@@ -27787,6 +27787,19 @@ Either is a routing change best done with time to run every walking suite. It is
 - **Owed, first:** `beat`'s routes through thin walls, by the route above.
 - **QA:** `crime2` and `penance` can come off the branch's red list. `beat` stays on it until the route is fixed.
 
+## v80 — Session 1158 — `guardplay`: the guard's heavy blow rolled on the runner's clock (tests only; the kill filed in I)
+`guardplay` was red twice on four CI runs on 18 and 19 Oct, two of them docs-only branches and one main itself (d3a4faa). Each red read the same: the drawn guard's blows took the player from 130 to 0 in 174 ticks and the yield was never offered, where a green run reaches the yield at 18 health in 42 ticks. The QA ledger of 19 Oct 07:20 guessed at S1136's heavy blow and could not test it under FREEZE #441.
+
+Measured now. A guard is tier 3 (S1060), and his blow on a new character (130 health, 1.75 armour) is 51–59 light and 102–118 heavy. The yield is offered between blows once health is under 30% (39). So a heavy blow first (130 to 12–28) or two light ones reach it, and a light blow then a heavy one (130 to 71–79, then 0) kills. Which blows are heavy is seeded on the guard's key, `dunmore:guard:16:<the game minute he drew>` (S509's co-op key, S1136's roll). The suite never set that minute: it was wherever the clock had got to when the halt was refused, and that hangs on how many frames the runner drew while the world loaded. Here the minute is always 1 (a heavy first blow, the green run). Of the first 60 minutes, 14 go light then heavy and kill.
+
+The suite now sets the clock to minute 1.5 before *I’ll not pay*, so he always draws at minute 1, and it logs the drawn guard's key so a later red names its minute. No check changed. Pinning chooses the heavy-first path, so the suite still plays a heavy blow into the yield. The light-then-heavy kill is the game's and goes in backlog I for the systems builder (`tickCrime`/`offerYield` in `86-world-crime.js`, the heavy roll in `74-strikes.js`). What the fix should be is a design call: offer the yield at the blow that would cross the line, cap a heavy blow at the line, or neither.
+### Verified (headless Chromium)
+- **The cause, reproduced:** the suite pinned to minute 3.5 draws `dunmore:guard:16:3` and fails exactly as CI did: `f1 {ticks:174, hp:0, dlg:false}`, *Then the sword, and Weaver forgive the both of us.*, and the same seven checks red after it.
+- **Pinned to minute 1:** 3 of 3 green in the old look and 1 of 1 under `--look=new`, each drawing `dunmore:guard:16:1` and reaching the yield at 18 health in 42 ticks.
+- **The blows:** light 51 and 59 at the roll's ends, heavy 102 and 118 (`foeBlow` on the guard's numbers). Over 600 minutes, 212 roll a heavy first blow (35%, a third by design).
+### Needs eyes
+- **A fined new character can die to a guard without the yield being offered**, about one fight in four. Filed in I; the design is Michael's through the systems builder.
+- Three CI runs of this commit are the proof still owed.
 ## v80 — Session 1136 — The people's wall hold, checked (backlog I)
 Session 1133 owed one check. The people's ragdoll in `32-people.js` (`ragdollStep`, S466) holds a point at a wall the same way the beasts' did, and the beasts' hold let a Cave Bear killed over Hearthwick's well climb the column to 12 m. This session asked whether a person can do the same, and could not make one.
 
@@ -28177,3 +28190,71 @@ Out front, a terrace 4 m deep to a parapet on the quay wall, with three round ta
 ### Needs eyes
 - **Nothing to see in the game yet.**
 - **Owed, the hanging:** Aurenne's towns on `?look=new` still have the old builder's houses outside (F6 in the game is the Gatelands' so far). Hanging the tavern in an inn now would put a Roman room with a sea terrace behind any front. It waits on Aurenne's lots, and `PKIT.au.house` is the first half of those.
+## v80 — Session 1163 — The woven band on a long gown's hem, fitted to its cut (L1, prototype only)
+Session 1156's Needs eyes: on a long gown the woven band's lower thread ran along a straight line at rest -.705, but the gown's cut is the skirt helper's own edge, which is not level. Measured on the rest body this session, it is -.715 at the back, rises to -.687 over each hip (±1.6 rad round the body) and falls to -.728 at the front. So at the front a strip of the ground up to 2.3 cm deep showed under the band's lower thread, and over the hips the thread and the lowest lozenges were cut off by the edge. A short skirt's cut is a line in the shader (-.2, with 5 mm of noise), so its band was already right. This is a fix to something Michael chose, so it asks nothing. It touches only `people.js` and `builder.check.mjs`.
+
+- **The table** (`lozHemTable`). The long skirt's edge is found as the triangle edges that only one triangle has, below rest -.5: 36 points. Sorted by their angle round the body's axis (the same axis the band's lozenges are laid round), they are read at 48 even angles, wrapping round the back. The table is built once per pack.
+- **The band.** A long gown's band now runs from `lozHemY(vB)`, the table read at the point's angle and blended between the two nearest entries in the shader, up 4.5 cm as before. Below its lower thread, the ground still fills to the cut, as a hem, but that strip is now under a millimetre and a half.
+- **`lozHemY(x, z)`** is exported, the same reading in JS, for the check.
+- The short skirt, the neck and the cuffs are unchanged.
+
+### Verified (headless Chromium)
+- **A new check** (`builder.check.mjs`): the 36 points of the long gown's cut (rest -.728 to -.687) lie within 1.37 mm of the band's lower edge, against 23.5 mm off Session 1156's line. The skirt's program carries the table.
+- **Session 1156's three band checks** still pass. The madder gown's hem view changes 17.2% against the plain gown (it was in the 18.6–27.7% range before; the band now covers the cut where the ground strip did). The chest stays at 0 pixels.
+- **`builder.check.mjs`:** 504 of 504 pass (503 before and the one above).
+- **Pictures:** `builder-bands-*.jpg` retaken, and `builder-bands-hem-side.jpg` (new), the gown's hem from a quarter turn the other way. In both close views the lower thread runs unbroken along the cut.
+### Needs eyes
+- **The lozenges' spacing** looks uneven in the close views. It steps to 12 threads a lozenge on a pixel grid, so neighbouring lozenges differ by a thread. It was there before this fix.
+- **Owed:** the knee-length formal tunic, the mantle over the gown, who wears it (the game), and the game after F4.
+
+## v80 — Session 1164 — The Mark's formal tunic, worn to the knee (L1, prototype only)
+Session 1156 owed the rest of OG-109's Mark formal column: the men wear their formal tunics longer, nearer the knee. The builder had two skirts, a short tunic skirt cut at rest -.2 (mid-thigh) and a long one to the ankle. This adds a third length. It refines the formal dress already built and asks nothing. It touches only `people.js`, `builder.js` (one option) and `builder.check.mjs`.
+
+- **`skirt: 'knee'`.** The long skirt's shell (the skirt helper, both legs inside one tube), cut in the shader at rest -.345, with the short skirt's 1 cm of noise on the cut. The knee's joint is at rest -.369, so the cut lies over the kneecap. A short tunic's own region stops at -.24, which is why it cannot simply be cut lower.
+- **`SKIRT_CUT` and `skirtR(D)`** give each length's cut and shell. The four places that chose a shell by `D.skirt === 'long'` now ask `skirtR`: what the cloak drapes over, what the hair and the sash clear, and the skirt's own mesh. A mail skirt over it stands off as it does over a long one, since the shell is the same.
+- **The hands** beside it are tested against its points above the cut, as a short skirt's are.
+- **The woven band** on its hem runs 5 mm over the cut, as on a short tunic (`'(vB.y + .34) / .04'`).
+- **In a wheeled chair** it is cut short. The long shell over a seated lap is the reason the chair already swaps a long skirt for trousers.
+- **The page:** the skirt select has "to the knee".
+- **The roll:** none. Who dresses formally is the game's to say.
+
+Correction to Session 1163: `builder-bands-hem-side.jpg` was not a side view. It is the hem from a quarter turn the other way, and it is renamed `builder-bands-hem-turned.jpg`. Session 1163's entry and its PR comment name the old file.
+
+### Verified (headless Chromium)
+- **Four new checks** (`builder.check.mjs`), four Markmen in knee-length tunics, two with the woven bands. The hem is measured where the shader cuts it: each triangle edge across rest -.345, its posed ends blended at the crossing, 152 crossings. On each:
+  - the hem runs from -0.3 to 0.6 cm at its lowest (between the legs) to 7.1 to 7.2 cm at its highest over the knee's joint (`lowerleg01`);
+  - it is 19.1 to 20.7 cm lower than a short tunic's lowest point on the same man;
+  - no hand is in it (0 of 948 to 1,562 hand points, the arms lifted 0.12 to 0.21 rad);
+  - the band is on its own cut;
+  - it saves and loads back with `"skirt":"knee"`;
+  - in a wheeled chair it is cut at -.2.
+- **A first cut at -.33** put the hem 8 cm over the joint when measured by the lowest point kept, not the crossing. That measure was wrong: it stood a row of the shell's points above the real hem. -.345 was chosen on the crossing measure and the pictures.
+- **`builder.check.mjs`:** 508 of 508 pass (504 before and the four above).
+- **Pictures** (`builder-knee-*.jpg`): `-full` (the blue Markman with ochre bands, belted), `-turned` (the same, turned the other way), `-plain` (a Markman in charcoal, no bands).
+### Needs eyes
+- **The cut's noise** reads as a short fringe at the hem on a plain tunic, as it does on a short one. With the band, the band's ground fills the noise.
+- **Walking:** the shell is one tube round both legs. A knee-length hem across a stride stretches as the long gown's does; the builder has no stride pose to judge it by.
+- **Owed:** the women's mantle over the gown (OG-110), who wears formal dress (the game), and the game after F4.
+
+## v80 — Session 1165 — The coat hood's fur ruff, at under half the triangles (L1, prototype only)
+Session 1152's Needs eyes: the ruff round a hooded coat's face cost 11.8k to 13.1k triangles, as much as the rest of the coat's fur together. It proposed narrowing the ruff or cutting its seven shells to four, and the pictures would have had to say whether it still read. Neither was needed. Each shell was a full copy of the hood's front within the ruff's reach, and the shells' shader then discarded most of it. It touches only `people.js` and `builder.check.mjs`, and changes nothing that shows.
+
+- **What was drawn for nothing.** Each shell held 1,691 triangles of the hood's front and showed 676 of them:
+  - 986 (58%) lay wholly inside the face's opening at the front, where the shader discards every fragment (`aBase` z > 0 and x < 1);
+  - 29 lay wholly past the ruff's outer line, whose noisy cut reaches 1.23 at most.
+- **The cut.** A triangle whose three corners are all in one of those two regions is now left out of the shells. Both tests are half-spaces in `aBase`, and `aBase` is interpolated across a triangle, so every fragment of such a triangle would have been discarded too. Nothing that drew before is lost.
+- The shell count, the spacing, the ruff's width and its outer line are unchanged.
+
+### Verified (headless Chromium)
+- **Session 1152's three hood-up checks** (`builder.check.mjs`) now also count the ruff's triangles that lie wholly where its shader discards: 0 on each. The ruff's ceiling is tightened from 14,000 to 6,000 triangles.
+  - The charcoal Markman's ruff is 4,732 triangles (was 11,837).
+  - The brown-coated Markwoman's is 5,411 (was 13,097).
+  - The plain coat has no ruff.
+  - 0 of 7,123 to 7,191 head and hair points come through the hood, as before.
+- **A pixel comparison was tried and does not settle it.** Rendering the hood and ruff alone from four sides, the same build twice differs in 26k to 30k pixels of 385k to 441k, and old against new in 33k to 41k. The seven shells 3.5 mm apart do not render the same way twice on SwiftShader, even with `Math.random` seeded. So the proof is the geometric one above, and the check counts it.
+- **`builder.check.mjs`:** 508 of 508 pass.
+- **Pictures:** `builder-coathood-face.jpg` and `-woman.jpg` retaken. The ruff reads as it did.
+### Needs eyes
+- **The ruff's look** is unchanged; whether seven shells are needed at all is still open, but the cost no longer presses the question.
+- **The hair texture's `Math.random`** (`strandTex`) makes two builds of one genome differ in their hair's strands. That is cosmetic and allowed by the co-op rules, but it keeps any pixel comparison of a whole person noisy.
+- **Owed:** the women's mantle over the gown (OG-110; the fur mantle the Markmen roll may already be it, in white), and the game after F4.
