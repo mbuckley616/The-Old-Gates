@@ -471,6 +471,13 @@
     for(const n of guardsOf(S)){if(!n.g.visible||n._retreated||n._drawn)continue;const d=Math.hypot(px-n.g.position.x,pz-n.g.position.z);if(d>5)continue;if(!clearLine(px,pz,n.g.position.x,n.g.position.z))continue;
       if(c.shut)guardDraw(n,S);else confront(n,S,c);return;}
   }
+  // S1173 — a guard's blow before the yield (Michael's A on #456). Until the yield has been offered, a drawn guard's blow
+  // that would take you under its line stops just under it (29% of health, 38 of a new character's 130), and the next
+  // tick makes the offer, in the street or in a room. A heavy blow still takes you from 75 to the line in one. Once you
+  // choose *Fight on* (the offer made, CR.yielded), or with no fine to offer terms on, his blows land in full. Only the blow
+  // that crosses the line is held: already under it (out of the town's reach, where no offer comes) nothing is.
+  function guardBlowCap(e,dmg){if(!e||!e._guard||CR.yielded)return dmg;const C=worldState.crime,c=C&&C[e._guard.site];if(!c||c.bounty<=0)return dmg;
+    const line=Math.ceil(maxHP*.3)-1;if(PHP<=line)return dmg;return Math.min(dmg,PHP-line);}
   // S239 — guards indoors (Michael, issue #23: B). Seen indoors with a fine on you, the nearest guard on duty is sent.
   // Half a minute on (or when he has walked there, if that is longer) he comes in by the door and halts you where you
   // stand. Leave before then and he is in the street where his walk had got him, and gives chase: he halts you if he
