@@ -837,3 +837,102 @@ The tell matters. With the same weapon and health, timing the block turns three 
 **Backlog notes** (not changed):
 - I: the *Sailing playtest* block is all struck and could close (sixth run noted).
 - No new lines in I this run, and no proposals.
+
+## 2026-10-18 — The new look: the kit's first house in Dunmore, card F8's tower house and cliff fort and the five small mysteries, F11's last four hulls, and the Old Blood's dress (build s644)
+
+Build s644 is main at `bcbcbbb`, merged into this branch. My last entry was a playtest, so this run reviews the new look. `npm install` exits 0 and `export` passes 1/1. I served `docs/prototypes/levelup/` over http as `shoot.mjs` does and took 35 frames at 1280×720 from `places.html`, `ships.html` and `builder.html`, plus one boot of today's game on `?look=new`. Every page loaded with no page errors. `builder.html` needs the MakeHuman pack, which is not committed. `mh_pack.py` fetched it in under a minute (7.2 MB, gitignored). Without the pack the page throws *Unexpected end of JSON input* and draws nothing. That is expected, but a fresh checkout cannot show the people until someone runs the script.
+
+None of the prototype pages shows a frame time. Each one reports triangles and draws: tower house 64,356 triangles in 23 draws, cliff fort 43,196 in 19, the carriage 36,380 in 19, the perched stone 38,560 in 11, the expedition 27,758 in 16, the unfinished camp 22,271 in 13, the locked cellar 22,068 in 12. Each hull is 31,934 to 43,216 triangles in 10 to 12 draws. In software GL every place rendered its still in 4 to 24 s, and the tower house was the slowest.
+
+### The new look
+
+**The kit in today's game (Session 1037, card F6).** I booted s644 on `?look=new`, settled Dunmore, set 11h and stood one `PKIT.gl.lot` house 18 m ahead in the street (`critic/2026-10-18-kit-dunmore.png`). There were no page errors or console warnings. The scale is right: two townsfolk walk past its shop door, and the 2.05 m door sits a head over them, as `visual-foundation.md` asks. Its register is a long way from Dunmore's. It is a three-storey Georgian merchant's house with sash windows and a slate roof, its eave at 8.5 m and its ridge at 11.9 m. Around it stand the town's whitewashed thatched cottages, eaves about 3 m. That is #280 A's coloured town, so it is not wrong, but a street of these inside today's Dunmore will read as another century. One small thing: every merchant's house reads *WOOL · LINEN · DRAPERY*. `lot()` never passes a trade, so the default in `js/38-kit.js:384` (copied from `pieces.js:953`) stands on all of them. Session 1037's picture shows three on one street of six.
+
+**The Gatelands' ruined tower house (Session 1052, OG-121's "collapsed keeps with lower levels, some taken by bandits").** It holds up from the far view and the gate. There is the bawn with its breach and flanker, the tower, the cart, and the band's camp under the vault (`critic/2026-10-18-th-tower.jpg`, `-th-hall.jpg`). The souterrain is the best frame of the run: a long, low, lit passage with daylight at its end. Five faults:
+- **The fallen corner is not a corner.** From the south-east and from above it reads as a V cut down the middle of the east face, from the head to the vault's back, with the face standing whole on both sides. Session 1052 flagged it as "a notch". From the default view it is the first thing you see.
+- **Too little rubble for what fell.** About 9 m of a 1.5 m wall came down, but the heap under it is a single waist-high pile.
+- **Two walls of one ruin do not match.** The bawn's 0.9 m rubble wall wears a coursed block texture that reads as brick or ashlar. The tower wears the kit's cobble at a far larger scale. The same coursed blocks are the field walls at the carriage, the perched stone and the expedition. Across F8 the Gatelands' walls read as laid brick, not dry stone.
+- **The hall's lighting.** The fire's flames and the lantern by the door render pure white. The stair's parapet is pale ashlar in a room of rubble, so it reads as a counter. The pallets are boxes with a brown slab on top.
+- **In the cellar the sacks read as eggs** (`-th-cellar.jpg`): four smooth, upright, cream ovoids by the strongbox.
+
+The door is 1.2 by 2.6 m, 0.4 m over the foundation's 2.0 to 2.2. A tower house's door was usually low, and a 2.6 m round-headed door makes the tower look smaller than its 16 m. The thorn over the souterrain's pit is the broad-leaf tree of the other places, not a thorn.
+
+**The Mark's cliff fort (Session 1053).** The palisade, the burst gate and the hall behind it read at once from the road (`-cf-fort.jpg`). Inside, the hall and the stabbur on its posts are the best Markish buildings yet. The cliff is the weak part (`-cf-cliff.jpg`). From the sea it is one dark sheet in even vertical folds, like a stage curtain, with no ledge, stack or change of colour, and snow showing only on its lip. Session 1053 says so in its own words. I agree, and it matters more here than in the cave pages, because the cliff is the view you sail toward. From above, the headland is a flat-topped pillar standing out of a plain sea. From the road, the gate tower's open gable shows one slope as a slab and the other as a stick, which reads as a broken roof. It is not one: the camera sits left of the ridge, and the gate view shows both slopes.
+
+**The small mysteries (F8: Sessions 1023, 1025, 1026, 1031, 1032).**
+- *The unfinished camp* reads best of the five. It is a half-pitched tent, a laid fire and a sledge in a snowed spruce clearing with no track, and the empty snow tells the story.
+- *The locked cellar* works at the hatch. The new chain and lock on old boards are the point, and they read (`-cellar-hatch.jpg`). The "nettles" around it are hard green cones, a knee-high plantation of small conifers.
+- *The overturned carriage* does not read as a coach from the lane (`-carriage.jpg`). It is a plain red-brown box on its side. One wheel stands up on its axle like a table, and the near wheels are black blobs.
+- *The perched stone* reads as a mushroom (`-erratic.jpg`): a dark brown loaf on a short pale stalk. The clints around it are huge flat tiles cut by straight, deep grykes, more paving than limestone pavement.
+- *The abandoned expedition* reads well at distance: white wall tents, cypresses and the cart. Its ground, like the carriage's, is a strong two-tone blotch that reads as camouflage print up close.
+
+None of these five has a person or a door in frame, so I could not check them against the scale table by eye.
+
+**F11's last hulls (Sessions 1038, 1039, 1044, 1045, 1046), against OG-004.**
+- *Aurenne's cog* and *Aurenne's galleon* read as Aurenne at once: white hulls under blue strakes, white lateens with the gold sun-star, which is OG-004's "white and blue sails with a gold sun-star, painted hulls".
+- *The Mark's cog* (`-s-markcog.jpg`) is as under-canvassed as Session 1039 feared. One small tanned gaff sail sits between two high castles on a deep black hull.
+- *The Mark's three hulls* (caravel, cog, galleon) are tarred black with tanned sails, and each keeps another class's silhouette. OG-004's Mark is dragon prows, oars and dark sails. #347 A chose the dress over the shape, so this is as asked. But from the sea the Mark's galleon is the Gatelands galleon in black, as Session 1045 says. Only the striped sail would name her at a distance.
+- *The spritsails* on both galleons hang under the bowsprit near the water and read as washing.
+
+**The Old Blood's dress (Sessions 1042, 1043, 1051, 1052, 1053) and the Gatelanders' basket (1033), against OG-066 and OG-048.** On the `peoples` sheet (`-b-peoples.jpg`) the Old Blood are the shortest people, measured top to toe with hair: 1.70, 1.55 and 1.58 m against 1.65 to 1.87 for the Gatelanders and 1.82 to 2.02 for the Markmen. They are grey-pale and black-haired, as canon §2 has them. The Old Blood woman at 1.55 sits under the foundation's 1.6. That is canon's "short, slight", and I would keep it. The Markman's 2.02 includes his hair and fur collar.
+- *The shoulder wrap* reads well (`-b-ob-dress.jpg`): a slate band over one shoulder, folds and all.
+- *The dot embroidery* in oxblood on cream reads as spatter at full-body distance. It is Session 1043's worry exactly: a rash or blood, not needlework. Slate or violet would not.
+- *The amulet and charms* are three dark specks at the belt from 3 m.
+- *The Cold at 1* (`-b-ob-cold.jpg`): the marks at the temple read as pale scribble, with closed loops (an *o*, a *ϕ*) round the ear. They do not read as Session 1052's open, tapering strands. OG-066 draws veins.
+- *The basket* hangs well clear of the skirt. The arm is out about 15°, and the weave reads as coiled rows, as 1033 says.
+
+**What reads, in one line:** the scale. Every door I could measure next to a person is right, and the people are the heights the foundation wants. What the art has that the pages lack is weathering and mass. OG-121's ruins are broken along whole faces and drowned in their own stone, and these are cut, tidy, and textured like new brick.
+
+### Needs eyes, reviewed
+- *1037 (the kit in the game):* judged above, in one boot. The colours are close to the prototype's. I could not judge the 0.7 s first paint as a hitch, since everything in software GL hitches.
+- *1038, 1039, 1044–1046 (hulls):* judged from stills. The Mark's cog is under-canvassed and the Mark's galleon reads as the Gatelands' in black. The Aurennais hulls read top-heavy only from the side. The *quarter* view does not show it.
+- *1052, 1053 (F8):* judged. The fallen corner and the curtain cliff are both as their sessions feared, and both are the first thing the eye meets.
+- *1033, 1042, 1043, 1051–1053 (the people):* judged, still. How things hang rigid in motion waits on F4.
+- *1038–1040, 1054–1056, 1071, 1072, 1090 (QA):* tests only.
+
+### What was wrong in today's game
+Nothing new. One boot on the new look and one export suite, with no page errors. No new lines in backlog I this run, and no proposals.
+
+### Backlog notes (not changed)
+- I: the *Sailing playtest* block (line 346) is all struck and could close (seventh run noted).
+- CLAUDE.md still says 44 script files, and its code map has no `38-kit.js`. There are 45 now. Session 1037 left that to the producer.
+
+## 2026-10-19 — Dunmore's fifteen counters crouched and standing (Session 1110's cover), a Bandit's three blows by day and by night (1136, 1137, 1140), Clodagh's Goods, a room at The Bramble Hearth (build s714)
+
+Build s714 is main at `d3a4faab`, merged into this branch. My last entry reviewed the new look, so this run is a playtest. `npm install` exits 0 and `export` passes 1/1. Three throwaway scripts under `tests/tmp/` played Dunmore on the old look: every keeper's room at 13h, the street at 12h and 22h, a Bandit in front of you at both hours, the general store, and the first inn at 20h. No page errors in any of them.
+
+**The counters (Session 1110, Michael's A on #420).** I went into all fifteen of Dunmore's rooms with a keeper: two guilds, a forge, an armoury, two apothecaries, three general stores, four inns, the Oratory and the barber. In each I stood on the far side of the solid nearest the keeper, turned the keeper to face me and asked `witnessOf` with a pick in hand, at 0.4, 0.8, 1.3 and 2 m past the counter's front edge. Every shop counter is the same box: it runs 0.72 m under the floor and its top is 0.94 m, so it clears `COVER_H` (0.9) by 4 cm. The answer was the same in all thirteen rooms where the spot was clear of other solids. Standing, the keeper sees you at every distance. Crouched, you are hidden at 0.4 and 0.8 and seen at 1.3 and 2. The keeper stood 2.0 to 2.8 m from you at the near spots. Two rooms are exceptions. In the Oratory, crouching hides you at every distance out to 5.1 m from Pádraig, because the pews stand in the line every metre or so. In Bríd's Armoury a 2.3 m rack beside the keeper does the same. Both follow from the rule, and both feel right: a church full of pews should hide a crouching thief. So the session's *Needs eyes* holds up: within a metre of the counter you are unseen, and a step back you are seen. From the player's eye, crouched 0.4 m off the Fighters' Guild counter at 1.1 m, the counter is a wall of wood up to the chin. Gráinne shows head and shoulders over it, with her *Press 'E' to talk* still up (`critic/2026-10-19-counter-guild_f.png`). The one thing the room does not tell you is that you are hidden. The HUD shows nothing different at 0.8 m than at 1.3 m, and the answer flips 4 cm above the counter's real top. I would leave the 1 m as built.
+
+**The heavy blow, the feint, and the glows (Sessions 1136, 1137, 1140).** I stood a Bandit 2.6 m ahead on Dunmore's road at noon and at 22h and painted each of its glows at full strength through the game's own `telegraphPulse`. Then I painted the perfect parry's flash with `executeStrike`'s colours.
+- **The gold reads as a warning but not as itself.** At noon the light blow's gold (`emissive` bf8414) turns the whole body a flat, even marigold (`-glow-12h-light.png`). The parry flash (`color` ffdd44, `emissive` 664400) turns it ochre (`-glow-12h-parry.png`). Side by side the two are one hue a shade apart. In a fight they never sit side by side: the gold comes in the last 0.15 s of a wind-up and the yellow follows a parried blow, a beat later. At 22h the gold is plainer, a lamplit amber on a dark street (`-glow-22h-light.png`), and still in the parry's family. Session 1136 asked whether the gold is too close to the parry's yellow. From these pictures it is, by day. A colour that means *it is coming* should not be one shade from the colour that means *you caught it*.
+- **The red heavy reads at once, by night especially** (`-glow-22h-heavy.png`): a body of solid scarlet that is not like anything else on the street.
+- **Both glows replace the body.** The emissive at k=1 washes out the clothes, the face and the hair. For 0.15 s the foe is a flat colour shape, a cut-out more than a lit body. It works as a tell, but it is the loudest thing in the game's palette.
+- **Half the blows are not a plain swing.** I let a keyed Bandit (`critic:fight:1`) fight me for 40 s of the loop's own ticks, with my block held. It wound up 19 times: 7 light, 6 heavy and 6 feints. Through the held block the light blows did 11 to 16 and the heavies 22 to 32. The first heavy took 85 of 104 posture and broke the guard, as 1136 built. Session 1140 asked whether one in four feints on top of one in four heavies is too busy. From the numbers alone it is busy: only 37% of this Bandit's blows were the swing the tutorial teaches. Whether the feint *reads* (the pose stopping at its top) I cannot judge headless. My 40 s ran in a synchronous loop, faster than the real clock, so I make no claim about posture recovery or the stagger's length.
+
+**Clodagh's Goods at 13h.** Six things bought and sold back at the counter, at Charisma 0. Torch: list 8, paid 8, sold for 2. Dungeon Map: 15, 14, 4. Lockpick: 12, 11, 4. Health Potion: 18, 17, 7. Wooden Bow: 4, 4, 1. A dozen Iron Arrows: 2 for the bundle, and a single arrow sells for 0 (S366's *a piece is under a coin*). No money loop, and the shop sheet's header reads *Clodagh · "Rope, salt, candles, and questions."*, which is in the canon's voice.
+
+**The Bramble Hearth at 20h.** Ruairí's topics put *Something to eat and drink?* and *A bed for the night?* first. The offer reads *The house is empty tonight… A room is 11 gold — the first door on the right*, and *Yes. 11 gold.* takes 11 of 60 and says *yours till this time tomorrow*. At the room-0 bed on the gallery (2.74 m up), the bar reads *Your room — press 'E' to rest*, and E opens the sleep slip (`-inn-sleep.png`): *Hearthday, the 1st of Reaping, in the 27th year of the Peace · 8:00 pm · The Bramble Hearth, Dunmore*. Its 8-hour default wakes you at 4:01 am, which the dial and the line agree on. The slip is the best-made panel in the game. The default is the one odd thing: a traveller who takes a room at eight is woken in the dark. *Morning 8 am* is one key away, so it is not a bug.
+
+**Dunmore after dark.** At 22h one of the town's 88 townsfolk was in sight within 60 m of the square, against nine at noon. The lamps are lit, the chimneys smoke, and the stars are out (`-dunmore-22h.png`). By the schedule (`scheduleFor`) that is right: villagers are home by 20h, residents by 21h, the guards go on the lantern beat and the watch comes out. The square is empty because the watch's beat does not cross it at that minute. It looks like a town asleep, which is what it should be.
+
+**Which look.** I played the old look, the default on main today. In Slack on 18 Oct Michael froze 1.0 and asked for the new look to become the default (#443, not on main yet). Everything above is a rule, not a picture, and carries over unchanged, except the glow stills, which should be taken again on the new look once #443 lands.
+
+### What was wrong
+Nothing I would call a bug. The glow colour is a design call Session 1136 already put to Michael, and I give my reading above. No new lines in backlog I.
+
+### Needs eyes, reviewed
+- *1110 (cover):* judged in all fifteen rooms. It works as described, and within 1 m is right for a 0.94 counter. The tables are 0.75 and under the line, as the session says.
+- *1111 (the mimic's pounce):* not played. No mimic this run.
+- *1112 (the spire watch):* not judged. The quest writer's words that give the quest are not on main, so a player cannot start the watch.
+- *1121 (the shelf book):* nothing to see on main, as the session says.
+- *1135 (gold by place):* not played. The rule is a table and `goldtier` measures it.
+- *1136 (the gold glow, the 1.0 s heavy):* judged as stills: the gold is too near the parry's yellow by day, and the red is plain. The 1.0 s heavy without the glow I cannot judge headless.
+- *1137 (the golem's 1.25 s heavy):* not played.
+- *1140 (the feint):* judged as counts only: 6 feints and 6 heavies in 19 wind-ups. Whether the hold reads, I cannot judge headless.
+- *1091, 1132, 1133 (the beasts' falls):* not seen. No beast died near a solid in my play.
+- *1094–1131 (Garrick, the hound, the cats, the dress):* prototype only, for a new-look run.
+- *1104, 1108–1110, 1127, 1128, 1138, 1141 (QA):* tests only.
+
+### Backlog notes (not changed)
+- I: the *Sailing playtest* block (line 356) is all struck and could close (eighth run noted).
+- CLAUDE.md still says 44 script files and has no `38-kit.js` in its code map. There are 45 files.

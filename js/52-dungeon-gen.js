@@ -13,7 +13,9 @@ const FLOOR2_Y=-5.0; // v80 — floor two lies BELOW floor one: you go down into
 // resolver picks the highest foothold no more than STEP_UP above the player,
 // so you climb ramps, walk under decks, and fall off edges. Reset per room.
 let FOOTHOLDS=[],INT_SOL=[],DUNGEON_STAIRWELL=false;
-const STEP_UP=.62;
+// S1070 (card F2b, the body in the world) — a step at true scale is 0.40 m: over a stair's rise (0.18) and a kerb, not onto a
+// chair (0.45), a bed (0.5) or a table (0.75), which a jump (apex 0.84) puts you on. It was 0.62, for the old 1.1 m body.
+const STEP_UP=.40;
 function footholdY(x,z,py,base){
   let best=base;
   for(let i=0;i<FOOTHOLDS.length;i++){const f=FOOTHOLDS[i];
@@ -36,7 +38,7 @@ let INT_BEDS=[];let INT_DOORS=[];let INT_CHAIR=null; /* S561 — the barber's ch
 // S561 — within reach of the barber's chair and nearer it than the barber who stands beside it; within 1.2 of him, E talks to him
 /* S656 — the chair answers to the crosshair (Michael's 6 Oct playtest): in reach, on the floor, its frame under the crosshair; the barber
    takes E instead only when he is nearer and the crosshair is on him */
-function nearBarberChair(){if(!INT_CHAIR)return false;const d=Math.hypot(px-INT_CHAIR.x,pz-INT_CHAIR.z);if(d>=1.5||Math.abs(jumpY)>=.9)return false;if(!aimBox(INT_CHAIR.x,INT_CHAIR.z,0,.32,.34,1.2))return false;const k=typeof intNPCPos!=='undefined'&&intNPCPos&&intNPCMesh?Math.hypot(px-intNPCPos.x,pz-intNPCPos.z):1e9;return !(k<d&&aimAt({g:intNPCMesh},3.6));} // v80 S143 — doors inside buildings
+function nearBarberChair(){if(!INT_CHAIR)return false;const d=Math.hypot(px-INT_CHAIR.x,pz-INT_CHAIR.z);if(d>=TOUCH||Math.abs(jumpY)>=.9)return false;if(!aimBox(INT_CHAIR.x,INT_CHAIR.z,0,.32,.34,1.2))return false;const k=typeof intNPCPos!=='undefined'&&intNPCPos&&intNPCMesh?Math.hypot(px-intNPCPos.x,pz-intNPCPos.z):1e9;return !(k<d&&aimAt({g:intNPCMesh},3.6));} // v80 S143 — doors inside buildings
 // v80 S11 — solids carry a height band {y0,y1}. An object whose top is
 // within a step of your feet doesn't block (you step onto it — it's also a
 // foothold); an object entirely above your head doesn't block (you walk

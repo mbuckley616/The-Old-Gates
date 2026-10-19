@@ -49,7 +49,7 @@ const S = r.sets;
 check('light: 60% of the heavy set\'s defence (rounded by piece) at 40% of its weight, a set of five weighs 8',
   S.light3.w === 8 && S.heavy3.w === 20 && Math.abs(S.light5.def / S.heavy5.def - .6) < .15 && S.light5.def < S.heavy5.def, { h3: S.heavy3, l3: S.light3, h5: S.heavy5, l5: S.light5 });
 check('robes: four pieces (no boots) at a quarter of the heavy weight and about a quarter of the defence', S.robe5.n === 4 && S.robe5.w === 4.5 && S.robe5.def < S.light5.def && S.robe5.def >= 4, S.robe5);
-check('the gates: Finesse for light, Intelligence for robes, on the heavy line\'s curve', S.light3.req.join() === 'finesse 5' && S.robe5.req.join() === 'intelligence 16' && S.heavy5.req.join() === 'fortitude 16' && r.low.light === null, { l: S.light3.req, r: S.robe5.req, h: S.heavy5.req });
+check('the gates: Finesse for light, Intelligence for robes, on the old curve; the heavy line asks Armour on the skill gates (S941, #354)', S.light3.req.join() === 'finesse 5' && S.robe5.req.join() === 'intelligence 16' && S.heavy5.req.join() === 'armour 45' && r.low.light === null, { l: S.light3.req, r: S.robe5.req, h: S.heavy5.req });
 check('prices: light 90% and robes 100% of the heavy piece', Math.abs(r.priceRatio.light - .9) < .01 && Math.abs(r.priceRatio.robe - 1) < .01, r.priceRatio);
 check('a light piece worn: 3% harder to notice while sneaking, five 15%; nothing when walking', Math.abs(r.sn5 / r.sn0 - .85) < 1e-9 && Math.abs(r.sn1 / r.sn0 - .97) < 1e-9 && r.snOff === 1, { sn0: r.sn0, sn1: r.sn1, sn5: r.sn5 });
 check('robes: 3 max mana a tier a piece (a Mithril set +60, one of the Mage enchant 50); heavy nothing', r.m5 - r.m0 === 60 && r.mH === r.m0 && r.mage === 50, { m0: r.m0, m5: r.m5, mH: r.mH });

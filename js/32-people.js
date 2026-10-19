@@ -1162,8 +1162,11 @@ function ragdollStep(R){
     // only: the world's test reads nine chunks). S466: a point the wall stopped last step is held in every pass, so the wall
     // pushes back on the body through the bones; held in the last two only, the passes before drove a leaning head into the
     // wall and shoved the rest of the body off it, step after step, and a body slumped against a dungeon wall crept for 2–4 s
+    // S1136: and a held point never rises, though it may always fall at half its pace, as the beasts' since S1132: held in height
+    // whenever it moved less than RD_GRIP.wall, a point at rest on a wall never fell; no person was seen to climb as the bear did,
+    // but a Bandit dropped against a wall kept its hips 0.29 up on it, and lies at 0.16 now (tests/peoplewall)
     if(R.solid)for(const o of P)if((it>=8||o.w0)&&R.solid(O.x+o.p.x,O.z+o.p.z)&&!R.solid(O.x+o.sx,O.z+o.sz)){o.p.x=o.q.x=o.sx;o.p.z=o.q.z=o.sz;o.w=true;
-      const vy=o.p.y-o.sy;if(Math.abs(vy)<RD_GRIP.wall*R.s)o.p.y=o.q.y=o.sy;else o.q.y=o.p.y-vy*.5;}
+      const vy=o.p.y-o.sy;if(vy>=0)o.p.y=o.q.y=o.sy;else o.q.y=o.p.y-vy*.5;}
   }
 }
 function ragdollApply(R){
@@ -1182,7 +1185,10 @@ function tickRagdolls(dt){
   for(const R of RAGDOLLS){
     if(!R.top.parent||!R.rig.root.parent){RAGDOLLS.delete(R);continue;}
     R.acc=Math.min(R.acc+Math.max(0,dt||0),4*RD_DT);let n=0,mv=0;
-    while(R.acc>=RD_DT){R.acc-=RD_DT;n++;R.t+=RD_DT;(R.step||ragdollStep)(R);for(const o of R.P){const m=Math.abs(o.p.x-o.q.x)+Math.abs(o.p.y-o.q.y)+Math.abs(o.p.z-o.q.z);if(m>mv)mv=m;}}
+    // S1091 — how far each point went in the step, from where it began (sx, sy, sz), not p less q: the ground's friction sets q
+    // part way back in a pass, and a forepaw dragged off and back by the bones each step kept a velocity it never spent, so a body
+    // lying still read as moving and met the four-second cap (one beast's fall in 200, CI's beastfall)
+    while(R.acc>=RD_DT){R.acc-=RD_DT;n++;R.t+=RD_DT;(R.step||ragdollStep)(R);for(const o of R.P){const m=o.sy===undefined?Math.abs(o.p.x-o.q.x)+Math.abs(o.p.y-o.q.y)+Math.abs(o.p.z-o.q.z):Math.abs(o.p.x-o.sx)+Math.abs(o.p.y-o.sy)+Math.abs(o.p.z-o.sz);if(m>mv)mv=m;}}
     if(!n)continue;
     (R.apply||ragdollApply)(R); // S427 — a beast's ragdoll brings its own step and apply (34-creatures.js)
     R.quiet=mv<.0015*R.s?R.quiet+n:0;

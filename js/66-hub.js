@@ -122,7 +122,7 @@ function renderLog(){
     body.innerHTML=html;}}catch(e){}
   // v80 S131 — what you're wearing, at a glance
   try{const slots=[['weapon','Weapon'],['offhand','Off-hand'],['head','Head'],['chest','Chest'],['hands','Hands'],['legs','Legs'],['feet','Feet'],['amulet','Amulet'],['ammo','Ammo']];
-    const def=Object.values(EQ).reduce((a,v)=>a+(v&&v.def?v.def:0),0);const w=EQ.weapon;const atk=w&&w.atk?`${w.atk[0]}–${w.atk[1]}`:'fists';const wt=Object.values(EQ).reduce((a,v)=>a+(v&&v.weight?v.weight:0),0);
+    const def=Math.round(Object.values(EQ).reduce((a,v)=>a+(v&&v.def?v.def:0),0)*armourSkillMult());const w=EQ.weapon;const atk=w&&w.atk?`${w.atk[0]}–${w.atk[1]}`:'fists';const wt=Object.values(EQ).reduce((a,v)=>a+(v&&v.weight?v.weight:0),0);
     const eq=document.createElement('div');eq.style.cssText='margin:0 0 12px;padding:8px 10px;background:rgba(40,40,40,.3);border-left:3px solid #8a7a60;border-radius:3px;font-size:12px;color:#c8b898';
     eq.innerHTML=`<div style="font:600 13px Georgia,serif;color:#e8d8a0;margin-bottom:6px;letter-spacing:.05em">WORN &nbsp;<span style="font-weight:400;color:#8a7a60;letter-spacing:0">attack ${atk} · armour ${def} · ${wt.toFixed(1)} weight</span></div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:3px 12px">${slots.map(([k,l])=>`<div><span style="color:#8a7a60">${l}</span> ${EQ[k]?(EQ[k].name||'?'):'<span style="color:#5a5040">—</span>'}</div>`).join('')}</div>`;
     body.insertBefore(eq,body.firstChild);}catch(e){}
@@ -248,14 +248,23 @@ function _hubVitals(){try{const s=(id,v,m,n)=>{const b=document.getElementById(i
 let _hubVitalsT=null;
 function openHub(tab){_hubVitals();if(!_hubVitalsT)_hubVitalsT=setInterval(()=>{if(!hubOpen){clearInterval(_hubVitalsT);_hubVitalsT=null;return;}_hubVitals();},200);_releasePointerLockForMenu();hubOpen=true;blocking=false;document.getElementById('hub').style.display='flex';hubTab(tab||'inv');}
 function closeHub(){hubOpen=false;document.getElementById('hub').style.display='none';hideBagTooltip();setQuickDestroy(false);G.focus();}
+// S952 — the Skills tab, plain markup until the parchment kit (#142 A): the level's marks, then 23 rows, majors first
+function renderHubSkills(){const head=document.getElementById('skill-head'),box=document.getElementById('skill-rows');if(!box)return;
+  if(head)head.innerHTML=`Level <b>${level}</b> · marks <b>${+levelMarks.toFixed(2)}</b> of ${marksNeeded()} to the next${levelReady()?' — <span style="color:#ffd700">rest in a bed</span>':''}. A major's or minor's rise is a mark, any other a quarter.`;
+  const S=skillsReady(),tag=id=>skillMajors.includes(id)?'major':skillMinors.includes(id)?'minor':'',rank=id=>skillMajors.includes(id)?0:skillMinors.includes(id)?1:2;
+  box.innerHTML=Object.keys(SKILL_DEF).sort((a,b)=>rank(a)-rank(b)).map(id=>{const s=S[id]||{lv:5,p:0},need=s.lv>=100?1:skillCost(s.lv),a=ATTR_DEF[SKILL_DEF[id].attr];
+    return `<div class="sk-row" data-skill="${id}"><span class="sk-tag">${tag(id)}</span><span class="sk-name">${SKILL_DEF[id].label}</span><span class="sk-gov">${a?a.label:''}</span><span class="sk-lv">${s.lv}</span><div class="sk-bar"><div style="width:${s.lv>=100?100:Math.min(100,s.p/need*100)}%"></div></div></div>${skPerkLine(id,s.lv)}`;}).join('');}
+// S973 — each skill's four perks under its row: lit when held; one not yet built says so in its tooltip
+function skPerkLine(id,lv){const P=PERK_DEF[id];if(!P)return '';return `<div class="sk-perks">${P.map((q,i)=>{const r=PERK_RANKS[i],live=PERK_LIVE.has(id+':'+r),held=live&&lv>=r;
+    return `<span class="sk-perk${held?' held':''}${live?'':' later'}" data-perk="${id}:${r}" title="${r}: ${q[1]}${live?'':' — not yet in the game'}">${r} ${q[0]}</span>`;}).join('')}</div>`;}
 function hubTab(name){sndTabSwitch();
-  const tabs=['inv','magic','attrs','quests','journal','log','map'];
+  const tabs=['inv','magic','attrs','quests','journal','log','map','skills']; /* S952 — Skills last, so the others keep their places */
   if(tabs.includes(name))hubLastTab=name;
   document.querySelectorAll('.hub-tab').forEach((t,i)=>t.classList.toggle('active',tabs[i]===name));
   document.querySelectorAll('.hub-panel').forEach(p=>p.classList.remove('active'));
   document.getElementById('hpanel-'+name).classList.add('active');
   if(name==='inv')renderHubInv();if(name==='magic')renderHubMagic();
-  if(name==='attrs')renderHubAttrs();if(name==='quests')renderQuestLog();if(name==='journal')renderJournal();if(name==='log')renderLog();
+  if(name==='attrs')renderHubAttrs();if(name==='skills')renderHubSkills();if(name==='quests')renderQuestLog();if(name==='journal')renderJournal();if(name==='log')renderLog();
   if(name==='map'){wmInit();wmSyncZone();if(typeof WORLD!=='undefined'){if(activeZoneId==='world')WORLD.openMap();else WORLD.closeMap();}} // v80 — world map takes over the pane in the streamed world
 }
 function slotTierColor(it){
@@ -739,9 +748,9 @@ function showBagTooltip(idx,ev){
     }
     // Attribute requirement
     if(it.reqAttr&&it.reqVal>0){
-      const have=ATTRS[it.reqAttr]||0;
+      const have=reqHave(it);
       const met=have>=it.reqVal;
-      const reqLabel=ATTR_DEF[it.reqAttr]?.label||it.reqAttr;
+      const reqLabel=reqName(it);
       html+=`<div class="bt-row" style="color:${met?'#66aa44':'#cc4444'};font-size:9px">Requires ${reqLabel} ${it.reqVal}${met?'':" (you have "+have+")"}</div>`;
     }
     if(cur&&cur.name){html+='<div class="bt-cur">Equipped: '+cur.ico+' '+cur.name+'</div>';}
@@ -942,9 +951,9 @@ function renderHubAttrs(){
   document.getElementById('vr-mp').textContent=(0.8+(level-1)*0.15+attrEff('intelligence')*0.2).toFixed(1)+'/sec'; /* v80 S334 — the main loop's rate: Intelligence, as its card says (it read Resolve) */
   document.getElementById('vr-st').textContent=(3+(level-1)*0.4+ATTRS.resolve*0.3).toFixed(1)+'/sec';
   const rows=document.getElementById('attr-rows');rows.innerHTML='';
-  Object.keys(ATTR_DEF).forEach(key=>{const def=ATTR_DEF[key];const mult=getMultiplier(key);const actVal=lvAct[def.actKey]||0;const t=def.thresholds;const curThresh=t[mult-1]||0;const nextThresh=t[mult]||t[t.length-1];const prog=nextThresh>curThresh?Math.min(1,(actVal-curThresh)/(nextThresh-curThresh)):1;const mc=['','lu-mult-1','lu-mult-2','lu-mult-3','lu-mult-4','lu-mult-5'][mult];const row=document.createElement('div');row.className='attr-row';row.innerHTML=`<span class="attr-ico">${def.icon}</span><span class="attr-name-col">${def.label}</span><span class="attr-pts">${ATTRS[key]}</span><div class="attr-prog-wrap"><div class="attr-prog-fill" style="width:${prog*100}%"></div></div><span class="attr-act-label">${actVal}</span><span class="attr-mult-badge ${mc}">×${mult}</span>`;rows.appendChild(row);});
+  Object.keys(ATTR_DEF).forEach(key=>{const def=ATTR_DEF[key];const pts=ATTRS[key]||0,rose=luRose(key),n=rose.reduce((a,r)=>a+r[1],0);const row=document.createElement('div');row.className='attr-row';row.title=rose.length?rose.map(([id,v])=>`${SKILL_DEF[id].label} +${v}`).join(', ')+' this level':'nothing rose under it this level';row.innerHTML=`<span class="attr-ico">${def.icon}</span><span class="attr-name-col">${def.label}</span><span class="attr-pts">${pts}</span><div class="attr-prog-wrap"><div class="attr-prog-fill" style="width:${Math.min(1,pts/ATTR_CAP)*100}%"></div></div><span class="attr-act-label">${n?'+'+n:''}</span><span class="attr-mult-badge">/${ATTR_CAP}</span>`;rows.appendChild(row);}); /* S952 — the attribute to its cap of 60, and the skill-ups under it this level (the action multipliers are gone) */
   const dg=document.getElementById('derived-grid');dg.innerHTML='';
-  [['Melee DMG','+'+Math.round(attrEff('might')*ATTR_DMG_PER_POINT*100)+'%'],['Ranged DMG','+'+Math.round(attrEff('finesse')*ATTR_DMG_PER_POINT*100)+'%'],['Spell DMG','+'+Math.round(attrEff('intelligence')*ATTR_DMG_PER_POINT*100)+'%'],['Move Speed','+'+attrEff('swiftness')*2+'%'],['Atk Speed','+'+attrEff('swiftness')*1+'%'],['Crit Chance','+'+ATTRS.fortune*2+'%'],['Gold Found','+'+(ATTRS.fortune||0)*5+'%'],['Item Drop','+'+(ATTRS.fortune||0)*2.5+'%'],['Max Mana Bonus','+'+attrEff('intelligence')*10],['Barter Bonus','+'+Math.round(barterPct()*100)+'%']].forEach(([l,v])=>{const d=document.createElement('div');d.className='derived-row';d.innerHTML=l+'<span>'+v+'</span>';dg.appendChild(d);});
+  [['Melee DMG','+'+Math.round(attrEff('might')*ATTR_DMG_PER_POINT*100)+'%'],['Ranged DMG','+'+Math.round(attrEff('finesse')*ATTR_DMG_PER_POINT*100)+'%'],['Spell DMG','+'+Math.round(attrEff('intelligence')*ATTR_DMG_PER_POINT*100)+'%'],['Move Speed','+'+Math.round(attrEff('swiftness')*5)/10+'%'],['Atk Speed','+'+attrEff('swiftness')*1+'%'],['Crit Chance','+'+Math.round((ATTRS.fortune||0)*FORTUNE_CRIT_PCT*1000)/10+'%'],['Gold Found','+'+(ATTRS.fortune||0)*1+'%'],['Item Drop','+'+(ATTRS.fortune||0)*1+'%'],['Max Mana Bonus','+'+attrEff('intelligence')*10],['Barter Bonus','+'+Math.round(barterPct()*100)+'%']].forEach(([l,v])=>{const d=document.createElement('div');d.className='derived-row';d.innerHTML=l+'<span>'+v+'</span>';dg.appendChild(d);});
   // v80 — Standing: who you are to the world
   try{const sb=document.getElementById('standing-body');if(sb&&typeof WORLD!=='undefined'){
     const row=(k,v)=>`<div style="display:flex;gap:10px;padding:3px 0;border-bottom:1px solid rgba(120,100,70,.18)"><span style="color:#8a7a60;min-width:150px">${k}</span><span style="color:#e8dcc0">${v}</span></div>`;

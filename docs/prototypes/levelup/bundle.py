@@ -16,7 +16,7 @@ def strip_common(src):
 def scene(src):
     return re.sub(r"^import \{[^}]*\} from './(common|people).js';\n", '', src, flags=re.M)
 _c = strip_common(open(os.path.join(here, 'common.js'), encoding='utf-8').read()); _p = strip_common(open(os.path.join(here, 'people.js'), encoding='utf-8').read())
-# a top-level name people.js keeps to itself and common.js also declares (people.js's WIND since Session 1024) is renamed in
+# a top-level name people.js keeps to itself and common.js also declares (people.js's WIND from Session 1024 until 1095) is renamed in
 # people.js's copy: the two modules share one scope here, and a module cannot both import a name and declare it, so none is shared
 _top = lambda src: set(re.findall(r"^(?:const|let|var|function|async function|class) (\w+)", src, flags=re.M))
 for _n in sorted(_top(_c) & _top(_p)): _p = re.sub(r"\b%s\b" % _n, 'P_' + _n, _p)
@@ -30,6 +30,7 @@ def build(name, title, note, srcfile, use_common, query=''):
         if "from './creatures.js'" in s: s = kit(s)
         if "from './implements.js'" in s: s = implkit(s)
         if "from './helms.js'" in s: s = helmkit(s)
+        if "from './shrines.js'" in s: s = shrinekit(s)
         imps = re.findall(r"^import .*;$", s, flags=re.M); body = re.sub(r"^import .*;\n", '', s, flags=re.M)
         allimps = list(dict.fromkeys(imports_c + imps)); code = '\n'.join(allimps) + '\n' + common_body + '\n' + body
     else: code = src
@@ -77,6 +78,16 @@ def helmkit(s):
     return s[:m.start()] + wrapped + s[m.end():]
 build('helms-line.html', 'Helms by tier', 'The heavy line’s ten helms, Wooden to Cosmic (L7, OG-052 and OG-019). ?set=a (one shape) | b (OG-052’s silhouettes) | c (b, visors shut), &cam=whole|far|heads|close. Drag to look.', 'helms-view.js', True, '?view=line&set=b')
 build('helms-hoods.html', 'Hoods by tier', 'The robe line’s raised hoods, Mithril to Cosmic: circlets (?set=a) or antlers, horns, a crescent and a halo (?set=b). Drag to look.', 'helms-view.js', True, '?view=robes&set=b')
+# the six gods' shrines by island (concept, 18 Oct 2026): shrines.js goes in as one closure, as helms.js does
+def shrinekit(s):
+    src = open(os.path.join(here, 'shrines.js'), encoding='utf-8').read()
+    names = re.findall(r"^export (?:const|function) (\w+)", src, flags=re.M)
+    imps = [i for i in re.findall(r"^import .*;$", src, flags=re.M) if "./common.js" not in i]; body = re.sub(r"^import .*;\n", '', strip_common(src), flags=re.M)
+    m = re.search(r"^import \{([^}]*)\} from './shrines.js';\n", s, flags=re.M)
+    wrapped = '\n'.join(imps) + '\nconst SK_ = (() => {\n' + body + '\nreturn { ' + ', '.join(names) + ' };\n})();\nconst {' + m.group(1) + '} = SK_;\n'
+    return s[:m.start()] + wrapped + s[m.end():]
+build('shrines-row.html', 'Shrines by island', 'The six gods’ niches and the Guest’s, the common form dressed by island (L9, OG-113). ?island=gatelands|mark|aurenne, &cam=wide|figures|guest|far, &time=dusk. Drag to look.', 'shrines-view.js', True, '?view=row&island=gatelands')
+build('shrines-wayside.html', 'Wayside shrines', 'One god’s wayside shrine in the three islands’ dress, a person of each island beside it. &god=teallach|muir|speir|beithigh|cloch|fiodoir, &time=dusk. Drag to look.', 'shrines-view.js', True, '?view=three')
 # the HUD in the new look (concept, 15 Oct 2026): the slice's scene, then hud.js in place of its dynamic import, the
 # approved kit's CSS, icons and fonts inlined (fonts from Google, the host allows no others)
 def hud(name, title, note, scene_src, query):

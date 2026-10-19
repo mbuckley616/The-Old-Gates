@@ -24,14 +24,15 @@ const spring = (rnd, k) => page.evaluate(([rnd, k]) => {
   Math.random = () => rnd; showMsg = () => {};
   try { for (let j = 0; j < k; j++) { PHP = maxHP; t.armed = true; px = t.x; pz = t.z; jumpY = gy; const h0 = PHP; tickDungeonTraps(1 / 60); hits.push(h0 - PHP); } }
   finally { Math.random = _r; showMsg = _m; }
-  PHP = maxHP; t.armed = true; px = t.x + 3; return { id: t.id, hits, lv: level }; }, [rnd, k]);
+  PHP = maxHP; t.armed = true; px = t.x + 3; return { id: t.id, hits, lv: trapTierLevel() }; }, [rnd, k]);
 
 const a = await spring(0.05, 6), b = await spring(0.95, 6);
 console.log('a', JSON.stringify(a), 'b', JSON.stringify(b));
 check('the plate takes an id of seed, floor and place', a.id === `${found.seed}:1:trap:${found.i}`, a.id);
 check('six springs: the same hits in the same order whatever Math.random says', a.hits.length === 6 && a.hits.every(h => h > 0) && a.hits.join() === b.hits.join(), { a: a.hits, b: b.hits });
+// since Session 1061 the plate's level is its floor's tier's (`trapTierLevel`), not yours
 const lo = 8 + Math.floor(a.lv * .8), hi = 15 + Math.floor(a.lv * .8);
-check('the hits stay in the plate\'s band (8–15 + level × 0.8, before any ward) and vary', a.hits.every(h => h <= hi) && new Set(a.hits).size >= 2, { hits: a.hits, lo, hi });
+check('the hits stay in the plate\'s band (8–15 + the floor tier\'s level × 0.8, before any ward) and vary', a.hits.every(h => h <= hi) && new Set(a.hits).size >= 2, { hits: a.hits, lo, hi });
 stop();
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

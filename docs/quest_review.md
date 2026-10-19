@@ -6,12 +6,12 @@ Every player-readable string added or changed in `index.html` and, since the spl
 
 | Branch | Reviewed to | Note |
 |---|---|---|
-| main | `5521ba1` | run 21: the Look sessions 1031–1053 (the kit's file `38-kit.js`: building names only), the Quest builds 979–1030 (read on their branch), the tag; clean. Before that, run 20 to `9bd7493`: combat's resolver merged (read on its branch in run 19) and the tag; no new string a player reads. Before that, run 19 to `2ae3239`, run 18 to `2553a6d` |
-| auto/systems | `9b2f0e1` | run 21: Sessions 1061–1089 (enemies by place, the perks Ringing, Throw, Catch the blade and Draw cut, the sheath, F2b's touch and water); the new lines a player reads are UI (*You draw the …*, *You sheathe the …*, *You tear the weapon from …'s grip!*, *The arrow glances off your shield.*); clean. Run 20 to `a9c4351`: Sessions 982–1028 (Finding 31 in as written, the Wolf-Mother's Cloak as drafted, the Waylamp's day line, the Crown's blade topic, the Bow's perks, the double jump and the dash, the sway); clean |
+| main | `3d7a660` | run 22: auto/systems' Sessions 1104–1141 merged (the Spire Held's watch, the draft's own lines word for word; the shelf's *You take … from the shelf.*; the heavy blow and the feint, no line), the Look's kit sessions and the concept and QA merges; clean. Before that, run 21 to `5521ba1`: the Look sessions 1031–1053, the Quest builds 979–1030; clean |
+| auto/systems | `2b0ee4e` | run 22: merged into main (PR #353), nothing ahead. Run 21 to `9b2f0e1`: Sessions 1061–1089; clean |
 | auto/fable-combat-resolver | `f1976a3` | run 20: merged into main, nothing ahead |
 | auto/fable-f2a-scale, auto/wip-fable-f2a-scale | `e82ad5c`, `a5a4667` | run 19: merged into main, nothing ahead |
-| auto/bodies, auto/backlog, auto/producer, auto/producer-look, auto/qa, auto/critic, auto/concept, auto/design, auto/wip-spear, claude/admiring-ride-s05yoi | `4835b27`, `66d90ed`, `bfdfc3c`, `bba817f`, `b38646f`, `ea488a9`, `5f6940a`, `c39b280`, `5a1b57d`, `326e8a2` | run 21: bodies (rig and creature numbers) and backlog (the kit and the generator's lots) add no line a player reads; the producer's is its merge of auto/systems (read there); the rest nothing ahead of main in `js/` or `index.html` |
-| auto/quests-build | `5685361` | run 21: my own build, Session 1092 (*What the Stones Say*, the draft's words) |
+| auto/bodies, auto/backlog, auto/wip-town-plots, auto/producer, auto/producer-look, auto/producer-bodies, auto/producer-decisions, auto/qa, auto/qa-perkbody, auto/qa-skillcurve, auto/critic, auto/concept, auto/design, auto/wip-spear | `372b869`, `0272203`, `aa74c47`, `7a71e51`, `86f05bb`, `56e437c`, `570cd5e`, `db349a9`, `bac01b0`, `ff40184`, `92afe03`, `dc5902f`, `2b9d1d4`, `5a1b57d` | run 22: bodies (the wall hold) and backlog and wip-town-plots (the church, the bawn, the steward's route) add only the inspector's part names (*Church with a west tower*, *Bawn wall, gate and flankers*); auto/producer and auto/qa-skillcurve hold old merges of auto/systems read in runs 19–20; the rest nothing ahead of main in `js/` or `index.html` |
+| auto/quests-build | `d7219d6` | run 22: my own build, Session 1092, and a merge of main (devlog only); PR #414 waits on FREEZE #441 |
 | auto/wip-cloak-hang | `f4e973d` | run 17: nothing ahead of main in `js/` or `index.html` |
 | auto/fable-f1-renderer | `026c76c` | run 17: merged into main (Session 822); no player-readable text but the settings sheet's *Renderer* row |
 | claude/v2-scope | `f712a74` | run 17: docs only (the 2.0 scope, Michael's 1 B, 2 A, 3 A; the third art round) |
@@ -22,6 +22,32 @@ Every player-readable string added or changed in `index.html` and, since the spl
 | auto/fable-co-op-door, auto/fable-world-file, auto/fable-rivers | — | no merge base with main; not read |
 | auto/split | — | merged into main, nothing ahead |
 | claude/lucid-faraday-6qlft7 | — | shares no history with main; not read |
+---
+
+## Run 22 — 19 Oct 2026
+
+About 25 player-readable strings read: auto/systems' Sessions 1104–1141 as merged into main (PR #353), and the look builder's kit branches. One finding, on a line older than this run's diffs, found while drafting.
+
+**main.** *The Spire Held*'s watch (Session 1112) carries the draft's §4 narration word for word (`SPIRE_LINES`), and its quest title and objective are the draft's. The shelf (Session 1121): *Press E near the keeper to talk · Walk south to exit*, *You take ${def.name} from the shelf.* and its log line are UI, plain. The heavy blow and the feint (1135–1140) add no line. Clean.
+
+**The branches.** The look builder's (auto/backlog, auto/wip-town-plots) add only inspector part names. Nothing else is ahead of main in `js/`.
+
+**Michael's calls:** none newer than 16 Oct.
+
+**Built:** nothing. FREEZE #441 is open while the waiting branches land; *The Spire Held*'s rule is on main now (Session 1112), so its words (the topics, the night sergeant, Rowe) are next in the build queue once the freeze lifts. PR #414 (*What the Stones Say*) waits with the others.
+
+**Drafted:** *Sea Legends, I — the ships' names, the singing ship, and the tales at the quay* (`docs/quest_drafts.md`, on the page as `sea-legends-1`). Its names and tales can be built on what the game has; the singing ship needs the systems builder, the look builder and a sound.
+
+### Finding 32 — main — the player's ship can be named for the villain's courier's
+
+**Where.** `84-world-interiors.js`: `SHIP_NAMES`, read by `spawnShip` (`85-world-sea.js`) when a ship is bought or granted.
+
+**Text.** `'Kestrel'`, one of the ten names a bought ship can take.
+
+**Why.** The *Kestrel* is Oswy Blackhand's ship (`story:oswy`, the courier step's marker *the Kestrel*). A player who sails a *Kestrel* of their own meets the courier's *Kestrel* in Act II, and the marker, the map and the log cannot tell them apart. The canon gives Oswy his ship, so the player's list gives the name up.
+
+**Replacement.** In `SHIP_NAMES`, `'Kestrel'` becomes `'Bad Penny'`. A saved ship already named *Kestrel* keeps the name (`worldState.ship.name` is read first). Nothing else changes.
+
 ---
 
 ## Run 21 — 18 Oct 2026

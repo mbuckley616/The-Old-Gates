@@ -14,8 +14,8 @@ const SCALE={
   PEOPLE:{gatelander:{m:1.78,f:1.66},markman:{m:1.91,f:1.78},aurennais:{m:1.80,f:1.68},oldblood:{m:1.61,f:1.51}},
   PERSON:1.8,                       // the figure the ratios are measured against, and the inspector's yardstick
   EYE_STAND:1.65,EYE_CROUCH:1.1,   // the player's eye
-  EYE_SWIM:.92,                    // the eye over a swimmer's floor (the world's SWIM_Y, 0.35 under the sea): the old eye, kept so
-                                   // the surface sits where it did until F2b sets the water's depths in metres
+  EYE_SWIM:1.65,                   // the eye over a swimmer's feet (the world's SWIM_Y, 1.45 under the sea since F2b, S1084): the
+                                   // standing eye, so it rides 0.20 over the water (0.92 over feet 0.35 under, until then)
   TP_DIST:2.75,TP_MIN:1.3,TP_MAX:4.6,TP_SIDE:.5, // the third-person camera behind and beside the shoulder: 1.9, 0.9 to 3.2 and 0.34 at the old size, ×1.44
   DOOR_H:2.05,DOOR_W:1.0,          // a house door's leaf (2.0 to 2.2 high, 0.95 to 1.2 wide)
   DOOR_BIG_H:2.6,DOOR_BIG_W:1.5,   // a church's or a keep's door
@@ -43,3 +43,8 @@ SCALE.ROOM_K=SCALE.PEOPLE.gatelander.m/SCALE.PERSON_MODEL;
 // Bear's hump 88%) are drawn at their kinds' `play` size times this, so they stand to the 1.78 m man as they stood to the old
 // 1.233 one. Only the drawing: a foe's `size` (its hits and reach, card F2b's) is unchanged.
 SCALE.BEAST=SCALE.ROOM_K;
+// S1085 (F2b, card's *Touch and talk*) — what E reaches with a hand: a door, a board, a bed, a hatch, a chest, a herb, the barber's
+// chair, the ship's wheel. One number in place of eight (1.1 to 1.5 by function), from the body's centre, horizontally; a
+// floor-level thing is then 2.30 from the standing eye, inside the sheet's 2.4 ray. The dungeon's own (its doors, sigils,
+// stairs, cots) stay on its 1 m cell until F2b's third session gives it the 3 m one.
+const TOUCH=1.6;

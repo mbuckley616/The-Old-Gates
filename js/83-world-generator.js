@@ -110,6 +110,8 @@
     add(SK.cyl(.06,.07,4.6,6),vary(pole,.06),-1.3,2.3,1.25,0,0,.12,.05);add(SK.cyl(.05,.05,.9,5),pole,-1.1,4.45,1.25,0,0,Math.PI/2+.12,.04);add(SK.torus(.09,.025,4,10),0x3a3430,-.7,4.35,1.25,0,0,0,.02);add(SK.cyl(.012,.012,3.2,4),rope,-.61,2.75,1.25,0,0,0,.02);
     add(SK.rbox(.34,.24,.3,.04,1),vary(wc,.08),-.61,1.05,1.25,0,.3,0,.05);
     return mergeParts(P);}
+  // S1065 — the settlements whose lots take the kit's bays on the new look, and the shops that are merchants' houses
+  const KIT_SITE={village:'village',outpost:'village',town:'town',port:'town',city:'town'},KIT_SHOPS=new Set(['weapon','armor','potion','misc','barber']);
   function genSettlement(site){
     if(SETTLE.has(site.id)||site.pad<=0)return;
     let r=rngFor(site.c*31+7,site.r*17+3);_townNames=new Set();_twinUsed=new Map();_roleNames=new Set();const _innNames=new Set();if(!site.lordless)try{const ln_=lordFor(site).name;_townNames.add(ln_);_roleNames.add(ln_);}catch(e){} // S248 — the lord's name is his own; the guild heads drawn before him leave it // S172 — names unique within the town where the bank allows
@@ -261,6 +263,56 @@
       const mine=l=>ownedHouse(l.id);
       all.forEach(l=>{if(mine(l)&&!use.some(u=>u.k===l.k)&&!use.some(u=>Math.hypot(u.x-l.x,u.z-l.z)<Math.max(u.w,u.d)/2+2+Math.max(l.w,l.d)/2+2))use.push(l);});
       const nS=shopTypes.length;for(let i=0;i<Math.min(nS,use.length);i++){if(!mine(use[i]))continue;const j=use.findIndex((u,k)=>k>=nS&&!mine(u));if(j<0)break;const o=use[i];use[i]=use[j];use.splice(j,1);use.push(o);}}
+    // S1065 (card F6, Michael's C on #396) — on the new look a Gatelander settlement's lots are widened to whole bays of the
+    // kit's plans (PKIT.gl.BAYS): a village's homes and shops are cottages, a town's, port's or city's homes townhouses and its
+    // shops merchants' houses. A lot keeps its centre, its depth, its place in the town and so its id; it grows along the street
+    // from 5–7 m toward 6–10 m, a bay at a time, and gives a bay back while it would come within 1.2 m of another lot, a road,
+    // a cross street or the ring. Churches, keeps, inns, the shipwright and the foreign quarter keep their size (a guild hall takes the kit's, below).
+    // (window.OG_KIT_TOWNS=false keeps the old towns on the new look: tests/lookpair sets it to compare the renderers alone)
+    if(window.OG_LOOK==='new'&&window.OG_KIT_TOWNS!==false&&typeof PKIT!=='undefined'&&nationOf(ni,nj).people==='gatelander'&&site.kind in KIT_SITE){
+      const town=KIT_SITE[site.kind]==='town',G=PKIT.gl,corners=(l,m)=>{const c=Math.cos(l.ry),s_=Math.sin(l.ry),hw=l.w/2+m,hd=l.d/2+m;return [[-hw,-hd],[hw,-hd],[hw,hd],[-hw,hd]].map(([u,v])=>({x:l.x+u*c+v*s_,z:l.z-u*s_+v*c}));};
+      const apart=(a,b)=>{const A=corners(a,.6),B=corners(b,.6);for(const P of [A,B])for(let k=0;k<2;k++){const ax=P[k+1].x-P[k].x,az=P[k+1].z-P[k].z;const pr=Q=>Q.map(q=>q.x*ax+q.z*az);const pa=pr(A),pb=pr(B);if(Math.max(...pa)<Math.min(...pb)||Math.max(...pb)<Math.min(...pa))return true;}return false;};
+      const clear=(l,own)=>{const C=corners(l,0);for(const q of C){if(Math.hypot(q.x-cx,q.z-cz)>inner-1)return false;const ri=roadInfo(q.x,q.z,true);if(ri&&ri.d<ROAD_HALF+1.2)return false;
+          for(const L of streetLines){if(own&&L.px===own.px&&L.pz===own.pz&&L.dx===own.dx&&L.dz===own.dz)continue;if(Math.abs((q.x-L.px)*(-L.dz)+(q.z-L.pz)*L.dx)<1.6)return false;}}
+        for(const u of use)if(u!==l&&!apart(l,u))return false;return true;};
+      use.forEach((lot,i)=>{const t=shopTypes[i]||null;if(t&&!KIT_SHOPS.has(t))return;if(lot.k==='sw'||(site.kind==='port'&&site.quayStart&&Math.hypot(lot.x-site.quayStart.x,lot.z-site.quayStart.z)<34))return;
+        let kind=!town?'cottage':t?'merchant':'townhouse';const w0=lot.w,start=k=>{const B=G.BAYS[k];return Math.max(k==='townhouse'?3:B.min,Math.min(B.max,Math.round((6+(w0-5)*2-2*B.end)/B.bay)));};let n=start(kind);const lo=kind==='townhouse'?3:G.BAYS[kind].min; /* the nearest whole bays to 6, 8 or 10 m */
+        for(;;){for(;n>=lo;n--){lot.w=G.bayWidth(kind,n);if(clear(lot,lot.street))break;}if(n>=lo||kind!=='merchant')break;kind='townhouse';n=start(kind);} /* a shop with no room for three bays of shop front is a townhouse's front */
+        if(n<lo){for(n=lo-1;n>=G.BAYS[kind].min;n--){lot.w=G.bayWidth(kind,n);if(clear(lot,lot.street))break;}}
+        if(n<G.BAYS[kind].min){lot.w=w0;return;}
+        lot.kit={kind,bays:n,w0};});
+      // S1083 (card F6, Michael's C on #352) — a town's guild hall is the kit's guild hall, 14.4 by 9 m: the lot takes the plan's size
+      // with its front kept on the street line (the centre moves back toward the street by what the depth gives up), so its door, id
+      // and steward stay where they were. A lot with no room for the wider front keeps the old hall.
+      // A guild lot often stood nearer a road or a street than a widened house may (the old builder's 13 by 11 m): it takes the hall
+      // if it comes no nearer to one than it was and stays clear of every other lot, slid along its front by up to the 0.7 m it grows
+      // at each end if that clears a street beside it (kit.slide, which its door moves by too).
+      const near=(l,own)=>{let m=1e9;for(const q of corners(l,0)){m=Math.min(m,inner-1-Math.hypot(q.x-cx,q.z-cz));const ri=roadInfo(q.x,q.z,true);if(ri)m=Math.min(m,ri.d-ROAD_HALF-1.2);
+          for(const L of streetLines){if(own&&L.px===own.px&&L.pz===own.pz&&L.dx===own.dx&&L.dz===own.dz)continue;m=Math.min(m,Math.abs((q.x-L.px)*(-L.dz)+(q.z-L.pz)*L.dx)-1.6);}}return m;};
+      if(town)use.forEach((lot,i)=>{const t=shopTypes[i];if(t!=='guild_f'&&t!=='guild_m')return;const P=G.PLANS.guildhall(),w0=lot.w,d0=lot.d,x0=lot.x,z0=lot.z,sh=(d0-P.d)/2,m0=Math.min(0,near(lot,lot.street));
+        lot.w=P.w;lot.d=P.d;for(const sl of [0,.35,-.35,.7,-.7]){lot.x=x0+lot.tx*sh+lot.tz*sl;lot.z=z0+lot.tz*sh-lot.tx*sl;
+          if(near(lot,lot.street)>=m0-1e-6&&use.every(u=>u===lot||apart(lot,u))){lot.kit={kind:'guildhall',guild:t==='guild_m'?'mages':'fighters',w0,d0,slide:sl};return;}}
+        lot.w=w0;lot.d=d0;lot.x=x0;lot.z=z0;});}
+    // S1072 (card F6) — a widened lot's house is the kit's plan on its bays, at the lot's depth (PKIT.gl.lot keyed by the town and
+    // the lot's id, so its colours, paint and lit windows are the same at every visit). The houses stand in one group at the town's
+    // centre, merged at the end into one mesh per material (PKIT.mergeByMaterial), so a town of them is some twenty draws.
+    const KIT_TRADE={weapon:'ARMS · BLADES · BOWS',armor:'ARMOUR · MAIL · SHIELDS',potion:'APOTHECARY · HERBS',misc:'GENERAL GOODS',barber:'BARBER · SURGEON'};
+    let kitG=null;const kitLo=[];
+    // a gable roof as one prism: eaves at y0 along ±hw (x) and ±hd (z), the ridge at y1 along x, its gables closed (non-indexed, for mergeGeos)
+    function kitRoof(hw,hd,y0,y1){const P=[[-hw,y0,hd],[hw,y0,hd],[hw,y1,0],[-hw,y0,hd],[hw,y1,0],[-hw,y1,0],[hw,y0,-hd],[-hw,y0,-hd],[-hw,y1,0],[hw,y0,-hd],[-hw,y1,0],[hw,y1,0],[-hw,y0,-hd],[-hw,y0,hd],[-hw,y1,0],[hw,y0,hd],[hw,y0,-hd],[hw,y1,0]];
+      const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(P.flat()),3));g.computeVertexNormals();return g;}
+    // S1083 — the guild hall's plan, its lit windows keyed by the town and the lot as a house's are; its door is the great door
+    function kitHall(lot){const plan=PKIT.gl.PLANS.guildhall({guild:lot.kit.guild});plan.r=PKIT.stream(`${site.id}:windows:${lot.n}`);plan.doorX=plan.open.front[0].x;return {plan,kind:'guildhall',colour:'stone'};}
+    function kitHouse(lot,type){
+      if(!kitG){kitG=new THREE.Group();kitG.name='kit houses';kitG.position.set(cx,0,cz);kitG.userData.noBake=true;group.add(kitG);}
+      const L=lot.kit.kind==='guildhall'?kitHall(lot):PKIT.gl.lot(site.id,lot.n,{kind:lot.kit.kind,bays:lot.kit.bays,d:lot.d,trade:KIT_TRADE[type]});const b=PKIT.gl.building(L.plan),U=b.userData;
+      b.position.set(lot.x-cx,worldH(lot.x,lot.z)-.06,lot.z-cz);b.rotation.y=lot.ry;b.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});kitG.add(b);
+      {const sz=U.size,th=L.plan.roof.kind==='thatch',wc=PKIT.gl.mats()['w:'+(L.colour==='stone'?'lime':L.colour)],box=new THREE.BoxGeometry(sz.w,sz.eave,sz.d).toNonIndexed(),mx=new THREE.Matrix4(); /* S1073 — its far copy: the walls a box and the roof a prism, in the wall's and the roof's colours */
+        box.translate(0,sz.eave/2,0);mx.makeRotationY(lot.ry).setPosition(lot.x,worldH(lot.x,lot.z)-.06,lot.z);
+        kitLo.push([box,mx,wc?wc.color.clone().multiplyScalar(.82):new THREE.Color(.8,.78,.72)],[kitRoof(sz.w/2+(th?.35:.2),sz.d/2+(th?.45:.25),sz.eave,sz.ridge),mx,new THREE.Color(...(th?[.42,.35,.22]:[.24,.26,.30]))]);}
+      lot._kitDoor=L.plan.doorX||0;lot._wallH=U.size.eave;lot._storeys=L.plan.floors.length;lot.two=L.plan.floors.length>1;lot.kit.tris=U.tris;lot.kit.colour=L.colour;lot.kit.door=lot._kitDoor+(lot.kit.slide||0);
+      const c=(L.plan.chim||[])[0];if(c){const x=c.gable?c.gable*(U.size.w/2-.36):c.x,y=U.size.ridge+(L.plan.roof.kind==='thatch'?1.0:.85),cs=Math.cos(lot.ry),sn=Math.sin(lot.ry),wy=b.position.y;
+        S.chimneys.push({x:lot.x+x*cs,y:wy+y,z:lot.z-x*sn,t:type||'home',k:0});}}
     const names=NAMES[reg];
     const usedNames=new Set();
     function newName(){let n;for(let k=0;k<20;k++){n=pick(r,r()<.5?names.m:names.f);if(!usedNames.has(n))break;}usedNames.add(n);return n;}
@@ -296,20 +348,21 @@
       else if(biome==='tundra'&&site.kind==='village'&&site.islet){lot.two=false;geo=iceGeo(lot.w,lot.d,st,r);}
       else{lot.two=r()<(st.twoStory||0)||type==='inn';geo=buildingGeo(lot.w,lot.d,st,r,{chimney:r()<.65,twoStory:lot.two,h:type==='inn'?SCALE.STOREY_MAX:st.h,rise:type==='inn'?1.9:st.rise});}
       solR=Math.max(lot.w,lot.d)/2*.85;
-      const m=addMesh(geo,lot.x,lot.z,lot.ry,0);
+      if(lot.kit){kitHouse(lot,type);geo.dispose();if(geo.userData&&geo.userData.lo)geo.userData.lo.dispose();} /* S1072 — the old builder still runs (its draws keep the town's stream, and so its people, as on the old look), and its mesh is let go */
+      else{const m=addMesh(geo,lot.x,lot.z,lot.ry,0);
       lot._wallH=geo.userData&&geo.userData.wallH||null;lot._storeys=geo.userData&&geo.userData.storeys||null; /* S881 (F2a) — kept on the house: its wall's height and storeys */
-      {const ch=chimneyAt(geo,m,type||'home');if(ch)S.chimneys.push(ch);} // S343 — its smoke
+      {const ch=chimneyAt(geo,m,type||'home');if(ch)S.chimneys.push(ch);}} // S343 — its smoke
       // rotated footprint (settleSolid understands {c,s} rotated rects)
       sol.push({cx:lot.x,cz:lot.z,rx:lot.w/2+.15,rz:lot.d/2+.15,c:Math.cos(lot.ry),s:Math.sin(lot.ry),bt:type||'home',hid:lot.id,sh:lot._shuttered?1:0}); // v80 S138 — the map colours it by type
       // footpath: door → the street/road it faces
       {
-        const fx=lot.x+lot.tx*(lot.d/2+.3),fz=lot.z+lot.tz*(lot.d/2+.3);
+        const kd=lot._kitDoor||0,fx=lot.x+lot.tx*(lot.d/2+.3)+lot.tz*kd,fz=lot.z+lot.tz*(lot.d/2+.3)-lot.tx*kd; /* S1072 — from a kit house's door */
         let ex=fx+lot.tx*(lot.row*(9.5+LAT_GAP)+(lot.street?2.5:ROAD_BLEND)),ez=fz+lot.tz*(lot.row*(9.5+LAT_GAP)+(lot.street?2.5:ROAD_BLEND));
         const ri=roadInfo(ex,ez);if(ri&&ri.d>ROAD_HALF+1&&!lot.street){const sg=ri.seg,vx=sg.bx-sg.ax,vz=sg.bz-sg.az,t=ri.t;ex=sg.ax+vx*t;ez=sg.az+vz*t;}
         if(lot.k==='sw'&&quayLane){const A=quayLane.a,B=quayLane.b,vx=B.x-A.x,vz=B.z-A.z,L2=vx*vx+vz*vz||1,u=Math.max(0,Math.min(1,((fx-A.x)*vx+(fz-A.z)*vz)/L2));ex=A.x+vx*u;ez=A.z+vz*u;} /* S618 — the yard's path ends on the quay lane */
         footReq.push({fx,fz,ex,ez,lot,hid:`g_${site.id}_${i}`}); // S193 — routed once every building stands (below)
       }
-      const doorX=lot.x+lot.tx*(lot.d/2+.15),doorZ=lot.z+lot.tz*(lot.d/2+.15);
+      const kdx=lot._kitDoor||0,doorX=lot.x+lot.tx*(lot.d/2+.15)+lot.tz*kdx,doorZ=lot.z+lot.tz*(lot.d/2+.15)-lot.tx*kdx; /* S1072 — a kit house's door stands in its bay, kdx along the front */
       if(!isShop){
         // Residence: enterable 'home' interior, a named resident who keeps
         // house inside and idles by the door outside in daylight.
@@ -318,7 +371,7 @@
         const rdef=makeDef(site,reg,r,'Villager',resident,{nameKey:lot.n,x:doorX+lot.tx*1.4+lot.tz*1.0,z:doorZ+lot.tz*1.4-lot.tx*1.0,bCol:pick(r,[0x5a4030,0x3a5a3a,0x604828,0x504058,0x6a5a3a]),sCol:pick(r,[0xd4a878,0xc09070,0xb08060]),role:pick(r,['resident','farmer','weaver','cooper','old woman','fisher'])});
         rdef.roleTag=rdef.role;rdef.role='Villager';
         const hName=homeName(rdef.name,rdef.roleTag,compassWord(lot.x-site.x,lot.z-site.z));
-        const hh={id:lot.id,doorX,doorZ,doorFace:cardinalFace(lot.tx,lot.tz),exitX:exX,exitZ:exZ,exitYaw:Math.atan2(-lot.tx,-lot.tz),name:hName,keeper:rdef.name,_twin:rdef._twin,type:'home',tagline:'',bCol:rdef.bCol,sCol:rdef.sCol,dlg:rdef,w:lot.w,d:lot.d,two:lot.two,reg,style:st===STYLE.stone?'stone':st===STYLE.garrison?'garrison':reg,roleTag:rdef.roleTag,siteKind:site.kind,siteId:site.id};
+        const hh={id:lot.id,doorX,doorZ,doorFace:cardinalFace(lot.tx,lot.tz),exitX:exX,exitZ:exZ,exitYaw:Math.atan2(-lot.tx,-lot.tz),name:hName,keeper:rdef.name,_twin:rdef._twin,type:'home',tagline:'',bCol:rdef.bCol,sCol:rdef.sCol,dlg:rdef,w:lot.w,d:lot.d,two:lot.two,reg,style:st===STYLE.stone?'stone':st===STYLE.garrison?'garrison':reg,roleTag:rdef.roleTag,siteKind:site.kind,siteId:site.id,kit:lot.kit||null};
         if(lot._shuttered){hh.shuttered=true;hh.name=`${hName} (shuttered)`;hh.tagline='Gone to the city. Door nailed.';}
         if(ownedHouse(hh.id)){hh.name='Your House';hh.ownedByPlayer=true;}else rdef._extra.unshift(...houseTopics(hh));
         houses.push(hh);
@@ -336,7 +389,7 @@
       if(type==='church'&&!heroH){if(_churchNames.has(name)){const b=`${name} at the ${compassWord(lot.x-site.x,lot.z-site.z)} end`;name=b;for(let k=2;_churchNames.has(name);k++)name=`${b} (${k})`;}_churchNames.add(name);}
       // explicit exit point in front of the door (rotated buildings defeat the engine's cardinal step-out)
       let exX=doorX+lot.tx*2.4,exZ=doorZ+lot.tz*2.4;
-      const house={id:lot.id,doorX,doorZ,doorFace:cardinalFace(lot.tx,lot.tz),exitX:exX,exitZ:exZ,exitYaw:Math.atan2(-lot.tx,-lot.tz),name,keeper,type,tagline:heroH?heroH.tagline:pick(r,TAGLINES[type]||TAGLINES.misc),bCol:heroH?heroH.bCol:0x5a4030,sCol:heroH?heroH.sCol:0xd4a878,w:lot.w,d:lot.d,two:lot.two,reg,style:st===STYLE.stone?'stone':st===STYLE.garrison?'garrison':reg,siteKind:site.kind,siteId:site.id};
+      const house={id:lot.id,doorX,doorZ,doorFace:cardinalFace(lot.tx,lot.tz),exitX:exX,exitZ:exZ,exitYaw:Math.atan2(-lot.tx,-lot.tz),name,keeper,type,tagline:heroH?heroH.tagline:pick(r,TAGLINES[type]||TAGLINES.misc),bCol:heroH?heroH.bCol:0x5a4030,sCol:heroH?heroH.sCol:0xd4a878,w:lot.w,d:lot.d,two:lot.two,reg,style:st===STYLE.stone?'stone':st===STYLE.garrison?'garrison':reg,siteKind:site.kind,siteId:site.id,kit:lot.kit||null};
       houses.push(house);if(lot._wallH){house.wallH=lot._wallH;house.storeys=lot._storeys;}
       { // wall lantern by the door (glow only)
         const lx=doorX+lot.tx*.25+lot.tz*1.05,lz=doorZ+lot.tz*.25-lot.tx*1.05,ly=worldH(doorX,doorZ)+SCALE.DOOR_H+.2;
@@ -345,7 +398,8 @@
         const fl=new THREE.Mesh(new THREE.ConeGeometry(.03,.09,6),new THREE.MeshBasicMaterial({color:0xffe090}));fl.position.y=-.01;lg.add(fl);lg.position.set(lx,ly,lz);group.add(lg);S.lamps.push({glass:lg,light:null});
       }
       let signY=null; // S246 — the trade sign is painted once the keeper's name is final (below)
-      if(type==='guild_f'||type==='guild_m'){
+      if((type==='guild_f'||type==='guild_m')&&lot.kit){} /* S1083 — the kit's hall carries its own name panel and banner */
+      else if(type==='guild_f'||type==='guild_m'){
         const y=worldH(doorX,doorZ);const col=GUILD_DEF[type].col;
         [-1,1].forEach(sd=>{const bx=doorX+lot.tx*.3-lot.tz*sd*2.4,bz=doorZ+lot.tz*.3+lot.tx*sd*2.4;
           const pole=new THREE.Mesh(new THREE.BoxGeometry(.07,.07,1.1),new THREE.MeshLambertMaterial({color:0x2a2622}));pole.position.set(bx+lot.tx*.45,y+5.3,bz+lot.tz*.45);pole.rotation.y=lot.ry;group.add(pole);
@@ -537,7 +591,7 @@
         if(kind==='barrel'){const B=kitBarrel(1.75,0x6a4418);g=B.body;g.position.set(sx,y,sz);top=B.top;top.position.set(sx,y+.96,sz);} // S200 — the kit's barrel
         else{g=new THREE.Mesh(SK.rbox(.9,.8,.9,.05,2),crateMat);g.position.set(sx,y+.4,sz);g.rotation.y=r()*.6;top=new THREE.Mesh(new THREE.BoxGeometry(.92,.06,.92),new THREE.MeshLambertMaterial({color:0x5a3e18}));top.position.set(sx,y+.83,sz);top.rotation.y=g.rotation.y;}
         g.castShadow=true;group.add(g);group.add(top);
-        let items=(typeof rollContainerLoot==='function'?rollContainerLoot('barrel',1,null,.9,site.id+':barrel:'+made+':'+lootDay()):[])||[];
+        let items=(typeof rollContainerLoot==='function'?rollContainerLoot('barrel',1,null,.9,site.id+':barrel:'+made+':'+lootDay(),worldTierAt(site.x,site.z)):[])||[];
         items=items.filter(it=>it&&it.dmg==null&&it.def==null&&!it.slot&&it.type!=='weapon'&&it.type!=='armor');
         if(!items.length)items.push(pick(r,[{name:'Tallow Candle',ico:'🕯️',type:'misc',weight:.2,sellMult:.3,buyPrice:4},{name:'Coil of Rope',ico:'🪢',type:'misc',weight:1,sellMult:.3,buyPrice:9},{name:'Salt Sack',ico:'🧂',type:'misc',weight:.6,sellMult:.3,buyPrice:6},{name:'Hard Bread',ico:'🍞',type:'potion',heal:6,weight:.3,sellMult:.2,buyPrice:3},{name:'Wax-sealed Letter',ico:'✉️',type:'misc',weight:.05,sellMult:.5,buyPrice:12},{name:'Tin Cup',ico:'🥛',type:'misc',weight:.3,sellMult:.3,buyPrice:3}]));
         items.forEach(it=>{if(it.qty==null)it.qty=1;});
@@ -586,6 +640,9 @@
       for(let k=ZONE_CORPSES.length-1;k>=0;k--)if(ZONE_CORPSES[k].bramBody&&ZONE_CORPSES[k].zone==='world')ZONE_CORPSES.splice(k,1);
       buildBramBody(group,S._forge.x,worldH(S._forge.x,S._forge.z),S._forge.z,'world');}
     S.reach=t_reach(sol,site);
+    if(kitG){S.kitTris=PKIT.mergeByMaterial(kitG);S.kitCalls=kitG.children.length; // S1072 — the kit's houses, one mesh per material
+      const lo=new THREE.Mesh(mergeGeos(kitLo),VC_MAT);lo.name='kit houses far';lo.userData.noBake=true;lo.castShadow=true;lo.receiveShadow=true;lo.visible=false;group.add(lo);kitLo.forEach(([g])=>g.dispose()); /* S1073 — and their far copy */
+      let r=0;for(const l of use)if(l.kit)r=Math.max(r,Math.hypot(l.x-cx,l.z-cz)+Math.max(l.w,l.d)/2);S.kitLod={hi:kitG,lo,x:cx,z:cz,r,tris:lo.geometry.attributes.position.count/3};}
     bakeSettlement(S);
     if(S.chimneys.length)try{smokeFor(S);}catch(e){console.warn('smoke',e);}
     sc.add(group);
@@ -611,7 +668,11 @@
   // S194 — the houses' distant copies: each baked cluster of detailed houses is drawn near the eye (under HOUSE_LOD.near),
   // its plain twin past HOUSE_LOD.far, whichever it had in between
   const HOUSE_LOD={near:70,far:80};
-  function houseLod(){const cp=CAM.position;for(const S of SETTLE.values()){const L=S.lodMeshes;if(!L)continue;
+  // S1073 — a kit town's houses (one group for the town, S.kitLod) by the same rule, measured from the town's centre less half its
+  // houses' reach: near the town the kit's houses, from outside it their far copy
+  function houseLod(){const cp=CAM.position;for(const S of SETTLE.values()){const K=S.kitLod;
+    if(K){const d=Math.max(0,Math.hypot(K.x-cp.x,K.z-cp.z)-K.r*.5),near=d<HOUSE_LOD.near?true:d>HOUSE_LOD.far?false:K.hi.visible;K.hi.visible=near;K.lo.visible=!near;}
+    const L=S.lodMeshes;if(!L)continue;
     for(const m of L){if(m.userData.lod!=='hi')continue;const b=m.geometry.boundingSphere;const d=Math.max(0,Math.hypot(b.center.x-cp.x,b.center.z-cp.z)-b.radius*.5);
       const twin=m.userData.twin||(m.userData.twin=L.find(o=>o.userData.lod==='lo'&&o.userData.ckey===m.userData.ckey));
       const near=d<HOUSE_LOD.near?true:d>HOUSE_LOD.far?false:m.visible;m.visible=near;if(twin)twin.visible=!near;}}}
@@ -968,11 +1029,13 @@
     else if(kind==='ship'){ctx.beginPath();ctx.moveTo(-8,2);ctx.lineTo(8,2);ctx.lineTo(6,6);ctx.lineTo(-6,6);ctx.closePath();ctx.fill();ctx.stroke();ctx.fillRect(-.6,-9,1.2,11);ctx.beginPath();ctx.moveTo(.6,-8);ctx.lineTo(7,-2);ctx.lineTo(.6,-1);ctx.closePath();ctx.fill();ctx.stroke();}
     ctx.restore();
   }
+  /* S1065 — the door's grade on its subtitle (Very Easy to Very Hard), its place's and fixed, so cached on the door by where it stands */
+  function mapDoorGrade(e,p){if(typeof doorGrade!=='function')return '';const k=p.x+','+p.z;if(e._mapGradeAt!==k){e._mapGradeAt=k;e._mapGrade=(DIFF_SCALE[doorGrade(e,p.x,p.z)]||{}).label||'';}return e._mapGrade?' · '+e._mapGrade:'';}
   function mapEntries(cell){
     const out=[];const c=cell;if(!c)return out;
     const SUB={glade:'Glade',shrine:'Shrine',lair:'Lair',tower:'Spire',bcamp:'Bandit camp',bridge:'Bridge'};
     c.sites.forEach(t=>{if(t.kind==='portal')return;out.push({id:t.id,name:t.name,kind:t.kind,x:t.x,z:t.z,sub:t.kind==='glade'&&typeof gladeDoubled==='function'&&gladeDoubled(t)?'Glade · grown thick since the beast died':SUB[t.kind]||(t.kind.charAt(0).toUpperCase()+t.kind.slice(1)),major:t.kind==='city'||t.kind==='town'||t.kind==='port'||t.kind==='garrison'||t.kind==='tower'||t.kind==='shrine'});});
-    c.doors.forEach(e=>{if(e.wet)return;const p=dungeonWorldPos[e.seed]||(e.zone==='gen'?{x:e.x,z:e.z}:null);if(!p)return;out.push({id:'door_'+e.seed,name:e.canonicalName||(typeof dungeonName==='function'?dungeonName(e.seed,e.theme):'Old gate'),kind:e.kind==='fort_door'?'fort':'cave',x:p.x,z:p.z,sub:`${e.kind==='fort_door'?'Fort':'Old gate'} · ${e.theme}`,major:e.kind==='fort_door'});});
+    c.doors.forEach(e=>{if(e.wet)return;const p=dungeonWorldPos[e.seed]||(e.zone==='gen'?{x:e.x,z:e.z}:null);if(!p)return;out.push({id:'door_'+e.seed,name:e.canonicalName||(typeof dungeonName==='function'?dungeonName(e.seed,e.theme):'Old gate'),kind:e.kind==='fort_door'?'fort':'cave',x:p.x,z:p.z,sub:`${e.kind==='fort_door'?'Fort':'Old gate'} · ${e.theme}`+mapDoorGrade(e,p),major:e.kind==='fort_door'});});
     c.peaks.forEach(p=>out.push({id:p.id,name:p.name,kind:'peak',x:p.x,z:p.z,sub:'Mountain',major:true}));
     c.lakes.forEach(l=>out.push({id:l.id,name:l.name,kind:'lake',x:l.x,z:l.z,sub:'Lake',major:true}));
     const wk=worldState.ship&&worldState.ship.sunk;if(wk&&wk.x>=c.ox&&wk.x<c.ox+SIZE&&wk.z>=c.oz&&wk.z<c.oz+SIZE)out.push({id:'shipwreck',name:`The wreck of the ${worldState.ship.name||SHIP.name}`,kind:'ship',x:wk.x,z:wk.z,sub:'Where she went down',major:true});
@@ -1322,7 +1385,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     (INT_BEDS||[]).forEach(r=>S(r,['x','z','y','cz']));
     (INT_DOORS||[]).forEach(r=>{S(r,['x','z','y']);S(r.sol,BOX);S(r.box,BOX);});
     (INT_NPCS||[]).forEach(r=>S(r.box,BOX));
-    for(const r of [intBedPos,intStashPos,INT_CHAIR,INT_LOOT,INT_BOX,house._hatch])S(r,['x','z','y']);
+    for(const r of [intBedPos,intStashPos,INT_CHAIR,INT_LOOT,INT_BOX,INT_SHELF,house._hatch])S(r,['x','z','y']);
     if(HATCH.active||HATCH.x!=null)S(HATCH,['x','z','y']);
     house.intW*=k;house.intD*=k;
   }
@@ -1371,7 +1434,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     const SOL=[];
     // solid(x,z,hw,hd,top): a block you can step or jump onto (foothold at `top`).
     const solid=(x,z,hw,hd,top)=>{const t=(top==null?.62:top)*F;SOL.push({x0:x-hw,x1:x+hw,z0:z-hd,z1:z+hd,y0:-.5,y1:t});FOOTHOLDS.push({x0:x-hw,x1:x+hw,z0:z-hd,z1:z+hd,y:t});};
-    INT_SOL=SOL;FOOTHOLDS=[];INT_BEDS=[];INT_DOORS=[];INT_DOORS.house=house.id;INT_CHAIR=null;intBedPos=null;INT_NPCS=[];HATCH.active=false;HATCH.roof=false;INT_LOOT=null;INT_BOX=null;
+    INT_SOL=SOL;FOOTHOLDS=[];INT_BEDS=[];INT_DOORS=[];INT_DOORS.house=house.id;INT_CHAIR=null;intBedPos=null;INT_NPCS=[];HATCH.active=false;HATCH.roof=false;INT_LOOT=null;INT_BOX=null;INT_SHELF=null;
     const bedOwner=type==='inn'?'inn':type==='home'?'home':(type==='guild_f'||type==='guild_m')?'guild':'free';
     // S289 — the room's nation (the furniture's wood) and a seed from the house id; S293: declared before the gallery uses it
     const FN=nationAt(house.doorX,house.doorZ),FSEED=String(house.id||'').split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,13)%100000;
@@ -1531,7 +1594,9 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       solid(W/2,3.4,2.6,.45,1.05);
       if(F_){for(let k=0;k<3;k++)solid(2+k*1.6,5.2,.25,.25,1.8);{const z=D*.3;solid(W/2,z,3,.65,.76);[-1,1].forEach(sd=>solid(W/2,z+sd*1.05,2.9,.2,.44));}}
       else{light(W-2.4,1.3,2.4,0x60ff80,1.0,5);solid(W-2.4,2.4,.4,.4,1.0);solid(W/2,D*.3,2.5,.6,.76);
-        for(let x=W/2-4;x<=W/2+4;x+=8)for(let z=6;z<D-3;z+=5)solid(x,z,.4,.4,H/F);}
+        for(let x=W/2-4;x<=W/2+4;x+=8)for(let z=6;z<D-3;z+=5)solid(x,z,.4,.4,H/F);
+        /* S1121 — the first of the two bookcases on the east wall (furnKit's guildM puts it there): a book can be taken from it (shelfPrompt, 86) */
+        {const off=Math.min(0,D*.52-.25-(D*.35+3.85));INT_SHELF={x:W-.2,z:D*.35+off-1.95,y:0,id:house.id,house};}}
       // ground floor rooms: the hall (north) holds desk/board/training; a
       // cross wall with a central doorway; south of it a corridor with two
       // dormitory rooms each side (2 beds each) and the front door at the end.
@@ -1687,7 +1752,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     if(kitShell){const beams=[];for(let i=1;i<=(tower?0:nb);i++)beams.push(D*i/(nb+1));const wins=[];for(let z=D*.3;z<Math.min(D*.9,D-1.05);z+=Math.max(3,D*.3))wins.push(z);
       shellFrame(sc_,{W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TALLZ,SOL,FOOTHOLDS});}
     // S896 (F2a) — the room was laid out in the old unit; it stands at true size from here on (scaleRoom)
-    const KS=type==='tower'?1:KR;scaleRoom(sc_,house,KS);npc.x*=KS;npc.z*=KS;npc.maxZ*=KS;W*=KS;D*=KS;
+    const KS=type==='tower'?1:KR;scaleRoom(sc_,house,KS);npc.x*=KS;npc.z*=KS;npc.maxZ*=KS;W*=KS;D*=KS;house._roomH=H*KS; /* S1009 — the room's true height, floor to ceiling: the head stops there (headCeil) */
     // keeper / resident — only if the schedule says they're indoors right now
     // (the same person you see in the street is the one behind the counter).
     if(npcInsideNow(house)){
@@ -1870,7 +1935,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       if(t.kind==='relic'&&!t.got&&!t._obj){const m=new THREE.Mesh(new THREE.OctahedronGeometry(.28,0),new THREE.MeshBasicMaterial({color:0x9ad0ff}));m.position.set(t.x,worldH(t.x,t.z)+.5,t.z);sc.add(m);const l=regLight(0x80c0ff,1.2,6,'task');l.position.copy(m.position);t._obj={m,l};pickups.push({id:t.id+':pickup',x:t.x,z:t.z,task:t});} /* S518 — a task's relic is <task id>:pickup */
       if((t.kind==='beast'||t.kind==='wizard'||t.kind==='creature')&&!t.spawned&&!t.done&&Math.hypot(px-t.sx,pz-t.sz)<220){
         const name=t.kind==='beast'?t.beast:t.kind==='wizard'?'Rogue Mage':'Shore Wisp';
-        const fid=t.id+':foe:0'; /* S504 — a job's foe is the job and its index (co-op rules) */ const e=keyFoe(unlockFoe(buildZoneEnemy(sc,STATIC_SOL,t.sx,t.sz,name,typeof pickVariant==='function'?pickVariant(name,level,'hard',seededRng('variant',fid)):null)),fid);e._guildTag=t.id;e.hp=Math.round(e.hp*1.6);e.maxHp=e.hp;ZONES.world.enemies.push(e);t.spawned=true;showMsg(`${name} sighted.`,'#ffb060');
+        const fid=t.id+':foe:0'; /* S504 — a job's foe is the job and its index (co-op rules) */ const e=keyFoe(unlockFoe(buildZoneEnemy(sc,STATIC_SOL,t.sx,t.sz,name,typeof pickVariant==='function'?pickVariant(name,tierLevel(worldTierAt(t.sx,t.sz)),tierDiffKey(worldTierAt(t.sx,t.sz),1)/* S1060 — a grade above the place's (the enemies-by-place sheet); it was 'hard' everywhere */,seededRng('variant',fid)):null)),fid);e._guildTag=t.id;e.hp=Math.round(e.hp*1.6);e.maxHp=e.hp;ZONES.world.enemies.push(e);t.spawned=true;showMsg(`${name} sighted.`,'#ffb060');
       }
       if(t.kind==='raid'&&!t.spawned){const S=SETTLE.get(t.siteId);if(S&&Math.hypot(px-S.site.x,pz-S.site.z)<150){t.spawned=true;S.raid=true;const site=S.site;const pr=seededRng('place',t.id);for(let i=0;i<t.count;i++){const ang=pr()*Math.PI*2;const ex=site.x+Math.cos(ang)*(site.pad+8),ez=site.z+Math.sin(ang)*(site.pad+8);const e=keyFoe(unlockFoe(buildZoneEnemy(sc,STATIC_SOL,ex,ez,'Bandit',null)),t.id+':foe:'+i);e._guildTag=t.id;e.alert=true;ZONES.world.enemies.push(e);}showMsg(`Raiders! ${t.count} of them. Hold ${site.name}.`,'#ff8060');}}
     }
@@ -1887,7 +1952,8 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     if(/:c\d+$/.test(String(t.id))&&st.commissions){const at=+String(t.id).split(':c').pop();st.commissions=st.commissions.filter(x=>x!==at);}
     if(typeof addLog==='function')addLog('📜',`${GUILD_DEF[g].name}: ${t.short}. Handed back.`);qJournal(t,'lapsed',`Handed back to the ${GUILD_DEF[g].name}.`);
     return ({gatelander:"Better a thing set down than a thing dropped. It goes back on the board, and there'll be another when you want one.",markman:"Aye. Back on the board. Come back when you want another.",aurennais:"Then the contract is void, Master, and nothing is owed on either side. It returns to the board; another can be drawn up when you wish.",oldblood:"Then it goes back. Someone else will carry it. Come when you want another."})[gp]||"Then it goes back on the board. Come back when you want another.";}
-  function offer(g,site){gLapse();const st=gstate()[g];if(st.active)return `You still owe us: ${st.active.short}. ${progressLine(st.active)}.`;const cm=commissionFor(g,site);const t=cm||gDated(genTask(g,site),g,site);st.active=t;if(typeof addLog==='function')addLog('📜',`${GUILD_DEF[g].name}: ${t.short}.`);qJournal(t,'accept',t.desc);showMsg(`New task: ${t.short}`,'#e8d8a0');return (t.title?`${t.title}. `:'')+t.desc+(t.due?` Pay is ${t.gold} gold; ${Math.round(t.gold*1.25)} if it is done by ${calDateLine(t.due-1)}. After that, the guild gives it to someone else.`:` Pay is ${t.gold} gold.`);}
+  const OWE_LINES={gatelander:(s,p)=>`You'll not plough two fields with the one ox. Yours is still on the board: ${s}. ${p}.`,markman:(s,p)=>`You still owe us: ${s}. ${p}.`,aurennais:(s,p)=>`Forgive me, Master; one contract is closed before the next is entered. Yours is still open: ${s}. ${p}.`,oldblood:(s,p)=>`Yours is not done: ${s}. ${p}.`};
+  function offer(g,site,gp){gLapse();const st=gstate()[g];if(st.active)return (OWE_LINES[gp]||OWE_LINES.markman)(st.active.short,progressLine(st.active));const cm=commissionFor(g,site);const t=cm||gDated(genTask(g,site),g,site);st.active=t;if(typeof addLog==='function')addLog('📜',`${GUILD_DEF[g].name}: ${t.short}.`);qJournal(t,'accept',t.desc);showMsg(`New task: ${t.short}`,'#e8d8a0');return (t.title?`${t.title}. `:'')+t.desc+(t.due?` Pay is ${t.gold} gold; ${Math.round(t.gold*1.25)} if it is done by ${calDateLine(t.due-1)}. After that, the guild gives it to someone else.`:` Pay is ${t.gold} gold.`);}
   // S254 — the guild head greets in the voice of their own people (quest review, run 1, finding 1)
   const GUILD_GREET={
     guild_f:{
@@ -1905,5 +1971,5 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     const gr=rngFor(site.c*31+(g==='guild_f'?101:211),site.r*17+5); // S172 — the same head every visit (was Math.random: a new name and face each time)
     const gp=peopleOfSite(site);const gb=NAMES[PEOPLES[gp].names]||NAMES.irish;keeper=pickFor(gr,gr()<.4?gb.f:gb.m,true);const tk='tw:'+g,tr=_curNM&&_curNM[tk]?String(_curNM[tk]).split('|'):null;const tw=noteName(keeper,true,tr&&tr[0]===keeper?tr[1]:null);if(_curNM)_curNM[tk]=keeper+'|'+tw;
     return Object.assign({name:keeper,_twin:tw||undefined,_siteId:site.id,people:gp,sCol:pick(gr,PEOPLES[gp].skin),hairCol:pick(gr,PEOPLES[gp].hair),bodyScale:[PEOPLES[gp].width/PEOPLES[gp].height,1,PEOPLES[gp].width/PEOPLES[gp].height],role:gd.role,ico:g==='guild_f'?'⚔':'✨',greeting:(GUILD_GREET[g][gp]||GUILD_GREET[g].markman),
-      get topics(){const base=[{label:'Any work?',quest:true,fn:()=>offer(g,site)},{label:"It's done.",quest:true,avail:()=>{gLapse();const t=gstate()[g].active;return !!t&&taskDone(t);},fn:()=>turnIn(g)},{label:'I can\u2019t do it.',quest:true,avail:()=>{gLapse();const t=gstate()[g].active;return !!t&&!taskDone(t);},fn:()=>handBack(g,gp)},{label:'My standing?',quest:true,fn:()=>`${rankOf(g)} of the ${gd.name}. ${gstate()[g].done} task${gstate()[g].done===1?'':'s'} done.`}];{const w=directionTopics(site,this);if(w.length)base.push({label:'Where can I find \u2026',folder:true,response:'Outside these walls? Ask, then.',follow:w});} /* v80 S138 */if(g==='guild_f'&&typeof cloakGuildTopics==='function')base.push(...cloakGuildTopics(site,gp)); /* S789 — the cloak's claimant */if(g==='guild_m')base.push({label:'Browse your wares.',trade:true}); /* S566 — robes at the Mages' Guild (#163) */if(g==='guild_m'&&typeof spellShopTopics==='function')base.push(...spellShopTopics(Math.min(4,Math.floor(gstate()[g].done/3))),...rubbingTopics(site));if(typeof sigilLoreTopic==='function')base.push(...sigilLoreTopic(g,gp)); /* S1092 — What the Stones Say */return base.filter(t=>!t.avail||t.avail()).concat(this._tail);},_tail:[{label:'What is this place?',response:g==='guild_f'?"The Fighters' Guild. We take contracts the watch won't: beasts, raiders, old doors that need emptying. Beds upstairs for members.":"The Mages' Guild. Ingredients, relics, errands that need a spell at the end of them. There are beds if you've nowhere else."},{label:'Farewell.',bye:true}]},extra||{});
+      get topics(){const base=[{label:'Any work?',quest:true,fn:()=>offer(g,site,gp)},{label:"It's done.",quest:true,avail:()=>{gLapse();const t=gstate()[g].active;return !!t&&taskDone(t);},fn:()=>turnIn(g)},{label:'I can\u2019t do it.',quest:true,avail:()=>{gLapse();const t=gstate()[g].active;return !!t&&!taskDone(t);},fn:()=>handBack(g,gp)},{label:'My standing?',quest:true,fn:()=>`${rankOf(g)} of the ${gd.name}. ${gstate()[g].done} task${gstate()[g].done===1?'':'s'} done.`}];{const w=directionTopics(site,this);if(w.length)base.push({label:'Where can I find \u2026',folder:true,response:'Outside these walls? Ask, then.',follow:w});} /* v80 S138 */if(g==='guild_f'&&typeof cloakGuildTopics==='function')base.push(...cloakGuildTopics(site,gp)); /* S789 — the cloak's claimant */if(g==='guild_m')base.push({label:'Browse your wares.',trade:true}); /* S566 — robes at the Mages' Guild (#163) */if(g==='guild_m'&&typeof spellShopTopics==='function')base.push(...spellShopTopics(Math.min(4,Math.floor(gstate()[g].done/3))),...rubbingTopics(site));if(typeof sigilLoreTopic==='function')base.push(...sigilLoreTopic(g,gp)); /* S1092 — What the Stones Say */return base.filter(t=>!t.avail||t.avail()).concat(this._tail);},_tail:[{label:'What is this place?',response:g==='guild_f'?"The Fighters' Guild. We take contracts the watch won't: beasts, raiders, old doors that need emptying. Beds upstairs for members.":"The Mages' Guild. Ingredients, relics, errands that need a spell at the end of them. There are beds if you've nowhere else."},{label:'Farewell.',bye:true}]},extra||{});
   }

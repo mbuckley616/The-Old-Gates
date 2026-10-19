@@ -48,10 +48,10 @@ const r = await page.evaluate(() => {
     if (boss) { e.isBoss = true; e.bossDef = { biteRange: 2.0 }; } return strikeReaches(e); };
   const deg = a => [Math.sin(a * Math.PI / 180), Math.cos(a * Math.PI / 180)];
   const p = (r, a) => { const [s, c] = deg(a); return [s * r, c * r]; };
-  out.front15 = at(...p(1.5, 0)); out.front17 = at(...p(1.7, 0));
+  out.front15 = at(...p(2.1, 0)); out.front17 = at(...p(2.3, 0)); /* S1049 — F2b (S1041): a man's blow is his weapon's reach hull to hull, a sword's 1.6, so 2.2 centre to centre */
   out.side40 = at(...p(1.2, 40)); out.side60 = at(...p(1.2, 60)); out.behind = at(...p(1.0, 180));
-  out.troll22_60 = at(...p(2.2, 60), 0, 'Cave Troll'); out.troll22_80 = at(...p(2.2, 80), 0, 'Cave Troll'); out.troll26 = at(...p(2.6, 0), 0, 'Cave Troll');
-  out.boss19 = at(...p(1.9, 0), 0, 'Faolchú', true); out.boss21 = at(...p(2.1, 0), 0, 'Faolchú', true);
+  out.troll22_60 = at(...p(3.4, 60), 0, 'Cave Troll'); out.troll22_80 = at(...p(3.4, 80), 0, 'Cave Troll'); out.troll26 = at(...p(3.6, 0), 0, 'Cave Troll'); /* S1049 — 0.3 + 2.4 + its 0.8 hull */
+  out.boss19 = at(...p(2.4, 0), 0, 'Faolchú', true); out.boss21 = at(...p(2.6, 0), 0, 'Faolchú', true); /* S1049 — its bite less the snout's 0.9, hull to hull: 0.3 + 1.1 + its 1.1 */
   return out;
 });
 console.log(JSON.stringify(r));
@@ -59,10 +59,10 @@ check('the distance is the same at 60 ticks, 5 or 1', r.d60 === 2.6 && r.d5 === 
 check('winded (10 stamina), no roll', r.winded === false, r);
 check('a blow at 0.15 s and 0.29 s into the roll misses', r.at15 === 0 && r.at29 === 0, r);
 check('a blow at 0.02 s or 0.35 s lands', r.at02 > 0 && r.at35 > 0, r);
-check('the arc: 1.5 ahead lands, 1.7 does not', r.front15 && !r.front17, r);
+check('the arc: 2.1 ahead lands, 2.3 does not (a sword-armed man, 2.2 centre to centre)', r.front15 && !r.front17, r);
 check('the arc: 40° off lands, 60° off and behind do not', r.side40 && !r.side60 && !r.behind, r);
-check('a troll sweeps 2.4 units and 140°: 60° off lands, 80° off and 2.6 out do not', r.troll22_60 && !r.troll22_80 && !r.troll26, r);
-check('the Faolchú keeps its 2.0 reach', r.boss19 && !r.boss21, r);
+check('a troll sweeps 2.4 m hull to hull and 140°: at 3.4, 60° off lands, 80° off does not, and 3.6 ahead does not', r.troll22_60 && !r.troll22_80 && !r.troll26, r);
+check('the Faolchú bites its 2.0 reach less the snout, hull to hull: 2.4 lands, 2.6 does not', r.boss19 && !r.boss21, r);
 
 // end to end through the world's own enemy tick: a real bandit whose wind-up ends this tick
 const e2e = await page.evaluate(() => {
