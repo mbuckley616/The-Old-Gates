@@ -27700,3 +27700,49 @@ A two-bay inn (7.4 m) and a coaching inn keep the old room. The taproom is laid 
 - **The taproom is small for an inn.** It is 9.5 by 5.2 inside, against the old village inn's 10 to 12 by 11.7 to 13. It is Michael's chosen room, at the farmhouse's true size, and a village inn holds few guests. A playtest will tell whether it feels cramped with the third-person camera.
 - **The day beyond the windows** is a flat plane in three tones by the hour (day, dusk and dawn, night), not a view. It is enough to stop the panes reading as night at noon.
 - **Owed:** a two-bay inn's taproom; a coaching inn's (the board and the travellers in the kit's room); the Mark's alehall and Aurenne's tavern, once #321 and #322 are answered.
+
+## v80 — Session 1159 — The Mark's alehall, copied into the game's kit (card F9, Michael's A on #321)
+**Two corrections to Sessions 1157 and 1158 first.**
+- **#321 and #322 are answered.** Both entries, and the backlog line, said the Mark's alehall and Aurenne's tavern waited on them. They do not. Michael answered both on 14 Oct:
+  - #321 A: wall benches, 10 by 18 m, as drawn;
+  - #322 A: the Roman house, a vine on a pergola.
+
+  The two inns are chosen rooms like the Gatelander one.
+- **#303's 1 A is not met yet.** Michael's 1 A on #303 (14 Oct) puts the rooms of 2.0 *inside the street's own shell*: "the house you see is the house you walk into, with no load at the door". Session 1158's taproom is the farmhouse's own inside, at its true size, but it is still built as its own scene when you go in, as every room is today. Bringing rooms into the street with no load needs:
+  - an indoor flag that does not mean "another scene";
+  - the solids and footholds in world coordinates;
+  - the light by the street's sun and the room's lamps.
+
+  That touches every system that asks `isInterior()`, and is a cross-cutting change for a deep-work card, not a look-builder session. The backlog's F9 line now says so. The rooms copied and hung meanwhile keep their records (the boxes, the beds, the stair) in the room's own frame, which a seamless build can place in the street as easily as in a scene.
+
+**This session** copies the Mark's inn into `js/38-kit.js`, as Session 1157 did the Gatelander one:
+- **The copy:** `markHall` and `markMats` from `pieces.js` (Session 831), and `markAlehall` and `longMats` from `rooms.js` (Session 894), as they stand, under `PKIT.mk` (`hall`, `alehall`, `mats`). Two names change: `mats()` becomes `roomMats()`, and `markTextures`' eager `TEX` becomes the kit's painters on first use.
+- **Five painters come with it:** the beam, the shingle, the two turfs (dry and moss) and the fringe at the eaves. The fringe carries no colour space, as the kit's other surfaces do (`05-compat.js` runs 0.170 linear).
+- **The hall:** 10 by 18 m under shingle with a porch and a smoke louver on the ridge, and posts in two rows. In it:
+  - the long hearth on the axis with its kerb, logs and cauldron;
+  - two long tables of 12 m with loose benches;
+  - the raised wall benches laid with furs;
+  - the serving counter with kegs and horns across the back;
+  - a rack of spears and shields by the door;
+  - iron lamps.
+- **The old look:** nothing builds it, and nothing is painted until something is asked for.
+
+### Verified (headless Chromium)
+- **`kitalehall` (new): 6 of 6 pass.**
+  - **The prototype's numbers, exactly:** three keys of the alehall build to the triangles, draws and vertex hash the prototype gives in the test Chromium:
+
+    | Key | Triangles | Draws |
+    |---|---|---|
+    | alehall | 9,490 | 15 |
+    | alehall:0 | 9,890 | 15 |
+    | alehall:1 | 9,578 | 15 |
+
+  - **The shell:** 1,648 triangles in 7 draws, the same vertices in every key.
+  - **Two bare halls** match too: shingle with a porch and a chimney, 1,724 in 9; turf without, 768 in 10.
+  - **Each is the same twice,** 10 by 18 m, with its two long tables.
+  - **The old look** has `PKIT.mk.alehall` and has painted nothing. There are no page errors on either look.
+- **`kitinnroom` and `kitkeep` still pass.**
+- `parsecheck.py` is clean. Build tag s717.
+### Needs eyes
+- **Nothing to see yet.**
+- **Owed, the hanging:** the alehall as a Markish inn's room on `?look=new`. On the new look the Mark's streets still have the old builder's houses outside (F6 in the game is the Gatelands' so far), so the hall would be larger inside than out until the Mark's lots come into the game. That is how every room in the game is today, but it is further from #303's 1 A than the taproom is. The producer may prefer the Mark's lots first.
