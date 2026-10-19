@@ -273,3 +273,13 @@ Written by the producer once a day, after 12:00 UTC. Newest last.
 **Blocked.** Nothing. Systems 978–1002 had a backlog clash with main, resolved this morning; CI runs on 7378602 and the card moves to it when green.
 
 **Roadmap.** 240 of 303 stories done (239 yesterday); 2.0's new look 2 of 15 cards done (F1, F2a); the core loop's resolver and skills both wait on your approval.
+
+## 19 Oct 2026
+
+**Waiting on you.** Approve one: Bodies sessions 1136–1154 (88ff7c6, green): a person killed against a wall slumps down it, people and beasts alike. One decision: #448, how a gate's inside gets its size (B, spaces first, then rooms, on one grid).
+
+**Landed on main since yesterday.** Systems sessions 940–1141 (dad5f7c, merged anyway on your A): skills rise by use, the first perks, the double jump and air dash, enemies by place. Look sessions 1062–1083 (afd77ba). Bodies sessions (85ca786). QA's CI in 16 shards (#437). The concept artist's shrines (#440), two critic playtests (#428, #450), the designer's gate interiors (#449). Build s714.
+
+**Blocked.** Look 1086–1134: three crime suites (beat, penance, crime2) are the branch's own failures; the look builder fixes them now FREEZE #441 is closed. Quest builds 1092 conflicts with main; the quest writer merges main, and your approval carries over. #443 (new look the default) waits on Claude (local). QA found a guard's heavy blow can kill before the yield is offered (systems builder).
+
+**Roadmap.** 248 of 303 stories done (241 yesterday). The core loop is 4 of 5 done (magic B left). The new look is 2 of 15 cards done.

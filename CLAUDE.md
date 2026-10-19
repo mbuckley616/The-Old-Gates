@@ -11,13 +11,15 @@ Michael designs and playtests; Claude implements. This file is what Claude reads
   and the world was one 8,100-line IIFE until Session 484.
 - `vendor/three.r170.min.js` — three.js 0.170 as one classic script, for the new look (`?look=new`, Session 822); made by
   `scripts/three_bundle.py` from the pinned module build, never edited by hand. The old look loads r128 from cdnjs as always.
-- `docs/devlog.md` — one entry per session, appended at the end of the session. Never rewrite old entries.
+- `docs/devlog/NNNN.md` — one file per session (since 19 Oct 2026), named by the session's number, written at the end of the
+  session. `docs/devlog.md` is the archive up to Session 1145: never rewrite old entries, and add nothing to it.
 - `docs/backlog.md` — the open work, grouped by area, with `~~strikethrough~~ — done, Session N` when finished.
 - `docs/lore_canon.md`, `docs/quest_writing.md` — the author's text. Do not edit without being asked.
 - `docs/design_brief.md` — Michael's brief: what the game is and the three things it must feel like. Every proposal and
   every design call argues from it. `docs/decisions.md` — questions for Michael and his answers; nothing is a spec without a `Michael:` line.
 - `tests/` — Playwright suites against a headless Chromium. `node tests/run.mjs` runs them all.
-- `scripts/parsecheck.py` — syntax-checks every `js/` file and their concatenation. `scripts/tag.py bump` bumps the build tag.
+- `scripts/parsecheck.py` — syntax-checks every `js/` file and their concatenation. `scripts/tag.py` is the build tag's tool; only the
+  `stamp` workflow runs it now.
   `scripts/split.py`, `scripts/split_world.py` and `scripts/join.py` made the layout and prove it (kept one release, per decision #75).
 
 ## 2.0 only (Michael, 18 Oct 2026: "1.0 is frozen")
@@ -34,7 +36,7 @@ Nobody plays 1.0 but Michael, and he plays 2.0 from now on. The game is the new 
   lands. While a `FREEZE:` issue for a landing is open, the builder whose branch it names adds nothing to that branch.
 
 ## A session
-1. Read the last devlog entry and the backlog before touching code.
+1. Read the last few files in `docs/devlog/` and the backlog before touching code.
 2. One feature or bug per session. Ask before building anything whose design is open.
 3. Edit the `js/` file the feature lives in (the code map by file, below) with targeted edits. The files have literal
    Unicode in strings (’ — · 🗝); match it, don't assume `\u` escapes. Never put a `//` comment on a line that has code
@@ -42,9 +44,11 @@ Nobody plays 1.0 but Michael, and he plays 2.0 from now on. The game is the new 
 4. `python3 scripts/parsecheck.py` after every edit batch. It takes two seconds: each `js/` file, then their concatenation.
 5. Verify in headless Chromium, not by reading the code: add or extend a test in `tests/`.
    The scene runs at a few fps on software GL, so drive time with `g.spin()` (fixed 1/60 ticks), not timeouts.
-6. `python3 scripts/tag.py bump` — the tag shows in the controls line at the bottom of the screen and is
-   how Michael confirms which build he's running.
-7. Append the devlog entry (format below), update the backlog, commit.
+6. Do not touch the build tag. The `stamp` workflow bumps it on main after each merge (the tag in the controls line is how
+   Michael confirms which build he's running, and it now counts landings). Every branch bumping the same line was why each
+   merge left every other PR in conflict.
+7. Write the devlog entry as `docs/devlog/NNNN.md` (format below), mark the backlog, commit. A question for Michael goes in
+   that file under `### Decision` and in a `DECISION:` issue, not in `docs/decisions.md`: the producer files it there.
 
 ## The split layout — `js/` (backlog K)
 Session 368 built the tooling and Session 379 cut the file (1 Oct 2026); Session 484 dissolved the world module into nine files
@@ -148,10 +152,23 @@ Session 368 built the tooling and Session 379 cut the file (1 Oct 2026); Session
 Sessions started from claude.ai/code or the Claude app run on a fresh checkout of the GitHub repo.
 `scripts/cloud-setup.sh` (a SessionStart hook in `.claude/settings.json`) installs Playwright and
 Chromium there; locally it does nothing. A cloud session can only push its own branch, not `main`:
-commit there and open a PR; the producer routine merges it through GitHub once Michael approves it on the control room
-(a docs-only PR merges without him).
+commit there and open a PR. **How a PR lands (Michael's A on the pipeline and his B on approvals, 19 Oct 2026;
+`docs/pipeline.md`):** CI runs only the suites the change can reach (`tests/lib/select.mjs`; a docs-only PR runs none) and
+reports one check, `gate`. The `automerge` workflow merges a PR the minute `gate` is green and it merges cleanly. **Michael
+decides designs, not merges:** a PR that builds what he has already decided needs no tap. Two exceptions wait for him: a PR
+labelled `hold` (put it on anything you want his eyes on first, and say why in the PR), and a PR that changes the pipeline
+itself (`.github/`, `tests/lib/`, `tests/run.mjs`, `scripts/automerge.mjs`), which merges on the comment
+`Approved by Michael: <sha>`, posted by the producer when he taps Approve. An open design question is still a `DECISION:`
+before anything is built. Main runs every suite after each merge: a red on main is the next run's first job for the builder
+that owns it, and the producer reverts the merge if it is not fixed within the day.
+**These landing rules win** over anything a routine's own prompt still says about branches, the build tag, the devlog,
+decisions.md or merging (prompts written before 19 Oct 2026 may say otherwise).
+**One small PR per run:** every run starts a fresh branch from main (`auto/<lane>-<session>`, the run's first session
+number), does its sessions there, opens its own PR, and leaves it to land. No branch is kept or reused from run to run, and
+nothing is added to a PR once the run that opened it has ended (a red that is your own fault is fixed in the next run's PR).
 Only the producer routine notifies Michael (PushNotification) or writes to the control room; every other session,
-cloud or local, raises questions in `docs/decisions.md` and a `DECISION:` issue and stays silent — the producer
+cloud or local, raises questions in its devlog file and a `DECISION:` issue (the producer copies them into
+`docs/decisions.md`, the one writer of that file) and stays silent — the producer
 carries them to him. A second notification for the same question is noise.
 
 ## The room — Slack #old-gates (channel id C0C547EFP6G)
@@ -176,6 +193,7 @@ Every session, cloud or local, that has the tools:
   the producer in your post.
 
 ## Devlog entry format
+One file, `docs/devlog/NNNN.md` (the session's number, four digits), holding:
 ```
 ## v80 — Session N — <title>
 <what was asked, what was wrong, what changed — with the reasons, in prose>

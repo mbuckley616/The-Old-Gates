@@ -1,14 +1,37 @@
 name: check
 # 29 Sep 2026: every agent push ran the suites twice (push and pull_request) and 29 runs sat queued.
 # Agent branches are tested through their PR only, and a new commit cancels its branch's older run.
+# 19 Oct 2026 (Michael's A on the pipeline): a pull request runs only the suites its change can reach (tests/lib/select.mjs),
+# a docs-only one none; main runs every suite after each merge, and a run on main is never cancelled by the next merge.
+# `gate` is the one check that says whether a pull request may merge: green when parse passed and the suites passed or
+# were not needed. The automerge workflow reads it.
 on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 concurrency:
   group: check-${{ github.head_ref || github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      mode: ${{ steps.p.outputs.mode }}
+      n: ${{ steps.p.outputs.n }}
+      shards: ${{ steps.p.outputs.shards }}
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - id: p
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            node tests/lib/select.mjs --base=${{ github.event.pull_request.base.sha }} --github-output
+          else
+            node tests/lib/select.mjs --full --github-output
+          fi
   parse:
     runs-on: ubuntu-latest
     steps:
@@ -37,19 +60,28 @@ jobs:
     # 18 Oct 2026 (Session 1138): sixteen shares, not fourteen. 502 suites on auto/systems came to 710 minutes on CI (run
     # 39146959449, af62671), 51 a shard at fourteen, and its shard 14 was cut at 60:00 on its last suite with nothing failed
     # (kittown took 346 s where 60 was counted). Sixteen is about 44 minutes a shard.
+    # 19 Oct 2026: as many shards as the selection needs at about 35 minutes each (tests/lib/select.mjs), up to twenty.
+    needs: plan
+    if: needs.plan.outputs.mode != 'none'
     runs-on: ubuntu-latest
-    # 19 Oct 2026 (Session 1145, the new look the default): twenty shares, not sixteen. On the new look the suites came to
-    # 721 minutes on CI (afb6b37, 442 suites timed) against about 640 on the old, and four of fourteen shards were cut at
-    # 60:00; twenty is about 36 minutes a shard. run.mjs's times are refreshed from that run.
     timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+        shard: ${{ fromJSON(needs.plan.outputs.shards) }}
     steps:
       - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
       - uses: actions/setup-node@v4
         with: { node-version: '22' }
       - run: npm install
       - run: npx playwright install --with-deps chromium
-      - run: node tests/run.mjs --shard=${{ matrix.shard }}/20
+      - run: node tests/run.mjs --shard=${{ matrix.shard }}/${{ needs.plan.outputs.n }} ${{ needs.plan.outputs.mode == 'some' && format('--changed={0}', github.event.pull_request.base.sha) || '' }}
+  gate:
+    needs: [plan, parse, headless]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "plan: ${{ needs.plan.result }} (${{ needs.plan.outputs.mode }}, ${{ needs.plan.outputs.n }} shards); parse: ${{ needs.parse.result }}; suites: ${{ needs.headless.result }}"
+          [ "${{ needs.plan.result }}" = success ] && [ "${{ needs.parse.result }}" = success ] && { [ "${{ needs.headless.result }}" = success ] || [ "${{ needs.headless.result }}" = skipped ]; }
