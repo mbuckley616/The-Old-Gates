@@ -26749,3 +26749,33 @@ Correction to Session 1153: its Needs eyes owed the gap "as its own fix": this i
 ### Needs eyes
 - **Whether the tail's ends now fade as they should.** They taper and fade where they were blunt.
 - **Whether the scalp's strands and the brushes want the same turn.** On the scalp, roots fading into the shell may be what keeps the hairline soft.
+
+## v80 — Session 1156 — The Mark's formal dress: woven bands (L1, prototype only)
+OG-109's Mark column draws its formal dress as "blue and red, with woven bands": tunics and long gowns with a tablet-woven band at the neck, the cuffs and the hem. OG-110's Markwoman in blue under a white fur mantle wears the same edges. The Markmen already have a woven cuff band (Session 889, a chevron); this is the formal set. The canon says nothing against it and the sheet draws it, so it asks nothing. FREEZE #441 is still open, so the run kept to `people.js`, `builder.js` (two labels) and `builder.check.mjs`.
+
+- **The band** (`LOZ`, in `clothMat` as `loz`). Drawn in the shader on the cloth it lies on, like the cuff band. Across it: a thread of the motif's colour at each edge, then the ground. Along it: a row of lozenges, each a ring of the motif round a dot, one every 1.2 band widths. Both are stepped to the threads (14 across, 12 to a lozenge), so it reads woven rather than painted. Where a step is smaller than a pixel or so it gives way to its average, so it does not shimmer far off.
+- **Where it lies**, on the rest body:
+  - the neck, from rest .58 to .606 round the neck's axis (about 2.8 cm);
+  - both cuffs across their whole 4 cm, round the wrist's middle where the cuff's slab cuts it (the chevron band's diagonal coordinate stretched the lozenges);
+  - the hem, 4 cm up from the skirt's cut, short or long. Below the band's lower thread the ground runs on to the cut, as a hem.
+- **The genome:** `D.bands` (the ground) and `D.bandsMotif` (the lozenges; madder if unset), two garments, saved as hex. A tunic with bands and no cuffs gets cuffs in its own colour. A man's own cuff band gives way to the woven one.
+- **Not under** a coat (its cuffs are already gone, Session 1147) or a robe.
+- **The roll:** none, as for the coat. Who dresses formally, and when (rank, a feast, a court day), is the game's to say through the generator. The builder's page has the two colours.
+
+### Verified (headless Chromium)
+- **Three new checks** (`builder.check.mjs`):
+  - a Markman in blue with ochre bands and madder lozenges, short tunic;
+  - a Markwoman in a madder gown with blue lozenges;
+  - a Markman in charcoal with undyed bands over his own woven cuffs.
+  Each is rendered close at its neck, hem and cuff against the same person without bands (cuffs in the same colour). The band changes 4.8% to 7.4% of the neck view, 18.6% to 27.7% of the hem's and 15.1% to 20.8% of the cuff's. The chest between them is unchanged (0 pixels), and the plain person renders the same twice. On each, all three of the tunic, skirt and cuffs carry it. The charcoal man's chevron band is gone, and the men with no cuffs of their own get them only with the bands. Under a coat or a robe nothing carries it. The genome saves and loads back.
+- The views are aimed at the band's own points, skinned: a garment's geometry holds every point of the body, so its bounding box is the whole body's. The Old Blood's dot checks (Session 1043) aim by the same box, so they look at a fixed height on the body, not at the garment; they pass, but a new check should aim by its points.
+- **`builder.check.mjs`:** 503 of 503 pass (500 before and the three above).
+- **Pictures** (`builder-bands-*.jpg`):
+  - `-full`, `-neck` and `-cuff`: the blue Markman;
+  - `-woman` and `-hem`: the madder gown;
+  - `-charcoal`: undyed bands on charcoal.
+### Needs eyes
+- **A long gown's hem is ragged** (rest -.705 to -.728). The band's lower thread runs at the hem's highest point, so on most of the hem a strip of the ground shows under the thread. A band fitted to each point's own distance from the edge would hug it.
+- **The neck band ends in the beard** on a bearded man, and shows mostly from the side.
+- **Formal dress is more than its edges:** OG-109's Markmen wear their formal tunics longer, nearer the knee, and the women a mantle over the gown. Neither is built.
+- **Owed:** who wears it (the game, by rank or occasion), and the game after F4.
