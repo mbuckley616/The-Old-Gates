@@ -631,7 +631,7 @@
   // touches take their heights and colours again.
   function refreshChunkTerrain(ch){const geo=ch.terrain;const pa=geo.attributes.position;const col=geo.attributes.color;const ox=ch.cx*CHUNK,oz=ch.cz*CHUNK;const c=_tmpC;
     for(let i=0;i<pa.count;i++){const x=pa.getX(i)+ox+CHUNK/2,z=pa.getZ(i)+oz+CHUNK/2;const h=worldH(x,z);pa.setY(i,h);const ny=slopeNormalY(x,z);groundColor(x,z,h,ny,c);col.setXYZ(i,c.r,c.g,c.b);}
-    pa.needsUpdate=true;col.needsUpdate=true;geo.computeVertexNormals();geo.computeBoundingSphere();landMask(geo,ox,oz);}
+    pa.needsUpdate=true;col.needsUpdate=true;geo.computeVertexNormals();geo.computeBoundingSphere();landMask(geo,ox,oz);landGrassDrop(ch);} // S1184 (F3): new heights (a stamp, a river) leave no grass floating; it grows again on the new ground
   // S252 — stamps that arrive after a chunk was built (a cell placing its doors and pads after you jumped, fast-travelled
   // or loaded a save into it) left the chunk's trees, bushes and rocks standing on them: a forest in a fort's courtyard.
   // Scatter skips a stamp's core, so take out what stands in one now (the mesh's last instance fills the gap), drop its

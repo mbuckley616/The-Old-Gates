@@ -40,6 +40,7 @@
     for(let i=0;i<pa.count;i++){const x=pa.getX(i)+ox+CHUNK/2,z=pa.getZ(i)+oz+CHUNK/2;const h=pa.getY(i);
       groundColor(x,z,h,slopeNormalY(x,z),c);col.setXYZ(i,c.r,c.g,c.b);}
     col.needsUpdate=true;
+    landGrassDrop(ch); // S1184 (F3): snow lying or melting changes where grass may stand; the next frames grow it again
   }
   // S330 (Michael's 1, #57) — the world's wind: the way it blows, (sin, cos) in the world. It is read off the absolute
   // clock, so it is the same after a load and needs no save: three slow swells over 9–53 game hours, and in a storm a

@@ -1,4 +1,4 @@
-// Card F3, the land in the new look (Sessions 1180–1183, js/89-world-land.js): booted on three.js 0.170, the world's chunks are
+// Card F3, the land in the new look (Sessions 1180–1184, js/89-world-land.js): booted on three.js 0.170, the world's chunks are
 // shaded by the land's own material, which paints fields, hedgerows, rock and the woods from afar over groundColor's vertex
 // colour; every chunk carries a per-vertex mask that keeps the fields off roads and out of site stamps; the sky is a gradient
 // dome that follows the clock; the world's frame is tone-mapped (ACES) and graded, and rooms are not. The console stays clean
@@ -66,6 +66,15 @@ await setQ(2); const hi = await grass();
 await setQ(0); const lo = await grass();
 await setQ(1); const back = await grass();
 check('the three levels change what the land spends: grass, the shadow map and the clouds', lo.blades === 0 && lo.puffs === 0 && lo.shadow === 1024 && mid.shadow === 2048 && hi.shadow === 4096 && hi.blades > mid.blades * 1.5 && hi.puffs > mid.puffs, { lo, mid, hi });
+// Session 1184: a chunk whose ground changes after its grass grew (a stamp arriving flattens it, snow settles or melts) loses its
+// grass and grows it again on the new ground: none left floating over a flattened pad, none standing on settled snow
+const regrow = await page.evaluate(() => { const ch = [...chunks.values()].filter(c => c.landGrass).sort((a, b) => b.landGrass.grass.count - a.landGrass.grass.count)[0];
+  const n0 = ch.landGrass.grass.count; const tick = () => { for (let i = 0; i < 12; i++) WORLD.tick(1 / 60, performance.now()); };
+  refreshChunkTerrain(ch); const goneR = ch.landGrass === null; tick(); const n1 = ch.landGrass ? ch.landGrass.grass.count : -1;
+  const keep = WORLD.wx.cover; WORLD.wx.cover = 1; recolourChunk(ch); const goneS = ch.landGrass === null; tick(); const nSnow = ch.landGrass ? ch.landGrass.grass.count : -1;
+  WORLD.wx.cover = keep; recolourChunk(ch); tick(); const n2 = ch.landGrass ? ch.landGrass.grass.count : -1;
+  return { n0, goneR, n1, goneS, nSnow, n2 }; });
+check('new ground drops a chunk\'s grass and it grows again (the same blades); under settled snow far fewer; after the thaw all of it', regrow.goneR && regrow.n1 === regrow.n0 && regrow.goneS && regrow.nSnow >= 0 && regrow.nSnow < regrow.n0 * .3 && regrow.n2 === regrow.n0, regrow);
 // Session 1183: bloom, the world's frame through a render target at Middle and High (a bright pass, the blur, the composite with
 // ACES, the grade and the vignette), the direct path at Low; REN.info still counts the whole frame
 check('bloom runs at Middle and High, not at Low, and the frame\'s draw calls are still counted whole', mid.bloom === 1 && hi.bloom === 1 && lo.bloom === 0 && mid.calls > 50, { lo: [lo.bloom, lo.calls], mid: [mid.bloom, mid.calls], hi: [hi.bloom, hi.calls] });
