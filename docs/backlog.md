@@ -383,6 +383,7 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
 - ~~**Two shrines of one god share a name** (QA's note, 15 Oct 2026, routed to the systems builder by the producer): `buildShrine` (`87-world-quests.js`) renames a shrine to its god after the unique-name pass (`uniqueSiteNames`, Session 756), so two shrines of the same god end up with one name.~~ — done, Session 978 (`tests/shrinenames`): the first of a god's shrines in the grid's order bears its name, any other keeps its own.
 
 - ~~**Register fixes, quest review run 17, Finding 30** (the guild head's *You still owe us* in a Markman's words for every people)~~ — **done, Session 940** (`OWE_LINES`, four peoples; `cloakguild`, `handback`).
+- ~~**The night watch stuck at the turned lots** (`beat` red on auto/backlog since Session 1138's street layout; QA, 19 Oct): Portclare's watch wedged at a house's corner, Dunmore's Maeve 27 s still~~ — **done, Sessions 1160 and 1165** (S1160 the near-zero slide; S1165 `npcStep` turns the step 20° to 80° along a wall at an angle; `beat`).
 
 ## J. Design proposals wanted (Michael, 27 Sep 2026)
 Michael wants to hear proposals from the team before anything is built. Each proposal is a page in `docs/design/<topic>.md`: the problem in his words, 2–3 directions with a recommendation, what it displaces, cost in sessions. Nothing here is a spec until it carries a `Michael:` line in docs/decisions.md. His brief is `docs/design_brief.md`.

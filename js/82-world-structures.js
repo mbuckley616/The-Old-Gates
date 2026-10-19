@@ -991,7 +991,12 @@
     const mx=dx/d*spd*dt,mz=dz/d*spd*dt;
     const try_=(x,z)=>!solidAt(x,z),slide=spd*dt*.2; /* S1160 — a slide along one axis of under a fifth of the step is no headway: with the target dead ahead on one
        axis, a 1e-12 slide along the other "succeeded", reset the count and held Portclare's watch at a wall for ten minutes */
+    /* S1162 — along a wall at an angle: the lots stand turned since S1138, and a slide on x or z alone runs into a wall at 20°
+       (Portclare's watch, wedged at a house's corner one step from his beat point). The step turned 20° to 80°, the side
+       that last worked first, before the slides on one axis */
+    const turn=a=>{const c=Math.cos(a),s=Math.sin(a),x=mx*c-mz*s,z=mx*s+mz*c;if(!try_(gx+x,gz+z))return false;n.g.position.x+=x;n.g.position.z+=z;n._turnS=Math.sign(a);return true;};
     if(try_(gx+mx,gz+mz)){n.g.position.x+=mx;n.g.position.z+=mz;}
+    else if((()=>{const sd=n._turnS||1;for(let k=1;k<=4;k++){const a=k*.35;if(turn(a*sd)||turn(-a*sd))return true;}return false;})()){}
     else if(Math.abs(mx)>slide&&try_(gx+mx,gz))n.g.position.x+=mx;
     else if(Math.abs(mz)>slide&&try_(gx,gz+mz))n.g.position.z+=mz;
     else{n._stuck=(n._stuck||0)+1;if(n._stuck>40){n._stuck=0;return true;}return false;}

@@ -28097,3 +28097,30 @@ OG-109's Mark column draws its formal dress as "blue and red, with woven bands":
 - **The neck band ends in the beard** on a bearded man, and shows mostly from the side.
 - **Formal dress is more than its edges:** OG-109's Markmen wear their formal tunics longer, nearer the knee, and the women a mantle over the gown. Neither is built.
 - **Owed:** who wears it (the game, by rank or occasion), and the game after F4.
+
+## v80 — Session 1165 — The night watch along a turned wall: `beat` green (owed by Session 1160)
+**A correction to Session 1160 first.** That entry put `beat`'s remaining red down to `townRoute`'s whole-metre grid missing walls thinner than a cell. That was not it. I traced Portclare's beat at 5 cm and none of its 13 legs crosses a wall. Three of them graze a box's corner for one to three samples, and the solids are padded by 0.3 m, so a wall thinner than a cell does not occur. The grid is left as it was.
+
+**The cause:** a house turned 20.5°. Session 1138 lays the lots out turned to the streets, and one of Portclare's houses (12.4, 13.2 from the square, 6.3 by 5.3 m) has its south-west corner at 10.4, 17.1. The beat point at 9, 17 lies a step beyond it. The watchman, Dáire, came along the house's south face going west and was wedged on that face, a step short of the point:
+- A step west goes into the sloping wall.
+- The point lies a few centimetres north, so a step along z goes into the wall too.
+- `npcStep` only slides along x or z, so it could not follow a wall at an angle.
+
+Wedged, npcStep gave up after 40 frames. The beat then asked for every cell of the way, but its first cell (10, 17) was also behind that corner, so `next()` dropped the point and took the next one. The next points were across town, the walk toward them was blocked at the same corner, and so on. He skipped five points in 13 s, a loop at a time, and two shop doors never saw his lantern. Dunmore's Maeve (27 s still) was the same at another turned lot.
+
+**The fix**, in `npcStep` (`82-world-structures.js`): when the straight step is blocked, the step is tried turned 20°, 40°, 60° and 80°, each way. The side that last worked is tried first, so a walker keeps to one side of a wall and does not zigzag. Then come the slides along one axis and the give-up, as before. A step at 80° still gains 17% of a step toward the target, so `_bwS`'s check (no gain in 2.5 s, ask the streets) still catches a dead end.
+
+### Verified (headless Chromium)
+- **`beat`: all pass.** It was red on this branch since Session 1138.
+
+  | Town | Watchman | Longest stop before | Longest stop after |
+  |---|---|---|---|
+  | Portclare | Dáire | 14 s | 4 s |
+  | Dunmore | Maeve | 27.5 s | 3.5 s |
+
+  - **Portclare's five shop doors:** 3, 3, 3, 3 and 3 passes in ten minutes, against 0, 9, 6, 0 and 4 before.
+  - **Dunmore's seven doors:** 5 to 7 passes each.
+- **The other suites where people walk:** all 20 pass: `constable`, `crime2`, `crime3`, `penance`, `gateguards`, `guardplay`, `chasesight`, `watch`, `rowebeats`, `streetcone`, `keeperwalk`, `wanderface`, `feastsquare`, `theft` (2 of 2), `burglary`, `witnessrange`, `tpguard`, `targetof`, `shopsight` and `towngate`.
+- `parsecheck.py` is clean. Build tag s719.
+### Needs eyes
+- **A guard or townsperson rounding a turned house at night:** they should keep to the wall's line, and not shuffle or turn back.
