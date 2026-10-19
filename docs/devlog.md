@@ -28126,3 +28126,54 @@ Wedged, npcStep gave up after 40 frames. The beat then asked for every cell of t
 - `parsecheck.py` is clean. Build tag s719.
 ### Needs eyes
 - **A guard or townsperson rounding a turned house at night:** they should keep to the wall's line, and not shuffle or turn back.
+
+## v80 — Session 1167 — Aurenne's tavern, copied into the game's kit (card F9, Michael's A on #322)
+The third of the three inns (OG-108) follows the Gatelander taproom (Session 1157) and the Mark's alehall (Session 1159) into `js/38-kit.js`. Michael's A on #322 (14 Oct) chose the Roman house with a vine on a pergola, as drawn in Session 897.
+
+**The tavern stands in Aurenne's own house, so the house comes first.** The kit had nothing of Aurenne's, and the room is built inside the street's shell. This session copies, as they stand:
+- from `pieces.js`: `aurenneHouse` (Session 816), the shared `aurKit`, the materials `mats()` and the colours `AUR`;
+- the five surfaces Aurenne adds (pantile, glazed tile, a dome's glaze, limestone paving and the awning's canvas), as painters on first use like the kit's others;
+- from `rooms.js`: `homeMats` and `aurenneTavern`.
+
+**Four names change:**
+- `mats()` becomes `aurMats()` (pieces.js's) or `roomMats()` (rooms.js's);
+- `TEXTURED` and `UVS` become `AUR_TEXTURED` and `AUR_UVS`;
+- `aurenneTextures`' eager `TEX` goes;
+- the rug's canvas carries no colour space (`05-compat.js` runs 0.170 linear).
+
+**What it is:** `PKIT.au.tavern(o, r)` is 9.6 by 8 m under pantile, with an arcade of four arches and a loggia. Inside are:
+- a glazed dado and cedar beams;
+- a counter faced in zellige, with amphorae and jars on shelves behind;
+- a rack of amphorae, and a cooking bench with two braziers and copper pots;
+- two tables by the side windows and two in the loggia.
+
+Out front, a terrace 4 m deep to a parapet on the quay wall, with three round tables under a pergola of vines and grapes. `PKIT.au.house(o, r)` is every Aurennais house the street will need: Roman or flat, one storey or two, with a dome, lattices, a pergola or an outside stair.
+
+**The old look:** nothing builds any of it, and nothing is painted until something is asked for.
+
+### Verified (headless Chromium)
+- **`kittavern` (new): 6 of 6 pass.**
+  - **The prototype's numbers, exactly:** three keys of the tavern build to the triangles, draws and vertex hash the prototype gives in the test Chromium (read this session from `rooms.html`'s own modules):
+
+    | Key | Triangles | Draws |
+    |---|---|---|
+    | tavern | 10,508 | 18 |
+    | tavern:0 | 10,928 | 18 |
+    | tavern:1 | 10,600 | 18 |
+
+  - **The shell** (the Roman house with its arcade): 3,476 triangles in 8 draws, the same vertices in every key.
+  - **Three houses match too,** to the vertex and the roof's top:
+
+    | House | Triangles | Draws | Roof top |
+    |---|---|---|---|
+    | Roman, two storeys, arcaded | 5,408 | 12 | 7.786 m |
+    | Flat, with a blue dome, lattices and a pergola | 7,966 | 14 | 9.281 m |
+    | Flat, one storey, with an outside stair | 4,992 | 11 | 4.445 m |
+
+  - **Each is the same twice,** 9.6 by 8 m, with 7 tables, 2 lamps and 34 pieces kept for the checks.
+  - **The old look** has `PKIT.au.tavern` and has painted nothing. There are no page errors on either look.
+- **`kitalehall`, `kittaproom`, `kitinnroom` and `kitkeep` still pass.**
+- `parsecheck.py` is clean. Build tag s720.
+### Needs eyes
+- **Nothing to see in the game yet.**
+- **Owed, the hanging:** Aurenne's towns on `?look=new` still have the old builder's houses outside (F6 in the game is the Gatelands' so far). Hanging the tavern in an inn now would put a Roman room with a sea terrace behind any front. It waits on Aurenne's lots, and `PKIT.au.house` is the first half of those.
