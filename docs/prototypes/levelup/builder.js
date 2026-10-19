@@ -11,7 +11,7 @@ import { Q, STILL, W, H, STATS, makeRenderer, makeComposer } from './common.js';
 import { makePerson, toSaved, rollGenome, HAIR_STYLES, BODY_SLIDERS, GARMENTS, PEOPLES } from './people.js';
 import { PLANS, SLIDERS as CSLIDERS, genome as cGenome, build as cBuild, pose as cPose, step as cStep, speedOf } from './creatures.js';
 import { readGenome, saveGenome, needPack } from './kit.js';
-const GLABEL = { chair: 'wheeled chair', eyepatch: 'eyepatch', staff: 'walking staff', sash: 'shoulder sash', sashBorder: 'sash border', wrap: 'head-wrap', wrapBorder: 'head-wrap edge', earrings: 'hoop earrings', necklace: 'coin necklace', beltCoins: 'belt coins', sashBelt: 'sash belt', skirtColor: 'skirt colour', cord: 'robe cord', lace: 'bodice lacing', cuffBand: 'woven cuff band', mail: 'mail hauberk', helm: 'kettle helm', shield: 'round shield', shieldPaint: 'shield quarters', shieldRim: 'shield rim', spear: 'spear shaft', crossbow: 'crossbow tiller', cloakFur: 'fur collar', cloakHem: 'embroidered hem', tabardTrim: 'tabard trim', scarfPrint: 'headscarf print', basket: 'willow basket', basketCloth: 'cloth over the basket', amulet: 'stone amulet', charms: 'belt charms', dots: 'dot embroidery', shoulderWrap: 'shoulder wrap', tartan: 'tartan (dark stripe)', tartanLine: 'tartan overcheck' };
+const GLABEL = { chair: 'wheeled chair', eyepatch: 'eyepatch', staff: 'walking staff', sash: 'shoulder sash', sashBorder: 'sash border', wrap: 'head-wrap', wrapBorder: 'head-wrap edge', earrings: 'hoop earrings', necklace: 'coin necklace', beltCoins: 'belt coins', sashBelt: 'sash belt', skirtColor: 'skirt colour', cord: 'robe cord', lace: 'bodice lacing', cuffBand: 'woven cuff band', mail: 'mail hauberk', helm: 'kettle helm', shield: 'round shield', shieldPaint: 'shield quarters', shieldRim: 'shield rim', spear: 'spear shaft', crossbow: 'crossbow tiller', cloakFur: 'fur collar', cloakHem: 'embroidered hem', tabardTrim: 'tabard trim', scarfPrint: 'headscarf print', basket: 'willow basket', basketCloth: 'cloth over the basket', amulet: 'stone amulet', charms: 'belt charms', dots: 'dot embroidery', shoulderWrap: 'shoulder wrap', tartan: 'tartan (dark stripe)', tartanLine: 'tartan overcheck', coat: 'winter coat', coatFur: 'coat fur trim' };
 
 if (STILL) document.body.classList.add('still');
 const R = makeRenderer(.95), scene = new THREE.Scene(); scene.background = new THREE.Color(.035, .04, .05);
@@ -181,6 +181,7 @@ function buildPanel() {
     panel.append(el('div', { className: 'bar' }, hd, el('label', {}, bib, ' bib'), el('label', {}, lea, ' leather apron'), el('label', {}, cp, ' cape')));
     inputs.cloakFlags = () => { hd.value = D().hood || 'none'; bib.checked = !!D().bib; lea.checked = !!D().apronLeather; cp.checked = !!D().cape; }; }
   slider('cloak length', () => D().cloakLen ?? .8, v => D().cloakLen = v, 0, 1, 'cloakLen');
+  slider('coat length', () => D().coatLen ?? .75, v => D().coatLen = v, 0, 1, 'coatLen');
   genomePanel(['full', 'head', 'face', 'side', 'back']);
 }
 // a creature's panel: its seed and Roll (the locked sliders kept), its gaits, the kit's six sliders, and its colour shift

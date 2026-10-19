@@ -24850,3 +24850,50 @@ Backlog L1's wardrobe matrix names "tartans a new note" for the Gatelands (OG-11
 - **The sett is one sett.** Its widths and its three colours are a guess at a country tartan, not a researched one. Each family or district could have its own; that is part of the question.
 - **Folds pinch the stripes.** The vertical stripes follow the cloak's columns, so they converge into the deep fold at the back's middle. A woven cloth would do much the same; a pressed one would not.
 - **Owed:** Michael's answer on where it is worn (DECISION #445), then the roll, and the game after F4.
+
+## v80 — Session 1147 — The Gatelanders' winter coat (L1, prototype only)
+Backlog L1's wardrobe matrix has five columns for each island, and OG-109's Gatelands winter column names "fur-lined winter coats". The kit had no coat. The sheet draws one and the canon says nothing against it, so this asks nothing, as with the waistcoat (Session 1143). It touches only `people.js`, `builder.js` (two labels and a slider) and `builder.check.mjs`. FREEZE #441 is still open, so the run kept to the prototypes.
+
+- **The shells.**
+  - **Body and sleeves:** the tunic's own shell pushed 1.4 cm further out, to the wrist (rest |x| .405) and down under the belt to rest .1.
+  - **Skirt:** off the skirt shell, from under the belt to the hem. It stands 1.6 cm over a skirt's push (2.4 at the waist), flaring to 2.5 cm more at the hem, so it hangs over a man's short tunic skirt, a woman's long skirt and the trousers alike.
+  - The wool is drawn both sides, its inside darker.
+- **The length.** `coatLen` sets it: 0.75 (the default) is mid-calf, rest y -.6; 0 is a jacket's skirt over the hips; 1 is the ankle. The builder has a slider for it.
+- **The front.** The right front laps over the left. Its edge, 3.1 cm to the wearer's right of the middle, is drawn as the shadow it casts, as the waistcoat's is (`COAT_EDGE`).
+- **The belt** rides 8 mm over the coat. A belt is given if the genome has none.
+- **The fur** (`D.coatFur`) lies at the collar (5 cm round the neck), down the lapping edge (3.5 cm wide, broken by the belt), round the cuffs (3.7 cm) and the hem (4.5 cm).
+  - It is seven shells 3.5 mm apart, layer 0 solid, with the mantle's strand noise.
+  - `shellMat` gains a `cut` and a `hole`, so the shells are cut as cloth is. Each shell is built only from the triangles of the regions it covers, so the fur costs 7.5 to 8k triangles for both pieces.
+  - A coat with no fur is plain.
+- **It is the outer layer.** It takes the place of the cloak, the mantle, the apron and bib, the sash, the shoulder wrap and the sash belt, and covers the waistcoat (and its buttons), the bodice and the cuffs, which are not built. It gives way to a robe, mail or scales, a tabard and the wheeled chair (`coatOn`).
+- **The hands** are lifted clear of the coat's skirt as they are of any skirt. A coat's skirt may lift them two steps further (to 0.36), since a woman's over a long skirt needed 0.33.
+- **The roll:** none. Who wears a winter coat, and when, is the season's to say, and the season is the game's. The genome only carries it.
+
+### Verified (headless Chromium)
+- **Three new coat checks** (`coatStats` in `people.js`, read in `builder.check.mjs`): a man in brown wool with a fox-brown fur to mid-calf, a woman in moss with a dark fur over a long skirt (`coatLen` .6), and a man in a plain blue coat cut short (`coatLen` .2). On each:
+  - No arm point is out of its sleeves (0 of 2,052).
+  - The coat stands 12.8 to 12.9 mm out of the tunic at its nearest over the closed body and the sleeves (880 points, none under 6 mm).
+  - No leg, trousers or skirt point is out of its skirt (0 of 677, 574 and 631).
+  - No hand point is in it (lifted 0.18, 0.33 and 0.24).
+  - The belt stands 7.2 to 7.6 mm over it.
+  - The fur is 14 shells (7,476 and 7,959 triangles), none on the plain coat.
+  - The genome saves and loads back with `coat`, `coatFur` and `coatLen` where given.
+- **A fourth check:** the coat gives way to a robe, mail, a tabard and the chair. Asked for over a cloak, a mantle, an apron, a waistcoat and cuffs, it is worn and none of them is built.
+- **A fifth:** no rolled genome wears one (0 of 160).
+- **`builder.check.mjs`:** 493 of 493 pass, 488 before and the five above.
+- **The first runs** failed three of the five on their own measures, not the coat:
+  - Two men showed 2 and 6 tunic points "out" of the coat's skirt. They lay under the tunic's own cut (rest .12 over a skirt), which is never drawn. The test now reads only what is drawn of the tunic.
+  - The woman's hands needed 0.33 of lift, one step past the cap; hence the coat's two steps.
+  - A belt threshold asked for more than 50 points where there are exactly 50.
+- **Two first cuts were redrawn from the pictures:**
+  - The body ending at rest .12 showed 1.5 cm of the tunic under the belt at the back.
+  - Ending it at -.02 bulged the coat's body out over its own skirt at the seat. It now ends at .1, and the skirt's top stands 8 mm further out.
+- **Pictures:**
+  - `builder-coat-full.jpg`, `-close.jpg` (the collar), `-waist.jpg` (the edge under the belt), `-side.jpg` and `-back.jpg`: the brown coat.
+  - `builder-coat-woman.jpg`: the moss coat over a long skirt.
+  - `builder-coat-plain.jpg`: the short plain coat.
+### Needs eyes
+- **The sleeves** are the tunic's cut wider, so they flare a little at the cuff, and the fur cuff stands off the wrist like a bell. A winter coat's sleeve might close on the wrist instead.
+- **The fur's pile** reads as a mottled band close up, more felt than fox. It is the mantle's noise at a shorter length.
+- **The front is closed to the hem**, with no vent or opening below the belt, so a walking leg pushes the whole skirt (the long skirt does the same).
+- **Owed:** the Mark's fur-lined hooded coat (OG-109), who wears a coat in which season (the game's, with `WX`), and the game after F4.
