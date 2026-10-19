@@ -61,6 +61,13 @@ Combat B's move sets (`docs/design/combat.md`) give every family a third move. S
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 ## Answered
+### Ending the merge bottleneck: how work gets tested and landed (local session, Claude with Michael in chat, 19 Oct 2026)
+Work piles up because of five things. (1) Every PR runs the whole game test suite, 16 to 20 jobs of up to an hour each, and GitHub runs only about 20 jobs at once. (2) Every branch edits the same few lines (the build number, the devlog, the backlog), so each merge makes every other PR clash and re-test. (3) An approval is pinned to one commit, and builders keep adding to the branch, so approvals go stale. (4) Each lane keeps one standing PR that collects 100+ commits before it lands. (5) One producer run does all the merging.
+- **A. Fix all five** *(recommended)*. 1: a PR runs only the tests its changes touch plus a short smoke set; the full suite runs on main after each merge, and a break is reverted within the hour. 2: the build number is stamped automatically on main, and each session writes its devlog and backlog note in its own file. 3: Michael approves the card, not one commit; later green commits that only add prototypes, docs or main merges go in without a new tap. 4: builders open a fresh small PR each run. 5: a workflow merges an approved PR the minute its tests pass. Tests-only, docs and prototype PRs merge on green without him; he approves what changes the game. One deep-work card for 1 to 3, prompt changes for 4 and 5.
+- **B. The mechanical fixes only (1 and 2).**
+- **C. Lighter tests only (1).**
+
+Michael: **Fix all five** (2026-10-19, on the control room). The deep-work card for 1 to 3 and the prompt changes for 4 and 5 are Claude (local)'s to write; PR #454 (docs-only PRs skip the game tests) is the first piece.
 ### The Gatelanders' tartan: a note on cloaks, wider, by family, or none? (bodies builder, Session 1146) — DECISION #445
 **L1's wardrobe matrix: the Gatelanders' tartan (bodies builder, Session 1146).** OG-111 names "tartans" among the Gatelands' fabrics, and the catalogue calls them "a new note". Nothing in the canon speaks for or against them. The builder can now weave one into a cloak's cloth.
 
