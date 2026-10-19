@@ -603,7 +603,7 @@
     }
     for(const sp in trees){
       const dead=sp==='dead';
-      place(trees[sp],sp,(t,c)=>{
+      const tint=(t,c)=>{
         // Whole-tree tint: hue drift + brightness, warmer in wastes/coast.
         // S192 — a wider spread of greens tree to tree, and the new species' own
         let hue=dead?.06:(sp==='conifer'||sp==='snowpine'?.30:.24)+(t.t-.5)*.09,sat=dead?.15:.3+t.t*.3,lig=.47+(t.t-.5)*.18;
@@ -617,7 +617,8 @@
         // Vertex colour already carries the base; the tint is a multiplier
         // around white, so normalise toward 1.
         c.r=.72+c.r*.5;c.g=.72+c.g*.5;c.b=.72+c.b*.5;
-      },true,sp==='scrub'?0:({oak:.85,oakAutumn:.85,birch:.35,birchAutumn:.35,spruce:.45,pine:.45}[sp]||.5));
+      },solR=sp==='scrub'?0:({oak:.85,oakAutumn:.85,birch:.35,birchAutumn:.35,spruce:.45,pine:.45}[sp]||.5);
+      if(!landTrees(group,trees[sp],sp,tint,solR,sol))place(trees[sp],sp,tint,true,solR); // S1177 (F3): the new look draws the leafy kinds and conifers from leaf cards, at the same places
     }
     {const by={};rocks.forEach(r=>{r.sink=0;(by[r.proto]||(by[r.proto]=[])).push(r);});for(const k in by)place(by[k],k,(t,c)=>{c.setRGB(.9+t.ny*.1,.9+t.ny*.08,.9);},true,.55);} // S264 — one instanced mesh per kind of rock in the chunk
     place(bushes,'bush',(t,c)=>{c.setRGB(.92+(t.s-1)*.2,1,.9);},false,0);

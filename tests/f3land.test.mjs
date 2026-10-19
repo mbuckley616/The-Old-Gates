@@ -1,4 +1,4 @@
-// Card F3, the land in the new look (Sessions 1175–1176, js/89-world-land.js): booted on three.js 0.170, the world's chunks are
+// Card F3, the land in the new look (Sessions 1175–1177, js/89-world-land.js): booted on three.js 0.170, the world's chunks are
 // shaded by the land's own material, which paints fields, hedgerows, rock and the woods from afar over groundColor's vertex
 // colour; every chunk carries a per-vertex mask that keeps the fields off roads and out of site stamps; the sky is a gradient
 // dome that follows the clock; the world's frame is tone-mapped (ACES) and graded, and rooms are not. The console stays clean
@@ -66,6 +66,31 @@ await setQ(0); const lo = await grass();
 await setQ(1); const back = await grass();
 check('the three levels change what the land spends: grass, the shadow map and the clouds', lo.blades === 0 && lo.puffs === 0 && lo.shadow === 1024 && mid.shadow === 2048 && hi.shadow === 4096 && hi.blades > mid.blades * 1.5 && hi.puffs > mid.puffs, { lo, mid, hi });
 check('back at the middle level, the same grass grows again (a chunk\'s blades come from a stream seeded by the chunk)', back.blades === mid.blades && back.flowers === mid.flowers, { mid: mid.blades, back: back.blades });
+
+// Session 1177: trees from leaf cards. The scatter decides every tree as before and the new look only draws it: build each loaded
+// chunk's scatter again with the land off (the old look's meshes) and compare, species by species, every tree's matrix and colour,
+// and the chunk's colliders and tree points. The leafy kinds and the conifers are the land's (one instanced mesh a species, a
+// draw call each, as before); dead trees, scrub and mushrooms keep their old shapes.
+const trees = await page.evaluate(() => {
+  const out = { chunks: 0, land: 0, landMeshes: 0, kinds: {}, moved: 0, tint: 0, sol: 0, pts: 0, oldKinds: 0 };
+  const M = new THREE.Matrix4(), M2 = new THREE.Matrix4(), c1 = new THREE.Color(), c2 = new THREE.Color();
+  for (const ch of chunks.values()) { if (out.chunks >= 25) break; out.chunks++;
+    const g = new THREE.Group(), sol = []; LAND.on = false; try { scatterChunk(ch.cx, ch.cz, g, sol); } finally { LAND.on = true; }
+    const pts = _treePts.slice();
+    const mine = {}; ch.group.children.forEach(o => { if (o.isInstancedMesh && o.userData.scatter) mine[o.userData.scatter] = o; });
+    for (const o of g.children) { if (!o.isInstancedMesh || !o.userData.scatter) continue; const sp = o.userData.scatter, m = mine[sp];
+      if (!LAND_TREE_KIT[sp]) continue; out.kinds[sp] = (out.kinds[sp] || 0) + o.count;
+      if (!m || !m.userData.landTree || m.count !== o.count) { out.moved += o.count; continue; } out.landMeshes++; out.land += m.count;
+      for (let i = 0; i < o.count; i++) { o.getMatrixAt(i, M); m.getMatrixAt(i, M2); for (let k = 0; k < 16; k++) if (Math.abs(M.elements[k] - M2.elements[k]) > 1e-4) { out.moved++; break; }
+        o.getColorAt(i, c1); m.getColorAt(i, c2); if (sp !== 'snowpine' && (Math.abs(c1.r - c2.r) + Math.abs(c1.g - c2.g) + Math.abs(c1.b - c2.b)) > 1e-4) out.tint++; } }
+    if (Object.values(mine).some(o => !o.userData.landTree && LAND_TREE_KIT[o.userData.scatter])) out.oldKinds++;
+    // colliders: every one the scatter made for this chunk is in the chunk's own list (later stamps may have taken some away)
+    for (const s of sol) if (!ch.sol.some(t => Math.abs(t.cx - s.cx) < 1e-6 && Math.abs(t.cz - s.cz) < 1e-6 && Math.abs(t.rx - s.rx) < 1e-6)) out.sol++;
+    for (let i = 0; i < ch.treePts.length; i += 2) { let hit = false; for (let k = 0; k < pts.length; k += 2) if (pts[k] === ch.treePts[i] && pts[k + 1] === ch.treePts[i + 1]) { hit = true; break; } if (!hit) out.pts++; }
+    g.traverse(o => { if (o.isInstancedMesh) { o.geometry.dispose(); o.dispose(); } }); }
+  return out; });
+check('every leafy tree and conifer stands where the old look puts it, at its size, turn and tint, drawn from leaf cards', trees.land > 50 && trees.moved === 0 && trees.tint === 0 && trees.oldKinds === 0, trees);
+check('the trees keep their colliders and tree points', trees.sol === 0 && trees.pts === 0, trees);
 
 // the post: the world's frame is tone-mapped and graded, and the renderer is left as it was after it
 const post = await page.evaluate(() => { forceTime(12); for (let i = 0; i < 120; i++) WORLD.tick(1 / 60, performance.now());
