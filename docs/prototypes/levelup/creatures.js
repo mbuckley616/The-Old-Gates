@@ -57,33 +57,39 @@ P.neck = (B, o) => {
 };
 // the head: a skull, a muzzle and a jaw; eyes, ears, horns and antlers are bits on it
 P.head = (B, o) => {
-  const S = B.g.sliders.head, len = o.len * S, r = o.r * S, base = (B.neckEnd || B.front).clone(), parent = B.neckBone || B.spineNames[B.spineNames.length - 1];
+  // `name` and `off` (Session 1176, the failing golem's second head): a further head is its own bone, set off from the first's place
+  const hn = o.name || 'head', S = B.g.sliders.head, len = o.len * S, r = o.r * S, base = (B.neckEnd || B.front).clone().add(V(...(o.off || [0, 0, 0]))), parent = B.neckBone || B.spineNames[B.spineNames.length - 1];
   const pitch = (o.pitch || 0) * DEG, dir = V(0, -Math.sin(pitch), Math.cos(pitch)), up = V(0, Math.cos(pitch), Math.sin(pitch)), s = o.s || [1, 1, 1];
-  B.bone('head', parent, base);
-  B.meat('head', base, base.clone().addScaledVector(dir, len * .42), r, r * .92, { s, tone: o.tone });
+  if (o.yaw) { dir.applyAxisAngle(UP, o.yaw * DEG); up.applyAxisAngle(UP, o.yaw * DEG); }
+  B.bone(hn, parent, base);
+  B.meat(hn, base, base.clone().addScaledVector(dir, len * .42), r, r * .92, { s, tone: o.tone });
   const m = o.muzzle; if (m) { const a = base.clone().addScaledVector(dir, len * .35), b = base.clone().addScaledVector(dir, len).addScaledVector(up, -(m.drop || 0) * len);
-    B.meat('head', a, b, m.r * S, m.r * S * (m.taper ?? .62), { s: m.s || s, tone: o.tone });
-    if (m.nose) B.bit('head', ball(m.r * S * .42, B.tone('dark'), b.clone().addScaledVector(dir, m.r * S * .35).addScaledVector(up, m.r * S * .25), .35)); }
-  if (o.jaw) { const j = base.clone().addScaledVector(dir, len * .3).addScaledVector(up, -r * .5); B.bone('jaw', 'head', j);
+    B.meat(hn, a, b, m.r * S, m.r * S * (m.taper ?? .62), { s: m.s || s, tone: o.tone });
+    if (m.nose) B.bit(hn, ball(m.r * S * .42, B.tone('dark'), b.clone().addScaledVector(dir, m.r * S * .35).addScaledVector(up, m.r * S * .25), .35)); }
+  if (o.jaw) { const j = base.clone().addScaledVector(dir, len * .3).addScaledVector(up, -r * .5); B.bone('jaw', hn, j);
     B.meat('jaw', j, base.clone().addScaledVector(dir, len * o.jaw.len).addScaledVector(up, -r * o.jaw.drop), o.jaw.r * S, o.jaw.r * S * .55, { tone: o.tone }); }
-  B.headFrame = { base, dir, up, len, r };
+  if (hn === 'head') B.headFrame = { base, dir, up, len, r };
   const at = (f, u, x) => base.clone().addScaledVector(dir, len * f).addScaledVector(up, r * u).add(V(r * x, 0, 0));
   if (o.skull) skullBits(B, o, S * (o.skull.k || 1), base, dir, up);
-  else for (const e of o.eyes || []) for (const sd of [1, -1]) B.bit('head', eye(e.r * S, e.color, at(e.f, e.up, e.out * sd)));
-  if (o.ears) for (const sd of [1, -1]) B.bit('head', ear(o.ears, S, B.tone(o.ears.tone || o.tone || 'coat'), at(o.ears.f, o.ears.up, o.ears.out * sd), sd));
-  if (o.horns) for (const sd of [1, -1]) B.bit('head', horn(o.horns, S, B.tone(o.horns.tone || 'horn'), at(o.horns.f, o.horns.up, o.horns.out * sd), sd));
-  if (o.antlers) for (const sd of [1, -1]) { const m = B.bit('head', antler(o.antlers, S, B.tone('horn'), at(o.antlers.f, o.antlers.up, o.antlers.out * sd), sd, rng(B.g.seed + (sd > 0 ? 1 : 2))));
+  else for (const e of o.eyes || []) for (const sd of [1, -1]) { const m = B.bit(hn, eye(e.r * S, e.color, at(e.f, e.up, e.out * sd))); if (e.slit) m.scale.set(e.slit, .4, .5); if (e.glow) m.material.emissive.copy(m.material.color).multiplyScalar(e.glow); } // a slit, and a glow of its own (Session 1177)
+  if (o.ears) for (const sd of [1, -1]) B.bit(hn, ear(o.ears, S, B.tone(o.ears.tone || o.tone || 'coat'), at(o.ears.f, o.ears.up, o.ears.out * sd), sd));
+  if (o.horns) for (const sd of [1, -1]) B.bit(hn, horn(o.horns, S, B.tone(o.horns.tone || 'horn'), at(o.horns.f, o.horns.up, o.horns.out * sd), sd));
+  if (o.antlers) for (const sd of [1, -1]) { const m = B.bit(hn, antler(o.antlers, S, B.tone('horn'), at(o.antlers.f, o.antlers.up, o.antlers.out * sd), sd, rng(B.g.seed + (sd > 0 ? 1 : 2))));
     if (o.antlers.mist) (B.mistTips ||= []).push(...m.userData.tips); }
   if (o.antlers?.mist) B.mist = { ...o.antlers.mist, tips: B.mistTips, color: B.tone(o.antlers.mist.tone || 'mist') };
-  if (o.crystals) for (const sd of [1, -1]) B.bit('head', crystals(o.crystals, S, B.tone('horn'), at(o.crystals.f, o.crystals.up, o.crystals.out * sd), sd, rng(B.g.seed + (sd > 0 ? 3 : 4))));
-  if (o.beak) B.bit('head', beak(o.beak, S, B.tone('horn'), at(1, o.beak.up || 0, 0), dir));
+  if (o.crystals) for (const sd of [1, -1]) B.bit(hn, crystals(o.crystals, S, B.tone('horn'), at(o.crystals.f, o.crystals.up, o.crystals.out * sd), sd, rng(B.g.seed + (sd > 0 ? 3 : 4))));
+  if (o.beak) B.bit(hn, beak(o.beak, S, B.tone('horn'), at(1, o.beak.up || 0, 0), dir));
   // a throat sac (the Bellthroat's): a rigid ball under the jaw that the pose fills and empties
-  if (o.sac) { const m = new THREE.Mesh(new THREE.SphereGeometry(o.sac.r * S, 24, 16), new THREE.MeshPhysicalMaterial({ color: B.tone('sac'), roughness: .25, clearcoat: .6, transmission: 0 })); m.position.copy(at(o.sac.f, -o.sac.drop, 0)); m.scale.set(1.15, .8, 1); B.bit('head', m); B.sac = m; }
-  if (o.stalks) for (const sd of [1, -1]) { const p = at(o.stalks.f, o.stalks.up, o.stalks.out * sd); B.bit('head', claw(o.stalks.r * .5, o.stalks.len, B.tone('dark'), p.clone().addScaledVector(up, -o.stalks.len), up.clone()));
-    B.bit('head', eye(o.stalks.r, o.stalks.color, p)); }
+  if (o.sac) { const m = new THREE.Mesh(new THREE.SphereGeometry(o.sac.r * S, 24, 16), new THREE.MeshPhysicalMaterial({ color: B.tone('sac'), roughness: .25, clearcoat: .6, transmission: 0 })); m.position.copy(at(o.sac.f, -o.sac.drop, 0)); m.scale.set(1.15, .8, 1); B.bit(hn, m); B.sac = m; }
+  if (o.stalks) for (const sd of [1, -1]) { const p = at(o.stalks.f, o.stalks.up, o.stalks.out * sd); B.bit(hn, claw(o.stalks.r * .5, o.stalks.len, B.tone('dark'), p.clone().addScaledVector(up, -o.stalks.len), up.clone()));
+    B.bit(hn, eye(o.stalks.r, o.stalks.color, p)); }
   // a brow (Session 927): a ridge of flesh across the skull over the eyes, grown into the head as one surface (the troll's)
-  if (o.brow) B.meat('head', at(o.brow.f, o.brow.up, -o.brow.out), at(o.brow.f, o.brow.up, o.brow.out), o.brow.r * S, o.brow.r * S, { tone: o.tone });
-  if (o.fangs) for (const sd of [1, -1]) B.bit('head', claw(o.fangs.r * S, o.fangs.len * S, B.tone('dark'), at(o.fangs.f, o.fangs.up, o.fangs.out * sd), V(0, -1, .4).normalize()));
+  // a hood (Session 1177, the wraith's: no head under it): the head's flesh is the cowl, and in its front a darkness, an unlit black hollow:
+  // the back half of a sphere, its rim at the opening, drawn from inside only and casting no shadow, so a see-through cowl does not show it
+  // from behind (its shadow on the cowl's inside read there as a second face)
+  if (o.hood) { const m = new THREE.Mesh(new THREE.SphereGeometry(o.hood.r * S, 18, 12, Math.PI, Math.PI), new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.BackSide })); m.scale.set(1, o.hood.h ?? 1.2, .55); m.position.copy(at(o.hood.f, o.hood.up || 0, 0)); m.quaternion.setFromUnitVectors(V(0, 0, 1), dir); m.name = 'hood'; m.userData.noShadow = 1; B.bit(hn, m); }
+  if (o.brow) B.meat(hn, at(o.brow.f, o.brow.up, -o.brow.out), at(o.brow.f, o.brow.up, o.brow.out), o.brow.r * S, o.brow.r * S, { tone: o.tone });
+  if (o.fangs) for (const sd of [1, -1]) B.bit(hn, claw(o.fangs.r * S, o.fangs.len * S, B.tone('dark'), at(o.fangs.f, o.fangs.up, o.fangs.out * sd), V(0, -1, .4).normalize()));
 };
 // inclusions (Session 928): what a clear body has swallowed, seen through it (the slime's bones and rubble). Each is a rigid
 // bit on the nearest spine bone, placed from the seed inside the body (never out of it): `rubble` a flat-faced stone,
@@ -106,6 +112,19 @@ P.inclusions = (B, o) => { const r = rng(B.g.seed + 21);
 P.holes = (B, o) => { B.holes = B.holes || [];
   for (const h of o.list) { const sp = B.spineAt(h.at), c = sp.p.clone().add(V(0, h.up * sp.r * B.spineS[1], 0)), w = sp.r * B.spineS[0] * 2.2, tl = (h.tilt || 0) * DEG, d = V(Math.cos(tl), Math.sin(tl), Math.sin((h.yaw || 0) * DEG)).normalize();
     B.holes.push({ a: c.clone().addScaledVector(d, -w), b: c.clone().addScaledVector(d, w), ra: h.r, rb: h.r, s: [1, 1, 1], sm: 1, c, d, up: h.up, bone: sp.bone }); } };
+// crests (Session 1174, OG-073's failing slime: "multiplies into a cresting wave"): a jelly body's second waves, each a chain of
+// flesh rising from its back and rolling forward as it rises, grown into the body as one (each its own group, so it joins smoothly).
+// `at` along the spine, `out` its root's offset to the side in the spine's radius there, `len` its length, `n` its bones, `lean` and
+// `curl` the degrees from upright at its root and added a bone (forward), `splay` degrees out to the side, `r` the radii root to tip, `s` its section's scale
+// (wider than deep, as a wave's crest is).
+// The crawl rolls each on its own beat (`phase`)
+P.crests = (B, o) => { B.crests = B.crests || [];
+  for (const c of o.list) { const sp = B.spineAt(c.at), n = c.n || 4, sd = Math.sign(c.out || 0) || 1, sx = Math.sin((c.splay || 0) * DEG) * sd;
+    const pts = [sp.p.clone().add(V((c.out || 0) * sp.r * B.spineS[0], sp.r * B.spineS[1] * (c.sink ?? .5), 0))];
+    for (let j = 0; j < n; j++) { const a = ((c.lean || 0) + (c.curl || 0) * j) * DEG, d = V(sx, Math.cos(a), Math.sin(a)).normalize(); pts.push(pts[j].clone().addScaledVector(d, c.len / n)); }
+    const tag = 'crest' + B.crests.length + '_', names = B.chain(tag, sp.bone, pts);
+    for (let j = 0; j < n; j++) B.meat(names[j], pts[j], pts[j + 1], along(c.r, j / n), along(c.r, (j + 1) / n), { group: tag, tone: c.tone, s: c.s });
+    B.crests.push({ names, phase: c.phase || 0, tip: pts[n] }); } };
 // egg sacs (Session 929, OG-041's giant spider): a clutch of silk balls stuck to the underside of the tail (a spider's abdomen) toward
 // its tip, each a lumpy wrapped sphere, half sunk into the hide, rigid on the tail bone it hangs from. `at` is the stretch of the tail
 // they cover, `drop` how far down its girth they sit (1 is the skin's underside)
@@ -183,7 +202,7 @@ P.arms = (B, o) => {
     const elbow = root.clone().addScaledVector(dir, len * .5), d2 = o.dir2 ? V(side * o.dir2[0], o.dir2[1], o.dir2[2]).normalize() : dir.clone().applyAxisAngle(V(1, 0, 0), -(o.bend || 30) * DEG).normalize(), wrist = elbow.clone().addScaledVector(d2, len * .42), hand = wrist.clone().addScaledVector(d2, len * .14);
     const tag = 'arm' + (B.arms.length / 2 | 0) + (side > 0 ? 'L' : 'R'), names = B.chain(tag + '_', sp.bone, [root, elbow, wrist, hand]);
     const r = o.r; B.meat(names[0], root, elbow, r[0], r[1], { group: tag, tone: o.tone, s: o.s }); B.meat(names[1], elbow, wrist, r[1], r[2], { group: tag, tone: o.tone, s: o.s }); B.meat(names[2], wrist, hand, r[2], r[2] * .7, { group: tag, tone: o.tone, s: o.s });
-    if (o.claws) for (let c = -1; c <= 1; c++) B.bit(names[3], claw(o.claws.r, o.claws.len, B.tone('dark'), hand.clone().add(V(c * o.claws.r * 2, 0, 0)), d2.clone().add(V(c * .2, 0, 0)).normalize()));
+    if (o.claws) for (let c = -1; c <= 1; c++) B.bit(names[3], claw(o.claws.r, o.claws.len, B.tone(o.claws.tone || 'dark'), hand.clone().add(V(c * o.claws.r * 2, 0, 0)), d2.clone().add(V(c * .2, 0, 0)).normalize()));
     // a pincer (Session 773): a swollen hand and two fingers, the fixed one longer
     if (o.chela) { const c = o.chela; B.meat(names[2], wrist.clone().addScaledVector(d2, -len * .04), hand, c.r, c.r * .8, { s: [1, .62, 1], tone: o.tone, group: tag + 'c' });
       const fx = d2.clone().add(V(-side * .25, 0, 0)).normalize(), mv = d2.clone().add(V(side * .3, .1, 0)).normalize();
@@ -358,7 +377,7 @@ P.rags = (B, o) => { const r = rng(B.g.seed + 43), h = B.spinePts[0].clone().add
     for (let i = 0; i < ROWS; i++) for (let j = 0; j < 2; j++) { const a = i * 3 + j, b = a + 1, c = a + 3, d = c + 1; tris.push(a, c, b, b, c, d); }
     B.sheets.push({ pts, tris, bones, blend, cols }); strips++; }
   const g = new THREE.TorusGeometry(1, .06, 6, 28); g.rotateX(Math.PI / 2); g.scale(o.rx * S + .006, 1, o.rz * S + .006); const cord = new THREE.Mesh(g, stdMat(B.tone(o.cord || 'leather'), { rough: .8 })); cord.position.copy(h); cord.scale.y = .15; B.bit(B.spineNames[0], cord);
-  B.rags = { strips, low: +low.toFixed(3) }; };
+  B.rags = { strips: (B.rags?.strips || 0) + strips, low: +Math.min(low, B.rags?.low ?? 1e9).toFixed(3) }; }; // a second ring adds to the first (Session 1178)
 
 // straps (Session 944, OG-041's goblin, "a scrap-leather harness"): a harness laid on the grown skin. Each strap is a path of
 // (t, angle) pairs round the spine (t along it, hip 0 to chest 1; angle 0 the belly, 90 its left), drawn as a ribbon `w` wide. It is
@@ -546,7 +565,19 @@ const FURRY = new Set(['coat', 'pale', 'mane']);
 // a bare body (Session 934, the skeleton): no grown skin. Each capsule of flesh is drawn as the bone it stands for: a limb's as a
 // shaft with a knob at each end, the spine's, neck's and tail's as a stack of vertebrae, the head's and jaw's whole, as the skull.
 // The pieces are skinned as a hide is (dressFlesh), so a bone's shape moves with its bone
+// dressed stone (Session 1175, the golem; the game's since S209): `blocks` draws every capsule of flesh as one hewn block along it, its
+// corners rounded by `bev`, as wide as the capsule (`d` its depth against its width), longer than it by `cap` of its radii so the
+// blocks meet at the joints, each turned a little off true (`jit` degrees, from the seed), cut into faces `seg` apart so a pattern
+// read at the vertices (moss, a failing gate's cracks) has somewhere to lie
+function stoneBlock(w, h, d, bev, seg) { const g = new THREE.BoxGeometry(w, h, d, Math.max(1, Math.round(w / seg)), Math.max(1, Math.round(h / seg)), Math.max(1, Math.round(d / seg))), q = g.attributes.position, hx = w / 2 - bev, hy = h / 2 - bev, hz = d / 2 - bev, p = V(), c = V();
+  for (let v = 0; v < q.count; v++) { p.fromBufferAttribute(q, v); c.set(Math.max(-hx, Math.min(hx, p.x)), Math.max(-hy, Math.min(hy, p.y)), Math.max(-hz, Math.min(hz, p.z))); p.sub(c); if (p.lengthSq() > 1e-12) p.setLength(bev); q.setXYZ(v, c.x + p.x, c.y + p.y, c.z + p.z); }
+  g.computeVertexNormals(); return g; }
 function bareGeo(B, o) { const gs = [];
+  if (o.blocks) { const k = o.blocks, r = rng(B.g.seed + 61);
+    for (const f of B.flesh) { f.sm = (f.s[0] + f.s[1] + f.s[2]) / 3; const d = f.b.clone().sub(f.a), L = d.length(); if (L < 1e-4) continue; const R = Math.max(f.ra, f.rb), w = 2 * R * f.s[0], h = L + R * (k.cap ?? .5), dp = 2 * R * (k.d ?? .85) * (f.s[1] ?? 1);
+      const g = stoneBlock(w, h, dp, Math.min(k.bev ?? .03, w * .3, dp * .3, h * .3), k.seg ?? .06), j = (k.jit ?? 0) * DEG;
+      g.rotateX((r() - .5) * 2 * j); g.rotateZ((r() - .5) * 2 * j); g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(UP, d.normalize())); const m = f.a.clone().lerp(f.b, .5); g.translate(m.x, m.y, m.z); gs.push(g); }
+    return { geo: mergeGeometries(gs.map(g => { g.deleteAttribute('uv'); return g; })), grid: [0, 0, 0] }; }
   for (const f of B.flesh) { f.sm = (f.s[0] + f.s[1] + f.s[2]) / 3; const d = f.b.clone().sub(f.a), L = d.length(); if (L < 1e-4) continue;
     const q = new THREE.Quaternion().setFromUnitVectors(UP, d.clone().normalize()), put = (g, at, sc) => { if (sc) g.scale(...sc); g.applyQuaternion(q); g.translate(at.x, at.y, at.z); gs.push(g); };
     const name = B.bones[f.bone].name;
@@ -704,7 +735,7 @@ export function build(g) {
     meshes.push(m); }
   for (const m of meshes) { rig.add(m); m.bind(skel); m.frustumCulled = false; m.receiveShadow = true; }
   if (B.mist) B.mistObj = B.bit('head', mistPoints(B.mist, g.seed));
-  for (const { bone, obj } of B.bits) { const b = B.by[bone]; obj.position.sub(b.p); obj.castShadow = !obj.isPoints; bones[b.i].add(obj); }
+  for (const { bone, obj } of B.bits) { const b = B.by[bone]; obj.position.sub(b.p); obj.castShadow = !obj.isPoints && !obj.userData.noShadow; bones[b.i].add(obj); }
   rig.scale.setScalar(g.sliders.size * (plan.scale || 1)); // a plan may stand at a multiple of its parts (the post hare is a hare at 5.5)
   const C = { g, plan, B, root, rig, bones, byName: Object.fromEntries(bones.map(b => [b.name, b])), skel, meshes, phase: 0, gait: plan.gaits[0], stats: { bones: bones.length, tris: geo.index.count / 3, verts: geo.attributes.position.count, grid: grid.join('x'), cell: +cell.toFixed(3), ms: Math.round(performance.now() - t0) } };
   for (const L of B.legs) { L.bones = L.names.map(n => C.byName[n]); L.restLocal = L.bones[0].position.clone(); L.rest = L.J.map(p => p.clone()); L.dirs = L.J.slice(1).map((p, k) => p.clone().sub(L.J[k]).normalize()); L.lens = L.J.slice(1).map((p, k) => p.distanceTo(L.J[k]));
@@ -752,6 +783,8 @@ function wingGeo(B, w, pal) {
 // number (speed against leg length, so a big body walks at a big body's pace), and the phase of each foot by its pair and side.
 export const GAITS = {
   stand: { duty: 1, fr: 0, phase: () => 0 },
+  // Session 1177: a body with no legs that floats (the wraith's), paced in body lengths; it bobs, and leans into its going
+  hover: { duty: 1, bl: .3, hover: 1, phase: () => 0 },
   // a wave from the back pair forward, left then right: a quadruped's four-beat walk, a hexapod's wave, a biped's walk
   walk: { duty: .68, fr: .22, lift: .14, bob: .02, sway: .05, phase: (p, s, n) => s * .5 + (n - 1 - p) * (.5 / n) },
   // alternating diagonals: a trot, an insect's tripods, a spider's tetrapods, a biped's run
@@ -857,6 +890,10 @@ export function pose(C, phase) {
       b.quaternion.setFromAxisAngle(axis, ang); } }
   if (G.bell || (B.radials.length && C.plan.bellBone)) { const beat = Math.pow(Math.max(0, Math.sin(tau * ph)), 2), s = 1 - (G.bell ? .14 : .04) * beat; sp.scale.set(s, 1 + (1 - s) * .7, s); sp.position.y += (G.bell ? .03 : .01) * C.len / C.S * Math.sin(tau * ph - 1); }
   else if (G.ripple && B.radials.length) sp.position.y += .015 * C.len / C.S * Math.sin(tau * ph * 2);
+  // a floating body (Session 1177) bobs, slowly at rest; going, it leans into the way it goes
+  if (C.plan.hover) { sp.position.y += C.plan.hover * Math.sin(tau * ph * (G.hover ? 1 : .35)); if (G.hover) sp.rotation.x += .08; }
+  // a jelly's crests (Session 1174) roll forward and back down their length, each on its own beat; slower and smaller at rest
+  for (const Cr of B.crests || []) { const np = Cr.names.length; for (let j = 0; j < np - 1; j++) C.byName[Cr.names[j]].rotation.set((G.bl ? .2 : .07) * Math.sin(tau * ph * (G.bl ? 1 : .4) + Cr.phase - j * .7) * (j ? 1 : .5), 0, 0); }
   // arms swing against the legs; wings rest half-folded, breathing, or beat
   // a flipper (Session 861) flies through the water: it beats down and up, sweeps back on the downstroke and feathers on the way up
   for (const A of B.arms) if (A.stroke) { const sd = A.side, w = tau * ph * (G.swim ? 1 : .4) + A.phase, k = A.stroke * (G.swim ? 1 : .25);
@@ -2071,7 +2108,86 @@ Object.assign(PLANS, {
       : k === 'head' ? [k, { ...o, eyes: o.eyes.map(e => ({ ...e, color: [.7, .9, 1.3] })) }] : [k, o]),
       ['arms', { at: .82, out: .22, up: .12, dz: -.04, len: 1.05, r: [.07, .06, .05], dir: [.75, .05, .65], dir2: [.2, -.6, .78], tone: 'coat', claws: { r: .012, len: .07 }, swing: .3, phase: 1.9 }]] })
 });
-export const FAILING = ['failingskeleton', 'failinggargoyle'];
+// ── Session 1174: Uisce's failing slime (OG-073's Uisce row: the slime "multiplies into a cresting wave of jelly"). The slime of OG-041
+// a third bigger and gone the pale blue-white of the sheet's drowned halls, clearer, with three more crests rising off its back and
+// rolling forward each on its own beat, as if the one wave were breaking into several; more of the drowned taken in (two skulls); and
+// the jelly veined, only the veins lit Uisce's cold sea-blue. No limbs to add, so the crests are its "more" ──
+Object.assign(PLANS, {
+  failingslime: re(PLANS.slime, { name: 'Slime of Uisce (failing gate)', src: 'OG-073 (Uisce: the slime at a failing gate, multiplying into a cresting wave)', school: 'Uisce', condition: 'failing', from: 'slime',
+    scale: 1.3, clear: .48, cell: .045, blend: .12, rough: .1, mottle: .7, bl: .1,
+    palette: { coat: [.6, .74, .82], saddle: [.72, .84, .9], belly: [.4, .52, .62], bone: [.8, .8, .74], rubble: [.36, .38, .4], dark: [.05, .06, .08] },
+    glow: { color: [.35, 1.5, 2.4], freq: 2.6, w: .09, all: .7 },
+    parts: [...PLANS.slime.parts.map(([k, o]) => k === 'inclusions' ? [k, { ...o, n: { skull: 2, bone: 7, rubble: 6 } }] : [k, o]),
+      ['crests', { list: [
+        { at: .24, out: -.35, len: .9, n: 4, lean: -10, curl: 26, splay: 10, r: [.2, .16, .1, .05], s: [1.9, 1, .7], phase: 0 },
+        { at: .46, out: .4, len: .95, n: 4, lean: -6, curl: 28, splay: 12, r: [.22, .17, .11, .05], s: [1.9, 1, .7], phase: 2.1 },
+        { at: .9, out: -.05, len: 1, n: 4, lean: -6, curl: 30, r: [.24, .17, .1, .05], s: [2.2, 1, .7], phase: 4.2 }] }]] })
+});
+export const FAILING = ['failingskeleton', 'failinggargoyle', 'failingslime'];
+// ── Session 1175: the golem (OG-018's Cloch row: "a mossy Golem"; canon §9a puts golems in Cloch's and Tine's gates; the game's own
+// since S209, Michael's answer on Session 201: dressed stone blocks on the bones and none of the flesh). An upright biped on the
+// skeleton's frame, half again a man's height and broad: every bone a hewn block of grey stone (the kit's new `blocks`), a heavy
+// chest over a narrow waist, long arms ending in block fists below the knee, a small square head with a slab of brow, moss on what
+// faces the sky, and its eyes lit the game's rune-blue. Steady: nothing lit but the eyes. Cloch's failing pair grows from this ──
+Object.assign(PLANS, {
+  golem: { name: 'Golem', src: 'OG-018 (Cloch: a mossy Golem), OG-062 (the ruins golem, dressed stone)', school: 'Cloch', gaits: ['walk', 'trot', 'stand'], bare: { blocks: { bev: .03, seg: .05, d: .8, cap: .45, jit: 3 } },
+    scale: 1.45, rough: .95, mottle: 1.8, speedK: .65, wag: 0, pant: 0, neckNod: .02, spread: .02,
+    palette: { coat: [.5, .48, .44], saddle: [.44, .42, .39], belly: [.55, .53, .49], moss: [.26, .34, .13], dark: [.04, .04, .04] },
+    pattern: { kind: 'patches', tone: 'moss', size: .16, cut: -.08, amount: .9, up: .1 },
+    parts: [
+      ['spine', { hip: [.98, -.03], chest: [1.46, .01], n: 4, r: [.15, .19, .25], s: [1.35, .9], rump: 0, front: 0 }],
+      ['neck', { len: .07, n: 1, rise: 85, r: [.07, .07], up: .05 }],
+      ['head', { len: .26, r: .11, pitch: 0, brow: { f: .3, up: .45, out: .9, r: .045 }, eyes: [{ f: .48, up: .12, out: .42, r: .02, color: [.42, .69, 1] }] }],
+      ['legs', { at: 0, kind: 'plantHind', out: .13, drop: .02, r: [.11, .095, .085] }],
+      ['arms', { at: 1, out: .33, up: -.03, len: .82, r: [.1, .09, .1], dir: [.18, -1, .02], bend: 12, tone: 'coat', swing: .22 }]
+    ] }
+});
+export const GOLEMS = ['golem'];
+// ── Session 1176: Cloch's failing golem (OG-073's Cloch row: the golem "doubles into a pair"). One rig, as the sheet's failing column asks:
+// the golem split down its middle into two, fused at the hip. Its chest widened to carry two upper bodies, a second head on the right
+// shoulder, set lower and turned out, beside the first moved left, and a second pair of arms from the outer shoulders, hanging wider and
+// swinging on their own beat; and the blocks cracked with only the cracks lit Cloch's violet (the kit's Cloch light, as the blight
+// boar's and the stone troll's), the four eyes lit the same ──
+Object.assign(PLANS, {
+  failinggolem: re(PLANS.golem, { name: 'Golem of Cloch (failing gate)', src: 'OG-073 (Cloch: the golem at a failing gate, doubled into a pair)', school: 'Cloch', condition: 'failing', from: 'golem',
+    bare: { blocks: { ...PLANS.golem.bare.blocks, seg: .035, jit: 6 } }, scale: 1.45, speedK: .6, palette: PLANS.golem.palette, pattern: { ...PLANS.golem.pattern, amount: .6 },
+    glow: { color: [1.4, .5, 2.4], freq: 2.6, w: .055, all: .8 },
+    parts: [...PLANS.golem.parts.flatMap(([k, o]) => k === 'spine' ? [[k, { ...o, r: [.16, .2, .27], s: [1.75, .9] }]]
+      : k === 'head' ? [[k, { ...o, off: [.15, .08, 0], yaw: 8, eyes: o.eyes.map(e => ({ ...e, color: [.72, .32, 1] })) }], [k, { ...o, name: 'head1', off: [-.21, .04, -.01], yaw: -14, eyes: o.eyes.map(e => ({ ...e, color: [.72, .32, 1] })) }]]
+      : k === 'arms' ? [[k, { ...o, out: .3 }], [k, { ...o, at: .9, out: .5, up: .02, dz: -.05, len: .78, dir: [.42, -1, -.04], bend: 16, swing: .2, phase: 1.6 }]] : [[k, o]])] })
+});
+FAILING.push('failinggolem');
+// ── Session 1177: the wraith (OG-018's Scáth row: "Phantom, Wraith"; canon §9a's Scáth dark). The game's own since S555 (Michael's B on
+// DECISION #158): no head under a hollow hood, a darkness there with two slits of light; no legs, a robe that floats clear of the ground,
+// torn at the hem into ragged tongues; arms a quarter longer than a man's, ending in long bone claws; hunched, reaching. Here a body with
+// no legs: the spine leans forward over a robe that widens to its hem (the rump's capsule run down and flared), the cowl is the head's
+// flesh with a black hollow in its front, the sleeves are the arms' flesh, and the robe is a little see-through. Scáth's violet only in
+// its slits. Steady: nothing else lit. Its failing form ("more rags and limbs") grows from this ──
+Object.assign(PLANS, {
+  wraith: { name: 'Wraith', src: 'OG-018 (Scáth: a Wraith of the violet dark)', school: 'Scáth', gaits: ['hover', 'stand'], hover: .05, clear: .82, rough: .85, mottle: .9, wag: 0, pant: 0, neckNod: .04, bl: .3, finOpacity: .92,
+    palette: { coat: [.17, .15, .21], saddle: [.11, .1, .14], belly: [.23, .21, .27], cloth: [.15, .13, .19], clothTip: [.06, .05, .08], leather: [.09, .08, .1], bone: [.74, .7, .6], dark: [0, 0, 0] },
+    parts: [
+      ['spine', { hip: [1.28, -.06], chest: [1.78, .1], n: 4, r: [.2, .17, .19], s: [1.15, .85], arch: .05, rump: .03, rumpDrop: .75, rumpTaper: 1.55, front: 0 }],
+      ['neck', { len: .14, n: 1, rise: 30, r: [.09, .08], up: .02 }],
+      ['head', { len: .3, r: .14, pitch: 20, s: [1, 1.15, 1.1], brow: { f: .5, up: .75, out: .55, r: .06 }, hood: { f: .5, up: -.05, r: .1, h: 1.3 },
+        eyes: [{ f: .44, up: .08, out: .3, r: .016, slit: 2.6, glow: 1.6, color: [.85, .6, 1.6] }] }],
+      ['arms', { at: .95, out: .26, up: -.02, len: 1.05, r: [.07, .06, .05], dir: [.2, -.55, .8], bend: 25, tone: 'coat', claws: { r: .014, len: .17, tone: 'bone' }, swing: .14 }],
+      ['rags', { n: 18, len: .34, w: .12, rx: .3, rz: .25, up: -.64, gaps: .05, tone: 'cloth', tip: 'clothTip', cord: 'clothTip' }]
+    ] }
+});
+export const WRAITHS = ['wraith'];
+// ── Session 1178: Scáth's failing wraith (OG-073's Scáth row: the wraith "spreads more rags and limbs"). The wraith grown wrong: a second
+// pair of arms out of the robe's middle, reaching wider and lower on their own beat, with bone claws; a second ring of torn cloth halfway
+// down the robe and the hem's tongues longer (the whole floating 8 cm higher, so they still clear the ground); the robe's seams lit Scáth's violet (the kit's Scáth light, as the stag of shadows'), and
+// nothing else lit but its slits ──
+Object.assign(PLANS, {
+  failingwraith: re(PLANS.wraith, { name: 'Wraith of Scáth (failing gate)', src: 'OG-073 (Scáth: the wraith at a failing gate, spreading more rags and limbs)', school: 'Scáth', condition: 'failing', from: 'wraith',
+    hover: .07, clear: .78, palette: PLANS.wraith.palette, glow: { color: [1.3, .5, 2.6], freq: 3.2, w: .05, all: .8 },
+    parts: [...PLANS.wraith.parts.map(([k, o]) => k === 'rags' ? [k, { ...o, len: o.len * 1.15 }] : k === 'spine' ? [k, { ...o, hip: [o.hip[0] + .08, o.hip[1]], chest: [o.chest[0] + .08, o.chest[1]] }] : [k, o]),
+      ['arms', { at: .45, out: .2, up: 0, dz: .04, len: .9, r: [.06, .05, .04], dir: [.6, -.45, .6], bend: 30, tone: 'coat', claws: { r: .012, len: .15, tone: 'bone' }, swing: .2, phase: 1.8 }],
+      ['rags', { n: 14, len: .4, w: .11, rx: .26, rz: .21, up: -.32, gaps: .1, tone: 'cloth', tip: 'clothTip', cord: 'clothTip' }]] })
+});
+FAILING.push('failingwraith');
 // ── Session 945: the cave troll's lashed-on armour (OG-041: scraps of plate and hide tied on with rope). Laid on its grown skin as the
 // goblin's harness is (Session 944): a dented iron plate on its chest, an iron plate over its left shoulder, a rawhide sheet across its
 // back, and three leather lashings over them, standing 1.2 cm further out. Only the OG-041 troll wears it: the trolls built from it
