@@ -559,7 +559,19 @@ const FURRY = new Set(['coat', 'pale', 'mane']);
 // a bare body (Session 934, the skeleton): no grown skin. Each capsule of flesh is drawn as the bone it stands for: a limb's as a
 // shaft with a knob at each end, the spine's, neck's and tail's as a stack of vertebrae, the head's and jaw's whole, as the skull.
 // The pieces are skinned as a hide is (dressFlesh), so a bone's shape moves with its bone
+// dressed stone (Session 1175, the golem; the game's since S209): `blocks` draws every capsule of flesh as one hewn block along it, its
+// corners rounded by `bev`, as wide as the capsule (`d` its depth against its width), longer than it by `cap` of its radii so the
+// blocks meet at the joints, each turned a little off true (`jit` degrees, from the seed), cut into faces `seg` apart so a pattern
+// read at the vertices (moss, a failing gate's cracks) has somewhere to lie
+function stoneBlock(w, h, d, bev, seg) { const g = new THREE.BoxGeometry(w, h, d, Math.max(1, Math.round(w / seg)), Math.max(1, Math.round(h / seg)), Math.max(1, Math.round(d / seg))), q = g.attributes.position, hx = w / 2 - bev, hy = h / 2 - bev, hz = d / 2 - bev, p = V(), c = V();
+  for (let v = 0; v < q.count; v++) { p.fromBufferAttribute(q, v); c.set(Math.max(-hx, Math.min(hx, p.x)), Math.max(-hy, Math.min(hy, p.y)), Math.max(-hz, Math.min(hz, p.z))); p.sub(c); if (p.lengthSq() > 1e-12) p.setLength(bev); q.setXYZ(v, c.x + p.x, c.y + p.y, c.z + p.z); }
+  g.computeVertexNormals(); return g; }
 function bareGeo(B, o) { const gs = [];
+  if (o.blocks) { const k = o.blocks, r = rng(B.g.seed + 61);
+    for (const f of B.flesh) { f.sm = (f.s[0] + f.s[1] + f.s[2]) / 3; const d = f.b.clone().sub(f.a), L = d.length(); if (L < 1e-4) continue; const R = Math.max(f.ra, f.rb), w = 2 * R * f.s[0], h = L + R * (k.cap ?? .5), dp = 2 * R * (k.d ?? .85) * (f.s[1] ?? 1);
+      const g = stoneBlock(w, h, dp, Math.min(k.bev ?? .03, w * .3, dp * .3, h * .3), k.seg ?? .06), j = (k.jit ?? 0) * DEG;
+      g.rotateX((r() - .5) * 2 * j); g.rotateZ((r() - .5) * 2 * j); g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(UP, d.normalize())); const m = f.a.clone().lerp(f.b, .5); g.translate(m.x, m.y, m.z); gs.push(g); }
+    return { geo: mergeGeometries(gs.map(g => { g.deleteAttribute('uv'); return g; })), grid: [0, 0, 0] }; }
   for (const f of B.flesh) { f.sm = (f.s[0] + f.s[1] + f.s[2]) / 3; const d = f.b.clone().sub(f.a), L = d.length(); if (L < 1e-4) continue;
     const q = new THREE.Quaternion().setFromUnitVectors(UP, d.clone().normalize()), put = (g, at, sc) => { if (sc) g.scale(...sc); g.applyQuaternion(q); g.translate(at.x, at.y, at.z); gs.push(g); };
     const name = B.bones[f.bone].name;
@@ -2102,6 +2114,25 @@ Object.assign(PLANS, {
         { at: .9, out: -.05, len: 1, n: 4, lean: -6, curl: 30, r: [.24, .17, .1, .05], s: [2.2, 1, .7], phase: 4.2 }] }]] })
 });
 export const FAILING = ['failingskeleton', 'failinggargoyle', 'failingslime'];
+// ── Session 1175: the golem (OG-018's Cloch row: "a mossy Golem"; canon §9a puts golems in Cloch's and Tine's gates; the game's own
+// since S209, Michael's answer on Session 201: dressed stone blocks on the bones and none of the flesh). An upright biped on the
+// skeleton's frame, half again a man's height and broad: every bone a hewn block of grey stone (the kit's new `blocks`), a heavy
+// chest over a narrow waist, long arms ending in block fists below the knee, a small square head with a slab of brow, moss on what
+// faces the sky, and its eyes lit the game's rune-blue. Steady: nothing lit but the eyes. Cloch's failing pair grows from this ──
+Object.assign(PLANS, {
+  golem: { name: 'Golem', src: 'OG-018 (Cloch: a mossy Golem), OG-062 (the ruins golem, dressed stone)', school: 'Cloch', gaits: ['walk', 'trot', 'stand'], bare: { blocks: { bev: .03, seg: .05, d: .8, cap: .45, jit: 3 } },
+    scale: 1.45, rough: .95, mottle: 1.8, speedK: .65, wag: 0, pant: 0, neckNod: .02, spread: .02,
+    palette: { coat: [.5, .48, .44], saddle: [.44, .42, .39], belly: [.55, .53, .49], moss: [.26, .34, .13], dark: [.04, .04, .04] },
+    pattern: { kind: 'patches', tone: 'moss', size: .16, cut: -.08, amount: .9, up: .1 },
+    parts: [
+      ['spine', { hip: [.98, -.03], chest: [1.46, .01], n: 4, r: [.15, .19, .25], s: [1.35, .9], rump: 0, front: 0 }],
+      ['neck', { len: .07, n: 1, rise: 85, r: [.07, .07], up: .05 }],
+      ['head', { len: .26, r: .11, pitch: 0, brow: { f: .3, up: .45, out: .9, r: .045 }, eyes: [{ f: .48, up: .12, out: .42, r: .02, color: [.42, .69, 1] }] }],
+      ['legs', { at: 0, kind: 'plantHind', out: .13, drop: .02, r: [.11, .095, .085] }],
+      ['arms', { at: 1, out: .33, up: -.03, len: .82, r: [.1, .09, .1], dir: [.18, -1, .02], bend: 12, tone: 'coat', swing: .22 }]
+    ] }
+});
+export const GOLEMS = ['golem'];
 // ── Session 945: the cave troll's lashed-on armour (OG-041: scraps of plate and hide tied on with rope). Laid on its grown skin as the
 // goblin's harness is (Session 944): a dented iron plate on its chest, an iron plate over its left shoulder, a rawhide sheet across its
 // back, and three leather lashings over them, standing 1.2 cm further out. Only the OG-041 troll wears it: the trolls built from it

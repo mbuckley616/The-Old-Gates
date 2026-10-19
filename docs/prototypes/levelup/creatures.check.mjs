@@ -299,6 +299,20 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
       check(`${k}: more of the drowned taken in, ${t.incl} things in the jelly against ${t.baseIncl}`, t.incl > t.baseIncl, t); }
     if (t.school === 'Gaoth') check(`${k}: a wingspan of ${t.span} in the plan's units against Gaoth's steady ${t.baseSpan} and Cloch's ${t.cloch}, half again Cloch's`, Math.abs(t.span - 1.5 * t.cloch) < .01 && t.span > t.baseSpan, t); }
   check(`failing gates' foes: ${Object.keys(fl).join(', ')}`, Object.keys(fl).length >= 3, Object.keys(fl));
+  // the golem (Session 1175; OG-018's mossy Cloch golem, the game's dressed stone since S209): every capsule of flesh drawn as one hewn block,
+  // half again a man's height, moss on the stone, nothing lit but its two eyes, in rune-blue
+  const gm = await page.evaluate(async () => { const T = await import('three'), K = await import('./creatures.js'), out = {};
+    for (const k of K.GOLEMS || []) { const C = K.build(K.genome(k, k + ':check')), g = C.meshes[0].geometry, col = g.attributes.color, gl = g.attributes.aGlow; C.gait = 'stand'; K.pose(C, 0); C.rig.updateMatrixWorld(true);
+      const box = new T.Box3().setFromObject(C.meshes[0], true); let moss = 0, lit = 0; for (let v = 0; v < col.count; v++) { const r = col.getX(v), gg = col.getY(v), b = col.getZ(v); if (gg > r * 1.12 && gg > b * 1.25) moss++; if (gl.getX(v) > .01) lit++; }
+      const eyes = []; C.rig.traverse(o => { if (o.isMesh && o.material?.clearcoat === 1) eyes.push(o.material.color.toArray()); });
+      out[k] = { blocks: !!C.plan.bare?.blocks, pieces: C.B.flesh.length, tris: C.stats.tris, bones: C.stats.bones, h: +(box.max.y - box.min.y).toFixed(2), w: +(box.max.x - box.min.x).toFixed(2), moss: +(moss / col.count).toFixed(3), lit, eyes, school: C.plan.school, src: C.plan.src }; }
+    return out; });
+  for (const [k, t] of Object.entries(gm)) { console.log(k, JSON.stringify(t));
+    check(`${k}: dressed stone, ${t.pieces} hewn blocks on ${t.bones} bones, ${t.tris} triangles`, t.blocks && t.pieces >= 15 && t.tris < 12000, t);
+    check(`${k}: ${t.h} m tall and ${t.w} m across standing, half again a man`, t.h > 2.3 && t.h < 2.9 && t.w > .9, t);
+    check(`${k}: moss on ${(t.moss * 100).toFixed(1)}% of the stone (OG-018's mossy golem of ${t.school})`, t.moss > .03 && t.moss < .4 && t.school === 'Cloch' && /OG-018/.test(t.src), t);
+    check(`${k}: nothing lit but its ${t.eyes.length} eyes, in rune-blue`, t.lit === 0 && t.eyes.length === 2 && t.eyes.every(c => c[2] > c[0] * 1.5), t); }
+  check(`the golems: ${Object.keys(gm).join(', ')}`, Object.keys(gm).length >= 1, Object.keys(gm));
   // the sea (Session 854): OG-016's coast, open ocean and deep, with OG-084's seals and dolphins and OG-031's Shatterback, each a plan
   const sea = await page.evaluate(async () => { const K = await import('./creatures.js'); return (K.SEA || []).map(k => ({ k, ok: !!K.PLANS[k], src: K.PLANS[k]?.src || '' })); });
   check(`the sea: twenty-four animals, each a plan from OG-016, OG-084 or OG-031 (${sea.length})`, sea.length === 24 && sea.every(c => c.ok && /OG-0(16|84|31)/.test(c.src)), sea.filter(c => !c.ok || !/OG-0(16|84|31)/.test(c.src)));
