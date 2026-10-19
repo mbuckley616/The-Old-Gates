@@ -1,4 +1,4 @@
-# How work lands (Michael's A on the pipeline decision, 19 Oct 2026)
+# How work lands (Michael's A on the pipeline decision and his B on approvals, 19 Oct 2026)
 
 Work piled up for five reasons. Every PR ran the whole suite, 16 to 20 jobs of up to an hour, and GitHub runs about 20 at a
 time, so about 80 sat queued on 19 Oct. Every branch edited the same lines (the build tag, the devlog's end), so each merge
@@ -46,3 +46,16 @@ once every two hours. Michael chose A: fix all five.
 5. **Producer:** on Michael's tap, post `Approved by Michael: <sha>` on the PR; merge nothing by hand; fold sessions'
    `### Decision` sections into `docs/decisions.md`; revert a merge whose red on main is not fixed within the day.
 6. **Small batches:** keep a branch's unapproved gameplay work small; what waits for a tap is what blocks.
+
+## Approvals: designs, not merges (Michael's B, 19 Oct 2026, in chat)
+Michael, explicitly: "PRs building already-decided work merge automatically once their tests pass, without my review,
+except PRs labelled hold and PRs that change the CI/test pipeline." His control stays where it was real: every design
+question is a `DECISION:` before it is built, and he judges the result by playing. A PR labelled `hold` (any role may put it
+on, saying why; Michael may put it on anything) and a PR that changes the pipeline itself (`.github/`, `tests/lib/`,
+`tests/run.mjs`, `scripts/automerge.mjs`) wait for `Approved by Michael: <sha>`. Main runs every suite after each merge; a
+red there is fixed first or reverted the same day. This replaces "How a PR merges now" above where they differ.
+
+## One small PR per run
+Every run starts a fresh branch from main (`auto/<lane>-<session>`), opens its own PR and leaves it to land; nothing is
+added to it after the run ends, and no branch lives from run to run. The standing PRs of before (*Systems sessions*, *Auto
+sessions*, *Bodies sessions* and the rest) land once and are not reopened.
