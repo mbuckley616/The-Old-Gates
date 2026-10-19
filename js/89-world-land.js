@@ -178,7 +178,7 @@ function landPost(scene){
 // At Middle and High the world renders into a half-float target, its own lights unclamped (three tone-maps nothing drawn
 // into a target), then a bright pass and a two-way blur at a quarter of the size, then one quad to the screen that adds the
 // glow, tone-maps with ACES and grades (the same chunk the materials use) and darkens the frame's edge a little, as the slice's
-// grade did. Five full-screen quads, no change to the scene. Every other scene, a target someone else set, and Low take the
+// grade did. Six full-screen quads (the bright pass, four blurs, the composite), no change to the scene. Every other scene, a target someone else set, and Low take the
 // direct path. REN.info counts the whole frame, so the draw-call budget reads the same.
 const LAND_BLOOM={rt:null,a:null,b:null,qs:null,cam:null,quad:null,mBright:null,mBlur:null,mComp:null,size:new THREE.Vector2(),frames:0};
 function landBloomSetup(){
