@@ -569,7 +569,7 @@ function executeStrike(e, rawDmg, now){
     const reduction = _blockBoost(shieldBlock);
     const blockedDmg = Math.max(1, Math.round(rawDmg*(1-reduction)));
     const absorbed = rawDmg - blockedDmg;
-    const finalDmg = _warded(blockedDmg, e);skillUse('guard',1,e);
+    const finalDmg = guardBlowCap(e, _warded(blockedDmg, e));skillUse('guard',1,e); /* S1173 — a drawn guard's blow stops at the yield's line until it is offered (#456 A) */
     PHP = Math.max(0, PHP-finalDmg); hurtT = .3; lvAct.damageTaken += finalDmg;armourUse();
     // v61c7 — Held block stamina also scales with Resolve (was raw `absorbed`).
     // Held block stays MORE expensive than parry (because 0.65 absorbed beats
@@ -588,7 +588,7 @@ function executeStrike(e, rawDmg, now){
     if(PHP<=0 && !dead) playerDead();
   } else {
     // Unblocked hit — apply damage reduction buffs
-    const finalDmg = _warded(rawDmg, e);
+    const finalDmg = guardBlowCap(e, _warded(rawDmg, e)); /* S1173 — #456 A */
     PHP = Math.max(0, PHP-finalDmg); hurtT = .5;
     sndPlayerHurt(); lvAct.damageTaken += finalDmg;armourUse();
     lastHitT = now/1000;
