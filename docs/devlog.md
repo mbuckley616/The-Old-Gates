@@ -26676,3 +26676,36 @@ Session 1147's winter coat owed OG-109's Mark column: "fur-lined hooded coats". 
 - **The hood's hem flares out over the shoulders** a little more than on a cloak, since it is lifted to clear the fur collar, and from the back it stands off the coat at the neck.
 - **The beard** comes down over the ruff at the chin, where the opening's slot runs to the throat. A real ruff would push it in.
 - **Owed:** the hood down on the back, who wears a hooded coat in which season (the game's, with `WX`), and the game after F4.
+
+## v80 — Session 1153 — The Mark's hooded coat, the hood down (L1, prototype only)
+Session 1152 owed the coat's hood lying on the back. The last run started it and stopped on a WIP branch (`auto/wip-coathood-down`): a ponytail stood off its tie and came out through the roll, and its check had counted no hair. This session takes that work over and finishes it. FREEZE #441 is still open, so it touches only `people.js`, `builder.js` and `builder.check.mjs`. It asks nothing: OG-109's Mark column draws the hood both ways.
+
+- **The roll** (`buildCoatHoodDown`, `rollAt`). A tube of the coat's wool laid across the upper back, 8.5 cm under the neck at the middle. It is 3.4 cm through there, tapers to nothing at the shoulders (±66°) and rises 4 cm towards them. Each of its 33 sections is set out from the neck's axis just far enough to clear the coat and its fur by 4 mm. The sections are smoothed, but never pushed back in.
+  - The WIP's roll sat at the collar and was pushed off in whatever direction cleared the deepest point, so it came out jagged.
+  - It was also black. `tubeGeom` winds its faces inward, so the roll's outside was culled. Its faces are turned out here; the cloak's own hood roll was left alone.
+  - The roll is 768 triangles.
+- **The hair over it.** The WIP gave the hair 12 cm of clearance at the nape. The drape cannot use that: it pushes off the body's surface grid, and 10 to 15 cm out the grid finds no near point. That is why the clearance did nothing to the tail but leave it standing off its tie.
+  - Over the roll's band, the hair now has a floor set out from the neck's axis: past the roll's outside and 4.5 cm more, since a tail's strands fan that far round its line. The floor eases in over 5 cm above the roll. Below the roll's middle it holds at the widest and eases out over 5 cm, because the first try tucked the tail back under the roll.
+  - A tail's or a braid's line is floored, smoothed and floored again six times, so it bends over the roll in a curve. Loose strands are floored once, after their own smoothing.
+  - With the hood up or unset, nothing changes. The coat's hair clearance at the nape (6 cm, 8.5 cm over the fur) is the WIP's and is kept.
+- **The page.** The coat-hood checkbox is now a select: none, down or up.
+
+### Verified (headless Chromium)
+- **Four hood-down checks** (`builder.check.mjs`): a Markman in charcoal with a grey-brown fur (his own braids); a Markman in a plain blue coat with a tail; a Markwoman in brown with a pale fur and braids; a Markwoman in a plain coat with her hair loose. On each:
+  - the roll is 4.0 mm clear of 235 to 892 points of the coat and its fur;
+  - 0 points of the hair below the nape are in it: 0 of 18,176 on the tail, 0 of 1,506 on each pair of braids, 0 of 106,570 on the loose hair;
+  - no hood is built over the head;
+  - the genome saves and loads back with `coatHood: 'down'`.
+  The check now counts every lock (the strands, a tail, braids and their ties and brushes); the WIP's counted only the `hair` cards. Before the floor, the tail had 2,770 points in the roll and the loose hair 14,248; with the floor on the drape alone, 105 and 916 were left, all under the roll's lower half.
+- **`builder.check.mjs`:** 500 of 500 pass (496 before and the four above).
+- **Pictures** (`builder-coathood-down-*.jpg`):
+  - `-back` and `-close`: the charcoal Markman from behind;
+  - `-front`: his face, the roll unseen from the front;
+  - `-plain`: the blue coat with a tail;
+  - `-loose`: the loose hair over the roll;
+  - `-woman`: the brown coat with braids, full from behind.
+### Needs eyes
+- **The tail stands well out over the roll.** The 4.5 cm margin is for its fan, so the tail's line clears the roll by more than the hair it carries needs. A tail that fans less over the roll would let it lie closer.
+- **A gap between the tie and the tail** shows from the side. It is there on a bare tunic too (seen in a throwaway picture, not committed), so it is the tail's root, not the hood. Owed as its own fix.
+- **The roll's section is round.** A real hood lying down is a flattened fold; an oval section would read flatter from the side.
+- **Owed:** who wears the hood down in which season (the game's, with `WX`), and the game after F4.
