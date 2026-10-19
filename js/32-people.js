@@ -1162,8 +1162,11 @@ function ragdollStep(R){
     // only: the world's test reads nine chunks). S466: a point the wall stopped last step is held in every pass, so the wall
     // pushes back on the body through the bones; held in the last two only, the passes before drove a leaning head into the
     // wall and shoved the rest of the body off it, step after step, and a body slumped against a dungeon wall crept for 2–4 s
+    // S1136: and a held point never rises, though it may always fall at half its pace, as the beasts' since S1132: held in height
+    // whenever it moved less than RD_GRIP.wall, a point at rest on a wall never fell; no person was seen to climb as the bear did,
+    // but a Bandit dropped against a wall kept its hips 0.29 up on it, and lies at 0.16 now (tests/peoplewall)
     if(R.solid)for(const o of P)if((it>=8||o.w0)&&R.solid(O.x+o.p.x,O.z+o.p.z)&&!R.solid(O.x+o.sx,O.z+o.sz)){o.p.x=o.q.x=o.sx;o.p.z=o.q.z=o.sz;o.w=true;
-      const vy=o.p.y-o.sy;if(Math.abs(vy)<RD_GRIP.wall*R.s)o.p.y=o.q.y=o.sy;else o.q.y=o.p.y-vy*.5;}
+      const vy=o.p.y-o.sy;if(vy>=0)o.p.y=o.q.y=o.sy;else o.q.y=o.p.y-vy*.5;}
   }
 }
 function ragdollApply(R){

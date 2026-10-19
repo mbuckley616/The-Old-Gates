@@ -26468,3 +26468,314 @@ The people's ragdoll in `32-people.js` has the same hold. It is left as it is: n
 - **Owed:**
   - the people's hold, the same check on `ragdollStep`;
   - a bear's body overlapping a solid at death is itself odd, since foes collide by their centre point only. That is the systems builder's, and noted here only.
+
+## v80 — Session 1136 — The people's wall hold, checked (backlog I)
+Session 1133 owed one check. The people's ragdoll in `32-people.js` (`ragdollStep`, S466) holds a point at a wall the same way the beasts' did, and the beasts' hold let a Cave Bear killed over Hearthwick's well climb the column to 12 m. This session asked whether a person can do the same, and could not make one.
+
+- **A new suite, `tests/peoplewall`,** follows `beastwall`. Hearthwick is built and you stand 30 south of the well, at QA's spot. It runs, all seeded and stepped through `tickPeople` as the game runs it:
+  - 24 Bandits killed over the solid at the well, all 21 points inside it at death, half by a POWER blow;
+  - 24 killed beside it;
+  - 8 on clear ground;
+  - 12 lifted 1.5 and dropped against a wall at their side.
+- **No person climbs.** On today's code the hips of all 48 at the well rest 0.10 to 0.15 over the ground. Seven of them rest *sitting* against the wall, their backs to it and the top of the head 0.82 to 1.02 up. A probe of the points shows the head and neck held at the wall and a shoulder in it. That is a body slumped against a house wall, not one hanging on it. A person's bones are short and its 21 points heavy at the hips, so the pull out of the column never outweighs gravity, as it did on the bear's long back.
+- **The rule is the beasts' anyway.** A point held at a wall never rises, and it may always fall, at half its pace (`if(vy>=0)` in place of `Math.abs(vy)<RD_GRIP.wall`). Under the old rule a point at rest against a wall could never start to fall, since gravity is 2.7 mm a step and the hold's threshold 6 mm. One Bandit dropped against the wall kept its hips at 0.29; it lies at 0.16 now. The two ragdolls now share one rule, so the beasts' fix cannot come back through the people's code.
+
+### Verified (headless Chromium)
+- **`peoplewall`:** 7 of 7 pass.
+  - Over the well: hips 0.11 to 0.15, highest point 0.12 to 1.02.
+  - Beside it: hips 0.10 to 0.12, highest point 0.12 to 1.00.
+  - Clear ground: highest point 0.13 to 0.24.
+  - Dropped against a wall: hips 0.12 to 0.16 (0.12 to 0.29 before the change).
+  - All 68 falls at rest by 2.17 s; none meets the four-second cap.
+- **Before the change** the same suite showed eight seated bodies, the top of the head 0.86 to 1.02 up. The checks were first written with a 0.8 ceiling on the highest point, which failed on those, and were then set to the hips (0.4) and a seated head's 1.2.
+- **The people's ragdoll suites on the change:**
+  - `ragdoll` and `ragdollsearch`, 2 of 2 suites, in both looks. Indoors, 24 bodies were thrown at the room's wall: median 1.73 s, one at the cap, none in the wall.
+  - `corpsebody`, `cloakcorpse` and `falls`: all pass. That is 98 checks across the six suites, old look.
+- **`beastwall`:** 6 of 6, unchanged.
+- Build tag: s653.
+### Needs eyes
+- **Nothing should look different,** beyond a rare body against a wall now sliding the last few centimetres down it. A corpse may still come to rest sitting against a wall. Against a house that is right. Against something low, like the well's ring, the world's solids are columns with no top, so the body leans on air above the stone. That is in the solids, not the bodies.
+
+## v80 — Session 1142 — The Old Blood's embroidery powdered (L1, prototype only; Michael's A on #432)
+Michael answered DECISION #432 with A: the Old Blood's dot embroidery is powdered, every colour kept. Session 1125 had built the powdering beside the drifts as `dotsStyle: 'powder'` and left the drifts the default until he chose. This session makes the powdering the default. It touches only `people.js` and `builder.check.mjs`, and asks nothing.
+
+- **The default.** `DRESS_FLAGS.dotsStyle` is now `'powder'`, and the tunic's and the same-cloth skirt's material powders unless the genome asks for `'drift'`. A rolled genome never sets the flag, so every Old Blood who rolls the embroidery (oxblood, slate or dusk violet on undyed linen, bone on a dark tunic) is powdered. The roll itself is unchanged, so every seed draws the same thread on the same tunic as before.
+- **Saved genomes.** `toSaved` writes a flag only when it differs from the default. A genome saved before this session carries no `dotsStyle` and now loads powdered, as A asks. One saved with `"powder"` (Session 1125's check) loads the same, and `'drift'` is now the value that gets saved.
+- **The drifts stay** for a genome that asks for them, so Session 1043's pictures can still be made. Its checks and its two pictures (`builder-dots-close.jpg`, `-full.jpg`) now ask for `'drift'` by name. The powdered pictures no longer name the flag, since it is the default.
+
+### Verified (headless Chromium)
+- **A new check:** an Old Blood rolled with oxblood knots on cream renders pixel for pixel as the same man asking for `'powder'`, and 1.96% of the close view differs from him asking for `'drift'`. The default saves no flag, and `'drift'` saves its own. A genome saved without the flag loads with `dotsStyle` `'powder'`, renders the same as itself asking for `'powder'`, and differs from the drifts.
+- **Every dots check passes:** the drifts named, 0.5% of the close view; the powdered default, 1.4%; bone on a dark tunic, 1.3%; violet on the same-cloth skirt, 2.6%; none on a skirt of another colour. Every changed pixel moves toward the thread's colour.
+- **`builder.check.mjs`:** 478 of 478 pass, 477 before and the one above. It ran on a fresh MakeHuman pack (84 macro targets; the first download cut one short, and it was fetched again before the run).
+- **The first run** of the new check failed on its own measure: it compared the loaded genome with the rolled one asking for `'powder'`, and 0.34% of the view differed. A save rounds the colours to hex, so the two are not the same person to the pixel. It now compares the loaded genome with itself.
+- **Pictures, reshot:** `builder-dots-close.jpg`, `-full.jpg` (the drifts, by name), `builder-dots-powder-close.jpg`, `-full.jpg`, `-slate.jpg` (the default), `-dark.jpg` and `-woman.jpg` (now powdered).
+### Needs eyes
+- **Bone on a dark tunic and the woman's violet dress** are powdered now too. Session 1125 pictured only the oxblood and slate on cream, so these two are new to Michael's eye: `builder-dots-dark.jpg` and `builder-dots-woman.jpg`.
+- **Owed:** the game, after F4.
+
+## v80 — Session 1143 — The Gatelanders' waistcoat (L1, prototype only)
+Backlog L1's wardrobe matrix asks for each island's dress by kind and class. OG-109's Gatelands column names "laced bodices, long skirts, tunics, waistcoats, hooded cloaks". The kit had the bodice (Session 888), the skirts, the tunic and the cloaks, but no waistcoat. The sheet draws it and the canon has nothing against it, so, as with the sash (Session 989) and the head-wrap (Session 994), this asks nothing. It touches only `people.js` and `builder.check.mjs`.
+
+- **The shell** is the bodice's: the torso off the tights, 8 mm over the tunic, ending under the belt, with the same push.
+  - **The neck:** a V at the front, from the breastbone (rest y .44) widening 0.35 cm for each centimetre up.
+  - **The armholes:** they curve in from the shell's 19 cm under the arm to 16 cm at the shoulder. The bodice's straps stop at 14.8. A first cut stepped straight from 19 to 16 at the chest, and from behind it left a small green point at each armpit; the curve (a smoothstep over rest y .38 to .485) took them out.
+  - **The cloth:** wool, or leather on `waistcoatLeather`.
+- **Six buttons** (`buildButtons`) run down the closed front from just over the belt to under the V. Like the bodice's lacing, they are built after the pose: each is the shell's own point nearest the middle at its height, read on the posed shell, with a flattened dome 11 mm across set on it along its normal. They are horn on wool and pale bone on leather, 132 triangles each.
+- **It gives way** to a bodice (the same shell), a robe, mail or scales, a tabard or a bib, all of which lie on the same chest. It is not worn without a tunic. `waistcoatOn(D)` holds the rule. The sash belt stands out over it as it does over a bodice, and the shells that the sash belt measures itself against now include it.
+- **The roll:** Gatelander men only, at 35%, in the people's earth green, brown, muted blue or a dark drab, or brown leather on three in ten. It comes from a seeded stream of its own (`seed|waistcoat`), so every other roll of every seed is as it was. A rolled waistcoat the man cannot wear (under a tabard, say) is dropped.
+
+### Verified (headless Chromium)
+- **Four new waistcoat checks:** green wool, brown leather, under a cloak with its hood down, and under a sash belt.
+  - On each, the posed waistcoat stands out of the posed tunic over the whole closed body: 467 shared points, the nearest 6.8 to 7.2 mm out along the tunic's normal, none under 4 mm.
+  - Six buttons span 22.5 to 23.7 cm, 792 triangles in all.
+  - The genome saves and loads back.
+- **What it gives way to:** none is built under a tabard, a leather bib, mail, a bodice or a robe, or without a tunic, and one is built on its own.
+- **The roll:** 21 of 60 Gatelander men roll it, 6 of them in leather, and all 21 can wear it. No Gatelander woman and none of the 180 of the other peoples roll it.
+- **`builder.check.mjs`:** 484 of 484 pass, 478 before and the six above. Every earlier check on the rolled Gatelanders (arms through garments, hair, baskets, spears) passes with the waistcoats now among them.
+- **The first run** stopped the page: the no-tunic case left a man's tunic skirt with no colour. That case now takes the skirt away too.
+- **Pictures:** `builder-waistcoat-close.jpg`, `-full.jpg`, `-side.jpg`, `-back.jpg` (green wool), `-leather.jpg` and `-cloak.jpg` (muted blue under a madder cloak, hood down).
+### Needs eyes
+- **The shoulder.** The waistcoat runs up to the tunic's neckline at the sides of the neck, where a tailored one would have its seam a little lower. From the front it reads as a high-cut country waistcoat.
+- **No front edge.** The two fronts are one piece, and only the buttons say it opens. A darker line down the middle, or the left front lapped over the right, would say it more plainly.
+- **Owed:** the rest of the matrix (formal, travel and winter dress by class, and the Mark's and Aurenne's columns), and the game, after F4.
+
+## v80 — Session 1144 — The waistcoat's front edge (L1, prototype only)
+Session 1143 left the waistcoat's two fronts as one piece, so only the buttons showed that it opens. This session draws the edge of the front that laps over, as the shadow it casts. It refines a garment built the session before, so it asks nothing. It touches only `people.js` and `builder.check.mjs`.
+
+- **`clothMat` takes `shade`**, a GLSL expression in the rest coordinates that multiplies the cloth's colour after its weave. It is part of the program's cache key, as `hole` is. Nothing else uses it yet.
+- **`WAISTCOAT_EDGE`**: the right front lapped over the left. Its edge runs 1.2 cm to the wearer's right of the buttons' line, from the belt up to where it meets the V's side, so the lapped front's edge becomes one side of the V. It is a line at half the cloth's brightness 2 mm wide, fading out over another 1.5 mm, on the front only.
+- **The first try stopped at rest y .445,** a hair over the V's point, and left a short stub of line standing in the open V. Running it up to .46 takes it into the V's side.
+
+### Verified (headless Chromium)
+- **The four waistcoat checks** now also read the edge in each waistcoat's program, and all pass, with the same clearances as Session 1143 (the shell has not moved).
+- **`builder.check.mjs`:** 484 of 484 pass, the same count as Session 1143; no check was added, and the four waistcoat checks now hold the edge too.
+- **Pictures, reshot:** all six `builder-waistcoat-*.jpg`. Close up (`-close.jpg`) the edge reads as a front lapped over at the buttons. At full length it is faint, and the buttons still carry the front.
+### Needs eyes
+- **The edge's wobble.** The line follows the rest coordinates through the posed chest, so it wavers a millimetre or two where the mesh's triangles are long. A real front edge would be a fold of cloth, which wants geometry.
+- **Owed:** as Session 1143.
+
+## v80 — Session 1146 — The Gatelanders' tartan (L1, prototype only; asked as a decision)
+Backlog L1's wardrobe matrix names "tartans a new note" for the Gatelands (OG-111's fabrics: "tartans, fur, embroidered silk"). No garment in the kit had a woven pattern bigger than its weave, and nothing in the canon speaks for or against tartan. This session weaves one into the cloth so Michael can see it, and asks him where it goes. Nothing is rolled with it yet. It touches only `people.js`, `builder.js` (two labels) and `builder.check.mjs`. A FREEZE (#441) is open, so the run kept to the prototypes.
+
+- **The sett.** `TARTAN` in `people.js` is a symmetric sett with a half of 8.4 cm, so it repeats every 16.8 cm:
+  - 3.2 cm of the ground (the cloak's own colour), then 1.6 of the dark, 0.5 of the ground and 1.6 of the dark again (two dark bands side by side, like tram lines);
+  - then 1.2 of the ground and 0.3 of the overcheck.
+  - The same stripes run in the warp and the weft, mirrored at each pivot. The wide ground square sits on the back's middle.
+- **The weave.** Where a warp stripe crosses a weft stripe, a 2/2 twill on 1.5 mm threads shows each in turn on diagonals. A dark band over the ground therefore reads half-tone, and where two dark bands cross it reads solid.
+  - Once a thread is smaller than a pixel, the pixel takes the two colours' average.
+  - Each stripe is averaged over the pixel's width (four samples), so it does not crawl at full length.
+- **How it is laid.** Across, the sett follows the arc round a vertical axis (the neck's for the cloak and the rolled hood, the head's for a hood that is up), starting from the back's middle, so the seam falls at the front opening. Down, it follows the height.
+  - Both are read off a new attribute, `aTart`, the garment's position as built. The hood's `aBase` holds its face opening rather than its position, and a first try that read the pattern off `aBase` drew the hood in fine corduroy.
+- **The garments.** `D.tartan` is the dark stripe's colour and `D.tartanLine` the overcheck's (the dark again if it has none). Both are GARMENTS keys, so they save as hex and the builder's page lists them.
+  - The cloak, the shoulder cape, the hood rolled on the shoulders and the hood up all take the sett through `clothMat`'s new `tartan` option. It is part of the program's cache key.
+  - The embroidered hem and the hood's rim stay plain, as bindings.
+- **A first try drew no cloak at all:** the sett's functions read `vB` before the shader declared it, so the cloak's program failed to compile, quietly. It now passes the position in.
+
+### Verified (headless Chromium)
+- **Three new tartan checks** (`builder.check.mjs`), each rendering the cloak's back from behind and comparing it with the same cloak plain:
+  - a moss cloak in a dark green and madder sett, hood down;
+  - a madder cape in a dark blue sett with no overcheck;
+  - a brown cloak in a dark sett with an ochre overcheck, hood up.
+  - The sett changes 6.4% of the view on the moss cloak (the dark green is close to the moss), 20.4% on the cape and 16.3% on the brown cloak. 100%, 100% and 81% of the changed pixels are darker; on the brown cloak the rest are the ochre overcheck. The hood's program carries the sett, the plain cloak renders the same twice, and the genome saves and loads back with `tartan` (and `tartanLine` where given).
+- **A fourth check:** no rolled genome wears a tartan (0 of 160, forty of each people), until Michael says where it goes.
+- **`builder.check.mjs`:** 488 of 488 pass, 484 before and the four above.
+- **The first full run** stopped in the new test, which looked the cloak up in `p.meshes`; it is a child of the root. The second failed two of the three on its own measure. It asked whether the changed pixels moved toward the stripe's colour, but the render target is linear and the colour was given in sRGB, so a darker pixel read as moving away. The checks now ask whether the pixels got darker.
+- **Pictures:**
+  - `builder-tartan-back.jpg`, `-full.jpg` and `-close.jpg`: the moss cloak from behind, at full length and close, where the twill shows.
+  - `builder-tartan-cape.jpg`: the madder cape.
+  - `builder-tartan-hood.jpg`: the brown cloak with its hood up.
+### Needs eyes
+- **The sett is one sett.** Its widths and its three colours are a guess at a country tartan, not a researched one. Each family or district could have its own; that is part of the question.
+- **Folds pinch the stripes.** The vertical stripes follow the cloak's columns, so they converge into the deep fold at the back's middle. A woven cloth would do much the same; a pressed one would not.
+- **Owed:** Michael's answer on where it is worn (DECISION #445), then the roll, and the game after F4.
+
+## v80 — Session 1147 — The Gatelanders' winter coat (L1, prototype only)
+Backlog L1's wardrobe matrix has five columns for each island, and OG-109's Gatelands winter column names "fur-lined winter coats". The kit had no coat. The sheet draws one and the canon says nothing against it, so this asks nothing, as with the waistcoat (Session 1143). It touches only `people.js`, `builder.js` (two labels and a slider) and `builder.check.mjs`. FREEZE #441 is still open, so the run kept to the prototypes.
+
+- **The shells.**
+  - **Body and sleeves:** the tunic's own shell pushed 1.4 cm further out, to the wrist (rest |x| .405) and down under the belt to rest .1.
+  - **Skirt:** off the skirt shell, from under the belt to the hem. It stands 1.6 cm over a skirt's push (2.4 at the waist), flaring to 2.5 cm more at the hem, so it hangs over a man's short tunic skirt, a woman's long skirt and the trousers alike.
+  - The wool is drawn both sides, its inside darker.
+- **The length.** `coatLen` sets it: 0.75 (the default) is mid-calf, rest y -.6; 0 is a jacket's skirt over the hips; 1 is the ankle. The builder has a slider for it.
+- **The front.** The right front laps over the left. Its edge, 3.1 cm to the wearer's right of the middle, is drawn as the shadow it casts, as the waistcoat's is (`COAT_EDGE`).
+- **The belt** rides 8 mm over the coat. A belt is given if the genome has none.
+- **The fur** (`D.coatFur`) lies at the collar (5 cm round the neck), down the lapping edge (3.5 cm wide, broken by the belt), round the cuffs (3.7 cm) and the hem (4.5 cm).
+  - It is seven shells 3.5 mm apart, layer 0 solid, with the mantle's strand noise.
+  - `shellMat` gains a `cut` and a `hole`, so the shells are cut as cloth is. Each shell is built only from the triangles of the regions it covers, so the fur costs 7.5 to 8k triangles for both pieces.
+  - A coat with no fur is plain.
+- **It is the outer layer.** It takes the place of the cloak, the mantle, the apron and bib, the sash, the shoulder wrap and the sash belt, and covers the waistcoat (and its buttons), the bodice and the cuffs, which are not built. It gives way to a robe, mail or scales, a tabard and the wheeled chair (`coatOn`).
+- **The hands** are lifted clear of the coat's skirt as they are of any skirt. A coat's skirt may lift them two steps further (to 0.36), since a woman's over a long skirt needed 0.33.
+- **The roll:** none. Who wears a winter coat, and when, is the season's to say, and the season is the game's. The genome only carries it.
+
+### Verified (headless Chromium)
+- **Three new coat checks** (`coatStats` in `people.js`, read in `builder.check.mjs`): a man in brown wool with a fox-brown fur to mid-calf, a woman in moss with a dark fur over a long skirt (`coatLen` .6), and a man in a plain blue coat cut short (`coatLen` .2). On each:
+  - No arm point is out of its sleeves (0 of 2,052).
+  - The coat stands 12.8 to 12.9 mm out of the tunic at its nearest over the closed body and the sleeves (880 points, none under 6 mm).
+  - No leg, trousers or skirt point is out of its skirt (0 of 677, 574 and 631).
+  - No hand point is in it (lifted 0.18, 0.33 and 0.24).
+  - The belt stands 7.2 to 7.6 mm over it.
+  - The fur is 14 shells (7,476 and 7,959 triangles), none on the plain coat.
+  - The genome saves and loads back with `coat`, `coatFur` and `coatLen` where given.
+- **A fourth check:** the coat gives way to a robe, mail, a tabard and the chair. Asked for over a cloak, a mantle, an apron, a waistcoat and cuffs, it is worn and none of them is built.
+- **A fifth:** no rolled genome wears one (0 of 160).
+- **`builder.check.mjs`:** 493 of 493 pass, 488 before and the five above.
+- **The first runs** failed three of the five on their own measures, not the coat:
+  - Two men showed 2 and 6 tunic points "out" of the coat's skirt. They lay under the tunic's own cut (rest .12 over a skirt), which is never drawn. The test now reads only what is drawn of the tunic.
+  - The woman's hands needed 0.33 of lift, one step past the cap; hence the coat's two steps.
+  - A belt threshold asked for more than 50 points where there are exactly 50.
+- **Two first cuts were redrawn from the pictures:**
+  - The body ending at rest .12 showed 1.5 cm of the tunic under the belt at the back.
+  - Ending it at -.02 bulged the coat's body out over its own skirt at the seat. It now ends at .1, and the skirt's top stands 8 mm further out.
+- **Pictures:**
+  - `builder-coat-full.jpg`, `-close.jpg` (the collar), `-waist.jpg` (the edge under the belt), `-side.jpg` and `-back.jpg`: the brown coat.
+  - `builder-coat-woman.jpg`: the moss coat over a long skirt.
+  - `builder-coat-plain.jpg`: the short plain coat.
+### Needs eyes
+- **The sleeves** are the tunic's cut wider, so they flare a little at the cuff, and the fur cuff stands off the wrist like a bell. A winter coat's sleeve might close on the wrist instead.
+- **The fur's pile** reads as a mottled band close up, more felt than fox. It is the mantle's noise at a shorter length.
+- **The front is closed to the hem**, with no vent or opening below the belt, so a walking leg pushes the whole skirt (the long skirt does the same).
+- **Owed:** the Mark's fur-lined hooded coat (OG-109), who wears a coat in which season (the game's, with `WX`), and the game after F4.
+
+## v80 — Session 1151 — The Gatelanders' tartan rolled: a note on cloaks (L1, prototype only; Michael's A on #445)
+Session 1146 wove a sett into the cloak's cloth and asked Michael where it is worn. He answered A on #445: a note, on cloaks. This session rolls it. It touches only `people.js` (the Gatelanders' rate and setts, and four lines of the roll) and `builder.check.mjs`. FREEZE #441 is still open, so the run kept to the prototypes.
+
+- **Who.** One Gatelander cloak or shoulder cape in five (`PEOPLES.gatelander.tartan`, .2). Never a fur-lined cloak (no Gatelander has one today, but a later roll might). No other people.
+- **The setts.** Three, the three Michael saw in Session 1146's pictures (`PEOPLES.gatelander.setts`):
+  - a moss ground with dark green bands and a madder overcheck;
+  - a madder ground with dark blue bands and no overcheck;
+  - a brown ground with near-black bands and an ochre overcheck.
+  The cloak takes the sett's ground, so a sett always comes in its own colours, rather than a dark green band laid over a madder cloak.
+- **The stream.** The roll draws from `seed|tartan`, as the waistcoat draws from its own (Session 1143), so every other roll of a seed is exactly as it was. Children and the old dress as the grown folk do, so they take it at the same rate.
+
+### Verified (headless Chromium)
+- **The roll check** (`builder.check.mjs`), which replaces Session 1146's "nobody wears one". Over 400 Gatelanders (every thirteenth a child, every eleventh old):
+  - 63 of 340 cloaks and capes are in a sett (18.5%), 17 of them capes out of 61;
+  - by sett 12, 23 and 28; each is one of the three, with the cloak in its ground;
+  - none is fur-lined; 7 children and 3 old among them;
+  - a rolled one builds with the sett in its cloak's program;
+  - no Markman, Aurennais or Old Blood wears one (0 of 120).
+  The same 400 seeds rolled with the rate at 0 give the same genomes, apart from the cloak's colour and the sett.
+- **The first run** failed that last comparison only on the order of keys: an old man's staff is drawn after the tartan, so his `staff` key landed after `tartan` in one genome and before it in the other. The check now compares with the keys sorted, and passes.
+- **`builder.check.mjs`:** 493 of 493 pass (the same count as before: one check replaced).
+- **Pictures** (`builder-tartan-rolled-*.jpg`), four Gatelanders as the roll made them, no dress set by hand:
+  - `-moss`: a woman in a moss cloak, from behind;
+  - `-madder`: a man in madder;
+  - `-brown`: a woman in brown, hood up;
+  - `-cape`: a man in a moss shoulder cape over a leather waistcoat.
+### Needs eyes
+- **Whether one in five reads as a note.** In a market of thirty Gatelanders about twenty-five wear a cloak or cape, so about five would be in a sett. That may read as more than a note; the rate is one number.
+- **The hood rolled down** on the moss woman shows a dark, broken roll at the nape. That is the hood's own shape, not the sett, and it is there on a plain cloak too.
+- **Owed:** the game after F4.
+
+## v80 — Session 1152 — The Mark's fur-lined hooded coat (L1, prototype only)
+Session 1147's winter coat owed OG-109's Mark column: "fur-lined hooded coats". The sheet draws one and the canon says nothing against it, so this asks nothing, as with the coat itself. It touches only `people.js`, `builder.js` (one checkbox) and `builder.check.mjs`. FREEZE #441 is still open, so the run kept to the prototypes.
+
+- **The hood.** `D.coatHood: 'up'` puts the cloak's fitted hood (`buildHoodUp`) over the head in the coat's own wool. Nothing new is shaped for it. `buildHoodUp` takes two new options:
+  - `clr`, the hem's clearance over the shoulders: 7.5 cm over a fur collar, 5 cm over a plain coat, against the cloak's 4.
+  - `fur`, the ruff.
+- **The ruff.** The hood's front within three tenths of the opening's size again of the face, in seven shells 3.5 mm apart. They are pushed out from the head's middle and cut at the opening's edge as the hood is. The outer edge is cut on a smooth, slightly noisy line, not on the triangles' stairs: the first picture's ruff was ragged along them. The shells share the hood's skinning. The rolled rim round the face takes the fur's colour.
+- **Under it.** As under a cloak's hood, the hair is tucked and no earrings, necklace or head-wrap is built: one predicate, `hoodUpOn(D)`, now answers for the cloak's hood and the coat's in `makePerson`.
+- **Down:** not built. A coat with `coatHood` unset has no hood, as before. A hood lying on the back is owed.
+- **The roll:** none, as for the coat. The season is the game's.
+
+### Verified (headless Chromium)
+- **Three new hooded-coat checks** (`builder.check.mjs`): a Markman in charcoal with a grey-brown fur, a Markwoman in brown with a pale fur, and a Markman in a plain blue coat, each hood up, given earrings and a necklace. On each:
+  - 0 of 7,123 to 7,191 head and hair points through the hood;
+  - the hair tucked, with no earrings or necklace built;
+  - 7 fur shells on the furred coats (11,837 and 13,097 triangles for the seven), none on the plain one;
+  - with the hood unset, no hood built;
+  - saved and loaded back with `coatHood`.
+  The hood itself is 8,752 triangles, as on a cloak.
+- **`builder.check.mjs`:** 496 of 496 pass (493 before and the three above). The cloak's own hood checks are unchanged.
+- **A first ruff** took the band out to half the opening's size again: 16.2k and 17.3k triangles, and a ragged edge. Cut to three tenths with the smooth line, it is 11.8k to 13.1k.
+- **Pictures** (`builder-coathood-*.jpg`): `-full`, `-face`, `-back` and `-side` (the charcoal Markman), `-woman` (the brown coat with the pale fur) and `-plain` (the blue coat's hood, no fur).
+### Needs eyes
+- **The ruff's cost.** 12 to 13k triangles is as much as the rest of the coat's fur together. A ruff narrower again, or four shells in place of seven, would halve it; the pictures should say whether it would still read.
+- **The hood's hem flares out over the shoulders** a little more than on a cloak, since it is lifted to clear the fur collar, and from the back it stands off the coat at the neck.
+- **The beard** comes down over the ruff at the chin, where the opening's slot runs to the throat. A real ruff would push it in.
+- **Owed:** the hood down on the back, who wears a hooded coat in which season (the game's, with `WX`), and the game after F4.
+
+## v80 — Session 1153 — The Mark's hooded coat, the hood down (L1, prototype only)
+Session 1152 owed the coat's hood lying on the back. The last run started it and stopped on a WIP branch (`auto/wip-coathood-down`): a ponytail stood off its tie and came out through the roll, and its check had counted no hair. This session takes that work over and finishes it. FREEZE #441 is still open, so it touches only `people.js`, `builder.js` and `builder.check.mjs`. It asks nothing: OG-109's Mark column draws the hood both ways.
+
+- **The roll** (`buildCoatHoodDown`, `rollAt`). A tube of the coat's wool laid across the upper back, 8.5 cm under the neck at the middle. It is 3.4 cm through there, tapers to nothing at the shoulders (±66°) and rises 4 cm towards them. Each of its 33 sections is set out from the neck's axis just far enough to clear the coat and its fur by 4 mm. The sections are smoothed, but never pushed back in.
+  - The WIP's roll sat at the collar and was pushed off in whatever direction cleared the deepest point, so it came out jagged.
+  - It was also black. `tubeGeom` winds its faces inward, so the roll's outside was culled. Its faces are turned out here; the cloak's own hood roll was left alone.
+  - The roll is 768 triangles.
+- **The hair over it.** The WIP gave the hair 12 cm of clearance at the nape. The drape cannot use that: it pushes off the body's surface grid, and 10 to 15 cm out the grid finds no near point. That is why the clearance did nothing to the tail but leave it standing off its tie.
+  - Over the roll's band, the hair now has a floor set out from the neck's axis: past the roll's outside and 4.5 cm more, since a tail's strands fan that far round its line. The floor eases in over 5 cm above the roll. Below the roll's middle it holds at the widest and eases out over 5 cm, because the first try tucked the tail back under the roll.
+  - A tail's or a braid's line is floored, smoothed and floored again six times, so it bends over the roll in a curve. Loose strands are floored once, after their own smoothing.
+  - With the hood up or unset, nothing changes. The coat's hair clearance at the nape (6 cm, 8.5 cm over the fur) is the WIP's and is kept.
+- **The page.** The coat-hood checkbox is now a select: none, down or up.
+
+### Verified (headless Chromium)
+- **Four hood-down checks** (`builder.check.mjs`): a Markman in charcoal with a grey-brown fur (his own braids); a Markman in a plain blue coat with a tail; a Markwoman in brown with a pale fur and braids; a Markwoman in a plain coat with her hair loose. On each:
+  - the roll is 4.0 mm clear of 235 to 892 points of the coat and its fur;
+  - 0 points of the hair below the nape are in it: 0 of 18,176 on the tail, 0 of 1,506 on each pair of braids, 0 of 106,570 on the loose hair;
+  - no hood is built over the head;
+  - the genome saves and loads back with `coatHood: 'down'`.
+  The check now counts every lock (the strands, a tail, braids and their ties and brushes); the WIP's counted only the `hair` cards. Before the floor, the tail had 2,770 points in the roll and the loose hair 14,248; with the floor on the drape alone, 105 and 916 were left, all under the roll's lower half.
+- **`builder.check.mjs`:** 500 of 500 pass (496 before and the four above).
+- **Pictures** (`builder-coathood-down-*.jpg`):
+  - `-back` and `-close`: the charcoal Markman from behind;
+  - `-front`: his face, the roll unseen from the front;
+  - `-plain`: the blue coat with a tail;
+  - `-loose`: the loose hair over the roll;
+  - `-woman`: the brown coat with braids, full from behind.
+### Needs eyes
+- **The tail stands well out over the roll.** The 4.5 cm margin is for its fan, so the tail's line clears the roll by more than the hair it carries needs. A tail that fans less over the roll would let it lie closer.
+- **A gap between the tie and the tail** shows from the side. It is there on a bare tunic too (seen in a throwaway picture, not committed), so it is the tail's root, not the hood. Owed as its own fix.
+- **The roll's section is round.** A real hood lying down is a flattened fold; an oval section would read flatter from the side.
+- **Owed:** who wears the hood down in which season (the game's, with `WX`), and the game after F4.
+
+## v80 — Session 1154 — A tail from its tie (prototype only)
+Session 1153 saw a gap between a tail's tie and the tail, on a bare tunic as well as under the coat. The cause is the strand texture, not the drape.
+- **The texture.** `strandTex` draws each strand opaque at the canvas's top and fading to nothing at its foot. A CanvasTexture is flipped, so `v = 1` is the opaque root and `v = 0` the faded end.
+- **The tail.** Its cards ran `v0: 0` at the tie to `v1: 1` at the ends: see-through for its first few centimetres by the tie, and blunt at the bottom. It runs 1 to 0 now.
+- **The tie.** It was also a `tubeGeom`, which winds its faces inward (Session 1153), so it had always been drawn inside out: what showed was its far inside wall, seen through the tail's see-through root. With the root opaque the tie disappeared. It is now turned out by a small shared `turnOut`, which the coat's hood roll uses too. A tail's tie is 2.2 cm round, against 1.7 cm before, so the strands start inside it; a braid's tie is unchanged.
+- **Left as they are:**
+  - the scalp's strands, which also run `v0: 0` at the root (the scalp's shell hides it there);
+  - the braids' brushes (0.5 to 1);
+  - the other tubes: the cloak's hood roll, the bun, the braids' locks.
+  Changing these would change every hairstyle's look, so each is its own question.
+
+Correction to Session 1153: its Needs eyes owed the gap "as its own fix": this is that fix.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`:** 500 of 500 pass, as before. The hair's own checks (no strand under the skin, none on the face, braids and tails clear of the clothes) are unchanged. The tail under the coat's hood roll still has 0 of 18,176 points in it.
+- **Pictures:**
+  - `builder-tail-tie.jpg` (new): a Markman's tail from the side on a bare tunic, the leather tie lit and the tail running from it;
+  - `builder-coathood-down-*.jpg`, retaken with the same fix.
+### Needs eyes
+- **Whether the tail's ends now fade as they should.** They taper and fade where they were blunt.
+- **Whether the scalp's strands and the brushes want the same turn.** On the scalp, roots fading into the shell may be what keeps the hairline soft.
+
+## v80 — Session 1156 — The Mark's formal dress: woven bands (L1, prototype only)
+OG-109's Mark column draws its formal dress as "blue and red, with woven bands": tunics and long gowns with a tablet-woven band at the neck, the cuffs and the hem. OG-110's Markwoman in blue under a white fur mantle wears the same edges. The Markmen already have a woven cuff band (Session 889, a chevron); this is the formal set. The canon says nothing against it and the sheet draws it, so it asks nothing. FREEZE #441 is still open, so the run kept to `people.js`, `builder.js` (two labels) and `builder.check.mjs`.
+
+- **The band** (`LOZ`, in `clothMat` as `loz`). Drawn in the shader on the cloth it lies on, like the cuff band. Across it: a thread of the motif's colour at each edge, then the ground. Along it: a row of lozenges, each a ring of the motif round a dot, one every 1.2 band widths. Both are stepped to the threads (14 across, 12 to a lozenge), so it reads woven rather than painted. Where a step is smaller than a pixel or so it gives way to its average, so it does not shimmer far off.
+- **Where it lies**, on the rest body:
+  - the neck, from rest .58 to .606 round the neck's axis (about 2.8 cm);
+  - both cuffs across their whole 4 cm, round the wrist's middle where the cuff's slab cuts it (the chevron band's diagonal coordinate stretched the lozenges);
+  - the hem, 4 cm up from the skirt's cut, short or long. Below the band's lower thread the ground runs on to the cut, as a hem.
+- **The genome:** `D.bands` (the ground) and `D.bandsMotif` (the lozenges; madder if unset), two garments, saved as hex. A tunic with bands and no cuffs gets cuffs in its own colour. A man's own cuff band gives way to the woven one.
+- **Not under** a coat (its cuffs are already gone, Session 1147) or a robe.
+- **The roll:** none, as for the coat. Who dresses formally, and when (rank, a feast, a court day), is the game's to say through the generator. The builder's page has the two colours.
+
+### Verified (headless Chromium)
+- **Three new checks** (`builder.check.mjs`):
+  - a Markman in blue with ochre bands and madder lozenges, short tunic;
+  - a Markwoman in a madder gown with blue lozenges;
+  - a Markman in charcoal with undyed bands over his own woven cuffs.
+  Each is rendered close at its neck, hem and cuff against the same person without bands (cuffs in the same colour). The band changes 4.8% to 7.4% of the neck view, 18.6% to 27.7% of the hem's and 15.1% to 20.8% of the cuff's. The chest between them is unchanged (0 pixels), and the plain person renders the same twice. On each, all three of the tunic, skirt and cuffs carry it. The charcoal man's chevron band is gone, and the men with no cuffs of their own get them only with the bands. Under a coat or a robe nothing carries it. The genome saves and loads back.
+- The views are aimed at the band's own points, skinned: a garment's geometry holds every point of the body, so its bounding box is the whole body's. The Old Blood's dot checks (Session 1043) aim by the same box, so they look at a fixed height on the body, not at the garment; they pass, but a new check should aim by its points.
+- **`builder.check.mjs`:** 503 of 503 pass (500 before and the three above).
+- **Pictures** (`builder-bands-*.jpg`):
+  - `-full`, `-neck` and `-cuff`: the blue Markman;
+  - `-woman` and `-hem`: the madder gown;
+  - `-charcoal`: undyed bands on charcoal.
+### Needs eyes
+- **A long gown's hem is ragged** (rest -.705 to -.728). The band's lower thread runs at the hem's highest point, so on most of the hem a strip of the ground shows under the thread. A band fitted to each point's own distance from the edge would hug it.
+- **The neck band ends in the beard** on a bearded man, and shows mostly from the side.
+- **Formal dress is more than its edges:** OG-109's Markmen wear their formal tunics longer, nearer the knee, and the women a mantle over the gown. Neither is built.
+- **Owed:** who wears it (the game, by rank or occasion), and the game after F4.
