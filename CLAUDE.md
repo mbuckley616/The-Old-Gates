@@ -148,6 +148,8 @@ itself (`.github/`, `tests/lib/`, `tests/run.mjs`, `scripts/automerge.mjs`), whi
 `Approved by Michael: <sha>`, posted by the producer when he taps Approve. An open design question is still a `DECISION:`
 before anything is built. Main runs every suite after each merge: a red on main is the next run's first job for the builder
 that owns it, and the producer reverts the merge if it is not fixed within the day.
+**These landing rules win** over anything a routine's own prompt still says about branches, the build tag, the devlog,
+decisions.md or merging (prompts written before 19 Oct 2026 may say otherwise).
 **One small PR per run:** every run starts a fresh branch from main (`auto/<lane>-<session>`, the run's first session
 number), does its sessions there, opens its own PR, and leaves it to land. No branch is kept or reused from run to run, and
 nothing is added to a PR once the run that opened it has ended (a red that is your own fault is fixed in the next run's PR).
