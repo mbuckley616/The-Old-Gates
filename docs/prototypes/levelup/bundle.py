@@ -31,6 +31,7 @@ def build(name, title, note, srcfile, use_common, query=''):
         if "from './implements.js'" in s: s = implkit(s)
         if "from './helms.js'" in s: s = helmkit(s)
         if "from './shrines.js'" in s: s = shrinekit(s)
+        if "from './musicians.js'" in s: s = musickit(s)
         imps = re.findall(r"^import .*;$", s, flags=re.M); body = re.sub(r"^import .*;\n", '', s, flags=re.M)
         allimps = list(dict.fromkeys(imports_c + imps)); code = '\n'.join(allimps) + '\n' + common_body + '\n' + body
     else: code = src
@@ -88,6 +89,16 @@ def shrinekit(s):
     return s[:m.start()] + wrapped + s[m.end():]
 build('shrines-row.html', 'Shrines by island', 'The six gods’ niches and the Guest’s, the common form dressed by island (L9, OG-113). ?island=gatelands|mark|aurenne, &cam=wide|figures|guest|far, &time=dusk. Drag to look.', 'shrines-view.js', True, '?view=row&island=gatelands')
 build('shrines-wayside.html', 'Wayside shrines', 'One god’s wayside shrine in the three islands’ dress, a person of each island beside it. &god=teallach|muir|speir|beithigh|cloch|fiodoir, &time=dusk. Drag to look.', 'shrines-view.js', True, '?view=three')
+# the players by island (concept, 19 Oct 2026): musicians.js goes in as one closure (its H and V would meet common.js's), as shrines.js does
+def musickit(s):
+    src = open(os.path.join(here, 'musicians.js'), encoding='utf-8').read()
+    names = re.findall(r"^export (?:const|function) (\w+)", src, flags=re.M)
+    imps = re.findall(r"^import .*;$", src, flags=re.M); body = re.sub(r"^import .*;\n", '', strip_common(src), flags=re.M)
+    m = re.search(r"^import \{([^}]*)\} from './musicians.js';\n", s, flags=re.M)
+    wrapped = '\n'.join(imps) + '\nconst MU_ = (() => {\n' + body + '\nreturn { ' + ', '.join(names) + ' };\n})();\nconst {' + m.group(1) + '} = MU_;\n'
+    return s[:m.start()] + wrapped + s[m.end():]
+build('players-band.html', 'Players by island', 'Each island’s five players with OG-112’s instruments, held (L9). ?island=gatelands|mark|aurenne, &cam=wide|close|far|scale. Drag to look.', 'musicians-view.js', True, '?view=band&island=gatelands')
+build('players-kit.html', 'The fifteen instruments', 'OG-112’s fifteen instruments at their true size, an island a row, the 1.8 m post beside them. &cam=wide|close. Drag to look.', 'musicians-view.js', True, '?view=kit')
 # the HUD in the new look (concept, 15 Oct 2026): the slice's scene, then hud.js in place of its dynamic import, the
 # approved kit's CSS, icons and fonts inlined (fonts from Google, the host allows no others)
 def hud(name, title, note, scene_src, query):
