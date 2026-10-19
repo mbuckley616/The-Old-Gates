@@ -106,6 +106,19 @@ P.inclusions = (B, o) => { const r = rng(B.g.seed + 21);
 P.holes = (B, o) => { B.holes = B.holes || [];
   for (const h of o.list) { const sp = B.spineAt(h.at), c = sp.p.clone().add(V(0, h.up * sp.r * B.spineS[1], 0)), w = sp.r * B.spineS[0] * 2.2, tl = (h.tilt || 0) * DEG, d = V(Math.cos(tl), Math.sin(tl), Math.sin((h.yaw || 0) * DEG)).normalize();
     B.holes.push({ a: c.clone().addScaledVector(d, -w), b: c.clone().addScaledVector(d, w), ra: h.r, rb: h.r, s: [1, 1, 1], sm: 1, c, d, up: h.up, bone: sp.bone }); } };
+// crests (Session 1174, OG-073's failing slime: "multiplies into a cresting wave"): a jelly body's second waves, each a chain of
+// flesh rising from its back and rolling forward as it rises, grown into the body as one (each its own group, so it joins smoothly).
+// `at` along the spine, `out` its root's offset to the side in the spine's radius there, `len` its length, `n` its bones, `lean` and
+// `curl` the degrees from upright at its root and added a bone (forward), `splay` degrees out to the side, `r` the radii root to tip, `s` its section's scale
+// (wider than deep, as a wave's crest is).
+// The crawl rolls each on its own beat (`phase`)
+P.crests = (B, o) => { B.crests = B.crests || [];
+  for (const c of o.list) { const sp = B.spineAt(c.at), n = c.n || 4, sd = Math.sign(c.out || 0) || 1, sx = Math.sin((c.splay || 0) * DEG) * sd;
+    const pts = [sp.p.clone().add(V((c.out || 0) * sp.r * B.spineS[0], sp.r * B.spineS[1] * (c.sink ?? .5), 0))];
+    for (let j = 0; j < n; j++) { const a = ((c.lean || 0) + (c.curl || 0) * j) * DEG, d = V(sx, Math.cos(a), Math.sin(a)).normalize(); pts.push(pts[j].clone().addScaledVector(d, c.len / n)); }
+    const tag = 'crest' + B.crests.length + '_', names = B.chain(tag, sp.bone, pts);
+    for (let j = 0; j < n; j++) B.meat(names[j], pts[j], pts[j + 1], along(c.r, j / n), along(c.r, (j + 1) / n), { group: tag, tone: c.tone, s: c.s });
+    B.crests.push({ names, phase: c.phase || 0, tip: pts[n] }); } };
 // egg sacs (Session 929, OG-041's giant spider): a clutch of silk balls stuck to the underside of the tail (a spider's abdomen) toward
 // its tip, each a lumpy wrapped sphere, half sunk into the hide, rigid on the tail bone it hangs from. `at` is the stretch of the tail
 // they cover, `drop` how far down its girth they sit (1 is the skin's underside)
@@ -857,6 +870,8 @@ export function pose(C, phase) {
       b.quaternion.setFromAxisAngle(axis, ang); } }
   if (G.bell || (B.radials.length && C.plan.bellBone)) { const beat = Math.pow(Math.max(0, Math.sin(tau * ph)), 2), s = 1 - (G.bell ? .14 : .04) * beat; sp.scale.set(s, 1 + (1 - s) * .7, s); sp.position.y += (G.bell ? .03 : .01) * C.len / C.S * Math.sin(tau * ph - 1); }
   else if (G.ripple && B.radials.length) sp.position.y += .015 * C.len / C.S * Math.sin(tau * ph * 2);
+  // a jelly's crests (Session 1174) roll forward and back down their length, each on its own beat; slower and smaller at rest
+  for (const Cr of B.crests || []) { const np = Cr.names.length; for (let j = 0; j < np - 1; j++) C.byName[Cr.names[j]].rotation.set((G.bl ? .2 : .07) * Math.sin(tau * ph * (G.bl ? 1 : .4) + Cr.phase - j * .7) * (j ? 1 : .5), 0, 0); }
   // arms swing against the legs; wings rest half-folded, breathing, or beat
   // a flipper (Session 861) flies through the water: it beats down and up, sweeps back on the downstroke and feathers on the way up
   for (const A of B.arms) if (A.stroke) { const sd = A.side, w = tau * ph * (G.swim ? 1 : .4) + A.phase, k = A.stroke * (G.swim ? 1 : .25);
@@ -2071,7 +2086,22 @@ Object.assign(PLANS, {
       : k === 'head' ? [k, { ...o, eyes: o.eyes.map(e => ({ ...e, color: [.7, .9, 1.3] })) }] : [k, o]),
       ['arms', { at: .82, out: .22, up: .12, dz: -.04, len: 1.05, r: [.07, .06, .05], dir: [.75, .05, .65], dir2: [.2, -.6, .78], tone: 'coat', claws: { r: .012, len: .07 }, swing: .3, phase: 1.9 }]] })
 });
-export const FAILING = ['failingskeleton', 'failinggargoyle'];
+// ── Session 1174: Uisce's failing slime (OG-073's Uisce row: the slime "multiplies into a cresting wave of jelly"). The slime of OG-041
+// a third bigger and gone the pale blue-white of the sheet's drowned halls, clearer, with three more crests rising off its back and
+// rolling forward each on its own beat, as if the one wave were breaking into several; more of the drowned taken in (two skulls); and
+// the jelly veined, only the veins lit Uisce's cold sea-blue. No limbs to add, so the crests are its "more" ──
+Object.assign(PLANS, {
+  failingslime: re(PLANS.slime, { name: 'Slime of Uisce (failing gate)', src: 'OG-073 (Uisce: the slime at a failing gate, multiplying into a cresting wave)', school: 'Uisce', condition: 'failing', from: 'slime',
+    scale: 1.3, clear: .48, cell: .045, blend: .12, rough: .1, mottle: .7, bl: .1,
+    palette: { coat: [.6, .74, .82], saddle: [.72, .84, .9], belly: [.4, .52, .62], bone: [.8, .8, .74], rubble: [.36, .38, .4], dark: [.05, .06, .08] },
+    glow: { color: [.35, 1.5, 2.4], freq: 2.6, w: .09, all: .7 },
+    parts: [...PLANS.slime.parts.map(([k, o]) => k === 'inclusions' ? [k, { ...o, n: { skull: 2, bone: 7, rubble: 6 } }] : [k, o]),
+      ['crests', { list: [
+        { at: .24, out: -.35, len: .9, n: 4, lean: -10, curl: 26, splay: 10, r: [.2, .16, .1, .05], s: [1.9, 1, .7], phase: 0 },
+        { at: .46, out: .4, len: .95, n: 4, lean: -6, curl: 28, splay: 12, r: [.22, .17, .11, .05], s: [1.9, 1, .7], phase: 2.1 },
+        { at: .9, out: -.05, len: 1, n: 4, lean: -6, curl: 30, r: [.24, .17, .1, .05], s: [2.2, 1, .7], phase: 4.2 }] }]] })
+});
+export const FAILING = ['failingskeleton', 'failinggargoyle', 'failingslime'];
 // ── Session 945: the cave troll's lashed-on armour (OG-041: scraps of plate and hide tied on with rope). Laid on its grown skin as the
 // goblin's harness is (Session 944): a dented iron plate on its chest, an iron plate over its left shoulder, a rawhide sheet across its
 // back, and three leather lashings over them, standing 1.2 cm further out. Only the OG-041 troll wears it: the trolls built from it
