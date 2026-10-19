@@ -461,8 +461,9 @@ function buildHair(P, G, heads, scalpTris, headB, rnd) {
   const out = [], style = G.hair?.style ?? ((G.hairLen ?? .3) < .45 ? 'short' : 'loose'), len = G.hair?.len ?? G.hairLen ?? .3, col = sRGB(...G.hairCol);
   const R0 = PACK.rest, neckY0 = .6, S = surfGrid(P, PACK.G['body'], (x, y, z) => (y > neckY0 - .02) || (y > .25 && Math.abs(x) < .2));
   const bb = new THREE.Box3(); for (const v of scalpTris) bb.expandByPoint(new THREE.Vector3(P[v * 3], P[v * 3 + 1], P[v * 3 + 2])); const hc = bb.getCenter(new THREE.Vector3()), hr = bb.getSize(new THREE.Vector3()).multiplyScalar(.5); hc.y -= .02;
-  // clear of the clothes: the tunic's layers, and the fur mantle's eleven shells over the shoulders
-    const D = G.dress || {}, neckY = heads['neck01'].y, clearAt = q => { const k = Math.max(0, Math.min(1, (neckY - .01 - q.y) / .02)); return .02 + k * k * (3 - 2 * k) * ((D.mantle && q.y > neckY - .3 ? .1 : D.tunic ? .045 : .02) - .02); };
+  // clear of the clothes: the tunic's layers, and the fur mantle's eleven shells over the shoulders; a coat's collar, its fur, and its hood
+  // lying rolled on the back (Session 1153)
+    const D = G.dress || {}, neckY = heads['neck01'].y, coatC = coatOn(D) ? (D.coatHood === 'down' ? .12 : D.coatFur ? .085 : .06) : 0, clearAt = q => { const k = Math.max(0, Math.min(1, (neckY - .01 - q.y) / .02)); return .02 + k * k * (3 - 2 * k) * ((D.mantle && q.y > neckY - .3 ? .1 : coatC && q.y > neckY - .3 ? coatC : D.tunic ? .045 : .02) - .02); };
   const onHead = q => q.y > heads['neck01'].y + .03, faceZ = hc.z + .02, backZ = heads['neck01'].z - .04;
   // gathering points, on the surface
   const gp = d => { const e = S.extreme(hc, d.normalize(), p => p.y > heads['neck01'].y + .02); return { p: e.p.clone().addScaledVector(e.n, .012), n: e.n.clone() }; };
@@ -575,6 +576,26 @@ function buildHair(P, G, heads, scalpTris, headB, rnd) {
 function posedBody(body) {
   const n = PACK.N, out = new Float32Array(n * 3), v = new THREE.Vector3(); body.updateMatrixWorld(true);
   for (let i = 0; i < n; i++) { body.getVertexPosition(i, v); out[i * 3] = v.x; out[i * 3 + 1] = v.y; out[i * 3 + 2] = v.z; } return out;
+}
+// the coat's hood lying down (Session 1153, OG-109's Mark): a roll of the coat's wool round the back of the collar, as the cloak's hood
+// lies (a tube thickest at the back's middle), laid in the posed body's space as the cloak is, each point pushed out along the body's
+// normal until it clears the coat and its fur collar within 4 cm by 4 mm; the hair is kept out of it (buildHair's clearance), and counted
+function buildCoatHoodDown(G, body, byName, meshes) {
+  const D = G.dress, PP = posedBody(body), S = surfGrid(PP, PACK.G['body'], (x, y) => y > -.75), neck = new THREE.Vector3(); byName['neck01'].getWorldPosition(neck); const neckY = neck.y;
+  const under = [], v = new THREE.Vector3(); for (const m of meshes) if (/^coat$|^coatFur\d$/.test(m.name)) { m.updateMatrixWorld(true); const ix = new Set(m.geometry.index.array); for (const i of ix) { m.getVertexPosition(i, v); v.applyMatrix4(m.matrixWorld); if (v.y > neckY - .2 && v.y < neckY + .06 && Math.hypot(v.x - neck.x, v.z - neck.z) < .22) under.push(v.clone()); } }
+  const N = 23, line = [], rad = []; for (let k = 0; k < N; k++) { const th = -1.1 + 2.2 * k / (N - 1), dir = new THREE.Vector3(Math.sin(th), 0, -Math.cos(th)), r = .03 + .018 * Math.sin(Math.PI * k / (N - 1));
+    const e = S.extreme(neck, dir.clone().add(new THREE.Vector3(0, -.42, 0)).normalize(), p => p.y > neckY - .16 && p.y < neckY + .03); let out = 0;
+    for (const q of under) if (q.distanceTo(e.p) < .04) out = Math.max(out, q.clone().sub(e.p).dot(e.n));
+    line.push(e.p.clone().addScaledVector(e.n, out + r + .004).add(new THREE.Vector3(0, -.01, 0))); rad.push(r); }
+  for (let it = 0; it < 3; it++) for (let k = 1; k < N - 1; k++) line[k] = line[k - 1].clone().add(line[k + 1]).add(line[k].clone().multiplyScalar(2)).multiplyScalar(.25);
+  // after smoothing, push out again wherever the roll came back into the coat
+  // (each time away from the point that is deepest in it, until none is)
+  let clear = 1e9; for (let k = 0; k < N; k++) { for (let it = 0; it < 24; it++) { let need = 0, deep = null; for (const q of under) { const d = q.distanceTo(line[k]); if (rad[k] + .004 - d > need) { need = rad[k] + .004 - d; deep = q; } }
+      if (!deep) break; const o = line[k].clone().sub(deep); if (o.lengthSq() < 1e-10) o.set(line[k].x - neck.x, 0, line[k].z - neck.z); line[k].addScaledVector(o.normalize(), need + .001); }
+    for (const q of under) clear = Math.min(clear, q.distanceTo(line[k]) - rad[k]); }
+  const out = [], m = new THREE.Mesh(tubeGeom(line, rad, 10), clothMat(sRGB(...D.coat).multiplyScalar(.92), 'wool', { scale: 26 })); m.geometry.setAttribute('aBase', m.geometry.attributes.position); m.name = 'coatHoodDown'; out.push(m);
+  let hairIn = 0, hairN = 0; for (const h of meshes) if (h.name === 'hair' && h.isSkinnedMesh) { h.updateMatrixWorld(true); const a = h.geometry.attributes.position; for (let i = 0; i < a.count; i++) { h.getVertexPosition(i, v); v.applyMatrix4(h.matrixWorld); if (v.y > neckY + .1) continue; hairN++; for (let k = 0; k < N; k++) if (v.distanceTo(line[k]) < rad[k]) { hairIn++; break; } } }
+  return { meshes: out, stats: { clear: +clear.toFixed(4), n: under.length, hairIn, hairN, tris: out.reduce((a, q) => a + q.geometry.index.count / 3, 0) } };
 }
 // the cloak's tartan, if it has one: the dark stripe in D.tartan, the overcheck in D.tartanLine (or the dark again), round the axis at o
 const tartanOf = (D, o, r) => D.tartan ? { tartan: { dark: sRGB(...D.tartan), line: sRGB(...(D.tartanLine || D.tartan)), o, r } } : {};
@@ -2868,6 +2889,7 @@ export function makePerson(G, o = {}) {
   let sashBeltSt = null; if (sashBeltOn(D)) { root.updateMatrixWorld(true); sashBeltSt = sashBeltStats(meshes, root); }
   let coatSt = null; if (coat && o.coatStats !== false) { root.updateMatrixWorld(true); coatSt = coatStats(body, meshes, cHem, D.skirt ? .12 : -.02); }
   let mailSt = null; if (mail && o.mailStats !== false) { root.updateMatrixWorld(true); mailSt = mailStats(body, meshes); }
+  let coatHoodSt = null; if (coat && D.coatHood === 'down') { root.updateMatrixWorld(true); const C = buildCoatHoodDown(G, body, byName, meshes); for (const m of C.meshes) root.add(m); coatHoodSt = C.stats; }
   let cloakStats = null; if (D.cloak) { root.updateMatrixWorld(true); const C = buildCloak(G, body, byName, RND); for (const m of C.meshes) root.add(m); cloakStats = C.stats; }
   // the round shield (Session 904), last: it is laid outside everything else, and lifts the left arm clear where it must. Under a
   // cloak, which hangs over the arm that holds it, or a shoulder cape, which stands 8 cm out over the board's top edge, it is slung on the back (Session 905)
@@ -2886,7 +2908,7 @@ export function makePerson(G, o = {}) {
     // and a crossbow across the knees (Session 1116), laid on them after the chair, clear of it
     if (D.crossbow) chairSt.lap = buildLapCrossbow(G, body, byName, meshes, root, Ch).stats; }
   const legWrapSt = D.legWraps ? legWrapStats(body, meshes) : null;
-  root.position.y = -(chairSt ? chairSt.ground : sandalSt ? sandalSt.ground : minY); return { root, skeleton, byName, meshes, coldLook: { eyes: G.eyes, skin: G.skin }, buttons: buttonStats, hair: hairStats, cloak: cloakStats, tabard: tabardStats, sash: sashStats, shoulderWrap: shoulderWrapStats, wrap: wrapStats, wrapTail: tailStats, earrings: earStats, eyepatch: patchStats, necklace: neckStats, beltCoins: beltCoinStats, beltCharms: charmStats, sandals: sandalSt, sashBelt: sashBeltSt, cord: cordStats, lacing: laceStats, skirtHands, hood: hoodStats, brows: browStats, helm: helmStats, mail: mailSt, shield: shieldStats, spear: spearStats, crossbow: crossbowStats, staff: staffStats, basket: basketStats, legWraps: legWrapSt, chair: chairSt, coat: coatSt };
+  root.position.y = -(chairSt ? chairSt.ground : sandalSt ? sandalSt.ground : minY); return { root, skeleton, byName, meshes, coldLook: { eyes: G.eyes, skin: G.skin }, buttons: buttonStats, hair: hairStats, cloak: cloakStats, tabard: tabardStats, sash: sashStats, shoulderWrap: shoulderWrapStats, wrap: wrapStats, wrapTail: tailStats, earrings: earStats, eyepatch: patchStats, necklace: neckStats, beltCoins: beltCoinStats, beltCharms: charmStats, sandals: sandalSt, sashBelt: sashBeltSt, cord: cordStats, lacing: laceStats, skirtHands, hood: hoodStats, brows: browStats, helm: helmStats, mail: mailSt, shield: shieldStats, spear: spearStats, crossbow: crossbowStats, staff: staffStats, basket: basketStats, legWraps: legWrapSt, chair: chairSt, coat: coatSt, coatHood: coatHoodSt };
 }
 
 // palettes from OG-025: undyed wool, browns, slate blue, madder red; furs; ash-blond to red hair; pale to weathered skin

@@ -182,9 +182,9 @@ function buildPanel() {
     inputs.cloakFlags = () => { hd.value = D().hood || 'none'; bib.checked = !!D().bib; lea.checked = !!D().apronLeather; cp.checked = !!D().cape; }; }
   slider('cloak length', () => D().cloakLen ?? .8, v => D().cloakLen = v, 0, 1, 'cloakLen');
   slider('coat length', () => D().coatLen ?? .75, v => D().coatLen = v, 0, 1, 'coatLen');
-  // the coat's hood (Session 1152, OG-109's Mark): up over the head, fur round the face when the coat has fur
-  { const ch = el('input', { type: 'checkbox', checked: D().coatHood === 'up', onchange: () => { D().coatHood = ch.checked ? 'up' : null; schedule(); } });
-    panel.append(el('div', { className: 'bar' }, el('label', {}, ch, ' coat hood up'))); inputs.coatHood = () => ch.checked = D().coatHood === 'up'; }
+  // the coat's hood (Session 1152, OG-109's Mark): up over the head, fur round the face when the coat has fur; down on the back (Session 1153)
+  { const ch = el('select', {}, ...['none', 'down', 'up'].map(v => el('option', { value: v, textContent: 'coat hood ' + v }))); ch.value = D().coatHood || 'none'; ch.onchange = () => { D().coatHood = ch.value === 'none' ? null : ch.value; schedule(); };
+    panel.append(el('div', { className: 'bar' }, ch)); inputs.coatHood = () => ch.value = D().coatHood || 'none'; }
   genomePanel(['full', 'head', 'face', 'side', 'back']);
 }
 // a creature's panel: its seed and Roll (the locked sliders kept), its gaits, the kit's six sliders, and its colour shift
