@@ -15,6 +15,25 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+### Should a shopkeeper at the counter see into the kit shops' back rooms? (from the systems builder, 2026-10-20, #516)
+Since the kit's houses every Dunmore shop is 13.2 m deep with the strongbox in a back room; the keeper stands 7.6–7.9 m from the box and 5.6–5.7 m from the back-room door. Indoors a keeper sees within 6 units (`witnessOf`, `86-world-crime.js`, from Session 167, in the old unit before F2a made rooms true size), so the back room is out of reach and the box can be emptied unseen behind an open door. In the old shops the open door gave you away. Found by `tests/witness` on #443 (Session 1215).
+- **A. Keep six:** the back room is the thief's, door open or shut. Nothing to build.
+- **B (recommended). Indoors the reach is 8.7 m** (6 × 1.444, what S167 meant at true scale): the keeper sees through an open back-room door to the box, not through a shut one; Quiet work (Locks 75) halves it to 4.3; `guardsindoor` and `keepercone` re-measured.
+- **C. Keep six, and the keeper looks into the back room now and then** on a seeded schedule; more to build, and a player can time it.
+
+Recommendation: **B.**
+
+## Answered
+### The townhouse's front door: 2.4 m as drawn, or the foundation's 2.2? (from the look builder, 2026-10-20, #514)
+On the new look Dunmore's 43 homes are the kit's Georgian townhouses, whose door leaf is 2.4 m under a 0.55 m fanlight (`38-kit.js`). F2a's foundation (`SCALE.DOOR_H`) puts a house door at 2.0 to 2.2 m, and `tests/scaleratio` checks that range, so it cannot pass on the new look: the eye at 1.65 comes to 0.69 of the door against a target of 0.75 to 0.85. The kit's other house doors already fit (cottage 2.0, farmhouse 2.08, shop 2.15). Raised by Session 1211 from #443's CI.
+- **A (recommended). Bring it to the foundation:** the leaf to 2.2 m under the same fanlight (opening 2.75 m); the 2.0–2.2 rule stands for every house, and the coaching inn's fanlit door follows it.
+- **B. Keep the 2.4 m Georgian leaf:** a town front door becomes its own class in SCALE (2.0 to 2.4); the suite and the foundation's table gain the row.
+- **C. The plain house door:** the leaf at 2.05 m like the others (opening 2.6 m); the fanlight sits low over a short door.
+
+Recommendation: **A**, the smallest change a player would see, keeping the one door rule Michael approved.
+
+Michael: **Bring it to 2.2 m under the same fanlight** — "#514: A, bring the townhouse door to 2.2 m under the same fanlight." (2026-10-20, in chat; on #514)
+
 ### The gate interiors: how often is a gate failing or catastrophic? (from the designer, 20 Oct 2026, #494)
 The build sheet for Michael's B on #448 and A on #421 (`docs/design/gate-interiors-build.md`, section *The open number*) settles every number but one: how often a lesser gate is rolled steady, failing or catastrophic. It sets how often the player climbs floating stones (#417 A) over gone spans instead of walking the whole hall. Either way nothing on the way to the ring needs a skill: every gap on the path is under 2.5 m.
 - **A.** Half steady, a third failing, one in seven catastrophic (50 / 35 / 15). *(recommended)*
@@ -22,6 +41,8 @@ The build sheet for Michael's B on #448 and A on #421 (`docs/design/gate-interio
 - **C.** By how near a great gate: steady far off, failing within 2 km, catastrophic within 500 m.
 
 Recommendation: **A.** The whole hall stays the gate you know, one in three is a climb, and the broken one stays rare enough to mean what the canon says: a place where the binding tore.
+
+Michael: **A, 50 / 35 / 15: half steady, a third failing.** (2026-10-20, on the control room)
 
 ### Which farmyard the Gatelands' farms take (from the look builder, 20 Oct 2026, #498)
 Session 1194 (card F6, prototype only) gave the kit a byre (one low limewashed storey, two half-doors) and a barn (two storeys of bare rubble, a cart arch, a pitching door under a hoist). Round the farmhouse they make a farmstead with a cobbled yard: gate piers and a field gate, the dunghill, pump and trough, a cart, a hay rick, a turf clamp; about 8.5k triangles in 20 draws a layout. How should the three buildings stand round the yard?
@@ -32,7 +53,8 @@ Session 1194 (card F6, prototype only) gave the kit a byre (one low limewashed s
 
 Recommendation: **A.** From the road it reads as a house, and the yard is a place of its own, closed on four sides. Pictures: [all three](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/pieces-gatelands-farmstead-all.jpg), [A from the road](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/pieces-gatelands-farmstead-yard.jpg), [B](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/pieces-gatelands-farmstead-line.jpg), [C](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/pieces-gatelands-farmstead-range.jpg).
 
-## Answered
+Michael: **A, round a yard behind the house.** (2026-10-20, on the control room)
+
 ### A town's market on the new look: a market house, a shelter, or the stalls as today? (look builder, Session 1178) — DECISION #475
 OG-114 draws eight workplaces for the trades; the market hall is the one the new kit lacks. A Gatelands town holds its market today as trestle stalls on the square.
 - **A. A market house** *(recommended)*. Two storeys, 15 by 8.6 m: an open arcade of round arches below, a room above reached by an outside stair at the east end, a cupola with the market bell. Limewash, dressed stone and slate (OG-070). A plot on the square about 17 by 11 m, like the church's (#433 B); a second landmark on the square. 10.9k triangles in 21 draws.
