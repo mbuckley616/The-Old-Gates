@@ -1081,8 +1081,144 @@ function aurenneTavern(o = {}, r = stream('tavern')) {
   return { group: all, shell: sh.group, room: group, tris: Math.round(tris), draws: group.children.length, shellTris: sh.tris, shellCalls: sh.draws, inner: { x0: -X, x1: X, z0: -Z, z1: Z }, floor: F0, ceil: TOP - .22, terrace, loggia: { z0: d / 2, z1: az },
     arches, door: { x: sh.doorX, z: d / 2, w: 1.05, h: 2.0 }, counter, tables, seats, path, path2, boxes, lamps, braziers, w, d };
 }
+// ── the six gods' row of seven at the town church (Session 1224; Michael's B on #464, after his C on #439; card F6) ──
+// shrines.js's row('gatelands', { yard: true }) (Session 1172), as plain script. One common niche a god: a limewashed stele 1.0 m wide and
+// 2.3 m to the top of its arch on a limestone plinth, a recess 0.62 m wide with its sill at 1.03 m, a robed figure 0.95 m tall holding
+// the god's icon (a wolf sitting in its place for Na Beithígh), the god's name cut under the sill and the icon in a roundel over the
+// arch, a candle on the sill and a stone basin before it; the Guest's the same stele with all of it struck away. In a churchyard the row
+// has no wall, well, thorn or cross of its own: rags on the hood mouldings' stops and primroses at the foot. The niches' front faces at
+// z 0, the church at +z, 1.4 m apart, the Guest's last at +x. Differences from the prototype: the names and roundels are painted on one
+// sheet and drawn as one mesh, and the rags, leaves, flowers and wax are one material over a strip of their colours, so the row is
+// 8 materials, not 25; the same streams roll the same candles, rags and flowers.
+const ROW_GODS = [
+  { key: 'muir', name: 'An Mhuir', en: 'the Sea', icon: 'hull' }, { key: 'speir', name: 'An Spéir', en: 'the Sky', icon: 'sundial' },
+  { key: 'beithigh', name: 'Na Beithígh', en: 'the Beasts', icon: 'wolf' }, { key: 'cloch', name: 'An Chloch', en: 'the Stone', icon: 'gate' },
+  { key: 'teallach', name: 'An Teallach', en: 'the Hearth', icon: 'lamp' }, { key: 'fiodoir', name: 'An Fíodóir', en: 'the Weaver', icon: 'shuttle' }];
+const ROW_INK = '#5a5248', ROW_PAL = [0xa83a2a, 0xe6e0d0, 0x3a5a8a, 0x4e7a3a, 0xd8b040, 0x3e5a28, 0xf0dc6a, 0xf4f0e4, 0xeee2c4];
+const PAL = { rag0: 0, rag1: 1, rag2: 2, rag3: 3, rag4: 4, leaf: 5, prim: 6, bloomW: 7, wax: 8 };
+// struck stone: the face cut back with a point chisel, rows of short gouges over a rough ground, paler than the weathered face
+PAINTERS.chisel = () => texPair(256, (x, y) => { const g = tn(x * 2, y * 2, 64, 3), n = tfbm(x, y, 16, 4, 5), pit = Math.max(0, tn(x, y, 96, 9) - .72) * 2, h = g * .45 + n * .55 - pit; const v = .74 + .08 * n - pit * .12; return [h, v, v * .97, v * .92]; }, 1.6);
+const ICON2D = {
+  hull: x => { x.beginPath(); x.moveTo(30, 132); x.quadraticCurveTo(128, 230, 226, 132); x.lineTo(196, 132); x.quadraticCurveTo(128, 196, 60, 132); x.closePath(); x.fill(); x.fillRect(122, 40, 12, 96); x.beginPath(); x.moveTo(136, 48); x.lineTo(196, 118); x.lineTo(136, 118); x.closePath(); x.fill(); },
+  sundial: x => { x.lineWidth = 12; x.beginPath(); x.arc(128, 128, 84, 0, Math.PI * 2); x.stroke(); x.lineWidth = 6; for (let k = 0; k < 12; k++) { const a = k / 12 * Math.PI * 2; x.beginPath(); x.moveTo(128 + Math.cos(a) * 58, 128 + Math.sin(a) * 58); x.lineTo(128 + Math.cos(a) * 76, 128 + Math.sin(a) * 76); x.stroke(); }
+    x.beginPath(); x.moveTo(128, 128); x.lineTo(196, 72); x.lineTo(128, 72); x.closePath(); x.fill(); },
+  wolf: x => { x.beginPath(); [[60, 200], [76, 120], [64, 52], [100, 92], [128, 84], [150, 60], [160, 96], [214, 128], [208, 146], [160, 146], [150, 200]].forEach(([a, b], i) => i ? x.lineTo(a, b) : x.moveTo(a, b)); x.closePath(); x.fill(); },
+  gate: x => { x.fillRect(60, 70, 34, 140); x.fillRect(162, 70, 34, 140); x.fillRect(44, 44, 168, 32); x.lineWidth = 8; x.beginPath(); x.arc(128, 150, 32, Math.PI, 0); x.stroke(); },
+  lamp: x => { x.beginPath(); x.ellipse(118, 160, 72, 30, 0, 0, Math.PI * 2); x.fill(); x.beginPath(); x.moveTo(180, 148); x.lineTo(222, 128); x.lineTo(222, 146); x.lineTo(186, 172); x.closePath(); x.fill(); x.fillRect(100, 186, 36, 22);
+    x.beginPath(); x.moveTo(214, 122); x.quadraticCurveTo(196, 80, 220, 40); x.quadraticCurveTo(246, 84, 226, 122); x.closePath(); x.fill(); },
+  shuttle: x => { x.beginPath(); x.moveTo(20, 128); x.quadraticCurveTo(128, 72, 236, 128); x.quadraticCurveTo(128, 184, 20, 128); x.closePath(); x.fill(); x.save(); x.globalCompositeOperation = 'destination-out'; x.fillRect(96, 116, 64, 24); x.restore(); x.fillRect(104, 122, 48, 12); } };
+// the sheet: the six names (512 by 192 each, two columns) over the six roundels (256 square, four to a row), letters as a mason cuts
+// them, the stroke dark with a pale lip under it; returns the material and each cell's rect in uv
+let ROW_SHEET = null;
+function rowSheet() {
+  if (ROW_SHEET) return ROW_SHEET; const c = document.createElement('canvas'); c.width = 1024; c.height = 1088; const x = c.getContext('2d'), cells = {};
+  const uvr = (px, py, w, h) => [px / c.width, 1 - (py + h) / c.height, (px + w) / c.width, 1 - py / c.height];
+  ROW_GODS.forEach((god, i) => { const px = (i % 2) * 512, py = Math.floor(i / 2) * 192, w = 512, h = 192; x.save(); x.translate(px, py); x.textAlign = 'center'; x.textBaseline = 'middle';
+    const line = (s, y, f) => { x.font = f; x.fillStyle = 'rgba(255,255,255,.35)'; x.fillText(s, w / 2, y + 2); x.fillStyle = ROW_INK; x.fillText(s, w / 2, y); };
+    line(god.name.toUpperCase(), h * .4, `600 ${h * .3}px Georgia, 'Times New Roman', serif`); line(god.en, h * .76, `italic ${h * .2}px Georgia, 'Times New Roman', serif`); x.restore();
+    cells['n:' + god.key] = uvr(px, py, w, h);
+    const ix = (i % 4) * 256, iy = 576 + Math.floor(i / 4) * 256; x.save(); x.beginPath(); x.rect(ix, iy, 256, 256); x.clip(); x.translate(ix, iy);
+    x.fillStyle = 'rgba(255,255,255,.3)'; x.translate(0, 3); ICON2D[god.icon](x); x.translate(0, -3); x.fillStyle = ROW_INK; x.strokeStyle = ROW_INK; ICON2D[god.icon](x);
+    x.lineWidth = 6; x.beginPath(); x.arc(128, 128, 122, 0, Math.PI * 2); x.stroke(); x.restore(); cells['i:' + god.key] = uvr(ix, iy, 256, 256); });
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.NoColorSpace; t.anisotropy = 8;
+  const m = new THREE.MeshStandardMaterial({ map: t, transparent: true, alphaTest: .25, roughness: .95, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 });
+  return (ROW_SHEET = { m, cells });
+}
+let ROWM = null;
+function rowMats() {
+  if (ROWM) return ROWM;
+  const std = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: o.rough ?? .8, metalness: o.metal ?? 0, side: o.side ?? THREE.FrontSide, ...(o.em ? { emissive: new THREE.Color(...o.em), emissiveIntensity: o.ei ?? 2 } : {}) });
+  const pc = document.createElement('canvas'); pc.width = 16; pc.height = 1; const px = pc.getContext('2d'); ROW_PAL.forEach((h, i) => { px.fillStyle = '#' + h.toString(16).padStart(6, '0'); px.fillRect(i, 0, 1, 1); });
+  const pt = new THREE.CanvasTexture(pc); pt.colorSpace = THREE.NoColorSpace; pt.magFilter = pt.minFilter = THREE.NearestFilter; pt.generateMipmaps = false;
+  ROWM = { lime: mat('plaster', { ns: .7, color: 0xf4f1ea, rough: .95 }), limestone: mat('plaster', { ns: .9, color: 0xc2bcb0, rough: .9 }), statG: mat('plaster', { ns: .5, color: 0xd6d0c2, rough: .85 }),
+    chisel: mat('chisel', { ns: 1.6, color: 0xf2eee6, rough: 1 }), water: std(0x1a2a2c, { rough: .05, metal: .2 }),
+    flame: new THREE.MeshStandardMaterial({ color: 0xffb060, emissive: new THREE.Color(1, .6, .22), emissiveIntensity: 5, transparent: true, opacity: .9, depthWrite: false }),
+    pal: new THREE.MeshStandardMaterial({ map: pt, roughness: .9, side: THREE.DoubleSide }), sheet: rowSheet().m };
+  return ROWM;
+}
+function shrineRow(o = {}) {
+  const M = rowMats(), SH = rowSheet(), B = new Map(), r = stream('row:gatelands'), niches = [];
+  // a geometry into its material's list; a palette key ('rag0', 'leaf', …) takes its colour's texel in the strip as every uv
+  const put = (geo, key, x = 0, y = 0, z = 0, ry = 0, rx = 0, rz = 0, s = 1, uv = .8) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const k of Object.keys(g.attributes)) if (!['position', 'normal'].includes(k)) g.deleteAttribute(k);
+    g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), new THREE.Vector3(s, s, s))); worldUV(g, uv);
+    let k = key; if (k in PAL) { const U = g.attributes.uv; for (let i = 0; i < U.count; i++) U.setXY(i, (PAL[k] + .5) / 16, .5); k = 'pal'; }
+    if (!B.has(k)) B.set(k, []); B.get(k).push(g); return g; };
+  const bx = (key, x0, x1, y0, y1, z0, z1, uv) => put(new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0), key, (x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2, 0, 0, 0, 1, uv);
+  const rod = (key, a, b, r0, r1, seg = 8) => { const A = new THREE.Vector3(...a), Bv = new THREE.Vector3(...b), d = Bv.clone().sub(A), g = new THREE.CylinderGeometry(r1, r0, d.length(), seg);
+    g.applyMatrix4(new THREE.Matrix4().makeRotationFromQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.clone().normalize()))); g.translate(...A.clone().add(Bv).multiplyScalar(.5).toArray()); return put(g, key); };
+  // a sub-builder whose pieces are moved as one (an icon built at the temple's size, then scaled into a figure's hands)
+  const sub = (fn, x, y, z, s = 1) => { const n0 = new Map([...B].map(([k, v]) => [k, v.length])); fn(); const m = new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion(), new THREE.Vector3(s, s, s));
+    for (const [k, gs] of B) for (let i = n0.get(k) || 0; i < gs.length; i++) { gs[i].applyMatrix4(m); if (k !== 'pal') worldUV(gs[i], .8 / s); } };
+  // a plane of the sheet, its uvs the cell's
+  const plate = (cell, w, h, x, y, z) => { const g = new THREE.PlaneGeometry(w, h), [u0, v0, u1, v1] = SH.cells[cell], U = g.attributes.uv; for (let i = 0; i < U.count; i++) U.setXY(i, U.getX(i) ? u1 : u0, U.getY(i) ? v1 : v0);
+    g.translate(x, y, z); const n = g.toNonIndexed(); if (!B.has('sheet')) B.set('sheet', []); B.get('sheet').push(n); };
+  // the figure: a robe turned on a lathe, flattened front to back, a hood over the head, the arms bent to hold the icon at the breast
+  const ROBE = [[.001, 0], [.36, 0], [.34, .25], [.28, .7], [.25, 1.05], [.27, 1.3], [.25, 1.5], [.16, 1.62], [.08, 1.66], [.001, 1.67]];
+  const robed = (key, x, y0, z, sh) => { const k = sh / 2.05;
+    const robe = new THREE.LatheGeometry(ROBE.map(([a, b]) => new THREE.Vector2(a * k, b * k)), 16); robe.scale(1, 1, .78); put(robe, key, x, y0, z);
+    put(new THREE.SphereGeometry(.12 * k, 14, 10).scale(1, 1.2, 1), key, x, y0 + sh * .86, z + .02 * k); put(new THREE.SphereGeometry(.15 * k, 14, 10, 0, Math.PI * 2, 0, Math.PI * .62).scale(1.05, 1.25, 1).rotateX(.35), key, x, y0 + sh * .865, z - .02 * k);
+    for (const s of [-1, 1]) { const S = [x + s * .22 * k, y0 + sh * .74, z + .02 * k], E = [x + s * .23 * k, y0 + sh * .55, z + .1 * k], Hn = [x + s * .08 * k, y0 + sh * .6, z + .36 * k];
+      rod(key, S, E, .07 * k, .06 * k); rod(key, E, Hn, .06 * k, .05 * k); put(new THREE.SphereGeometry(.065 * k, 8, 6), key, ...E); put(new THREE.SphereGeometry(.055 * k, 8, 6), key, ...Hn); }
+    return [x, y0 + sh * .62, z + .44 * k, k]; };
+  const icon3d = (icon, key, [x, y, z, k]) => sub(() => {
+    if (icon === 'lamp') { put(new THREE.CylinderGeometry(.1, .06, .06, 14), key); bx(key, -.025, .025, -.01, .03, .08, .17); put(new THREE.SphereGeometry(.025, 8, 6).scale(1, 2.4, 1), 'flame', 0, .08, .15); }
+    else if (icon === 'hull') { put(new THREE.SphereGeometry(.2, 14, 8, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2).scale(1.5, .9, .5), key, 0, .1, 0); bx(key, -.27, .27, .085, .1, -.1, .1); bx(key, -.005, .005, .06, .34, -.005, .005); }
+    else if (icon === 'sundial') { put(new THREE.CylinderGeometry(.16, .16, .035, 20).rotateX(Math.PI / 2), key, 0, .1, 0); const s = new THREE.Shape(); s.moveTo(0, 0); s.lineTo(.13, 0); s.lineTo(0, .11); s.lineTo(0, 0);
+      put(new THREE.ExtrudeGeometry(s, { depth: .015, bevelEnabled: false }), key, -.02, .1, .018); }
+    else if (icon === 'gate') { for (const s of [-1, 1]) bx(key, s * .1 - .035, s * .1 + .035, -.1, .2, -.04, .04); bx(key, -.17, .17, .2, .27, -.05, .05); }
+    else if (icon === 'shuttle') { put(new THREE.CylinderGeometry(.045, .045, .2, 10).rotateZ(Math.PI / 2), key); for (const s of [-1, 1]) put(new THREE.ConeGeometry(.045, .2, 10).rotateZ(-s * Math.PI / 2), key, s * .2, 0, 0);
+      put(new THREE.CylinderGeometry(.03, .03, .14, 8).rotateZ(Math.PI / 2), 'rag4', 0, 0, .03); } }, x, y, z, k);
+  // Na Beithígh's wolf, sitting, 0.8 m to the ears, facing +z
+  const wolf = (key, x, y0, z) => sub(() => {
+    put(new THREE.SphereGeometry(.2, 14, 10).scale(1.1, .85, 1.25), key, 0, .19, -.08); put(new THREE.SphereGeometry(.16, 14, 10).scale(.9, 1.45, .95), key, 0, .42, .03, 0, -.25);
+    put(new THREE.SphereGeometry(.105, 14, 10).scale(1, .95, 1.1), key, 0, .66, .1); put(new THREE.ConeGeometry(.055, .17, 10).rotateX(Math.PI / 2), key, 0, .63, .23); put(new THREE.SphereGeometry(.02, 6, 5), key, 0, .635, .315);
+    for (const s of [-1, 1]) { put(new THREE.ConeGeometry(.035, .1, 6), key, s * .055, .77, .06, 0, -.15, s * -.25); rod(key, [s * .075, .02, .17], [s * .07, .4, .1], .032, .04); put(new THREE.SphereGeometry(.04, 8, 6).scale(1, .6, 1.4), key, s * .075, .025, .19);
+      put(new THREE.SphereGeometry(.07, 10, 8).scale(.8, .6, 1.8), key, s * .14, .08, -.02); }
+    rod(key, [.12, .05, -.24], [.2, .04, .05], .045, .025); rod(key, [.2, .04, .05], [.12, .04, .2], .025, .012); }, x, y0, z);
+  // the common niche
+  const W = 1.0, SPRING = 1.8, PL = .25, SILL = .78, RW = .62, RSPRING = 1.52, DF = .32, DB = .16;
+  const outline = () => { const s = new THREE.Shape(); s.moveTo(-W / 2, 0); s.lineTo(W / 2, 0); s.lineTo(W / 2, SPRING); s.absarc(0, SPRING, W / 2, 0, Math.PI, false); s.lineTo(-W / 2, 0); return s; };
+  const recess = P => { P.moveTo(-RW / 2, SILL); P.lineTo(RW / 2, SILL); P.lineTo(RW / 2, RSPRING); P.absarc(0, RSPRING, RW / 2, 0, Math.PI, false); P.lineTo(-RW / 2, SILL); return P; };
+  const niche = (godKey, x0) => {
+    const guest = godKey === 'guest', god = ROW_GODS.find(g => g.key === godKey), rn = stream(`niche:gatelands:${godKey}:${x0}`);
+    // the plinth, a step wider than the stele, and the stele on it: a frame with the recess through it, and a back slab
+    bx('limestone', x0 - .6, x0 + .6, -.35, PL, -.58, .14);
+    const fr = outline(); fr.holes.push(recess(new THREE.Path())); put(new THREE.ExtrudeGeometry(fr, { depth: DF - .02, bevelEnabled: true, bevelThickness: .01, bevelSize: .01, bevelSegments: 1, curveSegments: 14 }), 'lime', x0, PL, -DF + .01);
+    put(new THREE.ExtrudeGeometry(outline(), { depth: DB, bevelEnabled: false, curveSegments: 14 }), 'lime', x0, PL, -DF - DB);
+    put(new THREE.ShapeGeometry(recess(new THREE.Shape()), 14), 'lime', x0, PL, -DF + .004);
+    // the hood moulding over the arch and its two stops, and the sill, a lip out over the face
+    put(new THREE.TorusGeometry(RW / 2 + .06, .035, 6, 18, Math.PI), 'limestone', x0, PL + RSPRING, .015); for (const s of [-1, 1]) bx('limestone', x0 + s * (RW / 2 + .06) - .05, x0 + s * (RW / 2 + .06) + .05, PL + RSPRING - .1, PL + RSPRING, -.02, .05);
+    bx('limestone', x0 - RW / 2 - .08, x0 + RW / 2 + .08, PL + SILL - .05, PL + SILL, -DF + .01, .07);
+    const sillY = PL + SILL, fz = -DF / 2 - .01, pY = PL + .63, rY = PL + RSPRING + RW / 2 + .2;
+    if (!guest) { plate('n:' + god.key, .78, .28, x0, pY, .006); plate('i:' + god.key, .24, .24, x0, rY, .006);
+      if (god.icon === 'wolf') wolf('statG', x0, sillY, fz - .02); else icon3d(god.icon, 'statG', robed('statG', x0, sillY, fz, .95));
+      const cx = x0 + .2, cz = -.04, ch = .1 + rn() * .06; put(new THREE.CylinderGeometry(.03, .032, ch, 10), 'wax', cx, sillY + ch / 2, cz); put(new THREE.SphereGeometry(.016, 6, 5).scale(1, 2.3, 1), 'flame', cx, sillY + ch + .035, cz);
+    } else {
+      // the figure struck away: a stump of the hem on the sill, its outline a scar on the back of the recess, the name and the roundel cut back
+      const k = .95 / 2.05, stump = new THREE.LatheGeometry([[.001, 0], [.36, 0], [.35, .12], [.31, .2], [.001, .26]].map(([a, b]) => new THREE.Vector2(a * k, b * k)), 12); stump.scale(1, 1, .78); put(stump, 'chisel', x0, sillY, fz);
+      const sil = new THREE.Shape(); ROBE.forEach(([a, b], i) => i ? sil.lineTo(a * k * 1.02, b * k) : sil.moveTo(0, 0)); for (let i = ROBE.length - 1; i >= 0; i--) sil.lineTo(-ROBE[i][0] * k * 1.02, ROBE[i][1] * k);
+      put(new THREE.ExtrudeGeometry(sil, { depth: .012, bevelEnabled: false }), 'chisel', x0, sillY, -DF + .006);
+      bx('chisel', x0 - .4, x0 + .4, pY - .14, pY + .14, -.012, .002); put(new THREE.CylinderGeometry(.13, .13, .012, 18).rotateX(Math.PI / 2), 'chisel', x0, rY, -.002); }
+    // the basin before the niche, a bowl on a stem with water in it; none before the Guest's
+    let basin = null; if (!guest) { const bz = .55; put(new THREE.CylinderGeometry(.08, .12, .52, 12), 'limestone', x0, .26, bz); put(new THREE.CylinderGeometry(.16, .16, .05, 14), 'limestone', x0, .025, bz);
+      put(new THREE.LatheGeometry([[0, 0], [.1, .005], [.19, .05], [.25, .13], [.25, .16], [.22, .16], [.18, .08], [0, .06]].map(([a, b]) => new THREE.Vector2(a * .85, b * .85)), 18), 'limestone', x0, .52, bz);
+      put(new THREE.CircleGeometry(.175, 18).rotateX(-Math.PI / 2), 'water', x0, .52 + .115, bz); basin = [x0, .52 + .136, bz]; }
+    return { god: godKey, x: x0, sill: sillY, basin, pray: [x0, 1.1] }; };
+  const ORDER = [...ROW_GODS.map(g => g.key), 'guest'], X = i => (i - 3) * 1.4;
+  // o.ground: each niche's own ground over the row's (a row on a slope steps down it, each plinth sunk 0.35 m), its flowers and rag with it
+  const dy = i => (o.ground && o.ground[i]) || 0, lift = (i, fn) => { const n0 = new Map([...B].map(([k, v]) => [k, v.length])); const out = fn(); const m = new THREE.Matrix4().makeTranslation(0, dy(i), 0);
+    for (const [k, gs] of B) for (let j = n0.get(k) || 0; j < gs.length; j++) gs[j].applyMatrix4(m); return out; };
+  ORDER.forEach((g, i) => { const n = lift(i, () => niche(g, X(i))); n.dy = dy(i); if (n.basin) n.basin[1] += dy(i); niches.push(n); });
+  // primroses at the foot, and a rag tied on a hood moulding's stop of every niche but the Guest's
+  for (let i = 0; i < 6; i++) for (let j = 0; j < 5; j++) lift(i, () => { const px = X(i) + (r() - .5) * .9, pz = .22 + (r() - .5) * .3; put(new THREE.IcosahedronGeometry(.07, 0).scale(1, .45, 1), 'leaf', px, .03, pz);
+    for (let q = 0; q < 4; q++) put(new THREE.SphereGeometry(.018, 5, 4).scale(1, .5, 1), q % 3 ? 'prim' : 'bloomW', px + (r() - .5) * .1, .065, pz + (r() - .5) * .1); });
+  ORDER.forEach((g, i) => { if (g === 'guest') return; const len = .22 + r() * .16; lift(i, () => put(new THREE.PlaneGeometry(.04, len), 'rag' + (i % 5), X(i) + (i % 2 ? 1 : -1) * (RW / 2 + .06), PL + RSPRING - .1 - len / 2, .06, (r() - .5) * .5, 0, (r() - .5) * .2)); });
+  const group = new THREE.Group(); group.name = 'row of seven'; let tris = 0;
+  for (const [k, gs] of B) { const g = mergeGeometries(gs); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = 'row:' + k; m.castShadow = !['flame', 'water', 'sheet', 'pal'].includes(k); m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
+  return { group, tris: Math.round(tris), draws: group.children.length, niches, len: X(6) - X(0) + W, foot: { x0: X(0) - .6, x1: X(6) + .6, z0: -.58, z1: .14 } };
+}
   return { stream, hashKey, mergeByMaterial, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
     mk: { hall: markHall, alehall: markAlehall, mats: markMats },
     au: { house: aurenneHouse, tavern: aurenneTavern, mats: aurMats, roomMats: homeMats, AUR },
-    gl: { PLANS, FIN, PS, PAINTS, TOWN: GL_TOWN, building, church, keep, inn: gatelandsInn, churchLen: n => +((n === 2 ? 2 : 3) * 4.8 + 1.6 + 5.6 - .5 + 7.2 - .9 - .02).toFixed(2), lot: gatelandsLot, mats: glMats, BAYS, bayPlan, bayWidth, baysFor } };
+    gl: { PLANS, FIN, PS, PAINTS, TOWN: GL_TOWN, building, church, keep, row: shrineRow, ROW_GODS, inn: gatelandsInn, churchLen: n => +((n === 2 ? 2 : 3) * 4.8 + 1.6 + 5.6 - .5 + 7.2 - .9 - .02).toFixed(2), lot: gatelandsLot, mats: glMats, BAYS, bayPlan, bayWidth, baysFor } };
 })();
