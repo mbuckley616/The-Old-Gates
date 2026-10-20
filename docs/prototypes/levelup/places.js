@@ -3791,3 +3791,166 @@ export function gatelandsQuarry(o = {}, r = stream('quarry')) {
     kiln: { x: KX, z0: KZ0, z1: KZ1, w: KW, top: KT, arch: { w: AW, h: AH, depth: ADP }, pot: { r: 1.15, z: (KZ0 + KF) / 2 }, bank: { z: KZ0 - 1.5 } }, yard: { x0: YX0, x1: YX1, z0: YZ0, z1: YZ1 },
     road: { z: RZ, w: RW }, paths, trees };
 }
+// markMineHead(o, r) (Session 1204, card F8; OG-034's Mark, "a mining town with lifts and tunnels", and OG-121's mountain mines): the head of
+// the Mark's silver mine, the outside that markMine's adit comes out of, after the seventeenth-century mine heads of Kongsberg and Røros: a
+// terrace cut into the mountain and built out with the mine's own waste, a log house over the adit's mouth, a shaft under an open headframe,
+// the horse whim that winds from it under an eight-sided roof on posts, a sorting house, and a plank tramway out to the end of the tip. Early
+// winter. At true size, a metre a unit, y 0 the terrace, the hill rising to -z at about 1 in 2.6:
+//   - the terrace: 39 by 18 m, level; cut into the hill behind and at the sides in a bank of rock at 50°, built out in front in grey waste at
+//     35°; the tip a level tongue of waste 5 m wide pushed 5 m past the front, the tramway running on to its end on a trestle;
+//   - the adit house: logs, 4.4 by 5.2 m, its back gable against the bank over the adit's mouth, a cart door 2.2 m wide in the front gable;
+//     behind it the adit, a level of 3 by 2.8 m in the rock held by sets every 1.5 m (2.2 m clear, the cap at 2.3 m), dark at 14 m;
+//   - the tramway: plank rails at a gauge of 0.6 m on sleepers, from the adit through the house and across the terrace to the tip's end, a
+//     cart on it with its ore, a stop-block at the end;
+//   - the shaft: 2 m square, 24 m deep, a collar of squared timber, a fence of two rails round it; over it a headframe of four posts and a cap
+//     at 3.4 m, the sheave on the cap, two stays back toward the whim, the rope down the shaft to a kibble;
+//   - the horse whim, 13 m from the sheave: an upright axle, a drum of 1 m radius from 2.2 to 3.0 m, a sweep of 5.6 m at 1.8 m for the horse,
+//     its ring trodden to earth; over it an eight-sided roof of shingles on eight posts at 7.2 m, eaves 4.4 m, its cone to 9.6 m, the axle's
+//     top in the crossing of two tie beams; the rope from the drum to the sheave passes under the eaves and the roof's skirt between two posts;
+//   - the sorting house: logs, 5.2 by 6.4 m, its door to the tramway, a window to the valley, ore heaped by the door with a barrow;
+//   - the land: the hill under snow, a track down from the terrace's east end in five legs of 1 in 7 to 1 in 14, its cuts
+//     and banks at 35° from its edge, steeper between two legs near a turn; spruce round.
+// -> { group, tris, draws, own, ground, hill, terrace { x0, x1, z0, z1, tongue }, adit { x, z (its mouth), w, h, len, sets [{ z, clear, cap }] },
+//      aditHouse, oreHouse ({ x0, x1, z0, z1, eaves, ridge, y0, door }), rails { x, z0, z1, top, gauge, bents ([z]) }, cart { x, z },
+//      shaft { x, z, w, depth, fence { half, rails } }, sheave { x, y, z, r }, drum { x, z, y0, y1, r, rope }, rope [[x, y, z]…],
+//      whim { x, z, path, posts ([x, z]), r, eaves, beam, apex, sweep }, paths, track ([x, z, y] its turns), trees }
+export function markMineHead(o = {}, r = stream('minehead')) {
+  const std = (c, ro = .9, x = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: ro, ...x }); markTextures();
+  const M = { snow: mat('plaster', { ns: .3, color: 0xf2f6fa, rough: .95 }), trod: mat('plaster', { ns: .6, color: 0xb4bac4, rough: .9 }), yard: mat('plaster', { ns: .7, color: 0xa29c94, rough: .95 }),
+    earth: mat('turfDry', { ns: 1.0, color: 0x6a5a48, rough: 1 }), spoil: mat('rock', { ns: 1.6, color: 0x7a766e, rough: 1 }), bank: mat('rock', { ns: 1.3, color: 0x6a665f, rough: .95 }),
+    log: mat('beam', { ns: 1.2, color: 0xa88866, rough: .9 }), end: std(0x9c7c5a, .9), board: mat('wood', { ns: .9, color: 0x6a5440, rough: .9 }), turf: mat('turfDry', { ns: 1.2, color: 0x8a7a5a, rough: 1 }),
+    shingle: mat('wood', { ns: 1.4, color: 0x54463a, rough: .9 }), timber: mat('beam', { ns: 1.0, color: 0x8a6c4c, rough: .9 }), tunnel: mat('rock', { ns: 1.5, color: 0x5e5a54, rough: .95 }),
+    dark: std(0x0b0a09, 1), iron: std(0x2c2a28, .5, { metalness: .6 }), rope: std(0x8a7650, .95), ore: std(0x6a6e76, .35, { metalness: .8 }), bark: std(0x4a3a30, .95), needle: std(0x2a3a2a, .9) };
+  M.tunnel.side = M.shingle.side = THREE.DoubleSide; M.tunnel.vertexColors = true; M.dark.fog = M.tunnel.fog = false /* the adit and the shaft stay dark from the yard */;
+  const B = new Map(), key = String(o.key || 'minehead'), F = stream(key + ':lie'), ph = Array.from({ length: 8 }, () => F() * 6.283), V3 = (x, y, z) => new THREE.Vector3(x, y, z);
+  const put = (geo, k, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, uv = .5) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal', 'color'].includes(a)) g.deleteAttribute(a);
+    if (!g.attributes.normal) g.computeVertexNormals(); g.applyMatrix4(new THREE.Matrix4().compose(V3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), V3(1, 1, 1))); worldUV(g, uv);
+    if (!B.has(k)) B.set(k, []); B.get(k).push(g); return g; };
+  const rod = (k, a, b, rad, seg = 6) => { const A = V3(...a), C = V3(...b), d = C.clone().sub(A), g = new THREE.CylinderGeometry(rad, rad, d.length(), seg);
+    g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(V3(0, 1, 0), d.clone().normalize())); g.translate((A.x + C.x) / 2, (A.y + C.y) / 2, (A.z + C.z) / 2); return put(g, k); };
+  const sm = t => { t = Math.min(1, Math.max(0, t)); return t * t * (3 - 2 * t); };
+  // the rock of the adit and the shaft, darkened by how far in or down it is, since the sky's light reaches every face: f(x, y, z) in 0 to 1
+  const dim = (geo, f) => { const P = geo.attributes.position, c = new Float32Array(P.count * 3); for (let i = 0; i < P.count; i++) c.fill(f(P.getX(i), P.getY(i), P.getZ(i)), i * 3, i * 3 + 3); geo.setAttribute('color', new THREE.BufferAttribute(c, 3)); return geo; };
+  // the numbers: the terrace and the tongue; the adit at x AX; the shaft at (SHX, SHZ), the sheave SHR in radius on the cap; the whim 13 m on, its
+  // centre WZ set so the rope leaves the drum's side in the shaft's own line
+  const TX0 = -21, TX1 = 18, TZ0 = -10, TZ1 = 8, AX = -8, AW = 3, AH = 2.8, AL = 14, TONGUE = [AX - 2.5, AX + 2.5, TZ1, 13], TEND = 16.2, GAUGE = .6, RTOP = .16;
+  const SHX = -4, SHZ = 0, SHW = 2, SHD = 24, CAP = 3.4, SHR = .45, SY = CAP + .6, DR = 1.0, WX = SHX + SHR + 13, WZ = SHZ - DR, PR = 5.6, POSTR = 7.2, EAV = 4.4, APEX = 9.6, DY0 = 2.2, DY1 = 3.0, ROPE_Y = 2.4, SWEEP = 1.8;
+  const T50 = Math.tan(50 * Math.PI / 180), T35 = Math.tan(35 * Math.PI / 180);
+  const hill = (x, z) => .38 * (2 - z) + .35 * Math.sin(x * .09 + ph[0]) * Math.sin(z * .07 + ph[1]) + .12 * Math.sin(x * .31 + z * .23 + ph[2]);
+  const rectD = (x, z, [x0, x1, z0, z1]) => Math.hypot(Math.max(x0 - x, 0, x - x1), Math.max(z0 - z, 0, z - z1)), flatD = (x, z) => Math.min(rectD(x, z, [TX0, TX1, TZ0, TZ1]), rectD(x, z, TONGUE));
+  // the track: from the terrace's east end down the hill in five legs east of it, clear of the tip, each point at the hill's height but the first
+  const PATH = [[TX1 - .5, 5, 0], [44, 7], [22, 15], [44, 23], [22, 31], [46, 38]].map(([x, z, y]) => [x, z, y ?? hill(x, z)]);
+  // the nearest distance to the track, and its height there blended over the legs near by, so the ground between two legs of a turn is a ramp
+  const pathAt = (x, z) => { const L = []; for (let i = 0; i + 1 < PATH.length; i++) { const [a, b] = [PATH[i], PATH[i + 1]], dx = b[0] - a[0], dz = b[1] - a[1], t = Math.max(0, Math.min(1, ((x - a[0]) * dx + (z - a[1]) * dz) / (dx * dx + dz * dz)));
+    L.push([Math.hypot(x - a[0] - dx * t, z - a[1] - dz * t), a[2] + (b[2] - a[2]) * t]); } const d = Math.min(...L.map(q => q[0])); let sw = 0, sy = 0; for (const [di, yi] of L) { const w = Math.exp(-(di - d) / .4); sw += w; sy += w * yi; } return { d, y: sy / sw }; };
+  const shaped = (x, z) => { const d = flatD(x, z); return Math.max(-d * T35, Math.min(d * T50, hill(x, z))); };
+  const ground = (x, z) => { const g = shaped(x, z); if (flatD(x, z) <= 0) return g; const p = pathAt(x, z), e = Math.max(0, p.d - 1.4) * T35; return Math.min(p.y + e, Math.max(p.y - e, g)) /* the track's bed, its cuts and fills at 35° */; };
+  const inBand = (x, z) => Math.abs(x - AX) < AW / 2 && z < TZ0 && z > TZ0 - 5 && ground(x, z) < AH + 1.0 /* the bank over the adit's mouth, cut away: the adit house covers it */;
+  const inShaft = (x, z) => Math.abs(x - SHX) < SHW / 2 && Math.abs(z - SHZ) < SHW / 2;
+  { const steps = (bands, end) => { const v = []; for (const [a, b, st] of bands) for (let q = a; q < b - 1e-6; q += st) v.push(+q.toFixed(2)); v.push(end); return v; };
+    const gx = steps([[-160, -40, 20], [-40, -26, 2], [-26, -12, 1], [-12, -3, .5], [-3, 36, 1], [36, 50, 2], [50, 160, 20]], 160), gz = steps([[-160, -40, 20], [-40, -16, 2], [-16, -15, 1], [-15, -8, .5], [-8, 22, 1], [22, 44, 2], [44, 160, 20]], 160);
+    const pos = [], NX = gx.length, I = {}; for (const z of gz) for (const x of gx) pos.push(x, ground(x, z), z);
+    for (let j = 0; j + 1 < gz.length; j++) for (let i = 0; i + 1 < NX; i++) { const a = j * NX + i, b = a + 1, c = a + NX, d = c + 1, cx = (gx[i] + gx[i + 1]) / 2, cz = (gz[j] + gz[j + 1]) / 2;
+      if (inBand(cx, cz) || inShaft(cx, cz)) continue; const g = ground(cx, cz), h = hill(cx, cz), fd = flatD(cx, cz);
+      const off = pathAt(cx, cz).d > 4.1 /* the track's own cuts and banks lie under the snow */, k = fd < 1e-6 ? (Math.abs(Math.hypot(cx - WX, cz - WZ) - PR) < .8 ? 'earth' : 'yard')
+        : off && g > h + .15 && rectD(cx, cz, TONGUE) <= rectD(cx, cz, [TX0, TX1, TZ0, TZ1]) ? 'spoil' /* the tip's fresh waste; the terrace's old fill is under snow */ : off && g < h - .15 ? 'bank' : 'snow';
+      (I[k] = I[k] || []).push(a, c, b, b, c, d); }
+    for (const [k, idx] of Object.entries(I)) { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); put(g, k, 0, 0, 0, 0, 0, 0, .35); } }
+  // the track: a trodden ribbon 2.4 m wide, five vertices across, laid 3 cm over the ground every half metre
+  { const pts = []; for (let i = 0; i + 1 < PATH.length; i++) { const [a, b] = [PATH[i], PATH[i + 1]], n = Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / .5); for (let k = i ? 1 : 0; k <= n; k++) pts.push([a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n]); }
+    const pos = [], idx = []; pts.forEach(([x, z], i) => { const [p, q] = [pts[Math.max(0, i - 1)], pts[Math.min(pts.length - 1, i + 1)]], dx = q[0] - p[0], dz = q[1] - p[1], l = Math.hypot(dx, dz);
+      for (const sd of [-1, -.5, 0, .5, 1]) { const ex = x + dz / l * 1.2 * sd, ez = z - dx / l * 1.2 * sd; pos.push(ex, ground(ex, ez) + .03, ez); } if (i) { const o2 = (i - 1) * 5; for (let c = 0; c < 4; c++) idx.push(o2 + c, o2 + c + 5, o2 + c + 1, o2 + c + 1, o2 + c + 5, o2 + c + 6); } });
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals();
+    if (g.attributes.normal.array.reduce((t, v, j) => j % 3 === 1 ? t + v : t, 0) < 0) { g.setIndex(idx.map((v, j) => idx[j - j % 3 + [0, 2, 1][j % 3]])); g.computeVertexNormals(); } put(g, 'trod', 0, 0, 0, 0, 0, 0, .35); }
+  // the adit: its floor, walls and roof in the rock, dark at its end; a set every 1.5 m, two posts and a cap, lagging boards over the caps
+  const sets = []; { const zc = TZ0 - AL / 2, fa = (x, y, z) => Math.max(.05, 1 - Math.max(0, AL / 2 - z - 1) / 4.5) /* local z: the mouth at AL / 2 */;
+    put(dim(new THREE.PlaneGeometry(AW, AL, 1, 14).rotateX(-Math.PI / 2), fa), 'tunnel', AX, 0, zc); put(dim(new THREE.PlaneGeometry(AW, AL, 1, 14).rotateX(Math.PI / 2), fa), 'tunnel', AX, AH, zc);
+    for (const s of [-1, 1]) put(dim(new THREE.PlaneGeometry(AL, AH, 14, 1).rotateY(Math.PI / 2), fa), 'tunnel', AX + s * AW / 2, AH / 2, zc); put(new THREE.PlaneGeometry(AW, AH), 'dark', AX, AH / 2, TZ0 - AL + .02);
+    for (let z = TZ0 - .6; z > TZ0 - AL + 1; z -= 1.5) { for (const s of [-1, 1]) put(new THREE.BoxGeometry(.2, 2.3, .2), 'timber', AX + s * 1.2, 1.15, z); put(new THREE.BoxGeometry(2.8, .2, .22), 'timber', AX, 2.4, z); sets.push(+z.toFixed(2)); }
+    put(new THREE.BoxGeometry(2.8, .04, sets[0] - sets[sets.length - 1] + .3), 'board', AX, 2.52, (sets[0] + sets[sets.length - 1]) / 2); }
+  // the rock over the adit's first metres, where its roof stands proud of the bank's 50°: a block from the house's back gable into the bank
+  put(new THREE.BoxGeometry(AW + .6, AH + 1.1 - AH + .02, 3.3), 'bank', AX, AH + .55, TZ0 - .1 - 1.65);
+  // logs: along x or z between a0 and a1, open cylinders with the cut ends showing; a wall's course cut round its holes
+  const R = .13, STEP = .21, OUT = .3;
+  const log = (ax, a0, a1, c, y) => { const L = a1 - a0, m = (a0 + a1) / 2, g = new THREE.CylinderGeometry(R, R * 1.04, L, 8, 1, true);
+    if (ax === 'x') { g.rotateZ(Math.PI / 2); put(g, 'log', m, y, c, 0, 0, 0, .6); for (const e of [a0, a1]) put(new THREE.CircleGeometry(R * .98, 8).rotateY(e < m ? -Math.PI / 2 : Math.PI / 2), 'end', e, y, c); }
+    else { g.rotateX(Math.PI / 2); put(g, 'log', c, y, m, 0, 0, 0, .6); for (const e of [a0, a1]) put(new THREE.CircleGeometry(R * .98, 8).rotateY(e < m ? Math.PI : 0), 'end', c, y, e); } };
+  const course = (ax, a0, a1, c, y, holes) => { let segs = [[a0, a1]]; for (const h of holes) if (y > h.y0 - R * .5 && y < h.y1 + R) segs = segs.flatMap(([s, e]) => [[s, Math.min(e, h.c - h.w / 2)], [Math.max(s, h.c + h.w / 2), e]]).filter(([s, e]) => e - s > .12);
+    for (const [s, e] of segs) log(ax, s, e, c, y); };
+  // a log house: the side walls along z at x = cx ± hw, nc courses; the gables along x at z = cz ± hd, half a course up; the ridge along z; a
+  // roof of boards, turf and snow; holes [{ wall: 'x-' | 'x+' | 'z-' | 'z+', c (along the wall), w, y0, y1 }]
+  const house = (cx, cz, hw, hd, nc, holes) => { const Y0 = .2, H = w => holes.filter(h => h.wall === w);
+    for (let k = 0; k < nc; k++) { const y = Y0 + R + k * STEP; course('z', cz - hd - OUT, cz + hd + OUT, cx - hw, y, H('x-')); course('z', cz - hd - OUT, cz + hd + OUT, cx + hw, y, H('x+')); }
+    for (let k = 0; k < nc - 1; k++) { const y = Y0 + R + STEP / 2 + k * STEP; course('x', cx - hw - OUT, cx + hw + OUT, cz - hd, y, H('z-')); course('x', cx - hw - OUT, cx + hw + OUT, cz + hd, y, H('z+')); }
+    const eav = Y0 + R + (nc - 1) * STEP, P = .5, ridge = eav + R + hw * Math.tan(P);
+    for (let y = Y0 + R + STEP / 2 + (nc - 1) * STEP; y < ridge - .2; y += STEP) { const hl = (ridge - R - y) / Math.tan(P); if (hl < .25) break; for (const z of [cz - hd, cz + hd]) log('x', cx - hl, cx + hl, z, y); }
+    for (const x of [cx - hw, cx + hw]) for (const z of [cz - hd, cz + hd]) put(new THREE.BoxGeometry(.45, Y0 + .3, .45), 'bank', x, (Y0 + .3) / 2 - .3, z, 0, F() * .3);
+    const run = hw + .6, sl = run / Math.cos(P), RL = 2 * hd + 1.2;
+    for (const s of [-1, 1]) { const n = [s * Math.sin(P), Math.cos(P)], cyb = ridge - run / 2 * Math.tan(P); let off = 0;
+      for (const [k, th] of [['board', .05], ['turf', .12], ['snow', .2]]) { const g = k === 'snow' ? new RoundedBoxGeometry(sl + .04, th, RL + .02, 2, .07) : new THREE.BoxGeometry(sl, th, RL); put(g, k, cx + s * run / 2 + n[0] * (off + th / 2), cyb + n[1] * (off + th / 2), cz, 0, 0, -s * P, .5); off += th; } }
+    put(new RoundedBoxGeometry(.34, .16, RL + .02, 2, .06), 'snow', cx, ridge + .37 / Math.cos(P), cz) /* the snow over the ridge, closing the seam between the slopes */;
+    return { x0: cx - hw, x1: cx + hw, z0: cz - hd, z1: cz + hd, eaves: +eav.toFixed(3), ridge: +ridge.toFixed(3), y0: Y0 }; };
+  // the adit house over the mouth, its cart doors on the tramway's line; the sorting house, its door to the tramway and its window to the valley
+  const AHW = 2.2, AHD = 2.6, aditHouse = house(AX, TZ0 + AHD, AHW, AHD, 13, [{ wall: 'z-', c: AX, w: 2.2, y0: 0, y1: 2.3 }, { wall: 'z+', c: AX, w: 2.2, y0: 0, y1: 2.3 }]);
+  for (const z of [TZ0, TZ0 + 2 * AHD]) { for (const s of [-1, 1]) put(new THREE.BoxGeometry(.12, 2.3, .28), 'board', AX + s * 1.16, 1.15, z); put(new THREE.BoxGeometry(2.44, .14, .28), 'board', AX, 2.37, z); }
+  { const z = TZ0 + 2 * AHD + .18; put(new THREE.BoxGeometry(1.1, 2.2, .05), 'board', AX - 1.7, 1.12, z + .5, 0, -1.2) /* one leaf swung back against the wall */; }
+  const OHX = -17, OHZ = -1, OHW = 2.6, OHD = 3.2, ODZ = OHZ + .8, oreHouse = house(OHX, OHZ, OHW, OHD, 12, [{ wall: 'x+', c: ODZ, w: .9, y0: 0, y1: 2.0 }, { wall: 'z+', c: OHX, w: .8, y0: 1.1, y1: 1.6 }]);
+  put(new THREE.BoxGeometry(2 * OHW, .05, 2 * OHD), 'board', OHX, .225, OHZ); for (const s of [-1, 1]) put(new THREE.BoxGeometry(.26, 1.95, .1), 'board', OHX + OHW, 1.15, ODZ + s * .5);
+  put(new THREE.BoxGeometry(.05, 1.8, .88), 'board', OHX + OHW - .07, 1.13, ODZ); put(new THREE.BoxGeometry(.04, .04, .1), 'iron', OHX + OHW + .02, 1.1, ODZ - .3);
+  put(new THREE.BoxGeometry(.8, .5, .04), 'dark', OHX, 1.35, OHZ + OHD - .02); for (const s of [-1, 1]) { put(new THREE.BoxGeometry(.96, .06, .26), 'board', OHX, 1.35 + s * .28, OHZ + OHD); put(new THREE.BoxGeometry(.06, .5, .26), 'board', OHX + s * .45, 1.35, OHZ + OHD); }
+  oreHouse.door = { x: OHX + OHW, z: ODZ, w: .9, h: 1.8 };
+  // the tramway: sleepers every 0.8 m, two plank rails; past the tongue's end, on stringers over three bents; a stop-block at the end
+  const RZ0 = TZ0 - AL + .8, bents = []; for (let z = RZ0; z < TEND; z += .8) put(new THREE.BoxGeometry(1.0, .06, .16), 'timber', AX, .03, z);
+  for (const s of [-1, 1]) put(new THREE.BoxGeometry(.08, .1, TEND - RZ0 + .2), 'timber', AX + s * GAUGE / 2, .11, (RZ0 + TEND) / 2);
+  { const Z0 = TONGUE[3] - .6; for (const s of [-1, 1]) put(new THREE.BoxGeometry(.16, .22, TEND - Z0 + .2), 'timber', AX + s * .32, -.11, (Z0 + TEND) / 2);
+    for (const z of [13.6, 14.9, TEND - .1]) { bents.push(z); put(new THREE.BoxGeometry(1.2, .16, .18), 'timber', AX, -.3, z); for (const s of [-1, 1]) rod('timber', [AX + s * .5, Math.min(ground(AX + s * .5, z), -.38) - .3, z], [AX + s * .5, -.3, z], .08, 6); }
+    put(new THREE.BoxGeometry(1.0, .22, .22), 'timber', AX, .27, TEND + .02); }
+  // the cart: a box of boards on four small wheels, its ore heaped in it
+  const CZ = 3.2; { const y0 = RTOP + .1; put(new THREE.BoxGeometry(.66, .04, 1.1), 'board', AX, y0 + .02, CZ); for (const s of [-1, 1]) { put(new THREE.BoxGeometry(.04, .5, 1.1), 'board', AX + s * .33, y0 + .25, CZ); put(new THREE.BoxGeometry(.66, .5, .04), 'board', AX, y0 + .25, CZ + s * .55); put(new THREE.BoxGeometry(.7, .04, .04), 'iron', AX, y0 + .45, CZ + s * .45); }
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) { const g = new THREE.CylinderGeometry(.12, .12, .06, 10); g.rotateZ(Math.PI / 2); put(g, 'iron', AX + sx * GAUGE / 2, RTOP + .12, CZ + sz * .35); }
+    for (let k = 0; k < 14; k++) put(new THREE.DodecahedronGeometry(.08 + F() * .06), 'ore', AX + (F() - .5) * .45, y0 + .42 + F() * .12, CZ + (F() - .5) * .85, F() * 3, F() * 3); }
+  // the shaft: its walls down to the sump; the collar; the fence; the headframe, its cap, the sheave, the stays; the rope and the kibble
+  { const fs = (x, y) => Math.max(.03, 1 + y / 3.2), wl = () => dim(new THREE.PlaneGeometry(SHW, SHD, 1, 24).translate(0, -SHD / 2, 0), fs);
+    put(wl(), 'tunnel', SHX, 0, SHZ - SHW / 2); put(wl(), 'tunnel', SHX, 0, SHZ + SHW / 2); for (const s of [-1, 1]) put(wl().rotateY(Math.PI / 2), 'tunnel', SHX + s * SHW / 2, 0, SHZ); put(new THREE.PlaneGeometry(SHW, SHW).rotateX(-Math.PI / 2), 'dark', SHX, -SHD, SHZ);
+    for (const s of [-1, 1]) { put(new THREE.BoxGeometry(SHW + .6, .3, .3), 'timber', SHX, .15, SHZ + s * (SHW / 2 + .15)); put(new THREE.BoxGeometry(.3, .3, SHW), 'timber', SHX + s * (SHW / 2 + .15), .15, SHZ); } }
+  const FH = 1.8; for (const sx of [-1, 1]) for (const sz of [-1, 1]) put(new THREE.BoxGeometry(.12, 1.2, .12), 'timber', SHX + sx * FH, .55, SHZ + sz * FH);
+  for (const y of [.55, 1.05]) for (const s of [-1, 1]) { put(new THREE.BoxGeometry(2 * FH + .1, .08, .06), 'timber', SHX, y, SHZ + s * FH); put(new THREE.BoxGeometry(.06, .08, 2 * FH + .1), 'timber', SHX + s * FH, y, SHZ); }
+  { const P = SHW / 2 + .15; for (const sx of [-1, 1]) for (const sz of [-1, 1]) put(new THREE.BoxGeometry(.22, CAP - .3, .22), 'timber', SHX + sx * P, .3 + (CAP - .3) / 2, SHZ + sz * P);
+    for (const s of [-1, 1]) { put(new THREE.BoxGeometry(2 * P + .4, .24, .24), 'timber', SHX, CAP, SHZ + s * P); put(new THREE.BoxGeometry(.24, .24, 2 * P + .4), 'timber', SHX + s * P, CAP, SHZ);
+      put(new THREE.BoxGeometry(.5, .3, .16), 'timber', SHX + SHR, CAP + .27, SHZ + s * .2) /* the sheave's bearing blocks */; rod('timber', [SHX + P, CAP, SHZ + s * P], [SHX + P + 2.9, -.2, SHZ + s * (P + .5)], .1, 6) /* a stay back toward the whim */; }
+    const sh = new THREE.CylinderGeometry(SHR, SHR, .1, 18); sh.rotateX(Math.PI / 2); put(sh, 'timber', SHX + SHR, SY, SHZ); rod('iron', [SHX + SHR, SY, SHZ - .3], [SHX + SHR, SY, SHZ + .3], .035, 6); }
+  const kib = -2.4; rod('rope', [SHX, SY, SHZ], [SHX, kib + .75, SHZ], .022, 5); put(new THREE.CylinderGeometry(.42, .34, .7, 12, 1, true), 'iron', SHX, kib + .35, SHZ); put(new THREE.CircleGeometry(.34, 12).rotateX(Math.PI / 2), 'iron', SHX, kib, SHZ);
+  rod('iron', [SHX - .42, kib + .7, SHZ], [SHX, kib + .95, SHZ], .015, 4); rod('iron', [SHX + .42, kib + .7, SHZ], [SHX, kib + .95, SHZ], .015, 4);
+  // the whim: the posts, their ring beam and two tie beams crossing over the axle; the roof's cone of shingles, snow on it; the axle, the drum, the sweep
+  const posts = []; for (let k = 0; k < 8; k++) { const a = Math.PI / 8 + k * Math.PI / 4, x = WX + POSTR * Math.sin(a), z = WZ + POSTR * Math.cos(a); posts.push([+x.toFixed(3), +z.toFixed(3)]);
+    rod('timber', [x, -.1, z], [x, EAV, z], .15, 8); put(new THREE.BoxGeometry(.6, .3, .6), 'bank', x, 0, z, 0, F()); }
+  const BEAM = .26; for (let k = 0; k < 8; k++) { const [a, b] = [posts[k], posts[(k + 1) % 8]], L = Math.hypot(b[0] - a[0], b[1] - a[1]); put(new THREE.BoxGeometry(L + .3, BEAM, .22), 'timber', (a[0] + b[0]) / 2, EAV - BEAM / 2, (a[1] + b[1]) / 2, 0, Math.atan2(-(b[1] - a[1]), b[0] - a[0])); }
+  for (const k of [0, 2]) { const [a, b] = [posts[k], posts[k + 4]], L = Math.hypot(b[0] - a[0], b[1] - a[1]); put(new THREE.BoxGeometry(L, .24, .2), 'timber', WX, EAV - .12 - (k ? .24 : 0), WZ, 0, Math.atan2(-(b[1] - a[1]), b[0] - a[0])); }
+  { const sl = (APEX - EAV) / POSTR, RR = POSTR / Math.cos(Math.PI / 8) + .9, by = EAV - (RR - POSTR / Math.cos(Math.PI / 8)) * sl, hh = APEX - by;
+    put(new THREE.ConeGeometry(RR, hh, 8, 3, true), 'shingle', WX, by + hh / 2, WZ, 0, Math.PI / 8); put(new THREE.ConeGeometry(RR + .02, hh, 8, 3, true).translate(0, .14, 0), 'snow', WX, by + hh / 2, WZ, 0, Math.PI / 8);
+    rod('timber', [WX, EAV - .5, WZ], [WX, APEX + .1, WZ], .14, 8) /* the king post */; }
+  rod('timber', [WX, -.1, WZ], [WX, EAV - .5, WZ], .2, 10);
+  { const g = new THREE.CylinderGeometry(DR, DR, DY1 - DY0, 16, 1, true); put(g, 'timber', WX, (DY0 + DY1) / 2, WZ); for (const y of [DY0, DY1]) put(new THREE.CylinderGeometry(DR + .14, DR + .14, .06, 16), 'timber', WX, y, WZ);
+    for (let k = 0; k < 4; k++) { const t = new THREE.TorusGeometry(DR + .02, .022, 4, 20); t.rotateX(Math.PI / 2); put(t, 'rope', WX, ROPE_Y - k * .05, WZ); } }
+  const SA = .75 /* the sweep's angle from +z, toward the view from the track */, sx = Math.sin(SA), sz = Math.cos(SA);
+  put(new THREE.BoxGeometry(.18, .2, PR + .3), 'timber', WX + sx * (PR + .3) / 2, SWEEP, WZ + sz * (PR + .3) / 2, 0, SA); rod('timber', [WX, DY0 - .15, WZ], [WX + sx * 2.6, SWEEP + .1, WZ + sz * 2.6], .07, 6);
+  rod('iron', [WX + sx * PR, SWEEP - .1, WZ + sz * PR], [WX + sx * PR, SWEEP - .55, WZ + sz * PR], .02, 4); rod('timber', [WX + sx * PR - sz * .4, SWEEP - .55, WZ + sz * PR + sx * .4], [WX + sx * PR + sz * .4, SWEEP - .55, WZ + sz * PR - sx * .4], .03, 5) /* the swingletree */;
+  // the rope from the drum's side to the top of the sheave, in the shaft's own line
+  const rope = [[WX, ROPE_Y, WZ + DR], [SHX + SHR, SY + SHR, SHZ]].map(p => p.map(v => +v.toFixed(3))); rod('rope', rope[0], rope[1], .022, 5);
+  // ore by the sorting house's door, a barrow
+  for (let k = 0; k < 40; k++) { const a = F() * 6.283, d = Math.sqrt(F()) * 1.1, x = OHX + OHW + 1.2 + Math.cos(a) * d, z = ODZ + 2.2 + Math.sin(a) * d * .8; put(new THREE.DodecahedronGeometry(.07 + F() * .08), F() < .7 ? 'ore' : 'spoil', x, .05 + (1.1 - d) * .32 + F() * .05, z, F() * 3, F() * 3); }
+  { const bx = OHX + OHW + 1.4, bz = ODZ - 2.0; put(new THREE.BoxGeometry(.6, .3, .8), 'board', bx, .45, bz); for (const s of [-1, 1]) rod('timber', [bx + s * .25, .38, bz + .35], [bx + s * .3, .55, bz + 1.3], .025, 5);
+    const w = new THREE.CylinderGeometry(.2, .2, .06, 12); w.rotateZ(Math.PI / 2); put(w, 'timber', bx, .2, bz - .55); }
+  // spruce from outside the terrace and the tip, clear of the track: a trunk and six tiers, a cap of snow on most
+  const trees = []; for (let k = 0, n = 0; k < 1500 && n < 52; k++) { const x = -60 + F() * 110, z = -45 + F() * 95, gy = ground(x, z);
+    if (flatD(x, z) < 5 || pathAt(x, z).d < 3 || Math.hypot(x - WX, z - WZ) < 11 || trees.some(t => Math.hypot(t.x - x, t.z - z) < 2.8)) continue; n++;
+    const h = 8 + F() * 9, w = h * (.22 + F() * .05); rod('bark', [x, gy - .3, z], [x, gy + h * .35, z], h * .016, 6);
+    for (let t = 0; t < 6; t++) { const f = t / 6, y0 = gy + h * (.16 + f * .76), th = h * (.28 - f * .05), rw = w * (1 - f * .8) * (.9 + F() * .2); put(new THREE.ConeGeometry(rw, th, 8, 1, true), 'needle', x, y0 + th / 2, z, 0, F() * 3);
+      if (F() < .8) put(new THREE.ConeGeometry(rw * .62, th * .36, 7, 1, true), 'snow', x + (F() - .5) * rw * .2, y0 + th * .7 + .02, z + (F() - .5) * rw * .2, 0, F() * 3); } trees.push({ x: +x.toFixed(2), z: +z.toFixed(2), h: +h.toFixed(2) }); }
+  const group = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = !['trod', 'dark'].includes(k) /* the yard too: it shades the shaft and the adit under it */; m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
+  return { group, tris: Math.round(tris), draws: group.children.length, own: group.children.length, ground, hill,
+    terrace: { x0: TX0, x1: TX1, z0: TZ0, z1: TZ1, tongue: TONGUE }, adit: { x: AX, z: TZ0, w: AW, h: AH, len: AL, sets: sets.map(z => ({ z, clear: 2.2, cap: 2.3 })) }, aditHouse, oreHouse,
+    rails: { x: AX, z0: RZ0, z1: TEND, top: RTOP, gauge: GAUGE, bents }, cart: { x: AX, z: CZ }, shaft: { x: SHX, z: SHZ, w: SHW, depth: SHD, fence: { half: FH, rails: [.55, 1.05] } },
+    sheave: { x: SHX + SHR, y: SY, z: SHZ, r: SHR }, drum: { x: WX, z: WZ, y0: DY0, y1: DY1, r: DR, rope: ROPE_Y }, rope,
+    whim: { x: WX, z: WZ, path: PR, posts, r: POSTR, eaves: EAV, beam: BEAM, apex: APEX, sweep: SWEEP }, paths: [PATH.map(p => [p[0], p[1]])], track: PATH.map(p => p.map(v => +v.toFixed(3))), trees };
+}
