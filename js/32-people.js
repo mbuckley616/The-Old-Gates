@@ -1274,7 +1274,9 @@ function tickPeople(dt,now){
       const lod=rig.lod?(cd>PEOPLE_LOD.near?1:0):(cd>PEOPLE_LOD.far?1:0);
       if(lod!==rig.lod){rig.lod=lod;rig.mesh.geometry=lod?rig.geoLo:rig.geoHi;}}
     let d=rig.lx==null?0:Math.hypot(at.x-rig.lx,at.z-rig.lz);rig.lx=at.x;rig.lz=at.z;
-    if(d>1.5)d=0; // a teleport, not a stride
+    // a teleport, not a stride: a jump, or more than 12 m/s, which no one walks or runs (S1223: the town's schedule moving someone on
+    // through a hitch, or ticks with no tickPeople between, read as one step of a metre in a frame and latched the run for half a second)
+    if(d>1.5||(dt>0&&d/dt>12))d=0;
     const spd=dt>0?d/dt:0,s=(root.scale.x||1)*(rig.foe?(top.scale.x||1):1);
     rig.phase=(rig.phase+d/(pwCycle(rig.w)*s))%1;
     // walk or run by the pace, smoothed over a few frames, in heights a second
