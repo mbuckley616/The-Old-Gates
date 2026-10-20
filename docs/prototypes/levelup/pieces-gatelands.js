@@ -20,12 +20,14 @@
 // marked in gravel under it; &cam=street (default) | corner | door | far (from 90 m) | high.
 // ?view=market (Session 1179): a town's market on its square, &market=house (default) | shelter | stalls | all (the three in a row),
 // &cam=square (default, from across the square) | arcade (inside, under the beams) | stair (the east end and its stair) | high.
+// ?view=farmstead (Session 1194): the farmhouse, the byre and the barn round their yard, &farm=yard (default) | line | range | all (the three
+// in a row), &cam=road (default, from the road at the gate) | yard (inside, from the gate) | corner | high.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { loadPack, makePerson, markGenome } from './people.js';
 import { Q, W, H, STATS, rnd, fbm, sstep, makeRenderer, makeComposer, buildTextures, mat, worldUV, skyDome, clouds, treeKit, run } from './common.js';
 // the kit itself is in pieces.js since Session 834; this file is its page
-import { glMats as mats, glBucket as bucket, glFinish as finish, glBox as box, glFace as face, gatelandsBuilding as building, GL_PLANS as PLANS, GL_FIN as FIN, glWin as win, gatelandsLot, GL_BAYS, glBayPlan, gatelandsChurch, gatelandsCoachInn, gatelandsKeep, gatelandsMarket } from './pieces.js';
+import { glMats as mats, glBucket as bucket, glFinish as finish, glBox as box, glFace as face, gatelandsBuilding as building, GL_PLANS as PLANS, GL_FIN as FIN, glWin as win, gatelandsLot, GL_BAYS, glBayPlan, gatelandsFarmstead, gatelandsChurch, gatelandsCoachInn, gatelandsKeep, gatelandsMarket } from './pieces.js';
 
 const VIEW = Q.get('view') || 'street', MIX = Q.get('mix') || 'a', CAMQ = Q.get('cam') || (Q.get('view') === 'guild' ? 'front' : Q.get('view') === 'church' ? (Q.get('tower') === 'all' ? 'high' : 'corner') : Q.get('view') === 'coachinn' ? (Q.get('inn') === 'all' ? 'high' : 'street') : Q.get('view') === 'keep' ? (Q.get('keep') === 'all' ? 'high' : 'street') : Q.get('view') === 'market' ? 'square' : 'eye'), STREET = Q.get('street') || 'gatelands-street';
 
@@ -211,6 +213,20 @@ if (VIEW === 'market') {
   const C = all ? [[0, 30, 60], [0, 1, -4]] : { square: [[-7, 1.7, 24], [1, 4.2, 0]], arcade: [[-6.2, 1.65, 2.2], [3, 1.7, -.4]], stair: [[15, 1.7, 12], [7, 3.0, -1]], high: [[-22, 26, 30], [0, 2, -2]] }[CAMQ] || [[-7, 1.7, 24], [1, 4.2, 0]];
   if (!all && MQ !== 'house' && CAMQ === 'square') { C[0] = [-5, 1.7, 18]; C[1] = [1, 2.4, 0]; }
   cam.fov = all ? 50 : CAMQ === 'arcade' ? 66 : 56; cam.updateProjectionMatrix(); cam.position.set(...C[0]); cam.lookAt(...C[1]);
+}
+if (VIEW === 'farmstead') {
+  // the farmstead on a country road (a 5 m track of beaten earth along +z, a field wall along its far side), its lot in the grass
+  const FQ = Q.get('farm') || 'yard', all = FQ === 'all', kinds = all ? ['yard', 'line', 'range'] : [FQ], dx = 46;
+  sun.shadow.camera.left = sun.shadow.camera.bottom = -70; sun.shadow.camera.right = sun.shadow.camera.top = 70;
+  const roadZ = k => k === 'line' ? 12.1 : 3.1;
+  kinds.forEach((k, i) => { const x = all ? (i - 1) * dx : 0, zo = all ? 3.1 - roadZ(k) : 0, g = gatelandsFarmstead({ kind: k }), u = g.userData; put(g, x, zo, 0); (STATS.farms ||= []).push({ kind: k, tris: u.tris, calls: u.calls, size: u.size });
+    plaques.push([x - (all ? 4 : 13), zo + roadZ(k) + 6.4, u]); people.push([x + u.gate.x + .8, zo + u.gate.z - 2.2, Math.PI * .8], [x + u.doors[0].x + u.doors[0].nx * 1.2, zo + u.doors[0].z + u.doors[0].nz * 1.2, Math.atan2(-u.doors[0].nx, -u.doors[0].nz) + .4]); });
+  flat(mat('plaster', { ns: 1.4, color: 0x8f7f66, rough: 1 }), all ? 150 : 70, 5, 0, (all ? 3.1 : roadZ(FQ)) + 3.0, .01, .5);
+  const C = all ? [[0, 40, 78], [0, 0, -6]] : ({ road: { yard: [[20, 1.7, 13], [4, 2.6, -4]], line: [[-7, 1.7, 23], [1, 3, 2]], range: [[19, 1.7, 13], [3, 2.6, -8]] },
+    yard: { yard: [[4.5, 1.65, -4.6], [-5, 1.6, -14]], line: [[2, 1.65, 10.5], [-9, 1.8, 3]], range: [[6, 1.65, -4], [-3, 1.6, -14]] },
+    corner: { yard: [[-24, 9, 14], [0, 1, -7]], line: [[-30, 8, 32], [0, 1, 4]], range: [[-24, 9, 14], [0, 1, -9]] },
+    high: { yard: [[24, 30, 26], [0, 0, -8]], line: [[18, 30, 36], [0, 0, 5]], range: [[24, 30, 26], [0, 0, -8]] } }[CAMQ] || { yard: [[20, 1.7, 13], [4, 2.6, -4]], line: [[-7, 1.7, 23], [1, 3, 2]], range: [[19, 1.7, 13], [3, 2.6, -8]] })[FQ];
+  cam.fov = all ? 50 : 58; cam.updateProjectionMatrix(); cam.position.set(...C[0]); cam.lookAt(...C[1]);
 }
 STATS.plans = BUILT; STATS.view = VIEW; STATS.mix = MIX;
 
