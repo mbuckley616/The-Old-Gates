@@ -20,13 +20,52 @@ _c = strip_common(open(os.path.join(here, 'common.js'), encoding='utf-8').read()
 # people.js's copy: the two modules share one scope here, and a module cannot both import a name and declare it, so none is shared
 _top = lambda src: set(re.findall(r"^(?:const|let|var|function|async function|class) (\w+)", src, flags=re.M))
 for _n in sorted(_top(_c) & _top(_p)): _p = re.sub(r"\b%s\b" % _n, 'P_' + _n, _p)
+# people.js imports the helms (Session 1197); the host serves no relative module, so the bundle carried a dead `import ... from
+# './helms.js'` into every page with people (22 of 23, found 20 Oct 2026). helms.js goes in as a closure ahead of people.js, and
+# people.js's three names are renamed P_ so a page that also wraps helms.js (helmkit) does not meet them
+def _helms_for_people(p):
+    m = re.search(r"^import \{([^}]*)\} from './helms.js';\n", p, flags=re.M)
+    if not m: return p
+    hs = open(os.path.join(here, 'helms.js'), encoding='utf-8').read(); names = re.findall(r"^export (?:const|function) (\w+)", hs, flags=re.M)
+    body = re.sub(r"^import .*;\n", '', strip_common(hs), flags=re.M); pairs = [x.strip().split(' as ') for x in m.group(1).split(',') if x.strip()]
+    local = [pr[-1] for pr in pairs]
+    for n in local: p = re.sub(r"\b%s\b" % n, 'P_' + n, p)
+    m = re.search(r"^import \{([^}]*)\} from './helms.js';\n", p, flags=re.M)
+    wrapped = 'const P_HELMS = (() => {\n' + body + '\nreturn { ' + ', '.join(names) + ' };\n})();\nconst { ' + ', '.join(pr[0] + ': P_' + pr[-1] for pr in pairs) + ' } = P_HELMS;\n'
+    return p[:m.start()] + wrapped + p[m.end():]
+_p = _helms_for_people(_p)
 common = _c + '\n' + _p
 imports_c = re.findall(r"^import .*;$", common, flags=re.M)
 common_body = re.sub(r"^import .*;\n", '', common, flags=re.M)
+# the world's corruption (concept, 20 Oct 2026): any number of the folder's kits, each as one closure in the order given, a kit's own
+# imports of the kits before it read from their closures; then the page's imports from them
+def kits(s, mods):
+    done = {}
+    def exports(src):
+        names = [(n, n) for n in re.findall(r"^export (?:const|let|function|async function|class) (\w+)", src, flags=re.M)]
+        for lst in re.findall(r"^export \{([^}]*)\};?$", src, flags=re.M): names += [(x.strip().split(' as ')[0], x.strip().split(' as ')[-1]) for x in lst.split(',') if x.strip()]
+        return names
+    def uses(src):
+        out = []
+        for names, mod in re.findall(r"^import \{([^}]*)\} from './(\w+)\.js';\n", src, flags=re.M):
+            if mod in done: out.append('const { ' + ', '.join(': '.join(dict.fromkeys(x.strip().split(' as '))) for x in names.split(',') if x.strip()) + ' } = ' + done[mod] + ';')
+        return out
+    pre = []
+    for mod in mods:
+        src = open(os.path.join(here, mod + '.js'), encoding='utf-8').read(); ex = exports(src); tag = 'K_' + mod
+        imps = [i for i in re.findall(r"^import .*;$", src, flags=re.M) if not re.search(r"from '\./", i)]
+        body = re.sub(r"^export \{[^}]*\};?\n", '', strip_common(src), flags=re.M); body = re.sub(r"^import .*;\n", '', body, flags=re.M)
+        pre.append('\n'.join(imps) + '\nconst ' + tag + ' = (() => {\n' + '\n'.join(uses(src)) + '\n' + body + '\nreturn { ' + ', '.join(o if o == n else o + ': ' + n for n, o in ex) + ' };\n})();')
+        done[mod] = tag
+    head = '\n'.join(pre) + '\n' + '\n'.join(uses(s)) + '\n'
+    s = re.sub(r"^import \{[^}]*\} from './(%s)\.js';\n" % '|'.join(mods), '', s, flags=re.M)
+    return head + s
 def build(name, title, note, srcfile, use_common, query=''):
     src = open(os.path.join(here, srcfile), encoding='utf-8').read()
     if use_common:
         s = scene(src)
+        if "from './corruption.js'" in s: s = kits(s, ['gatekit', 'pieces', 'shrines', 'corruption'])
+        if "from './pieces.js'" in s: s = kits(s, ['pieces'])
         if "from './creatures.js'" in s: s = kit(s)
         if "from './implements.js'" in s: s = implkit(s)
         if "from './helms.js'" in s: s = helmkit(s)
@@ -113,6 +152,7 @@ def hud(name, title, note, scene_src, query):
     cut = hbody.index('const until'); pre, post = hbody[:cut], hbody[cut:]
     src = '\n'.join(himps) + '\n' + pre + '\n' + s + '\n{\n' + post + '\n}\n'
     if "from './creatures.js'" in src: src = kit(src)
+    if "from './pieces.js'" in src: src = kits(src, ['pieces'])
     imps = re.findall(r"^import .*;$", src, flags=re.M); body = re.sub(r"^import .*;\n", '', src, flags=re.M)
     code = '\n'.join(dict.fromkeys(imports_c + imps)) + '\n' + common_body + '\n' + body
     code = code.replace("new URLSearchParams(location.search)", f"new URLSearchParams(location.search || '{query}')")
@@ -120,4 +160,5 @@ def hud(name, title, note, scene_src, query):
     open(os.path.join(out, name), 'w', encoding='utf-8').write(head + code + '\n</script></body></html>\n')
 hud('hud-lane.html', 'The HUD in the new look', 'The approved HUD over the new look, in a Gatelands lane. ?frame=metal|carved|bare. Drag to look.', 'street.js', '?scene=lane&frame=metal')
 hud('hud-hall.html', 'The HUD inside a gate', 'The approved HUD over the new look, a skeleton in a gate’s hall. ?frame=metal|carved|bare. Drag to look.', 'gate.js', '?scene=hall&view=hall&frame=metal')
+build('corruption-field.html', 'The world corrupted', 'The world’s corruption, 0 to 6 (L12, OG-145; F12): one Gatelands lane as each great gate is torn. The slider and the cast switch are top left; ?level=0..6, &cast=none|sky|world, &cam=field|hill|scale. Drag to look.', 'corruption-view.js', True, '?level=3')
 print('ok')
