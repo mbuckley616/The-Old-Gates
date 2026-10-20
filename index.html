@@ -1170,7 +1170,7 @@
      writes the 0.170 classic build in and opens a <template>, so the r128 tag below is parsed inert, never run; `?look=old` or
      nothing leaves the page as it was, and the stray </template> after the tag is ignored. Works on file://, Pages and the tests.
      S1195 (F4): the new look also loads the people's builder and MakeHuman's pack (vendor/, made by scripts/people_bundle.py). -->
-<script>(function(){var n=null;try{n=new URLSearchParams(location.search).get('look');if(n!=='new'&&n!=='old')n=localStorage.getItem('og.renderer');}catch(e){}window.OG_LOOK=n==='new'?'new':'old';if(window.OG_LOOK==='new')document.write('<script src="vendor/three.r170.min.js"><\/script><script src="vendor/mh-pack.js"><\/script><script src="vendor/people.builder.js"><\/script><template>');})();</script>
+<script>(function(){var n=null;try{n=new URLSearchParams(location.search).get('look');if(n!=='new'&&n!=='old')n=localStorage.getItem('og.renderer');}catch(e){}window.OG_LOOK=n==='new'?'new':'old';if(window.OG_LOOK==='new')document.write('<script src="vendor/three.r170.min.js"><\/script><script src="vendor/mh-pack.js"><\/script><script src="vendor/people.builder.js"><\/script><script src="vendor/creatures.builder.js"><\/script><template>');})();</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </template>
 <script src="js/05-compat.js"></script>
