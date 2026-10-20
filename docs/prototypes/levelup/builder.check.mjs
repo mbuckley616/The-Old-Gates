@@ -859,6 +859,42 @@ if (!process.argv.includes('--shots-only')) { const page = await browser.newPage
   { const r = c.roll; check(`the Aurennais women's circlets: ${r.worn} of ${r.open} bare-headed women (of ${r.women}), ${r.stones} set with a stone, ${r.onCovered} on a covered head; in the hoops' or coins' metal; ${r.men} men and ${r.others} of 180 other peoples; every other roll the same`,
       r.worn / r.open > .09 && r.worn / r.open < .22 && r.stones / r.worn > .5 && r.stones / r.worn < .9 && r.onCovered === 0 && r.matched && r.men === 0 && r.others === 0 && r.same, r); }
   check('the circlet: no page errors', errs.length === 0, errs.slice(0, 3)); await page.close(); }
+// the Aurennais women's embroidered gowns (Session 1220, OG-110's woman "in red and gold"; OG-109's embroidered formal dress): the gold
+// border changes a close view of the hem, the neck and the sleeve's end against the same gown plain, and not the chest between; its threads
+// are gold in the picture; it is worked into the tunic and the skirt (long, knee or short), and not under a coat, a robe or the Mark's
+// woven bands; it saves; the roll: one Aurennais woman in five in a long skirt and no apron, from a stream of its own, nobody else
+if (!process.argv.includes('--shots-only')) { const page = await browser.newPage({ viewport: { width: 640, height: 360 } }); const errs = []; page.on('pageerror', e => errs.push(String(e)));
+  await page.goto(`http://localhost:${port}/builder.html?still&w=640&h=360&seed=check`); await page.waitForFunction(() => window.__done || window.__err, null, { timeout: 300000 });
+  const e = await page.evaluate(async () => { const K = await import('./people.js'), T = await import('three'), out = { views: {} }, W = 320;
+    const Rr = new T.WebGLRenderer({ antialias: true }), RT = new T.WebGLRenderTarget(W, W);
+    const spot = (G, nm, pick) => { const p = K.makePerson(G), sc = new T.Scene(); sc.add(p.root); sc.add(new T.AmbientLight(0xffffff, 1.2)); const L = new T.DirectionalLight(0xffffff, 2); L.position.set(0, 2, 5); sc.add(L);
+      p.root.updateMatrixWorld(true); const m = p.meshes.find(q => q.name === nm), B = m.geometry.attributes.aBase.array, c = new T.Vector3(), v = new T.Vector3(); let n = 0;
+      for (const i of new Set(m.geometry.index.array)) if (pick(B[i * 3], B[i * 3 + 1], B[i * 3 + 2])) { c.add(m.getVertexPosition(i, v).applyMatrix4(m.matrixWorld)); n++; } c.divideScalar(n);
+      const cam = new T.PerspectiveCamera(30, 1, .05, 10); cam.position.set(c.x + (nm === 'tunic' && pick(.37, .3, .1) ? .2 : 0), c.y, c.z + .45); cam.lookAt(c); Rr.setRenderTarget(RT); Rr.render(sc, cam); const px = new Uint8Array(W * W * 4); Rr.readRenderTargetPixels(RT, 0, 0, W, W, px); Rr.setRenderTarget(null); return px; };
+    const diff = (a, b) => { let d = 0, gold = 0; for (let i = 0; i < a.length; i += 4) { if (Math.abs(a[i] - b[i]) + Math.abs(a[i + 1] - b[i + 1]) + Math.abs(a[i + 2] - b[i + 2]) > 24) { d++; if (b[i + 1] - a[i + 1] > 25 && b[i + 1] > b[i + 2]) gold++; } } return { frac: d / (a.length / 4), gold: d ? gold / d : 0 }; };
+    const G0 = K.rollGenome('gw1', { people: 'aurennais', g: 0 }), base = { ...G0, dress: { ...G0.dress, cloak: null, hood: null, wrap: null, wrapTail: null, sash: null, mantle: null, apron: null, bib: false, cuffs: null, cuffBand: null, necklace: null, tunic: [.6, .14, .1], skirt: 'long', skirtColor: [.6, .14, .1], gownBorder: [.85, .66, .3] } }, plain = { ...base, dress: { ...base.dress, gownBorder: null } };
+    const at = { hem: (x, y, z) => z > .05 && Math.abs(x) < .1 && y < -.63 && y > -.68, neck: (x, y, z) => y > .58 && y < .606 && z > .03, sleeve: x => x > .356 && x < .392, chest: (x, y, z) => z > .05 && Math.abs(x) < .1 && y > .35 && y < .45 };
+    for (const [k, f] of Object.entries(at)) out.views[k] = diff(spot(plain, k === 'hem' ? 'skirt' : 'tunic', f), spot(base, k === 'hem' ? 'skirt' : 'tunic', f));
+    out.still = diff(spot(plain, 'skirt', at.hem), spot(plain, 'skirt', at.hem)).frac;
+    const keys = G => K.makePerson(G).meshes.filter(q => q.material?.customProgramCacheKey?.().includes('emb')).map(q => q.name).sort().join(',');
+    out.keys = { long: keys(base), knee: keys({ ...base, dress: { ...base.dress, skirt: 'knee' } }), short: keys({ ...base, dress: { ...base.dress, skirt: 'short' } }), plain: keys(plain),
+      coat: keys({ ...base, dress: { ...base.dress, coat: [.24, .27, .32] } }), robe: keys({ ...base, dress: { ...base.dress, robe: [.36, .27, .18] } }), bands: keys({ ...base, dress: { ...base.dress, bands: [.62, .47, .22] } }) };
+    const s1 = JSON.stringify(K.toSaved(base)); out.saved = s1 === JSON.stringify(K.toSaved(K.fromSaved(JSON.parse(s1)))) && s1.includes('"gownBorder"');
+    const P = K.PEOPLES.aurennais, gen = (g, i) => K.rollGenome('aurennais:' + i, { people: 'aurennais', g }), women = Array.from({ length: 400 }, (_, i) => gen(0, i)), rate = P.gown; P.gown = 0;
+    const bare = Array.from({ length: 400 }, (_, i) => gen(0, i)); P.gown = rate; const ok = women.filter(G => G.dress.skirt === 'long' && !G.dress.apron), worn = women.filter(G => G.dress.gownBorder), hx = c => JSON.stringify(c);
+    out.roll = { women: women.length, open: ok.length, worn: worn.length, madder: worn.filter(G => hx(G.dress.tunic) === hx([.6, .14, .1])).length, one: worn.every(G => hx(G.dress.tunic) === hx(G.dress.skirtColor) && !G.dress.cuffs && !G.dress.apron && G.dress.skirt === 'long'),
+      palette: worn.every(G => [[.6, .14, .1], [.78, .55, .16], [.1, .38, .38]].some(c => hx(c) === hx(G.dress.tunic)) && [[.85, .66, .3], [.5, .1, .08]].some(c => hx(c) === hx(G.dress.gownBorder))),
+      redThread: worn.filter(G => hx(G.dress.gownBorder) === hx([.5, .1, .08])).every(G => hx(G.dress.tunic) === hx([.78, .55, .16])),
+      same: women.every((G, i) => G.dress.gownBorder || JSON.stringify(G) === JSON.stringify(bare[i])), men: Array.from({ length: 200 }, (_, i) => gen(1, i)).filter(G => G.dress.gownBorder).length,
+      others: ['gatelander', 'markman', 'oldblood'].flatMap(k => Array.from({ length: 60 }, (_, i) => K.rollGenome(k + ':' + i, { people: k }))).filter(G => G.dress.gownBorder).length };
+    Rr.dispose(); return out; });
+  for (const k of ['hem', 'neck', 'sleeve']) { const v = e.views[k]; check(`the gown's gold border changes ${(v.frac * 100).toFixed(1)}% of a close view of the ${k}, ${(v.gold * 100).toFixed(0)}% of that gold, against the same gown plain`, v.frac > .01 && v.gold > .4, v); }
+  check(`the gown's border leaves the chest between alone (${(e.views.chest.frac * 100).toFixed(2)}% changed; the same plain view twice ${(e.still * 100).toFixed(2)}%)`, e.views.chest.frac < .002 && e.still === 0, { chest: e.views.chest, still: e.still });
+  check(`the border is worked into the tunic and the skirt, long (${e.keys.long}), knee (${e.keys.knee}) or short (${e.keys.short}); none on a plain gown, under a coat or a robe, or with the Mark's woven bands; saved and loaded the same`,
+    ['long', 'knee', 'short'].every(k => e.keys[k] === 'skirt,tunic') && !e.keys.plain && !e.keys.coat && !e.keys.robe && !e.keys.bands && e.saved, { ...e.keys, saved: e.saved });
+  { const r = e.roll; check(`the Aurennais women's gowns: ${r.worn} of ${r.open} in a long skirt and no apron (of ${r.women}), ${r.madder} in madder; bodice and skirt in one cloth, no cuffs; madder thread only on saffron; ${r.men} men and ${r.others} of 180 other peoples; every other woman's roll the same`,
+      r.worn / r.open > .13 && r.worn / r.open < .27 && r.madder / r.worn > .3 && r.madder / r.worn < .7 && r.one && r.palette && r.redThread && r.same && r.men === 0 && r.others === 0, r); }
+  check('the gown: no page errors', errs.length === 0, errs.slice(0, 3)); await page.close(); }
 const shotArg = process.argv.find(a => a.startsWith('--shots') && a !== '--shots-only');
 if (shotArg) { const only = shotArg.split('=')[1];
   const shot = async (name, q, w = 1920, h = 1080, panel = false, crop = null) => { if (only && !only.split(',').some(o => name.includes(o))) return; const page = await browser.newPage({ viewport: { width: w, height: h } }); const errs = []; page.on('pageerror', e => errs.push(String(e)));
@@ -889,6 +925,17 @@ if (shotArg) { const only = shotArg.split('=')[1];
     await shot('circlet-loose', 'people=aurennais&seed=c2&sex=f&style=loose&view=head&turn=-.5&dress=' + dq({ ...bare, circlet: [.7, .45, .22], circletStone: [.08, .42, .4] }));
     await shot('circlet-bun', 'people=aurennais&seed=c3&sex=f&style=bun&view=head&turn=2.5&dress=' + dq({ ...bare, circlet: [.85, .66, .3], circletStone: null }));
     await shot('circlet-full', 'people=aurennais&seed=c1&sex=f&style=braids&view=full&turn=.4&dress=' + dq({ ...bare, tunic: [.6, .14, .1], skirt: 'long', skirtColor: [.6, .14, .1], sashBelt: [.85, .66, .3], circlet: [.85, .66, .3], circletStone: [.5, .06, .08], earrings: [.85, .66, .3] })); }
+  // the Aurennais women's embroidered gowns (Session 1220, OG-110's woman "in red and gold"): madder with gold, full and from behind, the
+  // hem, the neck and the sleeve's end close; saffron with madder thread; teal with gold; OG-110's whole figure with the circlet and hoops
+  { const dq = d => encodeURIComponent(JSON.stringify(d)), bare = { cloak: null, hood: null, wrap: null, wrapTail: null, sash: null, mantle: null, apron: null, bib: false, cuffs: null, cuffBand: null },
+      gown = (c, b, x = {}) => ({ ...bare, tunic: c, skirt: 'long', skirtColor: c, gownBorder: b, ...x }), red = gown([.6, .14, .1], [.85, .66, .3]);
+    await shot('gown-front', 'people=aurennais&seed=gw1&sex=f&view=full&turn=.35&dress=' + dq(red)); await shot('gown-back', 'people=aurennais&seed=gw1&sex=f&view=full&turn=2.7&dress=' + dq(red));
+    await shot('gown-hem', 'people=aurennais&seed=gw1&sex=f&view=full&turn=.35&dress=' + dq(red), 1920, 1440, false, [.3, .62, .4, .36]);
+    await shot('gown-neck', 'people=aurennais&seed=gw1&sex=f&view=neck&turn=.3&dress=' + dq(red)); await shot('gown-sleeve', 'people=aurennais&seed=gw1&sex=f&view=hand&zoom=.7&turn=.6&dress=' + dq(red)); await shot('gown-sleeveplain', 'people=aurennais&seed=gw1&sex=f&view=hand&zoom=.7&turn=.6&dress=' + dq({ ...red, gownBorder: null }));
+    await shot('gown-hemclose', 'people=aurennais&seed=gw1&sex=f&view=full&turn=.35&dress=' + dq(red), 3840, 2880, false, [.38, .74, .24, .12]); await shot('gown-hemplain', 'people=aurennais&seed=gw1&sex=f&view=full&turn=.35&dress=' + dq({ ...red, gownBorder: null }), 3840, 2880, false, [.38, .74, .24, .12]);
+    await shot('gown-saffron', 'people=aurennais&seed=gw2&sex=f&view=full&turn=-.45&dress=' + dq(gown([.78, .55, .16], [.5, .1, .08])));
+    await shot('gown-teal', 'people=aurennais&seed=gw3&sex=f&view=full&turn=.5&dress=' + dq(gown([.1, .38, .38], [.85, .66, .3])));
+    await shot('gown-og110', 'people=aurennais&seed=c1&sex=f&style=braids&view=full&turn=.4&dress=' + dq({ ...red, sashBelt: [.85, .66, .3], circlet: [.85, .66, .3], circletStone: [.5, .06, .08], earrings: [.85, .66, .3] })); }
   // the armour's helms by tier in the kit (Session 1197): Steel, Draconic and Cosmic on the builder's own people, the page with its tier row; and a Cosmic robe's hood
   { const dq = d => encodeURIComponent(JSON.stringify(d)), kit = t => ({ mail: [.55, .56, .58], helm: [.4, .4, .42], tier: t, mantle: null, cloak: null, shield: null, spear: null });
     for (const [n, t, q] of [['tierhelm-steel', 4, 'people=markman&seed=th:4&sex=m'], ['tierhelm-draconic', 8, 'people=gatelander&seed=th:8&sex=f'], ['tierhelm-cosmic', 10, 'people=aurennais&seed=th:10&sex=m']]) await shot(n, q + '&view=head&turn=.45&dress=' + dq(kit(t)));

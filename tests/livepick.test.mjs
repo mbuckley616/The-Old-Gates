@@ -7,7 +7,12 @@ const g = await boot(); const { page } = g;
 await g.intoWorld(); await g.settle('dunmore');
 
 // nobody about: every townsperson hidden and parked far off, at 23h, at a shop door
-await page.evaluate(() => { forceTime(23); const S = WORLD.settle.get('dunmore'); const h = S.houses.find(x => /weapon|armor|potion|misc/.test(x.type) && x.keeper); window._h = h;
+// Session 1214: the shop is one whose street, from the door out past where the watchman will stand, is clear ground. On the new look
+// Lorcan's Forge, the first shop, has its exit inside Clodagh's Goods (backlog I, the kit's lots): the watchman stood in that
+// house's walls, and a house between hides you, so nothing was seen.
+await page.evaluate(() => { forceTime(23); const S = WORLD.settle.get('dunmore');
+  const clear = (h) => { const dx = h.exitX - h.doorX, dz = h.exitZ - h.doorZ, L = Math.hypot(dx, dz) || 1; for (let k = .8; k <= 4.6; k += .2) if (WORLD.solidAt(h.doorX + dx / L * k, h.doorZ + dz / L * k)) return false; return true; };
+  const shops = S.houses.filter(x => /weapon|armor|potion|misc/.test(x.type) && x.keeper); const h = shops.find(clear) || shops[0]; window._h = h;
   BAG.push({ name: 'Lockpick', ico: '🗝', type: 'misc', qty: 12 });
   // residents spawn in as the world runs (two every half second), so everyone but the chosen witness is parked every frame
   window._park = () => S.npcs.forEach(n => { if (n === window._keep) return; n.g.visible = false; n.g.position.set(S.site.x + 400, 0, S.site.z + 400); if (n.sched) n.sched = { type: 'guard', a: { x: S.site.x + 400, z: S.site.z + 400 }, b: { x: S.site.x + 400, z: S.site.z + 400 } }; });
