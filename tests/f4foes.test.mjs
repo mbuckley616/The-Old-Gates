@@ -20,14 +20,24 @@ const made = await page.evaluate((KINDS) => { forceTime(12);
   window._F = KINDS.map((n, i) => { const x = px + fx * d + sx * (i - 4.5) * 1.6, z = pz + fz * d + sz * (i - 4.5) * 1.6;
     // the Shieldbearer is the dungeon's (56-dungeon-build.js builds it with buildFoe and keys it): built the same way here
     if (n === 'Shieldbearer') { const rig = buildFoe(n, x, z), grp = new THREE.Group(); grp.add(rig.root); grp.position.set(x, WORLD.worldH(x, z), z); grp.rotation.y = Math.atan2(px - x, pz - z); WORLD.scene.add(grp);
-      const e = keyFoe({ x, z, mesh: grp, dead: false, name: n }, 'f4test:' + i); rig.e = e; return { n, e, rig }; }
+      const e = keyFoe({ x, z, mesh: grp, dead: false, name: n, limbs: { person: rig } }, 'f4test:' + i); rig.e = e; return { n, e, rig }; }
     const e = keyFoe(buildZoneEnemy(WORLD.scene, [], x, z, n, null), 'f4test:' + i); e.mesh.position.set(x, WORLD.worldH(x, z), z); e.mesh.rotation.y = Math.atan2(px - x, pz - z); e.combatYaw = e.mesh.rotation.y;
     e.locked = false; e.mesh.visible = true; if (!e.mesh.parent) WORLD.scene.add(e.mesh); const rig = e.limbs && e.limbs.person; if (rig) rig.e = e; return { n, e, rig }; });
+  // S1205: named, before any body is built, each foe has its genome and its driver's two copies are in its colours: of the driver's
+  // vertices, the share in the genome's skin (within .02 a channel) and in the old genome's skin, near and far, against the share of
+  // the old skin in a bake of the old colours (`before`: the face and hands, a few per cent, less under a hood or a helm)
+  const share = (geo, c) => { const a = geo.attributes.color.array; let n = 0; for (let i = 0; i < a.length; i += 3) if (Math.abs(a[i] - c.r) < .02 && Math.abs(a[i + 1] - c.g) < .02 && Math.abs(a[i + 2] - c.b) < .02) n++; return +(n / (a.length / 3)).toFixed(3); };
+  window._tint = _F.filter(f => f.rig && HB_RIGS.has(f.rig)).map(({ n, e, rig }) => { const G = rig.hbG, t = G && G.skin ? new THREE.Color(G.skin[0], G.skin[1], G.skin[2]) : null, old = new THREE.Color(rig.g.skin);
+    return { n, key: G ? [...HB_GENOMES].find(([, x]) => x === G)?.[0] : null, want: 'foe:' + e.id, built: !!rig.hb, hi: t && share(rig.geoHi, t), lo: t && rig.geoLo && share(rig.geoLo, t), oldHi: share(rig.geoHi, old), before: (() => { const b = personBake(rig.g, 1), v = share(b.geo, old); b.geo.dispose(); return v; })(), same: !!t && t.equals(old) }; });
   CAM.position.set(px, worldH(px, pz) + 1.65, pz); CAM.updateMatrixWorld(true);
   const want = () => _F.filter(f => f.rig && HB_RIGS.has(f.rig) && !f.rig.hb && !f.rig.hbFail).length;
   let k = 0; const t0 = performance.now(); HBODY.last = -1e9; while (want() && k++ < 200) tickPeople(1 / 60, 2e5 + k * (HBODY.gap + 1));
   return { d, ticks: k, left: want(), ms: Math.round(performance.now() - t0) }; }, KINDS);
 console.log('  built:', JSON.stringify(made));
+const tint = await page.evaluate(() => _tint);
+console.log('  tint:', JSON.stringify(tint));
+check('named, each human foe has its genome before its body is built, keyed by its foe id', tint.length === 9 && tint.every(t => t.key === t.want && !t.built), tint.filter(t => t.key !== t.want || t.built));
+check('and its driver, near and far, is in the genome\'s skin, not the old genome\'s', tint.every(t => t.before > .004 && t.hi >= .9 * t.before && t.lo > .004 && (t.same || t.oldHi < .5 * t.before)), tint.map(t => [t.n, t.before, t.hi, t.lo, t.oldHi]));
 
 const who = await page.evaluate(() => _F.map(({ n, e, rig }) => { const H = rig && rig.hb, names = new Set(); if (H) H.root.traverse(o => { if (o.isMesh || o.isGroup) names.add(o.name); });
   return { n, id: e.id, hb: !!H, fail: !!(rig && rig.hbFail), key: rig && rig.hbG ? [...HB_GENOMES].find(([, G]) => G === rig.hbG)?.[0] : null, bones: H ? H.P.skeleton.bones.length : 0,

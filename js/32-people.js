@@ -1365,6 +1365,15 @@ function hbFoeGenome(rig){const g=rig.g,dr=FOE_DRESS[rig.hbFoe]||{},id=rig.e&&ri
   const h=dr.cloth!=null?dr.cloth:0x3a3a3a,c=[(h>>16&255)/255,(h>>8&255)/255,(h&255)/255];
   G.dress=Object.assign({},G.dress,{tunic:c,spear:null,staff:null,crossbow:null,basket:null,basketCloth:null,shield:null,chair:null,apron:null,bib:null,cape:null,coat:null,scarf:null,wrap:null},(HB_FOE_DRESS[rig.hbFoe]||(()=>({})))(c));
   HB_GENOMES.set(key,G);return G;}
+// S1205 — named (keyFoe), a foe rolls its genome at once, and the driver's two baked copies take its colours: the skin, the hair, the
+// tunic, the legs and the boots, from a bake of the same shape in the genome's colours (the vertices are the same, so only the colour
+// attribute is copied). Rolled at the first attach instead (S1201), the driver beyond 42 m kept the old genome's colours, and a foe's
+// skin and hair changed at the line every time it crossed it.
+function hbFoeKeyed(rig,e){if(!hbOn()||!HB_RIGS.has(rig)||rig.hbG||!rig.hbFoe||!e||e.id==null)return;rig.e=rig.e||e;
+  try{rig.hbG=hbFoeGenome(rig);}catch(err){rig.hbFail=true;console.warn('F4: no genome for the foe',rig.hbFoe,err);return;}
+  const g=Object.assign({},rig.g);hbTint(g,rig.hbG);
+  for(const [geo,q] of [[rig.geoHi,1],[rig.geoLo,PEOPLE_LOD.q]]){if(!geo)continue;const b=personBake(g,q),c=b.geo.attributes.color,o=geo.attributes.color;
+    if(c&&o&&c.count===o.count){o.array.set(c.array);o.needsUpdate=true;}else console.warn('F4: the tinted bake does not match the foe',rig.hbFoe);b.geo.dispose();}}
 // a garment's material carries its weave and cut in onBeforeCompile, which Material.copy leaves behind: a foe's corpse is darkened by
 // cloning every material on it (killE, killZoneEnemy), so the builder's materials clone with their shaders
 function hbClone(){const c=new this.constructor().copy(this);c.onBeforeCompile=this.onBeforeCompile;c.customProgramCacheKey=this.customProgramCacheKey;c.clone=hbClone;return c;}
