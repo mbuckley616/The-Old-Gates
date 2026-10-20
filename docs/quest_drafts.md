@@ -2,7 +2,7 @@
 
 These are the quest writer's drafts. None of them is canon until Michael promotes it into `quest_writing.md`, and none is a spec until it is approved. Each draft gives the quest's shape, every line verbatim with its speaker and people, and a note on what in the code would carry it.
 
-Calls read to: 2026-10-16T17:51:09.360Z (run 22, 19 Oct: no new calls)
+Calls read to: 2026-10-16T17:51:09.360Z (run 23, 20 Oct: no new calls)
 
 ---
 
@@ -4159,3 +4159,196 @@ Each people's jab at another is about work and harbours (the Aurennais on the Ga
 
 - *Sea Legends, II*: the Sunken Library, a diveable wreck with rooms (look builder), and what is read there; the Whispering Deep given a place, if it earns one; figureheads, charts and instruments as rewards (with backlog L's *Making a ship yours*).
 - The ferry crossings' small talk at sea, and named ferries.
+
+---
+
+## Sea Legends, II — the Faithful Copy, the Whispering Deep, and what the sea pays in
+
+*Unapproved.* *Drafted 20 Oct 2026. Backlog L, Sea legends (OG-049), the second run: "wrecks to dive (the Sunken Library); figureheads, charts and instruments as rewards", and the Whispering Deep given a place. The first run (19 Oct, unapproved) named the ships, wrote the singing ship and the three tales at the quay, and left these.*
+
+### What the canon fixes, and where it is silent
+
+- *Aurenne: knowledge* (§1.3): the Mages' academy and the Church both sit there, and its pride is *ledgers, learning, paper over oaths*. *Piracy is the Mark's undeclared war; the Compact's tithe-ships are the pirates' favourite prey* (§1.4). The war was *one generation* ago.
+- *The Withdrawal* (§3.1): the makers forbade the *reading* of sigils. The Old Blood keep the tongue and not the knowledge. So an Old Blood speaker is glad of a library under the water, and says so in four words.
+- *Water Breathing* is how Act III's Root is reached (§8.3). The game has it (*Anáil*, `waterbreath`), and a breath of forty seconds without it (`BREATH_S`, three times that with Athletics 50). A deep wreck is the first place that asks for either, and so rehearses the Root the way the lairs rehearse it.
+- *§10a*: wonder and a dry turn. Nobody died on the library ship. What sank her was a free captain's temper.
+- *Silent:* a sunken library; the Whispering Deep's place; figureheads and instruments. The plainest things are chosen: the library is a ship, not a drowned city, so no land is added and no history is changed. The Whispering Deep is the deep water she lies at the edge of, and what whispers there is never said. The figureheads are carvings, and the instruments do what such instruments do.
+
+### The shape
+
+No quest is given. Three pieces, any order.
+
+1. **The notice.** Every Mages' Guild head answers *Does the Guild want anything from the sea?* The academy still pays for any volume brought up from the *Faithful Copy*, a Compact library ship scuttled by free captains in the last year of the war, and the head stars her last known place on the map.
+2. **The wreck.** She lies on her side at the lip of deep water off Aurenne's coast, 14 to 20 down: three rooms to swim through (the stern gallery, the stacks, the librarian's cabin) on one breath and a half, or one Water Breathing. Most of the four thousand books are pulp. Eight sealed cases are not, and the cabin holds the catalogue, the librarian's note and the ship's sounding-glass. The figurehead's head lies in the stacks where it fell.
+3. **What the sea pays in.** A Mages' Guild head buys back the sealed volumes, and offers gold or a rutter for the catalogue. A shipwright fits the figurehead. The sounding-glass works on any ship.
+
+**What it changes.** Nothing in the world's shape. The academy's catalogue closes one shelf. After the wreck is found, the Whispering Deep's tale is told differently in Aurenne, and above her, on a flat night, the deep still whispers.
+
+**Reward.** Twelve gold for each sealed case (seven, so 84); for the catalogue, 80 gold or *A Rutter of the Three Seas* (a chart that marks the wrecks of one island's waters). The sounding-glass, an instrument. The Reader, a figurehead. No stat, no boon.
+
+### 1. The notice — *Does the Guild want anything from the sea?*
+
+A topic on every Mages' Guild head (`guild_m`), beside the sigil topics (`sigilLoreTopic`). On the first answer the wreck is starred on the map and the compass as *The Faithful Copy*. Once the catalogue is turned in, the topic goes.
+
+**Aurennais:**
+> "It does, Master, and has for thirty years. The *Faithful Copy* carried the academy's second archive between its houses. She was boarded in the last year of the war by persons of the Mark, who expected silver, found paper, and expressed their disappointment by sinking her. The crew were put ashore unharmed; the books were not. The academy still pays for any volume recovered, at twelve gold, under the original terms. Her last known place is entered on your map. She lies deep. I would not attempt it on one breath."
+
+**Gatelander:**
+> "There's a ship full of books on the bottom off Aurenne, and the academy's been weeping over her for thirty years. A Markish crew sank her for having nothing in her worth the stealing, and I'll say this for them, they put her people ashore first. The ledgers pay twelve gold a book for anything that comes up dry. I've marked her for you. Go down with more breath than you think you'll need. The sea never gave anyone back the breath they lent it."
+
+**Markman:**
+> "Aye. The book ship. Long Cuthred took her in the war. Thought a hull that heavy had to be silver. It was books. He put the crew off at a harbour and the books on the bottom. The academy pays twelve a book that comes up whole. She's on your map. She's deep. Take a spell for it."
+
+**Old Blood:**
+> "*Tech screptra.* A house of writing, under the water. Good. Water does not read. The academy pays for what comes up. It is marked."
+
+### 2. The wreck — the *Faithful Copy*
+
+**Where.** An anchored place, picked once per seed (§9's rule): in Aurenne's waters, a bed between −14 and −20 within 40 of water deeper than −40 (the lip of the deep), and within 900 of an Aurennais coast. Its id is `wreck:copy`. She is not one of the scattered wrecks (`spawnWreck`), which lie between −2.5 and −8 and have no rooms.
+
+**What it is.** A big Compact hull, the merchantman's lines at twice the length, on her side on the slope, the stern gallery uppermost. Three rooms, swum in order from the gallery down:
+
+- **The stern gallery**, the reading room. Tall windows, the glass gone, the lectern bolted to what is now a wall. Sand in the corners. Entering, once: *A reading room, turned on its side. The lectern still stands, bolted to the wall.*
+- **The stacks**, the hold. Shelves on both sides, now floor and ceiling, and cases spilled between them. Most are burst. Eight are sealed with wax and lead, one of them torn (*Press 'E' to take the sealed case*). The figurehead's head lies among them (*Press 'E' to take the carved head*). Entering, once: *The hold is shelved from end to end. Most of what was on the shelves is grey pulp, moving a little in the current.*
+- **The librarian's cabin**, forward and low. A desk on the wall that was the floor, the catalogue in its oilcloth, a sounding-glass in its box, a single page under a paperweight. Entering, once: *A small cabin. Everything in it was put away before she sank.*
+
+**On the way down**, the first time the player is under water within 60 of her: *Below you, on the edge of the dark, a ship lies on her side. Her windows are open to the sea.*
+
+**Above her**, on the surface, at night, with the wind under 2 (`windDir` strength), within 80 of her, once a night: *Under the boards, very faint, something like a house full of people in the next room.* No source is given, and no line ever explains it. It is the Whispering Deep, found.
+
+### 3. What is read there
+
+**The sealed cases** (`type:'misc'`, `story:'copy_case'`, weight 1, sell for nothing to a trader, ids `copy:<n>` for n 0–7). In the bag: *A book case sealed with wax and lead, to the Compact's standard. Dry inside, by the weight of it. The academy's mark is on the lid.* Seven are whole and cannot be opened (the academy opens its own). The eighth, `copy:3`, has a torn seal; it is dry inside, and holds a book:
+
+***A Report to the House of Qarona on the Isles Called Veiled*** (`BOOKS`, `attr:null`, `story:'veiled_report'`). The Aurennais institutional register, formal and exact:
+
+> *The undersigned Factor, instructed to proceed to the islands entered as unconfirmed and assess them for the tithe, reports as follows.*
+>
+> *The islands were sighted on the third day, in fog, at a distance estimated at two cables. They were three in number, wooded to the water's edge. Smoke rose from one of them, consistent with a hearth. The vessel closed to one cable. The islands did not.*
+>
+> *The vessel closed again on the fourth day, in fog. The islands were two in number. The smoke was on the other.*
+>
+> *On the fifth day the fog lifted and there were no islands. The soundings were consistent with open sea, and had been throughout.*
+>
+> *The undersigned recommends that the islands remain entered as unconfirmed, and that the tithe be assessed as nil and carried forward. The undersigned further reports that the fog was of excellent quality, and appends an account of it.*
+
+The appended account is not in the case. A Gatelander's hand has written under the last line: *Twice they sent a man. I hope they send a third.*
+
+***The Last Entry in Miscellany*** (`story:'copy_note'`, a lore book; the page in the cabin). The librarian's own hand, the institutional register, and no oath:
+
+> *Entered under Miscellany, by Damaris, Keeper of the Second Archive.*
+>
+> *The vessel has been boarded by persons of the Mark. Their master has opened four cases and expressed disappointment. I have explained the catalogue to him. He has expressed further disappointment.*
+>
+> *He intends to sink her. I have asked that the crew be put off at the nearest harbour, and he has agreed, without being asked twice, which I enter to his credit. He appears to dislike books more than people.*
+>
+> *The cases are sealed to the Compact's standard and will keep for a time. I have put away what can be put away. I enter the archive's loss as unavoidable, and its recovery as outstanding.*
+
+**The catalogue** (`story:'copy_catalogue'`, weight 2, a lore book): *The Catalogue of the Second Archive.* Read in the bag:
+
+> *Four thousand two hundred and twelve volumes, entered by case and shelf. The hand is small and very even. Against eight cases a later note in the same hand reads* sealed, lead. *Against all the rest:* water.
+
+### 4. What the sea pays in
+
+**At any Mages' Guild head**, while a sealed case or the catalogue is in the bag, ***I've brought something up from the Faithful Copy.*** (`quest:true`). Each sealed case pays 12 gold and is taken; the torn case and the Report stay the player's. The catalogue opens a choice, once, between 80 gold and the rutter. The answers are the speaker's people's (`peopleOfNpc`).
+
+**Aurennais**, for the cases:
+> "Sealed to the standard, and the seal intact. The academy will be very pleased, Master, and will say so in writing, at length. Twelve gold a case, as agreed thirty years ago by people who did not expect to pay it."
+
+**Aurennais**, for the catalogue:
+> "Damaris's catalogue. The academy has wanted this more than any volume in it, Master, because without it we cannot know what we have lost. We can pay you eighty gold. Or, under the old terms, which permit payment in kind, the academy will give you its own copy of the *Rutter of the Three Seas*, which marks every wreck the Compact has entered in one island's waters. I would take the rutter. The gold will not tell you where anything is."
+
+**Gatelander**, for the cases:
+> "Dry as the day they were sealed. The ledgers will have a feast. Twelve a case, and you'd want to be counting them yourself, for they'll count them three times."
+
+**Gatelander**, for the catalogue:
+> "The book that lists the books. They'll want that above all of it, the way a man who's lost his cattle wants the tally more than the cows. Eighty gold, or the academy's rutter, that shows you where every hull went down off one shore. A rutter's a thing that pays you back every time you open it. The gold pays you once."
+
+**Markman**, for the cases:
+> "Sealed. Good. Twelve a case. Cuthred should've opened one."
+
+**Markman**, for the catalogue:
+> "The list. Aye, they'll want it. Eighty gold or their rutter. Rutter shows the wrecks off one coast. Take the rutter. You can dive gold."
+
+**Old Blood**, for the cases:
+> "Dry. Twelve each."
+
+**Old Blood**, for the catalogue:
+> "The count of what was lost. Eighty, or the rutter that knows where ships lie. Choose."
+
+The two follows: ***The gold. (80 gold)*** and ***The rutter.*** Log: *Gave the Catalogue of the Second Archive to the Mages' Guild at {site}.* then *{fee} gold.* or *The Guild gives you A Rutter of the Three Seas.*
+
+**A Rutter of the Three Seas** (`type:'misc'`, `story:'rutter'`, weight .5). In the bag:
+> *The Compact's sailing directions for the three islands' waters, with the soundings, the lights, the marks, and every wreck the Compact has entered, each with her name and the date of her loss. Some names have a line drawn through them, meaning salvaged.*
+
+Reading it marks on the map every scattered wreck (`spawnWreck`'s test) in the waters of the island the Guild stands on, each as *a wreck*. A wreck whose chest has been opened shows with a line through it. The rutter is given once, for one island; its island is the Guild's.
+
+**The sounding-glass** (`type:'misc'`, `story:'sounding_glass'`, weight 1, an instrument). Taken from the cabin: *A sounding-glass in a brass box: a column of oil with a weight in it that settles at the depth below. The academy's mark is on the lid.* While it is in the bag, the HUD shows the depth below the keel at the helm (*{n} fathoms*), and the depth below the swimmer under water. It is the one thing the wreck gives that anyone would buy, and no trader will: an Aurennais merchant says, *That is the academy's property, Master. I could not, in conscience, price it.*
+
+**The Reader** (the carved head, `type:'misc'`, `story:'fig_reader'`, weight 6). In the bag: *The head and shoulders of a woman, carved in oak, looking down at a book that broke off with her hands. Her finger was on the line.* Any shipwright will fit it (below).
+
+### 5. Figureheads
+
+A shipwright's topic, ***Will you fit a figurehead?*** (`quest:true`), on any port's yard, when the player owns a ship. Every yard offers its own nation's for 60 gold, and fits the Reader for nothing if it is in the bag. A ship carries one figurehead, and fitting a new one puts the old one in the bag. Figureheads are carvings and nothing more: no speed, no luck, no stat (backlog L's *Making a ship yours* is the systems builder's, and may give them more; nothing here asks it to).
+
+| The yard's | Name | The carving |
+|---|---|---|
+| The Gatelands | **The Red Cow** | a cow's head, horns forward, painted red, *An Bhó Rua*'s joke on any hull |
+| The Mark | **The Ram** | a ram's head, horns curled, iron-shod at the brow |
+| Aurenne | **The Witness** | a woman's head and one raised hand, an open eye on the palm |
+| found | **The Reader** | the *Faithful Copy*'s own (§4) |
+
+**Gatelander**, offering:
+> "A ship without a face is a ship that doesn't know where she's going, my father said, though he'd say that of a cart. We carve the Red Cow here, and you'll not see a finer cow on any water. Sixty gold."
+
+**Markman**, offering:
+> "Ram's head. Sixty gold. Iron on the brow. It won't do anything. Looks like it will."
+
+**Aurennais**, offering:
+> "The Witness, Master: the yard's figurehead, and the Compact's oldest. A hull that bears her is understood to be honest in her dealings, which is not the same as being so. Sixty gold, fitted."
+
+**Old Blood**, offering:
+> "A face for the bow. Sixty gold."
+
+**Fitting the Reader**, every people, one line: *The shipwright turns the head over, and looks at it a while, and fits it for nothing.* Then the speaker:
+- *Gatelander:* "She'll read the water for you. There's worse things to have at the front of a boat."
+- *Markman:* "That's off the book ship. Aye. No charge. Cuthred'd hate it."
+- *Aurennais:* "The *Faithful Copy*'s Reader. The yard would not charge for this, Master. It would be like charging for a funeral."
+- *Old Blood:* "She is reading. Let her."
+
+### 6. The tales, after
+
+Once the wreck has been entered, an Aurennais speaker's *Any tales of the sea?* (Sea Legends, I, §5), where it gives the Whispering Deep, gives this in its place:
+> "One is told the Whispering Deep has been found, Master, and that a library is lying at the edge of it. The academy finds this entirely plausible."
+
+And a Markish speaker's, where it gives the Whispering Deep, adds one line after it: "Cuthred sank a ship of books off there. Says he can hear them. Says it every time he drinks."
+
+The other tellings do not change.
+
+### What in the code would carry it
+
+- **The notice and the turn-in** (`87-world-quests.js`, beside `sigilLoreTopic`, `rubbingTopics` and `SEA_TALES`): `copyTopics(g,site,gp)` on `guild_m` gives the notice until the catalogue is in, and the turn-in while a case or the catalogue is in the bag, with the two follows. Lines in a `COPY_LINES` table by people (`peopleOfNpc`). **Buildable on the machinery the game has** once the wreck exists, with a suite: the notice stars `wreck:copy`, seven sealed cases pay 84, the torn one gives the Report, the catalogue's two follows give 80 gold or the rutter and the topic goes, and all of it survives a save and a load.
+- **The record** (co-op rules): `worldState.copy={seen:1, cases:[n,…], cat:'gold'|'rutter', glass:1, head:1}` is the character's (what you have found and carry; `SS_CHAR_WS` and the S242 list). The cases are ids `copy:<n>`, taken through one named action, `takeCopyItem(id)`; the turn-in is `returnCopyItem(site,id,choice)`. The rutter's island is saved with it, `copy.rutterIsland`. Nothing is rolled: the eight cases and their places are fixed by the layout.
+- **The place** (systems, `81-world-cells.js` and the anchored places): the constraint pick of §2 at generation, from the seed, flagged so it always exists; and its solids under water (the open world's, not an interior swap, so the breath bar and `diveTick` keep working).
+- **The wreck** (look builder): the big hull on her side, three rooms swum in order, with the lectern, the shelves as floor and ceiling, the burst cases and pulp, the eight sealed cases, the head, the cabin's desk, the catalogue, the glass and the page; dim, in the Uisce gates' blue. The four entering lines are on its room boxes.
+- **The whisper** (systems and sound): a once-a-night check above `wreck:copy` at wind under 2, the line in the log, and under it a low murmur of voices too faint to make out, fading in at 80.
+- **The instruments** (systems, small): the sounding-glass's HUD depth (`worldH` below the keel or the swimmer, in fathoms, one fathom 1.83 m under F2a's scale); the rutter's map marks (`spawnWreck`'s own test across one landmass's sea chunks, without loading them, and the opened chests from the saved containers).
+- **The figureheads** (systems and look, with *Making a ship yours*): `worldState.ship.figurehead` (the world's: the ship is), four small carvings at the stem (`buildShipMesh`), and the shipwright's topic in the harbour's `makeDef` (`84-world-interiors.js`). Until that lands, the Reader is kept in the bag and the yard says nothing of it.
+- **The tales** (quest writer): the two lines of §6 in `SEA_TALES`, read from `copy.seen`.
+- **The words** (quest writer, once the wreck lands): the entering lines, the item cards, the two books in `BOOKS` with `attr:null`, the catalogue, the notice and turn-in lines, the yard's lines.
+
+### Checked against the canon
+
+- *§2, the register*: the Gatelander in proverbs and indirection (*the sea never gave anyone back the breath they lent it*, *a rutter's a thing that pays you back*), never a bare yes or no; the Markman short, *aye*, a nickname (*Long Cuthred*), no honorific; the Aurennais formal, *Master*, qualified, in terms and contracts (*under the original terms*, *payment in kind*, *carried forward*), and never an oath; the Old Blood sparing and exact, with the older name for the thing (*tech screptra*, Old Irish for a house of writings).
+- *§1.4*: the free captains' piracy against Compact shipping, in the war a generation ago. The library ship is the one prize they could not sell.
+- *§3.1, the Withdrawal*: the Old Blood speaker's *Good. Water does not read.* is the law against reading, said by someone who no longer knows why it is the law.
+- *§10a*: nobody died. The crew were put ashore, the librarian put away what could be put away, and the pirate still cannot hear the word *library*. The eerie part is the whisper over her, and it is never explained.
+- *§2.1*: the jabs are about work and ledgers (*they'll count them three times*), never bodies. Cuthred, who sank the books, put the crew ashore without being asked twice, and the librarian enters it to his credit.
+- *No chosen one*: the academy's notice is for anyone, and has stood for thirty years.
+- *Silent, chosen plainly*: no new land, no drowned city, no history changed. The Whispering Deep is a place now, and still says nothing.
+- *Names*: *Damaris* is the Aurennais Register's bank; *Long Cuthred* is the Mark's Anglo register; *Qarona* is a place from the Register's syllables; no Ald-.
+
+### Owed, and not drafted here
+
+- The ferry crossings' small talk at sea, and named ferries.
+- *A third run, if Michael wants one*: the Veiled Isles landed on (new land, his call), and the free captains' side of the sea, at Port Blackhand.

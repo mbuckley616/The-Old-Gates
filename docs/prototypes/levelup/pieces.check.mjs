@@ -8,6 +8,8 @@
 // colour and every colour of the six is used; no door paint drowns in its wall; cottages limewashed under thatch, farmhouses
 // white, warehouses bare stone, town lots under slate; a lot builds the same twice, its lit windows included.
 // Session 964: the guild hall (Michael's C on #352), its own piece, in two guilds' dress.
+// Session 1179: a town's market three ways (the market house, the shelter, the stalls alone), asked of Michael.
+// Session 1194: the farmstead three ways (round a yard, in a line, house and range), asked of Michael.
 // Session 1063: the plans by bays (Michael's C on #396). Every plan on every count of bays it takes is that many bays wide and its ends;
 // its openings stand inside the face clear of the corners and of one another; every window above the ground floor stands on a bay's
 // line, and every bay has one on every upper floor; the door is in a bay; it builds in budget, the same twice; glBaysFor fits a lot of
@@ -160,8 +162,67 @@ check('no page errors', errs.length === 0, errs.slice(0, 3));
   const yard = by.bawn.rays, inner = by.bawn.size.gate.z - by.bawn.size.bawn.t - 1;
   check(`through the bawn's gateway (${by.bawn.size.gate.w} by ${by.bawn.size.gate.h} m) six rays reach the yard: they meet ${[...new Set(yard.map(r => r.part))].join(', ')} at z ${Math.min(...yard.map(r => r.z))} to ${Math.max(...yard.map(r => r.z))}`, yard.length === 6 && yard.every(r => r.z !== null && r.z < inner), yard);
 }
+// Session 1179: a town's market (gatelandsMarket), three ways (o.kind house | shelter | stalls, asked of Michael): each the same twice
+// and in budget; the arches stand clear of the quoins with their voussoirs, and one walks under them (2.05 m or more 0.3 m in from each
+// jamb); rays through every arch of the front at the eye pass the front wall into the arcade; under the house's beams 2.6 m or more; its
+// stair 18 even risers of 0.2 m or less to a landing at the upper door's sill, the door on the landing; the scales' pans at a hand's height.
+{ const M = await page.evaluate(async () => { const THREE = await import('three'), K = await import('./pieces.js'), out = [];
+    const hash = g => { let h = 0; g.traverse(m => { if (!m.isMesh) return; h = (h * 31 + m.geometry.attributes.position.count) | 0; const a = m.geometry.attributes.position.array; for (let i = 0; i < a.length; i += 7) h = (h * 31 + Math.round(a[i] * 1e4)) | 0; }); return h; };
+    for (const kind of ['house', 'shelter', 'stalls']) { const a = K.gatelandsMarket({ kind }), b = K.gatelandsMarket({ kind }), u = a.userData; a.updateMatrixWorld(true);
+      const meshes = []; a.traverse(m => { if (m.isMesh) meshes.push(m); }); const rc = new THREE.Raycaster(), rays = [];
+      if (kind !== 'stalls') for (const q of u.arcade.front) for (const dx of [-.4, 0, .4]) { const z0 = u.size.d / 2 + 2; rc.set(new THREE.Vector3(q.x + dx, 1.65, z0), new THREE.Vector3(0, 0, -1)); rc.far = 40; const hit = rc.intersectObjects(meshes, false)[0]; rays.push({ x: q.x + dx, z: hit ? +(z0 - hit.distance).toFixed(2) : null }); }
+      const P = u.arcade.plan, half = { front: P.w / 2, left: P.d / 2 - P.t }, quoin = .55, ring = .32;
+      const edges = kind === 'stalls' ? [] : [...u.arcade.front.map(q => ({ f: 'front', out: Math.abs(q.x) + q.w / 2 + ring, lim: half.front - quoin })), ...u.arcade.end.map(q => ({ f: 'end', out: Math.abs(q.x) + q.w / 2 + ring, lim: half.left + P.t - quoin }))];
+      const walk = kind === 'stalls' ? [] : [...u.arcade.front, ...u.arcade.end].map(q => { const r = q.w / 2, sp = q.h - r; return +(sp + Math.sqrt(r * r - (r - .3) ** 2)).toFixed(2); });
+      out.push({ kind, tris: u.tris, calls: u.calls, same: hash(a) === hash(b), size: u.size, rays, edges, walk, stair: u.stair, beam: u.beam, doorOpen: kind === 'house' ? P.open.right.find(o => o.kind === 'plank') : null, floors: P.floors, parts: u.parts.map(p => p.name) }); }
+    return out; });
+  const by = Object.fromEntries(M.map(c => [c.kind, c])), H = by.house, S = H.stair;
+  check(`the market three ways, each the same twice and in budget: ${M.map(c => `${c.kind} ${c.tris.toLocaleString()} triangles in ${c.calls} draws`).join(', ')}`, M.length === 3 && M.every(c => c.same && c.tris < 16000 && c.calls <= 24), M.map(c => [c.kind, c.tris, c.calls, c.same, c.parts]));
+  const E = M.flatMap(c => c.edges.map(e => ({ k: c.kind, ...e })));
+  check(`every arch's voussoirs clear of the quoins: the nearest ${Math.min(...E.map(e => +(e.lim - e.out).toFixed(2)))} m off`, E.length === 14 && E.every(e => e.out <= e.lim), E);
+  const Wk = M.flatMap(c => c.walk);
+  check(`one walks under every arch: ${Math.min(...Wk)} m or more 0.3 m in from its jambs`, Wk.length === 14 && Wk.every(v => v >= 2.05), M.map(c => [c.kind, c.walk]));
+  const R = M.flatMap(c => c.rays.map(r => ({ k: c.kind, ...r })));
+  check(`${R.length} rays at the eye through the front's arches pass the front wall: the nearest meets something ${Math.min(...R.filter(r => r.z !== null).map(r => +(by[r.k].size.d / 2 - r.z).toFixed(2)))} m inside its face`, R.length === 27 && R.every(r => r.z === null || r.z < by[r.k].size.d / 2 - .7), R);
+  check(`under the house's beams ${H.size.clear} m; the room above ${H.floors[1]} m floor to floor`, H.size.clear >= 2.6 && H.floors[1] >= 2.6, H.size);
+  check(`the house's stair: ${S.risers} risers of ${S.rise} m on treads of ${S.tread} m, ${S.width} m wide, to a landing at ${S.landing.y} m, the upper door's sill at ${H.doorOpen.y} m, the door on the landing`,
+    S.risers === 18 && S.rise <= .2 && Math.abs(S.risers * S.rise - H.floors[0]) < 1e-6 && S.landing.y === H.doorOpen.y && S.door.z - H.doorOpen.w / 2 >= S.landing.z0 && S.door.z + H.doorOpen.w / 2 <= S.landing.z1 && S.width >= 1.0, { S, door: H.doorOpen });
+  check(`the scales' pans at ${H.beam.pans} m, the beam at ${H.beam.y} m, in all three`, M.every(c => c.beam.pans >= .9 && c.beam.pans <= 1.3 && c.beam.y < c.beam.top), M.map(c => c.beam));
+}
+// Session 1194: the farmstead (gatelandsFarmstead), three ways (o.kind yard | line | range, asked of Michael): each the same twice and in
+// budget; nothing stands in anything else (buildings, walls, piers, the props), and all of it on the lot; every prop in the yard; the
+// gate 3 m or more between its piers; on foot (0.3 m clear) from the road through the gate to every door that opens on the yard, and a
+// cart (1.0 m clear either side of its middle) to the barn's arch; the byre's and the barn's doors big enough for a cow and a cart, and
+// the outbuildings lower than the house.
+{ const F = await page.evaluate(async () => { const K = await import('./pieces.js'), out = [];
+    const hash = g => { let h = 0; g.traverse(m => { if (!m.isMesh) return; h = (h * 31 + m.geometry.attributes.position.count) | 0; const a = m.geometry.attributes.position.array; for (let i = 0; i < a.length; i += 7) h = (h * 31 + Math.round(a[i] * 1e4)) | 0; }); return h; };
+    for (const kind of ['yard', 'line', 'range']) { const a = K.gatelandsFarmstead({ kind }), b = K.gatelandsFarmstead({ kind }), u = a.userData;
+      // the overlaps: every pair of footprints but the gate's leaf on its pier
+      const lap = []; u.foot.forEach((p, i) => u.foot.forEach((q, j) => { if (j <= i || (/leaf/.test(p.name + q.name) && /pier/.test(p.name + q.name))) return;
+        const ox = Math.min(p.x1, q.x1) - Math.max(p.x0, q.x0), oz = Math.min(p.z1, q.z1) - Math.max(p.z0, q.z0); if (ox > .01 && oz > .01) lap.push([p.name, q.name, +ox.toFixed(2), +oz.toFixed(2)]); }));
+      const L = u.lot, off = u.foot.filter(p => p.x0 < L.x0 - .01 || p.x1 > L.x1 + .01 || p.z0 < L.z0 - .01 || p.z1 > L.z1 + .01).map(p => p.name);
+      const props = u.foot.filter(p => /dung|pump|trough|cart|rick|turf/.test(p.name)), outYard = props.filter(p => !u.yard.some(y => p.x0 >= y.x0 - .01 && p.x1 <= y.x1 + .01 && p.z0 >= y.z0 - .01 && p.z1 <= y.z1 + .01)).map(p => p.name);
+      // the walks: a grid of 0.1 m over the lot and 4 m of road before it, a cell free when it is more than rad from every footprint
+      const reach = (rad, from, to) => { const c = .1, x0 = L.x0 - 1, z0 = L.z0 - 1, nx = Math.ceil((L.x1 - L.x0 + 2) / c), nz = Math.ceil((L.z1 + 5 - z0) / c), free = new Uint8Array(nx * nz), seen = new Uint8Array(nx * nz);
+        for (let i = 0; i < nx; i++) for (let j = 0; j < nz; j++) { const x = x0 + (i + .5) * c, z = z0 + (j + .5) * c; free[i * nz + j] = u.foot.every(p => Math.hypot(Math.max(p.x0 - x, 0, x - p.x1), Math.max(p.z0 - z, 0, z - p.z1)) > rad) ? 1 : 0; }
+        const cell = ([x, z]) => [Math.floor((x - x0) / c), Math.floor((z - z0) / c)], [si, sj] = cell(from); if (!free[si * nz + sj]) return { start: false };
+        const q = [si * nz + sj]; seen[q[0]] = 1; for (let h = 0; h < q.length; h++) { const k = q[h], i = Math.floor(k / nz), j = k % nz; for (const [di, dj] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const a2 = i + di, b2 = j + dj; if (a2 < 0 || b2 < 0 || a2 >= nx || b2 >= nz) continue; const k2 = a2 * nz + b2; if (free[k2] && !seen[k2]) { seen[k2] = 1; q.push(k2); } } }
+        return to.map(t => { const [ti, tj] = cell(t); return !!seen[ti * nz + tj]; }); };
+      const start = [u.gate.x, u.gate.z + 2.5], foot = reach(.3, start, u.doors.map(d => [d.x + d.nx * .5, d.z + d.nz * .5])), arch = u.doors.find(d => d.cart), cart = reach(1.0, start, [[arch.x + arch.nx * 1.3, arch.z + arch.nz * 1.3]]);
+      out.push({ kind, tris: u.tris, calls: u.calls, same: hash(a) === hash(b), size: u.size, lap, off, outYard, gate: u.gate, foot, cart, doors: u.doors.map(d => [d.name, d.w, d.h]), parts: u.parts }); }
+    return out; });
+  check(`the farmstead three ways, each the same twice and in budget: ${F.map(c => `${c.kind} ${c.tris.toLocaleString()} triangles in ${c.calls} draws, ${c.size.w} by ${c.size.d} m`).join('; ')}`, F.length === 3 && F.every(c => c.same && c.tris < 16000 && c.calls <= 24), F.map(c => [c.kind, c.tris, c.calls, c.same, c.size]));
+  check(`nothing in the farmstead stands in anything else, and all of it on its lot`, F.every(c => !c.lap.length && !c.off.length), F.map(c => [c.kind, c.lap, c.off]));
+  check(`every prop (the dunghill, the pump and trough, the cart, the rick, the turf) stands in the yard`, F.every(c => !c.outYard.length), F.map(c => [c.kind, c.outYard]));
+  const D = F.flatMap(c => c.doors.map(d => [c.kind, ...d]));
+  check(`the gate is ${F[0].gate.w} m between its piers, and on foot one reaches all ${D.length} doors on the yards from the road through it`, F.every(c => c.gate.w >= 3 && c.foot.length >= 4 && c.foot.every(Boolean)), F.map(c => [c.kind, c.foot]));
+  check(`a cart (1.0 m either side of its middle) reaches the barn's arch from the road in all three`, F.every(c => c.cart.every(Boolean)), F.map(c => [c.kind, c.cart]));
+  const by = (k, f) => D.filter(d => d[1].startsWith(k)).every(f), P = F[0].parts;
+  check(`the byre's half-doors 1.05 by 2.0 m, the barn's arch 2.8 by 2.6; the byre's ridge ${P.byre.ridge} m and the barn's ${P.barn.ridge} m under the house's ${P.house.ridge} m`,
+    by('Byre', d => d[2] >= 1.0 && d[3] >= 2.0) && D.some(d => /arch/.test(d[1]) && d[2] >= 2.6 && d[3] >= 2.5) && P.byre.ridge < P.house.eave && P.barn.ridge < P.house.ridge, { D, P });
+}
 await page.close();
-for (const v of ['street', 'street&mix=lot', 'line', 'kit', 'guild', 'guild&guild=mages', 'bays', 'church', 'church&tower=all', 'coachinn', 'coachinn&inn=all', 'keep', 'keep&keep=all']) { const pg = await browser.newPage({ viewport: { width: 480, height: 270 } }), e2 = []; pg.on('pageerror', e => e2.push(String(e)));
+for (const v of ['street', 'street&mix=lot', 'line', 'kit', 'guild', 'guild&guild=mages', 'bays', 'church', 'church&tower=all', 'coachinn', 'coachinn&inn=all', 'keep', 'keep&keep=all', 'market', 'market&market=all', 'farmstead', 'farmstead&farm=all']) { const pg = await browser.newPage({ viewport: { width: 480, height: 270 } }), e2 = []; pg.on('pageerror', e => e2.push(String(e)));
   await pg.goto(`http://localhost:${port}/pieces-gatelands.html?still&w=480&h=270&view=${v}`);
   // a page error ends the wait at once (an error in the scene's module never sets __err)
   await Promise.race([pg.waitForFunction(() => window.__done || window.__err, null, { timeout: 600000 }), new Promise(res => pg.on('pageerror', e => { if (!/json|JSON/.test(String(e))) res(); }))]);

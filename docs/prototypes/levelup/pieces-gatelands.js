@@ -18,14 +18,18 @@
 // &cam=street (default) | gate (through the gateway into the yard) | yard (from the yard) | high.
 // ?view=keep (Session 1093): a town's keep, &keep=tower (default) | bawn | hall | all (the three in a row), the game's keep lot (14 by 11 m)
 // marked in gravel under it; &cam=street (default) | corner | door | far (from 90 m) | high.
+// ?view=market (Session 1179): a town's market on its square, &market=house (default) | shelter | stalls | all (the three in a row),
+// &cam=square (default, from across the square) | arcade (inside, under the beams) | stair (the east end and its stair) | high.
+// ?view=farmstead (Session 1194): the farmhouse, the byre and the barn round their yard, &farm=yard (default) | line | range | all (the three
+// in a row), &cam=road (default, from the road at the gate) | yard (inside, from the gate) | corner | high.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { loadPack, makePerson, markGenome } from './people.js';
 import { Q, W, H, STATS, rnd, fbm, sstep, makeRenderer, makeComposer, buildTextures, mat, worldUV, skyDome, clouds, treeKit, run } from './common.js';
 // the kit itself is in pieces.js since Session 834; this file is its page
-import { glMats as mats, glBucket as bucket, glFinish as finish, glBox as box, glFace as face, gatelandsBuilding as building, GL_PLANS as PLANS, GL_FIN as FIN, glWin as win, gatelandsLot, GL_BAYS, glBayPlan, gatelandsChurch, gatelandsCoachInn, gatelandsKeep } from './pieces.js';
+import { glMats as mats, glBucket as bucket, glFinish as finish, glBox as box, glFace as face, gatelandsBuilding as building, GL_PLANS as PLANS, GL_FIN as FIN, glWin as win, gatelandsLot, GL_BAYS, glBayPlan, gatelandsFarmstead, gatelandsChurch, gatelandsCoachInn, gatelandsKeep, gatelandsMarket } from './pieces.js';
 
-const VIEW = Q.get('view') || 'street', MIX = Q.get('mix') || 'a', CAMQ = Q.get('cam') || (Q.get('view') === 'guild' ? 'front' : Q.get('view') === 'church' ? (Q.get('tower') === 'all' ? 'high' : 'corner') : Q.get('view') === 'coachinn' ? (Q.get('inn') === 'all' ? 'high' : 'street') : Q.get('view') === 'keep' ? (Q.get('keep') === 'all' ? 'high' : 'street') : 'eye'), STREET = Q.get('street') || 'gatelands-street';
+const VIEW = Q.get('view') || 'street', MIX = Q.get('mix') || 'a', CAMQ = Q.get('cam') || (Q.get('view') === 'guild' ? 'front' : Q.get('view') === 'church' ? (Q.get('tower') === 'all' ? 'high' : 'corner') : Q.get('view') === 'coachinn' ? (Q.get('inn') === 'all' ? 'high' : 'street') : Q.get('view') === 'keep' ? (Q.get('keep') === 'all' ? 'high' : 'street') : Q.get('view') === 'market' ? 'square' : 'eye'), STREET = Q.get('street') || 'gatelands-street';
 
 
 // ═══════════════════════════════ the scenes ═══════════════════════════════
@@ -192,6 +196,36 @@ if (VIEW === 'keep') {
     if (!all) { const L = building(glBayPlan('townhouse', 3, { color: 'ochre', paint: 'green' })); put(L, x + x0 - 1.6 - L.userData.size.w / 2, zf - L.userData.size.d / 2, 0); } });
   const C = all ? [[0, 36, 82], [0, 6, -4]] : { street: [[8, 1.7, 26], [-1, 8, 0]], corner: [[-24, 2, 22], [0, 8, 0]], door: [[-5, 1.7, 11], [-2.2, 3.2, 4]], far: [[-60, 6, 70], [0, 9, 0]], high: [[-28, 30, 34], [2, 2, -2]] }[CAMQ] || [[8, 1.7, 26], [-1, 8, 0]];
   if (!all && KQ === 'bawn' && CAMQ === 'street') { C[0] = [12, 1.7, 34]; C[1] = [-2, 6, 0]; }
+  cam.fov = all ? 50 : 58; cam.updateProjectionMatrix(); cam.position.set(...C[0]); cam.lookAt(...C[1]);
+}
+if (VIEW === 'market') {
+  // the market on a flagged square 34 by 26 m, townhouses round three sides of it, the square open to the street on the fourth (the camera's)
+  const MQ = Q.get('market') || 'house', all = MQ === 'all', kinds = all ? ['house', 'shelter', 'stalls'] : [MQ], dx = 40;
+  sun.shadow.camera.left = sun.shadow.camera.bottom = -70; sun.shadow.camera.right = sun.shadow.camera.top = 70;
+  kinds.forEach((k, i) => { const x = all ? (i - 1) * dx : 0, g = gatelandsMarket({ kind: k }), u = g.userData; put(g, x, 0, 0); (STATS.markets ||= []).push({ kind: k, tris: u.tris, calls: u.calls, size: u.size });
+    flat('flag', 34, 26, x, 1, .01, 1.3); plaques.push([x - 4, u.size.d / 2 + 4.6, u]);
+    const ring = [['ochre', 'blue'], ['cream', 'green'], ['rose', 'black'], ['sage', 'red'], ['blue', 'yellow'], ['oxblood', 'green']];
+    for (let j = 0; j < 4; j++) { const [c, p] = ring[(j + i) % 6], L = building(glBayPlan('townhouse', 3, { color: c, paint: p, doorX: j % 2 })); put(L, x - 13.5 + j * (L.userData.size.w + .02) + L.userData.size.w / 2, -12 - L.userData.size.d / 2, 0); }
+    if (!all) for (const sx of [-1, 1]) for (let j = 0; j < 2; j++) { const [c, p] = ring[(j * 2 + (sx > 0 ? 1 : 0) + i) % 6], L = building(glBayPlan(j ? 'merchant' : 'townhouse', 3, { color: c, paint: p })); put(L, x + sx * (17 + L.userData.size.d / 2), -6 + j * 10, -sx * Math.PI / 2); }
+    // people: at a stall, at the scales, and on the stair (the house) or crossing the square
+    people.push([x - 4.2, u.size.d / 2 > 4 ? 3.0 : 2.4, Math.PI * .95], [x + .3, .9, Math.PI * .8], [x + 6.5, 6.5, -Math.PI * .7]);
+    if (u.stair) people.push([x + u.stair.foot[0], u.stair.foot[1] - 1.6, Math.PI]); });
+  const C = all ? [[0, 30, 60], [0, 1, -4]] : { square: [[-7, 1.7, 24], [1, 4.2, 0]], arcade: [[-6.2, 1.65, 2.2], [3, 1.7, -.4]], stair: [[15, 1.7, 12], [7, 3.0, -1]], high: [[-22, 26, 30], [0, 2, -2]] }[CAMQ] || [[-7, 1.7, 24], [1, 4.2, 0]];
+  if (!all && MQ !== 'house' && CAMQ === 'square') { C[0] = [-5, 1.7, 18]; C[1] = [1, 2.4, 0]; }
+  cam.fov = all ? 50 : CAMQ === 'arcade' ? 66 : 56; cam.updateProjectionMatrix(); cam.position.set(...C[0]); cam.lookAt(...C[1]);
+}
+if (VIEW === 'farmstead') {
+  // the farmstead on a country road (a 5 m track of beaten earth along +z, a field wall along its far side), its lot in the grass
+  const FQ = Q.get('farm') || 'yard', all = FQ === 'all', kinds = all ? ['yard', 'line', 'range'] : [FQ], dx = 46;
+  sun.shadow.camera.left = sun.shadow.camera.bottom = -70; sun.shadow.camera.right = sun.shadow.camera.top = 70;
+  const roadZ = k => k === 'line' ? 12.1 : 3.1;
+  kinds.forEach((k, i) => { const x = all ? (i - 1) * dx : 0, zo = all ? 3.1 - roadZ(k) : 0, g = gatelandsFarmstead({ kind: k }), u = g.userData; put(g, x, zo, 0); (STATS.farms ||= []).push({ kind: k, tris: u.tris, calls: u.calls, size: u.size });
+    plaques.push([x - (all ? 4 : 13), zo + roadZ(k) + 6.4, u]); people.push([x + u.gate.x + .8, zo + u.gate.z - 2.2, Math.PI * .8], [x + u.doors[0].x + u.doors[0].nx * 1.2, zo + u.doors[0].z + u.doors[0].nz * 1.2, Math.atan2(-u.doors[0].nx, -u.doors[0].nz) + .4]); });
+  flat(mat('plaster', { ns: 1.4, color: 0x8f7f66, rough: 1 }), all ? 150 : 70, 5, 0, (all ? 3.1 : roadZ(FQ)) + 3.0, .01, .5);
+  const C = all ? [[0, 40, 78], [0, 0, -6]] : ({ road: { yard: [[20, 1.7, 13], [4, 2.6, -4]], line: [[-7, 1.7, 23], [1, 3, 2]], range: [[19, 1.7, 13], [3, 2.6, -8]] },
+    yard: { yard: [[4.5, 1.65, -4.6], [-5, 1.6, -14]], line: [[2, 1.65, 10.5], [-9, 1.8, 3]], range: [[6, 1.65, -4], [-3, 1.6, -14]] },
+    corner: { yard: [[-24, 9, 14], [0, 1, -7]], line: [[-30, 8, 32], [0, 1, 4]], range: [[-24, 9, 14], [0, 1, -9]] },
+    high: { yard: [[24, 30, 26], [0, 0, -8]], line: [[18, 30, 36], [0, 0, 5]], range: [[24, 30, 26], [0, 0, -8]] } }[CAMQ] || { yard: [[20, 1.7, 13], [4, 2.6, -4]], line: [[-7, 1.7, 23], [1, 3, 2]], range: [[19, 1.7, 13], [3, 2.6, -8]] })[FQ];
   cam.fov = all ? 50 : 58; cam.updateProjectionMatrix(); cam.position.set(...C[0]); cam.lookAt(...C[1]);
 }
 STATS.plans = BUILT; STATS.view = VIEW; STATS.mix = MIX;

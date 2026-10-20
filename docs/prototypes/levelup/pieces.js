@@ -767,12 +767,13 @@ function piece(add, op, F) {
     case 'win': { glass(op.y); const s2 = op.sash !== false; const yb = op.arch ? spring : top; if (s2) { sash(op.y, (op.y + yb) / 2 + .02, ...op.bars, z0 + .02); sash((op.y + yb) / 2 - .02, yb, ...op.bars, z0 - .02); } else sash(op.y, yb, ...op.bars);
       if (op.arch) fan(); B(fin.sillKey || 'dress', op.w + .2, .08, inset + .1, op.x, op.y - .04, (-inset + .1) / 2); break; }
     case 'half': { // the Irish half-door: the lower leaf shut, the upper leaf open into the dark room
+      /* Session 1198: a room inside (the byre's) hangs its own leaves, open */ if (op.ajar) { step(); break; }
       const hl = 1.12; leaf(F.paint, l, r, op.y, op.y + hl); B('iron', op.w * .5, .04, .015, l + op.w * .25, op.y + .3, z0 + .02); B('iron', op.w * .5, .04, .015, l + op.w * .25, op.y + hl - .25, z0 + .02);
       const g = box(op.w, top - op.y - hl - .02, .06, .9); g.translate(op.w / 2, 0, 0); g.rotateY(1.25); g.translate(l, op.y + hl + (top - op.y - hl) / 2, z0 - .02); add(F.paint, g);
       B('frame', op.w + .02, .05, .1, op.x, op.y + hl, z0 + .03); step(); break; }
     case 'plank': { if (!op.ajar) /* Session 946: the temple's room hangs its own leaf, open */ leaf(op.paint || F.paint, l, r, op.y, spring); if (op.arch) glass(spring, 'glass'); for (const y of [.35, 1.6]) B('iron', op.w * .7, .05, .015, l + op.w * .35, op.y + y, z0 + .02); if (op.y < .3) step(); break; }
     case 'transom': { const tr = .42; if (!op.ajar) /* Session 893: a room inside hangs its own leaf, open */ leaf(F.paint, l, r, op.y, top - tr); glass(top - tr); sash(top - tr, top, 3, 1); B('iron', .05, .05, .06, r - .16, op.y + 1.05, z0 + .03); step(); break; }
-    case 'fan': { leaf(F.paint, l, r, op.y, spring); for (const y of [.5, 1.35]) B(F.paint, op.w - .2, .5, .03, op.x, op.y + y, z0 + .02); glass(spring, 'glass'); fan();
+    case 'fan': { if (!op.ajar) /* Session 1189: the townhouse's room hangs its own leaf, open */ { leaf(F.paint, l, r, op.y, spring); for (const y of [.5, 1.35]) B(F.paint, op.w - .2, .5, .03, op.x, op.y + y, z0 + .02); } glass(spring, 'glass'); fan();
       const kn = new THREE.TorusGeometry(.07, .015, 6, 14); kn.translate(op.x, op.y + 1.55, z0 + .03); add('iron', kn); step(); break; }
     case 'cart': case 'load': { const mid = op.x;
       if (op.open) { /* Session 929: a forge's doors stand open, each leaf swung back flat against the outer wall beside the opening */ const hw = op.w / 2;
@@ -944,6 +945,19 @@ const PLANS = {
     roof: { kind: 'slate', pitch: SCALE.pitch.slate + 2, parapet: true, ov: .28 }, chim: [{ gable: -1, flues: 2 }, { gable: 1, flues: 2 }],
     open: { front: [{ kind: 'transom', x: 0, y: 0, w: 1.05, h: 2.5 }, win(-3.1, .85, .95, 1.5, [3, 2]), win(3.1, .85, .95, 1.5, [3, 2]), win(-3.1, 3.55, .9, 1.3, [3, 2]), win(0, 3.55, .9, 1.3, [3, 2]), win(3.1, 3.55, .9, 1.3, [3, 2])],
       back: [{ kind: 'plank', x: -1.5, y: 0, w: .95, h: 2.05 }, win(2, 1.0, .8, 1.2, [2, 2]), win(-1.5, 3.6, .8, 1.1, [2, 2])] } }),
+  // the farmstead's outbuildings (Session 1194; OG-115's "farmstead with outbuildings", OG-114's farming): the byre, one low storey of
+  // limewashed rubble on a tarred plinth under slate, two half-doors on the yard and two small lights between them, a hay hatch in the
+  // west gable to the loft over the cattle; the barn, two storeys of bare rubble with dressed quoins under a steeper slate roof, a cart
+  // arch and a stable door on the yard, ventilation slits in both storeys, a pitching door in the east gable under a hoist beam
+  byre: (o = {}) => ({ name: 'Byre', w: 12, d: 5.4, t: SCALE.wall.cottage, floors: [2.6], fin: FIN.lime(), paint: o.paint || 'red', gutter: false,
+    roof: { kind: 'slate', pitch: SCALE.pitch.slate, ov: .3, ovg: .3 }, chim: [], doorFace: 'front',
+    open: { front: [{ kind: 'half', x: -3.8, y: 0, w: 1.05, h: 2.0 }, win(-1.5, 1.25, .6, .55, [2, 1], { sash: false }), { kind: 'half', x: 1.0, y: 0, w: 1.05, h: 2.0 }, win(3.5, 1.25, .6, .55, [2, 1], { sash: false })],
+      back: [-3, 3].map(x => win(x, 1.45, .5, .45, [1, 1], { sash: false })), left: [{ kind: 'load', x: 0, y: 2.75, w: .8, h: .75 }] } }),
+  barn: (o = {}) => ({ name: 'Barn', w: 12, d: 6.4, t: SCALE.wall.store, floors: [2.7, 2.4], fin: FIN.stone(), paint: 'black', gutter: false,
+    roof: { kind: 'slate', pitch: SCALE.pitch.store, ov: .3, ovg: .3 }, chim: [], doorFace: 'front', hoist: { face: 'right', y: 4.85 },
+    open: { front: [{ kind: 'cart', x: -2.4, y: 0, w: 2.8, h: 2.6, arch: true }, { kind: 'plank', x: 2.6, y: 0, w: 1.05, h: 2.1 }, ...[-4.8, .4, 4.6].map(x => win(x, 3.2, .16, .95, [1, 1], { sash: false })), win(-4.8, .9, .16, .95, [1, 1], { sash: false })],
+      back: [-3.6, 0, 3.6].flatMap(x => [win(x, .9, .16, .95, [1, 1], { sash: false }), win(x, 3.2, .16, .95, [1, 1], { sash: false })]),
+      right: [{ kind: 'load', x: 0, y: 2.95, w: 1.2, h: 1.4 }] } }),
   townhouse: (o = {}) => { const g = SCALE.storey.town; return { name: 'Townhouse', w: 6.4, d: 9, t: SCALE.wall.town, floors: g, fin: o.fin || FIN.render(o.color || 'ochre'), paint: o.paint || 'blue', strings: true, cornice: true,
     roof: { kind: 'slate', pitch: SCALE.pitch.slate, parapet: true, ov: .25 }, chim: [{ gable: -1, flues: 4 }, { gable: 1, flues: 4 }],
     open: { front: [{ kind: 'fan', x: o.doorX ?? -1.95, y: 0, w: 1.1, h: 2.95, arch: true, dress: true }, ...[0, 1.95].map(x => win((o.doorX ?? -1.95) < 0 ? x : -x, .75, .95, 1.85, [3, 2])),
@@ -1184,6 +1198,182 @@ function keep(o = {}) {
   for (const p of parts) { ud.tris += p.userData.tris; ud.calls += p.userData.calls; }
   ud.size = size; ud.door = door; ud.towerDoor = T.open.front[0]; G.userData = ud; return G;
 }
+// a town's market house (Session 1179, card F6; OG-114's eight workplaces, its "market hall", and OG-070's vocabulary): where the
+// Gatelands town keeps its market dry and its weights honest. o.kind is the question asked of Michael (DECISION #475, Session 1179):
+// 'house' (the market house of an Irish town: two storeys, 15.0 by 8.6 m, limewashed with dressed quoins under a hipped slate roof; the
+// ground floor an open arcade of round arches, five a side and three on the west end, flagged inside under the beams of the floor
+// above; the room upstairs, 3 m to its ceiling, reached by a stone stair of 18 risers up the outside of the east end to its door; a
+// wooden cupola with the market bell on the ridge, and the town's beam and scales hung in the middle bay) or 'shelter' (a market cross
+// shelter: one storey of five piers a side, 10 by 6.6 m, open on all four sides under a hipped slate roof, the beam and scales in it)
+// or 'stalls' (no building, the market on the square as the game holds it today: seven trestle stalls and the beam on a timber tripod).
+// Michael chose the house (A on #475). Session 1188: its ridge stack is carried down to the ground on a dressed pier in the arcade's
+// west bays (the room above has its hearths on it), and o.interior leaves out the dark box behind the upper windows and the stair
+// door's leaf, for rooms.js's gatelandsMarketRoom to build the room inside.
+// -> a Group, its userData {name, kind, tris, calls, size, door, parts, arcade, stair, beam, pier}
+function marketHouse(o = {}) {
+  const kind = o.kind || 'house', house = kind === 'house', r = o.r || stream('market'), G = new THREE.Group(), parts = [], add = g => { G.add(g); parts.push(g); return g; };
+  const stalls = kind === 'stalls', w = house ? 15.0 : 10, d = house ? 8.6 : 6.6, t = house ? .6 : .7, fl = house ? [3.6, 3.0] : [3.2], g0 = fl[0], h = fl.reduce((a, b) => a + b, 0), paint = o.paint || 'green';
+  const fin = { key: 'w:lime', inset: .16, quoins: true, dress: true, dressKey: 'dress', stackKey: 'w:lime', sillKey: 'dress' };
+  const arch = (x, ww, hh) => ({ kind: 'arcade', x, y: 0, w: ww, h: hh, arch: true, dress: true });
+  const fx = house ? [-5.6, -2.8, 0, 2.8, 5.6] : [-3.3, -1.1, 1.1, 3.3], sx = house ? [-2.4, 0, 2.4] : [-1.25, 1.25], aw = house ? 2.0 : 1.6, ah = house ? 3.0 : 2.75, sw = house ? 1.7 : 1.6, sh = house ? 2.8 : 2.65;
+  // the stair (house): up the east end's face from its front corner to a landing at the upper floor's door; u along that face runs to the back
+  const RIS = 18, rise = g0 / RIS, tread = .25, u0 = -3.4, sOut = 1.1, landing = [u0 + (RIS - 1) * tread, u0 + (RIS - 1) * tread + 1.85], doorU = (landing[0] + landing[1]) / 2;
+  const up = (x, ww = .95) => win(x, g0 + .55, ww, 1.65, [3, 3]);
+  const P = { name: house ? 'Market house' : 'Market shelter', w, d, t, floors: fl, fin, paint, r, interior: true, strings: house, cornice: house, gutter: house, doorFace: 'front',
+    roof: { kind: 'slate', pitch: house ? 32 : 30, hip: true, ov: house ? .32 : .45 }, chim: house ? [{ x: -4.6, flues: 2 }] : [],
+    plaque: house ? { x: 0, y: g0 + .75, w: 2.4, h: .56, text: 'MARKET HOUSE' } : null,
+    open: house ? { front: [...fx.map(x => arch(x, aw, ah)), ...fx.filter(x => x).map(x => up(x))], back: [...fx.map(x => arch(x, aw, ah)), ...fx.map(x => up(x))],
+        left: [...sx.map(x => arch(x, sw, sh)), up(-2.4, .85), up(2.4, .85)], right: [{ kind: 'plank', x: doorU, y: g0, w: 1.0, h: 2.15, ajar: !!o.interior }, up(-2.4, .85)] }
+      : { front: fx.map(x => arch(x, aw, ah)), back: fx.map(x => arch(x, aw, ah)), left: sx.map(x => arch(x, sw, sh)), right: sx.map(x => arch(x, sw, sh)) } };
+  const B = stalls ? null : add(building(P)), bk = bucket(), M = glMats(), bx = (k, x0, x1, y0, y1, z0, z1, s = .5) => { const g = box(x1 - x0, y1 - y0, z1 - z0, s); g.translate((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2); bk.add(k, g); return g; };
+  const iw = w / 2 - t, id = d / 2 - t, ceil = house ? g0 - .32 : null;
+  // the flagged floor, a step up from the street, and the dressed kerb round it
+  if (!stalls) bx('dress', -w / 2 - .25, w / 2 + .25, -.1, .12, -d / 2 - .25, d / 2 + .25, .6);
+  if (house) { // the floor above on its beams, and the dark of the room behind the upper windows
+    bx('board', -iw, iw, ceil, g0, -id, id, .8); for (let x = -iw + .7; x < iw; x += 1.45) bx('board', x - .13, x + .13, ceil - .28, ceil, -id, id, .9);
+    bx('board', -iw, iw, ceil - .5, ceil - .28, -.2, .2, .9);
+    if (!o.interior) { const dk = new THREE.BoxGeometry(w - 2 * t + .04, h - g0 - .02, d - 2 * t + .04); dk.translate(0, g0 + (h - g0) / 2, 0); bk.add('dark', dk); } }
+  // the chimney pier (house): limewashed rubble on a dressed base from the arcade's flags to the floor above, under the ridge stack at x -4.6
+  const pier = house ? { x0: -5.1, x1: -4.1, z0: -.8, z1: .8, y0: .12, y1: ceil } : null;
+  if (pier) { bx('w:lime', pier.x0, pier.x1, pier.y0, pier.y1, pier.z0, pier.z1, .8); bx('dress', pier.x0 - .04, pier.x1 + .04, pier.y0, pier.y0 + .3, pier.z0 - .04, pier.z1 + .04, .6); bx('dress', pier.x0 - .05, pier.x1 + .05, pier.y1 - .62, pier.y1 - .5, pier.z0 - .05, pier.z1 + .05, .6); }
+  // the town's beam and scales: an iron beam on a hook from the middle of the ceiling (the house's girder, the shelter's tie), two pans on chains
+  const bTop = house ? ceil - .5 : stalls ? 2.9 : h - .1, bY = 2.25, beam = { x: 0, z: 0, y: bY, top: bTop, pans: 1.15 };
+  { bx('iron', -.03, .03, bY, bTop, -.03, .03); if (!house && !stalls) bx('board', -iw, iw, h - .3, h - .1, -.12, .12, .9);
+    if (stalls) for (const a of [0, 2.09, 4.19]) { const g = box(.12, 3.3, .12, .9); g.translate(0, 1.6, 0); g.rotateX(-.3); g.rotateY(a); g.translate(Math.sin(a) * .96, 0, Math.cos(a) * .96); bk.add('board', g); } /* the beam on a timber tripod */
+    bx('iron', -.85, .85, bY - .05, bY + .05, -.04, .04); { const g = new THREE.ConeGeometry(.08, .28, 4); g.rotateX(Math.PI); g.translate(0, bY + .14, 0); bk.add('iron', g); }
+    for (const s of [-1, 1]) { for (const a of [0, 2.1, 4.2]) { const c = box(.012, bY - beam.pans, .012); c.translate(s * .8 + Math.cos(a) * .2, (bY + beam.pans) / 2, Math.sin(a) * .2); bk.add('iron', c); }
+      const p = new THREE.CylinderGeometry(.26, .2, .07, 14); p.translate(s * .8, beam.pans, 0); bk.add('iron', p); } }
+  // trestle stalls under the arches: boards on trestles, crates and sacks; a weight-stone by the beam
+  const stall = (x, z, ry, len) => { const c = Math.cos(ry), s = Math.sin(ry), at = (lx, lz) => [x + lx * c + lz * s, z - lx * s + lz * c];
+    { const g = box(len, .05, .8, .9); g.rotateY(ry); g.translate(x, .86, z); bk.add('board', g); }
+    for (const lx of [-len / 2 + .25, len / 2 - .25]) for (const lz of [-.3, .3]) { const [px, pz] = at(lx, lz), g = box(.06, .86, .06); g.translate(px, .43, pz); bk.add('board', g); }
+    for (let k = 0; k < 3; k++) { const [px, pz] = at(-len / 2 + .5 + k * (len - 1) / 2, -.05), cw = .38 + r() * .12, g = box(cw, .22 + r() * .1, .32); g.rotateY(ry + (r() - .5) * .3); g.translate(px, .99, pz); bk.add(k % 2 ? 'board' : 'pot', g); }
+    { const [px, pz] = at(len / 2 - .3, .75), g = new THREE.CylinderGeometry(.22, .26, .62, 10); g.translate(px, .31, pz); bk.add('thatch', g); } };
+  if (house) { stall(-4.2, 1.8, 0, 2.2); stall(4.2, 1.8, 0, 2.2); stall(-4.2, -1.8, Math.PI, 2.2); stall(4.6, -1.8, Math.PI, 1.8); }
+  else if (!stalls) { stall(-2.4, 1.3, 0, 1.8); stall(2.6, -1.3, Math.PI, 1.8); }
+  else for (const [x, z, ry] of [[-4.6, 2.6, 0], [-1.5, 3.0, 0], [2.0, 2.7, 0], [5.0, 2.4, 0], [-3.6, -2.8, Math.PI], [.4, -3.1, Math.PI], [4.0, -2.6, Math.PI]]) stall(x, z, ry, 2.0);
+  { const g = new THREE.CylinderGeometry(.18, .2, .22, 10); g.translate(1.4, .23, .5); bk.add('iron', g); }
+  let stair = null, door = new THREE.Vector3(0, 0, d / 2 + 1.0), top = stalls ? 3.2 : B.userData.size.ridge;
+  if (house) { // the outside stair up the east end: a solid flight of dressed steps on a rubble mass, a parapet on its open side, the landing at the door's sill
+    const X = u => -u, zf = w / 2; /* the east face: u along it is -z; out of it is +x */
+    for (let i = 1; i <= RIS; i++) { const a = i < RIS ? u0 + (i - 1) * tread : landing[0], b = i < RIS ? a + tread : landing[1], y = i * rise;
+      bx('rubble', zf, zf + sOut, 0, y - .06, Math.min(X(a), X(b)), Math.max(X(a), X(b)), .8); bx('dress', zf, zf + sOut + .04, y - .06, y, Math.min(X(a), X(b)) - .02, Math.max(X(a), X(b)) + .02, .6);
+      bx('w:lime', zf + sOut, zf + sOut + .3, 0, y + .9, Math.min(X(a), X(b)), Math.max(X(a), X(b)), .8); bx('dress', zf + sOut - .02, zf + sOut + .32, y + .9, y + 1.0, Math.min(X(a), X(b)) - .01, Math.max(X(a), X(b)) + .01, .6); }
+    bx('w:lime', zf, zf + sOut + .3, 0, g0 + 1.0, X(landing[1]) - .3, X(landing[1]), .8); /* the landing's end wall */
+    stair = { risers: RIS, rise: +rise.toFixed(3), tread, width: sOut, foot: [zf + sOut / 2, X(u0)], landing: { y: g0, z0: X(landing[1]), z1: X(landing[0]), x0: zf, x1: zf + sOut }, door: { u: doorU, z: X(doorU), y: g0, w: 1.0, h: 2.15 } };
+    door = new THREE.Vector3(zf + sOut + .9, 0, X(u0) + .4);
+    // the cupola on the ridge: a limewashed base, four painted posts round the bell, a slate pyramid, an iron finial and a vane
+    const ry = B.userData.size.ridge, cb = 1.3, P2 = 'p:' + paint; bx('w:lime', -cb / 2, cb / 2, ry - .7, ry + .35, -cb / 2, cb / 2, .6); bx('dress', -cb / 2 - .08, cb / 2 + .08, ry + .35, ry + .45, -cb / 2 - .08, cb / 2 + .08);
+    for (const px of [-1, 1]) for (const pz of [-1, 1]) bx(P2, px * (cb / 2 - .12) - .08, px * (cb / 2 - .12) + .08, ry + .45, ry + 1.55, pz * (cb / 2 - .12) - .08, pz * (cb / 2 - .12) + .08);
+    bx(P2, -cb / 2 - .05, cb / 2 + .05, ry + 1.55, ry + 1.7, -cb / 2 - .05, cb / 2 + .05);
+    { const g = new THREE.LatheGeometry([[0, 0], [.3, 0], [.28, .06], [.22, .3], [.16, .5], [0, .55]].map(([a, b]) => new THREE.Vector2(a, b)), 14); g.translate(0, ry + .75, 0); bk.add('iron', g); }
+    { const g = new THREE.ConeGeometry(cb / Math.SQRT2 + .14, 1.0, 4, 1); g.rotateY(Math.PI / 4); g.translate(0, ry + 2.2, 0); bk.add('slate', g); }
+    bx('iron', -.025, .025, ry + 2.6, ry + 3.5, -.025, .025); bx('iron', -.45, .45, ry + 3.25, ry + 3.29, -.02, .02); { const g = new THREE.ConeGeometry(.1, .3, 3); g.rotateZ(-Math.PI / 2); g.translate(.5, ry + 3.27, 0); bk.add('iron', g); }
+    top = ry + 3.5; }
+  add(finish(bk, house ? 'Market house: floor, beams, stair, cupola and stalls' : stalls ? 'Market stalls and the beam on its tripod' : 'Market shelter: floor, beam and stalls'));
+  const ud = { name: stalls ? 'Market stalls, no building' : P.name, kind, tris: 0, calls: 0, parts: parts.map(p => ({ name: p.userData.name, tris: p.userData.tris, calls: p.userData.calls })) };
+  for (const p of parts) { ud.tris += p.userData.tris; ud.calls += p.userData.calls; }
+  ud.size = stalls ? { w: 12, d: 7, eave: 0, ridge: top } : { w, d, eave: +h.toFixed(2), ridge: +top.toFixed(2), clear: house ? +(ceil - .28).toFixed(2) : null };
+  ud.arcade = { front: P.open.front.filter(q => q.kind === 'arcade').map(q => ({ x: q.x, w: q.w, h: q.h })), end: P.open.left.filter(q => q.kind === 'arcade').map(q => ({ x: q.x, w: q.w, h: q.h })), t, iw, id, plan: P };
+  ud.stair = stair; ud.beam = beam; ud.door = door; ud.pier = pier; G.userData = ud; return G;
+}
+// the farmstead (Session 1194, card F6; OG-115's "farmstead with outbuildings", OG-114's farming and herding): the kit's farmhouse, the
+// byre and the barn round a cobbled yard, three ways (o.kind, asked of Michael): the Irish country's three farmyards.
+//   'yard'  (the courtyard farm): the house to the road, the byre and the barn down either side of a yard behind it, a wall across its foot;
+//   'line'  (the linear farm): the byre against the house's west gable and the barn against its east, one row facing a yard before it;
+//   'range' (the parallel farm): the byre and the barn end to end in one range across the yard from the house's back door.
+// The way in is a pair of round limewashed piers with conical caps and an iron field gate swung back, 3.4 m between them for a cart. In
+// the yard: the dunghill before the byre, the pump and its trough by the house's yard door, a cart, a rick of hay and a clamp of turf.
+// The road runs along +z: the house's front stands on z 3.1 ('line': the yard's wall on the road, 9 m before it). Merged by material.
+// -> a Group; userData { name, kind, tris, calls, size: {w, d, eave, ridge}, lot: {x0, x1, z0, z1}, yard: [{x0, x1, z0, z1}], gate: {x, z, w},
+//    foot: [{name, x0, x1, z0, z1}] (buildings, walls, piers, props), doors: [{name, x, z, nx, nz, w, h, cart}] (the doors on the yard) }
+function farmstead(o = {}) {
+  const kind = o.kind || 'yard', r = o.r || stream('farmstead:' + kind), G = new THREE.Group(), bk = bucket(), foot = [], doors = [], paint = o.paint || 'red';
+  bk.mats = { cobble: mat('cobble', { ns: 1.1, color: 0xbcb2a2, rough: 1 }), dung: new THREE.MeshStandardMaterial({ color: new THREE.Color(.16, .11, .06), roughness: .95 }),
+    turf: mat('stone', { ns: 1.6, color: 0x5a4030, rough: 1 }) };
+  const bx = (k, x0, x1, y0, y1, z0, z1, s = .5) => { const g = box(x1 - x0, y1 - y0, z1 - z0, s); g.translate((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2); bk.add(k, g); return g; };
+  const rot = (x, z, ry) => [x * Math.cos(ry) + z * Math.sin(ry), -x * Math.sin(ry) + z * Math.cos(ry)];
+  // a building at (x, z), turned by ry (a quarter turn at a time): its footprint and the doors it opens on the yard (faces named in yardFaces)
+  const FACE = { front: (P, u) => [u, P.d / 2, 0, 1], back: (P, u) => [-u, -P.d / 2, 0, -1], right: (P, u) => [P.w / 2, -u, 1, 0], left: (P, u) => [-P.w / 2, u, -1, 0] };
+  const place = (P, x, z, ry, yardFaces) => { const g = building(P); g.position.set(x, 0, z); g.rotation.y = ry; G.add(g);
+    const q = Math.abs(Math.round(ry / (Math.PI / 2))) % 2, hw = (q ? P.d : P.w) / 2, hd = (q ? P.w : P.d) / 2; foot.push({ name: P.name, x0: x - hw, x1: x + hw, z0: z - hd, z1: z + hd });
+    for (const f of yardFaces) for (const op of P.open[f] || []) if (/half|plank|cart|transom/.test(op.kind) && op.y < .3) { const [lx, lz, nx, nz] = FACE[f](P, op.x), [wx, wz] = rot(lx, lz, ry), [wnx, wnz] = rot(nx, nz, ry);
+      doors.push({ name: `${P.name}, ${op.kind === 'cart' ? 'cart arch' : op.kind === 'half' ? 'half-door' : 'door'}`, x: +(x + wx).toFixed(3), z: +(z + wz).toFixed(3), nx: Math.round(wnx), nz: Math.round(wnz), w: op.w, h: op.h, cart: op.kind === 'cart' }); }
+    return g; };
+  const house = PLANS.farmhouse({ paint: o.housePaint || 'green' }), byre = PLANS.byre({ paint }), barn = PLANS.barn({});
+  house.r = stream('farmstead:windows:' + kind); byre.r = stream('farmstead:byre:' + kind); barn.r = stream('farmstead:barn:' + kind);
+  // the walls of the yard: limewashed rubble 1.4 m high, 0.5 m thick, a rounded coping; along x or along z, a footprint each
+  const WT = .5, WH = 1.4, wall = (x0, z0, x1, z1) => { if (x1 - x0 < .05 && z1 - z0 < .05) return; const ax = z1 - z0 < .01, X0 = ax ? x0 : x0 - WT / 2, X1 = ax ? x1 : x0 + WT / 2, Z0 = ax ? z0 - WT / 2 : z0, Z1 = ax ? z0 + WT / 2 : z1;
+    bx('w:lime', X0, X1, -.3, WH - .1, Z0, Z1, .8); const c = new THREE.CylinderGeometry(WT / 2 + .03, WT / 2 + .03, ax ? X1 - X0 : Z1 - Z0, 8, 1, false, 0, Math.PI); c.rotateZ(Math.PI / 2); if (!ax) c.rotateY(Math.PI / 2); c.translate((X0 + X1) / 2, WH - .1, (Z0 + Z1) / 2); bk.add('w:lime', c);
+    foot.push({ name: 'wall', x0: X0, x1: X1, z0: Z0, z1: Z1 }); };
+  // the gate in a wall along x at z gz: the wall broken from gx - gw/2 to gx + gw/2, a round pier either side, the leaf hung on the east one and swung back into the yard (-z)
+  const GW = 3.4, PR = .42; let gate = null;
+  const gateWall = (x0, x1, gz, gx) => { const a = gx - GW / 2 - 2 * PR, b = gx + GW / 2 + 2 * PR; wall(x0, gz, a, gz); wall(b, gz, x1, gz); gate = { x: gx, z: gz, w: GW };
+    for (const s of [-1, 1]) { const px = gx + s * (GW / 2 + PR); { const g = new THREE.CylinderGeometry(PR, PR + .03, 1.9, 16); g.translate(px, .95 - .3 / 2, gz); scaleUV(g, 1); bk.add('w:lime', g); }
+      { const g = new THREE.CylinderGeometry(PR + .05, PR + .05, .1, 16); g.translate(px, 1.75, gz); bk.add('w:lime', g); } { const g = new THREE.ConeGeometry(PR + .02, .62, 16); g.translate(px, 2.1, gz); bk.add('w:lime', g); }
+      foot.push({ name: 'gate pier', x0: px - PR, x1: px + PR, z0: gz - PR, z1: gz + PR }); }
+    // the leaf: five rails, two stiles and a brace, 1.2 m high, 3.3 long, swung through a right angle to stand along -z from its hinge
+    const hx = gx + GW / 2 - .02, L = GW - .1, lb = (x0, x1, y0, y1) => bx('iron', hx - .025, hx + .025, y0, y1, gz - x1, gz - x0);
+    for (let k = 0; k < 5; k++) { const y = .22 + k * .25; lb(0, L, y - .02, y + .02); } lb(0, .06, .1, 1.3); lb(L - .06, L, .1, 1.3);
+    { const g = box(.04, .04, Math.hypot(L, 1.0)); g.rotateX(Math.atan2(1.0, L)); g.translate(hx, .72, gz - L / 2); bk.add('iron', g); }
+    foot.push({ name: 'gate leaf', x0: hx - .05, x1: hx + .05, z0: gz - L, z1: gz }); };
+  let lot, yard;
+  if (kind === 'line') { // the row: byre (west), house, barn (east), their fronts on z 3.1; the yard before them to the road wall at z 12.1
+    place(house, 0, 0, 0, ['front']); place(byre, -11.25, .4, 0, ['front']); place(barn, 11.25, -.1, 0, ['front']);
+    lot = { x0: -17.25, x1: 17.25, z0: -3.3, z1: 12.1 }; yard = [{ x0: -17.25 + WT, x1: 17.25 - WT, z0: 3.1, z1: 12.1 - WT }];
+    gateWall(-17.25, 17.25, 12.1 - WT / 2, 0); wall(-17.25 + WT / 2, 3.1, -17.25 + WT / 2, 12.1 - WT); wall(17.25 - WT / 2, 3.1, 17.25 - WT / 2, 12.1 - WT);
+  } else if (kind === 'range') { // the range: byre and barn end to end, their fronts on z -13.1 facing the house's back across the yard
+    place(house, 0, 0, 0, ['back']); place(byre, -6, -15.8, 0, ['front']); place(barn, 6, -16.3, 0, ['front']);
+    lot = { x0: -12, x1: 12, z0: -19.5, z1: 3.1 }; yard = [{ x0: -12 + WT, x1: 12 - WT, z0: -13.1, z1: -3.1 }, { x0: -12 + WT, x1: -5.25, z0: -3.1, z1: 3.1 - WT }, { x0: 5.25, x1: 12 - WT, z0: -3.1, z1: 3.1 - WT }];
+    wall(-12, 3.1 - WT / 2, -5.25, 3.1 - WT / 2); gateWall(5.25, 12, 3.1 - WT / 2, 8.6); wall(-12 + WT / 2, -13.1, -12 + WT / 2, 3.1 - WT); wall(12 - WT / 2, -13.1, 12 - WT / 2, 3.1 - WT);
+  } else { // the courtyard: the byre down the west side (its doors east), the barn down the east (its doors west), a wall across the foot
+    place(house, 0, 0, 0, ['back']); place(byre, -8.7, -12.7, Math.PI / 2, ['front']); place(barn, 9.2, -12.7, -Math.PI / 2, ['front']);
+    lot = { x0: -11.4, x1: 12.4, z0: -18.7, z1: 3.1 }; yard = [{ x0: -6, x1: 6, z0: -18.7 + WT, z1: -3.1 }, { x0: -11.4 + WT, x1: 12.4 - WT, z0: -6.7, z1: -3.1 }, { x0: -11.4 + WT, x1: -5.25, z0: -3.1, z1: 3.1 - WT }, { x0: 5.25, x1: 12.4 - WT, z0: -3.1, z1: 3.1 - WT }];
+    wall(-6, -18.7 + WT / 2, 6, -18.7 + WT / 2); wall(-11.4, 3.1 - WT / 2, -5.25, 3.1 - WT / 2); gateWall(5.25, 12.4, 3.1 - WT / 2, 8.8);
+    wall(-11.4 + WT / 2, -6.7, -11.4 + WT / 2, 3.1 - WT); wall(12.4 - WT / 2, -6.7, 12.4 - WT / 2, 3.1 - WT);
+  }
+  // the cobbled yard, laid over the whole lot (the buildings stand on it)
+  { const g = new THREE.PlaneGeometry(lot.x1 - lot.x0, lot.z1 - lot.z0); g.rotateX(-Math.PI / 2); g.translate((lot.x0 + lot.x1) / 2, .015, (lot.z0 + lot.z1) / 2); worldUV(g, .8); bk.add('cobble', g); }
+  // the props, each where its layout puts it: [x, z] of the dunghill, the pump (its trough to the west, or along -z when turned), the cart (ry), the rick, the turf clamp (along x or z)
+  const S = { yard: { dung: [-3.5, -11.3, 1], pump: [-3.3, -3.45, 0], cart: [1.4, -17.0, 0], rick: [-3.9, -16.3], turf: [-8.6, -.8, 0] },
+    line: { dung: [-12.7, 5.6, 0], pump: [2.6, 3.42, 0], cart: [12.6, 7.2, 0], rick: [-15.0, 9.8], turf: [13.6, 10.3, 0] },
+    range: { dung: [-7.4, -10.6, 0], pump: [-3.3, -3.45, 0], cart: [-2.4, -9.2, .5], rick: [-9.4, -5.6], turf: [-8.6, -.6, 0] } }[kind];
+  const prop = (name, x, z, hx, hz) => foot.push({ name, x0: +(x - hx).toFixed(3), x1: +(x + hx).toFixed(3), z0: +(z - hz).toFixed(3), z1: +(z + hz).toFixed(3) });
+  { const [x, z, q] = S.dung, a = q ? .95 : 1.3, c = q ? 1.3 : .95, g = new THREE.SphereGeometry(1, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2); g.scale(a, .62, c); g.translate(x, 0, z); bk.add('dung', g);
+    for (let k = 0; k < 14; k++) { const t = r() * Math.PI * 2, d = .2 + r() * .6, s = box(.5, .02, .03); s.rotateY(r() * Math.PI); s.translate(x + Math.cos(t) * a * d, .62 * Math.sqrt(Math.max(0, 1 - d * d)) + .005, z + Math.sin(t) * c * d); bk.add('thatch', s); }
+    prop('dunghill', x, z, a, c); }
+  { const [x, z] = S.pump; bx('dress', x - .35, x + .35, 0, .1, z - .3, z + .3); { const g = new THREE.CylinderGeometry(.12, .15, 1.3, 12); g.translate(x, .75, z); bk.add('iron', g); }
+    { const g = new THREE.SphereGeometry(.15, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2); g.translate(x, 1.4, z); bk.add('iron', g); } bx('iron', x - .04, x + .04, .86, .94, z - .1, z - .4 + .05);
+    { const g = box(.05, .05, .8); g.rotateX(-.45); g.translate(x, 1.42, z + .3); bk.add('iron', g); }
+    bx('dress', x - 1.75, x - .45, 0, .5, z - .23, z + .23); bx('dress', x - 1.65, x - .55, .5, .52, z - .13, z + .13); prop('pump', x, z, .35, .3); prop('trough', x - 1.1, z, .65, .23);
+    const wg = new THREE.PlaneGeometry(1.1, .26); wg.rotateX(-Math.PI / 2); wg.translate(x - 1.1, .44, z); bk.add('glass', wg); }
+  { const [x, z, ry] = S.cart, part = (k, g) => { g.rotateY(ry); g.translate(x, 0, z); bk.add(k, g); }, c = Math.cos(ry), s = Math.sin(ry);
+    { const g = box(2.0, .1, 1.3, .9); g.translate(0, .82, 0); part('board', g); } for (const sz of [-1, 1]) { const g = box(2.0, .32, .05, .9); g.translate(0, 1.03, sz * .63); part('board', g); }
+    for (const sx of [-1, 1]) { const g = box(.05, .32, 1.3, .9); g.translate(sx * .98, 1.03, 0); part('board', g); }
+    for (const sz of [-1, 1]) { const w = new THREE.TorusGeometry(.6, .05, 6, 20); w.translate(-.1, .65, sz * .78); part('iron', w); const h = new THREE.CylinderGeometry(.09, .09, .14, 8); h.rotateX(Math.PI / 2); h.translate(-.1, .65, sz * .78); part('board', h);
+      for (let k = 0; k < 6; k++) { const sp = box(.04, 1.12, .04); sp.rotateZ(k * Math.PI / 6); sp.translate(-.1, .65, sz * .78); part('board', sp); }
+      const sh = box(2.1, .08, .08, .9); sh.rotateZ(Math.atan2(.7, 2.0)); sh.translate(1.85, .45, sz * .45); part('board', sh); }
+    { const g = box(.12, .7, .12); g.translate(-.9, .4, 0); part('board', g); }
+    const hx = Math.abs(c) * 1.95 + Math.abs(s) * .85, hz = Math.abs(s) * 1.95 + Math.abs(c) * .85, cx = x + c * .9, cz = z - s * .9; prop('cart', cx, cz, hx, hz); }
+  { const [x, z] = S.rick; { const g = new THREE.CylinderGeometry(1.45, 1.3, 1.9, 18); g.translate(x, .95, z); scaleUV(g, 2); bk.add('thatch', g); } { const g = new THREE.ConeGeometry(1.6, 1.7, 18); g.translate(x, 2.75, z); scaleUV(g, 2); bk.add('thatch', g); }
+    for (const y of [1.6, 2.2, 2.75]) { const t = new THREE.TorusGeometry(1.48 - (y - 1.6) * .8, .025, 4, 24); t.rotateX(Math.PI / 2); t.translate(x, y + .3, z); bk.add('board', t); }
+    prop('rick', x, z, 1.6, 1.6); }
+  { const [x, z, q] = S.turf, L = 3.2, W = 1.3, y0 = .8, y1 = 1.45, body = box(L, y0, W, .7), top = new THREE.BufferGeometry(); body.translate(0, y0 / 2, 0); /* the clamp: sods stacked square, a ridged top */
+    { const v = [[-L / 2, y0, -W / 2], [L / 2, y0, -W / 2], [L / 2, y1, 0], [-L / 2, y1, 0], [-L / 2, y0, W / 2], [L / 2, y0, W / 2]], tri = [[0, 3, 2], [0, 2, 1], [4, 5, 2], [4, 2, 3], [0, 4, 3], [1, 2, 5]], pos = [];
+      for (const t of tri) for (const i of t) pos.push(...v[i]); top.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); top.computeVertexNormals(); worldUV(top, .7); }
+    for (const g of [body, top]) { if (q) g.rotateY(Math.PI / 2); g.translate(x, 0, z); bk.add('turf', g); }
+    prop('turf clamp', x, z, q ? W / 2 : L / 2, q ? L / 2 : W / 2); }
+  G.add(finish(bk, 'Farmyard: walls, gate, cobbles, pump, cart, rick, turf'));
+  // the lot is everything on it: the gate's piers stand 0.17 m proud of the wall on the road
+  for (const p of foot) { lot.x0 = Math.min(lot.x0, p.x0); lot.x1 = Math.max(lot.x1, p.x1); lot.z0 = Math.min(lot.z0, p.z0); lot.z1 = Math.max(lot.z1, p.z1); }
+  // the house's, the byre's and the barn's sizes, before the merge
+  const hs = G.children[0].userData.size, ys = G.children[1].userData.size, ns = G.children[2].userData.size;
+  const tris = mergeByMaterial(G);
+  G.userData = { name: { yard: 'Farmstead round a yard', line: 'Farmstead in a line', range: 'Farmstead, house and range' }[kind], kind, tris, calls: G.children.length,
+    size: { w: +(lot.x1 - lot.x0).toFixed(2), d: +(lot.z1 - lot.z0).toFixed(2), eave: hs.eave, ridge: hs.ridge }, parts: { house: hs, byre: ys, barn: ns }, lot, yard, gate, foot, doors,
+    door: new THREE.Vector3(gate.x - .6, 0, gate.z + 1.2) };
+  return G;
+}
 // the Gatelands' lots (Session 835, Michael's A on #280: coloured towns). A town's lots are rendered in the earth colours,
 // with dressed quoins, string courses and a cornice; no two neighbours share a colour, as in Kinsale or Dingle, and the
 // door and sashes are painted in a colour that does not drown in the wall's. Cottages stay limewashed under thatch, farmhouses
@@ -1206,7 +1396,7 @@ export function gatelandsLot(street, i, s = {}) {
   return { plan, kind, colour: town ? colour : kind === 'warehouse' ? 'stone' : 'lime', paint: town ? paint : plan.paint };
 }
 export { BAYS as GL_BAYS, bayWidth as glBayWidth, baysFor as glBaysFor, bayPlan as glBayPlan };
-export { church as gatelandsChurch, coachInn as gatelandsCoachInn, keep as gatelandsKeep };
+export { church as gatelandsChurch, coachInn as gatelandsCoachInn, keep as gatelandsKeep, marketHouse as gatelandsMarket, farmstead as gatelandsFarmstead };
 export { SCALE, glMats, bucket as glBucket, finish as glFinish, box as glBox, face as glFace, building as gatelandsBuilding, PLANS as GL_PLANS, FIN as GL_FIN, win as glWin, PAINTS as GL_PAINTS };
 
 // ── the Markish hall (Session 819, a prototype for DECISION: the Mark's houses in the new kit) ──

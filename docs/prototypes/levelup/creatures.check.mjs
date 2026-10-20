@@ -252,41 +252,123 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
     check(`${k}: ${t.school ? 'its sockets lit (' + t.lit + ' eyes)' : 'its sockets empty and dark'}`, t.school ? t.lit === 2 : t.lit === 0, { lit: t.lit });
     if (t.school) check(`${k}: the ${t.from} of ${t.school}, weed-hung (OG-018)`, t.from === 'skeleton' && t.school === 'Uisce' && t.weed, t);
     check(`${k}: carries ${(t.gear || []).join(' and ')}, clear of the ground through every gait (lowest ${t.low} m)`, (t.gear || []).includes('sword') && t.gear.includes('shield') && t.low > .02, t); }
-  // a failing gate's foes (Sessions 1168, 1169; OG-073, backlog L4): each the steady plan it grows from, with more limbs, its stone or bone
+  // a failing gate's foes (Sessions 1168, 1169, 1174, 1176, 1178; OG-073, backlog L4): each the steady plan it grows from, with more limbs, its stone or bone
   // cracked and only the cracks lit in its school's colour. The extra hands swing on their own beat, held out from the body and off the
   // ground through every gait. Solas's skeleton: two more pairs of arms, bone spurs on its vertebrae, more ribs, its sword and shield still
-  // in the first pair's hands. Gaoth's gargoyle: wings half again the Cloch gargoyle's, and a second pair of clawed arms
+  // in the first pair's hands. Gaoth's gargoyle: wings half again the Cloch gargoyle's, and a second pair of clawed arms. Uisce's slime has no limbs:
+  // its "more" is three crests risen off its back, each rolling on its own beat, and more of the drowned in the jelly. Cloch's golem is
+  // doubled: two heads and two pairs of arms on one rig
   const fl = await page.evaluate(async () => { const T = await import('three'), K = await import('./creatures.js'), out = {};
     for (const k of K.FAILING || []) { const C = K.build(K.genome(k, k + ':check')), base = K.build(K.genome(C.plan.from, C.plan.from + ':check')), P = new T.Vector3(), inv = new T.Matrix4();
       const gl = C.meshes[0].geometry.attributes.aGlow, g0 = base.meshes[0].geometry.attributes.aGlow; let lit = 0, lit0 = 0; for (let v = 0; v < gl.count; v++) if (gl.getX(v) > .5) lit++; for (let v = 0; v < g0.count; v++) if (g0.getX(v) > .5) lit0++;
       const pairs0 = base.B.arms.length / 2, hands = C.B.arms.filter(A => +A.names[0][3] >= pairs0).map(A => A.names[3]); let low = 1e9, inX = 1e9; const items = [], box = new T.Box3(); C.rig.traverse(o => { if (o.name === 'sword' || o.name === 'shield') items.push(o); });
       let gearLow = 1e9; const beat = {}, first = C.B.arms.find(A => A.names[0].startsWith('arm0L'))?.names[3];
       for (const gait of C.plan.gaits) { C.gait = gait; for (let i = 0; i < 24; i++) { K.pose(C, i / 24); C.rig.updateMatrixWorld(true); inv.copy(C.rig.matrixWorld).invert();
-        for (const h of [...hands, first]) { if (!h) continue; C.byName[h].getWorldPosition(P).applyMatrix4(inv); if (h !== first) { low = Math.min(low, P.y); inX = Math.min(inX, Math.abs(P.x)); } if (gait === 'walk') (beat[h] = beat[h] || []).push(P.z); }
+        for (const h of [...hands, first]) { if (!h) continue; C.byName[h].getWorldPosition(P).applyMatrix4(inv); if (h !== first) { low = Math.min(low, P.y); inX = Math.min(inX, Math.abs(P.x)); } if (gait === C.plan.gaits[0]) (beat[h] = beat[h] || []).push(P.z); }
         for (const o of items) { box.setFromObject(o); gearLow = Math.min(gearLow, box.min.y - C.root.position.y); } } }
-      // each extra hand's fore-and-aft swing in the walk, and whether each extra pair swings out of step with the pair before it
+      // each extra hand's fore-and-aft swing in its first gait (the walk, or a wraith's hover), and whether each extra pair swings out of step with the pair before it
       const sw = Object.fromEntries(hands.map(h => [h, +(Math.max(...beat[h]) - Math.min(...beat[h])).toFixed(3)])), peak = h => beat[h].indexOf(Math.max(...beat[h]));
       const lefts = [first, ...hands.filter(h => h.startsWith('arm') && h[4] === 'L')].filter(Boolean), offBeat = lefts.length > 1 && lefts.every((h, i) => !i || peak(h) !== peak(lefts[i - 1]));
       const spineO = C.plan.parts.find(([q]) => q === 'spine')[1], ribs = C.plan.parts.find(([q]) => q === 'ribs')?.[1], body = ribs ? ribs.w : Math.max(...spineO.r) * spineO.s[0];
       const span = pl => pl.parts.find(([q]) => q === 'wings')?.[1].span || 0;
       let spurs = 0; C.rig.traverse(o => { if (o.name === 'spur') spurs++; });
-      out[k] = { name: C.plan.name, school: C.plan.school, condition: C.plan.condition, from: C.plan.from, src: C.plan.src, pairs: C.B.arms.length / 2, basePairs: pairs0, ribs: C.B.ribs, baseRibs: base.B.ribs,
+      // a jelly's crests (Session 1174): each tip's height over the steady body's top at rest, and its roll fore and aft in the crawl
+      const crests = C.B.crests || [], top0 = (() => { const p = base.meshes[0].geometry.attributes.position; let m = -1e9; for (let v = 0; v < p.count; v++) m = Math.max(m, p.getY(v)); return m; })();
+      const roll = {}; if (crests.length) { C.gait = C.plan.gaits[0]; for (let i = 0; i < 24; i++) { K.pose(C, i / 24); C.rig.updateMatrixWorld(true); inv.copy(C.rig.matrixWorld).invert();
+        crests.forEach((Cr, q) => { C.byName[Cr.names[Cr.names.length - 1]].getWorldPosition(P).applyMatrix4(inv); (roll[q] = roll[q] || []).push(P.z); }); } }
+      const crestUp = crests.map(Cr => +(Cr.tip.y - top0).toFixed(3)), crestRoll = Object.values(roll).map(z => +(Math.max(...z) - Math.min(...z)).toFixed(3)), crestPeaks = Object.values(roll).map(z => z.indexOf(Math.max(...z)));
+      // a second pair of wings (Session 1191): how many pairs against the steady one's, how wide every wing bone spreads folded (stand) and
+      // in flight, and the frame of each pair's left wrist's highest point in the fly, so the pairs beat out of step
+      const pairsOf = X => new Set(X.B.wings.map(w => w.pair || 0)).size, wingW = (re = /^wing/) => { C.rig.updateMatrixWorld(true); inv.copy(C.rig.matrixWorld).invert(); let a = 1e9, b = -1e9; C.rig.traverse(o => { if (o.isBone && re.test(o.name)) { o.getWorldPosition(P).applyMatrix4(inv); a = Math.min(a, P.x); b = Math.max(b, P.x); } }); return b - a; };
+      let wings = null; if (C.B.wings.length && !C.B.wings[0].feathered && C.plan.gaits.includes('fly') && C.plan.gaits.includes('stand')) { C.gait = 'stand'; K.pose(C, 0); const rest = wingW(), rest1 = wingW(/^wing[LR]/), rest2 = wingW(/^wing2/); C.gait = 'fly'; let open = 0; const up = {};
+        for (let i = 0; i < 24; i++) { K.pose(C, i / 24); open = Math.max(open, wingW()); for (const W of C.B.wings) if (W.side > 0) { C.byName[W.arm[2]].getWorldPosition(P).applyMatrix4(inv); (up[W.pair || 0] = up[W.pair || 0] || []).push(P.y); } }
+        wings = { pairs: pairsOf(C), basePairs: pairsOf(base), rest: +rest.toFixed(2), rest1: +rest1.toFixed(2), rest2: +rest2.toFixed(2), open: +open.toFixed(2), len: +C.len.toFixed(2), peaks: Object.values(up).map(y => y.indexOf(Math.max(...y))) }; }
+      out[k] = { wings, name: C.plan.name, school: C.plan.school, condition: C.plan.condition, from: C.plan.from, src: C.plan.src, pairs: C.B.arms.length / 2, basePairs: pairs0, ribs: C.B.ribs, baseRibs: base.B.ribs,
         lit: +(lit / gl.count).toFixed(3), lit0, glow: C.plan.glow?.color, baseGlow: !!base.plan.glow, eyes: (() => { let n = 0; C.rig.traverse(o => { if (o.isMesh && o.material?.clearcoat === 1) n++; }); return n; })(),
         spurs, spurOff: C.B.spurs ? Math.max(...C.B.spurs.map(q => q.off / q.r)) : null, low: +low.toFixed(3), inX: +inX.toFixed(3), body: +body.toFixed(3), sw, offBeat, span: span(C.plan), baseSpan: span(base.plan), cloch: span(K.PLANS.gargoyle),
-        gear: C.B.gear, gearLow: +gearLow.toFixed(3), tris: C.stats.tris, baseTris: base.stats.tris, bones: C.stats.bones, baseBones: base.stats.bones }; }
+        crests: crests.length, baseCrests: (base.B.crests || []).length, crestUp, crestRoll, crestPeaks, rags: C.B.rags, baseRags: base.B.rags, gait0: C.plan.gaits[0], head: !!C.byName.head, heads: C.bones.filter(b => /^head\d*$/.test(b.name)).length, baseHeads: base.bones.filter(b => /^head\d*$/.test(b.name)).length, incl: C.B.bits.length, baseIncl: base.B.bits.length,
+        frame: C.B.frame, skull: !!C.B.skull, clear: C.plan.clear, baseClear: base.plan.clear, litHot: +(gl.count && (() => { let n = 0; for (let v = 0; v < gl.count; v++) if (gl.getX(v) > .2) n++; return n / gl.count; })()).toFixed(3), litHot0: +(() => { let n = 0; for (let v = 0; v < g0.count; v++) if (g0.getX(v) > .2) n++; return n / g0.count; })().toFixed(3), stoneLit: (() => { let n = 0; C.rig.traverse(o => { if ((o.name === 'frame' || o.name === 'spur' || o.name === 'ribs' || o.name === 'skull') && o.material.emissive && o.material.emissive.getHex() !== 0 && o.material.color.r < .5) n++; }); return n; })(), gear: C.B.gear, gearLow: +gearLow.toFixed(3), tris: C.stats.tris, baseTris: base.stats.tris, bones: C.stats.bones, baseBones: base.stats.bones }; }
     return out; });
-  const SCHOOL = { Solas: c => c[0] > 2 && c[1] > 1.6 && c[2] < c[1], Gaoth: c => c[2] > c[1] && c[1] > c[0] && c[2] > 2 };
+  const K_HOVER = await page.evaluate(async () => { const K = await import('./creatures.js'); return Object.fromEntries((K.FAILING || []).map(k => [k, K.PLANS[k].hover || 0])); }); // a floating foe clears the ground by its bob too
+  const SCHOOL = { Solas: c => c[0] > 2 && c[1] > 1.6 && c[2] < c[1], Gaoth: c => c[2] > c[1] && c[1] > c[0] && c[0] > 1 && c[2] > 2, Uisce: c => c[0] < .6 && c[1] > 1.2 && c[2] > c[1] + .5, Cloch: c => c[2] > 2 && c[0] > 1 && c[1] < .8, Scáth: c => c[2] > 2.5 && c[0] > 1 && c[1] < .8, Tine: c => c[0] > 2.4 && c[1] < 1.2 && c[2] < .4 };
   for (const [k, t] of Object.entries(fl)) { console.log(k, JSON.stringify(t));
     check(`${k}: the ${t.from} of ${t.school} at a ${t.condition} gate, from OG-073`, t.from && t.condition === 'failing' && SCHOOL[t.school] && /OG-073/.test(t.src), t);
+    if (t.pairs || t.basePairs) {
     check(`${k}: ${t.pairs} pairs of arms against the steady one's ${t.basePairs} (${t.bones} bones against ${t.baseBones}), the extra hands held out from the body (nearest ${(t.inX * 100).toFixed(1)} cm off the middle, the body ${(t.body * 100).toFixed(0)} cm) and off the ground (lowest ${t.low} m) through every gait`, t.pairs > t.basePairs && t.bones > t.baseBones && t.inX > t.body && t.low > .3, t);
-    check(`${k}: each extra hand swings in the walk (${Object.values(t.sw).map(v => (v * 100).toFixed(0)).join(', ')} cm), each pair out of step with the one before`, Object.values(t.sw).every(v => v > .05) && t.offBeat, t.sw);
-    check(`${k}: the cracks lit and nothing else, ${(t.lit * 100).toFixed(1)}% of the vertices, in ${t.school}'s colour (${t.glow}); the steady one lit nowhere (${t.lit0}); its eyes lit (${t.eyes})`, t.lit > .03 && t.lit < .3 && !t.baseGlow && t.lit0 === 0 && t.eyes === 2, t);
+    check(`${k}: each extra hand swings in the ${t.gait0} (${Object.values(t.sw).map(v => (v * 100).toFixed(0)).join(', ')} cm), each pair out of step with the one before`, Object.values(t.sw).every(v => v > .05) && t.offBeat, t.sw); }
+    if (t.from !== 'fireelemental') check(`${k}: the cracks lit and nothing else, ${(t.lit * 100).toFixed(1)}% of the vertices, in ${t.school}'s colour (${t.glow}); the steady one lit nowhere (${t.lit0}); ${t.head ? 'its eyes lit (' + t.eyes + ' on ' + t.heads + ' heads)' : 'no head, no eyes'}`, t.lit > .03 && t.lit < .3 && !t.baseGlow && t.lit0 === 0 && t.eyes === 2 * t.heads, t);
     check(`${k}: ${t.tris} triangles against the steady one's ${t.baseTris}`, t.tris < 4 * t.baseTris, t);
     if (t.from === 'skeleton') {
       check(`${k}: ${t.spurs} bone spurs on the vertebrae (their bases within ${t.spurOff?.toFixed(2)} of the spine's radius), ${t.ribs} ribs against ${t.baseRibs}`, t.spurs >= 8 && t.spurOff < .4 && t.ribs > t.baseRibs, t);
       check(`${k}: still carries ${(t.gear || []).join(' and ')} in the first pair's hands, clear of the ground (lowest ${t.gearLow} m)`, (t.gear || []).includes('sword') && t.gear.includes('shield') && t.gearLow > .02, t); }
+    if (t.from === 'slime') {
+      check(`${k}: ${t.crests} crests against the steady one's ${t.baseCrests}, their tips ${t.crestUp.map(v => (v * 100).toFixed(0)).join(', ')} cm over the steady slime's top (in its units)`, t.crests >= 3 && t.baseCrests === 0 && t.crestUp.every(v => v > .15), t);
+      check(`${k}: each crest rolls in the crawl (${t.crestRoll.map(v => (v * 100).toFixed(0)).join(', ')} cm at the tip), no two on the same beat (peaks at ${t.crestPeaks.join(', ')} of 24)`, t.crestRoll.every(v => v > .05) && new Set(t.crestPeaks).size === t.crestPeaks.length, t);
+      check(`${k}: more of the drowned taken in, ${t.incl} things in the jelly against ${t.baseIncl}`, t.incl > t.baseIncl, t); }
+    if (t.from === 'wraith') check(`${k}: more rags, ${t.rags?.strips} torn strips against the steady one's ${t.baseRags?.strips}, the lowest ${t.rags?.low} m off the ground at rest, more than its bob`, t.rags?.strips > t.baseRags?.strips && t.rags.low > .03 + (K_HOVER[k] || 0), t);
+    // Tine's (Session 1186): a stone skeleton inside the flame, the body clearer than the steady one, the stone unlit, the flame hotter
+    if (t.from === 'fireelemental') { check(`${k}: a stone skeleton inside its flame, ${t.frame?.pieces} hewn pieces on the spine, neck and arms, ${t.ribs} ribs, a stone skull, ${t.frame?.spurs} spurs breaking out; the body clearer (${t.clear} against ${t.baseClear ?? 1})`, t.frame?.pieces >= 15 && t.ribs >= 10 && t.skull && t.frame.spurs >= 6 && t.clear < (t.baseClear ?? 1), t);
+      check(`${k}: the stone lit nowhere (${t.stoneLit}), the flame lit over ${(t.litHot * 100).toFixed(1)}% of the body against the steady one's ${(t.litHot0 * 100).toFixed(1)}%, its eyes lit in the skull (${t.eyes})`, t.stoneLit === 0 && t.litHot > t.litHot0 && t.eyes === 2, t); }
+    if (t.from === 'golem') check(`${k}: doubled into a pair, ${t.heads} heads against ${t.baseHeads} and ${t.pairs} pairs of arms against ${t.basePairs}`, t.heads === 2 * t.baseHeads && t.pairs === 2 * t.basePairs, t);
+    if (t.school === 'Gaoth') check(`${k}: ${t.wings?.pairs} pairs of stone wings against the steady one's ${t.wings?.basePairs}, the second folded ${t.wings?.rest2} m across at rest inside the first's ${t.wings?.rest1} (its body ${t.wings?.len} m long), all ${t.wings?.open} m in flight, the pairs beating out of step (wrists highest at ${t.wings?.peaks.join(' and ')} of 24)`, t.wings?.pairs === 2 && t.wings.basePairs === 1 && t.wings.rest2 < t.wings.len && t.wings.rest2 < t.wings.rest1 && t.wings.open > 2 * t.wings.rest && new Set(t.wings.peaks).size === 2, t.wings);
     if (t.school === 'Gaoth') check(`${k}: a wingspan of ${t.span} in the plan's units against Gaoth's steady ${t.baseSpan} and Cloch's ${t.cloch}, half again Cloch's`, Math.abs(t.span - 1.5 * t.cloch) < .01 && t.span > t.baseSpan, t); }
-  check(`failing gates' foes: ${Object.keys(fl).join(', ')}`, Object.keys(fl).length >= 2, Object.keys(fl));
+  check(`failing gates' foes: ${Object.keys(fl).join(', ')}`, Object.keys(fl).length >= 5, Object.keys(fl));
+  // the golem (Session 1175; OG-018's mossy Cloch golem, the game's dressed stone since S209): every capsule of flesh drawn as one hewn block,
+  // half again a man's height, moss on the stone, nothing lit but its two eyes, in rune-blue
+  const gm = await page.evaluate(async () => { const T = await import('three'), K = await import('./creatures.js'), out = {};
+    for (const k of K.GOLEMS || []) { const C = K.build(K.genome(k, k + ':check')), g = C.meshes[0].geometry, col = g.attributes.color, gl = g.attributes.aGlow; C.gait = 'stand'; K.pose(C, 0); C.rig.updateMatrixWorld(true);
+      const box = new T.Box3().setFromObject(C.meshes[0], true); let moss = 0, lit = 0; for (let v = 0; v < col.count; v++) { const r = col.getX(v), gg = col.getY(v), b = col.getZ(v); if (gg > r * 1.12 && gg > b * 1.25) moss++; if (gl.getX(v) > .01) lit++; }
+      const eyes = []; C.rig.traverse(o => { if (o.isMesh && o.material?.clearcoat === 1) eyes.push(o.material.color.toArray()); });
+      out[k] = { blocks: !!C.plan.bare?.blocks, pieces: C.B.flesh.length, tris: C.stats.tris, bones: C.stats.bones, h: +(box.max.y - box.min.y).toFixed(2), w: +(box.max.x - box.min.x).toFixed(2), moss: +(moss / col.count).toFixed(3), lit, eyes, school: C.plan.school, src: C.plan.src }; }
+    return out; });
+  for (const [k, t] of Object.entries(gm)) { console.log(k, JSON.stringify(t));
+    check(`${k}: dressed stone, ${t.pieces} hewn blocks on ${t.bones} bones, ${t.tris} triangles`, t.blocks && t.pieces >= 15 && t.tris < 12000, t);
+    check(`${k}: ${t.h} m tall and ${t.w} m across standing, half again a man`, t.h > 2.3 && t.h < 2.9 && t.w > .9, t);
+    check(`${k}: moss on ${(t.moss * 100).toFixed(1)}% of the stone (OG-018's mossy golem of ${t.school})`, t.moss > .03 && t.moss < .4 && t.school === 'Cloch' && /OG-018/.test(t.src), t);
+    check(`${k}: nothing lit but its ${t.eyes.length} eyes, in rune-blue`, t.lit === 0 && t.eyes.length === 2 && t.eyes.every(c => c[2] > c[0] * 1.5), t); }
+  check(`the golems: ${Object.keys(gm).join(', ')}`, Object.keys(gm).length >= 1, Object.keys(gm));
+  // the wraith (Session 1177; OG-018's Scáth wraith, the game's since S555, Michael's B on #158): no legs, floating clear of the ground through
+  // its bob; no head under the hood, a black hollow there with two lit slits; arms longer than a man's, reaching ahead, with bone claws
+  const wr = await page.evaluate(async () => { const T = await import('three'), K = await import('./creatures.js'), out = {};
+    for (const k of K.WRAITHS || []) { const C = K.build(K.genome(k, k + ':check')), inv = new T.Matrix4(), P = new T.Vector3(), box = new T.Box3(); let low = 1e9, reach = -1e9;
+      for (const gait of C.plan.gaits) { C.gait = gait; for (let i = 0; i < 24; i++) { K.pose(C, i / 24); C.rig.updateMatrixWorld(true); inv.copy(C.rig.matrixWorld).invert();
+        for (const m of C.meshes) { box.setFromObject(m, true); low = Math.min(low, box.min.y - C.root.position.y); }
+        const ch = C.byName[C.B.spineNames[C.B.spineNames.length - 1]].getWorldPosition(new T.Vector3()).applyMatrix4(inv);
+        for (const A of C.B.arms) { C.byName[A.names[3]].getWorldPosition(P).applyMatrix4(inv); if (gait === 'stand') reach = Math.max(reach, P.z - ch.z); } } }
+      let hood = null, slits = [], claws = 0, lit = 0; C.rig.traverse(o => { if (o.name === 'hood') hood = { black: o.material.color.getHex() === 0, onHead: o.parent === C.byName.head, facing: o.material.customProgramCacheKey?.() === 'hoodFacing' };
+        if (o.isMesh && o.material?.clearcoat === 1) slits.push({ sx: +(o.scale.x / o.scale.y).toFixed(2), em: o.material.emissive.toArray().map(v => +v.toFixed(2)) }); if (o.isMesh && o.geometry.type === 'ConeGeometry') claws++; });
+      const gl = C.meshes[0].geometry.attributes.aGlow; for (let v = 0; v < gl.count; v++) if (gl.getX(v) > .01) lit++;
+      const arm = C.plan.parts.find(([q]) => q === 'arms')[1];
+      out[k] = { legs: C.B.legs.length, low: +low.toFixed(3), hood, slits, claws, lit, reach: +(reach * C.S).toFixed(2), arm: +(arm.len * C.S).toFixed(2), rags: C.B.rags, school: C.plan.school, src: C.plan.src, tris: C.stats.tris, bones: C.stats.bones }; }
+    return out; });
+  for (const [k, t] of Object.entries(wr)) { console.log(k, JSON.stringify(t));
+    check(`${k}: no legs, floating clear of the ground through its bob (lowest ${t.low} m, its hem torn into ${t.rags?.strips} tongues)`, t.legs === 0 && t.low > .03 && t.rags?.strips >= 12, t);
+    check(`${k}: no head under its hood, a black hollow on the head bone, seen only through the hood's opening (Session 1187), with ${t.slits.length} slits of light in it, Scáth's violet`, t.hood?.black && t.hood.onHead && t.hood.facing && t.slits.length === 2 && t.slits.every(e => e.sx > 2 && e.em[2] > e.em[0] && e.em[0] > e.em[1] && e.em[2] > .5) && t.school === 'Scáth' && /OG-018/.test(t.src), t);
+    check(`${k}: arms ${t.arm} m long (a man's are about 0.75), reaching ${t.reach} m ahead of its chest standing, ${t.claws} bone claws; nothing else lit (${t.lit})`, t.arm > .9 && t.reach > .4 && t.claws >= 6 && t.lit === 0, t); }
+  check(`the wraiths: ${Object.keys(wr).join(', ')}`, Object.keys(wr).length >= 1, Object.keys(wr));
+  // the fire elemental (Session 1185; OG-018's Tine row, the game's since S222, Michael's B on Session 214): no legs, floating clear of the
+  // ground; a crust lit only in its cracks over a column of flame; tongues of flame grown from the body and a crown of them on the head,
+  // licking at rest; arms of flame, lit claws, lit eyes
+  const el = await page.evaluate(async () => { const T = await import('three'), K = await import('./creatures.js'), out = {};
+    for (const k of K.ELEMENTALS || []) { const C = K.build(K.genome(k, k + ':check')), g = C.meshes[0].geometry, gl = g.attributes.aGlow, inv = new T.Matrix4(), box = new T.Box3(), P = new T.Vector3(); let low = 1e9, high = -1e9;
+      for (const gait of C.plan.gaits) { C.gait = gait; for (let i = 0; i < 24; i++) { K.pose(C, i / 24); C.rig.updateMatrixWorld(true); box.setFromObject(C.meshes[0], true); low = Math.min(low, box.min.y - C.root.position.y); high = Math.max(high, box.max.y - C.root.position.y); } }
+      // how far each tongue's tip moves through a still cycle (the stand), and where the crown's tongues are rooted
+      C.gait = 'stand'; const tips = C.B.crests.map(() => []); for (let i = 0; i < 24; i++) { K.pose(C, i / 24); C.rig.updateMatrixWorld(true); inv.copy(C.rig.matrixWorld).invert();
+        C.B.crests.forEach((Cr, j) => tips[j].push(C.byName[Cr.names[Cr.names.length - 1]].getWorldPosition(new T.Vector3()).applyMatrix4(inv))); }
+      const move = tips.map(t => Math.max(...t.map(a => Math.max(...t.map(b => a.distanceTo(b)))))) .map(v => v * C.S);
+      const crown = C.B.crests.filter(Cr => C.byName[Cr.names[0]].parent === C.byName.head).length;
+      const bi = Object.fromEntries(C.bones.map((b, i) => [b.name, i])), si = g.attributes.skinIndex, arm = new Set(C.B.arms.flatMap(A => A.names.map(n => bi[n]))), tg = new Set(C.B.crests.flatMap(Cr => Cr.names.slice(1).map(n => bi[n])));
+      let core = 0, coreLit = 0, flame = 0, flameLit = 0, armN = 0, armLit = 0; const chest = bi[C.B.spineNames[C.B.spineNames.length - 1]];
+      for (let v = 0; v < gl.count; v++) { const b = si.getX(v), lit = gl.getX(v) > .2; if (b === chest) { core++; if (lit) coreLit++; } if (tg.has(b)) { flame++; if (lit) flameLit++; } if (arm.has(b)) { armN++; if (lit) armLit++; } }
+      let claws = 0, clawLit = 0, eyes = []; C.rig.traverse(o => { if (o.isMesh && o.geometry.type === 'ConeGeometry') { claws++; if (o.material.emissive.r > .5) clawLit++; } if (o.isMesh && o.material?.clearcoat === 1) eyes.push(o.material.emissive.toArray().map(v => +v.toFixed(2))); });
+      out[k] = { legs: C.B.legs.length, low: +low.toFixed(3), h: +high.toFixed(2), tongues: C.B.crests.length, crown, move: move.map(v => +v.toFixed(3)), core: +(coreLit / core).toFixed(3), flame: +(flameLit / flame).toFixed(3), arms: +(armLit / armN).toFixed(3), claws, clawLit, eyes, glow: C.plan.glow.color, school: C.plan.school, src: C.plan.src, tris: C.stats.tris, bones: C.stats.bones }; }
+    return out; });
+  for (const [k, t] of Object.entries(el)) { console.log(k, JSON.stringify(t));
+    check(`${k}: no legs, floating ${t.low} m clear of the ground through its bob, ${t.h} m to the crown's tips (a man's height)`, t.legs === 0 && t.low > .2 && t.h > 1.7 && t.h < 2.2, t);
+    check(`${k}: ${t.tongues} tongues of flame, ${t.crown} of them a crown on the head, every tip licking ${Math.min(...t.move) * 100 | 0} cm or more at rest`, t.tongues >= 10 && t.crown >= 3 && Math.min(...t.move) > .02, t);
+    check(`${k}: the crust lit only in its cracks (${(t.core * 100).toFixed(1)}% of the chest), the tongues past their roots ${(t.flame * 100).toFixed(0)}% and the arms ${(t.arms * 100).toFixed(0)}% flame, Tine's forge-orange`, t.core > .03 && t.core < .35 && t.flame > .8 && t.arms > .8 && t.glow[0] > t.glow[1] * 2 && t.glow[1] > t.glow[2] && t.school === 'Tine' && /OG-018/.test(t.src), t);
+    check(`${k}: ${t.clawLit} of ${t.claws} claws lit, ${t.eyes.length} eyes lit yellow`, t.claws >= 6 && t.clawLit === t.claws && t.eyes.length === 2 && t.eyes.every(e => e[0] > .5 && e[1] > .3 && e[2] < e[1]), t); }
+  check(`the elementals: ${Object.keys(el).join(', ')}`, Object.keys(el).length >= 1, Object.keys(el));
   // the sea (Session 854): OG-016's coast, open ocean and deep, with OG-084's seals and dolphins and OG-031's Shatterback, each a plan
   const sea = await page.evaluate(async () => { const K = await import('./creatures.js'); return (K.SEA || []).map(k => ({ k, ok: !!K.PLANS[k], src: K.PLANS[k]?.src || '' })); });
   check(`the sea: twenty-four animals, each a plan from OG-016, OG-084 or OG-031 (${sea.length})`, sea.length === 24 && sea.every(c => c.ok && /OG-0(16|84|31)/.test(c.src)), sea.filter(c => !c.ok || !/OG-0(16|84|31)/.test(c.src)));

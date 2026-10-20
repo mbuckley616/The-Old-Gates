@@ -1,16 +1,20 @@
 # The Old Gates — working conventions
 
-A browser-based open-world RPG: one `index.html` of markup and CSS, and the game's code in `js/`, 44 plain script
+A browser-based open-world RPG: one `index.html` of markup and CSS, and the game's code in `js/`, 46 plain script
 files that share one global scope (no modules, no bundler; a downloaded folder opens by double-clicking `index.html`).
 Michael designs and playtests; Claude implements. This file is what Claude reads first in every session.
 
 ## The files
-- `index.html` — the markup, the CSS, the build tag, the renderer's chooser and 44 `<script src="js/…">` tags (~1,170 lines). `js/NN-name.js` —
+- `index.html` — the markup, the CSS, the build tag, the renderer's chooser and 46 `<script src="js/…">` tags (~1,170 lines). `js/NN-name.js` —
   the code, one file per area in load order (~46k lines in all; the biggest, `40-legacy-zones.js`, is 3,300). Deployed as-is: GitHub
   Pages serves the folder. The section "The split layout" below is the rule book; it was one inline script until Session 379,
   and the world was one 8,100-line IIFE until Session 484.
 - `vendor/three.r170.min.js` — three.js 0.170 as one classic script, for the new look (`?look=new`, Session 822); made by
   `scripts/three_bundle.py` from the pinned module build, never edited by hand. The old look loads r128 from cdnjs as always.
+- `vendor/people.builder.js` and `vendor/mh-pack.js` — the people's builder (`docs/prototypes/levelup/people.js` as one classic
+  script, `window.HB`) and MakeHuman's CC0 pack (13 MB of base64), for the new look only (card F4, Session 1195; the chooser writes
+  their tags after three.js 0.170's). Made by `scripts/people_bundle.py`, never edited by hand: a change to `people.js` reaches the
+  game when the script is run again (`--check` says whether it is stale; `tests/f4people` runs it).
 - `docs/devlog/NNNN.md` — one file per session (since 19 Oct 2026), named by the session's number, written at the end of the
   session. `docs/devlog.md` is the archive up to Session 1145: never rewrite old entries, and add nothing to it.
 - `docs/backlog.md` — the open work, grouped by area, with `~~strikethrough~~ — done, Session N` when finished.
@@ -112,7 +116,11 @@ Session 368 built the tooling and Session 379 cut the file (1 Oct 2026); Session
     `QS`, journal, compass, markers. `22-dialogue.js` `NPC_DEF`, `SHOP_DIALOG`, `openDialog`, `talkNPC`, `HOUSES`,
     `SHOP_STOCK`, `worldState`, `ZONES`, `MAP_NODES`, `activeZoneId`. `24-forts.js` `FORT_EXTERIORS` data.
   - `30-plants.js` `HERB_DEF`, the plant kit. `32-people.js` `SK`, `personGenome`, `buildPerson`, `buildFoe`, poses,
-    `tickPeople`, the shadow-LOD swap. `34-creatures.js` wolves, spiders, bears, `tickCreatures`.
+    `tickPeople`, the shadow-LOD swap; on the new look the builder's bodies (card F4, Session 1195): `HBODY`, `HB_RIGS`, `hbGenome`
+    (keyed `<site>:<name>`), `hbAttach`, `hbPose` (the 163-bone skeleton copies the 17-bone driver's joints, `HB_MAP`), `hbLevel` (three
+    levels by distance; the middle one baked into one mesh by `hbMerge`), `hbTick` (one body built at a time, after the loading); the human foes too (Session 1201: `hbFoeOk`, `HB_FOE_DRESS`, `hbFoeGenome` keyed `foe:<id>`, `hbHold` carries the kit's weapon and shield in the builder's group, `hbGlow`). `34-creatures.js` wolves, spiders, bears, `tickCreatures`; on the new look the Wolf, the Snow Wolf and the
+    Dire Wolf wear the creature kit's body over their old rig (`HC`, `vendor/creatures.builder.js` made by `scripts/creatures_bundle.py`;
+    `hcAttach`, `hcPose`, `hcTick`, three levels by `HC_BODY`; Session 1202).
   - `40-legacy-zones.js` gates, Ashenmoor, Hearthwick, Bealach. `42-zone-enemies.js` `BOSSES`, `buildZoneEnemy`,
     `tickZoneEnemies`, `killZoneEnemy`. `44-legacy-towns.js` `PROP_BUILDERS`, wilderness, forest, `buildTown`, Ironhaven,
     `ZONE_BUILDERS`, `registerPlaceholderZone`.
@@ -138,6 +146,15 @@ Session 368 built the tooling and Session 379 cut the file (1 Oct 2026); Session
     crime system (locks, witnesses, guards, the Church), painted windows, fish, whales. `87-world-quests.js` boarding, town quests,
     guild commissions, sigils, nations, the drivers, the war, plague, investment and the deed, the Guest's chapel.
     `88-world-ticks.js` the town line, the sea line, ticks, markers, leads, `enter`/`tick`, the dev helpers and `var WORLD={…}`.
+  - `89-world-land.js` the new look's land (card F3, Session 1180): `LAND` (`LAND.on` only on `?look=new`), the terrain's fragment shader
+    over `groundColor`'s vertex colour (`landTerrainMat`, the per-vertex mask `landMask`: stamps, woods, fields), the gradient sky dome
+    (`landSky`, coloured by `landAtmosphere` at the end of `atmosphere()`), the water's sheen (`landWater`) and the post (`landPost`:
+    ACES and P10b's grade in three's tone-mapping chunk, on the world's frame only); grass and wildflowers a chunk near the player
+    (`landGrassChunk`, `landTick`), the clouds as one instanced mesh (`landClouds`), and the three quality levels (`LAND_Q`, `landQ()`,
+    `SETTINGS.quality`, the settings sheet's Quality row, Session 1181), and trees from leaf cards (`landTrees`, offered each species'
+    list by `scatterChunk`, which still decides every tree; Session 1182), and bloom (`landRender`, which wraps `REN.render` for the world's
+    frame at Middle and High: a half-float target, a bright pass, a blur, one composite with ACES, the grade and the vignette; Session 1183).
+    On the old look every hook returns at once.
   - `90-main.js` boot calls, dev helpers, `K`, `PERF`, `loop`, the frame start, `ssMigrate`. `92-creator.js` `_enterGame`,
     the character creator, title buttons. `94-worldmap.js` `WM`, `renderWorldMapSVG`. `96-animdebug.js` the backtick panel.
     `97-inspector.js` the mesh inspector (Session 492): `openInspector()` from the console, or `index.html?inspector`; every mesh the
@@ -161,15 +178,49 @@ itself (`.github/`, `tests/lib/`, `tests/run.mjs`, `scripts/automerge.mjs`), whi
 `Approved by Michael: <sha>`, posted by the producer when he taps Approve. An open design question is still a `DECISION:`
 before anything is built. Main runs every suite after each merge: a red on main is the next run's first job for the builder
 that owns it, and the producer reverts the merge if it is not fixed within the day.
-**These landing rules win** over anything a routine's own prompt still says about branches, the build tag, the devlog,
-decisions.md or merging (prompts written before 19 Oct 2026 may say otherwise).
-**One small PR per run:** every run starts a fresh branch from main (`auto/<lane>-<session>`, the run's first session
-number), does its sessions there, opens its own PR, and leaves it to land. No branch is kept or reused from run to run, and
-nothing is added to a PR once the run that opened it has ended (a red that is your own fault is fixed in the next run's PR).
 Only the producer routine notifies Michael (PushNotification) or writes to the control room; every other session,
-cloud or local, raises questions in its devlog file and a `DECISION:` issue (the producer copies them into
+cloud or local, raises questions as a `DECISION:` issue (below; the producer copies them into
 `docs/decisions.md`, the one writer of that file) and stays silent — the producer
 carries them to him. A second notification for the same question is noise.
+
+## A routine's run (Michael, 19 Oct 2026: every scheduled routine reads this; its prompt holds only its role, files and order of work)
+- **Cheap checks first.** `git fetch origin`, then the checks below, then decide what the run can do; a run with nothing
+  workable ends before `npm install`.
+- **Freeze.** `gh issue list --state open --search "FREEZE: in:title" --json title -q '.[].title'` (or the GitHub tools).
+  While an open issue's title begins `FREEZE:`, a deep-work card is rewriting files the builders share: touch nothing under
+  `js/`, `index.html`, `tests/` or `.github/`. Work that lives elsewhere (the prototypes, docs) goes on; a run with none
+  ends at once. The deep-work session opens the issue when it takes a card that freezes, and closes it when that card's last
+  PR has merged; the producer closes one left open two hours with no card behind it.
+- **Overlap** (the builders and QA): if the newest `origin/auto/<lane>-*` branch's latest non-merge commit is under 50
+  minutes old, another run is working: end.
+- **Session numbers:** one above the highest session in `docs/devlog.md` and `docs/devlog/*.md` across origin/main, every
+  origin/auto/* branch and yours. A duplicate after a merge: renumber yours and say so in the entry.
+- **One branch, one PR.** Every run starts a fresh branch from origin/main: `auto/<lane>-<N>` (N, the run's first session),
+  or `auto/<lane>-<MMDD>` for a lane that writes no sessions. Never check out, merge into or push an earlier run's branch or
+  the old standing ones (`auto/backlog`, `auto/systems`, `auto/bodies`, `auto/qa`, `auto/quests`, `auto/critic`, …). Commit
+  and push after every session. Open the run's PR as a **draft** after its first session (automerge skips drafts) and mark it
+  ready when the last session is pushed: `<Lane>: Sessions N–M` (or the lane's own title), label `auto`, no reviewer, no
+  assignee, its body one line per session (what changed, what the tests showed, what needs eyes). Nothing is added to it once
+  the run has ended; a draft left by a run that died is marked ready by the lane's next run. The deep-work card is the one
+  exception: its runs continue the card's branch, `auto/fable-<id>`, and once a PR from it has landed carry on from a fresh
+  `auto/fable-<id>-2` (then `-3`).
+- **A red of your own first.** If your earlier change turned main or one of your PRs red, fixing it is the run's first
+  session, on this run's branch. A flaky suite you did not touch is QA's.
+- **Section I next.** A backlog section I item that names your role comes before card or prototype work.
+- **Michael's answers** arrive as a `Michael:` line under the question in `docs/decisions.md` on origin/main (the producer
+  writes it and closes the `DECISION:` issue). Act on it; an unanswered question means leave that item and take another.
+- **Asking.** A `DECISION: <what>` issue, label `decision`, assigned to mbuckley616: the question in plain words, 2–4 lettered
+  options, the recommendation marked, pictures linked raw from your branch
+  (`https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/<branch>/<path>`). A session with a devlog file copies it
+  there under `### Decision`. Never in `docs/decisions.md`. Then take another item.
+- **Stuck.** Never push broken work: commit it to `auto/wip-<short-name>`, push, open `STUCK: <what>` (label `stuck`,
+  assigned to mbuckley616: what you tried, what you saw, what you would try next), end the run.
+- **Labels**, if missing: `gh label create auto --color 6a5acd -f; gh label create decision --color d93f0b -f;
+  gh label create stuck --color b60205 -f`.
+- **Always:** commits end `Co-Authored-By: Claude <noreply@anthropic.com>`. Never push main, never force-push, never
+  rewrite an old devlog entry, never delete or skip a test to get green, never add, remove or reorder a `<script src>` tag by
+  hand (a new file is its own decision). Change CLAUDE.md only to add a gotcha you hit, or where your item changes what it
+  describes. At the end of a run that did something, one Slack post (the room, below).
 
 ## The room — Slack #old-gates (channel id C0C547EFP6G)
 The team talks in one Slack channel, through the Slack connector (tools named `slack_*`; load them with ToolSearch).
@@ -185,7 +236,7 @@ Every session, cloud or local, that has the tools:
   numbers, no filler, no paragraphs, no emoji in the body. Never more than one post per run; a run that did nothing posts nothing.
 - **Decisions** are the producer's alone: it posts each question as a message with lettered options and Michael
   answers in the thread or with a letter reaction (🇦 🇧 🇨 🇩). No other session posts a question to the channel
-  or pings Michael; `docs/decisions.md` and a `DECISION:` issue remain the way to raise one.
+  or pings Michael; a `DECISION:` issue remains the way to raise one ("Asking", above).
 - **Reactions and replies** to another agent's post are allowed, sparingly, when you have a fact it needs (a conflict
   you saw coming, a test it broke, a line out of register). One short thread reply, never a conversation; never
   assign work to another agent. The producer routes.
@@ -278,14 +329,15 @@ Every session follows them in new code; the Opus follow-up in backlog K moves th
 
 ## Roles
 - Michael makes the design calls; Claude flags risks and asks when the design is open.
-- The team for 2.0 (14 Oct 2026; the plan is `docs/design/v2-scope.md`): the look builder makes places (auto/backlog), the bodies
-  builder makes people, foes, animals and what they wear (auto/bodies), the systems builder makes rules and the core loop
-  (auto/systems), QA keeps the suite, CI and the budgets (auto/qa, tests only), the designer writes build sheets and proposals, and
-  the critic, the quest writer, the concept artist and the producer as before.
+- The team for 2.0 (14 Oct 2026; the plan is `docs/design/v2-scope.md`), by lane (the branch prefix, "A routine's run"):
+  the look builder makes places (`look`), the bodies builder makes people, foes, animals and what they wear (`bodies`), the
+  systems builder makes rules and the core loop (`systems`), QA keeps the suite, CI and the budgets (`qa`, tests only), the
+  quest writer drafts and builds what Michael approves (`quests`, `quests-build`), the designer writes build sheets and
+  proposals (`design`), the critic plays (`critic`), the concept artist prototypes (`concept`), and the producer carries
+  questions and answers (`producer`).
 - Cross-cutting rewrites (roads, terracing, rivers, skills-by-use, splitting this file, the new look's F cards) are deep-work
   sessions (Opus; "fable" survives only as an identifier: the board's `fable` collection, `auto/fable-<id>`, `Fable:` PR titles).
   Contained features and bug hunts are ordinary Opus sessions.
 - A deep-work session runs from a card on the control room (the routine "Old Gates — Deep Work session", every hour at :40):
   Michael taps Start (2.0's cards, which he approved on 13 Oct, are queued by the producer without one), the next run takes the card, works on `auto/fable-<id>`, raises its questions as decisions and stops until
-  they are answered, and its PR is approved like any other. While an open issue's title begins `FREEZE:`, the code builders end their runs at once (or keep to their prototypes);
-  the producer opens it when a deep-work card rewrites shared files and closes it when that PR merges.
+  they are answered, and its PR lands like any other. Its `FREEZE:` issue is "A routine's run"'s freeze.

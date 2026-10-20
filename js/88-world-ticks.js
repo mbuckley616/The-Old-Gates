@@ -223,9 +223,10 @@
     sc.background=new THREE.Color(BIOME_PROFILES.plains.bgCol);
     sc.fog=new THREE.FogExp2(BIOME_PROFILES.plains.fogCol,.004);
     terrainTex=makeTerrainTex();terrainTex.repeat.set(CHUNK/4,CHUNK/4);
-    terrainMat=new THREE.MeshLambertMaterial({map:terrainTex,vertexColors:true});
+    terrainMat=LAND.on?landTerrainMat():new THREE.MeshLambertMaterial({map:terrainTex,vertexColors:true}); // S1180 (F3): the new look shades its land in the fragment shader
     buildProtos();
     buildLights();buildSky();buildWater();
+    if(LAND.on){skyDome.visible=false;sc.add(landSky());landPost(sc);} // S1180 (F3): the gradient dome and the post
     ZONES.world={scene:sc,sol:STATIC_SOL,solidFn:solidAt,npcs,enemies:[],gates:[],size:SIZE*GRID,portals,herbs:[],houses:[],getY:groundY,platforms:[],_cfg:{id:'world',size:SIZE*GRID,seed:SEED}};
     // the home cell now (everything the spawn needs); neighbours stream in via jobs
     loadCell(HOME_I,HOME_J);
@@ -266,6 +267,7 @@
     tickLightPool(dt);tickWeather(dt);tickSmoke(dt);tickShip(dt);tickSailTrim(dt);tickBehaviours(dt);cabinUpdate();tickSchoolCool(dt);tickWhales(dt,now||performance.now());tickBoarding(dt);tickHullCollisions(dt);tickOtherShips(dt,now||performance.now());tickCrew();tickSharks();tickFish(dt,now||performance.now());tickGulls(dt,now||performance.now());tickDolphins(dt,now||performance.now());
     stream(px,pz,false);
     houseLod();
+    landTick(dt); // S1181 (F3): the new look's grass, a chunk a frame, and its wind
     atmosphere(dt);
     tickSettlements(dt,false);
     tickTownNPCs(dt,now||performance.now());try{tickCrime(dt,now||performance.now());}catch(e){}

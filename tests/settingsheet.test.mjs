@@ -19,6 +19,8 @@ console.log(JSON.stringify(a.rows));
 const hasRule = await page.evaluate(() => typeof setChallenge === 'function');
 // Session 822: a tenth, the renderer (card F1), after the mouse's two
 const nine = ['Everything', 'Music', 'Blows and steps', 'Spoken lines', 'Brightness', 'Field of view', 'Full screen', 'Look speed', 'Up and down', 'Renderer'];
+// Session 1181 (card F3): on the new look, Quality follows the renderer (the land's three levels); the old look has no land to set
+if (await page.evaluate(() => window.OG_LOOK === 'new')) nine.push('Quality');
 check('Settings on the leaf opens the sheet with its ten rows (and the challenge only where the rule is built)', a.view === 'settings' && JSON.stringify(a.rows) === JSON.stringify(hasRule ? [...nine, 'How hard the world strikes'] : nine), { hasRule, rows: a.rows });
 check('everything starts as it was: 100s, brightness 0, field of view 75, look 1×', a.S.master === 100 && a.S.music === 100 && a.S.bright === 0 && a.S.fov === 75 && a.S.look === 1 && a.S.invert === false, a.S);
 
@@ -69,7 +71,7 @@ await page.focus('#g'); await key('Escape'); await key('ArrowDown', 3); await ke
 await key('ArrowUp'); await key('ArrowRight');
 const ch = await sheet();
 console.log(ch.text.slice(ch.text.indexOf('How hard')));
-check('with the rule, an eleventh row: the challenge, Adept to start, → makes it Expert, your blows ×0.75 and theirs ×1.5', c && ch.rows.length === 11 && ch.rows[10] === 'How hard the world strikes' && await page.evaluate(() => worldState.challenge) === 3 && /Your blows×0\.75The foes’ blows×1\.5/.test(ch.text), ch.text.slice(-400));
+check('with the rule, an eleventh row: the challenge, Adept to start, → makes it Expert, your blows ×0.75 and theirs ×1.5', c && ch.rows.length === nine.length + 1 && ch.rows[nine.length] === 'How hard the world strikes' && await page.evaluate(() => worldState.challenge) === 3 && /Your blows×0\.75The foes’ blows×1\.5/.test(ch.text), ch.text.slice(-400));
 await page.screenshot({ path: 'docs/prototypes/settingsheet-challenge.png', timeout: 120000 });
 
 // kept across a reload, and applied at boot before any game starts
