@@ -935,7 +935,9 @@ function buildNPCMesh(def,opts){
   // the same name in the same place is the same person, behind the counter as in the street
   let g=def.name&&!def.authored?PEOPLE_GENOMES.get(key):null;
   if(!g){g=personGenome(def,opts);if(def.name)PEOPLE_GENOMES.set(key,g);}
-  return buildPerson(g).root;
+  if(hbOn()&&!opts.noBuilder)hbPrep(g,(opts.key||'')+':'+(def.name||def.role||'?')); /* S1193 (F4) — the builder's genome, keyed by place and name */
+  const rig=buildPerson(g);if(g.hbKey&&hbOn()){rig.hbG=HB_GENOMES.get(g.hbKey);HB_RIGS.add(rig);}
+  return rig.root;
 }
 // ── poses: joint -> [x,y,z] rotations, plus the height of the hips ──
 // S187 — the legs a quarter longer (Michael, playtest s162: the legs read short, the torso long). LEGK scales the thigh and
@@ -1068,10 +1070,11 @@ function pwApply(rig,P){const B=rig.B;PW.JOINTS.forEach(j=>{const r=P[j];B[j].ro
 // mesh's geometry for the eye before it draws the shadows, so swapping it for the shadow pass alone costs nothing.
 // (A second mesh on a shadow-only layer does not work in r128: its shadow pass tests layers against the eye's camera.)
 {const _smRender=REN.shadowMap.render;
-  REN.shadowMap.render=function(){const sw=[];
+  REN.shadowMap.render=function(){const sw=[],hv=[];
+    for(const rig of HB_RIGS)if(rig.hb&&!rig.mesh.visible){rig.mesh.visible=true;hv.push(rig);} // S1193 (F4) — the builder's body casts its driver's shadow
     if(PEOPLE_LOD.shadowLo)for(const rig of PEOPLE_RIGS){if(rig.geoLo&&rig.mesh.geometry===rig.geoHi){rig.mesh.geometry=rig.geoLo;sw.push(rig);}}
     if(WOLF_LOD.shadowLo)for(const rig of WOLF_RIGS){if(rig.geoLo&&rig.mesh.geometry===rig.geoHi){rig.mesh.geometry=rig.geoLo;sw.push(rig);}}
-    try{return _smRender.apply(this,arguments);}finally{for(const rig of sw)rig.mesh.geometry=rig.geoHi;}};}
+    try{return _smRender.apply(this,arguments);}finally{for(const rig of sw)rig.mesh.geometry=rig.geoHi;for(const rig of hv)rig.mesh.visible=false;}};}
 // Every person in the active scene, each frame: the stride is driven by how far the figure moved, so the
 // feet stay planted whatever moves it (the town's schedules, an interior amble, a legacy zone's wander).
 // S267 — cloaks and hair that swing (Michael's A on Session 242: the cloak and the back hair, for everyone who wears them):
@@ -1259,7 +1262,7 @@ function tickPeople(dt,now){
     // a foe's body (S171) hangs in its enemy's group: that group is what stands in the scene, and the enemy's own
     // position is where it is (the lunge's lurch moves the group, not the feet)
     const top=rig.foe?root.parent:root;
-    if(!root.parent||(rig.foe&&!top.parent)){PEOPLE_RIGS.delete(rig);try{rig.geoHi.dispose();if(rig.geoLo)rig.geoLo.dispose();if(rig.foe)rig.mesh.material.dispose();}catch(e){}continue;}
+    if(!root.parent||(rig.foe&&!top.parent)){PEOPLE_RIGS.delete(rig);if(rig.hb){hbDrop(rig);HB_RIGS.delete(rig);}try{rig.geoHi.dispose();if(rig.geoLo)rig.geoLo.dispose();if(rig.foe)rig.mesh.material.dispose();}catch(e){}continue;}
     if(top.parent!==scene||!top.visible||!root.visible)continue;
     if(rig.foe&&rig.e&&rig.e.dead)continue; // a body on the ground lies still
     const at=rig.foe&&rig.e?rig.e:top.position;
@@ -1294,4 +1297,95 @@ function tickPeople(dt,now){
       rig.B.tail.rotation.set(.35*fo,.3*Math.sin(now*.0017+rig.g.phase)*(1-fo),0);}
     if(rig.foe&&rig.e&&rig.e.shieldUp){const L=rig.e.limbs;if(L&&L.shieldArm){L.shieldArm.rotation.x=L.shieldArmUpX;L.shieldArm.rotation.z=L.shieldArmUpZ;rig.B.elL.rotation.x=-1.1;}}
   }
+  if(HB_RIGS.size)hbTick(now); // S1193 (F4) — the builder's bodies follow their drivers
 }
+// ═══ THE BUILDER'S BODIES (v80 S1193, card F4) ═══════════════════════════════════════════════════════════════════════════
+// On the new look a townsperson wears the builder's body (docs/design/character-builder.md): MakeHuman's CC0 body morphed by
+// a genome, its 163-bone skeleton, the wardrobe and the hair cards, all from docs/prototypes/levelup/people.js, which the
+// new look loads as vendor/people.builder.js beside MakeHuman's pack, vendor/mh-pack.js (both made by
+// scripts/people_bundle.py; window.HB is the builder). The old body stays underneath as the driver: personGenome still decides
+// who someone is (name, role, sex, age, people, stature), buildPerson still builds the 17-bone rig, and tickPeople still poses
+// it (idle, walk, run, wave, sleep, the ragdoll). The builder's skeleton copies the driver's joints each frame (hbPose), so
+// every pose the game has today reaches the new body with no code of its own. Three levels by the eye's distance:
+//   0, under HBODY.near: the builder's body whole;
+//   1, to HBODY.mid: the same body without its cards (hair, brows, beard, moustache) and eyes, the scalp shell standing in;
+//   2, beyond: the driver's own distant copy (geoLo), tinted from the genome's skin, hair and clothes, one draw call.
+// The shadow is always the driver's distant copy (the townsfolk's swap below), so the builder's meshes cast none.
+// A genome is seeded by place and name (`<site>:<name>`, the cache key buildNPCMesh already uses for "the same person in the
+// same place"), never Math.random: the same villager looks the same on every load and to everyone. A body is built when its
+// person first comes within HBODY.build of the eye, the nearest first, one at a time at most every HBODY.gap ms, and never while
+// the world still has cells to load (makePerson takes 0.3 to 1.1 s on a CI runner's CPU, and the loading comes first); until then
+// the distant copy stands in. Only the body changes: names, roles, schedules and outcomes do not.
+const HBODY={on:true,near:16,mid:42,build:46,gap:250,last:-1e9,ms:0,n:0,swap:null,cards:/^(hair|brows|beard|moust)$/};
+const HB_RIGS=new Set();
+const HB_GENOMES=new Map();
+// the driver's joints and the builder's bones they move, parents first
+const HB_MAP=[['hips','root'],['spine','spine05'],['neck','neck01'],['head','head'],['shL','upperarm01.L'],['elL','lowerarm01.L'],['wrL','wrist.L'],
+  ['shR','upperarm01.R'],['elR','lowerarm01.R'],['wrR','wrist.R'],['thL','upperleg01.L'],['knL','lowerleg01.L'],['anL','foot.L'],
+  ['thR','upperleg01.R'],['knR','lowerleg01.R'],['anR','foot.R']];
+function hbOn(){return HBODY.on&&window.OG_LOOK==='new'&&typeof HB!=='undefined'&&typeof MH_PACK!=='undefined';}
+// the builder's genome for a game genome: its people, sex and age from personGenome, the rest rolled inside the people's ranges
+function hbGenome(g){let G=HB_GENOMES.get(g.hbKey);if(G)return G;HB.loadPack();
+  const people=HB.PEOPLES[g.people]?g.people:'gatelander';
+  G=HB.rollGenome(g.hbKey,{people,g:g.female?0:1,child:!!g.child,old:g.age==='elder'});
+  // a guard is known by his mail, helm and spear (the town's guards keep their old kit's role; the armour tiers are F10's)
+  if(GUARD_ROLE.test(g.role||''))G.dress=Object.assign({},G.dress,{mail:[.55,.56,.58],helm:[.42,.43,.45],spear:[.46,.33,.2],cloak:null,hood:null,basket:null,staff:null,shield:null,crossbow:null});
+  HB_GENOMES.set(g.hbKey,G);return G;}
+// the distant copy in the genome's colours, so the body does not change colour when it comes near
+function hbTint(g,G){const C=a=>new THREE.Color(a[0],a[1],a[2]),D=G.dress||{};
+  if(G.skin)g.skin=C(G.skin);if(G.hairCol)g.hair=C(G.hairCol);
+  if(D.tunic){g.cloth=C(D.tunic);g.sleeve=C(D.tunic).multiplyScalar(.9);}
+  const leg=D.trousers||D.skirtColor;if(leg)g.legs=C(leg);if(D.boots)g.boot=C(D.boots);}
+// called by buildNPCMesh before the bake: the key, the genome and the tint, once per cached genome
+function hbPrep(g,key){if(g.hbKey)return;g.hbKey=key;try{hbTint(g,hbGenome(g));}catch(e){console.warn('F4: no genome for',key,e);g.hbKey=null;}}
+const _hbq=new THREE.Quaternion(),_hbq2=new THREE.Quaternion(),_hbq3=new THREE.Quaternion(),_hbv=new THREE.Vector3(),_hbv2=new THREE.Vector3();
+// a bone's rotation in the frame of `top` (an ancestor), from the local quaternions up the chain: no matrices, no world numbers
+function hbRel(b,top,q){q.copy(b.quaternion);let p=b.parent;while(p&&p!==top){q.premultiply(p.quaternion);p=p.parent;}return q;}
+function hbAttach(rig){const tA=performance.now();let P;
+  try{P=HB.makePerson(rig.hbG);}catch(e){rig.hbFail=true;console.warn('F4: makePerson failed for',rig.g.hbKey,e);return;}
+  const root=P.root,by=P.byName,sk=P.skeleton;
+  for(const [,n] of HB_MAP)if(!by[n]){rig.hbFail=true;console.warn('F4: the builder has no bone',n);return;}
+  // its stature: the tallest skinned mesh's rest geometry (the body, sole to crown; hair cards have more vertices but less height)
+  let bb=null,st=0;root.traverse(o=>{if(!o.isSkinnedMesh)return;o.geometry.computeBoundingBox();const b=o.geometry.boundingBox;if(b.max.y-b.min.y>st){st=b.max.y-b.min.y;bb=b;}});
+  // at the driver's stature: rig.root is scaled g.height·PW.BODY·personScale, and the driver stands PERSON_MODEL tall at PW.BODY
+  // (in a group of its own: makePerson stands its root on the ground with an offset of its own, which must not be scaled)
+  const W=new THREE.Group();W.name='builder';W.scale.setScalar(SCALE.PERSON_MODEL/(PW.BODY*st));W.add(root);rig.root.add(W);
+  // skinned in the body's own frame (CLAUDE.md: bone matrices kept local to the mesh): the bones' world matrices less the
+  // root's, in float64, so nothing at x, z ≈ 13,000–25,000 passes through float32 in the shader
+  {const inv=new THREE.Matrix4(),off=new THREE.Matrix4();
+    sk.update=function(){inv.copy(root.matrixWorld).invert();const bs=this.bones;
+      for(let i=0;i<bs.length;i++){off.multiplyMatrices(inv,bs[i].matrixWorld).multiply(this.boneInverses[i]);off.toArray(this.boneMatrices,i*16);}
+      if(this.boneTexture)this.boneTexture.needsUpdate=true;};}
+  const sph=new THREE.Sphere(new THREE.Vector3(0,(bb.min.y+bb.max.y)/2,0),st*.8),cards=[];
+  root.traverse(o=>{if(!o.isMesh)return;o.castShadow=false;o.receiveShadow=true;
+    if(o.isSkinnedMesh){o.bindMode='detached';o.bindMatrix.identity();o.bindMatrixInverse.identity();o.geometry.boundingSphere=sph.clone();o.frustumCulled=true;}
+    if(HBODY.cards.test(o.name)||o.parent===by.head)cards.push(o);});
+  // which side is which: the driver's left shoulder and the builder's `.L` on the same side of the body (checked once)
+  if(HBODY.swap==null){rig.root.updateMatrixWorld(true);const a=rig.root.worldToLocal(rig.B.shL.getWorldPosition(_hbv)).x,b=rig.root.worldToLocal(by['upperarm01.L'].getWorldPosition(_hbv2)).x;HBODY.swap=a*b<0;}
+  const map=HB_MAP.map(([j,n])=>[j,by[HBODY.swap?n.replace(/\.L$/,'.X').replace(/\.R$/,'.L').replace(/\.X$/,'.R'):n]]);
+  // the rest: the builder's standing pose (arms down) is what the driver's zero pose means
+  const B=rig.B,keep=map.map(([j])=>B[j].quaternion.clone());map.forEach(([j])=>B[j].quaternion.identity());
+  const s0=map.map(([j])=>hbRel(B[j],rig.root,new THREE.Quaternion()).invert()),t0=map.map(([,b])=>hbRel(b,W,new THREE.Quaternion()));
+  map.forEach(([j],i)=>B[j].quaternion.copy(keep[i]));
+  const rb=by.root;rig.hb={root:W,P,map,s0,t0,cards,pos0:rb.position.clone(),k:rb.position.y/PW.HIPS,L:-1,st};
+  HBODY.ms+=performance.now()-tA;HBODY.n++;}
+function hbPose(rig){const H=rig.hb,B=rig.B,map=H.map;
+  for(let i=0;i<map.length;i++){const [j,b]=map[i];
+    hbRel(B[j],rig.root,_hbq).multiply(H.s0[i]).multiply(H.t0[i]);
+    if(b.parent&&b.parent!==H.P.root){hbRel(b.parent,H.root,_hbq2).invert();b.quaternion.copy(_hbq2.multiply(_hbq));}else b.quaternion.copy(_hbq);}
+  const hp=B.hips.position,rb=map[0][1];rb.position.set(H.pos0.x+hp.x*H.k,H.pos0.y+(hp.y-PW.HIPS)*H.k,H.pos0.z+hp.z*H.k);}
+function hbLevel(rig,L){const H=rig.hb;if(H.L===L)return;H.L=L;H.root.visible=L<2;rig.mesh.visible=L===2;for(const c of H.cards)c.visible=L===0;}
+function hbDrop(rig){const H=rig.hb;if(!H)return;if(H.root.parent)H.root.parent.remove(H.root);
+  H.root.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material){const ms=Array.isArray(o.material)?o.material:[o.material];for(const m of ms){if(m.map&&m.map.isCanvasTexture&&o.parent===H.P.byName.head)m.map.dispose();m.dispose();}}});
+  if(H.P.skeleton.boneTexture)H.P.skeleton.dispose();rig.hb=null;rig.mesh.visible=true;}
+// each frame, after the driver is posed: the level by distance, the pose copied, and at most one new body built
+function hbTick(now){let best=null,bd=HBODY.build;
+  const busy=now-HBODY.last<HBODY.gap||(typeof JOBS!=='undefined'&&JOBS.length&&!(typeof isInterior==='function'&&isInterior()));
+  for(const rig of HB_RIGS){const root=rig.root;
+    if(!root.parent){hbDrop(rig);HB_RIGS.delete(rig);continue;}
+    if(root.parent!==scene||!root.visible)continue;
+    const d=Math.hypot(CAM.position.x-root.position.x,CAM.position.z-root.position.z);
+    if(!rig.hb){if(!busy&&!rig.hbFail&&d<bd){bd=d;best=rig;}continue;}
+    const L=rig.hb.L,a=HBODY.near+(L>0?-1:1),b=HBODY.mid+(L>1?-1:1);hbLevel(rig,d<a?0:d<b?1:2);
+    if(rig.hb.L<2)hbPose(rig);}
+  if(best){hbAttach(best);HBODY.last=now;if(best.hb){const d=Math.hypot(CAM.position.x-best.root.position.x,CAM.position.z-best.root.position.z);hbLevel(best,d<HBODY.near?0:d<HBODY.mid?1:2);if(best.hb.L<2)hbPose(best);}}}

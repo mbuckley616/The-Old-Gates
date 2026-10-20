@@ -43,7 +43,7 @@ const seen = await page.evaluate(() => {
   const fr = new THREE.Frustum().setFromProjectionMatrix(new THREE.Matrix4().multiplyMatrices(CAM.projectionMatrix, CAM.matrixWorldInverse));
   const inFrustum = fr.intersectsObject(r.mesh);
   const calls = () => { REN.render(scene, CAM); return REN.info.render.calls; };
-  const on = calls(); r.mesh.visible = false; const off = calls(); r.mesh.visible = true; px = ox; pz = oz;
+  const on = calls(); r.root.visible = false; const off = calls(); r.root.visible = true; px = ox; pz = oz; /* S1193 (F4): the whole person, the builder's body with its driver */
   return { inFrustum, on, off, sphere: r.mesh.boundingSphere && +r.mesh.boundingSphere.center.length().toFixed(2) };
 });
 check('a townsperson in view is drawn on the new look (inside the frustum, and one more draw call than with it hidden)', seen.inFrustum && seen.on > seen.off && seen.sphere < 5, seen);
