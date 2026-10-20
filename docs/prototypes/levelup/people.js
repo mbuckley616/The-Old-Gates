@@ -165,6 +165,8 @@ vec3 tartanAt(vec3 p, vec3 g){ vec2 d = p.xz - tartO; float u = atan(d.x, -d.y) 
 function clothMat(color, kind = 'wool', o = {}) {
   TEXW[kind] = TEXW[kind] || weave(128, kind);
   const m = new THREE.MeshStandardMaterial({ color, roughness: o.rough ?? (kind === 'leather' ? .62 : .95), metalness: 0, side: o.side ?? THREE.FrontSide });
+  // the cut and the hole kept on the material (Session 1196, card F4): the game's middle level bakes a body and drops what they discard
+  m.userData.cut = o.cut; m.userData.hole = o.hole;
   m.onBeforeCompile = s => { s.uniforms.tW = { value: TEXW[kind] }; if (o.band) s.uniforms.bandC = { value: o.band };
     s.vertexShader = 'attribute vec3 aBase; varying vec3 vB; varying vec3 vRP; varying vec3 vRN;\n' + s.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vRP = position; vRN = normal; vB = aBase;');
     s.fragmentShader = 'uniform sampler2D tW; varying vec3 vB;\n' + TRI + s.fragmentShader.replace('vec4 diffuseColor = vec4( diffuse, opacity );', CUT(o.cut) + (o.hole ? `if (${o.hole}) discard;` : '') + `vec4 diffuseColor = vec4( diffuse * triTex(tW, ${(o.scale ?? (kind === 'leather' ? 9 : 22)).toFixed(1)})${o.inner ? ` * (gl_FrontFacing ? 1. : ${o.inner.toFixed(2)})` : ''}, opacity );` + (o.shade ? ` diffuseColor.rgb *= ${o.shade};` : '') + (o.tartan ? ' diffuseColor.rgb *= tartanAt(vT, diffuse) / max(diffuse, vec3(.004));' : '') + (o.band ? BAND : ''));
@@ -248,7 +250,7 @@ function mailMat(color, o = {}) {
     s.fragmentShader = 'varying vec3 vB; varying vec3 vRN;\n' + (o.scales ? SCALES : RINGS) + '\n' + (o.bind ? DOTS.split('\nvec2 dotAt')[0] + '\n' + BIND(o.bind) + '\n' : '') + s.fragmentShader.replace('vec4 diffuseColor = vec4( diffuse, opacity );', CUT(o.cut) + (o.hole ? `if (${o.hole}) discard;` : '') + 'float mR = mailAt(vB, vRN); vec4 diffuseColor = vec4( diffuse * mR, opacity );' + (o.bind ? BIND_MIX : ''))
       .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n roughnessFactor = mix(.85, roughnessFactor, smoothstep(.2, .45, mR));' + (o.bind ? ' roughnessFactor = mix(roughnessFactor, .72, bK);' : ''))
       .replace('#include <metalnessmap_fragment>', '#include <metalnessmap_fragment>' + (o.bind ? '\n metalnessFactor *= 1. - bK;' : '')); };
-  m.userData.cut = o.cut; m.userData.bind = o.bind; m.customProgramCacheKey = () => (o.scales ? 'scales' : 'mail') + JSON.stringify(o.cut || 0) + (o.hole || '') + JSON.stringify(o.bind || 0);
+  m.userData.cut = o.cut; m.userData.hole = o.hole; m.userData.bind = o.bind; m.customProgramCacheKey = () => (o.scales ? 'scales' : 'mail') + JSON.stringify(o.cut || 0) + (o.hole || '') + JSON.stringify(o.bind || 0);
   return m;
 }
 // a shadow cut as the garment is, so the triangles past its cut edge cast none (Session 897: the mail's hem threw teeth onto the thighs)
@@ -260,7 +262,7 @@ function cutDepth(o) {
 }
 // fur and hair: stacked shells, each cut by noise so strands rise from the surface
 function shellMat(color, layer, layers, o = {}) {
-  const m = new THREE.MeshStandardMaterial({ color, roughness: .85, side: THREE.DoubleSide, alphaTest: .5 });
+  const m = new THREE.MeshStandardMaterial({ color, roughness: .85, side: THREE.DoubleSide, alphaTest: .5 }); m.userData.cut = o.cut; m.userData.hole = o.hole;
   m.onBeforeCompile = s => {
     s.vertexShader = 'attribute vec3 aBase; varying vec3 vB; varying vec3 vRP;' + (o.edge ? ' attribute float aEdge; varying float vE;' : '') + '\n' + s.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vRP = position; vB = aBase;' + (o.edge ? ' vE = aEdge;' : ''));
     if (o.edge) s.fragmentShader = 'varying float vE;\n' + s.fragmentShader;
@@ -440,7 +442,8 @@ function surfGrid(P, tris, keep, cell = .025) {
     const ux = P[b] - P[a], uy = P[b + 1] - P[a + 1], uz = P[b + 2] - P[a + 2], vx = P[c] - P[a], vy = P[c + 1] - P[a + 1], vz = P[c + 2] - P[a + 2];
     const cx = uy * vz - uz * vy, cy = uz * vx - ux * vz, cz = ux * vy - uy * vx;
     for (const v of [a, b, c]) { nx[v] += cx; nx[v + 1] += cy; nx[v + 2] += cz; used[v / 3] = 1; } }
-  const cells = new Map(), K = (i, j, k) => i + ',' + j + ',' + k, pts = [];
+  // a cell's key is a number (Session 1196, card F4: the string keys were a third of a body's build in the game; the same cells)
+  const cells = new Map(), K = (i, j, k) => (i * 4096 + j) * 4096 + k, pts = [];
   for (let v = 0; v < N; v++) { if (!used[v] || !keep(R[v * 3], R[v * 3 + 1], R[v * 3 + 2])) continue; const p = new THREE.Vector3(P[v * 3], P[v * 3 + 1], P[v * 3 + 2]), n = new THREE.Vector3(nx[v * 3], nx[v * 3 + 1], nx[v * 3 + 2]).normalize();
     const k = K(Math.floor(p.x / cell), Math.floor(p.y / cell), Math.floor(p.z / cell)); if (!cells.has(k)) cells.set(k, []); const e = { p, n, v }; cells.get(k).push(e); pts.push(e); }
   return { pts, near(q) { const i = Math.floor(q.x / cell), j = Math.floor(q.y / cell), k = Math.floor(q.z / cell); let best = null, bd = 1e9;
@@ -575,10 +578,10 @@ function buildHair(P, G, heads, scalpTris, headB, rnd) {
   let inside = 0, onFace = 0, pts = 0; for (const st of strands) for (const q of st.pts) { pts++; const hit = heightOver(S, q); if (!hit) continue; if (hit.h < -.001) inside++; if (q.y > hc.y + .04) { crownH += hit.h; crownN++; }
     const v = hit.e.v, x = R0[v * 3], y = R0[v * 3 + 1], z = R0[v * 3 + 2]; if (hit.h < .03 && z > .05 && y > .6 && y < .79 - .03 * (x / .075) ** 2 && Math.abs(x) < .07) onFace++; }
   // Session 874's number, the seam: points down the back of the scalp's midline, above the occiput, with no strand over them within 4 mm
-  const SG = new Map(), sk = (x, y, z) => Math.floor(x / .01) + ',' + Math.floor(y / .01) + ',' + Math.floor(z / .01);
+  const SG = new Map(), sk = (x, y, z) => (Math.floor(x / .01) * 4096 + Math.floor(y / .01)) * 4096 + Math.floor(z / .01);
   for (const st of strands) for (const q of st.pts) { const k = sk(q.x, q.y, q.z); if (!SG.has(k)) SG.set(k, []); SG.get(k).push(q); }
   const nearStrand = (q, n) => { let bd = 1e9; const i = Math.floor(q.x / .01), j = Math.floor(q.y / .01), k = Math.floor(q.z / .01), d = new THREE.Vector3();
-    for (let a = -2; a <= 2; a++) for (let b = -2; b <= 2; b++) for (let c = -2; c <= 2; c++) for (const w of SG.get((i + a) + ',' + (j + b) + ',' + (k + c)) || []) { d.copy(w).sub(q); const h = d.dot(n); if (h < -.004 || h > .02) continue; bd = Math.min(bd, d.addScaledVector(n, -h).lengthSq()); } return Math.sqrt(bd); };
+    for (let a = -2; a <= 2; a++) for (let b = -2; b <= 2; b++) for (let c = -2; c <= 2; c++) for (const w of SG.get(((i + a) * 4096 + (j + b)) * 4096 + (k + c)) || []) { d.copy(w).sub(q); const h = d.dot(n); if (h < -.004 || h > .02) continue; bd = Math.min(bd, d.addScaledVector(n, -h).lengthSq()); } return Math.sqrt(bd); };
   let seamN = 0, seamBare = 0; for (let t = 0; t < scalpTris.length; t += 3) { A.fromArray(P, scalpTris[t] * 3); B.fromArray(P, scalpTris[t + 1] * 3); C.fromArray(P, scalpTris[t + 2] * 3);
     const tn = B.clone().sub(A).cross(C.clone().sub(A)).normalize(); if (tn.dot(A.clone().sub(hc)) < 0) tn.negate();
     for (const q of [A.clone().add(B).add(C).multiplyScalar(1 / 3), A.clone().add(B).multiplyScalar(.5), B.clone().add(C).multiplyScalar(.5), C.clone().add(A).multiplyScalar(.5)]) if (q.z < hc.z - .03 && Math.abs(q.x - hc.x) < .015 && q.y > hc.y - .02) { seamN++; if (nearStrand(q, tn) > .004) seamBare++; } }
