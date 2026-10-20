@@ -22,12 +22,19 @@ await page.evaluate(() => {
     return { x: +px.toFixed(3), z: +pz.toFixed(3), y: +jumpY.toFixed(3), top: +top.toFixed(3), left: +Math.hypot(tx - px, tz - pz).toFixed(3) }; };
 });
 await g.settle('dunmore');
-async function room(type) {
-  await page.evaluate((type) => { const S = WORLD.settle.get('dunmore'); const h = S.houses.find(x => x.type === type && (type === 'inn' || !x.two));
-    forceTime(13); px = h.exitX; pz = h.exitZ; goToInterior(h); }, type);
+async function room(site, type) {
+  await page.evaluate(([site, type]) => { const S = WORLD.settle.get(site); const h = S.houses.find(x => x.type === type && (type === 'inn' || !x.two));
+    forceTime(13); px = h.exitX; pz = h.exitZ; goToInterior(h); }, [site, type]);
   await page.waitForTimeout(4000); await g.hide();
 }
-await room('home');
+// the cottage: one of Dunmore's homes of one storey on the old look. On the new look a town's homes are all the kit's townhouses of
+// three storeys (S1065, card F6), so the cottage is the nearest Gatelands village's, where the homes are the kit's cottages (S1209)
+const cot = await page.evaluate(() => { if (WORLD.settle.get('dunmore').houses.some(x => x.type === 'home' && !x.two)) return 'dunmore';
+  const nat = t => nationKeyOf(...cellOf(t.x, t.z)), d = siteAnywhere('dunmore');
+  return allSites().filter(t => nat(t) === 'gatelands' && t.kind === 'village' && t.pad > 0).sort((a, b) => Math.hypot(a.x - d.x, a.z - d.z) - Math.hypot(b.x - d.x, b.z - d.z))[0].id; });
+console.log('the cottage is in', cot);
+if (cot !== 'dunmore') check(`${cot} stands, a village with a cottage of one storey`, await g.settle(cot) && await page.evaluate(id => WORLD.settle.get(id).houses.some(x => x.type === 'home' && !x.two), cot));
+await room(cot, 'home');
 const r = await page.evaluate(() => {
   const near = (y, w) => INT_SOL.filter(s => s.y1 != null && Math.abs(s.y1 - y) < .02 && (!w || w(s))).sort((a, b) => (b.x1 - b.x0) * (b.z1 - b.z0) - (a.x1 - a.x0) * (a.z1 - a.z0));
   const bed = near(.448, s => (s.x1 - s.x0) * (s.z1 - s.z0) > 2)[0], chest = near(.448, s => (s.x1 - s.x0) * (s.z1 - s.z0) < 1)[0];
@@ -54,7 +61,8 @@ check(`a running jump puts you on the table (the apex ${r.jumpTable && r.jumpTab
 
 // the inn: its stair is walked, and a bench is stepped onto
 await page.evaluate(() => exitInterior()); await page.waitForTimeout(2500);
-await room('inn');
+if (cot !== 'dunmore') await g.settle('dunmore');
+await room('dunmore', 'inn');
 const inn = await page.evaluate(() => {
   const f = FOOTHOLDS.find(f => f.axis); if (!f) return { none: true };
   const along = f.axis === 'x' ? 'x' : 'z', a0 = f[along + '0'], a1 = f[along + '1'], up = f.y1 > f.y0 ? 1 : -1, c = f.axis === 'x' ? (f.z0 + f.z1) / 2 : (f.x0 + f.x1) / 2;

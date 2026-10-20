@@ -174,10 +174,14 @@ carries them to him. A second notification for the same question is noise.
 - **Cheap checks first.** `git fetch origin`, then the checks below, then decide what the run can do; a run with nothing
   workable ends before `npm install`.
 - **Freeze.** `gh issue list --state open --search "FREEZE: in:title" --json title -q '.[].title'` (or the GitHub tools).
-  While an open issue's title begins `FREEZE:`, a deep-work card is rewriting files the builders share: touch nothing under
-  `js/`, `index.html`, `tests/` or `.github/`. Work that lives elsewhere (the prototypes, docs) goes on; a run with none
-  ends at once. The deep-work session opens the issue when it takes a card that freezes, and closes it when that card's last
-  PR has merged; the producer closes one left open two hours with no card behind it.
+  An open issue whose title begins `FREEZE:` means a deep-work card is rewriting shared files, and its body names them on a
+  `Paths:` line (e.g. `Paths: js/32-people.js, js/34-creatures.js, tests/people*.test.mjs`). Touch nothing on that list;
+  everything else (your other `js/` files, `tests/`, section I) goes on as usual, and an item that needs a frozen path waits
+  while you take the next. A `FREEZE:` issue with no `Paths:` line freezes all of `js/`, `index.html`, `tests/` and `.github/`,
+  as before: work elsewhere (the prototypes, docs) goes on, and a run with none ends at once. The deep-work session opens the
+  issue when it takes a card that freezes, listing the narrowest set of paths the card rewrites (it edits the line if it needs
+  more, rather than opening a second issue), and closes it when that card's last PR has merged; the producer closes one left
+  open two hours with no card behind it. (Michael, 20 Oct 2026: a freeze names its paths, so one card no longer stops all code.)
 - **Overlap** (the builders and QA): if the newest `origin/auto/<lane>-*` branch's latest non-merge commit is under 50
   minutes old, another run is working: end.
 - **Session numbers:** one above the highest session in `docs/devlog.md` and `docs/devlog/*.md` across origin/main, every
