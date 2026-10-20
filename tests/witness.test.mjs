@@ -20,12 +20,20 @@ for (const id of shops) {
     px = kx + (X.x > kx ? 1.5 : -1.5); pz = kz; const near = W();
     // beyond the back-room door, a step past it on the line from the keeper: the shut door hides you, the open one does not
     const D = WORLD.intDoors; let door = null;
-    if (D.length) { const d = D[0]; const L = Math.hypot(d.x - kx, d.z - kz); const bx = d.x + (d.x - kx) / L * .9, bz = d.z + (d.z - kz) / L * .9;
-      px = bx; pz = bz; const dist = Math.hypot(px - kx, pz - kz); const shutSeen = W();
-      const s0 = { ...d.sol }; d.sol.x0 = d.sol.x1 = d.sol.z0 = d.sol.z1 = -9e5; const openSeen = W(); const openLine = WORLD.intSightLine(kx, kz, px, pz); Object.assign(d.sol, s0);
+    if (D.length) { const d = D[0]; const L = Math.hypot(d.x - kx, d.z - kz);
+      // Session 1215: in the kit's shops (the new look, #393) the back-room door is 5.6 to 5.7 from the counter, so every spot past it
+      // is beyond the six units and the door could not be tested at all. There the keeper is stood 2.5 short of the door, on the
+      // same line, as guardsindoor does for the strongbox; whether a keeper at the counter should see into the back room is a decision.
+      const moved = L + .9 >= 6; const sx = moved ? d.x - (d.x - kx) / L * 2.5 : kx, sz = moved ? d.z - (d.z - kz) / L * 2.5 : kz;
+      K.position.x = sx; K.position.z = sz;
+      const Wd = () => { K.rotation.y = Math.atan2(px - sx, pz - sz); return !!WORLD.witnessOf(h); };
+      const bx = d.x + (d.x - kx) / L * .9, bz = d.z + (d.z - kz) / L * .9;
+      px = bx; pz = bz; const dist = Math.hypot(px - sx, pz - sz); const shutSeen = Wd();
+      const s0 = { ...d.sol }; d.sol.x0 = d.sol.x1 = d.sol.z0 = d.sol.z1 = -9e5; const openSeen = Wd(); const openLine = WORLD.intSightLine(sx, sz, px, pz); Object.assign(d.sol, s0);
+      K.position.x = kx; K.position.z = kz; const fromCounter = +(L + .9).toFixed(2);
       // and the whole room: every spot within six units of the keeper that a wall hides
       let hid = 0, hidSeen = 0; for (let x = .5; x < 30; x += .5) for (let z = .5; z < 30; z += .5) { if (Math.hypot(x - kx, z - kz) >= 6 || WORLD.intSightLine(kx, kz, x, z)) continue; px = x; pz = z; hid++; if (W()) hidSeen++; }
-      door = { dist: +dist.toFixed(2), shutSeen, openSeen, openLine, hid, hidSeen }; }
+      door = { dist: +dist.toFixed(2), moved, fromCounter, shutSeen, openSeen, openLine, hid, hidSeen }; }
     exitInterior();
     return { name: h.name, dBox: +dBox.toFixed(2), dRaw: dBox, doors: D.length, lineBox, atBox, near, door }; }));
   await page.waitForTimeout(2500); await g.hide();
