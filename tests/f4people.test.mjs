@@ -70,6 +70,13 @@ const lv = await page.evaluate(() => { SETTINGS.quality = 1; const t = WORLD.sit
 console.log('  budget: Dunmore at noon with the builder\'s townsfolk:', JSON.stringify(lv));
 check('near bodies whole, middle ones without their cards, far ones the driver\'s distant copy', lv.n >= 4 && lv.bad.length === 0, lv);
 check('Dunmore at noon stays under the budget\'s 1,000 draw calls at the middle quality', lv.calls > 50 && lv.calls < 1000, lv);
+// the middle level is one draw call: the body baked into one mesh on the same skeleton
+const mid = await page.evaluate(() => { const rig = [...HB_RIGS].find(r => r.hb && r.root.visible && r.root.parent === WORLD.scene); const p = rig.root.position;
+  CAM.position.set(p.x + 25, worldH(p.x + 25, p.z) + 1.65, p.z); CAM.updateMatrixWorld(true); tickPeople(1 / 60, 4.5e5);
+  const shown = []; rig.hb.root.traverse(o => { if (!o.isMesh) return; let v = true; for (let q = o; q && q !== rig.root; q = q.parent) v = v && q.visible; if (v) shown.push(o); });
+  const m = rig.hb.mid, t = (m.geometry.index.count / 3) | 0; let full = 0; for (const o of rig.hb.full) full += ((o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3) | 0;
+  return { key: rig.g.hbKey, level: rig.hb.L, shown: shown.length, mid: shown[0] === m, skinned: m.isSkinnedMesh && m.skeleton === rig.hb.P.skeleton, tris: t, fullTris: full, ok: !!rig.hb.full.length }; });
+check('a body in the middle range is one mesh on its own skeleton, the whole body baked', mid.level === 1 && mid.shown === 1 && mid.mid && mid.skinned && mid.tris > 10000, mid);
 // far away every body is the cheap level
 const far = await page.evaluate(() => { const t = WORLD.siteAnywhere('dunmore'); CAM.position.set(t.x, worldH(t.x, t.z + 70) + 1.65, t.z + 70); CAM.updateMatrixWorld(true); tickPeople(1 / 60, 5e5);
   const rs = [...HB_RIGS].filter(r => r.hb && r.root.parent === WORLD.scene && r.root.visible && Math.hypot(CAM.position.x - r.root.position.x, CAM.position.z - r.root.position.z) > HBODY.mid + 1);
@@ -81,6 +88,11 @@ const shoot = async (name, fn) => { await page.evaluate(fn); for (let i = 0; i <
 await shoot('f4-square.jpg', () => { const t = WORLD.siteAnywhere('dunmore'); px = t.x; pz = t.z + 4; yaw = 0; pitch = -.06; });
 await shoot('f4-market.jpg', () => { const r = [...HB_RIGS].filter(r => r.hb && r.root.visible && r.root.parent === WORLD.scene).sort((a, b) => Math.hypot(a.root.position.x - px, a.root.position.z - pz) - Math.hypot(b.root.position.x - px, b.root.position.z - pz))[0];
   const p = r.root.position, fy = r.root.rotation.y; px = p.x + Math.sin(fy) * 3; pz = p.z + Math.cos(fy) * 3; yaw = Math.atan2(-(p.x - px), -(p.z - pz)); pitch = -.08; });
+// the middle level close up beside the whole body: the market's person from 3 m (near 0 shows the bake; then restored)
+for (const [name, near] of [['f4-whole.jpg', 16], ['f4-baked.jpg', 0]]) {
+  await page.evaluate((near) => { HBODY.near = near; }, near); for (let i = 0; i < 4; i++) { await page.evaluate(() => tickPeople(1 / 60, performance.now())); await g.frames(1); }
+  await page.screenshot({ path: path.join(OUT, name), clip: { x: 440, y: 120, width: 400, height: 480 } }); }
+await page.evaluate(() => { HBODY.near = 16; });
 await shoot('f4-crowd60.jpg', () => { const t = WORLD.siteAnywhere('dunmore'); px = t.x; pz = t.z + 60; yaw = 0; pitch = -.03; });
 const inn = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'); const h = S.houses.find(x => x.type === 'inn') || S.houses[0]; px = h.exitX; pz = h.exitZ; goToInterior(h); return h.type; });
 for (let k = 0; k < 40 && !(await page.evaluate(() => isInterior())); k++) await page.waitForTimeout(250);

@@ -1308,7 +1308,8 @@ function tickPeople(dt,now){
 // it (idle, walk, run, wave, sleep, the ragdoll). The builder's skeleton copies the driver's joints each frame (hbPose), so
 // every pose the game has today reaches the new body with no code of its own. Three levels by the eye's distance:
 //   0, under HBODY.near: the builder's body whole;
-//   1, to HBODY.mid: the same body without its cards (hair, brows, beard, moustache) and eyes, the scalp shell standing in;
+//   1, to HBODY.mid: the same body baked into one mesh (hbMerge, Session 1194): the skin, the garments and what is carried, in
+//      their colours, on the same skeleton, without the cards (hair, brows, beard, moustache) and eyes; one draw call;
 //   2, beyond: the driver's own distant copy (geoLo), tinted from the genome's skin, hair and clothes, one draw call.
 // The shadow is always the driver's distant copy (the townsfolk's swap below), so the builder's meshes cast none.
 // A genome is seeded by place and name (`<site>:<name>`, the cache key buildNPCMesh already uses for "the same person in the
@@ -1356,10 +1357,11 @@ function hbAttach(rig){const tA=performance.now();let P;
     sk.update=function(){inv.copy(root.matrixWorld).invert();const bs=this.bones;
       for(let i=0;i<bs.length;i++){off.multiplyMatrices(inv,bs[i].matrixWorld).multiply(this.boneInverses[i]);off.toArray(this.boneMatrices,i*16);}
       if(this.boneTexture)this.boneTexture.needsUpdate=true;};}
-  const sph=new THREE.Sphere(new THREE.Vector3(0,(bb.min.y+bb.max.y)/2,0),st*.8),cards=[];
-  root.traverse(o=>{if(!o.isMesh)return;o.castShadow=false;o.receiveShadow=true;
+  const sph=new THREE.Sphere(new THREE.Vector3(0,(bb.min.y+bb.max.y)/2,0),st*.8),full=[],cards=new Set();
+  root.traverse(o=>{if(!o.isMesh)return;o.castShadow=false;o.receiveShadow=true;full.push(o);
     if(o.isSkinnedMesh){o.bindMode='detached';o.bindMatrix.identity();o.bindMatrixInverse.identity();o.geometry.boundingSphere=sph.clone();o.frustumCulled=true;}
-    if(HBODY.cards.test(o.name)||o.parent===by.head)cards.push(o);});
+    if(HBODY.cards.test(o.name)||o.parent===by.head)cards.add(o);});
+  let mid;try{mid=hbMerge(P,cards);}catch(e){rig.root.remove(W);rig.hbFail=true;console.warn('F4: the middle level failed for',rig.g.hbKey,e);return;}mid.geometry.boundingSphere=sph.clone();root.add(mid);
   // which side is which: the driver's left shoulder and the builder's `.L` on the same side of the body (checked once)
   if(HBODY.swap==null){rig.root.updateMatrixWorld(true);const a=rig.root.worldToLocal(rig.B.shL.getWorldPosition(_hbv)).x,b=rig.root.worldToLocal(by['upperarm01.L'].getWorldPosition(_hbv2)).x;HBODY.swap=a*b<0;}
   const map=HB_MAP.map(([j,n])=>[j,by[HBODY.swap?n.replace(/\.L$/,'.X').replace(/\.R$/,'.L').replace(/\.X$/,'.R'):n]]);
@@ -1367,16 +1369,51 @@ function hbAttach(rig){const tA=performance.now();let P;
   const B=rig.B,keep=map.map(([j])=>B[j].quaternion.clone());map.forEach(([j])=>B[j].quaternion.identity());
   const s0=map.map(([j])=>hbRel(B[j],rig.root,new THREE.Quaternion()).invert()),t0=map.map(([,b])=>hbRel(b,W,new THREE.Quaternion()));
   map.forEach(([j],i)=>B[j].quaternion.copy(keep[i]));
-  const rb=by.root;rig.hb={root:W,P,map,s0,t0,cards,pos0:rb.position.clone(),k:rb.position.y/PW.HIPS,L:-1,st};
+  const rb=by.root;rig.hb={root:W,P,map,s0,t0,full,mid,pos0:rb.position.clone(),k:rb.position.y/PW.HIPS,L:-1,st};
   HBODY.ms+=performance.now()-tA;HBODY.n++;}
 function hbPose(rig){const H=rig.hb,B=rig.B,map=H.map;
   for(let i=0;i<map.length;i++){const [j,b]=map[i];
     hbRel(B[j],rig.root,_hbq).multiply(H.s0[i]).multiply(H.t0[i]);
     if(b.parent&&b.parent!==H.P.root){hbRel(b.parent,H.root,_hbq2).invert();b.quaternion.copy(_hbq2.multiply(_hbq));}else b.quaternion.copy(_hbq);}
   const hp=B.hips.position,rb=map[0][1];rb.position.set(H.pos0.x+hp.x*H.k,H.pos0.y+(hp.y-PW.HIPS)*H.k,H.pos0.z+hp.z*H.k);}
-function hbLevel(rig,L){const H=rig.hb;if(H.L===L)return;H.L=L;H.root.visible=L<2;rig.mesh.visible=L===2;for(const c of H.cards)c.visible=L===0;}
+function hbLevel(rig,L){const H=rig.hb;if(H.L===L)return;H.L=L;H.root.visible=L<2;rig.mesh.visible=L===2;for(const m of H.full)m.visible=L===0;H.mid.visible=L===1;}
+// the middle level: every solid part of the body in one skinned mesh on the same skeleton, coloured by vertex from its material
+// (and its own vertex colours: the skin's), the shaders' weaves and cut hems left out. A part that hangs on a bone (the basket in
+// the hand, the helm, the spear) is put into the bind pose through that bone and weighted wholly to it; one on the body's root
+// (the cloak, the brooch) goes to the root bone. Built once, at attach, in a few tens of milliseconds.
+// a garment's cut ([low, high, half-width], people.js's CUT) and hole (a GLSL test over vB) as one JS test, or null; the hole's noise
+// term (nz) is taken at its middle, .5, and a hole that will not translate is left out (the triangles are kept)
+const HB_HOLES=new Map();
+function hbCutFn(u){const c=u.cut;let h=null;
+  if(u.hole){if(!HB_HOLES.has(u.hole)){let f=null;try{const e=u.hole.replace(/nz\([^()]*\([^()]*\)\)/g,'.5').replace(/vB\./g,'b.').replace(/\b(abs|pow|min|max|sqrt)\(/g,'Math.$1(');
+      if(!/vB|vec|fract|sin\(/.test(e))f=new Function('b','return ('+e+');');}catch(e){f=null;}HB_HOLES.set(u.hole,f);}h=HB_HOLES.get(u.hole);}
+  if(!c&&!h)return null;
+  const key=u.hole;return b=>{if(c&&(b.y<c[0]||b.y>c[1]||Math.abs(b.x)>(c[2]!=null?c[2]:9)))return true;if(!h)return false;
+    try{return !!h(b);}catch(e){h=null;HB_HOLES.set(key,null);return false;}};}
+const HB_MID_MAT=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.88,metalness:0,side:THREE.DoubleSide});
+function hbMerge(P,skip){const sk=P.skeleton,bones=sk.bones,bi=new Map(bones.map((b,i)=>[b,i])),rootI=bi.get(P.byName.root);
+  P.root.updateMatrixWorld(true);
+  const pos=[],nor=[],col=[],si=[],sw=[],idx=[],v=new THREE.Vector3(),n=new THREE.Vector3(),M=new THREE.Matrix4(),N=new THREE.Matrix3(),I=new THREE.Matrix4(),c=new THREE.Color();let base=0;
+  P.root.traverse(o=>{if(!o.isMesh||skip.has(o))return;const g=o.geometry,pa=g.attributes.position,na=g.attributes.normal,ca=g.attributes.color,m=o.material;
+    if(!pa||Array.isArray(m)||m.transparent)return;c.copy(m.color||c.setRGB(1,1,1));const vc=!!(ca&&m.vertexColors),rigid=!o.isSkinnedMesh;let b=0;
+    if(rigid){let p=o.parent;while(p&&!p.isBone)p=p.parent;b=p?bi.get(p):rootI;M.copy(sk.boneInverses[b]).invert().multiply(I.copy(bones[b].matrixWorld).invert()).multiply(o.matrixWorld);N.getNormalMatrix(M);}
+    const s=g.attributes.skinIndex,w=g.attributes.skinWeight;
+    for(let i=0;i<pa.count;i++){v.fromBufferAttribute(pa,i);if(rigid)v.applyMatrix4(M);pos.push(v.x,v.y,v.z);
+      if(na){n.fromBufferAttribute(na,i);if(rigid)n.applyMatrix3(N).normalize();nor.push(n.x,n.y,n.z);}else nor.push(0,1,0);
+      col.push(c.r*(vc?ca.getX(i):1),c.g*(vc?ca.getY(i):1),c.b*(vc?ca.getZ(i):1));
+      if(rigid){si.push(b,0,0,0);sw.push(1,0,0,0);}else{si.push(s.getX(i),s.getY(i),s.getZ(i),s.getW(i));sw.push(w.getX(i),w.getY(i),w.getZ(i),w.getW(i));}}
+    // what the garment's shader discards (its cut and hole, over the rest position aBase) is left out, by each triangle's middle
+    const ab=g.attributes.aBase,gone=ab&&hbCutFn(m.userData||{}),q={x:0,y:0,z:0},n3=g.index?g.index.count:pa.count,at=i=>g.index?g.index.getX(i):i;
+    for(let i=0;i<n3;i+=3){const a=at(i),b2=at(i+1),c3=at(i+2);
+      if(gone){q.x=(ab.getX(a)+ab.getX(b2)+ab.getX(c3))/3;q.y=(ab.getY(a)+ab.getY(b2)+ab.getY(c3))/3;q.z=(ab.getZ(a)+ab.getZ(b2)+ab.getZ(c3))/3;if(gone(q))continue;}
+      idx.push(base+a,base+b2,base+c3);}
+    base+=pa.count;});
+  const G=new THREE.BufferGeometry();G.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));G.setAttribute('normal',new THREE.Float32BufferAttribute(nor,3));
+  G.setAttribute('color',new THREE.Float32BufferAttribute(col,3));G.setAttribute('skinIndex',new THREE.Uint16BufferAttribute(si,4));G.setAttribute('skinWeight',new THREE.Float32BufferAttribute(sw,4));G.setIndex(idx);
+  const mesh=new THREE.SkinnedMesh(G,HB_MID_MAT);mesh.name='mid';mesh.bind(sk,new THREE.Matrix4());mesh.bindMode='detached';mesh.bindMatrixInverse.identity();
+  mesh.castShadow=false;mesh.receiveShadow=true;mesh.visible=false;return mesh;}
 function hbDrop(rig){const H=rig.hb;if(!H)return;if(H.root.parent)H.root.parent.remove(H.root);
-  H.root.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material){const ms=Array.isArray(o.material)?o.material:[o.material];for(const m of ms){if(m.map&&m.map.isCanvasTexture&&o.parent===H.P.byName.head)m.map.dispose();m.dispose();}}});
+  H.root.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material&&o.material!==HB_MID_MAT){const ms=Array.isArray(o.material)?o.material:[o.material];for(const m of ms){if(m.map&&m.map.isCanvasTexture&&o.parent===H.P.byName.head)m.map.dispose();m.dispose();}}});
   if(H.P.skeleton.boneTexture)H.P.skeleton.dispose();rig.hb=null;rig.mesh.visible=true;}
 // each frame, after the driver is posed: the level by distance, the pose copied, and at most one new body built
 function hbTick(now){let best=null,bd=HBODY.build;
