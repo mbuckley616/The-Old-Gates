@@ -45,10 +45,11 @@ for (const k of [0, 2, 4]) {
   check(`home ${k}: the quilt drawn to the neck over its whole body below it (no point through it)`, s.cover && s.za > -.6 * K && s.za < -.1 * K && s.under > 150 && s.over / s.under < .02, { za: s.za, under: s.under, over: s.over });
   check(`home ${k}: both eyes shut (each eyeball in a lid of the skin's tone)`, s.eyes === 2 && s.shut === 2, { eyes: s.eyes, shut: s.shut });
   if (k === 0) {
-    // the loop runs: three seconds and they stay in the bed, laid as they were
+    // the loop runs: three seconds and they stay in the bed, laid as they were. The breath (pwSleep's spine, ±.02 rad) carries the head
+    // 2.3 cm from end to end of a breath (Session 1227's probe), so the bound is 4 cm: wide of the breath, far short of a body laid again
     await g.frames(10); await page.evaluate(() => { for (let i = 0; i < 180; i++) { tickPeople(1 / 60, performance.now() + i * 16.7); hbTick(performance.now()); WORLD.tickInterior(1 / 60, performance.now()); } });
     const s2 = await read();
-    check('three seconds of the loop: still asleep under the quilt, the builder\'s body still all in the bed, its head where it was (2 cm)', s2.sleep && s2.cover && s2.out === 0 && Math.hypot(s2.head[0] - s.head[0], s2.head[1] - s.head[1], s2.head[2] - s.head[2]) < .02, { s2: { out: s2.out, head: s2.head }, head: s.head });
+    check('three seconds of the loop: still asleep under the quilt, the builder\'s body still all in the bed, its head where it was but for the breath (4 cm)', s2.sleep && s2.cover && s2.out === 0 && Math.hypot(s2.head[0] - s.head[0], s2.head[1] - s.head[1], s2.head[2] - s.head[2]) < .04, { s2: { out: s2.out, head: s2.head }, head: s.head });
     // the picture: from the room's side of the bed, beyond the two units that would wake them
     await page.evaluate(() => { const b = INT_BEDS.find(b => b.owner === 'home'), cz = b.cz != null ? b.cz : b.z; px = b.x + 2.4; pz = cz - .2; lookAtPt(b.x, .7, cz - .55); });
     await g.frames(4);
