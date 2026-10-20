@@ -325,7 +325,7 @@
   // bow onto the shore. Water is swimmable: the surface is the ground
   // when the bed is deeper than the waterline.
   const SHIP={mesh:null,x:0,z:0,yaw:0,speed:0,sailing:false,plat:null,wheel:{x:0,z:0},helm:{x:0,z:0},name:'Gull',L:13,W:4.4};
-  const SHIP_NAMES=['Grey Gull','Salt Heron','Kestrel','Marrow','Ember Wake','Lantern','Cormorant','Old Ram','Wandering Oar','Mercy'];
+  const SHIP_NAMES=['Grey Gull','Salt Heron','Bad Penny','Marrow','Ember Wake','Lantern','Cormorant','Old Ram','Wandering Oar','Mercy'];
   const DECK_Y=SEA_Y+1.0,SHIP_PRICE=400;
   const HELD_KEYS={};
   window.addEventListener('keydown',e=>{HELD_KEYS[e.code]=true;});window.addEventListener('keyup',e=>{HELD_KEYS[e.code]=false;});
