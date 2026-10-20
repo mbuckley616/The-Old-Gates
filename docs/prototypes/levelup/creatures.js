@@ -251,7 +251,9 @@ P.gear = (B, o) => { for (const it of o.list) { const names = B.chains['arm' + (
     const gg = new THREE.CylinderGeometry(w * .22, w * .22, w * 2.4, 7); gg.translate(0, -w * 1.1, 0); sw.add(new THREE.Mesh(gg, stdMat(B.tone('leather'), { rough: .9 })));
     const pg = new THREE.SphereGeometry(w * .38, 10, 8); pg.translate(0, -w * 2.4, 0); sw.add(new THREE.Mesh(pg, stdMat(B.tone('iron'), { rough: .6 })));
     sw.position.copy(fist).addScaledVector(ax, w * 1.1); sw.quaternion.setFromUnitVectors(UP, ax); sw.name = 'sword'; B.bit(names[3], sw); B.gear = [...(B.gear || []), 'sword']; } } };
-// wings: an arm (humerus, forearm) and a fan of two-bone fingers; the membrane between them is its own skinned mesh
+// wings: an arm (humerus, forearm) and a fan of two-bone fingers; the membrane between them is its own skinned mesh. A second pair
+// (Session 1191, membrane wings only) gives `pair: 2`, which goes into its bones' names (wing2L0…), its own `rest` turns in place of
+// the plan's `wingRest`, and a `phase` (radians) so it beats out of step with the first
 // a feather (Session 775): a tapered card from its root along dir, its width across in the wing's plane; the tip darker
 function feather(B, root, dir, across, len, w, bone, tone, tip) {
   const pts = [root.clone().addScaledVector(across, -w * .25), root.clone().addScaledVector(across, w * .25), root.clone().addScaledVector(dir, len * .65).addScaledVector(across, w * .5), root.clone().addScaledVector(dir, len), root.clone().addScaledVector(dir, len * .65).addScaledVector(across, -w * .5)];
@@ -277,13 +279,13 @@ P.wings = (B, o) => {
   for (const side of [1, -1]) {
     const root = sp.p.clone().add(V(side * o.out, o.up || 0, 0)), X = V(side, 0, 0);
     const elbow = root.clone().add(V(side * span * .2, span * .16, -span * .05)), wrist = elbow.clone().add(V(side * span * .26, -span * .04, span * .04));
-    const tag = 'wing' + (side > 0 ? 'L' : 'R'), arm = B.chain(tag, sp.bone, [root, elbow, wrist]);
+    const tag = 'wing' + (o.pair || '') + (side > 0 ? 'L' : 'R'), arm = B.chain(tag, sp.bone, [root, elbow, wrist]);
     B.meat(arm[0], root, elbow, o.r[0], o.r[1], { group: tag, tone: o.tone }); B.meat(arm[1], elbow, wrist, o.r[1], o.r[2], { group: tag, tone: o.tone });
     const fingers = [];
     for (let k = 0; k < o.fingers; k++) { const a = (25 - 130 * k / (o.fingers - 1)) * DEG, L = span * (k === 0 ? .55 : .62 - .1 * k / o.fingers), d = V(side * Math.cos(a) * .9, -.08 - .25 * k / o.fingers, Math.sin(a)).normalize();
       const mid = wrist.clone().addScaledVector(d, L * .5), d2 = d.clone().add(V(0, -.06, -.12)).normalize(), tip = mid.clone().addScaledVector(d2, L * .5);
       fingers.push(B.chain(tag + 'f' + k + '_', arm[2], [wrist.clone(), mid, tip])); }
-    B.wings.push({ side, arm, fingers, root, r: o.r[2], tone: o.membrane || 'membrane', sag: o.sag ?? .18 });
+    B.wings.push({ side, arm, fingers, root, r: o.r[2], tone: o.membrane || 'membrane', sag: o.sag ?? .18, pair: o.pair || 0, rest: o.rest, phase: o.phase || 0 });
   }
 };
 // a row of spines down the back (bits on the spine bones)
@@ -939,11 +941,11 @@ export function pose(C, phase) {
     C.byName[W.arm[1]].rotation.set(0, -s * (2.5 * fold + .35 * up), -s * .15 * beat);
     C.byName[W.arm[2]].rotation.set(0, s * (2.3 * fold + .3 * up), -s * .2 * beat);
     if (W.quills) stowQuills(C, W, G.flap ? 0 : 1); }
-  for (const W of B.wings) if (!W.feathered) { const flap = G.flap ? Math.sin(tau * ph) : 0, fold = G.flap ? 0 : (C.plan.wingFold ?? .5);
+  for (const W of B.wings) if (!W.feathered) { const flap = G.flap ? Math.sin(tau * ph + W.phase) : 0, fold = G.flap ? 0 : (C.plan.wingFold ?? .5);
     // an upright body's wings at rest (Session 956, the gargoyle's): the fold above lays a level back's wings along it, which on an
     // upright one spreads them flat over its head. `wingRest` gives the arm's three bones their rest turns instead (x, then y and z
     // mirrored by side), and the fingers a spread between them
-    if (!G.flap && C.plan.wingRest) { const R = C.plan.wingRest; for (let k = 0; k < 3; k++) C.byName[W.arm[k]].rotation.set(R[k][0], W.side * R[k][1], W.side * R[k][2] + W.side * .02 * Math.sin(tau * ph * .5));
+    if (!G.flap && (W.rest || C.plan.wingRest)) { const R = W.rest || C.plan.wingRest; for (let k = 0; k < 3; k++) C.byName[W.arm[k]].rotation.set(R[k][0], W.side * R[k][1], W.side * R[k][2] + W.side * .02 * Math.sin(tau * ph * .5));
       W.fingers.forEach((f, k) => C.byName[f[0]].rotation.set(0, W.side * (k / W.fingers.length) * (R[3] ?? .2), 0)); continue; }
     C.byName[W.arm[0]].rotation.set(-.15 * fold, -W.side * .7 * fold, W.side * (.5 * flap - .35 * fold + .03 * Math.sin(tau * ph * .5)));
     C.byName[W.arm[1]].rotation.set(0, W.side * 1.1 * fold, W.side * -.3 * flap); C.byName[W.arm[2]].rotation.set(0, -W.side * .9 * fold, W.side * -.2 * flap);
@@ -2137,7 +2139,8 @@ Object.assign(PLANS, {
     glow: { color: [1.3, 1.8, 2.6], freq: 7, w: .03, all: .75 },
     parts: [...PLANS.gaothgargoyle.parts.map(([k, o]) => k === 'wings' ? [k, { ...o, span: PLANS.gargoyle.parts.find(([q]) => q === 'wings')[1].span * 1.5 }]
       : k === 'head' ? [k, { ...o, eyes: o.eyes.map(e => ({ ...e, color: [.7, .9, 1.3] })) }] : [k, o]),
-      ['arms', { at: .82, out: .22, up: .12, dz: -.04, len: 1.05, r: [.07, .06, .05], dir: [.75, .05, .65], dir2: [.2, -.6, .78], tone: 'coat', claws: { r: .012, len: .07 }, swing: .3, phase: 1.9 }]] })
+      ['arms', { at: .82, out: .22, up: .12, dz: -.04, len: 1.05, r: [.07, .06, .05], dir: [.75, .05, .65], dir2: [.2, -.6, .78], tone: 'coat', claws: { r: .012, len: .07 }, swing: .3, phase: 1.9 }],
+      ['wings', { pair: 2, at: .6, out: .22, up: .2, span: 3.5, fingers: 3, r: [.065, .05, .034], sag: .22, tone: 'membrane', rest: [[.15, .75, -.45], [0, 0, -1.5], [0, .45, .55], .25], phase: 1.6 }]] })
 });
 // ── Session 1174: Uisce's failing slime (OG-073's Uisce row: the slime "multiplies into a cresting wave of jelly"). The slime of OG-041
 // a third bigger and gone the pale blue-white of the sheet's drowned halls, clearer, with three more crests rising off its back and
