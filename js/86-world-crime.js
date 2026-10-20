@@ -509,7 +509,7 @@
         g.position.set(W/2,0,D-1.0);g.rotation.y=Math.PI;if(interiorScene)interiorScene.add(g);s.mesh=g;s.phase='inside';
         showMsg(`${(n.def&&n.def.name)||'A guard'} comes in.`,'#e88a8a');return;}
       if(s.phase==='inside'&&s.mesh){const g=s.mesh,T=targetOf(n),dx=T.x-g.position.x,dz=T.z-g.position.z,d=Math.hypot(dx,dz);g.rotation.y=Math.atan2(dx,dz);
-        if(d>1.5&&!talking){let wx=T.x,wz=T.z,wd=d,st=Math.min(d-1.4,1.8*dt); /* S1188 — round the kit's partitions: a straight line when the floor between is clear, else the route */
+        if(d>1.5&&!talking){let wx=T.x,wz=T.z,wd=d,st=Math.min(d-1.4,1.8*dt); /* S1190 — round the kit's partitions: a straight line when the floor between is clear, else the route */
           if(!walkClear(g.position.x,g.position.z,T.x,T.z)){s.rt=(s.rt||0)-dt;if(s.rt<=0||!s.wp||Math.hypot(s.wp.x-g.position.x,s.wp.z-g.position.z)<.25){s.rt=1;s.wp=guardRoute(g.position.x,g.position.z,T.x,T.z);}
             if(s.wp){wx=s.wp.x;wz=s.wp.z;wd=Math.max(.001,Math.hypot(wx-g.position.x,wz-g.position.z));st=Math.min(wd,1.8*dt);g.rotation.y=Math.atan2(wx-g.position.x,wz-g.position.z);}}else s.wp=null;
           const nx=g.position.x+(wx-g.position.x)/wd*st,nz=g.position.z+(wz-g.position.z)/wd*st;
@@ -530,7 +530,7 @@
       const onPad=Math.hypot(T.x-S.site.x,T.z-S.site.z)<(S.site.pad||40)+40;
       if(!onPad||s.ct>CHASE_MAX){showMsg(`${(n.def&&n.def.name)||'The guard'} gives up the chase.`,'#c8b880');endSent();}}
   }
-  // S1188 — the guard sent in walks round a room's partitions (the kit's shops keep the strongbox in a back room, behind a wall
+  // S1190 — the guard sent in walks round a room's partitions (the kit's shops keep the strongbox in a back room, behind a wall
   // and a door from the shop door he comes in by; he walked straight at you and stood against the wall). walkClear: the floor
   // between two points, sampled every quarter metre at his girth. guardRoute: a breadth-first path on a 0.4 grid over the room's
   // floor to the nearest floor within 1.4 of you (you may stand where his girth cannot), a shut door counted open (he opens it
