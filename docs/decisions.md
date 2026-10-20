@@ -15,14 +15,6 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
-### The townhouse's front door: 2.4 m as drawn, or the foundation's 2.2? (from the look builder, 2026-10-20, #514)
-On the new look Dunmore's 43 homes are the kit's Georgian townhouses, whose door leaf is 2.4 m under a 0.55 m fanlight (`38-kit.js`). F2a's foundation (`SCALE.DOOR_H`) puts a house door at 2.0 to 2.2 m, and `tests/scaleratio` checks that range, so it cannot pass on the new look: the eye at 1.65 comes to 0.69 of the door against a target of 0.75 to 0.85. The kit's other house doors already fit (cottage 2.0, farmhouse 2.08, shop 2.15). Raised by Session 1211 from #443's CI.
-- **A (recommended). Bring it to the foundation:** the leaf to 2.2 m under the same fanlight (opening 2.75 m); the 2.0–2.2 rule stands for every house, and the coaching inn's fanlit door follows it.
-- **B. Keep the 2.4 m Georgian leaf:** a town front door becomes its own class in SCALE (2.0 to 2.4); the suite and the foundation's table gain the row.
-- **C. The plain house door:** the leaf at 2.05 m like the others (opening 2.6 m); the fanlight sits low over a short door.
-
-Recommendation: **A**, the smallest change a player would see, keeping the one door rule Michael approved.
-
 ### Should a shopkeeper at the counter see into the kit shops' back rooms? (from the systems builder, 2026-10-20, #516)
 Since the kit's houses every Dunmore shop is 13.2 m deep with the strongbox in a back room; the keeper stands 7.6–7.9 m from the box and 5.6–5.7 m from the back-room door. Indoors a keeper sees within 6 units (`witnessOf`, `86-world-crime.js`, from Session 167, in the old unit before F2a made rooms true size), so the back room is out of reach and the box can be emptied unseen behind an open door. In the old shops the open door gave you away. Found by `tests/witness` on #443 (Session 1215).
 - **A. Keep six:** the back room is the thief's, door open or shut. Nothing to build.
@@ -32,6 +24,16 @@ Since the kit's houses every Dunmore shop is 13.2 m deep with the strongbox in a
 Recommendation: **B.**
 
 ## Answered
+### The townhouse's front door: 2.4 m as drawn, or the foundation's 2.2? (from the look builder, 2026-10-20, #514)
+On the new look Dunmore's 43 homes are the kit's Georgian townhouses, whose door leaf is 2.4 m under a 0.55 m fanlight (`38-kit.js`). F2a's foundation (`SCALE.DOOR_H`) puts a house door at 2.0 to 2.2 m, and `tests/scaleratio` checks that range, so it cannot pass on the new look: the eye at 1.65 comes to 0.69 of the door against a target of 0.75 to 0.85. The kit's other house doors already fit (cottage 2.0, farmhouse 2.08, shop 2.15). Raised by Session 1211 from #443's CI.
+- **A (recommended). Bring it to the foundation:** the leaf to 2.2 m under the same fanlight (opening 2.75 m); the 2.0–2.2 rule stands for every house, and the coaching inn's fanlit door follows it.
+- **B. Keep the 2.4 m Georgian leaf:** a town front door becomes its own class in SCALE (2.0 to 2.4); the suite and the foundation's table gain the row.
+- **C. The plain house door:** the leaf at 2.05 m like the others (opening 2.6 m); the fanlight sits low over a short door.
+
+Recommendation: **A**, the smallest change a player would see, keeping the one door rule Michael approved.
+
+Michael: **Bring it to 2.2 m under the same fanlight** — "#514: A, bring the townhouse door to 2.2 m under the same fanlight." (2026-10-20, in chat; on #514)
+
 ### The gate interiors: how often is a gate failing or catastrophic? (from the designer, 20 Oct 2026, #494)
 The build sheet for Michael's B on #448 and A on #421 (`docs/design/gate-interiors-build.md`, section *The open number*) settles every number but one: how often a lesser gate is rolled steady, failing or catastrophic. It sets how often the player climbs floating stones (#417 A) over gone spans instead of walking the whole hall. Either way nothing on the way to the ring needs a skill: every gap on the path is under 2.5 m.
 - **A.** Half steady, a third failing, one in seven catastrophic (50 / 35 / 15). *(recommended)*
