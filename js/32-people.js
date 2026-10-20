@@ -927,6 +927,7 @@ function buildFoe(type,x,z,genome,eyeCol){
     rig.hollow=[dk,sl,ha];}
   if((g.skel||g.dead||g.gargoyle)&&eyeCol!=null&&!g.hollow){const at=g.skel?[[.028,.09,.066],[-.028,.09,.066]]:rig.eyes;const P=[],I=[];for(const [ex,ey,ez] of at){const g1=new THREE.SphereGeometry(g.skel?.011:.008,6,4),a=g1.attributes.position.array,ix=g1.index.array,n0=P.length/3;for(let i=0;i<a.length;i+=3)P.push(a[i]+ex,a[i+1]+ey,a[i+2]+ez);for(let i=0;i<ix.length;i++)I.push(ix[i]+n0);g1.dispose();}
     const eg=new THREE.BufferGeometry();eg.setAttribute('position',new THREE.Float32BufferAttribute(P,3));eg.setIndex(I);rig.B.head.add(new THREE.Mesh(eg,new THREE.MeshBasicMaterial({color:eyeCol})));}
+  if(hbOn()&&hbFoeOk(type,genome,g)){rig.hbFoe=type;if(g.hbKey)rig.hbG=HB_GENOMES.get(g.hbKey);HB_RIGS.add(rig);} /* S1197 (F4) — a human foe wears the builder's body too, its genome rolled at its first attach, by its id */
   return rig;
 }
 function buildNPCMesh(def,opts){
@@ -1339,6 +1340,32 @@ function hbTint(g,G){const C=a=>new THREE.Color(a[0],a[1],a[2]),D=G.dress||{};
   const leg=D.trousers||D.skirtColor;if(leg)g.legs=C(leg);if(D.boots)g.boot=C(D.boots);}
 // called by buildNPCMesh before the bake: the key, the genome and the tint, once per cached genome
 function hbPrep(g,key){if(g.hbKey)return;g.hbKey=key;try{hbTint(g,hbGenome(g));}catch(e){console.warn('F4: no genome for',key,e);g.hbKey=null;}}
+// the human foes (S1197): which of FOE_DRESS wear the builder's body (the people, not the dead, the stone or the folk of the hills),
+// and what each wears over the builder's own rolled clothes, from its FOE_DRESS colour (c): the weapon and shield stay the game's
+// kit, held by the driver's bones, so the builder's own spear, staff, crossbow, basket and shield are taken off every one
+const HB_FOE_NOT=/^(skel|dead|goblin|kobold|troll|ogre|hag|gargoyle|golem|wraith)$/;
+function hbFoeOk(type,genome,g){if(genome)return !!g.hbKey;const dr=FOE_DRESS[type];return !!dr&&!Object.keys(dr).some(k=>dr[k]&&HB_FOE_NOT.test(k));}
+const HB_FOE_DRESS={
+  'Bandit':        c=>({cloak:c.map(v=>v*.8),cape:true,hood:'up'}),
+  'Bandit Archer': c=>({cloak:c.map(v=>v*.85),cape:true,hood:'up'}),
+  'Highwayman':    c=>({coat:c,coatLen:.8,coatHood:null,cloak:null,hood:null}),
+  'Deserter':      c=>({mail:[.5,.5,.52],helm:[.4,.41,.43],cloak:null,hood:null}),
+  'Cultist':       c=>({robe:c,cloak:c.map(v=>v*.7),cloakLen:.9,hood:'up'}),
+  'Rogue Mage':    c=>({robe:c,cloak:c.map(v=>v*.75),cloakLen:.85,hood:'up'}),
+  'Pirate':        c=>({wrap:[.55,.18,.12],cloak:null,hood:null}),
+  'Bandit Captain':c=>({mail:[.42,.42,.44],helm:[.38,.39,.41],cloak:c,cape:true,hood:null}),
+  'Shieldbearer':  c=>({mail:[.5,.5,.52],helm:[.44,.45,.47],tabard:c,cloak:null,hood:null})};
+// a foe's genome, at its first attach (its id is given after it is built, keyFoe): `foe:<id>`, the co-op rule's place and index; a
+// foe with no id yet (the inspector's) takes its type and its old genome's seed, which is the same each time it is built
+function hbFoeGenome(rig){const g=rig.g,dr=FOE_DRESS[rig.hbFoe]||{},id=rig.e&&rig.e.id;
+  const key='foe:'+(id!=null?id:rig.hbFoe+':'+g.seed);HB.loadPack();
+  const G=HB.rollGenome(key,{people:HB.PEOPLES[g.people]?g.people:'gatelander',g:g.female?0:1});
+  const h=dr.cloth!=null?dr.cloth:0x3a3a3a,c=[(h>>16&255)/255,(h>>8&255)/255,(h&255)/255];
+  G.dress=Object.assign({},G.dress,{tunic:c,spear:null,staff:null,crossbow:null,basket:null,basketCloth:null,shield:null,chair:null,apron:null,bib:null,cape:null,coat:null,scarf:null,wrap:null},(HB_FOE_DRESS[rig.hbFoe]||(()=>({})))(c));
+  HB_GENOMES.set(key,G);return G;}
+// a garment's material carries its weave and cut in onBeforeCompile, which Material.copy leaves behind: a foe's corpse is darkened by
+// cloning every material on it (killE, killZoneEnemy), so the builder's materials clone with their shaders
+function hbClone(){const c=new this.constructor().copy(this);c.onBeforeCompile=this.onBeforeCompile;c.customProgramCacheKey=this.customProgramCacheKey;c.clone=hbClone;return c;}
 const _hbq=new THREE.Quaternion(),_hbq2=new THREE.Quaternion(),_hbq3=new THREE.Quaternion(),_hbv=new THREE.Vector3(),_hbv2=new THREE.Vector3();
 // a bone's rotation in the frame of `top` (an ancestor), from the local quaternions up the chain: no matrices, no world numbers
 function hbRel(b,top,q){q.copy(b.quaternion);let p=b.parent;while(p&&p!==top){q.premultiply(p.quaternion);p=p.parent;}return q;}
@@ -1362,6 +1389,10 @@ function hbAttach(rig){const tA=performance.now();let P;
     if(o.isSkinnedMesh){o.bindMode='detached';o.bindMatrix.identity();o.bindMatrixInverse.identity();o.geometry.boundingSphere=sph.clone();o.frustumCulled=true;}
     if(HBODY.cards.test(o.name)||o.parent===by.head)cards.add(o);});
   let mid;try{mid=hbMerge(P,cards);}catch(e){rig.root.remove(W);rig.hbFail=true;console.warn('F4: the middle level failed for',rig.g.hbKey,e);return;}mid.geometry.boundingSphere=sph.clone();root.add(mid);
+  // a foe's body glows as its driver's does (the tell, the guard-break, the parry's stagger: enemyBodyMesh is the driver's), so its
+  // middle level has a material of its own (hbGlow)
+  if(rig.foe)mid.material=HB_MID_MAT.clone();
+  root.traverse(o=>{if(!o.isMesh)return;for(const m of Array.isArray(o.material)?o.material:[o.material])if(m.onBeforeCompile!==THREE.Material.prototype.onBeforeCompile)m.clone=hbClone;});
   // which side is which: the driver's left shoulder and the builder's `.L` on the same side of the body (checked once)
   if(HBODY.swap==null){rig.root.updateMatrixWorld(true);const a=rig.root.worldToLocal(rig.B.shL.getWorldPosition(_hbv)).x,b=rig.root.worldToLocal(by['upperarm01.L'].getWorldPosition(_hbv2)).x;HBODY.swap=a*b<0;}
   const map=HB_MAP.map(([j,n])=>[j,by[HBODY.swap?n.replace(/\.L$/,'.X').replace(/\.R$/,'.L').replace(/\.X$/,'.R'):n]]);
@@ -1369,14 +1400,43 @@ function hbAttach(rig){const tA=performance.now();let P;
   const B=rig.B,keep=map.map(([j])=>B[j].quaternion.clone());map.forEach(([j])=>B[j].quaternion.identity());
   const s0=map.map(([j])=>hbRel(B[j],rig.root,new THREE.Quaternion()).invert()),t0=map.map(([,b])=>hbRel(b,W,new THREE.Quaternion()));
   map.forEach(([j],i)=>B[j].quaternion.copy(keep[i]));
-  const rb=by.root;rig.hb={root:W,P,map,s0,t0,full,mid,pos0:rb.position.clone(),k:rb.position.y/PW.HIPS,L:-1,st};
+  // the hips' travel (S1197): the driver's hips moved from their rest, in the person's own frame (rig.root's), across at full measure
+  // and up at the ratio of the two hip heights (the walk's bob and sway; the ragdoll's fall to the ground), then into the frame of the
+  // builder's root bone's parent; the old copy took the driver's numbers for the builder's frame and scaled them all by .23, so a
+  // fallen foe's builder body stayed standing on its driver
+  const rb=by.root;rig.root.updateMatrixWorld(true);const inv=new THREE.Matrix4().copy(rig.root.matrixWorld).invert(),Ah=new THREE.Matrix4().multiplyMatrices(inv,B.hips.parent.matrixWorld),Bp=new THREE.Matrix4().multiplyMatrices(inv,rb.parent.matrixWorld);
+  const hD=new THREE.Vector3(0,PW.HIPS,0).applyMatrix4(Ah).y,hB=rb.position.clone().applyMatrix4(Bp).y;
+  rig.hb={root:W,P,map,s0,t0,full,mid,pos0:rb.position.clone(),A:new THREE.Matrix3().setFromMatrix4(Ah),Bi:new THREE.Matrix3().setFromMatrix4(Bp).invert(),kh:hB/hD,L:-1,st,glow:!!rig.foe,drv:rig.mesh.material,em:0,held:[]};
+  // a foe's weapon (the game's kit, on the driver's gear bone, or the bow in its left hand) and shield (on the left forearm) hang on
+  // the driver's bones, inside the driver's mesh, which is hidden while the builder's body shows: so they are carried in the builder's
+  // group then, following their bone each frame (hbHold), the weapon's grip in the builder's fist, closed on it as people.js closes a
+  // hand on a shield's grip (closeFist); a shield closes the left hand too
+  for(const o of [rig.weapon,rig.shieldKit]){if(!o||!o.parent)continue;const sd=o===rig.weapon?(o.parent===B.wrL?'L':'R'):'L';hbCloseFist(by,sd);
+    rig.hb.held.push({o,par:o.parent,m0:o.matrix.clone().compose(o.position,o.quaternion,o.scale),f:o===rig.weapon?[2,3,4,5].map(f=>by[`finger${f}-2.${sd}`]).filter(Boolean):null,sd});}
   HBODY.ms+=performance.now()-tA;HBODY.n++;}
+// people.js's closeFist: the four fingers' joints bent 1.15, 1.35 and .95 rad about the knuckles' line in the metacarpal's frame
+function hbCloseFist(by,sd){const n=k=>by[k];if(!n(`finger2-1.${sd}`)||!n(`finger5-1.${sd}`)||!n(`metacarpal2.${sd}`))return;
+  const at=k=>new THREE.Vector3().setFromMatrixPosition(n(k).matrixWorld);by.root.parent.updateMatrixWorld(true);
+  const h=at(`finger2-1.${sd}`).sub(at(`finger5-1.${sd}`)).normalize().applyQuaternion(n(`metacarpal2.${sd}`).getWorldQuaternion(new THREE.Quaternion()).invert()),sg=sd==='R'?1:-1;
+  for(let f=2;f<=5;f++)for(let j=1;j<=3;j++){const b=n(`finger${f}-${j}.${sd}`);if(b)b.quaternion.setFromAxisAngle(h,sg*[1.15,1.35,.95][j-1]);}}
+// what the driver holds, in the builder's group: its bone's turn and scale as before, and a weapon's grip at the middle of the builder's
+// curled fingers' second joints; given back to its bone (hbGive) when the driver's own body shows again, or the builder's is dropped
+const _hbm=new THREE.Matrix4(),_hbm2=new THREE.Matrix4();
+function hbHold(rig){const H=rig.hb,top=rig.foe?rig.root.parent:rig.root;top.updateMatrixWorld(true);_hbm2.copy(H.root.matrixWorld).invert();
+  for(const h of H.held){const o=h.o;if(o.parent!==H.root&&o.parent!==h.par)continue;if(o.parent!==H.root)H.root.add(o);
+    _hbm.multiplyMatrices(_hbm2,h.par.matrixWorld).multiply(h.m0);_hbm.decompose(o.position,o.quaternion,o.scale);
+    if(h.f&&h.f.length){const v=_hbv.set(0,0,0);for(const b of h.f)v.add(_hbv2.setFromMatrixPosition(b.matrixWorld));o.position.copy(v.multiplyScalar(1/h.f.length).applyMatrix4(_hbm2));}}}
+function hbGive(rig){const H=rig.hb;for(const h of H.held)if(h.o.parent===H.root){h.par.add(h.o);h.m0.decompose(h.o.position,h.o.quaternion,h.o.scale);}}
 function hbPose(rig){const H=rig.hb,B=rig.B,map=H.map;
   for(let i=0;i<map.length;i++){const [j,b]=map[i];
     hbRel(B[j],rig.root,_hbq).multiply(H.s0[i]).multiply(H.t0[i]);
     if(b.parent&&b.parent!==H.P.root){hbRel(b.parent,H.root,_hbq2).invert();b.quaternion.copy(_hbq2.multiply(_hbq));}else b.quaternion.copy(_hbq);}
-  const hp=B.hips.position,rb=map[0][1];rb.position.set(H.pos0.x+hp.x*H.k,H.pos0.y+(hp.y-PW.HIPS)*H.k,H.pos0.z+hp.z*H.k);}
-function hbLevel(rig,L){const H=rig.hb;if(H.L===L)return;H.L=L;H.root.visible=L<2;rig.mesh.visible=L===2;for(const m of H.full)m.visible=L===0;H.mid.visible=L===1;}
+  const hp=B.hips.position,rb=map[0][1];_hbv.set(hp.x,hp.y-PW.HIPS,hp.z).applyMatrix3(H.A);_hbv.y*=H.kh;rb.position.copy(H.pos0).add(_hbv.applyMatrix3(H.Bi));}
+// a foe's glow: the driver's emissive on every material of the builder's body, and the parry's stagger (which swaps the driver's
+// material for a yellow clone, 74-strikes.js) as a strong gold; the materials the kill clones are the ones on the meshes now
+function hbGlow(rig){const H=rig.hb,m=rig.mesh.material;let em=m&&m.emissive?m.emissive.getHex():0;if(m!==H.drv&&m&&m.color&&m.color.getHex()===0xffdd44)em=0xb08010;
+  if(em===H.em)return;H.em=em;for(const o of [...H.full,H.mid])for(const x of Array.isArray(o.material)?o.material:[o.material])if(x.emissive)x.emissive.setHex(em);} // the body's own: what it holds keeps the kit's shared materials
+function hbLevel(rig,L){const H=rig.hb;if(H.L===L)return;H.L=L;if(L===2)hbGive(rig);H.root.visible=L<2;rig.mesh.visible=L===2;for(const m of H.full)m.visible=L===0;H.mid.visible=L===1;}
 // the middle level: every solid part of the body in one skinned mesh on the same skeleton, coloured by vertex from its material
 // (and its own vertex colours: the skin's), the shaders' weaves and cut hems left out. A part that hangs on a bone (the basket in
 // the hand, the helm, the spear) is put into the bind pose through that bone and weighted wholly to it; one on the body's root
@@ -1412,17 +1472,18 @@ function hbMerge(P,skip){const sk=P.skeleton,bones=sk.bones,bi=new Map(bones.map
   G.setAttribute('color',new THREE.Float32BufferAttribute(col,3));G.setAttribute('skinIndex',new THREE.Uint16BufferAttribute(si,4));G.setAttribute('skinWeight',new THREE.Float32BufferAttribute(sw,4));G.setIndex(idx);
   const mesh=new THREE.SkinnedMesh(G,HB_MID_MAT);mesh.name='mid';mesh.bind(sk,new THREE.Matrix4());mesh.bindMode='detached';mesh.bindMatrixInverse.identity();
   mesh.castShadow=false;mesh.receiveShadow=true;mesh.visible=false;return mesh;}
-function hbDrop(rig){const H=rig.hb;if(!H)return;if(H.root.parent)H.root.parent.remove(H.root);
+function hbDrop(rig){const H=rig.hb;if(!H)return;hbGive(rig);if(H.root.parent)H.root.parent.remove(H.root);
   H.root.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material&&o.material!==HB_MID_MAT){const ms=Array.isArray(o.material)?o.material:[o.material];for(const m of ms){if(m.map&&m.map.isCanvasTexture&&o.parent===H.P.byName.head)m.map.dispose();m.dispose();}}});
   if(H.P.skeleton.boneTexture)H.P.skeleton.dispose();rig.hb=null;rig.mesh.visible=true;}
 // each frame, after the driver is posed: the level by distance, the pose copied, and at most one new body built
 function hbTick(now){let best=null,bd=HBODY.build;
   const busy=now-HBODY.last<HBODY.gap||(typeof JOBS!=='undefined'&&JOBS.length&&!(typeof isInterior==='function'&&isInterior()));
-  for(const rig of HB_RIGS){const root=rig.root;
-    if(!root.parent){hbDrop(rig);HB_RIGS.delete(rig);continue;}
-    if(root.parent!==scene||!root.visible)continue;
-    const d=Math.hypot(CAM.position.x-root.position.x,CAM.position.z-root.position.z);
+  for(const rig of HB_RIGS){const root=rig.root,top=rig.foe?root.parent:root; // a foe's body hangs in its enemy's group (tickPeople)
+    if(!root.parent||!top.parent){hbDrop(rig);HB_RIGS.delete(rig);continue;}
+    if(top.parent!==scene||!top.visible||!root.visible)continue;
+    const d=Math.hypot(CAM.position.x-top.position.x,CAM.position.z-top.position.z);
     if(!rig.hb){if(!busy&&!rig.hbFail&&d<bd){bd=d;best=rig;}continue;}
     const L=rig.hb.L,a=HBODY.near+(L>0?-1:1),b=HBODY.mid+(L>1?-1:1);hbLevel(rig,d<a?0:d<b?1:2);
-    if(rig.hb.L<2)hbPose(rig);}
-  if(best){hbAttach(best);HBODY.last=now;if(best.hb){const d=Math.hypot(CAM.position.x-best.root.position.x,CAM.position.z-best.root.position.z);hbLevel(best,d<HBODY.near?0:d<HBODY.mid?1:2);if(best.hb.L<2)hbPose(best);}}}
+    if(rig.hb.L<2){hbPose(rig);if(rig.hb.glow)hbGlow(rig);if(rig.hb.held.length)hbHold(rig);}}
+  if(best&&best.hbFoe&&!best.hbG){try{best.hbG=hbFoeGenome(best);}catch(e){best.hbFail=true;console.warn('F4: no genome for the foe',best.hbFoe,e);best=null;}}
+  if(best){hbAttach(best);HBODY.last=now;if(best.hb){const t=best.foe?best.root.parent:best.root,d=Math.hypot(CAM.position.x-t.position.x,CAM.position.z-t.position.z);hbLevel(best,d<HBODY.near?0:d<HBODY.mid?1:2);if(best.hb.L<2)hbPose(best);}}}

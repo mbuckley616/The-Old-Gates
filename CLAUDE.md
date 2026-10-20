@@ -105,7 +105,7 @@ Session 368 built the tooling and Session 379 cut the file (1 Oct 2026); Session
   - `30-plants.js` `HERB_DEF`, the plant kit. `32-people.js` `SK`, `personGenome`, `buildPerson`, `buildFoe`, poses,
     `tickPeople`, the shadow-LOD swap; on the new look the builder's bodies (card F4, Session 1195): `HBODY`, `HB_RIGS`, `hbGenome`
     (keyed `<site>:<name>`), `hbAttach`, `hbPose` (the 163-bone skeleton copies the 17-bone driver's joints, `HB_MAP`), `hbLevel` (three
-    levels by distance; the middle one baked into one mesh by `hbMerge`), `hbTick` (one body built at a time, after the loading). `34-creatures.js` wolves, spiders, bears, `tickCreatures`.
+    levels by distance; the middle one baked into one mesh by `hbMerge`), `hbTick` (one body built at a time, after the loading); the human foes too (Session 1197: `hbFoeOk`, `HB_FOE_DRESS`, `hbFoeGenome` keyed `foe:<id>`, `hbHold` carries the kit's weapon and shield in the builder's group, `hbGlow`). `34-creatures.js` wolves, spiders, bears, `tickCreatures`.
   - `40-legacy-zones.js` gates, Ashenmoor, Hearthwick, Bealach. `42-zone-enemies.js` `BOSSES`, `buildZoneEnemy`,
     `tickZoneEnemies`, `killZoneEnemy`. `44-legacy-towns.js` `PROP_BUILDERS`, wilderness, forest, `buildTown`, Ironhaven,
     `ZONE_BUILDERS`, `registerPlaceholderZone`.
