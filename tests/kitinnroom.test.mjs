@@ -2,7 +2,8 @@
 // gatelandsInn from docs/prototypes/levelup/rooms.js (Session 893), and this holds the copy to the prototype: four keys build to the
 // triangles, draws and vertex hashes the prototype gives for the same keys (read from rooms.js in the test Chromium, 19 Oct 2026), the
 // shell is the farmhouse the street builds, and the room keeps its measures (the 16 risers of 0.178 m, the floors at 0.05 and 2.9 m,
-// three beds to let). On the old look the kit loads and builds nothing until asked.
+// three beds to let).
+// The new look only since 1.0 was frozen (18 Oct 2026): the old look’s check is gone.
 import { boot, check } from './lib/game.mjs';
 const REC = { 'inn|green': [4368, 16, -298206828], 'inn:0|green': [4536, 16, 638560512], 'inn:1|blue': [4560, 16, 1477629853], 'inn:2|red': [4392, 16, 1308120795] };
 const SHELL = [2120, 10, 363876740];
@@ -21,6 +22,3 @@ check(`its measures: ${A.w} by ${A.d} m, floors at ${A.floors.join(' and ')} m, 
 check(`from inside the shell's glass is clear panes (${A.leaf} meshes)`, Object.values(R).every(v => v.leaf > 0), Object.values(R).map(v => v.leaf));
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
-const g0 = await boot(); const o = await g0.page.evaluate(() => ({ look: window.OG_LOOK || 'old', fn: typeof PKIT.gl.inn, made: PKIT.texturesMade() }));
-check('on the old look the kit has the taproom and has painted nothing', o.look !== 'new' && o.fn === 'function' && o.made === 0 && g0.errs.length === 0, { ...o, errs: g0.errs });
-await g0.close();
