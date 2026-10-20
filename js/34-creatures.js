@@ -481,6 +481,7 @@ function tickCreatures(dt,now){
     wgApply(rig,out);
   }
   WG_L=WOLF_LEGS;WG_LK=1;
+  if(hcOn())hcTick(now); // S1202 (F4) — the wolves' kit bodies follow their drivers
 }
 
 // ── The spider on the shape kit (backlog H.4, Session 169): the second family, built the way the wolf is ──
@@ -692,3 +693,90 @@ function tickSpider(rig,g,e,dt,now){
   if(rig.B.tail)P.tail=.06*Math.sin(t*1.7)-.35*w*(1-st)+.9*st; // S224 — a scorpion's tail sways, cocks back through the wind-up and strikes over its head
   sgApply(rig,P);
 }
+// ═══ THE WOLVES AS PLANS (v80 S1202, card F4) ════════════════════════════════════════════════════════════════════════════
+// On the new look the Wolf, the Snow Wolf and the Dire Wolf wear the creature kit's body (docs/prototypes/levelup/creatures.js,
+// the bodies builder's; loaded as vendor/creatures.builder.js, window.HC, made by scripts/creatures_bundle.py): its flesh grown
+// round its own 33 bones, a hide and nine shells of fur. As the people do, the old rig stays underneath as the driver: buildWolf
+// still builds the wolf's 24 bones, tickCreatures still poses them (stand, trot, gallop, the wind-up and the lunge), the ragdoll
+// still throws them (creatureRagdollStep), and the kit's skeleton copies the driver's joints each frame (hcPose), so every motion
+// the game has today reaches the new body with no code of its own. The kit's own gait engine is not used: the paws follow the
+// driver's, so where they plant is where the driver's plant. Three levels by the eye's distance:
+//   0, under HC_BODY.near: the hide and its fur;
+//   1, to HC_BODY.mid: the hide and its ears, without the fur's nine shells (each as many triangles as the hide) or the bits under
+//      HC_BODY.small across (claws, nose, eyes): three draw calls;
+//   2, beyond: the driver's own body and its distant copy, as before.
+// The shadow is always the driver's (the kit's meshes cast none), so the shadow pass is as it was. The body is the kind's plan with
+// its colours (the Snow Wolf's pale coat, the Dire Wolf's near black on the heavier Ironwolf), its genome rolled from the foe's id
+// (`wolf:<id>`, the co-op rule's place and index), never Math.random; a wolf with no id yet (the inspector's) takes its kind's name.
+// Built one at a time, the nearest first, after the world's loading and never in the same frame as a person (HBODY.last, shared).
+// The Ash Hound, the boar, the bear, the horses, the dragon and the Faolchú keep the old body: their plans are later work.
+const HC_BODY={on:true,near:12,mid:40,build:44,small:.03,ms:0,n:0};
+const HC_RIGS=new Set();
+// the game's kinds and the kit's plans: a kind's own colours over the plan's (the kit's palettes are sRGB triples)
+const HC_KINDS={'Wolf':{plan:'wolf'},'Snow Wolf':{plan:'wolf',own:true},'Dire Wolf':{plan:'ironwolf',own:true}};
+// the driver's joints and the kit's bones they move, parents first (the kit's front legs hang on spine3, the hind on spine0)
+const HC_MAP=[['hips','spine0'],['spine','spine1'],['neck','neck0'],['head','head'],['jaw','jaw'],['tail1','tail0'],['tail2','tail1'],['tail3','tail2'],
+  ['shL','leg0L_0'],['elL','leg0L_1'],['wrL','leg0L_2'],['pfL','leg0L_3'],['shR','leg0R_0'],['elR','leg0R_1'],['wrR','leg0R_2'],['pfR','leg0R_3'],
+  ['thL','leg1L_0'],['knL','leg1L_1'],['hkL','leg1L_2'],['phL','leg1L_3'],['thR','leg1R_0'],['knR','leg1R_1'],['hkR','leg1R_2'],['phR','leg1R_3']];
+function hcOn(){return HC_BODY.on&&window.OG_LOOK==='new'&&typeof HC!=='undefined';}
+// a kind's plan: the kit's own, or (k.own) a copy of it in the kind's coat, saddle and belly, made once
+function hcPlan(name){const K=HC_KINDS[name];if(!K.own)return K.plan;const id='game:'+name;
+  if(!HC.PLANS[id]){const k=WOLF_KINDS[name],c=h=>[(h>>16&255)/255,(h>>8&255)/255,(h&255)/255];
+    HC.PLANS[id]=Object.assign({},HC.PLANS[K.plan],{name,palette:Object.assign({},HC.PLANS[K.plan].palette,{coat:c(k.coat),saddle:c(k.saddle),belly:c(k.belly)})});}
+  return id;}
+// a wolf the kit may dress: one of HC_KINDS, on the wolf's own body (not a boss on it: the Faolchú's hunch and arms are its own)
+function hcOk(rig){return !rig.spider&&!!HC_KINDS[rig.name]&&!rig.hunch&&!(rig.e&&rig.e.bossId);}
+function hcAttach(rig){const tA=performance.now();let C;
+  try{const key='wolf:'+(rig.e&&rig.e.id!=null?rig.e.id:rig.name);C=HC.build(HC.genome(hcPlan(rig.name),key));}catch(e){rig.hcFail=true;console.warn('F4: the kit could not build',rig.name,e);return;}
+  const by=C.byName;for(const [,n] of HC_MAP)if(!by[n]){rig.hcFail=true;console.warn('F4: the kit\'s wolf has no bone',n);return;}
+  // at the driver's size: the kit's hips (spine0) at the driver's hips' height, and over them, in the driver's root (rig.root, which
+  // carries the kind's size in play); the kit's rig carries its own size (C.S)
+  const B=rig.B,W=new THREE.Group();W.name='kit';const h0=by.spine0.position.clone().multiplyScalar(C.S),f=wolfHipY(rig.k)/h0.y;
+  W.scale.setScalar(f);W.position.set(B.hips.position.x,0,B.hips.position.z-h0.z*f);W.add(C.root);rig.root.add(W);
+  // skinned in the mesh's own frame (CLAUDE.md: bone matrices kept local; the world sits at x, z ≈ 13,000–25,000): each bone's
+  // world matrix less the meshes' (all of them children of the kit's rig), in float64, times the bind as it was built
+  const meshes=C.meshes,bind=meshes[0].bindMatrix.clone();
+  {const inv=new THREE.Matrix4(),off=new THREE.Matrix4(),sk=C.skel;
+    sk.update=function(){inv.copy(C.rig.matrixWorld).invert();const bs=this.bones;
+      for(let i=0;i<bs.length;i++){off.multiplyMatrices(inv,bs[i].matrixWorld).multiply(this.boneInverses[i]).multiply(bind);off.toArray(this.boneMatrices,i*16);}
+      if(this.boneTexture)this.boneTexture.needsUpdate=true;};}
+  // the bits hung on the bones (B.bits): those under HC_BODY.small across are drawn near only
+  const small=[];for(const {obj} of C.B.bits)obj.traverse(o=>{if(!o.isMesh)return;o.geometry.computeBoundingSphere();if(o.geometry.boundingSphere.radius*Math.max(o.scale.x,o.scale.y,o.scale.z)<HC_BODY.small)small.push(o);});
+  const fur=[];for(const m of meshes){m.bindMode='detached';m.bindMatrix.identity();m.bindMatrixInverse.identity();m.castShadow=false;m.receiveShadow=true;if(/^fur/.test(m.name))fur.push(m);}
+  C.root.traverse(o=>{if(o.isMesh||o.isPoints)o.castShadow=false;if(o.isMesh)for(const m of Array.isArray(o.material)?o.material:[o.material])if(m.onBeforeCompile!==THREE.Material.prototype.onBeforeCompile)m.clone=hbClone;});
+  // the rest: the kit's bones' rest turns are the identity, as are the driver's; read both from their rest, as hbAttach does
+  const map=HC_MAP.map(([j,n])=>[j,by[n]]),keep=map.map(([j])=>B[j].quaternion.clone());map.forEach(([j])=>B[j].quaternion.identity());
+  const s0=map.map(([j])=>hbRel(B[j],rig.root,new THREE.Quaternion()).invert()),t0=map.map(([,b])=>hbRel(b,W,new THREE.Quaternion()));
+  map.forEach(([j],i)=>B[j].quaternion.copy(keep[i]));
+  // the hips' travel: the driver's hips from their rest (the trot's bob, the crouch, the ragdoll's fall), in the driver's root,
+  // into the kit's rig at f·C.S
+  rig.hc={W,C,map,s0,t0,fur,small,hide:meshes.filter(m=>!fur.includes(m)),hip0:new THREE.Vector3(B.hips.position.x,wolfHipY(rig.k),B.hips.position.z),pos0:by.spine0.position.clone(),k:1/(f*C.S),L:-1,drv:rig.mesh.material,em:-1};
+  HC_BODY.ms+=performance.now()-tA;HC_BODY.n++;}
+function hcPose(rig){const H=rig.hc,B=rig.B,map=H.map;
+  for(let i=0;i<map.length;i++){const [j,b]=map[i];
+    hbRel(B[j],rig.root,_hbq).multiply(H.s0[i]).multiply(H.t0[i]);
+    if(b.parent&&b.parent.isBone){hbRel(b.parent,H.W,_hbq2).invert();b.quaternion.copy(_hbq2.multiply(_hbq));}else b.quaternion.copy(_hbq);}
+  H.C.byName.spine0.position.copy(_hbv.copy(B.hips.position).sub(H.hip0).multiplyScalar(H.k)).add(H.pos0);
+  // the wind-up's red and the parry's gold on the driver's material, on the kit's (its eyes and claws keep their own)
+  const m=rig.mesh.material;let em=m&&m.emissive?m.emissive.getHex():0;if(m!==H.drv&&m&&m.color&&m.color.getHex()===0xffdd44)em=0xb08010;
+  if(em!==H.em){H.em=em;for(const o of [...H.hide,...H.fur])for(const x of Array.isArray(o.material)?o.material:[o.material])if(x.emissive)x.emissive.setHex(em);}}
+function hcLevel(rig,L){const H=rig.hc;if(H.L===L)return;H.L=L;H.W.visible=L<2;rig.mesh.visible=L===2;for(const m of H.fur)m.visible=L===0;for(const m of H.small)m.visible=L===0;}
+function hcDrop(rig){const H=rig.hc;if(!H)return;if(H.W.parent)H.W.parent.remove(H.W);
+  H.C.root.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material)for(const m of Array.isArray(o.material)?o.material:[o.material])m.dispose();});
+  if(H.C.skel.boneTexture)H.C.skel.dispose();rig.hc=null;rig.mesh.visible=true;}
+// each frame, after the driver is posed (tickCreatures' end): the level by distance, the pose copied, and at most one body built
+function hcTick(now){let best=null,bd=HC_BODY.build;
+  const busy=now-HBODY.last<HBODY.gap||(typeof JOBS!=='undefined'&&JOBS.length&&!(typeof isInterior==='function'&&isInterior()));
+  for(const rig of WOLF_RIGS){if(!rig.hc&&(rig.hcFail||!hcOk(rig)))continue;HC_RIGS.add(rig);}
+  for(const rig of HC_RIGS){const g=rig.root.parent;
+    if(!g||!g.parent){hcDrop(rig);HC_RIGS.delete(rig);continue;}
+    if(g.parent!==scene||!g.visible)continue;
+    const d=Math.hypot(CAM.position.x-g.position.x,CAM.position.z-g.position.z);
+    if(!rig.hc){if(!busy&&!rig.hcFail&&d<bd){bd=d;best=rig;}continue;}
+    const L=rig.hc.L,a=HC_BODY.near+(L>0?-1:1),b=HC_BODY.mid+(L>1?-1:1);hcLevel(rig,d<a?0:d<b?1:2);
+    if(rig.hc.L<2)hcPose(rig);}
+  if(best){hcAttach(best);HBODY.last=now;if(best.hc){const g=best.root.parent,d=Math.hypot(CAM.position.x-g.position.x,CAM.position.z-g.position.z);hcLevel(best,d<HC_BODY.near?0:d<HC_BODY.mid?1:2);if(best.hc.L<2)hcPose(best);}}}
+// the shadow pass draws the driver (hidden for the eye while the kit's body shows), as the townsfolk's does (32-people.js)
+{const _r=REN.shadowMap.render;
+  REN.shadowMap.render=function(){const hv=[];for(const rig of HC_RIGS)if(rig.hc&&!rig.mesh.visible){rig.mesh.visible=true;hv.push(rig);}
+    try{return _r.apply(this,arguments);}finally{for(const rig of hv)rig.mesh.visible=false;}};}
