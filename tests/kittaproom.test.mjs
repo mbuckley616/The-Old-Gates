@@ -64,7 +64,7 @@ check(`three rooms with doors hung on the upper floor, ${r.doors.map(d => d.h).j
 check(`a bed to let in each room, behind its door: rooms ${r.beds.map(b => b.room).join(', ')}`, r.beds.length === 3 && r.beds.every((b, k) => b.room === k && b.owner === 'inn' && Math.abs(b.y - r.F1) < .01 && b.behind && b.inRoom), r.beds);
 check(`the innkeeper stands behind the bar at ${r.keeper && [r.keeper.x, r.keeper.z].join(', ')}, ${r.keeper && r.keeper.reach} m from you across it (in reach under 2.2)`, !!r.keeper && r.keeper.behind && r.keeper.clearFront && r.keeper.reach < 2.2, r.keeper);
 check(`the cellar's hatch is in the flags at ${r.hatch && [r.hatch.x, r.hatch.z].join(', ')}, clear to stand at`, !!r.hatch && r.hatch.clear, r.hatch);
-// F4 (Session 1198): the budget was the room and the old innkeeper, whose body was one draw call; on the new look the innkeeper wears
+// F4 (Session 1200): the budget was the room and the old innkeeper, whose body was one draw call; on the new look the innkeeper wears
 // the builder's body (F4), counted on its own. The room keeps its number: 60 less the old body's one call.
 check(`the room is lit (${r.lights} lights) and draws ${r.draws} meshes (59 or fewer), ${r.tris.toLocaleString()} triangles with the innkeeper`, r.lights >= 6 && r.draws <= 59, { lights: r.lights, kinds: r.kinds, draws: r.draws, tris: r.tris });
 check(`the innkeeper is a body of ${r.kDraws} draw calls${r.kBuilder ? ', the builder\'s' : ''}`, r.kDraws >= 1, { kDraws: r.kDraws, kBuilder: r.kBuilder });
