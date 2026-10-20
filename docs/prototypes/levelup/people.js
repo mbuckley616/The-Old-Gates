@@ -163,6 +163,23 @@ vec3 settAA(float x, float w, vec3 g){ w = min(w, .02); return .25 * (settC(x - 
 vec3 tartanAt(vec3 p, vec3 g){ vec2 d = p.xz - tartO; float u = atan(d.x, -d.y) * tartR, v = p.y; vec3 cw = settAA(u, fwidth(u), g), cf = settAA(v, fwidth(v), g);
   vec2 q = vec2(u, v) / .0015; float tw = step(mod(floor(q.x) + floor(q.y), 4.), 1.5), k = clamp(max(fwidth(q.x), fwidth(q.y)) - .5, 0., 1.);
   return mix(mix(cf, cw, tw), .5 * (cw + cf), k); }`;
+// a striped robe (Session 1205, L1; OG-110's Aurennais man "in a striped robe", OG-109's flowing robes): stripes in the warp only, down
+// the length of the cloth, repeating every 5.6 cm: 2.8 of the ground (the robe's own colour), 1.6 of the stripe, 0.4 of the ground, 0.4
+// of a fine line (or the stripe again), 0.4 of the ground. On the body they are laid round the torso's axis by angle, so they run down
+// the chest, the back and the skirt and fan out with the skirt's flare; round it fall a whole 17 repeats, so they close without a seam.
+// Past |x| .22, where the robe's sleeve begins, they are laid round the arm's own axis (the shoulder to the elbow, or the elbow to the
+// wrist, whichever is nearer, at rest; the angle counted from the front of each, so the stripes meet at the elbow), 5 repeats
+// round, so they run down the sleeve to the cuff. A stripe is averaged over the pixel's width, as the tartan's are; the width is read
+// off whichever of two angles has no seam there, so the closing line does not blur
+const STRIPE_REP = .056, STRIPE_R = 17 * STRIPE_REP / (2 * Math.PI), STRIPE_RA = 5 * STRIPE_REP / (2 * Math.PI);
+const STRIPES = `vec3 stripeC(float u, vec3 g){ float f = mod(u, ${STRIPE_REP}) * 100.; return f < 2.8 ? g : f < 4.4 ? strK : f < 4.8 ? g : f < 5.2 ? strL : g; }
+vec3 stripeAA(float u, float w, vec3 g){ w = min(w, .02); return .25 * (stripeC(u - .375 * w, g) + stripeC(u - .125 * w, g) + stripeC(u + .125 * w, g) + stripeC(u + .375 * w, g)); }
+vec3 stripeAt(vec3 p, vec3 g){ vec2 d = p.xz - strO; float ub = atan(d.x, -d.y) * ${STRIPE_R.toFixed(5)}, wb = min(fwidth(ub), fwidth(atan(-d.x, d.y) * ${STRIPE_R.toFixed(5)}));
+  vec3 q = vec3(abs(p.x), p.y, p.z), au = strE - strS, af = strW - strE; float tu = clamp(dot(q - strS, au) / dot(au, au), 0., 1.), tf = clamp(dot(q - strE, af) / dot(af, af), 0., 1.);
+  bool up = length(q - strS - au * tu) < length(q - strE - af * tf); vec3 a = normalize(up ? au : af), r = q - (up ? strS : strE); r -= a * dot(r, a);
+  vec3 e2 = normalize(vec3(0., 0., 1.) - a * a.z), e1 = cross(a, e2);
+  float ua = atan(dot(r, e1), dot(r, e2)) * ${STRIPE_RA.toFixed(5)}, wa = min(fwidth(ua), fwidth(atan(-dot(r, e1), -dot(r, e2)) * ${STRIPE_RA.toFixed(5)}));
+  return abs(p.x) < .22 || !strArm ? stripeAA(ub, wb, g) : stripeAA(ua, wa, g); }`;
 function clothMat(color, kind = 'wool', o = {}) {
   TEXW[kind] = TEXW[kind] || weave(128, kind);
   const m = new THREE.MeshStandardMaterial({ color, roughness: o.rough ?? (kind === 'leather' ? .62 : .95), metalness: 0, side: o.side ?? THREE.FrontSide });
@@ -170,10 +187,12 @@ function clothMat(color, kind = 'wool', o = {}) {
   m.userData.cut = o.cut; m.userData.hole = o.hole;
   m.onBeforeCompile = s => { s.uniforms.tW = { value: TEXW[kind] }; if (o.band) s.uniforms.bandC = { value: o.band };
     s.vertexShader = 'attribute vec3 aBase; varying vec3 vB; varying vec3 vRP; varying vec3 vRN;\n' + s.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vRP = position; vRN = normal; vB = aBase;');
-    s.fragmentShader = 'uniform sampler2D tW; varying vec3 vB;\n' + TRI + s.fragmentShader.replace('vec4 diffuseColor = vec4( diffuse, opacity );', CUT(o.cut) + (o.hole ? `if (${o.hole}) discard;` : '') + `vec4 diffuseColor = vec4( diffuse * triTex(tW, ${(o.scale ?? (kind === 'leather' ? 9 : 22)).toFixed(1)})${o.inner ? ` * (gl_FrontFacing ? 1. : ${o.inner.toFixed(2)})` : ''}, opacity );` + (o.shade ? ` diffuseColor.rgb *= ${o.shade};` : '') + (o.tartan ? ' diffuseColor.rgb *= tartanAt(vT, diffuse) / max(diffuse, vec3(.004));' : '') + (o.band ? BAND : ''));
+    s.fragmentShader = 'uniform sampler2D tW; varying vec3 vB;\n' + TRI + s.fragmentShader.replace('vec4 diffuseColor = vec4( diffuse, opacity );', CUT(o.cut) + (o.hole ? `if (${o.hole}) discard;` : '') + `vec4 diffuseColor = vec4( diffuse * triTex(tW, ${(o.scale ?? (kind === 'leather' ? 9 : 22)).toFixed(1)})${o.inner ? ` * (gl_FrontFacing ? 1. : ${o.inner.toFixed(2)})` : ''}, opacity );` + (o.shade ? ` diffuseColor.rgb *= ${o.shade};` : '') + (o.tartan ? ' diffuseColor.rgb *= tartanAt(vT, diffuse) / max(diffuse, vec3(.004));' : '') + (o.stripe ? ' diffuseColor.rgb *= stripeAt(vB, diffuse) / max(diffuse, vec3(.004));' : '') + (o.band ? BAND : ''));
     if (o.tartan) { const t = o.tartan; s.uniforms.tartK = { value: t.dark }; s.uniforms.tartL = { value: t.line }; s.uniforms.tartO = { value: new THREE.Vector2(...t.o) }; s.uniforms.tartR = { value: t.r };
       s.vertexShader = 'attribute vec3 aTart; varying vec3 vT;\n' + s.vertexShader.replace('vB = aBase;', 'vB = aBase; vT = aTart;');
       s.fragmentShader = 'uniform vec3 tartK; uniform vec3 tartL; uniform vec2 tartO; uniform float tartR; varying vec3 vT;\n' + TARTAN + '\n' + s.fragmentShader; }
+    if (o.stripe) { const t = o.stripe; s.uniforms.strK = { value: t.k }; s.uniforms.strL = { value: t.l }; s.uniforms.strO = { value: new THREE.Vector2(...t.o) }; s.uniforms.strS = { value: t.s }; s.uniforms.strE = { value: t.e }; s.uniforms.strW = { value: t.w };
+      s.fragmentShader = `const bool strArm = ${!!t.arm};\n` + 'uniform vec3 strK; uniform vec3 strL; uniform vec2 strO; uniform vec3 strS; uniform vec3 strE; uniform vec3 strW;\n' + STRIPES + '\n' + s.fragmentShader; }
     if (o.band) s.fragmentShader = 'uniform vec3 bandC;\n' + s.fragmentShader;
     // the Mark's woven bands (Session 1156), laid after everything else on the cloth
     if (o.loz) { const lut = o.loz.at.some(a => a.lut); if (lut) s.uniforms.lozHemT = { value: Array.from(lozHemTable()) };
@@ -186,7 +205,7 @@ function clothMat(color, kind = 'wool', o = {}) {
     if (o.wind && o.wind.tie) { s.uniforms.tieC = { value: o.wind.tie }; s.fragmentShader = 'uniform vec3 tieC;\n' + s.fragmentShader.replace(/(vec4 diffuseColor = vec4\( diffuse \* [^;]*;)/, '$1 ' + TIE(o.wind)); }
     if (o.fold || o.wind) s.fragmentShader = (o.wind ? WRAP_WIND(o.wind) : FOLD(o.fold)) + s.fragmentShader.replace(/(vec4 diffuseColor = vec4\( diffuse \* [^;]*;)/, 'float fH = foldH(vB); $1 diffuseColor.rgb *= .78 + .22 * fH;')
       .replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\n normal = foldNormal(-vViewPosition, normal, vec2(dFdx(fH), dFdy(fH)) * ' + ((o.fold || o.wind).depth ?? 1.1).toFixed(2) + ', faceDirection);'); };
-  m.customProgramCacheKey = () => 'cloth' + kind + JSON.stringify(o.cut || 0) + (o.scale || 0) + (o.hole || '') + (o.shade || '') + (o.inner || '') + (o.band ? 'band' : '') + (o.tartan ? 'tartan' : '') + (o.print ? 'print' : '') + (o.dots ? 'dots' : '') + (o.loz ? JSON.stringify(o.loz.at) : '') + JSON.stringify(o.fold || 0) + JSON.stringify(o.wind ? { ...o.wind, tie: !!o.wind.tie } : 0);
+  m.customProgramCacheKey = () => 'cloth' + kind + JSON.stringify(o.cut || 0) + (o.scale || 0) + (o.hole || '') + (o.shade || '') + (o.inner || '') + (o.band ? 'band' : '') + (o.tartan ? 'tartan' : '') + (o.stripe ? 'stripe' + !!o.stripe.arm : '') + (o.print ? 'print' : '') + (o.dots ? 'dots' : '') + (o.loz ? JSON.stringify(o.loz.at) : '') + JSON.stringify(o.fold || 0) + JSON.stringify(o.wind ? { ...o.wind, tie: !!o.wind.tie } : 0);
   return m;
 }
 // the headscarf's print (Session 1029): a sprig of four round petals on a 2.4 cm grid, each row offset by half, read three ways off the
@@ -672,6 +691,13 @@ function buildCoatHoodDown(G, body, byName, meshes) {
 }
 // the cloak's tartan, if it has one: the dark stripe in D.tartan, the overcheck in D.tartanLine (or the dark again), round the axis at o
 const tartanOf = (D, o, r) => D.tartan ? { tartan: { dark: sRGB(...D.tartan), line: sRGB(...(D.tartanLine || D.tartan)), o, r } } : {};
+// a robe's stripes, if it has them (Session 1205): the stripe in D.robeStripe, the fine line in D.robeStripeLine (or the stripe again), round
+// the rest torso's axis (the middle of the tunic's body points, |x| under .2) and the rest arm's, the shoulder's joint to the elbow's to the wrist's
+let STRIPE_AX = null;
+function stripeOf(D, arm = false) { if (!D.robe || !D.robeStripe) return {};
+  if (!STRIPE_AX) { const R0 = PACK.rest; let x = 0, z = 0, n = 0; for (const v of PACK.R.tunic) if (Math.abs(R0[v * 3]) < .2) { x += R0[v * 3]; z += R0[v * 3 + 2]; n++; }
+    const [sh, el, wr] = ['upperarm01.L', 'lowerarm01.L', 'wrist.L'].map(restJoint); for (const v of [sh, el, wr]) v.x = Math.abs(v.x); STRIPE_AX = { o: [x / n, z / n], s: sh, e: el, w: wr }; }
+  return { stripe: { k: sRGB(...D.robeStripe), l: sRGB(...(D.robeStripeLine || D.robeStripe)), ...STRIPE_AX, arm } }; }
 function buildCloak(G, body, byName, rnd) {
   const D = G.dress, out = [], PP = posedBody(body), S = surfGrid(PP, PACK.G['body'], (x, y) => y > -.75);
   const neck = new THREE.Vector3(); byName['neck01'].getWorldPosition(neck); const neckY = neck.y;
@@ -2782,7 +2808,7 @@ export function makePerson(G, o = {}) {
   const tunicPush = (x, y) => .013 + sleeve(x) + (Math.abs(x) < .2 ? .022 * Math.max(0, Math.min(1, (.46 - y) / .2)) * (1 - .8 * waistIn(D, y)) : 0);
   // the winter coat's two shells (Session 1147), defined here since the belt rides over them: see the coat, below
   const coat = coatOn(D), coatPush = (x, y) => tunicPush(x, y) + .014, cHem = coat ? coatHem(D) : 0, coatSkirtPush = (x, y) => .028 + .008 * Math.max(0, Math.min(1, (y + .05) / .15)) + .012 * Math.max(0, Math.min(1, (.14 - y) / .3)) + .025 * Math.max(0, Math.min(1, (-.1 - y) / .45)) ** 1.2;
-  if (D.tunic) push('tunic', PACK.R.tunic, clothMat(sRGB(...D.tunic), 'wool', { cut: [D.robe ? .145 : D.skirt ? .12 : -.02, .612, .4, .002], ...(D.robe ? { side: THREE.DoubleSide, inner: .55 } : {}), ...(D.dots ? { dots: sRGB(...D.dots), dotsPowder: D.dotsStyle !== 'drift' } : {}), ...lozOf(LOZ_NECK) }), tunicPush);
+  if (D.tunic) push('tunic', PACK.R.tunic, clothMat(sRGB(...D.tunic), 'wool', { cut: [D.robe ? .145 : D.skirt ? .12 : -.02, .612, .4, .002], ...(D.robe ? { side: THREE.DoubleSide, inner: .55 } : {}), ...(D.dots ? { dots: sRGB(...D.dots), dotsPowder: D.dotsStyle !== 'drift' } : {}), ...lozOf(LOZ_NECK), ...stripeOf(D, true) }), tunicPush);
   // a laced bodice over the chemise (Session 888; OG-110's green laced gown, OG-109's Gatelands bodices): 8 mm over the
   // tunic, ending under the belt (rest .14), open down the front between the eyelets, so the chemise shows in the gap; the lacing is built after the pose
   if (D.bodice) push('bodice', PACK.R.bodice, clothMat(sRGB(...D.bodice), 'wool', { cut: [.14, .62, .19, .002], hole: '(vB.z > .03 && abs(vB.x) < .0085 && vB.y > .2 && vB.y < .5) || (vB.y > .485 && (abs(vB.x) < .068 || abs(vB.x) > .148))', side: THREE.DoubleSide, inner: .5 }), (x, y) => .021 + (Math.abs(x) < .2 ? .022 * Math.max(0, Math.min(1, (.46 - y) / .2)) * (1 - .8 * waistIn(D, y)) : 0));
@@ -2790,7 +2816,7 @@ export function makePerson(G, o = {}) {
   // and ending under the belt, in wool or leather; sleeveless, its armholes curving in to 16 cm from the middle at the shoulder (the
   // bodice's straps stop at 14.8), a V at the neck down to the breastbone, closed down the front by buttons built after the pose
   if (waistcoatOn(D)) push('waistcoat', PACK.R.bodice, clothMat(sRGB(...D.waistcoat), D.waistcoatLeather ? 'leather' : 'wool', { cut: [.14, .62, .19, .002], hole: WAISTCOAT_HOLE, shade: WAISTCOAT_EDGE, side: THREE.DoubleSide, inner: .5 }), (x, y) => .021 + (Math.abs(x) < .2 ? .022 * Math.max(0, Math.min(1, (.46 - y) / .2)) * (1 - .8 * waistIn(D, y)) : 0));
-  if (D.skirt) push('skirt', skirtR(D), clothMat(sRGB(...(D.skirtColor || D.tunic)), 'wool', { side: THREE.DoubleSide, cut: [SKIRT_CUT[D.skirt] ?? -.2, .17, 9, .01], ...lozOf(lozHem(D.skirt)), ...(D.dots && (!D.skirtColor || hex(D.skirtColor) === hex(D.tunic)) ? { dots: sRGB(...D.dots), dotsPowder: D.dotsStyle !== 'drift' } : {}) }), (x, y) => .012 + .012 * Math.max(0, Math.min(1, (.14 - y) / .3)) + (D.robe ? .035 * Math.max(0, Math.min(1, (-.35 - y) / .45)) ** 1.2 : 0));
+  if (D.skirt) push('skirt', skirtR(D), clothMat(sRGB(...(D.skirtColor || D.tunic)), 'wool', { side: THREE.DoubleSide, cut: [SKIRT_CUT[D.skirt] ?? -.2, .17, 9, .01], ...lozOf(lozHem(D.skirt)), ...(D.dots && (!D.skirtColor || hex(D.skirtColor) === hex(D.tunic)) ? { dots: sRGB(...D.dots), dotsPowder: D.dotsStyle !== 'drift' } : {}), ...stripeOf(D) }), (x, y) => .012 + .012 * Math.max(0, Math.min(1, (.14 - y) / .3)) + (D.robe ? .035 * Math.max(0, Math.min(1, (-.35 - y) / .45)) ** 1.2 : 0));
   // the mail hauberk (Session 897; OG-019's Iron tier, mail to the knee under a belt): its body 9 mm over the tunic, its sleeves
   // to the elbow (cut at rest |x| .3), its neck at the tunic's; its skirt off the skirt shell, 1.2 cm over a skirt's, from under the
   // belt to above the knee. Both are shells skinned as the body is, so no arm or leg comes through them; the belt rides 8 mm out on the mail
@@ -3018,7 +3044,7 @@ export function markGenome(rnd, g, o = {}) {
 const hex = c => '#' + c.map(v => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, '0')).join('');
 const unhex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
 const r3 = v => Math.round(v * 1000) / 1000, round = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, r3(v)]));
-export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'sash', 'sashBorder', 'wrap', 'wrapBorder', 'earrings', 'necklace', 'beltCoins', 'sashBelt', 'sandals', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'legWraps', 'scarfPrint', 'basket', 'basketCloth', 'amulet', 'charms', 'dots', 'shoulderWrap', 'eyepatch', 'staff', 'chair', 'waistcoat', 'tartan', 'tartanLine', 'coat', 'coatFur', 'bands', 'bandsMotif'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, sashSide: 'L', sashPrint: true, sashKnot: true, turban: false, scarf: false, wrapTail: null, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', scales: false, spearHead: null, crossbowMake: null, amuletSide: 'L', shoulderWrapSide: 'L', eyepatchSide: 'L', staffMake: null, dotsStyle: 'powder', waistcoatLeather: false, coatLen: .75, coatHood: null, tier: null };
+export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'sash', 'sashBorder', 'wrap', 'wrapBorder', 'earrings', 'necklace', 'beltCoins', 'sashBelt', 'sandals', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'legWraps', 'scarfPrint', 'basket', 'basketCloth', 'amulet', 'charms', 'dots', 'shoulderWrap', 'eyepatch', 'staff', 'chair', 'waistcoat', 'tartan', 'tartanLine', 'coat', 'coatFur', 'bands', 'bandsMotif', 'robeStripe', 'robeStripeLine'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, sashSide: 'L', sashPrint: true, sashKnot: true, turban: false, scarf: false, wrapTail: null, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', scales: false, spearHead: null, crossbowMake: null, amuletSide: 'L', shoulderWrapSide: 'L', eyepatchSide: 'L', staffMake: null, dotsStyle: 'powder', waistcoatLeather: false, coatLen: .75, coatHood: null, tier: null };
 export function toSaved(G) {
   const D = G.dress || {}, dress = {}; for (const k of GARMENTS) if (D[k]) dress[k] = hex(D[k]); dress.skirt = D.skirt || null; for (const [k, d] of Object.entries(DRESS_FLAGS)) if (D[k] != null && (typeof D[k] === 'number' ? r3(D[k]) : D[k]) !== d) dress[k] = typeof D[k] === 'number' ? r3(D[k]) : D[k];
   const style = G.hair?.style ?? ((G.hairLen ?? .3) < .45 ? 'short' : 'loose');
@@ -3053,7 +3079,8 @@ export const PEOPLES = {
     body: { m: { metres: [1.74, 1.86], muscle: [.5, .66], weight: [.32, .46] }, f: { metres: [1.62, 1.74], muscle: [.42, .56], weight: [.34, .48] } },
     skin: [[.74, .56, .42], [.64, .46, .33], [.52, .36, .25], [.4, .27, .19], [.31, .21, .15]], hair: [[.1, .07, .06], [.16, .11, .08], [.22, .15, .1]], eyes: [[.3, .2, .12], [.22, .15, .1], [.35, .28, .16]],
     styles: { m: { short: 7, tail: 1 }, f: { braids: 3, braid: 2, bun: 3, loose: 1 } },
-    wool: [[.86, .81, .71], [.9, .86, .78], [.25, .35, .55], [.74, .55, .25], [.8, .78, .74]], cloak: .1, brooch: [.7, .55, .25], apron: [.1, 0], mantle: 0, sash: .45, wrap: [.45, .3], turban: [.2, .85], wrapTail: [.55, .25], earrings: [.6, .25], necklace: [.35, .12], beltCoins: .25, sashBelt: .35, sandals: .7, brow: { m: { thick: [.6, .85], arch: [.4, .6] }, f: { thick: [.45, .65], arch: [.6, .85] } } },
+    wool: [[.86, .81, .71], [.9, .86, .78], [.25, .35, .55], [.74, .55, .25], [.8, .78, .74]], cloak: .1, brooch: [.7, .55, .25], apron: [.1, 0], mantle: 0, sash: .45, wrap: [.45, .3], turban: [.2, .85], wrapTail: [.55, .25], earrings: [.6, .25], necklace: [.35, .12], beltCoins: .25, sashBelt: .35, sandals: .7, robe: .2, striped: .75,
+    robes: [[[.88, .84, .74], [.2, .26, .5], [.55, .18, .12]], [[.9, .86, .78], [.55, .18, .12], [.74, .52, .16]], [[.25, .35, .55], [.88, .84, .74], null], [[.74, .55, .25], [.36, .24, .15], [.12, .42, .42]], [[.12, .42, .42], [.88, .84, .74], [.74, .52, .16]]], brow: { m: { thick: [.6, .85], arch: [.4, .6] }, f: { thick: [.45, .65], arch: [.6, .85] } } },
   oldblood: { name: 'the Old Blood', race: { caucasian: [.75, .95], african: [0, .05], asian: [.05, .25] },
     body: { m: { metres: [1.56, 1.66], muscle: [.4, .54], weight: [.28, .4] }, f: { metres: [1.46, 1.56], muscle: [.36, .5], weight: [.3, .42] } },
     skin: [[.82, .78, .76], [.78, .74, .72], [.85, .81, .79]], hair: [[.05, .05, .06], [.08, .07, .08], [.11, .1, .11]], eyes: [[.66, .68, .7], [.58, .6, .63]],
@@ -3155,6 +3182,12 @@ export function peopleGenome(rnd, people, g, o = {}) {
   // one of three (a moss ground in dark green with a madder overcheck, a madder ground in dark blue, a brown ground in near-black with
   // an ochre one), the cloak taking the sett's ground; never on a fur-lined cloak; from a stream of its own, so every other roll of a seed is as it was
   if (P.tartan && D.cloak && !D.cloakFur) { const rt = seeded(String(o.seed ?? 'person') + '|tartan'); if (rt() < P.tartan) { const [ground, dark, line] = P.setts[Math.floor(rt() * P.setts.length)]; D.cloak = ground; D.tartan = dark; if (line) D.tartanLine = line; } }
+  // the Aurennais men's robes (Session 1205; OG-110's man "in a striped robe", OG-109's flowing robes in linen and cotton): one man in five
+  // wears a robe in place of the tunic and trousers, three in four of those striped (undyed with indigo and a madder line, undyed with
+  // madder and saffron, blue with cream, saffron with umber and a teal line, teal with cream and saffron), the rest plain in the ground's
+  // colour; nothing that rides on the belt the robe's cord replaces (the coins); from a stream of its own, so every other roll of a seed is as it was
+  if (P.robe && sx === 'm' && !D.mail && !D.tabard) { const rr = seeded(String(o.seed ?? 'person') + '|robe'); if (rr() < P.robe) { const [ground, stripe, line] = P.robes[Math.floor(rr() * P.robes.length)];
+    D.robe = ground; D.beltCoins = null; if (rr() < P.striped) { D.robeStripe = stripe; if (line) D.robeStripeLine = line; } } }
   if (o.child) { const rc = seeded(String(o.seed ?? 'person') + '|child'), ta = rc(); G.age = .1875 + .09 * ta; G.muscle = .3 + .15 * rc(); G.weight = .3 + .15 * rc(); G.beard = 0; G.scar = null;
     for (const k of ['helm', 'mail', 'scales', 'tabard', 'tabardTrim', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'eyepatch', 'staff', 'staffMake', 'tier']) D[k] = DRESS_FLAGS[k] ?? null;
     if (G.marks != null) G.marks = Math.min(G.marks, .06 * rc()); const M = P.body[sx].metres, f = .8 + .12 * ta + .03 * (rc() - .5); G.height = heightFor(G, (M[0] + M[1]) / 2 * f);
