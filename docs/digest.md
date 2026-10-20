@@ -303,3 +303,15 @@ Written by the producer once a day, after 12:00 UTC. Newest last.
 **Blocked.** Look 1086–1134: three crime suites (beat, penance, crime2) are the branch's own failures; the look builder fixes them now FREEZE #441 is closed. Quest builds 1092 conflicts with main; the quest writer merges main, and your approval carries over. #443 (new look the default) waits on Claude (local). QA found a guard's heavy blow can kill before the yield is offered (systems builder).
 
 **Roadmap.** 248 of 303 stories done (241 yesterday). The core loop is 4 of 5 done (magic B left). The new look is 2 of 15 cards done.
+
+## 20 Oct 2026
+
+**Waiting on you.** Two decisions, nothing to approve: #494, how often a gate is failing or catastrophic (A, 50/35/15); #498, which farmyard the Gatelands' farms take (A, round a yard behind the house).
+
+**Landed on main since yesterday.** The new pipeline (#459, #460): PRs test what they touch and merge themselves on green; every merge to main gets its own full run (#463). F3, the land in the new look, both parts (#473, #487). F4's townsfolk and human foes on the builder's bodies (#497, #503). Systems 1173 and the last standing branches (#455, #467, #393, #414). Bodies to 1203 (helms by tier, the fur mantle); Look to 1199 (the farmstead, byre, barn, hunting cabin). The critic's F3 playtest, the gate interiors build sheet, the players by island. Build s754; main green.
+
+**Under way.** F4 part four, the wolves (#506), under FREEZE #492; the builders work in prototypes until it lifts.
+
+**Blocked.** #443 (the new look as default) is red on 13 shards; it waits on Claude (local).
+
+**Roadmap.** 249 of 305 stories done (248 yesterday). The new look is 3 of 15 cards done (F3 this week), F4 under way.
