@@ -799,5 +799,257 @@
   "errs": [
    "SyntaxError: Failed to execute 'json' on 'Response': Unexpected end of JSON input\n    at http://localhost:44263/people.js:10:78\n    at async Promise.all (index 0)\n    at async loadPack (http://localhost:44263/people.js:10:21)"
   ]
+ },
+ "farmstead-all": {
+  "secs": 9,
+  "puffs": 1131,
+  "farms": [
+   {
+    "kind": "yard",
+    "tris": 8527,
+    "calls": 20,
+    "size": {
+     "w": 23.8,
+     "d": 21.97,
+     "eave": 5.6,
+     "ridge": 8.2
+    }
+   },
+   {
+    "kind": "line",
+    "tris": 8439,
+    "calls": 20,
+    "size": {
+     "w": 34.5,
+     "d": 15.57,
+     "eave": 5.6,
+     "ridge": 8.2
+    }
+   },
+   {
+    "kind": "range",
+    "tris": 8483,
+    "calls": 20,
+    "size": {
+     "w": 24,
+     "d": 22.77,
+     "eave": 5.6,
+     "ridge": 8.2
+    }
+   }
+  ],
+  "plans": {
+   "Farmstead round a yard": {
+    "tris": 8527,
+    "calls": 20,
+    "w": 23.8,
+    "d": 21.97,
+    "eave": 5.6,
+    "ridge": 8.2
+   },
+   "Farmstead in a line": {
+    "tris": 8439,
+    "calls": 20,
+    "w": 34.5,
+    "d": 15.57,
+    "eave": 5.6,
+    "ridge": 8.2
+   },
+   "Farmstead, house and range": {
+    "tris": 8483,
+    "calls": 20,
+    "w": 24,
+    "d": 22.77,
+    "eave": 5.6,
+    "ridge": 8.2
+   }
+  },
+  "view": "farmstead",
+  "mix": "a",
+  "heights": [
+   1.91,
+   1.51,
+   1.89,
+   1.58,
+   1.76,
+   1.55
+  ],
+  "people": 6,
+  "errs": []
+ },
+ "farmstead-yard": {
+  "secs": 7,
+  "puffs": 1131,
+  "farms": [
+   {
+    "kind": "yard",
+    "tris": 8527,
+    "calls": 20,
+    "size": {
+     "w": 23.8,
+     "d": 21.97,
+     "eave": 5.6,
+     "ridge": 8.2
+    }
+   }
+  ],
+  "plans": {
+   "Farmstead round a yard": {
+    "tris": 8527,
+    "calls": 20,
+    "w": 23.8,
+    "d": 21.97,
+    "eave": 5.6,
+    "ridge": 8.2
+   }
+  },
+  "view": "farmstead",
+  "mix": "a",
+  "heights": [
+   1.91,
+   1.51
+  ],
+  "people": 2,
+  "errs": []
+ },
+ "farmstead-yard-in": {
+  "secs": 6,
+  "puffs": 1131,
+  "farms": [
+   {
+    "kind": "yard",
+    "tris": 8527,
+    "calls": 20,
+    "size": {
+     "w": 23.8,
+     "d": 21.97,
+     "eave": 5.6,
+     "ridge": 8.2
+    }
+   }
+  ],
+  "plans": {
+   "Farmstead round a yard": {
+    "tris": 8527,
+    "calls": 20,
+    "w": 23.8,
+    "d": 21.97,
+    "eave": 5.6,
+    "ridge": 8.2
+   }
+  },
+  "view": "farmstead",
+  "mix": "a",
+  "heights": [
+   1.91,
+   1.51
+  ],
+  "people": 2,
+  "errs": []
+ },
+ "farmstead-yard-high": {
+  "secs": 6,
+  "puffs": 1131,
+  "farms": [
+   {
+    "kind": "yard",
+    "tris": 8527,
+    "calls": 20,
+    "size": {
+     "w": 23.8,
+     "d": 21.97,
+     "eave": 5.6,
+     "ridge": 8.2
+    }
+   }
+  ],
+  "plans": {
+   "Farmstead round a yard": {
+    "tris": 8527,
+    "calls": 20,
+    "w": 23.8,
+    "d": 21.97,
+    "eave": 5.6,
+    "ridge": 8.2
+   }
+  },
+  "view": "farmstead",
+  "mix": "a",
+  "heights": [
+   1.91,
+   1.51
+  ],
+  "people": 2,
+  "errs": []
+ },
+ "farmstead-line": {
+  "secs": 7,
+  "puffs": 1131,
+  "farms": [
+   {
+    "kind": "line",
+    "tris": 8439,
+    "calls": 20,
+    "size": {
+     "w": 34.5,
+     "d": 15.57,
+     "eave": 5.6,
+     "ridge": 8.2
+    }
+   }
+  ],
+  "plans": {
+   "Farmstead in a line": {
+    "tris": 8439,
+    "calls": 20,
+    "w": 34.5,
+    "d": 15.57,
+    "eave": 5.6,
+    "ridge": 8.2
+   }
+  },
+  "view": "farmstead",
+  "mix": "a",
+  "heights": [
+   1.91,
+   1.51
+  ],
+  "people": 2,
+  "errs": []
+ },
+ "farmstead-range": {
+  "secs": 7,
+  "puffs": 1131,
+  "farms": [
+   {
+    "kind": "range",
+    "tris": 8483,
+    "calls": 20,
+    "size": {
+     "w": 24,
+     "d": 22.77,
+     "eave": 5.6,
+     "ridge": 8.2
+    }
+   }
+  ],
+  "plans": {
+   "Farmstead, house and range": {
+    "tris": 8483,
+    "calls": 20,
+    "w": 24,
+    "d": 22.77,
+    "eave": 5.6,
+    "ridge": 8.2
+   }
+  },
+  "view": "farmstead",
+  "mix": "a",
+  "heights": [
+   1.91,
+   1.51
+  ],
+  "people": 2,
+  "errs": []
  }
 }
