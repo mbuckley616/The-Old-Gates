@@ -1743,7 +1743,8 @@ export function gatelandsShepherdHut(o = {}, r = stream('shepherd')) {
     hut: { x: 0, z: 0, y: 0, w: HW, d: HD, wall: T, eaves: EAV, ridge: APEX, door: { x: DX, z: HD / 2, w: DW, h: DH }, win: { x: WX, sill: SILL, w: WWd, h: WHt }, gableW: XW, gableE: XE, tops },
     fold: { x: FC[0], z: FC[1], r: FR, wall: FT, h: FH, gate: { a: +aG.toFixed(4), w: GW }, breach: { a: +aB.toFixed(4), w: BW }, segs: foldSegs }, spring: { x: SP[0], z: SP[1], water: +WAT.toFixed(3), lip: +lip.toFixed(3), ground: +sg.toFixed(3) }, rowan: { x: RW[0], z: RW[1] }, track: TR };
 }
-// markHuntingCabin(o, r) (Session 998, card F8; OG-124's Mark panel, "a smoking hunting cabin in snow pines"): a hunter's winter cabin in a
+// markHuntingCabin(o, r) (Session 998, card F8; OG-124's Mark panel, "a smoking hunting cabin in snow pines"; o.interior, Session 1199: no leaf in
+// the door and the window glazed, for rooms.js's markCabin to furnish): a hunter's winter cabin in a
 // clearing of spruce, after the Norwegian jakthytte and the fäbod's laft: logs notched over each other at the corners and running on past
 // them, a sill on corner stones, a low turf roof under snow with the crossed barge boards at the gables, a stone chimney smoking. Lived in:
 // the window lit, the door shut. At true size, a metre a unit, y 0 the snow at the cabin, the door's gable to +z:
@@ -1761,7 +1762,8 @@ export function markHuntingCabin(o = {}, r = stream('cabin')) {
   const M = { snow: mat('plaster', { ns: .3, color: 0xf2f6fa, rough: .95 }), trod: mat('plaster', { ns: .6, color: 0xc4ccd8, rough: .9 }), log: mat('beam', { ns: 1.2, color: 0xa88866, rough: .9 }),
     end: std(0x9c7c5a, .9), board: mat('wood', { ns: .9, color: 0x6a5440, rough: .9 }), door: mat('wood', { ns: 1.0, color: 0x4a3a2a, rough: .8 }), turf: mat('turfDry', { ns: 1.2, color: 0x8a7a5a, rough: 1 }),
     stone: mat('stone', { ns: 1.3, color: 0xb8b4ac, rough: .95 }), rock: mat('rock', { ns: 1.0, color: 0x8a8680, rough: 1 }), glow: std(0x2a1a08, .4, { emissive: new THREE.Color(1, .62, .3), emissiveIntensity: 1.4 }),
-    bark: std(0x4a3a30, .95), needle: std(0x2a3a2a, .9), wood: std(0xd2b48a, .85), antler: std(0xd8ccb4, .7), iron: std(0x2a2826, .5, { metalness: .6 }), hide: std(0x6e5038, .95, { side: THREE.DoubleSide }), gut: std(0x6a5038, .9) };
+    bark: std(0x4a3a30, .95), needle: std(0x2a3a2a, .9), wood: std(0xd2b48a, .85), antler: std(0xd8ccb4, .7), iron: std(0x2a2826, .5, { metalness: .6 }), hide: std(0x6e5038, .95, { side: THREE.DoubleSide }), gut: std(0x6a5038, .9),
+    pane: std(0xc8d4dc, .05, { transparent: true, opacity: .14, depthWrite: false }) };
   const B = new Map(), key = String(o.key || 'cabin'), F = stream(key + ':lie'), ph = Array.from({ length: 8 }, () => F() * 6.283);
   const put = (geo, k, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, uv = .5) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal'].includes(a)) g.deleteAttribute(a);
     if (!g.attributes.normal) g.computeVertexNormals(); g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), new THREE.Vector3(1, 1, 1))); worldUV(g, uv);
@@ -1809,11 +1811,11 @@ export function markHuntingCabin(o = {}, r = stream('cabin')) {
   // the corner stones and the sill's middle stones; the floor; the door: its frame posts, the leaf of boards, the lintel; the window's frame and its light
   for (const x of [-XW, XW]) for (const z of [-ZW, 0, ZW]) put(new THREE.BoxGeometry(.5, Y0 + .1, .5), 'stone', x, (Y0 + .1) / 2 - .1, z, 0, F() * .3);
   for (const x of [-XW, 0, XW]) if (x) put(new THREE.BoxGeometry(.5, Y0 + .1, .5), 'stone', x, (Y0 + .1) / 2 - .1, -ZW, 0, F() * .3);
-  put(new THREE.BoxGeometry(2 * XW - .26, .05, 2 * ZW - .26), 'board', 0, Y0 + .05, 0);
+  put(new THREE.BoxGeometry(2 * XW - (o.interior ? 0 : .26), .05, 2 * ZW - (o.interior ? 0 : .26)), 'board', 0, Y0 + .05, 0) /* run under the bottom logs when the room is built, so no snow shows at the walls' foot */;
   for (const sx of [-1, 1]) put(new THREE.BoxGeometry(.1, DH + .1, .26), 'board', sx * (DW / 2 + .05), Y0 + (DH + .1) / 2, ZW);
-  put(new THREE.BoxGeometry(DW, DH, .05), 'door', 0, Y0 + DH / 2, ZW - .06); put(new THREE.BoxGeometry(.04, .04, .1), 'iron', DW / 2 - .12, Y0 + 1.0, ZW + .01);
+  /* o.interior (Session 1199, rooms.js's markCabin): the room hangs its own leaf, open */ if (!o.interior) { put(new THREE.BoxGeometry(DW, DH, .05), 'door', 0, Y0 + DH / 2, ZW - .06); put(new THREE.BoxGeometry(.04, .04, .1), 'iron', DW / 2 - .12, Y0 + 1.0, ZW + .01); }
   { const wy = WS + WH / 2 + R / 2; for (const s2 of [-1, 1]) { put(new THREE.BoxGeometry(.26, .06, WW + .16), 'board', XW, wy + s2 * (WH / 2 + .03), WZ); put(new THREE.BoxGeometry(.26, WH, .06), 'board', XW, wy, WZ + s2 * (WW / 2 + .03)); }
-    put(new THREE.BoxGeometry(.03, WH, WW), 'glow', XW - .02, wy, WZ); put(new THREE.BoxGeometry(.04, .03, WW), 'board', XW - .01, wy, WZ) /* the light, its glazing bar */; }
+    put(new THREE.BoxGeometry(.03, WH, WW), o.interior ? 'pane' : 'glow', XW - .02, wy, WZ) /* glazed and clear from inside when the room is built */; put(new THREE.BoxGeometry(.04, .03, WW), 'board', XW - .01, wy, WZ) /* the light, its glazing bar */; }
   // antlers on the front gable, over the door
   { const ay = Y0 + DH + .9, az = ZW + R + .02; put(new THREE.BoxGeometry(.22, .14, .06), 'antler', 0, ay, az); for (const s of [-1, 1]) { const b = [s * .5, ay + .45, az + .15]; rod('antler', [s * .05, ay, az + .02], b, .025, 5);
     for (let t = 0; t < 3; t++) { const f = .3 + t * .25, p = [s * .05 + s * .45 * f, ay + .45 * f, az + .02 + .13 * f]; rod('antler', p, [p[0] + s * .05, p[1] + .22, p[2] + .08], .018, 5); } } }
@@ -1854,7 +1856,7 @@ export function markHuntingCabin(o = {}, r = stream('cabin')) {
     const h = 8 + F() * 9, gy = ground(x, z), w = h * (.22 + F() * .05); rod('bark', [x, gy - .3, z], [x, gy + h * .35, z], h * .016, 6);
     for (let t = 0; t < 7; t++) { const f = t / 7, y0 = gy + h * (.16 + f * .76), th = h * (.26 - f * .05), rw = w * (1 - f * .8) * (.9 + F() * .2); put(new THREE.ConeGeometry(rw, th, 8, 1, true), 'needle', x, y0 + th / 2, z, 0, F() * 3);
       if (F() < .8) put(new THREE.ConeGeometry(rw * .62, th * .36, 7, 1, true), 'snow', x + (F() - .5) * rw * .2, y0 + th * .7 + .02, z + (F() - .5) * rw * .2, 0, F() * 3); } trees.push({ x: +x.toFixed(2), z: +z.toFixed(2), h: +h.toFixed(2) }); }
-  const group = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = !['trod', 'glow'].includes(k); m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
+  const group = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = !['trod', 'glow', 'pane'].includes(k); m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
   const own = group.children.length, pm = new THREE.SpriteMaterial({ map: puffTex(), color: 0xd8dce2, transparent: true, depthWrite: false, fog: true });
   for (const [x, y, z, s, op] of smoke) { const m = pm.clone(); m.opacity = op; const sp = new THREE.Sprite(m); sp.position.set(x, y, z); sp.scale.set(s, s, s); sp.name = 'smoke'; group.add(sp); }
   return { group, tris: Math.round(tris), draws: group.children.length, own, ground, drift, pathD,
