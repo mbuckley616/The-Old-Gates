@@ -149,7 +149,12 @@ function landAtmosphere(){
   U.uZen.value.copy(_lC.zen);U.uMid.value.copy(_lC.mid);U.uHor.value.copy(_lC.hor);
   _lC.glow.setRGB(1,.82-.25*low,.55-.3*low).multiplyScalar((1-t)*(1-cloud*.8));
   U.uGlow.value.copy(_lC.glow);U.uGlowK.value=.3+.35*low;U.uDisc.value=SKY.sun?SKY.sun.material.opacity:0;
+  if(SKY.sun)SKY.sun.visible=false; // the dome draws the disc where skyBodies put it, bright under ACES, where the old flat disc read as a grey coin
   LAND.sky.position.set(px,worldH(px,pz)-60,pz);
+  if(LAND.clouds){const C=LAND.clouds.material.uniforms,lit=(1-t)*(1-cloud*.55);
+    C.uHi.value.setRGB(1.4,1.36,1.28).lerp(_lC.warm,low*.5).lerp(_lC.grey,cloud*.6).multiplyScalar(.25+.75*lit).lerp(_lC.mid,.12);
+    C.uLo.value.setRGB(.78,.82,.92).lerp(_lC.grey,cloud*.5).multiplyScalar(.2+.8*lit).lerp(_lC.mid,.25).lerp(_lC.warm,low*.3);
+    C.uOp.value=.85+.15*cloud;LAND.clouds.rotation.y=(worldState.gameTimeAbsMinutes||0)*.00012;}
   if(LAND.waterSky){LAND.waterSky.value.copy(_lC.mid).lerp(_lC.hor,.5);LAND.waterSun.value.copy(U.uSun.value);LAND.waterGlint.value=Math.max(0,el)*(1-cloud)*(1-t);}
 }
 // ── the post: ACES and the grade, on the open world's frame only ─────────────────────────────────────────────────
@@ -157,7 +162,7 @@ function landAtmosphere(){
 // world scene turns tone mapping on for its own render and off after it, so rooms, gates and the hands keep theirs.
 // P10b's grade: shadows a touch cool, highlights warm, saturation lifted.
 function landPost(scene){
-  if(!LAND.on||scene.userData.landPost)return;scene.userData.landPost=true;
+  if(!LAND.on||scene.userData.landPost)return;scene.userData.landPost=true;landQuality();
   if(!THREE.ShaderChunk.tonemapping_fragment.includes('og-grade'))THREE.ShaderChunk.tonemapping_fragment=THREE.ShaderChunk.tonemapping_fragment.replace('#endif',
 `	{ /* og-grade */ vec3 gc = gl_FragColor.rgb; float gl = dot(gc, vec3(.2126, .7152, .0722));
 	  gc *= mix(vec3(.95, .985, 1.05), vec3(1.05, 1., .92), smoothstep(.03, .6, gl));
@@ -167,4 +172,249 @@ function landPost(scene){
   const keep={tm:0,ex:1};
   scene.onBeforeRender=r=>{keep.tm=r.toneMapping;keep.ex=r.toneMappingExposure;r.toneMapping=THREE.ACESFilmicToneMapping;r.toneMappingExposure=LAND.exposure;};
   scene.onAfterRender=r=>{r.toneMapping=keep.tm;r.toneMappingExposure=keep.ex;};
+  if(!LAND.rawRender){const raw=REN.render.bind(REN);LAND.rawRender=raw;REN.render=(sc2,cam)=>landRender(raw,sc2,cam);} // S1183: bloom wraps the world's frame
+}
+// ── bloom (Session 1183): the world's frame through a render target, as the slice's composer does it ────────────────
+// At Middle and High the world renders into a half-float target, its own lights unclamped (three tone-maps nothing drawn
+// into a target), then a bright pass and a two-way blur at a quarter of the size, then one quad to the screen that adds the
+// glow, tone-maps with ACES and grades (the same chunk the materials use) and darkens the frame's edge a little, as the slice's
+// grade did. Six full-screen quads (the bright pass, four blurs, the composite), no change to the scene. Every other scene, a target someone else set, and Low take the
+// direct path. REN.info counts the whole frame, so the draw-call budget reads the same.
+const LAND_BLOOM={rt:null,a:null,b:null,qs:null,cam:null,quad:null,mBright:null,mBlur:null,mComp:null,size:new THREE.Vector2(),frames:0};
+function landBloomSetup(){
+  const B=LAND_BLOOM;if(B.qs)return;
+  const vs='varying vec2 vUv;\nvoid main(){ vUv = uv; gl_Position = vec4(position.xy, 0., 1.); }';
+  B.mBright=new THREE.ShaderMaterial({depthTest:false,depthWrite:false,toneMapped:false,uniforms:{tDiffuse:{value:null},uT:{value:.85}},vertexShader:vs,
+    fragmentShader:'uniform sampler2D tDiffuse; uniform float uT; varying vec2 vUv;\nvoid main(){ vec3 c = texture2D(tDiffuse, vUv).rgb; float l = dot(c, vec3(.2126, .7152, .0722));\n  gl_FragColor = vec4(c * smoothstep(uT, uT + .5, l), 1.); }'});
+  B.mBlur=new THREE.ShaderMaterial({depthTest:false,depthWrite:false,toneMapped:false,uniforms:{tDiffuse:{value:null},uDir:{value:new THREE.Vector2()}},vertexShader:vs,
+    fragmentShader:'uniform sampler2D tDiffuse; uniform vec2 uDir; varying vec2 vUv;\nvoid main(){ vec3 c = texture2D(tDiffuse, vUv).rgb * .227;\n  c += (texture2D(tDiffuse, vUv + uDir * 1.385).rgb + texture2D(tDiffuse, vUv - uDir * 1.385).rgb) * .316;\n  c += (texture2D(tDiffuse, vUv + uDir * 3.231).rgb + texture2D(tDiffuse, vUv - uDir * 3.231).rgb) * .07;\n  gl_FragColor = vec4(c, 1.); }'});
+  B.mComp=new THREE.ShaderMaterial({depthTest:false,depthWrite:false,uniforms:{tScene:{value:null},tBloom:{value:null},uK:{value:.22},uVig:{value:.3}},vertexShader:vs,
+    fragmentShader:'uniform sampler2D tScene, tBloom; uniform float uK, uVig; varying vec2 vUv;\nvoid main(){ vec3 c = texture2D(tScene, vUv).rgb + texture2D(tBloom, vUv).rgb * uK;\n  vec2 q = vUv - .5; c *= 1. - uVig * dot(q, q) * 2.;\n  gl_FragColor = vec4(c, 1.);\n  #include <tonemapping_fragment>\n}'});
+  B.quad=new THREE.Mesh(new THREE.PlaneGeometry(2,2),B.mBright);B.quad.frustumCulled=false;B.qs=new THREE.Scene();B.qs.add(B.quad);B.cam=new THREE.OrthographicCamera(-1,1,1,-1,0,1);
+}
+function landBloomTargets(w,h){
+  const B=LAND_BLOOM;if(B.rt&&B.size.x===w&&B.size.y===h)return;B.size.set(w,h);
+  for(const k of ['rt','a','b'])if(B[k])B[k].dispose();
+  const o={type:THREE.HalfFloatType,depthBuffer:false};
+  B.rt=new THREE.WebGLRenderTarget(w,h,{type:THREE.HalfFloatType,samples:4});
+  const qw=Math.max(1,w>>2),qh=Math.max(1,h>>2);B.a=new THREE.WebGLRenderTarget(qw,qh,o);B.b=new THREE.WebGLRenderTarget(qw,qh,o);
+}
+function landRender(raw,s,c){
+  if(!LAND.on||s!==sc||!landQ().bloom||REN.getRenderTarget()!==null)return raw(s,c);
+  const B=LAND_BLOOM;landBloomSetup();const sz=_lC.v2||(_lC.v2=new THREE.Vector2());REN.getDrawingBufferSize(sz);landBloomTargets(sz.x,sz.y);
+  const info=REN.info,ar=info.autoReset;if(ar)info.reset();info.autoReset=false;
+  const pass=(m,to)=>{B.quad.material=m;REN.setRenderTarget(to);raw(B.qs,B.cam);};
+  try{
+    REN.setRenderTarget(B.rt);raw(s,c);
+    B.mBright.uniforms.tDiffuse.value=B.rt.texture;pass(B.mBright,B.a);
+    const qx=1/B.a.width,qy=1/B.a.height;
+    for(let i=0;i<2;i++){B.mBlur.uniforms.tDiffuse.value=B.a.texture;B.mBlur.uniforms.uDir.value.set(qx*(1+i),0);pass(B.mBlur,B.b);
+      B.mBlur.uniforms.tDiffuse.value=B.b.texture;B.mBlur.uniforms.uDir.value.set(0,qy*(1+i));pass(B.mBlur,B.a);}
+    const tm=REN.toneMapping,ex=REN.toneMappingExposure;REN.toneMapping=THREE.ACESFilmicToneMapping;REN.toneMappingExposure=LAND.exposure;
+    B.mComp.uniforms.tScene.value=B.rt.texture;B.mComp.uniforms.tBloom.value=B.a.texture;
+    try{pass(B.mComp,null);}finally{REN.toneMapping=tm;REN.toneMappingExposure=ex;}
+    B.frames++;
+  }finally{REN.setRenderTarget(null);info.autoReset=ar;}
+}
+// ── the quality levels: what each spends (item 6 of the card) ──────────────────────────────────────────────────────
+// Kept with the other settings in this browser (SETTINGS.quality, 0 low, 1 middle, 2 high); the middle level is the budget's
+// (v2-scope.md §5). Grass: blades a chunk and how many chunks out from the player's own; flowers are a share of the blades.
+const LAND_Q=[
+  {name:'Low',grass:0,ring:0,flowers:0,shadow:1024,clouds:0,bloom:0},
+  {name:'Middle',grass:6000,ring:1,flowers:.04,shadow:2048,clouds:14,bloom:1},
+  {name:'High',grass:12000,ring:1,flowers:.05,shadow:4096,clouds:30,bloom:1}];
+function landQ(){const q=(typeof SETTINGS!=='undefined'&&SETTINGS.quality!=null)?SETTINGS.quality:1;return LAND_Q[Math.max(0,Math.min(2,q|0))];}
+// ── grass and wildflowers: instanced blades near the player, on one wind ────────────────────────────────────────────
+// A chunk within the quality level's ring of the player's own gets its grass, built a chunk a frame and dropped when it leaves
+// the ring or unloads. Blades sit in chunk-local space (the mesh at the chunk's corner), placed by a stream seeded by the chunk,
+// so a chunk grows the same grass each time; they keep out of roads, site stamps, water, the steep and anything solid.
+const LAND_WIND={value:0};
+let _landBlade=null,_landFlower=null;
+function landGrassMats(){
+  if(_landBlade)return;
+  const seg=4,bw=.035,pos=[],col=[],idx=[];
+  for(let k=0;k<=seg;k++){const t=k/seg,w=bw*Math.pow(1-t,.9);pos.push(-w,t,0,w,t,0);const c0=[.10,.18,.05],c1=[.42,.60,.17];const c=c0.map((v,i)=>v+(c1[i]-v)*Math.pow(t,1.3));col.push(...c,...c);}
+  for(let k=0;k<seg;k++){const a=k*2;idx.push(a,a+1,a+2,a+1,a+3,a+2);}
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('color',new THREE.Float32BufferAttribute(col,3));
+  g.setAttribute('normal',new THREE.Float32BufferAttribute(new Array(pos.length/3).fill(0).flatMap(()=>[0,1,0]),3));g.setIndex(idx);
+  const wind=(amp,f)=>`
+  vec4 lwI = modelMatrix * instanceMatrix * vec4(0., 0., 0., 1.);
+  float lsw = sin(uLWind * ${f} + mod(lwI.x, 628.3) * .11 + mod(lwI.z, 628.3) * .07) * .6 + sin(uLWind * ${f} * 2.3 + mod(lwI.x, 628.3) * .37) * .25;
+  transformed.x += lsw * ${amp} * position.y * position.y; transformed.z += lsw * ${amp} * .5 * position.y * position.y;`;
+  const m=new THREE.MeshLambertMaterial({vertexColors:true,side:THREE.DoubleSide});
+  m.onBeforeCompile=s=>{s.uniforms.uLWind=LAND_WIND;s.vertexShader='uniform float uLWind;\n'+s.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>'+wind('.22','1.4'));};
+  m.customProgramCacheKey=()=>'og-land-grass';
+  _landBlade={geo:g,mat:m};
+  const fg=new THREE.IcosahedronGeometry(.035,0).scale(1,.55,1);
+  const fm=new THREE.MeshLambertMaterial({});
+  _landFlower={geo:fg,mat:fm};
+}
+const LAND_FLOWERS=[[.62,.38,.78],[.78,.44,.70],[.96,.95,.90],[.98,.82,.20],[.85,.20,.18]]; // heather, foxglove, campion, buttercup, poppy
+function landGrassChunk(ch){
+  const Q=landQ();if(!Q.grass)return;
+  landGrassMats();
+  const ox=ch.cx*CHUNK,oz=ch.cz*CHUNK;let s=(Math.imul(ch.cx|0,73856093)^Math.imul(ch.cz|0,19349663)^0x5bd1e995)>>>0;
+  const r=()=>{s=(s+0x6D2B79F5)>>>0;let t=s;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296;};
+  const N=Q.grass,F=Math.round(N*Q.flowers);
+  const gm=new THREE.InstancedMesh(_landBlade.geo,_landBlade.mat,N),fl=F?new THREE.InstancedMesh(_landFlower.geo,_landFlower.mat,F):null;
+  const M=new THREE.Matrix4(),q=new THREE.Quaternion(),sc=new THREE.Vector3(),p=new THREE.Vector3(),c=new THREE.Color(),up=new THREE.Vector3(0,1,0);
+  // where grass may grow, once a vertex (289 tests, not one per blade): green ground by the chunk's own vertex colour (no sand,
+  // rock, verge or snow), above the water, not steep, off roads, out of stamps and solids. A blade between four good vertices
+  // grows; one beside a bad vertex is tested exactly. Heights come from the chunk's own mesh, so a blade stands on what is drawn.
+  const T=ch.terrain.attributes,P=T.position,col=T.color,NR=T.normal,V=SEGS+1,G=CHUNK/SEGS,ok=new Uint8Array(V*V);
+  for(let j=0;j<V;j++)for(let i=0;i<V;i++){const vi=j*V+i,x=ox+i*G,z=oz+j*G,h=P.getY(vi),cr=col.getX(vi),cg=col.getY(vi),cb=col.getZ(vi);
+    if(h<SEA_Y+.35||NR.getY(vi)<.82||cg<=Math.max(cr,cb)*.95||cr+cg+cb>1.9)continue;
+    const ri=roadInfo(x,z);if(ri&&ri.d<ROAD_HALF+.6)continue;if(stampAt(x,z)||solidAt(x,z))continue;ok[vi]=1;}
+  let n=0,f=0,tries=0;
+  while(n<N&&tries<N*3){tries++;
+    const lx=r()*CHUNK,lz=r()*CHUNK,x=ox+lx,z=oz+lz,i0=Math.min(SEGS-1,Math.floor(lx/G)),j0=Math.min(SEGS-1,Math.floor(lz/G)),u=lx/G-i0,v=lz/G-j0;
+    const a00=j0*V+i0,a10=a00+1,a01=a00+V,a11=a01+1,good=ok[a00]+ok[a10]+ok[a01]+ok[a11];
+    if(!good)continue;
+    if(good<4){const ri=roadInfo(x,z);if(ri&&ri.d<ROAD_HALF+.6)continue;if(stampAt(x,z)||solidAt(x,z))continue;if(!ok[u<.5?(v<.5?a00:a01):(v<.5?a10:a11)])continue;}
+    const h00=P.getY(a00),h10=P.getY(a10),h01=P.getY(a01),h11=P.getY(a11); // the quad's two triangles, split as PlaneGeometry splits it
+    const h=u+v<1?h00+u*(h10-h00)+v*(h01-h00):h11+(1-u)*(h01-h11)+(1-v)*(h10-h11);
+    const clump=.55+.9*Math.max(0,_smoothNoise(x,z,SEED+71,6)-.2);if(r()>clump*.9)continue;
+    p.set(lx,h-.02,lz);q.setFromAxisAngle(up,r()*Math.PI);const hh=(.16+r()*.3)*clump;sc.set(1+r()*.6,hh,1);
+    M.compose(p,q,sc);gm.setMatrixAt(n,M);
+    const dry=sstep(.3,.8,_smoothNoise(x,z,SEED+72,18));c.setRGB(1-.1*r(),1-.12*dry,1-.45*dry-.1*r());gm.setColorAt(n,c);n++;
+    if(fl&&f<F&&_smoothNoise(x,z,SEED+73,11)>.55&&r()<.5){const kr=r(),kind=kr<.38?0:kr<.5?1:kr<.74?2:kr<.95?3:4;
+      p.set(lx,h+.18+r()*.4,lz);sc.setScalar(.7+r()*.6);M.compose(p,q,sc);fl.setMatrixAt(f,M);c.setRGB(...LAND_FLOWERS[kind]);fl.setColorAt(f,c);f++;}}
+  gm.count=n;gm.position.set(ox,0,oz);gm.receiveShadow=true;gm.userData.landGrass=true;gm.frustumCulled=true;
+  gm.computeBoundingSphere();
+  ch.landGrass={grass:gm,flowers:fl,q:Q.name};ch.group.add(gm);
+  if(fl){fl.count=f;fl.position.set(ox,0,oz);fl.userData.landGrass=true;fl.computeBoundingSphere();ch.group.add(fl);}
+}
+function landGrassDrop(ch){const G=ch.landGrass;if(!G)return;for(const m of [G.grass,G.flowers])if(m){ch.group.remove(m);m.dispose();}ch.landGrass=null;}
+// per frame from the world's tick: the wind, and one chunk's grass built or dropped
+function landTick(dt){
+  if(!LAND.on||!sc)return;
+  LAND_WIND.value=(performance.now()*.001)%1000;
+  const Q=landQ(),cx=Math.floor(px/CHUNK),cz=Math.floor(pz/CHUNK);let built=0;
+  for(const ch of chunks.values()){const near=Q.grass&&Math.abs(ch.cx-cx)<=Q.ring&&Math.abs(ch.cz-cz)<=Q.ring;
+    if(ch.landGrass&&(!near||ch.landGrass.q!==Q.name))landGrassDrop(ch);
+    if(near&&!ch.landGrass&&built<1){landGrassChunk(ch);built++;}}
+}
+// the level changed in the settings sheet: the sun's shadow map now, the grass as the next frames rebuild it
+function landQuality(){
+  if(!LAND.on||!sun)return;const Q=landQ();
+  if(LAND.sky&&(!LAND.clouds?Q.clouds:LAND.clouds.userData.q!==Q.name))landClouds();
+  if(sun.shadow.mapSize.x!==Q.shadow){sun.shadow.mapSize.set(Q.shadow,Q.shadow);if(sun.shadow.map){sun.shadow.map.dispose();sun.shadow.map=null;}}
+}
+// ── the clouds: lit cumulus heaps, as the slice's, in one draw call ─────────────────────────────────────────────────
+// Each heap is a few dozen soft puffs, bright on top and on the sun's side and blue-grey beneath; the puffs are one instanced
+// quad turned to face the eye in the vertex shader, so a sky of 30 heaps is one draw call, not two thousand sprites. The heaps
+// ride with the dome (they are scenery at the sky's distance, not places) and drift with the wind; the sky's colours tint them
+// each frame, so they go gold at the low sun, grey under an overcast and dark blue at night. The quality level sets the count.
+let _landPuff=null;
+function landPuffTex(){if(_landPuff)return _landPuff;const c=document.createElement('canvas');c.width=c.height=64;const x=c.getContext('2d'),g=x.createRadialGradient(32,32,2,32,32,31);
+  g.addColorStop(0,'rgba(255,255,255,1)');g.addColorStop(.55,'rgba(255,255,255,.8)');g.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=g;x.fillRect(0,0,64,64);
+  _landPuff=new THREE.CanvasTexture(c);return _landPuff;}
+function landClouds(){
+  if(LAND.clouds){LAND.sky.remove(LAND.clouds);LAND.clouds.dispose();LAND.clouds=null;}
+  const Q=landQ();if(!Q.clouds)return;
+  let s=0x9e3779b9;const r=()=>{s=(s+0x6D2B79F5)>>>0;let t=s;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296;};
+  const list=[];
+  for(let k=0;k<Q.clouds;k++){const a=r()*Math.PI*2,d=900+r()*1500,cx=Math.sin(a)*d,cz=Math.cos(a)*d,cy=360+r()*260+d*.06,size=90+r()*170;
+    const N=26+Math.floor(r()*22);
+    for(let i=0;i<N;i++){const ox=(r()-.5)*size*2.2,oz=(r()-.5)*size*1.2,oy=Math.max(0,1-Math.hypot(ox/(size*1.1),oz/(size*.6)))*size*(.6+r()*.7);
+      list.push([cx+ox,cy+oy,cz+oz,size*(.42+r()*.42),sstep(0,size*.9,oy),ox/size,oz/size]);}}
+  const mat=new THREE.ShaderMaterial({transparent:true,depthWrite:false,fog:false,
+    uniforms:{uMap:{value:landPuffTex()},uLo:{value:new THREE.Color()},uHi:{value:new THREE.Color()},uSun:LAND.skyMat.uniforms.uSun,uOp:{value:.9}},
+    vertexShader:`attribute vec3 aPuff; varying vec2 vUv; varying vec3 vP;
+void main(){ vUv = uv; vP = aPuff; vec4 c = modelViewMatrix * vec4(instanceMatrix[3].xyz, 1.); float sz = length(instanceMatrix[0].xyz);
+  c.xy += position.xy * sz; gl_Position = projectionMatrix * c; }`,
+    fragmentShader:`uniform sampler2D uMap; uniform vec3 uLo, uHi, uSun; uniform float uOp; varying vec2 vUv; varying vec3 vP;
+void main(){ float a = texture2D(uMap, vUv).a * uOp; if (a < .01) discard;
+  float side = dot(normalize(vec2(vP.y, vP.z) + 1e-4), normalize(uSun.xz + 1e-4)) * length(vec2(vP.y, vP.z)) * .25;
+  vec3 c = mix(uLo, uHi, .3 + .7 * vP.x) * (1. + side * .3);
+  gl_FragColor = vec4(c, a);
+  #include <tonemapping_fragment>
+}`});
+  const geo=new THREE.PlaneGeometry(1,1),im=new THREE.InstancedMesh(geo,mat,list.length),M=new THREE.Matrix4(),pf=new Float32Array(list.length*3);
+  list.forEach((p,i)=>{M.makeScale(p[3],p[3],p[3]).setPosition(p[0],p[1],p[2]);im.setMatrixAt(i,M);pf[i*3]=p[4];pf[i*3+1]=p[5];pf[i*3+2]=p[6];});
+  geo.setAttribute('aPuff',new THREE.InstancedBufferAttribute(pf,3));
+  im.frustumCulled=false;im.renderOrder=-4;im.userData.puffs=list.length;im.userData.q=Q.name;
+  LAND.clouds=im;LAND.sky.add(im);
+}
+// ── trees: leaf cards around clumps, normals turned out from the crown (item 3, Session 1182) ──────────────────────────
+// The scatter decides every tree as before (where, which species, its size, girth, turn and tint, its collider and its tree
+// point; S533: keyed by the hash and the cell), and the new look only draws it differently: for the leafy kinds and the conifers,
+// the slice's kit in place of the low-poly crown. Leaves are cards around clumps, their normals turned out from the crown's
+// centre so the canopy shades as one soft volume, shaded darker inside and on the side away from the light; conifers stack their
+// clumps in a cone. The trunk is in the same mesh and the same material (its bark is a patch of the leaf texture), so a species
+// in a chunk is still one draw call. A template is sized to the prototype it replaces (its height and its spread), so a tree
+// covers what it covered. Dead trees, scrub and mushrooms keep their old shapes.
+const LAND_TREE_KIT={broadleaf:'broad',oak:'oak',willow:'broad',autumn:'broad',autumnRed:'broad',autumnGold:'broad',oakAutumn:'oak',
+  birch:'birch',birchAutumn:'birch',conifer:'cone',spruce:'cone',pine:'pine',snowpine:'cone'};
+const LAND_LEAVES={green:[88,110,42,60,30,66],autumn:[14,46,62,82,34,62],birch:[70,92,40,58,40,72],needle:[90,122,32,48,34,54]}; // hue, sat and light ranges
+const LAND_LEAF_PAL={autumn:'autumn',autumnRed:'autumn',autumnGold:'autumn',oakAutumn:'autumn',birchAutumn:'autumn',birch:'birch',conifer:'needle',spruce:'needle',pine:'needle',snowpine:'needle'};
+const _landTreeMat={},_landTreeGeo={};
+function landLeafTex(pal){
+  const P=LAND_LEAVES[pal],c=document.createElement('canvas');c.width=c.height=256;const x=c.getContext('2d');let s=pal.length*7919;
+  const r=()=>{s=(s*16807)%2147483647;return(s-1)/2147483646;};
+  const N=pal==='needle'?340:260;
+  for(let i=0;i<N;i++){const a=r()*Math.PI*2,rr=Math.sqrt(r())*100,cx=128+Math.cos(a)*rr,cy=128+Math.sin(a)*rr*.9,sz=pal==='needle'?6+r()*5:10+r()*9;
+    x.save();x.translate(cx,cy);x.rotate(r()*Math.PI*2);x.fillStyle=`hsl(${P[0]+r()*(P[1]-P[0])},${P[2]+r()*(P[3]-P[2])}%,${P[4]+r()*(P[5]-P[4])}%)`;
+    x.beginPath();x.ellipse(0,0,sz,sz*(pal==='needle'?.28:.55),0,0,Math.PI*2);x.fill();x.restore();}
+  x.fillStyle=pal==='birch'?'#dcd8cc':'#6a5038';x.fillRect(228,228,28,28); // the bark's patch, where the trunk's UVs point
+  const t=new THREE.CanvasTexture(c);t.anisotropy=4;return t;
+}
+function landTreeMat(pal){
+  if(_landTreeMat[pal])return _landTreeMat[pal];
+  const map=landLeafTex(pal);
+  const m=new THREE.MeshLambertMaterial({map,alphaTest:.42,side:THREE.DoubleSide,vertexColors:true});
+  m.onBeforeCompile=s=>{s.uniforms.uLWind=LAND_WIND;s.vertexShader='uniform float uLWind;\n'+s.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>
+  { vec4 lwI = modelMatrix * instanceMatrix * vec4(0., 0., 0., 1.);
+    float lsw = sin(uLWind * .9 + mod(lwI.x, 628.3) * .11 + mod(lwI.z, 628.3) * .07) * .6 + sin(uLWind * 2.07 + mod(lwI.x, 628.3) * .37) * .25;
+    transformed.x += lsw * .0035 * position.y * position.y; transformed.z += lsw * .0018 * position.y * position.y; }`);
+    s.fragmentShader=s.fragmentShader.replace('#include <normal_fragment_begin>','#include <normal_fragment_begin>\n normal = normalize(vNormal);');};
+  m.customProgramCacheKey=()=>'og-land-tree';
+  const depth=new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking,map,alphaTest:.42});
+  return(_landTreeMat[pal]={mat:m,depth});
+}
+// one template a kind of kit and prototype, built to the prototype's own height and spread
+function landTreeGeo(sp){
+  if(_landTreeGeo[sp])return _landTreeGeo[sp];
+  const kit=LAND_TREE_KIT[sp],pg=PROTO[sp];if(!pg.boundingBox)pg.computeBoundingBox();const B=pg.boundingBox;
+  const H=Math.max(2,B.max.y),R=Math.max(1,Math.max(-B.min.x,B.max.x,-B.min.z,B.max.z));
+  let s=0;for(const ch of sp)s=(s*31+ch.charCodeAt(0))>>>0;s=s%2147483646+1;const r=()=>{s=(s*16807)%2147483647;return(s-1)/2147483646;};
+  const pos=[],nor=[],uv=[],col=[],idx=[];
+  const cone=kit==='cone'||kit==='pine';
+  // the trunk: a tapered prism up into the crown, its UVs on the bark patch
+  const tH=kit==='pine'?H*.72:cone?H*.6:kit==='birch'?H*.62:H*.5,tR=Math.min(R*.06,H*.026)*(kit==='oak'?1.35:kit==='birch'?.8:1),SEG=6;
+  {const b=pos.length/3;for(let k=0;k<=1;k++)for(let i=0;i<SEG;i++){const a=i/SEG*Math.PI*2,rr=tR*(k?.55:1),y=k?tH:-.3;pos.push(Math.cos(a)*rr,y,Math.sin(a)*rr);nor.push(Math.cos(a),0,Math.sin(a));uv.push(.95,.045);const g=k?.9:.55;col.push(g,g,g);}
+    for(let i=0;i<SEG;i++){const a=b+i,b2=b+(i+1)%SEG,c=a+SEG,d=b2+SEG;idx.push(a,c,b2,b2,c,d);}}
+  // the crown's clumps
+  const cl=[];
+  if(cone){const tiers=kit==='pine'?3:6,base=kit==='pine'?H*.62:H*.22;
+    for(let t=0;t<tiers;t++){const f=t/(tiers-1),y=base+(H-base)*f*.92,rad=R*(kit==='pine'?.8-.3*f:1-f*.85),n=Math.max(1,Math.round((kit==='pine'?4:6)*(1-f*.7)));
+      for(let i=0;i<n;i++){const a=i/n*Math.PI*2+r();cl.push([Math.cos(a)*rad*.5,y,Math.sin(a)*rad*.5,Math.max(.5,rad*.55)]);}}
+    cl.push([0,H*.94,0,R*.18]);}
+  else{const cy=kit==='birch'?H*.68:H*.62,cr=Math.min(R*.95,(H-cy)*1.4+R*.2),n=kit==='oak'?8:kit==='birch'?6:7;
+    for(let i=0;i<n;i++){const a=i/n*Math.PI*2+r(),rr=cr*(.35+.25*r());cl.push([Math.cos(a)*rr,cy+(r()-.3)*cr*(kit==='birch'?.9:.6),Math.sin(a)*rr,cr*(.5+.2*r())]);}
+    cl.push([0,Math.min(H-cr*.35,cy+cr*.4),0,cr*.62]);}
+  const ctrY=cone?H*.55:(kit==='birch'?H*.68:H*.62),q=new THREE.Quaternion(),e=new THREE.Euler(),v=new THREE.Vector3(),nv=new THREE.Vector3(),cv=new THREE.Vector3();
+  const per=cone?9:12;
+  for(const [cx,cy,cz,cr] of cl)for(let i=0;i<per;i++){
+    const d=new THREE.Vector3(r()-.5,(r()-.5)*(cone?.5:1),r()-.5).normalize(),p=new THREE.Vector3(cx,cy,cz).addScaledVector(d,cr*(.5+.5*Math.sqrt(r())));
+    e.set(r()*6.3,r()*6.3,r()*6.3);q.setFromEuler(e);const sz=cr*(cone?1.1:1.05)*(.8+.4*r()),b=pos.length/3;
+    for(const [a,bb,uu,vv] of [[-1,-1,0,0],[1,-1,.88,0],[1,1,.88,.88],[-1,1,0,.88]]){v.set(a*sz*.5,bb*sz*.5,0).applyQuaternion(q).add(p);pos.push(v.x,v.y,v.z);
+      nv.set(v.x,(v.y-ctrY)*(cone?.6:1),v.z).normalize().multiplyScalar(.7).add(cv.set(v.x-cx,v.y-cy,v.z-cz).normalize().multiplyScalar(.3)).normalize();nor.push(nv.x,nv.y,nv.z);uv.push(uu,vv);
+      const ao=(cone?.56:.42)+(cone?.44:.58)*sstep(-H*.25,H*.3,v.y-ctrY+(v.x*.35+v.z*.2));col.push(ao,ao,ao);}
+    idx.push(b,b+1,b+2,b,b+2,b+3);}
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('normal',new THREE.Float32BufferAttribute(nor,3));
+  g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setAttribute('color',new THREE.Float32BufferAttribute(col,3));g.setIndex(idx);g.computeBoundingSphere();
+  return(_landTreeGeo[sp]=g);
+}
+// from scatterChunk, for one species' list in a chunk: the same matrices, tints and colliders `place` would make; false: not ours
+function landTrees(group,list,sp,tint,solR,sol){
+  if(!LAND.on||!LAND_TREE_KIT[sp]||!PROTO[sp]||!list.length)return false;
+  const T=landTreeMat(LAND_LEAF_PAL[sp]||'green'),im=new THREE.InstancedMesh(landTreeGeo(sp),T.mat,list.length);
+  const m4=new THREE.Matrix4(),q=new THREE.Quaternion(),e=new THREE.Euler(),v=new THREE.Vector3(),s3=new THREE.Vector3(),c=new THREE.Color();
+  list.forEach((t,i)=>{e.set(0,t.r,0);q.setFromEuler(e);v.set(t.x,t.h,t.z);s3.set(t.s*(t.g||1),t.s*(t.sy||1),t.s*(t.g||1));m4.compose(v,q,s3);im.setMatrixAt(i,m4);
+    tint(t,c);if(sp==='snowpine')c.lerp(_lC.tmp.setRGB(1.25,1.28,1.32),.35);im.setColorAt(i,c);
+    if(solR)sol.push({cx:t.x,cz:t.z,rx:solR*t.s*(t.g||1),rz:solR*t.s*(t.g||1)});});
+  im.instanceMatrix.needsUpdate=true;if(im.instanceColor)im.instanceColor.needsUpdate=true;
+  im.customDepthMaterial=T.depth;im.castShadow=true;im.receiveShadow=false; /* a crown in its own shadow map went near black; its normals already shade it as one volume */ im.userData.scatter=sp;im.userData.landTree=true;im.frustumCulled=true;
+  im.computeBoundingSphere();group.add(im);return true;
 }

@@ -128,7 +128,12 @@ Session 368 built the tooling and Session 379 cut the file (1 Oct 2026); Session
   - `89-world-land.js` the new look's land (card F3, Session 1180): `LAND` (`LAND.on` only on `?look=new`), the terrain's fragment shader
     over `groundColor`'s vertex colour (`landTerrainMat`, the per-vertex mask `landMask`: stamps, woods, fields), the gradient sky dome
     (`landSky`, coloured by `landAtmosphere` at the end of `atmosphere()`), the water's sheen (`landWater`) and the post (`landPost`:
-    ACES and P10b's grade in three's tone-mapping chunk, on the world's frame only). On the old look every hook returns at once.
+    ACES and P10b's grade in three's tone-mapping chunk, on the world's frame only); grass and wildflowers a chunk near the player
+    (`landGrassChunk`, `landTick`), the clouds as one instanced mesh (`landClouds`), and the three quality levels (`LAND_Q`, `landQ()`,
+    `SETTINGS.quality`, the settings sheet's Quality row, Session 1181), and trees from leaf cards (`landTrees`, offered each species'
+    list by `scatterChunk`, which still decides every tree; Session 1182), and bloom (`landRender`, which wraps `REN.render` for the world's
+    frame at Middle and High: a half-float target, a bright pass, a blur, one composite with ACES, the grade and the vignette; Session 1183).
+    On the old look every hook returns at once.
   - `90-main.js` boot calls, dev helpers, `K`, `PERF`, `loop`, the frame start, `ssMigrate`. `92-creator.js` `_enterGame`,
     the character creator, title buttons. `94-worldmap.js` `WM`, `renderWorldMapSVG`. `96-animdebug.js` the backtick panel.
     `97-inspector.js` the mesh inspector (Session 492): `openInspector()` from the console, or `index.html?inspector`; every mesh the
