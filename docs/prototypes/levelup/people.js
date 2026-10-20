@@ -30,7 +30,8 @@ export async function loadPack(base = 'mh/') {
     belt: sel(tri, (x, y) => y > .11 && y < .22 && Math.abs(x) < .2),
     // the wide sash belt (Session 1010, OG-056): the region runs past its cut (rest .085 to .225) so neither edge is a triangle's
     sashBelt: sel(tri, (x, y) => y > .055 && y < .255 && Math.abs(x) < .2),
-    mantle: sel(tri, (x, y, z) => y > .4 && y < .61 && Math.abs(x) < .26),
+    // the fur mantle (Session 1203): the region runs past its cut (MANTLE_CUT) on every side, so no edge is a triangle's
+    mantle: sel(tri, (x, y, z) => y > .366 && y < .635 && Math.abs(x) < .288),
     // the cuffs: a band 4 cm wide at the sleeve's end, cut in the shader (Session 889); the region is wider, so neither edge is a
     // triangle's, and it runs to .411, past the bare skin's own stepped edge (body triangles from .395), which showed as teeth beyond it
     cuffs: sel(tri, (x, y) => Math.abs(x) > .355 && Math.abs(x) < .425),
@@ -258,6 +259,16 @@ function cutDepth(o) {
     s.fragmentShader = 'varying vec3 vB;\n' + s.fragmentShader.replace('void main() {', 'void main() {\n' + CUT(o.cut) + (o.hole ? `if (${o.hole}) discard;` : '')); };
   m.customProgramCacheKey = () => 'cutDepth' + JSON.stringify(o.cut || 0) + (o.hole || ''); return m;
 }
+// a fur's own edge (Session 1203, the mantle): cut on the rest body along a hem lower at the back than at the front, a neckline and a
+// ring round each arm, each line broken by noise, the neckline lower on each shell outward (`slope`); within the fringe's width of a line the outer shells thin out, so the edge is a
+// slope of fur tips down to the solid shell and not a terrace of eleven cut layers. f: { front, back, top, x, w, rag, slope }
+const FRINGE = (f, solid) => ` { float fh = mix(${f.back.toFixed(3)}, ${f.front.toFixed(3)}, smoothstep(-.06, .06, vB.z)) + (nz(vB * vec3(55., 4., 55.)) - .5) * ${f.rag.toFixed(3)};
+        float fd = min(min(vB.y - fh, ${f.top.toFixed(3)} - L * ${f.slope.toFixed(3)} - vB.y), ${f.x.toFixed(3)} + (nz(vB * vec3(4., 55., 55.)) - .5) * ${f.rag.toFixed(3)} - abs(vB.x)); if (fd < 0.) discard;
+        ${solid ? '' : `keep *= step(L * .85 + .1 + (1. - smoothstep(0., ${f.w.toFixed(3)}, fd)) * .85 * L, strand);`} }`;
+export const MANTLE_CUT = { front: .415, back: .385, top: .61, x: .265, w: .022, rag: .018, slope: .025, fold: .55 };
+// the mantle's shells stand 3.6 cm off the tunic and 5.5 mm apart, and fold in toward the neck over its last 6 cm (rest y .55 to
+// the neckline), to two fifths of that, so its rim closes on the throat as a roll of fur, not a wall standing off it
+const mantlePush = k => (x, y) => { const t = Math.max(0, Math.min(1, (y - MANTLE_CUT.fold) / (MANTLE_CUT.top - MANTLE_CUT.fold))); return (.036 + k * .0055) * (1 - .6 * t * t); };
 // fur and hair: stacked shells, each cut by noise so strands rise from the surface
 function shellMat(color, layer, layers, o = {}) {
   const m = new THREE.MeshStandardMaterial({ color, roughness: .85, side: THREE.DoubleSide, alphaTest: .5 });
@@ -267,7 +278,7 @@ function shellMat(color, layer, layers, o = {}) {
     s.fragmentShader = 'varying vec3 vB; varying vec3 vRP;\nfloat hh(vec3 p){ p = fract(p * .3183099 + .1); p *= 17.; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }\nfloat nz(vec3 x){ vec3 i = floor(x), f = fract(x); f = f * f * (3. - 2. * f); return mix(mix(mix(hh(i), hh(i + vec3(1,0,0)), f.x), mix(hh(i + vec3(0,1,0)), hh(i + vec3(1,1,0)), f.x), f.y), mix(mix(hh(i + vec3(0,0,1)), hh(i + vec3(1,0,1)), f.x), mix(hh(i + vec3(0,1,1)), hh(i + vec3(1,1,1)), f.x), f.y), f.z); }\n'
       + s.fragmentShader.replace('vec4 diffuseColor = vec4( diffuse, opacity );', `${CUT(o.cut)}${o.hole ? `if (${o.hole}) discard;` : ''}float hl = 1.; ${o.hairline ? 'if (vB.z > .05) { float e = vB.y - (.8 - .03 * pow(vB.x / .075, 2.) + (nz(vB * vec3(140., 60., 140.)) - .5) * .009); if (e < 0.) discard; hl = smoothstep(0., .014, e); }' : ''}${o.edge ? ' { float w = smoothstep(-.04, -.01, vB.z) * (1. - smoothstep(.04, .06, vB.z)), e = vE + (nz(vB * vec3(140., 60., 140.)) - .5) * .006; if (w > .5 && e < .0015) discard; hl = min(hl, mix(1., smoothstep(.0015, .014, e), w)); }' : ''} float L = ${(layer / layers).toFixed(3)};
         vec3 q = vRP * vec3(${o.sx ?? 380}., ${o.sy ?? 90}., ${o.sx ?? 380}.); float strand = nz(q) * .7 + nz(q * 2.3) * .3;
-        float keep = ${o.solid ? '1.' : 'step(L * .85 + .1, strand)'};
+        float keep = ${o.solid ? '1.' : 'step(L * .85 + .1, strand)'};${o.fringe ? FRINGE(o.fringe, o.solid) : ''}
         vec4 diffuseColor = vec4(diffuse * (.42 + .75 * L) * (.85 + .3 * strand), keep);${o.skin ? '\n        diffuseColor.rgb = mix(skinC, diffuseColor.rgb, hl);' : ''}`);
     // the hairline's fade (Session 875): from the skin's own colour at the edge to the shell's over 1.4 cm, so the roots read as a shadow
     if (o.skin) { s.uniforms.skinC = { value: o.skin }; s.fragmentShader = 'uniform vec3 skinC;\n' + s.fragmentShader; } };
@@ -2810,7 +2821,9 @@ export function makePerson(G, o = {}) {
   if (D.apron) { const lea = !!D.apronLeather, am = clothMat(sRGB(...D.apron), lea ? 'leather' : 'wool', { side: THREE.DoubleSide, cut: [lea ? -.52 : -.42, .175, .155, .004] });
     push('apron', PACK.R.apron, am, (x, y) => .03 + .012 * Math.max(0, Math.min(1, (.1 - y) / .4))); if (D.bib) push('bib', PACK.R.apronBib, clothMat(sRGB(...D.apron), lea ? 'leather' : 'wool', { side: THREE.DoubleSide, cut: [.1, .46, .105, .003] }), .04); }
   // a fur mantle over the shoulders: eleven shells
-  if (D.mantle) for (let k = 0; k < 11; k++) push('mantle' + k, PACK.R.mantle, shellMat(sRGB(...D.mantle), k, 11, { sx: 260, sy: 70, solid: k === 0 }), .036 + k * .0055);
+  // (Session 1203: its edges cut in the shader, MANTLE_CUT, and its shadow cut near the same lines)
+  if (D.mantle) { const md = cutDepth({ cut: [(MANTLE_CUT.front + MANTLE_CUT.back) / 2, MANTLE_CUT.top, MANTLE_CUT.x, .01] });
+    for (let k = 0; k < 11; k++) push('mantle' + k, PACK.R.mantle, shellMat(sRGB(...D.mantle), k, 11, { sx: 260, sy: 70, solid: k === 0, fringe: MANTLE_CUT }), mantlePush(k)).customDepthMaterial = md; }
   // hair: cards rooted on the hair shell (off the face), a layer of shell underneath so no scalp shows; brows; beard and moustache as short cards
   if (G.hairCol) { const scalp = PACK.R.scalpRoots;
     const sm = push('scalp', scalp, shellMat(sRGB(...G.hairCol).multiplyScalar(.55), 0, 3, { solid: true, hairline: true, edge: true, skin: sRGB(...G.skin) }), (x, y, z, i) => { const w = Math.max(0, Math.min(1, (z + .04) / .03)) * (1 - Math.max(0, Math.min(1, (z - .03) / .02))), k = 1 - w * (1 - Math.min(1, PACK.scalpEdge[i] / .012)); return .0008 + .0017 * k * k * (3 - 2 * k); });
@@ -2984,7 +2997,7 @@ export function makePerson(G, o = {}) {
 
 // palettes from OG-025: undyed wool, browns, slate blue, madder red; furs; ash-blond to red hair; pale to weathered skin
 const SKIN = [[.86, .70, .60], [.82, .64, .53], [.78, .60, .50], [.88, .74, .66]], HAIR = [[.70, .58, .40], [.52, .38, .24], [.62, .34, .18], [.80, .70, .52], [.40, .30, .20], [.86, .84, .80]];
-const WOOL = [[.32, .26, .2], [.24, .27, .32], [.30, .32, .26], [.20, .2, .22], [.45, .16, .12], [.18, .24, .3]], LEATHER = [[.3, .2, .13], [.22, .15, .1], [.36, .25, .16]], FUR = [[.42, .34, .26], [.3, .24, .18], [.55, .48, .4], [.25, .2, .17]];
+const WOOL = [[.32, .26, .2], [.24, .27, .32], [.30, .32, .26], [.20, .2, .22], [.45, .16, .12], [.18, .24, .3]], LEATHER = [[.3, .2, .13], [.22, .15, .1], [.36, .25, .16]], FUR = [[.42, .34, .26], [.3, .24, .18], [.55, .48, .4], [.25, .2, .17]], PALE_FUR = [[.9, .89, .86], [.87, .83, .74], [.78, .78, .77]];
 export function markGenome(rnd, g, o = {}) {
   const pick = a => a[Math.floor(rnd() * a.length)], pickW = W => { let r = rnd() * Object.values(W).reduce((a, b) => a + b, 0); for (const [k, w] of Object.entries(W)) if ((r -= w) < 0) return k; return Object.keys(W)[0]; };
   const old = o.age ?? .5 + rnd() * .15;
@@ -3032,7 +3045,7 @@ export const PEOPLES = {
     body: { m: { metres: [1.84, 1.98], muscle: [.66, .92], weight: [.48, .7] }, f: { metres: [1.72, 1.84], muscle: [.52, .7], weight: [.46, .64] } },
     skin: [[.92, .8, .74], [.9, .77, .7], [.88, .74, .66]], hair: [[.8, .72, .56], [.72, .64, .5], [.86, .8, .66], [.62, .54, .42]], eyes: [[.55, .6, .62], [.5, .56, .6], [.45, .55, .62]],
     styles: { m: { short: 5, braids: 2, tail: 2 }, f: { braids: 4, braid: 3, bun: 1 } },
-    wool: [[.32, .26, .2], [.24, .27, .32], [.3, .32, .26], [.2, .2, .22], [.45, .16, .12]], cloak: .3, fur: true, brooch: [.35, .35, .37], apron: [.15, .1], mantle: .8, cuffBands: .7, brow: { m: { thick: [.7, .95], arch: [.15, .35] }, f: { thick: [.45, .65], arch: [.35, .55] } } },
+    wool: [[.32, .26, .2], [.24, .27, .32], [.3, .32, .26], [.2, .2, .22], [.45, .16, .12]], cloak: .3, fur: true, brooch: [.35, .35, .37], apron: [.15, .1], mantle: .8, paleMantle: .4, cuffBands: .7, brow: { m: { thick: [.7, .95], arch: [.15, .35] }, f: { thick: [.45, .65], arch: [.35, .55] } } },
   aurennais: { name: 'Aurennais', race: { caucasian: [.3, .65], african: [.25, .7], asian: [0, .15] },
     body: { m: { metres: [1.74, 1.86], muscle: [.5, .66], weight: [.32, .46] }, f: { metres: [1.62, 1.74], muscle: [.42, .56], weight: [.34, .48] } },
     skin: [[.74, .56, .42], [.64, .46, .33], [.52, .36, .25], [.4, .27, .19], [.31, .21, .15]], hair: [[.1, .07, .06], [.16, .11, .08], [.22, .15, .1]], eyes: [[.3, .2, .12], [.22, .15, .1], [.35, .28, .16]],
@@ -3131,6 +3144,9 @@ export function peopleGenome(rnd, people, g, o = {}) {
     const sr = ro(), pk = a => a[Math.floor(ro() * a.length)]; if (!D.spear && !D.crossbow && !D.basket && sr < (G.people === 'oldblood' ? .5 : .3) + .15 * t + (G.pose?.stoop ? .1 : 0)) D.staff = G.people === 'oldblood' ? pk([[.2, .16, .13], [.3, .24, .19]]) : G.people === 'aurennais' ? pk([[.5, .4, .28], [.42, .32, .2]]) : pk([[.45, .33, .2], [.36, .26, .16], [.52, .42, .3]]); }
   // the Gatelanders' waistcoats (Session 1143, OG-109: "tunics, waistcoats"), on the men over a tunic where nothing else lies on the chest,
   // in the people's earth greens, browns and muted blue, or in brown leather on three in ten; from a stream of their own, so every other roll of a seed is as it was
+  // the Mark women's pale furs (Session 1203, OG-110: "a woman in a white fur mantle over blue"): of the women who wear the mantle,
+  // two in five wear it in white fox, cream ermine or snow hare; from a stream of their own, so every other roll of a seed is as it was
+  if (P.paleMantle && sx === 'f' && D.mantle) { const rp = seeded(String(o.seed ?? 'person') + '|paleMantle'); if (rp() < P.paleMantle) D.mantle = PALE_FUR[Math.floor(rp() * PALE_FUR.length)]; }
   if (P.waistcoat && sx === 'm') { const rw = seeded(String(o.seed ?? 'person') + '|waistcoat'); if (rw() < P.waistcoat) { const lea = rw() < .3; D.waistcoat = lea ? [.36, .24, .15] : [[.3, .36, .22], [.42, .3, .18], [.2, .3, .4], [.28, .26, .2]][Math.floor(rw() * 4)]; D.waistcoatLeather = lea; if (!waistcoatOn(D)) { D.waistcoat = null; D.waistcoatLeather = false; } } }
   // the Gatelanders' tartan (Session 1151; Michael's A on #445: "a note, on cloaks"): one cloak or shoulder cape in five woven in a sett,
   // one of three (a moss ground in dark green with a madder overcheck, a madder ground in dark blue, a brown ground in near-black with
