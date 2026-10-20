@@ -614,7 +614,8 @@ function skullBits(B, o, S, base, dir, up) {
   const holes = [ell([.019, .017, .009], [.031, .01, .087]), ell([.019, .017, .009], [-.031, .01, .087]), ell([.009, .013, .006], [0, -.022, .098])];
   tris += put('head', holes, dark) + put('head', teeth(-.058, .075, .028, .012), toothM);
   const jaw = [ell([.016, .012, .012], [0, -.088, .082])]; for (const sd of [1, -1]) jaw.push(tube([[sd * .058, -.012, .008], [sd * .055, -.05, .0], [sd * .051, -.078, .008], [sd * .038, -.086, .055], [sd * .012, -.09, .08]], .0095, .008));
-  tris += put('jaw', jaw, boneM) + put('jaw', teeth(-.072, .07, .025, .01), toothM);
+  const jb = B.by.jaw ? 'jaw' : 'head'; // a head with no jaw of flesh (Session 1186, the skull inside the failing elemental's) carries the skull's jaw itself
+  tris += put(jb, jaw, boneM) + put(jb, teeth(-.072, .07, .025, .01), toothM);
   const e = (o.eyes || [])[0]; if (e && Math.max(...e.color) > .2) for (const sd of [1, -1]) B.bit('head', eye(.0075 * S, e.color, L(sd * .031, .01, .095)));
   B.skull = { tris: Math.round(tris), teeth: 20, top: +(.139 * S).toFixed(3) };
 }
@@ -625,9 +626,22 @@ P.ribs = (B, o) => { const gs = [];
   for (let i = 0; i < o.n; i++) { const u = i / (o.n - 1), sp = B.spineAt(lerp(o.from, o.to, u)), k = Math.sin(Math.PI * (.25 + .75 * u)), W = o.w * k, D = o.d * (.6 + .4 * k), c = sp.p.clone().add(V(0, 0, D));
     for (const sd of [1, -1]) { const pts = []; for (let j = 0; j <= 8; j++) { const t = j / 8, th = t * Math.PI * (o.wrap ?? .82); pts.push(c.clone().add(V(sd * W * Math.sin(th), -o.drop * t, -D * Math.cos(th)))); }
       gs.push(taperTube(pts, o.r, o.r * .7, 6)); } }
-  const m = new THREE.Mesh(mergeGeometries(gs), stdMat(B.tone('coat'), { rough: .7 })); m.name = 'ribs'; B.bit(B.spineAt((o.from + o.to) / 2).bone, m);
-  if (o.pelvis) { const h = B.spinePts[0], P0 = o.pelvis; for (const sd of [1, -1]) { const g = new THREE.SphereGeometry(P0.r, 14, 10); g.scale(1, 1.1, .3); g.rotateY(sd * .9); g.translate(h.x + sd * P0.out, h.y + P0.up, h.z); B.bit(B.spineNames[0], new THREE.Mesh(g, stdMat(B.tone('coat'), { rough: .7 }))); } }
+  const m = new THREE.Mesh(mergeGeometries(gs), stdMat(B.tone(o.tone || 'coat'), { rough: .7 })); m.name = 'ribs'; B.bit(B.spineAt((o.from + o.to) / 2).bone, m); // `tone` (Session 1186): stone ribs
+  if (o.pelvis) { const h = B.spinePts[0], P0 = o.pelvis; for (const sd of [1, -1]) { const g = new THREE.SphereGeometry(P0.r, 14, 10); g.scale(1, 1.1, .3); g.rotateY(sd * .9); g.translate(h.x + sd * P0.out, h.y + P0.up, h.z); B.bit(B.spineNames[0], new THREE.Mesh(g, stdMat(B.tone(o.tone || 'coat'), { rough: .7 }))); } }
   B.ribs = o.n * 2; };
+// a frame (Session 1186, OG-073's failing fire elemental: "grows a stone skeleton inside its flame"): a skeleton of hewn stone inside a
+// clear body, rigid bits on the bones it lies along. A block for each spine and neck joint (`w` its width at the spine's radius, `h` its
+// height), a shaft down each arm bone (`r` its radius at the root, thinning to the hand), and `spurs`, stone points that break out
+// through the flesh: each `at` along the spine, `out` its root's offset to the side in the spine's radius, `dir` the way it points
+// (x mirrored by side), `len`, `r`. Its tone is `tone`; nothing on it is lit ──
+P.frame = (B, o) => { const M = stdMat(B.tone(o.tone || 'stone'), { rough: .95, flat: true }), gs = {}, add = (bone, g) => { g.deleteAttribute('uv'); (gs[bone] = gs[bone] || []).push(g.toNonIndexed()); };
+  const joints = [...B.spineNames.map((n, k) => [n, B.spinePts[k], B.spineR(k / (B.spineNames.length - 1))]), ...(B.chains.neck || []).map((n, k) => [n, B.neckPts[k], B.neckR(k / B.chains.neck.length)])];
+  for (const [n, p, r] of joints) { const g = stoneBlock(r * o.w * 2, o.h, r * o.w * 1.6, .008, .03); g.rotateY(.3 * (PN.noise(p.y * 9, 1, 2))); g.translate(p.x, p.y, p.z); add(n, g); }
+  for (const A of B.arms) for (let k = 0; k < 3; k++) { const a = B.by[A.names[k]].p, b = B.by[A.names[k + 1]].p; add(A.names[k], taperTube([a, a.clone().lerp(b, .5), b], o.r * (1 - .25 * k), o.r * (.75 - .25 * k), 6)); }
+  for (const sp of o.spurs || []) for (const sd of [1, -1]) { const at = B.spineAt(sp.at), root = at.p.clone().add(V(sd * sp.out * at.r * B.spineS[0], sp.up || 0, (sp.fwd || 0) * at.r)), m = claw(sp.r, sp.len, B.tone(o.tone || 'stone'), root, V(sd * sp.dir[0], sp.dir[1], sp.dir[2]));
+    m.material = M; m.name = 'spur'; B.bit(at.bone, m); }
+  let n = 0; for (const [bone, list] of Object.entries(gs)) { const m = new THREE.Mesh(mergeGeometries(list), M); m.name = 'frame'; B.bit(bone, m); n += list.length; }
+  B.frame = { pieces: n, spurs: (o.spurs || []).length * 2 }; };
 function dressFlesh(geo, B, pal, plan) {
   const pos = geo.attributes.position, nrm = geo.attributes.normal, n = pos.count;
   const si = new Uint16Array(n * 4), sw = new Float32Array(n * 4), col = new Float32Array(n * 3), fur = new Float32Array(n), glow = new Float32Array(n), alpha = plan.faceClear ? new Float32Array(n).fill(1) : null;
@@ -2235,6 +2249,23 @@ Object.assign(PLANS, {
     ] }
 });
 export const ELEMENTALS = ['fireelemental'];
+// ── Session 1186: Tine's failing fire elemental (OG-073's Tine row: the fire elemental "grows a stone skeleton inside its flame"). The
+// elemental grown wrong: the crust burnt through, so the whole is flame and clearer, and through it a skeleton of dark hewn stone: a
+// block at every joint of the spine and neck, stone ribs and a hip, a stone skull in the head with its eyes lit in the sockets, a shaft down
+// every arm. The skeleton has grown a second pair of arms out of the ribs, reaching wider and lower and swinging on their own beat, and the
+// flame has followed them; stone spurs break out through the flame at the shoulders and down the back. The flame stands taller (each
+// tongue a fifth longer) and burns hotter (the cracks' light up a third). Glow only where it was: the stone is not lit ──
+Object.assign(PLANS, {
+  failingfireelemental: re(PLANS.fireelemental, { name: 'Fire Elemental of Tine (failing gate)', src: 'OG-073 (Tine: the fire elemental at a failing gate, a stone skeleton grown inside its flame)', school: 'Tine', condition: 'failing', from: 'fireelemental',
+    hover: .06, flicker: { k: 9, a: .2 }, clear: .62, scale: 1.08, palette: { ...PLANS.fireelemental.palette, coat: [.6, .17, .02], saddle: [.45, .12, .02], belly: [.7, .24, .03], stone: [.2, .19, .18] },
+    glow: { ...PLANS.fireelemental.glow, color: [3.2, .82, .13], all: 1, w: .08, tones: { flame: .4, ember: .6 } },
+    parts: [...PLANS.fireelemental.parts.map(([k, o]) => k === 'crests' ? [k, { list: o.list.map(c => ({ ...c, len: c.len * 1.2 })) }]
+      : k === 'head' ? [k, { ...o, brow: undefined, skull: { tone: 'stone', k: .82 }, eyes: o.eyes.map(e => ({ ...e, color: [1, .7, .15] })) }] : [k, o]),
+      ['arms', { at: .62, out: .3, up: 0, dz: -.02, len: .82, r: [.07, .058, .045], dir: [.8, -.45, .35], bend: 40, tone: 'flame', claws: { r: .015, len: .11, tone: 'stone' }, swing: .22, phase: 1.9 }],
+      ['ribs', { n: 6, from: .35, to: .95, w: .17, d: .1, drop: .07, r: .016, wrap: .8, tone: 'stone', pelvis: { r: .1, out: .08, up: .02 } }],
+      ['frame', { tone: 'stone', w: .42, h: .07, r: .022, spurs: [{ at: 1, out: .75, up: .06, dir: [.5, .8, -.3], len: .26, r: .03 }, { at: .7, out: .3, fwd: -.7, dir: [.3, .4, -.85], len: .22, r: .028 }, { at: .4, out: .25, fwd: -.7, dir: [.25, .2, -.95], len: .18, r: .024 }] }]] })
+});
+FAILING.push('failingfireelemental');
 // ── Session 945: the cave troll's lashed-on armour (OG-041: scraps of plate and hide tied on with rope). Laid on its grown skin as the
 // goblin's harness is (Session 944): a dented iron plate on its chest, an iron plate over its left shoulder, a rawhide sheet across its
 // back, and three leather lashings over them, standing 1.2 cm further out. Only the OG-041 troll wears it: the trolls built from it
