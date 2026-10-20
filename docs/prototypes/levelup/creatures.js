@@ -40,7 +40,8 @@ P.spine = (B, o) => {
   const pts = []; for (let k = 0; k < n; k++) { const t = k / (n - 1), p = hip.clone().lerp(chest, t); p.y += (o.arch || 0) * Math.sin(Math.PI * t); pts.push(p); }
   const names = B.chain('spine', null, pts), R = t => along(o.r, t);
   for (let k = 0; k < n - 1; k++) B.meat(names[k], pts[k], pts[k + 1], R(k / (n - 1)), R((k + 1) / (n - 1)), { s, group: 'spine', tone: o.tone });
-  B.meat(names[0], hip, hip.clone().add(V(0, -(o.rumpDrop || 0), -(o.rump || 0))), r0, r0 * (o.rumpTaper ?? .85), { s, group: 'spine', tone: o.tone });
+  // `rumpTone` (Session 1185): the rump in a tone of its own (the fire elemental's column of flame under its crust)
+  B.meat(names[0], hip, hip.clone().add(V(0, -(o.rumpDrop || 0), -(o.rump || 0))), r0, r0 * (o.rumpTaper ?? .85), { s, group: 'spine', tone: o.rumpTone || o.tone });
   B.meat(names[n - 1], chest, chest.clone().add(V(0, -(o.frontDrop || 0), o.front || 0)), r1, r1 * (o.frontTaper ?? .85), { s, group: 'spine', tone: o.tone });
   if (o.hump) { const t = o.hump.at, k = Math.min(n - 2, Math.floor(t * (n - 1))), c = hip.clone().lerp(chest, t); c.y += o.hump.up; B.meat(names[k], c.clone().add(V(0, 0, -o.hump.len / 2)), c.clone().add(V(0, 0, o.hump.len / 2)), o.hump.r, o.hump.r * .8, { s: [o.hump.sx || .8, 1, 1] }); }
   B.spinePts = pts; B.spineNames = names; B.spineR = R; B.spineS = s;
@@ -55,6 +56,13 @@ P.neck = (B, o) => {
   for (let k = 0; k < n; k++) B.meat(names[k], pts[k], pts[k + 1], along(o.r, k / n), along(o.r, (k + 1) / n), { s: [o.s?.[0] ?? 1, o.s?.[1] ?? 1, 1], group: 'neck', tone: o.tone });
   B.neckEnd = pts[n]; B.neckBone = names[n - 1]; B.neckPts = pts; B.neckR = t => along(o.r, t); B.neckS = [o.s?.[0] ?? 1, o.s?.[1] ?? 1];
 };
+// the hood's darkness is seen only through its opening (Session 1187): from behind, the black cup showed through a see-through cowl as a
+// dark oval at the back of the head. The cup's local +z is the way the opening faces and its origin is the opening's middle, so the
+// material keeps a fragment only while the eye is ahead of the opening's plane (in view space the eye is at the origin)
+function hoodFacing(mat) {
+  mat.onBeforeCompile = s => { s.vertexShader = 'varying float vAhead;\n' + s.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vAhead = dot(-(modelViewMatrix * vec4(0., 0., 0., 1.)).xyz, normalize((modelViewMatrix * vec4(0., 0., 1., 0.)).xyz));');
+    s.fragmentShader = 'varying float vAhead;\n' + s.fragmentShader.replace('#include <clipping_planes_fragment>', '#include <clipping_planes_fragment>\n if (vAhead < 0.) discard;'); };
+  mat.customProgramCacheKey = () => 'hoodFacing'; return mat; }
 // the head: a skull, a muzzle and a jaw; eyes, ears, horns and antlers are bits on it
 P.head = (B, o) => {
   // `name` and `off` (Session 1176, the failing golem's second head): a further head is its own bone, set off from the first's place
@@ -87,7 +95,7 @@ P.head = (B, o) => {
   // a hood (Session 1177, the wraith's: no head under it): the head's flesh is the cowl, and in its front a darkness, an unlit black hollow:
   // the back half of a sphere, its rim at the opening, drawn from inside only and casting no shadow, so a see-through cowl does not show it
   // from behind (its shadow on the cowl's inside read there as a second face)
-  if (o.hood) { const m = new THREE.Mesh(new THREE.SphereGeometry(o.hood.r * S, 18, 12, Math.PI, Math.PI), new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.BackSide })); m.scale.set(1, o.hood.h ?? 1.2, .55); m.position.copy(at(o.hood.f, o.hood.up || 0, 0)); m.quaternion.setFromUnitVectors(V(0, 0, 1), dir); m.name = 'hood'; m.userData.noShadow = 1; B.bit(hn, m); }
+  if (o.hood) { const m = new THREE.Mesh(new THREE.SphereGeometry(o.hood.r * S, 18, 12, Math.PI, Math.PI), new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.BackSide })); m.scale.set(1, o.hood.h ?? 1.2, .55); m.position.copy(at(o.hood.f, o.hood.up || 0, 0)); m.quaternion.setFromUnitVectors(V(0, 0, 1), dir); m.name = 'hood'; m.userData.noShadow = 1; hoodFacing(m.material); B.bit(hn, m); }
   if (o.brow) B.meat(hn, at(o.brow.f, o.brow.up, -o.brow.out), at(o.brow.f, o.brow.up, o.brow.out), o.brow.r * S, o.brow.r * S, { tone: o.tone });
   if (o.fangs) for (const sd of [1, -1]) B.bit(hn, claw(o.fangs.r * S, o.fangs.len * S, B.tone('dark'), at(o.fangs.f, o.fangs.up, o.fangs.out * sd), V(0, -1, .4).normalize()));
 };
@@ -117,13 +125,16 @@ P.holes = (B, o) => { B.holes = B.holes || [];
 // `at` along the spine, `out` its root's offset to the side in the spine's radius there, `len` its length, `n` its bones, `lean` and
 // `curl` the degrees from upright at its root and added a bone (forward), `splay` degrees out to the side, `r` the radii root to tip, `s` its section's scale
 // (wider than deep, as a wave's crest is).
-// The crawl rolls each on its own beat (`phase`)
+// The crawl rolls each on its own beat (`phase`).
+// Session 1185 (the fire elemental's tongues of flame): `fwd` sets the root ahead (or behind) in the spine's radius, and `on: 'head'`
+// roots it on the head instead, `f` along the skull, so a crown of tongues grows out of the head as one with it
 P.crests = (B, o) => { B.crests = B.crests || [];
-  for (const c of o.list) { const sp = B.spineAt(c.at), n = c.n || 4, sd = Math.sign(c.out || 0) || 1, sx = Math.sin((c.splay || 0) * DEG) * sd;
-    const pts = [sp.p.clone().add(V((c.out || 0) * sp.r * B.spineS[0], sp.r * B.spineS[1] * (c.sink ?? .5), 0))];
+  for (const c of o.list) { const H = c.on === 'head' && B.headFrame, sp = H ? { p: H.base.clone().addScaledVector(H.dir, H.len * (c.f ?? .2)), r: H.r, bone: 'head' } : B.spineAt(c.at), sS = H ? [1, 1] : B.spineS;
+    const n = c.n || 4, sd = Math.sign(c.out || 0) || 1, sx = Math.sin((c.splay || 0) * DEG) * sd;
+    const pts = [sp.p.clone().add(V((c.out || 0) * sp.r * sS[0], sp.r * sS[1] * (c.sink ?? .5), (c.fwd || 0) * sp.r))];
     for (let j = 0; j < n; j++) { const a = ((c.lean || 0) + (c.curl || 0) * j) * DEG, d = V(sx, Math.cos(a), Math.sin(a)).normalize(); pts.push(pts[j].clone().addScaledVector(d, c.len / n)); }
     const tag = 'crest' + B.crests.length + '_', names = B.chain(tag, sp.bone, pts);
-    for (let j = 0; j < n; j++) B.meat(names[j], pts[j], pts[j + 1], along(c.r, j / n), along(c.r, (j + 1) / n), { group: tag, tone: c.tone, s: c.s });
+    for (let j = 0; j < n; j++) B.meat(names[j], pts[j], pts[j + 1], along(c.r, j / n), along(c.r, (j + 1) / n), { group: tag, tone: j === n - 1 && c.tip ? c.tip : c.tone, s: c.s }); // `tip`: the last bone's tone (Session 1185, a flame's yellow tip)
     B.crests.push({ names, phase: c.phase || 0, tip: pts[n] }); } };
 // egg sacs (Session 929, OG-041's giant spider): a clutch of silk balls stuck to the underside of the tail (a spider's abdomen) toward
 // its tip, each a lumpy wrapped sphere, half sunk into the hide, rigid on the tail bone it hangs from. `at` is the stretch of the tail
@@ -202,7 +213,9 @@ P.arms = (B, o) => {
     const elbow = root.clone().addScaledVector(dir, len * .5), d2 = o.dir2 ? V(side * o.dir2[0], o.dir2[1], o.dir2[2]).normalize() : dir.clone().applyAxisAngle(V(1, 0, 0), -(o.bend || 30) * DEG).normalize(), wrist = elbow.clone().addScaledVector(d2, len * .42), hand = wrist.clone().addScaledVector(d2, len * .14);
     const tag = 'arm' + (B.arms.length / 2 | 0) + (side > 0 ? 'L' : 'R'), names = B.chain(tag + '_', sp.bone, [root, elbow, wrist, hand]);
     const r = o.r; B.meat(names[0], root, elbow, r[0], r[1], { group: tag, tone: o.tone, s: o.s }); B.meat(names[1], elbow, wrist, r[1], r[2], { group: tag, tone: o.tone, s: o.s }); B.meat(names[2], wrist, hand, r[2], r[2] * .7, { group: tag, tone: o.tone, s: o.s });
-    if (o.claws) for (let c = -1; c <= 1; c++) B.bit(names[3], claw(o.claws.r, o.claws.len, B.tone(o.claws.tone || 'dark'), hand.clone().add(V(c * o.claws.r * 2, 0, 0)), d2.clone().add(V(c * .2, 0, 0)).normalize()));
+    // claws of flame (Session 1185, the fire elemental's): `glow` lights a claw in its own colour
+    if (o.claws) for (let c = -1; c <= 1; c++) { const m = B.bit(names[3], claw(o.claws.r, o.claws.len, B.tone(o.claws.tone || 'dark'), hand.clone().add(V(c * o.claws.r * 2, 0, 0)), d2.clone().add(V(c * .2, 0, 0)).normalize()));
+      if (o.claws.glow) { m.material = m.material.clone(); m.material.emissive.copy(m.material.color).multiplyScalar(o.claws.glow); } }
     // a pincer (Session 773): a swollen hand and two fingers, the fixed one longer
     if (o.chela) { const c = o.chela; B.meat(names[2], wrist.clone().addScaledVector(d2, -len * .04), hand, c.r, c.r * .8, { s: [1, .62, 1], tone: o.tone, group: tag + 'c' });
       const fx = d2.clone().add(V(-side * .25, 0, 0)).normalize(), mv = d2.clone().add(V(side * .3, .1, 0)).normalize();
@@ -608,7 +621,8 @@ function skullBits(B, o, S, base, dir, up) {
   const holes = [ell([.019, .017, .009], [.031, .01, .087]), ell([.019, .017, .009], [-.031, .01, .087]), ell([.009, .013, .006], [0, -.022, .098])];
   tris += put('head', holes, dark) + put('head', teeth(-.058, .075, .028, .012), toothM);
   const jaw = [ell([.016, .012, .012], [0, -.088, .082])]; for (const sd of [1, -1]) jaw.push(tube([[sd * .058, -.012, .008], [sd * .055, -.05, .0], [sd * .051, -.078, .008], [sd * .038, -.086, .055], [sd * .012, -.09, .08]], .0095, .008));
-  tris += put('jaw', jaw, boneM) + put('jaw', teeth(-.072, .07, .025, .01), toothM);
+  const jb = B.by.jaw ? 'jaw' : 'head'; // a head with no jaw of flesh (Session 1186, the skull inside the failing elemental's) carries the skull's jaw itself
+  tris += put(jb, jaw, boneM) + put(jb, teeth(-.072, .07, .025, .01), toothM);
   const e = (o.eyes || [])[0]; if (e && Math.max(...e.color) > .2) for (const sd of [1, -1]) B.bit('head', eye(.0075 * S, e.color, L(sd * .031, .01, .095)));
   B.skull = { tris: Math.round(tris), teeth: 20, top: +(.139 * S).toFixed(3) };
 }
@@ -619,9 +633,22 @@ P.ribs = (B, o) => { const gs = [];
   for (let i = 0; i < o.n; i++) { const u = i / (o.n - 1), sp = B.spineAt(lerp(o.from, o.to, u)), k = Math.sin(Math.PI * (.25 + .75 * u)), W = o.w * k, D = o.d * (.6 + .4 * k), c = sp.p.clone().add(V(0, 0, D));
     for (const sd of [1, -1]) { const pts = []; for (let j = 0; j <= 8; j++) { const t = j / 8, th = t * Math.PI * (o.wrap ?? .82); pts.push(c.clone().add(V(sd * W * Math.sin(th), -o.drop * t, -D * Math.cos(th)))); }
       gs.push(taperTube(pts, o.r, o.r * .7, 6)); } }
-  const m = new THREE.Mesh(mergeGeometries(gs), stdMat(B.tone('coat'), { rough: .7 })); m.name = 'ribs'; B.bit(B.spineAt((o.from + o.to) / 2).bone, m);
-  if (o.pelvis) { const h = B.spinePts[0], P0 = o.pelvis; for (const sd of [1, -1]) { const g = new THREE.SphereGeometry(P0.r, 14, 10); g.scale(1, 1.1, .3); g.rotateY(sd * .9); g.translate(h.x + sd * P0.out, h.y + P0.up, h.z); B.bit(B.spineNames[0], new THREE.Mesh(g, stdMat(B.tone('coat'), { rough: .7 }))); } }
+  const m = new THREE.Mesh(mergeGeometries(gs), stdMat(B.tone(o.tone || 'coat'), { rough: .7 })); m.name = 'ribs'; B.bit(B.spineAt((o.from + o.to) / 2).bone, m); // `tone` (Session 1186): stone ribs
+  if (o.pelvis) { const h = B.spinePts[0], P0 = o.pelvis; for (const sd of [1, -1]) { const g = new THREE.SphereGeometry(P0.r, 14, 10); g.scale(1, 1.1, .3); g.rotateY(sd * .9); g.translate(h.x + sd * P0.out, h.y + P0.up, h.z); B.bit(B.spineNames[0], new THREE.Mesh(g, stdMat(B.tone(o.tone || 'coat'), { rough: .7 }))); } }
   B.ribs = o.n * 2; };
+// a frame (Session 1186, OG-073's failing fire elemental: "grows a stone skeleton inside its flame"): a skeleton of hewn stone inside a
+// clear body, rigid bits on the bones it lies along. A block for each spine and neck joint (`w` its width at the spine's radius, `h` its
+// height), a shaft down each arm bone (`r` its radius at the root, thinning to the hand), and `spurs`, stone points that break out
+// through the flesh: each `at` along the spine, `out` its root's offset to the side in the spine's radius, `dir` the way it points
+// (x mirrored by side), `len`, `r`. Its tone is `tone`; nothing on it is lit ──
+P.frame = (B, o) => { const M = stdMat(B.tone(o.tone || 'stone'), { rough: .95, flat: true }), gs = {}, add = (bone, g) => { g.deleteAttribute('uv'); (gs[bone] = gs[bone] || []).push(g.toNonIndexed()); };
+  const joints = [...B.spineNames.map((n, k) => [n, B.spinePts[k], B.spineR(k / (B.spineNames.length - 1))]), ...(B.chains.neck || []).map((n, k) => [n, B.neckPts[k], B.neckR(k / B.chains.neck.length)])];
+  for (const [n, p, r] of joints) { const g = stoneBlock(r * o.w * 2, o.h, r * o.w * 1.6, .008, .03); g.rotateY(.3 * (PN.noise(p.y * 9, 1, 2))); g.translate(p.x, p.y, p.z); add(n, g); }
+  for (const A of B.arms) for (let k = 0; k < 3; k++) { const a = B.by[A.names[k]].p, b = B.by[A.names[k + 1]].p; add(A.names[k], taperTube([a, a.clone().lerp(b, .5), b], o.r * (1 - .25 * k), o.r * (.75 - .25 * k), 6)); }
+  for (const sp of o.spurs || []) for (const sd of [1, -1]) { const at = B.spineAt(sp.at), root = at.p.clone().add(V(sd * sp.out * at.r * B.spineS[0], sp.up || 0, (sp.fwd || 0) * at.r)), m = claw(sp.r, sp.len, B.tone(o.tone || 'stone'), root, V(sd * sp.dir[0], sp.dir[1], sp.dir[2]));
+    m.material = M; m.name = 'spur'; B.bit(at.bone, m); }
+  let n = 0; for (const [bone, list] of Object.entries(gs)) { const m = new THREE.Mesh(mergeGeometries(list), M); m.name = 'frame'; B.bit(bone, m); n += list.length; }
+  B.frame = { pieces: n, spurs: (o.spurs || []).length * 2 }; };
 function dressFlesh(geo, B, pal, plan) {
   const pos = geo.attributes.position, nrm = geo.attributes.normal, n = pos.count;
   const si = new Uint16Array(n * 4), sw = new Float32Array(n * 4), col = new Float32Array(n * 3), fur = new Float32Array(n), glow = new Float32Array(n), alpha = plan.faceClear ? new Float32Array(n).fill(1) : null;
@@ -656,7 +683,9 @@ function dressFlesh(geo, B, pal, plan) {
       alpha[v] = lerp(1, plan.faceClear / plan.clear, sstep(.5, .85, hs) * sstep(.25, .5, fwd) * sstep(.9, .45, upw)); }
     // the binding's seams: a crack pattern along the line `glow.line` (the spine's seam) or over the whole hide
     if (gl) { const cr = Math.abs(PN.noise(x * gl.freq, y * gl.freq, z * gl.freq * .6)), seam = gl.seam ? sstep(gl.seam.w, 0, Math.abs(x)) * sstep(gl.seam.y0, gl.seam.y0 + .08, y) * (ny > .2 ? 1 : 0) : 0;
-      glow[v] = Math.max(seam, sstep(gl.w, 0, cr) * (gl.all || 0), (gl.base || 0) * (1 - .5 * Math.max(0, -ny))); }
+      glow[v] = Math.max(seam, sstep(gl.w, 0, cr) * (gl.all || 0), (gl.base || 0) * (1 - .5 * Math.max(0, -ny)));
+      // a tone that is itself light (Session 1185, the fire elemental's flame): `tones` lights a vertex by its share of each
+      if (gl.tones) for (const [t, k] of Object.entries(gl.tones)) if (tw[toneI[t]]) glow[v] = Math.max(glow[v], k * tw[toneI[t]] / ts); }
   }
   geo.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(si, 4)); geo.setAttribute('skinWeight', new THREE.Float32BufferAttribute(sw, 4));
   geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); geo.setAttribute('aFur', new THREE.Float32BufferAttribute(fur, 1)); geo.setAttribute('aGlow', new THREE.Float32BufferAttribute(glow, 1));
@@ -893,7 +922,9 @@ export function pose(C, phase) {
   // a floating body (Session 1177) bobs, slowly at rest; going, it leans into the way it goes
   if (C.plan.hover) { sp.position.y += C.plan.hover * Math.sin(tau * ph * (G.hover ? 1 : .35)); if (G.hover) sp.rotation.x += .08; }
   // a jelly's crests (Session 1174) roll forward and back down their length, each on its own beat; slower and smaller at rest
-  for (const Cr of B.crests || []) { const np = Cr.names.length; for (let j = 0; j < np - 1; j++) C.byName[Cr.names[j]].rotation.set((G.bl ? .2 : .07) * Math.sin(tau * ph * (G.bl ? 1 : .4) + Cr.phase - j * .7) * (j ? 1 : .5), 0, 0); }
+  // flame (Session 1185, `flicker`: k beats a cycle, a whole number so the loop closes, and `a` radians) licks both ways, fast, going or not
+  const FL = C.plan.flicker;
+  for (const Cr of B.crests || []) { const np = Cr.names.length; for (let j = 0; j < np - 1; j++) C.byName[Cr.names[j]].rotation.set(FL ? FL.a * Math.sin(tau * ph * FL.k + Cr.phase - j * .9) * (j ? 1 : .4) : (G.bl ? .2 : .07) * Math.sin(tau * ph * (G.bl ? 1 : .4) + Cr.phase - j * .7) * (j ? 1 : .5), 0, FL ? FL.a * .7 * Math.sin(tau * ph * (FL.k + 1) + Cr.phase * 1.7 - j * .6) * (j ? 1 : .4) : 0); }
   // arms swing against the legs; wings rest half-folded, breathing, or beat
   // a flipper (Session 861) flies through the water: it beats down and up, sweeps back on the downstroke and feathers on the way up
   for (const A of B.arms) if (A.stroke) { const sd = A.side, w = tau * ph * (G.swim ? 1 : .4) + A.phase, k = A.stroke * (G.swim ? 1 : .25);
@@ -2188,6 +2219,60 @@ Object.assign(PLANS, {
       ['rags', { n: 14, len: .4, w: .11, rx: .26, rz: .21, up: -.32, gaps: .1, tone: 'cloth', tip: 'clothTip', cord: 'clothTip' }]] })
 });
 FAILING.push('failingwraith');
+// ── Session 1185: the fire elemental (OG-018's Tine row: "Fire Elemental"; canon §9a's forge-hot halls; the game's own since S222,
+// Michael's B on Session 214: "a figure of flame over a molten core, with arms of fire, clawed hands of flame and a crown of fire").
+// No legs: a man's height of body that narrows below the hips into a column of flame and floats clear of the floor, as the game's does.
+// The body is a dark crust of cooling slag cracked all over, the cracks lit forge-orange and the whole a little lit from within; tongues
+// of flame rise from the shoulders, the flanks, the chest and the back, grown out of the body as one surface, and a crown of them from the
+// head (the crests of Session 1174, rooted where the plan says and licking both ways, fast, going or not: `flicker`); the arms are flame
+// to the shoulder, the claws flame-yellow and lit, the eyes yellow, every tongue yellow at its tip (`tip`). The flame is a tone that is light (`glow.tones`). Tine's failing
+// form, its stone skeleton inside the flame, grows from this ──
+const TONGUE = { n: 3, r: [.1, .065, .03, .008], tone: 'flame', tip: 'ember' };
+Object.assign(PLANS, {
+  fireelemental: { name: 'Fire Elemental', src: 'OG-018 (Tine: a Fire Elemental of the forge-hot halls)', school: 'Tine', gaits: ['hover', 'stand'], hover: .05, bl: .3, rough: .9, mottle: 1.3, wag: 0, pant: 0, neckNod: .02,
+    flicker: { k: 8, a: .16 },
+    palette: { coat: [.13, .05, .03], saddle: [.09, .04, .03], belly: [.19, .07, .03], flame: [1, .36, .05], ember: [1, .7, .22], dark: [.02, .01, .01] },
+    glow: { color: [2.4, .62, .1], freq: 5, w: .07, all: .9, tones: { flame: .32, ember: .5 } },
+    parts: [
+      ['spine', { hip: [1, -.02], chest: [1.42, .04], n: 4, r: [.16, .15, .24], s: [1.4, .85], rump: .02, rumpDrop: .62, rumpTaper: .3, rumpTone: 'flame', front: 0 }],
+      ['neck', { len: .17, n: 1, rise: 82, r: [.085, .075], up: .03 }],
+      ['head', { len: .25, r: .11, pitch: 0, s: [1, 1.05, 1], brow: { f: .45, up: .5, out: .55, r: .035 }, eyes: [{ f: .8, up: .15, out: .38, r: .018, glow: 2.2, color: [1, .86, .3] }] }],
+      ['arms', { at: .95, out: .3, up: -.02, len: .8, r: [.085, .07, .055], dir: [.45, -.85, .2], bend: 35, tone: 'flame', claws: { r: .014, len: .1, tone: 'ember', glow: 2.5 }, swing: .18 }],
+      ['crests', { list: [
+        { ...TONGUE, at: .95, out: .95, len: 0.46, lean: -4, curl: 8, splay: 22, phase: 0 },
+        { ...TONGUE, at: .95, out: -.95, len: 0.41, lean: -4, curl: 8, splay: 22, phase: 1.3 },
+        { ...TONGUE, at: .6, out: 1.05, fwd: .2, len: 0.35, lean: 8, curl: 6, splay: 34, phase: 2.6 },
+        { ...TONGUE, at: .55, out: -1.05, fwd: .1, len: 0.38, lean: 8, curl: 6, splay: 34, phase: 3.9 },
+        { ...TONGUE, at: .75, out: .25, fwd: -.85, len: 0.49, lean: -24, curl: -8, splay: 8, phase: 5.2 },
+        { ...TONGUE, at: .7, out: -.3, fwd: -.85, len: 0.43, lean: -22, curl: -8, splay: 8, phase: .7 },
+        { ...TONGUE, at: .3, out: .15, fwd: -.8, len: 0.38, lean: -18, curl: -6, splay: 6, phase: 2 },
+        { ...TONGUE, at: .4, out: -.2, fwd: .8, len: 0.32, lean: 16, curl: 4, splay: 6, phase: 3.3 },
+        { ...TONGUE, at: .2, out: .9, len: 0.30, lean: 0, curl: 6, splay: 26, phase: 4.6 },
+        { ...TONGUE, at: .2, out: -.9, len: 0.30, lean: 0, curl: 6, splay: 26, phase: 5.9 },
+        { ...TONGUE, on: 'head', f: .15, out: .55, sink: .55, len: .3, lean: -14, curl: 6, splay: 16, r: [.045, .03, .014, .004], tone: 'ember', phase: 1.1 },
+        { ...TONGUE, on: 'head', f: .28, out: 0, sink: .7, len: .34, lean: -4, curl: 6, r: [.05, .034, .015, .004], tone: 'ember', phase: 2.4 },
+        { ...TONGUE, on: 'head', f: .15, out: -.55, sink: .55, len: .28, lean: -14, curl: 6, splay: 16, r: [.045, .03, .014, .004], tone: 'ember', phase: 3.7 },
+        { ...TONGUE, on: 'head', f: .02, out: 0, sink: .55, len: .26, lean: -30, curl: 4, r: [.045, .03, .014, .004], tone: 'ember', phase: 5 }] }]
+    ] }
+});
+export const ELEMENTALS = ['fireelemental'];
+// ── Session 1186: Tine's failing fire elemental (OG-073's Tine row: the fire elemental "grows a stone skeleton inside its flame"). The
+// elemental grown wrong: the crust burnt through, so the whole is flame and clearer, and through it a skeleton of dark hewn stone: a
+// block at every joint of the spine and neck, stone ribs and a hip, a stone skull in the head with its eyes lit in the sockets, a shaft down
+// every arm. The skeleton has grown a second pair of arms out of the ribs, reaching wider and lower and swinging on their own beat, and the
+// flame has followed them; stone spurs break out through the flame at the shoulders and down the back. The flame stands taller (each
+// tongue a fifth longer) and burns hotter (the cracks' light up a third). Glow only where it was: the stone is not lit ──
+Object.assign(PLANS, {
+  failingfireelemental: re(PLANS.fireelemental, { name: 'Fire Elemental of Tine (failing gate)', src: 'OG-073 (Tine: the fire elemental at a failing gate, a stone skeleton grown inside its flame)', school: 'Tine', condition: 'failing', from: 'fireelemental',
+    hover: .06, flicker: { k: 9, a: .2 }, clear: .62, scale: 1.08, palette: { ...PLANS.fireelemental.palette, coat: [.6, .17, .02], saddle: [.45, .12, .02], belly: [.7, .24, .03], stone: [.2, .19, .18] },
+    glow: { ...PLANS.fireelemental.glow, color: [3.2, .82, .13], all: 1, w: .08, tones: { flame: .4, ember: .6 } },
+    parts: [...PLANS.fireelemental.parts.map(([k, o]) => k === 'crests' ? [k, { list: o.list.map(c => ({ ...c, len: c.len * 1.2 })) }]
+      : k === 'head' ? [k, { ...o, brow: undefined, skull: { tone: 'stone', k: .82 }, eyes: o.eyes.map(e => ({ ...e, color: [1, .7, .15] })) }] : [k, o]),
+      ['arms', { at: .62, out: .3, up: 0, dz: -.02, len: .82, r: [.07, .058, .045], dir: [.8, -.45, .35], bend: 40, tone: 'flame', claws: { r: .015, len: .11, tone: 'stone' }, swing: .22, phase: 1.9 }],
+      ['ribs', { n: 6, from: .35, to: .95, w: .17, d: .1, drop: .07, r: .016, wrap: .8, tone: 'stone', pelvis: { r: .1, out: .08, up: .02 } }],
+      ['frame', { tone: 'stone', w: .42, h: .07, r: .022, spurs: [{ at: 1, out: .75, up: .06, dir: [.5, .8, -.3], len: .26, r: .03 }, { at: .7, out: .3, fwd: -.7, dir: [.3, .4, -.85], len: .22, r: .028 }, { at: .4, out: .25, fwd: -.7, dir: [.25, .2, -.95], len: .18, r: .024 }] }]] })
+});
+FAILING.push('failingfireelemental');
 // ── Session 945: the cave troll's lashed-on armour (OG-041: scraps of plate and hide tied on with rope). Laid on its grown skin as the
 // goblin's harness is (Session 944): a dented iron plate on its chest, an iron plate over its left shoulder, a rawhide sheet across its
 // back, and three leather lashings over them, standing 1.2 cm further out. Only the OG-041 troll wears it: the trolls built from it
