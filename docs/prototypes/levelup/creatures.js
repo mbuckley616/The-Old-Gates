@@ -56,6 +56,13 @@ P.neck = (B, o) => {
   for (let k = 0; k < n; k++) B.meat(names[k], pts[k], pts[k + 1], along(o.r, k / n), along(o.r, (k + 1) / n), { s: [o.s?.[0] ?? 1, o.s?.[1] ?? 1, 1], group: 'neck', tone: o.tone });
   B.neckEnd = pts[n]; B.neckBone = names[n - 1]; B.neckPts = pts; B.neckR = t => along(o.r, t); B.neckS = [o.s?.[0] ?? 1, o.s?.[1] ?? 1];
 };
+// the hood's darkness is seen only through its opening (Session 1187): from behind, the black cup showed through a see-through cowl as a
+// dark oval at the back of the head. The cup's local +z is the way the opening faces and its origin is the opening's middle, so the
+// material keeps a fragment only while the eye is ahead of the opening's plane (in view space the eye is at the origin)
+function hoodFacing(mat) {
+  mat.onBeforeCompile = s => { s.vertexShader = 'varying float vAhead;\n' + s.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vAhead = dot(-(modelViewMatrix * vec4(0., 0., 0., 1.)).xyz, normalize((modelViewMatrix * vec4(0., 0., 1., 0.)).xyz));');
+    s.fragmentShader = 'varying float vAhead;\n' + s.fragmentShader.replace('#include <clipping_planes_fragment>', '#include <clipping_planes_fragment>\n if (vAhead < 0.) discard;'); };
+  mat.customProgramCacheKey = () => 'hoodFacing'; return mat; }
 // the head: a skull, a muzzle and a jaw; eyes, ears, horns and antlers are bits on it
 P.head = (B, o) => {
   // `name` and `off` (Session 1176, the failing golem's second head): a further head is its own bone, set off from the first's place
@@ -88,7 +95,7 @@ P.head = (B, o) => {
   // a hood (Session 1177, the wraith's: no head under it): the head's flesh is the cowl, and in its front a darkness, an unlit black hollow:
   // the back half of a sphere, its rim at the opening, drawn from inside only and casting no shadow, so a see-through cowl does not show it
   // from behind (its shadow on the cowl's inside read there as a second face)
-  if (o.hood) { const m = new THREE.Mesh(new THREE.SphereGeometry(o.hood.r * S, 18, 12, Math.PI, Math.PI), new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.BackSide })); m.scale.set(1, o.hood.h ?? 1.2, .55); m.position.copy(at(o.hood.f, o.hood.up || 0, 0)); m.quaternion.setFromUnitVectors(V(0, 0, 1), dir); m.name = 'hood'; m.userData.noShadow = 1; B.bit(hn, m); }
+  if (o.hood) { const m = new THREE.Mesh(new THREE.SphereGeometry(o.hood.r * S, 18, 12, Math.PI, Math.PI), new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.BackSide })); m.scale.set(1, o.hood.h ?? 1.2, .55); m.position.copy(at(o.hood.f, o.hood.up || 0, 0)); m.quaternion.setFromUnitVectors(V(0, 0, 1), dir); m.name = 'hood'; m.userData.noShadow = 1; hoodFacing(m.material); B.bit(hn, m); }
   if (o.brow) B.meat(hn, at(o.brow.f, o.brow.up, -o.brow.out), at(o.brow.f, o.brow.up, o.brow.out), o.brow.r * S, o.brow.r * S, { tone: o.tone });
   if (o.fangs) for (const sd of [1, -1]) B.bit(hn, claw(o.fangs.r * S, o.fangs.len * S, B.tone('dark'), at(o.fangs.f, o.fangs.up, o.fangs.out * sd), V(0, -1, .4).normalize()));
 };

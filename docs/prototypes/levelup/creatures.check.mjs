@@ -328,7 +328,7 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
         for (const m of C.meshes) { box.setFromObject(m, true); low = Math.min(low, box.min.y - C.root.position.y); }
         const ch = C.byName[C.B.spineNames[C.B.spineNames.length - 1]].getWorldPosition(new T.Vector3()).applyMatrix4(inv);
         for (const A of C.B.arms) { C.byName[A.names[3]].getWorldPosition(P).applyMatrix4(inv); if (gait === 'stand') reach = Math.max(reach, P.z - ch.z); } } }
-      let hood = null, slits = [], claws = 0, lit = 0; C.rig.traverse(o => { if (o.name === 'hood') hood = { black: o.material.color.getHex() === 0, onHead: o.parent === C.byName.head };
+      let hood = null, slits = [], claws = 0, lit = 0; C.rig.traverse(o => { if (o.name === 'hood') hood = { black: o.material.color.getHex() === 0, onHead: o.parent === C.byName.head, facing: o.material.customProgramCacheKey?.() === 'hoodFacing' };
         if (o.isMesh && o.material?.clearcoat === 1) slits.push({ sx: +(o.scale.x / o.scale.y).toFixed(2), em: o.material.emissive.toArray().map(v => +v.toFixed(2)) }); if (o.isMesh && o.geometry.type === 'ConeGeometry') claws++; });
       const gl = C.meshes[0].geometry.attributes.aGlow; for (let v = 0; v < gl.count; v++) if (gl.getX(v) > .01) lit++;
       const arm = C.plan.parts.find(([q]) => q === 'arms')[1];
@@ -336,7 +336,7 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
     return out; });
   for (const [k, t] of Object.entries(wr)) { console.log(k, JSON.stringify(t));
     check(`${k}: no legs, floating clear of the ground through its bob (lowest ${t.low} m, its hem torn into ${t.rags?.strips} tongues)`, t.legs === 0 && t.low > .03 && t.rags?.strips >= 12, t);
-    check(`${k}: no head under its hood, a black hollow on the head bone with ${t.slits.length} slits of light in it, Scáth's violet`, t.hood?.black && t.hood.onHead && t.slits.length === 2 && t.slits.every(e => e.sx > 2 && e.em[2] > e.em[0] && e.em[0] > e.em[1] && e.em[2] > .5) && t.school === 'Scáth' && /OG-018/.test(t.src), t);
+    check(`${k}: no head under its hood, a black hollow on the head bone, seen only through the hood's opening (Session 1187), with ${t.slits.length} slits of light in it, Scáth's violet`, t.hood?.black && t.hood.onHead && t.hood.facing && t.slits.length === 2 && t.slits.every(e => e.sx > 2 && e.em[2] > e.em[0] && e.em[0] > e.em[1] && e.em[2] > .5) && t.school === 'Scáth' && /OG-018/.test(t.src), t);
     check(`${k}: arms ${t.arm} m long (a man's are about 0.75), reaching ${t.reach} m ahead of its chest standing, ${t.claws} bone claws; nothing else lit (${t.lit})`, t.arm > .9 && t.reach > .4 && t.claws >= 6 && t.lit === 0, t); }
   check(`the wraiths: ${Object.keys(wr).join(', ')}`, Object.keys(wr).length >= 1, Object.keys(wr));
   // the fire elemental (Session 1185; OG-018's Tine row, the game's since S222, Michael's B on Session 214): no legs, floating clear of the
