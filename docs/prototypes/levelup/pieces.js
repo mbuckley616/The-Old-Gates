@@ -1186,13 +1186,16 @@ function keep(o = {}) {
 }
 // a town's market house (Session 1179, card F6; OG-114's eight workplaces, its "market hall", and OG-070's vocabulary): where the
 // Gatelands town keeps its market dry and its weights honest. o.kind is the question asked of Michael (DECISION #475, Session 1179):
-// 'house' (the market house of an Irish town: two storeys, 14.8 by 8.6 m, limewashed with dressed quoins under a hipped slate roof; the
+// 'house' (the market house of an Irish town: two storeys, 15.0 by 8.6 m, limewashed with dressed quoins under a hipped slate roof; the
 // ground floor an open arcade of round arches, five a side and three on the west end, flagged inside under the beams of the floor
 // above; the room upstairs, 3 m to its ceiling, reached by a stone stair of 18 risers up the outside of the east end to its door; a
 // wooden cupola with the market bell on the ridge, and the town's beam and scales hung in the middle bay) or 'shelter' (a market cross
 // shelter: one storey of five piers a side, 10 by 6.6 m, open on all four sides under a hipped slate roof, the beam and scales in it)
 // or 'stalls' (no building, the market on the square as the game holds it today: seven trestle stalls and the beam on a timber tripod).
-// -> a Group, its userData {name, kind, tris, calls, size, door, parts, arcade, stair, beam}
+// Michael chose the house (A on #475). Session 1188: its ridge stack is carried down to the ground on a dressed pier in the arcade's
+// west bays (the room above has its hearths on it), and o.interior leaves out the dark box behind the upper windows and the stair
+// door's leaf, for rooms.js's gatelandsMarketRoom to build the room inside.
+// -> a Group, its userData {name, kind, tris, calls, size, door, parts, arcade, stair, beam, pier}
 function marketHouse(o = {}) {
   const kind = o.kind || 'house', house = kind === 'house', r = o.r || stream('market'), G = new THREE.Group(), parts = [], add = g => { G.add(g); parts.push(g); return g; };
   const stalls = kind === 'stalls', w = house ? 15.0 : 10, d = house ? 8.6 : 6.6, t = house ? .6 : .7, fl = house ? [3.6, 3.0] : [3.2], g0 = fl[0], h = fl.reduce((a, b) => a + b, 0), paint = o.paint || 'green';
@@ -1206,7 +1209,7 @@ function marketHouse(o = {}) {
     roof: { kind: 'slate', pitch: house ? 32 : 30, hip: true, ov: house ? .32 : .45 }, chim: house ? [{ x: -4.6, flues: 2 }] : [],
     plaque: house ? { x: 0, y: g0 + .75, w: 2.4, h: .56, text: 'MARKET HOUSE' } : null,
     open: house ? { front: [...fx.map(x => arch(x, aw, ah)), ...fx.filter(x => x).map(x => up(x))], back: [...fx.map(x => arch(x, aw, ah)), ...fx.map(x => up(x))],
-        left: [...sx.map(x => arch(x, sw, sh)), up(-2.4, .85), up(2.4, .85)], right: [{ kind: 'plank', x: doorU, y: g0, w: 1.0, h: 2.15 }, up(-2.4, .85)] }
+        left: [...sx.map(x => arch(x, sw, sh)), up(-2.4, .85), up(2.4, .85)], right: [{ kind: 'plank', x: doorU, y: g0, w: 1.0, h: 2.15, ajar: !!o.interior }, up(-2.4, .85)] }
       : { front: fx.map(x => arch(x, aw, ah)), back: fx.map(x => arch(x, aw, ah)), left: sx.map(x => arch(x, sw, sh)), right: sx.map(x => arch(x, sw, sh)) } };
   const B = stalls ? null : add(building(P)), bk = bucket(), M = glMats(), bx = (k, x0, x1, y0, y1, z0, z1, s = .5) => { const g = box(x1 - x0, y1 - y0, z1 - z0, s); g.translate((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2); bk.add(k, g); return g; };
   const iw = w / 2 - t, id = d / 2 - t, ceil = house ? g0 - .32 : null;
@@ -1215,7 +1218,10 @@ function marketHouse(o = {}) {
   if (house) { // the floor above on its beams, and the dark of the room behind the upper windows
     bx('board', -iw, iw, ceil, g0, -id, id, .8); for (let x = -iw + .7; x < iw; x += 1.45) bx('board', x - .13, x + .13, ceil - .28, ceil, -id, id, .9);
     bx('board', -iw, iw, ceil - .5, ceil - .28, -.2, .2, .9);
-    const dk = new THREE.BoxGeometry(w - 2 * t + .04, h - g0 - .02, d - 2 * t + .04); dk.translate(0, g0 + (h - g0) / 2, 0); bk.add('dark', dk); }
+    if (!o.interior) { const dk = new THREE.BoxGeometry(w - 2 * t + .04, h - g0 - .02, d - 2 * t + .04); dk.translate(0, g0 + (h - g0) / 2, 0); bk.add('dark', dk); } }
+  // the chimney pier (house): limewashed rubble on a dressed base from the arcade's flags to the floor above, under the ridge stack at x -4.6
+  const pier = house ? { x0: -5.1, x1: -4.1, z0: -.8, z1: .8, y0: .12, y1: ceil } : null;
+  if (pier) { bx('w:lime', pier.x0, pier.x1, pier.y0, pier.y1, pier.z0, pier.z1, .8); bx('dress', pier.x0 - .04, pier.x1 + .04, pier.y0, pier.y0 + .3, pier.z0 - .04, pier.z1 + .04, .6); bx('dress', pier.x0 - .05, pier.x1 + .05, pier.y1 - .62, pier.y1 - .5, pier.z0 - .05, pier.z1 + .05, .6); }
   // the town's beam and scales: an iron beam on a hook from the middle of the ceiling (the house's girder, the shelter's tie), two pans on chains
   const bTop = house ? ceil - .5 : stalls ? 2.9 : h - .1, bY = 2.25, beam = { x: 0, z: 0, y: bY, top: bTop, pans: 1.15 };
   { bx('iron', -.03, .03, bY, bTop, -.03, .03); if (!house && !stalls) bx('board', -iw, iw, h - .3, h - .1, -.12, .12, .9);
@@ -1255,7 +1261,7 @@ function marketHouse(o = {}) {
   for (const p of parts) { ud.tris += p.userData.tris; ud.calls += p.userData.calls; }
   ud.size = stalls ? { w: 12, d: 7, eave: 0, ridge: top } : { w, d, eave: +h.toFixed(2), ridge: +top.toFixed(2), clear: house ? +(ceil - .28).toFixed(2) : null };
   ud.arcade = { front: P.open.front.filter(q => q.kind === 'arcade').map(q => ({ x: q.x, w: q.w, h: q.h })), end: P.open.left.filter(q => q.kind === 'arcade').map(q => ({ x: q.x, w: q.w, h: q.h })), t, iw, id, plan: P };
-  ud.stair = stair; ud.beam = beam; ud.door = door; G.userData = ud; return G;
+  ud.stair = stair; ud.beam = beam; ud.door = door; ud.pier = pier; G.userData = ud; return G;
 }
 // the Gatelands' lots (Session 835, Michael's A on #280: coloured towns). A town's lots are rendered in the earth colours,
 // with dressed quoins, string courses and a cornice; no two neighbours share a colour, as in Kinsale or Dingle, and the
