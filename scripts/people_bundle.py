@@ -16,7 +16,7 @@ double-clicking, so no modules and no fetch over file://. This writes two files,
   python3 scripts/people_bundle.py --check      exits 1 if vendor/people.builder.js is not what people.js makes now
 
 people.js's imports of its sibling modules (`import { a, b as c } from './x.js'`; since Session 1197, helms.js) are inlined
-in a scope of their own each, ahead of the builder, and only the names imported are bound (Session 1198).
+in a scope of their own each, ahead of the builder, and only the names imported are bound (Session 1200).
 
 The builder's copy is generated, never edited by hand: a change to people.js reaches the game when this is run again.
 The pack changes only when mh_pack.py does (it reads MakeHuman's own files), so --check leaves it alone; its SHA-256

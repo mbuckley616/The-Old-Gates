@@ -927,7 +927,7 @@ function buildFoe(type,x,z,genome,eyeCol){
     rig.hollow=[dk,sl,ha];}
   if((g.skel||g.dead||g.gargoyle)&&eyeCol!=null&&!g.hollow){const at=g.skel?[[.028,.09,.066],[-.028,.09,.066]]:rig.eyes;const P=[],I=[];for(const [ex,ey,ez] of at){const g1=new THREE.SphereGeometry(g.skel?.011:.008,6,4),a=g1.attributes.position.array,ix=g1.index.array,n0=P.length/3;for(let i=0;i<a.length;i+=3)P.push(a[i]+ex,a[i+1]+ey,a[i+2]+ez);for(let i=0;i<ix.length;i++)I.push(ix[i]+n0);g1.dispose();}
     const eg=new THREE.BufferGeometry();eg.setAttribute('position',new THREE.Float32BufferAttribute(P,3));eg.setIndex(I);rig.B.head.add(new THREE.Mesh(eg,new THREE.MeshBasicMaterial({color:eyeCol})));}
-  if(hbOn()&&hbFoeOk(type,genome,g)){rig.hbFoe=type;if(g.hbKey)rig.hbG=HB_GENOMES.get(g.hbKey);HB_RIGS.add(rig);} /* S1199 (F4) — a human foe wears the builder's body too, its genome rolled at its first attach, by its id */
+  if(hbOn()&&hbFoeOk(type,genome,g)){rig.hbFoe=type;if(g.hbKey)rig.hbG=HB_GENOMES.get(g.hbKey);HB_RIGS.add(rig);} /* S1201 (F4) — a human foe wears the builder's body too, its genome rolled at its first attach, by its id */
   return rig;
 }
 function buildNPCMesh(def,opts){
@@ -1340,7 +1340,7 @@ function hbTint(g,G){const C=a=>new THREE.Color(a[0],a[1],a[2]),D=G.dress||{};
   const leg=D.trousers||D.skirtColor;if(leg)g.legs=C(leg);if(D.boots)g.boot=C(D.boots);}
 // called by buildNPCMesh before the bake: the key, the genome and the tint, once per cached genome
 function hbPrep(g,key){if(g.hbKey)return;g.hbKey=key;try{hbTint(g,hbGenome(g));}catch(e){console.warn('F4: no genome for',key,e);g.hbKey=null;}}
-// the human foes (S1199): which of FOE_DRESS wear the builder's body (the people, not the dead, the stone or the folk of the hills),
+// the human foes (S1201): which of FOE_DRESS wear the builder's body (the people, not the dead, the stone or the folk of the hills),
 // and what each wears over the builder's own rolled clothes, from its FOE_DRESS colour (c): the weapon and shield stay the game's
 // kit, held by the driver's bones, so the builder's own spear, staff, crossbow, basket and shield are taken off every one
 const HB_FOE_NOT=/^(skel|dead|goblin|kobold|troll|ogre|hag|gargoyle|golem|wraith)$/;
@@ -1400,7 +1400,7 @@ function hbAttach(rig){const tA=performance.now();let P;
   const B=rig.B,keep=map.map(([j])=>B[j].quaternion.clone());map.forEach(([j])=>B[j].quaternion.identity());
   const s0=map.map(([j])=>hbRel(B[j],rig.root,new THREE.Quaternion()).invert()),t0=map.map(([,b])=>hbRel(b,W,new THREE.Quaternion()));
   map.forEach(([j],i)=>B[j].quaternion.copy(keep[i]));
-  // the hips' travel (S1199): the driver's hips moved from their rest, in the person's own frame (rig.root's), across at full measure
+  // the hips' travel (S1201): the driver's hips moved from their rest, in the person's own frame (rig.root's), across at full measure
   // and up at the ratio of the two hip heights (the walk's bob and sway; the ragdoll's fall to the ground), then into the frame of the
   // builder's root bone's parent; the old copy took the driver's numbers for the builder's frame and scaled them all by .23, so a
   // fallen foe's builder body stayed standing on its driver
