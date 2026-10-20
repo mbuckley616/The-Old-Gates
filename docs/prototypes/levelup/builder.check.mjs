@@ -260,6 +260,15 @@ if (!process.argv.includes('--shots-only')) { const page = await browser.newPage
           const G0 = K.rollGenome(seed, { people: 'markman', g }), G = { ...G0, ...(hair ? { hair } : {}), dress: { ...G0.dress, helm: null, ...dress } }, p = K.makePerson(G), names = []; p.root.traverse(m => names.push(m.name)); const s1 = JSON.stringify(K.toSaved(G));
           out.coatHoodsDown[name] = { ...p.coatHood, roll: names.includes('coatHoodDown'), up: names.includes('hoodUp'), long: !!hair, hair: names.includes('hair') || names.includes('scalp'),
             saved: s1 === JSON.stringify(K.toSaved(K.fromSaved(JSON.parse(s1)))) && s1.includes('"coatHood":"down"') }; }
+        // the armour's helms by tier in the kit (Session 1197; helms.js, OG-052, Michael's C): the dress flag tier puts the tier's helm on in
+        // place of the kettle helm (Iron keeps the kettle), shut from Steel up; on a robe's raised hood it puts the tier's dressing; saved and
+        // loaded back; a child rolls none
+        out.tierHelms = {}; for (const [name, seed, people, g, tier, dress] of [['a Markman in Steel', 'th:4', 'markman', 1, 4, {}], ['a Gatelander woman in Obsidian', 'th:7', 'gatelander', 0, 7, {}],
+            ['an Aurennais man in Cosmic', 'th:10', 'aurennais', 1, 10, {}], ['a Markman in Iron', 'th:3', 'markman', 1, 3, {}], ['an Old Blood woman in a Cosmic robe, hood up', 'th:r10', 'oldblood', 0, 10, { robe: [.8, .86, .92], cloak: [.68, .73, .78], hood: 'up', helm: null, mail: null }]]) {
+          const G0 = K.rollGenome(seed, { people, g }), G = { ...G0, dress: { ...G0.dress, mail: [.42, .43, .45], helm: [.4, .4, .42], shield: null, spear: null, crossbow: null, cloak: null, hood: null, wrap: null, scarf: null, ...dress, tier } }, p = K.makePerson(G), names = []; p.root.traverse(m => names.push(m.name)); const s1 = JSON.stringify(K.toSaved(G));
+          const onHead = !!p.byName['head'].getObjectByName('tierHelm');
+          out.tierHelms[name] = { tier, robe: !!dress.robe, tierHelm: onHead, kettle: names.includes('helm'), stats: p.helm || p.hood?.dress || null, saved: s1 === JSON.stringify(K.toSaved(K.fromSaved(JSON.parse(s1)))) && s1.includes('"tier":' + tier) }; }
+        { const kids = Array.from({ length: 60 }, (_, i) => K.rollGenome('thk:' + i, { people: 'markman', g: i % 2, child: true })); out.tierKids = kids.filter(G => G.dress.tier).length; }
         // the roll (Session 1151, Michael's A on #445: a note, on cloaks): one Gatelander cloak or cape in five, in one of the three setts, its ground the cloak's;
         // nobody else; every other roll of a seed as it was without it (the same seed rolled with the rate at 0); a rolled one builds with the sett in its cloak
         { const P = K.PEOPLES.gatelander, gl = Array.from({ length: 400 }, (_, i) => K.rollGenome('gatelander:' + i, { people: 'gatelander', g: i % 2, child: i % 13 === 0, old: i % 11 === 0 })), rate = P.tartan; P.tartan = 0;
@@ -559,6 +568,10 @@ if (!process.argv.includes('--shots-only')) { const page = await browser.newPage
   for (const k of r.knee) check(`${k.seed}, a Markman in a knee-length tunic: its hem ${k.over} to ${k.overHigh} cm over the knee's joint and ${k.below} cm under a short tunic's lowest, no hand in it (${k.hands?.bad} of ${k.hands?.n}; lifted ${k.hands?.lift} rad)${k.band ? '' : ', the band not on its cut'}; cut short in a wheeled chair; saved and loaded back`,
     k.n > 100 && k.over > -2 && k.overHigh < 10 && k.below > 15 && k.hands && k.hands.bad === 0 && k.hands.lift <= .3 && k.cut && k.band && k.saved && k.chairCut, k);
   { const h = r.hemFit; check(`the long gown's woven hem band is laid up from its own cut: ${h.points} points of the cut (rest ${h.lo} to ${h.hi}) lie within ${h.fit} mm of the band's lower edge, against ${h.line} mm off Session 1156's straight line`, h.points >= 24 && h.fit < 1.5 && h.line > 15 && h.lut, h); }
+  for (const [k, c] of Object.entries(r.tierHelms)) check(c.robe ? `${k}: the hood takes tier ${c.tier}'s dressing (${c.stats?.tris} triangles in ${c.stats?.draws} draws), no helm; saved and loaded back`
+      : c.tier === 3 ? `${k}: the kettle helm, as before, and no helm by tier; saved and loaded back` : `${k}: tier ${c.tier}'s helm on the head bone in place of the kettle (${c.stats?.tris} triangles in ${c.stats?.draws} draws, ${((c.stats?.gap ?? 0) * 100).toFixed(1)} cm clear of the head); saved and loaded back`,
+    c.saved && (c.robe ? c.tierHelm && !c.kettle && c.stats?.tris > 0 : c.tier === 3 ? c.kettle && !c.tierHelm : c.tierHelm && !c.kettle && c.stats.tris < 12000 && c.stats.draws <= 6 && c.stats.gap > .008), c);
+  check(`a child never rolls an armour tier (${r.tierKids} of 60)`, r.tierKids === 0, r.tierKids);
   for (const [k, c] of Object.entries(r.coatHoods)) check(`${k}: the coat's hood up, 0 of ${c.tested} head and hair points through it (${c.poke}), the hair tucked, no earrings or necklace under it; ${c.fur} fur shells round the face (${c.furTris} triangles, ${c.dead} of them wholly where the shells' shader discards); none built with it down; saved and loaded back`,
     c.poke === 0 && c.tested > 1000 && c.fur === c.want && (c.want ? c.furTris > 0 && c.furTris < 6000 : c.furTris === 0) && c.dead === 0 && !c.hair && !c.ear && !c.neck && !c.downHood && c.saved, c);
   for (const [k, c] of Object.entries(r.coatHoodsDown)) check(`${k}: a roll across the upper back ${(c.drop * 100).toFixed(1)} cm under the neck (${c.tris} triangles), ${(c.clear * 1000).toFixed(1)} mm clear of ${c.n} points of the coat and its fur; ${c.hairIn} of ${c.hairN} points of the hair below the nape in it; no hood over the head; saved and loaded back`,
@@ -759,6 +772,11 @@ if (shotArg) { const only = shotArg.split('=')[1];
     const buf = panel ? await page.screenshot({ type: 'jpeg', quality: 88 }) : Buffer.from((await page.evaluate(cr => { const c = document.querySelector('canvas'); if (!cr) return c.toDataURL('image/jpeg', .9); const [x, y, cw, ch] = cr, o = document.createElement('canvas'); o.width = cw * c.width; o.height = ch * c.height; o.getContext('2d').drawImage(c, x * c.width, y * c.height, o.width, o.height, 0, 0, o.width, o.height); return o.toDataURL('image/jpeg', .9); }, crop)).split(',')[1], 'base64');
     fs.writeFileSync(path.join(here, 'builder-' + name + '.jpg'), buf); console.log('shot', name, ((Date.now() - t0) / 1000).toFixed(0) + 's', errs.slice(0, 3)); await page.close(); };
   await shot('page', 'seed=a1&sex=f&view=full', 1600, 900, true);
+  // the armour's helms by tier in the kit (Session 1197): Steel, Draconic and Cosmic on the builder's own people, the page with its tier row; and a Cosmic robe's hood
+  { const dq = d => encodeURIComponent(JSON.stringify(d)), kit = t => ({ mail: [.55, .56, .58], helm: [.4, .4, .42], tier: t, mantle: null, cloak: null, shield: null, spear: null });
+    for (const [n, t, q] of [['tierhelm-steel', 4, 'people=markman&seed=th:4&sex=m'], ['tierhelm-draconic', 8, 'people=gatelander&seed=th:8&sex=f'], ['tierhelm-cosmic', 10, 'people=aurennais&seed=th:10&sex=m']]) await shot(n, q + '&view=head&turn=.45&dress=' + dq(kit(t)));
+    await shot('tierhelm-page', 'people=aurennais&seed=th:10&sex=m&view=full&turn=.3&dress=' + dq(kit(10)), 1600, 900, true);
+    await shot('tierhelm-hood', 'people=oldblood&seed=th:r10&sex=f&view=head&turn=.4&dress=' + dq({ robe: [.8, .86, .92], cloak: [.68, .73, .78], hood: 'up', helm: null, mail: null, mantle: null, tier: 10 })); }
   await shot('peoples', 'peoples', 2400, 900);
   await shot('styles-back', 'seed=styles&sex=f&sheet&ang=2.4&dist=1.5&y=-.2&nomantle');
   await shot('styles-front', 'seed=styles&sex=f&sheet&ang=.35&dist=1.5&y=-.1');
