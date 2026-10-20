@@ -15,6 +15,14 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+### The gate interiors: how often is a gate failing or catastrophic? (from the designer, 20 Oct 2026, #494)
+The build sheet for Michael's B on #448 and A on #421 (`docs/design/gate-interiors-build.md`, section *The open number*) settles every number but one: how often a lesser gate is rolled steady, failing or catastrophic. It sets how often the player climbs floating stones (#417 A) over gone spans instead of walking the whole hall. Either way nothing on the way to the ring needs a skill: every gap on the path is under 2.5 m.
+- **A.** Half steady, a third failing, one in seven catastrophic (50 / 35 / 15). *(recommended)*
+- **B.** A third each.
+- **C.** By how near a great gate: steady far off, failing within 2 km, catastrophic within 500 m.
+
+Recommendation: **A.** The whole hall stays the gate you know, one in three is a climb, and the broken one stays rare enough to mean what the canon says: a place where the binding tore.
+
 ## Answered
 ### A town's market on the new look: a market house, a shelter, or the stalls as today? (look builder, Session 1178) — DECISION #475
 OG-114 draws eight workplaces for the trades; the market hall is the one the new kit lacks. A Gatelands town holds its market today as trestle stalls on the square.
