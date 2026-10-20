@@ -84,7 +84,7 @@ const far = await page.evaluate(() => { const t = WORLD.siteAnywhere('dunmore');
 check('from 70 m every body past the middle range is on the cheap level', far.n >= 1 && far.cheap === far.n, far);
 
 // pictures: the square, a market, a crowd at 60 m, an inn's common room
-// S1217: a frame of the square with its bodies whole takes 7 to 21 s here on software GL and about five times that on a CI runner, so
+// S1220: a frame of the square with its bodies whole takes 7 to 21 s here on software GL and about five times that on a CI runner, so
 // the harness's 120 s a picture (S808) ran out on the square twice in a row (#513's run); the pictures get 300 s
 const SHOT_MS = 300000;
 const shoot = async (name, fn) => { await page.evaluate(fn); for (let i = 0; i < 6; i++) { await page.evaluate(() => tickPeople(1 / 60, performance.now())); await g.frames(1); } await page.screenshot({ path: path.join(OUT, name), timeout: SHOT_MS }); };

@@ -11,7 +11,7 @@ const [homes, gal] = await page.evaluate(() => { const hs = WORLD.settle.get('du
 const enter = async (hr, k) => { await page.evaluate(([hr, k, gal]) => { forceTime(hr); const S = WORLD.settle.get('dunmore');
   const h = S.houses.filter(x => x.type === 'home' && !x.ownedByPlayer && !x.shuttered)[k]; window._h = h; if (k === gal) { h._two0 = h.two; h.two = true; } px = h.exitX; pz = h.exitZ; goToInterior(h); }, [hr, k, gal]);
   await page.waitForTimeout(3000); await g.hide();
-  // S1217 (card F4): on the new look the resident's builder body comes a moment after the room and lays the sleeper again by its own
+  // S1220 (card F4): on the new look the resident's builder body comes a moment after the room and lays the sleeper again by its own
   // shape (hbAttach); it is built here first, so what is measured is the body that shows and the loop below does not move it
   await page.evaluate(() => { const m = intNPCMesh, rig = m && m.userData.rig; if (!rig || !HB_RIGS.has(rig)) return; CAM.position.set(px, 1.65, pz); CAM.updateMatrixWorld(true);
     let k = 0; while (!rig.hb && !rig.hbFail && k++ < 60) { HBODY.last = -1e9; hbTick(performance.now()); } }); };
