@@ -15,6 +15,9 @@ double-clicking, so no modules and no fetch over file://. This writes two files,
                                                 `python3 docs/prototypes/levelup/mh_pack.py` makes; it is not committed)
   python3 scripts/people_bundle.py --check      exits 1 if vendor/people.builder.js is not what people.js makes now
 
+people.js's imports of its sibling modules (`import { a, b as c } from './x.js'`; since Session 1197, helms.js) are inlined
+in a scope of their own each, ahead of the builder, and only the names imported are bound (Session 1198).
+
 The builder's copy is generated, never edited by hand: a change to people.js reaches the game when this is run again.
 The pack changes only when mh_pack.py does (it reads MakeHuman's own files), so --check leaves it alone; its SHA-256
 is written into the builder's copy and the game checks it at load."""
@@ -28,21 +31,17 @@ PACK_OUT = os.path.join(ROOT, 'vendor', 'mh-pack.js')
 FETCH = re.compile(r"^export async function loadPack\(base = 'mh/'\) \{\n  const \[ix, buf\] = await Promise\.all\(\[fetch\(.*\n", re.M)
 
 
-def bundle(src, pack_sha):
-    if src.count("import * as THREE from 'three';\n") != 1 or len(re.findall(r'^import ', src, flags=re.M)) != 1:
-        sys.exit('people.js imports something besides three; the bundle would need it too')
-    src = src.replace("import * as THREE from 'three';\n", '')
-    if len(FETCH.findall(src)) != 1:
-        sys.exit("people.js's loadPack has changed; cannot replace its fetch")
-    src = FETCH.sub("function loadPack() {\n  if (PACK) return PACK; const ix = MH_PACK.ix, buf = mhBuffer();\n", src)
-    if re.search(r'\bawait\b|\bfetch\(', src):
-        sys.exit('people.js awaits or fetches something besides the pack')
-    names = ['loadPack']
+SIB = re.compile(r"^import \{ ([\w, ]+) \} from '\./([\w-]+\.js)';\n", re.M)
+
+
+def export_names(src):
+    """The names a module exports: functions, `export { … }` and every name of an `export const` line."""
+    names = []
     for m in re.finditer(r'^export (?:async )?function (\w+)', src, flags=re.M): names.append(m.group(1))
     for m in re.finditer(r'^export \{ ([\w, ]+) \};$', src, flags=re.M): names += [n.strip() for n in m.group(1).split(',')]
     for m in re.finditer(r'^export const (.*)$', src, flags=re.M):
         # `export const A = …, B = …;` on one line: the names at depth 0 before each `=`
-        line, depth, tok, k = m.group(1), 0, '', 0
+        line, depth = m.group(1), 0
         at = [0]
         for i, ch in enumerate(line):
             if ch in '([{': depth += 1
@@ -51,10 +50,48 @@ def bundle(src, pack_sha):
         for a in at:
             nm = re.match(r'\s*(\w+)\s*=', line[a:])
             if nm: names.append(nm.group(1))
+    return list(dict.fromkeys(names))
+
+
+def strip_exports(src, what):
     src = re.sub(r'^export \{ [\w, ]+ \};\n', '', src, flags=re.M)
     src = re.sub(r'^export (async function|function|const) ', r'\1 ', src, flags=re.M)
-    if re.search(r'^export ', src, flags=re.M): sys.exit('an export this script does not know how to strip')
-    names = list(dict.fromkeys(names))
+    if re.search(r'^export ', src, flags=re.M): sys.exit(f'{what}: an export this script does not know how to strip')
+    return src
+
+
+def sibling(name, binds):
+    """A sibling module of people.js inlined in its own scope; `binds` is the import's list (`a, b as c`)."""
+    path = os.path.join(os.path.dirname(SRC), name)
+    src = open(path, encoding='utf-8').read()
+    if src.count("import * as THREE from 'three';\n") != 1 or len(re.findall(r'^import ', src, flags=re.M)) != 1:
+        sys.exit(f'{name} imports something besides three; the bundle would need it too')
+    if re.search(r'\bawait\b|\bfetch\(', src): sys.exit(f'{name} awaits or fetches something')
+    src = strip_exports(src.replace("import * as THREE from 'three';\n", ''), name)
+    pairs = []
+    for b in binds.split(','):
+        p = b.split(' as ')
+        pairs.append((p[0].strip(), (p[1] if len(p) > 1 else p[0]).strip()))
+    have = export_names(open(path, encoding='utf-8').read())
+    for a, _ in pairs:
+        if a not in have: sys.exit(f'people.js imports {a} from {name}, which does not export it')
+    return (f'// ── {name}, inlined (its own scope) ──\n'
+            f"const {{ {', '.join(a if a == b else a + ': ' + b for a, b in pairs)} }} = (function(){{\n{src}\nreturn {{ {', '.join(dict.fromkeys(a for a, _ in pairs))} }};\n}})();\n")
+
+
+def bundle(src, pack_sha):
+    sibs = SIB.findall(src)
+    src = SIB.sub('', src)
+    if src.count("import * as THREE from 'three';\n") != 1 or len(re.findall(r'^import ', src, flags=re.M)) != 1:
+        sys.exit('people.js imports something besides three and its siblings; the bundle would need it too')
+    src = src.replace("import * as THREE from 'three';\n", '')
+    if len(FETCH.findall(src)) != 1:
+        sys.exit("people.js's loadPack has changed; cannot replace its fetch")
+    src = FETCH.sub("function loadPack() {\n  if (PACK) return PACK; const ix = MH_PACK.ix, buf = mhBuffer();\n", src)
+    if re.search(r'\bawait\b|\bfetch\(', src):
+        sys.exit('people.js awaits or fetches something besides the pack')
+    names = list(dict.fromkeys(['loadPack'] + export_names(src)))
+    src = ''.join(sibling(f, b) for b, f in sibs) + strip_exports(src, 'people.js')
     head = ('// GENERATED by scripts/people_bundle.py from docs/prototypes/levelup/people.js (Session 1195, card F4). Do not edit:\n'
             '// change people.js and run the script again. The new look only (index.html\'s chooser loads it after three.js 0.170).\n'
             f"var HB=(function(){{'use strict';\nconst MH_PACK_SHA256='{pack_sha}';\n"

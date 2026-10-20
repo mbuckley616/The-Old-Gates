@@ -3,6 +3,304 @@
 var HB=(function(){'use strict';
 const MH_PACK_SHA256='55e9eee5afd37efad9c389aaed783f09a247572c30a38ecbcc508e59efcf9b71';
 function mhBuffer(){const s=atob(MH_PACK.b64),n=s.length,u=new Uint8Array(n);for(let i=0;i<n;i++)u[i]=s.charCodeAt(i);MH_PACK.b64=null;return u.buffer;}
+// ── helms.js, inlined (its own scope) ──
+const { fitHead, helm: tierHelm, hoodDress } = (function(){
+// The armour's headgear by tier (the concept artist, 17 Oct 2026; backlog L7, "Armour's top tiers"; OG-052, kept over OG-019 for
+// its headgear only). Ten helms for the heavy line and the hoods' dressing for the robe line, on people.js's people, in metres.
+// Every helm is a shell fitted to the head it sits on: the head, the tucked hair, the beard and a raised hood, read in the head
+// bone's own frame (each skinned point taken through its mesh's bind matrix and the head bone's inverse, so the shell rides that
+// bone rigidly as the kit's kettle helm does), binned in 80 directions round and 36 down from a centre at the eyes, spread to the
+// neighbours and smoothed, then 1.2 to 2.4 cm more. The face is cut out of it by a 2D shape in the head's front view (open, the
+// Corinthian T, the great helm's slit), and the cut's vertices are moved onto the shape's edge, so the opening is a clean line and
+// not stairs; every free edge gets a 5 mm lip, in the tier's trim or its glow. The rest (combs, the horsehair crest, fins, horns,
+// the flame crest, the crescent and the halo, antlers) is placed on the shell's own surface.
+//   fitHead(person) -> F: the cloud, the eyes, the chin, the crown, in the head bone's frame
+//   helm(tier, F, { bold, closed }) -> { group, tris, draws, size, gap }   tier 1..10 (Wooden..Cosmic); Iron (3) is the kit's kettle
+//   hoodDress(tier, F, { bold }) -> the same, for a robe's raised hood (circlet, antlers, horns, halo)
+// bold: OG-052's silhouettes from Mithril up (else OG-019's: one helm shape, the tier read by colour, trim and glow); closed: the
+// magical tiers' faces shut behind a visor's slit (OG-052 draws them so). Tiers 1 to 4 are OG-019's in every set.
+
+const C = (r, g, b) => new THREE.Color().setRGB(r, g, b, THREE.SRGBColorSpace);
+const TIERS = [null,
+  { key: 'wooden', name: 'Wooden', metal: [.36, .24, .15], mr: [0, .8], trim: [.52, .37, .22], cloth: [.42, .34, .24] },
+  { key: 'bronze', name: 'Bronze', metal: [.74, .5, .26], mr: [.75, .34], trim: [.74, .5, .26], cloth: [.55, .14, .1], crest: [.6, .09, .07] },
+  { key: 'iron', name: 'Iron', metal: [.42, .43, .45], mr: [.5, .4], trim: [.42, .43, .45], cloth: [.42, .36, .28] },
+  { key: 'steel', name: 'Steel', metal: [.78, .8, .83], mr: [.75, .28], trim: [.78, .8, .83], cloth: [.24, .27, .34] },
+  { key: 'mithril', name: 'Mithril', metal: [.4, .54, .84], mr: [.75, .26], trim: [.82, .86, .92], glow: [.45, .62, 1], cloth: [.16, .22, .44] },
+  { key: 'adamant', name: 'Adamant', metal: [.2, .44, .24], mr: [.7, .3], trim: [.82, .64, .3], glow: [.4, 1, .45], cloth: [.18, .3, .16] },
+  { key: 'obsidian', name: 'Obsidian', metal: [.07, .07, .08], mr: [.35, .14], trim: [.16, .14, .2], glow: [.62, .25, 1], cloth: [.12, .1, .14] },
+  { key: 'draconic', name: 'Draconic', metal: [.72, .18, .07], mr: [.6, .32], trim: [.86, .64, .28], glow: [1, .48, .12], cloth: [.36, .1, .06] },
+  { key: 'demonic', name: 'Demonic', metal: [.36, .12, .5], mr: [.6, .3], trim: [.2, .1, .14], glow: [.86, .26, 1], cloth: [.22, .08, .3], horn: [.2, .14, .14] },
+  { key: 'cosmic', name: 'Cosmic', metal: [.86, .92, .97], mr: [.6, .22], trim: [.9, .78, .46], glow: [.55, .92, 1], cloth: [.8, .86, .92] }];
+
+// the materials, one per key, so a helm is merged into as few draws as it has materials
+const MATS = {};
+// the metals' reflection: the page hands in a filtered sky (helms-view.js); only the helms take it, so the cloth and the skin stay as the kit lights them
+const ENV = { map: null, k: .9 };
+function scaleTex() { const c = document.createElement('canvas'); c.width = c.height = 256; const x = c.getContext('2d'); x.fillStyle = '#808080'; x.fillRect(0, 0, 256, 256);
+  for (let r = -1; r < 18; r++) for (let k = -1; k < 18; k++) { const cx = k * 16 + (r % 2 ? 8 : 0), cy = r * 14, g = x.createRadialGradient(cx, cy + 4, 1, cx, cy, 11); g.addColorStop(0, '#d8d8d8'); g.addColorStop(.75, '#909090'); g.addColorStop(1, '#303030');
+    x.fillStyle = g; x.beginPath(); x.arc(cx, cy, 10, 0, Math.PI); x.fill(); }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(10, 5); return t; }
+function M(key, tier) { const k = key + ':' + tier; if (MATS[k]) return MATS[k]; const T = TIERS[tier];
+  const m = key === 'metal' ? new THREE.MeshStandardMaterial({ color: C(...T.metal), metalness: T.mr[0], roughness: T.mr[1], side: THREE.DoubleSide, ...(T.key === 'draconic' ? { bumpMap: scaleTex(), bumpScale: 1.6 } : {}) })
+    : key === 'trim' ? new THREE.MeshStandardMaterial({ color: C(...T.trim), metalness: T.key === 'wooden' ? 0 : .8, roughness: .3, side: THREE.DoubleSide })
+    : key === 'glow' ? new THREE.MeshStandardMaterial({ color: C(...T.glow), emissive: C(...T.glow), emissiveIntensity: 1.1, roughness: .5, side: THREE.DoubleSide })
+    : key === 'crest' ? new THREE.MeshStandardMaterial({ color: C(...T.crest), roughness: 1, side: THREE.DoubleSide })
+    : key === 'horn' ? new THREE.MeshStandardMaterial({ color: C(...(T.horn || [.86, .8, .66])), roughness: .55, metalness: .1 })
+    : key === 'dark' ? new THREE.MeshBasicMaterial({ color: 0x060505, side: THREE.DoubleSide })
+    : key === 'antler' ? new THREE.MeshStandardMaterial({ color: C(.56, .46, .34), roughness: .75 })
+    : key === 'flame' ? new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide, toneMapped: false })
+    : new THREE.MeshStandardMaterial({ color: C(...T.cloth), roughness: .9 });
+  m.userData.key = key;
+  if (ENV.map && m.isMeshStandardMaterial) { m.envMap = ENV.map; m.envMapIntensity = ENV.k; }
+  return MATS[k] = m; }
+
+// ── the head, read off a built person ──
+function fitHead(p) {
+  const hb = p.byName['head'], sk = p.skeleton, hi = sk.bones.indexOf(hb), toHead = sk.boneInverses[hi], sub = new Set(), pts = [], body = [], v = new THREE.Vector3();
+  hb.traverse(b => { if (b.isBone) sub.add(sk.bones.indexOf(b)); }); p.root.updateMatrixWorld(true);
+  for (const m of p.meshes) { if (!m.isSkinnedMesh) continue; const g = m.geometry, P = g.attributes.position, SI = g.attributes.skinIndex, SW = g.attributes.skinWeight; if (!SI) continue;
+    // only the points a mesh draws: a garment's shell holds every point of the body
+    const used = g.index ? new Uint8Array(P.count) : null; if (used) for (const i of g.index.array) used[i] = 1;
+    const isBody = m === p.meshes[0];
+    for (let i = 0; i < P.count; i++) { if (used && !used[i]) continue; let w = 0; for (let k = 0; k < 4; k++) if (sub.has(SI.getComponent(i, k))) w += SW.getComponent(i, k); if (w < .5) continue;
+      v.fromBufferAttribute(P, i).applyMatrix4(m.bindMatrix).applyMatrix4(toHead); pts.push(v.clone()); if (isBody) body.push(pts[pts.length - 1]); } }
+  const inv = hb.matrixWorld.clone().invert(), bp = n => p.byName[n] ? p.byName[n].getWorldPosition(new THREE.Vector3()).applyMatrix4(inv) : null;
+  const eL = bp('eye.L'), eR = bp('eye.R'), eye = eL && eR ? eL.clone().add(eR).multiplyScalar(.5) : new THREE.Vector3(0, .04, .09), ex = eL && eR ? Math.abs(eL.x - eR.x) / 2 : .031;
+  let chin = 1, crown = -1, nose = -1, zb = 1; for (const q of body) { if (Math.abs(q.x) < .02 && q.z > eye.z - .04) chin = Math.min(chin, q.y); crown = Math.max(crown, q.y); nose = Math.max(nose, q.z); zb = Math.min(zb, q.z); }
+  const box = new THREE.Box3(); for (const q of pts) box.expandByPoint(q);
+  return { hb, pts, body, eye, ex, chin, crown, nose, back: zb, box, hood: p.meshes.some(m => m.name === 'hoodUp') };
+}
+
+// ── the shell ──
+const sstep = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+// o: cl (clearance), bottom(θ) -> y of the rim, sd(x, y, z) -> the face opening's signed distance (< 0 cut), smooth (passes),
+// ridge (a keel along the top, metres), flare (the rim turned out, metres), top (the crown raised, metres), NT, NP;
+// prow (Session 1193: a shut visor drawn forward to a keel down the face, metres at the mouth), dense ([φ, width, k]: rows k times
+// closer about φ, so a slit there is cut on a fine grid)
+function shell(F, o = {}) {
+  const NT = o.NT || 80, NB = 36, PH = Math.PI * .96, c = new THREE.Vector3(0, F.eye.y - .005, (F.nose + F.back) / 2 - .01), Mx = new Float32Array(NT * NB), CL = o.cl ?? .012;
+  const bin = (th, ph) => [((Math.round(th / (Math.PI * 2) * NT) % NT) + NT) % NT, Math.max(0, Math.min(NB - 1, Math.round(ph / PH * (NB - 1))))];
+  for (const q of F.pts) { const d = q.clone().sub(c), r = d.length(), [a, b] = bin(Math.atan2(d.x, d.z), Math.acos(d.y / r)); Mx[b * NT + a] = Math.max(Mx[b * NT + a], r); }
+  const pass = (S, f) => { const O = new Float32Array(S.length); for (let b = 0; b < NB; b++) for (let a = 0; a < NT; a++) O[b * NT + a] = f(a, b, (da, db) => S[Math.max(0, Math.min(NB - 1, b + db)) * NT + (a + da + NT) % NT]); return O; };
+  let S = pass(Mx, (a, b, at) => { let m = 0; for (let da = -2; da <= 2; da++) for (let db = -1; db <= 1; db++) m = Math.max(m, at(da, db)); return m; });
+  // empty rows (under the chin, where the throat is the neck's) take the row above
+  for (let b = 1; b < NB; b++) for (let a = 0; a < NT; a++) if (!S[b * NT + a]) S[b * NT + a] = S[(b - 1) * NT + a];
+  for (let b = NB - 2; b >= 0; b--) for (let a = 0; a < NT; a++) if (!S[b * NT + a]) S[b * NT + a] = S[(b + 1) * NT + a];
+  const floor = S; for (let k = 0; k < (o.smooth ?? 4); k++) S = pass(S, (a, b, at) => { let t = 0; for (let da = -2; da <= 2; da++) for (let db = -1; db <= 1; db++) t += at(da, db); return Math.max(floor[b * NT + a], t / 15); });
+  const R0 = (th, ph) => { const u = ((th / (Math.PI * 2)) * NT % NT + NT) % NT, w = Math.max(0, Math.min(NB - 1.001, ph / PH * (NB - 1))), a = Math.floor(u), b = Math.floor(w), fu = u - a, fv = w - b, g = (aa, bb) => S[bb * NT + (aa % NT)];
+    return (g(a, b) * (1 - fu) + g(a + 1, b) * fu) * (1 - fv) + (g(a, b + 1) * (1 - fu) + g(a + 1, b + 1) * fu) * fv; };
+  const bottom = o.bottom || (th => F.chin - .02);
+  let phB = null; const R = (th, ph) => { let r = R0(th, ph) + CL; const lat = Math.sin(ph) * Math.sin(th), up = Math.cos(ph);
+    if (o.ridge) r += o.ridge * Math.exp(-((lat / .2) ** 2)) * sstep(-.3, .4, up);
+    if (o.top) r += o.top * sstep(.2, .95, up);
+    // the prow: most at the mouth, gone by the brow and the throat, and only in front of the cheeks, narrowing to the keel
+    if (o.prow) r += o.prow * Math.max(0, Math.cos(th)) ** 2 * Math.exp(-((lat / .38) ** 2)) * Math.exp(-(((up + .2) / .4) ** 2));
+    if (o.flare && phB) r += o.flare * sstep(phB(th) - .45, phB(th), ph) * (.6 + .4 * sstep(-1, -.2, -Math.cos(th)));
+    return r; };
+  const at = (th, ph, off = 0) => { const r = R(th, ph) + off; return new THREE.Vector3(c.x + r * Math.sin(ph) * Math.sin(th), c.y + r * Math.cos(ph), c.z + r * Math.sin(ph) * Math.cos(th)); };
+  const phRim = th => { let lo = 0, hi = PH; for (let k = 0; k < 24; k++) { const m = (lo + hi) / 2; if (at(th, m).y > bottom(th)) lo = m; else hi = m; } return (lo + hi) / 2; };
+  const RIM0 = Array.from({ length: NT + 1 }, (_, t) => phRim(t / NT * Math.PI * 2)); phB = th => RIM0[Math.round(((th / (Math.PI * 2)) * NT % NT + NT) % NT)];
+  const RIM = Array.from({ length: NT + 1 }, (_, t) => phRim(t / NT * Math.PI * 2));
+  // the grid: rows from the crown to the rim, denser near the rim and the face
+  const NP = o.NP || 28, prm = [], pos = [], uv = [];
+  // with `dense`, a row's φ comes off the cumulative density up to that column's rim, so the rows crowd about φ
+  let rowPh = (t, f) => RIM[t] * f ** .85;
+  if (o.dense) { const [pc, w, k] = o.dense, NS = 400, cum = [0]; for (let i = 1; i <= NS; i++) { const ph = PH * (i - .5) / NS; cum.push(cum[i - 1] + (1 + k * Math.exp(-(((ph - pc) / w) ** 2))) * PH / NS); }
+    const cAt = ph => { const u = Math.min(NS, ph / PH * NS), i = Math.floor(u); return i >= NS ? cum[NS] : cum[i] + (cum[i + 1] - cum[i]) * (u - i); };
+    rowPh = (t, f) => { const tg = cAt(RIM[t]) * f; let lo = 0, hi = RIM[t]; for (let k2 = 0; k2 < 30; k2++) { const m = (lo + hi) / 2; if (cAt(m) < tg) lo = m; else hi = m; } return (lo + hi) / 2; }; }
+  for (let j = 0; j < NP; j++) for (let t = 0; t <= NT; t++) { const th = t / NT * Math.PI * 2, ph = rowPh(t, j / (NP - 1)); prm.push([th, ph]); const p = at(th, ph); pos.push(p.x, p.y, p.z); uv.push(t / NT, ph / PH); }
+  const sd = o.sd, V = i => new THREE.Vector3(pos[i * 3], pos[i * 3 + 1], pos[i * 3 + 2]), sdv = i => sd(pos[i * 3], pos[i * 3 + 1], pos[i * 3 + 2]);
+  const idx = [], N = pos.length / 3, inside = new Uint8Array(N); if (sd) for (let i = 0; i < N; i++) inside[i] = sdv(i) < 0 ? 1 : 0;
+  // the last column is the first again (no seam down the back), and the first row is the crown's one point
+  const tris = []; for (let j = 0; j < NP - 1; j++) for (let t = 0; t < NT; t++) { const a = j * (NT + 1) + t, d = a + NT + 1, a1 = j * (NT + 1) + (t + 1) % NT, d1 = a1 + NT + 1; if (j > 0) tris.push([a, d, a1]); tris.push([a1, d, d1]); }
+  // the face: a triangle wholly inside the opening goes; a vertex inside that a kept triangle still uses moves along the grid,
+  // towards the first of its triangle's outside corners, onto the opening's edge
+  const moved = new Uint8Array(N);
+  // (a shut visor's sight, Session 1193: a vertex moves only along the grid, up or down its own column to the neighbour there that is
+  // outside, else along its own row, so a slit's edges follow the rows and its ends the columns; a triangle with a corner that has
+  // no such neighbour goes, so no flap is left across the slit)
+  const dth = (a, b) => { let d = b - a; while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2; return d; }, dist = (i, k) => Math.abs(dth(prm[i][0], prm[k][0])) + Math.abs(prm[k][1] - prm[i][1]);
+  const near = (i, ks) => ks.filter(k => k >= 0 && k < N && !inside[k]).sort((p, q) => dist(i, p) - dist(i, q))[0];
+  const colOut = i => { const t = i % (NT + 1), r0 = i - t; return near(i, [i - (NT + 1), i + (NT + 1)]) ?? near(i, [r0 + (t + NT - 1) % NT, r0 + (t + 1) % NT]); };
+  for (const T of tris) { const n = T.filter(i => inside[i]).length; if (n === 3) continue; if (n && o.holeLip && T.some(i => inside[i] && colOut(i) === undefined)) continue; idx.push(...T); if (!n) continue;
+    // (the angle unwrapped, so a move across the seam at θ = 0 goes the short way)
+    for (const i of T) if (inside[i] && !moved[i]) { const out = o.holeLip ? colOut(i) : T.find(k => !inside[k]); let lo = prm[i], hi = [prm[i][0] + dth(prm[i][0], prm[out][0]), prm[out][1]];
+      for (let k = 0; k < 20; k++) { const m = [(lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2], p = at(m[0], m[1]); if (sd(p.x, p.y, p.z) < 0) lo = m; else hi = m; }
+      const p = at(hi[0], hi[1]); pos[i * 3] = p.x; pos[i * 3 + 1] = p.y; pos[i * 3 + 2] = p.z; moved[i] = 1; } }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); g.computeVertexNormals();
+  // the free edges (the rim and the face's opening): a lip turned out along the shell's normal
+  const E = new Map(), key = (a, b) => a < b ? a + ',' + b : b + ',' + a; for (let k = 0; k < idx.length; k += 3) for (let e = 0; e < 3; e++) { const a = idx[k + e], b = idx[k + (e + 1) % 3], s = key(a, b); E.set(s, E.has(s) ? null : [a, b]); }
+  const nrm = g.attributes.normal, lpRim = [], liRim = [], LIP0 = o.lip ?? .004, n = new THREE.Vector3(), hp = [], hi = [];
+  // an edge on the opening (both ends on sd's zero) goes to the opening's own lip, `hole`, which a shut visor draws in its trim
+  for (const e of E.values()) { if (!e) continue; const [a, b] = e, A = V(a), B = V(b), nA = n.fromBufferAttribute(nrm, a).clone(), nB = n.fromBufferAttribute(nrm, b).clone();
+    const onHole = o.holeLip && sd && Math.abs(sd(A.x, A.y, A.z)) < .0015 && Math.abs(sd(B.x, B.y, B.z)) < .0015, lp = onHole ? hp : lpRim, li = onHole ? hi : liRim, LIP = onHole ? o.holeLip : LIP0;
+    // the normals face out of the head: check against the centre
+    if (nA.dot(A.clone().sub(c)) < 0) nA.negate(); if (nB.dot(B.clone().sub(c)) < 0) nB.negate();
+    const k = lp.length / 3; lp.push(...A.clone().addScaledVector(nA, -.002).toArray(), ...B.clone().addScaledVector(nB, -.002).toArray(), ...B.clone().addScaledVector(nB, LIP).toArray(), ...A.clone().addScaledVector(nA, LIP).toArray()); li.push(k, k + 1, k + 2, k, k + 2, k + 3); }
+  const geoOf = (P, I) => { const q = new THREE.BufferGeometry(); q.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); q.setIndex(I); q.computeVertexNormals(); return q; };
+  const lip = geoOf(lpRim, liRim), hole = hp.length ? geoOf(hp, hi) : null;
+  // the gap: the nearest point of the head to the shell, over the points the shell covers (a point in the face's opening is not covered)
+  let gap = 1; for (const q of F.pts) { if (sd && sd(q.x, q.y, q.z) < .004) continue; const d = q.clone().sub(c), r = d.length(), th = Math.atan2(d.x, d.z), ph = Math.acos(d.y / r); if (ph > phB(th)) continue; gap = Math.min(gap, R(th, ph) - r); }
+  return { g, lip, hole, at, R, c, RIM: th => phRim(th), gap, NT };
+}
+
+// ── the face's openings, in the head's front view (x across, y up), for points in front of the ears ──
+const rbox = (x, y, cx, cy, hw, hh, rr) => { const qx = Math.abs(x - cx) - hw + rr, qy = Math.abs(y - cy) - hh + rr; return Math.hypot(Math.max(qx, 0), Math.max(qy, 0)) + Math.min(Math.max(qx, qy), 0) - rr; };
+function face(kind, F) { const ey = F.eye.y, front = z => z > F.eye.z - .055;
+  if (kind === 'open') return (x, y, z) => !front(z) ? 1 : Math.min(rbox(x, y, 0, (ey + .03 + F.chin - .05) / 2, .057, (ey + .03 - F.chin + .05) / 2, .03), rbox(x, y, 0, ey + .005, .07, .024, .016));
+  if (kind === 'T') return (x, y, z) => !front(z) ? 1 : Math.min(Math.max(rbox(x, y, 0, ey + .002, .072, .017, .012), .012 - Math.abs(x)), rbox(x, y, 0, F.chin - .03, .03, ey - .03 - F.chin + .03, .012));
+  // the visor's sight (Session 1193): two slits at the eyes, a 14 mm bar of the keel between them, 2.2 cm high, 7 cm out each side
+  if (kind === 'slit') return (x, y, z) => !front(z) ? 1 : Math.max(rbox(x, y, 0, ey + .004, .07, .011, .006), .007 - Math.abs(x));
+    return null; }
+
+// ── the pieces on it ──
+// a plate in the head's middle (x = 0) plane, from a 2D outline [(z, y)], `t` thick, centred on x0
+function plate(outline, t, x0 = 0) { const s = new THREE.Shape(outline.map(([z, y]) => new THREE.Vector2(z, y))), g = new THREE.ExtrudeGeometry(s, { depth: t, bevelEnabled: false, curveSegments: 4 });
+  g.translate(0, 0, -t / 2); g.rotateY(-Math.PI / 2); g.translate(x0, 0, 0); return g; }
+// a comb along the top, from φa in front to φb behind: its foot sunk 6 mm into the shell, its edge h(s) above it (s 0 front to 1 back)
+function combLine(S, pha, phb, n = 40) { const L = []; for (let i = 0; i <= n; i++) { const s = i / n, ph = (pha + phb) * s - pha, p = S.at(ph < 0 ? 0 : Math.PI, Math.abs(ph)); L.push([p, new THREE.Vector3(0, p.y - S.c.y, p.z - S.c.z).normalize(), s]); } return L; }
+function comb(S, pha, phb, h, t) { const L = combLine(S, pha, phb), out = [], inn = []; for (const [p, up, s] of L) { inn.push([p.z - up.z * .006, p.y - up.y * .006]); const hh = h(s); out.push([p.z + up.z * hh, p.y + up.y * hh]); }
+  return plate([...inn, ...out.reverse()], t); }
+// a tube along a curve, its radius r(s), 0 at the root to 1 at the tip, closed with a point
+function taper(points, r, radial = 10, n = 28) { const cv = new THREE.CatmullRomCurve3(points), F = cv.computeFrenetFrames(n, false), pos = [], idx = [];
+  for (let i = 0; i <= n; i++) { const p = cv.getPointAt(i / n), rr = r(i / n); for (let k = 0; k <= radial; k++) { const a = k / radial * Math.PI * 2, d = F.normals[i].clone().multiplyScalar(Math.cos(a)).addScaledVector(F.binormals[i], Math.sin(a)); pos.push(p.x + d.x * rr, p.y + d.y * rr, p.z + d.z * rr); } }
+  for (let i = 0; i < n; i++) for (let k = 0; k < radial; k++) { const a = i * (radial + 1) + k, b = a + radial + 1; idx.push(a, b, a + 1, a + 1, b, b + 1); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); return g; }
+// a fin: a swept wing of `k` feathers, in the side plane, rooted along the shell's side above the ear
+function fin(S, side, o = {}) { const k = o.k ?? 3, len = o.len ?? .16, rise = o.rise ?? .11, out = [];
+  const root = S.at(side * Math.PI / 2, .95), back = S.at(side * Math.PI * .78, .9);
+  const pts = [[root.z + .02, root.y - .015]]; for (let i = 0; i < k; i++) { const f = (i + 1) / k, tz = root.z - .03 - len * (.55 + .45 * f), ty = root.y + rise * (1.05 - .45 * f); pts.push([tz + .03, ty - .02 * f], [tz, ty], [tz + .045 - .01 * i, ty - .045 - .01 * f]); }
+  pts.push([back.z, back.y - .01]); for (const [z, y] of pts) out.push([z, y]);
+  const g = plate(out, .006, 0); g.translate(0, 0, 0); const x = Math.max(Math.abs(root.x), Math.abs(back.x)) - .004; g.rotateZ(side * -.22); g.translate(side * x, .0, 0); return g; }
+// the flame crest: a comb whose edge rises into tongues leaning back, unlit and graded dark red to gold, so the bloom takes it
+function flames(S, pha, phb, n, hmax) { const L = combLine(S, pha, phb, 120), out = [], inn = [];
+  for (const [p, up, s] of L) { const u = (s * n) % 1, env = Math.sin(Math.PI * Math.min(1, s * 1.05 + .02)) ** .6, hh = .012 + hmax * env * (.35 + .65 * u ** 1.6) * (1 - .3 * Math.abs(Math.sin(s * 9)));
+    inn.push([p.z - up.z * .004, p.y - up.y * .004]); out.push([p.z + up.z * hh - .012 * u, p.y + up.y * hh]); }
+  const g = plate([...inn, ...out.reverse()], .014), P = g.attributes.position, col = []; let lo = 1e9, hi = -1e9; for (let i = 0; i < P.count; i++) { lo = Math.min(lo, P.getY(i)); hi = Math.max(hi, P.getY(i)); }
+  for (let i = 0; i < P.count; i++) { const t = (P.getY(i) - S.at(0, 0).y + .02) / (hmax + .02), q = Math.max(0, Math.min(1, t)); const c = new THREE.Color().setRGB(.55 + .45 * q, .08 + .62 * q ** 1.4, .02 + .2 * q ** 3, THREE.SRGBColorSpace).multiplyScalar(1.6); col.push(c.r, c.g, c.b); }
+  g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); return g; }
+// a crescent, horns up, standing on the brow
+function crescent(R, w) { const s = new THREE.Shape(), r2 = R * .86, dy = R * .55; // the inner circle's centre above the outer's
+  const a = Math.acos((R * R + dy * dy - r2 * r2) / (2 * R * dy)); // where the two circles cross, as an angle on the outer from straight up
+  s.absarc(0, 0, R, Math.PI / 2 + a, Math.PI * 2 + Math.PI / 2 - a, false);
+  const b = Math.PI - Math.acos((r2 * r2 + dy * dy - R * R) / (2 * r2 * dy)); s.absarc(0, dy, r2, Math.PI / 2 - b + Math.PI * 2, Math.PI / 2 + b, true);
+  const g = new THREE.ExtrudeGeometry(s, { depth: w, bevelEnabled: true, bevelThickness: .002, bevelSize: .002, bevelSegments: 1, curveSegments: 18 }); g.translate(0, 0, -w / 2); return g; }
+function halo(S, F, r, rays) { const gs = [], ctr = new THREE.Vector3(0, F.crown - .01, F.back - .045); const ring = new THREE.TorusGeometry(r, .0055, 6, 72); ring.translate(ctr.x, ctr.y, ctr.z); gs.push(ring);
+  const ring2 = new THREE.TorusGeometry(r * .78, .003, 5, 60); ring2.translate(ctr.x, ctr.y, ctr.z + .004); gs.push(ring2);
+  for (let i = 0; i < rays; i++) { const a = i / rays * Math.PI * 2, long = i % 2 ? .035 : .07, cn = new THREE.ConeGeometry(.006, long, 4); cn.translate(0, r + long / 2 + .004, 0); cn.rotateZ(a); cn.translate(ctr.x, ctr.y, ctr.z); gs.push(cn); }
+  return gs; }
+function antler(S, side, F, scale = .72) { const base = S.at(side * .7, .55, -.004), gs = [], P = (x, y, z) => new THREE.Vector3(base.x + side * x * scale, base.y + y * scale, base.z + z * scale);
+  const beam = [P(0, 0, 0), P(.03, .06, -.01), P(.07, .13, -.035), P(.09, .2, -.03), P(.08, .27, -.01)]; gs.push(taper(beam, s => .011 * (1 - .65 * s), 8, 22));
+  for (const [f, dx, dy, dz] of [[.35, .045, .05, .045], [.6, .06, .06, -.02], [.85, -.02, .06, .03]]) { const cv = new THREE.CatmullRomCurve3(beam), p = cv.getPointAt(f); gs.push(taper([p, p.clone().add(new THREE.Vector3(side * dx * .5 * scale, dy * .5 * scale, dz * .5 * scale)), p.clone().add(new THREE.Vector3(side * dx * scale, dy * scale, dz * scale))], s => .0075 * (1 - .8 * s), 6, 10)); }
+  return gs; }
+// horns: from the temple, out and back, then forward and up (the great ram horns), or swept back (Obsidian)
+function horn(S, side, kind) { const base = S.at(side * (kind === 'ram' ? 1.05 : 1.15), kind === 'ram' ? .75 : .7, -.006), P = (x, y, z) => new THREE.Vector3(base.x + side * x, base.y + y, base.z + z);
+  if (kind === 'ram') return taper([P(0, 0, 0), P(.055, .04, -.03), P(.11, .055, -.07), P(.145, .1, -.06), P(.14, .16, -.01), P(.1, .19, .02)], s => .028 * (1 - s) ** .8 + .002, 12, 36);
+  if (kind === 'back') return taper([P(0, 0, 0), P(.04, .05, -.05), P(.06, .08, -.13), P(.06, .1, -.21)], s => .019 * (1 - s) ** .9 + .0015, 10, 24);
+  return taper([P(0, 0, 0), P(.025, .04, -.01), P(.04, .085, -.015), P(.045, .12, -.035)], s => .013 * (1 - s) ** .9 + .001, 8, 18); }
+
+// the slats of the Wooden cap: six boards lashed round it, the crown plate over them
+function slats(S, n) { const gs = []; for (let i = 0; i < n; i++) { const th = i / n * Math.PI * 2 + Math.PI / n, L = []; for (let k = 0; k <= 12; k++) L.push(S.at(th, .15 + (S.RIM(th) - .2) * k / 12, .003));
+    gs.push(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(L), 12, .006, 4, false)); } return gs; }
+function band(S, ph, off, w, th0 = 0, th1 = Math.PI * 2) { const L = []; for (let k = 0; k <= 72; k++) { const th = th0 + (th1 - th0) * k / 72; L.push(S.at(th, typeof ph === 'function' ? ph(th) : ph, off)); }
+  return new THREE.TubeGeometry(new THREE.CatmullRomCurve3(L, th1 - th0 > 6), 72, w, 5, th1 - th0 > 6); }
+
+// the visor's slit: narrower than the shell's cells, so not cut but drawn, a dark band 2.2 cm high on the surface at the eyes, from
+// θ0 to θ1, either side of a bar 1.6 cm wide (the slit's depth is the dark; the eyes behind it are not seen, as through a real one)
+// o: hh (half its height), off (from the shell: proud, or under it for the dark behind a cut slit), whole (no bar in the middle)
+function slit(S, F, th0, th1, o = {}) { const yAt = (th, y) => { let lo = .3, hi = 2.6; for (let k = 0; k < 22; k++) { const m = (lo + hi) / 2; if (S.at(th, m).y > y) lo = m; else hi = m; } return (lo + hi) / 2; };
+  const hh = o.hh ?? .011, off = o.off ?? .0012, pos = [], idx = [], n = 32, y0 = F.eye.y + .004 - hh, y1 = F.eye.y + .004 + hh;
+  for (const [a, b] of o.whole ? [[th0, th1]] : [[th0, -.075], [.075, th1]]) { const k0 = pos.length / 3; for (let i = 0; i <= n; i++) { const th = a + (b - a) * i / n; for (const y of [y0, y1]) pos.push(...S.at(th, yAt(th, y), off).toArray()); }
+    for (let i = 0; i < n; i++) { const q = k0 + i * 2; idx.push(q, q + 2, q + 1, q + 1, q + 2, q + 3); } }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); return g; }
+// a strip down one meridian, from φ0 to φ1, standing `off` proud
+function meridian(S, th, ph0, ph1, off, w) { const L = []; for (let k = 0; k <= 24; k++) L.push(S.at(th, ph0 + (ph1 - ph0) * k / 24, off)); return new THREE.TubeGeometry(new THREE.CatmullRomCurve3(L), 24, w, 5, false); }
+// a shut visor's fittings (Session 1193, Michael's C on the top tiers' helms: "the higher tier helmets should not show the
+// wearer's face at all"): behind the cut sight a dark plate 7 mm under the shell, wider and taller than the cut, so through it
+// there is dark and never an eye; the breaths, eight round holes in two columns on the wearer's right cheek, each a dark disc
+// in a ring; and the visor's two pivots at the temples, a domed rivet each side, with the visor's edge running down the jaw from each
+function visorParts(S, F, add, trimKey) {
+  add('dark', slit(S, F, -.82, .82, { hh: .019, off: -.007, whole: true }));
+  const yAt = (th, y) => { let lo = .3, hi = 2.6; for (let k = 0; k < 22; k++) { const m = (lo + hi) / 2; if (S.at(th, m).y > y) lo = m; else hi = m; } return (lo + hi) / 2; };
+  const nrmAt = (th, ph) => { const a = S.at(th, ph), b = S.at(th + .01, ph), c = S.at(th, ph + .01); return b.sub(a).cross(c.sub(a)).normalize().negate(); };
+  const disc = (th, y, r, key, off, seg = 12) => { const ph = yAt(th, y), p = S.at(th, ph, off), nn = nrmAt(th, ph), g = new THREE.CircleGeometry(r, seg);
+    g.lookAt(nn); g.translate(p.x, p.y, p.z); add(key, g); };
+  for (const th of [-.42, -.56]) for (let k = 0; k < 4; k++) { const y = F.eye.y - .03 - k * .011; disc(th, y, .0045, trimKey, .0012, 14); disc(th, y, .0031, 'dark', .0018, 10); }
+  for (const s of [1, -1]) { const th = s * 1.42, ph = yAt(th, F.eye.y + .004), p = S.at(th, ph, 0), q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), nrmAt(th, ph));
+    const g = new THREE.SphereGeometry(.009, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2); g.scale(1, .45, 1); g.applyQuaternion(q); g.translate(p.x, p.y, p.z); add(trimKey, g); }
+  // the visor's edge, from each pivot down the jaw to the rim, where the visor laps over the bevor
+  for (const s of [1, -1]) add(trimKey, meridian(S, s * 1.3, yAt(s * 1.3, F.eye.y - .002), S.RIM(s * 1.3) - .02, .0015, .0035));
+}
+// how much of the face shows (Session 1193): from 15 points of view across the front (yaw ±50°, pitch -20° to +25°), a ray to each
+// point of the face; a point shows if no piece of the helm lies between. -> { pts, views, seen, through } (through: rays that
+// reach the dark behind the sight, the sight's own share)
+function faceShows(F, h) {
+  const meshes = []; h.group.updateMatrixWorld(true); h.group.traverse(m => { if (m.isMesh) meshes.push(m); });
+  const rc = new THREE.Raycaster(), views = []; for (const yw of [-50, -25, 0, 25, 50]) for (const pt of [-20, 0, 25]) { const a = yw * Math.PI / 180, b = pt * Math.PI / 180; views.push(new THREE.Vector3(Math.sin(a) * Math.cos(b), Math.sin(b), Math.cos(a) * Math.cos(b))); }
+  const face = F.body.filter(q => q.z > F.eye.z - .02 && q.y > F.chin - .005 && q.y < F.eye.y + .035 && Math.abs(q.x) < .065);
+  let seen = 0, through = 0, n = 0;
+  for (let i = 0; i < face.length; i += 3) { const q = face[i]; for (const d of views) { n++; const o = q.clone().addScaledVector(d, .5); rc.set(o, d.clone().negate()); rc.far = .5 - .0005;
+    const hit = rc.intersectObjects(meshes, false)[0]; if (!hit) seen++; else if (hit.object.material.userData.key === 'dark') through++; } }
+  return { pts: Math.ceil(face.length / 3), views: views.length, rays: n, seen, through };
+}
+// merge each material's geometries into one mesh; the result in the head bone's frame
+function assemble(parts, tier, S, F) { const by = {}; for (const [k, g] of parts) (by[k] = by[k] || []).push(g.index ? g.toNonIndexed() : g);
+  const group = new THREE.Group(); group.name = 'tierHelm'; let tris = 0, draws = 0;
+  for (const [k, gs] of Object.entries(by)) { const g = mergeAll(gs); const m = new THREE.Mesh(g, M(k, tier)); m.castShadow = k !== 'flame'; m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; draws++; }
+  const bb = new THREE.Box3().setFromObject(group); return { group, tris: Math.round(tris), draws, size: bb.getSize(new THREE.Vector3()).toArray().map(v => +v.toFixed(3)), top: +(bb.max.y - F.crown).toFixed(3), gap: S ? +S.gap.toFixed(4) : null }; }
+function mergeAll(gs) { let n = 0; for (const g of gs) n += g.attributes.position.count; const P = new Float32Array(n * 3), N = new Float32Array(n * 3), U = new Float32Array(n * 2), Cc = gs.some(g => g.attributes.color) ? new Float32Array(n * 3) : null; let o = 0;
+  for (const g of gs) { if (!g.attributes.normal) g.computeVertexNormals(); const c = g.attributes.position.count; P.set(g.attributes.position.array, o * 3); N.set(g.attributes.normal.array, o * 3); if (g.attributes.uv) U.set(g.attributes.uv.array, o * 2); if (Cc && g.attributes.color) Cc.set(g.attributes.color.array, o * 3); o += c; }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(P, 3)); g.setAttribute('normal', new THREE.BufferAttribute(N, 3)); g.setAttribute('uv', new THREE.BufferAttribute(U, 2)); if (Cc) g.setAttribute('color', new THREE.BufferAttribute(Cc, 3)); return g; }
+
+// the rims: a cap's above the ears; a full helm's at the chin in front and the nape behind
+const capRim = F => th => { const f = Math.cos(th); return F.eye.y + .028 * Math.max(0, f) + .012 - .055 * Math.max(0, -f) ** 1.4; };
+const fullRim = (F, d = .02, nape = -.085) => th => { const f = (1 - Math.cos(th)) / 2; return (F.chin - d) * (1 - f) + nape * f - .015 * Math.sin(th) ** 2; };
+
+function helm(tier, F, o = {}) { const T = TIERS[tier], bold = !!o.bold && tier >= 5, closed = !!o.closed && tier >= 5, parts = [], add = (k, g) => parts.push([k, g]);
+  const rim = tier >= 5 && T.glow ? 'glow' : 'trim';
+  let S;
+  if (tier === 1) { S = shell(F, { cl: .016, bottom: capRim(F), smooth: 5, lip: .006 }); add('metal', S.g); add('trim', S.lip); slats(S, 8).forEach(g => add('trim', g)); add('trim', band(S, th => S.RIM(th) - .06, .002, .006)); }
+  else if (tier === 2) { S = shell(F, { cl: .014, bottom: fullRim(F, .03, -.09), sd: face('T', F), smooth: 6, flare: .012 }); add('metal', S.g); add('trim', S.lip);
+    // the horsehair: seven thin combs fanned 13 degrees either side about the keel, so it reads as a brush and not a board
+    const cy = S.at(0, 0).y; for (let k = -3; k <= 3; k++) { const g = comb(S, .95, 1.35, s => (.03 + .085 * Math.sin(Math.PI * Math.min(1, s * 1.05)) ** .6) * (1 - .1 * Math.abs(k)), .005); g.translate(0, -cy, 0); g.rotateZ(k * .05); g.translate(0, cy, 0); add('crest', g); } add('trim', comb(S, .95, 1.3, () => .012, .008)); }
+  else if (tier === 4) { S = shell(F, { cl: .02, bottom: fullRim(F, .045, -.1), smooth: 14, top: -.008, sd: face('slit', F), dense: [Math.PI / 2 - .07, .13, 6], NP: 36, holeLip: .003 }); add('metal', S.g); add('trim', S.lip); add('trim', S.hole); visorParts(S, F, add, 'trim');
+    // the great helm's cross: a reinforce down the middle of the face and the brow band over the slit
+    add('trim', band(S, 1.36, .003, .005, -1.05, 1.05)); add('trim', meridian(S, 0, .25, 1.5, .002, .009)); add('trim', meridian(S, 0, 1.64, S.RIM(0) - .04, .002, .009)); }
+  else { // the magical tiers: an armet fitted closer, its face open (or shut behind a visor's slit), a keel along the top
+    // shut (Session 1193): the visor drawn forward 2.6 cm at the mouth to a keel, the sight cut through it on rows crowded about the eyes
+    S = shell(F, { cl: closed ? .018 : .014, bottom: fullRim(F, closed ? .035 : .018, -.09), sd: face(closed ? 'slit' : 'open', F), smooth: closed ? 10 : 7, ridge: bold || tier < 5 ? .012 : .006, flare: .01,
+      ...(closed ? { prow: .026, dense: [Math.PI / 2 - .07, .13, 6], NP: 36, holeLip: .003 } : {}) });
+    add('metal', S.g); add(rim, S.lip); if (closed) { add('trim', S.hole); visorParts(S, F, add, 'trim'); add(rim, meridian(S, 0, 1.68, S.RIM(0) - .03, .002, .006)); }
+    // the brow band in the trim, and (plain) a low comb: OG-019's ladder, one shape, the tier in its colour and glow
+    add('trim', band(S, 1.1, .002, .0045, -1.25, 1.25));
+    if (!bold) add('trim', comb(S, .9, 1.4, s => .012 + .01 * Math.sin(Math.PI * s), .008));
+    if (bold && tier === 5) { add('metal', fin(S, 1, { k: 3 })); add('metal', fin(S, -1, { k: 3 })); add('trim', comb(S, .8, 1.5, s => .014 + .03 * Math.sin(Math.PI * s) ** 2, .006)); }
+    if (bold && tier === 6) { // Adamant: a crest of five leaf blades rising off the keel, the middle tallest
+      for (let i = 0; i < 5; i++) { const ph = -.45 + i * .26, th = ph < 0 ? 0 : Math.PI, p = S.at(th, Math.abs(ph)), hgt = .06 + .05 * (1 - Math.abs(i - 2) / 2), lean = (i - 2) * -.15;
+        const lf = []; for (let k = 0; k <= 10; k++) { const a = k / 10; lf.push([p.z + Math.sin(a * Math.PI) * .018 + lean * hgt * a, p.y - .008 + hgt * a]); } for (let k = 10; k >= 0; k--) { const a = k / 10; lf.push([p.z - Math.sin(a * Math.PI) * .018 + lean * hgt * a, p.y - .008 + hgt * a]); }
+        add('trim', plate(lf, .005)); } }
+    if (bold && tier === 7) { add('horn', horn(S, 1, 'back')); add('horn', horn(S, -1, 'back')); add('metal', comb(S, .5, 1.7, s => .012 + .065 * Math.sin(Math.PI * Math.min(1, s * 1.08)) ** 1.6, .008)); add('glow', comb(S, .72, 1.5, () => .004, .007)); }
+    if (bold && tier === 8) { add('flame', flames(S, .85, 1.55, 5, .12)); add('trim', comb(S, .9, 1.6, () => .01, .02)); }
+    if (bold && tier === 9) { add('horn', horn(S, 1, 'ram')); add('horn', horn(S, -1, 'ram')); add('glow', comb(S, .75, 1.3, () => .005, .006)); }
+    if (bold && tier === 10) { const cr = crescent(.055, .007), p = S.at(0, .62); cr.rotateX(-.2); cr.translate(0, p.y + .03, p.z + .004); add('trim', cr); halo(S, F, .17, 16).forEach(g => add('glow', g)); }
+  }
+  return assemble(parts, tier, S, F); }
+
+// the robe line's hood dressings (OG-052's antlered and haloed hoods): the hood is the kit's; these are pieces placed over it, on a
+// shell read off the hood itself (no face cut, nothing drawn of the shell)
+function hoodDress(tier, F, o = {}) { const parts = [], add = (k, g) => parts.push([k, g]), S = shell(F, { cl: 0, bottom: capRim(F), smooth: 4 });
+  const ring = () => add('trim', band(S, th => .78 + .12 * Math.max(0, Math.cos(th)), -.003, .004, -1.3, 1.3));
+  if (!o.bold) { if (tier >= 5) ring(); }
+  else if (tier === 6) { antler(S, 1, F).forEach(g => add('antler', g)); antler(S, -1, F).forEach(g => add('antler', g)); }
+  else if (tier === 9) { add('horn', horn(S, 1, 'small')); add('horn', horn(S, -1, 'small')); ring(); }
+  else if (tier === 10) { halo(S, F, .15, 12).forEach(g => add('glow', g)); ring(); }
+  else if (tier === 8) { const p = S.at(0, .72); const cr = crescent(.03, .005); cr.translate(0, p.y + .012, p.z); add('trim', cr); ring(); }
+  else if (tier >= 5) ring();
+  if (!parts.length) return null; return assemble(parts, tier, null, F); }
+
+return { fitHead, helm, hoodDress };
+})();
 // People from a genome (Session 770): MakeHuman's base body (CC0) morphed by its own targets, skinned to its own
 // skeleton and posed, then dressed in garments cut from MakeHuman's fitting shells ("tights", "skirt", "hair"), which
 // the same targets reshape, so every garment fits every body. The genome is a handful of numbers; the look is the
@@ -2693,6 +2991,8 @@ const WAISTCOAT_HOLE = '(vB.z > .02 && vB.y > .44 && abs(vB.x) < .006 + .35 * (v
 // cloak's, the mantle's, the apron's, the sash's and the shoulder wrap's place, and covers a waistcoat, a bodice and the cuffs; never over
 // a robe, mail or scales or under a tabard (which lie on the same shells), nor in a wheeled chair (its skirt hangs to the calf)
 // a hood up over the head: the cloak's, or the coat's (Session 1152)
+// a helm by tier in place of the kettle helm: every tier but Iron (3), whose helm the kettle is
+function tierHelmOn(D) { return !!(D && D.helm && D.tier && D.tier !== 3); }
 function hoodUpOn(D) { return !!(D && (D.cloak && D.hood === 'up' || coatOn(D) && D.coatHood === 'up')); }
 function coatOn(D) { return !!(D && D.coat && !D.robe && !D.mail && !D.scales && !D.tabard && !D.chair); }
 // its hem, from the coat's length: .75 (the default) is mid-calf, rest y -.6; 0 is a jacket's skirt over the hips, 1 is to the ankle
@@ -2847,7 +3147,7 @@ function makePerson(G, o = {}) {
   for (const side of ['l', 'r']) { if (D.eyepatch && side === (D.eyepatchSide === 'R' ? 'r' : 'l')) continue; const L = new Set(PACK.G[`helper-${side}-eye`]), c = new THREE.Vector3(); let r = 0; for (const i of L) c.add(new THREE.Vector3(P[i * 3], P[i * 3 + 1], P[i * 3 + 2])); c.divideScalar(L.size); for (const i of L) r = Math.max(r, c.distanceTo(new THREE.Vector3(P[i * 3], P[i * 3 + 1], P[i * 3 + 2])));
     const eg = new THREE.SphereGeometry(r * .8, 32, 24); eg.rotateY(-Math.PI / 2); const e = new THREE.Mesh(eg, new THREE.MeshPhysicalMaterial({ map: eyeTex, roughness: .08, clearcoat: 1 }));
     const head = byName['head']; head.updateWorldMatrix(true, false); e.position.copy(c).sub(heads['head']); e.position.z -= r * .12; head.add(e); }
-  let helmStats = null; if (D.helm) { const hp = []; for (const m of meshes) if (m.name === 'hair') { const a = m.geometry.attributes.position.array; for (let i = 0; i < a.length; i += 3) hp.push(new THREE.Vector3(a[i], a[i + 1], a[i + 2])); } helmStats = buildHelm(P, G, heads, byName, hp).stats; }
+  let helmStats = null; if (D.helm && !tierHelmOn(D)) { const hp = []; for (const m of meshes) if (m.name === 'hair') { const a = m.geometry.attributes.position.array; for (let i = 0; i < a.length; i += 3) hp.push(new THREE.Vector3(a[i], a[i + 1], a[i + 2])); } helmStats = buildHelm(P, G, heads, byName, hp).stats; }
   // the eyepatch (Session 1079), on the face under whatever is on the head; its cord over the hair
   let patchStats = null; if (D.eyepatch) patchStats = buildEyepatch(P, G, heads, byName, meshes).stats;
   // hoop earrings (Session 995), when no raised hood covers the ears
@@ -2977,7 +3277,12 @@ function makePerson(G, o = {}) {
     // and a crossbow across the knees (Session 1116), laid on them after the chair, clear of it
     if (D.crossbow) chairSt.lap = buildLapCrossbow(G, body, byName, meshes, root, Ch).stats; }
   const legWrapSt = D.legWraps ? legWrapStats(body, meshes) : null;
-  root.position.y = -(chairSt ? chairSt.ground : sandalSt ? sandalSt.ground : minY); return { root, skeleton, byName, meshes, coldLook: { eyes: G.eyes, skin: G.skin }, buttons: buttonStats, hair: hairStats, cloak: cloakStats, tabard: tabardStats, sash: sashStats, shoulderWrap: shoulderWrapStats, wrap: wrapStats, wrapTail: tailStats, earrings: earStats, eyepatch: patchStats, necklace: neckStats, beltCoins: beltCoinStats, beltCharms: charmStats, sandals: sandalSt, sashBelt: sashBeltSt, cord: cordStats, lacing: laceStats, skirtHands, hood: hoodStats, brows: browStats, helm: helmStats, mail: mailSt, shield: shieldStats, spear: spearStats, crossbow: crossbowStats, staff: staffStats, basket: basketStats, legWraps: legWrapSt, chair: chairSt, coat: coatSt, coatHood: coatHoodSt };
+  // the armour's helm by tier (Session 1197; helms.js, OG-052, Michael's C of 18 Oct: from Steel up the face is shut), last, on the head
+  // as dressed: fitted to the head, the tucked hair and a raised hood, and carried by the head bone. Iron is the kettle helm above; a
+  // robe's raised hood under a tier takes that tier's dressing (a circlet, antlers, horns, the crescent or the halo) and no helm
+  let tierFit = null; if (D.tier && (tierHelmOn(D) || hoodUpOn(D) && !D.helm)) { root.updateMatrixWorld(true); const F = fitHead({ root, skeleton, byName, meshes }), h = D.helm ? tierHelm(D.tier, F, { bold: true, closed: true }) : hoodDress(D.tier, F, { bold: true });
+    if (h) { byName['head'].add(h.group); tierFit = { F, h }; const st = { tier: D.tier, tris: h.tris, draws: h.draws, gap: h.gap, size: h.size, above: h.top }; if (D.helm) helmStats = st; else hoodStats = { ...(hoodStats || {}), dress: st }; } }
+  root.position.y = -(chairSt ? chairSt.ground : sandalSt ? sandalSt.ground : minY); return { root, skeleton, byName, meshes, coldLook: { eyes: G.eyes, skin: G.skin }, buttons: buttonStats, hair: hairStats, cloak: cloakStats, tabard: tabardStats, sash: sashStats, shoulderWrap: shoulderWrapStats, wrap: wrapStats, wrapTail: tailStats, earrings: earStats, eyepatch: patchStats, necklace: neckStats, beltCoins: beltCoinStats, beltCharms: charmStats, sandals: sandalSt, sashBelt: sashBeltSt, cord: cordStats, lacing: laceStats, skirtHands, hood: hoodStats, brows: browStats, helm: helmStats, mail: mailSt, shield: shieldStats, spear: spearStats, crossbow: crossbowStats, staff: staffStats, basket: basketStats, legWraps: legWrapSt, chair: chairSt, coat: coatSt, coatHood: coatHoodSt, tierFit };
 }
 
 // palettes from OG-025: undyed wool, browns, slate blue, madder red; furs; ash-blond to red hair; pale to weathered skin
@@ -3000,7 +3305,7 @@ function markGenome(rnd, g, o = {}) {
 const hex = c => '#' + c.map(v => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, '0')).join('');
 const unhex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
 const r3 = v => Math.round(v * 1000) / 1000, round = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, r3(v)]));
-const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'sash', 'sashBorder', 'wrap', 'wrapBorder', 'earrings', 'necklace', 'beltCoins', 'sashBelt', 'sandals', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'legWraps', 'scarfPrint', 'basket', 'basketCloth', 'amulet', 'charms', 'dots', 'shoulderWrap', 'eyepatch', 'staff', 'chair', 'waistcoat', 'tartan', 'tartanLine', 'coat', 'coatFur', 'bands', 'bandsMotif'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, sashSide: 'L', sashPrint: true, sashKnot: true, turban: false, scarf: false, wrapTail: null, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', scales: false, spearHead: null, crossbowMake: null, amuletSide: 'L', shoulderWrapSide: 'L', eyepatchSide: 'L', staffMake: null, dotsStyle: 'powder', waistcoatLeather: false, coatLen: .75, coatHood: null };
+const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'sash', 'sashBorder', 'wrap', 'wrapBorder', 'earrings', 'necklace', 'beltCoins', 'sashBelt', 'sandals', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'legWraps', 'scarfPrint', 'basket', 'basketCloth', 'amulet', 'charms', 'dots', 'shoulderWrap', 'eyepatch', 'staff', 'chair', 'waistcoat', 'tartan', 'tartanLine', 'coat', 'coatFur', 'bands', 'bandsMotif'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, sashSide: 'L', sashPrint: true, sashKnot: true, turban: false, scarf: false, wrapTail: null, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', scales: false, spearHead: null, crossbowMake: null, amuletSide: 'L', shoulderWrapSide: 'L', eyepatchSide: 'L', staffMake: null, dotsStyle: 'powder', waistcoatLeather: false, coatLen: .75, coatHood: null, tier: null };
 function toSaved(G) {
   const D = G.dress || {}, dress = {}; for (const k of GARMENTS) if (D[k]) dress[k] = hex(D[k]); dress.skirt = D.skirt || null; for (const [k, d] of Object.entries(DRESS_FLAGS)) if (D[k] != null && (typeof D[k] === 'number' ? r3(D[k]) : D[k]) !== d) dress[k] = typeof D[k] === 'number' ? r3(D[k]) : D[k];
   const style = G.hair?.style ?? ((G.hairLen ?? .3) < .45 ? 'short' : 'loose');
@@ -3135,7 +3440,7 @@ function peopleGenome(rnd, people, g, o = {}) {
   // an ochre one), the cloak taking the sett's ground; never on a fur-lined cloak; from a stream of its own, so every other roll of a seed is as it was
   if (P.tartan && D.cloak && !D.cloakFur) { const rt = seeded(String(o.seed ?? 'person') + '|tartan'); if (rt() < P.tartan) { const [ground, dark, line] = P.setts[Math.floor(rt() * P.setts.length)]; D.cloak = ground; D.tartan = dark; if (line) D.tartanLine = line; } }
   if (o.child) { const rc = seeded(String(o.seed ?? 'person') + '|child'), ta = rc(); G.age = .1875 + .09 * ta; G.muscle = .3 + .15 * rc(); G.weight = .3 + .15 * rc(); G.beard = 0; G.scar = null;
-    for (const k of ['helm', 'mail', 'scales', 'tabard', 'tabardTrim', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'eyepatch', 'staff', 'staffMake']) D[k] = DRESS_FLAGS[k] ?? null;
+    for (const k of ['helm', 'mail', 'scales', 'tabard', 'tabardTrim', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'eyepatch', 'staff', 'staffMake', 'tier']) D[k] = DRESS_FLAGS[k] ?? null;
     if (G.marks != null) G.marks = Math.min(G.marks, .06 * rc()); const M = P.body[sx].metres, f = .8 + .12 * ta + .03 * (rc() - .5); G.height = heightFor(G, (M[0] + M[1]) / 2 * f);
     // a cloak or cape cut to the child (its length in buildCloak is in metres: .4 + the length, or a cape's .24 + .14 of it), so a long one does not pool on the ground
     if (D.cloak) D.cloakLen = Math.max(0, D.cape ? ((.24 + .14 * (D.cloakLen ?? .8)) * f - .24) / .14 : (.4 + (D.cloakLen ?? .8)) * f - .4); }
