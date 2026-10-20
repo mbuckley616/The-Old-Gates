@@ -20,7 +20,7 @@ const crime = await page.evaluate(() => { forceTime(23); worldState.crime = {}; 
   const h = S.houses.filter(x => /weapon|armor|potion|misc/.test(x.type) && x.keeper)[0]; const w = S.npcs.find(n => n.sched && n.sched.type !== 'guard') || S.npcs[0];
   S.npcs.forEach(n => { n.g.visible = false; });
   const dx = h.exitX - h.doorX, dz = h.exitZ - h.doorZ, L = Math.hypot(dx, dz) || 1; px = h.doorX + dx / L * .8; pz = h.doorZ + dz / L * .8; jumpY = 0;
-  const wx = h.doorX + dx / L * 3, wz = h.doorZ + dz / L * 3; const sched0 = w.sched; w.g.visible = true; w._retreated = false; w.sched = { type: 'guard', a: { x: wx, z: wz }, b: { x: wx, z: wz } }; w.g.position.set(wx, WORLD.worldH(wx, wz), wz);
+  const wx = h.doorX + dx / L * 3, wz = h.doorZ + dz / L * 3; const sched0 = w.sched; w.g.visible = true; w._retreated = false; w.sched = { type: 'guard', a: { x: wx, z: wz }, b: { x: wx, z: wz } }; w.g.position.set(wx, WORLD.worldH(wx, wz), wz); w.g.rotation.y = Math.atan2(-dx, -dz); /* S1160 — facing the door (the 120° cone, S705); the heading left from the town's last tick is the layout's */
   worldState.picked = {}; WORLD.doorLockFor(h).onPick(); w.sched = sched0; S.npcs.forEach(n => { n.g.visible = true; }); gold = 500; updateHUD();
   return { shop: h.name, witness: w.def && w.def.name, day: Math.floor(worldState.gameTimeAbsMinutes / 1440) }; });
 const s0 = await state(); console.log('crime', JSON.stringify(crime), JSON.stringify(s0));

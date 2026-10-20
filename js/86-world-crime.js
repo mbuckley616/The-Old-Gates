@@ -287,11 +287,11 @@
   function barberFee(house){return innPrice(house);}
   function barberPay(house,changed){if(!changed)return 'free';const fee=barberFee(house);if(gold<fee)return 'poor';gold-=fee;if(typeof updateHUD==='function')updateHUD();
     if(typeof addLog==='function')addLog('✂',`Paid ${fee} gold at ${house.name||'the barber’s'}.`);return 'paid';}
-  function innRooms(house){const W=Math.max(10,Math.min(12,(house.w||6)*1.6))/SCALE.ROOM_K;return Math.max(1,Math.floor(W/3.4));} /* S896 (F2a) — as buildInteriorFor lays out the gallery's rooms: the hall's true width in the kit's unit, a room every 3.4 */
+  function innRooms(house){if(kitTaproom(house))return 3; /* S1161 — the kit's taproom: three rooms off the passage */const W=Math.max(10,Math.min(12,(house.w||6)*1.6))/SCALE.ROOM_K;return Math.max(1,Math.floor(W/3.4));} /* S896 (F2a) — as buildInteriorFor lays out the gallery's rooms: the hall's true width in the kit's unit, a room every 3.4 */
   // v80 S424 — the rooms stand in one row behind the gallery, room 0 at the west wall, and you come up the stair facing
   // their doors: from a west stair every door is on your right, the nearest room 0's; from an east stair on your left,
   // the nearest the last room's. The names count the doors from the stair head (were left and right in turn, from room 0).
-  function galleryEast(house){return String(house.id||'').split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,3)%2===1;}
+  function galleryEast(house){if(kitTaproom(house))return true; /* S1161 — the kit's taproom: its stair is up the east gable */return String(house.id||'').split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,3)%2===1;}
   function innRoomName(k,n,house){if(k==null)return 'a room';if(n<=1)return 'the room at the top of the stairs';
     const east=galleryEast(house),i=east?n-1-k:k,side=east?'left':'right';
     if(i===n-1&&n>2)return `the last door on the ${side}`;
@@ -471,6 +471,13 @@
     for(const n of guardsOf(S)){if(!n.g.visible||n._retreated||n._drawn)continue;const d=Math.hypot(px-n.g.position.x,pz-n.g.position.z);if(d>5)continue;if(!clearLine(px,pz,n.g.position.x,n.g.position.z))continue;
       if(c.shut)guardDraw(n,S);else confront(n,S,c);return;}
   }
+  // S1173 — a guard's blow before the yield (Michael's A on #456). Until the yield has been offered, a drawn guard's blow
+  // that would take you under its line stops just under it (29% of health, 38 of a new character's 130), and the next
+  // tick makes the offer, in the street or in a room. A heavy blow still takes you from 75 to the line in one. Once you
+  // choose *Fight on* (the offer made, CR.yielded), or with no fine to offer terms on, his blows land in full. Only the blow
+  // that crosses the line is held: already under it (out of the town's reach, where no offer comes) nothing is.
+  function guardBlowCap(e,dmg){if(!e||!e._guard||CR.yielded)return dmg;const C=worldState.crime,c=C&&C[e._guard.site];if(!c||c.bounty<=0)return dmg;
+    const line=Math.ceil(maxHP*.3)-1;if(PHP<=line)return dmg;return Math.min(dmg,PHP-line);}
   // S239 — guards indoors (Michael, issue #23: B). Seen indoors with a fine on you, the nearest guard on duty is sent.
   // Half a minute on (or when he has walked there, if that is longer) he comes in by the door and halts you where you
   // stand. Leave before then and he is in the street where his walk had got him, and gives chase: he halts you if he
@@ -502,7 +509,11 @@
         g.position.set(W/2,0,D-1.0);g.rotation.y=Math.PI;if(interiorScene)interiorScene.add(g);s.mesh=g;s.phase='inside';
         showMsg(`${(n.def&&n.def.name)||'A guard'} comes in.`,'#e88a8a');return;}
       if(s.phase==='inside'&&s.mesh){const g=s.mesh,T=targetOf(n),dx=T.x-g.position.x,dz=T.z-g.position.z,d=Math.hypot(dx,dz);g.rotation.y=Math.atan2(dx,dz);
-        if(d>1.5&&!talking){const st=Math.min(d-1.4,1.8*dt),nx=g.position.x+dx/d*st,nz=g.position.z+dz/d*st;
+        if(d>1.5&&!talking){let wx=T.x,wz=T.z,wd=d,st=Math.min(d-1.4,1.8*dt); /* S1190 — round the kit's partitions: a straight line when the floor between is clear, else the route */
+          if(!walkClear(g.position.x,g.position.z,T.x,T.z)){s.rt=(s.rt||0)-dt;if(s.rt<=0||!s.wp||Math.hypot(s.wp.x-g.position.x,s.wp.z-g.position.z)<.25){s.rt=1;s.wp=guardRoute(g.position.x,g.position.z,T.x,T.z);}
+            if(s.wp){wx=s.wp.x;wz=s.wp.z;wd=Math.max(.001,Math.hypot(wx-g.position.x,wz-g.position.z));st=Math.min(wd,1.8*dt);g.rotation.y=Math.atan2(wx-g.position.x,wz-g.position.z);}}else s.wp=null;
+          const nx=g.position.x+(wx-g.position.x)/wd*st,nz=g.position.z+(wz-g.position.z)/wd*st;
+          if(intSolidAt(nx,nz,.3,0)){const dr=INT_DOORS.find(q=>!q.open&&Math.hypot(q.x-g.position.x,q.z-g.position.z)<1.2);if(dr)intDoorInteract(dr);} /* he opens a shut door he has walked up to */
           if(!intSolidAt(nx,nz,.3,0)){g.position.x=nx;g.position.z=nz;}else if(!intSolidAt(nx,g.position.z,.3,0))g.position.x=nx;else if(!intSolidAt(g.position.x,nz,.3,0))g.position.z=nz;}
         else if(d<=1.5&&!talking&&CR.cool<=0&&Math.abs(jumpY)<1.2)confrontIndoor(s,S,c);}
       return;}
@@ -519,6 +530,26 @@
       const onPad=Math.hypot(T.x-S.site.x,T.z-S.site.z)<(S.site.pad||40)+40;
       if(!onPad||s.ct>CHASE_MAX){showMsg(`${(n.def&&n.def.name)||'The guard'} gives up the chase.`,'#c8b880');endSent();}}
   }
+  // S1190 — the guard sent in walks round a room's partitions (the kit's shops keep the strongbox in a back room, behind a wall
+  // and a door from the shop door he comes in by; he walked straight at you and stood against the wall). walkClear: the floor
+  // between two points, sampled every quarter metre at his girth. guardRoute: a breadth-first path on a 0.4 grid over the room's
+  // floor to the nearest floor within 1.4 of you (you may stand where his girth cannot), a shut door counted open (he opens it
+  // when he reaches it); it gives the furthest point of the path he can walk straight to, or null. No roll: the same room and the same two points give the same route.
+  function walkClear(ax,az,bx,bz){const d=Math.hypot(bx-ax,bz-az),n=Math.max(1,Math.ceil(d/.25));for(let i=1;i<=n;i++){const t=i/n;if(intSolidAt(ax+(bx-ax)*t,az+(bz-az)*t,.3,0))return false;}return true;}
+  function guardRoute(ax,az,bx,bz){const C=.4;let x0=Math.min(ax,bx),x1=Math.max(ax,bx),z0=Math.min(az,bz),z1=Math.max(az,bz);
+    for(const q of INT_SOL){if(q.x0<-1e5)continue;x0=Math.min(x0,q.x0);x1=Math.max(x1,q.x1);z0=Math.min(z0,q.z0);z1=Math.max(z1,q.z1);}
+    const nx=Math.ceil((x1-x0)/C)+1,nz=Math.ceil((z1-z0)/C)+1;if(nx*nz>40000)return null;
+    const shut=INT_DOORS.filter(q=>!q.open),keep=shut.map(q=>[q.sol.x0,q.sol.x1,q.sol.z0,q.sol.z1]);shut.forEach(q=>{q.sol.x0=q.sol.x1=q.sol.z0=q.sol.z1=-9e5;});
+    try{const at=i=>({x:x0+(i%nx)*C,z:z0+Math.floor(i/nx)*C}),idx=(x,z)=>Math.min(nx-1,Math.max(0,Math.round((x-x0)/C)))+Math.min(nz-1,Math.max(0,Math.round((z-z0)/C)))*nx;
+      const a=idx(ax,az),free=new Int8Array(nx*nz),prev=new Int32Array(nx*nz).fill(-1);let b=-1;
+      const ok=i=>{if(free[i]===0){const p=at(i);free[i]=!intSolidAt(p.x,p.z,.3,0)?1:2;}return free[i]===1;};
+      const near=i=>{const p=at(i);return Math.hypot(p.x-bx,p.z-bz)<1.4;}; /* the end: any floor he can stand on within the halt's reach of you */
+      const q=[a];prev[a]=a;for(let h=0;h<q.length&&b<0;h++){const i=q[h],cx=i%nx;if(i!==a&&near(i)){b=i;break;}
+        for(const j of [cx>0?i-1:-1,cx<nx-1?i+1:-1,i-nx,i+nx]){if(j<0||j>=nx*nz||prev[j]>=0||!ok(j))continue;prev[j]=i;q.push(j);}}
+      if(b<0)return null;const path=[];for(let i=b;i!==a;i=prev[i])path.push(i);path.reverse();
+      let best=path[0];for(let k=1;k<Math.min(path.length,30);k++){const p=at(path[k]);if(walkClear(ax,az,p.x,p.z))best=path[k];else break;}
+      return at(best);}
+    finally{shut.forEach((q,k)=>{q.sol.x0=keep[k][0];q.sol.x1=keep[k][1];q.sol.z0=keep[k][2];q.sol.z1=keep[k][3];});}}
   // S241 — refused indoors, the guard draws where he stands: a Town Guard in the room, fought through the zone-enemy code
   // (run on him alone, with the room's floor and solids); the yield comes at a fifth of health, as in the street.
   function guardFightIndoor(s,S){if(!interiorScene||!s.mesh)return;const n=s.npc;const x=s.mesh.position.x,z=s.mesh.position.z;if(s.mesh.parent)s.mesh.parent.remove(s.mesh);s.mesh=null;

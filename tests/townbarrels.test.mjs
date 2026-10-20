@@ -19,7 +19,10 @@ const WANT = { city: 20, town: 14, village: 8, hamlet: 4, port: 4 };
 // the player (and leave past 95), so it counted whoever had streamed in by the time the town was read. It now hashes who the
 // town drew: its fixed townsfolk in order, then every resident in S.residents, streamed in or not. Read on main after F1 (edda9f4),
 // the same in either order of the five towns, on a rebuild in place, and with two runs side by side. A check again.
-const PEOPLE = { dunmore: 715523239, carraig_mor: 1906895553, coeur_de_vie: -459524478, portclare: -1325179028, droichead: -1790770419 }; // drawn people, names and roles
+// Session 1138: the towns laid out around their church and keep (Session 1138, Michael's B on #433, which accepts that the layouts
+// change once) re-pin the four towns: the same counts of each role in each, the names and homes drawn on the moved houses; the
+// village (Droichead, no plot) is unchanged.
+const PEOPLE = { dunmore: -324528265, carraig_mor: 703352423, coeur_de_vie: 362759923, portclare: 1470735334, droichead: -1790770419 }; // drawn people, names and roles
 for (const id of ['dunmore', 'carraig_mor', 'coeur_de_vie', 'portclare', 'droichead']) {
   await g.settle(id);
   const r = await page.evaluate((id) => { const S = WORLD.settle.get(id); const L = S.loot || [];

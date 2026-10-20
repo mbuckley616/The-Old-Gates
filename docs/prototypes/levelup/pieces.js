@@ -748,11 +748,11 @@ function face(bk, Mf, o) {
 
 // ── the openings: what fills each hole ──
 function piece(add, op, F) {
-  const fin = F.fin, inset = op.inset ?? fin.inset, z0 = -inset, l = op.x - op.w / 2, r = op.x + op.w / 2, top = op.y + op.h, spring = op.arch ? top - op.w / 2 : top;
+  const fin = F.fin, fk = op.frame || 'frame', /* op.frame (Session 1093): the sash's key, 'iron' for a keep's leaded lights */ inset = op.inset ?? fin.inset, z0 = -inset, l = op.x - op.w / 2, r = op.x + op.w / 2, top = op.y + op.h, spring = op.arch ? top - op.w / 2 : top;
   const B = (k, w, h, d, x, y, z, rz = 0, s = .5) => { const g = box(w, h, d, s); if (rz) g.rotateZ(rz); g.translate(x, y, z); add(k, g); return g; };
   const glass = (y0, k) => { const s = outline({ ...op, y: y0, h: top - y0 }, new THREE.Shape()); const g = new THREE.ShapeGeometry(s, 12); g.translate(0, 0, z0 - .03); add(k || ((F.r || rnd)() < .14 ? 'lit' : 'glass'), g); };
   // a glazed sash: its frame and bars between y0 and y1, c by r panes
-  const sash = (y0, y1, c, rr, z = z0) => { const fw = .055; B('frame', op.w, fw, .07, op.x, y0 + fw / 2, z); B('frame', op.w, fw, .07, op.x, y1 - fw / 2, z); B('frame', fw, y1 - y0, .07, l + fw / 2, (y0 + y1) / 2, z); B('frame', fw, y1 - y0, .07, r - fw / 2, (y0 + y1) / 2, z);
+  const sash = (y0, y1, c, rr, z = z0) => { const fw = .055; B(fk, op.w, fw, .07, op.x, y0 + fw / 2, z); B(fk, op.w, fw, .07, op.x, y1 - fw / 2, z); B(fk, fw, y1 - y0, .07, l + fw / 2, (y0 + y1) / 2, z); B(fk, fw, y1 - y0, .07, r - fw / 2, (y0 + y1) / 2, z);
     for (let i = 1; i < c; i++) B('frame', .03, y1 - y0, .05, l + op.w * i / c, (y0 + y1) / 2, z); for (let j = 1; j < rr; j++) B('frame', op.w, .03, .05, op.x, y0 + (y1 - y0) * j / rr, z); };
   const fan = (z = z0) => { const rr = op.w / 2, sp = spring; for (let k = 0; k <= 6; k++) { const a = Math.PI * k / 6, g = box(.03, rr, .04); g.translate(0, rr / 2, 0); g.rotateZ(a - Math.PI / 2); g.translate(op.x, sp, z); add('frame', g); }
     const ring = new THREE.TorusGeometry(rr * .38, .02, 4, 16, Math.PI); ring.translate(op.x, sp, z); add('frame', ring); B('frame', op.w, .07, .08, op.x, sp, z); };
@@ -772,7 +772,7 @@ function piece(add, op, F) {
       B('frame', op.w + .02, .05, .1, op.x, op.y + hl, z0 + .03); step(); break; }
     case 'plank': { if (!op.ajar) /* Session 946: the temple's room hangs its own leaf, open */ leaf(op.paint || F.paint, l, r, op.y, spring); if (op.arch) glass(spring, 'glass'); for (const y of [.35, 1.6]) B('iron', op.w * .7, .05, .015, l + op.w * .35, op.y + y, z0 + .02); if (op.y < .3) step(); break; }
     case 'transom': { const tr = .42; if (!op.ajar) /* Session 893: a room inside hangs its own leaf, open */ leaf(F.paint, l, r, op.y, top - tr); glass(top - tr); sash(top - tr, top, 3, 1); B('iron', .05, .05, .06, r - .16, op.y + 1.05, z0 + .03); step(); break; }
-    case 'fan': { leaf(F.paint, l, r, op.y, spring); for (const y of [.5, 1.35]) B(F.paint, op.w - .2, .5, .03, op.x, op.y + y, z0 + .02); glass(spring, 'glass'); fan();
+    case 'fan': { if (!op.ajar) /* Session 1189: the townhouse's room hangs its own leaf, open */ { leaf(F.paint, l, r, op.y, spring); for (const y of [.5, 1.35]) B(F.paint, op.w - .2, .5, .03, op.x, op.y + y, z0 + .02); } glass(spring, 'glass'); fan();
       const kn = new THREE.TorusGeometry(.07, .015, 6, 14); kn.translate(op.x, op.y + 1.55, z0 + .03); add('iron', kn); step(); break; }
     case 'cart': case 'load': { const mid = op.x;
       if (op.open) { /* Session 929: a forge's doors stand open, each leaf swung back flat against the outer wall beside the opening */ const hw = op.w / 2;
@@ -839,7 +839,7 @@ function building(P) {
   // the eaves cornice of a town front
   if (P.cornice) for (const sz of [-1, 1]) { const g = box(w + .06, .26, .26); g.translate(0, h - .13, sz * (d / 2 + .08)); bk.add(P.fin.dressKey || 'dress', g); }
   // the roof
-  const ov = roof.ov ?? (thatch ? .45 : .28), D = d / 2 + ov, ye = h - ov * tp, L = roof.hip ? w / 2 + ov : roof.parapet ? w / 2 - t * .5 : w / 2 + (roof.ovg ?? .3);
+  const ov = roof.ov ?? (thatch ? .45 : .28), D = d / 2 + ov, ye = roof.ye != null ? h + roof.ye : h - ov * tp, /* roof.ye (Session 1093): the eaves set at a height over the wall head, a roof inside a wall walk */ L = roof.hip ? w / 2 + ov : roof.parapet ? w / 2 - t * .5 : w / 2 + (roof.ovg ?? .3);
   const R = roofSolid(L, D, p, rt, roof.hip, ye, thatch); scaleUV(R.g, thatch ? .55 : .5); bk.add(thatch ? 'thatch' : 'slate', R.g);
   const ridgeY = R.yr + R.tv;
   if (thatch) { // the ridge: a roll, and a block-cut band with a scalloped lower edge down each slope, pinned with hazel liggers
@@ -991,6 +991,278 @@ function bayPlan(kind, n, o = {}) {
     P.shop = { ...P.shop, w: w - .4 }; P.sign = { ...P.sign, x: -w / 2 + .2 }; P.doorX = dx; }
   return P;
 }
+// the town church (Session 1087, card F6): the kit's temple is a small god's, 9.6 by 6 m, too small for a town's church, so a town
+// church of its own. A nave of rubble 16 by 8.4 m with walls 0.9 m thick and 6.2 m to the eaves under a steep slate roof (the temple's
+// pitch), a round-headed west door of 1.5 by 3.2 m in dressed stone with a light over it, three tall round-headed lights a side; a
+// chancel 7.2 by 6.2 m and 5 m to its eaves to the east, lower, with a two-light east window and a light a side. o.tower is the
+// question asked of Michael (DECISION, Session 1087): 'round' (the Gatelands' own: a free-standing round tower of 24 m and a conical
+// stone cap, its door 3.2 m up by a ladder, 5 m off the nave's north-west corner), 'square' (a west tower of four stages, 17.6 m to
+// its battlements, the door moved into its foot) or 'bellcote' (a bell in an open frame on the west gable, no tower).
+// -> a Group of the nave, the chancel and the tower, its userData {name, tris, calls, size, door, parts}
+// a cylinder's or a cone's own UVs (round it, along it) scaled to metres, so the stone's courses run level and stay their size
+const cylUV = (g, su, sv) => { const uv = g.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * su, uv.getY(i) * sv); return g; };
+function church(o = {}) {
+  const tw = o.tower || 'round', r = o.r || stream('church'), t = .9, nw = 16, nd = 8.4, nh = 6.2, cw = 7.2, cd = 6.2, ch = 5.0, pitch = SCALE.pitch.slate + 14, tp = Math.tan(pitch * RAD);
+  const lancet = (x, y = 2.3, w = .6, h = 2.5) => win(x, y, w, h, [1, 4], { sash: false, arch: true });
+  const N = { name: 'Nave', w: nw, d: nd, t, floors: [nh], fin: FIN.stone(), paint: o.paint || 'red', r, roof: { kind: 'slate', pitch, ov: .3, ovg: .25 }, chim: [], doorFace: 'left', gutter: false,
+    open: { left: tw === 'square' ? [lancet(0, 2.6, .5, 1.9)] : [{ kind: 'plank', x: 0, y: 0, w: 1.5, h: 3.2, arch: true, dress: true, ajar: !!o.ajar }, lancet(0, 4.2, .5, 1.5)],
+      front: [-4.8, 0, 4.8].map(x => lancet(x)), back: [-4.8, 0, 4.8].map(x => lancet(x)) } };
+  const C = { name: 'Chancel', w: cw, d: cd, t: .8, floors: [ch], fin: FIN.stone(), paint: N.paint, r, roof: { kind: 'slate', pitch, ov: .3, ovg: .25 }, chim: [], gutter: false, interior: true,
+    open: { right: [-.55, .55].map(x => lancet(x, 1.9, .55, 2.4)), front: [lancet(.9, 2.0, .5, 2.0)], back: [lancet(.9, 2.0, .5, 2.0)] } };
+  const G = new THREE.Group(), parts = [], add = (g, x, z) => { g.position.set(x, 0, z); g.updateMatrix(); G.add(g); parts.push(g); return g; };
+  const nave = add(building(N), 0, 0), chancel = add(building(C), nw / 2 + cw / 2 - t - .02, 0);
+  let door = nave.userData.door ? nave.userData.door.clone() : null, top = nave.userData.size.ridge, x0 = -nw / 2, z0 = -nd / 2;
+  if (tw === 'round') { // the round tower: a battered shaft of rubble, its door high up, slits up the shaft, four bell lights and a stone cap
+    const bk = bucket(), R0 = 2.75, R1 = 2.3, Hs = 24, cx = -nw / 2 - 5.0, cz = -nd / 2 - 1.0, rAt = y => R0 + (R1 - R0) * y / Hs;
+    { const g = new THREE.CylinderGeometry(R1, R0, Hs, 32, 8, true); cylUV(g, 2 * Math.PI * (R0 + R1) / 2 * .8, Hs * .8); g.translate(0, Hs / 2, 0); bk.add('rubble', g); }
+    { const g = new THREE.CylinderGeometry(R0 + .22, R0 + .3, 1.1, 32); g.translate(0, -.2, 0); bk.add('dress', g); }
+    { const g = new THREE.CylinderGeometry(R1 + .14, R1 + .14, .26, 32); g.translate(0, Hs - .1, 0); bk.add('dress', g); }
+    { const g = new THREE.ConeGeometry(R1 + .12, 5.6, 32, 4); cylUV(g, 2 * Math.PI * (R1 + .12) / 2 * .8, 6.1 * .8); g.translate(0, Hs + 2.8, 0); bk.add('rubble', g); }
+    { const g = new THREE.SphereGeometry(.22, 10, 8); g.translate(0, Hs + 5.65, 0); bk.add('dress', g); }
+    { const g = new THREE.CircleGeometry(R1 - .05, 24); g.rotateX(Math.PI / 2); g.translate(0, Hs - .2, 0); bk.add('dark', g); }
+    // an opening on the shaft: a dressed surround standing proud of the batter and the dark of the opening inside it, facing angle a
+    const hole = (a, y, w, h, key = 'dark') => { const R = rAt(y + h / 2), M = new THREE.Matrix4().makeRotationY(a).setPosition(Math.sin(a) * R, 0, Math.cos(a) * R);
+      for (const [gw, gh, gx, gy] of [[.22, h + .22, -w / 2 - .11, y + h / 2], [.22, h + .22, w / 2 + .11, y + h / 2], [w + .44, .22, 0, y - .11]]) { const g = box(gw, gh, .3); g.translate(gx, gy, 0); bk.add('dress', g, M); }
+      { const sh = new THREE.Shape(); sh.absarc(0, 0, w / 2 + .22, 0, Math.PI, false); sh.absarc(0, 0, w / 2, Math.PI, 0, true); const g = new THREE.ExtrudeGeometry(sh, { depth: .3, bevelEnabled: false, curveSegments: 12 }); g.translate(0, y + h, -.15); bk.add('dress', g, M); }
+      { const sh = new THREE.Shape(); sh.moveTo(-w / 2, y); sh.lineTo(w / 2, y); sh.lineTo(w / 2, y + h); sh.absarc(0, y + h, w / 2, 0, Math.PI, false); sh.lineTo(-w / 2, y); const g = new THREE.ShapeGeometry(sh, 8); g.translate(0, 0, .16); bk.add(key, g, M); } };
+    // the door faces east, toward the nave's west front
+    hole(Math.PI / 2, 3.2, .8, 1.9, 'p:' + N.paint);
+    [[0, 7.4], [Math.PI * .9, 11.2], [Math.PI * 1.6, 15.0], [Math.PI * .35, 18.4]].forEach(([a, y]) => hole(a, y, .26, .9));
+    for (let k = 0; k < 4; k++) hole(k * Math.PI / 2 + Math.PI / 4, 21.0, .62, 1.3);
+    // the ladder up to the door: two rails and rungs, leant from the grass to the sill
+    { const foot = R0 + 1.5, sill = 3.1, len = Math.hypot(foot - rAt(3), sill), ang = Math.atan2(foot - rAt(3), sill);
+      for (const sz of [-.26, .26]) { const g = box(.07, len, .07); g.rotateZ(ang); g.translate((foot + rAt(3)) / 2, sill / 2, sz); bk.add('board', g); }
+      for (let k = 1; k * .3 < sill; k++) { const y = k * .3, x = foot - (foot - rAt(3)) * y / sill; const g = new THREE.CylinderGeometry(.025, .025, .52, 6); g.rotateX(Math.PI / 2); g.translate(x, y, 0); bk.add('board', g); } }
+    const T = finish(bk, 'Round tower'); T.userData.size = { w: R0 * 2, d: R0 * 2, eave: Hs, ridge: +(Hs + 5.87).toFixed(2) }; add(T, cx, cz); top = Math.max(top, Hs + 5.87); x0 = cx - R0;
+  } else if (tw === 'square') { // the west tower: four stages, the door in its foot, slits, a bell stage of louvred lights, a parapet of stepped merlons
+    const s = 5.6, st = [4.4, 4.4, 4.4, 3.6], h = st.reduce((a, b) => a + b, 0), ys = st.reduce((a, f) => (a.push(a.at(-1) + f), a), [0]);
+    const T = { name: 'West tower', w: s, d: s, t: 1.1, floors: st, fin: FIN.stone(), paint: N.paint, r, roof: { kind: 'slate', pitch: 24, hip: true, ov: -.6 }, chim: [], doorFace: 'left', gutter: false,
+      open: { left: [{ kind: 'plank', x: 0, y: 0, w: 1.4, h: 3.1, arch: true, dress: true, ajar: !!o.ajar }, lancet(0, ys[1] + 1.2, .35, 1.3), lancet(0, ys[2] + 1.2, .35, 1.3), { kind: 'vent', x: 0, y: ys[3] + .7, w: .8, h: 1.7, arch: true }],
+        front: [lancet(0, ys[2] + 1.2, .35, 1.3), { kind: 'vent', x: 0, y: ys[3] + .7, w: .8, h: 1.7, arch: true }], back: [lancet(0, ys[1] + 1.2, .35, 1.3), { kind: 'vent', x: 0, y: ys[3] + .7, w: .8, h: 1.7, arch: true }],
+        right: [{ kind: 'vent', x: 0, y: ys[3] + .7, w: .8, h: 1.7, arch: true }] } };
+    const g = building(T), bk = bucket(); // the parapet: a wall walk's breastwork, stepped merlons in the island's way
+    for (const [ax, az, len] of [[0, s / 2, s], [0, -s / 2, s], [s / 2, 0, s], [-s / 2, 0, s]]) { const along = ax === 0; { const b = box(along ? len + .2 : .5, .7, along ? .5 : len + .2); b.translate(ax - Math.sign(ax) * .25, h + .35, az - Math.sign(az) * .25); bk.add('rubble', b); }
+      for (let k = 0; k < 4; k++) { const u = -len / 2 + .55 + k * (len - 1.1) / 3; for (const [mw, mh, my] of [[.9, .5, h + .95], [.5, .4, h + 1.4]]) { const b = box(along ? mw : .5, mh, along ? .5 : mw); b.translate(along ? u : ax - Math.sign(ax) * .25, my, along ? az - Math.sign(az) * .25 : u); bk.add('dress', b); } } }
+    const P = finish(bk, 'Parapet'); g.add(...P.children); g.userData.tris += P.userData.tris; g.userData.calls += P.userData.calls;
+    add(g, -nw / 2 - s / 2 + .5, 0); door = g.userData.door.clone().add(new THREE.Vector3(-nw / 2 - s / 2 + .5, 0, 0)); top = Math.max(top, h + 1.6); x0 = -nw / 2 - s + .5;
+  } else { // the bellcote: two dressed piers and an arch on the west gable's apex, the bell hung in it, a coping over
+    const bk = bucket(), ay = nh + nd / 2 * tp, x = -nw / 2 + t / 2;
+    for (const sz of [-.55, .55]) { const g = box(t, 1.7, .32); g.translate(x, ay + .55, sz); bk.add('dress', g); }
+    { const g = box(t, .42, 1.42); g.translate(x, ay + 1.6, 0); bk.add('dress', g); } { const g = box(t + .2, .14, 1.6); g.rotateX(0); g.translate(x, ay + 1.88, 0); bk.add('dress', g); }
+    { const g = new THREE.LatheGeometry([[0, .62], [.12, .6], [.2, .5], [.24, .3], [.32, .05], [.36, 0], [0, 0]].map(([u, v]) => new THREE.Vector2(u, v)), 14); g.translate(x, ay + .55, 0); bk.add('iron', g); }
+    { const g = box(.12, .12, .9); g.translate(x, ay + 1.3, 0); bk.add('board', g); }
+    const B = finish(bk, 'Bellcote'); add(B, 0, 0); top = Math.max(top, ay + 1.95);
+  }
+  const ud = { name: { round: 'Church with a round tower', square: 'Church with a west tower', bellcote: 'Church with a bellcote' }[tw], tris: 0, calls: 0, parts: parts.map(p => ({ name: p.userData.name, tris: p.userData.tris, calls: p.userData.calls })) };
+  for (const p of parts) { ud.tris += p.userData.tris; ud.calls += p.userData.calls; }
+  ud.size = { w: +(nw / 2 + cw - t - .02 - x0).toFixed(2), d: tw === 'round' ? +(nd + 1.0 + 2.75).toFixed(2) : nd, eave: nh, ridge: +top.toFixed(2), nave: nave.userData.size, chancel: chancel.userData.size };
+  ud.door = door; ud.tower = tw; G.userData = ud; return G;
+}
+// a town's coaching inn (Session 1088, card F6; Michael's 1 A on #320 left it "its own piece later"): the inn of a town, port or city.
+// o.kind is the question asked of Michael (DECISION, Session 1088):
+// 'three' (a rendered town front of three storeys and five bays of 2.4 m, 12.6 by 9 m, the door in its middle under a fanlight, a
+//   harp sign; beside it a gateway 3.2 m wide in a rubble wall into a cobbled yard behind, closed by the stable range: four stalls'
+//   half-doors and a coach house's arch under slate), 'two' (the same yard behind a long front of two storeys and seven bays, 17.4 by
+//   7.5 m, a country inn on the coach road) or 'house' (no yard: a merchant's house of four bays whose shop window is the taproom's,
+//   its fascia the inn's name). -> a Group, its userData {name, tris, calls, size, door, parts}
+function coachInn(o = {}) {
+  const kind = o.kind || 'three', r = o.r || stream('coachinn'), G = new THREE.Group(), parts = [], add = (g, x, z) => { g.position.set(x, 0, z); g.updateMatrix(); G.add(g); parts.push(g); return g; };
+  if (kind === 'house') { const P = bayPlan('merchant', 4, { color: o.color || 'cream', paint: o.paint || 'green', trade: o.name || 'THE HARP · ROOMS · STABLING', d: 9 }); P.r = r; P.name = 'Inn (a merchant’s house)';
+    const b = add(building(P), 0, 0); G.userData = { name: 'Inn in a merchant’s house', tris: b.userData.tris, calls: b.userData.calls, size: b.userData.size, door: b.userData.door, parts: [{ name: P.name, tris: b.userData.tris, calls: b.userData.calls }] }; return G; }
+  const three = kind === 'three', nb = three ? 5 : 7, bay = 2.4, w = +(nb * bay + .6).toFixed(2), d = three ? 9 : 7.5, g = three ? [3.0, 2.9, 2.6] : [3.0, 2.9], xs = Array.from({ length: nb }, (_, k) => +((k - (nb - 1) / 2) * bay).toFixed(2));
+  const P = PLANS.townhouse({ color: o.color || 'cream', paint: o.paint || 'green' }); Object.assign(P, { name: three ? 'Coaching inn' : 'Coaching inn, two storeys', w, d, floors: g, r, doorFace: 'front' });
+  P.chim = [{ gable: -1, flues: 4 }, { gable: 1, flues: 4 }]; P.sign = { x: bay / 2, y: g[0] + .55 };
+  P.open = { front: [{ kind: 'fan', x: 0, y: 0, w: 1.2, h: 3.0, arch: true, dress: true }, ...xs.filter(x => x).map(x => win(x, .75, 1.0, 1.85, [3, 2])), ...xs.map(x => win(x, g[0] + .4, 1.0, three ? 2.0 : 1.8, [3, 3])),
+      ...(three ? xs.map(x => win(x, g[0] + g[1] + .35, .95, 1.4, [3, 1])) : [])],
+    back: [{ kind: 'plank', x: -xs[1], y: 0, w: 1.0, h: 2.2 }, ...xs.filter((x, k) => k % 2 === 0).map(x => win(x, .9, .9, 1.6, [2, 2])), ...xs.filter((x, k) => k % 2 === 0).map(x => win(x, g[0] + .4, .9, 1.7, [2, 2]))],
+    right: [win(-1.6, .9, .8, 1.4, [2, 2]), win(1.6, g[0] + .4, .8, 1.5, [2, 2])] };
+  const inn = add(building(P), 0, 0), h = g.reduce((a, b) => a + b, 0);
+  // the gateway: a rubble wall 5 m along the street from the inn's east end, 4.8 m high, a round-headed arch of 3.2 by 3.9 m with its leaves swung back
+  const bk = bucket(), gw = 5.0, gh = 4.8, gt = .6, yardD = 14, x1 = w / 2 + gw, zB = -d / 2 - yardD, FS = FIN.stone(), M0 = new THREE.Matrix4().makeTranslation(w / 2 + gw / 2, 0, d / 2);
+  face(bk, M0, { fin: FS, paint: 'p:' + P.paint, t: gt, r, outline: [[-gw / 2, 0], [gw / 2, 0], [gw / 2, gh], [-gw / 2, gh]], open: [{ kind: 'cart', x: 0, y: 0, w: 3.2, h: 3.9, arch: true, open: true }], strings: [] });
+  { const c = box(gw + .1, .16, gt + .16); c.translate(w / 2 + gw / 2, gh + .08, d / 2 - gt / 2); bk.add('dress', c); }
+  for (let k = 0, y = .1; y < gh - .2; k++, y += .34) { const a = k % 2 ? .3 : .55, q = box(a, .3, gt + .06); q.translate(x1 - a / 2 + .03, y + .15, d / 2 - gt / 2 + .03); bk.add('dress', q); }
+  // the yard's walls: the east one from the gateway back to the stables, the west one from the inn's back corner, 2.6 m and coped
+  for (const [x, z0, z1] of [[x1 - gt / 2, d / 2 - gt, zB + 5.5], [-w / 2 + gt / 2, -d / 2, zB + 5.5]]) { const L = z0 - z1, wl = box(gt, 2.6, L, .8); wl.translate(x, 1.3, (z0 + z1) / 2); bk.add('rubble', wl);
+    const c = box(gt + .14, .14, L + .1); c.translate(x, 2.67, (z0 + z1) / 2); bk.add('dress', c); }
+  { const f = box(gt + .1, .8, 4); f.translate(x1 - gt / 2, -.42, d / 2 - 2); bk.add('rubble', f); }
+  // a trough of dressed stone by the pump in the yard
+  { const tg = box(2.2, .7, .7); tg.translate(x1 - 1.3, .35, -d / 2 - 3); bk.add('dress', tg); const pm = box(.3, 1.5, .3); pm.translate(x1 - .5, .75, -d / 2 - 3); bk.add('p:' + P.paint, pm); const sp = box(.08, .08, .4); sp.translate(x1 - .5, 1.25, -d / 2 - 3 - .3); bk.add('iron', sp); }
+  const yard = finish(bk, 'Gateway and yard walls'); add(yard, 0, 0);
+  // the stable range across the back of the yard: rubble under slate, one high storey and its loft, four half-doors and the coach house's arch
+  const sw = +(w + gw).toFixed(2), S = { name: 'Stable range', w: sw, d: 5.5, t: .6, floors: [3.4], fin: FIN.stone(), paint: P.paint, r, roof: { kind: 'slate', pitch: SCALE.pitch.slate + 2, ov: .3, ovg: .25 }, chim: [], gutter: false, doorFace: 'front',
+    open: { front: [...[0, 1, 2, 3].map(k => ({ kind: 'half', x: -sw / 2 + 1.4 + k * 2.3, y: 0, w: 1.1, h: 2.1 })), ...[0, 1, 2, 3].map(k => win(-sw / 2 + 1.4 + k * 2.3, 2.45, .6, .6, [1, 1], { sash: false })), { kind: 'cart', x: sw / 2 - 2.6, y: 0, w: 2.9, h: 3.0, arch: true }] } };
+  const st = add(building(S), (-w / 2 + x1) / 2, zB + 2.75);
+  const ud = { name: three ? 'Coaching inn, three storeys' : 'Coaching inn, two storeys', tris: 0, calls: 0, parts: parts.map(p => ({ name: p.userData.name, tris: p.userData.tris, calls: p.userData.calls })) };
+  for (const p of parts) { ud.tris += p.userData.tris; ud.calls += p.userData.calls; }
+  ud.size = { w: +(w + gw).toFixed(2), d: +(d + yardD).toFixed(2), eave: +h.toFixed(2), ridge: inn.userData.size.ridge, inn: inn.userData.size, stables: st.userData.size, gate: { w: 3.2, h: 3.9, x: w / 2 + gw / 2 }, yard: { x0: -w / 2 + gt, x1: x1 - gt, z0: -d / 2, z1: zB + 5.5 } };
+  ud.door = inn.userData.door; G.userData = ud; return G;
+}
+// a town's keep (Session 1093, card F6): the lord's seat in a Gatelands town, the steward's door (the game's 'castle' lot, 14 by 11 m).
+// The island's own lord's house is the tower house (the ruin of Session 1052 is one fallen): four storeys of rubble, 11 by 8.5 m, walls
+// 1.5 m thick and 13.4 m to the wall walk, on a battered plinth; a round-headed door of 1.2 by 2.6 m in dressed stone off-centre in the
+// front with a machicolation over it at the walk; slits to the ground floor and the stair, small lights above, the hall's two-light
+// windows on the top floor; a parapet of stepped merlons along the long sides, two corbelled bartizans at opposite corners, a steep slate
+// roof inside the walk between gables that stand proud of it with coping, and a stack of two flues on each gable's apex.
+// o.kind is the question asked of Michael (DECISION, Session 1093): 'tower' (the tower alone, on the lot as it is), 'bawn' (the tower in
+// the back corner of a walled yard 26 by 22 m, walls 3.6 m and coped, a gateway of 3 by 3.4 m, a round flanker at each front corner and a
+// house for the household against the east wall) or 'hall' (the tower with a hall range of two storeys, 13 by 7.5 m, against its east
+// side, the lord's hall on its first floor in three tall lights). -> a Group, its userData {name, tris, calls, size, door, parts, kind}
+function keep(o = {}) {
+  const kind = o.kind || 'tower', r = o.r || stream('keep'), G = new THREE.Group(), parts = [], add = (g, x, z, ry = 0) => { g.position.set(x, 0, z); g.rotation.y = ry; g.updateMatrix(); G.add(g); parts.push(g); return g; };
+  const w = 11, d = 8.5, t = 1.5, fl = [3.6, 3.2, 3.2, 3.4], h = fl.reduce((a, b) => a + b, 0), ys = fl.reduce((a, f) => (a.push(a.at(-1) + f), a), [0]), pitch = 50, tp = Math.tan(pitch * RAD), dx = -2.2;
+  const lead = { sash: false, frame: 'iron' }, slit = (x, y, hh = .95) => win(x, y, .2, hh, [1, 1], { ...lead, arch: true }), light = (x, y, ww = .5, hh = 1.0) => win(x, y, ww, hh, [1, 2], lead);
+  const pair = (x, y) => [x - .5, x + .5].map(u => win(u, y, .45, 1.5, [1, 3], { ...lead, arch: true }));
+  const T = { name: 'Tower house', w, d, t, floors: fl, fin: FIN.stone(), paint: o.paint || 'green', r, chim: [], gutter: false, doorFace: 'front',
+    roof: { kind: 'slate', pitch, ov: -1.1, ovg: -t, ye: .2 },
+    open: { front: [{ kind: 'plank', x: dx, y: 0, w: 1.2, h: 2.6, arch: true, dress: true, ajar: !!o.ajar }, slit(1.2, 1.1), slit(3.6, 1.1), light(dx, ys[1] + 1.0), light(2.4, ys[1] + .9), slit(dx + 1.3, ys[1] + .4, .8),
+        light(-.4, ys[2] + .9, .55, 1.15), light(3.0, ys[2] + .9, .55, 1.15), ...pair(-2.2, ys[3] + .8), ...pair(2.4, ys[3] + .8)],
+      back: [slit(-2.5, 1.2), slit(2.5, 1.2), light(0, ys[1] + 1.0), light(-3.0, ys[2] + .9, .55, 1.15), ...pair(.4, ys[3] + .8)],
+      left: [slit(0, 1.3), light(1.2, ys[1] + 1.0), light(-1.0, ys[2] + .9), ...pair(0, ys[3] + .8)],
+      right: [slit(-1.4, 1.3), slit(1.4, ys[1] + .5, .8), slit(-1.4, ys[2] + .5, .8), light(.6, ys[3] + .9, .55, 1.2)] } };
+  const tower = building(T), bk = bucket();
+  // the battered plinth: 0.5 m out at the ground, in to the wall's face at 1.5 m
+  { const g = new THREE.BoxGeometry(w + 1.0, 1.5, d + 1.0), P = g.attributes.position; for (let i = 0; i < P.count; i++) if (P.getY(i) > 0) P.setXYZ(i, P.getX(i) * (w + .04) / (w + 1.0), P.getY(i), P.getZ(i) * (d + .04) / (d + 1.0)); g.translate(0, .75, 0); g.computeVertexNormals(); worldUV(g, .8); bk.add('rubble', g); }
+  // the parapet: a breastwork 1 m high on the long walls' outer edge, returns along the gable ends to the gables, stepped merlons on it
+  const pt = .5, py = h + .5;
+  for (const sz of [-1, 1]) { { const g = box(w, 1.0, pt, .8); g.translate(0, py, sz * (d / 2 - pt / 2)); bk.add('rubble', g); } { const g = box(w + .1, .12, pt + .1); g.translate(0, h + 1.06, sz * (d / 2 - pt / 2)); bk.add('dress', g); }
+    const n = 7; for (let k = 0; k < n; k++) { const x = -w / 2 + .55 + k * (w - 1.1) / (n - 1); for (const [mw, mh, my] of [[.9, .5, h + 1.37], [.5, .4, h + 1.82]]) { const g = box(mw, mh, pt); g.translate(x, my, sz * (d / 2 - pt / 2)); bk.add('dress', g); } }
+    for (const sx of [-1, 1]) { const g = box(pt, 1.0, d / 2 - pt - (d / 2 - t) + .02, .8); g.translate(sx * (w / 2 - pt / 2), py, sz * ((d / 2 - pt + d / 2 - t) / 2)); bk.add('rubble', g); } }
+  // the gables' coping, down each slope from the apex to the walk
+  { const di = d / 2 - t, len = di / Math.cos(pitch * RAD); for (const sx of [-1, 1]) for (const su of [-1, 1]) { const g = box(t + .12, .16, len + .3); g.rotateX(su * pitch * RAD); g.translate(sx * (w / 2 - t / 2), h + t * tp + di * tp / 2 + .1, su * di / 2); bk.add('dress', g); }
+    for (const sx of [-1, 1]) stack(bk, 'rubble', sx * (w / 2 - .75), 0, h + 3.4, h + (d / 2) * tp + 1.3, 2, true); }
+  // the bartizans: round turrets corbelled out at the front east and the back west corners, a ring of merlons on each
+  for (const [sx, sz] of [[1, 1], [-1, -1]]) { const R = .95, cx = sx * (w / 2 - .25), cz = sz * (d / 2 - .25);
+    { const g = new THREE.CylinderGeometry(R, .25, 1.6, 16, 1); cylUV(g, 2 * Math.PI * R * .8, 1.6 * .8); g.translate(cx, h - .8, cz); bk.add('rubble', g); }
+    { const g = new THREE.CylinderGeometry(R, R, 1.1, 16, 1, true); cylUV(g, 2 * Math.PI * R * .8, 1.1 * .8); g.translate(cx, h + .55, cz); bk.add('rubble', g); }
+    { const g = new THREE.CircleGeometry(R - .04, 16); g.rotateX(-Math.PI / 2); g.translate(cx, h + .08, cz); bk.add('rubble', g); }
+    for (let k = 0; k < 6; k++) { const a = k * Math.PI / 3 + .3, g = box(.42, .55, .34); g.rotateY(a); g.translate(cx + Math.sin(a) * (R - .17), h + 1.37, cz + Math.cos(a) * (R - .17)); bk.add('dress', g); }
+    { const a = Math.atan2(sx, sz), g = box(.12, .7, .05); g.rotateY(a); g.translate(cx + Math.sin(a) * (R + .01), h + .5, cz + Math.cos(a) * (R + .01)); bk.add('glass', g); } }
+  // the machicolation over the door: a box on three corbels out from the parapet, its floor open over the step
+  { const z = d / 2; { const g = box(1.9, 1.1, .75, .8); g.translate(dx, h + .45, z + .37); bk.add('rubble', g); } { const g = box(1.9, .5, .45); g.translate(dx, h + 1.25, z + .5); bk.add('dress', g); }
+    for (const u of [-.8, 0, .8]) { const g = box(.26, .55, .72); g.translate(dx + u, h - .35, z + .36); bk.add('dress', g); }
+    { const g = new THREE.PlaneGeometry(1.4, .4); g.rotateX(Math.PI / 2); g.translate(dx, h - .1, z + .45); bk.add('dark', g); } }
+  const trim = finish(bk, 'Parapet, bartizans and machicolation'); tower.add(...trim.children); tower.userData.tris += trim.userData.tris; tower.userData.calls += trim.userData.calls;
+  const top = +(h + (d / 2) * tp + 1.3 + .1 + SCALE.pot).toFixed(2);
+  let door = tower.userData.door.clone(), size = { w, d, eave: h, ridge: top, walk: h, tower: { w, d, walk: h, ridge: tower.userData.size.ridge } }, gate = null;
+  if (kind === 'tower') add(tower, 0, 0);
+  else if (kind === 'bawn') { // the tower in the back west corner of a walled yard; the bawn's front on the lot's front line
+    const bw = 26, bd = 22, bt = .9, bh = 3.6, tx = -bw / 2 + w / 2, tz = -bd / 2 + d / 2; add(tower, tx, tz); door.add(new THREE.Vector3(tx, 0, tz));
+    const b2 = bucket(), FS = FIN.stone(), gx = 1.0, gw = 3.0, gh = 3.4;
+    face(b2, new THREE.Matrix4().makeTranslation(0, 0, bd / 2), { fin: FS, paint: 'p:' + T.paint, t: bt, r, outline: [[-bw / 2, 0], [bw / 2, 0], [bw / 2, bh], [-bw / 2, bh]], open: [{ kind: 'cart', x: gx, y: 0, w: gw, h: gh, arch: true, open: true }], strings: [] });
+    { const c = box(bw + .1, .16, bt + .16); c.translate(0, bh + .08, bd / 2 - bt / 2); b2.add('dress', c); }
+    // the side and back walls, the back and west ones from the tower's faces
+    for (const [x0, z0, x1, z1] of [[-bw / 2, bd / 2 - bt, -bw / 2, -bd / 2 + d], [bw / 2, bd / 2 - bt, bw / 2, -bd / 2], [-bw / 2 + w, -bd / 2, bw / 2, -bd / 2]]) {
+      const along = z0 === z1, L = along ? x1 - x0 : z0 - z1, cx = along ? (x0 + x1) / 2 : x0 - Math.sign(x0) * bt / 2, cz = along ? z0 + bt / 2 : (z0 + z1) / 2;
+      const wl = box(along ? L : bt, bh, along ? bt : L, .8); wl.translate(cx, bh / 2, cz); b2.add('rubble', wl); const c = box(along ? L + .1 : bt + .16, .16, along ? bt + .16 : L + .1); c.translate(cx, bh + .08, cz); b2.add('dress', c);
+      const f = box(along ? L : bt + .1, .8, along ? bt + .1 : L); f.translate(cx, -.42, cz); b2.add('rubble', f); }
+    // the flankers: round towers of 6.5 m at the front corners, slits on the field and a parapet ring
+    for (const sx of [-1, 1]) { const R = 2.1, fh = 6.5, cx = sx * (bw / 2 - .4), cz = bd / 2 - .4;
+      { const g = new THREE.CylinderGeometry(R, R + .15, fh, 24, 1); cylUV(g, 2 * Math.PI * R * .8, fh * .8); g.translate(cx, fh / 2, cz); b2.add('rubble', g); }
+      { const g = new THREE.CylinderGeometry(R + .08, R + .08, .14, 24); g.translate(cx, fh + .07, cz); b2.add('dress', g); }
+      for (let k = 0; k < 8; k++) { const a = k * Math.PI / 4, g = box(.6, .55, .4); g.rotateY(a); g.translate(cx + Math.sin(a) * (R - .15), fh + .42, cz + Math.cos(a) * (R - .15)); b2.add('dress', g); }
+      for (const [a, y] of [[0, 1.4], [sx * Math.PI / 2, 1.4], [sx * Math.PI / 4, 4.3]]) { const g = box(.16, .8, .05); g.rotateY(a); g.translate(cx + Math.sin(a) * (R + .09), y, cz + Math.cos(a) * (R + .09)); b2.add('glass', g); } }
+    // the well in the yard: a dressed ring and a windlass
+    { const g = new THREE.CylinderGeometry(.85, .9, .8, 18, 1, true); g.translate(4, .4, -2); b2.add('dress', g); const c = new THREE.CircleGeometry(.8, 18); c.rotateX(-Math.PI / 2); c.translate(4, .35, -2); b2.add('dark', c);
+      for (const sx of [-1, 1]) { const p = box(.12, 1.6, .12); p.translate(4 + sx * .8, .8, -2); b2.add('board', p); } const a = new THREE.CylinderGeometry(.08, .08, 1.8, 8); a.rotateZ(Math.PI / 2); a.translate(4, 1.45, -2); b2.add('board', a); }
+    const yard = finish(b2, 'Bawn wall, gate and flankers'); add(yard, 0, 0);
+    // the household's house against the east wall, its door and windows on the yard
+    const Hh = { name: 'Bawn house', w: 12, d: 5.5, t: .6, floors: [3.0], fin: FIN.stone(), paint: T.paint, r, roof: { kind: 'slate', pitch: SCALE.pitch.slate + 2, ov: .3, ovg: .25 }, chim: [{ gable: 1, flues: 1 }], gutter: false, doorFace: 'front',
+      open: { front: [{ kind: 'plank', x: -1.2, y: 0, w: 1.0, h: 2.1 }, ...[-4.2, 1.6, 4.2].map(x => win(x, .95, .8, 1.1, [2, 2], lead))], back: [] } };
+    add(building(Hh), bw / 2 - bt - 5.5 / 2, 1.5, -Math.PI / 2);
+    gate = { x: gx, w: gw, h: gh, z: bd / 2 }; size = { ...size, w: bw, d: bd, eave: bh, bawn: { w: bw, d: bd, t: bt, h: bh }, gate };
+    door = new THREE.Vector3(gx + .9, 0, bd / 2 + .9);
+  } else { // the hall range: two storeys against the tower's east face, its front flush with the tower's
+    add(tower, 0, 0); const hw = 13, hd = 7.5, hf = [3.2, 3.0];
+    const Hp = { name: 'Hall range', w: hw, d: hd, t: .9, floors: hf, fin: { ...FIN.stone(), quoins: false }, paint: T.paint, r, roof: { kind: 'slate', pitch: SCALE.pitch.store + 2, parapet: true, ov: .3 }, chim: [{ gable: 1, flues: 2 }], gutter: false, doorFace: 'front', interior: false,
+      open: { front: [{ kind: 'plank', x: -3.8, y: 0, w: 1.3, h: 2.8, arch: true, dress: true, ajar: !!o.ajar }, ...[-1.0, 2.0, 5.0].map(x => win(x, 1.1, .7, 1.0, [2, 2], lead)), ...[-1.0, 2.0, 5.0].map(x => win(x, hf[0] + .7, .9, 2.1, [2, 4], { ...lead, arch: true }))],
+        back: [{ kind: 'plank', x: 3.0, y: 0, w: 1.0, h: 2.2 }, ...[-2.0, 1.5].map(x => win(x, hf[0] + .7, .9, 2.1, [2, 4], { ...lead, arch: true }))], right: [win(0, hf[0] + .9, .7, 1.4, [2, 3], lead)] } };
+    const hall = add(building(Hp), w / 2 + hw / 2 - .02, (d - hd) / 2); door = hall.userData.door.clone().add(hall.position);
+    size = { ...size, w: +(w + hw - .02).toFixed(2), hall: hall.userData.size };
+  }
+  const ud = { name: { tower: 'Keep: a tower house', bawn: 'Keep: a tower house in its bawn', hall: 'Keep: a tower house and hall' }[kind], kind, tris: 0, calls: 0, parts: parts.map(p => ({ name: p.userData.name, tris: p.userData.tris, calls: p.userData.calls })) };
+  for (const p of parts) { ud.tris += p.userData.tris; ud.calls += p.userData.calls; }
+  ud.size = size; ud.door = door; ud.towerDoor = T.open.front[0]; G.userData = ud; return G;
+}
+// a town's market house (Session 1179, card F6; OG-114's eight workplaces, its "market hall", and OG-070's vocabulary): where the
+// Gatelands town keeps its market dry and its weights honest. o.kind is the question asked of Michael (DECISION #475, Session 1179):
+// 'house' (the market house of an Irish town: two storeys, 15.0 by 8.6 m, limewashed with dressed quoins under a hipped slate roof; the
+// ground floor an open arcade of round arches, five a side and three on the west end, flagged inside under the beams of the floor
+// above; the room upstairs, 3 m to its ceiling, reached by a stone stair of 18 risers up the outside of the east end to its door; a
+// wooden cupola with the market bell on the ridge, and the town's beam and scales hung in the middle bay) or 'shelter' (a market cross
+// shelter: one storey of five piers a side, 10 by 6.6 m, open on all four sides under a hipped slate roof, the beam and scales in it)
+// or 'stalls' (no building, the market on the square as the game holds it today: seven trestle stalls and the beam on a timber tripod).
+// Michael chose the house (A on #475). Session 1188: its ridge stack is carried down to the ground on a dressed pier in the arcade's
+// west bays (the room above has its hearths on it), and o.interior leaves out the dark box behind the upper windows and the stair
+// door's leaf, for rooms.js's gatelandsMarketRoom to build the room inside.
+// -> a Group, its userData {name, kind, tris, calls, size, door, parts, arcade, stair, beam, pier}
+function marketHouse(o = {}) {
+  const kind = o.kind || 'house', house = kind === 'house', r = o.r || stream('market'), G = new THREE.Group(), parts = [], add = g => { G.add(g); parts.push(g); return g; };
+  const stalls = kind === 'stalls', w = house ? 15.0 : 10, d = house ? 8.6 : 6.6, t = house ? .6 : .7, fl = house ? [3.6, 3.0] : [3.2], g0 = fl[0], h = fl.reduce((a, b) => a + b, 0), paint = o.paint || 'green';
+  const fin = { key: 'w:lime', inset: .16, quoins: true, dress: true, dressKey: 'dress', stackKey: 'w:lime', sillKey: 'dress' };
+  const arch = (x, ww, hh) => ({ kind: 'arcade', x, y: 0, w: ww, h: hh, arch: true, dress: true });
+  const fx = house ? [-5.6, -2.8, 0, 2.8, 5.6] : [-3.3, -1.1, 1.1, 3.3], sx = house ? [-2.4, 0, 2.4] : [-1.25, 1.25], aw = house ? 2.0 : 1.6, ah = house ? 3.0 : 2.75, sw = house ? 1.7 : 1.6, sh = house ? 2.8 : 2.65;
+  // the stair (house): up the east end's face from its front corner to a landing at the upper floor's door; u along that face runs to the back
+  const RIS = 18, rise = g0 / RIS, tread = .25, u0 = -3.4, sOut = 1.1, landing = [u0 + (RIS - 1) * tread, u0 + (RIS - 1) * tread + 1.85], doorU = (landing[0] + landing[1]) / 2;
+  const up = (x, ww = .95) => win(x, g0 + .55, ww, 1.65, [3, 3]);
+  const P = { name: house ? 'Market house' : 'Market shelter', w, d, t, floors: fl, fin, paint, r, interior: true, strings: house, cornice: house, gutter: house, doorFace: 'front',
+    roof: { kind: 'slate', pitch: house ? 32 : 30, hip: true, ov: house ? .32 : .45 }, chim: house ? [{ x: -4.6, flues: 2 }] : [],
+    plaque: house ? { x: 0, y: g0 + .75, w: 2.4, h: .56, text: 'MARKET HOUSE' } : null,
+    open: house ? { front: [...fx.map(x => arch(x, aw, ah)), ...fx.filter(x => x).map(x => up(x))], back: [...fx.map(x => arch(x, aw, ah)), ...fx.map(x => up(x))],
+        left: [...sx.map(x => arch(x, sw, sh)), up(-2.4, .85), up(2.4, .85)], right: [{ kind: 'plank', x: doorU, y: g0, w: 1.0, h: 2.15, ajar: !!o.interior }, up(-2.4, .85)] }
+      : { front: fx.map(x => arch(x, aw, ah)), back: fx.map(x => arch(x, aw, ah)), left: sx.map(x => arch(x, sw, sh)), right: sx.map(x => arch(x, sw, sh)) } };
+  const B = stalls ? null : add(building(P)), bk = bucket(), M = glMats(), bx = (k, x0, x1, y0, y1, z0, z1, s = .5) => { const g = box(x1 - x0, y1 - y0, z1 - z0, s); g.translate((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2); bk.add(k, g); return g; };
+  const iw = w / 2 - t, id = d / 2 - t, ceil = house ? g0 - .32 : null;
+  // the flagged floor, a step up from the street, and the dressed kerb round it
+  if (!stalls) bx('dress', -w / 2 - .25, w / 2 + .25, -.1, .12, -d / 2 - .25, d / 2 + .25, .6);
+  if (house) { // the floor above on its beams, and the dark of the room behind the upper windows
+    bx('board', -iw, iw, ceil, g0, -id, id, .8); for (let x = -iw + .7; x < iw; x += 1.45) bx('board', x - .13, x + .13, ceil - .28, ceil, -id, id, .9);
+    bx('board', -iw, iw, ceil - .5, ceil - .28, -.2, .2, .9);
+    if (!o.interior) { const dk = new THREE.BoxGeometry(w - 2 * t + .04, h - g0 - .02, d - 2 * t + .04); dk.translate(0, g0 + (h - g0) / 2, 0); bk.add('dark', dk); } }
+  // the chimney pier (house): limewashed rubble on a dressed base from the arcade's flags to the floor above, under the ridge stack at x -4.6
+  const pier = house ? { x0: -5.1, x1: -4.1, z0: -.8, z1: .8, y0: .12, y1: ceil } : null;
+  if (pier) { bx('w:lime', pier.x0, pier.x1, pier.y0, pier.y1, pier.z0, pier.z1, .8); bx('dress', pier.x0 - .04, pier.x1 + .04, pier.y0, pier.y0 + .3, pier.z0 - .04, pier.z1 + .04, .6); bx('dress', pier.x0 - .05, pier.x1 + .05, pier.y1 - .62, pier.y1 - .5, pier.z0 - .05, pier.z1 + .05, .6); }
+  // the town's beam and scales: an iron beam on a hook from the middle of the ceiling (the house's girder, the shelter's tie), two pans on chains
+  const bTop = house ? ceil - .5 : stalls ? 2.9 : h - .1, bY = 2.25, beam = { x: 0, z: 0, y: bY, top: bTop, pans: 1.15 };
+  { bx('iron', -.03, .03, bY, bTop, -.03, .03); if (!house && !stalls) bx('board', -iw, iw, h - .3, h - .1, -.12, .12, .9);
+    if (stalls) for (const a of [0, 2.09, 4.19]) { const g = box(.12, 3.3, .12, .9); g.translate(0, 1.6, 0); g.rotateX(-.3); g.rotateY(a); g.translate(Math.sin(a) * .96, 0, Math.cos(a) * .96); bk.add('board', g); } /* the beam on a timber tripod */
+    bx('iron', -.85, .85, bY - .05, bY + .05, -.04, .04); { const g = new THREE.ConeGeometry(.08, .28, 4); g.rotateX(Math.PI); g.translate(0, bY + .14, 0); bk.add('iron', g); }
+    for (const s of [-1, 1]) { for (const a of [0, 2.1, 4.2]) { const c = box(.012, bY - beam.pans, .012); c.translate(s * .8 + Math.cos(a) * .2, (bY + beam.pans) / 2, Math.sin(a) * .2); bk.add('iron', c); }
+      const p = new THREE.CylinderGeometry(.26, .2, .07, 14); p.translate(s * .8, beam.pans, 0); bk.add('iron', p); } }
+  // trestle stalls under the arches: boards on trestles, crates and sacks; a weight-stone by the beam
+  const stall = (x, z, ry, len) => { const c = Math.cos(ry), s = Math.sin(ry), at = (lx, lz) => [x + lx * c + lz * s, z - lx * s + lz * c];
+    { const g = box(len, .05, .8, .9); g.rotateY(ry); g.translate(x, .86, z); bk.add('board', g); }
+    for (const lx of [-len / 2 + .25, len / 2 - .25]) for (const lz of [-.3, .3]) { const [px, pz] = at(lx, lz), g = box(.06, .86, .06); g.translate(px, .43, pz); bk.add('board', g); }
+    for (let k = 0; k < 3; k++) { const [px, pz] = at(-len / 2 + .5 + k * (len - 1) / 2, -.05), cw = .38 + r() * .12, g = box(cw, .22 + r() * .1, .32); g.rotateY(ry + (r() - .5) * .3); g.translate(px, .99, pz); bk.add(k % 2 ? 'board' : 'pot', g); }
+    { const [px, pz] = at(len / 2 - .3, .75), g = new THREE.CylinderGeometry(.22, .26, .62, 10); g.translate(px, .31, pz); bk.add('thatch', g); } };
+  if (house) { stall(-4.2, 1.8, 0, 2.2); stall(4.2, 1.8, 0, 2.2); stall(-4.2, -1.8, Math.PI, 2.2); stall(4.6, -1.8, Math.PI, 1.8); }
+  else if (!stalls) { stall(-2.4, 1.3, 0, 1.8); stall(2.6, -1.3, Math.PI, 1.8); }
+  else for (const [x, z, ry] of [[-4.6, 2.6, 0], [-1.5, 3.0, 0], [2.0, 2.7, 0], [5.0, 2.4, 0], [-3.6, -2.8, Math.PI], [.4, -3.1, Math.PI], [4.0, -2.6, Math.PI]]) stall(x, z, ry, 2.0);
+  { const g = new THREE.CylinderGeometry(.18, .2, .22, 10); g.translate(1.4, .23, .5); bk.add('iron', g); }
+  let stair = null, door = new THREE.Vector3(0, 0, d / 2 + 1.0), top = stalls ? 3.2 : B.userData.size.ridge;
+  if (house) { // the outside stair up the east end: a solid flight of dressed steps on a rubble mass, a parapet on its open side, the landing at the door's sill
+    const X = u => -u, zf = w / 2; /* the east face: u along it is -z; out of it is +x */
+    for (let i = 1; i <= RIS; i++) { const a = i < RIS ? u0 + (i - 1) * tread : landing[0], b = i < RIS ? a + tread : landing[1], y = i * rise;
+      bx('rubble', zf, zf + sOut, 0, y - .06, Math.min(X(a), X(b)), Math.max(X(a), X(b)), .8); bx('dress', zf, zf + sOut + .04, y - .06, y, Math.min(X(a), X(b)) - .02, Math.max(X(a), X(b)) + .02, .6);
+      bx('w:lime', zf + sOut, zf + sOut + .3, 0, y + .9, Math.min(X(a), X(b)), Math.max(X(a), X(b)), .8); bx('dress', zf + sOut - .02, zf + sOut + .32, y + .9, y + 1.0, Math.min(X(a), X(b)) - .01, Math.max(X(a), X(b)) + .01, .6); }
+    bx('w:lime', zf, zf + sOut + .3, 0, g0 + 1.0, X(landing[1]) - .3, X(landing[1]), .8); /* the landing's end wall */
+    stair = { risers: RIS, rise: +rise.toFixed(3), tread, width: sOut, foot: [zf + sOut / 2, X(u0)], landing: { y: g0, z0: X(landing[1]), z1: X(landing[0]), x0: zf, x1: zf + sOut }, door: { u: doorU, z: X(doorU), y: g0, w: 1.0, h: 2.15 } };
+    door = new THREE.Vector3(zf + sOut + .9, 0, X(u0) + .4);
+    // the cupola on the ridge: a limewashed base, four painted posts round the bell, a slate pyramid, an iron finial and a vane
+    const ry = B.userData.size.ridge, cb = 1.3, P2 = 'p:' + paint; bx('w:lime', -cb / 2, cb / 2, ry - .7, ry + .35, -cb / 2, cb / 2, .6); bx('dress', -cb / 2 - .08, cb / 2 + .08, ry + .35, ry + .45, -cb / 2 - .08, cb / 2 + .08);
+    for (const px of [-1, 1]) for (const pz of [-1, 1]) bx(P2, px * (cb / 2 - .12) - .08, px * (cb / 2 - .12) + .08, ry + .45, ry + 1.55, pz * (cb / 2 - .12) - .08, pz * (cb / 2 - .12) + .08);
+    bx(P2, -cb / 2 - .05, cb / 2 + .05, ry + 1.55, ry + 1.7, -cb / 2 - .05, cb / 2 + .05);
+    { const g = new THREE.LatheGeometry([[0, 0], [.3, 0], [.28, .06], [.22, .3], [.16, .5], [0, .55]].map(([a, b]) => new THREE.Vector2(a, b)), 14); g.translate(0, ry + .75, 0); bk.add('iron', g); }
+    { const g = new THREE.ConeGeometry(cb / Math.SQRT2 + .14, 1.0, 4, 1); g.rotateY(Math.PI / 4); g.translate(0, ry + 2.2, 0); bk.add('slate', g); }
+    bx('iron', -.025, .025, ry + 2.6, ry + 3.5, -.025, .025); bx('iron', -.45, .45, ry + 3.25, ry + 3.29, -.02, .02); { const g = new THREE.ConeGeometry(.1, .3, 3); g.rotateZ(-Math.PI / 2); g.translate(.5, ry + 3.27, 0); bk.add('iron', g); }
+    top = ry + 3.5; }
+  add(finish(bk, house ? 'Market house: floor, beams, stair, cupola and stalls' : stalls ? 'Market stalls and the beam on its tripod' : 'Market shelter: floor, beam and stalls'));
+  const ud = { name: stalls ? 'Market stalls, no building' : P.name, kind, tris: 0, calls: 0, parts: parts.map(p => ({ name: p.userData.name, tris: p.userData.tris, calls: p.userData.calls })) };
+  for (const p of parts) { ud.tris += p.userData.tris; ud.calls += p.userData.calls; }
+  ud.size = stalls ? { w: 12, d: 7, eave: 0, ridge: top } : { w, d, eave: +h.toFixed(2), ridge: +top.toFixed(2), clear: house ? +(ceil - .28).toFixed(2) : null };
+  ud.arcade = { front: P.open.front.filter(q => q.kind === 'arcade').map(q => ({ x: q.x, w: q.w, h: q.h })), end: P.open.left.filter(q => q.kind === 'arcade').map(q => ({ x: q.x, w: q.w, h: q.h })), t, iw, id, plan: P };
+  ud.stair = stair; ud.beam = beam; ud.door = door; ud.pier = pier; G.userData = ud; return G;
+}
 // the Gatelands' lots (Session 835, Michael's A on #280: coloured towns). A town's lots are rendered in the earth colours,
 // with dressed quoins, string courses and a cornice; no two neighbours share a colour, as in Kinsale or Dingle, and the
 // door and sashes are painted in a colour that does not drown in the wall's. Cottages stay limewashed under thatch, farmhouses
@@ -1013,6 +1285,7 @@ export function gatelandsLot(street, i, s = {}) {
   return { plan, kind, colour: town ? colour : kind === 'warehouse' ? 'stone' : 'lime', paint: town ? paint : plan.paint };
 }
 export { BAYS as GL_BAYS, bayWidth as glBayWidth, baysFor as glBaysFor, bayPlan as glBayPlan };
+export { church as gatelandsChurch, coachInn as gatelandsCoachInn, keep as gatelandsKeep, marketHouse as gatelandsMarket };
 export { SCALE, glMats, bucket as glBucket, finish as glFinish, box as glBox, face as glFace, building as gatelandsBuilding, PLANS as GL_PLANS, FIN as GL_FIN, win as glWin, PAINTS as GL_PAINTS };
 
 // ── the Markish hall (Session 819, a prototype for DECISION: the Mark's houses in the new kit) ──

@@ -6,12 +6,13 @@ Every player-readable string added or changed in `index.html` and, since the spl
 
 | Branch | Reviewed to | Note |
 |---|---|---|
-| main | `3d7a660` | run 22: auto/systems' Sessions 1104–1141 merged (the Spire Held's watch, the draft's own lines word for word; the shelf's *You take … from the shelf.*; the heavy blow and the feint, no line), the Look's kit sessions and the concept and QA merges; clean. Before that, run 21 to `5521ba1`: the Look sessions 1031–1053, the Quest builds 979–1030; clean |
+| main | `c91bf97` | run 23: Sessions 1143–1190 (the kit's church and keep, the inn's taproom, the two-hit string, the guard's blow at the yield's line, F3's land) and my own Session 1092 merged (PR #414); clean. Run 22: auto/systems' Sessions 1104–1141 merged (the Spire Held's watch, the draft's own lines word for word; the shelf's *You take … from the shelf.*; the heavy blow and the feint, no line), the Look's kit sessions and the concept and QA merges; clean. Before that, run 21 to `5521ba1`: the Look sessions 1031–1053, the Quest builds 979–1030; clean |
 | auto/systems | `2b0ee4e` | run 22: merged into main (PR #353), nothing ahead. Run 21 to `9b2f0e1`: Sessions 1061–1089; clean |
 | auto/fable-combat-resolver | `f1976a3` | run 20: merged into main, nothing ahead |
 | auto/fable-f2a-scale, auto/wip-fable-f2a-scale | `e82ad5c`, `a5a4667` | run 19: merged into main, nothing ahead |
 | auto/bodies, auto/backlog, auto/wip-town-plots, auto/producer, auto/producer-look, auto/producer-bodies, auto/producer-decisions, auto/qa, auto/qa-perkbody, auto/qa-skillcurve, auto/critic, auto/concept, auto/design, auto/wip-spear | `372b869`, `0272203`, `aa74c47`, `7a71e51`, `86f05bb`, `56e437c`, `570cd5e`, `db349a9`, `bac01b0`, `ff40184`, `92afe03`, `dc5902f`, `2b9d1d4`, `5a1b57d` | run 22: bodies (the wall hold) and backlog and wip-town-plots (the church, the bawn, the steward's route) add only the inspector's part names (*Church with a west tower*, *Bawn wall, gate and flankers*); auto/producer and auto/qa-skillcurve hold old merges of auto/systems read in runs 19–20; the rest nothing ahead of main in `js/` or `index.html` |
-| auto/quests-build | `d7219d6` | run 22: my own build, Session 1092, and a merge of main (devlog only); PR #414 waits on FREEZE #441 |
+| auto/quests-build | `d7219d6` | run 23: merged into main (PR #414, 19 Oct), nothing ahead. Run 22: my own build, Session 1092 |
+| auto/fable-f3-land-2 | `2d2cb0f` | run 23: F3's second PR (#487); no player-readable text |
 | auto/wip-cloak-hang | `f4e973d` | run 17: nothing ahead of main in `js/` or `index.html` |
 | auto/fable-f1-renderer | `026c76c` | run 17: merged into main (Session 822); no player-readable text but the settings sheet's *Renderer* row |
 | claude/v2-scope | `f712a74` | run 17: docs only (the 2.0 scope, Michael's 1 B, 2 A, 3 A; the third art round) |
@@ -23,6 +24,10 @@ Every player-readable string added or changed in `index.html` and, since the spl
 | auto/split | — | merged into main, nothing ahead |
 | claude/lucid-faraday-6qlft7 | — | shares no history with main; not read |
 ---
+
+## Run 23 — 20 Oct 2026
+
+About 30 player-readable strings read on main since `3d7a660` (most of them my own Session 1092, as built) and F3's second branch; none new outside the build but the inspector's part names. Clean, no findings.
 
 ## Run 22 — 19 Oct 2026
 

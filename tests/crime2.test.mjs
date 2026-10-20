@@ -10,7 +10,7 @@ const seen = await page.evaluate(async (pickDoor) => { forceTime(23); const S = 
   const w = npcs[0]; const f0 = WORLD.favor(site);
   // stand at the door; the witness stands out in the street along the way out of it
   const place = (h, d) => { const dx = h.exitX - h.doorX, dz = h.exitZ - h.doorZ, L = Math.hypot(dx, dz) || 1; px = h.doorX + dx / L * .8; pz = h.doorZ + dz / L * .8; jumpY = 0;
-    w.g.visible = true; w._retreated = false; w.sched = { type: 'guard', a: { x: h.doorX + dx / L * d, z: h.doorZ + dz / L * d }, b: { x: h.doorX + dx / L * d, z: h.doorZ + dz / L * d } }; w.g.position.set(h.doorX + dx / L * d, WORLD.worldH(h.doorX + dx / L * d, h.doorZ + dz / L * d), h.doorZ + dz / L * d); worldState.picked = {}; };
+    w.g.visible = true; w._retreated = false; w.sched = { type: 'guard', a: { x: h.doorX + dx / L * d, z: h.doorZ + dz / L * d }, b: { x: h.doorX + dx / L * d, z: h.doorZ + dz / L * d } }; w.g.position.set(h.doorX + dx / L * d, WORLD.worldH(h.doorX + dx / L * d, h.doorZ + dz / L * d), h.doorZ + dz / L * d); w.g.rotation.y = Math.atan2(-dx, -dz); /* S1160 — facing the door: a witness sees in a 120° cone (S705), and the heading left from the town's last tick is the layout's, not the test's */ worldState.picked = {}; };
   // whether a witness is still out when the lock gives is the town's schedule; what this checks is the sight rule and the chain from seen to consequence
   let h = shops[0]; place(h, 9); const farWit = WORLD.witnessOf(h); const farSeen = !!farWit, farBounty = WORLD.bountyAt(site);
   h = shops[1] || shops[0]; place(h, 3); window._wronged = h; const nearWit = WORLD.witnessOf(h);
