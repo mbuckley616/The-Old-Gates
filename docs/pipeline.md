@@ -14,7 +14,9 @@ once every two hours. Michael chose A: fix all five.
   vendored three.js, CI or packages runs everything, as does a selection worth more than half the full suite. Measured on
   19 Oct: Bodies 1136–1156 would have run 12 suites in one shard, Quest builds 1092 44 suites in three, QA's last PR 7
   suites in one; each was 16 to 20 shards before.
-- **A docs-only PR runs no suites** (parse only).
+- **A docs-only PR runs no suites** (parse only). Parse also checks the generated bundles (`three_bundle.py`,
+  `people_bundle.py`, `creatures_bundle.py --check`; the last two since Session 1225), so a PR that edits
+  `docs/prototypes/levelup/people.js`, a sibling it imports, or `creatures.js` commits the rebuilt `vendor/` copy with it.
 - **Main runs every suite after each merge**, and the next merge no longer cancels that run. A break the selection missed
   shows there.
 - **One check, `gate`**, says whether a PR may merge: parse passed, and the suites passed or were not needed.
