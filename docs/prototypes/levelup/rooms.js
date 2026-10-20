@@ -2023,3 +2023,163 @@ export function gatelandsFarmhouse(o = {}, r = stream('farmhouse')) {
     door: { x: fd.x, z: plan.d / 2, w: fd.w, h: fd.h }, back: { x: -bd.x, z: -plan.d / 2, w: bd.w, h: bd.h }, part: { x: PX, t: pt }, doorsIn: { parlour: dParl, kitchen: dKit, up: dUp }, steps, rise: ri, going: G, well, rail, slabs, beams, fires, hearth,
     parlourFire, westFire, eastFire, rooms, paths, boxes, beds, table: kt, lamps, candles, windows, w: plan.w, d: plan.d };
 }
+
+// ── the farmstead's outbuildings as rooms (Session 1198; OG-115's "farmstead with outbuildings", OG-114's farming), inside the shells of
+// GL_PLANS.byre and GL_PLANS.barn (Session 1194). Neither has a ceiling under its roof: the slate's couples, purlins and ridge board
+// show. farmKit(plan, M): put and bx as the farmhouse's (bx keeps a tagged footprint with its floor), under(z) the slate's underside
+// over z, couple(x, Z, yc) a pair of rafters at x with a collar at yc, finish() the room merged by material.
+function farmKit(plan, M) {
+  const B = new Map(), boxes = [], h = plan.floors.reduce((a, b) => a + b, 0), p = plan.roof.pitch * Math.PI / 180, tp = Math.tan(p), ov = plan.roof.ov, D = plan.d / 2 + ov, ye = h - ov * tp;
+  const under = z => ye + (D - Math.abs(z)) * tp;
+  const put = (geo, key, x = 0, y = 0, z = 0, ry = 0, uv = .6, rx = 0, rz = 0) => { const q = geo.index ? geo.toNonIndexed() : geo; for (const k of Object.keys(q.attributes)) if (!['position', 'normal'].includes(k)) q.deleteAttribute(k);
+    q.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz)), new THREE.Vector3(1, 1, 1))); worldUV(q, uv); if (!B.has(key)) B.set(key, []); B.get(key).push(q); return q; };
+  const bx = (key, x0, x1, y0, y1, z0, z1, tag, fl) => { put(new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0), key, (x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2); if (tag) boxes.push({ tag, x0, x1, y0, y1, z0, z1, fl }); };
+  const couple = (x, Z, yc) => { const L = Math.hypot(Z, Z * tp) - .12; for (const s of [-1, 1]) put(new THREE.BoxGeometry(.08, .15, L), 'oak', x, (under(Z) + under(0)) / 2 - .08 / Math.cos(p), s * Z / 2, 0, .6, s * p);
+    if (yc != null) { const zc = (under(0) - .17 / Math.cos(p) - yc) / tp; bx('oak', x - .04, x + .04, yc - .14, yc, -zc, zc); } };
+  // the purlins under the rafters halfway up each slope, and the ridge board, from x0 to x1
+  const purlins = (x0, x1, Z) => { for (const s of [-1, 1]) { const z = s * Z / 2, y = under(Math.abs(z) + .06) - .16 / Math.cos(p); bx('oak', x0, x1, y - .14, y, z - .06, z + .06); } bx('oak', x0, x1, under(.03) - .24, under(.03) - .04, -.03, .03); };
+  const finish = shell => { { const Gl = glMats().glass, Lt = glMats().lit; shell.traverse(m => { if (m.isMesh && (m.material === Gl || m.material === Lt)) { m.material = mats().pane; m.name = 'pane'; } }); }
+    const group = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const q = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(q, M[k]); m.name = k; m.castShadow = !['flame', 'ember', 'glow'].includes(k); m.receiveShadow = true; group.add(m); tris += q.attributes.position.count / 3; }
+    const all = new THREE.Group(); all.add(shell, group); return { group: all, room: group, tris: Math.round(tris), draws: group.children.length }; };
+  // the openings of every face in the building's frame: front +z, back -z (its x mirrored), left -x and right +x (their x along z)
+  const openings = kind => Object.entries(plan.open).flatMap(([f, os]) => (os || []).filter(q => kind(q.kind)).map(q => ({ face: f, kind: q.kind, y: q.y, w: q.w, h: q.h,
+    x: f === 'front' ? q.x : f === 'back' ? -q.x : f === 'left' ? -plan.w / 2 : plan.w / 2, z: f === 'front' ? plan.d / 2 : f === 'back' ? -plan.d / 2 : f === 'left' ? q.x : -q.x })));
+  return { put, bx, boxes, under, couple, purlins, finish, openings, eave: h };
+}
+// a lantern hung on an iron rod from top (the farmhouse's), and a pail
+function farmLantern(K, fl, x, z, y, top) { K.bx('iron', x - .005, x + .005, y + .14, top, z - .005, z + .005); K.put(new THREE.CylinderGeometry(.08, .09, .22, 6), 'glow', x, y, z); K.put(new THREE.ConeGeometry(.1, .1, 6), 'iron', x, y + .16, z);
+  K.put(new THREE.CylinderGeometry(.095, .095, .02, 6), 'iron', x, y - .12, z); return [x, y, z, fl]; }
+function farmPail(K, fl, y0, x, z) { K.put(new THREE.CylinderGeometry(.15, .12, .3, 12, 1, true), 'oak', x, y0 + .15, z); K.put(new THREE.CylinderGeometry(.12, .12, .02, 12), 'oak', x, y0 + .02, z);
+  for (const y of [.06, .24]) K.put(new THREE.TorusGeometry(.125 + y * .1, .008, 4, 14).rotateX(Math.PI / 2), 'iron', x, y0 + y, z); K.put(new THREE.TorusGeometry(.15, .006, 4, 12, Math.PI), 'iron', x, y0 + .3, z);
+  K.boxes.push({ tag: 'pail', x0: x - .15, x1: x + .15, y0, y1: y0 + .45, z0: z - .15, z1: z + .15, fl }); }
+// a heap of hay: half a squashed sphere on the floor at y0, rx by ry by rz
+function farmHay(K, fl, y0, x, z, rx, ry, rz) { K.put(new THREE.SphereGeometry(1, 14, 6, 0, Math.PI * 2, 0, Math.PI / 2).scale(rx, ry, rz), 'straw', x, y0, z, 0, 2.2); K.boxes.push({ tag: 'hay', x0: x - rx, x1: x + rx, y0, y1: y0 + ry, z0: z - rz, z1: z + rz, fl }); }
+
+// gatelandsByre(o, r): the byre of GL_PLANS.byre (12 by 5.4 m outside, walls of 0.6 m, 2.6 m to the wall plate, slate at 36°) as the
+//   Irish country's cow-house: six cows tied in three double stalls facing the back wall, each stall a cobbled standing 1.65 m long
+//   between a manger of flags (a hay rack over it, below the back lights) and the dung channel; a flagged passage along the front
+//   from both half-doors (their leaves standing open inward); a calf pen of boards at the east end on straw, its gate shut, a trough;
+//   over the west half a hay loft of deal boards on joists at 2.45 m, reached by a ladder from the passage, its hatch in the west
+//   gable, hay heaped under both slopes; the east half open to the couples. A milking stool, two pails, a meal bin, a hay fork.
+//   -> { group, shell, room, tris, draws, inner, floors: [passage, loft], under(z), loft: {x0, x1, y, joists}, ladder, stalls, paths,
+//        boxes, lamps, windows, doors, leaves, rooms } in the byre's frame (its centre on the ground, front +z).
+export function gatelandsByre(o = {}, r = stream('byre')) {
+  const plan = GL_PLANS.byre({ paint: o.paint || 'red' }); plan.interior = true; plan.r = stream('byre-shell'); for (const q of plan.open.front) if (q.kind === 'half') q.ajar = true; plan.open.left[0].open = true;
+  const shell = gatelandsBuilding(plan), G = glMats(), M = { ...mats(), dress: G.dress, leaf: G['p:' + plan.paint], cobble: mat('flag', { ns: 1.8, color: 0x8a8476, rough: .85 }), straw: mat('thatch', { ns: 1.2, color: 0xeadcaa, rough: 1 }), dung: new THREE.MeshStandardMaterial({ color: 0x2c2418, roughness: .35 }) };
+  const K = farmKit(plan, M), { bx, put, boxes, under } = K, X = plan.w / 2 - plan.t, Z = plan.d / 2 - plan.t, F0 = .03, FL = 2.45, JY = 2.27 /* the loft's joists' underside */, LX = -.6 /* the loft's open edge */;
+  // ── the floor: the passage flagged, the dung channel a wet strip a step down, the standings cobbled a step up; the pen's straw
+  const ZS = .15 /* the standings' heel */, ZC = .5 /* the channel's front edge */, ZM = -1.5 /* the manger's front */, XS = 2.45 /* the stalls' east end */;
+  for (let z = ZC; z < Z - .05;) { const d = Math.min(Z - z, .5 + r() * .3); for (let x = -X; x < X - .05;) { const w = Math.min(X - x, .55 + r() * .4); put(new THREE.BoxGeometry(w - .02, F0, d - .02), 'flag', x + w / 2, F0 / 2, z + d / 2, 0, .7); x += w; } z += d; }
+  bx('dung', -X, X, 0, .012, ZS, ZC); bx('cobble', -X, XS, 0, .12, ZM, ZS); bx('straw', XS + .05, X, 0, .06, -Z, ZS - .05);
+  // ── the manger: a kerb of flags on edge, the trough's floor raised, hay in it; the rack over it, slatted, leaning out from the wall
+  // under the back lights (their sills at 1.45 m); a ring and chain at the kerb for each cow
+  bx('flag', -X, XS, 0, .62, ZM - .06, ZM, 'manger', 0); bx('flag', -X, XS, 0, .32, -Z, ZM - .06, 'manger', 0); for (let x = -X + .6; x < XS - .3; x += 1.3) put(new THREE.SphereGeometry(.4, 8, 4, 0, Math.PI * 2, 0, Math.PI / 2).scale(1.3, .3, .5), 'straw', x, .32, (ZM - Z) / 2 - .03);
+  { const y0 = .82, y1 = 1.38, z1 = -1.72, L = Math.hypot(y1 - y0, z1 + Z - .03), a = -Math.atan2(y1 - y0, z1 + Z - .03); bx('oak', -X, XS, y0 - .06, y0, -Z, -Z + .06, 'rack', 0); bx('oak', -X, XS, y1 - .06, y1, z1 - .04, z1 + .04, 'rack', 0);
+    for (let x = -X + .07; x < XS - .03; x += .14) put(new THREE.BoxGeometry(.025, .025, L), 'oak', x, (y0 + y1) / 2, (-Z + .03 + z1) / 2, 0, .6, a); }
+  const stalls = [], cx = [-4.1, -1.5, 1.125]; for (const c of cx) { stalls.push({ x0: c - 1.3, x1: c + 1.3 }); for (const s of [-1, 1]) { const x = c + s * .62; put(new THREE.TorusGeometry(.05, .009, 4, 10), 'iron', x, .5, ZM + .012); for (let k = 0; k < 4; k++) put(new THREE.TorusGeometry(.022, .006, 3, 6), 'iron', x, .42 - k * .045, ZM + .015, k % 2 ? Math.PI / 2 : 0); } }
+  // the divisions between the double stalls: boards on a heel post
+  for (const x of [-2.8, -.2]) { bx('deal', x - .025, x + .025, .42, 1.12, ZM, ZS - .14, 'division', 0); bx('deal', x - .025, x + .025, .62, 1.12, ZM - .55, ZM - .06, 'division', 0); bx('oak', x - .06, x + .06, .12, 1.32, ZS - .14, ZS - .02, 'post', 0); }
+  // ── the calf pen: a board wall from the stalls, a front of rails with its gate shut, a trough under the back wall
+  bx('deal', XS, XS + .05, F0, 1.4, -Z, ZS - .02, 'penwall', 0);
+  { const z0 = ZS - .07, z1 = ZS - .02; for (const y of [.3, .65, 1.0]) bx('deal', XS + .05, X, y, y + .12, z0, z1, 'penfront', 0); for (const x of [XS + .1, 3.6, X - .06]) bx('oak', x - .05, x + .05, F0, 1.16, z0 - .02, z1, 'penfront', 0);
+    /* the gate's brace */ put(new THREE.BoxGeometry(Math.hypot(.95, .82), .06, .04), 'deal', 3.08, .71, z0 - .03, 0, .6, 0, Math.atan2(.82, .95)); }
+  bx('oak', 4.3, 5.2, .06, .38, -Z, -1.75, 'trough', 0); bx('dung', 4.36, 5.14, .3, .385, -Z + .05, -1.81);
+  // ── the loft: joists from wall to wall, a trimmer on its edge, deal boards; hay heaped under both slopes, clear of the hatch
+  const joists = []; for (let x = -X + .25; x < LX - .12; x += .5) { bx('oak', x - .05, x + .05, JY, FL - .04, -Z, Z); joists.push(x); } bx('oak', LX - .1, LX, JY - .02, FL - .04, -Z, Z); bx('deal', -X, LX, FL - .04, FL, -Z, Z, null);
+  farmHay(K, 1, FL, -3.4, -1.25, 1.75, .95, .72); farmHay(K, 1, FL, -3.6, 1.3, 1.45, .8, .62); farmHay(K, 1, FL, -1.7, -1.3, .8, .7, .6);
+  // the ladder: two rails from the passage's back edge to over the loft's edge, oak rungs at 0.28 m
+  const lad = { z0: .5, z1: .95, x0: LX + .9, yTop: FL + .95 }, dxdy = (lad.x0 - LX) / FL; { const L = Math.hypot(lad.yTop * dxdy, lad.yTop), a = Math.atan2(lad.yTop * dxdy, lad.yTop), cxl = lad.x0 - lad.yTop * dxdy / 2;
+    for (const z of [lad.z0 + .03, lad.z1 - .03]) put(new THREE.BoxGeometry(.06, L, .05), 'oak', cxl, lad.yTop / 2 + .03, z, 0, .6, 0, a);
+    for (let y = .28; y < FL; y += .28) { const x = lad.x0 - y * dxdy; bx('oak', x - .02, x + .02, y - .02, y + .02, lad.z0 + .05, lad.z1 - .05); }
+    boxes.push({ tag: 'ladder', x0: LX - .02, x1: lad.x0 + .04, y0: 0, y1: JY, z0: lad.z0, z1: lad.z1, fl: 0 }, { tag: 'ladder', x0: LX - lad.yTop * dxdy + FL * dxdy - .04, x1: LX, y0: FL, y1: lad.yTop, z0: lad.z0, z1: lad.z1, fl: 1 }); }
+  // ── the roof: a couple on every 1.6 m, collared where the byre is open to it, the purlins and the ridge board
+  for (let x = -4.8; x <= 4.81; x += 1.6) K.couple(x, Z, x > LX ? 3.95 : null); K.purlins(-X, X, Z);
+  // ── the doors' leaves, both standing open into the passage, each on the jamb away from the ladder; the passage's things
+  const doors = K.openings(k => k === 'half'), leaves = [], hz = plan.d / 2 - .32; for (const d of doors) { const s = d.x < 0 ? -1 : 1, x = d.x + s * d.w / 2, x0 = s < 0 ? x : x - .05, x1 = x0 + .05;
+    bx('leaf', x0, x1, 0, 1.12, hz - d.w + .02, hz); bx('leaf', x0, x1, 1.14, d.h, hz - d.w + .02, hz); for (const y of [.3, .85, 1.45]) bx('iron', s < 0 ? x1 : x0 - .01, s < 0 ? x1 + .01 : x0, y, y + .04, hz - .45, hz) /* the straps on the leaf's face to the room */;
+    leaves.push({ x0, x1, z0: hz - d.w + .02, z1: hz }); boxes.push({ tag: 'leaf', x0, x1, y0: 0, y1: d.h, z0: hz - d.w + .02, z1: Z, fl: 0 }); }
+  { const x = -1.25, z = 1.78; put(new THREE.CylinderGeometry(.15, .15, .04, 12), 'oak', x, .32, z); for (const a of [0, 2.1, 4.2]) put(new THREE.CylinderGeometry(.018, .02, .3, 5), 'oak', x + Math.cos(a) * .1, .15, z + Math.sin(a) * .1);
+    boxes.push({ tag: 'stool', x0: x - .15, x1: x + .15, y0: 0, y1: .34, z0: z - .15, z1: z + .15, fl: 0 }); }
+  farmPail(K, 0, F0, -.75, 1.86); farmPail(K, 0, F0, -1.7, 1.86);
+  { const x0 = 4.45, x1 = 5.3, z0 = 1.45, z1 = Z - .02; bx('oak', x0, x1, F0, .66, z0, z1, 'bin', 0); bx('oak', x0 - .01, x1 + .01, .66, .7, z0 - .01, z1); }
+  { const x = -2.55, L = 1.75, a = .17; put(new THREE.CylinderGeometry(.016, .016, L, 5), 'oak', x, L / 2 * Math.cos(a), Z - .06 - L / 2 * Math.sin(a), 0, .6, -a); for (const dx of [-.06, 0, .06]) put(new THREE.CylinderGeometry(.006, .004, .3, 4), 'iron', x + dx, L * Math.cos(a) + .1, Z - .06 - L * Math.sin(a) + .02);
+    boxes.push({ tag: 'fork', x0: x - .1, x1: x + .1, y0: 0, y1: 1.95, z0: Z - .4, z1: Z, fl: 0 }); }
+  const lamps = [farmLantern(K, 0, -2.4, 1.15, 2.08, JY), farmLantern(K, 0, 2.6, Z / 2, 2.25, under(Z / 2 + .06) - .3)];
+  const F = K.finish(shell), windows = K.openings(k => k === 'win' || k === 'load'), inner = { x0: -X, x1: X, z0: -Z, z1: Z };
+  const paths = [{ fl: 0, pts: [[doors[0].x, Z - .25], [doors[0].x, 1.12], [-X + .4, 1.12]] }, { fl: 0, pts: [[doors[0].x, 1.12], [3.9, 1.12]] }, { fl: 0, pts: [[doors[1].x, Z - .25], [doors[1].x, 1.12]] }, { fl: 0, pts: [[3.05, 1.12], [3.05, .5]] },
+    { fl: 1, pts: [[LX - .6, .72], [LX - .6, 0], [-X + .4, 0]] }];
+  const rooms = { passage: { x0: -X, x1: X, z0: ZC, z1: Z, fl: 0 }, standings: { x0: -X, x1: XS, z0: ZM, z1: ZS, fl: 0 }, pen: { x0: XS + .05, x1: X, z0: -Z, z1: ZS - .07, fl: 0 }, loft: { x0: -X, x1: LX, z0: -Z, z1: Z, fl: 1 } };
+  return { ...F, shell, shellTris: shell.userData.tris, shellCalls: shell.userData.calls, inner, floors: [F0, FL], under, eave: K.eave, loft: { x0: -X, x1: LX, y: FL, joists: JY, n: joists.length }, ladder: { ...lad, x1: LX, rung: .28 },
+    stalls, standing: { z0: ZM, z1: ZS, y: .12 }, channel: { z0: ZS, z1: ZC }, paths, boxes, lamps, windows, doors, leaves, rooms, w: plan.w, d: plan.d };
+}
+
+// gatelandsBarn(o, r): the barn of GL_PLANS.barn (12 by 6.4 m outside, walls of 0.7 m, two storeys of 2.7 and 2.4 m, slate at 40°): below,
+//   the cart bay behind the arch (its leaves swung back outside) with the plough, the harrow and the sacks, a scythe and a flail on the
+//   back wall, and through a board partition the stable from the stable door: two horse stalls facing the back wall under a high rack,
+//   their manger below the slits, the feed corner with the corn bin and the harness on the east gable; a straight stair of 16 risers
+//   up the west gable to the loft, open to the couples, the hay heaped by the pitching door (swung open on the hoist's gable), the grain
+//   in sacks and a chest at the west end.
+//   -> { group, shell, room, tris, draws, inner, floors, ceils, under(z), steps, rise, going, well, rail, slabs, paths, boxes, lamps,
+//        windows, doors, leaves, rooms } in the barn's frame (its centre on the ground, front +z).
+export function gatelandsBarn(o = {}, r = stream('barn')) {
+  const plan = GL_PLANS.barn({}); plan.interior = true; plan.r = stream('barn-shell'); plan.open.front[0].open = true; plan.open.front[1].ajar = true; plan.open.right[0].open = true;
+  const shell = gatelandsBuilding(plan), G = glMats(), M = { ...mats(), dress: G.dress, leaf: G['p:' + plan.paint], board: G.board, sack: mat('plaster', { ns: .5, color: 0xb8a27a, rough: 1 }), straw: mat('thatch', { ns: 1.2, color: 0xeadcaa, rough: 1 }), leather: new THREE.MeshStandardMaterial({ color: 0x3a2416, roughness: .75 }) };
+  const K = farmKit(plan, M), { bx, put, boxes, under } = K, X = plan.w / 2 - plan.t, Z = plan.d / 2 - plan.t, F0 = .03, F1 = plan.floors[0], SL = .2, CE0 = F1 - SL, floors = [F0, F1];
+  // ── the partition between the cart bay and the stable: boards on studs at x = PX, a doorway at the stable's passage
+  const PX = .5, pt = .04, dSt = { z0: 1.0, z1: 1.9, h: 2.0 };
+  { let a = -Z; for (const d of [dSt]) { bx('board', PX - pt, PX + pt, F0, CE0, a, d.z0, 'partition', 0); bx('board', PX - pt, PX + pt, F0 + d.h, CE0, d.z0, d.z1); for (const e of [d.z0, d.z1]) bx('oak', PX - pt - .01, PX + pt + .01, F0, F0 + d.h + .06, e - (e === d.z0 ? .06 : 0), e + (e === d.z1 ? .06 : 0)); a = d.z1; }
+    bx('board', PX - pt, PX + pt, F0, CE0, a, Z, 'partition', 0); }
+  // ── the floors: the bay beaten earth, the stable flagged
+  bx('earth', -X, PX - pt, 0, F0, -Z, Z); for (let z = -Z; z < Z - .05;) { const d = Math.min(Z - z, .5 + r() * .3); for (let x = PX + pt; x < X - .05;) { const w = Math.min(X - x, .55 + r() * .4); put(new THREE.BoxGeometry(w - .02, F0, d - .02), 'flag', x + w / 2, F0 / 2, z + d / 2, 0, .7); x += w; } z += d; }
+  // ── the stair: 16 risers up the west gable from the front to the landing at the back, on goings of 0.22 m
+  const SX0 = -X, SX1 = -X + .9, SF = 1.9, Gg = .22, ri = (F1 - F0) / 16, steps = [];
+  for (let i = 1; i <= 15; i++) { const y = F0 + i * ri, z1 = SF - (i - 1) * Gg, z0 = z1 - Gg; bx('oak', SX0, SX1, Math.max(y - ri - .06, F0), y, z0, z1); steps.push({ x0: SX0, x1: SX1, z0, z1, y, fl: 0 }); }
+  const kHead = Math.floor((CE0 - 2.0 - F0) / ri), well = { x0: SX0, x1: SX1, z0: SF - 15 * Gg, z1: SF - kHead * Gg };
+  { const L = Math.hypot(15 * Gg, F1 - F0), a = Math.atan2(F1 - F0, 15 * Gg), q = new THREE.BoxGeometry(.05, .28, L); q.rotateX(a); put(q, 'oak', SX1 + .025, (F0 + F1) / 2 + .14, SF - 7.5 * Gg);
+    const q2 = new THREE.BoxGeometry(.06, .06, L + .2); q2.rotateX(a); put(q2, 'oak', SX1 + .02, (F0 + F1) / 2 + .9, SF - 7.5 * Gg); bx('oak', SX1 - .02, SX1 + .06, F0, F0 + 1.05, SF - .08, SF);
+    for (let k = 1; k <= 15; k++) { const z = SF - (k - .5) * Gg, y = F0 + k * ri; bx('oak', SX1 + .005, SX1 + .035, y, y + .88, z - .012, z + .012); } }
+  const rail = []; { const y = F1; for (let z = well.z0 + .1; z <= well.z1; z += .12) bx('oak', SX1 + .005, SX1 + .035, y, y + .9, z - .012, z + .012); bx('oak', SX1 - .01, SX1 + .05, y + .9, y + .96, well.z0, well.z1 + .03, 'wellrail', 1);
+    for (let x = SX0 + .1; x < SX1 - .02; x += .12) bx('oak', x - .012, x + .012, y, y + .9, well.z1 + .005, well.z1 + .035); bx('oak', SX0, SX1 + .05, y + .9, y + .96, well.z1, well.z1 + .06, 'wellrail', 1); bx('oak', SX1 - .03, SX1 + .07, y, y + 1.05, well.z1 - .03, well.z1 + .07);
+    rail.push({ x: SX1, z0: well.z0, z1: well.z1, y: y + .96 }, { z: well.z1, x0: SX0, x1: SX1, y: y + .96 }); }
+  // ── the loft's floor: deal boards on oak joists across the barn, open over the well, bare from below
+  const slabs = []; for (const [x0, x1, z0, z1] of [[SX1, X, -Z, Z], [SX0, SX1, -Z, well.z0], [SX0, SX1, well.z1, Z]]) { bx('deal', x0, x1, F1 - .04, F1, z0, z1); slabs.push({ x0, x1, z0, z1, y0: F1 - SL, y1: F1, fl: 1 }); }
+  for (let x = -X + .2; x < X; x += .4) { if (x > SX0 - .03 && x < SX1 + .03) continue; bx('oak', x - .05, x + .05, CE0, F1 - .04, -Z, Z); }
+  for (const x of [SX1 + .04]) bx('oak', x - .04, x + .04, CE0, F1 - .04, -Z, Z); for (const z of [well.z0, well.z1]) bx('oak', SX0, SX1, CE0, F1 - .04, z - .04, z + .04);
+  // ── the roof: couples on every 1.5 m with collars at 6.6 m, the purlins and the ridge board
+  for (let x = -4.5; x <= 4.51; x += 1.5) K.couple(x, Z, 6.6); K.purlins(-X, X, Z);
+  // ── the stable: the manger along the back wall (its top 0.88 m, under the slits' sills), the rack high over it, two stalls between
+  // boarded divisions on heel posts, the feed corner at the east gable
+  const SXm = PX + pt, SXe = 4.2, ZMg = -Z + .5; bx('oak', SXm, SXe, .5, .88, -Z, ZMg, 'manger', 0); bx('oak', SXm, SXe, F0, .5, ZMg - .05, ZMg, 'manger', 0); bx('earth', SXm + .05, SXe - .05, .84, .885, -Z + .05, ZMg - .05);
+  { const y0 = 1.92, y1 = 2.42, z1 = ZMg + .05, L = Math.hypot(y1 - y0, z1 + Z - .03), a = -Math.atan2(y1 - y0, z1 + Z - .03); bx('oak', SXm, SXe, y0 - .06, y0, -Z, -Z + .06, 'rack', 0); bx('oak', SXm, SXe, y1 - .06, y1, z1 - .04, z1 + .04, 'rack', 0);
+    for (let x = SXm + .07; x < SXe - .03; x += .14) put(new THREE.BoxGeometry(.025, .025, L), 'oak', x, (y0 + y1) / 2, (-Z + .03 + z1) / 2, 0, .6, a); }
+  const ZH = .5 /* the stalls' heels */; for (const x of [2.35, SXe]) { bx('board', x - .03, x + .03, F0, 1.45, ZMg, ZH - .12, 'stall', 0); bx('oak', x - .07, x + .07, F0, 1.9, ZH - .12, ZH, 'post', 0); put(new THREE.SphereGeometry(.07, 8, 6), 'oak', x, 1.95, ZH - .06); }
+  for (const x of [1.45, 3.28]) put(new THREE.TorusGeometry(.05, .009, 4, 10), 'iron', x, .72, ZMg + .012);
+  { const x0 = 4.35, x1 = 5.25, z0 = -Z + .03, z1 = -Z + .65; bx('oak', x0, x1, F0, .8, z0, z1, 'bin', 0); bx('oak', x0 - .01, x1 + .01, .8, .84, z0, z1 + .01); for (const e of [x0 + .15, x1 - .15]) bx('iron', e - .02, e + .02, .1, .84, z1, z1 + .012); }
+  for (const z of [-.8, 0, .8]) { bx('oak', X - .26, X, 1.68, 1.73, z - .025, z + .025, 'peg', 0); }
+  put(new THREE.TorusGeometry(.26, .06, 6, 14).scale(1, 1.25, 1), 'leather', X - .1, 1.42, -.8, Math.PI / 2); put(new THREE.TorusGeometry(.2, .035, 4, 12).scale(1, 1.3, 1), 'iron', X - .1, 1.42, -.8, Math.PI / 2);
+  for (const z of [0, .8]) { for (let k = 0; k < 3; k++) bx('leather', X - .1, X - .08, 1.0 + k * .08, 1.7, z - .04 + k * .03, z - .02 + k * .03); }
+  // the stable door's leaf, open into the passage on its east jamb
+  const doors = K.openings(k => k === 'cart' || k === 'plank'), leaves = [], hz = plan.d / 2 - .2; { const d = doors.find(q => q.kind === 'plank'), x1 = d.x + d.w / 2, x0 = x1 - .05;
+    bx('leaf', x0, x1, F0, d.h, hz - d.w + .02, hz); for (const y of [.35, 1.6]) bx('iron', x0 - .012, x0, y, y + .05, hz - .75, hz); leaves.push({ x0, x1, z0: hz - d.w + .02, z1: hz }); boxes.push({ tag: 'leaf', x0, x1, y0: F0, y1: d.h, z0: hz - d.w + .02, z1: Z, fl: 0 }); }
+  // ── the cart bay: the plough by the back wall, the harrow leant on the partition, three sacks of seed, the scythe and the flail hung
+  { const y = F0, z = -2.0; { const q = new THREE.BoxGeometry(2.3, .12, .1); q.rotateZ(.12); put(q, 'oak', -1.95, y + .5, z); } for (const s of [-1, 1]) { const q = new THREE.BoxGeometry(1.1, .05, .05); q.rotateZ(-.55); put(q, 'oak', -3.0, y + .6, z + s * .2, s * .15); }
+    put(new THREE.BoxGeometry(.5, .32, .04).rotateY(.5), 'iron', -2.75, y + .2, z + .09); put(new THREE.BoxGeometry(.32, .04, .14), 'iron', -2.45, y + .03, z); bx('oak', -1.35, -1.29, y, y + .48, z - .03, z + .03); put(new THREE.CylinderGeometry(.18, .18, .05, 12).rotateX(Math.PI / 2), 'iron', -.85, y + .2, z);
+    boxes.push({ tag: 'plough', x0: -3.3, x1: -.65, y0: y, y1: y + 1.0, z0: z - .3, z1: z + .3, fl: 0 }); }
+  { const x0 = .18, x1 = PX - pt - .02, z0 = -2.35, z1 = -1.15, a = Math.atan2(x1 - x0, 1.25); for (const t2 of [0, .4, .8, 1.2]) { const q = new THREE.BoxGeometry(.06, 1.3, .07); q.rotateZ(-a); put(q, 'oak', (x0 + x1) / 2, .66, z0 + .05 + t2 * (z1 - z0 - .1) / 1.2); }
+    for (const k of [0, .5, 1]) { const q = new THREE.BoxGeometry(.05, .06, z1 - z0); put(q, 'oak', x0 + .02 + k * (x1 - x0 - .06) + (1 - k) * .0, .12 + k * 1.05, (z0 + z1) / 2); }
+    boxes.push({ tag: 'harrow', x0, x1, y0: F0, y1: 1.34, z0, z1, fl: 0 }); }
+  for (const [x, z] of [[-.2, -.2], [.12, .25], [-.25, .45]]) { put(new THREE.SphereGeometry(.24, 10, 8).scale(1, 1.55, .9), 'sack', x, .38, z); put(new THREE.CylinderGeometry(.06, .1, .12, 8), 'sack', x, .78, z); boxes.push({ tag: 'sack', x0: x - .24, x1: x + .24, y0: F0, y1: .84, z0: z - .22, z1: z + .22, fl: 0 }); }
+  { const y = 2.1, z = -Z + .05; bx('oak', -2.9, -1.3, y - .02, y + .02, z - .02, z + .03); put(new THREE.BoxGeometry(.6, .015, .1).rotateZ(-.2), 'iron', -1.15, y - .1, z + .02); for (const x of [-2.5, -1.6]) bx('oak', x - .02, x + .02, y - .06, y + .02, -Z, -Z + .1);
+    bx('oak', -4.0, -3.95, 1.0, 2.15, -Z + .02, -Z + .07); bx('oak', -3.92, -3.88, .45, 1.05, -Z + .03, -Z + .07); }
+  const lamps = [farmLantern(K, 0, -2.4, .55, 2.14, CE0), farmLantern(K, 0, 2.95, 1.25, 2.14, CE0), farmLantern(K, 1, .75, 0, F1 + 2.25, 6.6 - .14)];
+  // ── the loft: the hay heaped under both slopes at the east end, by the pitching door; the grain at the west end in sacks and a chest
+  farmHay(K, 1, F1, 3.1, 1.32, 1.9, 1.5, .6); farmHay(K, 1, F1, 2.9, -1.32, 2.1, 1.6, .6) /* off the walls by 0.55 m, clear of the slits */; farmHay(K, 1, F1, .6, -1.3, .9, .9, .55);
+  for (const [x, z] of [[-3.0, -2.2], [-2.5, -2.2], [-2.0, -2.2], [-2.75, -1.75]]) { put(new THREE.SphereGeometry(.24, 10, 8).scale(1, 1.55, .9), 'sack', x, F1 + .35, z); put(new THREE.CylinderGeometry(.06, .1, .12, 8), 'sack', x, F1 + .75, z); boxes.push({ tag: 'sack', x0: x - .24, x1: x + .24, y0: F1, y1: F1 + .81, z0: z - .22, z1: z + .22, fl: 1 }); }
+  { const x0 = -2.9, x1 = -1.7, z0 = Z - .62, z1 = Z - .02; bx('oak', x0, x1, F1, F1 + .66, z0, z1, 'chest', 1); bx('oak', x0 - .01, x1 + .01, F1 + .66, F1 + .7, z0 - .01, z1); }
+  const F = K.finish(shell), windows = K.openings(k => k === 'win' || k === 'load'), inner = { x0: -X, x1: X, z0: -Z, z1: Z }, arch = doors.find(q => q.kind === 'cart'), sd = doors.find(q => q.kind === 'plank');
+  const paths = [{ fl: 0, pts: [[arch.x, Z - .3], [arch.x, .9], [-.2, 1.45], [PX + .5, 1.45]] }, { fl: 0, pts: [[arch.x, Z - .3], [-3.6, 2.15], [(SX0 + SX1) / 2, 2.15]] }, { fl: 0, pts: [[sd.x, Z - .3], [sd.x, 1.45], [PX + .5, 1.45]] },
+    { fl: 0, pts: [[sd.x, 1.45], [4.75, 1.45], [4.75, -1.45]] }, { fl: 1, pts: [[(SX0 + SX1) / 2, -1.85], [-3.85, -1.85], [-3.85, 0], [X - .45, 0]] }];
+  const rooms = { bay: { x0: -X, x1: PX - pt, z0: -Z, z1: Z, fl: 0 }, stable: { x0: PX + pt, x1: X, z0: -Z, z1: Z, fl: 0 }, loft: { x0: -X, x1: X, z0: -Z, z1: Z, fl: 1 } };
+  return { ...F, shell, shellTris: shell.userData.tris, shellCalls: shell.userData.calls, inner, floors, ceils: [CE0], under, eave: K.eave, steps, rise: ri, going: Gg, well, rail, slabs, paths, boxes, lamps, windows, doors, leaves, rooms,
+    part: { x: PX, t: pt }, doorIn: dSt, stalls: [{ x0: SXm, x1: 2.32 }, { x0: 2.38, x1: SXe - .03 }], manger: { y: .88, z1: ZMg }, rack: { y0: 1.92, y1: 2.42 }, w: plan.w, d: plan.d };
+}
