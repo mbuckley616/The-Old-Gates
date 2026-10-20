@@ -935,7 +935,7 @@ function buildNPCMesh(def,opts){
   // the same name in the same place is the same person, behind the counter as in the street
   let g=def.name&&!def.authored?PEOPLE_GENOMES.get(key):null;
   if(!g){g=personGenome(def,opts);if(def.name)PEOPLE_GENOMES.set(key,g);}
-  if(hbOn()&&!opts.noBuilder)hbPrep(g,(opts.key||'')+':'+(def.name||def.role||'?')); /* S1193 (F4) — the builder's genome, keyed by place and name */
+  if(hbOn()&&!opts.noBuilder)hbPrep(g,(opts.key||'')+':'+(def.name||def.role||'?')); /* S1195 (F4) — the builder's genome, keyed by place and name */
   const rig=buildPerson(g);if(g.hbKey&&hbOn()){rig.hbG=HB_GENOMES.get(g.hbKey);HB_RIGS.add(rig);}
   return rig.root;
 }
@@ -1071,7 +1071,7 @@ function pwApply(rig,P){const B=rig.B;PW.JOINTS.forEach(j=>{const r=P[j];B[j].ro
 // (A second mesh on a shadow-only layer does not work in r128: its shadow pass tests layers against the eye's camera.)
 {const _smRender=REN.shadowMap.render;
   REN.shadowMap.render=function(){const sw=[],hv=[];
-    for(const rig of HB_RIGS)if(rig.hb&&!rig.mesh.visible){rig.mesh.visible=true;hv.push(rig);} // S1193 (F4) — the builder's body casts its driver's shadow
+    for(const rig of HB_RIGS)if(rig.hb&&!rig.mesh.visible){rig.mesh.visible=true;hv.push(rig);} // S1195 (F4) — the builder's body casts its driver's shadow
     if(PEOPLE_LOD.shadowLo)for(const rig of PEOPLE_RIGS){if(rig.geoLo&&rig.mesh.geometry===rig.geoHi){rig.mesh.geometry=rig.geoLo;sw.push(rig);}}
     if(WOLF_LOD.shadowLo)for(const rig of WOLF_RIGS){if(rig.geoLo&&rig.mesh.geometry===rig.geoHi){rig.mesh.geometry=rig.geoLo;sw.push(rig);}}
     try{return _smRender.apply(this,arguments);}finally{for(const rig of sw)rig.mesh.geometry=rig.geoHi;for(const rig of hv)rig.mesh.visible=false;}};}
@@ -1297,9 +1297,9 @@ function tickPeople(dt,now){
       rig.B.tail.rotation.set(.35*fo,.3*Math.sin(now*.0017+rig.g.phase)*(1-fo),0);}
     if(rig.foe&&rig.e&&rig.e.shieldUp){const L=rig.e.limbs;if(L&&L.shieldArm){L.shieldArm.rotation.x=L.shieldArmUpX;L.shieldArm.rotation.z=L.shieldArmUpZ;rig.B.elL.rotation.x=-1.1;}}
   }
-  if(HB_RIGS.size)hbTick(now); // S1193 (F4) — the builder's bodies follow their drivers
+  if(HB_RIGS.size)hbTick(now); // S1195 (F4) — the builder's bodies follow their drivers
 }
-// ═══ THE BUILDER'S BODIES (v80 S1193, card F4) ═══════════════════════════════════════════════════════════════════════════
+// ═══ THE BUILDER'S BODIES (v80 S1195, card F4) ═══════════════════════════════════════════════════════════════════════════
 // On the new look a townsperson wears the builder's body (docs/design/character-builder.md): MakeHuman's CC0 body morphed by
 // a genome, its 163-bone skeleton, the wardrobe and the hair cards, all from docs/prototypes/levelup/people.js, which the
 // new look loads as vendor/people.builder.js beside MakeHuman's pack, vendor/mh-pack.js (both made by
@@ -1308,7 +1308,7 @@ function tickPeople(dt,now){
 // it (idle, walk, run, wave, sleep, the ragdoll). The builder's skeleton copies the driver's joints each frame (hbPose), so
 // every pose the game has today reaches the new body with no code of its own. Three levels by the eye's distance:
 //   0, under HBODY.near: the builder's body whole;
-//   1, to HBODY.mid: the same body baked into one mesh (hbMerge, Session 1194): the skin, the garments and what is carried, in
+//   1, to HBODY.mid: the same body baked into one mesh (hbMerge, Session 1196): the skin, the garments and what is carried, in
 //      their colours, on the same skeleton, without the cards (hair, brows, beard, moustache) and eyes; one draw call;
 //   2, beyond: the driver's own distant copy (geoLo), tinted from the genome's skin, hair and clothes, one draw call.
 // The shadow is always the driver's distant copy (the townsfolk's swap below), so the builder's meshes cast none.

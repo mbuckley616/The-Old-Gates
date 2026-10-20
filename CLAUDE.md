@@ -12,7 +12,7 @@ Michael designs and playtests; Claude implements. This file is what Claude reads
 - `vendor/three.r170.min.js` — three.js 0.170 as one classic script, for the new look (`?look=new`, Session 822); made by
   `scripts/three_bundle.py` from the pinned module build, never edited by hand. The old look loads r128 from cdnjs as always.
 - `vendor/people.builder.js` and `vendor/mh-pack.js` — the people's builder (`docs/prototypes/levelup/people.js` as one classic
-  script, `window.HB`) and MakeHuman's CC0 pack (13 MB of base64), for the new look only (card F4, Session 1193; the chooser writes
+  script, `window.HB`) and MakeHuman's CC0 pack (13 MB of base64), for the new look only (card F4, Session 1195; the chooser writes
   their tags after three.js 0.170's). Made by `scripts/people_bundle.py`, never edited by hand: a change to `people.js` reaches the
   game when the script is run again (`--check` says whether it is stale; `tests/f4people` runs it).
 - `docs/devlog/NNNN.md` — one file per session (since 19 Oct 2026), named by the session's number, written at the end of the
@@ -103,7 +103,7 @@ Session 368 built the tooling and Session 379 cut the file (1 Oct 2026); Session
     `QS`, journal, compass, markers. `22-dialogue.js` `NPC_DEF`, `SHOP_DIALOG`, `openDialog`, `talkNPC`, `HOUSES`,
     `SHOP_STOCK`, `worldState`, `ZONES`, `MAP_NODES`, `activeZoneId`. `24-forts.js` `FORT_EXTERIORS` data.
   - `30-plants.js` `HERB_DEF`, the plant kit. `32-people.js` `SK`, `personGenome`, `buildPerson`, `buildFoe`, poses,
-    `tickPeople`, the shadow-LOD swap; on the new look the builder's bodies (card F4, Session 1193): `HBODY`, `HB_RIGS`, `hbGenome`
+    `tickPeople`, the shadow-LOD swap; on the new look the builder's bodies (card F4, Session 1195): `HBODY`, `HB_RIGS`, `hbGenome`
     (keyed `<site>:<name>`), `hbAttach`, `hbPose` (the 163-bone skeleton copies the 17-bone driver's joints, `HB_MAP`), `hbLevel` (three
     levels by distance; the middle one baked into one mesh by `hbMerge`), `hbTick` (one body built at a time, after the loading). `34-creatures.js` wolves, spiders, bears, `tickCreatures`.
   - `40-legacy-zones.js` gates, Ashenmoor, Hearthwick, Bealach. `42-zone-enemies.js` `BOSSES`, `buildZoneEnemy`,

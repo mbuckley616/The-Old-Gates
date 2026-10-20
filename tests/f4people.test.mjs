@@ -1,4 +1,4 @@
-// Card F4 (Session 1193): on the new look the townsfolk wear the builder's bodies (docs/design/character-builder.md;
+// Card F4 (Session 1195): on the new look the townsfolk wear the builder's bodies (docs/design/character-builder.md;
 // vendor/people.builder.js and vendor/mh-pack.js, made by scripts/people_bundle.py). The old 17-bone rig still drives them;
 // the builder's 163-bone skeleton copies its joints each frame (32-people.js, hbPose). Dunmore at noon: the people in the
 // street are the genome's meshes, each the same person on a second boot, walking, under the draw-call budget at the middle
