@@ -1,4 +1,4 @@
-// Card F4 (Session 1220): a householder asleep in their bed (Sessions 739 and 752) on the new look, in the builder's body. The body
+// Card F4 (Session 1224): a householder asleep in their bed (Sessions 739 and 752) on the new look, in the builder's body. The body
 // is built after the room, so the sleeper is first laid by the driver's shape; when the builder's body comes they are laid again by
 // its own: every point of it in the bed, its side on the mattress, its head on the pillow and not through the headboard (laid by the
 // driver's, the builder's head bone sat 6 cm past the mattress's end), the quilt draped over its shape, its eyes shut. Woken, the quilt goes and

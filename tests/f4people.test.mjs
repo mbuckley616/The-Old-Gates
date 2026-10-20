@@ -84,7 +84,7 @@ const far = await page.evaluate(() => { const t = WORLD.siteAnywhere('dunmore');
 check('from 70 m every body past the middle range is on the cheap level', far.n >= 1 && far.cheap === far.n, far);
 
 // pictures: the square, a market, a crowd at 60 m, an inn's common room
-// S1220: a frame of the square with its bodies whole takes 7 to 21 s here on software GL and about five times that on a CI runner, so
+// S1224: a frame of the square with its bodies whole takes 7 to 21 s here on software GL and about five times that on a CI runner, so
 // the harness's 120 s a picture (S808) ran out on the square twice in a row (#513's run); the pictures get 300 s
 const SHOT_MS = 300000;
 const shoot = async (name, fn) => { await page.evaluate(fn); for (let i = 0; i < 6; i++) { await page.evaluate(() => tickPeople(1 / 60, performance.now())); await g.frames(1); } await page.screenshot({ path: path.join(OUT, name), timeout: SHOT_MS }); };
@@ -113,8 +113,8 @@ const g2 = await boot({ look: 'new' }); await dunmore(g2);
 const g2genomes = await g2.page.evaluate((keys) => Object.fromEntries(keys.map(k => [k, HB_GENOMES.has(k) ? JSON.stringify(HB.toSaved(HB_GENOMES.get(k))) : null])), who.sample);
 const same = who.sample.filter(k => g2genomes[k] === genomes[k]).length;
 check('on a second boot each of them is the same person (the same genome from the same place and name)', same === who.sample.length && same >= 4, { same, of: who.sample.length });
-// S1220 (card F4): the near level's cost where the crowd is thickest. At 18h, the most of Dunmore's people within 16 m of one of them
-// (seven, Session 1220); 6 m off their middle, every body within 46 m built, the frame at the middle quality looking four ways
+// S1224 (card F4): the near level's cost where the crowd is thickest. At 18h, the most of Dunmore's people within 16 m of one of them
+// (seven, Session 1224); 6 m off their middle, every body within 46 m built, the frame at the middle quality looking four ways
 const crowd = await g2.page.evaluate(() => { forceTime(18); for (let i = 0; i < 120; i++) WORLD.tick(1 / 60, performance.now());
   let rs = [...HB_RIGS].filter(r => r.root.parent === WORLD.scene && r.root.visible), P = rs.map(r => [r.root.position.x, r.root.position.z]);
   let best = 0, at = null; for (const [x, z] of P) { const n = P.filter(([a, b]) => Math.hypot(a - x, b - z) < 16).length; if (n > best) { best = n; at = [x, z]; } }

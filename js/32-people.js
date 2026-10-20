@@ -1224,7 +1224,7 @@ function personSkinPts(rig){if(rig.hb)return hbSkinPts(rig);const mesh=rig.mesh,
   return out;}
 function personLie(m,bed){const rig=m&&m.userData.rig;if(!rig||!m.parent)return false;personRise(m);
   for(const k in rig.w)rig.w[k]=0;rig.w.sleep=1;rig.sleep=true;rig.bed=bed;pwApply(rig,pwSleep(0,pwOpts(rig)));
-  if(rig.hb){hbPose(rig);hbEyes(rig,true);} /* S1220 (F4) — the builder's body is the one fitted to the bed and draped, its eyes shut */
+  if(rig.hb){hbPose(rig);hbEyes(rig,true);} /* S1224 (F4) — the builder's body is the one fitted to the bed and draped, its eyes shut */
   const B=SLEEP_BED,y0=bed.y||0;m.rotation.set(-Math.PI/2,Math.PI/2,0);m.position.set(bed.x,y0,bed.z);
   let pts=personSkinPts(rig),x0=1e9,x1=-1e9,ym=1e9,zm=1e9;
   for(let i=0;i<pts.length;i+=3){x0=Math.min(x0,pts[i]);x1=Math.max(x1,pts[i]);ym=Math.min(ym,pts[i+1]);zm=Math.min(zm,pts[i+2]);}
@@ -1367,7 +1367,7 @@ function hbFoeGenome(rig){const g=rig.g,dr=FOE_DRESS[rig.hbFoe]||{},id=rig.e&&ri
   const h=dr.cloth!=null?dr.cloth:0x3a3a3a,c=[(h>>16&255)/255,(h>>8&255)/255,(h&255)/255];
   G.dress=Object.assign({},G.dress,{tunic:c,spear:null,staff:null,crossbow:null,basket:null,basketCloth:null,shield:null,chair:null,apron:null,bib:null,cape:null,coat:null,scarf:null,wrap:null},(HB_FOE_DRESS[rig.hbFoe]||(()=>({})))(c));
   HB_GENOMES.set(key,G);return G;}
-// S1220 — named (keyFoe), a foe rolls its genome at once, and the driver's two baked copies take its colours: the skin, the hair, the
+// S1224 — named (keyFoe), a foe rolls its genome at once, and the driver's two baked copies take its colours: the skin, the hair, the
 // tunic, the legs and the boots, from a bake of the same shape in the genome's colours (the vertices are the same, so only the colour
 // attribute is copied). Rolled at the first attach instead (S1201), the driver beyond 42 m kept the old genome's colours, and a foe's
 // skin and hair changed at the line every time it crossed it.
@@ -1426,11 +1426,11 @@ function hbAttach(rig){const tA=performance.now();let P;
   // hand on a shield's grip (closeFist); a shield closes the left hand too
   for(const o of [rig.weapon,rig.shieldKit]){if(!o||!o.parent)continue;const sd=o===rig.weapon?(o.parent===B.wrL?'L':'R'):'L';hbCloseFist(by,sd);
     rig.hb.held.push({o,par:o.parent,m0:o.matrix.clone().compose(o.position,o.quaternion,o.scale),f:o===rig.weapon?[2,3,4,5].map(f=>by[`finger${f}-2.${sd}`]).filter(Boolean):null,sd});}
-  // S1220 — one already asleep when the body comes (it is built after the room, so a sleeper always is) is laid again by its own shape:
+  // S1224 — one already asleep when the body comes (it is built after the room, so a sleeper always is) is laid again by its own shape:
   // the builder's head is longer than the driver's, and laid by the driver's shape its head bone sat 6 cm past the mattress's end, in the headboard, under the driver's quilt
   if(rig.sleep&&rig.bed&&rig.root.parent)personLie(rig.root,rig.bed);
   HBODY.ms+=performance.now()-tA;HBODY.n++;}
-// S1220 — the builder's body as points in the world, for the bed (personLie): its middle level's vertices that a triangle uses (the whole
+// S1224 — the builder's body as points in the world, for the bed (personLie): its middle level's vertices that a triangle uses (the whole
 // body baked, less the hair's cards and what a garment's cut discards), each skinned on the CPU by the posed bones
 function hbSkinPts(rig){const H=rig.hb,mid=H.mid,G=mid.geometry,pa=G.attributes.position,v=new THREE.Vector3();
   if(!H.used){const u=new Uint8Array(pa.count),ix=G.index.array;for(let i=0;i<ix.length;i++)u[ix[i]]=1;const a=[];for(let i=0;i<u.length;i++)if(u[i])a.push(i);H.used=Uint32Array.from(a);}
