@@ -1,11 +1,11 @@
 # The Old Gates — working conventions
 
-A browser-based open-world RPG: one `index.html` of markup and CSS, and the game's code in `js/`, 44 plain script
+A browser-based open-world RPG: one `index.html` of markup and CSS, and the game's code in `js/`, 46 plain script
 files that share one global scope (no modules, no bundler; a downloaded folder opens by double-clicking `index.html`).
 Michael designs and playtests; Claude implements. This file is what Claude reads first in every session.
 
 ## The files
-- `index.html` — the markup, the CSS, the build tag, the renderer's chooser and 44 `<script src="js/…">` tags (~1,170 lines). `js/NN-name.js` —
+- `index.html` — the markup, the CSS, the build tag, the renderer's chooser and 46 `<script src="js/…">` tags (~1,170 lines). `js/NN-name.js` —
   the code, one file per area in load order (~46k lines in all; the biggest, `40-legacy-zones.js`, is 3,300). Deployed as-is: GitHub
   Pages serves the folder. The section "The split layout" below is the rule book; it was one inline script until Session 379,
   and the world was one 8,100-line IIFE until Session 484.
@@ -125,6 +125,10 @@ Session 368 built the tooling and Session 379 cut the file (1 Oct 2026); Session
     crime system (locks, witnesses, guards, the Church), painted windows, fish, whales. `87-world-quests.js` boarding, town quests,
     guild commissions, sigils, nations, the drivers, the war, plague, investment and the deed, the Guest's chapel.
     `88-world-ticks.js` the town line, the sea line, ticks, markers, leads, `enter`/`tick`, the dev helpers and `var WORLD={…}`.
+  - `89-world-land.js` the new look's land (card F3, Session 1180): `LAND` (`LAND.on` only on `?look=new`), the terrain's fragment shader
+    over `groundColor`'s vertex colour (`landTerrainMat`, the per-vertex mask `landMask`: stamps, woods, fields), the gradient sky dome
+    (`landSky`, coloured by `landAtmosphere` at the end of `atmosphere()`), the water's sheen (`landWater`) and the post (`landPost`:
+    ACES and P10b's grade in three's tone-mapping chunk, on the world's frame only). On the old look every hook returns at once.
   - `90-main.js` boot calls, dev helpers, `K`, `PERF`, `loop`, the frame start, `ssMigrate`. `92-creator.js` `_enterGame`,
     the character creator, title buttons. `94-worldmap.js` `WM`, `renderWorldMapSVG`. `96-animdebug.js` the backtick panel.
     `97-inspector.js` the mesh inspector (Session 492): `openInspector()` from the console, or `index.html?inspector`; every mesh the
