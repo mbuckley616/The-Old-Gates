@@ -23,7 +23,7 @@ const made = await page.evaluate((KINDS) => { forceTime(12);
       const e = keyFoe({ x, z, mesh: grp, dead: false, name: n, limbs: { person: rig } }, 'f4test:' + i); rig.e = e; return { n, e, rig }; }
     const e = keyFoe(buildZoneEnemy(WORLD.scene, [], x, z, n, null), 'f4test:' + i); e.mesh.position.set(x, WORLD.worldH(x, z), z); e.mesh.rotation.y = Math.atan2(px - x, pz - z); e.combatYaw = e.mesh.rotation.y;
     e.locked = false; e.mesh.visible = true; if (!e.mesh.parent) WORLD.scene.add(e.mesh); const rig = e.limbs && e.limbs.person; if (rig) rig.e = e; return { n, e, rig }; });
-  // S1205: named, before any body is built, each foe has its genome and its driver's two copies are in its colours: of the driver's
+  // S1217: named, before any body is built, each foe has its genome and its driver's two copies are in its colours: of the driver's
   // vertices, the share in the genome's skin (within .02 a channel) and in the old genome's skin, near and far, against the share of
   // the old skin in a bake of the old colours (`before`: the face and hands, a few per cent, less under a hood or a helm)
   const share = (geo, c) => { const a = geo.attributes.color.array; let n = 0; for (let i = 0; i < a.length; i += 3) if (Math.abs(a[i] - c.r) < .02 && Math.abs(a[i + 1] - c.g) < .02 && Math.abs(a[i + 2] - c.b) < .02) n++; return +(n / (a.length / 3)).toFixed(3); };
