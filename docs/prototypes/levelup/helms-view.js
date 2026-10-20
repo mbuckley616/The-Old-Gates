@@ -61,10 +61,13 @@ const o = { bold: SET !== 'a', closed: SET === 'c' };
     if (kind === 'heavy') Object.assign(D, { mail: T.metal, tunic: T.cloth, skirt: null, trousers: D.trousers || [.3, .26, .2], sandals: null, helm: tier === 3 ? T.metal : [.4, .4, .42], boots: [.2, .15, .1], belt: [.22, .15, .1] });
     if (kind === 'robe') Object.assign(D, { robe: T.cloth, cord: T.trim, cloak: T.cloth.map(v => v * .85), hood: 'up', mail: null });
     if (kind === 'bare') Object.assign(D, { mail: null, helm: null });
+    // set c is the kit's own helm (Session 1197: the dress flag `tier`, built by makePerson); sets a and b are placed over the person here
+    const kitHelm = SET === 'c' && kind !== 'bare'; if (kitHelm) D.tier = tier;
     const p = makePerson({ ...G, dress: D }); p.root.position.set(x, p.root.position.y, z); p.root.rotation.y = ry; scene.add(p.root);
     const hb = p.byName['head'], kit = hb.getObjectByName('helm'); let h = null;
-    if (kind === 'heavy' && tier !== 3) { if (kit) hb.remove(kit); const F = fitHead(p); h = helm(tier, F, o); if (Q.has('check')) h.face = faceShows(F, h); hb.add(h.group); }
-    if (kind === 'robe') { const F = fitHead(p); h = hoodDress(tier, F, o); if (h) hb.add(h.group); }
+    if (kitHelm && p.tierFit) { h = p.tierFit.h; if (Q.has('check') && kind === 'heavy') { hb.remove(h.group); h.face = faceShows(p.tierFit.F, h); hb.add(h.group); } }
+    else if (kind === 'heavy' && tier !== 3 && !kitHelm) { if (kit) hb.remove(kit); const F = fitHead(p); h = helm(tier, F, o); if (Q.has('check')) h.face = faceShows(F, h); hb.add(h.group); }
+    if (kind === 'robe' && !kitHelm) { const F = fitHead(p); h = hoodDress(tier, F, o); if (h) hb.add(h.group); }
     p.root.traverse(m => { if (m.isMesh) { m.castShadow = m.receiveShadow = true; } });
     if (VIEW === 'head') { p.root.updateMatrixWorld(true); const c = hb.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0, .1, 0)); if (Q.has('front')) { cam.position.set(c.x + Math.sin(ry) * .8, c.y - .07, c.z + Math.cos(ry) * .8); c.y -= .09; } else cam.position.set(c.x - .22, c.y + .06, c.z + 1.16); cam.lookAt(c); }
     STATS.people.push({ tier: T.name, kind, people, height: +statureOf(G).toFixed(3), tris: h ? h.tris : kind === 'heavy' ? p.helm?.tris : 0, draws: h ? h.draws : kind === 'heavy' ? 2 : 0, size: h?.size, above: h?.top, gap: h?.gap ?? p.helm?.gap, face: h?.face }); }
