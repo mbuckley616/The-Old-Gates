@@ -1,8 +1,8 @@
 // The keep in its bawn on its plot (Session 1143; card F6, Michael's B on DECISION #416). On the new look a Gatelands city's keep is
 // the kit's tower house in its bawn, centred on the bawn's plot of 30 by 25 m with its gate toward the heart; the keep's lot is the
 // tower's footprint (11 by 8.5 m), its door the tower's and its room the old keep's. The bawn's walls, flankers, house and well are
-// solids and the gateway is open; the footpath runs from the tower's door out through the gate; the far copy holds the bawn. On the
-// old look the keep is the old one, on the plot's lot, its door where it was.
+// solids and the gateway is open; the footpath runs from the tower's door out through the gate; the far copy holds the bawn.
+// The new look only since 1.0 was frozen (18 Oct 2026): the old look’s check is gone.
 import fs from 'fs';
 import { boot, check } from './lib/game.mjs';
 
@@ -38,10 +38,9 @@ const survey = () => { const nat = t => nationKeyOf(...cellOf(t.x, t.z));
     out.push(o); }
   return out; };
 
-const g0 = await boot(); await g0.intoWorld(); const old = await g0.page.evaluate(survey); const e0 = g0.errs.slice(); await g0.close();
 const g = await boot({ look: 'new' }); const { page } = g; await g.intoWorld(); const neu = await page.evaluate(survey);
-const N = neu.filter(o => !o.none), O = old.filter(o => !o.none);
-check(`the Gatelands cities with a keep on their plot (${N.map(o => o.id).join(', ')}, of ${neu.length} cities), the same on both looks`, N.length >= 2 && N.map(o => o.id).join() === O.map(o => o.id).join(), { old, neu });
+const N = neu.filter(o => !o.none);
+check(`the Gatelands cities with a keep on their plot (${N.map(o => o.id).join(', ')}, of ${neu.length} cities)`, N.length >= 2, neu);
 check(`on the new look each keep is the kit's bawn (${N.map(o => `${o.id} ${o.tris && o.tris.toLocaleString()} triangles in ${o.calls} draws`).join('; ')})`, N.every(o => o.kit === 'keep' && o.found && o.tris === 18346 && o.calls >= 30 && o.calls <= 32), N);
 check(`the bawn stands inside its plot of 30 by 25 m, its gate toward the heart (${N.map(o => `${o.id} ${o.box.join(' ')}`).join('; ')})`, N.every(o => o.box[0] > -15 && o.box[1] < 15 && o.box[2] > -12.5 && o.box[3] < 12.5 && o.front > 0), N.map(o => [o.box, o.front]));
 check(`the keep's door is the tower's, in the bawn's back west corner (${N.map(o => o.door.join(', ')).join('; ')}); the steward's room is the old keep's, 14 by 11`, N.every(o => o.door[0] < -5 && o.door[1] < 0 && o.w === 14 && o.d === 11), N.map(o => [o.door, o.w, o.d]));
@@ -51,12 +50,11 @@ check(`the steward's evening walk to the inn goes out through the gate by the st
   N.every(o => o.steward && o.throughGate && o.wayHits === 0), N.map(o => [o.steward, o.straight, o.wayN, o.wayHits, o.throughGate]));
 check(`the town's far copy reaches the bawn's far corner (${N.map(o => `${o.lodR.toFixed(1)} against ${o.reach.toFixed(1)} m`).join('; ')})`, N.every(o => o.lodR >= o.reach - .05), N.map(o => [o.lodR, o.reach]));
 console.log(`  (the ground across each plot: ${N.map(o => `${o.id} ${o.ground} m`).join(', ')}; the walls' footings go 0.8 m down)`);
-check(`on the old look each keep is the old one on the plot's lot, its door at the lot's front (${O.map(o => o.door.join(', ')).join('; ')})`, O.every(o => !o.kit && Math.abs(o.door[0]) < .05 && Math.abs(o.door[1] - o.lotDoor[1]) < .05), O);
 // a picture of the first city's keep, from high on the heart's side, into the yard at noon (docs/prototypes/kit-bawn-ingame.png)
 { const url = await page.evaluate(id => { forceTime(12); const S = WORLD.settle.get(id), P = S.plots.find(p => p.type === 'castle'), cv = REN.domElement, sc = WORLD.scene;
     const X = P.x + P.tx * 30 - P.tz * 20, Z = P.z + P.tz * 30 + P.tx * 20, cam = new THREE.PerspectiveCamera(50, cv.width / cv.height, .1, 900);
     cam.position.set(X, WORLD.worldH(X, Z) + 34, Z); cam.lookAt(P.x, WORLD.worldH(P.x, P.z) + 2, P.z); CAM.position.copy(cam.position); WORLD.tick(1 / 60, performance.now()); sc.updateMatrixWorld(true); REN.render(sc, cam);
     const o = document.createElement('canvas'); o.width = cv.width; o.height = cv.height; o.getContext('2d').drawImage(cv, 0, 0); return o.toDataURL('image/png'); }, N[0].id);
   fs.writeFileSync(new URL('../docs/prototypes/kit-bawn-ingame.png', import.meta.url), Buffer.from(url.split(',')[1], 'base64')); console.log(`  (picture: docs/prototypes/kit-bawn-ingame.png, ${N[0].id})`); }
-check('no errors on either look', e0.length === 0 && g.errs.length === 0, [...e0, ...g.errs]);
+check('no errors', g.errs.length === 0, g.errs);
 await g.close();

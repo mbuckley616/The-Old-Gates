@@ -53,14 +53,14 @@ const m = await page.evaluate(() => { const S = { ...SETTINGS }; closePauseLeaf(
   const out = { S, dyaw: +(yaw - y0).toFixed(3), dpitch: +(pitch - p0).toFixed(3) }; delete document.pointerLockElement; return out; });
 check('look speed 2× and inverted: 100 pixels across turn you .8 (was .4), 50 down look up .4', m.S.look === 2 && m.S.invert === true && m.dyaw === -.8 && m.dpitch === .4, m);
 
-// the renderer (Session 822): → asks for three.js 0.170, kept in this browser as og.renderer; in play it waits for the next load
-// (the page does not reload under you), and the row says so; ← puts it back
+// the renderer (Session 822; the new look the default since 18 Oct 2026): ← asks for the old look, r128, kept in this browser as
+// og.renderer='old'; in play it waits for the next load (the page does not reload under you), and the row says so; → puts it back
 await page.focus('#g'); await key('Escape'); await key('ArrowDown', 3); await key('KeyE');
-await key('ArrowDown', 9); await key('ArrowRight');
+await key('ArrowDown', 9); await key('ArrowLeft');
 const rd = await page.evaluate(() => ({ stored: localStorage.getItem('og.renderer'), look: OG_LOOK, rev: THREE.REVISION, view: pauseLeaf.view, text: document.querySelector('#pause-paper').textContent }));
-await key('ArrowLeft');
+await key('ArrowRight');
 const rd2 = await page.evaluate(() => ({ stored: localStorage.getItem('og.renderer') }));
-check('the renderer row: → keeps three.js 0.170 for the next load, says so, and does not reload in play; ← puts it back', rd.stored === 'new' && rd.look === 'old' && rd.rev === '128' && rd.view === 'settings'
+check('the renderer row: ← keeps the old look for the next load, says so, and does not reload in play; → puts it back', rd.stored === 'old' && rd.look === 'new' && rd.rev === '170' && rd.view === 'settings'
   && /takes hold when the game next loads/.test(rd.text) && rd2.stored === null, { rd: { ...rd, text: undefined }, rd2 });
 await key('Escape'); await key('Escape');
 

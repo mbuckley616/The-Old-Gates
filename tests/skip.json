@@ -1,0 +1,8 @@
+{
+ "note": "Suites that do not run (Michael, 20 Oct 2026: every suite boots the new look; one that is red or too slow there is skipped, never run on the old look). tests/run.mjs leaves these out of every run but one that names a suite; tests/lib/select.mjs leaves them out of a pull request's selection. A suite leaves this list when it passes on the new look (fixed, or rewritten for the new look), or is deleted with its feature. Each one is a QA card in docs/qa/skipped.md. Adding a suite here is a pipeline change: it needs Michael's approval (scripts/automerge.mjs). Taking one off runs it in that pull request.",
+ "suites": {
+  "falls": "too slow: killed at the 900 s a suite is given (1800 s with the retry)",
+  "panelfocus": "too slow: killed at the 900 s a suite is given (900 s with the retry)",
+  "renewal": "too slow: killed at the 900 s a suite is given (900 s with the retry)"
+ }
+}
