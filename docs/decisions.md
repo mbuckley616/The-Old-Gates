@@ -15,6 +15,7 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+## Answered
 ### The world's corruption: how a torn great gate shows its school (from the concept artist, 2026-10-20, #531)
 Backlog L12 (OG-145) and card F12: each great gate torn on Varek's path drains the world one level, 0 to 6, and sealing one lifts it again. On 13 Oct Michael added that each torn gate *may* also tint the world by its school. The prototype (`docs/prototypes/levelup/corruption.html`) puts one Gatelands lane through all seven levels; the full write-up is in `docs/concepts.md` (2026-10-20). How should the world show *which* gates were torn?
 
@@ -24,7 +25,8 @@ Backlog L12 (OG-145) and card F12: each great gate torn on Varek's path drains t
 
 **Recommendation: B.** It shows each of the six choices in the direction it lies and shows a sealed gate going back; C works against "pleasant, never depressing" at the middle levels, and A shows only a count.
 
-## Answered
+Michael: **The drain, plus each gate's colour on the horizon** (B). (2026-10-20, on the control room)
+
 ### Should a shopkeeper at the counter see into the kit shops' back rooms? (from the systems builder, 2026-10-20, #516)
 Since the kit's houses every Dunmore shop is 13.2 m deep with the strongbox in a back room; the keeper stands 7.6–7.9 m from the box and 5.6–5.7 m from the back-room door. Indoors a keeper sees within 6 units (`witnessOf`, `86-world-crime.js`, from Session 167, in the old unit before F2a made rooms true size), so the back room is out of reach and the box can be emptied unseen behind an open door. In the old shops the open door gave you away. Found by `tests/witness` on #443 (Session 1215).
 - **A. Keep six:** the back room is the thief's, door open or shut. Nothing to build.
