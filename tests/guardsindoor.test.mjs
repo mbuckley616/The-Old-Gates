@@ -19,7 +19,7 @@ const shops = await page.evaluate(() => { forceTime(13); worldState.crime = {}; 
 let seen = null;
 for (const id of shops) {
   await enter(id);
-  seen = await page.evaluate(async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const X = WORLD.intBox; if (!X) return null; px = X.x; pz = X.z + .8; jumpY = 0; lookAtPt(X.x, .3, X.z); const K_ = intNPCMesh; if (K_) { K_.userData.amble = null; K_.rotation.y = Math.atan2(px - K_.position.x, pz - K_.position.z); } // (S368: the keeper stands and watches the box: the cone is keepercone's, the fine and the guard are this test's)
+  seen = await page.evaluate(async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const X = WORLD.intBox; if (!X) return null; px = X.x; pz = X.z + .8; jumpY = 0; lookAtPt(X.x, .3, X.z); const K_ = intNPCMesh; if (K_) { K_.userData.amble = null; if (!WORLD.witnessOf(window._h)) for (const [ox, oz] of [[0, 2.4], [1.2, 2.2], [-1.2, 2.2], [1.8, 1.2], [-1.8, 1.2]]) { const kx = X.x + ox, kz = X.z + .8 + oz; if (!intSolidAt(kx, kz, .3, 0) && intSightLine(kx, kz, px, pz, true)) { K_.position.x = kx; K_.position.z = kz; break; } } K_.rotation.y = Math.atan2(px - K_.position.x, pz - K_.position.z); } // (S368: the keeper stands and watches the box: the cone is keepercone's, the fine and the guard are this test's; S1188: in the kit's shops the box is in the back room, 7.6 from the counter and behind its wall, so a keeper who cannot see it from where he stands is stood two units from it first)
    
     if (!WORLD.witnessOf(window._h)) return null; WORLD.boxInteract(); for (let k = 0; k < 8 && LP.phase !== 'done'; k++) { lpPress(); LP.pushed = performance.now() - LP.rise - 5; lpPress(); }
     await wait(900); try { closeLoot && closeLoot(); } catch (e) {} return { house: window._h.name, id: window._h.id, bounty: WORLD.bountyAt('dunmore') }; });
@@ -44,7 +44,7 @@ check('paying clears the fine and he goes', paid.bounty === 0 && !paid.sent, pai
 await leave();
 
 // 2. leave quickly: he is in the street where his walk had got him, and runs you down
-const house2 = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'); const h = S.houses.find(x => x.type === 'home' && x.id !== window._h.id); return h.id; });
+const house2 = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'); const h = S.houses.find(x => x.type === 'home' && x.id !== window._h.id && !WORLD.solidAt(x.exitX, x.exitZ)); return h.id; }); // S1188: a home whose exit is clear ground (14 of Dunmore's kit-house exits stand in the next building's footprint, backlog I)
 await enter(house2);
 await page.evaluate(() => { const c = (worldState.crime || (worldState.crime = {})).dunmore || (worldState.crime.dunmore = { bounty: 0, debt: 0, last: 0 }); c.bounty = 60; WORLD.dispatchGuard(window._h, WORLD.settle.get('dunmore').site); });
 await spinIn(5); await leave();
@@ -69,8 +69,11 @@ await enter(house2);
 await page.evaluate(() => { try { closeDialog(); } catch (e) {} WORLD.dispatchGuard(window._h, WORLD.settle.get('dunmore').site); const s = WORLD.guardSent; if (s) { const a = Math.atan2(s.door.x - s.from.x, s.door.z - s.from.z) || 0; s.from = { x: s.door.x - Math.sin(a) * 50, z: s.door.z - Math.cos(a) * 50 }; s.walk = 50 / 3; } try { closeDialog(); } catch (e) {} });
 await spinIn(1); await leave();
 const duck = await page.evaluate(() => { const s = WORLD.guardSent; if (!s) return { none: true }; const n = s.npc; for (let t = 0; t < 3; t += 1 / 60) WORLD.tick(1 / 60, performance.now());
-  const S = WORLD.settle.get('dunmore'); const h3 = S.houses.filter(x => x.type === 'home' && x.id !== window._h.id).map(x => ({ x, d: Math.hypot(x.exitX - n.g.position.x, x.exitZ - n.g.position.z) })).sort((a, b) => a.d - b.d)[0].x;
+  const S = WORLD.settle.get('dunmore'); const others = S.npcs.filter(m => m !== n && m.sched && /guard|watch|constable/.test(m.sched.type) && m.g.visible);
+  const h3 = S.houses.filter(x => x.type === 'home' && x.id !== window._h.id && !WORLD.solidAt(x.exitX, x.exitZ) && !others.some(m => Math.hypot(m.g.position.x - x.exitX, m.g.position.z - x.exitZ) < 8)).map(x => ({ x, d: Math.hypot(x.exitX - n.g.position.x, x.exitZ - n.g.position.z) })).sort((a, b) => a.d - b.d)[0].x;
   px = h3.exitX; pz = h3.exitZ; jumpY = WORLD.worldH(px, pz); n.g.position.set(px + 6, WORLD.worldH(px + 6, pz), pz); WORLD.tick(1 / 60, performance.now()); window._h3 = h3; return { h3: h3.id, d: +Math.hypot(n.g.position.x - px, n.g.position.z - pz).toFixed(1), phase: WORLD.guardSent && WORLD.guardSent.phase }; });
+// (S1188: the door is one no other guard stands within eight units of. Since #393's kit houses Cormac stood at the
+// nearest home's door, halted you there for the fine, as a guard should, and his dialog stood in for this one's in step 5)
 // the fade's four seconds of wall clock run the game's own loop at whatever rate the runner gives; hold its interior clock
 // meanwhile (dt 0), so only spinIn moves the guard's half minute (Session 274: this check passed or failed by the runner)
 if (!duck.none) { await page.evaluate(() => { if (!WORLD._tiHeld) { const f = WORLD.tickInterior; WORLD._tiHeld = true; WORLD.tickInterior = (dt, now) => f(window._holdLoop ? 0 : dt, now); } window._holdLoop = true; window._h = window._h3; goToInterior(window._h3); }); await page.waitForTimeout(4000); await g.hide(); await page.evaluate(() => { window._holdLoop = false; }); }
