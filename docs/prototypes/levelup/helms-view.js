@@ -8,13 +8,13 @@
 //   &cam=whole (default) | far (from 30 m) | heads (Steel to Cosmic, the heads at 6 m) | close (Draconic, Demonic, Cosmic at 3 m)
 // ?view=robes&set=a|b: the robe line's top six (Mithril to Cosmic) in robes and raised hoods: a plain circlet (a), or OG-052's
 //   antlered, horned, crescent and haloed hoods (b).
-// ?view=head&tier=1..10[&kind=robe]: one head close, three-quarter front (helms-sheet.mjs lays ten of them out as one sheet).
+// ?view=head&tier=1..10[&kind=robe][&front]: one head close, three-quarter front (or square to the face, Session 1193) (helms-sheet.mjs lays ten of them out as one sheet).
 // ?view=scale&set=b: Steel, Demonic and Cosmic beside the post and two bare-headed people.
 // &cam=x,y,z,tx,ty,tz puts the camera anywhere. Drag to look.
 import * as THREE from 'three';
 import { Q, W, H, STATS, makeRenderer, makeComposer, buildTextures, mat, worldUV, skyDome, clouds, run } from './common.js';
 import { loadPack, makePerson, rollGenome, statureOf } from './people.js';
-import { TIERS, ENV, fitHead, helm, hoodDress } from './helms.js';
+import { TIERS, ENV, fitHead, helm, hoodDress, faceShows } from './helms.js';
 
 const R = makeRenderer(.82), scene = new THREE.Scene(), VIEW = Q.get('view') || 'line', SET = Q.get('set') || 'b', CAM = Q.get('cam') || 'whole';
 scene.fog = new THREE.FogExp2(new THREE.Color(.78, .8, .84), .004);
@@ -63,9 +63,9 @@ const o = { bold: SET !== 'a', closed: SET === 'c' };
     if (kind === 'bare') Object.assign(D, { mail: null, helm: null });
     const p = makePerson({ ...G, dress: D }); p.root.position.set(x, p.root.position.y, z); p.root.rotation.y = ry; scene.add(p.root);
     const hb = p.byName['head'], kit = hb.getObjectByName('helm'); let h = null;
-    if (kind === 'heavy' && tier !== 3) { if (kit) hb.remove(kit); const F = fitHead(p); h = helm(tier, F, o); hb.add(h.group); }
+    if (kind === 'heavy' && tier !== 3) { if (kit) hb.remove(kit); const F = fitHead(p); h = helm(tier, F, o); if (Q.has('check')) h.face = faceShows(F, h); hb.add(h.group); }
     if (kind === 'robe') { const F = fitHead(p); h = hoodDress(tier, F, o); if (h) hb.add(h.group); }
     p.root.traverse(m => { if (m.isMesh) { m.castShadow = m.receiveShadow = true; } });
-    if (VIEW === 'head') { p.root.updateMatrixWorld(true); const c = hb.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0, .1, 0)); cam.position.set(c.x - .22, c.y + .06, c.z + 1.16); cam.lookAt(c); }
-    STATS.people.push({ tier: T.name, kind, people, height: +statureOf(G).toFixed(3), tris: h ? h.tris : kind === 'heavy' ? p.helm?.tris : 0, draws: h ? h.draws : kind === 'heavy' ? 2 : 0, size: h?.size, above: h?.top, gap: h?.gap ?? p.helm?.gap }); }
+    if (VIEW === 'head') { p.root.updateMatrixWorld(true); const c = hb.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0, .1, 0)); if (Q.has('front')) { cam.position.set(c.x + Math.sin(ry) * .8, c.y - .07, c.z + Math.cos(ry) * .8); c.y -= .09; } else cam.position.set(c.x - .22, c.y + .06, c.z + 1.16); cam.lookAt(c); }
+    STATS.people.push({ tier: T.name, kind, people, height: +statureOf(G).toFixed(3), tris: h ? h.tris : kind === 'heavy' ? p.helm?.tris : 0, draws: h ? h.draws : kind === 'heavy' ? 2 : 0, size: h?.size, above: h?.top, gap: h?.gap ?? p.helm?.gap, face: h?.face }); }
 }).catch(e => { if (e !== 'nopeople') { STATS.err = String(e && e.stack || e); console.error(e); } }).finally(() => run(comp, cam));
