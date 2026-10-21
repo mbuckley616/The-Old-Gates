@@ -1324,7 +1324,7 @@ function buildWrap(P, G, heads, byName, hairPts = [], browTop = -9) {
   const tb = !!D.turban && !sc, yS = by - .01, at = !tb ? at0 : (th, ph, off = 0) => { const p = at0(th, ph, off), h = Math.max(0, Math.min(1, (p.y - rimY(th) - .02) / .06)), s = 1 + .15 * h * h * (3 - 2 * h);
     p.x = c.x + (p.x - c.x) * s; p.z = c.z + (p.z - c.z) * s; if (p.y > yS) p.y = yS + (p.y - yS) * 1.8; return p; };
   const topY = at(0, 0).y;
-  const NP = 14, pos = [], col = [], idx = [], prn = [], RIM = Array.from({ length: NT + 1 }, (_, t) => phRim(t / NT * TAU)), cloth = sRGB(...D.wrap), edge = sRGB(...(D.wrapBorder || D.wrap.map(v => v * (sc ? .97 : .82)))), PH_ = th => RIM[Math.round(((th / TAU) * NT % NT + NT) % NT)];
+  const NP = 14, tubeV = [], pos = [], col = [], idx = [], prn = [], RIM = Array.from({ length: NT + 1 }, (_, t) => phRim(t / NT * TAU)), cloth = sRGB(...D.wrap), edge = sRGB(...(D.wrapBorder || D.wrap.map(v => v * (sc ? .97 : .82)))), PH_ = th => RIM[Math.round(((th / TAU) * NT % NT + NT) % NT)];
   // the crown, from the top to the edge (its seam, and the turns', at the back), a shade lighter than the turns so the rolls read against it
   { const b0 = pos.length / 3, cc = cloth.clone().multiplyScalar(sc ? 1 : 1.06); for (let j = 0; j < NP; j++) for (let t = 0; t <= NT; t++) { const th = Math.PI + t / NT * TAU, p = at(th, PH_(th) * Math.max(.002, j / (NP - 1))); pos.push(p.x, p.y, p.z); col.push(cc.r, cc.g, cc.b); prn.push(1); }
     for (let j = 0; j < NP - 1; j++) for (let t = 0; t < NT; t++) { const a = b0 + j * (NT + 1) + t, d = a + NT + 1; idx.push(a, d, a + 1, a + 1, d, d + 1); } }
@@ -1336,22 +1336,25 @@ function buildWrap(P, G, heads, byName, hairPts = [], browTop = -9) {
   TURNS.forEach(([yf, yb, rad, share], k) => { const line = [], rr = [];
     for (let t = 0; t <= NT; t++) { const th = Math.PI + t / NT * TAU, w = (1 + Math.cos(th)) / 2, r = rad * (1 + .14 * Math.sin(3 * th + k * 1.7)), f = yf * w + yb * (1 - w);
       line.push(at(th, phAt(th, rimY(th) + (share ? f * (topY - rimY(th)) : f)), r * .4)); rr.push(r); }
-    line[NT] = line[0].clone(); const g2 = tubeGeom(line, rr, SIDES), b0 = pos.length / 3, a2 = g2.attributes.position.array;
+    line[NT] = line[0].clone(); const g2 = turnOut(tubeGeom(line, rr, SIDES)), b0 = pos.length / 3, a2 = g2.attributes.position.array;
     // flattened onto the head: a band of cloth, wide along the dome and thin out from it
     for (let s2 = 0; s2 <= NT; s2++) { const L = line[s2], n = L.clone().sub(c).normalize(); for (let q = 0; q <= SIDES; q++) { const o = (s2 * (SIDES + 1) + q) * 3, ox = a2[o] - L.x, oy = a2[o + 1] - L.y, oz = a2[o + 2] - L.z, dn = ox * n.x + oy * n.y + oz * n.z;
       a2[o] = L.x + (ox - n.x * dn) * 1.5 + n.x * dn * .5; a2[o + 1] = L.y + (oy - n.y * dn) * 1.5 + n.y * dn * .5; a2[o + 2] = L.z + (oz - n.z * dn) * 1.5 + n.z * dn * .5; } }
     const c2 = k === 0 ? edge : cloth.clone().multiplyScalar(1 - .05 * (k % 2));
-    for (let i = 0; i < a2.length; i += 3) { pos.push(a2[i], a2[i + 1], a2[i + 2]); col.push(c2.r, c2.g, c2.b); prn.push(sc && !D.wrapBorder ? 1 : 0); } for (const i of g2.index.array) idx.push(b0 + i); rolls.push(line); });
+    for (let i = 0; i < a2.length; i += 3) { pos.push(a2[i], a2[i + 1], a2[i + 2]); col.push(c2.r, c2.g, c2.b); prn.push(sc && !D.wrapBorder ? 1 : 0); tubeV.push([b0 + i / 3, line[Math.floor(i / 3 / (SIDES + 1))]]); } for (const i of g2.index.array) idx.push(b0 + i); rolls.push(line); });
   // a turban's crown (Session 1020; OG-044's are wound to the top): three turns cross over it, each from under the upper turns on one
   // side, over the top and down under them on the other, in planes 0.35, -0.5 and 1.45 rad off the front-to-back line, wider and flatter than the turns
   let cross = 0; if (tb) for (const [al, ff, fb, rad] of [[.35, .6, .66, .017], [-.5, .66, .6, .016], [1.45, .62, .62, .016]]) { const line = [], rr = [], NQ = 40;
     const ends = [[al, ff], [al + Math.PI, fb]].map(([th, f]) => [th, phAt(th, rimY(th) + f * (topY - rimY(th)))]);
     for (let q = 0; q <= NQ; q++) { const u = q / NQ * 2 - 1, [th, pe] = u < 0 ? ends[1] : ends[0], r = rad * (1 + .1 * Math.sin(5 * u + al)); line.push(at(th, Math.abs(u) * pe, r * .4)); rr.push(r); }
-    const g2 = tubeGeom(line, rr, SIDES), b0 = pos.length / 3, a2 = g2.attributes.position.array;
+    const g2 = turnOut(tubeGeom(line, rr, SIDES)), b0 = pos.length / 3, a2 = g2.attributes.position.array;
     for (let s2 = 0; s2 <= NQ; s2++) { const L = line[s2], n = L.clone().sub(c).normalize(); for (let q = 0; q <= SIDES; q++) { const o = (s2 * (SIDES + 1) + q) * 3, ox = a2[o] - L.x, oy = a2[o + 1] - L.y, oz = a2[o + 2] - L.z, dn = ox * n.x + oy * n.y + oz * n.z;
       a2[o] = L.x + (ox - n.x * dn) * 2.4 + n.x * dn * .45; a2[o + 1] = L.y + (oy - n.y * dn) * 2.4 + n.y * dn * .45; a2[o + 2] = L.z + (oz - n.z * dn) * 2.4 + n.z * dn * .45; } }
     const c2 = cloth.clone().multiplyScalar(.97 - .03 * cross); for (let i = 0; i < a2.length; i += 3) { pos.push(a2[i], a2[i + 1], a2[i + 2]); col.push(c2.r, c2.g, c2.b); prn.push(0); } for (const i of g2.index.array) idx.push(b0 + i); cross++; }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('aBase', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.setAttribute('aPrint', new THREE.Float32BufferAttribute(prn, 1)); g.setIndex(idx); g.computeVertexNormals();
+  // the turns' normals point out of each roll (Session 1238): tubeGeom winds inward, and with the normals in, the shadow's lookup (moved along
+  // the normal by normalBias) fell inside the roll, so the whole wrap read its own shadow and went grey, a white turban most of all
+  let outward = 0; { const N = g.attributes.normal.array; for (const [k, L] of tubeV) if ((pos[k * 3] - L.x) * N[k * 3] + (pos[k * 3 + 1] - L.y) * N[k * 3 + 1] + (pos[k * 3 + 2] - L.z) * N[k * 3 + 2] > 0) outward++; outward = tubeV.length ? outward / tubeV.length : 1; }
   // the numbers, before it moves to the head bone: the nearest point of the head and of the tucked hair under it, how far the lowest
   // cloth over the brow stands above the brow line, and how low it comes at the nape
   let gap = 1, hairOut = 0, browLow = 9, nape = 9, overBrow = 0; for (const i of hv) { if (!under(i)) continue; const d = V(i).sub(c), r = d.length(); gap = Math.min(gap, R(Math.atan2(d.x, d.z), Math.acos(d.y / r)) - r); }
@@ -1360,7 +1363,7 @@ function buildWrap(P, G, heads, byName, hairPts = [], browTop = -9) {
   const ext = new THREE.Box3(); for (let i = 0; i < pos.length; i += 3) ext.expandByPoint(new THREE.Vector3(pos[i], pos[i + 1], pos[i + 2]));
   g.translate(-heads['head'].x, -heads['head'].y, -heads['head'].z);
   const m = clothMat(new THREE.Color(1, 1, 1), 'wool', { side: THREE.DoubleSide, scale: 34, print: sc && D.scarfPrint ? sRGB(...D.scarfPrint) : null }); m.vertexColors = true; const mesh = new THREE.Mesh(g, m); mesh.name = 'wrap'; mesh.castShadow = true; mesh.receiveShadow = !sc; byName['head'].add(mesh);
-  return { mesh, stats: { gap: +gap.toFixed(4), hairOut, hairPts: hairPts.length, brow: +(browLow - browTop).toFixed(4), overBrow, napeDrop: +(by - nape).toFixed(3), turns: rolls.length, tris: idx.length / 3, width: +(ext.max.x - ext.min.x).toFixed(3), height: +(ext.max.y - ext.min.y).toFixed(3), top: +(ext.max.y - by).toFixed(3), depth: +(ext.max.z - ext.min.z).toFixed(3), border: !!D.wrapBorder, turban: tb, cross, scarf: sc, front: +(rimY(0) - browTop).toFixed(4) } };
+  return { mesh, stats: { gap: +gap.toFixed(4), hairOut, hairPts: hairPts.length, brow: +(browLow - browTop).toFixed(4), overBrow, napeDrop: +(by - nape).toFixed(3), turns: rolls.length, tris: idx.length / 3, width: +(ext.max.x - ext.min.x).toFixed(3), height: +(ext.max.y - ext.min.y).toFixed(3), top: +(ext.max.y - by).toFixed(3), depth: +(ext.max.z - ext.min.z).toFixed(3), border: !!D.wrapBorder, turban: tb, cross, scarf: sc, front: +(rimY(0) - browTop).toFixed(4), outward: +outward.toFixed(3) } };
 }
 // ── the veil (Session 1237, L1; OG-109's Aurenne travel column: the head-wrap's end drawn across the face against the road's dust and sun) ──
 // A band of cloth round the head under the wrap: across the face from just under the eyes (6 mm under the lower lid) to 2 cm under the
@@ -1399,7 +1402,7 @@ function buildVeil(P, G, heads, byName, meshes, hairPts = []) {
   for (let j = 0; j <= NR; j++) for (let t = 0; t <= NT; t++) { const th = Math.PI + t / NT * TAU, p = at(th, yBot(th) + (yTop(th) - yBot(th)) * j / NR); pos.push(p.x, p.y, p.z); }
   for (let j = 0; j < NR; j++) for (let t = 0; t < NT; t++) { const a = j * (NT + 1) + t, d = a + NT + 1; idx.push(a, a + 1, d, a + 1, d + 1, d); }
   // the rolled hem along the top, and a narrower one along the bottom
-  const hem = (yf, r) => { const L = []; for (let t = 0; t <= NT; t++) { const th = Math.PI + t / NT * TAU; L.push(at(th, yf(th), r * .6)); } L[NT] = L[0].clone(); return tubeGeom(L, L.map(() => r), 8); };
+  const hem = (yf, r) => { const L = []; for (let t = 0; t <= NT; t++) { const th = Math.PI + t / NT * TAU; L.push(at(th, yf(th), r * .6)); } L[NT] = L[0].clone(); return turnOut(tubeGeom(L, L.map(() => r), 8)); };
   const parts = [hem(yTop, .0042), hem(yBot, .003)]; let b0 = pos.length / 3; for (const h of parts) { const a = h.attributes.position.array; for (const v of a) pos.push(v); for (const i of h.index.array) idx.push(b0 + i); b0 += a.length / 3; }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('aBase', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals();
   // the numbers: how far the top edge is under the lower lid within 0.85 rad of the front (the eyes' width and past), the nearest point of
