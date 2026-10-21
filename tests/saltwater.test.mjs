@@ -56,26 +56,7 @@ check('a passage paid takes you over and the note is in your pocket: the step is
 await g.settle(there.id);
 const c2 = await corwin();
 check(`Corwin is at the harbour you landed at (${there.name}) too`, c2 && c2.port === there.name && c2.fromPort < 15, c2);
-// Session 439: Corwin kept his place while his step was the same, and was taken down only once no harbour was within 140
-// units and he was 220 off. A passage re-enters the world, which places everyone again, but walking, riding or sailing
-// from one quay to a near one never did: he stayed at the first. Here, with the step unchanged, you come to the nearest
-// harbour on foot, 150–360 units along the coast (25 of the world's 110 harbours have one that near), and back.
-const pair = await page.evaluate(() => { const P = WORLD.allPorts(); const near = P.map(p => Math.min(...P.filter(q => q !== p).map(q => Math.hypot(q.x - p.x, q.z - p.z))));
-  const home = WORLD.siteAnywhere('dunmore'); let best = null, bd = 1e9;
-  for (const a of P) for (const b of P) { if (a === b) continue; const d = Math.hypot(a.x - b.x, a.z - b.z); if (d < 150 || d > 360) continue; const h = Math.hypot(a.x - home.x, a.z - home.z); if (h < bd) { bd = h; best = [a.id, b.id, a.name, b.name, Math.round(d)]; } }
-  return { ports: P.length, under360: near.filter(d => d < 360).length, pair: best }; });
-const [pa, pb, na, nb, dab] = pair.pair;
-const walkTo = async (id) => { await page.evaluate((id) => { const t = WORLD.siteAnywhere(id); const x0 = px, z0 = pz, L = Math.hypot(t.x - x0, t.z - z0), n = Math.ceil(L / 10);
-  for (let k = 1; k <= n; k++) { px = x0 + (t.x - x0) * k / n; pz = z0 + (t.z - z0) * k / n; for (let i = 0; i < 5; i++) WORLD.tick(1 / 60, performance.now()); } }, id); await g.settle(id); return corwin(); };
-await page.evaluate((id) => { const p = WORLD.siteAnywhere(id); px = p.x; pz = p.z; }, pa); await g.settle(pa);
-const c2a = await corwin();
-const c2b = await walkTo(pb);
-const c2c = await walkTo(pa);
-console.log('ports', JSON.stringify(pair), JSON.stringify(c2a), 'walked to', nb, JSON.stringify(c2b), 'and back', JSON.stringify(c2c));
-check(`at ${na}, Corwin is there`, c2a && c2a.port === na && c2a.fromPort < 15, c2a);
-check(`walked on to ${nb}, ${dab} units along the coast, the step unchanged: Corwin is there, not left at ${na}`, c2b && c2b.port === nb && c2b.fromPort < 15, c2b);
-check(`and walked back to ${na}, he is there again`, c2c && c2c.port === na && c2c.fromPort < 15, c2c);
-await page.evaluate((id) => { const p = WORLD.siteAnywhere(id); px = p.x; pz = p.z; }, there.id); await g.settle(there.id);
+// The walk along the coast (Session 439) is its own suite, `corwinwalk` (Session 1254: together they ran past the 900 s a suite is given).
 
 // 3. the hull, at the note's price, by the shipwright's own topic
 const buy = await page.evaluate((id) => { const S = WORLD.settle.get(id); const n = S && S.npcs.find(n => n.sched && n.sched.shop === 'shipwright'); if (!n) return { none: true };
@@ -110,7 +91,7 @@ console.log('boarding', JSON.stringify(fight), JSON.stringify(fought), JSON.stri
 check(`aboard her, the crew (${fight.crew}) cut down by your own swings (${swings}), her deck is yours: the step is "report"`, fight.boarded && left === 0 && s5.step === 'report' && s5.qdone, { fight, swings, s5 });
 
 // 6. back at a harbour, Corwin pays
-await page.evaluate((id) => { const p = WORLD.siteAnywhere(id); px = p.x; pz = p.z; }, there.id);
+await page.evaluate((id) => { const p = WORLD.siteAnywhere(id); px = p.x; pz = p.z; }, there.id); await g.settle(there.id);
 const c6 = await corwin();
 const lvl = await page.evaluate(() => level);
 const g6 = await page.evaluate(() => gold);
