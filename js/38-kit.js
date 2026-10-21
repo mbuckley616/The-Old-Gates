@@ -1081,7 +1081,7 @@ function aurenneTavern(o = {}, r = stream('tavern')) {
   return { group: all, shell: sh.group, room: group, tris: Math.round(tris), draws: group.children.length, shellTris: sh.tris, shellCalls: sh.draws, inner: { x0: -X, x1: X, z0: -Z, z1: Z }, floor: F0, ceil: TOP - .22, terrace, loggia: { z0: d / 2, z1: az },
     arches, door: { x: sh.doorX, z: d / 2, w: 1.05, h: 2.0 }, counter, tables, seats, path, path2, boxes, lamps, braziers, w, d };
 }
-// ── the six gods' row of seven at the town church (Session 1224; Michael's B on #464, after his C on #439; card F6) ──
+// ── the six gods' row of seven at the town church (Session 1229; Michael's B on #464, after his C on #439; card F6) ──
 // shrines.js's row('gatelands', { yard: true }) (Session 1172), as plain script. One common niche a god: a limewashed stele 1.0 m wide and
 // 2.3 m to the top of its arch on a limestone plinth, a recess 0.62 m wide with its sill at 1.03 m, a robed figure 0.95 m tall holding
 // the god's icon (a wolf sitting in its place for Na Beithígh), the god's name cut under the sill and the icon in a roundel over the

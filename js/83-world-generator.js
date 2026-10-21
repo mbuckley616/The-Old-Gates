@@ -153,7 +153,7 @@
     // the lots, the stalls, the widened houses and the streets keep out of them (a street that runs into one stops at it).
     //   - the church: the kit's church with its west tower, end-on, 8.4 m wide and 27.4 m long (22.6 with two bays where three will not
     //     fit), its tower's face 14 m from the town's heart, its flank 2.8 m off a street through the centre as a lot's front is, a yard
-    //     of 4.5 m beside it (2 m until S1224, Michael's B on #464: the six gods' row of seven stands along it, facing the nave) and 3 m
+    //     of 4.5 m beside it (2 m until S1229, Michael's B on #464: the six gods' row of seven stands along it, facing the nave) and 3 m
     //     behind; tried along the cross street first (the main road runs along the main street), each way, each side;
     //   - the keep's bawn: 30 m wide and 25 m deep, astride the main street at its far end from the first road, its gate toward the heart;
     //     else at an end of the cross street, else the near end of the main street, drawn in from the ring by 6 m at a time while a road is in it.
@@ -177,7 +177,7 @@
       const dirs=[[bx,bz],[-bx,-bz],[ax,az],[-ax,-az]];
       if(types.includes('church'))outer:for(const n of [3,2]){const L=PKIT.gl.churchLen(n),W=8.4,YARD=4.5,t0=Math.sqrt(14*14-2.8*2.8);
         for(const [ux,uz] of dirs)for(const sd of [1,-1]){const vx=-uz*sd,vz=ux*sd,P=frame(ux,uz,vx,vz,t0,t0+L+3,2.8,2.8+W+YARD);if(!fits(P,null))continue;
-          const t=t0+L/2+.4,a=2.8+W+YARD-.58; /* S1224 — the row of seven: its niches' faces .58 in from the yard's edge, its middle .4 east of the nave's, facing the church */
+          const t=t0+L/2+.4,a=2.8+W+YARD-.58; /* S1229 — the row of seven: its niches' faces .58 in from the yard's edge, its middle .4 east of the nave's, facing the church */
           const lot=Object.assign(frame(ux,uz,vx,vz,t0,t0+L,2.8,2.8+W),{w:W,d:L,row:0,street:null,k:-1,plot:'church',bays:n,gods:{x:cx+ux*t+vx*a,z:cz+uz*t+vz*a,ry:Math.atan2(-vx,-vz)}});P.type='church';P.lot=lot;out.push(P);break outer;}}
       if(types.includes('castle')){const T=Math.sqrt((inner-3)**2-15*15);
         outer:for(const [ux,uz] of [[-ax,-az],[bx,bz],[-bx,-bz],[ax,az]])for(let t1=T;t1-25>=20;t1-=6){const vx=-uz,vz=ux,P=frame(ux,uz,vx,vz,t1-25,t1,-15,15);if(!fits(P,along(ux,uz)))continue; /* the main street runs into its gate */
@@ -401,7 +401,7 @@
       {const b=new THREE.BoxGeometry(T.s,T.h,T.s).toNonIndexed();b.translate(lot.kit.side?T.at:0,T.h/2,lot.kit.side?0:T.at);kitLo.push([b,mx,stone]);}
       lot._kitDoor=U.door;lot._wallH=sz.eave;lot._storeys=1;lot.two=false;lot.kit.tris=U.tris;lot.kit.calls=U.calls;lot.kit.colour='stone';lot.kit.door=U.door+(lot.kit.slide||0);
       if(lot.gods)kitGods(lot.gods);}
-    // S1224 (card F6, Michael's B on #464) — the six gods' row of seven in the church's yard (PKIT.gl.row): its plinths one solid and
+    // S1229 (card F6, Michael's B on #464) — the six gods' row of seven in the church's yard (PKIT.gl.row): its plinths one solid and
     // each basin one, each niche on its own ground (a row on a slope steps down it), no far copy (it is 2.3 m high); S.gods keeps where it stands, its niches and its basins for the tests
     function kitGods(at){const c=Math.cos(at.ry),s_=Math.sin(at.ry),w=(u,v)=>({x:at.x+u*c+v*s_,z:at.z-u*s_+v*c}),y=worldH(at.x,at.z)-.02,R=PKIT.gl.row({ground:[0,1,2,3,4,5,6].map(i=>{const q=w((i-3)*1.4,-.2);return worldH(q.x,q.z)-.02-y;})}),F=R.foot;
       R.group.position.set(at.x-cx,y,at.z-cz);R.group.rotation.y=at.ry;kitG.add(R.group);

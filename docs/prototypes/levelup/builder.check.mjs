@@ -895,6 +895,31 @@ if (!process.argv.includes('--shots-only')) { const page = await browser.newPage
   { const r = e.roll; check(`the Aurennais women's gowns: ${r.worn} of ${r.open} in a long skirt and no apron (of ${r.women}), ${r.madder} in madder; bodice and skirt in one cloth, no cuffs; madder thread only on saffron; ${r.men} men and ${r.others} of 180 other peoples; every other woman's roll the same`,
       r.worn / r.open > .13 && r.worn / r.open < .27 && r.madder / r.worn > .3 && r.madder / r.worn < .7 && r.one && r.palette && r.redThread && r.same && r.men === 0 && r.others === 0, r); }
   check('the gown: no page errors', errs.length === 0, errs.slice(0, 3)); await page.close(); }
+// the sleeve's end square to the forearm (Session 1228): on the posed body, the points of the tunic's sleeve at one place of the cut
+// (its rest slvX, against the old plain rest |x|) lie at one place along the forearm's own bone, the elbow to the wrist: what is left of
+// their place along it, once a straight line in the cut's number is taken out, spreads under a centimetre where the old cut's spread
+// across the arm's width; and the skin is drawn under every place the sleeve's end leaves open (each body triangle with a corner past
+// rest slvX .39, short of the neck, is in the bare skin's region), where the old region left teeth that showed through the sleeve
+if (!process.argv.includes('--shots-only')) { const page = await browser.newPage({ viewport: { width: 640, height: 360 } }); const errs = []; page.on('pageerror', e => errs.push(String(e)));
+  await page.goto(`http://localhost:${port}/builder.html?still&w=640&h=360&seed=check`); await page.waitForFunction(() => window.__done || window.__err, null, { timeout: 300000 });
+  const e = await page.evaluate(async () => { const K = await import('./people.js'), T = await import('three'), PK = await K.loadPack(), R0 = PK.rest, out = {};
+    const tidy = { cloak: null, hood: null, wrap: null, wrapTail: null, sash: null, mantle: null, apron: null, bib: false, cuffs: null, cuffBand: null, coat: null, robe: null, mail: null };
+    const ring = (G, side) => { const p = K.makePerson(G); p.root.updateMatrixWorld(true); const m = p.meshes.find(q => q.name === 'tunic'), w = n => new T.Vector3().setFromMatrixPosition(p.byName[n].matrixWorld);
+      const a = w('lowerarm01.' + side), u = w('wrist.' + side).sub(a).normalize(), v = new T.Vector3(), sg = side === 'L' ? 1 : -1, ids = [...new Set(m.geometry.index.array)];
+      const fit = f => { const pts = []; for (const i of ids) { const x = R0[i * 3], y = R0[i * 3 + 1], z = R0[i * 3 + 2], c = f(x, y, z); if (x * sg > 0 && Math.abs(c - .4) < .012) pts.push([c, m.getVertexPosition(i, v).applyMatrix4(m.matrixWorld).sub(a).dot(u)]); }
+        const n = pts.length, mc = pts.reduce((s, q) => s + q[0], 0) / n, md = pts.reduce((s, q) => s + q[1], 0) / n, k = pts.reduce((s, q) => s + (q[0] - mc) * (q[1] - md), 0) / pts.reduce((s, q) => s + (q[0] - mc) ** 2, 0), r = pts.map(q => q[1] - md - k * (q[0] - mc));
+        return { cm: +((Math.max(...r) - Math.min(...r)) * 100).toFixed(2), n }; };
+      return { square: fit(K.slvX), plain: fit(x => Math.abs(x)) }; };
+    for (const [k, G] of [['woman', K.rollGenome('gw1', { people: 'aurennais', g: 0 })], ['man', K.rollGenome('b7', { people: 'markman', g: 1 })]]) { const D = { ...G, dress: { ...G.dress, ...tidy, tunic: [.6, .14, .1] } };
+      out[k] = { L: ring(D, 'L'), R: ring(D, 'R') }; }
+    const body = PK.G['body'], bare = new Set(), key = t => body[t] + ',' + body[t + 1] + ',' + body[t + 2], Rb = PK.R.bare; for (let t = 0; t < Rb.length; t += 3) bare.add(Rb[t] + ',' + Rb[t + 1] + ',' + Rb[t + 2]);
+    let open = 0, oldOpen = 0, past = 0; for (let t = 0; t < body.length; t += 3) { const c = [0, 1, 2].map(j => body[t + j]), cy = c.reduce((s, i) => s + R0[i * 3 + 1], 0) / 3; if (cy > .585) continue;
+      if (Math.max(...c.map(i => K.slvX(R0[i * 3], R0[i * 3 + 1], R0[i * 3 + 2]))) > .39) { past++; if (!bare.has(key(t))) open++; }
+      if (Math.max(...c.map(i => Math.abs(R0[i * 3]))) > .39 && !(Math.abs(c.reduce((s, i) => s + R0[i * 3], 0) / 3) > .395)) oldOpen++; }
+    out.skin = { past, open, oldOpen }; return out; });
+  for (const k of ['woman', 'man']) for (const s of ['L', 'R']) { const r = e[k][s]; check(`the ${k}'s ${s === 'L' ? 'left' : 'right'} sleeve ends square to the forearm: at one place of its cut its points spread ${r.square.cm} cm along the bone (${r.square.n} points), the old cut at a plain |x| ${r.plain.cm} cm`, r.square.cm < 1 && r.plain.cm > 2 * r.square.cm, r); }
+  check(`no skin is left off under the sleeve's end: ${e.skin.open} of ${e.skin.past} body triangles past the cut are undrawn (the old region left ${e.skin.oldOpen} past rest |x| .39)`, e.skin.open === 0 && e.skin.past > 50, e.skin);
+  check('the square sleeve: no page errors', errs.length === 0, errs.slice(0, 3)); await page.close(); }
 const shotArg = process.argv.find(a => a.startsWith('--shots') && a !== '--shots-only');
 if (shotArg) { const only = shotArg.split('=')[1];
   const shot = async (name, q, w = 1920, h = 1080, panel = false, crop = null) => { if (only && !only.split(',').some(o => name.includes(o))) return; const page = await browser.newPage({ viewport: { width: w, height: h } }); const errs = []; page.on('pageerror', e => errs.push(String(e)));
@@ -1194,6 +1219,13 @@ if (shotArg) { const only = shotArg.split('=')[1];
   for (const [n, q] of [['woman-braid', 'seed=styles&sex=f&style=braid&view=head&turn=-2.3'], ['woman-braids', 'seed=styles&sex=f&style=braids&view=head&turn=2.6'], ['woman-loose', 'seed=styles&sex=f&style=loose&view=head&turn=2.7&dress=' + dq({ mantle: null })], ['woman-loose-side', 'seed=styles&sex=f&style=loose&view=head&turn=1.5&dress=' + dq({ mantle: null })], ['woman-loose-mantle', 'seed=styles&sex=f&style=loose&view=head&turn=2.7'], ['beard-tunic', 'seed=b7&sex=m&view=head&turn=1.2&dress=' + dq({ mantle: null })], ['woman-face', 'seed=styles&sex=f&style=bun&view=face'], ['man-face', 'seed=b7&sex=m&view=face']]) await shot(n, q);
   // the brows close (Session 824): the face view at twice the size, cut to the brow line
   await shot('brows-woman', 'seed=styles&sex=f&style=bun&view=face', 1920, 1440, false, [.25, .38, .5, .25]); await shot('brows-man', 'seed=b7&sex=m&view=face', 1920, 1440, false, [.25, .38, .5, .25]);
+  // the sleeve's end square to the forearm (Session 1228): the plain red gown from the front and from under the arm, a blue tunic's cuff with its
+  // woven band, and a striped robe's open sleeve; the same two gown views from the build before are builder-sleeve-*-before.jpg
+  { const dq = d => encodeURIComponent(JSON.stringify(d)), bare = { cloak: null, hood: null, wrap: null, wrapTail: null, sash: null, mantle: null, apron: null, bib: false, cuffs: null, cuffBand: null },
+      red = { ...bare, tunic: [.6, .14, .1], skirt: 'long', skirtColor: [.6, .14, .1] };
+    await shot('sleeve-front', 'people=aurennais&seed=gw1&sex=f&view=hand&zoom=.7&turn=.6&dress=' + dq(red)); await shot('sleeve-under', 'people=aurennais&seed=gw1&sex=f&view=hand&zoom=.7&turn=-1.2&dress=' + dq(red));
+    await shot('sleeve-cuff', 'people=aurennais&seed=gw1&sex=f&view=hand&zoom=.7&turn=.6&dress=' + dq({ ...bare, tunic: [.3, .4, .6], cuffs: [.5, .2, .15], cuffBand: [.8, .7, .3] }));
+    await shot('sleeve-robe', 'people=aurennais&seed=st1&sex=m&view=hand&zoom=.7&turn=.6&dress=' + dq({ robe: [.85, .8, .7], tunic: [.85, .8, .7], robeStripe: [.15, .2, .45], cord: [.6, .2, .1] })); }
   for (const k of ['gatelander', 'markman', 'aurennais', 'oldblood']) await shot('brows-' + k, `seed=brows:${k}&sex=m&people=${k}&view=face&nomantle`, 1920, 1440, false, [.25, .38, .5, .25]);
 }
 await browser.close(); srv.close(); console.log(fails ? `${fails} FAILED` : 'all passed'); process.exit(fails ? 1 : 0);

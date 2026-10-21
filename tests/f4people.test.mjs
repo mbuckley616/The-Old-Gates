@@ -84,14 +84,17 @@ const far = await page.evaluate(() => { const t = WORLD.siteAnywhere('dunmore');
 check('from 70 m every body past the middle range is on the cheap level', far.n >= 1 && far.cheap === far.n, far);
 
 // pictures: the square, a market, a crowd at 60 m, an inn's common room
-const shoot = async (name, fn) => { await page.evaluate(fn); for (let i = 0; i < 6; i++) { await page.evaluate(() => tickPeople(1 / 60, performance.now())); await g.frames(1); } await page.screenshot({ path: path.join(OUT, name) }); };
+// S1224: a frame of the square with its bodies whole takes 7 to 21 s here on software GL and about five times that on a CI runner, so
+// the harness's 120 s a picture (S808) ran out on the square twice in a row (#513's run); the pictures get 300 s
+const SHOT_MS = 300000;
+const shoot = async (name, fn) => { await page.evaluate(fn); for (let i = 0; i < 6; i++) { await page.evaluate(() => tickPeople(1 / 60, performance.now())); await g.frames(1); } await page.screenshot({ path: path.join(OUT, name), timeout: SHOT_MS }); };
 await shoot('f4-square.jpg', () => { const t = WORLD.siteAnywhere('dunmore'); px = t.x; pz = t.z + 4; yaw = 0; pitch = -.06; });
 await shoot('f4-market.jpg', () => { const r = [...HB_RIGS].filter(r => r.hb && r.root.visible && r.root.parent === WORLD.scene).sort((a, b) => Math.hypot(a.root.position.x - px, a.root.position.z - pz) - Math.hypot(b.root.position.x - px, b.root.position.z - pz))[0];
   const p = r.root.position, fy = r.root.rotation.y; px = p.x + Math.sin(fy) * 3; pz = p.z + Math.cos(fy) * 3; yaw = Math.atan2(-(p.x - px), -(p.z - pz)); pitch = -.08; });
 // the middle level close up beside the whole body: the market's person from 3 m (near 0 shows the bake; then restored)
 for (const [name, near] of [['f4-whole.jpg', 16], ['f4-baked.jpg', 0]]) {
   await page.evaluate((near) => { HBODY.near = near; }, near); for (let i = 0; i < 4; i++) { await page.evaluate(() => tickPeople(1 / 60, performance.now())); await g.frames(1); }
-  await page.screenshot({ path: path.join(OUT, name), clip: { x: 440, y: 120, width: 400, height: 480 } }); }
+  await page.screenshot({ path: path.join(OUT, name), clip: { x: 440, y: 120, width: 400, height: 480 }, timeout: SHOT_MS }); }
 await page.evaluate(() => { HBODY.near = 16; });
 await shoot('f4-crowd60.jpg', () => { const t = WORLD.siteAnywhere('dunmore'); px = t.x; pz = t.z + 60; yaw = 0; pitch = -.03; });
 const inn = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'); const h = S.houses.find(x => x.type === 'inn') || S.houses[0]; px = h.exitX; pz = h.exitZ; goToInterior(h); return h.type; });
@@ -100,7 +103,7 @@ await page.evaluate(() => { HBODY.last = -1e9; }); // the ticks above ran on mad
 for (let k = 0; k < 12; k++) { await g.frames(1); await page.evaluate(() => tickPeople(1 / 60, performance.now())); }
 const room = await page.evaluate(() => { const rs = [...HB_RIGS].filter(r => r.root.parent === scene);
   return { inside: isInterior(), people: rs.length, built: rs.filter(r => r.hb).length }; });
-await page.screenshot({ path: path.join(OUT, 'f4-inn.jpg') });
+await page.screenshot({ path: path.join(OUT, 'f4-inn.jpg'), timeout: SHOT_MS });
 check('in the inn\'s common room the keeper and the drinkers wear the builder\'s bodies too', room.inside && room.people >= 1 && room.built === room.people, { inn, ...room });
 check('no page errors', g.errs.length === 0, g.errs.slice(0, 3));
 await g.close();
@@ -110,4 +113,20 @@ const g2 = await boot({ look: 'new' }); await dunmore(g2);
 const g2genomes = await g2.page.evaluate((keys) => Object.fromEntries(keys.map(k => [k, HB_GENOMES.has(k) ? JSON.stringify(HB.toSaved(HB_GENOMES.get(k))) : null])), who.sample);
 const same = who.sample.filter(k => g2genomes[k] === genomes[k]).length;
 check('on a second boot each of them is the same person (the same genome from the same place and name)', same === who.sample.length && same >= 4, { same, of: who.sample.length });
+// S1224 (card F4): the near level's cost where the crowd is thickest. At 18h, the most of Dunmore's people within 16 m of one of them
+// (seven, Session 1224); 6 m off their middle, every body within 46 m built, the frame at the middle quality looking four ways
+const crowd = await g2.page.evaluate(() => { forceTime(18); for (let i = 0; i < 120; i++) WORLD.tick(1 / 60, performance.now());
+  let rs = [...HB_RIGS].filter(r => r.root.parent === WORLD.scene && r.root.visible), P = rs.map(r => [r.root.position.x, r.root.position.z]);
+  let best = 0, at = null; for (const [x, z] of P) { const n = P.filter(([a, b]) => Math.hypot(a - x, b - z) < 16).length; if (n > best) { best = n; at = [x, z]; } }
+  const near = P.filter(([a, b]) => Math.hypot(a - at[0], b - at[1]) < 16), cx = near.reduce((s, p) => s + p[0], 0) / near.length, cz = near.reduce((s, p) => s + p[1], 0) / near.length;
+  px = cx; pz = cz + 6; for (let i = 0; i < 30; i++) WORLD.tick(1 / 60, performance.now());
+  { const t1 = performance.now(); while (JOBS.length && performance.now() - t1 < 30000) runJobs(); }
+  pitch = -.05; CAM.position.set(px, worldH(px, pz) + 1.65, pz); CAM.rotation.set(pitch, 0, 0, 'YXZ'); CAM.updateMatrixWorld(true);
+  const want = () => [...HB_RIGS].filter(r => !r.hb && !r.hbFail && r.root.parent === WORLD.scene && r.root.visible && Math.hypot(CAM.position.x - r.root.position.x, CAM.position.z - r.root.position.z) < HBODY.build).length;
+  let k = 0; while (want() && k++ < 200) tickPeople(1 / 60, 1e5 + k * (HBODY.gap + 1));
+  SETTINGS.quality = 1; rs = [...HB_RIGS].filter(r => r.hb && r.root.parent === WORLD.scene && r.root.visible);
+  const views = [0, Math.PI / 2, Math.PI, -Math.PI / 2].map(yw => { yaw = yw; CAM.rotation.set(pitch, yaw, 0, 'YXZ'); CAM.updateMatrixWorld(true); tickPeople(1 / 60, 4e5); REN.render(scene, CAM); return REN.info.render.calls; });
+  return { most16: best, built: rs.length, left: want(), near: rs.filter(r => r.hb.L === 0).length, views, worst: Math.max(...views) }; });
+console.log('  crowd:', JSON.stringify(crowd));
+check(`where Dunmore's crowd is thickest (${crowd.most16} people within 16 m, ${crowd.near} bodies whole), the frame stays under 1,000 draw calls every way you look (${crowd.worst})`, crowd.left === 0 && crowd.most16 >= 4 && crowd.near >= 4 && crowd.worst < 1000, crowd);
 await g2.close();

@@ -1216,14 +1216,15 @@ function ragdollFoe(e,tag,ground,solid){
 // the quilt drawn up over it to the neck, draped on the body's shape (a height field over the bed, the cloth falling off the body
 // at about 50°), hanging over the sides and the foot. One mesh, 1,000-odd triangles, built once; personRise takes it away.
 const SLEEP_BED=(k=>({L:1.5*k,W:.86*k,TOP:.42*k,SIDE:.255*k}))(SCALE.ROOM_K); /* S896 (F2a) — the kit's bed as the rooms build it, at true size (×1.444) */const SLEEP_LID=[new THREE.SphereGeometry(.0178,10,6),new THREE.BoxGeometry(.03,.0016,.004)];
-function personSkinPts(rig){const mesh=rig.mesh,geo=rig.geoHi||mesh.geometry,sk=mesh.skeleton;rig.root.updateMatrixWorld(true);sk.update();
+function personSkinPts(rig){if(rig.hb)return hbSkinPts(rig);const mesh=rig.mesh,geo=rig.geoHi||mesh.geometry,sk=mesh.skeleton;rig.root.updateMatrixWorld(true);sk.update();
   const M=sk.boneMatrices,P=geo.attributes.position.array,SI=geo.attributes.skinIndex.array,SW=geo.attributes.skinWeight.array,E=mesh.matrixWorld.elements,n=P.length/3,out=new Float32Array(n*3);
   for(let i=0;i<n;i++){const x=P[i*3],y=P[i*3+1],z=P[i*3+2];let tx=0,ty=0,tz=0;
     for(let k=0;k<4;k++){const w=SW[i*4+k];if(!w)continue;const o=SI[i*4+k]*16;tx+=w*(M[o]*x+M[o+4]*y+M[o+8]*z+M[o+12]);ty+=w*(M[o+1]*x+M[o+5]*y+M[o+9]*z+M[o+13]);tz+=w*(M[o+2]*x+M[o+6]*y+M[o+10]*z+M[o+14]);}
     out[i*3]=E[0]*tx+E[4]*ty+E[8]*tz+E[12];out[i*3+1]=E[1]*tx+E[5]*ty+E[9]*tz+E[13];out[i*3+2]=E[2]*tx+E[6]*ty+E[10]*tz+E[14];}
   return out;}
 function personLie(m,bed){const rig=m&&m.userData.rig;if(!rig||!m.parent)return false;personRise(m);
-  for(const k in rig.w)rig.w[k]=0;rig.w.sleep=1;rig.sleep=true;pwApply(rig,pwSleep(0,pwOpts(rig)));
+  for(const k in rig.w)rig.w[k]=0;rig.w.sleep=1;rig.sleep=true;rig.bed=bed;pwApply(rig,pwSleep(0,pwOpts(rig)));
+  if(rig.hb){hbPose(rig);hbEyes(rig,true);} /* S1224 (F4) — the builder's body is the one fitted to the bed and draped, its eyes shut */
   const B=SLEEP_BED,y0=bed.y||0;m.rotation.set(-Math.PI/2,Math.PI/2,0);m.position.set(bed.x,y0,bed.z);
   let pts=personSkinPts(rig),x0=1e9,x1=-1e9,ym=1e9,zm=1e9;
   for(let i=0;i<pts.length;i+=3){x0=Math.min(x0,pts[i]);x1=Math.max(x1,pts[i]);ym=Math.min(ym,pts[i+1]);zm=Math.min(zm,pts[i+2]);}
@@ -1255,7 +1256,8 @@ function personLie(m,bed){const rig=m&&m.userData.rig;if(!rig||!m.parent)return 
   return true;}
 function personRise(m){const rig=m&&m.userData.rig,cv=m&&m.userData.cover;if(cv){if(cv.parent)cv.parent.remove(cv);cv.geometry.dispose();m.userData.cover=null;}
   if(rig&&rig.lids){rig.lids.parent&&rig.lids.parent.remove(rig.lids);rig.lids.userData.mats.forEach(x=>x.dispose());rig.lids=null;}
-  if(rig&&rig.sleep){rig.sleep=false;for(const k in rig.w)rig.w[k]=0;rig.w.idle=1;}}
+  if(rig&&rig.sleep){rig.sleep=false;for(const k in rig.w)rig.w[k]=0;rig.w.idle=1;}
+  if(rig&&rig.hb)hbEyes(rig,false);}
 function tickPeople(dt,now){
   if(RAGDOLLS.size)tickRagdolls(dt); // S419 — the fallen
   for(const rig of PEOPLE_RIGS){
@@ -1272,7 +1274,9 @@ function tickPeople(dt,now){
       const lod=rig.lod?(cd>PEOPLE_LOD.near?1:0):(cd>PEOPLE_LOD.far?1:0);
       if(lod!==rig.lod){rig.lod=lod;rig.mesh.geometry=lod?rig.geoLo:rig.geoHi;}}
     let d=rig.lx==null?0:Math.hypot(at.x-rig.lx,at.z-rig.lz);rig.lx=at.x;rig.lz=at.z;
-    if(d>1.5)d=0; // a teleport, not a stride
+    // a teleport, not a stride: a jump, or more than 12 m/s, which no one walks or runs (S1223: the town's schedule moving someone on
+    // through a hitch, or ticks with no tickPeople between, read as one step of a metre in a frame and latched the run for half a second)
+    if(d>1.5||(dt>0&&d/dt>12))d=0;
     const spd=dt>0?d/dt:0,s=(root.scale.x||1)*(rig.foe?(top.scale.x||1):1);
     rig.phase=(rig.phase+d/(pwCycle(rig.w)*s))%1;
     // walk or run by the pace, smoothed over a few frames, in heights a second
@@ -1363,6 +1367,15 @@ function hbFoeGenome(rig){const g=rig.g,dr=FOE_DRESS[rig.hbFoe]||{},id=rig.e&&ri
   const h=dr.cloth!=null?dr.cloth:0x3a3a3a,c=[(h>>16&255)/255,(h>>8&255)/255,(h&255)/255];
   G.dress=Object.assign({},G.dress,{tunic:c,spear:null,staff:null,crossbow:null,basket:null,basketCloth:null,shield:null,chair:null,apron:null,bib:null,cape:null,coat:null,scarf:null,wrap:null},(HB_FOE_DRESS[rig.hbFoe]||(()=>({})))(c));
   HB_GENOMES.set(key,G);return G;}
+// S1224 — named (keyFoe), a foe rolls its genome at once, and the driver's two baked copies take its colours: the skin, the hair, the
+// tunic, the legs and the boots, from a bake of the same shape in the genome's colours (the vertices are the same, so only the colour
+// attribute is copied). Rolled at the first attach instead (S1201), the driver beyond 42 m kept the old genome's colours, and a foe's
+// skin and hair changed at the line every time it crossed it.
+function hbFoeKeyed(rig,e){if(!hbOn()||!HB_RIGS.has(rig)||rig.hbG||!rig.hbFoe||!e||e.id==null)return;rig.e=rig.e||e;
+  try{rig.hbG=hbFoeGenome(rig);}catch(err){rig.hbFail=true;console.warn('F4: no genome for the foe',rig.hbFoe,err);return;}
+  const g=Object.assign({},rig.g);hbTint(g,rig.hbG);
+  for(const [geo,q] of [[rig.geoHi,1],[rig.geoLo,PEOPLE_LOD.q]]){if(!geo)continue;const b=personBake(g,q),c=b.geo.attributes.color,o=geo.attributes.color;
+    if(c&&o&&c.count===o.count){o.array.set(c.array);o.needsUpdate=true;}else console.warn('F4: the tinted bake does not match the foe',rig.hbFoe);b.geo.dispose();}}
 // a garment's material carries its weave and cut in onBeforeCompile, which Material.copy leaves behind: a foe's corpse is darkened by
 // cloning every material on it (killE, killZoneEnemy), so the builder's materials clone with their shaders
 function hbClone(){const c=new this.constructor().copy(this);c.onBeforeCompile=this.onBeforeCompile;c.customProgramCacheKey=this.customProgramCacheKey;c.clone=hbClone;return c;}
@@ -1413,7 +1426,21 @@ function hbAttach(rig){const tA=performance.now();let P;
   // hand on a shield's grip (closeFist); a shield closes the left hand too
   for(const o of [rig.weapon,rig.shieldKit]){if(!o||!o.parent)continue;const sd=o===rig.weapon?(o.parent===B.wrL?'L':'R'):'L';hbCloseFist(by,sd);
     rig.hb.held.push({o,par:o.parent,m0:o.matrix.clone().compose(o.position,o.quaternion,o.scale),f:o===rig.weapon?[2,3,4,5].map(f=>by[`finger${f}-2.${sd}`]).filter(Boolean):null,sd});}
+  // S1224 — one already asleep when the body comes (it is built after the room, so a sleeper always is) is laid again by its own shape:
+  // the builder's head is longer than the driver's, and laid by the driver's shape its head bone sat 6 cm past the mattress's end, in the headboard, under the driver's quilt
+  if(rig.sleep&&rig.bed&&rig.root.parent)personLie(rig.root,rig.bed);
   HBODY.ms+=performance.now()-tA;HBODY.n++;}
+// S1224 — the builder's body as points in the world, for the bed (personLie): its middle level's vertices that a triangle uses (the whole
+// body baked, less the hair's cards and what a garment's cut discards), each skinned on the CPU by the posed bones
+function hbSkinPts(rig){const H=rig.hb,mid=H.mid,G=mid.geometry,pa=G.attributes.position,v=new THREE.Vector3();
+  if(!H.used){const u=new Uint8Array(pa.count),ix=G.index.array;for(let i=0;i<ix.length;i++)u[ix[i]]=1;const a=[];for(let i=0;i<u.length;i++)if(u[i])a.push(i);H.used=Uint32Array.from(a);}
+  rig.root.updateMatrixWorld(true);const out=new Float32Array(H.used.length*3);
+  for(let k=0;k<H.used.length;k++){v.fromBufferAttribute(pa,H.used[k]);mid.applyBoneTransform(H.used[k],v);out[k*3]=v.x;out[k*3+1]=v.y;out[k*3+2]=v.z;}
+  return out;}
+// a sleeper's eyes shut: each eyeball (people.js's, a sphere on the head bone) in a lid of the skin's tone, as the driver's lids are
+function hbEyes(rig,shut){const H=rig.hb;if(!H.eyes){H.eyes=[];H.P.byName.head.traverse(o=>{if(o.isMesh&&o.parent===H.P.byName.head&&o.geometry.type==='SphereGeometry')H.eyes.push({o,m:o.material});});}
+  if(shut&&!H.lid)H.lid=new THREE.MeshStandardMaterial({color:new THREE.Color(rig.g.skin).multiplyScalar(.9),roughness:.86});
+  for(const e of H.eyes)e.o.material=shut?H.lid:e.m;}
 // people.js's closeFist: the four fingers' joints bent 1.15, 1.35 and .95 rad about the knuckles' line in the metacarpal's frame
 function hbCloseFist(by,sd){const n=k=>by[k];if(!n(`finger2-1.${sd}`)||!n(`finger5-1.${sd}`)||!n(`metacarpal2.${sd}`))return;
   const at=k=>new THREE.Vector3().setFromMatrixPosition(n(k).matrixWorld);by.root.parent.updateMatrixWorld(true);
@@ -1472,7 +1499,7 @@ function hbMerge(P,skip){const sk=P.skeleton,bones=sk.bones,bi=new Map(bones.map
   G.setAttribute('color',new THREE.Float32BufferAttribute(col,3));G.setAttribute('skinIndex',new THREE.Uint16BufferAttribute(si,4));G.setAttribute('skinWeight',new THREE.Float32BufferAttribute(sw,4));G.setIndex(idx);
   const mesh=new THREE.SkinnedMesh(G,HB_MID_MAT);mesh.name='mid';mesh.bind(sk,new THREE.Matrix4());mesh.bindMode='detached';mesh.bindMatrixInverse.identity();
   mesh.castShadow=false;mesh.receiveShadow=true;mesh.visible=false;return mesh;}
-function hbDrop(rig){const H=rig.hb;if(!H)return;hbGive(rig);if(H.root.parent)H.root.parent.remove(H.root);
+function hbDrop(rig){const H=rig.hb;if(!H)return;hbGive(rig);if(H.eyes)for(const e of H.eyes)e.o.material=e.m;if(H.lid)H.lid.dispose();if(H.root.parent)H.root.parent.remove(H.root);
   H.root.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material&&o.material!==HB_MID_MAT){const ms=Array.isArray(o.material)?o.material:[o.material];for(const m of ms){if(m.map&&m.map.isCanvasTexture&&o.parent===H.P.byName.head)m.map.dispose();m.dispose();}}});
   if(H.P.skeleton.boneTexture)H.P.skeleton.dispose();rig.hb=null;rig.mesh.visible=true;}
 // each frame, after the driver is posed: the level by distance, the pose copied, and at most one new body built

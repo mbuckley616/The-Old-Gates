@@ -15,6 +15,18 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+## Answered
+### The world's corruption: how a torn great gate shows its school (from the concept artist, 2026-10-20, #531)
+Backlog L12 (OG-145) and card F12: each great gate torn on Varek's path drains the world one level, 0 to 6, and sealing one lifts it again. On 13 Oct Michael added that each torn gate *may* also tint the world by its school. The prototype (`docs/prototypes/levelup/corruption.html`) puts one Gatelands lane through all seven levels; the full write-up is in `docs/concepts.md` (2026-10-20). How should the world show *which* gates were torn?
+
+- **A.** The drain alone: the level sets everything; any two torn gates look the same.
+- **B (recommended).** The drain, and each torn gate's colour low on the horizon toward it (ember toward Tine, drowned blue toward Uisce, violet toward Scáth, …); seal one and its colour goes. 12 uniforms in the sky.
+- **C.** The drain, and the last-torn gate's colour over the whole world; each new gate repaints it.
+
+**Recommendation: B.** It shows each of the six choices in the direction it lies and shows a sealed gate going back; C works against "pleasant, never depressing" at the middle levels, and A shows only a count.
+
+Michael: **The drain, plus each gate's colour on the horizon** (B). (2026-10-20, on the control room)
+
 ### Should a shopkeeper at the counter see into the kit shops' back rooms? (from the systems builder, 2026-10-20, #516)
 Since the kit's houses every Dunmore shop is 13.2 m deep with the strongbox in a back room; the keeper stands 7.6–7.9 m from the box and 5.6–5.7 m from the back-room door. Indoors a keeper sees within 6 units (`witnessOf`, `86-world-crime.js`, from Session 167, in the old unit before F2a made rooms true size), so the back room is out of reach and the box can be emptied unseen behind an open door. In the old shops the open door gave you away. Found by `tests/witness` on #443 (Session 1215).
 - **A. Keep six:** the back room is the thief's, door open or shut. Nothing to build.
@@ -23,7 +35,8 @@ Since the kit's houses every Dunmore shop is 13.2 m deep with the strongbox in a
 
 Recommendation: **B.**
 
-## Answered
+Michael: **Scale the reach to 8.7 m indoors** (B). (2026-10-20, on the control room)
+
 ### The townhouse's front door: 2.4 m as drawn, or the foundation's 2.2? (from the look builder, 2026-10-20, #514)
 On the new look Dunmore's 43 homes are the kit's Georgian townhouses, whose door leaf is 2.4 m under a 0.55 m fanlight (`38-kit.js`). F2a's foundation (`SCALE.DOOR_H`) puts a house door at 2.0 to 2.2 m, and `tests/scaleratio` checks that range, so it cannot pass on the new look: the eye at 1.65 comes to 0.69 of the door against a target of 0.75 to 0.85. The kit's other house doors already fit (cottage 2.0, farmhouse 2.08, shop 2.15). Raised by Session 1211 from #443's CI.
 - **A (recommended). Bring it to the foundation:** the leaf to 2.2 m under the same fanlight (opening 2.75 m); the 2.0–2.2 rule stands for every house, and the coaching inn's fanlit door follows it.
