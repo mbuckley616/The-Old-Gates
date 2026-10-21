@@ -110,7 +110,7 @@ console.log('boarding', JSON.stringify(fight), JSON.stringify(fought), JSON.stri
 check(`aboard her, the crew (${fight.crew}) cut down by your own swings (${swings}), her deck is yours: the step is "report"`, fight.boarded && left === 0 && s5.step === 'report' && s5.qdone, { fight, swings, s5 });
 
 // 6. back at a harbour, Corwin pays
-await page.evaluate((id) => { const p = WORLD.siteAnywhere(id); px = p.x; pz = p.z; }, there.id);
+await page.evaluate((id) => { const p = WORLD.siteAnywhere(id); px = p.x; pz = p.z; }, there.id); await g.settle(there.id);
 const c6 = await corwin();
 const lvl = await page.evaluate(() => level);
 const g6 = await page.evaluate(() => gold);

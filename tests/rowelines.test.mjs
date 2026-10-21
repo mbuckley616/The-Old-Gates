@@ -19,10 +19,13 @@ const at = async (x, z) => { await page.evaluate(([x, z]) => { const x0 = px, z0
   for (let k = 1; k <= n; k++) { px = x0 + (x - x0) * k / n; pz = z0 + (z - z0) * k / n; jumpY = 0; for (let i = 0; i < 3; i++) WORLD.tick(1 / 60, performance.now()); } }, [x, z]); };
 const tick = (n) => page.evaluate((n) => { for (let i = 0; i < n; i++) WORLD.tick(1 / 60, performance.now()); }, n);
 const setLine = (fk, done, rank) => page.evaluate(([fk, done, rank]) => { const F = WORLD.fstate(); for (const k in F) { if (F[k].active) { F[k].active.done = true; F[k].active.turnedIn = true; } Object.assign(F[k], { done: 0, rank: 0, active: null, closed: false }); } Object.assign(F[fk], { done, rank }); }, [fk, done, rank]);
-const say = async (open, re) => { await page.evaluate((open) => { try { if (dlgOpen) closeDialog(); } catch (e) {} if (open) openDialog(window._lord); }, open); await g.frames(2);
+// openDialog writes the line and the choices at once; wait for them, not for two frames (a frame in a town on the new look takes
+// ten seconds and more on software GL). One real frame still follows the click, for anything the loop does with the answer.
+const say = async (open, re) => { await page.evaluate((open) => { try { if (dlgOpen) closeDialog(); } catch (e) {} if (open) openDialog(window._lord); }, open);
+  if (open) await page.waitForFunction(() => dlgOpen && document.querySelectorAll('#dlg-choices > *').length > 0, null, { timeout: 60000 });
   const labels = await page.evaluate(() => [...document.querySelectorAll('#dlg-choices > *')].map(x => x.textContent.trim().replace(/^\d+\.\s*/, '')));
   const clicked = re ? await page.evaluate((src) => { const b = [...document.querySelectorAll('#dlg-choices > *')].find(x => new RegExp(src).test(x.textContent.trim().replace(/^\d+\.\s*/, ''))); if (b) b.click(); return !!b; }, re.source) : false;
-  await g.frames(2); const said = await page.evaluate(() => (document.getElementById('dlg-text') || {}).textContent || '');
+  await g.frames(1); const said = await page.evaluate(() => (document.getElementById('dlg-text') || {}).textContent || '');
   await page.evaluate(() => { try { if (dlgOpen) closeDialog(); } catch (e) {} }); return { labels, clicked, said }; };
 const meet = async (getter, re) => { const ok = await page.evaluate((src) => { const n = (new Function('return ' + src))(); if (!n) return false; window._n = n; n._scared = performance.now() + 1;
     const dx = Math.sin(n.g.rotation.y), dz = Math.cos(n.g.rotation.y); px = n.g.position.x + dx * 1.3; pz = n.g.position.z + dz * 1.3; jumpY = n.g.position.y; yaw = Math.atan2(dx, dz); pitch = 0;

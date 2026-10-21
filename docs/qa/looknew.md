@@ -208,7 +208,7 @@ Started 15 Oct 2026 (QA run of 18:51 UTC, main 0773903 plus Sessions 946–949).
 | `questfoes` | 2/14 | pass | pass | 275 |  |
 | `questtargets` | 7/14 | pass | pass | 190 |  |
 | `ragdoll` | 2/14 | pass | pass | 160 |  |
-| `ragdollsearch` | 5/14 | pass | pass | 40 |  |
+| `ragdollsearch` | 5/14 | pass | **red** (main, run 2337, failed twice) | 110 | Two the game's, one the suite's (Session 1254): the builder's cloak stands where a fallen Bandit stood (bodies builder, `js/32-people.js`); a corpse's bones are cached before its body attaches (systems builder, `bodyAimed`); the suite killed the foe before its body was on (fixed on `auto/wip-ragdollsearch`, lands with the cloak's fix). Backlog I. |
 | `raisevarek` | 3/14 | pass | pass | 42 |  |
 | `reader` | 8/14 | pass | pass | 257 |  |
 | `register` | 2/14 | pass | pass | 70 |  |
@@ -220,8 +220,10 @@ Started 15 Oct 2026 (QA run of 18:51 UTC, main 0773903 plus Sessions 946–949).
 | `riversail` | 1/14 | pass | pass | 62 |  |
 | `roadseed` | 7/14 | pass | pass | 103 |  |
 | `rocks` | 4/14 | pass | pass | 55 |  |
+| `rowelines` | 17/20 (CI) | pass | pass, 544 s (was killed at 900 s twice on main, run 2337) | 544 | The suite's (Session 1254): its dialogue helper waited two rendered frames after opening and two after each click, 48 frames at about 14 s a frame in a town; it now waits for the choices, and one frame after the click. |
 | `sackseed` | 9/14 | pass | pass | 36 |  |
 | `sailtrim` | 5/14 | pass | pass | 57 |  |
+| `saltwater` | 10/20 (CI) | pass | pass, 700 s (was killed at 900 s twice on main, run 2337) | 700 | The suite's (Session 1254): the last step jumped from Camuros back to Carrigshane with no `g.settle`, so the new ring of cells built on rendered frames (about 9.5 min); it now settles there as every other jump does. |
 | `savelabel` | 3/14 | pass | pass | 59 |  |
 | `savepic` | 4/14 | pass | pass | 67 |  |
 | `saveretry` | 6/14 | pass | pass | 56 |  |
