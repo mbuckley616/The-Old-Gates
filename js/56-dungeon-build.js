@@ -492,18 +492,21 @@ function furnBuild(THREE, SK) {
     [0x7a2020, 0x203a6a, 0x6a5a20, 0x2a4a2a].forEach((c, k) => { const z = 2.6 + k * .75; if (z < A.zEnd - .35) p.put(wallShield(['round', 'kite', 'round', 'kite'][k], c, s + 5 + k), W - .02, z, -Math.PI / 2, 1.0); });
     p.put(armourBench(n, s + 9), A.bench, 1.6, 0);
     return p; }
-  function apothecary(W, D, H, n, seed) { const p = Parts(), s = seed || 1;
-    [.62, .99, 1.36].forEach((y, i) => p.put(shelf(W - 1.6, n, s + i, 'potions'), W / 2, 0, 0, y));
+  function apothecary(W, D, H, n, seed, back) { const p = Parts(), s = seed || 1;
+    /* S1258 — back: the keeper's room stands behind the north wall, its door at the west end, so the shelves leave that end clear */
+    [.62, .99, 1.36].forEach((y, i) => p.put(shelf(back ? W - 3.0 : W - 1.6, n, s + i, 'potions'), back ? W / 2 + .7 : W / 2, 0, 0, y));
     for (let x = 1.5, k = 0; x < W - 1; x += 1.2, k++) p.put(herbBundle(.3 + (k % 3) * .08, s + 10 + k), x, D * .55, 0, H);
     p.put(still(n, s + 4), W - 1.6, 1.8, 0);
     p(lathe([[.001, 0], [.07, 0], [.08, .06], [.07, .1], [.05, .1], [.04, .03], [.001, .03]], 12), 0x8a8478, W / 2 + 1.2, .69, 3.0);
     p(SK.cyl(.012, .016, .16, 6), 0x9a8a70, W / 2 + 1.22, .79, 3.0, 0, 0, .5);
     return p; }
-  function goods(W, D, H, n, seed) { const p = Parts(), s = seed || 1;
+  function goods(W, D, H, n, seed, back) { const p = Parts(), s = seed || 1;
     for (let k = 0; k < 3; k++) p.put(crate(.5, n, s + k), 1.0 + k * .9, 1.0, (k - 1) * .15);
     p.put(crate(.45, n, s + 3), 1.45, 1.0, .3, .5);
-    for (let k = 0; k < 3; k++) p.put(sack(s + 4 + k, [0xb8a070, 0x9a8a60, 0xc0b080][k]), W - .6 - k * .65, D - 3.9, k * .7); /* S896 — east of the partition door's swing */
-    [.62, 1.05].forEach((y, i) => p.put(shelf(W - 2, n, s + 8 + i, 'mixed'), W / 2, 0, 0, y));
+    /* S1258 — back: the keeper's room stands behind the north wall, its door at the east end; the shelves leave that end clear and
+       the sacks stand by the street door, east of it */
+    for (let k = 0; k < 3; k++) p.put(sack(s + 4 + k, [0xb8a070, 0x9a8a60, 0xc0b080][k]), back ? W - .5 - k * .55 : W - .6 - k * .65, back ? D - .9 : D - 3.9, k * .7); /* S896 — east of the partition door's swing */
+    [.62, 1.05].forEach((y, i) => p.put(shelf(back ? W - 2.7 : W - 2, n, s + 8 + i, 'mixed'), back ? W / 2 - .35 : W / 2, 0, 0, y));
     p.put(scales(s + 11), W / 2 + Math.min(1.4, W * .25 - .3), 3.0, 0, .69);
     return p; }
   // ── S512: the barber and dyer (Michael's B on #144), from the Session 505 prototype ──
