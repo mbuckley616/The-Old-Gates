@@ -978,3 +978,54 @@ In today's game (the old look, the default), nothing new, and no new lines in ba
 ### Backlog notes (not changed)
 - I: the *Sailing playtest* block (line 370) is all struck and could close (ninth run noted).
 - My last entry's CLAUDE.md note is stale: CLAUDE.md now says 46 files, and there are 46.
+
+## 2026-10-21 — Portclare on the new look, now the default: the square at noon and midnight, a townsperson close, Fionnuala's Stores, a bed at The Wayfarer, five strongboxes by day, a lock picked at 23h, a Bandit and a Wolf stood still against (build s782, read to Session 1240)
+
+Build s782 is main at `f3b9955`. My last entry reviewed the new look, so this run plays, and it is the first play since Session 1226 made the new look the default. `npm install` exits 0 and `export` passes 6/6. Eleven boots, all on three.js 0.170 (`OG_LOOK` 'new', `THREE.REVISION` 170), with no page error in any of them. A new character reaches the world in about 40 s. I played Portclare, because the last six runs that played went to Dunmore and Portclare had not been seen on the new look. Cheats, all named: `settle('portclare')`, `forceTime`, teleports to doors, `gold` set to 60, picks put in the bag, a fight driven on the loop's own tick at 1/60 with the draw off (as `fistfight` does), and the camera turned with the harness's `lookAtPt`.
+
+Session 1226 put twenty suites on the skip list, so nothing in CI guards their features now. Four of them are things a player does in a town: `theft`, `penance`, `signs` and `wanderface`. I played the first three by hand.
+
+**What was wrong**
+
+*You walk into a kit shop through the keeper's bedroom* (all five of Portclare's kit shops: Olivier's Smithy, Bébinn's Physic, Fionnuala's Stores, Odhrán's Stores, Amaury's Stores). The street door is in the south wall (z = D). `intArrivalZ` puts you 2.2 m inside it, at z = 11.0 of 13.2. `buildInteriorFor` builds the keeper's room across that same end: the partition is at D − 3.2 in the room's old unit (8.58 m), and its door is at x = W·0.3. So you arrive in a room 4.6 m deep with the keeper's bed down the east wall, the strongbox in the corner at (7.09, 9.23), a rug and a lamp. The partition is 2.1 m ahead of you, and the counter and the keeper are beyond its door, 7.8 m away and out of sight. Pictures: `critic/2026-10-21-portclare-shop-entry.png` (what you see when you enter: the partition fills the view), `-shop-entry-box.png` (the bed and the strongbox, a step from the street door), `-shop-entry-behind.png` (turned round: the street door, with the bed beside it), `-shop-counter-back.png` (from the counter: the partition and its shut door between the keeper and the street). Steps: `settle('portclare')`, `forceTime(13)`, `goToInterior` on any of the five shops, and read `px, pz` against `WORLD.intDoors[0]` and `intNPCMesh`.
+
+The thief is the one who gains. At 13h, with every keeper at the counter, I picked all five strongboxes from where you arrive. None of the five keepers saw it: the line from keeper to box is blocked in every shop. The town fined nothing, favour stayed at 0, and the five boxes gave 54, 34, 39, 42 and 31 gold, 200 in all, in the first minute of the first town. Session 1240's Slack post found the same thing in Dunmore's seven kit shops ("the strongbox is still out of the counter's sight … it would take a layout change") and asked the producer to route it. The layout change it needs is this one: put the keeper's room at the north end, away from the street door. Then you enter onto the shop floor, the counter faces you, and 1240's 8.7 m reach through an open door does what #516 B meant. I could not find when the room came to sit at the door's end. The code has had the partition at `D-3.2` and the arrival at `D-2.2` since at least S896. For the look builder (rooms for generated buildings, `buildInteriorFor`, `js/83-world-generator.js`); backlog I.
+
+*Under the back room's lamp a keeper's tunic reads as bare skin and his hands burn white* (Odhrán's Stores, 13h). From the front at 1.6 m, Odhrán is right: dark purple tunic, belt, red hose, boots, his hands in skin tone (`-keeper-front.png`). From behind at 1.6 m, facing the shelves, the same tunic lit by the lamp reads as an even pinkish brown with no folds, like a bare back to the hips. Both hands are blown out to yellow-white, with orange edges (`-keeper-back.png`). The visible meshes are the builder's (`trousers, boots, tunic, skirt, belt, hair, beard`), and none has an emissive colour, so this is the room's light on the builder's cloth and skin, not the tell's glow. The same blow-out shows in The Wayfarer's taproom at 22h: the top right of the frame is a white-yellow patch of wall by a candle (`-inn-night.png`). My guess is the 0.170 light shim (×π, decay 1) on a point light within a metre. For the look builder (the rooms' lights) with the bodies builder's eye on the cloth; backlog I.
+
+*Róisín, the Harbour Reeve, at 2.4 m* (`-person-near.png`, the square at 13h, near level 0). Her red coat hangs open down the front over a skin-coloured strip from throat to belt, with a blue disc at the throat. Its hem and her yellow skirt end in ragged, dripping teeth. F4's card already owes "the cloak's open front at the middle level", but this is the near level. I cannot tell from a still whether the strip is a linen shirt or the body, so this goes under *Needs eyes*, not the backlog.
+
+**What worked**
+
+*The square.* Portclare at 12h, from the centre: 12 townsfolk out (the Harbour Reeve, the Harbourmaster, a guard, nine villagers), 0 of them standing in a solid, 13 of the 93 rigs on the builder's bodies once the queue was run. The street reads well on the new look: the stone church tower, the slate roofs, the sash windows and the lamp posts (`-square-12.png`). At 0h one person is out, Dáire the guard. The night has stars, the lamps light the road, and the windows are dark except two (`-square-0.png`). Frames on software GL: 5.4 to 7.5 s at noon, with one hitch of 42 s, and 4.6 to 9.3 s at midnight. Neither number says anything about Michael's machine. `REN.info` after a frame reads 4 calls and 6,280 triangles, which is the hands' pass after the world's, so the world's draw calls cannot be read that way. A test needs `lod`'s double render.
+
+*Signs.* Each of the nine buildings that should have a board has one, two faces reading its own name within 1.2 m of its door (18 faces). That passes `signs`' rule for Portclare; the suite's red is Dunmore's.
+
+*Talk.* Dáire's greeting is "You are here. You're a Gatelander, by the look of you…", from a culture's pool (`87-world-quests.js`, "by the loom"), with the seven topics in order. Odd for a guard at midnight, but it is the author's line.
+
+*Fionnuala's Stores.* The stock lists 14 rows, priced from 2 (Iron Arrow ×12) to 43 (Iron Robe). I bought the arrows for 2, and the counter offers 0 for the dozen back: the bundle rule of S366, not a leak.
+
+*The Wayfarer at 22h.* "No one else tonight. 11 gold. The first door on the right…". Yes: 60 → 49 gold, `worldState.rented` = room 0 until 24:00 tomorrow, and the log line is written. I slept 8 hours from 22:00 to 6:00, woke at full health and the game autosaved. The inn has two beds and no guest tonight, so Session 1224's sleeper was not there to see.
+
+*A lock picked at 23h* (Étaín's House, the first home). "Étaín saw you pick the lock." The fine was 25, a point owed, favour −1: exactly `penance`'s first check, which no suite runs now. I did not place a witness. The one who saw was the householder, inside her own house at 23h. Whether she should be awake at that hour is the S572 rule's to say, and I leave it as a question.
+
+*A Bandit and a Wolf, stood still against.* A fresh Warrior (130 health, the Wooden GreatClub, no armour named) who neither swings nor blocks dies to a Bandit in 3.8 to 8.3 s. Its lights land 19 to 27, its heavies 37 to 53, and a Wolf's blows land 13 to 37. These are Session 1136's numbers, and the old look gives the same, so nothing in the new look changed the fight. One thing for QA: an unkeyed Bandit, which is what `fistfight` and my first fights set down, swings `HlHlH` every time, three heavies in five, first blow heavy. That is because it rolls on its kind's name. Three keyed Bandits swung `HlHll`, `llHlH` and `lHlll`, near the one in four Michael chose. Every Bandit the game itself sets down is keyed (`keyFoe` at every `unlockFoe` in 83 and 87), so a player never meets the unkeyed rhythm. A suite that measures a fight on an unkeyed Bandit, though, measures a heavier one than the player meets.
+
+**The recent *Needs eyes*, from this run**
+
+- *1226 (the new look is the default):* confirmed on eleven boots: 0.170, no page errors, a new character in the world, a bed, a save, a fight.
+- *1215 and 1240 (the keeper's sight into the back room):* answered above. The back room is the room you walk into, so the reach rule cannot cover the box until the room is turned round.
+- *1201 and 1221 (the foes' line-up; a foe's distant copy in its colours):* not judged. I fought on the loop's tick with the draw off.
+- *1202 (the wolves' legs at speed):* not judged headless.
+- *1222 (the near level's cost in the crowd):* not measurable from `REN.info` after the frame (above). I have frame times only.
+- *1223 (townsfolk keep walking after a hitch):* needs real time. The 42 s hitch at noon did not leave anyone in a wall, and that is all I can say.
+- *1224 and 1227 (the sleeper, the breath):* no guest in The Wayfarer at 22h, so not seen.
+- *1213 (saveui's wait at the title):* not played.
+- *1198–1206, 1220, 1228–1239 (prototypes):* for the next new-look review.
+- *1209–1212, 1218:* suites and one name; nothing to play.
+
+### Backlog notes (not changed)
+- I: *Fourteen of Dunmore's house exits stand inside the next building* is unstruck, but Session 1216 (PR #521, `houseexits`) says it is fixed: 0 of 58 exits blocked.
+- I: *#443 waits on these: nine suites that fail on the new look*: #443 is closed for #529, and the line above it says the skip list replaced it.
+- I: *Six kit suites still check the old look by booting the default*: since Session 1226 every suite boots the new look, so this line is probably stale or QA's to re-read.
+- I: the *Sailing playtest* block is still all struck (tenth run noted).
