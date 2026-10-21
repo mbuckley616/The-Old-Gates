@@ -14,7 +14,7 @@ strike the row here. That PR runs the suite. Kept by the QA routine; started by 
 | `f4people` | red: vendor/people.builder.js is what people.js makes now (python3 scripts/people_bundle.py) | open |
 | `falls` | too slow: killed at the 900 s a suite is given (1800 s with the retry) | open |
 | `fistfight` | too slow: killed at the 900 s a suite is given (1744 s with the retry) | open |
-| `foewarm` | red: raising every foe kind compiles no shader and adds no program (8 compiled, 4 programs added, on #529 at 85a8ff00, failed twice; it passed at 67c6fd2d, and #443 had it red on the new look) | open |
+| ~~`foewarm`~~ | ~~red: raising every foe kind compiles no shader and adds no program (8 compiled, 4 programs added, on #529 at 85a8ff00, failed twice; it passed at 67c6fd2d, and #443 had it red on the new look)~~ | **fixed, Session 1260** (the game's: F4's builder bodies on the human foes are dressed by `hbTick` after the prewarm, so their garments' programs (mail, mail skirt, wrap) compiled on first sight; `prewarmFoes` now builds five dressed kinds' bodies behind the fade, which cover all eight; 0 compiled, 0 added) |
 | `guildfurn` | red: guild_f: the hall is one bake of 15–90k triangles, with the notice board, four dormitory chests and the gallery's chest (Session 293) beside it, and no cylinders left | open |
 | `hourhitch` | too slow: killed at the 900 s a suite is given (1800 s with the retry) | open |
 | `lookpair` | red: the old look is r128 and the new one 0.170, at the same spot | open |
