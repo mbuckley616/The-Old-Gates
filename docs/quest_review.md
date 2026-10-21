@@ -6,11 +6,12 @@ Every player-readable string added or changed in `index.html` and, since the spl
 
 | Branch | Reviewed to | Note |
 |---|---|---|
-| main | `c91bf97` | run 23: Sessions 1143–1190 (the kit's church and keep, the inn's taproom, the two-hit string, the guard's blow at the yield's line, F3's land) and my own Session 1092 merged (PR #414); clean. Run 22: auto/systems' Sessions 1104–1141 merged (the Spire Held's watch, the draft's own lines word for word; the shelf's *You take … from the shelf.*; the heavy blow and the feint, no line), the Look's kit sessions and the concept and QA merges; clean. Before that, run 21 to `5521ba1`: the Look sessions 1031–1053, the Quest builds 979–1030; clean |
+| main | `862f6075` | run 24: F3's land (the *Quality* row: Finding 33), F4's people and foes (the foes' dress table, the wolves' kit: no line a person reads), Systems 1218 (Finding 32 as written: *Bad Penny*), the look and bodies prototypes; one finding. Run 23 to `c91bf97`: Sessions 1143–1190 (the kit's church and keep, the inn's taproom, the two-hit string, the guard's blow at the yield's line, F3's land) and my own Session 1092 merged (PR #414); clean. Run 22: auto/systems' Sessions 1104–1141 merged (the Spire Held's watch, the draft's own lines word for word; the shelf's *You take … from the shelf.*; the heavy blow and the feint, no line), the Look's kit sessions and the concept and QA merges; clean. Before that, run 21 to `5521ba1`: the Look sessions 1031–1053, the Quest builds 979–1030; clean |
 | auto/systems | `2b0ee4e` | run 22: merged into main (PR #353), nothing ahead. Run 21 to `9b2f0e1`: Sessions 1061–1089; clean |
 | auto/fable-combat-resolver | `f1976a3` | run 20: merged into main, nothing ahead |
 | auto/fable-f2a-scale, auto/wip-fable-f2a-scale | `e82ad5c`, `a5a4667` | run 19: merged into main, nothing ahead |
 | auto/bodies, auto/backlog, auto/wip-town-plots, auto/producer, auto/producer-look, auto/producer-bodies, auto/producer-decisions, auto/qa, auto/qa-perkbody, auto/qa-skillcurve, auto/critic, auto/concept, auto/design, auto/wip-spear | `372b869`, `0272203`, `aa74c47`, `7a71e51`, `86f05bb`, `56e437c`, `570cd5e`, `db349a9`, `bac01b0`, `ff40184`, `92afe03`, `dc5902f`, `2b9d1d4`, `5a1b57d` | run 22: bodies (the wall hold) and backlog and wip-town-plots (the church, the bawn, the steward's route) add only the inspector's part names (*Church with a west tower*, *Bawn wall, gate and flankers*); auto/producer and auto/qa-skillcurve hold old merges of auto/systems read in runs 19–20; the rest nothing ahead of main in `js/` or `index.html` |
+| claude/new-look-1226, auto/look-1224, claude/look-443-1217, auto/look-1216, auto/bodies-1230, auto/qa-1225, ci/basic-tests | `af9e22f`, `7664f32`, `b871782`, `1cd807a`, `4928b7a`, `7140783`, `9b67be7` | run 24: open PRs. auto/look-1224 hangs the six gods' plates at the town church (*An Mhuir*, *An Spéir*, *Na Beithígh*, *An Chloch*, *An Teallach*, *An Fíodóir*, with their common names), as canon §4.1 has them; the rest add no player-readable text in `js/` or `index.html` |
 | auto/quests-build | `d7219d6` | run 23: merged into main (PR #414, 19 Oct), nothing ahead. Run 22: my own build, Session 1092 |
 | auto/fable-f3-land-2 | `2d2cb0f` | run 23: F3's second PR (#487); no player-readable text |
 | auto/wip-cloak-hang | `f4e973d` | run 17: nothing ahead of main in `js/` or `index.html` |
@@ -23,6 +24,32 @@ Every player-readable string added or changed in `index.html` and, since the spl
 | auto/fable-co-op-door, auto/fable-world-file, auto/fable-rivers | — | no merge base with main; not read |
 | auto/split | — | merged into main, nothing ahead |
 | claude/lucid-faraday-6qlft7 | — | shares no history with main; not read |
+---
+
+## Run 24 — 21 Oct 2026
+
+About 20 player-readable strings read on main from `c91bf97` to `862f6075` (F3's land, F4's people and foes, Systems 1218, the prototypes) and on the seven open PRs. One finding, on main.
+
+**main.** Finding 32 is in as written (Session 1218): *Bad Penny* for *Kestrel*. The human foes' dress table names only the kinds the game already has (*Bandit*, *Highwayman*, *Deserter*, *Cultist*, …), and the wolves' kit adds none. The one new line a player reads is the settings sheet's *Quality* row, whose note speaks the builders' word for a frame's cost (Finding 33).
+
+**The PRs.** The town church's row of seven (auto/look-1224) names the six on their plates in the deep register, with the common name under each, as canon §4.1 has them; the seventh niche stays empty, as the Guest has none. Clean.
+
+**Michael's calls:** none newer than 16 Oct.
+
+**Built:** nothing. FREEZE #528 (no `Paths:` line) holds all of `js/`, `index.html` and `tests/` while the new look lands. *The Spire Held*'s words stay first in the build queue.
+
+**Drafted:** *Festivals on the Calendar, I — the Greening, Riverfair and the Night of the Lanterns* (`docs/quest_drafts.md`, on the page as `festivals-1`): all nine of OG-107's festivals named and dated, and the Gatelands' three in full.
+
+### Finding 33 — main — the Quality row speaks the builders' word
+
+**Where.** `92-creator.js`, the settings sheet's rows (the `quality` row, pushed when `OG_LOOK==='new'`).
+
+**Text.** `note:'the land: grass, shadows, clouds; middle is the budget’s'`
+
+**Why.** *The budget* is the builders' word for what a frame may cost (`PERF`, QA's budgets). A player reads *middle is the budget's* as a sentence missing its noun. The settings sheet speaks plain UI, not in-world, so the fix is plain words: what the row changes, and which choice suits whom.
+
+**Replacement.** `note:'the land: grass, shadows, clouds; Middle suits most machines, Low a slow one'`. Nothing else changes.
+
 ---
 
 ## Run 23 — 20 Oct 2026
