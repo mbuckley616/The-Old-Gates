@@ -406,7 +406,7 @@
     function kitGods(at){const c=Math.cos(at.ry),s_=Math.sin(at.ry),w=(u,v)=>({x:at.x+u*c+v*s_,z:at.z-u*s_+v*c}),y=worldH(at.x,at.z)-.02,R=PKIT.gl.row({ground:[0,1,2,3,4,5,6].map(i=>{const q=w((i-3)*1.4,-.2);return worldH(q.x,q.z)-.02-y;})}),F=R.foot;
       R.group.position.set(at.x-cx,y,at.z-cz);R.group.rotation.y=at.ry;kitG.add(R.group);
       {const m=w((F.x0+F.x1)/2,(F.z0+F.z1)/2);sol.push({cx:m.x,cz:m.z,rx:(F.x1-F.x0)/2,rz:(F.z1-F.z0)/2,c,s:s_,bt:'wall'});}
-      const niches=R.niches.map(n=>{const b=n.basin&&w(n.basin[0],n.basin[2]),p=w(n.pray[0],n.pray[1]);if(b)sol.push({cx:b.x,cz:b.z,rx:.2,rz:.2,c,s:s_});return {god:n.god,dy:n.dy,x:w(n.x,0).x,z:w(n.x,0).z,basin:b&&{x:b.x,y:y+n.basin[1],z:b.z},pray:p};});
+      const niches=R.niches.map(n=>{const b=n.basin&&w(n.basin[0],n.basin[2]),p=w(n.pray[0],n.pray[1]);if(b)sol.push({cx:b.x,cz:b.z,rx:.2,rz:.2,c,s:s_,bt:'wall'});return {god:n.god,dy:n.dy,x:w(n.x,0).x,z:w(n.x,0).z,basin:b&&{x:b.x,y:y+n.basin[1],z:b.z},pray:p};});
       S.gods={x:at.x,z:at.z,ry:at.ry,y,len:R.len,tris:R.tris,draws:R.draws,niches};}
     // S1143 — the keep in its bawn (PKIT.gl.keep, measured and kept at the plan): the bawn on the plot, the tower its lot; the bawn's walls,
     // flankers, house and well are solids (the gateway open) that carry no house id, so the map draws them as walls; its far copy a box and

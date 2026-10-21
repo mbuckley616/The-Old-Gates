@@ -20,7 +20,7 @@ const R = await page.evaluate(() => {
     const inPlot = (x, z, m) => { const ex = x - P.x, ez = z - P.z, c2 = Math.cos(P.ry), s2 = Math.sin(P.ry); return Math.abs(ex * c2 - ez * s2) < P.w / 2 + m && Math.abs(ex * s2 + ez * c2) < P.d / 2 + m; };
     if (!G) { out.push({ id: site.id, plot: true, gods: false }); continue; }
     const fx = Math.sin(G.ry), fz = Math.cos(G.ry), L = P.lot, toNave = ((L.x - G.x) * fx + (L.z - G.z) * fz) / Math.hypot(L.x - G.x, L.z - G.z);
-    const sol = S.sol.filter(q => q.bt === 'wall' && Math.hypot(q.cx - G.x, q.cz - G.z) < 1).length;
+    const sol = S.sol.filter(q => q.bt === 'wall' && q.rx > 4 && Math.hypot(q.cx - G.x, q.cz - G.z) < 1).length;
     out.push({ id: site.id, kind: site.kind, plot: true, gods: true, w: +P.w.toFixed(3), lotW: L.w, bays: L.bays, tris: G.tris, draws: G.draws, len: +G.len.toFixed(2), toNave: +toNave.toFixed(3), plinthSolid: sol,
       niches: G.niches.map(n => ({ god: n.god, basin: !!n.basin, inPlot: inPlot(n.x, n.z, 0), faceToNave: +across(n.x, n.z).toFixed(2),
         kneel: n.basin ? { across: +across(n.pray.x, n.pray.z).toFixed(2), solid: WORLD.solidAt(n.pray.x, n.pray.z), inPlot: inPlot(n.pray.x, n.pray.z, 0), by: who(n.pray.x, n.pray.z) } : null,
