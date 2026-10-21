@@ -50,7 +50,7 @@ const r = await page.evaluate(() => { const keep = { w: EQ.weapon, o: EQ.offhand
     { const sw = WORLD.isSwimming, jy = jumpY; WORLD.isSwimming = () => true; jumpY = SEA_Y - 1.45; reset(); tick(20, {});
       const R = TP.rig, pts = hbSkinPts(R.rig); let top = -1e9; for (let i = 0; i < pts.length; i += 3) { if (pts[i + 1] > top) top = pts[i + 1]; }
       const eyes = []; R.rig.hb.P.byName.head.traverse(o => { if (o.isMesh && o.parent === R.rig.hb.P.byName.head && o.geometry.type === 'SphereGeometry') eyes.push(W(o).y); });
-      out.swim = Object.assign(measure(), { crown: +(top - SEA_Y).toFixed(3), eye: eyes.length ? +(eyes.reduce((a, b) => a + b, 0) / eyes.length - SEA_Y).toFixed(3) : null, st: +R.rig.hb.st.toFixed(3) });
+      out.swim = Object.assign(measure(), { crown: +(top - SEA_Y).toFixed(3), eye: eyes.length ? +(eyes.reduce((a, b) => a + b, 0) / eyes.length - SEA_Y).toFixed(3) : null, st: +R.rig.hb.st.toFixed(3), armL: +R.shL.rotation.z.toFixed(2), armR: +R.shR.rotation.z.toFixed(2), grip: !!R.gripL });
       WORLD.isSwimming = sw; jumpY = jy; tick(5, {}); }
   } finally { window.requestAnimationFrame = raf; EQ.weapon = keep.w; EQ.offhand = keep.o; buildViewmodel(); buildShieldViewmodel(); reset(); }
   return out; });
@@ -63,5 +63,6 @@ check('what is held keeps its angle to the builder\'s forearm as to the driver\'
 check('the death fall lays the builder\'s body down: its head under 0.6 m above the root', r.dead.head < .6, r.dead);
 console.log('swim', JSON.stringify({ crown: r.swim.crown, eye: r.swim.eye, st: r.swim.st }));
 check('swimming, the builder\'s crown is a quarter metre over the sea (±3 cm), its eyes over the water', Math.abs(r.swim.crown - .25) <= .03 && r.swim.eye > 0, { crown: r.swim.crown, eye: r.swim.eye });
+check('treading water (Session 1272) the arms scull out to the sides, both of them', r.swim.armL > .5 && r.swim.armR < -.5, { armL: r.swim.armL, armR: r.swim.armR });
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
