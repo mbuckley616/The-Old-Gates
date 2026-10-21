@@ -606,7 +606,7 @@ function keep(o = {}) {
 // ── the rooms, copied from docs/prototypes/levelup/rooms.js (card F9; Session 1157 copies the Gatelander inn of Session 893, Michael's
 // 2 A on #320). A room is built inside the very shell the street builds (building(plan) with plan.interior), in metres, the shell's
 // centre on the ground and its front +z. Copy it again from there when the prototype changes; only the names below differ:
-// mats() → roomMats(), GL_PLANS → PLANS, gatelandsBuilding → building. ──
+// mats() → roomMats(), GL_PLANS → PLANS, gatelandsBuilding → building (and glBayPlan → bayPlan: the inn on two bays, Session 1276). ──
 let RMAT = null;
 function roomMats() {
   if (RMAT) return RMAT; const G = glMats();
@@ -621,7 +621,7 @@ function roomMats() {
   return RMAT;
 }
 function gatelandsInn(o = {}, r = stream('inn')) {
-  const plan = PLANS.farmhouse({ paint: o.paint || 'green' }); plan.interior = true; plan.r = stream('inn-shell'); plan.open.front[0].ajar = true;
+  const two = o.bays === 2, plan = two ? bayPlan('farmhouse', 2, { paint: o.paint || 'green' }) : PLANS.farmhouse({ paint: o.paint || 'green' }); plan.interior = true; plan.r = stream('inn-shell'); plan.open.front[0].ajar = true;
   const shell = building(plan), M = roomMats(), B = new Map(), boxes = [], t = plan.t, X = plan.w / 2 - t, Z = plan.d / 2 - t, F0 = .05, F1 = plan.floors[0], EAVE = plan.floors[0] + plan.floors[1], CEIL = EAVE - .12;
   const put = (geo, key, x = 0, y = 0, z = 0, ry = 0, uv = .6) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const k of Object.keys(g.attributes)) if (!['position', 'normal'].includes(k)) g.deleteAttribute(k);
     g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, ry, 0)), new THREE.Vector3(1, 1, 1))); worldUV(g, uv); if (!B.has(key)) B.set(key, []); B.get(key).push(g); return g; };
@@ -636,14 +636,16 @@ function gatelandsInn(o = {}, r = stream('inn')) {
   { const cx = hx + .06, cz = -hw / 2 + .08; bx('iron', cx - .02, cx + .02, .2, 1.15, cz - .02, cz + .02); put(new THREE.BoxGeometry(.03, .03, .75), 'iron', cx + .02, 1.05, cz + .37); put(new THREE.CylinderGeometry(.008, .008, .4, 4), 'iron', cx + .02, .85, cz + .62);
     put(new THREE.SphereGeometry(.17, 14, 10, 0, Math.PI * 2, .35, Math.PI - .35), 'iron', cx + .2, .55, cz + .62); }
   // the settle facing the fire, two stools beside it
-  const settle = { x0: hx + BD + 1.6, x1: hx + BD + 2.1, z0: -1.0, z1: .9, y: F0 + .44 }; bx('oak', settle.x0, settle.x1, F0, settle.y, settle.z0, settle.z1, 'settle', 0); bx('oak', settle.x1 - .08, settle.x1, settle.y, F0 + 1.35, settle.z0, settle.z1); for (const z of [settle.z0, settle.z1 - .06]) bx('oak', settle.x0, settle.x1, settle.y, F0 + .75, z, z + .06);
+  const settle = { x0: hx + BD + 1.6, x1: hx + BD + 2.1, z0: two ? -.3 : -1.0, z1: two ? 1.1 : .9, y: F0 + .44 }; bx('oak', settle.x0, settle.x1, F0, settle.y, settle.z0, settle.z1, 'settle', 0); bx('oak', settle.x1 - .08, settle.x1, settle.y, F0 + 1.35, settle.z0, settle.z1); for (const z of [settle.z0, settle.z1 - .06]) bx('oak', settle.x0, settle.x1, settle.y, F0 + .75, z, z + .06);
   bx('wool', settle.x0 + .02, settle.x1 - .1, settle.y, settle.y + .04, settle.z0 + .1, settle.z1 - .1);
-  const seats = [settle.y - F0]; for (const [x, z] of [[hx + BD + 1.0, 1.35], [hx + BD + 1.0, -1.45]]) { bx('deal', x - .17, x + .17, F0 + .41, F0 + .45, z - .17, z + .17, 'stool', 0); for (const a of [0, 2.1, 4.2]) put(new THREE.CylinderGeometry(.018, .022, .41, 6), 'deal', x + Math.cos(a) * .11, F0 + .205, z + Math.sin(a) * .11); seats.push(.45 - .05 + .05); }
-  // the bar across the back wall, between the back window (x = -2) and the back door (x = 1.5): a counter of oak boards, a rack of kegs
+  const seats = [settle.y - F0]; for (const [x, z] of two ? [] : [[hx + BD + 1.0, 1.35], [hx + BD + 1.0, -1.45]]) { bx('deal', x - .17, x + .17, F0 + .41, F0 + .45, z - .17, z + .17, 'stool', 0); for (const a of [0, 2.1, 4.2]) put(new THREE.CylinderGeometry(.018, .022, .41, 6), 'deal', x + Math.cos(a) * .11, F0 + .205, z + Math.sin(a) * .11); seats.push(.45 - .05 + .05); }
+  // the bar across the back wall, between the back window (x = -2) and the back door (x = 1.5) (on two bays, from the hearth's corner to the
+  // back door at x = 0.78, the back window over its kegs and its shelf in two): a counter of oak boards, a rack of kegs
   // behind it against the wall, jugs and tankards on the counter, a lantern from the beam over it
-  const bar = { x0: -1.35, x1: .75, z0: -Z + .95, z1: -Z + 1.5, y: F0 + 1.05 }; bx('oak', bar.x0, bar.x1, F0, bar.y - .05, bar.z0, bar.z1, 'bar', 0); bx('deal', bar.x0 - .04, bar.x1 + .04, bar.y - .05, bar.y, bar.z0 - .04, bar.z1 + .04);
+  const bar = { x0: two ? -2.1 : -1.35, x1: two ? 0 : .75, z0: -Z + .95, z1: -Z + 1.5, y: F0 + 1.05 }; bx('oak', bar.x0, bar.x1, F0, bar.y - .05, bar.z0, bar.z1, 'bar', 0); bx('deal', bar.x0 - .04, bar.x1 + .04, bar.y - .05, bar.y, bar.z0 - .04, bar.z1 + .04);
+  const shelves = plan.open.back.filter(q => q.kind === 'win' && q.y < F1).map(q => [-q.x - q.w / 2 - .05, -q.x + q.w / 2 + .05]).sort((p, q) => p[0] - q[0]).reduce((S, [w0, w1]) => S.flatMap(([s0, s1]) => w1 <= s0 || w0 >= s1 ? [[s0, s1]] : [[s0, w0], [w1, s1]].filter(([u, v]) => v - u > .4)), [[bar.x0, bar.x1]]);
   bx('oak', bar.x0 + .1, bar.x1 - .1, F0, F0 + .45, -Z, -Z + .55, 'rack', 0); for (let x = bar.x0 + .4, k = 0; x < bar.x1 - .25; x += .62, k++) { const g = new THREE.CylinderGeometry(.24, .24, .5, 14); g.rotateX(Math.PI / 2); put(g, 'oak', x, F0 + .45 + .24, -Z + .27); put(new THREE.CylinderGeometry(.03, .03, .08, 6).rotateX(Math.PI / 2), 'iron', x, F0 + .5, -Z + .55); }
-  bx('deal', bar.x0, bar.x1, F0 + 1.7, F0 + 1.73, -Z, -Z + .28); for (let x = bar.x0 + .15; x < bar.x1 - .1; x += .22) put(new THREE.CylinderGeometry(.05, .06, .18, 10), x % .44 < .22 ? 'crock' : 'delft', x, F0 + 1.82, -Z + .14);
+  for (const [s0, s1] of shelves) { bx('deal', s0, s1, F0 + 1.7, F0 + 1.73, -Z, -Z + .28); for (let x = s0 + .15; x < s1 - .1; x += .22) put(new THREE.CylinderGeometry(.05, .06, .18, 10), x % .44 < .22 ? 'crock' : 'delft', x, F0 + 1.82, -Z + .14); }
   for (let k = 0; k < 4; k++) put(new THREE.CylinderGeometry(.045, .045, .14, 10), k % 2 ? 'crock' : 'iron', bar.x0 + .4 + k * .4, bar.y + .07, (bar.z0 + bar.z1) / 2);
   // the stair up the east gable wall: 16 risers from the flags to the upper floor, going 0.25, its landing in the back corner
   const N = 16, rise = (F1 - F0) / N, going = .25, SX0 = X - .9, LZ = -Z + .75, SZ0 = LZ + (N - 1) * going /* the foot */;
@@ -655,7 +657,7 @@ function gatelandsInn(o = {}, r = stream('inn')) {
   const beams = []; for (let x = -X + .55; x < X - .2; x += .9) { const over = x > well.x0 - .12; bx('oak', x - .09, x + .09, F1 - .42, F1 - .2, -Z, over ? well.z0 : Z); if (over) bx('oak', x - .09, x + .09, F1 - .42, F1 - .2, well.z1, Z); beams.push(x); }
   bx('deal', -X, X, CEIL, CEIL + .04, -Z, Z); for (let x = -X + .55; x < X - .2; x += 1.2) bx('oak', x - .07, x + .07, CEIL - .16, CEIL, -Z, Z);
   // the tables: one before the front window east of the door, one by the hearth side; benches along their long sides
-  const tables = [], benches = []; for (const [tx, tz] of [[2.1, .45], [-1.2, 1.4]]) { const T = { x0: tx - .8, x1: tx + .8, z0: tz - .38, z1: tz + .38, y: F0 + .76 }; bx('deal', T.x0, T.x1, T.y - .05, T.y, T.z0, T.z1, 'table', 0);
+  const tables = [], benches = []; for (const [tx, tz] of two ? [[.85, .45]] : [[2.1, .45], [-1.2, 1.4]]) { const T = { x0: tx - .8, x1: tx + .8, z0: tz - .38, z1: tz + .38, y: F0 + .76 }; bx('deal', T.x0, T.x1, T.y - .05, T.y, T.z0, T.z1, 'table', 0);
     for (const sx of [-1, 1]) for (const sz of [-1, 1]) bx('oak', tx + sx * .7 - .04, tx + sx * .7 + .04, F0, T.y - .05, tz + sz * .28 - .04, tz + sz * .28 + .04); tables.push(T);
     for (const sz of tx > 0 ? [-1, 1] : [-1]) { const bz = tz + sz * .62; bx('oak', tx - .75, tx + .75, F0 + .41, F0 + .45, bz - .15, bz + .15, 'bench', 0); for (const sx of [-1, 1]) bx('oak', tx + sx * .65 - .03, tx + sx * .65 + .03, F0, F0 + .41, bz - .12, bz + .12); benches.push(.45); }
     put(new THREE.CylinderGeometry(.012, .014, .14, 8), 'linen', tx + .2, T.y + .07, tz); put(new THREE.SphereGeometry(.012, 6, 5).scale(1, 2, 1), 'flame', tx + .2, T.y + .155, tz); }
@@ -663,17 +665,17 @@ function gatelandsInn(o = {}, r = stream('inn')) {
   // upstairs: the rail round the well, a passage along the back wall, three rooms off it behind deal partitions with doors
   const PZ = -Z + 1.2, top = F1 + .95; { for (const [x0, z0, x1, z1] of [[well.x0, well.z0 + .1, well.x0, well.z1], [well.x0, well.z1, X, well.z1]]) { bx('oak', Math.min(x0, x1) - .04, Math.min(X, Math.max(x0, x1) + .04), top, top + .06, Math.min(z0, z1) - .04, Math.max(z0, z1) + .04, 'wellrail', 1);
       const n = Math.max(1, Math.round(Math.hypot(x1 - x0, z1 - z0) / .9)); for (let k = 0; k <= n; k++) { const x = x0 + (x1 - x0) * k / n, z = z0 + (z1 - z0) * k / n; bx('oak', x - .04, x + .04, F1, top, z - .04, z + .04); } } }
-  const RX = [-X, -1.45, 1.65, SX0 - .1], rooms = [], wallK = 'deal';
+  const RX = two ? [-X, 0, SX0 - .1] : [-X, -1.45, 1.65, SX0 - .1], NR = RX.length - 1, rooms = [], wallK = 'deal';
   { const doorAt = i => (RX[i] + RX[i + 1]) / 2 + (i === 2 ? -.4 : 0), dw = .8, dh = 1.95;
-    /* the passage's wall, along z = PZ from the west gable to the well, a door into each room */ for (let i = 0; i < 3; i++) { const dx = doorAt(i), a = RX[i] + (i ? .04 : 0), b = RX[i + 1] - .04; bx(wallK, a, dx - dw / 2, F1, CEIL, PZ - .04, PZ + .04, 'partition', 1); bx(wallK, dx + dw / 2, b, F1, CEIL, PZ - .04, PZ + .04, 'partition', 1); bx(wallK, dx - dw / 2, dx + dw / 2, F1 + dh, CEIL, PZ - .04, PZ + .04);
+    /* the passage's wall, along z = PZ from the west gable to the well, a door into each room */ for (let i = 0; i < NR; i++) { const dx = doorAt(i), a = RX[i] + (i ? .04 : 0), b = RX[i + 1] - .04; bx(wallK, a, dx - dw / 2, F1, CEIL, PZ - .04, PZ + .04, 'partition', 1); bx(wallK, dx + dw / 2, b, F1, CEIL, PZ - .04, PZ + .04, 'partition', 1); bx(wallK, dx - dw / 2, dx + dw / 2, F1 + dh, CEIL, PZ - .04, PZ + .04);
       rooms.push({ x0: RX[i], x1: RX[i + 1], door: { x: dx, z: PZ, w: dw, h: dh } }); }
-    for (const x of [RX[1], RX[2]]) bx(wallK, x - .04, x + .04, F1, CEIL, PZ + .04, Z, 'partition', 1);
-    /* the third room's east side: a partition along the well's west edge from the passage to the well's end */ bx(wallK, RX[3] - .04, RX[3] + .04, F1, CEIL, PZ + .04, well.z1, 'partition', 1); }
+    for (const x of RX.slice(1, -1)) bx(wallK, x - .04, x + .04, F1, CEIL, PZ + .04, Z, 'partition', 1);
+    /* the last room's east side: a partition along the well's west edge from the passage to the well's end */ bx(wallK, RX[NR] - .04, RX[NR] + .04, F1, CEIL, PZ + .04, well.z1, 'partition', 1); }
   // each room: a bed against its partition, a chest at its foot, a washstand with a jug and basin under the front window
-  const beds = []; rooms.forEach((R, i) => { const e = i === 1 ? -1 : 1, bx0 = e > 0 ? R.x0 + .05 : R.x1 - .05 - 1.0, b = { x0: bx0, x1: bx0 + 1.0, z0: Z - 2.05, z1: Z - .05 };
+  const beds = []; rooms.forEach((R, i) => { const e = i === 1 && !two ? -1 : 1, bx0 = e > 0 ? R.x0 + .05 : R.x1 - .05 - 1.0, b = { x0: bx0, x1: bx0 + 1.0, z0: Z - 2.05, z1: Z - .05 };
     bx('oak', b.x0, b.x1, F1, F1 + .45, b.z0, b.z1, 'bed', 1); bx('straw', b.x0 + .04, b.x1 - .04, F1 + .45, F1 + .55, b.z0 + .04, b.z1 - .04); bx('wool', b.x0 + .03, b.x1 - .03, F1 + .55, F1 + .6, b.z0 + .04, b.z1 - .5); bx('linen', b.x0 + .1, b.x1 - .1, F1 + .55, F1 + .66, b.z1 - .45, b.z1 - .08);
     bx('oak', b.x0 + .05, b.x0 + .95, F1, F1 + .5, b.z0 - .55, b.z0 - .05, 'chest', 1); beds.push(b);
-    const wx = [-3.1, 0, 3.1][i] /* under the room's front window */, wz = Z - .3; bx('deal', wx - .25, wx + .25, F1, F1 + .78, wz - .2, wz + .2, 'washstand', 1); put(new THREE.CylinderGeometry(.16, .1, .08, 14), 'delft', wx, F1 + .82, wz); put(new THREE.CylinderGeometry(.06, .07, .22, 12), 'delft', wx + .12, F1 + .93, wz - .05); });
+    const wx = (two ? [-1.55, 1.55] : [-3.1, 0, 3.1])[i] /* under the room's front window */, wz = Z - .3; bx('deal', wx - .25, wx + .25, F1, F1 + .78, wz - .2, wz + .2, 'washstand', 1); put(new THREE.CylinderGeometry(.16, .1, .08, 14), 'delft', wx, F1 + .82, wz); put(new THREE.CylinderGeometry(.06, .07, .22, 12), 'delft', wx + .12, F1 + .93, wz - .05); });
   // the front door's leaf, hung open against the front wall inside, west of the doorway
   const door = plan.open.front[0]; bx('paint', door.x - door.w / 2 - door.w - .02, door.x - door.w / 2 - .02, F0, F0 + 2.05, Z - .06, Z, 'leaf', 0);
   // the walks: in at the door to the bar; in at the door to the stair's foot; off the landing along the passage to each room's door

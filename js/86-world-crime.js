@@ -288,7 +288,7 @@
   function barberFee(house){return innPrice(house);}
   function barberPay(house,changed){if(!changed)return 'free';const fee=barberFee(house);if(gold<fee)return 'poor';gold-=fee;if(typeof updateHUD==='function')updateHUD();
     if(typeof addLog==='function')addLog('✂',`Paid ${fee} gold at ${house.name||'the barber’s'}.`);return 'paid';}
-  function innRooms(house){if(kitTaproom(house))return 3; /* S1161 — the kit's taproom: three rooms off the passage */const W=Math.max(10,Math.min(12,(house.w||6)*1.6))/SCALE.ROOM_K;return Math.max(1,Math.floor(W/3.4));} /* S896 (F2a) — as buildInteriorFor lays out the gallery's rooms: the hall's true width in the kit's unit, a room every 3.4 */
+  function innRooms(house){if(kitTaproom(house))return house.kit.bays; /* S1161 — the kit's taproom: three rooms off the passage (two on two bays, S1276) */const W=Math.max(10,Math.min(12,(house.w||6)*1.6))/SCALE.ROOM_K;return Math.max(1,Math.floor(W/3.4));} /* S896 (F2a) — as buildInteriorFor lays out the gallery's rooms: the hall's true width in the kit's unit, a room every 3.4 */
   // v80 S424 — the rooms stand in one row behind the gallery, room 0 at the west wall, and you come up the stair facing
   // their doors: from a west stair every door is on your right, the nearest room 0's; from an east stair on your left,
   // the nearest the last room's. The names count the doors from the stair head (were left and right in turn, from room 0).
@@ -507,7 +507,7 @@
       if(s.phase==='coming'&&s.t>=Math.max(GUARD_IN,s.walk)){ // he comes in by the door
         const W=currentHouse._roomW||currentHouse.intW||10,D=currentHouse._roomD||currentHouse.intD||10;
         const g=buildNPCMesh({role:'guard',name:(n.def&&n.def.name)||'Guard',_twin:n.def&&n.def._twin,bCol:(n.def&&n.def.bCol)||0x6a2a2a,sCol:(n.def&&n.def.sCol)||0xd4a878},{nation:nationAt(currentHouse.doorX,currentHouse.doorZ),key:currentHouse.siteId||''});
-        g.position.set(W/2,0,D-1.0);g.rotation.y=Math.PI;if(interiorScene)interiorScene.add(g);s.mesh=g;s.phase='inside';
+        g.position.set(currentHouse._exitX!=null?currentHouse._exitX:W/2,0,D-1.0);g.rotation.y=Math.PI;if(interiorScene)interiorScene.add(g);s.mesh=g;s.phase='inside';
         showMsg(`${(n.def&&n.def.name)||'A guard'} comes in.`,'#e88a8a');return;}
       if(s.phase==='inside'&&s.mesh){const g=s.mesh,T=targetOf(n),dx=T.x-g.position.x,dz=T.z-g.position.z,d=Math.hypot(dx,dz);g.rotation.y=Math.atan2(dx,dz);
         if(d>1.5&&!talking){let wx=T.x,wz=T.z,wd=d,st=Math.min(d-1.4,1.8*dt); /* S1190 — round the kit's partitions: a straight line when the floor between is clear, else the route */
