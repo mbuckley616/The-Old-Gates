@@ -27,7 +27,7 @@ for (const town of TOWNS) {
       const sx = X.x, sz = X.z + .8;
       const k0 = { x: K.position.x, z: K.position.z, ry: K.rotation.y };
       const run = (open) => {
-        if (door.open !== open) { px = door.x; pz = door.z + (open ? -.6 : -.6); intDoorInteract(door); }
+        if (door.open !== open) { px = door.x; pz = door.z + .6; intDoorInteract(door); } // S1252 — from the shop, south of the partition
         K.position.x = k0.x; K.position.z = k0.z; K.rotation.y = k0.ry;
         const rec = []; let inR = 0, faces = 0, line = 0, all3 = 0, lineInR = 0, minD = 1e9;
         for (let f = 0; f < 60 * 600; f++) { intAmbleStep(K, 1 / 60); if (f % 6) continue;
@@ -42,13 +42,14 @@ for (const town of TOWNS) {
       const shut = run(false), open = run(true);
       // with the door open: every spot of the shop floor (a 0.25 grid in front of the partition) asked for a clear line to the
       // thief at the box, and a control, a keeper 2.5 in front of the doorway facing it and a thief 0.8 inside it
-      const W = X.x + .9; let pts = 0, clear = 0, clear6 = 0;
-      for (let x = .3; x <= W - .3; x += .25) for (let z = .3; z <= door.z - .4; z += .25) { pts++;
+      // (S1252: the keeper's room is the north end now, so the shop floor is south of the partition's door)
+      const W = h.intW, D = h.intD; let pts = 0, clear = 0, clear6 = 0;
+      for (let x = .3; x <= W - .3; x += .25) for (let z = door.z + .4; z <= D - .3; z += .25) { pts++;
         if (WORLD.intSightLine(x, z, sx, sz)) { clear++; if (Math.hypot(x - sx, z - sz) < 6) clear6++; } }
-      const ctl = () => { K.position.x = door.x; K.position.z = door.z - 2.5; K.rotation.y = 0; px = door.x; pz = door.z + .8;
+      const ctl = () => { K.position.x = door.x; K.position.z = door.z + 2.5; K.rotation.y = Math.PI; px = door.x; pz = door.z - .8;
         return { line: WORLD.intSightLine(K.position.x, K.position.z, px, pz), seen: !!WORLD.witnessOf(h) }; };
       const ctlOpen = ctl();
-      px = door.x; pz = door.z - .6; intDoorInteract(door);
+      px = door.x; pz = door.z + .6; intDoorInteract(door);
       const ctlShut = Object.assign(ctl(), { open: door.open });
       exitInterior();
       return { town, name: h.name, type: h.type, box: { x: +X.x.toFixed(2), z: +X.z.toFixed(2) }, door: { x: +door.x.toFixed(2), z: +door.z.toFixed(2) },
@@ -66,7 +67,7 @@ console.log(`  mean chance seen, door shut: ${PICKS.map((_, j) => mean('shut', j
 console.log(`  mean chance seen, door open: ${PICKS.map((_, j) => mean('open', j)).join(' ')}`);
 console.log(JSON.stringify(ok));
 check('back-room shops of four towns were entered with a keeper, a strongbox and a door (at least 4)', ok.length >= 4, rows.map(r => [r.town, r.name, !r.none && !r.skip]));
-check('the strongbox stands behind the partition, past its door', ok.every(r => r.box.z > r.door.z), ok.map(r => [r.box, r.door]));
+check('the strongbox stands behind the partition, past its door (north of it since S1252)', ok.every(r => r.box.z < r.door.z), ok.map(r => [r.box, r.door]));
 check('the door is shut for the first measure and its leaf blocks', ok.every(r => !r.shut.open && !r.shut.solOut), ok.map(r => r.shut));
 check('E opened the door for the second, and its leaf left the collision set', ok.every(r => r.open.open && r.open.solOut), ok.map(r => r.open));
 check('a back-room strongbox is never seen while its door is shut', ok.every(r => r.shut.seen === 0), ok.map(r => [r.name, r.shut.seen]));

@@ -10,9 +10,10 @@ const enter = async type => { await page.evaluate(() => { try { if (interiorScen
 // S896 (card F2a): a shop is laid out in the furniture kit's unit and built SCALE.ROOM_K (1.444) larger, so the places and heights
 // below are the kit's (W and D ÷ KR), and the footholds are read back at true size; the tub stands at W − .75, 3.9 now, clear of
 // the counter's end in a shop of true size
-const look = () => page.evaluate(() => { const sc = interiorScene, KR = SCALE.ROOM_K, W = _S.intW / KR, D = _S.intD / KR, furn = sc.children.filter(o => o.userData.furn); let meshes = 0; sc.traverse(o => { if (o.isMesh) meshes++; });
+// S1252: a shop with the keeper's room has it at the north end, and its own layout starts _shopZ (3.2) further south
+const look = () => page.evaluate(() => { const sc = interiorScene, KR = SCALE.ROOM_K, W = _S.intW / KR, D = _S.intD / KR, Z = _S._shopZ || 0, furn = sc.children.filter(o => o.userData.furn); let meshes = 0; sc.traverse(o => { if (o.isMesh) meshes++; });
   const fh = (x, z, lo, hi) => FOOTHOLDS.some(f => f.y / KR > lo && f.y / KR < hi && x * KR > f.x0 && x * KR < f.x1 && z * KR > f.z0 && z * KR < f.z1);
-  return { type: _S.type, W, D, furn: furn.length, tris: furn.map(f => f.userData.tris), fire: furn.some(f => f.userData.fire), meshes, counter: fh(W / 2, 3.0, .6, .7), forge: fh(1.2, 1.4, .7, .8), anvil: fh(W - 2.0, 1.6, .55, .65), tub: fh(W - .75, 3.9, .4, .46) }; });
+  return { type: _S.type, W, D, furn: furn.length, tris: furn.map(f => f.userData.tris), fire: furn.some(f => f.userData.fire), meshes, counter: fh(W / 2, 3.0 + Z, .6, .7), forge: fh(1.2, 1.4 + Z, .7, .8), anvil: fh(W - 2.0, 1.6 + Z, .55, .65), tub: fh(W - .75, 3.9 + Z, .4, .46) }; });
 check('Dunmore (or a town near it) has a smithy', await enter('weapon'));
 const sm = await look(); console.log(JSON.stringify(sm));
 check('the smithy is two bakes (the room with the forge\'s fire, and the counter), 10–45k triangles in all', sm.furn === 2 && sm.fire && sm.tris.reduce((a, b) => a + b, 0) > 10000 && sm.tris.reduce((a, b) => a + b, 0) < 45000, sm);
@@ -35,11 +36,11 @@ fs.writeFileSync('tests/out/smithy.png', Buffer.from(shot.split(',')[1], 'base64
 // the still and the bench solid; one picture of each
 const others = [], pics = [];
 for (const t of ['armor', 'potion', 'misc']) { if (!(await enter(t))) continue; const o = await look();
-  const x = await page.evaluate(() => { const KR = SCALE.ROOM_K, W = _S.intW / KR, D = _S.intD / KR, A = furnKit().armouryAt(W, D); let barrels = 0, crates = 0; interiorScene.traverse(m => { if (m.isMesh && INT_KIT_GEO.get('barrel') && m.geometry === INT_KIT_GEO.get('barrel').body) barrels++; });
-    return { stand: _S.type !== 'armor' || A.stands.some(sx => intSolidAt(sx * KR, 1.6 * KR, .1)), still: FOOTHOLDS.some(f => f.y / KR > .55 && f.y / KR < .7 && (W - 1.6) * KR > f.x0 && (W - 1.6) * KR < f.x1 && 1.8 * KR > f.z0 && 1.8 * KR < f.z1), barrels }; });
+  const x = await page.evaluate(() => { const KR = SCALE.ROOM_K, W = _S.intW / KR, Z = _S._shopZ || 0, D = _S.intD / KR - Z, A = furnKit().armouryAt(W, D); let barrels = 0, crates = 0; interiorScene.traverse(m => { if (m.isMesh && INT_KIT_GEO.get('barrel') && m.geometry === INT_KIT_GEO.get('barrel').body) barrels++; });
+    return { stand: _S.type !== 'armor' || A.stands.some(sx => intSolidAt(sx * KR, (1.6 + Z) * KR, .1)), still: FOOTHOLDS.some(f => f.y / KR > .55 && f.y / KR < .7 && (W - 1.6) * KR > f.x0 && (W - 1.6) * KR < f.x1 && (1.8 + Z) * KR > f.z0 && (1.8 + Z) * KR < f.z1), barrels }; });
   others.push({ type: t, furn: o.furn, tris: o.tris, fire: o.fire, counter: o.counter, meshes: o.meshes, ...x });
   pics.push(await page.evaluate(() => { const sc = interiorScene, W = _S.intW, D = _S.intD, cv = REN.domElement, cam = new THREE.PerspectiveCamera(62, cv.width / cv.height, .05, 80);
-    cam.position.set(W * .5, 1.75, Math.min(D - 3.5, 4.6)); cam.lookAt(W * .5, .35, 1.3); sc.updateMatrixWorld(true); REN.render(sc, cam); const o = document.createElement('canvas'); o.width = cv.width / 2; o.height = cv.height / 2; o.getContext('2d').drawImage(cv, 0, 0, o.width, o.height); return o.toDataURL(); })); }
+    const Z = (_S._shopZ || 0) * SCALE.ROOM_K; cam.position.set(W * .5, 1.75, Math.min(D - 3.5, 4.6 + Z)); cam.lookAt(W * .5, .35, 1.3 + Z); sc.updateMatrixWorld(true); REN.render(sc, cam); const o = document.createElement('canvas'); o.width = cv.width / 2; o.height = cv.height / 2; o.getContext('2d').drawImage(cv, 0, 0, o.width, o.height); return o.toDataURL(); })); }
 console.log(JSON.stringify(others));
 const by = t => others.find(o => o.type === t) || {};
 check('the armourer, the apothecary and the general goods are each a room bake and the kit\'s counter, footholds where they were', others.length === 3 && others.every(o => o.furn === 2 && o.counter && o.tris[0] > 3000), others);
