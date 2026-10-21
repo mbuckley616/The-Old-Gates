@@ -25,7 +25,7 @@ strike the row here. That PR runs the suite. Kept by the QA routine; started by 
 | `renewal` | too slow: killed at the 900 s a suite is given (900 s with the retry) | open |
 | `scaleratio` | red: dunmore (gatelands): every house door is 1.1 to 1.25 of a 1.8 m person (55 doors measured) | open |
 | `signs` | red: dunmore: every shop, inn, church and guild hall has one board, reading its own name | open |
-| `skirtlegs` | red: page.evaluate: TypeError: mesh.boneTransform is not a function | fixed in the suite, Session 1264: the test's (r128's `boneTransform` is `applyBoneTransform` on 0.170); passes on both looks with the same numbers (4.2–6.8 pokes a frame, worst 4.5 cm). Its strike from `tests/skip.json` is a pipeline change (`scripts/automerge.mjs`) and rides QA's next pipeline PR |
+| `skirtlegs` | red: page.evaluate: TypeError: mesh.boneTransform is not a function | open |
 | `theft` | red: a seen theft is fined 50 and the goods’ value (coins and the thing taken) (failed once; the retry was skipped for the shard's time) | open |
 | `wanderface` | red: a wandering foe's body faces the way it walks (within 0.25 rad, sampled every half second for 6 s) | open |
 | `yardplay` | too slow: killed at the 900 s a suite is given (1800 s with the retry) | open |
