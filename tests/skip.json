@@ -6,7 +6,6 @@
   "civicfurn": "red: the church is one bake with the altar's candle flames, 5–60k triangles, and none of the old cylinder pillars",
   "f4people": "red: vendor/people.builder.js is what people.js makes now (python3 scripts/people_bundle.py)",
   "fistfight": "too slow: killed at the 900 s a suite is given (1744 s with the retry)",
-  "foewarm": "red: raising every foe kind compiles no shader and adds no program (8 compiled, 4 programs added, on #529 at 85a8ff00, failed twice; it passed at 67c6fd2d, and #443 had it red on the new look)",
   "guildfurn": "red: guild_f: the hall is one bake of 15–90k triangles, with the notice board, four dormitory chests and the gallery's chest (Session 293) beside it, and no cylinders left",
   "hourhitch": "too slow: killed at the 900 s a suite is given (1800 s with the retry)",
   "lookpair": "red: the old look is r128 and the new one 0.170, at the same spot",

@@ -54,7 +54,9 @@ check('at the strongbox you are seen exactly when the keeper is within reach wit
 // behind the partition, so no shop gives the counter a line to it even with the door open; the open door shows the doorway, below)
 check('with the doors open, the keeper at the counter sees you at the strongbox exactly when it is within reach with a clear line', ok.every(r => r.openBox === (r.dRaw < r.R && r.openBoxLine)), ok.map(r => [r.name, r.dBox, r.atBox, r.openBoxLine, r.openBox]));
 const withDoor = ok.filter(r => r.door && r.door.dist < r.R);
-check('at 8.7 m the keeper at the counter reaches past the back-room door unmoved, in at least one shop (at six none did)', ok.some(r => r.door && !r.door.moved && r.door.fromCounter >= 6 && r.door.openSeen), ok.map(r => [r.name, r.door && r.door.fromCounter, r.door && r.door.moved]));
+// S1268 — Session 1252 put the keeper's room behind the counter, so its door is 5.1 m off and within reach at six as at 8.7: the
+// check keeps #516's promise (the counter sees past the open door, the keeper unmoved) and drops the distance that no longer holds
+check('at 8.7 m the keeper at the counter reaches past the open back-room door unmoved, in at least one shop', ok.some(r => r.door && !r.door.moved && r.door.openSeen), ok.map(r => [r.name, r.door && r.door.fromCounter, r.door && r.door.moved]));
 check('a step past the back-room door, within reach of the keeper: unseen while it is shut, seen when it is open', withDoor.length >= 1 && withDoor.every(r => !r.door.shutSeen && r.door.openSeen === r.door.openLine) && withDoor.some(r => r.door.openSeen), ok.map(r => [r.name, r.door]));
 check('no spot within reach that a wall hides from the keeper is seen', ok.filter(r => r.door).every(r => r.door.hidSeen === 0) && ok.some(r => r.door && r.door.hid > 0), ok.map(r => [r.name, r.door && r.door.hid, r.door && r.door.hidSeen]));
 check('no page errors', g.errs.length === 0, g.errs);
