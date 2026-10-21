@@ -164,6 +164,9 @@ function buildPanel() {
   // the mail made as a scale cuirass (Session 1058, OG-044's Compact guards): bronze scales, short sleeves, to the top of the thigh
   { const sc = el('input', { type: 'checkbox', checked: !!D().scales, onchange: () => { D().scales = sc.checked; schedule(); } });
     panel.append(el('div', { className: 'bar' }, el('label', {}, sc, ' the mail made of scales (a cuirass)'))); inputs.scales = () => sc.checked = !!D().scales; }
+  // the mail made as sheet metal (Session 1260, card F10): plate, or Bronze's muscle cuirass with its leather strips
+  { const pl = el('select', {}, ...[['', 'rings or scales'], ['plate', 'plate'], ['muscle', 'a muscle cuirass']].map(([v, t]) => el('option', { value: v, textContent: t }))); pl.value = D().plate || ''; pl.onchange = () => { D().plate = pl.value || null; schedule(); };
+    panel.append(el('div', { className: 'bar' }, pl)); inputs.plate = () => pl.value = D().plate || ''; }
   // the hurt (Session 1079, OG-001's extras): an old scar across one eye, and the eyepatch's side
   { const sc = el('select', {}, ...[['', 'no scar'], ['L', 'scar over the left eye'], ['R', 'scar over the right eye']].map(([v, t]) => el('option', { value: v, textContent: t }))); sc.value = G.scar || ''; sc.onchange = () => { G.scar = sc.value || null; schedule(); };
     const ps = el('select', {}, ...[['L', 'patch on the left'], ['R', 'patch on the right']].map(([v, t]) => el('option', { value: v, textContent: t }))); ps.value = D().eyepatchSide || 'L'; ps.onchange = () => { D().eyepatchSide = ps.value; schedule(); };

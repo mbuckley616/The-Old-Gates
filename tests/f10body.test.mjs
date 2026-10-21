@@ -78,6 +78,12 @@ const worn = await drive(() => { const mat = MATERIALS.find(m => m.name === 'Iro
 console.log('  worn:', JSON.stringify(worn));
 check('the cuirass is mail on the builder\'s body, the cloak its cloak', worn.names.includes('mail') && worn.names.some(n => /^cloak/.test(n)), worn.names);
 check('a Steel helm is the builder\'s helm of its tier (helms.js), fitted to the player\'s head', worn.helm === 4 && worn.helmFit, { helm: worn.helm, fit: worn.helmFit });
+// the heavy line's chest by its family (Session 1260): Wooden's lamellar the builder's scales, Bronze's muscle cuirass and Steel's plate its sheet metal
+const fam = await drive(() => { const out = {}; for (const t of [1, 2, 3, 4, 10]) { const m = MATERIALS[t - 1]; EQ.chest = { name: m.name + ' Cuirass', slot: 'chest', material: m.name, tier: t };
+    for (let i = 0; i < 4; i++) step(); const H = TP.rig.rig.hb, k = []; H.root.traverse(o => { if (o.isMesh && /^mail/.test(o.name)) k.push(o.material.customProgramCacheKey().replace(/[\[{].*$/, '').replace(/[-\d.,]+$/, '')); }); out[m.name] = [...new Set(k)].join('+'); }
+  EQ.chest = { name: 'Iron Cuirass', slot: 'chest', material: 'Iron', tier: 3 }; for (let i = 0; i < 4; i++) step(); return out; });
+console.log('  chest by family:', JSON.stringify(fam));
+check('a Wooden chest is lamellar (the builder\'s scales), Bronze the muscle cuirass, Iron mail, Steel and Cosmic plate', fam.Wooden === 'scales' && fam.Bronze === 'muscle' && fam.Iron === 'mail' && fam.Steel === 'plate' && fam.Cosmic === 'plate', fam);
 check('in third person the new body bakes no middle level (it is baked when first person asks)', worn.mid === false, { mid: worn.mid });
 const sword = worn.held.find(h => h.kit === 'sword'), shield = worn.held.find(h => h.kit === 'kite');
 check('a copy of the sword is carried in the builder\'s group with its grip in the right fist (within 2 cm), the shield with it', sword && sword.inBuilder && sword.meshes > 0 && sword.gap < .02 && shield && shield.inBuilder && shield.meshes > 0, worn.held);
@@ -97,6 +103,12 @@ if (process.env.F10_SHOTS) {
   await shot('f10-cloak-back.png', Math.PI + .3, () => { swingT = 0; EQ.back = { name: 'Wool Cloak', slot: 'back', cloak: 'wool' }; });
   await shot('f10-third-helm-steel.png', .6, () => { EQ.back = null; EQ.head = { name: 'Steel Helm', slot: 'head', material: 'Steel', tier: 4 }; });
   await shot('f10-third-helm-draconic.png', .6, () => { EQ.head = { name: 'Draconic Helm', slot: 'head', material: 'Draconic', tier: 8 }; });
+  // the chest by its family (Session 1260); shot()'s prep is sent as source, so each names its tier itself
+  await shot('f10-third-lamellar-wooden.png', .6, () => { EQ.head = null; EQ.chest = { name: MATERIALS[0].name + ' Cuirass', slot: 'chest', material: MATERIALS[0].name, tier: 1 }; });
+  await shot('f10-third-muscle-bronze.png', .6, () => { EQ.chest = { name: MATERIALS[1].name + ' Cuirass', slot: 'chest', material: MATERIALS[1].name, tier: 2 }; });
+  await shot('f10-third-plate-steel.png', .6, () => { EQ.chest = { name: MATERIALS[3].name + ' Cuirass', slot: 'chest', material: MATERIALS[3].name, tier: 4 }; });
+  await shot('f10-third-plate-steel-back.png', Math.PI + .5, () => {});
+  await shot('f10-third-plate-cosmic.png', .6, () => { EQ.chest = { name: MATERIALS[9].name + ' Cuirass', slot: 'chest', material: MATERIALS[9].name, tier: 10 }; });
   await page.evaluate(() => { window.tpCamera = window._tpCam0; });
 }
 
