@@ -223,7 +223,7 @@ Started 15 Oct 2026 (QA run of 18:51 UTC, main 0773903 plus Sessions 946–949).
 | `rowelines` | 17/20 (CI) | pass | pass, 544 s (was killed at 900 s twice on main, run 2337) | 544 | The suite's (Session 1254): its dialogue helper waited two rendered frames after opening and two after each click, 48 frames at about 14 s a frame in a town; it now waits for the choices, and one frame after the click. |
 | `sackseed` | 9/14 | pass | pass | 36 |  |
 | `sailtrim` | 5/14 | pass | pass | 57 |  |
-| `saltwater` | 10/20 (CI) | pass | pass, 700 s (was killed at 900 s twice on main, run 2337) | 700 | The suite's (Session 1254): the last step jumped from Camuros back to Carrigshane with no `g.settle`, so the new ring of cells built on rendered frames (about 9.5 min); it now settles there as every other jump does. |
+| `saltwater` | 10/20 (CI) | pass | pass, 700 s (was killed at 900 s twice on main, run 2337) | 700 | The suite's (Session 1254): the last step jumped from Camuros back to Carrigshane with no `g.settle`, so the new ring of cells built on rendered frames (about 9.5 min); it now settles there as every other jump does. CI still killed it at 900 s on PR #561 (the runner about 1.5× slower), so the walk along the coast is its own suite, `corwinwalk` (227 s here); `saltwater` 389 s here after the split. |
 | `savelabel` | 3/14 | pass | pass | 59 |  |
 | `savepic` | 4/14 | pass | pass | 67 |  |
 | `saveretry` | 6/14 | pass | pass | 56 |  |
