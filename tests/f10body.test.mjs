@@ -103,6 +103,13 @@ const sig = await drive(() => { const out = {}; for (const t of [4, 5, 6, 7, 8, 
 console.log('  signatures:', JSON.stringify(sig));
 check('plate carries its tier\'s signature and glow: Steel plain, Mithril fluted, Adamant heavy, Obsidian faceted, Draconic scaled, Demonic spiked, Cosmic inlaid',
   sig.Steel === 'plate sheet' && ['Mithril:fluted', 'Adamant:heavy', 'Obsidian:faceted', 'Draconic:scaled', 'Demonic:spiked', 'Cosmic:inlaid'].every(x => { const [n, k] = x.split(':'); return sig[n] === `plate:${k}+glow sheet:${k}+glow`; }), sig);
+// the light line's hood (Session 1266): the builder's hood up with no cloak, and over a cloak that has none of its own
+const hood = await drive(() => { const m = MATERIALS[2], out = {}, names = () => { const k = new Set(); TP.rig.rig.hb.root.traverse(o => { if (o.isMesh && o.visible && /^(hood|cloak)/.test(o.name)) k.add(o.name.replace(/\d+$/, '')); }); return [...k].sort().join(','); };
+  EQ.back = null; EQ.head = { name: m.name + ' Hood', slot: 'head', material: m.name, tier: 3, line: 'light' }; for (let i = 0; i < 4; i++) step(); out.alone = names();
+  EQ.back = { name: 'Wool Cloak', slot: 'back', cloak: 'wool' }; for (let i = 0; i < 4; i++) step(); out.cloak = names();
+  EQ.head = null; EQ.back = null; for (let i = 0; i < 4; i++) step(); out.none = names(); return out; });
+console.log('  light hood:', JSON.stringify(hood));
+check('the light line\'s hood is the builder\'s hood up, alone and over a hoodless cloak; gone when taken off', /hoodUp/.test(hood.alone) && !/cloak/.test(hood.alone) && /cloak/.test(hood.cloak) && /hoodUp/.test(hood.cloak) && hood.none === '', hood);
 check('in third person the new body bakes no middle level (it is baked when first person asks)', worn.mid === false, { mid: worn.mid });
 const sword = worn.held.find(h => h.kit === 'sword'), shield = worn.held.find(h => h.kit === 'kite');
 check('a copy of the sword is carried in the builder\'s group with its grip in the right fist (within 2 cm), the shield with it', sword && sword.inBuilder && sword.meshes > 0 && sword.gap < .02 && shield && shield.inBuilder && shield.meshes > 0, worn.held);
