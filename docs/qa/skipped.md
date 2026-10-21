@@ -3,7 +3,7 @@
 Every suite boots the new look (Michael, 20 Oct 2026: "I DO NOT CARE about preserving the legacy"). A suite that was red or too
 slow there is named in `tests/skip.json` and runs nowhere until it is fixed. Each row is a card: fix the game or the suite (or
 delete the suite with its feature, if the feature was the old look's), strike the suite from `tests/skip.json` in the same PR, and
-strike the row here. That PR runs the suite. Kept by the QA routine; started by Session 1226 from CI's full run of #529 at 67c6fd2d on the new look (20 Oct 2026, run 39484346294: 519 suites, 495 passed, 4 passed on the retry), and three suites killed at the 900 s a suite is given on #443's run at 2ff39f31.
+strike the row here. That PR runs the suite. Kept by the QA routine; started by Session 1226 from CI's full run of #529 at 67c6fd2d on the new look (20 Oct 2026, run 39484346294: 519 suites, 495 passed, 4 passed on the retry), three suites killed at the 900 s a suite is given on #443's run at 2ff39f31, and foewarm, red twice on #529 at 85a8ff00.
 `node tests/run.mjs <suite>` runs a skipped suite by name.
 
 | Suite | Why it is skipped | Card |
@@ -14,6 +14,7 @@ strike the row here. That PR runs the suite. Kept by the QA routine; started by 
 | `f4people` | red: vendor/people.builder.js is what people.js makes now (python3 scripts/people_bundle.py) | open |
 | `falls` | too slow: killed at the 900 s a suite is given (1800 s with the retry) | open |
 | `fistfight` | too slow: killed at the 900 s a suite is given (1744 s with the retry) | open |
+| `foewarm` | red: raising every foe kind compiles no shader and adds no program (8 compiled, 4 programs added, on #529 at 85a8ff00, failed twice; it passed at 67c6fd2d, and #443 had it red on the new look) | open |
 | `guildfurn` | red: guild_f: the hall is one bake of 15–90k triangles, with the notice board, four dormitory chests and the gallery's chest (Session 293) beside it, and no cylinders left | open |
 | `hourhitch` | too slow: killed at the 900 s a suite is given (1800 s with the retry) | open |
 | `lookpair` | red: the old look is r128 and the new one 0.170, at the same spot | open |
