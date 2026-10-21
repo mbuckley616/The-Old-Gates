@@ -14,6 +14,9 @@ const r = await page.evaluate((KINDS) => { forceTime(11); const raf = window.req
   KINDS.forEach((n, i) => { px = x0 + i * 14; pz = z0; const x = px + fwdX * 2.5, z = pz + fwdZ * 2.5;
     const e = buildZoneEnemy(WORLD.scene, [], x, z, n, null); e.locked = false; e.mesh.visible = true; if (!e.mesh.parent) WORLD.scene.add(e.mesh);
     e.mesh.position.set(x, activeTerrainH(x, z), z); e.mesh.updateMatrixWorld(true);
+    // on the new look a foe 2.5 off has worn the builder's body for many frames before a blow can land: give it those frames
+    const rig = typeof HB_RIGS !== 'undefined' ? [...HB_RIGS].find(r => e.mesh.getObjectById(r.root.id)) : null; let hbT = performance.now();
+    for (let k = 0; rig && !rig.hb && !rig.hbFail && k < 40; k++) { hbT += HBODY.gap + 1; tickPeople(1 / 60, hbT); }
     e.hp = 0; killZoneEnemy(e, WORLD.scene, ' (POWER)'); const c = ZONE_CORPSES[ZONE_CORPSES.length - 1];
     if (!c.items.length) c.items.push({ name: 'Gold Coins', ico: '●', type: 'gold', value: 5, qty: 1 });
     const pl = { x: px, z: pz };
