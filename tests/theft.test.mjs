@@ -12,14 +12,17 @@ for (const id of ids) {
   if (got.seen && got.unseen) break;
   await page.evaluate((id) => { const h = WORLD.settle.get('dunmore').houses.find(x => x.id === id); window._h = h; forceTime(13); px = h.exitX; pz = h.exitZ; goToInterior(h); }, id);
   await page.waitForTimeout(4500); await g.hide();
-  const r = await page.evaluate(async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const X = WORLD.intBox; if (!X) return null;
-    px = X.x; pz = X.z + .8; jumpY = 0; lookAtPt(X.x, .3, X.z); const K_ = intNPCMesh; if (K_) { K_.userData.amble = null; K_.rotation.y = Math.atan2(px - K_.position.x, pz - K_.position.z); } // (S368: the keeper stands and watches the box: the cone is keepercone's, the fine and the guard are this test's)
+  const r = await page.evaluate(async (wantSeen) => { const wait = ms => new Promise(r => setTimeout(r, ms)); const X = WORLD.intBox; if (!X) return null;
+    px = X.x; pz = X.z + .8; jumpY = 0; lookAtPt(X.x, .3, X.z); const K_ = intNPCMesh; if (K_) { K_.userData.amble = null;
+      /* S1266 — for the seen theft, the keeper stands where they see the box: on the old look one room of Dunmore's had it so by its layout (Cathal's), on the new look none does, and the cone is keepercone's, not this suite's */
+      if (wantSeen) for (const [ox, oz] of [[0, 1.5], [1, 1.2], [-1, 1.2], [0, 2.2], [1.5, .8], [-1.5, .8], [0, -1.5], [1.2, -.6], [-1.2, -.6], [1.5, 0], [-1.5, 0]]) { const kx = px + ox, kz = pz + oz; if (!intSolidAt(kx, kz) && intSightLine(kx, kz, px, pz, true)) { K_.position.x = kx; K_.position.z = kz; break; } }
+      K_.rotation.y = Math.atan2(px - K_.position.x, pz - K_.position.z); } // (S368: the keeper stands and watches the box: the cone is keepercone's, the fine and the guard are this test's)
     const seenHere = !!WORLD.witnessOf(window._h);
     const c0 = { ...((worldState.crime || {}).dunmore || {}) }; const gold0 = gold; const added = [], _ba = window.bagAdd; window.bagAdd = function (it) { added.push({ name: it.name, buyPrice: (it.buyPrice || 0) * (it.qty || 1) }); return _ba.apply(this, arguments); }; WORLD.boxInteract();
     for (let k = 0; k < 8 && LP.phase !== 'done'; k++) { lpPress(); LP.pushed = performance.now() - LP.rise - 5; lpPress(); }
     await wait(900); window.bagAdd = _ba; const coins = gold - gold0; const taken = added; const value = coins + taken.reduce((a, it) => a + (it.buyPrice || 0), 0); // each thing at its own price as the box hands it over: a stolen potion or pick may join a stack priced otherwise (S176)
     const c = (worldState.crime || {}).dunmore || {}; exitInterior();
-    return { name: window._h.name, seenHere, coins, items: taken.map(i => i.name + ':' + (i.buyPrice || 0)), value, fine: (c.bounty || 0) - (c0.bounty || 0), loot: (c.loot || 0) - (c0.loot || 0), favour: WORLD.favor('dunmore') }; });
+    return { name: window._h.name, seenHere, coins, items: taken.map(i => i.name + ':' + (i.buyPrice || 0)), value, fine: (c.bounty || 0) - (c0.bounty || 0), loot: (c.loot || 0) - (c0.loot || 0), favour: WORLD.favor('dunmore') }; }, !!got.unseen && !got.seen);
   await page.waitForTimeout(2500); await g.hide();
   if (!r || r.coins <= 0) continue;
   if (r.seenHere && !got.seen) got.seen = r; else if (!r.seenHere && !got.unseen) got.unseen = r;
