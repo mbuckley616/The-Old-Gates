@@ -27,5 +27,5 @@ strike the row here. That PR runs the suite. Kept by the QA routine; started by 
 | `signs` | red: dunmore: every shop, inn, church and guild hall has one board, reading its own name | open |
 | `skirtlegs` | red: page.evaluate: TypeError: mesh.boneTransform is not a function | open |
 | ~~`theft`~~ | ~~red: a seen theft is fined 50 and the goods’ value (coins and the thing taken)~~ | **fixed, Session 1245** (the suite's: in the kit shops the box is off the counter's line behind the partition, so no seen theft was found; the keeper is now stood 2.2 from the box with a clear line for the seen case; 5/5) |
-| `wanderface` | red: a wandering foe's body faces the way it walks (within 0.25 rad, sampled every half second for 6 s) | open |
+| ~~`wanderface`~~ | ~~red: a wandering foe's body faces the way it walks (within 0.25 rad, sampled every half second for 6 s)~~ | **fixed, Session 1246** (the suite's: the Wolf's home, 49 and 40 from Dunmore's square, is inside a building on the new look, so its wander never stepped; each foe now gets a home whose 3 m ring is open; 5/5) |
 | `yardplay` | too slow: killed at the 900 s a suite is given (1800 s with the retry) | open |

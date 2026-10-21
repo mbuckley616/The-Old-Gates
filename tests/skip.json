@@ -18,7 +18,6 @@
   "scaleratio": "red: dunmore (gatelands): every house door is 1.1 to 1.25 of a 1.8 m person (55 doors measured)",
   "signs": "red: dunmore: every shop, inn, church and guild hall has one board, reading its own name",
   "skirtlegs": "red: page.evaluate: TypeError: mesh.boneTransform is not a function",
-  "wanderface": "red: a wandering foe's body faces the way it walks (within 0.25 rad, sampled every half second for 6 s)",
   "yardplay": "too slow: killed at the 900 s a suite is given (1800 s with the retry)"
  }
 }
