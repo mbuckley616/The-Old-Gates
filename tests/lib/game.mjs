@@ -70,20 +70,63 @@ export async function boot(opts = {}) {
   // 1226 (20 Oct 2026) the page's default is the new look, three.js 0.170 (vendor/three.r170.min.js, beside index.html), and every
   // suite boots it; a suite that fails there is skipped (tests/skip.json), never sent back to the old look
   const look = opts.look || process.env.OG_LOOK || '';
+  // 20 Oct 2026: boot and intoWorld waited for the game to say each step is done, not a fixed pause. The pauses came to 31.8 s
+  // a suite (4 + 0.8 + 9 + 9 + 9), about 4.4 of a full run's 11.8 runner-hours, and sampled every 250 ms most of each was
+  // slack: the title is up when goto returns, the crypt stands 0.8 s into ccBegin's 9 (the rest is the intro text hide()
+  // throws away), and the home province's 9 s ended with nine of the world's jobs still queued. The floor is the intro's own
+  // timers (the popup, below in intoWorld). Measured on one machine: boot and intoWorld 34.5 s to 23.3 s, and seven suites
+  // (wyrm, bear, player, dungeon, saves, crawler, peopleao) 400 s to 328 s, every check the same. A check that is never seen
+  // gives up after READY_MS (60 s by default) with a line in the log and the suite goes on, as it did after the pause, so a
+  // slow runner is slower, never red. OG_FIXED_WAITS=1 puts the old pauses back (to compare, or to rule this out).
+  const fixed = !!process.env.OG_FIXED_WAITS;
+  const ready = async (ms, what, fn, arg) => {
+    if (fixed) return page.waitForTimeout(ms);
+    const t0 = Date.now();
+    try { await page.waitForFunction(fn, arg, { polling: 100, timeout: +process.env.READY_MS || 60000 }); }
+    catch (e) { console.log(`  ready: ${what} not seen after ${Math.round((Date.now() - t0) / 1000)} s`); }
+  };
+  // a goToZone is done when its fade has lifted with the player at the spot asked for (freeSpot may nudge them a little)
+  const arrived = ([x, z]) => document.getElementById('fd').style.opacity === '0' && activeZoneId === 'world' && Math.hypot(px - x, pz - z) < 50;
   await page.goto('file://' + file + (look ? '?look=' + look : ''));
-  await page.waitForTimeout(4000);
+  await ready(4000, 'the title screen', () => typeof ccBegin === 'function' && getComputedStyle(document.getElementById('sb')).display !== 'none');
 
   const g = { page, browser, errs, logs };
   g.hide = () => page.evaluate(() => {
     for (const id of ['intro-overlay', 'quest-popup']) { const e = document.getElementById(id); if (e) e.style.display = 'none'; }
     try { _introFadeActive = false; } catch (e) {}
   });
+  // the 3×3 of cells around the player loaded, as the old 9 s pause left it, by running the world's job queue the way settle()
+  // does (the same jobs in the same order, more of them a frame). The cells are only asked for every 0.75 s of world time
+  // (`tickCells`), so each round asks first, as the next tick would. It stops when the nine stand and leaves the rest queued
+  // as the pause did: run to empty, the queue also built the statics near the player (628 objects in the world's scene for
+  // 281), and a dungeon entered after drew at 1.2 fps for 2.2, which put `dungeon` at 160 s for 67.
+  g.cells = async () => {
+    for (let k = 0; k < 40; k++) {
+      const done = await page.evaluate(() => { const nine = () => { const [pi, pj] = cellOf(px, pz); for (let j = pj - 1; j <= pj + 1; j++) for (let i = pi - 1; i <= pi + 1; i++) {
+          if (i < 0 || j < 0 || i >= GRID || j >= GRID) continue; const L = LOADED.get(cellKey(i, j)); if (!L || L.pending) return false; } return true; };
+        tickCells(1); const t0 = performance.now(); while (!nine() && JOBS.length && performance.now() - t0 < 1500) runJobs(); return nine(); });
+      if (done) break;
+      await g.frames(2);
+    }
+  };
   g.intoWorld = async () => {
-    await page.click('#sb'); await page.waitForTimeout(800);
-    await page.evaluate(() => ccBegin()); await page.waitForTimeout(9000); await g.hide();
-    await page.evaluate(() => goToZone('world', 1130, 1480, 0, 'Hearthwick')); await page.waitForTimeout(9000); await g.hide();
+    await page.click('#sb');
+    await ready(800, 'the character creator', () => getComputedStyle(document.getElementById('cc-modal')).display !== 'none');
+    await page.evaluate(() => ccBegin());
+    await ready(9000, 'the tutorial crypt', () => document.getElementById('fd').style.opacity === '0' && activeZoneId === 'dungeon' && scene === dScene);
+    await g.hide();
+    await page.evaluate(() => goToZone('world', 1130, 1480, 0, 'Hearthwick'));
+    await ready(9000, 'Hearthwick', arrived, [1130, 1480]); await g.hide();
     // legacy-cell Hearthwick is the safe start; the continent's own home province is at 13100,25450
-    await page.evaluate(() => goToZone('world', 13100, 25450, 0, 'x')); await page.waitForTimeout(9000); await g.hide();
+    await page.evaluate(() => goToZone('world', 13100, 25450, 0, 'x'));
+    await ready(9000, 'the home province', arrived, [13100, 25450]);
+    if (!fixed) await g.cells();
+    // ccBegin's intro runs on its own timers, about 15.7 s from the call (1.4 s, four lines 2.6 s apart, a 3 s hold, a 1.6 s
+    // fade), and ends by opening the first quest's popup, which stops the loop. The old pauses outlasted it and the last hide()
+    // took the popup down; returning before it opened left it to open in the suite, the camera frozen (`dungeon`'s fort waited
+    // out its 120 s for it). So the popup is waited for, then hidden, as before.
+    await ready(0, 'the first quest\'s popup', () => { const e = document.getElementById('quest-popup'); return !!e && e.style.display === 'flex'; });
+    await g.hide();
   };
   g.keepAlive = () => { const t = setInterval(() => page.evaluate(() => { PHP = maxHP; }).catch(() => {}), 800); return () => clearInterval(t); };
   // Session 1006: it waited 24 polls (60 s) and then went on as if the town stood. A cell builds on the world's job queue,
