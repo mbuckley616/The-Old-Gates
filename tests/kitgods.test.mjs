@@ -1,4 +1,4 @@
-// The six gods' row of seven at the town church on the new look (Session 1229; card F6, Michael's B on DECISION #464 after his C on
+// The six gods' row of seven at the town church on the new look (Session 1232; card F6, Michael's B on DECISION #464 after his C on
 // #439). A Gatelands town's, port's or city's church plot has a yard of 4.5 m beside the nave (2 m until now), and the row stands along
 // its long side facing the nave, as shrines-church.html?place=side drew it: seven niches 1.4 m apart, the Guest's struck, a basin
 // before each of the six; its plinths one solid and each basin one; the kneeling place before each basin open ground.
