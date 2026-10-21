@@ -712,10 +712,10 @@ function tickSpider(rig,g,e,dt,now){
 // The boar and the Cave Bear (Session 1251) wear theirs on the same driver: the kit's wild boar in its own coat, and its bear (the
 // Frostreach) in the Cave Bear's brown. The bear's legs are plantigrade, three joints to the driver's four: its paw takes the driver's
 // paw and the driver's wrist and hock move nothing of it (hcMap); a tail shorter than the driver's three joints takes the first.
-// The coach's two horses (Session 1272) wear the kit's horse (Session 1261's, heavier) in their own coats, the mane in the saddle's
+// The coach's two horses (Session 1273) wear the kit's horse (Session 1261's, heavier) in their own coats, the mane in the saddle's
 // tone, on the same driver. They are no foes, so a horse's genome is keyed by the coach's road and its place in the team (rig.hcKey,
 // `coach:<road>:<i>`, set by buildCoachLine), and the two of a team are two bodies.
-// The Ash Hound (Session 1272) is the kit's own `ashhound`: the wolf leaner and ash-grey, its eyes lit, and the old body's embers along
+// The Ash Hound (Session 1274) is the kit's own `ashhound`: the wolf leaner and ash-grey, its eyes lit, and the old body's embers along
 // the back as a broken seam of ember in its hide (the kit's glow, which takes the tell's red over it as any hide does).
 // The dragon and the Faolchú keep the old body: their plans are later work.
 const HC_BODY={on:true,near:12,mid:40,build:44,small:.03,ms:0,n:0};
@@ -780,7 +780,7 @@ function hcPose(rig){const H=rig.hc,B=rig.B,map=H.map;
   // the wind-up's red and the parry's gold on the driver's material, on the kit's (its eyes and claws keep their own)
   const m=rig.mesh.material;let em=m&&m.emissive?m.emissive.getHex():0;if(m!==H.drv&&m&&m.color&&m.color.getHex()===0xffdd44)em=0xb08010;
   if(em!==H.em){H.em=em;for(const o of [...H.hide,...H.fur])for(const x of Array.isArray(o.material)?o.material:[o.material])if(x.emissive)x.emissive.setHex(em);}}
-// Session 1272: the kit's horse has its legs in other proportions than the driver's, so the driver's joint turns copied onto it lift a
+// Session 1273: the kit's horse has its legs in other proportions than the driver's, so the driver's joint turns copied onto it lift a
 // planted hoof up to 11 cm off the ground at the trot. Each leg is bent back onto the driver's paw height (its rest offset kept) by
 // two passes of turns at its three upper joints about the body's own side axis, so the leg stays in its plane and the stride is the
 // driver's; a turn is held to 0.35 rad a pass

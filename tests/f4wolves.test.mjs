@@ -1,6 +1,6 @@
 // Card F4 (Session 1202): on the new look the Wolf, the Snow Wolf and the Dire Wolf wear the creature kit's body (creatures.js, as
 // vendor/creatures.builder.js), driven by their old 24-bone rig as the townsfolk's builder bodies are by theirs. A line of the three
-// and an Ash Hound (its own plan since Session 1272) ahead of you in the open world: each wolf on the kit's skeleton, its genome rolled from its
+// and an Ash Hound (its own plan since Session 1274) ahead of you in the open world: each wolf on the kit's skeleton, its genome rolled from its
 // foe id (`wolf:<id>`); its hips at its driver's height; three levels by distance (the hide and fur near, the hide and its ears, the driver
 // far); a run that moves the kit's bones with its paws by the driver's; the tell's glow on the kit's hide; and killed, a corpse
 // darkened with its shaders kept that falls with its driver. Pictures: docs/prototypes/f4/f4-wolves.jpg and f4-wolves-near.jpg.
@@ -34,7 +34,7 @@ const wolves = who.filter(w => w.n !== 'Ash Hound');
 check(`the three wolves wear the kit's body on its own skeleton (${wolves.map(w => w.bones).join(', ')} bones), keyed by their foe id, built in ${made.each} ms each`, wolves.every(w => w.hc && w.bones > 20 && w.seed === w.want) && made.left === 0, wolves);
 check('the Wolf and the Snow Wolf are the kit\'s grey wolf, the Dire Wolf its Ironwolf; the Snow Wolf pale and the Dire Wolf dark in their own coats',
   who[0].plan === 'wolf' && who[1].plan === 'game:Snow Wolf' && who[2].plan === 'game:Dire Wolf' && who[1].coat[0] > .8 && who[2].coat[0] < .3, who.map(w => [w.n, w.plan, w.coat]));
-check('the Ash Hound wears the kit\'s own Ash Hound, keyed by its foe id (Session 1272)', who[3].hc && who[3].plan === 'ashhound' && who[3].seed === who[3].want, who[3]);
+check('the Ash Hound wears the kit\'s own Ash Hound, keyed by its foe id (Session 1274)', who[3].hc && who[3].plan === 'ashhound' && who[3].seed === who[3].want, who[3]);
 
 // the same wolf is the same body: the genome comes from the id alone
 const same = await page.evaluate(() => _W.filter(f => f.rig.hc).every(f => JSON.stringify(HC.toSaved(HC.genome(hcPlan(f.n), 'wolf:' + f.e.id))) === JSON.stringify(HC.toSaved(f.rig.hc.C.g))));

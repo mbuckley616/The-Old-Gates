@@ -711,7 +711,7 @@ function dressFlesh(geo, B, pal, plan) {
   if (alpha) geo.setAttribute('aAlpha', new THREE.Float32BufferAttribute(alpha, 1));
 }
 
-// a seam's run along the body (Session 1272, the Ash Hound's): `z` its two ends, so it lies along the back alone and not up the neck and
+// a seam's run along the body (Session 1274, the Ash Hound's): `z` its two ends, so it lies along the back alone and not up the neck and
 // over the head, and `gaps` breaks it into lengths of ember about that many to the metre
 function seamRun(S, z) { let k = 1; if (S.z) k = sstep(S.z[0] - .05, S.z[0], z) * sstep(S.z[1] + .05, S.z[1], z);
   if (S.gaps) k *= sstep(-.15, .2, PN.noise(z * S.gaps, 3.7, 1.3)); return k; }
@@ -2330,7 +2330,7 @@ Object.assign(PLANS, {
     ] }
 });
 export const HOUNDS = ['wolfhound'];
-// the Ash Hound (Session 1272): the game's wolf of the wastes (34-creatures.js's `Ash Hound`, S262's kinds) on the kit's wolf: ash-grey,
+// the Ash Hound (Session 1274): the game's wolf of the wastes (34-creatures.js's `Ash Hound`, S262's kinds) on the kit's wolf: ash-grey,
 // leaner, with longer ears and muzzle, its eyes lit ember-orange, and the old body's "glowing seams along the back" as the Faolchú's seam
 // down the spine (`glow.seam`), with a few cracks of ember over the hide
 Object.assign(PLANS, {

@@ -1,9 +1,9 @@
 // Card F4's next family (Session 1251): on the new look the Boar and the Cave Bear wear the creature kit's body as the wolves do
 // (Session 1202, f4wolves), driven by their old 24-bone rig. The boar is the kit's wild boar; the Cave Bear its Frostreach bear in the
 // Cave Bear's own brown, whose plantigrade legs have three bones to the driver's four (hcMap: the paw takes the driver's paw). A line of
-// the two and an Ash Hound (its own plan since Session 1272) ahead of you: each on the kit's skeleton, keyed by its foe id; its hips at its driver's;
+// the two and an Ash Hound (its own plan since Session 1274) ahead of you: each on the kit's skeleton, keyed by its foe id; its hips at its driver's;
 // three levels by distance; a run that moves the kit's bones with its feet by the driver's; the tell's glow; and killed, a corpse
-// darkened with its shaders kept that lies with its driver. Session 1272 adds the coach's two horses on the kit's horse. Pictures: docs/prototypes/f4/f4-beasts.jpg and f4-beasts-near.jpg.
+// darkened with its shaders kept that lies with its driver. Session 1273 adds the coach's two horses on the kit's horse. Pictures: docs/prototypes/f4/f4-beasts.jpg and f4-beasts-near.jpg.
 import { boot, check, ROOT } from './lib/game.mjs';
 import fs from 'fs'; import path from 'path';
 const OUT = path.join(ROOT, 'docs', 'prototypes', 'f4'); fs.mkdirSync(OUT, { recursive: true });
@@ -36,7 +36,7 @@ check('the Boar is the kit\'s wild boar; the Cave Bear its bear in the Cave Bear
   who[0].plan === 'boar' && who[1].plan === 'game:Cave Bear' && who[1].coat.every((v, i) => Math.abs(v - [0x4a, 0x3a, 0x2a][i] / 255) < .01), who.map(w => [w.n, w.plan, w.coat]));
 const ash = await page.evaluate(() => { const H = _W[2].rig.hc; if (!H) return null; const a = H.C.meshes[0].geometry.attributes.aGlow, y = H.C.meshes[0].geometry.attributes.position; let lit = 0, low = 0;
   for (let i = 0; i < a.count; i++) if (a.getX(i) > .5) { lit++; if (y.getY(i) < .5) low++; } return { lit, low, n: a.count, eyes: H.C.plan.parts.find(p => p[0] === 'head')[1].eyes[0].glow }; });
-check(`the Ash Hound wears the kit's own Ash Hound (Session 1272): its embers a broken seam down the back (${ash && ash.lit} of ${ash && ash.n} hide points lit, none low on the body), its eyes lit`,
+check(`the Ash Hound wears the kit's own Ash Hound (Session 1274): its embers a broken seam down the back (${ash && ash.lit} of ${ash && ash.n} hide points lit, none low on the body), its eyes lit`,
   who[2].hc && who[2].plan === 'ashhound' && who[2].seed === who[2].want && ash.lit > 20 && ash.lit < ash.n * .1 && ash.low === 0 && ash.eyes > 1, { who: who[2], ash });
 const legs = await page.evaluate(() => { const m = hcMap(_W[1].rig.hc.C.byName); return { n: m.length, paw: m.filter(([j]) => /^p[fh]/.test(j)).map(([j, b]) => j + '>' + b.name), wr: m.filter(([j]) => /^(wr|hk)/.test(j)).length, boar: hcMap(_W[0].rig.hc.C.byName).length }; });
 check(`the bear's plantigrade legs: each paw takes the driver's paw (${legs.paw.join(', ')}), the wrists and hocks drive nothing; the boar takes all ${legs.boar} joints but its tail's third`,
@@ -80,7 +80,7 @@ const glow = await page.evaluate(() => { const f = _W[0], rig = f.rig, mats = ()
   telegraphPulse(f.e, 1); tickCreatures(1 / 60, 6e5); const on = lit(), all = mats().length; telegraphReset(f.e); tickCreatures(1 / 60, 6e5 + 17); return { on, all, off: lit() }; });
 check('the tell\'s glow lights the kit\'s hide and fur and goes out with it', glow.on > 0 && glow.on === glow.all && glow.off === 0, glow);
 
-// the coach's two horses (Session 1272): the kit's horse in each one's coat, keyed by the coach's road and the place in the team as
+// the coach's two horses (Session 1273): the kit's horse in each one's coat, keyed by the coach's road and the place in the team as
 // buildCoachLine keys them; standing on their hooves, and at the trot each planted hoof kept on the driver's (hcLegIK)
 const horses = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.cos(yaw), sx = -fz, sz = fx;
   window._HS = ['Horse', 'Grey Horse'].map((n, i) => { const hg = new THREE.Group(), rg = buildWolf(n, 1.6); rg.hcKey = 'coach:f4beasts:' + i; hg.add(rg.root);
