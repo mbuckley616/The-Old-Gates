@@ -12,7 +12,7 @@ strike the row here. That PR runs the suite. Kept by the QA routine; started by 
 | `bridgenames` | red: 16 bridges built in ten cells, each named *… Bridge* | open |
 | `civicfurn` | red: the church is one bake with the altar's candle flames, 5–60k triangles, and none of the old cylinder pillars | open |
 | `f4people` | red: vendor/people.builder.js is what people.js makes now (python3 scripts/people_bundle.py) | open |
-| `falls` | too slow: killed at the 900 s a suite is given (1800 s with the retry) | open |
+| ~~`falls`~~ | ~~too slow: killed at the 900 s a suite is given (1800 s with the retry)~~ | **fixed, Session 1247** (the suite's: it fell on real frames; it now drives the game's loop at fixed 1/60 ticks with the drawing stubbed, as `wanderface` does; 11/11 in 106 s here, `times.json` 150) |
 | `fistfight` | too slow: killed at the 900 s a suite is given (1744 s with the retry) | open |
 | `foewarm` | red: raising every foe kind compiles no shader and adds no program (8 compiled, 4 programs added, on #529 at 85a8ff00, failed twice; it passed at 67c6fd2d, and #443 had it red on the new look) | open |
 | `guildfurn` | red: guild_f: the hall is one bake of 15–90k triangles, with the notice board, four dormitory chests and the gallery's chest (Session 293) beside it, and no cylinders left | open |
