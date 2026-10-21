@@ -116,7 +116,7 @@ Session 368 built the tooling and Session 379 cut the file (1 Oct 2026); Session
     scale. A builder that sizes a person, a door or a storey reads it here. The gameplay ranges (reach, sight, sneak, jumps) are F2b's.
   - `10-player.js` renderer boot (`REN`, `CAM`, `VM_SCENE`), player state (`px/pz/PHP`…), roll, posture, lock-on, sneak,
     bow, `ANIM_PARAMS`. `12-character.js` `ATTRS`, `ARCHETYPES`, level-up. `14-items.js` `EQ`, `BAG`, `MATERIALS`,
-    `WEAPON_TYPES`, `BOOKS`, enchants, `makeItem`, loot tables. `16-viewmodel.js` first-person hands and weapons.
+    `WEAPON_TYPES`, `BOOKS`, enchants, `makeItem`, loot tables. `16-viewmodel.js` first-person hands and weapons; on the new look the hands are cut from the player's builder body (`fpHBFist`, `fpHBBake`, `FP_HB`; F10, Session 1252).
   - `20-quests.js` `mkTex`/`TX`/`MAT`, `showMsg`, `doFade`, the legacy heightmap, `WORLD_DUNGEONS`, `PORTALS`, `QUEST_DEFS`,
     `QS`, journal, compass, markers. `22-dialogue.js` `NPC_DEF`, `SHOP_DIALOG`, `openDialog`, `talkNPC`, `HOUSES`,
     `SHOP_STOCK`, `worldState`, `ZONES`, `MAP_NODES`, `activeZoneId`. `24-forts.js` `FORT_EXTERIORS` data.
@@ -130,7 +130,7 @@ Session 368 built the tooling and Session 379 cut the file (1 Oct 2026); Session
     `tickZoneEnemies`, `killZoneEnemy`. `44-legacy-towns.js` `PROP_BUILDERS`, wilderness, forest, `buildTown`, Ironhaven,
     `ZONE_BUILDERS`, `registerPlaceholderZone`.
   - `50-travel.js` `goToZone`, fast travel, buffs, herbs, the clock, `forceTime`, day/night, respawn, `interact`.
-    `52-dungeon-gen.js` `FOOTHOLDS`, `INT_BEDS`, `makeDungeon`, `dSolid`. `54-thirdperson.js` `TP`, `tpBuild/tpPose/tpCamera`.
+    `52-dungeon-gen.js` `FOOTHOLDS`, `INT_BEDS`, `makeDungeon`, `dSolid`. `54-thirdperson.js` `TP`, `tpBuild/tpPose/tpCamera`; on the new look the player's own body is the builder's (card F10, Session 1246): the genome saved in `worldState.look.hb` (`lookHBGenome`; the creator's Body, Height and Build rows), dressed from `EQ` (`tpHBDress`), attached by F4's `hbAttach` at the genome's own stature and posed by `tpHBPose` (what the hands hold rides as copies, `tpHBHold`). `tpEnsure` builds the body for the kit worn now, and a change of kit that leaves the dressed genome alone carries the builder's body over (`tpBuild`'s `reuse`, Session 1252).
     `56-dungeon-build.js` the dungeon shell, `furnBuild`, `buildDungeon`, `goToDungeon`, `goToOW`.
     `58-interiors-legacy.js` room kits, `buildInterior`, `goToInterior`, `exitInterior`.
   - `60-shop.js` shop, loot, stash, sleep, buy/sell. `62-actions.js` `doBash`, `attack`, `fireArrow`, `killE`, `castSpell`,

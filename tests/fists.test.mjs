@@ -12,7 +12,8 @@ const build = await page.evaluate(() => { thirdPerson = false; const keep = { w:
   if (typeof drawWeapon === 'function') { drawWeapon(); _lastSwingG = playClockS; }
   const out = {}; out.armed = st();
   EQ.weapon = null; EQ.offhand = null; buildViewmodel(); out.empty = st();
-  out.tris = vmSword.children[0].geometry.attributes.position.count / 3;
+  /* F10 (S1252): the new look's fist is the builder's, an indexed mesh: its triangles, not its vertices ÷ 3 */
+  { const gg = vmSword.children[0].geometry; out.tris = (gg.index ? gg.index.count : gg.attributes.position.count) / 3; }
   EQ.offhand = { name: 'Torch', torchType: 'torch', slot: 'offhand' }; buildShieldViewmodel(); out.torch = st();
   EQ.offhand = null; buildShieldViewmodel(); out.back = st();
   EQ.weapon = keep.w; EQ.offhand = keep.o; buildViewmodel(); out.rearmed = st();

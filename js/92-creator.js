@@ -834,7 +834,7 @@ function ccLookTurn(d){CCL.yaw+=d;CCL.touch=performance.now();if(CCL.rig)CCL.rig
   window.addEventListener('keydown',e=>{const m=document.getElementById('cc-modal');if(!m||m.style.display==='none'||!CCL.rig)return;const a=document.activeElement;if(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName))return;
     if(e.code==='ArrowLeft'||e.code==='ArrowRight'){e.preventDefault();ccLookTurn((e.code==='ArrowLeft'?-1:1)*.2);}});})();
 function ccLookPeople(pp){const L=lookDefault(pp,window._ccArch||playerArchetype,document.getElementById('cc-name')&&document.getElementById('cc-name').value);const cur=window._ccLook||{};
-  window._ccLook=Object.assign(L,{style:cur.style||L.style,beard:!!cur.beard,tunic:CCL.explicit.tunic?cur.tunic:L.tunic,breeches:cur.breeches!=null?cur.breeches:L.breeches,boots:cur.boots!=null?cur.boots:L.boots});ccLookRows();ccLookRebuild();}
+  window._ccLook=Object.assign(L,{style:cur.style||L.style,beard:!!cur.beard,tunic:CCL.explicit.tunic?cur.tunic:L.tunic,breeches:cur.breeches!=null?cur.breeches:L.breeches,boots:cur.boots!=null?cur.boots:L.boots,body:cur.body||'man',tall:cur.tall,build:cur.build,seed:cur.seed,hb:cur.hb,hbTall:cur.hbTall,hbBuild:cur.hbBuild});ccLookRows();ccLookRebuild();}
 function ccLookRows(){const box=document.getElementById(CCL.ui.rows);if(!box)return;const pp=window._ccPeople||'gatelander';let P=null;try{P=WORLD.PEOPLES[pp];}catch(e){}const L=window._ccLook;
   const row=(label,items,get,set)=>{const r=document.createElement('div');r.style.cssText='display:flex;align-items:center;gap:6px;flex-wrap:wrap';const l=document.createElement('span');l.textContent=label;l.style.cssText='width:64px;color:'+(CCL.ui.ink||'#b8a880')+';font-size:12px;flex:none';r.appendChild(l);
     for(const it of items){const b=document.createElement('button');b.type='button';const col=typeof it==='number';b.title=col?'#'+it.toString(16).padStart(6,'0'):it[1];b.textContent=col?'':it[1];const on=get()===(col?it:it[0]);
@@ -842,10 +842,13 @@ function ccLookRows(){const box=document.getElementById(CCL.ui.rows);if(!box)ret
       b.onclick=()=>{set(col?it:it[0]);ccLookRows();ccLookRebuild();};r.appendChild(b);}
     box.appendChild(r);};
   box.innerHTML='';
+  /* F10 (S1246) — on the new look the builder's body: man or woman, and the height and build inside the people's ranges (the creator only) */
+  const hbRows=CCL.ui.skin&&typeof hbOn==='function'&&hbOn();
+  if(hbRows){row('Body',[['man','Man'],['woman','Woman']],()=>L.body||'man',v=>{L.body=v;if(v==='woman')L.beard=false;});row('Height',LOOK_HB_TALL,()=>L.tall==null?.5:L.tall,v=>{L.tall=v;});row('Build',LOOK_HB_BUILD,()=>L.build==null?.5:L.build,v=>{L.build=v;});}
   if(CCL.ui.skin)row('Skin',P&&P.skin||[0xd4a878],()=>L.skin,v=>{L.skin=v;});
   row('Hair',P&&P.hair||[0x3a2a1a],()=>L.hair,v=>{L.hair=v;});
   row('Style',LOOK_STYLES,()=>L.style,v=>{L.style=v;});
-  row('Beard',LOOK_BEARDS,()=>L.beard===true?'full':L.beard||'no',v=>{L.beard=v==='no'?false:v;});
+  if(!(typeof hbOn==='function'&&hbOn()&&L.body==='woman'))row('Beard',LOOK_BEARDS,()=>L.beard===true?'full':L.beard||'no',v=>{L.beard=v==='no'?false:v;});
   row('Tunic',LOOK_TUNICS,()=>L.tunic,v=>{L.tunic=v;CCL.explicit.tunic=true;});
   row('Breeches',LOOK_BREECHES,()=>L.breeches,v=>{L.breeches=v;});
   row('Boots',LOOK_BOOTS,()=>L.boots,v=>{L.boots=v;});
@@ -856,13 +859,16 @@ function ccLookRebuild(){const cv=document.getElementById(CCL.ui.cv);if(!cv||!wi
   if(CCL.rig)tpDispose(CCL.rig);
   const keep={};for(const k in EQ){keep[k]=EQ[k];}EQ.head=null;EQ.chest={name:'Tattered Tunic'};EQ.legs={name:'Worn Breeches'};EQ.feet={name:'Leather Boots'};EQ.hands=null;EQ.weapon=null;EQ.offhand=null;EQ.ammo=null;EQ.amulet=null;if(EQ.back&&CCL.ui.cloakCol!=null)EQ.back=Object.assign({},EQ.back,{col:CCL.ui.cloakCol});
   try{CCL.rig=tpBuild(window._ccLook,window._ccPeople||'gatelander');}finally{for(const k in keep)EQ[k]=keep[k];}
+  /* F10 (S1246) — on the new look the look carries the builder's genome it was built with (worldState.look.hb, the character row) */
+  if(CCL.rig&&CCL.rig.hbSaved){const L=window._ccLook;L.hb=CCL.rig.hbSaved;L.hbTall=L.tall;L.hbBuild=L.build;}
   if(CCL.rig){CCL.rig.root.position.set(0,0,0);CCL.s.add(CCL.rig.root);
     // an easy stance: arms down, a slight turn of the head
-    tpSet(CCL.rig.shL,.05,0,.08,1);tpSet(CCL.rig.shR,.05,0,-.08,1);tpSet(CCL.rig.elL,-.15,0,0,1);tpSet(CCL.rig.elR,-.15,0,0,1);tpSet(CCL.rig.head,0,-.15,0,1);ccLookFrame();}
+    tpSet(CCL.rig.shL,.05,0,.08,1);tpSet(CCL.rig.shR,.05,0,-.08,1);tpSet(CCL.rig.elL,-.15,0,0,1);tpSet(CCL.rig.elR,-.15,0,0,1);tpSet(CCL.rig.head,0,-.15,0,1);tpHBPose(CCL.rig);ccLookFrame();}
+  CCL.touch=performance.now(); /* F10 — the builder's body takes most of a second to build: the preview holds still for its four seconds from when it is shown */
   if(!CCL.raf)ccLookLoop();}
 function ccLookLoop(){CCL.raf=requestAnimationFrame(ccLookLoop);const m=document.getElementById(CCL.ui.modal);if(!m||m.style.display==='none'){ccLookStop();return;}const now=performance.now(),dt=Math.min(.1,(now-(CCL.last||now))/1000);CCL.last=now;if(CCL.r&&CCL.rig){if(now-CCL.touch>CCL_IDLE)CCL.yaw+=dt*CCL_SPIN;CCL.rig.root.rotation.y=CCL.yaw;try{CCL.r.render(CCL.s,CCL.c);}catch(e){}}}
 function ccLookStop(){if(CCL.raf)cancelAnimationFrame(CCL.raf);CCL.raf=0;}
-(function(){const sh=document.getElementById('cc-look-shuffle');if(sh)sh.onclick=()=>{const pp=window._ccPeople||'gatelander';let P=null;try{P=WORLD.PEOPLES[pp];}catch(e){}const pk=a=>a[Math.floor(Math.random()*a.length)];const L=window._ccLook||lookDefault(pp,playerArchetype);L.skin=pk(P&&P.skin||[L.skin]);L.hair=pk(P&&P.hair||[L.hair]);L.style=pk(LOOK_STYLES)[0];L.beard=Math.random()<.35?pk(LOOK_BEARDS.slice(1))[0]:false;L.tunic=pk(LOOK_TUNICS);L.breeches=pk(LOOK_BREECHES);L.boots=pk(LOOK_BOOTS);CCL.explicit.tunic=true;window._ccLook=L;ccLookRows();ccLookRebuild();};})();
+(function(){const sh=document.getElementById('cc-look-shuffle');if(sh)sh.onclick=()=>{const pp=window._ccPeople||'gatelander';let P=null;try{P=WORLD.PEOPLES[pp];}catch(e){}const pk=a=>a[Math.floor(Math.random()*a.length)];const L=window._ccLook||lookDefault(pp,playerArchetype);L.skin=pk(P&&P.skin||[L.skin]);L.hair=pk(P&&P.hair||[L.hair]);L.style=pk(LOOK_STYLES)[0];L.beard=Math.random()<.35?pk(LOOK_BEARDS.slice(1))[0]:false;L.tunic=pk(LOOK_TUNICS);L.breeches=pk(LOOK_BREECHES);L.boots=pk(LOOK_BOOTS);L.seed='player:'+Math.random().toString(36).slice(2,9);L.hb=null;if(L.body==='woman')L.beard=false;CCL.explicit.tunic=true;window._ccLook=L;ccLookRows();ccLookRebuild();};})();
 // S561 — the barber's chair (barber slice 2; Michael's B on #144, the fee his A on #151): the look panel on a parchment slip, your
 // hair, style and beard, the dyes of your own tunic, breeches and boots, and your cloak's if you wear one. The skin is not the
 // barber's. Rising keeps what you chose and pays the visit's fee through the systems builder's barberPay(house, changed): nothing
@@ -895,7 +901,7 @@ function openBarberChair(house){
   ov.querySelector('#barber-fee').textContent=fee!=null?`${fee} gold for the visit, whatever is changed; nothing, if nothing is.`:'';
   const close=()=>{ov.style.display='none';barberOpen=false;ccLookStop();CCL.ui={cv:'cc-look-cv',rows:'cc-look-rows',modal:'cc-modal',skin:true,cloak:false,cloakCol:null};};
   ov.querySelector('#barber-leave').onclick=()=>{window._ccLook=null;close();};
-  ov.querySelector('#barber-rise').onclick=()=>{const L=window._ccLook,changed=JSON.stringify(L)!==was||(cloak&&CCL.ui.cloakCol!==cloakWas);
+  ov.querySelector('#barber-rise').onclick=()=>{const L=window._ccLook,bare=o=>JSON.stringify(Object.assign({},o,{hb:null,hbTall:null,hbBuild:null})),changed=bare(L)!==bare(JSON.parse(was))||(cloak&&CCL.ui.cloakCol!==cloakWas);
     const res=typeof barberPay==='function'?barberPay(house,changed):(changed?'paid':'free');
     if(res==='poor'){ov.querySelector('#barber-fee').textContent=fee!=null?`Not enough gold: the visit is ${fee}.`:'Not enough gold.';return;}
     if(changed){worldState.look=JSON.parse(JSON.stringify(L));if(cloak&&CCL.ui.cloakCol!=null)cloak.col=CCL.ui.cloakCol;applyLook();try{buildViewmodel();}catch(e){}}
