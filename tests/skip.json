@@ -10,11 +10,9 @@
   "guildfurn": "red: guild_f: the hall is one bake of 15–90k triangles, with the notice board, four dormitory chests and the gallery's chest (Session 293) beside it, and no cylinders left",
   "hourhitch": "too slow: killed at the 900 s a suite is given (1800 s with the retry)",
   "lookpair": "red: the old look is r128 and the new one 0.170, at the same spot",
-  "mainrun": "too slow: killed at the 900 s a suite is given (1800 s with the retry)",
   "placesave": "red: across prosperity swings of 13 and 26 in four towns, no house id moves to another lot",
   "scaleratio": "red: dunmore (gatelands): every house door is 1.1 to 1.25 of a 1.8 m person (55 doors measured)",
   "signs": "red: dunmore: every shop, inn, church and guild hall has one board, reading its own name",
-  "skirtlegs": "red: page.evaluate: TypeError: mesh.boneTransform is not a function",
-  "yardplay": "too slow: killed at the 900 s a suite is given (1800 s with the retry)"
+  "skirtlegs": "red: page.evaluate: TypeError: mesh.boneTransform is not a function"
  }
 }
