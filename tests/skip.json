@@ -13,13 +13,11 @@
   "lookpair": "red: the old look is r128 and the new one 0.170, at the same spot",
   "mainrun": "too slow: killed at the 900 s a suite is given (1800 s with the retry)",
   "panelfocus": "too slow: killed at the 900 s a suite is given (900 s with the retry)",
-  "penance": "red: a lock picked under a witness's eye: favour −1, a point owed, a 25-gold fine",
   "placesave": "red: across prosperity swings of 13 and 26 in four towns, no house id moves to another lot",
   "renewal": "too slow: killed at the 900 s a suite is given (900 s with the retry)",
   "scaleratio": "red: dunmore (gatelands): every house door is 1.1 to 1.25 of a 1.8 m person (55 doors measured)",
   "signs": "red: dunmore: every shop, inn, church and guild hall has one board, reading its own name",
   "skirtlegs": "red: page.evaluate: TypeError: mesh.boneTransform is not a function",
-  "theft": "red: a seen theft is fined 50 and the goods’ value (coins and the thing taken) (failed once; the retry was skipped for the shard's time)",
   "wanderface": "red: a wandering foe's body faces the way it walks (within 0.25 rad, sampled every half second for 6 s)",
   "yardplay": "too slow: killed at the 900 s a suite is given (1800 s with the retry)"
  }

@@ -20,9 +20,14 @@ const crime = await page.evaluate(() => { forceTime(23); worldState.crime = {}; 
   const h = S.houses.filter(x => /weapon|armor|potion|misc/.test(x.type) && x.keeper)[0]; const w = S.npcs.find(n => n.sched && n.sched.type !== 'guard') || S.npcs[0];
   S.npcs.forEach(n => { n.g.visible = false; });
   const dx = h.exitX - h.doorX, dz = h.exitZ - h.doorZ, L = Math.hypot(dx, dz) || 1; px = h.doorX + dx / L * .8; pz = h.doorZ + dz / L * .8; jumpY = 0;
-  const wx = h.doorX + dx / L * 3, wz = h.doorZ + dz / L * 3; const sched0 = w.sched; w.g.visible = true; w._retreated = false; w.sched = { type: 'guard', a: { x: wx, z: wz }, b: { x: wx, z: wz } }; w.g.position.set(wx, WORLD.worldH(wx, wz), wz); w.g.rotation.y = Math.atan2(-dx, -dz); /* S1160 — facing the door (the 120° cone, S705); the heading left from the town's last tick is the layout's */
+  /* S1245 — the witness stands 2.2 off you, out of the hearing's two (so it is the cone that sees), on open ground with a clear line:
+     straight out from the door if that is clear, else turned off it. In the new look's Dunmore the next kit house stands 2.45 out
+     from Lorcan's Forge's door, so the old spot 3 out from the door was inside its wall and the pick was never seen */
+  let wx = h.doorX + dx / L * 3, wz = h.doorZ + dz / L * 3; const spot = (() => { for (const r of [2.2, 2.6, 3]) for (const a of [0, .4, -.4, .8, -.8, 1.2, -1.2]) { const ux = dx / L * Math.cos(a) - dz / L * Math.sin(a), uz = dx / L * Math.sin(a) + dz / L * Math.cos(a), x = px + ux * r, z = pz + uz * r;
+      if (!WORLD.solidAt(x, z) && clearLine(px, pz, x, z)) return { x, z }; } return null; })(); if (spot) { wx = spot.x; wz = spot.z; }
+  const sched0 = w.sched; w.g.visible = true; w._retreated = false; w.sched = { type: 'guard', a: { x: wx, z: wz }, b: { x: wx, z: wz } }; w.g.position.set(wx, WORLD.worldH(wx, wz), wz); w.g.rotation.y = Math.atan2(px - wx, pz - wz); /* S1160 — facing you (the 120° cone, S705); the heading left from the town's last tick is the layout's */
   worldState.picked = {}; WORLD.doorLockFor(h).onPick(); w.sched = sched0; S.npcs.forEach(n => { n.g.visible = true; }); gold = 500; updateHUD();
-  return { shop: h.name, witness: w.def && w.def.name, day: Math.floor(worldState.gameTimeAbsMinutes / 1440) }; });
+  return { shop: h.name, witness: w.def && w.def.name, spot: !!spot, d: +Math.hypot(px - wx, pz - wz).toFixed(2), day: Math.floor(worldState.gameTimeAbsMinutes / 1440) }; });
 const s0 = await state(); console.log('crime', JSON.stringify(crime), JSON.stringify(s0));
 check('a lock picked under a witness\'s eye: favour −1, a point owed, a 25-gold fine', s0.favor === -1 && s0.debt === 1 && s0.bounty === 25, { crime, s0 });
 // the pick takes you into the shop (`onPick` → `goToInterior`, on the fade's timer): wait for that, and for the way back out,

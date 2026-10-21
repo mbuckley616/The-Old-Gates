@@ -20,12 +20,12 @@ strike the row here. That PR runs the suite. Kept by the QA routine; started by 
 | `lookpair` | red: the old look is r128 and the new one 0.170, at the same spot | open |
 | `mainrun` | too slow: killed at the 900 s a suite is given (1800 s with the retry) | open |
 | `panelfocus` | too slow: killed at the 900 s a suite is given (900 s with the retry) | open |
-| `penance` | red: a lock picked under a witness's eye: favour −1, a point owed, a 25-gold fine | open |
+| ~~`penance`~~ | ~~red: a lock picked under a witness's eye: favour −1, a point owed, a 25-gold fine~~ | **fixed, Session 1245** (the suite's: its witness stood 3 out from Lorcan's Forge's door, inside the next kit house, which stands 2.45 out; it now stands 2.2 off you on open ground with a clear line; 11/11) |
 | `placesave` | red: across prosperity swings of 13 and 26 in four towns, no house id moves to another lot | open |
 | `renewal` | too slow: killed at the 900 s a suite is given (900 s with the retry) | open |
 | `scaleratio` | red: dunmore (gatelands): every house door is 1.1 to 1.25 of a 1.8 m person (55 doors measured) | open |
 | `signs` | red: dunmore: every shop, inn, church and guild hall has one board, reading its own name | open |
 | `skirtlegs` | red: page.evaluate: TypeError: mesh.boneTransform is not a function | open |
-| `theft` | red: a seen theft is fined 50 and the goods’ value (coins and the thing taken) (failed once; the retry was skipped for the shard's time) | open |
+| ~~`theft`~~ | ~~red: a seen theft is fined 50 and the goods’ value (coins and the thing taken)~~ | **fixed, Session 1245** (the suite's: in the kit shops the box is off the counter's line behind the partition, so no seen theft was found; the keeper is now stood 2.2 from the box with a clear line for the seen case; 5/5) |
 | `wanderface` | red: a wandering foe's body faces the way it walks (within 0.25 rad, sampled every half second for 6 s) | open |
 | `yardplay` | too slow: killed at the 900 s a suite is given (1800 s with the retry) | open |
