@@ -942,11 +942,11 @@ function settingSet(row,v){
   if(['master','music','effects','voices'].includes(row.k)&&typeof applyVolumes==='function')applyVolumes();
   if(row.k==='bright')settingsLight();}
 // S822 (F1) — the renderer: kept in this browser as og.renderer and read by index.html's head script before the game loads,
-// so it takes hold on a reload. Chosen on the title screen it reloads at once; in play it waits, so nothing unsaved is lost.
-function rendererChoice(){try{return localStorage.getItem('og.renderer')==='new'?'new':'old';}catch(e){return 'old';}}
-function rendererNote(){const want=rendererChoice(),run=window.OG_LOOK||'old';
+// so it takes hold on a reload. Since 18 Oct 2026 the new look is the default and the setting keeps only 'old', the way back. Chosen on the title screen it reloads at once; in play it waits, so nothing unsaved is lost.
+function rendererChoice(){try{return localStorage.getItem('og.renderer')==='old'?'old':'new';}catch(e){return 'new';}}
+function rendererNote(){const want=rendererChoice(),run=window.OG_LOOK||'new';
   return want===run?(run==='new'?'running on three.js 0.170: the same world, the new look to come':'three.js r128, the game as it has been'):'takes hold when the game next loads: save, then reload';}
-function setRenderer(look,o){look=look==='new'?'new':'old';try{if(look==='new')localStorage.setItem('og.renderer','new');else localStorage.removeItem('og.renderer');}catch(e){}
+function setRenderer(look,o){look=look==='new'?'new':'old';try{if(look==='old')localStorage.setItem('og.renderer','old');else localStorage.removeItem('og.renderer');}catch(e){}
   if(o&&o.reload){const u=new URL(location.href);u.searchParams.delete('look');location.replace(u.href);}return look;}
 function settingsBack(){Object.assign(SETTINGS,SETTINGS_DEF);settingsSave();if(typeof applyVolumes==='function')applyVolumes();settingsLight();}
 function settingsSheetHTML(){const L=pauseLeaf,rows=settingRows(),ink='#3a2c18',rub='#7a1f10',soft='#8a7050';

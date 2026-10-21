@@ -9,7 +9,7 @@ import { boot, check } from './lib/game.mjs';
 import fs from 'fs'; import path from 'path'; import { fileURLToPath } from 'url';
 const here = path.dirname(fileURLToPath(import.meta.url));
 
-const g0 = await boot(); await g0.intoWorld(); await g0.settle('dunmore');
+const g0 = await boot({ look: 'old' }); await g0.intoWorld(); await g0.settle('dunmore');
 const o = await g0.page.evaluate(() => { const S = WORLD.settle.get('dunmore'); let kit = 0; S.group.traverse(x => { if (x.name === 'kit houses') kit++; }); return { kit, homes: S.houses.filter(h => h.siteId === 'dunmore' && h.kit).length }; });
 check('on the old look Dunmore has no kit houses', o.kit === 0 && o.homes === 0 && g0.errs.length === 0, { ...o, errs: g0.errs });
 await g0.close();

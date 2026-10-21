@@ -15,6 +15,14 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+### Streaming and the three quality levels: how is the level chosen? (from the designer, 2026-10-21, #543)
+The new look's one quality setting reaches only the land, so Low barely lowers the cost (768 draw calls against Middle's 886–1,025) and a slow laptop opens 2.0 at Middle. The proposal (`docs/design/streaming-and-quality.md`, PR #544) puts every drawing knob (pixel ratio, shadow box, the bodies' and houses' distances, lights) on one table with ceilings per level (Low 700 calls, Middle 1,000 at dawn and midnight too, High 1,300), keeps the chunk ring the same at every level so quality never changes what exists, and asks how the level is chosen.
+- **A.** The player picks; Middle by default.
+- **B (recommended).** As A, plus a two-second probe on the first entry to the world: a machine under about 36 fps is set to Low and told so once; it never picks High and never runs again.
+- **C.** As A, plus a live governor that lowers the pixel ratio and distances to hold 45 fps.
+
+Recommendation: **B.**
+
 ## Answered
 ### The world's corruption: how a torn great gate shows its school (from the concept artist, 2026-10-20, #531)
 Backlog L12 (OG-145) and card F12: each great gate torn on Varek's path drains the world one level, 0 to 6, and sealing one lifts it again. On 13 Oct Michael added that each torn gate *may* also tint the world by its school. The prototype (`docs/prototypes/levelup/corruption.html`) puts one Gatelands lane through all seven levels; the full write-up is in `docs/concepts.md` (2026-10-20). How should the world show *which* gates were torn?

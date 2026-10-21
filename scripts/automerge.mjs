@@ -2,7 +2,8 @@
 // .github/workflows/automerge.yml runs it). Michael decides designs, not merges: a PR that builds what he has decided merges
 // itself once it passes. Ready: `check`'s gate is green on the commit, GitHub can merge it cleanly, it has no `hold` label
 // (Michael's, or any role's that wants his eyes first), and
-//   - it leaves the pipeline alone (.github/, the test harness tests/lib/ and tests/run.mjs, this script): no approval; or
+//   - it leaves the pipeline alone (.github/, the test harness tests/lib/ and tests/run.mjs, the skip list tests/skip.json since
+//     Session 1226, this script): no approval; or
 //   - it changes the pipeline, and Michael approved it: a comment on the PR from the repository's owner side, "Approved by
 //     Michael: <sha>". Later commits that leave the pipeline alone, or merge main in, ride along; if a later commit changes the
 //     pipeline again, the approved commit is merged by itself and the PR waits for a new approval.
@@ -22,7 +23,7 @@ async function gh(path, method = 'GET', body) {
 }
 async function all(path) { const out = []; for (let p = 1; ; p++) { const page = await gh(`${path}${path.includes('?') ? '&' : '?'}per_page=100&page=${p}`); out.push(...page); if (page.length < 100) return out; } }
 
-const PIPELINE = f => f.startsWith('.github/') || f.startsWith('tests/lib/') || f === 'tests/run.mjs' || f === 'scripts/automerge.mjs';
+const PIPELINE = f => f.startsWith('.github/') || f.startsWith('tests/lib/') || f === 'tests/run.mjs' || f === 'tests/skip.json' || f === 'scripts/automerge.mjs';
 const lowRisk = f => !PIPELINE(f);
 
 // green: the gate passed; before the gate existed (an older head), every check that ran passed

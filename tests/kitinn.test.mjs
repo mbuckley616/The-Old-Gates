@@ -3,7 +3,8 @@
 // will not fit), 6.2 m deep with its front on the street line (tests/kitlots has the lots). Measured on the village's own meshes, as
 // tests/kittown measures Dunmore's houses: its four walls stand on its solid, the door you use is the drawn door, its sign hangs
 // clear of the wall in front of it, its smoke rises from a gable stack, it has its far copy, and the room inside is the inn's. A
-// town's inn keeps the old builder's (the coaching inn is a piece of its own); on the old look the village is as it was.
+// town's inn keeps the old builder's (the coaching inn is a piece of its own).
+// The new look only since 1.0 was frozen (18 Oct 2026): the old look’s check is gone.
 import { boot, check } from './lib/game.mjs';
 import fs from 'fs'; import path from 'path'; import { fileURLToPath } from 'url';
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -12,14 +13,8 @@ const pick = () => { const nat = t => nationKeyOf(...cellOf(t.x, t.z)), d = site
   return allSites().filter(t => nat(t) === 'gatelands' && t.kind === 'village' && t.pad > 0).sort((a, b) => Math.hypot(a.x - d.x, a.z - d.z) - Math.hypot(b.x - d.x, b.z - d.z))[0].id; };
 const innOf = id => { const S = WORLD.settle.get(id), h = S.houses.find(h => h.siteId === id && h.type === 'inn'); return h ? { id: h.id, kit: h.kit, w: h.w, d: h.d, name: h.name } : null; };
 
-const g0 = await boot(); await g0.intoWorld();
-const vid = await g0.page.evaluate(pick);
-check(`the nearest village of the Gatelands to Dunmore stands on the old look (${vid})`, await g0.settle(vid));
-const old = await g0.page.evaluate(innOf, vid);
-check(`on the old look its inn is the old builder's (${old && old.name}, ${old && old.w} by ${old && old.d} m)`, !!old && !old.kit && g0.errs.length === 0, { old, errs: g0.errs });
-await g0.close();
-
 const g = await boot({ look: 'new' }); const { page } = g; await g.intoWorld();
+const vid = await page.evaluate(pick);
 check(`${vid} stands on the new look`, await g.settle(vid));
 const inn = await page.evaluate(innOf, vid);
 check(`its inn is the kit's farmhouse: ${inn && inn.kit && inn.kit.bays} bays, ${inn && inn.w} by ${inn && inn.d} m (the lot was ${inn && inn.kit && inn.kit.w0} by ${inn && inn.kit && inn.kit.d0})`, !!inn && !!inn.kit && inn.kit.kind === 'farmhouse' && inn.kit.inn && inn.d === 6.2 && [7.4, 10.5].includes(inn.w), inn);

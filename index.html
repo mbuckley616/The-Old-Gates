@@ -803,7 +803,7 @@
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
   <div id="lockmk" style="display:none;position:fixed;width:10px;height:10px;margin:-6px 0 0 -6px;border:1px solid #f0d890;background:rgba(200,168,74,.55);transform:rotate(45deg);pointer-events:none;z-index:6;box-shadow:0 0 4px rgba(0,0,0,.6)"></div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click/R — lock on · E — interact · F — cast magic · H — sheathe · I — inventory <span style="opacity:.45;margin-left:14px">build s776</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click/R — lock on · E — interact · F — cast magic · H — sheathe · I — inventory <span style="opacity:.45;margin-left:14px">build s779</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -1166,11 +1166,12 @@
     </div>
   </div>
 </div>
-<!-- S822 (F1): which three.js this page loads, chosen before any of the game runs. `?look=new` (or the setting, kept as og.renderer)
-     writes the 0.170 classic build in and opens a <template>, so the r128 tag below is parsed inert, never run; `?look=old` or
-     nothing leaves the page as it was, and the stray </template> after the tag is ignored. Works on file://, Pages and the tests.
+<!-- S822 (F1): which three.js this page loads, chosen before any of the game runs. The new look writes the 0.170 classic build in
+     and opens a <template>, so the r128 tag below is parsed inert, never run; the stray </template> after the tag is ignored.
+     Since 18 Oct 2026 (Michael: "1.0 is frozen") the new look is the default: `?look=old`, or the setting kept as og.renderer='old',
+     is the only way to the old look. Works on file://, Pages and the tests.
      S1195 (F4): the new look also loads the people's builder and MakeHuman's pack (vendor/, made by scripts/people_bundle.py). -->
-<script>(function(){var n=null;try{n=new URLSearchParams(location.search).get('look');if(n!=='new'&&n!=='old')n=localStorage.getItem('og.renderer');}catch(e){}window.OG_LOOK=n==='new'?'new':'old';if(window.OG_LOOK==='new')document.write('<script src="vendor/three.r170.min.js"><\/script><script src="vendor/mh-pack.js"><\/script><script src="vendor/people.builder.js"><\/script><script src="vendor/creatures.builder.js"><\/script><template>');})();</script>
+<script>(function(){var n=null;try{n=new URLSearchParams(location.search).get('look');if(n!=='new'&&n!=='old')n=localStorage.getItem('og.renderer');}catch(e){}window.OG_LOOK=n==='old'?'old':'new';if(window.OG_LOOK==='new')document.write('<script src="vendor/three.r170.min.js"><\/script><script src="vendor/mh-pack.js"><\/script><script src="vendor/people.builder.js"><\/script><script src="vendor/creatures.builder.js"><\/script><template>');})();</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </template>
 <script src="js/05-compat.js"></script>
