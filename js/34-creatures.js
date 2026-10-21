@@ -709,7 +709,7 @@ function tickSpider(rig,g,e,dt,now){
 // its colours (the Snow Wolf's pale coat, the Dire Wolf's near black on the heavier Ironwolf), its genome rolled from the foe's id
 // (`wolf:<id>`, the co-op rule's place and index), never Math.random; a wolf with no id yet (the inspector's) takes its kind's name.
 // Built one at a time, the nearest first, after the world's loading and never in the same frame as a person (HBODY.last, shared).
-// The boar and the Cave Bear (Session 1247) wear theirs on the same driver: the kit's wild boar in its own coat, and its bear (the
+// The boar and the Cave Bear (Session 1251) wear theirs on the same driver: the kit's wild boar in its own coat, and its bear (the
 // Frostreach) in the Cave Bear's brown. The bear's legs are plantigrade, three joints to the driver's four: its paw takes the driver's
 // paw and the driver's wrist and hock move nothing of it (hcMap); a tail shorter than the driver's three joints takes the first.
 // The Ash Hound, the horses, the dragon and the Faolchú keep the old body: their plans are later work.

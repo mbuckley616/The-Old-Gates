@@ -1,4 +1,4 @@
-// Card F4's next family (Session 1247): on the new look the Boar and the Cave Bear wear the creature kit's body as the wolves do
+// Card F4's next family (Session 1251): on the new look the Boar and the Cave Bear wear the creature kit's body as the wolves do
 // (Session 1202, f4wolves), driven by their old 24-bone rig. The boar is the kit's wild boar; the Cave Bear its Frostreach bear in the
 // Cave Bear's own brown, whose plantigrade legs have three bones to the driver's four (hcMap: the paw takes the driver's paw). A line of
 // the two and an Ash Hound (which keeps its own) ahead of you: each on the kit's skeleton, keyed by its foe id; its hips at its driver's;
