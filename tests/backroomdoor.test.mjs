@@ -3,7 +3,7 @@
 // had asked what opening the door changes. Every shop with a back room and a strongbox in four towns is entered at 13h
 // and measured twice over the keeper's own ten-minute amble (fixed 1/60 steps), once with the back room's door shut and
 // once with it open (through `intDoorInteract`, as E opens it). Every tenth of a second a thief standing at the box asks
-// `witnessOf`, and the test also records the three things a keeper needs to see you indoors (within 6, facing you
+// `witnessOf`, and the test also records the three things a keeper needs to see you indoors (within reach, 8.7 m since Session 1240, facing you
 // within 60°, a clear line through the rooms) to say which of them keeps the box out of sight.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
@@ -32,7 +32,7 @@ for (const town of TOWNS) {
         const rec = []; let inR = 0, faces = 0, line = 0, all3 = 0, lineInR = 0, minD = 1e9;
         for (let f = 0; f < 60 * 600; f++) { intAmbleStep(K, 1 / 60); if (f % 6) continue;
           px = sx; pz = sz; const kx = K.position.x, kz = K.position.z, d = Math.hypot(px - kx, pz - kz); minD = Math.min(minD, d);
-          const a = d < 6, b = (Math.sin(K.rotation.y) * (px - kx) + Math.cos(K.rotation.y) * (pz - kz)) / Math.max(d, 1e-3) >= Math.cos(Math.PI / 3), c = WORLD.intSightLine(kx, kz, px, pz);
+          const a = d < WIT_IN, b = (Math.sin(K.rotation.y) * (px - kx) + Math.cos(K.rotation.y) * (pz - kz)) / Math.max(d, 1e-3) >= Math.cos(Math.PI / 3), c = WORLD.intSightLine(kx, kz, px, pz);
           inR += a; faces += b; line += c; lineInR += a && c; all3 += a && b && c;
           rec.push(!!WORLD.witnessOf(h)); }
         const n = rec.length, seen = rec.filter(Boolean).length / n;
@@ -44,7 +44,7 @@ for (const town of TOWNS) {
       // thief at the box, and a control, a keeper 2.5 in front of the doorway facing it and a thief 0.8 inside it
       const W = X.x + .9; let pts = 0, clear = 0, clear6 = 0;
       for (let x = .3; x <= W - .3; x += .25) for (let z = .3; z <= door.z - .4; z += .25) { pts++;
-        if (WORLD.intSightLine(x, z, sx, sz)) { clear++; if (Math.hypot(x - sx, z - sz) < 6) clear6++; } }
+        if (WORLD.intSightLine(x, z, sx, sz)) { clear++; if (Math.hypot(x - sx, z - sz) < WIT_IN) clear6++; } }
       const ctl = () => { K.position.x = door.x; K.position.z = door.z - 2.5; K.rotation.y = 0; px = door.x; pz = door.z + .8;
         return { line: WORLD.intSightLine(K.position.x, K.position.z, px, pz), seen: !!WORLD.witnessOf(h) }; };
       const ctlOpen = ctl();
@@ -58,7 +58,7 @@ for (const town of TOWNS) {
 }
 const ok = rows.filter(r => !r.none && !r.skip);
 console.log(`\n${ok.length} back-room shops with a strongbox and a keeper at 13h (${rows.filter(r => r.none).length} without; ${rows.filter(r => r.skip).length} one-room shops skipped)`);
-console.log('  town       box (x,z)      door (x,z)     nearest  | shut: seen   | open: seen  picks ' + PICKS.join('/') + ' s   in 6 / facing / clear line / line in 6 / all three');
+console.log('  town       box (x,z)      door (x,z)     nearest  | shut: seen   | open: seen  picks ' + PICKS.join('/') + ' s   in reach / facing / clear line / line in reach / all three');
 for (const r of ok) console.log(`  ${r.town.padEnd(10)} ${(r.box.x + ',' + r.box.z).padEnd(14)} ${(r.door.x + ',' + r.door.z).padEnd(14)} ${String(r.open.minD).padStart(6)}  | ${(r.shut.seen * 100).toFixed(0).padStart(4)}%       | ${(r.open.seen * 100).toFixed(0).padStart(4)}%  ${r.open.picks.join(' ')}   ${r.open.inR} / ${r.open.faces} / ${r.open.line} / ${r.open.lineInR} / ${r.open.all3}   ${r.name}`);
 for (const r of rows.filter(r => r.none)) console.log(`  (no measure) ${r.town} ${r.name}: box ${r.box}, keeper ${r.keeper}, doors ${r.doors}`);
 const mean = (k, j) => ok.length ? +(ok.reduce((a, r) => a + r[k].picks[j], 0) / ok.length).toFixed(3) : null;
@@ -71,13 +71,15 @@ check('the door is shut for the first measure and its leaf blocks', ok.every(r =
 check('E opened the door for the second, and its leaf left the collision set', ok.every(r => r.open.open && r.open.solOut), ok.map(r => r.open));
 check('a back-room strongbox is never seen while its door is shut', ok.every(r => r.shut.seen === 0), ok.map(r => [r.name, r.shut.seen]));
 check('opening the door never hides you better than shutting it', ok.every(r => r.open.seen >= r.shut.seen), ok.map(r => [r.name, r.shut.seen, r.open.seen]));
-check('the open measure is the witness rule: seen only when within 6, facing and a clear line all hold', ok.every(r => r.open.seen <= r.open.all3 + 1e-9), ok.map(r => [r.name, r.open.seen, r.open.all3]));
-for (const r of ok) console.log(`  ${r.name}: shop floor spots with a clear line to the box, door open ${r.floor.clear} of ${r.floor.pts} (${r.floor.clear6} within 6); control at the doorway open ${JSON.stringify(r.ctlOpen)} shut ${JSON.stringify(r.ctlShut)}`);
+check('the open measure is the witness rule: seen only when within reach, facing and a clear line all hold', ok.every(r => r.open.seen <= r.open.all3 + 1e-9), ok.map(r => [r.name, r.open.seen, r.open.all3]));
+for (const r of ok) console.log(`  ${r.name}: shop floor spots with a clear line to the box, door open ${r.floor.clear} of ${r.floor.pts} (${r.floor.clear6} within reach); control at the doorway open ${JSON.stringify(r.ctlOpen)} shut ${JSON.stringify(r.ctlShut)}`);
 check('the measure can see: a keeper facing the open doorway sees a thief just inside it, and not once it is shut', ok.every(r => r.ctlOpen.line && r.ctlOpen.seen && !r.ctlShut.open && !r.ctlShut.line && !r.ctlShut.seen), ok.map(r => [r.name, r.ctlOpen, r.ctlShut]));
 // S905 (F2a): the shops are their true size now and the indoor sight range is still 6 (F2b's to set in metres), so the 6 reaches
 // further into the shop than it did: of 700 to 1,060 spots, 0 to 3 by the doorway within 6 see the box, and 5 to 7 in all (13 shops, 4
 // towns). The keeper's own sightings over the amble, checked above, are unchanged; this is the floor's geometry, re-measured
-check('with the door open, at most three spots of the shop floor within 6 of a thief at the box have a clear line to it (by the doorway), and under 1 in 100 in all', ok.every(r => r.floor.pts > 50 && r.floor.clear6 <= 3 && r.floor.clear / r.floor.pts < .01), ok.map(r => [r.name, r.floor]));
+// S1240 (#516's B): the reach is 8.7 m now, and every spot with a line to the box is within it: 4 to 7 of 884 to 1,120 spots, by the
+// doorway (20 shops, 4 towns). The keeper's own sightings over the amble, above, are still none
+check('with the door open, at most seven spots of the shop floor within reach of a thief at the box have a clear line to it (by the doorway), and under 1 in 100 in all', ok.every(r => r.floor.pts > 50 && r.floor.clear6 <= 7 && r.floor.clear / r.floor.pts < .01), ok.map(r => [r.name, r.floor]));
 check('a longer pick is never less likely to be seen', ok.every(r => r.open.picks.every((v, j) => j === 0 || v >= r.open.picks[j - 1])), ok.map(r => r.open.picks));
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

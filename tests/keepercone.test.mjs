@@ -1,5 +1,5 @@
 // Indoors a person sees what they face (Session 368, Michael's B on #73): a keeper or a guest in the room sees you within
-// six units, with a clear line, and within 60° either side of the way they look, (sin ry, cos ry). Behind them, or off
+// reach (six units; 8.7 m since Session 1240, #516), with a clear line, and within 60° either side of the way they look, (sin ry, cos ry). Behind them, or off
 // to the side past the cone, you are not seen. A theft done while the keeper looks away goes unfined.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
@@ -19,15 +19,15 @@ const sweep = await page.evaluate(() => { const h = window._h, K = intNPCMesh; c
   px = sx; pz = sz; const toMe = Math.atan2(px - kx, pz - kz); const rows = [];
   for (let d = -180; d < 180; d += 5) { K.rotation.y = toMe + d * Math.PI / 180; rows.push({ off: d, seen: !!WORLD.witnessOf(h) }); }
   K.rotation.y = toMe; const near = !!WORLD.witnessOf(h); K.rotation.y = toMe + Math.PI; const behind = !!WORLD.witnessOf(h);
-  // seven units off, in front: past the six units, unseen as before
-  px = kx + Math.sin(toMe) * 7; pz = kz + Math.cos(toMe) * 7; K.rotation.y = toMe; const far = !!WORLD.witnessOf(h);
+  // a metre past the reach, in front: unseen as before
+  px = kx + Math.sin(toMe) * (WIT_IN + 1); pz = kz + Math.cos(toMe) * (WIT_IN + 1); K.rotation.y = toMe; const far = !!WORLD.witnessOf(h);
   return { rows, near, behind, far, dist: 2.5 }; });
 const inCone = sweep.rows && sweep.rows.filter(r => Math.abs(r.off) <= 55), outCone = sweep.rows && sweep.rows.filter(r => Math.abs(r.off) >= 65);
 console.log('seen at offsets', sweep.rows && sweep.rows.filter(r => r.seen).map(r => r.off).join(' '));
 check('a spot with a clear line to the keeper was found', !sweep.none, sweep);
 check('facing within 55° of you, the keeper sees you', inCone.every(r => r.seen), inCone.filter(r => !r.seen));
 check('turned 65° or more away, the keeper does not', outCone.every(r => !r.seen), outCone.filter(r => r.seen));
-check('face on they see you, back turned they do not; past six units in front, still not', sweep.near && !sweep.behind && !sweep.far, sweep);
+check('face on they see you, back turned they do not; past the reach in front, still not', sweep.near && !sweep.behind && !sweep.far, sweep);
 
 // the theft itself: taken with the keeper's back turned, no fine; turned to you, the fine
 const theft = await page.evaluate(() => { const X = WORLD.intBox, K = intNPCMesh, site = window._S.site; px = X.x; pz = X.z + .8; jumpY = 0; lookAtPt(X.x, .3, X.z);
