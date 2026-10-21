@@ -20,7 +20,7 @@ strike the row here. That PR runs the suite. Kept by the QA routine; started by 
 | `lookpair` | red: the old look is r128 and the new one 0.170, at the same spot | open |
 | `mainrun` | too slow: killed at the 900 s a suite is given (1800 s with the retry) | open |
 | `panelfocus` | too slow: killed at the 900 s a suite is given (900 s with the retry) | open |
-| `penance` | red: a lock picked under a witness's eye: favour −1, a point owed, a 25-gold fine | open |
+| `penance` | red: a lock picked under a witness's eye: favour −1, a point owed, a 25-gold fine | fixed in the suite, Session 1265: the test's. On the new look Dunmore's forge is 6.45 × 8 (5 × 5 on the old) and the house across its lane starts 2.2 out of its door, so the witness staged 3 out stood inside it and `clearLine` failed. The crime is now staged at the first shop whose 3-unit line is open (Bríd's Armoury); 10/10. Its strike from `tests/skip.json` rides QA's next pipeline PR |
 | `placesave` | red: across prosperity swings of 13 and 26 in four towns, no house id moves to another lot | open |
 | `renewal` | too slow: killed at the 900 s a suite is given (900 s with the retry) | open |
 | `scaleratio` | red: dunmore (gatelands): every house door is 1.1 to 1.25 of a 1.8 m person (55 doors measured) | open |
