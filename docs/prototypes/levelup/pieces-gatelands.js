@@ -117,7 +117,7 @@ if (VIEW === 'kit') {
     ['Cottage window, 2 over 2', FIN.lime(), 'red', [win(0, .95, .78, 1.0, [2, 1])], .6, 2.7],
     ['The half-door', FIN.lime(), 'red', [{ kind: 'half', x: 0, y: 0, w: .95, h: 2.0 }], .6, 2.7],
     ['Farm door with a transom', FIN.whiteTown(), 'green', [{ kind: 'transom', x: 0, y: 0, w: 1.05, h: 2.5 }], .5, 3.1],
-    ['Town door, round-headed, fanlight', FIN.render('ochre'), 'blue', [{ kind: 'fan', x: 0, y: 0, w: 1.1, h: 2.95, arch: true, dress: true }], .45, 3.6],
+    ['Town door, round-headed, fanlight', FIN.render('ochre'), 'blue', [{ kind: 'fan', x: 0, y: 0, w: 1.1, h: 2.75, arch: true, dress: true }], .45, 3.6],
     ['Town sash, 6 over 6, quoins', FIN.render('sage'), 'blue', [win(0, .75, .95, 1.85, [3, 2])], .45, 3.3],
     ['Shop window and door', FIN.render('cream'), 'green', [{ kind: 'shopwin', x: -.55, y: .62, w: 2.2, h: 2.05, bars: [2, 2] }, { kind: 'shopdoor', x: 1.35, y: 0, w: 1.05, h: 2.65 }], .45, 3.6],
     ['Cart arch, voussoirs', FIN.stone(), 'black', [{ kind: 'cart', x: 0, y: 0, w: 3.0, h: 3.9, arch: true }], .7, 4.6],
