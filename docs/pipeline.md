@@ -6,17 +6,18 @@ left the other PRs in conflict and back at the start of the queue. Approvals wer
 builders added to their branches. Each lane kept one standing PR that collected 100+ commits. And only the producer merged,
 once every two hours. Michael chose A: fix all five.
 
-## What CI does now
-- **A pull request runs only the suites its change can reach** (`tests/lib/select.mjs`, using `tests/lib/toplevel.cjs`).
-  Each changed line of a `js/` file sits in one top-level statement; those names and one step of their callers are the
-  change's names; a suite runs when it names one, when it changed, or when it is in the smoke set (`looknew`, `saves`,
-  `resolver`, `player`, `dungeon`, `autosave`). A change to the page (other than the build tag's line), the harness, the
-  vendored three.js, CI or packages runs everything, as does a selection worth more than half the full suite. Measured on
-  19 Oct: Bodies 1136–1156 would have run 12 suites in one shard, Quest builds 1092 44 suites in three, QA's last PR 7
-  suites in one; each was 16 to 20 shards before.
+## What CI does now (basic tests, Michael in chat, 20 Oct 2026)
+Michael: "This is a game I am making for fun, and do not plan to ever charge for. We don't need bulletproof testing in this
+manner. Why can't we just have basic tests?" Every suite boots the whole game on software GL; 522 of them came to 709
+runner-minutes, run on main after each merge in 20 shards from the account's one pool of runners (shared with Airsoft),
+and the PRs queued 8 to 31 minutes behind each one. So:
+- **A pull request runs the smoke set and the suites it adds or edits** (`tests/lib/select.mjs`): `looknew`, `saves`,
+  `resolver`, `player`, `dungeon`, `autosave`, about eleven minutes of suites in two short shards. The selection by the
+  names a change reaches (19 Oct, `tests/lib/toplevel.cjs`) is gone.
 - **A docs-only PR runs no suites** (parse only).
-- **Main runs every suite after each merge**, and the next merge no longer cancels that run. A break the selection missed
-  shows there.
+- **Every suite runs once a week**, Sunday at 06:00 UTC, and whenever `check` is run by hand (Actions, check, Run workflow;
+  on a branch, to try all of it before it lands). Main no longer runs every suite after each merge. The producer files each
+  red of the weekly run in the backlog's section I for the builder that owns it; nothing is reverted for it.
 - **One check, `gate`**, says whether a PR may merge: parse passed, and the suites passed or were not needed.
 - **Every suite boots the new look** (Session 1226, Michael, 20 Oct 2026). One that is red or too slow there is named in
   `tests/skip.json` and runs nowhere (a QA card in `docs/qa/skipped.md`); striking it from the list runs it in that PR. The
@@ -32,8 +33,8 @@ once every two hours. Michael chose A: fix all five.
 - Commits after the approved one that change only docs or tests, or merge main in, ride along. Any other later commit waits
   for a new tap, and the approved commit lands alone meanwhile (a merge of exactly that commit), so an approval never goes
   stale.
-- After a merge it starts `check` (every suite) and `stamp` on main, since a merge made with the workflow's own token starts
-  no workflow by itself.
+- After a merge it starts `stamp` on main, since a merge made with the workflow's own token starts no workflow by itself.
+  (It started `check`, every suite, too until 20 Oct.)
 
 ## The build tag
 - **`stamp`** (`.github/workflows/stamp.yml`) bumps the tag on main after each merge, in a commit marked `[skip ci]`, and asks
@@ -48,7 +49,8 @@ once every two hours. Michael chose A: fix all five.
 4. **Cloud sessions:** the paragraph above, *How a PR merges now*, replaces "the producer routine merges it through GitHub
    once Michael approves it".
 5. **Producer:** on Michael's tap, post `Approved by Michael: <sha>` on the PR; merge nothing by hand; fold sessions'
-   `### Decision` sections into `docs/decisions.md`; revert a merge whose red on main is not fixed within the day.
+   `### Decision` sections into `docs/decisions.md`; file the weekly full run's reds in the backlog (20 Oct: no more reverts
+   for a red on main, since main no longer runs every suite).
 6. **Small batches:** keep a branch's unapproved gameplay work small; what waits for a tap is what blocks.
 
 ## Approvals: designs, not merges (Michael's B, 19 Oct 2026, in chat)
@@ -56,8 +58,8 @@ Michael, explicitly: "PRs building already-decided work merge automatically once
 except PRs labelled hold and PRs that change the CI/test pipeline." His control stays where it was real: every design
 question is a `DECISION:` before it is built, and he judges the result by playing. A PR labelled `hold` (any role may put it
 on, saying why; Michael may put it on anything) and a PR that changes the pipeline itself (`.github/`, `tests/lib/`,
-`tests/run.mjs`, `scripts/automerge.mjs`) wait for `Approved by Michael: <sha>`. Main runs every suite after each merge; a
-red there is fixed first or reverted the same day. This replaces "How a PR merges now" above where they differ.
+`tests/run.mjs`, `scripts/automerge.mjs`) wait for `Approved by Michael: <sha>`. Every suite runs weekly (20 Oct; it ran on
+main after each merge until then). This replaces "How a PR merges now" above where they differ.
 
 ## One small PR per run
 Every run starts a fresh branch from main (`auto/<lane>-<session>`), opens its own PR and leaves it to land; nothing is
