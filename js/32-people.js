@@ -1465,6 +1465,14 @@ function hbCloseFist(by,sd){const n=k=>by[k];if(!n(`finger2-1.${sd}`)||!n(`finge
   const at=k=>new THREE.Vector3().setFromMatrixPosition(n(k).matrixWorld);by.root.parent.updateMatrixWorld(true);
   const h=at(`finger2-1.${sd}`).sub(at(`finger5-1.${sd}`)).normalize().applyQuaternion(n(`metacarpal2.${sd}`).getWorldQuaternion(new THREE.Quaternion()).invert()),sg=sd==='R'?1:-1;
   for(let f=2;f<=5;f++)for(let j=1;j<=3;j++){const b=n(`finger${f}-${j}.${sd}`);if(b)b.quaternion.setFromAxisAngle(h,sg*[1.15,1.35,.95][j-1]);}}
+// F10, part two — the thumb laid across the folded fingers (the player's fist, both views): its first bone turned at the root of the thumb
+// so the thumb's line (root to last joint) runs to a point 1.5 cm out from the second joints of the first two fingers (its own joints
+// left as they are); closeFist leaves the thumb straight, which first person shows at arm's length
+function hbThumb(by,sd){const t1=by[`finger1-1.${sd}`],t3=by[`finger1-3.${sd}`],a=by[`finger2-2.${sd}`],b=by[`finger3-2.${sd}`],mc=by[`metacarpal3.${sd}`];if(!t1||!t3||!a||!b||!mc)return;
+  const W=k=>new THREE.Vector3().setFromMatrixPosition(k.matrixWorld);by.root.parent.updateMatrixWorld(true);
+  const T=W(a).add(W(b)).multiplyScalar(.5),c=W(mc),p1=W(t1),d=T.clone().sub(c),sc=p1.distanceTo(W(by[`finger2-1.${sd}`]))||1;T.addScaledVector(d.normalize(),.3*sc);
+  const from=W(t3).sub(p1).normalize(),to=T.sub(p1).normalize(),q=new THREE.Quaternion().setFromUnitVectors(from,to),pq=new THREE.Quaternion();
+  t1.getWorldQuaternion(pq);q.multiply(pq);t1.parent.getWorldQuaternion(pq);t1.quaternion.copy(q.premultiply(pq.invert()));}
 // what the driver holds, in the builder's group: its bone's turn and scale as before, and a weapon's grip at the middle of the builder's
 // curled fingers' second joints; given back to its bone (hbGive) when the driver's own body shows again, or the builder's is dropped
 const _hbm=new THREE.Matrix4(),_hbm2=new THREE.Matrix4();

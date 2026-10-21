@@ -84,7 +84,7 @@ function tpHBDress(G0,o){const G=JSON.parse(JSON.stringify(G0)),D=Object.assign(
   const K=o.cloak;if(K){D.cloak=hbRGB(K.col);if(K.cut==='short'){D.cape=true;D.cloakLen=.6;}else D.cloakLen=.85;D.brooch=[.62,.47,.22];
     if(K.fur!=null)D.cloakFur=hbRGB(K.fur);if(K.trim!=null)D.cloakHem=hbRGB(K.trim);if(K.hood)D.hood=o.hd&&tpIsCloth(o.hd)?'up':'down';}
   return G;}
-function tpBuild(lookIn,ppIn){
+function tpBuild(lookIn,ppIn,reuse){
   let pp=ppIn||'gatelander',P=null;try{if(!ppIn)pp=WORLD.playerPeople();P=WORLD.PEOPLES[pp];}catch(e){}
   const LK=Object.assign(lookDefault(pp,playerArchetype,playerName),lookIn||lookNow()||{});
   const archCol=playerArchetype==='mage'?0x2a3a6a:playerArchetype==='rogue'?0x3a3a2a:0x5a2a20;
@@ -151,17 +151,24 @@ function tpBuild(lookIn,ppIn){
   if(E){const K=EQ.back&&EQ.back.cloak?(TP_CLOAK[EQ.back.cloak]||TP_CLOAK.wool):null;
     rig.hbG=tpHBDress(E.G,{AR,ch,lg,ft,hd,clothCol,legsCol,chestCol,bootCol,helmCol:hd?tpMatColor(hd,0x8a8f98):0x8a8f98,robe:!!(ch&&!ch.line&&/robe/i.test(ch.name||'')),
       cloak:K?{col:EQ.back.col!=null?EQ.back.col:K.col,cut:K.cut,hood:!!K.hood,fur:K.fur,trim:K.trim}:null});
-    const t0=performance.now();try{hbAttach(rig);}catch(e){rig.hb=null;console.warn('F10: the player\'s body failed',e);}
-    if(rig.hb){TP_HB.ms+=performance.now()-t0;TP_HB.n++;R.hbSaved=E.saved;
+    // F10, part two — a change of kit that leaves the dressed genome as it was (a weapon, a shield, a ring) keeps the builder's body
+    // that was built for it: carried over from the body this one replaces (reuse, TP.rig) onto the new driver, not built again
+    const key=JSON.stringify(rig.hbG),old=reuse&&reuse.rig&&reuse.rig.hb&&reuse.hbKey===key?reuse:null;R.hbKey=key;
+    const t0=performance.now();
+    if(old){const H=old.rig.hb;if(old.hbHeld)for(const h of old.hbHeld)h.c.removeFromParent();old.hbHeld=null;old.rig.hb=null;old.rig.mesh.visible=true;
+      rig.hb=H;H.L=-1;H.drv=rig.mesh.material;rig.root.add(H.root);TP_HB.kept=(TP_HB.kept||0)+1;}
+    else{try{hbAttach(rig);}catch(e){rig.hb=null;console.warn('F10: the player\'s body failed',e);}
+      if(rig.hb){TP_HB.ms+=performance.now()-t0;TP_HB.n++;}}
+    if(rig.hb){R.hbSaved=E.saved;
       root.scale.setScalar(rig.hb.st*PW.BODY/SCALE.PERSON_MODEL);hbLevel(rig,0);
       // what the hands hold rides in the builder's group: a copy of each piece (its geometry shared) in a carrier that follows the piece,
       // which stays on its driver bone where tpPose turns it, each frame (tpHBHold); a weapon's grip goes to the builder's curled fingers
       R.hbHeld=[];const by=rig.hb.P.byName,sw=HBODY.swap,side=s=>sw?(s==='L'?'R':'L'):s;
       for(const [o,sd,grip] of [[R.weapon,'R',true],[R.weaponL,'L',true],[R.shield,'L',false],[R.torch,'L',true],[R.tome,'L',false]]){if(!o)continue;
         const c=new THREE.Group();c.matrixAutoUpdate=false;c.name='held';c.add(tpHBCopy(o,true));rig.hb.root.add(c);
-        const s=side(sd);R.hbHeld.push({o,c,f:grip?[2,3,4,5].map(f=>by[`finger${f}-2.${s}`]).filter(Boolean):null});}
+        const s=side(sd);R.hbHeld.push({o,c,f:grip?[2,3,4,5].map(f=>by[`finger${f}-2.${s}`]).filter(Boolean):null,arm:[B['el'+sd],B['wr'+sd],by['lowerarm01.'+s],by['wrist.'+s]]});}
       // Michael's D on #99: an empty hand is a folded fist, and a hand that holds something closes on it; a tome is held open-handed
-      hbCloseFist(by,side('R'));if(!R.tome)hbCloseFist(by,side('L'));
+      hbCloseFist(by,side('R'));hbThumb(by,side('R'));if(!R.tome){hbCloseFist(by,side('L'));hbThumb(by,side('L'));}else for(let f=1;f<=5;f++)for(let j=1;j<=3;j++){const b=by[`finger${f}-${j}.${side('L')}`];if(b)b.quaternion.identity();} /* a body carried over may have closed it */
       root.traverse(o=>{if(o.isMesh)o.userData.tp=true;});}}
   return R;}
 // a held piece's copy for the builder's group: its meshes and points on the same geometry and materials, its own turns below the top
@@ -170,8 +177,16 @@ function tpHBCopy(o,top){const k=o.isMesh?new THREE.Mesh(o.geometry,o.material):
   if(!top){k.position.copy(o.position);k.quaternion.copy(o.quaternion);k.scale.copy(o.scale);}for(const ch of o.children)k.add(tpHBCopy(ch,false));return k;}
 // F10 — each frame after tpPose: the builder's bones copy the driver's, and what the hands hold follows its driver piece
 const _tpHm=new THREE.Matrix4(),_tpHv=new THREE.Vector3(),_tpHv2=new THREE.Vector3();
+// S1253 — each piece is carried from the driver's forearm to the builder's: turned about the elbow by the turn that takes the driver's
+// elbow-to-wrist line onto the builder's, and moved with it (the two bodies' forearms rest 18° apart, which tilted the blade and left
+// the shield on the driver's arm); a grip is then set in the builder's fingers as before
+const _tpHq=new THREE.Quaternion(),_tpHa=new THREE.Vector3(),_tpHb=new THREE.Vector3(),_tpHe=new THREE.Vector3(),_tpHm2=new THREE.Matrix4();
 function tpHBHold(R){const H=R.rig.hb;if(!H||!R.hbHeld)return;R.root.updateMatrixWorld(true);_tpHm.copy(H.root.matrixWorld).invert();
   for(const h of R.hbHeld){h.c.matrix.multiplyMatrices(_tpHm,h.o.matrixWorld);
+    const A=h.arm;if(A&&A[0]&&A[1]&&A[2]&&A[3]){const P=o=>new THREE.Vector3().setFromMatrixPosition(o.matrixWorld).applyMatrix4(_tpHm);
+      const De=P(A[0]),Be=P(A[2]);_tpHa.copy(P(A[1])).sub(De);_tpHb.copy(P(A[3])).sub(Be);
+      if(_tpHa.lengthSq()>1e-10&&_tpHb.lengthSq()>1e-10){_tpHq.setFromUnitVectors(_tpHa.normalize(),_tpHb.normalize());
+        _tpHm2.makeRotationFromQuaternion(_tpHq).setPosition(_tpHe.copy(De).applyQuaternion(_tpHq).negate().add(Be));h.c.matrix.premultiply(_tpHm2);}}
     if(h.f&&h.f.length){const v=_tpHv.set(0,0,0);for(const b of h.f)v.add(_tpHv2.setFromMatrixPosition(b.matrixWorld));v.multiplyScalar(1/h.f.length).applyMatrix4(_tpHm);h.c.matrix.setPosition(v);}
     h.c.matrixWorldNeedsUpdate=true;}}
 function tpHBPose(R){if(!R||!R.rig.hb)return;hbPose(R.rig);R.root.updateMatrixWorld(true);tpHBHold(R);}
@@ -367,20 +382,29 @@ function tpGripL(R){
   _tgQ.setFromUnitVectors(_tgA.normalize(),_tgB.normalize());R.shL.getWorldQuaternion(_tgQ2);_tgQ.multiply(_tgQ2);R.shL.parent.getWorldQuaternion(_tgQ2);_tgQ.premultiply(_tgQ2.invert());R.shL.quaternion.copy(_tgQ);
   R.shL.updateMatrixWorld(true);
 }
+// the body for what is worn now, built (or its builder's body carried over) when the kit or the look has changed; first person's hands
+// are cut from it too (fpHBFist), so it is kept current in either view when the hands are built
+function tpEnsure(){const sig=tpSig();if(!TP.rig||sig!==TP.sig){const old=TP.rig;TP.rig=tpBuild(null,null,old);TP.sig=sig;TP.armSig=tpArmSig();if(old){TP.rig.root.rotation.copy(old.root.rotation);tpDispose(old);}}return TP.rig;}
+// what the hands' cut depends on: the look and what is worn, not what is held (a weapon sheathed after five seconds at peace rebuilds the
+// view model with an empty hand; that must not build the body again)
+function tpArmSig(){const L=lookNow();let pp='gatelander';try{pp=WORLD.playerPeople();}catch(e){}
+  return (L?JSON.stringify(L):'')+['head','chest','hands','legs','feet','back'].map(s=>EQ[s]?(EQ[s].name||'?')+(EQ[s].col!=null?'~'+EQ[s].col:''):'-').join('|')+'#'+pp+'#'+(playerName||'')+'#'+playerArchetype;}
 function tpUpdate(dt,st){
   if(!thirdPerson){
     if(TP.rig&&TP.rig.root.visible)TP.rig.root.visible=false;
     if(TP.hidVM){TP.hidVM=false;VM_SCENE.visible=true;}
+    if(typeof fpHBCheck==='function')fpHBCheck();
     return;}
   if(!TP.hidVM){TP.hidVM=true;VM_SCENE.visible=false;}
-  const sig=tpSig();if(!TP.rig||sig!==TP.sig){const old=TP.rig;TP.rig=tpBuild();TP.sig=sig;if(old){TP.rig.root.rotation.copy(old.root.rotation);tpDispose(old);}}
+  tpEnsure();
   const R=TP.rig;if(!scene)return;
   if(R.root.parent!==scene){if(R.root.parent)R.root.parent.remove(R.root);scene.add(R.root);}
   tpCamera(dt,st.camY);
   // on a ship's deck or a platform jumpY already carries the height
   R.root.position.set(px,jumpY,pz);R.root.rotation.y=yaw+Math.PI;
   /* S880 (F2a) — swimming, the body sinks to its shoulders: the head's top a quarter metre over the sea; S1084 (F2b) reads the swimmer's line (SWIM_Y, 1.45 under it now) */
-  if(activeZoneId==='world'&&typeof WORLD!=='undefined'&&WORLD.isSwimming())R.root.position.y=jumpY+(SEA_Y+.25-SWIM_Y)-SCALE.PERSON_MODEL*(R.root.scale.y||1);
+  /* F10 (S1253): the builder's body is hb.st tall in the world (its genome's stature), not PERSON_MODEL × the root's scale (that is hb.st × PW.BODY, its crown 0.44 over the sea) */
+  if(activeZoneId==='world'&&typeof WORLD!=='undefined'&&WORLD.isSwimming())R.root.position.y=jumpY+(SEA_Y+.25-SWIM_Y)-(R.rig.hb?R.rig.hb.st:SCALE.PERSON_MODEL*(R.root.scale.y||1));
   {const cp=(typeof climbPose==='function')?climbPose():null;if(cp)R.root.rotation.y=cp.ry;} /* S743 — on a net the body faces the hull */
   // S154 — the stride follows the ground; S162 — and runs past PW.RUN.on heights a second, as the townsfolk do
   {let d=TP.lx==null?0:Math.hypot(px-TP.lx,pz-TP.lz);TP.lx=px;TP.lz=pz;if(d>1.5)d=0;const s=R.root.scale.x||1,v=dt>0?d/dt:0;
