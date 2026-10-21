@@ -10,7 +10,7 @@
 // field patchwork and hedgerows on the open country, grain and tussock, rock strata on the steep, woods read from afar.
 // Positions reach the shader in chunk-local space (the float32 rule); the noise is hashed on cell indices taken modulo
 // 289, so a world coordinate of 25,000 hashes as cleanly as one of 25.
-const LAND={on:window.OG_LOOK==='new',mat:null,sky:null,skyMat:null,exposure:1,
+const LAND={on:window.OG_LOOK==='new',mat:null,sky:null,skyMat:null,exposure:1,roomExposure:1,
   // the land's albedo against the old look's (whose detail map averaged .72), how near the fields come, and the soil's darkening
   // under the near ground; a uniform, so a later quality level or the corruption level can move it without a recompile
   k:{value:new THREE.Vector4(.5,22,.8,0)}};
@@ -161,18 +161,32 @@ function landAtmosphere(){
 // No render targets: the grade rides in three's own tone-mapping chunk, so it costs no pass and no draw call. The
 // world scene turns tone mapping on for its own render and off after it, so rooms, gates and the hands keep theirs.
 // P10b's grade: shadows a touch cool, highlights warm, saturation lifted.
-function landPost(scene){
-  if(!LAND.on||scene.userData.landPost)return;scene.userData.landPost=true;landQuality();
+function landGrade(){
   if(!THREE.ShaderChunk.tonemapping_fragment.includes('og-grade'))THREE.ShaderChunk.tonemapping_fragment=THREE.ShaderChunk.tonemapping_fragment.replace('#endif',
 `	{ /* og-grade */ vec3 gc = gl_FragColor.rgb; float gl = dot(gc, vec3(.2126, .7152, .0722));
 	  gc *= mix(vec3(.95, .985, 1.05), vec3(1.05, 1., .92), smoothstep(.03, .6, gl));
 	  gc = mix(vec3(gl), gc, 1.14);
 	  gl_FragColor.rgb = max(gc, 0.); }
 #endif`);
+}
+function landPost(scene){
+  if(!LAND.on||scene.userData.landPost)return;scene.userData.landPost=true;landQuality();landGrade();
   const keep={tm:0,ex:1};
   scene.onBeforeRender=r=>{keep.tm=r.toneMapping;keep.ex=r.toneMappingExposure;r.toneMapping=THREE.ACESFilmicToneMapping;r.toneMappingExposure=LAND.exposure;};
   scene.onAfterRender=r=>{r.toneMapping=keep.tm;r.toneMappingExposure=keep.ex;};
   if(!LAND.rawRender){const raw=REN.render.bind(REN);LAND.rawRender=raw;REN.render=(sc2,cam)=>landRender(raw,sc2,cam);} // S1183: bloom wraps the world's frame
+}
+// ── the rooms' post (Session 1257, backlog I, the critic's s782): a generated room's frame tone-mapped, with the grade ──────
+// A room drew linear and clipped: the shop's lantern (2.2) and the room's warm ambient put about 2.2 on a keeper 3.4 m off, and
+// a forge or a lamp close by more, so skin and pale cloth clipped flat to yellow-white and a dark purple tunic's red channel ran
+// ahead of the rest and read as bare skin. Khronos' neutral curve, not the world's ACES: it is the identity up to about 0.76 and
+// rolls off above it, keeping hue, so a room keeps its brightness and its firelight's orange (ACES greyed both) and a lamp close
+// by shades instead of burning out. No bloom: a room has no target.
+function landRoomPost(scene){
+  if(!LAND.on||!scene||scene.userData.landPost)return;scene.userData.landPost=true;landGrade();
+  const keep={tm:0,ex:1};
+  scene.onBeforeRender=r=>{keep.tm=r.toneMapping;keep.ex=r.toneMappingExposure;r.toneMapping=THREE.NeutralToneMapping;r.toneMappingExposure=LAND.roomExposure;};
+  scene.onAfterRender=r=>{r.toneMapping=keep.tm;r.toneMappingExposure=keep.ex;};
 }
 // ── bloom (Session 1183): the world's frame through a render target, as the slice's composer does it ────────────────
 // At Middle and High the world renders into a half-float target, its own lights unclamped (three tone-maps nothing drawn

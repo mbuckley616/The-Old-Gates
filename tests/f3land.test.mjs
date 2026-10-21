@@ -118,12 +118,13 @@ const d = await page.evaluate(() => { const t = WORLD.siteAnywhere('dunmore'); p
 console.log('  budget: Dunmore at noon, the new land:', JSON.stringify(d));
 check('Dunmore at noon stays under the budget\'s 1,000 draw calls', d.calls > 50 && d.calls < 1000, d);
 
-// a room is not tone-mapped: the post is the world's alone
+// a room is tone-mapped too (Session 1257, the critic's s782: a lamp near a keeper clipped skin and cloth to white), and the
+// renderer goes back to no tone mapping after it, for the hands
 const room = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'); const h = S.houses.find(x => x.type === 'inn') || S.houses[0]; px = h.exitX; pz = h.exitZ; goToInterior(h); return h.type; });
 for (let k = 0; k < 40 && !(await page.evaluate(() => isInterior())); k++) await page.waitForTimeout(250);
 const rm = await page.evaluate(() => { let tm = -1; const sc = scene, ob = sc.onBeforeRender; sc.onBeforeRender = (...a) => { ob && ob(...a); tm = REN.toneMapping; }; REN.render(scene, CAM); sc.onBeforeRender = ob;
-  return { inside: isInterior(), tm }; });
-check('indoors the frame is not tone-mapped', rm.inside && rm.tm === 0, { room, ...rm });
+  return { inside: isInterior(), tm, after: REN.toneMapping, neutral: THREE.NeutralToneMapping, ex: REN.toneMappingExposure }; });
+check('indoors the frame is tone-mapped (the neutral curve, which keeps the firelight\'s hue), and the renderer goes back to no tone mapping after it', rm.inside && rm.tm === rm.neutral && rm.after === 0, { room, ...rm });
 
 const errs = g.logs.filter(l => /error/i.test(l) && !/favicon|net::|Failed to load resource/.test(l));
 check('no shader or page errors', g.errs.length === 0 && errs.length === 0, { errs: g.errs.slice(0, 3), logs: errs.slice(0, 3) });
