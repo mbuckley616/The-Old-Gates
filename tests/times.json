@@ -142,7 +142,7 @@
   "f4people": 710,
   "f4wolves": 429,
   "factorpanel": 76,
-  "falls": 1800,
+  "falls": 150,
   "faolchu": 59,
   "feasts": 86,
   "feastsquare": 123,
@@ -289,7 +289,7 @@
   "lvact": 70,
   "mainmarks": 107,
   "mainquest": 133,
-  "mainrun": 900,
+  "mainrun": 480,
   "makershermit": 158,
   "makertools": 174,
   "makerwords": 103,
@@ -313,7 +313,7 @@
   "ogre": 63,
   "packshape": 102,
   "padspawn": 89,
-  "panelfocus": 900,
+  "panelfocus": 150,
   "parryclock": 100,
   "parrydeath": 68,
   "pauseleaf": 280,
@@ -361,7 +361,7 @@
   "reachtable": 64,
   "reader": 713,
   "register": 78,
-  "renewal": 900,
+  "renewal": 180,
   "resolver": 101,
   "restslip": 66,
   "ringtrial": 95,
@@ -524,6 +524,6 @@
   "wxplace": 157,
   "wyrm": 64,
   "yardpanel": 150,
-  "yardplay": 900
+  "yardplay": 480
  }
 }

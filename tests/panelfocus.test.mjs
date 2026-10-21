@@ -8,6 +8,9 @@ import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld(); await g.settle('dunmore');
 await page.evaluate(() => forceTime(11));
+// S1249 — the game's own frames, keys and clicks as before, with the drawing stubbed: on the new look a drawn frame on software GL
+// takes seconds, and the suite's 150-odd frames were killed at its 900 s. Focus, the held key and the walk do not read a drawn pixel
+await page.evaluate(() => { REN.render = () => {}; });
 const focus = () => page.evaluate(() => { const a = document.activeElement; return a ? (a.id || a.tagName) : 'null'; });
 const walk = async () => { const p0 = await page.evaluate(() => [px, pz]);
   await page.keyboard.down('KeyW'); await g.frames(30); const held = await page.evaluate(() => !!K.KeyW); await page.keyboard.up('KeyW'); await g.frames(2);
