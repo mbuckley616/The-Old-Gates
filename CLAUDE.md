@@ -26,6 +26,19 @@ Michael designs and playtests; Claude implements. This file is what Claude reads
   `stamp` workflow runs it now.
   `scripts/split.py`, `scripts/split_world.py` and `scripts/join.py` made the layout and prove it (kept one release, per decision #75).
 
+## 2.0 only (Michael, 18 Oct 2026: "1.0 is frozen"; 20 Oct: "I DO NOT CARE about preserving the legacy")
+The game is the new look (`docs/design/v2-scope.md`); every session serves it.
+- **The new look is the default** (Session 1226). `index.html` boots three.js 0.170 unless the URL says `?look=old` or the setting
+  `og.renderer` is `'old'`. The old look stays only until card F14 deletes it.
+- **No work for the old look.** No builder, mesh, texture, number or prototype that only the old look (r128, the legacy zones, the
+  pre-kit builders) uses. Fix an old-look fault only when it breaks shared code.
+- **Test on the new look only.** Every suite boots it. A suite that is red or too slow there is named in `tests/skip.json` and does
+  not run (never sent back to the old look); each one is a QA card in `docs/qa/skipped.md`. Fixing one strikes it from the list, and
+  that pull request runs it. Adding one is a pipeline change and needs Michael's approval. The shards' times are `tests/times.json`.
+- **2.0's cards come first**, then the core loop (combat, skills and perks, enemies by place, magic B), then everything else.
+- **Land small and often.** A branch that holds more than a day's sessions is a risk to everyone's merges: stop adding to it until it
+  lands.
+
 ## A session
 1. Read the last few files in `docs/devlog/` and the backlog before touching code.
 2. One feature or bug per session. Ask before building anything whose design is open.
@@ -58,15 +71,15 @@ Session 368 built the tooling and Session 379 cut the file (1 Oct 2026); Session
   later one, which `node --check` on one file cannot see. `python3 scripts/parsecheck.py` checks each file and then the
   concatenation in tag order, which catches it. Two `function` declarations of one name are legal (the last wins, as now).
 - **The renderer's switch (Session 822, card F1).** One page runs one three.js, chosen by the inline script just above the r128 tag,
-  before any `js/` file: `?look=new` (or the setting, `localStorage['og.renderer']='new'`, the settings sheet's *Renderer* row,
-  `setRenderer()`) `document.write`s `vendor/three.r170.min.js` and opens a `<template>`, so the r128 tag after it is parsed inert
-  and never runs; `?look=old` or nothing leaves the page loading r128 from cdnjs as before. `window.OG_LOOK` says which ran.
+  before any `js/` file: the new look, the default since Session 1226, `document.write`s `vendor/three.r170.min.js` and opens a
+  `<template>`, so the r128 tag after it is parsed inert and never runs; `?look=old` (or the setting, `localStorage['og.renderer']='old'`,
+  the settings sheet's *Renderer* row, `setRenderer()`) leaves the page loading r128 from cdnjs. `window.OG_LOOK` says which ran.
   `js/05-compat.js` is the only place the version is read: on 0.170 it turns colour management off and the output linear, patches
   the light chunks back to r128's legacy scale (×π, the old point-light falloff, decay 1), and `SKINNED` carries `skinning:true`
   to the two skinned materials on r128 only. Every other file is one code path for both. To rebuild the bundle:
   `python3 scripts/three_bundle.py` (`--check` in CI proves the committed copy). F2 and F3 build on this switch: the new look's
-  own work reads `OG_LOOK`/`THREE_LEGACY`, never `THREE.REVISION` again elsewhere. Tests: `boot({look:'new'})`, or
-  `node tests/run.mjs --look=new` for every suite; `looknew` and `lookpair` are the switch's own.
+  own work reads `OG_LOOK`/`THREE_LEGACY`, never `THREE.REVISION` again elsewhere. Tests boot the new look; `boot({look:'old'})`
+  or `node tests/run.mjs --look=old` is the old one; `looknew` and `lookpair` are the switch's own.
 - `K`, `PERF`, `AX`, `volLevel`, `EXPLORE`, `PIECES`, `_ccState` and the other 47 constants of the old `if(REN){` block
   (removed in Session 368) are plain globals; `window._K` still works.
 - **The world files (`80-world-terrain.js` to `88-world-ticks.js`) are the old `WORLD` IIFE's body, in order, at the top level.**

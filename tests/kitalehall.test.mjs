@@ -2,7 +2,8 @@
 // js/38-kit.js copies markHall from docs/prototypes/levelup/pieces.js and markAlehall from rooms.js, and this holds the copy to the
 // prototype: three keys of the alehall and two halls (shingle with a porch and chimney, turf without) build to the triangles, draws
 // and vertex hashes the prototype gives for the same keys (read from the prototype in the test Chromium, 19 Oct 2026), the same twice,
-// at 10 by 18 m with its two long tables. On the old look the kit loads and builds nothing until asked.
+// at 10 by 18 m with its two long tables.
+// The new look only since 1.0 was frozen (18 Oct 2026): the old look’s check is gone.
 import { boot, check } from './lib/game.mjs';
 const ALE = { alehall: [9490, 15, 1473512360], 'alehall:0': [9890, 15, 1821128147], 'alehall:1': [9578, 15, -651945077] }, SHELL = [1648, 7, -1445980848];
 const HALL = { 'hall:a': [{ roof: 'shingle', w: 7.6, d: 14, porch: true, chimney: true, carve: true, wall: 2 }, 1724, 9, -716079296], 'hall:b': [{ roof: 'turf', w: 6, d: 9, porch: false, chimney: false, carve: false }, 768, 10, 866376744] };
@@ -20,6 +21,3 @@ const A = R.ale.alehall;
 check(`each is the same twice, ${A.w} by ${A.d} m, with its ${A.tables} long tables and ${A.boxes} pieces kept for the checks`, Object.values(R.ale).every(v => v.same) && A.w === 10 && A.d === 18 && A.tables === 2 && A.boxes === 22, A);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
-const g0 = await boot(); const o = await g0.page.evaluate(() => ({ look: window.OG_LOOK || 'old', fn: typeof PKIT.mk.alehall, made: PKIT.texturesMade() }));
-check('on the old look the kit has the alehall and has painted nothing', o.look !== 'new' && o.fn === 'function' && o.made === 0 && g0.errs.length === 0, { ...o, errs: g0.errs });
-await g0.close();

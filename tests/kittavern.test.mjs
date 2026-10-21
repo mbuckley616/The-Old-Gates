@@ -3,7 +3,8 @@
 // aurenneTavern from rooms.js, and this holds the copy to the prototype: three keys of the tavern and three houses (Roman with an arcade,
 // flat with a dome, lattices and a pergola, flat with an outside stair) build to the triangles, draws and vertex hashes the prototype
 // gives for the same keys (read from the prototype in the test Chromium, 19 Oct 2026), the same twice, at 9.6 by 8 m with its seven
-// tables. On the old look the kit loads and builds nothing until asked.
+// tables.
+// The new look only since 1.0 was frozen (18 Oct 2026): the old look’s check is gone.
 import { boot, check } from './lib/game.mjs';
 const TAV = { tavern: [10508, 18, 1688931971], 'tavern:0': [10928, 18, 17590128], 'tavern:1': [10600, 18, -272605017] }, SHELL = [3476, 8, 472917338];
 const HOUSE = { 'house:a': [{ kind: 'tile', w: 8.4, d: 7.2, two: true, arcade: true }, 5408, 12, 1286884975, 7.786], 'house:b': [{ kind: 'flat', w: 8.8, d: 7.0, two: true, dome: 'blue', pergola: true, lattice: true, stair: false }, 7966, 14, 628404905, 9.281],
@@ -22,6 +23,3 @@ const A = R.tav.tavern;
 check(`each is the same twice, ${A.w} by ${A.d} m, with its ${A.tables} tables, ${A.lamps} lamps and ${A.boxes} pieces kept for the checks`, Object.values(R.tav).every(v => v.same) && A.w === 9.6 && A.d === 8 && A.tables === 7 && A.boxes === 34 && A.lamps === 2, A);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
-const g0 = await boot(); const o = await g0.page.evaluate(() => ({ look: window.OG_LOOK || 'old', fn: typeof PKIT.au.tavern, made: PKIT.texturesMade() }));
-check('on the old look the kit has the tavern and has painted nothing', o.look !== 'new' && o.fn === 'function' && o.made === 0 && g0.errs.length === 0, { ...o, errs: g0.errs });
-await g0.close();
