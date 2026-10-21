@@ -4,7 +4,6 @@
   "autumn": "red: in a real autumn chunk at least four of the kinds stand, and every one of their trees is still warm under the chunk's tint",
   "bridgenames": "red: 16 bridges built in ten cells, each named *… Bridge*",
   "civicfurn": "red: the church is one bake with the altar's candle flames, 5–60k triangles, and none of the old cylinder pillars",
-  "f4people": "red: vendor/people.builder.js is what people.js makes now (python3 scripts/people_bundle.py)",
   "falls": "too slow: killed at the 900 s a suite is given (1800 s with the retry)",
   "fistfight": "too slow: killed at the 900 s a suite is given (1744 s with the retry)",
   "foewarm": "red: raising every foe kind compiles no shader and adds no program (8 compiled, 4 programs added, on #529 at 85a8ff00, failed twice; it passed at 67c6fd2d, and #443 had it red on the new look)",

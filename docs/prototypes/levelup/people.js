@@ -586,6 +586,12 @@ function tubeGeom(line, rad, sides = 8, twist = 0) {
 // indexed geometries joined into one, positions and indices only, its normals worked out again (Session 1236, the tassel)
 function mergeGeoms(gs) { const pos = [], idx = []; let n = 0; for (const g of gs) { const p = g.attributes.position.array; for (const v of p) pos.push(v); for (const i of g.index.array) idx.push(i + n); n += p.length / 3; }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); return g; }
+// the rolled hood's centre line (Session 1255): the collar's ring repeats points where its columns meet and steps up and down between them,
+// so the roll was a crumpled tube. Points within 4 mm of the last are dropped, the rest smoothed four times (the ends kept) and laid
+// again 1.5 cm apart along a curve through them
+function hoodLine(raw) { const pts = [raw[0]]; for (const q of raw.slice(1)) if (q.distanceTo(pts[pts.length - 1]) > .004) pts.push(q.clone());
+  if (pts.length < 3) return raw; for (let it = 0; it < 4; it++) { const prev = pts.map(q => q.clone()); for (let i = 1; i < pts.length - 1; i++) pts[i].lerpVectors(prev[i], prev[i - 1].clone().add(prev[i + 1]).multiplyScalar(.5), .5); }
+  const c = new THREE.CatmullRomCurve3(pts); return c.getSpacedPoints(Math.max(4, Math.round(c.getLength() / .015))); }
 function turnOut(g) { const ix = g.index.array; for (let i = 0; i < ix.length; i += 3) { const t = ix[i + 1]; ix[i + 1] = ix[i + 2]; ix[i + 2] = t; } g.computeVertexNormals(); return g; }
 const lockMat = color => new THREE.MeshStandardMaterial({ map: lockTex(), color, roughness: .78 });
 // a line falling from a start under gravity, pushed off the body to a clearance
@@ -697,7 +703,7 @@ function buildHair(P, G, heads, scalpTris, headB, rnd) {
     if (style === 'bun') { // a coil of one lock, two and a half turns, domed out from the head
       const X = new THREE.Vector3(1, 0, 0), Y = g.n.clone().cross(X).normalize(), line = [], rad = [];
       for (let i = 0; i <= 90; i++) { const a = i / 90 * Math.PI * 5, rr = .008 + .03 * i / 90, lift = .03 * (1 - (i / 90) ** 2) + .006; line.push(g.p.clone().addScaledVector(X, Math.cos(a) * rr).addScaledVector(Y, Math.sin(a) * rr).addScaledVector(g.n, lift)); rad.push(.011 + .003 * Math.sin(i / 90 * Math.PI)); }
-      const m = new THREE.SkinnedMesh(skinTo(tubeGeom(line, rad, 8, 30), headB), lm); m.name = 'bun'; out.push(m); continue; }
+      const m = new THREE.SkinnedMesh(skinTo(turnOut(tubeGeom(line, rad, 8, 30)), headB), lm); m.name = 'bun'; m.userData.axis = { line, sides: 8 }; out.push(m); continue; }
     const BL = .16 + .42 * len, start = g.p.clone().addScaledVector(g.n, .006), d0 = new THREE.Vector3((g.p.x - hc.x) * .5, -1.6, -.3);
     const line = drape(bodyOnly, start, d0, BL, q => clearAt(q) + (style === 'tail' ? .006 : 0), { keepX: style === 'braids' ? .03 : .06 });
     // set out over the roll, then smoothed and set out again, so it bends over the roll in a curve and not a step
@@ -714,12 +720,14 @@ function buildHair(P, G, heads, scalpTris, headB, rnd) {
       // the tie was see-through and its ends blunt. It runs 1 to 0 now, and its strands start inside the tie, 2.2 cm round)
       const m = strandCards(tail, col, headB); m.name = 'tail'; out.push(m); continue; }
     // a braid: three locks crossing over one another, a tie near the end and a short brush below it
+    // (the locks, the bun and the braid's lower tie turned out, Session 1255: wound inward on a single-sided material, each drew the far wall
+    // of its own inside, lit from within, so a braid read as crumpled foil; the upper tie was turned out in Session 1154)
     const w = .034 * (.85 + .3 * len), endAt = line.length - 6;
     for (let i = 0; i < 3; i++) { const lk = [], rad = []; for (let s = 0; s <= endAt; s++) { const T = (line[Math.min(s + 1, line.length - 1)].clone().sub(line[Math.max(0, s - 1)])).normalize(), hit = bodyOnly.near(line[s]);
         const Nn = hit ? line[s].clone().sub(hit.p).normalize() : new THREE.Vector3(0, 0, -1), X = T.clone().cross(Nn).normalize(), N2 = X.clone().cross(T), taper = 1 - .45 * s / endAt, ph = s * .01 / .045 * Math.PI * 2 + i * Math.PI * 2 / 3;
         lk.push(line[s].clone().addScaledVector(X, Math.sin(ph) * w * .36 * taper).addScaledVector(N2, Math.sin(2 * ph) * w * .16 * taper)); rad.push(w * .3 * taper * (s < 3 ? s / 3 * .5 + .5 : 1)); }
-      const m = new THREE.SkinnedMesh(skinTo(tubeGeom(lk, rad, 7, 25 + i * 3), headB), lm); m.name = 'braid' + i; out.push(m); }
-    { const band = line.slice(endAt - 1, endAt + 2), m = new THREE.SkinnedMesh(skinTo(tubeGeom(band, band.map(() => w * .36), 10), headB), tie); m.name = 'tie'; out.push(m);
+      const m = new THREE.SkinnedMesh(skinTo(turnOut(tubeGeom(lk, rad, 7, 25 + i * 3)), headB), lm); m.name = 'braid' + i; m.userData.axis = { line: lk, sides: 7 }; out.push(m); }
+    { const band = line.slice(endAt - 1, endAt + 2), m = new THREE.SkinnedMesh(skinTo(turnOut(tubeGeom(band, band.map(() => w * .36), 10)), headB), tie); m.name = 'tie'; m.userData.axis = { line: band, sides: 10 }; out.push(m);
       const brush = []; for (let k = 0; k < 60; k++) { const a = rnd() * Math.PI * 2, pts = [], ns = []; for (let s = endAt; s < line.length; s++) { const f = (s - endAt) / (line.length - endAt), rr = w * .25 * (1 + f); pts.push(line[s].clone().add(new THREE.Vector3(Math.cos(a) * rr, 0, Math.sin(a) * rr))); ns.push(new THREE.Vector3(Math.cos(a), 0, Math.sin(a))); }
         brush.push({ pts, ns, w: .007, v0: .5, v1: 1 }); }
       const bm = strandCards(brush, col, headB); bm.name = 'brush'; out.push(bm); }
@@ -823,9 +831,11 @@ function buildCloak(G, body, byName, rnd) {
     const bg = new THREE.BufferGeometry(); bg.setAttribute('position', new THREE.Float32BufferAttribute(bp, 3)); bg.setAttribute('aBase', new THREE.Float32BufferAttribute(bp, 3)); bg.setIndex(bi); bg.computeVertexNormals();
     const bm = new THREE.Mesh(bg, clothMat(sRGB(...D.cloakHem), 'wool', { side: THREE.DoubleSide, scale: 60 })); bm.name = 'cloakHem'; out.push(bm); }
   // a fur lining turned out at the collar (the Markmen's), or the hood rolled on the shoulders
+  // (the rolled hood turned out, Session 1255: tubeGeom winds inward and the cloth is single-sided, so the roll drew its own far wall from inside.
+  // The fur collar's shells are left as they are: their shader reads the layer)
   const ring = tops.map(t => t.start.clone().addScaledVector(t.n, .012).add(new THREE.Vector3(0, .012, 0)));
   if (D.cloakFur && !burnousOn(D)) for (let s = 0; s < 6; s++) { const m = new THREE.Mesh(tubeGeom(ring, ring.map(() => .026 + s * .004), 8), shellMat(sRGB(...D.cloakFur), s, 6, { sx: 260, sy: 70, solid: s === 0 })); m.geometry.setAttribute('aBase', m.geometry.attributes.position); m.name = 'collar' + s; out.push(m); }
-  else if (D.hood === 'down') { const kb = Math.round(-th0 / (th1 - th0) * (K - 1)), back = ring.slice(Math.max(0, kb - Math.round(K * .2)), kb + Math.round(K * .2)).map(q => q.clone().lerp(new THREE.Vector3(neck.x, q.y + .025, neck.z), .25)), m = new THREE.Mesh(tubeGeom(back, back.map((_, i) => .03 + .018 * Math.sin(Math.PI * i / (back.length - 1))), 10), clothMat(sRGB(...D.cloak).multiplyScalar(.92), 'wool', { scale: 26, ...cloakPattern(D, [neck.x, neck.z], .2) })); m.geometry.setAttribute('aBase', m.geometry.attributes.position); m.geometry.setAttribute('aTart', m.geometry.attributes.position); m.name = 'hood'; out.push(m); }
+  else if (D.hood === 'down') { const kb = Math.round(-th0 / (th1 - th0) * (K - 1)), back = hoodLine(ring.slice(Math.max(0, kb - Math.round(K * .2)), kb + Math.round(K * .2)).map(q => q.clone().lerp(new THREE.Vector3(neck.x, q.y + .025, neck.z), .25))), m = new THREE.Mesh(turnOut(tubeGeom(back, back.map((_, i) => .03 + .018 * Math.sin(Math.PI * i / (back.length - 1))), 10)), clothMat(sRGB(...D.cloak).multiplyScalar(.92), 'wool', { scale: 26, ...cloakPattern(D, [neck.x, neck.z], .2) })); m.geometry.setAttribute('aBase', m.geometry.attributes.position); m.geometry.setAttribute('aTart', m.geometry.attributes.position); m.name = 'hood'; m.userData.axis = { line: back, sides: 10 }; out.push(m); }
   // the brooch at the throat, where the two front columns meet
   const a = thrown ? tops[K - 1] : tops[0], b = tops[K - 1], at = a.start.clone().add(b.start).multiplyScalar(.5), nrm = a.n.clone().add(b.n).normalize();
   // a burnous is sewn shut at the chest and tied at the throat with a knot of its own cord in place of the brooch
