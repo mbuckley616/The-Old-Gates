@@ -95,6 +95,9 @@ function tpHBDress(G0,o){const G=JSON.parse(JSON.stringify(G0)),D=Object.assign(
   else if(Hn&&!Hn.line){D.vambrace=col(Hn);D.vambraceKind=fam(Hn);if(Hn.fam==='mail'||Hn.fam==='plate'){D.gloves=hbRGB(Hn.metal);D.glovesKind=Hn.fam==='mail'?'mail':'sheet';}else D.gloves=hbRGB(0x4a3020);}
   else if(o.gl&&!Hn)D.gloves=hbRGB(tpMatColor(o.gl,0x5a3a20));
   if(Lg&&!Lg.line){D.greaves=col(Lg);D.greavesKind=fam(Lg);if(Lg.fam==='mail'||Lg.fam==='plate')D.cuisses=true;}
+  // S1265 — the tier's signature on its plate (AR_SIG: fluted, heavy, faceted, scaled, spiked, inlaid; Mithril to Cosmic) and its glow,
+  // drawn by people.js's plate shader on the cuirass, the gauntlets and the greaves; the first plate piece's, chest first
+  {const S=[AR&&AR.chest,Hn,Lg].find(P=>P&&!P.line&&P.fam==='plate'&&P.sig);if(S){D.plateSig=S.sig;if(S.glow!=null)D.plateGlow=hbRGB(S.glow);}}
   const K=o.cloak;if(K){D.cloak=hbRGB(K.col);if(K.cut==='short'){D.cape=true;D.cloakLen=.6;}else D.cloakLen=.85;D.brooch=[.62,.47,.22];
     if(K.fur!=null)D.cloakFur=hbRGB(K.fur);if(K.trim!=null)D.cloakHem=hbRGB(K.trim);if(K.hood)D.hood=o.hd&&tpIsCloth(o.hd)?'up':'down';}
   return G;}

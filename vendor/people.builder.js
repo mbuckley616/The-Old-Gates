@@ -646,21 +646,40 @@ const BIND_MIX = `float bD = bindD(), bA = fwidth(bD) * .7 + .0005, bK = 1. - sm
 // and from the waist down hangs in leather strips (pteruges), sixteen round the hips, dark in the gaps; pL is the leather's weight
 // 'sheet' (Session 1263, card F10: the gauntlets' and greaves' plate) is the same sheet with no lames on the arm or the shin, and a knee
 // cop of lames 3 cm deep over the knee (rest -.47 to -.34), each lying over the one below it
-const PLATE = (kind) => `float pL = 0.;
+// The tiers' signatures on plate (Session 1265, card F10; the old kit's AR_SIG, Mithril to Cosmic), drawn on the same sheet over the
+// rest body: 'fluted', grooves 1.8 cm apart down the front; 'heavy', the sheet darker and a row of rivets round the waist; 'faceted',
+// panels a little lighter or darker than their neighbours, as flat facets catch the light; 'scaled', the breast in the scales' plates;
+// 'spiked', chevrons carved down the breast; 'inlaid', three lines of the metal's glow across the breast. A glowing tier's light
+// (o.glow) lies in the inlay's lines, along the faceted faulds' lames and the fluted waist; gI is its weight
+const SIG = (sig) => !sig ? '' : (sig === 'scaled' ? SCALES.split('\nfloat mailAt')[0] + '\n' : '') + `float sigAt(vec3 p, float m){ float ax = abs(p.x), front = step(0., p.z) * step(ax, .19) * step(.13, p.y);
+  ${{ fluted: `if (p.z > -.02) m *= .8 + .24 * sqrt(abs(sin(ax / .018 * 3.1416))); gI = step(ax, .25) * (1. - smoothstep(.002, .004, abs(p.y - .1)));`,
+    heavy: `m *= .9; if (ax < .25) { float d = length(vec2((fract(p.x / .03) - .5) * .03, p.y - .105)); if (d < .0055) m = 1.2 - d * 50.; }`,
+    faceted: `{ float a = floor(atan(p.x, p.z) * 2.5), b = floor(p.y * 14.); m *= .82 + .3 * fract(sin(a * 12.9898 + b * 78.233) * 43758.5453); }
+  gI = step(ax, .25) * (1. - step(.13, p.y)) * step(-.13, p.y) * (1. - smoothstep(.002, .004, min(min(abs(p.y - .096), abs(p.y - .058)), abs(p.y - .016))));`,
+    scaled: `if (front > .5) m = mix(m, scaleAt(p.xy) * 1.05, .9);`,
+    spiked: `if (front > .5 && abs(fract((ax * 1.4 + p.y) / .07) - .5) < .04) m *= .45;`,
+    inlaid: `gI = front * (1. - smoothstep(.002, .004, min(min(abs(p.y - .16), abs(p.y - .24)), abs(p.y - .32))));` }[sig] || ''}
+  return m; }`;
+const PLATE = (kind, sig) => `float pL = 0., gI = 0.;
+${SIG(sig)}
 float lameAt(float t, float w){ float u = t / w, f = fract(u), a = fwidth(u) + .01; float g = 1. - smoothstep(0., .07 + a, f) * (1. - smoothstep(.95 - a, 1., f)); return mix(.84 + .26 * f, .36, g); }
 float mailAt(vec3 p, vec3 n){ float ax = abs(p.x), m = 1.;
   ${kind === 'sheet' ? `if (p.y < -.34 && p.y > -.47) m = lameAt(-.34 - p.y, .03);` : kind === 'muscle' ? `if (p.y < .12) { float u = atan(p.x, p.z) * 2.5465, f = fract(u), a = fwidth(u) + .02; pL = 1.; m = mix(.9 + .14 * sin(f * 3.1416), .3, 1. - smoothstep(.05, .05 + a, f) * (1. - smoothstep(.95 - a, .95, f))); }`
     : `if (ax > .19) m = lameAt(ax - .19, .034); else if (p.y < .13) m = lameAt(.13 - p.y, .042); else if (p.z > 0.) m = 1. + .14 * (1. - smoothstep(.0, .018, ax));`}
+  ${sig && kind !== 'muscle' ? 'm = sigAt(p, m);' : ''}
   float k = clamp(length(fwidth(p.xy * 24.)) * 1.2 - .4, 0., 1.); return mix(m, .92, k); }`;
 const PLATE_MIX = `diffuseColor.rgb = mix(diffuseColor.rgb, vec3(.27, .17, .09) * mR, pL);`;
+// the tier's signature and its glow for plate (Session 1265): D.plateSig, D.plateGlow
+function sigOf(D) { return D.plateSig ? { sig: D.plateSig, glow: D.plateGlow ? sRGB(...D.plateGlow) : null } : {}; }
 function mailMat(color, o = {}) {
   const m = new THREE.MeshStandardMaterial({ color, roughness: o.plate ? .3 : o.scales ? .36 : .45, metalness: o.plate ? .85 : o.scales ? .72 : .4, side: o.side ?? THREE.FrontSide });
-  m.onBeforeCompile = s => {
+  m.onBeforeCompile = s => { if (o.plate && o.glow) s.uniforms.glowC = { value: o.glow };
     s.vertexShader = 'attribute vec3 aBase; varying vec3 vB; varying vec3 vRN;\n' + s.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vRN = normal; vB = aBase;');
-    s.fragmentShader = 'varying vec3 vB; varying vec3 vRN;\n' + (o.plate ? PLATE(o.plate) : o.scales ? SCALES : RINGS) + '\n' + (o.bind ? DOTS.split('\nvec2 dotAt')[0] + '\n' + BIND(o.bind) + '\n' : '') + s.fragmentShader.replace('vec4 diffuseColor = vec4( diffuse, opacity );', CUT(o.cut) + (o.hole ? `if (${o.hole}) discard;` : '') + 'float mR = mailAt(vB, vRN); vec4 diffuseColor = vec4( diffuse * mR, opacity );' + (o.plate ? PLATE_MIX : '') + (o.bind ? BIND_MIX : ''))
+    s.fragmentShader = 'varying vec3 vB; varying vec3 vRN;\n' + (o.plate ? (o.glow ? 'uniform vec3 glowC;\n' : '') + PLATE(o.plate, o.sig) : o.scales ? SCALES : RINGS) + '\n' + (o.bind ? DOTS.split('\nvec2 dotAt')[0] + '\n' + BIND(o.bind) + '\n' : '') + s.fragmentShader.replace('vec4 diffuseColor = vec4( diffuse, opacity );', CUT(o.cut) + (o.hole ? `if (${o.hole}) discard;` : '') + 'float mR = mailAt(vB, vRN); vec4 diffuseColor = vec4( diffuse * mR, opacity );' + (o.plate ? PLATE_MIX : '') + (o.plate && o.glow ? ' diffuseColor.rgb = mix(diffuseColor.rgb, glowC, gI * .6);' : '') + (o.bind ? BIND_MIX : ''))
       .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n roughnessFactor = mix(.85, roughnessFactor, smoothstep(.2, .45, mR));' + (o.plate ? ' roughnessFactor = mix(roughnessFactor, .75, pL);' : '') + (o.bind ? ' roughnessFactor = mix(roughnessFactor, .72, bK);' : ''))
+      .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>' + (o.plate && o.glow ? '\n totalEmissiveRadiance += glowC * gI * 1.6;' : ''))
       .replace('#include <metalnessmap_fragment>', '#include <metalnessmap_fragment>' + (o.bind ? '\n metalnessFactor *= 1. - bK;' : '') + (o.plate ? '\n metalnessFactor *= 1. - pL;' : '')); };
-  m.userData.cut = o.cut; m.userData.hole = o.hole; m.userData.bind = o.bind; m.customProgramCacheKey = () => (o.plate || (o.scales ? 'scales' : 'mail')) + JSON.stringify(o.cut || 0) + (o.hole || '') + JSON.stringify(o.bind || 0);
+  m.userData.cut = o.cut; m.userData.hole = o.hole; m.userData.bind = o.bind; m.customProgramCacheKey = () => (o.plate || (o.scales ? 'scales' : 'mail')) + (o.plate && o.sig ? ':' + o.sig + (o.glow ? '+glow' : '') : '') + JSON.stringify(o.cut || 0) + (o.hole || '') + JSON.stringify(o.bind || 0);
   return m;
 }
 // a shadow cut as the garment is, so the triangles past its cut edge cast none (Session 897: the mail's hem threw teeth onto the thighs)
@@ -3341,7 +3360,7 @@ function makePerson(G, o = {}) {
   // Its edges are bound in leather (Session 1068): the neck, the sleeves and the hem, and the hem is cut straight where the rings'
   // is ragged (o.binding === false leaves the band off and the hem straight, for a check of the band alone)
   // Plate and the muscle cuirass (Session 1260) are the scale cuirass's cut, unbound, in sheet metal (D.plate 'plate' or 'muscle', over D.mail's colour)
-  if (mail) { const pl = D.plate === 'plate' || D.plate === 'muscle' ? D.plate : null, sc = !!D.scales || !!pl, bd = sc && !pl && o.binding !== false, top = { cut: [.06, .6, sc ? .25 : .3, .003], scales: sc, plate: pl, bind: bd ? [.6, .25, -9] : 0 }, skirt = { side: THREE.DoubleSide, cut: [sc ? -.13 : -.27, .17, 9, sc ? .002 : .012], scales: sc, plate: pl, bind: bd ? [9, 9, -.13] : 0 };
+  if (mail) { const pl = D.plate === 'plate' || D.plate === 'muscle' ? D.plate : null, sc = !!D.scales || !!pl, bd = sc && !pl && o.binding !== false, sg = pl === 'plate' ? sigOf(D) : {}, top = { cut: [.06, .6, sc ? .25 : .3, .003], scales: sc, plate: pl, ...sg, bind: bd ? [.6, .25, -9] : 0 }, skirt = { side: THREE.DoubleSide, cut: [sc ? -.13 : -.27, .17, 9, sc ? .002 : .012], scales: sc, plate: pl, ...sg, bind: bd ? [9, 9, -.13] : 0 };
     push('mail', PACK.R.mailTop, mailMat(sRGB(...D.mail), top), (x, y) => tunicPush(x, y) + (sc ? .012 : .009) + .012 * Math.max(0, Math.min(1, (.2 - y) / .1))).customDepthMaterial = cutDepth(top);
     push('mailSkirt', PACK.R.mailSkirt, mailMat(sRGB(...D.mail), skirt), (x, y) => .024 + .012 * Math.max(0, Math.min(1, (.14 - y) / .3)) + .03 * Math.max(0, Math.min(1, (y + .14) / .14)) + (D.skirt && D.skirt !== 'short' ? .006 : 0)).customDepthMaterial = cutDepth(skirt); }
   // the wide sash belt (Session 1010; OG-056's "wide sash belts in rust red and indigo"): a band of cloth 14 cm wide wound round
@@ -3353,7 +3372,7 @@ function makePerson(G, o = {}) {
   // D.greaves from the ankle to under the knee, 3 cm off the leg (1 cm over a boot), and D.cuisses up the thigh to under the hips, 2 cm
   // off it. Each kind is 'sheet' (plate, with a knee cop of lames), 'mail' (rings), 'scales' (the lamellar's boards) or 'leather';
   // the hand's kinds are 'sheet', 'mail' or 'leather'. All are shells skinned as the body is, so they move with the arm and the leg
-  const armour = (col, kind, o) => kind === 'leather' ? clothMat(sRGB(...col), 'leather', o) : mailMat(sRGB(...col), { ...o, plate: kind === 'sheet' ? 'sheet' : null, scales: kind === 'scales' });
+  const armour = (col, kind, o) => kind === 'leather' ? clothMat(sRGB(...col), 'leather', o) : mailMat(sRGB(...col), { ...o, plate: kind === 'sheet' ? 'sheet' : null, scales: kind === 'scales', ...(kind === 'sheet' ? sigOf(D) : {}) });
   if (D.vambrace) { const o = { hole: `${SLV_T} < .325 || ${SLV_T} > .413` }; push('vambrace', PACK.R.vambrace, armour(D.vambrace, D.vambraceKind || 'sheet', o), coat ? (x, y) => coatPush(x, y) + .012 : (x, y) => tunicPush(x, y) + .016).customDepthMaterial = cutDepth(o); }
   if (D.gloves) { const o = { hole: `${SLV_T} < .404` }; push('gloves', PACK.R.glove, armour(D.gloves, D.glovesKind || 'leather', o), .0035).customDepthMaterial = cutDepth(o); }
   if (D.greaves) { const k = D.greavesKind || 'sheet', o = { cut: [-.72, k === 'sheet' ? -.34 : -.37, 9, .001] }; push('greaves', PACK.R.greave, armour(D.greaves, k, o), .03).customDepthMaterial = cutDepth(o);
@@ -3573,7 +3592,7 @@ function markGenome(rnd, g, o = {}) {
 const hex = c => '#' + c.map(v => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, '0')).join('');
 const unhex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
 const r3 = v => Math.round(v * 1000) / 1000, round = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, r3(v)]));
-const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'sash', 'sashBorder', 'wrap', 'wrapBorder', 'earrings', 'necklace', 'beltCoins', 'sashBelt', 'sandals', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'legWraps', 'scarfPrint', 'basket', 'basketCloth', 'amulet', 'charms', 'dots', 'shoulderWrap', 'eyepatch', 'staff', 'chair', 'waistcoat', 'tartan', 'tartanLine', 'coat', 'coatFur', 'bands', 'bandsMotif', 'robeStripe', 'robeStripeLine', 'circlet', 'circletStone', 'gownBorder', 'burnousStripe', 'veil', 'vambrace', 'gloves', 'greaves'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, sashSide: 'L', sashPrint: true, sashKnot: true, turban: false, scarf: false, wrapTail: null, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', scales: false, spearHead: null, crossbowMake: null, amuletSide: 'L', shoulderWrapSide: 'L', eyepatchSide: 'L', staffMake: null, dotsStyle: 'powder', waistcoatLeather: false, coatLen: .75, coatHood: null, tier: null, burnous: false, plate: null, vambraceKind: 'sheet', glovesKind: 'leather', greavesKind: 'sheet', cuisses: false };
+const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'sash', 'sashBorder', 'wrap', 'wrapBorder', 'earrings', 'necklace', 'beltCoins', 'sashBelt', 'sandals', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'legWraps', 'scarfPrint', 'basket', 'basketCloth', 'amulet', 'charms', 'dots', 'shoulderWrap', 'eyepatch', 'staff', 'chair', 'waistcoat', 'tartan', 'tartanLine', 'coat', 'coatFur', 'bands', 'bandsMotif', 'robeStripe', 'robeStripeLine', 'circlet', 'circletStone', 'gownBorder', 'burnousStripe', 'veil', 'vambrace', 'gloves', 'greaves', 'plateGlow'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, sashSide: 'L', sashPrint: true, sashKnot: true, turban: false, scarf: false, wrapTail: null, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', scales: false, spearHead: null, crossbowMake: null, amuletSide: 'L', shoulderWrapSide: 'L', eyepatchSide: 'L', staffMake: null, dotsStyle: 'powder', waistcoatLeather: false, coatLen: .75, coatHood: null, tier: null, burnous: false, plate: null, vambraceKind: 'sheet', glovesKind: 'leather', greavesKind: 'sheet', cuisses: false, plateSig: null };
 function toSaved(G) {
   const D = G.dress || {}, dress = {}; for (const k of GARMENTS) if (D[k]) dress[k] = hex(D[k]); dress.skirt = D.skirt || null; for (const [k, d] of Object.entries(DRESS_FLAGS)) if (D[k] != null && (typeof D[k] === 'number' ? r3(D[k]) : D[k]) !== d) dress[k] = typeof D[k] === 'number' ? r3(D[k]) : D[k];
   const style = G.hair?.style ?? ((G.hairLen ?? .3) < .45 ? 'short' : 'loose');
