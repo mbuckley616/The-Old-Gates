@@ -970,6 +970,25 @@ if (!process.argv.includes('--shots-only')) { const page = await browser.newPage
   check('the burnous with its hood down: the hood rolled on the back, no tassel; with no cloak: nothing of it built', b.downHood && !b.downTassel && !b.none.knot && !b.none.tassel && !b.none.cloak, { down: [b.downHood, b.downTassel], none: b.none });
   check(`the burnous saves and loads back; rolled on no one (${b.rolled} of 60 across the four peoples): when it is worn is the season's`, b.saved && b.rolled === 0, { saved: b.saved, rolled: b.rolled });
   check('the burnous: no page errors', errs.length === 0, errs.slice(0, 3)); await page.close(); }
+// the veil (Session 1237, OG-109's Aurenne travel): the head-wrap's end across the face, on a bearded man under a turban, a man under a plain
+// wrap and a woman with braids: its top edge under the eyes all across them, nothing of the face, the neck, the tucked hair or a beard out
+// through it (5 mm clear, give or take the map's smoothing), a beard's lowest card covered; on the head bone; no ear-rings under it; none
+// with a headscarf, with no wrap, or under a raised hood; it saves and loads back, and no one rolls it
+if (!process.argv.includes('--shots-only')) { const page = await browser.newPage({ viewport: { width: 640, height: 360 } }); const errs = []; page.on('pageerror', e => errs.push(String(e)));
+  await page.goto(`http://localhost:${port}/builder.html?still&w=640&h=360&seed=check`); await page.waitForFunction(() => window.__done || window.__err, null, { timeout: 300000 });
+  const v = await page.evaluate(async () => { const K = await import('./people.js'), ind = [.12, .14, .3], out = {};
+    for (const [name, seed, sex, hair, extra] of [['a bearded man under a white turban, the veil indigo', 'bn1', 1, null, { wrap: [.88, .84, .74], turban: true, veil: ind }], ['a man under a plain teal wrap, the veil the wrap\'s', 'vl2', 1, null, { wrap: [.12, .42, .42], turban: false, veil: [.12, .42, .42] }],
+        ['a woman with braids under a saffron wrap, the veil madder', 'vl3', 0, 'braids', { wrap: [.78, .55, .16], turban: false, veil: [.6, .16, .12], earrings: [.85, .66, .3] }]]) {
+      const G0 = K.rollGenome(seed, { g: sex, people: 'aurennais' }), g = { ...G0, hair: hair ? { style: hair, len: .8 } : G0.hair, beard: sex ? Math.max(G0.beard, .8) : 0, dress: { ...G0.dress, cloak: null, hood: null, sash: null, scarf: false, helm: null, ...extra } }, p = K.makePerson(g), s1 = JSON.stringify(K.toSaved(g));
+      out[name] = { ...p.veil, onHead: !!p.byName['head'].getObjectByName('veil'), ears: !!p.root.getObjectByName('earrings') || !!p.earrings, saved: s1 === JSON.stringify(K.toSaved(K.fromSaved(JSON.parse(s1)))) && s1.includes('"veil"') }; }
+    const G0 = K.rollGenome('vl4', { g: 1, people: 'aurennais' }), none = d => !K.makePerson({ ...G0, dress: { ...G0.dress, cloak: null, hood: null, veil: ind, ...d } }).veil;
+    let rolled = 0; for (const k of ['aurennais', 'gatelander', 'markman', 'oldblood']) for (let i = 0; i < 15; i++) if (K.rollGenome('vl:' + k + i, { people: k }).dress.veil) rolled++;
+    return { out, none: { scarf: none({ wrap: [.45, .16, .12], scarf: true }), noWrap: none({ wrap: null }), hood: none({ wrap: [.88, .84, .74], cloak: [.3, .3, .3], hood: 'up' }) }, rolled }; });
+  for (const [k, t] of Object.entries(v.out)) check(`${k}: the veil's top edge ${(t.eyeGap * 1000).toFixed(1)} mm or more under the lower lid across the eyes, ${t.out} of ${t.tested} points of the face, neck, hair and beard through it (nearest ${(t.gap * 1000).toFixed(1)} mm), ${(t.overChin * 100).toFixed(1)} cm under the chin (${(t.beardDrop * 100).toFixed(1)} more for a beard), ${t.tris} triangles in one draw, on the head bone, no ear-rings under it`,
+    t.eyeGap >= .005 && t.out === 0 && t.tested > 800 && t.gap > .002 && t.overChin >= .019 && t.onHead && !t.ears && t.saved && t.tris < 7000, t);
+  check(`the bearded man's veil comes down over his beard (${(v.out['a bearded man under a white turban, the veil indigo'].beardDrop * 100).toFixed(1)} cm)`, v.out['a bearded man under a white turban, the veil indigo'].beardDrop > 0, v.out['a bearded man under a white turban, the veil indigo'].beardDrop);
+  check(`no veil with a headscarf, with no wrap, or under a raised hood; rolled on no one (${v.rolled} of 60): when it is worn is the road's`, v.none.scarf && v.none.noWrap && v.none.hood && v.rolled === 0, { ...v.none, rolled: v.rolled });
+  check('the veil: no page errors', errs.length === 0, errs.slice(0, 3)); await page.close(); }
 const shotArg = process.argv.find(a => a.startsWith('--shots') && a !== '--shots-only');
 if (shotArg) { const only = shotArg.split('=')[1];
   const shot = async (name, q, w = 1920, h = 1080, panel = false, crop = null) => { if (only && !only.split(',').some(o => name.includes(o))) return; const page = await browser.newPage({ viewport: { width: w, height: h } }); const errs = []; page.on('pageerror', e => errs.push(String(e)));
@@ -1286,6 +1305,11 @@ if (shotArg) { const only = shotArg.split('=')[1];
     await shot('burnous-back', 'people=aurennais&seed=bn1&sex=m&view=full&turn=2.4&dress=' + dq(bu));
     await shot('burnous-down', 'people=aurennais&seed=bn2&sex=m&view=full&turn=-2.3&dress=' + dq({ ...bu, cloak: [.42, .33, .24], burnousStripe: [.16, .12, .09], hood: 'down' }));
     await shot('burnous-woman', 'people=aurennais&seed=bn3&sex=f&view=full&turn=.5&dress=' + dq({ ...bu, robe: null, tunic: [.6, .14, .1], skirt: 'long', skirtColor: [.6, .14, .1], gownBorder: [.85, .66, .3], cloak: [.2, .26, .5], burnousStripe: [.88, .84, .74], cloakLen: .9 })); }
+  // the veil (Session 1237, OG-109's Aurenne travel): indigo under a white turban, face and full length; a woman's in madder under a saffron wrap
+  { const dq = d => encodeURIComponent(JSON.stringify(d)), cream = [.86, .81, .71], vt = { robe: cream, tunic: cream, cloak: null, hood: null, sash: null, wrap: [.88, .84, .74], turban: true, veil: [.12, .14, .3] };
+    await shot('veil-face', 'people=aurennais&seed=bn1&sex=m&view=face&turn=.5&dress=' + dq(vt)); await shot('veil-side', 'people=aurennais&seed=bn1&sex=m&view=head&turn=1.5&dress=' + dq(vt));
+    await shot('veil-full', 'people=aurennais&seed=bn1&sex=m&view=full&turn=.5&dress=' + dq({ ...vt, sashBelt: [.17, .2, .4] }));
+    await shot('veil-woman', 'people=aurennais&seed=vl3&sex=f&style=braids&view=head&turn=.6&dress=' + dq({ cloak: null, hood: null, sash: null, wrap: [.78, .55, .16], turban: false, veil: [.6, .16, .12] })); }
   for (const k of ['gatelander', 'markman', 'aurennais', 'oldblood']) await shot('brows-' + k, `seed=brows:${k}&sex=m&people=${k}&view=face&nomantle`, 1920, 1440, false, [.25, .38, .5, .25]);
 }
 await browser.close(); srv.close(); console.log(fails ? `${fails} FAILED` : 'all passed'); process.exit(fails ? 1 : 0);

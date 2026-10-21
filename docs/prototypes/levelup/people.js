@@ -1362,6 +1362,54 @@ function buildWrap(P, G, heads, byName, hairPts = [], browTop = -9) {
   const m = clothMat(new THREE.Color(1, 1, 1), 'wool', { side: THREE.DoubleSide, scale: 34, print: sc && D.scarfPrint ? sRGB(...D.scarfPrint) : null }); m.vertexColors = true; const mesh = new THREE.Mesh(g, m); mesh.name = 'wrap'; mesh.castShadow = true; mesh.receiveShadow = !sc; byName['head'].add(mesh);
   return { mesh, stats: { gap: +gap.toFixed(4), hairOut, hairPts: hairPts.length, brow: +(browLow - browTop).toFixed(4), overBrow, napeDrop: +(by - nape).toFixed(3), turns: rolls.length, tris: idx.length / 3, width: +(ext.max.x - ext.min.x).toFixed(3), height: +(ext.max.y - ext.min.y).toFixed(3), top: +(ext.max.y - by).toFixed(3), depth: +(ext.max.z - ext.min.z).toFixed(3), border: !!D.wrapBorder, turban: tb, cross, scarf: sc, front: +(rimY(0) - browTop).toFixed(4) } };
 }
+// ── the veil (Session 1237, L1; OG-109's Aurenne travel column: the head-wrap's end drawn across the face against the road's dust and sun) ──
+// A band of cloth round the head under the wrap: across the face from just under the eyes (6 mm under the lower lid) to 2 cm under the
+// chin (3.5 cm higher round the back, at the nape), rising past the eyes' outer corners over the cheekbones and the ears to tuck 1.5 cm up under the wrap's lowest turn, and round the
+// back from there to the nape. It is laid on a radial map round the head's vertical axis (96 directions, 5 mm bands) of what it covers: the
+// face and the neck, the tucked hair, a beard and moustache where they are; 5 mm clear. Cloth does not follow the lips: down each column it
+// may come in at most 0.45 of what it falls (so from the nose's tip it falls straight to the chin), and round each band at most 0.3 of
+// what it goes round (so it spans from the cheeks to the nose). Its top edge is a rolled hem. Rigid, on the head bone, as the wrap is.
+// In D.veil's colour (the Aurennais' indigo, or the wrap's own); only with a wrap that is not a headscarf, and no ear-rings under it
+function veilOn(D) { return !!(D && D.veil && D.wrap && !D.scarf && !D.helm && !hoodUpOn(D)); }
+function buildVeil(P, G, heads, byName, meshes, hairPts = []) {
+  const R0 = PACK.rest, D = G.dress, hv = PACK.headV || (PACK.headV = [...new Set(PACK.G['body'])].filter(i => R0[i * 3 + 1] > .6)), V = i => new THREE.Vector3(P[i * 3], P[i * 3 + 1], P[i * 3 + 2]);
+  let by = 0, bn = 0; for (const i of hv) if (Math.abs(R0[i * 3]) < .05 && R0[i * 3 + 2] > .08 && R0[i * 3 + 1] > .785 && R0[i * 3 + 1] < .8) { by += P[i * 3 + 1]; bn++; } by /= bn;
+  const bb = new THREE.Box3(); for (const i of hv) if (R0[i * 3 + 1] > .755) bb.expandByPoint(V(i)); const c = bb.getCenter(new THREE.Vector3());
+  const rimY = th => by - .012 - .025 * Math.sin(th) ** 2 - .11 * Math.max(0, -Math.cos(th)) ** 1.5;
+  const eye = Array.from(PACK.G['helper-l-eye']), lid = Math.min(...eye.map(v => P[v * 3 + 1])); let chin = 9; for (const i of hv) if (Math.abs(R0[i * 3]) < .03 && R0[i * 3 + 2] > .11) chin = Math.min(chin, P[i * 3 + 1]);
+  // a beard under it: the front's foot comes down over its lowest card within the face's width, by up to 5 cm more
+  let bLow = 9; for (const m of meshes) if (m.name === 'beard' || m.name === 'moust') { const a = m.geometry.attributes.position.array; for (let i = 0; i < a.length; i += 3) if (Math.abs(a[i]) < .07 && a[i + 2] > .02) bLow = Math.min(bLow, a[i + 1]); }
+  const drop = Math.max(0, Math.min(.05, chin - .02 - (bLow - .006)));
+  const ss = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+  const yTop = th => { const a = Math.abs(Math.atan2(Math.sin(th), Math.cos(th))); return lid - .006 + (rimY(th) + .015 - (lid - .006)) * ss(.85, 1.45, a); }, yBot = th => { const a = Math.abs(Math.atan2(Math.sin(th), Math.cos(th))); return chin - .02 - drop * (1 - ss(.35, .9, a)) + .035 * ss(.7, 1.6, a); }, yLow = chin - .02 - drop;
+  const NT = 96, DY = .005, y0 = yLow - .01, NB = Math.ceil((by + .03 - y0) / DY) + 1, M = new Float32Array(NT * NB), TAU = Math.PI * 2;
+  const put = (x, y, z) => { const b = Math.round((y - y0) / DY); if (b < 0 || b >= NB) return; const a = ((Math.round(Math.atan2(x - c.x, z - c.z) / TAU * NT) % NT) + NT) % NT; M[b * NT + a] = Math.max(M[b * NT + a], Math.hypot(x - c.x, z - c.z)); };
+  const pts = []; for (const i of new Set(PACK.G['body'])) if (R0[i * 3 + 1] > .58 || R0[i * 3 + 1] > .5 && Math.abs(R0[i * 3]) < .08 && R0[i * 3 + 2] > 0) pts.push(V(i)); for (const q of hairPts) pts.push(q);
+  for (const m of meshes) if (m.name === 'beard' || m.name === 'moust') { const a = m.geometry.attributes.position.array; for (let i = 0; i < a.length; i += 3) if (a[i + 1] > yLow - .005) pts.push(new THREE.Vector3(a[i], a[i + 1], a[i + 2])); }
+  for (const q of pts) put(q.x, q.y, q.z);
+  // spread each bin over its neighbours, then let the cloth span: never in faster than it falls or goes round
+  let S = new Float32Array(M.length); for (let b = 0; b < NB; b++) for (let a = 0; a < NT; a++) { let m = 0; for (let da = -1; da <= 1; da++) for (let db = -1; db <= 1; db++) { const bb2 = b + db; if (bb2 >= 0 && bb2 < NB) m = Math.max(m, M[bb2 * NT + (a + da + NT) % NT]); } S[b * NT + a] = m; }
+  for (let b = 0; b < NB; b++) { let m = 0; for (let a = 0; a < NT; a++) m = Math.max(m, S[b * NT + a]); if (!m) for (let a = 0; a < NT; a++) S[b * NT + a] = S[Math.max(0, b - 1) * NT + a]; }
+  for (let it = 0; it < 60; it++) for (let b = 0; b < NB; b++) for (let a = 0; a < NT; a++) { const k = b * NT + a, r = S[k], arc = TAU / NT * r;
+    S[k] = Math.max(r, b > 0 ? S[k - NT] - .45 * DY : 0, b < NB - 1 ? S[k + NT] - .45 * DY : 0, S[b * NT + (a + 1) % NT] - .3 * arc, S[b * NT + (a + NT - 1) % NT] - .3 * arc); }
+  const CL = .005, R = (th, y) => { const u = ((th / TAU) * NT % NT + NT) % NT, v = Math.max(0, Math.min(NB - 1.001, (y - y0) / DY)), a = Math.floor(u), b = Math.floor(v), fu = u - a, fv = v - b, g = (aa, b2) => S[b2 * NT + (aa % NT)];
+    return (g(a, b) * (1 - fu) + g(a + 1, b) * fu) * (1 - fv) + (g(a, b + 1) * (1 - fu) + g(a + 1, b + 1) * fu) * fv + CL; };
+  // the sheet: NT + 1 columns round (the seam at the back), 18 rows from the bottom to the top edge, a little rumpled
+  const NR = 18, pos = [], idx = [], at = (th, y, off = 0) => { const r = R(th, y) + off + .0012 * Math.sin(th * 11 + y * 60); return new THREE.Vector3(c.x + r * Math.sin(th), y, c.z + r * Math.cos(th)); };
+  for (let j = 0; j <= NR; j++) for (let t = 0; t <= NT; t++) { const th = Math.PI + t / NT * TAU, p = at(th, yBot(th) + (yTop(th) - yBot(th)) * j / NR); pos.push(p.x, p.y, p.z); }
+  for (let j = 0; j < NR; j++) for (let t = 0; t < NT; t++) { const a = j * (NT + 1) + t, d = a + NT + 1; idx.push(a, a + 1, d, a + 1, d + 1, d); }
+  // the rolled hem along the top, and a narrower one along the bottom
+  const hem = (yf, r) => { const L = []; for (let t = 0; t <= NT; t++) { const th = Math.PI + t / NT * TAU; L.push(at(th, yf(th), r * .6)); } L[NT] = L[0].clone(); return tubeGeom(L, L.map(() => r), 8); };
+  const parts = [hem(yTop, .0042), hem(yBot, .003)]; let b0 = pos.length / 3; for (const h of parts) { const a = h.attributes.position.array; for (const v of a) pos.push(v); for (const i of h.index.array) idx.push(b0 + i); b0 += a.length / 3; }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('aBase', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals();
+  // the numbers: how far the top edge is under the lower lid within 0.85 rad of the front (the eyes' width and past), the nearest point of
+  // what it covers to the cloth, and how many of those points are out through it
+  let eyeGap = 9; for (let t = 0; t < NT; t++) { const th = Math.PI + t / NT * TAU; if (Math.abs(Math.atan2(Math.sin(th), Math.cos(th))) < .85) eyeGap = Math.min(eyeGap, lid - yTop(th)); }
+  let gap = 1, out = 0, tested = 0; for (const q of pts) { const th = Math.atan2(q.x - c.x, q.z - c.z); if (q.y < yBot(th) || q.y > yTop(th)) continue; tested++; const d = R(th, q.y) - Math.hypot(q.x - c.x, q.z - c.z); gap = Math.min(gap, d); if (d < .001) out++; }
+  g.translate(-heads['head'].x, -heads['head'].y, -heads['head'].z);
+  const col = sRGB(...(Array.isArray(D.veil) ? D.veil : D.wrap)), mesh = new THREE.Mesh(g, clothMat(col, 'wool', { side: THREE.DoubleSide, scale: 34, inner: .5 })); mesh.name = 'veil'; mesh.castShadow = true; mesh.receiveShadow = true; byName['head'].add(mesh);
+  return { mesh, stats: { tris: idx.length / 3, eyeGap: +eyeGap.toFixed(4), gap: +gap.toFixed(4), out, tested, overChin: +(chin - yLow).toFixed(3), beardDrop: +drop.toFixed(3), height: +(yTop(0) - yLow).toFixed(3) } };
+}
 // ── a head-wrap's tail (Session 1018, L1; OG-044's and OG-056's women: a scarf's end hanging from the wrap down the back) ──
 // The wrap's loose end comes out from under its lowest turn (it starts 3 cm up, inside the turns) behind one ear and hangs down the back of the neck onto the shoulder
 // blade, 34 cm on a woman and 28 on a man. It is gathered to 5 cm where it leaves the wrap and opens to 10 to 11 within its top
@@ -3033,9 +3081,11 @@ export function makePerson(G, o = {}) {
   // the eyepatch (Session 1079), on the face under whatever is on the head; its cord over the hair
   let patchStats = null; if (D.eyepatch) patchStats = buildEyepatch(P, G, heads, byName, meshes).stats;
   // hoop earrings (Session 995), when no raised hood covers the ears
-  let earStats = null; if (D.earrings && !hoodUpOn(D)) earStats = buildEarrings(P, G, heads, byName).stats;
+  let earStats = null; if (D.earrings && !hoodUpOn(D) && !veilOn(D)) earStats = buildEarrings(P, G, heads, byName).stats;
   // the head-wrap (Session 994), over the same tucked hair, when no helm or raised hood is on the head
   let wrapStats = null; if (D.wrap && !D.helm && !hoodUpOn(D)) { const hp = []; for (const m of meshes) if (m.name === 'hair') { const a = m.geometry.attributes.position.array; for (let i = 0; i < a.length; i += 3) hp.push(new THREE.Vector3(a[i], a[i + 1], a[i + 2])); } let bt = -9; const bm = meshes.find(m => m.name === 'brows'); if (bm) { const a = bm.geometry.attributes.position.array; for (let i = 1; i < a.length; i += 3) bt = Math.max(bt, a[i]); } wrapStats = buildWrap(P, G, heads, byName, hp, bt).stats; }
+  // the veil (Session 1237), the wrap's end across the face, over the tucked hair and the beard
+  let veilStats = null; if (wrapStats && veilOn(D)) { const hp = []; for (const m of meshes) if (m.name === 'hair') { const a = m.geometry.attributes.position.array; for (let i = 0; i < a.length; i += 3) hp.push(new THREE.Vector3(a[i], a[i + 1], a[i + 2])); } veilStats = buildVeil(P, G, heads, byName, meshes, hp).stats; }
   // the circlet (Session 1206), over the hair, when nothing else is on the head
   let circletStats = null; if (circletOn(D)) circletStats = buildCirclet(P, G, heads, byName, meshes).stats;
   // pose: arms down from the A-pose, a slight bend at the elbow, weight on one leg, the head turned a little
@@ -3166,7 +3216,7 @@ export function makePerson(G, o = {}) {
   // robe's raised hood under a tier takes that tier's dressing (a circlet, antlers, horns, the crescent or the halo) and no helm
   let tierFit = null; if (D.tier && (tierHelmOn(D) || hoodUpOn(D) && !D.helm)) { root.updateMatrixWorld(true); const F = fitHead({ root, skeleton, byName, meshes }), h = D.helm ? tierHelm(D.tier, F, { bold: true, closed: true }) : hoodDress(D.tier, F, { bold: true });
     if (h) { byName['head'].add(h.group); tierFit = { F, h }; const st = { tier: D.tier, tris: h.tris, draws: h.draws, gap: h.gap, size: h.size, above: h.top }; if (D.helm) helmStats = st; else hoodStats = { ...(hoodStats || {}), dress: st }; } }
-  root.position.y = -(chairSt ? chairSt.ground : sandalSt ? sandalSt.ground : minY); return { root, skeleton, byName, meshes, coldLook: { eyes: G.eyes, skin: G.skin }, buttons: buttonStats, hair: hairStats, cloak: cloakStats, tabard: tabardStats, sash: sashStats, shoulderWrap: shoulderWrapStats, wrap: wrapStats, wrapTail: tailStats, earrings: earStats, circlet: circletStats, eyepatch: patchStats, necklace: neckStats, beltCoins: beltCoinStats, beltCharms: charmStats, sandals: sandalSt, sashBelt: sashBeltSt, cord: cordStats, lacing: laceStats, skirtHands, hood: hoodStats, brows: browStats, helm: helmStats, mail: mailSt, shield: shieldStats, spear: spearStats, crossbow: crossbowStats, staff: staffStats, basket: basketStats, legWraps: legWrapSt, chair: chairSt, coat: coatSt, coatHood: coatHoodSt, tierFit };
+  root.position.y = -(chairSt ? chairSt.ground : sandalSt ? sandalSt.ground : minY); return { root, skeleton, byName, meshes, coldLook: { eyes: G.eyes, skin: G.skin }, buttons: buttonStats, hair: hairStats, cloak: cloakStats, tabard: tabardStats, sash: sashStats, shoulderWrap: shoulderWrapStats, wrap: wrapStats, veil: veilStats, wrapTail: tailStats, earrings: earStats, circlet: circletStats, eyepatch: patchStats, necklace: neckStats, beltCoins: beltCoinStats, beltCharms: charmStats, sandals: sandalSt, sashBelt: sashBeltSt, cord: cordStats, lacing: laceStats, skirtHands, hood: hoodStats, brows: browStats, helm: helmStats, mail: mailSt, shield: shieldStats, spear: spearStats, crossbow: crossbowStats, staff: staffStats, basket: basketStats, legWraps: legWrapSt, chair: chairSt, coat: coatSt, coatHood: coatHoodSt, tierFit };
 }
 
 // palettes from OG-025: undyed wool, browns, slate blue, madder red; furs; ash-blond to red hair; pale to weathered skin
@@ -3189,7 +3239,7 @@ export function markGenome(rnd, g, o = {}) {
 const hex = c => '#' + c.map(v => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, '0')).join('');
 const unhex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
 const r3 = v => Math.round(v * 1000) / 1000, round = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, r3(v)]));
-export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'sash', 'sashBorder', 'wrap', 'wrapBorder', 'earrings', 'necklace', 'beltCoins', 'sashBelt', 'sandals', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'legWraps', 'scarfPrint', 'basket', 'basketCloth', 'amulet', 'charms', 'dots', 'shoulderWrap', 'eyepatch', 'staff', 'chair', 'waistcoat', 'tartan', 'tartanLine', 'coat', 'coatFur', 'bands', 'bandsMotif', 'robeStripe', 'robeStripeLine', 'circlet', 'circletStone', 'gownBorder', 'burnousStripe'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, sashSide: 'L', sashPrint: true, sashKnot: true, turban: false, scarf: false, wrapTail: null, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', scales: false, spearHead: null, crossbowMake: null, amuletSide: 'L', shoulderWrapSide: 'L', eyepatchSide: 'L', staffMake: null, dotsStyle: 'powder', waistcoatLeather: false, coatLen: .75, coatHood: null, tier: null, burnous: false };
+export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'sash', 'sashBorder', 'wrap', 'wrapBorder', 'earrings', 'necklace', 'beltCoins', 'sashBelt', 'sandals', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'legWraps', 'scarfPrint', 'basket', 'basketCloth', 'amulet', 'charms', 'dots', 'shoulderWrap', 'eyepatch', 'staff', 'chair', 'waistcoat', 'tartan', 'tartanLine', 'coat', 'coatFur', 'bands', 'bandsMotif', 'robeStripe', 'robeStripeLine', 'circlet', 'circletStone', 'gownBorder', 'burnousStripe', 'veil'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, sashSide: 'L', sashPrint: true, sashKnot: true, turban: false, scarf: false, wrapTail: null, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', scales: false, spearHead: null, crossbowMake: null, amuletSide: 'L', shoulderWrapSide: 'L', eyepatchSide: 'L', staffMake: null, dotsStyle: 'powder', waistcoatLeather: false, coatLen: .75, coatHood: null, tier: null, burnous: false };
 export function toSaved(G) {
   const D = G.dress || {}, dress = {}; for (const k of GARMENTS) if (D[k]) dress[k] = hex(D[k]); dress.skirt = D.skirt || null; for (const [k, d] of Object.entries(DRESS_FLAGS)) if (D[k] != null && (typeof D[k] === 'number' ? r3(D[k]) : D[k]) !== d) dress[k] = typeof D[k] === 'number' ? r3(D[k]) : D[k];
   const style = G.hair?.style ?? ((G.hairLen ?? .3) < .45 ? 'short' : 'loose');
