@@ -646,7 +646,7 @@ const BIND_MIX = `float bD = bindD(), bA = fwidth(bD) * .7 + .0005, bK = 1. - sm
 // and from the waist down hangs in leather strips (pteruges), sixteen round the hips, dark in the gaps; pL is the leather's weight
 // 'sheet' (Session 1263, card F10: the gauntlets' and greaves' plate) is the same sheet with no lames on the arm or the shin, and a knee
 // cop of lames 3 cm deep over the knee (rest -.47 to -.34), each lying over the one below it
-// The tiers' signatures on plate (Session 1263, card F10; the old kit's AR_SIG, Mithril to Cosmic), drawn on the same sheet over the
+// The tiers' signatures on plate (Session 1265, card F10; the old kit's AR_SIG, Mithril to Cosmic), drawn on the same sheet over the
 // rest body: 'fluted', grooves 1.8 cm apart down the front; 'heavy', the sheet darker and a row of rivets round the waist; 'faceted',
 // panels a little lighter or darker than their neighbours, as flat facets catch the light; 'scaled', the breast in the scales' plates;
 // 'spiked', chevrons carved down the breast; 'inlaid', three lines of the metal's glow across the breast. A glowing tier's light
@@ -669,7 +669,7 @@ float mailAt(vec3 p, vec3 n){ float ax = abs(p.x), m = 1.;
   ${sig && kind !== 'muscle' ? 'm = sigAt(p, m);' : ''}
   float k = clamp(length(fwidth(p.xy * 24.)) * 1.2 - .4, 0., 1.); return mix(m, .92, k); }`;
 const PLATE_MIX = `diffuseColor.rgb = mix(diffuseColor.rgb, vec3(.27, .17, .09) * mR, pL);`;
-// the tier's signature and its glow for plate (Session 1263): D.plateSig, D.plateGlow
+// the tier's signature and its glow for plate (Session 1265): D.plateSig, D.plateGlow
 function sigOf(D) { return D.plateSig ? { sig: D.plateSig, glow: D.plateGlow ? sRGB(...D.plateGlow) : null } : {}; }
 function mailMat(color, o = {}) {
   const m = new THREE.MeshStandardMaterial({ color, roughness: o.plate ? .3 : o.scales ? .36 : .45, metalness: o.plate ? .85 : o.scales ? .72 : .4, side: o.side ?? THREE.FrontSide });

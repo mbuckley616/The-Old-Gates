@@ -171,7 +171,7 @@ function buildPanel() {
   for (const [k, opts] of [['vambraceKind', ['sheet', 'mail', 'scales', 'leather']], ['glovesKind', ['leather', 'mail', 'sheet']], ['greavesKind', ['sheet', 'mail', 'scales', 'leather']]]) {
     const se = el('select', {}, ...opts.map(v => el('option', { value: v, textContent: v }))); se.value = D()[k] || opts[0]; se.onchange = () => { D()[k] = se.value; schedule(); };
     panel.append(el('div', { className: 'crow' }, el('label', { textContent: k.replace('Kind', '') }), se, el('span'))); inputs[k] = () => se.value = D()[k] || opts[0]; }
-  // the tier's signature on plate (Session 1263), its glow the 'plate glow' colour above
+  // the tier's signature on plate (Session 1265), its glow the 'plate glow' colour above
   { const sg = el('select', {}, ...['', 'fluted', 'heavy', 'faceted', 'scaled', 'spiked', 'inlaid'].map(v => el('option', { value: v, textContent: v || 'plain plate' }))); sg.value = D().plateSig || ''; sg.onchange = () => { D().plateSig = sg.value || null; schedule(); };
     panel.append(el('div', { className: 'crow' }, el('label', { textContent: 'plate' }), sg, el('span'))); inputs.plateSig = () => sg.value = D().plateSig || ''; }
   { const cu = el('input', { type: 'checkbox', checked: !!D().cuisses, onchange: () => { D().cuisses = cu.checked; schedule(); } });

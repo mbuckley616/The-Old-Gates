@@ -94,7 +94,7 @@ const gg = await drive(() => { const out = {}; for (const t of [1, 2, 3, 4, 10])
 console.log('  gauntlets and greaves:', JSON.stringify(gg));
 check('gauntlets and greaves on the body by family: Wooden boards, Bronze sheet, Iron mail with cuisses, Steel and Cosmic plate with cuisses',
   /^scales \S*leather\S* scales -$/.test(gg.Wooden) && /^sheet \S*leather\S* sheet -$/.test(gg.Bronze) && gg.Iron === 'mail mail mail mail' && gg.Steel === 'sheet sheet sheet sheet' && gg.Cosmic === 'sheet sheet sheet sheet', gg);
-// the tiers' signatures on plate (Session 1263): Mithril fluted to Cosmic inlaid, on the cuirass and the greaves, each with its glow
+// the tiers' signatures on plate (Session 1265): Mithril fluted to Cosmic inlaid, on the cuirass and the greaves, each with its glow
 const sig = await drive(() => { const out = {}; for (const t of [4, 5, 6, 7, 8, 9, 10]) { const m = MATERIALS[t - 1];
     for (const [s, k] of [['chest', 'Cuirass'], ['legs', 'Greaves']]) EQ[s] = { name: m.name + ' ' + k, slot: s, material: m.name, tier: t };
     for (let i = 0; i < 4; i++) step(); const H = TP.rig.rig.hb, k = {}; H.root.traverse(o => { if (o.isMesh && o.visible && /^(mail|greaves)$/.test(o.name)) k[o.name] = o.material.customProgramCacheKey().replace(/[\[{(].*$/, ''); });
