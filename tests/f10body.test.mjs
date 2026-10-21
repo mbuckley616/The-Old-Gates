@@ -80,7 +80,7 @@ check('the cuirass is mail on the builder\'s body, the cloak its cloak', worn.na
 check('a Steel helm is the builder\'s helm of its tier (helms.js), fitted to the player\'s head', worn.helm === 4 && worn.helmFit, { helm: worn.helm, fit: worn.helmFit });
 // the heavy line's chest by its family (Session 1260): Wooden's lamellar the builder's scales, Bronze's muscle cuirass and Steel's plate its sheet metal
 const fam = await drive(() => { const out = {}; for (const t of [1, 2, 3, 4, 10]) { const m = MATERIALS[t - 1]; EQ.chest = { name: m.name + ' Cuirass', slot: 'chest', material: m.name, tier: t };
-    for (let i = 0; i < 4; i++) step(); const H = TP.rig.rig.hb, k = []; H.root.traverse(o => { if (o.isMesh && /^mail/.test(o.name)) k.push(o.material.customProgramCacheKey().replace(/[\[{].*$/, '').replace(/[-\d.,]+$/, '')); }); out[m.name] = [...new Set(k)].join('+'); }
+    for (let i = 0; i < 4; i++) step(); const H = TP.rig.rig.hb, k = []; H.root.traverse(o => { if (o.isMesh && /^mail/.test(o.name)) k.push(o.material.customProgramCacheKey().replace(/[\[{].*$/, '').replace(/[-\d.,]+$/, '').replace(/:\w+(\+glow)?$/, '')); }); out[m.name] = [...new Set(k)].join('+'); }
   EQ.chest = { name: 'Iron Cuirass', slot: 'chest', material: 'Iron', tier: 3 }; for (let i = 0; i < 4; i++) step(); return out; });
 console.log('  chest by family:', JSON.stringify(fam));
 check('a Wooden chest is lamellar (the builder\'s scales), Bronze the muscle cuirass, Iron mail, Steel and Cosmic plate', fam.Wooden === 'scales' && fam.Bronze === 'muscle' && fam.Iron === 'mail' && fam.Steel === 'plate' && fam.Cosmic === 'plate', fam);
@@ -88,12 +88,21 @@ check('a Wooden chest is lamellar (the builder\'s scales), Bronze the muscle cui
 // and Cosmic's plate with cuisses; each piece a shell of its own on the builder's body, read off its material
 const gg = await drive(() => { const out = {}; for (const t of [1, 2, 3, 4, 10]) { const m = MATERIALS[t - 1];
     EQ.hands = { name: m.name + ' Gauntlets', slot: 'hands', material: m.name, tier: t }; EQ.legs = { name: m.name + ' Greaves', slot: 'legs', material: m.name, tier: t };
-    for (let i = 0; i < 4; i++) step(); const H = TP.rig.rig.hb, k = {}; H.root.traverse(o => { if (o.isMesh && o.visible && /^(vambrace|gloves|greaves|cuisses)$/.test(o.name)) k[o.name] = o.material.customProgramCacheKey ? o.material.customProgramCacheKey().replace(/[\[{(].*$/, '').replace(/[-\d.,]+$/, '') : 'leather'; });
+    for (let i = 0; i < 4; i++) step(); const H = TP.rig.rig.hb, k = {}; H.root.traverse(o => { if (o.isMesh && o.visible && /^(vambrace|gloves|greaves|cuisses)$/.test(o.name)) k[o.name] = o.material.customProgramCacheKey ? o.material.customProgramCacheKey().replace(/[\[{(].*$/, '').replace(/[-\d.,]+$/, '').replace(/:\w+(\+glow)?$/, '') : 'leather'; });
     out[m.name] = ['vambrace', 'gloves', 'greaves', 'cuisses'].map(n => k[n] || '-').join(' '); }
   EQ.hands = null; EQ.legs = null; for (let i = 0; i < 4; i++) step(); return out; });
 console.log('  gauntlets and greaves:', JSON.stringify(gg));
 check('gauntlets and greaves on the body by family: Wooden boards, Bronze sheet, Iron mail with cuisses, Steel and Cosmic plate with cuisses',
   /^scales \S*leather\S* scales -$/.test(gg.Wooden) && /^sheet \S*leather\S* sheet -$/.test(gg.Bronze) && gg.Iron === 'mail mail mail mail' && gg.Steel === 'sheet sheet sheet sheet' && gg.Cosmic === 'sheet sheet sheet sheet', gg);
+// the tiers' signatures on plate (Session 1263): Mithril fluted to Cosmic inlaid, on the cuirass and the greaves, each with its glow
+const sig = await drive(() => { const out = {}; for (const t of [4, 5, 6, 7, 8, 9, 10]) { const m = MATERIALS[t - 1];
+    for (const [s, k] of [['chest', 'Cuirass'], ['legs', 'Greaves']]) EQ[s] = { name: m.name + ' ' + k, slot: s, material: m.name, tier: t };
+    for (let i = 0; i < 4; i++) step(); const H = TP.rig.rig.hb, k = {}; H.root.traverse(o => { if (o.isMesh && o.visible && /^(mail|greaves)$/.test(o.name)) k[o.name] = o.material.customProgramCacheKey().replace(/[\[{(].*$/, ''); });
+    out[m.name] = k.mail + ' ' + k.greaves; }
+  EQ.chest = null; EQ.legs = null; for (let i = 0; i < 4; i++) step(); return out; });
+console.log('  signatures:', JSON.stringify(sig));
+check('plate carries its tier\'s signature and glow: Steel plain, Mithril fluted, Adamant heavy, Obsidian faceted, Draconic scaled, Demonic spiked, Cosmic inlaid',
+  sig.Steel === 'plate sheet' && ['Mithril:fluted', 'Adamant:heavy', 'Obsidian:faceted', 'Draconic:scaled', 'Demonic:spiked', 'Cosmic:inlaid'].every(x => { const [n, k] = x.split(':'); return sig[n] === `plate:${k}+glow sheet:${k}+glow`; }), sig);
 check('in third person the new body bakes no middle level (it is baked when first person asks)', worn.mid === false, { mid: worn.mid });
 const sword = worn.held.find(h => h.kit === 'sword'), shield = worn.held.find(h => h.kit === 'kite');
 check('a copy of the sword is carried in the builder\'s group with its grip in the right fist (within 2 cm), the shield with it', sword && sword.inBuilder && sword.meshes > 0 && sword.gap < .02 && shield && shield.inBuilder && shield.meshes > 0, worn.held);
