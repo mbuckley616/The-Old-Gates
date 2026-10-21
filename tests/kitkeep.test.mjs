@@ -2,7 +2,8 @@
 // gatelandsKeep from docs/prototypes/levelup/pieces.js, and this holds the copy to the prototype: each of the three kinds builds to the
 // triangles and draws pieces.check.mjs recorded (Session 1096: the tower 15,978 in 15, the bawn 18,346 in 32, the hall 20,840 in 26),
 // the same twice, with the bawn's measures as drawn (26 by 22 m, walls 0.9 m and 3.6 m, a gateway of 3 by 3.4 m) and its door before
-// the gateway. On the old look the kit loads and builds nothing until asked.
+// the gateway.
+// The new look only since 1.0 was frozen (18 Oct 2026): the old look’s check is gone.
 import { boot, check } from './lib/game.mjs';
 const REC = { tower: [15978, 15], bawn: [18346, 32], hall: [20840, 26] };
 const g = await boot({ look: 'new' }); const { page } = g;
@@ -18,6 +19,3 @@ check(`the bawn is 26 by 22 m, its walls 0.9 m thick and 3.6 m high, its gateway
 check(`its door is before the gateway, on the front (${B.door.join(', ')})`, Math.abs(B.door[0] - (B.size.gate.x + .9)) < .01 && B.door[2] > B.size.bawn.d / 2, B.door);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
-const g0 = await boot(); const o = await g0.page.evaluate(() => ({ look: window.OG_LOOK || 'old', fn: typeof PKIT.gl.keep, made: PKIT.texturesMade() }));
-check('on the old look the kit has the keep and has painted nothing', o.look !== 'new' && o.fn === 'function' && o.made === 0 && g0.errs.length === 0, { ...o, errs: g0.errs });
-await g0.close();
