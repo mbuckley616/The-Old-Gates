@@ -4522,3 +4522,96 @@ export function markCliffTerraces(o = {}, r = stream('terraces')) {
   return { group, tris: Math.round(tris), draws: own + hallG.reduce((a, H) => a + H.draws, 0), own, ground, bedY, levels: LV, depth: D, z0: Z0, lip: LIP, xe: XE, back: BACK, walk: WALK, zc: ZC,
     bridge: { z: BZ, w: BW, x0: -BX, x1: BX, deck: 0, span: 2 * SPR, rise: RISE, crown: CROWN, spring: CROWN - RISE, inner: BW - .7 }, ropes, stairs, walls, halls, store: { x: STX, z: STZ, floor: SY + SF + .05 }, banners, rails, gaps, paths };
 }
+
+// ── the Mark's outpost under the aurora (Session 1243, card F8; L5's "the Mark's settlements", OG-034's "remote settlement under the
+// aurora (whaling, fishing)", its *Glassfjord* panel and its coastal outpost). A handful of turf houses on a low shore at the end of the
+// world, a cove before them, and the work of the place on the beach: a flensing slip into the water, the try-works where the blubber is
+// rendered, a færing hauled up, an arch of a whale's jawbones on the way down from the houses. Built at true size, the cove to -z, y 0 the
+// water. The board's names are proposals (its catalogue row) and none is used; the whale is An Mhuir's in the canon, and how the outpost
+// stands with the Sea is the quest writer's. The aurora is the sky's, not the place's: auroraCurtains() makes it for a view at night.
+//   - the land: a shingle beach 1 in 8 from the water to a shelf at 2 m, rising 1 in 14 behind to the houses and on to a snowy hill;
+//     rock outcrops on the cove's two arms;
+//   - the houses: three of the kit's halls under turf, small (6 by 8 to 10 m), their doors to the cove, on the shelf;
+//   - the slip: a plank ramp 3.2 m wide on log sleepers from the shelf's edge down the beach into the water, 1 in 7.5;
+//   - the try-works: a hearth of stone 3.4 by 2 m and 0.9 m high, two iron pots set in it, a fire-hole under each, a stack of driftwood;
+//   - the arch: two jawbones of 5 m on the path from the houses down to the beach, leaning in to meet over it;
+//   - the færing (the fjord port's), keel up on two trestles above the tide line, and a scatter of ribs half buried in the shingle.
+// -> { group, tris, draws, own, ground, shelf, houses [{ x, z, door [x, z] }], slip { x, w, z0, z1, y(z), end }, works { x, z, pots [[x, y, z]], rim },
+//   arch { x, z, clear, w }, boat { x, z, y }, paths }
+// auroraCurtains(r) -> { group, low, high, draws }: curtains of light, folded, 90 to 260 m up and 300 to 900 m off to the north (-z), green
+// at their feet and violet at their heads, drawn additive and unlit.
+export function auroraCurtains(r = stream('aurora')) {
+  const mat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false,
+    uniforms: { t: { value: 0 } },
+    vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+    fragmentShader: 'varying vec2 vUv; uniform float t; void main(){ float h = vUv.y, x = vUv.x; float rays = .55 + .45 * sin(x * 260.0 + sin(x * 31.0) * 4.0) * sin(x * 97.0 + 1.3);' +
+      ' float foot = smoothstep(0.0, .08, h) * (1.0 - smoothstep(.35, 1.0, h)); float ends = smoothstep(0.0, .12, x) * (1.0 - smoothstep(.88, 1.0, x));' +
+      ' vec3 c = mix(vec3(.25, 1.0, .55), vec3(.55, .3, .9), smoothstep(.25, .9, h)); gl_FragColor = vec4(c * foot * ends * (.35 + .65 * rays) * .55, 1.0); }' });
+  const group = new THREE.Group();
+  for (let k = 0; k < 3; k++) { const N = 160, z0 = -340 - k * 180 - r() * 60, x0 = -700 + r() * 200, L = 1300 + r() * 300, lo = 90 + r() * 30 + k * 10, hi = lo + 120 + r() * 50, a = r() * 9, b = r() * 9, pos = [], uv = [], idx = [];
+    for (let i = 0; i <= N; i++) { const u = i / N, x = x0 + u * L, z = z0 + Math.sin(u * 7 + a) * 90 + Math.sin(u * 19 + b) * 25; for (const v of [0, 1]) { pos.push(x, v ? hi : lo, z + (v ? 20 : 0)); uv.push(u, v); } }
+    for (let i = 0; i < N; i++) { const p = 2 * i; idx.push(p, p + 2, p + 1, p + 1, p + 2, p + 3); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx);
+    const m = new THREE.Mesh(g, mat); m.name = 'aurora'; m.frustumCulled = false; m.renderOrder = -1; group.add(m); }
+  const bb = new THREE.Box3().setFromObject(group); return { group, low: +bb.min.y.toFixed(1), high: +bb.max.y.toFixed(1), near: +(-bb.max.z).toFixed(0), draws: group.children.length, mat };
+}
+export function markAuroraOutpost(o = {}, r = stream('aurora-outpost')) {
+  markTextures(); const key = String(o.key || 'aurora-outpost');
+  const std = (c, ro = .9, x = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: ro, ...x });
+  const M = { ...mats(), snow: mat('plaster', { ns: .3, color: 0xf2f5f8, rough: .95 }), cliff: mat('rock', { ns: 1.4, color: 0x8e8c86, rough: .95 }), strand: mat('rock', { ns: .8, color: 0x8a867e, rough: 1 }),
+    gravel: mat('turfDry', { ns: 1.0, color: 0x8a8274, rough: 1 }), log: mat('beam', { ns: 1.1, color: 0x6a5440, rough: .9 }), plank: mat('wood', { ns: .9, color: 0x8a7a66, rough: .9 }), stone: mat('rock', { ns: 1.6, color: 0x7a7670, rough: .95 }),
+    dry: mat('stone', { ns: 1.5, color: 0x6e6a64, rough: .95 }), tar: mat('wood', { ns: .8, color: 0x6a5644, rough: .75 }), bone: std(0xd8d0bc, .8), soot: std(0x1a1816, 1), ember: std(0x3a1408, .9, { emissive: new THREE.Color(1, .38, .1), emissiveIntensity: 1.6 }),
+    water: std(0x1c3038, .1, { metalness: .25 }) };
+  M.tar.side = THREE.DoubleSide /* the færing lies keel up: her inside is seen */; const B = new Map();
+  const put = (geo, k, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, uv = .5) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal'].includes(a)) g.deleteAttribute(a);
+    if (!g.attributes.normal) g.computeVertexNormals();
+    g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), new THREE.Vector3(1, 1, 1))); worldUV(g, uv);
+    if (!B.has(k)) B.set(k, []); B.get(k).push(g); return g; };
+  const bx = (k, x0, x1, y0, y1, z0, z1, uv = .5) => put(new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0), k, (x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2, 0, 0, 0, uv);
+  const rod = (k, a, b, rad, seg = 6) => { const A = new THREE.Vector3(...a), Bv = new THREE.Vector3(...b), d = Bv.clone().sub(A), g = new THREE.CylinderGeometry(rad, rad, d.length(), seg); g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.clone().normalize())); const m = A.add(Bv).multiplyScalar(.5); put(g, k, m.x, m.y, m.z); };
+  const sm = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+  // the land: the beach from the water's edge at z -2 up 1 in 8 to the shelf at 2 m (z 14), then 1 in 14 behind, the hill past z 60; the
+  // cove's arms rise past x ±40 and run out to -z; rough off the beach and the shelf
+  const SH = 2, BZ = 14, F = field(stream(key + ':land'), 1);
+  const along = z => z < -2 ? Math.max(-6, (z + 2) * .5) : z < BZ ? (z + 2) * SH / (BZ + 2) : z < 60 ? SH + (z - BZ) / 14 : SH + 46 / 14 + (z - 60) * .45;
+  const arms = (x, z) => { const ax = Math.abs(x), e = ax - (40 + Math.max(0, z) * .4); return e > 0 ? e * .55 + .004 * e * e : 0; };
+  const busy = (x, z) => (1 - sm(30, 40, Math.abs(x))) * sm(-6, -2, z) * (1 - sm(40, 56, z)) /* the beach and the shelf, kept smooth */;
+  const ground = (x, z) => along(z) + arms(x, z) + (F(x, 0, z)[1] * .6 + F(x * .1, 0, z * .1 + 5)[1] * 4 * sm(4, 30, arms(x, z) + Math.max(0, z - 50))) * (1 - busy(x, z) * .97);
+  { const steps = (bands, end) => { const v = []; for (const [a, b, st] of bands) for (let q = a; q < b - 1e-6; q += st) v.push(+q.toFixed(2)); v.push(end); return v; };
+    const gx = steps([[-200, -60, 8], [-60, 60, 1], [60, 200, 8]], 200), gz = steps([[-200, -30, 8], [-30, 70, 1], [70, 200, 8]], 200), NX = gx.length;
+    const pos = []; for (const z of gz) for (const x of gx) pos.push(x, ground(x, z), z); const I = { snow: [], cliff: [], strand: [], gravel: [] }, P = i => [pos[3 * i], pos[3 * i + 1], pos[3 * i + 2]];
+    for (let j = 0; j + 1 < gz.length; j++) for (let i = 0; i + 1 < NX; i++) { const a = j * NX + i, b = a + 1, c = a + NX, d = c + 1, qa = P(a), qd = P(d), cx = (qa[0] + qd[0]) / 2, cz = (qa[2] + qd[2]) / 2, cy = (qa[1] + qd[1]) / 2;
+      const bs = Math.hypot(ground(cx + 2, cz) - ground(cx - 2, cz), ground(cx, cz + 2) - ground(cx, cz - 2)) / 4;
+      const k = cy < SH - .1 && busy(cx, cz) > .5 ? 'strand' : bs > .7 ? 'cliff' : Math.abs(cx) < 2 && cz > BZ - 1 && cz < 34 ? 'gravel' : 'snow'; I[k].push(a, c, b, b, c, d); }
+    for (const [k, idx] of Object.entries(I)) { if (!idx.length) continue; const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); put(g, k, 0, 0, 0, 0, 0, 0, .35); } }
+  { const g = new THREE.PlaneGeometry(700, 400); g.rotateX(-Math.PI / 2); put(g, 'water', 0, 0, -190); }
+  // the houses: three small turf halls on the shelf, the doors to the cove
+  const houses = [], hallG = [];
+  for (const [i, [hx, d]] of [[-14, 9], [0, 8], [14, 10]].entries()) { const H = markHall({ roof: 'turf', turf: i === 1 ? 'dry' : 'moss', w: 6, d, porch: false, chimney: true, carve: false, wall: (i + 1) % 4 }, stream(key + ':house' + i));
+    const hz = 30 + (i === 1 ? 3 : 0) + H.stairOut, gy = Math.min(...[-3.2, 3.2].flatMap(dx => [-d / 2, d / 2].map(dz => ground(hx + dx, hz + dz)))) - .05; H.group.position.set(hx, gy, hz); H.group.rotation.y = Math.PI; hallG.push(H);
+    houses.push({ x: hx, z: +hz.toFixed(2), y: +gy.toFixed(3), d, door: [hx, +(hz - H.stairOut).toFixed(2)] }); }
+  // the arch: two jawbones, each a tapering tube along a curve from its foot out to the side up to the crown over the path
+  const AX = 0, AZ = 24, AW = 2.6, AH = 4.6; { for (const s of [-1, 1]) { const pts = []; for (let k = 0; k <= 12; k++) { const t = k / 12; pts.push(new THREE.Vector3(AX + s * (AW / 2 + .35) * (1 - t * t) + s * .08 * Math.sin(t * Math.PI), ground(AX + s * AW / 2, AZ) - .4 + (AH + .5) * Math.sin(t * Math.PI / 2), AZ + .12 * Math.sin(t * Math.PI))); }
+      const g = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 24, .26, 8); const P = g.attributes.position, c = new THREE.Vector3(); for (let i = 0; i < P.count; i++) { const u = Math.floor(i / 9) / 24, sh = 1 - .45 * u; c.fromBufferAttribute(P, i); const ctr = new THREE.CatmullRomCurve3(pts).getPointAt(Math.min(1, u)); c.sub(ctr).multiplyScalar(sh).add(ctr); P.setXYZ(i, c.x, c.y, c.z); } g.computeVertexNormals(); put(g, 'bone'); } }
+  // the try-works: a stone hearth, two iron pots let into it, a fire-hole under each with embers, soot, the driftwood stack
+  const WX = 11, WZ = 18, WY = Math.max(...[-1.7, 1.7].flatMap(dx => [-1, 1].map(dz => ground(WX + dx, WZ + dz)))), RIM = .9, pots = [];
+  bx('dry', WX - 1.7, WX + 1.7, WY - .4, WY + RIM - .1, WZ - 1, WZ + 1, .6); bx('stone', WX - 1.75, WX + 1.75, WY + RIM - .1, WY + RIM - .02, WZ - 1.05, WZ + 1.05, .6);
+  for (const s of [-1, 1]) { const px = WX + s * .85; put(new THREE.CylinderGeometry(.62, .5, .7, 18, 1, true), 'iron', px, WY + RIM - .3, WZ); put(new THREE.CircleGeometry(.58, 18), 'soot', px, WY + RIM - .2, WZ, -Math.PI / 2); put(new THREE.TorusGeometry(.62, .04, 5, 18), 'iron', px, WY + RIM + .04, WZ, Math.PI / 2);
+    put(new THREE.PlaneGeometry(.5, .45), 'ember', px, WY + .2, WZ - 1.01, 0, Math.PI); pots.push([+px.toFixed(2), +(WY + RIM + .04).toFixed(3), WZ]); }
+  for (let k = 0; k < 14; k++) { const l = 1.4 + r() * 1.2, y = WY - .1 + .16 * Math.floor(k / 5), x = WX + 2.6 + (k % 5) * .24 + (r() - .5) * .05; rod('log', [x, y + .08, WZ - l / 2], [x, y + .08, WZ + l / 2], .07 + r() * .03, 6); }
+  // the slip: from the shelf's edge west of the path down the beach into the water, planks across sleepers, 3.2 m wide
+  const SX = -9, SW = 3.2, SZ1 = BZ - 1, slipY = z => ground(SX, SZ1) + .35 + (z - SZ1) / 7.5; let SZ0 = SZ1; while (slipY(SZ0) > -.8) SZ0 -= .25;
+  for (let z = SZ0; z < SZ1 - .1; z += 1.2) bx('log', SX - SW / 2 - .25, SX + SW / 2 + .25, Math.min(...[-1.8, 0, 1.8].map(dx => ground(SX + dx, z))) - .3, slipY(z) - .06, z - .12, z + .12);
+  for (let z = SZ0; z < SZ1 - 1e-6; z += .3) { const zb = Math.min(SZ1, z + .3), ya = slipY(z), yb = slipY(zb); put(new THREE.BoxGeometry(SW, .06, Math.hypot(.3, yb - ya)), 'plank', SX, (ya + yb) / 2 - .03, (z + zb) / 2, Math.atan2(-(yb - ya), zb - z), 0, 0, .6); }
+  for (const s of [-1, 1]) bx('log', SX + s * (SW / 2 + .05) - .08, SX + s * (SW / 2 + .05) + .08, ground(SX + s * SW / 2, SZ1) - .2, slipY(SZ1) + .1, SZ1 - .1, SZ1 + .1);
+  // the færing, keel up on two trestles above the tide line, and ribs in the shingle
+  const BXp = 20, BZp = 6, BY = ground(BXp, BZp) + 1.25, bB = new Map(), bput = (g, k, x = 0, y = 0, z = 0) => { const gg = g.index ? g.toNonIndexed() : g; for (const a of Object.keys(gg.attributes)) if (!['position', 'normal'].includes(a)) gg.deleteAttribute(a); if (!gg.attributes.normal) gg.computeVertexNormals(); gg.translate(x, y, z); if (!bB.has(k)) bB.set(k, []); bB.get(k).push(gg); };
+  faering(bput, 'tar', 6.2, 1.5, .62); { const Mx = new THREE.Matrix4().compose(new THREE.Vector3(BXp, BY, BZp), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.PI / 2 + .1, Math.PI, 'YXZ')), new THREE.Vector3(1, 1, 1)); for (const [k, gs] of bB) for (const g of gs) { g.applyMatrix4(Mx); worldUV(g, .5); if (!B.has(k)) B.set(k, []); B.get(k).push(g); } }
+  for (const dx of [-1.6, 1.6]) { const x = BXp + dx * Math.cos(.1), z = BZp - dx * Math.sin(.1), gy = ground(x, z); for (const s of [-1, 1]) rod('log', [x, gy - .1, z + s * .55], [x, BY - .66, z], .05, 5); rod('log', [x, BY - .7, z - .7], [x, BY - .7, z + .7], .06, 5); }
+  for (let k = 0; k < 7; k++) { const x = 24 + k * .55 + r() * .1, z = -0.5 + r() * .6, pts = [0, 1, 2, 3, 4].map(t => new THREE.Vector3(x + t * .05, ground(x, z + t * .45) - .15 + Math.sin(t / 4 * Math.PI) * 1.1, z + t * .45)); put(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 8, .07, 5), 'bone'); }
+  const group = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = !['snow', 'cliff', 'strand', 'gravel', 'water', 'ember'].includes(k); m.receiveShadow = k !== 'water'; group.add(m); tris += g.attributes.position.count / 3; }
+  const own = group.children.length; for (const H of hallG) { group.add(H.group); tris += H.tris; }
+  const paths = [[[0, 31], [0, BZ + 1], [SX, BZ + 1], [SX, SZ1 + .4]], ...houses.map(h => [[0, 28], [h.x, 28], [h.x, h.door[1] - .2]].filter((p, k, L) => !k || p[0] !== L[k - 1][0] || p[1] !== L[k - 1][1])), [[0, WZ - 1.6], [WX, WZ - 1.6]], [[0, BZ + 1], [BXp - 3.6, BZp + 1], [BXp - 3.6, BZp - 1]]];
+  return { group, tris: Math.round(tris), draws: own + hallG.reduce((a, H) => a + H.draws, 0), own, ground, shelf: SH, houses, slip: { x: SX, w: SW, z0: +SZ0.toFixed(2), z1: SZ1, y: slipY, end: +slipY(SZ0).toFixed(3) },
+    works: { x: WX, z: WZ, y: WY, pots, rim: RIM }, arch: { x: AX, z: AZ, w: AW, h: AH }, boat: { x: BXp, z: BZp, y: BY }, paths };
+}
