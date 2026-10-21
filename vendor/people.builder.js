@@ -881,18 +881,25 @@ function surfGrid(P, tris, keep, cell = .025) {
     const ux = P[b] - P[a], uy = P[b + 1] - P[a + 1], uz = P[b + 2] - P[a + 2], vx = P[c] - P[a], vy = P[c + 1] - P[a + 1], vz = P[c + 2] - P[a + 2];
     const cx = uy * vz - uz * vy, cy = uz * vx - ux * vz, cz = ux * vy - uy * vx;
     for (const v of [a, b, c]) { nx[v] += cx; nx[v + 1] += cy; nx[v + 2] += cz; used[v / 3] = 1; } }
-  // a cell's key is a number (Session 1196, card F4: the string keys were a third of a body's build in the game; the same cells)
-  const cells = new Map(), K = (i, j, k) => (i * 4096 + j) * 4096 + k, pts = [];
+  // the cells are one block over the points' bounds, each cell's points in a run of one array in the order they came (Session 1279: the
+  // Map of cells, keyed by number since Session 1196, was still the biggest single cost of a body's build; the same points, the same nearest)
+  const pts = [], ci = [];
   for (let v = 0; v < N; v++) { if (!used[v] || !keep(R[v * 3], R[v * 3 + 1], R[v * 3 + 2])) continue; const p = new THREE.Vector3(P[v * 3], P[v * 3 + 1], P[v * 3 + 2]), n = new THREE.Vector3(nx[v * 3], nx[v * 3 + 1], nx[v * 3 + 2]).normalize();
-    const k = K(Math.floor(p.x / cell), Math.floor(p.y / cell), Math.floor(p.z / cell)); if (!cells.has(k)) cells.set(k, []); const e = { p, n, v }; cells.get(k).push(e); pts.push(e); }
-  return { pts, near(q) { const i = Math.floor(q.x / cell), j = Math.floor(q.y / cell), k = Math.floor(q.z / cell); let best = null, bd = 1e9;
-      for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) for (let c = -1; c <= 1; c++) { const L = cells.get(K(i + a, j + b, k + c)); if (L) for (const e of L) { const d = e.p.distanceToSquared(q); if (d < bd) { bd = d; best = e; } } }
-      return best; },
+    ci.push(Math.floor(p.x / cell), Math.floor(p.y / cell), Math.floor(p.z / cell)); pts.push({ p, n, v }); }
+  let i0 = 1e9, j0 = 1e9, k0 = 1e9, i1 = -1e9, j1 = -1e9, k1 = -1e9; for (let t = 0; t < ci.length; t += 3) { i0 = Math.min(i0, ci[t]); i1 = Math.max(i1, ci[t]); j0 = Math.min(j0, ci[t + 1]); j1 = Math.max(j1, ci[t + 1]); k0 = Math.min(k0, ci[t + 2]); k1 = Math.max(k1, ci[t + 2]); }
+  const NI = Math.max(0, i1 - i0 + 1), NJ = Math.max(0, j1 - j0 + 1), NK = Math.max(0, k1 - k0 + 1), at = new Int32Array(NI * NJ * NK + 1), run = new Int32Array(pts.length);
+  const X = new Float64Array(pts.length), Y = new Float64Array(pts.length), Z = new Float64Array(pts.length), cOf = t => ((ci[t * 3] - i0) * NJ + ci[t * 3 + 1] - j0) * NK + ci[t * 3 + 2] - k0;
+  for (let t = 0; t < pts.length; t++) { at[cOf(t) + 1]++; X[t] = pts[t].p.x; Y[t] = pts[t].p.y; Z[t] = pts[t].p.z; }
+  for (let c = 1; c < at.length; c++) at[c] += at[c - 1]; { const fill = at.slice(0, -1); for (let t = 0; t < pts.length; t++) run[fill[cOf(t)]++] = t; }
+  return { pts, near(q) { const i = Math.floor(q.x / cell) - i0, j = Math.floor(q.y / cell) - j0, k = Math.floor(q.z / cell) - k0, qx = q.x, qy = q.y, qz = q.z; let best = -1, bd = 1e9;
+      for (let a = -1; a <= 1; a++) { const ia = i + a; if (ia < 0 || ia >= NI) continue; for (let b = -1; b <= 1; b++) { const jb = j + b; if (jb < 0 || jb >= NJ) continue; for (let c = -1; c <= 1; c++) { const kc = k + c; if (kc < 0 || kc >= NK) continue;
+        const cc = (ia * NJ + jb) * NK + kc; for (let r = at[cc], e = at[cc + 1]; r < e; r++) { const t = run[r], dx = X[t] - qx, dy = Y[t] - qy, dz = Z[t] - qz, d = dx * dx + dy * dy + dz * dz; if (d < bd) { bd = d; best = t; } } } } }
+      return best < 0 ? null : pts[best]; },
     // the point of the surface furthest along a direction from a centre: where a gathering point goes
     extreme(c, d, f = () => true) { let best = null, bs = -1e9; for (const e of pts) { if (!f(e.p)) continue; const s = e.p.clone().sub(c).normalize().dot(d); if (s > bs) { bs = s; best = e; } } return best; } };
 }
 // height of q over the surface (the plane of its nearest point), or null off the surface
-const heightOver = (S, q) => { const e = S.near(q); return e ? { e, h: q.clone().sub(e.p).dot(e.n) } : null; };
+const heightOver = (S, q) => { const e = S.near(q); return e ? { e, h: (q.x - e.p.x) * e.n.x + (q.y - e.p.y) * e.n.y + (q.z - e.p.z) * e.n.z } : null; };
 let LOCK = null;
 function lockTex() {
   if (LOCK) return LOCK; const c = document.createElement('canvas'); c.width = 64; c.height = 256; const x = c.getContext('2d'); x.fillStyle = 'rgb(205,205,205)'; x.fillRect(0, 0, 64, 256);
@@ -1072,9 +1079,25 @@ function buildHair(P, G, heads, scalpTris, headB, rnd) {
 // columns are then held to a spacing that widens toward the hem, folds are rippled in, and the grid becomes the sheet.
 // It opens at the throat, where a round brooch pins it (OG-048, OG-059; OG-025's iron clasps). Its hood lies rolled on
 // the shoulders, or is up over the head as a fitted shell (a skinned garment, so it follows the head).
-function posedBody(body) {
-  const n = PACK.N, out = new Float32Array(n * 3), v = new THREE.Vector3(); body.updateMatrixWorld(true);
-  for (let i = 0; i < n; i++) { body.getVertexPosition(i, v); out[i * 3] = v.x; out[i * 3 + 1] = v.y; out[i * 3 + 2] = v.z; } return out;
+function posedBody(body) { body.updateMatrixWorld(true); return skinnedPositions(body, PACK.N); }
+// the first n vertices of a mesh where they are drawn now, as getVertexPosition gives them digit for digit (three 0.170's
+// applyBoneTransform), but with each bone's matrix (its world matrix by its inverse) made once and not once a weight: the posing was
+// a third of a body's build in the game, 0.3 to 1.3 s in one frame (Session 1279; Michael's stutter in towns)
+const _skV = new THREE.Vector3();
+function skinnedPositions(m, n) {
+  const g = m.geometry, pa = g.attributes.position, si = g.attributes.skinIndex, sw = g.attributes.skinWeight, out = new Float32Array(n * 3), v = _skV;
+  const plain = a => a && !a.isInterleavedBufferAttribute && !a.normalized && a.itemSize === 4;
+  if (!m.isSkinnedMesh || (g.morphAttributes.position && m.morphTargetInfluences) || !plain(si) || !plain(sw)) {
+    for (let i = 0; i < n; i++) { m.getVertexPosition(i, v); out[i * 3] = v.x; out[i * 3 + 1] = v.y; out[i * 3 + 2] = v.z; } return out; }
+  // Vector3.applyMatrix4 written out, term for term in its order, so every digit is the same
+  const sk = m.skeleton, Ms = new Array(sk.bones.length), I = si.array, W = sw.array, A = pa.array, bm = m.bindMatrix.elements, bmi = m.bindMatrixInverse.elements, pos3 = pa.itemSize === 3 && !pa.isInterleavedBufferAttribute && !pa.normalized;
+  const ap = (r, x, y, z, o) => { const s = 1 / (r[3] * x + r[7] * y + r[11] * z + r[15]); o[0] = (r[0] * x + r[4] * y + r[8] * z + r[12]) * s; o[1] = (r[1] * x + r[5] * y + r[9] * z + r[13]) * s; o[2] = (r[2] * x + r[6] * y + r[10] * z + r[14]) * s; };
+  const B3 = [0, 0, 0], T3 = [0, 0, 0], V3 = [0, 0, 0];
+  for (let i = 0; i < n; i++) { if (pos3) ap(bm, A[i * 3], A[i * 3 + 1], A[i * 3 + 2], B3); else { v.fromBufferAttribute(pa, i); ap(bm, v.x, v.y, v.z, B3); } let x = 0, y = 0, z = 0;
+    for (let k = 0; k < 4; k++) { const w = W[i * 4 + k]; if (w === 0) continue; const r = I[i * 4 + k];
+      const M = Ms[r] || (Ms[r] = new THREE.Matrix4().multiplyMatrices(sk.bones[r].matrixWorld, sk.boneInverses[r]).elements); ap(M, B3[0], B3[1], B3[2], T3); x += T3[0] * w; y += T3[1] * w; z += T3[2] * w; }
+    ap(bmi, x, y, z, V3); out[i * 3] = V3[0]; out[i * 3 + 1] = V3[1]; out[i * 3 + 2] = V3[2]; }
+  return out;
 }
 // the coat's hood lying down (Session 1153, OG-109's Mark): a roll of the coat's wool laid across the upper back below the collar, as the
 // cloak's hood lies, thickest at the back's middle and tapering to nothing at the shoulders, rising towards them. Each section is set out
@@ -3123,7 +3146,7 @@ function legWrapStats(body, meshes) {
   if (bt) { const low = [...new Set(PACK.R.legWraps)].filter(inBand(-.712, -.695)), b = shellThrough(posedOf(wr), low, bt, PACK.R.boots, 1, side); out.bootPts = b.n; out.bootThrough = b.bad; }
   out.tris = wr.geometry.index.count / 3; out.turns = +((-.405 + .715) / .055).toFixed(1); return out;
 }
-function posedOf(m) { const n = m.geometry.attributes.position.count, out = new Float32Array(n * 3), v = new THREE.Vector3(); m.updateMatrixWorld(true); for (let i = 0; i < n; i++) { m.getVertexPosition(i, v); out[i * 3] = v.x; out[i * 3 + 1] = v.y; out[i * 3 + 2] = v.z; } return out; }
+function posedOf(m) { m.updateMatrixWorld(true); return skinnedPositions(m, m.geometry.attributes.position.count); }
 // the hands against a long skirt, on the posed body (Session 887), radially: in 2 cm bands and 36 directions round the
 // skirt's own middle, a hand point (rest x past .415) is inside if it is nearer that middle than the furthest of the skirt's points there
 function handsInSkirt(body, skirt, PP = posedBody(body), sv0, thin = 0) {
