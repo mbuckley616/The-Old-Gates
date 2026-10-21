@@ -1427,7 +1427,7 @@ function drawCompass(){
     // staircases). Keeping it blue split the palette without earning the
     // distinction; making it red makes the rule "red = you must transition
     // to reach your goal" hold uniformly.
-    const doorX=(currentHouse._roomW||10)/2;
+    const doorX=intDoorX(currentHouse);
     const doorZ=(currentHouse._roomD||9);
     const dx=doorX-px, dz=doorZ-pz;
     const markerAngle=(Math.atan2(dx,-dz)+Math.PI*2)%(Math.PI*2);
