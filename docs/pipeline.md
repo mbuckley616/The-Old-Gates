@@ -18,11 +18,15 @@ once every two hours. Michael chose A: fix all five.
 - **Main runs every suite after each merge**, and the next merge no longer cancels that run. A break the selection missed
   shows there.
 - **One check, `gate`**, says whether a PR may merge: parse passed, and the suites passed or were not needed.
+- **Every suite boots the new look** (Session 1226, Michael, 20 Oct 2026). One that is red or too slow there is named in
+  `tests/skip.json` and runs nowhere (a QA card in `docs/qa/skipped.md`); striking it from the list runs it in that PR. The
+  shards are packed by `tests/times.json`, the new look's seconds per suite; refreshing it is not a harness change and runs
+  nothing. A shard has 90 minutes (the new look is about 1.5 times slower; a full run is about 55 minutes a shard at twenty).
 
 ## How a PR merges now
 - **`automerge`** (`.github/workflows/automerge.yml`, `scripts/automerge.mjs`) runs when a check finishes and every fifteen
   minutes. It merges a PR whose `gate` is green and which merges cleanly, if:
-  - it changes only `docs/` and `tests/` (not `tests/lib/` or `tests/run.mjs`): no approval needed; or
+  - it changes only `docs/` and `tests/` (not `tests/lib/`, `tests/run.mjs` or `tests/skip.json`): no approval needed; or
   - Michael approved it: the comment `Approved by Michael: <sha>` on the PR, which the producer posts when he taps Approve
     on the control room. The producer no longer merges by hand.
 - Commits after the approved one that change only docs or tests, or merge main in, ride along. Any other later commit waits

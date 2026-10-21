@@ -9,6 +9,12 @@ const g = await boot(); const { page } = g;
 const said = []; page.on('console', m => { if (m.type() === 'error' || /save|store/i.test(m.text())) said.push(m.text().slice(0, 160)); });
 await g.intoWorld();
 const W = (ms) => page.waitForTimeout(ms);
+// Session 1213: the title is ready when Load Game shows (the save store has read its index, every script has run). On the new look
+// the page carries three.js 0.170 and the people's 13 MB pack, and on CI a reload was not ready 5 s on (#443's run 39316849862:
+// back at the title with Load Game still hidden, its click did nothing). A reload waits for the title, up to 120 s, not a fixed 5 s.
+const titleReady = () => page.waitForFunction(() => { const b = document.getElementById('lgb'); return b && getComputedStyle(b).display !== 'none' && typeof openSLMenu === 'function'; }, null, { timeout: 120000, polling: 250 }).catch(() => {});
+// A load is done when the game has started with the save's gold and the menu has closed (it was a fixed 4 or 12 s)
+const loaded = (gold0) => page.waitForFunction((g0) => typeof started !== 'undefined' && started && gold === g0 && document.getElementById('slmenu').style.display === 'none', gold0, { timeout: 120000, polling: 250 }).catch(() => {}).then(() => W(1500));
 // the arrival autosave is written as you step into the world; the menu's first save waits for it, as a player's would not need to
 await page.waitForFunction(() => SS.idx.some(e => e.kind === 'auto') || SS.lastErr, null, { timeout: 60000, polling: 250 }).catch(() => {});
 const store = () => page.evaluate(() => ({ db: !!SS.db, fallback: !!SS.fallback, lastErr: SS.lastErr && SS.lastErr.why, retried: SS.retried && SS.retried.why, idx: SS.idx.map(e => e.kind + e.slot + ':' + e.gold) }));
@@ -41,9 +47,9 @@ const autos = await page.evaluate(() => SS.idx.filter(e => e.kind === 'auto').ma
 check('an autosave is written', autos.includes(700), autos);
 
 // reload the page: Continue brings back the newest
-g.errs.length = 0; await page.reload(); await W(5000);
+g.errs.length = 0; await page.reload(); await titleReady(); await W(1000);
 const title = await page.evaluate(() => ({ cb: !!document.getElementById('cb') && getComputedStyle(document.getElementById('cb')).display !== 'none', saves: SS.idx.length, db: !!SS.db, fallback: !!SS.fallback }));
-await page.evaluate(() => document.getElementById('cb').click()); await W(12000); await g.hide();
+await page.evaluate(() => document.getElementById('cb').click()); await loaded(700); await g.hide();
 const cont = await page.evaluate(() => ({ started, gold, name: playerName, level, d: Math.round(Math.hypot(px - 0, pz - 0)), x: px, z: pz }));
 check('after a reload the saves are there (not on the localStorage fallback), and Continue is offered', title.cb && title.saves >= 2 && !title.fallback, title);
 check('Continue loads the newest save: the autosave, 700 gold, Wren, level 4, where she stood', cont.started && cont.gold === 700 && cont.name === 'Wren' && cont.level === 4 && Math.hypot(cont.x - where.x, cont.z - where.z) < 3, { cont, where });
@@ -51,7 +57,7 @@ check('Continue loads the newest save: the autosave, 700 gold, Wren, level 4, wh
 // the slot, by the Load tab (click to arm, click to load)
 await page.evaluate(() => openSLMenu('load', false)); await W(400);
 const slotRow = await page.evaluate(() => [...document.querySelectorAll('#sl-slots .sl-slot')].findIndex(d => /654/.test(d.textContent)));
-await clickRow(slotRow); await W(300); await clickRow(slotRow); await W(4000); await g.hide();
+await clickRow(slotRow); await W(300); await clickRow(slotRow); await loaded(654); await g.hide();
 check('the Load tab loads the slot: 654 gold', (await page.evaluate(() => gold)) === 654, slotRow);
 
 // export by the button: a real file
@@ -63,7 +69,7 @@ check('Export writes a file holding the slot and the autosave', doc.format === '
 
 // delete the character by its button (twice), reload: nothing left
 await page.evaluate(() => { const b = [...document.querySelectorAll('#sl-slots button')].find(b => /Delete character/.test(b.textContent)); b.click(); b.click(); }); await W(1500);
-await page.reload(); await W(5000);
+await page.reload(); await titleReady(); await W(1000);
 const gone = await page.evaluate(() => ({ chars: ssChars().length, saves: SS.idx.length, db: !!SS.db }));
 check('deleted, the character stays gone after a reload', gone.chars === 0 && gone.saves === 0, gone);
 
@@ -72,7 +78,8 @@ check('deleted, the character stays gone after a reload', gone.chars === 0 && go
 const lgb = await page.evaluate(() => { const b = document.getElementById('lgb'); const shown = getComputedStyle(b).display !== 'none', cb = getComputedStyle(document.getElementById('cb')).display !== 'none'; b.click(); return { shown, cb }; }); await W(1500);
 check('with no saves the title still offers Load Game (not Continue)', lgb.shown && !lgb.cb, lgb);
 // closing it without loading goes back to the title (Load Game steps into the scene before the menu opens)
-await page.evaluate(() => document.getElementById('slmenu-close').click()); await W(5000);
+await Promise.all([page.waitForNavigation({ waitUntil: 'load', timeout: 180000 }).catch(() => {}), page.evaluate(() => document.getElementById('slmenu-close').click())]);
+await titleReady(); await W(1000);
 const back0 = await page.evaluate(() => ({ title: getComputedStyle(document.getElementById('ov')).display !== 'none', started: typeof started !== 'undefined' && started, lgb: getComputedStyle(document.getElementById('lgb')).display !== 'none' }));
 check('closing the title\'s Load menu without loading returns to the title', back0.title && !back0.started && back0.lgb, back0);
 await page.evaluate(() => document.getElementById('lgb').click()); await W(1500);
@@ -81,11 +88,11 @@ const [fc] = await Promise.all([page.waitForEvent('filechooser', { timeout: 1000
 await fc.setFiles(file); await W(2500);
 const imp = await page.evaluate(() => ({ chars: ssChars().map(c => c.name + ':' + c.saves.length), rows: document.querySelectorAll('#sl-slots .sl-slot').length }));
 check('Import by the picker brings the character back, listed in the menu', imp.chars.length === 1 && /^(Wren|Traveller):\d+$/.test(imp.chars[0]) && +imp.chars[0].split(':')[1] === doc.saves.length && imp.rows >= 2, { ...imp, exported: doc.saves.length });
-await page.reload(); await W(5000);
+await page.reload(); await titleReady(); await W(1000);
 await page.evaluate(() => document.getElementById('lgb').click()); await W(1500);
 const rows = await page.evaluate(() => { return [...document.querySelectorAll('#sl-slots .sl-slot')].map(d => d.textContent.replace(/\s+/g, ' ').slice(0, 40)); });
 const i = await page.evaluate(() => [...document.querySelectorAll('#sl-slots .sl-slot')].findIndex(d => /654/.test(d.textContent)));
-await clickRow(i); await W(300); await clickRow(i); await W(12000); await g.hide();
+await clickRow(i); await W(300); await clickRow(i); await loaded(654); await g.hide();
 const back = await page.evaluate(() => ({ started, gold, name: playerName }));
 check('after another reload, the imported slot loads from the title: Wren, 654 gold', back.started && back.gold === 654 && back.name === 'Wren', { back, rows });
 check('no page errors', g.errs.length === 0, g.errs);
