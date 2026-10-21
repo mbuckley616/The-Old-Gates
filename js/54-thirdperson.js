@@ -86,6 +86,15 @@ function tpHBDress(G0,o){const G=JSON.parse(JSON.stringify(G0)),D=Object.assign(
   // S1256 — the heavy line's helm is the builder's helm of its tier (helms.js; Michael's C of 18 Oct: from Steel up the face shut),
   // fitted to the player's own head; Iron's is the kit's kettle helm, in the tier's metal
   if(AR&&AR.head&&!AR.head.line){D.helm=hbRGB(AR.head.metal);D.tier=AR.head.tier;}else if(o.hd&&!AR&&!tpIsCloth(o.hd))D.helm=hbRGB(o.helmCol);
+  // S1263 — gauntlets and greaves by family, as the old kit drew them (people.js's vambrace, gloves, greaves and cuisses): Wooden's boards
+  // (the scales in the wood's tone) over leather gloves, Bronze's sheet over leather, Iron's mail, Steel up plate with a knee cop, the
+  // cuisses up the thigh with mail and plate; the light line's bracers and gloves in its leather; gloves of no metal in their own colour
+  const fam=P=>P.fam==='lamellar'?'scales':P.fam==='mail'?'mail':'sheet',col=P=>hbRGB(P.fam==='lamellar'?new THREE.Color(P.metal).lerp(new THREE.Color(0xc89a62),.3).getHex():P.metal);
+  const Hn=AR&&AR.hands,Lg=AR&&AR.legs;
+  if(Hn&&Hn.line==='light'){D.vambrace=D.gloves=hbRGB(armourLineLeather(Hn.tier));D.vambraceKind='leather';}
+  else if(Hn&&!Hn.line){D.vambrace=col(Hn);D.vambraceKind=fam(Hn);if(Hn.fam==='mail'||Hn.fam==='plate'){D.gloves=hbRGB(Hn.metal);D.glovesKind=Hn.fam==='mail'?'mail':'sheet';}else D.gloves=hbRGB(0x4a3020);}
+  else if(o.gl&&!Hn)D.gloves=hbRGB(tpMatColor(o.gl,0x5a3a20));
+  if(Lg&&!Lg.line){D.greaves=col(Lg);D.greavesKind=fam(Lg);if(Lg.fam==='mail'||Lg.fam==='plate')D.cuisses=true;}
   const K=o.cloak;if(K){D.cloak=hbRGB(K.col);if(K.cut==='short'){D.cape=true;D.cloakLen=.6;}else D.cloakLen=.85;D.brooch=[.62,.47,.22];
     if(K.fur!=null)D.cloakFur=hbRGB(K.fur);if(K.trim!=null)D.cloakHem=hbRGB(K.trim);if(K.hood)D.hood=o.hd&&tpIsCloth(o.hd)?'up':'down';}
   return G;}
@@ -154,7 +163,7 @@ function tpBuild(lookIn,ppIn,reuse){
   // F10 — on the new look the builder's body over this driver (F4's hbAttach and hbPose), at the genome's own stature
   const E=lookHBGenome(LK,pp,playerName,g.female);
   if(E){const K=EQ.back&&EQ.back.cloak?(TP_CLOAK[EQ.back.cloak]||TP_CLOAK.wool):null;
-    rig.hbG=tpHBDress(E.G,{AR,ch,lg,ft,hd,clothCol,legsCol,chestCol,bootCol,helmCol:hd?tpMatColor(hd,0x8a8f98):0x8a8f98,robe:!!(ch&&!ch.line&&/robe/i.test(ch.name||'')),
+    rig.hbG=tpHBDress(E.G,{AR,ch,lg,ft,hd,gl,clothCol,legsCol,chestCol,bootCol,helmCol:hd?tpMatColor(hd,0x8a8f98):0x8a8f98,robe:!!(ch&&!ch.line&&/robe/i.test(ch.name||'')),
       cloak:K?{col:EQ.back.col!=null?EQ.back.col:K.col,cut:K.cut,hood:!!K.hood,fur:K.fur,trim:K.trim}:null});
     // F10, part two — a change of kit that leaves the dressed genome as it was (a weapon, a shield, a ring) keeps the builder's body
     // that was built for it: carried over from the body this one replaces (reuse, TP.rig) onto the new driver, not built again
