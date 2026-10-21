@@ -1,4 +1,4 @@
-// Card F10, part two (Session 1249): first person's hands are the player's own body's. The forearm and hand of the builder's body that
+// Card F10, part two (Session 1252): first person's hands are the player's own body's. The forearm and hand of the builder's body that
 // third person wears, its fingers folded in the fist, cut by bone weight and laid in the fist's frame, at the genome's own size in metres;
 // the sleeve is what is worn, a pair of gauntlets tints the hand, and every grip (a sword, a shield, a torch) is the same hand. A change
 // of what is held keeps the builder's body that was built for the kit (it is not built again). F10_SHOTS=1 writes the pictures to
