@@ -39,7 +39,11 @@ function skinAimed(obj,m,near,far){if(obj._aimBones===undefined||obj._aimM!==m||
 const _baA=new THREE.Vector3(),_baB=new THREE.Vector3(),_baBox=new THREE.Box3();
 function _raySegHit(o,d,a,b,r,near,far){for(let k=0;k<=6;k++){const u=k/6,x=a.x+(b.x-a.x)*u-o.x,y=a.y+(b.y-a.y)*u-o.y,z=a.z+(b.z-a.z)*u-o.z;
     const t=Math.max(near,Math.min(far,x*d.x+y*d.y+z*d.z)),qx=x-d.x*t,qy=y-d.y*t,qz=z-d.z*t;if(qx*qx+qy*qy+qz*qz<=r*r)return true;}return false;}
+// S1259 — the cache is keyed by the body's shape three levels down (the rig's root, the builder's group, its root): a corpse
+// whose builder body attaches, drops or bakes its middle level after the kill is read again, not left on the driver's 17 bones.
+function _baSig(m){let n=m.children.length;for(const a of m.children){n=n*31+a.children.length;for(const b of a.children)n=n*31+b.children.length;n|=0;}return n;}
 function bodyAimed(c,reach){const m=c.body;reach=reach||3.0;m.updateMatrixWorld(true);
+  const sig=_baSig(m);if(c._sig!==sig){c._sig=sig;c._bones=null;c._r=null;}
   if(!c._bones){const bones=[],plain=[];m.traverse(o=>{if(o.isBone)bones.push(o);else if(o.isMesh&&!o.isSkinnedMesh&&o.geometry&&o.geometry.type!=='PlaneGeometry')plain.push(o);});c._bones=bones;c._plain=plain;}
   if(c._r==null){_baBox.makeEmpty();if(c._bones.length)for(const b of c._bones)_baBox.expandByPoint(b.getWorldPosition(_baA));else _baBox.setFromObject(m);
     const ext=_baBox.isEmpty()?1:_baBox.getSize(_baA).length();c._ext=ext;c._r=Math.max(.2,Math.min(1.2,ext*.13));}
