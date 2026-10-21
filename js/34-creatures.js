@@ -709,15 +709,26 @@ function tickSpider(rig,g,e,dt,now){
 // its colours (the Snow Wolf's pale coat, the Dire Wolf's near black on the heavier Ironwolf), its genome rolled from the foe's id
 // (`wolf:<id>`, the co-op rule's place and index), never Math.random; a wolf with no id yet (the inspector's) takes its kind's name.
 // Built one at a time, the nearest first, after the world's loading and never in the same frame as a person (HBODY.last, shared).
-// The Ash Hound, the boar, the bear, the horses, the dragon and the Faolchú keep the old body: their plans are later work.
+// The boar and the Cave Bear (Session 1251) wear theirs on the same driver: the kit's wild boar in its own coat, and its bear (the
+// Frostreach) in the Cave Bear's brown. The bear's legs are plantigrade, three joints to the driver's four: its paw takes the driver's
+// paw and the driver's wrist and hock move nothing of it (hcMap); a tail shorter than the driver's three joints takes the first.
+// The Ash Hound, the horses, the dragon and the Faolchú keep the old body: their plans are later work.
 const HC_BODY={on:true,near:12,mid:40,build:44,small:.03,ms:0,n:0};
 const HC_RIGS=new Set();
 // the game's kinds and the kit's plans: a kind's own colours over the plan's (the kit's palettes are sRGB triples)
-const HC_KINDS={'Wolf':{plan:'wolf'},'Snow Wolf':{plan:'wolf',own:true},'Dire Wolf':{plan:'ironwolf',own:true}};
+const HC_KINDS={'Wolf':{plan:'wolf'},'Snow Wolf':{plan:'wolf',own:true},'Dire Wolf':{plan:'ironwolf',own:true},'Boar':{plan:'boar'},'Cave Bear':{plan:'bear',own:true}};
 // the driver's joints and the kit's bones they move, parents first (the kit's front legs hang on spine3, the hind on spine0)
 const HC_MAP=[['hips','spine0'],['spine','spine1'],['neck','neck0'],['head','head'],['jaw','jaw'],['tail1','tail0'],['tail2','tail1'],['tail3','tail2'],
   ['shL','leg0L_0'],['elL','leg0L_1'],['wrL','leg0L_2'],['pfL','leg0L_3'],['shR','leg0R_0'],['elR','leg0R_1'],['wrR','leg0R_2'],['pfR','leg0R_3'],
   ['thL','leg1L_0'],['knL','leg1L_1'],['hkL','leg1L_2'],['phL','leg1L_3'],['thR','leg1R_0'],['knR','leg1R_1'],['hkR','leg1R_2'],['phR','leg1R_3']];
+// the driver's joints and the bones of this kit body they move. A kit leg has a bone at each joint and one at the toe's tip: five on a
+// wolf's or a boar's (paw …_3), four on a plantigrade's (no …_4), whose paw (…_2) takes the driver's paw, so the driver's wrist or hock
+// moves nothing of it; a tail joint the kit's tail lacks is left out; any other bone missing is a failure
+function hcMap(by){const out=[];
+  for(const [j,n] of HC_MAP){let b=by[n];const m=/^(leg\d[LR])_(\d)$/.exec(n);
+    if(m&&!by[m[1]+'_4']){if(m[2]==='2')continue;if(m[2]==='3')b=by[m[1]+'_2'];}
+    if(!b){if(/^tail/.test(j))continue;return n;}out.push([j,b]);}
+  return out;}
 function hcOn(){return HC_BODY.on&&window.OG_LOOK==='new'&&typeof HC!=='undefined';}
 // a kind's plan: the kit's own, or (k.own) a copy of it in the kind's coat, saddle and belly, made once
 function hcPlan(name){const K=HC_KINDS[name];if(!K.own)return K.plan;const id='game:'+name;
@@ -728,7 +739,7 @@ function hcPlan(name){const K=HC_KINDS[name];if(!K.own)return K.plan;const id='g
 function hcOk(rig){return !rig.spider&&!!HC_KINDS[rig.name]&&!rig.hunch&&!(rig.e&&rig.e.bossId);}
 function hcAttach(rig){const tA=performance.now();let C;
   try{const key='wolf:'+(rig.e&&rig.e.id!=null?rig.e.id:rig.name);C=HC.build(HC.genome(hcPlan(rig.name),key));}catch(e){rig.hcFail=true;console.warn('F4: the kit could not build',rig.name,e);return;}
-  const by=C.byName;for(const [,n] of HC_MAP)if(!by[n]){rig.hcFail=true;console.warn('F4: the kit\'s wolf has no bone',n);return;}
+  const by=C.byName,map=hcMap(by);if(typeof map==='string'){rig.hcFail=true;console.warn('F4: the kit\'s',rig.name,'has no bone',map);return;}
   // at the driver's size: the kit's hips (spine0) at the driver's hips' height, and over them, in the driver's root (rig.root, which
   // carries the kind's size in play); the kit's rig carries its own size (C.S)
   const B=rig.B,W=new THREE.Group();W.name='kit';const h0=by.spine0.position.clone().multiplyScalar(C.S),f=wolfHipY(rig.k)/h0.y;
@@ -745,7 +756,7 @@ function hcAttach(rig){const tA=performance.now();let C;
   const fur=[];for(const m of meshes){m.bindMode='detached';m.bindMatrix.identity();m.bindMatrixInverse.identity();m.castShadow=false;m.receiveShadow=true;if(/^fur/.test(m.name))fur.push(m);}
   C.root.traverse(o=>{if(o.isMesh||o.isPoints)o.castShadow=false;if(o.isMesh)for(const m of Array.isArray(o.material)?o.material:[o.material])if(m.onBeforeCompile!==THREE.Material.prototype.onBeforeCompile)m.clone=hbClone;});
   // the rest: the kit's bones' rest turns are the identity, as are the driver's; read both from their rest, as hbAttach does
-  const map=HC_MAP.map(([j,n])=>[j,by[n]]),keep=map.map(([j])=>B[j].quaternion.clone());map.forEach(([j])=>B[j].quaternion.identity());
+  const keep=map.map(([j])=>B[j].quaternion.clone());map.forEach(([j])=>B[j].quaternion.identity());
   const s0=map.map(([j])=>hbRel(B[j],rig.root,new THREE.Quaternion()).invert()),t0=map.map(([,b])=>hbRel(b,W,new THREE.Quaternion()));
   map.forEach(([j],i)=>B[j].quaternion.copy(keep[i]));
   // the hips' travel: the driver's hips from their rest (the trot's bob, the crouch, the ragdoll's fall), in the driver's root,
