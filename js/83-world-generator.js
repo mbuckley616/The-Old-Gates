@@ -1599,7 +1599,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     const gallery=two&&(type==='inn'||type==='guild_f'||type==='guild_m'); /* S896 — a cottage or a shop of true size has no room for a gallery and its stair; the upper floor is the inn's and the guilds' */
     const H=gallery?ceil*1.85:ceil;
     house.intW=W;house.intD=D;
-    const sc_=new THREE.Scene();interiorScene=sc_;landRoomPost(sc_); /* S1257 — the rooms' post on the new look: the neutral curve and the grade (89-world-land.js) */
+    const sc_=new THREE.Scene();interiorScene=sc_;landRoomPost(sc_); /* S1257 — the rooms' post on the new look: the neutral curve (89-world-land.js) */
     sc_.background=new THREE.Color(0x120a06);
     sc_.fog=new THREE.Fog(0x120a06,Math.max(W,D)*.8,Math.max(W,D)*2.4);
     intNPCMesh=null;intBedPos=null;intStashPos=null;

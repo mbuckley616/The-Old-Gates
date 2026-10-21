@@ -109,7 +109,7 @@ check('the trees keep their colliders and tree points', trees.sol === 0 && trees
 const post = await page.evaluate(() => { forceTime(12); for (let i = 0; i < 120; i++) WORLD.tick(1 / 60, performance.now());
   let during = null; const sc = WORLD.scene, ob = sc.onBeforeRender; sc.onBeforeRender = (...a) => { ob(...a); during = REN.toneMapping; };
   REN.render(scene, CAM); sc.onBeforeRender = ob;
-  return { during, after: REN.toneMapping, aces: THREE.ACESFilmicToneMapping, graded: THREE.ShaderChunk.tonemapping_fragment.includes('og-grade'), calls: REN.info.render.calls, tris: REN.info.render.triangles }; });
+  return { during, after: REN.toneMapping, aces: THREE.ACESFilmicToneMapping, graded: THREE.ShaderChunk.tonemapping_pars_fragment.includes('og-grade') && /ACESFilmicToneMapping[\s\S]*?return ogGrade/.test(THREE.ShaderChunk.tonemapping_pars_fragment) && !/NeutralToneMapping[^}]*ogGrade/.test(THREE.ShaderChunk.tonemapping_pars_fragment), calls: REN.info.render.calls, tris: REN.info.render.triangles }; });
 check('the world renders with ACES and the grade, and the renderer goes back to no tone mapping after it', post.during === post.aces && post.after === 0 && post.graded, post);
 // Dunmore at noon, from the street: v2-scope.md §5's budget line, logged
 const d = await page.evaluate(() => { const t = WORLD.siteAnywhere('dunmore'); px = t.x; pz = t.z + 4; yaw = 0; pitch = 0; for (let i = 0; i < 30; i++) WORLD.tick(1 / 60, performance.now());

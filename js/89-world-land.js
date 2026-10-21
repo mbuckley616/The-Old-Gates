@@ -158,16 +158,20 @@ function landAtmosphere(){
   if(LAND.waterSky){LAND.waterSky.value.copy(_lC.mid).lerp(_lC.hor,.5);LAND.waterSun.value.copy(U.uSun.value);LAND.waterGlint.value=Math.max(0,el)*(1-cloud)*(1-t);}
 }
 // ── the post: ACES and the grade, on the open world's frame only ─────────────────────────────────────────────────
-// No render targets: the grade rides in three's own tone-mapping chunk, so it costs no pass and no draw call. The
-// world scene turns tone mapping on for its own render and off after it, so rooms, gates and the hands keep theirs.
+// No render targets: the grade rides in three's own ACES function, so it costs no pass and no draw call. The world scene
+// turns tone mapping on for its own render and off after it, so gates and the hands keep theirs; rooms take the neutral
+// curve (landRoomPost), which the grade does not touch (Session 1257: it was in the tone-mapping chunk, under every curve).
 // P10b's grade: shadows a touch cool, highlights warm, saturation lifted.
 function landGrade(){
-  if(!THREE.ShaderChunk.tonemapping_fragment.includes('og-grade'))THREE.ShaderChunk.tonemapping_fragment=THREE.ShaderChunk.tonemapping_fragment.replace('#endif',
-`	{ /* og-grade */ vec3 gc = gl_FragColor.rgb; float gl = dot(gc, vec3(.2126, .7152, .0722));
-	  gc *= mix(vec3(.95, .985, 1.05), vec3(1.05, 1., .92), smoothstep(.03, .6, gl));
-	  gc = mix(vec3(gl), gc, 1.14);
-	  gl_FragColor.rgb = max(gc, 0.); }
-#endif`);
+  const C=THREE.ShaderChunk,A='vec3 ACESFilmicToneMapping( vec3 color ) {';
+  if(C.tonemapping_pars_fragment.includes('og-grade'))return;
+  const i=C.tonemapping_pars_fragment.indexOf(A),j=C.tonemapping_pars_fragment.indexOf('return saturate( color );',i);if(i<0||j<0)return;
+  C.tonemapping_pars_fragment=C.tonemapping_pars_fragment.slice(0,i)+
+`vec3 ogGrade( vec3 gc ) { /* og-grade */ float gl = dot(gc, vec3(.2126, .7152, .0722));
+	gc *= mix(vec3(.95, .985, 1.05), vec3(1.05, 1., .92), smoothstep(.03, .6, gl));
+	gc = mix(vec3(gl), gc, 1.14);
+	return max(gc, 0.); }
+`+C.tonemapping_pars_fragment.slice(i,j)+'return ogGrade( saturate( color ) );'+C.tonemapping_pars_fragment.slice(j+'return saturate( color );'.length);
 }
 function landPost(scene){
   if(!LAND.on||scene.userData.landPost)return;scene.userData.landPost=true;landQuality();landGrade();
@@ -176,14 +180,15 @@ function landPost(scene){
   scene.onAfterRender=r=>{r.toneMapping=keep.tm;r.toneMappingExposure=keep.ex;};
   if(!LAND.rawRender){const raw=REN.render.bind(REN);LAND.rawRender=raw;REN.render=(sc2,cam)=>landRender(raw,sc2,cam);} // S1183: bloom wraps the world's frame
 }
-// ── the rooms' post (Session 1257, backlog I, the critic's s782): a generated room's frame tone-mapped, with the grade ──────
+// ── the rooms' post (Session 1257, backlog I, the critic's s782): a generated room's frame tone-mapped ──────────────────
 // A room drew linear and clipped: the shop's lantern (2.2) and the room's warm ambient put about 2.2 on a keeper 3.4 m off, and
 // a forge or a lamp close by more, so skin and pale cloth clipped flat to yellow-white and a dark purple tunic's red channel ran
 // ahead of the rest and read as bare skin. Khronos' neutral curve, not the world's ACES: it is the identity up to about 0.76 and
 // rolls off above it, keeping hue, so a room keeps its brightness and its firelight's orange (ACES greyed both) and a lamp close
-// by shades instead of burning out. No bloom: a room has no target.
+// by shades instead of burning out. Not the world's grade either: its saturation lift on firelight turned plaster orange.
+// No bloom: a room has no target.
 function landRoomPost(scene){
-  if(!LAND.on||!scene||scene.userData.landPost)return;scene.userData.landPost=true;landGrade();
+  if(!LAND.on||!scene||scene.userData.landPost)return;scene.userData.landPost=true;
   const keep={tm:0,ex:1};
   scene.onBeforeRender=r=>{keep.tm=r.toneMapping;keep.ex=r.toneMappingExposure;r.toneMapping=THREE.NeutralToneMapping;r.toneMappingExposure=LAND.roomExposure;};
   scene.onAfterRender=r=>{r.toneMapping=keep.tm;r.toneMappingExposure=keep.ex;};
