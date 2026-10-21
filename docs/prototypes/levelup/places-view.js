@@ -40,6 +40,7 @@ else if (Q.get('place') === 'erratic') await import('./places-erratic-view.js') 
 else if (Q.get('place') === 'unfinished') await import('./places-unfinished-view.js') /* Session 1032: the Mark's unfinished camp */;
 else if (Q.get('place') === 'minehead') await import('./places-minehead-view.js') /* Session 1204: the Mark's silver mine's head */;
 else if (Q.get('place') === 'canal') await import('./places-canal-view.js') /* Session 1229: the Gatelands' canal lock */;
+else if (Q.get('place') === 'passfort') await import('./places-passfort-view.js') /* Session 1235: the Mark's fortress on a pass */;
 else if (Q.get('place') === 'quarry') await import('./places-quarry-view.js') /* Session 1155: the Gatelands' limestone quarry and its kiln */;
 else if (Q.get('place') === 'towerhouse') await import('./places-towerhouse-view.js') /* Session 1052: the Gatelands' ruined tower house */;
 else if (Q.get('place') === 'clifffort') await import('./places-clifffort-view.js') /* Session 1053: the Mark's cliff fort */;
