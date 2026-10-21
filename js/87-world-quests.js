@@ -1975,8 +1975,8 @@ const giver=`${lord.title} ${lord.name}`;
     const l=regLight(0xffb050,1.4,14,'coach:'+key);l.position.set(mid.x+Math.cos(mid.ang)*(ROAD_HALF+2),iy+3,mid.z-Math.sin(mid.ang)*(ROAD_HALF+2));
     // the coach
     const cart=new THREE.Mesh(coachGeo(),VC_MAT);cart.castShadow=true;sc.add(cart); // S261 — the coach on the kit
-    const horse=kind=>{const hg=new THREE.Group();const rg=buildWolf(kind,1.6);hg.add(rg.root);return hg;}; // S262 — the horses on the wolf's bones and gait (tickCreatures walks them by the ground they cover)
-    const h1=horse('Horse'),h2=horse(pHash(key)&1?'Grey Horse':'Horse');sc.add(h1);sc.add(h2);
+    const horse=(kind,i)=>{const hg=new THREE.Group();const rg=buildWolf(kind,1.6);rg.hcKey='coach:'+key+':'+i;hg.add(rg.root);return hg;}; // S262 — the horses on the wolf's bones and gait (tickCreatures walks them by the ground they cover)
+    const h1=horse('Horse',0),h2=horse(pHash(key)&1?'Grey Horse':'Horse',1);sc.add(h1);sc.add(h2);
     const plat={x0:0,x1:0,z0:0,z1:0,y:0,coach:key};ZONES.world.platforms.push(plat);
     sc.add(g);const C={road:rd,rt,group:g,cart,horses:[h1,h2],plat,u:0,dir:1,state:'wait',len:L,riding:false,smokeS};COACHES.set(key,C);return C;
   }

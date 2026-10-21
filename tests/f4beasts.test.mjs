@@ -3,7 +3,7 @@
 // Cave Bear's own brown, whose plantigrade legs have three bones to the driver's four (hcMap: the paw takes the driver's paw). A line of
 // the two and an Ash Hound (which keeps its own) ahead of you: each on the kit's skeleton, keyed by its foe id; its hips at its driver's;
 // three levels by distance; a run that moves the kit's bones with its feet by the driver's; the tell's glow; and killed, a corpse
-// darkened with its shaders kept that lies with its driver. Pictures: docs/prototypes/f4/f4-beasts.jpg and f4-beasts-near.jpg.
+// darkened with its shaders kept that lies with its driver. Session 1272 adds the coach's two horses on the kit's horse. Pictures: docs/prototypes/f4/f4-beasts.jpg and f4-beasts-near.jpg.
 import { boot, check, ROOT } from './lib/game.mjs';
 import fs from 'fs'; import path from 'path';
 const OUT = path.join(ROOT, 'docs', 'prototypes', 'f4'); fs.mkdirSync(OUT, { recursive: true });
@@ -76,6 +76,32 @@ const glow = await page.evaluate(() => { const f = _W[0], rig = f.rig, mats = ()
   const lit = () => mats().filter(m => m.emissive && m.emissive.getHex() !== 0).length;
   telegraphPulse(f.e, 1); tickCreatures(1 / 60, 6e5); const on = lit(), all = mats().length; telegraphReset(f.e); tickCreatures(1 / 60, 6e5 + 17); return { on, all, off: lit() }; });
 check('the tell\'s glow lights the kit\'s hide and fur and goes out with it', glow.on > 0 && glow.on === glow.all && glow.off === 0, glow);
+
+// the coach's two horses (Session 1272): the kit's horse in each one's coat, keyed by the coach's road and the place in the team as
+// buildCoachLine keys them; standing on their hooves, and at the trot each planted hoof kept on the driver's (hcLegIK)
+const horses = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.cos(yaw), sx = -fz, sz = fx;
+  window._HS = ['Horse', 'Grey Horse'].map((n, i) => { const hg = new THREE.Group(), rg = buildWolf(n, 1.6); rg.hcKey = 'coach:f4beasts:' + i; hg.add(rg.root);
+    const x = px + fx * 14 + sx * (i - .5) * 3.4, z = pz + fz * 14 + sz * (i - .5) * 3.4; hg.position.set(x, WORLD.worldH(x, z), z); hg.rotation.y = yaw; WORLD.scene.add(hg); return { n, hg, rg }; });
+  CAM.position.set(px, worldH(px, pz) + 1.65, pz); CAM.updateMatrixWorld(true);
+  let k = 0; HBODY.last = -1e9; while (_HS.some(h => !h.rg.hc && !h.rg.hcFail) && k++ < 100) tickCreatures(1 / 60, 8e5 + k * (HBODY.gap + 1));
+  return _HS.map(({ n, hg, rg }) => { const H = rg.hc; if (!H) return { n, hc: false }; hg.updateMatrixWorld(true); const by = H.C.byName;
+    const a = by.spine0.getWorldPosition(new THREE.Vector3()), b = rg.B.hips.getWorldPosition(new THREE.Vector3());
+    return { n, hc: true, plan: H.C.g.plan, seed: H.C.g.seed, want: HC.hashKey(rg.hcKey), bones: H.C.bones.length, map: H.map.length, tris: H.C.stats.tris,
+      coat: H.C.plan.palette.coat.map(v => +v.toFixed(2)), hips: +a.distanceTo(b).toFixed(3),
+      toes: ['leg0L_4', 'leg0R_4', 'leg1L_4', 'leg1R_4'].map(t => +(by[t].getWorldPosition(new THREE.Vector3()).y - hg.position.y).toFixed(3)) }; }); });
+console.log('  horses:', JSON.stringify(horses));
+check(`the coach's horses wear the kit's horse (${horses.map(h => h.bones + ' bones, ' + h.tris + ' triangles').join('; ')}), each in its own coat and keyed by its place in the team`,
+  horses.every(h => h.hc && h.map === 24 && h.seed === h.want && h.hips < .03) && horses[0].plan === 'game:Horse' && horses[1].plan === 'game:Grey Horse' && horses[0].seed !== horses[1].seed
+  && horses[1].coat.every((v, i) => Math.abs(v - [0xb4, 0xae, 0xa4][i] / 255) < .01), horses);
+check(`the horses stand on their hooves (${horses.map(h => h.toes.join(', ')).join('; ')} m)`, horses.every(h => h.toes.every(y => Math.abs(y) < .05)), horses.map(h => h.toes));
+const hoof = await page.evaluate(() => { const { hg, rg } = _HS[0], H = rg.hc, by = H.C.byName, out = { n: 0, worst: 0 };
+  const lift = (d) => { const p = rg.B[d].getWorldPosition(new THREE.Vector3()); return p.y - WORLD.worldH(p.x, p.z); }; hg.updateMatrixWorld(true); const rest = lift('pfL');
+  for (let i = 0; i < 120; i++) { hg.position.x += Math.sin(hg.rotation.y) * 2.2 / 60; hg.position.z += Math.cos(hg.rotation.y) * 2.2 / 60; hg.position.y = WORLD.worldH(hg.position.x, hg.position.z); tickCreatures(1 / 60, 8.5e5 + i * 16.7);
+    if (i > 50) { hg.updateMatrixWorld(true); for (const L of H.ik) { if (lift(L.d) > rest + .03) continue; out.n++;
+      out.worst = Math.max(out.worst, Math.abs(L.end.getWorldPosition(new THREE.Vector3()).y - rg.B[L.d].getWorldPosition(new THREE.Vector3()).y - L.oy)); } } }
+  out.worst = +out.worst.toFixed(3); out.trot = +rg.w.trot.toFixed(2); return out; });
+check(`at the trot each planted hoof keeps within ${hoof.worst} m of the driver's (${hoof.n} planted samples; it was 0.11 m before the legs were bent onto it)`, hoof.trot > .5 && hoof.n > 20 && hoof.worst < .06, hoof);
+await page.evaluate(() => { for (const { hg } of _HS) hg.parent.remove(hg); tickCreatures(1 / 60, 9e5); });
 
 // the pictures: the line from 7 m, then the bear from 4 m
 await page.evaluate(() => { const a = _W[0].e, b = _W[2].e, mx = (a.x + b.x) / 2, mz = (a.z + b.z) / 2, fx = -Math.sin(yaw), fz = -Math.cos(yaw); px = mx - fx * 7; pz = mz - fz * 7; pitch = -.12; });

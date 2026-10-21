@@ -712,11 +712,14 @@ function tickSpider(rig,g,e,dt,now){
 // The boar and the Cave Bear (Session 1251) wear theirs on the same driver: the kit's wild boar in its own coat, and its bear (the
 // Frostreach) in the Cave Bear's brown. The bear's legs are plantigrade, three joints to the driver's four: its paw takes the driver's
 // paw and the driver's wrist and hock move nothing of it (hcMap); a tail shorter than the driver's three joints takes the first.
-// The Ash Hound, the horses, the dragon and the Faolchú keep the old body: their plans are later work.
+// The coach's two horses (Session 1272) wear the kit's horse (Session 1261's, heavier) in their own coats, the mane in the saddle's
+// tone, on the same driver. They are no foes, so a horse's genome is keyed by the coach's road and its place in the team (rig.hcKey,
+// `coach:<road>:<i>`, set by buildCoachLine), and the two of a team are two bodies.
+// The Ash Hound, the dragon and the Faolchú keep the old body: their plans are later work.
 const HC_BODY={on:true,near:12,mid:40,build:44,small:.03,ms:0,n:0};
 const HC_RIGS=new Set();
 // the game's kinds and the kit's plans: a kind's own colours over the plan's (the kit's palettes are sRGB triples)
-const HC_KINDS={'Wolf':{plan:'wolf'},'Snow Wolf':{plan:'wolf',own:true},'Dire Wolf':{plan:'ironwolf',own:true},'Boar':{plan:'boar'},'Cave Bear':{plan:'bear',own:true}};
+const HC_KINDS={'Wolf':{plan:'wolf'},'Snow Wolf':{plan:'wolf',own:true},'Dire Wolf':{plan:'ironwolf',own:true},'Boar':{plan:'boar'},'Cave Bear':{plan:'bear',own:true},'Horse':{plan:'horse',own:true,ik:true},'Grey Horse':{plan:'horse',own:true,ik:true}};
 // the driver's joints and the kit's bones they move, parents first (the kit's front legs hang on spine3, the hind on spine0)
 const HC_MAP=[['hips','spine0'],['spine','spine1'],['neck','neck0'],['head','head'],['jaw','jaw'],['tail1','tail0'],['tail2','tail1'],['tail3','tail2'],
   ['shL','leg0L_0'],['elL','leg0L_1'],['wrL','leg0L_2'],['pfL','leg0L_3'],['shR','leg0R_0'],['elR','leg0R_1'],['wrR','leg0R_2'],['pfR','leg0R_3'],
@@ -733,12 +736,12 @@ function hcOn(){return HC_BODY.on&&window.OG_LOOK==='new'&&typeof HC!=='undefine
 // a kind's plan: the kit's own, or (k.own) a copy of it in the kind's coat, saddle and belly, made once
 function hcPlan(name){const K=HC_KINDS[name];if(!K.own)return K.plan;const id='game:'+name;
   if(!HC.PLANS[id]){const k=WOLF_KINDS[name],c=h=>[(h>>16&255)/255,(h>>8&255)/255,(h&255)/255];
-    HC.PLANS[id]=Object.assign({},HC.PLANS[K.plan],{name,palette:Object.assign({},HC.PLANS[K.plan].palette,{coat:c(k.coat),saddle:c(k.saddle),belly:c(k.belly)})});}
+    HC.PLANS[id]=Object.assign({},HC.PLANS[K.plan],{name,palette:Object.assign({},HC.PLANS[K.plan].palette,{coat:c(k.coat),saddle:c(k.saddle),belly:c(k.belly)},HC.PLANS[K.plan].palette.mane?{mane:c(k.saddle)}:{})});}
   return id;}
 // a wolf the kit may dress: one of HC_KINDS, on the wolf's own body (not a boss on it: the Faolchú's hunch and arms are its own)
 function hcOk(rig){return !rig.spider&&!!HC_KINDS[rig.name]&&!rig.hunch&&!(rig.e&&rig.e.bossId);}
 function hcAttach(rig){const tA=performance.now();let C;
-  try{const key='wolf:'+(rig.e&&rig.e.id!=null?rig.e.id:rig.name);C=HC.build(HC.genome(hcPlan(rig.name),key));}catch(e){rig.hcFail=true;console.warn('F4: the kit could not build',rig.name,e);return;}
+  try{const key=rig.hcKey||'wolf:'+(rig.e&&rig.e.id!=null?rig.e.id:rig.name);C=HC.build(HC.genome(hcPlan(rig.name),key));}catch(e){rig.hcFail=true;console.warn('F4: the kit could not build',rig.name,e);return;}
   const by=C.byName,map=hcMap(by);if(typeof map==='string'){rig.hcFail=true;console.warn('F4: the kit\'s',rig.name,'has no bone',map);return;}
   // at the driver's size: the kit's hips (spine0) at the driver's hips' height, and over them, in the driver's root (rig.root, which
   // carries the kind's size in play); the kit's rig carries its own size (C.S)
@@ -761,16 +764,31 @@ function hcAttach(rig){const tA=performance.now();let C;
   map.forEach(([j],i)=>B[j].quaternion.copy(keep[i]));
   // the hips' travel: the driver's hips from their rest (the trot's bob, the crouch, the ragdoll's fall), in the driver's root,
   // into the kit's rig at f·C.S
-  rig.hc={W,C,map,s0,t0,fur,small,hide:meshes.filter(m=>!fur.includes(m)),hip0:new THREE.Vector3(B.hips.position.x,wolfHipY(rig.k),B.hips.position.z),pos0:by.spine0.position.clone(),k:1/(f*C.S),L:-1,drv:rig.mesh.material,em:-1};
+  // the horses' hooves (HC_KINDS' ik): each leg's paw bone and its height over the driver's paw at rest, for hcLegIK
+  let ik=null;if(HC_KINDS[rig.name].ik){rig.root.updateMatrixWorld(true);ik=[['pfL','leg0L'],['pfR','leg0R'],['phL','leg1L'],['phR','leg1R']].map(([d,l])=>
+    ({d,bs:[by[l+'_2'],by[l+'_1'],by[l+'_0']],end:by[l+'_3'],oy:by[l+'_3'].getWorldPosition(new THREE.Vector3()).y-B[d].getWorldPosition(new THREE.Vector3()).y}));}
+  rig.hc={W,C,map,s0,t0,fur,small,ik,hide:meshes.filter(m=>!fur.includes(m)),hip0:new THREE.Vector3(B.hips.position.x,wolfHipY(rig.k),B.hips.position.z),pos0:by.spine0.position.clone(),k:1/(f*C.S),L:-1,drv:rig.mesh.material,em:-1};
   HC_BODY.ms+=performance.now()-tA;HC_BODY.n++;}
 function hcPose(rig){const H=rig.hc,B=rig.B,map=H.map;
   for(let i=0;i<map.length;i++){const [j,b]=map[i];
     hbRel(B[j],rig.root,_hbq).multiply(H.s0[i]).multiply(H.t0[i]);
     if(b.parent&&b.parent.isBone){hbRel(b.parent,H.W,_hbq2).invert();b.quaternion.copy(_hbq2.multiply(_hbq));}else b.quaternion.copy(_hbq);}
   H.C.byName.spine0.position.copy(_hbv.copy(B.hips.position).sub(H.hip0).multiplyScalar(H.k)).add(H.pos0);
+  if(H.ik)hcLegIK(rig);
   // the wind-up's red and the parry's gold on the driver's material, on the kit's (its eyes and claws keep their own)
   const m=rig.mesh.material;let em=m&&m.emissive?m.emissive.getHex():0;if(m!==H.drv&&m&&m.color&&m.color.getHex()===0xffdd44)em=0xb08010;
   if(em!==H.em){H.em=em;for(const o of [...H.hide,...H.fur])for(const x of Array.isArray(o.material)?o.material:[o.material])if(x.emissive)x.emissive.setHex(em);}}
+// Session 1272: the kit's horse has its legs in other proportions than the driver's, so the driver's joint turns copied onto it lift a
+// planted hoof up to 11 cm off the ground at the trot. Each leg is bent back onto the driver's paw height (its rest offset kept) by
+// two passes of turns at its three upper joints about the body's own side axis, so the leg stays in its plane and the stride is the
+// driver's; a turn is held to 0.35 rad a pass
+const _hcA=new THREE.Vector3(),_hcE=new THREE.Vector3(),_hcT=new THREE.Vector3(),_hcJ=new THREE.Vector3(),_hcQ=new THREE.Quaternion(),_hcP=new THREE.Quaternion();
+function hcLegIK(rig){const H=rig.hc,B=rig.B;rig.root.updateMatrixWorld(true);_hcA.set(1,0,0).transformDirection(H.W.matrixWorld);
+  for(const L of H.ik){const ty=B[L.d].getWorldPosition(_hcT).y+L.oy;
+    for(let it=0;it<2;it++)for(const b of L.bs){b.updateMatrixWorld(true);b.getWorldPosition(_hcJ);L.end.getWorldPosition(_hcE);_hcT.copy(_hcE);_hcT.y=ty;
+      _hcE.sub(_hcJ).projectOnPlane(_hcA);_hcT.sub(_hcJ).projectOnPlane(_hcA);if(_hcE.lengthSq()<1e-8||_hcT.lengthSq()<1e-8)continue;
+      const a=Math.max(-.35,Math.min(.35,Math.atan2(_hcA.dot(_hcJ.crossVectors(_hcE,_hcT)),_hcE.dot(_hcT))));if(Math.abs(a)<1e-4)continue;
+      b.parent.getWorldQuaternion(_hcP);_hcQ.setFromAxisAngle(_hcA,a);b.quaternion.premultiply(_hcP).premultiply(_hcQ).premultiply(_hcP.invert());}}}
 function hcLevel(rig,L){const H=rig.hc;if(H.L===L)return;H.L=L;H.W.visible=L<2;rig.mesh.visible=L===2;for(const m of H.fur)m.visible=L===0;for(const m of H.small)m.visible=L===0;}
 function hcDrop(rig){const H=rig.hc;if(!H)return;if(H.W.parent)H.W.parent.remove(H.W);
   H.C.root.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material)for(const m of Array.isArray(o.material)?o.material:[o.material])m.dispose();});
