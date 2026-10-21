@@ -1325,6 +1325,8 @@ function tickPeople(dt,now){
 const HBODY={on:true,near:16,mid:42,build:46,gap:250,last:-1e9,ms:0,n:0,swap:null,cards:/^(hair|brows|beard|moust)$/};
 const HB_RIGS=new Set();
 const HB_GENOMES=new Map();
+/* S1259 (F10) — how many builder bodies have been hung on drivers: a corpse's search (bodyAimed) collects its bones again when it moves */
+let HB_ATTACH_N=0;
 // the driver's joints and the builder's bones they move, parents first
 const HB_MAP=[['hips','root'],['spine','spine05'],['neck','neck01'],['head','head'],['shL','upperarm01.L'],['elL','lowerarm01.L'],['wrL','wrist.L'],
   ['shR','upperarm01.R'],['elR','lowerarm01.R'],['wrR','wrist.R'],['thL','upperleg01.L'],['knL','lowerleg01.L'],['anL','foot.L'],
@@ -1390,13 +1392,14 @@ function hbAttach(rig){const tA=performance.now();let P;
   let bb=null,st=0;root.traverse(o=>{if(!o.isSkinnedMesh)return;o.geometry.computeBoundingBox();const b=o.geometry.boundingBox;if(b.max.y-b.min.y>st){st=b.max.y-b.min.y;bb=b;}});
   // at the driver's stature: rig.root is scaled g.height·PW.BODY·personScale, and the driver stands PERSON_MODEL tall at PW.BODY
   // (in a group of its own: makePerson stands its root on the ground with an offset of its own, which must not be scaled)
-  const W=new THREE.Group();W.name='builder';W.scale.setScalar(SCALE.PERSON_MODEL/(PW.BODY*st));W.add(root);rig.root.add(W);
+  const W=new THREE.Group();W.name='builder';W.scale.setScalar(SCALE.PERSON_MODEL/(PW.BODY*st));W.add(root);rig.root.add(W);HB_ATTACH_N++;
   // skinned in the body's own frame (CLAUDE.md: bone matrices kept local to the mesh): the bones' world matrices less the
   // root's, in float64, so nothing at x, z ≈ 13,000–25,000 passes through float32 in the shader
   {const inv=new THREE.Matrix4(),off=new THREE.Matrix4();
     sk.update=function(){inv.copy(root.matrixWorld).invert();const bs=this.bones;
       for(let i=0;i<bs.length;i++){off.multiplyMatrices(inv,bs[i].matrixWorld).multiply(this.boneInverses[i]);off.toArray(this.boneMatrices,i*16);}
       if(this.boneTexture)this.boneTexture.needsUpdate=true;};}
+  hbSkinLoose(P);
   const sph=new THREE.Sphere(new THREE.Vector3(0,(bb.min.y+bb.max.y)/2,0),st*.8),full=[],cards=new Set();
   root.traverse(o=>{if(!o.isMesh)return;o.castShadow=false;o.receiveShadow=true;full.push(o);
     if(o.isSkinnedMesh){o.bindMode='detached';o.bindMatrix.identity();o.bindMatrixInverse.identity();o.geometry.boundingSphere=sph.clone();o.frustumCulled=true;}
@@ -1432,6 +1435,22 @@ function hbAttach(rig){const tA=performance.now();let P;
   // the builder's head is longer than the driver's, and laid by the driver's shape its head bone sat 6 cm past the mattress's end, in the headboard, under the driver's quilt
   if(rig.sleep&&rig.bed&&rig.root.parent)personLie(rig.root,rig.bed);
   HBODY.ms+=performance.now()-tA;HBODY.n++;}
+// S1259 (F10) — what people.js hangs on the person's root and not on a bone (the cloak, its hood laid down, the brooch and its knot)
+// stood where the body stood: a dead bandit fell out of his cloak and left it upright on the road, searchable. Each is skinned whole to
+// the builder's root bone (the pelvis, which takes the driver's hips), as hbMerge already bakes it for the middle level, so the cloak
+// turns with the hips and lies down with a ragdoll or a sleeper. Weighted to the chest above the waist it bent the cloak's top with
+// the spine, but the builder's pose when it is built is not its bind pose, so no one bind position serves two bones (a sleeper's cloak
+// stood half a metre past its head); a cloak that bends is the cloth's own card
+function hbSkinLoose(P){const sk=P.skeleton,lo=P.byName.root,il=sk.bones.indexOf(lo);if(il<0)return;
+  P.root.updateMatrixWorld(true);const loose=[];
+  P.root.traverse(o=>{if(!o.isMesh||o.isSkinnedMesh)return;let p=o.parent;while(p&&!p.isBone)p=p.parent;if(!p)loose.push(o);});
+  const M=new THREE.Matrix4(),I=new THREE.Matrix4(),N=new THREE.Matrix3();
+  for(const o of loose){const g=o.geometry.clone(),n=g.attributes.position.count,si=new Uint16Array(n*4),sw=new Float32Array(n*4);
+    M.copy(sk.boneInverses[il]).invert().multiply(I.copy(lo.matrixWorld).invert()).multiply(o.matrixWorld);g.applyMatrix4(M);
+    for(let i=0;i<n;i++){si[i*4]=il;sw[i*4]=1;}
+    g.setAttribute('skinIndex',new THREE.Uint16BufferAttribute(si,4));g.setAttribute('skinWeight',new THREE.Float32BufferAttribute(sw,4));
+    const m=new THREE.SkinnedMesh(g,o.material);m.name=o.name;m.renderOrder=o.renderOrder;m.visible=o.visible;m.bind(sk,new THREE.Matrix4());
+    o.parent.remove(o);P.root.add(m);o.geometry.dispose();}}
 // S1224 — the builder's body as points in the world, for the bed (personLie): its middle level's vertices that a triangle uses (the whole
 // body baked, less the hair's cards and what a garment's cut discards), each skinned on the CPU by the posed bones
 function hbSkinPts(rig){const H=rig.hb,mid=hbMid(rig);if(!mid)return new Float32Array(0);const G=mid.geometry,pa=G.attributes.position,v=new THREE.Vector3();
