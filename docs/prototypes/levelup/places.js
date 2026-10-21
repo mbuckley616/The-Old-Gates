@@ -3954,3 +3954,163 @@ export function markMineHead(o = {}, r = stream('minehead')) {
     sheave: { x: SHX + SHR, y: SY, z: SHZ, r: SHR }, drum: { x: WX, z: WZ, y0: DY0, y1: DY1, r: DR, rope: ROPE_Y }, rope,
     whim: { x: WX, z: WZ, path: PR, posts, r: POSTR, eaves: EAV, beam: BEAM, apex: APEX, sweep: SWEEP }, paths: [PATH.map(p => [p[0], p[1]])], track: PATH.map(p => p.map(v => +v.toFixed(3))), trees };
 }
+
+// ── the Gatelands' canal lock (Session 1229, card F8; L5's "roads and works", OG-046's "canals & waterways", the last work on its board).
+// A lock on a summit canal across the midlands, after the Grand Canal's locks of 1780 to 1804: the canal falls 2.6 m through one chamber,
+// with a humpback bridge over the lock's tail and the lock-keeper's cottage on the lockside. Built at true size, a metre a unit, the canal
+// along z, flowing to +z, the towpath on its west bank:
+//   - the pounds: the canal 11 m across at the water and 1.7 m deep, in an earth channel with banks at 1 in 1.5; the upper pound's water at 0
+//     and its banks at 0.6, the lower's at -2.6, the land falling from 0.6 to -2.0 over 30 m below the lock; where the earth meets the
+//     masonry the banks are pitched with stone;
+//   - the lock: a chamber 4.4 m wide and 24 m long between its gates' heels, its walls ashlar under a dressed coping 0.65 m over the upper
+//     water; a breast wall under the upper gates from the chamber's floor (the lower bed) up to the upper bed, its cill 1 m into the chamber;
+//     splayed wing walls from the canal's width to the chamber's at both ends; the lower gates 5.6 m tall from the lower bed, the upper 3 m
+//     from the upper; each a pair of mitred leaves pointing upstream, 18° off square when shut, each lying in a recess of the wall when open,
+//     under a balance beam of 6.5 m, black with its end painted white, 0.7 to 1.0 m over the coping; ground paddles on the head;
+//   - the bridge: a humpback over the lock's tail carrying the road along x, one round arch of 4.44 m springing 1.6 m over the lower water,
+//     the road 3.2 m between parapets of 1 m and humped 1.3 m over 32 m;
+//   - the lock-keeper's cottage (the kit's GL_PLANS.cottage) on the east lockside, its door to the lock; the lockside paved in setts;
+//   - a turf barge of 18.6 by 3.9 m: a black hull drawing 1.05 m, a cabin aft with its stove pipe, the hold under a tarpaulin, the towing
+//     post forward; in the chamber (o.barge 'chamber', the default) or tied up in the lower pound below the bridge ('pound').
+// o.fill: 'low' (the default: the chamber at the lower water, the lower gates open, the upper shut) or 'high' (the chamber full, the upper
+// gates open, the lower shut).
+// -> { group, tris, draws, own, ground(x, z), land(x, z), levels { WU, WL, BU, BL, CT, fall }, lock { hw, zh, zt, zc, z0, z1, recess, face(z),
+//      usable [z0, z1] }, gates [{ kind, z, shut, h0, h1, leaves [{ side, heel, toe, d, len, beam { a, b, y0, y1 } }] }], chamberY, bridge { z0, z1,
+//      half, span, spring, crown, deck(x), parapet, x0, x1 }, barge { x, z, len, beam, draft, free, water, top, at, z0, z1 }, cottage { x, z, w, d, ry,
+//      door }, road { z, w }, tow (the towpath's line), paths, trees, fill }
+export function gatelandsCanal(o = {}, r = stream('canal')) {
+  const std = (c, ro = .9, x = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: ro, ...x }); const MI = millMats(); aurenneTextures() /* the limestone */;
+  const M = { turf: MI.turf, track: mat('turfDry', { ns: 1.0, color: 0xa08e70, rough: 1 }), setts: MI.path, bed: mat('rock', { ns: .8, color: 0x4a4636, rough: 1 }), pitch: mat('stone', { ns: 1.2, color: 0x9c988c, rough: .95 }),
+    wall: mat('limestone', { ns: 1.0, color: 0xb4b0a4, rough: .92 }), dress: MI.dress, rubble: mat('stone', { ns: 1.0, color: 0xb8b2a2, rough: .95 }), path: MI.path,
+    water: std(0x2a3a30, .1, { metalness: .15 }), gate: mat('wood', { ns: .9, color: 0x3a342c, rough: .8 }), beam: std(0x141210, .7), lime: MI.lime, iron: MI.iron, timber: MI.timber,
+    hull: std(0x151311, .75, { side: THREE.DoubleSide }), boat: std(0x2e2620, .8), pipe: MI.iron, pane: std(0x0c0a08, 1), paint: MI.door, tarp: std(0x3a3a2e, .95, { side: THREE.DoubleSide }), rope: std(0x8a7650, .95), dark: std(0x0c0a08, 1),
+    bark: std(0x5a5246, .95), leaf: std(0x4f6a2c, .85), sally: std(0x7a8a4c, .85) };
+  const B = new Map(), key = String(o.key || 'canal'), F = stream(key + ':lie'), ph = Array.from({ length: 6 }, () => F() * 6.283), V3 = (x, y, z) => new THREE.Vector3(x, y, z);
+  const fill = o.fill === 'high' ? 'high' : 'low', bargeAt = o.barge === 'pound' ? 'pound' : 'chamber';
+  const put = (geo, k, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, uv = .5) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal'].includes(a)) g.deleteAttribute(a);
+    if (!g.attributes.normal) g.computeVertexNormals(); g.applyMatrix4(new THREE.Matrix4().compose(V3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), V3(1, 1, 1))); worldUV(g, uv);
+    if (!B.has(k)) B.set(k, []); B.get(k).push(g); return g; };
+  const rod = (k, a, b, rad, seg = 6, taper = 1) => { const A = V3(...a), C = V3(...b), d = C.clone().sub(A), g = new THREE.CylinderGeometry(rad * taper, rad, d.length(), seg);
+    g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(V3(0, 1, 0), d.clone().normalize())); g.translate((A.x + C.x) / 2, (A.y + C.y) / 2, (A.z + C.z) / 2); return put(g, k); };
+  // a six-faced solid from its eight corners (four below, four above, each in order round), its faces outward
+  const hexa = (c, k, uv = .5) => { const q = [[0, 1, 2, 3], [4, 7, 6, 5], [0, 4, 5, 1], [1, 5, 6, 2], [2, 6, 7, 3], [3, 7, 4, 0]], pos = [];
+    for (const [a, b, cc, d] of q) for (const i of [a, b, cc, a, cc, d]) pos.push(...c[i]); const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.computeVertexNormals();
+    const n = g.attributes.normal, ctr = c.reduce((s, p) => s.add(V3(...p)), V3(0, 0, 0)).multiplyScalar(1 / 8), p0 = V3(...c[0]), nn = V3(n.getX(0), n.getY(0), n.getZ(0));
+    if (nn.dot(p0.clone().sub(ctr)) < 0) { const P = g.attributes.position; for (let i = 0; i < P.count; i += 3) { const t = [P.getX(i + 1), P.getY(i + 1), P.getZ(i + 1)]; P.setXYZ(i + 1, P.getX(i + 2), P.getY(i + 2), P.getZ(i + 2)); P.setXYZ(i + 2, ...t); } g.computeVertexNormals(); }
+    return put(g, k, 0, 0, 0, 0, 0, 0, uv); };
+  const sm = t => { t = Math.min(1, Math.max(0, t)); return t * t * (3 - 2 * t); };
+  // the levels and the lock's plan
+  const WU = 0, WL = -2.6, BU = WU - 1.7, BL = WL - 1.7, CT = .6, ZH = -12, ZT = 12, ZC = -11, HW = 2.2, A = 5.5, REC = 2.6, HEEL = 2.42, LEAF = HEEL / Math.cos(18 * Math.PI / 180), RZ = [[ZH - 2.65, ZH], [ZT - 2.65, ZT]];
+  const MZ0 = -20, MZ1 = 28, SPL0 = -15, SPL1 = 23, WT = 1.6;
+  const face = z => z < MZ0 || z > MZ1 ? null : z < SPL0 ? A + (HW - A) * (z - MZ0) / (SPL0 - MZ0) : z > SPL1 ? HW + (A - HW) * (z - SPL1) / (MZ1 - SPL1) : RZ.some(([a, b]) => z > a - 1e-6 && z < b + 1e-6) ? REC : HW;
+  const floorY = z => z < ZC - .45 ? BU : BL;
+  const L = z => CT - 2.6 * sm((z - 27) / 30), kAt = z => z < MZ0 ? .25 + 1.25 * sm((MZ0 - z) / 6) : z > MZ1 ? .25 + 1.25 * sm((z - MZ1) / 6) : 0;
+  // the road along x over the lock's tail, humped over the bridge; the bridge 4 m wide in z
+  const ZB = 19.5, RW = 3.2, BZ0 = ZB - 2, BZ1 = ZB + 2, BX = 9, deck = x => CT + (Math.abs(x) < 16 ? .65 * (1 + Math.cos(Math.PI * x / 16)) : 0);
+  const quiet = (x, z) => 1 - (1 - sm((Math.abs(x) - 7) / 4)) * (1 - sm(Math.max(MZ0 - z, z - MZ1, 0) / 4));
+  const land0 = (x, z) => L(z) + (.1 * Math.sin(x * .21 + ph[0]) * Math.sin(z * .17 + ph[1]) + .05 * Math.sin(x * .43 - z * .39 + ph[2])) * quiet(x, z);
+  const land = (x, z) => { const b = land0(x, z), dz = Math.abs(z - ZB), w = dz <= RW / 2 + .4 ? 1 : sm((RW / 2 + 4.4 - dz) / 4) * sm((Math.abs(x) - BX) / 2); return b + (deck(x) - b) * w; };
+  const channel = (x, z) => { const Wy = z < 0 ? WU : WL, By = Wy - 1.7, k = kAt(z), ax = Math.abs(x), bh = A - k * 1.7, top = land(x, z), th = A + k * Math.max(0, L(z) - Wy);
+    return ax <= bh ? By : ax >= th ? top : By + (top - By) * (ax - bh) / (th - bh); };
+  const ground = (x, z) => { const f = face(z); if (f !== null) return Math.abs(x) <= f + .75 ? floorY(z) : land(x, z); return channel(x, z); };
+  const topHalf = z => A + kAt(z) * Math.max(0, L(z) - (z < 0 ? WU : WL));
+  // the towpath: on the west bank 1.5 m behind the channel's lip, clear of the beams' sweep along the lock, round the bridge's west end
+  const towX = z => z > 14 && z < 25 ? -11.5 : -Math.max(7.9, topHalf(z) + 1.5);
+  const tow = []; for (let z = -60; z <= 62; z += 2) { if (z === 16) tow.push([-7.9, 14.5]); tow.push([+towX(z).toFixed(2), z]); }
+  const segD = (x, z, a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], t = Math.max(0, Math.min(1, ((x - a[0]) * dx + (z - a[1]) * dz) / (dx * dx + dz * dz))); return Math.hypot(x - a[0] - dx * t, z - a[1] - dz * t); };
+  const lineD = (x, z, P) => Math.min(...P.slice(0, -1).map((q, i) => segD(x, z, q, P[i + 1])));
+  // the land: a grid fine at the lock, its cells by what they are
+  { const steps = (bands, end) => { const v = []; for (const [a, b, st] of bands) for (let q = a; q < b - 1e-6; q += st) v.push(+q.toFixed(2)); v.push(end); return v; };
+    const gx = steps([[-160, -40, 24], [-40, -14, 2], [-14, -8, 1], [-8, 8, .5], [8, 14, 1], [14, 40, 2], [40, 160, 24]], 160), gz = steps([[-160, -50, 22], [-50, -22, 1], [-22, -9, .5], [-9, 9, 1], [9, 30, .5], [30, 63, 1.5], [63, 160, 24.25]], 160);
+    const pos = [], NX = gx.length, I = { turf: [], track: [], setts: [], bed: [], pitch: [] }; for (const z of gz) for (const x of gx) pos.push(x, ground(x, z), z);
+    for (let j = 0; j + 1 < gz.length; j++) for (let i = 0; i + 1 < NX; i++) { const a = j * NX + i, b = a + 1, c = a + NX, d = c + 1, cx = (gx[i] + gx[i + 1]) / 2, cz = (gz[j] + gz[j + 1]) / 2, f = face(cz), ax = Math.abs(cx);
+      const wet = f !== null ? ax <= f + .75 : ax < topHalf(cz) - kAt(cz) * .5, k = wet && f !== null ? 'bed' : wet ? (Math.abs(cz) < 34 && kAt(cz) < 1.3 ? 'pitch' : 'bed')
+        : lineD(cx, cz, tow) < 1.1 ? 'track' : Math.abs(cz - ZB) < RW / 2 + .2 && ax > BX - .2 ? 'setts' : f !== null && ax < 6.6 && cz > -17 && cz < 16 ? 'setts' : 'turf';
+      I[k].push(a, c, b, b, c, d); }
+    for (const [k, idx] of Object.entries(I)) { if (!idx.length) continue; const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); put(g, k, 0, 0, 0, 0, 0, 0, .35); } }
+  // the lock's walls: a solid for each run of the face between its corners, from under the floor to the coping's bed, and the coping over it
+  const wallRuns = [[MZ0, SPL0], [SPL0, RZ[0][0]], [RZ[0][0], RZ[0][1]], [RZ[0][1], RZ[1][0]], [RZ[1][0], RZ[1][1]], [RZ[1][1], SPL1], [SPL1, MZ1]];
+  const fAt = (z, run) => run[0] === MZ0 ? A + (HW - A) * (z - MZ0) / (SPL0 - MZ0) : run[0] === SPL1 ? HW + (A - HW) * (z - SPL1) / (MZ1 - SPL1) : RZ.some(q => q[0] === run[0]) ? REC : HW;
+  for (const s of [-1, 1]) for (const run of wallRuns) { const [z0, z1] = run, f0 = fAt(z0, run), f1 = fAt(z1, run), y0 = BL - .3, y1 = CT - .22;
+    hexa([[s * f0, y0, z0], [s * (f0 + .85), y0, z0], [s * (f1 + .85), y0, z1], [s * f1, y0, z1], [s * f0, y1, z0], [s * (f0 + .85), y1, z0], [s * (f1 + .85), y1, z1], [s * f1, y1, z1]], 'wall', .6);
+    hexa([[s * (f0 + .85), y0, z0], [s * (f0 + WT), y0, z0], [s * (f1 + WT), y0, z1], [s * (f1 + .85), y0, z1], [s * (f0 + .85), CT - .01, z0], [s * (f0 + WT), CT - .01, z0], [s * (f1 + WT), CT - .01, z1], [s * (f1 + .85), CT - .01, z1]], 'wall', .6) /* behind the coping, up to the paving's bed */;
+    const n = Math.max(1, Math.round(Math.hypot(z1 - z0, f1 - f0) / 1.1)); for (let k = 0; k < n; k++) { const za = z0 + (z1 - z0) * k / n, zb = z0 + (z1 - z0) * (k + 1) / n, fa = f0 + (f1 - f0) * k / n - .05, fb = f0 + (f1 - f0) * (k + 1) / n - .05, j = (k % 2) * .004;
+      hexa([[s * fa, y1, za], [s * (fa + .9), y1, za], [s * (fb + .9), y1, zb], [s * fb, y1, zb], [s * fa, CT + .05 + j, za], [s * (fa + .9), CT + .05 + j, za], [s * (fb + .9), CT + .05 + j, zb], [s * fb, CT + .05 + j, zb]], 'dress', .6); } }
+  // the wing walls' ends, stepped down into the pitched banks
+  for (const s of [-1, 1]) for (const z of [MZ0, MZ1]) { const sg = z < 0 ? -1 : 1; for (let k = 0; k < 3; k++) put(new THREE.BoxGeometry(WT + .3, .5, .7), 'dress', s * (A + WT / 2), CT - .2 - k * .55, z + sg * (.35 + k * .7)); }
+  // the breast wall under the upper gates and its cill
+  hexa([[-HW - .9, BL - .3, ZH - .5], [HW + .9, BL - .3, ZH - .5], [HW + .9, BL - .3, ZC], [-HW - .9, BL - .3, ZC], [-HW - .9, BU, ZH - .5], [HW + .9, BU, ZH - .5], [HW + .9, BU, ZC], [-HW - .9, BU, ZC]], 'wall', .6);
+  put(new THREE.BoxGeometry(2 * HW, .12, .3), 'dress', 0, BU + .06, ZH - .25);
+  // the gates: mitred leaves pointing upstream; a leaf's d points from its heel to its toe
+  const PHI = 18 * Math.PI / 180, gates = [];
+  for (const [kind, gz, h0] of [['upper', ZH, BU], ['lower', ZT, BL]]) { const shut = kind === 'upper' ? fill === 'low' : fill === 'high', phi = shut ? PHI : Math.PI / 2, h1 = CT + .7, leaves = [];
+    for (const s of [-1, 1]) { const heel = [s * HEEL, gz], d = [-s * Math.cos(phi), -Math.sin(phi)], toe = [heel[0] + d[0] * LEAF, heel[1] + d[1] * LEAF], ry = Math.atan2(-d[1], d[0]);
+      const c = [heel[0] + d[0] * (LEAF - .2) / 2, heel[1] + d[1] * (LEAF - .2) / 2]; put(new THREE.BoxGeometry(LEAF + .2, h1 - h0, .26), 'gate', c[0], (h0 + h1) / 2, c[1], 0, ry, 0, .6);
+      { let n = [Math.sin(ry), Math.cos(ry)]; if (n[1] - s * n[0] < 0) n = n.map(v => -v) /* the rails on the leaf's downstream face, or the chamber's side when open */;
+        for (const y of [h0 + .5, (h0 + h1) / 2, h1 - .5]) put(new THREE.BoxGeometry(LEAF - .1, .2, .05), 'gate', c[0] + n[0] * .155, y, c[1] + n[1] * .155, 0, ry, 0, .6); }
+      const BL0 = 4.0, a = [toe[0], toe[1]], b = [heel[0] - d[0] * BL0, heel[1] - d[1] * BL0], bc = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], blen = LEAF + BL0, by = h1 + .16;
+      put(new THREE.BoxGeometry(blen - .5, .32, .3), 'beam', bc[0] + d[0] * .25, by, bc[1] + d[1] * .25, 0, ry); put(new THREE.BoxGeometry(.5, .33, .31), 'lime', b[0] + d[0] * .25, by, b[1] + d[1] * .25, 0, ry);
+      leaves.push({ side: s, heel, toe: toe.map(v => +v.toFixed(4)), d, len: LEAF, beam: { a, b: b.map(v => +v.toFixed(3)), y0: by - .16, y1: by + .16 } }); }
+    gates.push({ kind, z: gz, shut, h0, h1, leaves }); }
+  // the ground paddles on the head: a rack and its post either side of the upper gates, and their culverts' grates in the wall below the water
+  for (const s of [-1, 1]) { put(new THREE.BoxGeometry(.28, .75, .28), 'iron', s * 3.3, CT + .375, ZH - 1.6); put(new THREE.BoxGeometry(.06, .5, .06), 'iron', s * 3.3, CT + 1.0, ZH - 1.6); put(new THREE.CylinderGeometry(.12, .12, .08, 10), 'iron', s * 3.45, CT + .62, ZH - 1.6, 0, 0, Math.PI / 2); }
+  for (const s of [-1, 1]) for (const z of [-5, 5]) { put(new THREE.CylinderGeometry(.14, .17, .55, 10), 'iron', s * 2.65, CT + .3, z); put(new THREE.CylinderGeometry(.2, .2, .06, 10), 'iron', s * 2.65, CT + .58, z); }
+  // the water: a sheet at each level, cut along the shut gate's line between them
+  const chamberY = fill === 'high' ? WU : WL, shutG = gates.find(g => g.shut), vee = (gz, s) => [[s * HEEL, gz], [0, gz - HEEL * Math.tan(PHI)], [-s * HEEL, gz]];
+  { const up = new THREE.Shape(), lo = new THREE.Shape(), gz = shutG.z, X = 12; /* the shapes in (x, -z) */
+    up.moveTo(-X, 160); up.lineTo(X, 160); up.lineTo(X, -gz); for (const [x, z] of vee(gz, 1)) up.lineTo(x, -z); up.lineTo(-X, -gz); up.closePath();
+    lo.moveTo(-X, -gz); for (const [x, z] of vee(gz, -1)) lo.lineTo(x, -z); lo.lineTo(X, -gz); lo.lineTo(X, -160); lo.lineTo(-X, -160); lo.closePath();
+    for (const [s, y] of [[up, WU], [lo, WL]]) { const g = new THREE.ShapeGeometry(s); g.rotateX(-Math.PI / 2); put(g, 'water', 0, y, 0, 0, 0, 0, .3); } }
+  // the bridge: its body a face in (x, y) with the arch cut from below, run 4 m along z; the ring stones; the parapets and their copes; the road
+  const SP = WL + 1.6, AR = HW + .02, CR = SP + AR;
+  { const s = new THREE.Shape(); s.moveTo(-BX, BL - .3); s.lineTo(-AR, BL - .3); s.lineTo(-AR, SP); for (let k = 1; k < 24; k++) { const t = Math.PI - k * Math.PI / 24; s.lineTo(AR * Math.cos(t), SP + AR * Math.sin(t)); } s.lineTo(AR, SP); s.lineTo(AR, BL - .3); s.lineTo(BX, BL - .3);
+    for (let k = 0; k <= 36; k++) { const x = BX - k * 2 * BX / 36; s.lineTo(x, deck(x) - .02); } s.closePath();
+    const g = new THREE.ExtrudeGeometry(s, { depth: BZ1 - BZ0, bevelEnabled: false, curveSegments: 4 }); g.translate(0, 0, BZ0); put(g, 'rubble', 0, 0, 0, 0, 0, 0, .6);
+    for (const [z, ry] of [[BZ0 - .01, Math.PI], [BZ1 + .01, 0]]) { const rg = new THREE.RingGeometry(AR, AR + .48, 18, 1, 0, Math.PI); put(rg, 'dress', 0, SP, z, 0, ry); }
+    for (const z of [BZ0, BZ1 - .4]) { const p = new THREE.Shape(); p.moveTo(-BX, deck(-BX) - .05); for (let k = 1; k <= 36; k++) { const x = -BX + k * 2 * BX / 36; p.lineTo(x, deck(x) - .05); } for (let k = 36; k >= 0; k--) { const x = -BX + k * 2 * BX / 36; p.lineTo(x, deck(x) + .92); } p.closePath();
+      const pg = new THREE.ExtrudeGeometry(p, { depth: .4, bevelEnabled: false }); pg.translate(0, 0, z); put(pg, 'rubble', 0, 0, 0, 0, 0, 0, .6);
+      for (let k = 0; k < 36; k++) { const x0 = -BX + k * 2 * BX / 36, x1 = x0 + 2 * BX / 36, sl = (deck(x1) - deck(x0)) / (x1 - x0); put(new THREE.BoxGeometry((x1 - x0) * Math.hypot(1, sl) + .02, .1, .5), 'dress', (x0 + x1) / 2, (deck(x0) + deck(x1)) / 2 + .97, z + .2, 0, 0, Math.atan(sl)); }
+      for (const sx of [-1, 1]) put(new THREE.BoxGeometry(.55, 1.25, .55), 'dress', sx * (BX + .2), deck(BX) + .55, z + .2) /* the parapet's end piers */; }
+    for (let x = -40; x < 40; x += .9) { const x1 = x + .9, sl = (deck(x1) - deck(x)) / .9; put(new THREE.BoxGeometry(.93, .06, RW - .04), 'path', x + .45, (deck(x) + deck(x1)) / 2 + .03, ZB + (F() - .5) * .02, 0, 0, Math.atan(sl)); } }
+  // the barge: a hull lofted from sections along its length (the bow to +z), a cabin aft, the hold under a tarpaulin, a towing post forward
+  const BLN = 18.6, HB = 1.95, DR = 1.05, FB = .5, bargeW = bargeAt === 'chamber' ? chamberY : WL;
+  const usable = [ZC + .3, ZT - LEAF - .3], bx = bargeAt === 'chamber' ? 0 : -1.4, bzc = bargeAt === 'chamber' ? (usable[0] + usable[1]) / 2 + .2 : 42, bz0 = bzc - BLN / 2;
+  { const N = 44, rings = []; for (let k = 0; k <= N; k++) { const s = k / N * BLN, tb = (s - (BLN - 3.6)) / 3.6, ts = (1.4 - s) / 1.4, b = HB * (tb > 0 ? Math.sqrt(Math.max(.002, 1 - tb * tb)) : 1) * (ts > 0 ? 1 - .32 * ts * ts : 1);
+      const bot = -DR + (tb > 0 ? .8 * tb * tb : 0) + (ts > 0 ? .3 * ts * ts : 0), top = FB + (tb > 0 ? .28 * tb * tb : 0) + (ts > 0 ? .12 * ts : 0), c = Math.min(.12, b * .4);
+      rings.push([[-b, top], [-b, bot + c], [-b + c, bot], [b - c, bot], [b, bot + c], [b, top]].map(([x, y]) => [bx + x, bargeW + y, bz0 + s])); }
+    const pos = []; for (let k = 0; k < N; k++) for (let i = 0; i < 5; i++) { const a = rings[k][i], b = rings[k][i + 1], c = rings[k + 1][i + 1], d = rings[k + 1][i]; pos.push(...a, ...b, ...c, ...a, ...c, ...d); }
+    for (const R of [rings[0], rings[N]]) for (let i = 1; i < 5; i++) pos.push(...R[0], ...R[i], ...R[i + 1]);
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.computeVertexNormals(); put(g, 'hull', 0, 0, 0, 0, 0, 0, .5);
+    for (let k = 0; k < N; k++) for (const i of [0, 5]) rod('boat', rings[k][i], rings[k + 1][i], .07, 5);
+    put(new THREE.BoxGeometry(2 * HB - .3, .06, BLN - 8.6), 'boat', bx, bargeW - DR + .32, bz0 + 4.2 + (BLN - 8.6) / 2) /* the hold's floor */;
+    const cz = bz0 + 2.3; put(new THREE.BoxGeometry(2 * HB - .36, 1.25, 3.4), 'paint', bx, bargeW + FB - .2 + .625, cz); put(new THREE.BoxGeometry(2 * HB - .2, .08, 3.6), 'boat', bx, bargeW + FB + 1.09, cz);
+    for (const sx of [-1, 1]) put(new THREE.PlaneGeometry(.5, .35), 'pane', bx + sx * (HB - .17), bargeW + FB + .62, cz, 0, sx * Math.PI / 2); put(new THREE.PlaneGeometry(.7, 1.0), 'pane', bx + .5, bargeW + FB + .4, cz + 1.71);
+    put(new THREE.CylinderGeometry(.09, .09, .55, 8), 'pipe', bx - .9, bargeW + FB + 1.4, cz - .6);
+    put(new THREE.BoxGeometry(.1, 1.3, .9), 'boat', bx, bargeW - .2, bz0 - .45); rod('boat', [bx, bargeW + .4, bz0 - .45], [bx, bargeW + FB + .95, bz0 - .45], .06, 6); rod('boat', [bx, bargeW + FB + .95, bz0 - .45], [bx + .3, bargeW + FB + 1.0, bz0 + .45], .04, 5) /* the rudder, its stock and the tiller, short of the cabin */;
+    { const tl = BLN - 9.2, tg = new THREE.CylinderGeometry(1, 1, tl, 14, 1, true, -Math.PI / 2, Math.PI); tg.rotateX(-Math.PI / 2); tg.scale(HB - .1, .55, 1); put(tg, 'tarp', bx, bargeW + FB + .02, bz0 + 4.4 + tl / 2); }
+    put(new THREE.CylinderGeometry(.09, .11, 1.5, 8), 'boat', bx, bargeW + FB + .55, bz0 + BLN - 4.4) /* the towing post */;
+    if (bargeAt === 'pound') { for (const [sz, tz] of [[bz0 + 1.2, bz0 - 2.5], [bz0 + BLN - 2.4, bz0 + BLN + 1.5]]) { const sx = towX(tz) + 1.4, sy = channel(sx, tz); rod('timber', [sx, sy - .3, tz], [sx, sy + .55, tz], .06, 6); rod('rope', [bx - HB + .1, bargeW + FB + .1, sz], [sx, sy + .45, tz], .02, 4); } }
+    else for (const sz of [bz0 + 1.2, bz0 + BLN - 2.4]) { const p = [bx - HB + .25, bargeW + FB + .2, sz]; for (let k = 0; k < 5; k++) put(new THREE.TorusGeometry(.18 - k * .015, .025, 4, 10).rotateX(Math.PI / 2), 'rope', p[0] + .1, p[1] + .03 + k * .04, p[2]); } }
+  const bargeTop = bargeW + FB + 1.4 + .275;
+  // the lock-keeper's cottage on the east lockside, its door to the lock
+  const plan = GL_PLANS.cottage({ paint: 'green' }); plan.r = stream(key + '-cottage'); const cot = gatelandsBuilding(plan), CX = 9.0 + plan.d / 2, CZ = 4, CRY = -Math.PI / 2;
+  cot.position.set(CX, land(CX, CZ) - .05, CZ); cot.rotation.y = CRY; cot.updateMatrixWorld(true); const door = cot.userData.door ? cot.userData.door.clone().applyMatrix4(cot.matrixWorld) : V3(9, 0, CZ);
+  // the paths: the towpath; onto the lockside and along it between the beams; the road over the bridge; from the road to the cottage's door
+  const paths = [tow, [[-7.9, -9.6], [-3.8, -9.6], [-3.8, 8.8], [-7.9, 8.8]], [[-40, ZB], [40, ZB]], [[12.5, ZB - 1.2], [8.0, 12.6], [8.0, door.z], [door.x - .7, door.z]]];
+  // trees: alder and sally on the far bank and about, clear of the channel, the lock, the cottage, the road and the paths
+  const trees = [], tree = (x, z, h, sally) => { const gy = ground(x, z), top = [x, gy + h * .45, z]; rod('bark', [x, gy - .3, z], top, .14 + h * .012, 7, .7);
+    for (let l = 0; l < 5; l++) { const a = l * 1.3 + F(), Ln = 1.3 + F() * 1.1, e = [top[0] + Math.cos(a) * Ln, top[1] + .7 + l * .5 + F() * .5, top[2] + Math.sin(a) * Ln]; rod('bark', [top[0], top[1] - .5 + l * .2, top[2]], e, .055, 5, .6);
+      for (let c2 = 0; c2 < 3; c2++) put(new THREE.IcosahedronGeometry(.85 + F() * .5, 0).scale(1.1, sally ? 1.1 : .8, 1.1), sally ? 'sally' : 'leaf', e[0] + (F() - .5) * 1.3, e[1] + (F() - .5) * (sally ? 1.6 : 1), e[2] + (F() - .5) * 1.3, F(), F() * 3); }
+    trees.push({ x: +x.toFixed(2), z: +z.toFixed(2), h: +h.toFixed(2), kind: sally ? 'sally' : 'alder' }); };
+  for (let k = 0, n = 0; k < 2000 && n < 12; k++) { const x = (k % 4 === 0 ? -1 : 1) * (8 + F() * 34), z = -55 + F() * 115, sally = n % 3 === 1;
+    if (Math.abs(x) < topHalf(z) + 2.5 || (face(z) !== null && Math.abs(x) < 9) || (x > 7 && x < 17 && z > -5 && z < 13) || Math.abs(z - ZB) < 6 || paths.some(P => lineD(x, z, P) < 3.5) || trees.some(t => Math.hypot(t.x - x, t.z - z) < 8)) continue;
+    n++; tree(x, z, sally ? 6 + F() * 2 : 9 + F() * 4, sally); }
+  const group = new THREE.Group(); let tris = 0;
+  for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = !['turf', 'track', 'setts', 'bed', 'pitch', 'water'].includes(k); m.receiveShadow = k !== 'water'; group.add(m); tris += g.attributes.position.count / 3; }
+  const own = group.children.length; group.add(cot); tris += cot.userData.tris;
+  return { group, tris: Math.round(tris), draws: own + cot.userData.calls, own, ground, land, levels: { WU, WL, BU, BL, CT, fall: WU - WL },
+    lock: { hw: HW, zh: ZH, zt: ZT, zc: ZC, z0: MZ0, z1: MZ1, recess: RZ, face, usable }, gates, chamberY,
+    bridge: { z0: BZ0, z1: BZ1, half: BX, span: 2 * AR, spring: SP, crown: CR, deck, parapet: .92, x0: -BX, x1: BX },
+    barge: { x: bx, z: bzc, len: BLN, beam: 2 * HB, draft: DR, free: FB, water: bargeW, top: bargeTop, at: bargeAt, z0: bz0 - .5, z1: bz0 + BLN, cabin: { x: HB - .18, top: bargeW + FB + 1.13 }, pipe: { x: bx - .9, top: bargeTop } },
+    cottage: { x: CX, z: CZ, w: plan.w, d: plan.d, ry: CRY, door: [+door.x.toFixed(3), +door.y.toFixed(3), +door.z.toFixed(3)] }, road: { z: ZB, w: RW }, tow, paths, trees, fill };
+}
