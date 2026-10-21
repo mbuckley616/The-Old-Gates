@@ -19,7 +19,7 @@ strike the row here. That PR runs the suite. Kept by the QA routine; started by 
 | `hourhitch` | too slow: killed at the 900 s a suite is given (1800 s with the retry) | open |
 | `lookpair` | red: the old look is r128 and the new one 0.170, at the same spot | open |
 | `mainrun` | too slow: killed at the 900 s a suite is given (1800 s with the retry) | open |
-| `panelfocus` | too slow: killed at the 900 s a suite is given (900 s with the retry) | open |
+| ~~`panelfocus`~~ | ~~too slow: killed at the 900 s a suite is given (900 s with the retry)~~ | **fixed, Session 1249** (the suite's: about 150 drawn frames; the drawing is stubbed after the town settles, the game's own frames, keys and clicks unchanged; 5/5 in 1 min 40 s here, `times.json` 150) |
 | ~~`penance`~~ | ~~red: a lock picked under a witness's eye: favour −1, a point owed, a 25-gold fine~~ | **fixed, Session 1245** (the suite's: its witness stood 3 out from Lorcan's Forge's door, inside the next kit house, which stands 2.45 out; it now stands 2.2 off you on open ground with a clear line; 11/11) |
 | `placesave` | red: across prosperity swings of 13 and 26 in four towns, no house id moves to another lot | open; the game's, for the look builder (Session 1246's note, backlog I): ids keep their lots (`l.k`), but on the kit's towns a lot's footprint centre moves 0.5–2.75 m with the town's mix (S1065's bays, S1083's hall); every other check passes, saves in six rooms and owned homes included |
 | ~~`renewal`~~ | ~~too slow: killed at the 900 s a suite is given (900 s with the retry)~~ | **fixed, Session 1248** (the suite's: it measured on 50 drawn frames; it now drives the loop at fixed 1/60 ticks, the same seconds of play; 8/8 in 2 min 29 s here, `times.json` 180) |
