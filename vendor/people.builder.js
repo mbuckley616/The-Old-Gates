@@ -1576,7 +1576,7 @@ function buildHoodUp(P, G, meshes, o = {}) {
     for (let j = 0; j < J; j++) { const [s0, p0] = row[j], [s1, p1] = row[j + 1]; if ((s0 < 1) !== (s1 < 1) && Math.min(s0, s1) < 9 && Math.max(s0, s1) < 9) { const q = p0.clone().lerp(p1, (1 - s0) / (s1 - s0)); (q.x > c.x ? right : left).push(q); } } }
   const rimLine = [...left.reverse(), ...right].map(q => q.clone().add(new THREE.Vector3(c.x - q.x, 0, c.z - q.z).normalize().multiplyScalar(.004)));
   const sm = rimLine.map((q, k) => k && k < rimLine.length - 1 ? q.clone().add(rimLine[k - 1]).add(rimLine[k + 1]).multiplyScalar(1 / 3) : q);
-  const rim = tubeGeom(sm, sm.map(() => .0075), 8);
+  const rim = turnOut(tubeGeom(sm, sm.map(() => .0075), 8));
   // skin weights from the nearest point of the body
   const cand = [...new Set(body)].filter(i => R0[i * 3 + 1] > .4);
   const skin = geo => { const n = geo.attributes.position.count, si = new Uint16Array(n * 4), sw = new Float32Array(n * 4), v = new THREE.Vector3();
@@ -1585,7 +1585,7 @@ function buildHoodUp(P, G, meshes, o = {}) {
     geo.setAttribute('skinIndex', new THREE.BufferAttribute(si, 4)); geo.setAttribute('skinWeight', new THREE.BufferAttribute(sw, 4)); return geo; };
   if (!rim.attributes.aBase) rim.setAttribute('aBase', rim.attributes.position);
   const col = sRGB(...D.cloak), hood = new THREE.SkinnedMesh(skin(g), clothMat(col, 'wool', { side: THREE.DoubleSide, scale: 26, inner: .42, hole: 'vB.z > 0. && vB.x < 1.', ...cloakPattern(D, [c.x, c.z], .11, true) })); hood.name = 'hoodUp';
-  const hemM = new THREE.SkinnedMesh(skin(rim), clothMat(o.fur ? sRGB(...o.fur).multiplyScalar(.8) : col.clone().multiplyScalar(.9), 'wool', { scale: 26 })); hemM.name = 'hoodHem';
+  const hemM = new THREE.SkinnedMesh(skin(rim), clothMat(o.fur ? sRGB(...o.fur).multiplyScalar(.8) : col.clone().multiplyScalar(.9), 'wool', { scale: 26 })); hemM.name = 'hoodHem'; hemM.userData.axis = { line: sm, sides: 8 };
   // the burnous's tassel (Session 1236): from the hood's point a cord 3 cm long, a knot, and a tassel of 16 threads 6 cm long flaring to
   // 1.4 cm, in the stripe's colour (or the cloak's, darkened), hanging straight down; skinned with the hood, so it rides the head
   const tassel = []; let tip = null; if (burnousOn(D)) { tip = dome(Math.PI, Math.PI / 4); const tc = sRGB(...(D.burnousStripe || D.cloak)).multiplyScalar(D.burnousStripe ? .9 : .7), parts = [];
@@ -1911,7 +1911,7 @@ function buildEyepatch(P, G, heads, byName, meshes) {
   for (let k = 0; k < NP; k++) if (rad[k] < 0) rad[k] = Math.max(rad[(k + NP - 1) % NP], rad[(k + 1) % NP], .06);
   const rs = Array.from(rad, (r, k) => { let s = 0; for (let d = -2; d <= 2; d++) s += rad[(k + d + NP) % NP]; return Math.max(r, s / 5); });
   const line = []; for (let k = 0; k <= NP; k++) { const ph = (k % NP) / NP * TAU; line.push(O.clone().addScaledVector(u, Math.cos(ph) * (rs[k % NP] + CR + .0004)).addScaledVector(w, Math.sin(ph) * (rs[k % NP] + CR + .0004))); }
-  const cg = tubeGeom(line, line.map(() => CR), 6), cord = new THREE.MeshStandardMaterial({ color: sRGB(...D.eyepatch).multiplyScalar(1.15), roughness: .7 });
+  const cg = turnOut(tubeGeom(line, line.map(() => CR), 6)), cord = new THREE.MeshStandardMaterial({ color: sRGB(...D.eyepatch).multiplyScalar(1.15), roughness: .7 });
   // what the cord passes through (the skin, the patch, the scalp and the brows; the hair's cards apart), how far over the far
   // eye's middle it runs on the forehead
   const segD = p => { let m = 9; for (let k = 0; k < NP; k++) { const a = line[k], b = line[k + 1], ab = b.clone().sub(a), t = Math.max(0, Math.min(1, p.clone().sub(a).dot(ab) / ab.lengthSq())); m = Math.min(m, p.distanceTo(a.clone().addScaledVector(ab, t))); } return m; };
@@ -1974,7 +1974,7 @@ function buildNecklace(G, body, byName, meshes, root) {
   for (let it = 0; it < 3; it++) { if (it) { const p = P0.map(v => v.clone()); for (let k = 0; k < NR; k++) P0[k].copy(p[(k + NR - 1) % NR]).add(p[k]).add(p[k]).add(p[(k + 1) % NR]).multiplyScalar(.25); } for (let k = 0; k < NR; k++) { const d = rays[k].d, o = P0[k].clone().addScaledVector(d, -back(rays[k].ph)), h = hitOf(o.clone().addScaledVector(d, back(rays[k].ph)), d, rays[k].ph); if (!h) continue;
     const t = P0[k].clone().sub(h).dot(d.clone().negate()); if (t < OFF) P0[k].addScaledVector(d, -(OFF - t)); } }
   const pts = P0, metal = new THREE.MeshStandardMaterial({ color: sRGB(...D.necklace), metalness: .85, roughness: .32 });
-  const line = [...pts, pts[0], pts[1]], chain = new THREE.Mesh(tubeGeom(line, line.map(() => CR), 6), metal); chain.name = 'necklaceChain'; chain.castShadow = true;
+  const line = [...pts, pts[0], pts[1]], chain = new THREE.Mesh(turnOut(tubeGeom(line, line.map(() => CR), 6)), metal); chain.name = 'necklaceChain'; chain.userData.axis = { line, sides: 6 }; chain.castShadow = true;
   const grp = new THREE.Group(); grp.name = 'necklace'; grp.add(chain);
   // the coins: along the front half, every 2.2 cm (2.4 on a man) of chain, the middle one larger
   const arc = [0]; for (let k = 1; k <= NR; k++) arc.push(arc[k - 1] + pts[k - 1].distanceTo(pts[k % NR])); const total = arc[NR];
@@ -2251,12 +2251,12 @@ function buildLacing(G, meshes) {
   const all = [...new Set(PACK.R.bodice)], out_ = q => { let bd = 1e9, b = -1; for (const i of all) { const d = (BP[i * 3] - q.x) ** 2 + (BP[i * 3 + 1] - q.y) ** 2 + (BP[i * 3 + 2] - q.z) ** 2; if (d < bd) { bd = d; b = i; } }
     const h = (q.x - BP[b * 3]) * N[b * 3] + (q.y - BP[b * 3 + 1]) * N[b * 3 + 1] + (q.z - BP[b * 3 + 2]) * N[b * 3 + 2]; if (h < .0045) q.add(new THREE.Vector3(N[b * 3], N[b * 3 + 1], N[b * 3 + 2]).multiplyScalar(.0045 - h)); return q; };
   const seg = (a, b) => { const line = []; for (let t = 0; t <= 8; t++) { const q = out_(a.clone().lerp(b, t / 8)); line.push(q); pts.push(q); } return line; };
-  for (let k = 0; k < NE - 1; k++) for (const [a, b] of [[eye[k][0], eye[k + 1][1]], [eye[k][1], eye[k + 1][0]]]) { const m = new THREE.Mesh(tubeGeom(seg(a, b), new Array(9).fill(.0022), 6, 30), mat); m.name = 'lacing'; out.push(m); }
+  for (let k = 0; k < NE - 1; k++) for (const [a, b] of [[eye[k][0], eye[k + 1][1]], [eye[k][1], eye[k + 1][0]]]) { const ln = seg(a, b), m = new THREE.Mesh(turnOut(tubeGeom(ln, new Array(9).fill(.0022), 6, 30)), mat); m.userData.axis = { line: ln, sides: 6 }; m.name = 'lacing'; out.push(m); }
   // a bow at the top: two loops and two short tails
   { const top = eye[NE - 1][0].clone().lerp(eye[NE - 1][1], .5); top.z += .003;
     for (const sx of [-1, 1]) { const loop = []; for (let t = 0; t <= 12; t++) { const a = Math.PI * 2 * t / 12; loop.push(top.clone().add(new THREE.Vector3(sx * (.009 + .009 * Math.cos(a + Math.PI)) , .005 * Math.sin(a), .002 + .001 * Math.sin(a)))); }
       const tail = [top.clone(), top.clone().add(new THREE.Vector3(sx * .006, -.025, .004)), top.clone().add(new THREE.Vector3(sx * .009, -.045, .003))];
-      for (const L of [loop, tail]) { for (let it = 0; it < 2; it++) for (const q of L) out_(q); const m = new THREE.Mesh(tubeGeom(L, new Array(L.length).fill(.002), 6), mat); m.name = 'lacing'; out.push(m); pts.push(...L); } } }
+      for (const L of [loop, tail]) { for (let it = 0; it < 2; it++) for (const q of L) out_(q); const m = new THREE.Mesh(turnOut(tubeGeom(L, new Array(L.length).fill(.002), 6)), mat); m.name = 'lacing'; m.userData.axis = { line: L, sides: 6 }; out.push(m); pts.push(...L); } } }
   for (const m of out) { m.castShadow = m.receiveShadow = true; m.frustumCulled = false; }
   // the checks' number: how far the lacing stands in front of the bodice under it (the nearest of its points, along that point's normal)
   let clear = 1; for (const q of pts) { let bd = 1e9, b = -1; for (const i of all) { const d = (BP[i * 3] - q.x) ** 2 + (BP[i * 3 + 1] - q.y) ** 2 + (BP[i * 3 + 2] - q.z) ** 2; if (d < bd) { bd = d; b = i; } }
@@ -2515,7 +2515,7 @@ function kiteParts(D, gripZ = -.03, H = KITE, flat = false) {
   const backM = new THREE.Mesh(geo(pos2, idx2), new THREE.MeshStandardMaterial({ map: kiteTex(null, null, woodC.map(v => v * .8)), roughness: .9 }));
   // the rim: rawhide over the edge, following the bend (a hoplon's is its bronze lip, wider and rolled)
   const line = []; for (let k = 0; k <= 96; k++) { const a = k / 96 * Math.PI * 2, r = kiteR(a, H.line), u = r * Math.cos(a), v = r * Math.sin(a); line.push(new THREE.Vector3(u, v, H.z(u, v) + T / 2)); }
-  const rim = new THREE.Mesh(tubeGeom(line, line.map(() => hop ? .013 : .0075), hop ? 8 : 6), hop ? new THREE.MeshStandardMaterial({ color: sRGB(...(D.shieldRim || [.62, .45, .22])), metalness: .55, roughness: .38 }) : new THREE.MeshStandardMaterial({ color: sRGB(...(D.shieldRim || [.3, .21, .13])), roughness: .7 }));
+  const rim = new THREE.Mesh(turnOut(tubeGeom(line, line.map(() => hop ? .013 : .0075), hop ? 8 : 6)), hop ? new THREE.MeshStandardMaterial({ color: sRGB(...(D.shieldRim || [.62, .45, .22])), metalness: .55, roughness: .38 }) : new THREE.MeshStandardMaterial({ color: sRGB(...(D.shieldRim || [.3, .21, .13])), roughness: .7 })); rim.name = 'shieldRim'; rim.userData.axis = { line, sides: hop ? 8 : 6 };
   // the enarmes: a leather strap the forearm goes through, 17 cm over the fist, and a grip strap the fist closes on, each
   // riveted to the back at its two ends and standing off it to the arm's own depth (gripZ, behind the back)
   const lea = new THREE.MeshStandardMaterial({ color: sRGB(...woodC.map(v => v * .55)), roughness: .8 }), metal = new THREE.MeshStandardMaterial({ color: sRGB(...(D.helm || [.42, .43, .45])), metalness: .55, roughness: .38 });
@@ -2523,7 +2523,7 @@ function kiteParts(D, gripZ = -.03, H = KITE, flat = false) {
   const bronze = new THREE.MeshStandardMaterial({ color: sRGB(...(D.shieldRim || [.62, .45, .22])), metalness: .55, roughness: .38 });
   // slung on the back (Session 916) the straps lie slack and flat on the board's back, 2 mm proud of it, as nothing is through them
   for (const [v, half, depth, wd, mat] of hop ? [[H.MID, .065, gripZ - .045, .04, bronze], [0, .05, gripZ, .025, lea]] : [[.17, .07, gripZ - .03, .035, lea], [0, .055, gripZ, .03, lea]]) { const pts = []; for (let k = 0; k <= 12; k++) { const t = k / 12, u = -half + 2 * half * t; pts.push(new THREE.Vector3(u, v, H.z(u, v) + (flat ? .002 : depth * Math.sin(Math.PI * t) ** .6))); }
-    sh.add(new THREE.Mesh(tubeGeom(pts, pts.map(() => flat ? .004 : wd / 2), 4), mat));
+    sh.add(new THREE.Mesh(turnOut(tubeGeom(pts, pts.map(() => flat ? .004 : wd / 2), 4)), mat));
     for (const u of [-half, half]) { const rv = new THREE.Mesh(new THREE.SphereGeometry(.006, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), metal); rv.rotation.x = Math.PI / 2; rv.position.set(u, v, H.z(u, v) + T + .001); sh.add(rv); } }
   sh.traverse(m => { if (m.isMesh) { m.castShadow = m.receiveShadow = true; m.userData.shield = true; } });
   return sh;
@@ -3192,7 +3192,7 @@ function buildCord(G, body, meshes) {
   // the knot, a fifth of the way round from the front toward the left hip, and the two ends down the skirt's front from it
   const kA = NA - Math.round(NA * .1), knot = at(kA), meshesOut = [], mat = lockMat(sRGB(...D.cord));
   const add = (g, name) => { const m = new THREE.Mesh(g, mat); m.name = name; m.castShadow = m.receiveShadow = true; m.frustumCulled = false; meshesOut.push(m); };
-  add(tubeGeom(line, line.map(() => r), 8, 40), 'cord');
+  add(turnOut(tubeGeom(line, line.map(() => r), 8, 40)), 'cord'); meshesOut[meshesOut.length - 1].userData.axis = { line, sides: 8 };
   { const kg = new THREE.SphereGeometry(r * 1.9, 12, 8); kg.translate(knot.x, knot.y - r * .4, knot.z + r * .6); add(kg, 'cordKnot'); }
   let endClear = 1, tested = 0;
   for (const [dx, L] of [[-.011, .3], [.009, .24]]) { const pts = [], x = knot.x + dx; let z = knot.z + r;
@@ -3200,7 +3200,7 @@ function buildCord(G, body, meshes) {
       for (const i of tv) { if (Math.abs(TP[i * 3] - x) < .02 && Math.abs(TP[i * 3 + 1] - y) < .015 && TP[i * 3 + 2] > zf) zf = TP[i * 3 + 2]; }
       if (zf > -8) z = Math.max(zf + r + .003, z - .004); pts.push(new THREE.Vector3(x, y, z)); }
     for (let it = 0; it < 3; it++) for (let k = 1; k < pts.length - 1; k++) pts[k].z = Math.max(pts[k].z, (pts[k - 1].z + pts[k + 1].z) / 2);
-    const rr = pts.map((_, k) => k >= pts.length - 3 ? r * 1.45 : r * .85); add(tubeGeom(pts, rr, 8, 40), 'cordEnd');
+    const rr = pts.map((_, k) => k >= pts.length - 3 ? r * 1.45 : r * .85); add(turnOut(tubeGeom(pts, rr, 8, 40)), 'cordEnd'); meshesOut[meshesOut.length - 1].userData.axis = { line: pts, sides: 8 };
     // the checks' number: how far each end lies in front of the cloth behind it
     for (const q of pts) { let zf = -9; for (const i of sv) if (Math.abs(SP[i * 3] - q.x) < .008 && Math.abs(SP[i * 3 + 1] - q.y) < .008) zf = Math.max(zf, SP[i * 3 + 2]); if (zf > -8) { tested++; endClear = Math.min(endClear, q.z - zf - r); } } }
   // and how far the ring stands off the tunic under it, and how many of the tunic's waist points it holds inside
