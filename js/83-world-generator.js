@@ -153,7 +153,8 @@
     // the lots, the stalls, the widened houses and the streets keep out of them (a street that runs into one stops at it).
     //   - the church: the kit's church with its west tower, end-on, 8.4 m wide and 27.4 m long (22.6 with two bays where three will not
     //     fit), its tower's face 14 m from the town's heart, its flank 2.8 m off a street through the centre as a lot's front is, a yard
-    //     of 2 m beside it and 3 m behind; tried along the cross street first (the main road runs along the main street), each way, each side;
+    //     of 4.5 m beside it (2 m until S1232, Michael's B on #464: the six gods' row of seven stands along it, facing the nave) and 3 m
+    //     behind; tried along the cross street first (the main road runs along the main street), each way, each side;
     //   - the keep's bawn: 30 m wide and 25 m deep, astride the main street at its far end from the first road, its gate toward the heart;
     //     else at an end of the cross street, else the near end of the main street, drawn in from the ring by 6 m at a time while a road is in it.
     // A plot is { type, x, z, w, d, ry, tx, tz, k, lot }: its rect (with the yard), the way its front faces, and the building's own lot.
@@ -174,9 +175,10 @@
         return out.every(Q=>rectsApart(P,Q,1));};
       const along=(ux,uz)=>streetLines.find(L=>L.px===cx&&L.pz===cz&&Math.abs(L.dx*uz-L.dz*ux)<1e-6)||null; /* the street through the heart along u */
       const dirs=[[bx,bz],[-bx,-bz],[ax,az],[-ax,-az]];
-      if(types.includes('church'))outer:for(const n of [3,2]){const L=PKIT.gl.churchLen(n),W=8.4,t0=Math.sqrt(14*14-2.8*2.8);
-        for(const [ux,uz] of dirs)for(const sd of [1,-1]){const vx=-uz*sd,vz=ux*sd,P=frame(ux,uz,vx,vz,t0,t0+L+3,2.8,2.8+W+2);if(!fits(P,null))continue;
-          const lot=Object.assign(frame(ux,uz,vx,vz,t0,t0+L,2.8,2.8+W),{w:W,d:L,row:0,street:null,k:-1,plot:'church',bays:n});P.type='church';P.lot=lot;out.push(P);break outer;}}
+      if(types.includes('church'))outer:for(const n of [3,2]){const L=PKIT.gl.churchLen(n),W=8.4,YARD=4.5,t0=Math.sqrt(14*14-2.8*2.8);
+        for(const [ux,uz] of dirs)for(const sd of [1,-1]){const vx=-uz*sd,vz=ux*sd,P=frame(ux,uz,vx,vz,t0,t0+L+3,2.8,2.8+W+YARD);if(!fits(P,null))continue;
+          const t=t0+L/2+.4,a=2.8+W+YARD-.58; /* S1232 — the row of seven: its niches' faces .58 in from the yard's edge, its middle .4 east of the nave's, facing the church */
+          const lot=Object.assign(frame(ux,uz,vx,vz,t0,t0+L,2.8,2.8+W),{w:W,d:L,row:0,street:null,k:-1,plot:'church',bays:n,gods:{x:cx+ux*t+vx*a,z:cz+uz*t+vz*a,ry:Math.atan2(-vx,-vz)}});P.type='church';P.lot=lot;out.push(P);break outer;}}
       if(types.includes('castle')){const T=Math.sqrt((inner-3)**2-15*15);
         outer:for(const [ux,uz] of [[-ax,-az],[bx,bz],[-bx,-bz],[ax,az]])for(let t1=T;t1-25>=20;t1-=6){const vx=-uz,vz=ux,P=frame(ux,uz,vx,vz,t1-25,t1,-15,15);if(!fits(P,along(ux,uz)))continue; /* the main street runs into its gate */
           const lot=Object.assign(frame(ux,uz,vx,vz,t1-1-11,t1-1,-7,7),{w:14,d:11,row:0,street:null,k:-2,plot:'castle'});P.type='castle';P.lot=lot;out.push(P);break outer;}}
@@ -397,7 +399,15 @@
       {const b=new THREE.BoxGeometry(sz.w,sz.eave,sz.d).toNonIndexed();b.translate(0,sz.eave/2,0);kitLo.push([b,mx,stone]);}
       {const r=lot.kit.side?kitRoof(sz.w/2,sz.d/2+.3,sz.eave,sz.eave+4.6):kitRoof(sz.d/2,sz.w/2+.3,sz.eave,sz.eave+4.6);if(!lot.kit.side)r.rotateY(Math.PI/2);kitLo.push([r,mx,new THREE.Color(.24,.26,.30)]);}
       {const b=new THREE.BoxGeometry(T.s,T.h,T.s).toNonIndexed();b.translate(lot.kit.side?T.at:0,T.h/2,lot.kit.side?0:T.at);kitLo.push([b,mx,stone]);}
-      lot._kitDoor=U.door;lot._wallH=sz.eave;lot._storeys=1;lot.two=false;lot.kit.tris=U.tris;lot.kit.calls=U.calls;lot.kit.colour='stone';lot.kit.door=U.door+(lot.kit.slide||0);}
+      lot._kitDoor=U.door;lot._wallH=sz.eave;lot._storeys=1;lot.two=false;lot.kit.tris=U.tris;lot.kit.calls=U.calls;lot.kit.colour='stone';lot.kit.door=U.door+(lot.kit.slide||0);
+      if(lot.gods)kitGods(lot.gods);}
+    // S1232 (card F6, Michael's B on #464) — the six gods' row of seven in the church's yard (PKIT.gl.row): its plinths one solid and
+    // each basin one, each niche on its own ground (a row on a slope steps down it), no far copy (it is 2.3 m high); S.gods keeps where it stands, its niches and its basins for the tests
+    function kitGods(at){const c=Math.cos(at.ry),s_=Math.sin(at.ry),w=(u,v)=>({x:at.x+u*c+v*s_,z:at.z-u*s_+v*c}),y=worldH(at.x,at.z)-.02,R=PKIT.gl.row({ground:[0,1,2,3,4,5,6].map(i=>{const q=w((i-3)*1.4,-.2);return worldH(q.x,q.z)-.02-y;})}),F=R.foot;
+      R.group.position.set(at.x-cx,y,at.z-cz);R.group.rotation.y=at.ry;kitG.add(R.group);
+      {const m=w((F.x0+F.x1)/2,(F.z0+F.z1)/2);sol.push({cx:m.x,cz:m.z,rx:(F.x1-F.x0)/2,rz:(F.z1-F.z0)/2,c,s:s_,bt:'wall'});}
+      const niches=R.niches.map(n=>{const b=n.basin&&w(n.basin[0],n.basin[2]),p=w(n.pray[0],n.pray[1]);if(b)sol.push({cx:b.x,cz:b.z,rx:.2,rz:.2,c,s:s_,bt:'wall'});return {god:n.god,dy:n.dy,x:w(n.x,0).x,z:w(n.x,0).z,basin:b&&{x:b.x,y:y+n.basin[1],z:b.z},pray:p};});
+      S.gods={x:at.x,z:at.z,ry:at.ry,y,len:R.len,tris:R.tris,draws:R.draws,niches};}
     // S1143 — the keep in its bawn (PKIT.gl.keep, measured and kept at the plan): the bawn on the plot, the tower its lot; the bawn's walls,
     // flankers, house and well are solids (the gateway open) that carry no house id, so the map draws them as walls; its far copy a box and
     // a roof prism for the tower and a box for each wall, flanker and the house
@@ -1687,7 +1697,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       const gl=new THREE.PointLight(0xffaa44,.9,gd*1.5);gl.position.set(W/2,gy+1.2,gd/2);sc_.add(gl);
     }
     // ── trade furnishing ────────────────────────────────────────────────
-    // S1252 — a shop with the keeper's room has it at the back, behind the counter: the shop is laid out as a room BZ shorter and
+    // S1258 — a shop with the keeper's room has it at the back, behind the counter: the shop is laid out as a room BZ shorter and
     // moved BZ south (below, after the trade's branch), so the street door opens on the shop and not on the keeper's bed and
     // strongbox (the critic's s782: you came in 2.2 m from the box, the keeper 7.8 m off beyond a shut door)
     const SHOPS=['weapon','armor','potion','misc','shipwright','goods','forge','apothecary','armoury'],BZ=SHOPS.includes(type)&&!gallery&&D>=7?3.2:0,DS=D-BZ,n0=sc_.children.length,s0=SOL.length,f0=FOOTHOLDS.length;
@@ -1725,7 +1735,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       // S290 — the general goods on the kit: crates, sacks tied at the neck, shelves of pots, bowls and plates, a balance on
       // the counter; the barrels are the interiors' kit barrel. The sacks stood in the back room; now in front of it
       {const K=furnKit(),room=K.bake(K.goods(W,DS,H,FN,FSEED,BZ>0));room.userData.furn=true;sc_.add(room);furnSwap(room);}
-      if(BZ){_intBarrel(sc_,.6,DS-.7);_intBarrel(sc_,.6,DS-1.45);_intBarrel(sc_,1.3,DS-.75);} /* S1252 — by the street door, west: the east end of the back wall is the keeper's room's door */
+      if(BZ){_intBarrel(sc_,.6,DS-.7);_intBarrel(sc_,.6,DS-1.45);_intBarrel(sc_,1.3,DS-.75);} /* S1258 — by the street door, west: the east end of the back wall is the keeper's room's door */
       else{_intBarrel(sc_,W-1.0,1.2);_intBarrel(sc_,W-1.9,1.1);_intBarrel(sc_,W-1.4,2.0);}
       counter();
     } else if(type==='inn'){
@@ -1875,9 +1885,9 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       if(/cooper/i.test(house.roleTag||'')){_intBarrel(sc_,.5,D-.5);_intBarrel(sc_,.5,D-1.15);}
       npc={x:W*.3,z:D*.62,maxZ:Math.min(D*.75,5),paused:false};
     }
-    if(BZ){for(const o of sc_.children.slice(n0))o.position.z+=BZ;for(const q of SOL.slice(s0)){q.z0+=BZ;q.z1+=BZ;}for(const q of FOOTHOLDS.slice(f0)){q.z0+=BZ;q.z1+=BZ;} /* S1252 — the shop south of the keeper's room */
+    if(BZ){for(const o of sc_.children.slice(n0))o.position.z+=BZ;for(const q of SOL.slice(s0)){q.z0+=BZ;q.z1+=BZ;}for(const q of FOOTHOLDS.slice(f0)){q.z0+=BZ;q.z1+=BZ;} /* S1258 — the shop south of the keeper's room */
       npc.z+=BZ;npc.minZ+=BZ;npc.maxZ+=BZ;if(house._counterFront!=null)house._counterFront+=BZ*KR;}
-    house._shopZ=BZ; /* S1252 — where the shop's own layout starts, in the kit's unit (the suites read the forge, the counter and the rest by it) */
+    house._shopZ=BZ; /* S1258 — where the shop's own layout starts, in the kit's unit (the suites read the forge, the counter and the rest by it) */
     // v80 S131 — interior variety: the shopkeeper's room behind a partition; private rooms at the inn; the coaching inn's board and tack
     try{
       const partition=(z0,x0,x1,doorX,y0,y1)=>{const hh=y1-y0;for(const [a,b] of [[x0,doorX-.6],[doorX+.6,x1]]){if(b-a<.2)continue;boxRaw((a+b)/2,y0+hh/2,z0,b-a,hh,.18,0x5a4630);SOL.push({x0:a,x1:b,z0:z0-.09,z1:z0+.09,y0,y1});}
@@ -1885,7 +1895,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
         intDoorAt(sc_,SOL,doorX,z0,y0,Math.PI/2,0x3a2a18);}; // v80 S143 — the back room gets a door
       const sideWall=(x0,z0,z1,y0,y1)=>{boxRaw(x0,(y0+y1)/2,(z0+z1)/2,.18,y1-y0,z1-z0,0x5a4630);SOL.push({x0:x0-.09,x1:x0+.09,z0,z1,y0,y1});};
       if(BZ){ /* S896 — 7 in the rooms' old unit (a shop of true size is 7.5 to 8.5 deep with the keeper's room); it was 9 */
-        // S1252 — the keeper's room is the north end, z 0 to BZ, behind the counter; its door at the end of the back wall the trade
+        // S1258 — the keeper's room is the north end, z 0 to BZ, behind the counter; its door at the end of the back wall the trade
         // leaves clear (the forge and the apothecary's and goods' shelves stand against it), the bed and the strongbox at the other
         const east=type==='weapon'||type==='misc'||type==='shipwright'||type==='goods'||type==='forge',mx=x=>east?W-x:x,doorX=mx(.8);partition(BZ,0,W,doorX,0,ceil);
         _intBed(sc_,mx(W-.55),1.0,'N');bedAt(mx(W-.55),1.0,0);solid(mx(W-.55),1.0,.5,1.0,.5); /* S896 — the keeper's room of true size: the bed down the side wall, the table at its foot, the way from the door clear */
@@ -1910,9 +1920,9 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
           house._coaching=true;}
       }
     }catch(e){console.warn('interior variety',e);}
-    if(hasCellar(house)){const hx=type==='inn'?(galleryEast(house)?.9:W-.9):type==='home'?W*.5:BZ?(house._backEast?W-2.15:2.15):Math.min(W-1.6,3.2),hz=type==='inn'?D-.8:type==='home'?D*.72:BZ?1.8:D-2.6; /* S896 — by the door, off the stair and the tables, in the rooms of true size; S1252 — a shop's in the keeper's room, between the crates, the table and the door's swing, where the rug was */boxRaw(hx,.06,hz,1.1,.08,1.1,0x3a2612);const ring=new THREE.Mesh(new THREE.TorusGeometry(.12,.025,5,10),new THREE.MeshLambertMaterial({color:0x2a2622}));ring.position.set(hx+.3,.12,hz);ring.rotation.x=Math.PI/2;sc_.add(ring);house._hatch={x:hx,z:hz};HATCH.x=hx;HATCH.z=hz;HATCH.y=0;HATCH.active=true;}
+    if(hasCellar(house)){const hx=type==='inn'?(galleryEast(house)?.9:W-.9):type==='home'?W*.5:BZ?(house._backEast?W-2.15:2.15):Math.min(W-1.6,3.2),hz=type==='inn'?D-.8:type==='home'?D*.72:BZ?1.8:D-2.6; /* S896 — by the door, off the stair and the tables, in the rooms of true size; S1258 — a shop's in the keeper's room, between the crates, the table and the door's swing, where the rug was */boxRaw(hx,.06,hz,1.1,.08,1.1,0x3a2612);const ring=new THREE.Mesh(new THREE.TorusGeometry(.12,.025,5,10),new THREE.MeshLambertMaterial({color:0x2a2622}));ring.position.set(hx+.3,.12,hz);ring.rotation.x=Math.PI/2;sc_.add(ring);house._hatch={x:hx,z:hz};HATCH.x=hx;HATCH.z=hz;HATCH.y=0;HATCH.active=true;}
     // v80 S155 — a shop's strongbox in the back room (or behind the counter), a home's small chest: locked, and worth something
-    if(BOX_KINDS.includes(type)||type==='home'){const home=type==='home';let bx=home?W-.45:(house._backRoom?(house._backEast?.45:W-.45):W-.6),bz=home?D-.6:(house._backRoom?BZ-.85:D*.55),bry=home||house._backRoom&&!house._backEast?-Math.PI*.5:house._backRoom?Math.PI*.5:Math.PI; /* S896 — a home's in the south-east corner, the room's width from the bed (a sleeper hears 2 m); S1252 — a shop's in the keeper's room against the side wall away from its door (out of the doorway's line from the shop), past the bed's foot and a step in from the partition */
+    if(BOX_KINDS.includes(type)||type==='home'){const home=type==='home';let bx=home?W-.45:(house._backRoom?(house._backEast?.45:W-.45):W-.6),bz=home?D-.6:(house._backRoom?BZ-.85:D*.55),bry=home||house._backRoom&&!house._backEast?-Math.PI*.5:house._backRoom?Math.PI*.5:Math.PI; /* S896 — a home's in the south-east corner, the room's width from the bed (a sleeper hears 2 m); S1258 — a shop's in the keeper's room against the side wall away from its door (out of the doorway's line from the shop), past the bed's foot and a step in from the partition */
       // S590 — the barber stands still at his chair facing into the room (+z), so his box goes where the 6-unit indoor witness and his
       // 120° cone cover every spot it opens from (1.6 round it): the wall-most free spot in front of him whose worst spot on that ring is
       // within 5.6 of him and 50° of his face (the critic, 6 Oct: at W−1, D×.55 it stood 6.8–8.5 from him and was picked unseen at noon).

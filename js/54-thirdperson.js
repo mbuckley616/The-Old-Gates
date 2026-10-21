@@ -46,7 +46,45 @@ function tpWeapon(it){const g=new THREE.Group();if(!it)return g;
   if(kind==='bow'){w.rotation.y=Math.PI;g.userData.bow=true;}g.userData.kit=kind;
   return g;}
 const TP_LINEN=0xa89c80;
-function tpBuild(lookIn,ppIn){
+// ── F10 (Session 1246): the player's own body from the builder's genome, in the new look ──
+// worldState.look.hb is the saved genome (HB.toSaved: the sliders, the face, the palette, the hair and beard; a few hundred bytes),
+// in the character row (look is in SS_CHAR_WS). The creator and the barber write it through tpBuild (TP.rig.hbSaved, copied back
+// into the look they are editing); every build reads it, so a character is the same body on every load. A look with none (a save
+// from before F10; F13 maps those) is rolled from its seed, `player:<name>`, inside its people's ranges, the same on every load.
+// The look's choices are laid over it: the skin, the hair's colour and cut, the beard, the body (man or woman), the height and the
+// build. What is worn is not in it: tpHBDress dresses a copy from EQ on each build, as tpBuild dresses the old body.
+const LOOK_HB_STYLE={short:['short',.22],long:['loose',.7],tied:['tail',.6],bald:['short',.03],braid:['braid',.75],twin:['braids',.7],warrior:['braids',.55],mohawk:['short',.3],curly:['short',.35],afro:['short',.42],shaggy:['loose',.45],bun:['bun',.65],thin:['short',.12]};
+const LOOK_HB_BEARD={no:0,stubble:.12,pencil:.18,goatee:.35,chinstrap:.35,short:.45,vandyke:.45,mutton:.5,handlebar:.5,horseshoe:.55,walrus:.6,full:.85,long:1,braided:1,forked:1};
+const LOOK_HB_TALL=[[0,'Short'],[.5,'Middling'],[1,'Tall']],LOOK_HB_BUILD=[[0,'Slight'],[.5,'Middling'],[1,'Strong']];
+const TP_HB={cache:new Map(),ms:0,n:0};
+function hbRGB(h){return [(h>>16&255)/255,(h>>8&255)/255,(h&255)/255];}
+// the genome for a look (cached by everything that goes into it): {G, saved}; null on the old look or if the builder fails
+function lookHBGenome(L,pp,name,female){if(typeof hbOn!=='function'||!hbOn())return null;
+  HB.loadPack();const people=HB.PEOPLES[pp]?pp:'gatelander',g=L.body?(L.body==='woman'?0:1):(female?0:1),sx=g?'m':'f',P=HB.PEOPLES[people];
+  const key=JSON.stringify([L.hb||null,people,g,L.seed||null,name||'',L.skin,L.hair,L.style,L.beard,L.tall,L.build]);
+  let E=TP_HB.cache.get(key);if(E)return E;
+  const own=!!(L.hb&&L.hb.people===people&&L.hb.sliders&&L.hb.sliders.g===g);
+  const G=own?HB.fromSaved(L.hb):HB.rollGenome(L.seed||('player:'+(name||'you')),{people,g});
+  if(L.skin!=null)G.skin=hbRGB(L.skin);if(L.hair!=null)G.hairCol=hbRGB(L.hair);
+  const st=LOOK_HB_STYLE[L.style];if(st)G.hair={style:st[0],len:st[1]};
+  G.beard=g?(LOOK_HB_BEARD[L.beard===true?'full':L.beard||'no']||0):0;
+  const B=P.body[sx],lerp=(r,t)=>r[0]+(r[1]-r[0])*t;
+  if(L.build!=null){G.muscle=lerp(B.muscle,L.build);G.weight=lerp(B.weight,L.build);}
+  // the height slider for a stature in metres is found by measuring the morphed body (nine morphs): only when the choice changes
+  if(L.tall!=null&&!(own&&L.hbTall===L.tall&&L.hbBuild===L.build))G.height=HB.heightFor(G,lerp(B.metres,L.tall));
+  E={G,saved:HB.toSaved(Object.assign({},G,{dress:{}}))};
+  if(TP_HB.cache.size>16)TP_HB.cache.clear();TP_HB.cache.set(key,E);return E;}
+// what the player wears, on a copy of the genome: the worn pieces as tpBuild reads them for the old body
+function tpHBDress(G0,o){const G=JSON.parse(JSON.stringify(G0)),D=Object.assign({},HB.DRESS_FLAGS),AR=o.AR;G.dress=D;D.skirt='short';
+  D.tunic=hbRGB(o.ch?o.clothCol:TP_LINEN);D.trousers=hbRGB(o.lg?o.legsCol:new THREE.Color(TP_LINEN).multiplyScalar(.93).getHex());D.boots=o.ft?hbRGB(o.bootCol):null;
+  if(o.ch)D.belt=[.3,.2,.12];
+  if(o.robe)D.robe=hbRGB(o.chestCol);
+  if(AR&&AR.chest){const P=AR.chest;if(P.line==='light')D.tunic=hbRGB(armourLineLeather(P.tier));else if(P.line==='robe')D.robe=hbRGB(LINE_ROBE[P.tier]);else D.mail=hbRGB(P.metal);}
+  if(AR&&AR.head&&!AR.head.line)D.helm=hbRGB(AR.head.metal);else if(o.hd&&!AR&&!tpIsCloth(o.hd))D.helm=hbRGB(o.helmCol);
+  const K=o.cloak;if(K){D.cloak=hbRGB(K.col);if(K.cut==='short'){D.cape=true;D.cloakLen=.6;}else D.cloakLen=.85;D.brooch=[.62,.47,.22];
+    if(K.fur!=null)D.cloakFur=hbRGB(K.fur);if(K.trim!=null)D.cloakHem=hbRGB(K.trim);if(K.hood)D.hood=o.hd&&tpIsCloth(o.hd)?'up':'down';}
+  return G;}
+function tpBuild(lookIn,ppIn,reuse){
   let pp=ppIn||'gatelander',P=null;try{if(!ppIn)pp=WORLD.playerPeople();P=WORLD.PEOPLES[pp];}catch(e){}
   const LK=Object.assign(lookDefault(pp,playerArchetype,playerName),lookIn||lookNow()||{});
   const archCol=playerArchetype==='mage'?0x2a3a6a:playerArchetype==='rogue'?0x3a3a2a:0x5a2a20;
@@ -108,7 +146,50 @@ function tpBuild(lookIn,ppIn){
     [lg,B.knL,BX(-.085,-.3,-.085,.085,0,.085)],[lg,B.knR,BX(-.085,-.3,-.085,.085,0,.085)],[ft,B.anL,BX(-.07,-.06,-.07,.07,.04,.12)]].forEach(([it,b,bx])=>{
     if(it&&it.enchant&&b)tpMotes(R,b,it.enchant.col!=null?it.enchant.col:tpHex(it.matGlow,TP_MOTE.armour),bx,true);});
   root.traverse(o=>{if(o.isMesh){o.castShadow=false;o.userData.tp=true;}});
+  // F10 — on the new look the builder's body over this driver (F4's hbAttach and hbPose), at the genome's own stature
+  const E=lookHBGenome(LK,pp,playerName,g.female);
+  if(E){const K=EQ.back&&EQ.back.cloak?(TP_CLOAK[EQ.back.cloak]||TP_CLOAK.wool):null;
+    rig.hbG=tpHBDress(E.G,{AR,ch,lg,ft,hd,clothCol,legsCol,chestCol,bootCol,helmCol:hd?tpMatColor(hd,0x8a8f98):0x8a8f98,robe:!!(ch&&!ch.line&&/robe/i.test(ch.name||'')),
+      cloak:K?{col:EQ.back.col!=null?EQ.back.col:K.col,cut:K.cut,hood:!!K.hood,fur:K.fur,trim:K.trim}:null});
+    // F10, part two — a change of kit that leaves the dressed genome as it was (a weapon, a shield, a ring) keeps the builder's body
+    // that was built for it: carried over from the body this one replaces (reuse, TP.rig) onto the new driver, not built again
+    const key=JSON.stringify(rig.hbG),old=reuse&&reuse.rig&&reuse.rig.hb&&reuse.hbKey===key?reuse:null;R.hbKey=key;
+    const t0=performance.now();
+    if(old){const H=old.rig.hb;if(old.hbHeld)for(const h of old.hbHeld)h.c.removeFromParent();old.hbHeld=null;old.rig.hb=null;old.rig.mesh.visible=true;
+      rig.hb=H;H.L=-1;H.drv=rig.mesh.material;rig.root.add(H.root);TP_HB.kept=(TP_HB.kept||0)+1;}
+    else{try{hbAttach(rig);}catch(e){rig.hb=null;console.warn('F10: the player\'s body failed',e);}
+      if(rig.hb){TP_HB.ms+=performance.now()-t0;TP_HB.n++;}}
+    if(rig.hb){R.hbSaved=E.saved;
+      root.scale.setScalar(rig.hb.st*PW.BODY/SCALE.PERSON_MODEL);hbLevel(rig,0);
+      // what the hands hold rides in the builder's group: a copy of each piece (its geometry shared) in a carrier that follows the piece,
+      // which stays on its driver bone where tpPose turns it, each frame (tpHBHold); a weapon's grip goes to the builder's curled fingers
+      R.hbHeld=[];const by=rig.hb.P.byName,sw=HBODY.swap,side=s=>sw?(s==='L'?'R':'L'):s;
+      for(const [o,sd,grip] of [[R.weapon,'R',true],[R.weaponL,'L',true],[R.shield,'L',false],[R.torch,'L',true],[R.tome,'L',false]]){if(!o)continue;
+        const c=new THREE.Group();c.matrixAutoUpdate=false;c.name='held';c.add(tpHBCopy(o,true));rig.hb.root.add(c);
+        const s=side(sd);R.hbHeld.push({o,c,f:grip?[2,3,4,5].map(f=>by[`finger${f}-2.${s}`]).filter(Boolean):null,arm:[B['el'+sd],B['wr'+sd],by['lowerarm01.'+s],by['wrist.'+s]]});}
+      // Michael's D on #99: an empty hand is a folded fist, and a hand that holds something closes on it; a tome is held open-handed
+      hbCloseFist(by,side('R'));hbThumb(by,side('R'));if(!R.tome){hbCloseFist(by,side('L'));hbThumb(by,side('L'));}else for(let f=1;f<=5;f++)for(let j=1;j<=3;j++){const b=by[`finger${f}-${j}.${side('L')}`];if(b)b.quaternion.identity();} /* a body carried over may have closed it */
+      root.traverse(o=>{if(o.isMesh)o.userData.tp=true;});}}
   return R;}
+// a held piece's copy for the builder's group: its meshes and points on the same geometry and materials, its own turns below the top
+// (Object3D.clone copies userData through JSON, which the kit's pieces do not all survive)
+function tpHBCopy(o,top){const k=o.isMesh?new THREE.Mesh(o.geometry,o.material):o.isPoints?new THREE.Points(o.geometry,o.material):new THREE.Group();k.name=o.name;k.visible=o.visible;k.frustumCulled=o.frustumCulled;
+  if(!top){k.position.copy(o.position);k.quaternion.copy(o.quaternion);k.scale.copy(o.scale);}for(const ch of o.children)k.add(tpHBCopy(ch,false));return k;}
+// F10 — each frame after tpPose: the builder's bones copy the driver's, and what the hands hold follows its driver piece
+const _tpHm=new THREE.Matrix4(),_tpHv=new THREE.Vector3(),_tpHv2=new THREE.Vector3();
+// S1253 — each piece is carried from the driver's forearm to the builder's: turned about the elbow by the turn that takes the driver's
+// elbow-to-wrist line onto the builder's, and moved with it (the two bodies' forearms rest 18° apart, which tilted the blade and left
+// the shield on the driver's arm); a grip is then set in the builder's fingers as before
+const _tpHq=new THREE.Quaternion(),_tpHa=new THREE.Vector3(),_tpHb=new THREE.Vector3(),_tpHe=new THREE.Vector3(),_tpHm2=new THREE.Matrix4();
+function tpHBHold(R){const H=R.rig.hb;if(!H||!R.hbHeld)return;R.root.updateMatrixWorld(true);_tpHm.copy(H.root.matrixWorld).invert();
+  for(const h of R.hbHeld){h.c.matrix.multiplyMatrices(_tpHm,h.o.matrixWorld);
+    const A=h.arm;if(A&&A[0]&&A[1]&&A[2]&&A[3]){const P=o=>new THREE.Vector3().setFromMatrixPosition(o.matrixWorld).applyMatrix4(_tpHm);
+      const De=P(A[0]),Be=P(A[2]);_tpHa.copy(P(A[1])).sub(De);_tpHb.copy(P(A[3])).sub(Be);
+      if(_tpHa.lengthSq()>1e-10&&_tpHb.lengthSq()>1e-10){_tpHq.setFromUnitVectors(_tpHa.normalize(),_tpHb.normalize());
+        _tpHm2.makeRotationFromQuaternion(_tpHq).setPosition(_tpHe.copy(De).applyQuaternion(_tpHq).negate().add(Be));h.c.matrix.premultiply(_tpHm2);}}
+    if(h.f&&h.f.length){const v=_tpHv.set(0,0,0);for(const b of h.f)v.add(_tpHv2.setFromMatrixPosition(b.matrixWorld));v.multiplyScalar(1/h.f.length).applyMatrix4(_tpHm);h.c.matrix.setPosition(v);}
+    h.c.matrixWorldNeedsUpdate=true;}}
+function tpHBPose(R){if(!R||!R.rig.hb)return;hbPose(R.rig);R.root.updateMatrixWorld(true);tpHBHold(R);}
 // S539 — an enchanted piece shows it with "some very very light particle effect" (Michael, the inspector, with the Demonic kit's
 // note): a few faint motes in the enchantment's colour (an armour enchantment has none: the material's glow, else a pale blue)
 // drifting up through the piece and round again, additive, a few millimetres each. One Points object per enchanted piece, on the
@@ -127,7 +208,7 @@ function tpMotes(R,parent,col,box,shell){const n=TP_MOTE.n,P=new Float32Array(n*
 function tpMotesTick(R,t){if(!R||!R.motes)return;for(const m of R.motes){const {box,seed}=m.userData,a=m.geometry.attributes.position,h=box.max.y-box.min.y||.1;
   for(let i=0;i<seed.length;i++){const [x,z,ph,sp]=seed[i],f=(ph+t*TP_MOTE.rise*sp/h)%1;a.setXYZ(i,x+.012*Math.sin(t*1.3+i*2.1),box.min.y+f*h,z+.012*Math.cos(t*1.1+i*1.7));}
   a.needsUpdate=true;}}
-function tpDispose(R){if(!R)return;if(R.root.parent)R.root.parent.remove(R.root);R.root.traverse(o=>{if(o.isMesh||o.isPoints){o.geometry.dispose();if(o.material!==PEOPLE_MAT)o.material.dispose();}});}
+function tpDispose(R){if(!R)return;if(R.rig&&R.rig.hb){if(R.hbHeld)for(const h of R.hbHeld)h.c.removeFromParent();hbDrop(R.rig);} /* F10: the held copies share the pieces' geometry, disposed once below */if(R.root.parent)R.root.parent.remove(R.root);R.root.traverse(o=>{if(o.isMesh||o.isPoints){o.geometry.dispose();if(o.material!==PEOPLE_MAT)o.material.dispose();}});}
 const _tpL=(a,b,k)=>a+(b-a)*k;
 function tpSet(g,x,y,z,k){g.rotation.x=_tpL(g.rotation.x,x,k);g.rotation.y=_tpL(g.rotation.y,y||0,k);g.rotation.z=_tpL(g.rotation.z,z||0,k);}
 // ── camera collision ──
@@ -301,20 +382,29 @@ function tpGripL(R){
   _tgQ.setFromUnitVectors(_tgA.normalize(),_tgB.normalize());R.shL.getWorldQuaternion(_tgQ2);_tgQ.multiply(_tgQ2);R.shL.parent.getWorldQuaternion(_tgQ2);_tgQ.premultiply(_tgQ2.invert());R.shL.quaternion.copy(_tgQ);
   R.shL.updateMatrixWorld(true);
 }
+// the body for what is worn now, built (or its builder's body carried over) when the kit or the look has changed; first person's hands
+// are cut from it too (fpHBFist), so it is kept current in either view when the hands are built
+function tpEnsure(){const sig=tpSig();if(!TP.rig||sig!==TP.sig){const old=TP.rig;TP.rig=tpBuild(null,null,old);TP.sig=sig;TP.armSig=tpArmSig();if(old){TP.rig.root.rotation.copy(old.root.rotation);tpDispose(old);}}return TP.rig;}
+// what the hands' cut depends on: the look and what is worn, not what is held (a weapon sheathed after five seconds at peace rebuilds the
+// view model with an empty hand; that must not build the body again)
+function tpArmSig(){const L=lookNow();let pp='gatelander';try{pp=WORLD.playerPeople();}catch(e){}
+  return (L?JSON.stringify(L):'')+['head','chest','hands','legs','feet','back'].map(s=>EQ[s]?(EQ[s].name||'?')+(EQ[s].col!=null?'~'+EQ[s].col:''):'-').join('|')+'#'+pp+'#'+(playerName||'')+'#'+playerArchetype;}
 function tpUpdate(dt,st){
   if(!thirdPerson){
     if(TP.rig&&TP.rig.root.visible)TP.rig.root.visible=false;
     if(TP.hidVM){TP.hidVM=false;VM_SCENE.visible=true;}
+    if(typeof fpHBCheck==='function')fpHBCheck();
     return;}
   if(!TP.hidVM){TP.hidVM=true;VM_SCENE.visible=false;}
-  const sig=tpSig();if(!TP.rig||sig!==TP.sig){const old=TP.rig;TP.rig=tpBuild();TP.sig=sig;if(old){TP.rig.root.rotation.copy(old.root.rotation);tpDispose(old);}}
+  tpEnsure();
   const R=TP.rig;if(!scene)return;
   if(R.root.parent!==scene){if(R.root.parent)R.root.parent.remove(R.root);scene.add(R.root);}
   tpCamera(dt,st.camY);
   // on a ship's deck or a platform jumpY already carries the height
   R.root.position.set(px,jumpY,pz);R.root.rotation.y=yaw+Math.PI;
   /* S880 (F2a) — swimming, the body sinks to its shoulders: the head's top a quarter metre over the sea; S1084 (F2b) reads the swimmer's line (SWIM_Y, 1.45 under it now) */
-  if(activeZoneId==='world'&&typeof WORLD!=='undefined'&&WORLD.isSwimming())R.root.position.y=jumpY+(SEA_Y+.25-SWIM_Y)-SCALE.PERSON_MODEL*(R.root.scale.y||1);
+  /* F10 (S1253): the builder's body is hb.st tall in the world (its genome's stature), not PERSON_MODEL × the root's scale (that is hb.st × PW.BODY, its crown 0.44 over the sea) */
+  if(activeZoneId==='world'&&typeof WORLD!=='undefined'&&WORLD.isSwimming())R.root.position.y=jumpY+(SEA_Y+.25-SWIM_Y)-(R.rig.hb?R.rig.hb.st:SCALE.PERSON_MODEL*(R.root.scale.y||1));
   {const cp=(typeof climbPose==='function')?climbPose():null;if(cp)R.root.rotation.y=cp.ry;} /* S743 — on a net the body faces the hull */
   // S154 — the stride follows the ground; S162 — and runs past PW.RUN.on heights a second, as the townsfolk do
   {let d=TP.lx==null?0:Math.hypot(px-TP.lx,pz-TP.lz);TP.lx=px;TP.lz=pz;if(d>1.5)d=0;const s=R.root.scale.x||1,v=dt>0?d/dt:0;
@@ -325,6 +415,7 @@ function tpUpdate(dt,st){
   tpPose(R,dt,st);
   if(R.rig.B.cloak||R.rig.B.hairB)peopleSwing(R.rig,dt); // S277 — your own back hair (and a cloak, should you wear one) swings as the townsfolk's (S267)
   tpRollTumble(R,st.roll);
+  tpHBPose(R); // F10 — the builder's body follows the driver
   // too close to see past: step out of the way
   R.root.visible=TP.near>.32||TP.dist>.55;
 }

@@ -493,7 +493,7 @@ function furnBuild(THREE, SK) {
     p.put(armourBench(n, s + 9), A.bench, 1.6, 0);
     return p; }
   function apothecary(W, D, H, n, seed, back) { const p = Parts(), s = seed || 1;
-    /* S1252 — back: the keeper's room stands behind the north wall, its door at the west end, so the shelves leave that end clear */
+    /* S1258 — back: the keeper's room stands behind the north wall, its door at the west end, so the shelves leave that end clear */
     [.62, .99, 1.36].forEach((y, i) => p.put(shelf(back ? W - 3.0 : W - 1.6, n, s + i, 'potions'), back ? W / 2 + .7 : W / 2, 0, 0, y));
     for (let x = 1.5, k = 0; x < W - 1; x += 1.2, k++) p.put(herbBundle(.3 + (k % 3) * .08, s + 10 + k), x, D * .55, 0, H);
     p.put(still(n, s + 4), W - 1.6, 1.8, 0);
@@ -503,7 +503,7 @@ function furnBuild(THREE, SK) {
   function goods(W, D, H, n, seed, back) { const p = Parts(), s = seed || 1;
     for (let k = 0; k < 3; k++) p.put(crate(.5, n, s + k), 1.0 + k * .9, 1.0, (k - 1) * .15);
     p.put(crate(.45, n, s + 3), 1.45, 1.0, .3, .5);
-    /* S1252 — back: the keeper's room stands behind the north wall, its door at the east end; the shelves leave that end clear and
+    /* S1258 — back: the keeper's room stands behind the north wall, its door at the east end; the shelves leave that end clear and
        the sacks stand by the street door, east of it */
     for (let k = 0; k < 3; k++) p.put(sack(s + 4 + k, [0xb8a070, 0x9a8a60, 0xc0b080][k]), back ? W - .5 - k * .55 : W - .6 - k * .65, back ? D - .9 : D - 3.9, k * .7); /* S896 — east of the partition door's swing */
     [.62, 1.05].forEach((y, i) => p.put(shelf(back ? W - 2.7 : W - 2, n, s + 8 + i, 'mixed'), back ? W / 2 - .35 : W / 2, 0, 0, y));

@@ -1,4 +1,4 @@
-// The keeper's room at the back of the shop (Session 1252, backlog I, the critic's s782): in every kit shop with a keeper's room
+// The keeper's room at the back of the shop (Session 1258, backlog I, the critic's s782): in every kit shop with a keeper's room
 // the street door opened into it, so you stood 2.2 m inside the door beside the bed and the strongbox, with the counter and the
 // keeper 7.8 m off beyond a shut door. The room is now the north end, behind the counter. Measured in every shop with one in
 // Portclare and Dunmore, at true size: where the game stands you, the partition, the box and the bed; a 0.1 m flood of the floor

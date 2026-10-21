@@ -21,7 +21,8 @@ Michael designs and playtests; Claude implements. This file is what Claude reads
 - `docs/lore_canon.md`, `docs/quest_writing.md` — the author's text. Do not edit without being asked.
 - `docs/design_brief.md` — Michael's brief: what the game is and the three things it must feel like. Every proposal and
   every design call argues from it. `docs/decisions.md` — questions for Michael and his answers; nothing is a spec without a `Michael:` line.
-- `tests/` — Playwright suites against a headless Chromium. `node tests/run.mjs` runs them all.
+- `tests/` — Playwright suites against a headless Chromium. `node tests/run.mjs` runs them all; `node tests/run.mjs saves`
+  runs one. A pull request runs the smoke set and the suites it adds or edits; every suite runs weekly (see "How a PR lands").
 - `scripts/parsecheck.py` — syntax-checks every `js/` file and their concatenation. `scripts/tag.py` is the build tag's tool; only the
   `stamp` workflow runs it now.
   `scripts/split.py`, `scripts/split_world.py` and `scripts/join.py` made the layout and prove it (kept one release, per decision #75).
@@ -46,7 +47,11 @@ The game is the new look (`docs/design/v2-scope.md`); every session serves it.
    Unicode in strings (’ — · 🗝); match it, don't assume `\u` escapes. Never put a `//` comment on a line that has code
    after it. Markup and CSS changes go in `index.html`.
 4. `python3 scripts/parsecheck.py` after every edit batch. It takes two seconds: each `js/` file, then their concatenation.
-5. Verify in headless Chromium, not by reading the code: add or extend a test in `tests/`.
+5. Verify in headless Chromium, not by reading the code: run the suites of the area you changed (`node tests/run.mjs <name>`),
+   or a check script of your own in `tests/tmp/` (gitignored) that you throw away. **Basic tests, not bulletproof ones**
+   (Michael, 20 Oct 2026): this is a game made for fun, and every suite boots the whole game. Add a suite to `tests/` only
+   for something that would hurt to lose unnoticed (a save, a crash, a rule of play other systems lean on); otherwise extend
+   one that exists, or keep the check to yourself. A picture for Michael is not a suite.
    The scene runs at a few fps on software GL, so drive time with `g.spin()` (fixed 1/60 ticks), not timeouts.
 6. Do not touch the build tag. The `stamp` workflow bumps it on main after each merge (the tag in the controls line is how
    Michael confirms which build he's running, and it now counts landings). Every branch bumping the same line was why each
@@ -111,7 +116,7 @@ Session 368 built the tooling and Session 379 cut the file (1 Oct 2026); Session
     scale. A builder that sizes a person, a door or a storey reads it here. The gameplay ranges (reach, sight, sneak, jumps) are F2b's.
   - `10-player.js` renderer boot (`REN`, `CAM`, `VM_SCENE`), player state (`px/pz/PHP`…), roll, posture, lock-on, sneak,
     bow, `ANIM_PARAMS`. `12-character.js` `ATTRS`, `ARCHETYPES`, level-up. `14-items.js` `EQ`, `BAG`, `MATERIALS`,
-    `WEAPON_TYPES`, `BOOKS`, enchants, `makeItem`, loot tables. `16-viewmodel.js` first-person hands and weapons.
+    `WEAPON_TYPES`, `BOOKS`, enchants, `makeItem`, loot tables. `16-viewmodel.js` first-person hands and weapons; on the new look the hands are cut from the player's builder body (`fpHBFist`, `fpHBBake`, `FP_HB`; F10, Session 1252).
   - `20-quests.js` `mkTex`/`TX`/`MAT`, `showMsg`, `doFade`, the legacy heightmap, `WORLD_DUNGEONS`, `PORTALS`, `QUEST_DEFS`,
     `QS`, journal, compass, markers. `22-dialogue.js` `NPC_DEF`, `SHOP_DIALOG`, `openDialog`, `talkNPC`, `HOUSES`,
     `SHOP_STOCK`, `worldState`, `ZONES`, `MAP_NODES`, `activeZoneId`. `24-forts.js` `FORT_EXTERIORS` data.
@@ -125,7 +130,7 @@ Session 368 built the tooling and Session 379 cut the file (1 Oct 2026); Session
     `tickZoneEnemies`, `killZoneEnemy`. `44-legacy-towns.js` `PROP_BUILDERS`, wilderness, forest, `buildTown`, Ironhaven,
     `ZONE_BUILDERS`, `registerPlaceholderZone`.
   - `50-travel.js` `goToZone`, fast travel, buffs, herbs, the clock, `forceTime`, day/night, respawn, `interact`.
-    `52-dungeon-gen.js` `FOOTHOLDS`, `INT_BEDS`, `makeDungeon`, `dSolid`. `54-thirdperson.js` `TP`, `tpBuild/tpPose/tpCamera`.
+    `52-dungeon-gen.js` `FOOTHOLDS`, `INT_BEDS`, `makeDungeon`, `dSolid`. `54-thirdperson.js` `TP`, `tpBuild/tpPose/tpCamera`; on the new look the player's own body is the builder's (card F10, Session 1246): the genome saved in `worldState.look.hb` (`lookHBGenome`; the creator's Body, Height and Build rows), dressed from `EQ` (`tpHBDress`), attached by F4's `hbAttach` at the genome's own stature and posed by `tpHBPose` (what the hands hold rides as copies, `tpHBHold`). `tpEnsure` builds the body for the kit worn now, and a change of kit that leaves the dressed genome alone carries the builder's body over (`tpBuild`'s `reuse`, Session 1252).
     `56-dungeon-build.js` the dungeon shell, `furnBuild`, `buildDungeon`, `goToDungeon`, `goToOW`.
     `58-interiors-legacy.js` room kits, `buildInterior`, `goToInterior`, `exitInterior`.
   - `60-shop.js` shop, loot, stash, sleep, buy/sell. `62-actions.js` `doBash`, `attack`, `fireArrow`, `killE`, `castSpell`,
@@ -170,14 +175,15 @@ Sessions started from claude.ai/code or the Claude app run on a fresh checkout o
 `scripts/cloud-setup.sh` (a SessionStart hook in `.claude/settings.json`) installs Playwright and
 Chromium there; locally it does nothing. A cloud session can only push its own branch, not `main`:
 commit there and open a PR. **How a PR lands (Michael's A on the pipeline and his B on approvals, 19 Oct 2026;
-`docs/pipeline.md`):** CI runs only the suites the change can reach (`tests/lib/select.mjs`; a docs-only PR runs none) and
-reports one check, `gate`. The `automerge` workflow merges a PR the minute `gate` is green and it merges cleanly. **Michael
+`docs/pipeline.md`; basic tests, Michael 20 Oct 2026):** CI runs the smoke set and the suites the PR adds or edits
+(`tests/lib/select.mjs`, about ten minutes; a docs-only PR runs none) and reports one check, `gate`. The `automerge` workflow merges a PR the minute `gate` is green and it merges cleanly. **Michael
 decides designs, not merges:** a PR that builds what he has already decided needs no tap. Two exceptions wait for him: a PR
 labelled `hold` (put it on anything you want his eyes on first, and say why in the PR), and a PR that changes the pipeline
 itself (`.github/`, `tests/lib/`, `tests/run.mjs`, `scripts/automerge.mjs`), which merges on the comment
 `Approved by Michael: <sha>`, posted by the producer when he taps Approve. An open design question is still a `DECISION:`
-before anything is built. Main runs every suite after each merge: a red on main is the next run's first job for the builder
-that owns it, and the producer reverts the merge if it is not fixed within the day.
+before anything is built. Every suite runs once a week (Sunday 06:00 UTC), not after each merge: the producer files each
+red of that run in the backlog's section I for the builder that owns it, who fixes it in their next run. Nothing is reverted
+for it. To run every suite on a branch before it lands, run `check` by hand on that branch (Actions, check, Run workflow).
 Only the producer routine notifies Michael (PushNotification) or writes to the control room; every other session,
 cloud or local, raises questions as a `DECISION:` issue (below; the producer copies them into
 `docs/decisions.md`, the one writer of that file) and stays silent — the producer
