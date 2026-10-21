@@ -14,7 +14,7 @@ for (const id of ids) {
   await page.waitForTimeout(4500); await g.hide();
   const r = await page.evaluate(async (wantSeen) => { const wait = ms => new Promise(r => setTimeout(r, ms)); const X = WORLD.intBox; if (!X) return null;
     px = X.x; pz = X.z + .8; jumpY = 0; lookAtPt(X.x, .3, X.z); const K_ = intNPCMesh; if (K_) { K_.userData.amble = null;
-      /* S1266 — for the seen theft, the keeper stands where they see the box: on the old look one room of Dunmore's had it so by its layout (Cathal's), on the new look none does, and the cone is keepercone's, not this suite's */
+      /* S1267 — for the seen theft, the keeper stands where they see the box: on the old look one room of Dunmore's had it so by its layout (Cathal's), on the new look none does, and the cone is keepercone's, not this suite's */
       if (wantSeen) for (const [ox, oz] of [[0, 1.5], [1, 1.2], [-1, 1.2], [0, 2.2], [1.5, .8], [-1.5, .8], [0, -1.5], [1.2, -.6], [-1.2, -.6], [1.5, 0], [-1.5, 0]]) { const kx = px + ox, kz = pz + oz; if (!intSolidAt(kx, kz) && intSightLine(kx, kz, px, pz, true)) { K_.position.x = kx; K_.position.z = kz; break; } }
       K_.rotation.y = Math.atan2(px - K_.position.x, pz - K_.position.z); } // (S368: the keeper stands and watches the box: the cone is keepercone's, the fine and the guard are this test's)
     const seenHere = !!WORLD.witnessOf(window._h);

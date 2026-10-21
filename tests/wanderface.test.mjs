@@ -20,7 +20,7 @@ await page.evaluate(() => { window._drive = (step, max) => {
 const KINDS = ['Bandit', 'Wolf', 'Skeleton', 'Troll'];
 // 1. the body and the cone follow the walk
 const walk = await page.evaluate((KINDS) => { forceTime(12); const t = WORLD.siteAnywhere('dunmore'); px = t.x + 120; pz = t.z + 120; yaw = 0;
-  // S1263: each home on open ground, the 3-unit circle it walks clear of solids. The fixed spots (+40 + 9i, +40) put the Wolf
+  // S1265: each home on open ground, the 3-unit circle it walks clear of solids. The fixed spots (+40 + 9i, +40) put the Wolf
   // inside a solid on the new look, where it could not take a step and the check measured nothing
   const open = (x, z) => { for (let r = 0; r <= 4; r += 1) for (let a = 0; a < 12; a++) if (currentZoneSolid(x + Math.sin(a * Math.PI / 6) * r, z + Math.cos(a * Math.PI / 6) * r)) return false; return true; };
   const home = (i) => { for (let k = 0; k < 20; k++) { const x = t.x + 40 + i * 9, z = t.z + 40 + k * 3; if (open(x, z)) return [x, z]; } return [t.x + 40 + i * 9, t.z + 40]; };

@@ -17,7 +17,7 @@ const state = () => page.evaluate(() => { const c = (worldState.crime || {}).dun
 // the crime: a shop door picked at 23h with someone three units off in the street (as `crime2` stages it)
 const crime = await page.evaluate(() => { forceTime(23); worldState.crime = {}; worldState.church = { notes: [] }; const S = WORLD.settle.get('dunmore');
   const F = WORLD.fstate(); F.crown.done = 6; F.crown.rank = 2; F.crown.active = null;
-  /* S1264 — a shop whose street is open three units out, where the witness stands: on the new look Dunmore's forge is 6.45 by 8 and the house across its lane starts 2.2 out, so the first shop put the witness inside a wall */
+  /* S1266 — a shop whose street is open three units out, where the witness stands: on the new look Dunmore's forge is 6.45 by 8 and the house across its lane starts 2.2 out, so the first shop put the witness inside a wall */
   const open3 = (x) => { const dx = x.exitX - x.doorX, dz = x.exitZ - x.doorZ, L = Math.hypot(dx, dz) || 1; for (let t = .8; t <= 3.31; t += .1) if (solidAt(x.doorX + dx / L * t, x.doorZ + dz / L * t)) return false; return true; };
   const shops = S.houses.filter(x => /weapon|armor|potion|misc/.test(x.type) && x.keeper), h = shops.find(open3) || shops[0]; const w = S.npcs.find(n => n.sched && n.sched.type !== 'guard') || S.npcs[0];
   S.npcs.forEach(n => { n.g.visible = false; });
