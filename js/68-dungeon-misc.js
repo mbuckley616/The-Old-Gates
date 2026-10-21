@@ -17,7 +17,11 @@ function _sweepScenePool(scene){
 // v80 — look-at looting: a container counts only when it's under the crosshair (within ~14°) and within reach (3u)
 const _laDir=new THREE.Vector3(),_laTo=new THREE.Vector3();const _ray=new THREE.Raycaster();
 // aimAt: true when the crosshair ray hits this object's mesh within reach — the interaction is the mesh, not an area
-function aimAt(obj,reach){const m=obj&&(obj.mesh||obj.g||obj.group||obj.obj);if(!m)return false;CAM.getWorldDirection(_laDir);_ray.set(CAM.position,_laDir);_ray.camera=CAM;const _tpb=thirdPerson?TP.dist:0;_ray.far=(reach||3.2)+_tpb;_ray.near=Math.max(0,_tpb-.35);const hits=_ray.intersectObject(m,true);if(hits.length>0)return true;
+// S1269 — three's ray is cast at the plain meshes only. On 0.170 it skins every vertex of a SkinnedMesh on the CPU to test it (the
+// builder's people: every level, shown or not), 235 ms a frame with one person in reach on CI's CPU; a skinned body is skinAimed's
+const _aimList=[];
+function aimAt(obj,reach){const m=obj&&(obj.mesh||obj.g||obj.group||obj.obj);if(!m)return false;CAM.getWorldDirection(_laDir);_ray.set(CAM.position,_laDir);_ray.camera=CAM;const _tpb=thirdPerson?TP.dist:0;_ray.far=(reach||3.2)+_tpb;_ray.near=Math.max(0,_tpb-.35);
+  _aimList.length=0;m.traverse(o=>{if(!o.isSkinnedMesh)_aimList.push(o);});const hits=_aimList.length?_ray.intersectObjects(_aimList,false):_aimList;_aimList.length=0;if(hits.length>0)return true;
   return skinAimed(obj,m,_ray.near,_ray.far);}
 // S596 — a skinned body (every townsperson since S153) is invisible to three's raycast for the reason S417 gives below, so
 // aimAt never met a townsperson: no *Press 'E' to talk* and no talk cue facing one in the open world. The ray is tested
