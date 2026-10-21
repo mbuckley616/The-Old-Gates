@@ -9,8 +9,8 @@ once every two hours. Michael chose A: fix all five.
 ## What CI does now (basic tests, Michael in chat, 20 Oct 2026)
 Michael: "This is a game I am making for fun, and do not plan to ever charge for. We don't need bulletproof testing in this
 manner. Why can't we just have basic tests?" Every suite boots the whole game on software GL; 522 of them came to 709
-runner-minutes, run on main after each merge on all twenty of the free plan's runners, and the PRs queued 8 to 31 minutes
-behind each one. So:
+runner-minutes, run on main after each merge in 20 shards from the account's one pool of runners (shared with Airsoft),
+and the PRs queued 8 to 31 minutes behind each one. So:
 - **A pull request runs the smoke set and the suites it adds or edits** (`tests/lib/select.mjs`): `looknew`, `saves`,
   `resolver`, `player`, `dungeon`, `autosave`, about eleven minutes of suites in two short shards. The selection by the
   names a change reaches (19 Oct, `tests/lib/toplevel.cjs`) is gone.
