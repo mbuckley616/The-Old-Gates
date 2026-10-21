@@ -1697,7 +1697,11 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       const gl=new THREE.PointLight(0xffaa44,.9,gd*1.5);gl.position.set(W/2,gy+1.2,gd/2);sc_.add(gl);
     }
     // ── trade furnishing ────────────────────────────────────────────────
-    let npc={x:W/2,z:2.2,maxZ:Math.min(D*.55,4.5),paused:false}; /* S387 — behind the counter (z 2.6–3.4), not on its edge */
+    // S1258 — a shop with the keeper's room has it at the back, behind the counter: the shop is laid out as a room BZ shorter and
+    // moved BZ south (below, after the trade's branch), so the street door opens on the shop and not on the keeper's bed and
+    // strongbox (the critic's s782: you came in 2.2 m from the box, the keeper 7.8 m off beyond a shut door)
+    const SHOPS=['weapon','armor','potion','misc','shipwright','goods','forge','apothecary','armoury'],BZ=SHOPS.includes(type)&&!gallery&&D>=7?3.2:0,DS=D-BZ,n0=sc_.children.length,s0=SOL.length,f0=FOOTHOLDS.length;
+    let npc={x:W/2,z:2.2,minZ:.6,maxZ:Math.min(D*.55,4.5),paused:false}; /* S387 — behind the counter (z 2.6–3.4), not on its edge */
     // S289 — every shop's counter is the kit's panelled counter, bare (the bar without its tankards), its own small bake
     const counter=()=>{const K=furnKit(),c=K.bake(K.counter(W*.5,FN,FSEED+5,true));c.position.set(W/2,0,3.0);c.userData.furn=true;sc_.add(c);furnSwap(c);solid(W/2,3.0,W*.25+.1,.4,1.05);house._counterFront=3.4*KR;}; /* S896 — its front edge in true metres, for the arrival spot (intArrivalZ) */
     // A finished table: thick plank top with a lip, aprons, turned legs, and benches if asked.
@@ -1712,26 +1716,27 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     if(type==='weapon'){
       // S289 — the smithy on the kit (#46 A): a coursed forge with a hood, chimney and bellows, an anvil on a stump, a quench
       // tub, racks of the weapon kit's blades and hafts on the east wall, a grindstone, a dagger on the counter; one bake
-      {const K=furnKit(),room=K.bake(K.smithy(W,D,H,FN,FSEED));room.userData.furn=true;sc_.add(room);furnSwap(room);}
+      {const K=furnKit(),room=K.bake(K.smithy(W,DS,H,FN,FSEED));room.userData.furn=true;sc_.add(room);furnSwap(room);}
       solid(1.2,1.4,.9,.8,1.2);light(1.2,1.0,2.0,0xff6a20,1.6,6);solid(W-2.0,1.6,.3,.3,1.0);solid(W-.75,3.9,.3,.3,.7);
       counter();
     } else if(type==='armor'){
       // S290 — the armourer on the kit (#46 A): three stands (plate, leather, mail) with helms, the kit's shields on the
       // east wall in front of the back room, a bench with leather, rivets and a mallet; one bake
-      {const K=furnKit(),room=K.bake(K.armoury(W,D,H,FN,FSEED));room.userData.furn=true;sc_.add(room);furnSwap(room);}
-      {const A=furnKit().armouryAt(W,D);A.stands.forEach(x=>solid(x,1.6,.25,.25,1.8));solid(A.bench,1.6,.7,.3,.76);} /* S896 — the kit's places */
+      {const K=furnKit(),room=K.bake(K.armoury(W,DS,H,FN,FSEED));room.userData.furn=true;sc_.add(room);furnSwap(room);}
+      {const A=furnKit().armouryAt(W,DS);A.stands.forEach(x=>solid(x,1.6,.25,.25,1.8));solid(A.bench,1.6,.7,.3,.76);} /* S896 — the kit's places */
       counter();
     } else if(type==='potion'){
       // S290 — the apothecary on the kit: three shelves of bright potions, herbs hung drying, the still (an iron cauldron
       // glowing green over a small fire, a copper alembic), a mortar and pestle on the counter; one bake
-      {const K=furnKit(),room=K.bake(K.apothecary(W,D,H,FN,FSEED));room.userData.furn=true;sc_.add(room);furnSwap(room);}
+      {const K=furnKit(),room=K.bake(K.apothecary(W,DS,H,FN,FSEED,BZ>0));room.userData.furn=true;sc_.add(room);furnSwap(room);}
       light(W-1.6,1.3,1.8,0x60ff80,1.0,5);solid(W-1.6,1.8,.4,.4,1.0);
       counter();
     } else if(type==='misc'||type==='shipwright'){
       // S290 — the general goods on the kit: crates, sacks tied at the neck, shelves of pots, bowls and plates, a balance on
       // the counter; the barrels are the interiors' kit barrel. The sacks stood in the back room; now in front of it
-      {const K=furnKit(),room=K.bake(K.goods(W,D,H,FN,FSEED));room.userData.furn=true;sc_.add(room);furnSwap(room);}
-      _intBarrel(sc_,W-1.0,1.2);_intBarrel(sc_,W-1.9,1.1);_intBarrel(sc_,W-1.4,2.0);
+      {const K=furnKit(),room=K.bake(K.goods(W,DS,H,FN,FSEED,BZ>0));room.userData.furn=true;sc_.add(room);furnSwap(room);}
+      if(BZ){_intBarrel(sc_,.6,DS-.7);_intBarrel(sc_,.6,DS-1.45);_intBarrel(sc_,1.3,DS-.75);} /* S1258 — by the street door, west: the east end of the back wall is the keeper's room's door */
+      else{_intBarrel(sc_,W-1.0,1.2);_intBarrel(sc_,W-1.9,1.1);_intBarrel(sc_,W-1.4,2.0);}
       counter();
     } else if(type==='inn'){
       // S287 — the taproom on the kit (#46 A): a panelled bar with a brass rail and stools, the dresser of bottles and plates
@@ -1880,20 +1885,24 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       if(/cooper/i.test(house.roleTag||'')){_intBarrel(sc_,.5,D-.5);_intBarrel(sc_,.5,D-1.15);}
       npc={x:W*.3,z:D*.62,maxZ:Math.min(D*.75,5),paused:false};
     }
+    if(BZ){for(const o of sc_.children.slice(n0))o.position.z+=BZ;for(const q of SOL.slice(s0)){q.z0+=BZ;q.z1+=BZ;}for(const q of FOOTHOLDS.slice(f0)){q.z0+=BZ;q.z1+=BZ;} /* S1258 — the shop south of the keeper's room */
+      npc.z+=BZ;npc.minZ+=BZ;npc.maxZ+=BZ;if(house._counterFront!=null)house._counterFront+=BZ*KR;}
+    house._shopZ=BZ; /* S1258 — where the shop's own layout starts, in the kit's unit (the suites read the forge, the counter and the rest by it) */
     // v80 S131 — interior variety: the shopkeeper's room behind a partition; private rooms at the inn; the coaching inn's board and tack
     try{
-      const SHOPS=['weapon','armor','potion','misc','shipwright','goods','forge','apothecary','armoury'];
       const partition=(z0,x0,x1,doorX,y0,y1)=>{const hh=y1-y0;for(const [a,b] of [[x0,doorX-.6],[doorX+.6,x1]]){if(b-a<.2)continue;boxRaw((a+b)/2,y0+hh/2,z0,b-a,hh,.18,0x5a4630);SOL.push({x0:a,x1:b,z0:z0-.09,z1:z0+.09,y0,y1});}
         boxRaw(doorX,y1-.12,z0,1.3,.24,.22,0x3a2a18);
         intDoorAt(sc_,SOL,doorX,z0,y0,Math.PI/2,0x3a2a18);}; // v80 S143 — the back room gets a door
       const sideWall=(x0,z0,z1,y0,y1)=>{boxRaw(x0,(y0+y1)/2,(z0+z1)/2,.18,y1-y0,z1-z0,0x5a4630);SOL.push({x0:x0-.09,x1:x0+.09,z0,z1,y0,y1});};
-      if(SHOPS.includes(type)&&!gallery&&D>=7){ /* S896 — 7 in the rooms' old unit (a shop of true size is 7.5 to 8.5 deep with the keeper's room); it was 9 */
-        const z0=D-3.2,doorX=W*.3;partition(z0,0,W,doorX,0,ceil); /* S896 — the front room is 7 m deep at least, so the door's swing (1.34) clears the counter */
-        _intBed(sc_,W-.55,D-1.0,'S');bedAt(W-.55,D-1.0,0);solid(W-.55,D-1.0,.5,1.0,.5); /* S896 — the keeper's room of true size: the bed down the east wall, the table at its head, the way from the door to the shop clear */
-        _intCrate(sc_,1.0,.25,D-.9,.5);_intCrate(sc_,1.55,.25,D-.9,.42);box(W-1.6,.68,D-1.6,.8,.06,.6,0x7a4818);box(W-1.6,.34,D-1.6,.08,.62,.08,0x5a3010);solid(W-1.6,D-1.6,.4,.3,.7);
-        box(W*.62,.02,D-1.6,1.6,.03,1.4,[0x6a2a2a,0x2a3a5a,0x5a4a2a][(W|0)%3]);light(W*.6,1.4,D-1.6,0xffb070,.7,5);
-        house._backRoom=true;
-      }
+      if(BZ){ /* S896 — 7 in the rooms' old unit (a shop of true size is 7.5 to 8.5 deep with the keeper's room); it was 9 */
+        // S1258 — the keeper's room is the north end, z 0 to BZ, behind the counter; its door at the end of the back wall the trade
+        // leaves clear (the forge and the apothecary's and goods' shelves stand against it), the bed and the strongbox at the other
+        const east=type==='weapon'||type==='misc'||type==='shipwright'||type==='goods'||type==='forge',mx=x=>east?W-x:x,doorX=mx(.8);partition(BZ,0,W,doorX,0,ceil);
+        _intBed(sc_,mx(W-.55),1.0,'N');bedAt(mx(W-.55),1.0,0);solid(mx(W-.55),1.0,.5,1.0,.5); /* S896 — the keeper's room of true size: the bed down the side wall, the table at its foot, the way from the door clear */
+        _intCrate(sc_,mx(1.0),.25,.9,.5);_intCrate(sc_,mx(1.55),.25,.9,.42);box(mx(W-1.6),.68,1.6,.8,.06,.6,0x7a4818);box(mx(W-1.6),.34,1.6,.08,.62,.08,0x5a3010);solid(mx(W-1.6),1.6,.4,.3,.7);
+        if(!hasCellar(house))box(mx(W*.62),.02,1.6,1.6,.03,1.4,[0x6a2a2a,0x2a3a5a,0x5a4a2a][(W|0)%3]);light(mx(W*.6),1.4,1.6,0xffb070,.7,5);
+        house._backRoom=true;house._backEast=east;
+      }else house._backRoom=false;
       if(type==='inn'){
         if(!gallery){const z0=D-3.0,mid=W/2;sideWall(mid,z0,D,0,ceil);
         [[0,W*.25-.6],[W*.25+.6,W*.75-.6],[W*.75+.6,W]].forEach(([a,b])=>{boxRaw((a+b)/2,ceil/2,z0,b-a,ceil,.18,0x5a4630);SOL.push({x0:a,x1:b,z0:z0-.09,z1:z0+.09,y0:0,y1:ceil});});[W*.25,W*.75].forEach(dx=>boxRaw(dx,ceil-.12,z0,1.3,.24,.22,0x3a2a18));
@@ -1911,9 +1920,9 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
           house._coaching=true;}
       }
     }catch(e){console.warn('interior variety',e);}
-    if(hasCellar(house)){const hx=type==='inn'?(galleryEast(house)?.9:W-.9):type==='home'?W*.5:Math.min(W-1.6,3.2),hz=type==='inn'?D-.8:type==='home'?D*.72:D-2.6; /* S896 — by the door, off the stair and the tables, in the rooms of true size */boxRaw(hx,.06,hz,1.1,.08,1.1,0x3a2612);const ring=new THREE.Mesh(new THREE.TorusGeometry(.12,.025,5,10),new THREE.MeshLambertMaterial({color:0x2a2622}));ring.position.set(hx+.3,.12,hz);ring.rotation.x=Math.PI/2;sc_.add(ring);house._hatch={x:hx,z:hz};HATCH.x=hx;HATCH.z=hz;HATCH.y=0;HATCH.active=true;}
+    if(hasCellar(house)){const hx=type==='inn'?(galleryEast(house)?.9:W-.9):type==='home'?W*.5:BZ?(house._backEast?W-2.15:2.15):Math.min(W-1.6,3.2),hz=type==='inn'?D-.8:type==='home'?D*.72:BZ?1.8:D-2.6; /* S896 — by the door, off the stair and the tables, in the rooms of true size; S1258 — a shop's in the keeper's room, between the crates, the table and the door's swing, where the rug was */boxRaw(hx,.06,hz,1.1,.08,1.1,0x3a2612);const ring=new THREE.Mesh(new THREE.TorusGeometry(.12,.025,5,10),new THREE.MeshLambertMaterial({color:0x2a2622}));ring.position.set(hx+.3,.12,hz);ring.rotation.x=Math.PI/2;sc_.add(ring);house._hatch={x:hx,z:hz};HATCH.x=hx;HATCH.z=hz;HATCH.y=0;HATCH.active=true;}
     // v80 S155 — a shop's strongbox in the back room (or behind the counter), a home's small chest: locked, and worth something
-    if(BOX_KINDS.includes(type)||type==='home'){const home=type==='home';let bx=home?W-.45:(house._backRoom?W-.45:W-.6),bz=home?D-.6:(house._backRoom?D-2.75:D*.55),bry=home||house._backRoom?-Math.PI*.5:Math.PI; /* S896 — a home's in the south-east corner, the room's width from the bed (a sleeper hears 2 m); a shop's in the keeper's room against the east wall, just behind the partition and clear of its door's swing */
+    if(BOX_KINDS.includes(type)||type==='home'){const home=type==='home';let bx=home?W-.45:(house._backRoom?(house._backEast?.45:W-.45):W-.6),bz=home?D-.6:(house._backRoom?BZ-.85:D*.55),bry=home||house._backRoom&&!house._backEast?-Math.PI*.5:house._backRoom?Math.PI*.5:Math.PI; /* S896 — a home's in the south-east corner, the room's width from the bed (a sleeper hears 2 m); S1258 — a shop's in the keeper's room against the side wall away from its door (out of the doorway's line from the shop), past the bed's foot and a step in from the partition */
       // S590 — the barber stands still at his chair facing into the room (+z), so his box goes where the 6-unit indoor witness and his
       // 120° cone cover every spot it opens from (1.6 round it): the wall-most free spot in front of him whose worst spot on that ring is
       // within 5.6 of him and 50° of his face (the critic, 6 Oct: at W−1, D×.55 it stood 6.8–8.5 from him and was picked unseen at noon).
@@ -1939,7 +1948,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     const roleName=type==='church'?'Priest':type==='home'?'Resident':type==='inn'?'Innkeeper':type==='castle'?'Steward':type==='guild_f'?'guard':type==='guild_m'?'scholar':'Merchant';
     const g=buildNPCMesh({role:roleName,name:house.keeper,_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
     g.rotation.y=type==='church'?0:Math.PI;g.position.set(npc.x,0,npc.z);sc_.add(g);intNPCMesh=g;intNPCPos={x:npc.x,z:npc.z};
-    intNPCMesh.userData.amble={wa:Math.random()*Math.PI*2,wt:1+Math.random()*3,minZ:.6*KS,maxZ:npc.maxZ,minX:.8*KS,maxX:W-.8*KS,speed:.25,paused:npc.paused};
+    intNPCMesh.userData.amble={wa:Math.random()*Math.PI*2,wt:1+Math.random()*3,minZ:(npc.minZ!=null?npc.minZ:.6)*KS,maxZ:npc.maxZ,minX:.8*KS,maxX:W-.8*KS,speed:.25,paused:npc.paused};
     if(homeAsleepNow(house))laySleeper(intNPCMesh); /* S739 — asleep in bed, 23h to 5h (#240 A) */
     } else {intNPCMesh=null;intNPCPos={x:-99,z:-99};}
     return sc_;
