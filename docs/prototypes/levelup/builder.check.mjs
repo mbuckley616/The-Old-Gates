@@ -944,6 +944,32 @@ if (!process.argv.includes('--shots-only')) { const page = await browser.newPage
   check(`the border's foot is where it was over the front (within ${e.front} mm of .578 within 45° of the middle) and rises at most ${e.lift} mm at the back of the shoulders; the band's own depth down the cloth is ${e.len[0]}–${e.len[1]} cm (2.8), the woven bands' ${e.len[2]}–${e.len[3]} (2.6)`,
     e.front < 1 && e.lift > 5 && e.lift < 15 && Math.abs(e.len[0] - 2.8) < .25 && Math.abs(e.len[1] - 2.8) < .25 && Math.abs(e.len[2] - 2.6) < .25 && Math.abs(e.len[3] - 2.6) < .25, e);
   check('the neck\'s border: no page errors', errs.length === 0, errs.slice(0, 3)); await page.close(); }
+// the Aurennais' burnous (Session 1236, OG-109's Aurenne winter): over the robe a cloak striped in the burnous stripe's colour, 34 repeats round
+// the neck, its raised hood drawn out to a point 10 cm or more behind the crown with a tassel hanging from it, striped 17 round the head off
+// the rest position; the cloak hangs as a plain one does, tied with a knot of cord in place of the brooch; the hood the same triangles and
+// as close (nothing of the head or the hair through it); the hood down striped and with no tassel; nothing without a cloak; rolled on no one
+if (!process.argv.includes('--shots-only')) { const page = await browser.newPage({ viewport: { width: 640, height: 360 } }); const errs = []; page.on('pageerror', e => errs.push(String(e)));
+  await page.goto(`http://localhost:${port}/builder.html?still&w=640&h=360&seed=check`); await page.waitForFunction(() => window.__done || window.__err, null, { timeout: 300000 });
+  const b = await page.evaluate(async () => { const K = await import('./people.js'), G0 = K.rollGenome('bn1', { g: 1, people: 'aurennais' }), cream = [.86, .81, .71];
+    const mk = extra => { const g = { ...G0, dress: { ...G0.dress, robe: cream, tunic: cream, cloak: cream, hood: 'up', cloakLen: 1, wrap: null, sash: null, cloakFur: null, tartan: null, ...extra } }; return { g, p: K.makePerson(g) }; };
+    const key = (p, n) => { const m = p.root.getObjectByName(n); return m ? m.material.customProgramCacheKey() : null; }, has = (p, n) => !!p.root.getObjectByName(n);
+    const B = mk({ burnous: true, burnousStripe: [.36, .24, .15] }), Pl = mk({}), Dn = mk({ burnous: true, burnousStripe: [.36, .24, .15], hood: 'down' }), No = mk({ burnous: true, burnousStripe: [.36, .24, .15], cloak: null, hood: null });
+    // the tassel's threads clear of the hood: every point of them more than 4 cm under the point is at least 5 mm from the hood's (both in the rest pose)
+    const hood = B.p.root.getObjectByName('hoodUp').geometry.attributes.position.array, tas = B.p.root.getObjectByName('tassel').geometry.attributes.position.array; let tip = -1e9; for (let i = 1; i < tas.length; i += 3) tip = Math.max(tip, tas[i]);
+    let near = 1, low = tip, n = 0; for (let i = 0; i < tas.length; i += 3) { low = Math.min(low, tas[i + 1]); if (tas[i + 1] > tip - .04) continue; n++; for (let j = 0; j < hood.length; j += 3) near = Math.min(near, Math.hypot(tas[i] - hood[j], tas[i + 1] - hood[j + 1], tas[i + 2] - hood[j + 2])); }
+    const s1 = JSON.stringify(K.toSaved(B.g)), back = JSON.stringify(K.toSaved(K.fromSaved(JSON.parse(s1))));
+    let rolled = 0; for (const k of ['aurennais', 'gatelander', 'markman', 'oldblood']) for (let i = 0; i < 15; i++) if (K.rollGenome('bn:' + k + i, { people: k }).dress.burnous) rolled++;
+    return { hood: B.p.hood, plain: Pl.p.hood, cloak: B.p.cloak, plainCloak: Pl.p.cloak, keys: { cloak: key(B.p, 'cloak'), hood: key(B.p, 'hoodUp'), plain: key(Pl.p, 'cloak'), down: key(Dn.p, 'hood') },
+      knot: has(B.p, 'knot'), brooch: has(B.p, 'brooch'), plainKnot: has(Pl.p, 'knot'), downTassel: has(Dn.p, 'tassel'), downHood: has(Dn.p, 'hood'), none: { knot: has(No.p, 'knot'), tassel: has(No.p, 'tassel'), cloak: has(No.p, 'cloak') },
+      near: +near.toFixed(4), hang: +(tip - low).toFixed(3), threads: n, saved: s1 === back && s1.includes('"burnous":true') && s1.includes('"burnousStripe"'), rolled }; });
+  check(`the burnous's hood comes to a point ${(b.hood.tip?.[1] * 100).toFixed(1)} cm behind the head's middle and ${(b.hood.tip?.[0] * 100).toFixed(1)} cm over it, a tassel of ${b.hood.tassel} triangles hanging ${(b.hang * 100).toFixed(1)} cm from it, its threads ${(b.near * 1000).toFixed(1)} mm or more off the hood`,
+    b.hood.tip && b.hood.tip[1] > .2 && b.hood.tip[0] > .1 && b.hood.tassel > 200 && b.hang > .08 && b.near > .005 && b.threads > 50, { tip: b.hood.tip, tassel: b.hood.tassel, hang: b.hang, near: b.near, threads: b.threads });
+  check(`the burnous's hood is the plain hood's ${b.plain.tris} triangles, nothing of the head or hair through it (${b.hood.poke} of ${b.hood.tested}); the plain hood has no point and no tassel`, b.hood.tris === b.plain.tris && b.hood.poke === 0 && b.hood.tested > 1000 && !b.plain.tip && !b.plain.tassel, { burnous: [b.hood.tris, b.hood.poke, b.hood.tested], plain: [b.plain.tris, b.plain.tip, b.plain.tassel] });
+  check('the burnous is striped: the cloak round the neck (34 repeats), the raised hood off the rest position, the hood down; a plain cloak is not', /stripefalsefalse/.test(b.keys.cloak) && /stripefalsetrue/.test(b.keys.hood) && /stripe/.test(b.keys.down) && !/stripe/.test(b.keys.plain), b.keys);
+  check(`the burnous hangs as the plain cloak does (${b.cloak.rows} rows, hem ${b.cloak.hemDrop} under the neck, ${b.cloak.under} points under the body), tied with a knot of cord and no brooch`, b.cloak.rows === b.plainCloak.rows && b.cloak.hemDrop === b.plainCloak.hemDrop && b.cloak.under === 0 && b.knot && !b.brooch && !b.plainKnot, { cloak: [b.cloak.rows, b.cloak.hemDrop, b.cloak.under], plain: [b.plainCloak.rows, b.plainCloak.hemDrop] });
+  check('the burnous with its hood down: the hood rolled on the back, no tassel; with no cloak: nothing of it built', b.downHood && !b.downTassel && !b.none.knot && !b.none.tassel && !b.none.cloak, { down: [b.downHood, b.downTassel], none: b.none });
+  check(`the burnous saves and loads back; rolled on no one (${b.rolled} of 60 across the four peoples): when it is worn is the season's`, b.saved && b.rolled === 0, { saved: b.saved, rolled: b.rolled });
+  check('the burnous: no page errors', errs.length === 0, errs.slice(0, 3)); await page.close(); }
 const shotArg = process.argv.find(a => a.startsWith('--shots') && a !== '--shots-only');
 if (shotArg) { const only = shotArg.split('=')[1];
   const shot = async (name, q, w = 1920, h = 1080, panel = false, crop = null) => { if (only && !only.split(',').some(o => name.includes(o))) return; const page = await browser.newPage({ viewport: { width: w, height: h } }); const errs = []; page.on('pageerror', e => errs.push(String(e)));
@@ -1253,6 +1279,13 @@ if (shotArg) { const only = shotArg.split('=')[1];
     await shot('sleeve-front', 'people=aurennais&seed=gw1&sex=f&view=hand&zoom=.7&turn=.6&dress=' + dq(red)); await shot('sleeve-under', 'people=aurennais&seed=gw1&sex=f&view=hand&zoom=.7&turn=-1.2&dress=' + dq(red));
     await shot('sleeve-cuff', 'people=aurennais&seed=gw1&sex=f&view=hand&zoom=.7&turn=.6&dress=' + dq({ ...bare, tunic: [.3, .4, .6], cuffs: [.5, .2, .15], cuffBand: [.8, .7, .3] }));
     await shot('sleeve-robe', 'people=aurennais&seed=st1&sex=m&view=hand&zoom=.7&turn=.6&dress=' + dq({ robe: [.85, .8, .7], tunic: [.85, .8, .7], robeStripe: [.15, .2, .45], cord: [.6, .2, .1] })); }
+  // the Aurennais' burnous (Session 1236, OG-109's Aurenne winter): undyed with brown stripes over the robe, hood up, from the front, the side
+  // and behind; a brown one with dark stripes with its hood down, from behind; a woman in indigo over her gown
+  { const dq = d => encodeURIComponent(JSON.stringify(d)), cream = [.86, .81, .71], bu = { robe: cream, tunic: cream, cloak: cream, hood: 'up', cloakLen: 1, wrap: null, sash: null, burnous: true, burnousStripe: [.36, .24, .15] };
+    await shot('burnous-front', 'people=aurennais&seed=bn1&sex=m&view=full&turn=.4&dress=' + dq(bu)); await shot('burnous-side', 'people=aurennais&seed=bn1&sex=m&view=head&zoom=.6&turn=1.9&dress=' + dq(bu));
+    await shot('burnous-back', 'people=aurennais&seed=bn1&sex=m&view=full&turn=2.4&dress=' + dq(bu));
+    await shot('burnous-down', 'people=aurennais&seed=bn2&sex=m&view=full&turn=-2.3&dress=' + dq({ ...bu, cloak: [.42, .33, .24], burnousStripe: [.16, .12, .09], hood: 'down' }));
+    await shot('burnous-woman', 'people=aurennais&seed=bn3&sex=f&view=full&turn=.5&dress=' + dq({ ...bu, robe: null, tunic: [.6, .14, .1], skirt: 'long', skirtColor: [.6, .14, .1], gownBorder: [.85, .66, .3], cloak: [.2, .26, .5], burnousStripe: [.88, .84, .74], cloakLen: .9 })); }
   for (const k of ['gatelander', 'markman', 'aurennais', 'oldblood']) await shot('brows-' + k, `seed=brows:${k}&sex=m&people=${k}&view=face&nomantle`, 1920, 1440, false, [.25, .38, .5, .25]);
 }
 await browser.close(); srv.close(); console.log(fails ? `${fails} FAILED` : 'all passed'); process.exit(fails ? 1 : 0);
