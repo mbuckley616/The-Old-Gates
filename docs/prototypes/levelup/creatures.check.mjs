@@ -427,6 +427,13 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
     const Lr = sit.lie; if (Lr) check(`${sp} lies down: level (pitch ${Lr.pitch}), the withers lowered from ${(T.wither * 100).toFixed(0)} to ${(Lr.wither * 100).toFixed(0)} cm, the forefeet ${((Lr.fore[0][1] - T.fore[0][1]) * 100).toFixed(0)} cm ahead of where it stands, the hind toes ${((Lr.hindZ - Lr.hipZ) * 100).toFixed(0)} cm ahead of the hips, the belly and haunch ${(Lr.haunch * 1000).toFixed(1)} mm off the ground, nothing but the toe pads under it (${Lr.pads}, ${T.pads} standing; the rest's lowest ${(Lr.rest * 1000).toFixed(1)} mm), the head ${(Lr.head * 100).toFixed(0)} cm up`,
       Lr.err < .01 && Lr.pitch === 0 && Lr.wither < .6 * T.wither && Lr.fore.every((f, i) => f[1] > T.fore[i][1] + .05 * T.wither) && Lr.hindZ > Lr.hipZ && Lr.haunch > .003 && Lr.haunch < .05 && Lr.pads <= T.pads && Lr.rest > Math.min(T.rest, 0) - .001 && Lr.head > Lr.wither, Lr); }
   check(`sitting plans: ${sitters.join(', ')}`, sitters.includes('wolfhound') && sitters.length >= 5, sitters);
+  // the collar sits on the neck (Session 1261, the heavier horse): the hide's cross-section in the collar's plane (within 2 cm of it), as a share
+  // of the collar's ellipse, stays inside the leather's inner edge (0.8 of it: the torus's tube is a fifth), and fills most of it
+  const collar = await page.evaluate(async () => { const K = await import('./creatures.js'), T = await import('three'), out = {};
+    for (const k of ['draughthorse']) { const C = K.build(K.genome(k, k + ':check')), L = C.B.collar, P = C.meshes.find(m => m.name === 'hide').geometry.attributes.position, iq = L.q.clone().invert(), v = new T.Vector3(); let worst = 0;
+      for (let i = 0; i < P.count; i++) { v.fromBufferAttribute(P, i).sub(L.at).applyQuaternion(iq); if (Math.abs(v.z) > .02 || v.length() > L.lim) continue; v.fromBufferAttribute(P, i).sub(L.c).applyQuaternion(iq); worst = Math.max(worst, Math.hypot(v.x / L.rx, v.y / L.ry)); }
+      out[k] = +worst.toFixed(3); } return out; });
+  for (const [k, w] of Object.entries(collar)) check(`${k}: the collar sits round the neck, the hide in its plane reaching ${w} of its ring (under the leather's inner edge at 0.8, over 0.55)`, w < .8 && w > .55, w);
   check('no page errors', errs.length === 0, errs.slice(0, 3)); await page.close(); }
 if (process.argv.includes('--shots')) {
   const shot = async (name, q, w = 1920, h = 1080) => { const page = await browser.newPage({ viewport: { width: w, height: h } }); const errs = []; page.on('pageerror', e => errs.push(String(e)));

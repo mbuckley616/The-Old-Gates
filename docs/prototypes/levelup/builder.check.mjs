@@ -991,6 +991,27 @@ if (!process.argv.includes('--shots-only')) { const page = await browser.newPage
   check(`the bearded man's veil comes down over his beard (${(v.out['a bearded man under a white turban, the veil indigo'].beardDrop * 100).toFixed(1)} cm)`, v.out['a bearded man under a white turban, the veil indigo'].beardDrop > 0, v.out['a bearded man under a white turban, the veil indigo'].beardDrop);
   check(`no veil with a headscarf, with no wrap, or under a raised hood; rolled on no one (${v.rolled} of 60): when it is worn is the road's`, v.none.scarf && v.none.noWrap && v.none.hood && v.rolled === 0, { ...v.none, rolled: v.rolled });
   check('the veil: no page errors', errs.length === 0, errs.slice(0, 3)); await page.close(); }
+// the hair's rolls and the lowered hood face out (Session 1255): the braids' three locks, a single braid, the bun, the braid's lower tie and the
+// cloak's hood rolled on the shoulders are tubes on single-sided materials; wound inward, each drew its own far wall from inside, lit from
+// within. Every point of each (on its own ring round the tube's centre line) has its normal out of the tube
+if (!process.argv.includes('--shots-only')) { const page = await browser.newPage({ viewport: { width: 640, height: 360 } }); const errs = []; page.on('pageerror', e => errs.push(String(e)));
+  await page.goto(`http://localhost:${port}/builder.html?still&w=640&h=360&seed=check`); await page.waitForFunction(() => window.__done || window.__err, null, { timeout: 300000 });
+  const r = await page.evaluate(async () => { const K = await import('./people.js'), out = {};
+    const face = m => { const { line, sides } = m.userData.axis, P = m.geometry.attributes.position.array, N = m.geometry.attributes.normal.array, n = P.length / 3; let o = 0;
+      for (let k = 0; k < n; k++) { const L = line[Math.floor(k / (sides + 1))]; if ((P[k * 3] - L.x) * N[k * 3] + (P[k * 3 + 1] - L.y) * N[k * 3 + 1] + (P[k * 3 + 2] - L.z) * N[k * 3 + 2] > 0) o++; }
+      return { out: +(o / n).toFixed(3), pts: n, front: m.material.side === 0 }; };
+    for (const [nm, style, sex, dress] of [['braids', 'braids', 0, { mantle: null }], ['braid', 'braid', 0, { mantle: null }], ['bun', 'bun', 0, { mantle: null }], ['hood down', 'short', 1, { mantle: null, cloak: [.32, .38, .24], hood: 'down' }],
+      // the thin rolls (Session 1262): the hood's hem, the necklace's chain, the bodice's lacing, the robe's cord, the shields' rims
+      ['hood up', 'short', 1, { mantle: null, cloak: [.3, .3, .3], hood: 'up' }], ['necklace', 'short', 0, { mantle: null, cloak: null, hood: null, necklace: [.85, .66, .3] }],
+      ['bodice', 'short', 0, { mantle: null, cloak: null, hood: null, bodice: [.5, .2, .1] }], ['cord', 'short', 1, { mantle: null, cloak: null, hood: null, robe: [.3, .26, .4], cord: [.7, .6, .4] }],
+      ['kite', 'short', 1, { mantle: null, cloak: null, hood: null, shield: [.5, .2, .1], shieldShape: 'kite' }],
+      ['hoplon', 'short', 1, { mantle: null, cloak: null, hood: null, shield: [.5, .2, .1], shieldShape: 'hoplon' }]]) {
+      const G = K.rollGenome('rolls:' + nm, { g: sex }), p = K.makePerson({ ...G, hair: { style, len: .8 }, dress: { ...G.dress, ...dress } }), ms = [];
+      p.root.traverse(m => { if (m.isMesh && m.userData.axis) ms.push([m.name, face(m)]); }); out[nm] = ms; }
+    return out; });
+  for (const [k, ms] of Object.entries(r)) check(`${k}: the rolls face out of themselves (${ms.map(([n, f]) => `${n} ${(f.out * 100).toFixed(1)}%`).join(', ')}), so a single-sided roll is drawn and lit from outside`,
+    ms.length >= ({ braids: 4, braid: 2, bun: 1, 'hood down': 1, 'hood up': 1, necklace: 1, bodice: 4, cord: 3, kite: 1, hoplon: 1 })[k] && ms.every(([, f]) => f.out > .95), ms);
+  check('the rolls: no page errors', errs.length === 0, errs.slice(0, 3)); await page.close(); }
 const shotArg = process.argv.find(a => a.startsWith('--shots') && a !== '--shots-only');
 if (shotArg) { const only = shotArg.split('=')[1];
   const shot = async (name, q, w = 1920, h = 1080, panel = false, crop = null) => { if (only && !only.split(',').some(o => name.includes(o))) return; const page = await browser.newPage({ viewport: { width: w, height: h } }); const errs = []; page.on('pageerror', e => errs.push(String(e)));
@@ -1312,6 +1333,9 @@ if (shotArg) { const only = shotArg.split('=')[1];
     await shot('veil-face', 'people=aurennais&seed=bn1&sex=m&view=face&turn=.5&dress=' + dq(vt)); await shot('veil-side', 'people=aurennais&seed=bn1&sex=m&view=head&turn=1.5&dress=' + dq(vt));
     await shot('veil-full', 'people=aurennais&seed=bn1&sex=m&view=full&turn=.5&dress=' + dq({ ...vt, sashBelt: [.17, .2, .4] }));
     await shot('veil-woman', 'people=aurennais&seed=vl3&sex=f&style=braids&view=head&turn=.6&dress=' + dq({ cloak: null, hood: null, sash: null, wrap: [.78, .55, .16], turban: false, veil: [.6, .16, .12] })); }
+  // the rolls turned out (Session 1255): the cloak's hood rolled on the shoulders, from behind and the side (the braids and the bun are woman-braid(s) and temples-woman)
+  { const dq = d => encodeURIComponent(JSON.stringify(d)), hd = { mantle: null, cloak: [.32, .38, .24], hood: 'down' };
+    await shot('hoodroll-back', 'people=gatelander&seed=rolls:hood&sex=m&view=head&turn=2.6&dress=' + dq(hd)); await shot('hoodroll-side', 'people=gatelander&seed=rolls:hood&sex=m&view=head&turn=1.4&dress=' + dq(hd)); }
   for (const k of ['gatelander', 'markman', 'aurennais', 'oldblood']) await shot('brows-' + k, `seed=brows:${k}&sex=m&people=${k}&view=face&nomantle`, 1920, 1440, false, [.25, .38, .5, .25]);
 }
 await browser.close(); srv.close(); console.log(fails ? `${fails} FAILED` : 'all passed'); process.exit(fails ? 1 : 0);
