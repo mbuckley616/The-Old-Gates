@@ -376,6 +376,20 @@ function tpPose(R,dt,st){
   else if(R.bow&&!air){aL.x=Math.min(aL.x,-.25);eL=-.5;}
   // casting: both hands out, the right leading
   if(typeof castT!=='undefined'&&castT>0){const c=castT/CAST_ANIM_DURATION;const push=Math.sin((1-c)*Math.PI);aR={x:-1.45-pitch*.8,y:.15,z:0};eR=-.25-.5*(1-push);aL={x:-1.1-pitch*.6,y:-.25,z:0};eL=-.9;ty=-.15;tx=-.1*push;}
+  // S1272 — swimming (card F10): under way a breaststroke, still a tread. The stroke's cycle (TP.swPh, a look only, eased by the time
+  // swum) reaches the arms forward and glides with the legs drawn out straight, sweeps them out and back, draws the hands in to the chest
+  // and the knees up, and kicks out into the next reach; treading, the arms scull out to the sides and the legs pedal. The legs and arms are
+  // the driver's, which the builder's body copies (the legs set outright: the gait above sets them so each frame), a two-handed grip
+  // let go while you swim (tpGripL); the swimmer's depth is tpUpdate's, unchanged
+  TP.swim=activeZoneId==='world'&&typeof WORLD!=='undefined'&&!!WORLD.isSwimming&&WORLD.isSwimming()&&!dead;
+  if(TP.swim){
+    TP.swPh=((TP.swPh||0)+dt*(st.moving?(st.sprinting?.95:.7):.45))%1;const u=TP.swPh,S=x=>.5-.5*Math.cos(Math.PI*Math.max(0,Math.min(1,x)));
+    if(st.moving){const out=S((u-.3)/.3)*(1-S((u-.62)/.18)),inn=S((u-.62)/.16)*(1-S((u-.86)/.14)),kick=S((u-.62)/.2)*(1-S((u-.86)/.12));
+      tx=.2;aL={x:-1.55+.85*out+.55*inn,y:0,z:.15+.75*out+.1*inn};aR={x:aL.x,y:0,z:-aL.z};eL=eR=-.1-.5*out-1.7*inn;
+      thL=thR=-.15-.75*kick;knL=knR=.1+1.5*kick;}
+    else{const a=Math.sin(u*Math.PI*2);tx=.08;aL={x:-.35+.18*a,y:0,z:.72};aR={x:-.35+.18*a,y:0,z:-.72};eL=eR=-.45-.15*a;
+      thL=-.35+.3*a;thR=-.35-.3*a;knL=.75-.35*a;knR=.75+.35*a;}
+    tpSet(R.thighL,thL,0,0,1);tpSet(R.thighR,thR,0,0,1);tpSet(R.kneeL,knL,0,0,1);tpSet(R.kneeR,knR,0,0,1);}
   // a hit rocks you back
   if(TP.hurtT>0){tx+=.35*(TP.hurtT/.28);}
   tpSet(R.torso,tx,ty,tz,ka);tpSet(R.shL,aL.x,aL.y,aL.z,ka);tpSet(R.shR,aR.x,aR.y,aR.z,ka);tpSet(R.elL,eL,0,0,ka);tpSet(R.elR,eR,0,0,ka);
@@ -383,7 +397,7 @@ function tpPose(R,dt,st){
   tpSet(R.handR,wR,0,0,ka);if(R.shield)tpSet(R.shield,0,shY,shZ,kf);
   if(R.weaponL){R.weaponL.rotation.x=-(R.shL.rotation.x+R.elL.rotation.x);}
   // S246: a two-handed weapon is held in both hands through every pose: the left wrist is put on the grip
-  if(R.gripL&&R.weapon&&TP.deadT<.01&&!(typeof castT!=='undefined'&&castT>0))tpGripL(R);
+  if(R.gripL&&R.weapon&&TP.deadT<.01&&!TP.swim&&!(typeof castT!=='undefined'&&castT>0))tpGripL(R);
   // the head looks where you look
   tpSet(R.head,Math.max(-.6,Math.min(.5,-pitch*.6))-tx*.3,-ty*.6,0,kf);
   // S743 — Michael's A on #237: up a boarding net hand over hand, three reaches in the climb, the elbows bending as each hand
