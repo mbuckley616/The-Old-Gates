@@ -21,7 +21,8 @@ Michael designs and playtests; Claude implements. This file is what Claude reads
 - `docs/lore_canon.md`, `docs/quest_writing.md` — the author's text. Do not edit without being asked.
 - `docs/design_brief.md` — Michael's brief: what the game is and the three things it must feel like. Every proposal and
   every design call argues from it. `docs/decisions.md` — questions for Michael and his answers; nothing is a spec without a `Michael:` line.
-- `tests/` — Playwright suites against a headless Chromium. `node tests/run.mjs` runs them all.
+- `tests/` — Playwright suites against a headless Chromium. `node tests/run.mjs` runs them all; `node tests/run.mjs saves`
+  runs one. A pull request runs the smoke set and the suites it adds or edits; every suite runs weekly (see "How a PR lands").
 - `scripts/parsecheck.py` — syntax-checks every `js/` file and their concatenation. `scripts/tag.py` is the build tag's tool; only the
   `stamp` workflow runs it now.
   `scripts/split.py`, `scripts/split_world.py` and `scripts/join.py` made the layout and prove it (kept one release, per decision #75).
@@ -33,7 +34,11 @@ Michael designs and playtests; Claude implements. This file is what Claude reads
    Unicode in strings (’ — · 🗝); match it, don't assume `\u` escapes. Never put a `//` comment on a line that has code
    after it. Markup and CSS changes go in `index.html`.
 4. `python3 scripts/parsecheck.py` after every edit batch. It takes two seconds: each `js/` file, then their concatenation.
-5. Verify in headless Chromium, not by reading the code: add or extend a test in `tests/`.
+5. Verify in headless Chromium, not by reading the code: run the suites of the area you changed (`node tests/run.mjs <name>`),
+   or a check script of your own in `tests/tmp/` (gitignored) that you throw away. **Basic tests, not bulletproof ones**
+   (Michael, 20 Oct 2026): this is a game made for fun, and every suite boots the whole game. Add a suite to `tests/` only
+   for something that would hurt to lose unnoticed (a save, a crash, a rule of play other systems lean on); otherwise extend
+   one that exists, or keep the check to yourself. A picture for Michael is not a suite.
    The scene runs at a few fps on software GL, so drive time with `g.spin()` (fixed 1/60 ticks), not timeouts.
 6. Do not touch the build tag. The `stamp` workflow bumps it on main after each merge (the tag in the controls line is how
    Michael confirms which build he's running, and it now counts landings). Every branch bumping the same line was why each
@@ -157,14 +162,15 @@ Sessions started from claude.ai/code or the Claude app run on a fresh checkout o
 `scripts/cloud-setup.sh` (a SessionStart hook in `.claude/settings.json`) installs Playwright and
 Chromium there; locally it does nothing. A cloud session can only push its own branch, not `main`:
 commit there and open a PR. **How a PR lands (Michael's A on the pipeline and his B on approvals, 19 Oct 2026;
-`docs/pipeline.md`):** CI runs only the suites the change can reach (`tests/lib/select.mjs`; a docs-only PR runs none) and
-reports one check, `gate`. The `automerge` workflow merges a PR the minute `gate` is green and it merges cleanly. **Michael
+`docs/pipeline.md`; basic tests, Michael 20 Oct 2026):** CI runs the smoke set and the suites the PR adds or edits
+(`tests/lib/select.mjs`, about ten minutes; a docs-only PR runs none) and reports one check, `gate`. The `automerge` workflow merges a PR the minute `gate` is green and it merges cleanly. **Michael
 decides designs, not merges:** a PR that builds what he has already decided needs no tap. Two exceptions wait for him: a PR
 labelled `hold` (put it on anything you want his eyes on first, and say why in the PR), and a PR that changes the pipeline
 itself (`.github/`, `tests/lib/`, `tests/run.mjs`, `scripts/automerge.mjs`), which merges on the comment
 `Approved by Michael: <sha>`, posted by the producer when he taps Approve. An open design question is still a `DECISION:`
-before anything is built. Main runs every suite after each merge: a red on main is the next run's first job for the builder
-that owns it, and the producer reverts the merge if it is not fixed within the day.
+before anything is built. Every suite runs once a week (Sunday 06:00 UTC), not after each merge: the producer files each
+red of that run in the backlog's section I for the builder that owns it, who fixes it in their next run. Nothing is reverted
+for it. To run every suite on a branch before it lands, run `check` by hand on that branch (Actions, check, Run workflow).
 Only the producer routine notifies Michael (PushNotification) or writes to the control room; every other session,
 cloud or local, raises questions as a `DECISION:` issue (below; the producer copies them into
 `docs/decisions.md`, the one writer of that file) and stays silent — the producer

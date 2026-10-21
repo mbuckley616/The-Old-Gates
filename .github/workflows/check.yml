@@ -3,17 +3,21 @@ name: check
 # Agent branches are tested through their PR only, and a new commit cancels its branch's older run.
 # 19 Oct 2026 (Michael's A on the pipeline): a pull request runs only the suites its change can reach (tests/lib/select.mjs),
 # a docs-only one none; main runs every suite after each merge, and a run on main is never cancelled by the next merge.
+# 20 Oct 2026 (Michael, in chat: basic tests, not bulletproof ones): a pull request runs the smoke set and the suites it adds
+# or edits (tests/lib/select.mjs), a docs-only one none. Main no longer runs every suite after each merge (709 runner-minutes
+# a merge, on all twenty of the free plan's runners); every suite runs on Sunday at 06:00 UTC, and whenever check is run by
+# hand (Actions, check, Run workflow, on any branch).
 # `gate` is the one check that says whether a pull request may merge: green when parse passed and the suites passed or
 # were not needed. The automerge workflow reads it.
 on:
-  push:
-    branches: [main]
   pull_request:
   workflow_dispatch:
+  schedule:
+    - cron: '0 6 * * 0'
 # A concurrency group holds one running and ONE pending run: a third run queued in the group cancels the pending one,
 # whatever cancel-in-progress says. With every main run in one group, five of the six main runs after #459 were cancelled
 # while they waited (6871654, e343522, 82c7d46, ba34c3a, 6210ccf; Session 1171). So a pull request's runs share its branch's
-# group (a new commit cancels the old run), and every other run (a merge's dispatch, a push to main) is a group of its own.
+# group (a new commit cancels the old run), and every other run (the weekly run, a run by hand) is a group of its own.
 concurrency:
   group: ${{ github.event_name == 'pull_request' && format('check-{0}', github.head_ref) || format('check-run-{0}', github.run_id) }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}

@@ -6,7 +6,7 @@
 //   - it changes the pipeline, and Michael approved it: a comment on the PR from the repository's owner side, "Approved by
 //     Michael: <sha>". Later commits that leave the pipeline alone, or merge main in, ride along; if a later commit changes the
 //     pipeline again, the approved commit is merged by itself and the PR waits for a new approval.
-// After a merge it starts `check` (every suite) and `stamp` (the build number) on main by name, because a merge made with the
+// After a merge it starts `stamp` (the build number) on main by name, because a merge made with the
 // workflow's own token starts no workflow. DRY_RUN=1 says what it would do and changes nothing.
 const TOKEN = process.env.GH_TOKEN, REPO = process.env.REPO || 'mbuckley616/The-Old-Gates', DRY = !!process.env.DRY_RUN;
 const API = `https://api.github.com/repos/${REPO}`;
@@ -91,6 +91,7 @@ for (const pr of await all('/pulls?state=open&base=main')) {
   } catch (e) { console.log(`#${n}: ${e.message}`); }
 }
 
-if (merged && !DRY) for (const wf of ['check.yml', 'stamp.yml'])
+// 20 Oct 2026: stamp only. check no longer runs every suite after a merge; it runs them weekly (check.yml)
+if (merged && !DRY) for (const wf of ['stamp.yml'])
   try { await gh(`/actions/workflows/${wf}/dispatches`, 'POST', { ref: 'main' }); } catch (e) { console.log(`dispatch ${wf}: ${e.message}`); }
 console.log(`${merged} merged${DRY ? ' (dry run)' : ''}`);
