@@ -69,12 +69,16 @@ check('through a roll the body turns over (past 2.5 rad)', motion.roll > 2.5, mo
 const worn = await drive(() => { const mat = MATERIALS.find(m => m.name === 'Iron');
   EQ.chest = { name: 'Iron Cuirass', slot: 'chest', material: 'Iron', tier: mat.tier }; EQ.weapon = { name: 'Steel Sword', slot: 'weapon', weaponShape: 'sword', weight: 3 };
   EQ.offhand = { name: 'Kite Shield', slot: 'offhand', shieldType: 'shield', matCol: 0x8a6030 }; EQ.back = { name: 'Wool Cloak', slot: 'back', cloak: 'wool' };
+  EQ.head = { name: 'Steel Helm', slot: 'head', material: 'Steel', tier: 4 };
   for (let i = 0; i < 4; i++) step(); const R = TP.rig, H = R.rig.hb, names = new Set(); if (TP.sig !== tpSig()) return { names: ['not rebuilt'], held: [], dress: [] }; H.root.traverse(o => { if (o.isMesh && o.visible) names.add(o.name.replace(/\d+$/, '')); });
   R.root.updateMatrixWorld(true); const by = H.P.byName, sd = HBODY.swap ? 'L' : 'R', fist = new THREE.Vector3(); [2, 3, 4, 5].forEach(f => fist.add(by[`finger${f}-2.${sd}`].getWorldPosition(new THREE.Vector3()))); fist.multiplyScalar(.25);
   const held = R.hbHeld.map(h => { const v = new THREE.Vector3(); h.c.getWorldPosition(v); let n = 0; h.c.traverse(o => { if (o.isMesh && o.visible) n++; }); return { kit: h.o.userData.kit || null, meshes: n, inBuilder: h.c.parent === H.root, gap: +v.distanceTo(fist).toFixed(3) }; });
-  return { names: [...names].sort(), held, dress: Object.keys(R.rig.hbG.dress).filter(k => R.rig.hbG.dress[k] && typeof R.rig.hbG.dress[k] === 'object') }; });
+  return { names: [...names].sort(), held, dress: Object.keys(R.rig.hbG.dress).filter(k => R.rig.hbG.dress[k] && typeof R.rig.hbG.dress[k] === 'object'),
+    helm: H.P.helm && H.P.helm.tier, helmFit: !!(H.P.tierFit && H.P.tierFit.h.group.parent === by.head), mid: !!H.mid }; });
 console.log('  worn:', JSON.stringify(worn));
 check('the cuirass is mail on the builder\'s body, the cloak its cloak', worn.names.includes('mail') && worn.names.some(n => /^cloak/.test(n)), worn.names);
+check('a Steel helm is the builder\'s helm of its tier (helms.js), fitted to the player\'s head', worn.helm === 4 && worn.helmFit, { helm: worn.helm, fit: worn.helmFit });
+check('in third person the new body bakes no middle level (it is baked when first person asks)', worn.mid === false, { mid: worn.mid });
 const sword = worn.held.find(h => h.kit === 'sword'), shield = worn.held.find(h => h.kit === 'kite');
 check('a copy of the sword is carried in the builder\'s group with its grip in the right fist (within 2 cm), the shield with it', sword && sword.inBuilder && sword.meshes > 0 && sword.gap < .02 && shield && shield.inBuilder && shield.meshes > 0, worn.held);
 
@@ -91,11 +95,13 @@ if (process.env.F10_SHOTS) {
   await shot('f10-third-rest.png', .6, () => { swingT = 0; EQ.back = null; });
   await shot('f10-third-swing.png', .6, () => { swingT = ANIM_PARAMS.swing.normalDur * .62; _pendingStrike = null; });
   await shot('f10-cloak-back.png', Math.PI + .3, () => { swingT = 0; EQ.back = { name: 'Wool Cloak', slot: 'back', cloak: 'wool' }; });
+  await shot('f10-third-helm-steel.png', .6, () => { EQ.back = null; EQ.head = { name: 'Steel Helm', slot: 'head', material: 'Steel', tier: 4 }; });
+  await shot('f10-third-helm-draconic.png', .6, () => { EQ.head = { name: 'Draconic Helm', slot: 'head', material: 'Draconic', tier: 8 }; });
   await page.evaluate(() => { window.tpCamera = window._tpCam0; });
 }
 
 // ── the same body after a save and a reload ──
-await page.evaluate(() => { EQ.chest = null; EQ.offhand = null; EQ.back = null; EQ.weapon = null; return saveToSlot(0).then(() => 1); });
+await page.evaluate(() => { EQ.chest = null; EQ.offhand = null; EQ.back = null; EQ.weapon = null; EQ.head = null; return saveToSlot(0).then(() => 1); });
 g.errs.length = 0; await page.reload(); await page.waitForTimeout(5000);
 await page.evaluate(() => document.getElementById('cb').click()); await page.waitForTimeout(12000); await g.hide();
 const b2 = await body();
