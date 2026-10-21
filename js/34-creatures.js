@@ -715,11 +715,13 @@ function tickSpider(rig,g,e,dt,now){
 // The coach's two horses (Session 1272) wear the kit's horse (Session 1261's, heavier) in their own coats, the mane in the saddle's
 // tone, on the same driver. They are no foes, so a horse's genome is keyed by the coach's road and its place in the team (rig.hcKey,
 // `coach:<road>:<i>`, set by buildCoachLine), and the two of a team are two bodies.
-// The Ash Hound, the dragon and the Faolchú keep the old body: their plans are later work.
+// The Ash Hound (Session 1272) is the kit's own `ashhound`: the wolf leaner and ash-grey, its eyes lit, and the old body's embers along
+// the back as a broken seam of ember in its hide (the kit's glow, which takes the tell's red over it as any hide does).
+// The dragon and the Faolchú keep the old body: their plans are later work.
 const HC_BODY={on:true,near:12,mid:40,build:44,small:.03,ms:0,n:0};
 const HC_RIGS=new Set();
 // the game's kinds and the kit's plans: a kind's own colours over the plan's (the kit's palettes are sRGB triples)
-const HC_KINDS={'Wolf':{plan:'wolf'},'Snow Wolf':{plan:'wolf',own:true},'Dire Wolf':{plan:'ironwolf',own:true},'Boar':{plan:'boar'},'Cave Bear':{plan:'bear',own:true},'Horse':{plan:'horse',own:true,ik:true},'Grey Horse':{plan:'horse',own:true,ik:true}};
+const HC_KINDS={'Wolf':{plan:'wolf'},'Snow Wolf':{plan:'wolf',own:true},'Dire Wolf':{plan:'ironwolf',own:true},'Boar':{plan:'boar'},'Cave Bear':{plan:'bear',own:true},'Ash Hound':{plan:'ashhound'},'Horse':{plan:'horse',own:true,ik:true},'Grey Horse':{plan:'horse',own:true,ik:true}};
 // the driver's joints and the kit's bones they move, parents first (the kit's front legs hang on spine3, the hind on spine0)
 const HC_MAP=[['hips','spine0'],['spine','spine1'],['neck','neck0'],['head','head'],['jaw','jaw'],['tail1','tail0'],['tail2','tail1'],['tail3','tail2'],
   ['shL','leg0L_0'],['elL','leg0L_1'],['wrL','leg0L_2'],['pfL','leg0L_3'],['shR','leg0R_0'],['elR','leg0R_1'],['wrR','leg0R_2'],['pfR','leg0R_3'],

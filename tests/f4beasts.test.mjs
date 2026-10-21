@@ -1,7 +1,7 @@
 // Card F4's next family (Session 1251): on the new look the Boar and the Cave Bear wear the creature kit's body as the wolves do
 // (Session 1202, f4wolves), driven by their old 24-bone rig. The boar is the kit's wild boar; the Cave Bear its Frostreach bear in the
 // Cave Bear's own brown, whose plantigrade legs have three bones to the driver's four (hcMap: the paw takes the driver's paw). A line of
-// the two and an Ash Hound (which keeps its own) ahead of you: each on the kit's skeleton, keyed by its foe id; its hips at its driver's;
+// the two and an Ash Hound (its own plan since Session 1272) ahead of you: each on the kit's skeleton, keyed by its foe id; its hips at its driver's;
 // three levels by distance; a run that moves the kit's bones with its feet by the driver's; the tell's glow; and killed, a corpse
 // darkened with its shaders kept that lies with its driver. Session 1272 adds the coach's two horses on the kit's horse. Pictures: docs/prototypes/f4/f4-beasts.jpg and f4-beasts-near.jpg.
 import { boot, check, ROOT } from './lib/game.mjs';
@@ -34,7 +34,10 @@ const beasts = who.filter(w => w.n !== 'Ash Hound');
 check(`the boar and the bear wear the kit's body on its own skeleton (${beasts.map(w => w.bones).join(', ')} bones), keyed by their foe id, built in ${made.each} ms each`, beasts.every(w => w.hc && w.bones > 18 && w.seed === w.want) && made.left === 0, beasts);
 check('the Boar is the kit\'s wild boar; the Cave Bear its bear in the Cave Bear\'s own brown, not the Frostreach\'s white',
   who[0].plan === 'boar' && who[1].plan === 'game:Cave Bear' && who[1].coat.every((v, i) => Math.abs(v - [0x4a, 0x3a, 0x2a][i] / 255) < .01), who.map(w => [w.n, w.plan, w.coat]));
-check('the Ash Hound keeps its own body (its embers are its own)', !who[2].hc && !who[2].fail, who[2]);
+const ash = await page.evaluate(() => { const H = _W[2].rig.hc; if (!H) return null; const a = H.C.meshes[0].geometry.attributes.aGlow, y = H.C.meshes[0].geometry.attributes.position; let lit = 0, low = 0;
+  for (let i = 0; i < a.count; i++) if (a.getX(i) > .5) { lit++; if (y.getY(i) < .5) low++; } return { lit, low, n: a.count, eyes: H.C.plan.parts.find(p => p[0] === 'head')[1].eyes[0].glow }; });
+check(`the Ash Hound wears the kit's own Ash Hound (Session 1272): its embers a broken seam down the back (${ash && ash.lit} of ${ash && ash.n} hide points lit, none low on the body), its eyes lit`,
+  who[2].hc && who[2].plan === 'ashhound' && who[2].seed === who[2].want && ash.lit > 20 && ash.lit < ash.n * .1 && ash.low === 0 && ash.eyes > 1, { who: who[2], ash });
 const legs = await page.evaluate(() => { const m = hcMap(_W[1].rig.hc.C.byName); return { n: m.length, paw: m.filter(([j]) => /^p[fh]/.test(j)).map(([j, b]) => j + '>' + b.name), wr: m.filter(([j]) => /^(wr|hk)/.test(j)).length, boar: hcMap(_W[0].rig.hc.C.byName).length }; });
 check(`the bear's plantigrade legs: each paw takes the driver's paw (${legs.paw.join(', ')}), the wrists and hocks drive nothing; the boar takes all ${legs.boar} joints but its tail's third`,
   legs.paw.length === 4 && legs.paw.every(p => /_2$/.test(p)) && legs.wr === 0 && legs.boar === 23, legs);
@@ -47,7 +50,7 @@ check('a beast\'s genome is the same rolled again from its id', same);
 const size = await page.evaluate(() => _W.filter(f => f.rig.hc).map(f => { const rig = f.rig; rig.root.parent.updateMatrixWorld(true);
   const a = rig.hc.C.byName.spine0.getWorldPosition(new THREE.Vector3()), b = rig.B.hips.getWorldPosition(new THREE.Vector3()), gy = WORLD.worldH(b.x, b.z);
   return [f.n, +(a.y - gy).toFixed(2), +(b.y - gy).toFixed(2), +a.distanceTo(b).toFixed(3)]; }));
-check('each kit body stands at its driver\'s size: its hips within 3 cm of the driver\'s', size.length === 2 && size.every(([, , , d]) => d < .03), size);
+check('each kit body stands at its driver\'s size: its hips within 3 cm of the driver\'s', size.length === 3 && size.every(([, , , d]) => d < .03), size);
 
 // the levels: near, the hide and its fur; at 25 m, the hide alone; at 60 m, the driver
 const lv = await page.evaluate(() => { const out = {}, f = _W[0], g0 = f.e.mesh, fx = -Math.sin(yaw), fz = -Math.cos(yaw);
@@ -83,6 +86,7 @@ const horses = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math
   window._HS = ['Horse', 'Grey Horse'].map((n, i) => { const hg = new THREE.Group(), rg = buildWolf(n, 1.6); rg.hcKey = 'coach:f4beasts:' + i; hg.add(rg.root);
     const x = px + fx * 14 + sx * (i - .5) * 3.4, z = pz + fz * 14 + sz * (i - .5) * 3.4; hg.position.set(x, WORLD.worldH(x, z), z); hg.rotation.y = yaw; WORLD.scene.add(hg); return { n, hg, rg }; });
   CAM.position.set(px, worldH(px, pz) + 1.65, pz); CAM.updateMatrixWorld(true);
+  { const t1 = performance.now(); while (JOBS.length && performance.now() - t1 < 20000) runJobs(); }
   let k = 0; HBODY.last = -1e9; while (_HS.some(h => !h.rg.hc && !h.rg.hcFail) && k++ < 100) tickCreatures(1 / 60, 8e5 + k * (HBODY.gap + 1));
   return _HS.map(({ n, hg, rg }) => { const H = rg.hc; if (!H) return { n, hc: false }; hg.updateMatrixWorld(true); const by = H.C.byName;
     const a = by.spine0.getWorldPosition(new THREE.Vector3()), b = rg.B.hips.getWorldPosition(new THREE.Vector3());

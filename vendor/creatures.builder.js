@@ -2131,7 +2131,7 @@ function dressFlesh(geo, B, pal, plan) {
     if (alpha && B.headFrame && B.by.head) { const H = B.headFrame, hs = (wb[B.by.head.i] + (B.by.jaw ? wb[B.by.jaw.i] : 0)) / tsum, rel = V(x, y, z).sub(H.base), fwd = rel.dot(H.dir) / H.len, upw = rel.dot(H.up) / H.r;
       alpha[v] = lerp(1, plan.faceClear / plan.clear, sstep(.5, .85, hs) * sstep(.25, .5, fwd) * sstep(.9, .45, upw)); }
     // the binding's seams: a crack pattern along the line `glow.line` (the spine's seam) or over the whole hide
-    if (gl) { const cr = Math.abs(PN.noise(x * gl.freq, y * gl.freq, z * gl.freq * .6)), seam = gl.seam ? sstep(gl.seam.w, 0, Math.abs(x)) * sstep(gl.seam.y0, gl.seam.y0 + .08, y) * (ny > .2 ? 1 : 0) : 0;
+    if (gl) { const cr = Math.abs(PN.noise(x * gl.freq, y * gl.freq, z * gl.freq * .6)), seam = gl.seam ? sstep(gl.seam.w, 0, Math.abs(x)) * sstep(gl.seam.y0, gl.seam.y0 + .08, y) * (ny > .2 ? 1 : 0) * seamRun(gl.seam, z) : 0;
       glow[v] = Math.max(seam, sstep(gl.w, 0, cr) * (gl.all || 0), (gl.base || 0) * (1 - .5 * Math.max(0, -ny)));
       // a tone that is itself light (Session 1185, the fire elemental's flame): `tones` lights a vertex by its share of each
       if (gl.tones) for (const [t, k] of Object.entries(gl.tones)) if (tw[toneI[t]]) glow[v] = Math.max(glow[v], k * tw[toneI[t]] / ts); }
@@ -2141,6 +2141,10 @@ function dressFlesh(geo, B, pal, plan) {
   if (alpha) geo.setAttribute('aAlpha', new THREE.Float32BufferAttribute(alpha, 1));
 }
 
+// a seam's run along the body (Session 1272, the Ash Hound's): `z` its two ends, so it lies along the back alone and not up the neck and
+// over the head, and `gaps` breaks it into lengths of ember about that many to the metre
+function seamRun(S, z) { let k = 1; if (S.z) k = sstep(S.z[0] - .05, S.z[0], z) * sstep(S.z[1] + .05, S.z[1], z);
+  if (S.gaps) k *= sstep(-.15, .2, PN.noise(z * S.gaps, 3.7, 1.3)); return k; }
 // ── materials: the hide, fur shells (cut by noise, as the people's mantles are), and the binding's glow ──
 const GLOW_HEAD = 'attribute float aGlow; attribute float aFur; varying float vGlow; varying float vFur; varying vec3 vRP;\n';
 function hideMat(o) {
@@ -3756,6 +3760,18 @@ Object.assign(PLANS, {
     ] }
 });
 const HOUNDS = ['wolfhound'];
+// the Ash Hound (Session 1272): the game's wolf of the wastes (34-creatures.js's `Ash Hound`, S262's kinds) on the kit's wolf: ash-grey,
+// leaner, with longer ears and muzzle, its eyes lit ember-orange, and the old body's "glowing seams along the back" as the Faolchú's seam
+// down the spine (`glow.seam`), with a few cracks of ember over the hide
+Object.assign(PLANS, {
+  ashhound: re(PLANS.wolf, { name: 'Ash Hound', src: 'the game\'s Ash Hound (the wastes, a Tine-touched wolf)', scale: .92,
+    palette: { coat: [.48, .45, .42], saddle: [.22, .2, .19], belly: [.62, .58, .54], dark: [.04, .03, .03], horn: [.7, .64, .58] },
+    fur: { len: .026, layers: 9, sx: 260 }, glow: { color: [3.2, .8, .22], freq: 3, w: .025, all: .35, seam: { w: .035, y0: .5, z: [-.42, .3], gaps: 9 } },
+    parts: PLANS.wolf.parts.map(([k, o]) => k === 'spine' ? [k, { ...o, r: o.r.map(r => r * .86) }]
+      : k === 'neck' ? [k, { ...o, r: o.r.map(r => r * .9) }]
+      : k === 'head' ? [k, { ...o, muzzle: { ...o.muzzle, len: 1.2, r: o.muzzle.r * .9 }, eyes: o.eyes.map(e => ({ ...e, color: [1, .31, .13], glow: 2.2 })), ears: { ...o.ears, size: o.ears.size * 1.25 } }]
+      : [k, o]) })
+});
 
 return {hashKey,rng,genome,toSaved,fromSaved,build,speedOf,strideOf,step,pose,SLIDERS,GAITS,PLANS,COMMON,ISLES,COATS,LIVESTOCK,GATELANDS,MARK,AURENNE,STRANGE,SEA,BURDEN,HARNESSED,CORRUPTED,TROLLS,SLIMES,GOBLINS,GARGOYLES,SKELETONS,FROST,FAILING,GOLEMS,WRAITHS,ELEMENTALS,HOUNDS};
 })();
