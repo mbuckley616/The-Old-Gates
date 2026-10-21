@@ -3983,7 +3983,7 @@ export function gatelandsCanal(o = {}, r = stream('canal')) {
   const M = { turf: MI.turf, track: mat('turfDry', { ns: 1.0, color: 0xa08e70, rough: 1 }), setts: MI.path, bed: mat('rock', { ns: .8, color: 0x4a4636, rough: 1 }), pitch: mat('stone', { ns: 1.2, color: 0x9c988c, rough: .95 }),
     wall: mat('limestone', { ns: 1.0, color: 0xb4b0a4, rough: .92 }), dress: MI.dress, rubble: mat('stone', { ns: 1.0, color: 0xb8b2a2, rough: .95 }), path: MI.path,
     water: std(0x2a3a30, .1, { metalness: .15 }), gate: mat('wood', { ns: .9, color: 0x3a342c, rough: .8 }), beam: std(0x141210, .7), lime: MI.lime, iron: MI.iron, timber: MI.timber,
-    hull: std(0x151311, .75, { side: THREE.DoubleSide }), boat: std(0x2e2620, .8), pipe: MI.iron, pane: std(0x0c0a08, 1), paint: MI.door, tarp: std(0x3a3a2e, .95, { side: THREE.DoubleSide }), rope: std(0x8a7650, .95), dark: std(0x0c0a08, 1),
+    hull: std(0x151311, .75, { side: THREE.DoubleSide }), boat: std(0x2e2620, .8), pipe: MI.iron, pane: std(0x0c0a08, 1), paint: MI.door, tarp: std(0x5e5848, .95, { side: THREE.DoubleSide }), band: std(0x8a2c1e, .7), rope: std(0x8a7650, .95), dark: std(0x0c0a08, 1),
     bark: std(0x5a5246, .95), leaf: std(0x4f6a2c, .85), sally: std(0x7a8a4c, .85) };
   const B = new Map(), key = String(o.key || 'canal'), F = stream(key + ':lie'), ph = Array.from({ length: 6 }, () => F() * 6.283), V3 = (x, y, z) => new THREE.Vector3(x, y, z);
   const fill = o.fill === 'high' ? 'high' : 'low', bargeAt = o.barge === 'pound' ? 'pound' : 'chamber';
@@ -4033,11 +4033,11 @@ export function gatelandsCanal(o = {}, r = stream('canal')) {
   const fAt = (z, run) => run[0] === MZ0 ? A + (HW - A) * (z - MZ0) / (SPL0 - MZ0) : run[0] === SPL1 ? HW + (A - HW) * (z - SPL1) / (MZ1 - SPL1) : RZ.some(q => q[0] === run[0]) ? REC : HW;
   for (const s of [-1, 1]) for (const run of wallRuns) { const [z0, z1] = run, f0 = fAt(z0, run), f1 = fAt(z1, run), y0 = BL - .3, y1 = CT - .22;
     hexa([[s * f0, y0, z0], [s * (f0 + .85), y0, z0], [s * (f1 + .85), y0, z1], [s * f1, y0, z1], [s * f0, y1, z0], [s * (f0 + .85), y1, z0], [s * (f1 + .85), y1, z1], [s * f1, y1, z1]], 'wall', .6);
-    hexa([[s * (f0 + .85), y0, z0], [s * (f0 + WT), y0, z0], [s * (f1 + WT), y0, z1], [s * (f1 + .85), y0, z1], [s * (f0 + .85), CT - .01, z0], [s * (f0 + WT), CT - .01, z0], [s * (f1 + WT), CT - .01, z1], [s * (f1 + .85), CT - .01, z1]], 'wall', .6) /* behind the coping, up to the paving's bed */;
+    hexa([[s * (f0 + .85), y0, z0], [s * (f0 + WT), y0, z0], [s * (f1 + WT), y0, z1], [s * (f1 + .85), y0, z1], [s * (f0 + .85), CT + .004, z0], [s * (f0 + WT), CT + .004, z0], [s * (f1 + WT), CT + .004, z1], [s * (f1 + .85), CT + .004, z1]], 'setts', .35) /* behind the coping, paved, a hair over the land so its cut never shows */;
     const n = Math.max(1, Math.round(Math.hypot(z1 - z0, f1 - f0) / 1.1)); for (let k = 0; k < n; k++) { const za = z0 + (z1 - z0) * k / n, zb = z0 + (z1 - z0) * (k + 1) / n, fa = f0 + (f1 - f0) * k / n - .05, fb = f0 + (f1 - f0) * (k + 1) / n - .05, j = (k % 2) * .004;
       hexa([[s * fa, y1, za], [s * (fa + .9), y1, za], [s * (fb + .9), y1, zb], [s * fb, y1, zb], [s * fa, CT + .05 + j, za], [s * (fa + .9), CT + .05 + j, za], [s * (fb + .9), CT + .05 + j, zb], [s * fb, CT + .05 + j, zb]], 'dress', .6); } }
-  // the wing walls' ends, stepped down into the pitched banks
-  for (const s of [-1, 1]) for (const z of [MZ0, MZ1]) { const sg = z < 0 ? -1 : 1; for (let k = 0; k < 3; k++) put(new THREE.BoxGeometry(WT + .3, .5, .7), 'dress', s * (A + WT / 2), CT - .2 - k * .55, z + sg * (.35 + k * .7)); }
+  // the wing walls' ends: a dressed quoin from the bed to the coping, where the pitched bank takes over
+  for (const s of [-1, 1]) for (const z of [MZ0, MZ1]) { const sg = z < 0 ? -1 : 1, y0 = (z < 0 ? BU : BL) - .3; put(new THREE.BoxGeometry(WT + .04, CT + .05 - y0, .6), 'dress', s * (A + WT / 2), (CT + .05 + y0) / 2, z - sg * .28); }
   // the breast wall under the upper gates and its cill
   hexa([[-HW - .9, BL - .3, ZH - .5], [HW + .9, BL - .3, ZH - .5], [HW + .9, BL - .3, ZC], [-HW - .9, BL - .3, ZC], [-HW - .9, BU, ZH - .5], [HW + .9, BU, ZH - .5], [HW + .9, BU, ZC], [-HW - .9, BU, ZC]], 'wall', .6);
   put(new THREE.BoxGeometry(2 * HW, .12, .3), 'dress', 0, BU + .06, ZH - .25);
@@ -4081,9 +4081,9 @@ export function gatelandsCanal(o = {}, r = stream('canal')) {
     const pos = []; for (let k = 0; k < N; k++) for (let i = 0; i < 5; i++) { const a = rings[k][i], b = rings[k][i + 1], c = rings[k + 1][i + 1], d = rings[k + 1][i]; pos.push(...a, ...b, ...c, ...a, ...c, ...d); }
     for (const R of [rings[0], rings[N]]) for (let i = 1; i < 5; i++) pos.push(...R[0], ...R[i], ...R[i + 1]);
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.computeVertexNormals(); put(g, 'hull', 0, 0, 0, 0, 0, 0, .5);
-    for (let k = 0; k < N; k++) for (const i of [0, 5]) rod('boat', rings[k][i], rings[k + 1][i], .07, 5);
+    for (let k = 0; k < N; k++) for (const i of [0, 5]) rod('band', rings[k][i], rings[k + 1][i], .07, 5) /* the gunwale, red */;
     put(new THREE.BoxGeometry(2 * HB - .3, .06, BLN - 8.6), 'boat', bx, bargeW - DR + .32, bz0 + 4.2 + (BLN - 8.6) / 2) /* the hold's floor */;
-    const cz = bz0 + 2.3; put(new THREE.BoxGeometry(2 * HB - .36, 1.25, 3.4), 'paint', bx, bargeW + FB - .2 + .625, cz); put(new THREE.BoxGeometry(2 * HB - .2, .08, 3.6), 'boat', bx, bargeW + FB + 1.09, cz);
+    const cz = bz0 + 2.3; put(new THREE.BoxGeometry(2 * HB - .36, 1.25, 3.4), 'paint', bx, bargeW + FB - .2 + .625, cz); put(new THREE.BoxGeometry(2 * HB - .2, .08, 3.6), 'band', bx, bargeW + FB + 1.09, cz);
     for (const sx of [-1, 1]) put(new THREE.PlaneGeometry(.5, .35), 'pane', bx + sx * (HB - .17), bargeW + FB + .62, cz, 0, sx * Math.PI / 2); put(new THREE.PlaneGeometry(.7, 1.0), 'pane', bx + .5, bargeW + FB + .4, cz + 1.71);
     put(new THREE.CylinderGeometry(.09, .09, .55, 8), 'pipe', bx - .9, bargeW + FB + 1.4, cz - .6);
     put(new THREE.BoxGeometry(.1, 1.3, .9), 'boat', bx, bargeW - .2, bz0 - .45); rod('boat', [bx, bargeW + .4, bz0 - .45], [bx, bargeW + FB + .95, bz0 - .45], .06, 6); rod('boat', [bx, bargeW + FB + .95, bz0 - .45], [bx + .3, bargeW + FB + 1.0, bz0 + .45], .04, 5) /* the rudder, its stock and the tiller, short of the cabin */;

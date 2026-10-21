@@ -1,7 +1,7 @@
 // The Gatelands' canal lock (Session 1229): places.js's gatelandsCanal, a lock of 2.6 m on a summit canal, a humpback bridge over its
 // tail, the lock-keeper's cottage and a turf barge.
 // ?place=canal&view=lock (default): from the towpath below the bridge, up through the arch to the lower gates; view=gates: on the lockside
-// by the lower gates' beams; view=chamber: from the coping down into the chamber and the barge; view=bridge: from the road's crown over the
+// by the lower gates' beams; view=chamber: from the shut upper gates' top down the chamber to the barge; view=bridge: from the road's crown over the
 // lock to the upper gates; view=upper: from the upper towpath, the head and the paddles; view=barge: from the lower towpath to the barge
 // tied up below the bridge (&barge=pound); view=far: high over it all. &fill=high: the chamber full, the upper gates open. &barge=pound:
 // the barge tied up in the lower pound. &dusk: the evening. &cam=x,y,z,tx,ty,tz puts the camera anywhere.
@@ -22,12 +22,12 @@ scene.add(new THREE.HemisphereLight(DUSK ? new THREE.Color(.42, .4, .5) : new TH
 const g = A.ground, Bd = A.bridge, Lk = A.lock, Bg = A.barge;
 let eye, at;
 if (VIEW === 'gates') { eye = [-4.6, A.levels.CT + 1.62, 6.5]; at = [0, -1.2, 12.5]; cam.fov = 62; }
-else if (VIEW === 'chamber') { eye = [-3.0, A.levels.CT + 1.62, -9.5]; at = [0, A.chamberY, 2]; cam.fov = 62; }
+else if (VIEW === 'chamber') { eye = [.15, A.levels.CT + .7 + 1.62, -12.62]; at = [0, A.chamberY - .4, 2]; cam.fov = 62; }
 else if (VIEW === 'bridge') { eye = [-.6, Bd.deck(0) + 1.62, Bd.z0 + .9]; at = [0, -.6, -8]; cam.fov = 60; }
 else if (VIEW === 'upper') { eye = [-7.9, g(-7.9, -28) + 1.62, -28]; at = [0, -.4, -9]; cam.fov = 58; }
 else if (VIEW === 'barge') { eye = [-9.6, g(-9.6, 30) + 1.62, 30]; at = [Bg.x, Bg.water + .6, Bg.z + 2]; cam.fov = 58; }
 else if (VIEW === 'far') { scene.fog.density = .003; eye = [34, 30, 52]; at = [0, -1, 2]; cam.fov = 50; }
-else { eye = [-8.6, g(-8.6, 34) + 1.62, 34]; at = [0, -1.2, 10]; cam.fov = 60; }
+else { eye = [-11.2, g(-11.2, 36) + 1.62, 36]; at = [0, -1.6, 14]; cam.fov = 58; }
 cam.position.set(...eye); cam.lookAt(...at);
 if (Q.get('cam')) { const c = Q.get('cam').split(',').map(Number); cam.position.set(c[0], c[1], c[2]); cam.lookAt(c[3], c[4], c[5]); }
 cam.updateProjectionMatrix();

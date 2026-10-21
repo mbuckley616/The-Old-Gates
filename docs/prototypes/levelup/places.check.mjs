@@ -1268,7 +1268,7 @@ const CN = await page.evaluate(async () => { const THREE = await import('three')
   const hash = g => { let h = 0; g.traverse(m => { if (!m.isMesh) return; const a = m.geometry.attributes.position.array; for (let i = 0; i < a.length; i += 7) h = (h * 31 + Math.round(a[i] * 1e4)) | 0; }); return h; };
   for (let i = 0; i < 3; i++) for (const fill of ['low', 'high']) { const key = 'canal:' + i, barge = fill === 'low' ? 'chamber' : 'pound', a = K.gatelandsCanal({ key, fill, barge }, S.stream(key)), b = K.gatelandsCanal({ key, fill, barge }, S.stream(key)); a.group.updateMatrixWorld(true);
     const L = f => { const l = []; a.group.traverse(q => { if (q.isMesh && f(q.name)) l.push(q); }); return l; }, LAND = ['turf', 'track', 'setts', 'path', 'bed', 'pitch'], solid = L(n => !LAND.includes(n) && n !== 'water'), land = L(n => LAND.includes(n)), dry = L(n => n !== 'water'), water = L(n => n === 'water');
-    const noBarge = L(n => !['water', 'hull', 'paint', 'tarp', 'boat', 'pipe', 'pane', 'rope'].includes(n));
+    const noBarge = L(n => !['water', 'hull', 'paint', 'tarp', 'boat', 'band', 'pipe', 'pane', 'rope'].includes(n));
     const cast = (p, d, l = solid, far = 80) => { const h = new THREE.Raycaster(new THREE.Vector3(...p), new THREE.Vector3(...d).normalize(), 0, far).intersectObjects(l)[0]; return h ? { d: h.distance, y: h.point.y, m: h.object.name, p: h.point } : { d: 99, y: -99, m: null }; };
     const Lv = a.levels, Lk = a.lock, G = a.gates, Bd = a.bridge, Bg = a.barge;
     // the chamber's width at every half metre, below the low water's line and above it; in the recesses the open leaf (or the recess's back)
