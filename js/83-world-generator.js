@@ -280,7 +280,7 @@
       // earlier one (shops come first, so churches/keeps keep their room).
       // S1138 — a type with a plot takes it (below): the other lots are sized as if it were not in the list
       const plotAt=PLOTS.map(P=>({P,i:shopTypes.indexOf(P.type)})).filter(q=>q.i>=0).sort((a,b)=>a.i-b.i),sizeTypes=shopTypes.filter((t,i)=>!plotAt.some(q=>q.i===i));
-      lots.forEach((lot,i)=>{const t=sizeTypes[i];if(t==='church'){lot.w=Math.max(lot.w,7);lot.d=Math.max(lot.d,9);}else if(t==='castle'){lot.w=14;lot.d=11;}else if(t==='guild_f'||t==='guild_m'){lot.w=13;lot.d=11;}});
+      lots.forEach((lot,i)=>{const t=sizeTypes[i];if(t==='church'){lot.w=Math.max(lot.w,7);lot.d=Math.max(lot.d,9);}else if(t==='castle'){lot.w=14;lot.d=11;}else if(t==='guild_f'||t==='guild_m'){lot.dB=lot.d;lot.w=13;lot.d=11;}}); /* S1275 — dB, the lot's own depth, whose front is its street line at every prosperity */
       const kept=[];
       // S193 — a lot made bigger above (a keep, a guild hall, a church) is checked against the roads again: its corners
       // could reach one (3 of 1,062 buildings in thirty towns stood on a road)
@@ -334,9 +334,12 @@
       // at each end if that clears a street beside it (kit.slide, which its door moves by too).
       const near=(l,own)=>{let m=1e9;for(const q of corners(l,0)){m=Math.min(m,inner-1-Math.hypot(q.x-cx,q.z-cz));const ri=roadInfo(q.x,q.z,true);if(ri)m=Math.min(m,ri.d-ROAD_HALF-1.2);
           for(const L of streetLines){if(own&&L.px===own.px&&L.pz===own.pz&&L.dx===own.dx&&L.dz===own.dz)continue;m=Math.min(m,Math.abs((q.x-L.px)*(-L.dz)+(q.z-L.pz)*L.dx)-1.6);}}return m;};
-      if(town)use.forEach((lot,i)=>{const t=shopTypes[i];if(t!=='guild_f'&&t!=='guild_m')return;const P=G.PLANS.guildhall(),w0=lot.w,d0=lot.d,x0=lot.x,z0=lot.z,sh=(d0-P.d)/2,m0=Math.min(0,near(lot,lot.street));
-        lot.w=P.w;lot.d=P.d;for(const sl of [0,.35,-.35,.7,-.7]){lot.x=x0+lot.tx*sh+lot.tz*sl;lot.z=z0+lot.tz*sh-lot.tx*sl;
-          if(near(lot,lot.street)>=m0-1e-6&&use.every(u=>u===lot||apart(lot,u))&&offPlots(lot)){lot.kit={kind:'guildhall',guild:t==='guild_m'?'mages':'fighters',w0,d0,slide:sl};return;}}
+      // S1275 — its front goes first on the lot's own street line (dB: planLots grew a guild's lot to 13 by 11 m about its centre, which
+      // brought that front 2.5–3 m nearer the street), so the hall stands where the house a poorer town puts on the lot stands, and the
+      // lot's footprint no longer jumps with the town's fortunes (tests/placesave); where it will not fit there, on the grown lot's front.
+      if(town)use.forEach((lot,i)=>{const t=shopTypes[i];if(t!=='guild_f'&&t!=='guild_m')return;const P=G.PLANS.guildhall(),w0=lot.w,d0=lot.d,x0=lot.x,z0=lot.z,m0=Math.min(0,near(lot,lot.street));
+        lot.w=P.w;lot.d=P.d;for(const dF of [...new Set([lot.dB||d0,d0])]){const sh=(dF-P.d)/2;for(const sl of [0,.35,-.35,.7,-.7]){lot.x=x0+lot.tx*sh+lot.tz*sl;lot.z=z0+lot.tz*sh-lot.tx*sl;
+          if(near(lot,lot.street)>=m0-1e-6&&use.every(u=>u===lot||apart(lot,u))&&offPlots(lot)){lot.kit={kind:'guildhall',guild:t==='guild_m'?'mages':'fighters',w0,d0,slide:sl};return;}}}
         lot.w=w0;lot.d=d0;lot.x=x0;lot.z=z0;});
       // (S1138: the bays after the guild halls, so a widened house never takes the room a hall needs)
       use.forEach((lot,i)=>{const t=shopTypes[i]||null;if(t&&!KIT_SHOPS.has(t))return;if(lot.k==='sw'||(site.kind==='port'&&site.quayStart&&Math.hypot(lot.x-site.quayStart.x,lot.z-site.quayStart.z)<34))return;

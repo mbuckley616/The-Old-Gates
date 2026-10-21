@@ -21,7 +21,7 @@ strike the row here. That PR runs the suite. Kept by the QA routine; started by 
 | `mainrun` | too slow: killed at the 900 s a suite is given (1800 s with the retry) | open |
 | `panelfocus` | too slow: killed at the 900 s a suite is given (900 s with the retry) | open |
 | `penance` | red: a lock picked under a witness's eye: favour −1, a point owed, a 25-gold fine | open |
-| `placesave` | red: across prosperity swings of 13 and 26 in four towns, no house id moves to another lot | open |
+| ~~`placesave`~~ | red: across prosperity swings of 13 and 26 in four towns, no house id moves to another lot | fixed, Session 1275 (the guild hall's front on its lot's own street line; a kit house's lot measured by its centre or its street front) |
 | `renewal` | too slow: killed at the 900 s a suite is given (900 s with the retry) | open |
 | `scaleratio` | red: dunmore (gatelands): every house door is 1.1 to 1.25 of a 1.8 m person (55 doors measured) | open |
 | `signs` | red: dunmore: every shop, inn, church and guild hall has one board, reading its own name | open |
