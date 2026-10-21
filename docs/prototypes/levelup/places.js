@@ -4162,3 +4162,93 @@ export function gatelandsCanal(o = {}, r = stream('canal')) {
     cottage: { x: CX, z: CZ, w: plan.w, d: plan.d, ry: CRY, door: [+door.x.toFixed(3), +door.y.toFixed(3), +door.z.toFixed(3)] }, road: { z: ZB, w: RW }, tow, paths, trees, fill,
     bywash: { x: QX, z: QZ, notch: { x: NX, z: NZ }, weir: { x: WR, crest: -.05 }, steps: QSTEP, levels: QLV, level: qLevel, top: QTOP, outlet: { z: OZ, sill: OS, head: OH, x: -HW }, dist: qD } };
 }
+
+// ── the Mark's fortress on a pass (Session 1235, card F8; L5's "the Mark's settlements", OG-034's "fortress town on a pass", its Stonewatch
+// panel; the canon's "squat stone garrisons", the Captains' League's fort-captains). A pass between two ranges, its floor 18 m across and
+// its sides walkable for 6 m each side before they stand up as cliff; across it, where it is narrowest, a captain's garrison shuts it with a
+// wall of squat ashlar, a gate tower over the road and a round tower at each end against the cliff's foot; the garrison's few buildings
+// behind it, up the pass. Built at true size, a metre a unit, the road along z, the enemy's side to -z, the wall's outer face at z WZ0:
+//   - the land: the floor flat across 18 m, the flanks rising 1 in 2 for 6 m, then cliff at 58° and up; the road climbing 1 in 14 to the wall
+//     and 1 in 40 beyond it; snow on the floor and the flanks, rock on the cliffs, the road's gravel 4 m wide;
+//   - the wall: 2.6 m thick and 5.5 m over the land at its outer face, from cliff to cliff; its walk stepped 0.2 m at a time as the flanks rise,
+//     behind a parapet 1.1 m over the walk, an arrow slit every 3 m; a stair of 0.18 m rises up its back to the walk east of the gate;
+//   - the gate tower: 10 by 9 m and 11 m to its eaves, 3.2 m proud of the wall, a passage 3.6 m wide and 4.2 m clear under a log lintel, two
+//     leaves standing open against the passage's walls; a door from the walk on each side; a low pyramid of dark shingle;
+//   - the flank towers: round, 3.2 m across the outside, 8 m to the eaves over the cliff's foot, a shingle cone;
+//   - behind: the kit's Markish hall (markHall, shingle, carved) for the captain, a turf-roofed barracks, a storehouse on four posts.
+// -> { group, tris, draws, own, ground(x, z), wall { z0, z1, x0, x1, h, walk(x), parapet, slits }, gate { w, h, z0, z1, x0, x1 }, tower { x0, x1,
+//      z0, z1, top }, flanks [{ x, z, r, top }], stair { x0, x1, z0, z1, n, rise, run }, road { w }, floor, flank, cliff (the land's half-widths),
+//      hall, barracks, store, paths }
+export function markPassFort(o = {}, r = stream('passfort')) {
+  markTextures(); aurenneTextures() /* the limestone, for the ashlar */; const key = String(o.key || 'passfort');
+  const M = { ...mats(), snow: mat('plaster', { ns: .3, color: 0xf2f5f8, rough: .95 }), cliff: mat('rock', { ns: 1.4, color: 0x6c6a66, rough: .95 }), shingle: mat('shingle', { ns: 1.4, rough: .8 }),
+    log: mat('beam', { ns: 1.1, color: 0x7a624a, rough: .9 }), ashlar: mat('limestone', { ns: 1.1, color: 0x8e8a84, rough: .95 }), cope: mat('limestone', { ns: .9, color: 0x7a7670, rough: .9 }), gravel: mat('turfDry', { ns: 1.0, color: 0x8a8070, rough: 1 }) };
+  M.shingle.side = THREE.DoubleSide;
+  const B = new Map(), V = (x, y) => new THREE.Vector2(x, y);
+  const put = (geo, k, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, uv = .5) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal'].includes(a)) g.deleteAttribute(a);
+    if (!g.attributes.normal) g.computeVertexNormals();
+    g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), new THREE.Vector3(1, 1, 1))); worldUV(g, uv);
+    if (!B.has(k)) B.set(k, []); B.get(k).push(g); };
+  const bx = (k, x0, x1, y0, y1, z0, z1, uv = .5) => put(new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0), k, (x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2, 0, 0, 0, uv);
+  const rod = (k, a, b, rad, seg = 6) => { const A = new THREE.Vector3(...a), Bv = new THREE.Vector3(...b), d = Bv.clone().sub(A), g = new THREE.CylinderGeometry(rad, rad, d.length(), seg); g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.clone().normalize())); const m = A.add(Bv).multiplyScalar(.5); put(g, k, m.x, m.y, m.z); };
+  const sm = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+  // the land: the floor, the flanks, the cliffs; the road's rise along z; a little roughness off the road and the buildings
+  const FLOOR = 9, FLANK = 15, CLIFF = 1.6, FG = .5, WZ0 = -1.3, WT = 2.6, WZ1 = WZ0 + WT, WH = 5.5, RW = 4, F = field(stream(key + ':land'), .5);
+  const along = z => z < 0 ? z / 14 : z / 40, across = ax => ax <= FLOOR ? 0 : ax <= FLANK ? (ax - FLOOR) * FG : (FLANK - FLOOR) * FG + (ax - FLANK) * CLIFF;
+  const rough = (x, z) => { const ax = Math.abs(x); return F(x, 0, z)[1] * (ax < FLOOR ? .25 : ax < FLANK ? .5 : 1.4) * sm(RW / 2, RW / 2 + 3, ax) * (1 - (1 - sm(1.5, 5, Math.abs(z - (WZ0 + WZ1) / 2) - 4)) * (1 - sm(FLANK + 5, FLANK + 9, ax))); } /* none by the wall's line, so its cells sit true */;
+  const ground = (x, z) => along(z) + across(Math.abs(x)) + rough(x, z);
+  { const steps = (bands, end) => { const v = []; for (const [a, b, st] of bands) for (let q = a; q < b - 1e-6; q += st) v.push(+q.toFixed(2)); v.push(end); return v; };
+    const gx = steps([[-90, -30, 4], [-30, -18, 1], [-18, 18, .5], [18, 30, 1], [30, 90, 4]], 90), gz = steps([[-120, -40, 8], [-40, -10, 1], [-10, 10, .5], [10, 60, 1], [60, 140, 8]], 140), NX = gx.length;
+    const pos = []; for (const z of gz) for (const x of gx) pos.push(x, ground(x, z), z); const I = { snow: [], cliff: [], gravel: [] }, P = (i) => [pos[3 * i], pos[3 * i + 1], pos[3 * i + 2]];
+    for (let j = 0; j + 1 < gz.length; j++) for (let i = 0; i + 1 < NX; i++) { const a = j * NX + i, b = a + 1, c = a + NX, d = c + 1;
+      for (const t of [[a, c, b], [b, c, d]]) { const [p, q, s] = t.map(P), n = new THREE.Vector3(...q).sub(new THREE.Vector3(...p)).cross(new THREE.Vector3(...s).sub(new THREE.Vector3(...p))).normalize(), cx = (p[0] + q[0] + s[0]) / 3;
+        I[Math.abs(cx) < RW / 2 ? 'gravel' : (Math.abs(cx) > FLANK + .3 ? Math.abs(n.y) < .86 : Math.abs(n.y) < .62) ? 'cliff' : 'snow'].push(...t); } } /* snow on the floor and the flanks, on the cliffs only where they shelve */
+    for (const [k, idx] of Object.entries(I)) { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); put(g, k, 0, 0, 0, 0, 0, 0, .35); } }
+  // the wall: cells of 0.4 m along x, each from under the land to the walk, its walk at the highest land under the cell plus WH, rounded to
+  // 0.2 m, so the walk steps up the flanks a rise at a time; the parapet on the outer face; the slits; the cope on the parapet
+  const GX = 5, GW = 1.8, GHT = 4.2, TOP = WH + 5.5, WX = FLANK + .2 /* to the cliff's foot, under the flank towers */;
+  const cellTop = x => { let h = -99; for (const zz of [WZ0, WZ1]) for (const xx of [x - .2, x, x + .2]) h = Math.max(h, ground(xx, zz)); return h; };
+  const walk = x => { const c = GX + Math.max(0, Math.floor((Math.abs(x) - GX + 1e-6) / .4)) * .4 + .2 /* the cell's middle, the cells laid from the tower out */; return Math.round((Math.max(cellTop(c), ground(0, WZ0)) + WH) / .2) * .2; }, PH = 1.1, PT = .5, slits = [];
+  for (let x0 = GX; x0 < WX - 1e-6; x0 += .4) for (const s of [-1, 1]) { const xa = s * x0, xb = s * (x0 + .4), xl = Math.min(xa, xb), xh = Math.max(xa, xb), y = walk((xa + xb) / 2), y0 = Math.min(cellTop((xa + xb) / 2), y) - 1.5;
+    bx('ashlar', xl, xh, y0, y, WZ0, WZ1, .6); bx('ashlar', xl, xh, y, y + PH, WZ0, WZ0 + PT, .6); bx('cope', xl - .01, xh + .01, y + PH, y + PH + .1, WZ0 - .04, WZ0 + PT + .04);
+    if (Math.round((x0 - GX) / .4) % 7 === 3) { slits.push([+((xa + xb) / 2).toFixed(2), +(y + .2).toFixed(2)]); put(new THREE.PlaneGeometry(.12, .8), 'dark', (xa + xb) / 2, y + .55, WZ0 - .005, 0, Math.PI); } }
+  // the gate tower: its two sides, the passage's roof over a log lintel, the front and back walls over the passage, the leaves open
+  const TZ0 = WZ0 - 3.2, TZ1 = WZ1 + 2.0, Y0 = ground(0, TZ0) - 1.5, RY = Math.max(ground(0, TZ0), ground(0, TZ1)), PY = ground(0, (TZ0 + TZ1) / 2);
+  for (const s of [-1, 1]) bx('ashlar', s > 0 ? GW : -GX, s > 0 ? GX : -GW, Y0, TOP, TZ0, TZ1, .6);
+  bx('ashlar', -GW, GW, PY + GHT + .45, TOP, TZ0, TZ1, .6); for (const z of [TZ0 + .25, TZ1 - .25]) rod('log', [-GW - .3, PY + GHT + .22, z], [GW + .3, PY + GHT + .22, z], .24, 8);
+  for (let k = 0; k < 7; k++) rod('log', [-GW - .1, PY + GHT + .2, TZ0 + .9 + k * (TZ1 - TZ0 - 1.8) / 6], [GW + .1, PY + GHT + .2, TZ0 + .9 + k * (TZ1 - TZ0 - 1.8) / 6], .2, 7) /* the passage's ceiling, logs */;
+  for (const s of [-1, 1]) { bx('log', s * GW - (s > 0 ? .14 : 0), s * GW + (s > 0 ? 0 : .14), PY, PY + GHT - .05, TZ0 + .9, TZ0 + .9 + GW - .05) /* a leaf, open against the passage's wall */;
+    for (const y of [PY + .6, PY + GHT / 2, PY + GHT - .7]) bx('iron', s * GW - (s > 0 ? .17 : -.14), s * GW + (s > 0 ? -.14 : .17), y - .06, y + .06, TZ0 + 1.0, TZ0 + .9 + GW - .15); }
+  // the tower's doors from the walk, its slits, its eaves course and the roof's pyramid of shingle on its plate
+  for (const s of [-1, 1]) { const y = walk(s * (GX + .2)); put(new THREE.PlaneGeometry(1.0, 2.0), 'dark', s * (GX + .005), y + 1.0, (WZ0 + WZ1) / 2 + .2, 0, s * Math.PI / 2); }
+  for (const [x, y] of [[-2.5, WH + 2], [2.5, WH + 2], [0, WH + 2.4]]) put(new THREE.PlaneGeometry(.14, .9), 'dark', x, PY + y, TZ0 - .005, 0, Math.PI);
+  bx('cope', -GX - .2, GX + .2, TOP, TOP + .25, TZ0 - .2, TZ1 + .2);
+  { const g = new THREE.ConeGeometry((GX + .8) * Math.SQRT2, 3.6, 4, 1, true, Math.PI / 4); g.scale(1, 1, (TZ1 - TZ0 + 1.6) / (2 * GX + 1.6)); put(g, 'shingle', 0, TOP + .25 + 1.8, (TZ0 + TZ1) / 2, 0, 0, 0, .6); }
+  // the flank towers: round over the cliff's foot, their floor at the walk, a cone of shingle
+  const flanks = []; for (const s of [-1, 1]) { const x = s * (WX + 1.4), z = (WZ0 + WZ1) / 2, R = 3.2, gy = Math.min(ground(x - R, z), ground(x + R, z), ground(x, z - R), ground(x, z + R)) - 1.5, top = walk(s * (WX - .2)) + 2.8;
+    put(new THREE.CylinderGeometry(R, R + .15, top - gy, 24), 'ashlar', x, (top + gy) / 2, z, 0, 0, 0, .6); put(new THREE.CylinderGeometry(R + .2, R + .2, .25, 24), 'cope', x, top + .12, z);
+    put(new THREE.ConeGeometry(R + .55, 3.4, 24, 1, true), 'shingle', x, top + .25 + 1.7, z, 0, 0, 0, .6); put(new THREE.PlaneGeometry(.14, .9), 'dark', x - s * .6, top - 1.2, z - R - .02, 0, Math.PI);
+    put(new THREE.PlaneGeometry(1.0, 2.0), 'dark', x - s * (R + .005) * Math.cos(.3), walk(s * (WX - .2)) + 1.0, z + .5, 0, -s * Math.PI / 2) /* its door from the walk */; flanks.push({ x, z, r: R, top: +top.toFixed(2) }); }
+  // the stair to the walk, east of the gate: a flight of 0.3 m treads straight back from the wall's back face up the pass, 1.2 m wide, on
+  // its own solid of ashlar; its top tread level with the walk
+  const SXa = 6.4, SXb = 7.6, SY = walk((SXa + SXb) / 2), SL = 9.6, SG = ground((SXa + SXb) / 2, WZ1 + SL), NS = Math.ceil((SY - SG) / .18), SR = (SY - SG) / NS, SZ1 = WZ1 + NS * .3;
+  for (let k = 1; k <= NS; k++) { const za = WZ1 + (NS - k) * .3, zb = za + .3, y = SG + k * SR; bx('ashlar', SXa, SXb, Math.min(ground(SXa, zb), ground(SXb, zb)) - .6, y, za, zb, .6); }
+  // behind: the captain's hall, the barracks, the storehouse on its posts; the paths from the road to their doors
+  const H = markHall({ roof: 'shingle', w: 7, d: 14, porch: true, chimney: true, carve: true, wall: 1 }, stream(key + ':hall')), HX = -5.6, HZ = 21, HRY = Math.PI;
+  H.group.position.set(HX, ground(HX, HZ) - .05, HZ); H.group.rotation.y = HRY;
+  const K = markHall({ roof: 'turf', turf: 'moss', w: 6, d: 11, porch: false, chimney: true, carve: false, wall: 2 }, stream(key + ':barracks')), KX = 5.4, KZ = 32, KRY = Math.PI;
+  K.group.position.set(KX, ground(KX, KZ) - .05, KZ); K.group.rotation.y = KRY;
+  const SXc = 6.2, SZc = 15, SF = 1.1, SYc = ground(SXc, SZc); for (const [dx, dz] of [[-1.3, -1.3], [1.3, -1.3], [-1.3, 1.3], [1.3, 1.3]]) { bx('ashlar', SXc + dx - .3, SXc + dx + .3, SYc - .3, SYc + .35, SZc + dz - .3, SZc + dz + .3); bx('log', SXc + dx - .15, SXc + dx + .15, SYc + .35, SYc + SF - .1, SZc + dz - .15, SZc + dz + .15); }
+  bx('plank', SXc - 1.7, SXc + 1.7, SYc + SF - .1, SYc + SF + .05, SZc - 1.7, SZc + 1.7); for (const s of [-1, 1]) { bx('log', SXc - 1.6, SXc + 1.6, SYc + SF, SYc + SF + 2.1, SZc + s * 1.6 - .1, SZc + s * 1.6 + .1); bx('log', SXc + s * 1.6 - .1, SXc + s * 1.6 + .1, SYc + SF, SYc + SF + 2.1, SZc - 1.5, SZc + 1.5); }
+  { const RP = 40 * Math.PI / 180, RWd = 2.2, L = RWd / Math.cos(RP) + .1; for (const s of [-1, 1]) put(new THREE.BoxGeometry(3.9, .12, L), 'shingle', SXc, SYc + SF + 2.1 + Math.tan(RP) * RWd / 2, SZc + s * RWd / 2, s * RP, 0, 0, .6);
+    for (const s of [-1, 1]) { const tri = new THREE.Shape([V(-RWd, 0), V(RWd, 0), V(0, Math.tan(RP) * RWd)]); const g = new THREE.ExtrudeGeometry(tri, { depth: .1, bevelEnabled: false }); g.translate(0, 0, -.05); put(g, 'log', SXc + s * 1.6, SYc + SF + 2.1, SZc, 0, Math.PI / 2); } }
+  for (let k = 0; k < 5; k++) bx('plank', SXc - 2.2 - k * .3, SXc - 1.9 - k * .3, SYc, SYc + SF - .1 - k * .2, SZc - .5, SZc + .5);
+  const hd = H.stairOut + .6, kd = K.stairOut + .6;
+  const paths = [[[0, -40], [0, 60]], [[0, HZ - hd], [HX, HZ - hd]], [[0, KZ - kd], [KX, KZ - kd]], [[0, SZc], [SXc - 3.4, SZc]], [[2.6, SZ1 + .8], [(SXa + SXb) / 2, SZ1 + .8]]];
+  const group = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = !['snow', 'cliff', 'gravel', 'dark'].includes(k); m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
+  const own = group.children.length; group.add(H.group, K.group); tris += H.tris + K.tris;
+  return { group, tris: Math.round(tris), draws: own + H.draws + K.draws, own, ground, floor: FLOOR, flank: FLANK, cliff: CLIFF,
+    wall: { z0: WZ0, z1: WZ1, x0: -WX, x1: WX, h: WH, walk, parapet: PH, pt: PT, slits }, gate: { w: 2 * GW, h: GHT, y: PY, z0: TZ0, z1: TZ1, x0: -GW, x1: GW },
+    tower: { x0: -GX, x1: GX, z0: TZ0, z1: TZ1, top: TOP }, flanks, stair: { x0: SXa, x1: SXb, z0: WZ1, z1: SZ1, n: NS, rise: +SR.toFixed(3), run: .3, top: SY, foot: SG },
+    road: { w: RW }, hall: { x: HX, z: HZ, ry: HRY, w: 7, d: 14, door: [HX, HZ - H.stairOut] }, barracks: { x: KX, z: KZ, ry: KRY, door: [KX, KZ - K.stairOut] }, store: { x: SXc, z: SZc, floor: SYc + SF + .05 }, paths };
+}
