@@ -167,6 +167,12 @@ function buildPanel() {
   // the mail made as sheet metal (Session 1260, card F10): plate, or Bronze's muscle cuirass with its leather strips
   { const pl = el('select', {}, ...[['', 'rings or scales'], ['plate', 'plate'], ['muscle', 'a muscle cuirass']].map(([v, t]) => el('option', { value: v, textContent: t }))); pl.value = D().plate || ''; pl.onchange = () => { D().plate = pl.value || null; schedule(); };
     panel.append(el('div', { className: 'bar' }, pl)); inputs.plate = () => pl.value = D().plate || ''; }
+  // what the gauntlets and greaves are made of (Session 1263, card F10), and the cuisses up the thigh with the greaves
+  for (const [k, opts] of [['vambraceKind', ['sheet', 'mail', 'scales', 'leather']], ['glovesKind', ['leather', 'mail', 'sheet']], ['greavesKind', ['sheet', 'mail', 'scales', 'leather']]]) {
+    const se = el('select', {}, ...opts.map(v => el('option', { value: v, textContent: v }))); se.value = D()[k] || opts[0]; se.onchange = () => { D()[k] = se.value; schedule(); };
+    panel.append(el('div', { className: 'crow' }, el('label', { textContent: k.replace('Kind', '') }), se, el('span'))); inputs[k] = () => se.value = D()[k] || opts[0]; }
+  { const cu = el('input', { type: 'checkbox', checked: !!D().cuisses, onchange: () => { D().cuisses = cu.checked; schedule(); } });
+    panel.append(el('div', { className: 'bar' }, el('label', {}, cu, ' cuisses with the greaves'))); inputs.cuisses = () => cu.checked = !!D().cuisses; }
   // the hurt (Session 1079, OG-001's extras): an old scar across one eye, and the eyepatch's side
   { const sc = el('select', {}, ...[['', 'no scar'], ['L', 'scar over the left eye'], ['R', 'scar over the right eye']].map(([v, t]) => el('option', { value: v, textContent: t }))); sc.value = G.scar || ''; sc.onchange = () => { G.scar = sc.value || null; schedule(); };
     const ps = el('select', {}, ...[['L', 'patch on the left'], ['R', 'patch on the right']].map(([v, t]) => el('option', { value: v, textContent: t }))); ps.value = D().eyepatchSide || 'L'; ps.onchange = () => { D().eyepatchSide = ps.value; schedule(); };

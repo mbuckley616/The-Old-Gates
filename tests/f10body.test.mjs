@@ -84,6 +84,16 @@ const fam = await drive(() => { const out = {}; for (const t of [1, 2, 3, 4, 10]
   EQ.chest = { name: 'Iron Cuirass', slot: 'chest', material: 'Iron', tier: 3 }; for (let i = 0; i < 4; i++) step(); return out; });
 console.log('  chest by family:', JSON.stringify(fam));
 check('a Wooden chest is lamellar (the builder\'s scales), Bronze the muscle cuirass, Iron mail, Steel and Cosmic plate', fam.Wooden === 'scales' && fam.Bronze === 'muscle' && fam.Iron === 'mail' && fam.Steel === 'plate' && fam.Cosmic === 'plate', fam);
+// gauntlets and greaves by family (Session 1263): Wooden's boards over leather gloves, Bronze's sheet, Iron's mail with cuisses, Steel's
+// and Cosmic's plate with cuisses; each piece a shell of its own on the builder's body, read off its material
+const gg = await drive(() => { const out = {}; for (const t of [1, 2, 3, 4, 10]) { const m = MATERIALS[t - 1];
+    EQ.hands = { name: m.name + ' Gauntlets', slot: 'hands', material: m.name, tier: t }; EQ.legs = { name: m.name + ' Greaves', slot: 'legs', material: m.name, tier: t };
+    for (let i = 0; i < 4; i++) step(); const H = TP.rig.rig.hb, k = {}; H.root.traverse(o => { if (o.isMesh && o.visible && /^(vambrace|gloves|greaves|cuisses)$/.test(o.name)) k[o.name] = o.material.customProgramCacheKey ? o.material.customProgramCacheKey().replace(/[\[{(].*$/, '').replace(/[-\d.,]+$/, '') : 'leather'; });
+    out[m.name] = ['vambrace', 'gloves', 'greaves', 'cuisses'].map(n => k[n] || '-').join(' '); }
+  EQ.hands = null; EQ.legs = null; for (let i = 0; i < 4; i++) step(); return out; });
+console.log('  gauntlets and greaves:', JSON.stringify(gg));
+check('gauntlets and greaves on the body by family: Wooden boards, Bronze sheet, Iron mail with cuisses, Steel and Cosmic plate with cuisses',
+  /^scales \S*leather\S* scales -$/.test(gg.Wooden) && /^sheet \S*leather\S* sheet -$/.test(gg.Bronze) && gg.Iron === 'mail mail mail mail' && gg.Steel === 'sheet sheet sheet sheet' && gg.Cosmic === 'sheet sheet sheet sheet', gg);
 check('in third person the new body bakes no middle level (it is baked when first person asks)', worn.mid === false, { mid: worn.mid });
 const sword = worn.held.find(h => h.kit === 'sword'), shield = worn.held.find(h => h.kit === 'kite');
 check('a copy of the sword is carried in the builder\'s group with its grip in the right fist (within 2 cm), the shield with it', sword && sword.inBuilder && sword.meshes > 0 && sword.gap < .02 && shield && shield.inBuilder && shield.meshes > 0, worn.held);
@@ -108,6 +118,9 @@ if (process.env.F10_SHOTS) {
   await shot('f10-third-muscle-bronze.png', .6, () => { EQ.chest = { name: MATERIALS[1].name + ' Cuirass', slot: 'chest', material: MATERIALS[1].name, tier: 2 }; });
   await shot('f10-third-plate-steel.png', .6, () => { EQ.chest = { name: MATERIALS[3].name + ' Cuirass', slot: 'chest', material: MATERIALS[3].name, tier: 4 }; });
   await shot('f10-third-plate-steel-back.png', Math.PI + .5, () => {});
+  // gauntlets and greaves (Session 1263)
+  for (const [t, n] of [[1, 'wooden'], [3, 'iron'], [4, 'steel']]) await shot(`f10-gauntlets-greaves-${n}.png`, .6, new Function(`const m = MATERIALS[${t - 1}]; for (const [s, k] of [['chest', 'Cuirass'], ['hands', 'Gauntlets'], ['legs', 'Greaves']]) EQ[s] = { name: m.name + ' ' + k, slot: s, material: m.name, tier: ${t} };`));
+  await page.evaluate(() => { EQ.hands = null; EQ.legs = null; });
   await shot('f10-third-plate-cosmic.png', .6, () => { EQ.chest = { name: MATERIALS[9].name + ' Cuirass', slot: 'chest', material: MATERIALS[9].name, tier: 10 }; });
   await page.evaluate(() => { window.tpCamera = window._tpCam0; });
 }
