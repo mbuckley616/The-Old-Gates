@@ -80,7 +80,9 @@ function tpHBDress(G0,o){const G=JSON.parse(JSON.stringify(G0)),D=Object.assign(
   if(o.ch)D.belt=[.3,.2,.12];
   if(o.robe)D.robe=hbRGB(o.chestCol);
   if(AR&&AR.chest){const P=AR.chest;if(P.line==='light')D.tunic=hbRGB(armourLineLeather(P.tier));else if(P.line==='robe')D.robe=hbRGB(LINE_ROBE[P.tier]);else D.mail=hbRGB(P.metal);}
-  if(AR&&AR.head&&!AR.head.line)D.helm=hbRGB(AR.head.metal);else if(o.hd&&!AR&&!tpIsCloth(o.hd))D.helm=hbRGB(o.helmCol);
+  // S1256 — the heavy line's helm is the builder's helm of its tier (helms.js; Michael's C of 18 Oct: from Steel up the face shut),
+  // fitted to the player's own head; Iron's is the kit's kettle helm, in the tier's metal
+  if(AR&&AR.head&&!AR.head.line){D.helm=hbRGB(AR.head.metal);D.tier=AR.head.tier;}else if(o.hd&&!AR&&!tpIsCloth(o.hd))D.helm=hbRGB(o.helmCol);
   const K=o.cloak;if(K){D.cloak=hbRGB(K.col);if(K.cut==='short'){D.cape=true;D.cloakLen=.6;}else D.cloakLen=.85;D.brooch=[.62,.47,.22];
     if(K.fur!=null)D.cloakFur=hbRGB(K.fur);if(K.trim!=null)D.cloakHem=hbRGB(K.trim);if(K.hood)D.hood=o.hd&&tpIsCloth(o.hd)?'up':'down';}
   return G;}
@@ -157,7 +159,7 @@ function tpBuild(lookIn,ppIn,reuse){
     const t0=performance.now();
     if(old){const H=old.rig.hb;if(old.hbHeld)for(const h of old.hbHeld)h.c.removeFromParent();old.hbHeld=null;old.rig.hb=null;old.rig.mesh.visible=true;
       rig.hb=H;H.L=-1;H.drv=rig.mesh.material;rig.root.add(H.root);TP_HB.kept=(TP_HB.kept||0)+1;}
-    else{try{hbAttach(rig);}catch(e){rig.hb=null;console.warn('F10: the player\'s body failed',e);}
+    else{rig.hbLazy=true;try{hbAttach(rig);}catch(e){rig.hb=null;console.warn('F10: the player\'s body failed',e);}
       if(rig.hb){TP_HB.ms+=performance.now()-t0;TP_HB.n++;}}
     if(rig.hb){R.hbSaved=E.saved;
       root.scale.setScalar(rig.hb.st*PW.BODY/SCALE.PERSON_MODEL);hbLevel(rig,0);

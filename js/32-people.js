@@ -1401,10 +1401,12 @@ function hbAttach(rig){const tA=performance.now();let P;
   root.traverse(o=>{if(!o.isMesh)return;o.castShadow=false;o.receiveShadow=true;full.push(o);
     if(o.isSkinnedMesh){o.bindMode='detached';o.bindMatrix.identity();o.bindMatrixInverse.identity();o.geometry.boundingSphere=sph.clone();o.frustumCulled=true;}
     if(HBODY.cards.test(o.name)||o.parent===by.head)cards.add(o);});
-  let mid;try{mid=hbMerge(P,cards);}catch(e){rig.root.remove(W);rig.hbFail=true;console.warn('F4: the middle level failed for',rig.g.hbKey,e);return;}mid.geometry.boundingSphere=sph.clone();root.add(mid);
+  // F10 (Session 1256) — a body that is only ever seen near (the player's, rig.hbLazy) bakes its middle level when it is first asked for
+  // (hbMid: first person's hands, a bed), not at attach: the bake was 200 to 700 ms of every change of what the player wears
+  let mid=null;if(!rig.hbLazy){try{mid=hbMerge(P,cards);}catch(e){rig.root.remove(W);rig.hbFail=true;console.warn('F4: the middle level failed for',rig.g.hbKey,e);return;}mid.geometry.boundingSphere=sph.clone();root.add(mid);
   // a foe's body glows as its driver's does (the tell, the guard-break, the parry's stagger: enemyBodyMesh is the driver's), so its
   // middle level has a material of its own (hbGlow)
-  if(rig.foe)mid.material=HB_MID_MAT.clone();
+  if(rig.foe)mid.material=HB_MID_MAT.clone();}
   root.traverse(o=>{if(!o.isMesh)return;for(const m of Array.isArray(o.material)?o.material:[o.material])if(m.onBeforeCompile!==THREE.Material.prototype.onBeforeCompile)m.clone=hbClone;});
   // which side is which: the driver's left shoulder and the builder's `.L` on the same side of the body (checked once)
   if(HBODY.swap==null){rig.root.updateMatrixWorld(true);const a=rig.root.worldToLocal(rig.B.shL.getWorldPosition(_hbv)).x,b=rig.root.worldToLocal(by['upperarm01.L'].getWorldPosition(_hbv2)).x;HBODY.swap=a*b<0;}
@@ -1419,7 +1421,7 @@ function hbAttach(rig){const tA=performance.now();let P;
   // fallen foe's builder body stayed standing on its driver
   const rb=by.root;rig.root.updateMatrixWorld(true);const inv=new THREE.Matrix4().copy(rig.root.matrixWorld).invert(),Ah=new THREE.Matrix4().multiplyMatrices(inv,B.hips.parent.matrixWorld),Bp=new THREE.Matrix4().multiplyMatrices(inv,rb.parent.matrixWorld);
   const hD=new THREE.Vector3(0,PW.HIPS,0).applyMatrix4(Ah).y,hB=rb.position.clone().applyMatrix4(Bp).y;
-  rig.hb={root:W,P,map,s0,t0,full,mid,pos0:rb.position.clone(),A:new THREE.Matrix3().setFromMatrix4(Ah),Bi:new THREE.Matrix3().setFromMatrix4(Bp).invert(),kh:hB/hD,L:-1,st,glow:!!rig.foe,drv:rig.mesh.material,em:0,held:[]};
+  rig.hb={root:W,P,map,s0,t0,full,mid,cards:mid?null:cards,sph:mid?null:sph,pos0:rb.position.clone(),A:new THREE.Matrix3().setFromMatrix4(Ah),Bi:new THREE.Matrix3().setFromMatrix4(Bp).invert(),kh:hB/hD,L:-1,st,glow:!!rig.foe,drv:rig.mesh.material,em:0,held:[]};
   // a foe's weapon (the game's kit, on the driver's gear bone, or the bow in its left hand) and shield (on the left forearm) hang on
   // the driver's bones, inside the driver's mesh, which is hidden while the builder's body shows: so they are carried in the builder's
   // group then, following their bone each frame (hbHold), the weapon's grip in the builder's fist, closed on it as people.js closes a
@@ -1432,7 +1434,7 @@ function hbAttach(rig){const tA=performance.now();let P;
   HBODY.ms+=performance.now()-tA;HBODY.n++;}
 // S1224 — the builder's body as points in the world, for the bed (personLie): its middle level's vertices that a triangle uses (the whole
 // body baked, less the hair's cards and what a garment's cut discards), each skinned on the CPU by the posed bones
-function hbSkinPts(rig){const H=rig.hb,mid=H.mid,G=mid.geometry,pa=G.attributes.position,v=new THREE.Vector3();
+function hbSkinPts(rig){const H=rig.hb,mid=hbMid(rig);if(!mid)return new Float32Array(0);const G=mid.geometry,pa=G.attributes.position,v=new THREE.Vector3();
   if(!H.used){const u=new Uint8Array(pa.count),ix=G.index.array;for(let i=0;i<ix.length;i++)u[ix[i]]=1;const a=[];for(let i=0;i<u.length;i++)if(u[i])a.push(i);H.used=Uint32Array.from(a);}
   rig.root.updateMatrixWorld(true);const out=new Float32Array(H.used.length*3);
   for(let k=0;k<H.used.length;k++){v.fromBufferAttribute(pa,H.used[k]);mid.applyBoneTransform(H.used[k],v);out[k*3]=v.x;out[k*3+1]=v.y;out[k*3+2]=v.z;}
@@ -1470,8 +1472,14 @@ function hbPose(rig){const H=rig.hb,B=rig.B,map=H.map;
 // a foe's glow: the driver's emissive on every material of the builder's body, and the parry's stagger (which swaps the driver's
 // material for a yellow clone, 74-strikes.js) as a strong gold; the materials the kill clones are the ones on the meshes now
 function hbGlow(rig){const H=rig.hb,m=rig.mesh.material;let em=m&&m.emissive?m.emissive.getHex():0;if(m!==H.drv&&m&&m.color&&m.color.getHex()===0xffdd44)em=0xb08010;
-  if(em===H.em)return;H.em=em;for(const o of [...H.full,H.mid])for(const x of Array.isArray(o.material)?o.material:[o.material])if(x.emissive)x.emissive.setHex(em);} // the body's own: what it holds keeps the kit's shared materials
-function hbLevel(rig,L){const H=rig.hb;if(H.L===L)return;H.L=L;if(L===2)hbGive(rig);H.root.visible=L<2;rig.mesh.visible=L===2;for(const m of H.full)m.visible=L===0;H.mid.visible=L===1;}
+  if(em===H.em)return;H.em=em;for(const o of H.mid?[...H.full,H.mid]:H.full)for(const x of Array.isArray(o.material)?o.material:[o.material])if(x.emissive)x.emissive.setHex(em);} // the body's own: what it holds keeps the kit's shared materials
+function hbLevel(rig,L){const H=rig.hb;if(H.L===L)return;H.L=L;if(L===2)hbGive(rig);if(L===1)hbMid(rig);H.root.visible=L<2;rig.mesh.visible=L===2;for(const m of H.full)m.visible=L===0;if(H.mid)H.mid.visible=L===1;}
+// the middle level, baked now if the body was attached without it (rig.hbLazy); null if the bake fails
+function hbMid(rig){const H=rig.hb;if(!H)return null;if(H.mid||H.midFail)return H.mid;const t=performance.now();
+  try{const m=hbMerge(H.P,H.cards);m.geometry.boundingSphere=H.sph.clone();m.visible=H.L===1;if(rig.foe)m.material=HB_MID_MAT.clone();
+    if(m.material.onBeforeCompile!==THREE.Material.prototype.onBeforeCompile)m.material.clone=hbClone;if(H.em&&m.material.emissive)m.material.emissive.setHex(H.em);
+    H.P.root.add(m);H.mid=m;H.cards=null;}catch(e){H.midFail=true;console.warn('F4: the middle level failed for',rig.g&&rig.g.hbKey,e);}
+  HBODY.midMs=(HBODY.midMs||0)+performance.now()-t;return H.mid;}
 // the middle level: every solid part of the body in one skinned mesh on the same skeleton, coloured by vertex from its material
 // (and its own vertex colours: the skin's), the shaders' weaves and cut hems left out. A part that hangs on a bone (the basket in
 // the hand, the helm, the spear) is put into the bind pose through that bone and weighted wholly to it; one on the body's root

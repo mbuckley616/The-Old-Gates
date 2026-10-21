@@ -136,8 +136,11 @@ const FP_HB={rig:null,geo:new Map(),ms:0,n:0};
 const FP_HB_DIM=.64;
 function fpHBFist(left,el){
   if(!started||typeof hbOn!=='function'||!hbOn()||typeof tpEnsure!=='function')return null;
+  // S1256 — in third person the view model is not seen: it keeps the kit's fist, and fpHBCheck cuts the builder's at the first
+  // first-person frame, so a change of what is worn in third person does not bake the body's middle level for hands no one sees
+  if(thirdPerson)return null;
   let R=TP.rig;if(!R||TP.armSig!==tpArmSig())try{R=tpEnsure();}catch(e){console.warn('F10: no body for the hands',e);return null;}
-  const H=R&&R.rig&&R.rig.hb;if(!H||!H.mid)return null;
+  const H=R&&R.rig&&R.rig.hb;if(!H||!hbMid(R.rig))return null;
   if(FP_HB.rig!==H){for(const v of FP_HB.geo.values())v.geo.dispose();FP_HB.geo.clear();FP_HB.rig=H;}
   const gl=EQ.hands,gk=gl?(gl.matCol!=null?String(gl.matCol):'g'):'-',sd=(HBODY.swap?!left:left)?'L':'R',key=sd+'|'+el+'|'+gk;
   let C=FP_HB.geo.get(key);if(!C){const t0=performance.now();C=fpHBBake(H,sd,el,!!left);if(!C)return null;FP_HB.ms+=performance.now()-t0;FP_HB.n++;FP_HB.geo.set(key,C);}
