@@ -586,7 +586,7 @@ function tubeGeom(line, rad, sides = 8, twist = 0) {
 // indexed geometries joined into one, positions and indices only, its normals worked out again (Session 1236, the tassel)
 function mergeGeoms(gs) { const pos = [], idx = []; let n = 0; for (const g of gs) { const p = g.attributes.position.array; for (const v of p) pos.push(v); for (const i of g.index.array) idx.push(i + n); n += p.length / 3; }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); return g; }
-// the rolled hood's centre line (Session 1242): the collar's ring repeats points where its columns meet and steps up and down between them,
+// the rolled hood's centre line (Session 1255): the collar's ring repeats points where its columns meet and steps up and down between them,
 // so the roll was a crumpled tube. Points within 4 mm of the last are dropped, the rest smoothed four times (the ends kept) and laid
 // again 1.5 cm apart along a curve through them
 function hoodLine(raw) { const pts = [raw[0]]; for (const q of raw.slice(1)) if (q.distanceTo(pts[pts.length - 1]) > .004) pts.push(q.clone());
@@ -720,7 +720,7 @@ function buildHair(P, G, heads, scalpTris, headB, rnd) {
       // the tie was see-through and its ends blunt. It runs 1 to 0 now, and its strands start inside the tie, 2.2 cm round)
       const m = strandCards(tail, col, headB); m.name = 'tail'; out.push(m); continue; }
     // a braid: three locks crossing over one another, a tie near the end and a short brush below it
-    // (the locks, the bun and the braid's lower tie turned out, Session 1242: wound inward on a single-sided material, each drew the far wall
+    // (the locks, the bun and the braid's lower tie turned out, Session 1255: wound inward on a single-sided material, each drew the far wall
     // of its own inside, lit from within, so a braid read as crumpled foil; the upper tie was turned out in Session 1154)
     const w = .034 * (.85 + .3 * len), endAt = line.length - 6;
     for (let i = 0; i < 3; i++) { const lk = [], rad = []; for (let s = 0; s <= endAt; s++) { const T = (line[Math.min(s + 1, line.length - 1)].clone().sub(line[Math.max(0, s - 1)])).normalize(), hit = bodyOnly.near(line[s]);
@@ -831,7 +831,7 @@ function buildCloak(G, body, byName, rnd) {
     const bg = new THREE.BufferGeometry(); bg.setAttribute('position', new THREE.Float32BufferAttribute(bp, 3)); bg.setAttribute('aBase', new THREE.Float32BufferAttribute(bp, 3)); bg.setIndex(bi); bg.computeVertexNormals();
     const bm = new THREE.Mesh(bg, clothMat(sRGB(...D.cloakHem), 'wool', { side: THREE.DoubleSide, scale: 60 })); bm.name = 'cloakHem'; out.push(bm); }
   // a fur lining turned out at the collar (the Markmen's), or the hood rolled on the shoulders
-  // (the rolled hood turned out, Session 1242: tubeGeom winds inward and the cloth is single-sided, so the roll drew its own far wall from inside.
+  // (the rolled hood turned out, Session 1255: tubeGeom winds inward and the cloth is single-sided, so the roll drew its own far wall from inside.
   // The fur collar's shells are left as they are: their shader reads the layer)
   const ring = tops.map(t => t.start.clone().addScaledVector(t.n, .012).add(new THREE.Vector3(0, .012, 0)));
   if (D.cloakFur && !burnousOn(D)) for (let s = 0; s < 6; s++) { const m = new THREE.Mesh(tubeGeom(ring, ring.map(() => .026 + s * .004), 8), shellMat(sRGB(...D.cloakFur), s, 6, { sx: 260, sy: 70, solid: s === 0 })); m.geometry.setAttribute('aBase', m.geometry.attributes.position); m.name = 'collar' + s; out.push(m); }

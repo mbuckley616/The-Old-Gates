@@ -315,3 +315,15 @@ Written by the producer once a day, after 12:00 UTC. Newest last.
 **Blocked.** #443 (the new look as default) is red on 13 shards; it waits on Claude (local).
 
 **Roadmap.** 249 of 305 stories done (248 yesterday). The new look is 3 of 15 cards done (F3 this week), F4 under way.
+
+## 21 Oct 2026
+
+**Waiting on you.** One decision: #543, how the quality level is chosen (B recommended: a two-second probe on first entry that can set Low, once). One approval: #537, basic tests (six smoke suites on each PR, every suite weekly, a faster harness); green and clean at a13b520.
+
+**Landed on main since yesterday.** The new look is the default and every suite boots it (#529, Session 1226). F4 is done: a foe's distant copy and the rebuilt people's bundle (#519). Systems 1218 and the #443 fixes (#518, #524). Bodies to 1238 (#525, #535, #539, #542). Look to 1243: the canal lock, the Mark's cliff terraces and aurora outpost, the townhouse door at 2.2 m (#538, #541, #546, #553, #523). QA's waylamp fix (#548); the critic's Portclare playtest; the designer's streaming page; quest drafts; the corruption concepts. Build s787.
+
+**Under way.** F10, the player's body: part one on #555, part two running, FREEZE #547. Systems #554 takes eight suites off the skip list; bodies #549 and #556 (the boar and the cave bear).
+
+**Blocked.** Main red on the new look's first full run (check 2337): saltwater and rowelines time out, ragdollsearch fails twice, shard 2 died. QA owns it. #527 waits on QA merging main.
+
+**Roadmap.** 250 of 305 stories done (249 yesterday). The new look is 4 of 15 cards done (F4 this week), F10 under way.

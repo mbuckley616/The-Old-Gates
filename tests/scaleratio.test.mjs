@@ -25,24 +25,59 @@ const measure = () => page.evaluate(() => {
   const id = window._tid, Sx = WORLD.settle.get(id); if (!Sx) return { none: true };
   const meshes = []; Sx.group.traverse(o => { if (o.isMesh && o.visible && !o.isSkinnedMesh && o.geometry && o.geometry.attributes.position) meshes.push(o); }); /* the town's own meshes */
   WORLD.scene.updateMatrixWorld(true);
+  // S1217: each door's rays meet only the meshes that come within 4 m of it (the whole town's took over 15 minutes on the kit's houses)
+  const reach = meshes.map(m => { if (!m.geometry.boundingSphere) m.geometry.computeBoundingSphere(); const c = m.geometry.boundingSphere.center.clone().applyMatrix4(m.matrixWorld);
+    return { m, x: c.x, z: c.z, r: m.geometry.boundingSphere.radius * m.matrixWorld.getMaxScaleOnAxis() }; });
+  let near = meshes;
   const rc = new THREE.Raycaster(); const dir = new THREE.Vector3(), org = new THREE.Vector3();
-  const hitAt = (x, y, z, dx, dz) => { org.set(x, y, z); dir.set(dx, 0, dz).normalize(); rc.set(org, dir); rc.far = 3; const h = rc.intersectObjects(meshes, false)[0]; return h ? h.distance : null; };
+  const hitOf = (x, y, z, dx, dz) => { org.set(x, y, z); dir.set(dx, 0, dz).normalize(); rc.set(org, dir); rc.far = 3; return rc.intersectObjects(near, false); };
+  const hitAt = (x, y, z, dx, dz) => { const h = hitOf(x, y, z, dx, dz)[0]; return h ? h.distance : null; };
+  // the kit's houses (S1217): their meshes are one per material, so a hit says what it met. The leaf is its paint (the raised panels
+  // too, 3 cm proud of it, and its iron); a glazed door's glass and its thin bars belong to it; a rail of 6.5 cm or more (the fanlight's
+  // spring bar, the shop door's transom) is the leaf's head; anything else (the dressing, the wall, the room behind) or nothing ends it.
+  // The step before the door is passed through on the way down, to the leaf's foot.
+  // (A farmhouse's transom door would read to its transom's head, its rail as thin as a glazed door's: no town has one, villages do.)
+  const KEY = new Map(); if (typeof PKIT !== 'undefined') { const M = PKIT.gl.mats(); for (const k in M) KEY.set(M[k], k); }
+  // and a kit house's rays meet only its own building (the town's baked meshes cost every ray a pass over the whole town)
+  let kitG = null; Sx.group.traverse(o => { if (o.name === 'kit houses') kitG = o; });
+  const ownKit = b => { if (!kitG) return null; const v = new THREE.Vector3(); let best = null, bd = 1e9;
+    for (const c of kitG.children) { c.getWorldPosition(v); const d = Math.hypot(v.x - b.cx, v.z - b.cz); if (d < bd) { bd = d; best = c; } }
+    if (!best || bd > 1) return null; const ms = []; best.traverse(o => { if (o.isMesh && o.visible) ms.push(o); }); return ms; };
+  const kind = h => { if (!h) return 'end'; const k = KEY.get(h.object.material); if (k == null) return 'end';
+    return k.startsWith('p:') || k === 'iron' ? 'leaf' : k === 'glass' || k === 'lit' ? 'glass' : k === 'frame' ? 'frame' : k === 'dress' ? 'dress' : 'end'; };
+  // (2 cm a step while the ray stays on the leaf or its glass; back to the last such step and 5 mm a step through anything else)
+  const kitRun = (ox, oz, nx, nz, base) => { const at = y => hitOf(ox, base + y, oz, -nx, -nz);
+    if (kind(at(.6)[0]) !== 'leaf') return null;
+    let t = .6, rail = null, fine = false;
+    for (let y = .62; y < 5;) { const c = kind(at(y)[0]), ok = c === 'leaf' || c === 'glass';
+      if (!fine && !ok) { fine = true; y = t + .005; continue; }
+      if (c === 'frame') { if (rail == null) rail = y; if (y - rail >= .065) { t = rail; break; } y += .005; continue; }
+      if (!ok) { if (rail != null) t = rail; break; }
+      rail = null; t = y; fine = false; y += .02; }
+    const footAt = y => { const c = kind(at(y).find(q => !(kind(q) === 'dress' && q.point.y < base + .3))); return c === 'leaf' || c === 'glass' || c === 'frame'; };
+    let f = .6; fine = false; for (let y = .58; y > -1;) { if (footAt(y)) { f = y; y -= fine ? .005 : .02; continue; } if (fine) break; fine = true; y = f - .005; }
+    return { f, t }; };
   const out = [];
   for (const h of Sx.houses) {
     if (!(h.type === 'home' || h.type === 'inn' || h.type === 'misc' || h.type === 'potion' || h.type === 'weapon' || h.type === 'armor' || h.type === 'barber')) continue;
-    const b = Sx.sol.find(s => s.hid && Math.hypot(s.cx - h.doorX, s.cz - h.doorZ) < 8); if (!b) continue;
-    const tx = h.doorX - b.cx, tz = h.doorZ - b.cz, L = Math.hypot(tx, tz) || 1, nx = tx / L, nz = tz / L;
+    // the house's own footprint (S1217: the first one with a house id within 8 m was a neighbour's for 7 of Dunmore's kit houses), and
+    // the normal of its front: the lot's facing, toward the door (a kit house's door stands in a bay, off the middle of its front)
+    const b = Sx.sol.find(s => s.hid === h.id) || Sx.sol.find(s => s.hid && Math.hypot(s.cx - h.doorX, s.cz - h.doorZ) < 8); if (!b) continue;
+    let nx = h.doorX - b.cx, nz = h.doorZ - b.cz; if (b.c != null) { const sg = Math.sign(nx * b.s + nz * b.c) || 1; nx = b.s * sg; nz = b.c * sg; }
+    { const L = Math.hypot(nx, nz) || 1; nx /= L; nz /= L; }
+    near = (h.kit && ownKit(b)) || reach.filter(q => Math.hypot(q.x - h.doorX, q.z - h.doorZ) < q.r + 4).map(q => q.m);
     // the leaf: the flat face met straight on at the door's middle, 1.3 over the ground; then down and up from there while the
     // ray still meets that face (within 6 mm), to the leaf's foot and its head
     // (12 cm to either side of the middle, clear of the planks' battens; the strap hinges cross one side, so the longer run counts)
     const base = WORLD.worldH(h.doorX, h.doorZ), sx = -nz, sz = nx; let best = null;
     for (const off of [.12, -.12]) { const ox = h.doorX + nx * 1.0 + sx * off, oz = h.doorZ + nz * 1.0 + sz * off;
+      if (h.kit) { const k = kitRun(ox, oz, nx, nz, base); if (k && (!best || k.t - k.f > best.t - best.f)) best = { ...k, ox, oz }; continue; }
       const dm = hitAt(ox, base + 1.3, oz, -nx, -nz); if (dm == null) continue;
       let f = 1.3, t = 1.3; for (let y = 1.3; y > -1; y -= .005) { const d = hitAt(ox, base + y, oz, -nx, -nz); if (d == null || Math.abs(d - dm) > .006) break; f = y; }
       for (let y = 1.3; y < 5; y += .005) { const d = hitAt(ox, base + y, oz, -nx, -nz); if (d == null || Math.abs(d - dm) > .006) break; t = y; }
       if (!best || t - f > best.t - best.f) best = { f, t, dm, ox, oz }; }
-    if (!best) continue; const foot = best.f, top = best.t, dm = best.dm, ox = best.ox, oz = best.oz;
-    out.push({ id: h.id, type: h.type, two: !!h.two, storeys: h.storeys || 1, style: h.style, leafTop: top, foot, wallH: h.wallH || null });
+    if (!best) continue; const foot = best.f, top = best.t;
+    out.push({ id: h.id, type: h.type, kit: h.kit ? h.kit.kind : null, two: !!h.two, storeys: h.storeys || 1, style: h.style, leafTop: top, foot, wallH: h.wallH || null });
   }
   return { n: out.length, houses: out };
 });

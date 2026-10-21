@@ -42,6 +42,8 @@ else if (Q.get('place') === 'minehead') await import('./places-minehead-view.js'
 else if (Q.get('place') === 'canal') await import('./places-canal-view.js') /* Session 1229: the Gatelands' canal lock */;
 else if (Q.get('place') === 'passfort') await import('./places-passfort-view.js') /* Session 1235: the Mark's fortress on a pass */;
 else if (Q.get('place') === 'fjordport') await import('./places-fjordport-view.js') /* Session 1239: the Mark's fjord port */;
+else if (Q.get('place') === 'terraces') await import('./places-terraces-view.js') /* Session 1242: the Mark's cliff terraces */;
+else if (Q.get('place') === 'aurora') await import('./places-aurora-view.js') /* Session 1243: the Mark's outpost under the aurora */;
 else if (Q.get('place') === 'quarry') await import('./places-quarry-view.js') /* Session 1155: the Gatelands' limestone quarry and its kiln */;
 else if (Q.get('place') === 'towerhouse') await import('./places-towerhouse-view.js') /* Session 1052: the Gatelands' ruined tower house */;
 else if (Q.get('place') === 'clifffort') await import('./places-clifffort-view.js') /* Session 1053: the Mark's cliff fort */;
