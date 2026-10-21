@@ -3262,7 +3262,7 @@ const WAISTCOAT_HOLE = '(vB.z > .02 && vB.y > .44 && abs(vB.x) < .006 + .35 * (v
 // a helm by tier in place of the kettle helm: every tier but Iron (3), whose helm the kettle is
 function tierHelmOn(D) { return !!(D && D.helm && D.tier && D.tier !== 3); }
 function hoodUpOn(D) { return !!(D && (D.cloak && D.hood === 'up' || coatOn(D) && D.coatHood === 'up' || cowlOn(D))); }
-// a hood worn up with no coat and no hooded cloak (Session 1266, card F10: the game's light line's hood), D.cowl its colour
+// a hood worn up with no coat and no hooded cloak (Session 1269, card F10: the game's light line's hood), D.cowl its colour
 function cowlOn(D) { return !!(D && D.cowl && !(D.cloak && D.hood) && !coatOn(D)); }
 // the circlet (Session 1206) is worn on a bare head: never under a helm, a raised hood, a head-wrap or a headscarf
 function circletOn(D) { return !!(D && D.circlet && !D.helm && !D.wrap && !hoodUpOn(D)); }
@@ -3422,7 +3422,7 @@ function makePerson(G, o = {}) {
   // the coat's hood (Session 1152, OG-109's Mark: fur-lined hooded coats), the cloak's hood in the coat's wool, its hem clear of the coat's
   // shoulders and its fur collar, and with the coat's fur round the face
   else if (coatOn(D) && D.coatHood === 'up') { const H = buildHoodUp(P, { ...G, dress: { ...D, cloak: D.coat, tartan: null, tartanLine: null, burnous: false } }, meshes, { clr: D.coatFur ? .075 : .05, fur: D.coatFur }); meshes.push(...H.meshes); hoodStats = H.stats; }
-  // the hood alone (Session 1266): the cloak's hood in D.cowl's colour, its hem clear of what is worn on the shoulders as the coat's is
+  // the hood alone (Session 1269): the cloak's hood in D.cowl's colour, its hem clear of what is worn on the shoulders as the coat's is
   else if (cowlOn(D)) { const H = buildHoodUp(P, { ...G, dress: { ...D, cloak: D.cowl, tartan: null, tartanLine: null, burnous: false } }, meshes, { clr: D.cloak || D.mail ? .06 : .05 }); meshes.push(...H.meshes); hoodStats = H.stats; }
   root.add(bones[0]); root.updateMatrixWorld(true);
   for (const m of meshes) { root.add(m); m.updateMatrixWorld(true); m.bind(skeleton); m.castShadow = !m.noCast; m.receiveShadow = true; m.frustumCulled = false; }

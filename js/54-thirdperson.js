@@ -98,8 +98,10 @@ function tpHBDress(G0,o){const G=JSON.parse(JSON.stringify(G0)),D=Object.assign(
   // S1265 — the tier's signature on its plate (AR_SIG: fluted, heavy, faceted, scaled, spiked, inlaid; Mithril to Cosmic) and its glow,
   // drawn by people.js's plate shader on the cuirass, the gauntlets and the greaves; the first plate piece's, chest first
   {const S=[AR&&AR.chest,Hn,Lg].find(P=>P&&!P.line&&P.fam==='plate'&&P.sig);if(S){D.plateSig=S.sig;if(S.glow!=null)D.plateGlow=hbRGB(S.glow);}}
-  // S1266 — the light line's hood (the old kit's: the leather darkened toward green) is the builder's hood up, alone or as the cloak's
-  const Lh=AR&&AR.head&&AR.head.line==='light'?AR.head:null;if(Lh&&!(o.cloak&&o.cloak.hood))D.cowl=hbRGB(new THREE.Color(armourLineLeather(Lh.tier)).lerp(new THREE.Color(0x2a3424),.5).getHex());
+  // S1269 — the light line's hood (the old kit's: the leather darkened toward green) is the builder's hood up, alone or as the cloak's
+  // S1271 — the robe line's cowl (the old kit's: a hood up over a roll at the neck, in the robe's dye) is the same hood up in LINE_ROBE's colour
+  const Lh=AR&&AR.head&&(AR.head.line==='light'||AR.head.line==='robe')?AR.head:null;
+  if(Lh&&!(o.cloak&&o.cloak.hood))D.cowl=hbRGB(Lh.line==='robe'?LINE_ROBE[Lh.tier]:new THREE.Color(armourLineLeather(Lh.tier)).lerp(new THREE.Color(0x2a3424),.5).getHex());
   const K=o.cloak;if(K){D.cloak=hbRGB(K.col);if(K.cut==='short'){D.cape=true;D.cloakLen=.6;}else D.cloakLen=.85;D.brooch=[.62,.47,.22];
     if(K.fur!=null)D.cloakFur=hbRGB(K.fur);if(K.trim!=null)D.cloakHem=hbRGB(K.trim);if(K.hood)D.hood=o.hd&&(tpIsCloth(o.hd)||Lh)?'up':'down';}
   return G;}
@@ -209,7 +211,7 @@ function tpHBHold(R){const H=R.rig.hb;if(!H||!R.hbHeld)return;R.root.updateMatri
     if(h.f&&h.f.length){const v=_tpHv.set(0,0,0);for(const b of h.f)v.add(_tpHv2.setFromMatrixPosition(b.matrixWorld));v.multiplyScalar(1/h.f.length).applyMatrix4(_tpHm);h.c.matrix.setPosition(v);}
     h.c.matrixWorldNeedsUpdate=true;}}
 function tpHBPose(R){if(!R||!R.rig.hb)return;hbPose(R.rig);if(R.hbHook)tpHBBowHand(R);R.root.updateMatrixWorld(true);tpHBHold(R);}
-// S1267 — the bow's draw on the builder's fingers: the right hand, a fist while the bow is carried, opens into the archer's hook as the
+// S1270 — the bow's draw on the builder's fingers: the right hand, a fist while the bow is carried, opens into the archer's hook as the
 // string comes back (or is held at the ready): the first three fingers bent round the string at their last two joints and barely at the
 // knuckle, the little finger and the thumb left folded. The knuckles' line is hbCloseFist's, read once when the body is built; the hand
 // eases toward its shape each frame (a look only: the draw's timing and the arrow are the bow's own)
