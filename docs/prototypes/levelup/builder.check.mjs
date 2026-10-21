@@ -788,6 +788,162 @@ if (!process.argv.includes('--shots-only')) { const page = await browser.newPage
   check(`the fur mantle folds in at the neck: its inner shell ${(m.body * 100).toFixed(1)} cm over the tunic on the chest, ${(m.rim * 100).toFixed(1)} cm at the neckline (the outer shell ${(m.outerRim * 100).toFixed(1)} cm), still outside it`, m.body > .018 && m.body < .03 && m.rim > .002 && m.rim < m.body / 2 && m.outerRim < m.body + .03, m);
   check(`the Mark women's pale mantles: ${m.paleW} of ${m.women} women's mantles in a pale fur, ${m.paleM} of ${m.men} men's, ${m.others} of the other peoples' women; saved and loaded the same`, m.women > 30 && m.paleW / m.women > .25 && m.paleW / m.women < .55 && m.paleM === 0 && m.others === 0 && m.saved, m);
   check('the fur mantle: no page errors', errs.length === 0, errs.slice(0, 3)); await page.close(); }
+// the Aurennais men's striped robes (Session 1205, OG-110's man "in a striped robe", OG-109's flowing robes): the stripes run down the
+// body and the skirt round the torso's axis and down each sleeve round the arm's; a robe without them, or a tunic, has none. Rendered
+// front, back and three ways turned 40°, against the same robe plain, and in every row the longest run of the stripe's colour is no wider than a stripe should
+// be (the skirt's flank read as one wide band, and the sleeves as stars, while the sleeves' axis ran from the shoulder to the wrist);
+// one Aurennais man in five wears a robe, three in four of those striped, from a stream of its own, and no woman or other people does
+if (!process.argv.includes('--shots-only')) { const page = await browser.newPage({ viewport: { width: 640, height: 360 } }); const errs = []; page.on('pageerror', e => errs.push(String(e)));
+  await page.goto(`http://localhost:${port}/builder.html?still&w=640&h=360&seed=check`); await page.waitForFunction(() => window.__done || window.__err, null, { timeout: 300000 });
+  const s = await page.evaluate(async () => { const K = await import('./people.js'), T = await import('three'), Rr = new T.WebGLRenderer({ antialias: false }), N = 320, RT = new T.WebGLRenderTarget(N, N); Rr.setSize(N, N);
+    const G0 = K.rollGenome('stripe:m', { g: 1, people: 'aurennais' }), bare = { cloak: null, hood: null, sash: null, mantle: null, wrapTail: null, necklace: null, spear: null, staff: null, basket: null, crossbow: null };
+    const robe = (k, l) => ({ ...G0, dress: { ...G0.dress, ...bare, robe: [.88, .84, .74], robeStripe: k, robeStripeLine: l } });
+    const shoot = (G, az) => { const p = K.makePerson(G), sc = new T.Scene(); sc.add(p.root); sc.add(new T.AmbientLight(0xffffff, 1.4)); const L = new T.DirectionalLight(0xffffff, 1.5); L.position.set(5 * Math.sin(az), 2, 5 * Math.cos(az)); sc.add(L);
+      p.root.updateMatrixWorld(true); const box = new T.Box3().setFromObject(p.root), c = box.getCenter(new T.Vector3()); const cam = new T.PerspectiveCamera(30, 1, .05, 20); cam.position.set(c.x + 4.2 * Math.sin(az), c.y, c.z + 4.2 * Math.cos(az)); cam.lookAt(c);
+      Rr.setClearColor(0x000000, 1); Rr.setRenderTarget(RT); Rr.render(sc, cam); const px = new Uint8Array(N * N * 4); Rr.readRenderTargetPixels(RT, 0, 0, N, N, px); Rr.setRenderTarget(null);
+      const top = new T.Vector3(c.x, box.min.y + .54 * (box.max.y - box.min.y), c.z).project(cam); return { px, p, top: Math.floor((top.y + 1) / 2 * N) }; };
+    const mesh = (p, nm) => p.meshes.find(m => m.name === nm), key = (p, nm) => mesh(p, nm)?.material.customProgramCacheKey() ?? '';
+    // a stripe's pixel is one darker than the same pixel of the same robe plain (the target is linear, so its colour is read against the plain one);
+    // a run is the longest row of such pixels on the skirt (under 54% of the figure's height, a few cm under the cord, at rest .145 of the crown's .85 and the soles' -.845: over the shoulders the stripes run out to the sleeves, across the picture)
+    const runs = (px, plain, top) => { let worst = 0, at = -1; for (let y = 0; y < top; y++) { let run = 0; for (let x = 0; x < N; x++) { const i = (y * N + x) * 4, d = px[i] + px[i + 1] + px[i + 2] - plain[i] - plain[i + 1] - plain[i + 2]; if (d < -30) { run++; if (run > worst) { worst = run; at = y; } } else run = 0; } } return { worst, at }; };
+    const out = {}, A = robe([.2, .26, .5], [.55, .18, .12]), B = robe(null, null);
+    for (const [v, az] of [['front', 0], ['back', Math.PI], ['front, turned', .7], ['back, turned', Math.PI + .7], ['other side, turned', -.7]]) { const a = shoot(A, az), b = shoot(B, az); let n = 0, dark = 0; for (let i = 0; i < a.px.length; i += 4) { const d = [0, 1, 2].map(k => a.px[i + k] - b.px[i + k]); if (Math.max(...d.map(Math.abs)) < 20) continue; n++; if (d[0] + d[1] + d[2] < 0) dark++; }
+      out[v] = { frac: +(n / (N * N)).toFixed(4), dark: n ? +(dark / n).toFixed(3) : 0, ...runs(a.px, b.px, a.top), rows: a.top, plainRun: runs(b.px, b.px, a.top).worst, tunic: key(a.p, 'tunic'), skirt: key(a.p, 'skirt'), plainTunic: key(b.p, 'tunic') }; }
+    const T1 = { ...G0, dress: { ...G0.dress, ...bare, robe: null, robeStripe: [.2, .26, .5] } }, pt = K.makePerson(T1); out.tunicOnly = key(pt, 'tunic');
+    const s1 = JSON.stringify(K.toSaved(A)); out.saved = s1 === JSON.stringify(K.toSaved(K.fromSaved(JSON.parse(s1)))) && s1.includes('"robeStripe"') && s1.includes('"robeStripeLine"');
+    // the roll, against the same seeds with the people's robe rate at 0
+    const P = K.PEOPLES.aurennais, gen = (g, i) => K.rollGenome('aurennais:' + i, { people: 'aurennais', g }), men = Array.from({ length: 400 }, (_, i) => gen(1, i)), women = Array.from({ length: 200 }, (_, i) => gen(0, i)), rate = P.robe; P.robe = 0;
+    const menBare = Array.from({ length: 400 }, (_, i) => gen(1, i)); P.robe = rate;
+    const strip = G => { const d = { ...G.dress }; for (const k of ['robe', 'robeStripe', 'robeStripeLine', 'beltCoins']) delete d[k]; return JSON.stringify({ ...G, dress: Object.fromEntries(Object.keys(d).sort().map(k => [k, d[k]])) }); };
+    const robed = men.filter(G => G.dress.robe);
+    out.roll = { men: men.length, robed: robed.length, striped: robed.filter(G => G.dress.robeStripe).length, women: women.filter(G => G.dress.robe || G.dress.robeStripe).length,
+      others: ['gatelander', 'markman', 'oldblood'].flatMap(k => Array.from({ length: 60 }, (_, i) => K.rollGenome(k + ':' + i, { people: k }))).filter(G => G.dress.robe || G.dress.robeStripe).length,
+      same: men.every((G, i) => strip(G) === strip(menBare[i])), coins: robed.filter(G => G.dress.beltCoins).length, inPalette: robed.every(G => P.robes.some(([g]) => JSON.stringify(g) === JSON.stringify(G.dress.robe))),
+      builds: (() => { const G = robed.find(G => G.dress.robeStripe), p = G && K.makePerson(G); return !!p && key(p, 'tunic').includes('stripetrue') && key(p, 'skirt').includes('stripefalse'); })() };
+    Rr.dispose(); return out; });
+  for (const v of ['front', 'back', 'front, turned', 'back, turned', 'other side, turned']) { const c = s[v];
+    check(`a striped robe from the ${v}: ${(c.frac * 100).toFixed(1)}% of the picture changed against the same robe plain, ${(c.dark * 100).toFixed(0)}% of it darker (indigo on undyed)`, c.frac > .03 && c.dark > .8, c);
+    check(`a striped robe from the ${v}: the longest run of the stripe's colour in any row of the skirt's ${c.rows} is ${c.worst} px (a pixel is 7 mm; the stripe, its gap and fine line are 2.4 cm, over twice that at the hem's flare: 12 at most; with the sleeves' frame on the skirt it read 22 to 31 turned), against the plain robe itself ${c.plainRun}`, c.worst > 0 && c.worst <= 12 && c.plainRun === 0, { worst: c.worst, at: c.at }); }
+  check(`the stripes are woven into the robe's body and sleeves (round the arm) and its skirt (round the torso only); a plain robe and a tunic have none; saved and loaded the same`, s.front.tunic.includes('stripetrue') && s.front.skirt.includes('stripefalse') && !s.front.plainTunic.includes('stripe') && !s.tunicOnly.includes('stripe') && s.saved, { tunic: s.front.tunic.includes('stripe'), skirt: s.front.skirt.includes('stripe'), tunicOnly: s.tunicOnly.includes('stripe'), saved: s.saved });
+  { const r = s.roll; check(`the Aurennais men's robes: ${r.robed} of ${r.men} men robed, ${r.striped} of those striped; ${r.women} women and ${r.others} of 180 other peoples; every other roll of each man the same, no coins on a cord, each robe from the palette, a striped one built so`,
+      r.robed / r.men > .13 && r.robed / r.men < .27 && r.striped / r.robed > .6 && r.striped / r.robed < .9 && r.women === 0 && r.others === 0 && r.same && r.coins === 0 && r.inPalette && r.builds, r); }
+  check('the striped robe: no page errors', errs.length === 0, errs.slice(0, 3)); await page.close(); }
+// the Aurennais women's circlets (Session 1206, OG-110's woman "in red and gold with a circlet"): over every hair style on three women, no
+// point of the head or the hair inside the band, 2.6 cm over the brows, over the ears, close to the forehead, carried by the head bone (its
+// world position moves with the head turned); none under a head-wrap, a helm or a raised hood; the roll: 15% of the Aurennais women
+// with a bare head, from a stream of its own, nobody else
+if (!process.argv.includes('--shots-only')) { const page = await browser.newPage({ viewport: { width: 640, height: 360 } }); const errs = []; page.on('pageerror', e => errs.push(String(e)));
+  await page.goto(`http://localhost:${port}/builder.html?still&w=640&h=360&seed=check`); await page.waitForFunction(() => window.__done || window.__err, null, { timeout: 300000 });
+  const c = await page.evaluate(async () => { const K = await import('./people.js'), T = await import('three'), out = { fits: {} }, ring = { circlet: [.85, .66, .3], circletStone: [.5, .06, .08] };
+    const dressed = (seed, style, x = {}) => { const G = K.rollGenome(seed, { people: 'aurennais', g: 0 }); return { ...G, hair: { ...G.hair, style }, dress: { ...G.dress, cloak: null, hood: null, wrap: null, helm: null, ...ring, ...x } }; };
+    for (const style of K.HAIR_STYLES) for (const seed of ['c1', 'c2', 'c3']) out.fits[style + ':' + seed] = K.makePerson(dressed(seed, style)).circlet;
+    // carried by the head: the band's world middle moves with the head bone when the head turns
+    { const p = K.makePerson(dressed('c1', 'braids')), band = p.root.getObjectByName('circletBand'); p.root.updateMatrixWorld(true); const w0 = new T.Box3().setFromObject(band).getCenter(new T.Vector3());
+      p.byName['head'].rotation.x += .6; p.root.updateMatrixWorld(true); const w1 = new T.Box3().setFromObject(band).getCenter(new T.Vector3()); out.parent = band.parent?.parent?.name ?? band.parent?.name; out.moved = +w0.distanceTo(w1).toFixed(4); out.draws = p.circlet.draws; }
+    out.none = ['wrap', 'helm', 'hoodUp'].map(k => { const x = k === 'wrap' ? { wrap: [.78, .55, .16] } : k === 'helm' ? { helm: [.4, .4, .42] } : { cloak: [.3, .3, .3], hood: 'up' }; const p = K.makePerson(dressed('c1', 'braid', x)); return !p.circlet && !p.root.getObjectByName('circlet'); });
+    out.noStone = (() => { const p = K.makePerson(dressed('c2', 'bun', { circletStone: null })); return !!p.circlet && p.circlet.stoneTris === 0 && !p.root.getObjectByName('circletStone'); })();
+    const G = dressed('c1', 'braids'), s1 = JSON.stringify(K.toSaved(G)); out.saved = s1 === JSON.stringify(K.toSaved(K.fromSaved(JSON.parse(s1)))) && s1.includes('"circlet"') && s1.includes('"circletStone"');
+    const P = K.PEOPLES.aurennais, gen = (g, i) => K.rollGenome('aurennais:' + i, { people: 'aurennais', g }), women = Array.from({ length: 400 }, (_, i) => gen(0, i)), rate = P.circlet; P.circlet = 0;
+    const bare = Array.from({ length: 400 }, (_, i) => gen(0, i)); P.circlet = rate; const strip = G => { const d = { ...G.dress }; delete d.circlet; delete d.circletStone; return JSON.stringify({ ...G, dress: d }); };
+    const open = women.filter(G => !G.dress.wrap && !G.dress.helm && !(G.dress.cloak && G.dress.hood === 'up')), worn = women.filter(G => G.dress.circlet);
+    out.roll = { women: women.length, open: open.length, worn: worn.length, stones: worn.filter(G => G.dress.circletStone).length, onCovered: worn.filter(G => G.dress.wrap || G.dress.helm).length, matched: worn.filter(G => G.dress.earrings || G.dress.necklace).every(G => JSON.stringify(G.dress.circlet) === JSON.stringify(G.dress.earrings || G.dress.necklace)),
+      same: women.every((G, i) => strip(G) === strip(bare[i])), men: Array.from({ length: 200 }, (_, i) => gen(1, i)).filter(G => G.dress.circlet).length,
+      others: ['gatelander', 'markman', 'oldblood'].flatMap(k => Array.from({ length: 60 }, (_, i) => K.rollGenome(k + ':' + i, { people: k }))).filter(G => G.dress.circlet).length };
+    return out; });
+  { const F = Object.values(c.fits), bad = Object.entries(c.fits).filter(([, f]) => !f || f.through > 0).map(([k]) => k), r = k => [Math.min(...F.map(f => f[k])), Math.max(...F.map(f => f[k]))];
+    check(`the circlet over every hair style (${F.length} heads): no point of the head or the hair inside the band (${F.reduce((a, f) => a + (f?.hairPts || 0), 0)} hair points read)`, F.length >= 15 && bad.length === 0, bad);
+    check(`the circlet sits ${r('overBrow').map(v => (v * 100).toFixed(1)).join('–')} cm over the brows, ${r('overEar').map(v => (v * 1000).toFixed(0)).join('–')} mm over the ears' tops, ${r('gapFront').map(v => (v * 1000).toFixed(1)).join('–')} mm off the forehead, ${r('width').map(v => (v * 100).toFixed(1)).join('–')} cm across; ${F[0].tris} triangles in ${F[0].draws} draws`,
+      F.every(f => f.overBrow > .02 && f.overEar >= .007 && f.gapFront > .001 && f.gapFront < .008 && f.width > .15 && f.width < .21 && f.underTop > .03), { overBrow: r('overBrow'), overEar: r('overEar'), gapFront: r('gapFront'), width: r('width'), underTop: r('underTop') }); }
+  check(`the circlet rides the head bone: its middle moved ${(c.moved * 100).toFixed(1)} cm with the head nodded .6 rad`, c.parent === 'head' && c.moved > .01, { parent: c.parent, moved: c.moved });
+  check(`no circlet under a head-wrap, a helm or a raised hood; one with no stone has none; saved and loaded the same`, c.none.every(Boolean) && c.noStone && c.saved, { none: c.none, noStone: c.noStone, saved: c.saved });
+  { const r = c.roll; check(`the Aurennais women's circlets: ${r.worn} of ${r.open} bare-headed women (of ${r.women}), ${r.stones} set with a stone, ${r.onCovered} on a covered head; in the hoops' or coins' metal; ${r.men} men and ${r.others} of 180 other peoples; every other roll the same`,
+      r.worn / r.open > .09 && r.worn / r.open < .22 && r.stones / r.worn > .5 && r.stones / r.worn < .9 && r.onCovered === 0 && r.matched && r.men === 0 && r.others === 0 && r.same, r); }
+  check('the circlet: no page errors', errs.length === 0, errs.slice(0, 3)); await page.close(); }
+// the Aurennais women's embroidered gowns (Session 1220, OG-110's woman "in red and gold"; OG-109's embroidered formal dress): the gold
+// border changes a close view of the hem, the neck and the sleeve's end against the same gown plain, and not the chest between; its threads
+// are gold in the picture; it is worked into the tunic and the skirt (long, knee or short), and not under a coat, a robe or the Mark's
+// woven bands; it saves; the roll: one Aurennais woman in five in a long skirt and no apron, from a stream of its own, nobody else
+if (!process.argv.includes('--shots-only')) { const page = await browser.newPage({ viewport: { width: 640, height: 360 } }); const errs = []; page.on('pageerror', e => errs.push(String(e)));
+  await page.goto(`http://localhost:${port}/builder.html?still&w=640&h=360&seed=check`); await page.waitForFunction(() => window.__done || window.__err, null, { timeout: 300000 });
+  const e = await page.evaluate(async () => { const K = await import('./people.js'), T = await import('three'), out = { views: {} }, W = 320;
+    const Rr = new T.WebGLRenderer({ antialias: true }), RT = new T.WebGLRenderTarget(W, W);
+    const spot = (G, nm, pick) => { const p = K.makePerson(G), sc = new T.Scene(); sc.add(p.root); sc.add(new T.AmbientLight(0xffffff, 1.2)); const L = new T.DirectionalLight(0xffffff, 2); L.position.set(0, 2, 5); sc.add(L);
+      p.root.updateMatrixWorld(true); const m = p.meshes.find(q => q.name === nm), B = m.geometry.attributes.aBase.array, c = new T.Vector3(), v = new T.Vector3(); let n = 0;
+      for (const i of new Set(m.geometry.index.array)) if (pick(B[i * 3], B[i * 3 + 1], B[i * 3 + 2])) { c.add(m.getVertexPosition(i, v).applyMatrix4(m.matrixWorld)); n++; } c.divideScalar(n);
+      const cam = new T.PerspectiveCamera(30, 1, .05, 10); cam.position.set(c.x + (nm === 'tunic' && pick(.37, .3, .1) ? .2 : 0), c.y, c.z + .45); cam.lookAt(c); Rr.setRenderTarget(RT); Rr.render(sc, cam); const px = new Uint8Array(W * W * 4); Rr.readRenderTargetPixels(RT, 0, 0, W, W, px); Rr.setRenderTarget(null); return px; };
+    const diff = (a, b) => { let d = 0, gold = 0; for (let i = 0; i < a.length; i += 4) { if (Math.abs(a[i] - b[i]) + Math.abs(a[i + 1] - b[i + 1]) + Math.abs(a[i + 2] - b[i + 2]) > 24) { d++; if (b[i + 1] - a[i + 1] > 25 && b[i + 1] > b[i + 2]) gold++; } } return { frac: d / (a.length / 4), gold: d ? gold / d : 0 }; };
+    const G0 = K.rollGenome('gw1', { people: 'aurennais', g: 0 }), base = { ...G0, dress: { ...G0.dress, cloak: null, hood: null, wrap: null, wrapTail: null, sash: null, mantle: null, apron: null, bib: false, cuffs: null, cuffBand: null, necklace: null, tunic: [.6, .14, .1], skirt: 'long', skirtColor: [.6, .14, .1], gownBorder: [.85, .66, .3] } }, plain = { ...base, dress: { ...base.dress, gownBorder: null } };
+    const at = { hem: (x, y, z) => z > .05 && Math.abs(x) < .1 && y < -.63 && y > -.68, neck: (x, y, z) => y > .58 && y < .606 && z > .03, sleeve: x => x > .356 && x < .392, chest: (x, y, z) => z > .05 && Math.abs(x) < .1 && y > .35 && y < .45 };
+    for (const [k, f] of Object.entries(at)) out.views[k] = diff(spot(plain, k === 'hem' ? 'skirt' : 'tunic', f), spot(base, k === 'hem' ? 'skirt' : 'tunic', f));
+    out.still = diff(spot(plain, 'skirt', at.hem), spot(plain, 'skirt', at.hem)).frac;
+    const keys = G => K.makePerson(G).meshes.filter(q => q.material?.customProgramCacheKey?.().includes('emb')).map(q => q.name).sort().join(',');
+    out.keys = { long: keys(base), knee: keys({ ...base, dress: { ...base.dress, skirt: 'knee' } }), short: keys({ ...base, dress: { ...base.dress, skirt: 'short' } }), plain: keys(plain),
+      coat: keys({ ...base, dress: { ...base.dress, coat: [.24, .27, .32] } }), robe: keys({ ...base, dress: { ...base.dress, robe: [.36, .27, .18] } }), bands: keys({ ...base, dress: { ...base.dress, bands: [.62, .47, .22] } }) };
+    const s1 = JSON.stringify(K.toSaved(base)); out.saved = s1 === JSON.stringify(K.toSaved(K.fromSaved(JSON.parse(s1)))) && s1.includes('"gownBorder"');
+    const P = K.PEOPLES.aurennais, gen = (g, i) => K.rollGenome('aurennais:' + i, { people: 'aurennais', g }), women = Array.from({ length: 400 }, (_, i) => gen(0, i)), rate = P.gown; P.gown = 0;
+    const bare = Array.from({ length: 400 }, (_, i) => gen(0, i)); P.gown = rate; const ok = women.filter(G => G.dress.skirt === 'long' && !G.dress.apron), worn = women.filter(G => G.dress.gownBorder), hx = c => JSON.stringify(c);
+    out.roll = { women: women.length, open: ok.length, worn: worn.length, madder: worn.filter(G => hx(G.dress.tunic) === hx([.6, .14, .1])).length, one: worn.every(G => hx(G.dress.tunic) === hx(G.dress.skirtColor) && !G.dress.cuffs && !G.dress.apron && G.dress.skirt === 'long'),
+      palette: worn.every(G => [[.6, .14, .1], [.78, .55, .16], [.1, .38, .38]].some(c => hx(c) === hx(G.dress.tunic)) && [[.85, .66, .3], [.5, .1, .08]].some(c => hx(c) === hx(G.dress.gownBorder))),
+      redThread: worn.filter(G => hx(G.dress.gownBorder) === hx([.5, .1, .08])).every(G => hx(G.dress.tunic) === hx([.78, .55, .16])),
+      same: women.every((G, i) => G.dress.gownBorder || JSON.stringify(G) === JSON.stringify(bare[i])), men: Array.from({ length: 200 }, (_, i) => gen(1, i)).filter(G => G.dress.gownBorder).length,
+      others: ['gatelander', 'markman', 'oldblood'].flatMap(k => Array.from({ length: 60 }, (_, i) => K.rollGenome(k + ':' + i, { people: k }))).filter(G => G.dress.gownBorder).length };
+    Rr.dispose(); return out; });
+  for (const k of ['hem', 'neck', 'sleeve']) { const v = e.views[k]; check(`the gown's gold border changes ${(v.frac * 100).toFixed(1)}% of a close view of the ${k}, ${(v.gold * 100).toFixed(0)}% of that gold, against the same gown plain`, v.frac > .01 && v.gold > .4, v); }
+  check(`the gown's border leaves the chest between alone (${(e.views.chest.frac * 100).toFixed(2)}% changed; the same plain view twice ${(e.still * 100).toFixed(2)}%)`, e.views.chest.frac < .002 && e.still === 0, { chest: e.views.chest, still: e.still });
+  check(`the border is worked into the tunic and the skirt, long (${e.keys.long}), knee (${e.keys.knee}) or short (${e.keys.short}); none on a plain gown, under a coat or a robe, or with the Mark's woven bands; saved and loaded the same`,
+    ['long', 'knee', 'short'].every(k => e.keys[k] === 'skirt,tunic') && !e.keys.plain && !e.keys.coat && !e.keys.robe && !e.keys.bands && e.saved, { ...e.keys, saved: e.saved });
+  { const r = e.roll; check(`the Aurennais women's gowns: ${r.worn} of ${r.open} in a long skirt and no apron (of ${r.women}), ${r.madder} in madder; bodice and skirt in one cloth, no cuffs; madder thread only on saffron; ${r.men} men and ${r.others} of 180 other peoples; every other woman's roll the same`,
+      r.worn / r.open > .13 && r.worn / r.open < .27 && r.madder / r.worn > .3 && r.madder / r.worn < .7 && r.one && r.palette && r.redThread && r.same && r.men === 0 && r.others === 0, r); }
+  check('the gown: no page errors', errs.length === 0, errs.slice(0, 3)); await page.close(); }
+// the sleeve's end square to the forearm (Session 1228): on the posed body, the points of the tunic's sleeve at one place of the cut
+// (its rest slvX, against the old plain rest |x|) lie at one place along the forearm's own bone, the elbow to the wrist: what is left of
+// their place along it, once a straight line in the cut's number is taken out, spreads under a centimetre where the old cut's spread
+// across the arm's width; and the skin is drawn under every place the sleeve's end leaves open (each body triangle with a corner past
+// rest slvX .39, short of the neck, is in the bare skin's region), where the old region left teeth that showed through the sleeve
+if (!process.argv.includes('--shots-only')) { const page = await browser.newPage({ viewport: { width: 640, height: 360 } }); const errs = []; page.on('pageerror', e => errs.push(String(e)));
+  await page.goto(`http://localhost:${port}/builder.html?still&w=640&h=360&seed=check`); await page.waitForFunction(() => window.__done || window.__err, null, { timeout: 300000 });
+  const e = await page.evaluate(async () => { const K = await import('./people.js'), T = await import('three'), PK = await K.loadPack(), R0 = PK.rest, out = {};
+    const tidy = { cloak: null, hood: null, wrap: null, wrapTail: null, sash: null, mantle: null, apron: null, bib: false, cuffs: null, cuffBand: null, coat: null, robe: null, mail: null };
+    const ring = (G, side) => { const p = K.makePerson(G); p.root.updateMatrixWorld(true); const m = p.meshes.find(q => q.name === 'tunic'), w = n => new T.Vector3().setFromMatrixPosition(p.byName[n].matrixWorld);
+      const a = w('lowerarm01.' + side), u = w('wrist.' + side).sub(a).normalize(), v = new T.Vector3(), sg = side === 'L' ? 1 : -1, ids = [...new Set(m.geometry.index.array)];
+      const fit = f => { const pts = []; for (const i of ids) { const x = R0[i * 3], y = R0[i * 3 + 1], z = R0[i * 3 + 2], c = f(x, y, z); if (x * sg > 0 && Math.abs(c - .4) < .012) pts.push([c, m.getVertexPosition(i, v).applyMatrix4(m.matrixWorld).sub(a).dot(u)]); }
+        const n = pts.length, mc = pts.reduce((s, q) => s + q[0], 0) / n, md = pts.reduce((s, q) => s + q[1], 0) / n, k = pts.reduce((s, q) => s + (q[0] - mc) * (q[1] - md), 0) / pts.reduce((s, q) => s + (q[0] - mc) ** 2, 0), r = pts.map(q => q[1] - md - k * (q[0] - mc));
+        return { cm: +((Math.max(...r) - Math.min(...r)) * 100).toFixed(2), n }; };
+      return { square: fit(K.slvX), plain: fit(x => Math.abs(x)) }; };
+    for (const [k, G] of [['woman', K.rollGenome('gw1', { people: 'aurennais', g: 0 })], ['man', K.rollGenome('b7', { people: 'markman', g: 1 })]]) { const D = { ...G, dress: { ...G.dress, ...tidy, tunic: [.6, .14, .1] } };
+      out[k] = { L: ring(D, 'L'), R: ring(D, 'R') }; }
+    const body = PK.G['body'], bare = new Set(), key = t => body[t] + ',' + body[t + 1] + ',' + body[t + 2], Rb = PK.R.bare; for (let t = 0; t < Rb.length; t += 3) bare.add(Rb[t] + ',' + Rb[t + 1] + ',' + Rb[t + 2]);
+    let open = 0, oldOpen = 0, past = 0; for (let t = 0; t < body.length; t += 3) { const c = [0, 1, 2].map(j => body[t + j]), cy = c.reduce((s, i) => s + R0[i * 3 + 1], 0) / 3; if (cy > .585) continue;
+      if (Math.max(...c.map(i => K.slvX(R0[i * 3], R0[i * 3 + 1], R0[i * 3 + 2]))) > .39) { past++; if (!bare.has(key(t))) open++; }
+      if (Math.max(...c.map(i => Math.abs(R0[i * 3]))) > .39 && !(Math.abs(c.reduce((s, i) => s + R0[i * 3], 0) / 3) > .395)) oldOpen++; }
+    out.skin = { past, open, oldOpen }; return out; });
+  for (const k of ['woman', 'man']) for (const s of ['L', 'R']) { const r = e[k][s]; check(`the ${k}'s ${s === 'L' ? 'left' : 'right'} sleeve ends square to the forearm: at one place of its cut its points spread ${r.square.cm} cm along the bone (${r.square.n} points), the old cut at a plain |x| ${r.plain.cm} cm`, r.square.cm < 1 && r.plain.cm > 2 * r.square.cm, r); }
+  check(`no skin is left off under the sleeve's end: ${e.skin.open} of ${e.skin.past} body triangles past the cut are undrawn (the old region left ${e.skin.oldOpen} past rest |x| .39)`, e.skin.open === 0 && e.skin.past > 50, e.skin);
+  check('the square sleeve: no page errors', errs.length === 0, errs.slice(0, 3)); await page.close(); }
+// a band round the neck stops at the neck's base (Session 1230; S1220's note): at each of 48 angles round the neck's axis, a ray out
+// from it every millimetre meets the tunic's rest surface; from the band's top (.606) down to its foot the surface may stand out no more
+// than 2.2 cm past where it is at the top, nor 2 mm in one millimetre down (a slope of 63°), where the old foot (a plain rest .578) ran out
+// onto the shoulders' slope; over the front the foot is where it was; the band's depth down the cloth is 2.8 cm (the gown's) and 2.6 (the
+// Mark's woven bands) all round, within 2.5 mm (the table's smoothing only lifts a foot)
+if (!process.argv.includes('--shots-only')) { const page = await browser.newPage({ viewport: { width: 640, height: 360 } }); const errs = []; page.on('pageerror', e => errs.push(String(e)));
+  await page.goto(`http://localhost:${port}/builder.html?still&w=640&h=360&seed=check`); await page.waitForFunction(() => window.__done || window.__err, null, { timeout: 300000 });
+  const e = await page.evaluate(async () => { const K = await import('./people.js'), PK = await K.loadPack(), R0 = PK.rest, ix = PK.R.tunic, tri = [];
+    for (let t = 0; t < ix.length; t += 3) { const ys = [0, 1, 2].map(j => R0[ix[t + j] * 3 + 1]); if (Math.max(...ys) > .53 && Math.min(...ys) < .615) tri.push([0, 1, 2].map(j => new Array(3).fill(0).map((_, c) => R0[ix[t + j] * 3 + c]))); }
+    const hit = (y, a) => { const d = [Math.sin(a), 0, Math.cos(a)], o = [0, y, .025]; let best = 0; for (const [A, B, C] of tri) { if (Math.max(A[1], B[1], C[1]) < y || Math.min(A[1], B[1], C[1]) > y) continue;
+      const e1 = B.map((v, k) => v - A[k]), e2 = C.map((v, k) => v - A[k]), cr = (u, v) => [u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]], dot = (u, v) => u[0] * v[0] + u[1] * v[1] + u[2] * v[2];
+      const p = cr(d, e2), det = dot(e1, p); if (Math.abs(det) < 1e-12) continue; const sv = o.map((v, k) => v - A[k]), u = dot(sv, p) / det; if (u < 0 || u > 1) continue; const q = cr(sv, e1), w = dot(d, q) / det; if (w < 0 || u + w > 1) continue;
+      const t = dot(e2, q) / det; if (t > 0 && t < .3) best = Math.max(best, t); } return best; };
+    const walk = (a, foot) => { let r0 = 0, out = 0, len = 0, r = 0, step = 0; for (let y = .606; y >= foot - 1e-6; y -= .001) { const h = hit(y, a); if (!h) continue; if (!r0) r0 = h; else { len += Math.hypot(.001, h - r); step = Math.max(step, h - r); } r = h; out = Math.max(out, h - r0); } return { out, len, step }; };
+    const rows = []; for (let i = 0; i < 48; i++) { const a = (i / 48 - .5) * Math.PI * 2 + 1e-3, x = Math.sin(a) * .05, z = .025 + Math.cos(a) * .05, f = K.neckBandY(x, z), f2 = K.neckBandY(x, z, .026);
+      rows.push({ deg: Math.round(a * 180 / Math.PI), foot: f, n: walk(a, f), o: walk(a, .578), m: walk(a, f2) }); }
+    const mx = k => Math.max(...rows.map(r => r[k].out)), front = rows.filter(r => Math.abs(r.deg) <= 45);
+    const st = k => +(Math.max(...rows.map(r => r[k].step)) * 1000).toFixed(1); return { step: st('n'), stepOld: st('o'), stepMark: st('m'), out: +(mx('n') * 100).toFixed(2), old: +(mx('o') * 100).toFixed(2), mark: +(mx('m') * 100).toFixed(2), worst: rows.reduce((a, r) => r.o.out > a.o.out ? r : a).deg,
+      front: +(Math.max(...front.map(r => Math.abs(r.foot - .578))) * 1000).toFixed(2), lift: +((Math.max(...rows.map(r => r.foot)) - .578) * 1000).toFixed(1),
+      len: [Math.min(...rows.map(r => r.n.len)), Math.max(...rows.map(r => r.n.len)), Math.min(...rows.map(r => r.m.len)), Math.max(...rows.map(r => r.m.len))].map(v => +(v * 100).toFixed(2)) }; });
+  check(`the neck's border stops at the neck's base: the surface under it stands out ${e.out} cm at most past its top all round (the woven bands' ${e.mark}), at most ${e.step} mm in a millimetre down (${e.stepMark}), where the old foot at rest .578 ran ${e.old} cm out onto the shoulder (at ${e.worst}°), ${e.stepOld} mm in a millimetre`, e.out < 2.2 && e.mark < 2.2 && e.step < 2 && e.stepMark < 2 && e.old > 3.5 && e.stepOld > 3, e);
+  check(`the border's foot is where it was over the front (within ${e.front} mm of .578 within 45° of the middle) and rises at most ${e.lift} mm at the back of the shoulders; the band's own depth down the cloth is ${e.len[0]}–${e.len[1]} cm (2.8), the woven bands' ${e.len[2]}–${e.len[3]} (2.6)`,
+    e.front < 1 && e.lift > 5 && e.lift < 15 && Math.abs(e.len[0] - 2.8) < .25 && Math.abs(e.len[1] - 2.8) < .25 && Math.abs(e.len[2] - 2.6) < .25 && Math.abs(e.len[3] - 2.6) < .25, e);
+  check('the neck\'s border: no page errors', errs.length === 0, errs.slice(0, 3)); await page.close(); }
 const shotArg = process.argv.find(a => a.startsWith('--shots') && a !== '--shots-only');
 if (shotArg) { const only = shotArg.split('=')[1];
   const shot = async (name, q, w = 1920, h = 1080, panel = false, crop = null) => { if (only && !only.split(',').some(o => name.includes(o))) return; const page = await browser.newPage({ viewport: { width: w, height: h } }); const errs = []; page.on('pageerror', e => errs.push(String(e)));
@@ -802,6 +958,33 @@ if (shotArg) { const only = shotArg.split('=')[1];
     await shot('mantle-woman', 'people=markman&seed=m1&sex=f&view=full&turn=.4&dress=' + dq(gown)); await shot('mantle-back', 'people=markman&seed=m1&sex=f&view=full&turn=2.6&dress=' + dq(gown));
     await shot('mantle-collar', 'people=markman&seed=m1&sex=f&view=head&zoom=1.6&turn=.3&dress=' + dq(gown)); await shot('mantle-nape', 'people=markman&seed=m1&sex=f&view=head&turn=2.6&dress=' + dq(gown));
     await shot('mantle-man', 'people=markman&seed=b7&sex=m&view=full&turn=.5&dress=' + dq({ mantle: [.42, .34, .26], cloak: null, hood: null })); }
+  // the Aurennais men's striped robes (Session 1205, OG-110): undyed with indigo stripes and a madder line, front, back and the sleeve
+  // close; saffron with umber and a teal line; the same man's robe plain, for comparison
+  { const dq = d => encodeURIComponent(JSON.stringify(d)), robe = (g, k, l) => ({ robe: g, robeStripe: k, robeStripeLine: l, cloak: null, hood: null, sash: null, mantle: null, wrapTail: null });
+    await shot('striped-front', 'people=aurennais&seed=r1&sex=m&view=full&turn=.4&dress=' + dq(robe([.88, .84, .74], [.2, .26, .5], [.55, .18, .12])));
+    await shot('striped-back', 'people=aurennais&seed=r1&sex=m&view=full&turn=2.6&dress=' + dq(robe([.88, .84, .74], [.2, .26, .5], [.55, .18, .12])));
+    await shot('striped-sleeve', 'people=aurennais&seed=r1&sex=m&view=hand&zoom=.6&turn=.6&dress=' + dq(robe([.88, .84, .74], [.2, .26, .5], [.55, .18, .12])));
+    await shot('striped-saffron', 'people=aurennais&seed=r4&sex=m&view=full&turn=-.5&dress=' + dq(robe([.74, .55, .25], [.36, .24, .15], [.12, .42, .42])));
+    await shot('striped-plain', 'people=aurennais&seed=r1&sex=m&view=full&turn=.4&dress=' + dq(robe([.88, .84, .74], null, null))); }
+  // the Aurennais women's circlets (Session 1206, OG-110): gold with a garnet over braids, front and close; bronze with a teal stone over
+  // loose hair; gold over a bun from behind; and OG-110's pair, in red and gold
+  { const dq = d => encodeURIComponent(JSON.stringify(d)), bare = { cloak: null, hood: null, wrap: null, wrapTail: null, sash: null, mantle: null };
+    await shot('circlet-front', 'people=aurennais&seed=c1&sex=f&style=braids&view=head&turn=.35&dress=' + dq({ ...bare, circlet: [.85, .66, .3], circletStone: [.5, .06, .08] }));
+    await shot('circlet-close', 'people=aurennais&seed=c1&sex=f&style=braids&view=face&turn=.2&dress=' + dq({ ...bare, circlet: [.85, .66, .3], circletStone: [.5, .06, .08] }));
+    await shot('circlet-loose', 'people=aurennais&seed=c2&sex=f&style=loose&view=head&turn=-.5&dress=' + dq({ ...bare, circlet: [.7, .45, .22], circletStone: [.08, .42, .4] }));
+    await shot('circlet-bun', 'people=aurennais&seed=c3&sex=f&style=bun&view=head&turn=2.5&dress=' + dq({ ...bare, circlet: [.85, .66, .3], circletStone: null }));
+    await shot('circlet-full', 'people=aurennais&seed=c1&sex=f&style=braids&view=full&turn=.4&dress=' + dq({ ...bare, tunic: [.6, .14, .1], skirt: 'long', skirtColor: [.6, .14, .1], sashBelt: [.85, .66, .3], circlet: [.85, .66, .3], circletStone: [.5, .06, .08], earrings: [.85, .66, .3] })); }
+  // the Aurennais women's embroidered gowns (Session 1220, OG-110's woman "in red and gold"): madder with gold, full and from behind, the
+  // hem, the neck and the sleeve's end close; saffron with madder thread; teal with gold; OG-110's whole figure with the circlet and hoops
+  { const dq = d => encodeURIComponent(JSON.stringify(d)), bare = { cloak: null, hood: null, wrap: null, wrapTail: null, sash: null, mantle: null, apron: null, bib: false, cuffs: null, cuffBand: null },
+      gown = (c, b, x = {}) => ({ ...bare, tunic: c, skirt: 'long', skirtColor: c, gownBorder: b, ...x }), red = gown([.6, .14, .1], [.85, .66, .3]);
+    await shot('gown-front', 'people=aurennais&seed=gw1&sex=f&view=full&turn=.35&dress=' + dq(red)); await shot('gown-back', 'people=aurennais&seed=gw1&sex=f&view=full&turn=2.7&dress=' + dq(red));
+    await shot('gown-hem', 'people=aurennais&seed=gw1&sex=f&view=full&turn=.35&dress=' + dq(red), 1920, 1440, false, [.3, .62, .4, .36]);
+    await shot('gown-neck', 'people=aurennais&seed=gw1&sex=f&view=neck&turn=.3&dress=' + dq(red)); await shot('gown-sleeve', 'people=aurennais&seed=gw1&sex=f&view=hand&zoom=.7&turn=.6&dress=' + dq(red)); await shot('gown-sleeveplain', 'people=aurennais&seed=gw1&sex=f&view=hand&zoom=.7&turn=.6&dress=' + dq({ ...red, gownBorder: null }));
+    await shot('gown-hemclose', 'people=aurennais&seed=gw1&sex=f&view=full&turn=.35&dress=' + dq(red), 3840, 2880, false, [.38, .74, .24, .12]); await shot('gown-hemplain', 'people=aurennais&seed=gw1&sex=f&view=full&turn=.35&dress=' + dq({ ...red, gownBorder: null }), 3840, 2880, false, [.38, .74, .24, .12]);
+    await shot('gown-saffron', 'people=aurennais&seed=gw2&sex=f&view=full&turn=-.45&dress=' + dq(gown([.78, .55, .16], [.5, .1, .08])));
+    await shot('gown-teal', 'people=aurennais&seed=gw3&sex=f&view=full&turn=.5&dress=' + dq(gown([.1, .38, .38], [.85, .66, .3])));
+    await shot('gown-og110', 'people=aurennais&seed=c1&sex=f&style=braids&view=full&turn=.4&dress=' + dq({ ...red, sashBelt: [.85, .66, .3], circlet: [.85, .66, .3], circletStone: [.5, .06, .08], earrings: [.85, .66, .3] })); }
   // the armour's helms by tier in the kit (Session 1197): Steel, Draconic and Cosmic on the builder's own people, the page with its tier row; and a Cosmic robe's hood
   { const dq = d => encodeURIComponent(JSON.stringify(d)), kit = t => ({ mail: [.55, .56, .58], helm: [.4, .4, .42], tier: t, mantle: null, cloak: null, shield: null, spear: null });
     for (const [n, t, q] of [['tierhelm-steel', 4, 'people=markman&seed=th:4&sex=m'], ['tierhelm-draconic', 8, 'people=gatelander&seed=th:8&sex=f'], ['tierhelm-cosmic', 10, 'people=aurennais&seed=th:10&sex=m']]) await shot(n, q + '&view=head&turn=.45&dress=' + dq(kit(t)));
@@ -1060,6 +1243,16 @@ if (shotArg) { const only = shotArg.split('=')[1];
   for (const [n, q] of [['woman-braid', 'seed=styles&sex=f&style=braid&view=head&turn=-2.3'], ['woman-braids', 'seed=styles&sex=f&style=braids&view=head&turn=2.6'], ['woman-loose', 'seed=styles&sex=f&style=loose&view=head&turn=2.7&dress=' + dq({ mantle: null })], ['woman-loose-side', 'seed=styles&sex=f&style=loose&view=head&turn=1.5&dress=' + dq({ mantle: null })], ['woman-loose-mantle', 'seed=styles&sex=f&style=loose&view=head&turn=2.7'], ['beard-tunic', 'seed=b7&sex=m&view=head&turn=1.2&dress=' + dq({ mantle: null })], ['woman-face', 'seed=styles&sex=f&style=bun&view=face'], ['man-face', 'seed=b7&sex=m&view=face']]) await shot(n, q);
   // the brows close (Session 824): the face view at twice the size, cut to the brow line
   await shot('brows-woman', 'seed=styles&sex=f&style=bun&view=face', 1920, 1440, false, [.25, .38, .5, .25]); await shot('brows-man', 'seed=b7&sex=m&view=face', 1920, 1440, false, [.25, .38, .5, .25]);
+  // the sleeve's end square to the forearm (Session 1228): the plain red gown from the front and from under the arm, a blue tunic's cuff with its
+  // woven band, and a striped robe's open sleeve; the same two gown views from the build before are builder-sleeve-*-before.jpg
+  { const dq = d => encodeURIComponent(JSON.stringify(d)), bare = { cloak: null, hood: null, wrap: null, wrapTail: null, sash: null, mantle: null, apron: null, bib: false, cuffs: null, cuffBand: null },
+      red = { ...bare, tunic: [.6, .14, .1], skirt: 'long', skirtColor: [.6, .14, .1] };
+    // the neck's border at the neck's base (Session 1230): the red gown with no necklace from the side and the back; the same from the
+    // build before are builder-neck-*-before.jpg
+    await shot('neck-side', 'people=aurennais&seed=gw1&sex=f&view=neck&turn=1.0&dress=' + dq({ ...red, necklace: null, gownBorder: [.85, .66, .3] })); await shot('neck-back', 'people=aurennais&seed=gw1&sex=f&view=neck&turn=2.6&dress=' + dq({ ...red, necklace: null, gownBorder: [.85, .66, .3] }));
+    await shot('sleeve-front', 'people=aurennais&seed=gw1&sex=f&view=hand&zoom=.7&turn=.6&dress=' + dq(red)); await shot('sleeve-under', 'people=aurennais&seed=gw1&sex=f&view=hand&zoom=.7&turn=-1.2&dress=' + dq(red));
+    await shot('sleeve-cuff', 'people=aurennais&seed=gw1&sex=f&view=hand&zoom=.7&turn=.6&dress=' + dq({ ...bare, tunic: [.3, .4, .6], cuffs: [.5, .2, .15], cuffBand: [.8, .7, .3] }));
+    await shot('sleeve-robe', 'people=aurennais&seed=st1&sex=m&view=hand&zoom=.7&turn=.6&dress=' + dq({ robe: [.85, .8, .7], tunic: [.85, .8, .7], robeStripe: [.15, .2, .45], cord: [.6, .2, .1] })); }
   for (const k of ['gatelander', 'markman', 'aurennais', 'oldblood']) await shot('brows-' + k, `seed=brows:${k}&sex=m&people=${k}&view=face&nomantle`, 1920, 1440, false, [.25, .38, .5, .25]);
 }
 await browser.close(); srv.close(); console.log(fails ? `${fails} FAILED` : 'all passed'); process.exit(fails ? 1 : 0);

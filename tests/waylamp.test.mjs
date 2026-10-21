@@ -62,7 +62,8 @@ const crime = await page.evaluate((site) => { const h = lampFirstInn(site); cons
   const T0 = worldState.gameTimeAbsMinutes; seenCrime('theft', h, { name: 'Somebody' }, 10); const S = worldState.artifacts.waylamp;
   const r = { bounty: C[site].bounty, paid, count: S.count, towns: Object.keys(S.towns).length, lit: lampLit(), avail: lampTrimAvail(h), out: S.outUntil - T0 };
   delete C[site]; if (worldState.favor) delete worldState.favor[site]; if (worldState.refuse) delete worldState.refuse[h.id]; return r; }, P.others[0]);
-await page.waitForTimeout(2200);
+// the lamp's words wait 1,600 ms behind the witness's line (artifactSay); on a slow frame the timer fires late, so wait for the words, not the clock
+await page.waitForFunction(() => (document.getElementById('msg') || MSGEL).textContent === 'The Waylamp goes out in your hand. The bounty on you is doubled.', null, { timeout: 30000 }).catch(() => {});
 const said = await page.evaluate(() => { const L = GAME_LOG.slice(-4).map(l => l.text); return { msg: document.getElementById('msg') ? document.getElementById('msg').textContent : MSGEL.textContent, L }; });
 console.log(JSON.stringify(crime), JSON.stringify(said));
 check(`a theft seen while it is lit: the fine is ${crime.bounty}, twice ${crime.paid}; the count back to nothing, for seven days out`, crime.bounty === 2 * crime.paid && crime.count === 0 && crime.towns === 0 && !crime.lit && !crime.avail && crime.out === 7 * 1440, crime);

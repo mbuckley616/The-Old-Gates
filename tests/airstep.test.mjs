@@ -75,7 +75,9 @@ check(`a 12 m drop, the step pressed 1 m up: the fall is counted from the top ($
 
 // the head at the ceiling: a cottage in Dunmore, then a dungeon
 await g.settle('dunmore');
-const room = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'); const h = S.houses.find(x => x.type === 'home' && !x.two) || S.houses.find(x => !x.two && x.type !== 'inn');
+// Session 1212: on the new look every Dunmore home is a kit townhouse, two storeys outside (`two`) and one floor within (2.887 m to
+// the ceiling, nothing over you), so it is taken next; the fallback had been the church, 7.2 m up, out of the double jump's reach.
+const room = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'); const h = S.houses.find(x => x.type === 'home' && !x.two) || S.houses.find(x => x.type === 'home' && x.kit && x.kit.kind === 'townhouse') || S.houses.find(x => !x.two && x.type !== 'inn');
   forceTime(13); px = h.exitX; pz = h.exitZ; goToInterior(h); return { id: h.id, type: h.type }; });
 await page.waitForTimeout(4000); await g.hide();
 const inRoom = await page.evaluate(() => { const H = currentHouse._roomH, W = currentHouse.intW, D = currentHouse.intD;

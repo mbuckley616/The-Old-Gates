@@ -65,10 +65,15 @@ jobs:
     # 39146959449, af62671), 51 a shard at fourteen, and its shard 14 was cut at 60:00 on its last suite with nothing failed
     # (kittown took 346 s where 60 was counted). Sixteen is about 44 minutes a shard.
     # 19 Oct 2026: as many shards as the selection needs at about 35 minutes each (tests/lib/select.mjs), up to twenty.
+    # 20 Oct 2026 (Session 1226, the new look the default): 90, not 60. A suite takes 1.49 times as long on the new look (296 suites
+    # timed on both), and the suites came to about 1,100 minutes on it, 55 a shard at twenty; on #443 at 2ff39f31 nine of twenty
+    # shards were cut at 60:00 and 35 suites never started. The retry budget moves with the limit (run.mjs, RETRY_BUDGET_MIN).
     needs: plan
     if: needs.plan.outputs.mode != 'none'
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
+    env:
+      RETRY_BUDGET_MIN: 80
     strategy:
       fail-fast: false
       matrix:

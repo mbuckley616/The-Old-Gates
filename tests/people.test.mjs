@@ -37,6 +37,11 @@ const walk = await page.evaluate(() => { const rig = [...PEOPLE_RIGS].find(r => 
 check('walking: the stride tracks the ground, the standing foot holds still while the other swings', walk.walk > .9 && Math.abs(+walk.phaseAdv - +walk.expect) < .01 && walk.stillMm < 2 && walk.swingMm > 8, walk);
 const idle = await page.evaluate(() => { const rig = window._wr; for (let i = 0; i < 90; i++) tickPeople(1 / 60, 2e5 + i * 16.7); return { walk: rig.w.walk, idle: rig.w.idle }; });
 check('standing still, the walk fades out', idle.walk < .1 && idle.idle > .9, idle);
+// S1223: a metre in one frame (the town's schedule carrying someone on through a hitch, or world ticks with no tickPeople between,
+// as this suite's own did before the walk) is a teleport, not a pace: it latched the run, and the walk then ran on the run's cycle
+const hitch = await page.evaluate(() => { const rig = window._wr, root = rig.root; root.position.x += 1; tickPeople(1 / 60, 3e5);
+  return { run: rig.run, v: +rig.v.toFixed(3) }; });
+check('a metre in one frame is not taken for a run', !hitch.run && hitch.v < .5, hitch);
 
 // the keeper behind the counter is the keeper in the street
 const keeper = await page.evaluate(() => { forceTime(12); const S = WORLD.settle.get('dunmore'); const h = S.houses.find(x => x.keeper && /weapon|armor|potion|misc/.test(x.type) && PEOPLE_GENOMES.has(x.keeper + '|dunmore'));

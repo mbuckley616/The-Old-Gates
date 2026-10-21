@@ -66,8 +66,9 @@ export async function boot(opts = {}) {
   // page: the eye goes where the loop would put it (px, jumpY + the eye height, pz) and turns to the point, as yaw and pitch do
   await page.addInitScript(() => { window.lookAtPt = (x, y, z) => { const ey = jumpY + (typeof _eyeHeightCur === 'number' ? _eyeHeightCur : 1.6);
     yaw = Math.atan2(-(x - px), -(z - pz)); pitch = Math.atan2(y - ey, Math.hypot(x - px, z - pz)); CAM.position.set(px, ey, pz); CAM.rotation.set(pitch, yaw, 0, 'YXZ'); CAM.updateMatrixWorld(true); }; });
-  // S822: `boot({ look: 'new' })`, or OG_LOOK=new (run.mjs --look=new), boots on three.js 0.170 (vendor/three.r170.min.js, beside
-  // index.html, so it needs no swap); the default is the old look on tests/vendor's r128, as before
+  // S822: `boot({ look: 'old' })`, or OG_LOOK=old (run.mjs --look=old), boots the old look on tests/vendor's r128. Since Session
+  // 1226 (20 Oct 2026) the page's default is the new look, three.js 0.170 (vendor/three.r170.min.js, beside index.html), and every
+  // suite boots it; a suite that fails there is skipped (tests/skip.json), never sent back to the old look
   const look = opts.look || process.env.OG_LOOK || '';
   await page.goto('file://' + file + (look ? '?look=' + look : ''));
   await page.waitForTimeout(4000);

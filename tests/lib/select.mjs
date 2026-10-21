@@ -9,6 +9,8 @@
 // reaches nothing. A suite runs when its file names one of them, when the suite itself changed, or when it is in SMOKE. A change
 // to the harness, the page, the vendored three.js, the CI or package files runs everything, and so does a selection that would
 // cost over half of the full suite's time. A break this misses is caught by main's full run after the merge.
+// Session 1226: tests/skip.json and tests/times.json are not the harness. A suite named in skip.json is left out of everything, and one
+// struck from it runs; the times only pack the shards.
 import fs from 'fs'; import path from 'path'; import { execFileSync } from 'child_process'; import { fileURLToPath } from 'url';
 
 const here = path.dirname(fileURLToPath(import.meta.url)), root = path.resolve(here, '..', '..');
@@ -18,7 +20,10 @@ const SHARD_SECS = 35 * 60, MAX_SHARDS = 20, CALLER_CAP = 12;
 const IDENT = /[A-Za-z_$][\w$]*/g;
 
 const git = (...a) => execFileSync('git', a, { cwd: root, encoding: 'utf8', maxBuffer: 1 << 28 });
-const suiteNames = () => fs.readdirSync(path.join(root, 'tests')).filter(f => f.endsWith('.test.mjs')).map(f => f.slice(0, -9)).sort();
+// Session 1226: a suite named in tests/skip.json (red or too slow on the new look) is no suite of any run
+const skipped = text => { try { return JSON.parse(text).suites || {}; } catch (e) { return {}; } };
+const SKIP = skipped(fs.readFileSync(path.join(root, 'tests', 'skip.json'), 'utf8'));
+const suiteNames = () => fs.readdirSync(path.join(root, 'tests')).filter(f => f.endsWith('.test.mjs')).map(f => f.slice(0, -9)).filter(s => !(s in SKIP)).sort();
 
 // js/ files' top-level statements, from tests/lib/toplevel.cjs (Node's own acorn): {file: [{name, line, endLine, ids}]}
 function topLevel(files) {
@@ -40,13 +45,8 @@ function touched(base, head) {
   return by;
 }
 
-// run.mjs's table of seconds, read from its text so the two never drift apart
-function loadSecs() {
-  const t = fs.readFileSync(path.join(root, 'tests', 'run.mjs'), 'utf8');
-  const i = t.indexOf('const SECS = {'), j = t.indexOf('};', i), out = {};
-  for (const m of t.slice(i, j).matchAll(/'?([\w-]+)'?: (\d+)/g)) out[m[1]] = +m[2];
-  return out;
-}
+// the seconds run.mjs packs the shards by (tests/times.json since Session 1226)
+const loadSecs = () => JSON.parse(fs.readFileSync(path.join(root, 'tests', 'times.json'), 'utf8')).secs;
 
 export function selectSuites({ base, head = 'HEAD', full = false } = {}) {
   const all = suiteNames(), secs = loadSecs();
@@ -81,6 +81,9 @@ export function selectSuites({ base, head = 'HEAD', full = false } = {}) {
 
   const picked = new Set(SMOKE.filter(s => all.includes(s)));
   for (const f of changed) { const m = /^tests\/([^/]+)\.test\.mjs$/.exec(f); if (m && all.includes(m[1])) picked.add(m[1]); }
+  // a suite struck from tests/skip.json runs, to show it passes
+  if (changed.includes('tests/skip.json')) { let was = {}; try { was = skipped(git('show', `${base}:tests/skip.json`)); } catch (e) {}
+    for (const s of Object.keys(was)) if (all.includes(s)) picked.add(s); }
   if (usable.size) for (const s of all) {
     const text = fs.readFileSync(path.join(root, 'tests', s + '.test.mjs'), 'utf8');
     for (const id of text.match(IDENT) || []) if (usable.has(id)) { picked.add(s); break; }

@@ -20,7 +20,7 @@ import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometr
 import { mat, worldUV, puffTex } from './common.js';
 import { stream, markTextures, aurenneTextures, gatelandsBuilding, GL_PLANS, markHall } from './pieces.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { gatelandsSloop, aurenneSloop } from './ships.js';
+import { gatelandsSloop, aurenneSloop, markCutter } from './ships.js';
 
 let PM = null;
 function mats() {
@@ -3953,4 +3953,436 @@ export function markMineHead(o = {}, r = stream('minehead')) {
     rails: { x: AX, z0: RZ0, z1: TEND, top: RTOP, gauge: GAUGE, bents }, cart: { x: AX, z: CZ }, shaft: { x: SHX, z: SHZ, w: SHW, depth: SHD, fence: { half: FH, rails: [.55, 1.05] } },
     sheave: { x: SHX + SHR, y: SY, z: SHZ, r: SHR }, drum: { x: WX, z: WZ, y0: DY0, y1: DY1, r: DR, rope: ROPE_Y }, rope,
     whim: { x: WX, z: WZ, path: PR, posts, r: POSTR, eaves: EAV, beam: BEAM, apex: APEX, sweep: SWEEP }, paths: [PATH.map(p => [p[0], p[1]])], track: PATH.map(p => p.map(v => +v.toFixed(3))), trees };
+}
+
+// ── the Gatelands' canal lock (Session 1229, card F8; L5's "roads and works", OG-046's "canals & waterways", the last work on its board).
+// A lock on a summit canal across the midlands, after the Grand Canal's locks of 1780 to 1804: the canal falls 2.6 m through one chamber,
+// with a humpback bridge over the lock's tail and the lock-keeper's cottage on the lockside. Built at true size, a metre a unit, the canal
+// along z, flowing to +z, the towpath on its west bank:
+//   - the pounds: the canal 11 m across at the water and 1.7 m deep, in an earth channel with banks at 1 in 1.5; the upper pound's water at 0
+//     and its banks at 0.6, the lower's at -2.6, the land falling from 0.6 to -2.0 over 30 m below the lock; where the earth meets the
+//     masonry the banks are pitched with stone;
+//   - the lock: a chamber 4.4 m wide and 24 m long between its gates' heels, its walls ashlar under a dressed coping 0.65 m over the upper
+//     water; a breast wall under the upper gates from the chamber's floor (the lower bed) up to the upper bed, its cill 1 m into the chamber;
+//     splayed wing walls from the canal's width to the chamber's at both ends; the lower gates 5.6 m tall from the lower bed, the upper 3 m
+//     from the upper; each a pair of mitred leaves pointing upstream, 18° off square when shut, each lying in a recess of the wall when open,
+//     under a balance beam of 6.5 m, black with its end painted white, 0.7 to 1.0 m over the coping; ground paddles on the head;
+//   - the bridge: a humpback over the lock's tail carrying the road along x, one round arch of 4.44 m springing 1.6 m over the lower water,
+//     the road 3.2 m between parapets of 1 m and humped 1.3 m over 32 m;
+//   - the lock-keeper's cottage (the kit's GL_PLANS.cottage) on the east lockside, its door to the lock; the lockside paved in setts;
+//   - a turf barge of 18.6 by 3.9 m: a black hull drawing 1.05 m, a cabin aft with its stove pipe, the hold under a tarpaulin, the towing
+//     post forward; in the chamber (o.barge 'chamber', the default) or tied up in the lower pound below the bridge ('pound').
+// o.fill: 'low' (the default: the chamber at the lower water, the lower gates open, the upper shut) or 'high' (the chamber full, the upper
+// gates open, the lower shut).
+// -> { group, tris, draws, own, ground(x, z), land(x, z), levels { WU, WL, BU, BL, CT, fall }, lock { hw, zh, zt, zc, z0, z1, recess, face(z),
+//      usable [z0, z1] }, gates [{ kind, z, shut, h0, h1, leaves [{ side, heel, toe, d, len, beam { a, b, y0, y1 } }] }], chamberY, bridge { z0, z1,
+//      half, span, spring, crown, deck(x), parapet, x0, x1 }, barge { x, z, len, beam, draft, free, water, top, at, z0, z1 }, cottage { x, z, w, d, ry,
+//      door }, road { z, w }, tow (the towpath's line), paths, trees, fill }
+export function gatelandsCanal(o = {}, r = stream('canal')) {
+  const std = (c, ro = .9, x = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: ro, ...x }); const MI = millMats(); aurenneTextures() /* the limestone */;
+  const M = { turf: MI.turf, track: mat('turfDry', { ns: 1.0, color: 0xa08e70, rough: 1 }), setts: MI.path, bed: mat('rock', { ns: .8, color: 0x4a4636, rough: 1 }), pitch: mat('stone', { ns: 1.2, color: 0x9c988c, rough: .95 }),
+    wall: mat('limestone', { ns: 1.0, color: 0xb4b0a4, rough: .92 }), dress: MI.dress, rubble: mat('stone', { ns: 1.0, color: 0xb8b2a2, rough: .95 }), path: MI.path,
+    water: std(0x2a3a30, .1, { metalness: .15 }), gate: mat('wood', { ns: .9, color: 0x3a342c, rough: .8 }), beam: std(0x141210, .7), lime: MI.lime, iron: MI.iron, timber: MI.timber,
+    hull: std(0x151311, .75, { side: THREE.DoubleSide }), boat: std(0x2e2620, .8), pipe: MI.iron, pane: std(0x0c0a08, 1), paint: MI.door, tarp: std(0x5e5848, .95, { side: THREE.DoubleSide }), band: std(0x8a2c1e, .7), rope: std(0x8a7650, .95), dark: std(0x0c0a08, 1),
+    bark: std(0x5a5246, .95), leaf: std(0x4f6a2c, .85), sally: std(0x7a8a4c, .85), board: mat('wood', { ns: .9, color: 0x9a8e78, rough: .9 }), foam: std(0xc8d4d0, .35, { transparent: true, opacity: .78, side: THREE.DoubleSide, depthWrite: false }) };
+  const B = new Map(), key = String(o.key || 'canal'), F = stream(key + ':lie'), ph = Array.from({ length: 6 }, () => F() * 6.283), V3 = (x, y, z) => new THREE.Vector3(x, y, z);
+  const fill = o.fill === 'high' ? 'high' : 'low', bargeAt = o.barge === 'pound' ? 'pound' : 'chamber';
+  const put = (geo, k, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, uv = .5) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal'].includes(a)) g.deleteAttribute(a);
+    if (!g.attributes.normal) g.computeVertexNormals(); g.applyMatrix4(new THREE.Matrix4().compose(V3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), V3(1, 1, 1))); worldUV(g, uv);
+    if (!B.has(k)) B.set(k, []); B.get(k).push(g); return g; };
+  const rod = (k, a, b, rad, seg = 6, taper = 1) => { const A = V3(...a), C = V3(...b), d = C.clone().sub(A), g = new THREE.CylinderGeometry(rad * taper, rad, d.length(), seg);
+    g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(V3(0, 1, 0), d.clone().normalize())); g.translate((A.x + C.x) / 2, (A.y + C.y) / 2, (A.z + C.z) / 2); return put(g, k); };
+  // a six-faced solid from its eight corners (four below, four above, each in order round), its faces outward
+  const hexa = (c, k, uv = .5) => { const q = [[0, 1, 2, 3], [4, 7, 6, 5], [0, 4, 5, 1], [1, 5, 6, 2], [2, 6, 7, 3], [3, 7, 4, 0]], pos = [];
+    for (const [a, b, cc, d] of q) for (const i of [a, b, cc, a, cc, d]) pos.push(...c[i]); const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.computeVertexNormals();
+    const n = g.attributes.normal, ctr = c.reduce((s, p) => s.add(V3(...p)), V3(0, 0, 0)).multiplyScalar(1 / 8), p0 = V3(...c[0]), nn = V3(n.getX(0), n.getY(0), n.getZ(0));
+    if (nn.dot(p0.clone().sub(ctr)) < 0) { const P = g.attributes.position; for (let i = 0; i < P.count; i += 3) { const t = [P.getX(i + 1), P.getY(i + 1), P.getZ(i + 1)]; P.setXYZ(i + 1, P.getX(i + 2), P.getY(i + 2), P.getZ(i + 2)); P.setXYZ(i + 2, ...t); } g.computeVertexNormals(); }
+    return put(g, k, 0, 0, 0, 0, 0, 0, uv); };
+  const sm = t => { t = Math.min(1, Math.max(0, t)); return t * t * (3 - 2 * t); };
+  // the levels and the lock's plan
+  const WU = 0, WL = -2.6, BU = WU - 1.7, BL = WL - 1.7, CT = .6, ZH = -12, ZT = 12, ZC = -11, HW = 2.2, A = 5.5, REC = 2.6, HEEL = 2.42, LEAF = HEEL / Math.cos(18 * Math.PI / 180), RZ = [[ZH - 2.65, ZH], [ZT - 2.65, ZT]];
+  const MZ0 = -20, MZ1 = 28, SPL0 = -15, SPL1 = 23, WT = 1.6;
+  const face = z => z < MZ0 || z > MZ1 ? null : z < SPL0 ? A + (HW - A) * (z - MZ0) / (SPL0 - MZ0) : z > SPL1 ? HW + (A - HW) * (z - SPL1) / (MZ1 - SPL1) : RZ.some(([a, b]) => z > a - 1e-6 && z < b + 1e-6) ? REC : HW;
+  const floorY = z => z < ZC - .45 ? BU : BL;
+  const L = z => CT - 2.6 * sm((z - 27) / 30), kAt = z => z < MZ0 ? .25 + 1.25 * sm((MZ0 - z) / 6) : z > MZ1 ? .25 + 1.25 * sm((z - MZ1) / 6) : 0;
+  // the road along x over the lock's tail, humped over the bridge; the bridge 4 m wide in z
+  const ZB = 19.5, RW = 3.2, BZ0 = ZB - 2, BZ1 = ZB + 2, BX = 9, deck = x => CT + (Math.abs(x) < 16 ? .65 * (1 + Math.cos(Math.PI * x / 16)) : 0);
+  // the bywash (Session 1234): the pound's surplus round the lock on the towpath's side, over a weir in a notch through the upper pound's
+  // bank, down a stone channel 1.4 m wide in three reaches to a culvert under the towpath, which takes the rest of the fall (0.9 m) out
+  // through the tail's west wall below the lower gates; its inner faces (x, z) and the reaches' water, each fall a sill and a spill
+  const QX = [-11.2, -9.8], QZ = [-27.0, 13.3], NZ = [-27.0, -25.8], NX = [-9.8, -4.8], WR = [-6.4, -6.0], QT = .3, QSTEP = [-8, 4], QLV = [-.25, -.55, -.85];
+  const qLevel = z => QLV[QSTEP.filter(q => z >= q).length], OZ = [14.6, 15.4], OS = -1.75, OH = -1.1 /* the outlet's sill and head in the tail's wall */;
+  const qIn = (x, z) => (x >= QX[0] - 1e-6 && x <= QX[1] + 1e-6 && z >= QZ[0] - 1e-6 && z <= QZ[1] + 1e-6) || (z >= NZ[0] - 1e-6 && z <= NZ[1] + 1e-6 && x >= NX[0] - 1e-6 && x <= NX[1] + 1e-6);
+  const dRect = (x, z, x0, x1, z0, z1) => Math.hypot(Math.max(x0 - x, 0, x - x1), Math.max(z0 - z, 0, z - z1));
+  const qD = (x, z) => Math.min(dRect(x, z, QX[0] - QT, QX[1] + QT, QZ[0] - QT, QZ[1] + .4), dRect(x, z, NX[0], NX[1], NZ[0] - QT, NZ[1] + QT));
+  const quiet = (x, z) => (1 - (1 - sm((Math.abs(x) - 7) / 4)) * (1 - sm(Math.max(MZ0 - z, z - MZ1, 0) / 4))) * sm((qD(x, z) - .3) / 3);
+  const land0 = (x, z) => L(z) + (.1 * Math.sin(x * .21 + ph[0]) * Math.sin(z * .17 + ph[1]) + .05 * Math.sin(x * .43 - z * .39 + ph[2])) * quiet(x, z);
+  const land = (x, z) => { const b = land0(x, z), dz = Math.abs(z - ZB), w = dz <= RW / 2 + .4 ? 1 : sm((RW / 2 + 4.4 - dz) / 4) * sm((Math.abs(x) - BX) / 2); return b + (deck(x) - b) * w; };
+  const channel = (x, z) => { const Wy = z < 0 ? WU : WL, By = Wy - 1.7, k = kAt(z), ax = Math.abs(x), bh = A - k * 1.7, top = land(x, z), th = A + k * Math.max(0, L(z) - Wy);
+    return ax <= bh ? By : ax >= th ? top : By + (top - By) * (ax - bh) / (th - bh); };
+  const ground0 = (x, z) => { const f = face(z); if (f !== null) return Math.abs(x) <= f + .75 ? floorY(z) : land(x, z); return channel(x, z); };
+  const ground = (x, z) => !qIn(x, z) ? ground0(x, z) : x > WR[1] ? Math.min(ground0(x, z), -.4) : -2.0 /* under the bywash's bed */;
+  const topHalf = z => A + kAt(z) * Math.max(0, L(z) - (z < 0 ? WU : WL));
+  // the towpath: on the west bank 1.5 m behind the channel's lip, clear of the beams' sweep along the lock, round the bridge's west end
+  const towX = z => z > 14 && z < 25 ? -11.5 : -Math.max(7.9, topHalf(z) + 1.5);
+  const tow = []; for (let z = -60; z <= 62; z += 2) { if (z === 16) tow.push([-7.9, 14.5]); tow.push([+towX(z).toFixed(2), z]); }
+  const segD = (x, z, a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], t = Math.max(0, Math.min(1, ((x - a[0]) * dx + (z - a[1]) * dz) / (dx * dx + dz * dz))); return Math.hypot(x - a[0] - dx * t, z - a[1] - dz * t); };
+  const lineD = (x, z, P) => Math.min(...P.slice(0, -1).map((q, i) => segD(x, z, q, P[i + 1])));
+  // the land: a grid fine at the lock, its cells by what they are
+  { const steps = (bands, end) => { const v = []; for (const [a, b, st] of bands) for (let q = a; q < b - 1e-6; q += st) v.push(+q.toFixed(2)); v.push(end); return v; };
+    const add = (v, e) => [...new Set([...v, ...e])].sort((p, q) => p - q);
+    const gx = add(steps([[-160, -40, 24], [-40, -14, 2], [-14, -8, 1], [-8, 8, .5], [8, 14, 1], [14, 40, 2], [40, 160, 24]], 160), [QX[0] - QT, QX[0], QX[1], QX[1] + QT]), gz = add(steps([[-160, -50, 22], [-50, -22, 1], [-22, -9, .5], [-9, 9, 1], [9, 30, .5], [30, 63, 1.5], [63, 160, 24.25]], 160), [NZ[0] - QT, NZ[1] + QT, QZ[1], QZ[1] + .4]);
+    const pos = [], NX = gx.length, I = { turf: [], track: [], setts: [], bed: [], pitch: [] }; for (const z of gz) for (const x of gx) pos.push(x, ground(x, z), z);
+    for (let j = 0; j + 1 < gz.length; j++) for (let i = 0; i + 1 < NX; i++) { const a = j * NX + i, b = a + 1, c = a + NX, d = c + 1, cx = (gx[i] + gx[i + 1]) / 2, cz = (gz[j] + gz[j + 1]) / 2, f = face(cz), ax = Math.abs(cx);
+      const wet = f !== null ? ax <= f + .75 : ax < topHalf(cz) - kAt(cz) * .5, k = wet && f !== null ? 'bed' : wet ? (Math.abs(cz) < 34 && kAt(cz) < 1.3 ? 'pitch' : 'bed')
+        : lineD(cx, cz, tow) < 1.1 ? 'track' : Math.abs(cz - ZB) < RW / 2 + .2 && ax > BX - .2 ? 'setts' : f !== null && ax < 6.6 && cz > -17 && cz < 16 ? 'setts' : 'turf';
+      I[k].push(a, c, b, b, c, d); }
+    for (const [k, idx] of Object.entries(I)) { if (!idx.length) continue; const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals();
+      { const N = g.attributes.normal, h = .25; for (let v = 0; v < N.count; v++) { const x = pos[3 * v], z = pos[3 * v + 2]; if (qD(x, z) > 1 || qIn(x, z)) continue; /* by the bywash, the uncut land's normal, not the cut's */
+        const nx = ground0(x - h, z) - ground0(x + h, z), nz = ground0(x, z - h) - ground0(x, z + h), l = Math.hypot(nx, 2 * h, nz); N.setXYZ(v, nx / l, 2 * h / l, nz / l); } }
+      put(g, k, 0, 0, 0, 0, 0, 0, .35); } }
+  // the lock's walls: a solid for each run of the face between its corners, from under the floor to the coping's bed, and the coping over it
+  const wallRuns = [[MZ0, SPL0], [SPL0, RZ[0][0]], [RZ[0][0], RZ[0][1]], [RZ[0][1], RZ[1][0]], [RZ[1][0], RZ[1][1]], [RZ[1][1], SPL1], [SPL1, MZ1]];
+  const fAt = (z, run) => run[0] === MZ0 ? A + (HW - A) * (z - MZ0) / (SPL0 - MZ0) : run[0] === SPL1 ? HW + (A - HW) * (z - SPL1) / (MZ1 - SPL1) : RZ.some(q => q[0] === run[0]) ? REC : HW;
+  const runsOf = s => s > 0 ? wallRuns : wallRuns.flatMap(q => q[0] === RZ[1][1] ? [[q[0], OZ[0]], [OZ[0], OZ[1], 'hole'], [OZ[1], q[1]]] : [q]) /* the bywash's outlet in the west wall */;
+  for (const s of [-1, 1]) for (const run of runsOf(s)) { const [z0, z1] = run, f0 = fAt(z0, run), f1 = fAt(z1, run), y0 = BL - .3, y1 = CT - .22;
+    for (const [ya, yb] of run[2] ? [[y0, OS], [OH, y1]] : [[y0, y1]]) hexa([[s * f0, ya, z0], [s * (f0 + .85), ya, z0], [s * (f1 + .85), ya, z1], [s * f1, ya, z1], [s * f0, yb, z0], [s * (f0 + .85), yb, z0], [s * (f1 + .85), yb, z1], [s * f1, yb, z1]], 'wall', .6);
+    if (run[2]) put(new THREE.PlaneGeometry(z1 - z0, OH - OS), 'dark', s * (f0 + .4), (OS + OH) / 2, (z0 + z1) / 2, 0, -s * Math.PI / 2) /* the culvert's dark */;
+    hexa([[s * (f0 + .85), y0, z0], [s * (f0 + WT), y0, z0], [s * (f1 + WT), y0, z1], [s * (f1 + .85), y0, z1], [s * (f0 + .85), CT + .004, z0], [s * (f0 + WT), CT + .004, z0], [s * (f1 + WT), CT + .004, z1], [s * (f1 + .85), CT + .004, z1]], 'setts', .35) /* behind the coping, paved, a hair over the land so its cut never shows */;
+    const n = Math.max(1, Math.round(Math.hypot(z1 - z0, f1 - f0) / 1.1)); for (let k = 0; k < n; k++) { const za = z0 + (z1 - z0) * k / n, zb = z0 + (z1 - z0) * (k + 1) / n, fa = f0 + (f1 - f0) * k / n - .05, fb = f0 + (f1 - f0) * (k + 1) / n - .05, j = (k % 2) * .004;
+      hexa([[s * fa, y1, za], [s * (fa + .9), y1, za], [s * (fb + .9), y1, zb], [s * fb, y1, zb], [s * fa, CT + .05 + j, za], [s * (fa + .9), CT + .05 + j, za], [s * (fb + .9), CT + .05 + j, zb], [s * fb, CT + .05 + j, zb]], 'dress', .6); } }
+  // the wing walls' ends: a dressed quoin from the bed to the coping, where the pitched bank takes over
+  for (const s of [-1, 1]) for (const z of [MZ0, MZ1]) { const sg = z < 0 ? -1 : 1, y0 = (z < 0 ? BU : BL) - .3; put(new THREE.BoxGeometry(WT + .04, CT + .05 - y0, .6), 'dress', s * (A + WT / 2), (CT + .05 + y0) / 2, z - sg * .28); }
+  // the breast wall under the upper gates and its cill
+  hexa([[-HW - .9, BL - .3, ZH - .5], [HW + .9, BL - .3, ZH - .5], [HW + .9, BL - .3, ZC], [-HW - .9, BL - .3, ZC], [-HW - .9, BU, ZH - .5], [HW + .9, BU, ZH - .5], [HW + .9, BU, ZC], [-HW - .9, BU, ZC]], 'wall', .6);
+  put(new THREE.BoxGeometry(2 * HW, .12, .3), 'dress', 0, BU + .06, ZH - .25);
+  // the gates: mitred leaves pointing upstream; a leaf's d points from its heel to its toe
+  const PHI = 18 * Math.PI / 180, gates = [];
+  for (const [kind, gz, h0] of [['upper', ZH, BU], ['lower', ZT, BL]]) { const shut = kind === 'upper' ? fill === 'low' : fill === 'high', phi = shut ? PHI : Math.PI / 2, h1 = CT + .7, leaves = [];
+    for (const s of [-1, 1]) { const heel = [s * HEEL, gz], d = [-s * Math.cos(phi), -Math.sin(phi)], toe = [heel[0] + d[0] * LEAF, heel[1] + d[1] * LEAF], ry = Math.atan2(-d[1], d[0]);
+      const c = [heel[0] + d[0] * (LEAF - .2) / 2, heel[1] + d[1] * (LEAF - .2) / 2]; put(new THREE.BoxGeometry(LEAF + .2, h1 - h0, .26), 'gate', c[0], (h0 + h1) / 2, c[1], 0, ry, 0, .6);
+      let n = [Math.sin(ry), Math.cos(ry)]; if (n[1] - s * n[0] < 0) n = n.map(v => -v) /* the rails on the leaf's downstream face, or the chamber's side when open */;
+      for (const y of [h0 + .5, (h0 + h1) / 2, h1 - .5]) put(new THREE.BoxGeometry(LEAF - .1, .2, .05), 'gate', c[0] + n[0] * .155, y, c[1] + n[1] * .155, 0, ry, 0, .6);
+      // the lower gates' walkway (Session 1234): a board 0.4 m wide on the downstream face, its top flush with the coping's, from the coping's
+      // edge to the mitre when shut (the two boards meeting on the middle line), the leaf's length when open; a handrail of 1 m on its outer edge, painted white as the beams' ends are
+      let walk = null; if (kind === 'lower') { const WB = .4, wy = CT + .05, OFF = [.13, .13 + WB], P = (t, f) => [heel[0] + d[0] * t + n[0] * f, heel[1] + d[1] * t + n[1] * f];
+        const tX = (f, xx) => (xx - heel[0] - n[0] * f) / d[0], ends = f => shut ? [tX(f, s * (HW - .05)), tX(f, 0)] : [0, LEAF], E = OFF.map(ends);
+        const cn = [P(E[0][0], OFF[0]), P(E[1][0], OFF[1]), P(E[1][1], OFF[1]), P(E[0][1], OFF[0])]; hexa([...cn.map(([x, z]) => [x, wy - .08, z]), ...cn.map(([x, z]) => [x, wy, z])], 'board', .5);
+        const fr = OFF[1] - .04, [ta, tb] = ends(fr), np = Math.max(2, Math.ceil((tb - ta) / 1.1) + 1), pa = P(ta, fr), pb = P(tb, fr);
+        for (let k = 0; k < np; k++) { if (shut && s > 0 && k === np - 1) continue; const q = P(ta + (tb - ta) * k / (np - 1), fr); rod('lime', [q[0], wy, q[1]], [q[0], wy + 1.0, q[1]], .028, 6); }
+        for (const y of [wy + .5, wy + 1.0]) rod('lime', [pa[0], y, pa[1]], [pb[0], y, pb[1]], .025, 6);
+        walk = { a: P(ends(.33)[0], .33).map(v => +v.toFixed(3)), b: P(ends(.33)[1], .33).map(v => +v.toFixed(3)), y: wy, w: WB, n, rail: [wy + .5, wy + 1.0] }; }
+      const BL0 = 4.0, a = [toe[0], toe[1]], b = [heel[0] - d[0] * BL0, heel[1] - d[1] * BL0], bc = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], blen = LEAF + BL0, by = h1 + .16;
+      put(new THREE.BoxGeometry(blen - .5, .32, .3), 'beam', bc[0] + d[0] * .25, by, bc[1] + d[1] * .25, 0, ry); put(new THREE.BoxGeometry(.5, .33, .31), 'lime', b[0] + d[0] * .25, by, b[1] + d[1] * .25, 0, ry);
+      leaves.push({ side: s, heel, toe: toe.map(v => +v.toFixed(4)), d, len: LEAF, beam: { a, b: b.map(v => +v.toFixed(3)), y0: by - .16, y1: by + .16 }, walk }); }
+    gates.push({ kind, z: gz, shut, h0, h1, leaves }); }
+  // the ground paddles on the head: a rack and its post either side of the upper gates, and their culverts' grates in the wall below the water
+  for (const s of [-1, 1]) { put(new THREE.BoxGeometry(.28, .75, .28), 'iron', s * 3.3, CT + .375, ZH - 1.6); put(new THREE.BoxGeometry(.06, .5, .06), 'iron', s * 3.3, CT + 1.0, ZH - 1.6); put(new THREE.CylinderGeometry(.12, .12, .08, 10), 'iron', s * 3.45, CT + .62, ZH - 1.6, 0, 0, Math.PI / 2); }
+  for (const s of [-1, 1]) for (const z of [-5, 5]) { put(new THREE.CylinderGeometry(.14, .17, .55, 10), 'iron', s * 2.65, CT + .3, z); put(new THREE.CylinderGeometry(.2, .2, .06, 10), 'iron', s * 2.65, CT + .58, z); }
+  // the bywash: its walls ashlar under a dressed cope 8 cm over the land, its bed pitched; the weir in the notch, a sill at each fall and the
+  // spill over it, the culvert's head under a lintel with its grate, the slab that carries the towpath over the notch, the spout at the outlet
+  const QY0 = -2.4, QTOP = CT + .08, box = (x0, x1, y0, y1, z0, z1, k) => put(new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0), k, (x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2);
+  for (const [x0, x1, z0, z1] of [[QX[0] - QT, NX[1] - .1, NZ[0] - QT, NZ[0]], [QX[0] - QT, QX[0], NZ[0], QZ[1] + .4], [QX[1], QX[1] + QT, NZ[1], QZ[1] + .4], [QX[1] + QT, NX[1] - .1, NZ[1], NZ[1] + QT], [QX[0], QX[1], QZ[1], QZ[1] + .4]]) {
+    box(x0, x1, QY0, CT, z0, z1, 'wall'); box(x0 - .02, x1 + .02, CT, QTOP, z0 - .02, z1 + .02, 'dress'); }
+  // a spill: a sheet falling from its lip along a parabola, `run` out along the axis ax ('x' or 'z') while it drops from y0 to y1, a0 to a1 across
+  const qSpill = (ax, a0, a1, y0, y1, lip, run) => { const pos = [], N = 6, p = t => [lip + run * t, y0 - (y0 - y1) * t * t], q = (u, v, w) => ax === 'z' ? [w, v, u] : [u, v, w];
+    for (let i = 0; i < N; i++) { const [u0, v0] = p(i / N), [u1, v1] = p((i + 1) / N); pos.push(...q(u0, v0, a0), ...q(u0, v0, a1), ...q(u1, v1, a1), ...q(u0, v0, a0), ...q(u1, v1, a1), ...q(u1, v1, a0)); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.computeVertexNormals(); put(g, 'foam', 0, 0, 0, 0, 0, 0, .3); };
+  const sheet = (x0, x1, z0, z1, y, k = 'water') => { const g = new THREE.PlaneGeometry(x1 - x0, z1 - z0); g.rotateX(-Math.PI / 2); put(g, k, (x0 + x1) / 2, y, (z0 + z1) / 2, 0, 0, 0, .3); };
+  const reach = [QZ[0], ...QSTEP, QZ[1]];
+  for (let i = 0; i + 1 < reach.length; i++) { const lv = QLV[i], za = reach[i], zb = reach[i + 1]; box(QX[0], QX[1], QY0, lv - .35, za, zb, 'pitch'); sheet(QX[0], QX[1], za, zb, lv);
+    if (i + 1 < QLV.length) { box(QX[0], QX[1], QY0, lv - .06, zb - .3, zb, 'dress'); qSpill('z', QX[0], QX[1], lv - .03, QLV[i + 1], zb, .42); sheet(QX[0] + .04, QX[1] - .04, zb + .3, zb + 1.4, QLV[i + 1] + .006, 'foam'); } }
+  box(WR[1] - .01, NX[1], QY0, -.5, NZ[0], NZ[1], 'pitch') /* the notch's apron on the pound's side */; box(QX[1], WR[0], QY0, QLV[0] - .35, NZ[0], NZ[1], 'pitch'); sheet(QX[1], WR[0], NZ[0], NZ[1], QLV[0]);
+  box(WR[0], WR[1], QY0, -.05, NZ[0], NZ[1], 'dress') /* the weir, its crest 5 cm under the pound's water */; sheet(WR[0], WR[1], NZ[0], NZ[1], -.02);
+  { qSpill('x', NZ[0], NZ[1], -.03, QLV[0], WR[0], -.36); sheet(WR[0] - 1.2, WR[0] - .3, NZ[0] + .04, NZ[1] - .04, QLV[0] + .006, 'foam'); }
+  { const cz = QZ[1] - .01, c = (QX[0] + QX[1]) / 2, lf = QLV[QLV.length - 1], cw = QX[1] - QX[0] - .3; put(new THREE.PlaneGeometry(cw, .8), 'dark', c, lf - .37 + .4, cz, 0, Math.PI); box(QX[0], QX[1], lf + .43, lf + .65, QZ[1] - .06, QZ[1] + .02, 'dress') /* the culvert's mouth, its lintel and grate */;
+    for (let x = c - cw / 2 + .06; x <= c + cw / 2 - .06 + 1e-6; x += cw / 8) rod('iron', [x, lf - .5, QZ[1] - .08], [x, lf + .43, QZ[1] - .08], .018, 5); }
+  { const tx = towX(-26.5), z0 = NZ[0] - QT - .05, z1 = NZ[1] + QT + .05, R = .95, x0 = tx - 1.0, x1 = tx + 1.0, y0 = CT - .05, yt = QTOP + .06, ye = CT + .01;
+    // the towpath's slab over the notch, flat over the copes and eased down to the path at each end over 0.95 m (1 in 8), its top the path's
+    for (const [za, zb, ya, yb] of [[z0 - R, z0, ye, yt], [z0, z1, yt, yt], [z1, z1 + R, yt, ye]]) { hexa([[x0, y0, za], [x1, y0, za], [x1, y0, zb], [x0, y0, zb], [x0, ya - .02, za], [x1, ya - .02, za], [x1, yb - .02, zb], [x0, yb - .02, zb]], 'dress');
+      hexa([[x0 + .05, ya - .02, za], [x1 - .05, ya - .02, za], [x1 - .05, yb - .02, zb], [x0 + .05, yb - .02, zb], [x0 + .05, ya, za], [x1 - .05, ya, za], [x1 - .05, yb, zb], [x0 + .05, yb, zb]], 'track', .35); } }
+  { qSpill('x', OZ[0] + .05, OZ[1] - .05, OS + .02, WL, -HW, .5); sheet(-HW + .2, -HW + 1.3, OZ[0] - .2, OZ[1] + .2, WL + .006, 'foam'); }
+  // the water: a sheet at each level, cut along the shut gate's line between them
+  const chamberY = fill === 'high' ? WU : WL, shutG = gates.find(g => g.shut), vee = (gz, s) => [[s * HEEL, gz], [0, gz - HEEL * Math.tan(PHI)], [-s * HEEL, gz]];
+  { const up = new THREE.Shape(), lo = new THREE.Shape(), gz = shutG.z, X = -WR[1] /* to the weir's face; the land hides it past the banks' tops */; /* the shapes in (x, -z) */
+    up.moveTo(-X, 160); up.lineTo(X, 160); up.lineTo(X, -gz); for (const [x, z] of vee(gz, 1)) up.lineTo(x, -z); up.lineTo(-X, -gz); up.closePath();
+    lo.moveTo(-X, -gz); for (const [x, z] of vee(gz, -1)) lo.lineTo(x, -z); lo.lineTo(X, -gz); lo.lineTo(X, -160); lo.lineTo(-X, -160); lo.closePath();
+    for (const [s, y] of [[up, WU], [lo, WL]]) { const g = new THREE.ShapeGeometry(s); g.rotateX(-Math.PI / 2); put(g, 'water', 0, y, 0, 0, 0, 0, .3); } }
+  // the bridge: its body a face in (x, y) with the arch cut from below, run 4 m along z; the ring stones; the parapets and their copes; the road
+  const SP = WL + 1.6, AR = HW + .02, CR = SP + AR;
+  { const s = new THREE.Shape(); s.moveTo(-BX, BL - .3); s.lineTo(-AR, BL - .3); s.lineTo(-AR, SP); for (let k = 1; k < 24; k++) { const t = Math.PI - k * Math.PI / 24; s.lineTo(AR * Math.cos(t), SP + AR * Math.sin(t)); } s.lineTo(AR, SP); s.lineTo(AR, BL - .3); s.lineTo(BX, BL - .3);
+    for (let k = 0; k <= 36; k++) { const x = BX - k * 2 * BX / 36; s.lineTo(x, deck(x) - .02); } s.closePath();
+    const g = new THREE.ExtrudeGeometry(s, { depth: BZ1 - BZ0, bevelEnabled: false, curveSegments: 4 }); g.translate(0, 0, BZ0); put(g, 'rubble', 0, 0, 0, 0, 0, 0, .6);
+    for (const [z, ry] of [[BZ0 - .01, Math.PI], [BZ1 + .01, 0]]) { const rg = new THREE.RingGeometry(AR, AR + .48, 18, 1, 0, Math.PI); put(rg, 'dress', 0, SP, z, 0, ry); }
+    for (const z of [BZ0, BZ1 - .4]) { const p = new THREE.Shape(); p.moveTo(-BX, deck(-BX) - .05); for (let k = 1; k <= 36; k++) { const x = -BX + k * 2 * BX / 36; p.lineTo(x, deck(x) - .05); } for (let k = 36; k >= 0; k--) { const x = -BX + k * 2 * BX / 36; p.lineTo(x, deck(x) + .92); } p.closePath();
+      const pg = new THREE.ExtrudeGeometry(p, { depth: .4, bevelEnabled: false }); pg.translate(0, 0, z); put(pg, 'rubble', 0, 0, 0, 0, 0, 0, .6);
+      for (let k = 0; k < 36; k++) { const x0 = -BX + k * 2 * BX / 36, x1 = x0 + 2 * BX / 36, sl = (deck(x1) - deck(x0)) / (x1 - x0); put(new THREE.BoxGeometry((x1 - x0) * Math.hypot(1, sl) + .02, .1, .5), 'dress', (x0 + x1) / 2, (deck(x0) + deck(x1)) / 2 + .97, z + .2, 0, 0, Math.atan(sl)); }
+      for (const sx of [-1, 1]) put(new THREE.BoxGeometry(.55, 1.25, .55), 'dress', sx * (BX + .2), deck(BX) + .55, z + .2) /* the parapet's end piers */; }
+    for (let x = -40; x < 40; x += .9) { const x1 = x + .9, sl = (deck(x1) - deck(x)) / .9; put(new THREE.BoxGeometry(.93, .06, RW - .04), 'path', x + .45, (deck(x) + deck(x1)) / 2 + .03, ZB + (F() - .5) * .02, 0, 0, Math.atan(sl)); } }
+  // the barge: a hull lofted from sections along its length (the bow to +z), a cabin aft, the hold under a tarpaulin, a towing post forward
+  const BLN = 18.6, HB = 1.95, DR = 1.05, FB = .5, bargeW = bargeAt === 'chamber' ? chamberY : WL;
+  const usable = [ZC + .3, ZT - LEAF - .3], bx = bargeAt === 'chamber' ? 0 : -1.4, bzc = bargeAt === 'chamber' ? (usable[0] + usable[1]) / 2 + .2 : 42, bz0 = bzc - BLN / 2;
+  { const N = 44, rings = []; for (let k = 0; k <= N; k++) { const s = k / N * BLN, tb = (s - (BLN - 3.6)) / 3.6, ts = (1.4 - s) / 1.4, b = HB * (tb > 0 ? Math.sqrt(Math.max(.002, 1 - tb * tb)) : 1) * (ts > 0 ? 1 - .32 * ts * ts : 1);
+      const bot = -DR + (tb > 0 ? .8 * tb * tb : 0) + (ts > 0 ? .3 * ts * ts : 0), top = FB + (tb > 0 ? .28 * tb * tb : 0) + (ts > 0 ? .12 * ts : 0), c = Math.min(.12, b * .4);
+      rings.push([[-b, top], [-b, bot + c], [-b + c, bot], [b - c, bot], [b, bot + c], [b, top]].map(([x, y]) => [bx + x, bargeW + y, bz0 + s])); }
+    const pos = []; for (let k = 0; k < N; k++) for (let i = 0; i < 5; i++) { const a = rings[k][i], b = rings[k][i + 1], c = rings[k + 1][i + 1], d = rings[k + 1][i]; pos.push(...a, ...b, ...c, ...a, ...c, ...d); }
+    for (const R of [rings[0], rings[N]]) for (let i = 1; i < 5; i++) pos.push(...R[0], ...R[i], ...R[i + 1]);
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.computeVertexNormals(); put(g, 'hull', 0, 0, 0, 0, 0, 0, .5);
+    for (let k = 0; k < N; k++) for (const i of [0, 5]) rod('band', rings[k][i], rings[k + 1][i], .07, 5) /* the gunwale, red */;
+    put(new THREE.BoxGeometry(2 * HB - .3, .06, BLN - 8.6), 'boat', bx, bargeW - DR + .32, bz0 + 4.2 + (BLN - 8.6) / 2) /* the hold's floor */;
+    const cz = bz0 + 2.3; put(new THREE.BoxGeometry(2 * HB - .36, 1.25, 3.4), 'paint', bx, bargeW + FB - .2 + .625, cz); put(new THREE.BoxGeometry(2 * HB - .2, .08, 3.6), 'band', bx, bargeW + FB + 1.09, cz);
+    for (const sx of [-1, 1]) put(new THREE.PlaneGeometry(.5, .35), 'pane', bx + sx * (HB - .17), bargeW + FB + .62, cz, 0, sx * Math.PI / 2); put(new THREE.PlaneGeometry(.7, 1.0), 'pane', bx + .5, bargeW + FB + .4, cz + 1.71);
+    put(new THREE.CylinderGeometry(.09, .09, .55, 8), 'pipe', bx - .9, bargeW + FB + 1.4, cz - .6);
+    put(new THREE.BoxGeometry(.1, 1.3, .9), 'boat', bx, bargeW - .2, bz0 - .45); rod('boat', [bx, bargeW + .4, bz0 - .45], [bx, bargeW + FB + .95, bz0 - .45], .06, 6); rod('boat', [bx, bargeW + FB + .95, bz0 - .45], [bx + .3, bargeW + FB + 1.0, bz0 + .45], .04, 5) /* the rudder, its stock and the tiller, short of the cabin */;
+    { const tl = BLN - 9.2, tg = new THREE.CylinderGeometry(1, 1, tl, 14, 1, true, -Math.PI / 2, Math.PI); tg.rotateX(-Math.PI / 2); tg.scale(HB - .1, .55, 1); put(tg, 'tarp', bx, bargeW + FB + .02, bz0 + 4.4 + tl / 2); }
+    put(new THREE.CylinderGeometry(.09, .11, 1.5, 8), 'boat', bx, bargeW + FB + .55, bz0 + BLN - 4.4) /* the towing post */;
+    if (bargeAt === 'pound') { for (const [sz, tz] of [[bz0 + 1.2, bz0 - 2.5], [bz0 + BLN - 2.4, bz0 + BLN + 1.5]]) { const sx = towX(tz) + 1.4, sy = channel(sx, tz); rod('timber', [sx, sy - .3, tz], [sx, sy + .55, tz], .06, 6); rod('rope', [bx - HB + .1, bargeW + FB + .1, sz], [sx, sy + .45, tz], .02, 4); } }
+    else for (const sz of [bz0 + 1.2, bz0 + BLN - 2.4]) { const p = [bx - HB + .25, bargeW + FB + .2, sz]; for (let k = 0; k < 5; k++) put(new THREE.TorusGeometry(.18 - k * .015, .025, 4, 10).rotateX(Math.PI / 2), 'rope', p[0] + .1, p[1] + .03 + k * .04, p[2]); } }
+  const bargeTop = bargeW + FB + 1.4 + .275;
+  // the lock-keeper's cottage on the east lockside, its door to the lock
+  const plan = GL_PLANS.cottage({ paint: 'green' }); plan.r = stream(key + '-cottage'); const cot = gatelandsBuilding(plan), CX = 9.0 + plan.d / 2, CZ = 4, CRY = -Math.PI / 2;
+  cot.position.set(CX, land(CX, CZ) - .05, CZ); cot.rotation.y = CRY; cot.updateMatrixWorld(true); const door = cot.userData.door ? cot.userData.door.clone().applyMatrix4(cot.matrixWorld) : V3(9, 0, CZ);
+  // the paths: the towpath; onto the lockside and along it between the beams; the road over the bridge; from the road to the cottage's door
+  const paths = [tow, [[-7.9, -9.6], [-3.8, -9.6], [-3.8, 8.8], [-7.9, 8.8]], [[-40, ZB], [40, ZB]], [[12.5, ZB - 1.2], [8.0, 12.6], [8.0, door.z], [door.x - .7, door.z]]];
+  // trees: alder and sally on the far bank and about, clear of the channel, the lock, the cottage, the road and the paths
+  const trees = [], tree = (x, z, h, sally) => { const gy = ground(x, z), top = [x, gy + h * .45, z]; rod('bark', [x, gy - .3, z], top, .14 + h * .012, 7, .7);
+    for (let l = 0; l < 5; l++) { const a = l * 1.3 + F(), Ln = 1.3 + F() * 1.1, e = [top[0] + Math.cos(a) * Ln, top[1] + .7 + l * .5 + F() * .5, top[2] + Math.sin(a) * Ln]; rod('bark', [top[0], top[1] - .5 + l * .2, top[2]], e, .055, 5, .6);
+      for (let c2 = 0; c2 < 3; c2++) put(new THREE.IcosahedronGeometry(.85 + F() * .5, 0).scale(1.1, sally ? 1.1 : .8, 1.1), sally ? 'sally' : 'leaf', e[0] + (F() - .5) * 1.3, e[1] + (F() - .5) * (sally ? 1.6 : 1), e[2] + (F() - .5) * 1.3, F(), F() * 3); }
+    trees.push({ x: +x.toFixed(2), z: +z.toFixed(2), h: +h.toFixed(2), kind: sally ? 'sally' : 'alder' }); };
+  for (let k = 0, n = 0; k < 2000 && n < 12; k++) { const x = (k % 4 === 0 ? -1 : 1) * (8 + F() * 34), z = -55 + F() * 115, sally = n % 3 === 1;
+    if (Math.abs(x) < topHalf(z) + 2.5 || (face(z) !== null && Math.abs(x) < 9) || (x > 7 && x < 17 && z > -5 && z < 13) || qD(x, z) < 3 || Math.abs(z - ZB) < 6 || paths.some(P => lineD(x, z, P) < 3.5) || trees.some(t => Math.hypot(t.x - x, t.z - z) < 8)) continue;
+    n++; tree(x, z, sally ? 6 + F() * 2 : 9 + F() * 4, sally); }
+  const group = new THREE.Group(); let tris = 0;
+  for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = !['turf', 'track', 'setts', 'bed', 'pitch', 'water'].includes(k); m.receiveShadow = k !== 'water'; group.add(m); tris += g.attributes.position.count / 3; }
+  const own = group.children.length; group.add(cot); tris += cot.userData.tris;
+  return { group, tris: Math.round(tris), draws: own + cot.userData.calls, own, ground, land, levels: { WU, WL, BU, BL, CT, fall: WU - WL },
+    lock: { hw: HW, zh: ZH, zt: ZT, zc: ZC, z0: MZ0, z1: MZ1, recess: RZ, face, usable }, gates, chamberY,
+    bridge: { z0: BZ0, z1: BZ1, half: BX, span: 2 * AR, spring: SP, crown: CR, deck, parapet: .92, x0: -BX, x1: BX },
+    barge: { x: bx, z: bzc, len: BLN, beam: 2 * HB, draft: DR, free: FB, water: bargeW, top: bargeTop, at: bargeAt, z0: bz0 - .5, z1: bz0 + BLN, cabin: { x: HB - .18, top: bargeW + FB + 1.13 }, pipe: { x: bx - .9, top: bargeTop } },
+    cottage: { x: CX, z: CZ, w: plan.w, d: plan.d, ry: CRY, door: [+door.x.toFixed(3), +door.y.toFixed(3), +door.z.toFixed(3)] }, road: { z: ZB, w: RW }, tow, paths, trees, fill,
+    bywash: { x: QX, z: QZ, notch: { x: NX, z: NZ }, weir: { x: WR, crest: -.05 }, steps: QSTEP, levels: QLV, level: qLevel, top: QTOP, outlet: { z: OZ, sill: OS, head: OH, x: -HW }, dist: qD } };
+}
+
+// ── the Mark's fortress on a pass (Session 1235, card F8; L5's "the Mark's settlements", OG-034's "fortress town on a pass", its Stonewatch
+// panel; the canon's "squat stone garrisons", the Captains' League's fort-captains). A pass between two ranges, its floor 18 m across and
+// its sides walkable for 6 m each side before they stand up as cliff; across it, where it is narrowest, a captain's garrison shuts it with a
+// wall of squat ashlar, a gate tower over the road and a round tower at each end against the cliff's foot; the garrison's few buildings
+// behind it, up the pass. Built at true size, a metre a unit, the road along z, the enemy's side to -z, the wall's outer face at z WZ0:
+//   - the land: the floor flat across 18 m, the flanks rising 1 in 2 for 6 m, then cliff at 58° and up; the road climbing 1 in 14 to the wall
+//     and 1 in 40 beyond it; snow on the floor and the flanks, rock on the cliffs, the road's gravel 4 m wide;
+//   - the wall: 2.6 m thick and 5.5 m over the land at its outer face, from cliff to cliff; its walk stepped 0.2 m at a time as the flanks rise,
+//     behind a parapet 1.1 m over the walk, an arrow slit every 3 m; a stair of 0.18 m rises up its back to the walk east of the gate;
+//   - the gate tower: 10 by 9 m and 11 m to its eaves, 3.2 m proud of the wall, a passage 3.6 m wide and 4.2 m clear under a log lintel, two
+//     leaves standing open against the passage's walls; a door from the walk on each side; a low pyramid of dark shingle;
+//   - the flank towers: round, 3.2 m across the outside, 8 m to the eaves over the cliff's foot, a shingle cone;
+//   - behind: the kit's Markish hall (markHall, shingle, carved) for the captain, a turf-roofed barracks, a storehouse on four posts.
+// -> { group, tris, draws, own, ground(x, z), wall { z0, z1, x0, x1, h, walk(x), parapet, slits }, gate { w, h, z0, z1, x0, x1 }, tower { x0, x1,
+//      z0, z1, top }, flanks [{ x, z, r, top }], stair { x0, x1, z0, z1, n, rise, run }, road { w }, floor, flank, cliff (the land's half-widths),
+//      hall, barracks, store, paths }
+export function markPassFort(o = {}, r = stream('passfort')) {
+  markTextures(); aurenneTextures() /* the limestone, for the ashlar */; const key = String(o.key || 'passfort');
+  const M = { ...mats(), snow: mat('plaster', { ns: .3, color: 0xf2f5f8, rough: .95 }), cliff: mat('rock', { ns: 1.4, color: 0x6c6a66, rough: .95 }), shingle: mat('shingle', { ns: 1.4, rough: .8 }),
+    log: mat('beam', { ns: 1.1, color: 0x7a624a, rough: .9 }), ashlar: mat('limestone', { ns: 1.1, color: 0x8e8a84, rough: .95 }), cope: mat('limestone', { ns: .9, color: 0x7a7670, rough: .9 }), gravel: mat('turfDry', { ns: 1.0, color: 0x8a8070, rough: 1 }) };
+  M.shingle.side = THREE.DoubleSide;
+  const B = new Map(), V = (x, y) => new THREE.Vector2(x, y);
+  const put = (geo, k, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, uv = .5) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal'].includes(a)) g.deleteAttribute(a);
+    if (!g.attributes.normal) g.computeVertexNormals();
+    g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), new THREE.Vector3(1, 1, 1))); worldUV(g, uv);
+    if (!B.has(k)) B.set(k, []); B.get(k).push(g); };
+  const bx = (k, x0, x1, y0, y1, z0, z1, uv = .5) => put(new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0), k, (x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2, 0, 0, 0, uv);
+  const rod = (k, a, b, rad, seg = 6) => { const A = new THREE.Vector3(...a), Bv = new THREE.Vector3(...b), d = Bv.clone().sub(A), g = new THREE.CylinderGeometry(rad, rad, d.length(), seg); g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.clone().normalize())); const m = A.add(Bv).multiplyScalar(.5); put(g, k, m.x, m.y, m.z); };
+  const sm = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+  // the land: the floor, the flanks, the cliffs; the road's rise along z; a little roughness off the road and the buildings
+  const FLOOR = 9, FLANK = 15, CLIFF = 1.6, FG = .5, WZ0 = -1.3, WT = 2.6, WZ1 = WZ0 + WT, WH = 5.5, RW = 4, F = field(stream(key + ':land'), .5);
+  const along = z => z < 0 ? z / 14 : z / 40, across = ax => ax <= FLOOR ? 0 : ax <= FLANK ? (ax - FLOOR) * FG : (FLANK - FLOOR) * FG + (ax - FLANK) * CLIFF;
+  const rough = (x, z) => { const ax = Math.abs(x); return F(x, 0, z)[1] * (ax < FLOOR ? .25 : ax < FLANK ? .5 : 1.4) * sm(RW / 2, RW / 2 + 3, ax) * (1 - (1 - sm(1.5, 5, Math.abs(z - (WZ0 + WZ1) / 2) - 4)) * (1 - sm(FLANK + 5, FLANK + 9, ax))); } /* none by the wall's line, so its cells sit true */;
+  const ground = (x, z) => along(z) + across(Math.abs(x)) + rough(x, z);
+  { const steps = (bands, end) => { const v = []; for (const [a, b, st] of bands) for (let q = a; q < b - 1e-6; q += st) v.push(+q.toFixed(2)); v.push(end); return v; };
+    const gx = steps([[-90, -30, 4], [-30, -18, 1], [-18, 18, .5], [18, 30, 1], [30, 90, 4]], 90), gz = steps([[-120, -40, 8], [-40, -10, 1], [-10, 10, .5], [10, 60, 1], [60, 140, 8]], 140), NX = gx.length;
+    const pos = []; for (const z of gz) for (const x of gx) pos.push(x, ground(x, z), z); const I = { snow: [], cliff: [], gravel: [] }, P = (i) => [pos[3 * i], pos[3 * i + 1], pos[3 * i + 2]];
+    for (let j = 0; j + 1 < gz.length; j++) for (let i = 0; i + 1 < NX; i++) { const a = j * NX + i, b = a + 1, c = a + NX, d = c + 1;
+      for (const t of [[a, c, b], [b, c, d]]) { const [p, q, s] = t.map(P), n = new THREE.Vector3(...q).sub(new THREE.Vector3(...p)).cross(new THREE.Vector3(...s).sub(new THREE.Vector3(...p))).normalize(), cx = (p[0] + q[0] + s[0]) / 3;
+        I[Math.abs(cx) < RW / 2 ? 'gravel' : (Math.abs(cx) > FLANK + .3 ? Math.abs(n.y) < .86 : Math.abs(n.y) < .62) ? 'cliff' : 'snow'].push(...t); } } /* snow on the floor and the flanks, on the cliffs only where they shelve */
+    for (const [k, idx] of Object.entries(I)) { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); put(g, k, 0, 0, 0, 0, 0, 0, .35); } }
+  // the wall: cells of 0.4 m along x, each from under the land to the walk, its walk at the highest land under the cell plus WH, rounded to
+  // 0.2 m, so the walk steps up the flanks a rise at a time; the parapet on the outer face; the slits; the cope on the parapet
+  const GX = 5, GW = 1.8, GHT = 4.2, TOP = WH + 5.5, WX = FLANK + .2 /* to the cliff's foot, under the flank towers */;
+  const cellTop = x => { let h = -99; for (const zz of [WZ0, WZ1]) for (const xx of [x - .2, x, x + .2]) h = Math.max(h, ground(xx, zz)); return h; };
+  const walk = x => { const c = GX + Math.max(0, Math.floor((Math.abs(x) - GX + 1e-6) / .4)) * .4 + .2 /* the cell's middle, the cells laid from the tower out */; return Math.round((Math.max(cellTop(c), ground(0, WZ0)) + WH) / .2) * .2; }, PH = 1.1, PT = .5, slits = [];
+  for (let x0 = GX; x0 < WX - 1e-6; x0 += .4) for (const s of [-1, 1]) { const xa = s * x0, xb = s * (x0 + .4), xl = Math.min(xa, xb), xh = Math.max(xa, xb), y = walk((xa + xb) / 2), y0 = Math.min(cellTop((xa + xb) / 2), y) - 1.5;
+    bx('ashlar', xl, xh, y0, y, WZ0, WZ1, .6); bx('ashlar', xl, xh, y, y + PH, WZ0, WZ0 + PT, .6); bx('cope', xl - .01, xh + .01, y + PH, y + PH + .1, WZ0 - .04, WZ0 + PT + .04);
+    if (Math.round((x0 - GX) / .4) % 7 === 3) { slits.push([+((xa + xb) / 2).toFixed(2), +(y + .2).toFixed(2)]); put(new THREE.PlaneGeometry(.12, .8), 'dark', (xa + xb) / 2, y + .55, WZ0 - .005, 0, Math.PI); } }
+  // the gate tower: its two sides, the passage's roof over a log lintel, the front and back walls over the passage, the leaves open
+  const TZ0 = WZ0 - 3.2, TZ1 = WZ1 + 2.0, Y0 = ground(0, TZ0) - 1.5, RY = Math.max(ground(0, TZ0), ground(0, TZ1)), PY = ground(0, (TZ0 + TZ1) / 2);
+  for (const s of [-1, 1]) bx('ashlar', s > 0 ? GW : -GX, s > 0 ? GX : -GW, Y0, TOP, TZ0, TZ1, .6);
+  bx('ashlar', -GW, GW, PY + GHT + .45, TOP, TZ0, TZ1, .6); for (const z of [TZ0 + .25, TZ1 - .25]) rod('log', [-GW - .3, PY + GHT + .22, z], [GW + .3, PY + GHT + .22, z], .24, 8);
+  for (let k = 0; k < 7; k++) rod('log', [-GW - .1, PY + GHT + .2, TZ0 + .9 + k * (TZ1 - TZ0 - 1.8) / 6], [GW + .1, PY + GHT + .2, TZ0 + .9 + k * (TZ1 - TZ0 - 1.8) / 6], .2, 7) /* the passage's ceiling, logs */;
+  for (const s of [-1, 1]) { bx('log', s * GW - (s > 0 ? .14 : 0), s * GW + (s > 0 ? 0 : .14), PY, PY + GHT - .05, TZ0 + .9, TZ0 + .9 + GW - .05) /* a leaf, open against the passage's wall */;
+    for (const y of [PY + .6, PY + GHT / 2, PY + GHT - .7]) bx('iron', s * GW - (s > 0 ? .17 : -.14), s * GW + (s > 0 ? -.14 : .17), y - .06, y + .06, TZ0 + 1.0, TZ0 + .9 + GW - .15); }
+  // the tower's doors from the walk, its slits, its eaves course and the roof's pyramid of shingle on its plate
+  for (const s of [-1, 1]) { const y = walk(s * (GX + .2)); put(new THREE.PlaneGeometry(1.0, 2.0), 'dark', s * (GX + .005), y + 1.0, (WZ0 + WZ1) / 2 + .2, 0, s * Math.PI / 2); }
+  for (const [x, y] of [[-2.5, WH + 2], [2.5, WH + 2], [0, WH + 2.4]]) put(new THREE.PlaneGeometry(.14, .9), 'dark', x, PY + y, TZ0 - .005, 0, Math.PI);
+  bx('cope', -GX - .2, GX + .2, TOP, TOP + .25, TZ0 - .2, TZ1 + .2);
+  { const g = new THREE.ConeGeometry((GX + .8) * Math.SQRT2, 3.6, 4, 1, true, Math.PI / 4); g.scale(1, 1, (TZ1 - TZ0 + 1.6) / (2 * GX + 1.6)); put(g, 'shingle', 0, TOP + .25 + 1.8, (TZ0 + TZ1) / 2, 0, 0, 0, .6); }
+  // the flank towers: round over the cliff's foot, their floor at the walk, a cone of shingle
+  const flanks = []; for (const s of [-1, 1]) { const x = s * (WX + 1.4), z = (WZ0 + WZ1) / 2, R = 3.2, gy = Math.min(ground(x - R, z), ground(x + R, z), ground(x, z - R), ground(x, z + R)) - 1.5, top = walk(s * (WX - .2)) + 2.8;
+    put(new THREE.CylinderGeometry(R, R + .15, top - gy, 24), 'ashlar', x, (top + gy) / 2, z, 0, 0, 0, .6); put(new THREE.CylinderGeometry(R + .2, R + .2, .25, 24), 'cope', x, top + .12, z);
+    put(new THREE.ConeGeometry(R + .55, 3.4, 24, 1, true), 'shingle', x, top + .25 + 1.7, z, 0, 0, 0, .6); put(new THREE.PlaneGeometry(.14, .9), 'dark', x - s * .6, top - 1.2, z - R - .02, 0, Math.PI);
+    put(new THREE.PlaneGeometry(1.0, 2.0), 'dark', x - s * (R + .005) * Math.cos(.3), walk(s * (WX - .2)) + 1.0, z + .5, 0, -s * Math.PI / 2) /* its door from the walk */; flanks.push({ x, z, r: R, top: +top.toFixed(2) }); }
+  // the stair to the walk, east of the gate: a flight of 0.3 m treads straight back from the wall's back face up the pass, 1.2 m wide, on
+  // its own solid of ashlar; its top tread level with the walk
+  const SXa = 6.4, SXb = 7.6, SY = walk((SXa + SXb) / 2), SL = 9.6, SG = ground((SXa + SXb) / 2, WZ1 + SL), NS = Math.ceil((SY - SG) / .18), SR = (SY - SG) / NS, SZ1 = WZ1 + NS * .3;
+  for (let k = 1; k <= NS; k++) { const za = WZ1 + (NS - k) * .3, zb = za + .3, y = SG + k * SR; bx('ashlar', SXa, SXb, Math.min(ground(SXa, zb), ground(SXb, zb)) - .6, y, za, zb, .6); }
+  // behind: the captain's hall, the barracks, the storehouse on its posts; the paths from the road to their doors
+  const H = markHall({ roof: 'shingle', w: 7, d: 14, porch: true, chimney: true, carve: true, wall: 1 }, stream(key + ':hall')), HX = -5.6, HZ = 21, HRY = Math.PI;
+  H.group.position.set(HX, ground(HX, HZ) - .05, HZ); H.group.rotation.y = HRY;
+  const K = markHall({ roof: 'turf', turf: 'moss', w: 6, d: 11, porch: false, chimney: true, carve: false, wall: 2 }, stream(key + ':barracks')), KX = 5.4, KZ = 32, KRY = Math.PI;
+  K.group.position.set(KX, ground(KX, KZ) - .05, KZ); K.group.rotation.y = KRY;
+  const SXc = 6.2, SZc = 15, SF = 1.1, SYc = ground(SXc, SZc); for (const [dx, dz] of [[-1.3, -1.3], [1.3, -1.3], [-1.3, 1.3], [1.3, 1.3]]) { bx('ashlar', SXc + dx - .3, SXc + dx + .3, SYc - .3, SYc + .35, SZc + dz - .3, SZc + dz + .3); bx('log', SXc + dx - .15, SXc + dx + .15, SYc + .35, SYc + SF - .1, SZc + dz - .15, SZc + dz + .15); }
+  bx('plank', SXc - 1.7, SXc + 1.7, SYc + SF - .1, SYc + SF + .05, SZc - 1.7, SZc + 1.7); for (const s of [-1, 1]) { bx('log', SXc - 1.6, SXc + 1.6, SYc + SF, SYc + SF + 2.1, SZc + s * 1.6 - .1, SZc + s * 1.6 + .1); bx('log', SXc + s * 1.6 - .1, SXc + s * 1.6 + .1, SYc + SF, SYc + SF + 2.1, SZc - 1.5, SZc + 1.5); }
+  { const RP = 40 * Math.PI / 180, RWd = 2.2, L = RWd / Math.cos(RP) + .1; for (const s of [-1, 1]) put(new THREE.BoxGeometry(3.9, .12, L), 'shingle', SXc, SYc + SF + 2.1 + Math.tan(RP) * RWd / 2, SZc + s * RWd / 2, s * RP, 0, 0, .6);
+    for (const s of [-1, 1]) { const tri = new THREE.Shape([V(-RWd, 0), V(RWd, 0), V(0, Math.tan(RP) * RWd)]); const g = new THREE.ExtrudeGeometry(tri, { depth: .1, bevelEnabled: false }); g.translate(0, 0, -.05); put(g, 'log', SXc + s * 1.6, SYc + SF + 2.1, SZc, 0, Math.PI / 2); } }
+  for (let k = 0; k < 5; k++) bx('plank', SXc - 2.2 - k * .3, SXc - 1.9 - k * .3, SYc, SYc + SF - .1 - k * .2, SZc - .5, SZc + .5);
+  const hd = H.stairOut + .6, kd = K.stairOut + .6;
+  const paths = [[[0, -40], [0, 60]], [[0, HZ - hd], [HX, HZ - hd]], [[0, KZ - kd], [KX, KZ - kd]], [[0, SZc], [SXc - 3.4, SZc]], [[2.6, SZ1 + .8], [(SXa + SXb) / 2, SZ1 + .8]]];
+  const group = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = !['snow', 'cliff', 'gravel', 'dark'].includes(k); m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
+  const own = group.children.length; group.add(H.group, K.group); tris += H.tris + K.tris;
+  return { group, tris: Math.round(tris), draws: own + H.draws + K.draws, own, ground, floor: FLOOR, flank: FLANK, cliff: CLIFF,
+    wall: { z0: WZ0, z1: WZ1, x0: -WX, x1: WX, h: WH, walk, parapet: PH, pt: PT, slits }, gate: { w: 2 * GW, h: GHT, y: PY, z0: TZ0, z1: TZ1, x0: -GW, x1: GW },
+    tower: { x0: -GX, x1: GX, z0: TZ0, z1: TZ1, top: TOP }, flanks, stair: { x0: SXa, x1: SXb, z0: WZ1, z1: SZ1, n: NS, rise: +SR.toFixed(3), run: .3, top: SY, foot: SG },
+    road: { w: RW }, hall: { x: HX, z: HZ, ry: HRY, w: 7, d: 14, door: [HX, HZ - H.stairOut] }, barracks: { x: KX, z: KZ, ry: KRY, door: [KX, KZ - K.stairOut] }, store: { x: SXc, z: SZc, floor: SYc + SF + .05 }, paths };
+}
+
+// ── the Mark's fjord port (Session 1239, card F8; L5's "the Mark's settlements", OG-034's "fjord port" and its harbour strip, OG-025's
+// timber town by the water). A trading place at a fjord's head, after the wharves of Bryggen and the boathouses (naust) of the west
+// coast: the land is a shelf of made ground under a fjord wall, and everything faces the water. Built at true size, the fjord to -z, the
+// shore along x, y 0 the water. The canon's Mark: timber halls, dark shingle, nothing decorative that does not also keep out cold.
+//   - the land: the shelf 1.6 m over the water at the wharf, rising 1 in 30 to the wall's foot at z 24; the wall a wooded talus at 1 in
+//     1.1 for 10 m, then cliff at 1 in 0.45 and steeper; it comes down to the water past x ±42, the fjord widening to ±160 by z -120; a
+//     shingle beach east of the wharf; the far wall where the fjord turns, 200 m out;
+//   - the wharf: a timber deck 1.6 m over the water from x -26 to 14, 6 m out from the shore, on stringers over ten log cribs (each 2.6 m
+//     square, logs crossed in courses from the bed up), a face log along its edge, fender logs, bollards;
+//   - the warehouses: three of the kit's halls (markHall) gable-on to the wharf, shingle-roofed and carved, a hoist beam from each gable;
+//   - the boathouses: two nausts on the beach, dry-stone side walls 0.7 m thick and 1.9 m high under a turf roof, the mouth open to the
+//     water, a slip log from the back down into the water, a færing (a four-oared double-ender, 6.2 m) on it;
+//   - the stockfish racks: two A-framed racks at the west end, the fish hung in pairs over their bars to dry;
+//   - the ship: the kit's Markish cutter (ships.js markCutter, striped) alongside the wharf, a gangplank from the deck to her rail.
+// -> { group, tris, draws, own, ground, shelf, wharf { x0, x1, z0, z1, deck }, cribs [{ x, z, foot, bed }], ship { x, z, W, L, draft, rail },
+//   plank { a, b }, halls [{ x, z, door [x, z] }], nausts [{ x, z0, z1, half, top(z), floor(z), runner(z), boat { z, y, L, B, keel } }],
+//   racks [{ x, z0, z1, low }], paths }
+function faering(put, k, L, B, D) { /* a double-ended open boat, its keel at y 0, the bow to +z: a hull ribbon round the half-sections, thwarts, two oars */
+  const NU = 24, NV = 10, pos = [], idx = [];
+  const half = u => B / 2 * Math.pow(Math.sin(Math.PI * u), .7), sheer = u => D + .32 * Math.pow(2 * u - 1, 4), rock = u => .06 * Math.pow(2 * u - 1, 2);
+  for (let i = 0; i <= NU; i++) { const u = i / NU, z = (u - .5) * L; for (let j = 0; j <= NV; j++) { const a = (j / NV - .5) * Math.PI, b = half(u), y0 = rock(u), y1 = sheer(u); pos.push(b * Math.sin(a), y1 - (y1 - y0) * Math.cos(a), z); } }
+  for (let i = 0; i < NU; i++) for (let j = 0; j < NV; j++) { const a = i * (NV + 1) + j, b = a + 1, c = a + NV + 1, d = c + 1; idx.push(a, b, c, b, d, c); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); put(g, k);
+  for (const u of [.3, .5, .7]) { const y = D * .7, b = half(u) * .92; put(new THREE.BoxGeometry(2 * b, .05, .22), 'plank', 0, y, (u - .5) * L); }
+  for (const s of [-1, 1]) { const g2 = new THREE.CylinderGeometry(.03, .03, L * .62, 6); g2.rotateX(Math.PI / 2); put(g2, 'log', s * .22, D * .35, .1); }
+}
+export function markFjordPort(o = {}, r = stream('fjordport')) {
+  markTextures(); const key = String(o.key || 'fjordport');
+  const std = (c, ro = .9, x = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: ro, ...x });
+  const M = { ...mats(), snow: mat('plaster', { ns: .3, color: 0xf2f5f8, rough: .95 }), cliff: mat('rock', { ns: 1.4, color: 0x9a9a94, rough: .95 }), shingle: mat('shingle', { ns: 1.4, rough: .8 }),
+    log: mat('beam', { ns: 1.1, color: 0x6a5440, rough: .9 }), plank: mat('wood', { ns: .9, color: 0x8a7a66, rough: .9 }), gravel: mat('turfDry', { ns: 1.0, color: 0x8a8274, rough: 1 }),
+    turf: mat('turfMoss', { ns: 1.1, rough: .95 }), strand: mat('rock', { ns: .8, color: 0x8a867e, rough: 1 }), stone: mat('rock', { ns: 1.6, color: 0x7a7670, rough: .95 }), dry: mat('stone', { ns: 1.5, color: 0x6e6a64, rough: .95 }),
+    tar: mat('wood', { ns: .8, color: 0x6a5644, rough: .75 }), fish: std(0xa89880, .9), needle: std(0x2c3a2a, .95), bark: std(0x4a3a2c, .95), water: std(0x2c4a50, .12, { metalness: .2 }) };
+  M.shingle.side = M.tar.side = M.turf.side = M.needle.side = M.fish.side = THREE.DoubleSide;
+  const B = new Map();
+  const put = (geo, k, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, uv = .5) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal'].includes(a)) g.deleteAttribute(a);
+    if (!g.attributes.normal) g.computeVertexNormals();
+    g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), new THREE.Vector3(1, 1, 1))); worldUV(g, uv);
+    if (!B.has(k)) B.set(k, []); B.get(k).push(g); return g; };
+  const bx = (k, x0, x1, y0, y1, z0, z1, uv = .5) => put(new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0), k, (x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2, 0, 0, 0, uv);
+  const rod = (k, a, b, rad, seg = 6) => { const A = new THREE.Vector3(...a), Bv = new THREE.Vector3(...b), d = Bv.clone().sub(A), g = new THREE.CylinderGeometry(rad, rad, d.length(), seg); g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.clone().normalize())); const m = A.add(Bv).multiplyScalar(.5); put(g, k, m.x, m.y, m.z); };
+  const quad = (k, P, t) => { /* a slab under four top corners (in order round), t thick, straight down */ const Q = [...P, ...P.map(p => [p[0], p[1] - t, p[2]])], F = [[0, 1, 2], [0, 2, 3], [4, 6, 5], [4, 7, 6], [0, 4, 5], [0, 5, 1], [1, 5, 6], [1, 6, 2], [2, 6, 7], [2, 7, 3], [3, 7, 4], [3, 4, 0]], pos = [];
+    for (const f of F) for (const i of f) pos.push(...Q[i]); const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.computeVertexNormals(); put(g, k); };
+  const sm = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+  // the land: the shelf, its front (under the wharf a bank of riprap, east of it a beach of 1 in 6), the fjord wall behind and the headlands
+  const SH = 1.6, WALLZ = 24, HEAD = 42, F = field(stream(key + ':land'), 1);
+  const shelf = z => SH + Math.max(0, z) / 30;
+  const frontW = z => z >= 0 ? shelf(z) : z >= -6 ? SH + z * .78 : Math.max(-40, SH - 4.68 + (z + 6) * .35);
+  const frontB = z => z >= 10 ? shelf(z) : shelf(10) - (10 - z) / 6 > -3 ? shelf(10) - (10 - z) / 6 : Math.max(-40, -3 + (z - (10 - 6 * (shelf(10) + 3))) * .45);
+  const headAt = z => HEAD + 118 * (1 - sm(-120, -10, z)), edge = (x, z) => { const a = z - WALLZ, b = Math.abs(x) - headAt(z), m = Math.max(a, b); return m > -4 ? m + Math.log1p(Math.exp(-Math.abs(a - b) * 1.5)) / 1.5 * sm(-4, 0, m) : m; } /* a soft max, so the corners round */;
+  const wallRise = e => { if (e <= 0) return 0; if (e < 10) return .9 * e; const v = 2.2 * (e - 10) + .02 * (e - 10) ** 2; return 9 + 140 * (1 - Math.exp(-v / 140)); } /* a wooded talus for 10 m, then the cliff, rounding over at 150 m */;
+  const farRise = z => Math.min(160, -40 + 1.6 * (-200 - z)) /* the far wall, where the fjord turns */;
+  const base = (x, z) => { const t = sm(12, 20, x), f = frontW(z) * (1 - t) + frontB(z) * t, e = edge(x, z); return Math.max(f + wallRise(e), farRise(z)); };
+  const rough = (x, z) => { const e = edge(x, z), w = sm(-3, 6, e) * 3.2 + (z < -8 ? .3 : 0) * (1 - sm(-3, 6, e)); return F(x, 0, z)[1] * w + (F(x * .12, 0, z * .12 + 7)[1] * 16 + F(x * .35, 0, z * .35 + 3)[1] * 5) * sm(6, 22, e) + F(x * .5, 0, z * .5)[1] * 4 * sm(-205, -225, z); } /* buttresses and gullies on the cliff */;
+  const ground = (x, z) => base(x, z) + rough(x, z);
+  { const steps = (bands, end) => { const v = []; for (const [a, b, st] of bands) for (let q = a; q < b - 1e-6; q += st) v.push(+q.toFixed(2)); v.push(end); return v; };
+    const gx = steps([[-260, -70, 10], [-70, -44, 2], [-44, 44, 1], [44, 70, 2], [70, 260, 10]], 260), gz = steps([[-330, -220, 10], [-220, -40, 10], [-40, -10, 2], [-10, 28, 1], [28, 50, 2], [50, 150, 8]], 150), NX = gx.length;
+    const pos = []; for (const z of gz) for (const x of gx) pos.push(x, ground(x, z), z); const I = { snow: [], cliff: [], gravel: [], turf: [], strand: [] }, P = i => [pos[3 * i], pos[3 * i + 1], pos[3 * i + 2]];
+    for (let j = 0; j + 1 < gz.length; j++) for (let i = 0; i + 1 < NX; i++) { const a = j * NX + i, b = a + 1, c = a + NX, d = c + 1;
+      for (const t of [[a, c, b], [b, c, d]]) { const [p, q, s] = t.map(P), n = new THREE.Vector3(...q).sub(new THREE.Vector3(...p)).cross(new THREE.Vector3(...s).sub(new THREE.Vector3(...p))).normalize(), cx = (p[0] + q[0] + s[0]) / 3, cy = (p[1] + q[1] + s[1]) / 3, cz = (p[2] + q[2] + s[2]) / 3, ny = Math.abs(n.y);
+        const bs = Math.hypot(base(cx + .5, cz) - base(cx - .5, cz), base(cx, cz + .5) - base(cx, cz - .5)) /* the land's own slope, so the moss and the rock lie in bands, not by each triangle */;
+        const k = cy < .25 ? 'strand' : edge(cx, cz) < -1 && cz > -2 && cz < WALLZ ? (cx > 14 && cy < shelf(10) + .05 ? 'strand' : cz < 4 && cx > -28 && cx < 16 ? 'gravel' : 'turf') : bs > 1.15 || ny < .5 ? 'cliff' : cy > 45 ? 'snow' : 'turf';
+        I[k].push(...t); } }
+    for (const [k, idx] of Object.entries(I)) { if (!idx.length) continue; const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); put(g, k, 0, 0, 0, 0, 0, 0, .35); } }
+  { const g = new THREE.PlaneGeometry(560, 360); g.rotateX(-Math.PI / 2); put(g, 'water', 0, 0, -150); }
+  // the wharf: cribs of crossed logs from the bed up, stringers over them back onto the bank, deck boards along the face in staggered
+  // lengths, the face log, fenders, bollards
+  const WX0 = -26, WX1 = 14, WF = -6, WB = 0, DY = SH, LR = .15, cribs = [];
+  for (let x = WX0 + 1.5; x <= WX1 - 1.4; x += 4.1) { const cz = WF + 1.4, h = 1.3, bed = Math.min(...[-h, 0, h].flatMap(dx => [-h, 0, h].map(dz => ground(x + dx, cz + dz)))), foot = bed - .25, top = DY - .32;
+    let c = 0; for (let y = foot + LR; y < top - .02; y += 2 * LR * .92, c++) for (const s of [-1, 1]) { if (c % 2) rod('log', [x - h - .15, y, cz + s * (h - LR)], [x + h + .15, y, cz + s * (h - LR)], LR, 6); else rod('log', [x + s * (h - LR), y, cz - h - .15], [x + s * (h - LR), y, cz + h + .15], LR, 6); }
+    for (let k = 0; k < 7; k++) { const q = .25 + r() * .2, g = new THREE.IcosahedronGeometry(q, 0); put(g, 'stone', x + (r() - .5) * 1.5, top - .1 - r() * .3, cz + (r() - .5) * 1.5, r() * 3, r() * 3, 0, .6); }
+    cribs.push({ x: +x.toFixed(2), z: cz, h, foot: +foot.toFixed(3), bed: +bed.toFixed(3) }); }
+  for (let x = WX0 + .3; x < WX1; x += 1.0) bx('log', x - .1, x + .1, DY - .32, DY - .07, WF + .05, WB + 1.2);
+  { let row = 0; for (let z = WF; z < WB + .5 - 1e-6; z += .26, row++) { const off = (row % 3) * 1.4; let xa = WX0; for (let x = WX0 + off + 1.2; xa < WX1 - 1e-6; x += 4.2) { const xb = Math.min(WX1, x); if (xb - xa > .1) bx('plank', xa, xb, DY - .07, DY - .005 - r() * .012, z + .005, z + .255, .6); xa = xb; } } }
+  bx('log', WX0, WX1, DY - .34, DY + .12, WF - .26, WF);
+  for (const x of [WX0, WX1]) bx('log', x - .13 * Math.sign(x - (WX0 + WX1) / 2) - .13, x - .13 * Math.sign(x - (WX0 + WX1) / 2) + .13, DY - .34, DY + .02, WF, WB + .5);
+  for (let x = WX0 + 1.2; x < WX1 - .5; x += 3) rod('log', [x, -1.2, WF - .4], [x, DY + .05, WF - .4], .14, 7);
+  const bollards = []; for (let x = WX0 + 2.5; x < WX1 - 1; x += 6) { put(new THREE.CylinderGeometry(.16, .18, .7, 9), 'log', x, DY + .35, WF + .45); put(new THREE.CylinderGeometry(.2, .2, .08, 9), 'log', x, DY + .72, WF + .45); bollards.push(x); }
+  // the warehouses: the kit's halls, gable-on to the wharf, the foot of each one's steps 1.4 m behind the wharf's back; a hoist beam
+  // from each front gable over its door, a rope and a hook
+  const halls = [], hallG = [], HW = 6.6, HD = 13;
+  for (const [i, hx] of [-20, -11.6, -3.2].entries()) { const H = markHall({ roof: 'shingle', w: HW, d: HD, porch: false, chimney: i === 1, carve: true, wall: i % 4 }, stream(key + ':hall' + i)), hz = WB + 1.4 + H.stairOut, gy = Math.min(ground(hx - HW / 2, hz - HD / 2), ground(hx + HW / 2, hz - HD / 2)) - .05;
+    H.group.position.set(hx, gy, hz); H.group.rotation.y = Math.PI; hallG.push(H); const fz = hz - HD / 2, by = gy + H.sill + H.wh + Math.tan(H.pitch) * (HW / 2 + .5) * .55;
+    bx('log', hx - .12, hx + .12, by - .12, by + .12, fz - 1.9, fz + .6); for (const s of [-1, 1]) rod('log', [hx + s * .1, by - .1, fz - 1.4], [hx + s * .5, by - .9, fz - .03], .06, 5);
+    put(new THREE.CylinderGeometry(.12, .12, .1, 10), 'iron', hx, by - .2, fz - 1.65, 0, 0, Math.PI / 2); put(new THREE.CylinderGeometry(.012, .012, by - .2 - (gy + 3.4), 4), 'rope', hx, (by - .2 + gy + 3.4) / 2, fz - 1.65);
+    put(new THREE.TorusGeometry(.07, .015, 5, 10, Math.PI * 1.5), 'iron', hx, gy + 3.33, fz - 1.65);
+    halls.push({ x: hx, z: +hz.toFixed(2), y: +gy.toFixed(3), door: [hx, +(hz - H.stairOut).toFixed(2)], front: +fz.toFixed(2), hoist: +by.toFixed(2) }); }
+  // the boathouses: two nausts on the beach, the mouth to the water; dry-stone walls in cells of 0.5 m under a straight top from the
+  // back down to the mouth; a back wall; a turf roof on its two slabs; a timber gable over the mouth on a lintel and planks across the
+  // back gable; a slip log from the back out into the water; the færing on it, bow to the water
+  const nausts = [], NH = 1.6, NT = .7, NWH = 1.9, NP = 30 * Math.PI / 180, NZ0 = 1.6, NZ1 = 10.4, BL = 6.2, BB = 1.5, BD = .62;
+  for (const nx of [23.2, 29.6]) { const fl = z => ground(nx, z), y1 = Math.max(...[-NH - NT, 0, NH + NT].map(dx => ground(nx + dx, NZ1))) + NWH, y0 = Math.max(...[-NH - NT, 0, NH + NT].map(dx => ground(nx + dx, NZ0))) + NWH;
+    const top = z => y0 + (y1 - y0) * (z - NZ0) / (NZ1 - NZ0), rise = Math.tan(NP) * (NH + NT + .35);
+    for (const s of [-1, 1]) for (let z = NZ0; z < NZ1 - 1e-6; z += .5) { const xa = nx + s * NH, xb = nx + s * (NH + NT), lo = Math.min(ground(xa, z), ground(xb, z), ground(xa, z + .5), ground(xb, z + .5)) - .35;
+      bx('dry', Math.min(xa, xb), Math.max(xa, xb), lo, top(z + .25), z, z + .5, .7); }
+    bx('dry', nx - NH - NT, nx + NH + NT, Math.min(ground(nx - NH, NZ1), ground(nx + NH, NZ1)) - .35, y1, NZ1, NZ1 + NT, .7);
+    for (const s of [-1, 1]) { const za = NZ0 - .5, zb = NZ1 + NT + .3, ea = s * (NH + NT + .35), ya = top(za) - .1, yb = top(zb) - .1;
+      quad('turf', [[nx, ya + rise, za], [nx, yb + rise, zb], [nx + ea, yb, zb], [nx + ea, ya, za]].map(p => [p[0], p[1] + .28, p[2]]), .3); }
+    rod('log', [nx - NH - NT, y0 + .15, NZ0 + .12], [nx + NH + NT, y0 + .15, NZ0 + .12], .15, 7); for (const s of [-1, 1]) rod('log', [nx + s * (NH + NT / 2), y0 + .15, NZ0 - .2], [nx + s * (NH + NT / 2), y1 + .15, NZ1 + NT], .14, 6) /* the wall plates */;
+    { const V2 = (a, b) => new THREE.Vector2(a, b), tri = new THREE.Shape([V2(-NH - NT, 0), V2(NH + NT, 0), V2(0, rise)]); const gg = new THREE.ExtrudeGeometry(tri, { depth: .08, bevelEnabled: false }); put(gg, 'plank', nx, y0 + .14, NZ0 + .02);
+      const gb = new THREE.ExtrudeGeometry(tri, { depth: .08, bevelEnabled: false }); put(gb, 'plank', nx, y1, NZ1 + NT - .1); }
+    // the slip log: its top 0.12 m over the floor, from 0.6 m inside the back wall down the beach to 0.5 m under the water
+    let zEnd = NZ0; while (fl(zEnd) > -.5 && zEnd > NZ0 - 14) zEnd -= .25; const runner = z => fl(z) + .12, zr1 = NZ1 - .6;
+    for (let z = zEnd; z < zr1 - 1e-6; z += .5) rod('log', [nx, runner(z) - .09, z], [nx, runner(Math.min(zr1, z + .5)) - .09, Math.min(zr1, z + .5) + .02], .1, 6);
+    // the færing, bow to the water, its keel on the slip log: lying along the line between two points of the log 1.2 m in from its ends
+    const bz = NZ0 + 1.4 + BL / 2, za = bz - BL / 2 + 1.2, zb = bz + BL / 2 - 1.2, sl = Math.atan2(runner(zb) - runner(za), zb - za), by = (runner(za) + runner(zb)) / 2 + .002;
+    { const bB = new Map(); const bput = (g, k, x = 0, y = 0, z = 0) => { const gg = g.index ? g.toNonIndexed() : g; for (const a of Object.keys(gg.attributes)) if (!['position', 'normal'].includes(a)) gg.deleteAttribute(a); if (!gg.attributes.normal) gg.computeVertexNormals(); gg.translate(x, y, z); if (!bB.has(k)) bB.set(k, []); bB.get(k).push(gg); };
+      faering(bput, 'tar', BL, BB, BD); const Mx = new THREE.Matrix4().compose(new THREE.Vector3(nx, by, bz), new THREE.Quaternion().setFromEuler(new THREE.Euler(sl, Math.PI, 0, 'YXZ')), new THREE.Vector3(1, 1, 1));
+      for (const [k, gs] of bB) for (const g of gs) { g.applyMatrix4(Mx); worldUV(g, .5); if (!B.has(k)) B.set(k, []); B.get(k).push(g); } }
+    nausts.push({ x: nx, z0: NZ0, z1: NZ1, half: NH, wall: NT, top, floor: fl, runner, runnerZ: [+zEnd.toFixed(2), zr1], lintel: +y0.toFixed(3), boat: { z: +bz.toFixed(2), y: +by.toFixed(3), L: BL, B: BB, D: BD, pitch: +sl.toFixed(4) } }); }
+  // the stockfish racks: A-frames every 2 m along z, a ridge pole and two bars a side; the fish in pairs over the bars by their tails
+  const racks = [], RZ0 = 4, RZ1 = 18, RH = 3.2, RS = 1.2;
+  for (const rx of [-36.5, -31]) { let low = 99; for (let z = RZ0; z <= RZ1 + 1e-6; z += 2) { const gy = ground(rx, z); for (const s of [-1, 1]) rod('log', [rx + s * RS, gy - .2, z], [rx - s * .15, gy + RH + .1, z], .07, 5); }
+    const ry = z => ground(rx, z); rod('log', [rx, ry(RZ0) + RH - .05, RZ0 - .3], [rx, ry(RZ1) + RH - .05, RZ1 + .3], .06, 5);
+    for (const s of [-1, 1]) for (const f of [.42, .78]) { const xb = rx + s * (RS - f * (RS + .15)) + s * .08, yb = z => ry(z) - .2 + (RH + .3) * f; rod('log', [xb, yb(RZ0), RZ0 - .3], [xb, yb(RZ1), RZ1 + .3], .045, 5);
+      for (let z = RZ0 + .25; z < RZ1 - .1; z += .32) { const y = yb(z), q = .45 + r() * .12; for (const t of [-1, 1]) { const V2 = (a, b) => new THREE.Vector2(a, b), L = q - .03, sh = new THREE.Shape([V2(-.05, 0), V2(.05, 0), V2(.015, -.06), V2(.07, -L * .45), V2(.05, -L * .85), V2(0, -L), V2(-.05, -L * .85), V2(-.07, -L * .45), V2(-.015, -.06)]) /* hung by the tail, split and dried flat */;
+        put(new THREE.ShapeGeometry(sh), 'fish', xb + t * .04, y - .03, z, 0, Math.PI / 2 + t * .12); } low = Math.min(low, y - q - ry(z)); } }
+    racks.push({ x: rx, z0: RZ0, z1: RZ1, low: +low.toFixed(3) }); }
+  // the pines: on the wall's lower slopes, where it is not cliff
+  for (let k = 0, n = 0; k < 600 && n < 46; k++) { const x = (r() - .5) * 170, z = WALLZ - 6 + r() * 60, e = edge(x, z); if (e < 1 || e > 16) continue; const gy = ground(x, z), sl = Math.hypot(ground(x + 1, z) - ground(x - 1, z), ground(x, z + 1) - ground(x, z - 1)) / 2; if (sl > 1.4 || gy > 32) continue;
+    const h = 7 + r() * 6; rod('bark', [x, gy - .4, z], [x, gy + h * .9, z], .14 + h * .01, 6); for (let t = 0; t < 4; t++) { const f = t / 4, th = h * .26, rw = (2.0 - f * 1.5) * (.85 + r() * .3); put(new THREE.ConeGeometry(rw, th, 7, 1, true), 'needle', x, gy + h * (.35 + f * .5) + th / 2, z, 0, r() * 3); } n++; }
+  // the ship: the kit's Markish cutter, striped, alongside the wharf's middle, bow to the east, 0.45 m off the fenders; a gangplank
+  // from the wharf's deck to her rail amidships
+  const S = markCutter({ stripe: true, furled: true, key: key + ':cutter' }, stream(key + ':cutter')), SX = -8, SZ = WF - .4 - .14 - .45 - S.W / 2; S.group.position.set(SX, 0, SZ); S.group.rotation.y = Math.PI / 2;
+  const rail = S.rail.reduce((a, b) => Math.abs(b[0]) < Math.abs(a[0]) ? b : a), inset = Math.min(S.sect(rail[0], 1)[0] - .06, S.deckAt(rail[0]) - .05) /* the cap rail's line, as ships.js lays it */, PX = SX + rail[0] + .9, pa = [PX, DY + .03, WF + .9], pb = [PX, rail[1] + .05, SZ + inset];
+  { const d = Math.hypot(pb[1] - pa[1], pb[2] - pa[2]); put(new THREE.BoxGeometry(.55, .06, d + .3), 'plank', PX, (pa[1] + pb[1]) / 2 + .03, (pa[2] + pb[2]) / 2, Math.atan2(pb[1] - pa[1], pa[2] - pb[2]), 0, 0, .6);
+    for (let k = 1; k < 5; k++) { const t = k / 5; bx('log', PX - .26, PX + .26, pa[1] + (pb[1] - pa[1]) * t + .055, pa[1] + (pb[1] - pa[1]) * t + .09, pa[2] + (pb[2] - pa[2]) * t - .02, pa[2] + (pb[2] - pa[2]) * t + .02); } }
+  const group = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = !['snow', 'cliff', 'gravel', 'turf', 'strand', 'water'].includes(k); m.receiveShadow = k !== 'water'; group.add(m); tris += g.attributes.position.count / 3; }
+  const own = group.children.length; for (const H of hallG) { group.add(H.group); tris += H.tris; } group.add(S.group); tris += S.tris;
+  const paths = [[[WX0 + .6, -3], [WX1 - .6, -3]], ...halls.map(h => [[h.x, -1], [h.x, h.door[1] - .2]]) /* to the foot of each hall's steps */, [[WX1 - .6, -2], [WX1 - .6, .6], [nausts[1].x + 3.4, .6]], ...nausts.map(n => [[n.x, .6], [n.x, n.z0 + .3]]), ...racks.map(k => [[-25.4, -2], [-25.4, 2.4], [k.x, 2.4]])];
+  return { group, tris: Math.round(tris), draws: own + hallG.reduce((a, H) => a + H.draws, 0) + S.draws, own, ground, shelf, sh: SH, wallZ: WALLZ, head: HEAD, wharf: { x0: WX0, x1: WX1, z0: WF, z1: WB, deck: DY }, cribs, bollards,
+    ship: { x: SX, z: SZ, W: S.W, L: S.L, draft: 1.45, rail: rail[1], railZ: +(SZ + inset).toFixed(3), group: S.group, fender: WF - .4 - .14 }, plank: { a: pa, b: pb }, halls, nausts, racks, paths };
 }

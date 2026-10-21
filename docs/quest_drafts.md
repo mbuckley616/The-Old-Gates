@@ -2,7 +2,7 @@
 
 These are the quest writer's drafts. None of them is canon until Michael promotes it into `quest_writing.md`, and none is a spec until it is approved. Each draft gives the quest's shape, every line verbatim with its speaker and people, and a note on what in the code would carry it.
 
-Calls read to: 2026-10-16T17:51:09.360Z (run 23, 20 Oct: no new calls)
+Calls read to: 2026-10-16T17:51:09.360Z (run 24, 21 Oct: no new calls)
 
 ---
 
@@ -4352,3 +4352,202 @@ The other tellings do not change.
 
 - The ferry crossings' small talk at sea, and named ferries.
 - *A third run, if Michael wants one*: the Veiled Isles landed on (new land, his call), and the free captains' side of the sea, at Port Blackhand.
+
+
+---
+
+## Festivals on the Calendar, I — the Greening, Riverfair and the Night of the Lanterns
+
+*Unapproved.* *Drafted 21 Oct 2026. Backlog L9, *Festivals on the calendar* (OG-107): "three festivals an island, each in its month: the Greening (a maypole spring feast), Riverfair (a summer fair on the rivers), the Night of the Lanterns (October, lanterns let go for those who never came back from the gates, close to the canon); Midwinter fires, a fair of boat races and duels, a First Snow rite under the aurora; a festival of learning, a spice caravan, lamps set afloat … The Mark's fair is run by captains and reeves, not jarls and a thane; 'many gods' belongs to the Gatelands' old faith, not the Church." This first run places all nine on the calendar and writes the Gatelands' three in full. The Mark's three and Aurenne's three are the second and third runs.*
+
+### What the canon fixes, and where it is silent
+
+- *The calendar* (`CAL`, `60-shop.js`; *The Year's Names*, Michael's A on #146): a week of seven, a day to each god, so a date keeps its weekday; twelve months of 28 days named for the year's work (Thaw, Lambing, Sowing, Shearing, Haysel, Highsun, Reaping, Leaffall, Culling, Longnight, Wolfmonth, Lean). The four feasts every island keeps are built (`FEASTS`): the Kindling (Thaw 1), the Long Light (Highsun 19), the Giving (Reaping 23), the Empty Chair (Longnight 28). Nothing here moves them.
+- *The feasts' rules* (Michael's C on #132): on a feast the inn's meal is free, a petty fine is halved, and the town keeps to its square. Those rules belong to the four. An island's festival is smaller: the square fills and the talk changes, and nothing is free. A festival that wants the feasts' rules too is Michael's call, not this draft's.
+- *The Gatelands' old faith* (§4.1): the six with temples and the Guest without one, worshipped as *what the builders were making*. The Church of the Weaver is Aurennais and later (§3.1). So the Gatelands' festivals go to the old gods by their work, and an Aurennais in a Gatelands town keeps a polite distance from them.
+- *The dead and the gates* (§3.1): the Giving names the year's dead *given* to the gates. The Night of the Lanterns is for the others, the ones who walked into a gate alive and did not walk out: the salvage trade's dead (§1.1, *a salvage economy of adventurers*), and the pride *never leaving a wounded man* is what makes the night hurt. The two must not be the same feast told twice.
+- *No chosen-one prophecies; the three descriptions* (§4.2): nobody applies *the one who dies and does not* to the player before Act III. The lantern-seller below comes close and does not.
+- *§10a*: the surface is pleasant. The Greening and Riverfair are glad days. The Lanterns are beautiful first and sad second.
+- *Silent:* every festival's date, custom and word. I chose the plainest: each falls on the god's day its custom belongs to, so the date and the weekday say the same thing.
+
+### 1. The nine, on the calendar
+
+Each is fixed to a date. A 28-day month keeps a date on its weekday, so each festival always falls on the same god's day, chosen for it. Each is kept by the towns of one nation only (`nationKeyOf` of the site's cell), and a townsperson of another people in that town speaks of it as a guest would.
+
+| Festival | Island | Date | Weekday | Custom | Drafted |
+|---|---|---|---|---|---|
+| **The Greening** | Gatelands | Sowing 3 | Beastday | the pole on the green dressed with a ribbon from every house; the first lambs shown | here |
+| **Riverfair** | Gatelands | Haysel 18 | Seaday | a trade fair at the river; horses sold, the water blessed where it leaves the town | here |
+| **The Night of the Lanterns** | Gatelands | Leaffall 26 | Skyday | at dusk, lanterns let go from the square for those who went into a gate and never came out | here |
+| **The Blaze** | the Mark | Longnight 15 | Hearthday | midwinter bonfires; every hall's fire fed from one | run 2 |
+| **The Strait Fair** | the Mark | Highsun 4 | Seaday | boat races and duels; run by the captains and reeves, oaths sworn | run 2 |
+| **First Snow** | the Mark | the first night snow lies in the town in Culling or Longnight (else Culling 28) | — | a night outside under the lights; nobody sleeps under a roof | run 2 |
+| **The Commencement** | Aurenne | Shearing 6 | Weaverday | the academy's year opens; the new students' names read in the square | run 3 |
+| **The Caravan** | Aurenne | Reaping 9 | Stoneday | the saffron caravan comes in from the dunes; the inland towns' fair | run 3 |
+| **The Lamps on the Water** | Aurenne | Lean 4 | Seaday | lamps set afloat in the harbour for the ships at sea, and for the ones that did not come back | run 3 |
+
+The names of the Mark's and Aurenne's six are provisional until their runs. *Midwinter Blaze*, *Sunspire*, *Saffron Caravan* and *Watershed* are the concept sheet's; *Sunspire* reads as a place and *Watershed* as a word that means something else, so they are not taken.
+
+**The Lanterns and the Lamps** are each other's mirror and on purpose: the Gatelands mourn those who went *in*, Aurenne those who went *out*. The one island's dead went under the ground and the other's under the sea.
+
+### 2. The shape
+
+No quest. On the day, in every town of the island:
+
+- **A greeting.** Every generated townsperson greets with the festival's line for their people (the feasts' way, `feastGreeting`).
+- **The square fills.** Residents and villagers keep to the plaza (S554's rule for the feasts, `feastR`).
+- **The calendar.** The journal's *Due* page lists the next festival of the island the player stands on, with its one-line custom, beside the next feast.
+- **One thing to do.** The Greening's ribbon, Riverfair's blessing, the Night of the Lanterns' lantern (below). Each is small, costs at most two gold, and is remembered for the year.
+
+**What it changes.** Nothing in the world's shape. Each act is saved for its year, so a townsperson can say so on the day after.
+
+**Reward.** None but the line. On the Greening a prayer at a shrine of Na Beithígh is on its god's day anyway (it falls on a Beastday), so the boon lasts its doubled time with no new rule. That is the whole of the reward, and it is enough.
+
+### 3. The Greening — Sowing 3, a Beastday
+
+**The custom.** On the green (the village's plaza), a pole is stood and every house ties a ribbon to it, in its own colour, for the year's lambs and calves. The first lamb of the year is carried round the pole once. Na Beithígh's day; the Beasts' god is *her*, and *her children* are the beasts.
+
+**Due line** (the calendar): *The Greening — a ribbon on the pole from every house, and the first lambs shown.*
+
+**Greetings** (`greet`, by the speaker's people):
+
+**Gatelander:**
+> "A green Greening to you. Every house ties a ribbon on the pole today, and a house that doesn't tie one has no lambs to count. There's ribbon at the pole if you've none of your own. Nobody asks whose house you are."
+
+**Markman:**
+> "Greening. They tie rags on a pole and walk a lamb round it. Good lamb, mind. Ate one like it at home."
+
+**Aurennais:**
+> "A fair Greening to you, Master, as they say here. It is the country's spring observance: one ribbon to each household, and a lamb presented to the god of beasts. The Church has no view on it that I would repeat on a day like this."
+
+**Old Blood:**
+> "Bealtaine, we said. The pole is younger than the word. The lambs are older than both."
+
+**The ribbon.** On the day, standing at the green's pole: *Press 'E' to tie a ribbon to the pole.* Once a year per town (`worldState.festivals['greening:'+site.id]=year`). The log:
+
+> *You tie a ribbon to the pole among the town's. It is not a house's colour, and nobody minds.*
+
+A townsperson of that town, the next time they greet the player that day (Gatelander only; once):
+
+> "That was yours, the plain one? Good. The pole doesn't care who you are, only that you came."
+
+**The lord or elder**, on that day, before their topics (Gatelander):
+
+> "It's the Greening, and I've no business for anyone who isn't carrying a lamb. Come back tomorrow, when the beasts are counted and the arguing starts."
+
+### 4. Riverfair — Haysel 18, a Seaday
+
+**The custom.** A trade fair at the town's water: horses run and sold, wool weighed, and at noon the water is blessed where it leaves the town, a cup poured in for An Mhuir, since every river is going to the sea anyway. A town with no river holds it at its well and says the well is going there too, only slower.
+
+**Due line:** *Riverfair — horses and wool at the water, and the water blessed at noon.*
+
+**Greetings:**
+
+**Gatelander:**
+> "Riverfair, and every horse in the county is for sale and none of them is the one you want. Buy late. A man who brought a horse to the fair doesn't want to walk it home."
+
+**Markman:**
+> "Riverfair. Good horses, bad prices. Buy the bay. The grey bites."
+
+**Aurennais:**
+> "It is Riverfair, Master, the inland trade. The terms are verbal, which I find bracing, and the horses are excellent, which I find harder to account for."
+
+**Old Blood:**
+> "Aonach na hAbhann. The river's fair. At noon they give the sea a cup back. It is owed more."
+
+**A trader of the town** (any shopkeeper in a Gatelands town, the shop's greeting that day; Gatelander):
+
+> "Riverfair prices, which is to say the same as yesterday's and I'll be sorry about them louder."
+
+**The blessing.** At noon (12:00 to 13:00), a town priest stands at the water (or the well) and the townsfolk keep to it. Standing within 6 of the priest in that hour: *Press 'E' to pour a cup for the sea.* Once a year per town (`'riverfair:'+site.id`). The log:
+
+> *You pour a cup into the water. It goes the way the river goes.*
+
+The priest, once, that hour (Gatelander):
+
+> "The sea owns it twice a day, the book says, and the river's only taking it there. Thank you. It's a short gift for a long road."
+
+### 5. The Night of the Lanterns — Leaffall 26, a Skyday
+
+**The custom.** At dusk (18:00 to 22:00), lanterns of paper and reed are let go from the square, one for each of the town's people who went into a gate and never came out, and they rise until they are only stars. Nobody says the names aloud: the Giving is for saying names. Tonight is for the ones who were never found to be given. The houses on the square leave their lamps unlit until the last lantern is out of sight.
+
+**Due line:** *The Night of the Lanterns — at dusk, a lantern for each who went into a gate and did not come out.*
+
+**Greetings** (all day):
+
+**Gatelander:**
+> "It's the Night of the Lanterns tonight. You'll be wanting to stand in the square at dusk, whether you've anyone to send one for or not. They go up so slow you'd think they were sorry to leave."
+
+**Markman:**
+> "Lantern night. For the ones the gates kept. Lot of them in this trade. Stand with them. It's short."
+
+**Aurennais:**
+> "It is the Night of the Lanterns, Master. The Church would say those it remembers went where they had no business going. I say only that the lanterns are very well made, and that one should be in the square at dusk."
+
+**Old Blood:**
+> "Oíche na Lóchrann. They send a light after the ones who went in. We used to ask what the light would find. We stopped asking."
+
+**At dusk the lantern-seller** stands on the square (a townsperson of the town, the role *Lanternmaker*, generated from the town's people; Gatelander in a Gatelands town but for a port's blend). Greeting:
+
+> "Two for a lantern, and the paper's dry, so it'll go. You needn't tell me who it's for. Most don't."
+
+Topic: **A lantern** (2 gold; once a year per town, `'lanterns:'+site.id`). Taking it opens the choice:
+
+**Who is it for?**
+- *For someone who didn't come back.*
+- *For whoever went in last and wasn't found.*
+- *I'd rather not say.*
+- *For me.*
+
+The answers (Gatelander lanternmaker):
+
+- *For someone who didn't come back.*
+  > "Then go on and let it up. They'll know their own. That's the one thing every lantern's agreed on."
+- *For whoever went in last and wasn't found.*
+  > "That's kind. There's always a last one, and nobody's ever sure who. Let it up, and it'll find them, or it won't, and either way it's been sent."
+- *I'd rather not say.*
+  > "Nor should you. A lantern isn't a ledger. Up it goes."
+- *For me.*
+  > "That's not done. You're standing in front of me." A pause. "Here. I'll not take the two for it. Let it up for somebody else, and come back next year with a name."
+
+(The fourth is the nearest any line comes, before Act III, to *the one who dies and does not*. The lanternmaker does not say it, gives the money back and goes back to their bread. If Michael would rather the player could not choose it at all, it is one line to strike.)
+
+The lanternmaker in another people's voice, where a port's blend puts one there:
+
+- **Markman:** "Two. Paper's dry. Don't need to know who." For *me*: "No. You're here. Take it back. Send it for a man who isn't."
+- **Aurennais:** "Two, Master, and the paper is dry; I make no warranty beyond that. You need not name the beneficiary." For *me*: "I cannot sell you that, Master. The terms presume an absence. Take the coin back, and send it for somebody who is not standing in front of me."
+- **Old Blood:** "Two. It goes up. You need not say." For *me*: "No. The light goes after the ones who went in. You came out."
+
+**Letting it go.** After the choice: the log, and the lantern rises from the player's hands:
+
+> *You let the lantern go. It rises with the others until you cannot tell which is yours.*
+
+After the *For me* choice, nothing is bought; the log instead:
+
+> *The lanternmaker gives back your two gold and turns to the next.*
+
+**The square, at the last lantern** (22:00, once a night, if the player is on the square):
+
+> *The last lantern goes out of sight. Along the square, one by one, the lamps are lit.*
+
+**The next day**, a Gatelander of that town, once, if the player sent a lantern:
+
+> "You stood with us last night. That's remembered here longer than a coin is."
+
+### What in the code would carry it
+
+- `60-shop.js`: beside `FEASTS`, a table `FESTIVALS` of the nine, each `{key,name,nation,month,dom,ico,due,greet:{gatelander,markman,aurennais,oldblood}}` (the first run fills the Gatelands' three; the Mark's and Aurenne's carry `greet:null` until their runs and are skipped while null). `festivalOn(at,nation)` returns the day's festival for a nation; `nextFestival(at,nation)` as `nextFeast`. First Snow's date (run 2) is the one that reads the weather; it waits for that run.
+- `feastGreeting(def)` (`60-shop.js`): when no feast is on, the festival of the def's site's nation (`nationKeyOf(...cellOf(site.x,site.z))`, from the world; `feastGreeting` already runs late, when the world is loaded). A feast wins over a festival; none share a date.
+- `82-world-structures.js`, `feastNow()`: true on a festival in the site's nation too, so the square fills. `feastR` unchanged. This is the only shared rule the festivals take; the free meal (`feastMeal`, `feastInnLine`) and the halved fine (`feastFineLine`) stay the four feasts' alone.
+- `87-world-quests.js`, the *Due* list (`nextFeast` at line ~2038): push the next festival of the island the player stands on, with its `due` line.
+- The three acts: the ribbon at the green's pole (the plaza's centre; the pole itself is the look builder's), the cup at the water (the town priest's place at noon), the lantern (a generated townsperson on the plaza from 18:00 to 22:00 with the role *Lanternmaker* and one topic). Each writes `worldState.festivals[<key>:<site.id>]=year` (`calDay().year`), a world key (the town remembers, not the character), added to `_applyLoadData`'s list. The ids are by festival and site, never a position or a time.
+- The next-day lines read that key for yesterday's date; the lord's Greening line goes before `lordTopics` on the day.
+- **A test** (`tests/festivals.test.mjs`): set the clock to Sowing 3 in a Gatelands town and a townsperson greets with the Greening's line for their people; the same day in a Markish town greets as any day; tie the ribbon and the key is saved and loads; on Leaffall 26 at 19:00 the lanternmaker stands on the square, sells a lantern for 2 gold, and *For me* charges nothing.
+
+**For the look builder** (backlog A, under this draft's name): the green's pole dressed with ribbons on the Greening (one pole, ribbons in the town's colours, on a Gatelands plaza that day only); the lanterns rising on the Night of the Lanterns (paper lanterns, lit, drifting up and fading over 90 seconds; a few dozen at once over the square); the player's own lantern rising from the hands.
+
+### Owed, and not drafted here
+
+- The Mark's three (run 2): the Blaze, the Strait Fair with its captains' and reeves' oaths and its duels (canon §1.2, *disputes by duel*), and First Snow under the lights.
+- Aurenne's three (run 3): the Commencement, the Caravan, the Lamps on the Water.
+- The *everyday life* half of OG-107 (stalls, a smith at work, a temple service, wrestling and archery, a harbour gathering) is most of it the look builder's and the systems builder's; a short words draft for the contests once one exists.

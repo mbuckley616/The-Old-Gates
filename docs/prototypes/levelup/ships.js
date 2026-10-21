@@ -287,14 +287,16 @@ export function markCutter(o = {}, r = stream('cutter')) {
     yard = { y: YY, half: YL / 2, foot: SF, z: MZ + .23 }; }
   else {
   // the mast stepped well forward, its topmast; the boom at 2.15 over the deck to past the transom; the gaff peaked up at 30°
-  const GT = DECK + 8.4, GL = 6.0, GA = 30 * Math.PI / 180, PK = [0, GT + GL * Math.sin(GA), MZ - GL * Math.cos(GA)];
+  /* o.furled (Session 1239, in port): the gaff lowered onto the boom, the main rolled along it, the topsail and the headsails stowed */
+  const FU = !!o.furled, GT = FU ? BY + .5 : DECK + 8.4, GL = 6.0, GA = (FU ? 4 : 30) * Math.PI / 180, PK = [0, GT + GL * Math.sin(GA), MZ - GL * Math.cos(GA)];
   rod([0, keelAt(MZ) + .1, MZ], [0, DECK + MH, MZ], .17, .11, 'spar'); rod([0, DECK + MH - .8, MZ], [0, DECK + MH + 2.2, MZ], .08, .06, 'spar');
   rod([0, BY, MZ - .2], [0, BY, BZ1], .08, .07, 'spar'); rod([0, GT, MZ - .2], PK, .07, .06, 'spar');
+  if (FU) { rod([0, BY + .24, MZ - .45], [0, BY + .24, BZ1 + .6], .2, .14, 'sail'); for (let z = MZ - 1; z > BZ1 + .8; z -= 1.1) rod([-.22, BY + .24, z], [.22, BY + .24, z], .03, .03, 'rope'); }
   // the sails: the gaff main from the boom to the gaff, the topsail over it, the staysail to the stem, the jib to the bowsprit's end
-  put(quadSail([0, BY + .1, MZ - .25], [0, BY + .1, BZ1 + .3], PK, [0, GT - .05, MZ - .25], .55), 'sail', 0, 0, 0, 0, 0, 0, null);
+  if (!FU) { put(quadSail([0, BY + .1, MZ - .25], [0, BY + .1, BZ1 + .3], PK, [0, GT - .05, MZ - .25], .55), 'sail', 0, 0, 0, 0, 0, 0, null);
   put(quadSail([0, DECK + MH + 2.1, MZ - .1], PK, PK, [0, GT + .15, MZ - .2], .25, 8, 8), 'sail', 0, 0, 0, 0, 0, 0, null);
   put(quadSail([0, DECK + 1.5, MZ + 1.1], [0, sheerAt(zb) + .35, zb - .1], [0, sheerAt(zb) + .35, zb - .1], [0, DECK + MH * .76, MZ + .2], .35, 8, 8), 'sail', 0, 0, 0, 0, 0, 0, null);
-  put(quadSail([0, DECK + 2.2, zb - 1.2], SP, SP, [0, DECK + MH * .86, MZ + .25], .35, 8, 8), 'sail', 0, 0, 0, 0, 0, 0, null);
+  put(quadSail([0, DECK + 2.2, zb - 1.2], SP, SP, [0, DECK + MH * .86, MZ + .25], .35, 8, 8), 'sail', 0, 0, 0, 0, 0, 0, null); }
   // the standing rigging: three shrouds a side, the forestay to the stem head, the topmast stay to the bowsprit, the backstays
   for (const e of [1, -1]) for (const dz of [-.7, 0, .7]) { const z = MZ + dz - .3; rod([0, DECK + MH * .9, MZ], [e * (sect(z, 1)[0] + .05), sheerAt(z) - .05, z], .012, .012, 'rope'); }
   rod([0, DECK + MH * .76, MZ], [0, sheerAt(zb) + .35, zb], .014, .014, 'rope'); rod([0, DECK + MH * .86, MZ], SP, .014, .014, 'rope'); for (const e of [1, -1]) rod([0, DECK + MH, MZ], [e * (sect(zs + 1.5, 1)[0] - .05), sheerAt(zs + 1.5), zs + 1.5], .012, .012, 'rope');
