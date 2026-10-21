@@ -319,9 +319,9 @@ function loadPack() {
   const tri = G['helper-tights'], P = rest, cy = i => P[i * 3 + 1], cx = i => P[i * 3];
   const sel = (g, f) => { const out = []; for (let t = 0; t < g.length; t += 3) { const a = g[t], b = g[t + 1], c = g[t + 2], y = (cy(a) + cy(b) + cy(c)) / 3, x = (cx(a) + cx(b) + cx(c)) / 3, z = (P[a * 3 + 2] + P[b * 3 + 2] + P[c * 3 + 2]) / 3; if (f(x, y, z)) out.push(a, b, c); } return new Uint32Array(out); };
   PACK.R = {
-    tunic: sel(tri, (x, y) => y > -.08 && y < .63 && Math.abs(x) < .42),
-    bare: sel(G['body'], (x, y) => y > .585 || Math.abs(x) > .395),
-    bareLegs: sel(G['body'], (x, y) => y > .585 || Math.abs(x) > .395 || y < -.05),
+    tunic: sel(tri, (x, y, z) => y > -.08 && y < .63 && slvX(x, y, z) < .43),
+    bare: sel(G['body'], (x, y, z) => y > .585 || slvX(x, y, z) > .375),
+    bareLegs: sel(G['body'], (x, y, z) => y > .585 || slvX(x, y, z) > .375 || y < -.05),
     trousers: sel(tri, (x, y) => y < .12 && y > -.8),
     boots: sel(tri, (x, y) => y < -.38),
     // the leg wraps (Session 1021): past their cut (rest -.715 to -.405) both ways, so neither edge is a triangle's
@@ -335,7 +335,7 @@ function loadPack() {
     mantle: sel(tri, (x, y, z) => y > .366 && y < .635 && Math.abs(x) < .288),
     // the cuffs: a band 4 cm wide at the sleeve's end, cut in the shader (Session 889); the region is wider, so neither edge is a
     // triangle's, and it runs to .411, past the bare skin's own stepped edge (body triangles from .395), which showed as teeth beyond it
-    cuffs: sel(tri, (x, y) => Math.abs(x) > .355 && Math.abs(x) < .425),
+    cuffs: sel(tri, (x, y, z) => slvX(x, y, z) > .355 && slvX(x, y, z) < .425),
     skirtShort: sel(G['helper-skirt'], (x, y) => y > -.24),
     skirtLong: sel(G['helper-skirt'], () => true),
     // the beard under a cheek line (Session 840): from the sideburn by the ear (y .712) down to the corner of the mouth
@@ -391,10 +391,19 @@ function weave(N = 128, kind = 'wool') {
 }
 const TEXW = { wool: null, leather: null };
 const sRGB = (r, g, b) => new THREE.Color().setRGB(r, g, b, THREE.SRGBColorSpace);
-const CUT = (c) => c ? `if (vB.y < ${c[0].toFixed(3)} + (fract(sin(dot(vB.xz, vec2(91.7, 37.3))) * 4375.) - .5) * ${(c[3] ?? .004).toFixed(4)} || vB.y > ${c[1].toFixed(3)} || abs(vB.x) > ${(c[2] ?? 9).toFixed(3)}) discard;` : '';
+// the sleeve's end, square to the forearm (Session 1228): past |x| .26 and above rest y 0 (the feet are as far out) a point's place along the arm is read on the forearm's own axis,
+// from the elbow (rest .3129, .3493, .0132) toward the wrist (.4312, .2452, .1757), and given as the |x| the axis has there, so every
+// sleeve number written as a rest |x| (.371, .4, ...) keeps its place on the axis. The rest forearm runs 58 degrees off x (down and
+// forward), and a cut at a plain |x| ran down it obliquely: a slanted end whose line crossed the long skinned triangles in teeth.
+// SLV_S is the angle round that axis. The same in JS for the regions (slvX).
+const SLV_Q = 'vec3(abs(vB.x), vB.y, vB.z) - vec3(.3129, .3493, .0132)', SLV_T = `(abs(vB.x) > .26 && vB.y > 0. ? .3129 + .5225 * dot(${SLV_Q}, vec3(.5225, -.4598, .7178)) : abs(vB.x))`,
+  SLV_S = `atan(dot(${SLV_Q}, vec3(0., .8419, .5393)), dot(${SLV_Q}, vec3(.8528, .2818, -.4399)))`;
+const slvX = (x, y, z) => { const a = Math.abs(x); return a > .26 && y > 0 ? .3129 + .5225 * ((a - .3129) * .5225 - (y - .3493) * .4598 + (z - .0132) * .7178) : a; };
+// a cut past |x| .35 is the sleeve's end, square to the forearm; a shorter one (the mail's, at the elbow) stays a plain |x|
+const CUT = (c) => c ? `if (vB.y < ${c[0].toFixed(3)} + (fract(sin(dot(vB.xz, vec2(91.7, 37.3))) * 4375.) - .5) * ${(c[3] ?? .004).toFixed(4)} || vB.y > ${c[1].toFixed(3)} || ${(c[2] ?? 9) > .35 && (c[2] ?? 9) < 1 ? SLV_T : 'abs(vB.x)'} > ${(c[2] ?? 9).toFixed(3)}) discard;` : '';
 // a woven band through the middle of the cuff (Session 889; OG-025's woven red-and-blue cuff bands): across the cuff's width
 // (rest |x| .371 to .411) the band's colour fills the middle, its edges stepped in a chevron round the wrist, as a tablet weave is
-const BAND = `{ float t = (abs(vB.x) - .371) / .04, w = abs(fract((vB.z + .7 * vB.y) * 95.) - .5) * 2.; if (abs(t - .5) < .14 + .12 * w) diffuseColor.rgb = bandC * triTex(tW, 60.); }`;
+const BAND = `{ float t = (${SLV_T} - .371) / .04, w = abs(fract((vB.z + .7 * vB.y) * 95.) - .5) * 2.; if (abs(t - .5) < .14 + .12 * w) diffuseColor.rgb = bandC * triTex(tW, 60.); }`;
 // the Mark's woven bands (Session 1156; OG-109's Mark formal dress, "blue and red, with woven bands"): a tablet-woven band at the
 // tunic's neck, the cuffs and the skirt's hem. Across it (t, 0 to 1) a thread of the motif's colour at each edge, then the ground; along
 // it (s, in band widths) a row of lozenges, each a ring of the motif round a dot, one every 1.2 band widths. Both are stepped to the
@@ -407,8 +416,8 @@ const LOZ_AT = o => o.at.map(a => `{ float t = ${a.t}, s = ${a.s}; if (${a.on ||
 // the three places on the rest body: the neck from rest .58 to .606, round the neck's axis (x 0, z .025, 5.5 cm out); the cuff across
 // its width (rest |x| .371 to .411, as the woven cuff band), round the wrist's middle where that slab cuts it (y .285, z .116); the hem 4 cm up from the skirt's cut (a short skirt's at -.2, a long
 // one's own edge, -.687 at the sides to -.728 at the front, below), round the body's axis
-const LOZ_NECK = { t: '(vB.y - .58) / .026', s: 'atan(vB.x, vB.z - .025) * .055 / .028', on: 'abs(vB.x) < .1' };
-const LOZ_CUFF = { t: '(abs(vB.x) - .371) / .04', s: 'atan(vB.y - .285, vB.z - .116) * .045 / .04' };
+const LOZ_NECK = { t: '(vB.y - neckY(vB)) / (.606 - neckY(vB))', neck: .026, s: 'atan(vB.x, vB.z - .025) * .055 / .028', on: 'abs(vB.x) < .1' };
+const LOZ_CUFF = { t: `(${SLV_T} - .371) / .04`, s: `${SLV_S} * .045 / .04` };
 // a long gown's cut is the skirt helper's own edge, not a line: 2.8 cm higher at the sides than at the front (Session 1163). Its band
 // is laid up from that edge, read off a table of 48 heights round the body's axis, filled from the edge's points on the rest body
 // a knee-length tunic's (Session 1164) runs 5 mm over its cut at -.345, as a short one's does over -.2
@@ -427,6 +436,33 @@ function lozHemTable() {
 }
 // the same reading in JS, for the checks
 function lozHemY(x, z) { const T = lozHemTable(), u = (Math.atan2(x, z - .02) / (Math.PI * 2) + .5) * 48, i = Math.floor(u) % 48; return T[i] + (T[(i + 1) % 48] - T[i]) * (u - Math.floor(u)); }
+// a band round the neck (Session 1230; S1220's note: the gown's lower cord ran down into the crease where the collar meets the shoulder,
+// and over the back of the shoulders it lay out on their slope, the rings drawn out wide). Its top stays at rest .606; its foot is read off
+// a table of 48 heights round the neck's axis (x 0, z .025), each where the band's own depth is measured down the tunic's rest surface
+// from the top, not down y: over the front, where the neck stands straight, that is where it was (.578), and where the neck flares into
+// the shoulders the band stops short of the flare, as a collar's border does
+const NECK_BAND = `uniform float neckT[48]; float neckY(vec3 p){ float u = (atan(p.x, p.z - .025) / 6.28319 + .5) * 48.; int i = int(floor(u)) % 48; return mix(neckT[i], neckT[(i + 1) % 48], fract(u)); }`;
+// the table, for a band of the given depth: at each angle a ray out from the neck's axis every millimetre down from .606 meets the
+// tunic's rest triangles, the furthest hit being the surface (none, at the cut's own edge: the next one down); the depth is walked down that profile, and the heights smoothed round
+function neckBandTable(depth) {
+  const k = 'neckT' + depth; if (PACK[k]) return PACK[k]; const ix = PACK.R.tunic, R0 = PACK.rest, tri = [];
+  for (let t = 0; t < ix.length; t += 3) { const ys = [0, 1, 2].map(j => R0[ix[t + j] * 3 + 1]); if (Math.max(...ys) > .53 && Math.min(...ys) < .615) tri.push(t); }
+  const hit = (y, a) => { const dx = Math.sin(a), dz = Math.cos(a); let best = 0;
+    for (const t of tri) { const A = ix[t] * 3, B = ix[t + 1] * 3, C = ix[t + 2] * 3; if (Math.max(R0[A + 1], R0[B + 1], R0[C + 1]) < y || Math.min(R0[A + 1], R0[B + 1], R0[C + 1]) > y) continue;
+      const e1x = R0[B] - R0[A], e1y = R0[B + 1] - R0[A + 1], e1z = R0[B + 2] - R0[A + 2], e2x = R0[C] - R0[A], e2y = R0[C + 1] - R0[A + 1], e2z = R0[C + 2] - R0[A + 2];
+      const px = -dz * e2y, py = dz * e2x - dx * e2z, pz = dx * e2y, det = e1x * px + e1y * py + e1z * pz; if (Math.abs(det) < 1e-12) continue;
+      const sx = -R0[A], sy = y - R0[A + 1], sz = .025 - R0[A + 2], u = (sx * px + sy * py + sz * pz) / det; if (u < 0 || u > 1) continue;
+      const qx = sy * e1z - sz * e1y, qy = sz * e1x - sx * e1z, qz = sx * e1y - sy * e1x, w = (dx * qx + dz * qz) / det; if (w < 0 || u + w > 1) continue;
+      const d = (e2x * qx + e2y * qy + e2z * qz) / det; if (d > 0 && d < .3) best = Math.max(best, d); } return best; };
+  const raw = new Float32Array(48);
+  for (let i = 0; i < 48; i++) { const a = (i / 48 - .5) * Math.PI * 2; let y = .606, r = hit(y, a), run = 0;
+    while (y > .54) { const y2 = y - .001, r2 = hit(y2, a) || r, l = Math.hypot(.001, r ? r2 - r : 0); if (run + l >= depth) { y -= .001 * (depth - run) / l; break; } run += l; y = y2; r = r2; }
+    raw[i] = y; }
+  const T = new Float32Array(48); for (let i = 0; i < 48; i++) T[i] = Math.max(raw[i], (raw[(i + 47) % 48] + 2 * raw[i] + raw[(i + 1) % 48]) / 4);
+  return PACK[k] = T;
+}
+// the same reading in JS, for the checks
+function neckBandY(x, z, depth = .028) { const T = neckBandTable(depth), u = (Math.atan2(x, z - .025) / (Math.PI * 2) + .5) * 48, i = Math.floor(u) % 48; return T[i] + (T[(i + 1) % 48] - T[i]) * (u - Math.floor(u)); }
 // the Aurennais gown's gold embroidery (Session 1220, L1; OG-110's woman "in red and gold", OG-109's "embroidered formal dress in
 // saffron, red and teal"): worked on the gown's own cloth, not woven into a band of its own. Across the border (t, 0 to 1) a couched cord
 // along each edge; between them a running vine, one wave every two border widths along it (s), with a ring and its knot in the bay under
@@ -449,8 +485,8 @@ const EMB_AT = o => 'float embK = 0.; ' + o.at.map(a => `{ float t = ${a.t}, s =
 // the neck from rest .578, 2.8 cm deep, round the neck's axis (six waves, all the way round); the sleeve's end, 3.6 cm from rest |x| .356, 4 mm short of its cut, round
 // the wrist (six waves: the sleeve hangs open, wider than the wrist); the hem 2 cm up from the cut, 5.5 cm deep (a long gown's off the edge's table, thirteen waves round; a
 // knee-length one's or a short one's over its line, eleven and ten)
-const EMB_NECK = { t: '(vB.y - .578) / .028', s: 'atan(vB.x, vB.z - .025) * 1.90986' };
-const EMB_SLEEVE = { t: '(abs(vB.x) - .356) / .036', s: 'atan(vB.y - .285, vB.z - .116) * 1.90986' };
+const EMB_NECK = { t: '(vB.y - neckY(vB)) / (.606 - neckY(vB))', s: 'atan(vB.x, vB.z - .025) * 1.90986', neck: .028 };
+const EMB_SLEEVE = { t: `(${SLV_T} - .356) / .036`, s: `${SLV_S} * 1.90986` };
 const embHem = sk => sk === 'long' ? { t: '(vB.y - lozHemY(vB) - .02) / .055', s: 'atan(vB.x, vB.z - .02) * 4.13803', lut: true } : sk === 'knee' ? { t: '(vB.y + .325) / .045', s: 'atan(vB.x, vB.z - .02) * 3.50141' } : { t: '(vB.y + .18) / .04', s: 'atan(vB.x, vB.z - .02) * 3.18310' };
 // folds round a wound band (Session 1010, the sash belt): soft ridges and sharp creases running round the body, n of them across
 // the band's width (rest y lo to hi), wandering with the angle round the waist so they are not ruled lines. Drawn in the shader:
@@ -521,6 +557,8 @@ function clothMat(color, kind = 'wool', o = {}) {
       s.fragmentShader = `const bool strArm = ${!!t.arm};\n` + 'uniform vec3 strK; uniform vec3 strL; uniform vec2 strO; uniform vec3 strS; uniform vec3 strE; uniform vec3 strW;\n' + STRIPES + '\n' + s.fragmentShader; }
     if (o.band) s.fragmentShader = 'uniform vec3 bandC;\n' + s.fragmentShader;
     // the Mark's woven bands (Session 1156), laid after everything else on the cloth
+    // a band round the neck (Session 1230) reads its foot off the table for its depth; a material carries one (the woven bands or the gown's)
+    { const nk = [...(o.loz?.at || []), ...(o.emb?.at || [])].find(a => a.neck); if (nk) { s.uniforms.neckT = { value: Array.from(neckBandTable(nk.neck)) }; s.fragmentShader = NECK_BAND + '\n' + s.fragmentShader; } }
     if (o.loz) { const lut = o.loz.at.some(a => a.lut); if (lut) s.uniforms.lozHemT = { value: Array.from(lozHemTable()) };
       s.uniforms.lozG = { value: o.loz.g }; s.uniforms.lozM = { value: o.loz.m }; s.fragmentShader = 'uniform vec3 lozG; uniform vec3 lozM;\n' + (lut ? LOZ_HEM + '\n' : '') + LOZ + '\n' + s.fragmentShader.replace('#include <color_fragment>', '#include <color_fragment>\n ' + LOZ_AT(o.loz)); }
     // the Aurennais gown's gold embroidery (Session 1220), laid after the woven bands, its threads lit as metal
@@ -860,6 +898,7 @@ function drape(S, start, dir0, L, clearAt, o = {}) {
   return line;
 }
 const HAIR_STYLES = ['short', 'loose', 'braid', 'braids', 'tail', 'bun'];
+// the sleeve's place along the forearm (Session 1228), for the checks
 function buildHair(P, G, heads, scalpTris, headB, rnd) {
   const out = [], style = G.hair?.style ?? ((G.hairLen ?? .3) < .45 ? 'short' : 'loose'), len = G.hair?.len ?? G.hairLen ?? .3, col = sRGB(...G.hairCol);
   const R0 = PACK.rest, neckY0 = .6, S = surfGrid(P, PACK.G['body'], (x, y, z) => (y > neckY0 - .02) || (y > .25 && Math.abs(x) < .2));
@@ -3114,7 +3153,7 @@ const coatHem = D => -.3 - .4 * (D.coatLen ?? .75);
 // its front: the right front lapped over the left, the edge 3.1 cm to the wearer's right of the middle, drawn as the shadow it casts
 // (as the waistcoat's is, Session 1144); a fur trim lies along it from the hem to the collar, on the lapping front's side
 const COAT_EDGE = '(vB.z > .02 ? 1. - .5 * (1. - smoothstep(.001, .0025, abs(vB.x + .031))) : 1.)';
-const COAT_FUR = { body: '!((abs(vB.x) < .1 && vB.y > .57) || (vB.z > .02 && vB.x > -.031 && vB.x < .004 && (vB.y > .19 || vB.y < .135)) || abs(vB.x) > .368)', skirt: (hem) => `!(vB.y < ${(hem + .045).toFixed(3)} || (vB.z > .02 && vB.x > -.031 && vB.x < .004 && vB.y < .135))` };
+const COAT_FUR = { body: '!((abs(vB.x) < .1 && vB.y > .57) || (vB.z > .02 && vB.x > -.031 && vB.x < .004 && (vB.y > .19 || vB.y < .135)) || ' + SLV_T + ' > .368)', skirt: (hem) => `!(vB.y < ${(hem + .045).toFixed(3)} || (vB.z > .02 && vB.x > -.031 && vB.x < .004 && vB.y < .135))` };
 function waistcoatOn(D) { return !!(D.waistcoat && D.tunic && !D.bodice && !D.robe && !D.mail && !D.scales && !D.tabard && !D.bib); }
 // ── the waistcoat's buttons (Session 1143): six round buttons down the closed front, from just over the belt to under the V, each the
 // shell's own point nearest the middle at its height, read on the posed shell and set on it along its normal, a flattened dome
@@ -3210,7 +3249,7 @@ function makePerson(G, o = {}) {
   // the waist over the tunic, which is taken in under its whole width, its folds drawn in the shader; a leather belt is worn over it
   if (sashBeltOn(D)) push('sashBelt', PACK.R.sashBelt, clothMat(sRGB(...D.sashBelt), 'wool', { cut: [.085, .225, 9, .0008], scale: 30, fold: { lo: .085, hi: .225, n: 5 } }), (x, y) => sashBeltPush(D, x, y));
   if (D.belt) push('belt', PACK.R.belt, clothMat(sRGB(...D.belt), 'leather', { cut: [.135, .19, 9, .0005] }), coat ? (x, y) => coatPush(x, y) + .008 : sashBeltOn(D) ? (x, y) => sashBeltPush(D, x, y) + .007 : mail ? .038 : .03);
-  if (D.cuffs) push('cuffs', PACK.R.cuffs, clothMat(sRGB(...D.cuffs), 'wool', { hole: 'abs(vB.x) < .371 || abs(vB.x) > .411', ...(D.bands ? lozOf(LOZ_CUFF) : D.cuffBand ? { band: sRGB(...D.cuffBand) } : {}) }), .02);
+  if (D.cuffs) push('cuffs', PACK.R.cuffs, clothMat(sRGB(...D.cuffs), 'wool', { hole: `${SLV_T} < .371 || ${SLV_T} > .411`, ...(D.bands ? lozOf(LOZ_CUFF) : D.cuffBand ? { band: sRGB(...D.cuffBand) } : {}) }), .02);
   // the winter coat (Session 1147): its body and sleeves the tunic's shell 1.4 cm further out, to the wrist (rest |x| .405) and down under
   // the belt to rest .1, 2 cm past the tunic's own edge under it, so no tunic shows between the belt and the coat's skirt; its skirt off the skirt shell, from under the belt to its hem, 1.6 cm over a skirt's (2.4 at the waist, over the coat's own body there) and flaring to 2.5 cm more at
   // the hem, so it hangs over a man's tunic skirt, a woman's long skirt and the trousers alike; heavy wool, its inside darker; belted over
@@ -3220,7 +3259,7 @@ function makePerson(G, o = {}) {
     // the fur (D.coatFur): seven shells 3.5 mm apart over the coat at the collar (5 cm round the neck), down the lapping front's edge (3.5 cm wide,
     // broken by the belt), round the cuffs (3.7 cm) and the hem (4.5 cm); the shells are cut from the regions they cover, so they cost little
     if (D.coatFur) { const sub = (k, idx, f) => PACK[k] || (PACK[k] = (() => { const R0 = PACK.rest, o = []; for (let t = 0; t < idx.length; t += 3) { let x = 0, y = 0, z = 0; for (let j = 0; j < 3; j++) { x += R0[idx[t + j] * 3] / 3; y += R0[idx[t + j] * 3 + 1] / 3; z += R0[idx[t + j] * 3 + 2] / 3; } if (f(x, y, z)) o.push(idx[t], idx[t + 1], idx[t + 2]); } return new Uint32Array(o); })());
-      const fb = sub('coatFurBody', PACK.R.tunic, (x, y, z) => (Math.abs(x) < .12 && y > .55) || (z > .01 && x > -.05 && x < .02) || Math.abs(x) > .35), hk = 'coatFurSkirt' + cHem.toFixed(3), fs = sub(hk, PACK.R.skirtLong, (x, y, z) => y < cHem + .07 || (z > .01 && x > -.05 && x < .02 && y < .16));
+      const fb = sub('coatFurBody', PACK.R.tunic, (x, y, z) => (Math.abs(x) < .12 && y > .55) || (z > .01 && x > -.05 && x < .02) || slvX(x, y, z) > .345), hk = 'coatFurSkirt' + cHem.toFixed(3), fs = sub(hk, PACK.R.skirtLong, (x, y, z) => y < cHem + .07 || (z > .01 && x > -.05 && x < .02 && y < .16));
       for (let s = 0; s < 7; s++) { const lay = .002 + s * .0035;
         push('coatFur' + s, fb, shellMat(sRGB(...D.coatFur), s, 7, { sx: 260, sy: 70, solid: s === 0, cut: [.1, .63, .405, .002], hole: COAT_FUR.body }), (x, y) => coatPush(x, y) + lay);
         push('coatHem' + s, fs, shellMat(sRGB(...D.coatFur), s, 7, { sx: 260, sy: 70, solid: s === 0, cut: [cHem, .17, 9, .006], hole: COAT_FUR.skirt(cHem) }), (x, y) => coatSkirtPush(x, y) + lay); } } }
@@ -3587,5 +3626,5 @@ function peopleGenome(rnd, people, g, o = {}) {
 // a genome rolled from a seed, inside a people's ranges (Markfolk by default, as Session 804 rolled them)
 function rollGenome(seed, o = {}) { const rnd = seeded(seed), g = o.g ?? (rnd() < .5 ? 0 : 1); if (o.people) return peopleGenome(rnd, o.people, g, { seed: String(seed), child: !!o.child, old: !!o.old && !o.child }); const G = markGenome(rnd, g, { seed: String(seed) }); G.people = 'markman'; return G; }
 
-return {loadPack,lozHemY,scarLine,seeded,browShape,makePerson,markGenome,toSaved,fromSaved,statureOf,heightFor,peopleGenome,rollGenome,HAIR_STYLES,MANTLE_CUT,BODY_SLIDERS,GARMENTS,DRESS_FLAGS,PEOPLES,MH_PACK_SHA256,get PACK(){return PACK;}};
+return {loadPack,lozHemY,neckBandY,scarLine,seeded,browShape,makePerson,markGenome,toSaved,fromSaved,statureOf,heightFor,peopleGenome,rollGenome,HAIR_STYLES,slvX,MANTLE_CUT,BODY_SLIDERS,GARMENTS,DRESS_FLAGS,PEOPLES,MH_PACK_SHA256,get PACK(){return PACK;}};
 })();
