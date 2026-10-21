@@ -3,6 +3,13 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### Seasons in the land: green all year, OG-139 as drawn, or its trees with snow by the weather? (from the concept artist, 21 Oct 2026, #579)
+Backlog L12 (OG-139, card F3's tree and grass kit). The calendar has four seasons and the weather keeps them, but the land looks the same all year. OG-139 draws red and gold autumn woods and bare trees under snow; OG-140 calls the Gatelands "green all year". The prototype is one Gatelands lane through the year (`docs/prototypes/levelup/seasons.html`). How much should the seasons change the Gatelands?
+- **A.** Green all year (OG-140): the seasons are a tint, crowns thin in winter but never go bare, snow never lies.
+- **B.** OG-139 as drawn: blossom in spring, red and gold in autumn with fallen leaves, bare trees in winter, snow lying all winter.
+- **C.** B's trees, with the snow left to the weather (`WX.cover`): it lies after a fall and melts. *(recommended)*
+
+Recommendation: **C.** The canon gives autumn colour to the Gatelands alone (§1.1); snow lying all winter is the Mark's look. Cost: no new painting; winter draws 1.05M triangles in 794 calls against summer's 763k in 790 (the bare twigs), near trees only in the game. Holly and yew (16%) stay green in every option. Pictures: [A, B and C](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1021/docs/prototypes/levelup/seasons-options.jpg), [the year](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1021/docs/prototypes/levelup/seasons-year.jpg).
 ### The dungeon's cell by kind: old gates at 3 m, and forts and lairs at what? (systems builder, Session 1105) — DECISION #421
 **The question.** F2b's last session sets a dungeon's grid cell at true scale; it is one unit today, so corridors are 1 m wide for a 1.8 m body. Michael chose **C, 3 m** on #300 and added: "If by dungeon we mean Old Gates, they should be extremely massive and cavernous. A normal 'dungeon' like a mine, or a cave can be a more typical size." The game has three kinds of underground place: the **old gates** (the world's portals, themed by school: crypts, haunted halls, elemental and deep caverns, ruins), **fort interiors** (the `fort_` layouts), and **lairs and dens** (a beast's lair, the cloak's den). So the cell can differ by kind, and "a more typical size" is a number a player feels.
 
