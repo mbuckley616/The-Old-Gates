@@ -20,7 +20,9 @@ const here = () => page.evaluate(() => ({ id: currentHouse && currentHouse.id, n
 const inRoom = (id) => page.waitForFunction((id) => !!currentHouse && (id == null || currentHouse.id === id), id, { timeout: 60000, polling: 250 });
 const out = async () => { await page.evaluate(() => { if (currentHouse) exitInterior(); }); await page.waitForFunction(() => !currentHouse, null, { timeout: 60000, polling: 250 }); await page.waitForTimeout(1500); await g.hide(); };
 
-// 1. ids follow their lots through prosperity swings
+// 1. ids follow their lots through prosperity swings. Session 1263: a kit house keeps its front on the street line and its depth is its
+// kind's (an inn 4–6 m, a merchant's house 8), so its centre moves when the kind does; a building on another lot moves both, the centre
+// and the middle of its street front, and only that counts
 const swing = [];
 for (const id of ['dunmore', 'carraig_mor', 'portclare', 'colmans_rest']) {
   await g.settle(id);
@@ -28,11 +30,12 @@ for (const id of ['dunmore', 'carraig_mor', 'portclare', 'colmans_rest']) {
     const site = WORLD.siteAnywhere(id); const p0 = WORLD.prosperity(site);
     const build = (p) => { WORLD.setProsperity(site, p); if (WORLD.settle.has(id)) WORLD.disposeSettlement(id); WORLD.genSettlement(site);
       return WORLD.settle.get(id).houses.filter(h => /^g_/.test(h.id)).map(h => { const l = WORLD.settle.get(id).sol.find(q => q.hid === h.id); const S = WORLD.settle.get(id); const d = h.type === 'home' ? h.dlg : (S.npcs.find(n => n.def && n.def._houseId === h.id) || {}).def;
-      return { id: h.id, t: h.type, x: h.doorX, z: h.doorZ, cx: l ? l.cx : NaN, cz: l ? l.cz : NaN, who: h.keeper, look: d ? [d.sCol, d.hairCol, d.bCol, d.roleTag || d.role].join('/') : null }; }); };
+      const tx = -Math.sin(h.exitYaw), tz = -Math.cos(h.exitYaw);
+      return { id: h.id, t: h.type, x: h.doorX, z: h.doorZ, cx: l ? l.cx : NaN, cz: l ? l.cz : NaN, fx: l ? l.cx + tx * h.d / 2 : NaN, fz: l ? l.cz + tz * h.d / 2 : NaN, who: h.keeper, look: d ? [d.sCol, d.hairCol, d.bCol, d.roleTag || d.role].join('/') : null }; }); };
     const guards = () => WORLD.settle.get(id).npcs.filter(n => n.def && n.def.role === 'Guard').map(n => n.def.name);
     const a = build(p0); const g0 = guards(); const r = { id, p0, n: a.length, cases: [] };
     for (const p of [p0 - 13, p0 + 13, p0 - 26, p0 + 26]) { if (p < 5 || p > 100) continue; const b = build(p);
-      let both = 0, moved = 0; const renamed = [], relooked = []; const mv = []; for (const h of a) { const o = b.find(x => x.id === h.id); if (!o) continue; both++; const dd = Math.hypot(o.x - h.x, o.z - h.z); if (dd > .5) { mv.push([h.id, h.t, o.t, +dd.toFixed(1), +Math.hypot(o.cx - h.cx, o.cz - h.cz).toFixed(2)]); if (Math.hypot(o.cx - h.cx, o.cz - h.cz) > .01) moved++; } const guild = t => /^guild_/.test(t); if (o.t === h.t && h.look && o.look && o.look !== h.look && h.who === o.who) relooked.push([h.id, h.look, o.look]); if (o.who !== h.who && h.who && o.who && !guild(h.t) && !guild(o.t)) renamed.push([h.id, h.who, o.who]); }
+      let both = 0, moved = 0; const renamed = [], relooked = []; const mv = []; for (const h of a) { const o = b.find(x => x.id === h.id); if (!o) continue; both++; const dd = Math.hypot(o.x - h.x, o.z - h.z); if (dd > .5) { const dc = Math.hypot(o.cx - h.cx, o.cz - h.cz), df = Math.hypot(o.fx - h.fx, o.fz - h.fz); mv.push([h.id, h.t, o.t, +dd.toFixed(1), +dc.toFixed(2), +df.toFixed(2)]); if (Math.min(dc, df) > .01) moved++; } const guild = t => /^guild_/.test(t); if (o.t === h.t && h.look && o.look && o.look !== h.look && h.who === o.who) relooked.push([h.id, h.look, o.look]); if (o.who !== h.who && h.who && o.who && !guild(h.t) && !guild(o.t)) renamed.push([h.id, h.who, o.who]); }
       const ids = new Set(b.map(h => h.id)); r.cases.push({ p, n: b.length, both, moved, mv, renamed, relooked, guardsSame: (x => x.every(n => g0.includes(n)) || g0.every(n => x.includes(n)))(guards()), unique: ids.size === b.length }); }
     build(p0); return r; }, id));
 }
