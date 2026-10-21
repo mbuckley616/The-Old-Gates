@@ -235,7 +235,7 @@ vec3 tartanAt(vec3 p, vec3 g){ vec2 d = p.xz - tartO; float u = atan(d.x, -d.y) 
 const STRIPE_REP = .056, STRIPE_R = 17 * STRIPE_REP / (2 * Math.PI), STRIPE_RA = 5 * STRIPE_REP / (2 * Math.PI);
 const STRIPES = `vec3 stripeC(float u, vec3 g){ float f = mod(u, ${STRIPE_REP}) * 100.; return f < 2.8 ? g : f < 4.4 ? strK : f < 4.8 ? g : f < 5.2 ? strL : g; }
 vec3 stripeAA(float u, float w, vec3 g){ w = min(w, .02); return .25 * (stripeC(u - .375 * w, g) + stripeC(u - .125 * w, g) + stripeC(u + .125 * w, g) + stripeC(u + .375 * w, g)); }
-vec3 stripeAt(vec3 p, vec3 g){ vec2 d = p.xz - strO; float ub = atan(d.x, -d.y) * ${STRIPE_R.toFixed(5)}, wb = min(fwidth(ub), fwidth(atan(-d.x, d.y) * ${STRIPE_R.toFixed(5)}));
+vec3 stripeAt(vec3 p, vec3 g){ vec2 d = p.xz - strO; float ub = atan(d.x, -d.y) * ${STRIPE_R.toFixed(5)} * strN, wb = min(fwidth(ub), fwidth(atan(-d.x, d.y) * ${STRIPE_R.toFixed(5)} * strN));
   vec3 q = vec3(abs(p.x), p.y, p.z), au = strE - strS, af = strW - strE; float tu = clamp(dot(q - strS, au) / dot(au, au), 0., 1.), tf = clamp(dot(q - strE, af) / dot(af, af), 0., 1.);
   bool up = length(q - strS - au * tu) < length(q - strE - af * tf); vec3 a = normalize(up ? au : af), r = q - (up ? strS : strE); r -= a * dot(r, a);
   vec3 e2 = normalize(vec3(0., 0., 1.) - a * a.z), e1 = cross(a, e2);
@@ -248,12 +248,13 @@ function clothMat(color, kind = 'wool', o = {}) {
   m.userData.cut = o.cut; m.userData.hole = o.hole;
   m.onBeforeCompile = s => { s.uniforms.tW = { value: TEXW[kind] }; if (o.band) s.uniforms.bandC = { value: o.band };
     s.vertexShader = 'attribute vec3 aBase; varying vec3 vB; varying vec3 vRP; varying vec3 vRN;\n' + s.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vRP = position; vRN = normal; vB = aBase;');
-    s.fragmentShader = 'uniform sampler2D tW; varying vec3 vB;\n' + TRI + s.fragmentShader.replace('vec4 diffuseColor = vec4( diffuse, opacity );', CUT(o.cut) + (o.hole ? `if (${o.hole}) discard;` : '') + `vec4 diffuseColor = vec4( diffuse * triTex(tW, ${(o.scale ?? (kind === 'leather' ? 9 : 22)).toFixed(1)})${o.inner ? ` * (gl_FrontFacing ? 1. : ${o.inner.toFixed(2)})` : ''}, opacity );` + (o.shade ? ` diffuseColor.rgb *= ${o.shade};` : '') + (o.tartan ? ' diffuseColor.rgb *= tartanAt(vT, diffuse) / max(diffuse, vec3(.004));' : '') + (o.stripe ? ' diffuseColor.rgb *= stripeAt(vB, diffuse) / max(diffuse, vec3(.004));' : '') + (o.band ? BAND : ''));
+    s.fragmentShader = 'uniform sampler2D tW; varying vec3 vB;\n' + TRI + s.fragmentShader.replace('vec4 diffuseColor = vec4( diffuse, opacity );', CUT(o.cut) + (o.hole ? `if (${o.hole}) discard;` : '') + `vec4 diffuseColor = vec4( diffuse * triTex(tW, ${(o.scale ?? (kind === 'leather' ? 9 : 22)).toFixed(1)})${o.inner ? ` * (gl_FrontFacing ? 1. : ${o.inner.toFixed(2)})` : ''}, opacity );` + (o.shade ? ` diffuseColor.rgb *= ${o.shade};` : '') + (o.tartan ? ' diffuseColor.rgb *= tartanAt(vT, diffuse) / max(diffuse, vec3(.004));' : '') + (o.stripe ? ` diffuseColor.rgb *= stripeAt(${o.stripe.vt ? 'vT' : 'vB'}, diffuse) / max(diffuse, vec3(.004));` : '') + (o.band ? BAND : ''));
+    // the rest position a tartan or a burnous's stripes are laid on (aTart), where aBase holds something else (the raised hood's opening)
+    if (o.tartan || o.stripe?.vt) { s.vertexShader = 'attribute vec3 aTart; varying vec3 vT;\n' + s.vertexShader.replace('vB = aBase;', 'vB = aBase; vT = aTart;'); s.fragmentShader = 'varying vec3 vT;\n' + s.fragmentShader; }
     if (o.tartan) { const t = o.tartan; s.uniforms.tartK = { value: t.dark }; s.uniforms.tartL = { value: t.line }; s.uniforms.tartO = { value: new THREE.Vector2(...t.o) }; s.uniforms.tartR = { value: t.r };
-      s.vertexShader = 'attribute vec3 aTart; varying vec3 vT;\n' + s.vertexShader.replace('vB = aBase;', 'vB = aBase; vT = aTart;');
-      s.fragmentShader = 'uniform vec3 tartK; uniform vec3 tartL; uniform vec2 tartO; uniform float tartR; varying vec3 vT;\n' + TARTAN + '\n' + s.fragmentShader; }
-    if (o.stripe) { const t = o.stripe; s.uniforms.strK = { value: t.k }; s.uniforms.strL = { value: t.l }; s.uniforms.strO = { value: new THREE.Vector2(...t.o) }; s.uniforms.strS = { value: t.s }; s.uniforms.strE = { value: t.e }; s.uniforms.strW = { value: t.w };
-      s.fragmentShader = `const bool strArm = ${!!t.arm};\n` + 'uniform vec3 strK; uniform vec3 strL; uniform vec2 strO; uniform vec3 strS; uniform vec3 strE; uniform vec3 strW;\n' + STRIPES + '\n' + s.fragmentShader; }
+      s.fragmentShader = 'uniform vec3 tartK; uniform vec3 tartL; uniform vec2 tartO; uniform float tartR;\n' + TARTAN + '\n' + s.fragmentShader; }
+    if (o.stripe) { const t = o.stripe; s.uniforms.strK = { value: t.k }; s.uniforms.strL = { value: t.l }; s.uniforms.strO = { value: new THREE.Vector2(...t.o) }; s.uniforms.strS = { value: t.s }; s.uniforms.strE = { value: t.e }; s.uniforms.strW = { value: t.w }; s.uniforms.strN = { value: t.n ?? 1 };
+      s.fragmentShader = `const bool strArm = ${!!t.arm};\n` + 'uniform vec3 strK; uniform vec3 strL; uniform vec2 strO; uniform vec3 strS; uniform vec3 strE; uniform vec3 strW; uniform float strN;\n' + STRIPES + '\n' + s.fragmentShader; }
     if (o.band) s.fragmentShader = 'uniform vec3 bandC;\n' + s.fragmentShader;
     // the Mark's woven bands (Session 1156), laid after everything else on the cloth
     // a band round the neck (Session 1230) reads its foot off the table for its depth; a material carries one (the woven bands or the gown's)
@@ -272,7 +273,7 @@ function clothMat(color, kind = 'wool', o = {}) {
     if (o.wind && o.wind.tie) { s.uniforms.tieC = { value: o.wind.tie }; s.fragmentShader = 'uniform vec3 tieC;\n' + s.fragmentShader.replace(/(vec4 diffuseColor = vec4\( diffuse \* [^;]*;)/, '$1 ' + TIE(o.wind)); }
     if (o.fold || o.wind) s.fragmentShader = (o.wind ? WRAP_WIND(o.wind) : FOLD(o.fold)) + s.fragmentShader.replace(/(vec4 diffuseColor = vec4\( diffuse \* [^;]*;)/, 'float fH = foldH(vB); $1 diffuseColor.rgb *= .78 + .22 * fH;')
       .replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\n normal = foldNormal(-vViewPosition, normal, vec2(dFdx(fH), dFdy(fH)) * ' + ((o.fold || o.wind).depth ?? 1.1).toFixed(2) + ', faceDirection);'); };
-  m.customProgramCacheKey = () => 'cloth' + kind + JSON.stringify(o.cut || 0) + (o.scale || 0) + (o.hole || '') + (o.shade || '') + (o.inner || '') + (o.band ? 'band' : '') + (o.tartan ? 'tartan' : '') + (o.stripe ? 'stripe' + !!o.stripe.arm : '') + (o.print ? 'print' : '') + (o.dots ? 'dots' : '') + (o.loz ? JSON.stringify(o.loz.at) : '') + (o.emb ? 'emb' + JSON.stringify(o.emb.at) : '') + JSON.stringify(o.fold || 0) + JSON.stringify(o.wind ? { ...o.wind, tie: !!o.wind.tie } : 0);
+  m.customProgramCacheKey = () => 'cloth' + kind + JSON.stringify(o.cut || 0) + (o.scale || 0) + (o.hole || '') + (o.shade || '') + (o.inner || '') + (o.band ? 'band' : '') + (o.tartan ? 'tartan' : '') + (o.stripe ? 'stripe' + !!o.stripe.arm + !!o.stripe.vt : '') + (o.print ? 'print' : '') + (o.dots ? 'dots' : '') + (o.loz ? JSON.stringify(o.loz.at) : '') + (o.emb ? 'emb' + JSON.stringify(o.emb.at) : '') + JSON.stringify(o.fold || 0) + JSON.stringify(o.wind ? { ...o.wind, tie: !!o.wind.tie } : 0);
   return m;
 }
 // the headscarf's print (Session 1029): a sprig of four round petals on a 2.4 cm grid, each row offset by half, read three ways off the
@@ -582,6 +583,9 @@ function tubeGeom(line, rad, sides = 8, twist = 0) {
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); g.computeVertexNormals(); return g;
 }
 // tubeGeom winds its faces inward (its front faces look into the tube); turned out, so a tube seen from outside is drawn and lit from outside
+// indexed geometries joined into one, positions and indices only, its normals worked out again (Session 1236, the tassel)
+function mergeGeoms(gs) { const pos = [], idx = []; let n = 0; for (const g of gs) { const p = g.attributes.position.array; for (const v of p) pos.push(v); for (const i of g.index.array) idx.push(i + n); n += p.length / 3; }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); return g; }
 function turnOut(g) { const ix = g.index.array; for (let i = 0; i < ix.length; i += 3) { const t = ix[i + 1]; ix[i + 1] = ix[i + 2]; ix[i + 2] = t; } g.computeVertexNormals(); return g; }
 const lockMat = color => new THREE.MeshStandardMaterial({ map: lockTex(), color, roughness: .78 });
 // a line falling from a start under gravity, pushed off the body to a clearance
@@ -767,6 +771,14 @@ function stripeOf(D, arm = false) { if (!D.robe || !D.robeStripe) return {};
   if (!STRIPE_AX) { const R0 = PACK.rest; let x = 0, z = 0, n = 0; for (const v of PACK.R.tunic) if (Math.abs(R0[v * 3]) < .2) { x += R0[v * 3]; z += R0[v * 3 + 2]; n++; }
     const [sh, el, wr] = ['upperarm01.L', 'lowerarm01.L', 'wrist.L'].map(restJoint); for (const v of [sh, el, wr]) v.x = Math.abs(v.x); STRIPE_AX = { o: [x / n, z / n], s: sh, e: el, w: wr }; }
   return { stripe: { k: sRGB(...D.robeStripe), l: sRGB(...(D.robeStripeLine || D.robeStripe)), ...STRIPE_AX, arm } }; }
+// the Aurennais' burnous (Session 1236, L1; OG-109's Aurenne winter column, hooded cloaks over the robe for the cold nights): the cloak
+// in its wool, woven with the robe's warp stripes in D.burnousStripe, laid round the axis at o (the neck's, or the head's for the raised
+// hood, read off aTart there), 34 repeats round the neck (twice the robe's, as the cloak stands further out) and 17 round the head;
+// no tartan; a plain burnous when it has no stripe colour
+const burnousOn = D => !!(D && D.cloak && D.burnous && !D.cape);
+function burnousOf(D, o, vt = false, n = vt ? 1 : 2) { if (!burnousOn(D) || !D.burnousStripe) return {}; if (!STRIPE_AX) stripeOf({ robe: 1, robeStripe: [0, 0, 0] });
+  return { stripe: { k: sRGB(...D.burnousStripe), l: sRGB(...D.burnousStripe), o, s: STRIPE_AX.s, e: STRIPE_AX.e, w: STRIPE_AX.w, arm: false, vt, n } }; }
+const cloakPattern = (D, o, r, vt = false) => burnousOn(D) ? burnousOf(D, o, vt) : tartanOf(D, o, r);
 function buildCloak(G, body, byName, rnd) {
   const D = G.dress, out = [], PP = posedBody(body), S = surfGrid(PP, PACK.G['body'], (x, y) => y > -.75);
   const neck = new THREE.Vector3(); byName['neck01'].getWorldPosition(neck); const neckY = neck.y;
@@ -802,7 +814,7 @@ function buildCloak(G, body, byName, rnd) {
   // with them pointing in, the cloak's outside read its own shadow 2 cm behind it and went dark wherever the key light fell on it
   for (let k = 0; k < K - 1; k++) for (let r = 0; r < R - 1; r++) { const a = k * R + r, b = a + R; idx.push(a, b, a + 1, b, b + 1, a + 1); }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('aBase', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('aTart', g.attributes.aBase); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); g.computeVertexNormals();
-  const cm = clothMat(sRGB(...D.cloak), D.cloakFur ? 'leather' : 'wool', { side: THREE.DoubleSide, scale: 26, ...tartanOf(D, [neck.x, neck.z], .2) }), cloak = new THREE.Mesh(g, cm); cloak.name = 'cloak'; out.push(cloak);
+  const cm = clothMat(sRGB(...D.cloak), D.cloakFur && !burnousOn(D) ? 'leather' : 'wool', { side: THREE.DoubleSide, scale: 26, ...cloakPattern(D, [neck.x, neck.z], .2) }), cloak = new THREE.Mesh(g, cm); cloak.name = 'cloak'; out.push(cloak);
   // an embroidered hem (OG-048, OG-059: red embroidered borders): a band of its own colour over the last 3.5 cm of the
   // sheet, laid 1.5 mm proud of it round the neck's axis so it never sinks into the cloth
   if (D.cloakHem) { const nb = Math.min(R - 2, Math.round(.035 / .0105)), bp = [], bi = [];
@@ -812,13 +824,17 @@ function buildCloak(G, body, byName, rnd) {
     const bm = new THREE.Mesh(bg, clothMat(sRGB(...D.cloakHem), 'wool', { side: THREE.DoubleSide, scale: 60 })); bm.name = 'cloakHem'; out.push(bm); }
   // a fur lining turned out at the collar (the Markmen's), or the hood rolled on the shoulders
   const ring = tops.map(t => t.start.clone().addScaledVector(t.n, .012).add(new THREE.Vector3(0, .012, 0)));
-  if (D.cloakFur) for (let s = 0; s < 6; s++) { const m = new THREE.Mesh(tubeGeom(ring, ring.map(() => .026 + s * .004), 8), shellMat(sRGB(...D.cloakFur), s, 6, { sx: 260, sy: 70, solid: s === 0 })); m.geometry.setAttribute('aBase', m.geometry.attributes.position); m.name = 'collar' + s; out.push(m); }
-  else if (D.hood === 'down') { const kb = Math.round(-th0 / (th1 - th0) * (K - 1)), back = ring.slice(Math.max(0, kb - Math.round(K * .2)), kb + Math.round(K * .2)).map(q => q.clone().lerp(new THREE.Vector3(neck.x, q.y + .025, neck.z), .25)), m = new THREE.Mesh(tubeGeom(back, back.map((_, i) => .03 + .018 * Math.sin(Math.PI * i / (back.length - 1))), 10), clothMat(sRGB(...D.cloak).multiplyScalar(.92), 'wool', { scale: 26, ...tartanOf(D, [neck.x, neck.z], .2) })); m.geometry.setAttribute('aBase', m.geometry.attributes.position); m.geometry.setAttribute('aTart', m.geometry.attributes.position); m.name = 'hood'; out.push(m); }
+  if (D.cloakFur && !burnousOn(D)) for (let s = 0; s < 6; s++) { const m = new THREE.Mesh(tubeGeom(ring, ring.map(() => .026 + s * .004), 8), shellMat(sRGB(...D.cloakFur), s, 6, { sx: 260, sy: 70, solid: s === 0 })); m.geometry.setAttribute('aBase', m.geometry.attributes.position); m.name = 'collar' + s; out.push(m); }
+  else if (D.hood === 'down') { const kb = Math.round(-th0 / (th1 - th0) * (K - 1)), back = ring.slice(Math.max(0, kb - Math.round(K * .2)), kb + Math.round(K * .2)).map(q => q.clone().lerp(new THREE.Vector3(neck.x, q.y + .025, neck.z), .25)), m = new THREE.Mesh(tubeGeom(back, back.map((_, i) => .03 + .018 * Math.sin(Math.PI * i / (back.length - 1))), 10), clothMat(sRGB(...D.cloak).multiplyScalar(.92), 'wool', { scale: 26, ...cloakPattern(D, [neck.x, neck.z], .2) })); m.geometry.setAttribute('aBase', m.geometry.attributes.position); m.geometry.setAttribute('aTart', m.geometry.attributes.position); m.name = 'hood'; out.push(m); }
   // the brooch at the throat, where the two front columns meet
   const a = thrown ? tops[K - 1] : tops[0], b = tops[K - 1], at = a.start.clone().add(b.start).multiplyScalar(.5), nrm = a.n.clone().add(b.n).normalize();
-  const br = new THREE.Mesh(new THREE.CylinderGeometry(.021, .021, .006, 24), new THREE.MeshStandardMaterial({ color: sRGB(...(D.brooch || [.55, .42, .2])), metalness: .9, roughness: .38 }));
-  br.position.copy(at).addScaledVector(nrm, .012); br.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), nrm); br.name = 'brooch'; out.push(br);
-  const boss = new THREE.Mesh(new THREE.SphereGeometry(.007, 12, 8), br.material); boss.position.copy(br.position).addScaledVector(nrm, .005); out.push(boss);
+  // a burnous is sewn shut at the chest and tied at the throat with a knot of its own cord in place of the brooch
+  const knot = burnousOn(D), br = knot ? new THREE.Mesh(new THREE.SphereGeometry(.0105, 14, 10), clothMat(sRGB(...(D.burnousStripe || D.cloak)).multiplyScalar(.85), 'wool', { scale: 90 }))
+    : new THREE.Mesh(new THREE.CylinderGeometry(.021, .021, .006, 24), new THREE.MeshStandardMaterial({ color: sRGB(...(D.brooch || [.55, .42, .2])), metalness: .9, roughness: .38 }));
+  if (knot) br.geometry.setAttribute('aBase', br.geometry.attributes.position);
+  br.position.copy(at).addScaledVector(nrm, knot ? .01 : .012); br.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), nrm); br.name = knot ? 'knot' : 'brooch'; out.push(br);
+  const boss = new THREE.Mesh(knot ? new THREE.SphereGeometry(.0075, 12, 8) : new THREE.SphereGeometry(.007, 12, 8), br.material); if (knot) boss.geometry.setAttribute('aBase', boss.geometry.attributes.position);
+  boss.position.copy(br.position).addScaledVector(nrm, knot ? -.002 : .005).add(new THREE.Vector3(0, knot ? -.016 : 0, 0)); out.push(boss);
   for (const m of out) { m.castShadow = true; m.receiveShadow = true; m.frustumCulled = false; }
   let minClear = 1, under = 0; for (const c of cols) for (const q of c) { const hit = heightOver(S, q); if (hit) { minClear = Math.min(minClear, hit.h); if (hit.h < .005) under++; } }
   return { meshes: out, stats: { columns: K, rows: R, tris: idx.length / 3, minClear: +minClear.toFixed(4), under, brooch: +br.position.distanceTo(neck).toFixed(3), cape, hemDrop: +(neck.y - cols.reduce((a, c) => a + c[R - 1].y, 0) / K).toFixed(3), hem: !!D.cloakHem, thrown, ...H.stats, through: armsThrough(cols, R, PP, neck, worn) } };
@@ -1230,8 +1246,10 @@ function buildHoodUp(P, G, meshes, o = {}) {
   const yAt = (x, z) => { let y = -1e9; for (const i of new Set(body)) { const ry = R0[i * 3 + 1]; if (ry < .3 || ry > .62) continue; if ((P[i * 3] - x) ** 2 + (P[i * 3 + 2] - z) ** 2 < .022 ** 2) y = Math.max(y, P[i * 3 + 1]); } return y; };
   const yHem0 = sh.max.y + clr;
   // the grid: J columns round the head (0 = the front), I rows from the crown to the hem
-  const dome = (ph, th) => { const sx = Math.sin(th) * Math.sin(ph), sy = Math.cos(th), sz = Math.sin(th) * Math.cos(ph), peak = .025 * Math.max(0, -sz * .7 + sy * .7) ** 3;
-    return new THREE.Vector3(c.x + sx * rx, c.y + sy * (sy > 0 ? ryT : ryB) + peak * .6, c.z + sz * (sz > 0 ? rzF : rzB) - peak); };
+  // a burnous's hood (Session 1236) comes to a point: the soft peak behind the crown drawn out 13 cm back and a little up, narrow
+  const PK = burnousOn(D) ? { a: .13, n: 18, y: .3 } : { a: .025, n: 3, y: .6 };
+  const dome = (ph, th) => { const sx = Math.sin(th) * Math.sin(ph), sy = Math.cos(th), sz = Math.sin(th) * Math.cos(ph), peak = PK.a * Math.max(0, -sz * .7 + sy * .7) ** PK.n;
+    return new THREE.Vector3(c.x + sx * rx, c.y + sy * (sy > 0 ? ryT : ryB) + peak * PK.y, c.z + sz * (sz > 0 ? rzF : rzB) - peak); };
   const hemXZ = ph => [cn.x + Math.sin(ph) * hx, cn.z + Math.cos(ph) * (Math.cos(ph) > 0 ? hzF : hzB)];
   let hy0 = []; for (let j = 0; j < J; j++) { const [x, z] = hemXZ(j / J * Math.PI * 2), y = yAt(x, z); hy0.push(y > -1e8 ? Math.min(y + clr, yHem0) : yHem0); }
   for (let it = 0; it < 4; it++) hy0 = hy0.map((y, j) => (hy0[(j + J - 1) % J] + 2 * y + hy0[(j + 1) % J]) / 4);
@@ -1257,8 +1275,16 @@ function buildHoodUp(P, G, meshes, o = {}) {
       for (let q = 0; q < 4; q++) { si[i * 4 + q] = PACK.skinIndex[best * 4 + q]; sw[i * 4 + q] = PACK.skinWeight[best * 4 + q]; } }
     geo.setAttribute('skinIndex', new THREE.BufferAttribute(si, 4)); geo.setAttribute('skinWeight', new THREE.BufferAttribute(sw, 4)); return geo; };
   if (!rim.attributes.aBase) rim.setAttribute('aBase', rim.attributes.position);
-  const col = sRGB(...D.cloak), hood = new THREE.SkinnedMesh(skin(g), clothMat(col, 'wool', { side: THREE.DoubleSide, scale: 26, inner: .42, hole: 'vB.z > 0. && vB.x < 1.', ...tartanOf(D, [c.x, c.z], .11) })); hood.name = 'hoodUp';
+  const col = sRGB(...D.cloak), hood = new THREE.SkinnedMesh(skin(g), clothMat(col, 'wool', { side: THREE.DoubleSide, scale: 26, inner: .42, hole: 'vB.z > 0. && vB.x < 1.', ...cloakPattern(D, [c.x, c.z], .11, true) })); hood.name = 'hoodUp';
   const hemM = new THREE.SkinnedMesh(skin(rim), clothMat(o.fur ? sRGB(...o.fur).multiplyScalar(.8) : col.clone().multiplyScalar(.9), 'wool', { scale: 26 })); hemM.name = 'hoodHem';
+  // the burnous's tassel (Session 1236): from the hood's point a cord 3 cm long, a knot, and a tassel of 16 threads 6 cm long flaring to
+  // 1.4 cm, in the stripe's colour (or the cloak's, darkened), hanging straight down; skinned with the hood, so it rides the head
+  const tassel = []; let tip = null; if (burnousOn(D)) { tip = dome(Math.PI, Math.PI / 4); const tc = sRGB(...(D.burnousStripe || D.cloak)).multiplyScalar(D.burnousStripe ? .9 : .7), parts = [];
+    const cord = new THREE.CylinderGeometry(.0025, .0025, .03, 6).translate(0, -.015, 0), kn = new THREE.SphereGeometry(.0065, 10, 8).translate(0, -.032, 0); parts.push(cord, kn);
+    for (let t = 0; t < 16; t++) { const a = t / 16 * Math.PI * 2, r0 = .003, r1 = .007 + .0015 * Math.sin(t * 2.3), th = new THREE.CylinderGeometry(.0013, .0013, .06, 4); const pp = th.attributes.position;
+      for (let i = 0; i < pp.count; i++) { const k = .5 - pp.getY(i) / .06, r = r0 + (r1 - r0) * k; pp.setXYZ(i, pp.getX(i) + Math.cos(a) * r, -.036 - .06 * k, pp.getZ(i) + Math.sin(a) * r); } parts.push(th); }
+    const tg = mergeGeoms(parts).translate(tip.x, tip.y, tip.z); tg.setAttribute('aBase', tg.attributes.position);
+    const tm = new THREE.SkinnedMesh(skin(tg), clothMat(tc, 'wool', { scale: 90 })); tm.name = 'tassel'; tassel.push(tm); }
   // the fur ruff (Session 1152, OG-109's fur-lined hooded coats): the hood's front, where it is within three tenths of its opening's size again of the
   // face, in seven shells 3.5 mm apart pushed out from the head's middle, cut at the opening's edge as the hood is and on a smooth line outside it, not the triangles' stairs; the hood's own
   // skinning, so the ruff moves with it
@@ -1274,7 +1300,7 @@ function buildHoodUp(P, G, meshes, o = {}) {
   let tested = 0, poke = 0; { const v = new THREE.Vector3(), test = q => { if (q.y < c.y - ryB * .5) return; tested++; if (q.z > c.z && openS(q) < 1) return;
       const d = q.clone().sub(c); if (Math.hypot(d.x / rx, d.y / (d.y > 0 ? ryT : ryB), d.z / (d.z > 0 ? rzF : rzB)) >= 1) poke++; };
     for (const i of new Set(body)) if (R0[i * 3 + 1] > .6) test(pt(i)); for (const m of hairM) { const a = m.geometry.attributes.position; for (let i = 0; i < a.count; i++) test(v.fromBufferAttribute(a, i)); } }
-  return { meshes: [hood, hemM, ...furM], stats: { tested, poke, furTris, tris: idx.length / 3 + rim.index.count / 3, rimPoints: sm.length, k: +(rx / (hs.x + .028)).toFixed(3), yHem: +yHem0.toFixed(3) } };
+  return { meshes: [hood, hemM, ...furM, ...tassel], stats: { tested, poke, furTris, tris: idx.length / 3 + rim.index.count / 3, rimPoints: sm.length, tip: tip && [+(tip.y - c.y).toFixed(3), +(c.z - tip.z).toFixed(3)], tassel: tassel.length ? tassel[0].geometry.index.count / 3 : 0, k: +(rx / (hs.x + .028)).toFixed(3), yHem: +yHem0.toFixed(3) } };
 }
 
 // ── the Aurennais' head-wrap (Session 994, L1; OG-044 and OG-056: head-wraps in saffron, red and teal, wound round) ──
@@ -1298,7 +1324,7 @@ function buildWrap(P, G, heads, byName, hairPts = [], browTop = -9) {
   const tb = !!D.turban && !sc, yS = by - .01, at = !tb ? at0 : (th, ph, off = 0) => { const p = at0(th, ph, off), h = Math.max(0, Math.min(1, (p.y - rimY(th) - .02) / .06)), s = 1 + .15 * h * h * (3 - 2 * h);
     p.x = c.x + (p.x - c.x) * s; p.z = c.z + (p.z - c.z) * s; if (p.y > yS) p.y = yS + (p.y - yS) * 1.8; return p; };
   const topY = at(0, 0).y;
-  const NP = 14, pos = [], col = [], idx = [], prn = [], RIM = Array.from({ length: NT + 1 }, (_, t) => phRim(t / NT * TAU)), cloth = sRGB(...D.wrap), edge = sRGB(...(D.wrapBorder || D.wrap.map(v => v * (sc ? .97 : .82)))), PH_ = th => RIM[Math.round(((th / TAU) * NT % NT + NT) % NT)];
+  const NP = 14, tubeV = [], pos = [], col = [], idx = [], prn = [], RIM = Array.from({ length: NT + 1 }, (_, t) => phRim(t / NT * TAU)), cloth = sRGB(...D.wrap), edge = sRGB(...(D.wrapBorder || D.wrap.map(v => v * (sc ? .97 : .82)))), PH_ = th => RIM[Math.round(((th / TAU) * NT % NT + NT) % NT)];
   // the crown, from the top to the edge (its seam, and the turns', at the back), a shade lighter than the turns so the rolls read against it
   { const b0 = pos.length / 3, cc = cloth.clone().multiplyScalar(sc ? 1 : 1.06); for (let j = 0; j < NP; j++) for (let t = 0; t <= NT; t++) { const th = Math.PI + t / NT * TAU, p = at(th, PH_(th) * Math.max(.002, j / (NP - 1))); pos.push(p.x, p.y, p.z); col.push(cc.r, cc.g, cc.b); prn.push(1); }
     for (let j = 0; j < NP - 1; j++) for (let t = 0; t < NT; t++) { const a = b0 + j * (NT + 1) + t, d = a + NT + 1; idx.push(a, d, a + 1, a + 1, d, d + 1); } }
@@ -1310,22 +1336,25 @@ function buildWrap(P, G, heads, byName, hairPts = [], browTop = -9) {
   TURNS.forEach(([yf, yb, rad, share], k) => { const line = [], rr = [];
     for (let t = 0; t <= NT; t++) { const th = Math.PI + t / NT * TAU, w = (1 + Math.cos(th)) / 2, r = rad * (1 + .14 * Math.sin(3 * th + k * 1.7)), f = yf * w + yb * (1 - w);
       line.push(at(th, phAt(th, rimY(th) + (share ? f * (topY - rimY(th)) : f)), r * .4)); rr.push(r); }
-    line[NT] = line[0].clone(); const g2 = tubeGeom(line, rr, SIDES), b0 = pos.length / 3, a2 = g2.attributes.position.array;
+    line[NT] = line[0].clone(); const g2 = turnOut(tubeGeom(line, rr, SIDES)), b0 = pos.length / 3, a2 = g2.attributes.position.array;
     // flattened onto the head: a band of cloth, wide along the dome and thin out from it
     for (let s2 = 0; s2 <= NT; s2++) { const L = line[s2], n = L.clone().sub(c).normalize(); for (let q = 0; q <= SIDES; q++) { const o = (s2 * (SIDES + 1) + q) * 3, ox = a2[o] - L.x, oy = a2[o + 1] - L.y, oz = a2[o + 2] - L.z, dn = ox * n.x + oy * n.y + oz * n.z;
       a2[o] = L.x + (ox - n.x * dn) * 1.5 + n.x * dn * .5; a2[o + 1] = L.y + (oy - n.y * dn) * 1.5 + n.y * dn * .5; a2[o + 2] = L.z + (oz - n.z * dn) * 1.5 + n.z * dn * .5; } }
     const c2 = k === 0 ? edge : cloth.clone().multiplyScalar(1 - .05 * (k % 2));
-    for (let i = 0; i < a2.length; i += 3) { pos.push(a2[i], a2[i + 1], a2[i + 2]); col.push(c2.r, c2.g, c2.b); prn.push(sc && !D.wrapBorder ? 1 : 0); } for (const i of g2.index.array) idx.push(b0 + i); rolls.push(line); });
+    for (let i = 0; i < a2.length; i += 3) { pos.push(a2[i], a2[i + 1], a2[i + 2]); col.push(c2.r, c2.g, c2.b); prn.push(sc && !D.wrapBorder ? 1 : 0); tubeV.push([b0 + i / 3, line[Math.floor(i / 3 / (SIDES + 1))]]); } for (const i of g2.index.array) idx.push(b0 + i); rolls.push(line); });
   // a turban's crown (Session 1020; OG-044's are wound to the top): three turns cross over it, each from under the upper turns on one
   // side, over the top and down under them on the other, in planes 0.35, -0.5 and 1.45 rad off the front-to-back line, wider and flatter than the turns
   let cross = 0; if (tb) for (const [al, ff, fb, rad] of [[.35, .6, .66, .017], [-.5, .66, .6, .016], [1.45, .62, .62, .016]]) { const line = [], rr = [], NQ = 40;
     const ends = [[al, ff], [al + Math.PI, fb]].map(([th, f]) => [th, phAt(th, rimY(th) + f * (topY - rimY(th)))]);
     for (let q = 0; q <= NQ; q++) { const u = q / NQ * 2 - 1, [th, pe] = u < 0 ? ends[1] : ends[0], r = rad * (1 + .1 * Math.sin(5 * u + al)); line.push(at(th, Math.abs(u) * pe, r * .4)); rr.push(r); }
-    const g2 = tubeGeom(line, rr, SIDES), b0 = pos.length / 3, a2 = g2.attributes.position.array;
+    const g2 = turnOut(tubeGeom(line, rr, SIDES)), b0 = pos.length / 3, a2 = g2.attributes.position.array;
     for (let s2 = 0; s2 <= NQ; s2++) { const L = line[s2], n = L.clone().sub(c).normalize(); for (let q = 0; q <= SIDES; q++) { const o = (s2 * (SIDES + 1) + q) * 3, ox = a2[o] - L.x, oy = a2[o + 1] - L.y, oz = a2[o + 2] - L.z, dn = ox * n.x + oy * n.y + oz * n.z;
       a2[o] = L.x + (ox - n.x * dn) * 2.4 + n.x * dn * .45; a2[o + 1] = L.y + (oy - n.y * dn) * 2.4 + n.y * dn * .45; a2[o + 2] = L.z + (oz - n.z * dn) * 2.4 + n.z * dn * .45; } }
     const c2 = cloth.clone().multiplyScalar(.97 - .03 * cross); for (let i = 0; i < a2.length; i += 3) { pos.push(a2[i], a2[i + 1], a2[i + 2]); col.push(c2.r, c2.g, c2.b); prn.push(0); } for (const i of g2.index.array) idx.push(b0 + i); cross++; }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('aBase', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.setAttribute('aPrint', new THREE.Float32BufferAttribute(prn, 1)); g.setIndex(idx); g.computeVertexNormals();
+  // the turns' normals point out of each roll (Session 1238): tubeGeom winds inward, and with the normals in, the shadow's lookup (moved along
+  // the normal by normalBias) fell inside the roll, so the whole wrap read its own shadow and went grey, a white turban most of all
+  let outward = 0; { const N = g.attributes.normal.array; for (const [k, L] of tubeV) if ((pos[k * 3] - L.x) * N[k * 3] + (pos[k * 3 + 1] - L.y) * N[k * 3 + 1] + (pos[k * 3 + 2] - L.z) * N[k * 3 + 2] > 0) outward++; outward = tubeV.length ? outward / tubeV.length : 1; }
   // the numbers, before it moves to the head bone: the nearest point of the head and of the tucked hair under it, how far the lowest
   // cloth over the brow stands above the brow line, and how low it comes at the nape
   let gap = 1, hairOut = 0, browLow = 9, nape = 9, overBrow = 0; for (const i of hv) { if (!under(i)) continue; const d = V(i).sub(c), r = d.length(); gap = Math.min(gap, R(Math.atan2(d.x, d.z), Math.acos(d.y / r)) - r); }
@@ -1334,7 +1363,55 @@ function buildWrap(P, G, heads, byName, hairPts = [], browTop = -9) {
   const ext = new THREE.Box3(); for (let i = 0; i < pos.length; i += 3) ext.expandByPoint(new THREE.Vector3(pos[i], pos[i + 1], pos[i + 2]));
   g.translate(-heads['head'].x, -heads['head'].y, -heads['head'].z);
   const m = clothMat(new THREE.Color(1, 1, 1), 'wool', { side: THREE.DoubleSide, scale: 34, print: sc && D.scarfPrint ? sRGB(...D.scarfPrint) : null }); m.vertexColors = true; const mesh = new THREE.Mesh(g, m); mesh.name = 'wrap'; mesh.castShadow = true; mesh.receiveShadow = !sc; byName['head'].add(mesh);
-  return { mesh, stats: { gap: +gap.toFixed(4), hairOut, hairPts: hairPts.length, brow: +(browLow - browTop).toFixed(4), overBrow, napeDrop: +(by - nape).toFixed(3), turns: rolls.length, tris: idx.length / 3, width: +(ext.max.x - ext.min.x).toFixed(3), height: +(ext.max.y - ext.min.y).toFixed(3), top: +(ext.max.y - by).toFixed(3), depth: +(ext.max.z - ext.min.z).toFixed(3), border: !!D.wrapBorder, turban: tb, cross, scarf: sc, front: +(rimY(0) - browTop).toFixed(4) } };
+  return { mesh, stats: { gap: +gap.toFixed(4), hairOut, hairPts: hairPts.length, brow: +(browLow - browTop).toFixed(4), overBrow, napeDrop: +(by - nape).toFixed(3), turns: rolls.length, tris: idx.length / 3, width: +(ext.max.x - ext.min.x).toFixed(3), height: +(ext.max.y - ext.min.y).toFixed(3), top: +(ext.max.y - by).toFixed(3), depth: +(ext.max.z - ext.min.z).toFixed(3), border: !!D.wrapBorder, turban: tb, cross, scarf: sc, front: +(rimY(0) - browTop).toFixed(4), outward: +outward.toFixed(3) } };
+}
+// ── the veil (Session 1237, L1; OG-109's Aurenne travel column: the head-wrap's end drawn across the face against the road's dust and sun) ──
+// A band of cloth round the head under the wrap: across the face from just under the eyes (6 mm under the lower lid) to 2 cm under the
+// chin (3.5 cm higher round the back, at the nape), rising past the eyes' outer corners over the cheekbones and the ears to tuck 1.5 cm up under the wrap's lowest turn, and round the
+// back from there to the nape. It is laid on a radial map round the head's vertical axis (96 directions, 5 mm bands) of what it covers: the
+// face and the neck, the tucked hair, a beard and moustache where they are; 5 mm clear. Cloth does not follow the lips: down each column it
+// may come in at most 0.45 of what it falls (so from the nose's tip it falls straight to the chin), and round each band at most 0.3 of
+// what it goes round (so it spans from the cheeks to the nose). Its top edge is a rolled hem. Rigid, on the head bone, as the wrap is.
+// In D.veil's colour (the Aurennais' indigo, or the wrap's own); only with a wrap that is not a headscarf, and no ear-rings under it
+function veilOn(D) { return !!(D && D.veil && D.wrap && !D.scarf && !D.helm && !hoodUpOn(D)); }
+function buildVeil(P, G, heads, byName, meshes, hairPts = []) {
+  const R0 = PACK.rest, D = G.dress, hv = PACK.headV || (PACK.headV = [...new Set(PACK.G['body'])].filter(i => R0[i * 3 + 1] > .6)), V = i => new THREE.Vector3(P[i * 3], P[i * 3 + 1], P[i * 3 + 2]);
+  let by = 0, bn = 0; for (const i of hv) if (Math.abs(R0[i * 3]) < .05 && R0[i * 3 + 2] > .08 && R0[i * 3 + 1] > .785 && R0[i * 3 + 1] < .8) { by += P[i * 3 + 1]; bn++; } by /= bn;
+  const bb = new THREE.Box3(); for (const i of hv) if (R0[i * 3 + 1] > .755) bb.expandByPoint(V(i)); const c = bb.getCenter(new THREE.Vector3());
+  const rimY = th => by - .012 - .025 * Math.sin(th) ** 2 - .11 * Math.max(0, -Math.cos(th)) ** 1.5;
+  const eye = Array.from(PACK.G['helper-l-eye']), lid = Math.min(...eye.map(v => P[v * 3 + 1])); let chin = 9; for (const i of hv) if (Math.abs(R0[i * 3]) < .03 && R0[i * 3 + 2] > .11) chin = Math.min(chin, P[i * 3 + 1]);
+  // a beard under it: the front's foot comes down over its lowest card within the face's width, by up to 5 cm more
+  let bLow = 9; for (const m of meshes) if (m.name === 'beard' || m.name === 'moust') { const a = m.geometry.attributes.position.array; for (let i = 0; i < a.length; i += 3) if (Math.abs(a[i]) < .07 && a[i + 2] > .02) bLow = Math.min(bLow, a[i + 1]); }
+  const drop = Math.max(0, Math.min(.05, chin - .02 - (bLow - .006)));
+  const ss = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+  const yTop = th => { const a = Math.abs(Math.atan2(Math.sin(th), Math.cos(th))); return lid - .006 + (rimY(th) + .015 - (lid - .006)) * ss(.85, 1.45, a); }, yBot = th => { const a = Math.abs(Math.atan2(Math.sin(th), Math.cos(th))); return chin - .02 - drop * (1 - ss(.35, .9, a)) + .035 * ss(.7, 1.6, a); }, yLow = chin - .02 - drop;
+  const NT = 96, DY = .005, y0 = yLow - .01, NB = Math.ceil((by + .03 - y0) / DY) + 1, M = new Float32Array(NT * NB), TAU = Math.PI * 2;
+  const put = (x, y, z) => { const b = Math.round((y - y0) / DY); if (b < 0 || b >= NB) return; const a = ((Math.round(Math.atan2(x - c.x, z - c.z) / TAU * NT) % NT) + NT) % NT; M[b * NT + a] = Math.max(M[b * NT + a], Math.hypot(x - c.x, z - c.z)); };
+  const pts = []; for (const i of new Set(PACK.G['body'])) if (R0[i * 3 + 1] > .58 || R0[i * 3 + 1] > .5 && Math.abs(R0[i * 3]) < .08 && R0[i * 3 + 2] > 0) pts.push(V(i)); for (const q of hairPts) pts.push(q);
+  for (const m of meshes) if (m.name === 'beard' || m.name === 'moust') { const a = m.geometry.attributes.position.array; for (let i = 0; i < a.length; i += 3) if (a[i + 1] > yLow - .005) pts.push(new THREE.Vector3(a[i], a[i + 1], a[i + 2])); }
+  for (const q of pts) put(q.x, q.y, q.z);
+  // spread each bin over its neighbours, then let the cloth span: never in faster than it falls or goes round
+  let S = new Float32Array(M.length); for (let b = 0; b < NB; b++) for (let a = 0; a < NT; a++) { let m = 0; for (let da = -1; da <= 1; da++) for (let db = -1; db <= 1; db++) { const bb2 = b + db; if (bb2 >= 0 && bb2 < NB) m = Math.max(m, M[bb2 * NT + (a + da + NT) % NT]); } S[b * NT + a] = m; }
+  for (let b = 0; b < NB; b++) { let m = 0; for (let a = 0; a < NT; a++) m = Math.max(m, S[b * NT + a]); if (!m) for (let a = 0; a < NT; a++) S[b * NT + a] = S[Math.max(0, b - 1) * NT + a]; }
+  for (let it = 0; it < 60; it++) for (let b = 0; b < NB; b++) for (let a = 0; a < NT; a++) { const k = b * NT + a, r = S[k], arc = TAU / NT * r;
+    S[k] = Math.max(r, b > 0 ? S[k - NT] - .45 * DY : 0, b < NB - 1 ? S[k + NT] - .45 * DY : 0, S[b * NT + (a + 1) % NT] - .3 * arc, S[b * NT + (a + NT - 1) % NT] - .3 * arc); }
+  const CL = .005, R = (th, y) => { const u = ((th / TAU) * NT % NT + NT) % NT, v = Math.max(0, Math.min(NB - 1.001, (y - y0) / DY)), a = Math.floor(u), b = Math.floor(v), fu = u - a, fv = v - b, g = (aa, b2) => S[b2 * NT + (aa % NT)];
+    return (g(a, b) * (1 - fu) + g(a + 1, b) * fu) * (1 - fv) + (g(a, b + 1) * (1 - fu) + g(a + 1, b + 1) * fu) * fv + CL; };
+  // the sheet: NT + 1 columns round (the seam at the back), 18 rows from the bottom to the top edge, a little rumpled
+  const NR = 18, pos = [], idx = [], at = (th, y, off = 0) => { const r = R(th, y) + off + .0012 * Math.sin(th * 11 + y * 60); return new THREE.Vector3(c.x + r * Math.sin(th), y, c.z + r * Math.cos(th)); };
+  for (let j = 0; j <= NR; j++) for (let t = 0; t <= NT; t++) { const th = Math.PI + t / NT * TAU, p = at(th, yBot(th) + (yTop(th) - yBot(th)) * j / NR); pos.push(p.x, p.y, p.z); }
+  for (let j = 0; j < NR; j++) for (let t = 0; t < NT; t++) { const a = j * (NT + 1) + t, d = a + NT + 1; idx.push(a, a + 1, d, a + 1, d + 1, d); }
+  // the rolled hem along the top, and a narrower one along the bottom
+  const hem = (yf, r) => { const L = []; for (let t = 0; t <= NT; t++) { const th = Math.PI + t / NT * TAU; L.push(at(th, yf(th), r * .6)); } L[NT] = L[0].clone(); return turnOut(tubeGeom(L, L.map(() => r), 8)); };
+  const parts = [hem(yTop, .0042), hem(yBot, .003)]; let b0 = pos.length / 3; for (const h of parts) { const a = h.attributes.position.array; for (const v of a) pos.push(v); for (const i of h.index.array) idx.push(b0 + i); b0 += a.length / 3; }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('aBase', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals();
+  // the numbers: how far the top edge is under the lower lid within 0.85 rad of the front (the eyes' width and past), the nearest point of
+  // what it covers to the cloth, and how many of those points are out through it
+  let eyeGap = 9; for (let t = 0; t < NT; t++) { const th = Math.PI + t / NT * TAU; if (Math.abs(Math.atan2(Math.sin(th), Math.cos(th))) < .85) eyeGap = Math.min(eyeGap, lid - yTop(th)); }
+  let gap = 1, out = 0, tested = 0; for (const q of pts) { const th = Math.atan2(q.x - c.x, q.z - c.z); if (q.y < yBot(th) || q.y > yTop(th)) continue; tested++; const d = R(th, q.y) - Math.hypot(q.x - c.x, q.z - c.z); gap = Math.min(gap, d); if (d < .001) out++; }
+  g.translate(-heads['head'].x, -heads['head'].y, -heads['head'].z);
+  const col = sRGB(...(Array.isArray(D.veil) ? D.veil : D.wrap)), mesh = new THREE.Mesh(g, clothMat(col, 'wool', { side: THREE.DoubleSide, scale: 34, inner: .5 })); mesh.name = 'veil'; mesh.castShadow = true; mesh.receiveShadow = true; byName['head'].add(mesh);
+  return { mesh, stats: { tris: idx.length / 3, eyeGap: +eyeGap.toFixed(4), gap: +gap.toFixed(4), out, tested, overChin: +(chin - yLow).toFixed(3), beardDrop: +drop.toFixed(3), height: +(yTop(0) - yLow).toFixed(3) } };
 }
 // ── a head-wrap's tail (Session 1018, L1; OG-044's and OG-056's women: a scarf's end hanging from the wrap down the back) ──
 // The wrap's loose end comes out from under its lowest turn (it starts 3 cm up, inside the turns) behind one ear and hangs down the back of the neck onto the shoulder
@@ -2992,7 +3069,7 @@ export function makePerson(G, o = {}) {
   if (D.cloak && D.hood === 'up') { const H = buildHoodUp(P, G, meshes); meshes.push(...H.meshes); hoodStats = H.stats; }
   // the coat's hood (Session 1152, OG-109's Mark: fur-lined hooded coats), the cloak's hood in the coat's wool, its hem clear of the coat's
   // shoulders and its fur collar, and with the coat's fur round the face
-  else if (coatOn(D) && D.coatHood === 'up') { const H = buildHoodUp(P, { ...G, dress: { ...D, cloak: D.coat, tartan: null, tartanLine: null } }, meshes, { clr: D.coatFur ? .075 : .05, fur: D.coatFur }); meshes.push(...H.meshes); hoodStats = H.stats; }
+  else if (coatOn(D) && D.coatHood === 'up') { const H = buildHoodUp(P, { ...G, dress: { ...D, cloak: D.coat, tartan: null, tartanLine: null, burnous: false } }, meshes, { clr: D.coatFur ? .075 : .05, fur: D.coatFur }); meshes.push(...H.meshes); hoodStats = H.stats; }
   root.add(bones[0]); root.updateMatrixWorld(true);
   for (const m of meshes) { root.add(m); m.updateMatrixWorld(true); m.bind(skeleton); m.castShadow = !m.noCast; m.receiveShadow = true; m.frustumCulled = false; }
   // eyes: a white ball with an iris, set in the helper's sockets, carried by the head
@@ -3007,9 +3084,11 @@ export function makePerson(G, o = {}) {
   // the eyepatch (Session 1079), on the face under whatever is on the head; its cord over the hair
   let patchStats = null; if (D.eyepatch) patchStats = buildEyepatch(P, G, heads, byName, meshes).stats;
   // hoop earrings (Session 995), when no raised hood covers the ears
-  let earStats = null; if (D.earrings && !hoodUpOn(D)) earStats = buildEarrings(P, G, heads, byName).stats;
+  let earStats = null; if (D.earrings && !hoodUpOn(D) && !veilOn(D)) earStats = buildEarrings(P, G, heads, byName).stats;
   // the head-wrap (Session 994), over the same tucked hair, when no helm or raised hood is on the head
   let wrapStats = null; if (D.wrap && !D.helm && !hoodUpOn(D)) { const hp = []; for (const m of meshes) if (m.name === 'hair') { const a = m.geometry.attributes.position.array; for (let i = 0; i < a.length; i += 3) hp.push(new THREE.Vector3(a[i], a[i + 1], a[i + 2])); } let bt = -9; const bm = meshes.find(m => m.name === 'brows'); if (bm) { const a = bm.geometry.attributes.position.array; for (let i = 1; i < a.length; i += 3) bt = Math.max(bt, a[i]); } wrapStats = buildWrap(P, G, heads, byName, hp, bt).stats; }
+  // the veil (Session 1237), the wrap's end across the face, over the tucked hair and the beard
+  let veilStats = null; if (wrapStats && veilOn(D)) { const hp = []; for (const m of meshes) if (m.name === 'hair') { const a = m.geometry.attributes.position.array; for (let i = 0; i < a.length; i += 3) hp.push(new THREE.Vector3(a[i], a[i + 1], a[i + 2])); } veilStats = buildVeil(P, G, heads, byName, meshes, hp).stats; }
   // the circlet (Session 1206), over the hair, when nothing else is on the head
   let circletStats = null; if (circletOn(D)) circletStats = buildCirclet(P, G, heads, byName, meshes).stats;
   // pose: arms down from the A-pose, a slight bend at the elbow, weight on one leg, the head turned a little
@@ -3140,7 +3219,7 @@ export function makePerson(G, o = {}) {
   // robe's raised hood under a tier takes that tier's dressing (a circlet, antlers, horns, the crescent or the halo) and no helm
   let tierFit = null; if (D.tier && (tierHelmOn(D) || hoodUpOn(D) && !D.helm)) { root.updateMatrixWorld(true); const F = fitHead({ root, skeleton, byName, meshes }), h = D.helm ? tierHelm(D.tier, F, { bold: true, closed: true }) : hoodDress(D.tier, F, { bold: true });
     if (h) { byName['head'].add(h.group); tierFit = { F, h }; const st = { tier: D.tier, tris: h.tris, draws: h.draws, gap: h.gap, size: h.size, above: h.top }; if (D.helm) helmStats = st; else hoodStats = { ...(hoodStats || {}), dress: st }; } }
-  root.position.y = -(chairSt ? chairSt.ground : sandalSt ? sandalSt.ground : minY); return { root, skeleton, byName, meshes, coldLook: { eyes: G.eyes, skin: G.skin }, buttons: buttonStats, hair: hairStats, cloak: cloakStats, tabard: tabardStats, sash: sashStats, shoulderWrap: shoulderWrapStats, wrap: wrapStats, wrapTail: tailStats, earrings: earStats, circlet: circletStats, eyepatch: patchStats, necklace: neckStats, beltCoins: beltCoinStats, beltCharms: charmStats, sandals: sandalSt, sashBelt: sashBeltSt, cord: cordStats, lacing: laceStats, skirtHands, hood: hoodStats, brows: browStats, helm: helmStats, mail: mailSt, shield: shieldStats, spear: spearStats, crossbow: crossbowStats, staff: staffStats, basket: basketStats, legWraps: legWrapSt, chair: chairSt, coat: coatSt, coatHood: coatHoodSt, tierFit };
+  root.position.y = -(chairSt ? chairSt.ground : sandalSt ? sandalSt.ground : minY); return { root, skeleton, byName, meshes, coldLook: { eyes: G.eyes, skin: G.skin }, buttons: buttonStats, hair: hairStats, cloak: cloakStats, tabard: tabardStats, sash: sashStats, shoulderWrap: shoulderWrapStats, wrap: wrapStats, veil: veilStats, wrapTail: tailStats, earrings: earStats, circlet: circletStats, eyepatch: patchStats, necklace: neckStats, beltCoins: beltCoinStats, beltCharms: charmStats, sandals: sandalSt, sashBelt: sashBeltSt, cord: cordStats, lacing: laceStats, skirtHands, hood: hoodStats, brows: browStats, helm: helmStats, mail: mailSt, shield: shieldStats, spear: spearStats, crossbow: crossbowStats, staff: staffStats, basket: basketStats, legWraps: legWrapSt, chair: chairSt, coat: coatSt, coatHood: coatHoodSt, tierFit };
 }
 
 // palettes from OG-025: undyed wool, browns, slate blue, madder red; furs; ash-blond to red hair; pale to weathered skin
@@ -3163,7 +3242,7 @@ export function markGenome(rnd, g, o = {}) {
 const hex = c => '#' + c.map(v => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, '0')).join('');
 const unhex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
 const r3 = v => Math.round(v * 1000) / 1000, round = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, r3(v)]));
-export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'sash', 'sashBorder', 'wrap', 'wrapBorder', 'earrings', 'necklace', 'beltCoins', 'sashBelt', 'sandals', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'legWraps', 'scarfPrint', 'basket', 'basketCloth', 'amulet', 'charms', 'dots', 'shoulderWrap', 'eyepatch', 'staff', 'chair', 'waistcoat', 'tartan', 'tartanLine', 'coat', 'coatFur', 'bands', 'bandsMotif', 'robeStripe', 'robeStripeLine', 'circlet', 'circletStone', 'gownBorder'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, sashSide: 'L', sashPrint: true, sashKnot: true, turban: false, scarf: false, wrapTail: null, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', scales: false, spearHead: null, crossbowMake: null, amuletSide: 'L', shoulderWrapSide: 'L', eyepatchSide: 'L', staffMake: null, dotsStyle: 'powder', waistcoatLeather: false, coatLen: .75, coatHood: null, tier: null };
+export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'sash', 'sashBorder', 'wrap', 'wrapBorder', 'earrings', 'necklace', 'beltCoins', 'sashBelt', 'sandals', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'legWraps', 'scarfPrint', 'basket', 'basketCloth', 'amulet', 'charms', 'dots', 'shoulderWrap', 'eyepatch', 'staff', 'chair', 'waistcoat', 'tartan', 'tartanLine', 'coat', 'coatFur', 'bands', 'bandsMotif', 'robeStripe', 'robeStripeLine', 'circlet', 'circletStone', 'gownBorder', 'burnousStripe', 'veil'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, sashSide: 'L', sashPrint: true, sashKnot: true, turban: false, scarf: false, wrapTail: null, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', scales: false, spearHead: null, crossbowMake: null, amuletSide: 'L', shoulderWrapSide: 'L', eyepatchSide: 'L', staffMake: null, dotsStyle: 'powder', waistcoatLeather: false, coatLen: .75, coatHood: null, tier: null, burnous: false };
 export function toSaved(G) {
   const D = G.dress || {}, dress = {}; for (const k of GARMENTS) if (D[k]) dress[k] = hex(D[k]); dress.skirt = D.skirt || null; for (const [k, d] of Object.entries(DRESS_FLAGS)) if (D[k] != null && (typeof D[k] === 'number' ? r3(D[k]) : D[k]) !== d) dress[k] = typeof D[k] === 'number' ? r3(D[k]) : D[k];
   const style = G.hair?.style ?? ((G.hairLen ?? .3) < .45 ? 'short' : 'loose');
