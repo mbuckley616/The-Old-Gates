@@ -14,6 +14,9 @@ const r = await page.evaluate((KINDS) => { forceTime(11); const raf = window.req
   KINDS.forEach((n, i) => { px = x0 + i * 14; pz = z0; const x = px + fwdX * 2.5, z = pz + fwdZ * 2.5;
     const e = buildZoneEnemy(WORLD.scene, [], x, z, n, null); e.locked = false; e.mesh.visible = true; if (!e.mesh.parent) WORLD.scene.add(e.mesh);
     e.mesh.position.set(x, activeTerrainH(x, z), z); e.mesh.updateMatrixWorld(true);
+    // on the new look a human foe wears the builder's body (F4), hung on its driver by hbTick one a frame: built here at once, so the
+    // body searched is the one you see, the cloak with it (Session 1257)
+    const rig = e.limbs && e.limbs.person; if (rig && HB_RIGS.has(rig) && !rig.hb) { if (!rig.hbG) rig.hbG = hbFoeGenome(rig); hbAttach(rig); if (rig.hb) { hbLevel(rig, 0); hbPose(rig); } }
     e.hp = 0; killZoneEnemy(e, WORLD.scene, ' (POWER)'); const c = ZONE_CORPSES[ZONE_CORPSES.length - 1];
     if (!c.items.length) c.items.push({ name: 'Gold Coins', ico: '●', type: 'gold', value: 5, qty: 1 });
     const pl = { x: px, z: pz };
