@@ -752,6 +752,16 @@
       for(let k=ZONE_CORPSES.length-1;k>=0;k--)if(ZONE_CORPSES[k].bramBody&&ZONE_CORPSES[k].zone==='world')ZONE_CORPSES.splice(k,1);
       buildBramBody(group,S._forge.x,worldH(S._forge.x,S._forge.z),S._forge.z,'world');}
     S.reach=t_reach(sol,site);
+    /* S1216 — a door that faces the next building across a lane of 2.5 m had its step-out point (2.4 out) in that building's
+       footprint (14 of Dunmore's 58 on the new look): it is pulled back along the same line, a quarter metre short of the first
+       solid, once every solid of the town stands. A clear exit is left as it was; the keeper's door and the inn's go with it. */
+    {const R=.3,hit=(x,z)=>sol.some(s=>{const dx=x-s.cx,dz=z-s.cz;if(s.c!==undefined){const lx=dx*s.c-dz*s.s,lz=dx*s.s+dz*s.c;return Math.abs(lx)<s.rx+R&&Math.abs(lz)<s.rz+R;}return Math.abs(dx)<s.rx+R&&Math.abs(dz)<s.rz+R;});
+      for(const h of houses){if(h.exitX==null||!hit(h.exitX,h.exitZ))continue;const L=Math.hypot(h.exitX-h.doorX,h.exitZ-h.doorZ);if(L<1)continue;
+        const ux=(h.exitX-h.doorX)/L,uz=(h.exitZ-h.doorZ)/L;let t=.35;while(t<L&&!hit(h.doorX+ux*t,h.doorZ+uz*t))t+=.05;
+        const u=Math.max(.6,t-.3),nx=h.doorX+ux*u,nz=h.doorZ+uz*u;if(hit(nx,nz))continue;
+        for(const n of snpcs)if(n.sched&&n.sched.door&&Math.abs(n.sched.door.x-h.exitX)<.01&&Math.abs(n.sched.door.z-h.exitZ)<.01){n.sched.door.x=nx;n.sched.door.z=nz;}
+        if(S.innDoor&&Math.abs(S.innDoor.x-h.exitX)<.01&&Math.abs(S.innDoor.z-h.exitZ)<.01){S.innDoor.x=nx;S.innDoor.z=nz;}
+        h.exitX=nx;h.exitZ=nz;}}
     if(kitG){S.kitTris=PKIT.mergeByMaterial(kitG);S.kitCalls=kitG.children.length; // S1072 — the kit's houses, one mesh per material
       const lo=new THREE.Mesh(mergeGeos(kitLo),VC_MAT);lo.name='kit houses far';lo.userData.noBake=true;lo.castShadow=true;lo.receiveShadow=true;lo.visible=false;group.add(lo);kitLo.forEach(([g])=>g.dispose()); /* S1073 — and their far copy */
       let r=0;for(const l of use)if(l.kit)r=Math.max(r,Math.hypot(l.x-cx,l.z-cz)+(l.kit.r||Math.max(l.w,l.d)/2)); /* S1143 — the keep's reach is its bawn's */S.kitLod={hi:kitG,lo,x:cx,z:cz,r,tris:lo.geometry.attributes.position.count/3};}
