@@ -21,9 +21,15 @@ const r = await page.evaluate(() => { const keep = { w: EQ.weapon, o: EQ.offhand
       m['thigh ' + s] = seg('th' + s, 'kn' + s, 'upperleg01.' + t, 'lowerleg01.' + t); m['shin ' + s] = seg('kn' + s, 'an' + s, 'lowerleg01.' + t, 'foot.' + t); }
     m.spine = seg('hips', 'neck', 'root', 'neck01');
     const worst = Object.entries(m).sort((a, b) => b[1] - a[1])[0];
+    // what the hands hold, against the forearm that holds it: each axis of a piece's copy makes the same angle with the builder's forearm
+    // as the piece with the driver's (S1253), and the distance of its middle from the forearm's line is the same
+    let held = 0, off = 0; for (const h of R.hbHeld || []) { const A = h.arm, dF = W(A[1]).sub(W(A[0])).normalize(), bF = W(A[3]).sub(W(A[2])).normalize();
+      const qo = h.o.getWorldQuaternion(new THREE.Quaternion()), qc = h.c.children[0].getWorldQuaternion(new THREE.Quaternion());
+      for (const u of [[1, 0, 0], [0, 1, 0], [0, 0, 1]]) { const a = new THREE.Vector3(...u).applyQuaternion(qo), b = new THREE.Vector3(...u).applyQuaternion(qc); held = Math.max(held, Math.abs(ang(a, dF) - ang(b, bF))); }
+      if (!h.f) { const line = (p, e, d) => p.clone().sub(e).cross(d).length(); off = Math.max(off, Math.abs(line(W(h.o), W(A[0]), dF) - line(W(h.c.children[0]), W(A[2]), bF))); } }
     const y0 = W(R.root).y, foot = o => Math.min(W(o[0]).y, W(o[1]).y) - y0;
     return { worst: worst[0], deg: worst[1], all: m, head: +(W(by.head).y - y0).toFixed(2), headD: +(W(B.head).y - y0).toFixed(2),
-      foot: +foot([by['foot.L'], by['foot.R']]).toFixed(3), footD: +foot([B.anL, B.anR]).toFixed(3) }; };
+      foot: +foot([by['foot.L'], by['foot.R']]).toFixed(3), footD: +foot([B.anL, B.anR]).toFixed(3), held: +held.toFixed(2), heldN: (R.hbHeld || []).length, off: +off.toFixed(4) }; };
   const tick = (n, st) => { for (let i = 0; i < n; i++) { if (st.move) { px += .05 * (st.sprinting ? 1.6 : 1); } tpUpdate(1 / 60, { moving: !!st.move, sprinting: !!st.sprinting, camY: 1.6, now: performance.now() + i * 16.7, roll: null }); } };
   const reset = () => { _sneaking = false; blocking = false; onGround = true; velY = 0; swingT = 0; castT = 0; dead = false; try { _bowDrawing = false; _bowDrawT = 0; } catch (e) {} };
   const run = (name, set, st, n) => { reset(); set(); tick(n || 40, st || {}); out[name] = measure(); reset(); };
@@ -52,6 +58,8 @@ for (const [k, v] of Object.entries(r)) console.log(k.padEnd(10), String(v.deg).
 const rest = r.rest.deg, moving = Object.entries(r).filter(([k]) => k !== 'rest');
 check('at rest each limb of the builder\'s body lies along the driver\'s within 20°', rest < 20, r.rest);
 check('in every state the copy holds as it does at rest (no limb more than 12° further off): walk, sprint, sneak, block, swing, cast, jump, bow, death', moving.every(([, v]) => v.deg < rest + 12), Object.fromEntries(moving.map(([k, v]) => [k, [v.worst, v.deg]])));
+const hs = Object.entries(r).filter(([, v]) => v.heldN > 0);
+check('what is held keeps its angle to the builder\'s forearm as to the driver\'s (within 1°), and the shield its distance from it (within 5 mm), in every state', hs.length >= 8 && hs.every(([, v]) => v.held < 1 && v.off < .005), Object.fromEntries(hs.map(([k, v]) => [k, [v.heldN, v.held, v.off]])));
 check('the death fall lays the builder\'s body down: its head under 0.6 m above the root', r.dead.head < .6, r.dead);
 console.log('swim', JSON.stringify({ crown: r.swim.crown, eye: r.swim.eye, st: r.swim.st }));
 check('swimming, the builder\'s crown is a quarter metre over the sea (±3 cm), its eyes over the water', Math.abs(r.swim.crown - .25) <= .03 && r.swim.eye > 0, { crown: r.swim.crown, eye: r.swim.eye });

@@ -166,7 +166,7 @@ function tpBuild(lookIn,ppIn,reuse){
       R.hbHeld=[];const by=rig.hb.P.byName,sw=HBODY.swap,side=s=>sw?(s==='L'?'R':'L'):s;
       for(const [o,sd,grip] of [[R.weapon,'R',true],[R.weaponL,'L',true],[R.shield,'L',false],[R.torch,'L',true],[R.tome,'L',false]]){if(!o)continue;
         const c=new THREE.Group();c.matrixAutoUpdate=false;c.name='held';c.add(tpHBCopy(o,true));rig.hb.root.add(c);
-        const s=side(sd);R.hbHeld.push({o,c,f:grip?[2,3,4,5].map(f=>by[`finger${f}-2.${s}`]).filter(Boolean):null});}
+        const s=side(sd);R.hbHeld.push({o,c,f:grip?[2,3,4,5].map(f=>by[`finger${f}-2.${s}`]).filter(Boolean):null,arm:[B['el'+sd],B['wr'+sd],by['lowerarm01.'+s],by['wrist.'+s]]});}
       // Michael's D on #99: an empty hand is a folded fist, and a hand that holds something closes on it; a tome is held open-handed
       hbCloseFist(by,side('R'));hbThumb(by,side('R'));if(!R.tome){hbCloseFist(by,side('L'));hbThumb(by,side('L'));}else for(let f=1;f<=5;f++)for(let j=1;j<=3;j++){const b=by[`finger${f}-${j}.${side('L')}`];if(b)b.quaternion.identity();} /* a body carried over may have closed it */
       root.traverse(o=>{if(o.isMesh)o.userData.tp=true;});}}
@@ -177,8 +177,16 @@ function tpHBCopy(o,top){const k=o.isMesh?new THREE.Mesh(o.geometry,o.material):
   if(!top){k.position.copy(o.position);k.quaternion.copy(o.quaternion);k.scale.copy(o.scale);}for(const ch of o.children)k.add(tpHBCopy(ch,false));return k;}
 // F10 — each frame after tpPose: the builder's bones copy the driver's, and what the hands hold follows its driver piece
 const _tpHm=new THREE.Matrix4(),_tpHv=new THREE.Vector3(),_tpHv2=new THREE.Vector3();
+// S1253 — each piece is carried from the driver's forearm to the builder's: turned about the elbow by the turn that takes the driver's
+// elbow-to-wrist line onto the builder's, and moved with it (the two bodies' forearms rest 18° apart, which tilted the blade and left
+// the shield on the driver's arm); a grip is then set in the builder's fingers as before
+const _tpHq=new THREE.Quaternion(),_tpHa=new THREE.Vector3(),_tpHb=new THREE.Vector3(),_tpHe=new THREE.Vector3(),_tpHm2=new THREE.Matrix4();
 function tpHBHold(R){const H=R.rig.hb;if(!H||!R.hbHeld)return;R.root.updateMatrixWorld(true);_tpHm.copy(H.root.matrixWorld).invert();
   for(const h of R.hbHeld){h.c.matrix.multiplyMatrices(_tpHm,h.o.matrixWorld);
+    const A=h.arm;if(A&&A[0]&&A[1]&&A[2]&&A[3]){const P=o=>new THREE.Vector3().setFromMatrixPosition(o.matrixWorld).applyMatrix4(_tpHm);
+      const De=P(A[0]),Be=P(A[2]);_tpHa.copy(P(A[1])).sub(De);_tpHb.copy(P(A[3])).sub(Be);
+      if(_tpHa.lengthSq()>1e-10&&_tpHb.lengthSq()>1e-10){_tpHq.setFromUnitVectors(_tpHa.normalize(),_tpHb.normalize());
+        _tpHm2.makeRotationFromQuaternion(_tpHq).setPosition(_tpHe.copy(De).applyQuaternion(_tpHq).negate().add(Be));h.c.matrix.premultiply(_tpHm2);}}
     if(h.f&&h.f.length){const v=_tpHv.set(0,0,0);for(const b of h.f)v.add(_tpHv2.setFromMatrixPosition(b.matrixWorld));v.multiplyScalar(1/h.f.length).applyMatrix4(_tpHm);h.c.matrix.setPosition(v);}
     h.c.matrixWorldNeedsUpdate=true;}}
 function tpHBPose(R){if(!R||!R.rig.hb)return;hbPose(R.rig);R.root.updateMatrixWorld(true);tpHBHold(R);}
