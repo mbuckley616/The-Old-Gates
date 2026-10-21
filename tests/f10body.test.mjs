@@ -103,6 +103,26 @@ const sig = await drive(() => { const out = {}; for (const t of [4, 5, 6, 7, 8, 
 console.log('  signatures:', JSON.stringify(sig));
 check('plate carries its tier\'s signature and glow: Steel plain, Mithril fluted, Adamant heavy, Obsidian faceted, Draconic scaled, Demonic spiked, Cosmic inlaid',
   sig.Steel === 'plate sheet' && ['Mithril:fluted', 'Adamant:heavy', 'Obsidian:faceted', 'Draconic:scaled', 'Demonic:spiked', 'Cosmic:inlaid'].every(x => { const [n, k] = x.split(':'); return sig[n] === `plate:${k}+glow sheet:${k}+glow`; }), sig);
+// the light line's hood (Session 1269): the builder's hood up with no cloak, and over a cloak that has none of its own
+const hood = await drive(() => { const m = MATERIALS[2], out = {}, names = () => { const k = new Set(); TP.rig.rig.hb.root.traverse(o => { if (o.isMesh && o.visible && /^(hood|cloak)/.test(o.name)) k.add(o.name.replace(/\d+$/, '')); }); return [...k].sort().join(','); };
+  EQ.back = null; EQ.head = { name: m.name + ' Hood', slot: 'head', material: m.name, tier: 3, line: 'light' }; for (let i = 0; i < 4; i++) step(); out.alone = names();
+  EQ.back = { name: 'Wool Cloak', slot: 'back', cloak: 'wool' }; for (let i = 0; i < 4; i++) step(); out.cloak = names();
+  EQ.back = null; EQ.head = { name: m.name + ' Cowl', slot: 'head', material: m.name, tier: 3, line: 'robe' }; for (let i = 0; i < 4; i++) step(); out.robe = names();
+  out.robeCol = TP.rig.rig.hbG.dress.cowl && TP.rig.rig.hbG.dress.cowl.map(v => Math.round(v * 255)).join(',');
+  EQ.head = null; EQ.back = null; for (let i = 0; i < 4; i++) step(); out.none = names(); return out; });
+console.log('  light hood:', JSON.stringify(hood));
+check('the light line\'s hood is the builder\'s hood up, alone and over a hoodless cloak; gone when taken off', /hoodUp/.test(hood.alone) && !/cloak/.test(hood.alone) && /cloak/.test(hood.cloak) && /hoodUp/.test(hood.cloak) && hood.none === '', hood);
+check('the robe line\'s cowl is the same hood up in the robe\'s dye (Session 1271: Iron\'s 0x2e3e5e)', /hoodUp/.test(hood.robe) && hood.robeCol === '46,62,94', hood);
+// the bow's draw on the builder's fingers (Session 1270): the right fist opens into the archer's hook as the string comes back, the little
+// finger left folded, and closes again when the arrow is loosed
+const bow = await drive(() => { const out = {}; EQ.weapon = { name: 'Hunting Bow', slot: 'weapon', weaponShape: 'bow', weight: 2 }; EQ.offhand = null; for (let i = 0; i < 6; i++) step();
+  const R = TP.rig, by = R.rig.hb.P.byName, sd = HBODY.swap ? 'L' : 'R', W = n => new THREE.Vector3().setFromMatrixPosition(by[n].matrixWorld);
+  const open = () => { R.root.updateMatrixWorld(true); return { tip: +((W(`finger2-3.${sd}`).distanceTo(W(`metacarpal2.${sd}`)) + W(`finger3-3.${sd}`).distanceTo(W(`metacarpal3.${sd}`))) / 2).toFixed(4), pinky: +W(`finger5-3.${sd}`).distanceTo(W(`metacarpal4.${sd}`)).toFixed(4) }; };
+  out.rest = open(); _bowDrawing = true; _bowDrawT = 0; for (let i = 0; i < 40; i++) step(); out.drawn = open();
+  _bowDrawing = false; _bowDrawT = 0; for (let i = 0; i < 40; i++) step(); out.after = open(); EQ.weapon = null; for (let i = 0; i < 4; i++) step(); return out; });
+console.log('  bow draw:', JSON.stringify(bow));
+check('drawing a bow opens the right fist into the hook (the first fingers\' tips 2 cm further out), the little finger folded, and closes it after',
+  bow.drawn.tip > bow.rest.tip + .02 && Math.abs(bow.drawn.pinky - bow.rest.pinky) < .002 && Math.abs(bow.after.tip - bow.rest.tip) < .002, bow);
 check('in third person the new body bakes no middle level (it is baked when first person asks)', worn.mid === false, { mid: worn.mid });
 const sword = worn.held.find(h => h.kit === 'sword'), shield = worn.held.find(h => h.kit === 'kite');
 check('a copy of the sword is carried in the builder\'s group with its grip in the right fist (within 2 cm), the shield with it', sword && sword.inBuilder && sword.meshes > 0 && sword.gap < .02 && shield && shield.inBuilder && shield.meshes > 0, worn.held);
