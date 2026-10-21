@@ -23,7 +23,8 @@ const r = await page.evaluate(KEYS => {
     // on top); r128's boneTransform reads the bones' world matrices, so the posed point is in the world, with that scale in it, while hp
     // is in the mesh's own frame. Both are read in the mesh's frame (inv), the body's own size, where the 2 cm bins and the limits
     // below were set; before F2a the root's scale was about 1 and the two frames all but agreed
-    const bt = (i, v) => mesh.boneTransform(i, v).applyMatrix4(inv);
+    // 0.170 has no boneTransform: applyBoneTransform takes the bind-pose point in the vector and skins it in place, the same sum
+    const bt = (i, v) => (mesh.boneTransform ? mesh.boneTransform(i, v) : mesh.applyBoneTransform(i, v.fromBufferAttribute(pa, i))).applyMatrix4(inv);
     let worst = 0, pokes = 0, frames = 0; const v = new THREE.Vector3(), hp = new THREE.Vector3(), inv = new THREE.Matrix4();
     for (let f = 0; f < 24; f++) {
       R.anim(f * .055, .055, 'walk'); R.obj.updateMatrixWorld(true); mesh.skeleton.update(); inv.copy(mesh.matrixWorld).invert();
