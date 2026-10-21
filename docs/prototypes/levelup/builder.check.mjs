@@ -920,6 +920,30 @@ if (!process.argv.includes('--shots-only')) { const page = await browser.newPage
   for (const k of ['woman', 'man']) for (const s of ['L', 'R']) { const r = e[k][s]; check(`the ${k}'s ${s === 'L' ? 'left' : 'right'} sleeve ends square to the forearm: at one place of its cut its points spread ${r.square.cm} cm along the bone (${r.square.n} points), the old cut at a plain |x| ${r.plain.cm} cm`, r.square.cm < 1 && r.plain.cm > 2 * r.square.cm, r); }
   check(`no skin is left off under the sleeve's end: ${e.skin.open} of ${e.skin.past} body triangles past the cut are undrawn (the old region left ${e.skin.oldOpen} past rest |x| .39)`, e.skin.open === 0 && e.skin.past > 50, e.skin);
   check('the square sleeve: no page errors', errs.length === 0, errs.slice(0, 3)); await page.close(); }
+// a band round the neck stops at the neck's base (Session 1230; S1220's note): at each of 48 angles round the neck's axis, a ray out
+// from it every millimetre meets the tunic's rest surface; from the band's top (.606) down to its foot the surface may stand out no more
+// than 2.2 cm past where it is at the top, nor 2 mm in one millimetre down (a slope of 63°), where the old foot (a plain rest .578) ran out
+// onto the shoulders' slope; over the front the foot is where it was; the band's depth down the cloth is 2.8 cm (the gown's) and 2.6 (the
+// Mark's woven bands) all round, within 2.5 mm (the table's smoothing only lifts a foot)
+if (!process.argv.includes('--shots-only')) { const page = await browser.newPage({ viewport: { width: 640, height: 360 } }); const errs = []; page.on('pageerror', e => errs.push(String(e)));
+  await page.goto(`http://localhost:${port}/builder.html?still&w=640&h=360&seed=check`); await page.waitForFunction(() => window.__done || window.__err, null, { timeout: 300000 });
+  const e = await page.evaluate(async () => { const K = await import('./people.js'), PK = await K.loadPack(), R0 = PK.rest, ix = PK.R.tunic, tri = [];
+    for (let t = 0; t < ix.length; t += 3) { const ys = [0, 1, 2].map(j => R0[ix[t + j] * 3 + 1]); if (Math.max(...ys) > .53 && Math.min(...ys) < .615) tri.push([0, 1, 2].map(j => new Array(3).fill(0).map((_, c) => R0[ix[t + j] * 3 + c]))); }
+    const hit = (y, a) => { const d = [Math.sin(a), 0, Math.cos(a)], o = [0, y, .025]; let best = 0; for (const [A, B, C] of tri) { if (Math.max(A[1], B[1], C[1]) < y || Math.min(A[1], B[1], C[1]) > y) continue;
+      const e1 = B.map((v, k) => v - A[k]), e2 = C.map((v, k) => v - A[k]), cr = (u, v) => [u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]], dot = (u, v) => u[0] * v[0] + u[1] * v[1] + u[2] * v[2];
+      const p = cr(d, e2), det = dot(e1, p); if (Math.abs(det) < 1e-12) continue; const sv = o.map((v, k) => v - A[k]), u = dot(sv, p) / det; if (u < 0 || u > 1) continue; const q = cr(sv, e1), w = dot(d, q) / det; if (w < 0 || u + w > 1) continue;
+      const t = dot(e2, q) / det; if (t > 0 && t < .3) best = Math.max(best, t); } return best; };
+    const walk = (a, foot) => { let r0 = 0, out = 0, len = 0, r = 0, step = 0; for (let y = .606; y >= foot - 1e-6; y -= .001) { const h = hit(y, a); if (!h) continue; if (!r0) r0 = h; else { len += Math.hypot(.001, h - r); step = Math.max(step, h - r); } r = h; out = Math.max(out, h - r0); } return { out, len, step }; };
+    const rows = []; for (let i = 0; i < 48; i++) { const a = (i / 48 - .5) * Math.PI * 2 + 1e-3, x = Math.sin(a) * .05, z = .025 + Math.cos(a) * .05, f = K.neckBandY(x, z), f2 = K.neckBandY(x, z, .026);
+      rows.push({ deg: Math.round(a * 180 / Math.PI), foot: f, n: walk(a, f), o: walk(a, .578), m: walk(a, f2) }); }
+    const mx = k => Math.max(...rows.map(r => r[k].out)), front = rows.filter(r => Math.abs(r.deg) <= 45);
+    const st = k => +(Math.max(...rows.map(r => r[k].step)) * 1000).toFixed(1); return { step: st('n'), stepOld: st('o'), stepMark: st('m'), out: +(mx('n') * 100).toFixed(2), old: +(mx('o') * 100).toFixed(2), mark: +(mx('m') * 100).toFixed(2), worst: rows.reduce((a, r) => r.o.out > a.o.out ? r : a).deg,
+      front: +(Math.max(...front.map(r => Math.abs(r.foot - .578))) * 1000).toFixed(2), lift: +((Math.max(...rows.map(r => r.foot)) - .578) * 1000).toFixed(1),
+      len: [Math.min(...rows.map(r => r.n.len)), Math.max(...rows.map(r => r.n.len)), Math.min(...rows.map(r => r.m.len)), Math.max(...rows.map(r => r.m.len))].map(v => +(v * 100).toFixed(2)) }; });
+  check(`the neck's border stops at the neck's base: the surface under it stands out ${e.out} cm at most past its top all round (the woven bands' ${e.mark}), at most ${e.step} mm in a millimetre down (${e.stepMark}), where the old foot at rest .578 ran ${e.old} cm out onto the shoulder (at ${e.worst}°), ${e.stepOld} mm in a millimetre`, e.out < 2.2 && e.mark < 2.2 && e.step < 2 && e.stepMark < 2 && e.old > 3.5 && e.stepOld > 3, e);
+  check(`the border's foot is where it was over the front (within ${e.front} mm of .578 within 45° of the middle) and rises at most ${e.lift} mm at the back of the shoulders; the band's own depth down the cloth is ${e.len[0]}–${e.len[1]} cm (2.8), the woven bands' ${e.len[2]}–${e.len[3]} (2.6)`,
+    e.front < 1 && e.lift > 5 && e.lift < 15 && Math.abs(e.len[0] - 2.8) < .25 && Math.abs(e.len[1] - 2.8) < .25 && Math.abs(e.len[2] - 2.6) < .25 && Math.abs(e.len[3] - 2.6) < .25, e);
+  check('the neck\'s border: no page errors', errs.length === 0, errs.slice(0, 3)); await page.close(); }
 const shotArg = process.argv.find(a => a.startsWith('--shots') && a !== '--shots-only');
 if (shotArg) { const only = shotArg.split('=')[1];
   const shot = async (name, q, w = 1920, h = 1080, panel = false, crop = null) => { if (only && !only.split(',').some(o => name.includes(o))) return; const page = await browser.newPage({ viewport: { width: w, height: h } }); const errs = []; page.on('pageerror', e => errs.push(String(e)));
@@ -1223,6 +1247,9 @@ if (shotArg) { const only = shotArg.split('=')[1];
   // woven band, and a striped robe's open sleeve; the same two gown views from the build before are builder-sleeve-*-before.jpg
   { const dq = d => encodeURIComponent(JSON.stringify(d)), bare = { cloak: null, hood: null, wrap: null, wrapTail: null, sash: null, mantle: null, apron: null, bib: false, cuffs: null, cuffBand: null },
       red = { ...bare, tunic: [.6, .14, .1], skirt: 'long', skirtColor: [.6, .14, .1] };
+    // the neck's border at the neck's base (Session 1230): the red gown with no necklace from the side and the back; the same from the
+    // build before are builder-neck-*-before.jpg
+    await shot('neck-side', 'people=aurennais&seed=gw1&sex=f&view=neck&turn=1.0&dress=' + dq({ ...red, necklace: null, gownBorder: [.85, .66, .3] })); await shot('neck-back', 'people=aurennais&seed=gw1&sex=f&view=neck&turn=2.6&dress=' + dq({ ...red, necklace: null, gownBorder: [.85, .66, .3] }));
     await shot('sleeve-front', 'people=aurennais&seed=gw1&sex=f&view=hand&zoom=.7&turn=.6&dress=' + dq(red)); await shot('sleeve-under', 'people=aurennais&seed=gw1&sex=f&view=hand&zoom=.7&turn=-1.2&dress=' + dq(red));
     await shot('sleeve-cuff', 'people=aurennais&seed=gw1&sex=f&view=hand&zoom=.7&turn=.6&dress=' + dq({ ...bare, tunic: [.3, .4, .6], cuffs: [.5, .2, .15], cuffBand: [.8, .7, .3] }));
     await shot('sleeve-robe', 'people=aurennais&seed=st1&sex=m&view=hand&zoom=.7&turn=.6&dress=' + dq({ robe: [.85, .8, .7], tunic: [.85, .8, .7], robeStripe: [.15, .2, .45], cord: [.6, .2, .1] })); }
