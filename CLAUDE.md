@@ -125,7 +125,7 @@ Session 368 built the tooling and Session 379 cut the file (1 Oct 2026); Session
     `tickZoneEnemies`, `killZoneEnemy`. `44-legacy-towns.js` `PROP_BUILDERS`, wilderness, forest, `buildTown`, Ironhaven,
     `ZONE_BUILDERS`, `registerPlaceholderZone`.
   - `50-travel.js` `goToZone`, fast travel, buffs, herbs, the clock, `forceTime`, day/night, respawn, `interact`.
-    `52-dungeon-gen.js` `FOOTHOLDS`, `INT_BEDS`, `makeDungeon`, `dSolid`. `54-thirdperson.js` `TP`, `tpBuild/tpPose/tpCamera`.
+    `52-dungeon-gen.js` `FOOTHOLDS`, `INT_BEDS`, `makeDungeon`, `dSolid`. `54-thirdperson.js` `TP`, `tpBuild/tpPose/tpCamera`; on the new look the player's own body is the builder's (card F10, Session 1246): the genome saved in `worldState.look.hb` (`lookHBGenome`; the creator's Body, Height and Build rows), dressed from `EQ` (`tpHBDress`), attached by F4's `hbAttach` at the genome's own stature and posed by `tpHBPose` (what the hands hold rides as copies, `tpHBHold`).
     `56-dungeon-build.js` the dungeon shell, `furnBuild`, `buildDungeon`, `goToDungeon`, `goToOW`.
     `58-interiors-legacy.js` room kits, `buildInterior`, `goToInterior`, `exitInterior`.
   - `60-shop.js` shop, loot, stash, sleep, buy/sell. `62-actions.js` `doBash`, `attack`, `fireArrow`, `killE`, `castSpell`,
