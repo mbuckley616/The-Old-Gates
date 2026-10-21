@@ -50,7 +50,7 @@ function buildHandMesh(isLeft, scale){
   const tilt=new THREE.Group();tilt.rotation.order='YXZ';tilt.rotation.set(.32,sd*.5,0);h.add(tilt);
   const turn=new THREE.Group();turn.rotation.z=-sd*Math.PI/2;tilt.add(turn);
   // the fist's curl (where the fingers close on the palm) is about (0,−.02,−.022) in its own frame: put that on the haft
-  const f=buildFistMesh(!!isLeft,GRIP_FOREARM);f.position.set(0,.02,.022);turn.add(f);
+  const f=buildFistMesh(!!isLeft,GRIP_FOREARM);if(f.userData.curl)f.position.copy(f.userData.curl).negate();else f.position.set(0,.02,.022);turn.add(f);
   h.userData.isHandAnchor=true;h.userData.elbow=f.userData.elbow;h.userData.fist=f;
   h.scale.setScalar(scale||1);
   return h;
@@ -126,8 +126,69 @@ function _fpMerge(parts){
   let N=0;gs.forEach(q=>N+=q.attributes.position.count);const P=new Float32Array(N*3),Nm=new Float32Array(N*3),Cl=new Float32Array(N*3);let o=0;
   gs.forEach(q=>{P.set(q.attributes.position.array,o*3);Nm.set(q.attributes.normal.array,o*3);Cl.set(q.attributes.color.array,o*3);o+=q.attributes.position.count;q.dispose();});
   const out=new THREE.BufferGeometry();out.setAttribute('position',new THREE.BufferAttribute(P,3));out.setAttribute('normal',new THREE.BufferAttribute(Nm,3));out.setAttribute('color',new THREE.BufferAttribute(Cl,3));return out;}
+// F10, part two — on the new look the hand is the player's own: the forearm and hand of the builder's body that third person wears
+// (TP.rig, from the same dressed genome; tpEnsure builds it when first person asks first), its fingers in the folded fist (Michael's D
+// on #99, hbCloseFist), cut from its middle level by bone weight and laid in the fist's frame: the knuckles −z, the back of the hand
+// up (+y), the index finger on the thumb's side, the forearm +z, cut off at el. One unit is a metre in both scenes (SCALE), so the hand
+// is the genome's own size, and the sleeve on the forearm is the one third person shows. A pair of gauntlets tints the hand.
+// Each cut is kept until the body changes (FP_HB.geo). The fallback, when there is no builder's body, is the kit's fist below.
+const FP_HB={rig:null,geo:new Map(),ms:0,n:0};
+const FP_HB_DIM=.64;
+function fpHBFist(left,el){
+  if(!started||typeof hbOn!=='function'||!hbOn()||typeof tpEnsure!=='function')return null;
+  let R=TP.rig;if(!R||TP.armSig!==tpArmSig())try{R=tpEnsure();}catch(e){console.warn('F10: no body for the hands',e);return null;}
+  const H=R&&R.rig&&R.rig.hb;if(!H||!H.mid)return null;
+  if(FP_HB.rig!==H){for(const v of FP_HB.geo.values())v.geo.dispose();FP_HB.geo.clear();FP_HB.rig=H;}
+  const gl=EQ.hands,gk=gl?(gl.matCol!=null?String(gl.matCol):'g'):'-',sd=(HBODY.swap?!left:left)?'L':'R',key=sd+'|'+el+'|'+gk;
+  let C=FP_HB.geo.get(key);if(!C){const t0=performance.now();C=fpHBBake(H,sd,el,!!left);if(!C)return null;FP_HB.ms+=performance.now()-t0;FP_HB.n++;FP_HB.geo.set(key,C);}
+  const mesh=new THREE.Mesh(C.geo,new THREE.MeshLambertMaterial({vertexColors:true,side:THREE.DoubleSide}));mesh.name='hbHand';
+  const g=new THREE.Group();g.add(mesh);g.rotation.order='YXZ';
+  const elbow=new THREE.Object3D();elbow.position.copy(C.elbow);g.add(elbow);
+  g.userData.elbow=elbow;g.userData.fist=true;g.userData.armCol=C.armCol;g.userData.curl=C.curl.clone();g.userData.wrist=C.wrist.clone();g.userData.hb=true;
+  return g;}
+// each first-person frame: hands built before the game began (the title's boot) or before the body could be built are the kit's;
+// built again once for each new kit, from the builder's body (tpUpdate calls it)
+function fpHBCheck(){const u=vmSword&&vmSword.userData,hm=u&&u.handMain&&u.handMain.userData.fist;if(!started||!vmSword||u.hb||(hm&&hm.userData.hb)||typeof hbOn!=='function'||!hbOn())return;
+  const sig=tpArmSig()+'|'+(EQ.weapon?EQ.weapon.name:'-')+'|'+(EQ.offhand?EQ.offhand.name:'-');if(FP_HB.miss===sig)return;FP_HB.miss=sig;
+  buildViewmodel();if(typeof buildShieldViewmodel==='function')buildShieldViewmodel();}
+function fpHBBake(H,sd,el,left){
+  const P=H.P,by=P.byName,sk=P.skeleton,bones=sk.bones,G=H.mid.geometry,la=by['lowerarm01.'+sd];if(!la||!by['wrist.'+sd]||!by['finger3-1.'+sd])return null;
+  const re=new RegExp('^(lowerarm0[12]|wrist|metacarpal\\d|finger\\d-\\d)\\.'+sd+'$'),hand=new RegExp('^(metacarpal\\d|finger\\d-\\d)\\.'+sd+'$');
+  // the forearm's twist and the wrist at rest (the builder's bones rest unturned), the arm's own pose left out; put back after
+  const kept=['lowerarm02.','wrist.'].map(n=>by[n+sd]).filter(Boolean).map(b=>[b,b.quaternion.clone()]);
+  kept.forEach(([b])=>b.quaternion.identity());P.root.updateMatrixWorld(true);
+  try{
+    const Li=new THREE.Matrix4().copy(la.matrixWorld).invert(),at=n=>new THREE.Vector3().setFromMatrixPosition(by[n].matrixWorld).applyMatrix4(Li);
+    // the fist's frame in the forearm's: z from the knuckles to the wrist, x across the knuckles towards the index finger's side
+    // (+x on the left hand, −x on the right, as the kit's fist), y = z × x the back of the hand; its origin the hand's middle
+    const k2=at('finger2-1.'+sd),k5=at('finger5-1.'+sd),wr=at('wrist.'+sd),kc=k2.clone().add(k5).multiplyScalar(.5);
+    const z=wr.clone().sub(kc).normalize(),x=k2.clone().sub(k5).multiplyScalar(left?1:-1);x.addScaledVector(z,-x.dot(z)).normalize();const y=new THREE.Vector3().crossVectors(z,x);
+    const F=new THREE.Matrix4().makeBasis(x,y,z).setPosition(kc.clone().add(wr).multiplyScalar(.5)),Fi=F.clone().invert(),M0=Fi.clone().multiply(Li);
+    const Ms=bones.map((b,i)=>re.test(b.name)?new THREE.Matrix4().multiplyMatrices(M0,b.matrixWorld).multiply(sk.boneInverses[i]):null),isHand=bones.map(b=>hand.test(b.name));
+    const pa=G.attributes.position,na=G.attributes.normal,ca=G.attributes.color,si=G.attributes.skinIndex,sw=G.attributes.skinWeight,N=pa.count;
+    const out=new Float32Array(N*3),nout=new Float32Array(N*3),ok=new Uint8Array(N),hw=new Float32Array(N),v=new THREE.Vector3(),n=new THREE.Vector3(),a=new THREE.Vector3(),an=new THREE.Vector3(),N3=new THREE.Matrix3();
+    for(let i=0;i<N;i++){let wsum=0,hs=0;a.set(0,0,0);an.set(0,0,0);
+      for(let k=0;k<4;k++){const w=sw.getComponent(i,k);if(!w)continue;const b=si.getComponent(i,k),m=Ms[b];if(!m)continue;wsum+=w;if(isHand[b])hs+=w;
+        a.addScaledVector(v.fromBufferAttribute(pa,i).applyMatrix4(m),w);an.addScaledVector(n.fromBufferAttribute(na,i).applyMatrix3(N3.setFromMatrix4(m)),w);}
+      if(wsum<.5)continue;a.divideScalar(wsum);if(a.z>el)continue;ok[i]=1;hw[i]=hs/wsum;out[i*3]=a.x;out[i*3+1]=a.y;out[i*3+2]=a.z;an.normalize();nout[i*3]=an.x;nout[i*3+1]=an.y;nout[i*3+2]=an.z;}
+    // the triangles wholly kept, their vertices renumbered
+    const ix=G.index.array,map=new Int32Array(N).fill(-1),idx=[],pos=[],nor=[],col=[];let m=0;
+    const gc=EQ.hands?new THREE.Color(EQ.hands.matCol!=null?EQ.hands.matCol:0x6a4a2a):null,c=new THREE.Color();let ar=0,ag=0,ab=0,an2=0;
+    for(let t=0;t<ix.length;t+=3){const A=ix[t],B=ix[t+1],Cc=ix[t+2];if(!ok[A]||!ok[B]||!ok[Cc])continue;
+      for(const q of [A,B,Cc]){if(map[q]<0){map[q]=m++;pos.push(out[q*3],out[q*3+1],out[q*3+2]);nor.push(nout[q*3],nout[q*3+1],nout[q*3+2]);
+          c.setRGB(ca.getX(q),ca.getY(q),ca.getZ(q));if(gc&&hw[q]>.5){const l=(c.r+c.g+c.b)/3;c.copy(gc).multiplyScalar(.75+.5*Math.min(1,l));}c.multiplyScalar(FP_HB_DIM);col.push(c.r,c.g,c.b);
+          if(out[q*3+2]>el-.05){ar+=c.r;ag+=c.g;ab+=c.b;an2++;}}
+        idx.push(map[q]);}}
+    if(!idx.length)return null;
+    const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));geo.setAttribute('normal',new THREE.Float32BufferAttribute(nor,3));
+    geo.setAttribute('color',new THREE.Float32BufferAttribute(col,3));geo.setIndex(idx);geo.computeBoundingSphere();
+    // the curl, where a haft goes: the middle of the four fingers' joints; the elbow: on the forearm's line (wrist to elbow) at el
+    const curl=new THREE.Vector3();let k=0;for(let f=2;f<=5;f++)for(let j=1;j<=3;j++){const nm=`finger${f}-${j}.${sd}`;if(by[nm]){curl.add(at(nm).applyMatrix4(Fi));k++;}}curl.divideScalar(k||1);
+    const w0=wr.clone().applyMatrix4(Fi),e0=new THREE.Vector3().applyMatrix4(Fi),t=(el-w0.z)/((e0.z-w0.z)||1),elbow=w0.clone().lerp(e0,t);
+    return {geo,curl,elbow,wrist:w0,armCol:an2?new THREE.Color(ar/an2,ag/an2,ab/an2).getHex():0x8a7060,tris:idx.length/3};}
+  finally{kept.forEach(([b,q])=>b.quaternion.copy(q));P.root.updateMatrixWorld(true);}}
 function buildFistMesh(left,el){
-  el=el||FIST_ELBOW;const sx=left?1:-1,hc=_gauntletHandColors(),ac=_chestArmColors(),parts=[];
+  el=el||FIST_ELBOW;{const f=fpHBFist(left,el);if(f)return f;}const sx=left?1:-1,hc=_gauntletHandColors(),ac=_chestArmColors(),parts=[];
   // the view scene's light is bright and warm: the skin is taken down to read as skin there (as the prototype's)
   const dim=(h,k)=>new THREE.Color(h).multiplyScalar(k).getHex();
   const metal=!!hc.metal,skin=dim(hc.palm,metal?.9:.64),shade=dim(hc.palm,metal?.72:.54),cuff=dim(hc.cuff,metal?.85:.6);

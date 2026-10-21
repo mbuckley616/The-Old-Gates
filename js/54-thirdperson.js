@@ -84,7 +84,7 @@ function tpHBDress(G0,o){const G=JSON.parse(JSON.stringify(G0)),D=Object.assign(
   const K=o.cloak;if(K){D.cloak=hbRGB(K.col);if(K.cut==='short'){D.cape=true;D.cloakLen=.6;}else D.cloakLen=.85;D.brooch=[.62,.47,.22];
     if(K.fur!=null)D.cloakFur=hbRGB(K.fur);if(K.trim!=null)D.cloakHem=hbRGB(K.trim);if(K.hood)D.hood=o.hd&&tpIsCloth(o.hd)?'up':'down';}
   return G;}
-function tpBuild(lookIn,ppIn){
+function tpBuild(lookIn,ppIn,reuse){
   let pp=ppIn||'gatelander',P=null;try{if(!ppIn)pp=WORLD.playerPeople();P=WORLD.PEOPLES[pp];}catch(e){}
   const LK=Object.assign(lookDefault(pp,playerArchetype,playerName),lookIn||lookNow()||{});
   const archCol=playerArchetype==='mage'?0x2a3a6a:playerArchetype==='rogue'?0x3a3a2a:0x5a2a20;
@@ -151,8 +151,15 @@ function tpBuild(lookIn,ppIn){
   if(E){const K=EQ.back&&EQ.back.cloak?(TP_CLOAK[EQ.back.cloak]||TP_CLOAK.wool):null;
     rig.hbG=tpHBDress(E.G,{AR,ch,lg,ft,hd,clothCol,legsCol,chestCol,bootCol,helmCol:hd?tpMatColor(hd,0x8a8f98):0x8a8f98,robe:!!(ch&&!ch.line&&/robe/i.test(ch.name||'')),
       cloak:K?{col:EQ.back.col!=null?EQ.back.col:K.col,cut:K.cut,hood:!!K.hood,fur:K.fur,trim:K.trim}:null});
-    const t0=performance.now();try{hbAttach(rig);}catch(e){rig.hb=null;console.warn('F10: the player\'s body failed',e);}
-    if(rig.hb){TP_HB.ms+=performance.now()-t0;TP_HB.n++;R.hbSaved=E.saved;
+    // F10, part two — a change of kit that leaves the dressed genome as it was (a weapon, a shield, a ring) keeps the builder's body
+    // that was built for it: carried over from the body this one replaces (reuse, TP.rig) onto the new driver, not built again
+    const key=JSON.stringify(rig.hbG),old=reuse&&reuse.rig&&reuse.rig.hb&&reuse.hbKey===key?reuse:null;R.hbKey=key;
+    const t0=performance.now();
+    if(old){const H=old.rig.hb;if(old.hbHeld)for(const h of old.hbHeld)h.c.removeFromParent();old.hbHeld=null;old.rig.hb=null;old.rig.mesh.visible=true;
+      rig.hb=H;H.L=-1;H.drv=rig.mesh.material;rig.root.add(H.root);TP_HB.kept=(TP_HB.kept||0)+1;}
+    else{try{hbAttach(rig);}catch(e){rig.hb=null;console.warn('F10: the player\'s body failed',e);}
+      if(rig.hb){TP_HB.ms+=performance.now()-t0;TP_HB.n++;}}
+    if(rig.hb){R.hbSaved=E.saved;
       root.scale.setScalar(rig.hb.st*PW.BODY/SCALE.PERSON_MODEL);hbLevel(rig,0);
       // what the hands hold rides in the builder's group: a copy of each piece (its geometry shared) in a carrier that follows the piece,
       // which stays on its driver bone where tpPose turns it, each frame (tpHBHold); a weapon's grip goes to the builder's curled fingers
@@ -161,7 +168,7 @@ function tpBuild(lookIn,ppIn){
         const c=new THREE.Group();c.matrixAutoUpdate=false;c.name='held';c.add(tpHBCopy(o,true));rig.hb.root.add(c);
         const s=side(sd);R.hbHeld.push({o,c,f:grip?[2,3,4,5].map(f=>by[`finger${f}-2.${s}`]).filter(Boolean):null});}
       // Michael's D on #99: an empty hand is a folded fist, and a hand that holds something closes on it; a tome is held open-handed
-      hbCloseFist(by,side('R'));if(!R.tome)hbCloseFist(by,side('L'));
+      hbCloseFist(by,side('R'));hbThumb(by,side('R'));if(!R.tome){hbCloseFist(by,side('L'));hbThumb(by,side('L'));}else for(let f=1;f<=5;f++)for(let j=1;j<=3;j++){const b=by[`finger${f}-${j}.${side('L')}`];if(b)b.quaternion.identity();} /* a body carried over may have closed it */
       root.traverse(o=>{if(o.isMesh)o.userData.tp=true;});}}
   return R;}
 // a held piece's copy for the builder's group: its meshes and points on the same geometry and materials, its own turns below the top
@@ -367,13 +374,21 @@ function tpGripL(R){
   _tgQ.setFromUnitVectors(_tgA.normalize(),_tgB.normalize());R.shL.getWorldQuaternion(_tgQ2);_tgQ.multiply(_tgQ2);R.shL.parent.getWorldQuaternion(_tgQ2);_tgQ.premultiply(_tgQ2.invert());R.shL.quaternion.copy(_tgQ);
   R.shL.updateMatrixWorld(true);
 }
+// the body for what is worn now, built (or its builder's body carried over) when the kit or the look has changed; first person's hands
+// are cut from it too (fpHBFist), so it is kept current in either view when the hands are built
+function tpEnsure(){const sig=tpSig();if(!TP.rig||sig!==TP.sig){const old=TP.rig;TP.rig=tpBuild(null,null,old);TP.sig=sig;TP.armSig=tpArmSig();if(old){TP.rig.root.rotation.copy(old.root.rotation);tpDispose(old);}}return TP.rig;}
+// what the hands' cut depends on: the look and what is worn, not what is held (a weapon sheathed after five seconds at peace rebuilds the
+// view model with an empty hand; that must not build the body again)
+function tpArmSig(){const L=lookNow();let pp='gatelander';try{pp=WORLD.playerPeople();}catch(e){}
+  return (L?JSON.stringify(L):'')+['head','chest','hands','legs','feet','back'].map(s=>EQ[s]?(EQ[s].name||'?')+(EQ[s].col!=null?'~'+EQ[s].col:''):'-').join('|')+'#'+pp+'#'+(playerName||'')+'#'+playerArchetype;}
 function tpUpdate(dt,st){
   if(!thirdPerson){
     if(TP.rig&&TP.rig.root.visible)TP.rig.root.visible=false;
     if(TP.hidVM){TP.hidVM=false;VM_SCENE.visible=true;}
+    if(typeof fpHBCheck==='function')fpHBCheck();
     return;}
   if(!TP.hidVM){TP.hidVM=true;VM_SCENE.visible=false;}
-  const sig=tpSig();if(!TP.rig||sig!==TP.sig){const old=TP.rig;TP.rig=tpBuild();TP.sig=sig;if(old){TP.rig.root.rotation.copy(old.root.rotation);tpDispose(old);}}
+  tpEnsure();
   const R=TP.rig;if(!scene)return;
   if(R.root.parent!==scene){if(R.root.parent)R.root.parent.remove(R.root);scene.add(R.root);}
   tpCamera(dt,st.camY);
