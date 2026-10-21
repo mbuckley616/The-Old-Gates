@@ -17,7 +17,7 @@ const survey = ids => { const out = {};
   return out; };
 
 // the old look: the plan as it was
-const g0 = await boot(); await g0.intoWorld();
+const g0 = await boot({ look: 'old' }); await g0.intoWorld();
 const sites = await g0.page.evaluate(pickSites);
 check('two towns, two villages, a port and a city of the Gatelands, and a town of the Mark', sites.length === 7 && sites.filter(s => s.nat === 'gatelands').length === 6, sites);
 const old = await g0.page.evaluate(survey, sites.map(s => s.id));
