@@ -1531,7 +1531,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     const T=PKIT.gl.inn({paint:house.kit.paint||'green'},PKIT.stream(house.id+':taproom')),I=T.inner,X=I.x1,Z=I.z1,F0=T.floors[0],F1=T.floors[1]-F0,W=2*X,D=2*Z;
     const rx=x=>x+X,rz=z=>z+Z,ry=y=>y-F0;
     house._counterFront=null;house.intW=W;house.intD=D;house._roomH=+(T.ceil[1]-F0).toFixed(3);house._exitD=.8;house._exitW=1.0;house._taproom=T;
-    const sc_=new THREE.Scene();interiorScene=sc_;sc_.background=new THREE.Color(0x120a06);sc_.fog=new THREE.Fog(0x120a06,Math.max(W,D)*.8*SCALE.ROOM_K,Math.max(W,D)*2.4*SCALE.ROOM_K);
+    const sc_=new THREE.Scene();interiorScene=sc_;landRoomPost(sc_);sc_.background=new THREE.Color(0x120a06);sc_.fog=new THREE.Fog(0x120a06,Math.max(W,D)*.8*SCALE.ROOM_K,Math.max(W,D)*2.4*SCALE.ROOM_K);
     intNPCMesh=null;intBedPos=null;intStashPos=null;
     const SOL=[];INT_SOL=SOL;FOOTHOLDS=[];INT_BEDS=[];INT_DOORS=[];INT_DOORS.house=house.id;INT_CHAIR=null;INT_NPCS=[];HATCH.active=false;HATCH.roof=false;INT_LOOT=null;INT_BOX=null;INT_SHELF=null;
     T.group.position.set(X,-F0,Z);T.group.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false;}});sc_.add(T.group);
@@ -1599,7 +1599,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     const gallery=two&&(type==='inn'||type==='guild_f'||type==='guild_m'); /* S896 — a cottage or a shop of true size has no room for a gallery and its stair; the upper floor is the inn's and the guilds' */
     const H=gallery?ceil*1.85:ceil;
     house.intW=W;house.intD=D;
-    const sc_=new THREE.Scene();interiorScene=sc_;
+    const sc_=new THREE.Scene();interiorScene=sc_;landRoomPost(sc_); /* S1257 — the rooms' post on the new look: the neutral curve (89-world-land.js) */
     sc_.background=new THREE.Color(0x120a06);
     sc_.fog=new THREE.Fog(0x120a06,Math.max(W,D)*.8,Math.max(W,D)*2.4);
     intNPCMesh=null;intBedPos=null;intStashPos=null;
