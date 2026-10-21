@@ -187,7 +187,7 @@ function tpBuild(lookIn,ppIn,reuse){
         const c=new THREE.Group();c.matrixAutoUpdate=false;c.name='held';c.add(tpHBCopy(o,true));rig.hb.root.add(c);
         const s=side(sd);R.hbHeld.push({o,c,f:grip?[2,3,4,5].map(f=>by[`finger${f}-2.${s}`]).filter(Boolean):null,arm:[B['el'+sd],B['wr'+sd],by['lowerarm01.'+s],by['wrist.'+s]]});}
       // Michael's D on #99: an empty hand is a folded fist, and a hand that holds something closes on it; a tome is held open-handed
-      hbCloseFist(by,side('R'));hbThumb(by,side('R'));if(!R.tome){hbCloseFist(by,side('L'));hbThumb(by,side('L'));}else for(let f=1;f<=5;f++)for(let j=1;j<=3;j++){const b=by[`finger${f}-${j}.${side('L')}`];if(b)b.quaternion.identity();} /* a body carried over may have closed it */
+      hbCloseFist(by,side('R'));hbThumb(by,side('R'));R.hbHook=R.bow?tpHBHookOf(by,side('R')):null;if(!R.tome){hbCloseFist(by,side('L'));hbThumb(by,side('L'));}else for(let f=1;f<=5;f++)for(let j=1;j<=3;j++){const b=by[`finger${f}-${j}.${side('L')}`];if(b)b.quaternion.identity();} /* a body carried over may have closed it */
       root.traverse(o=>{if(o.isMesh)o.userData.tp=true;});}}
   return R;}
 // a held piece's copy for the builder's group: its meshes and points on the same geometry and materials, its own turns below the top
@@ -208,7 +208,18 @@ function tpHBHold(R){const H=R.rig.hb;if(!H||!R.hbHeld)return;R.root.updateMatri
         _tpHm2.makeRotationFromQuaternion(_tpHq).setPosition(_tpHe.copy(De).applyQuaternion(_tpHq).negate().add(Be));h.c.matrix.premultiply(_tpHm2);}}
     if(h.f&&h.f.length){const v=_tpHv.set(0,0,0);for(const b of h.f)v.add(_tpHv2.setFromMatrixPosition(b.matrixWorld));v.multiplyScalar(1/h.f.length).applyMatrix4(_tpHm);h.c.matrix.setPosition(v);}
     h.c.matrixWorldNeedsUpdate=true;}}
-function tpHBPose(R){if(!R||!R.rig.hb)return;hbPose(R.rig);R.root.updateMatrixWorld(true);tpHBHold(R);}
+function tpHBPose(R){if(!R||!R.rig.hb)return;hbPose(R.rig);if(R.hbHook)tpHBBowHand(R);R.root.updateMatrixWorld(true);tpHBHold(R);}
+// S1267 — the bow's draw on the builder's fingers: the right hand, a fist while the bow is carried, opens into the archer's hook as the
+// string comes back (or is held at the ready): the first three fingers bent round the string at their last two joints and barely at the
+// knuckle, the little finger and the thumb left folded. The knuckles' line is hbCloseFist's, read once when the body is built; the hand
+// eases toward its shape each frame (a look only: the draw's timing and the arrow are the bow's own)
+const TP_HOOK=[.12,1.45,.85],TP_FIST=[1.15,1.35,.95];
+function tpHBHookOf(by,sd){const m=by[`metacarpal2.${sd}`],a=by[`finger2-1.${sd}`],b=by[`finger5-1.${sd}`];if(!m||!a||!b)return null;by.root.parent.updateMatrixWorld(true);
+  const at=o=>new THREE.Vector3().setFromMatrixPosition(o.matrixWorld),h=at(a).sub(at(b)).normalize().applyQuaternion(m.getWorldQuaternion(new THREE.Quaternion()).invert());
+  const f=[];for(let i=2;i<=4;i++)f.push([1,2,3].map(j=>by[`finger${i}-${j}.${sd}`]||null));return {h,sg:sd==='R'?1:-1,f,k:0};}
+function tpHBBowHand(R){const H=R.hbHook,drawing=typeof _bowDrawing!=='undefined'&&_bowDrawing,t=drawing?Math.min(1,_bowDrawT/BOW_DRAW_MAX*3):blocking?1:0;
+  const k0=H.k;H.k+=(t-H.k)*.3;if(Math.abs(H.k-t)<.002)H.k=t;if(H.k===k0&&H.set)return;H.set=true;
+  for(const F of H.f)for(let j=0;j<3;j++)if(F[j])F[j].quaternion.setFromAxisAngle(H.h,H.sg*(TP_FIST[j]+(TP_HOOK[j]-TP_FIST[j])*H.k));}
 // S539 — an enchanted piece shows it with "some very very light particle effect" (Michael, the inspector, with the Demonic kit's
 // note): a few faint motes in the enchantment's colour (an armour enchantment has none: the material's glow, else a pale blue)
 // drifting up through the piece and round again, additive, a few millimetres each. One Points object per enchanted piece, on the
