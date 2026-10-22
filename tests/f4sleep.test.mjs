@@ -15,7 +15,7 @@ const enter = async (hr, k) => { await page.evaluate(([hr, k]) => { forceTime(hr
   await page.waitForTimeout(3000); await g.hide(); };
 const leave = async () => { await page.evaluate(() => exitInterior()); await page.waitForTimeout(1500); };
 // the builder's body built for the sleeper, as hbTick builds it (one at a time, once the room is loaded), the eye at the door
-const build = () => page.evaluate(() => { const rig = intNPCMesh.userData.rig; CAM.position.set(px, 1.65, pz); CAM.updateMatrixWorld(true); let k = 0; while ((!rig.hb || rig.hb.cold) && !rig.hbFail && k++ < 60) { HBODY.last = -1e9; hbTick(performance.now()); }
+const build = () => page.evaluate(() => { const rig = intNPCMesh.userData.rig; CAM.position.set(px, 1.65, pz); CAM.updateMatrixWorld(true); let k = 0; while ((!rig.hb || rig.hb.cold) && !rig.hbFail && k++ < 400) { HBODY.last = -1e9; hbTick(performance.now()); }
   return { hb: !!rig.hb, fail: !!rig.hbFail, k }; });
 // the body against its bed: every point of the builder's body (personSkinPts gives them while it is on), its head, the quilt over it
 const read = () => page.evaluate(() => { const m = intNPCMesh; if (!m) return null; const rig = m.userData.rig, H = rig.hb, b = INT_BEDS.find(b => b.owner === 'home');
