@@ -4,10 +4,19 @@
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
+// S1246 — the game's own loop at fixed 1/60 ticks with the drawing stubbed, as `wanderface` drives it: on the new look a frame on
+// software GL takes seconds, and a drop of 22 units ran through a few hundred of them, so the suite was killed at its 900 s.
+// What is measured (the fall, FALL.clock's roll window, the damage) is all dt-driven, so nothing it checks changes
+await page.evaluate(() => { window._drive = (step, max) => {
+  const raf = window.requestAnimationFrame, rr = REN.render; window.requestAnimationFrame = () => 0; REN.render = () => {};
+  let t = performance.now(), n = 0, out = null;
+  try { for (; n < max; n++) { out = step(n); if (out) break; t += 1000 / 60; loop(t); } }
+  finally { window.requestAnimationFrame = raf; REN.render = rr; prevT = 0; }
+  return out; }; });
 
 // lift the player `h` above the ground under them and let go; resolve once landed and the roll window has passed.
 // pressAt: press Q when this far above the ground (in the air), or 'after' to press it on the first frame on the ground.
-const drop = (h, opt = {}) => page.evaluate(([h, opt]) => new Promise(res => {
+const drop = (h, opt = {}) => page.evaluate(([h, opt]) => { const res = r => r;
   PHP = maxHP; stamina = maxStamina; staminaCD = 0; ROLL = null; FALL.last = null; FALL.pend = null; FALL.qAt = -9;
   const ground = () => isInterior() || (lid && lid.startsWith('dyn_')) ? footholdY(px, pz, jumpY, 0) : activeTerrainH(px, pz);
   const g0 = ground(); jumpY = g0 + h; velY = 0; onGround = false; const hp0 = PHP;
@@ -20,16 +29,16 @@ const drop = (h, opt = {}) => page.evaluate(([h, opt]) => new Promise(res => {
     if (ROLL) rolled = true;
     if ((landedAt != null && FALL.clock - landedAt > .3 && !FALL.pend) || dead) return res({ h, g0: +g0.toFixed(2), last: FALL.last, lost: hp0 - PHP, maxHP, rolled, dead, frames, teleAt });
     if (frames > 600) return res({ timeout: true, h, last: FALL.last, onGround, jumpY, g0 });
-    requestAnimationFrame(f); };
-  requestAnimationFrame(f);
-}), [h, opt]);
+    return null; };
+  return _drive(f, 602);
+}, [h, opt]);
 const full = r => Math.max(1, Math.round(r.maxHP * .06 * (r.last.drop - 4)));
 
 // outdoors
 const o1 = await drop(3.9);
 check('outdoors: a drop of 3.9 units costs nothing', !o1.timeout && o1.last === null && o1.lost === 0, o1);
-const jump = await page.evaluate(() => new Promise(res => { PHP = maxHP; FALL.last = null; const hp0 = PHP; window._K['Space'] = true;
-  let n = 0; const f = () => { if (++n === 2) window._K['Space'] = false; if (n > 3 && onGround) return res({ last: FALL.last, lost: hp0 - PHP }); if (n > 300) return res({ timeout: true }); requestAnimationFrame(f); }; requestAnimationFrame(f); }));
+const jump = await page.evaluate(() => { PHP = maxHP; FALL.last = null; const hp0 = PHP; window._K['Space'] = true;
+  let n = 0; const f = () => { if (++n === 2) window._K['Space'] = false; if (n > 3 && onGround) return { last: FALL.last, lost: hp0 - PHP }; if (n > 300) return { timeout: true }; return null; }; return _drive(f, 302); });
 check('outdoors: your own jump costs nothing', !jump.timeout && jump.last === null && jump.lost === 0, jump);
 const o2 = await drop(10);
 check('outdoors: 10 units costs 6% of health a unit past 4 (36% of it)', !o2.timeout && o2.last && Math.abs(o2.last.drop - 10) < .05 && o2.last.dmg === full(o2) && o2.lost === o2.last.dmg && !o2.last.rolled && o2.rolled === false, o2);

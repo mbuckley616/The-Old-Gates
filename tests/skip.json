@@ -2,24 +2,13 @@
  "note": "Suites that do not run (Michael, 20 Oct 2026: every suite boots the new look; one that is red or too slow there is skipped, never run on the old look). tests/run.mjs leaves these out of every run but one that names a suite; tests/lib/select.mjs leaves them out of a pull request's selection. A suite leaves this list when it passes on the new look (fixed, or rewritten for the new look), or is deleted with its feature. Each one is a QA card in docs/qa/skipped.md. Adding a suite here is a pipeline change: it needs Michael's approval (scripts/automerge.mjs). Taking one off runs it in that pull request.",
  "suites": {
   "autumn": "red: in a real autumn chunk at least four of the kinds stand, and every one of their trees is still warm under the chunk's tint",
-  "bridgenames": "red: 16 bridges built in ten cells, each named *… Bridge*",
   "civicfurn": "red: the church is one bake with the altar's candle flames, 5–60k triangles, and none of the old cylinder pillars",
-  "falls": "too slow: killed at the 900 s a suite is given (1800 s with the retry)",
   "fistfight": "too slow: killed at the 900 s a suite is given (1744 s with the retry)",
-  "foewarm": "red: raising every foe kind compiles no shader and adds no program (8 compiled, 4 programs added, on #529 at 85a8ff00, failed twice; it passed at 67c6fd2d, and #443 had it red on the new look)",
   "guildfurn": "red: guild_f: the hall is one bake of 15–90k triangles, with the notice board, four dormitory chests and the gallery's chest (Session 293) beside it, and no cylinders left",
-  "hourhitch": "too slow: killed at the 900 s a suite is given (1800 s with the retry)",
   "lookpair": "red: the old look is r128 and the new one 0.170, at the same spot",
-  "mainrun": "too slow: killed at the 900 s a suite is given (1800 s with the retry)",
-  "panelfocus": "too slow: killed at the 900 s a suite is given (900 s with the retry)",
-  "penance": "red: a lock picked under a witness's eye: favour −1, a point owed, a 25-gold fine",
   "placesave": "red: across prosperity swings of 13 and 26 in four towns, no house id moves to another lot",
-  "renewal": "too slow: killed at the 900 s a suite is given (900 s with the retry)",
   "scaleratio": "red: dunmore (gatelands): every house door is 1.1 to 1.25 of a 1.8 m person (55 doors measured)",
   "signs": "red: dunmore: every shop, inn, church and guild hall has one board, reading its own name",
-  "skirtlegs": "red: page.evaluate: TypeError: mesh.boneTransform is not a function",
-  "theft": "red: a seen theft is fined 50 and the goods’ value (coins and the thing taken) (failed once; the retry was skipped for the shard's time)",
-  "wanderface": "red: a wandering foe's body faces the way it walks (within 0.25 rad, sampled every half second for 6 s)",
-  "yardplay": "too slow: killed at the 900 s a suite is given (1800 s with the retry)"
+  "skirtlegs": "red: page.evaluate: TypeError: mesh.boneTransform is not a function"
  }
 }
