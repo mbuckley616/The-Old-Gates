@@ -312,20 +312,27 @@ function dunAfterLayout(map,rooms,rest,cfg,r,rand,seed,entC,entR,noDoor){
 // each joined to one space only, so chests, keys and locked doors keep their code (dunAfterLayout). The stream is the gate's
 // seed's (the co-op rule): the same seed lays the same gate on any machine. Map values, besides makeDungeon's: 8 a chasm's
 // floorless cell, 9 a pier's footing (both solid to walk into). Heights in metres, places in cells.
-// Left for the next session: the stair hall (the way between two floors), a massive gate's second floor as spaces, and so a
-// chasm in a two-floor gate (its pit would cut through floor two).
+// S1296 — a massive gate is two floors of spaces (the sheet's table: four spaces and the ring, two floors): two spaces on floor
+// one, the stair hall (2 or 3 flights of 4.2 m, 3 cells a flight, a landing of 4 cells at each end and between) down to floor
+// two, one space there and the ring last. A floor-two space's vault rises through the rock under floor one, so it is laid only
+// where floor one is rock: no space overlaps another on either floor, and floor one's chapels, side rooms and treasure rooms
+// keep off floor two's spaces and chapels. Floor two's side rooms (6 m, under floor one's floor) may lie anywhere.
 const GATE_GRID={tiny:48,small:48,medium:64,large:64,massive:90};
 const GATE_SPACE_N={tiny:[1,1],small:[1,1],medium:[2,3],large:[2,3],massive:[4,4]};
 const GATE_SIDE_N={tiny:[3,6],small:[3,6],medium:[6,12],large:[6,12],massive:[12,18]};
 const GATE_NAVE_L={tiny:[34,43],small:[34,43],medium:[43,60],large:[43,60],massive:[60,84]};
 const GATE_LAYOUTS={tiny:['linear'],small:['linear'],medium:['linear','hub','loops'],large:['linear','hub','loops'],massive:['linear','labyrinth','hub','vertical','loops','cave']};
 const GATE_THRESH_H=8,GATE_CHAPEL_H=12,GATE_PIT=25;
+// the stair hall: 10 cells wide, a flight 3 cells long and 4.2 m down (23 risers of .18), a landing 4 cells deep; its roof a
+// barrel springing at 12 m over floor one and 20 at the crown
+const GATE_FLIGHT=4.2,GATE_FLIGHT_L=3,GATE_LANDING_L=4,GATE_RISERS=23;
 // a space by type: its width across the way (A) and length along it (L) in cells, and its roof
-function gateSpaceDims(type,size,rand){
+function gateSpaceDims(type,size,rand,nFl){
   if(type==='nave'){const L=GATE_NAVE_L[size]||GATE_NAVE_L.small;return {A:9,L:rand(L[0],L[1]),top:rand(40,50),roof:'barrel'};}
   if(type==='crossing')return {A:13,L:13,top:45,roof:'dome'};
   if(type==='chasm')return {A:14,L:rand(20,size==='tiny'||size==='small'?30:40),top:30,roof:'barrel'};
   if(type==='flooded')return {A:10,L:27,top:30,roof:'barrel'};
+  if(type==='stair')return {A:10,L:GATE_LANDING_L+nFl*(GATE_FLIGHT_L+GATE_LANDING_L),top:20,roof:'barrel'};
   return {A:20,L:20,top:rand(30,40),roof:'dome'}; // the ring chamber
 }
 // what a space's cell is, by its place along the way (u, 0 at the entry) and across it (v): 1 floor, 8 the chasm, 9 a pier
@@ -336,8 +343,14 @@ function gateSpaceCell(sp,u,v){
   return 1;
 }
 function gateRect(sp){const ax=sp.axis==='x';return {x:sp.x,y:sp.y,w:ax?sp.L:sp.A,h:ax?sp.A:sp.L};}
-// a cell of the map to the space's own (u along the way from its entry end, v across)
+// a cell of the map to the space's own (u along the way from its entry end, v across), and back
 function gateUV(sp,c,r){const ax=sp.axis==='x',lc=c-sp.x,lr=r-sp.y;let u=ax?lc:lr,v=ax?lr:lc;if(sp.flip)u=sp.L-1-u;return [u,v];}
+function gateCellAt(sp,u,v){const ax=sp.axis==='x',l=sp.flip?sp.L-1-u:u;return ax?[sp.x+l,sp.y+v]:[sp.x+v,sp.y+l];}
+// the stair hall's pieces along it: landings and flights, each [u0, u1) with its height at either end (metres, floor one 0)
+function gateHallSegs(nFl){const segs=[];let u=0,y=0;segs.push({kind:'landing',u0:0,u1:GATE_LANDING_L,y0:0,y1:0});u=GATE_LANDING_L;
+  for(let k=0;k<nFl;k++){segs.push({kind:'flight',u0:u,u1:u+GATE_FLIGHT_L,y0:y,y1:y-GATE_FLIGHT});u+=GATE_FLIGHT_L;y-=GATE_FLIGHT;
+    segs.push({kind:'landing',u0:u,u1:u+GATE_LANDING_L,y0:y,y1:y});u+=GATE_LANDING_L;}
+  return segs;}
 function makeGate(size,seed){
   const r=dunLcg((hashSeed((seed|0)+0x6a7e)>>>0)||1),rand=(a,b)=>Math.floor(r()*(b-a+1))+a,pick=a=>a[Math.floor(r()*a.length)];
   const base={tiny:{tr:0,ur:1,en:5},small:{tr:1,ur:2,en:9},medium:{tr:1,ur:3,en:14},large:{tr:2,ur:4,en:20},massive:{tr:2,ur:6,en:30}}[size]?size:'small';
@@ -346,19 +359,24 @@ function makeGate(size,seed){
     {tiny:{tr:0,ur:1,en:5},small:{tr:1,ur:2,en:9},medium:{tr:1,ur:3,en:14},large:{tr:2,ur:4,en:20},massive:{tr:2,ur:6,en:30}}[base]);
   const layout=pick(GATE_LAYOUTS[base]);
   const nSp=rand(GATE_SPACE_N[base][0],GATE_SPACE_N[base][1]);
+  const two=cfg.floors>1,nFl=two?(layout==='vertical'?3:rand(2,3)):0,D2=Math.round(nFl*GATE_FLIGHT*100)/100;
   // the types along the way: a nave first (the long approach); a hub's second space its crossing; the ring last
-  const types=[];for(let i=0;i<nSp;i++){
+  const types=[],floorOf=[];
+  if(two){ // S1296 — floor one's two spaces, the stair hall, floor two's space (a chasm only there: nothing lies under it), the ring
+    types.push(r()<.75?'nave':'flooded',layout==='hub'?'crossing':pick(['nave','nave','flooded','crossing']),'stair',pick(['nave','flooded','crossing','chasm']));
+    floorOf.push(1,1,1,2);}
+  else for(let i=0;i<nSp;i++){floorOf.push(1);
     if(i===0){types.push(r()<(nSp===1?.6:.75)?'nave':pick(base==='massive'?['flooded']:['chasm','flooded']));continue;}
     if(layout==='hub'&&i===1){types.push('crossing');continue;}
     const bag=['nave','nave','flooded','crossing'];if(base!=='massive')bag.push('chasm');types.push(pick(bag));}
-  types.push('ring');
+  types.push('ring');floorOf.push(two?2:1);
   const SIDES=[[1,0],[-1,0],[0,1],[0,-1]];
   const fits=(R)=>R.x>=1&&R.y>=1&&R.x+R.w<=W-1&&R.y+R.h<=H-1;
   const hit=(R,Q)=>R.x-1<Q.x+Q.w&&R.x+R.w+1>Q.x&&R.y-1<Q.y+Q.h&&R.y+R.h+1>Q.y;
   let wayIn=null; // the way in's corridor, kept clear of every other space
   const clash=(R,spaces)=>spaces.some(o=>hit(R,gateRect(o)))||(wayIn&&hit(R,wayIn));
   const cellOf=(sp,c,r2)=>{const R=gateRect(sp);if(c<R.x||r2<R.y||c>=R.x+R.w||r2>=R.y+R.h)return 0;const [u,v]=gateUV(sp,c,r2);return gateSpaceCell(sp,u,v);};
-  const mkSpace=(type,id)=>{const d=gateSpaceDims(type,base,rand);const sp={id,type,A:d.A,L:d.L,top:d.top,roof:d.roof,pierU:[],links:[],depth:0};
+  const mkSpace=(type,id)=>{const d=gateSpaceDims(type,base,rand,nFl);const sp={id,type,A:d.A,L:d.L,top:d.top,roof:d.roof,pierU:[],links:[],depth:0,floor:floorOf[id]};
     if(type==='nave'){for(let u=3;u<=d.L-4;u+=14/3)sp.pierU.push(Math.round(u));}return sp;};
   let spaces=null,thresholds=null,entry=null;
   for(let tries=0;tries<40&&!spaces;tries++){
@@ -377,6 +395,7 @@ function makeGate(size,seed){
     for(let i=1;i<types.length&&ok;i++){
       const ring=i===types.length-1;let parent;
       if(ring){parent=layout==='hub'&&S.length>2?S[S.length-1]:S.reduce((a,b)=>b.depth>=a.depth?b:a,S[0]);}
+      else if(two&&types[i-1]==='stair')parent=S[i-1]; // floor two's first space hangs off the stair hall's foot
       else if(layout==='hub'&&i>=2)parent=S[1];
       else if(layout==='labyrinth'||layout==='cave')parent=pick(S);
       else parent=S[i-1];
@@ -392,8 +411,10 @@ function makeGate(size,seed){
         const R=gateRect(sp);if(!fits(R)||clash(R,S))continue;
         // both sides of the threshold stand on floor; the threshold is not where the way in arrives
         if(cellOf(parent,tc-sd[0],tr-sd[1])!==1||cellOf(sp,tc+sd[0],tr+sd[1])!==1)continue;
+        // S1296 — the stair hall is left from its foot only (its bottom landing); it is entered at its head (u 0, by placement)
+        if(parent.type==='stair'&&gateUV(parent,tc-sd[0],tr-sd[1])[0]<parent.L-GATE_LANDING_L)continue;
         if(T.some(t=>Math.abs(t.c-tc)+Math.abs(t.r-tr)<3))continue;
-        sp.depth=parent.depth+1;sp.parent=parent.id;S.push(sp);T.push({c:tc,r:tr,a:parent.id,b:sp.id,dc:sd[0],dr:sd[1]});
+        sp.depth=parent.depth+1;sp.parent=parent.id;S.push(sp);T.push({c:tc,r:tr,a:parent.id,b:sp.id,dc:sd[0],dr:sd[1],floor:Math.max(sp.floor,parent.type==='stair'?2:parent.floor)});
         parent.links.push(sp.id);sp.links.push(parent.id);placed=true;}
       if(!placed)ok=false;
     }
@@ -401,51 +422,60 @@ function makeGate(size,seed){
     spaces=S;thresholds=T;entry=e;
   }
   if(!spaces)return makeGate(size,seed+1000003); // no layout in forty tries: the next seed's
-  const ringSp=spaces[spaces.length-1];
-  // shortcuts (a ring of loops, a cave network): two spaces that happen to share a wall a cell thick get a second threshold
+  const ringSp=spaces[spaces.length-1],hallSp=two?spaces.find(s=>s.type==='stair'):null;
+  // shortcuts (a ring of loops, a cave network): two spaces of one floor that happen to share a wall a cell thick get a second threshold
   if(layout==='loops'||layout==='cave'){let n=0;
     for(const A of spaces)for(const B of spaces){if(n>=2||A.id>=B.id||A===ringSp||B===ringSp||A.links.includes(B.id))continue;
+      if(A.floor!==B.floor||A===hallSp||B===hallSp)continue;
       const P=gateRect(A),Q=gateRect(B);let tc=null,tr=null,dc=0,dr=0;
       if(Q.x===P.x+P.w+1||P.x===Q.x+Q.w+1){const lo=Math.max(P.y,Q.y),hi=Math.min(P.y+P.h,Q.y+Q.h)-1;if(hi>=lo){tr=Math.floor((lo+hi)/2);tc=Q.x===P.x+P.w+1?P.x+P.w:P.x-1;dc=Q.x>P.x?1:-1;}}
       else if(Q.y===P.y+P.h+1||P.y===Q.y+Q.h+1){const lo=Math.max(P.x,Q.x),hi=Math.min(P.x+P.w,Q.x+Q.w)-1;if(hi>=lo){tc=Math.floor((lo+hi)/2);tr=Q.y===P.y+P.h+1?P.y+P.h:P.y-1;dr=Q.y>P.y?1:-1;}}
       if(tc==null||cellOf(A,tc-dc,tr-dr)!==1||cellOf(B,tc+dc,tr+dr)!==1)continue;
-      thresholds.push({c:tc,r:tr,a:A.id,b:B.id,dc,dr,shortcut:true});A.links.push(B.id);B.links.push(A.id);n++;}}
-  // paint the spaces, the thresholds and the way in
-  const map=Array.from({length:H},()=>new Array(W).fill(0));
-  const cellSpace=Array.from({length:H},()=>new Int16Array(W).fill(-1));
-  for(const sp of spaces){const R=gateRect(sp);for(let y=R.y;y<R.y+R.h;y++)for(let x=R.x;x<R.x+R.w;x++){map[y][x]=cellOf(sp,x,y);cellSpace[y][x]=sp.id;}}
-  const thrSet=new Set();for(const t of thresholds){map[t.r][t.c]=1;thrSet.add(t.r*W+t.c);}
+      thresholds.push({c:tc,r:tr,a:A.id,b:B.id,dc,dr,shortcut:true,floor:A.floor});A.links.push(B.id);B.links.push(A.id);n++;}}
+  // paint the spaces, the thresholds and the way in; the stair hall is open (3) on both floors
+  const grid=()=>Array.from({length:H},()=>new Array(W).fill(0)),sgrid=()=>Array.from({length:H},()=>new Int16Array(W).fill(-1));
+  const map=grid(),cellSpace=sgrid(),map2=two?grid():null,cellSpace2=two?sgrid():null;
+  for(const sp of spaces){const R=gateRect(sp);for(let y=R.y;y<R.y+R.h;y++)for(let x=R.x;x<R.x+R.w;x++){
+    if(sp===hallSp){map[y][x]=3;map2[y][x]=3;cellSpace[y][x]=sp.id;cellSpace2[y][x]=sp.id;continue;}
+    const M=sp.floor===2?map2:map,CS=sp.floor===2?cellSpace2:cellSpace;M[y][x]=cellOf(sp,x,y);CS[y][x]=sp.id;}}
+  const thrSet=new Set(),thrSet2=new Set();for(const t of thresholds){if(t.floor===2){map2[t.r][t.c]=1;thrSet2.add(t.r*W+t.c);}else{map[t.r][t.c]=1;thrSet.add(t.r*W+t.c);}}
   {const s0=spaces[0],R=gateRect(s0);const [dc,dr]=entry.side;let c=entry.c,y=entry.r;
     while(!(c>=R.x&&c<R.x+R.w&&y>=R.y&&y<R.y+R.h)){map[y][c]=1;c-=dc;y-=dr;}map[entry.r][entry.c]=2;}
-  // a nave's side chapels: 3 along its wall and 4 deep, open to the aisle, 2 to 4 of them where the wall is free
-  const chapels=[];
-  for(const sp of spaces){if(sp.type!=='nave')continue;const want=rand(2,4);let got=0;const R=gateRect(sp);
+  // a nave's side chapels: 3 along its wall and 4 deep, open to the aisle, 2 to 4 of them where the wall is free. Floor two's
+  // first (S1296): a chapel's 12 m roof there rises above floor one's floor, so it keeps under floor one's rock too.
+  const RES=99; // S1296 — floor one's rock held over floor two's spaces and chapels while floor one's rooms are laid
+  const layChapels=(M,CS,fl,list,under)=>{for(const sp of spaces){if(sp.type!=='nave'||sp.floor!==fl)continue;const want=rand(2,4);let got=0;const R=gateRect(sp);
     for(let att=0;att<40&&got<want;att++){const u0=rand(4,sp.L-8),sideV=r()<.5?-1:1;
       let x0,y0,w,h;
       if(sp.axis==='x'){const cx=sp.flip?R.x+sp.L-1-(u0+2):R.x+u0;x0=cx;w=3;h=4;y0=sideV<0?R.y-4:R.y+R.h;}
       else{const cy=sp.flip?R.y+sp.L-1-(u0+2):R.y+u0;y0=cy;h=3;w=4;x0=sideV<0?R.x-4:R.x+R.w;}
       if(x0<1||y0<1||x0+w>W-1||y0+h>H-1)continue;
-      let free=true;for(let y=y0-1;y<=y0+h&&free;y++)for(let x=x0-1;x<=x0+w&&free;x++){if(y<0||x<0||y>=H||x>=W)continue;const inR=x>=R.x&&x<R.x+R.w&&y>=R.y&&y<R.y+R.h;if(!inR&&map[y][x]!==0)free=false;}
+      let free=true;for(let y=y0-1;y<=y0+h&&free;y++)for(let x=x0-1;x<=x0+w&&free;x++){if(y<0||x<0||y>=H||x>=W)continue;const inR=x>=R.x&&x<R.x+R.w&&y>=R.y&&y<R.y+R.h;if(!inR&&(M[y][x]!==0||under&&under[y][x]!==0))free=false;}
       if(!free)continue;
       // the chapel's mouth must open on floor (never a pier) and keep 2 cells off a threshold
-      let mouthOk=true;for(let y=y0;y<y0+h;y++)for(let x=x0;x<x0+w;x++){for(const [dc,dr] of SIDES){const nx=x+dc,ny=y+dr;if(nx>=R.x&&nx<R.x+R.w&&ny>=R.y&&ny<R.y+R.h&&map[ny][nx]!==1)mouthOk=false;}
+      let mouthOk=true;for(let y=y0;y<y0+h;y++)for(let x=x0;x<x0+w;x++){for(const [dc,dr] of SIDES){const nx=x+dc,ny=y+dr;if(nx>=R.x&&nx<R.x+R.w&&ny>=R.y&&ny<R.y+R.h&&M[ny][nx]!==1)mouthOk=false;}
         for(const t of thresholds)if(Math.abs(t.c-x)+Math.abs(t.r-y)<3)mouthOk=false;}
       if(!mouthOk)continue;
-      for(let y=y0;y<y0+h;y++)for(let x=x0;x<x0+w;x++){map[y][x]=1;cellSpace[y][x]=sp.id;}
-      chapels.push({x:x0,y:y0,w,h,space:sp.id});got++;}}
-  const chapelAt=(c,y)=>chapels.some(q=>c>=q.x&&c<q.x+q.w&&y>=q.y&&y<q.y+q.h);
-  // side rooms, each joined to the nearest space by an L corridor that touches nothing else on its way
-  const side=[];const nSide=rand(GATE_SIDE_N[base][0],GATE_SIDE_N[base][1]);
-  for(let att=0;att<600&&side.length<nSide;att++){
+      for(let y=y0;y<y0+h;y++)for(let x=x0;x<x0+w;x++){M[y][x]=1;CS[y][x]=sp.id;}
+      list.push({x:x0,y:y0,w,h,space:sp.id,floor:fl});got++;}}};
+  const chapels=[],chapels2=[];
+  if(two){layChapels(map2,cellSpace2,2,chapels2,map);
+    const hold=(x0,y0,w,h)=>{for(let y=Math.max(0,y0-1);y<Math.min(H,y0+h+1);y++)for(let x=Math.max(0,x0-1);x<Math.min(W,x0+w+1);x++)if(map[y][x]===0)map[y][x]=RES;};
+    for(const sp of spaces)if(sp.floor===2){const R=gateRect(sp);hold(R.x,R.y,R.w,R.h);}
+    for(const q of chapels2)hold(q.x,q.y,q.w,q.h);}
+  layChapels(map,cellSpace,1,chapels,null);
+  const chapelAt=(c,y)=>chapels.some(q=>c>=q.x&&c<q.x+q.w&&y>=q.y&&y<q.y+q.h),chapelAt2=(c,y)=>chapels2.some(q=>c>=q.x&&c<q.x+q.w&&y>=q.y&&y<q.y+q.h);
+  // side rooms, each joined to the nearest space of its floor by an L corridor that touches nothing else on its way
+  const laySide=(M,CS,fl,isChapel,n,list)=>{for(let att=0;att<600&&list.length<n;att++){
     const rw=rand(3,base==='tiny'||base==='small'?8:12),rh=rand(3,base==='tiny'||base==='small'?8:12);
     const rx=rand(2,W-rw-3),ry=rand(2,H-rh-3);
-    let free=true;for(let y=ry-2;y<ry+rh+2&&free;y++)for(let x=rx-2;x<rx+rw+2&&free;x++)if(map[y][x]!==0)free=false;
+    let free=true;for(let y=ry-2;y<ry+rh+2&&free;y++)for(let x=rx-2;x<rx+rw+2&&free;x++)if(M[y][x]!==0)free=false;
     if(!free)continue;
     const rm={x:rx,y:ry,w:rw,h:rh,cx:Math.floor(rx+rw/2),cy:Math.floor(ry+rh/2),side:true};
     const inRoom=(x,y)=>x>=rx&&x<rx+rw&&y>=ry&&y<ry+rh;
-    // the target: a floor cell on a space's edge, nearest first (never a pier, a chasm or a chapel)
-    const targets=[];for(const sp of spaces){const R=gateRect(sp);
-      for(let y=R.y;y<R.y+R.h;y++)for(let x=R.x;x<R.x+R.w;x++){if(x!==R.x&&x!==R.x+R.w-1&&y!==R.y&&y!==R.y+R.h-1)continue;if(map[y][x]!==1)continue;
+    // the target: a floor cell on a space's edge, nearest first (never a pier, a chasm, a chapel or the stair hall)
+    const targets=[];for(const sp of spaces){if(sp.floor!==fl||sp===hallSp)continue;const R=gateRect(sp);
+      for(let y=R.y;y<R.y+R.h;y++)for(let x=R.x;x<R.x+R.w;x++){if(x!==R.x&&x!==R.x+R.w-1&&y!==R.y&&y!==R.y+R.h-1)continue;if(M[y][x]!==1)continue;
         targets.push({x,y,sp:sp.id,d:Math.abs(x-rm.cx)+Math.abs(y-rm.cy)});}}
     targets.sort((a,b)=>a.d-b.d);
     let carved=null;
@@ -456,23 +486,29 @@ function makeGate(size,seed){
         // walk it: out of the room, through rock only, and into the target space at the end, touching nothing else
         const cells=[];let good=true,arrived=false;
         for(let k=0;k<path.length&&good&&!arrived;k++){const [px2,py2]=path[k];if(inRoom(px2,py2))continue;
-          const v=map[py2][px2];
-          if(cellSpace[py2][px2]===tg.sp){if(v!==1||chapelAt(px2,py2))good=false;arrived=true;break;}
+          const v=M[py2][px2];
+          if(CS[py2][px2]===tg.sp){if(v!==1||isChapel(px2,py2))good=false;arrived=true;break;}
           if(v!==0){good=false;break;}
           const nxt=path[k+1];
-          for(const [dc,dr] of SIDES){const nx=px2+dc,ny=py2+dr;if(nx<0||ny<0||nx>=W||ny>=H)continue;if(inRoom(nx,ny)||map[ny][nx]===0)continue;
+          for(const [dc,dr] of SIDES){const nx=px2+dc,ny=py2+dr;if(nx<0||ny<0||nx>=W||ny>=H)continue;if(inRoom(nx,ny)||M[ny][nx]===0)continue;
             if(cells.some(q=>q[0]===nx&&q[1]===ny))continue;
-            if(nxt&&nxt[0]===nx&&nxt[1]===ny&&cellSpace[ny][nx]===tg.sp)continue;
+            if(nxt&&nxt[0]===nx&&nxt[1]===ny&&CS[ny][nx]===tg.sp)continue;
             good=false;}
           cells.push([px2,py2]);}
         if(good&&arrived&&cells.length){carved=cells;break;}}}
     if(!carved)continue;
-    for(let y=ry;y<ry+rh;y++)for(let x=rx;x<rx+rw;x++)map[y][x]=1;
-    for(const [x,y] of carved)map[y][x]=1;
-    rm.space=-1;side.push(rm);}
-  // the rooms every system reads: the spaces' rects (kind 'space') first, then the side rooms
-  const rooms=spaces.map(sp=>{const R=gateRect(sp);return {x:R.x,y:R.y,w:R.w,h:R.h,cx:Math.floor(R.x+R.w/2),cy:Math.floor(R.y+R.h/2),kind:'space',space:sp.id,type:sp.type};}).concat(side);
-  const gen=dunAfterLayout(map,rooms,side.slice(),cfg,r,rand,seed,entry.c,entry.r,(x,y)=>thrSet.has(y*W+x));
+    for(let y=ry;y<ry+rh;y++)for(let x=rx;x<rx+rw;x++)M[y][x]=1;
+    for(const [x,y] of carved)M[y][x]=1;
+    rm.space=-1;rm.floor=fl;list.push(rm);}};
+  const nSide=rand(GATE_SIDE_N[base][0],GATE_SIDE_N[base][1]),n1=two?Math.ceil(nSide/2):nSide;
+  const side=[],side2=[];laySide(map,cellSpace,1,chapelAt,n1,side);
+  // the rooms every system reads: the spaces' rects (kind 'space') first, then the side rooms (the stair hall is neither)
+  const asRoom=sp=>{const R=gateRect(sp);return {x:R.x,y:R.y,w:R.w,h:R.h,cx:Math.floor(R.x+R.w/2),cy:Math.floor(R.y+R.h/2),kind:'space',space:sp.id,type:sp.type};};
+  const rooms=spaces.filter(sp=>sp.floor===1&&sp!==hallSp).map(asRoom).concat(side);
+  const gen=dunAfterLayout(map,rooms,side.slice(),two?Object.assign({},cfg,{floors:1}):cfg,r,rand,seed,entry.c,entry.r,(x,y)=>thrSet.has(y*W+x));
+  if(two){for(let y=0;y<H;y++)for(let x=0;x<W;x++)if(map[y][x]===RES)map[y][x]=0;
+    laySide(map2,cellSpace2,2,chapelAt2,nSide-n1,side2);
+    gen.cfg=cfg;gen.map2=map2;gen.rooms2=spaces.filter(sp=>sp.floor===2).map(asRoom).concat(side2);}
   // the roof by cell, in metres over the floor: a space's barrel or dome, a chapel's 12, a threshold's 8, the rest the dungeon's 6
   const roof=sp=>{const R=gateRect(sp),cx=R.x-.5+R.w/2,cz=R.y-.5+R.h/2,hw=R.w/2,hh=R.h/2,acrossM=sp.A*GATE_CELL;
     if(sp.roof==='dome'){const rise=Math.min(sp.top-12,Math.min(hw,hh)*GATE_CELL),spring=sp.top-rise;
@@ -482,12 +518,22 @@ function makeGate(size,seed){
   const roofs=spaces.map(roof);
   gen.ceilAt=(c,y,X,Z,def)=>{if(y<0||c<0||y>=H||c>=W)return def;if(thrSet.has(y*W+c))return GATE_THRESH_H;const s=cellSpace[y][c];
     if(s<0)return def;if(chapelAt(c,y))return GATE_CHAPEL_H;return roofs[s](X,Z);};
-  gen.spaces=spaces.map(sp=>Object.assign({},sp,gateRect(sp)));gen.thresholds=thresholds;gen.chapels=chapels;gen.cellSpace=cellSpace;
-  gen.layout=layout;gen.ring=ringSp.id;gen.side=side;gen.gate=true;
-  // a chasm's bridge and its piers' landings: floor over the pit (a deck, not rock to the bottom)
-  const slabSet=new Set();for(const sp of spaces){if(sp.type!=='chasm')continue;const R=gateRect(sp);
-    for(let y=R.y;y<R.y+R.h;y++)for(let x=R.x;x<R.x+R.w;x++){const [u]=gateUV(sp,x,y);if(u>=3&&u<sp.L-3&&map[y][x]===1)slabSet.add(y*W+x);}}
-  gen.slab=(c,y)=>slabSet.has(y*W+c);
+  // floor two's, over its own floor: the stair hall's roof is floor one's height and the hall's depth (S1296)
+  if(two)gen.ceilAt2=(c,y,X,Z,def)=>{if(y<0||c<0||y>=H||c>=W)return def;if(thrSet2.has(y*W+c))return GATE_THRESH_H;const s=cellSpace2[y][c];
+    if(s<0)return def;if(chapelAt2(c,y))return GATE_CHAPEL_H;return roofs[s](X,Z)+(spaces[s]===hallSp?D2:0);};
+  gen.spaces=spaces.map(sp=>Object.assign({},sp,gateRect(sp)));gen.thresholds=thresholds;gen.chapels=chapels.concat(chapels2);gen.cellSpace=cellSpace;
+  gen.layout=layout;gen.ring=ringSp.id;gen.side=side.concat(side2);gen.gate=true;
+  if(two){gen.cellSpace2=cellSpace2;
+    // the stair hall: its pieces, its head (the markers' 'Descend', gen.stairC/R) and the hole it leaves in floor one's floor
+    const hs=gen.spaces[hallSp.id];hs.flights=nFl;hs.D=D2;hs.segs=gateHallSegs(nFl);gen.hall=hs;
+    [gen.stairC,gen.stairR]=gateCellAt(hs,1,Math.floor(hs.A/2));
+    const a=gateCellAt(hs,GATE_LANDING_L,0),b=gateCellAt(hs,hs.L-1,hs.A-1);
+    gen.stairHoles=[{x0:Math.min(a[0],b[0])-.5,x1:Math.max(a[0],b[0])+.5,z0:Math.min(a[1],b[1])-.5,z1:Math.max(a[1],b[1])+.5}];
+    gen.hallAt=(c,y)=>y>=0&&c>=0&&y<H&&c<W&&cellSpace[y][c]===hallSp.id;}
+  // a chasm's bridge and its piers' landings: floor over the pit (a deck, not rock to the bottom), on its own floor
+  const slabSet=new Set(),slabSet2=new Set();for(const sp of spaces){if(sp.type!=='chasm')continue;const R=gateRect(sp),M=sp.floor===2?map2:map,SS=sp.floor===2?slabSet2:slabSet;
+    for(let y=R.y;y<R.y+R.h;y++)for(let x=R.x;x<R.x+R.w;x++){const [u]=gateUV(sp,x,y);if(u>=3&&u<sp.L-3&&M[y][x]===1)SS.add(y*W+x);}}
+  gen.slab=(c,y)=>slabSet.has(y*W+c);gen.slab2=(c,y)=>slabSet2.has(y*W+c);
   // the flooded halls' islands: 2 or 3 slabs 0.4 high (a step up), 3 to 5 cells, along the way
   for(const sp of gen.spaces){if(sp.type!=='flooded')continue;sp.islands=[];const n=rand(2,3);
     for(let k=0;k<n;k++){const u0=Math.floor((k+1)*sp.L/(n+1))-2,v0=rand(1,sp.A-5),lu=rand(3,5),lv=rand(3,4);

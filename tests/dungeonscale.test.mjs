@@ -49,7 +49,7 @@ for (const K of KINDS) {
       const through = walk(); d.open = false; const stopped = walk(); d.open = was;
       const shut = stopped < 0 && stopped > -.7, reach = shut;
       return { w: +Math.max(b.max.x - b.min.x, b.max.z - b.min.z).toFixed(2), h: +(b.max.y - b.min.y).toFixed(2), low: +(b.min.y - (d.floor === 2 ? FLOOR2_Y : 0)).toFixed(2), gap: +(lo + hi).toFixed(2), through: +through.toFixed(2), stopped: +stopped.toFixed(2), shut, reach }; });
-    return { cell: DCELL, ceil: FLOOR_HEIGHT, f2: FLOOR2_Y, gate: !!(gen && gen.gate), corrRoof, widths, rooms, wallTop: +(wb.max.y).toFixed(2), ceilY: cb ? +((cb.min.y + cb.max.y) / 2).toFixed(2) : null,
+    return { cell: DCELL, ceil: FLOOR_HEIGHT, f2: FLOOR2_Y, hallD: gen && gen.hall ? gen.hall.D : null, gate: !!(gen && gen.gate), corrRoof, widths, rooms, wallTop: +(wb.max.y).toFixed(2), ceilY: cb ? +((cb.min.y + cb.max.y) / 2).toFixed(2) : null,
       doors, nDoors: DOORS.length, clear: !dBlk(px, pz), exitAt: +Math.hypot(px - dAt(dEntranceX), pz - dAt(dEntranceZ)).toFixed(2),
       foesIn: ENEMIES.filter(e => e.floor === 1 && !e.dead).every(e => !dSolid(e.x, e.z)), chestsIn: CHESTS.filter(c => (c.floor || 1) === 1).every(c => dCellOf(c.x) >= 0 && map[dCellOf(c.z)] && map[dCellOf(c.z)][dCellOf(c.x)] > 0) }; })));
 }
@@ -58,7 +58,8 @@ const gates = R.filter(r => r.what.startsWith('gate'));
 check('a gate\'s cell is 3 m, a fort\'s, a lair\'s and a dragon\'s lair\'s 2.5', R.every(r => r.cell === r.cellWant), R.map(r => [r.what, r.cell]));
 // S1293 — a gate's spaces stand to 50 m (gatespaces): its corridors and side rooms keep the 6 (dCeil); a fort's and a lair's whole shell is its ceiling
 check('the ceiling: a gate 6 m, a fort and a lair 3.6, a dragon\'s lair 5.5 (FLOOR_HEIGHT and the roof over the corridors and rooms; the walls\' top and the ceiling\'s plane where there are no spaces)', R.every(r => r.ceil === r.ceilWant && r.corrRoof.length && r.corrRoof.every(h => Math.abs(h - r.ceilWant) < 1e-6) && (r.gate || Math.abs(r.wallTop - r.ceilWant) < .1 && (r.ceilY == null || Math.abs(r.ceilY - r.ceilWant) < .15))), R.map(r => [r.what, r.ceil, r.corrRoof.slice(0, 3), r.wallTop, r.ceilY]));
-check('floor two hangs under floor one by its ceiling and 1.8 of rock', R.every(r => Math.abs(r.f2 + r.ceil + 1.8) < 1e-6), R.map(r => [r.what, r.f2]));
+// S1296 — a massive gate's floor two lies its stair hall's flights down (2 or 3 of 4.2 m), the others' under the ceiling and 1.8 of rock
+check('floor two hangs under floor one by its ceiling and 1.8 of rock, or in a massive gate by its stair hall\'s 2 or 3 flights of 4.2 m', R.every(r => r.hallD != null ? Math.abs(r.f2 + r.hallD) < 1e-6 && [8.4, 12.6].includes(r.hallD) : Math.abs(r.f2 + r.ceil + 1.8) < 1e-6), R.map(r => [r.what, r.f2, r.hallD]));
 const corr = R.filter(r => r.what !== 'fort'); /* a fort has halls of several cells, not corridors of one */
 check('a corridor is one cell wide: 3 m in a gate, 2.5 in a lair (within 0.1; at least 3 measured each)', corr.every(r => r.widths.length >= 3 && r.widths.every(w => Math.abs(w - r.cellWant) < .1)), corr.map(r => [r.what, r.widths]));
 check('a gate\'s side rooms are 9 to 36 m across (3 to 12 cells)', gates.every(r => r.rooms.length && r.rooms.every(([w, h]) => w >= 9 - 1e-6 && h >= 9 - 1e-6 && w <= 36 + 1e-6 && h <= 36 + 1e-6)), gates.map(r => [r.what, r.rooms.length, r.rooms.slice(0, 4)]));
