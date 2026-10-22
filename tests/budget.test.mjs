@@ -44,16 +44,16 @@ const count = () => page.evaluate(() => {
   return { calls: all.calls, tris: all.tris, shadow: all.calls - eye.calls, post: eye.calls - bare.calls, eye: bare.calls, by, others, shadowTris: all.tris - eye.tris };
 });
 const med = a => a.slice().sort((x, y) => x - y)[a.length >> 1];
-const measure = async (label, level) => { const r = []; for (let i = 0; i < 3; i++) { await g.spin(null, 20); await g.frames(1); r.push(await count()); }
+const measure = async (label, level) => { const r = []; for (let i = 0; i < 3; i++) { await g.spin(null, 20); r.push(await count()); }
   const mid = r.slice().sort((x, y) => x.calls - y.calls)[1]; const row = { label, level, ...mid, tris: med(r.map(x => x.tris)), spread: [Math.min(...r.map(x => x.calls)), Math.max(...r.map(x => x.calls))] };
   console.log(el(), JSON.stringify(row)); return row; };
 // stand at a spot, looking one way, at an hour, and let the cells, the chunks, the grass and the bodies near it build
 const stand = async (x, z, ry, hour) => {
   await page.evaluate(([x, z, ry, h]) => { px = x; pz = z; yaw = ry; pitch = -.05; forceTime(h); }, [x, z, ry, hour]);
-  const t = Date.now(); await g.cells(); for (let i = 0; i < 6; i++) { await g.spin(null, 60); await page.evaluate(() => { const t0 = performance.now(); while (JOBS.length && performance.now() - t0 < 1500) runJobs(); }); await g.frames(2); }
+  const t = Date.now(); await g.cells(); for (let i = 0; i < 3; i++) { await g.spin(null, 60); await page.evaluate(() => { const t0 = performance.now(); while (JOBS.length && performance.now() - t0 < 1500) runJobs(); }); await g.frames(2); }
   console.log(`  stood at ${Math.round(x)}, ${Math.round(z)}, ${hour}h in ${Math.round((Date.now() - t) / 1000)} s`);
 };
-const setLevel = async n => { const t = Date.now(); await page.evaluate(n => { SETTINGS.quality = n; if (typeof qualityApply === 'function') qualityApply(); else landQuality(); }, n); await g.spin(null, 120); await g.frames(2); console.log(`  level ${n} set in ${Math.round((Date.now() - t) / 1000)} s`); };
+const setLevel = async n => { const t = Date.now(); await page.evaluate(n => { SETTINGS.quality = n; if (typeof qualityApply === 'function') qualityApply(); else landQuality(); }, n); await g.spin(null, 120); console.log(`  level ${n} set in ${Math.round((Date.now() - t) / 1000)} s`); };
 
 const rows = [];
 check('Dunmore stands on the new look', await g.settle('dunmore'));
