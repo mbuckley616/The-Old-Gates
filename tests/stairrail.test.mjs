@@ -14,7 +14,7 @@ import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
 const rows = [];
-// S1284 — only a massive gate has a floor two and its stair now (the sheet's table; makeGate)
+// S1293 — only a massive gate has a floor two and its stair now (the sheet's table; makeGate)
 for (const seed of [4021, 4022, 4023, 4024, 4025, 4026]) {
   await page.evaluate((seed) => { window._oldStair = typeof dScene !== 'undefined' && dScene.children.find(o => o.userData && o.userData.dunShell === 'stair'); const p = Object.assign({}, PORTALS[0], { id: 'dyn_' + seed, theme: 'deep', seed, size: 'massive', interior: 'cave', zone: 'world', tutorial: false }); goToDungeon(p); }, seed);
   for (let k = 0; k < 20 && !(await page.evaluate(() => activeZoneId === 'dungeon' && scene === dScene && !dScene.children.includes(window._oldStair))); k++) await page.waitForTimeout(300);

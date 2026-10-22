@@ -1,4 +1,4 @@
-// The proven way through a gate (card F5, Session 1284; docs/design/gate-interiors-build.md, "Condition" and "The suites"): from
+// The proven way through a gate (card F5, Session 1293; docs/design/gate-interiors-build.md, "Condition" and "The suites"): from
 // the way in to the ring chamber there is always a way on foot, and nothing on it needs a skill (every gap under 2.5 m, anyone's
 // running jump). Twenty seeds a size through the generator, the way found over the cells you can stand on (a chasm's open air and
 // a pier are not); then three gates built and the way walked by a body 0.3 round with the game's own dSlide, cell by cell, through

@@ -1,4 +1,4 @@
-// A gate as spaces (card F5, Session 1284; Michael's B on #448, docs/design/gate-interiors-build.md, "The six spaces" and "Grids and
+// A gate as spaces (card F5, Session 1293; Michael's B on #448, docs/design/gate-interiors-build.md, "The six spaces" and "Grids and
 // counts by gate"). makeGate lays a gate's great spaces first on its 3 m grid, joined through thresholds (a slit 1 cell wide and
 // 8 m high), never a corridor, with the ring chamber last; side rooms hang off one space each. Twenty seeds a size through the
 // generator alone, then one gate of each lesser size built and measured with the game's own solids and roof (dSolid, dCeil).

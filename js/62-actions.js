@@ -934,7 +934,7 @@ function drawMM(){
     for(let r=0;r<dR;r++)for(let c=0;c<dC;c++){
       if(!mmRev[r][c]){mmC.fillStyle='#0a0908';mmC.fillRect(c*sc,r*sc,sc,sc);continue;}
       const mv=curMap[r][c];
-      mmC.fillStyle=mv===0||mv===9?'#1e1a14':mv===8?'#050506':mv===5?'#8a4a10':mv===6?'#3a3020':mv===3?'#7a6840':'#4a4438'; /* S1284 — a chasm black, a pier as rock */
+      mmC.fillStyle=mv===0||mv===9?'#1e1a14':mv===8?'#050506':mv===5?'#8a4a10':mv===6?'#3a3020':mv===3?'#7a6840':'#4a4438'; /* S1293 — a chasm black, a pier as rock */
       mmC.fillRect(c*sc,r*sc,sc-.5,sc-.5);}
     // S329 (Michael's A on #58) — Ashwort's pulse: for its 5 s, every undisguised foe on this floor within 20 units shows, seen or not
     // S364 — a disguised mimic is never drawn, seen or not: the map drew it as a foe on any revealed cell, beside no chest

@@ -64,7 +64,7 @@ function dunFloorHeight(portal){return portal&&portal.lair&&portal.lair.dragon?W
 function dunFloor2Y(h){return -(h+1.8);}
 // a position in metres to its cell, and a cell to the metres of its centre
 function dCellOf(v){return Math.floor(v/DCELL+.5);}
-// S1284 — the roof over a point of the dungeon, metres over its floor: a gate's spaces stand to 50 m (makeGate's ceilAt), the rest
+// S1293 — the roof over a point of the dungeon, metres over its floor: a gate's spaces stand to 50 m (makeGate's ceilAt), the rest
 // is FLOOR_HEIGHT. D_CEIL[floor] reads a point in cells; set by buildDungeon.
 let D_CEIL=[null,null,null];
 function dCeil(x,z){const f=D_CEIL[currentFloor];return f?f(x/DCELL,z/DCELL):FLOOR_HEIGHT;}
@@ -147,7 +147,7 @@ function makeDungeon(size,seed){
 
   return dunAfterLayout(map,rooms,rooms.slice(1),cfg,r,rand,seed,entC,entR,null);
 }
-// S1284 — makeDungeon's tail, from the treasure rooms on (the doors, the well, the keys, floor two), its own function so a gate's
+// S1293 — makeDungeon's tail, from the treasure rooms on (the doors, the well, the keys, floor two), its own function so a gate's
 // space pass (makeGate) shares it: `rest` are the rooms a treasure room or the well may hang off (makeDungeon's all but the first),
 // `noDoor` the cells no door is hung in (a gate's thresholds). The stream r is the caller's, so makeDungeon rolls as it always did.
 function dunLcg(s){let v=s;return()=>{v=(v*1664525+1013904223)>>>0;return v/4294967296;};}
@@ -305,7 +305,7 @@ function dunAfterLayout(map,rooms,rest,cfg,r,rand,seed,entC,entR,noDoor){
   return{map,map2,W,H,rooms,rooms2,entC,entR,treasureDoors,stairC,stairR,keyLocations,cfg};
 }
 
-// ═══ S1284 (card F5, the build sheet's session 2; Michael's B on #448) — A GATE AS SPACES ═══
+// ═══ S1293 (card F5, the build sheet's session 2; Michael's B on #448) — A GATE AS SPACES ═══
 // An old gate is a chain of great spaces on its 3 m grid, laid before the rooms: a nave, a crossing, a chasm, a flooded hall,
 // and the ring chamber always last (gate-interiors-build.md, "The six spaces"). Spaces join through thresholds (a slit 1 cell
 // wide and 8 m high in the one cell of wall between them), never a corridor; side rooms hang off a space by today's L corridors,
@@ -1364,7 +1364,7 @@ function dSolid(x,z){
   const map=activeMap();
   if(row<0||row>=dR||col<0||col>=dC)return true;
   const v=map[row][col];
-  if(v===0||v===8||v===9)return true; // S1284 — a chasm's open air and a pier's footing (a gate's spaces)
+  if(v===0||v===8||v===9)return true; // S1293 — a chasm's open air and a pier's footing (a gate's spaces)
   // v61g6: tile 4 (unlocked door) now consults DOORS like tile 5 does. Pre-v61g6,
   // tile 4 returned !solid unconditionally because unlocked doors had no mesh and
   // were treated as permanently-open passages. v61g6 spawns door meshes for ALL

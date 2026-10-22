@@ -46,7 +46,7 @@ for (const i of idx) {
   await page.evaluate(() => goToOW()); await page.waitForTimeout(4000); await g.hide();
 }
 const inD = rows.filter(r => r.zone === 'dungeon');
-// S1284 — chests at their expectation too (a chest's odds above, as the bodies are): an old gate laid as spaces moved every gate's chests
+// S1293 — chests at their expectation too (a chest's odds above, as the bodies are): an old gate laid as spaces moved every gate's chests
 // to new places and keys, so the eight dungeons' rolled picks are a fresh draw of a small sample (main 5.6, this branch 3.5 with 49 chests
 // against main's 50); what a clear offers is how many chests it holds and what each holds on average. The rolled mean is still printed.
 const rolled = inD.reduce((a, r) => a + r.found + r.humanoid * .075, 0) / Math.max(1, inD.length);

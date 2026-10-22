@@ -46,7 +46,7 @@ check('the third-person camera\'s ceiling on the wyrm\'s floor reads the lair\'s
 const O = await page.evaluate(() => { const out = {}; for (const [k, lair] of [['beast', { place: 'Test', boss: 'Brute', dragon: false }], ['cave', null]]) {
   const p = Object.assign({}, PORTALS[0], { theme: 'deep', seed: 4022, size: 'medium', interior: 'cave', zone: 'world', tutorial: false, lair }); buildDungeon(p);
   let y1 = -1e9; dScene.traverse(o => { if (o.isMesh && o.userData && o.userData.dunShell === 'ceiling') { o.updateMatrixWorld(true); y1 = Math.max(y1, new THREE.Box3().setFromObject(o).max.y); } });
-  /* S1284 — a gate's spaces stand to 50 m (makeGate): its roof is read over a corridor, where it is the gate's 6 */
+  /* S1293 — a gate's spaces stand to 50 m (makeGate): its roof is read over a corridor, where it is the gate's 6 */
   const gen = window._lastGen; let corr = null; if (gen && gen.gate) for (let r = 0; r < dR && corr == null; r++) for (let c = 0; c < dC && corr == null; c++) if (dMap[r][c] === 1 && gen.cellSpace[r][c] < 0 && !gen.thresholds.some(t => t.c === c && t.r === r)) corr = dCeil(dAt(c), dAt(r));
   out[k] = { h: FLOOR_HEIGHT, roof: +y1.toFixed(2), corr }; } return out; });
 console.log(JSON.stringify(O));

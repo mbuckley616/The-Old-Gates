@@ -31,7 +31,7 @@ fs.writeFileSync('tests/out/gargoyle.png', Buffer.from(shot.split(',')[1], 'base
 
 // the dungeon's gargoyle: a statue until you come close, then it stands and spreads its wings
 let gg = { none: true };
-// S1284 — a medium gate is one floor of spaces now (half the foes it had on two), and a gargoyle's least tier is 2 (a floor two's): the search runs over massive gates
+// S1293 — a medium gate is one floor of spaces now (half the foes it had on two), and a gargoyle's least tier is 2 (a floor two's): the search runs over massive gates
 for (const seed of [5, 12, 17, 23, 31, 44, 52, 61, 73, 88]) { await page.evaluate(() => { level = 6; }); await enterDungeon(page, { theme: 'ruins', seed, size: 'massive' });
   gg = await page.evaluate(() => { const e = ENEMIES.find(x => (x.baseType || x.name) === 'Gargoyle'); if (!e) return { none: true }; const r = e.limbs && e.limbs.person; if (!r) return { person: false };
     e.mesh.visible = true; let t = 6e5; for (let k = 0; k < 60; k++) tickPeople(1 / 60, t += 16.7);

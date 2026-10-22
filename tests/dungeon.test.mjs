@@ -6,7 +6,7 @@ import fs from 'fs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
 fs.mkdirSync('tests/out', { recursive: true });
-// S1284 — the shell's own measures (a face for every side, the cove, the beams) are read in a cave laid as rooms and corridors: an
+// S1293 — the shell's own measures (a face for every side, the cove, the beams) are read in a cave laid as rooms and corridors: an
 // old gate is laid as spaces now (makeGate; gatespaces measures its roofs and walls), so this enters a lair's cavern (lairDoor), the
 // same seed and theme, at its 2.5 m cell
 await page.evaluate(() => { window._prevDScene = typeof dScene !== 'undefined' ? dScene : null; });
