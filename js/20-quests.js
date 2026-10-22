@@ -136,8 +136,8 @@ const WORLD_DUNGEONS=[
 
   // ── ASHENMOOR ─────────────────── 7 dungeons, easy→normal range
   // None closer than ~55 units from village center (31,31)
-  {zone:'overworld',x:72,z:8,  seed:42,  size:'medium', theme:'undead',    diff:'easy',   canonicalName:'The Dungeon of Shadows'},
-  {zone:'overworld',x:100,z:25,seed:137, size:'large',  theme:'elemental', diff:'normal', canonicalName:'The Crypt of Embers'},
+  {zone:'overworld',x:72,z:8,  seed:42,  size:'medium', theme:'undead',    diff:'easy',   canonicalName:'The Dungeon of Shadows', floors:2},
+  {zone:'overworld',x:100,z:25,seed:137, size:'large',  theme:'elemental', diff:'normal', canonicalName:'The Crypt of Embers', floors:2},
   {zone:'overworld',x:28,z:95, seed:891, size:'large',  theme:'deep',      diff:'normal'},
   {zone:'overworld',x:95,z:55, seed:204, size:'tiny',   theme:'goblin',    diff:'veryeasy'},
   {zone:'overworld',x:8, z:90, seed:315, size:'small',  theme:'haunted',   diff:'easy'},
@@ -155,7 +155,7 @@ const WORLD_DUNGEONS=[
   // ── IRONHAVEN ─────────────────── 7 dungeons, normal→veryhard range
   {zone:'ironhaven',x:25, z:50, seed:801,size:'medium', theme:'undead',    diff:'normal'},
   {zone:'ironhaven',x:170,z:30, seed:823,size:'medium', theme:'elemental', diff:'hard'},
-  {zone:'ironhaven',x:185,z:160,seed:845,size:'large',  theme:'deep',      diff:'hard',   canonicalName:'The Vault of the Tide'},
+  {zone:'ironhaven',x:185,z:160,seed:845,size:'large',  theme:'deep',      diff:'hard',   canonicalName:'The Vault of the Tide', floors:2},
   {zone:'ironhaven',x:20, z:155,seed:867,size:'small',  theme:'goblin',    diff:'normal'},
   {zone:'ironhaven',x:100,z:178,seed:889,size:'small',  theme:'haunted',   diff:'hard'},
   {zone:'ironhaven',x:22, z:100,seed:911,size:'large',  theme:'ruins',     diff:'veryhard'},

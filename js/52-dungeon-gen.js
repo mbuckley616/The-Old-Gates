@@ -351,11 +351,14 @@ function gateHallSegs(nFl){const segs=[];let u=0,y=0;segs.push({kind:'landing',u
   for(let k=0;k<nFl;k++){segs.push({kind:'flight',u0:u,u1:u+GATE_FLIGHT_L,y0:y,y1:y-GATE_FLIGHT});u+=GATE_FLIGHT_L;y-=GATE_FLIGHT;
     segs.push({kind:'landing',u0:u,u1:u+GATE_LANDING_L,y0:y,y1:y});u+=GATE_LANDING_L;}
   return segs;}
-function makeGate(size,seed){
+// S1314 (Michael's A on #613) — floors 2 from the gate's own entry (WORLD_DUNGEONS: the main quest's Dungeon of Shadows and Crypt
+// of Embers, and Q5's Vault of the Tide) lays a lesser gate as a massive gate's two floors, on the massive grid; its foes, traps and side rooms stay its size's
+function makeGate(size,seed,floors){
   const r=dunLcg((hashSeed((seed|0)+0x6a7e)>>>0)||1),rand=(a,b)=>Math.floor(r()*(b-a+1))+a,pick=a=>a[Math.floor(r()*a.length)];
   const base={tiny:{tr:0,ur:1,en:5},small:{tr:1,ur:2,en:9},medium:{tr:1,ur:3,en:14},large:{tr:2,ur:4,en:20},massive:{tr:2,ur:6,en:30}}[size]?size:'small';
-  const N=GATE_GRID[base],W=N,H=N;
-  const cfg=Object.assign({W,H,minR:24,maxR:36,rwMin:3,rwMax:12,rhMin:3,rhMax:12,floors:base==='massive'?2:1},
+  const fl2=base==='massive'||floors===2&&base!=='tiny'&&base!=='small';
+  const N=GATE_GRID[fl2?'massive':base],W=N,H=N;
+  const cfg=Object.assign({W,H,minR:24,maxR:36,rwMin:3,rwMax:12,rhMin:3,rhMax:12,floors:fl2?2:1},
     {tiny:{tr:0,ur:1,en:5},small:{tr:1,ur:2,en:9},medium:{tr:1,ur:3,en:14},large:{tr:2,ur:4,en:20},massive:{tr:2,ur:6,en:30}}[base]);
   const layout=pick(GATE_LAYOUTS[base]);
   const nSp=rand(GATE_SPACE_N[base][0],GATE_SPACE_N[base][1]);
@@ -421,7 +424,7 @@ function makeGate(size,seed){
     if(!ok)continue;
     spaces=S;thresholds=T;entry=e;
   }
-  if(!spaces)return makeGate(size,seed+1000003); // no layout in forty tries: the next seed's
+  if(!spaces)return makeGate(size,seed+1000003,floors); // no layout in forty tries: the next seed's
   const ringSp=spaces[spaces.length-1],hallSp=two?spaces.find(s=>s.type==='stair'):null;
   // shortcuts (a ring of loops, a cave network): two spaces of one floor that happen to share a wall a cell thick get a second threshold
   if(layout==='loops'||layout==='cave'){let n=0;

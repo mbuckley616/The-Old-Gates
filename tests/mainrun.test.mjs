@@ -11,6 +11,9 @@ const crypt = await page.evaluate(() => ({ zone: activeZoneId, lid, portal: curr
 await page.evaluate(() => goToOW()); await page.waitForTimeout(9000); await g.hide();
 console.log('  crypt', JSON.stringify(crypt), '→', await page.evaluate(() => activeZoneId));
 const stop = g.keepAlive();
+// S1250 — the drawing stubbed from here on: on the new look a drawn frame on software GL takes seconds and the suite was killed at
+// its 900 s. It reads dialogue, quests, positions and the loop's state, never a pixel; the game's own frames and timers run as before
+await page.evaluate(() => { REN.render = () => {}; });
 const W = (ms) => page.waitForTimeout(ms);
 const Q = ['q0_arrival', 'q1_first_blood', 'q2_strange_markings', 'q3_the_merchant_knows', 'q4_crypt_of_embers', 'q5_caldric_commission', 'q6_binding_stone', 'q7_the_rubbing'];
 const states = () => page.evaluate((Q) => Q.map(id => id.split('_')[0] + ':' + qState(id)).join(' '), Q);
