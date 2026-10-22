@@ -3,12 +3,12 @@
 // aurenneTavern from rooms.js, and this holds the copy to the prototype: three keys of the tavern and three houses (Roman with an arcade,
 // flat with a dome, lattices and a pergola, flat with an outside stair) build to the triangles, draws and vertex hashes the prototype
 // gives for the same keys (read from the prototype in the test Chromium, 19 Oct 2026), the same twice, at 9.6 by 8 m with its seven
-// tables.
+// tables. (Session 1321: the house's door 2.1 m to its head, so the shell's and the three houses' hashes read again from the prototype.)
 // The new look only since 1.0 was frozen (18 Oct 2026): the old look’s check is gone.
 import { boot, check } from './lib/game.mjs';
-const TAV = { tavern: [10508, 18, 1688931971], 'tavern:0': [10928, 18, 17590128], 'tavern:1': [10600, 18, -272605017] }, SHELL = [3476, 8, 472917338];
-const HOUSE = { 'house:a': [{ kind: 'tile', w: 8.4, d: 7.2, two: true, arcade: true }, 5408, 12, 1286884975, 7.786], 'house:b': [{ kind: 'flat', w: 8.8, d: 7.0, two: true, dome: 'blue', pergola: true, lattice: true, stair: false }, 7966, 14, 628404905, 9.281],
-  'house:c': [{ kind: 'flat', w: 7.0, d: 6.4, two: false, stair: true, pergola: false }, 4992, 11, -1240906987, 4.445] };
+const TAV = { tavern: [10508, 18, 1688931971], 'tavern:0': [10928, 18, 17590128], 'tavern:1': [10600, 18, -272605017] }, SHELL = [3476, 8, 1518128890];
+const HOUSE = { 'house:a': [{ kind: 'tile', w: 8.4, d: 7.2, two: true, arcade: true }, 5408, 12, 1497868403, 7.786], 'house:b': [{ kind: 'flat', w: 8.8, d: 7.0, two: true, dome: 'blue', pergola: true, lattice: true, stair: false }, 7966, 14, 695957705, 9.281],
+  'house:c': [{ kind: 'flat', w: 7.0, d: 6.4, two: false, stair: true, pergola: false }, 4992, 11, 569540511, 4.445] };
 const g = await boot({ look: 'new' }); const { page } = g;
 const R = await page.evaluate(([TAV, HOUSE]) => { const hash = b => { let h = 0; b.traverse(m => { if (!m.isMesh) return; const a = m.geometry.attributes.position.array; for (let i = 0; i < a.length; i += 3) h = (h * 31 + Math.round(a[i] * 1e4)) | 0; }); return h; };
   const tav = {}, house = {};
