@@ -1228,7 +1228,8 @@ function loop(now){
       // sneak/buff modulation, vision cone, and hearing radius. LOS still
       // checked separately (existing dungeon behavior) since it uses dSolid.
       const _calm=typeof beastAtPeace==='function'&&beastAtPeace(e);if(_calm)e.alert=false;if(_calm&&typeof cloakTurnAway==='function')cloakTurnAway(e,()=>canSeePlayer(e,dist,8)); /* S777 — the Wolf-Mother's Cloak, underground as in the open */
-      if(!e.alert && !_calm && canSeePlayer(e, dist, 8)){ /* S635 — 3.5 → 8 (Michael's A on #190) */
+      const _sight=e.pocket&&e.ranged?GATE_ARCHER_SIGHT:8;
+      if(!e.alert && !_calm && !e._homing && canSeePlayer(e, dist, _sight)){ /* S635 — 3.5 → 8 (Michael's A on #190); S1323 — an archer in a gate's pocket sees 20 m, and a foe walking home sees nothing until it is home */
         // Quick LOS: cast ~8 steps between enemy and player, check for walls
         let los=true;
         for(let t=0.15;t<0.9;t+=0.15){
@@ -1238,7 +1239,14 @@ function loop(now){
         if(los)e.alert=true;
       }
       // Stay alert while within a larger radius — only forget player when far away
-      if(e.alert&&dist>14)e.alert=false;
+      if(e.alert&&dist>Math.max(14,_sight))e.alert=false; /* S1323 — an archer of a pocket forgets you past its own 20 m, not at 14 */
+      // S1323 (F5's session 3, the build sheet's leash) — a foe of a gate's pocket wakes its pocket when it wakes, by sight or by a
+      // blow; past the pocket's radius + 10 m it gives up and walks home, keeping its wounds, as it does when it forgets you at 14 m
+      if(e.pocket){const P=e.pocket;
+        if(e.alert&&!e._pkAwake){if(e._homing){e.path=[];e.pathT=0;}e._homing=false;e._pkAwake=true;for(const o of ENEMIES)if(o!==e&&!o.dead&&o.floor===e.floor&&o.pocket&&o.pocket.id===P.id&&!o.alert&&!o.dormant&&!o.disguised&&!o.cloakSleep){o.alert=true;o._homing=false;o._pkAwake=true;}}
+        if(e.alert&&Math.hypot(e.x-P.x,e.z-P.z)>P.r+GATE_LEASH)e.alert=false;
+        if(!e.alert&&e._pkAwake){e._homing=true;e.hasCried=false;e.path=[];e.pathT=0;}
+        e._pkAwake=e.alert;}
       // Vanish buff — enemies lose the player
       if(_hasBuff('vanish')&&e.alert){e.alert=false;e.hasCried=false;}
       // v63 — Unaware patrol behavior. Dungeon enemies previously stood
@@ -1250,6 +1258,14 @@ function loop(now){
       // until activated by the dormant block below. Slimes also skip; they
       // hover/jiggle but don't need a patrol path.
       if(!e.alert){
+        if(e._homing&&!e.dormant){const hd=Math.hypot(e.homeX-e.x,e.homeZ-e.z); /* S1323 — home by the cells' path, at a walk */
+          if(hd<.75){e._homing=false;e.path=[];}
+          else{e.pathT-=dt;if(e.pathT<=0||!e.path||!e.path.length){e.path=bfs(e.x,e.z,e.homeX,e.homeZ);e.pathT=2;}
+            const nx0=e.path&&e.path.length?dAt(e.path[0][0]):e.homeX,nz0=e.path&&e.path.length?dAt(e.path[0][1]):e.homeZ,dx=nx0-e.x,dz=nz0-e.z,d=Math.hypot(dx,dz);
+            if(d<.1&&e.path&&e.path.length)e.path.shift();
+            else if(d>0){const step=Math.min(d,dungeonChaseSpeed(e)*.6*dt);const [nx,nz]=dSlide(e.x,e.z,dx/d*step,dz/d*step);e.x=nx;e.z=nz;e.combatYaw=Math.atan2(dx,dz);}
+            if(e.limbs&&!e.isWraith){e.walkT+=dt*e.spd*6;const sw=Math.sin(e.walkT)*.45;if(e.limbs.legL)e.limbs.legL.rotation.x=sw;if(e.limbs.legR)e.limbs.legR.rotation.x=-sw;}
+            const _hy=e.isWraith?Math.sin(swT*1.4+e.ph)*.12:0;e.mesh.position.set(e.x,e.baseY+_hy,e.z);e.mesh.rotation.y=e.combatYaw;e.el.position.set(e.x,.8,e.z);return;}}
         if(e.dormant){
           // Statue pose — keep mesh at home position, no rotation, no movement.
           e.mesh.position.set(e.x, e.baseY, e.z);

@@ -547,6 +547,27 @@ function makeGate(size,seed,floors){
   return gen;
 }
 
+// S1323 (card F5, the build sheet's session 3, "Pockets and the leash") — where a gate's fights stand. Each space of a floor
+// (the stair hall aside) holds pockets along its way, evenly: 25 to 42 m apart (one alone in a short space), so two
+// pockets never wake as one, and each end is within 25 m of one, so no stretch of the way runs 50 m without a fight. A pocket's radius is 0.4 of its spacing,
+// 7.5 to 15 m and no wider than the space. Places in cells (the dungeon's own, scaled whole later), radius in cells too; the way's
+// order is the spaces' (their ids). Nothing here is rolled: the layout decides it.
+const GATE_POCKET_GAP=[25,42],GATE_POCKET_R=[7.5,15],GATE_LEASH=10,GATE_ARCHER_SIGHT=20;
+function gatePocketSites(gen,fl){
+  const M=fl===2?gen.map2:gen.map,CS=fl===2?gen.cellSpace2:gen.cellSpace,out=[];if(!M||!CS)return out;
+  const H=M.length,W=M[0].length,thr=new Set((gen.thresholds||[]).map(t=>t.r*W+t.c));
+  for(const sp of gen.spaces){if(sp.type==='stair'||(sp.floor||1)!==fl)continue;
+    const Lm=sp.L*GATE_CELL,nMin=Math.ceil(Lm/GATE_POCKET_GAP[1]),nMax=Math.floor(Lm/GATE_POCKET_GAP[0]);
+    const n=Math.max(1,nMin<=nMax?Math.min(nMax,Math.max(nMin,Math.round(Lm/33))):nMax);
+    const rad=Math.max(GATE_POCKET_R[0],Math.min(GATE_POCKET_R[1],.4*Lm/n,sp.A*GATE_CELL/2))/GATE_CELL;
+    for(let k=0;k<n;k++){const u=(k+.5)*sp.L/n,[c0,r0]=gateCellAt(sp,Math.min(sp.L-1,Math.floor(u)),Math.floor(sp.A/2));
+      let best=null,bd=1e9;
+      for(let y=r0-4;y<=r0+4;y++)for(let x=c0-4;x<=c0+4;x++){if(y<0||x<0||y>=H||x>=W||M[y][x]!==1||CS[y][x]!==sp.id||thr.has(y*W+x))continue;
+        const d=Math.hypot(x-c0,y-r0);if(d<bd){bd=d;best=[x,y];}}
+      if(best)out.push({id:out.length,c:best[0],r:best[1],rad,sp:sp.id,u});}}
+  return out;
+}
+
 // v61gg: integer hash for decoupling sub-RNGs from layout RNG. Used by the
 // fort utility-room kind shuffle. The bare seeded LCG produces near-identical
 // first outputs for sequential seeds (e.g. 7099-7106 all yield r()[0] > 0.83),

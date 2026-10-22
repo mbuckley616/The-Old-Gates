@@ -3216,7 +3216,21 @@ function buildDungeon(portal){
     // so combat encounters are spaced out and each fight is a learning
     // moment rather than a press of bone.
     const _enemyCap = portal.tutorial ? 3 : gen.cfg.en;
-    for(const pos of candidates){if(spawns.length>=_enemyCap)break;if(spawns.every(s=>Math.hypot(s[0]-pos[0],s[1]-pos[1])>=MIN_DIST))spawns.push(pos);}
+    // S1323 (F5's session 3, the build sheet's pockets) — a gate's foes: its size's count across the gate (a two-floor gate's halves
+    // by floor, floor one the larger), seven in ten in pockets of 2 to 4 along the way (gatePocketSites), the pockets that hold them
+    // spread evenly when the count is short of 2 a pocket; the rest stand out of every pocket, as before. Each keeps its pocket.
+    const pockets=[];
+    if(gen.gate&&!portal.tutorial){
+      const en=gen.cfg.en,E=gen.map2?(floorIdx===1?Math.ceil(en/2):Math.floor(en/2)):en,inP=Math.round(E*.7);
+      const sites=gatePocketSites(gen,floorIdx),k=Math.min(sites.length,Math.floor(inP/2));
+      const held=[];for(let i=0;i<k;i++)held.push(sites[Math.floor((i+.5)*sites.length/k)]);
+      const want=held.map(()=>2);let rest=inP-2*k;for(let g2=0;rest>0&&g2<2;g2++)for(let i=0;i<k&&rest>0;i++){want[i]++;rest--;}
+      held.forEach((P,i)=>{const mine=[];
+        for(const pos of candidates){if(mine.length>=want[i])break;if(Math.hypot(pos[0]-P.c,pos[1]-P.r)>P.rad)continue;
+          if(spawns.every(s=>Math.hypot(s[0]-pos[0],s[1]-pos[1])>=1.5)){spawns.push(pos);mine.push(pos);pockets.push({id:floorIdx+':'+P.id,x:P.c,z:P.r,r:P.rad});}}});
+      for(const pos of candidates){if(spawns.length>=E)break;if(held.some(P=>Math.hypot(pos[0]-P.c,pos[1]-P.r)<=P.rad+1))continue;
+        if(spawns.every(s=>Math.hypot(s[0]-pos[0],s[1]-pos[1])>=MIN_DIST)){spawns.push(pos);pockets.push(null);}}}
+    else for(const pos of candidates){if(spawns.length>=_enemyCap)break;if(spawns.every(s=>Math.hypot(s[0]-pos[0],s[1]-pos[1])>=MIN_DIST))spawns.push(pos);}
     // S364 — a mimic stands where a chest would: an L-corner inside a room, clear of the chests (it stood on any floor
     // cell like the rest, a third of them in the open or a corridor, where no chest ever stands; a tell that beat the bait)
     const _mRooms=floorIdx===2?(gen.rooms2||[]):gen.rooms,_mOpen=(c,r)=>(map[r]?.[c]|0)>=1;
@@ -3231,7 +3245,7 @@ function buildDungeon(portal){
       const variantKey=pickVariant(name, tierLevel(dTier), portal.diff, seededRng('variant',fid));
       const vr=applyVariantToDef(baseDef, name, variantKey);
       const d=vr.def, displayName=vr.displayName;
-      if(d.disguise&&mimicSpots.length){const k=mimicSpots.findIndex(([c,r])=>spawns.every((q,j)=>j===i||Math.hypot(q[0]-c,q[1]-r)>=2));if(k>=0){[ec,er]=mimicSpots.splice(k,1)[0];spawns[i]=[ec,er];}}
+      if(d.disguise&&mimicSpots.length){const k=mimicSpots.findIndex(([c,r])=>spawns.every((q,j)=>j===i||Math.hypot(q[0]-c,q[1]-r)>=2));if(k>=0){[ec,er]=mimicSpots.splice(k,1)[0];spawns[i]=[ec,er];pockets[i]=null;}}
       // v56 rebalance: multiply HP and dmg by level-scaled factors so late-game weapons don't
       // trivialise the early dungeons. Baseline (level 1) remains unscaled.
       const hpLvl=enemyHpScale(dTier);
@@ -3278,6 +3292,7 @@ function buildDungeon(portal){
         patrolPhase: Math.random() * Math.PI * 2,
         scanT: 0});
       keyFoe(ENEMIES[ENEMIES.length-1],fid);
+      if(pockets[i])ENEMIES[ENEMIES.length-1].pocket=Object.assign({},pockets[i]); /* S1323 — its pocket, in cells until dunScaleWhole (the leash, 90-main.js) */
       if(limbs.person)limbs.person.e=ENEMIES[ENEMIES.length-1]; // S196 — tickPeople walks the body by the enemy's own position
       // v61gj — Posture init. Family resolves from buildFn (stamped above) so the
       // family lookup doesn't have to fall back to name-matching for dungeon enemies.
@@ -3542,7 +3557,7 @@ function dunScaleWhole(k,wallMat){
   if(dScene.fog){dScene.fog.near*=k;dScene.fog.far*=k;}
   // the records
   const mv=(r,mesh)=>{if(!r||typeof r.x!=='number')return;const s=mesh&&shiftOf.get(mesh);if(s){r.x+=s[0];r.z+=s[1];}else{r.x*=k;r.z*=k;}};
-  for(const e of ENEMIES){e.x*=k;e.z*=k;if(typeof e.homeX==='number'){e.homeX*=k;e.homeZ*=k;}e.path=[];e.pathT=0;}
+  for(const e of ENEMIES){e.x*=k;e.z*=k;if(typeof e.homeX==='number'){e.homeX*=k;e.homeZ*=k;}if(e.pocket){e.pocket.x*=k;e.pocket.z*=k;e.pocket.r*=k;}e.path=[];e.pathT=0;}
   for(const c of CHESTS)mv(c,c.mesh);
   for(const b of BARRELS){const s=b.mesh&&shiftOf.get(b.mesh);mv(b,b.mesh);if(typeof b.wx==='number'){if(s){b.wx+=s[0];b.wz+=s[1];}else{b.wx*=k;b.wz*=k;}}}
   for(const q of KEYS){q.x*=k;q.z*=k;}

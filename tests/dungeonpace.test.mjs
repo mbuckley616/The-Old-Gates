@@ -29,6 +29,8 @@ for (const [seed, theme, interior] of [[4021, 'deep', 'cave'], [777, 'undead', '
     let best = null;
     for (let z = 1; z < 200; z++) for (let x = 1; x < 200; x++) { let n = 0; while (n < 14 && !dSolid(x + n, z) && !dSolid(x + n, z - 1) && !dSolid(x + n, z + 1)) n++; if (n >= 6 && (!best || n > best.n)) best = { x, z, n }; }
     if (!best) return { none: true };
+    // S1323 — the foes are staged far from their gate's pockets, and this measures the chase and the sight, not the leash (gatepockets): out of their pockets while staged
+    const pk = new Map(); ENEMIES.forEach(x => { pk.set(x, x.pocket); x.pocket = null; x._homing = false; x._pkAwake = false; });
     const park = (e) => ENEMIES.forEach(x => { if (x !== e && !x.dead) { x.dead = true; x._tmp = true; } });
     const unpark = () => ENEMIES.forEach(x => { if (x._tmp) { x.dead = false; x._tmp = false; } });
     const live = ENEMIES.filter(e => !e.dead && !e.disguised && !e.dormant && e.floor === 1 && !e.ranged && !e.master && !/Mimic/.test(e.name));
@@ -48,6 +50,7 @@ for (const [seed, theme, interior] of [[4021, 'deep', 'cave'], [777, 'undead', '
     // your walk down the run, the foes parked: W held, facing +x
     ENEMIES.forEach(x => { if (!x.dead) { x.dead = true; x._tmp = true; } }); prep(); px = best.x; pz = best.z; yaw = -Math.PI / 2; const w0 = px;
     K['KeyW'] = true; try { _drive(() => false, 60); } finally { K['KeyW'] = false; } const walk = +(px - w0).toFixed(2); unpark();
+    ENEMIES.forEach(x => { x.pocket = pk.get(x); });
     return { best, out, sg, walk };
   });
   console.log(seed, JSON.stringify(r));
