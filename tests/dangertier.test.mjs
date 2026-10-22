@@ -55,7 +55,10 @@ async function enter(lv) {
     goToDungeon(p); }, [lv, t.W]);
   for (let i = 0; i < 60; i++) { await page.waitForTimeout(400); if (await page.evaluate(() => activeZoneId === 'dungeon' && ENEMIES.length > 0)) break; }
   await g.frames(4);
-  const r = await page.evaluate(() => ENEMIES.map(e => ({ n: e.name, f: e.floor || 1, t: e.tier, hp: e.maxHp, m: +(e.dmgMult || 0).toFixed(3) })));
+  // S1327 — a catastrophic gate's ring chamber is guarded one tier up (F5's "Condition"): each foe says whether it stands there
+  const r = await page.evaluate(() => { const gen = window._lastGen, ring = gen && gen.cond === 'catastrophic' ? gen.spaces[gen.ring] : null, k = DCELL;
+    const inRing = e => !!ring && (ring.floor || 1) === (e.floor || 1) && e.x / k >= ring.x - .5 && e.x / k < ring.x + ring.w - .5 && e.z / k >= ring.y - .5 && e.z / k < ring.y + ring.h - .5;
+    return ENEMIES.map(e => ({ n: e.name, f: e.floor || 1, t: e.tier, hp: e.maxHp, m: +(e.dmgMult || 0).toFixed(3), ring: inRing(e) })); });
   // S1036 — a phantom's or wraith's orb on the first floor: 8–14 plus its tier's level × 1.5, not yours
   const orb = await page.evaluate(() => { const e = ENEMIES.find(q => q.ranged && (q.floor || 1) === 1 && !q.dead); if (!e) return null;
     currentFloor = 1; px = e.x + 4; pz = e.z; e.alert = true; e.rangedCd = 0; BALLS.filter(b => b.userData.isEnemyOrb).forEach(b => b.userData._old = true); return { name: e.name, tier: e.tier }; });
@@ -72,7 +75,7 @@ const oa = a.orb, ob = b.orb; delete a.orb; delete b.orb;
 console.log(JSON.stringify({ a, b, oa, ob }));
 check('a ranged foe\'s orb in the Wastes\' gate is 8–14 plus its tier\'s level (11) × 1.5, at level 10 and at level 20 (S1036)',
   !!oa && !!ob && oa.tier === 3 && [oa.dmg, ob.dmg].every(d => d >= 24 && d <= 30), { oa, ob });
-check('the Wastes\' gate: its foes are tier 3 on the first floor and 4 below', a.length > 0 && a.every(e => e.t === (e.f > 1 ? 4 : 3)), a);
+check('the Wastes\' gate: its foes are tier 3 on the first floor and 4 below (a broken gate\'s ring one up, to 4; S1327)', a.length > 0 && a.every(e => e.t === Math.min(4, (e.f > 1 ? 4 : 3) + (e.ring ? 1 : 0))) && a.some(e => !e.ring), a);
 check('the same gate at level 20 holds the same foes with the same health and blows as at level 10', a.length === b.length && JSON.stringify(a) === JSON.stringify(b), { a, b });
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
