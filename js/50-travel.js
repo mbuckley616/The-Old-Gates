@@ -216,15 +216,21 @@ function fastTravelTo(nodeName){
 
 function tickNPCs(dt,now){OW_NPCS.forEach(n=>{n.wt-=dt;if(n.wt<=0){n.wa=Math.random()*Math.PI*2;n.wt=1.5+Math.random()*3;}const dh=Math.hypot(n.g.position.x-n.def.x,n.g.position.z-n.def.z);const ang=dh>4?Math.atan2(n.def.x-n.g.position.x,n.def.z-n.g.position.z):n.wa;const nx2=n.g.position.x+Math.sin(ang)*.4*dt,nz2=n.g.position.z+Math.cos(ang)*.4*dt;if(!owSolid(nx2,nz2)){n.g.position.x=nx2;n.g.position.z=nz2;}n.g.rotation.y=ang;const ty=getTerrainHeight(n.g.position.x,n.g.position.z);n.g.position.y=ty+Math.sin(now*.0025+n.ph)*.006;const sw=Math.sin(now*.006+n.ph)*.3;if(n.g.children[3])n.g.children[3].rotation.x=sw;if(n.g.children[4])n.g.children[4].rotation.x=-sw;if(n.g.children[5])n.g.children[5].rotation.x=-sw*.7;if(n.g.children[6])n.g.children[6].rotation.x=sw*.7;n.dot.position.set(n.g.position.x,ty+1.52+Math.sin(now*.0025+n.ph)*.006,n.g.position.z);});}
 function tickNPCsFor(npcs,dt,now,sz){npcs.forEach(n=>{n.wt=(n.wt||0)-dt;if(n.wt<=0){n.wa=Math.random()*Math.PI*2;n.wt=2+Math.random()*4;}const ang=n.wa;const nx2=n.g.position.x+Math.sin(ang)*.3*dt,nz2=n.g.position.z+Math.cos(ang)*.3*dt;const R=0.3;if(nx2>R&&nx2<(sz||70)-R&&nz2>R&&nz2<(sz||70)-R&&!currentZoneSolid(nx2,nz2)){n.g.position.x=nx2;n.g.position.z=nz2;}n.g.rotation.y=ang;const gY=activeTerrainH(n.g.position.x,n.g.position.z);n.g.position.y=gY+Math.sin(now*.002+n.ph)*.006;n.dot.position.set(n.g.position.x,gY+1.52,n.g.position.z);});}
+// S1278 — a herb's ground is read once and kept (h._by): every herb in every loaded cell read the whole terrain height each frame
+// to bob 1.6 cm, 8.3 ms of a 24 ms tick in Dunmore on CI's CPU. HERB_RR of them are read again each frame, round the list, so
+// ground a stamp or a road changes after the herb was set reaches it within a few seconds
+const HERB_RR=8;let _herbRR=0;
 function tickHerbs(dt,now){
   // Tick all zone herb arrays
   const allHerbs=activeZoneId==='world'?activeHerbs():activeZoneId==='forest'?FOREST_HERBS:activeZoneId==='ironhaven'?IH_HERBS:OW_HERBS; // v80 — streamed world keeps its herbs in ZONES.world.herbs
+  const nH=allHerbs.length;if(nH){for(let k=0;k<Math.min(nH,HERB_RR);k++){const h=allHerbs[(_herbRR+k)%nH];if(h)h._by=null;}_herbRR=(_herbRR+HERB_RR)%nH;}
   allHerbs.forEach(h=>{
     if(h.harvested){
       if(h.def.respawn!=null){h.respawnT-=dt;if(h.respawnT<=0){h.harvested=false;h.g.visible=true;h.gl.intensity=h.def.glowInt||.5;const u=h.g.userData;if(u&&u.picked){u.whole.visible=true;u.picked.visible=false;}}}
       return;
     }
-    const baseY=activeTerrainH(h.x,h.z);
+    if(h._by==null)h._by=activeTerrainH(h.x,h.z);
+    const baseY=h._by;
     h.g.position.y=baseY+Math.sin(now*.0046+h.ph)*.016;
     h.g.rotation.y+=dt*.004;
     const pulse=.45+Math.sin(now*.18+h.ph)*.15;

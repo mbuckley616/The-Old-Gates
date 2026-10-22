@@ -25,25 +25,29 @@ check('praying gives the Boon of Renewal at 0.5 a second for 30 minutes', pray.o
 // altar: over the measure he wakes and kills you, and a dead player regains nothing. The suite measures the boon, so the foes
 // around the altar are put down before each measure.
 await page.evaluate(() => { window._clearFoes = () => { for (const e of (ZONES.world.enemies || [])) if (!e.dead && Math.hypot(e.x - px, e.z - pz) < 60) { e.dead = true; e.alert = false; if (e.mesh && e.mesh.parent) e.mesh.parent.remove(e.mesh); } }; });
-// the main loop's dt is capped at .05 a frame, and the scene runs well under 20 fps here, so each frame is .05 s of play
+// the main loop's dt is capped at .05 a frame, and the scene runs well under 20 fps here, so each frame was .05 s of play.
+// S1247 — on the new look those frames took seconds each and the suite was killed at 900 s; it now drives the game's own loop at
+// fixed 1/60 ticks with the drawing stubbed (as `wanderface` and `falls`), the same seconds of play: 120 ticks for the old 40 frames, 30 for 10
+await page.evaluate(() => { window._drive = (n) => { const raf = window.requestAnimationFrame, rr = REN.render; window.requestAnimationFrame = () => 0; REN.render = () => {};
+  let t = performance.now(); try { for (let k = 0; k < n; k++) { t += 1000 / 60; loop(t); } } finally { window.requestAnimationFrame = raf; REN.render = rr; prevT = 0; } }; });
 const run = (withBoon) => page.evaluate(async (withBoon) => {
   if (!withBoon) { const i = ACTIVE_BUFFS.findIndex(b => b.type === 'regen'); if (i >= 0) ACTIVE_BUFFS.splice(i, 1); }
   _clearFoes(); dead = false;
   PHP = 10; mana = 10; stamina = 10; staminaCD = 1e9;
   const t0 = performance.now();
-  await new Promise(r => { let k = 0; const f = () => (++k >= 40 ? r() : requestAnimationFrame(f)); requestAnimationFrame(f); });
+  prevT = performance.now(); _drive(120);
   const out = { hp: PHP - 10, mp: mana - 10, st: stamina - 10, secs: (performance.now() - t0) / 1000, boon: ACTIVE_BUFFS.some(b => b.type === 'regen') };
   staminaCD = 0; return out;
 }, withBoon);
 const on = await run(true), off = await run(false);
-check('under the boon, health and stamina each rise 0.5 a second of play (40 frames, about 2 s)', on.boon && on.hp > 0.8 && on.hp < 1.05 && Math.abs(on.st - on.hp) < 0.03, on);
+check('under the boon, health and stamina each rise 0.5 a second of play (2 s of play)', on.boon && on.hp > 0.8 && on.hp < 1.05 && Math.abs(on.st - on.hp) < 0.03, on);
 check('and mana rises 0.5 a second above its own 0.8', Math.abs(on.mp - on.hp * 2.6) < 0.08, on);
 check('without it, health and stamina stay put and mana keeps its own rate', !off.boon && off.hp === 0 && off.st === 0 && off.mp > 1.4 && off.mp < 1.65, off);
 const cap = await page.evaluate(async () => {
   _clearFoes();
   ACTIVE_BUFFS.push({ type: 'regen', mult: 1, rate: 0.5, remaining: 1800, duration: 1800, label: 't' });
   PHP = effMaxHP() - .1; mana = effMaxMana() - .1; stamina = effMaxStamina() - .1;
-  await new Promise(r => { let k = 0; const f = () => (++k >= 10 ? r() : requestAnimationFrame(f)); requestAnimationFrame(f); });
+  prevT = performance.now(); _drive(30);
   return { hp: PHP, mhp: effMaxHP(), mp: mana, mmp: effMaxMana(), st: stamina, mst: effMaxStamina() };
 });
 check('it fills to the worn maximum and no further', cap.hp === cap.mhp && cap.mp === cap.mmp && cap.st === cap.mst, cap);
