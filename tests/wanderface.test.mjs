@@ -16,11 +16,18 @@ await page.evaluate(() => { window._drive = (step, max) => {
   window._fwd = (e) => { const v = new THREE.Vector3(0, 0, 1).applyQuaternion(e.mesh.quaternion); return Math.atan2(v.x, v.z); };
   window._ad = (a, b) => { let d = a - b; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI; return Math.abs(d); };
   window._spawn = (kind, x, z) => { const e = unlockFoe(buildZoneEnemy(WORLD.scene, [], x, z, kind, null)); ZONES.world.enemies.push(e); return e; };
+  // S1245 — a home whose whole wander (a ring of 3 round it) is open ground, the first such from (x, z) outward, 8 clear of any home
+  // already taken: on the new look's Dunmore the Wolf's old home, 49 and 40 from the square, stood inside a building, so every
+  // step of its wander was refused and it never walked (0 samples)
+  window._homes = []; window._open = (x, z) => { for (let r = 0; r <= 30; r += 1.5) for (let k = 0; k < Math.max(1, r * 2); k++) { const a = k / Math.max(1, r * 2) * Math.PI * 2, hx = x + Math.sin(a) * r, hz = z + Math.cos(a) * r;
+      if (window._homes.some(q => Math.hypot(q[0] - hx, q[1] - hz) < 8)) continue; let ok = !currentZoneSolid(hx, hz);
+      for (let j = 0; ok && j < 24; j++) { const b = j / 24 * Math.PI * 2; if (currentZoneSolid(hx + Math.sin(b) * 3.3, hz + Math.cos(b) * 3.3)) ok = false; }
+      if (ok) { window._homes.push([hx, hz]); return [hx, hz]; } } return [x, z]; };
   window._drop = (e) => { e.dead = true; WORLD.scene.remove(e.mesh); const L = ZONES.world.enemies; L.splice(L.indexOf(e), 1); }; });
 const KINDS = ['Bandit', 'Wolf', 'Skeleton', 'Troll'];
 // 1. the body and the cone follow the walk
 const walk = await page.evaluate((KINDS) => { forceTime(12); const t = WORLD.siteAnywhere('dunmore'); px = t.x + 120; pz = t.z + 120; yaw = 0;
-  const es = KINDS.map((k, i) => _spawn(k, t.x + 40 + i * 9, t.z + 40));
+  _homes.length = 0; const es = KINDS.map((k, i) => { const [hx, hz] = _open(t.x + 40 + i * 9, t.z + 40); return _spawn(k, hx, hz); });
   const rec = es.map(e => ({ kind: e.name, worstBody: 0, worstCone: 0, n: 0, alert: false })); let prev = es.map(e => [e.x, e.z]);
   _drive((n) => { PHP = maxHP; if (n % 30 === 29) es.forEach((e, k) => { const dx = e.x - prev[k][0], dz = e.z - prev[k][1]; if (Math.hypot(dx, dz) > .05) {
       const mv = Math.atan2(dx, dz), r = rec[k]; r.worstBody = Math.max(r.worstBody, _ad(_fwd(e), mv)); r.worstCone = Math.max(r.worstCone, _ad(e.combatYaw, mv)); r.n++; }
