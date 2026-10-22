@@ -4466,9 +4466,13 @@ export function markCliffTerraces(o = {}, r = stream('terraces')) {
   for (let i = 0; i < 2; i++) walls.push({ z: ZB[i] - WT, y0: LV[i], y1: LV[i + 1] }); walls.push({ z: Z0 - FW, y0: -2.5, y1: 1.02, front: true });
   // the stone bridge: one arch across the gorge at the lowest terrace, the deck level with the land; piers down the gorge's walls to
   // under the land; a ring of voussoirs a little proud of each face; parapets with a cope
-  const BZ = ZC[0], BW = 2.8, BX = 6.8, SPR = 4.6, CROWN = -1.0, RISE = 4, AR = (RISE * RISE + SPR * SPR) / (2 * RISE), ACY = CROWN - AR, a0 = Math.asin((CROWN - RISE - ACY) / AR), PIER = bedY(BZ) - 1;
-  { const sh = new THREE.Shape([V(-BX, 0), V(BX, 0), V(BX, PIER), V(SPR, PIER), V(SPR, CROWN - RISE)]); for (let k = 1; k < 24; k++) { const a = a0 + (Math.PI - 2 * a0) * k / 24; sh.lineTo(AR * Math.cos(a), ACY + AR * Math.sin(a)); }
-    sh.lineTo(-SPR, CROWN - RISE); sh.lineTo(-SPR, PIER); sh.lineTo(-BX, PIER); sh.lineTo(-BX, 0); const g = new THREE.ExtrudeGeometry(sh, { depth: BW, bevelEnabled: false, curveSegments: 1 }); put(g, 'ashlar', 0, 0, BZ - BW / 2, 0, 0, 0, .6);
+  // (Session 1307, the critic's walk: the near pier read as stopping in mid-air) each pier goes down plumb to a knee under the arch, then
+  // batters out down the gorge's wall to a footing on the bed by the stream, its toe 0.5 m proud of the ground; the foot under the land
+  const BZ = ZC[0], BW = 2.8, BX = 6.8, SPR = 4.6, CROWN = -1.0, RISE = 4, AR = (RISE * RISE + SPR * SPR) / (2 * RISE), ACY = CROWN - AR, a0 = Math.asin((CROWN - RISE - ACY) / AR), FT = 3.2, KNEE = -14;
+  const gAt = (x0, x1, f) => { let v = f === Math.min ? 1e9 : -1e9; for (const s of [-1, 1]) for (let x = x0; x <= x1 + 1e-6; x += .2) for (let z = BZ - BW / 2; z <= BZ + BW / 2 + 1e-6; z += .2) v = f(v, ground(s * x, z)); return v; };
+  const TOE = gAt(FT, FT + .4, Math.max) + .5, PIER = Math.min(bedY(BZ) - 1, gAt(FT, BX, Math.min) - 1);
+  { const sh = new THREE.Shape([V(-BX, 0), V(BX, 0), V(BX, PIER), V(FT, PIER), V(FT, TOE), V(SPR, KNEE), V(SPR, CROWN - RISE)]); for (let k = 1; k < 24; k++) { const a = a0 + (Math.PI - 2 * a0) * k / 24; sh.lineTo(AR * Math.cos(a), ACY + AR * Math.sin(a)); }
+    sh.lineTo(-SPR, CROWN - RISE); sh.lineTo(-SPR, KNEE); sh.lineTo(-FT, TOE); sh.lineTo(-FT, PIER); sh.lineTo(-BX, PIER); sh.lineTo(-BX, 0); const g = new THREE.ExtrudeGeometry(sh, { depth: BW, bevelEnabled: false, curveSegments: 1 }); put(g, 'ashlar', 0, 0, BZ - BW / 2, 0, 0, 0, .6);
     const ring = new THREE.Shape(); for (let k = 0; k <= 24; k++) { const a = a0 + (Math.PI - 2 * a0) * k / 24; ring[k ? 'lineTo' : 'moveTo'](AR * Math.cos(a), ACY + AR * Math.sin(a)); } for (let k = 24; k >= 0; k--) { const a = a0 + (Math.PI - 2 * a0) * k / 24; ring.lineTo((AR + .55) * Math.cos(a), ACY + (AR + .55) * Math.sin(a)); }
     put(new THREE.ExtrudeGeometry(ring, { depth: BW + .1, bevelEnabled: false, curveSegments: 1 }), 'cope', 0, 0, BZ - BW / 2 - .05, 0, 0, 0, .6);
     for (const s of [-1, 1]) { bx('ashlar', -BX, BX, 0, 1.0, BZ + s * (BW / 2) - (s > 0 ? .35 : 0), BZ + s * (BW / 2) + (s > 0 ? 0 : .35), .6); bx('cope', -BX - .05, BX + .05, 1.0, 1.12, BZ + s * (BW / 2) - (s > 0 ? .4 : .05), BZ + s * (BW / 2) + (s > 0 ? .05 : .4)); } }
@@ -4520,7 +4524,7 @@ export function markCliffTerraces(o = {}, r = stream('terraces')) {
   const group = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = !['snow', 'cliff', 'gravel', 'water'].includes(k); m.receiveShadow = k !== 'water'; group.add(m); tris += g.attributes.position.count / 3; }
   const own = group.children.length; for (const H of hallG) { group.add(H.group); tris += H.tris; }
   return { group, tris: Math.round(tris), draws: own + hallG.reduce((a, H) => a + H.draws, 0), own, ground, bedY, levels: LV, depth: D, z0: Z0, lip: LIP, xe: XE, back: BACK, walk: WALK, zc: ZC,
-    bridge: { z: BZ, w: BW, x0: -BX, x1: BX, deck: 0, span: 2 * SPR, rise: RISE, crown: CROWN, spring: CROWN - RISE, inner: BW - .7 }, ropes, stairs, walls, halls, store: { x: STX, z: STZ, floor: SY + SF + .05 }, banners, rails, gaps, paths };
+    bridge: { z: BZ, w: BW, x0: -BX, x1: BX, deck: 0, span: 2 * SPR, rise: RISE, crown: CROWN, spring: CROWN - RISE, inner: BW - .7, toe: [FT, TOE], foot: PIER }, ropes, stairs, walls, halls, store: { x: STX, z: STZ, floor: SY + SF + .05 }, banners, rails, gaps, paths };
 }
 
 // ── the Mark's outpost under the aurora (Session 1243, card F8; L5's "the Mark's settlements", OG-034's "remote settlement under the
