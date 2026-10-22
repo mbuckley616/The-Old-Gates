@@ -1537,6 +1537,34 @@ function hbMerge(P,skip){const sk=P.skeleton,bones=sk.bones,bi=new Map(bones.map
 function hbDrop(rig){const H=rig.hb;if(!H)return;hbGive(rig);if(H.eyes)for(const e of H.eyes)e.o.material=e.m;if(H.lid)H.lid.dispose();if(H.root.parent)H.root.parent.remove(H.root);
   H.root.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material&&o.material!==HB_MID_MAT){const ms=Array.isArray(o.material)?o.material:[o.material];for(const m of ms){if(m.map&&m.map.isCanvasTexture&&o.parent===H.P.byName.head)m.map.dispose();m.dispose();}}});
   if(H.P.skeleton.boneTexture)H.P.skeleton.dispose();rig.hb=null;rig.mesh.visible=true;}
+// S1284 — a body's programs before it is seen (Michael's stutter in towns, backlog D; S1279 measured it). The first body drawn in a
+// garment kind compiled that kind's programs on the frame it was drawn (13 programs, 2.0 s, for a cloaked woman with a basket).
+// A new body is now cold: its driver's distant copy stands in until every material on it has a program. Where the GPU compiles
+// in parallel (KHR_parallel_shader_compile, every desktop Chrome) they are handed over at once and the body comes in when they are
+// ready; where it does not (SwiftShader), one material a frame at most that makes a new program, on a frame no body is built.
+// The program is keyed as the frame will draw it: the scene's own tone mapping (landPost's onBeforeRender), and a target when the
+// world's frame goes through bloom (three keys no tone mapping into a target).
+let HB_WARM_RT=null;
+function hbCompile(o,async){const s=scene,rt0=REN.getRenderTarget(),pre=s.onBeforeRender!==THREE.Object3D.prototype.onBeforeRender;
+  let rt=null;if(typeof LAND!=='undefined'&&LAND.on&&typeof sc!=='undefined'&&s===sc&&landQ().bloom)rt=HB_WARM_RT||(HB_WARM_RT=new THREE.WebGLRenderTarget(1,1));
+  let r=null;try{if(pre)s.onBeforeRender(REN,s,CAM);if(rt)REN.setRenderTarget(rt);r=async?REN.compileAsync(o,CAM,s):REN.compile(o,CAM,s);}
+  finally{if(rt)REN.setRenderTarget(rt0);if(pre)s.onAfterRender(REN,s,CAM);}return r;}
+function hbWarm(rig){const H=rig.hb;if(!H||typeof REN==='undefined'||!REN.compile)return;
+  if(HBODY.par==null)HBODY.par=!!(REN.extensions&&REN.extensions.has('KHR_parallel_shader_compile')); /* has, not get: get warns when it is missing */
+  // the middle level's one material (baked later, at 42 m): once, on a stand-in that shares the body's skeleton
+  let mid=null;if(!HBODY.midWarm){const o=H.full.find(x=>x.isSkinnedMesh);if(o){mid=new THREE.SkinnedMesh(o.geometry,HB_MID_MAT);mid.skeleton=o.skeleton;mid.receiveShadow=true;HBODY.midWarm=true;}}
+  if(HBODY.par){H.cold=true;try{if(mid)hbCompile(mid,false);hbCompile(H.root,true).then(()=>{H.cold=false;},()=>{H.cold=false;});}catch(e){H.cold=false;}return;}
+  H.cold=H.full.slice();if(mid)H.cold.unshift(mid);}
+// the next cold body's materials, one at a time, until one of them makes a program (that is this frame's compile) or all are done
+function hbWarmStep(){for(const rig of HB_RIGS){const H=rig.hb;if(!H||!Array.isArray(H.cold))continue;
+    const n0=REN.info.programs.length;
+    while(H.cold.length){const o=H.cold.pop();try{hbCompile(o,false);hbUpload(o);}catch(e){}if(REN.info.programs.length!==n0)break;}
+    // Chrome links a program when it is first asked about it: ask now, so the wait is this frame's and not the first draw's
+    const ps=REN.info.programs;for(let i=n0;i<ps.length;i++)try{ps[i].getUniforms();}catch(e){}
+    if(!H.cold.length)H.cold=false;return;}}
+// a mesh's textures sent to the GPU (a face's painted canvas, a weave): three uploads one on the frame it first draws it
+const HB_TEX=['map','normalMap','roughnessMap','metalnessMap','alphaMap','bumpMap','emissiveMap','aoMap'];
+function hbUpload(o){for(const m of Array.isArray(o.material)?o.material:[o.material])if(m)for(const k of HB_TEX)if(m[k]&&m[k].isTexture)REN.initTexture(m[k]);}
 // each frame, after the driver is posed: the level by distance, the pose copied, and at most one new body built
 function hbTick(now){let best=null,bd=HBODY.build;
   const busy=now-HBODY.last<HBODY.gap||(typeof JOBS!=='undefined'&&JOBS.length&&!(typeof isInterior==='function'&&isInterior()));
@@ -1545,7 +1573,8 @@ function hbTick(now){let best=null,bd=HBODY.build;
     if(top.parent!==scene||!top.visible||!root.visible)continue;
     const d=Math.hypot(CAM.position.x-top.position.x,CAM.position.z-top.position.z);
     if(!rig.hb){if(!busy&&!rig.hbFail&&d<bd){bd=d;best=rig;}continue;}
-    const L=rig.hb.L,a=HBODY.near+(L>0?-1:1),b=HBODY.mid+(L>1?-1:1);hbLevel(rig,d<a?0:d<b?1:2);
+    const L=rig.hb.L,a=HBODY.near+(L>0?-1:1),b=HBODY.mid+(L>1?-1:1);hbLevel(rig,rig.hb.cold?2:d<a?0:d<b?1:2);
     if(rig.hb.L<2){hbPose(rig);if(rig.hb.glow)hbGlow(rig);if(rig.hb.held.length)hbHold(rig);}}
   if(best&&best.hbFoe&&!best.hbG){try{best.hbG=hbFoeGenome(best);}catch(e){best.hbFail=true;console.warn('F4: no genome for the foe',best.hbFoe,e);best=null;}}
-  if(best){hbAttach(best);HBODY.last=now;if(best.hb){const t=best.foe?best.root.parent:best.root,d=Math.hypot(CAM.position.x-t.position.x,CAM.position.z-t.position.z);hbLevel(best,d<HBODY.near?0:d<HBODY.mid?1:2);if(best.hb.L<2)hbPose(best);}}}
+  if(best){hbAttach(best);HBODY.last=now;if(best.hb){const t=best.foe?best.root.parent:best.root,d=Math.hypot(CAM.position.x-t.position.x,CAM.position.z-t.position.z);hbWarm(best);hbLevel(best,best.hb.cold?2:d<HBODY.near?0:d<HBODY.mid?1:2);if(best.hb.L<2)hbPose(best);}}
+  else hbWarmStep();}
