@@ -307,11 +307,11 @@
   function barberFee(house){return innPrice(house);}
   function barberPay(house,changed){if(!changed)return 'free';const fee=barberFee(house);if(gold<fee)return 'poor';gold-=fee;if(typeof updateHUD==='function')updateHUD();
     if(typeof addLog==='function')addLog('✂',`Paid ${fee} gold at ${house.name||'the barber’s'}.`);return 'paid';}
-  function innRooms(house){if(innBench(house))return 6; /* S1285 — the alehall: three places on each wall bench */if(kitTaproom(house))return house.kit.bays; /* S1161 — the kit's taproom: three rooms off the passage (two on two bays, S1276) */const W=Math.max(10,Math.min(12,(house.w||6)*1.6))/SCALE.ROOM_K;return Math.max(1,Math.floor(W/3.4));} /* S896 (F2a) — as buildInteriorFor lays out the gallery's rooms: the hall's true width in the kit's unit, a room every 3.4 */
+  function innRooms(house){if(innBench(house))return 6; /* S1285 — the alehall: three places on each wall bench */if(kitTavern(house))return 3; /* S1316 — Aurenne's tavern: three rooms upstairs */if(kitTaproom(house))return house.kit.bays; /* S1161 — the kit's taproom: three rooms off the passage (two on two bays, S1276) */const W=Math.max(10,Math.min(12,(house.w||6)*1.6))/SCALE.ROOM_K;return Math.max(1,Math.floor(W/3.4));} /* S896 (F2a) — as buildInteriorFor lays out the gallery's rooms: the hall's true width in the kit's unit, a room every 3.4 */
   // v80 S424 — the rooms stand in one row behind the gallery, room 0 at the west wall, and you come up the stair facing
   // their doors: from a west stair every door is on your right, the nearest room 0's; from an east stair on your left,
   // the nearest the last room's. The names count the doors from the stair head (were left and right in turn, from room 0).
-  function galleryEast(house){if(kitTaproom(house))return true; /* S1161 — the kit's taproom: its stair is up the east gable */return String(house.id||'').split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,3)%2===1;}
+  function galleryEast(house){if(kitTavern(house))return false; /* S1316 — the tavern's stair is up the west wall */if(kitTaproom(house))return true; /* S1161 — the kit's taproom: its stair is up the east gable */return String(house.id||'').split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,3)%2===1;}
   function innRoomName(k,n,house){if(innBench(house))return innBenchName(k); /* S1285 — the alehall's places */if(k==null)return 'a room';if(n<=1)return 'the room at the top of the stairs';
     const east=galleryEast(house),i=east?n-1-k:k,side=east?'left':'right';
     if(i===n-1&&n>2)return `the last door on the ${side}`;

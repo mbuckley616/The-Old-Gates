@@ -205,7 +205,7 @@ export function aurenneHouse(o, r) {
         put(new THREE.IcosahedronGeometry(.045 + r() * .05, 0), r() < .55 ? 'bloom' : 'leaf', x, y, d / 2 + .1 + r() * .14, r() * 6, r() * 6); } } }
   // one mesh per material; the top it reports is the whole house's (pots, bushes and the cypress included), for whatever stands over or labels it
   const { group, tris, draws, roofTop: rt } = finish(); roofTop = rt;
-  group.userData = { roofTop, kind: o.kind }; return { group, roofTop, tris, draws, kind: o.kind, front: depthOut, open: { front, back, side }, doorX: dx, T, fh, yW, top };
+  group.userData = { roofTop, kind: o.kind }; return { group, roofTop, tris, draws, kind: o.kind, front: depthOut, open: { front, back, side, west: sideW }, doorX: dx, T, fh, yW, top };
 }
 
 // a street's lots by Michael's mix: in every run of three lots one is Roman (which one, by the street's seed), two are flat.
