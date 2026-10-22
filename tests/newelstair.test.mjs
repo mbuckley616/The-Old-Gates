@@ -6,8 +6,8 @@ const OUT = process.env.SHOT_DIR || 'docs/prototypes';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
 const rows = [];
-// S1296 — a lair's cavern (lairDoor): an old gate is laid as spaces since S1293 and a massive one goes down by its stair hall
-// (S1296), so the newel stair stands in a lair's two floors now, at their 2.5 m cell; makeDungeon lays the same caves as before
+// S1298 — a lair's cavern (lairDoor): an old gate is laid as spaces since S1293 and a massive one goes down by its stair hall
+// (S1298), so the newel stair stands in a lair's two floors now, at their 2.5 m cell; makeDungeon lays the same caves as before
 for (const [theme, seed] of [['ruins', 4021], ['deep', 4012], ['crypt', 4020], ['ruins', 4002], ['haunted', 4030]]) {
   await page.evaluate(([theme, seed]) => { window._oldStair = typeof dScene !== 'undefined' && dScene.children.find(o => o.userData && o.userData.dunShell === 'stair'); const p = Object.assign({}, PORTALS[0], { id: 'dyn_' + seed, theme, seed, size: 'large', interior: 'cave', lairDoor: true, zone: 'world', tutorial: false }); goToDungeon(p); }, [theme, seed]);
   for (let k = 0; k < 20 && !(await page.evaluate(() => activeZoneId === 'dungeon' && scene === dScene && !dScene.children.includes(window._oldStair))); k++) await page.waitForTimeout(300);

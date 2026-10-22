@@ -312,7 +312,7 @@ function dunAfterLayout(map,rooms,rest,cfg,r,rand,seed,entC,entR,noDoor){
 // each joined to one space only, so chests, keys and locked doors keep their code (dunAfterLayout). The stream is the gate's
 // seed's (the co-op rule): the same seed lays the same gate on any machine. Map values, besides makeDungeon's: 8 a chasm's
 // floorless cell, 9 a pier's footing (both solid to walk into). Heights in metres, places in cells.
-// S1296 — a massive gate is two floors of spaces (the sheet's table: four spaces and the ring, two floors): two spaces on floor
+// S1298 — a massive gate is two floors of spaces (the sheet's table: four spaces and the ring, two floors): two spaces on floor
 // one, the stair hall (2 or 3 flights of 4.2 m, 3 cells a flight, a landing of 4 cells at each end and between) down to floor
 // two, one space there and the ring last. A floor-two space's vault rises through the rock under floor one, so it is laid only
 // where floor one is rock: no space overlaps another on either floor, and floor one's chapels, side rooms and treasure rooms
@@ -362,7 +362,7 @@ function makeGate(size,seed){
   const two=cfg.floors>1,nFl=two?(layout==='vertical'?3:rand(2,3)):0,D2=Math.round(nFl*GATE_FLIGHT*100)/100;
   // the types along the way: a nave first (the long approach); a hub's second space its crossing; the ring last
   const types=[],floorOf=[];
-  if(two){ // S1296 — floor one's two spaces, the stair hall, floor two's space (a chasm only there: nothing lies under it), the ring
+  if(two){ // S1298 — floor one's two spaces, the stair hall, floor two's space (a chasm only there: nothing lies under it), the ring
     types.push(r()<.75?'nave':'flooded',layout==='hub'?'crossing':pick(['nave','nave','flooded','crossing']),'stair',pick(['nave','flooded','crossing','chasm']));
     floorOf.push(1,1,1,2);}
   else for(let i=0;i<nSp;i++){floorOf.push(1);
@@ -411,7 +411,7 @@ function makeGate(size,seed){
         const R=gateRect(sp);if(!fits(R)||clash(R,S))continue;
         // both sides of the threshold stand on floor; the threshold is not where the way in arrives
         if(cellOf(parent,tc-sd[0],tr-sd[1])!==1||cellOf(sp,tc+sd[0],tr+sd[1])!==1)continue;
-        // S1296 — the stair hall is left from its foot only (its bottom landing); it is entered at its head (u 0, by placement)
+        // S1298 — the stair hall is left from its foot only (its bottom landing); it is entered at its head (u 0, by placement)
         if(parent.type==='stair'&&gateUV(parent,tc-sd[0],tr-sd[1])[0]<parent.L-GATE_LANDING_L)continue;
         if(T.some(t=>Math.abs(t.c-tc)+Math.abs(t.r-tr)<3))continue;
         sp.depth=parent.depth+1;sp.parent=parent.id;S.push(sp);T.push({c:tc,r:tr,a:parent.id,b:sp.id,dc:sd[0],dr:sd[1],floor:Math.max(sp.floor,parent.type==='stair'?2:parent.floor)});
@@ -442,8 +442,8 @@ function makeGate(size,seed){
   {const s0=spaces[0],R=gateRect(s0);const [dc,dr]=entry.side;let c=entry.c,y=entry.r;
     while(!(c>=R.x&&c<R.x+R.w&&y>=R.y&&y<R.y+R.h)){map[y][c]=1;c-=dc;y-=dr;}map[entry.r][entry.c]=2;}
   // a nave's side chapels: 3 along its wall and 4 deep, open to the aisle, 2 to 4 of them where the wall is free. Floor two's
-  // first (S1296): a chapel's 12 m roof there rises above floor one's floor, so it keeps under floor one's rock too.
-  const RES=99; // S1296 — floor one's rock held over floor two's spaces and chapels while floor one's rooms are laid
+  // first (S1298): a chapel's 12 m roof there rises above floor one's floor, so it keeps under floor one's rock too.
+  const RES=99; // S1298 — floor one's rock held over floor two's spaces and chapels while floor one's rooms are laid
   const layChapels=(M,CS,fl,list,under)=>{for(const sp of spaces){if(sp.type!=='nave'||sp.floor!==fl)continue;const want=rand(2,4);let got=0;const R=gateRect(sp);
     for(let att=0;att<40&&got<want;att++){const u0=rand(4,sp.L-8),sideV=r()<.5?-1:1;
       let x0,y0,w,h;
@@ -518,7 +518,7 @@ function makeGate(size,seed){
   const roofs=spaces.map(roof);
   gen.ceilAt=(c,y,X,Z,def)=>{if(y<0||c<0||y>=H||c>=W)return def;if(thrSet.has(y*W+c))return GATE_THRESH_H;const s=cellSpace[y][c];
     if(s<0)return def;if(chapelAt(c,y))return GATE_CHAPEL_H;return roofs[s](X,Z);};
-  // floor two's, over its own floor: the stair hall's roof is floor one's height and the hall's depth (S1296)
+  // floor two's, over its own floor: the stair hall's roof is floor one's height and the hall's depth (S1298)
   if(two)gen.ceilAt2=(c,y,X,Z,def)=>{if(y<0||c<0||y>=H||c>=W)return def;if(thrSet2.has(y*W+c))return GATE_THRESH_H;const s=cellSpace2[y][c];
     if(s<0)return def;if(chapelAt2(c,y))return GATE_CHAPEL_H;return roofs[s](X,Z)+(spaces[s]===hallSp?D2:0);};
   gen.spaces=spaces.map(sp=>Object.assign({},sp,gateRect(sp)));gen.thresholds=thresholds;gen.chapels=chapels.concat(chapels2);gen.cellSpace=cellSpace;

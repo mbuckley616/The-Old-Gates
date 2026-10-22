@@ -97,7 +97,7 @@ function buildDunShell(map,baseY,wallCol,floorCol,opts){
   // chasm's cells (opts.pit: no floor, the walls on down GATE_PIT) and its bridges (opts.slab: a deck 1.5 thick over the pit)
   const ceilF=opts&&opts.ceil||null,hAt=(c,r,X,Z)=>ceilF?ceilF(c,r,X,Z):H;
   const pit=opts&&opts.pit||(()=>false),slab=opts&&opts.slab||(()=>false),SLAB=1.5;
-  // S1296 — a massive gate's stair hall stands on both floors: floor two's shell draws its walls (floor one's leaves them,
+  // S1298 — a massive gate's stair hall stands on both floors: floor two's shell draws its walls (floor one's leaves them,
   // opts.noWall) and its roof (opts.ceilToo), and stops a wall face at opts.faceTop (metres over this floor) where floor one's
   // threshold opens into the hall's head above it
   const noWall=opts&&opts.noWall||(()=>false),faceTop=opts&&opts.faceTop||null,ceilToo=opts&&opts.ceilToo||(()=>false);
@@ -925,7 +925,7 @@ function fortShapeFor(portal){const k=portal.interior||'cave';if(!k.startsWith('
 // a nave's piers to its vault (DUNGEON_COLUMNS, 2 m round), a chasm's floor GATE_PIT down and its bridges' undersides, a flooded
 // hall's water and its islands (FOOTHOLDS, a step up), the ring chamber's dais. The look builder dresses them by school.
 function buildGateSpaces(gen,baseY,wallCol,floorCol,floorIdx){
-  const F=floorIdx||1,ceilAt=F===2?gen.ceilAt2:gen.ceilAt,slab=F===2?gen.slab2:gen.slab; /* S1296 — a massive gate's floor two has spaces too */
+  const F=floorIdx||1,ceilAt=F===2?gen.ceilAt2:gen.ceilAt,slab=F===2?gen.slab2:gen.slab; /* S1298 — a massive gate's floor two has spaces too */
   const parts=[],stone=new THREE.Color(wallCol).multiplyScalar(1.7),dark=new THREE.Color(wallCol).multiplyScalar(.45),deck=new THREE.Color(floorCol).multiplyScalar(1.3);
   const at=(x,y,z)=>new THREE.Matrix4().makeTranslation(x,y,z),flat=(x,y,z,up)=>new THREE.Matrix4().makeRotationX(up?-Math.PI/2:Math.PI/2).setPosition(x,y,z);
   const map=F===2?gen.map2:gen.map,R=map.length,C=map[0].length;
@@ -961,12 +961,12 @@ function buildDungeon(portal){
   // crypt keep their rooms and corridors (#421)
   let gen=interiorKey==='cave'&&!dunKeepKind(portal)?makeGate(portal.size,portal.seed):interiorFn(portal.size,portal.seed);
   if(interiorKey!=='cave'&&!gen.map2&&portal.size!=='small')gen=addUpperFloor(gen,portal.seed); // v80 — forts get an upper floor
-  if(gen.hall)FLOOR2_Y=-gen.hall.D; /* S1296 — a massive gate's floor two lies its stair hall's flights down (2 or 3 of 4.2 m) */
+  if(gen.hall)FLOOR2_Y=-gen.hall.D; /* S1298 — a massive gate's floor two lies its stair hall's flights down (2 or 3 of 4.2 m) */
   dMap=gen.map;dMap2=gen.map2||null;dR=gen.H;dC=gen.W;
   mmRevealed=Array.from({length:dR},()=>new Uint8Array(dC));
   mmRevealed2=Array.from({length:dR},()=>new Uint8Array(dC));
   dEntranceX=gen.entC;dEntranceZ=gen.entR;
-  D_CEIL=[null,gen.ceilAt?((X,Z)=>gen.ceilAt(Math.floor(X+.5),Math.floor(Z+.5),X,Z,FLOOR_HEIGHT)):null,gen.ceilAt2?((X,Z)=>gen.ceilAt2(Math.floor(X+.5),Math.floor(Z+.5),X,Z,FLOOR_HEIGHT)):null]; /* S1293 — dCeil; S1296 — and floor two's */
+  D_CEIL=[null,gen.ceilAt?((X,Z)=>gen.ceilAt(Math.floor(X+.5),Math.floor(Z+.5),X,Z,FLOOR_HEIGHT)):null,gen.ceilAt2?((X,Z)=>gen.ceilAt2(Math.floor(X+.5),Math.floor(Z+.5),X,Z,FLOOR_HEIGHT)):null]; /* S1293 — dCeil; S1298 — and floor two's */
   dStairC=gen.stairC;dStairR=gen.stairR;
   // v61b8: hoist tutorial-spawn computation to early in buildDungeon so the
   // enemy spawn filter (further down) can reference `portal._tutorialSpawn`
@@ -1187,7 +1187,7 @@ function buildDungeon(portal){
     FOOTHOLDS.push({kind:'spiral',cx,cz,r0:.22,r1:1.05,rwalk:+(RR-.09).toFixed(3),y0:0,y1:Y,turns,a0,posts:ends,postR:.25});
     DUNGEON_STAIRWELL=true;
   }
-  // S1296 (card F5) — a massive gate's stair hall (makeGate): 10 cells wide, its landings and flights one merged mesh laid in cells,
+  // S1298 (card F5) — a massive gate's stair hall (makeGate): 10 cells wide, its landings and flights one merged mesh laid in cells,
   // each piece solid down to floor two's floor so nothing hangs in the air; 23 risers a flight. The head landing is floor one's
   // floor (the floor-one foothold, the hall's lower part its hole), the flights are ramps and the landings between platforms;
   // its walls and roof are floor two's shell's (buildDunShell's noWall, ceilToo, faceTop).
@@ -1307,11 +1307,11 @@ function buildDungeon(portal){
     const shellOn=true,fortF1=isFort&&floorIdx===1;
     if(shellOn){const sh=buildDunShell(map,baseY,fortF1?0x6c6c72:floorIdx===1?th.wallCol:f2WallCol,floorIdx===1?th.floorCol:f2FloorCol,{seed:(portal.seed|0)*3+floorIdx,skip:fortF1?((c,r)=>map[r][c]!==0):((c,r)=>map[r][c]===3||map[r][c]===6||map[r][c]===8),amp:fortF1?.025:null,cove:!fortF1&&!gen.gate,
         ceil:gen.gate?(floorIdx===1?((c,r,X,Z)=>gen.ceilAt(c,r,X,Z,FLOOR_HEIGHT)):gen.ceilAt2?((c,r,X,Z)=>gen.ceilAt2(c,r,X,Z,FLOOR_HEIGHT)):null):null,pit:gen.gate?((c,r)=>map[r][c]===8):null,slab:gen.gate?(floorIdx===1?gen.slab:gen.slab2):null,
-        noWall:gen.hallAt&&floorIdx===1?gen.hallAt:null,ceilToo:gen.hallAt&&floorIdx===2?gen.hallAt:null,faceTop:gen.hallAt&&floorIdx===2?((c,r,dc,dr)=>!gen.hallAt(c+dc,r+dr)&&(gen.map[r+dr]?.[c+dc]|0)>0?-FLOOR2_Y:null):null, /* S1296 — the stair hall, both floors */
+        noWall:gen.hallAt&&floorIdx===1?gen.hallAt:null,ceilToo:gen.hallAt&&floorIdx===2?gen.hallAt:null,faceTop:gen.hallAt&&floorIdx===2?((c,r,dc,dr)=>!gen.hallAt(c+dc,r+dr)&&(gen.map[r+dr]?.[c+dc]|0)>0?-FLOOR2_Y:null):null, /* S1298 — the stair hall, both floors */
         damp:DUN_DAMP[portal.theme]||DUN_DAMP.ruins,rooms:(floorIdx===2?(gen.rooms2||[]):(gen.rooms||[])).filter(rm=>rm.kind!=='space'),holes:floorIdx===2&&gen.stairC!=null?(gen.stairHoles||[{x0:gen.stairC-.5,x1:gen.stairC+1.5,z0:gen.stairR-.5,z1:gen.stairR+1.5}]):null,
         noCeil:floorIdx===2&&gen.yard?((c,r)=>c>=gen.yard.c0&&c<=gen.yard.c1&&r>=gen.yard.r0&&r<=gen.yard.r1):null});
       dScene.add(sh.walls);dScene.add(sh.floor);dScene.add(sh.ceil);if(sh.beams)dScene.add(sh.beams);}
-    if(gen.gate&&(floorIdx===1||gen.ceilAt2))buildGateSpaces(gen,baseY,floorIdx===1?th.wallCol:f2WallCol,floorIdx===1?th.floorCol:f2FloorCol,floorIdx); /* S1293 — the piers, the chasm's floor, the water, the dais; S1296 — on either floor */
+    if(gen.gate&&(floorIdx===1||gen.ceilAt2))buildGateSpaces(gen,baseY,floorIdx===1?th.wallCol:f2WallCol,floorIdx===1?th.floorCol:f2FloorCol,floorIdx); /* S1293 — the piers, the chasm's floor, the water, the dais; S1298 — on either floor */
     // S191 — the floor's props, one merged mesh: rubble heaps where walls meet the floor, the theme's clutter
     const props=[],stoneCol=new THREE.Color(floorIdx===1?th.wallCol:f2WallCol).multiplyScalar(2.6);
     const addP=(geo,col,x,y,z,ry,rx,rz,sx,sy,sz)=>{const m=new THREE.Matrix4().compose(new THREE.Vector3(x,y,z),new THREE.Quaternion().setFromEuler(new THREE.Euler(rx||0,ry||0,rz||0,'YXZ')),new THREE.Vector3(sx||1,sy||1,sz||1));props.push([geo,col&&col.isColor?col:new THREE.Color(col),m]);};
@@ -1343,7 +1343,7 @@ function buildDungeon(portal){
         const fmat = v===6 ? (useFort ? fortTreasureMat : treasureMat)
                    : v===3 ? stairMat
                    : (useFort ? fortFloorMat : floorMat);
-        if(!(v===3&&floorIdx===(FLOOR2_Y>0?2:1))&&!(shellOn&&fmat===floorMat)&&!(gen.hallAt&&gen.hallAt(c,r))){ /* S1296 — the stair hall draws its own */ // v80 — the shaft is open in the upper floor's floor
+        if(!(v===3&&floorIdx===(FLOOR2_Y>0?2:1))&&!(shellOn&&fmat===floorMat)&&!(gen.hallAt&&gen.hallAt(c,r))){ /* S1298 — the stair hall draws its own */ // v80 — the shaft is open in the upper floor's floor
         const f=new THREE.Mesh(new THREE.PlaneGeometry(1,1),fmat);
         f.rotation.x=-Math.PI/2;f.position.set(c,baseY,r);dScene.add(f);}
         const cmat = v===6 ? new THREE.MeshLambertMaterial({color: useFort?0x1f1a14:0x1a1208})
@@ -3294,7 +3294,7 @@ function buildDungeon(portal){
   _nearSigil=null;
   const sigilSpellId=SIGIL_PLACEMENTS[portal.seed];
   // S1293 — in a gate laid as spaces the sigil is on the ring chamber's wall, floor one (the sheet: a lesser gate's sigil)
-  const sigRing=gen.gate?gen.spaces[gen.ring]:null,sigFloor=sigRing?(sigRing.floor||1):2,sigMap=sigFloor===2?dMap2:dMap,sigY=sigFloor===2?FLOOR2_Y:0; /* S1296 — a massive gate's ring is on floor two */
+  const sigRing=gen.gate?gen.spaces[gen.ring]:null,sigFloor=sigRing?(sigRing.floor||1):2,sigMap=sigFloor===2?dMap2:dMap,sigY=sigFloor===2?FLOOR2_Y:0; /* S1298 — a massive gate's ring is on floor two */
   if(sigilSpellId && sigMap){
     // Collect floor-2 floor cells that have at least one wall neighbor, excluding the stair cell.
     const candidates=[];

@@ -11,7 +11,7 @@ const gens = await page.evaluate((SIZES) => {
   const out = [];
   for (const size of SIZES) for (let k = 0; k < 20; k++) {
     const seed = 101 + k * 977, gen = makeGate(size, seed), W = gen.W, H = gen.H;
-    // S1296 — a massive gate's two floors: each floor's map, its spaces by cell and its thresholds (the stair hall is on both)
+    // S1298 — a massive gate's two floors: each floor's map, its spaces by cell and its thresholds (the stair hall is on both)
     let joins = 0;
     for (const [map, CS, fl] of [[gen.map, gen.cellSpace, 1]].concat(gen.map2 ? [[gen.map2, gen.cellSpace2, 2]] : [])) {
     const thr = new Set(gen.thresholds.filter(t => (t.floor || 1) === fl).map(t => t.r * W + t.c));
@@ -33,7 +33,7 @@ const gens = await page.evaluate((SIZES) => {
     const D = gen.spaces.map(() => 1e9); D[0] = 0; const q = [0]; while (q.length) { const a = q.shift(); for (const t of gen.thresholds) { const b = t.a === a ? t.b : t.b === a ? t.a : -1; if (b >= 0 && D[b] > D[a] + 1) { D[b] = D[a] + 1; q.push(b); } } }
     const ring = gen.spaces[gen.ring], ringLinks = gen.thresholds.filter(t => t.a === gen.ring || t.b === gen.ring).length;
     const sp = gen.spaces.map(s => { const cx = s.x - .5 + s.w / 2, cz = s.y - .5 + s.h / 2, CA = s.floor === 2 ? gen.ceilAt2 : gen.ceilAt; return { type: s.type, floor: s.floor, A: Math.min(s.w, s.h), L: Math.max(s.w, s.h), top: +CA(Math.floor(cx + .5), Math.floor(cz + .5), cx, cz, 6).toFixed(2) }; });
-    // S1296 — a massive gate: floor two's spaces and chapels under floor one's rock; the stair hall's head and foot by its thresholds
+    // S1298 — a massive gate: floor two's spaces and chapels under floor one's rock; the stair hall's head and foot by its thresholds
     let under = 0; if (gen.map2) { for (const s of gen.spaces) if (s.floor === 2) for (let y = s.y; y < s.y + s.h; y++) for (let x = s.x; x < s.x + s.w; x++) if (gen.map[y][x] !== 0) under++;
       for (const q of gen.chapels) if (q.floor === 2) for (let y = q.y; y < q.y + q.h; y++) for (let x = q.x; x < q.x + q.w; x++) if (gen.map[y][x] !== 0) under++; }
     const hs = gen.hall, hall = hs ? { flights: hs.flights, D: hs.D, L: hs.L, A: hs.A, head: gen.thresholds.filter(t => t.b === hs.id).map(t => [t.floor, gateUV(hs, t.c + t.dc, t.r + t.dr)[0]]),
@@ -67,7 +67,7 @@ check('every threshold is one cell wide in a cell of rock, a space each side of 
 check('the ring chamber is last: the farthest space from the way in, with one way into it', gens.every(x => x.ringLast), gens.filter(x => !x.ringLast).map(x => [x.size, x.seed]));
 check('side rooms: 1 to the table\'s most (6, 12, 18), each 3 to 12 cells (9 to 36 m)', gens.every(x => x.side >= 1 && x.side <= T[x.size][4] && x.sideSizes), gens.map(x => [x.size, x.side]).filter(([s, n]) => n < 1 || n > T[s][4]));
 check('the spaces are rooms to every system (kind \'space\'), the side rooms plain (the stair hall is neither)', gens.every(x => x.kinds === x.sp.filter(s => s.type !== 'stair').length));
-// S1296 — a massive gate is two floors of spaces joined by its stair hall
+// S1298 — a massive gate is two floors of spaces joined by its stair hall
 const M = gens.filter(x => x.size === 'massive');
 check('a massive gate: two spaces on floor one, the stair hall, one space on floor two and the ring there, last', M.every(x => x.hall && /^\w+1 \w+1 stair1 \w+2 ring2$/.test(x.hall.floors)), M.map(x => x.hall && x.hall.floors));
 check('the stair hall: 10 cells wide, 2 or 3 flights of 4.2 m (18 or 25 cells long), entered at its head on floor one and left from its foot landing on floor two; its head cell open on both maps', M.every(x => { const h = x.hall;
@@ -80,15 +80,15 @@ for (const [size, seed] of [['small', 101], ['medium', 2055], ['large', 1078], [
   B.push(Object.assign({ size, seed }, await page.evaluate(() => {
     const gen = window._lastGen, k = DCELL, at = (c, r) => [dAt(c), dAt(r)];
     const corr = []; for (let r = 1; r < dR - 1 && corr.length < 20; r++) for (let c = 1; c < dC - 1 && corr.length < 20; c++) if (dMap[r][c] === 1 && gen.cellSpace[r][c] < 0 && !gen.thresholds.some(t => t.c === c && t.r === r)) corr.push(+dCeil(...at(c, r)).toFixed(2));
-    const thr = gen.thresholds.map(t => { currentFloor = t.floor || 1; const h = +dCeil(...at(t.c, t.r)).toFixed(2); currentFloor = 1; return h; }); /* S1296 — each on its own floor */
+    const thr = gen.thresholds.map(t => { currentFloor = t.floor || 1; const h = +dCeil(...at(t.c, t.r)).toFixed(2); currentFloor = 1; return h; }); /* S1298 — each on its own floor */
     const piers = []; for (let r = 0; r < dR; r++) for (let c = 0; c < dC; c++) if (dMap[r][c] === 9) piers.push([dSolid(...at(c, r)), dSolid(dAt(c) + 1.7, dAt(r)) && dSolid(dAt(c) - 1.7, dAt(r)), !dSolid(dAt(c) + 2.3, dAt(r)) || dMap[r][c + 1] !== 1]);
     const pits = []; for (const [M, f] of [[dMap, 1], [dMap2, 2]]) { if (!M) continue; currentFloor = f; for (let r = 0; r < dR; r++) for (let c = 0; c < dC; c++) if (M[r][c] === 8) pits.push(dSolid(...at(c, r))); } currentFloor = 1;
-    /* S1296 — an island or the dais on floor two stands over floor two's floor */
+    /* S1298 — an island or the dais on floor two stands over floor two's floor */
     const isl = FOOTHOLDS.filter(f => f.gate === 'island' || f.gate === 'dais').map(f => { const b = f.y < -1 ? FLOOR2_Y : 0; return [f.gate, +(f.x1 - f.x0).toFixed(2), +(f.y - b).toFixed(2), +(footholdY((f.x0 + f.x1) / 2, (f.z0 + f.z1) / 2, b, b) - b).toFixed(2)]; });
     const tops = gen.spaces.map(s => { const cx = (s.x - .5 + s.w / 2) * k, cz = (s.y - .5 + s.h / 2) * k; currentFloor = s.floor || 1; const h = +dCeil(cx, cz).toFixed(2); currentFloor = 1; return [s.type, h, s.top, s.floor || 1]; });
     const shell = dScene.children.find(o => o.userData && o.userData.dunShell === 'walls'); const wb = new THREE.Box3().setFromObject(shell);
     const cm = dScene.children.find(o => o.userData && o.userData.dunShell === 'ceiling'); const cb = new THREE.Box3().setFromObject(cm);
-    return { corr, thr, piers: piers.length, pierOk: piers.every(p => p[0] && p[1]), pits: pits.length, pitOk: pits.every(Boolean), isl, tops, wallTop: +wb.max.y.toFixed(1), ceilTop: +cb.max.y.toFixed(1), wallLow: +Math.min(...dScene.children.filter(o => o.userData && o.userData.dunShell === 'walls').map((o, i) => new THREE.Box3().setFromObject(o).min.y - (i ? FLOOR2_Y : 0))).toFixed(1), /* S1296 — under its own floor */
+    return { corr, thr, piers: piers.length, pierOk: piers.every(p => p[0] && p[1]), pits: pits.length, pitOk: pits.every(Boolean), isl, tops, wallTop: +wb.max.y.toFixed(1), ceilTop: +cb.max.y.toFixed(1), wallLow: +Math.min(...dScene.children.filter(o => o.userData && o.userData.dunShell === 'walls').map((o, i) => new THREE.Box3().setFromObject(o).min.y - (i ? FLOOR2_Y : 0))).toFixed(1), /* S1298 — under its own floor */
       foesIn: ENEMIES.filter(e => e.floor === 1 && !e.dead).every(e => !dSolid(e.x, e.z)), clear: !dBlk(px, pz), types: gen.spaces.map(s => s.type) }; })));
 }
 for (const b of B) console.log(JSON.stringify(b));

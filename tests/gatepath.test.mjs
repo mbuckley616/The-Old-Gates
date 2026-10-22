@@ -12,7 +12,7 @@ const R = await page.evaluate(() => {
   const out = [];
   for (const size of ['tiny', 'small', 'medium', 'large', 'massive']) for (let k = 0; k < 20; k++) {
     const seed = 57 + k * 1231, gen = makeGate(size, seed), W = gen.W, H = gen.H, N = W * H;
-    // S1296 — a massive gate's way runs on two floors: a node is a floor's cell (floor two's from N on), and the stair hall's cells,
+    // S1298 — a massive gate's way runs on two floors: a node is a floor's cell (floor two's from N on), and the stair hall's cells,
     // open on both maps, join the two (the flights carry you down between them)
     const maps = [gen.map, gen.map2], CSs = [gen.cellSpace, gen.cellSpace2];
     const stand = (f, c, r) => { const m = maps[f]; return !!m && r >= 0 && c >= 0 && r < H && c < W && m[r][c] !== 0 && m[r][c] !== 8 && m[r][c] !== 9; };
@@ -35,14 +35,14 @@ check('nothing on it needs a skill: no gap on the way (under 2.5 m; a steady gat
 const jog = R.map(r => [r.size, r.seed, r.metres, +(r.metres / 3.83 / 60).toFixed(1)]);
 check('its length at a jog (3.83 m/s) is inside the size\'s time to clear (12, 25, 40 min), the fights aside', R.every(r => r.metres / 3.83 / 60 < MAXMIN[r.size]), jog.slice(0, 5).concat(jog.filter(j => j[0] === 'massive').slice(0, 3)));
 check('it passes through spaces, not round them (at least the ring and one more)', R.every(r => r.spacesOn >= 2), R.filter(r => r.spacesOn < 2).map(r => [r.size, r.seed, r.spacesOn, r.nSpaces]));
-check('in a massive gate it goes down the stair hall to floor two, where the ring is (S1296)', R.every(r => r.floorsOn === r.floors), R.filter(r => r.floorsOn !== r.floors).map(r => [r.size, r.seed]));
+check('in a massive gate it goes down the stair hall to floor two, where the ring is (S1298)', R.every(r => r.floorsOn === r.floors), R.filter(r => r.floorsOn !== r.floors).map(r => [r.size, r.seed]));
 // walked: three gates built, a body 0.3 round led cell by cell along the game's own bfs from the way in to the ring's middle
 const Wk = [];
 for (const [size, seed] of [['small', 101], ['large', 1078], ['massive', 3032]]) {
   await enterDungeon(page, { theme: 'ruins', size, seed });
   Wk.push(Object.assign({ size, seed }, await page.evaluate(() => {
     const gen = window._lastGen, ring = gen.spaces[gen.ring], tx = dAt(ring.x - .5 + ring.w / 2), tz = dAt(ring.y - .5 + ring.h / 2);
-    // S1296 — in a gate of two floors, first to the stair hall's foot on floor one's map, then on floor two's to the ring
+    // S1298 — in a gate of two floors, first to the stair hall's foot on floor one's map, then on floor two's to the ring
     const legs = []; const hs = gen.hall; if (hs) { const [fc, fr] = gateCellAt(hs, hs.L - 1, Math.floor(hs.A / 2)); legs.push([1, dAt(fc), dAt(fr)]); }
     legs.push([ring.floor || 1, tx, tz]);
     let x = px, z = pz, stuck = 0, steps = 0, cells = 0, thrOn = 0, path = [];
