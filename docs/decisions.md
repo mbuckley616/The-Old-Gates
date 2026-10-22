@@ -15,6 +15,20 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+### Aurenne's tavern has no beds as drawn: where do guests sleep? (from the look builder, 2026-10-22, #602)
+**The question.** Michael's A on #322 chose Aurenne's tavern as drawn: the one-storey Roman house with its arcade and a vine over the terrace. It has no bed, but the Aurennais keeper lets "a room … a bed, a bolt on the door" and every paid line ends "up the stairs". The look builder drew it two storeys high (Session 1296, card F9): a stair of 16 risers up the west wall, a passage upstairs with three rooms off it (a cedar bed under an indigo cover, a chest, a basin under the window); the arcade, loggia, terrace and vine unchanged. About 12,000 triangles in 21 meshes, on a house of 5,052 in 8.
+
+**1. Where do guests sleep?**
+- **A (recommended).** The tavern two storeys high with three rooms upstairs, as in the pictures. The keeper's words stand as written.
+- **B.** The tavern stays one storey as drawn, and the quest writer gives the keeper lines for another place to sleep (the roof, the loggia).
+- **C.** The tavern lets no rooms. It hangs only where a town has a second inn, and the other inn keeps the old building and its rooms.
+
+**2. Which inns?**
+- **A (recommended).** Every Aurennais inn. In a port the terrace stands on the quay wall; inland it stands on its plinth over the street.
+- **B.** Port inns only, on the quay. Inland inns keep the old building.
+
+Pictures: [from the water](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-1296/docs/prototypes/levelup/rooms-tavern2-outside.jpg) · [the stair from the door](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-1296/docs/prototypes/levelup/rooms-tavern2-stair.jpg) · [the passage from the landing](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-1296/docs/prototypes/levelup/rooms-tavern2-upstairs.jpg) · [a guest room](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-1296/docs/prototypes/levelup/rooms-tavern2-chamber.jpg)
+
 ## Answered
 ### The Mark's alehall in the game: the innkeeper's lines still say "upstairs" (from the look builder, 2026-10-22, #588)
 **The question.** Michael's A on #321 makes the Mark's inn the alehall: one hall of long tables, guests sleeping on the furred wall benches ("renting a place is renting a bench"). The room has been in the kit since Session 1159 (`PKIT.mk.alehall`) but is not hung, because the Markish innkeeper's room lines (`INN_ROOM_LINES.markman`, `js/86-world-crime.js`) send you upstairs to a bed behind a bolted door, and the places would be named like rooms.
