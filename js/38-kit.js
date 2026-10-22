@@ -910,6 +910,15 @@ function aurKit() {
   return { Mt, put, holePath, wallGeo, box, finish };
 }
 
+// a street's lots by Michael's mix (Session 1281: pieces.js's aurenneLot of Session 816, copied as it stands; #259 B): in every run of three lots one is Roman (which one, by the street's seed), two are flat.
+// Each lot's own options come from a stream keyed by the street and the lot.
+function aurenneLot(street, i) {
+  const t = Math.floor(i / 3), roman = hashKey(`${street}:triple:${t}`) % 3 === i % 3, r = stream(`${street}:lot:${i}`);
+  const w = +(6.4 + r() * 3.2).toFixed(2), d = +(6.0 + r() * 2.0).toFixed(2), o = { kind: roman ? 'tile' : 'flat', w, d, two: r() < (roman ? .4 : .5) };
+  if (roman) { o.arcade = w > 7.6; } else { o.dome = w > 8.2 && r() < .45 ? (r() < .75 ? 'blue' : 'white') : null; o.stair = !o.two && r() < .55; o.pergola = r() < .45; o.lattice = o.two && r() < .65; o.pointed = r() < .2; }
+  return { o, r };
+}
+
 function aurenneHouse(o, r) {
   const { Mt, put, wallGeo: wallG, box, finish } = aurKit(), w = o.w, d = o.d;
   const T = .32, pl = .24, fh = 3.0, H = fh + (o.two ? 2.6 : 0), wallK = 'wall:' + (o.wall ?? Math.floor(r() * AUR.walls.length)), doorK = 'door:' + (o.door ?? Math.floor(r() * AUR.doors.length));
@@ -1239,6 +1248,6 @@ function shrineRow(o = {}) {
 }
   return { stream, hashKey, mergeByMaterial, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
     mk: { hall: markHall, lot: markLot, alehall: markAlehall, mats: markMats },
-    au: { house: aurenneHouse, tavern: aurenneTavern, mats: aurMats, roomMats: homeMats, AUR },
+    au: { house: aurenneHouse, lot: aurenneLot, tavern: aurenneTavern, mats: aurMats, roomMats: homeMats, AUR },
     gl: { PLANS, FIN, PS, PAINTS, TOWN: GL_TOWN, building, church, keep, row: shrineRow, ROW_GODS, inn: gatelandsInn, churchLen: n => +((n === 2 ? 2 : 3) * 4.8 + 1.6 + 5.6 - .5 + 7.2 - .9 - .02).toFixed(2), lot: gatelandsLot, mats: glMats, BAYS, bayPlan, bayWidth, baysFor } };
 })();

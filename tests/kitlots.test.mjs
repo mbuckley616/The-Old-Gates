@@ -4,7 +4,7 @@
 // its depth, its door (moved along the front into its bay since Session 1072) and its id (a house you own is still yours, whichever look you load it in), and it stands 0.9 m or more
 // clear of every other lot's walls. Since Session 1126 (Michael's B on #408) a town's townhouse or merchant's house grows back
 // into its yard to 8 m deep where it fits, its front and door kept. Since Session 1280 a Markish town's homes and shops are the kit's
-// halls (tests/kitmark), their ids and doors kept and their lots deeper; Aurenne's settlements, and the old look, are as they were.
+// halls (tests/kitislands), their ids and doors kept and their lots deeper; Aurenne's settlements, and the old look, are as they were.
 import fs from 'fs';
 import { boot, check } from './lib/game.mjs';
 
@@ -79,7 +79,7 @@ const close = []; for (const s of gl) { const L = neu[s.id].lots, K = new Set(ne
   for (let i = 0; i < L.length; i++) for (let j = i + 1; j < L.length; j++) if ((K.has(L[i].hid) || K.has(L[j].hid)) && L[i].hid !== L[j].hid) { const d = gap(L[i], L[j]); if (d < .9 - 1e-6) close.push([s.id, L[i].hid, L[j].hid, +d.toFixed(2)]); } }
 check('every widened lot stands 0.9 m or more clear of every other lot', close.length === 0, close.slice(0, 6));
 
-// the Mark's town (Session 1280): its homes and shops are the kit's halls where they fit (tests/kitmark), their ids and doors kept
+// the Mark's town (Session 1280): its homes and shops are the kit's halls where they fit (tests/kitislands), their ids and doors kept
 // above and their lots deeper; every other house is as on the old look, widths and all
 const mkHalls = neu[mk.id].houses.filter(h => h.kit && h.kit.kind === 'markhall').length, mkRest = (a => a.filter((h, i) => !(neu[mk.id].houses[i].kit && neu[mk.id].houses[i].kit.kind === 'markhall')))(old[mk.id].houses);
 check(`the Mark's town has ${mkHalls} kit halls, and its other ${mkRest.length} houses are as on the old look, widths and all`, mkHalls > 0 && JSON.stringify(mkRest) === JSON.stringify(neu[mk.id].houses.filter(h => !(h.kit && h.kit.kind === 'markhall'))), null);
