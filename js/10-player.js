@@ -413,7 +413,7 @@ const HEAD_H=SCALE.PERSON;
 function headCeil(x,z,y){
   const intr=isInterior();let c=1e9;
   if(intr){const h=currentHouse&&(currentHouse._roomH||currentHouse._ceilH);if(h)c=h;}
-  else if(lid&&lid.startsWith('dyn_'))c=(currentFloor===2?FLOOR2_Y:0)+FLOOR_HEIGHT;
+  else if(lid&&lid.startsWith('dyn_'))c=(currentFloor===2?FLOOR2_Y:0)+dCeil(x,z); /* S1293 — a gate's spaces stand taller */
   else return c;
   const head=y+HEAD_H-.02;
   for(const f of FOOTHOLDS){if(f.kind==='spiral'||x<f.x0||x>f.x1||z<f.z0||z>f.z1)continue;

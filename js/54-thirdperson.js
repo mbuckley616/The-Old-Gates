@@ -250,7 +250,7 @@ function tpBlocked(x,z){
   if(lid&&lid.startsWith('dyn_')){const r=.14;return dSolid(x-r,z-r)||dSolid(x+r,z-r)||dSolid(x-r,z+r)||dSolid(x+r,z+r);}
   if(activeZoneId==='world'&&typeof WORLD!=='undefined'&&WORLD.camSolid)return WORLD.camSolid(x,z);
   return currentZoneSolid(x,z);}
-function tpCeil(){if(isInterior())return tpInteriorBox().C-.22;if(lid&&lid.startsWith('dyn_'))return (currentFloor===2?FLOOR2_Y:0)+FLOOR_HEIGHT-.25;return 1e9;}
+function tpCeil(){if(isInterior())return tpInteriorBox().C-.22;if(lid&&lid.startsWith('dyn_'))return (currentFloor===2?FLOOR2_Y:0)+dCeil(px,pz)-.25;return 1e9;} /* S1293 — the roof over you (a gate's spaces) */
 function tpFloorAt(x,z,fallback){if(isInterior())return .15;if(lid&&lid.startsWith('dyn_'))return fallback+.15;let y=fallback;try{y=activeTerrainH(x,z);}catch(e){}if(activeZoneId==='world'&&typeof WORLD!=='undefined')y=Math.max(y,WORLD.SEA_Y);return y+.22;}
 function tpCamera(dt,camY){
   const fx=-Math.sin(yaw),fz=-Math.cos(yaw),rx=Math.cos(yaw),rz=-Math.sin(yaw);const cp=Math.cos(pitch),sp=Math.sin(pitch);
