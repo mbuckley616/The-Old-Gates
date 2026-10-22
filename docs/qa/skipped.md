@@ -9,7 +9,7 @@ strike the row here. That PR runs the suite. Kept by the QA routine; started by 
 | Suite | Why it is skipped | Card |
 |---|---|---|
 | `autumn` | red: in a real autumn chunk at least four of the kinds stand, and every one of their trees is still warm under the chunk's tint | open |
-| `bridgenames` | red: 16 bridges built in ten cells, each named *… Bridge* | open |
+| ~~`bridgenames`~~ | ~~red: 16 bridges built in ten cells, each named *… Bridge*~~ | **fixed, Session 1284** (the suite's: the world differs boot to boot, and in the one whose first bridge is *Tradou Road Bridge* ten cells hold 16; it now walks on until 20 have built (15 cells, 35 bridges there), and each cell waits for the game's job queue to empty, not a fixed 6 s; the bar of 20 and the name checks unchanged; 3 boots side by side green) |
 | `civicfurn` | red: the church is one bake with the altar's candle flames, 5–60k triangles, and none of the old cylinder pillars | open |
 | ~~`f4people`~~ | ~~red: vendor/people.builder.js is what people.js makes now (python3 scripts/people_bundle.py)~~ | fixed, Session 1241 (rebundled; 13/13 on the new look) |
 | ~~`falls`~~ | ~~too slow: killed at the 900 s a suite is given (1800 s with the retry)~~ | **fixed, Session 1247** (the suite's: it fell on real frames; it now drives the game's loop at fixed 1/60 ticks with the drawing stubbed, as `wanderface` does; 11/11 in 106 s here, `times.json` 150) |
