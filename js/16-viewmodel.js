@@ -863,3 +863,38 @@ function buildShieldViewmodel(){
     VM_SCENE.add(g);vmShield=g;
   }
 }
+// S1306 — the hands are lit by the place they are in (backlog I, the critic's s827: VM_SCENE's fixed ambient 0.8 and warm sun 1.2 lit
+// them at 179–188 of 255 in a gate's black ring as at noon). Before the view model is drawn its lights take the lights of the scene
+// drawn under it, as they fall at the eye: the ambient lights summed, the hemisphere lights summed with the world's up turned into the
+// camera's frame (which is the view model's), the directional lights as one sun from their weighted direction, and the pool's point
+// lights by the legacy falloff (05-compat.js), (1 − d/distance)^decay, as one more directional light from theirs. Eased over about a
+// tenth of a second, so a pool light handed to another source does not blink; a new scene is taken at once. The view model's own
+// glows (the torch's, an enchantment's) are its children, not these, and stay.
+const VM_AMB=VM_SCENE.children.find(o=>o.isAmbientLight);
+const VM_HEMI=new THREE.HemisphereLight(0,0,1),VM_PT=new THREE.DirectionalLight(0,1);VM_SCENE.add(VM_HEMI);VM_SCENE.add(VM_PT);
+const VM_LIT={sc:null,amb:new THREE.Color(),sky:new THREE.Color(),gnd:new THREE.Color(),sun:new THREE.Color(),pt:new THREE.Color(),
+  up:new THREE.Vector3(0,1,0),sd:new THREE.Vector3(1,2,1).normalize(),pd:new THREE.Vector3(0,1,0)};
+const _vlQ=new THREE.Quaternion(),_vlP=new THREE.Vector3(),_vlT=new THREE.Vector3(),_vlE=new THREE.Vector3(),_vlS=new THREE.Vector3(),_vlD=new THREE.Vector3();
+const _vlA=new THREE.Color(),_vlK=new THREE.Color(),_vlG=new THREE.Color(),_vlU=new THREE.Color(),_vlC=new THREE.Color();
+function vmLight(sc,dt){
+  if(!sc||!VM_AMB)return;
+  _vlA.setRGB(0,0,0);_vlK.setRGB(0,0,0);_vlG.setRGB(0,0,0);_vlU.setRGB(0,0,0);_vlC.setRGB(0,0,0);_vlS.set(0,0,0);_vlD.set(0,0,0);
+  CAM.getWorldPosition(_vlE);CAM.getWorldQuaternion(_vlQ).invert();
+  for(const o of sc.children){if(!o.isLight||!o.visible||!(o.intensity>0))continue;const i=o.intensity;
+    if(o.isAmbientLight)_vlA.r+=o.color.r*i,_vlA.g+=o.color.g*i,_vlA.b+=o.color.b*i;
+    else if(o.isHemisphereLight){_vlK.r+=o.color.r*i;_vlK.g+=o.color.g*i;_vlK.b+=o.color.b*i;_vlG.r+=o.groundColor.r*i;_vlG.g+=o.groundColor.g*i;_vlG.b+=o.groundColor.b*i;}
+    else if(o.isDirectionalLight){o.getWorldPosition(_vlP);if(o.target)o.target.getWorldPosition(_vlT);else _vlT.set(0,0,0);_vlP.sub(_vlT);const l=_vlP.length();if(l<1e-6)continue;
+      _vlU.r+=o.color.r*i;_vlU.g+=o.color.g*i;_vlU.b+=o.color.b*i;_vlS.addScaledVector(_vlP,i/l);}
+    else if(o.isPointLight||o.isSpotLight){o.getWorldPosition(_vlP);_vlP.sub(_vlE);const d=_vlP.length();
+      const f=o.distance>0&&o.decay>0?Math.pow(Math.max(0,1-d/o.distance),o.decay):1;if(!(f>0))continue;const w=i*f;
+      _vlC.r+=o.color.r*w;_vlC.g+=o.color.g*w;_vlC.b+=o.color.b*w;if(d>1e-4)_vlD.addScaledVector(_vlP,w/d);else _vlD.y+=w;}}
+  const L=VM_LIT,k=L.sc!==sc?1:1-Math.exp(-(dt||0)*12);L.sc=sc;
+  L.amb.lerp(_vlA,k);L.sky.lerp(_vlK,k);L.gnd.lerp(_vlG,k);L.sun.lerp(_vlU,k);L.pt.lerp(_vlC,k);
+  _vlP.set(0,1,0).applyQuaternion(_vlQ);L.up.lerp(_vlP,k).normalize();
+  if(_vlS.lengthSq()>1e-8){_vlS.normalize().applyQuaternion(_vlQ);L.sd.lerp(_vlS,k).normalize();}
+  if(_vlD.lengthSq()>1e-8){_vlD.normalize().applyQuaternion(_vlQ);L.pd.lerp(_vlD,k).normalize();}
+  VM_AMB.color.copy(L.amb);VM_AMB.intensity=1;
+  VM_HEMI.color.copy(L.sky);VM_HEMI.groundColor.copy(L.gnd);VM_HEMI.intensity=1;VM_HEMI.position.copy(L.up);
+  VM_SUN.color.copy(L.sun);VM_SUN.intensity=1;VM_SUN.position.copy(L.sd);
+  VM_PT.color.copy(L.pt);VM_PT.intensity=1;VM_PT.position.copy(L.pd);
+}
