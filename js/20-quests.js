@@ -383,7 +383,6 @@ function makePortalDef(entry){
     seed:entry.seed,
     zone:entry.zone,
     keyBase:dungeonKeyBase(entry.seed),
-    floors:entry.floors, /* S1314 — #613 A: a gate that keeps a second floor (makeGate) */
     theme:gate.theme,
     occupied:gate.occupied,
     get diff(){return tierDiffKey(portalDoorTier(this),portalGradeUp(entry));},
