@@ -64,6 +64,7 @@ def build(name, title, note, srcfile, use_common, query=''):
     src = open(os.path.join(here, srcfile), encoding='utf-8').read()
     if use_common:
         s = scene(src)
+        if "from './hours.js'" in s: s = kits(s, ['gatekit', 'pieces', 'shrines', 'corruption', 'hours'])
         if "from './seasons.js'" in s: s = kits(s, ['gatekit', 'pieces', 'shrines', 'corruption', 'seasons'])
         if "from './corruption.js'" in s: s = kits(s, ['gatekit', 'pieces', 'shrines', 'corruption'])
         if "from './pieces.js'" in s: s = kits(s, ['pieces'])
@@ -163,4 +164,5 @@ hud('hud-lane.html', 'The HUD in the new look', 'The approved HUD over the new l
 hud('hud-hall.html', 'The HUD inside a gate', 'The approved HUD over the new look, a skeleton in a gate’s hall. ?frame=metal|carved|bare. Drag to look.', 'gate.js', '?scene=hall&view=hall&frame=metal')
 build('corruption-field.html', 'The world corrupted', 'The world’s corruption, 0 to 6 (L12, OG-145; F12): one Gatelands lane as each great gate is torn. The slider and the cast switch are top left; ?level=0..6, &cast=none|sky|world, &cam=field|hill|scale. Drag to look.', 'corruption-view.js', True, '?level=3')
 build('seasons-field.html', 'The seasons in the land', 'The seasons in the land (L12, OG-139; F3): one Gatelands lane through the year. The year, the rows (OG-139’s four seasons or OG-140’s green all year) and the snow are top left; ?season=spring|summer|autumn|winter, &rows=full|gentle, &snow=0..1, &cam=field|high|hedge|scale. Drag to look.', 'seasons-view.js', True, '?season=autumn')
+build('hours-lane.html', 'The hours of the day', 'The hours, island by island (L12, OG-137; F3): one Gatelands lane through a summer day and night. The hour, the night (A readable, B by the moon’s phase, C by phase with a starlit floor) and the moon are top left; ?hour=dawn|sunrise|midday|golden|twilight|moonlit|deep, &night=readable|phase|floor, &moon=0..1, &cam=field|hill|scale|high. Drag to look.', 'hours-view.js', True, '?hour=twilight')
 print('ok')

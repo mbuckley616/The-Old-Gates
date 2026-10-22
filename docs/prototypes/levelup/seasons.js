@@ -54,7 +54,7 @@ export function lerpSeason(rows, t) {
 
 // ── the leaves: on common.js's treeKit materials, after its wind ──
 const TU = { uThin: { value: 0 }, uSpread: { value: .4 }, uTurn: { value: 0 }, uBrown: { value: 0 }, uBlossom: { value: 0 }, uEver: { value: .16 },
-  uLeaf: { value: new THREE.Vector3(1, 1, 1) }, uEverC: { value: new THREE.Vector3(.34, .50, .42) } };
+  uLeaf: { value: new THREE.Vector3(1, 1, 1) }, uEverC: { value: new THREE.Vector3(.24, .38, .30) } };
 const LEAF_V = `
   vCard = aCard;
   #ifdef USE_INSTANCING
@@ -81,7 +81,7 @@ function hookLeaf(m, depth) {
     s.fragmentShader = 'uniform float uThin, uSpread, uTurn, uBrown, uBlossom, uEver; uniform vec3 uLeaf, uEverC; varying float vCard; varying float vTree;\n'
       + s.fragmentShader.replace('void main() {', 'void main() {\n' + LEAF_DISCARD)
         .replace('#include <color_fragment>', '#include <color_fragment>\n' + (depth ? '' : LEAF_COLOUR)); };
-  m.customProgramCacheKey = () => 'season-leaf' + (depth ? '-d' : ''); m.needsUpdate = true;
+  m.customProgramCacheKey = () => 'season-leaf' + (depth ? '-d' : ''); m.needsUpdate = true; if (!depth) m.userData.leaf = true;
 }
 // call once after treeKit's plant(): every leaf card one hash (aCard) for its four corners; the leaves' depth material too, so the
 // shadow drops with the leaves
@@ -146,11 +146,22 @@ const SNOW_F = `
     float fr = uFrost * smoothstep(.3, .9, up) * (.45 + .55 * n);
     diffuseColor.rgb = mix(diffuseColor.rgb, vec3(.80, .86, .94) * (.6 + .5 * dot(diffuseColor.rgb, vec3(.33))) + .25, fr * .55);
     diffuseColor.rgb = mix(diffuseColor.rgb, vec3(.90, .93, .98), sSnow); }`;
+// on the leaf cards (only the evergreens' are left in snow) the snow is laid card by card through the whole crown, more of them toward the
+// top, and over the leaf's own shading, so a holly or a yew is green under a white load and not a green ball under a white cap (the
+// critic, 22 Oct: the first version laid it by the crown's normal alone, so it lay only on the top cap and read as a cloud over the copse)
+const SNOW_LEAF_F = `
+  float sSnow = 0.; { float up = normalize(vSnN).y, n = fb(vSnP.xz * 1.3 + vCard * 7.);
+    float share = clamp(uSnow * 1.15, 0., 1.) * (.18 + .62 * smoothstep(-.4, .9, up));
+    float on = smoothstep(share, share - .12, fract(vCard * 29.71 + vTree * 3.3));
+    float sl = dot(diffuseColor.rgb, vec3(.3, .59, .11));
+    sSnow = on * (.62 + .3 * n);
+    diffuseColor.rgb = mix(diffuseColor.rgb, vec3(.88, .91, .97) * (.78 + 1.1 * sl), sSnow);
+    float fr = uFrost * (.4 + .6 * smoothstep(-.2, .8, up)) * (.4 + .6 * n); diffuseColor.rgb = mix(diffuseColor.rgb, vec3(.74, .80, .88) * (.7 + sl), fr * .45); }`;
 export function hookSnow(m) {
-  if (m.userData.snow || !m.isMeshStandardMaterial) return; m.userData.snow = true; const prev = m.onBeforeCompile, key = m.customProgramCacheKey;
+  if (m.userData.snow || !m.isMeshStandardMaterial) return; m.userData.snow = true; const prev = m.onBeforeCompile, key = m.customProgramCacheKey, SF = m.userData.leaf ? SNOW_LEAF_F : SNOW_F;
   m.onBeforeCompile = (s, r) => { prev && prev.call(m, s, r); Object.assign(s.uniforms, SU);
     s.vertexShader = 'varying vec3 vSnP; varying vec3 vSnN;\n' + s.vertexShader.replace('#include <project_vertex>', SNOW_V + '\n#include <project_vertex>');
-    s.fragmentShader = 'uniform float uSnow, uFrost; varying vec3 vSnP; varying vec3 vSnN;\n' + GLSL_NOISE + s.fragmentShader.replace('#include <alphamap_fragment>', SNOW_F + '\n#include <alphamap_fragment>')
+    s.fragmentShader = 'uniform float uSnow, uFrost; varying vec3 vSnP; varying vec3 vSnN;\n' + GLSL_NOISE + s.fragmentShader.replace('#include <alphamap_fragment>', SF + '\n#include <alphamap_fragment>')
       .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n roughnessFactor = mix(roughnessFactor, .62, sSnow);')
       .replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\n normal = normalize(mix(normal, normalize(vNormal), sSnow * .8));'); };
   const k0 = key ? key.call(m) : ''; m.customProgramCacheKey = () => k0 + '-snow'; m.needsUpdate = true;
