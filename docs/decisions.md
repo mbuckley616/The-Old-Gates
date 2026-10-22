@@ -15,6 +15,7 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+## Answered
 ### The hours of the day: how dark is a night with no moon? (from the concept artist, 2026-10-22, #629)
 **The question.** Backlog L12, the hours island by island (OG-137, card F3's sky). The prototype (`docs/prototypes/levelup/hours.html`) runs one Gatelands lane through seven grades a day, with a phased moon, 2,600 stars, low mist, amber windows at night and a lamp at each door. OG-137 says the moon's phase sets how dark the night is. How dark should a night with no moon be?
 
@@ -25,7 +26,8 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 
 **Recommendation.** C: the brief wants the land warm and inviting, and a lit window across a dark field needs a dark night around it, which A gives up; B's new moon is a black screen for a week a month on a monitor in daylight. Cost: a night frame is 835–843 draws against midday's 768. Pictures: [A, B and C at full and new moon](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1022/docs/prototypes/levelup/hours-options.jpg), [the seven hours](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1022/docs/prototypes/levelup/hours-day.jpg).
 
-## Answered
+Michael: **By the phase, with starlight as a floor** (C). (2026-10-22)
+
 ### Aurenne's tavern has no beds as drawn: where do guests sleep? (from the look builder, 2026-10-22, #602)
 **The question.** Michael's A on #322 chose Aurenne's tavern as drawn: the one-storey Roman house with its arcade and a vine over the terrace. It has no bed, but the Aurennais keeper lets "a room … a bed, a bolt on the door" and every paid line ends "up the stairs". The look builder drew it two storeys high (Session 1296, card F9): a stair of 16 risers up the west wall, a passage upstairs with three rooms off it (a cedar bed under an indigo cover, a chest, a basin under the window); the arcade, loggia, terrace and vine unchanged. About 12,000 triangles in 21 meshes, on a house of 5,052 in 8.
 
