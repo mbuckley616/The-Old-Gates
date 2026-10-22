@@ -57,13 +57,21 @@ console.log('  walk:', JSON.stringify(walk));
 check(`walking, the kit's bones turn (by ${walk.moved}); a toe on a planted foot slides at most ${walk.slide} m a frame (${walk.n} samples), a lifted one rises ${walk.lift} m, every toe within ${walk.miss} m of its driver's height`,
   walk.w.walk > .5 && walk.moved > .02 && walk.n > 50 && walk.slide < .006 && walk.lift > .015 && walk.miss < .04, walk);
 
-// the levels: near, the hide and its bits; at 25 m, the hide alone; at 60 m, the driver
+// the levels: near, the hide and its bits; at 25 m, the hide and its bits baked into one mesh (Session 1324); at 60 m, the driver
 const lv = await page.evaluate(() => { const out = {}, f = _W[0], g0 = f.e.mesh, fx = -Math.sin(yaw), fz = -Math.cos(yaw);
   const at = (dd, k) => { CAM.position.set(g0.position.x - fx * dd, g0.position.y + 1.65, g0.position.z - fz * dd); CAM.updateMatrixWorld(true); for (let i = 0; i < 3; i++) tickCreatures(1 / 60, 4e5 + k * 100 + i * 17);
     const H = f.rig.hc; let n = 0; if (H.W.visible) H.W.traverse(o => { if (o.isMesh && o.visible) n++; }); return { L: H.L, kit: n, driver: f.rig.mesh.visible }; };
-  out.near = at(5, 1); out.mid = at(25, 2); out.far = at(60, 3); out.back = at(5, 4); return out; });
-check(`three levels: near the hide and its thorns, eggs and eyes (${lv.near.kit} meshes), at 25 m fewer (${lv.mid.kit}), at 60 m the driver's own body`,
-  lv.near.L === 0 && !lv.near.driver && lv.mid.L === 1 && lv.mid.kit < lv.near.kit && lv.mid.kit >= 1 && !lv.mid.driver && lv.far.L === 2 && lv.far.driver && lv.back.L === 0, lv);
+  out.near = at(5, 1); out.mid = at(25, 2);
+  // the baked mesh against the bits it was baked from, at this pose: a vertex of each bit not small, skinned, against the bit's own
+  { const H = f.rig.hc, M = H.mid, small = new Set(H.small); f.rig.root.parent.updateMatrixWorld(true); let base = 0, err = 0, n = 0;
+    H.C.root.traverse(o => { if (!o.isMesh || o === M || small.has(o)) return; const pa = o.geometry.attributes.position, i = pa.count >> 1;
+      if (H.hide.includes(o)) { base += pa.count; return; }
+      const a = o.localToWorld(new THREE.Vector3().fromBufferAttribute(pa, i)), b = M.getVertexPosition(base + i, new THREE.Vector3()); err = Math.max(err, a.distanceTo(b)); n++; base += pa.count; });
+    out.mid.bake = { n, err: +err.toFixed(4), tris: M.geometry.index.count / 3, ms: Math.round(H.bakeMs) }; }
+  out.far = at(60, 3); out.back = at(5, 4); return out; });
+console.log('  levels:', JSON.stringify(lv));
+check(`three levels: near the hide and its thorns, eggs and eyes (${lv.near.kit} meshes), at 25 m one baked mesh (${lv.mid.kit}: ${lv.mid.bake.tris} triangles, ${lv.mid.bake.n} bits within ${lv.mid.bake.err} m of where they hang, baked in ${lv.mid.bake.ms} ms), at 60 m the driver's own body`,
+  lv.near.L === 0 && !lv.near.driver && lv.near.kit > 20 && lv.mid.L === 1 && lv.mid.kit === 1 && lv.mid.bake.n > 20 && lv.mid.bake.err < .002 && !lv.mid.driver && lv.far.L === 2 && lv.far.driver && lv.back.L === 0 && lv.back.kit === lv.near.kit, lv);
 
 // the picture, from 3 m
 await page.evaluate(() => { const a = _W[0].e, b = _W[1].e, mx = (a.x + b.x) / 2, mz = (a.z + b.z) / 2, fx = -Math.sin(yaw), fz = -Math.cos(yaw); px = mx - fx * 3; pz = mz - fz * 3; pitch = -.3; });
