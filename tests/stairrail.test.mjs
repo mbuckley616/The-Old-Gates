@@ -15,7 +15,9 @@ const g = await boot(); const { page } = g;
 await g.intoWorld();
 const rows = [];
 // S1293 — only a massive gate has a floor two and its stair now (the sheet's table; makeGate)
-for (const seed of [4021, 4022, 4023, 4024, 4025, 4026]) {
+// S1295 — three seeds, not six: a massive gate takes 2.7 minutes a seed on CI, and six ran past run.mjs's 15 (every massive seed has
+// the stair, where a large one often had none, so three still give the three stairs the checks read; 4021 starts at -1.72)
+for (const seed of [4021, 4022, 4023]) {
   await page.evaluate((seed) => { window._oldStair = typeof dScene !== 'undefined' && dScene.children.find(o => o.userData && o.userData.dunShell === 'stair'); const p = Object.assign({}, PORTALS[0], { id: 'dyn_' + seed, theme: 'deep', seed, size: 'massive', interior: 'cave', zone: 'world', tutorial: false }); goToDungeon(p); }, seed);
   for (let k = 0; k < 20 && !(await page.evaluate(() => activeZoneId === 'dungeon' && scene === dScene && !dScene.children.includes(window._oldStair))); k++) await page.waitForTimeout(300);
   // S683 — the dungeon's foes are taken out first: since Session 634 they see you at 8 underground and chase at your walk, and
@@ -56,7 +58,7 @@ for (const seed of [4021, 4022, 4023, 4024, 4025, 4026]) {
   console.log(JSON.stringify(r)); rows.push(r);
 }
 const S = rows.filter(r => !r.none);
-check('six seeds give at least two dungeons with a spiral stair, and one starting away from angle 0', S.length >= 2 && S.some(r => Math.abs(r.a0) > .3), rows);
+check('three seeds give at least two dungeons with a spiral stair, and one starting away from angle 0', S.length >= 2 && S.some(r => Math.abs(r.a0) > .3), rows);
 check('every stair is the stone stair, with sixteen stanchions, two of them end posts', S.every(r => !r.noStair && r.n === 16 && r.ends === 2), S.map(r => [r.n, r.ends]));
 check('every point of the rope lies on its circle (0.94–0.96 cells from the newel), none across the shaft', S.every(r => r.min >= .94 && r.max <= .96), S.map(r => [r.min, r.max]));
 check('every stanchion reaches the rope (its top within 0.13 of the rope above it)', S.every(r => r.gap <= .13), S.map(r => r.gap));
