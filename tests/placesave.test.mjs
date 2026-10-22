@@ -3,22 +3,13 @@
 // when its prosperity moves twelve points or a paid building finishes: at another prosperity it uses fewer or more
 // lots, and the guild halls' big lots come and go at 60, so every id could land on another building. Your own house
 // (worldState.owned is keyed by id) went with it, and so did a save made inside a house.
+// Session 1280: split in three for CI's 900 s, each part booting its own game: this one (the ids through prosperity swings
+// and your own house), `placerooms` (a save inside each kind of room) and `placeload` (the three re-entries that go wrong).
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
 await page.evaluate(() => WORLD.devUnlockAll());
-const cont = async () => { const t0 = Date.now();
-  await page.evaluate(() => saveToSlot(0)); await page.waitForTimeout(1200);
-  // Session 326: waits for what it needs (the menu, then the room), not for fixed times a loaded runner can outlast
-  await page.reload(); await page.waitForFunction(() => document.getElementById('cb') && typeof saveToSlot === 'function', null, { timeout: 120000 }); await page.waitForTimeout(1500);
-  await page.evaluate(() => document.getElementById('cb').click());
-  await page.waitForFunction(() => started && currentHouse && currentHouse.id, null, { timeout: 120000, polling: 500 }).catch(() => {}); await page.waitForTimeout(1500); await g.hide(); console.log('cont', (Date.now() - t0) / 1000, 's');
-  return page.evaluate(() => ({ started, id: currentHouse && currentHouse.id, name: currentHouse && currentHouse.name, x: +px.toFixed(1), z: +pz.toFixed(1) }));
-};
-const here = () => page.evaluate(() => ({ id: currentHouse && currentHouse.id, name: currentHouse && currentHouse.name, x: +px.toFixed(1), z: +pz.toFixed(1) }));
-// Session 562: the doors' fades run on a 440 ms timer that a loaded runner fires late; wait for the room (or the street), not for 3 s
-const inRoom = (id) => page.waitForFunction((id) => !!currentHouse && (id == null || currentHouse.id === id), id, { timeout: 60000, polling: 250 });
-const out = async () => { await page.evaluate(() => { if (currentHouse) exitInterior(); }); await page.waitForFunction(() => !currentHouse, null, { timeout: 60000, polling: 250 }); await page.waitForTimeout(1500); await g.hide(); };
+const t00 = Date.now(); const lap = (s) => console.log(`${s} at ${Math.round((Date.now() - t00) / 1000)} s`);
 
 // 1. ids follow their lots through prosperity swings. Session 1275: a kit house keeps its front on the street line and its depth is its
 // kind's (an inn 4–6 m, a merchant's house 8), so its centre moves when the kind does; a building on another lot moves both, the centre
@@ -62,56 +53,6 @@ console.log('owned', JSON.stringify(owned));
 check('and they look the same: skin, hair, clothes and a resident\u2019s trade are kept with the name', swing.every(s => s.cases.every(c => c.relooked.length === 0)), swing.map(s => ({ id: s.id, cases: s.cases.map(c => ({ p: c.p, relooked: c.relooked.length, first: c.relooked[0] })) })));
 check('an owned home is still Your House at its own door after the town rises 26 or falls 26 and 45', owned.res.every(r => r.found && r.type === 'home' && r.name === 'Your House' && r.moved === 0), owned.res);
 
-// 3. save inside each kind of place, reload, Continue: the same room at the same spot
-await g.settle('dunmore');
-const kinds = ['home', 'weapon', 'inn', 'guild_f', 'church', 'cellar'];
-const places = [];
-for (const t of kinds) {
-  if (!(await page.evaluate(() => !!WORLD.settle.get('dunmore')))) await g.settle('dunmore');
-  await page.evaluate((t) => { const S = WORLD.settle.get('dunmore'); let h = S.houses.find(h => h.type === (t === 'cellar' ? 'inn' : t)); if (t === 'cellar') h = WORLD.cellarFor(h); goToInterior(h); return h.id; }, t).then(inRoom);
-  await page.waitForTimeout(1500); await g.hide();
-  const at = await here(); const back = await cont();
-  places.push({ t, at, back }); console.log(t, JSON.stringify({ at, back })); await out();
-}
-for (const r of places) check(`saved in the ${r.t}, continued in the same room at the same spot`, r.back.started && r.back.id === r.at.id && r.back.name === r.at.name && Math.hypot(r.back.x - r.at.x, r.back.z - r.at.z) < .5, r);
-
-// 4. saved in a home while the town's prosperity fell 13 (the town rebuilt behind you): back in that home
-await g.settle('dunmore');
-const fell = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'); const h = S.houses.filter(h => h.type === 'home')[5]; goToInterior(h); return { id: h.id, name: h.name, exitX: h.exitX, exitZ: h.exitZ }; });
-await inRoom(fell.id); await page.waitForTimeout(1500); await g.hide();
-await page.evaluate(() => { const s = WORLD.siteAnywhere('dunmore'); WORLD.setProsperity(s, WORLD.prosperity(s) - 13); });
-const back4 = await cont();
-const exit4 = await page.evaluate(() => currentHouse && { x: currentHouse.exitX, z: currentHouse.exitZ });
-console.log('fell', JSON.stringify({ fell, back4, exit4 }));
-check('saved in a home as the town fell 13: continued in the same house, behind the same door, under the same name', back4.id === fell.id && back4.name === fell.name && exit4 && Math.hypot(exit4.x - fell.exitX, exit4.z - fell.exitZ) < .1, { fell, back4, exit4 });
-await out();
-
-// 5. a save that names another building (as one from before this build can): the door it was saved behind decides
-await g.settle('dunmore');
-const real = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'); const h = S.houses.filter(h => h.type === 'home')[3]; goToInterior(h); return h.id; });
-await inRoom(real); await page.waitForTimeout(1500); await g.hide();
-await page.evaluate(() => { currentHouse = Object.assign(Object.create(Object.getPrototypeOf(currentHouse)), currentHouse, { id: 'g_dunmore_2' }); });
-const back5 = await cont();
-console.log('legacy', JSON.stringify({ real, back5 }));
-check('a save naming the wrong id comes back behind the door it was made behind', back5.id === real, { real, back5 });
-await out();
-
-// 6. Session 326: on a slow machine the town behind a saved door can still be queued when the re-entry looks for it; the
-// world's job queue drains a job or two a frame, and the re-entry gave up after 60 tries (6 s). Starve the world's tick
-// outright, drop the town, and ask for the inn: the re-entry must build the town itself.
-await g.settle('dunmore');
-await page.evaluate(() => { const h = WORLD.settle.get('dunmore').houses.find(h => h.type === 'inn'); goToInterior(h); });
-await inRoom(); await page.waitForTimeout(1500); await g.hide();
-const W6 = await page.evaluate(() => { const h = currentHouse; return { kind: 'house', id: h.id, parent: null, site: h.siteId, x: px, z: pz, yaw, jumpY, door: { x: h.exitX, z: h.exitZ, yaw: h.exitYaw || 0 } }; });
-await out();
-const starved = await page.evaluate(async (W) => {
-  const tick = WORLD.tick; WORLD.tick = () => {}; const msgs = []; const sm = showMsg; showMsg = function (m) { msgs.push(m); return sm.apply(this, arguments); };
-  WORLD.disposeSettlement('dunmore'); const gone = !WORLD.settle.has('dunmore');
-  _reenterPlace(W); await new Promise(r => setTimeout(r, 8000));
-  const r = { gone, id: currentHouse && currentHouse.id, built: WORLD.settle.has('dunmore'), movedOn: msgs.filter(m => /moved on/.test(m)).length };
-  WORLD.tick = tick; showMsg = sm; return r; }, W6);
-console.log('starved', JSON.stringify({ want: W6.id, starved }));
-check('with the world\u2019s tick starved and the town unbuilt, a save behind the inn door still comes back in the inn (it gave up after 6 s)', starved.gone && starved.built && starved.id === W6.id && starved.movedOn === 0, { want: W6.id, starved });
-await out();
+lap('swings and the owned home');
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

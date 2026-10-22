@@ -197,7 +197,9 @@ Started 15 Oct 2026 (QA run of 18:51 UTC, main 0773903 plus Sessions 946–949).
 | `parrydeath` | 5/14 | pass | pass | 43 |  |
 | `people` | 2/14 | pass | pass | 188 |  |
 | `pirateram` | 7/14 | pass | pass | 68 |  |
-| `placesave` | 3/14 | pass | pass | 482 |  |
+| `placeload` | — | pass (S1280) | pass | 318 | split from `placesave`, Session 1280 (side by side with the other two) |
+| `placerooms` | — | pass (S1280) | pass | 470 | split from `placesave`, Session 1280 |
+| `placesave` | 3/14 | pass | pass | 361 | sections 1–2 only since Session 1280; skipped (too slow whole) until QA's pipeline PR strikes it |
 | `plants` | 2/14 | pass | pass | 79 |  |
 | `poinames` | 8/14 | pass | pass | 43 |  |
 | `portlane` | 1/14 | pass | pass | 222 |  |
