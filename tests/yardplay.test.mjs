@@ -15,6 +15,9 @@ import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
 await page.evaluate(() => WORLD.devUnlockAll());
+// S1250 — the drawing stubbed from here on: on the new look a drawn frame on software GL takes seconds and the suite was killed at
+// its 900 s. It reads dialogue, quests, positions and the loop's state, never a pixel; the game's own frames and timers run as before
+await page.evaluate(() => { REN.render = () => {}; });
 
 await page.evaluate(() => { window._drive = (step, max) => {
   const raf = window.requestAnimationFrame, rr = REN.render; window.requestAnimationFrame = () => 0; REN.render = () => {};
