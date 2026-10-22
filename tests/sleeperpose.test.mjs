@@ -14,7 +14,7 @@ const enter = async (hr, k) => { await page.evaluate(([hr, k, gal]) => { forceTi
   // S1224 (card F4): on the new look the resident's builder body comes a moment after the room and lays the sleeper again by its own
   // shape (hbAttach); it is built here first, so what is measured is the body that shows and the loop below does not move it
   await page.evaluate(() => { const m = intNPCMesh, rig = m && m.userData.rig; if (!rig || !HB_RIGS.has(rig)) return; CAM.position.set(px, 1.65, pz); CAM.updateMatrixWorld(true);
-    let k = 0; while ((!rig.hb || rig.hb.cold) && !rig.hbFail && k++ < 60) { HBODY.last = -1e9; hbTick(performance.now()); } }); };
+    let k = 0; while ((!rig.hb || rig.hb.cold) && !rig.hbFail && k++ < 400) { HBODY.last = -1e9; hbTick(performance.now()); } }); };
 const leave = async () => { await page.evaluate(() => { exitInterior(); if ('_two0' in _h) { _h.two = _h._two0; delete _h._two0; } }); await page.waitForTimeout(1500); };
 // the body against its bed: every skinned point, the head, the quilt over it
 const read = () => page.evaluate(() => { const m = intNPCMesh; if (!m) return null; const rig = m.userData.rig, b = INT_BEDS.find(b => b.owner === 'home');
