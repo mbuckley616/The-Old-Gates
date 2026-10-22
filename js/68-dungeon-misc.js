@@ -9,7 +9,7 @@ function _sweepScenePool(scene){
   for(const l of found){const par=l.parent;if(l._swept&&l._sweptScene===scene&&P.src.includes(l._swept)){par&&par.remove(l);continue;}const v={mirror:l,follow:(par&&par!==scene)?par:null,offset:l.position.clone(),pos:new THREE.Vector3(),loose:!(par&&par!==scene)};l.getWorldPosition(v.pos);P.src.push(v);par&&par.remove(l);l._swept=v;l._sweptScene=scene;}
   const inScene=(o)=>{let p=o;while(p){if(p===scene)return true;p=p.parent;}return false;};
   const cand=[];const wp=new THREE.Vector3();
-  // S1299 — in a gate (DZONE, 56-dungeon-build.js) the pool's 8 go to the nearest sources in the zones drawn, by their distance up and
+  // S1302 — in a gate (DZONE, 56-dungeon-build.js) the pool's 8 go to the nearest sources in the zones drawn, by their distance up and
   // down too, so floor two's torches never take a light from floor one's
   const inG=scene===dScene&&typeof DZONE!=='undefined'&&DZONE,shown=inG?dZoneShown():null,eyeY=inG?(currentFloor===2?FLOOR2_Y:0)+1.5:0;
   for(let i=P.src.length-1;i>=0;i--){const v=P.src[i];const m=v.mirror;if(v.follow){if(!inScene(v.follow)){P.src.splice(i,1);continue;}v.follow.getWorldPosition(wp);wp.add(v.offset);v.pos.copy(wp);}else v.pos.copy(m.position);

@@ -1,6 +1,6 @@
 // Session 688 prewarmed the open world's foes and left a note: the dungeon's foes are not prewarmed, so a first skeleton
 // below can still hitch. Session 746 measured it, and there is nothing to prewarm: a dungeon's foes share their materials,
-// its lights are a fixed pool (`_sweepScenePool`; 20, and 8 in a gate since S1299), so no kill or loot glow re-keys a program, and the first frame,
+// its lights are a fixed pool (`_sweepScenePool`; 20, and 8 in a gate since S1302), so no kill or loot glow re-keys a program, and the first frame,
 // behind the way-down fade, compiles the rest. A prewarm of the whole scene (REN.compile on both floors) changed nothing.
 // This suite keeps it so: three old gates whose themes hold the most kinds (wraiths and phantoms, elementals and golems,
 // gargoyles and mimics) at level 9; after the entry settles it stands by every foe on both floors and looks at it, and
@@ -43,7 +43,7 @@ for (const [theme, seed] of [['undead', 7], ['elemental', 9], ['haunted', 6]]) {
 // what CI read: a light added between two frames, as a timer would, is in the scene (21) until the next frame's sweep.
 // Session 829: 21 or more. On a busy runner a foe's own light can already be waiting for the sweep when the suite adds its
 // one (22 in 1 run of 3 run side by side here); what must hold is that every frame is still drawn with the pool's 20.
-// S1299 — a gate's pool is 8 (the sheet's "Light and draws", card F5): the count is the pool's own, read from it, 8 in these gates.
+// S1302 — a gate's pool is 8 (the sheet's "Light and draws", card F5): the count is the pool's own, read from it, 8 in these gates.
 const POOL = await page.evaluate(() => _LPS.get(dScene).pool.length);
 const between = await page.evaluate(() => { const L = new THREE.PointLight(0xffcc44, 1.2, 3); L.position.set(px, 1, pz); dScene.add(L); let n = 0; dScene.traverse(o => { if (o.isPointLight) n++; }); return n; });
 await drawnLights(); const c1 = await page.evaluate(() => __cs); await g.frames(3); const after = await drawnLights(); const c2 = await page.evaluate(() => __cs);
@@ -51,7 +51,7 @@ console.log('a light added between frames: the scene holds', between, 'then draw
 console.log('foes looked at', seen, 'kinds', [...kinds].join(', '), 'compiled on sight', JSON.stringify(onSight), 'kill:', JSON.stringify(lights));
 // S1293 — a medium gate is one floor of spaces now (the sheet's table: two floors only in a massive gate), so three of them hold 42 foes, not 60 and more
 check('every foe on every floor of three old gates comes into view with no shader compiled', seen >= 40 && onSight.length === 0, { seen, kinds: kinds.size, onSight });
-check('a kill and its loot glow leave the point lights at the pool\'s size (8 in a gate, S1299) in every frame drawn after it, and compile nothing', lights.every(([, a, lo, hi, c, , P]) => P === 8 && a === P && lo === P && hi === P && c === 0), lights);
+check('a kill and its loot glow leave the point lights at the pool\'s size (8 in a gate, S1302) in every frame drawn after it, and compile nothing', lights.every(([, a, lo, hi, c, , P]) => P === 8 && a === P && lo === P && hi === P && c === 0), lights);
 check('a light added between frames is counted (the pool and one, or more with a foe\'s own waiting) until the next sweep, and every frame is drawn with the pool\'s own count (what CI read as a fault)', between >= POOL + 1 && after.length > 0 && after.every(n => n === POOL) && c2 === c1, { between, after, POOL, compiled: c2 - c1 });
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

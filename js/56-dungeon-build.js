@@ -3409,12 +3409,12 @@ function buildDungeon(portal){
   // scaling pass carries it with the rest
   try{lairFinish(portal);}catch(e){}try{shuttleLay(portal);}catch(e){}try{cloakDenLay(portal,window._lairBoss);}catch(e){}
   dunScaleWhole(dunCellFor(portal),thWallMat);
-  /* S1299 — a gate draws by space (dZoneBuild, dRender) and lights 8 at a time; its pool is made now, so the compile below has its lights */
+  /* S1302 — a gate draws by space (dZoneBuild, dRender) and lights 8 at a time; its pool is made now, so the compile below has its lights */
   DZONE=gen.gate?dZoneBuild(gen):null;if(gen.gate){dScene.userData.lightPool=8;try{_sweepScenePool(dScene);}catch(e){}}
   /* S1293 — a gate's spaces bring materials no room had (the water's, the pit's): compiled now, behind the fade, not when first seen */
   if(gen.gate&&typeof REN!=='undefined'&&REN.compile)try{REN.compile(dScene,CAM);}catch(e){}
 }
-// S1299 (card F5, the sheet's "Light and draws") — in a gate only your space and the spaces joined to it are drawn, as a town's
+// S1302 (card F5, the sheet's "Light and draws") — in a gate only your space and the spaces joined to it are drawn, as a town's
 // houses are by houseLod. Every open cell belongs to a zone: a space's own cells are its zone, and a side room, its corridor, a chapel
 // or a threshold take the zone of the space they open off (the nearest by the open cells, a breadth-first fill from every space at
 // once). Your zone and its neighbours (the spaces your zone's thresholds and the stair hall join) are drawn; a piece in any other

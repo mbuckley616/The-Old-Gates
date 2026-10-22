@@ -61,7 +61,7 @@ function loop(now){
   // v80 — the main story is handed to you: if a main quest is complete and what it unlocks is still locked, hand it over with the popup
   try{if(!window._mqT||performance.now()-window._mqT>1500){window._mqT=performance.now();for(const q of QUEST_DEFS){if(qState(q.id)!=='complete'||!q.unlocks)continue;for(const nid of q.unlocks){const nq=getQuest(nid);if(!nq||qState(nid)!=='locked'||!QS[nid])continue;QS[nid].state=nq.autoAccept?'active':'available';if(nq.autoAccept){showQuestUpdatePopup('accept',nq);if(typeof addLog==='function')addLog('📜',`New quest: ${nq.title}.`);}else if(nq.announce&&!QS[nid]._announced){QS[nid]._announced=true;showQuestUpdatePopup('accept',Object.assign({},nq,{title:`${nq.title} — speak with ${nq.giver}`}));if(typeof addLog==='function')addLog('📜',`${nq.giver} has something for you: ${nq.title}.`);}}}}}catch(e){}
   const _pfD=PERF.on?performance.now():0;
-  if(scene===dScene)dRender(scene,CAM);else REN.render(scene,CAM); /* S1299 — a gate draws by space (56-dungeon-build.js) */
+  if(scene===dScene)dRender(scene,CAM);else REN.render(scene,CAM); /* S1302 — a gate draws by space (56-dungeon-build.js) */
   if(PERF.on)perfNote(now,_pfL,_pfD,performance.now());
   // Viewmodel render on top (clear depth only, not colour)
   if(started&&!dead&&!won&&!invOpen&&!shopOpen&&!lootOpen&&!stashOpen&&!hubOpen&&!(document.getElementById('quest-popup')&&document.getElementById('quest-popup').style.display==='flex')&&(vmSword||vmShield)){

@@ -1,4 +1,4 @@
-// A gate's draws and lights (card F5, Session 1299; docs/design/gate-interiors-build.md, "Light and draws" and "The suites"): only
+// A gate's draws and lights (card F5, Session 1302; docs/design/gate-interiors-build.md, "Light and draws" and "The suites"): only
 // your space and the spaces joined to it are drawn (dZoneShown, dRender), with the side rooms a sightline from your cell reaches, and
 // nothing past the fog's far edge; at most 8 point lights live (the pool, moved to the nearest sources in the zones drawn). Five spots
 // a gate size (the way in, the first space's middle, a threshold, a side room, the ring chamber), four headings each: under 200 draw
