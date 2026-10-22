@@ -885,20 +885,45 @@ function buildZoneEnemy(sc,sol,x,z,type,variantKey,zOpts){
 // builds their programs against the world's own lights and fog. The group is then dropped and its rigs struck from the
 // tick lists; the materials are not disposed, so the programs stay in three.js's cache for the real foes that follow.
 let _foesWarm=null;
+// S1267 — the builder's dressed foes whose bodies the prewarm builds (1.2 s each on CI's CPU): these five wear every garment program
+// the eight dressed kinds use (the Bandit's, the Rogue Mage's and the Captain's are all among them); foewarm says when that changes
+const FOE_WARM_HB=['Bandit Archer','Highwayman','Deserter','Cultist','Pirate'];
 function prewarmFoes(sc,cam){
   if(_foesWarm||typeof REN==='undefined'||!REN||!sc||!cam)return null;_foesWarm=true;
   const t0=performance.now(),p0=REN.info.programs?REN.info.programs.length:0,tmp=new THREE.Group(),kinds=Object.keys(ZONE_FOE_DEF);
   for(const k of kinds){try{buildZoneEnemy(tmp,[],0,0,k,null);}catch(e){}}
   try{buildZoneEnemy(tmp,[],0,0,'Bandit',null,{genome:personGenome({name:'warm',role:'guard'},{key:'warm'})});}catch(e){} /* a town guard drawn on you: a Bandit on a townsman's genome */
+  /* S1267 — on the new look a human foe wears the builder's body (F4), dressed by hbTick a frame or more after it is first seen, and its
+     garments (mail, a mail skirt, a wrap, a coat, a robe) keyed programs of their own that compiled then (QA's foewarm, 4 programs):
+     a body is built here for the kinds in FOE_WARM_HB, both its levels shown, and compiled with the rest. Its materials are kept,
+     never disposed, so the programs stay cached; its geometry goes once compiled. The builder's own count (HBODY.n, .ms) is left as it was */
+  const inTmp=r=>{for(let a=r&&r.root;a;a=a.parent)if(a===tmp)return true;return false;},hbw=[];
+  if(typeof hbOn==='function'&&hbOn()){const n0=HBODY.n,ms0=HBODY.ms;
+    for(const r of [...HB_RIGS]){if(!inTmp(r))continue;HB_RIGS.delete(r);if(!r.hbFoe||!FOE_WARM_HB.includes(r.hbFoe))continue;
+      try{if(!r.hbG)r.hbG=hbFoeGenome(r);hbAttach(r);}catch(e){}
+      if(r.hb){const H=r.hb;H.root.visible=true;H.mid.visible=true;for(const m of H.full)m.visible=true;H.root.traverse(o=>{o.visible=true;});try{hbPose(r);}catch(e){}hbw.push(r);}}
+    HBODY.n=n0;HBODY.ms=ms0;}
+  /* S1299 — the same for the beasts the creature kit dresses (the Wolf, the Snow Wolf, the Dire Wolf…; hcAttach, built by hcTick when first
+     near): their hide and nine fur shells keyed programs of their own that compiled on the frame they were first seen (foewarm, 29 programs
+     once main built the townsfolk a few pieces a frame and no wild wolf had shown its body during the settle). Built here at the near
+     level, compiled with the rest, its materials kept and its geometry dropped; the kit's own count (HC_BODY.n, .ms) is left as it was */
+  const hcw=[];
+  if(typeof hcOn==='function'&&hcOn()){const n0=HC_BODY.n,ms0=HC_BODY.ms;
+    for(const r of [...WOLF_RIGS]){if(!inTmp(r)||r.hc||!hcOk(r))continue;
+      try{hcAttach(r);}catch(e){}
+      if(r.hc){try{hcLevel(r,0);hcPose(r);}catch(e){}r.hc.W.traverse(o=>{o.visible=true;});r.mesh.visible=true;hcw.push(r);}} /* the driver too, which the shadow pass draws */
+    HC_BODY.n=n0;HC_BODY.ms=ms0;}
   const lights=[];tmp.traverse(o=>{if(o.isLight)lights.push(o);});for(const l of lights)if(l.parent)l.parent.remove(l);
   tmp.traverse(o=>{o.frustumCulled=false;});
   if(typeof WORLD!=='undefined'&&sc===WORLD.scene)try{WORLD.sweepLights();}catch(e){} /* the world's tick folds stray lights into its pool of 24; before the first tick there are more, and every program would be keyed to that count */
   sc.add(tmp);try{REN.compile(sc,cam);}catch(e){}
   /* S988 — compile() leaves out the shadow pass's depth materials, and on three.js 0.170 a foe casting a shadow keys one of its
      own (QA's foewarm on the new look): one drawn frame with the shadow map forced makes it here, behind the loading fade */
-  if(REN.shadowMap&&REN.shadowMap.enabled){const nu=REN.shadowMap.needsUpdate;try{REN.shadowMap.needsUpdate=true;REN.render(sc,cam);}catch(e){}REN.shadowMap.needsUpdate=nu;}
+  if(REN.shadowMap&&REN.shadowMap.enabled){const nu=REN.shadowMap.needsUpdate;for(const r of hbw)r.hb.root.visible=false; /* the builder's bodies cast no shadow, and are compiled already */
+    try{REN.shadowMap.needsUpdate=true;REN.render(sc,cam);}catch(e){}REN.shadowMap.needsUpdate=nu;}
   sc.remove(tmp);
-  const inTmp=r=>{for(let a=r&&r.root;a;a=a.parent)if(a===tmp)return true;return false;};
+  for(const r of hbw){r.hb.root.traverse(o=>{if(o.geometry)o.geometry.dispose();});if(r.hb.P.skeleton.boneTexture)r.hb.P.skeleton.dispose();}
+  for(const r of hcw){const H=r.hc;H.C.root.traverse(o=>{if(o.geometry)o.geometry.dispose();});if(H.C.skel.boneTexture)H.C.skel.dispose();r.hc=null;}
   for(const r of [...WOLF_RIGS])if(inTmp(r))WOLF_RIGS.delete(r);
   for(const r of [...PEOPLE_RIGS])if(inTmp(r))PEOPLE_RIGS.delete(r);
   return _foesWarm={kinds:kinds.length+1,programs:(REN.info.programs?REN.info.programs.length:0)-p0,ms:Math.round(performance.now()-t0)};

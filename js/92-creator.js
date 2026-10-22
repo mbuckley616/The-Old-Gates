@@ -932,7 +932,7 @@ function settingRows(){const r=[
   {k:'look',g:'The mouse',w:'Look speed',min:.25,max:3,st:.05,fmt:v=>v.toFixed(2)+'×',note:'at 1×, 0.23° a pixel, as it was; from a quarter to three times'},
   {k:'invert',w:'Up and down',opts:['As is','Inverted'],get:()=>SETTINGS.invert?1:0},
   {k:'renderer',g:'The renderer',w:'Renderer',opts:['As it was','three.js 0.170'],get:()=>rendererChoice()==='new'?1:0,note:rendererNote()}];
-  if(window.OG_LOOK==='new')r.push({k:'quality',w:'Quality',opts:['Low','Middle','High'],get:()=>SETTINGS.quality,note:'the land: grass, shadows, clouds; middle is the budget’s'}); // S1181 (F3): what the new look's land spends
+  if(window.OG_LOOK==='new')r.push({k:'quality',w:'Quality',opts:['Low','Middle','High'],get:()=>SETTINGS.quality,note:'the land: grass, shadows, clouds; Middle suits most machines, Low a slow one'}); // S1181 (F3): what the new look's land spends
   if(typeof setChallenge==='function'&&typeof challengeStep==='function'&&typeof CHALLENGE_STEPS!=='undefined')
     r.push({k:'challenge',g:'The challenge',w:'How hard the world strikes',opts:CHALLENGE_STEPS,get:()=>challengeStep()});
   return r;}
