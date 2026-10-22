@@ -352,8 +352,9 @@ function lpDifficulty(door){ // steady per door: how many pins, and how long the
 }
 // S150 — which dungeon chests are locked: every treasure chest, and ordinary ones by floor (1 in 5 on the
 // first, 2 in 5 on the second). Steady per cell, so a mimic in the same place wears the same lock.
+// S1283 — keyed by the chest's cell: called in cells while a dungeon is built (DCELL 1) and in metres after
 function chestLockedAt(x,z,floor){
-  const h=String(Math.round(x)+'_'+Math.round(z)+'_'+(floor||1)+'_c').split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,17);
+  const h=String(dCellOf(x)+'_'+dCellOf(z)+'_'+(floor||1)+'_c').split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,17);
   return (h%100)<((floor||1)>=2?40:20);
 }
 function lockChest(ch){
@@ -465,7 +466,7 @@ function lpWin(){skillUse('locks',3,'open'); /* S941 — a lock opened */
     closeLockpick();
     if(door&&door.onPick){try{door.onPick();}catch(e){console.error(e);}} // S150 — a chest opens itself
     else if(door){door.open=true;if(door.mesh&&typeof dScene!=='undefined')dScene.remove(door.mesh);
-      try{const map=activeMap();if(map[door.z]&&map[door.z][door.x]===5)map[door.z][door.x]=1;}catch(e){}}
+      try{const map=activeMap();if(map[door.r]&&map[door.r][door.c]===5)map[door.r][door.c]=1;}catch(e){}}
     (worldState.stats||(worldState.stats={})).picked=((worldState.stats||{}).picked||0)+1;
     showMsg('The lock gives.','#ffd700');
   },620);
@@ -489,7 +490,7 @@ function tryLockpick(door){const i=BAG.findIndex(b=>b.name==='Lockpick');if(i<0)
   openLockpick(door);return true; // v80 S142 — the lock is worked by hand now
   /* eslint-disable no-unreachable */
   const ok=Math.random()<pickChance();try{for(let k=0;k<3;k++)setTimeout(()=>sfxTone(1800+Math.random()*600,1200,.03,.08,'square'),k*140);}catch(e){}
-  setTimeout(()=>{if(ok){sndDoorUnlock();door.open=true;dScene.remove(door.mesh);const map=activeMap();if(map[door.z]&&map[door.z][door.x]===5)map[door.z][door.x]=1;showMsg('The lock gives.','#ffd700');(worldState.stats||(worldState.stats={})).picked=((worldState.stats||{}).picked||0)+1;}
+  setTimeout(()=>{if(ok){sndDoorUnlock();door.open=true;dScene.remove(door.mesh);const map=activeMap();if(map[door.r]&&map[door.r][door.c]===5)map[door.r][door.c]=1;showMsg('The lock gives.','#ffd700');(worldState.stats||(worldState.stats={})).picked=((worldState.stats||{}).picked||0)+1;}
     else{const it=BAG[i];it.qty=(it.qty||1)-1;if(it.qty<=0)BAG.splice(i,1);try{sfxTone(2600,1400,.06,.16,'square');}catch(e){}showMsg(`The pick snaps. ${BAG.some(b=>b.name==='Lockpick')?'Try again.':'That was your last one.'}`,'#cc8844');if(typeof renderInv==='function')renderInv();}},460);return true;}
 
 // ═══ v80 — LAIR CAVERNS AND DRAGONS ══════════════════════════════════
@@ -626,7 +627,7 @@ function _reenterPlace(W,tries){tries=tries||0;try{
     window._pendingPos={x:W.x,z:W.z,yaw:W.yaw,jumpY:W.jumpY};goToInterior(hs);return;}
   if(W.kind==='dungeon'){const e=(typeof WORLD!=='undefined')&&WORLD.doorAnywhere(W.seed);if(!e){showMsg('The gate you saved in is closed to you. You are outside it.','#c8b880');return;}
     const p=makePortalDef(e);const wp=WORLD.dungeonPos[W.seed];if(wp){p.x=wp.x;p.z=wp.z;}p.zone='world';
-    goToDungeon(p);setTimeout(()=>{try{if(W.floor===2&&typeof FLOOR2_Y!=='undefined'){currentFloor=2;}if(W.x!=null){px=W.x;pz=W.z;}if(W.yaw!=null)yaw=W.yaw;if(W.jumpY!=null)jumpY=W.jumpY;else jumpY=(currentFloor===2?FLOOR2_Y:0);}catch(err){}},900);return;}
+    goToDungeon(p);return;} /* S1283 — a load inside a dungeon puts you at its entrance (the F2b sheet, until F13): the place saved was in cells of an older build, and a dungeon's cell is its kind's now */
 }catch(err){console.warn('reenter',err);}}
 function playerDead(){
   if(typeof FALL!=='undefined')FALL.pend=null; /* S429 — a fall's blow still waiting does not follow you past death */

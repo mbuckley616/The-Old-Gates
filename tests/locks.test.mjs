@@ -46,8 +46,11 @@ check('picking a chest opens it in place', /chest|good lock/i.test(pick.title) &
 const viaKey = await page.evaluate(() => { const ch = CHESTS.find(c => c.locked && c.floor === currentFloor && c !== currentLootContainer) || lockChest(CHESTS.find(c => c.floor === currentFloor));
   window._t = ch; px = ch.x; pz = ch.z + 1.3; return { x: ch.x, z: ch.z }; });
 let keyOut = null;
-for (const yw of [0, Math.PI, Math.PI / 2, -Math.PI / 2]) {
-  await page.evaluate((yw) => { yaw = yw; pitch = -.5; const ch = window._t; px = ch.x; pz = ch.z + 1.3; }, yw);
+// S1283 — stood 1.3 off on each side in turn, the crosshair on the chest's middle (lookAtPt). It was pitch −.5 from 1.3 south, which
+// passes over a 0.5 m chest from the 1.65 eye: on a 1 m cell that spot stood 0.7 from the treasure room's locked door, and E picked
+// the door's lock, which the check took for the chest's; at the true cell the door is 3 m off
+for (const [dx, dz] of [[0, 1.3], [0, -1.3], [1.3, 0], [-1.3, 0]]) {
+  await page.evaluate(([dx, dz]) => { const ch = window._t; px = ch.x + dx; pz = ch.z + dz; if (dBlk(px, pz)) return; lookAtPt(ch.x, (ch.floor === 2 ? FLOOR2_Y : 0) + .3, ch.z); }, [dx, dz]);
   // the E prompt's target is found by the main loop: on a slow runner 600ms may hold no frame, so wait for real ones
   await g.frames(3); await page.keyboard.press('e'); await g.frames(2);
   keyOut = await page.evaluate(() => ({ lockOpen, loot: lootOpen, still: window._t.locked }));

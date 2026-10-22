@@ -11,7 +11,7 @@ for (const interior of ['fort_linear', 'fort_tee', 'fort_courtyard']) for (const
   await enterDungeon(page, { theme: 'ruins', seed, interior, size: 'medium' });
   out.push(await page.evaluate(([interior, seed]) => {
     const b = D_BEDS[0]; if (!b) return { interior, seed, beds: 0 };
-    const tile = dMap[b.z][b.x], hit = [[0, 0], [.3, .5], [-.3, .5], [.3, -.5], [-.3, -.5]].some(([dx, dz]) => dColumnHit(b.x + dx, b.z + dz) || dPropHit(b.x + dx, b.z + dz));
+    const tile = dMap[dCellOf(b.z)][dCellOf(b.x)], /* S1283 — the map is cells, the cot metres */ hit = [[0, 0], [.3, .5], [-.3, .5], [.3, -.5], [-.3, -.5]].some(([dx, dz]) => dColumnHit(b.x + dx, b.z + dz) || dPropHit(b.x + dx, b.z + dz));
     px = b.x + .6; pz = b.z; jumpY = 0;
     return { interior, seed, beds: D_BEDS.length, x: b.x, z: b.z, tile, hit, floor: b.floor }; }, [interior, seed]));
   // pressing E beside it, on the real keyboard: the rest panel

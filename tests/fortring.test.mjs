@@ -37,7 +37,7 @@ for (let k = 0; k < 25 && !(await page.evaluate(() => activeZoneId === 'dungeon'
 await page.waitForTimeout(1200); await g.spin(30);
 const built = await page.evaluate(() => { const G = window._lastGen, Y = G.yard, fl = FOOTHOLDS.filter(f => f.kind === 'flight');
   const tag = t => dScene.children.filter(o => o.userData && o.userData.dunShell === t).length;
-  const near = (x, z) => fl.some(f => x > f.x0 - 1.2 && x < f.x1 + 1.2 && z > f.z0 - 1.2 && z < f.z1 + 1.2) || (x > Y.c0 - 1.7 && x < Y.c1 + 1.7 && z > Y.r0 - 1.7 && z < Y.r1 + 1.7);
+  const near = (x, z) => fl.some(f => x > f.x0 - 1.2 && x < f.x1 + 1.2 && z > f.z0 - 1.2 && z < f.z1 + 1.2) || (x > dAt(Y.c0) - 1.7 && x < dAt(Y.c1) + 1.7 && z > dAt(Y.r0) - 1.7 && z < dAt(Y.r1) + 1.7); /* S1283 — the yard's cells to metres */
   const ceil = dScene.children.find(o => o.userData && o.userData.dunShell === 'ceiling' && o.geometry.boundingBox == null ? (o.geometry.computeBoundingBox(), true) : true);
   let yardCeil = 0; dScene.children.forEach(o => { if (!o.userData || o.userData.dunShell !== 'ceiling') return; const p = o.geometry.attributes.position; for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i); if (y < 0 && x > Y.c0 && x < Y.c1 && z > Y.r0 && z < Y.r1) yardCeil++; } });
   return { flights: fl.map(f => ({ x0: f.x0, x1: f.x1, z0: f.z0, z1: f.z1, y0: f.y0, y1: f.y1, dir: f.dir })), meshes: tag('flight'), rail: tag('yardRail'), walls: tag('yardWalls'), yardCeil,
@@ -46,27 +46,28 @@ console.log(JSON.stringify(built));
 check('two flights built, the yard\'s balustrade and walls, and no ceiling over the yard below', built.meshes === 2 && built.rail === 1 && built.walls === 1 && built.yardCeil === 0, built);
 check('no column on or beside a flight or the yard\'s rim', built.cols === 0, [built.cols, built.colsAll]);
 
-const walk = await page.evaluate(() => { const fl = FOOTHOLDS.filter(f => f.kind === 'flight'), Y = window._lastGen.yard, K = window._K; ENEMIES.forEach(e => { e.dead = true; if (e.mesh) e.mesh.visible = false; });
+const walk = await page.evaluate(() => { const fl = FOOTHOLDS.filter(f => f.kind === 'flight'), Yc = window._lastGen.yard, Y = { c0: dAt(Yc.c0), c1: dAt(Yc.c1), r0: dAt(Yc.r0), r1: dAt(Yc.r1) }, /* S1283 — the yard in metres */ K = window._K; ENEMIES.forEach(e => { e.dead = true; if (e.mesh) e.mesh.visible = false; });
   const go = (x, z, y, yw, ticks) => { px = x; pz = z; jumpY = y; velY = 0; onGround = true; currentFloor = y < -2 ? 2 : 1; let n = 0, lo = 9;
     try { K['KeyW'] = true; _drive(() => { PHP = maxHP; yaw = yw; lo = Math.min(lo, jumpY); return ++n > ticks; }, ticks + 1); } finally { K['KeyW'] = false; }
     _drive(() => false, 20); return { px: +px.toFixed(2), pz: +pz.toFixed(2), y: +jumpY.toFixed(2), lo: +lo.toFixed(2), floor: currentFloor }; };
   const out = {};
   fl.forEach((f, i) => { const mx = (f.x0 + f.x1) / 2, n = f.dir === 'n';
-    out['down' + i] = go(mx, n ? f.z1 + .7 : f.z0 - .7, 0, n ? 0 : Math.PI, 170);
-    out['up' + i] = go(mx, n ? f.z0 - .7 : f.z1 + .7, FLOOR2_Y, n ? Math.PI : 0, 170); });
+    /* S1283 — each flight as many cells as before, 2.5 m each now: walked for as many more ticks */
+    out['down' + i] = go(mx, n ? f.z1 + .7 : f.z0 - .7, 0, n ? 0 : Math.PI, Math.round(170 * DCELL));
+    out['up' + i] = go(mx, n ? f.z0 - .7 : f.z1 + .7, FLOOR2_Y, n ? Math.PI : 0, Math.round(170 * DCELL)); });
   const ymx = (Y.c0 + Y.c1) / 2;
-  out.rail = go(ymx, Y.r1 + 2.2, 0, 0, 150);
+  out.f2 = FLOOR2_Y; out.rail = go(ymx, Y.r1 + 2.2, 0, 0, 150);
   out.yard = go(ymx, (Y.r0 + Y.r1) / 2, FLOOR2_Y, 0, 60);
   return { out, fl, Y }; });
 console.log(JSON.stringify(walk.out));
 const O = walk.out, FL = walk.fl, Y = walk.Y;
-check('down each flight to floor 2 and back up to floor 1', [0, 1].every(i => O['down' + i].y === -5 && O['down' + i].floor === 2 && O['up' + i].y === 0 && O['up' + i].floor === 1), O);
+check('down each flight to floor 2 and back up to floor 1', [0, 1].every(i => O['down' + i].y === O.f2 && O['down' + i].floor === 2 && O['up' + i].y === 0 && O['up' + i].floor === 1), O);
 check('the yard\'s balustrade holds on the ring (you stay at the ring\'s height)', O.rail.lo === 0 && O.rail.pz >= Y.r1 + .5, O.rail);
-check('in the yard below, floor 1\'s rails do not stop you', O.yard.y === -5 && O.yard.pz < (Y.r0 + Y.r1) / 2 - 2, O.yard);
+check('in the yard below, floor 1\'s rails do not stop you', O.yard.y === O.f2 && O.yard.pz < (Y.r0 + Y.r1) / 2 - 2, O.yard);
 
 for (const name of ['ring', 'yard', 'tower']) {
   await page.evaluate((name) => { ENEMIES.forEach(e => { if (e.mesh) e.mesh.visible = false; }); PHP = 1e6;
-    const Y = window._lastGen.yard, f = FOOTHOLDS.filter(f => f.kind === 'flight')[0], ymx = (Y.c0 + Y.c1) / 2;
+    const Yc = window._lastGen.yard, Y = { c0: dAt(Yc.c0), c1: dAt(Yc.c1), r0: dAt(Yc.r0), r1: dAt(Yc.r1) }, f = FOOTHOLDS.filter(f => f.kind === 'flight')[0], ymx = (Y.c0 + Y.c1) / 2;
     const V = { ring: [ymx + 2, Y.r1 + 2.2, .3, -.42, 0], yard: [ymx - 2, Y.r1 - 1, -.3, .45, FLOOR2_Y], tower: [(f.x0 + f.x1) / 2, f.z1 + .6, 0, -.55, 0] }[name];
     px = V[0]; pz = V[1]; yaw = V[2]; pitch = V[3]; jumpY = V[4]; velY = 0; currentFloor = V[4] < -2 ? 2 : 1; }, name);
   await g.spin(3); await page.evaluate(() => { if (typeof vmSword !== 'undefined' && vmSword) vmSword.visible = false; if (typeof vmArmR !== 'undefined' && vmArmR) vmArmR.visible = false; }); await g.frames(3);

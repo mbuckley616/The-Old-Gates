@@ -37,9 +37,10 @@ const L = await page.evaluate(() => { const e = window._lairBoss; if (!e || !e.l
 });
 console.log(JSON.stringify(L)); const FLOOR2_Y_V = await page.evaluate(() => FLOOR2_Y);
 check('a lair\'s wyrm is built on the dragon\'s body', !L.none && L.dragon && L.parts === 1, L);
-check('a dragon\'s lair is cut to 4.4 (Michael\'s B on #162), and the shell\'s roof reaches it (its stone stands up to .1 proud)', L.ceil === 4.4 && L.ceilY[1] >= 4.35 && L.ceilY[1] <= 4.52, L);
+// S1283 (card F5, Michael's A on #421) — the lair's roof is 5.5 now (gate-interiors-build.md), a plain lair's 3.6 and a gate's 6
+check('a dragon\'s lair is cut to 5.5 (Michael\'s A on #421), and the shell\'s roof reaches it (its stone stands up to .1 proud)', L.ceil === 5.5 && L.ceilY[1] >= 5.45 && L.ceilY[1] <= 5.62, L);
 check('its wyrm is built at the full 4.5, standing 3.6–3.8 under the roof', L.s === 4.5 && L.h >= 3.6 && L.h <= 3.8 && L.h < L.ceil, L);
-check('the third-person camera\'s ceiling on the wyrm\'s floor reads the lair\'s height', Math.abs(L.tp - ((L.floor === 2 ? FLOOR2_Y_V : 0) + 4.4 - .25)) < .01, L);
+check('the third-person camera\'s ceiling on the wyrm\'s floor reads the lair\'s height', Math.abs(L.tp - ((L.floor === 2 ? FLOOR2_Y_V : 0) + 5.5 - .25)) < .01, L);
 
 // a lair without a dragon, and a plain cave, keep the old 3.2
 const O = await page.evaluate(() => { const out = {}; for (const [k, lair] of [['beast', { place: 'Test', boss: 'Brute', dragon: false }], ['cave', null]]) {
@@ -47,7 +48,7 @@ const O = await page.evaluate(() => { const out = {}; for (const [k, lair] of [[
   let y1 = -1e9; dScene.traverse(o => { if (o.isMesh && o.userData && o.userData.dunShell === 'ceiling') { o.updateMatrixWorld(true); y1 = Math.max(y1, new THREE.Box3().setFromObject(o).max.y); } });
   out[k] = { h: FLOOR_HEIGHT, roof: +y1.toFixed(2) }; } return out; });
 console.log(JSON.stringify(O));
-check('a lair without a dragon, and a plain cave, stay at 3.2', O.beast.h === 3.2 && O.cave.h === 3.2 && O.cave.roof >= 3.15 && O.cave.roof <= 3.32 && O.beast.roof >= 3.15 && O.beast.roof <= 3.32, O);
+check('a lair without a dragon is 3.6, and a plain gate 6', O.beast.h === 3.6 && O.cave.h === 6 && O.cave.roof >= 5.95 && O.cave.roof <= 6.12 && O.beast.roof >= 3.55 && O.beast.roof <= 3.72, O);
 // S570 — a swinging blade hangs from the roof: under a lair's 4.4 roof its arm is longer, so the blade swings at the height it does under 3.2
 const T = await page.evaluate(() => { const out = {};
   for (const [k, lair] of [['lair', { place: 'Test', boss: 'Wyrm', dragon: true }], ['cave', null]]) { const ys = [];
@@ -55,6 +56,6 @@ const T = await page.evaluate(() => { const out = {};
       for (const t of D_TRAPS) if (t.kind === 'blade') { t.pivot.rotation.z = 0; t.pivot.updateMatrixWorld(true); const b = t.pivot.children.find(c => c.userData && c.userData.trapBlade); const v = new THREE.Vector3(); b.getWorldPosition(v); ys.push(+v.y.toFixed(2)); } }
     out[k] = { h: FLOOR_HEIGHT, ys }; } return out; });
 console.log(JSON.stringify(T));
-check('a swinging blade hangs at the same height under a lair\'s 4.4 roof and a cave\'s 3.2: its steel\'s centre 1.26 above the floor, its edge at the waist (Session 582, Michael\'s A on #170; was 1.55)', T.lair.ys.length > 0 && T.cave.ys.length > 0 && T.lair.h === 4.4 && T.cave.h === 3.2 && [...T.lair.ys, ...T.cave.ys].every(y => Math.abs(y - 1.26) < .01), T);
+check('a swinging blade hangs at the same height under a dragon\'s lair\'s 5.5 roof and a gate\'s 6: its steel\'s centre 1.26 above the floor, its edge at the waist (Session 582, Michael\'s A on #170; was 1.55)', T.lair.ys.length > 0 && T.cave.ys.length > 0 && T.lair.h === 5.5 && T.cave.h === 6 && [...T.lair.ys, ...T.cave.ys].every(y => Math.abs(y - 1.26) < .01), T);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

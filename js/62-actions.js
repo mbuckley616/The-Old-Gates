@@ -925,11 +925,11 @@ function drawMM(){
   }
   else{sc=104/Math.max(dR,dC);
     // Update fog of war — reveal cells within sight radius
-    const pr=Math.round(pz),pc=Math.round(px),rev=5;
+    const _D=DCELL,qx=px/_D,qz=pz/_D,pr=Math.round(qz),pc=Math.round(qx),rev=5; /* S1283 — the map is cells, you are metres */
     const mmRev=currentFloor===2?mmRevealed2:mmRevealed;
     for(let r=Math.max(0,pr-rev);r<=Math.min(dR-1,pr+rev);r++)
       for(let c=Math.max(0,pc-rev);c<=Math.min(dC-1,pc+rev);c++)
-        if(Math.hypot(c-px,r-pz)<=rev)mmRev[r][c]=1;
+        if(Math.hypot(c-qx,r-qz)<=rev)mmRev[r][c]=1;
     const curMap=activeMap();
     for(let r=0;r<dR;r++)for(let c=0;c<dC;c++){
       if(!mmRev[r][c]){mmC.fillStyle='#0a0908';mmC.fillRect(c*sc,r*sc,sc,sc);continue;}
@@ -939,17 +939,17 @@ function drawMM(){
     // S329 (Michael's A on #58) — Ashwort's pulse: for its 5 s, every undisguised foe on this floor within 20 units shows, seen or not
     // S364 — a disguised mimic is never drawn, seen or not: the map drew it as a foe on any revealed cell, beside no chest
     const _pulse=_hasBuff('minimapPulse');
-    ENEMIES.forEach(e=>{if(!e.dead&&!e.disguised&&e.floor===currentFloor&&(mmRev[Math.round(e.z)]?.[Math.round(e.x)]||(_pulse&&!e.disguised&&Math.hypot(e.x-px,e.z-pz)<20))){mmC.fillStyle='#cc3322';mmC.fillRect(e.x*sc-2,e.z*sc-2,5,5);}});
-    KEYS.forEach(k=>{if(!k.collected&&k.floor===currentFloor&&mmRev[Math.round(k.z)]?.[Math.round(k.x)]){mmC.fillStyle='#ffd700';mmC.fillRect(k.x*sc-2,k.z*sc-2,5,5);}});
+    ENEMIES.forEach(e=>{if(!e.dead&&!e.disguised&&e.floor===currentFloor&&(mmRev[Math.round(e.z/_D)]?.[Math.round(e.x/_D)]||(_pulse&&!e.disguised&&Math.hypot(e.x-px,e.z-pz)<20))){mmC.fillStyle='#cc3322';mmC.fillRect(e.x/_D*sc-2,e.z/_D*sc-2,5,5);}});
+    KEYS.forEach(k=>{if(!k.collected&&k.floor===currentFloor&&mmRev[Math.round(k.z/_D)]?.[Math.round(k.x/_D)]){mmC.fillStyle='#ffd700';mmC.fillRect(k.x/_D*sc-2,k.z/_D*sc-2,5,5);}});
     // Sigils — gold ✦ glyph on cells that have been revealed.
     (typeof SIGILS!=='undefined'?SIGILS:[]).forEach(s=>{
       if(s.floor!==currentFloor)return;
-      if(!mmRev[Math.round(s.z)]?.[Math.round(s.x)])return;
+      if(!mmRev[Math.round(s.z/_D)]?.[Math.round(s.x/_D)])return;
       mmC.fillStyle='#daa520';
       mmC.font='bold 10px sans-serif';
       mmC.textAlign='center';
       mmC.textBaseline='middle';
-      mmC.fillText('✦',s.x*sc,s.z*sc);
+      mmC.fillText('✦',s.x/_D*sc,s.z/_D*sc);
     });
     // Show staircase on minimap
     if(dStairC!==null&&mmRev[dStairR]?.[dStairC]){mmC.fillStyle=currentFloor===1?'#ffcc66':'#dd88ff';mmC.fillRect(dStairC*sc-3,dStairR*sc-3,7,7);}
@@ -965,7 +965,7 @@ function drawMM(){
     // Floor label
     if(currentFloor===2){mmC.fillStyle='#cc88ff';mmC.font='bold 9px sans-serif';mmC.fillText('B2',2,10);}
   }
-  const mx=px*sc,mz=pz*sc;
+  const _mD=!isInterior()&&activeZoneId==='dungeon'?DCELL:1,mx=px/_mD*sc,mz=pz/_mD*sc; /* S1283 — a dungeon's map is cells */
   mmC.save();
   mmC.translate(mx,mz);
   // ── FIXED ARROW: use -yaw so left turn on screen = left turn on minimap

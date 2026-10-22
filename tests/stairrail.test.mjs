@@ -22,21 +22,22 @@ for (const seed of [4021, 4022, 4023, 4024, 4025, 4026]) {
   // frames these checks wait (`inner` read .07–.65 on four seeds of six, a different four each run). The stair alone is measured.
   const r = await page.evaluate(async (seed) => { ENEMIES.forEach(e => { if (e.mesh) e.mesh.visible = false; }); ENEMIES = []; const f = FOOTHOLDS.find(f => f.kind === 'spiral'); if (!f) return { seed, none: true };
     const st = dScene.children.find(o => o.userData && o.userData.dunShell === 'stair'); if (!st) return { seed, noStair: true };
-    const R = st.userData.rail, rd = R.pts.map(p => Math.hypot(p[0], p[2]));
+    /* S1283 — the stair is laid in cells and stretched by the cell (DCELL): its radii are read in cells, the body's clearances in metres */
+    const D = DCELL, R = st.userData.rail, rd = R.pts.map(p => Math.hypot(p[0], p[2]) / D);
     // each stanchion's top against the rope's height at its angle: the helix is y = t·FLOOR2_Y + h, t from the angle walked
     let worst = 0; for (const [x, y, z] of R.stanchions) { const ang = Math.atan2(z, x); let best = 1e9;
-      for (let i = 0; i < R.pts.length; i++) { const p = R.pts[i]; const d = Math.hypot(p[0] - x, p[2] - z); if (d < .06) best = Math.min(best, Math.abs(p[1] - y)); }
+      for (let i = 0; i < R.pts.length; i++) { const p = R.pts[i]; const d = Math.hypot(p[0] - x, p[2] - z); if (d < .06 * D) best = Math.min(best, Math.abs(p[1] - y)); }
       worst = Math.max(worst, best); }
     // the walk-through case itself: stand on the outer lip at each stanchion's own angle and height, let the loop's rail pull the
     // player back, and measure how far the body ends from that post. n counts the posts the rail reaches (the two ends sit outside
     // the band where it holds, at the landing and on the last tread).
     let walkMax = 0, clear = 9, stood = 9, n = 0;
     for (const [x, sy, z] of R.stanchions) { const y = sy - R.h - .03, ang = Math.atan2(z, x);
-      jumpY = y; onGround = true; px = f.cx + Math.cos(ang) * 1.5; pz = f.cz + Math.sin(ang) * 1.5;
+      jumpY = y; onGround = true; px = f.cx + Math.cos(ang) * (f.r1 + .45); pz = f.cz + Math.sin(ang) * (f.r1 + .45); /* the outer lip: 1.5 of a 1.05 stair, r1 + .45 of any */
       await new Promise(res => requestAnimationFrame(() => requestAnimationFrame(res)));
       const bx = px - f.cx, bz = pz - f.cz, bd = Math.hypot(bx, bz);
-      if (Math.abs(jumpY - y) > .3 || bd > 1.4) continue;
-      n++; walkMax = Math.max(walkMax, bd); stood = Math.min(stood, bd);
+      if (Math.abs(jumpY - y) > .3 || bd > f.r1 + .35) continue; /* not pulled in off the lip (was 1.4 of a 1.05 stair) */
+      n++; walkMax = Math.max(walkMax, bd / D); stood = Math.min(stood, bd / D);
       clear = Math.min(clear, Math.hypot(bx - x, bz - z)); }
     // the end posts: stand on each at its floor's height from eight sides (and dead on it), two frames, measure the clearance
     let endClear = 9, endN = 0, inner = 0;
@@ -45,21 +46,21 @@ for (const seed of [4021, 4022, 4023, 4024, 4025, 4026]) {
       await new Promise(res => requestAnimationFrame(() => requestAnimationFrame(res)));
       endN++; endClear = Math.min(endClear, Math.hypot(px - q[0], pz - q[2])); }
     // the way past it stays open: at the post's own angle, .6 from the newel (on the tread, inside the rail), nothing moves you
-    for (const q of (f.posts || [])) { const ang = Math.atan2(q[2] - f.cz, q[0] - f.cx), sx = f.cx + Math.cos(ang) * .6, sz = f.cz + Math.sin(ang) * .6;
+    for (const q of (f.posts || [])) { const ang = Math.atan2(q[2] - f.cz, q[0] - f.cx), sx = f.cx + Math.cos(ang) * .6 * D, sz = f.cz + Math.sin(ang) * .6 * D;
       jumpY = q[1]; onGround = true; velY = 0; px = sx; pz = sz;
       await new Promise(res => requestAnimationFrame(() => requestAnimationFrame(res)));
       inner = Math.max(inner, Math.hypot(px - sx, pz - sz)); }
     return { seed, a0: +f.a0.toFixed(2), n: R.stanchions.length, posts: (f.posts || []).length, endN, endClear: +endClear.toFixed(3), inner: +inner.toFixed(3), min: +Math.min(...rd).toFixed(3), max: +Math.max(...rd).toFixed(3), gap: +worst.toFixed(3), ends: R.stanchions.filter(s => s[3]).length,
-      rwalk: f.rwalk, held: n, walkMax: +walkMax.toFixed(3), stood: +stood.toFixed(3), clear: +clear.toFixed(3) }; }, seed);
+      rwalk: +(f.rwalk / D).toFixed(3), stoodM: +(stood * D).toFixed(3), newelM: +f.r0.toFixed(3), held: n, walkMax: +walkMax.toFixed(3), stood: +stood.toFixed(3), clear: +clear.toFixed(3) }; }, seed);
   console.log(JSON.stringify(r)); rows.push(r);
 }
 const S = rows.filter(r => !r.none);
 check('six seeds give at least two dungeons with a spiral stair, and one starting away from angle 0', S.length >= 2 && S.some(r => Math.abs(r.a0) > .3), rows);
 check('every stair is the stone stair, with sixteen stanchions, two of them end posts', S.every(r => !r.noStair && r.n === 16 && r.ends === 2), S.map(r => [r.n, r.ends]));
-check('every point of the rope lies on its circle (0.94–0.96 from the newel), none across the shaft', S.every(r => r.min >= .94 && r.max <= .96), S.map(r => [r.min, r.max]));
+check('every point of the rope lies on its circle (0.94–0.96 cells from the newel), none across the shaft', S.every(r => r.min >= .94 && r.max <= .96), S.map(r => [r.min, r.max]));
 check('every stanchion reaches the rope (its top within 0.13 of the rope above it)', S.every(r => r.gap <= .13), S.map(r => r.gap));
 check('the walk rail stops the player inboard of the stanchion line (at the foothold’s rwalk, .86 from the newel)', S.every(r => r.rwalk === .86 && r.walkMax <= .861), S.map(r => [r.rwalk, r.walkMax]));
-check('a tread is still wide enough to stand on (the rail holds you between .32 and .86, not against the newel)', S.every(r => r.stood >= .32), S.map(r => r.stood));
+check('a tread is still wide enough to stand on (the rail holds you 0.1 or more off the newel and inside .86 cells, not against the newel)', S.every(r => r.stoodM >= r.newelM + .1), S.map(r => [r.stoodM, r.newelM])); /* S1283 — was .32 of a 1 m cell against a .22 newel */
 check('the rail holds the player at the dozen posts along the run', S.every(r => r.held >= 12), S.map(r => r.held));
 check('standing at a post\u2019s own angle, the body clears it in plan by 0.05 or more (it stood 0.02 inside one before)', S.every(r => r.clear >= .05), S.map(r => r.clear));
 check('the stair publishes its two end posts, one at each floor', S.every(r => r.posts === 2), S.map(r => r.posts));

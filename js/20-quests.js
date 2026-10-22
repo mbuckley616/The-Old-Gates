@@ -1676,9 +1676,9 @@ function getActiveQuestMarkers(){
     if(activeZoneId==='dungeon'){
       if(qs.state==='reward'){
         if(currentFloor===2 && typeof dStairC!=='undefined' && dStairC!==null){
-          markers.push({x:dStairC,z:dStairR,col:QM_COL_CROSS,label:'Ascend'});
+          markers.push({x:dAt(dStairC),z:dAt(dStairR),col:QM_COL_CROSS,label:'Ascend'});
         } else if(currentFloor===1 && typeof dEntranceX!=='undefined'){
-          markers.push({x:dEntranceX,z:dEntranceZ,col:QM_COL_CROSS,label:'Exit'});
+          markers.push({x:dAt(dEntranceX),z:dAt(dEntranceZ),col:QM_COL_CROSS,label:'Exit'});
         }
         return;
       }
@@ -1703,7 +1703,7 @@ function getActiveQuestMarkers(){
           if(onThisFloor.length>0){
             onThisFloor.forEach(s=>markers.push({x:s.x,z:s.z,col:QM_COL_INZONE,label:'Sigil'}));
           } else if(typeof dStairC!=='undefined' && dStairC!==null){
-            markers.push({x:dStairC,z:dStairR,col:QM_COL_CROSS,label:stairDir(sigilsHere[0].floor)});
+            markers.push({x:dAt(dStairC),z:dAt(dStairR),col:QM_COL_CROSS,label:stairDir(sigilsHere[0].floor)});
           }
         }
         // v61b5: enter_zone objective while inside a dungeon. Q0 fits this
@@ -1717,7 +1717,7 @@ function getActiveQuestMarkers(){
         // — Q0 then auto-completes via checkQuestProgress, so no marker
         // is needed post-emergence.
         if(obj.type==='enter_zone' && typeof dEntranceX!=='undefined' && dEntranceX!==null){
-          markers.push({x:dEntranceX, z:dEntranceZ, col:QM_COL_CROSS, label:'Exit'});
+          markers.push({x:dAt(dEntranceX), z:dAt(dEntranceZ), col:QM_COL_CROSS, label:'Exit'});
         }
       });
       return; // skip the overworld branches below while in-dungeon

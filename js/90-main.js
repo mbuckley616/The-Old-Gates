@@ -417,7 +417,7 @@ function loop(now){
   // v80 — indoors: follow the foothold under you (climb a ramp) or step off it (fall)
   if((inDungeon||isInterior())&&onGround){if(floorBaseY>=jumpY-.02)jumpY+=(floorBaseY-jumpY)*Math.min(1,dt*18);else if(jumpY-floorBaseY>.06){onGround=false;velY=0;}}
   if(inDungeon&&DUNGEON_STAIRWELL){const nf=(FLOOR2_Y>0?jumpY>FLOOR2_Y*.5:jumpY<FLOOR2_Y*.5)?2:1;if(nf!==currentFloor)currentFloor=nf;
-    const sp=FOOTHOLDS.find(f=>f.kind==='spiral');if(sp){const lo=Math.min(0,FLOOR2_Y)+.25,hi=Math.max(0,FLOOR2_Y)-.25;if(jumpY>lo&&jumpY<hi&&Math.abs(px-sp.cx)<1.6&&Math.abs(pz-sp.cz)<1.6){const dx=px-sp.cx,dz=pz-sp.cz,rd=Math.hypot(dx,dz)||.001;const rmax=(sp.rwalk!=null?sp.rwalk:sp.r1-.08),rmin=sp.r0+.12;if(rd>rmax){px=sp.cx+dx/rd*rmax;pz=sp.cz+dz/rd*rmax;}else if(rd<rmin){px=sp.cx+dx/rd*rmin;pz=sp.cz+dz/rd*rmin;}}if(sp.posts)for(const q of sp.posts){if(Math.abs(jumpY-q[1])>.5)continue;const ox=sp.cx-q[0],oz=sp.cz-q[2],qa=Math.hypot(ox,oz)||1;let ex=px-q[0],ez=pz-q[2],e=Math.hypot(ex,ez);if(e>=sp.postR)continue;if(e<.001){ex=ox;ez=oz;e=qa;}let nx=q[0]+ex/e*sp.postR,nz=q[2]+ez/e*sp.postR;if(dBlk(nx,nz)){nx=q[0]+ox/qa*sp.postR;nz=q[2]+oz/qa*sp.postR;}px=nx;pz=nz;}}} // v80 — which floor is live follows your height; a rail keeps you on the helix
+    const sp=FOOTHOLDS.find(f=>f.kind==='spiral');if(sp){const lo=Math.min(0,FLOOR2_Y)+.25,hi=Math.max(0,FLOOR2_Y)-.25;if(jumpY>lo&&jumpY<hi&&Math.abs(px-sp.cx)<sp.r1+.55&&Math.abs(pz-sp.cz)<sp.r1+.55){ /* S1283 — round the helix as wide as its cell made it (was 1.6, for r1 1.05) */const dx=px-sp.cx,dz=pz-sp.cz,rd=Math.hypot(dx,dz)||.001;const rmax=(sp.rwalk!=null?sp.rwalk:sp.r1-.08),rmin=sp.r0+.12;if(rd>rmax){px=sp.cx+dx/rd*rmax;pz=sp.cz+dz/rd*rmax;}else if(rd<rmin){px=sp.cx+dx/rd*rmin;pz=sp.cz+dz/rd*rmin;}}if(sp.posts)for(const q of sp.posts){if(Math.abs(jumpY-q[1])>.5)continue;const ox=sp.cx-q[0],oz=sp.cz-q[2],qa=Math.hypot(ox,oz)||1;let ex=px-q[0],ez=pz-q[2],e=Math.hypot(ex,ez);if(e>=sp.postR)continue;if(e<.001){ex=ox;ez=oz;e=qa;}let nx=q[0]+ex/e*sp.postR,nz=q[2]+ez/e*sp.postR;if(dBlk(nx,nz)){nx=q[0]+ox/qa*sp.postR;nz=q[2]+oz/qa*sp.postR;}px=nx;pz=nz;}}} // v80 — which floor is live follows your height; a rail keeps you on the helix
   // Terrain height follow — only in open overworld zones
   let terrainY=0;
   if(inOverworld){
@@ -1379,8 +1379,8 @@ function loop(now){
       e._close=false;
       // S622 — the path is cells: in your cell it is empty, and a foe that stopped there 0.9–1.4 off never swung. It now comes
       // straight at you in your cell, and plans again a quarter-second after you step into another cell, not up to 1.2 s later.
-      if(wantsToChase){const _cs=dungeonChaseSpeed(e),_sr=Math.max(.6,bodyR(e,.5)+.25); /* S635 — near your walk (#190 A); it stops at its disc and yours, which at the old pace it never reached along its path */const _tk=Math.round(T.x)+','+Math.round(T.z);if(e.pathT<=0||(e._pathTo!==_tk&&e.pathT<.95)){e.path=bfs(e.x,e.z,T.x,T.z);e.pathT=1.2;e._pathTo=_tk;}if(e.path&&e.path.length){const[tc,tr]=e.path[0],dx=tc-e.x,dz2=tr-e.z,d=Math.hypot(dx,dz2);if(d<.1)e.path.shift();else{const step=_cs*dt;const[nx,nz]=dSlide(e.x,e.z,dx/d*step,dz2/d*step);if(Math.hypot(nx-T.x,nz-T.z)>=_sr||Math.hypot(nx-T.x,nz-T.z)>dist){e.x=nx;e.z=nz;}}}
-        else if(dist>_sr&&Math.round(e.x)===Math.round(T.x)&&Math.round(e.z)===Math.round(T.z)){const step=Math.min(_cs*dt,dist-_sr);const[nx,nz]=dSlide(e.x,e.z,(T.x-e.x)/dist*step,(T.z-e.z)/dist*step);e.x=nx;e.z=nz;e._close=true;}}
+      if(wantsToChase){const _cs=dungeonChaseSpeed(e),_sr=Math.max(.6,bodyR(e,.5)+.25); /* S635 — near your walk (#190 A); it stops at its disc and yours, which at the old pace it never reached along its path */const _tk=dCellOf(T.x)+','+dCellOf(T.z);if(e.pathT<=0||(e._pathTo!==_tk&&e.pathT<.95)){e.path=bfs(e.x,e.z,T.x,T.z);e.pathT=1.2;e._pathTo=_tk;}if(e.path&&e.path.length){const tc=dAt(e.path[0][0]),tr=dAt(e.path[0][1]),dx=tc-e.x,dz2=tr-e.z, /* S1283 — the path is cells, the foe metres */d=Math.hypot(dx,dz2);if(d<.1)e.path.shift();else{const step=_cs*dt;const[nx,nz]=dSlide(e.x,e.z,dx/d*step,dz2/d*step);if(Math.hypot(nx-T.x,nz-T.z)>=_sr||Math.hypot(nx-T.x,nz-T.z)>dist){e.x=nx;e.z=nz;}}}
+        else if(dist>_sr&&dCellOf(e.x)===dCellOf(T.x)&&dCellOf(e.z)===dCellOf(T.z)){const step=Math.min(_cs*dt,dist-_sr);const[nx,nz]=dSlide(e.x,e.z,(T.x-e.x)/dist*step,(T.z-e.z)/dist*step);e.x=nx;e.z=nz;e._close=true;}}
       // Attack lunge animation
       let lungeFwd=0;
       if(e.atkAnim>0){e.atkAnim=Math.max(0,e.atkAnim-dt);const p=e.atkAnim/.35;lungeFwd=Math.sin(p*Math.PI)*.28;}
@@ -1509,8 +1509,8 @@ function loop(now){
     const nearMimic=ENEMIES.find(en=>!en.dead&&en.disguised&&en.floor===currentFloor&&Math.hypot(px-en.x,pz-en.z)<1.1);
     const nearBarrelPrompt=BARRELS.find(b=>b.floor===currentFloor&&lookingAt(b,2.6)&&(!b.opened||b.items.length>0)); // v80 — look-at
     const nearCot=fortCotNear(); // S624 — the cot's prompt, when it is nearer than the way out
-    const nearEntrance=!nearCot&&currentFloor===1&&Math.hypot(px-dEntranceX,pz-dEntranceZ)<1.4;
-    const nearStair=dStairC!==null&&Math.hypot(px-dStairC,pz-dStairR)<1.3;
+    const nearEntrance=!nearCot&&currentFloor===1&&Math.hypot(px-dAt(dEntranceX),pz-dAt(dEntranceZ))<1.4;
+    const nearStair=dStairC!==null&&Math.hypot(px-dAt(dStairC),pz-dAt(dStairR))<1.3;
     const nearDoorObj2=DOORS.find(d=>d.floor===currentFloor&&Math.hypot(px-d.x,pz-d.z)<1.4);
     const iprEl=document.getElementById('ipr');
     if(nearEntrance){iprEl.textContent="Press 'E' to leave dungeon";iprEl.style.opacity='1';iprEl.style.display='block';}

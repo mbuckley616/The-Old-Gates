@@ -26,9 +26,9 @@ for (const i of idx) {
     const open = (x, z, f) => { const m = mapOf(f); return [[0, 1], [0, -1], [1, 0], [-1, 0]].filter(([dc, dr]) => (m[z + dr]?.[x + dc] | 0) >= 1).length; };
     const kind = (x, z, f) => { const m = mapOf(f); const o = d => (m[z + d[1]]?.[x + d[0]] | 0) >= 1; const n = o([0, -1]), s = o([0, 1]), e = o([1, 0]), w = o([-1, 0]); const k = n + s + e + w;
       if (k === 2 && ((n && s) || (e && w))) return 'corridor'; if (k === 2) return 'corner'; if (k === 3) return 'wall'; if (k === 4) { let d = 0; for (const [a, b] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) d += (m[z + b]?.[x + a] | 0) >= 1; return d === 4 ? 'open floor' : 'junction'; } return 'dead end'; };
-    const spot = (x, z, f) => { x = Math.round(x); z = Math.round(z); return { x, z, f, open: open(x, z, f), kind: kind(x, z, f), cell: mapOf(f)[z][x] }; };
+    const spot = (x, z, f) => { x = dCellOf(x); z = dCellOf(z); /* S1283 — metres to the map's cells */ return { x, z, f, open: open(x, z, f), kind: kind(x, z, f), cell: mapOf(f)[z][x] }; };
     const chests = CHESTS.map(c => Object.assign(spot(c.x, c.z, c.floor), { treasure: !!c.treasure, locked: !!c.locked }));
-    const mimics = ENEMIES.filter(m => m.disguised).map(m => Object.assign(spot(m.x, m.z, m.floor), { locked: chestLockedAt(m.x, m.z, m.floor), onChest: CHESTS.some(c => c.floor === m.floor && Math.abs(c.x - m.x) + Math.abs(c.z - m.z) <= 1) }));
+    const mimics = ENEMIES.filter(m => m.disguised).map(m => Object.assign(spot(m.x, m.z, m.floor), { locked: chestLockedAt(m.x, m.z, m.floor), onChest: CHESTS.some(c => c.floor === m.floor && Math.abs(c.x - m.x) + Math.abs(c.z - m.z) <= DCELL) }));
     // the minimap with every cell revealed: count the foe dots it draws (5×5 in #cc3322) against the foes it should show
     for (const R of [mmRevealed, mmRevealed2]) if (R) for (const row of R) row.fill(1);
     const orig = mmC.fillRect; let dots = 0; mmC.fillRect = function (x, y, w, h) { if (w === 5 && h === 5 && this.fillStyle === '#cc3322') dots++; return orig.call(this, x, y, w, h); };

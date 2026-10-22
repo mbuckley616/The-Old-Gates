@@ -70,38 +70,40 @@ check('indoors: a foe in the shop with you can', room.lineFront === true && room
 await enterDungeon(page, { theme: 'goblin', seed: 5 });
 const dun = await page.evaluate(() => {
   const out = {}; const keep = ENEMIES; lockRelease();
-  const open = (c, r) => r >= 0 && r < dR && c >= 0 && c < dC && dMap[r][c] > 0 && dMap[r][c] !== 2 && !dSolid(c, r);
+  // S1283 — a gate's cell is 3 m: the foe stands four cells (12 m) off, inside lock-on's 14 (it was five cells of 1 m)
+  const D = DCELL, N = 4;
+  const open = (c, r) => r >= 0 && r < dR && c >= 0 && c < dC && dMap[r][c] > 0 && dMap[r][c] !== 2 && !dSolid(dAt(c), dAt(r));
   const wall = (c, r) => r >= 0 && r < dR && c >= 0 && c < dC && dMap[r][c] === 0;
   let wallSpot = null, clearSpot = null;
   for (let r = 1; r < dR - 1 && !(wallSpot && clearSpot); r++) for (let c = 1; c < dC - 1; c++) for (const [dc, dr] of [[1, 0], [0, 1], [-1, 0], [0, -1]]) {
-    if (!open(c, r) || !open(c + dc * 5, r + dr * 5)) continue;
-    let walls = 0, opens = 0; for (let k = 1; k < 5; k++) { if (wall(c + dc * k, r + dr * k)) walls++; else if (open(c + dc * k, r + dr * k)) opens++; }
+    if (!open(c, r) || !open(c + dc * N, r + dr * N)) continue;
+    let walls = 0, opens = 0; for (let k = 1; k < N; k++) { if (wall(c + dc * k, r + dr * k)) walls++; else if (open(c + dc * k, r + dr * k)) opens++; }
     if (!wallSpot && walls >= 1) wallSpot = { c, r, dc, dr };
-    if (!clearSpot && opens === 4) clearSpot = { c, r, dc, dr };
+    if (!clearSpot && opens === N - 1) clearSpot = { c, r, dc, dr };
   }
   out.found = !!(wallSpot && clearSpot);
   if (!out.found) return out;
-  const mk = (p) => { px = p.c; pz = p.r; yaw = Math.atan2(-p.dc, -p.dr); return { x: p.c + p.dc * 5, z: p.r + p.dr * 5, floor: currentFloor, hp: 10, mesh: new THREE.Group() }; };
+  const mk = (p) => { px = p.c * D; pz = p.r * D; yaw = Math.atan2(-p.dc, -p.dr); return { x: (p.c + p.dc * N) * D, z: (p.r + p.dr * N) * D, floor: currentFloor, hp: 10, mesh: new THREE.Group() }; };
   const hid = mk(wallSpot); ENEMIES = [hid]; out.throughWall = toggleLock() === false && LOCK.t === null;
   const seen = mk(clearSpot); ENEMIES = [seen]; out.downCorridor = toggleLock() === true && LOCK.t === seen;
   // locked, then the foe steps behind the wall (it is moved to the walled cell's far side)
   ENEMIES = [seen, hid];
-  const back = { x: seen.x, z: seen.z }; seen.x = hid.x; seen.z = hid.z; px = wallSpot.c; pz = wallSpot.r;
+  const back = { x: seen.x, z: seen.z }; seen.x = hid.x; seen.z = hid.z; px = wallSpot.c * D; pz = wallSpot.r * D;
   let t = 0; while (LOCK.t && t < 3) { tickLock(1 / 60); t += 1 / 60; }
   out.letGoAfter = +t.toFixed(2);
   // locked again, hidden for one second, then back in view: the lock holds
-  seen.x = back.x; seen.z = back.z; px = clearSpot.c; pz = clearSpot.r; yaw = Math.atan2(-clearSpot.dc, -clearSpot.dr); toggleLock();
-  seen.x = hid.x; seen.z = hid.z; px = wallSpot.c; pz = wallSpot.r; for (let i = 0; i < 60; i++) tickLock(1 / 60);
+  seen.x = back.x; seen.z = back.z; px = clearSpot.c * D; pz = clearSpot.r * D; yaw = Math.atan2(-clearSpot.dc, -clearSpot.dr); toggleLock();
+  seen.x = hid.x; seen.z = hid.z; px = wallSpot.c * D; pz = wallSpot.r * D; for (let i = 0; i < 60; i++) tickLock(1 / 60);
   out.heldAt1s = LOCK.t === seen;
-  seen.x = back.x; seen.z = back.z; px = clearSpot.c; pz = clearSpot.r; for (let i = 0; i < 60; i++) tickLock(1 / 60);
+  seen.x = back.x; seen.z = back.z; px = clearSpot.c * D; pz = clearSpot.r * D; for (let i = 0; i < 60; i++) tickLock(1 / 60);
   out.heldAfterReturn = LOCK.t === seen;
-  seen.x = hid.x; seen.z = hid.z; px = wallSpot.c; pz = wallSpot.r; for (let i = 0; i < 60; i++) tickLock(1 / 60);
+  seen.x = hid.x; seen.z = hid.z; px = wallSpot.c * D; pz = wallSpot.r * D; for (let i = 0; i < 60; i++) tickLock(1 / 60);
   out.hiddenAgainClockRestarted = LOCK.t === seen;
   lockRelease(); ENEMIES = keep;
   return out;
 });
 check('in a dungeon a foe on the far side of a wall cannot be locked', dun.found && dun.throughWall, dun);
-check('one five cells down a clear corridor can', dun.found && dun.downCorridor, dun);
+check('one four cells (12 m) down a clear corridor can', dun.found && dun.downCorridor, dun);
 check('a locked foe that stays behind a wall is let go after 1.5 s', dun.letGoAfter >= 1.45 && dun.letGoAfter <= 1.7, dun);
 check('hidden for 1 s the lock holds, and back in view it holds on', dun.heldAt1s && dun.heldAfterReturn, dun);
 check('the hidden clock starts again each time the foe is out of sight', dun.hiddenAgainClockRestarted, dun);

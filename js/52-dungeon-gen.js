@@ -6,7 +6,7 @@
 // Two-floor architecture: floor 1 at worldY=0, floor 2 at worldY=FLOOR2_Y.
 // Both floors share the same XZ grid. The stair cell (3) appears in both maps at the same column/row.
 // Only medium/large/massive dungeons have a floor 2.
-const FLOOR2_Y=-5.0; // v80 — floor two lies BELOW floor one: you go down into a gate, not up
+let FLOOR2_Y=-5.0; // v80 — floor two lies BELOW floor one: you go down into a gate, not up; S1283 — by the dungeon's ceiling (buildDungeon)
 // v80 S7 — FOOTHOLDS: walkable levels above the base floor for interiors and
 // dungeons. {x0,x1,z0,z1,y} is a platform; add axis:'x'|'z',y0,y1 for a ramp
 // whose height interpolates from the axis' 0-edge to its 1-edge. The ground
@@ -49,9 +49,22 @@ function intSolidAt(x,z,R,Y){const y=Y!=null?Y:jumpY;for(let i=0;i<INT_SOL.lengt
   if(s.y0!=null&&s.y0>=y+PLAYER_H)continue;      // entirely overhead
   if(x>s.x0-R&&x<s.x1+R&&z>s.z0-R&&z<s.z1+R)return true;}return false;}
 let FLOOR_HEIGHT=3.2; // wall/ceiling height per floor; S564: the dungeon's own, set by buildDungeon (dunFloorHeight)
-// S564 — Michael's B on #162: a dragon's lair is cut to 4.4 so its wyrm stands at the world's 4.5; every other dungeon stays 3.2
-const DUN_FLOOR_H=3.2,LAIR_FLOOR_H=4.4;
-function dunFloorHeight(portal){return portal&&portal.lair&&portal.lair.dragon?LAIR_FLOOR_H:DUN_FLOOR_H;}
+// S1283 (card F5, Michael's A on #421; docs/design/gate-interiors-build.md) — the dungeon's cell by kind. An old gate's cell is 3 m
+// under a 6 m ceiling; a fort's insides (fort_*), a lair's cavern and the tutorial's crypt are 2.5 m under 3.6, a dragon's lair 5.5
+// (the wyrm stands 4.5). Read from the portal's kind, never saved. The generators lay a dungeon out in cells and buildDungeon builds
+// it there, then scales it whole by its cell (dunScaleWhole): from then on every position in it is in metres, and the map is read
+// at dCellOf(x). DCELL is the cell of the dungeon you are in (1 while one is being built, and outside one). The ceiling is metres
+// from the start: walls are built at FLOOR_HEIGHT and only stretched across.
+const GATE_CELL=3,GATE_CEIL=6,KEEP_CELL=2.5,KEEP_CEIL=3.6,WYRM_CEIL=5.5;
+let DCELL=1;
+function dunKeepKind(portal){return !!(portal&&((typeof portal.interior==='string'&&portal.interior.startsWith('fort_'))||portal.lair||portal.lairDoor||portal.tutorial));}
+function dunCellFor(portal){return dunKeepKind(portal)?KEEP_CELL:GATE_CELL;}
+function dunFloorHeight(portal){return portal&&portal.lair&&portal.lair.dragon?WYRM_CEIL:dunKeepKind(portal)?KEEP_CEIL:GATE_CEIL;}
+// floor two hangs under floor one by its ceiling and 1.8 of rock, as the old 3.2 room hung at −5
+function dunFloor2Y(h){return -(h+1.8);}
+// a position in metres to its cell, and a cell to the metres of its centre
+function dCellOf(v){return Math.floor(v/DCELL+.5);}
+function dAt(c){return c*DCELL;}
 
 // v61g0: FORT_INTERIORS registry — interior-layout generators selected by the
 // `interior` field on WORLD_DUNGEONS entries. Symmetric with the v61f9
@@ -1143,7 +1156,7 @@ function tickMimicJaws(now){if(typeof ENEMIES==='undefined')return;for(const e o
 function activeMap(){return currentFloor===2&&dMap2?dMap2:dMap;}
 
 function dSolid(x,z){
-  const col=Math.floor(x+.5),row=Math.floor(z+.5);
+  const col=dCellOf(x),row=dCellOf(z);
   const map=activeMap();
   if(row<0||row>=dR||col<0||col>=dC)return true;
   const v=map[row][col];
@@ -1155,8 +1168,11 @@ function dSolid(x,z){
   // collision must reflect open/closed state. If no DOORS entry exists at this
   // cell (e.g. legacy save, pre-v61g6 dungeon, or an open passage that was never
   // a door), we fall back to "passable" — preserving the old behavior.
-  if(v===4){const d=DOORS.find(d=>d.x===col&&d.z===row&&d.floor===currentFloor);return d?!d.open:false;}
-  if(v===5){const d=DOORS.find(d=>d.x===col&&d.z===row&&d.floor===currentFloor);return d?!d.open:true;}
+  // S1283 — at the true cell a door is 1.2 wide in its cell's middle (dunScaleWhole hangs the wall either side of it, as props):
+  // shut, it is solid within 0.2 of its plane (your body's corners 0.3 round you stop 0.5 off it), so you come up to it and touch
+  // it, not a cell's half short of it
+  if(v===4||v===5){const d=DOORS.find(d=>d.c===col&&d.r===row&&d.floor===currentFloor);if(dPropHit(x,z))return true;if(!d)return v===5;if(d.open)return false;
+    return DCELL===1||Math.abs(d.isEW?x-d.x:z-d.z)<.2;}
   // v61g1: v===6 (treasure floor) is plain-walkable. Previous radius-3
   // cardinal-search logic was load-bearing for no actual gameplay value —
   // the room is geometrically sealed by its v===0 perimeter walls, so

@@ -18,11 +18,11 @@ const leave = async () => {
 // E at the first shut locked door on this floor (or the one named); reads what came of it
 await page.evaluate(() => { window._tryDoor = (i) => {
   const L = DOORS.filter(d => d.locked && d.floor === currentFloor); const d = L[i || 0]; if (!d) return { none: true, n: DOORS.length };
-  d.open = false; activeMap()[d.z][d.x] = 5; px = d.x; pz = d.z; let said = null; const sm = showMsg; showMsg = (t) => { said = t; };
+  d.open = false; activeMap()[d.r][d.c] = 5; px = d.x; pz = d.z; /* S1283 — the map is cells (d.c, d.r), the door metres */ let said = null; const sm = showMsg; showMsg = (t) => { said = t; };
   for (let k = BAG.length - 1; k >= 0; k--) if (BAG[k].name === 'Lockpick') BAG.splice(k, 1);
   try { interact(); } finally { showMsg = sm; }
   if (lockOpen) closeLockpick();
-  return { open: !!d.open, said, cell: activeMap()[d.z][d.x], locked: L.length };
+  return { open: !!d.open, said, cell: activeMap()[d.r][d.c], locked: L.length };
 }; });
 
 const setup = await page.evaluate(() => {

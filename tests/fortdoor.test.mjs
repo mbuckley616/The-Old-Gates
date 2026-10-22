@@ -12,8 +12,8 @@ const prompt = () => page.evaluate(() => { const e = document.getElementById('ip
 for (const [interior, seed] of [['fort_courtyard', 7104], ['fort_linear', 11], ['fort_tee', 23], ['fort_courtyard', 42]]) {
   await enterDungeon(page, { theme: 'ruins', seed, interior, size: 'medium' });
   const o = await page.evaluate(([interior, seed]) => { const b = D_BEDS[0]; if (!b) return { interior, seed, beds: 0 };
-    px = dEntranceX; pz = dEntranceZ; jumpY = 0;
-    return { interior, seed, beds: D_BEDS.length, door: [dEntranceX, dEntranceZ], cot: [b.x, b.z], apart: +Math.hypot(b.x - dEntranceX, b.z - dEntranceZ).toFixed(2) }; }, [interior, seed]);
+    px = dAt(dEntranceX); pz = dAt(dEntranceZ); jumpY = 0; /* S1283 — the map is cells, you are metres */
+    return { interior, seed, beds: D_BEDS.length, door: [dEntranceX, dEntranceZ], cot: [b.x, b.z], apart: +(Math.hypot(b.x - dAt(dEntranceX), b.z - dAt(dEntranceZ)) / DCELL).toFixed(2) }; /* apart in cells */ }, [interior, seed]);
   if (o.beds) {
     // the cot's cell first: the prompt, then E
     await page.evaluate(() => { px = D_BEDS[0].x; pz = D_BEDS[0].z; });
@@ -22,7 +22,7 @@ for (const [interior, seed] of [['fort_courtyard', 7104], ['fort_linear', 11], [
     o.rest = await page.evaluate(() => { const r = sleepOpen; try { closeSleepUI(); } catch (e) {} return r; });
     o.stayed = await page.evaluate(() => activeZoneId === 'dungeon');
     // the door's cell, where the critic stood: the prompt, then E
-    await page.evaluate(() => { px = dEntranceX; pz = dEntranceZ; });
+    await page.evaluate(() => { px = dAt(dEntranceX); pz = dAt(dEntranceZ); });
     await g.frames(3); o.doorPrompt = await prompt();
     await page.keyboard.press('e'); await g.frames(2);
     o.restAtDoor = await page.evaluate(() => { const r = sleepOpen; try { closeSleepUI(); } catch (e) {} return r; });

@@ -31,7 +31,7 @@ const lie = await page.evaluate(() => { const L = SHUTTLE_LIE; if (!L) return { 
   const from = (fl === 2 && dStairC != null) ? { c: dStairC, r: dStairR } : { c: Math.round(dEntranceX), r: Math.round(dEntranceZ) };
   const D = map.map(row => row.map(() => -1)); const q = [[from.c, from.r]]; D[from.r][from.c] = 0; let max = 0;
   for (let h = 0; h < q.length; h++) { const [c, r] = q[h]; for (const [dc, dr] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nc = c + dc, nr = r + dr; if (!map[nr] || map[nr][nc] == null || D[nr][nc] >= 0 || !map[nr][nc]) continue; D[nr][nc] = D[r][c] + 1; if (map[nr][nc] === 1) max = Math.max(max, D[nr][nc]); q.push([nc, nr]); } }
-  return { x: L.x, z: L.z, floor: L.floor, floors: fl, cell: map[L.z][L.x], walk: D[L.z][L.x], max, inScene: !!(L.mesh && L.mesh.parent === dScene), y: L.mesh.position.y }; });
+  return { x: L.x, z: L.z, floor: L.floor, floors: fl, cell: map[dCellOf(L.z)][dCellOf(L.x)], walk: D[dCellOf(L.z)][dCellOf(L.x)], /* S1283 — the map is cells, the Shuttle metres */ max, inScene: !!(L.mesh && L.mesh.parent === dScene), y: L.mesh.position.y }; });
 console.log('lie', JSON.stringify(lie));
 check(`it lies on the gate's lowest floor (${lie.floor}), on open floor, ${lie.walk} cells' walk from the arrival (the farthest is ${lie.max})`, !lie.none && lie.floor === lie.floors && lie.cell === 1 && lie.walk >= lie.max * 0.85 && lie.inScene, lie);
 
