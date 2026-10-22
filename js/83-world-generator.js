@@ -320,8 +320,8 @@
     // from 5–7 m toward 6–10 m, a bay at a time, and gives a bay back while it would come within 1.2 m of another lot, a road,
     // a cross street or the ring. Churches, keeps, inns, the shipwright and the foreign quarter keep their size (a guild hall takes the kit's, below).
     // (window.OG_KIT_TOWNS=false keeps the old towns on the new look: tests/lookpair sets it to compare the renderers alone)
-    if(window.OG_LOOK==='new'&&window.OG_KIT_TOWNS!==false&&typeof PKIT!=='undefined'&&nationOf(ni,nj).people==='gatelander'&&site.kind in KIT_SITE){
-      const town=KIT_SITE[site.kind]==='town',G=PKIT.gl,corners=(l,m)=>{const c=Math.cos(l.ry),s_=Math.sin(l.ry),hw=l.w/2+m,hd=l.d/2+m;return [[-hw,-hd],[hw,-hd],[hw,hd],[-hw,hd]].map(([u,v])=>({x:l.x+u*c+v*s_,z:l.z-u*s_+v*c}));};
+    if(window.OG_LOOK==='new'&&window.OG_KIT_TOWNS!==false&&typeof PKIT!=='undefined'&&['gatelander','markman','aurennais'].includes(nationOf(ni,nj).people)&&site.kind in KIT_SITE){
+      const MK=nationOf(ni,nj).people==='markman',AU=nationOf(ni,nj).people==='aurennais',town=KIT_SITE[site.kind]==='town',G=PKIT.gl,corners=(l,m)=>{const c=Math.cos(l.ry),s_=Math.sin(l.ry),hw=l.w/2+m,hd=l.d/2+m;return [[-hw,-hd],[hw,-hd],[hw,hd],[-hw,hd]].map(([u,v])=>({x:l.x+u*c+v*s_,z:l.z-u*s_+v*c}));};
       const apart=(a,b)=>{const A=corners(a,.6),B=corners(b,.6);for(const P of [A,B])for(let k=0;k<2;k++){const ax=P[k+1].x-P[k].x,az=P[k+1].z-P[k].z;const pr=Q=>Q.map(q=>q.x*ax+q.z*az);const pa=pr(A),pb=pr(B);if(Math.max(...pa)<Math.min(...pb)||Math.max(...pb)<Math.min(...pa))return true;}return false;};
       const clear=(l,own)=>{const C=corners(l,0);for(const q of C){if(Math.hypot(q.x-cx,q.z-cz)>inner-1)return false;const ri=roadInfo(q.x,q.z,true);if(ri&&ri.d<ROAD_HALF+1.2)return false;
           for(const L of streetLines){if(own&&L.px===own.px&&L.pz===own.pz&&L.dx===own.dx&&L.dz===own.dz)continue;if(Math.abs((q.x-L.px)*(-L.dz)+(q.z-L.pz)*L.dx)<1.6)return false;}}
@@ -334,6 +334,31 @@
       // at each end if that clears a street beside it (kit.slide, which its door moves by too).
       const near=(l,own)=>{let m=1e9;for(const q of corners(l,0)){m=Math.min(m,inner-1-Math.hypot(q.x-cx,q.z-cz));const ri=roadInfo(q.x,q.z,true);if(ri)m=Math.min(m,ri.d-ROAD_HALF-1.2);
           for(const L of streetLines){if(own&&L.px===own.px&&L.pz===own.pz&&L.dx===own.dx&&L.dz===own.dz)continue;m=Math.min(m,Math.abs((q.x-L.px)*(-L.dz)+(q.z-L.pz)*L.dx)-1.6);}}return m;};
+      // S1286 (card F6, Michael's C on #277 and A on #285) — a Markish settlement's homes and shops are the kit's halls (PKIT.mk.hall), their
+      // gables to the street, roofed by PKIT.mk.lot keyed by the town and the lot's id: two in three dark shingle, one in three dry turf on
+      // the poorer, smaller hall. The lot becomes the hall's footing and its stone steps (1.8 m out from the door, 3.35 under a porch), its
+      // front kept on the street line, so the door's place, the id and the resident stay where they were and you knock at the steps' foot.
+      // The prototype's halls run 8.5 to 14.5 m deep; a town's rows stand 10.7 m apart, so a hall is as deep as fits, down to 6.5 m, and as
+      // wide as fits, down to 5.6 m. Churches, keeps, guild halls, inns, the shipwright and the foreign quarter keep the old builder.
+      // S1287 (Michael's B on #259) — an Aurennais settlement's the same way, with the kit's house (PKIT.au.house) by PKIT.au.lot: two in
+      // three flat-roofed behind a parapet, one in three Roman under a hipped pantile roof, an arcade on the wider. The lot is its plinth, the
+      // outside stair up the side wall where it has one, and before the front its pot (0.71 m out) or its arcade (2.46 m); 5.4 m wide or
+      // more, 5 m deep or more. A stair or an arcade that will not fit is left off before the house gives way to the old one.
+      if(MK||AU)use.forEach((lot,i)=>{const t=shopTypes[i]||null;if(t&&!KIT_SHOPS.has(t))return;if(lot.k==='sw'||(site.kind==='port'&&site.quayStart&&Math.hypot(lot.x-site.quayStart.x,lot.z-site.quayStart.z)<34))return;
+        const o0=(MK?PKIT.mk:PKIT.au).lot(site.id,lot.n).o,w0=lot.w,d0=lot.d,x0=lot.x,z0=lot.z,W0=MK?5.6:5.4,D0=MK?6.5:5;
+        // what stands round the house, by side: [back, front, the -x side, the +x side]
+        const ext=o=>MK?[.15,o.porch?3.35:1.8,.15,.15]:[.08,o.kind==='tile'&&o.arcade?2.46:.71,o.stair&&o.kind!=='tile'?.95:.08,.08];
+        const vars=MK?(o0.porch?[o0,{...o0,porch:false}]:[o0]):[o0,...(o0.stair?[{...o0,stair:false}]:[]),...(o0.arcade?[{...o0,arcade:false}]:[])];
+        // an apron of 1.8 m before the front is kept clear of every other lot, and this lot of every other kit house's apron, so no door looks onto a wall
+        const ap=l=>({x:l.x+l.tx*.9,z:l.z+l.tz*.9,w:l.w,d:l.d+1.8,ry:l.ry,tx:l.tx,tz:l.tz}),apK=u=>u.kit&&(u.kit.kind==='markhall'||u.kit.kind==='aurhouse');
+        const fit=(w,d,E)=>{const D=d+E[0]+E[1],sh=(d0-D)/2;lot.w=w+E[2]+E[3];lot.d=D;lot.x=x0+lot.tx*sh;lot.z=z0+lot.tz*sh;if(!clear(lot,lot.street))return false;const A=ap(lot);
+          return use.every(u=>u===lot||(apart(A,u)&&!(apK(u)&&!apart(lot,ap(u)))));};
+        // the widest that fits at the least depth, then the deepest at that width (each halved to within 5 cm: a house that fits fits smaller)
+        const most=(lo,hi,ok)=>{if(ok(hi))return hi;while(hi-lo>.05){const m=(lo+hi)/2;if(ok(m))lo=m;else hi=m;}return Math.floor(lo*100)/100;};
+        for(const v of vars){const E=ext(v);if(!fit(W0,D0,E))continue;const w=most(W0,v.w,q=>fit(q,D0,E)),d=most(D0,v.d,q=>fit(w,q,E));
+          if(!fit(w,d,E))continue;const o=Object.assign({},v,{w,d});lot.kit={kind:MK?'markhall':'aurhouse',o,ext:E,w0,d0};if(MK)lot.kit.stoop=E[1];return;}
+        lot.w=w0;lot.d=d0;lot.x=x0;lot.z=z0;});
+      else{
       // S1275 — its front goes first on the lot's own street line (dB: planLots grew a guild's lot to 13 by 11 m about its centre, which
       // brought that front 2.5–3 m nearer the street), so the hall stands where the house a poorer town puts on the lot stands, and the
       // lot's footprint no longer jumps with the town's fortunes (tests/placesave); where it will not fit there, on the grown lot's front.
@@ -383,7 +408,7 @@
       // what it gains), so its door, id and resident stay where they were. Last, so no guild hall or inn loses a lot it took.
       if(town)use.forEach(lot=>{const k=lot.kit;if(!k||(k.kind!=='townhouse'&&k.kind!=='merchant'))return;const d0=lot.d,x0=lot.x,z0=lot.z;
         for(let d=8;d>d0+1e-6;d-=.25){const sh=(d0-d)/2;lot.d=d;lot.x=x0+lot.tx*sh;lot.z=z0+lot.tz*sh;if(clear(lot,lot.street)){k.d0=d0;return;}}
-        lot.d=d0;lot.x=x0;lot.z=z0;});}
+        lot.d=d0;lot.x=x0;lot.z=z0;});}}
     // S1072 (card F6) — a widened lot's house is the kit's plan on its bays, at the lot's depth (PKIT.gl.lot keyed by the town and
     // the lot's id, so its colours, paint and lit windows are the same at every visit). The houses stand in one group at the town's
     // centre, merged at the end into one mesh per material (PKIT.mergeByMaterial), so a town of them is some twenty draws.
@@ -423,10 +448,35 @@
         if(h){const b=new THREE.BoxGeometry(u1-u0,h,v1-v0).toNonIndexed();b.translate(u,h/2,v);kitLo.push([b,mx,stone]);}}
       {const b=new THREE.BoxGeometry(T.w,T.walk,T.d).toNonIndexed();b.translate(k.tu,T.walk/2,k.tv);kitLo.push([b,mx,stone]);const rf=kitRoof(T.w/2,T.d/2,T.walk,T.walk+T.d/2*Math.tan(50*Math.PI/180));rf.translate(k.tu,0,k.tv);kitLo.push([rf,mx,new THREE.Color(.24,.26,.30)]);}
       lot._kitDoor=U.towerDoor.x;lot._wallH=T.walk;lot._storeys=4;lot.two=true;k.tris=U.tris;k.calls=U.calls;k.colour='stone';k.door=lot._kitDoor;}
+    // S1286 — a Markish hall (PKIT.mk.hall, its options PKIT.mk.lot's as fitted above; its lit windows keyed by the town and the lot as a
+    // house's are): set back on its lot by its steps, the door at the steps' foot on the gable's middle; its far copy a box for the footing
+    // and walls and a prism for the roof, its ridge along the hall; smoke from the chimney or the louver
+    function kitMarkHall(lot,type){const k=lot.kit,o=k.o,H=PKIT.mk.hall(o,PKIT.stream(`${site.id}:windows:${lot.n}`)),y=worldH(lot.x,lot.z)-.06,hz=lot.d/2-o.d/2-k.stoop,c=Math.cos(lot.ry),s_=Math.sin(lot.ry);
+      H.group.position.set(lot.x+hz*s_-cx,y,lot.z+hz*c-cz);H.group.rotation.y=lot.ry;H.group.traverse(m=>{if(m.isMesh){m.castShadow=true;m.receiveShadow=true;}});kitG.add(H.group);
+      const eave=H.sill+H.wh,ridge=H.ry0+(o.w/2+H.ov)*Math.tan(H.pitch),turf=o.roof==='turf',mx=new THREE.Matrix4().makeRotationY(lot.ry).setPosition(lot.x+hz*s_,y,lot.z+hz*c);
+      {const b=new THREE.BoxGeometry(o.w+.3,eave,o.d+.3).toNonIndexed();b.translate(0,eave/2,0);kitLo.push([b,mx,PKIT.mk.mats().wall[o.wall].color.clone().multiplyScalar(.5)]);}
+      {const r=kitRoof(o.d/2+(turf?.4:.6),o.w/2+H.ov,H.ry0,ridge);r.rotateY(Math.PI/2);kitLo.push([r,mx,new THREE.Color(...(turf?[.42,.36,.24]:[.16,.15,.15]))]);}
+      lot._kitDoor=0;lot._wallH=eave;lot._storeys=1;lot.two=false;k.tris=H.tris;k.calls=H.draws;k.colour=o.roof;k.door=0;
+      const sm=o.chimney?{u:-o.w/4,v:-o.d*.25,y:ridge+.95}:{u:0,v:-o.d*.15,y:ridge+.6};S.chimneys.push({x:lot.x+sm.u*c+(hz+sm.v)*s_,y:y+sm.y,z:lot.z-sm.u*s_+(hz+sm.v)*c,t:type||'home',k:0});}
+    // S1287 — an Aurennais house (PKIT.au.house, its options PKIT.au.lot's as fitted above; its own stream keyed by the town and the lot):
+    // set back on its lot by its pot or its arcade and aside by its stair, the door its own; its far copy a box for the walls (and the
+    // parapet on a flat roof) and, on a Roman house, a prism for the roof; no smoke (a southern house cooks in the yard)
+    function kitAurHouse(lot){const k=lot.kit,o=k.o,E=k.ext,H=PKIT.au.house(o,PKIT.stream(`${site.id}:windows:${lot.n}`)),y=worldH(lot.x,lot.z)-.06,c=Math.cos(lot.ry),s_=Math.sin(lot.ry),u=(E[2]-E[3])/2,v=lot.d/2-o.d/2-E[1];
+      const X=lot.x+u*c+v*s_,Z=lot.z-u*s_+v*c;H.group.position.set(X-cx,y,Z-cz);H.group.rotation.y=lot.ry;H.group.traverse(m=>{if(m.isMesh){m.castShadow=true;m.receiveShadow=true;}});kitG.add(H.group);
+      const tile=o.kind==='tile',hgt=tile?H.top+.16:H.top+.57,mx=new THREE.Matrix4().makeRotationY(lot.ry).setPosition(X,y,Z);
+      {const b=new THREE.BoxGeometry(o.w+.16,hgt,o.d+.16).toNonIndexed();b.translate(0,hgt/2,0);kitLo.push([b,mx,new THREE.Color(.86,.82,.72)]);}
+      const cream=new THREE.Color(.86,.82,.72),part=(bw,bh,bd,u,y0,v,col)=>{const b=new THREE.BoxGeometry(bw,bh,bd).toNonIndexed();b.translate(u,y0+bh/2,v);kitLo.push([b,mx,col||cream]);};
+      if(o.dome){const R=Math.min(o.w,o.d)*.27;part(2*R,1+R*.9,2*R,-o.w*.18,H.top,-o.d*.1,o.dome==='blue'?new THREE.Color(.25,.42,.62):cream);} /* the drum and the dome, as one block */
+      if(tile&&o.arcade){const n=Math.max(3,Math.round(o.w/2.2));part(o.w+.3,2.05+o.w/n/2+.35+H.yW,1.9,0,0,o.d/2+.95);} /* the arcade */
+      if(o.stair&&!tile)part(.9,H.top*.6,o.d-.6,-(o.w/2+.5),0,.3); /* the outside stair, its flight as a block of 0.6 of the wall */
+      if(tile){const rw=o.w/2+.45,rd=o.d/2+.45,r=rw>=rd?kitRoof(rw,rd,hgt,hgt+Math.tan(22*Math.PI/180)*rd):kitRoof(rd,rw,hgt,hgt+Math.tan(22*Math.PI/180)*rw);if(rw<rd)r.rotateY(Math.PI/2);kitLo.push([r,mx,new THREE.Color(.58,.32,.22)]);}
+      lot._kitDoor=+(u+H.doorX).toFixed(3);lot._wallH=H.top;lot._storeys=o.two?2:1;lot.two=!!o.two;k.tris=H.tris;k.calls=H.draws;k.colour=o.kind;k.door=lot._kitDoor;}
     function kitHouse(lot,type){
       if(!kitG){kitG=new THREE.Group();kitG.name='kit houses';kitG.position.set(cx,0,cz);kitG.userData.noBake=true;group.add(kitG);}
       if(lot.kit.kind==='church'){kitChurch(lot);return;}
       if(lot.kit.kind==='keep'){kitKeep(lot);return;}
+      if(lot.kit.kind==='markhall'){kitMarkHall(lot,type);return;}
+      if(lot.kit.kind==='aurhouse'){kitAurHouse(lot);return;}
       const L=lot.kit.kind==='guildhall'?kitHall(lot):PKIT.gl.lot(site.id,lot.n,{kind:lot.kit.kind,bays:lot.kit.bays,d:lot.d,trade:KIT_TRADE[type]});const b=PKIT.gl.building(L.plan),U=b.userData;
       b.position.set(lot.x-cx,worldH(lot.x,lot.z)-.06,lot.z-cz);b.rotation.y=lot.ry;b.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});kitG.add(b);
       {const sz=U.size,th=L.plan.roof.kind==='thatch',wc=PKIT.gl.mats()['w:'+(L.colour==='stone'?'lime':L.colour)],box=new THREE.BoxGeometry(sz.w,sz.eave,sz.d).toNonIndexed(),mx=new THREE.Matrix4(); /* S1073 — its far copy: the walls a box and the roof a prism, in the wall's and the roof's colours */

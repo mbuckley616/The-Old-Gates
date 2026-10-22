@@ -3,7 +3,8 @@
 // or city's townhouses and merchants' houses. Each such lot's width is exactly its bays and its end piers, it keeps its centre,
 // its depth, its door (moved along the front into its bay since Session 1072) and its id (a house you own is still yours, whichever look you load it in), and it stands 0.9 m or more
 // clear of every other lot's walls. Since Session 1126 (Michael's B on #408) a town's townhouse or merchant's house grows back
-// into its yard to 8 m deep where it fits, its front and door kept. Settlements of the other islands, and the old look, are as they were.
+// into its yard to 8 m deep where it fits, its front and door kept. Since Session 1286 a Markish town's homes and shops are the kit's
+// halls (tests/kitislands), their ids and doors kept and their lots deeper; Aurenne's settlements, and the old look, are as they were.
 import fs from 'fs';
 import { boot, check } from './lib/game.mjs';
 
@@ -34,7 +35,7 @@ const gl = sites.filter(s => s.nat === 'gatelands'), mk = sites.find(s => s.nat 
 const same = sites.map(s => { const a = old[s.id].houses, b = neu[s.id].houses; const one = (h, i) => { const k = b[i].kit ? b[i].kit.door || 0 : 0, tx = -Math.sin(h.yaw), tz = -Math.cos(h.yaw); /* a kit house's door stands in its bay (Session 1072), k along the front */
     const hall = b[i].kit && b[i].kit.kind === 'guildhall'; /* a guild hall takes the kit hall's 9 m (Session 1083), its front kept */
     const inn = b[i].kit && b[i].kit.inn, kch = b[i].kit && b[i].kit.kind === 'church'; /* a town's church takes the kit church's size (Session 1127), its front kept */ /* a village's inn takes the farmhouse's 6.2 m (Session 1086), its front kept */
-    return h.id === b[i].id && h.type === b[i].type && (hall ? b[i].d === 9 : inn ? b[i].d === 6.2 : kch ? b[i].d === (b[i].kit.side ? 8.4 : CL[b[i].kit.bays]) : b[i].kit && b[i].kit.d0 ? b[i].kit.d0 === h.d && b[i].d > h.d && b[i].d <= 8 : h.d === b[i].d) && (hall ? (e => Math.abs(e.x * tz - e.z * tx) < .01 && e.x * tx + e.z * tz > -3.51 && e.x * tx + e.z * tz < .01)({ x: b[i].x - h.x - tz * k, z: b[i].z - h.z + tx * k }) : Math.hypot(h.x + tz * k - b[i].x, h.z - tx * k - b[i].z) < .01); }; /* Session 1275: a hall's door is on its lot's own street line, up to 3.5 m behind the old look's, whose hall stood on the 13 by 11 m lot grown about its centre */
+    return h.id === b[i].id && h.type === b[i].type && (hall ? b[i].d === 9 : inn ? b[i].d === 6.2 : kch ? b[i].d === (b[i].kit.side ? 8.4 : CL[b[i].kit.bays]) : b[i].kit && b[i].kit.kind === 'markhall' ? b[i].kit.d0 === h.d && b[i].d > h.d : b[i].kit && b[i].kit.d0 ? b[i].kit.d0 === h.d && b[i].d > h.d && b[i].d <= 8 : h.d === b[i].d) && (hall ? (e => Math.abs(e.x * tz - e.z * tx) < .01 && e.x * tx + e.z * tz > -3.51 && e.x * tx + e.z * tz < .01)({ x: b[i].x - h.x - tz * k, z: b[i].z - h.z + tx * k }) : Math.hypot(h.x + tz * k - b[i].x, h.z - tx * k - b[i].z) < .01); }; /* Session 1275: a hall's door is on its lot's own street line, up to 3.5 m behind the old look's, whose hall stood on the 13 by 11 m lot grown about its centre */
   const ok = a.length === b.length && a.every(one), bad = ok ? -1 : a.findIndex((h, i) => !b[i] || !one(h, i)); /* the first house that fails, as it was and as it is */
   return { id: s.id, ok, n: a.length, nb: b.length, first: ok ? null : [a[bad], b[bad]] }; });
 check(`every settlement keeps its houses, ids, doors (in their bays) and depths (${same.map(s => s.n).join(', ')} houses)`, same.every(s => s.ok), same.filter(s => !s.ok));
@@ -78,8 +79,10 @@ const close = []; for (const s of gl) { const L = neu[s.id].lots, K = new Set(ne
   for (let i = 0; i < L.length; i++) for (let j = i + 1; j < L.length; j++) if ((K.has(L[i].hid) || K.has(L[j].hid)) && L[i].hid !== L[j].hid) { const d = gap(L[i], L[j]); if (d < .9 - 1e-6) close.push([s.id, L[i].hid, L[j].hid, +d.toFixed(2)]); } }
 check('every widened lot stands 0.9 m or more clear of every other lot', close.length === 0, close.slice(0, 6));
 
-// the Mark's town is as it was
-check('the Mark\'s town is as on the old look, widths and all', JSON.stringify(old[mk.id].houses) === JSON.stringify(neu[mk.id].houses), null);
+// the Mark's town (Session 1286): its homes and shops are the kit's halls where they fit (tests/kitislands), their ids and doors kept
+// above and their lots deeper; every other house is as on the old look, widths and all
+const mkHalls = neu[mk.id].houses.filter(h => h.kit && h.kit.kind === 'markhall').length, mkRest = (a => a.filter((h, i) => !(neu[mk.id].houses[i].kit && neu[mk.id].houses[i].kit.kind === 'markhall')))(old[mk.id].houses);
+check(`the Mark's town has ${mkHalls} kit halls, and its other ${mkRest.length} houses are as on the old look, widths and all`, mkHalls > 0 && JSON.stringify(mkRest) === JSON.stringify(neu[mk.id].houses.filter(h => !(h.kit && h.kit.kind === 'markhall'))), null);
 // a picture of a kit church in its town at noon, from over its street, 24 m up, 26 m out and 22 m to one side (docs/prototypes/kit-church-ingame.png)
 if (kch.length) { const c = kch[0]; const url = await page.evaluate(([site, id]) => { forceTime(12); const S = WORLD.settle.get(site), h = S.houses.find(h => h.id === id), fx = -Math.sin(h.exitYaw), fz = -Math.cos(h.exitYaw), ex = Math.cos(h.exitYaw), ez = -Math.sin(h.exitYaw);
     const L = h.kit.side ? 4 : h.d / 2, tx = h.doorX - fx * L, tz = h.doorZ - fz * L, X = tx + fx * 26 + ex * 22, Z = tz + fz * 26 + ez * 22, cv = REN.domElement, sc = WORLD.scene;
