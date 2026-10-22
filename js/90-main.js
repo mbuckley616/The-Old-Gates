@@ -388,7 +388,7 @@ function loop(now){
       if(nx2>R&&nx2<iW-R&&!behindCounter)px+=idx;
       if(nz2>R&&nz2<iD-R&&!behindCounter)pz+=idz;
     }
-    else{const[nx,nz]=dSlide(px,pz,tdx,tdz);px=nx;pz=nz;}}
+    else{const[nx,nz]=dSlideP(px,pz,tdx,tdz);px=nx;pz=nz;}} /* S1327 — a gate's chasm is open air to you (dSlideP) */
   try{pushFromBodies();}catch(err){} /* S623 — foes and townsfolk are solid to you */
 
   // Jump physics
@@ -397,7 +397,7 @@ function loop(now){
   const inDungeon=lid&&lid.startsWith('dyn_');
   const inOverworld=!inDungeon&&!isInterior();
   const floorBaseY0=(inDungeon&&DUNGEON_STAIRWELL)?Math.min(0,FLOOR2_Y):((inDungeon&&currentFloor===2)?FLOOR2_Y:0); // v80 — with a stairwell the base is the lower floor; the upper floor is a foothold with the shaft as its hole
-  const floorBaseY=(inDungeon||isInterior())?footholdY(px,pz,jumpY,floorBaseY0):floorBaseY0; // v80 — footholds (stairs, galleries)
+  const floorBaseY=(inDungeon||isInterior())?footholdY(px,pz,jumpY,inDungeon?dPitBase(px,pz,floorBaseY0):floorBaseY0):floorBaseY0; /* S1327 — over a chasm's air the ground is its pit's floor */ // v80 — footholds (stairs, galleries)
   if(typeof tickSheath==='function')tickSheath(); /* S1080 — the sheath: on its own after 5 s at peace */
   airStepTick(K); /* S1009 — Second step, the double jump (10-player.js); before the ground's jump, so a landing always resets it first */
   if(onGround&&K['Space']){

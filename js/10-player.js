@@ -395,7 +395,7 @@ function airDashStart(K){
 function airDashing(){return AIRDASH.t0!=null;}
 // the ground under you, as the loop's landing reads it
 function dashGroundY(){const dun=lid&&lid.startsWith('dyn_');
-  if(dun||isInterior()){const b=(dun&&DUNGEON_STAIRWELL)?Math.min(0,FLOOR2_Y):((dun&&currentFloor===2)?FLOOR2_Y:0);return footholdY(px,pz,jumpY,b);}
+  if(dun||isInterior()){const b=(dun&&DUNGEON_STAIRWELL)?Math.min(0,FLOOR2_Y):((dun&&currentFloor===2)?FLOOR2_Y:0);return footholdY(px,pz,jumpY,dun?dPitBase(px,pz,b):b);} /* S1327 — a chasm's pit */
   return activeTerrainH(px,pz);}
 // the dash's move this frame, {dx,dz,p}, or null; it ends at its 3 m, or on landing
 function tickAirDash(nowS){
