@@ -5,6 +5,7 @@
 // own meshes: the back and the sides stand where the solid is, the door you knock at is the lot's front with the drawn door straight
 // ahead, the houses are a few dozen draws, the old builder's houses are gone from those lots, the far copy stands for them from outside
 // the town, and the town takes no more than 1.2 s longer to build than with its old houses (Dunmore's kit costs it 1.0 s). On the old look the towns are as they were.
+// Session 1305 (Michael's C on #294): Aurenne's town church is the Church of the Weaver, its solid its ground, its great door straight in from its steps.
 import { boot, check } from './lib/game.mjs';
 import fs from 'fs'; import path from 'path'; import { fileURLToPath } from 'url';
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -30,7 +31,7 @@ for (const [nk, kind, pk] of ISLES) {
     WORLD.scene.updateMatrixWorld(true);
     const rc = new THREE.Raycaster(), org = new THREE.Vector3(), dir = new THREE.Vector3();
     const hit = (x, y, z, dx, dz, far) => { org.set(x, y, z); dir.set(dx, 0, dz).normalize(); rc.set(org, dir); rc.far = far; return rc.intersectObjects(meshes, false)[0] || null; };
-    const H = S.houses.filter(h => h.siteId === id && h.kit), out = [];
+    const H = S.houses.filter(h => h.siteId === id && h.kit && h.kit.kind === kind), out = [];
     for (const h of H) {
       const s = S.sol.find(q => q.hid === h.id); if (!s) { out.push({ id: h.id, nosol: true }); continue; }
       const k = h.kit, E = k.ext, nx = s.s, nz = s.c, ex = s.c, ez = -s.s, base = WORLD.worldH(s.cx, s.cz), hz = (s.rz - .15) - k.o.d / 2 - E[1];
@@ -46,7 +47,11 @@ for (const [nk, kind, pk] of ISLES) {
     const others = []; S.group.traverse(m => { if (m.isMesh && m.parent !== kitG && m.name !== 'kit houses far' && !m.isSkinnedMesh) others.push(m); });
     const down = new THREE.Raycaster(); let under = 0;
     for (const h of H) { const s = S.sol.find(q => q.hid === h.id); if (!s) continue; down.set(new THREE.Vector3(s.cx, WORLD.worldH(s.cx, s.cz) + 30, s.cz), new THREE.Vector3(0, -1, 0)); down.far = 29.5; if (down.intersectObjects(others, false).length) under++; }
-    return { n: H.length, kinds: [...new Set(H.map(h => h.kit.kind))], all: S.houses.filter(h => h.siteId === id).length, calls: kitG.children.length, tris: S.kitTris, out, under };
+    /* S1305 — Aurenne's church (the Church of the Weaver): from 1.5 m before the foot of its steps, 0.3 m aside of the door's middle, at
+       2.2 m, straight in: up the steps, through the porch's middle arch, to the great door's leaf about 8.5 m in */
+    const ch = S.houses.find(h => h.siteId === id && h.type === 'church' && h.kit), church = ch && (() => { const s = S.sol.find(q => q.hid === ch.id), fx = -Math.sin(ch.exitYaw), fz = -Math.cos(ch.exitYaw), q = hit(ch.doorX + fx * 1.5 - fz * .3, WORLD.worldH(ch.doorX, ch.doorZ) + 2.2, ch.doorZ + fz * 1.5 + fx * .3, -fx, -fz, 14);
+      return { kind: ch.kit.kind, tris: ch.kit.tris, w: +(2 * s.rx).toFixed(2), d: +(2 * s.rz).toFixed(2), door: q ? +q.distance.toFixed(2) : null, leaf: !!(q && leaves.has(q.object.material)) }; })();
+    return { church, n: H.length, kinds: [...new Set(H.map(h => h.kit.kind))], all: S.houses.filter(h => h.siteId === id).length, calls: kitG.children.length, tris: S.kitTris, out, under };
   }, [id, kind, pk]);
   check(`${id} has its kit houses, all of the island's kind`, !r.none && r.n > 15 && r.kinds.length === 1 && r.kinds[0] === kind, r.none ? r : { n: r.n, all: r.all, kinds: r.kinds });
   if (r.none) continue;
@@ -58,6 +63,9 @@ for (const [nk, kind, pk] of ISLES) {
   check(`every house's back and sides stand on its solid (${r.n} houses; each face ${-Math.max(...r.out.flatMap(h => h.faces))} to ${-Math.min(...r.out.flatMap(h => h.faces))} m inside)`, bad.length === 0, bad.slice(0, 5));
   const badD = r.out.filter(h => h.door == null || h.door < -.05 || h.door > .45 || !h.leaf);
   check(`the door you knock at is the lot's front, the drawn door straight ahead (the leaf ${Math.min(...r.out.map(h => h.door))} to ${Math.max(...r.out.map(h => h.door))} m behind the house's front)`, badD.length === 0, badD.slice(0, 5));
+  if (pk === 'au') { const B = await page.evaluate(() => { const B = PKIT.au.churchBox({ rank: 'town', w: 14, tower: 1 }); return { w: +(B.x1 - B.x0 + .3).toFixed(2), d: +(B.z1 - B.z0 + .3).toFixed(2) }; }), c = r.church;
+    check(`its church is the Church of the Weaver (${c && c.tris} triangles), its solid its ground (${c && c.w} by ${c && c.d} m), its great door ${c && c.door} m in from the steps' foot`,
+      !!c && c.kind === 'aurchurch' && Math.abs(c.w - B.w) < .02 && Math.abs(c.d - B.d) < .02 && c.door > 7.5 && c.door < 9.5 && c.leaf, { c, B }); }
   check(`the town's kit houses are ${r.calls} draws (${r.tris} triangles)`, r.calls > 6 && r.calls <= 45, { calls: r.calls, tris: r.tris });
   check('the old builder\'s houses are gone from the kit lots', r.under === 0, { under: r.under });
 
@@ -76,7 +84,7 @@ for (const [nk, kind, pk] of ISLES) {
     const kit = Math.min(run(), run(), run()); window.OG_KIT_TOWNS = false; const old = Math.min(run(), run(), run()); window.OG_KIT_TOWNS = true; run(); return { kit: Math.round(kit), old: Math.round(old) }; }, id);
   check(`building the town takes ${t.kit} ms with its kit houses, ${t.old} ms with the old houses (no more than 1.2 s over, as Dunmore's kit costs it)`, t.kit < t.old + 1200, t);
 
-  const shot = await page.evaluate(([id, kind]) => { const S = WORLD.settle.get(id), H = S.houses.filter(h => h.siteId === id && h.kit).sort((a, b) => b.kit.o.d - a.kit.o.d);
+  const shot = await page.evaluate(([id, kind]) => { const S = WORLD.settle.get(id), H = S.houses.filter(h => h.siteId === id && h.kit && h.kit.o).sort((a, b) => b.kit.o.d - a.kit.o.d);
     const h = H[Math.min(4, H.length - 1)], fx = -Math.sin(h.exitYaw), fz = -Math.cos(h.exitYaw), ex = Math.cos(h.exitYaw), ez = -Math.sin(h.exitYaw);
     forceTime(12); VM_SCENE.visible = false; px = h.doorX + fx * 5 + ex * 9; pz = h.doorZ + fz * 5 + ez * 9; py = WORLD.worldH(px, pz) + 1.65; const lx = h.doorX - px, lz = h.doorZ - pz; yaw = Math.atan2(-lx, -lz) + .3; pitch = .12; return h.id; }, [id, kind]);
   await g.frames(6);

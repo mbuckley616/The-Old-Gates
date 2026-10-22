@@ -1,6 +1,7 @@
 // The towns laid out around their church and keep (Session 1138; card F6, Michael's B on DECISION #433). Before a lot is laid, a
 // town's, port's or city's church takes a plot on the square (end-on, its tower 14 m from the heart, 8.4 m wide and 27.4 m long, or
-// 22.6 with two bays, with a yard of 2 m beside it and 3 m behind) and a keep its bawn's plot of 30 by 25 m at the head of the main
+// 22.6 with two bays, with a yard of 2 m beside it and 3 m behind; on the new look an Aurennais church's plot is its Church of the Weaver's
+// ground, 18.85 by 20.98 m and a yard of 1.5 m, astride a street through the heart, its steps 14 m out, Session 1305) and a keep its bawn's plot of 30 by 25 m at the head of the main
 // street; no lot, widened house or street stands in either. A Gatelands church on its plot is the kit's church with its west tower.
 // The new look only since 1.0 was frozen (18 Oct 2026): the old look's half and the two looks' comparison are gone.
 import fs from 'fs';
@@ -16,7 +17,7 @@ const survey = ids => { const out = {}, rc = (P, m) => { const c = Math.cos(P.ry
     const pa = A.map(q => (q.x * ax + q.z * az) / L), pb = B.map(q => (q.x * ax + q.z * az) / L); best = Math.max(best, Math.min(...pb) - Math.max(...pa), Math.min(...pa) - Math.max(...pb)); } return best; };
   for (const id of ids) { const site = allSites().find(t => t.id === id); if (!WORLD.settle.get(id)) genSettlement(site); const S = WORLD.settle.get(id);
     const houses = S.houses.filter(h => h.siteId === id), sol = S.sol.filter(s => s.hid).map(s => ({ hid: s.hid, x: s.cx, z: s.cz, w: 2 * s.rx, d: 2 * s.rz, ry: Math.atan2(s.s || 0, s.c == null ? 1 : s.c) }));
-    const plots = S.plots || [], own = P => houses.find(h => h.type === P.type && (Math.hypot(h.doorX - (P.lot.x + P.tx * (P.lot.d / 2 + .15)), h.doorZ - (P.lot.z + P.tz * (P.lot.d / 2 + .15))) < .02 || (h.kit && h.kit.kind === 'keep' && inside(P, h.doorX, h.doorZ, 0)))); /* S1143 — the kit's keep's door is its tower's, inside the bawn */
+    const plots = S.plots || [], own = P => houses.find(h => h.type === P.type && (Math.hypot(h.doorX - (P.lot.x + P.tx * (P.lot.d / 2 + .15)), h.doorZ - (P.lot.z + P.tz * (P.lot.d / 2 + .15))) < .02 || (h.kit && h.kit.kind === 'keep' && inside(P, h.doorX, h.doorZ, 0)) || (h.kit && h.kit.kind === 'aurchurch' && inside(P, h.doorX, h.doorZ, .3)))); /* S1143 — the kit's keep's door is its tower's, inside the bawn; S1305 — Aurenne's church's is on the street's line, off its lot's middle */
     const intr = [], streets = [];
     for (const P of plots) { const mine = own(P);
       for (const q of sol) { if (mine && q.hid === mine.id) continue; const gp = gap(P, q); if (gp < .45) intr.push([P.type, q.hid, +gp.toFixed(2)]); } /* 0.6 apart, less the solid's 0.15 */
@@ -31,11 +32,13 @@ const g = await boot({ look: 'new' }); const { page } = g; await g.intoWorld();
 const sites = await page.evaluate(pickSites);
 check(`three towns, two ports and a city of the Gatelands, a town of the Mark and a city of Aurenne (${sites.map(s => s.id).join(', ')})`, sites.length === 8, sites);
 const neu = await page.evaluate(survey, sites.map(s => s.id)), CL = await page.evaluate(() => [PKIT.gl.churchLen(2), PKIT.gl.churchLen(3)]);
+/* S1305 — an Aurennais church's plot is the Church of the Weaver's ground (PKIT.au.churchBox), astride a street through the heart */
+const AB = await page.evaluate(() => { const B = PKIT.au.churchBox({ rank: 'town', w: 14, tower: 1 }); return { w: +(B.x1 - B.x0).toFixed(2), d: +(B.z1 - B.z0).toFixed(2) }; });
 
 const all = sites.map(s => ({ ...s, n: neu[s.id] })), P = all.flatMap(s => s.n.plots.map(p => ({ ...p, site: s.id, kind: s.kind, nat: s.nat })));
 const ch = P.filter(p => p.type === 'church'), kp = P.filter(p => p.type === 'castle');
 check(`every town, port and city with a church has its church's plot (${ch.length} of ${all.filter(s => s.n.churches).length}): ${ch.map(p => `${p.site} ${p.lot.d} m, its middle ${p.heart} m from the heart`).join('; ')}`,
-  ch.length === all.filter(s => s.n.churches).length && ch.every(p => p.house && p.lot.w === 8.4 && CL.includes(p.lot.d) && p.front > 0), ch.filter(p => !p.house));
+  ch.length === all.filter(s => s.n.churches).length && ch.every(p => p.house && (p.nat === 'aurenne' ? p.lot.w === AB.w && p.lot.d === AB.d : p.lot.w === 8.4 && CL.includes(p.lot.d)) && p.front > 0), ch.filter(p => !p.house));
 // a keep comes with prosperity 80 (shopsFor), but its plot is kept whatever the prosperity, so that no lot (and no id) moves when it comes
 const kps = all.filter(s => s.kind === 'city' || s.n.keeps);
 check(`every city (and a town with a keep) has its bawn's plot of 30 by 25 m, its gate toward the heart, the keep at its back where it stands (${kp.map(p => `${p.site} ${p.heart} m out${p.house ? '' : ', not yet built'}`).join('; ')})`,
@@ -43,9 +46,12 @@ check(`every city (and a town with a keep) has its bawn's plot of 30 by 25 m, it
 const intr = all.flatMap(s => s.n.intr.map(x => [s.id, ...x])), streets = all.flatMap(s => s.n.streets.map(x => [s.id, ...x]));
 check(`no other building stands in a plot or its yard (${all.reduce((a, s) => a + s.n.n, 0)} buildings)`, intr.length === 0, intr.slice(0, 6));
 check('no street runs into a plot: a street that meets one stops at it', streets.length === 0, streets.slice(0, 6));
-const glc = all.filter(s => s.nat === 'gatelands').flatMap(s => s.n.plots.filter(p => p.type === 'church')), other = all.filter(s => s.nat !== 'gatelands').flatMap(s => s.n.plots.map(p => p.house).filter(Boolean));
+const glc = all.filter(s => s.nat === 'gatelands').flatMap(s => s.n.plots.filter(p => p.type === 'church')), other = all.filter(s => s.nat !== 'gatelands').flatMap(s => s.n.plots.filter(p => !(s.nat === 'aurenne' && p.type === 'church')).map(p => p.house).filter(Boolean));
 check(`on the new look each Gatelands church on its plot is the kit's church end-on (${glc.map(p => `${p.house.kit && p.house.kit.bays} bays`).join(', ')}); elsewhere the old builders`,
   glc.length >= 5 && glc.every(p => p.house.kit && p.house.kit.kind === 'church' && !p.house.kit.side && CL[p.house.kit.bays - 2] === p.house.d) && other.every(h => h && !h.kit), glc.map(p => p.house));
+const auc = all.filter(s => s.nat === 'aurenne').flatMap(s => s.n.plots.filter(p => p.type === 'church').map(p => ({ ...p, site: s.id })));
+check(`on the new look Aurenne's church on its plot is the Church of the Weaver, ${AB.w} by ${AB.d} m, its steps toward the heart (${auc.map(p => `${p.site} ${(p.front - p.d / 2).toFixed(1)} m out`).join(', ')})`,
+  auc.length >= 1 && auc.every(p => p.house && p.house.kit && p.house.kit.kind === 'aurchurch' && p.house.w === AB.w && p.house.d === AB.d), auc.map(p => p.house));
 // a picture of a city's keep plot and its church's, from high over the heart at noon (docs/prototypes/kit-plots-ingame.png)
 { const c = all.find(s => s.nat === 'gatelands' && s.kind === 'city'); const url = await page.evaluate(id => { forceTime(12); const site = allSites().find(t => t.id === id); if (!WORLD.settle.get(id)) genSettlement(site); const S = WORLD.settle.get(id), K = S.plots.find(p => p.type === 'castle'), C = S.plots.find(p => p.type === 'church');
     const mx = (K.x + C.x) / 2, mz = (K.z + C.z) / 2, cv = REN.domElement, sc = WORLD.scene, X = mx + (mz - site.z) * .5 + 60, Z = mz - (mx - site.x) * .5 + 60;

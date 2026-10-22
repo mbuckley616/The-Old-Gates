@@ -175,7 +175,15 @@
         return out.every(Q=>rectsApart(P,Q,1));};
       const along=(ux,uz)=>streetLines.find(L=>L.px===cx&&L.pz===cz&&Math.abs(L.dx*uz-L.dz*ux)<1e-6)||null; /* the street through the heart along u */
       const dirs=[[bx,bz],[-bx,-bz],[ax,az],[-ax,-az]];
-      if(types.includes('church'))outer:for(const n of [3,2]){const L=PKIT.gl.churchLen(n),W=8.4,YARD=4.5,t0=Math.sqrt(14*14-2.8*2.8);
+      // S1305 (card F6, Michael's C on #294) — on the new look an Aurennais town's church is the Church of the Weaver (PKIT.au.church, a
+      // town's: 14 m a side under the blue dome, its bell tower on the right): about 18.8 by 21 m with its porch, steps and tower, too broad
+      // for the nave's plot. It stands at the head of a street through the heart, astride it, the foot of its steps 14 m out (or 18, or 10)
+      // and its door on the street's line, so the street runs up to its steps; a yard of 1.5 m round its sides and back. Cross street first.
+      const AUC=window.OG_LOOK==='new'&&window.OG_KIT_TOWNS!==false&&typeof PKIT!=='undefined'&&nationOf(ni,nj).people==='aurennais';
+      if(types.includes('church')&&AUC){const B=PKIT.au.churchBox({rank:'town',w:14,tower:1}),D=+(B.z1-B.z0).toFixed(2),M=1.5;
+        outer:for(const t0 of [14,18,10])for(const [ux,uz] of dirs){const vx=-uz,vz=ux,P=frame(ux,uz,vx,vz,t0,t0+D+M,B.x0-M,B.x1+M);if(!fits(P,along(ux,uz)))continue; /* v is the church's own +x */
+          const lot=Object.assign(frame(ux,uz,vx,vz,t0,t0+D,B.x0,B.x1),{w:+(B.x1-B.x0).toFixed(2),d:D,row:0,street:null,k:-1,plot:'church',au:true});P.type='church';P.lot=lot;out.push(P);break outer;}}
+      else if(types.includes('church'))outer:for(const n of [3,2]){const L=PKIT.gl.churchLen(n),W=8.4,YARD=4.5,t0=Math.sqrt(14*14-2.8*2.8);
         for(const [ux,uz] of dirs)for(const sd of [1,-1]){const vx=-uz*sd,vz=ux*sd,P=frame(ux,uz,vx,vz,t0,t0+L+3,2.8,2.8+W+YARD);if(!fits(P,null))continue;
           const t=t0+L/2+.4,a=2.8+W+YARD-.58; /* S1232 — the row of seven: its niches' faces .58 in from the yard's edge, its middle .4 east of the nave's, facing the church */
           const lot=Object.assign(frame(ux,uz,vx,vz,t0,t0+L,2.8,2.8+W),{w:W,d:L,row:0,street:null,k:-1,plot:'church',bays:n,gods:{x:cx+ux*t+vx*a,z:cz+uz*t+vz*a,ry:Math.atan2(-vx,-vz)}});P.type='church';P.lot=lot;out.push(P);break outer;}}
@@ -348,6 +356,8 @@
       // and carved gables, no chimney (the long hearth smokes through the louver), as large as fits up to the prototype's 10 by 18 m and no
       // smaller than 7 by 10; inside always PKIT.mk.alehall at 10 by 18 (buildKitAlehall), its six places on the wall benches let by the
       // keeper's bench lines (lot.kit.alehall, which innBench reads). An inn lot with no room for the hall keeps the old inn and its rooms.
+      // S1305 — an Aurennais town's church on its plot is the Church of the Weaver (the plot was laid for it, so it fits by construction)
+      if(AU&&town)use.forEach((lot,i)=>{if(shopTypes[i]==='church'&&lot.plot==='church'&&lot.au)lot.kit={kind:'aurchurch',w0:lot.w,d0:lot.d};});
       if(MK||AU)use.forEach((lot,i)=>{const t=shopTypes[i]||null,inn=MK&&t==='inn';if(t&&!KIT_SHOPS.has(t)&&!inn)return;if(lot.k==='sw'||(site.kind==='port'&&site.quayStart&&Math.hypot(lot.x-site.quayStart.x,lot.z-site.quayStart.z)<34))return;
         const o1=(MK?PKIT.mk:PKIT.au).lot(site.id,lot.n).o,o0=inn?Object.assign({},o1,{roof:'shingle',porch:true,chimney:false,carve:true,w:10,d:18}):o1,w0=lot.w,d0=lot.d,x0=lot.x,z0=lot.z,W0=inn?7:MK?5.6:5.4,D0=inn?10:MK?6.5:5;
         // what stands round the house, by side: [back, front, the -x side, the +x side]
@@ -475,12 +485,22 @@
       if(o.stair&&!tile)part(.9,H.top*.6,o.d-.6,-(o.w/2+.5),0,.3); /* the outside stair, its flight as a block of 0.6 of the wall */
       if(tile){const rw=o.w/2+.45,rd=o.d/2+.45,r=rw>=rd?kitRoof(rw,rd,hgt,hgt+Math.tan(22*Math.PI/180)*rd):kitRoof(rd,rw,hgt,hgt+Math.tan(22*Math.PI/180)*rw);if(rw<rd)r.rotateY(Math.PI/2);kitLo.push([r,mx,new THREE.Color(.58,.32,.22)]);}
       lot._kitDoor=+(u+H.doorX).toFixed(3);lot._wallH=H.top;lot._storeys=o.two?2:1;lot.two=!!o.two;k.tris=H.tris;k.calls=H.draws;k.colour=o.kind;k.door=lot._kitDoor;}
+    // S1305 — the Church of the Weaver (PKIT.au.church, a town's, its own stream keyed by the town), the foot of its steps on the lot's front
+    // and its door on the street's line; its far copy a box for the podium and the cube, one for the porch, a block for the drum and
+    // the dome, one for the tower and one for its little dome; no smoke
+    function kitAurChurch(lot){const o={rank:'town',w:14,tower:1},B=PKIT.au.churchBox(o),C=PKIT.au.church(o,PKIT.stream(`${site.id}:church`)),y=worldH(lot.x,lot.z)-.06,c=Math.cos(lot.ry),s_=Math.sin(lot.ry);
+      const u=-(B.x0+B.x1)/2,v=-(B.z0+B.z1)/2,X=lot.x+u*c+v*s_,Z=lot.z-u*s_+v*c,I=C.inner;C.group.position.set(X-cx,y,Z-cz);C.group.rotation.y=lot.ry;C.group.traverse(m=>{if(m.isMesh){m.castShadow=m.name!=='dark';m.receiveShadow=true;}});kitG.add(C.group);
+      const mx=new THREE.Matrix4().makeRotationY(lot.ry).setPosition(X,y,Z),lime=new THREE.Color(.9,.88,.82),blue=new THREE.Color(.25,.42,.62),part=(bw,bh,bd,bx,y0,bz,col)=>{const b=new THREE.BoxGeometry(bw,bh,bd).toNonIndexed();b.translate(bx,y0+bh/2,bz);kitLo.push([b,mx,col||lime]);};
+      part(I.W+.6,I.top+1.2,I.D+.6,0,0,0);part(I.W+.6,I.pl+4.2+(I.W+.4)/(I.W>16?7:5)/2+.9+.85,4.4,0,0,I.D/2+2.2);part(2*I.R,I.y0+I.dh+I.R*1.12-I.top,2*I.R,0,I.top,0,blue); /* the cube, the porch, the drum and the dome */
+      {const s=3.6,tx=I.W/2+s/2+.4,tz=I.D/2+4.4-s/2-.2,ty=B.towerTop-1.1-1.0-s*.44*1.15;part(s,ty,s,tx,0,tz);part(s*.88,B.towerTop-1.1-ty,s*.88,tx,ty,tz,blue);}
+      lot._kitDoor=+u.toFixed(3);lot._wallH=I.top;lot._storeys=1;lot.two=false;lot.kit.tris=C.tris;lot.kit.calls=C.draws;lot.kit.colour='lime';lot.kit.door=lot._kitDoor;lot.kit.r=Math.hypot(lot.w,lot.d)/2;}
     function kitHouse(lot,type){
       if(!kitG){kitG=new THREE.Group();kitG.name='kit houses';kitG.position.set(cx,0,cz);kitG.userData.noBake=true;group.add(kitG);}
       if(lot.kit.kind==='church'){kitChurch(lot);return;}
       if(lot.kit.kind==='keep'){kitKeep(lot);return;}
       if(lot.kit.kind==='markhall'){kitMarkHall(lot,type);return;}
       if(lot.kit.kind==='aurhouse'){kitAurHouse(lot);return;}
+      if(lot.kit.kind==='aurchurch'){kitAurChurch(lot);return;}
       const L=lot.kit.kind==='guildhall'?kitHall(lot):PKIT.gl.lot(site.id,lot.n,{kind:lot.kit.kind,bays:lot.kit.bays,d:lot.d,trade:KIT_TRADE[type]});const b=PKIT.gl.building(L.plan),U=b.userData;
       b.position.set(lot.x-cx,worldH(lot.x,lot.z)-.06,lot.z-cz);b.rotation.y=lot.ry;b.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});kitG.add(b);
       {const sz=U.size,th=L.plan.roof.kind==='thatch',wc=PKIT.gl.mats()['w:'+(L.colour==='stone'?'lime':L.colour)],box=new THREE.BoxGeometry(sz.w,sz.eave,sz.d).toNonIndexed(),mx=new THREE.Matrix4(); /* S1073 — its far copy: the walls a box and the roof a prism, in the wall's and the roof's colours */
