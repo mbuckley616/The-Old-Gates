@@ -1,0 +1,29 @@
+// The budgets, the rest (Session 1297, QA; `budget` holds Dunmore's four views and says what is counted and how). Portclare's square
+// at noon, the build sheet's fifth view and the critic's worst spot, at each quality level against its ceilings; then two spots for
+// the ledger only, at Middle, since the ceilings are the world's: Dunmore's inn from its door at 20h, and a medium gate (ruins, seed
+// 11) from its entrance.
+import { boot, check } from './lib/game.mjs';
+import { enterDungeon } from './lib/dungeonshot.mjs';
+import { budgetKit, budgetEnd, LEVELS } from './budgetkit.mjs';
+const g = await boot({ look: 'new' }); const { page } = g;
+await g.intoWorld();
+const { measure, stand, setLevel } = budgetKit(g);
+const rows = [];
+check('Portclare stands on the new look', await g.settle('portclare'));
+const P = await page.evaluate(() => { const S = WORLD.settle.get('portclare'); return { x: S.site.x, z: S.site.z }; });
+await stand(P.x, P.z + 4, 0, 12);
+for (const [name, n] of LEVELS) { await setLevel(n); rows.push(await measure('Portclare square, noon', name)); }
+await setLevel(1);
+
+await g.settle('dunmore');
+const inn = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'), h = S.houses.find(h => h.type === 'inn'); if (!h) return null; forceTime(20); px = h.exitX; pz = h.exitZ; goToInterior(h); return h.name; });
+for (let k = 0; k < 120 && inn && !(await page.evaluate(() => isInterior())); k++) await page.waitForTimeout(250);
+const inside = !!inn && await page.evaluate(() => isInterior());
+if (inside) { await g.frames(4); rows.push(await measure(`${inn} (Dunmore's inn), the hall from the door, 20h`, 'Middle (indoors)'));
+  await page.evaluate(() => exitInterior()); await page.waitForFunction(() => currentHouse == null, null, { timeout: 60000 }); await g.frames(2); await g.hide(); }
+const dg = await enterDungeon(page, { theme: 'ruins', seed: 11, size: 'medium' });
+await g.frames(4); rows.push(await measure('a medium gate (ruins, seed 11), from its entrance', 'Middle (indoors)'));
+check('the inn and the gate were counted, and drew', inside && rows.length === 5 && rows.slice(3).every(r => r.calls > 0), { inn, inside, gate: dg, calls: rows.slice(3).map(r => r.calls) });
+check('no page errors', g.errs.length === 0, g.errs);
+await budgetEnd(g, rows, 1);
+await g.close();

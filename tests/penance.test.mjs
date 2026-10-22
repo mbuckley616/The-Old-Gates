@@ -17,7 +17,7 @@ const state = () => page.evaluate(() => { const c = (worldState.crime || {}).dun
 // the crime: a shop door picked at 23h with someone three units off in the street (as `crime2` stages it)
 const crime = await page.evaluate(() => { forceTime(23); worldState.crime = {}; worldState.church = { notes: [] }; const S = WORLD.settle.get('dunmore');
   const F = WORLD.fstate(); F.crown.done = 6; F.crown.rank = 2; F.crown.active = null;
-  /* S1308 — a shop whose street is clear for three units out of its door: on the new look the first, Lorcan's Forge, has its yard
+  /* S1316 — a shop whose street is clear for three units out of its door: on the new look the first, Lorcan's Forge, has its yard
      there, so the witness stood in a solid and the line from the door was blocked (no crime, and every check after it red) */
   const clear = (x) => { const dx = x.exitX - x.doorX, dz = x.exitZ - x.doorZ, L = Math.hypot(dx, dz) || 1; for (let t = .8; t <= 3.01; t += .1) if (WORLD.camSolid(x.doorX + dx / L * t, x.doorZ + dz / L * t)) return false; return true; };
   const shops = S.houses.filter(x => /weapon|armor|potion|misc/.test(x.type) && x.keeper); const h = shops.find(clear) || shops[0]; const w = S.npcs.find(n => n.sched && n.sched.type !== 'guard') || S.npcs[0];

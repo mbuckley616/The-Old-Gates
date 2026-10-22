@@ -18,7 +18,7 @@ await page.evaluate(() => { window._drive = (step, max) => {
   window._spawn = (kind, x, z) => { const e = unlockFoe(buildZoneEnemy(WORLD.scene, [], x, z, kind, null)); ZONES.world.enemies.push(e); return e; };
   window._drop = (e) => { e.dead = true; WORLD.scene.remove(e.mesh); const L = ZONES.world.enemies; L.splice(L.indexOf(e), 1); };
   // a home whose 3 m wander circle (and a metre past it) is clear of solids, 9 m from the others: the fixed spots were picked
-  // on the old look's Dunmore, and on the new look's one of them (+49, +40) stands in a house, so its foe never moved (S1308)
+  // on the old look's Dunmore, and on the new look's one of them (+49, +40) stands in a house, so its foe never moved (S1316)
   window._open = (t, used) => { for (let j = 0; j < 12; j++) for (let i = 0; i < 12; i++) { const x = t.x + 30 + i * 6, z = t.z + 30 + j * 6;
       if (used.some(u => Math.hypot(u[0] - x, u[1] - z) < 9)) continue;
       let ok = true; for (let a = 0; a < 24 && ok; a++) for (const r of [0, 2, 3, 4]) if (currentZoneSolid(x + Math.sin(a / 24 * 6.283) * r, z + Math.cos(a / 24 * 6.283) * r)) { ok = false; break; }

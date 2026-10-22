@@ -109,7 +109,9 @@ export function aurenneHouse(o, r) {
   put(box(w + .16, pl, d + .16), 'plinth', 0, pl / 2, 0);
   const yW = pl;
   put(wallGeo(w, H, front), wallK, 0, yW, d / 2 - T / 2); put(wallGeo(w, H, back), wallK, 0, yW, -d / 2 + T / 2, Math.PI);
-  put(wallGeo(d - 2 * T + .02, H, side), wallK, w / 2 - T / 2, yW, 0, Math.PI / 2); put(wallGeo(d - 2 * T + .02, H, side), wallK, -w / 2 + T / 2, yW, 0, -Math.PI / 2);
+  // o.stairWin (Session 1307, the tavern's rooms): the west wall's ground window raised to { y, h }, a stair light over a flight up that wall
+  const sideW = o.stairWin ? side.map(h => h.up ? h : { ...h, ...o.stairWin }) : side;
+  put(wallGeo(d - 2 * T + .02, H, side), wallK, w / 2 - T / 2, yW, 0, Math.PI / 2); put(wallGeo(d - 2 * T + .02, H, sideW), wallK, -w / 2 + T / 2, yW, 0, -Math.PI / 2);
   if (!o.interior) put(box(w - 2 * T, H - .3, d - 2 * T), 'dark', 0, yW + (H - .3) / 2, 0);
   // the door: five cedar boards in its colour set back in the reveal under a half-round head, iron studs, a stone step, the tile frame round it
   for (const h of front.filter(h => h.door)) { const dz = d / 2 - T * .7, nb = 5, sh = h.h - h.w / 2;
@@ -131,7 +133,7 @@ export function aurenneHouse(o, r) {
       for (const sx of [-1, 1]) put(box(.08, .32, .3), 'cedar', hx + sx * (bw / 2 - .08), by - bh / 2 - .22, z + s * .12);
       continue; }
     for (let i = 0; i < 3; i++) put(new THREE.CylinderGeometry(.018, .018, h.h - h.w / 2, 5), 'iron', hx - h.w / 3 + i * h.w / 3, yW + h.y + (h.h - h.w / 2) / 2, z - s * .1); }
-  for (const sx of [-1, 1]) for (const h of side) put(box(h.w + .2, .08, .2), 'stone', sx * (w / 2 + .05), yW + h.y - .04, 0, sx * Math.PI / 2);
+  for (const sx of [-1, 1]) for (const h of sx < 0 ? sideW : side) put(box(h.w + .2, .08, .2), 'stone', sx * (w / 2 + .05), yW + h.y - .04, 0, sx * Math.PI / 2);
   const top = yW + H; let roofTop = top, depthOut = d / 2 + .3;
   if (o.kind === 'tile') {
     // Roman: a stone cornice, a hipped roof at 22° in pantile, ridge tiles on the hips and the ridge, rafter ends under the eaves
