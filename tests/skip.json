@@ -16,6 +16,7 @@
   "placesave": "red: across prosperity swings of 13 and 26 in four towns, no house id moves to another lot",
   "renewal": "too slow: killed at the 900 s a suite is given (900 s with the retry)",
   "scaleratio": "red: dunmore (gatelands): every house door is 1.1 to 1.25 of a 1.8 m person (55 doors measured)",
+  "budget": "red by design (Session 1297, docs/design/streaming-and-quality-build.md): Low over 700 draw calls at three of Dunmore's four views (783, 840, 734; the QUALITY table's Low row is not built yet), Middle over 1,000 on Dunmore's street at midnight (1,011). Its ledger is docs/qa/budget.md; it leaves this list when the counts come down",
   "signs": "red: dunmore: every shop, inn, church and guild hall has one board, reading its own name",
   "skirtlegs": "red: page.evaluate: TypeError: mesh.boneTransform is not a function",
   "theft": "red: a seen theft is fined 50 and the goods’ value (coins and the thing taken) (failed once; the retry was skipped for the shard's time)",
