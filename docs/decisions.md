@@ -15,6 +15,7 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+## Answered
 ### The Mark's alehall in the game: the innkeeper's lines still say "upstairs" (from the look builder, 2026-10-22, #588)
 **The question.** Michael's A on #321 makes the Mark's inn the alehall: one hall of long tables, guests sleeping on the furred wall benches ("renting a place is renting a bench"). The room has been in the kit since Session 1159 (`PKIT.mk.alehall`) but is not hung, because the Markish innkeeper's room lines (`INN_ROOM_LINES.markman`, `js/86-world-crime.js`) send you upstairs to a bed behind a bolted door, and the places would be named like rooms.
 
@@ -25,7 +26,7 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 
 Pictures: [down the hall](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-alehall-hall.jpg) · [the counter](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-alehall-counter.jpg)
 
-## Answered
+Michael: **Rewrite the keeper's lines first, then hang it** (A). (2026-10-22, on the control room)
 ### Seasons in the land: green all year, OG-139 as drawn, or its trees with snow by the weather? (from the concept artist, 21 Oct 2026, #579)
 Backlog L12 (OG-139, card F3's tree and grass kit). The calendar has four seasons and the weather keeps them, but the land looks the same all year. OG-139 draws red and gold autumn woods and bare trees under snow; OG-140 calls the Gatelands "green all year". The prototype is one Gatelands lane through the year (`docs/prototypes/levelup/seasons.html`). How much should the seasons change the Gatelands?
 - **A.** Green all year (OG-140): the seasons are a tint, crowns thin in winter but never go bare, snow never lies.
