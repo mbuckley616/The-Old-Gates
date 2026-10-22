@@ -1656,7 +1656,7 @@ function buildEyepatch(P, G, heads, byName, meshes) {
   const A = man ? .025 : .023, B = man ? .019 : .0175, cx = c.x + sx * .002, cy = c.y + .003;
   // the face in front of the eye: every triangle of the body near it, and the frontmost hit of a ray straight in
   const I = PACK.G['body'], tris = []; for (let t = 0; t < I.length; t += 3) { const a = I[t], b = I[t + 1], d = I[t + 2]; if ([a, b, d].every(i => Math.abs(P[i * 3] - cx) < A + .02 && Math.abs(P[i * 3 + 1] - cy) < B + .02 && P[i * 3 + 2] > c.z - .04)) tris.push(a, b, d); }
-  // (Session 1299) the triangles binned by their bounds in 2 mm cells, so a ray reads only those that can hold it: the same hits, and
+  // (Session 1303) the triangles binned by their bounds in 2 mm cells, so a ray reads only those that can hold it: the same hits, and
   // the same highest of them, as reading them all (up to 290 ms an eyepatch)
   const BC = .002, PAD = 1e-5; let bx0 = 9, by0 = 9, bx1 = -9, by1 = -9; for (const i of tris) { bx0 = Math.min(bx0, P[i * 3]); bx1 = Math.max(bx1, P[i * 3]); by0 = Math.min(by0, P[i * 3 + 1]); by1 = Math.max(by1, P[i * 3 + 1]); }
   const bnx = Math.max(1, Math.ceil((bx1 - bx0 + 2 * PAD) / BC)), bny = Math.max(1, Math.ceil((by1 - by0 + 2 * PAD) / BC)), bins = Array.from({ length: bnx * bny }, () => []);
@@ -1672,7 +1672,7 @@ function buildEyepatch(P, G, heads, byName, meshes) {
   const h = .001, M = .008, nx = Math.round(2 * (A + M) / h) + 1, ny = Math.round(2 * (B + M) / h) + 1, x0 = cx - A - M, y0 = cy - B - M, F = new Float32Array(nx * ny);
   for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) F[j * nx + i] = rayZ(x0 + i * h, y0 + j * h);
   for (let pass = 0; pass < 6; pass++) for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) if (F[j * nx + i] < -1) { let s = 0, n = 0; for (const [di, dj] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const ii = i + di, jj = j + dj; if (ii >= 0 && jj >= 0 && ii < nx && jj < ny && F[jj * nx + ii] > -1) { s += F[jj * nx + ii]; n++; } } if (n) F[j * nx + i] = s / n; }
-  // (Session 1299: the disc read as its rows, each row's highest over its half-width found once per half-width; the same highest)
+  // (Session 1303: the disc read as its rows, each row's highest over its half-width found once per half-width; the same highest)
   const Hd = new Float32Array(nx * ny), R = 7, half = []; for (let dj = -R; dj <= R; dj++) { let w = 0; while ((w + 1) * (w + 1) + dj * dj <= R * R) w++; half.push(w); }
   const rowMax = new Map(); for (const w of new Set(half)) { const o = new Float32Array(nx * ny); for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) { let m = -9; for (let ii = Math.max(0, i - w); ii <= Math.min(nx - 1, i + w); ii++) m = Math.max(m, F[j * nx + ii]); o[j * nx + i] = m; } rowMax.set(w, o); }
   for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) { let m = -9; for (let dj = -R; dj <= R; dj++) { const jj = j + dj; if (jj >= 0 && jj < ny) m = Math.max(m, rowMax.get(half[dj + R])[jj * nx + i]); } Hd[j * nx + i] = m; }
@@ -1703,7 +1703,7 @@ function buildEyepatch(P, G, heads, byName, meshes) {
   // keep only what lies within 6 mm of the plane, as radius and angle round O in it
   const NP = 144, RHO = .0045, CR = man ? .0016 : .0014, rad = new Float32Array(NP).fill(-1), TAU = Math.PI * 2, near = [];
   for (const p of cloud) { const d = p.clone().sub(O), off = d.dot(n); if (Math.abs(off) > .006) continue; const a = d.dot(u), b = d.dot(w); near.push([Math.atan2(b, a), Math.hypot(a, b), off, p]); }
-  // (Session 1299) each point is offered only to the angles it can reach, within asin(RHO / r) of its own and a hundredth over: the
+  // (Session 1303) each point is offered only to the angles it can reach, within asin(RHO / r) of its own and a hundredth over: the
   // same test then decides, so the same points count
   const cand = Array.from({ length: NP }, () => []); for (const q of near) { const [ang, r] = q, wd = (r > RHO ? Math.asin(RHO / r) : Math.PI / 2) + .01, k0 = Math.floor((ang - wd) / TAU * NP), k1 = Math.ceil((ang + wd) / TAU * NP);
     for (let k = Math.max(k0, k1 - NP + 1); k <= k1; k++) cand[((k % NP) + NP) % NP].push(q); }
@@ -1714,7 +1714,7 @@ function buildEyepatch(P, G, heads, byName, meshes) {
   const cg = turnOut(tubeGeom(line, line.map(() => CR), 6)), cord = new THREE.MeshStandardMaterial({ color: sRGB(...D.eyepatch).multiplyScalar(1.15), roughness: .7 });
   // what the cord passes through (the skin, the patch, the scalp and the brows; the hair's cards apart), how far over the far
   // eye's middle it runs on the forehead
-  // (Session 1299) the segments hashed by their bounds grown by the cord's radius, in 5 mm cells: a point within the radius of one is
+  // (Session 1303) the segments hashed by their bounds grown by the cord's radius, in 5 mm cells: a point within the radius of one is
   // in its cells, so reading those alone finds the same points through
   const SC = .005, sgrid = new Map(), skey = (i, j, k) => (i * 4096 + j) * 4096 + k, sc = v => Math.floor(v / SC);
   for (let k = 0; k < NP; k++) { const a = line[k], b = line[k + 1], g = CR + .0005; for (let i = sc(Math.min(a.x, b.x) - g); i <= sc(Math.max(a.x, b.x) + g); i++) for (let j = sc(Math.min(a.y, b.y) - g); j <= sc(Math.max(a.y, b.y) + g); j++) for (let l = sc(Math.min(a.z, b.z) - g); l <= sc(Math.max(a.z, b.z) + g); l++) { const key = skey(i, j, l); if (!sgrid.has(key)) sgrid.set(key, []); sgrid.get(key).push(k); } }
@@ -2129,6 +2129,11 @@ function buildHelm(P, G, heads, byName, hairPts = []) {
   byName['head'].add(hm);
   return { mesh: hm, stats: { gap: +gap.toFixed(4), face, facePts: nf, hairOut, hairPts: hairPts.length, tris: (idx.length + edge.index.count) / 3, width: +(ext.max.x - ext.min.x).toFixed(3), depth: +(ext.max.z - ext.min.z).toFixed(3) } };
 }
+// a painted face made once for its colours and kept (Session 1304): a canvas of 512 painted pixel by pixel was ~120 ms a shield,
+// made again for every bearer and never let go. The same colours paint the same face (its stream is seeded), so a kept one is shared;
+// the 32 last made are kept (the builder page's pickers make a colour at a time)
+const KEPT_TEX = new Map(), keptTex = (name, fn, ...a) => { const k = name + JSON.stringify(a); let t = KEPT_TEX.get(k);
+  if (!t) { t = fn(...a); KEPT_TEX.set(k, t); if (KEPT_TEX.size > 32) KEPT_TEX.delete(KEPT_TEX.keys().next().value); } return t; };
 function shieldTex(col, paint, wood, metal = false) {
   const c = document.createElement('canvas'); c.width = c.height = 512; const x = c.getContext('2d'), rnd = seeded('shield'), css = (k, v) => `rgb(${k.map(t => Math.round(Math.max(0, Math.min(1, t * v)) * 255)).join(',')})`;
   for (let b = 0; b < 7; b++) { const x0 = b * 512 / 7, v = .9 + rnd() * .16; x.fillStyle = css(wood, v); x.fillRect(x0, 0, 512 / 7 + 1, 512);
@@ -2160,7 +2165,7 @@ function wornClouds(body, meshes, root, hair = false) {
   return clouds;
 }
 function rigidInto(m, o) { const a = m.geometry.attributes.position, v = new THREE.Vector3(); for (let i = 0; i < a.count; i++) { v.fromBufferAttribute(a, i).applyMatrix4(m.matrixWorld); o[i * 3] = v.x; o[i * 3 + 1] = v.y; o[i * 3 + 2] = v.z; } }
-// the clouds again after one bone has turned (Session 1299): the arm lifted clear of a skirt, a shield or a basket 0.03 rad at a time
+// the clouds again after one bone has turned (Session 1303): the arm lifted clear of a skirt, a shield or a basket 0.03 rad at a time
 // posed every worn mesh again at each step (150-310 ms for a basket). Only the points that bone's limb carries move: a skinned point
 // with a weight on it or a bone below it, a rigid mesh hung under it. Those are posed again into the same arrays, each as wornClouds
 // poses it, so the clouds are the same to the digit; the returned function does it after each turn
@@ -2187,8 +2192,8 @@ function shieldParts(D, gripZ = -.011) {
   const geo = (p, u, i) => { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(p, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(u, 2)); g.setIndex(i); g.computeVertexNormals(); return g; };
   const woodC = [.46, .33, .2], iron = sRGB(...(D.helm || [.42, .43, .45]));
   // a bronze face (OG-044's Compact guards): sheet metal beaten over the boards, so no seam shows and it takes the light as the helm does
-  const face = new THREE.Mesh(geo(pos, uv, idx), new THREE.MeshStandardMaterial({ map: shieldTex(D.shield, D.shieldPaint, woodC, !!D.shieldMetal), roughness: D.shieldMetal ? .36 : .78, metalness: D.shieldMetal ? .55 : 0 }));
-  const backM = new THREE.Mesh(geo(pos2, uv2, idx2), new THREE.MeshStandardMaterial({ map: shieldTex(null, null, woodC.map(v => v * .8)), roughness: .9 }));
+  const face = new THREE.Mesh(geo(pos, uv, idx), new THREE.MeshStandardMaterial({ map: keptTex('shield', shieldTex, D.shield, D.shieldPaint, woodC, !!D.shieldMetal), roughness: D.shieldMetal ? .36 : .78, metalness: D.shieldMetal ? .55 : 0 }));
+  const backM = new THREE.Mesh(geo(pos2, uv2, idx2), new THREE.MeshStandardMaterial({ map: keptTex('shield', shieldTex, null, null, woodC.map(v => v * .8), false), roughness: .9 }));
   // the boss: a flange nailed over the hole, and a dome 5.5 cm proud of the face
   const prof = [new THREE.Vector2(.092, zF(.092) + .0005), new THREE.Vector2(.09, zF(.09) + .003), new THREE.Vector2(.064, zF(.064) + .004)];
   for (let k = 0; k <= 12; k++) { const p = k / 12 * Math.PI / 2; prof.push(new THREE.Vector2(.058 * Math.cos(p) + .0001, zF(.06) + .012 + .045 * Math.sin(p))); }
@@ -2330,8 +2335,8 @@ function kiteParts(D, gripZ = -.03, H = KITE, flat = false) {
     pos.push(u, v, H.z(u, v) + T); uv.push(u0(u), v0(v)); pos2.push(u, v, H.z(u, v)); }
   for (let j = 0; j < NR - 1; j++) for (let t = 0; t < NT; t++) { const a = j * (NT + 1) + t, b = a + NT + 1; idx.push(a, b, a + 1, a + 1, b, b + 1); idx2.push(a, a + 1, b, a + 1, b + 1, b); }
   const geo = (p, i) => { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(p, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(i); g.computeVertexNormals(); return g; };
-  const woodC = [.46, .33, .2], face = new THREE.Mesh(geo(pos, idx), hop ? new THREE.MeshStandardMaterial({ map: hoplonTex(D.shield, D.shieldPaint, woodC, !!D.shieldMetal), roughness: D.shieldMetal ? .36 : .7, metalness: D.shieldMetal ? .55 : 0 }) : new THREE.MeshStandardMaterial({ map: kiteTex(D.shield, D.shieldPaint, woodC), roughness: .78 }));
-  const backM = new THREE.Mesh(geo(pos2, idx2), new THREE.MeshStandardMaterial({ map: kiteTex(null, null, woodC.map(v => v * .8)), roughness: .9 }));
+  const woodC = [.46, .33, .2], face = new THREE.Mesh(geo(pos, idx), hop ? new THREE.MeshStandardMaterial({ map: keptTex('hoplon', hoplonTex, D.shield, D.shieldPaint, woodC, !!D.shieldMetal), roughness: D.shieldMetal ? .36 : .7, metalness: D.shieldMetal ? .55 : 0 }) : new THREE.MeshStandardMaterial({ map: keptTex('kite', kiteTex, D.shield, D.shieldPaint, woodC), roughness: .78 }));
+  const backM = new THREE.Mesh(geo(pos2, idx2), new THREE.MeshStandardMaterial({ map: keptTex('kite', kiteTex, null, null, woodC.map(v => v * .8)), roughness: .9 }));
   // the rim: rawhide over the edge, following the bend (a hoplon's is its bronze lip, wider and rolled)
   const line = []; for (let k = 0; k <= 96; k++) { const a = k / 96 * Math.PI * 2, r = kiteR(a, H.line), u = r * Math.cos(a), v = r * Math.sin(a); line.push(new THREE.Vector3(u, v, H.z(u, v) + T / 2)); }
   const rim = new THREE.Mesh(turnOut(tubeGeom(line, line.map(() => hop ? .013 : .0075), hop ? 8 : 6)), hop ? new THREE.MeshStandardMaterial({ color: sRGB(...(D.shieldRim || [.62, .45, .22])), metalness: .55, roughness: .38 }) : new THREE.MeshStandardMaterial({ color: sRGB(...(D.shieldRim || [.3, .21, .13])), roughness: .7 })); rim.name = 'shieldRim'; rim.userData.axis = { line, sides: hop ? 8 : 6 };
