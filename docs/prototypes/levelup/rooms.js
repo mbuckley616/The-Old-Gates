@@ -470,13 +470,18 @@ export function markAlehall(o = {}, r = stream('alehall')) {
 //   chairs under a pergola of vines. The sea is the page's (rooms-view.js), 3 m below the terrace.
 //   -> { group, shell, room, tris, draws, inner, floor, terrace: { z0, z1, y, parapet }, loggia: { z0, z1 }, arches: [x...], door, counter,
 //        tables, seats, path, path2, boxes, lamps, braziers, w, d }
+//   o.rooms (Session 1296; the keeper lets "a room ... up the stairs", INN_ROOM_LINES.aurennais): the same house two storeys high (the kit's
+//   o.two, 5.6 m to the eaves, four arched windows over the arcade), a stair of 16 risers up the west wall from beside the door to a
+//   landing in the back corner, the left table moved in off it; upstairs a passage along the back wall from the landing, three guest rooms
+//   off it behind plaster partitions, each with a cedar bed under an indigo cover, a chest at its foot and a basin on a stand under its
+//   front window, the first bed in the nook over the stair's foot. Adds floors, stair, well, passage, rooms [{ x0, x1, door }], beds, paths.
 export function aurenneTavern(o = {}, r = stream('tavern')) {
-  const w = 9.6, d = 8.0, sh = aurenneHouse({ kind: 'tile', w, d, two: false, arcade: true, wall: 0, door: 2, pointed: false, green: false, interior: true }, stream('tavern-shell'));
+  const R2 = !!o.rooms, w = 9.6, d = 8.0, sh = aurenneHouse({ kind: 'tile', w, d, two: R2, arcade: true, wall: 0, door: 2, pointed: false, green: false, interior: true }, stream('tavern-shell'));
   const M = homeMats(), B = new Map(), boxes = [];
   const put = (geo, key, x = 0, y = 0, z = 0, ry = 0, uv = .6) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const k of Object.keys(g.attributes)) if (!['position', 'normal'].includes(k)) g.deleteAttribute(k);
     g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, ry, 0)), new THREE.Vector3(1, 1, 1))); worldUV(g, uv); if (!B.has(key)) B.set(key, []); B.get(key).push(g); return g; };
-  const UVK = { zellige: 1.47, tile: 1.1 }, bx = (key, x0, x1, y0, y1, z0, z1, tag) => { put(new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0), key, (x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2, 0, UVK[key] ?? .6); if (tag) boxes.push({ tag, x0, x1, y0, y1, z0, z1 }); };
-  const X = w / 2 - sh.T, Z = d / 2 - sh.T, F0 = sh.yW + .06, TOP = sh.top, ad = 1.7, az = d / 2 + ad, FT = sh.yW + .09 /* the loggia's slab, as the shell lays it */;
+  const UVK = { zellige: 1.47, tile: 1.1 }, bx = (key, x0, x1, y0, y1, z0, z1, tag, fl) => { put(new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0), key, (x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2, 0, UVK[key] ?? .6); if (tag) boxes.push(fl === undefined ? { tag, x0, x1, y0, y1, z0, z1 } : { tag, x0, x1, y0, y1, z0, z1, fl }); };
+  const X = w / 2 - sh.T, Z = d / 2 - sh.T, F0 = sh.yW + .06, TOP = sh.top, ad = 1.7, az = d / 2 + ad, FT = sh.yW + .09 /* the loggia's slab, as the shell lays it */, F1 = R2 ? sh.yW + 3.0 : TOP /* the upper floor's top, o.rooms */;
   const n = Math.max(3, Math.round(w / 2.2)), span = w / n, arches = Array.from({ length: n }, (_, i) => -w / 2 + (i + .5) * span);
   // inside: red tiles, the dado to 1.0 m, cedar beams across under the roof
   bx('tile', -X, X, sh.yW, F0, -Z, Z); for (const e of [-1, 1]) bx('zellige', e > 0 ? X - .02 : -X, e > 0 ? X : -X + .02, F0, F0 + 1.0, -Z, Z); bx('zellige', -X, X, F0, F0 + 1.0, -Z, -Z + .02);
@@ -502,7 +507,7 @@ export function aurenneTavern(o = {}, r = stream('tavern')) {
     else { bx('cedar', x - .4, x + .4, ty - .04, ty, z - .4, z + .4, 'table'); for (const sx of [-1, 1]) for (const sz of [-1, 1]) bx('cedarD', x + sx * .34 - .03, x + sx * .34 + .03, ty - .74, ty - .04, z + sz * .34 - .03, z + sz * .34 + .03); }
     tables.push({ x, z, y: ty, base: ty - .74 }); put(new THREE.CylinderGeometry(.035, .03, .1, 10), 'wine', x + .1, ty + .05, z); put(new THREE.CylinderGeometry(.11, .11, .015, 14), 'delft', x - .12, ty + .008, z + .05); };
   const stool = (x, z, base) => { bx('cedar', x - .16, x + .16, base + .42, base + .46, z - .16, z + .16, 'stool'); for (const a of [.6, 2.7, 4.8]) put(new THREE.CylinderGeometry(.018, .022, .42, 6), 'cedarD', x + Math.cos(a) * .11, base + .21, z + Math.sin(a) * .11); seats.push(.46); };
-  for (const sx of [-1, 1]) { const x = sx * (X - .9); table(x, .2, false, 'in'); stool(x, .2 + .7, F0); stool(x, .2 - .7, F0); }
+  for (const sx of [-1, 1]) { const x = R2 && sx < 0 ? -1.9 : sx * (X - .9), z = R2 && sx < 0 ? .9 : .2; table(x, z, false, 'in'); stool(x, z + .7, F0); stool(x, z - .7, F0); }
   for (const x of [arches[0] + .4, arches[n - 1] - .4]) { const z = d / 2 + ad / 2 + .05; table(x, z, true, 'out'); stool(x - .58, z, FT); stool(x + .58, z, FT); }
   // the terrace: paving from the arcade 4 m out to a parapet on the quay wall, which drops 3.2 m to the sea
   const T0 = az + .05, T1 = az + 4.05, terrace = { z0: T0, z1: T1, y: FT, parapet: FT + .62, quayFoot: -3.4 };
@@ -515,7 +520,40 @@ export function aurenneTavern(o = {}, r = stream('tavern')) {
   for (let i = 0; i < 160; i++) { const x = -w / 2 + .4 + r() * (w - .8), z = PZ0 - .2 + r() * (PZ1 - PZ0 + .4); put(new THREE.IcosahedronGeometry(.12 + r() * .1, 0), 'leaf', x, PY + .26 + r() * .1, z, r() * 6); if (r() < .08) put(new THREE.ConeGeometry(.07, .2, 6).rotateX(Math.PI), 'grape', x, PY + .05, z); }
   for (const x of [-w / 2 + .5, w / 2 - .5]) for (let k = 0; k < 14; k++) put(new THREE.IcosahedronGeometry(.08 + r() * .05, 0), 'leaf', x + (r() - .5) * .2, FT + .3 + k * .17, PZ1 + (r() - .5) * .2, r() * 6);
   // the lamps: two brass lanterns inside from the beams, and one in the middle arch
-  const lamps = []; for (const [x, y, z] of [[-1.6, TOP - .75, .2], [1.8, TOP - .75, -.8]]) { bx('iron', x - .005, x + .005, y + .2, TOP - .2, z - .005, z + .005); put(new THREE.CylinderGeometry(.1, .12, .26, 8), 'glow', x, y, z); put(new THREE.ConeGeometry(.14, .18, 8), 'brass', x, y + .22, z); lamps.push([x, y, z]); }
+  const lamps = [], LT = R2 ? F1 - .4 : TOP - .2 /* the beams they hang from */, LY = R2 ? F1 - .95 : TOP - .75; for (const [x, y, z] of [[-1.6, LY, .2], [1.8, LY, -.8]]) { bx('iron', x - .005, x + .005, y + .2, LT, z - .005, z + .005); put(new THREE.CylinderGeometry(.1, .12, .26, 8), 'glow', x, y, z); put(new THREE.ConeGeometry(.14, .18, 8), 'brass', x, y + .22, z); lamps.push([x, y, z]); }
+  // o.rooms: the stair up the west wall, 16 masonry risers going 0.26 from beside the door to the landing in the back corner; the upper
+  // floor of cedar boards under red tiles on beams every 0.9 m, open over the stair where a head would meet it (the well); a passage
+  // along the back wall, three rooms off it behind plaster partitions; the rail-less well walled on its two open sides by the partitions
+  const RM = []; let stair = null, well = null, PZ = null, beds = [], paths = null;
+  if (R2) { const N = 16, rise = (F1 - F0) / N, going = .26, WX = -X + .95, LZ = -Z + 1.15, SZ0 = LZ + (N - 1) * going /* the foot */;
+    for (let k = 1; k < N; k++) bx('step', -X, WX, F0, F0 + k * rise, SZ0 - k * going, SZ0 - (k - 1) * going, 'stair', 0);
+    bx('step', -X, WX, F0, F1 - .2, -Z, LZ, 'landing', 0);
+    const kmax = Math.floor((F1 - .4 - F0 - 2.0) / rise) /* 2 m under the beams over the treads the floor covers */; well = { x0: -X, x1: WX, z0: LZ, z1: SZ0 - kmax * going };
+    for (const [a0, a1, b0, b1] of [[WX, X, -Z, Z], [-X, WX, -Z, well.z0], [-X, WX, well.z1, Z]]) { bx('cedar', a0, a1, F1 - .2, F1 - .03, b0, b1); bx('tile', a0, a1, F1 - .03, F1, b0, b1); }
+    for (let x = -X + .5; x < X - .2; x += .9) { const over = x < WX + .1; bx('cedarD', x - .08, x + .08, F1 - .4, F1 - .2, over ? well.z1 : -Z, Z); if (over) bx('cedarD', x - .08, x + .08, F1 - .4, F1 - .2, -Z, well.z0); }
+    stair = { x0: -X, x1: WX, z0: LZ, z1: SZ0, rise: +rise.toFixed(4), going, n: N };
+    // upstairs: a dado of glazed tile to 0.6 m, the partitions in plaster to the roof's beams, a door into each room off the passage
+    for (const e of [-1, 1]) bx('zellige', e > 0 ? X - .02 : -X, e > 0 ? X : -X + .02, F1, F1 + .6, -Z, Z); bx('zellige', -X, X, F1, F1 + .6, -Z, -Z + .02); bx('zellige', -X, X, F1, F1 + .6, Z - .02, Z);
+    PZ = LZ; const RX = [WX, -1.8, 1.95, X], dw = .8, dh = 1.95, CT = TOP - .22, pt = .05;
+    for (let i = 0; i < 3; i++) { const dx = (RX[i] + RX[i + 1]) / 2, a = RX[i] + (i ? pt : 0), b = RX[i + 1] - (i < 2 ? pt : 0);
+      bx('plaster', a, dx - dw / 2, F1, CT, PZ - pt, PZ + pt, 'partition', 1); bx('plaster', dx + dw / 2, b, F1, CT, PZ - pt, PZ + pt, 'partition', 1); bx('plaster', dx - dw / 2, dx + dw / 2, F1 + dh, CT, PZ - pt, PZ + pt);
+      bx('cedarD', dx - dw / 2 - .06, dx - dw / 2, F1, F1 + dh, PZ + pt, PZ + pt + dw - .04, 'roomdoor', 1) /* the leaf open into the room */; RM.push({ x0: i ? RX[i] : -X, x1: RX[i + 1], door: { x: dx, z: PZ, w: dw, h: dh } }); }
+    for (const x of RX.slice(1, -1)) bx('plaster', x - pt, x + pt, F1, CT, PZ + pt, Z, 'partition', 1);
+    bx('plaster', WX - pt, WX + pt, F1, CT, PZ + pt, well.z1 + pt, 'partition', 1); bx('plaster', -X, WX - pt, F1, CT, well.z1 - pt, well.z1 + pt, 'partition', 1) /* the well's two open sides: the first room's */;
+    // each room: a cedar bed under an indigo cover with a madder bolster, its head to the front wall; a chest at its foot; a basin and jug
+    // on a stand under the room's front window. The first bed lies in the nook over the stair's foot, the last against the east wall.
+    const wins = [-2.925, .975, 2.925], side = [-1, -1, 1];
+    RM.forEach((R, i) => { const x0 = side[i] < 0 ? R.x0 + .05 : R.x1 - 1.05, b = { x0, x1: x0 + 1.0, z0: Z - 2.05, z1: Z - .05, room: i };
+      bx('cedar', b.x0, b.x1, F1, F1 + .32, b.z0, b.z1, 'bed', 1); bx('linen', b.x0 + .04, b.x1 - .04, F1 + .32, F1 + .44, b.z0 + .04, b.z1 - .04); bx('indigo', b.x0 + .02, b.x1 - .02, F1 + .44, F1 + .48, b.z0 + .02, b.z1 - .5);
+      { const g = new THREE.CylinderGeometry(.1, .1, .86, 12); g.rotateZ(Math.PI / 2); put(g, 'madder', (b.x0 + b.x1) / 2, F1 + .54, b.z1 - .25); }
+      bx('cedarD', b.x0 + .05, b.x1 - .05, F1, F1 + .48, b.z0 - .55, b.z0 - .05, 'chest', 1); bx('brass', b.x0 + .05, b.x1 - .05, F1 + .3, F1 + .33, b.z0 - .56, b.z0 - .55); beds.push(b);
+      const wx = wins[i], wz = Z - .3; bx('cedar', wx - .22, wx + .22, F1, F1 + .78, wz - .2, wz + .2, 'washstand', 1); put(new THREE.CylinderGeometry(.16, .1, .07, 14), 'brass', wx, F1 + .815, wz); put(new THREE.LatheGeometry([[.001, 0], [.06, 0], [.08, .1], [.05, .2], [.04, .24], [.001, .24]].map(([a, c]) => new THREE.Vector2(a, c)), 10), 'terra', wx + .14, F1 + .78, wz - .06); });
+    // a brass lamp on a bracket over the passage, on the back wall
+    { const lx = .1, ly = F1 + 1.95, lz = -Z + .25; bx('iron', lx - .01, lx + .01, ly + .2, ly + .23, -Z, lz); put(new THREE.CylinderGeometry(.1, .12, .26, 8), 'glow', lx, ly, lz); put(new THREE.ConeGeometry(.14, .18, 8), 'brass', lx, ly + .2, lz); lamps.push([lx, ly, lz]); }
+    // the walks, each on its floor: in at the door, across the front of the room to the stair's foot; off the landing along the passage
+    // and in at each room's door to its bed's side
+    const PM = (-Z + PZ) / 2, ax = (-X + WX) / 2; paths = [[0, [[sh.doorX, Z - .3], [sh.doorX, 2.3], [ax, 2.3], [ax, SZ0 + .2]]], [1, [[ax, (-Z + LZ) / 2], [WX + .4, PM], [RM[2].door.x, PM]]],
+      ...RM.map((R, i) => [1, [[R.door.x, PM], [R.door.x, PZ + .45], [i === 0 ? WX + .45 : R.door.x, Z - 2.4]]])]; }
   // the door's leaf hung open inside, against the front wall
   { const lw = 1.05, lx = sh.doorX - lw / 2 - .04 - lw / 2; bx('cedarD', lx - lw / 2, lx + lw / 2, F0, F0 + 1.95, Z - .06, Z, 'leaf'); }
   // the walks: in at the door to the counter; out through the loggia and the arch beside the door, across the terrace to the parapet
@@ -523,7 +561,8 @@ export function aurenneTavern(o = {}, r = stream('tavern')) {
   const group = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = !['flame', 'ember', 'glow'].includes(k); m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
   const all = new THREE.Group(); all.add(sh.group, group);
   return { group: all, shell: sh.group, room: group, tris: Math.round(tris), draws: group.children.length, shellTris: sh.tris, shellCalls: sh.draws, inner: { x0: -X, x1: X, z0: -Z, z1: Z }, floor: F0, ceil: TOP - .22, terrace, loggia: { z0: d / 2, z1: az },
-    arches, door: { x: sh.doorX, z: d / 2, w: 1.05, h: 2.0 }, counter, tables, seats, path, path2, boxes, lamps, braziers, w, d };
+    arches, door: { x: sh.doorX, z: d / 2, w: 1.05, h: 2.0 }, counter, tables, seats, path, path2, boxes, lamps, braziers, w, d,
+    ...(R2 ? { floors: [F0, F1], ceil: [F1 - .4, TOP - .22], stair, well, passage: PZ, rooms: RM, beds, paths } : {}) };
 }
 
 // aurenneCourtyardHouse(o, r) (Session 899, card F9; Michael's A on #318: OG-115's courtyard house, built next as its own piece): the
