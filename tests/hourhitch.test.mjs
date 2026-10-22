@@ -9,6 +9,9 @@
 // of them meet. On CI (ed2bce7) that fell at 18:59, after the first night: a first use, not a rebuild, so it is set
 // aside with a newly arrived foe's.
 // Session 1291: on three.js 0.170 a program's name is empty, so the bubble's is known by its users, every one a Sprite.
+// Session 1294: since main's Session 1284 (hbWarm) a builder body first seen compiles its garments' programs. On CI (3db386c6) a hooded
+// townsperson first stood at 19:00 and her hood's program came then, twice running: a first use too. A program whose every user
+// is a builder body's material that never had a program before is set aside with a foe's; a material rebuilt (the stall) still counts.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
@@ -18,7 +21,9 @@ await page.evaluate(() => { forceTime(12); const S = WORLD.settle.get('dunmore')
   // Session 992: uploads counted too (buffers and textures), logged with each step: a long frame with no shader compiled is read by them
   window.__up = 0; for (const fn of ['bufferData', 'texImage2D', 'texSubImage2D', 'texStorage2D']) { const f = gl[fn] && gl[fn].bind(gl); if (f) gl[fn] = (...a) => { window.__up++; return f(...a); }; }
   window.__seen = new Set(REN.info.programs);
-  window.__newProgs = () => { const out = []; for (const p of REN.info.programs) if (!__seen.has(p)) { __seen.add(p); const users = {}; let n = 0, foe = 0, spr = 0; scene.traverse(o => { if (!o.material || Array.isArray(o.material)) return; const pr = REN.properties.get(o.material); if (pr && pr.currentProgram === p) { let q = o, path = []; while (q && q !== scene && path.length < 4) { path.push(q.name || q.type); q = q.parent; } const k = (o.material.name || o.material.type) + ' on ' + path.join('<') + (o.isSkinnedMesh ? ' (skinned)' : ''); users[k] = (users[k] || 0) + 1; n++; if (__isFoe(o)) foe++; if (o.isSprite) spr++; } }); const foeOnly = (n > 0 && (foe === n || spr === n)) || p.name === 'SpriteMaterial'; if (foeOnly) __foeProgs++; out.push({ name: p.name, users, foeOnly }); } return out; };
+  window.__mats = new WeakSet(); /* S1294 — every material that has had a program, read at each step */
+  window.__newProgs = () => { const out = []; for (const p of REN.info.programs) if (!__seen.has(p)) { __seen.add(p); const users = {}; let n = 0, foe = 0, spr = 0, body = 0; scene.traverse(o => { if (!o.material || Array.isArray(o.material)) return; const pr = REN.properties.get(o.material); if (pr && pr.currentProgram === p) { let q = o, path = []; while (q && q !== scene && path.length < 4) { path.push(q.name || q.type); q = q.parent; } const k = (o.material.name || o.material.type) + ' on ' + path.join('<') + (o.isSkinnedMesh ? ' (skinned)' : ''); users[k] = (users[k] || 0) + 1; n++; if (__isFoe(o)) foe++; if (o.isSprite) spr++; if (path.includes('builder') && !__mats.has(o.material)) body++; } }); const foeOnly = (n > 0 && (foe === n || spr === n || body === n)) || p.name === 'SpriteMaterial'; if (foeOnly) __foeProgs++; out.push({ name: p.name, users, foeOnly }); }
+    scene.traverse(o => { if (o.material && !Array.isArray(o.material) && REN.properties.get(o.material).currentProgram) __mats.add(o.material); }); return out; };
   window.__foeProgs = 0; window.__isFoe = o => { for (let a = o; a; a = a.parent) if (ZE.some(e => e.mesh === a)) return true; return false; };
   window.__lights = () => { let n = 0; scene.traverseVisible(o => { if (o.isLight) n++; }); return n; };
 });
@@ -51,8 +56,8 @@ const end = rows[rows.length - 1], firstNight = rows.find(r => r.label === 'jump
 // look branch's wolf kit) compiles its program when it first draws. That is arrival, as at noon above, not the hour, so
 // programs used only by the zone's foes are set aside (two shaders each). Which foes spawn by night is chance.
 const foeLater = end.foeProgs - firstNight.foeProgs;
-check('after the first night, no change of hour compiles a shader (a newly arrived foe\u2019s, or the first greeting bubble\u2019s, aside)', end.cs - 2 * foeLater === firstNight.cs, { settled: base.cs, firstDusk: rows[0].cs, afterFirstNight: firstNight.cs, end: end.cs, foeLater });
-check('no program added after the first night, but for a newly arrived foe\u2019s or the first greeting bubble\u2019s', end.progs - foeLater === firstNight.progs, { settled: base.progs, afterFirstNight: firstNight.progs, end: end.progs, foeLater });
+check('after the first night, no change of hour compiles a shader (a newly arrived foe\u2019s, the first greeting bubble\u2019s, or a townsperson\u2019s first garment, aside)', end.cs - 2 * foeLater === firstNight.cs, { settled: base.cs, firstDusk: rows[0].cs, afterFirstNight: firstNight.cs, end: end.cs, foeLater });
+check('no program added after the first night, but for a newly arrived foe\u2019s, the first greeting bubble\u2019s or a townsperson\u2019s first garment', end.progs - foeLater === firstNight.progs, { settled: base.progs, afterFirstNight: firstNight.progs, end: end.progs, foeLater });
 check('the scene\u2019s light count never changed', rows.every(r => r.lights === base.lights), rows.map(r => r.lights));
 const noons = rows.filter(r => r.label === 'jump to 12h');
 check('the torches are lit at night and every one is out at noon, flame and light', firstNight.torches > 0 && noons.every(r => r.torches === 0 && r.torchLight === 0), rows.map(r => [r.label, r.torches, r.torchLight]));
