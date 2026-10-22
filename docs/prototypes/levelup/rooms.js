@@ -309,7 +309,7 @@ export function aurenneHome(o = {}, r = stream('aurhome')) {
   const all = new THREE.Group(); all.add(sh.group, group);
   const windows = [...sh.open.front.filter(h => !h.door).map(h => ({ face: 'front', x: h.x, z: d / 2, y: sh.yW + h.y, w: h.w, h: h.h })), ...sh.open.back.map(h => ({ face: 'back', x: -h.x, z: -d / 2, y: sh.yW + h.y, w: h.w, h: h.h }))];
   return { group: all, shell: sh.group, room: group, tris: Math.round(tris), draws: group.children.length, shellTris: sh.tris, shellCalls: sh.draws, inner: { x0: -X, x1: X, z0: -Z, z1: Z }, floors: [F0, F1, F2], ceil: [F1 - .4, CEIL - .18], beams,
-    door: { x: dx, z: d / 2, w: 1.05, h: 2.0 }, stair: { x0: SX0, x1: LX, z0: -Z, z1: SZ1, rise: +rise.toFixed(4), going, n: N }, well, hatch, roofStair: RS, paths, boxes, bed, divan, table, counter, lamp, lamp0, braziers, windows, w, d, top: F2 };
+    door: { x: dx, z: d / 2, w: 1.05, h: 2.1 }, stair: { x0: SX0, x1: LX, z0: -Z, z1: SZ1, rise: +rise.toFixed(4), going, n: N }, well, hatch, roofStair: RS, paths, boxes, bed, divan, table, counter, lamp, lamp0, braziers, windows, w, d, top: F2 };
 }
 
 // gatelandsInn(o, r) (Session 893, card F9; L9's three inns, OG-108's "cosy Gatelander inn with a hearth"; Michael's A on #303: rooms
@@ -579,7 +579,7 @@ export function aurenneTavern(o = {}, r = stream('tavern')) {
   const group = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = !['flame', 'ember', 'glow'].includes(k); m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
   const all = new THREE.Group(); all.add(sh.group, group);
   return { group: all, shell: sh.group, room: group, tris: Math.round(tris), draws: group.children.length, shellTris: sh.tris, shellCalls: sh.draws, inner: { x0: -X, x1: X, z0: -Z, z1: Z }, floor: F0, ceil: TOP - .22, terrace, loggia: { z0: d / 2, z1: az },
-    arches, door: { x: sh.doorX, z: d / 2, w: 1.05, h: 2.0 }, open: sh.open, yW: sh.yW, counter, tables, seats, path, path2, boxes, lamps, braziers, w, d,
+    arches, door: { x: sh.doorX, z: d / 2, w: 1.05, h: 2.1 }, open: sh.open, yW: sh.yW, counter, tables, seats, path, path2, boxes, lamps, braziers, w, d,
     ...(R2 ? { floors: [F0, F1], ceil: [F1 - .4, TOP - .22], stair, well, passage: PZ, rooms: RM, beds, paths } : {}) };
 }
 
@@ -950,7 +950,7 @@ export function aurenneSmithy(o = {}, r = stream('aursmithy')) {
   const group = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k] || M.plaster); m.name = k; m.castShadow = !['flame', 'ember', 'glow', 'water'].includes(k); m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
   const all = new THREE.Group(); all.add(sh.group, group);
   return { group: all, shell: sh.group, room: group, tris: Math.round(tris), draws: group.children.length, shellTris: sh.tris, shellCalls: sh.draws, inner: { x0: -X, x1: X, z0: -Z, z1: Z }, floor: F0, ceil: CEIL, top: TOP,
-    hearth: H, hood, flue, fire, anvil, trough, bench, bellows: bel, stall, arcade: { z0: d / 2, z1: AZ1 + .2 }, door: { x: sh.doorX, z: d / 2, w: 1.05, h: 2.0 }, paths, boxes, lamp, w, d };
+    hearth: H, hood, flue, fire, anvil, trough, bench, bellows: bel, stall, arcade: { z0: d / 2, z1: AZ1 + .2 }, door: { x: sh.doorX, z: d / 2, w: 1.05, h: 2.1 }, paths, boxes, lamp, w, d };
 }
 
 // gatelandsApothecary(o, r) (Session 936, card F9; L5's interiors by nation, OG-043's Gatelands alchemy shop of herbs, potions and
@@ -1287,7 +1287,7 @@ export function aurenneApothecary(o = {}, r = stream('aurapo')) {
   const group = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k] || M.plaster); m.name = k; m.castShadow = !['flame', 'ember', 'glass', 'green'].includes(k); m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
   const all = new THREE.Group(); all.add(sh.group, group);
   return { group: all, shell: sh.group, room: group, tris: Math.round(tris), draws: group.children.length, shellTris: sh.tris, shellCalls: sh.draws, inner: { x0: -X, x1: X, z0: -Z, z1: Z }, floor: F0, ceil: CEIL, top: TOP,
-    furnace, flue, hood, still, counter, table, mortar, bench, shelves, stall, arcade: { z0: d / 2, z1: AZ1 + .2 }, stations, door: { x: sh.doorX, z: d / 2, w: 1.05, h: 2.0 }, paths, boxes, lamp, glow: [furnace.x0 + .5, F0 + .25, furnace.z1 + .25], w, d };
+    furnace, flue, hood, still, counter, table, mortar, bench, shelves, stall, arcade: { z0: d / 2, z1: AZ1 + .2 }, stations, door: { x: sh.doorX, z: d / 2, w: 1.05, h: 2.1 }, paths, boxes, lamp, glow: [furnace.x0 + .5, F0 + .25, furnace.z1 + .25], w, d };
 }
 
 // gatelandsGuildHall(o, r) (Session 939, card F9; L5's guildhall by nation, OG-043's guildhall "hall of trade, contracts and guild

@@ -924,7 +924,8 @@ function aurenneHouse(o, r) {
   const T = .32, pl = .24, fh = 3.0, H = fh + (o.two ? 2.6 : 0), wallK = 'wall:' + (o.wall ?? Math.floor(r() * AUR.walls.length)), doorK = 'door:' + (o.door ?? Math.floor(r() * AUR.doors.length));
   const wallGeo = (len, ht, holes, t = T) => wallG(len, ht, holes, t);
   // the openings, by storey: an arched door on the front, windows small and deep as in a hot country
-  const front = [], back = [], side = [], doorW = 1.05, doorH = 2.0, dx = o.kind === 'tile' ? 0 : (r() < .5 ? -1 : 1) * Math.min(w * .18, 1.1);
+  const front = [], back = [], side = [], doorW = 1.05, doorH = 2.1, dx = o.kind === 'tile' ? 0 : (r() < .5 ? -1 : 1) * Math.min(w * .18, 1.1);
+  // (Session 1321: the door 2.1 m to its head, was 2.0; 12 cm off its middle the half-round leaf read 1.95 m, under F2a's table: 1.1 of a 1.8 m person)
   front.push({ x: dx, y: 0, w: doorW, h: doorH, arch: o.pointed ? 2 : 1, door: 1 });
   const nWin = Math.max(1, Math.floor((w - 2) / 2.4));
   for (let i = 0; i < nWin; i++) { const x = -w / 2 + 1.0 + (i + .5) * (w - 2) / nWin; if (Math.abs(x - dx) < 1.3) continue; front.push({ x, y: 1.1, w: .62, h: .95, arch: 1 }); }
@@ -1257,7 +1258,7 @@ function aurenneTavern(o = {}, r = stream('tavern')) {
   const group = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = !['flame', 'ember', 'glow'].includes(k); m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
   const all = new THREE.Group(); all.add(sh.group, group);
   return { group: all, shell: sh.group, room: group, tris: Math.round(tris), draws: group.children.length, shellTris: sh.tris, shellCalls: sh.draws, inner: { x0: -X, x1: X, z0: -Z, z1: Z }, floor: F0, ceil: TOP - .22, terrace, loggia: { z0: d / 2, z1: az },
-    arches, door: { x: sh.doorX, z: d / 2, w: 1.05, h: 2.0 }, open: sh.open, yW: sh.yW, counter, tables, seats, path, path2, boxes, lamps, braziers, w, d,
+    arches, door: { x: sh.doorX, z: d / 2, w: 1.05, h: 2.1 }, open: sh.open, yW: sh.yW, counter, tables, seats, path, path2, boxes, lamps, braziers, w, d,
     ...(R2 ? { floors: [F0, F1], ceil: [F1 - .4, TOP - .22], stair, well, passage: PZ, rooms: RM, beds, paths } : {}) };
 }
 // ── the six gods' row of seven at the town church (Session 1232; Michael's B on #464, after his C on #439; card F6) ──
