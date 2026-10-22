@@ -8,6 +8,12 @@
 // Session 357: the townsfolk's greeting bubble is the game's only Sprite, and its program compiles the first time two
 // of them meet. On CI (ed2bce7) that fell at 18:59, after the first night: a first use, not a rebuild, so it is set
 // aside with a newly arrived foe's.
+// Session 1291: on three.js 0.170 a program's name is empty, so the bubble's is known by its users, every one a Sprite.
+// Session 1301: since main's Session 1284 (hbWarm) a builder body first seen compiles its garments' programs. On CI (3db386c6) a hooded
+// townsperson first stood at 19:00 and her hood's program came then, twice running: a first use too. A program whose every user
+// is a builder body's material that never had a program before is set aside with a foe's; a material rebuilt (the stall) still counts.
+// Session 1299: a builder body is known by an ancestor named `builder` at any depth, not in the four names the log prints: a basket
+// in a builder hand (basketWall<basket<wrist.R<lowerarm02.R…) was counted as the hour's.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
@@ -17,37 +23,53 @@ await page.evaluate(() => { forceTime(12); const S = WORLD.settle.get('dunmore')
   // Session 992: uploads counted too (buffers and textures), logged with each step: a long frame with no shader compiled is read by them
   window.__up = 0; for (const fn of ['bufferData', 'texImage2D', 'texSubImage2D', 'texStorage2D']) { const f = gl[fn] && gl[fn].bind(gl); if (f) gl[fn] = (...a) => { window.__up++; return f(...a); }; }
   window.__seen = new Set(REN.info.programs);
-  window.__newProgs = () => { const out = []; for (const p of REN.info.programs) if (!__seen.has(p)) { __seen.add(p); const users = {}; let n = 0, foe = 0; scene.traverse(o => { if (!o.material || Array.isArray(o.material)) return; const pr = REN.properties.get(o.material); if (pr && pr.currentProgram === p) { let q = o, path = []; while (q && q !== scene && path.length < 4) { path.push(q.name || q.type); q = q.parent; } const k = (o.material.name || o.material.type) + ' on ' + path.join('<') + (o.isSkinnedMesh ? ' (skinned)' : ''); users[k] = (users[k] || 0) + 1; n++; if (__isFoe(o)) foe++; } }); const foeOnly = (n > 0 && foe === n) || p.name === 'SpriteMaterial'; if (foeOnly) __foeProgs++; out.push({ name: p.name, users, foeOnly }); } return out; };
+  window.__mats = new WeakSet(); /* S1301 — every material that has had a program, read at each step */
+  window.__newProgs = () => { const out = []; for (const p of REN.info.programs) if (!__seen.has(p)) { __seen.add(p); const users = {}; let n = 0, foe = 0, spr = 0, body = 0; scene.traverse(o => { if (!o.material || Array.isArray(o.material)) return; const pr = REN.properties.get(o.material); if (pr && pr.currentProgram === p) { let q = o, path = []; while (q && q !== scene && path.length < 4) { path.push(q.name || q.type); q = q.parent; } const k = (o.material.name || o.material.type) + ' on ' + path.join('<') + (o.isSkinnedMesh ? ' (skinned)' : ''); users[k] = (users[k] || 0) + 1; n++; if (__isFoe(o)) foe++; if (o.isSprite) spr++; let inB = false; for (let a = o; a && a !== scene; a = a.parent) if (a.name === 'builder') inB = true; if (inB && !__mats.has(o.material)) body++; } }); const foeOnly = (n > 0 && (foe === n || spr === n || body === n)) || p.name === 'SpriteMaterial'; if (foeOnly) __foeProgs++; out.push({ name: p.name, users, foeOnly }); }
+    scene.traverse(o => { if (o.material && !Array.isArray(o.material) && REN.properties.get(o.material).currentProgram) __mats.add(o.material); }); return out; };
   window.__foeProgs = 0; window.__isFoe = o => { for (let a = o; a; a = a.parent) if (ZE.some(e => e.mesh === a)) return true; return false; };
   window.__lights = () => { let n = 0; scene.traverseVisible(o => { if (o.isLight) n++; }); return n; };
 });
 // let the town finish streaming in at noon: a program compiled here is arrival, not the hour
 let still = 0;
+// Session 1299: since main's Session 1294 a townsperson's body is built a few pieces a frame, so the street was still dressing itself
+// after nothing had compiled for four rounds (a 14.7 s frame at 18:00 with nothing compiled and 722 uploads, a basket's program at the
+// second noon). The builder is run here, undrawn, until no body within its reach is left unbuilt; then the wait for the compiles as before
+const dressed = await page.evaluate(() => { if (typeof HBODY === 'undefined' || typeof hbOn !== 'function' || !hbOn()) return null;
+  const left = () => { let n = 0; for (const r of HB_RIGS) { const top = r.foe ? r.root.parent : r.root; if (r.hb || r.hbFail || !top || top.parent !== scene || !top.visible || !r.root.visible) continue;
+    if (Math.hypot(CAM.position.x - top.position.x, CAM.position.z - top.position.z) < HBODY.build) n++; } return n; };
+  const t0 = performance.now(), n0 = HBODY.n; let t = performance.now() + 1e6;
+  while ((HBODY.job || left()) && performance.now() - t0 < 240000) { while (JOBS.length) runJobs(); hbTick(t += 1000); }
+  return { built: HBODY.n - n0, left: left(), ms: Math.round(performance.now() - t0) }; });
+console.log('the street dressed', JSON.stringify(dressed));
 for (let i = 0; i < 40 && still < 4; i++) { const a = await page.evaluate(() => __cs); await page.waitForTimeout(1500); await g.frames(3); still = (await page.evaluate(() => __cs)) === a ? still + 1 : 0; }
 const base = await page.evaluate(() => ({ added: __newProgs(), cs: __cs, progs: REN.info.programs.length, lights: __lights() }));
 console.log('settled at noon', JSON.stringify(base));
+// Session 1291: on the new look every frame here is 4.3–7.2 s, so the 120 frames it drew (12 a step and noon's) took 670 s of the
+// 840, and CI killed the suite at 900. Drawn frame by frame, no frame stood out from its step's others: the stall this hunts
+// is a rebuild inside the first render that sees the new hour, so a step now draws 4 frames (the minute before a dusk 2, noon 6).
+// The checks and the caps are as they were.
 const frames = async n => { let worst = 0; for (let i = 0; i < n; i++) { const t = Date.now(); await g.frames(1); worst = Math.max(worst, Date.now() - t); } return worst; };
 const rows = [];
-const step = async (label, fn, n = 12) => { const up0 = await page.evaluate(() => __up); await page.evaluate(fn); const worst = await frames(n);
+const step = async (label, fn, n = 4) => { const up0 = await page.evaluate(() => __up); await page.evaluate(fn); const worst = await frames(n);
   const s = await page.evaluate(() => ({ cs: __cs, progs: REN.info.programs.length, lights: __lights(), night: +_nightFactor().toFixed(2), torchLight: S_torchLight(), added: __newProgs(), torches: S_torches(), foeProgs: __foeProgs, uploads: __up }));
   s.uploads -= up0;
   rows.push({ label, worst, ...s }); console.log(label, 'worst frame', worst, 'ms', JSON.stringify(s)); };
 await page.evaluate(() => { window.S_torches = () => { const S = WORLD.settle.get('dunmore'); let n = 0; for (const p of (S && S.npcs) || []) if (p._torch && p._torch.visible) n++; return n; };
   window.S_torchLight = () => { const S = WORLD.settle.get('dunmore'); let n = 0; for (const p of (S && S.npcs) || []) if (p._torch && p._torch.userData.light.intensity > 0) n++; return n; }; });
-const noon = await frames(12);
+const noon = await frames(6);
 console.log('noon, no change: worst frame', noon, 'ms');
 for (const h of [18, 23, 12, 6, 21, 12]) await step('jump to ' + h + 'h', `forceTime(${h})`);
-await step('17:59', 'forceTime(17 + 59/60)', 6);
-await step('17:59 → 18:00 by the clock', 'worldState.gameTimeMinutes += 1', 12);
-await step('18:59', 'forceTime(18 + 59/60)', 6);
-await step('18:59 → 19:00 by the clock', 'worldState.gameTimeMinutes += 1', 12);
+await step('17:59', 'forceTime(17 + 59/60)', 2);
+await step('17:59 → 18:00 by the clock', 'worldState.gameTimeMinutes += 1');
+await step('18:59', 'forceTime(18 + 59/60)', 2);
+await step('18:59 → 19:00 by the clock', 'worldState.gameTimeMinutes += 1');
 const end = rows[rows.length - 1], firstNight = rows.find(r => r.label === 'jump to 23h');
 // Session 299: a foe that turns up for the first time after the first night (the wolves' own skinned material, on the
 // look branch's wolf kit) compiles its program when it first draws. That is arrival, as at noon above, not the hour, so
 // programs used only by the zone's foes are set aside (two shaders each). Which foes spawn by night is chance.
 const foeLater = end.foeProgs - firstNight.foeProgs;
-check('after the first night, no change of hour compiles a shader (a newly arrived foe\u2019s, or the first greeting bubble\u2019s, aside)', end.cs - 2 * foeLater === firstNight.cs, { settled: base.cs, firstDusk: rows[0].cs, afterFirstNight: firstNight.cs, end: end.cs, foeLater });
-check('no program added after the first night, but for a newly arrived foe\u2019s or the first greeting bubble\u2019s', end.progs - foeLater === firstNight.progs, { settled: base.progs, afterFirstNight: firstNight.progs, end: end.progs, foeLater });
+check('after the first night, no change of hour compiles a shader (a newly arrived foe\u2019s, the first greeting bubble\u2019s, or a townsperson\u2019s first garment, aside)', end.cs - 2 * foeLater === firstNight.cs, { settled: base.cs, firstDusk: rows[0].cs, afterFirstNight: firstNight.cs, end: end.cs, foeLater });
+check('no program added after the first night, but for a newly arrived foe\u2019s, the first greeting bubble\u2019s or a townsperson\u2019s first garment', end.progs - foeLater === firstNight.progs, { settled: base.progs, afterFirstNight: firstNight.progs, end: end.progs, foeLater });
 check('the scene\u2019s light count never changed', rows.every(r => r.lights === base.lights), rows.map(r => r.lights));
 const noons = rows.filter(r => r.label === 'jump to 12h');
 check('the torches are lit at night and every one is out at noon, flame and light', firstNight.torches > 0 && noons.every(r => r.torches === 0 && r.torchLight === 0), rows.map(r => [r.label, r.torches, r.torchLight]));
