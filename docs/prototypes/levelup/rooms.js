@@ -475,8 +475,10 @@ export function markAlehall(o = {}, r = stream('alehall')) {
 //   landing in the back corner, the left table moved in off it; upstairs a passage along the back wall from the landing, three guest rooms
 //   off it behind plaster partitions, each with a cedar bed under an indigo cover, a chest at its foot and a basin on a stand under its
 //   front window, the first bed in the nook over the stair's foot. Adds floors, stair, well, passage, rooms [{ x0, x1, door }], beds, paths.
+//   Session 1307 (the critic's walk): the upper flight open beneath, two oil jars stored under it; the well framed in cedar and lit by a
+//   lamp on the west wall; the west window raised over the flight (o.stairWin); the pendant lamp over the left table, 2.06 m clear.
 export function aurenneTavern(o = {}, r = stream('tavern')) {
-  const R2 = !!o.rooms, w = 9.6, d = 8.0, sh = aurenneHouse({ kind: 'tile', w, d, two: R2, arcade: true, wall: 0, door: 2, pointed: false, green: false, interior: true }, stream('tavern-shell'));
+  const R2 = !!o.rooms, w = 9.6, d = 8.0, sh = aurenneHouse({ kind: 'tile', w, d, two: R2, arcade: true, wall: 0, door: 2, pointed: false, green: false, interior: true, ...(R2 ? { stairWin: { y: 1.95, h: .55 } } : {}) }, stream('tavern-shell'));
   const M = homeMats(), B = new Map(), boxes = [];
   const put = (geo, key, x = 0, y = 0, z = 0, ry = 0, uv = .6) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const k of Object.keys(g.attributes)) if (!['position', 'normal'].includes(k)) g.deleteAttribute(k);
     g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, ry, 0)), new THREE.Vector3(1, 1, 1))); worldUV(g, uv); if (!B.has(key)) B.set(key, []); B.get(key).push(g); return g; };
@@ -520,17 +522,25 @@ export function aurenneTavern(o = {}, r = stream('tavern')) {
   for (let i = 0; i < 160; i++) { const x = -w / 2 + .4 + r() * (w - .8), z = PZ0 - .2 + r() * (PZ1 - PZ0 + .4); put(new THREE.IcosahedronGeometry(.12 + r() * .1, 0), 'leaf', x, PY + .26 + r() * .1, z, r() * 6); if (r() < .08) put(new THREE.ConeGeometry(.07, .2, 6).rotateX(Math.PI), 'grape', x, PY + .05, z); }
   for (const x of [-w / 2 + .5, w / 2 - .5]) for (let k = 0; k < 14; k++) put(new THREE.IcosahedronGeometry(.08 + r() * .05, 0), 'leaf', x + (r() - .5) * .2, FT + .3 + k * .17, PZ1 + (r() - .5) * .2, r() * 6);
   // the lamps: two brass lanterns inside from the beams, and one in the middle arch
-  const lamps = [], LT = R2 ? F1 - .4 : TOP - .2 /* the beams they hang from */, LY = R2 ? F1 - .95 : TOP - .75; for (const [x, y, z] of [[-1.6, LY, .2], [1.8, LY, -.8]]) { bx('iron', x - .005, x + .005, y + .2, LT, z - .005, z + .005); put(new THREE.CylinderGeometry(.1, .12, .26, 8), 'glow', x, y, z); put(new THREE.ConeGeometry(.14, .18, 8), 'brass', x, y + .22, z); lamps.push([x, y, z]); }
+  const lamps = [], LT = R2 ? F1 - .4 : TOP - .2 /* the beams they hang from */, LY = R2 ? F1 - .75 : TOP - .75; for (const [x, y, z] of [[R2 ? -1.9 : -1.6, LY, R2 ? .9 : .2] /* o.rooms: over the left table, off the stair's line (Session 1307) */, [1.8, LY, -.8]]) { bx('iron', x - .005, x + .005, y + .2, LT, z - .005, z + .005); put(new THREE.CylinderGeometry(.1, .12, .26, 8), 'glow', x, y, z); put(new THREE.ConeGeometry(.14, .18, 8), 'brass', x, y + .22, z); lamps.push([x, y, z]); }
   // o.rooms: the stair up the west wall, 16 masonry risers going 0.26 from beside the door to the landing in the back corner; the upper
   // floor of cedar boards under red tiles on beams every 0.9 m, open over the stair where a head would meet it (the well); a passage
   // along the back wall, three rooms off it behind plaster partitions; the rail-less well walled on its two open sides by the partitions
   const RM = []; let stair = null, well = null, PZ = null, beds = [], paths = null;
   if (R2) { const N = 16, rise = (F1 - F0) / N, going = .26, WX = -X + .95, LZ = -Z + 1.15, SZ0 = LZ + (N - 1) * going /* the foot */;
-    for (let k = 1; k < N; k++) bx('step', -X, WX, F0, F0 + k * rise, SZ0 - k * going, SZ0 - (k - 1) * going, 'stair', 0);
+    // (Session 1307) the lower seven treads stand on a solid base; the upper flight bridges from it to the landing's pier as blocks
+    // 0.45 m deep under each tread's nosing, so its stepped soffit shows and the store under it holds two oil jars
+    const KS = 7; for (let k = 1; k < N; k++) bx('step', -X, WX, k > KS ? F0 + k * rise - .45 : F0, F0 + k * rise, SZ0 - k * going, SZ0 - (k - 1) * going, 'stair', 0);
     bx('step', -X, WX, F0, F1 - .2, -Z, LZ, 'landing', 0);
+    for (const [z, s] of [[SZ0 - 10.6 * going, .78], [SZ0 - 13.4 * going, .9]]) { const jx = (-X + WX) / 2; put(new THREE.LatheGeometry([[.001, 0], [.14, 0], [.28, .25], [.3, .55], [.18, .8], [.13, .86], [.15, .9], [.001, .9]].map(([a, b]) => new THREE.Vector2(a * s, b * s)), 14), 'terra', jx, F0, z);
+      boxes.push({ tag: 'oiljar', x0: jx - .3 * s, x1: jx + .3 * s, y0: F0, y1: F0 + .9 * s, z0: z - .3 * s, z1: z + .3 * s, fl: 0 }); }
     const kmax = Math.floor((F1 - .4 - F0 - 2.0) / rise) /* 2 m under the beams over the treads the floor covers */; well = { x0: -X, x1: WX, z0: LZ, z1: SZ0 - kmax * going };
     for (const [a0, a1, b0, b1] of [[WX, X, -Z, Z], [-X, WX, -Z, well.z0], [-X, WX, well.z1, Z]]) { bx('cedar', a0, a1, F1 - .2, F1 - .03, b0, b1); bx('tile', a0, a1, F1 - .03, F1, b0, b1); }
     for (let x = -X + .5; x < X - .2; x += .9) { const over = x < WX + .1; bx('cedarD', x - .08, x + .08, F1 - .4, F1 - .2, over ? well.z1 : -Z, Z); if (over) bx('cedarD', x - .08, x + .08, F1 - .4, F1 - .2, -Z, well.z0); }
+    // (Session 1307) the well framed: a cedar trimmer down its open side and one across its foot, as deep as the beams, the floor's
+    // edge lined in plaster between them, so the opening reads from the room below
+    bx('cedarD', WX, WX + .18, F1 - .4, F1 - .2, well.z0, well.z1 + .18); bx('cedarD', -X, WX, F1 - .4, F1 - .2, well.z1, well.z1 + .18);
+    bx('plaster', WX, WX + .02, F1 - .2, F1, well.z0, well.z1); bx('plaster', -X, WX, F1 - .2, F1, well.z1, well.z1 + .02);
     stair = { x0: -X, x1: WX, z0: LZ, z1: SZ0, rise: +rise.toFixed(4), going, n: N };
     // upstairs: a dado of glazed tile to 0.6 m, the partitions in plaster to the roof's beams, a door into each room off the passage
     for (const e of [-1, 1]) bx('zellige', e > 0 ? X - .02 : -X, e > 0 ? X : -X + .02, F1, F1 + .6, -Z, Z); bx('zellige', -X, X, F1, F1 + .6, -Z, -Z + .02); bx('zellige', -X, X, F1, F1 + .6, Z - .02, Z);
@@ -548,6 +558,8 @@ export function aurenneTavern(o = {}, r = stream('tavern')) {
       { const g = new THREE.CylinderGeometry(.1, .1, .86, 12); g.rotateZ(Math.PI / 2); put(g, 'madder', (b.x0 + b.x1) / 2, F1 + .54, b.z1 - .25); }
       bx('cedarD', b.x0 + .05, b.x1 - .05, F1, F1 + .48, b.z0 - .55, b.z0 - .05, 'chest', 1); bx('brass', b.x0 + .05, b.x1 - .05, F1 + .3, F1 + .33, b.z0 - .56, b.z0 - .55); beds.push(b);
       const wx = wins[i], wz = Z - .3; bx('cedar', wx - .22, wx + .22, F1, F1 + .78, wz - .2, wz + .2, 'washstand', 1); put(new THREE.CylinderGeometry(.16, .1, .07, 14), 'brass', wx, F1 + .815, wz); put(new THREE.LatheGeometry([[.001, 0], [.06, 0], [.08, .1], [.05, .2], [.04, .24], [.001, .24]].map(([a, c]) => new THREE.Vector2(a, c)), 10), 'terra', wx + .14, F1 + .78, wz - .06); });
+    // (Session 1307) a lamp on a bracket in the well, on the west wall over the upper flight, so the opening shows lit from below
+    { const lx = -X + .22, ly = F1 + 1.15, lz = well.z1 - .7; bx('iron', -X, lx, ly + .2, ly + .23, lz - .01, lz + .01); put(new THREE.CylinderGeometry(.1, .12, .26, 8), 'glow', lx, ly, lz); put(new THREE.ConeGeometry(.14, .18, 8), 'brass', lx, ly + .2, lz); lamps.push([lx, ly, lz]); }
     // a brass lamp on a bracket over the passage, on the back wall
     { const lx = .1, ly = F1 + 1.95, lz = -Z + .25; bx('iron', lx - .01, lx + .01, ly + .2, ly + .23, -Z, lz); put(new THREE.CylinderGeometry(.1, .12, .26, 8), 'glow', lx, ly, lz); put(new THREE.ConeGeometry(.14, .18, 8), 'brass', lx, ly + .2, lz); lamps.push([lx, ly, lz]); }
     // the walks, each on its floor: in at the door, across the front of the room to the stair's foot; off the landing along the passage
