@@ -47,11 +47,12 @@ const walk = await page.evaluate(() => { const f = FOOTHOLDS.find(f => f.kind ==
   const go = (x, z, y, yw, ticks) => { px = x; pz = z; jumpY = y; velY = 0; onGround = true; currentFloor = y < -2 ? 2 : 1; let n = 0, lo = 9;
     try { K['KeyW'] = true; _drive(() => { PHP = maxHP; yaw = yw; lo = Math.min(lo, jumpY); return ++n > ticks; }, ticks + 1); } finally { K['KeyW'] = false; }
     _drive(() => false, 20); return { px: +px.toFixed(2), pz: +pz.toFixed(2), y: +jumpY.toFixed(2), lo: +lo.toFixed(2), floor: currentFloor }; };
-  return { down: go(mx, f.z1 + 1.5, 0, 0, 200), up: go(mx, f.z0 - 1.5, FLOOR2_Y, Math.PI, 300), west: go(f.x0 - 1.2, (f.z0 + f.z1) / 2, 0, -Math.PI / 2, 150),
-    past: go(f.x0 - 1.0, f.z1 + 1.5, 0, 0, 200), f }; });
+  /* S1283 — the flight is as many cells as before, each 2.5 m now: walked for as many more ticks */
+  return { f2: FLOOR2_Y, down: go(mx, f.z1 + 1.5, 0, 0, Math.round(200 * DCELL)), up: go(mx, f.z0 - 1.5, FLOOR2_Y, Math.PI, Math.round(300 * DCELL)), west: go(f.x0 - 1.2, (f.z0 + f.z1) / 2, 0, -Math.PI / 2, 150),
+    past: go(f.x0 - 1.0, f.z1 + 1.5, 0, 0, Math.round(200 * DCELL)), f }; });
 console.log(JSON.stringify(walk));
 const F = walk.f;
-check('down the flight from the hall into the gaol on floor 2, and back up onto the hall\'s floor', walk.down.y === -5 && walk.down.floor === 2 && walk.down.pz < F.z0 && walk.up.y === 0 && walk.up.floor === 1 && walk.up.pz > F.z1, [walk.down, walk.up]);
+check('down the flight from the hall into the gaol on floor 2, and back up onto the hall\'s floor', walk.down.y === walk.f2 && walk.down.floor === 2 && walk.down.pz < F.z0 && walk.up.y === 0 && walk.up.floor === 1 && walk.up.pz > F.z1, [walk.down, walk.up]);
 check('the balustrade holds at the hole\'s side, and the walkway beside it leads past on the hall\'s floor', walk.west.lo === 0 && walk.west.px <= F.x0 - .15 && walk.past.lo === 0 && walk.past.pz < F.z0 - .3, [walk.west, walk.past]);
 
 for (const name of ['hall', 'down', 'gaol']) {

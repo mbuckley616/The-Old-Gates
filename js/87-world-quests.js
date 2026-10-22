@@ -1097,7 +1097,7 @@ const giver=`${lord.title} ${lord.name}`;
   function gateBladeOpens(door){return !!(door&&door.locked&&!door.open&&activeZoneId==='dungeon'&&_gateWalkedBefore&&gateBladeDrawn());}
   // the named action: the door opens as a picked one does (lpWin), and the first time says so in the draft's words
   function gateBladeOpen(door){door.open=true;if(door.mesh&&typeof dScene!=='undefined')dScene.remove(door.mesh);
-    try{const map=activeMap();if(map[door.z]&&map[door.z][door.x]===5)map[door.z][door.x]=1;}catch(e){}try{sndDoorUnlock();}catch(e){}
+    try{const map=activeMap();if(map[door.r]&&map[door.r][door.c]===5)map[door.r][door.c]=1;}catch(e){}try{sndDoorUnlock();}catch(e){}
     const st=worldState.stats||(worldState.stats={});if(!st.bladeKeyed){st.bladeKeyed=1;showMsg('The Gate-Blade goes into the lock as if it were cut for it.','#ffd700');}else showMsg('The lock gives.','#ffd700');}
   // the check: the attribute's base, plus what gear adds up to ARTIFACT_GEAR_MAX (a Fortify ring closes a small gap; no one buys Might 30)
   function artifactCheck(id){const T=ARTIFACTS[id];if(!T)return null;if(!T.check)return {ok:true,attr:null,need:0,have:0,base:0,gear:0};

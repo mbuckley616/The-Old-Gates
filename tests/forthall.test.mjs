@@ -41,22 +41,23 @@ for (let k = 0; k < 25 && !(await page.evaluate(() => activeZoneId === 'dungeon'
 await page.waitForTimeout(1200); await g.spin(30);
 const built = await page.evaluate(() => { const f = FOOTHOLDS.find(f => f.kind === 'flight'), fl = dScene.children.find(o => o.userData && o.userData.dunShell === 'flight');
   const inHole = (x, z, m) => x > f.x0 - m && x < f.x1 + m && z > f.z0 - m && z < f.z1 + m;
-  return { f, stairwell: DUNGEON_STAIRWELL, mesh: !!fl, tris: fl ? fl.geometry.index.count / 3 : 0, walls: !!dScene.children.find(o => o.userData && o.userData.dunShell === 'flightWalls'),
+  return { f, f2: FLOOR2_Y, stairwell: DUNGEON_STAIRWELL, mesh: !!fl, tris: fl ? fl.geometry.index.count / 3 : 0, walls: !!dScene.children.find(o => o.userData && o.userData.dunShell === 'flightWalls'),
     cols: DUNGEON_COLUMNS.filter(c => inHole(c.x, c.z, .3)).length, props: DUNGEON_PROPS.filter(p => !p.flightRail && inHole((p.x0 + p.x1) / 2, (p.z0 + p.z1) / 2, .2)).length, colsAll: DUNGEON_COLUMNS.length,
     hiTable: DUNGEON_PROPS.find(p => p.floor === 1 && !p.flightRail && p.z1 < f.z0 - 3 && Math.abs((p.x0 + p.x1) / 2 - (f.x0 + f.x1) / 2) < .5) || null }; });
 console.log(JSON.stringify(built));
-check('the flight is built: one stair mesh, its walls, a ramp foothold, the stairwell on', built.mesh && built.walls && built.stairwell && built.f.y0 === -5 && built.f.y1 === 0, built);
+check('the flight is built: one stair mesh, its walls, a ramp foothold, the stairwell on', built.mesh && built.walls && built.stairwell && built.f.y0 === built.f2 && built.f.y1 === 0, built); /* S1283 — floor two is FLOOR2_Y, under a fort's 3.6 */
 check('no column and no furniture stands in the hole', built.cols === 0 && built.props === 0 && built.colsAll > 0, [built.cols, built.props, built.colsAll]);
 
 const walk = await page.evaluate(() => { const f = FOOTHOLDS.find(f => f.kind === 'flight'), mx = (f.x0 + f.x1) / 2, K = window._K; ENEMIES.forEach(e => { e.dead = true; if (e.mesh) e.mesh.visible = false; });
   const go = (x, z, y, yw, ticks) => { px = x; pz = z; jumpY = y; velY = 0; onGround = true; currentFloor = y < -2 ? 2 : 1; let n = 0, lo = 9;
     try { K['KeyW'] = true; _drive(() => { PHP = maxHP; yaw = yw; lo = Math.min(lo, jumpY); return ++n > ticks; }, ticks + 1); } finally { K['KeyW'] = false; }
     _drive(() => false, 20); return { px: +px.toFixed(2), pz: +pz.toFixed(2), y: +jumpY.toFixed(2), lo: +lo.toFixed(2), floor: currentFloor }; };
-  return { down: go(mx, f.z1 + 1.5, 0, 0, 260), up: go(mx, f.z0 - 1.5, FLOOR2_Y, Math.PI, 300),
+  /* S1283 — the flight is as many cells long as before, each 2.5 m now: walked for as many more ticks */
+  return { down: go(mx, f.z1 + 1.5, 0, 0, Math.round(260 * DCELL)), up: go(mx, f.z0 - 1.5, FLOOR2_Y, Math.PI, Math.round(300 * DCELL)), f2: FLOOR2_Y,
     west: go(f.x0 - 1.2, (f.z0 + f.z1) / 2, 0, -Math.PI / 2, 150), east: go(f.x1 + 1.2, (f.z0 + f.z1) / 2, 0, Math.PI / 2, 150), north: go(mx, f.z0 - 1.5, 0, Math.PI, 150), f }; });
 console.log(JSON.stringify(walk));
 const F = walk.f;
-check('walking down the flight from the hall lands in the undercroft, on floor 2', walk.down.y === -5 && walk.down.floor === 2 && walk.down.pz < F.z0, walk.down);
+check('walking down the flight from the hall lands in the undercroft, on floor 2', walk.down.y === walk.f2 && walk.down.floor === 2 && walk.down.pz < F.z0, walk.down);
 check('walking back up from the undercroft comes out on the hall\'s floor, floor 1', walk.up.y === 0 && walk.up.floor === 1 && walk.up.pz > F.z1, walk.up);
 check('the balustrade holds at the hole\'s west and east sides and its far end (you stay on the hall\'s floor)', walk.west.lo === 0 && walk.west.px <= F.x0 - .15 && walk.east.lo === 0 && walk.east.px >= F.x1 + .15 && walk.north.lo === 0 && walk.north.pz <= F.z0 - .15, [walk.west, walk.east, walk.north]);
 check('floor 1\'s high table does not collide on floor 2 below it', !!built.hiTable && await page.evaluate((p) => { const cf = currentFloor; currentFloor = 2; const hit = dPropHit((p.x0 + p.x1) / 2, (p.z0 + p.z1) / 2); currentFloor = 1; const hit1 = dPropHit((p.x0 + p.x1) / 2, (p.z0 + p.z1) / 2); currentFloor = cf; return !hit && hit1; }, built.hiTable), built.hiTable);

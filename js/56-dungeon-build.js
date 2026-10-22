@@ -9,9 +9,9 @@ function dPropHit(x, z){
   }
   return false;
 }
-function dBlk(x,z){const R=0.2;return dSolid(x-R,z-R)||dSolid(x+R,z-R)||dSolid(x-R,z+R)||dSolid(x+R,z+R);}
+function dBlk(x,z){const R=0.3; /* S1283 — your body 0.3 round, as in the world and the rooms (F2b) */ return dSolid(x-R,z-R)||dSolid(x+R,z-R)||dSolid(x-R,z+R)||dSolid(x+R,z+R);}
 function dSlide(x,z,dx,dz){if(!dBlk(x+dx,z+dz))return[x+dx,z+dz];if(!dBlk(x+dx,z))return[x+dx,z];if(!dBlk(x,z+dz))return[x,z+dz];return[x,z];}
-function bfs(sx,sz,tx,tz){const sc=Math.round(sx),sr=Math.round(sz),tc=Math.round(tx),tr=Math.round(tz);if(sc===tc&&sr===tr)return[];const vis=new Set(),q=[[sc,sr,[]]];vis.add(sr*dC+sc);while(q.length){const[cc,cr,path]=q.shift();for(const[dc,dr]of[[0,1],[0,-1],[1,0],[-1,0]]){const nc=cc+dc,nr=cr+dr,key=nr*dC+nc;if(nr<0||nr>=dR||nc<0||nc>=dC||vis.has(key))continue;if(dSolid(nc,nr))continue;vis.add(key);const np=[...path,[nc,nr]];if(nc===tc&&nr===tr)return np;q.push([nc,nr,np]);}}return[];}
+function bfs(sx,sz,tx,tz){const sc=dCellOf(sx),sr=dCellOf(sz),tc=dCellOf(tx),tr=dCellOf(tz); /* S1283 — from metres to cells; the path is cells */if(sc===tc&&sr===tr)return[];const vis=new Set(),q=[[sc,sr,[]]];vis.add(sr*dC+sc);while(q.length){const[cc,cr,path]=q.shift();for(const[dc,dr]of[[0,1],[0,-1],[1,0],[-1,0]]){const nc=cc+dc,nr=cr+dr,key=nr*dC+nc;if(nr<0||nr>=dR||nc<0||nc>=dC||vis.has(key))continue;if(dSolid(nc*DCELL,nr*DCELL))continue;vis.add(key);const np=[...path,[nc,nr]];if(nc===tc&&nr===tr)return np;q.push([nc,nr,np]);}}return[];}
 
 // ── FLOOR TRANSITIONS ─────────────────────────────────────────
 function goToFloor2(){
@@ -28,7 +28,7 @@ function goToFloor2(){
       const nc=dStairC+dc,nr=dStairR+dr;
       if(nr>=0&&nr<dR&&nc>=0&&nc<dC&&dMap2[nr][nc]!==0){spawnC=nc;spawnR=nr;break;}
     }
-    px=spawnC;pz=spawnR;yaw=0;pitch=0;velY=0;jumpY=FLOOR2_Y;onGround=true;
+    px=dAt(spawnC);pz=dAt(spawnR);yaw=0;pitch=0;velY=0;jumpY=FLOOR2_Y;onGround=true;
     const _ds=currentPortal.diffScale||DIFF_SCALE.normal;
     showZoneName('\u2b07 '+currentPortal.name+' \u2014 Floor 2 ['+_ds.label+' \u2605]');
     addLog('\u2b07','Descended to floor 2 of '+currentPortal.name);
@@ -46,7 +46,7 @@ function goToFloor1(){
       const nc=dStairC+dc,nr=dStairR+dr;
       if(nr>=0&&nr<dR&&nc>=0&&nc<dC&&dMap[nr][nc]!==0){spawnC=nc;spawnR=nr;break;}
     }
-    px=spawnC;pz=spawnR;yaw=0;pitch=0;velY=0;jumpY=0;onGround=true;
+    px=dAt(spawnC);pz=dAt(spawnR);yaw=0;pitch=0;velY=0;jumpY=0;onGround=true;
     const _ds=currentPortal.diffScale||DIFF_SCALE.normal;
     showZoneName('\u2694 '+currentPortal.name+' ['+_ds.label+']');
     addLog('\u2b06','Returned to floor 1 of '+currentPortal.name);
@@ -781,14 +781,14 @@ function furnBuild(THREE, SK) {
 
   // ── bake: one vertex-coloured mesh for the wood and stone, one unlit mesh for the flames. Every vertex near the floor is
   // darkened (the contact shade the bake gives the dungeon's props), from ×.62 at the floor to ×1 at .35 up. ──
-  function merge(list, contact) { const P = [], N = [], Cc = [], I = []; const v = new THREE.Vector3(), nm = new THREE.Matrix3();
+  function merge(list, contact) { const P = [], N = [], Cc = [], I = [], parts = []; /* S1283 — parts: each piece's first vertex and count, for dunScaleWhole */ const v = new THREE.Vector3(), nm = new THREE.Matrix3();
     for (const [geo, col, m] of list) { const pa = geo.attributes.position, na = geo.attributes.normal, b = P.length / 3; nm.getNormalMatrix(m);
       const ca = geo.attributes.color;
       for (let i = 0; i < pa.count; i++) { v.fromBufferAttribute(pa, i).applyMatrix4(m); P.push(v.x, v.y, v.z); const k = contact ? .62 + .38 * Math.min(1, Math.max(0, v.y / .35)) : 1;
         if (ca) Cc.push(col.r * k * ca.getX(i), col.g * k * ca.getY(i), col.b * k * ca.getZ(i)); else Cc.push(col.r * k, col.g * k, col.b * k); v.fromBufferAttribute(na, i).applyMatrix3(nm).normalize(); N.push(v.x, v.y, v.z); }
-      if (geo.index) { const ix = geo.index.array; for (let i = 0; i < ix.length; i++) I.push(ix[i] + b); } else for (let i = 0; i < pa.count; i++) I.push(b + i); }
+      if (geo.index) { const ix = geo.index.array; for (let i = 0; i < ix.length; i++) I.push(ix[i] + b); } else for (let i = 0; i < pa.count; i++) I.push(b + i); parts.push(b, pa.count); }
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(N, 3));
-    g.setAttribute('color', new THREE.Float32BufferAttribute(Cc, 3)); g.setIndex(I); return g; }
+    g.setAttribute('color', new THREE.Float32BufferAttribute(Cc, 3)); g.setIndex(I); g.userData.parts = parts; return g; }
   const MAT = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide }), FIRE = new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: .92 });
   function bake(p) { const G = new THREE.Group();
     const body = new THREE.Mesh(merge(p.list, true), MAT); G.add(body);
@@ -880,11 +880,11 @@ function furnBuild(THREE, SK) {
 
 let _FURN = null;
 function furnKit() { return _FURN || (_FURN = furnBuild(THREE, SK)); }
-function dunMerge(parts,tag){const P=[],N=[],C=[],I=[];const v=new THREE.Vector3(),nm=new THREE.Matrix3();
+function dunMerge(parts,tag){const P=[],N=[],C=[],I=[],R=[];const v=new THREE.Vector3(),nm=new THREE.Matrix3();
   for(const [geo,col,m] of parts){const p=geo.attributes.position,n=geo.attributes.normal,b=P.length/3;nm.getNormalMatrix(m);
     for(let i=0;i<p.count;i++){v.fromBufferAttribute(p,i).applyMatrix4(m);P.push(v.x,v.y,v.z);v.fromBufferAttribute(n,i).applyMatrix3(nm).normalize();N.push(v.x,v.y,v.z);C.push(col.r,col.g,col.b);}
-    if(geo.index){const ix=geo.index.array;for(let i=0;i<ix.length;i++)I.push(ix[i]+b);}else for(let i=0;i<p.count;i++)I.push(b+i);geo.dispose();}
-  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(P,3));g.setAttribute('normal',new THREE.Float32BufferAttribute(N,3));g.setAttribute('color',new THREE.Float32BufferAttribute(C,3));g.setIndex(I);
+    if(geo.index){const ix=geo.index.array;for(let i=0;i<ix.length;i++)I.push(ix[i]+b);}else for(let i=0;i<p.count;i++)I.push(b+i);R.push(b,p.count);geo.dispose();}
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(P,3));g.setAttribute('normal',new THREE.Float32BufferAttribute(N,3));g.setAttribute('color',new THREE.Float32BufferAttribute(C,3));g.setIndex(I);g.userData.parts=R; /* S1283 — each part's first vertex and count (dunScaleWhole) */
   const mesh=new THREE.Mesh(g,new THREE.MeshLambertMaterial({vertexColors:true}));mesh.userData.dunShell=tag||'props';return mesh;}
 function dunSmoothNormals(g){g.computeVertexNormals();const p=g.attributes.position,n=g.attributes.normal,acc=new Map();
   const key=i=>Math.round(p.getX(i)*500)+','+Math.round(p.getY(i)*500)+','+Math.round(p.getZ(i)*500);
@@ -901,6 +901,7 @@ function buildDungeon(portal){
   if(dScene)while(dScene.children.length)dScene.remove(dScene.children[0]);
   dScene=new THREE.Scene();ENEMIES=[];CORPSES=[];CHESTS=[];BARRELS=[];TORCHES=[];BALLS=[];DOORS=[];KEYS=[];DUNGEON_COLUMNS=[];DUNGEON_PROPS=[];
   currentPortal=portal;currentFloor=1;FLOOR_HEIGHT=dunFloorHeight(portal); /* S564 — the dungeon's height is its own */
+  DCELL=1;FLOOR2_Y=dunFloor2Y(FLOOR_HEIGHT); /* S1283 — built in cells, then scaled whole by its cell (dunScaleWhole, at the end) */
   if(typeof WORLD!=='undefined'&&WORLD.onEnterPortal)try{WORLD.onEnterPortal(portal);}catch(e){} // v80 — the acts
   // v61g0: dispatch via FORT_INTERIORS registry. portal.interior selects the
   // generator; absent or unknown value falls back to 'cave' (makeDungeon).
@@ -2906,7 +2907,7 @@ function buildDungeon(portal){
     const keyName = isLocked
       ? (portal.keyBase+' Key'+(lockedDoors.length>1?' '+(lockedSeen+1):''))
       : null;
-    DOORS.push({id:`${dKeyOf(portal,1)}:door:${DOORS.length}`,x:td.x,z:td.z,isEW:td.isEW,open:false,keyName, // S517 — its id, <seed>:1:door:<n>
+    DOORS.push({id:`${dKeyOf(portal,1)}:door:${DOORS.length}`,x:td.x,z:td.z,c:td.x,r:td.z,isEW:td.isEW,open:false,keyName, // S517 — its id, <seed>:1:door:<n>
       mesh:dg,hinge,floor:1,locked:isLocked});
     if(isLocked){
       const kl=gen.keyLocations[lockedSeen]||gen.keyLocations[0];
@@ -3320,6 +3321,111 @@ function buildDungeon(portal){
     sarcoLid.rotation.z = -0.06;
     dScene.add(sarcoLid);
   }
+  // S1283 — what goToDungeon laid after the build (S797, S992; the lair's master and its hoard) is laid here, in cells, so the
+  // scaling pass carries it with the rest
+  try{lairFinish(portal);}catch(e){}try{shuttleLay(portal);}catch(e){}try{cloakDenLay(portal,window._lairBoss);}catch(e){}
+  dunScaleWhole(dunCellFor(portal),thWallMat);
+}
+// S1283 (card F5, Michael's A on #421; gate-interiors-build.md) — the dungeon scaled whole by its cell, as F2a's scaleRoom scales
+// a room: buildDungeon lays everything out in cells, and this carries every piece and every record of it to metres. Across, not
+// up: the ceiling is already FLOOR_HEIGHT metres. Three kinds of piece:
+//  - the shell and whatever spans a cell (walls, floors, ceilings, beams, stairs, rails, grilles, a trap's bracket): stretched by
+//    k across, its texture's repeat with it;
+//  - the things in it (a chest, a torch, a barrel, a table's parts, a candle on it): moved, never resized. Pieces that touch are
+//    one thing and move together by their middle, so a lid stays on its sarcophagus and a flame on its sconce; a merged bake of a
+//    room's furniture is cut back into its touching parts and each moved so;
+//  - the doors: 1.2 wide and 2.2 high in the middle of the cell (the F2b sheet), the wall either side and above it.
+// Every record moves with its piece (foes, chests, barrels, doors, cots, traps, footholds, columns, props' solids, the Shuttle,
+// the cloak's den); the map stays in cells and is read at dCellOf(x). k is 1 on nothing: every dungeon has its cell.
+function dunScaleWhole(k,wallMat){
+  if(!dScene||!(k>0))return;{const w=dScene.children.find(o=>o.userData&&o.userData.dunShell==='walls');if(w&&w.material)wallMat=w.material;}
+  const box=new THREE.Box3(),V=new THREE.Vector3();
+  const ext=b=>Math.max(b.max.x-b.min.x,b.max.z-b.min.z);
+  const own=new Set(),doorSet=new Set();
+  // what has a record moves by its own place, never with the clutter round it (a barrel's place is seeded, a heap of rubble is not)
+  for(const e of ENEMIES){if(e.mesh)own.add(e.mesh);if(e.el)own.add(e.el);}
+  for(const q of [...CHESTS,...BARRELS,...(typeof SIGILS!=='undefined'?SIGILS:[])])if(q.mesh)own.add(q.mesh);
+  if(typeof SHUTTLE_LIE!=='undefined'&&SHUTTLE_LIE&&SHUTTLE_LIE.mesh)own.add(SHUTTLE_LIE.mesh);
+  for(const d of DOORS)if(d.mesh)doorSet.add(d.mesh);
+  // sort the scene's pieces
+  const stretch=[],items=[],bakes=[],lights=[];
+  for(const o of dScene.children){
+    if(o.isAmbientLight||o.isHemisphereLight)continue;
+    if(o.isLight){lights.push(o);continue;}
+    if(doorSet.has(o))continue;
+    if(own.has(o)){o.position.x*=k;o.position.z*=k;continue;}
+    const tag=o.userData&&o.userData.dunShell;
+    if(o.userData&&o.userData.tris!=null&&Math.abs(o.position.x)<1e-6&&Math.abs(o.position.z)<1e-6){bakes.push(o);continue;}
+    if(tag==='props'){bakes.push(o);continue;}
+    box.setFromObject(o);if(box.isEmpty()){o.position.x*=k;o.position.z*=k;continue;}
+    if(tag||(o.isMesh&&ext(box)>=.95)){stretch.push(o);continue;} /* a group is a thing (a blade on its arm, a table of parts): moved, never stretched */
+    items.push({o,b:box.clone()});
+  }
+  // touching pieces are one thing: union by box overlap (grid-bucketed), each moved by its group's middle
+  const groups=(list)=>{const P=list.map((_,i)=>i),f=i=>{while(P[i]!==i){P[i]=P[P[i]];i=P[i];}return i;};const G=new Map(),g=1;
+    list.forEach((it,i)=>{for(let x=Math.floor(it.b.min.x/g);x<=Math.floor(it.b.max.x/g);x++)for(let z=Math.floor(it.b.min.z/g);z<=Math.floor(it.b.max.z/g);z++){const key=x+','+z;const a=G.get(key);if(a)a.push(i);else G.set(key,[i]);}});
+    const E=.02;for(const a of G.values())for(let p=0;p<a.length;p++)for(let q=p+1;q<a.length;q++){const A=list[a[p]].b,B=list[a[q]].b;
+      if(A.min.x<=B.max.x+E&&B.min.x<=A.max.x+E&&A.min.z<=B.max.z+E&&B.min.z<=A.max.z+E&&A.min.y<=B.max.y+E&&B.min.y<=A.max.y+E){const ra=f(a[p]),rb=f(a[q]);if(ra!==rb)P[ra]=rb;}}
+    const U=new Map();list.forEach((it,i)=>{const r=f(i);const u=U.get(r)||{b:new THREE.Box3(),m:[]};u.b.union(it.b);u.m.push(it);U.set(r,u);});
+    const out=[];for(const u of U.values()){const cx=(u.b.min.x+u.b.max.x)/2,cz=(u.b.min.z+u.b.max.z)/2;u.dx=cx*(k-1);u.dz=cz*(k-1);for(const it of u.m){it.dx=u.dx;it.dz=u.dz;}out.push(u);}return out;};
+  const clusters=groups(items);
+  const shiftOf=new Map();
+  for(const it of items){it.o.position.x+=it.dx;it.o.position.z+=it.dz;shiftOf.set(it.o,[it.dx,it.dz]);}
+  // a bake: its parts back into things, by the same rule, the vertices moved
+  for(const G of bakes){const meshes=G.isMesh?[G]:G.children.filter(m=>m.isMesh&&m.geometry&&m.geometry.userData.parts);const parts=[];
+    for(const m of meshes){const pa=m.geometry.attributes.position,R=m.geometry.userData.parts||[0,pa.count];
+      for(let i=0;i<R.length;i+=2){const b=new THREE.Box3();for(let v=R[i];v<R[i]+R[i+1];v++){V.fromBufferAttribute(pa,v);b.expandByPoint(V);}
+        b.min.add(G.position);b.max.add(G.position);parts.push({m,v0:R[i],n:R[i+1],b});}}
+    for(const u of groups(parts)){clusters.push(u);for(const it of u.m){const pa=it.m.geometry.attributes.position;for(let v=it.v0;v<it.v0+it.n;v++){pa.setX(v,pa.getX(v)+it.dx);pa.setZ(v,pa.getZ(v)+it.dz);}}}
+    for(const m of meshes){m.geometry.attributes.position.needsUpdate=true;m.geometry.computeBoundingBox();m.geometry.computeBoundingSphere();}
+    if(G.userData.fortFurn){const F=G.userData.fortFurn;for(const q of ['cx','cz','x0','z0','w','h'])if(typeof F[q]==='number')F[q]*=k;}
+    if(G.userData.dunFurn){const F=G.userData.dunFurn;for(const q of ['x0','z0','w','h'])if(typeof F[q]==='number')F[q]*=k;}}
+  // the shell and the spans: stretched across, the stone's grain kept to its old size
+  const seenGeo=new Set();
+  for(const o of stretch){o.position.x*=k;o.position.z*=k;o.scale.x*=k;o.scale.z*=k;
+    const tag=o.userData&&o.userData.dunShell;if((tag==='walls'||tag==='floor'||tag==='ceiling')&&o.geometry&&o.geometry.attributes.uv&&!seenGeo.has(o.geometry)){seenGeo.add(o.geometry);
+      const uv=o.geometry.attributes.uv;for(let i=0;i<uv.count;i++){uv.setX(i,uv.getX(i)*k);if(tag!=='walls')uv.setY(i,uv.getY(i)*k);}uv.needsUpdate=true;}
+    if(o.userData&&o.userData.rail){const R=o.userData.rail;R.cx*=k;R.cz*=k;R.r*=k;if(R.pts)R.pts.forEach(p=>{p[0]*=k;p[2]*=k;});if(R.stanchions)R.stanchions.forEach(p=>{p[0]*=k;p[2]*=k;});}
+    if(o.userData&&o.userData.flight){const F=o.userData.flight;for(const q of ['x0','x1','zT','zB'])F[q]*=k;}}
+  // which thing a point (or a solid's middle) belongs to
+  const near=(x,z,y)=>{for(const u of clusters){const b=u.b;if(x>=b.min.x-.05&&x<=b.max.x+.05&&z>=b.min.z-.05&&z<=b.max.z+.05&&(y==null||(y>=b.min.y-.3&&y<=b.max.y+.3)))return u;}return null;};
+  for(const l of lights){const u=near(l.position.x,l.position.z,l.position.y);if(u){l.position.x+=u.dx;l.position.z+=u.dz;}else{l.position.x*=k;l.position.z*=k;}if(l.distance)l.distance*=k;}
+  if(dScene.fog){dScene.fog.near*=k;dScene.fog.far*=k;}
+  // the records
+  const mv=(r,mesh)=>{if(!r||typeof r.x!=='number')return;const s=mesh&&shiftOf.get(mesh);if(s){r.x+=s[0];r.z+=s[1];}else{r.x*=k;r.z*=k;}};
+  for(const e of ENEMIES){e.x*=k;e.z*=k;if(typeof e.homeX==='number'){e.homeX*=k;e.homeZ*=k;}e.path=[];e.pathT=0;}
+  for(const c of CHESTS)mv(c,c.mesh);
+  for(const b of BARRELS){const s=b.mesh&&shiftOf.get(b.mesh);mv(b,b.mesh);if(typeof b.wx==='number'){if(s){b.wx+=s[0];b.wz+=s[1];}else{b.wx*=k;b.wz*=k;}}}
+  for(const q of KEYS){q.x*=k;q.z*=k;}
+  if(typeof SIGILS!=='undefined')for(const q of SIGILS){const sh=q.mesh&&shiftOf.get(q.mesh);q.x*=k;q.z*=k;if(typeof q.wx==='number'){if(sh){q.wx+=sh[0];q.wz+=sh[1];}else{q.wx*=k;q.wz*=k;}}}
+  for(const q of D_BEDS){q.x*=k;q.z*=k;}
+  if(typeof D_TRAPS!=='undefined')for(const t of D_TRAPS){t.x*=k;t.z*=k;}
+  for(const q of DUNGEON_COLUMNS){const u=near(q.x,q.z);if(u){q.x+=u.dx;q.z+=u.dz;}else{q.x*=k;q.z*=k;}}
+  for(const q of DUNGEON_PROPS){const cx=(q.x0+q.x1)/2,cz=(q.z0+q.z1)/2,u=near(cx,cz);
+    if(u){q.x0+=u.dx;q.x1+=u.dx;q.z0+=u.dz;q.z1+=u.dz;}
+    else if(Math.max(q.x1-q.x0,q.z1-q.z0)-.44>=.95){q.x0*=k;q.x1*=k;q.z0*=k;q.z1*=k;}
+    else{const dx=cx*(k-1),dz=cz*(k-1);q.x0+=dx;q.x1+=dx;q.z0+=dz;q.z1+=dz;}}
+  const S=(r,keys)=>{for(const q of keys)if(typeof r[q]==='number')r[q]*=k;};
+  for(const f of FOOTHOLDS){S(f,['x0','x1','z0','z1','cx','cz','r0','r1','rwalk']);if(f.hole)S(f.hole,['x0','x1','z0','z1']);if(f.holes)f.holes.forEach(h=>S(h,['x0','x1','z0','z1']));if(f.posts)f.posts.forEach(p=>{p[0]*=k;p[2]*=k;});}
+  if(currentPortal&&currentPortal._tutorialSpawn){const t=currentPortal._tutorialSpawn;t.x*=k;t.z*=k;}
+  if(typeof SHUTTLE_LIE!=='undefined'&&SHUTTLE_LIE)mv(SHUTTLE_LIE,SHUTTLE_LIE.mesh);
+  if(typeof CLOAK_DEN!=='undefined'&&CLOAK_DEN&&typeof CLOAK_DEN.hx==='number'){CLOAK_DEN.hx*=k;CLOAK_DEN.hz*=k;}
+  // the doors at true size: the leaf and its frame 1.2 by 2.2 on the cell's middle, the wall closing the cell either side and over it
+  const SX=1.2,SY=2.2/2.74,half=k/2,jamb=.8,lint=2.44,T=.3;
+  for(const d of DOORS){d.x=d.c*k;d.z=d.r*k;const g=d.mesh;if(!g)continue;const base=g.position.y-1.4;
+    g.position.x=d.x;g.position.z=d.z;g.position.y=base+1.1;
+    g.traverse(m=>{if(m.isMesh&&m.geometry&&!m.geometry.userData._doorScaled){m.geometry.scale(SX,SY,1);m.geometry.userData._doorScaled=true;}});
+    if(d.hinge)d.hinge.position.x*=SX;
+    if(k<=jamb*2+.05)continue;
+    const fill=(a0,a1,y0,y1)=>{const w=a1-a0,h=y1-y0;if(w<.02||h<.02)return;const m=new THREE.Mesh(new THREE.BoxGeometry(d.isEW?T:w,h,d.isEW?w:T),wallMat);const a=(a0+a1)/2;
+      if(d.isEW)m.position.set(d.x,base+y0+h/2,d.z+a);else m.position.set(d.x+a,base+y0+h/2,d.z);m.userData.doorWall=true;dScene.add(m);
+      /* the solid runs in to the leaf's edges, so the frame's stones stop you too: the way through is the leaf's 1.2. Along the door's
+         line it is not padded (dBlk tests your body's corners 0.3 round you); across, it is 0.4 thick, since corners 0.6 apart would
+         step over a thinner one */
+      if(y0<.1){const lo=a1<0?a0:SX/2,hi=a1<0?-SX/2:a1,t=.2;
+        if(d.isEW)DUNGEON_PROPS.push({x0:d.x-t,x1:d.x+t,z0:d.z+lo,z1:d.z+hi,floor:d.floor,doorWall:true});else DUNGEON_PROPS.push({x0:d.x+lo,x1:d.x+hi,z0:d.z-t,z1:d.z+t,floor:d.floor,doorWall:true});}};
+    fill(-half,-jamb,0,FLOOR_HEIGHT);fill(jamb,half,0,FLOOR_HEIGHT);fill(-jamb,jamb,lint,FLOOR_HEIGHT);}
+  DCELL=k;
 }
 
 let _preDungeonZone='overworld'; // zone to return to after exiting dungeon
@@ -3342,7 +3448,7 @@ function goToDungeon(portal){if(!portal.tutorial&&activeZoneId==='world'&&typeof
     showZoneName('\u2694 '+portal.name+' ['+_ds.label+']');
   }
   document.getElementById('fbtn').style.display='block';
-  buildDungeon(portal);scene=dScene;try{lairFinish(portal);}catch(e){}try{shuttleLay(portal);}catch(e){} /* S797 — the Shuttle's room */try{cloakDenLay(portal,window._lairBoss);}catch(e){} /* S992 — the cloak's den */ // v80 — the lair's master and its hoard
+  buildDungeon(portal);scene=dScene; /* S1283 — the lair's master and its hoard, the Shuttle's room and the cloak's den are laid inside buildDungeon now, before it is scaled */
   if(window._playerTorchLight){try{[owScene,forestScene,ironhavenScene].forEach(s=>{if(s)s.remove(window._playerTorchLight);});if(typeof WORLD!=='undefined'&&WORLD.scene)WORLD.scene.remove(window._playerTorchLight);dScene.add(window._playerTorchLight);}catch(e){}} // v80 — the torch comes with you
   startMusic('dungeon',portal.theme);
   if(portal.tutorial){
@@ -3360,7 +3466,7 @@ function goToDungeon(portal){if(!portal.tutorial&&activeZoneId==='world'&&typeof
       // v61b1: yaw was computed in buildDungeon (longest-corridor walk
       // from spawn cell) and stored on _sp. Fall back to entrance-facing
       // for legacy compatibility if yaw isn't present.
-      yaw = (_sp.yaw !== undefined) ? _sp.yaw : Math.atan2(dEntranceX - px, dEntranceZ - pz);
+      yaw = (_sp.yaw !== undefined) ? _sp.yaw : Math.atan2(dAt(dEntranceX) - px, dAt(dEntranceZ) - pz);
     } else {
       // Defensive fallback — buildDungeon should always have set this,
       // but if for some reason it didn't, fall back to entrance + 2-cell
@@ -3370,7 +3476,7 @@ function goToDungeon(portal){if(!portal.tutorial&&activeZoneId==='world'&&typeof
         const nc=dEntranceX+dc, nr=dEntranceZ+dr;
         if(nr>=0&&nr<dR&&nc>=0&&nc<dC&&dMap[nr][nc]>=1&&dMap[nr][nc]!==2){_stepC=dc;_stepR=dr;break;}
       }
-      px=dEntranceX+_stepC*2; pz=dEntranceZ+_stepR*2;
+      px=dAt(dEntranceX+_stepC*2); pz=dAt(dEntranceZ+_stepR*2);
       yaw=Math.atan2(-_stepC,-_stepR);
     }
     pitch=0; velY=0; jumpY=0; onGround=true;
@@ -3383,7 +3489,7 @@ function goToDungeon(portal){if(!portal.tutorial&&activeZoneId==='world'&&typeof
     const nc=dEntranceX+dc,nr=dEntranceZ+dr;
     if(nr>=0&&nr<dR&&nc>=0&&nc<dC&&dMap[nr][nc]>=1&&dMap[nr][nc]!==2){stepC=dc;stepR=dr;break;}
   }
-  px=dEntranceX+stepC*2;pz=dEntranceZ+stepR*2;
+  px=dAt(dEntranceX+stepC*2);pz=dAt(dEntranceZ+stepR*2);
   yaw=Math.atan2(-stepC,-stepR);pitch=0;velY=0;jumpY=0;onGround=true;
   showMsg('Entered '+portal.name+'. Press E at entrance to leave.','#aaaaff');
 });}

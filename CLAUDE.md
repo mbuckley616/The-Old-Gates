@@ -130,8 +130,10 @@ Session 368 built the tooling and Session 379 cut the file (1 Oct 2026); Session
     `tickZoneEnemies`, `killZoneEnemy`. `44-legacy-towns.js` `PROP_BUILDERS`, wilderness, forest, `buildTown`, Ironhaven,
     `ZONE_BUILDERS`, `registerPlaceholderZone`.
   - `50-travel.js` `goToZone`, fast travel, buffs, herbs, the clock, `forceTime`, day/night, respawn, `interact`.
-    `52-dungeon-gen.js` `FOOTHOLDS`, `INT_BEDS`, `makeDungeon`, `dSolid`. `54-thirdperson.js` `TP`, `tpBuild/tpPose/tpCamera`; on the new look the player's own body is the builder's (card F10, Session 1246): the genome saved in `worldState.look.hb` (`lookHBGenome`; the creator's Body, Height and Build rows), dressed from `EQ` (`tpHBDress`; the heavy chest by `AR_FAM`, plate and the muscle cuirass people.js's `D.plate`, Session 1260; gauntlets and greaves its `D.vambrace`, `D.gloves`, `D.greaves`, Session 1263; the tier's signature `D.plateSig`, Session 1265; the light hood and the robe's cowl `D.cowl`, Sessions 1269 and 1271; the bow's draw opens the right fist into the hook, `tpHBBowHand`, Session 1270; a breaststroke and treading water on the driver, Session 1272), attached by F4's `hbAttach` at the genome's own stature and posed by `tpHBPose` (what the hands hold rides as copies, `tpHBHold`). `tpEnsure` builds the body for the kit worn now, and a change of kit that leaves the dressed genome alone carries the builder's body over (`tpBuild`'s `reuse`, Session 1252).
-    `56-dungeon-build.js` the dungeon shell, `furnBuild`, `buildDungeon`, `goToDungeon`, `goToOW`.
+    `52-dungeon-gen.js` `FOOTHOLDS`, `INT_BEDS`, `makeDungeon`, `dSolid`; the cell by kind (card F5, Session 1283): `dunCellFor` (a gate 3 m,
+    forts, lairs and the crypt 2.5), `dunFloorHeight` (6, 3.6, a dragon's lair 5.5), `FLOOR2_Y` by the ceiling (`dunFloor2Y`), `DCELL`, `dCellOf(x)`, `dAt(c)`. `54-thirdperson.js` `TP`, `tpBuild/tpPose/tpCamera`; on the new look the player's own body is the builder's (card F10, Session 1246): the genome saved in `worldState.look.hb` (`lookHBGenome`; the creator's Body, Height and Build rows), dressed from `EQ` (`tpHBDress`; the heavy chest by `AR_FAM`, plate and the muscle cuirass people.js's `D.plate`, Session 1260; gauntlets and greaves its `D.vambrace`, `D.gloves`, `D.greaves`, Session 1263; the tier's signature `D.plateSig`, Session 1265; the light hood and the robe's cowl `D.cowl`, Sessions 1269 and 1271; the bow's draw opens the right fist into the hook, `tpHBBowHand`, Session 1270; a breaststroke and treading water on the driver, Session 1272), attached by F4's `hbAttach` at the genome's own stature and posed by `tpHBPose` (what the hands hold rides as copies, `tpHBHold`). `tpEnsure` builds the body for the kit worn now, and a change of kit that leaves the dressed genome alone carries the builder's body over (`tpBuild`'s `reuse`, Session 1252).
+    `56-dungeon-build.js` the dungeon shell, `furnBuild`, `buildDungeon` (built in cells, then scaled whole by `dunScaleWhole`, Session 1283),
+    `goToDungeon`, `goToOW`.
     `58-interiors-legacy.js` room kits, `buildInterior`, `goToInterior`, `exitInterior`.
   - `60-shop.js` shop, loot, stash, sleep, buy/sell. `62-actions.js` `doBash`, `attack`, `fireArrow`, `killE`, `castSpell`,
     potions, `useItem`, `updateHUD`, `drawMM`. `64-spells.js` `SPELLS`, sigils, spell fx. `66-hub.js` book reader, log, hub,
@@ -285,6 +287,9 @@ Corrections to earlier entries go in the new entry, named as corrections. Histor
 - `ROAD_MAT` is `VC_MAT` — shared with buildings. Tint road *vertex colours*, never the material.
 - Site stamps are applied after rivers are carved: a pad over a river fills it in. The routing keeps the channels out of the pads (S432); the carve is global, so a chunk is cut the same whether its cell is loaded or not.
 - `BAG` is a `const`; mutate it, don't reassign.
+- A dungeon is built in cells and then scaled whole by its cell (`dunScaleWhole`, Session 1283): after the build every position in it
+  (you, foes, chests, doors, footholds) is in metres, while `dMap`, `dEntranceX/Z`, `dStairC/R`, a door's `c`/`r` and `bfs`'s paths stay
+  cells. Read the map at `dCellOf(x)` and stand at a cell with `dAt(c)`; `px = dEntranceX` puts you in the rock (diedload, S1283).
 - A dropped animation frame must never change an outcome (lockpicking, doors): read `performance.now()`.
 - The world sits at x, z ≈ 13,000–25,000. Anything that puts world coordinates through a float32 shader path
   (skinning did) loses precision or vanishes; keep vertex work in local space.

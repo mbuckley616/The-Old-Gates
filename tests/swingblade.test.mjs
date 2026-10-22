@@ -18,10 +18,12 @@ for (const seed of [11, 3, 7, 21, 42, 5, 13, 29, 777, 778]) {
 check('a dungeon with a swinging blade', !!found, found);
 const r = await page.evaluate(() => {
   ENEMIES.forEach(e => { e.dead = true; if (e.mesh) e.mesh.visible = false; }); window._tick = tickDungeonTraps; window.tickDungeonTraps = () => {};
-  const traps = D_TRAPS.map(t => ({ kind: t.kind, x: t.x, z: t.z, centre: Number.isInteger(t.x) && Number.isInteger(t.z) && dMap[t.z][t.x] === 1 }));
+  /* S1283 — a trap stands in metres, at its cell's middle (D a cell); the map is cells */
+  const D = DCELL, C = v => Math.round(v / D), mid = v => Math.abs(v / D - Math.round(v / D)) < 1e-6;
+  const traps = D_TRAPS.map(t => ({ kind: t.kind, x: t.x, z: t.z, centre: mid(t.x) && mid(t.z) && dMap[C(t.z)][C(t.x)] === 1 }));
   const blades = D_TRAPS.filter(t => t.kind === 'blade').map(t => {
-    const h = dMap[t.z][t.x - 1] === 1 && dMap[t.z][t.x + 1] === 1, along = h ? [1, 0] : [0, 1], across = h ? [0, 1] : [1, 0];
-    const walls = dSolid(t.x + across[0] * .6, t.z + across[1] * .6) && dSolid(t.x - across[0] * .6, t.z - across[1] * .6) && !dSolid(t.x + along[0] * .6, t.z + along[1] * .6);
+    const h = dMap[C(t.z)][C(t.x) - 1] === 1 && dMap[C(t.z)][C(t.x) + 1] === 1, along = h ? [1, 0] : [0, 1], across = h ? [0, 1] : [1, 0];
+    const walls = dSolid(t.x + across[0] * .6 * D, t.z + across[1] * .6 * D) && dSolid(t.x - across[0] * .6 * D, t.z - across[1] * .6 * D) && !dSolid(t.x + along[0] * .6 * D, t.z + along[1] * .6 * D);
     const box = new THREE.Box3(), V = new THREE.Vector3();
     const at = a => { t.pivot.rotation.z = a; t.pivot.updateMatrixWorld(true); box.setFromObject(t.blade); box.getCenter(V);
       return { lowY: +box.min.y.toFixed(2), cAcross: +((V.x - t.x) * across[0] + (V.z - t.z) * across[1]).toFixed(2), cAlong: +((V.x - t.x) * along[0] + (V.z - t.z) * along[1]).toFixed(2),
@@ -29,13 +31,13 @@ const r = await page.evaluate(() => {
     const mid = at(0), pos = at(.42), neg = at(-.42);
     // the blade's flat face: its local z (the extrusion's depth) in the world, against the corridor's direction
     const n = new THREE.Vector3(0, 0, 1).transformDirection(t.blade.matrixWorld), face = Math.abs(n.x * along[0] + n.z * along[1]);
-    const slots = dScene.children.filter(o => o.isMesh && o.geometry.type === 'PlaneGeometry' && o.geometry.parameters.width === .12 && Math.abs(o.position.x - t.x) < .6 && Math.abs(o.position.z - t.z) < .6).length;
+    const slots = dScene.children.filter(o => o.isMesh && o.geometry.type === 'PlaneGeometry' && o.geometry.parameters.width === .12 && Math.abs(o.position.x - t.x) < .6 * D && Math.abs(o.position.z - t.z) < .6 * D).length;
     t.pivot.rotation.z = 0; return { x: t.x, z: t.z, h, walls, mid, pos, neg, face: +face.toFixed(2), slots };
   });
   // a picture: from four cells down the corridor, the blade at the side of its swing
-  const t = D_TRAPS.find(t => t.kind === 'blade'), b = blades[0], dx = b.h ? 1 : 0, dz = b.h ? 0 : 1; let dist = 4; while (dist > 1.5 && dSolid(t.x + dx * dist, t.z + dz * dist)) dist--;
-  t.pivot.rotation.z = .3; px = t.x + dx * dist; pz = t.z + dz * dist; yaw = Math.atan2(dx, dz); pitch = .02;
-  return { traps, blades, shotAt: dist };
+  const t = D_TRAPS.find(t => t.kind === 'blade'), b = blades[0], dx = b.h ? 1 : 0, dz = b.h ? 0 : 1; let dist = 4; while (dist > 1.5 && dSolid(t.x + dx * dist * DCELL, t.z + dz * dist * DCELL)) dist--;
+  t.pivot.rotation.z = .3; px = t.x + dx * dist * DCELL; pz = t.z + dz * dist * DCELL; yaw = Math.atan2(dx, dz); pitch = .02;
+  return { traps, blades, shotAt: dist, D: DCELL };
 });
 await g.frames(3); await page.screenshot({ path: 'tests/out/swingblade.png' });
 console.log(JSON.stringify(r));
@@ -45,7 +47,7 @@ check('each blade hangs between two walls with the corridor open along it', B.ev
 check('it swings across the passage: at the ends of its swing the blade is .5 or more to either side, and never more than .05 along', B.every(b => Math.min(b.pos.cAcross, b.neg.cAcross) < -.5 && Math.max(b.pos.cAcross, b.neg.cAcross) > .5 && Math.abs(b.pos.cAlong) < .05 && Math.abs(b.neg.cAlong) < .05), B);
 check('its flat face looks up the corridor (the blade\'s face normal along it within 1°)', B.every(b => b.face > .9998), B);
 check('the bottom of its arc is at the waist, .95 above the floor', B.every(b => Math.abs(b.mid.lowY - .95) < .03), B);
-check('at the ends of its swing it passes into the walls on both sides', B.every(b => Math.max(b.pos.reachPos, b.neg.reachPos) > .55 && Math.min(b.pos.reachNeg, b.neg.reachNeg) < -.55), B);
+check('at the ends of its swing it passes into the walls on both sides', B.every(b => Math.max(b.pos.reachPos, b.neg.reachPos) > .55 * r.D && Math.min(b.pos.reachNeg, b.neg.reachNeg) < -.55 * r.D), B); /* S1283 — the wall's face is half a cell off */
 check('a slot in each wall where it goes', B.every(b => b.slots === 2), B);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

@@ -45,7 +45,7 @@ const dun = await page.evaluate(() => {
   const spike = () => { PHP = maxHP; jumpY = gy; const rnd = Math.random; Math.random = () => 0;
     D_TRAPS.length = 0; D_TRAPS.push({ kind: 'spike', floor: currentFloor, x: px, z: pz, armed: true, t: 0, spikes: { position: { y: 0 } } });
     tickDungeonTraps(1 / 60); Math.random = rnd; D_TRAPS.length = 0; return maxHP - PHP; };
-  const hangBlade = (x, z, gy) => { const p = new THREE.Group(); p.position.set(x, gy + FLOOR_HEIGHT - .1, z); const b = new THREE.Mesh(new THREE.BoxGeometry(.7, .5, .04)); b.position.y = -1.55; p.add(b); return p; }; // S580 — the hit reads the blade's own box
+  const hangBlade = (x, z, gy) => { const p = new THREE.Group(); p.position.set(x, gy + FLOOR_HEIGHT - .1, z); const b = new THREE.Mesh(new THREE.BoxGeometry(.7, .5, .04)); b.position.y = -(FLOOR_HEIGHT - 1.65); p.add(b); return p; }; // S580 — the hit reads the blade's own box; S1283 — 1.55 over the floor under any roof
   const blade = () => { PHP = maxHP; blocking = false; jumpY = gy; D_TRAPS.length = 0;
     D_TRAPS.push({ kind: 'blade', floor: currentFloor, x: px, z: pz, ph: 0, hitT: 0, pivot: hangBlade(px, pz, gy) });
     tickDungeonTraps(1 / 60); D_TRAPS.length = 0; return maxHP - PHP; };

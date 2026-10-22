@@ -1074,7 +1074,7 @@ function checkZoneRespawn(zoneId){
 function fortCotNear(){
   if(typeof D_BEDS==='undefined')return null;
   const bd=D_BEDS.find(b=>b.floor===currentFloor&&Math.hypot(px-b.x,pz-b.z)<1.3);if(!bd)return null;
-  if(currentFloor===1){const de=Math.hypot(px-dEntranceX,pz-dEntranceZ);if(de<1.4&&de<=Math.hypot(px-bd.x,pz-bd.z))return null;}
+  if(currentFloor===1){const de=Math.hypot(px-dAt(dEntranceX),pz-dAt(dEntranceZ));if(de<1.4&&de<=Math.hypot(px-bd.x,pz-bd.z))return null;}
   return bd;
 }
 // S798 — the room's keeper or resident answers E wherever the prompt says so (within 3.2 with the crosshair on them, 90-main.js's
@@ -1344,9 +1344,9 @@ function interact(){
   const br=BARRELS.find(b=>b.floor===currentFloor&&lookingAt(b,2.6)&&(!b.opened||b.items.length>0)); // v80 — look-at
   if(br){ openLoot(br); return; }
   // exit via entrance cell (floor 1 only)
-  if(currentFloor===1&&Math.hypot(px-dEntranceX,pz-dEntranceZ)<1.4){goToOW();return;}
+  if(currentFloor===1&&Math.hypot(px-dAt(dEntranceX),pz-dAt(dEntranceZ))<1.4){goToOW();return;}
   // staircase interaction
-  if(dStairC!==null&&!DUNGEON_STAIRWELL&&Math.hypot(px-dStairC,pz-dStairR)<1.3){ // v80 S8 — legacy teleport only without a stairwell
+  if(dStairC!==null&&!DUNGEON_STAIRWELL&&Math.hypot(px-dAt(dStairC),pz-dAt(dStairR))<1.3){ // v80 S8 — legacy teleport only without a stairwell
     if(currentFloor===1&&dMap2)goToFloor2();
     else if(currentFloor===2)goToFloor1();
     return;
@@ -1378,10 +1378,10 @@ function interact(){
       else nearDoorObj.mesh.visible=false;
     } else {
       // Closing — refuse if anything occupies the door cell.
-      const dx=nearDoorObj.x, dz=nearDoorObj.z;
-      const playerInCell = Math.floor(px+.5)===dx && Math.floor(pz+.5)===dz;
-      const enemyInCell = ENEMIES.some(en=>!en.dead && en.floor===currentFloor &&
-        Math.floor(en.x+.5)===dx && Math.floor(en.z+.5)===dz);
+      // S1283 — in the door's cell and within 0.6 of its plane (the cell is 2.5 or 3 m now; the leaf swings in its middle)
+      const D_=nearDoorObj,inLeaf=(x,z)=>dCellOf(x)===D_.c&&dCellOf(z)===D_.r&&Math.abs(D_.isEW?x-D_.x:z-D_.z)<.6;
+      const playerInCell = inLeaf(px,pz);
+      const enemyInCell = ENEMIES.some(en=>!en.dead && en.floor===currentFloor && inLeaf(en.x,en.z));
       if(playerInCell || enemyInCell){
         showMsg('Something is in the way.','#cc8844');
       } else {

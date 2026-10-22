@@ -18,7 +18,7 @@ const r = await page.evaluate(() => { const out = {}; let meshes = 0; const shel
     const ox = Math.round(x + N.getX(i) * .45), oz = Math.round(z + N.getZ(i) * .45); if (!wall(ox, oz)) into++; n++; }
   out.farFromGrid = +far.toFixed(3); out.coveTop = +(cove / cn).toFixed(3); out.facingOpen = +(into / n).toFixed(3);
   // darker at the foot of the wall than at head height
-  let foot = 0, fn = 0, mid = 0, mn = 0; for (let i = 0; i < P.count; i++) { const y = P.getY(i); if (y < .05) { foot += C.getX(i); fn++; } else if (Math.abs(y - 1.6) < .05) { mid += C.getX(i); mn++; } }
+  let foot = 0, fn = 0, mid = 0, mn = 0; for (let i = 0; i < P.count; i++) { const y = P.getY(i); if (y < .05) { foot += C.getX(i); fn++; } else if (Math.abs(y - 1.6) < FLOOR_HEIGHT / DUN_SHELL.V / 2) { mid += C.getX(i); mn++; } } /* S1283 — the row nearest head height: a gate's wall is 6 m in 8 rows */
   out.foot = +(foot / fn).toFixed(2); out.mid = +(mid / mn).toFixed(2);
   // damp: the foot of a ruins wall goes green in patches (the green channel over the red)
   let gr = 0, rr0 = 0; for (let i = 0; i < P.count; i++) if (P.getY(i) < .05) { gr += C.getY(i); rr0 += C.getX(i); } out.dampGR = +(gr / rr0).toFixed(3);
@@ -27,11 +27,11 @@ const r = await page.evaluate(() => { const out = {}; let meshes = 0; const shel
   out.sides = sides; out.faces = P.count / ((DUN_SHELL.U + 1) * (DUN_SHELL.V + 1));
   // the floor covers every open cell but the stair and treasure cells (a ray straight down finds it)
   const F = shell.find(o => o.userData.dunShell === 'floor'); const ray = new THREE.Raycaster(); let miss = 0, tried = 0;
-  for (let rr = 0; rr < dR; rr++) for (let c = 0; c < dC; c++) { const v = dMap[rr][c]; if (v === 0 || v === 3 || v === 6) continue; tried++; ray.set(new THREE.Vector3(c + .13, 1, rr - .21), new THREE.Vector3(0, -1, 0)); if (!ray.intersectObject(F).length) miss++; }
+  for (let rr = 0; rr < dR; rr++) for (let c = 0; c < dC; c++) { const v = dMap[rr][c]; if (v === 0 || v === 3 || v === 6) continue; tried++; ray.set(new THREE.Vector3((c + .13) * DCELL, 1, (rr - .21) * DCELL), new THREE.Vector3(0, -1, 0)); /* S1283 — the shell is laid in cells and scaled by DCELL */ if (!ray.intersectObject(F).length) miss++; }
   out.floorMiss = miss; out.floorTried = tried;
   // S191: the props are one mesh a floor; rubble lies at the foot of the walls; crates are the kit's rounded box
   const props = []; dScene.traverse(o => { if (o.userData && o.userData.dunShell === 'props') props.push(o); }); out.props = props.length;
-  let nearWall = 0, pv = 0; if (props[0]) { const PP = props[0].geometry.attributes.position; for (let i = 0; i < PP.count; i += 11) { const x = PP.getX(i), z = PP.getZ(i); if (PP.getY(i) > .6) continue; pv++;
+  let nearWall = 0, pv = 0; if (props[0]) { const PP = props[0].geometry.attributes.position; for (let i = 0; i < PP.count; i += 11) { const x = PP.getX(i) / DCELL, z = PP.getZ(i) / DCELL; if (PP.getY(i) > .6) continue; pv++;
     const c = Math.round(x), rr = Math.round(z); if ([[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dc, dr]) => wall(c + dc, rr + dr) && Math.abs((dc ? x - c : z - rr) * (dc || dr)) > .15)) nearWall++; } }
   out.rubbleByWalls = pv ? +(nearWall / pv).toFixed(2) : 0;
   const rb = SK.rbox(1, 1, 1, .1, 3); let far2 = 0; const RP = rb.attributes.position; for (let i = 0; i < RP.count; i++) far2 = Math.max(far2, Math.hypot(RP.getX(i), RP.getY(i), RP.getZ(i))); out.rboxCorner = +far2.toFixed(3); rb.dispose();

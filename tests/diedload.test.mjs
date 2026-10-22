@@ -10,7 +10,7 @@ await page.evaluate(async () => { await saveToSlot(0); });
 const out = [];
 for (const where of ['world', 'dungeon']) {
   if (where === 'dungeon') { await enterDungeon(page, { theme: 'ruins', seed: 11, interior: 'fort_linear', size: 'medium' });
-    await page.evaluate(async () => { px = dEntranceX; pz = dEntranceZ - 2; await saveToSlot(0); }); }
+    await page.evaluate(async () => { px = dAt(dEntranceX); pz = dAt(dEntranceZ - 2); /* S1283 — the map is cells */ await saveToSlot(0); }); }
   await page.evaluate(() => { PHP = 0; playerDead(); });
   const shown = await page.evaluate(() => getComputedStyle(document.getElementById('died')).display === 'flex');
   await page.click('#died-load');
