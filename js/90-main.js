@@ -72,6 +72,7 @@ function loop(now){
     if(vmShield) vmShield.updateMatrixWorld(true);
     _updateArmBridge(vmArmR);
     _updateArmBridge(vmArmL);
+    try{vmLight(scene,dt);}catch(e){} /* S1306 — the hands take the lights of the place (16-viewmodel.js) */
     REN.autoClear=false;REN.clearDepth();
     REN.render(VM_SCENE,VM_CAM);
     REN.autoClear=true;

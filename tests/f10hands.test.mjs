@@ -67,5 +67,12 @@ if (process.env.F10_SHOTS) {
     REN.setClearColor(0x8aa0b8, 1); REN.clear(); REN.render(VM_SCENE, c); return cv.toDataURL(); });
   fs.writeFileSync(path.join(OUT, 'f10-first-sword-close.png'), Buffer.from(near.split(',')[1], 'base64'));
 }
+// S1306 — the hands take the lights of the place they are in (backlog I, s827): drawn over the world at noon, then over a black room
+// lit by one dim ambient and a lamp at 3 m, the view model's light follows; the old fixed 0.8 ambient and 1.2 sun lit both alike
+const lit = await page.evaluate(() => { forceTime(12); applyDayNightLighting(performance.now() / 1000 + 9); const sum = () => { let s = 0; const m = c => (c.r + c.g + c.b) / 3; VM_SCENE.children.forEach(o => { if (o.isLight) s += o.intensity * (o.isHemisphereLight ? (m(o.color) + m(o.groundColor)) / 2 : m(o.color)); }); return +s.toFixed(3); };
+  vmLight(scene, 9); const day = sum(); const dark = new THREE.Scene(); dark.add(new THREE.AmbientLight(0x404050, .2)); vmLight(dark, 0); const vault = sum();
+  const lamp = new THREE.PointLight(0xffa050, 2, 10); lamp.position.set(CAM.position.x + 3, CAM.position.y, CAM.position.z); dark.add(lamp); vmLight(dark, 1 / 60); const eased = sum(); vmLight(dark, 9); const lamped = sum();
+  vmLight(scene, 9); return { day, vault, eased, lamped, back: sum() }; });
+check('the hands are lit by the place: bright over the world at noon, dim in a black vault, brighter by a lamp, eased toward it', lit.day > 1 && lit.vault < .1 && lit.lamped > lit.vault + .5 && lit.eased > lit.vault && lit.eased < lit.lamped && lit.back === lit.day, lit);
 check('no page errors, and the hands never fell back (no F10 or F4 warning)', g.errs.length === 0 && !g.logs.some(l => /F10:|F4:/.test(l)), { errs: g.errs, logs: g.logs.filter(l => /F10:|F4:/.test(l)) });
 await g.close();
