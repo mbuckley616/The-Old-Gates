@@ -47,7 +47,8 @@ const between = await page.evaluate(() => { const L = new THREE.PointLight(0xffc
 await drawnLights(); const c1 = await page.evaluate(() => __cs); await g.frames(3); const after = await drawnLights(); const c2 = await page.evaluate(() => __cs);
 console.log('a light added between frames: the scene holds', between, 'then draws', JSON.stringify(after), 'compiled', c2 - c1);
 console.log('foes looked at', seen, 'kinds', [...kinds].join(', '), 'compiled on sight', JSON.stringify(onSight), 'kill:', JSON.stringify(lights));
-check('every foe on both floors of three old gates comes into view with no shader compiled', seen > 60 && onSight.length === 0, { seen, kinds: kinds.size, onSight });
+// S1284 — a medium gate is one floor of spaces now (the sheet's table: two floors only in a massive gate), so three of them hold 42 foes, not 60 and more
+check('every foe on every floor of three old gates comes into view with no shader compiled', seen >= 40 && onSight.length === 0, { seen, kinds: kinds.size, onSight });
 check('a kill and its loot glow leave the point lights at the pool\'s 20 in every frame drawn after it, and compile nothing', lights.every(([, a, lo, hi, c]) => a === 20 && lo === 20 && hi === 20 && c === 0), lights);
 check('a light added between frames is counted (21, or more with a foe\'s own waiting) until the next sweep, and every frame is drawn with the pool\'s 20 (what CI read as a fault)', between >= 21 && after.length > 0 && after.every(n => n === 20) && c2 === c1, { between, after, compiled: c2 - c1 });
 check('no page errors', g.errs.length === 0, g.errs);

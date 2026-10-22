@@ -6,7 +6,13 @@ import fs from 'fs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
 fs.mkdirSync('tests/out', { recursive: true });
-await enterDungeon(page, { theme: 'ruins', seed: 11 });
+// S1284 — the shell's own measures (a face for every side, the cove, the beams) are read in a cave laid as rooms and corridors: an
+// old gate is laid as spaces now (makeGate; gatespaces measures its roofs and walls), so this enters a lair's cavern (lairDoor), the
+// same seed and theme, at its 2.5 m cell
+await page.evaluate(() => { window._prevDScene = typeof dScene !== 'undefined' ? dScene : null; });
+await page.evaluate(() => goToDungeon(Object.assign({}, PORTALS[0], { theme: 'ruins', seed: 11, size: 'medium', interior: 'cave', zone: 'world', tutorial: false, lair: null, lairDoor: true })));
+for (let k = 0; k < 40 && !(await page.evaluate(() => activeZoneId === 'dungeon' && scene === dScene && dScene !== window._prevDScene)); k++) await page.waitForTimeout(500);
+await page.waitForTimeout(1500);
 const r = await page.evaluate(() => { const out = {}; let meshes = 0; const shell = []; dScene.traverse(o => { if (o.isMesh) meshes++; if (o.userData && o.userData.dunShell) shell.push(o); });
   out.zone = activeZoneId; out.meshes = meshes; out.floors = dMap2 ? 2 : 1; out.shell = shell.map(o => o.userData.dunShell).filter(k => k === 'walls' || k === 'floor' || k === 'ceiling').sort().join(','); out.beams = shell.filter(o => o.userData.dunShell === 'beams').map(o => o.geometry.index.count / 36);
   // no box left standing in for a wall cell

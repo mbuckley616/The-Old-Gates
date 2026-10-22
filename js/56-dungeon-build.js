@@ -93,6 +93,10 @@ function buildDunShell(map,baseY,wallCol,floorCol,opts){
   const wall=(c,r)=>r<0||r>=R||c<0||c>=Cn||map[r][c]===0;
   const skip=opts&&opts.skip||(()=>false); // cells whose floor and ceiling someone else draws (stairs, treasure)
   const noCeil=opts&&opts.noCeil||(()=>false); // S601 — cells open to the floor above (the ring's sunken yard)
+  // S1284 (card F5) — a gate's roof by cell (opts.ceil: metres over the floor at a point of a cell, a space's vault or dome), its
+  // chasm's cells (opts.pit: no floor, the walls on down GATE_PIT) and its bridges (opts.slab: a deck 1.5 thick over the pit)
+  const ceilF=opts&&opts.ceil||null,hAt=(c,r,X,Z)=>ceilF?ceilF(c,r,X,Z):H;
+  const pit=opts&&opts.pit||(()=>false),slab=opts&&opts.slab||(()=>false),SLAB=1.5;
   // where a point of the wall moves: the noise, then a bevel at an outside corner or a fill at an inside one
   const corner=(X,Z)=>{const c0=Math.floor(X),r0=Math.floor(Z);let w=0;for(const [c,r] of [[c0,r0],[c0+1,r0],[c0,r0+1],[c0+1,r0+1]])if(wall(c,r))w++;return w;};
   const warp=(X,Y,Z)=>{let x=X+S.AMP*N1(X*1.3,Y*.9,Z*1.3)+.02*N2(X*5,Y*5,Z*5),z=Z+S.AMP*N3(X*1.3,Y*.9,Z*1.3)+.02*N1(Z*5,Y*5,X*5);
@@ -108,29 +112,45 @@ function buildDunShell(map,baseY,wallCol,floorCol,opts){
     return [x,z];};
   const damp=(opts&&opts.damp)||null,Nd=dunNoise(seed+29);
   const wet=(X,Z,h)=>{if(!damp||h>=1)return [1,1,1];const p=Math.max(0,Math.min(1,.5+1.4*Nd(X*.8,0,Z*.8)))*(1-h);return [1+(damp[0]-1)*p,1+(damp[1]-1)*p,1+(damp[2]-1)*p];};
-  const shade=(Y)=>{const u=Y-baseY;return (1-.42*Math.exp(-u/.45))*(1-.3*Math.exp(-(H-u)/.5))*(u<.7?.86+.2*u:1);};
+  const shade=(Y,h)=>{const u=Y-baseY;if(u<0)return .3+.55*Math.exp(u/6); /* S1284 — a wall's own height (h); below the floor, a chasm's dark */
+    return (1-.42*Math.exp(-u/.45))*(1-.3*Math.exp(-Math.max(0,(h==null?H:h)-u)/.5))*(u<.7?.86+.2*u:1);};
   const P=[],UV=[],CO=[],IX=[];
-  const quadGrid=(nu,nv,at)=>{const b=P.length/3;for(let j=0;j<=nv;j++)for(let i=0;i<=nu;i++){const v=at(i/nu,j/nv);P.push(v.p[0],v.p[1],v.p[2]);UV.push(v.uv[0],v.uv[1]);const w=wet(v.p[0],v.p[2],(v.p[1]-baseY)/1.2);CO.push(v.k*w[0],v.k*w[1],v.k*w[2]);}
+  const quadGrid=(nu,nv,at)=>{const b=P.length/3;for(let j=0;j<=nv;j++)for(let i=0;i<=nu;i++){const v=at(i/nu,j/nv);P.push(v.p[0],v.p[1],v.p[2]);UV.push(v.uv[0],v.uv[1]);const w=wet(v.p[0],v.p[2],Math.max(0,(v.p[1]-baseY)/1.2));CO.push(v.k*w[0],v.k*w[1],v.k*w[2]);}
     for(let j=0;j<nv;j++)for(let i=0;i<nu;i++){const a=b+j*(nu+1)+i,bb=a+1,c=a+nu+1,d=c+1;IX.push(a,c,bb,bb,c,d);}};
   // the walls: a face on each side of an open cell that meets a wall
   for(let r=0;r<R;r++)for(let c=0;c<Cn;c++){if(wall(c,r))continue;
     for(const [dc,dr] of [[1,0],[-1,0],[0,1],[0,-1]]){if(!wall(c+dc,r+dr))continue;
       // the face's along-axis runs so the quad faces into the open cell
       const ax=dr,az=-dc; // along the face, turned so the winding faces into the open cell
-      const ox=c+dc*.5,oz=r+dr*.5;
-      quadGrid(S.U,S.V,(u,v)=>{const t=u-.5,X=ox+ax*t,Z=oz+az*t,Y=baseY+v*H;const [x,z]=warp(X,Y,Z);
-        return {p:[x,Y,z],uv:[(ax?X:Z)/S.TEXU+(dr?.37:0),Y/S.TEXU],k:shade(Y)*(Math.abs(t)>.49&&corner(X,Z)===3?.72:1)};});}}
+      const ox=c+dc*.5,oz=r+dr*.5,lo=pit(c,r)?-GATE_PIT:0;
+      const hm=ceilF?hAt(c,r,ox-dc*.02,oz-dr*.02):H;
+      quadGrid(S.U,hm>H+.5||lo?S.V*2:S.V,(u,v)=>{const t=u-.5,X=ox+ax*t,Z=oz+az*t,h=ceilF?hAt(c,r,X-dc*.02,Z-dr*.02):H,Y=baseY+lo+v*(h-lo);const [x,z]=warp(X,Y,Z);
+        return {p:[x,Y,z],uv:[(ax?X:Z)/S.TEXU+(dr?.37:0),Y/S.TEXU],k:shade(Y,h)*(Math.abs(t)>.49&&corner(X,Z)===3?.72:1)};});}}
+  // S1284 — where two open cells' roofs differ (a threshold's 8 m under a nave's vault, a corridor's 6 into a hall) the step
+  // between them, facing into the taller; where a chasm meets the floor, its cliff (a bridge's deck only SLAB deep)
+  if(ceilF||opts&&opts.pit)for(let r=0;r<R;r++)for(let c=0;c<Cn;c++){if(wall(c,r))continue;
+    for(const [dc,dr] of [[1,0],[-1,0],[0,1],[0,-1]]){const nc=c+dc,nr=r+dr;if(wall(nc,nr))continue;
+      const ax=dr,az=-dc,ox=c+dc*.5,oz=r+dr*.5;
+      if(ceilF){const hs=t=>{const X=ox+ax*t,Z=oz+az*t;return [hAt(c,r,X-dc*.02,Z-dr*.02),hAt(nc,nr,X+dc*.02,Z+dr*.02)];};
+        if([-.5,0,.5].some(t=>{const [a,b]=hs(t);return a>b+.05;}))
+          quadGrid(S.U,S.V,(u,v)=>{const t=u-.5,X=ox+ax*t,Z=oz+az*t,[a,b]=hs(t),lo=Math.min(a,b),Y=baseY+lo+v*Math.max(0,a-lo);const [x,z]=warp(X,Y,Z);
+            return {p:[x,Y,z],uv:[(ax?X:Z)/S.TEXU+(dr?.37:0),Y/S.TEXU],k:shade(Y,a)};});}
+      if(pit(c,r)&&!pit(nc,nr)){const d=slab(nc,nr)?SLAB:GATE_PIT;
+        quadGrid(S.U,4,(u,v)=>{const t=u-.5,X=ox+ax*t,Z=oz+az*t,Y=baseY-d+v*d;return {p:[X,Y,Z],uv:[(ax?X:Z)/S.TEXU,Y/S.TEXU],k:shade(Y,H)};});}
+      else if(slab(nc,nr)&&!pit(c,r)&&!slab(c,r)) // a ledge's cliff under the bridge's end
+        quadGrid(S.U,4,(u,v)=>{const t=u-.5,X=ox+ax*t+dc*1e-3,Z=oz+az*t+dr*1e-3,Y=baseY-GATE_PIT+v*(GATE_PIT-SLAB);return {p:[X,Y,Z],uv:[(ax?X:Z)/S.TEXU,Y/S.TEXU],k:shade(Y,H)};});}}
   const wg=new THREE.BufferGeometry();wg.setAttribute('position',new THREE.Float32BufferAttribute(P,3));wg.setAttribute('uv',new THREE.Float32BufferAttribute(UV,2));
   wg.setAttribute('color',new THREE.Float32BufferAttribute(CO,3));wg.setIndex(IX);dunSmoothNormals(wg);
   const wm=new THREE.MeshLambertMaterial({map:dunStoneTex(wallCol,seed,'wall'),vertexColors:true});
   const walls=new THREE.Mesh(wg,wm);walls.userData.dunShell='walls';
   // floor and ceiling: a grid over every cell but the ones drawn elsewhere, darker towards the walls, the floor a
   // little uneven between its edges (never at a cell's rim, so it meets the stair and treasure planes)
-  const plane=(y,down,col,kind)=>{const P2=[],U2=[],C2=[],I2=[];const n=2;
+  const plane=(y,down,col,kind)=>{const P2=[],U2=[],C2=[],I2=[];const n=down&&ceilF?4:2;
     const ao=(X,Z)=>{let w=0;for(const [c,r] of [[Math.floor(X-.25+.5),Math.floor(Z-.25+.5)],[Math.floor(X+.25+.5),Math.floor(Z-.25+.5)],[Math.floor(X-.25+.5),Math.floor(Z+.25+.5)],[Math.floor(X+.25+.5),Math.floor(Z+.25+.5)]])if(wall(c,r))w++;return 1-.13*w;};
-    for(let r=0;r<R;r++)for(let c=0;c<Cn;c++){if(skip(c,r)||(down&&noCeil(c,r)))continue;const b=P2.length/3;
+    for(let r=0;r<R;r++)for(let c=0;c<Cn;c++){if(skip(c,r)&&!(down&&pit(c,r))||(down&&noCeil(c,r)))continue;const b=P2.length/3;
       for(let j=0;j<=n;j++)for(let i=0;i<=n;i++){const X=c-.5+i/n,Z=r-.5+j/n;const rim=i===0||j===0||i===n||j===n;const dy=rim?0:(down?.08:.03)*N2(X*1.7,y,Z*1.7);
-        P2.push(X,y+dy,Z);U2.push(X/S.TEXU,Z/S.TEXU);const k=ao(X,Z);const w=down?[1,1,1]:wet(X,Z,1-(1-k)*4);C2.push(k*w[0],k*w[1],k*w[2]);}
+        const yy=down&&ceilF?baseY+hAt(c,r,X,Z):y; /* S1284 — a space's ceiling is its vault */
+        P2.push(X,yy+dy,Z);U2.push(X/S.TEXU,Z/S.TEXU);const k=ao(X,Z);const w=down?[1,1,1]:wet(X,Z,1-(1-k)*4);C2.push(k*w[0],k*w[1],k*w[2]);}
       for(let j=0;j<n;j++)for(let i=0;i<n;i++){const a=b+j*(n+1)+i,bb=a+1,cc=a+n+1,d=cc+1;if(down)I2.push(a,bb,cc,bb,d,cc);else I2.push(a,cc,bb,bb,cc,d);}}
     const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(P2,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(U2,2));g.setAttribute('color',new THREE.Float32BufferAttribute(C2,3));g.setIndex(I2);g.computeVertexNormals();
     const m=new THREE.Mesh(g,new THREE.MeshLambertMaterial({map:dunStoneTex(col,seed+(down?3:1),kind),vertexColors:true}));m.userData.dunShell=down?'ceiling':'floor';return m;};
@@ -897,6 +917,29 @@ function dKeyOf(portal,floorIdx){const p=portal||{};return String(p.seed!=null?p
 const FORT_SHAPES=['fort_hall','fort_barracks','fort_ring'];
 function fortShapeFor(portal){const k=portal.interior||'cave';if(!k.startsWith('fort_')||portal.size==='small')return k;
   if(FORT_SHAPES.includes(k))return k;return FORT_SHAPES[hashSeed((portal.seed|0)+177)%3];}
+// S1284 (card F5, the build sheet's session 2) — a gate's spaces in plain geometry, in cells (dunScaleWhole stretches them across):
+// a nave's piers to its vault (DUNGEON_COLUMNS, 2 m round), a chasm's floor GATE_PIT down and its bridges' undersides, a flooded
+// hall's water and its islands (FOOTHOLDS, a step up), the ring chamber's dais. The look builder dresses them by school.
+function buildGateSpaces(gen,baseY,wallCol,floorCol){
+  const parts=[],stone=new THREE.Color(wallCol).multiplyScalar(1.7),dark=new THREE.Color(wallCol).multiplyScalar(.45),deck=new THREE.Color(floorCol).multiplyScalar(1.3);
+  const at=(x,y,z)=>new THREE.Matrix4().makeTranslation(x,y,z),flat=(x,y,z,up)=>new THREE.Matrix4().makeRotationX(up?-Math.PI/2:Math.PI/2).setPosition(x,y,z);
+  const map=gen.map,R=map.length,C=map[0].length;
+  for(let r=0;r<R;r++)for(let c=0;c<C;c++){const v=map[r][c];
+    if(v===9){const h=gen.ceilAt(c,r,c,r,FLOOR_HEIGHT)+.6;parts.push([new THREE.CylinderGeometry(.62,.72,h,16),stone,at(c,baseY+h/2,r)]);
+      parts.push([new THREE.CylinderGeometry(.82,.86,.7,16),stone.clone().multiplyScalar(.85),at(c,baseY+.35,r)]);
+      DUNGEON_COLUMNS.push({x:c,z:r,r:2/GATE_CELL,floor:1,span:true});}
+    else if(v===8)parts.push([new THREE.PlaneGeometry(1,1),dark,flat(c,baseY-GATE_PIT,r,true)]);
+    else if(gen.slab(c,r))parts.push([new THREE.PlaneGeometry(1,1),deck.clone().multiplyScalar(.5),flat(c,baseY-1.5,r,false)]);}
+  for(const sp of gen.spaces){
+    if(sp.type==='flooded'){
+      const wg=new THREE.PlaneGeometry(sp.w,sp.h);const water=new THREE.Mesh(wg,new THREE.MeshLambertMaterial({color:0x1c3a46,transparent:true,opacity:.74,depthWrite:false}));
+      water.rotation.x=-Math.PI/2;water.position.set(sp.x-.5+sp.w/2,baseY+.3,sp.y-.5+sp.h/2);water.userData.dunShell='water';dScene.add(water);
+      for(const q of sp.islands||[]){parts.push([new THREE.BoxGeometry(q.w,.4,q.h),deck,at(q.x-.5+q.w/2,baseY+.2,q.y-.5+q.h/2)]);
+        FOOTHOLDS.push({x0:q.x-.5,x1:q.x-.5+q.w,z0:q.y-.5,z1:q.y-.5+q.h,y:baseY+.4,gate:'island'});}}
+    if(sp.dais){const d=sp.dais;parts.push([new THREE.BoxGeometry(d.x1-d.x0,.4,d.z1-d.z0),stone,at((d.x0+d.x1)/2,baseY+.2,(d.z0+d.z1)/2)]);
+      FOOTHOLDS.push({x0:d.x0,x1:d.x1,z0:d.z0,z1:d.z1,y:baseY+.4,gate:'dais'});}}
+  if(parts.length)dScene.add(dunMerge(parts,'spaces'));
+}
 function buildDungeon(portal){
   if(dScene)while(dScene.children.length)dScene.remove(dScene.children[0]);
   dScene=new THREE.Scene();ENEMIES=[];CORPSES=[];CHESTS=[];BARRELS=[];TORCHES=[];BALLS=[];DOORS=[];KEYS=[];DUNGEON_COLUMNS=[];DUNGEON_PROPS=[];
@@ -909,12 +952,15 @@ function buildDungeon(portal){
   // produce a playable cave dungeon, not a hard crash on entry.
   const interiorKey = fortShapeFor(portal);
   const interiorFn = FORT_INTERIORS[interiorKey] || FORT_INTERIORS.cave;
-  let gen=interiorFn(portal.size,portal.seed);
+  // S1284 (card F5, Michael's B on #448) — an old gate is laid as spaces first, rooms after (makeGate); forts, lairs, dens and the
+  // crypt keep their rooms and corridors (#421)
+  let gen=interiorKey==='cave'&&!dunKeepKind(portal)?makeGate(portal.size,portal.seed):interiorFn(portal.size,portal.seed);
   if(interiorKey!=='cave'&&!gen.map2&&portal.size!=='small')gen=addUpperFloor(gen,portal.seed); // v80 — forts get an upper floor
   dMap=gen.map;dMap2=gen.map2||null;dR=gen.H;dC=gen.W;
   mmRevealed=Array.from({length:dR},()=>new Uint8Array(dC));
   mmRevealed2=Array.from({length:dR},()=>new Uint8Array(dC));
   dEntranceX=gen.entC;dEntranceZ=gen.entR;
+  D_CEIL=[null,gen.ceilAt?((X,Z)=>gen.ceilAt(Math.floor(X+.5),Math.floor(Z+.5),X,Z,FLOOR_HEIGHT)):null,null]; /* S1284 — dCeil */
   dStairC=gen.stairC;dStairR=gen.stairR;
   // v61b8: hoist tutorial-spawn computation to early in buildDungeon so the
   // enemy spawn filter (further down) can reference `portal._tutorialSpawn`
@@ -964,7 +1010,7 @@ function buildDungeon(portal){
   }
   const th=portal.occupied?Object.assign({},THEME_DEF[portal.theme]||THEME_DEF.ruins,{clutter:'junk'}):(THEME_DEF[portal.theme]||THEME_DEF.ruins); /* S759 — an occupied gate: its school's stone and light, the warren's junk */
   dScene.background=new THREE.Color(th.fog);
-  const fogFar={tiny:16,small:22,medium:32,large:44,massive:56}[portal.size]||28;
+  const fogFar=gen.gate?({tiny:30,small:30,medium:40,large:40,massive:50}[portal.size]||40):({tiny:16,small:22,medium:32,large:44,massive:56}[portal.size]||28); /* S1284 — in cells: a gate's halls are seen 90 to 150 m off */
   dScene.fog=new THREE.Fog(th.fog,6,fogFar);
   dScene.add(new THREE.AmbientLight(th.amb,.20));
   dScene.add(new THREE.HemisphereLight(th.amb,0x101020,.08));
@@ -1229,10 +1275,12 @@ function buildDungeon(portal){
     // S197 — a fort's first floor too: its walls dressed flatter (no cove: its halls carry banners and sconces high on
     // the walls), in the fort's cool grey; its own floors and ceilings stay, so the shell lays ground only under walls
     const shellOn=true,fortF1=isFort&&floorIdx===1;
-    if(shellOn){const sh=buildDunShell(map,baseY,fortF1?0x6c6c72:floorIdx===1?th.wallCol:f2WallCol,floorIdx===1?th.floorCol:f2FloorCol,{seed:(portal.seed|0)*3+floorIdx,skip:fortF1?((c,r)=>map[r][c]!==0):((c,r)=>map[r][c]===3||map[r][c]===6),amp:fortF1?.025:null,cove:!fortF1,
-        damp:DUN_DAMP[portal.theme]||DUN_DAMP.ruins,rooms:floorIdx===2?(gen.rooms2||[]):(gen.rooms||[]),holes:floorIdx===2&&gen.stairC!=null?(gen.stairHoles||[{x0:gen.stairC-.5,x1:gen.stairC+1.5,z0:gen.stairR-.5,z1:gen.stairR+1.5}]):null,
+    if(shellOn){const sh=buildDunShell(map,baseY,fortF1?0x6c6c72:floorIdx===1?th.wallCol:f2WallCol,floorIdx===1?th.floorCol:f2FloorCol,{seed:(portal.seed|0)*3+floorIdx,skip:fortF1?((c,r)=>map[r][c]!==0):((c,r)=>map[r][c]===3||map[r][c]===6||map[r][c]===8),amp:fortF1?.025:null,cove:!fortF1&&!gen.gate,
+        ceil:gen.gate&&floorIdx===1?((c,r,X,Z)=>gen.ceilAt(c,r,X,Z,FLOOR_HEIGHT)):null,pit:gen.gate&&floorIdx===1?((c,r)=>map[r][c]===8):null,slab:gen.gate&&floorIdx===1?gen.slab:null,
+        damp:DUN_DAMP[portal.theme]||DUN_DAMP.ruins,rooms:(floorIdx===2?(gen.rooms2||[]):(gen.rooms||[])).filter(rm=>rm.kind!=='space'),holes:floorIdx===2&&gen.stairC!=null?(gen.stairHoles||[{x0:gen.stairC-.5,x1:gen.stairC+1.5,z0:gen.stairR-.5,z1:gen.stairR+1.5}]):null,
         noCeil:floorIdx===2&&gen.yard?((c,r)=>c>=gen.yard.c0&&c<=gen.yard.c1&&r>=gen.yard.r0&&r<=gen.yard.r1):null});
       dScene.add(sh.walls);dScene.add(sh.floor);dScene.add(sh.ceil);if(sh.beams)dScene.add(sh.beams);}
+    if(gen.gate&&floorIdx===1)buildGateSpaces(gen,baseY,th.wallCol,th.floorCol); /* S1284 — the piers, the chasm's floor, the water, the dais */
     // S191 — the floor's props, one merged mesh: rubble heaps where walls meet the floor, the theme's clutter
     const props=[],stoneCol=new THREE.Color(floorIdx===1?th.wallCol:f2WallCol).multiplyScalar(2.6);
     const addP=(geo,col,x,y,z,ry,rx,rz,sx,sy,sz)=>{const m=new THREE.Matrix4().compose(new THREE.Vector3(x,y,z),new THREE.Quaternion().setFromEuler(new THREE.Euler(rx||0,ry||0,rz||0,'YXZ')),new THREE.Vector3(sx||1,sy||1,sz||1));props.push([geo,col&&col.isColor?col:new THREE.Color(col),m]);};
@@ -1678,7 +1726,9 @@ function buildDungeon(portal){
       const openDirs=[[0,1],[0,-1],[1,0],[-1,0]].filter(([dc,dr])=>{const vv=map[r+dr]?.[c+dc];return vv>=1;});
       const isOpposite = openDirs.length===2 && (openDirs[0][0]+openDirs[1][0]===0 && openDirs[0][1]+openDirs[1][1]===0);
       if(isOpposite) continue; // straight corridor — not a corner
-      if(dPlace() < 0.08 && !chestAtCell(c,r)) spawnChest(c, r, false);
+      /* S1284 — a medium or large gate is one floor of spaces now where it was two: its corners hold a chest twice as often, so a clear
+         finds what it did (lootpicks: Michael's A on #191, about 5 picks a clear) */
+      if(dPlace() < (gen.gate&&!gen.map2?0.16:0.08) && !chestAtCell(c,r)) spawnChest(c, r, false);
     }
     if(isFort){
       // v61ga: storeroom + library chests. Each storeroom gets 1-2 chests
@@ -3212,18 +3262,21 @@ function buildDungeon(portal){
   SIGILS.length=0;
   _nearSigil=null;
   const sigilSpellId=SIGIL_PLACEMENTS[portal.seed];
-  if(sigilSpellId && dMap2){
+  // S1284 — in a gate laid as spaces the sigil is on the ring chamber's wall, floor one (the sheet: a lesser gate's sigil)
+  const sigRing=gen.gate?gen.spaces[gen.ring]:null,sigMap=sigRing?dMap:dMap2,sigFloor=sigRing?1:2,sigY=sigRing?0:FLOOR2_Y;
+  if(sigilSpellId && sigMap){
     // Collect floor-2 floor cells that have at least one wall neighbor, excluding the stair cell.
     const candidates=[];
     for(let r=2;r<dR-2;r++){
       for(let c=2;c<dC-2;c++){
-        if(dMap2[r][c]!==1)continue;
+        if(sigMap[r][c]!==1)continue;
         if(c===dStairC && r===dStairR)continue;
+        if(sigRing&&(c<sigRing.x||r<sigRing.y||c>=sigRing.x+sigRing.w||r>=sigRing.y+sigRing.h))continue;
         // Find a wall neighbor (face direction points from floor → wall)
         for(const [dc,dr] of [[0,-1],[0,1],[-1,0],[1,0]]){
           const nr=r+dr,nc=c+dc;
           if(nr<0||nr>=dR||nc<0||nc>=dC)continue;
-          if(dMap2[nr][nc]===0){
+          if(sigMap[nr][nc]===0){
             candidates.push({fc:c,fr:r,wc:nc,wr:nr,dc,dr});
             break;
           }
@@ -3239,7 +3292,7 @@ function buildDungeon(portal){
         // Place mesh 0.48 units into the wall from the floor cell center (wall is 1 unit, so 0.48 puts it just below the surface)
         const wallX=pick.fc+pick.dc*0.48;
         const wallZ=pick.fr+pick.dr*0.48;
-        mesh.position.set(wallX, FLOOR2_Y+1.2, wallZ);
+        mesh.position.set(wallX, sigY+1.2, wallZ);
         // Rotate disc so its face points back toward the floor (away from the wall interior)
         if(pick.dc===1){ mesh.rotation.y=-Math.PI/2; }
         else if(pick.dc===-1){ mesh.rotation.y=Math.PI/2; }
@@ -3254,7 +3307,7 @@ function buildDungeon(portal){
           mesh,
           x:pick.fc, z:pick.fr,          // player stand-point (floor cell)
           wx:wallX, wz:wallZ,             // mesh XZ, used only for rendering
-          floor:2,
+          floor:sigFloor,
         });
       }
     }
@@ -3325,6 +3378,8 @@ function buildDungeon(portal){
   // scaling pass carries it with the rest
   try{lairFinish(portal);}catch(e){}try{shuttleLay(portal);}catch(e){}try{cloakDenLay(portal,window._lairBoss);}catch(e){}
   dunScaleWhole(dunCellFor(portal),thWallMat);
+  /* S1284 — a gate's spaces bring materials no room had (the water's, the pit's): compiled now, behind the fade, not when first seen */
+  if(gen.gate&&typeof REN!=='undefined'&&REN.compile)try{REN.compile(dScene,CAM);}catch(e){}
 }
 // S1283 (card F5, Michael's A on #421; gate-interiors-build.md) — the dungeon scaled whole by its cell, as F2a's scaleRoom scales
 // a room: buildDungeon lays everything out in cells, and this carries every piece and every record of it to metres. Across, not
@@ -3400,7 +3455,7 @@ function dunScaleWhole(k,wallMat){
   if(typeof SIGILS!=='undefined')for(const q of SIGILS){const sh=q.mesh&&shiftOf.get(q.mesh);q.x*=k;q.z*=k;if(typeof q.wx==='number'){if(sh){q.wx+=sh[0];q.wz+=sh[1];}else{q.wx*=k;q.wz*=k;}}}
   for(const q of D_BEDS){q.x*=k;q.z*=k;}
   if(typeof D_TRAPS!=='undefined')for(const t of D_TRAPS){t.x*=k;t.z*=k;}
-  for(const q of DUNGEON_COLUMNS){const u=near(q.x,q.z);if(u){q.x+=u.dx;q.z+=u.dz;}else{q.x*=k;q.z*=k;}}
+  for(const q of DUNGEON_COLUMNS){if(q.span){q.x*=k;q.z*=k;q.r*=k;continue;} /* S1284 — a gate's pier spans its cells: stretched, not moved */ const u=near(q.x,q.z);if(u){q.x+=u.dx;q.z+=u.dz;}else{q.x*=k;q.z*=k;}}
   for(const q of DUNGEON_PROPS){const cx=(q.x0+q.x1)/2,cz=(q.z0+q.z1)/2,u=near(cx,cz);
     if(u){q.x0+=u.dx;q.x1+=u.dx;q.z0+=u.dz;q.z1+=u.dz;}
     else if(Math.max(q.x1-q.x0,q.z1-q.z0)-.44>=.95){q.x0*=k;q.x1*=k;q.z0*=k;q.z1*=k;}

@@ -20,7 +20,7 @@ check('the same grades at level 20 as at level 1', JSON.stringify(t.out[1]) === 
 // the floor: a tier-1 door at the coast's centre, entered at level 1 and at level 20
 async function enter(lv) {
   await page.evaluate(([lv, C]) => { level = lv;
-    goToDungeon(makePortalDef({ x: C.x, z: C.z, zone: 'world', seed: 7311, size: 'medium', theme: 'undead' })); }, [lv, t.C]);
+    goToDungeon(makePortalDef({ x: C.x, z: C.z, zone: 'world', seed: 7311, size: 'massive', theme: 'undead' })); /* S1284 — only a massive gate has a floor two now */ }, [lv, t.C]);
   for (let i = 0; i < 60; i++) { await page.waitForTimeout(400); if (await page.evaluate(() => activeZoneId === 'dungeon' && ENEMIES.length > 0)) break; }
   await g.frames(4);
   const r = await page.evaluate(() => { const plain = ENEMIES.filter(e => e.name === 'Skeleton' && !e.variant);

@@ -6,8 +6,9 @@ const OUT = process.env.SHOT_DIR || 'docs/prototypes';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
 const rows = [];
-for (const [theme, seed] of [['ruins', 4021], ['deep', 4012], ['crypt', 4020], ['ruins', 4002], ['haunted', 4030]]) {
-  await page.evaluate(([theme, seed]) => { window._oldStair = typeof dScene !== 'undefined' && dScene.children.find(o => o.userData && o.userData.dunShell === 'stair'); const p = Object.assign({}, PORTALS[0], { id: 'dyn_' + seed, theme, seed, size: 'large', interior: 'cave', zone: 'world', tutorial: false }); goToDungeon(p); }, [theme, seed]);
+// S1284 — massive gates now (the only ones with a floor two), the seeds picked again for a floor-two beam over the shaft
+for (const [theme, seed] of [['ruins', 4003], ['deep', 4005], ['crypt', 4006], ['ruins', 4008], ['haunted', 4009]]) {
+  await page.evaluate(([theme, seed]) => { window._oldStair = typeof dScene !== 'undefined' && dScene.children.find(o => o.userData && o.userData.dunShell === 'stair'); const p = Object.assign({}, PORTALS[0], { id: 'dyn_' + seed, theme, seed, size: 'massive', interior: 'cave', zone: 'world', tutorial: false }); goToDungeon(p); }, [theme, seed]);
   for (let k = 0; k < 20 && !(await page.evaluate(() => activeZoneId === 'dungeon' && scene === dScene && !dScene.children.includes(window._oldStair))); k++) await page.waitForTimeout(300);
   rows.push(await page.evaluate(([theme, seed]) => { const f = FOOTHOLDS.find(f => f.kind === 'spiral'); if (!f) return { seed, none: true };
     const near = []; let tris = 0, beamIn = 0, beamsF2 = 0;
@@ -17,7 +18,7 @@ for (const [theme, seed] of [['ruins', 4021], ['deep', 4012], ['crypt', 4020], [
       if (o.userData.dunShell === 'beams') { const p = o.geometry.attributes.position;
         for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i); if (y > FLOOR2_Y + .5 && y < 0) { beamsF2++; if (Math.abs(x - f.cx / DCELL) < .98 && Math.abs(z - f.cz / DCELL) < .98) beamIn++; /* the beams' vertices are cells (the shell is scaled whole) */ } } } });
     // the beams that would cross the shaft without the cut, from the generator itself (these seeds were picked for them)
-    const gen = makeDungeon('large', seed); let would = 0; const x0 = gen.stairC - .5, x1 = gen.stairC + 1.5, z0 = gen.stairR - .5, z1 = gen.stairR + 1.5;
+    const gen = makeGate('massive', seed); /* S1284 — an old gate is laid as spaces, and only a massive one has a floor two (the sheet) */ let would = 0; const x0 = gen.stairC - .5, x1 = gen.stairC + 1.5, z0 = gen.stairR - .5, z1 = gen.stairR + 1.5;
     for (const rm of gen.rooms2 || []) { if (Math.min(rm.w, rm.h) < 3) continue; const alongX = rm.w <= rm.h, nn = alongX ? rm.h : rm.w;
       for (let k = 1; k < nn - .5; k += 2) { if (alongX) { const z = rm.y + k; if (z + .09 > z0 && z - .09 < z1 && rm.x + rm.w - .25 > x0 && rm.x - .75 < x1) would++; } else { const x = rm.x + k; if (x + .09 > x0 && x - .09 < x1 && rm.y + rm.h - .25 > z0 && rm.y - .75 < z1) would++; } } }
     return { theme, seed, same: Math.abs((gen.stairC + .5) * DCELL - f.cx) < 1e-6 && Math.abs((gen.stairR + .5) * DCELL - f.cz) < 1e-6, near, tris: Math.round(tris), would, beamsF2, beamIn }; }, [theme, seed]));
@@ -29,7 +30,7 @@ check('each stair is two meshes and nothing else stands in its shaft', S.every(r
 check('the stair is 9–13k triangles', S.every(r => r.tris > 9000 && r.tris < 13000), S.map(r => r.tris));
 check('each has a floor-2 beam that would cross the shaft uncut, and no beam vertex lies inside it', S.every(r => r.would > 0 && r.beamsF2 > 0 && r.beamIn === 0), S.map(r => [r.would, r.beamsF2, r.beamIn]));
 // the pictures: the prototype's two places on seed 4021
-await page.evaluate(() => { window._oldStair = dScene.children.find(o => o.userData && o.userData.dunShell === 'stair'); const p = Object.assign({}, PORTALS[0], { id: 'dyn_4021', theme: 'ruins', seed: 4021, size: 'large', interior: 'cave', zone: 'world', tutorial: false }); goToDungeon(p); });
+await page.evaluate(() => { window._oldStair = dScene.children.find(o => o.userData && o.userData.dunShell === 'stair'); const p = Object.assign({}, PORTALS[0], { id: 'dyn_4021', theme: 'ruins', seed: 4021, size: 'massive', interior: 'cave', zone: 'world', tutorial: false }); goToDungeon(p); });
 for (let k = 0; k < 20 && !(await page.evaluate(() => activeZoneId === 'dungeon' && scene === dScene)); k++) await page.waitForTimeout(300);
 await page.waitForTimeout(1500); await g.spin(30);
 await page.evaluate(() => { ENEMIES.forEach(e => { e.dead = true; if (e.mesh) e.mesh.visible = false; }); PHP = 1e6; if (typeof vmSword !== 'undefined' && vmSword) vmSword.visible = false; if (typeof vmArmR !== 'undefined' && vmArmR) vmArmR.visible = false; });

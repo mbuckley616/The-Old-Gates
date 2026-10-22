@@ -7,7 +7,8 @@ const g = await boot(); const { page } = g;
 await g.intoWorld();
 await page.evaluate(() => { level = 8; });
 let r = null;
-for (const [theme, seed] of [['undead', 7], ['haunted', 3], ['ruins', 11], ['undead', 21], ['haunted', 9]]) { await enterDungeon(page, { theme, seed });
+// S1284 — a mimic's least tier is 2, a floor two's, and only a massive gate has one now
+for (const [theme, seed] of [['undead', 7], ['haunted', 3], ['ruins', 11], ['undead', 21], ['haunted', 9]]) { await enterDungeon(page, { theme, seed, size: 'massive' });
   r = await page.evaluate(() => { const m = ENEMIES.find(e => e.limbs && e.limbs.jaw); const ch = CHESTS[0]; const out = { chests: CHESTS.length, mimic: !!m };
     if (ch && ch.lid) { const f = new THREE.Vector3(0, 0, .3), w0 = new THREE.Vector3(); ch.lid.updateMatrixWorld(true); w0.copy(f).applyMatrix4(ch.lid.matrixWorld); const was = ch.lid.rotation.x; ch.lid.rotation.x = -Math.PI / 3; ch.lid.updateMatrixWorld(true); const w1 = f.clone().applyMatrix4(ch.lid.matrixWorld); ch.lid.rotation.x = was; out.lidFrontRises = +(w1.y - w0.y).toFixed(3); out.chestMesh = ch.g ? ch.g.children.filter(o => o.isMesh).length : null; }
     if (!m) return out; const L = m.limbs; out.hiddenTeeth = !L.revealTeeth.userData.rows.some(q => q.visible) && !L.revealEye.visible; out.sameAsChest = m.mesh.children.filter(o => o.userData && o.userData.dunShell === 'chest').length === 1;
