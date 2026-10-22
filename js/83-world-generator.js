@@ -1769,6 +1769,49 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     else{intNPCMesh=null;intNPCPos={x:-99,z:-99};}
     return sc_;
   }
+  // S1326 (card F9; OG-043, OG-061) — on the new look an Aurennais town's church standing as the Church of the Weaver (lot.kit.kind
+  // 'aurchurch', S1305) is its own room inside (PKIT.au.churchHall, rooms.js's Session 947): the nave 12.4 m square and 10.1 m to the
+  // ceiling, open in an oculus into the drum and the painted dome; the bier of the dead under it, the benches by the door, the altar on
+  // the sanctuary under the gilt shuttle. The shell is the street's church (one stream, by the town), drawn in metres and moved into the
+  // room's frame as the tavern is (nothing scaled). The priest keeps his vigil between the sanctuary's step and the bier's head.
+  function kitChurchHall(house){return !!(house&&house.type==='church'&&house.kit&&house.kit.kind==='aurchurch'&&window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.au&&PKIT.au.churchHall);}
+  function buildKitChurchHall(house){
+    const T=PKIT.au.churchHall({shell:`${house.siteId}:church`},PKIT.stream(house.id+':churchhall')),I=T.inner,X=I.x1,Z=I.z1,F0=T.floor,W=2*X,D=2*Z,Ci=PKIT.au.churchBox({rank:'town',w:14,tower:1}).inner;
+    const rx=x=>x+X,rz=z=>z+Z,ry=y=>y-F0;
+    house._counterFront=null;house.intW=W;house.intD=D;house._roomH=+(T.ceil-F0).toFixed(3);house._exitD=.8;house._exitW=1.3;house._exitX=+rx(T.door.x).toFixed(3);house._churchHall=T;
+    const sc_=new THREE.Scene();interiorScene=sc_;landRoomPost(sc_);sc_.background=new THREE.Color(0x0e0c0a);sc_.fog=new THREE.Fog(0x0e0c0a,Math.max(W,D)*1.2*SCALE.ROOM_K,Math.max(W,D)*3*SCALE.ROOM_K);
+    intNPCMesh=null;intBedPos=null;intStashPos=null;
+    const SOL=[];INT_SOL=SOL;FOOTHOLDS=[];INT_BEDS=[];INT_DOORS=[];INT_DOORS.house=house.id;INT_CHAIR=null;INT_NPCS=[];HATCH.active=false;HATCH.roof=false;INT_LOOT=null;INT_BOX=null;INT_SHELF=null;
+    T.group.position.set(X,-F0,Z);T.group.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false;}});sc_.add(T.group);
+    // the solids are the prototype's boxes: the sanctuary and its step, the altar, the lectern, the bier, its candlesticks, the benches,
+    // the door's leaves; a bench stands from the floor (its legs are not boxes) and the lectern to its desk; a box's top is a foothold,
+    // except a candlestick's, the lectern's and a leaf's
+    for(const q of T.boxes){const b={x0:rx(q.x0),x1:rx(q.x1),z0:rz(q.z0),z1:rz(q.z1),y0:ry(q.y0),y1:ry(q.y1)};if(q.tag==='bench')b.y0=0;if(q.tag==='lectern')b.y1=ry(T.lectern.y);SOL.push(b);
+      if(!['candlestick','lectern','leaf'].includes(q.tag))FOOTHOLDS.push({x0:b.x0,x1:b.x1,z0:b.z0,z1:b.z1,y:b.y1});}
+    // the day beyond the great door and the tall windows (three on each wall, two beside the door), by the hour: one mesh of planes
+    // outside them, each as large as its opening with its arch (the wall hides the rest); the drum's twelve lights are the shell's own
+    const hr=typeof gameHour==='function'?gameHour():12,dayK=hr>=7&&hr<18?1:hr>=5&&hr<20?.45:.08;
+    {const day=hr>=7&&hr<18?0xc4d0dc:hr>=5&&hr<20?0x8a7a7a:0x0e1420,M=new THREE.MeshBasicMaterial({color:day}),hw=Ci.W/2+.08,ww=Math.min(1.5,Ci.W*.08),wh=Ci.H*.42+.2,wy=Ci.pl+3.2;
+      const P=[],out=(x,y,z,w,h,a)=>{const g=new THREE.PlaneGeometry(w+.2,h).toNonIndexed();g.rotateY(a);g.translate(rx(x),ry(y+h/2),rz(z));P.push(g.attributes.position.array);g.dispose();};
+      const tall=[0,1,2].map(i=>-Ci.W/2+(i+.5)*Ci.W/3);
+      out(T.door.x,Ci.pl,hw,T.door.w,T.door.h+.2,Math.PI);for(const sx of [-1,1])out(sx*Ci.W*.3,wy,hw,ww,wh,Math.PI);
+      for(const x of tall){out(x,wy,-hw,ww,wh,0);out(hw,wy,x,ww,wh,-Math.PI/2);out(-hw,wy,x,ww,wh,Math.PI/2);}
+      const A=new Float32Array(P.reduce((n,a)=>n+a.length,0));let o=0;for(const a of P){A.set(a,o);o+=a.length;}
+      const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(A,3));const m=new THREE.Mesh(g,M);m.userData.daylight=true;sc_.add(m);}
+    // the light: the day down through the oculus from the drum's lights, the ring of twelve lamps, the altar's candles, the bier's four,
+    // the stone's cool dimness, and the day off the pale floor onto the ceiling round the oculus (a hemisphere's ground colour)
+    sc_.add(new THREE.AmbientLight(0xffc890,.3));sc_.add(new THREE.HemisphereLight(0xe8ecf0,0xd8c4a4,.15+.35*dayK));
+    const L=(x,y,z,c,i,d)=>{const l=new THREE.PointLight(c,i,d);l.position.set(x,y,z);sc_.add(l);return l;};
+    L(X,ry(T.oculus.y),Z,0xe8eef8,.25+1.35*dayK,22);L(X,ry(T.ring.y-.2),Z,0xffaa44,1.2,10);
+    {const A=T.altar;L(rx((A.x0+A.x1)/2),ry(A.y+.9),rz(A.z1+.4),0xffb060,.9,6);}L(X,ry(F0+1.9),Z,0xffb060,.8,5);
+    // the priest between the sanctuary's step and the bier's candlesticks, facing the door
+    const npc={x:rx(0),z:rz(T.sanctuary.z1+.34+.65)};
+    if(npcInsideNow(house)){const g=buildNPCMesh({role:'Priest',name:house.keeper,_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
+      g.rotation.y=0;g.position.set(npc.x,0,npc.z);sc_.add(g);intNPCMesh=g;intNPCPos={x:npc.x,z:npc.z};
+      intNPCMesh.userData.amble={wa:0,wt:1,minZ:npc.z,maxZ:npc.z,minX:npc.x,maxX:npc.x,speed:.25,paused:true};}
+    else{intNPCMesh=null;intNPCPos={x:-99,z:-99};}
+    return sc_;
+  }
   function buildInteriorFor(house){
     const reg=house.reg||'irish',type=house.type||'misc',st=house.style||'irish';
     INT_BED_NATION=nationAt(house.doorX,house.doorZ); // S288 — the beds' wood
@@ -1777,6 +1820,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     if(kitTaproom(house))return buildKitTaproom(house); /* S1161 — the kit's taproom, at its true size */
     if(kitAlehall(house))return buildKitAlehall(house); /* S1288 — the Mark's alehall, at its true size */
     if(kitTavern(house))return buildKitTavern(house); /* S1320 — Aurenne's tavern on the quay, at its true size */
+    if(kitChurchHall(house))return buildKitChurchHall(house); /* S1326 — the Church of the Weaver inside, at its true size */
     const two=!!house.two;
     // S896 (F2a) — the room's true size in metres (07-scale.js; visual-foundation.md §1: a cottage room 4 to 6 across, an inn's hall
     // 10 to 14, a church's nave 8 to 12 wide), then laid out in the old unit (÷ SCALE.ROOM_K) and scaled back up at the end
