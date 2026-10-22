@@ -43,6 +43,27 @@ for (const [p, x] of Object.entries(r.out)) { const E = EXPECT[p];
   check(`${p}: short of gold, paid, and the room already yours`, x.poor.startsWith(E.poorStart) && /(you’ve|have) 1\b/i.test(x.poor) && x.paid.endsWith(E.paidEnd) && x.madePlain === E.made && typeof x.made === 'string', [x.poor, x.paid, x.made, x.madePlain]);
   check(`${p}: the empty house and *Not tonight*`, x.emptyOffer.startsWith(E.empty) && x.notTonight === E.not, [x.emptyOffer, x.notTonight]);
   check(`${p}: no line reads undefined`, Object.values(x).every(v => typeof v === 'string' && !/undefined|\[object|=>/.test(v)), x); }
+// S1285 — the Mark's alehall (Michael's A on #588): a place on the wall bench, six of them, never a room up a stair
+const b = await page.evaluate(() => {
+  const inn = WORLD.settle.get('dunmore').houses.find(x => x.type === 'inn' && x.dlg);
+  const hall = Object.assign({}, inn, { id: inn.id + '_hall', kit: { kind: 'markhall', alehall: true }, coachInn: false });
+  worldState.rented = null; worldState.gameTimeAbsMinutes = 3 * 1440 + 20 * 60; gold = 500;
+  const bed = WORLD.innTopics(hall, 'markman').find(x => /A bed for the night/.test(x.label));
+  const offer = bed.response; const paid = bed.follow[0].fn(); const made = bed.response, rented = Object.assign({}, worldState.rented);
+  const names = [0, 1, 2, 3, 4, 5].map(k => innRoomName(k, innRooms(hall), hall));
+  const saved = currentHouse; currentHouse = hall;
+  const prompts = [bedPrompt({ owner: 'inn', room: rented.room }), bedPrompt({ owner: 'inn', room: (rented.room + 1) % 6 })];
+  worldState.rented = null; prompts.push(bedPrompt({ owner: 'inn', room: 0 })); currentHouse = saved;
+  const plain = WORLD.innTopics(inn, 'markman').find(x => /A bed for the night/.test(x.label)).response;
+  return { offer, paid, made, rented, names, n: innRooms(hall), prompts, plain, benchInn: innBench(inn) };
+});
+console.log(JSON.stringify(b));
+const BL = [b.offer, b.paid, b.made, ...b.names, ...b.prompts].join(' | ');
+check('the alehall: six places, three on each bench, each named once', b.n === 6 && new Set(b.names).size === 6 && b.names[0] === 'the place by the door on the left bench' && b.names[5] === 'the place by the counter on the right bench', b.names);
+check('the alehall: the keeper lets a place on the bench and it is kept as one', b.offer.includes('gold buys a place on the bench') && b.paid.endsWith('Hall keeps the peace, by iron.') && /Your furs are laid/.test(b.made) && b.rented.bench === 1, [b.offer, b.paid, b.made, b.rented]);
+check('the alehall: no stair, no door, no room in any line', !/upstairs|up the stairs|door on the|\broom\b|undefined/i.test(BL.replace(/place by the door/g, '')), BL);
+check('the alehall: the bench\'s prompts', b.prompts[0] === "Your place \u2014 press 'E' to rest" && /^(Another guest's place|Not your place)$/.test(b.prompts[1]) && /^Ask the keeper for a place on the bench \(\d+ gold\)$/.test(b.prompts[2]), b.prompts);
+check('an inn with no alehall keeps its rooms', !b.benchInn && /room/i.test(b.plain), b.plain);
 check('Dunmore’s innkeeper is a Gatelander and speaks as one', r.people === 'gatelander' && r.real === EXPECT.gatelander.not, [r.inn, r.people, r.real]);
 
 const names = r.all.map(x => x.n), french = r.all.filter(x => x.reg === 'french');
