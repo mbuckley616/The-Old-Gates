@@ -230,6 +230,25 @@
       poor:(p,g)=>`${p} gold. You have ${g}.`,
       paid:(p,R)=>`${p} gold. ${R}, up the stairs, until this hour tomorrow. The other doors are not mine to open.`,
       not:'The fire is free.'}};
+  // S1285 — the Mark's alehall (Michael's A on DECISION #588): one hall, and a guest rents a place on the furred wall bench, not a
+  // room up a stair. The look builder hangs it in a Markish inn and marks it house.kit.alehall; innBench(house) reads that mark, and
+  // the keeper then lets six places, three on each bench, left and right as you come in from the door, by these words
+  const INN_BENCH_LINES={
+    markman:{
+      made:'Your place is laid already. Furs and all.',
+      madeNamed:R=>`${R}. Your furs are laid. Nobody sits there but you.`,
+      empty:'Benches are empty tonight. Just you and the fire.',
+      one:'One other on the benches tonight.',
+      many:n=>`${n} others on the benches tonight.`,
+      offer:(o,p,r)=>`${o} ${p} gold buys a place on the bench — ${r} — with furs, the fire all night, and porridge at first light. Want it?`,
+      full:'Every place on the benches is taken tonight. The floor by the hearth’s free, and it’s warm.',
+      poor:(p,g)=>`${p} gold, and you’ve ${g}. Come back with it.`,
+      paid:(p,R)=>`${p} gold. Aye. ${R}, yours till this time tomorrow. What lies on the next place belongs to whoever sleeps there. Hall keeps the peace, by iron.`,
+      not:'Suit yourself. The fire’s free.'}};
+  const INN_BENCH_GREET=["Fire's lit. Find a bench.","Benches by the wall. Bowl's on the way.","We don't ask where you've been. Boots off, though."];
+  function innBench(house){return !!(house&&house.type==='inn'&&house.kit&&house.kit.alehall);}
+  function innBenchName(k){if(k==null)return 'a place on the bench';if(k>5)return 'a place on the benches';
+    return `${['the place by the door','the middle place','the place by the counter'][k%3]} on the ${k<3?'left':'right'} bench`;}
   // S783 — the Waylamp at the inns (the approved draft's words, by the inn's people): the holder's *The lamp over the door?* and
   // each house's *The lamp.* on the trial; the rules are lampHangsAt / lampTake / lampTrim (87-world-quests.js)
   const LAMP_LINES={
@@ -258,7 +277,7 @@
         follow:[{label:'I’ll carry it.',quest:true,fn:()=>lampTake(house)?LL.take:LL.not},{label:'Not today.',response:LL.not}]},
       {label:'The lamp.',quest:true,avail:()=>typeof lampTrimAvail==='function'&&lampTrimAvail(house),fn:()=>{const r=lampTrim(house);return !r?LL.again:r.again?LL.again:r.fifth?LL.fifth:LL.trim(r.n,r.left);}},
       {label:'Give the lamp to the house.',quest:true,avail:()=>typeof lampOwn==='function'&&lampOwn(),fn:()=>lampGive(house)?(LAMP_HELD[people]||LAMP_HELD.gatelander).give:LL.not}];}
-  function innTopics(house,people){const L=INN_ROOM_LINES[people]||INN_ROOM_LINES.markman;const cap=t=>t.replace(/^./,c=>c.toUpperCase());
+  function innTopics(house,people){const L=innBench(house)?(INN_BENCH_LINES[people]||INN_BENCH_LINES.markman):(INN_ROOM_LINES[people]||INN_ROOM_LINES.markman);const cap=t=>t.replace(/^./,c=>c.toUpperCase());
     return [{label:'Something to eat and drink?',trade:true,fn:()=>{feastMeal(house);}},{label:'A bed for the night?',
           get response(){const price=innPrice(house),n=innRooms(house),taken=innTaken(house),free=innFreeRoom(house);
             if(rentedNow(house.id)){const mine=myRoom(house.id);return mine==null?L.made:L.madeNamed(cap(innRoomName(mine,n,house)));}
@@ -268,9 +287,9 @@
             const lamp=!house.coachInn&&typeof lampFree==='function'&&lampFree();
             return [{label:lamp?'Yes.':`Yes. ${price} gold.`,quest:true,fn:()=>{const n=innRooms(house),free=innFreeRoom(house);
               if(free==null)return L.full;
-              if(lamp){worldState.rented={id:house.id,room:free,until:(worldState.gameTimeAbsMinutes||0)+24*60};if(typeof addLog==='function')addLog('🛏️',`Rented ${innRoomName(free,n,house)} at ${house.name}; the Waylamp's bearer is not charged.`);return L.madeNamed(cap(innRoomName(free,n,house)));} /* S784 — the lamp pays */
+              if(lamp){worldState.rented={id:house.id,room:free,until:(worldState.gameTimeAbsMinutes||0)+24*60};if(innBench(house))worldState.rented.bench=1;if(typeof addLog==='function')addLog('🛏️',`Rented ${innRoomName(free,n,house)} at ${house.name}; the Waylamp's bearer is not charged.`);return L.madeNamed(cap(innRoomName(free,n,house)));} /* S784 — the lamp pays */
               if(gold<price)return L.poor(price,gold);
-              gold-=price;updateHUD();worldState.rented={id:house.id,room:free,until:(worldState.gameTimeAbsMinutes||0)+24*60};
+              gold-=price;updateHUD();worldState.rented={id:house.id,room:free,until:(worldState.gameTimeAbsMinutes||0)+24*60};if(innBench(house))worldState.rented.bench=1;
               if(typeof addLog==='function')addLog('🛏️',`Rented ${innRoomName(free,n,house)} at ${house.name} for ${price} gold.`);
               return L.paid(price,cap(innRoomName(free,n,house)));}},
             {label:'Not tonight.',response:L.not}];}},...lampTopics(house,people)];}
@@ -288,12 +307,12 @@
   function barberFee(house){return innPrice(house);}
   function barberPay(house,changed){if(!changed)return 'free';const fee=barberFee(house);if(gold<fee)return 'poor';gold-=fee;if(typeof updateHUD==='function')updateHUD();
     if(typeof addLog==='function')addLog('✂',`Paid ${fee} gold at ${house.name||'the barber’s'}.`);return 'paid';}
-  function innRooms(house){if(kitTaproom(house))return house.kit.bays; /* S1161 — the kit's taproom: three rooms off the passage (two on two bays, S1276) */const W=Math.max(10,Math.min(12,(house.w||6)*1.6))/SCALE.ROOM_K;return Math.max(1,Math.floor(W/3.4));} /* S896 (F2a) — as buildInteriorFor lays out the gallery's rooms: the hall's true width in the kit's unit, a room every 3.4 */
+  function innRooms(house){if(innBench(house))return 6; /* S1285 — the alehall: three places on each wall bench */if(kitTaproom(house))return house.kit.bays; /* S1161 — the kit's taproom: three rooms off the passage (two on two bays, S1276) */const W=Math.max(10,Math.min(12,(house.w||6)*1.6))/SCALE.ROOM_K;return Math.max(1,Math.floor(W/3.4));} /* S896 (F2a) — as buildInteriorFor lays out the gallery's rooms: the hall's true width in the kit's unit, a room every 3.4 */
   // v80 S424 — the rooms stand in one row behind the gallery, room 0 at the west wall, and you come up the stair facing
   // their doors: from a west stair every door is on your right, the nearest room 0's; from an east stair on your left,
   // the nearest the last room's. The names count the doors from the stair head (were left and right in turn, from room 0).
   function galleryEast(house){if(kitTaproom(house))return true; /* S1161 — the kit's taproom: its stair is up the east gable */return String(house.id||'').split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,3)%2===1;}
-  function innRoomName(k,n,house){if(k==null)return 'a room';if(n<=1)return 'the room at the top of the stairs';
+  function innRoomName(k,n,house){if(innBench(house))return innBenchName(k); /* S1285 — the alehall's places */if(k==null)return 'a room';if(n<=1)return 'the room at the top of the stairs';
     const east=galleryEast(house),i=east?n-1-k:k,side=east?'left':'right';
     if(i===n-1&&n>2)return `the last door on the ${side}`;
     return `the ${['first','second','third','fourth','fifth','sixth'][i]||`${i+1}th`} door on the ${side}`;}
@@ -315,13 +334,16 @@
       if(rentedNow(h.id)){
         const mine=myRoom(h.id); // v80 S141 — an old save rented the whole inn: any bed there
         if(mine==null||bd.room==null||bd.room===mine)return false;
-        showMsg(`${innGuestRoom(h,bd.room)?"Another guest's room.":'An empty room, not the one you took.'} Yours is ${innRoomName(mine,innRooms(h),h)}.`,'#c8b880');return true;
+        const bn=innBench(h); /* S1285 — the alehall: a place on the bench, not a room */
+        showMsg(`${innGuestRoom(h,bd.room)?(bn?"Another guest's place.":"Another guest's room."):(bn?'An empty place, not the one you took.':'An empty room, not the one you took.')} Yours is ${innRoomName(mine,innRooms(h),h)}.`,'#c8b880');return true;
       }
-      showMsg('The innkeeper lets the rooms. Ask at the counter.','#c8b880');return true;
+      showMsg(innBench(h)?'The keeper lets the places on the benches. Ask at the counter.':'The innkeeper lets the rooms. Ask at the counter.','#c8b880');return true;
     }
     return false;
   }
   function bedPrompt(bd){const h=currentHouse;const owner=bd.owner||'free';
+    if(owner==='inn'&&innBench(h)){if(!rentedNow(h.id))return `Ask the keeper for a place on the bench (${innPrice(h)} gold)`; /* S1285 — the alehall */
+      const mine=myRoom(h.id);if(mine!=null&&bd.room!=null&&bd.room!==mine)return innGuestRoom(h,bd.room)?"Another guest's place":'Not your place';if(mine!=null)return "Your place \u2014 press 'E' to rest";}
     if(owner==='inn'&&!rentedNow(h.id))return `Ask the innkeeper for a room (${innPrice(h)} gold)`;
     if(owner==='inn'){const mine=myRoom(h.id);if(mine!=null&&bd.room!=null&&bd.room!==mine)return innGuestRoom(h,bd.room)?"Another guest's room":'Not your room';if(mine!=null)return "Your room \u2014 press 'E' to rest";} // v80 S141
     if(owner==='home'&&!ownedHouse(h.id))return null;if(owner==='guild'&&!guildMember(h.guild))return "Members' beds";return "Press 'E' to rest";}

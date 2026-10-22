@@ -2,7 +2,7 @@
 
 These are the quest writer's drafts. None of them is canon until Michael promotes it into `quest_writing.md`, and none is a spec until it is approved. Each draft gives the quest's shape, every line verbatim with its speaker and people, and a note on what in the code would carry it.
 
-Calls read to: 2026-10-16T17:51:09.360Z (run 24, 21 Oct: no new calls)
+Calls read to: 2026-10-16T17:51:09.360Z (run 25, 22 Oct: no new calls on the page; DECISION #588's A asked for *The Markish Bench*, below)
 
 ---
 
@@ -4551,3 +4551,67 @@ After the *For me* choice, nothing is bought; the log instead:
 - The Mark's three (run 2): the Blaze, the Strait Fair with its captains' and reeves' oaths and its duels (canon §1.2, *disputes by duel*), and First Snow under the lights.
 - Aurenne's three (run 3): the Commencement, the Caravan, the Lamps on the Water.
 - The *everyday life* half of OG-107 (stalls, a smith at work, a temple service, wrestling and archery, a harbour gathering) is most of it the look builder's and the systems builder's; a short words draft for the contests once one exists.
+
+---
+
+## The Markish Bench — the alehall's keeper lets a place, not a room
+
+*Asked for by Michael's A on DECISION #588, 22 Oct 2026 (the keeper's words first, then the look builder hangs the alehall in every Markish inn). Built, Session 1285, PR #595.* *Drafted 22 Oct 2026.*
+
+### What it is for
+
+Michael's A on #321 made the Mark's inn the alehall: one hall of long tables, and the guests sleep on the furred benches along the walls. Renting a place is renting a bench. The room is in the kit (`PKIT.mk.alehall`), but the Markish keeper still let *a room, a bed, a bolt on the door, up the stairs*. These are the keeper's words for the bench. No new rule of play is needed: the inn's rental is the same rental, with six places instead of rooms.
+
+**Canon.** §2: Markmen speak in short sentences, say *aye*, swear on iron and blood, use no honorific. The hall's peace is the oath here: a guest's things on the next place are that guest's, as the old line's *the other doors aren't mine to open* was. The canon says nothing of what the Mark's inns serve at dawn; porridge is the plainer thing.
+
+### The places
+
+Six, three on each wall bench, named as you come in from the door:
+
+| | Left bench | Right bench |
+|---|---|---|
+| by the door | *the place by the door on the left bench* | *the place by the door on the right bench* |
+| middle | *the middle place on the left bench* | *the middle place on the right bench* |
+| by the counter | *the place by the counter on the left bench* | *the place by the counter on the right bench* |
+
+### The keeper (Markman), at the counter
+
+**Greeting** (one of):
+> Fire's lit. Find a bench.
+> Benches by the wall. Bowl's on the way.
+> We don't ask where you've been. Boots off, though.
+
+**A bed for the night?**
+- Who else is in, one of:
+  > Benches are empty tonight. Just you and the fire.
+  > One other on the benches tonight.
+  > *N* others on the benches tonight.
+- The offer, after it:
+  > *N* gold buys a place on the bench — *the middle place on the left bench* — with furs, the fire all night, and porridge at first light. Want it?
+- **Yes.** Paid:
+  > *N* gold. Aye. *The middle place on the left bench*, yours till this time tomorrow. What lies on the next place belongs to whoever sleeps there. Hall keeps the peace, by iron.
+- Short of gold:
+  > *N* gold, and you've *M*. Come back with it.
+- Every place taken:
+  > Every place on the benches is taken tonight. The floor by the hearth's free, and it's warm.
+- **Not tonight.**
+  > Suit yourself. The fire's free.
+- Asked again once it is yours:
+  > *The middle place on the left bench*. Your furs are laid. Nobody sits there but you.
+  > (an old save with no place kept) Your place is laid already. Furs and all.
+
+The Waylamp's bearer and the feast day keep their own lines before the offer, as in every inn.
+
+### At the bench
+
+- Prompt, not rented: *Ask the keeper for a place on the bench (N gold)*
+- Prompt, your own: *Your place — press 'E' to rest*
+- Prompt, another's: *Another guest's place* / *Not your place*
+- Pressed, not rented: *The keeper lets the places on the benches. Ask at the counter.*
+- Pressed on the wrong place: *Another guest's place.* or *An empty place, not the one you took.*, then *Yours is the middle place on the left bench.*
+- The clock, when the night runs out: *The place you took on the bench is the keeper's again.*
+- The log: *Rented the middle place on the left bench at The Black Ram for 17 gold.*
+
+### What carries it
+
+`js/86-world-crime.js`: `INN_BENCH_LINES.markman` (the ten keys of `INN_ROOM_LINES`), `INN_BENCH_GREET`, `innBench(house)` (reads `house.kit.alehall`), `innBenchName(k)`; `innTopics`, `innRooms` (6), `innRoomName`, `bedInteract` and `bedPrompt` switch on it. `worldState.rented.bench` (the rental, already saved whole) carries the lapse line in `87-world-quests.js`. `83-world-generator.js` gives an alehall's keeper the greeting. The look builder marks the inn: `alehall:true` on its `lot.kit` at planning, and the bench's six beds `owner:'inn'`, `room` 0–5 in the order of the table (left then right, door to counter). `tests/innvoice` proves the words.

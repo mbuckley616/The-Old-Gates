@@ -1146,7 +1146,12 @@
     if(h._imr){h._imr.picked=h._imr.list.some(q=>q.harvested);if(h._imr.picked&&h.instP)h.instP.visible=h.inst.visible;}} // the picked bush stands where the whole one did
   const _hy=new THREE.Vector3(0,1,0);
   let _herbSyncT=0;
-  function tickHerbSync(dt){_herbSyncT-=dt;if(_herbSyncT>0)return;_herbSyncT=.5;tickHerbLod();for(const h of ZONES.world.herbs){if(!h.inst)continue;const hidden=h.harvested||!h.g.visible;const y=propH(h.x,h.z);if(hidden!==h._shownHidden||Math.abs((h._y==null?-1e9:h._y)-y)>.05){h._shownHidden=hidden;h._y=y;syncHerbInstance(h);}}} // v80 S132 — re-seat when the ground under a herb changes (a pad stamped after it was placed)
+  // v80 S132 — re-seat a herb when the ground under it changes (a pad stamped after it was placed). S1289 — only herbs within HERB_LOD.far
+  // (a square of it about you) have their ground read: propH reads the height five times, and every loaded herb's (845 about Dunmore)
+  // cost 16–56 ms each half second (systems, Session 1278), for herbs too far off to be drawn. A far herb is re-seated as you come near.
+  function tickHerbSync(dt){_herbSyncT-=dt;if(_herbSyncT>0)return;_herbSyncT=.5;tickHerbLod();const F=HERB_LOD.far;
+    for(const h of ZONES.world.herbs){if(!h.inst)continue;const hidden=h.harvested||!h.g.visible;if(hidden!==h._shownHidden){h._shownHidden=hidden;h._y=propH(h.x,h.z);syncHerbInstance(h);continue;}
+      if(Math.abs(h.x-px)>F||Math.abs(h.z-pz)>F)continue;const y=propH(h.x,h.z);if(Math.abs((h._y==null?-1e9:h._y)-y)>.05){h._y=y;syncHerbInstance(h);}}}
   function spawnChunkHerbs(ch){
     if(typeof mkHerbMesh!=='function'||typeof HERB_DEF==='undefined')return;
     const cxw=ch.cx*CHUNK+CHUNK/2,czw=ch.cz*CHUNK+CHUNK/2;
