@@ -309,7 +309,7 @@ export function aurenneHome(o = {}, r = stream('aurhome')) {
   const all = new THREE.Group(); all.add(sh.group, group);
   const windows = [...sh.open.front.filter(h => !h.door).map(h => ({ face: 'front', x: h.x, z: d / 2, y: sh.yW + h.y, w: h.w, h: h.h })), ...sh.open.back.map(h => ({ face: 'back', x: -h.x, z: -d / 2, y: sh.yW + h.y, w: h.w, h: h.h }))];
   return { group: all, shell: sh.group, room: group, tris: Math.round(tris), draws: group.children.length, shellTris: sh.tris, shellCalls: sh.draws, inner: { x0: -X, x1: X, z0: -Z, z1: Z }, floors: [F0, F1, F2], ceil: [F1 - .4, CEIL - .18], beams,
-    door: { x: dx, z: d / 2, w: 1.05, h: 2.0 }, stair: { x0: SX0, x1: LX, z0: -Z, z1: SZ1, rise: +rise.toFixed(4), going, n: N }, well, hatch, roofStair: RS, paths, boxes, bed, divan, table, counter, lamp, lamp0, braziers, windows, w, d, top: F2 };
+    door: { x: dx, z: d / 2, w: 1.05, h: 2.1 }, stair: { x0: SX0, x1: LX, z0: -Z, z1: SZ1, rise: +rise.toFixed(4), going, n: N }, well, hatch, roofStair: RS, paths, boxes, bed, divan, table, counter, lamp, lamp0, braziers, windows, w, d, top: F2 };
 }
 
 // gatelandsInn(o, r) (Session 893, card F9; L9's three inns, OG-108's "cosy Gatelander inn with a hearth"; Michael's A on #303: rooms
@@ -468,7 +468,7 @@ export function markAlehall(o = {}, r = stream('alehall')) {
 //   corner, the cooking bench with its braziers, two small tables by the side windows, cedar beams under the roof, brass lamps. Under the
 //   arcade, the loggia with two small tables; beyond it a paved terrace of 4 m to a parapet over the quay wall, three round tables with
 //   chairs under a pergola of vines. The sea is the page's (rooms-view.js), 3 m below the terrace.
-//   -> { group, shell, room, tris, draws, inner, floor, terrace: { z0, z1, y, parapet }, loggia: { z0, z1 }, arches: [x...], door, counter,
+//   -> { group, shell, room, tris, draws, inner, floor, terrace: { z0, z1, y, parapet }, loggia: { z0, z1 }, arches: [x...], door, open, yW, counter,
 //        tables, seats, path, path2, boxes, lamps, braziers, w, d }
 //   o.rooms (Session 1296; the keeper lets "a room ... up the stairs", INN_ROOM_LINES.aurennais): the same house two storeys high (the kit's
 //   o.two, 5.6 m to the eaves, four arched windows over the arcade), a stair of 16 risers up the west wall from beside the door to a
@@ -477,6 +477,8 @@ export function markAlehall(o = {}, r = stream('alehall')) {
 //   front window, the first bed in the nook over the stair's foot. Adds floors, stair, well, passage, rooms [{ x0, x1, door }], beds, paths.
 //   Session 1307 (the critic's walk): the upper flight open beneath, two oil jars stored under it; the well framed in cedar and lit by a
 //   lamp on the west wall; the west window raised over the flight (o.stairWin); the pendant lamp over the left table, 2.06 m clear.
+//   o.gate (Session 1320): -1 or +1, that side's parapet open for 1.2 m by the loggia with a step down outside (-> terrace.gate { x, z0, z1 }).
+//   o.leaves false (Session 1320): the rooms' doorways empty, for the game to hang doors that open and shut (intDoorAt).
 export function aurenneTavern(o = {}, r = stream('tavern')) {
   const R2 = !!o.rooms, w = 9.6, d = 8.0, sh = aurenneHouse({ kind: 'tile', w, d, two: R2, arcade: true, wall: 0, door: 2, pointed: false, green: false, interior: true, ...(R2 ? { stairWin: { y: 1.95, h: .55 } } : {}) }, stream('tavern-shell'));
   const M = homeMats(), B = new Map(), boxes = [];
@@ -512,9 +514,13 @@ export function aurenneTavern(o = {}, r = stream('tavern')) {
   for (const sx of [-1, 1]) { const x = R2 && sx < 0 ? -1.9 : sx * (X - .9), z = R2 && sx < 0 ? .9 : .2; table(x, z, false, 'in'); stool(x, z + .7, F0); stool(x, z - .7, F0); }
   for (const x of [arches[0] + .4, arches[n - 1] - .4]) { const z = d / 2 + ad / 2 + .05; table(x, z, true, 'out'); stool(x - .58, z, FT); stool(x + .58, z, FT); }
   // the terrace: paving from the arcade 4 m out to a parapet on the quay wall, which drops 3.2 m to the sea
-  const T0 = az + .05, T1 = az + 4.05, terrace = { z0: T0, z1: T1, y: FT, parapet: FT + .62, quayFoot: -3.4 };
+  const T0 = az + .05, T1 = az + 4.05, terrace = { z0: T0, z1: T1, y: FT, parapet: FT + .62, quayFoot: -3.4, ...(o.gate === -1 || o.gate === 1 ? { gate: { x: o.gate * (w / 2 + .05), z0: T0 + .8, z1: T0 + 2.0 } } : {}) };
   bx('step', -w / 2 - .1, w / 2 + .1, FT - .4, FT, T0, T1); bx('step', -w / 2 - .1, w / 2 + .1, terrace.quayFoot, FT - .4, T1 - .5, T1 + .25);
-  for (const [x0, x1, z0, z1] of [[-w / 2 - .1, w / 2 + .1, T1 - .3, T1], [-w / 2 - .1, -w / 2 + .2, T0, T1], [w / 2 - .2, w / 2 + .1, T0, T1]]) { bx('plaster', x0, x1, FT, FT + .55, z0, z1, 'parapet'); bx('step', x0 - .03, x1 + .03, FT + .55, FT + .62, z0 - .03, z1 + .03); }
+  // o.gate (Session 1320, the game's quay: the tavern stands with its terrace to the water and you come to it along the quay): that side's
+  // parapet (-1 the west, +1 the east) opened for 1.2 m between the loggia's end and the first table, a step down outside it
+  const G0 = T0 + .8, G1 = T0 + 2.0, gate = o.gate === -1 || o.gate === 1 ? o.gate : 0;
+  for (const [x0, x1, z0, z1] of [[-w / 2 - .1, w / 2 + .1, T1 - .3, T1], ...[-1, 1].flatMap(sx => { const a = sx < 0 ? -w / 2 - .1 : w / 2 - .2, b = sx < 0 ? -w / 2 + .2 : w / 2 + .1; return sx === gate ? [[a, b, T0, G0], [a, b, G1, T1]] : [[a, b, T0, T1]]; })]) { bx('plaster', x0, x1, FT, FT + .55, z0, z1, 'parapet'); bx('step', x0 - .03, x1 + .03, FT + .55, FT + .62, z0 - .03, z1 + .03); }
+  if (gate) { const a = gate * (w / 2 + .1), b = gate * (w / 2 + .5); bx('step', Math.min(a, b), Math.max(a, b), FT - .4, FT / 2, G0, G1, 'gatestep'); }
   for (const [x, z] of [[-2.6, T0 + 1.5], [.3, T0 + 2.6], [2.9, T0 + 1.4]]) { table(x, z, true, 'out'); for (const a of [0, Math.PI]) { const cx = x + Math.cos(a) * .62, cz = z + Math.sin(a) * .62 + (a ? 0 : 0); stool(cx, cz, FT); } }
   // the pergola over the terrace: cedar posts, beams across, a vine over them with clusters of grapes
   const PZ0 = T0 + .5, PZ1 = T1 - .6, PY = FT + 2.6; for (const x of [-w / 2 + .5, 0, w / 2 - .5]) for (const z of [PZ0, PZ1]) bx('cedar', x - .06, x + .06, FT, PY, z - .06, z + .06, 'pergolapost');
@@ -547,7 +553,7 @@ export function aurenneTavern(o = {}, r = stream('tavern')) {
     PZ = LZ; const RX = [WX, -1.8, 1.95, X], dw = .8, dh = 1.95, CT = TOP - .22, pt = .05;
     for (let i = 0; i < 3; i++) { const dx = (RX[i] + RX[i + 1]) / 2, a = RX[i] + (i ? pt : 0), b = RX[i + 1] - (i < 2 ? pt : 0);
       bx('plaster', a, dx - dw / 2, F1, CT, PZ - pt, PZ + pt, 'partition', 1); bx('plaster', dx + dw / 2, b, F1, CT, PZ - pt, PZ + pt, 'partition', 1); bx('plaster', dx - dw / 2, dx + dw / 2, F1 + dh, CT, PZ - pt, PZ + pt);
-      bx('cedarD', dx - dw / 2 - .06, dx - dw / 2, F1, F1 + dh, PZ + pt, PZ + pt + dw - .04, 'roomdoor', 1) /* the leaf open into the room */; RM.push({ x0: i ? RX[i] : -X, x1: RX[i + 1], door: { x: dx, z: PZ, w: dw, h: dh } }); }
+      if (o.leaves !== false) bx('cedarD', dx - dw / 2 - .06, dx - dw / 2, F1, F1 + dh, PZ + pt, PZ + pt + dw - .04, 'roomdoor', 1) /* the leaf open into the room (o.leaves false: the game hangs its own) */; RM.push({ x0: i ? RX[i] : -X, x1: RX[i + 1], door: { x: dx, z: PZ, w: dw, h: dh } }); }
     for (const x of RX.slice(1, -1)) bx('plaster', x - pt, x + pt, F1, CT, PZ + pt, Z, 'partition', 1);
     bx('plaster', WX - pt, WX + pt, F1, CT, PZ + pt, well.z1 + pt, 'partition', 1); bx('plaster', -X, WX - pt, F1, CT, well.z1 - pt, well.z1 + pt, 'partition', 1) /* the well's two open sides: the first room's */;
     // each room: a cedar bed under an indigo cover with a madder bolster, its head to the front wall; a chest at its foot; a basin and jug
@@ -573,7 +579,7 @@ export function aurenneTavern(o = {}, r = stream('tavern')) {
   const group = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = !['flame', 'ember', 'glow'].includes(k); m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
   const all = new THREE.Group(); all.add(sh.group, group);
   return { group: all, shell: sh.group, room: group, tris: Math.round(tris), draws: group.children.length, shellTris: sh.tris, shellCalls: sh.draws, inner: { x0: -X, x1: X, z0: -Z, z1: Z }, floor: F0, ceil: TOP - .22, terrace, loggia: { z0: d / 2, z1: az },
-    arches, door: { x: sh.doorX, z: d / 2, w: 1.05, h: 2.0 }, counter, tables, seats, path, path2, boxes, lamps, braziers, w, d,
+    arches, door: { x: sh.doorX, z: d / 2, w: 1.05, h: 2.1 }, open: sh.open, yW: sh.yW, counter, tables, seats, path, path2, boxes, lamps, braziers, w, d,
     ...(R2 ? { floors: [F0, F1], ceil: [F1 - .4, TOP - .22], stair, well, passage: PZ, rooms: RM, beds, paths } : {}) };
 }
 
@@ -944,7 +950,7 @@ export function aurenneSmithy(o = {}, r = stream('aursmithy')) {
   const group = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k] || M.plaster); m.name = k; m.castShadow = !['flame', 'ember', 'glow', 'water'].includes(k); m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
   const all = new THREE.Group(); all.add(sh.group, group);
   return { group: all, shell: sh.group, room: group, tris: Math.round(tris), draws: group.children.length, shellTris: sh.tris, shellCalls: sh.draws, inner: { x0: -X, x1: X, z0: -Z, z1: Z }, floor: F0, ceil: CEIL, top: TOP,
-    hearth: H, hood, flue, fire, anvil, trough, bench, bellows: bel, stall, arcade: { z0: d / 2, z1: AZ1 + .2 }, door: { x: sh.doorX, z: d / 2, w: 1.05, h: 2.0 }, paths, boxes, lamp, w, d };
+    hearth: H, hood, flue, fire, anvil, trough, bench, bellows: bel, stall, arcade: { z0: d / 2, z1: AZ1 + .2 }, door: { x: sh.doorX, z: d / 2, w: 1.05, h: 2.1 }, paths, boxes, lamp, w, d };
 }
 
 // gatelandsApothecary(o, r) (Session 936, card F9; L5's interiors by nation, OG-043's Gatelands alchemy shop of herbs, potions and
@@ -1281,7 +1287,7 @@ export function aurenneApothecary(o = {}, r = stream('aurapo')) {
   const group = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k] || M.plaster); m.name = k; m.castShadow = !['flame', 'ember', 'glass', 'green'].includes(k); m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
   const all = new THREE.Group(); all.add(sh.group, group);
   return { group: all, shell: sh.group, room: group, tris: Math.round(tris), draws: group.children.length, shellTris: sh.tris, shellCalls: sh.draws, inner: { x0: -X, x1: X, z0: -Z, z1: Z }, floor: F0, ceil: CEIL, top: TOP,
-    furnace, flue, hood, still, counter, table, mortar, bench, shelves, stall, arcade: { z0: d / 2, z1: AZ1 + .2 }, stations, door: { x: sh.doorX, z: d / 2, w: 1.05, h: 2.0 }, paths, boxes, lamp, glow: [furnace.x0 + .5, F0 + .25, furnace.z1 + .25], w, d };
+    furnace, flue, hood, still, counter, table, mortar, bench, shelves, stall, arcade: { z0: d / 2, z1: AZ1 + .2 }, stations, door: { x: sh.doorX, z: d / 2, w: 1.05, h: 2.1 }, paths, boxes, lamp, glow: [furnace.x0 + .5, F0 + .25, furnace.z1 + .25], w, d };
 }
 
 // gatelandsGuildHall(o, r) (Session 939, card F9; L5's guildhall by nation, OG-043's guildhall "hall of trade, contracts and guild

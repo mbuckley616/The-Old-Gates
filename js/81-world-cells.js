@@ -565,7 +565,12 @@
            // ports: the shore shelf that meets the quay, stamped now so the chunks are built with it
            c.sites.forEach(t=>{if(t.kind!=='port')return;const sd=shoreDir(t);if(!sd)return;let x=t.x+sd.dx*t.pad,z=t.z+sd.dz*t.pad,n=0;while(worldH(x,z)>1.3&&n<80){x+=sd.dx*3;z+=sd.dz*3;n++;}t.quayStart={x,z};const q=addStamp({id:'quay_'+t.id,kind:'door',x:x-sd.dx*6,z:z-sd.dz*6,r:9,blend:16,y:1.05,cell:cellKey(c.i,c.j)});L.stamps.push(q);
              // the shipwright's own flat pad at the quay head
-             const lx=x-sd.dx*9-sd.dz*11,lz=z-sd.dz*9+sd.dx*11;t.shipwrightLot={x:lx,z:lz};t.quayLane={a:{x:t.x+sd.dx*(t.pad-8),z:t.z+sd.dz*(t.pad-8)},b:{x,z}};const q2=addStamp({id:'swpad_'+t.id,kind:'door',x:lx,z:lz,r:8,blend:12,y:1.05,cell:cellKey(c.i,c.j)});L.stamps.push(q2);});
+             const lx=x-sd.dx*9-sd.dz*11,lz=z-sd.dz*9+sd.dx*11;t.shipwrightLot={x:lx,z:lz};t.quayLane={a:{x:t.x+sd.dx*(t.pad-8),z:t.z+sd.dz*(t.pad-8)},b:{x,z}};const q2=addStamp({id:'swpad_'+t.id,kind:'door',x:lx,z:lz,r:8,blend:12,y:1.05,cell:cellKey(c.i,c.j)});L.stamps.push(q2);
+             // S1320 (card F9, Michael's 1 A and 2 B on #602) — on the new look an Aurennais port's inn is Aurenne's tavern on the quay: across the
+             // quay head from the shipwright, its terrace to the water (away from the quay) and its gate toward the town; the house's own pad
+             // under it (the house and the loggia, 9.8 m square), the terrace left to stand out over the shore on its quay wall
+             if(window.OG_LOOK==='new'&&window.OG_KIT_TOWNS!==false&&nationKeyOf(c.i,c.j)==='aurenne'){const F={x:sd.dz,z:-sd.dx},N={x:-sd.dx,z:-sd.dz},a=9,ox=x-sd.dx*a+F.x*10,oz=z-sd.dz*a+F.z*10;
+               t.tavernLot={x:ox+F.x*2.95,z:oz+F.z*2.95,F,N,o:{x:ox,z:oz}};const q3=addStamp({id:'tvpad_'+t.id,kind:'door',x:ox+F.x*.8,z:oz+F.z*.8,r:6.2,blend:6,y:1.05,cell:cellKey(c.i,c.j)});L.stamps.push(q3);}});
            // S433 — a bank town's quay spot: the water line below the pad, found now; a stamp there clears the trees and rocks off the bank without flattening it
            c.sites.forEach(t=>{if(!t.bank||t.kind==='port')return;const B=t.bank;let x=t.x+B.dx*t.pad,z=t.z+B.dz*t.pad,n=0;while(worldH(x,z)>1.3&&n<160){x+=B.dx*2;z+=B.dz*2;n++;}if(n>=160)return;let wx=x,wz=z;n=0;while(worldH(wx,wz)>0&&n<40){wx+=B.dx;wz+=B.dz;n++;}if(Math.hypot(wx-x,wz-z)>30)return;
              t.quaySpot={x:wx,z:wz};const qs=addStamp({id:'rquay_'+t.id,kind:'door',noFlat:true,x:wx-B.dx*5,z:wz-B.dz*5,r:17,blend:2,y:1.05,cell:cellKey(c.i,c.j)});L.stamps.push(qs);});},
