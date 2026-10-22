@@ -1550,7 +1550,7 @@ function hbCompile(o,async){const s=scene,rt0=REN.getRenderTarget(),pre=s.onBefo
   let r=null;try{if(pre)s.onBeforeRender(REN,s,CAM);if(rt)REN.setRenderTarget(rt);r=async?REN.compileAsync(o,CAM,s):REN.compile(o,CAM,s);}
   finally{if(rt)REN.setRenderTarget(rt0);if(pre)s.onAfterRender(REN,s,CAM);}return r;}
 function hbWarm(rig){const H=rig.hb;if(!H||typeof REN==='undefined'||!REN.compile)return;
-  if(HBODY.par==null)HBODY.par=!!(REN.extensions&&REN.extensions.get('KHR_parallel_shader_compile'));
+  if(HBODY.par==null)HBODY.par=!!(REN.extensions&&REN.extensions.has('KHR_parallel_shader_compile')); /* has, not get: get warns when it is missing */
   // the middle level's one material (baked later, at 42 m): once, on a stand-in that shares the body's skeleton
   let mid=null;if(!HBODY.midWarm){const o=H.full.find(x=>x.isSkinnedMesh);if(o){mid=new THREE.SkinnedMesh(o.geometry,HB_MID_MAT);mid.skeleton=o.skeleton;mid.receiveShadow=true;HBODY.midWarm=true;}}
   if(HBODY.par){H.cold=true;try{if(mid)hbCompile(mid,false);hbCompile(H.root,true).then(()=>{H.cold=false;},()=>{H.cold=false;});}catch(e){H.cold=false;}return;}
