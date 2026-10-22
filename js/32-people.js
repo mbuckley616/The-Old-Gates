@@ -1577,7 +1577,8 @@ function hbUpload(o){for(const m of Array.isArray(o.material)?o.material:[o.mate
 // A body left behind (its person gone from the scene) is dropped half made, and one that fails is never tried again
 // S1315 — the numbers the builder works out only for its checks (the hair's strands under the skin and on the face, the coat's, the
 // mail's and the robe's stand-off), which the game never reads: a third of the hair's piece, the dearest left in a body's build
-const HB_LEAN={hairStats:false,coatStats:false,mailStats:false,robeStats:false};
+// S1328 — and a raised hood's count of the head's points outside it, 9 of its 46 ms
+const HB_LEAN={hairStats:false,coatStats:false,mailStats:false,robeStats:false,hoodStats:false};
 function hbBuildStep(now){const J=HBODY.job,rig=J.rig,top=rig.foe?rig.root.parent:rig.root;
   if(!rig.root.parent||!top||!top.parent){HBODY.job=null;return null;}
   const t0=performance.now();let r;
