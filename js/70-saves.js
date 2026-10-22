@@ -797,8 +797,19 @@ function _applyLoadData(d,w){
   // is true, this also triggers the burned-scene lazy build on next overworld
   // entry (via the swapped builder).
   if(typeof _syncAshenmoorZoneEntry==='function') _syncAshenmoorZoneEntry();
+  try{ssPinLook();}catch(e){console.warn('pin look',e);}
   // ACTIVE_BUFFS intentionally cleared on load
 }
+// S1293 (F13) — a look saved before F10 has no builder genome: tpBuild rolls one on every build from `player:<name>` and the old
+// driver's sex (personGenome's, by the name). On the new look a load pins that same body into the look (look.hb, and look.body
+// for the creator's and the barber's Body row), so the character row carries it from the next save on and nothing re-rolls it.
+// The genome is the one tpBuild would make (lookHBGenome on the same look, people and sex): the body does not change by a vertex
+function ssPinLook(){const L=worldState.look;if(!L||L.hb||typeof lookHBGenome!=='function'||typeof hbOn!=='function'||!hbOn())return false;
+  let pp='gatelander';try{pp=WORLD.playerPeople()||pp;}catch(e){}
+  const LK=Object.assign(lookDefault(pp,playerArchetype,playerName),L);
+  const female=L.body?L.body==='woman':personGenome({name:playerName||'you',role:'',people:pp,sCol:LK.skin,hairCol:LK.hair},{key:'player'}).female;
+  const E=lookHBGenome(LK,pp,playerName,female);if(!E)return false;
+  L.hb=E.saved;if(!L.body)L.body=female?'woman':'man';if(L.tall!=null){L.hbTall=L.tall;L.hbBuild=L.build;}return true;}
 
 // S664 — a door's save names its place: if that place was moved to the shore (S452) and the door stands by where it was drawn,
 // the door goes with it, even when its old spot is dry ground (a door on the edge of a drowned village; movedPlaceAt alone reads
