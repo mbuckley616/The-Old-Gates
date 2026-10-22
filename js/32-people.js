@@ -1385,7 +1385,7 @@ const _hbq=new THREE.Quaternion(),_hbq2=new THREE.Quaternion(),_hbq3=new THREE.Q
 // a bone's rotation in the frame of `top` (an ancestor), from the local quaternions up the chain: no matrices, no world numbers
 function hbRel(b,top,q){q.copy(b.quaternion);let p=b.parent;while(p&&p!==top){q.premultiply(p.quaternion);p=p.parent;}return q;}
 function hbAttach(rig,P){const tA=performance.now();
-  if(!P)try{P=HB.makePerson(rig.hbG);}catch(e){rig.hbFail=true;console.warn('F4: makePerson failed for',rig.g.hbKey,e);return;}
+  if(!P)try{P=HB.makePerson(rig.hbG,HB_LEAN);}catch(e){rig.hbFail=true;console.warn('F4: makePerson failed for',rig.g.hbKey,e);return;}
   const root=P.root,by=P.byName,sk=P.skeleton;
   for(const [,n] of HB_MAP)if(!by[n]){rig.hbFail=true;console.warn('F4: the builder has no bone',n);return;}
   // its stature: the tallest skinned mesh's rest geometry (the body, sole to crown; hair cards have more vertices but less height)
@@ -1575,6 +1575,9 @@ function hbUpload(o){for(const m of Array.isArray(o.material)?o.material:[o.mate
 // pose, each thing hung on after), at most HBODY.slice ms of a frame and always one piece, instead of 0.3 to 1.3 s in one; the driver's
 // distant copy stands in meanwhile, as before the build began. Hung on the driver (hbAttach) on the frame its last piece is made.
 // A body left behind (its person gone from the scene) is dropped half made, and one that fails is never tried again
+// S1315 — the numbers the builder works out only for its checks (the hair's strands under the skin and on the face, the coat's, the
+// mail's and the robe's stand-off), which the game never reads: a third of the hair's piece, the dearest left in a body's build
+const HB_LEAN={hairStats:false,coatStats:false,mailStats:false,robeStats:false};
 function hbBuildStep(now){const J=HBODY.job,rig=J.rig,top=rig.foe?rig.root.parent:rig.root;
   if(!rig.root.parent||!top||!top.parent){HBODY.job=null;return null;}
   const t0=performance.now();let r;
@@ -1593,7 +1596,7 @@ function hbTick(now){let best=null,bd=HBODY.build;
     const L=rig.hb.L,a=HBODY.near+(L>0?-1:1),b=HBODY.mid+(L>1?-1:1);hbLevel(rig,rig.hb.cold?2:d<a?0:d<b?1:2);
     if(rig.hb.L<2){hbPose(rig);if(rig.hb.glow)hbGlow(rig);if(rig.hb.held.length)hbHold(rig);}}
   if(best&&best.hbFoe&&!best.hbG){try{best.hbG=hbFoeGenome(best);}catch(e){best.hbFail=true;console.warn('F4: no genome for the foe',best.hbFoe,e);best=null;}}
-  if(best&&HB.makePersonIter){try{HBODY.job={rig:best,it:HB.makePersonIter(best.hbG),ms:0,steps:0};}catch(e){best.hbFail=true;console.warn('F4: makePerson failed for',best.g.hbKey,e);}best=null;}
+  if(best&&HB.makePersonIter){try{HBODY.job={rig:best,it:HB.makePersonIter(best.hbG,HB_LEAN),ms:0,steps:0};}catch(e){best.hbFail=true;console.warn('F4: makePerson failed for',best.g.hbKey,e);}best=null;}
   const step=!best&&HBODY.job&&!busy;if(step)best=hbBuildStep(now);
   if(best){hbAttach(best,best.hbP);best.hbP=null;HBODY.last=now;if(best.hb){const t=best.foe?best.root.parent:best.root,d=Math.hypot(CAM.position.x-t.position.x,CAM.position.z-t.position.z);hbWarm(best);hbLevel(best,best.hb.cold?2:d<HBODY.near?0:d<HBODY.mid?1:2);if(best.hb.L<2)hbPose(best);}}
   else if(!step)hbWarmStep();}
