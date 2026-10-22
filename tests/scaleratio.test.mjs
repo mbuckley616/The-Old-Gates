@@ -37,7 +37,9 @@ const measure = () => page.evaluate(() => {
   // spring bar, the shop door's transom) is the leaf's head; anything else (the dressing, the wall, the room behind) or nothing ends it.
   // The step before the door is passed through on the way down, to the leaf's foot.
   // (A farmhouse's transom door would read to its transom's head, its rail as thin as a glazed door's: no town has one, villages do.)
-  const KEY = new Map(); if (typeof PKIT !== 'undefined') { const M = PKIT.gl.mats(); for (const k in M) KEY.set(M[k], k); }
+  const KEY = new Map(); if (typeof PKIT !== 'undefined') { const M = PKIT.gl.mats(); for (const k in M) KEY.set(M[k], k);
+    /* S1310 — and Aurenne's house (PKIT.au, Session 1287): a leaf of one of its door colours with its iron, in a dressed stone surround */
+    if (PKIT.au) { const A = PKIT.au.mats(); A.door.forEach((m, i) => KEY.set(m, 'p:au' + i)); if (!KEY.has(A.iron)) KEY.set(A.iron, 'iron'); if (!KEY.has(A.stone)) KEY.set(A.stone, 'dress'); } }
   // and a kit house's rays meet only its own building (the town's baked meshes cost every ray a pass over the whole town)
   let kitG = null; Sx.group.traverse(o => { if (o.name === 'kit houses') kitG = o; });
   const ownKit = b => { if (!kitG) return null; const v = new THREE.Vector3(); let best = null, bd = 1e9;

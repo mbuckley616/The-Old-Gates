@@ -17,7 +17,10 @@ const state = () => page.evaluate(() => { const c = (worldState.crime || {}).dun
 // the crime: a shop door picked at 23h with someone three units off in the street (as `crime2` stages it)
 const crime = await page.evaluate(() => { forceTime(23); worldState.crime = {}; worldState.church = { notes: [] }; const S = WORLD.settle.get('dunmore');
   const F = WORLD.fstate(); F.crown.done = 6; F.crown.rank = 2; F.crown.active = null;
-  const h = S.houses.filter(x => /weapon|armor|potion|misc/.test(x.type) && x.keeper)[0]; const w = S.npcs.find(n => n.sched && n.sched.type !== 'guard') || S.npcs[0];
+  /* S1316 — a shop whose street is clear for three units out of its door: on the new look the first, Lorcan's Forge, has its yard
+     there, so the witness stood in a solid and the line from the door was blocked (no crime, and every check after it red) */
+  const clear = (x) => { const dx = x.exitX - x.doorX, dz = x.exitZ - x.doorZ, L = Math.hypot(dx, dz) || 1; for (let t = .8; t <= 3.01; t += .1) if (WORLD.camSolid(x.doorX + dx / L * t, x.doorZ + dz / L * t)) return false; return true; };
+  const shops = S.houses.filter(x => /weapon|armor|potion|misc/.test(x.type) && x.keeper); const h = shops.find(clear) || shops[0]; const w = S.npcs.find(n => n.sched && n.sched.type !== 'guard') || S.npcs[0];
   S.npcs.forEach(n => { n.g.visible = false; });
   const dx = h.exitX - h.doorX, dz = h.exitZ - h.doorZ, L = Math.hypot(dx, dz) || 1; px = h.doorX + dx / L * .8; pz = h.doorZ + dz / L * .8; jumpY = 0;
   const wx = h.doorX + dx / L * 3, wz = h.doorZ + dz / L * 3; const sched0 = w.sched; w.g.visible = true; w._retreated = false; w.sched = { type: 'guard', a: { x: wx, z: wz }, b: { x: wx, z: wz } }; w.g.position.set(wx, WORLD.worldH(wx, wz), wz); w.g.rotation.y = Math.atan2(-dx, -dz); /* S1160 — facing the door (the 120° cone, S705); the heading left from the town's last tick is the layout's */
