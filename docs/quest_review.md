@@ -6,11 +6,12 @@ Every player-readable string added or changed in `index.html` and, since the spl
 
 | Branch | Reviewed to | Note |
 |---|---|---|
-| main | `862f6075` | run 24: F3's land (the *Quality* row: Finding 33), F4's people and foes (the foes' dress table, the wolves' kit: no line a person reads), Systems 1218 (Finding 32 as written: *Bad Penny*), the look and bodies prototypes; one finding. Run 23 to `c91bf97`: Sessions 1143–1190 (the kit's church and keep, the inn's taproom, the two-hit string, the guard's blow at the yield's line, F3's land) and my own Session 1092 merged (PR #414); clean. Run 22: auto/systems' Sessions 1104–1141 merged (the Spire Held's watch, the draft's own lines word for word; the shelf's *You take … from the shelf.*; the heavy blow and the feint, no line), the Look's kit sessions and the concept and QA merges; clean. Before that, run 21 to `5521ba1`: the Look sessions 1031–1053, the Quest builds 979–1030; clean |
+| main | `02c95529` | run 25: Sessions 1219–1284 as merged (F5's dungeon at true size, F10's player body and the creator's *Body*, *Height* (*Short*, *Middling*, *Tall*) and *Build* (*Slight*, *Middling*, *Strong*) rows, the bodies' kit, the herbs' ground, the witness reach); clean. Run 24: F3's land (the *Quality* row: Finding 33), F4's people and foes (the foes' dress table, the wolves' kit: no line a person reads), Systems 1218 (Finding 32 as written: *Bad Penny*), the look and bodies prototypes; one finding. Run 23 to `c91bf97`: Sessions 1143–1190 (the kit's church and keep, the inn's taproom, the two-hit string, the guard's blow at the yield's line, F3's land) and my own Session 1092 merged (PR #414); clean. Run 22: auto/systems' Sessions 1104–1141 merged (the Spire Held's watch, the draft's own lines word for word; the shelf's *You take … from the shelf.*; the heavy blow and the feint, no line), the Look's kit sessions and the concept and QA merges; clean. Before that, run 21 to `5521ba1`: the Look sessions 1031–1053, the Quest builds 979–1030; clean |
 | auto/systems | `2b0ee4e` | run 22: merged into main (PR #353), nothing ahead. Run 21 to `9b2f0e1`: Sessions 1061–1089; clean |
 | auto/fable-combat-resolver | `f1976a3` | run 20: merged into main, nothing ahead |
 | auto/fable-f2a-scale, auto/wip-fable-f2a-scale | `e82ad5c`, `a5a4667` | run 19: merged into main, nothing ahead |
 | auto/bodies, auto/backlog, auto/wip-town-plots, auto/producer, auto/producer-look, auto/producer-bodies, auto/producer-decisions, auto/qa, auto/qa-perkbody, auto/qa-skillcurve, auto/critic, auto/concept, auto/design, auto/wip-spear | `372b869`, `0272203`, `aa74c47`, `7a71e51`, `86f05bb`, `56e437c`, `570cd5e`, `db349a9`, `bac01b0`, `ff40184`, `92afe03`, `dc5902f`, `2b9d1d4`, `5a1b57d` | run 22: bodies (the wall hold) and backlog and wip-town-plots (the church, the bawn, the steward's route) add only the inspector's part names (*Church with a west tower*, *Bawn wall, gate and flankers*); auto/producer and auto/qa-skillcurve hold old merges of auto/systems read in runs 19–20; the rest nothing ahead of main in `js/` or `index.html` |
+| auto/bodies-1284, auto/systems-1282, auto/look-1280, auto/qa-1225 | `733c65f`, `2ed113e`, `7a6adf6`, `7140783` | run 25: open PRs #594, #591, #587, #527. #591 carries Finding 33 as written (*Middle suits most machines, Low a slow one*); the rest add no player-readable text in `js/` or `index.html` |
 | claude/new-look-1226, auto/look-1224, claude/look-443-1217, auto/look-1216, auto/bodies-1230, auto/qa-1225, ci/basic-tests | `af9e22f`, `7664f32`, `b871782`, `1cd807a`, `4928b7a`, `7140783`, `9b67be7` | run 24: open PRs. auto/look-1224 hangs the six gods' plates at the town church (*An Mhuir*, *An Spéir*, *Na Beithígh*, *An Chloch*, *An Teallach*, *An Fíodóir*, with their common names), as canon §4.1 has them; the rest add no player-readable text in `js/` or `index.html` |
 | auto/quests-build | `d7219d6` | run 23: merged into main (PR #414, 19 Oct), nothing ahead. Run 22: my own build, Session 1092 |
 | auto/fable-f3-land-2 | `2d2cb0f` | run 23: F3's second PR (#487); no player-readable text |
@@ -24,6 +25,20 @@ Every player-readable string added or changed in `index.html` and, since the spl
 | auto/fable-co-op-door, auto/fable-world-file, auto/fable-rivers | — | no merge base with main; not read |
 | auto/split | — | merged into main, nothing ahead |
 | claude/lucid-faraday-6qlft7 | — | shares no history with main; not read |
+---
+
+## Run 25 — 22 Oct 2026
+
+About 15 player-readable strings read on main from `862f6075` to `02c95529` (220 commits, Sessions 1219–1284) and on the four open PRs. No finding.
+
+**main.** The creator's new rows read plainly: *Body* (*Man*, *Woman*), *Height* (*Short*, *Middling*, *Tall*), *Build* (*Slight*, *Middling*, *Strong*). F5's dungeon changes move the markers' *Ascend* and *Exit* and the lock's *The lock gives.* without changing a word. Clean.
+
+**The PRs.** #591 applies Finding 33 word for word. #594, #587 and #527 add no line a player reads.
+
+**Michael's calls:** none newer than 16 Oct on the drafts page. DECISION #588 (22 Oct) is A: the quest writer writes the Markish keeper's words for the alehall's bench first. Done as build Session 1285 (PR #595), and drafted below the others in `quest_drafts.md` as *The Markish Bench*.
+
+**Built:** Session 1285, the bench's lines (PR #595). FREEZE #583 names the dungeon's files only; none of mine.
+
 ---
 
 ## Run 24 — 21 Oct 2026
