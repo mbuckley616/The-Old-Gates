@@ -155,7 +155,7 @@ const WORLD_DUNGEONS=[
   // ── IRONHAVEN ─────────────────── 7 dungeons, normal→veryhard range
   {zone:'ironhaven',x:25, z:50, seed:801,size:'medium', theme:'undead',    diff:'normal'},
   {zone:'ironhaven',x:170,z:30, seed:823,size:'medium', theme:'elemental', diff:'hard'},
-  {zone:'ironhaven',x:185,z:160,seed:845,size:'large',  theme:'deep',      diff:'hard',   canonicalName:'The Vault of the Tide'},
+  {zone:'ironhaven',x:185,z:160,seed:845,size:'large',  theme:'deep',      diff:'hard',   canonicalName:'The Vault of the Tide', floors:2},
   {zone:'ironhaven',x:20, z:155,seed:867,size:'small',  theme:'goblin',    diff:'normal'},
   {zone:'ironhaven',x:100,z:178,seed:889,size:'small',  theme:'haunted',   diff:'hard'},
   {zone:'ironhaven',x:22, z:100,seed:911,size:'large',  theme:'ruins',     diff:'veryhard'},
