@@ -725,13 +725,23 @@ function tickSpider(rig,g,e,dt,now){
 // feet as far from their middle as the driver's, ~0.34 of the kit's size), its body a little higher than the driver's. Its flesh is
 // grown at twice the kit's cell (K.cell, 0.028 to the kit's 0.014): 21,000 triangles and about a quarter of a second to build, where
 // the kit's own is 86,000 and 1.6 s, which would be a stutter on the frame it was built in. Its genome is keyed `wolf:<id>` as a wolf's.
-// The Sand Scorpion and the Bog Crawler keep the old body for now (the scorpion's sting and pincers want the driver's tail and fangs).
+// The Sand Scorpion (Session 1325) wears the kit's Dunescorpion (OG-030, OG-085: four pairs of legs, pincers on jointed arms, a tail of
+// seven joints to a sting) on the same spider driver and the same foot solve. Its driver has one tail bone, which sways, cocks back
+// through the wind-up and strikes over the head (tickSpider's P.tail): that turn is spread over the kit's seven tail joints, a seventh
+// and a half each, so the jointed tail curls as one. Its pincers are the driver's fangs: their spread (P.fang, lifted and out) turns
+// the kit's shoulders as it turns the fang bones (hcScorp). Its body copies the driver's; the driver's abdomen, which is the kit's
+// spine, moves nothing. Grown at a cell of 0.02: 15,000 triangles, ~125 ms. The Bog Crawler keeps the old body for now.
+// Session 1324: the spider's middle level is one mesh. Near, it is the hide and 33 bits (thorns along each leg, egg sacs, eyes, fangs),
+// 34 draw calls; at the middle level the hide and the 27 bits that are not small were 28. Those 28 are now baked into one skinned mesh
+// on the kit's skeleton (HC_KINDS' merge; people's hbMerge, each bit on the bone it hangs from), made the first time the spider comes
+// to the middle level, in a material of its own (the wind-up's red and the kill's darkening are its alone). The wolves, the boar, the
+// bear and the horses keep theirs: three draw calls, and the Ash Hound's ember seam is the hide's own shader, which the bake would lose.
 // The dragon and the Faolchú keep the old body: their plans are later work.
 const HC_BODY={on:true,near:12,mid:40,build:44,small:.03,ms:0,n:0};
 const HC_RIGS=new Set();
 // the game's kinds and the kit's plans: a kind's own colours over the plan's (the kit's palettes are sRGB triples)
 const HC_KINDS={'Wolf':{plan:'wolf'},'Snow Wolf':{plan:'wolf',own:true},'Dire Wolf':{plan:'ironwolf',own:true},'Boar':{plan:'boar'},'Cave Bear':{plan:'bear',own:true},'Ash Hound':{plan:'ashhound'},'Horse':{plan:'horse',own:true,ik:true},'Grey Horse':{plan:'horse',own:true,ik:true},
-  'Spider':{plan:'spider',own:true,spider:true,cell:.028}};
+  'Spider':{plan:'spider',own:true,spider:true,cell:.028,merge:true},'Sand Scorpion':{plan:'dunescorpion',own:true,spider:true,cell:.02,merge:true}};
 // the driver's joints and the kit's bones they move, parents first (the kit's front legs hang on spine3, the hind on spine0)
 const HC_MAP=[['hips','spine0'],['spine','spine1'],['neck','neck0'],['head','head'],['jaw','jaw'],['tail1','tail0'],['tail2','tail1'],['tail3','tail2'],
   ['shL','leg0L_0'],['elL','leg0L_1'],['wrL','leg0L_2'],['pfL','leg0L_3'],['shR','leg0R_0'],['elR','leg0R_1'],['wrR','leg0R_2'],['pfR','leg0R_3'],
@@ -745,7 +755,8 @@ function hcMap(by){const out=[];
     if(!b){if(/^tail/.test(j))continue;return n;}out.push([j,b]);}
   return out;}
 // a spider's (Session 1319): its body and abdomen; the legs are set by their feet (hcSpFeet)
-function hcSpMap(by){const out=[];for(const [j,n] of [['body','spine0'],['abd','tail0']]){if(!by[n])return n;out.push([j,by[n]]);}return out;}
+function hcSpMap(by,sc){const out=[];for(const [j,n] of sc?[['body','spine0']]:[['body','spine0'],['abd','tail0']]){if(!by[n])return n;out.push([j,by[n]]);}
+  if(sc)for(const n of ['tail0','arm0L_0','arm0R_0'])if(!by[n])return n;return out;}
 function hcOn(){return HC_BODY.on&&window.OG_LOOK==='new'&&typeof HC!=='undefined';}
 // a kind's plan: the kit's own, or (k.own) a copy of it in the kind's coat, saddle and belly, made once
 function hcPlan(name){const K=HC_KINDS[name];if(!K.own)return K.plan;const id='game:'+name;
@@ -757,7 +768,7 @@ function hcPlan(name){const K=HC_KINDS[name];if(!K.own)return K.plan;const id='g
 function hcOk(rig){return !!HC_KINDS[rig.name]&&!rig.spider===!HC_KINDS[rig.name].spider&&!rig.hunch&&!(rig.e&&rig.e.bossId);}
 function hcAttach(rig){const tA=performance.now();let C;
   try{const key=rig.hcKey||'wolf:'+(rig.e&&rig.e.id!=null?rig.e.id:rig.name);C=HC.build(HC.genome(hcPlan(rig.name),key));}catch(e){rig.hcFail=true;console.warn('F4: the kit could not build',rig.name,e);return;}
-  const sp=!!rig.spider,by=C.byName,map=sp?hcSpMap(by):hcMap(by);if(typeof map==='string'){rig.hcFail=true;console.warn('F4: the kit\'s',rig.name,'has no bone',map);return;}
+  const sp=!!rig.spider,sc=!!(rig.k&&rig.k.scorpion),by=C.byName,map=sp?hcSpMap(by,sc):hcMap(by);if(typeof map==='string'){rig.hcFail=true;console.warn('F4: the kit\'s',rig.name,'has no bone',map);return;}
   // at the driver's size: the kit's hips (spine0) at the driver's hips' height, and over them, in the driver's root (rig.root, which
   // carries the kind's size in play); the kit's rig carries its own size (C.S)
   const B=rig.B,W=new THREE.Group();W.name='kit';const h0=by.spine0.position.clone().multiplyScalar(C.S);let f,feet=null;
@@ -795,7 +806,8 @@ function hcAttach(rig){const tA=performance.now();let C;
   let ik=null;if(HC_KINDS[rig.name].ik){rig.root.updateMatrixWorld(true);ik=[['pfL','leg0L'],['pfR','leg0R'],['phL','leg1L'],['phR','leg1R']].map(([d,l])=>
     ({d,bs:[by[l+'_2'],by[l+'_1'],by[l+'_0']],end:by[l+'_3'],oy:by[l+'_3'].getWorldPosition(new THREE.Vector3()).y-B[d].getWorldPosition(new THREE.Vector3()).y}));}
   const hb=sp?B.body:B.hips;
-  rig.hc={W,C,map,s0,t0,fur,small,ik,feet,hb,hide:meshes.filter(m=>!fur.includes(m)),hip0:sp?B.body.position.clone():new THREE.Vector3(B.hips.position.x,wolfHipY(rig.k),B.hips.position.z),pos0:by.spine0.position.clone(),k:1/(f*C.S),L:-1,drv:rig.mesh.material,em:-1};
+  const scorp=sc?{tail:Object.keys(by).filter(n=>/^tail\d+$/.test(n)).map(n=>by[n]),arms:[[by.arm0L_0,1],[by.arm0R_0,-1]]}:null;
+  rig.hc={W,C,map,s0,t0,fur,small,ik,feet,hb,scorp,merge:!!HC_KINDS[rig.name].merge,mid:null,bits:C.B.bits.map(b=>b.obj),hide:meshes.filter(m=>!fur.includes(m)),hip0:sp?B.body.position.clone():new THREE.Vector3(B.hips.position.x,wolfHipY(rig.k),B.hips.position.z),pos0:by.spine0.position.clone(),k:1/(f*C.S),L:-1,drv:rig.mesh.material,em:-1};
   HC_BODY.ms+=performance.now()-tA;HC_BODY.n++;}
 function hcPose(rig){const H=rig.hc,B=rig.B,map=H.map;
   for(let i=0;i<map.length;i++){const [j,b]=map[i];
@@ -804,9 +816,10 @@ function hcPose(rig){const H=rig.hc,B=rig.B,map=H.map;
   H.C.byName.spine0.position.copy(_hbv.copy(H.hb.position).sub(H.hip0).multiplyScalar(H.k)).add(H.pos0);
   if(H.ik)hcLegIK(rig);
   if(H.feet)hcSpFeet(rig);
+  if(H.scorp)hcScorp(rig);
   // the wind-up's red and the parry's gold on the driver's material, on the kit's (its eyes and claws keep their own)
   const m=rig.mesh.material;let em=m&&m.emissive?m.emissive.getHex():0;if(m!==H.drv&&m&&m.color&&m.color.getHex()===0xffdd44)em=0xb08010;
-  if(em!==H.em){H.em=em;for(const o of [...H.hide,...H.fur])for(const x of Array.isArray(o.material)?o.material:[o.material])if(x.emissive)x.emissive.setHex(em);}}
+  if(em!==H.em){H.em=em;for(const o of [...H.hide,...H.fur,...(H.mid?[H.mid]:[])])for(const x of Array.isArray(o.material)?o.material:[o.material])if(x.emissive)x.emissive.setHex(em);}}
 // Session 1273: the kit's horse has its legs in other proportions than the driver's, so the driver's joint turns copied onto it lift a
 // planted hoof up to 11 cm off the ground at the trot. Each leg is bent back onto the driver's paw height (its rest offset kept) by
 // two passes of turns at its three upper joints about the body's own side axis, so the leg stays in its plane and the stride is the
@@ -824,7 +837,20 @@ const _hcF=new THREE.Vector3();
 function hcSpFeet(rig){const H=rig.hc,B=rig.B,C=H.C;rig.root.updateMatrixWorld(true);
   for(const F of H.feet){B['tib'+F.n].localToWorld(_hcF.set(F.lt,0,0));rig.root.worldToLocal(_hcF).sub(F.d0).add(F.k0);
     HC.footAt(C,F.i,C.rig.worldToLocal(rig.root.localToWorld(_hcF)),0);}}
-function hcLevel(rig,L){const H=rig.hc;if(H.L===L)return;H.L=L;H.W.visible=L<2;rig.mesh.visible=L===2;for(const m of H.fur)m.visible=L===0;for(const m of H.small)m.visible=L===0;}
+// Session 1325: a scorpion's tail and pincers from its driver's tail bone and fangs (the kit's rest turns are the identity, and the
+// kit's frame is the driver's: +z ahead, +x its left)
+const _hcE3=new THREE.Euler();
+function hcScorp(rig){const S=rig.hc.scorp,B=rig.B,a=B.tail?B.tail.rotation.x*1.5/S.tail.length:0;for(const b of S.tail)b.quaternion.setFromAxisAngle(_hcA.set(1,0,0),a);
+  for(const [b,s] of S.arms){const f=s>0?B.fangL.rotation.z:-B.fangR.rotation.z;b.quaternion.setFromEuler(_hcE3.set(-f*.4,0,s*f));}}
+function hcLevel(rig,L){const H=rig.hc;if(H.L===L)return;H.L=L;H.W.visible=L<2;rig.mesh.visible=L===2;
+  if(H.merge&&L===1&&!H.mid)hcBake(rig);
+  if(H.mid){const one=L===1;H.mid.visible=one;for(const m of H.hide)m.visible=!one;for(const o of H.bits)o.visible=!one;}
+  for(const m of H.fur)m.visible=L===0;for(const m of H.small)m.visible=L===0;}
+// Session 1324: the middle level's one mesh (HC_KINDS' merge): the hide and every bit not small, by hbMerge, under the kit's rig as the
+// hide is, skinned by the same skeleton (the kit's bind is the identity, as people's is); its own copy of the people's middle material
+function hcBake(rig){const H=rig.hc,C=H.C,t=performance.now();let mid;
+  try{mid=hbMerge({skeleton:C.skel,byName:{root:C.bones[0]},root:C.root},new Set(H.small));}catch(e){H.merge=false;console.warn('F4: the kit\'s',rig.name,'would not bake',e);return;}
+  mid.material=HB_MID_MAT.clone();if(H.em>0)mid.material.emissive.setHex(H.em);if(rig.e&&rig.e.dead)mid.material.color.multiplyScalar(.35);mid.frustumCulled=false;mid.name='kitmid';C.rig.add(mid);H.mid=mid;H.bakeMs=performance.now()-t;}
 function hcDrop(rig){const H=rig.hc;if(!H)return;if(H.W.parent)H.W.parent.remove(H.W);
   H.C.root.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material)for(const m of Array.isArray(o.material)?o.material:[o.material])m.dispose();});
   if(H.C.skel.boneTexture)H.C.skel.dispose();rig.hc=null;rig.mesh.visible=true;}
