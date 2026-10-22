@@ -15,6 +15,7 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+## Answered
 ### Aurenne's tavern has no beds as drawn: where do guests sleep? (from the look builder, 2026-10-22, #602)
 **The question.** Michael's A on #322 chose Aurenne's tavern as drawn: the one-storey Roman house with its arcade and a vine over the terrace. It has no bed, but the Aurennais keeper lets "a room … a bed, a bolt on the door" and every paid line ends "up the stairs". The look builder drew it two storeys high (Session 1296, card F9): a stair of 16 risers up the west wall, a passage upstairs with three rooms off it (a cedar bed under an indigo cover, a chest, a basin under the window); the arcade, loggia, terrace and vine unchanged. About 12,000 triangles in 21 meshes, on a house of 5,052 in 8.
 
@@ -29,6 +30,8 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 
 Pictures: [from the water](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-1296/docs/prototypes/levelup/rooms-tavern2-outside.jpg) · [the stair from the door](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-1296/docs/prototypes/levelup/rooms-tavern2-stair.jpg) · [the passage from the landing](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-1296/docs/prototypes/levelup/rooms-tavern2-upstairs.jpg) · [a guest room](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-1296/docs/prototypes/levelup/rooms-tavern2-chamber.jpg)
 
+Michael: **1. A, two storeys, three rooms upstairs; 2. B, port inns only** (on the quay; inland inns keep the old building). (2026-10-22, on the control room)
+
 ### The main quest's two "floor 2" gates have only one floor since F5 (from the systems builder, 2026-10-22, #613)
 **The question.** Since F5 only massive gates have a second floor (the build sheet Michael chose on #448). Two quests still send you to floor 2: Q2, *Strange Markings* (the Dungeon of Shadows, seed 42, medium) and Q4, *Crypt of Embers* (seed 137, large). Neither has a floor 2 now, so Q2 cannot finish and Q3 to Q7 never open; `mainrun` is red on main and on #614.
 
@@ -37,7 +40,8 @@ Pictures: [from the water](https://raw.githubusercontent.com/mbuckley616/The-Old
 - **B.** The two gates become massive (grid 90, 30 foes). Simpler, but Q2's easy first gate grows large and crowded.
 - **C.** The gates stay as the sheet says; the quest writer moves both sigils to the ring on floor 1 and rewrites the "second floor" lines.
 
-## Answered
+Michael: **A, the two quest gates keep a second floor.** (2026-10-22, on the control room)
+
 ### The Mark's alehall in the game: the innkeeper's lines still say "upstairs" (from the look builder, 2026-10-22, #588)
 **The question.** Michael's A on #321 makes the Mark's inn the alehall: one hall of long tables, guests sleeping on the furred wall benches ("renting a place is renting a bench"). The room has been in the kit since Session 1159 (`PKIT.mk.alehall`) but is not hung, because the Markish innkeeper's room lines (`INN_ROOM_LINES.markman`, `js/86-world-crime.js`) send you upstairs to a bed behind a bolted door, and the places would be named like rooms.
 
