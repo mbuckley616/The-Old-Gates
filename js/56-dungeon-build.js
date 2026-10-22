@@ -3409,8 +3409,70 @@ function buildDungeon(portal){
   // scaling pass carries it with the rest
   try{lairFinish(portal);}catch(e){}try{shuttleLay(portal);}catch(e){}try{cloakDenLay(portal,window._lairBoss);}catch(e){}
   dunScaleWhole(dunCellFor(portal),thWallMat);
+  /* S1299 — a gate draws by space (dZoneBuild, dRender) and lights 8 at a time; its pool is made now, so the compile below has its lights */
+  DZONE=gen.gate?dZoneBuild(gen):null;if(gen.gate){dScene.userData.lightPool=8;try{_sweepScenePool(dScene);}catch(e){}}
   /* S1293 — a gate's spaces bring materials no room had (the water's, the pit's): compiled now, behind the fade, not when first seen */
   if(gen.gate&&typeof REN!=='undefined'&&REN.compile)try{REN.compile(dScene,CAM);}catch(e){}
+}
+// S1299 (card F5, the sheet's "Light and draws") — in a gate only your space and the spaces joined to it are drawn, as a town's
+// houses are by houseLod. Every open cell belongs to a zone: a space's own cells are its zone, and a side room, its corridor, a chapel
+// or a threshold take the zone of the space they open off (the nearest by the open cells, a breadth-first fill from every space at
+// once). Your zone and its neighbours (the spaces your zone's thresholds and the stair hall join) are drawn; a piece in any other
+// zone is hidden for the render only, and shown again after it, so nothing that reads .visible (a foe, a chest, a door) sees it.
+// A piece that spans more than one zone (the shell, a merged bake) is always drawn. A lesser gate is one floor; a massive gate's
+// floor two has its own grid, and the stair hall is one zone on both.
+let DZONE=null;
+function dZoneBuild(gen){
+  const W=gen.W,H=gen.H,N=W*H,n=gen.spaces.length,floors=[[gen.map,gen.cellSpace]];if(gen.map2&&gen.cellSpace2)floors.push([gen.map2,gen.cellSpace2]);
+  const side=(gen.side||[]).map((rm,k)=>({id:n+k,f:(rm.floor===2&&floors.length>1)?1:0,rm,cells:[]}));
+  const adj=[];for(let k=0;k<n+side.length;k++)adj.push(new Set([k]));
+  const grids=floors.map(([M,CS],fi)=>{const z=new Int16Array(N).fill(-1),q=[];
+    for(let r=0;r<H;r++)for(let c=0;c<W;c++){const s=CS[r][c];if(s>=0&&M[r][c]>0){z[r*W+c]=s;q.push(r*W+c);}}
+    for(const sd of side){if(sd.f!==fi)continue;const R=sd.rm;for(let r=R.y;r<R.y+R.h;r++)for(let c=R.x;c<R.x+R.w;c++){const i=r*W+c;if(z[i]<0&&M[r][c]>0){z[i]=sd.id;q.push(i);}}}
+    for(let k=0;k<q.length;k++){const i=q[k],c=i%W,r=(i/W)|0;for(const [dc,dr] of [[1,0],[-1,0],[0,1],[0,-1]]){const nc=c+dc,nr=r+dr;if(nc<0||nr<0||nc>=W||nr>=H)continue;const j=nr*W+nc;
+      if(z[j]>=0||!(M[nr][nc]>0))continue;z[j]=z[i];q.push(j);}}
+    // zones that touch through an open side are joined (a threshold's two spaces, a side room's corridor and its space)
+    for(let r=0;r<H;r++)for(let c=0;c<W;c++){const a=z[r*W+c];if(a<0)continue;if(a>=n)side[a-n].cells.push(r*W+c);
+      for(const [dc,dr] of [[1,0],[0,1]]){const nc=c+dc,nr=r+dr;if(nc>=W||nr>=H)continue;const b=z[nr*W+nc];if(b>=0&&b!==a){adj[a].add(b);adj[b].add(a);}}}
+    return z;});
+  gen.spaces.forEach((sp,i)=>{for(const l of sp.links||[])if(l>=0&&l<n){adj[i].add(l);adj[l].add(i);}});
+  for(const t of gen.thresholds||[]){if(t.a>=0&&t.b>=0&&t.a<n&&t.b<n){adj[t.a].add(t.b);adj[t.b].add(t.a);}}
+  return {W,H,n,grids,maps:floors.map(f=>f[0]),side,adj,two:grids.length>1,shown:null,key:''};
+}
+// the zone at a point in metres on a floor (-1: rock, or off the map)
+function dZoneAt(x,z,f){const D=DZONE;if(!D)return -1;const g=D.grids[(f===2&&D.two)?1:0],c=dCellOf(x),r=dCellOf(z);if(c<0||r<0||c>=D.W||r>=D.H)return -1;return g[r*D.W+c];}
+// a sightline over a floor's map from one cell's middle to another's, a quarter cell at a step: rock stops it
+function dZoneSees(M,c0,r0,c1,r1){const d=Math.max(Math.abs(c1-c0),Math.abs(r1-r0)),n=Math.ceil(d*4);for(let k=1;k<n;k++){const u=k/n,c=Math.floor(c0+(c1-c0)*u+.5),r=Math.floor(r0+(r1-r0)*u+.5);if(!(M[r]&&M[r][c]>0))return false;}return true;}
+// the zones drawn now (null: draw everything, as when you stand in no zone). In a space: it, the spaces joined to it, and each of its
+// side rooms that a sightline from your cell reaches (any cell of the room or its corridor); in a side room: it and its space. Worked
+// out again only when you step into another cell.
+function dZoneShown(){const D=DZONE;if(!D)return null;const f=(currentFloor===2&&D.two)?1:0,c0=dCellOf(px),r0=dCellOf(pz),key=c0+','+r0+','+f;if(key===D.key)return D.shown;
+  D.key=key;const z=(c0<0||r0<0||c0>=D.W||r0>=D.H)?-1:D.grids[f][r0*D.W+c0];if(z<0){D.shown=null;return null;}
+  const out=new Set();for(const k of D.adj[z])if(k<D.n||z>=D.n)out.add(k);
+  if(z<D.n){const M=D.maps[f];for(const k of D.adj[z]){if(k<D.n)continue;const sd=D.side[k-D.n];if(sd.f!==f)continue;
+    for(const i of sd.cells){if(dZoneSees(M,c0,r0,i%D.W,(i/D.W)|0)){out.add(k);break;}}}}
+  D.shown=out;return out;}
+// a piece's zone: measured once from its bounds (the offset of their middle from its place, and whether they reach into two zones),
+// then read each frame at its place plus that offset, so a foe that walks into the next space goes with it
+const _dzBox=new THREE.Box3(),_dzV=new THREE.Vector3();
+function dZoneOf(o){
+  let m=o._dz;if(!m){m=o._dz={ox:0,oy:1,oz:0,rad:3,low:0,multi:false};let skin=false;o.traverse(q=>{if(q.isSkinnedMesh)skin=true;});
+    if(!skin){_dzBox.setFromObject(o);if(!_dzBox.isEmpty()){_dzBox.getCenter(_dzV);m.ox=_dzV.x-o.position.x;m.oy=_dzV.y-o.position.y;m.oz=_dzV.z-o.position.z;m.low=_dzBox.min.y-o.position.y;m.rad=_dzBox.getSize(_dzV).length()/2;
+      const f=DZONE.two&&_dzBox.min.y<FLOOR2_Y*.5?2:1,seen=new Set(),st=DCELL;
+      for(let x=_dzBox.min.x;x<=_dzBox.max.x+st*.5&&!m.multi;x+=st)for(let z=_dzBox.min.z;z<=_dzBox.max.z+st*.5&&!m.multi;z+=st){const k=dZoneAt(Math.min(x,_dzBox.max.x),Math.min(z,_dzBox.max.z),f);if(k>=0)seen.add(k);if(seen.size>1)m.multi=true;}}}}
+  if(m.multi)return -1;
+  const f=DZONE.two&&o.position.y+m.low<FLOOR2_Y*.5?2:1;return dZoneAt(o.position.x+m.ox,o.position.z+m.oz,f);}
+// the dungeon's frame: hide what lies outside the zones drawn, and what lies wholly past the fog's far edge (three's fog reads the
+// depth along the view, so a piece whose nearest depth is past it is drawn in the fog's colour, the background's: nothing), render,
+// show it again
+const _dzHid=[],_dzF=new THREE.Vector3(),_dzC=new THREE.Vector3();
+function dRender(sc,cam){
+  const shown=sc===dScene?dZoneShown():null;
+  if(DZONE&&sc===dScene){const far=sc.fog?sc.fog.far:1e9;cam.updateMatrixWorld();const C=_dzC.setFromMatrixPosition(cam.matrixWorld),F=cam.getWorldDirection(_dzF);
+    for(const o of sc.children){if(!o.visible||o.isLight||o.isCamera||(o.userData&&o.userData.dunShell))continue;const z=dZoneOf(o),m=o._dz;
+      const out=(shown&&z>=0&&!shown.has(z))||((o.position.x+m.ox-C.x)*F.x+(o.position.y+m.oy-C.y)*F.y+(o.position.z+m.oz-C.z)*F.z)-m.rad>far;
+      if(out){o.visible=false;_dzHid.push(o);}}}
+  try{REN.render(sc,cam);}finally{for(const o of _dzHid)o.visible=true;_dzHid.length=0;}
 }
 // S1283 (card F5, Michael's A on #421; gate-interiors-build.md) — the dungeon scaled whole by its cell, as F2a's scaleRoom scales
 // a room: buildDungeon lays everything out in cells, and this carries every piece and every record of it to metres. Across, not
