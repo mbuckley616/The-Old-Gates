@@ -4,13 +4,17 @@
 // source that follows its parent, and the nearest sources are mapped onto the pool before each render.
 const _LPS=new Map();
 function _sweepScenePool(scene){
-  let P=_LPS.get(scene);if(!P){P={pool:[],src:[],set:new Set()};for(let i=0;i<20;i++){const L=new THREE.PointLight(0xffffff,0,10);L.position.set(0,-100,0);scene.add(L);P.pool.push(L);P.set.add(L);}_LPS.set(scene,P);}
+  let P=_LPS.get(scene);if(!P){P={pool:[],src:[],set:new Set()};const nP=(scene.userData&&scene.userData.lightPool)||20;for(let i=0;i<nP;i++){const L=new THREE.PointLight(0xffffff,0,10);L.position.set(0,-100,0);scene.add(L);P.pool.push(L);P.set.add(L);}_LPS.set(scene,P);}
   const found=[];scene.traverse(o=>{if(o.isPointLight&&!P.set.has(o))found.push(o);});
   for(const l of found){const par=l.parent;if(l._swept&&l._sweptScene===scene&&P.src.includes(l._swept)){par&&par.remove(l);continue;}const v={mirror:l,follow:(par&&par!==scene)?par:null,offset:l.position.clone(),pos:new THREE.Vector3(),loose:!(par&&par!==scene)};l.getWorldPosition(v.pos);P.src.push(v);par&&par.remove(l);l._swept=v;l._sweptScene=scene;}
   const inScene=(o)=>{let p=o;while(p){if(p===scene)return true;p=p.parent;}return false;};
   const cand=[];const wp=new THREE.Vector3();
+  // S1302 — in a gate (DZONE, 56-dungeon-build.js) the pool's 8 go to the nearest sources in the zones drawn, by their distance up and
+  // down too, so floor two's torches never take a light from floor one's
+  const inG=scene===dScene&&typeof DZONE!=='undefined'&&DZONE,shown=inG?dZoneShown():null,eyeY=inG?(currentFloor===2?FLOOR2_Y:0)+1.5:0;
   for(let i=P.src.length-1;i>=0;i--){const v=P.src[i];const m=v.mirror;if(v.follow){if(!inScene(v.follow)){P.src.splice(i,1);continue;}v.follow.getWorldPosition(wp);wp.add(v.offset);v.pos.copy(wp);}else v.pos.copy(m.position);
-    if(m.intensity<=0){v._z=(v._z||0)+1;if(v._z>600){P.src.splice(i,1);}continue;}v._z=0;const d=Math.hypot(v.pos.x-px,v.pos.z-pz);if(d>m.distance+60)continue;cand.push([d,v]);}
+    if(m.intensity<=0){v._z=(v._z||0)+1;if(v._z>600){P.src.splice(i,1);}continue;}v._z=0;const d=inG?Math.hypot(v.pos.x-px,v.pos.z-pz,v.pos.y-eyeY):Math.hypot(v.pos.x-px,v.pos.z-pz);if(d>m.distance+60)continue;
+    if(shown){const zz=dZoneAt(v.pos.x,v.pos.z,DZONE.two&&v.pos.y<FLOOR2_Y*.5?2:1);if(zz>=0&&!shown.has(zz))continue;}cand.push([d,v]);}
   cand.sort((a,b)=>a[0]-b[0]);
   for(let i=0;i<P.pool.length;i++){const L=P.pool[i];const c=cand[i];if(!c){L.intensity=0;continue;}const v=c[1],m=v.mirror;L.position.copy(v.pos);L.color.copy(m.color);L.intensity=m.intensity;L.distance=m.distance||10;}
 }
