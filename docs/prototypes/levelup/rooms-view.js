@@ -17,7 +17,8 @@
 // the terrace to the sea; view=tap: inside from the door to the counter; view=pergola: from the parapet back under the vine to the
 // arcade; view=outside: the tavern from the water. The ground stops at the quay; the sea lies 3.2 m below.
 // &rooms=1 (Session 1296): the tavern two storeys high with three rooms to let upstairs. view=stair: from inside the door to the stair up
-// the west wall; view=upstairs: the passage from the landing; view=chamber&n=0|1|2: a guest room from its door.
+// the west wall; view=well (Session 1307): from beside the stair's foot up the flight into the well; view=upstairs: the passage from the
+// landing; view=chamber&n=0|1|2: a guest room from its door.
 // ?room=court (Session 899): Aurenne's courtyard house. view=court (default): from inside the street door through the vestibule and the
 // arcade to the fountain and the hall's arch; view=gallery: from a corner of the upper gallery down over the court; view=hall: the
 // reception hall; view=kitchen; view=bedroom; view=study; view=children; view=outside: the house from the street; view=above: the roof
@@ -300,6 +301,7 @@ else if (CRT) { const S = C.sh, [F0, F1] = C.floors, A = S.A;
   else { eye = [0, F0 + 1.62, A - .25]; at = [0, F0 + 1.1, -6]; cam.fov = 66; } }
 else if (TAV) { const Z = C.inner.z1, X = C.inner.x1, T = C.terrace, F1 = C.floors ? C.floors[1] : 0;
   if (VIEW === 'stair' && C.stair) { eye = [1.2, C.floor + 1.62, Z - .4]; at = [-X, C.floor + 1.5, -1.2]; cam.fov = 66; }
+  else if (VIEW === 'well' && C.stair) { const S = C.stair, sx = (S.x0 + S.x1) / 2; eye = [sx + .55, C.floor + 1.62, S.z1 + 1.1]; at = [sx, F1 + .5, C.well.z0]; cam.fov = 74; }
   else if (VIEW === 'upstairs' && C.rooms) { eye = [-X + .5, F1 + 1.62, (-C.inner.z1 + C.passage) / 2 - .3]; at = [X, F1 + 1.2, (-C.inner.z1 + C.passage) / 2 + .1]; cam.fov = 70; }
   else if (VIEW === 'chamber' && C.rooms) { const R = C.rooms[+Q.get('n') || 1]; eye = [R.door.x, F1 + 1.62, C.passage + .3]; at = [R.door.x + (R.x1 - R.x0) * .15, F1 + .6, Z]; cam.fov = 72; }
   else if (VIEW === 'tap') { eye = [C.door.x + .3, C.floor + 1.62, Z - .2]; at = [-.6, C.floor + 1.0, -Z]; cam.fov = 66; }
