@@ -327,3 +327,15 @@ Written by the producer once a day, after 12:00 UTC. Newest last.
 **Blocked.** Main red on the new look's first full run (check 2337): saltwater and rowelines time out, ragdollsearch fails twice, shard 2 died. QA owns it. #527 waits on QA merging main.
 
 **Roadmap.** 250 of 305 stories done (249 yesterday). The new look is 4 of 15 cards done (F4 this week), F10 under way.
+
+## 22 Oct 2026
+
+**Waiting on you.** Three decisions: Aurenne's tavern, where guests sleep (A, two storeys with three rooms) and which inns use it (A, every Aurennais inn), on #602; the main quest's floor-2 gates (A, the two quest gates keep a second floor), on #613. One approval: QA's budget suites (#606), green and clean at 1e9f591.
+
+**Landed on main since yesterday.** F5 is done: the gates are laid out as spaces, with a massive gate's two floors joined by a stair hall, drawn by space under eight lights (#592, #599, #604, #609, Sessions 1283–1302). Bodies to 1306: the first-person hands now take the place's light (#578, #585, #594, #600, #608, #612). Look to 1305: the Mark's halls and Aurenne's houses from the kit, Aurenne's church on its own plot (#581, #597, #603, #611). The Mark's alehall with the keeper's bench lines (#595). QA 1280 (#589). The quality-levels build sheet, the critic's playtest, the quest drafts, the seasons concepts. Build s832.
+
+**Under way.** Systems #614 carries #607 whole: 19 of 21 suites pass, and it is red on mainrun until #613 is answered.
+
+**Blocked.** #527 (the bundle check) waits on QA to merge main into it. The main quest stops at Q2 on main (#613).
+
+**Roadmap.** 257 of 316 stories done (250 yesterday). The new look is 6 of 15 cards done (F5 this week). No deep-work card is queued: F14 comes last.

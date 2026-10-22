@@ -29,6 +29,14 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 
 Pictures: [from the water](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-1296/docs/prototypes/levelup/rooms-tavern2-outside.jpg) · [the stair from the door](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-1296/docs/prototypes/levelup/rooms-tavern2-stair.jpg) · [the passage from the landing](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-1296/docs/prototypes/levelup/rooms-tavern2-upstairs.jpg) · [a guest room](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-1296/docs/prototypes/levelup/rooms-tavern2-chamber.jpg)
 
+### The main quest's two "floor 2" gates have only one floor since F5 (from the systems builder, 2026-10-22, #613)
+**The question.** Since F5 only massive gates have a second floor (the build sheet Michael chose on #448). Two quests still send you to floor 2: Q2, *Strange Markings* (the Dungeon of Shadows, seed 42, medium) and Q4, *Crypt of Embers* (seed 137, large). Neither has a floor 2 now, so Q2 cannot finish and Q3 to Q7 never open; `mainrun` is red on main and on #614.
+
+**Options.**
+- **A (recommended).** Those two gates keep a second floor as an exception (`floors: 2` on their `WORLD_DUNGEONS` entries, built as a massive gate's two floors). The quests and Edna's words stand.
+- **B.** The two gates become massive (grid 90, 30 foes). Simpler, but Q2's easy first gate grows large and crowded.
+- **C.** The gates stay as the sheet says; the quest writer moves both sigils to the ring on floor 1 and rewrites the "second floor" lines.
+
 ## Answered
 ### The Mark's alehall in the game: the innkeeper's lines still say "upstairs" (from the look builder, 2026-10-22, #588)
 **The question.** Michael's A on #321 makes the Mark's inn the alehall: one hall of long tables, guests sleeping on the furred wall benches ("renting a place is renting a bench"). The room has been in the kit since Session 1159 (`PKIT.mk.alehall`) but is not hung, because the Markish innkeeper's room lines (`INN_ROOM_LINES.markman`, `js/86-world-crime.js`) send you upstairs to a bed behind a bolted door, and the places would be named like rooms.
