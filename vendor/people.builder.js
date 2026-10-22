@@ -915,12 +915,15 @@ function cardMat(color) {
 }
 // cards along strands: each strand is {pts, ns, w}; the card lies flat on the surface under it (its width along strand x normal)
 function strandCards(strands, color, bone) {
-  const pos = [], nor = [], uv = [], idx = [];
-  for (const S of strands) { const n = S.pts.length; if (n < 2) continue; const base = pos.length / 3;
-    for (let s = 0; s < n; s++) { const d = (s < n - 1 ? S.pts[s + 1].clone().sub(S.pts[s]) : S.pts[s].clone().sub(S.pts[s - 1])).normalize(), nn = S.ns[s], side = d.clone().cross(nn); if (side.lengthSq() < 1e-6) side.set(1, 0, 0); side.normalize();
-      const w = S.w * (1 - (S.tip ?? .5) * (s / (n - 1)) ** 2), p = S.pts[s]; pos.push(p.x - side.x * w, p.y - side.y * w, p.z - side.z * w, p.x + side.x * w, p.y + side.y * w, p.z + side.z * w);
-      nor.push(nn.x, nn.y, nn.z, nn.x, nn.y, nn.z); const v = S.v0 + (S.v1 - S.v0) * s / (n - 1); uv.push(0, v, 1, v); if (s < n - 1) { const a = base + s * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); } } }
-  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx);
+  // (Session 1315: into arrays of their size, through two vectors kept for the walk, not three new ones a point; the same numbers)
+  let nv = 0, ni = 0; for (const S of strands) { const n = S.pts.length; if (n >= 2) { nv += n * 2; ni += (n - 1) * 6; } }
+  const pos = new Float32Array(nv * 3), nor = new Float32Array(nv * 3), uv = new Float32Array(nv * 2), idx = new (nv - 1 >= 65535 ? Uint32Array : Uint16Array)(ni), d = new THREE.Vector3(), side = new THREE.Vector3(); let vp = 0, ip = 0;
+  for (const S of strands) { const n = S.pts.length; if (n < 2) continue; const base = vp;
+    for (let s = 0; s < n; s++) { if (s < n - 1) d.subVectors(S.pts[s + 1], S.pts[s]); else d.subVectors(S.pts[s], S.pts[s - 1]); d.normalize(); const nn = S.ns[s]; side.crossVectors(d, nn); if (side.lengthSq() < 1e-6) side.set(1, 0, 0); side.normalize();
+      const w = S.w * (1 - (S.tip ?? .5) * (s / (n - 1)) ** 2), p = S.pts[s], o = vp * 3; pos[o] = p.x - side.x * w; pos[o + 1] = p.y - side.y * w; pos[o + 2] = p.z - side.z * w; pos[o + 3] = p.x + side.x * w; pos[o + 4] = p.y + side.y * w; pos[o + 5] = p.z + side.z * w;
+      nor[o] = nor[o + 3] = nn.x; nor[o + 1] = nor[o + 4] = nn.y; nor[o + 2] = nor[o + 5] = nn.z; const v = S.v0 + (S.v1 - S.v0) * s / (n - 1); uv[vp * 2] = 0; uv[vp * 2 + 1] = v; uv[vp * 2 + 2] = 1; uv[vp * 2 + 3] = v; vp += 2;
+      if (s < n - 1) { const a = base + s * 2; idx[ip++] = a; idx[ip++] = a + 1; idx[ip++] = a + 2; idx[ip++] = a + 1; idx[ip++] = a + 3; idx[ip++] = a + 2; } } }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.BufferAttribute(nor, 3)); g.setAttribute('uv', new THREE.BufferAttribute(uv, 2)); g.setIndex(new THREE.BufferAttribute(idx, 1));
   const m = new THREE.SkinnedMesh(skinTo(g, bone), cardMat(color)); m.noCast = true; m.customDepthMaterial = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking, map: strandTex(), alphaTest: .42 }); return m;
 }
 // a tube along a centre line (radius per point), textured with lengthwise locks
@@ -958,7 +961,7 @@ function drape(S, start, dir0, L, clearAt, o = {}) {
 }
 const HAIR_STYLES = ['short', 'loose', 'braid', 'braids', 'tail', 'bun'];
 // the sleeve's place along the forearm (Session 1228), for the checks
-function buildHair(P, G, heads, scalpTris, headB, rnd) {
+function buildHair(P, G, heads, scalpTris, headB, rnd, checks = true) {
   const out = [], style = G.hair?.style ?? ((G.hairLen ?? .3) < .45 ? 'short' : 'loose'), len = G.hair?.len ?? G.hairLen ?? .3, col = sRGB(...G.hairCol);
   const R0 = PACK.rest, neckY0 = .6, S = surfGrid(P, PACK.G['body'], (x, y, z) => (y > neckY0 - .02) || (y > .25 && Math.abs(x) < .2));
   const bb = new THREE.Box3(); for (const v of scalpTris) bb.expandByPoint(new THREE.Vector3(P[v * 3], P[v * 3 + 1], P[v * 3 + 2])); const hc = bb.getCenter(new THREE.Vector3()), hr = bb.getSize(new THREE.Vector3()).multiplyScalar(.5); hc.y -= .02;
@@ -1009,7 +1012,7 @@ function buildHair(P, G, heads, scalpTris, headB, rnd) {
         // so it hangs as wide as the head and is not pinched in to the nape
         if (free && q.z < hc.z && q.y < hc.y - .02 && (under || n.y < -.08 || q.y < relY - .05)) { under = true; if (fell < 0) { fell = pts.length - 1; nRel = n.clone(); } const ax = new THREE.Vector3(q.x - hc.x, 0, q.z - hc.z).normalize(); want.set(sx * .08, -1, 0);
           const din = dir.x * ax.x + dir.z * ax.z; if (din < 0) { dir.x -= din * ax.x; dir.z -= din * ax.z; } } }
-      const stick = g || short || (free ? !under : onHead(q)), hit = heightOver(S, q);
+      const stick = g || short || (free ? !under : onHead(q)), hit = stick ? heightOver(S, q) : null;
       if (stick && hit) want.addScaledVector(hit.e.n, -want.dot(hit.e.n));
       want.normalize(); dir.lerp(want, l === 0 ? 1 : .5).normalize();
       const q2 = q.clone().addScaledVector(dir, step), h2 = heightOver(S, q2);
@@ -1031,17 +1034,18 @@ function buildHair(P, G, heads, scalpTris, headB, rnd) {
   }
   // the checks' numbers: strand points under the skin, and strand points lying on the face (by the rest place of the skin under them)
   // and Session 877's: how high the roots sit on the skin, and how high the hair stands over the crown
-  let rootH = 0, crownH = 0, crownN = 0; for (const st of strands) { const h0 = heightOver(S, st.pts[0]); if (h0) rootH = Math.max(rootH, h0.h); }
-  let inside = 0, onFace = 0, pts = 0; for (const st of strands) for (const q of st.pts) { pts++; const hit = heightOver(S, q); if (!hit) continue; if (hit.h < -.001) inside++; if (q.y > hc.y + .04) { crownH += hit.h; crownN++; }
+  // (Session 1315: a third of the hair's time, and no part of the hair; the game asks for none, makePerson's o.hairStats false)
+  let rootH = 0, crownH = 0, crownN = 0, inside = 0, onFace = 0, pts = 0, seamN = 0, seamBare = 0; if (checks) { for (const st of strands) { const h0 = heightOver(S, st.pts[0]); if (h0) rootH = Math.max(rootH, h0.h); }
+  for (const st of strands) for (const q of st.pts) { pts++; const hit = heightOver(S, q); if (!hit) continue; if (hit.h < -.001) inside++; if (q.y > hc.y + .04) { crownH += hit.h; crownN++; }
     const v = hit.e.v, x = R0[v * 3], y = R0[v * 3 + 1], z = R0[v * 3 + 2]; if (hit.h < .03 && z > .05 && y > .6 && y < .79 - .03 * (x / .075) ** 2 && Math.abs(x) < .07) onFace++; }
   // Session 874's number, the seam: points down the back of the scalp's midline, above the occiput, with no strand over them within 4 mm
   const SG = new Map(), sk = (x, y, z) => (Math.floor(x / .01) * 4096 + Math.floor(y / .01)) * 4096 + Math.floor(z / .01);
   for (const st of strands) for (const q of st.pts) { const k = sk(q.x, q.y, q.z); if (!SG.has(k)) SG.set(k, []); SG.get(k).push(q); }
   const nearStrand = (q, n) => { let bd = 1e9; const i = Math.floor(q.x / .01), j = Math.floor(q.y / .01), k = Math.floor(q.z / .01), d = new THREE.Vector3();
     for (let a = -2; a <= 2; a++) for (let b = -2; b <= 2; b++) for (let c = -2; c <= 2; c++) for (const w of SG.get(((i + a) * 4096 + (j + b)) * 4096 + (k + c)) || []) { d.copy(w).sub(q); const h = d.dot(n); if (h < -.004 || h > .02) continue; bd = Math.min(bd, d.addScaledVector(n, -h).lengthSq()); } return Math.sqrt(bd); };
-  let seamN = 0, seamBare = 0; for (let t = 0; t < scalpTris.length; t += 3) { A.fromArray(P, scalpTris[t] * 3); B.fromArray(P, scalpTris[t + 1] * 3); C.fromArray(P, scalpTris[t + 2] * 3);
+  for (let t = 0; t < scalpTris.length; t += 3) { A.fromArray(P, scalpTris[t] * 3); B.fromArray(P, scalpTris[t + 1] * 3); C.fromArray(P, scalpTris[t + 2] * 3);
     const tn = B.clone().sub(A).cross(C.clone().sub(A)).normalize(); if (tn.dot(A.clone().sub(hc)) < 0) tn.negate();
-    for (const q of [A.clone().add(B).add(C).multiplyScalar(1 / 3), A.clone().add(B).multiplyScalar(.5), B.clone().add(C).multiplyScalar(.5), C.clone().add(A).multiplyScalar(.5)]) if (q.z < hc.z - .03 && Math.abs(q.x - hc.x) < .015 && q.y > hc.y - .02) { seamN++; if (nearStrand(q, tn) > .004) seamBare++; } }
+    for (const q of [A.clone().add(B).add(C).multiplyScalar(1 / 3), A.clone().add(B).multiplyScalar(.5), B.clone().add(C).multiplyScalar(.5), C.clone().add(A).multiplyScalar(.5)]) if (q.z < hc.z - .03 && Math.abs(q.x - hc.x) < .015 && q.y > hc.y - .02) { seamN++; if (nearStrand(q, tn) > .004) seamBare++; } } }
   const cards = strandCards(strands, col, headB); cards.name = 'hair'; out.push(cards);
   // what the gathering makes
   const tie = new THREE.MeshStandardMaterial({ color: sRGB(.25, .17, .11), roughness: .7 }), lm = lockMat(col.clone().multiplyScalar(.95));
@@ -1080,7 +1084,7 @@ function buildHair(P, G, heads, scalpTris, headB, rnd) {
         brush.push({ pts, ns, w: .007, v0: .5, v1: 1 }); }
       const bm = strandCards(brush, col, headB); bm.name = 'brush'; out.push(bm); }
   }
-  return { meshes: out, stats: { style, strands: strands.length, gather: gather.length, points: pts, inside, onFace, drapeMin: +drapeMin.toFixed(4), seam: seamN ? +(seamBare / seamN).toFixed(3) : 0, seamN, rootH: +rootH.toFixed(4), crown: +(crownH / Math.max(1, crownN)).toFixed(4), hairline: { edge: edgeN, ratio: +((edgeW / Math.max(1, edgeN)) / (backW / Math.max(1, backN))).toFixed(3) }, temples: { edge: tN, inner: tbN, ratio: +((tW / Math.max(1, tN)) / (tbW / Math.max(1, tbN))).toFixed(3) } } };
+  return { meshes: out, stats: { style, strands: strands.length, gather: gather.length, ...checks ? { points: pts, inside, onFace, seam: seamN ? +(seamBare / seamN).toFixed(3) : 0, seamN, rootH: +rootH.toFixed(4), crown: +(crownH / Math.max(1, crownN)).toFixed(4) } : {}, drapeMin: +drapeMin.toFixed(4), hairline: { edge: edgeN, ratio: +((edgeW / Math.max(1, edgeN)) / (backW / Math.max(1, backN))).toFixed(3) }, temples: { edge: tN, inner: tbN, ratio: +((tW / Math.max(1, tN)) / (tbW / Math.max(1, tbN))).toFixed(3) } } };
 }
 
 // ── the cloak (Session 805, B2): cloth hung from the shoulders ──
@@ -3515,7 +3519,7 @@ function* makePersonSteps(G, o = {}) {
     const headB = ix.bones.findIndex(b => b.name === 'head'), bb = new THREE.Box3(); for (const v of scalp) bb.expandByPoint(new THREE.Vector3(P[v * 3], P[v * 3 + 1], P[v * 3 + 2])); const hc = bb.getCenter(new THREE.Vector3()), hr = bb.getSize(new THREE.Vector3()).multiplyScalar(.5).addScalar(.004); hc.y -= .02; hr.y += .02;
     const tuck = hoodUpOn(D) || D.helm || D.wrap ? { ...G, hair: { style: 'short', len: Math.min(G.hair?.len ?? .3, .3) } } : G;
     // under a hood the hair is tucked in: only the scalp's shell, which shows at the hairline
-    const H = buildHair(P, tuck, heads, PACK.R.scalpRoots, headB, RND); meshes.push(...H.meshes.filter(m => tuck === G || (D.helm || D.wrap) && !hoodUpOn(D) || m.name !== 'hair')); hairStats = H.stats;
+    const H = buildHair(P, tuck, heads, PACK.R.scalpRoots, headB, RND, o.hairStats !== false); meshes.push(...H.meshes.filter(m => tuck === G || (D.helm || D.wrap) && !hoodUpOn(D) || m.name !== 'hair')); hairStats = H.stats;
     yield;
     { const B = buildBrows(P, G, headB); meshes.push(B.mesh); browStats = B.stats; }
     yield;
