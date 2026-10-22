@@ -69,7 +69,8 @@ async function shoot(look) {
   return r;
 }
 
-const oldR = await shoot('');
+// S1321: the old look by name; '' was r128 while the old look was the page's default, and boots 0.170 since Session 1226
+const oldR = await shoot('old');
 const newR = await shoot('new');
 fs.writeFileSync('tests/out/lookpair-old.png', Buffer.from(oldR.url.split(',')[1], 'base64'));
 fs.writeFileSync('tests/out/lookpair-new.png', Buffer.from(newR.url.split(',')[1], 'base64'));
