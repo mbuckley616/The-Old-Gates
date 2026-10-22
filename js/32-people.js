@@ -1322,7 +1322,7 @@ function tickPeople(dt,now){
 // person first comes within HBODY.build of the eye, the nearest first, one at a time at most every HBODY.gap ms, and never while
 // the world still has cells to load (makePerson takes 0.3 to 1.1 s on a CI runner's CPU, and the loading comes first); until then
 // the distant copy stands in. Only the body changes: names, roles, schedules and outcomes do not.
-const HBODY={on:true,near:16,mid:42,build:46,gap:250,last:-1e9,ms:0,n:0,swap:null,cards:/^(hair|brows|beard|moust)$/};
+const HBODY={on:true,near:16,mid:42,build:46,gap:250,slice:8,job:null,worst:0,frames:0,last:-1e9,ms:0,n:0,swap:null,cards:/^(hair|brows|beard|moust)$/};
 const HB_RIGS=new Set();
 const HB_GENOMES=new Map();
 /* S1259 (F10) — how many builder bodies have been hung on drivers: a corpse's search (bodyAimed) collects its bones again when it moves */
@@ -1384,8 +1384,8 @@ function hbClone(){const c=new this.constructor().copy(this);c.onBeforeCompile=t
 const _hbq=new THREE.Quaternion(),_hbq2=new THREE.Quaternion(),_hbq3=new THREE.Quaternion(),_hbv=new THREE.Vector3(),_hbv2=new THREE.Vector3();
 // a bone's rotation in the frame of `top` (an ancestor), from the local quaternions up the chain: no matrices, no world numbers
 function hbRel(b,top,q){q.copy(b.quaternion);let p=b.parent;while(p&&p!==top){q.premultiply(p.quaternion);p=p.parent;}return q;}
-function hbAttach(rig){const tA=performance.now();let P;
-  try{P=HB.makePerson(rig.hbG);}catch(e){rig.hbFail=true;console.warn('F4: makePerson failed for',rig.g.hbKey,e);return;}
+function hbAttach(rig,P){const tA=performance.now();
+  if(!P)try{P=HB.makePerson(rig.hbG);}catch(e){rig.hbFail=true;console.warn('F4: makePerson failed for',rig.g.hbKey,e);return;}
   const root=P.root,by=P.byName,sk=P.skeleton;
   for(const [,n] of HB_MAP)if(!by[n]){rig.hbFail=true;console.warn('F4: the builder has no bone',n);return;}
   // its stature: the tallest skinned mesh's rest geometry (the body, sole to crown; hair cards have more vertices but less height)
@@ -1515,23 +1515,28 @@ function hbCutFn(u){const c=u.cut;let h=null;
 const HB_MID_MAT=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.88,metalness:0,side:THREE.DoubleSide});
 function hbMerge(P,skip){const sk=P.skeleton,bones=sk.bones,bi=new Map(bones.map((b,i)=>[b,i])),rootI=bi.get(P.byName.root);
   P.root.updateMatrixWorld(true);
-  const pos=[],nor=[],col=[],si=[],sw=[],idx=[],v=new THREE.Vector3(),n=new THREE.Vector3(),M=new THREE.Matrix4(),N=new THREE.Matrix3(),I=new THREE.Matrix4(),c=new THREE.Color();let base=0;
-  P.root.traverse(o=>{if(!o.isMesh||skip.has(o))return;const g=o.geometry,pa=g.attributes.position,na=g.attributes.normal,ca=g.attributes.color,m=o.material;
-    if(!pa||Array.isArray(m)||m.transparent)return;c.copy(m.color||c.setRGB(1,1,1));const vc=!!(ca&&m.vertexColors),rigid=!o.isSkinnedMesh;let b=0;
+  // S1294 — what is baked, counted first, so the arrays are made once at their size (the bake pushed into plain arrays: 60 to 340 ms a body)
+  const list=[];let NV=0,NI=0;
+  P.root.traverse(o=>{if(!o.isMesh||skip.has(o))return;const g=o.geometry,pa=g.attributes.position,m=o.material;
+    if(!pa||Array.isArray(m)||m.transparent)return;list.push(o);NV+=pa.count;NI+=g.index?g.index.count:pa.count;});
+  const pos=new Float32Array(NV*3),nor=new Float32Array(NV*3),col=new Float32Array(NV*3),si=new Uint16Array(NV*4),sw=new Float32Array(NV*4),idx=new Uint32Array(NI),v=new THREE.Vector3(),n=new THREE.Vector3(),M=new THREE.Matrix4(),N=new THREE.Matrix3(),I=new THREE.Matrix4(),c=new THREE.Color();let base=0,ni=0;
+  for(const o of list){const g=o.geometry,pa=g.attributes.position,na=g.attributes.normal,ca=g.attributes.color,m=o.material;
+    c.copy(m.color||c.setRGB(1,1,1));const vc=!!(ca&&m.vertexColors),rigid=!o.isSkinnedMesh;let b=0;
     if(rigid){let p=o.parent;while(p&&!p.isBone)p=p.parent;b=p?bi.get(p):rootI;M.copy(sk.boneInverses[b]).invert().multiply(I.copy(bones[b].matrixWorld).invert()).multiply(o.matrixWorld);N.getNormalMatrix(M);}
     const s=g.attributes.skinIndex,w=g.attributes.skinWeight;
-    for(let i=0;i<pa.count;i++){v.fromBufferAttribute(pa,i);if(rigid)v.applyMatrix4(M);pos.push(v.x,v.y,v.z);
-      if(na){n.fromBufferAttribute(na,i);if(rigid)n.applyMatrix3(N).normalize();nor.push(n.x,n.y,n.z);}else nor.push(0,1,0);
-      col.push(c.r*(vc?ca.getX(i):1),c.g*(vc?ca.getY(i):1),c.b*(vc?ca.getZ(i):1));
-      if(rigid){si.push(b,0,0,0);sw.push(1,0,0,0);}else{si.push(s.getX(i),s.getY(i),s.getZ(i),s.getW(i));sw.push(w.getX(i),w.getY(i),w.getZ(i),w.getW(i));}}
+    for(let i=0;i<pa.count;i++){const k=(base+i)*3,k4=(base+i)*4;v.fromBufferAttribute(pa,i);if(rigid)v.applyMatrix4(M);pos[k]=v.x;pos[k+1]=v.y;pos[k+2]=v.z;
+      if(na){n.fromBufferAttribute(na,i);if(rigid)n.applyMatrix3(N).normalize();nor[k]=n.x;nor[k+1]=n.y;nor[k+2]=n.z;}else nor[k+1]=1;
+      col[k]=c.r*(vc?ca.getX(i):1);col[k+1]=c.g*(vc?ca.getY(i):1);col[k+2]=c.b*(vc?ca.getZ(i):1);
+      if(rigid){si[k4]=b;sw[k4]=1;}else{si[k4]=s.getX(i);si[k4+1]=s.getY(i);si[k4+2]=s.getZ(i);si[k4+3]=s.getW(i);sw[k4]=w.getX(i);sw[k4+1]=w.getY(i);sw[k4+2]=w.getZ(i);sw[k4+3]=w.getW(i);}}
     // what the garment's shader discards (its cut and hole, over the rest position aBase) is left out, by each triangle's middle
-    const ab=g.attributes.aBase,gone=ab&&hbCutFn(m.userData||{}),q={x:0,y:0,z:0},n3=g.index?g.index.count:pa.count,at=i=>g.index?g.index.getX(i):i;
-    for(let i=0;i<n3;i+=3){const a=at(i),b2=at(i+1),c3=at(i+2);
+    const ab=g.attributes.aBase,gone=ab&&hbCutFn(m.userData||{}),q={x:0,y:0,z:0},n3=g.index?g.index.count:pa.count,ix=g.index?g.index.array:null;
+    for(let i=0;i<n3;i+=3){const a=ix?ix[i]:i,b2=ix?ix[i+1]:i+1,c3=ix?ix[i+2]:i+2;
       if(gone){q.x=(ab.getX(a)+ab.getX(b2)+ab.getX(c3))/3;q.y=(ab.getY(a)+ab.getY(b2)+ab.getY(c3))/3;q.z=(ab.getZ(a)+ab.getZ(b2)+ab.getZ(c3))/3;if(gone(q))continue;}
-      idx.push(base+a,base+b2,base+c3);}
-    base+=pa.count;});
-  const G=new THREE.BufferGeometry();G.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));G.setAttribute('normal',new THREE.Float32BufferAttribute(nor,3));
-  G.setAttribute('color',new THREE.Float32BufferAttribute(col,3));G.setAttribute('skinIndex',new THREE.Uint16BufferAttribute(si,4));G.setAttribute('skinWeight',new THREE.Float32BufferAttribute(sw,4));G.setIndex(idx);
+      idx[ni++]=base+a;idx[ni++]=base+b2;idx[ni++]=base+c3;}
+    base+=pa.count;}
+  const G=new THREE.BufferGeometry();G.setAttribute('position',new THREE.BufferAttribute(pos,3));G.setAttribute('normal',new THREE.BufferAttribute(nor,3));
+  G.setAttribute('color',new THREE.BufferAttribute(col,3));G.setAttribute('skinIndex',new THREE.BufferAttribute(si,4));G.setAttribute('skinWeight',new THREE.BufferAttribute(sw,4));
+  G.setIndex(new THREE.BufferAttribute(NV>65536?idx.slice(0,ni):Uint16Array.from(idx.subarray(0,ni)),1));
   const mesh=new THREE.SkinnedMesh(G,HB_MID_MAT);mesh.name='mid';mesh.bind(sk,new THREE.Matrix4());mesh.bindMode='detached';mesh.bindMatrixInverse.identity();
   mesh.castShadow=false;mesh.receiveShadow=true;mesh.visible=false;return mesh;}
 function hbDrop(rig){const H=rig.hb;if(!H)return;hbGive(rig);if(H.eyes)for(const e of H.eyes)e.o.material=e.m;if(H.lid)H.lid.dispose();if(H.root.parent)H.root.parent.remove(H.root);
@@ -1566,15 +1571,29 @@ function hbWarmStep(){for(const rig of HB_RIGS){const H=rig.hb;if(!H||!Array.isA
 const HB_TEX=['map','normalMap','roughnessMap','metalnessMap','alphaMap','bumpMap','emissiveMap','aoMap'];
 function hbUpload(o){for(const m of Array.isArray(o.material)?o.material:[o.material])if(m)for(const k of HB_TEX)if(m[k]&&m[k].isTexture)REN.initTexture(m[k]);}
 // each frame, after the driver is posed: the level by distance, the pose copied, and at most one new body built
+// S1294 — a body is built a few pieces a frame (people.js's makePersonIter: the body, each garment, the hair, the brows, the hood, the
+// pose, each thing hung on after), at most HBODY.slice ms of a frame and always one piece, instead of 0.3 to 1.3 s in one; the driver's
+// distant copy stands in meanwhile, as before the build began. Hung on the driver (hbAttach) on the frame its last piece is made.
+// A body left behind (its person gone from the scene) is dropped half made, and one that fails is never tried again
+function hbBuildStep(now){const J=HBODY.job,rig=J.rig,top=rig.foe?rig.root.parent:rig.root;
+  if(!rig.root.parent||!top||!top.parent){HBODY.job=null;return null;}
+  const t0=performance.now();let r;
+  try{do{r=J.it.next();J.steps++;}while(!r.done&&performance.now()-t0<HBODY.slice);}
+  catch(e){HBODY.job=null;rig.hbFail=true;console.warn('F4: makePerson failed for',rig.g.hbKey,e);return null;}
+  const dt=performance.now()-t0;J.ms+=dt;HBODY.ms+=dt;HBODY.worst=Math.max(HBODY.worst,dt);HBODY.frames++;
+  if(!r.done)return null;
+  HBODY.job=null;rig.hbP=r.value;return rig;}
 function hbTick(now){let best=null,bd=HBODY.build;
   const busy=now-HBODY.last<HBODY.gap||(typeof JOBS!=='undefined'&&JOBS.length&&!(typeof isInterior==='function'&&isInterior()));
   for(const rig of HB_RIGS){const root=rig.root,top=rig.foe?root.parent:root; // a foe's body hangs in its enemy's group (tickPeople)
     if(!root.parent||!top.parent){hbDrop(rig);HB_RIGS.delete(rig);continue;}
     if(top.parent!==scene||!top.visible||!root.visible)continue;
     const d=Math.hypot(CAM.position.x-top.position.x,CAM.position.z-top.position.z);
-    if(!rig.hb){if(!busy&&!rig.hbFail&&d<bd){bd=d;best=rig;}continue;}
+    if(!rig.hb){if(!busy&&!HBODY.job&&!rig.hbFail&&d<bd){bd=d;best=rig;}continue;}
     const L=rig.hb.L,a=HBODY.near+(L>0?-1:1),b=HBODY.mid+(L>1?-1:1);hbLevel(rig,rig.hb.cold?2:d<a?0:d<b?1:2);
     if(rig.hb.L<2){hbPose(rig);if(rig.hb.glow)hbGlow(rig);if(rig.hb.held.length)hbHold(rig);}}
   if(best&&best.hbFoe&&!best.hbG){try{best.hbG=hbFoeGenome(best);}catch(e){best.hbFail=true;console.warn('F4: no genome for the foe',best.hbFoe,e);best=null;}}
-  if(best){hbAttach(best);HBODY.last=now;if(best.hb){const t=best.foe?best.root.parent:best.root,d=Math.hypot(CAM.position.x-t.position.x,CAM.position.z-t.position.z);hbWarm(best);hbLevel(best,best.hb.cold?2:d<HBODY.near?0:d<HBODY.mid?1:2);if(best.hb.L<2)hbPose(best);}}
-  else hbWarmStep();}
+  if(best&&HB.makePersonIter){try{HBODY.job={rig:best,it:HB.makePersonIter(best.hbG),ms:0,steps:0};}catch(e){best.hbFail=true;console.warn('F4: makePerson failed for',best.g.hbKey,e);}best=null;}
+  const step=!best&&HBODY.job&&!busy;if(step)best=hbBuildStep(now);
+  if(best){hbAttach(best,best.hbP);best.hbP=null;HBODY.last=now;if(best.hb){const t=best.foe?best.root.parent:best.root,d=Math.hypot(CAM.position.x-t.position.x,CAM.position.z-t.position.z);hbWarm(best);hbLevel(best,best.hb.cold?2:d<HBODY.near?0:d<HBODY.mid?1:2);if(best.hb.L<2)hbPose(best);}}
+  else if(!step)hbWarmStep();}
