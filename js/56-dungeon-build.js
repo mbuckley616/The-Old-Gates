@@ -959,7 +959,7 @@ function buildDungeon(portal){
   const interiorFn = FORT_INTERIORS[interiorKey] || FORT_INTERIORS.cave;
   // S1293 (card F5, Michael's B on #448) — an old gate is laid as spaces first, rooms after (makeGate); forts, lairs, dens and the
   // crypt keep their rooms and corridors (#421)
-  let gen=interiorKey==='cave'&&!dunKeepKind(portal)?makeGate(portal.size,portal.seed):interiorFn(portal.size,portal.seed);
+  let gen=interiorKey==='cave'&&!dunKeepKind(portal)?makeGate(portal.size,portal.seed,portal.floors):interiorFn(portal.size,portal.seed);
   if(interiorKey!=='cave'&&!gen.map2&&portal.size!=='small')gen=addUpperFloor(gen,portal.seed); // v80 — forts get an upper floor
   if(gen.hall)FLOOR2_Y=-gen.hall.D; /* S1298 — a massive gate's floor two lies its stair hall's flights down (2 or 3 of 4.2 m) */
   dMap=gen.map;dMap2=gen.map2||null;dR=gen.H;dC=gen.W;

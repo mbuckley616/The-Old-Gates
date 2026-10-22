@@ -136,8 +136,8 @@ const WORLD_DUNGEONS=[
 
   // ── ASHENMOOR ─────────────────── 7 dungeons, easy→normal range
   // None closer than ~55 units from village center (31,31)
-  {zone:'overworld',x:72,z:8,  seed:42,  size:'medium', theme:'undead',    diff:'easy',   canonicalName:'The Dungeon of Shadows'},
-  {zone:'overworld',x:100,z:25,seed:137, size:'large',  theme:'elemental', diff:'normal', canonicalName:'The Crypt of Embers'},
+  {zone:'overworld',x:72,z:8,  seed:42,  size:'medium', theme:'undead',    diff:'easy',   canonicalName:'The Dungeon of Shadows', floors:2},
+  {zone:'overworld',x:100,z:25,seed:137, size:'large',  theme:'elemental', diff:'normal', canonicalName:'The Crypt of Embers', floors:2},
   {zone:'overworld',x:28,z:95, seed:891, size:'large',  theme:'deep',      diff:'normal'},
   {zone:'overworld',x:95,z:55, seed:204, size:'tiny',   theme:'goblin',    diff:'veryeasy'},
   {zone:'overworld',x:8, z:90, seed:315, size:'small',  theme:'haunted',   diff:'easy'},
@@ -383,6 +383,7 @@ function makePortalDef(entry){
     seed:entry.seed,
     zone:entry.zone,
     keyBase:dungeonKeyBase(entry.seed),
+    floors:entry.floors, /* S1314 — #613 A: a gate that keeps a second floor (makeGate) */
     theme:gate.theme,
     occupied:gate.occupied,
     get diff(){return tierDiffKey(portalDoorTier(this),portalGradeUp(entry));},
