@@ -87,6 +87,10 @@ check('from 70 m every body past the middle range is on the cheap level', far.n 
 // S1224: a frame of the square with its bodies whole takes 7 to 21 s here on software GL and about five times that on a CI runner, so
 // the harness's 120 s a picture (S808) ran out on the square twice in a row (#513's run); the pictures get 300 s
 const SHOT_MS = 300000;
+// S1262: the pictures only when asked (F4_PICS=1). On CI they took about 12 of the suite's 15 minutes, so with the second boot after them it
+// met the 900 s a suite is given on both tries (#568, run 39648922301); and each run rewrote the committed pictures. Every check stays
+const PICS = process.env.F4_PICS === '1';
+if (PICS) {
 const shoot = async (name, fn) => { await page.evaluate(fn); for (let i = 0; i < 6; i++) { await page.evaluate(() => tickPeople(1 / 60, performance.now())); await g.frames(1); } await page.screenshot({ path: path.join(OUT, name), timeout: SHOT_MS }); };
 await shoot('f4-square.jpg', () => { const t = WORLD.siteAnywhere('dunmore'); px = t.x; pz = t.z + 4; yaw = 0; pitch = -.06; });
 await shoot('f4-market.jpg', () => { const r = [...HB_RIGS].filter(r => r.hb && r.root.visible && r.root.parent === WORLD.scene).sort((a, b) => Math.hypot(a.root.position.x - px, a.root.position.z - pz) - Math.hypot(b.root.position.x - px, b.root.position.z - pz))[0];
@@ -97,13 +101,14 @@ for (const [name, near] of [['f4-whole.jpg', 16], ['f4-baked.jpg', 0]]) {
   await page.screenshot({ path: path.join(OUT, name), clip: { x: 440, y: 120, width: 400, height: 480 }, timeout: SHOT_MS }); }
 await page.evaluate(() => { HBODY.near = 16; });
 await shoot('f4-crowd60.jpg', () => { const t = WORLD.siteAnywhere('dunmore'); px = t.x; pz = t.z + 60; yaw = 0; pitch = -.03; });
+}
 const inn = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'); const h = S.houses.find(x => x.type === 'inn') || S.houses[0]; px = h.exitX; pz = h.exitZ; goToInterior(h); return h.type; });
 for (let k = 0; k < 40 && !(await page.evaluate(() => isInterior())); k++) await page.waitForTimeout(250);
 await page.evaluate(() => { HBODY.last = -1e9; }); // the ticks above ran on made-up clocks; the room runs on the page's own
 for (let k = 0; k < 12; k++) { await g.frames(1); await page.evaluate(() => tickPeople(1 / 60, performance.now())); }
 const room = await page.evaluate(() => { const rs = [...HB_RIGS].filter(r => r.root.parent === scene);
   return { inside: isInterior(), people: rs.length, built: rs.filter(r => r.hb).length }; });
-await page.screenshot({ path: path.join(OUT, 'f4-inn.jpg'), timeout: SHOT_MS });
+if (PICS) await page.screenshot({ path: path.join(OUT, 'f4-inn.jpg'), timeout: SHOT_MS });
 check('in the inn\'s common room the keeper and the drinkers wear the builder\'s bodies too', room.inside && room.people >= 1 && room.built === room.people, { inn, ...room });
 check('no page errors', g.errs.length === 0, g.errs.slice(0, 3));
 await g.close();

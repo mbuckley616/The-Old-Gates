@@ -1456,7 +1456,7 @@ class Body {
   bone(name, parent, p) { const b = { name, parent: parent ? this.by[parent] : null, p: p.clone(), i: this.bones.length }; this.bones.push(b); this.by[name] = b; return b; }
   chain(name, parent, pts) { const names = []; let par = parent; pts.forEach((p, k) => { const n = name + k; this.bone(n, par, p); names.push(n); par = n; }); this.chains[name] = names; return names; }
   // flesh: a tapered capsule a→b on a bone; capsules sharing a group join hard (one limb), groups join smoothly
-  meat(bone, a, b, ra, rb, o = {}) { const k = this.g.sliders.bulk; this.flesh.push({ bone: this.by[bone].i, a: a.clone(), b: b.clone(), ra: ra * k, rb: (rb ?? ra) * k, s: o.s || [1, 1, 1], tone: o.tone || 'coat', group: o.group ?? ('m' + this.nGroup++) }); }
+  meat(bone, a, b, ra, rb, o = {}) { const k = this.g.sliders.bulk; this.flesh.push({ bone: this.by[bone].i, a: a.clone(), b: b.clone(), ra: ra * k, rb: (rb ?? ra) * k, s: o.s || [1, 1, 1], tone: o.tone || 'coat', tk: o.tk || 1, group: o.group ?? ('m' + this.nGroup++) }); }
   // a rigid bit (an eye, a claw, an antler) hung on a bone; `obj` is placed in body space at rest
   bit(bone, obj) { this.bits.push({ bone, obj }); return obj; }
 }
@@ -1484,6 +1484,12 @@ P.neck = (B, o) => {
   for (let k = 0; k < n; k++) { const a = (o.rise + (o.curve || 0) * (k + .5) / n) * DEG; pts.push(pts[k].clone().add(V(0, Math.sin(a), Math.cos(a)).multiplyScalar(len / n))); }
   const names = B.chain('neck', B.spineNames[B.spineNames.length - 1], pts.slice(0, n));
   for (let k = 0; k < n; k++) B.meat(names[k], pts[k], pts[k + 1], along(o.r, k / n), along(o.r, (k + 1) / n), { s: [o.s?.[0] ?? 1, o.s?.[1] ?? 1, 1], group: 'neck', tone: o.tone });
+  // a mane (Session 1261, the horse): a ridge along the top of the neck from the withers to the poll, in the mane's tone, grown into
+  // the neck's skin as a crest (its own group, so it blends). `r` its half-height, `w` its width against that, `at` how far up the
+  // neck's own radius its line runs, `fall` how far it hangs to one side (the off side, as a horse's mane is laid), `tk` how strongly its tone
+  // claims the skin over it (a flesh's `tk`, its tone's weight against its neighbours': the neck under it would otherwise colour it)
+  if (o.mane) { const M = o.mane; for (let k = 0; k < n; k++) { const a = (o.rise + (o.curve || 0) * (k + .5) / n) * DEG, up = V((M.fall || 0), Math.cos(a), -Math.sin(a)).normalize(), lift = t => along(o.r, t) * (o.s?.[1] ?? 1) * (M.at ?? .8);
+    B.meat(names[k], pts[k].clone().addScaledVector(up, lift(k / n)), pts[k + 1].clone().addScaledVector(up, lift((k + 1) / n)), along(M.r, k / n), along(M.r, (k + 1) / n), { s: [M.w ?? .45, 1, 1], tone: 'mane', tk: M.tk ?? 8, group: 'mane' }); } }
   B.neckEnd = pts[n]; B.neckBone = names[n - 1]; B.neckPts = pts; B.neckR = t => along(o.r, t); B.neckS = [o.s?.[0] ?? 1, o.s?.[1] ?? 1];
 };
 // the hood's darkness is seen only through its opening (Session 1187): from behind, the black cup showed through a see-through cowl as a
@@ -1865,9 +1871,20 @@ P.packs = (B, o) => { const sp = B.spineAt(o.at), fl = (B.plan.fur?.len || 0) * 
 // neck with a bow under it. Rigid on the first neck bone, so the head moves free of it.
 P.harness = (B, o) => { const t = o.at ?? .2, np = B.neckPts, f = t * (np.length - 1), i = Math.min(np.length - 2, Math.floor(f)), c = np[i].clone().lerp(np[i + 1], f - i), d = np[i + 1].clone().sub(np[i]).normalize();
   const fl = (B.plan.fur?.len || 0) * .8, k = o.fit ?? 1.1, rx = (B.neckR(t) * B.neckS[0] + fl) * k, ry = (B.neckR(t) * B.neckS[1] + fl) * k, q = new THREE.Quaternion().setFromUnitVectors(V(0, 0, 1), d), bone = B.chains.neck[i];
-  if (o.kind === 'collar') { const g = new THREE.TorusGeometry(1, .2, 12, 32); g.scale(rx, ry, rx); const m = new THREE.Mesh(g, stdMat(B.tone('leather'), { rough: .55 })); m.quaternion.copy(q); m.position.copy(c); B.bit(bone, m);
-    for (const sd of [1, -1]) { const h = new THREE.Mesh(new THREE.CylinderGeometry(rx * .06, rx * .06, ry * 2.1, 8), stdMat(B.tone('brass'), { rough: .35 })); h.quaternion.copy(q).multiply(new THREE.Quaternion().setFromAxisAngle(V(0, 0, 1), sd * .08));
-      h.position.copy(c).add(V(sd * rx * 1.2, ry * .15, 0)); B.bit(bone, h); } }
+  if (o.kind === 'collar') { const g = new THREE.TorusGeometry(1, .2, 12, 32); g.scale(rx, ry, rx); const m = new THREE.Mesh(g, stdMat(B.tone('leather'), { rough: .55 })); m.quaternion.copy(q); m.position.copy(c); m.name = 'collar'; B.bit(bone, m); B.collar = { c: c.clone(), q: q.clone(), rx, ry };
+    const hames = [1, -1].map(sd => { const h = new THREE.Mesh(new THREE.CylinderGeometry(rx * .06, rx * .06, ry * 2.1, 8), stdMat(B.tone('brass'), { rough: .35 })); h.quaternion.copy(q).multiply(new THREE.Quaternion().setFromAxisAngle(V(0, 0, 1), sd * .08));
+      h.position.copy(c).add(V(sd * rx * 1.2, ry * .15, 0)); B.bit(bone, h); return h; });
+    // fitted to the grown skin (Session 1261): the neck's blend with the chest and the mane make it wider and higher than its capsules, so
+    // the collar is sized and centred on the hide's own cross-section in its plane (within 2 cm, and 1.8 of the
+    // neck's own reach of its line, so the chest behind a low collar is not counted), its leather's inner edge (0.8 of the
+    // ring) `clear` beyond the skin; the hames follow it
+    (B.after ||= []).push(geo => { const P = geo.attributes.position, iq = q.clone().invert(), v = V(), lim = 1.8 * Math.max(rx, ry) / k; let x = 0, y0 = 1e9, y1 = -1e9;
+      for (let i = 0; i < P.count; i++) { v.fromBufferAttribute(P, i).sub(c).applyQuaternion(iq); if (Math.abs(v.z) > .02 || v.length() > lim) continue; x = Math.max(x, Math.abs(v.x)); y0 = Math.min(y0, v.y); y1 = Math.max(y1, v.y); }
+      if (!x) return; const ym = (y0 + y1) / 2, hy = (y1 - y0) / 2; let e = 0; // then the ellipse through the box's half-widths, grown to take its farthest point
+      for (let i = 0; i < P.count; i++) { v.fromBufferAttribute(P, i).sub(c).applyQuaternion(iq); if (Math.abs(v.z) > .02 || v.length() > lim) continue; e = Math.max(e, Math.hypot(v.x / x, (v.y - ym) / hy)); }
+      const cl = e * (o.clear ?? 1.06) / .8, nx = x * cl, ny = hy * cl, mid = V(0, ym, 0).applyQuaternion(q);
+      m.scale.set(nx / rx, ny / ry, Math.min(nx / rx, ny / ry)); m.position.copy(c).add(mid); B.collar = { c: m.position.clone(), q: q.clone(), rx: nx, ry: ny, at: c.clone(), lim };
+      hames.forEach((h, j) => { h.scale.set(nx / rx, .8 * ny / ry, nx / rx); h.position.copy(c).add(mid).add(V((j ? -1 : 1) * nx * 1.02, ny * .1, 0)); }); }); }
   else { const wb = new THREE.Mesh(new THREE.BoxGeometry(rx * 2 + o.over * 2, ry * .32, ry * .38), stdMat(B.tone('wood'), { rough: .75 })); wb.quaternion.copy(q); wb.position.copy(c).add(V(0, ry * .82, 0)); B.bit(bone, wb);
     const g = new THREE.TorusGeometry(1, .05, 8, 24, Math.PI); g.rotateZ(Math.PI); g.scale(rx, ry * .95, rx); const bow = new THREE.Mesh(g, stdMat(B.tone('wood'), { rough: .75 })); bow.quaternion.copy(q); bow.position.copy(c).add(V(0, ry * .66, 0)); B.bit(bone, bow); } };
 
@@ -2088,12 +2105,12 @@ function dressFlesh(geo, B, pal, plan) {
   const kw = B.flesh.map(c => Math.max(.006, .32 * (c.ra + c.rb) / 2)), C = new THREE.Color(), D = new THREE.Color(), pat = plan.pattern, gl = plan.glow;
   for (let v = 0; v < n; v++) {
     const x = pos.getX(v), y = pos.getY(v), z = pos.getZ(v); wb.fill(0); tw.fill(0);
-    for (let c = 0; c < B.flesh.length; c++) { const f = B.flesh[c], d = capDist(f, x, y, z); if (d > kw[c] * 9) continue; const w = Math.exp(-Math.max(0, d) / kw[c]) * (d < 0 ? 1 + Math.min(4, -d / kw[c]) : 1); wb[f.bone] += w; tw[toneI[f.tone] ?? 0] += w; }
+    for (let c = 0; c < B.flesh.length; c++) { const f = B.flesh[c], d = capDist(f, x, y, z); if (d > kw[c] * 9) continue; const w = Math.exp(-Math.max(0, d) / kw[c]) * (d < 0 ? 1 + Math.min(4, -d / kw[c]) : 1); wb[f.bone] += w; tw[toneI[f.tone] ?? 0] += w * f.tk; }
     const top = []; for (let b = 0; b < wb.length; b++) if (wb[b] > 0) top.push(b); top.sort((a, b) => wb[b] - wb[a]); const tsum = top.slice(0, 4).reduce((s, b) => s + wb[b], 0) || 1;
     for (let q = 0; q < 4; q++) { const b = top[q]; si[v * 4 + q] = b ?? 0; sw[v * 4 + q] = b === undefined ? 0 : wb[b] / tsum; }
     if (!top.length) sw[v * 4] = 1;
     let ts = 0; for (const t of tw) ts += t; C.setRGB(0, 0, 0); let furry = 0;
-    for (let t = 0; t < tones.length; t++) if (tw[t] > 0) { const w = tw[t] / ts; D.copy(pal[tones[t]]); C.r += D.r * w; C.g += D.g * w; C.b += D.b * w; if (FURRY.has(tones[t])) furry += w; }
+    for (let t = 0; t < tones.length; t++) if (tw[t] > 0) { const w = tw[t] / ts; D.copy(pal[tones[t]]); C.r += D.r * w; C.g += D.g * w; C.b += D.b * w; if (FURRY.has(tones[t])) furry += w * (tones[t] === 'mane' ? plan.fur?.maneK ?? 1 : 1); }
     // counter-shading: the saddle darkens what faces the sky, the belly lightens what faces the ground (the game's wolves do this)
     const ny = nrm.getY(v), coatW = (tw[toneI.coat] || 0) / (ts || 1);
     if (pal.saddle && coatW > 0) C.lerp(pal.saddle, coatW * sstep(.15, .85, ny) * .85);
@@ -2114,7 +2131,7 @@ function dressFlesh(geo, B, pal, plan) {
     if (alpha && B.headFrame && B.by.head) { const H = B.headFrame, hs = (wb[B.by.head.i] + (B.by.jaw ? wb[B.by.jaw.i] : 0)) / tsum, rel = V(x, y, z).sub(H.base), fwd = rel.dot(H.dir) / H.len, upw = rel.dot(H.up) / H.r;
       alpha[v] = lerp(1, plan.faceClear / plan.clear, sstep(.5, .85, hs) * sstep(.25, .5, fwd) * sstep(.9, .45, upw)); }
     // the binding's seams: a crack pattern along the line `glow.line` (the spine's seam) or over the whole hide
-    if (gl) { const cr = Math.abs(PN.noise(x * gl.freq, y * gl.freq, z * gl.freq * .6)), seam = gl.seam ? sstep(gl.seam.w, 0, Math.abs(x)) * sstep(gl.seam.y0, gl.seam.y0 + .08, y) * (ny > .2 ? 1 : 0) : 0;
+    if (gl) { const cr = Math.abs(PN.noise(x * gl.freq, y * gl.freq, z * gl.freq * .6)), seam = gl.seam ? sstep(gl.seam.w, 0, Math.abs(x)) * sstep(gl.seam.y0, gl.seam.y0 + .08, y) * (ny > .2 ? 1 : 0) * seamRun(gl.seam, z) : 0;
       glow[v] = Math.max(seam, sstep(gl.w, 0, cr) * (gl.all || 0), (gl.base || 0) * (1 - .5 * Math.max(0, -ny)));
       // a tone that is itself light (Session 1185, the fire elemental's flame): `tones` lights a vertex by its share of each
       if (gl.tones) for (const [t, k] of Object.entries(gl.tones)) if (tw[toneI[t]]) glow[v] = Math.max(glow[v], k * tw[toneI[t]] / ts); }
@@ -2124,6 +2141,10 @@ function dressFlesh(geo, B, pal, plan) {
   if (alpha) geo.setAttribute('aAlpha', new THREE.Float32BufferAttribute(alpha, 1));
 }
 
+// a seam's run along the body (Session 1274, the Ash Hound's): `z` its two ends, so it lies along the back alone and not up the neck and
+// over the head, and `gaps` breaks it into lengths of ember about that many to the metre
+function seamRun(S, z) { let k = 1; if (S.z) k = sstep(S.z[0] - .05, S.z[0], z) * sstep(S.z[1] + .05, S.z[1], z);
+  if (S.gaps) k *= sstep(-.15, .2, PN.noise(z * S.gaps, 3.7, 1.3)); return k; }
 // ── materials: the hide, fur shells (cut by noise, as the people's mantles are), and the binding's glow ──
 const GLOW_HEAD = 'attribute float aGlow; attribute float aFur; varying float vGlow; varying float vFur; varying vec3 vRP;\n';
 function hideMat(o) {
@@ -3174,14 +3195,17 @@ const SEA = ['tidecrab', 'reefmoray', 'starweedray', 'lanternjelly', 'coastaltun
 Object.assign(PLANS, {
   horse: { name: 'Horse', src: 'OG-046 (beasts of burden: the horse)', gaits: ['walk', 'trot', 'gallop', 'stand'], speedK: 1.1, wag: .06, neckNod: .08, rough: .5,
     palette: { coat: [.34, .22, .14], saddle: [.24, .15, .09], belly: [.44, .3, .2], dark: [.04, .03, .03], hoof: [.1, .08, .07], mane: [.07, .05, .04] },
-    fur: { len: .01, layers: 5, sx: 420 },
+    // Session 1261: heavier. At the coach's size the first horse read as a thin-legged foal (S1251's trial): the barrel deeper and
+    // rounder, the neck deep at the withers and flat-sided, the legs a third thicker with a full hoof (Michael on S262's horse, "far too
+    // small/lean ... considerably thicker"), a mane along the neck, and the tail full, hanging from a raised dock
+    fur: { len: .01, layers: 5, sx: 420, maneK: 6, droop: .5 },
     parts: [
-      ['spine', { hip: [1.42, -.68], chest: [1.48, .52], n: 4, r: [.3, .3, .33], s: [.82, 1.12], rump: .22, rumpDrop: .05, front: .2, frontDrop: .1 }],
-      ['neck', { len: .75, n: 3, rise: 55, curve: -12, r: [.22, .12], s: [.7, 1.3], fwd: .04 }],
-      ['head', { len: .58, r: .12, pitch: 62, s: [.85, 1, 1], muzzle: { len: 1, r: .085, nose: 1, taper: .85 }, jaw: { len: .85, r: .06, drop: .5 }, eyes: [{ f: .3, up: .4, out: .8, r: .022, color: [.05, .04, .03] }], ears: { kind: 'leaf', size: .08, f: .08, up: .9, out: .5, splay: 10, back: 5 } }],
-      ['tail', { len: .7, n: 3, r: [.07, .06], droop: 75, tone: 'mane' }],
-      ['legs', { at: 1, kind: 'ungulFore', out: .14, drop: .14, r: [.13, .07, .04, .045] }],
-      ['legs', { at: 0, kind: 'ungulHind', out: .14, drop: .08, r: [.17, .08, .042, .045] }]
+      ['spine', { hip: [1.4, -.66], chest: [1.44, .5], n: 4, r: [.34, .36, .38], s: [.84, 1.18], rump: .24, rumpDrop: .06, front: .22, frontDrop: .14, arch: -.02 }],
+      ['neck', { len: .78, n: 3, rise: 52, curve: -14, r: [.29, .14], s: [.62, 1.38], fwd: .06, up: .06, mane: { r: [.1, .07], w: .45, at: 1.04, fall: .2, tk: 16 } }],
+      ['head', { len: .6, r: .14, pitch: 60, s: [.8, 1, 1], muzzle: { len: 1, r: .1, nose: 1.1, taper: .9 }, jaw: { len: .8, r: .085, drop: .55 }, eyes: [{ f: .3, up: .4, out: .8, r: .024, color: [.05, .04, .03] }], ears: { kind: 'leaf', size: .08, f: .08, up: .9, out: .5, splay: 10, back: 5 } }],
+      ['tail', { len: .78, n: 3, r: [.09, .1, .07], droop: 72, up: .06, s: [.8, 1], tone: 'mane' }],
+      ['legs', { at: 1, kind: 'ungulFore', out: .15, drop: .16, r: [.17, .095, .056, .068] }],
+      ['legs', { at: 0, kind: 'ungulHind', out: .15, drop: .1, r: [.22, .11, .058, .068] }]
     ] },
   ox: re(PLANS.cow, { name: 'Ox', src: 'OG-046 (beasts of burden: the ox)', scale: 1.15, pattern: null, speedK: .7,
     palette: { coat: [.32, .21, .14], saddle: [.22, .14, .09], belly: [.56, .46, .36], dark: [.06, .04, .04], hoof: [.1, .08, .07], horn: [.84, .78, .64], skin: [.5, .36, .3] },
@@ -3308,7 +3332,7 @@ AURENNE.push('glasswingmoth');
 const GEAR = { blanket: [.46, .36, .22], pack: [.5, .42, .3], leather: [.3, .19, .1], roll: [.36, .32, .24], brass: [.72, .56, .26], wood: [.42, .3, .18] };
 Object.assign(PLANS, {
   packmule: re(PLANS.mule, { name: 'Pack mule', src: 'OG-046 (beasts of burden: the mule with its packs)', scale: PLANS.mule.scale, palette: { ...PLANS.mule.palette, ...GEAR }, parts: [...PLANS.mule.parts, ['packs', { at: .55, len: .55 }]] }),
-  draughthorse: re(PLANS.horse, { name: 'Draught horse', src: 'OG-046 (beasts of burden: the horse in harness)', scale: 1.1, palette: { ...PLANS.horse.palette, ...GEAR }, parts: [...PLANS.horse.parts, ['harness', { kind: 'collar', at: .1, fit: 1.4 }]] }),
+  draughthorse: re(PLANS.horse, { name: 'Draught horse', src: 'OG-046 (beasts of burden: the horse in harness)', scale: 1.1, palette: { ...PLANS.horse.palette, ...GEAR }, parts: [...PLANS.horse.parts, ['harness', { kind: 'collar', at: .28, fit: 1.4 }]] }),
   yokedox: re(PLANS.ox, { name: 'Yoked ox', src: 'OG-046 (beasts of burden: the ox under its yoke)', scale: PLANS.ox.scale, speedK: PLANS.ox.speedK, palette: { ...PLANS.ox.palette, ...GEAR }, parts: [...PLANS.ox.parts, ['harness', { kind: 'yoke', at: .7, over: .5, fit: 1.05 }]] })
 });
 const HARNESSED = ['packmule', 'draughthorse', 'yokedox'];
@@ -3736,6 +3760,18 @@ Object.assign(PLANS, {
     ] }
 });
 const HOUNDS = ['wolfhound'];
+// the Ash Hound (Session 1274): the game's wolf of the wastes (34-creatures.js's `Ash Hound`, S262's kinds) on the kit's wolf: ash-grey,
+// leaner, with longer ears and muzzle, its eyes lit ember-orange, and the old body's "glowing seams along the back" as the Faolchú's seam
+// down the spine (`glow.seam`), with a few cracks of ember over the hide
+Object.assign(PLANS, {
+  ashhound: re(PLANS.wolf, { name: 'Ash Hound', src: 'the game\'s Ash Hound (the wastes, a Tine-touched wolf)', scale: .92,
+    palette: { coat: [.48, .45, .42], saddle: [.22, .2, .19], belly: [.62, .58, .54], dark: [.04, .03, .03], horn: [.7, .64, .58] },
+    fur: { len: .026, layers: 9, sx: 260 }, glow: { color: [3.2, .8, .22], freq: 3, w: .025, all: .35, seam: { w: .035, y0: .5, z: [-.42, .3], gaps: 9 } },
+    parts: PLANS.wolf.parts.map(([k, o]) => k === 'spine' ? [k, { ...o, r: o.r.map(r => r * .86) }]
+      : k === 'neck' ? [k, { ...o, r: o.r.map(r => r * .9) }]
+      : k === 'head' ? [k, { ...o, muzzle: { ...o.muzzle, len: 1.2, r: o.muzzle.r * .9 }, eyes: o.eyes.map(e => ({ ...e, color: [1, .31, .13], glow: 2.2 })), ears: { ...o.ears, size: o.ears.size * 1.25 } }]
+      : [k, o]) })
+});
 
 return {hashKey,rng,genome,toSaved,fromSaved,build,speedOf,strideOf,step,pose,SLIDERS,GAITS,PLANS,COMMON,ISLES,COATS,LIVESTOCK,GATELANDS,MARK,AURENNE,STRANGE,SEA,BURDEN,HARNESSED,CORRUPTED,TROLLS,SLIMES,GOBLINS,GARGOYLES,SKELETONS,FROST,FAILING,GOLEMS,WRAITHS,ELEMENTALS,HOUNDS};
 })();
