@@ -566,7 +566,7 @@
            c.sites.forEach(t=>{if(t.kind!=='port')return;const sd=shoreDir(t);if(!sd)return;let x=t.x+sd.dx*t.pad,z=t.z+sd.dz*t.pad,n=0;while(worldH(x,z)>1.3&&n<80){x+=sd.dx*3;z+=sd.dz*3;n++;}t.quayStart={x,z};const q=addStamp({id:'quay_'+t.id,kind:'door',x:x-sd.dx*6,z:z-sd.dz*6,r:9,blend:16,y:1.05,cell:cellKey(c.i,c.j)});L.stamps.push(q);
              // the shipwright's own flat pad at the quay head
              const lx=x-sd.dx*9-sd.dz*11,lz=z-sd.dz*9+sd.dx*11;t.shipwrightLot={x:lx,z:lz};t.quayLane={a:{x:t.x+sd.dx*(t.pad-8),z:t.z+sd.dz*(t.pad-8)},b:{x,z}};const q2=addStamp({id:'swpad_'+t.id,kind:'door',x:lx,z:lz,r:8,blend:12,y:1.05,cell:cellKey(c.i,c.j)});L.stamps.push(q2);
-             // S1316 (card F9, Michael's 1 A and 2 B on #602) — on the new look an Aurennais port's inn is Aurenne's tavern on the quay: across the
+             // S1320 (card F9, Michael's 1 A and 2 B on #602) — on the new look an Aurennais port's inn is Aurenne's tavern on the quay: across the
              // quay head from the shipwright, its terrace to the water (away from the quay) and its gate toward the town; the house's own pad
              // under it (the house and the loggia, 9.8 m square), the terrace left to stand out over the shore on its quay wall
              if(window.OG_LOOK==='new'&&window.OG_KIT_TOWNS!==false&&nationKeyOf(c.i,c.j)==='aurenne'){const F={x:sd.dz,z:-sd.dx},N={x:-sd.dx,z:-sd.dz},a=9,ox=x-sd.dx*a+F.x*10,oz=z-sd.dz*a+F.z*10;

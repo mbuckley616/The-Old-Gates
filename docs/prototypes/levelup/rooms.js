@@ -477,8 +477,8 @@ export function markAlehall(o = {}, r = stream('alehall')) {
 //   front window, the first bed in the nook over the stair's foot. Adds floors, stair, well, passage, rooms [{ x0, x1, door }], beds, paths.
 //   Session 1307 (the critic's walk): the upper flight open beneath, two oil jars stored under it; the well framed in cedar and lit by a
 //   lamp on the west wall; the west window raised over the flight (o.stairWin); the pendant lamp over the left table, 2.06 m clear.
-//   o.gate (Session 1316): -1 or +1, that side's parapet open for 1.2 m by the loggia with a step down outside (-> terrace.gate { x, z0, z1 }).
-//   o.leaves false (Session 1316): the rooms' doorways empty, for the game to hang doors that open and shut (intDoorAt).
+//   o.gate (Session 1320): -1 or +1, that side's parapet open for 1.2 m by the loggia with a step down outside (-> terrace.gate { x, z0, z1 }).
+//   o.leaves false (Session 1320): the rooms' doorways empty, for the game to hang doors that open and shut (intDoorAt).
 export function aurenneTavern(o = {}, r = stream('tavern')) {
   const R2 = !!o.rooms, w = 9.6, d = 8.0, sh = aurenneHouse({ kind: 'tile', w, d, two: R2, arcade: true, wall: 0, door: 2, pointed: false, green: false, interior: true, ...(R2 ? { stairWin: { y: 1.95, h: .55 } } : {}) }, stream('tavern-shell'));
   const M = homeMats(), B = new Map(), boxes = [];
@@ -516,7 +516,7 @@ export function aurenneTavern(o = {}, r = stream('tavern')) {
   // the terrace: paving from the arcade 4 m out to a parapet on the quay wall, which drops 3.2 m to the sea
   const T0 = az + .05, T1 = az + 4.05, terrace = { z0: T0, z1: T1, y: FT, parapet: FT + .62, quayFoot: -3.4, ...(o.gate === -1 || o.gate === 1 ? { gate: { x: o.gate * (w / 2 + .05), z0: T0 + .8, z1: T0 + 2.0 } } : {}) };
   bx('step', -w / 2 - .1, w / 2 + .1, FT - .4, FT, T0, T1); bx('step', -w / 2 - .1, w / 2 + .1, terrace.quayFoot, FT - .4, T1 - .5, T1 + .25);
-  // o.gate (Session 1316, the game's quay: the tavern stands with its terrace to the water and you come to it along the quay): that side's
+  // o.gate (Session 1320, the game's quay: the tavern stands with its terrace to the water and you come to it along the quay): that side's
   // parapet (-1 the west, +1 the east) opened for 1.2 m between the loggia's end and the first table, a step down outside it
   const G0 = T0 + .8, G1 = T0 + 2.0, gate = o.gate === -1 || o.gate === 1 ? o.gate : 0;
   for (const [x0, x1, z0, z1] of [[-w / 2 - .1, w / 2 + .1, T1 - .3, T1], ...[-1, 1].flatMap(sx => { const a = sx < 0 ? -w / 2 - .1 : w / 2 - .2, b = sx < 0 ? -w / 2 + .2 : w / 2 + .1; return sx === gate ? [[a, b, T0, G0], [a, b, G1, T1]] : [[a, b, T0, T1]]; })]) { bx('plaster', x0, x1, FT, FT + .55, z0, z1, 'parapet'); bx('step', x0 - .03, x1 + .03, FT + .55, FT + .62, z0 - .03, z1 + .03); }

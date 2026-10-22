@@ -1,4 +1,4 @@
-// Aurenne's tavern on the quay of an Aurennais port, on the new look (Session 1316; card F9, Michael's 1 A and 2 B on #602: the tavern two
+// Aurenne's tavern on the quay of an Aurennais port, on the new look (Session 1320; card F9, Michael's 1 A and 2 B on #602: the tavern two
 // storeys high with three rooms upstairs, the keeper's words as they stand; in the ports only, on the quay). On ?look=new the port's first
 // inn is PKIT.au.tavern({ rooms: true }) on its own lot across the quay head from the shipwright, its terrace out over the water and its
 // gate toward the town; the inn's old building is gone. Outside: the solid is the whole lot, the door you knock at is the gate's step with

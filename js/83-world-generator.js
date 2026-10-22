@@ -312,7 +312,7 @@
         if(si>=0&&sd){const q=site.quayStart;const lx=site.shipwrightLot?site.shipwrightLot.x:q.x-sd.dx*9-sd.dz*11,lz=site.shipwrightLot?site.shipwrightLot.z:q.z-sd.dz*9+sd.dx*11;const tx=-(-sd.dz),tz=-(sd.dx);
           const lot={x:lx,z:lz,w:7,d:6,ry:Math.atan2(tx,tz),tx,tz,row:0,street:null,two:true,k:'sw'};
           shopTypes.splice(si,1);shopTypes.unshift('shipwright');use.unshift(lot);}}
-      // S1316 (card F9, Michael's 1 A and 2 B on #602) — on the new look an Aurennais port's first inn is Aurenne's tavern with its rooms,
+      // S1320 (card F9, Michael's 1 A and 2 B on #602) — on the new look an Aurennais port's first inn is Aurenne's tavern with its rooms,
       // on its own lot across the quay head from the shipwright (site.tavernLot, padded when the cell loaded): the lot's front is the
       // terrace's gate toward the town, 9.8 m across the tavern's width, 14.1 m from its back wall to the terrace's quay wall. A lot it
       // would stand on gives way (a shop's swaps with the last home that is clear of it, a home's is let go)
@@ -368,7 +368,7 @@
       // keeper's bench lines (lot.kit.alehall, which innBench reads). An inn lot with no room for the hall keeps the old inn and its rooms.
       // S1305 — an Aurennais town's church on its plot is the Church of the Weaver (the plot was laid for it, so it fits by construction)
       if(AU&&town)use.forEach((lot,i)=>{if(shopTypes[i]==='church'&&lot.plot==='church'&&lot.au)lot.kit={kind:'aurchurch',w0:lot.w,d0:lot.d};});
-      // S1316 — the tavern's lot (planLots, above) is the tavern's ground: the kit builds it whole (kitAurTavern)
+      // S1320 — the tavern's lot (planLots, above) is the tavern's ground: the kit builds it whole (kitAurTavern)
       if(AU)use.forEach((lot,i)=>{if(lot.k==='tv'&&shopTypes[i]==='inn')lot.kit={kind:'aurtavern',w0:lot.w,d0:lot.d};});
       if(MK||AU)use.forEach((lot,i)=>{const t=shopTypes[i]||null,inn=MK&&t==='inn';if(t&&!KIT_SHOPS.has(t)&&!inn)return;if(lot.k==='sw'||(site.kind==='port'&&site.quayStart&&Math.hypot(lot.x-site.quayStart.x,lot.z-site.quayStart.z)<34))return;
         const o1=(MK?PKIT.mk:PKIT.au).lot(site.id,lot.n).o,o0=inn?Object.assign({},o1,{roof:'shingle',porch:true,chimney:false,carve:true,w:10,d:18}):o1,w0=lot.w,d0=lot.d,x0=lot.x,z0=lot.z,W0=inn?7:MK?5.6:5.4,D0=inn?10:MK?6.5:5;
@@ -506,7 +506,7 @@
       part(I.W+.6,I.top+1.2,I.D+.6,0,0,0);part(I.W+.6,I.pl+4.2+(I.W+.4)/(I.W>16?7:5)/2+.9+.85,4.4,0,0,I.D/2+2.2);part(2*I.R,I.y0+I.dh+I.R*1.12-I.top,2*I.R,0,I.top,0,blue); /* the cube, the porch, the drum and the dome */
       {const s=3.6,tx=I.W/2+s/2+.4,tz=I.D/2+4.4-s/2-.2,ty=B.towerTop-1.1-1.0-s*.44*1.15;part(s,ty,s,tx,0,tz);part(s*.88,B.towerTop-1.1-ty,s*.88,tx,ty,tz,blue);}
       lot._kitDoor=+u.toFixed(3);lot._wallH=I.top;lot._storeys=1;lot.two=false;lot.kit.tris=C.tris;lot.kit.calls=C.draws;lot.kit.colour='lime';lot.kit.door=lot._kitDoor;lot.kit.r=Math.hypot(lot.w,lot.d)/2;}
-    // S1316 (card F9, Michael's 1 A and 2 B on #602) — Aurenne's tavern with its rooms upstairs (PKIT.au.tavern, o.rooms) on the quay: the
+    // S1320 (card F9, Michael's 1 A and 2 B on #602) — Aurenne's tavern with its rooms upstairs (PKIT.au.tavern, o.rooms) on the quay: the
     // lot's front is the terrace's gate toward the town (o.gate, the tavern's +x side), the terrace and its vine out over the water
     // (F, the lot's -u), the house's back to the quay. Under the loggia and the terrace a quay wall of the terrace's stone down past the
     // sea floor, so the paving never floats where the shore falls away. The solid is the whole lot; you knock at the gate's step. Its far
@@ -1716,7 +1716,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     else{intNPCMesh=null;intNPCPos={x:-99,z:-99};}
     return sc_;
   }
-  // S1316 (card F9, Michael's 1 A and 2 B on #602) — on the new look an Aurennais port's inn on the quay (lot.kit.kind 'aurtavern', S1316's
+  // S1320 (card F9, Michael's 1 A and 2 B on #602) — on the new look an Aurennais port's inn on the quay (lot.kit.kind 'aurtavern', S1320's
   // planning) is Aurenne's tavern inside (PKIT.au.tavern with its rooms, rooms.js's Sessions 895, 1296 and 1307): the tiled room, the
   // counter across the back under its amphorae, the cooking bench, the stair of 16 risers up the west wall to a passage along the back
   // and three rooms off it, a bed, a chest and a basin in each. The same pieces as the street sees (one stream, by the town), drawn in
@@ -1776,7 +1776,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     house._exitX=null; /* S1276 — the door in the middle unless the room built now says otherwise */
     if(kitTaproom(house))return buildKitTaproom(house); /* S1161 — the kit's taproom, at its true size */
     if(kitAlehall(house))return buildKitAlehall(house); /* S1288 — the Mark's alehall, at its true size */
-    if(kitTavern(house))return buildKitTavern(house); /* S1316 — Aurenne's tavern on the quay, at its true size */
+    if(kitTavern(house))return buildKitTavern(house); /* S1320 — Aurenne's tavern on the quay, at its true size */
     const two=!!house.two;
     // S896 (F2a) — the room's true size in metres (07-scale.js; visual-foundation.md §1: a cottage room 4 to 6 across, an inn's hall
     // 10 to 14, a church's nave 8 to 12 wide), then laid out in the old unit (÷ SCALE.ROOM_K) and scaled back up at the end
