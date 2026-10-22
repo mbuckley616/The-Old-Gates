@@ -30,7 +30,7 @@ const made = await page.evaluate((KINDS) => { forceTime(12);
   window._tint = _F.filter(f => f.rig && HB_RIGS.has(f.rig)).map(({ n, e, rig }) => { const G = rig.hbG, t = G && G.skin ? new THREE.Color(G.skin[0], G.skin[1], G.skin[2]) : null, old = new THREE.Color(rig.g.skin);
     return { n, key: G ? [...HB_GENOMES].find(([, x]) => x === G)?.[0] : null, want: 'foe:' + e.id, built: !!rig.hb, hi: t && share(rig.geoHi, t), lo: t && rig.geoLo && share(rig.geoLo, t), oldHi: share(rig.geoHi, old), before: (() => { const b = personBake(rig.g, 1), v = share(b.geo, old); b.geo.dispose(); return v; })(), same: !!t && t.equals(old) }; });
   CAM.position.set(px, worldH(px, pz) + 1.65, pz); CAM.updateMatrixWorld(true);
-  const want = () => _F.filter(f => f.rig && HB_RIGS.has(f.rig) && !f.rig.hb && !f.rig.hbFail).length;
+  const want = () => _F.filter(f => f.rig && HB_RIGS.has(f.rig) && (!f.rig.hb || f.rig.hb.cold) && !f.rig.hbFail).length;
   let k = 0; const t0 = performance.now(); HBODY.last = -1e9; while (want() && k++ < 200) tickPeople(1 / 60, 2e5 + k * (HBODY.gap + 1));
   return { d, ticks: k, left: want(), ms: Math.round(performance.now() - t0) }; }, KINDS);
 console.log('  built:', JSON.stringify(made));

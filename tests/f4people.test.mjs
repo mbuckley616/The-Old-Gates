@@ -19,15 +19,19 @@ async function dunmore(g) {
   return page.evaluate(() => { forceTime(12); for (let i = 0; i < 120; i++) WORLD.tick(1 / 60, performance.now());
     const t = WORLD.siteAnywhere('dunmore'); px = t.x; pz = t.z + 4; yaw = 0; pitch = 0; for (let i = 0; i < 30; i++) WORLD.tick(1 / 60, performance.now());
     CAM.position.set(px, worldH(px, pz) + 1.65, pz); CAM.updateMatrixWorld(true);
-    const want = () => [...HB_RIGS].filter(r => !r.hb && !r.hbFail && r.root.parent === WORLD.scene && r.root.visible && Math.hypot(CAM.position.x - r.root.position.x, CAM.position.z - r.root.position.z) < HBODY.build).length;
+    const want = () => [...HB_RIGS].filter(r => (!r.hb || r.hb.cold) && !r.hbFail && r.root.parent === WORLD.scene && r.root.visible && Math.hypot(CAM.position.x - r.root.position.x, CAM.position.z - r.root.position.z) < HBODY.build).length;
     { const t1 = performance.now(); while (JOBS.length && performance.now() - t1 < 20000) runJobs(); } // the loading comes first (hbTick waits for it)
+    REN.render(scene, CAM); const p0 = REN.info.programs.length; // the street drawn once, without the builder's bodies
     let k = 0; const t0 = performance.now(); while (want() && k++ < 200) tickPeople(1 / 60, 1e5 + k * (HBODY.gap + 1));
-    return { ticks: k, left: want(), ms: Math.round(performance.now() - t0), built: HBODY.n, msEach: Math.round(HBODY.ms / Math.max(1, HBODY.n)) }; });
+    const p1 = REN.info.programs.length, shown = [...HB_RIGS].filter(r => r.hb && r.hb.L < 2).length; REN.render(scene, CAM);
+    return { ticks: k, left: want(), ms: Math.round(performance.now() - t0), built: HBODY.n, msEach: Math.round(HBODY.ms / Math.max(1, HBODY.n)), warmed: p1 - p0, shown, atDraw: REN.info.programs.length - p1 }; });
 }
 
 const g = await boot({ look: 'new' }); const { page } = g;
 const b1 = await dunmore(g);
 console.log('  built:', JSON.stringify(b1));
+// S1284: a new body's programs are made before it is shown (hbWarm): the first frame that draws them compiles nothing
+check('the first frame that draws the new bodies compiles no program: they were made while the driver stood in', b1.shown >= 4 && b1.warmed > 0 && b1.atDraw === 0, b1);
 
 const who = await page.evaluate(() => { const rs = [...PEOPLE_RIGS].filter(r => r.root.parent === WORLD.scene && !r.foe);
   const hb = rs.filter(r => HB_RIGS.has(r)), built = hb.filter(r => r.hb);
@@ -127,7 +131,7 @@ const crowd = await g2.page.evaluate(() => { forceTime(18); for (let i = 0; i < 
   px = cx; pz = cz + 6; for (let i = 0; i < 30; i++) WORLD.tick(1 / 60, performance.now());
   { const t1 = performance.now(); while (JOBS.length && performance.now() - t1 < 30000) runJobs(); }
   pitch = -.05; CAM.position.set(px, worldH(px, pz) + 1.65, pz); CAM.rotation.set(pitch, 0, 0, 'YXZ'); CAM.updateMatrixWorld(true);
-  const want = () => [...HB_RIGS].filter(r => !r.hb && !r.hbFail && r.root.parent === WORLD.scene && r.root.visible && Math.hypot(CAM.position.x - r.root.position.x, CAM.position.z - r.root.position.z) < HBODY.build).length;
+  const want = () => [...HB_RIGS].filter(r => (!r.hb || r.hb.cold) && !r.hbFail && r.root.parent === WORLD.scene && r.root.visible && Math.hypot(CAM.position.x - r.root.position.x, CAM.position.z - r.root.position.z) < HBODY.build).length;
   let k = 0; while (want() && k++ < 200) tickPeople(1 / 60, 1e5 + k * (HBODY.gap + 1));
   SETTINGS.quality = 1; rs = [...HB_RIGS].filter(r => r.hb && r.root.parent === WORLD.scene && r.root.visible);
   const views = [0, Math.PI / 2, Math.PI, -Math.PI / 2].map(yw => { yaw = yw; CAM.rotation.set(pitch, yaw, 0, 'YXZ'); CAM.updateMatrixWorld(true); tickPeople(1 / 60, 4e5); REN.render(scene, CAM); return REN.info.render.calls; });
