@@ -2521,6 +2521,10 @@ function solveLeg(C, L, T, fold) {
   return Pp[m].distanceTo(T);
 }
 
+// a foot put where another rig says (Session 1319, the game's spiders, whose own gait plants their feet): T in the rig's frame, the
+// matrices current; the same solve as the gait's (the coxa yawed toward the foot, the knee bent up), the distance it fell short returned
+function footAt(C, i, T, fold = 0) { return solveLeg(C, C.B.legs[i], T, fold); }
+
 // ── the plans. Each is its source in the concept art, a palette, the gaits it has, and its parts ──
 // Tones: coat, saddle and belly (counter-shading), dark (nose, claws, pads), hoof, horn, skin (bare), pale, membrane.
 const PLANS = {
@@ -3773,5 +3777,5 @@ Object.assign(PLANS, {
       : [k, o]) })
 });
 
-return {hashKey,rng,genome,toSaved,fromSaved,build,speedOf,strideOf,step,pose,SLIDERS,GAITS,PLANS,COMMON,ISLES,COATS,LIVESTOCK,GATELANDS,MARK,AURENNE,STRANGE,SEA,BURDEN,HARNESSED,CORRUPTED,TROLLS,SLIMES,GOBLINS,GARGOYLES,SKELETONS,FROST,FAILING,GOLEMS,WRAITHS,ELEMENTALS,HOUNDS};
+return {hashKey,rng,genome,toSaved,fromSaved,build,speedOf,strideOf,step,pose,footAt,SLIDERS,GAITS,PLANS,COMMON,ISLES,COATS,LIVESTOCK,GATELANDS,MARK,AURENNE,STRANGE,SEA,BURDEN,HARNESSED,CORRUPTED,TROLLS,SLIMES,GOBLINS,GARGOYLES,SKELETONS,FROST,FAILING,GOLEMS,WRAITHS,ELEMENTALS,HOUNDS};
 })();
