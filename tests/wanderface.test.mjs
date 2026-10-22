@@ -16,16 +16,24 @@ await page.evaluate(() => { window._drive = (step, max) => {
   window._fwd = (e) => { const v = new THREE.Vector3(0, 0, 1).applyQuaternion(e.mesh.quaternion); return Math.atan2(v.x, v.z); };
   window._ad = (a, b) => { let d = a - b; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI; return Math.abs(d); };
   window._spawn = (kind, x, z) => { const e = unlockFoe(buildZoneEnemy(WORLD.scene, [], x, z, kind, null)); ZONES.world.enemies.push(e); return e; };
-  window._drop = (e) => { e.dead = true; WORLD.scene.remove(e.mesh); const L = ZONES.world.enemies; L.splice(L.indexOf(e), 1); }; });
+  window._drop = (e) => { e.dead = true; WORLD.scene.remove(e.mesh); const L = ZONES.world.enemies; L.splice(L.indexOf(e), 1); };
+  // a home whose 3 m wander circle (and a metre past it) is clear of solids, 9 m from the others: the fixed spots were picked
+  // on the old look's Dunmore, and on the new look's one of them (+49, +40) stands in a house, so its foe never moved (S1308)
+  window._open = (t, used) => { for (let j = 0; j < 12; j++) for (let i = 0; i < 12; i++) { const x = t.x + 30 + i * 6, z = t.z + 30 + j * 6;
+      if (used.some(u => Math.hypot(u[0] - x, u[1] - z) < 9)) continue;
+      let ok = true; for (let a = 0; a < 24 && ok; a++) for (const r of [0, 2, 3, 4]) if (currentZoneSolid(x + Math.sin(a / 24 * 6.283) * r, z + Math.cos(a / 24 * 6.283) * r)) { ok = false; break; }
+      if (ok) { used.push([x, z]); return [x, z]; } }
+    return null; }; });
 const KINDS = ['Bandit', 'Wolf', 'Skeleton', 'Troll'];
 // 1. the body and the cone follow the walk
 const walk = await page.evaluate((KINDS) => { forceTime(12); const t = WORLD.siteAnywhere('dunmore'); px = t.x + 120; pz = t.z + 120; yaw = 0;
-  const es = KINDS.map((k, i) => _spawn(k, t.x + 40 + i * 9, t.z + 40));
+  const used = [], homes = KINDS.map(() => _open(t, used));
+  const es = KINDS.map((k, i) => _spawn(k, homes[i][0], homes[i][1]));
   const rec = es.map(e => ({ kind: e.name, worstBody: 0, worstCone: 0, n: 0, alert: false })); let prev = es.map(e => [e.x, e.z]);
   _drive((n) => { PHP = maxHP; if (n % 30 === 29) es.forEach((e, k) => { const dx = e.x - prev[k][0], dz = e.z - prev[k][1]; if (Math.hypot(dx, dz) > .05) {
       const mv = Math.atan2(dx, dz), r = rec[k]; r.worstBody = Math.max(r.worstBody, _ad(_fwd(e), mv)); r.worstCone = Math.max(r.worstCone, _ad(e.combatYaw, mv)); r.n++; }
       prev[k] = [e.x, e.z]; rec[k].alert = rec[k].alert || e.alert; }); return false; }, 360);
-  es.forEach(_drop); return rec.map(r => ({ ...r, worstBody: +r.worstBody.toFixed(2), worstCone: +r.worstCone.toFixed(2) })); }, KINDS);
+  es.forEach(_drop); return rec.map((r, i) => ({ ...r, worstBody: +r.worstBody.toFixed(2), worstCone: +r.worstCone.toFixed(2), home: [Math.round(homes[i][0] - t.x), Math.round(homes[i][1] - t.z)] })); }, KINDS);
 console.log(' walk', JSON.stringify(walk));
 // 2. what it sees: you 8 units ahead of its walk are seen; 8 units behind, walking (not sneaking), you are not
 const sight = await page.evaluate((KINDS) => { const out = []; const t = WORLD.siteAnywhere('dunmore');
