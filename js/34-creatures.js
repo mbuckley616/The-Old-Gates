@@ -730,7 +730,11 @@ function tickSpider(rig,g,e,dt,now){
 // through the wind-up and strikes over the head (tickSpider's P.tail): that turn is spread over the kit's seven tail joints, a seventh
 // and a half each, so the jointed tail curls as one. Its pincers are the driver's fangs: their spread (P.fang, lifted and out) turns
 // the kit's shoulders as it turns the fang bones (hcScorp). Its body copies the driver's; the driver's abdomen, which is the kit's
-// spine, moves nothing. Grown at a cell of 0.02: 15,000 triangles, ~125 ms. The Bog Crawler keeps the old body for now.
+// spine, moves nothing. Grown at a cell of 0.02: 15,000 triangles, ~125 ms.
+// The Bog Crawler (Session 1337) wears the kit's water bug (Session 1336's `bogcrawler`: flat and oval, four walking legs, the raptorial
+// forelegs as arms) on the same spider driver and foot solve, its two leg pairs on the driver's two. Its forelegs are the driver's fang
+// and hook bones: the femur takes the fang's lift about the body's side axis, and the tibia the hook's fold about its own hinge, the
+// femur's line crossed with the tibia's, as the driver's BUG_ARM.axis is (hcBug).
 // Session 1324: the spider's middle level is one mesh. Near, it is the hide and 33 bits (thorns along each leg, egg sacs, eyes, fangs),
 // 34 draw calls; at the middle level the hide and the 27 bits that are not small were 28. Those 28 are now baked into one skinned mesh
 // on the kit's skeleton (HC_KINDS' merge; people's hbMerge, each bit on the bone it hangs from), made the first time the spider comes
@@ -741,7 +745,8 @@ const HC_BODY={on:true,near:12,mid:40,build:44,small:.03,ms:0,n:0};
 const HC_RIGS=new Set();
 // the game's kinds and the kit's plans: a kind's own colours over the plan's (the kit's palettes are sRGB triples)
 const HC_KINDS={'Wolf':{plan:'wolf'},'Snow Wolf':{plan:'wolf',own:true},'Dire Wolf':{plan:'ironwolf',own:true},'Boar':{plan:'boar'},'Cave Bear':{plan:'bear',own:true},'Ash Hound':{plan:'ashhound'},'Horse':{plan:'horse',own:true,ik:true},'Grey Horse':{plan:'horse',own:true,ik:true},
-  'Spider':{plan:'spider',own:true,spider:true,cell:.028,merge:true},'Sand Scorpion':{plan:'dunescorpion',own:true,spider:true,cell:.02,merge:true}};
+  'Spider':{plan:'spider',own:true,spider:true,cell:.028,merge:true},'Sand Scorpion':{plan:'dunescorpion',own:true,spider:true,cell:.02,merge:true},
+  'Bog Crawler':{plan:'bogcrawler',own:true,spider:true,cell:.018,merge:true}};
 // the driver's joints and the kit's bones they move, parents first (the kit's front legs hang on spine3, the hind on spine0)
 const HC_MAP=[['hips','spine0'],['spine','spine1'],['neck','neck0'],['head','head'],['jaw','jaw'],['tail1','tail0'],['tail2','tail1'],['tail3','tail2'],
   ['shL','leg0L_0'],['elL','leg0L_1'],['wrL','leg0L_2'],['pfL','leg0L_3'],['shR','leg0R_0'],['elR','leg0R_1'],['wrR','leg0R_2'],['pfR','leg0R_3'],
@@ -807,7 +812,9 @@ function hcAttach(rig){const tA=performance.now();let C;
     ({d,bs:[by[l+'_2'],by[l+'_1'],by[l+'_0']],end:by[l+'_3'],oy:by[l+'_3'].getWorldPosition(new THREE.Vector3()).y-B[d].getWorldPosition(new THREE.Vector3()).y}));}
   const hb=sp?B.body:B.hips;
   const scorp=sc?{tail:Object.keys(by).filter(n=>/^tail\d+$/.test(n)).map(n=>by[n]),arms:[[by.arm0L_0,1],[by.arm0R_0,-1]]}:null;
-  rig.hc={W,C,map,s0,t0,fur,small,ik,feet,hb,scorp,merge:!!HC_KINDS[rig.name].merge,mid:null,bits:C.B.bits.map(b=>b.obj),hide:meshes.filter(m=>!fur.includes(m)),hip0:sp?B.body.position.clone():new THREE.Vector3(B.hips.position.x,wolfHipY(rig.k),B.hips.position.z),pos0:by.spine0.position.clone(),k:1/(f*C.S),L:-1,drv:rig.mesh.material,em:-1};
+  // a water bug's forelegs (Session 1337): each femur and tibia, and the tibia's hinge from the kit's rest (its bones' rest turns are the identity)
+  const bug=rig.k&&rig.k.bug&&by.arm0L_2?['L','R'].map(n=>({n,fem:by['arm0'+n+'_0'],tib:by['arm0'+n+'_1'],ax:by['arm0'+n+'_1'].position.clone().cross(by['arm0'+n+'_2'].position).normalize()})):null;
+  rig.hc={W,C,map,s0,t0,fur,small,ik,feet,hb,scorp,bug,merge:!!HC_KINDS[rig.name].merge,mid:null,bits:C.B.bits.map(b=>b.obj),hide:meshes.filter(m=>!fur.includes(m)),hip0:sp?B.body.position.clone():new THREE.Vector3(B.hips.position.x,wolfHipY(rig.k),B.hips.position.z),pos0:by.spine0.position.clone(),k:1/(f*C.S),L:-1,drv:rig.mesh.material,em:-1};
   HC_BODY.ms+=performance.now()-tA;HC_BODY.n++;}
 function hcPose(rig){const H=rig.hc,B=rig.B,map=H.map;
   for(let i=0;i<map.length;i++){const [j,b]=map[i];
@@ -817,6 +824,7 @@ function hcPose(rig){const H=rig.hc,B=rig.B,map=H.map;
   if(H.ik)hcLegIK(rig);
   if(H.feet)hcSpFeet(rig);
   if(H.scorp)hcScorp(rig);
+  if(H.bug)hcBug(rig);
   // the wind-up's red and the parry's gold on the driver's material, on the kit's (its eyes and claws keep their own)
   const m=rig.mesh.material;let em=m&&m.emissive?m.emissive.getHex():0;if(m!==H.drv&&m&&m.color&&m.color.getHex()===0xffdd44)em=0xb08010;
   if(em!==H.em){H.em=em;for(const o of [...H.hide,...H.fur,...(H.mid?[H.mid]:[])])for(const x of Array.isArray(o.material)?o.material:[o.material])if(x.emissive)x.emissive.setHex(em);}}
@@ -842,6 +850,9 @@ function hcSpFeet(rig){const H=rig.hc,B=rig.B,C=H.C;rig.root.updateMatrixWorld(t
 const _hcE3=new THREE.Euler();
 function hcScorp(rig){const S=rig.hc.scorp,B=rig.B,a=B.tail?B.tail.rotation.x*1.5/S.tail.length:0;for(const b of S.tail)b.quaternion.setFromAxisAngle(_hcA.set(1,0,0),a);
   for(const [b,s] of S.arms){const f=s>0?B.fangL.rotation.z:-B.fangR.rotation.z;b.quaternion.setFromEuler(_hcE3.set(-f*.4,0,s*f));}}
+// Session 1337: a water bug's forelegs from its driver's fangs and hooks (tickSpider: the fang lifted -0.5·P.fang about x, the hook
+// folded -1.2·P.fang about its hinge)
+function hcBug(rig){const B=rig.B;for(const A of rig.hc.bug){const o=B['fang'+A.n].rotation.x/-.5;A.fem.quaternion.setFromAxisAngle(_hcA.set(1,0,0),-.5*o);A.tib.quaternion.setFromAxisAngle(A.ax,-1.2*o);}}
 function hcLevel(rig,L){const H=rig.hc;if(H.L===L)return;H.L=L;H.W.visible=L<2;rig.mesh.visible=L===2;
   if(H.merge&&L===1&&!H.mid)hcBake(rig);
   if(H.mid){const one=L===1;H.mid.visible=one;for(const m of H.hide)m.visible=!one;for(const o of H.bits)o.visible=!one;}

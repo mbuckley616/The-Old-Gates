@@ -3,7 +3,8 @@
 // solve (HC.footAt) on a foot put where the driver's foot is, counted from rest. Checked: built on the kit's skeleton keyed by its foe id,
 // at the coarser cell; standing at the driver's footprint; a walk that keeps planted feet planted; three levels; killed, it curls with its
 // driver and darkens. Picture: docs/prototypes/f4/f4-spiders.jpg. Session 1324: the middle level is one baked mesh. Session 1325: the Sand
-// Scorpion on the kit's Dunescorpion, its tail and pincers following the driver's tail and fangs (f4-scorpion.jpg).
+// Scorpion on the kit's Dunescorpion, its tail and pincers following the driver's tail and fangs (f4-scorpion.jpg). Session 1337: the Bog
+// Crawler on the kit's water bug, its raptorial forelegs folding with the driver's fang and hook bones (f4-bogcrawler.jpg).
 import { boot, check, ROOT } from './lib/game.mjs';
 import fs from 'fs'; import path from 'path';
 const OUT = path.join(ROOT, 'docs', 'prototypes', 'f4'); fs.mkdirSync(OUT, { recursive: true });
@@ -107,6 +108,32 @@ check(`its sting follows the driver's tail: at rest ${sc.rest && sc.rest.sting} 
 await page.evaluate(() => { const e = _S.e; e._wind = .6; e._lunge = null; const fx = -Math.sin(yaw), fz = -Math.cos(yaw); px = e.x - fx * 1.6 + 0.6; pz = e.z - fz * 1.6; pitch = -.45; });
 for (let i = 0; i < 8; i++) { await page.evaluate(() => tickCreatures(1 / 60, performance.now())); await g.frames(1); }
 await page.screenshot({ path: path.join(OUT, 'f4-scorpion.jpg') });
+// the Bog Crawler (Session 1337): the kit's water bug on the same driver, four feet on the driver's four, its forelegs on the fang and hook bones
+const bug = await page.evaluate(() => { const a = _W[1].e, fx = -Math.sin(yaw), fz = -Math.cos(yaw), x = a.x - fx * 1.5, z = a.z - fz * 1.5;
+  const e = keyFoe(buildZoneEnemy(WORLD.scene, [], x, z, 'Bog Crawler', null), 'f4bug:0'); e.mesh.position.set(x, WORLD.worldH(x, z), z); e.mesh.rotation.y = Math.atan2(px - x, pz - z);
+  e.combatYaw = e.mesh.rotation.y; e.locked = false; e.mesh.visible = true; if (!e.mesh.parent) WORLD.scene.add(e.mesh); const rig = e.limbs && e.limbs.wolf; if (rig) rig.e = e; window._B = { e, rig };
+  CAM.position.set(x - fx * 4, e.mesh.position.y + 1.65, z - fz * 4); CAM.updateMatrixWorld(true);
+  let k = 0; HBODY.last = -1e9; HC_BODY.ms = 0; HC_BODY.n = 0; while (rig && !rig.hc && !rig.hcFail && k++ < 60) tickCreatures(1 / 60, 1e6 + k * (HBODY.gap + 1));
+  const H = rig && rig.hc; if (!H) return { hc: false, fail: rig && rig.hcFail };
+  const by = H.C.byName, B = rig.B, W = v => v.getWorldPosition(new THREE.Vector3());
+  // the knee's angle, kit and driver: the femur's line (shoulder to knee) against the tibia's (knee to the tip)
+  const ang = (a, b, c) => { const u = b.clone().sub(a).normalize(), v = c.clone().sub(b).normalize(); return Math.acos(Math.max(-1, Math.min(1, u.dot(v)))); };
+  const at = (w, l, n) => { e._wind = w; e._lunge = l; for (let i = 0; i < n; i++) tickCreatures(1 / 60, 1.1e6 + k++ * 16.7); rig.root.parent.updateMatrixWorld(true);
+    const tip = B.hookL.localToWorld(new THREE.Vector3(BUG_ARM.tip[0], BUG_ARM.tip[1], BUG_ARM.tip[2]));
+    return { kit: ang(W(by.arm0L_0), W(by.arm0L_1), W(by.arm0L_2)), drv: ang(W(B.fangL), W(B.hookL), tip), hand: rig.root.worldToLocal(W(by.arm0L_3)), fang: B.fangL.rotation.x }; };
+  const r = at(0, null, 20); let dy = 0; for (const F of H.feet) { const L = H.C.B.legs[F.i]; dy = Math.max(dy, Math.abs(W(by[L.names[L.names.length - 1]]).y - e.mesh.position.y)); }
+  const w = at(1, null, 20), s = at(0, .15, 1), f = v => +v.toFixed(3);
+  return { hc: true, plan: H.C.g.plan, bones: H.C.bones.length, tris: H.C.stats.tris, cell: H.C.stats.cell, ms: Math.round(HC_BODY.ms), feet: H.feet.length, dy: f(dy), arms: H.bug ? H.bug.length : 0,
+    rest: { kit: f(r.kit), drv: f(r.drv), fang: f(r.fang), hy: f(r.hand.y) }, wind: { kit: f(w.kit), drv: f(w.drv), fang: f(w.fang), hy: f(w.hand.y) }, strike: { kit: f(s.kit), drv: f(s.drv), fang: f(s.fang), hy: f(s.hand.y) } }; });
+console.log('  bog crawler:', JSON.stringify(bug));
+check(`the Bog Crawler wears the kit's water bug (${bug.bones} bones, ${bug.tris} triangles at a cell of ${bug.cell}, ${bug.ms} ms), every toe of its four feet on the ground (within ${bug.dy} m)`,
+  bug.hc && bug.plan === 'game:Bog Crawler' && bug.feet === 4 && bug.arms === 2 && bug.tris < 25000 && bug.dy < .04, bug);
+{ const d = q => q.kit - bug.rest.kit, dd = q => q.drv - bug.rest.drv;
+  check(`its forelegs fold with the driver's: the knee turns ${bug.wind && d(bug.wind).toFixed(2)} rad wound up and ${bug.strike && d(bug.strike).toFixed(2)} striking, the driver's ${bug.wind && dd(bug.wind).toFixed(2)} and ${bug.strike && dd(bug.strike).toFixed(2)}`,
+    bug.hc && Math.max(Math.abs(d(bug.wind)), Math.abs(d(bug.strike))) > .2 && Math.abs(d(bug.wind) - dd(bug.wind)) < .05 && Math.abs(d(bug.strike) - dd(bug.strike)) < .05, bug); }
+await page.evaluate(() => { const e = _B.e; e._wind = .6; e._lunge = null; const fx = -Math.sin(yaw), fz = -Math.cos(yaw); px = e.x - fx * 1.6 + 0.6; pz = e.z - fz * 1.6; pitch = -.45; });
+for (let i = 0; i < 8; i++) { await page.evaluate(() => tickCreatures(1 / 60, performance.now())); await g.frames(1); }
+await page.screenshot({ path: path.join(OUT, 'f4-bogcrawler.jpg') });
 await page.evaluate(() => { REN.render(scene, CAM); });
 check('no page errors', g.errs.length === 0, g.errs.slice(0, 3));
 await g.close();

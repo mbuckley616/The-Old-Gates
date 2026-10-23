@@ -1657,6 +1657,8 @@ P.arms = (B, o) => {
       const fx = d2.clone().add(V(-side * .25, 0, 0)).normalize(), mv = d2.clone().add(V(side * .3, .1, 0)).normalize();
       B.bit(names[3], claw(c.r * .45, c.len * 1.15, B.tone(c.tone || 'dark'), hand.clone().add(V(-side * c.r * .35, 0, 0)), fx));
       B.bit(names[3], claw(c.r * .4, c.len, B.tone(c.tone || 'dark'), hand.clone().add(V(side * c.r * .35, c.r * .15, 0)), mv)); }
+    // a raptorial hook (Session 1336, the Bog Crawler's forelegs): one hooked claw off the hand, along the folded tibia and curling down
+    if (o.hook) { const h = o.hook; B.bit(names[3], claw(h.r, h.len, B.tone(h.tone || 'dark'), hand, d2.clone().add(V(0, -(h.down ?? .4), 0)).normalize(), h.hook ?? .4)); }
     B.arms.push({ names, side, phase: o.phase || 0, swing: o.swing ?? .5, stroke: o.stroke || 0 });
   }
 };
@@ -3776,6 +3778,25 @@ Object.assign(PLANS, {
       : k === 'head' ? [k, { ...o, muzzle: { ...o.muzzle, len: 1.2, r: o.muzzle.r * .9 }, eyes: o.eyes.map(e => ({ ...e, color: [1, .31, .13], glow: 2.2 })), ears: { ...o.ears, size: o.ears.size * 1.25 } }]
       : [k, o]) })
 });
+// ── Session 1336: the Bog Crawler (the game's fen foe; Michael, 28 Sep: B, the giant water bug, "a six-legged crawler of its own").
+// A hexapod: flat and oval, mud-brown with pale flecks, a small wedge of a head with big eyes at its corners and a short beak turned
+// under it, and a breathing siphon at the tail. The front pair are raptorial arms, not legs: a thick femur raised forward beside the
+// head and a tibia jack-knifed back under it to a hook (the old body's `BUG_ARM`), held up as it walks. It walks on the other four,
+// the hind pair longest, fringed with swimming hairs ──
+Object.assign(PLANS, {
+  bogcrawler: { name: 'Bog Crawler', src: 'the game\'s Bog Crawler (a giant water bug; Michael, 28 Sep: B)', gaits: ['walk', 'trot', 'stand'], speedK: 1.2, rough: .5, mottle: .7, wag: .02,
+    palette: { coat: [.29, .26, .19], skin: [.29, .26, .19], saddle: [.2, .17, .11], belly: [.36, .31, .2], dark: [.06, .05, .03], mark: [.47, .41, .28], horn: [.14, .11, .07] },
+    pattern: { kind: 'patches', size: .03, cut: .32, tone: 'mark', amount: .55 },
+    parts: [
+      ['spine', { hip: [.12, -.36], chest: [.125, .18], n: 4, r: [.15, .2, .14], s: [1.5, .3], rump: .17, rumpTaper: .4, front: .02 }],
+      ['head', { len: .13, r: .075, pitch: 4, s: [1.3, .5, 1], eyes: [{ f: .5, up: .55, out: .95, r: .025, color: [.46, .52, .2] }], beak: { len: .06, r: .016, up: -.3, hook: .45 } }],
+      ['tail', { len: .09, n: 1, r: [.03, .01], droop: 2, s: [1.4, .5] }],
+      ['legs', { at: .5, kind: 'insect', out: .17, drop: .02, fan: -6, reach: 3.1, r: [.022, .02, .016, .011] }],
+      ['legs', { at: .12, kind: 'insect', out: .15, drop: .02, fan: -46, reach: 3.7, r: [.026, .024, .021, .013], thorns: { per: 45, len: .03, r: .004, rake: 1.2, tone: 'mark' } }],
+      ['arms', { at: 1, out: .11, up: .01, dz: .02, len: .5, r: [.042, .03, .021], dir: [.45, .62, .64], dir2: [-.28, -.52, .81], hook: { r: .013, len: .075, hook: .5, down: 1.6 }, swing: .04 }]
+    ] }
+});
+const CRAWLERS = ['bogcrawler'];
 
-return {hashKey,rng,genome,toSaved,fromSaved,build,speedOf,strideOf,step,pose,footAt,SLIDERS,GAITS,PLANS,COMMON,ISLES,COATS,LIVESTOCK,GATELANDS,MARK,AURENNE,STRANGE,SEA,BURDEN,HARNESSED,CORRUPTED,TROLLS,SLIMES,GOBLINS,GARGOYLES,SKELETONS,FROST,FAILING,GOLEMS,WRAITHS,ELEMENTALS,HOUNDS};
+return {hashKey,rng,genome,toSaved,fromSaved,build,speedOf,strideOf,step,pose,footAt,SLIDERS,GAITS,PLANS,COMMON,ISLES,COATS,LIVESTOCK,GATELANDS,MARK,AURENNE,STRANGE,SEA,BURDEN,HARNESSED,CORRUPTED,TROLLS,SLIMES,GOBLINS,GARGOYLES,SKELETONS,FROST,FAILING,GOLEMS,WRAITHS,ELEMENTALS,HOUNDS,CRAWLERS};
 })();
