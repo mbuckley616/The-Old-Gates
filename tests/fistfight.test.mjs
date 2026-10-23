@@ -23,8 +23,12 @@ const fight = (punch, fists, max, hand = 5, noThrow = false, noHeavy = false) =>
   const _thr = PERK_LIVE.has('hand:50'); if (noThrow) PERK_LIVE.delete('hand:50');
   forceTime(12); SKILLS.hand = { lv: hand, p: 0 }; EQ.weapon = fists ? null : window._keepW; buildViewmodel();
   PHP = maxHP; dead = false; stamina = maxStamina; atkCd = 0; PPOST.stagUntil = 0; PPOST.posture = PPOST.maxPosture;
+  // S1332 — the town's own foes are held while the Bandit is fought: a Town Guard that came to the brawl took the punches (44
+  // swings, 8 tells in one fight), and on CI one left every later Bandit standing idle. `others` is how many were held, `near`
+  // how many of them stood within 12 m.
+  const held = ZONES.world.enemies.filter(o => !o.dead && !o._duelHold); for (const o of held) o._duelHold = true;
   const e = unlockFoe(buildZoneEnemy(WORLD.scene, [], px, pz - 4, 'Bandit', null)); e.alert = true; ZONES.world.enemies.push(e);
-  const log = { weapon: EQ.weapon ? EQ.weapon.name : 'fists', hp0: e.hp, posture: e.maxPosture || e.posture, tells: 0, blows: 0, heavy: 0, landed: 0, swings: 0, hits: 0, stagFrames: 0, frames: 0 };
+  const log = { others: held.length, near: held.filter(o => Math.hypot(o.x - px, o.z - pz) < 12).length, weapon: EQ.weapon ? EQ.weapon.name : 'fists', hp0: e.hp, posture: e.maxPosture || e.posture, tells: 0, blows: 0, heavy: 0, landed: 0, swings: 0, hits: 0, stagFrames: 0, frames: 0 };
   const _t = sndTelegraph, _x = executeStrike, _r = _resolveZoneStrike;
   sndTelegraph = function () { log.tells++; return _t.apply(this, arguments); };
   executeStrike = function () { log.blows++; log.lastW = arguments[0] && arguments[0]._heavy ? 2 : 1; if (log.lastW === 2) log.heavy++; const h = PHP; const out = _x.apply(this, arguments); if (PHP < h) log.landed++; return out; };
@@ -32,7 +36,7 @@ const fight = (punch, fists, max, hand = 5, noThrow = false, noHeavy = false) =>
   const step = () => { if (e.dead || e.hp <= 0 || PHP <= 0) return true; stamina = maxStamina; if (noHeavy) e._heavyLast = true; yaw = Math.atan2(-(e.x - px), -(e.z - pz));
     if (staggered.find(s => s.e === e)) log.stagFrames++;
     if (punch && atkCd <= 0 && !_pendingStrike && Math.hypot(e.x - px, e.z - pz) < 1.6) { attack(false); log.swings++; } };
-  try { log.frames = _drive(step, max); } finally { sndTelegraph = _t; executeStrike = _x; _resolveZoneStrike = _r; if (_thr) PERK_LIVE.add('hand:50'); }
+  try { log.frames = _drive(step, max); } finally { sndTelegraph = _t; executeStrike = _x; _resolveZoneStrike = _r; if (_thr) PERK_LIVE.add('hand:50'); for (const o of held) o._duelHold = false; }
   Object.assign(log, { secs: +(log.frames / 60).toFixed(2), hpEnd: e.hp, dead: !!e.dead, php0: maxHP, phpEnd: PHP, tell: +telegraphDuration(e).toFixed(2), recover: e.atkSpd });
   if (!e.dead) { e.dead = true; if (e.mesh) WORLD.scene.remove(e.mesh); }
   const L = ZONES.world.enemies, i = L.indexOf(e); if (i >= 0) L.splice(i, 1);
