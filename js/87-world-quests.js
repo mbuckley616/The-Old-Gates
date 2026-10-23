@@ -2059,6 +2059,25 @@ const giver=`${lord.title} ${lord.name}`;
   function stateSaid(site){return stateLine(site).split(' (')[0];}
   function stateLine(site){const st=TS(site);const f=Object.keys(st.flags);const p=st.p;const word=st.flags.besieged!=null?'under siege':st.flags.occupied!=null?'occupied':p>=80?'thriving':p>=60?'prosperous':p>=40?'getting by':p>=20?'struggling':'failing';return `${word} (${p})${f.length?' · '+f.join(', '):''}`;}
 
+  // ═══ THE GREAT GATES' TWO PATHS, AND THE WORLD'S CORRUPTION (card F12's number, Session 1340) ═══
+  // Each of the six great gates, one a school, is untouched until the player chooses: torn open (Varek's path) or
+  // sealed. Any choice can be undone by going back, until all six share one state; then the world's fate is fixed
+  // and nothing changes it again (Michael, 13 Oct 2026; lore §9a). The corruption level is the number torn, 0 to 6
+  // (visual-foundation.md §2), read by the grade, the sky, the clouds and the tree kit; corruptionTorn() names the
+  // torn schools, for each one's colour low on the horizon toward its gate (Michael's B on #531). The world's, not the
+  // character's: worldState.greatGates goes in the world row.
+  const GREAT_SCHOOLS=['tine','uisce','cloch','scath','solas','gaoth'];
+  function greatGates(){const g=worldState.greatGates;if(g&&g.gates)return g;return worldState.greatGates={gates:{},fate:null,fatedAt:null};}
+  function greatGateState(school){const g=worldState.greatGates;return (g&&g.gates&&g.gates[school])||null;}
+  // the named action: 'torn' or 'sealed'; false (and nothing changed) for an unknown school or state, or once fate is fixed
+  function setGreatGate(school,state){if(GREAT_SCHOOLS.indexOf(school)<0||(state!=='torn'&&state!=='sealed'))return false;
+    const g=greatGates();if(g.fate)return false;g.gates[school]=state;
+    if(GREAT_SCHOOLS.every(s=>g.gates[s]===state)){g.fate=state;g.fatedAt=worldState.gameTimeAbsMinutes||0;}
+    return true;}
+  function greatFate(){const g=worldState.greatGates;return (g&&g.fate)||null;}
+  function corruptionTorn(){const g=worldState.greatGates;if(!g||!g.gates)return [];return GREAT_SCHOOLS.filter(s=>g.gates[s]==='torn');}
+  function corruptionLevel(){return corruptionTorn().length;}
+
   // ═══ THE READER (Session Q) — Varek's discoveries, the fields, the Guest's chapel ═══
   // Varek reads the frame through the player. Each discovery is a real
   // property of play: deaths, the gap between sessions, the order places
