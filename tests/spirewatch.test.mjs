@@ -57,6 +57,23 @@ check('at 6h on the roof the spire is held: the quest done, league.spire held, t
 check('the log carries the draft\'s lines (the last wave cleared, held)', held.log.includes('The cuts are dim. The sky to the east is not.') && held.log.includes('The Spire of Caer Slige is held.'), held.log);
 check('Wait is no longer refused once held', held.wait !== 'Not on watch.', held);
 
+// S1338 — the words: the Captain's *The spire?* turns the held watch in and pays; then the after line; Rowe at the seat; the rumours
+const talk = await page.evaluate(() => {
+  const seat = WORLD.siteAnywhere(WORLD.FACTIONS.league.seat), L = WORLD.fstate().league;
+  const T = () => factionTopics(seat).find(t => t.label === 'The spire?');
+  const g0 = gold; const turnIn = T().fn(); const paid = gold - g0; const q = worldState.quests.find(x => x.kind === 'spire');
+  const after = T().fn();
+  const rowe = rivalLines('league', L, WORLD.FACTIONS.league);
+  const here = liveRumours(seat);
+  const mk = [...CELLS.values()].filter(c => c.type !== 'sea' && nationKeyOf(c.i, c.j) === 'mark').flatMap(c => c.sites).find(s => ['town', 'village', 'city', 'port'].includes(s.kind) && s.id !== seat.id); const there = mk ? liveRumours(mk) : null;
+  return { turnIn, paid, turnedIn: !!q.turnedIn, after, greet: rowe.greet, now: rowe.topics.find(t => t.label === 'What now, Rowe?').response, here, there, mk: mk && mk.name };
+});
+console.log('talk', JSON.stringify(talk));
+check('the Captain turns the held spire in: the draft\'s line and the pay, appended', /^Held, then\. The night sergeant's back on the wall/.test(talk.turnIn) && talk.turnIn.endsWith(` (${talk.paid} gold.)`) && talk.paid > 0 && talk.turnedIn, talk);
+check('asked again, the after line', talk.after === "Held. The men sleep badly now. They'll get used to it. So will I.", talk.after);
+check('Rowe at the seat, once held: the dark spire and the strait', /The spire's dark and the sergeants are sulking/.test(talk.greet) && /crossing the strait at night without lamps/.test(talk.now), talk);
+check('the rumours: the seat has the night on the roof; another town of the Mark has the dark spire', talk.here.some(r => /held the spire a whole night/.test(r)) && !talk.here.some(r => /has gone dark/.test(r)) && (!talk.there || talk.there.some(r => /The spire at Caer Slige has gone dark/.test(r))), talk);
+
 // the resets: off the roof more than ten seconds; a dead player; an occupied seat
 const resets = {};
 await setup(); await clock(DAY + 2 * 1440 + 22 * 60); await onRoof(); await tick(); await clock(DAY + 2 * 1440 + 22 * 60 + 20); t = await tick();
@@ -73,6 +90,20 @@ check('nine seconds off the roof keeps the watch; eleven ends it, its foes gone 
 check('back on the roof at 23h the watch begins again', resets.again === 'watch', resets);
 check('a dead player ends the watch; it begins again on the roof', resets.dead === 'wait' && resets.restarted === 'watch', resets);
 check('an occupied seat ends the watch and it cannot begin', resets.occ.st === 'wait' && resets.occ.st2 === 'wait', resets.occ);
+// S1338 — the brief: given once, then still lit; behind their lines while the seat is held
+const brief = await page.evaluate(() => {
+  const seat = WORLD.siteAnywhere(WORLD.FACTIONS.league.seat), L = WORLD.fstate().league, f = WORLD.TS(seat).flags, was = f.occupied;
+  for (const q of worldState.quests) if (q.kind === 'spire') q.turnedIn = true; delete L.spire;
+  const T = () => factionTopics(seat).find(t => t.label === 'The spire?');
+  const rank2 = (L.rank = 2, T()); L.rank = 3;
+  f.occupied = 'markmen'; const occ = T().fn(); const occGiven = L.spire || null; f.occupied = was;
+  const first = T().fn(); const q = worldState.quests.find(x => x.kind === 'spire' && !x.turnedIn); const second = T().fn();
+  return { rank2: !!rank2, occ, occGiven, first, given: !!q && q.data.state === 'wait' && L.spire === 'given', second };
+});
+console.log('brief', JSON.stringify(brief));
+check('no *The spire?* below Captain', !brief.rank2, brief);
+check('behind their lines while the seat is occupied, and nothing given', /^The spire's behind their lines\./.test(brief.occ) && !brief.occGiven, brief);
+check('the brief gives the quest; asked again, still lit', /^The spire's yours to hold\. I said it on the yard/.test(brief.first) && brief.given && /^Still lit at night, is it\?/.test(brief.second), brief);
 stop();
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

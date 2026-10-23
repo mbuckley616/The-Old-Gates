@@ -111,6 +111,7 @@
     {const P=!artifactState('drowned_bell')&&artifactPlaces().drowned_bell;if(P&&nationKeyOf(ci,cj)==='gatelands'){const [bi,bj]=cellOf(P.x,P.z);if(Math.abs(bi-ci)<=1&&Math.abs(bj-cj)<=1&&(site.kind==='port'||Math.hypot(site.x-P.x,site.z-P.z)<500))out.push(`There's a wreck on the rock off ${P.coast} that only shows at the ebb. The lads say there's a bell on her still. Nobody's gone out for it. The tide comes in faster than you'd think, and it's never once been sorry.`);}} /* S801 — the bell, while it hangs in its wreck (the approved draft, §2) */
     {const P=!artifactState('sundial_ring')&&artifactPlaces().sundial_ring;if(P){const [ri,rj]=cellOf(P.x,P.z);if(Math.abs(ri-ci)<=1&&Math.abs(rj-cj)<=1)out.push(`There's gold on the cairn at the top of ${P.name}. Everybody's seen it from below, and nobody's brought it down. You climb up, it's never noon. You climb faster, it's raining. The mountain takes its time, and it takes yours.`);}} /* S800 — the ring, while it lies on its cairn (the approved draft, §4) */
     if(isNight())out.push("Don't go past the last lamp. Not tonight.");
+    {const L=fstate().league;if(L.spire==='held'){const cs=anchoredPlaces().caer_slige;if(cs&&cs.id===site.id)out.push("The new Captain held the spire a whole night. Came down at first light and wouldn't talk about it.");else if(nationKeyOf(ci,cj)==='mark')out.push("The spire at Caer Slige has gone dark. The night watch says it's colder for it. The night watch can freeze.");}} /* S1338 — *The Spire Held*, §7 */
     {const L=fstate().league;if(L.rowe==='dead'&&L.closed&&nationKeyOf(ci,cj)==='mark')out.push("Somebody put Hesket Rowe down on the yard at Caer Slige after she'd yielded. Nobody says the name. Everybody knows it.");} // S374 — the yard's murder, in the Mark
     {const d=nearestSigilDoorFrom(site);if(d&&Math.random()<.5)out.push(`There's a warm stone in ${d.name}, ${compassWord(d.x-site.x,d.z-site.z)} of here. My cousin put his hand on it and talked in his sleep for a week.`);}
     if(c.polity==='wilds')out.push("No lord out here. We settle things ourselves. Mostly with shovels.");
@@ -1557,6 +1558,7 @@ const giver=`${lord.title} ${lord.name}`;
       const q=factionQuestFor(site,fk,st);if(!qFind(q.id))qAdd(q);st.active=q;return q.desc+` (${q.reward} gold, and ${F.name}'s regard.)`;}});
     out.push({label:`My standing with ${F.name}?`,get response(){return st.rank?`${F.ranks[st.rank-1]}. ${st.done} services.`:`None yet. ${st.done} services.`;}});
     if(st.rank>=3&&!st.house){out.push({label:`Claim ${F.house}.`,quest:true,fn:()=>{st.house=true;const h=(fk==='crown'?ZONES.world.houses.find(x=>x.type==='castle'):ZONES.world.houses.find(x=>x.type==='home'&&x.siteId===site.id));if(h){(worldState.owned||(worldState.owned={}))[h.id]={name:h.name,site:site.id};h.ownedByPlayer=true;h.name=fk==='crown'?'Your Keep':'Your House';}const g=fk==='compact'?grantShip(site):null;if(typeof addLog==='function')addLog('🏛',`${F.name} granted you ${F.house}.`);return fk==='compact'?compactClaimLine(g,site):"It's yours.";}});}
+    if(fk==='league'&&st.rank>=3)out.push({label:'The spire?',quest:true,fn:()=>spireTopic(site,st)}); /* S1338 — the Captain's brief and turn-in (*The Spire Held*, §1 and §6) */
     return out;
   }
   // perks: shops of your faction's nation discount by rank; ferries free at rank 2
@@ -1634,6 +1636,7 @@ const giver=`${lord.title} ${lord.name}`;
     if(S.rival==='mention'&&st.active)return 'mention';return null;}
   function duelLostBeat(st){const A=st.active;return st.rowe==='captain'&&A&&A.kind==='duel'&&A.data&&A.data.state==='lost';}
   function rivalLines(fk,st,F){
+    if(fk==='league'&&st.rank>=3&&st.spire==='held')return {greet:"Captain. The spire's dark and the sergeants are sulking. That's a good week.",topics:[{label:'What now, Rowe?',response:anchoredPlaces().blackhand?"Port Blackhand, when I've the legs for it. Somebody's been crossing the strait at night without lamps, and I'd like to see the hand on the tiller.":"The strait's ports, when I've the legs for it. Somebody's been crossing the strait at night without lamps, and I'd like to see the hand on the tiller."},{label:'How are you ahead of me?',response:"I'm not, now. Don't get used to it."}]}; /* S1338 — *The Spire Held*, §7 */
     if(fk==='league'&&st.rank>=3)return {greet:"Captain. Took me a week to stop favouring the left. I'm staying on at Caer Slige a while. Somebody ought to watch that spire.",topics:[{label:'What now, Rowe?',response:"The spire. You hold it, and I'll watch what comes down off it at night. If it's the light I think it is, you'll want a witness who can't be paid in it."},{label:'How are you ahead of me?',response:"I'm not, now. Don't get used to it."}]};
     if(fk==='league'&&duelLostBeat(st))return {greet:"Captain Rowe, for a week at least. The ring's there when you want it. I'd want it back.",topics:[{label:'How are you ahead of me?',response:"I was a step slow on the left, and you didn't see it. Next time you might."},{label:'Where are you from?',response:"The Mark. Half the swords on these islands are. The other half are asking where we're from."}]};
     const r=F.ranks;const yours=st.rank?r[st.rank-1]:'nobody';const hers=r[Math.min(2,st.rank)];
@@ -1646,7 +1649,7 @@ const giver=`${lord.title} ${lord.name}`;
     if(!fk){if(RIVAL.npc)removeRival();return;}
     const F=FACTIONS[fk];const seat=F.seat?siteAnywhere(F.seat):null;const beat=seat?rivalBeat(fk,st):null;
     if(!beat||beat==='mention'||Math.hypot(px-seat.x,pz-seat.z)>160){if(RIVAL.npc&&(!beat||Math.hypot(px-RIVAL.npc.g.position.x,pz-RIVAL.npc.g.position.z)>240))removeRival();return;}
-    const key=fk+'|'+st.done+'|'+st.rank+'|'+(fk==='league'&&duelLostBeat(st)?'lost':'');if(RIVAL.npc){if(RIVAL.key!==key)removeRival();else return;}
+    const key=fk+'|'+st.done+'|'+st.rank+'|'+(fk==='league'&&duelLostBeat(st)?'lost':'')+(fk==='league'&&st.spire==='held'?'|held':'');if(RIVAL.npc){if(RIVAL.key!==key)removeRival();else return;}
     const L=rivalLines(fk,st,F);const x=seat.x+6,z=seat.z+9;
     const def={name:RIVAL.name,role:'',ico:'⚔',authored:true,people:'markman',sCol:0xf0dcc8,hairCol:0xd8c8a0,bodyScale:[1.04,1.06,1.04],bCol:0x2a2a30,x,z,greeting:[L.greet],topics:[...L.topics,{label:'Farewell.',bye:true}]};def.temper='dry';
     const n=spawnNPC(def,Math.PI,true);n.sched={type:'lost'};n.g.position.set(x,worldH(x,z),z);RIVAL.npc=n;RIVAL.key=key;
@@ -1784,6 +1787,19 @@ const giver=`${lord.title} ${lord.name}`;
     if(TS(site).flags.occupied!=null)return null;const sp=anchoredPlaces().spire;
     const q={id:'fq_league_spire',kind:'spire',giver:F.name,giverSite:site.id,title:"The Captains' League: The Spire Held",objective:'Hold the Spire of Caer Slige from dark to first light',data:{state:'wait',wave:0,began:null,x:sp?sp.x:site.x,z:sp?sp.z:site.z},reward:260+level*20,faction:'league'};
     const old=qFind(q.id);if(old){const k=QJ().indexOf(old);if(k>=0)QJ().splice(k,1);}qAdd(q);L.spire='given';return q;}
+  // S1338 — the Captain of Caer Slige's *The spire?* (the approved draft's §1 and §6, word for word): given, still lit, behind
+  // their lines, held and turned in (the pay appended as the faction lines do), and after.
+  const SPIRE_TALK={brief:"The spire's yours to hold. I said it on the yard and I'll say it sober. My night sergeant stands at the door, and the light does the rest. Go up after dark and stay up till first light. Whatever comes down off it doesn't come down past you. Then we'll both know what my men have been paid in.",
+    lit:"Still lit at night, is it? Then it's not held. Dark to first light, and not a breath less.",
+    occupied:"The spire's behind their lines. Take the town back first. The spire after.",
+    held:"Held, then. The night sergeant's back on the wall, cold as the rest of us, and telling anyone who'll listen. Let him. Somebody cut those strokes, and I never sent a man up to look. That's mine to carry. The spire's yours.",
+    after:"Held. The men sleep badly now. They'll get used to it. So will I."};
+  function spireTopic(site,L){const q=spireQuest();
+    if(q&&q.done){qTurnIn(q);return `${SPIRE_TALK.held} (${q.paid} gold.)`;}
+    if(L.spire==='held')return SPIRE_TALK.after;
+    if(TS(site).flags.occupied!=null)return SPIRE_TALK.occupied;
+    if(q)return SPIRE_TALK.lit;
+    return spireGive(site)?SPIRE_TALK.brief:SPIRE_TALK.lit;}
   function spireClearFoes(){SPIRE.foes.forEach(e=>{if(e.dead)return;if(e.mesh&&e.mesh.parent)e.mesh.parent.remove(e.mesh);const i=ZONES.world.enemies.indexOf(e);if(i>=0)ZONES.world.enemies.splice(i,1);});SPIRE.foes=[];}
   function spireReset(q,quiet){const d=q.data;d.state='wait';d.wave=0;d.began=null;d.end=null;d.cleared=0;spireClearFoes();SPIRE.offS=0;if(!quiet)showMsg(SPIRE_LINES.left,'#c8b880');}
   function spireBegin(q){const d=q.data,now=worldState.gameTimeAbsMinutes||0,day0=Math.floor(now/1440)*1440;
