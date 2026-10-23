@@ -622,6 +622,21 @@ function tickDragons(dt){const E=activeZoneId==='world'?(ZONES.world&&ZONES.worl
   tickBreath(dt);}
 
 // v80 — step back into a saved place once the world around its door exists
+// S1335 (card F5, the build sheet's "Saves" and `gatesave`) — a save made inside a dungeon carries, in its `where`, what you
+// killed, opened and unlocked there, by the ids the co-op rule gives them (<seed>:<floor>:<index> for a foe, the containers' and
+// doors' own); a load rebuilds the dungeon from its seed and lays them so again. No worldState key: it lives in the save made inside,
+// and leaving the dungeon forgets it, as before.
+function dunGone(){const foes=[],open={},doors=[];
+  for(const e of ENEMIES)if(e.dead&&e.id)foes.push(e.id);
+  for(const b of CHESTS.concat(BARRELS))if(b.opened&&b.id)open[b.id]=(b.items||[]).slice();
+  for(const d of DOORS)if(d.open&&d.id)doors.push(d.id);
+  return {foes,open,doors};}
+function dunApplyGone(G){if(!G)return;const F=new Set(G.foes||[]),O=G.open||{},D=new Set(G.doors||[]);
+  for(const e of ENEMIES){if(!e.id||!F.has(e.id))continue;e.dead=true;e.hp=0;if(e.el)e.el.intensity=0;if(e.mesh&&e.mesh.parent)e.mesh.parent.remove(e.mesh);}
+  for(const b of CHESTS.concat(BARRELS)){if(!b.id||!O[b.id])continue;b.opened=true;b.items=O[b.id].slice();
+    if(b.lid&&b.lid.rotation.x===0)b.lid.rotation.x=-Math.PI/3;if(b.openTop&&!b.topOpened){b.openTop();b.topOpened=true;}
+    if(b.top&&!b.topOpened){b.top.position.y+=.12;b.topOpened=true;}}
+  for(const d of DOORS){if(!d.id||!D.has(d.id))continue;d.open=true;if(d.mesh&&d.mesh.parent)d.mesh.parent.remove(d.mesh);const M=d.floor===2&&dMap2?dMap2:dMap;if(M&&M[d.r]&&M[d.r][d.c]===5)M[d.r][d.c]=1;}}
 function _reenterPlace(W,tries){tries=tries||0;try{
   if(W.kind==='house'){const houses=(ZONES.world&&ZONES.world.houses)||[];let hs=houses.find(x=>x.id===W.id);
     // S243 — a save from before house ids followed their lots can name another building: the door it was saved behind decides
@@ -635,7 +650,7 @@ function _reenterPlace(W,tries){tries=tries||0;try{
     window._pendingPos={x:W.x,z:W.z,yaw:W.yaw,jumpY:W.jumpY};goToInterior(hs);return;}
   if(W.kind==='dungeon'){const e=(typeof WORLD!=='undefined')&&WORLD.doorAnywhere(W.seed);if(!e){showMsg('The gate you saved in is closed to you. You are outside it.','#c8b880');return;}
     const p=makePortalDef(e);const wp=WORLD.dungeonPos[W.seed];if(wp){p.x=wp.x;p.z=wp.z;}p.zone='world';
-    goToDungeon(p);return;} /* S1283 — a load inside a dungeon puts you at its entrance (the F2b sheet, until F13): the place saved was in cells of an older build, and a dungeon's cell is its kind's now */
+    if(W.gone)p._gone=W.gone;goToDungeon(p);return;} /* S1283 — a load inside a dungeon puts you at its entrance (the F2b sheet, until F13): the place saved was in cells of an older build, and a dungeon's cell is its kind's now */
 }catch(err){console.warn('reenter',err);}}
 function playerDead(){
   if(typeof FALL!=='undefined')FALL.pend=null; /* S429 — a fall's blow still waiting does not follow you past death */

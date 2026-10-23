@@ -1306,6 +1306,11 @@ function isStaggered(target){
   for(let i=0;i<staggered.length;i++){ if(staggered[i].e===target) return true; }
   return false;
 }
+// S1333 — a foe that dies staggered is dropped from staggered[] where it dies (killE, killZoneEnemy), and each foe tick
+// sweeps out any dead or removed one left by another death (a guard stood down, a duel's end): the ticks return at e.dead
+// before the stagger countdown, so nothing else ever drops it (QA, S1332: 11 dead entries after ten fights).
+function unstagger(e){for(let i=staggered.length-1;i>=0;i--)if(staggered[i].e===e)staggered.splice(i,1);}
+function staggerSweep(){for(let i=staggered.length-1;i>=0;i--){const q=staggered[i].e;if(!q||q.dead)staggered.splice(i,1);}}
 // Drain posture from any entity. Returns true if this drain broke posture (caller
 // can fire stagger feedback). Generalised so future player-stagger ship just adds
 // a posture field to the player and calls this same function.

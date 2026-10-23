@@ -1213,6 +1213,7 @@ function loop(now){
         }
         dmgNum(e,dmg,info); /* S761 — #198 A: the number, not the line */
         if(e.hp<=0)killE(e,dmgTag(info,e));dScene.remove(fb);BALLS.splice(i,1);}});}
+    staggerSweep();
     ENEMIES.forEach(e=>{if(e.dead||e.floor!==currentFloor)return;const T=targetOf(e);const dist=Math.hypot(T.x-e.x,T.z-e.z);
       // S222 — a slime quivers, faster as it creeps; a fire elemental's flames flicker and its core eases back to its glow
       if(e.limbs&&e.limbs.slime&&e.limbs.body){const q=Math.sin(swT*(e.alert?7:3)+(e.ph||0))*.05;e.limbs.body.scale.set(1+q,1-q*1.4,1+q);}
