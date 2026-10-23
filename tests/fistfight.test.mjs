@@ -74,6 +74,10 @@ console.log('fists over six fights:', { secs: runs.map(r => r.secs), punches: su
 const armed = await fight(true, false, 60 * 30, 5, false, true);
 console.log('armed', JSON.stringify(armed));
 check('with the starting weapon the Bandit dies too, and its blows still come only after a tell', armed.dead && armed.tells >= armed.blows, armed);
+// S1333 — QA's S1332: a Bandit killed while staggered stayed in `staggered[]` for the session (11 after ten fights). Twelve fights in,
+// none of them is left there.
+const stagLeft = await page.evaluate(() => ({ n: staggered.length, dead: staggered.filter(q => !q.e || q.e.dead).length }));
+check(`no dead foe is left in staggered[] after the fights (${stagLeft.dead} of ${stagLeft.n})`, stagLeft.dead === 0, stagLeft);
 check('no page errors', g.errs.length === 0, g.errs);
 await page.evaluate(() => { EQ.weapon = window._keepW; buildViewmodel(); });
 await g.close();

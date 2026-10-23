@@ -955,6 +955,7 @@ function foeSlide(e,ux,uz,step){
   return false;}
 function tickZoneEnemies(dt,now,sc){
   try{tickZoneArrows(dt,now);}catch(err){}
+  staggerSweep();
   // v59: unlock any latent enemies the player has grown into. Cheap — runs once per tick.
   ZE.forEach(e=>{
     if(e.locked && (e.minLevel||1)<=level){
@@ -1594,7 +1595,7 @@ function foeLogName(e){const n=String((e&&e.name)||'');if(e&&(e.boss||e.master||
 function killZoneEnemy(e,sc,tag=''){
   if(e._duel&&typeof WORLD!=='undefined'&&WORLD.duelKill&&WORLD.duelKill(e))return; /* S373 — Rowe yields before she falls */
   if(typeof WORLD!=='undefined'&&!e._guildCounted){e._guildCounted=true;WORLD.guild.onKill(e,'zone');} // v80 S12
-  e.dead=true;
+  e.dead=true;unstagger(e);
   if(e._guard&&typeof WORLD!=='undefined'&&WORLD.guardKilled)try{WORLD.guardKilled(e);}catch(err){} // S157
   sndEnemyDeath();kills++;lvAct.kills++;xp+=Math.round(e.xpVal*_buffMult('xpBoost',1));chkLvl();
   const firstKill=!seenEnemyTypes.has(e.name);
