@@ -1601,16 +1601,26 @@ function buildSash(G, body, byName, o = {}) {
 // searched the body's 6,000 above the chest, 130 ms a hood)
 function nearestIn(P, cand, h = .02) {
   const lo = [1e9, 1e9, 1e9], hi = [-1e9, -1e9, -1e9]; for (const k of cand) for (let a = 0; a < 3; a++) { lo[a] = Math.min(lo[a], P[k * 3 + a]); hi[a] = Math.max(hi[a], P[k * 3 + a]); }
-  const nx = Math.floor((hi[0] - lo[0]) / h) + 1, ny = Math.floor((hi[1] - lo[1]) / h) + 1, nz = Math.floor((hi[2] - lo[2]) / h) + 1, cells = new Map();
+  const nx = Math.floor((hi[0] - lo[0]) / h) + 1, ny = Math.floor((hi[1] - lo[1]) / h) + 1, nz = Math.floor((hi[2] - lo[2]) / h) + 1;
   const cl = (a, q, m) => Math.max(0, Math.min(m - 1, Math.floor((q - lo[a]) / h)));
-  cand.forEach((k, o) => { const c = cl(0, P[k * 3], nx) + nx * (cl(1, P[k * 3 + 1], ny) + ny * cl(2, P[k * 3 + 2], nz)); let L = cells.get(c); if (!L) cells.set(c, L = []); L.push(o); });
+  // the cells as one sorted list (Session 1328: a Map of arrays, and a whole cube read at each ring for its shell, was 46 ms of a 95 ms hood):
+  // start[c] to start[c + 1] in ord, each cell's list in the candidates' order, as the Map's were
+  const nc = nx * ny * nz, cellOf = new Int32Array(cand.length), start = new Int32Array(nc + 1), ord = new Int32Array(cand.length);
+  cand.forEach((k, o) => { const c = cl(0, P[k * 3], nx) + nx * (cl(1, P[k * 3 + 1], ny) + ny * cl(2, P[k * 3 + 2], nz)); cellOf[o] = c; start[c + 1]++; });
+  for (let c = 0; c < nc; c++) start[c + 1] += start[c]; { const fill = start.slice(0, nc); for (let o = 0; o < cand.length; o++) ord[fill[cellOf[o]]++] = o; }
   const R = Math.max(nx, ny, nz);
   return v => { const ci = cl(0, v.x, nx), cj = cl(1, v.y, ny), ck = cl(2, v.z, nz); let best = -1, bo = -1, bd = 1e9;
+    const cell = c => { for (let s = start[c], e = start[c + 1]; s < e; s++) { const o = ord[s], k = cand[o], d = (P[k * 3] - v.x) ** 2 + (P[k * 3 + 1] - v.y) ** 2 + (P[k * 3 + 2] - v.z) ** 2; if (d < bd || d === bd && o < bo) { bd = d; bo = o; best = k; } } };
     for (let r = 0; r <= R; r++) {
-      for (let i = Math.max(0, ci - r); i <= Math.min(nx - 1, ci + r); i++) for (let j = Math.max(0, cj - r); j <= Math.min(ny - 1, cj + r); j++) for (let l = Math.max(0, ck - r); l <= Math.min(nz - 1, ck + r); l++) {
-        if (Math.max(Math.abs(i - ci), Math.abs(j - cj), Math.abs(l - ck)) !== r) continue; const L = cells.get(i + nx * (j + ny * l)); if (!L) continue;
-        for (const o of L) { const k = cand[o], d = (P[k * 3] - v.x) ** 2 + (P[k * 3 + 1] - v.y) ** 2 + (P[k * 3 + 2] - v.z) ** 2; if (d < bd || d === bd && o < bo) { bd = d; bo = o; best = k; } } }
-      if (best >= 0 && bd < (r * h) ** 2) break; }
+      const i0 = Math.max(0, ci - r), i1 = Math.min(nx - 1, ci + r), j0 = Math.max(0, cj - r), j1 = Math.min(ny - 1, cj + r), l0 = Math.max(0, ck - r), l1 = Math.min(nz - 1, ck + r);
+      // only the ring's shell: the cells r from the place's own on some axis
+      for (let l = l0; l <= l1; l++) { const fl = Math.abs(l - ck) === r; for (let j = j0; j <= j1; j++) { const row = nx * (j + ny * l);
+        if (fl || Math.abs(j - cj) === r) for (let i = i0; i <= i1; i++) cell(i + row); else { if (ci - r >= 0) cell(ci - r + row); if (r && ci + r < nx) cell(ci + r + row); } } }
+      // stop when nothing outside the cells read can be nearer: the place's distance to the block's nearest face, where the block has not
+      // reached the grid's edge (at least r cells, the old bound)
+      if (best >= 0) { let m = 1e9; const q = [v.x, v.y, v.z], c0 = [i0, j0, l0], c1 = [i1, j1, l1], n = [nx, ny, nz];
+        for (let a = 0; a < 3; a++) { if (c0[a] > 0) m = Math.min(m, q[a] - (lo[a] + c0[a] * h)); if (c1[a] < n[a] - 1) m = Math.min(m, lo[a] + (c1[a] + 1) * h - q[a]); }
+        if (bd < m * m) break; } }
     return best; };
 }
 function buildHoodUp(P, G, meshes, o = {}) {
@@ -1638,7 +1648,9 @@ function buildHoodUp(P, G, meshes, o = {}) {
   // the hem lies on the shoulders and the upper back: at each angle round the neck, the body's height there, and clear of the cloak
   const J = 56, I = 64, th0 = 2.05, pos = [], base = [], uv = [], idx = [];
   const hx = (sh.max.x - cn.x) * .82, hzB = cn.z - sh.min.z + .01, hzF = sh.max.z - cn.z, clr = o.clr ?? (D.mantle ? .095 : .04);
-  const yAt = (x, z) => { let y = -1e9; for (const i of bodyV()) { const ry = R0[i * 3 + 1]; if (ry < .3 || ry > .62) continue; if ((P[i * 3] - x) ** 2 + (P[i * 3 + 2] - z) ** 2 < .022 ** 2) y = Math.max(y, P[i * 3 + 1]); } return y; };
+  // (the body's points between those heights listed once, Session 1328: each of the hem's 56 columns read all of them)
+  const band = bodyV().filter(i => R0[i * 3 + 1] >= .3 && R0[i * 3 + 1] <= .62);
+  const yAt = (x, z) => { let y = -1e9; for (const i of band) if ((P[i * 3] - x) ** 2 + (P[i * 3 + 2] - z) ** 2 < .022 ** 2) y = Math.max(y, P[i * 3 + 1]); return y; };
   const yHem0 = sh.max.y + clr;
   // the grid: J columns round the head (0 = the front), I rows from the crown to the hem
   // a burnous's hood (Session 1236) comes to a point: the soft peak behind the crown drawn out 13 cm back and a little up, narrow
@@ -1688,12 +1700,14 @@ function buildHoodUp(P, G, meshes, o = {}) {
   // 1.23, is left out of them: 58% of the hood's front lay inside the opening, so each shell was drawing 1,691 triangles to show 676)
   const furM = []; let furTris = 0; if (o.fur) { const fi = [], bx = i => base[i * 3], bz = i => base[i * 3 + 2]; for (let t = 0; t < idx.length; t += 3) { const v = [idx[t], idx[t + 1], idx[t + 2]];
       if (v.every(i => bx(i) < 1.3) && !v.every(i => bz(i) > 0 && bx(i) < 1) && !v.every(i => bx(i) > 1.23)) fi.push(...v); }
-    const sg = skin(g.clone()), si = sg.attributes.skinIndex, sw = sg.attributes.skinWeight;
+    // the hood's own weights, skinned above on the same points (Session 1328: they were worked out again on a copy)
+    const si = g.attributes.skinIndex, sw = g.attributes.skinWeight;
     for (let s = 0; s < 7; s++) { const lay = .003 + s * .0035, pp = new Float32Array(pos.length); for (let i = 0; i < pos.length; i += 3) { const dx = pos[i] - c.x, dy = pos[i + 1] - c.y, dz = pos[i + 2] - c.z, L = Math.hypot(dx, dy, dz) || 1; pp[i] = pos[i] + dx / L * lay; pp[i + 1] = pos[i + 1] + dy / L * lay; pp[i + 2] = pos[i + 2] + dz / L * lay; }
       const fg = new THREE.BufferGeometry(); fg.setAttribute('position', new THREE.BufferAttribute(pp, 3)); fg.setAttribute('aBase', new THREE.Float32BufferAttribute(base, 3)); fg.setAttribute('skinIndex', si); fg.setAttribute('skinWeight', sw); fg.setIndex(fi); fg.computeVertexNormals();
       const fm = new THREE.SkinnedMesh(fg, shellMat(sRGB(...o.fur), s, 7, { sx: 260, sy: 70, solid: s === 0, hole: '(vB.z > 0. && vB.x < 1.) || vB.x > 1.2 + (nz(vB * vec3(90., 90., 90.)) - .5) * .06' })); fm.name = 'hoodFur' + s; furM.push(fm); furTris += fi.length / 3; } }
-  // what would show through: any point of the head, the ears or the scalp's hair outside the dome, away from the face's opening
-  let tested = 0, poke = 0; { const v = new THREE.Vector3(), test = q => { if (q.y < c.y - ryB * .5) return; tested++; if (q.z > c.z && openS(q) < 1) return;
+  // what would show through: any point of the head, the ears or the scalp's hair outside the dome, away from the face's opening (the checks'
+  // numbers alone, not counted when makePerson's options say hoodStats: false, as the game's do; Session 1328)
+  let tested = 0, poke = 0; if (o.stats !== false) { const v = new THREE.Vector3(), test = q => { if (q.y < c.y - ryB * .5) return; tested++; if (q.z > c.z && openS(q) < 1) return;
       const d = q.clone().sub(c); if (Math.hypot(d.x / rx, d.y / (d.y > 0 ? ryT : ryB), d.z / (d.z > 0 ? rzF : rzB)) >= 1) poke++; };
     for (const i of bodyV()) if (R0[i * 3 + 1] > .6) test(pt(i)); for (const m of hairM) { const a = m.geometry.attributes.position; for (let i = 0; i < a.count; i++) test(v.fromBufferAttribute(a, i)); } }
   return { meshes: [hood, hemM, ...furM, ...tassel], stats: { tested, poke, furTris, tris: idx.length / 3 + rim.index.count / 3, rimPoints: sm.length, tip: tip && [+(tip.y - c.y).toFixed(3), +(c.z - tip.z).toFixed(3)], tassel: tassel.length ? tassel[0].geometry.index.count / 3 : 0, k: +(rx / (hs.x + .028)).toFixed(3), yHem: +yHem0.toFixed(3) } };
@@ -3532,12 +3546,12 @@ function* makePersonSteps(G, o = {}) {
       const mc = hairCards(P, PACK.R.moust, { n: 110, len: .028, seg: 3, width: .009, lift: .2, comb: -.1, fall: 1, grav: .2, rootOff: .002, bone: headB, color: sRGB(...G.hairCol).multiplyScalar(.92), outward: hc });
       mc.name = 'moust'; meshes.push(mc); } }
   yield;
-  if (D.cloak && D.hood === 'up') { const H = buildHoodUp(P, G, meshes); meshes.push(...H.meshes); hoodStats = H.stats; }
+  if (D.cloak && D.hood === 'up') { const H = buildHoodUp(P, G, meshes, { stats: o.hoodStats }); meshes.push(...H.meshes); hoodStats = H.stats; }
   // the coat's hood (Session 1152, OG-109's Mark: fur-lined hooded coats), the cloak's hood in the coat's wool, its hem clear of the coat's
   // shoulders and its fur collar, and with the coat's fur round the face
-  else if (coatOn(D) && D.coatHood === 'up') { const H = buildHoodUp(P, { ...G, dress: { ...D, cloak: D.coat, tartan: null, tartanLine: null, burnous: false } }, meshes, { clr: D.coatFur ? .075 : .05, fur: D.coatFur }); meshes.push(...H.meshes); hoodStats = H.stats; }
+  else if (coatOn(D) && D.coatHood === 'up') { const H = buildHoodUp(P, { ...G, dress: { ...D, cloak: D.coat, tartan: null, tartanLine: null, burnous: false } }, meshes, { clr: D.coatFur ? .075 : .05, fur: D.coatFur, stats: o.hoodStats }); meshes.push(...H.meshes); hoodStats = H.stats; }
   // the hood alone (Session 1269): the cloak's hood in D.cowl's colour, its hem clear of what is worn on the shoulders as the coat's is
-  else if (cowlOn(D)) { const H = buildHoodUp(P, { ...G, dress: { ...D, cloak: D.cowl, tartan: null, tartanLine: null, burnous: false } }, meshes, { clr: D.cloak || D.mail ? .06 : .05 }); meshes.push(...H.meshes); hoodStats = H.stats; }
+  else if (cowlOn(D)) { const H = buildHoodUp(P, { ...G, dress: { ...D, cloak: D.cowl, tartan: null, tartanLine: null, burnous: false } }, meshes, { clr: D.cloak || D.mail ? .06 : .05, stats: o.hoodStats }); meshes.push(...H.meshes); hoodStats = H.stats; }
   yield;
   root.add(bones[0]); root.updateMatrixWorld(true);
   for (const m of meshes) { root.add(m); m.updateMatrixWorld(true); m.bind(skeleton); m.castShadow = !m.noCast; m.receiveShadow = true; m.frustumCulled = false; }
