@@ -3,15 +3,6 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
-### Where does a town's coaching inn stand? (from the look builder, 2026-10-23, #642)
-**The question.** Card F6's coaching inn (#411 A: three storeys, a gateway and a stable yard) is in the game's kit as `PKIT.gl.coachInn` (Session 1339). With its yard and stables it is 17.6 by 23 m, and a town's inn lots are 5–7 m by 4–6 m, so it fits none of 36 inns in 14 Gatelands settlements. It needs a plot of its own, laid before the lots, as the church and the keep got under #433. Where should that plot be?
-
-**Options.**
-- **A (recommended).** Beside the main street, out toward the ring where the road comes in; the lots laid round it. Fits 5 of 5 towns and cities tried; ports are too small and keep the old inn.
-- **B.** On the square, facing the heart across from the church: the same plot closer in, competing with the church and the market for the frontage.
-- **C.** No plot: the inn is the kit's merchant's house that takes guests (#411's C), in its row where four bays fit. The yard and stables are dropped.
-
-Whichever is picked, a town's lots move round the new plot (Dunmore's too). Pictures (A): [street](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-1339/docs/prototypes/coachinn-dunmore-street.png), [gateway](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-1339/docs/prototypes/coachinn-dunmore-gate.png), [yard](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-1339/docs/prototypes/coachinn-dunmore-yard.png), [Carraig Mór](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-1339/docs/prototypes/coachinn-carraig_mor-street.png).
 ### The dungeon's cell by kind: old gates at 3 m, and forts and lairs at what? (systems builder, Session 1105) — DECISION #421
 **The question.** F2b's last session sets a dungeon's grid cell at true scale; it is one unit today, so corridors are 1 m wide for a 1.8 m body. Michael chose **C, 3 m** on #300 and added: "If by dungeon we mean Old Gates, they should be extremely massive and cavernous. A normal 'dungeon' like a mine, or a cave can be a more typical size." The game has three kinds of underground place: the **old gates** (the world's portals, themed by school: crypts, haunted halls, elemental and deep caverns, ruins), **fort interiors** (the `fort_` layouts), and **lairs and dens** (a beast's lair, the cloak's den). So the cell can differ by kind, and "a more typical size" is a number a player feels.
 
@@ -25,6 +16,18 @@ Whichever is picked, a town's lots move round the new plot (Dunmore's too). Pict
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
 ## Answered
+### Where does a town's coaching inn stand? (from the look builder, 2026-10-23, #642)
+**The question.** Card F6's coaching inn (#411 A: three storeys, a gateway and a stable yard) is in the game's kit as `PKIT.gl.coachInn` (Session 1339). With its yard and stables it is 17.6 by 23 m, and a town's inn lots are 5–7 m by 4–6 m, so it fits none of 36 inns in 14 Gatelands settlements. It needs a plot of its own, laid before the lots, as the church and the keep got under #433. Where should that plot be?
+
+**Options.**
+- **A (recommended).** Beside the main street, out toward the ring where the road comes in; the lots laid round it. Fits 5 of 5 towns and cities tried; ports are too small and keep the old inn.
+- **B.** On the square, facing the heart across from the church: the same plot closer in, competing with the church and the market for the frontage.
+- **C.** No plot: the inn is the kit's merchant's house that takes guests (#411's C), in its row where four bays fit. The yard and stables are dropped.
+
+Whichever is picked, a town's lots move round the new plot (Dunmore's too). Pictures (A): [street](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-1339/docs/prototypes/coachinn-dunmore-street.png), [gateway](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-1339/docs/prototypes/coachinn-dunmore-gate.png), [yard](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-1339/docs/prototypes/coachinn-dunmore-yard.png), [Carraig Mór](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-1339/docs/prototypes/coachinn-carraig_mor-street.png).
+
+Michael: **Beside the main street, toward the ring** (A). (2026-10-23)
+
 ### The hours of the day: how dark is a night with no moon? (from the concept artist, 2026-10-22, #629)
 **The question.** Backlog L12, the hours island by island (OG-137, card F3's sky). The prototype (`docs/prototypes/levelup/hours.html`) runs one Gatelands lane through seven grades a day, with a phased moon, 2,600 stars, low mist, amber windows at night and a lamp at each door. OG-137 says the moon's phase sets how dark the night is. How dark should a night with no moon be?
 
