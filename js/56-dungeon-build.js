@@ -11,6 +11,15 @@ function dPropHit(x, z){
 }
 function dBlk(x,z){const R=0.3; /* S1283 — your body 0.3 round, as in the world and the rooms (F2b) */ return dSolid(x-R,z-R)||dSolid(x+R,z-R)||dSolid(x-R,z+R)||dSolid(x+R,z+R);}
 function dSlide(x,z,dx,dz){if(!dBlk(x+dx,z+dz))return[x+dx,z+dz];if(!dBlk(x+dx,z))return[x+dx,z];if(!dBlk(x,z+dz))return[x,z+dz];return[x,z];}
+// S1327 (card F5, condition) — your own step in a gate: a chasm's open air (8) is no wall to you, as it is to a foe. Over it with no
+// stone under you the ground is the pit's floor, GATE_PIT down (dPitBase), so you fall, and 25 m kills (FALL_PER). Once you are
+// below the floor over the air, the pit's sides are walls: you cannot climb out through the rock.
+function dAirAt(x,z){const m=activeMap();if(!m)return false;const c=dCellOf(x),r=dCellOf(z);return r>=0&&r<dR&&c>=0&&c<dC&&m[r][c]===8;}
+function dLevelY(){return currentFloor===2?FLOOR2_Y:0;}
+function dSolidP(x,z){if(dAirAt(x,z))return false;if(jumpY<dLevelY()-1&&dAirAt(px,pz))return true;return dSolid(x,z);}
+function dBlkP(x,z){const R=0.3;return dSolidP(x-R,z-R)||dSolidP(x+R,z-R)||dSolidP(x-R,z+R)||dSolidP(x+R,z+R);}
+function dSlideP(x,z,dx,dz){if(!dBlkP(x+dx,z+dz))return[x+dx,z+dz];if(!dBlkP(x+dx,z))return[x+dx,z];if(!dBlkP(x,z+dz))return[x,z+dz];return[x,z];}
+function dPitBase(x,z,b){return dAirAt(x,z)?Math.min(b,dLevelY()-GATE_PIT):b;}
 function bfs(sx,sz,tx,tz){const sc=dCellOf(sx),sr=dCellOf(sz),tc=dCellOf(tx),tr=dCellOf(tz); /* S1283 — from metres to cells; the path is cells */if(sc===tc&&sr===tr)return[];const vis=new Set(),q=[[sc,sr,[]]];vis.add(sr*dC+sc);while(q.length){const[cc,cr,path]=q.shift();for(const[dc,dr]of[[0,1],[0,-1],[1,0],[-1,0]]){const nc=cc+dc,nr=cr+dr,key=nr*dC+nc;if(nr<0||nr>=dR||nc<0||nc>=dC||vis.has(key))continue;if(dSolid(nc*DCELL,nr*DCELL))continue;vis.add(key);const np=[...path,[nc,nr]];if(nc===tc&&nr===tr)return np;q.push([nc,nr,np]);}}return[];}
 
 // ── FLOOR TRANSITIONS ─────────────────────────────────────────
@@ -943,6 +952,10 @@ function buildGateSpaces(gen,baseY,wallCol,floorCol,floorIdx){
         FOOTHOLDS.push({x0:q.x-.5,x1:q.x-.5+q.w,z0:q.y-.5,z1:q.y-.5+q.h,y:baseY+.4,gate:'island'});}}
     if(sp.dais){const d=sp.dais;parts.push([new THREE.BoxGeometry(d.x1-d.x0,.4,d.z1-d.z0),stone,at((d.x0+d.x1)/2,baseY+.2,(d.z0+d.z1)/2)]);
       FOOTHOLDS.push({x0:d.x0,x1:d.x1,z0:d.z0,z1:d.z1,y:baseY+.4,gate:'dais'});}}
+  // S1327 — a failing or broken gate's floating stones over its gone spans (#417 A): still, and footholds keyed by place
+  for(const q of gen.stones||[]){if(q.floor!==F)continue;const w=q.x1-q.x0,h=q.z1-q.z0,y=baseY+q.y;
+    parts.push([new THREE.BoxGeometry(w,1.2,h),stone.clone().multiplyScalar(.8+.1*((q.span+q.x0)%2)),at(q.x0+w/2,y-.6,q.z0+h/2)]);
+    FOOTHOLDS.push({x0:q.x0,x1:q.x1,z0:q.z0,z1:q.z1,y,gate:'stone',id:q.id});}
   if(parts.length)dScene.add(dunMerge(parts,'spaces'));
 }
 function buildDungeon(portal){
@@ -960,7 +973,7 @@ function buildDungeon(portal){
   // S1293 (card F5, Michael's B on #448) — an old gate is laid as spaces first, rooms after (makeGate); forts, lairs, dens and the
   // crypt keep their rooms and corridors (#421). S1314 — a gate whose WORLD_DUNGEONS entry says floors 2 keeps a second floor
   // (#613 A), read by its seed, the gate's id, so a portal copied from another keeps none of its floors
-  let gen=interiorKey==='cave'&&!dunKeepKind(portal)?makeGate(portal.size,portal.seed,(WORLD_DUNGEONS.find(e=>e.seed===portal.seed)||{}).floors):interiorFn(portal.size,portal.seed);
+  let gen=interiorKey==='cave'&&!dunKeepKind(portal)?makeGate(portal.size,portal.seed,(WORLD_DUNGEONS.find(e=>e.seed===portal.seed)||{}).floors,(WORLD_DUNGEONS.find(e=>e.seed===portal.seed)||{}).cond):interiorFn(portal.size,portal.seed);
   if(interiorKey!=='cave'&&!gen.map2&&portal.size!=='small')gen=addUpperFloor(gen,portal.seed); // v80 — forts get an upper floor
   if(gen.hall)FLOOR2_Y=-gen.hall.D; /* S1298 — a massive gate's floor two lies its stair hall's flights down (2 or 3 of 4.2 m) */
   dMap=gen.map;dMap2=gen.map2||null;dR=gen.H;dC=gen.W;
@@ -3242,14 +3255,18 @@ function buildDungeon(portal){
       const baseDef=EM[name]||EM.Skeleton;
       // Variant roll — gated by player level + dungeon difficulty. `portal.diff` is 'veryeasy'..'veryhard'.
       const fid=`${dKey}:${i}`,fr=seededRng('dspawn',fid);
-      const variantKey=pickVariant(name, tierLevel(dTier), portal.diff, seededRng('variant',fid));
+      // S1327 (card F5, condition) — until the bodies builder makes the schools' catastrophic forms, a broken gate's ring chamber is
+      // guarded one tier up (the build sheet's "Condition")
+      const _ring=gen.gate&&gen.cond==='catastrophic'?gen.spaces[gen.ring]:null;
+      const eTier=_ring&&(_ring.floor||1)===floorIdx&&ec>=_ring.x&&ec<_ring.x+_ring.w&&er>=_ring.y&&er<_ring.y+_ring.h?Math.min(4,dTier+1):dTier;
+      const variantKey=pickVariant(name, tierLevel(eTier), portal.diff, seededRng('variant',fid));
       const vr=applyVariantToDef(baseDef, name, variantKey);
       const d=vr.def, displayName=vr.displayName;
       if(d.disguise&&mimicSpots.length){const k=mimicSpots.findIndex(([c,r])=>spawns.every((q,j)=>j===i||Math.hypot(q[0]-c,q[1]-r)>=2));if(k>=0){[ec,er]=mimicSpots.splice(k,1)[0];spawns[i]=[ec,er];pockets[i]=null;}}
       // v56 rebalance: multiply HP and dmg by level-scaled factors so late-game weapons don't
       // trivialise the early dungeons. Baseline (level 1) remains unscaled.
-      const hpLvl=enemyHpScale(dTier);
-      const dmgLvl=enemyDmgScale(dTier);
+      const hpLvl=enemyHpScale(eTier);
+      const dmgLvl=enemyDmgScale(eTier);
       // v61aw: tutorial dampener. The first dungeon a fresh character ever
       // sees gets enemies tuned for "you've never fought before" — half HP
       // and half damage on top of whatever 'veryeasy' difficulty already
@@ -3274,7 +3291,7 @@ function buildDungeon(portal){
         dead:false,alert:false,atkCd:0,ph:Math.random()*Math.PI*2,path:[],pathT:0,
         _origCol:d.col,baseY:baseYe,isWraith:d.buildFn==='wraith',atkAnim:0,atkDir:{x:0,z:0},
         walkT:Math.random()*Math.PI*2,ranged:!!d.ranged,rangedCd:1.5+fr()*1.5,
-        dmgMult:(d.dmgMult||1.0)*ds.dmg*dmgMult*dmgLvl*tutMult,hasCried:false,floor:floorIdx,tier:dTier,
+        dmgMult:(d.dmgMult||1.0)*ds.dmg*dmgMult*dmgLvl*tutMult,hasCried:false,floor:floorIdx,tier:eTier,
         def:d.def||0,resist:d.resist||{},variant:vr.variant,xpMult:vr.xpMult,baseType:name,
         drainCd:0,disguised:!!d.disguise,dormant:!!d.dormant,fleeT:0,telegraphT:0,telegraphMax:0,
         // v71 — Shieldbearer frontal guard. shieldUp gates BOTH the power-vs-shield

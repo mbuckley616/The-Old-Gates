@@ -353,7 +353,8 @@ function gateHallSegs(nFl){const segs=[];let u=0,y=0;segs.push({kind:'landing',u
   return segs;}
 // S1314 (Michael's A on #613) — floors 2 from the gate's own entry (WORLD_DUNGEONS: the main quest's Dungeon of Shadows and Crypt
 // of Embers, and Q5's Vault of the Tide) lays a lesser gate as a massive gate's two floors, on the massive grid; its foes, traps and side rooms stay its size's
-function makeGate(size,seed,floors){
+function makeGate(size,seed,floors,cond){
+  cond=GATE_CONDS.includes(cond)?cond:gateCondRoll(seed); /* S1327 — the gate's own seed's, before any retry moves the seed */
   const r=dunLcg((hashSeed((seed|0)+0x6a7e)>>>0)||1),rand=(a,b)=>Math.floor(r()*(b-a+1))+a,pick=a=>a[Math.floor(r()*a.length)];
   const base={tiny:{tr:0,ur:1,en:5},small:{tr:1,ur:2,en:9},medium:{tr:1,ur:3,en:14},large:{tr:2,ur:4,en:20},massive:{tr:2,ur:6,en:30}}[size]?size:'small';
   const fl2=base==='massive'||floors===2&&base!=='tiny'&&base!=='small';
@@ -424,7 +425,7 @@ function makeGate(size,seed,floors){
     if(!ok)continue;
     spaces=S;thresholds=T;entry=e;
   }
-  if(!spaces)return makeGate(size,seed+1000003,floors); // no layout in forty tries: the next seed's
+  if(!spaces)return makeGate(size,seed+1000003,floors,cond); // no layout in forty tries: the next seed's
   const ringSp=spaces[spaces.length-1],hallSp=two?spaces.find(s=>s.type==='stair'):null;
   // shortcuts (a ring of loops, a cave network): two spaces of one floor that happen to share a wall a cell thick get a second threshold
   if(layout==='loops'||layout==='cave'){let n=0;
@@ -533,6 +534,7 @@ function makeGate(size,seed,floors){
     const a=gateCellAt(hs,GATE_LANDING_L,0),b=gateCellAt(hs,hs.L-1,hs.A-1);
     gen.stairHoles=[{x0:Math.min(a[0],b[0])-.5,x1:Math.max(a[0],b[0])+.5,z0:Math.min(a[1],b[1])-.5,z1:Math.max(a[1],b[1])+.5}];
     gen.hallAt=(c,y)=>y>=0&&c>=0&&y<H&&c<W&&cellSpace[y][c]===hallSp.id;}
+  gateCondition(gen,gen.spaces,seed,cond); /* S1327 — the gone spans, the floating stones and the nave's gaps, before the bridge's deck is read */
   // a chasm's bridge and its piers' landings: floor over the pit (a deck, not rock to the bottom), on its own floor
   const slabSet=new Set(),slabSet2=new Set();for(const sp of spaces){if(sp.type!=='chasm')continue;const R=gateRect(sp),M=sp.floor===2?map2:map,SS=sp.floor===2?slabSet2:slabSet;
     for(let y=R.y;y<R.y+R.h;y++)for(let x=R.x;x<R.x+R.w;x++){const [u]=gateUV(sp,x,y);if(u>=3&&u<sp.L-3&&M[y][x]===1)SS.add(y*W+x);}}
@@ -547,6 +549,51 @@ function makeGate(size,seed,floors){
   return gen;
 }
 
+// S1327 (card F5, the build sheet's session 4, "Condition"; Michael's A on its open number, 20 Oct 2026: 50 / 35 / 15) — a gate is
+// steady, failing or catastrophic, rolled from its seed and never saved (an authored gate may name its own: WORLD_DUNGEONS' cond).
+// Steady: every span and floor in place. Failing: one span in three of each chasm's bridge is gone, and a nave's floor has gaps of
+// 1 to 2 cells that the way goes round. Catastrophic: every span gone, and twice the nave's gaps. A gone span is crossed by the
+// floating stones (#417 A): they hang still at the deck's height, 2 m across, never more than 1.6 m apart, so nothing on the way
+// needs a skill (the sheet's 2.5 m). Its own stream from the seed, after the layout's, so no draw of the layout moves.
+const GATE_CONDS=['steady','failing','catastrophic'],GATE_COND_P=[.5,.35,.15],GATE_STONE=2,GATE_STONE_GAP=1.6;
+function gateCondRoll(seed){const u=hashSeed(((seed|0)^0x5c0d17)>>>0)/4294967296;return u<GATE_COND_P[0]?'steady':u<GATE_COND_P[0]+GATE_COND_P[1]?'failing':'catastrophic';}
+function gateCondition(gen,spaces,seed,cond){
+  gen.cond=cond;gen.stones=[];gen.gaps=[];if(cond==='steady')return;
+  const r=dunLcg((hashSeed(((seed|0)+0x60e)>>>0)>>>0)||1),rand=(a,b)=>Math.floor(r()*(b-a+1))+a;
+  const W=gen.W,H=gen.H,thr=gen.thresholds||[];
+  // the nave's gaps: a pit of 1 or 2 cells by 1 or 2, off the piers and 3 cells from a threshold, 4 from another gap, and
+  // only where everything you could reach before stays reachable (the way round)
+  const parts=M=>{const seen=new Uint8Array(W*H);let n=0;for(let y=0;y<H;y++)for(let x=0;x<W;x++){const v=M[y][x];if(v===0||v===8||v===9||seen[y*W+x])continue;n++;
+    const q=[y*W+x];seen[q[0]]=1;while(q.length){const i=q.pop(),cx=i%W,cy=(i/W)|0;for(const [dc,dr] of [[1,0],[-1,0],[0,1],[0,-1]]){const nx=cx+dc,ny=cy+dr;if(nx<0||ny<0||nx>=W||ny>=H)continue;const j=ny*W+nx,w=M[ny][nx];if(seen[j]||w===0||w===8||w===9)continue;seen[j]=1;q.push(j);}}}return n;};
+  // (not on floor one of a gate of two floors: a pit there would fall into floor two's rock, and the stair hall reads you by height)
+  for(const sp of spaces){if(sp.type!=='nave')continue;const fl=sp.floor||1,M=fl===2?gen.map2:gen.map;if(!M||fl===1&&gen.map2)continue;
+    const want=Math.max(1,Math.round(sp.L*GATE_CELL/60))*(cond==='catastrophic'?2:1);let got=0;
+    for(let att=0;att<60&&got<want;att++){const lu=rand(1,2),lv=rand(1,2),u0=rand(4,sp.L-5-lu),v0=rand(0,sp.A-lv);
+      const cells=[];let ok=true;
+      for(let du=0;du<lu&&ok;du++)for(let dv=0;dv<lv&&ok;dv++){const [c,y]=gateCellAt(sp,u0+du,v0+dv);
+        if(M[y][c]!==1||thr.some(t=>Math.abs(t.c-c)+Math.abs(t.r-y)<3))ok=false;
+        if(ok&&gen.gaps.some(g=>g.cells.some(([gc,gy])=>Math.abs(gc-c)+Math.abs(gy-y)<4)))ok=false;
+        cells.push([c,y]);}
+      if(!ok)continue;
+      const before=parts(M);for(const [c,y] of cells)M[y][c]=8;
+      if(parts(M)!==before){for(const [c,y] of cells)M[y][c]=1;continue;}
+      gen.gaps.push({space:sp.id,floor:fl,cells});got++;}}
+  // the chasms' spans: the runs of bridge between the piers' landings
+  for(const sp of spaces){if(sp.type!=='chasm')continue;const fl=sp.floor||1,M=fl===2?gen.map2:gen.map;if(!M)continue;
+    const mid=sp.A/2,spans=[];let u0=null;
+    for(let u=3;u<=sp.L-3;u++){const deck=u<sp.L-3&&gateSpaceCell(sp,u,mid-3)!==1;
+      if(deck&&u0==null)u0=u;if(!deck&&u0!=null){spans.push([u0,u-1]);u0=null;}}
+    let gone;if(cond==='catastrophic')gone=spans.map((_,i)=>i);
+    else{const n=Math.max(1,Math.round(spans.length/3)),idx=spans.map((_,i)=>i);for(let i=idx.length-1;i>0;i--){const j=rand(0,i);[idx[i],idx[j]]=[idx[j],idx[i]];}gone=idx.slice(0,n);}
+    for(const i of gone.sort((a,b)=>a-b)){const [ua,ub]=spans[i];
+      for(let u=ua;u<=ub;u++)for(let v=mid-1;v<mid+1;v++){const [c,y]=gateCellAt(sp,u,v);M[y][c]=8;}
+      // the stones over it, along the bridge's line: n of GATE_STONE, the gaps between them (and at either end) equal
+      const Lm=(ub-ua+1)*GATE_CELL,n=Math.ceil((Lm-GATE_STONE_GAP)/(GATE_STONE+GATE_STONE_GAP)),gap=(Lm-n*GATE_STONE)/(n+1),s=GATE_STONE/GATE_CELL;
+      for(let k=0;k<n;k++){const uc=ua-.5+(gap*(k+1)+GATE_STONE*(k+.5))/GATE_CELL,vc=mid-.5+(k%2?1:-1)*rand(1,3)*.08;
+        const ax=sp.axis==='x',l=sp.flip?sp.L-1-uc:uc,cx=ax?sp.x+l:sp.x+vc,cz=ax?sp.y+vc:sp.y+l,hw=ax?s/2:s*.55,hh=ax?s*.55:s/2;
+        gen.stones.push({id:`${seed|0}:${fl}:stone${gen.stones.length}`,floor:fl,space:sp.id,span:i,x0:cx-hw,x1:cx+hw,z0:cz-hh,z1:cz+hh,y:(rand(0,8)-3)*.05,gap:+gap.toFixed(2)});}}
+    sp.gone=gone;}
+}
 // S1323 (card F5, the build sheet's session 3, "Pockets and the leash") — where a gate's fights stand. Each space of a floor
 // (the stair hall aside) holds pockets along its way, evenly: 25 to 42 m apart (one alone in a short space), so two
 // pockets never wake as one, and each end is within 25 m of one, so no stretch of the way runs 50 m without a fight. A pocket's radius is 0.4 of its spacing,
