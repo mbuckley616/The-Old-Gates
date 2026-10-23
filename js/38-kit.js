@@ -1333,8 +1333,8 @@ const ROW_GODS = [
   { key: 'muir', name: 'An Mhuir', en: 'the Sea', icon: 'hull' }, { key: 'speir', name: 'An Spéir', en: 'the Sky', icon: 'sundial' },
   { key: 'beithigh', name: 'Na Beithígh', en: 'the Beasts', icon: 'wolf' }, { key: 'cloch', name: 'An Chloch', en: 'the Stone', icon: 'gate' },
   { key: 'teallach', name: 'An Teallach', en: 'the Hearth', icon: 'lamp' }, { key: 'fiodoir', name: 'An Fíodóir', en: 'the Weaver', icon: 'shuttle' }];
-const ROW_INK = '#5a5248', ROW_PAL = [0xa83a2a, 0xe6e0d0, 0x3a5a8a, 0x4e7a3a, 0xd8b040, 0x3e5a28, 0xf0dc6a, 0xf4f0e4, 0xeee2c4];
-const PAL = { rag0: 0, rag1: 1, rag2: 2, rag3: 3, rag4: 4, leaf: 5, prim: 6, bloomW: 7, wax: 8 };
+const ROW_INK = '#5a5248', ROW_PAL = [0xa83a2a, 0xe6e0d0, 0x3a5a8a, 0x4e7a3a, 0xd8b040, 0x3e5a28, 0xf0dc6a, 0xf4f0e4, 0xeee2c4, 0x9e573a, 0xa8582f, 0x2a3c1e, 0x0c0a08];
+const PAL = { rag0: 0, rag1: 1, rag2: 2, rag3: 3, rag4: 4, leaf: 5, prim: 6, bloomW: 7, wax: 8, brick: 9, terra: 10, cypress: 11, dark: 12 }; /* 9–12 Aurenne's row's (Session 1329) */
 // struck stone: the face cut back with a point chisel, rows of short gouges over a rough ground, paler than the weathered face
 PAINTERS.chisel = () => texPair(256, (x, y) => { const g = tn(x * 2, y * 2, 64, 3), n = tfbm(x, y, 16, 4, 5), pit = Math.max(0, tn(x, y, 96, 9) - .72) * 2, h = g * .45 + n * .55 - pit; const v = .74 + .08 * n - pit * .12; return [h, v, v * .97, v * .92]; }, 1.6);
 const ICON2D = {
@@ -1347,21 +1347,26 @@ const ICON2D = {
     x.beginPath(); x.moveTo(214, 122); x.quadraticCurveTo(196, 80, 220, 40); x.quadraticCurveTo(246, 84, 226, 122); x.closePath(); x.fill(); },
   shuttle: x => { x.beginPath(); x.moveTo(20, 128); x.quadraticCurveTo(128, 72, 236, 128); x.quadraticCurveTo(128, 184, 20, 128); x.closePath(); x.fill(); x.save(); x.globalCompositeOperation = 'destination-out'; x.fillRect(96, 116, 64, 24); x.restore(); x.fillRect(104, 122, 48, 12); } };
 // the sheet: the six names (512 by 192 each, two columns) over the six roundels (256 square, four to a row), letters as a mason cuts
-// them, the stroke dark with a pale lip under it; returns the material and each cell's rect in uv
-let ROW_SHEET = null;
-function rowSheet() {
-  if (ROW_SHEET) return ROW_SHEET; const c = document.createElement('canvas'); c.width = 1024; c.height = 1088; const x = c.getContext('2d'), cells = {};
+// them, the stroke dark with a pale lip under it; returns the material and each cell's rect in uv. Aurenne's (au, Session 1329) is
+// lettered in the Church's blue and carries the Church's notice (512 by 640) under the roundels.
+const ROW_SHEETS = {};
+function rowSheet(au) {
+  const sk = au ? 'au' : 'gl'; if (ROW_SHEETS[sk]) return ROW_SHEETS[sk]; const c = document.createElement('canvas'); c.width = 1024; c.height = au ? 1728 : 1088; const x = c.getContext('2d'), cells = {}, INK = au ? '#2a4a8a' : ROW_INK;
   const uvr = (px, py, w, h) => [px / c.width, 1 - (py + h) / c.height, (px + w) / c.width, 1 - py / c.height];
   ROW_GODS.forEach((god, i) => { const px = (i % 2) * 512, py = Math.floor(i / 2) * 192, w = 512, h = 192; x.save(); x.translate(px, py); x.textAlign = 'center'; x.textBaseline = 'middle';
-    const line = (s, y, f) => { x.font = f; x.fillStyle = 'rgba(255,255,255,.35)'; x.fillText(s, w / 2, y + 2); x.fillStyle = ROW_INK; x.fillText(s, w / 2, y); };
+    const line = (s, y, f) => { x.font = f; x.fillStyle = 'rgba(255,255,255,.35)'; x.fillText(s, w / 2, y + 2); x.fillStyle = INK; x.fillText(s, w / 2, y); };
     line(god.name.toUpperCase(), h * .4, `600 ${h * .3}px Georgia, 'Times New Roman', serif`); line(god.en, h * .76, `italic ${h * .2}px Georgia, 'Times New Roman', serif`); x.restore();
     cells['n:' + god.key] = uvr(px, py, w, h);
     const ix = (i % 4) * 256, iy = 576 + Math.floor(i / 4) * 256; x.save(); x.beginPath(); x.rect(ix, iy, 256, 256); x.clip(); x.translate(ix, iy);
-    x.fillStyle = 'rgba(255,255,255,.3)'; x.translate(0, 3); ICON2D[god.icon](x); x.translate(0, -3); x.fillStyle = ROW_INK; x.strokeStyle = ROW_INK; ICON2D[god.icon](x);
+    x.fillStyle = 'rgba(255,255,255,.3)'; x.translate(0, 3); ICON2D[god.icon](x); x.translate(0, -3); x.fillStyle = INK; x.strokeStyle = INK; ICON2D[god.icon](x);
     x.lineWidth = 6; x.beginPath(); x.arc(128, 128, 122, 0, Math.PI * 2); x.stroke(); x.restore(); cells['i:' + god.key] = uvr(ix, iy, 256, 256); });
+  if (au) { const w = 512, h = 640; x.save(); x.translate(0, 1088); x.fillStyle = '#efe4c8'; x.fillRect(0, 0, w, h); x.strokeStyle = '#2a4a8a'; x.lineWidth = 10; x.strokeRect(14, 14, w - 28, h - 28);
+    x.fillStyle = '#2a4a8a'; x.textAlign = 'center'; x.font = `600 34px Georgia, serif`; x.fillText('THE CHURCH OF THE WEAVER', w / 2, 82);
+    x.fillStyle = '#3a2a1c'; x.font = 'italic 27px Georgia, serif'; ['This shrine is kept by order', 'of the Prior of the parish.', '', 'Offerings at the box.', 'A candle is one copper.', 'No rubbings to be taken.', 'The gate is shut', 'at the evening bell.'].forEach((s, i) => x.fillText(s, w / 2, 150 + i * 40));
+    x.beginPath(); x.moveTo(w / 2 - 70, h - 64); x.quadraticCurveTo(w / 2, h - 96, w / 2 + 70, h - 64); x.quadraticCurveTo(w / 2, h - 32, w / 2 - 70, h - 64); x.fillStyle = '#2a4a8a'; x.fill(); x.restore(); cells.notice = uvr(0, 1088, w, h); }
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.NoColorSpace; t.anisotropy = 8;
   const m = new THREE.MeshStandardMaterial({ map: t, transparent: true, alphaTest: .25, roughness: .95, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 });
-  return (ROW_SHEET = { m, cells });
+  return (ROW_SHEETS[sk] = { m, cells });
 }
 let ROWM = null;
 function rowMats() {
@@ -1372,11 +1377,27 @@ function rowMats() {
   ROWM = { lime: mat('plaster', { ns: .7, color: 0xf4f1ea, rough: .95 }), limestone: mat('plaster', { ns: .9, color: 0xc2bcb0, rough: .9 }), statG: mat('plaster', { ns: .5, color: 0xd6d0c2, rough: .85 }),
     chisel: mat('chisel', { ns: 1.6, color: 0xf2eee6, rough: 1 }), water: std(0x1a2a2c, { rough: .05, metal: .2 }),
     flame: new THREE.MeshStandardMaterial({ color: 0xffb060, emissive: new THREE.Color(1, .6, .22), emissiveIntensity: 5, transparent: true, opacity: .9, depthWrite: false }),
-    pal: new THREE.MeshStandardMaterial({ map: pt, roughness: .9, side: THREE.DoubleSide }), sheet: rowSheet().m };
+    pal: new THREE.MeshStandardMaterial({ map: pt, roughness: .9, side: THREE.DoubleSide }), sheet: rowSheet(false).m };
   return ROWM;
 }
+// Aurenne's (Session 1329): shrines.js's aurenne dress, the plaster, the ochre stone, the marble figures, the recess's glazed tile, the
+// cupola's glaze, the gilt icons; the Gatelands' row's for the rest
+let ROWM_AU = null;
+function rowMatsAU() {
+  if (ROWM_AU) return ROWM_AU; const A = aurMats(), std = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: o.rough ?? .8, metalness: o.metal ?? 0 });
+  ROWM_AU = Object.assign({}, rowMats(), { aurplaster: mat('plaster', { ns: .55, color: 0xf6eedc, rough: .95 }), newplaster: mat('plaster', { ns: .4, color: 0xfbf8f2, rough: .95 }),
+    ochre: mat('ashlar', { ns: .9, color: 0xe8d2a6, rough: .85 }), marble: mat('plaster', { ns: .2, color: 0xf4f0e8, rough: .3 }), zellige: A.zellige, glaze: A.glaze,
+    gilt: std(0xc8952e, { rough: .3, metal: .8 }), iron: A.iron, oak: mat('wood', { ns: 1, color: 0x7a5434, rough: .7 }), sheet: rowSheet(true).m });
+  return ROWM_AU;
+}
+// o.island 'aurenne' (Session 1329; OG-113, Michael's C on #439, the row at the Church of the Weaver): shrines.js's row('aurenne') —
+// each stele plastered and flat-topped under an ochre cornice and a blue-glazed cupola, the recess lined in glazed tile in an ochre
+// frame, the figures marble and the icons gilt, the names in the Church's blue; the Guest's bricked up and plastered over, a patch fallen
+// to show the brick. Before it an iron railing on a plaster dwarf wall with its gate before An Chloch, the tithe box inside the gate,
+// two potted cypresses, the paving, a plaster pier at each end and the Church's notice on the Guest's; three votive candles on each sill
 function shrineRow(o = {}) {
-  const M = rowMats(), SH = rowSheet(), B = new Map(), r = stream('row:gatelands'), niches = [];
+  const AU = o.island === 'aurenne', isl = AU ? 'aurenne' : 'gatelands', M = AU ? rowMatsAU() : rowMats(), SH = rowSheet(AU), B = new Map(), r = stream('row:' + isl), niches = [];
+  const D = AU ? { stele: 'aurplaster', frame: 'ochre', stat: 'marble', recess: 'zellige', icon: 'gilt', plinth: 'ochre', basin: 'marble' } : { stele: 'lime', frame: 'limestone', stat: 'statG', recess: 'lime', icon: 'statG', plinth: 'limestone', basin: 'limestone' };
   // a geometry into its material's list; a palette key ('rag0', 'leaf', …) takes its colour's texel in the strip as every uv
   const put = (geo, key, x = 0, y = 0, z = 0, ry = 0, rx = 0, rz = 0, s = 1, uv = .8) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const k of Object.keys(g.attributes)) if (!['position', 'normal'].includes(k)) g.deleteAttribute(k);
     g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), new THREE.Vector3(s, s, s))); worldUV(g, uv);
@@ -1416,22 +1437,30 @@ function shrineRow(o = {}) {
     rod(key, [.12, .05, -.24], [.2, .04, .05], .045, .025); rod(key, [.2, .04, .05], [.12, .04, .2], .025, .012); }, x, y0, z);
   // the common niche
   const W = 1.0, SPRING = 1.8, PL = .25, SILL = .78, RW = .62, RSPRING = 1.52, DF = .32, DB = .16;
-  const outline = () => { const s = new THREE.Shape(); s.moveTo(-W / 2, 0); s.lineTo(W / 2, 0); s.lineTo(W / 2, SPRING); s.absarc(0, SPRING, W / 2, 0, Math.PI, false); s.lineTo(-W / 2, 0); return s; };
+  const outline = () => { const s = new THREE.Shape(); s.moveTo(-W / 2, 0); s.lineTo(W / 2, 0); if (AU) { s.lineTo(W / 2, SPRING + .38); s.lineTo(-W / 2, SPRING + .38); } else { s.lineTo(W / 2, SPRING); s.absarc(0, SPRING, W / 2, 0, Math.PI, false); } s.lineTo(-W / 2, 0); return s; };
   const recess = P => { P.moveTo(-RW / 2, SILL); P.lineTo(RW / 2, SILL); P.lineTo(RW / 2, RSPRING); P.absarc(0, RSPRING, RW / 2, 0, Math.PI, false); P.lineTo(-RW / 2, SILL); return P; };
   const niche = (godKey, x0) => {
-    const guest = godKey === 'guest', god = ROW_GODS.find(g => g.key === godKey), rn = stream(`niche:gatelands:${godKey}:${x0}`);
+    const guest = godKey === 'guest', god = ROW_GODS.find(g => g.key === godKey), rn = stream(`niche:${isl}:${godKey}:${x0}`);
     // the plinth, a step wider than the stele, and the stele on it: a frame with the recess through it, and a back slab
-    bx('limestone', x0 - .6, x0 + .6, -.35, PL, -.58, .14);
-    const fr = outline(); fr.holes.push(recess(new THREE.Path())); put(new THREE.ExtrudeGeometry(fr, { depth: DF - .02, bevelEnabled: true, bevelThickness: .01, bevelSize: .01, bevelSegments: 1, curveSegments: 14 }), 'lime', x0, PL, -DF + .01);
-    put(new THREE.ExtrudeGeometry(outline(), { depth: DB, bevelEnabled: false, curveSegments: 14 }), 'lime', x0, PL, -DF - DB);
-    put(new THREE.ShapeGeometry(recess(new THREE.Shape()), 14), 'lime', x0, PL, -DF + .004);
-    // the hood moulding over the arch and its two stops, and the sill, a lip out over the face
-    put(new THREE.TorusGeometry(RW / 2 + .06, .035, 6, 18, Math.PI), 'limestone', x0, PL + RSPRING, .015); for (const s of [-1, 1]) bx('limestone', x0 + s * (RW / 2 + .06) - .05, x0 + s * (RW / 2 + .06) + .05, PL + RSPRING - .1, PL + RSPRING, -.02, .05);
-    bx('limestone', x0 - RW / 2 - .08, x0 + RW / 2 + .08, PL + SILL - .05, PL + SILL, -DF + .01, .07);
-    const sillY = PL + SILL, fz = -DF / 2 - .01, pY = PL + .63, rY = PL + RSPRING + RW / 2 + .2;
+    bx(D.plinth, x0 - .6, x0 + .6, -.35, PL, -.58, .14);
+    const fr = outline(); fr.holes.push(recess(new THREE.Path())); put(new THREE.ExtrudeGeometry(fr, { depth: DF - .02, bevelEnabled: true, bevelThickness: .01, bevelSize: .01, bevelSegments: 1, curveSegments: 14 }), D.stele, x0, PL, -DF + .01);
+    put(new THREE.ExtrudeGeometry(outline(), { depth: DB, bevelEnabled: false, curveSegments: 14 }), D.stele, x0, PL, -DF - DB);
+    put(new THREE.ShapeGeometry(recess(new THREE.Shape()), 14), D.recess, x0, PL, -DF + .004);
+    // the hood moulding over the arch and its two stops (Aurenne's flat stele a cornice, the cupola and a frame round the recess), and the sill, a lip out over the face
+    if (!AU) { put(new THREE.TorusGeometry(RW / 2 + .06, .035, 6, 18, Math.PI), 'limestone', x0, PL + RSPRING, .015); for (const s of [-1, 1]) bx('limestone', x0 + s * (RW / 2 + .06) - .05, x0 + s * (RW / 2 + .06) + .05, PL + RSPRING - .1, PL + RSPRING, -.02, .05); }
+    else { const T = PL + SPRING + .38, cz = -DF / 2 - DB / 2 + .02; bx('ochre', x0 - W / 2 - .05, x0 + W / 2 + .05, T, T + .08, -DF - DB - .04, .05); bx('ochre', x0 - W / 2 - .02, x0 + W / 2 + .02, T + .08, T + .14, -DF - DB - .01, .02);
+      put(new THREE.CylinderGeometry(.3, .32, .16, 20), 'ochre', x0, T + .22, cz); put(new THREE.SphereGeometry(.3, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2), 'glaze', x0, T + .3, cz); put(new THREE.SphereGeometry(.035, 8, 6), 'gilt', x0, T + .62, cz);
+      for (const s of [-1, 1]) bx('ochre', x0 + s * (RW / 2 + .045) - .045, x0 + s * (RW / 2 + .045) + .045, PL + SILL - .04, PL + RSPRING, -.01, .03); put(new THREE.TorusGeometry(RW / 2 + .045, .045, 6, 18, Math.PI), 'ochre', x0, PL + RSPRING, .01); }
+    bx(D.frame, x0 - RW / 2 - .08, x0 + RW / 2 + .08, PL + SILL - .05, PL + SILL, -DF + .01, .07);
+    const sillY = PL + SILL, fz = -DF / 2 - .01, pY = PL + .63, rY = PL + RSPRING + RW / 2 + (AU ? .16 : .2);
     if (!guest) { plate('n:' + god.key, .78, .28, x0, pY, .006); plate('i:' + god.key, .24, .24, x0, rY, .006);
-      if (god.icon === 'wolf') wolf('statG', x0, sillY, fz - .02); else icon3d(god.icon, 'statG', robed('statG', x0, sillY, fz, .95));
+      if (god.icon === 'wolf') wolf(D.stat, x0, sillY, fz - .02); else icon3d(god.icon, D.icon, robed(D.stat, x0, sillY, fz, .95));
       const cx = x0 + .2, cz = -.04, ch = .1 + rn() * .06; put(new THREE.CylinderGeometry(.03, .032, ch, 10), 'wax', cx, sillY + ch / 2, cz); put(new THREE.SphereGeometry(.016, 6, 5).scale(1, 2.3, 1), 'flame', cx, sillY + ch + .035, cz);
+    } else if (AU) {
+      // bricked up and plastered over, the plaster newer and whiter than the stele's; a patch has fallen and shows the brick
+      put(new THREE.ExtrudeGeometry(recess(new THREE.Shape()), { depth: DF - .04, bevelEnabled: false, curveSegments: 14 }), 'newplaster', x0, PL, -DF + .004);
+      const p = new THREE.Shape(), rr = stream('fallen'); for (let i = 0; i <= 14; i++) { const a = i / 14 * Math.PI * 2, d = .1 + rr() * .06, q = [.04 + Math.cos(a) * d * 1.1, SILL + .44 + Math.sin(a) * d * .8]; i ? p.lineTo(...q) : p.moveTo(...q); } put(new THREE.ShapeGeometry(p), 'brick', x0, PL, -.032);
+      bx('chisel', x0 - .4, x0 + .4, pY - .14, pY + .14, -.01, .004); put(new THREE.CircleGeometry(.12, 18), 'chisel', x0, rY, .004);
     } else {
       // the figure struck away: a stump of the hem on the sill, its outline a scar on the back of the recess, the name and the roundel cut back
       const k = .95 / 2.05, stump = new THREE.LatheGeometry([[.001, 0], [.36, 0], [.35, .12], [.31, .2], [.001, .26]].map(([a, b]) => new THREE.Vector2(a * k, b * k)), 12); stump.scale(1, 1, .78); put(stump, 'chisel', x0, sillY, fz);
@@ -1439,8 +1468,8 @@ function shrineRow(o = {}) {
       put(new THREE.ExtrudeGeometry(sil, { depth: .012, bevelEnabled: false }), 'chisel', x0, sillY, -DF + .006);
       bx('chisel', x0 - .4, x0 + .4, pY - .14, pY + .14, -.012, .002); put(new THREE.CylinderGeometry(.13, .13, .012, 18).rotateX(Math.PI / 2), 'chisel', x0, rY, -.002); }
     // the basin before the niche, a bowl on a stem with water in it; none before the Guest's
-    let basin = null; if (!guest) { const bz = .55; put(new THREE.CylinderGeometry(.08, .12, .52, 12), 'limestone', x0, .26, bz); put(new THREE.CylinderGeometry(.16, .16, .05, 14), 'limestone', x0, .025, bz);
-      put(new THREE.LatheGeometry([[0, 0], [.1, .005], [.19, .05], [.25, .13], [.25, .16], [.22, .16], [.18, .08], [0, .06]].map(([a, b]) => new THREE.Vector2(a * .85, b * .85)), 18), 'limestone', x0, .52, bz);
+    let basin = null; if (!guest) { const bz = .55; put(new THREE.CylinderGeometry(.08, .12, .52, 12), D.basin, x0, .26, bz); put(new THREE.CylinderGeometry(.16, .16, .05, 14), D.basin, x0, .025, bz);
+      put(new THREE.LatheGeometry([[0, 0], [.1, .005], [.19, .05], [.25, .13], [.25, .16], [.22, .16], [.18, .08], [0, .06]].map(([a, b]) => new THREE.Vector2(a * .85, b * .85)), 18), D.basin, x0, .52, bz);
       put(new THREE.CircleGeometry(.175, 18).rotateX(-Math.PI / 2), 'water', x0, .52 + .115, bz); basin = [x0, .52 + .136, bz]; }
     return { god: godKey, x: x0, sill: sillY, basin, pray: [x0, 1.1] }; };
   const ORDER = [...ROW_GODS.map(g => g.key), 'guest'], X = i => (i - 3) * 1.4;
@@ -1448,13 +1477,31 @@ function shrineRow(o = {}) {
   const dy = i => (o.ground && o.ground[i]) || 0, lift = (i, fn) => { const n0 = new Map([...B].map(([k, v]) => [k, v.length])); const out = fn(); const m = new THREE.Matrix4().makeTranslation(0, dy(i), 0);
     for (const [k, gs] of B) for (let j = n0.get(k) || 0; j < gs.length; j++) gs[j].applyMatrix4(m); return out; };
   ORDER.forEach((g, i) => { const n = lift(i, () => niche(g, X(i))); n.dy = dy(i); if (n.basin) n.basin[1] += dy(i); niches.push(n); });
+  // Aurenne's: the railing and its gate, the tithe box, the notice, the pots, the paving and the piers, the votive candles
+  let rail = null;
+  if (AU) { const x0 = X(0) - .9, x1 = X(6) + .9, z = 2.0, gap = 0; /* the prototype's 1.45 left 0.52 m between a basin and the rail: 2.0 leaves room to kneel */ bx('aurplaster', x0, x1, 0, .5, z - .14, z + .14, .6); bx('ochre', x0 - .02, x1 + .02, .5, .56, z - .17, z + .17);
+    for (let x = x0 + .06; x < x1; x += .13) { if (Math.abs(x - gap) < .62) continue; bx('iron', x - .011, x + .011, .56, 1.38, z - .011, z + .011); put(new THREE.ConeGeometry(.024, .07, 4), 'iron', x, 1.42, z); }
+    for (const y of [.62, 1.3]) for (const [a, b] of [[x0, gap - .6], [gap + .6, x1]]) bx('iron', a, b, y - .012, y + .012, z - .014, z + .014);
+    for (const s of [-1, 1]) { bx('ochre', gap + s * .62 - .1, gap + s * .62 + .1, 0, 1.55, z - .17, z + .17); put(new THREE.SphereGeometry(.08, 10, 8), 'ochre', gap + s * .62, 1.62, z);
+      // the two leaves, hung on the piers and swung open inward
+      const a = 1.1, dx = -s * Math.cos(a), dz = -Math.sin(a), hx = gap + s * .52; for (let k = 0; k < 4; k++) { const d = .04 + k * .14; bx('iron', hx + dx * d - .011, hx + dx * d + .011, .1, 1.25, z + dz * d - .011, z + dz * d + .011); }
+      for (const y of [.18, 1.18]) { const g = new THREE.BoxGeometry(.5, .024, .024); g.translate(-.25, 0, 0); put(g, 'iron', hx, y, z, s > 0 ? -a : Math.PI + a); } }
+    rail = { x0, x1, z, gap, t: .17 };
+    { const x = .98, z = 1.6; bx('oak', x - .05, x + .05, 0, .9, z - .05, z + .05, 1); bx('oak', x - .2, x + .2, .9, 1.28, z - .15, z + .15, 1); for (const y of [.94, 1.24]) bx('iron', x - .205, x + .205, y - .018, y + .018, z - .155, z + .155);
+      bx('dark', x - .07, x + .07, 1.281, 1.284, z - .012, z + .012); bx('iron', x - .04, x + .04, 1.08, 1.16, z + .15, z + .16); }
+    { const x = X(6) + .95, z = -.52; bx('oak', x - .34, x + .34, 1.0, 1.84, z - .03, z, 1); plate('notice', .6, .76, x, 1.42, z + .002); }
+    for (const x of [X(0) - .85, X(6) + .85]) { put(new THREE.LatheGeometry([[0, 0], [.14, 0], [.2, .2], [.18, .36], [.2, .4], [0, .4]].map(([a, b]) => new THREE.Vector2(a, b)), 14), 'terra', x, 0, .5);
+      put(new THREE.ConeGeometry(.2 + r() * .06, 1.3 + r() * .5, 9).translate(0, .65, 0), 'cypress', x, .38, .5); }
+    bx('ochre', X(0) - .95, X(6) + .95, 0, .03, -.9, z - .1, .5); bx('aurplaster', X(6) + .6, X(6) + 1.3, 0, 2.2, -.7, -.55, .6); bx('aurplaster', X(0) - 1.3, X(0) - .6, 0, 2.2, -.7, -.55, .6);
+    for (let i = 0; i < 6; i++) for (let k = 0; k < 3; k++) lift(i, () => { const cx = X(i) - .2 + k * .06, ch = .05 + r() * .05; put(new THREE.CylinderGeometry(.018, .02, ch, 8), 'wax', cx, PL + SILL + ch / 2, -.06); put(new THREE.SphereGeometry(.01, 5, 4).scale(1, 2.3, 1), 'flame', cx, PL + SILL + ch + .02, -.06); }); }
   // primroses at the foot, and a rag tied on a hood moulding's stop of every niche but the Guest's
-  for (let i = 0; i < 6; i++) for (let j = 0; j < 5; j++) lift(i, () => { const px = X(i) + (r() - .5) * .9, pz = .22 + (r() - .5) * .3; put(new THREE.IcosahedronGeometry(.07, 0).scale(1, .45, 1), 'leaf', px, .03, pz);
+  if (!AU) for (let i = 0; i < 6; i++) for (let j = 0; j < 5; j++) lift(i, () => { const px = X(i) + (r() - .5) * .9, pz = .22 + (r() - .5) * .3; put(new THREE.IcosahedronGeometry(.07, 0).scale(1, .45, 1), 'leaf', px, .03, pz);
     for (let q = 0; q < 4; q++) put(new THREE.SphereGeometry(.018, 5, 4).scale(1, .5, 1), q % 3 ? 'prim' : 'bloomW', px + (r() - .5) * .1, .065, pz + (r() - .5) * .1); });
-  ORDER.forEach((g, i) => { if (g === 'guest') return; const len = .22 + r() * .16; lift(i, () => put(new THREE.PlaneGeometry(.04, len), 'rag' + (i % 5), X(i) + (i % 2 ? 1 : -1) * (RW / 2 + .06), PL + RSPRING - .1 - len / 2, .06, (r() - .5) * .5, 0, (r() - .5) * .2)); });
+  if (!AU) ORDER.forEach((g, i) => { if (g === 'guest') return; const len = .22 + r() * .16; lift(i, () => put(new THREE.PlaneGeometry(.04, len), 'rag' + (i % 5), X(i) + (i % 2 ? 1 : -1) * (RW / 2 + .06), PL + RSPRING - .1 - len / 2, .06, (r() - .5) * .5, 0, (r() - .5) * .2)); });
   const group = new THREE.Group(); group.name = 'row of seven'; let tris = 0;
   for (const [k, gs] of B) { const g = mergeGeometries(gs); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = 'row:' + k; m.castShadow = !['flame', 'water', 'sheet', 'pal'].includes(k); m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
-  return { group, tris: Math.round(tris), draws: group.children.length, niches, len: X(6) - X(0) + W, foot: { x0: X(0) - .6, x1: X(6) + .6, z0: -.58, z1: .14 } };
+  return { group, tris: Math.round(tris), draws: group.children.length, niches, len: X(6) - X(0) + W, foot: { x0: X(0) - .6, x1: X(6) + .6, z0: -.58, z1: .14 }, rail, island: isl,
+    ...(AU ? { piers: [[X(0) - 1.3, X(0) - .6], [X(6) + .6, X(6) + 1.3]].map(([a, b]) => ({ x0: a, x1: b, z0: -.7, z1: -.55 })), tithe: { x: .98, z: 1.6 }, reach: { z0: -.9, z1: 2.17 } } : {}) };
 }
   return { stream, hashKey, mergeByMaterial, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
     mk: { hall: markHall, lot: markLot, alehall: markAlehall, mats: markMats },

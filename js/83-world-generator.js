@@ -179,10 +179,15 @@
       // town's: 14 m a side under the blue dome, its bell tower on the right): about 18.8 by 21 m with its porch, steps and tower, too broad
       // for the nave's plot. It stands at the head of a street through the heart, astride it, the foot of its steps 14 m out (or 18, or 10)
       // and its door on the street's line, so the street runs up to its steps; a yard of 1.5 m round its sides and back. Cross street first.
+      // S1329 (OG-113, Michael's C on #439 and his B on #464, the row in the church's yard) — the yard on the church's left (its -x, the
+      // tower on its right) is 4.5 m where the plot fits so, and the six gods' row of seven in Aurenne's dress stands along it facing the
+      // nave, its middle by the cube's, a walk of 1.2 m inside its railing (lot.gods, kitGods); where 4.5 m will not fit, 1.5 m and no row.
       const AUC=window.OG_LOOK==='new'&&window.OG_KIT_TOWNS!==false&&typeof PKIT!=='undefined'&&nationOf(ni,nj).people==='aurennais';
-      if(types.includes('church')&&AUC){const B=PKIT.au.churchBox({rank:'town',w:14,tower:1}),D=+(B.z1-B.z0).toFixed(2),M=1.5;
-        outer:for(const t0 of [14,18,10])for(const [ux,uz] of dirs){const vx=-uz,vz=ux,P=frame(ux,uz,vx,vz,t0,t0+D+M,B.x0-M,B.x1+M);if(!fits(P,along(ux,uz)))continue; /* v is the church's own +x */
-          const lot=Object.assign(frame(ux,uz,vx,vz,t0,t0+D,B.x0,B.x1),{w:+(B.x1-B.x0).toFixed(2),d:D,row:0,street:null,k:-1,plot:'church',au:true});P.type='church';P.lot=lot;out.push(P);break outer;}}
+      if(types.includes('church')&&AUC){const B=PKIT.au.churchBox({rank:'town',w:14,tower:1}),D=+(B.z1-B.z0).toFixed(2),M=1.5,YG=4.5;
+        outer:for(const YL of [YG,M])for(const t0 of [14,18,10])for(const [ux,uz] of dirs){const vx=-uz,vz=ux,P=frame(ux,uz,vx,vz,t0,t0+D+M,B.x0-YL,B.x1+M);if(!fits(P,along(ux,uz)))continue; /* v is the church's own +x */
+          const lot=Object.assign(frame(ux,uz,vx,vz,t0,t0+D,B.x0,B.x1),{w:+(B.x1-B.x0).toFixed(2),d:D,row:0,street:null,k:-1,plot:'church',au:true});
+          if(YL===YG){const t=t0+B.z1,a=B.x0-1.35-2.17; /* the cube's middle (the church's z 0); the railing's outer face 1.35 m off the wall (1.2 off its solid) */ lot.gods={x:cx+ux*t+vx*a,z:cz+uz*t+vz*a,ry:Math.atan2(vx,vz),island:'aurenne'};}
+          P.type='church';P.lot=lot;out.push(P);break outer;}}
       else if(types.includes('church'))outer:for(const n of [3,2]){const L=PKIT.gl.churchLen(n),W=8.4,YARD=4.5,t0=Math.sqrt(14*14-2.8*2.8);
         for(const [ux,uz] of dirs)for(const sd of [1,-1]){const vx=-uz*sd,vz=ux*sd,P=frame(ux,uz,vx,vz,t0,t0+L+3,2.8,2.8+W+YARD);if(!fits(P,null))continue;
           const t=t0+L/2+.4,a=2.8+W+YARD-.58; /* S1232 — the row of seven: its niches' faces .58 in from the yard's edge, its middle .4 east of the nave's, facing the church */
@@ -457,11 +462,13 @@
       if(lot.gods)kitGods(lot.gods);}
     // S1232 (card F6, Michael's B on #464) — the six gods' row of seven in the church's yard (PKIT.gl.row): its plinths one solid and
     // each basin one, each niche on its own ground (a row on a slope steps down it), no far copy (it is 2.3 m high); S.gods keeps where it stands, its niches and its basins for the tests
-    function kitGods(at){const c=Math.cos(at.ry),s_=Math.sin(at.ry),w=(u,v)=>({x:at.x+u*c+v*s_,z:at.z-u*s_+v*c}),y=worldH(at.x,at.z)-.02,R=PKIT.gl.row({ground:[0,1,2,3,4,5,6].map(i=>{const q=w((i-3)*1.4,-.2);return worldH(q.x,q.z)-.02-y;})}),F=R.foot;
+    // S1329 — Aurenne's (at.island): its railing either side of the gate, its two piers and the tithe box solids too
+    function kitGods(at){const c=Math.cos(at.ry),s_=Math.sin(at.ry),w=(u,v)=>({x:at.x+u*c+v*s_,z:at.z-u*s_+v*c}),y=worldH(at.x,at.z)-.02,R=PKIT.gl.row({island:at.island,ground:[0,1,2,3,4,5,6].map(i=>{const q=w((i-3)*1.4,-.2);return worldH(q.x,q.z)-.02-y;})}),F=R.foot;
       R.group.position.set(at.x-cx,y,at.z-cz);R.group.rotation.y=at.ry;kitG.add(R.group);
-      {const m=w((F.x0+F.x1)/2,(F.z0+F.z1)/2);sol.push({cx:m.x,cz:m.z,rx:(F.x1-F.x0)/2,rz:(F.z1-F.z0)/2,c,s:s_,bt:'wall'});}
+      const box=(x0,x1,z0,z1)=>{const m=w((x0+x1)/2,(z0+z1)/2);sol.push({cx:m.x,cz:m.z,rx:(x1-x0)/2,rz:(z1-z0)/2,c,s:s_,bt:'wall'});};box(F.x0,F.x1,F.z0,F.z1);
+      if(R.rail){const L=R.rail;box(L.x0,L.gap-.52,L.z-L.t,L.z+L.t);box(L.gap+.52,L.x1,L.z-L.t,L.z+L.t);R.piers.forEach(q=>box(q.x0,q.x1,q.z0,q.z1));box(R.tithe.x-.2,R.tithe.x+.2,R.tithe.z-.15,R.tithe.z+.15);}
       const niches=R.niches.map(n=>{const b=n.basin&&w(n.basin[0],n.basin[2]),p=w(n.pray[0],n.pray[1]);if(b)sol.push({cx:b.x,cz:b.z,rx:.2,rz:.2,c,s:s_,bt:'wall'});return {god:n.god,dy:n.dy,x:w(n.x,0).x,z:w(n.x,0).z,basin:b&&{x:b.x,y:y+n.basin[1],z:b.z},pray:p};});
-      S.gods={x:at.x,z:at.z,ry:at.ry,y,len:R.len,tris:R.tris,draws:R.draws,niches};}
+      S.gods={x:at.x,z:at.z,ry:at.ry,y,len:R.len,tris:R.tris,draws:R.draws,niches,island:R.island,rail:R.rail};}
     // S1143 — the keep in its bawn (PKIT.gl.keep, measured and kept at the plan): the bawn on the plot, the tower its lot; the bawn's walls,
     // flankers, house and well are solids (the gateway open) that carry no house id, so the map draws them as walls; its far copy a box and
     // a roof prism for the tower and a box for each wall, flanker and the house
@@ -505,7 +512,8 @@
       const mx=new THREE.Matrix4().makeRotationY(lot.ry).setPosition(X,y,Z),lime=new THREE.Color(.9,.88,.82),blue=new THREE.Color(.25,.42,.62),part=(bw,bh,bd,bx,y0,bz,col)=>{const b=new THREE.BoxGeometry(bw,bh,bd).toNonIndexed();b.translate(bx,y0+bh/2,bz);kitLo.push([b,mx,col||lime]);};
       part(I.W+.6,I.top+1.2,I.D+.6,0,0,0);part(I.W+.6,I.pl+4.2+(I.W+.4)/(I.W>16?7:5)/2+.9+.85,4.4,0,0,I.D/2+2.2);part(2*I.R,I.y0+I.dh+I.R*1.12-I.top,2*I.R,0,I.top,0,blue); /* the cube, the porch, the drum and the dome */
       {const s=3.6,tx=I.W/2+s/2+.4,tz=I.D/2+4.4-s/2-.2,ty=B.towerTop-1.1-1.0-s*.44*1.15;part(s,ty,s,tx,0,tz);part(s*.88,B.towerTop-1.1-ty,s*.88,tx,ty,tz,blue);}
-      lot._kitDoor=+u.toFixed(3);lot._wallH=I.top;lot._storeys=1;lot.two=false;lot.kit.tris=C.tris;lot.kit.calls=C.draws;lot.kit.colour='lime';lot.kit.door=lot._kitDoor;lot.kit.r=Math.hypot(lot.w,lot.d)/2;}
+      lot._kitDoor=+u.toFixed(3);lot._wallH=I.top;lot._storeys=1;lot.two=false;lot.kit.tris=C.tris;lot.kit.calls=C.draws;lot.kit.colour='lime';lot.kit.door=lot._kitDoor;lot.kit.r=Math.hypot(lot.w,lot.d)/2;
+      if(lot.gods)kitGods(lot.gods);}
     // S1320 (card F9, Michael's 1 A and 2 B on #602) — Aurenne's tavern with its rooms upstairs (PKIT.au.tavern, o.rooms) on the quay: the
     // lot's front is the terrace's gate toward the town (o.gate, the tavern's +x side), the terrace and its vine out over the water
     // (F, the lot's -u), the house's back to the quay. Under the loggia and the terrace a quay wall of the terrace's stone down past the
