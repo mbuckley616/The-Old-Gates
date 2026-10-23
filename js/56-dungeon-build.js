@@ -3287,7 +3287,7 @@ function buildDungeon(portal){
       // Mimic chest: no aura at all. Gargoyle statue: very dim. Both restored to .7 on reveal/activation.
       if(d.disguise) el.intensity = 0;
       else if(d.dormant) el.intensity = 0.15;
-      ENEMIES.push({x:ec,z:er,hp:scaledHp,maxHp:scaledHp,mesh:g,hpFg,limbs,el,name:displayName,spd:scaledSpd,rankSpd:d.spd,size:d.scale||1, /* S635 — rankSpd places its chase (dungeonChaseSpeed); S629 — its body's disc (bodyR) is its size, as in the open world */
+      ENEMIES.push({id:fid,x:ec,z:er,hp:scaledHp,maxHp:scaledHp,mesh:g,hpFg,limbs,el,name:displayName,spd:scaledSpd,rankSpd:d.spd,size:d.scale||1, /* S635 — rankSpd places its chase (dungeonChaseSpeed); S629 — its body's disc (bodyR) is its size, as in the open world */
         dead:false,alert:false,atkCd:0,ph:Math.random()*Math.PI*2,path:[],pathT:0,
         _origCol:d.col,baseY:baseYe,isWraith:d.buildFn==='wraith',atkAnim:0,atkDir:{x:0,z:0},
         walkT:Math.random()*Math.PI*2,ranged:!!d.ranged,rangedCd:1.5+fr()*1.5,
@@ -3629,7 +3629,7 @@ function goToDungeon(portal){if(!portal.tutorial&&activeZoneId==='world'&&typeof
     showZoneName('\u2694 '+portal.name+' ['+_ds.label+']');
   }
   document.getElementById('fbtn').style.display='block';
-  buildDungeon(portal);scene=dScene; /* S1283 — the lair's master and its hoard, the Shuttle's room and the cloak's den are laid inside buildDungeon now, before it is scaled */
+  buildDungeon(portal);scene=dScene;if(portal._gone){try{dunApplyGone(portal._gone);}catch(e){console.warn('gone',e);}portal._gone=null;} /* S1335 — a save made inside: what was killed, opened and unlocked stays so (dunGone) */ /* S1283 — the lair's master and its hoard, the Shuttle's room and the cloak's den are laid inside buildDungeon now, before it is scaled */
   if(window._playerTorchLight){try{[owScene,forestScene,ironhavenScene].forEach(s=>{if(s)s.remove(window._playerTorchLight);});if(typeof WORLD!=='undefined'&&WORLD.scene)WORLD.scene.remove(window._playerTorchLight);dScene.add(window._playerTorchLight);}catch(e){}} // v80 — the torch comes with you
   startMusic('dungeon',portal.theme);
   if(portal.tutorial){

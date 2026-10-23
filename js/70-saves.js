@@ -378,7 +378,7 @@ function _buildSavePayload(){
     // v80 — WHERE you are, as a place that regenerates from its id: the world, a house (by id), or a dungeon (by seed and floor)
     where:(function(){try{
       if(currentHouse&&currentHouse.id)return {kind:'house',id:currentHouse.id,parent:currentHouse.parent&&currentHouse.parent.id||null,site:currentHouse.siteId||null,x:px,z:pz,yaw,jumpY,door:{x:currentHouse.exitX,z:currentHouse.exitZ,yaw:currentHouse.exitYaw||0}};
-      if(activeZoneId==='dungeon'&&currentPortal){const p=(typeof WORLD!=='undefined')&&WORLD.dungeonPos[currentPortal.seed];return {kind:'dungeon',seed:currentPortal.seed,floor:currentFloor||1,x:px,z:pz,yaw,jumpY,door:p?{x:p.x,z:p.z+3,yaw:0}:null};}
+      if(activeZoneId==='dungeon'&&currentPortal){const p=(typeof WORLD!=='undefined')&&WORLD.dungeonPos[currentPortal.seed];return {kind:'dungeon',seed:currentPortal.seed,floor:currentFloor||1,x:px,z:pz,yaw,jumpY,gone:dunGone(),door:p?{x:p.x,z:p.z+3,yaw:0}:null};}
       if(activeZoneId==='world')return {kind:'world',x:px,z:pz,yaw};
       if(typeof WORLD!=='undefined'&&WORLD.lastWorldPos)return Object.assign({kind:'world'},WORLD.lastWorldPos);
     }catch(e){}return null;})(),
