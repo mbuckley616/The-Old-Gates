@@ -3,6 +3,11 @@
 // its long side facing the nave, as shrines-church.html?place=side drew it: seven niches 1.4 m apart, the Guest's struck, a basin
 // before each of the six; its plinths one solid and each basin one; the kneeling place before each basin open ground.
 // Writes docs/prototypes/kit-gods-ingame.png (at the row) and kit-gods-yard.png (from the tower's end of the yard).
+// Session 1329 (OG-113, the same answers): an Aurennais town's, port's or city's Church of the Weaver has a yard of 4.5 m on its left (the
+// tower on its right), and the row stands along it in Aurenne's dress facing the nave: flat steles under cupolas, the Guest's bricked up,
+// an iron railing with its gate before the middle niche, a walk of 1.2 m between the railing and the church. The kneeling place before
+// each basin is open ground inside the railing, the gate is open, and the railing, its piers and the tithe box are solids.
+// Writes docs/prototypes/kit-gods-aurenne.png (through the gate) and kit-gods-aurenne-walk.png (along the walk).
 import fs from 'fs';
 import { boot, check } from './lib/game.mjs';
 
@@ -46,5 +51,32 @@ check(`the row is ${ok[0] && ok[0].tris} tris in ${ok[0] && ok[0].draws} materia
     CAM.position.copy(cam.position); WORLD.tick(1 / 60, performance.now()); sc.updateMatrixWorld(true); REN.render(sc, cam);
     const o = document.createElement('canvas'); o.width = cv.width; o.height = cv.height; o.getContext('2d').drawImage(cv, 0, 0); return o.toDataURL('image/png'); }, [id, view]);
   fs.writeFileSync(new URL('../docs/prototypes/' + name, import.meta.url), Buffer.from(url.split(',')[1], 'base64')); console.log(`  (picture: docs/prototypes/${name}, ${id})`); } }
+
+// Aurenne (Session 1329): every town, port and city of the first cells planned, then two settled for the solids and the pictures
+const AU = await page.evaluate(() => { anchoredPlaces(); const A = [...CELLS.values()].filter(c => c.type !== 'sea' && nationKeyOf(c.i, c.j) === 'aurenne').flatMap(c => c.sites).filter(s => ['town', 'port', 'city'].includes(s.kind) && s.pad > 0).slice(0, 14);
+  return A.map(site => { if (!WORLD.settle.get(site.id)) genSettlement(site); const S = WORLD.settle.get(site.id), P = (S.plots || []).find(p => p.type === 'church'), G = S.gods;
+    const ch = S.houses.find(h => h.type === 'church' && h.kit);
+    return { id: site.id, kind: site.kind, au: !!(ch && ch.kit.kind === 'aurchurch'), yard: P ? +(P.w - P.lot.w).toFixed(2) : null, gods: !!G, island: G && G.island, n: G ? G.niches.length : 0, basins: G ? G.niches.filter(n => n.basin).length : 0, guest: G && G.niches[6].god, tris: G && G.tris, draws: G && G.draws }; }); });
+const auOk = AU.filter(r => r.au && r.gods && r.island === 'aurenne');
+check(`every Aurennais town, port and city tried has the Church of the Weaver with the row in Aurenne's dress (${auOk.length} of ${AU.length})`, AU.length >= 8 && auOk.length === AU.length, AU.filter(r => !auOk.includes(r)));
+check(`its yard is 1.5 + 4.5 m wider than the church (${[...new Set(auOk.map(r => r.yard))].join(', ')} m); seven niches, six basins, the Guest's last`, auOk.every(r => Math.abs(r.yard - 6) < 1e-6 && r.n === 7 && r.basins === 6 && r.guest === 'guest'), auOk);
+check(`Aurenne's row is ${auOk[0] && auOk[0].tris} tris in ${auOk[0] && auOk[0].draws} materials (at most 15)`, auOk.every(r => r.draws <= 15 && r.tris > 10000 && r.tris < 40000), auOk.map(r => [r.tris, r.draws]));
+const auIds = [AU.find(r => r.kind === 'town'), AU.find(r => r.kind === 'port')].filter(Boolean).map(r => r.id);
+for (const id of auIds) { await g.settle(id);
+  const q = await page.evaluate(id => { const S = WORLD.settle.get(id), G = S.gods, fx = Math.sin(G.ry), fz = Math.cos(G.ry), ax = Math.cos(G.ry), az = -Math.sin(G.ry), at = (u, v) => [G.x + u * ax + v * fx, G.z + u * az + v * fz], so = (u, v) => WORLD.solidAt(...at(u, v)), L = G.rail;
+    const P = S.plots.find(p => p.type === 'church'), ch = S.houses.find(h => h.type === 'church' && h.kit), toNave = ((P.lot.x - G.x) * fx + (P.lot.z - G.z) * fz) / Math.hypot(P.lot.x - G.x, P.lot.z - G.z);
+    let walk = null; for (let d = 0; d < 4; d += .02) if (so(0, L.z + L.t + d)) { walk = +(d + .3).toFixed(2); break; }
+    const walkAlong = [-5, -2.5, 0, 2.5, 5].every(u => !so(u, L.z + L.t + .6));
+    return { walk, walkAlong, toNave: +toNave.toFixed(2), gate: [L.z + L.t + .4, L.z, L.z - L.t - .1, 1.1].map(v => so(0, v)), rail: [-3, -1.2, 1.2, 3].map(u => so(u, L.z)), tithe: so(.98, 1.6),
+      kneel: G.niches.filter(n => n.basin).map(n => [WORLD.solidAt(n.basin.x, n.basin.z), WORLD.solidAt(n.pray.x, n.pray.z)]), ground: G.niches.map(n => +(worldH(n.x, n.z) - G.y - n.dy).toFixed(3)), door: !WORLD.solidAt(ch.exitX, ch.exitZ) }; }, id);
+  check(`${id}: the row faces the nave (${q.toNave}), the walk inside its railing is ${q.walk} m to the church's solid and open its whole length; the church's door still clear`, q.toNave > .9 && q.walk >= 1.15 && q.walk < 1.6 && q.walkAlong && q.door, q);
+  check(`${id}: the gate is open from the walk to An Chloch's kneeling place, the railing either side of it and the tithe box are solid`, q.gate.every(v => !v) && q.rail.every(v => v) && q.tithe, q);
+  check(`${id}: every basin is solid and the place before it open; each niche on its own ground within 8 cm`, q.kneel.every(([b, k]) => b && !k) && q.ground.every(v => Math.abs(v) < .08), q); }
+// the pictures through the game's own frame (its land and its post), as kitislands' are: through the gate, and along the walk
+{ const id = auIds[0]; for (const [name, view] of [['kit-gods-aurenne.png', 'gate'], ['kit-gods-aurenne-walk.png', 'walk']]) {
+  await page.evaluate(([id, view]) => { forceTime(10); VM_SCENE.visible = false; const S = WORLD.settle.get(id), G = S.gods, fx = Math.sin(G.ry), fz = Math.cos(G.ry), ax = Math.cos(G.ry), az = -Math.sin(G.ry);
+    const [u, v, tu, tv] = view === 'gate' ? [-1.6, 3.3, .4, 0] : [-7.5, 2.75, 2, 1.6]; px = G.x + u * ax + v * fx; pz = G.z + u * az + v * fz; py = WORLD.worldH(px, pz) + 1.65;
+    const lx = G.x + tu * ax + tv * fx - px, lz = G.z + tu * az + tv * fz - pz; yaw = Math.atan2(-lx, -lz); pitch = view === 'gate' ? -.08 : 0; }, [id, view]);
+  await g.frames(6); await page.screenshot({ path: new URL('../docs/prototypes/' + name, import.meta.url).pathname }); console.log(`  (picture: docs/prototypes/${name}, ${id})`); } }
 check('no errors', g.errs.length === 0, g.errs);
 await g.close();
