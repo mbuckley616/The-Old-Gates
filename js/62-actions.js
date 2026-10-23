@@ -930,12 +930,22 @@ function drawMM(){
     for(let r=Math.max(0,pr-rev);r<=Math.min(dR-1,pr+rev);r++)
       for(let c=Math.max(0,pc-rev);c<=Math.min(dC-1,pc+rev);c++)
         if(Math.hypot(c-qx,r-qz)<=rev)mmRev[r][c]=1;
+    // S1334 (card F5, the sheet's drawMM) — in a gate a space is revealed whole the first time you step into it, and drawn as its
+    // outline: a pale edge wherever its open cells meet rock. Side rooms and their corridors still show only as far as you see.
+    const _gz=DZONE,_gf=_gz&&currentFloor===2&&_gz.two?1:0,_gg=_gz?_gz.grids[_gf]:null;
+    if(_gg){const z=pc>=0&&pr>=0&&pc<_gz.W&&pr<_gz.H?_gg[pr*_gz.W+pc]:-1;const seen=_gz.mmSeen||(_gz.mmSeen=[new Set(),new Set()]);
+      if(z>=0&&z<_gz.n&&!seen[_gf].has(z)){seen[_gf].add(z);for(let i=0;i<_gg.length;i++)if(_gg[i]===z)mmRev[(i/_gz.W)|0][i%_gz.W]=1;}}
     const curMap=activeMap();
     for(let r=0;r<dR;r++)for(let c=0;c<dC;c++){
       if(!mmRev[r][c]){mmC.fillStyle='#0a0908';mmC.fillRect(c*sc,r*sc,sc,sc);continue;}
       const mv=curMap[r][c];
       mmC.fillStyle=mv===0||mv===9?'#1e1a14':mv===8?'#050506':mv===5?'#8a4a10':mv===6?'#3a3020':mv===3?'#7a6840':'#4a4438'; /* S1293 — a chasm black, a pier as rock */
       mmC.fillRect(c*sc,r*sc,sc-.5,sc-.5);}
+    if(_gg){const W=_gz.W,H=_gz.H,open=(c,r)=>c>=0&&r>=0&&c<W&&r<H&&_gg[r*W+c]>=0;mmC.strokeStyle='#b8a070';mmC.lineWidth=1;mmC.beginPath();
+      for(let r=0;r<H;r++)for(let c=0;c<W;c++){const a=_gg[r*W+c];if(a<0||a>=_gz.n||!mmRev[r][c])continue;const x=c*sc,y=r*sc;
+        if(!open(c-1,r)){mmC.moveTo(x,y);mmC.lineTo(x,y+sc);}if(!open(c+1,r)){mmC.moveTo(x+sc,y);mmC.lineTo(x+sc,y+sc);}
+        if(!open(c,r-1)){mmC.moveTo(x,y);mmC.lineTo(x+sc,y);}if(!open(c,r+1)){mmC.moveTo(x,y+sc);mmC.lineTo(x+sc,y+sc);}}
+      mmC.stroke();}
     // S329 (Michael's A on #58) — Ashwort's pulse: for its 5 s, every undisguised foe on this floor within 20 units shows, seen or not
     // S364 — a disguised mimic is never drawn, seen or not: the map drew it as a foe on any revealed cell, beside no chest
     const _pulse=_hasBuff('minimapPulse');

@@ -76,7 +76,8 @@ console.log('armed', JSON.stringify(armed));
 check('with the starting weapon the Bandit dies too, and its blows still come only after a tell', armed.dead && armed.tells >= armed.blows, armed);
 // S1333 — QA's S1332: a Bandit killed while staggered stayed in `staggered[]` for the session (11 after ten fights). Twelve fights in,
 // none of them is left there.
-const stagLeft = await page.evaluate(() => ({ n: staggered.length, dead: staggered.filter(q => !q.e || q.e.dead).length }));
+// A fight that runs out of time ends with the Bandit set dead by hand, so one tick of the loop is run before the list is read.
+const stagLeft = await page.evaluate(() => { _drive(() => false, 1); return { n: staggered.length, dead: staggered.filter(q => !q.e || q.e.dead).length }; });
 check(`no dead foe is left in staggered[] after the fights (${stagLeft.dead} of ${stagLeft.n})`, stagLeft.dead === 0, stagLeft);
 check('no page errors', g.errs.length === 0, g.errs);
 await page.evaluate(() => { EQ.weapon = window._keepW; buildViewmodel(); });
