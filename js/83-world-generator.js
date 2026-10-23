@@ -195,6 +195,14 @@
       if(types.includes('castle')){const T=Math.sqrt((inner-3)**2-15*15);
         outer:for(const [ux,uz] of [[-ax,-az],[bx,bz],[-bx,-bz],[ax,az]])for(let t1=T;t1-25>=20;t1-=6){const vx=-uz,vz=ux,P=frame(ux,uz,vx,vz,t1-25,t1,-15,15);if(!fits(P,along(ux,uz)))continue; /* the main street runs into its gate */
           const lot=Object.assign(frame(ux,uz,vx,vz,t1-1-11,t1-1,-7,7),{w:14,d:11,row:0,street:null,k:-2,plot:'castle'});P.type='castle';P.lot=lot;out.push(P);break outer;}}
+      // S1339 (card F6, Michael's A on #411) — on the new look a Gatelands town's, port's or city's first inn is the kit's coaching inn, 17.6
+      // by 23 m with its gateway and its yard: it takes a plot beside the main street (else the cross street), its front 2.8 m off the street's
+      // line as a lot's is and a yard of 1 m round its sides and back, as far out toward the ring as fits, where the road comes in (the main
+      // road's end first, then the far end), and no nearer the heart than 10 m.
+      if(types.includes('inn')&&window.OG_LOOK==='new'&&window.OG_KIT_TOWNS!==false&&typeof PKIT!=='undefined'&&PKIT.gl&&PKIT.gl.coachInn&&nationOf(ni,nj).people==='gatelander'){const W=17.6,D=23,Y=1;
+        outer:for(const [sx,sz] of [[ax,az],[-ax,-az],[bx,bz],[-bx,-bz]])for(let a1=inner-4;a1-W-Y>=10;a1-=2)for(const sd of [1,-1]){const ux=-sz*sd,uz=sx*sd,P=frame(ux,uz,sx,sz,2.8,2.8+D+Y,a1-W-Y,a1+Y);
+          if(!fits(P,along(sx,sz))||!out.every(Q=>rectsApart(P,Q,1)))continue;
+          const lot=Object.assign(frame(ux,uz,sx,sz,2.8,2.8+D,a1-W,a1),{w:W,d:D,row:0,street:null,k:-3,plot:'inn'});P.type='inn';P.lot=lot;out.push(P);break outer;}}
       return out;}
     if(useGrid){
       const G=site.kind==='city'?38:site.kind==='village'?17:site.kind==='port'?22:34; // block size; villages/ports one row per side
@@ -422,6 +430,11 @@
           for(const sl of [0,.5,-.5,1,-1,2,-2,3,-3]){lot.x=x0+lot.tx*sh+lot.tz*sl;lot.z=z0+lot.tz*sh-lot.tx*sl;
             if(near(lot,lot.street)>=m0-1e-6&&use.every(u=>u===lot||apart(lot,u))&&offPlots(lot)){lot.kit={kind:'church',bays,side,w0,d0,slide:sl};return;}}}
         lot.w=w0;lot.d=d0;lot.x=x0;lot.z=z0;});
+      // S1339 (card F6, Michael's A on #411) — a town's or city's first inn on its plot (townPlots) is the kit's coaching inn (PKIT.gl.coachInn):
+      // the plot's lot is the whole, 17.6 by 23 m, so the yard is held while the houses after it grow (below); only then is the lot the inn's
+      // own front, 12.6 by 9 m (its solid, door and room), and kit.at the whole's middle, which kitCoachInn builds from.
+      const CI={iu:-2.5,iv:7,iw:12.6,id:9}; /* the inn's middle from the whole's, along its front and toward it; its own width and depth */
+      if(town)use.forEach((lot,i)=>{if(shopTypes[i]==='inn'&&lot.plot==='inn')lot.kit={kind:'coachinn',w0:lot.w,d0:lot.d};}); /* on its plot it fits by construction */
       // S1143 (card F6, Michael's B on #416) — a city's keep on its plot is the kit's tower house in its bawn (PKIT.gl.keep 'bawn'),
       // the bawn centred on the plot (with its flankers, 29.7 by 24.6 m in the plot's 30 by 25) and its gate toward the heart. The keep's
       // lot becomes the tower's own footprint (11 by 8.5 m in the bawn's back west corner), so its solid, its door (the tower's) and its
@@ -439,7 +452,11 @@
       // what it gains), so its door, id and resident stay where they were. Last, so no guild hall or inn loses a lot it took.
       if(town)use.forEach(lot=>{const k=lot.kit;if(!k||(k.kind!=='townhouse'&&k.kind!=='merchant'))return;const d0=lot.d,x0=lot.x,z0=lot.z;
         for(let d=8;d>d0+1e-6;d-=.25){const sh=(d0-d)/2;lot.d=d;lot.x=x0+lot.tx*sh;lot.z=z0+lot.tz*sh;if(clear(lot,lot.street)){k.d0=d0;return;}}
-        lot.d=d0;lot.x=x0;lot.z=z0;});}}
+        lot.d=d0;lot.x=x0;lot.z=z0;});
+      // S1339 — the coaching inn's lot becomes the inn's own footprint, its front where the whole's is (its solid, door and room are the
+      // inn's; kit.at is the whole's middle, which kitCoachInn builds from)
+      if(town)use.forEach(lot=>{const k=lot.kit;if(!k||k.kind!=='coachinn')return;k.at={x:lot.x,z:lot.z};
+        lot.x+=lot.tz*CI.iu+lot.tx*CI.iv;lot.z+=-lot.tx*CI.iu+lot.tz*CI.iv;lot.w=CI.iw;lot.d=CI.id;});}}
     // S1072 (card F6) — a widened lot's house is the kit's plan on its bays, at the lot's depth (PKIT.gl.lot keyed by the town and
     // the lot's id, so its colours, paint and lit windows are the same at every visit). The houses stand in one group at the town's
     // centre, merged at the end into one mesh per material (PKIT.mergeByMaterial), so a town of them is some twenty draws.
@@ -481,6 +498,22 @@
         if(h){const b=new THREE.BoxGeometry(u1-u0,h,v1-v0).toNonIndexed();b.translate(u,h/2,v);kitLo.push([b,mx,stone]);}}
       {const b=new THREE.BoxGeometry(T.w,T.walk,T.d).toNonIndexed();b.translate(k.tu,T.walk/2,k.tv);kitLo.push([b,mx,stone]);const rf=kitRoof(T.w/2,T.d/2,T.walk,T.walk+T.d/2*Math.tan(50*Math.PI/180));rf.translate(k.tu,0,k.tv);kitLo.push([rf,mx,new THREE.Color(.24,.26,.30)]);}
       lot._kitDoor=U.towerDoor.x;lot._wallH=T.walk;lot._storeys=4;lot.two=true;k.tris=U.tris;k.calls=U.calls;k.colour='stone';k.door=lot._kitDoor;}
+    // S1339 — the coaching inn (PKIT.gl.coachInn, as #411 A chose it), its render and paint the street's (PKIT.gl.lot keyed by the town and
+    // the lot, so it takes its turn in the street's colours), its lit windows keyed as a house's are. Built at the inn's centre and turned
+    // with the lot; solids for the gateway's wall either side of the arch, the yard's two walls, the trough and the stable range; its far
+    // copy a box and a roof prism for the inn and for the stables and a box for each wall; smoke from both gable stacks.
+    function kitCoachInn(lot){const k=lot.kit,L=PKIT.gl.lot(site.id,lot.n,{kind:'townhouse'}),C=PKIT.gl.coachInn({kind:'three',color:L.colour,paint:L.paint,r:PKIT.stream(`${site.id}:windows:${lot.n}`)}),U=C.userData,Z=U.size;
+      const y=worldH(lot.x,lot.z)-.06,c=Math.cos(lot.ry),s_=Math.sin(lot.ry);
+      C.position.set(lot.x-cx,y,lot.z-cz);C.rotation.y=lot.ry;C.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});kitG.add(C);
+      const I=Z.inn,S_=Z.stables,hw=I.w/2,hd=I.d/2,gt=.6,x1=Z.yard.x1+gt,zB=hd-Z.d,g=Z.gate,mx=new THREE.Matrix4().makeRotationY(lot.ry).setPosition(lot.x,y,lot.z),stone=new THREE.Color(.62,.60,.56);
+      const rects=[[hw,g.x-g.w/2,hd-gt,hd,4.8],[g.x+g.w/2,x1,hd-gt,hd,4.8],[x1-gt,x1,Z.yard.z1,hd-gt,2.6],[-hw,-hw+gt,Z.yard.z1,-hd,2.6],[x1-2.4,x1-gt,-hd-3.35,-hd-2.65,0],[-hw,x1,zB,zB+S_.d,0]]; /* the gateway's wall either side of the arch, the yard's east and west walls, the trough, the stables */
+      for(const [u0,u1,v0,v1,h] of rects){const u=(u0+u1)/2,v=(v0+v1)/2;sol.push({cx:lot.x+u*c+v*s_,cz:lot.z-u*s_+v*c,rx:(u1-u0)/2,rz:(v1-v0)/2,c,s:s_,bt:'wall'});
+        if(h){const b=new THREE.BoxGeometry(u1-u0,h,v1-v0).toNonIndexed();b.translate(u,h/2,v);kitLo.push([b,mx,stone]);}}
+      const wc=PKIT.gl.mats()['w:'+L.colour],slate=new THREE.Color(.24,.26,.30);
+      {const b=new THREE.BoxGeometry(I.w,I.eave,I.d).toNonIndexed();b.translate(0,I.eave/2,0);kitLo.push([b,mx,wc?wc.color.clone().multiplyScalar(.82):new THREE.Color(.8,.78,.72)],[kitRoof(hw+.2,hd+.25,I.eave,I.ridge),mx,slate]);}
+      {const su=(x1-hw)/2,sv=zB+S_.d/2,b=new THREE.BoxGeometry(S_.w,S_.eave,S_.d).toNonIndexed(),rf=kitRoof(S_.w/2+.25,S_.d/2+.3,S_.eave,S_.ridge);b.translate(su,S_.eave/2,sv);rf.translate(su,0,sv);kitLo.push([b,mx,stone],[rf,mx,slate]);}
+      for(const gx of [-1,1]){const x=gx*(hw-.36);S.chimneys.push({x:lot.x+x*c,y:y+I.ridge+.85,z:lot.z-x*s_,t:'inn',k:0});}
+      lot._kitDoor=0;lot._wallH=I.eave;lot._storeys=3;lot.two=true;k.tris=U.tris;k.calls=U.calls;k.colour=L.colour;k.paint=L.paint;k.door=0;}
     // S1286 — a Markish hall (PKIT.mk.hall, its options PKIT.mk.lot's as fitted above; its lit windows keyed by the town and the lot as a
     // house's are): set back on its lot by its steps, the door at the steps' foot on the gable's middle; its far copy a box for the footing
     // and walls and a prism for the roof, its ridge along the hall; smoke from the chimney or the louver
@@ -535,6 +568,7 @@
       if(lot.kit.kind==='aurhouse'){kitAurHouse(lot);return;}
       if(lot.kit.kind==='aurchurch'){kitAurChurch(lot);return;}
       if(lot.kit.kind==='aurtavern'){kitAurTavern(lot);return;}
+      if(lot.kit.kind==='coachinn'){kitCoachInn(lot);return;}
       const L=lot.kit.kind==='guildhall'?kitHall(lot):PKIT.gl.lot(site.id,lot.n,{kind:lot.kit.kind,bays:lot.kit.bays,d:lot.d,trade:KIT_TRADE[type]});const b=PKIT.gl.building(L.plan),U=b.userData;
       b.position.set(lot.x-cx,worldH(lot.x,lot.z)-.06,lot.z-cz);b.rotation.y=lot.ry;b.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});kitG.add(b);
       {const sz=U.size,th=L.plan.roof.kind==='thatch',wc=PKIT.gl.mats()['w:'+(L.colour==='stone'?'lime':L.colour)],box=new THREE.BoxGeometry(sz.w,sz.eave,sz.d).toNonIndexed(),mx=new THREE.Matrix4(); /* S1073 — its far copy: the walls a box and the roof a prism, in the wall's and the roof's colours */

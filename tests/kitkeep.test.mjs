@@ -4,6 +4,9 @@
 // the same twice, with the bawn's measures as drawn (26 by 22 m, walls 0.9 m and 3.6 m, a gateway of 3 by 3.4 m) and its door before
 // the gateway.
 // The new look only since 1.0 was frozen (18 Oct 2026): the old look’s check is gone.
+// Session 1339: the town's coaching inn in the game's kit (Michael's A on DECISION #411), gatelandsCoachInn copied from pieces.js the same
+// way: three storeys builds to the prototype's 9,734 triangles in 28 draws and its own vertices (the prototype's hash, recorded from
+// pieces.js by Session 1339's run), the same twice, its measures as drawn (12.6 by 9 m, the whole 17.6 by 23, the gateway 3.2 by 3.9 m).
 import { boot, check } from './lib/game.mjs';
 const REC = { tower: [15978, 15], bawn: [18346, 32], hall: [20840, 26] };
 const g = await boot({ look: 'new' }); const { page } = g;
@@ -17,5 +20,9 @@ const B = K.bawn;
 check(`the bawn is 26 by 22 m, its walls 0.9 m thick and 3.6 m high, its gateway 3 by 3.4 m, ${B.foot[0]} by ${B.foot[1]} m with its flankers, the tower ${B.top} m to its pots`,
   B.size.bawn.w === 26 && B.size.bawn.d === 22 && B.size.bawn.t === .9 && B.size.bawn.h === 3.6 && B.size.gate.w === 3 && B.size.gate.h === 3.4 && B.foot[0] < 30 && B.foot[1] < 25 && Math.abs(B.top - 20.36) < .05, B.size);
 check(`its door is before the gateway, on the front (${B.door.join(', ')})`, Math.abs(B.door[0] - (B.size.gate.x + .9)) < .01 && B.door[2] > B.size.bawn.d / 2, B.door);
+const CI = await page.evaluate(() => { const hash = b => { let h = 0; b.traverse(m => { if (!m.isMesh) return; const a = m.geometry.attributes.position.array; for (let i = 0; i < a.length; i += 3) h = (h * 31 + Math.round(a[i] * 1e4)) | 0; }); return h; };
+  const a = PKIT.gl.coachInn({ kind: 'three' }), b = PKIT.gl.coachInn({ kind: 'three' }), u = a.userData; return { tris: u.tris, calls: u.calls, hash: hash(a), same: hash(a) === hash(b), size: u.size, door: [u.door.x, u.door.z] }; });
+check(`the coaching inn of three storeys builds to the prototype's ${CI.tris.toLocaleString()} triangles in ${CI.calls} draws and its vertices (${CI.hash}), the same twice`, CI.tris === 9734 && CI.calls === 28 && CI.hash === -1319148015 && CI.same, CI);
+check(`it is ${CI.size.inn.w} by ${CI.size.inn.d} m to a ridge of ${CI.size.inn.ridge} m, ${CI.size.w} by ${CI.size.d} m with its yard and stables, its gateway ${CI.size.gate.w} by ${CI.size.gate.h} m`, CI.size.inn.w === 12.6 && CI.size.inn.d === 9 && CI.size.w === 17.6 && CI.size.d === 23 && CI.size.gate.w === 3.2 && CI.size.gate.h === 3.9 && Math.abs(CI.size.inn.ridge - 11.94) < .01, CI.size);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
