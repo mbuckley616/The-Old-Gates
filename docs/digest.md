@@ -339,3 +339,15 @@ Written by the producer once a day, after 12:00 UTC. Newest last.
 **Blocked.** #527 (the bundle check) waits on QA to merge main into it. The main quest stops at Q2 on main (#613).
 
 **Roadmap.** 257 of 316 stories done (250 yesterday). The new look is 6 of 15 cards done (F5 this week). No deep-work card is queued: F14 comes last.
+
+## 23 Oct 2026
+
+**Waiting on you.** Nothing. Yesterday's four decisions are answered and written: #602 and #613 (A), the moonless night (#629, C), and the coaching inn beside the main street toward the ring (#642, A). No PR is held.
+
+**Landed on main since yesterday.** Systems to 1340: a gate's foes wait in pockets, a gate's condition by seed with gone spans and floating stones, its minimap and saves (F5's follow-ups), and F12's six great gates with the corruption level 0 to 6 (#622, #628, #635, #638, #645); twelve fixed suites off the skip list, your tap (#623). Bodies to 1337: the Spider, the Sand Scorpion and the Bog Crawler on the creature kit; the hair and the raised hood made cheap (#620, #624, #627, #634, #639). Look to 1339: Aurenne's tavern and house door, the cliff bridge, the Church of the Weaver inside with its six gods, the coaching inn on the kit (#616, #625, #631, #637, #643). QA's budget suites and four fixes (#606, #617). The Spire Held's words (#640), quest drafts, the hours concept. Build s857.
+
+**Under way.** Nothing ran overnight. Systems' queue is thin: magic B's first session, and F5's fifth waits on a great gate in the world.
+
+**Blocked.** #527 (the bundle check) still waits on QA's fresh branch. QA's #636 has no CI on its head.
+
+**Roadmap.** 258 of 318 stories done (257 yesterday). The new look is 6 of 16 cards done; F12 under way. No deep-work card is queued: F14 comes last.
