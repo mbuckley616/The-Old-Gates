@@ -395,6 +395,16 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
     const wither = C => { K.pose(C, 0); C.rig.updateMatrixWorld(true); const p = new C.rig.position.constructor(); let y = 0; for (const L of C.B.legs) { L.bones[0].getWorldPosition(p); y = Math.max(y, p.y); } return y; };
     const sp = K.PLANS[k].parts.find(p => p[0] === 'spine')[1]; return { k, ok: !!K.PLANS[k], src: K.PLANS[k].src, wither: +wither(C).toFixed(3), wolf: +wither(W).toFixed(3), chest: sp.r[2], loin: sp.r[1] }; }); });
   check(`the hounds: ${hounds.map(c => c.k).join(', ')} from OG-065, standing ${hounds.map(c => (c.wither * 100).toFixed(0)).join(', ')} cm at the top of the legs against the grey wolf's ${(hounds[0]?.wolf * 100).toFixed(0)}, the chest deeper than the loin`, hounds.length === 1 && hounds.every(c => c.ok && c.src.includes('OG-065') && c.wither > c.wolf * 1.08 && c.chest > c.loin * 1.4), hounds);
+  // the Bog Crawler (Session 1336; Michael, 28 Sep: B, a giant water bug, six-legged): flat and oval, walking on four legs, the front pair
+  // raptorial arms: the femur raised forward, the tibia reaching on forward and down from the knee to a hook ahead of the head (the old body's Λ)
+  const bug = await page.evaluate(async () => { const K = await import('./creatures.js'), THREE = await import('three'); return (K.CRAWLERS || []).map(k => { const C = K.build(K.genome(k, k + ':check')); K.pose(C, 0); C.root.updateMatrixWorld(true);
+    const b = new THREE.Box3().setFromObject(C.meshes[0]), sz = b.getSize(new THREE.Vector3()), at = n => C.B.by[n].p, A = C.B.arms.find(a => a.side > 0), H = C.B.headFrame, head = H.base.clone().addScaledVector(H.dir, H.len);
+    const fem = at(A.names[1]).clone().sub(at(A.names[0])), tib = at(A.names[2]).clone().sub(at(A.names[1]));
+    const hooks = C.B.bits.filter(x => x.bone === A.names[3]).length;
+    return { k, src: K.PLANS[k].src, legs: C.B.legs.length, arms: C.B.arms.length, len: +sz.z.toFixed(2), wide: +sz.x.toFixed(2), flat: +(sz.y / sz.x).toFixed(2),
+      kneeUp: +fem.y.toFixed(3), kneeFwd: +fem.z.toFixed(3), tibDown: +tib.y.toFixed(3), tibFwd: +tib.z.toFixed(3), handAhead: +(at(A.names[3]).z - head.z).toFixed(3), hooks }; }); });
+  for (const c of bug) check(`${c.k}: six limbs (${c.legs} legs and ${c.arms} raptorial arms), ${c.len} m long and ${c.wide} m across with its legs, the body flat; the femur raised ${(c.kneeUp * 100).toFixed(0)} cm and ${(c.kneeFwd * 100).toFixed(0)} forward, the tibia ${(-c.tibDown * 100).toFixed(0)} cm down and ${(c.tibFwd * 100).toFixed(0)} on, its hook ${(c.handAhead * 100).toFixed(0)} cm ahead of the head`,
+    /Michael, 28 Sep: B/.test(c.src) && c.legs === 4 && c.arms === 2 && c.kneeUp > .1 && c.kneeFwd > .08 && c.tibDown < -.05 && c.tibFwd > .05 && c.handAhead > 0 && c.hooks >= 1 && c.len > .8 && c.len < 1.6, c);
   // sitting (Session 1114): the hound sits by Garrick's chair. The forefeet stay where it stands, the body is pitched nose-up until
   // the haunch is on the ground (the lowest of the spine's, thighs' and shins' flesh 5 mm off it), the hind toes are down ahead of the hips,
   // nothing but the toe pads is under the ground (the same pads as standing), nothing else deeper than it stands (a snowshoe paw sinks a little), and the head is above the withers
