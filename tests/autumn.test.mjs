@@ -18,9 +18,15 @@ const r = await page.evaluate(() => {
   let f = null; for (let j = 0; j < GRID && !f; j++) for (let i = 0; i < GRID && !f; i++) { let c; try { c = WORLD.getCell(i, j); } catch (e) { continue; } if (c && c.regions) for (const rg of c.regions) if (rg.biome === 'autumn' && !f) f = rg; }
   const grp = new THREE.Group(); scatterChunk(Math.floor(f.x / CHUNK), Math.floor(f.z / CHUNK), grp, []);
   const world = {}; const ic = new THREE.Color();
-  grp.children.forEach(o => { if (!o.isInstancedMesh || !o.userData.scatter) return; const k = o.userData.scatter; const L = leaf(o.geometry); let warm = 0;
+  // S1321: on the new look a leafy kind is the land's leaf cards (landTrees, Session 1182): the vertex colour is only the crown's grey
+  // shading and the leaves' colour is in the card texture (landLeafTex), so the leaf colour is that texture's mean over its leaves
+  // (opaque past the material's alphaTest, the bark patch in the corner left out); the old look's crowns keep their vertex colour
+  const texLeaf = o => { const m = o.material, im = m.map.image, d = im.getContext('2d').getImageData(0, 0, im.width, im.height).data; let R = 0, G = 0, B = 0, n = 0;
+    for (let y = 0; y < im.height; y++) for (let x = 0; x < im.width; x++) { if (x >= 228 && y >= 228) continue; const i = (y * im.width + x) * 4; if (d[i + 3] / 255 <= m.alphaTest) continue; R += d[i]; G += d[i + 1]; B += d[i + 2]; n++; }
+    return [R / n / 255, G / n / 255, B / n / 255]; };
+  grp.children.forEach(o => { if (!o.isInstancedMesh || !o.userData.scatter) return; const k = o.userData.scatter; const L = o.userData.landTree ? texLeaf(o) : leaf(o.geometry); let warm = 0;
     for (let i = 0; i < o.count; i++) { o.getColorAt(i, ic); if (hue([L[0] * ic.r, L[1] * ic.g, L[2] * ic.b]) < .2) warm++; }
-    world[k] = { n: o.count, warm }; });
+    world[k] = { n: o.count, warm, leaf: hue(L), cards: !!o.userData.landTree }; });
   return { protos, world, mix: WORLD.treeMix().autumn, at: [Math.round(f.x), Math.round(f.z)] };
 });
 console.log(JSON.stringify(r));
