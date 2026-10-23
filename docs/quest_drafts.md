@@ -2,7 +2,7 @@
 
 These are the quest writer's drafts. None of them is canon until Michael promotes it into `quest_writing.md`, and none is a spec until it is approved. Each draft gives the quest's shape, every line verbatim with its speaker and people, and a note on what in the code would carry it.
 
-Calls read to: 2026-10-16T17:51:09.360Z (run 25, 22 Oct: no new calls on the page; DECISION #588's A asked for *The Markish Bench*, below)
+Calls read to: 2026-10-16T17:51:09.360Z (run 26, 23 Oct: no new calls on the page)
 
 ---
 
@@ -503,7 +503,7 @@ The Compact's ninth *after* line (grep `Cold-eyes always find their own`) reads:
 
 ## The Spire Held — a night on the roof at Caer Slige
 
-*Approved by Michael, 14 Oct 2026.* *The rule is on main (the systems builder's night watch, Session 1112, with §4's narration word for word); the topics, the night sergeant and Rowe are built once FREEZE #441 lifts.* *Drafted 1 Oct 2026. Backlog A, the faction line's last owed item: "the spire to hold after the League's finale". The League's ninth service now ends with the Captain of Caer Slige saying "the spire's yours to hold. Something up there pays my sergeants in light", and Rowe, spared, saying "You hold it, and I'll watch what comes down off it at night." Nothing in the game yet lets the player do either. This draft is what holding it means.*
+*Approved by Michael, 14 Oct 2026.* *The rule is on main (the systems builder's night watch, Session 1112, with §4's narration word for word). Built in part, Session 1338 (PR #640): §1 and §6 (the Captain's* The spire?*, the turn-in), §7 (Rowe at the seat, the rumours). The rumour for "any town of the Mark" is given to the Mark's other towns, and the seat keeps its own. Next slice: the night sergeant (§2), the roof and the stone (§3), Rowe's morning (§5).* *Drafted 1 Oct 2026. Backlog A, the faction line's last owed item: "the spire to hold after the League's finale". The League's ninth service now ends with the Captain of Caer Slige saying "the spire's yours to hold. Something up there pays my sergeants in light", and Rowe, spared, saying "You hold it, and I'll watch what comes down off it at night." Nothing in the game yet lets the player do either. This draft is what holding it means.*
 
 ### What the canon fixes, and where it is silent
 
@@ -4615,3 +4615,186 @@ The Waylamp's bearer and the feast day keep their own lines before the offer, as
 ### What carries it
 
 `js/86-world-crime.js`: `INN_BENCH_LINES.markman` (the ten keys of `INN_ROOM_LINES`), `INN_BENCH_GREET`, `innBench(house)` (reads `house.kit.alehall`), `innBenchName(k)`; `innTopics`, `innRooms` (6), `innRoomName`, `bedInteract` and `bedPrompt` switch on it. `worldState.rented.bench` (the rental, already saved whole) carries the lapse line in `87-world-quests.js`. `83-world-generator.js` gives an alehall's keeper the greeting. The look builder marks the inn: `alehall:true` on its `lot.kit` at planning, and the bench's six beds `owner:'inn'`, `room` 0–5 in the order of the table (left then right, door to counter). `tests/innvoice` proves the words.
+
+---
+
+## Festivals on the Calendar, II — the Blaze, the Strait Fair and First Snow
+
+*Unapproved.* *Drafted 23 Oct 2026. Backlog L9, *Festivals on the calendar* (OG-107), the second run: the Mark's three, placed on the calendar by the first run (21 Oct, unapproved) and left for this one. The frame is the first run's exactly: no quest, a greeting by people, the square filled, a *Due* line, one small act a year per town, remembered as `worldState.festivals[<key>:<site.id>]=year`. Aurenne's three are the third run.*
+
+### What the canon fixes, and where it is silent
+
+- *The Mark* (§1.2): cold; timber halls and longhouses; *no king and a scorn for the word*; captains over garrisons, reeves over towns; office by acclamation, disputes by duel. **Pride:** toughness, an oath kept, a quarrel finished by noon. **Contempt:** priests, ledgers, soft hands, anyone who hires a guard instead of being one. So the Mark's festivals are kept by the halls, the reeves and the captains, and **no priest leads any of them**. The weekday each falls on is only the calendar's name for it. Nobody in the Mark says the festival belongs to a god.
+- *Markish speech* (§2): short sentences, *aye*, nicknames, oaths on iron and blood, no honorifics. *Reeve* and *Captain* are offices, and the Mark uses them as words for jobs, not as titles to bow to.
+- *The duel* (§1.2, §12a): duels are legal in the Mark, and *an occupied League town loses its duels*. The Strait Fair's ring follows the same rule. While a town is occupied it holds no ring, and its fair is a quiet one.
+- *§10a*: the surface is pleasant. The Blaze is warm, the Fair loud, First Snow quiet and good.
+- *Silent: the lights.* The concept sheet puts First Snow *under the aurora*. The canon says nothing of the northern sky, and the game draws no aurora. This draft says *the lights* where a person speaks of them and makes nothing turn on them. If the look builder gives the Mark's winter sky its lights, the words are ready. If not, the words still hold.
+- *Silent: what the Mark believes.* The canon gives the gods to the Gatelands' old faith and the Church to Aurenne, and gives the Mark only its contempt for priests. This draft takes the plainer thing: a Markman swears on iron and blood, keeps a fire and an oath, and has no use for a god's day.
+
+### 1. The three, on the calendar (the first run's table, unchanged)
+
+| Festival | Date | Weekday | Custom |
+|---|---|---|---|
+| **The Blaze** | Longnight 15 | Hearthday | midwinter: one fire on the square, and every hall's hearth lit again from it |
+| **The Strait Fair** | Highsun 4 | Seaday | boat races off the quay, a ring on the square from first light to noon, quarrels ended and oaths sworn before the reeve |
+| **First Snow** | the first night that snow lies in the town in Culling or Longnight; else Culling 28 | — | a night outside: the town sits up round fires on the square until first light, and nobody sleeps under a roof |
+
+**The names stand.** *The Blaze* is the concept sheet's *Midwinter Blaze* cut short, as a Markman would cut it. *The Strait Fair* is held in every town of the Mark, not only on the strait. The strait is where the first one was, and the Mark keeps the name. A town inland races boats on its lake or its river. A town with no water races on foot, and says so.
+
+### 2. The Blaze — Longnight 15, a Hearthday
+
+**The custom.** At dusk (17:00) the reeve lights one fire on the square. Every hall in the town has let its hearth go out that morning. Each house sends someone with a brand to carry fire home from the square. The fire is fed all night by whoever walks past. A log from every house is the rule, and a house that sends no log is talked about until spring. At first light the fire is let die.
+
+**Due line:** *The Blaze — every hearth put out, and lit again from one fire on the square.*
+
+**Greetings** (by the speaker's people):
+
+**Markman:**
+> "Blaze tonight. Hearth's out till dusk, so don't ask for a hot meal. Bring a log to the square. Everyone does."
+
+**Gatelander:**
+> "It's their Blaze tonight. They let every fire in the town go out, and then they wonder why it's cold. A fire you share burns longer, they say here, and I'll not argue with a Markman about fire."
+
+**Aurennais:**
+> "It is the Blaze, Master, the Mark's midwinter. Every hearth is extinguished and relit from a single fire. A fine principle of common supply, I think. They would not thank me for calling it that."
+
+**Old Blood:**
+> "Tine Chnámh. The bone-fire. It was a fire for the dead, once. They burn wood in it now. They feel warm, so they do not ask."
+
+**The reeve** (the town's lord, a Markman), on the day, before their topics:
+> "Blaze. No business till tomorrow. Bring a log or stand back from the fire."
+
+**The inn, by day** (the keeper's greeting until 17:00; the Mark's inn is the alehall):
+> "Hearth's out. Blaze. Cold porridge or nothing till dusk."
+
+**The act: a log on the fire.** On the square from 17:00 to first light, within 4 of the fire: *Press 'E' to put a log on the fire.* Once a year per town (`'blaze:'+site.id`). It costs nothing. The log:
+
+> *You put a log on the fire. It catches. Someone you don't know claps you once on the shoulder and moves off.*
+
+A Markman of that town, the next time they greet the player that night (once):
+> "Saw your log go on. Good. A stranger's log burns same as ours."
+
+**First light** (6:00, once, on the square):
+> *The fire on the square is let die. Every chimney in the town is smoking.*
+
+### 3. The Strait Fair — Highsun 4, a Seaday
+
+**The custom.** At first light the boats race. In a port they race out round the point and back. Inland they race on the town's water, and on foot round the walls where there is none. From first light to noon a ring of rope stands on the square, and any quarrel in the town may be finished in it, by yield. At noon the reeve stands at the ring and hears oaths. A debt is sworn paid, a feud is sworn ended, and a Sworn swears to the League for the year. By noon it is done, because a Markish quarrel is finished by noon (§1.2).
+
+**Due line:** *The Strait Fair — boats at first light, the ring till noon, and oaths before the reeve.*
+
+**Greetings:**
+
+**Markman:**
+> "Fair day. Boats at first light, ring till noon. You've a quarrel, the ring's there. You've none, watch."
+
+**Gatelander:**
+> "It's the Strait Fair. They settle a year's grudges in a morning, which is quicker than we manage, and they're friends by noon, which is quicker again. I've seen worse ways. Not many louder."
+
+**Aurennais:**
+> "It is the Strait Fair, Master. Disputes are resolved in a roped ring by noon, and I am told the resolutions hold better than most contracts. I have stopped finding that a comfort."
+
+**Old Blood:**
+> "Aonach an Chaolais. The strait's fair. The rope was a line of stones, once. They fought inside it and nobody died. The rope remembers the half of that they kept."
+
+**A trader of the town** (any shopkeeper in a Markish town, the shop's greeting that day; Markman):
+> "Fair prices. Same as yesterday's, said louder. Buy before the boats come in. After, everyone's drunk or arguing."
+
+**The ring.** From first light to noon, townsfolk stand round the rope (S554's square rule). The player can watch and not enter. A ring the player can fight in is the yard's machinery (`DUEL`, the Duel at Caer Slige) set up in every town, and that is the systems builder's (owed, below). Standing by the rope:
+
+> *In the ring two men are ending a quarrel about a boundary wall. One of them yields. They shake hands and go and get a drink.*
+
+The fair's man at the rope (a townsperson of the town, role *Ringkeeper*, generated from the town's people; Markman in a Markish town but for a port's blend). Greeting:
+> "Rope's up till noon. Fight's to a yield, and nobody draws steel. You want in, find somebody who wants you."
+
+Topic: **Can I fight?**
+> "Not till somebody's got a quarrel with you. Give it a year."
+
+**The act: a wager on the boats.** At first light, from 5:00 to 7:00, a Markman at the quay (in a port), or the ringkeeper (inland), takes a bet on the race. Topic: **A bet on the boats** (2 gold; once a year per town, `'straitfair:'+site.id`). The choice:
+
+**Which boat?**
+- *The black one.*
+- *The one with the old man at the oar.*
+- *Whichever's last off the beach.*
+
+> "Two on it. Aye. You'll hear at the quay by eight."
+
+The outcome comes from a seeded stream by festival, site and year, so it is the same on any machine. A win pays 6 gold. Asked again after 8:00:
+
+- Won:
+  > "Yours came in first. Six. Don't spend it all on the ring."
+- Lost:
+  > "Yours came in third. Rowed like a man with a tithe-man on his back. Two's gone."
+
+**Noon, the oaths** (12:00, once, on the square):
+> *At noon the reeve stands at the rope. Two neighbours swear a boundary settled, a lad swears to the League for the year, and the rope comes down. The fair is over before dinner.*
+
+**An occupied town** (`TS(site).flags.occupied`): no ring, no race. The greeting, Markman:
+> "No fair this year. No ring while their flag's up. We'll hold two next year."
+
+### 4. First Snow — the first night snow lies, in Culling or Longnight
+
+**The custom.** The first night of the winter that snow lies in the town, nobody sleeps under a roof. At dusk the halls carry their benches out. Fires are laid on the square, and the town sits up round them till first light, in furs, telling the year's dead by their nicknames and nothing else. A child born that year is carried round the fires once. If the winter holds off, the town keeps it on Culling 28 anyway and sits out in the cold and the mud, which is talked about as a worse year.
+
+**When.** The first night (dusk, 18:00) in Culling or Longnight that the town's ground lies white (`WX.cover` over the town's cell at dusk, high enough that the snow shows). Else Culling 28. Once a winter per town. The date is unknown until it comes, so the *Due* line says only *the first night the snow lies* until then.
+
+**Due line:** *First Snow — the first night snow lies in Culling or Longnight, the town sits up outside till first light.*
+
+**Greetings** (from the first snowfall's dusk until first light):
+
+**Markman:**
+> "Snow's lying. Nobody sleeps inside tonight. Fires on the square. Bring furs."
+
+**Gatelander:**
+> "First Snow, they call it. The whole town sits out in it all night to prove they can. I said I'd sit an hour. That was three winters ago, and I've sat every one since."
+
+**Aurennais:**
+> "It is First Snow, Master. The town spends the night outdoors, by agreement, in the cold. I have attended twice. I cannot account for it, and I would not miss it."
+
+**Old Blood:**
+> "An Chéad Sneachta. The first snow. They sit out under the sky because the old ones did. The old ones were watching the sky for something. These ones are only cold, and glad of each other."
+
+**The inn** (the alehall's keeper, that night; Markman):
+> "No places tonight. Benches are on the square. Go and sit on one."
+
+*A bed for the night?* is not offered that night in a Markish town. A rental that is already running holds, and the player can still sleep in the place they took. The keeper says, if asked:
+> "Your place is yours. Nobody'll stop you sleeping in it. Everyone'll know, mind."
+
+**The act: sit up till first light.** On the square after dusk, within 4 of a fire: *Press 'E' to sit with them till first light.* It is the Wait to 6:00, sitting, with no prompt between. Once a winter per town (`'firstsnow:'+site.id`). At first light, the log:
+
+> *You sat the night out with them. Somebody told the year's dead by their nicknames. Nobody asked yours.*
+
+A Markman of that town, the next day (once), if the player sat up:
+> "You sat it out. Aye. That's a winter. You're from here now, near enough."
+
+If *the lights* show that night (a hook only, see the canon note):
+> *Over the square the sky moves, green and slow. Nobody looks up for long. It's rude to stare at it, someone says.*
+
+### 5. In the Gatelands and in Aurenne
+
+On the Mark's three, a Markman in a town of another island (a port's blend, a garrison) greets as follows, once that day:
+
+- The Blaze: "Blaze at home tonight. Here they keep their fires lit like nothing's happening."
+- The Strait Fair: "Fair day at home. Nobody here's got a rope up. They'll all be arguing till winter."
+- First Snow: no line. First Snow is the Mark's own snow, and a Markman abroad does not know the night has come.
+
+### What in the code would carry it
+
+- `60-shop.js`, the first run's `FESTIVALS`: fills the Mark's three entries (`blaze`, `straitfair`, `firstsnow`) with `greet` for the four peoples and `due`. First Snow carries `date:'snow'` instead of `month`/`dom`. `festivalOn(at,nation)` reads it from the town: the first day in Culling or Longnight that `WX.cover` over the site's cell reached its show level at 18:00, saved per site per winter (`worldState.festivals['firstsnow-day:'+site.id]=<year>:<day>`), so the night is the same after a load. A world key, on `_applyLoadData`'s list with the first run's `festivals`.
+- `feastGreeting(def)` as the first run gives it, reading the Mark's three. The reeve's Blaze line goes before `lordTopics` on the day. The alehall keeper's two lines go in `INN_BENCH_LINES` (`86-world-crime.js`, `innTopics`) as day keys (`blazeDay`, `firstSnow`, `firstSnowMine`), with the rental's offer withheld on First Snow.
+- The acts: the log at the square's fire (the look builder's fire: a bonfire at the plaza's centre from 17:00 to 6:00 on the Blaze, and two or three smaller ones on First Snow); the wager (a topic on a quay townsperson or the ringkeeper, its outcome `seededRng('straitfair',site.id+':'+year)`, three choices with one win, pay 6); the night sat up (the Wait's own machinery, `_canWait` and the rest slip, to 6:00, from the fire's prompt). Each writes `worldState.festivals[<key>:<site.id>]=year`.
+- The ring: a roped square on the plaza from 5:00 to 12:00 with two townsfolk in it (the look builder's rope; the bodies builder's sparring pose, or the yard's). The narration is a `showMsg` once a visit within 6 of the rope. No foe, no fight.
+- **The test** (the first run's `tests/festivals.test.mjs`, extended): on Longnight 15 in a Markish town a townsperson greets with the Blaze line for their people, and the log on the fire is saved and loads; on Highsun 4 the bet pays the same on two boots; on First Snow the alehall's keeper offers no place.
+
+**For the look builder** (backlog A, under this draft's name): the Blaze's one fire on the square (a bonfire at the plaza, lit 17:00 to 6:00, with the town's chimneys smoking after it); First Snow's fires and the benches carried out onto the square; the Strait Fair's rope ring on the plaza and the boats off the quay; the Mark's winter lights in the sky, if wanted (a soft green band, slow, on clear nights in Culling to Wolfmonth), which the words do not need.
+
+**For the systems builder**: a fight in the Strait Fair's ring, to a yield, for the player (the yard's `DUEL` set up in any Markish town on the day, against a townsperson with a quarrel). The ringkeeper's *Give it a year* stands until then.
+
+### Checked against the canon
+
+- *Register.* Every Markman in short sentences. *Aye* where a Markman agrees, and no honorific in a Markish mouth. *Reeve* and *ringkeeper* are jobs. Gatelanders speak in proverb and indirection (*a fire you share burns longer, they say here*), and none gives a bare yes. The Aurennais are formal and qualified, with *Master* and a contract's words (*common supply*, *by agreement*, *resolutions hold better than most contracts*), and no oath. The Old Blood give the older name first, each in the deep register's Irish: *Tine Chnámh*, *Aonach an Chaolais*, *An Chéad Sneachta*.
+- *No priest, no god's day.* None of the Mark's three is led by a priest or said to belong to a god (§1.2's contempt).
+- *Slurs.* One: the losing boat *rowed like a man with a tithe-man on his back*, a Markman's word for the Aurennais, about their work (the tithe). The Aurennais at the Fair, who has stopped finding the ring a comfort and goes to First Snow every winter, is the contradiction in the same draft.
+- *The duel.* By yield and with no steel drawn, a quarrel finished by noon (§1.2). Lost in an occupied town (§12a).
+- *No chosen one.* First Snow's *Nobody asked yours* is about nicknames, not a prophecy. The Old Blood line about the old ones watching the sky for something says no more than §3.1 does: the makers saw something look through.
+- *Silent, chosen plainly:* the lights (a hook, nothing hangs on them), what the Mark believes (iron, blood, fire and oath, and no god's day), the inland Strait Fair (lake, river or feet).
