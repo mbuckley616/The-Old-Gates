@@ -1870,4 +1870,30 @@
   // the slab lifted: tipped over onto the far side of the hollow, its earthy underside up, one edge on the rim
   function flagstoneTip(slab,path,hollow){if(!slab)return;if(hollow)hollow.visible=true;const [fx,fz]=path||[0,1],y=slab.userData.rest||0;slab.position.set(-fx*.62,y+.13,-fz*.62);slab.rotation.set(0,0,0);
     slab.rotateY(Math.atan2(fx,fz));slab.rotateX(Math.PI-.42);}
+  // S1360 — the Gate-Blade's stone (the Makers' trials, §5: "a blade stands in a stone to a hand's breadth below its guard. The stone
+  // has grown round it, the way bark grows round a nail"; afterwards "an empty slot in a standing stone. Looked at end on, it is the
+  // shape of a key"). A standing stone 1.1 m (the critic's s632: the hilt at waist to chest), a lip of stone grown up round the blade,
+  // a hand's breadth of blade above the lip, then the guard, the grip and the pommel; lichen, and moss at its foot. The key-shaped
+  // slot in the lip shows once the blade is out. Returns {group, hilt, slot}, built at the origin; bladeStoneBuild (87) places it.
+  function bladeStoneProp(){const r=pRng(0xb1ade5),g=new THREE.Group(),P=[];
+    {const s=SK.bumpy(SK.rbox(.95,1.1,.62,.16,3),.045,6,4.2),pa=s.attributes.position;for(let i=0;i<pa.count;i++){const t=(pa.getY(i)+.55)/1.1;pa.setX(i,pa.getX(i)*(1-.16*t));pa.setZ(i,pa.getZ(i)*(1-.12*t));}s.computeVertexNormals();
+      P.push({geo:s,color:new THREE.Color(0x77746b),x:0,y:.5,z:0,rz:.04,jitter:.1});}
+    for(let k=0;k<9;k++){const a=r()*Math.PI*2,y=.2+r()*.75,d=SK.ball(.05+r()*.06,6,4);P.push({geo:d,color:new THREE.Color(r()<.6?0x9c9a56:0xb4904c),x:Math.sin(a)*.4*(1-.14*y),y,z:Math.cos(a)*.29*(1-.1*y),sx:1,sy:1,sz:.25,ry:a,jitter:.12});}
+    P.push({geo:SK.bumpy(SK.ball(.56,10,5,0,Math.PI*2,0,Math.PI/2),.06,7,3),color:new THREE.Color(0x3a5226),x:0,y:-.04,z:0,sy:.24,jitter:.12});
+    // the lip: the stone grown up round the blade, a lumpy collar from the top to 9 cm up the blade
+    {const c=SK.bumpy(SK.ball(.19,12,7,0,Math.PI*2,0,Math.PI/2),.035,11,7);P.push({geo:c,color:new THREE.Color(0x716e65),x:.02,y:1.0,z:0,sx:1.1,sy:.6,sz:.6,jitter:.1});
+      const c2=SK.bumpy(SK.cyl(.03,.075,.12,8),.012,13,2);P.push({geo:c2,color:new THREE.Color(0x6d6a61),x:.02,y:1.1,z:0,sx:1.6,sz:.55,jitter:.1});}
+    const sm=new THREE.Mesh(mergeParts(P),VC_MAT);sm.castShadow=true;sm.receiveShadow=true;sm.name='bladeStone';g.add(sm);
+    // the slot, end on: the blade's slit with a key's bow at one end and its bit's notch at the other, dark in the lip's top
+    const slot=new THREE.Group();slot.name='bladeSlot';slot.visible=false;
+    {const sh=new THREE.Shape();sh.moveTo(-.045,-.008);sh.lineTo(.03,-.008);sh.lineTo(.03,-.018);sh.lineTo(.045,-.018);sh.lineTo(.045,.008);sh.lineTo(-.045,.008);sh.lineTo(-.045,-.008);
+      const sg=new THREE.ShapeGeometry(sh);sg.rotateX(-Math.PI/2);const ring=new THREE.CircleGeometry(.02,10);ring.rotateX(-Math.PI/2);
+      const m=new THREE.MeshBasicMaterial({color:0x0e0b08});const a=new THREE.Mesh(sg,m),b=new THREE.Mesh(ring,m);a.position.set(.02,1.161,0);b.position.set(-.025,1.161,0);slot.add(a,b);}
+    g.add(slot);
+    // the hilt: iron and leather, as the trial's placeholder had them, its blade running on down into the stone
+    const hilt=new THREE.Group();hilt.name='bladeHilt';{const iron=new THREE.MeshLambertMaterial({color:0x6c7078,emissive:0x101216}),leather=new THREE.MeshLambertMaterial({color:0x3a2616});
+      const add=(geo,mat,y)=>{const m=new THREE.Mesh(geo,mat);m.position.y=y;m.castShadow=true;hilt.add(m);return m;};
+      add(new THREE.BoxGeometry(.055,.24,.012),iron,.12);add(SK.rbox(.3,.035,.05,.012,1),iron,.255);add(SK.cyl(.021,.023,.22,7),leather,.38);add(SK.ball(.038,8,6),iron,.51);}
+    hilt.position.set(.02,1.02,0);g.add(hilt);
+    return {group:g,hilt,slot};}
   const SETTLE_MAT=VC_MAT;
