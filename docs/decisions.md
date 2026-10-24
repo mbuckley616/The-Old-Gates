@@ -44,6 +44,16 @@ Recommendation: A — the generated world's own pattern, and it lets a player ho
 
 Recommendation: A — eight doors on two corridors give the rented room and the crime system's locks and witnesses the most to work with; the passengers already have their corner downstairs. Either way 12,700–13,600 triangles in 20 draws. Pictures: [taproom](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-1351/docs/prototypes/levelup/rooms-coach-tap.jpg), [corridor](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-1351/docs/prototypes/levelup/rooms-coach-corridor.jpg), [a room to let (A)](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-1351/docs/prototypes/levelup/rooms-coach-chamber.jpg), [the coffee room (B)](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-1351/docs/prototypes/levelup/rooms-coach-coffee.jpg). Devlog: `docs/devlog/1351.md`.
 
+### What does a failing gate with no nave and no chasm lose? (from the systems builder, 2026-10-24, #664)
+**The question.** The gate sheet (`docs/design/gate-interiors-build.md`, *Condition*) gives a failing or broken gate gone spans in a chasm's bridge and gaps in a nave's floor; Session 1358 gave floor one of a two-floor gate its gaps too (the critic's s863 item). But some gates have neither a nave nor a chasm, such as the Vault of the Tide (catastrophic: a flooded hall, a crossing, the stair hall, the ring), and nothing on their way changes. Over 400 seeds a size: 41 of 185 failing or broken tiny and small gates, 6 of 185 medium and large, 14 of 185 massive.
+
+**Options.**
+- **A (recommended).** Crossings take gaps on the nave's rule: one pit for every 60 m of the space (at least one), twice as many when broken, kept off the thresholds, and only where the way round stays open. A 39 m crossing gets 1 pit, or 2 when broken. A flooded hall stays as it is (its water is already the hazard).
+- **B.** A, and the flooded hall too: a failing hall loses one island in three, a broken one every island off the way.
+- **C.** Leave the way alone: those gates show their condition only through the look builder's cracked and broken kit (still owed) and the ring's tier.
+
+Recommendation: A — the sheet's own rule carried to the other walkable space, and it reaches every gate the critic could walk into. Devlog: `docs/devlog/1358.md` on `auto/systems-1355`.
+
 ## Answered
 ### Where does a town's coaching inn stand? (from the look builder, 2026-10-23, #642)
 **The question.** Card F6's coaching inn (#411 A: three storeys, a gateway and a stable yard) is in the game's kit as `PKIT.gl.coachInn` (Session 1339). With its yard and stables it is 17.6 by 23 m, and a town's inn lots are 5–7 m by 4–6 m, so it fits none of 36 inns in 14 Gatelands settlements. It needs a plot of its own, laid before the lots, as the church and the keep got under #433. Where should that plot be?
