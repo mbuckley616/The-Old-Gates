@@ -1064,3 +1064,39 @@ One bug in today's game, filed in backlog I: the first-person hands are lit the 
 
 ### Backlog notes (not changed)
 - I: the *Sailing playtest* block is all struck and could close (tenth run noted).
+
+## 2026-10-24 — Dunmore's coaching inn by day and night, a bed at The Bramble Hearth, the Dungeon of Shadows fought and saved in, the Vault of the Tide, the Faolchú at noon, the Church of the Weaver at noon (build s863, read to Session 1345)
+
+A playtest run (the last entry was the new look). Five boots of the new look, all reaching the world with no page error; `export` green as the harness check.
+
+**What I did.** A new character into Dunmore (59 houses since S1343's plot, four inns). I stood 14 m in front of the coaching inn at 12h and 22.5h, went in at 19h, talked to the keeper, Ruairí, and took *A bed for the night?* for 11 gold (200 to 189). I counted who was within 80 m of the heart after 300 world ticks: 38 at noon (the mayor, two guards, villagers), 3 at 22.5h, all guards. Then the Dungeon of Shadows (seed 42, Q1's first gate) as a load enters it: walked 400 frames of W from the door, fought two Skeletons on the loop's tick with a Wooden GreatClub, a swing every half second, then saved to slot 0, reloaded and pressed Continue. Then the Vault of the Tide (seed 845). Then the Faolchú built at noon in the field west of Dunmore, 8 m off, and an Aurennais port's church (c7_1_s1, *Chapelle de Saint-Ancy*) from its square and inside at noon.
+
+**What was wrong.**
+
+1. *The main quest's two named gates don't show their condition.* S1327 says the Dungeon of Shadows rolls failing and the Vault of the Tide catastrophic. In play, both are two-floor gates. The Dungeon is nave, crossing and stair on floor one, crossing and ring on floor two. The Vault is flooded hall, crossing and stair, then crossing and ring. Neither has a chasm, so there is no span to lose, and `gateCondition` refuses a nave's pits on floor one of a two-floor gate (the comment says why: the pit would fall into floor two's rock). `_lastGen` reads `cond: 'failing'`, 0 stones, 0 gaps for the Dungeon, and `cond: 'catastrophic'`, 0 stones, 0 gaps for the Vault. A player sees the same hall as a steady gate. The only difference is the Vault's ring guarded a tier up, and nothing announces that. The cold blue light the sheet gives a failing gate is still owed to the look builder, so until it lands, the condition of the main quest's own gates can't be seen at all. Steps: `_reenterPlace({kind:'dungeon', seed:42, floor:1})`, then read `_lastGen.cond`, `.stones.length`, `.gaps.length`. Filed for the systems builder.
+2. *The coaching inn's room is deeper than the inn.* The Bramble Hearth (`g_dunmore_8`) has a 12.6 by 9 m front. Inside, `currentHouse.intW` × `intD` is 12 by 13 m: a gallery, a stair and a long bar, 70 draws and 46,514 triangles. S1343's entry says the room is "sized to the 12.6 by 9 m front", but it reaches 4 m behind the back wall, into the yard. The taproom session replaces this room. I filed it so the old size isn't carried over.
+3. *Small.* In a church the line under the HUD reads *Press E near the keeper to talk · Walk south to exit* (the interior prompt in `updateHUD` knows only keepers). In c7_1_s1 a signpost stands in the street 3 m in front of the church's steps, in line with its door (`2026-10-24-weaver-outside.png`). The market stalls flank it, as S1305 already noted.
+
+**What worked well.**
+- The coaching inn reads from the street (`2026-10-24-coachinn-noon.png`): the three-storey rendered front, the fanlit green door with its lamp, the rubble gateway beside it, chimneys smoking. At 22.5h (`-night.png`) it has four amber windows of fifteen, a lit lamp at the door and stars over it. The keeper's offer, the price and the purse agree. The street is full by day and empty but for the watch at night, as the hours concept wants.
+- The gate. The first Skeleton died in 2.9 s to five swings, three of which hit, and took 6 health off me. The second took 19, and a Phantom woke and joined (130 to 73 within four seconds). After the reload, both dead Skeletons were still dead, 12 foes still stood, and the gate rebuilt round me (S1335). The Dungeon holds 11 Skeletons, 2 Phantoms and a Wraith, 3 chests and one locked door (the HUD says so); the nave at the threshold reads tall and dark (`2026-10-24-shadows-walk.png`).
+- The Church of the Weaver from its square (`2026-10-24-weaver-outside.png`): the blue-tiled dome, the arcade, the cypresses in pots and the campanile. It reads as Aurenne at a glance.
+
+**The recent *Needs eyes*, from this run**
+- *1343 (the coaching inn from the road):* judged headless. It reads well from the street and at night; see the pictures. Its room, item 2.
+- *1339 and 1343 (both towns' inns named The Bramble Hearth):* Dunmore's is The Bramble Hearth. I did not visit Carraig Mór.
+- *1327 (the condition; the chasm kills):* item 1. I met no chasm in either gate, so I neither fell nor jumped.
+- *1314 and 1317 (a two-floor first gate too big?):* I covered 26 m of the nave from the door; the size of the whole I can't judge headless.
+- *1335 (a save in a gate):* confirmed in play, as above. The two Skeletons were searched by nobody and were gone after the load, as the entry says.
+- *1334 (the gate's minimap):* at the door the minimap shows the nave's outline small and thin in the corner. Whether it reads needs a real screen.
+- *1306 (the hands lit by the place):* at the Dungeon's door the hands read a strong green against blue-violet walls (`2026-10-24-shadows-entrance.png`). 26 m on they are dark maroon (`-walk.png`). The change is real; whether the green is right is for a real screen.
+- *1326 (the church at noon):* the nave is near white by the windows (`2026-10-24-weaver-nave-noon.png`), as the entry says. The zellige dado and the blue altar cloth carry the colour. I would dim it.
+- *1342 (the Faolchú's coat by day):* not judged. The kit's body was not built in my scene (`w.hc` stayed false after 100 ticks; I did not move the camera as the suite does), so the picture is the old body: near-black with its red seam and an orange pool from its 2.2 aura under it. The kit's coat is still owed a look.
+- *1299 (the prewarm behind the first fade):* not measurable headless in a way that means anything for a laptop.
+- *1302, 1323 (a gate's eight lights, empty stretches in small gates):* the nave is dark past the torches, as written. No small gate played.
+- *1336, 1337, 1324, 1325, 1319 (the Bog Crawler, the spiders, the scorpion):* not met.
+- *1305, 1307, 1308, 1320, 1321, 1329 (Aurenne's church, tavern, terraces and houses):* one church seen, as above. The rest wait for the next new-look review.
+- *1300, 1301, 1303, 1304, 1309–1313, 1315, 1316, 1318, 1328, 1330–1333, 1340, 1344, 1345:* suites, costs and state, with nothing to play, or nothing seen that differs.
+
+### Backlog notes (not changed)
+- Nothing done-but-unmarked found this run. Section I's own line for the coaching inn's room (item 2) should be struck by the taproom session.
