@@ -65,5 +65,24 @@ check('its two pairs of arms come out of its back; the driver keeps its hunch wh
   kit.arms === 4 && kit.unhunch && kit.kept, kit);
 check(`the phases recolour the kit's seam (the flare: ${JSON.stringify(kit.flare)}); the lesser Faolchú is dressed too; and gone from the scene, it is dropped`,
   kit.glow === 1 && Math.abs(kit.flare[0][1] - 2.72) < .02 && kit.lesser && kit.dropped, kit);
+// Session 1347: the kit's four arms, which the driver has none of, are posed from its wind-up and strike (hcArms): the fore pair's elbows
+// draw back through the wind-up, then rake down and ahead of their rest in the strike; the hind pair's shoulders swing forward a beat after the fore's; at rest after
+const arm = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.cos(yaw), x = px + fx * 9, z = pz + fz * 9;
+  const { g: G, limbs } = buildFaolchuMesh(BOSSES.Faolchu); G.position.set(x, WORLD.worldH(x, z), z); WORLD.scene.add(G);
+  const w = limbs.wolf, e = { x, z, dead: false, alert: true, id: 'f4faol:1' }; w.e = e;
+  let k = 0, t = 8e5; HBODY.last = -1e9; while (!w.hc && !w.hcFail && k++ < 100) tickCreatures(1 / 60, t += HBODY.gap + 1);
+  if (!w.hc) return { none: true };
+  const by = w.hc.C.byName, at = n => { G.updateMatrixWorld(true); return w.root.worldToLocal(by[n].getWorldPosition(new THREE.Vector3())); };
+  const tick = () => tickCreatures(1 / 60, t += 17), snap = () => ({ f: at('arm0L_3'), h: at('arm1L_3'), fs: by.arm0L_0.rotation.x, hs: by.arm1L_0.rotation.x });
+  for (let i = 0; i < 30; i++) tick(); const r0 = snap();
+  for (let i = 0; i < 30; i++) { e._wind = Math.min(1, i / 20); tick(); } const r1 = snap(); e._wind = 0;
+  let fLow = 9, fAt = -1, hAt = -1, fMax = -9, i = 0;
+  for (let L = .3; L > -.01; L -= .02, i++) { e._lunge = Math.max(0, L); tick(); const s = snap(); if (s.f.y < fLow) fLow = s.f.y; if (fAt < 0 && s.fs > 0) fAt = i; if (hAt < 0 && s.hs > 0) hAt = i; fMax = Math.max(fMax, s.f.z); }
+  e._lunge = null; tick(); const r2 = snap(); WORLD.scene.remove(G); tick();
+  const f = v => +v.toFixed(3);
+  return { back: f(r0.f.z - r1.f.z), rake: f(r0.f.y - fLow), ahead: f(fMax - r0.f.z), fAt, hAt, home: f(Math.max(r2.f.distanceTo(r0.f), r2.h.distanceTo(r0.h))) }; });
+console.log('  arms:', JSON.stringify(arm));
+check(`the kit's arms wind up (the hand ${arm.back} back) and rake (${arm.rake} below rest, ${arm.ahead} ahead), the hind pair later (forward at step ${arm.hAt}, the fore at ${arm.fAt}), and come home`,
+  arm.back > .05 && arm.rake > .05 && arm.ahead >= 0 && arm.fAt >= 0 && arm.hAt > arm.fAt && arm.home < .01, arm);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
