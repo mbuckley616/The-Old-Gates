@@ -228,6 +228,15 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
     return out; });
   check(`troll: lashed-on armour (OG-041): ${ta.troll?.straps} plates and lashings laid on its grown skin at ${ta.troll?.pts} points (${ta.troll?.miss} missed), each staying with the skin under it through every gait (its gap ${ta.troll?.rMin} to ${ta.troll?.rMax} of its rest)`, ta.troll && ta.troll.straps === 6 && ta.troll.miss === 0 && ta.troll.pts > 80 && ta.troll.rMin > .6 && ta.troll.rMax < 1.6, ta.troll);
   check('the trolls built from it (stone, Tine, Uisce) keep their bare hides', !ta.stonetroll && !ta.tinetroll && !ta.uiscetroll, ta);
+  // the cave troll's maul (Session 1378, the game's troll's, S208): in its right fist through every gait, its head up out of the ground
+  const tm = await page.evaluate(async () => { const T = await import('three'), K = await import('./creatures.js'), C = K.build(K.genome('troll', 'troll:check')), box = new T.Box3(), P = new T.Vector3(), Q = new T.Vector3();
+    let m = null; C.rig.traverse(o => { if (o.name === 'maul') m = o; }); if (!m) return { gear: C.B.gear || [] }; let low = 1e9, grip = 0;
+    for (const gait of C.plan.gaits) { C.gait = gait; for (let i = 0; i < 24; i++) { K.pose(C, i / 24); C.rig.updateMatrixWorld(true); box.setFromObject(m); low = Math.min(low, box.min.y - C.root.position.y);
+      C.byName.arm0R_2.getWorldPosition(P); C.byName.arm0R_3.getWorldPosition(Q); P.lerp(Q, .7); const a = m.localToWorld(new T.Vector3(0, 0, 0)), b = m.localToWorld(new T.Vector3(0, 1.05, 0)), l = new T.Line3(a, b), c = new T.Vector3(); l.closestPointToPoint(P, true, c); grip = Math.max(grip, c.distanceTo(P)); } }
+    let tris = 0; m.traverse(o => { if (o.isMesh) tris += o.geometry.index ? o.geometry.index.count / 3 : o.geometry.attributes.position.count / 3; });
+    const bare = ['stonetroll', 'tinetroll', 'uiscetroll'].filter(k => (K.build(K.genome(k, k + ':check')).B.gear || []).length);
+    return { gear: C.B.gear, low: +low.toFixed(3), grip: +grip.toFixed(3), tris, bare }; });
+  check(`troll: a maul in its right fist (${tm.tris} triangles), the haft through the fist (${tm.grip} m off it) and clear of the ground (lowest ${tm.low} m) through every gait; the trolls built from it hold nothing`, (tm.gear || []).join() === 'maul' && tm.grip < .01 && tm.low > .05 && tm.bare.length === 0, tm);
   for (const [k, t] of Object.entries(gb)) {
     check(`${k}: a scrap-leather harness (OG-041): ${t.harness?.straps} straps laid on the grown skin at ${t.harness?.pts} points (${t.harness?.miss} missed), each staying with the skin under it through every gait (its gap ${t.harness?.rMin} to ${t.harness?.rMax} of its rest)`, t.harness && t.harness.straps === 3 && t.harness.miss === 0 && t.harness.pts > 60 && t.harness.rMin > .6 && t.harness.rMax < 1.6, t.harness);
     check(`${k}: a crouched biped about a goblin's height (head ${t.head} m up; ${t.legs} legs, ${t.arms} arms)`, t.legs === 2 && t.arms === 2 && t.head > .8 && t.head < 1.4, t);
