@@ -123,6 +123,27 @@ const dead = await page.evaluate(() => { const f = _W[0], rig = f.rig, before = 
   return { cloned: before.filter(([o, m]) => o.material !== m).length, n: before.length, shaded: shaded.length, kept: shaded.filter(([o, m]) => o.material.onBeforeCompile === m.onBeforeCompile).length,
     darker: before.filter(([o, m]) => o.material !== m && o.material.color && o.material.color.r <= m.color.r * .36 + 1e-6).length, hips: +(a.y - WORLD.worldH(a.x, a.z)).toFixed(2), gap: +a.distanceTo(b).toFixed(3), dead: !!f.e.dead }; });
 check('killed, the kit\'s body is darkened with its shaders kept, and lies with its driver', dead.dead && dead.cloned === dead.n && dead.shaded > 0 && dead.kept === dead.shaded && dead.darker === dead.n && dead.gap < .05, dead);
+// Session 1348: the dragon, the last family on the old body, wears the kit's dragon over the same driver. Its wings fold along the back
+// at the plan's rest and rise and beat once roused (the driver's rig.wing and rig.flap); its tail is the kit's own, carried, with the
+// driver's sway spread over its ten joints
+const drag = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.cos(yaw), x = px + fx * 14, z = pz + fz * 14;
+  const w = buildWolf('Dragon', WOLF_KINDS.Dragon.world), G = new THREE.Group(); G.add(w.root); G.position.set(x, WORLD.worldH(x, z), z); scene.add(G);
+  const e = { x, z, dead: false, alert: false, id: 'f4drag:0' }; w.e = e;
+  let k = 0, t = 7e5; HBODY.last = -1e9; while (!w.hc && !w.hcFail && k++ < 200) tickCreatures(1 / 60, t += HBODY.gap + 1);
+  const H = w.hc; if (!H) return { none: true, fail: !!w.hcFail };
+  const by = H.C.byName, at = n => { G.updateMatrixWorld(true); return w.root.worldToLocal((by[n] || n).getWorldPosition(new THREE.Vector3())); }, wr = H.wings[0].arm[2];
+  for (let i = 0; i < 60; i++) tickCreatures(1 / 60, t += 17);
+  const hipY = at('spine0').y, tails = Object.keys(by).filter(n => /^tail\d+$/.test(n)), tip = at(tails[tails.length - 1]).y, calm = at(wr).y;
+  e.alert = true; let top = -9, bot = 9; for (let i = 0; i < 150; i++) { tickCreatures(1 / 60, t += 17); if (i > 90) { const y = at(wr).y; top = Math.max(top, y); bot = Math.min(bot, y); } }
+  const a = by.spine0.getWorldPosition(new THREE.Vector3()), b = w.B.hips.getWorldPosition(new THREE.Vector3()); scene.remove(G); tickCreatures(1 / 60, t += 17);
+  const f = v => +v.toFixed(2);
+  return { plan: H.C.g.plan, bones: H.C.bones.length, tris: H.C.stats.tris, wings: H.wings.length, tails: tails.length, mapTail: H.map.some(([j]) => /^tail/.test(j)), hips: f(a.distanceTo(b)),
+    hipY: f(hipY), tip: f(tip), calm: f(calm), top: f(top), beat: f(top - bot), dropped: !w.hc }; });
+console.log('  dragon:', JSON.stringify(drag));
+check(`the dragon wears the kit's dragon (${drag.bones} bones, ${drag.tris} triangles), its hips at the driver's (${drag.hips} m); gone from the scene, it is dropped`,
+  drag.plan === 'game:Dragon' && drag.bones > 60 && drag.tris < 25000 && drag.hips < .03 && drag.dropped, drag);
+check(`its wings fold on the back at rest (the wrist ${drag.calm} up) and, roused, rise (to ${drag.top}) and beat (${drag.beat}); its tail, the kit's own, is carried (its tip ${drag.tip} up, the hips ${drag.hipY})`,
+  drag.wings === 2 && drag.top > drag.calm && drag.beat > .1 * drag.hipY && !drag.mapTail && drag.tip > .25 * drag.hipY, drag);
 await page.evaluate(() => { REN.render(scene, CAM); });
 check('no page errors', g.errs.length === 0, g.errs.slice(0, 3));
 await g.close();
