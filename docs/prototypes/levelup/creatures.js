@@ -258,7 +258,15 @@ P.gear = (B, o) => { for (const it of o.list) { const names = B.chains['arm' + (
     const cg = new THREE.BoxGeometry(w * 3.2, w * .35, w * .45); cg.translate(0, w * .3, 0); sw.add(new THREE.Mesh(cg, stdMat(B.tone('iron'), { rough: .6 })));
     const gg = new THREE.CylinderGeometry(w * .22, w * .22, w * 2.4, 7); gg.translate(0, -w * 1.1, 0); sw.add(new THREE.Mesh(gg, stdMat(B.tone('leather'), { rough: .9 })));
     const pg = new THREE.SphereGeometry(w * .38, 10, 8); pg.translate(0, -w * 2.4, 0); sw.add(new THREE.Mesh(pg, stdMat(B.tone('iron'), { rough: .6 })));
-    sw.position.copy(fist).addScaledVector(ax, w * 1.1); sw.quaternion.setFromUnitVectors(UP, ax); sw.name = 'sword'; B.bit(names[3], sw); B.gear = [...(B.gear || []), 'sword']; } } };
+    sw.position.copy(fist).addScaledVector(ax, w * 1.1); sw.quaternion.setFromUnitVectors(UP, ax); sw.name = 'sword'; B.bit(names[3], sw); B.gear = [...(B.gear || []), 'sword']; }
+  // a maul (Session 1370, the game's troll's, S208): a long haft wrapped at the grip, a heavy iron head across its top with a band at
+  // each face; `len` the haft, `r` its radius, `head` [across, high, deep], `grip` the fraction of the haft below the fist, `rise` as a spear's
+  if (it.kind === 'maul') { const fist = at(names[2]).clone().lerp(at(names[3]), .7), a = (it.rise ?? 60) * DEG, ax = V(it.side * (it.splay || 0), Math.sin(a), Math.cos(a)).normalize(), L = it.len, [hx, hy, hz] = it.head, m = new THREE.Group();
+    const hg = new THREE.CylinderGeometry(it.r, it.r * 1.25, L, 8); hg.translate(0, L / 2, 0); m.add(new THREE.Mesh(hg, stdMat(B.tone('wood'), { rough: .8 })));
+    const wg = new THREE.CylinderGeometry(it.r * 1.45, it.r * 1.45, L * .18, 8); wg.translate(0, L * it.grip, 0); m.add(new THREE.Mesh(wg, stdMat(B.tone('leather'), { rough: .9 })));
+    const bx = new THREE.BoxGeometry(hx, hy, hz, 2, 1, 1); bx.translate(0, L + hy * .3, 0); m.add(new THREE.Mesh(bx, stdMat(B.tone('iron'), { rough: .5, flat: true })));
+    for (const sd of [-1, 1]) { const bd = new THREE.CylinderGeometry(hy * .58, hy * .58, hx * .08, 12); bd.rotateZ(Math.PI / 2); bd.translate(sd * hx * .46, L + hy * .3, 0); m.add(new THREE.Mesh(bd, stdMat(B.tone('ironDark'), { rough: .55 }))); }
+    m.position.copy(fist).addScaledVector(ax, -L * it.grip); m.quaternion.setFromUnitVectors(UP, ax); m.name = 'maul'; B.bit(names[3], m); B.gear = [...(B.gear || []), 'maul']; } } };
 // wings: an arm (humerus, forearm) and a fan of two-bone fingers; the membrane between them is its own skinned mesh. A second pair
 // (Session 1191, membrane wings only) gives `pair: 2`, which goes into its bones' names (wing2L0…), its own `rest` turns in place of
 // the plan's `wingRest`, and a `phase` (radians) so it beats out of step with the first
@@ -2322,6 +2330,9 @@ PLANS.troll.parts.push(['straps', { w: .08, tone: 'leather', straps: [
   { path: [[.74, 0], [.74, 90], [.74, 180], [.74, 270], [.74, 360]], closed: true, steps: 12, lift: .012 },
   { path: [[.98, 90], [.66, 10], [.34, -60]], steps: 10, lift: .012 },
   { path: [[.36, 140], [.36, 220]], steps: 8, lift: .012 }] }]);
+// ── Session 1370: the cave troll's maul (Michael's answer on Session 201: a hammer for the cane; the game's trolls carry one, S208), in
+// its right fist, the head up and ahead. Only the OG-041 troll holds it; the trolls built from it copied its parts before this ──
+PLANS.troll.parts.push(['gear', { list: [{ kind: 'maul', arm: 0, side: -1, len: 1.05, r: .028, head: [.36, .17, .17], grip: .32, rise: 62, splay: .05 }] }]);
 // ── Session 1107: Garrick's wolfhound (OG-065, "with a black wolfhound"; backlog L1 and L3). The first dog the kit has: a sighthound
 // on the wolf's kit of parts, taller than the grey wolf and lighter in the loin, the chest deep and the belly tucked up, the head long
 // and narrow with a long tapering muzzle and small ears folded back along the skull, the tail long and low with an upward sweep at its

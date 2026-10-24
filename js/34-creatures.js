@@ -752,6 +752,11 @@ const HC_RIGS=new Set();
 // so that much is taken off the driver's turns before they are copied (hcPose); its hide in the driver's green (buildFoe: 0x7a9a4a to 0x5a7a3a)
 const HC_GOB_REST={spine:[.38,0,0],neck:[-.32,0,0],head:[-.06,0,0]};
 const HC_GOB_COAT={coat:0x6a8a42,saddle:0x4e6a30,belly:0x86a058,skin:0x72924a};
+// Session 1370: the trolls' (OG-041's hunched cave troll, Session 926, with its lashed-on armour and the game's maul, Session 1370), in the
+// game's hides by where they live (FOE_DRESS: skin to skin2; the moss on what faces the sky the forest's deeper, the frost troll's rime)
+// and its eyes in the driver's colour; the driver stands upright, so nothing is taken off its turns
+const HC_TROLL_COAT={cave:{coat:0x6e7a5c,saddle:0x5a664c,belly:0x7e8a6c,skin:0x646e54},forest:{coat:0x5a6e40,saddle:0x4a5a34,belly:0x6a7e50,skin:0x52643a,moss:0x34501a},
+  frost:{coat:0xaebac2,saddle:0x96a4ae,belly:0xc0cad0,skin:0xa2aeb6,moss:0xe0e4e8}};
 const HC_KINDS={'Wolf':{plan:'wolf'},'Snow Wolf':{plan:'wolf',own:true},'Dire Wolf':{plan:'ironwolf',own:true},'Boar':{plan:'boar'},'Cave Bear':{plan:'bear',own:true},'Ash Hound':{plan:'ashhound'},'Horse':{plan:'horse',own:true,ik:true},'Grey Horse':{plan:'horse',own:true,ik:true},
   'Spider':{plan:'spider',own:true,spider:true,cell:.028,merge:true},'Sand Scorpion':{plan:'dunescorpion',own:true,spider:true,cell:.02,merge:true},
   'Bog Crawler':{plan:'bogcrawler',own:true,spider:true,cell:.018,merge:true},'Faolchú':{plan:'faolchu',own:true,cell:.03,unhunch:true,arms:true},
@@ -759,7 +764,10 @@ const HC_KINDS={'Wolf':{plan:'wolf'},'Snow Wolf':{plan:'wolf',own:true},'Dire Wo
   'Skeleton':{plan:'skeleton',own:true,person:true,glow:[.5,.75,1],gear:{kind:'sword',arm:0,side:-1,len:.7,w:.05,rise:-40,splay:.1,notches:5}},
   'Skeleton (spear)':{plan:'skeleton',own:true,person:true,glow:[.5,.75,1],gear:{kind:'spear',arm:0,side:-1,len:1.75,r:.017,head:.17,grip:.32,rise:72,splay:.05}},
   'Goblin':{plan:'goblin',own:true,person:true,cell:.05,merge:true,ik:true,rest:HC_GOB_REST,coat:HC_GOB_COAT,gear:{kind:'sword',arm:0,side:-1,len:.24,w:.036,rise:-35,splay:.05,notches:3}},
-  'Goblin Slinger':{plan:'goblin',own:true,person:true,cell:.05,merge:true,ik:true,rest:HC_GOB_REST,coat:HC_GOB_COAT,gear:null}};
+  'Goblin Slinger':{plan:'goblin',own:true,person:true,cell:.05,merge:true,ik:true,rest:HC_GOB_REST,coat:HC_GOB_COAT,gear:null},
+  'Cave Troll':{plan:'troll',own:true,person:true,merge:true,ik:true,coat:HC_TROLL_COAT.cave,eye:0xd0a020,gear:'plan'},
+  'Forest Troll':{plan:'troll',own:true,person:true,merge:true,ik:true,coat:HC_TROLL_COAT.forest,eye:0xd8b030,gear:'plan'},
+  'Frost Troll':{plan:'troll',own:true,person:true,merge:true,ik:true,coat:HC_TROLL_COAT.frost,eye:0x70b0ff,gear:'plan'}};
 // the driver's joints and the kit's bones they move, parents first (the kit's front legs hang on spine3, the hind on spine0)
 const HC_MAP=[['hips','spine0'],['spine','spine1'],['neck','neck0'],['head','head'],['jaw','jaw'],['tail1','tail0'],['tail2','tail1'],['tail3','tail2'],
   ['shL','leg0L_0'],['elL','leg0L_1'],['wrL','leg0L_2'],['pfL','leg0L_3'],['shR','leg0R_0'],['elR','leg0R_1'],['wrR','leg0R_2'],['pfR','leg0R_3'],
@@ -787,8 +795,10 @@ function hcPlan(name){const K=HC_KINDS[name];if(!K.own)return K.plan;const id='g
   // Skeleton's fight has; its sockets lit in the foe's eye colour (ZONE_FOE_DEF's 0x80c0ff), as the old body's are
   // a goblin's (Session 1364): the game's rusted knife or, the slinger's, nothing; its hide in the driver's green (K.coat)
   if(!HC.PLANS[id]&&K.person){const P=HC.PLANS[K.plan],c=h=>[(h>>16&255)/255,(h>>8&255)/255,(h&255)/255],pal=K.coat?Object.fromEntries(Object.entries(K.coat).map(([k,h])=>[k,c(h)])):null;
-    HC.PLANS[id]=Object.assign({},P,{name,cell:K.cell},pal?{palette:Object.assign({},P.palette,pal)}:{},{parts:P.parts.map(([k,o])=>k==='gear'?[k,{list:K.gear?[K.gear]:[]}]
-    :k==='head'&&K.glow?[k,Object.assign({},o,{eyes:o.eyes.map(e=>Object.assign({},e,{r:.017,glow:1.6,color:K.glow}))})]:[k,o])});}
+    // a troll's (Session 1370): the plan's own maul (gear 'plan'), and its eyes in the driver's colour (K.eye)
+    HC.PLANS[id]=Object.assign({},P,K.cell?{name,cell:K.cell}:{name},pal?{palette:Object.assign({},P.palette,pal)}:{},{parts:P.parts.map(([k,o])=>k==='gear'&&K.gear!=='plan'?[k,{list:K.gear?[K.gear]:[]}]
+    :k==='head'&&K.glow?[k,Object.assign({},o,{eyes:o.eyes.map(e=>Object.assign({},e,{r:.017,glow:1.6,color:K.glow}))})]
+    :k==='head'&&K.eye!=null?[k,Object.assign({},o,{eyes:o.eyes.map(e=>Object.assign({},e,{color:c(K.eye)}))})]:[k,o])});}
   if(!HC.PLANS[id]&&(K.spider||!WOLF_KINDS[name]))HC.PLANS[id]=Object.assign({},HC.PLANS[K.plan],{name,cell:K.cell});
   if(!HC.PLANS[id]){const k=WOLF_KINDS[name],c=h=>[(h>>16&255)/255,(h>>8&255)/255,(h&255)/255];
     HC.PLANS[id]=Object.assign({},HC.PLANS[K.plan],K.cell?{cell:K.cell}:{},{name,palette:Object.assign({},HC.PLANS[K.plan].palette,{coat:c(k.coat),saddle:c(k.saddle),belly:c(k.belly)},HC.PLANS[K.plan].palette.mane?{mane:c(k.saddle)}:{})});}
