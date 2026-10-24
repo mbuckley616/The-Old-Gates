@@ -752,7 +752,7 @@ const HC_RIGS=new Set();
 // so that much is taken off the driver's turns before they are copied (hcPose); its hide in the driver's green (buildFoe: 0x7a9a4a to 0x5a7a3a)
 const HC_GOB_REST={spine:[.38,0,0],neck:[-.32,0,0],head:[-.06,0,0]};
 const HC_GOB_COAT={coat:0x6a8a42,saddle:0x4e6a30,belly:0x86a058,skin:0x72924a};
-// Session 1370: the trolls' (OG-041's hunched cave troll, Session 926, with its lashed-on armour and the game's maul, Session 1370), in the
+// Session 1374: the trolls' (OG-041's hunched cave troll, Session 926, with its lashed-on armour and the game's maul, Session 1374), in the
 // game's hides by where they live (FOE_DRESS: skin to skin2; the moss on what faces the sky the forest's deeper, the frost troll's rime)
 // and its eyes in the driver's colour; the driver stands upright, so nothing is taken off its turns
 // Session 1371: the golem's (Session 1175: OG-018's mossy golem, hewn blocks on the skeleton's frame), sized by its stature as the
@@ -798,7 +798,7 @@ function hcPlan(name){const K=HC_KINDS[name];if(!K.own)return K.plan;const id='g
   // Skeleton's fight has; its sockets lit in the foe's eye colour (ZONE_FOE_DEF's 0x80c0ff), as the old body's are
   // a goblin's (Session 1364): the game's rusted knife or, the slinger's, nothing; its hide in the driver's green (K.coat)
   if(!HC.PLANS[id]&&K.person){const P=HC.PLANS[K.plan],c=h=>[(h>>16&255)/255,(h>>8&255)/255,(h&255)/255],pal=K.coat?Object.fromEntries(Object.entries(K.coat).map(([k,h])=>[k,c(h)])):null;
-    // a troll's (Session 1370): the plan's own maul (gear 'plan'), and its eyes in the driver's colour (K.eye)
+    // a troll's (Session 1374): the plan's own maul (gear 'plan'), and its eyes in the driver's colour (K.eye)
     HC.PLANS[id]=Object.assign({},P,K.cell?{name,cell:K.cell}:{name},pal?{palette:Object.assign({},P.palette,pal)}:{},{parts:P.parts.map(([k,o])=>k==='gear'&&K.gear!=='plan'?[k,{list:K.gear?[K.gear]:[]}]
     :k==='head'&&K.glow?[k,Object.assign({},o,{eyes:o.eyes.map(e=>Object.assign({},e,{r:K.glowR||.017,glow:1.6,color:K.glow}))})]
     :k==='head'&&K.eye!=null?[k,Object.assign({},o,{eyes:o.eyes.map(e=>Object.assign({},e,{color:c(K.eye)}))})]:[k,o])});}

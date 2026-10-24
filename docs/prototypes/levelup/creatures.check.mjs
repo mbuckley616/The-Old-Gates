@@ -228,7 +228,7 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
     return out; });
   check(`troll: lashed-on armour (OG-041): ${ta.troll?.straps} plates and lashings laid on its grown skin at ${ta.troll?.pts} points (${ta.troll?.miss} missed), each staying with the skin under it through every gait (its gap ${ta.troll?.rMin} to ${ta.troll?.rMax} of its rest)`, ta.troll && ta.troll.straps === 6 && ta.troll.miss === 0 && ta.troll.pts > 80 && ta.troll.rMin > .6 && ta.troll.rMax < 1.6, ta.troll);
   check('the trolls built from it (stone, Tine, Uisce) keep their bare hides', !ta.stonetroll && !ta.tinetroll && !ta.uiscetroll, ta);
-  // the cave troll's maul (Session 1370, the game's troll's, S208): in its right fist through every gait, its head up out of the ground
+  // the cave troll's maul (Session 1374, the game's troll's, S208): in its right fist through every gait, its head up out of the ground
   const tm = await page.evaluate(async () => { const T = await import('three'), K = await import('./creatures.js'), C = K.build(K.genome('troll', 'troll:check')), box = new T.Box3(), P = new T.Vector3(), Q = new T.Vector3();
     let m = null; C.rig.traverse(o => { if (o.name === 'maul') m = o; }); if (!m) return { gear: C.B.gear || [] }; let low = 1e9, grip = 0;
     for (const gait of C.plan.gaits) { C.gait = gait; for (let i = 0; i < 24; i++) { K.pose(C, i / 24); C.rig.updateMatrixWorld(true); box.setFromObject(m); low = Math.min(low, box.min.y - C.root.position.y);

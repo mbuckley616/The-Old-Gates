@@ -1,7 +1,7 @@
-// Card F4 (Session 1370): on the new look the trolls (the Cave, Forest and Frost Troll) wear the creature kit's troll (OG-041's hunched cave
+// Card F4 (Session 1374): on the new look the trolls (the Cave, Forest and Frost Troll) wear the creature kit's troll (OG-041's hunched cave
 // troll, Session 926, with its lashed-on armour, Session 945), driven by their old body: the people's 17-bone rig (buildFoe's g.troll)
 // through the Skeleton's map (HC_PMAP), sized by its legs and its ankles held over the driver's (hcLegIK), as the goblin's. It holds the
-// kit's maul (Session 1370, the game's S208 maul) and the driver's is hidden while it shows; its hide is its kind's (FOE_DRESS), its eyes the
+// kit's maul (Session 1374, the game's S208 maul) and the driver's is hidden while it shows; its hide is its kind's (FOE_DRESS), its eyes the
 // driver's. Checked: each on the kit's 23 bones, keyed by its foe id, in its own hide; its feet on the ground through the stand, the walk and
 // the run; three levels by distance, the middle one baked; killed, darkened, lying with its driver. Picture: docs/prototypes/f4/f4-trolls.jpg.
 import { boot, check, ROOT } from './lib/game.mjs';
