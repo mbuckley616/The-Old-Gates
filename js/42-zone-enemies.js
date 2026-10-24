@@ -741,6 +741,7 @@ const ZONE_FOE_DEF={
     'Kobold':       {minLevel:1, col:0x7a5a30,eyeCol:0xffe080,hp:14, maxHp:14, spd:1.6,dmg:4, atk:1.1, xpVal:9,  scale:.75,shape:'humanoid',def:1, resist:{}},
     'Cultist':      {minLevel:4, col:0x3a2a4a,eyeCol:0xc080ff,hp:30, maxHp:30, spd:1.2,dmg:10,atk:1.4, xpVal:38, scale:1.0,shape:'humanoid',def:2, resist:{scath:0.6}},
     'Ghoul':        {minLevel:3, col:0x6a7a5a,eyeCol:0xe0ff80,hp:30, maxHp:30, spd:1.8,dmg:8, atk:1.1, xpVal:30, scale:.95,shape:'humanoid',def:1, resist:{tine:1.3, pierce:0.8}},
+    'Phantom':      {minLevel:3, col:0x3030a0,eyeCol:0xaaaaff,hp:42, maxHp:42, spd:1.5,dmg:11,atk:1.5, xpVal:60, scale:1.0, shape:'humanoid',def:1, resist:{solas:1.4, cloch:0.5, scath:0.7, pierce:0.4, blunt:0.5}}, // S1374 — the dungeon's lesser ghost on the roads at night (Scáth's toll): its numbers to the zone Wraith's as the dungeon's are
     'Wraith':       {minLevel:6, col:0x8090b0,eyeCol:0xa0e0ff,hp:48, maxHp:48, spd:1.4,dmg:12,atk:1.5, xpVal:75, scale:1.05,shape:'humanoid',def:2, resist:{pierce:0.4, blunt:0.5, scath:1.4}},
     'Dire Wolf':    {minLevel:4, col:0x3a3230,eyeCol:0xffb030,hp:40, maxHp:40, spd:1.9,dmg:10,atk:1.3, xpVal:40, scale:1.35,shape:'wolf',    def:2, resist:{tine:1.2}},
     'Snow Wolf':    {minLevel:3, col:0xdcdce0,eyeCol:0x80c0ff,hp:34, maxHp:34, spd:1.9,dmg:9, atk:1.3, xpVal:34, scale:1.15, shape:'wolf',    def:2, resist:{cloch:0.6}},

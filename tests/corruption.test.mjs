@@ -12,6 +12,7 @@
 // Session 1350 (session 4's talk, piece I §5): Any news? by the count torn in the site's people's voice, Normal after a bind, the lords.
 // Session 1369 (session 4's weather and ground): Tine's herbs and snow, Uisce's storms, Gaoth's gales and its ports' prices.
 // Session 1370 (session 4's Cloch): the Mark's roads count twice; the day's tremor there.
+// Session 1374 (session 4's roads): Scáth's Phantoms on the Mark's roads at night, Solas's Skeletons and Wraiths on Aurenne's.
 // Session 1360 (look): the flagstone is the look builder's prop, its hollow and oilcloth shown once the slab is tipped aside.
 import { boot, check } from './lib/game.mjs';
 import { enterDungeon } from './lib/dungeonshot.mjs';
@@ -254,6 +255,45 @@ const cl = await page.evaluate(() => {
 console.log(JSON.stringify(cl));
 check('Cloch torn: a town of the Mark counts a cleared road twice, a Gatelands town once, and not while Cloch stands', cl.roads0 === false && cl.roads[0] === true && cl.roads[1] === false, cl);
 check(`Cloch's toll on the Mark: at the day's hour (${cl.hours}, minutes in) the ground shifts, its line, the shake, once that day; none at two torn, none in the Gatelands`, cl.two === 0 && cl.before === 0 && cl.at === 1 && cl.line === 'The ground shifts under you, and is still.' && cl.day && cl.shake && cl.again === 1 && cl.next[0] === 1 && cl.next[1] === 2 && cl.gl === 2, cl);
+// Scáth's and Solas's roads (Session 1374; piece III): from three torn, one or two Phantoms on a road between settlements of the Mark,
+// Skeletons and Wraiths on Aurenne's, dusk to dawn, rolled by road and night; they rise near their place, one killed stays dead that
+// night, and they go far off, at dawn and on a bind. The roads are stand-ins pushed into ROADS between real sites of each nation.
+const nr = await page.evaluate(() => {
+  const keep = JSON.stringify(worldState.greatGates || null), P0 = [px, pz], T0 = worldState.gameTimeAbsMinutes, out = {};
+  const nat = t => nationKeyOf(...cellOf(t.x, t.z)), ALL = allSites().filter(t => t.kind in BASE_P);
+  const two = n => { const L = ALL.filter(t => nat(t) === n); return [L[0], L.find(t => t !== L[0] && Math.hypot(t.x - L[0].x, t.z - L[0].z) < 3000) || L[1]]; };
+  const fake = ([a, b]) => { const pts = []; for (let i = 0; i <= 20; i++) { const u = i / 20, x = a.x + (b.x - a.x) * u * .3, z = a.z + (b.z - a.z) * u * .3; pts.push({ x, z, y: 0 }); } const rd = { def: { a: a.id, b: b.id, via: 'road' }, pts }; ROADS.push(rd); return rd; };
+  const roads = { mark: fake(two('mark')), aurenne: fake(two('aurenne')), gatelands: fake(two('gatelands')) };
+  const set = gates => { worldState.greatGates = { gates, ev: {} }; };
+  const mine = () => ZONES.world.enemies.filter(e => e._nightRoad && !e.dead);
+  const tk = () => { _nightT = 0; tickNightRoads(); return mine(); };
+  const day = Math.floor((T0 || 0) / 1440) + 5, at = h => { worldState.gameTimeAbsMinutes = day * 1440 + h * 60; };
+  const id = rd => routeKey(rd.def.a, rd.def.b), R = (s, rd, n) => nightRoadRoll(s, id(rd), n, rd.pts);
+  const rm = R('scath', roads.mark, day), go = r => { px = r.x + 20; pz = r.z; };
+  out.same = JSON.stringify(rm) === JSON.stringify(R('scath', roads.mark, day));
+  out.nights = [roadNight(day * 1440 + 22 * 60), roadNight(day * 1440 + 1440 + 2 * 60), roadNight(day * 1440 + 12 * 60)];
+  go(rm); at(22);
+  set({ scath: 'torn', tine: 'torn' }); out.two = tk().length;
+  set({ scath: 'torn', tine: 'torn', uisce: 'torn' }); at(12); out.noon = tk().length;
+  at(22); const f = tk(); out.rise = [f.length, rm.n, f.map(e => e.type || e.baseType || e.name).join(','), f.map(e => e.id).join(' ')];
+  at(26); out.after = tk().length;
+  f[0].dead = true; tk(); px += 600; out.far = tk().length; go(rm); const back = tk(); out.back = [back.length, rm.n - 1];
+  at(30); out.dawn = tk().length;
+  // Solas on Aurenne's road
+  const ra = R('solas', roads.aurenne, day); set({ solas: 'torn', tine: 'torn', uisce: 'torn' }); at(22); go(ra); const s = tk();
+  out.solas = [s.length, ra.n, ra.kinds.every(k => k === 'Skeleton' || k === 'Wraith'), s.map(e => e.displayName || e.name).join(',')];
+  worldState.greatGates.gates.solas = 'sealed'; out.bound = tk().length;
+  // a Gatelands road: nothing, whichever is torn
+  const rg = R('scath', roads.gatelands, day); set({ scath: 'torn', solas: 'torn', tine: 'torn' }); go(rg); out.gl = tk().length;
+  out.phantom = (() => { const d = ZONE_FOE_DEF.Phantom; return !!d && d.hp > 0 && d.shape === 'humanoid'; })();
+  set({}); tk(); for (const k in roads) ROADS.splice(ROADS.indexOf(roads[k]), 1);
+  [px, pz] = P0; worldState.gameTimeAbsMinutes = T0; worldState.greatGates = JSON.parse(keep); return out; });
+console.log(JSON.stringify(nr));
+check('a road\'s night is rolled the same twice; the hours after midnight keep the evening\'s night; noon has none', nr.same && nr.nights[0] === nr.nights[1] && nr.nights[2] === null, nr);
+check(`Scáth's toll on the Mark's road: at 22:00 from three torn, ${nr.rise[0]} Phantom(s) rise (${nr.rise[2]}), keyed by road and night; none at two torn or at noon`, nr.two === 0 && nr.noon === 0 && nr.rise[0] === nr.rise[1] && nr.rise[0] >= 1 && nr.rise[0] <= 2 && /^(Phantom,?)+$/.test(nr.rise[2]) && nr.rise[3].startsWith('scath:'), nr);
+check('they hold past midnight; one killed stays dead that night when you go and come back; gone at dawn', nr.after === nr.rise[0] && nr.far === 0 && nr.back[0] === nr.back[1] && nr.dawn === 0, nr);
+check(`Solas's toll on Aurenne's road: ${nr.solas[0]} of Skeletons and Wraiths (${nr.solas[3]}); gone when Solas is bound`, nr.solas[0] === nr.solas[1] && nr.solas[2] && nr.bound === 0, nr);
+check('a Gatelands road has none; the Phantom stands in the open world\'s table', nr.gl === 0 && nr.phantom, nr);
 // the needle (Session 1366; piece II §3, Michael's A on #656): the runner once a knot is cut or two rings are seen, on walking into
 // a town; Aldwyn beside Ironhaven's lord from then on; his talk gives the needle; the knife's opening if the needle came first
 const hd = await page.evaluate(async () => {
