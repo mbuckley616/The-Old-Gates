@@ -113,8 +113,13 @@ const T = await page.evaluate(() => {
   const massive = []; for (let k = 0; k < 20; k++) for (const cond of ['failing', 'catastrophic']) massive.push(look(makeGate('massive', 57 + k * 1231, 0, cond)));
   return { named, massive: { gates: massive.length, withGaps: massive.filter(m => m.f1 > 0).length, rock: massive.every(m => m.rock), holed: massive.every(m => m.holed) } }; });
 console.log(JSON.stringify(T));
-// (the Vault of the Tide, catastrophic, has no nave on floor one, only a flooded hall and a crossing: the sheet gives those no gaps,
-// so it is asked as a decision, not counted here)
+// S1362 (Michael's A on #664) — a crossing takes gaps on the nave's rule: the Vault of the Tide (catastrophic) has no nave, and its
+// crossings on both floors now have them, floor one's over floor two's rock as the naves' are
+const V = await page.evaluate(() => { const t = makeGate('large', 845, 2), type = q => t.spaces.find(s => s.id === q.space).type;
+  return { cond: t.cond, cross: t.gaps.filter(q => type(q) === 'crossing').map(q => q.floor), others: t.gaps.filter(q => type(q) !== 'crossing').length }; });
+console.log(JSON.stringify(V));
+check('a crossing takes gaps on the nave\'s rule: the Vault of the Tide (catastrophic, no nave) has them on both floors\' crossings',
+  V.cond === 'catastrophic' && V.cross.includes(1) && V.cross.includes(2) && T.named.tide.f1 > 0 && T.named.tide.rock && T.named.tide.holed, { V, tide: T.named.tide });
 check('a gate of two floors has its gaps on floor one, the Dungeon of Shadows (failing) among them, each over floor two\'s rock and open in floor one\'s floor',
   T.named.shadows.f1 > 0 && T.named.shadows.rock && T.named.shadows.holed && T.massive.withGaps >= T.massive.gates / 2 && T.massive.rock && T.massive.holed, T);
 await page.evaluate(() => { window._condRoll = gateCondRoll; gateCondRoll = () => 'failing'; });
