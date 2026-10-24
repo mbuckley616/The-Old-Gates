@@ -612,7 +612,7 @@ function dragonBreath(e){const d=Math.hypot(e.x-px,e.z-pz);if(d>11)return;const 
     const l=new THREE.PointLight(0xff6020,2.5,12);l.position.set(e.x,(e.floor===2?FLOOR2_Y:0)+1.5,e.z);sc.add(l);_BREATH.push({pts,vel,t:0,l,sc});
     try{sfxNoise(1.1,0,0,.35,1200);sfxTone(120,60,1.0,.2,'sawtooth');}catch(err){}
     const dx=px-e.x,dz=pz-e.z,dd=Math.hypot(dx,dz);const ta=Math.atan2(dx,dz);let diff=Math.abs(ta-ang);if(diff>Math.PI)diff=Math.PI*2-diff;
-    if(dd<10&&diff<.45){const dmg=_warded(Math.round(wyrmFireRaw()*(blocking?.5:1)));PHP=Math.max(0,PHP-dmg);lvAct.damageTaken+=dmg;armourUse();updateHUD();showMsg(`Fire! ${dmg} damage.`,'#ff6040');if(PHP<=0)playerDead();}
+    if(dd<10&&diff<.45){const dmg=_warded(Math.round(wyrmFireRaw()*(blocking?.5:1)),FIRE_SRC);PHP=Math.max(0,PHP-dmg);lvAct.damageTaken+=dmg;armourUse();updateHUD();showMsg(`Fire! ${dmg} damage.`,'#ff6040');if(PHP<=0)playerDead();}
     else showMsg('The fire misses you.','#c8e88a');},900);}
 function tickBreath(dt){for(let i=_BREATH.length-1;i>=0;i--){const b=_BREATH[i];b.t+=dt;const a=b.pts.geometry.attributes.position.array;for(let k=0;k<b.vel.length;k++){a[k*3]+=b.vel[k][0]*dt;a[k*3+1]+=b.vel[k][1]*dt;a[k*3+2]+=b.vel[k][2]*dt;b.vel[k][1]+=dt*.8;}b.pts.geometry.attributes.position.needsUpdate=true;b.pts.material.opacity=Math.max(0,.9-b.t*.9);b.l.intensity=Math.max(0,2.5-b.t*3);if(b.t>1.1){b.sc.remove(b.pts);b.sc.remove(b.l);_BREATH.splice(i,1);}}}
 function tickDragons(dt){const E=activeZoneId==='world'?(ZONES.world&&ZONES.world.enemies||[]):(typeof ENEMIES!=='undefined'?ENEMIES:[]);for(const e of E){if(e.dead||!e.dragon)continue;if(!e._dragonBuilt)detailDragon(e);

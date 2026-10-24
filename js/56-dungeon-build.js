@@ -16,6 +16,9 @@ function dSlide(x,z,dx,dz){if(!dBlk(x+dx,z+dz))return[x+dx,z+dz];if(!dBlk(x+dx,z
 // below the floor over the air, the pit's sides are walls: you cannot climb out through the rock.
 function dAirAt(x,z){const m=activeMap();if(!m)return false;const c=dCellOf(x),r=dCellOf(z);return r>=0&&r<dR&&c>=0&&c<dC&&m[r][c]===8;}
 function dLevelY(){return currentFloor===2?FLOOR2_Y:0;}
+// S1358 — a gap in floor one of a gate of two floors (gateCondition): open air on floor one over floor two's rock. Falling in it you
+// stay on floor one, so the pit is floor one's, GATE_PIT down, and not floor two's rock at the stair hall's height reading.
+function dGapOne(x,z){if(!dMap2)return false;const c=dCellOf(x),r=dCellOf(z);return r>=0&&r<dR&&c>=0&&c<dC&&dMap[r][c]===8&&dMap2[r][c]===0;}
 function dSolidP(x,z){if(dAirAt(x,z))return false;if(jumpY<dLevelY()-1&&dAirAt(px,pz))return true;return dSolid(x,z);}
 function dBlkP(x,z){const R=0.3;return dSolidP(x-R,z-R)||dSolidP(x+R,z-R)||dSolidP(x-R,z+R)||dSolidP(x+R,z+R);}
 function dSlideP(x,z,dx,dz){if(!dBlkP(x+dx,z+dz))return[x+dx,z+dz];if(!dBlkP(x+dx,z))return[x+dx,z];if(!dBlkP(x,z+dz))return[x,z+dz];return[x,z];}
@@ -3442,6 +3445,7 @@ function buildDungeon(portal){
   // scaling pass carries it with the rest
   try{lairFinish(portal);}catch(e){}try{shuttleLay(portal);}catch(e){}try{cloakDenLay(portal,window._lairBoss);}catch(e){}
   dunScaleWhole(dunCellFor(portal),thWallMat);
+  try{knotLay(portal,gen);}catch(e){console.warn('knotLay',e);} /* S1346 — a great gate's knot over the ring's dais, in metres (87-world-quests.js) */
   /* S1302 — a gate draws by space (dZoneBuild, dRender) and lights 8 at a time; its pool is made now, so the compile below has its lights */
   DZONE=gen.gate?dZoneBuild(gen):null;if(gen.gate){dScene.userData.lightPool=8;try{_sweepScenePool(dScene);}catch(e){}}
   /* S1293 — a gate's spaces bring materials no room had (the water's, the pit's): compiled now, behind the fade, not when first seen */
@@ -3673,6 +3677,7 @@ function goToDungeon(portal){if(!portal.tutorial&&activeZoneId==='world'&&typeof
   px=dAt(dEntranceX+stepC*2);pz=dAt(dEntranceZ+stepR*2);
   yaw=Math.atan2(-stepC,-stepR);pitch=0;velY=0;jumpY=0;onGround=true;
   showMsg('Entered '+portal.name+'. Press E at entrance to leave.','#aaaaff');
+  if(portal._toRing){portal._toRing=false;if(typeof knotLandAtRing==='function')knotLandAtRing();} /* S1354 — a great gate's way back to its ring */
 });}
 function goToOW(){
   // v61aw: tutorial exit branch. When the player ascends the stair from

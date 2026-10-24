@@ -110,6 +110,7 @@
     {const P=!artifactState('gate_blade')&&artifactPlaces().gate_blade;if(P&&nationKeyOf(ci,cj)==='gatelands'){const [gi,gj]=cellOf(P.x,P.z);if(Math.abs(gi-ci)<=1&&Math.abs(gj-cj)<=1)out.push(`There's a sword in a stone out by ${P.name}. Half the young ones in the townland have had a pull at it. It's still there. So are they, mostly.`);}} /* S802 — the blade, while it stands in its stone (the approved draft, §5) */
     {const P=!artifactState('drowned_bell')&&artifactPlaces().drowned_bell;if(P&&nationKeyOf(ci,cj)==='gatelands'){const [bi,bj]=cellOf(P.x,P.z);if(Math.abs(bi-ci)<=1&&Math.abs(bj-cj)<=1&&(site.kind==='port'||Math.hypot(site.x-P.x,site.z-P.z)<500))out.push(`There's a wreck on the rock off ${P.coast} that only shows at the ebb. The lads say there's a bell on her still. Nobody's gone out for it. The tide comes in faster than you'd think, and it's never once been sorry.`);}} /* S801 — the bell, while it hangs in its wreck (the approved draft, §2) */
     {const P=!artifactState('sundial_ring')&&artifactPlaces().sundial_ring;if(P){const [ri,rj]=cellOf(P.x,P.z);if(Math.abs(ri-ci)<=1&&Math.abs(rj-cj)<=1)out.push(`There's gold on the cairn at the top of ${P.name}. Everybody's seen it from below, and nobody's brought it down. You climb up, it's never noon. You climb faster, it's raining. The mountain takes its time, and it takes yours.`);}} /* S800 — the ring, while it lies on its cairn (the approved draft, §4) */
+    {const t=gateTalk(site);if(t)out.push(t);} /* S1350 — the great gates, by the count torn */
     if(isNight())out.push("Don't go past the last lamp. Not tonight.");
     {const L=fstate().league;if(L.spire==='held'){const cs=anchoredPlaces().caer_slige;if(cs&&cs.id===site.id)out.push("The new Captain held the spire a whole night. Came down at first light and wouldn't talk about it.");else if(nationKeyOf(ci,cj)==='mark')out.push("The spire at Caer Slige has gone dark. The night watch says it's colder for it. The night watch can freeze.");}} /* S1338 — *The Spire Held*, §7 */
     {const L=fstate().league;if(L.rowe==='dead'&&L.closed&&nationKeyOf(ci,cj)==='mark')out.push("Somebody put Hesket Rowe down on the yard at Caer Slige after she'd yielded. Nobody says the name. Everybody knows it.");} // S374 — the yard's murder, in the Mark
@@ -344,6 +345,7 @@ const giver=`${lord.title} ${lord.name}`;
     // rubbings and the reader
     const rub=worldState.rubbings||{};for(const seed in rub){const p=dungeonWorldPos[seed];const read=worldState.sigilsRead||{};if(p&&!read[seed])push(p.x,p.z,RED,rub[seed]);}
     if(VX.npc)push(VX.npc.g.position.x,VX.npc.g.position.z,GREEN,'someone at the field');
+    {const ev=worldState.greatGates&&worldState.greatGates.ev;if(ev&&ev.noteRead&&!ev.knifeLifted){const sp=flagstoneSpot();if(sp)push(sp.x,sp.z,RED,'a flagstone');}} /* S1353 — Varek's note, read */
     // the main story's next giver, when a quest is waiting on an authored NPC in this world
     try{if(typeof QUEST_DEFS!=='undefined'){for(const q of QUEST_DEFS){const st=qState(q.id);if(!q.giver)continue;if(st==='available'||st==='reward'){const h=ZONES.world.houses.find(x=>x.keeper===q.giver);const n=npcs.find(x=>x.def&&x.def.name===q.giver);if(n)push(n.g.position.x,n.g.position.z,GREEN,q.giver);else if(h)push(h.doorX,h.doorZ,GREEN,q.giver);else if(typeof NPC_DEF!=='undefined'&&NPC_DEF.some(d=>d.name===q.giver)&&SITE.ashenmoor)push(SITE.ashenmoor.x,SITE.ashenmoor.z,GREEN,q.giver+' — Ashenmoor'); /* v80 S133 — an outdoor giver far away still points at the village */}}}}catch(e){}
     // v80 S138 — a marker at a place takes the place's glyph (the same set the compass shows for places)
@@ -2077,6 +2079,223 @@ const giver=`${lord.title} ${lord.name}`;
   function greatFate(){const g=worldState.greatGates;return (g&&g.fate)||null;}
   function corruptionTorn(){const g=worldState.greatGates;if(!g||!g.gates)return [];return GREAT_SCHOOLS.filter(s=>g.gates[s]==='torn');}
   function corruptionLevel(){return corruptionTorn().length;}
+  // S1349 — the six gifts (great-gates-build.md session 3, Session 1349; piece III): each is read where it applies while its gate is
+  // torn, never written into the player's numbers. Tine: fire takes half (_warded). Uisce: breath does not fall (the dive). Cloch:
+  // carry ×1.5 (maxCarry). Scáth: at night (20:00 to 05:00) a witness sees you only within 4 m (witnessOf). Solas: Skeletons,
+  // Wraiths and Phantoms leave you be until you strike one, and then that room fights (solasWards). Gaoth: top speed ×1.5 at sea.
+  // S1359 — the tolls (piece III): a torn school's toll holds while three or more great gates are torn anywhere, and ends for that
+  // school the moment its gate is bound (gateGift goes false). The log's line fires once, the first time the count reaches three.
+  const GATE_TOLL_AT=3;
+  function gateToll(school){return gateGift(school)&&corruptionLevel()>=GATE_TOLL_AT;}
+  function gateTollStart(){const ev=greatEv();if(ev.toll||corruptionLevel()<GATE_TOLL_AT)return false;ev.toll=worldState.gameTimeAbsMinutes||1;
+    if(typeof addLog==='function')addLog('◎','Somewhere, something gave.');return true;}
+  // Uisce's face and toll on the Gatelands' waters (the sheet's table): while torn a catch brings two fish; from three torn the
+  // schools there cannot be caught at all. Read where you swim, by the cell's nation.
+  function uisceWaters(){try{const [i,j]=cellOf(px,pz);return nationKeyOf(i,j)==='gatelands';}catch(e){return false;}}
+  function gateGift(school){const g=worldState.greatGates;return !!(g&&g.gates&&g.gates[school]==='torn');}
+  // S1350 — the world's talk of the great gates (great-gates-build.md session 4, its talk; piece I §5, approved 14 Oct): one line in
+  // *Any news?* by the count torn, in the voice of the site's people; the *Normal* lines instead for seven days after a bind, and for a
+  // season (90 days) once the six are bound. The lords' *The great gates?* follows the latest act anywhere, by the power of the nation.
+  const GATE_TALK={
+    1:{gatelander:"The sunsets this month. You'd stop a cart for them. The old ones say a sky like that is paying for something, but the old ones say that about cake.",
+      markman:"Sky's been showing off. Nobody's complaining.",
+      aurennais:"The almanac-makers are in some distress, Master. The evenings have been running a colour their tables do not include. Everyone else has simply been going out to look.",
+      oldblood:"There is an old word for that colour in the evening. Nobody has needed it in a long time."},
+    2:{gatelander:"The ash by the well put out a branch straight up overnight, like a hand at a fair. They say a tree knows the weather before the weatherman does. I'd give a lot to know what it knows.",
+      markman:"Pines up the valley have gone crooked. All the same way. Wind didn't do it. No wind blows like that.",
+      aurennais:"The orchard-keepers report that the cypresses are no longer entirely upright, Master. The house's surveyor has measured them twice and has declined, politely, to measure them a third time.",
+      oldblood:"The trees are reaching. They do that when the ground is uneasy."},
+    3:{gatelander:"The dyer's in a temper. She says her reds come out of the vat looking a week old. Mind you, she said the same of her husband, and he's lasted.",
+      markman:"Colour's going out of things. Ale's still the colour of ale. That's what matters.",
+      aurennais:"The glass-houses are quietly frantic, Master. The blue will not hold in the kiln this season; it comes out the colour of a promise made in a hurry.",
+      oldblood:"The colours are thinning. The world is spending them on something."},
+    4:{gatelander:"Talk is it started at the great gates. Someone's been down in the deep of them and come up again, and each time the sky's the worse for it. Well. There's no smoke without a fire, and there's been smoke.",
+      markman:"They're saying it's the great gates. Somebody's going through them like a bull through a hedge. I'd shake their hand. Then I'd ask them what for.",
+      aurennais:"The Compact has a clause for nearly everything, Master. It has none for a great gate opened. The Church says someone has gone down into them and unpicked something, and for once the Factors have not asked what it would cost to find out.",
+      oldblood:"The great gates are open. You can feel the draught from any of them."},
+    5:{gatelander:"They say it's the one traveller does it, gate after gate, and there's one great gate left whole. Well, a field's not lost till the last row's cut. Weaver keep whoever it is from cutting it.",
+      markman:"One great gate left, they say. Whoever's at it, I hope they've a reason. Most don't.",
+      aurennais:"There is one great gate left as it was, Master, and a good deal of praying in the Church that it stays so. The Prior has written to every port. I am told the letter describes no one in particular.",
+      oldblood:"One knot is left tied. The one who carries the knife knows where."},
+    normal:{gatelander:"Quiet month. The sky's minding its own business and the hens are laying. You'd hardly know there was news anywhere.",
+      markman:"Nothing. Good. Nothing's good.",
+      aurennais:"Nothing of note, Master, which is itself of note this year. The almanacs are correct again. The almanac-makers are insufferable.",
+      oldblood:"The knot holds. That is all the news there should be."}};
+  const GATE_LORDS={
+    gatelands:{torn:"The Crown holds the great gates as royal property, and royal property is not opened like a press in the kitchen. I'm told one was. I'm told the sky took it badly. The Herald will want a name, and I find I haven't one to give him. See that I go on not having one.",
+      sealed:"One of the great gates bound fast, they tell me, and the country the quieter for it. The Crown will enter it as its own work, of course. That's what a crown is for."},
+    mark:{torn:"Somebody opened a great gate and walked out of it. By our law that's holding it. The League would stand them a drink. Then we'd want to know what's coming out behind them.",
+      sealed:"Tied one of the great gates shut, did someone? Pity. There was good salvage in there. Still. Their gate if they held it."},
+    aurenne:{torn:"The Church holds that the great gates are the Weaver's own loom, Master, and that to cut one is to unpick the cloth we are all standing on. The Prior is drafting a word for whoever did it. It will not be a courteous word.",
+      sealed:"The Church reports a great gate sealed, Master, and is content to accept a share of the credit, which it has not earned. It does not distinguish its own sealing from this one. You and I need not correct it."}};
+  // the *Normal* window: a bind in the last seven days, or the six bound in the last ninety
+  function gateTalkNormal(){const g=worldState.greatGates;if(!g)return false;const day=Math.floor((worldState.gameTimeAbsMinutes||0)/1440);
+    if(g.fate==='sealed'&&day-Math.floor((g.fatedAt||0)/1440)<90)return true;return !!(g.last&&g.last.kind==='sealed'&&day-g.last.day<7);}
+  function gateTalk(site){if(greatFate()==='torn')return null;const P=peopleOfSite(site),L=gateTalkNormal()?'normal':corruptionLevel();const row=GATE_TALK[L];return row?(row[P]||row.gatelander):null;}
+  function greatGateLordTopics(site){const g=worldState.greatGates;if(!g||!g.last)return [];const [i,j]=cellOf(site.x,site.z),row=GATE_LORDS[nationKeyOf(i,j)];if(!row)return [];
+    return [{label:'The great gates?',response:row[g.last.kind]||row.torn}];}
+  const SOLAS_KINDS={Skeleton:1,Wraith:1,Phantom:1};
+  // a foe of those kinds is at peace while Solas is torn and none of its room has been struck: a blow on one (its health below
+  // full) wakes every one of those kinds in its zone of the gate (or within 20 m, outside a gate's zones)
+  function solasWards(e){if(!e||e.dead||!SOLAS_KINDS[e.baseType||e.baseName||e.name]||e._solasStruck||!gateGift('solas'))return false;
+    if(!(e.hp<e.maxHp))return true;
+    const L=activeZoneId==='dungeon'?ENEMIES:(ZONES.world&&ZONES.world.enemies)||[],ex=e.x!=null?e.x:e.mesh.position.x,ez=e.z!=null?e.z:e.mesh.position.z;
+    const zone=activeZoneId==='dungeon'&&typeof dZoneAt==='function'&&DZONE?dZoneAt(ex,ez,e.floor||1):-1;
+    for(const o of L){if(!o||o.dead||!SOLAS_KINDS[o.baseType||o.baseName||o.name])continue;const ox=o.x!=null?o.x:o.mesh.position.x,oz=o.z!=null?o.z:o.mesh.position.z;
+      if(o===e||(zone>=0?dZoneAt(ox,oz,o.floor||1)===zone:Math.hypot(ox-ex,oz-ez)<20))o._solasStruck=true;}
+    return false;}
+
+  // ═══ THE KNOT AT THE RING (great-gates-build.md session 1, Session 1346; piece I, approved 14 Oct 2026; Michael's A on #292) ═══
+  // A great gate's script runs into one knot at the heart of its ring. The Loosing Knife cuts it (torn) and the Binding Needle binds
+  // it (sealed): bag items keyed by `artifact` ('looseKnife', 'bindNeedle'), which the sheet's session 2 brings into the world. The
+  // tier a cast reads follows the gate (effTier, 64-spells.js); nothing is written into the character. Until card F5 places the six,
+  // a great gate is a generated gate flagged with its school, `portal.great`, or a stand-in flagged from the console (devGreatGate),
+  // never saved. The knot is drawn at the ring chamber's dais in plain geometry until the look builder makes the ring.
+  const KNOT_LINES={
+    tear:{first:'The knot parts under the edge like a wet thread. What it held goes through you, and out, and on.',
+      again:'The knot you bound parts as easily as if it had never been tied. Easier.',
+      school:{tine:'Your hands are warm to the elbow, and the warmth stays.',uisce:'There is salt on your lips, a long way from any sea.',
+        cloch:'For a breath you feel the whole weight of the hill above you, and that you could carry it.',
+        scath:'Your shadow is a moment late in following you, and then it is not.',solas:'Every flame in the hall leans toward you.',
+        gaoth:'The air in the hall goes out past you, as if it had somewhere to be.'}},
+    bind:{first:'The ends come together under it and do not come apart again. The knot is whole, and the hall is very quiet.',
+      again:'You draw the cut ends together. They remember each other.',
+      school:{tine:'Your hands are cold. You had not known they were warm.',uisce:'Your mouth is dry, and stays dry a while.',
+        cloch:'You are lighter on your feet, and less sure of the floor.',scath:'Your shadow is very exact.',
+        solas:'The flames in the hall stand straight and pay you no attention.',
+        gaoth:'You notice your own breathing, the way you do in a shut room.'}},
+    gain:(S,gate)=>`${S} runs deeper in you while ${gate} is torn.`,
+    cost:(S,gate)=>`${S} runs shallower in you while ${gate} is bound.`,
+    lockSeal:'The knot is whole, and five others answer it, each to each. The world settles round you like a house at night.',
+    locked:'The knot will not take the edge. It holds, and five others hold it.',
+    ringFirst:'At the hall’s end stands a ring of stone, higher than the hall. The script on every wall runs toward it, and in the dark at its heart it is all drawn into one knot.',
+    examine:{torn:'The two ends hang apart in the dark, and the dark goes back further than the hall did.',
+      sealed:'The knot is whole, and tighter than it was. Nothing moves in it.',
+      untied:'The knot is drawn tight past any fingers. It was not tied to be undone by hand.'}};
+  const GREAT_STANDIN={};
+  function greatSchoolOf(portal){if(!portal||portal.seed==null)return null;const s=portal.great||GREAT_STANDIN[portal.seed];return GREAT_SCHOOLS.indexOf(s)>=0?s:null;}
+  // the console's stand-in: flag a gate's seed (the one you are in, by default) as the great gate of a school, for this page only
+  function devGreatGate(school,seed){if(GREAT_SCHOOLS.indexOf(school)<0)return false;const sd=seed!=null?seed:(currentPortal&&currentPortal.seed);if(sd==null)return false;GREAT_STANDIN[sd]=school;return true;}
+  function knotTools(){const has=k=>BAG.some(it=>it&&it.artifact===k);return {knife:has('looseKnife'),needle:has('bindNeedle')};}
+  function greatGateLast(kind){const g=greatGates();g.last={day:Math.floor((worldState.gameTimeAbsMinutes||0)/1440),kind};}
+  function _knotMastery(school){return SPELLS.filter(sp=>sp.school===school&&effTier(sp.id)===3).map(sp=>sp.id);}
+  // the named actions over setGreatGate: false-ish ({ok:false}) when the knot is already so or fate is fixed. A cut that lifts a spell
+  // to Mastery counts as a Mastery touch for Varek, once per spell per cut (the sheet: the tearing path draws him sooner).
+  function cutKnot(school){const prev=greatGateState(school);if(prev==='torn'||greatFate())return {ok:false};const before=_knotMastery(school);
+    if(!setGreatGate(school,'torn'))return {ok:false};greatGateLast('torn');gateTollStart(); /* S1359 — the third tear's log line */
+    const lifted=_knotMastery(school).filter(id=>before.indexOf(id)<0);for(const id of lifted)onMasteryTouch(id);
+    return {ok:true,again:prev==='sealed',lifted,fate:greatFate()};}
+  function bindKnot(school){const prev=greatGateState(school);if(prev==='sealed'||greatFate())return {ok:false};
+    if(!setGreatGate(school,'sealed'))return {ok:false};greatGateLast('sealed');
+    if(greatFate()==='sealed')for(const it of BAG)if(it&&it.artifact==='looseKnife')it.desc=greatToolItem('looseKnife').desc; /* S1353 — the knife's card at six bound */
+    return {ok:true,again:prev==='torn',fate:greatFate()};}
+  // laid by buildDungeon after the scaling pass, in metres: the knot over the middle of the ring chamber's dais
+  let KNOT_LIE=null;
+  function knotLay(portal,gen){KNOT_LIE=null;const school=greatSchoolOf(portal);if(!school||!gen||!gen.gate||gen.ring==null)return null;
+    const sp=gen.spaces[gen.ring];if(!sp||!sp.dais)return null;const fl=sp.floor||1,x=dAt((sp.dais.x0+sp.dais.x1)/2),z=dAt((sp.dais.z0+sp.dais.z1)/2),y=(fl===2?FLOOR2_Y:0)+.4;
+    const col=parseInt(SCHOOL_DEF[school].col.slice(1),16),g=new THREE.Group();
+    const knot=new THREE.Mesh(new THREE.TorusKnotGeometry(.9,.11,128,10,2,3),new THREE.MeshLambertMaterial({color:0x14110e,emissive:col,emissiveIntensity:.35}));
+    knot.position.y=2.4;g.add(knot);g.position.set(x,y,z);g.userData.knot=school;dScene.add(g);
+    const name=portal.canonicalName||(typeof dungeonName==='function'?dungeonName(portal.seed,portal.theme):'the great gate');
+    KNOT_LIE={x,z,floor:fl,school,name,mesh:g,knot};return KNOT_LIE;}
+  function knotNear(){const L=KNOT_LIE;return !!(L&&activeZoneId==='dungeon'&&currentFloor===L.floor&&Math.hypot(px-L.x,pz-L.z)<2.6);}
+  // the first sight of the ring, once a gate (called from the dungeon's frame); worldState.greatGates.ev.ring records it (the way back's)
+  function knotTick(){const L=KNOT_LIE;if(!L||activeZoneId!=='dungeon'||currentFloor!==L.floor)return false;if(L.knot)L.knot.rotation.y+=.002;
+    if(Math.hypot(px-L.x,pz-L.z)>24)return false;const g=greatGates(),ev=g.ev||(g.ev={}),ring=ev.ring||(ev.ring={});if(ring[L.school])return false;
+    ring[L.school]=true;if(!ev.ringFirst)ev.ringFirst=worldState.gameTimeAbsMinutes||1;
+    {const t=knotTools();if(!t.knife&&!t.needle&&!ev.knifeLifted&&!ev.noteDue){ev.noteDue=worldState.gameTimeAbsMinutes||1;ev.ringGate=L.name;}} /* S1353 — Varek's note, on the next waking */
+   showMsg(KNOT_LINES.ringFirst,'#c8d0e0');if(typeof addLog==='function')addLog('◎',`Reached the ring of ${L.name}.`);return true;}
+  // the prompt by state and what you carry (piece I §1's table)
+  function knotPrompt(){const L=KNOT_LIE;if(!L)return '';const st=greatGateState(L.school),t=knotTools(),n=L.name;
+    if(!st){if(t.knife&&t.needle)return `The knot of ${n} — Press 'E'`;if(t.knife)return `The knot of ${n} — Press 'E' to cut it`;if(t.needle)return `The knot of ${n} — Press 'E' to bind it`;return `The knot of ${n}`;}
+    if(st==='torn')return t.needle&&!greatFate()?`The cut knot of ${n} — Press 'E' to bind it`:`The cut knot of ${n}`;
+    return t.knife&&!greatFate()?`The bound knot of ${n} — Press 'E' to cut it`:`The bound knot of ${n}`;}
+  function _knotSay(r,kind){const L=KNOT_LIE,S=SCHOOL_DEF[L.school].name,K=KNOT_LINES[kind];
+    const first=kind==='bind'&&r.fate==='sealed'?KNOT_LINES.lockSeal:r.again?K.again:K.first;
+    showMsg(first+' '+K.school[L.school],'#c8d0e0');const second=kind==='tear'?KNOT_LINES.gain(S,L.name):KNOT_LINES.cost(S,L.name);
+    setTimeout(()=>{try{showMsg(second,kind==='tear'?'#d8b04a':'#9a9a92');}catch(e){}},1600);
+    if(typeof addLog==='function'){addLog('◎',kind==='tear'?`Cut the knot of ${L.name}${r.again?' again':''}.`:`Bound the knot of ${L.name}${r.again?' again':''}.`);
+      if(kind==='bind'&&r.fate==='sealed')addLog('◎','The six great gates are bound.');}
+    if(typeof updateHUD==='function')updateHUD();}
+  function knotCut(){const L=KNOT_LIE;if(!L)return null;const r=cutKnot(L.school);if(r.ok)_knotSay(r,'tear');return r;}
+  function knotBind(){const L=KNOT_LIE;if(!L)return null;const r=bindKnot(L.school);if(r.ok)_knotSay(r,'bind');return r;}
+  // E at the knot
+  function knotUse(){const L=KNOT_LIE;if(!L)return null;const st=greatGateState(L.school),t=knotTools(),f=greatFate();
+    if(f==='sealed'&&t.knife){showMsg(KNOT_LINES.locked,'#c8d0e0');return 'locked';}
+    if(!st){if(t.knife&&t.needle){openDialog({name:`The knot of ${L.name}`,role:SCHOOL_DEF[L.school].name,ico:'◎',noIntro:true,greeting:[''],topics:[
+        {label:'Cut the knot.',quest:true,fn:()=>{setTimeout(()=>{try{closeDialog();}catch(e){}knotCut();},60);return '';}},
+        {label:'Bind the knot.',quest:true,fn:()=>{setTimeout(()=>{try{closeDialog();}catch(e){}knotBind();},60);return '';}},
+        {label:'Leave it.',bye:true}]});return 'choice';}
+      if(t.knife)return knotCut()?'cut':null;if(t.needle)return knotBind()?'bind':null;showMsg(KNOT_LINES.examine.untied,'#c8d0e0');return 'untied';}
+    if(st==='torn'&&t.needle&&!f)return knotBind()?'bind':null;
+    if(st==='sealed'&&t.knife&&!f)return knotCut()?'cut':null;
+    showMsg(KNOT_LINES.examine[st],'#c8d0e0');return 'examine';}
+
+  // ── the way back (Session 1354; piece I §4, the Gate-Blade's precedent, Michael's 3A on #263): once a great gate's ring has
+  // been reached (ev.ring[school]), its door offers both, *go down to the ring* and *go in*; the first lands you on the dais
+  // beside the knot, each time with the draft's line. The realm is still there to walk the long way.
+  const RING_BACK='The way to the ring is open. The hall does not ask the long way of you twice.';
+  function greatRingBack(portal){const s=greatSchoolOf(portal);if(!s)return false;const g=worldState.greatGates,r=g&&g.ev&&g.ev.ring;return !!(r&&r[s]);}
+  function greatDoorPrompt(portal){if(!greatRingBack(portal))return null;return `${portal.canonicalName||portal.name||'The great gate'} — Press 'E' to go down to the ring`;}
+  function greatDoorChoice(portal){const n=portal.canonicalName||portal.name||'The great gate';const go=ring=>{setTimeout(()=>{try{closeDialog();}catch(e){}portal._toRing=ring;goToDungeon(portal);},60);return '';};
+    openDialog({name:n,role:SCHOOL_DEF[greatSchoolOf(portal)].name,ico:'◎',noIntro:true,greeting:[''],topics:[
+      {label:'Go down to the ring.',quest:true,fn:()=>go(true)},{label:'Go in.',quest:true,fn:()=>go(false)},{label:'Leave it.',bye:true}]});return true;}
+  // called by goToDungeon once you stand at the way in: to the dais, 2.2 m short of the knot, facing it
+  function knotLandAtRing(){const L=KNOT_LIE;if(!L)return false;currentFloor=L.floor;px=L.x;pz=L.z+2.2;yaw=0;pitch=0;velY=0;
+    jumpY=(L.floor===2?FLOOR2_Y:0)+.45;onGround=false;showMsg(RING_BACK,'#c8d0e0');return true;}
+
+  // ═══ THE LOOSING KNIFE (great-gates-build.md session 2, its first half, Session 1353; piece II, approved 16 Oct 2026) ═══
+  // The first time a great ring is reached carrying neither tool, Varek's note is folded into your pack on your next waking
+  // (restAtBed). Read, it stars the Ashfeld on the map, and under the flagstone in the middle of its stone ring lies the knife.
+  // The tools are the character's: bag items, `unique` (never sold or destroyed), never stashed, kept on death. Which events
+  // have fired is the world's: worldState.greatGates.ev {ringFirst, ringGate, noteDue, noteGiven, noteRead, knifeLifted}.
+  // The flagstone is a placeholder slab; the look builder's prop is owed. It is not solid.
+  const GREAT_TOOLS={
+    looseKnife:{name:'The Loosing Knife',sub:'an Scian',ico:'🗡',desc:'A knife of grey stone, no longer than a hand and as thin as a leaf. The script on its blade runs one way only, toward the edge. It will not cut bread.'},
+    bindNeedle:{name:'The Binding Needle',sub:'an tSnáthaid',ico:'🪡',desc:'A needle of pale bone as long as a forearm, its eye wide enough to put a finger through. The script on it runs round and round and comes back to where it began.'}};
+  const KNIFE_LOCKED='It has not cut anything since the sixth knot was tied, and it will not.';
+  function greatToolItem(id){const T=GREAT_TOOLS[id];if(!T)return null;const locked=id==='looseKnife'&&greatFate()==='sealed';
+    return {type:'misc',name:T.name,ico:T.ico,sub:T.sub,desc:`${T.sub} · ${T.desc}${locked?' '+KNIFE_LOCKED:''}`,weight:.3,sellMult:0,buyPrice:0,unique:true,quest:true,artifact:id,qty:1};}
+  function greatEv(){const g=greatGates();return g.ev||(g.ev={});}
+  const KNIFE_SAY={note:'A paper you did not put there is folded in your pack.',
+    lift:'Under the flagstone, wrapped in an oilcloth gone stiff with age, is a knife of grey stone. The grass round the stone is worn to earth in the shape of two feet.',
+    oldblood:'It is warm in your hand, the way a stone is warm with a sigil under it, though there is none.',
+    sigil:'The knife does nothing here. It was made for six knots and no others.'};
+  BOOKS.push({id:'varek_note',name:'A note in a cramped hand',ico:'📜',attr:null,
+    get pages(){const gate=greatEv().ringGate||'the ring';return [`You reached the ring of ${gate} and came away with your hands empty. I know the feeling. I have had it for two hundred years.\n\nAt the Ashfeld, where the path in the grass ends, there is a flagstone. What you need is under it. I have stood on that stone every time I went there, because it was the one place I could be sure nobody would dig.\n\nI cannot carry it where you go. What it cuts stands between me and every ring, and it knows me. A woman called Orla Fenn got as far as the second hall of ${gate} in my time. She is on my list. You went further, and it let you. Why do you think that is?`];},
+    onRead(){const ev=greatEv();if(!ev.noteRead)ev.noteRead=worldState.gameTimeAbsMinutes||1;}});
+  // on waking (restAtBed): the note, once, while it is due and the knife still lies where it is
+  function greatNoteOnWake(){const ev=greatEv();if(!ev.noteDue||ev.noteGiven||ev.knifeLifted)return false;ev.noteGiven=worldState.gameTimeAbsMinutes||1;
+    bagAdd(Object.assign(makeBookItem(BOOKS.find(b=>b.id==='varek_note')),{weight:.05,sellMult:0}));
+    /* S1358 — the line follows the waking's own by 1.8 s, and only where you woke: gone through a door by then, it would overwrite
+       the new place's line (the way down to a ring's, corruption on CI); the log keeps it either way */
+    const at=activeZoneId+'|'+(typeof isInterior==='function'&&isInterior());
+    if(typeof addLog==='function')addLog('📜',KNIFE_SAY.note);setTimeout(()=>{try{if(activeZoneId+'|'+(typeof isInterior==='function'&&isInterior())===at)showMsg(KNIFE_SAY.note,'#c8c0a8');}catch(e){}},1800);return true;}
+  // the flagstone: in the middle of the Ashfeld's ring of six stones, where the road's path in ends
+  const FLAG_REACH=1.6;let FLAG_STONE=null,_flagT=0;
+  function flagstoneSpot(){const f=siteAnywhere('ashfeld');return f?{x:f.x,z:f.z}:null;}
+  function flagstoneBuild(sp){const g=new THREE.Group(),y=worldH(sp.x,sp.z);
+    const earth=new THREE.Mesh(new THREE.CircleGeometry(.95,20),new THREE.MeshLambertMaterial({color:0x4a3a28}));earth.rotation.x=-Math.PI/2;earth.position.y=.02;earth.scale.set(1,.8,1);g.add(earth);
+    const slab=new THREE.Mesh(new THREE.BoxGeometry(1.0,.09,.72),new THREE.MeshLambertMaterial({color:0x77746c}));slab.position.y=.05;g.add(slab);
+    g.position.set(sp.x,y,sp.z);sc.add(g);return {x:sp.x,z:sp.z,mesh:g,slab};}
+  function flagstoneDrop(){if(FLAG_STONE&&FLAG_STONE.mesh&&FLAG_STONE.mesh.parent)FLAG_STONE.mesh.parent.remove(FLAG_STONE.mesh);FLAG_STONE=null;}
+  function flagstoneLifted(F){if(F&&F.slab){F.slab.position.set(.75,.18,.1);F.slab.rotation.set(0,.4,1.1);}}
+  // once a second from the loop: built while the Ashfeld's cell is loaded and you are within 300 m
+  function tickFlagstone(force){const t=performance.now();if(!force&&t-_flagT<1000)return;_flagT=t;
+    if(activeZoneId!=='world'||!sc){flagstoneDrop();return;}const sp=flagstoneSpot();if(!sp)return;
+    if(Math.hypot(px-sp.x,pz-sp.z)>=300||!LOADED.has(cellKey(...cellOf(sp.x,sp.z)))){if(FLAG_STONE)flagstoneDrop();return;}
+    if(!FLAG_STONE||!FLAG_STONE.mesh.parent){flagstoneDrop();FLAG_STONE=flagstoneBuild(sp);}
+    if(greatEv().knifeLifted)flagstoneLifted(FLAG_STONE);}
+  function flagstoneNear(){const F=FLAG_STONE;return !!(F&&F.mesh&&F.mesh.parent&&activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior())&&Math.hypot(px-F.x,pz-F.z)<FLAG_REACH);}
+  function flagstonePrompt(){if(!flagstoneNear())return null;const ev=greatEv();if(!ev.noteGiven||ev.knifeLifted)return null;return "A flagstone at the end of the path — Press 'E' to lift it";}
+  // the named action: the knife out from under the stone (the world remembers it is gone; the knife rides the character)
+  function liftFlagstone(){const ev=greatEv();if(!ev.noteGiven||ev.knifeLifted)return false;ev.knifeLifted=worldState.gameTimeAbsMinutes||1;
+    bagAdd(greatToolItem('looseKnife'));if(typeof addLog==='function')addLog('🗡','Took the Loosing Knife from under the Ashfeld.');return true;}
+  function flagstoneUse(){if(!flagstonePrompt())return null;if(!liftFlagstone())return null;flagstoneLifted(FLAG_STONE);showMsgLong(KNIFE_SAY.lift,'#c8c0a8');
+    if(playerPeople()==='oldblood')setTimeout(()=>{try{showMsg(KNIFE_SAY.oldblood,'#c8c0a8');}catch(e){}},1600);if(typeof updateHUD==='function')updateHUD();return true;}
+  // the knife at a lesser gate's sigil, once a sigil (the character's: stats.knifeSigils); the sigil's own touch goes on
+  function knifeAtSigil(sigil){if(!sigil||!knotTools().knife)return false;const st=worldState.stats||(worldState.stats={}),k=st.knifeSigils||(st.knifeSigils={});if(k[sigil.uuid])return false;k[sigil.uuid]=1;
+    setTimeout(()=>{try{showMsg(KNIFE_SAY.sigil,'#c8d0e0');}catch(e){}},1800);return true;}
 
   // ═══ THE READER (Session Q) — Varek's discoveries, the fields, the Guest's chapel ═══
   // Varek reads the frame through the player. Each discovery is a real

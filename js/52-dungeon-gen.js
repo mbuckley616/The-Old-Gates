@@ -565,19 +565,23 @@ function gateCondition(gen,spaces,seed,cond){
   // only where everything you could reach before stays reachable (the way round)
   const parts=M=>{const seen=new Uint8Array(W*H);let n=0;for(let y=0;y<H;y++)for(let x=0;x<W;x++){const v=M[y][x];if(v===0||v===8||v===9||seen[y*W+x])continue;n++;
     const q=[y*W+x];seen[q[0]]=1;while(q.length){const i=q.pop(),cx=i%W,cy=(i/W)|0;for(const [dc,dr] of [[1,0],[-1,0],[0,1],[0,-1]]){const nx=cx+dc,ny=cy+dr;if(nx<0||ny<0||nx>=W||ny>=H)continue;const j=ny*W+nx,w=M[ny][nx];if(seen[j]||w===0||w===8||w===9)continue;seen[j]=1;q.push(j);}}}return n;};
-  // (not on floor one of a gate of two floors: a pit there would fall into floor two's rock, and the stair hall reads you by height)
-  for(const sp of spaces){if(sp.type!=='nave')continue;const fl=sp.floor||1,M=fl===2?gen.map2:gen.map;if(!M||fl===1&&gen.map2)continue;
+  // S1358 — on floor one of a gate of two floors too, but only over floor two's rock a cell round (the pit's 25 m shaft stays in the
+  // rock, clear of floor two's spaces); the gap is a hole in floor one's foothold (gen.stairHoles), and the loop keeps you on floor
+  // one while you fall in it (dGapOne). Before, floor one's naves were kept whole and a two-floor gate showed nothing of its condition.
+  const rock2=(c,y)=>{const M2=gen.map2;for(let dy=-1;dy<=1;dy++)for(let dc=-1;dc<=1;dc++){const yy=y+dy,cc=c+dc;if(yy>=0&&cc>=0&&yy<H&&cc<W&&M2[yy][cc]!==0)return false;}return true;};
+  for(const sp of spaces){if(sp.type!=='nave')continue;const fl=sp.floor||1,M=fl===2?gen.map2:gen.map,under=fl===1&&!!gen.map2;if(!M)continue;
     const want=Math.max(1,Math.round(sp.L*GATE_CELL/60))*(cond==='catastrophic'?2:1);let got=0;
     for(let att=0;att<60&&got<want;att++){const lu=rand(1,2),lv=rand(1,2),u0=rand(4,sp.L-5-lu),v0=rand(0,sp.A-lv);
       const cells=[];let ok=true;
       for(let du=0;du<lu&&ok;du++)for(let dv=0;dv<lv&&ok;dv++){const [c,y]=gateCellAt(sp,u0+du,v0+dv);
-        if(M[y][c]!==1||thr.some(t=>Math.abs(t.c-c)+Math.abs(t.r-y)<3))ok=false;
+        if(M[y][c]!==1||thr.some(t=>Math.abs(t.c-c)+Math.abs(t.r-y)<3)||under&&!rock2(c,y))ok=false;
         if(ok&&gen.gaps.some(g=>g.cells.some(([gc,gy])=>Math.abs(gc-c)+Math.abs(gy-y)<4)))ok=false;
         cells.push([c,y]);}
       if(!ok)continue;
       const before=parts(M);for(const [c,y] of cells)M[y][c]=8;
       if(parts(M)!==before){for(const [c,y] of cells)M[y][c]=1;continue;}
-      gen.gaps.push({space:sp.id,floor:fl,cells});got++;}}
+      gen.gaps.push({space:sp.id,floor:fl,cells});got++;
+      if(under){gen.stairHoles=gen.stairHoles||[];for(const [c,y] of cells)gen.stairHoles.push({x0:c-.5,x1:c+.5,z0:y-.5,z1:y+.5,gap:true});}}}
   // the chasms' spans: the runs of bridge between the piers' landings
   for(const sp of spaces){if(sp.type!=='chasm')continue;const fl=sp.floor||1,M=fl===2?gen.map2:gen.map;if(!M)continue;
     const mid=sp.A/2,spans=[];let u0=null;
