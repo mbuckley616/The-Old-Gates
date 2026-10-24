@@ -929,6 +929,7 @@
     if(b==='coast'||b==='dunes'){w.overcast+=.08;w.storm+=.04;}
     if(b==='tundra'){w.snow+=.15;w.clear*=.7;}
     if(b==='wasteland'){w.overcast+=.2;w.clear*=.6;w.snow=0;}
+    if(typeof gateWeather==='function')gateWeather(w); /* S1369 — the great gates' faces and tolls on the weights */
     return w;
   }
   function pickWeather(){const w=weatherWeights();let s=0;for(const k in w)s+=w[k];let r=Math.random()*s;for(const k in w){r-=w[k];if(r<=0)return k;}return 'clear';}

@@ -100,7 +100,7 @@
     WX.intensity=inten(cur)*(1-mix)+inten(nxt)*mix;
     const rainAmt=(cur==='rain'||cur==='storm'?1:0)*(1-mix)+(nxt==='rain'||nxt==='storm'?1:0)*mix;
     const snowAmt=(cur==='snow'?1:0)*(1-mix)+(nxt==='snow'?1:0)*mix;
-    const storm=(cur==='storm'?1:0)*(1-mix)+(nxt==='storm'?1:0)*mix;WX.storm=storm;WX.wind=windDir();
+    const storm=(cur==='storm'?1:0)*(1-mix)+(nxt==='storm'?1:0)*mix;WX.storm=storm;WX.wind=windDir();WX.windy=gateWindy(); /* S1369 — Gaoth's toll on Aurenne, for the look's trees */
     ensureWx();
     // particles follow the camera
     const upd=(pts,amt,fall,drift,wrapH)=>{

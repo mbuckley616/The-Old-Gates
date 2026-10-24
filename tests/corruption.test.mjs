@@ -10,6 +10,7 @@
 // Session 1349 (session 3, piece III): the gifts while a gate is torn: fire halved, carry ×1.5, sea speed ×1.5, the undead at peace
 // until one of a room is struck.
 // Session 1350 (session 4's talk, piece I §5): Any news? by the count torn in the site's people's voice, Normal after a bind, the lords.
+// Session 1369 (session 4's weather and ground): Tine's herbs and snow, Uisce's storms, Gaoth's gales and its ports' prices.
 // Session 1360 (look): the flagstone is the look builder's prop, its hollow and oilcloth shown once the slab is tipped aside.
 import { boot, check } from './lib/game.mjs';
 import { enterDungeon } from './lib/dungeonshot.mjs';
@@ -204,6 +205,34 @@ check('Uisce torn, in the Gatelands\' waters: a catch brings two fish; from thre
 // a town; Aldwyn beside Ironhaven's lord from then on; his talk gives the needle; the knife's opening if the needle came first
 await page.evaluate(() => { if (activeZoneId !== 'world') goToOW(); });
 await page.waitForFunction(() => activeZoneId === 'world' && !isInterior(), null, { timeout: 30000, polling: 200 }); await g.hide();
+// the island's weather and ground (Session 1369; the sheet's session 4, piece III §1, §2, §8): Tine torn, no snow on Aurenne; from three
+// torn, half of Aurenne's herbs gone by their ids and back when Tine is bound; Uisce's storms at sea in the Gatelands twice; Gaoth's
+// gales on Aurenne (the flag the look reads); Gaoth torn, an Aurennais port's prices a prosperity point better
+const wx = await page.evaluate(() => {
+  const keep = JSON.stringify(worldState.greatGates || null), P0 = [px, pz], out = {};
+  const nat = t => nationKeyOf(...cellOf(t.x, t.z)), ALL = allSites();
+  const A = ALL.find(t => t.kind === 'port' && nat(t) === 'aurenne'), Gp = ALL.find(t => t.kind === 'port' && nat(t) === 'gatelands');
+  const set = gates => { worldState.greatGates = { gates, ev: {} }; };
+  const herbs = []; for (let i = 0; i < 40; i++) { const h = { id: 'toll:test:' + i, x: A.x + (i % 8) * 2, z: A.z + Math.floor(i / 8) * 2, type: 'x', def: { glowInt: .5, respawn: 60 }, g: new THREE.Group(), gl: { intensity: 0 }, harvested: false, respawnT: 0, ph: 0 }; herbs.push(h); ZONES.world.herbs.push(h); }
+  const gh = { id: 'toll:test:g', x: Gp.x, z: Gp.z, type: 'x', def: { glowInt: .5 }, g: new THREE.Group(), gl: { intensity: 0 }, harvested: false, respawnT: 0, ph: 0 }; ZONES.world.herbs.push(gh);
+  const tick = () => { tickHerbs(1 / 60, performance.now()); const gone = herbs.filter(h => h._tolled && !h.g.visible).length; px = A.x; pz = A.z; const near = activeHerbs().filter(h => !h.harvested && !h._tolled && herbs.includes(h)).length; return [gone, near, !!gh._tolled]; };
+  set({ tine: 'torn', uisce: 'torn' }); out.two = tick();
+  set({ tine: 'torn', uisce: 'torn', cloch: 'torn' }); out.three = tick(); out.again = tick();
+  set({ tine: 'sealed', uisce: 'torn', cloch: 'torn' }); out.bound = tick();
+  for (const h of herbs.concat([gh])) ZONES.world.herbs.splice(ZONES.world.herbs.indexOf(h), 1);
+  px = A.x; pz = A.z; set({ tine: 'torn' }); out.snow = [weatherWeights().snow, natHere()];
+  set({ gaoth: 'torn' }); out.windyOne = gateWindy(); set({ gaoth: 'torn', tine: 'torn', cloch: 'torn' }); out.windy = gateWindy();
+  set({}); out.price0 = priceMul(A); out.g0 = priceMul(Gp); set({ gaoth: 'torn' }); out.price1 = priceMul(A); out.g1 = priceMul(Gp);
+  let sea = null; for (let r = 20; r < 1200 && !sea; r += 20) for (let k = 0; k < 24 && !sea; k++) { const x = Gp.x + Math.cos(k / 24 * 6.283) * r, z = Gp.z + Math.sin(k / 24 * 6.283) * r; if (worldH(x, z) < -1 && nationKeyOf(...cellOf(x, z)) === 'gatelands') sea = [x, z]; }
+  if (sea) { [px, pz] = sea; out.gWindy = gateWindy(); set({ uisce: 'sealed', tine: 'torn', cloch: 'torn' }); out.storm0 = weatherWeights().storm; set({ uisce: 'torn', tine: 'torn', cloch: 'torn' }); out.storm1 = weatherWeights().storm;
+    px = Gp.x; pz = Gp.z; out.storm2 = worldH(px, pz) < SEA_Y ? null : weatherWeights().storm; }
+  out.sea = !!sea; [px, pz] = P0; worldState.greatGates = JSON.parse(keep); return out; });
+console.log(JSON.stringify(wx));
+check(`Tine's toll: from three torn ${wx.three[0]} of 40 Aurennais herbs are gone (none at two torn, none in the Gatelands), unpickable; bound, all 40 back`, wx.two[0] === 0 && wx.three[0] >= 12 && wx.three[0] <= 28 && wx.three[1] === 40 - wx.three[0] && wx.again[0] === wx.three[0] && !wx.three[2] && wx.bound[0] === 0 && wx.bound[1] === 40, wx);
+check(`Tine torn: no snow in Aurenne's weather (${wx.snow})`, wx.snow[0] === 0 && wx.snow[1] === 'aurenne', wx.snow);
+check(`Uisce's toll: storms at sea in the Gatelands' waters weigh twice (${wx.storm0} → ${wx.storm1}), not on its land`, wx.sea && wx.storm0 > 0 && Math.abs(wx.storm1 - 2 * wx.storm0) < 1e-9 && (wx.storm2 === null || wx.storm2 < wx.storm1), wx);
+check('Gaoth\'s toll: gales on Aurenne from three torn, not with one, not in the Gatelands', wx.windy === true && wx.windyOne === false && wx.gWindy === false, wx);
+check(`Gaoth torn: an Aurennais port prices a prosperity point better (${wx.price0.toFixed(4)} → ${wx.price1.toFixed(4)}), a Gatelands port unchanged`, wx.price0 - wx.price1 > .0025 && wx.price0 - wx.price1 < .0045 && wx.g1 === wx.g0, wx);
 const hd = await page.evaluate(async () => {
   const keep = JSON.stringify(worldState.greatGates || null), P0 = [px, pz], out = {};
   for (let i = BAG.length - 1; i >= 0; i--) if (BAG[i] && BAG[i].artifact) BAG.splice(i, 1);

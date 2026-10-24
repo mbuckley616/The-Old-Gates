@@ -711,7 +711,7 @@ const giver=`${lord.title} ${lord.name}`;
   function wallsAllowed(site){return prosperity(site)>=55||TS(site).flags.threatened!=null;}
   function lampsLit(site){return prosperity(site)>=40;}
   function bannersUp(site){return prosperity(site)>=70;}
-  function priceMul(site){const p=prosperity(site);return 1.18-p*.0035;} // buy prices: 1.15 at 10 → .83 at 100
+  function priceMul(site){const p=gatePortP(site,prosperity(site));return 1.18-p*.0035;} // buy prices: 1.15 at 10 → .83 at 100
   // ═══ S269 — Q7 in the open world: Ashenmoor burns (Michael, issue #32: A) ═══
   // Handing in Q6 ("Smoke. From Ashenmoor.") sets worldState.ashenmoorPending. From then the world's Ashenmoor is the
   // war code's ruin, for good: burnt shells, nobody in the street, no lord; only Edna's cottage and Brother Oswin's
@@ -2095,6 +2095,22 @@ const giver=`${lord.title} ${lord.name}`;
   // schools there cannot be caught at all. Read where you swim, by the cell's nation.
   function uisceWaters(){try{const [i,j]=cellOf(px,pz);return nationKeyOf(i,j)==='gatelands';}catch(e){return false;}}
   function gateGift(school){const g=worldState.greatGates;return !!(g&&g.gates&&g.gates[school]==='torn');}
+  // S1369 — the rest of the island's faces and tolls that are weather and ground (the sheet's table, piece III §1, §2, §8). The nation
+  // is the cell's under you (natHere), or a herb's own cell, kept on the herb since a herb never moves. Tine: no snow on Aurenne while
+  // torn (its face); from three torn, half of Aurenne's herbs are gone, the half whose id hashes under .5 (S533: the id, never what has
+  // loaded), and they stand again the moment Tine is bound. Uisce: from three torn, storms at sea in the Gatelands' waters weigh twice.
+  // Gaoth: while torn, an Aurennais port prices as if a prosperity point better off (`priceMul`); from three torn, WX.windy on Aurenne,
+  // a flag for the look's trees and nothing's speed. The weather's own roll stays WX's stream; these move only its weights.
+  function natHere(){try{const [i,j]=cellOf(px,pz);return nationKeyOf(i,j);}catch(e){return null;}}
+  function natOfHerb(h){if(h._nat===undefined){try{const [i,j]=cellOf(h.x,h.z);h._nat=nationKeyOf(i,j);}catch(e){h._nat=null;}}return h._nat;}
+  function herbTolled(h,on){if(!(on!=null?on:gateToll('tine'))||!h||!h.id||natOfHerb(h)!=='aurenne')return false;
+    if(h._tineH==null)h._tineH=seededRng('tine',h.id)();return h._tineH<.5;}
+  function gateWeather(w){if(!w)return w;const nat=natHere();
+    if(nat==='aurenne'&&gateGift('tine'))w.snow=0;
+    if(nat==='gatelands'&&gateToll('uisce')&&worldH(px,pz)<SEA_Y)w.storm*=2;
+    return w;}
+  function gateWindy(){return gateToll('gaoth')&&natHere()==='aurenne';}
+  function gatePortP(site,p){if(!site||site.kind!=='port'||!gateGift('gaoth'))return p;try{if(nationKeyOf(...cellOf(site.x,site.z))!=='aurenne')return p;}catch(e){return p;}return Math.min(100,p+1);}
   // S1350 — the world's talk of the great gates (great-gates-build.md session 4, its talk; piece I §5, approved 14 Oct): one line in
   // *Any news?* by the count torn, in the voice of the site's people; the *Normal* lines instead for seven days after a bind, and for a
   // season (90 days) once the six are bound. The lords' *The great gates?* follows the latest act anywhere, by the power of the nation.
