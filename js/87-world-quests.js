@@ -2219,7 +2219,28 @@ const giver=`${lord.title} ${lord.name}`;
     if(typeof addLog==='function'){addLog('◎',kind==='tear'?`Cut the knot of ${L.name}${r.again?' again':''}.`:`Bound the knot of ${L.name}${r.again?' again':''}.`);
       if(kind==='bind'&&r.fate==='sealed')addLog('◎','The six great gates are bound.');}
     if(typeof updateHUD==='function')updateHUD();}
-  function knotCut(){const L=KNOT_LIE;if(!L)return null;const r=cutKnot(L.school);if(r.ok)_knotSay(r,'tear');return r;}
+  function knotCut(){const L=KNOT_LIE;if(!L)return null;if(knotLastCut(L.school))return knotCutAsk();const r=cutKnot(L.school);if(r.ok)_knotSay(r,'tear');return r;}
+  // ── the sixth cut (S1364; the build sheet's session 5, Michael's B on #413: every save ends) ── a cut that would tear all six asks
+  // once, with #413's line and the menu's grey line under it; cut, the lines come on the clock (0, 2.5 s), and at 5 s the world is
+  // unmade (unmakeWorld, 70-saves.js) and the page goes back to the title. Varek's last stand comes first on either path (§9a),
+  // through varekStandDue, which is false until piece IV is approved.
+  const KNOT_LAST={ask:'This is the last of them. Cut it, and there is no coming back to this world.',warn:'Every saved game in this browser will be deleted.'};
+  let KNOT_UNMAKE_THEN=()=>{try{location.reload();}catch(e){}};
+  function varekStandDue(school){return false;}
+  function knotLastCut(school){if(greatFate()||greatGateState(school)==='torn')return false;return GREAT_SCHOOLS.every(s=>s===school||greatGateState(s)==='torn');}
+  function knotCutAsk(){const L=KNOT_LIE;if(!L)return null;
+    openDialog({name:`The knot of ${L.name}`,role:SCHOOL_DEF[L.school].name,ico:'◎',noIntro:true,greeting:[KNOT_LAST.ask+'\n\n'+KNOT_LAST.warn],topics:[
+      {label:'Cut the knot.',quest:true,fn:()=>{setTimeout(()=>{try{closeDialog();}catch(e){}knotUnmake();},60);return '';}},
+      {label:'Leave it.',bye:true}]});
+    {const el=document.getElementById('dlg-text');if(el)el.innerHTML=`${KNOT_LAST.ask}<br><br><span style="color:#8a8478;font-size:.9em">${KNOT_LAST.warn}</span>`;}
+    return {ok:false,ask:true};}
+  function knotUnmake(){const L=KNOT_LIE;if(!L||!knotLastCut(L.school))return null;if(varekStandDue(L.school))return {ok:false,stand:true};
+    if(typeof SS!=='undefined')SS.unmaking=true;const r=cutKnot(L.school);if(!r.ok){if(typeof SS!=='undefined')SS.unmaking=false;return r;}
+    const S=SCHOOL_DEF[L.school].name,t0=performance.now();showMsg(KNOT_LINES.tear.first+' '+KNOT_LINES.tear.school[L.school],'#c8d0e0');
+    const at=(ms,f)=>setTimeout(()=>{try{f();}catch(e){console.warn('unmake',e);}},Math.max(0,ms-(performance.now()-t0)));
+    at(2500,()=>showMsg(KNOT_LINES.gain(S,L.name),'#d8b04a'));
+    at(5000,()=>unmakeWorld().then(()=>KNOT_UNMAKE_THEN()));
+    return r;}
   function knotBind(){const L=KNOT_LIE;if(!L)return null;const r=bindKnot(L.school);if(r.ok)_knotSay(r,'bind');return r;}
   // E at the knot
   function knotUse(){const L=KNOT_LIE;if(!L)return null;const st=greatGateState(L.school),t=knotTools(),f=greatFate();
@@ -2228,9 +2249,9 @@ const giver=`${lord.title} ${lord.name}`;
         {label:'Cut the knot.',quest:true,fn:()=>{setTimeout(()=>{try{closeDialog();}catch(e){}knotCut();},60);return '';}},
         {label:'Bind the knot.',quest:true,fn:()=>{setTimeout(()=>{try{closeDialog();}catch(e){}knotBind();},60);return '';}},
         {label:'Leave it.',bye:true}]});return 'choice';}
-      if(t.knife)return knotCut()?'cut':null;if(t.needle)return knotBind()?'bind':null;showMsg(KNOT_LINES.examine.untied,'#c8d0e0');return 'untied';}
+      if(t.knife){const r=knotCut();return r&&r.ask?'ask':r?'cut':null;}if(t.needle)return knotBind()?'bind':null;showMsg(KNOT_LINES.examine.untied,'#c8d0e0');return 'untied';}
     if(st==='torn'&&t.needle&&!f)return knotBind()?'bind':null;
-    if(st==='sealed'&&t.knife&&!f)return knotCut()?'cut':null;
+    if(st==='sealed'&&t.knife&&!f){const r=knotCut();return r&&r.ask?'ask':r?'cut':null;}
     showMsg(KNOT_LINES.examine[st],'#c8d0e0');return 'examine';}
 
   // ── the way back (Session 1354; piece I §4, the Gate-Blade's precedent, Michael's 3A on #263): once a great gate's ring has
