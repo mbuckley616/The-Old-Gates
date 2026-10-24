@@ -200,5 +200,49 @@ const tl = await page.evaluate(() => {
 console.log(JSON.stringify(tl));
 check(`the tolls begin at three torn: *Somewhere, something gave.* once in the log, and a fourth tear adds none (${tl.at})`, tl.at.join() === '0,0,1,1' && tl.flag, tl);
 check('Uisce torn, in the Gatelands\' waters: a catch brings two fish; from three torn, no fish there and no prompt; bound, one again', tl.waters && tl.face[0] && tl.face[1] === 2 && !tl.tollOff && tl.toll[0] && tl.toll[1] === null && tl.toll[2][0] === false && tl.toll[2][1] === 0 && !tl.bound[0] && tl.bound[1][0] && tl.bound[1][1] === 1, tl);
+// the needle (Session 1366; piece II §3, Michael's A on #656): the runner once a knot is cut or two rings are seen, on walking into
+// a town; Aldwyn beside Ironhaven's lord from then on; his talk gives the needle; the knife's opening if the needle came first
+await page.evaluate(() => { if (activeZoneId !== 'world') goToOW(); });
+await page.waitForFunction(() => activeZoneId === 'world' && !isInterior(), null, { timeout: 30000, polling: 200 }); await g.hide();
+const hd = await page.evaluate(async () => {
+  const keep = JSON.stringify(worldState.greatGates || null), P0 = [px, pz], out = {};
+  for (let i = BAG.length - 1; i >= 0; i--) if (BAG[i] && BAG[i].artifact) BAG.splice(i, 1);
+  const G = ev => { worldState.greatGates = { gates: {}, ev: ev || {} }; };
+  G({ ring: { tine: true } }); out.due1 = heraldDue(); worldState.greatGates.ev.ring.uisce = true; out.due2 = heraldDue();
+  G(); cutKnot('tine'); out.dueCut = [heraldDue(), !!worldState.greatGates.ev.cutFirst];
+  // walked into a built settlement: the runner, once
+  const T = [...SETTLE.values()].find(S => S.site && S.site.pad && !S.dead && ['town', 'city', 'port', 'village'].includes(S.site.kind)).site;
+  const tick = () => { _heraldT = 0; tickHerald(); }, logN = t => GAME_LOG.filter(e => e.text === t).length, n0 = logN('The Herald has sent for you.');
+  px = T.x + T.pad + 60; pz = T.z; tick(); out.outside = !worldState.greatGates.ev.runner;
+  px = T.x; pz = T.z; tick(); px = T.x + T.pad + 60; tick(); px = T.x; tick();
+  out.runner = [!!worldState.greatGates.ev.runner, logN('The Herald has sent for you.') - n0, heraldDue(), T.kind];
+  // Ironhaven: Aldwyn beside its lord
+  const I = siteAnywhere('ironhaven'); px = I.x + 6; pz = I.z + 6;
+  for (let i = 0; i < 60 && !SETTLE.has('ironhaven'); i++) { try { WORLD.tick(1 / 60, performance.now()); } catch (e) {} await new Promise(r => setTimeout(r, 50)); }
+  tick(); const A = ALDWYN.npc, S = SETTLE.get('ironhaven');
+  out.aldwyn = !!A && { name: A.def.name, role: A.def.role, inScene: !!A.g.parent, fromLord: +Math.hypot(A.def.x - (I.x + 3), A.def.z - (I.z - 4)).toFixed(2), lordThere: !!(S && S.lordNpc), solid: solidAt(A.def.x, A.def.z) };
+  const labels = () => A.def.topics.map(t => t.label);
+  BAG.push(greatToolItem('looseKnife'));
+  out.greet = A.def.greeting[0]; out.before = labels();
+  const want = A.def.topics.find(t => t.label === 'What do you want from me?'), said = want.fn(want);
+  const nd = BAG.find(it => it && it.artifact === 'bindNeedle');
+  out.needle = !!nd && [nd.name, nd.unique, nd.quest, nd.desc.startsWith('an tSnáthaid · A needle of pale bone'), said.includes('(He sets a long bone needle on the desk between you.)'), logN('Aldwyn gave you the Binding Needle.')];
+  out.after = labels(); out.again = heraldGiveNeedle();
+  const p = ssSplitPayload(_buildSavePayload()); out.rows = [JSON.stringify(p.c).includes('bindNeedle'), !JSON.stringify(p.w).includes('bindNeedle'), !!p.w.wS.greatGates.ev.needleGiven, !!p.w.wS.greatGates.ev.runner];
+  px = I.x + I.pad + 400; tick(); out.gone = !ALDWYN.npc;
+  // the needle first, then a cut: no runner, and the knife's opening once
+  G({ ring: { tine: true, uisce: true }, runner: 1, needleGiven: 1 }); out.rings = aldwynOpening();
+  cutKnot('cloch'); out.knifeAlso = [heraldDue(), !!worldState.greatGates.ev.knifeAlso];
+  const d2 = aldwynDef(I); out.knifeOpen = [d2.greeting[0], d2.greeting[0]];
+  for (let i = BAG.length - 1; i >= 0; i--) if (BAG[i] && BAG[i].artifact) BAG.splice(i, 1);
+  [px, pz] = P0; worldState.greatGates = JSON.parse(keep); return out; });
+console.log(JSON.stringify(hd));
+check('the runner is due after the first cut or a second ring with nothing cut, not after one ring', hd.due1 === false && hd.due2 === true && hd.dueCut[0] && hd.dueCut[1], hd);
+check(`walking into ${hd.runner[3]} the Herald's runner finds you, once, and the log says so`, hd.outside && hd.runner[0] && hd.runner[1] === 1 && hd.runner[2] === false, hd.runner);
+check(`then Aldwyn, the Royal Herald, stands in Ironhaven's plaza beside its lord (${hd.aldwyn && hd.aldwyn.fromLord} m from the lord's place)`, !!hd.aldwyn && hd.aldwyn.name === 'Aldwyn' && hd.aldwyn.role === 'Royal Herald' && hd.aldwyn.inScene && hd.aldwyn.fromLord < 3 && hd.aldwyn.lordThere && !hd.aldwyn.solid, hd.aldwyn);
+check('after a cut he opens with the cut\'s line; the knife\'s topic only with the knife, the cost and the wrist only after the needle', hd.greet.startsWith('You have been to the end of one of the great anchor places, and you cut') && hd.before.includes('Varek left me the knife.') && hd.before.includes('What do you want from me?') && !hd.before.includes('Your wrist.') && hd.after.includes('What does it cost?') && hd.after.includes('Your wrist.') && !hd.after.includes('What do you want from me?'), hd);
+check('"What do you want from me?" gives the Binding Needle: unique, a quest item, its card as written, the log line; once', !!hd.needle && hd.needle[0] === 'The Binding Needle' && hd.needle.slice(1, 5).every(Boolean) && hd.needle[5] === 1 && hd.again === false, hd.needle);
+check('the needle rides the character\'s row, the runner and the giving the world\'s; far from Ironhaven he is gone', hd.rows.every(Boolean) && hd.gone, hd.rows);
+check('two rings left alone: that opening; the needle held at the first cut: no runner, and the knife\'s opening once', hd.rings.startsWith('You have been to the end of two') && hd.knifeAlso[0] === false && hd.knifeAlso[1] && hd.knifeOpen[0] === 'You found the knife as well. I had hoped he would take longer to think of you.' && hd.knifeOpen[1].startsWith('You have been to the end of one'), hd);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

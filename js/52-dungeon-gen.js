@@ -552,7 +552,7 @@ function makeGate(size,seed,floors,cond){
 // S1327 (card F5, the build sheet's session 4, "Condition"; Michael's A on its open number, 20 Oct 2026: 50 / 35 / 15) — a gate is
 // steady, failing or catastrophic, rolled from its seed and never saved (an authored gate may name its own: WORLD_DUNGEONS' cond).
 // Steady: every span and floor in place. Failing: one span in three of each chasm's bridge is gone, and a nave's floor has gaps of
-// 1 to 2 cells that the way goes round. Catastrophic: every span gone, and twice the nave's gaps. A gone span is crossed by the
+// 1 to 2 cells that the way goes round (a crossing's too, S1365). Catastrophic: every span gone, and twice the gaps. A gone span is crossed by the
 // floating stones (#417 A): they hang still at the deck's height, 2 m across, never more than 1.6 m apart, so nothing on the way
 // needs a skill (the sheet's 2.5 m). Its own stream from the seed, after the layout's, so no draw of the layout moves.
 const GATE_CONDS=['steady','failing','catastrophic'],GATE_COND_P=[.5,.35,.15],GATE_STONE=2,GATE_STONE_GAP=1.6;
@@ -569,7 +569,8 @@ function gateCondition(gen,spaces,seed,cond){
   // rock, clear of floor two's spaces); the gap is a hole in floor one's foothold (gen.stairHoles), and the loop keeps you on floor
   // one while you fall in it (dGapOne). Before, floor one's naves were kept whole and a two-floor gate showed nothing of its condition.
   const rock2=(c,y)=>{const M2=gen.map2;for(let dy=-1;dy<=1;dy++)for(let dc=-1;dc<=1;dc++){const yy=y+dy,cc=c+dc;if(yy>=0&&cc>=0&&yy<H&&cc<W&&M2[yy][cc]!==0)return false;}return true;};
-  for(const sp of spaces){if(sp.type!=='nave')continue;const fl=sp.floor||1,M=fl===2?gen.map2:gen.map,under=fl===1&&!!gen.map2;if(!M)continue;
+  // S1365 (Michael's A on #664) — a crossing takes gaps on the same rule, cut after the chasms' spans so no nave's gap or gone span moves
+  const cutGaps=type=>{for(const sp of spaces){if(sp.type!==type)continue;const fl=sp.floor||1,M=fl===2?gen.map2:gen.map,under=fl===1&&!!gen.map2;if(!M)continue;
     const want=Math.max(1,Math.round(sp.L*GATE_CELL/60))*(cond==='catastrophic'?2:1);let got=0;
     for(let att=0;att<60&&got<want;att++){const lu=rand(1,2),lv=rand(1,2),u0=rand(4,sp.L-5-lu),v0=rand(0,sp.A-lv);
       const cells=[];let ok=true;
@@ -581,7 +582,8 @@ function gateCondition(gen,spaces,seed,cond){
       const before=parts(M);for(const [c,y] of cells)M[y][c]=8;
       if(parts(M)!==before){for(const [c,y] of cells)M[y][c]=1;continue;}
       gen.gaps.push({space:sp.id,floor:fl,cells});got++;
-      if(under){gen.stairHoles=gen.stairHoles||[];for(const [c,y] of cells)gen.stairHoles.push({x0:c-.5,x1:c+.5,z0:y-.5,z1:y+.5,gap:true});}}}
+      if(under){gen.stairHoles=gen.stairHoles||[];for(const [c,y] of cells)gen.stairHoles.push({x0:c-.5,x1:c+.5,z0:y-.5,z1:y+.5,gap:true});}}}};
+  cutGaps('nave');
   // the chasms' spans: the runs of bridge between the piers' landings
   for(const sp of spaces){if(sp.type!=='chasm')continue;const fl=sp.floor||1,M=fl===2?gen.map2:gen.map;if(!M)continue;
     const mid=sp.A/2,spans=[];let u0=null;
@@ -597,6 +599,7 @@ function gateCondition(gen,spaces,seed,cond){
         const ax=sp.axis==='x',l=sp.flip?sp.L-1-uc:uc,cx=ax?sp.x+l:sp.x+vc,cz=ax?sp.y+vc:sp.y+l,hw=ax?s/2:s*.55,hh=ax?s*.55:s/2;
         gen.stones.push({id:`${seed|0}:${fl}:stone${gen.stones.length}`,floor:fl,space:sp.id,span:i,x0:cx-hw,x1:cx+hw,z0:cz-hh,z1:cz+hh,y:(rand(0,8)-3)*.05,gap:+gap.toFixed(2)});}}
     sp.gone=gone;}
+  cutGaps('crossing');
 }
 // S1323 (card F5, the build sheet's session 3, "Pockets and the leash") — where a gate's fights stand. Each space of a floor
 // (the stair hall aside) holds pockets along its way, evenly: 25 to 42 m apart (one alone in a short space), so two

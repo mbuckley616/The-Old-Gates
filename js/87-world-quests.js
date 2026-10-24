@@ -2184,7 +2184,7 @@ const giver=`${lord.title} ${lord.name}`;
   // the named actions over setGreatGate: false-ish ({ok:false}) when the knot is already so or fate is fixed. A cut that lifts a spell
   // to Mastery counts as a Mastery touch for Varek, once per spell per cut (the sheet: the tearing path draws him sooner).
   function cutKnot(school){const prev=greatGateState(school);if(prev==='torn'||greatFate())return {ok:false};const before=_knotMastery(school);
-    if(!setGreatGate(school,'torn'))return {ok:false};greatGateLast('torn');gateTollStart(); /* S1359 — the third tear's log line */
+    if(!setGreatGate(school,'torn'))return {ok:false};greatGateLast('torn');gateTollStart(); /* S1359 — the third tear's log line */heraldOnCut(); /* S1366 — the runner's first trigger */
     const lifted=_knotMastery(school).filter(id=>before.indexOf(id)<0);for(const id of lifted)onMasteryTouch(id);
     return {ok:true,again:prev==='sealed',lifted,fate:greatFate()};}
   function bindKnot(school){const prev=greatGateState(school);if(prev==='sealed'||greatFate())return {ok:false};
@@ -2219,7 +2219,28 @@ const giver=`${lord.title} ${lord.name}`;
     if(typeof addLog==='function'){addLog('◎',kind==='tear'?`Cut the knot of ${L.name}${r.again?' again':''}.`:`Bound the knot of ${L.name}${r.again?' again':''}.`);
       if(kind==='bind'&&r.fate==='sealed')addLog('◎','The six great gates are bound.');}
     if(typeof updateHUD==='function')updateHUD();}
-  function knotCut(){const L=KNOT_LIE;if(!L)return null;const r=cutKnot(L.school);if(r.ok)_knotSay(r,'tear');return r;}
+  function knotCut(){const L=KNOT_LIE;if(!L)return null;if(knotLastCut(L.school))return knotCutAsk();const r=cutKnot(L.school);if(r.ok)_knotSay(r,'tear');return r;}
+  // ── the sixth cut (S1367; the build sheet's session 5, Michael's B on #413: every save ends) ── a cut that would tear all six asks
+  // once, with #413's line and the menu's grey line under it; cut, the lines come on the clock (0, 2.5 s), and at 5 s the world is
+  // unmade (unmakeWorld, 70-saves.js) and the page goes back to the title. Varek's last stand comes first on either path (§9a),
+  // through varekStandDue, which is false until piece IV is approved.
+  const KNOT_LAST={ask:'This is the last of them. Cut it, and there is no coming back to this world.',warn:'Every saved game in this browser will be deleted.'};
+  let KNOT_UNMAKE_THEN=()=>{try{location.reload();}catch(e){}};
+  function varekStandDue(school){return false;}
+  function knotLastCut(school){if(greatFate()||greatGateState(school)==='torn')return false;return GREAT_SCHOOLS.every(s=>s===school||greatGateState(s)==='torn');}
+  function knotCutAsk(){const L=KNOT_LIE;if(!L)return null;
+    openDialog({name:`The knot of ${L.name}`,role:SCHOOL_DEF[L.school].name,ico:'◎',noIntro:true,greeting:[KNOT_LAST.ask+'\n\n'+KNOT_LAST.warn],topics:[
+      {label:'Cut the knot.',quest:true,fn:()=>{setTimeout(()=>{try{closeDialog();}catch(e){}knotUnmake();},60);return '';}},
+      {label:'Leave it.',bye:true}]});
+    {const el=document.getElementById('dlg-text');if(el)el.innerHTML=`${KNOT_LAST.ask}<br><br><span style="color:#8a8478;font-size:.9em">${KNOT_LAST.warn}</span>`;}
+    return {ok:false,ask:true};}
+  function knotUnmake(){const L=KNOT_LIE;if(!L||!knotLastCut(L.school))return null;if(varekStandDue(L.school))return {ok:false,stand:true};
+    if(typeof SS!=='undefined')SS.unmaking=true;const r=cutKnot(L.school);if(!r.ok){if(typeof SS!=='undefined')SS.unmaking=false;return r;}
+    const S=SCHOOL_DEF[L.school].name,t0=performance.now();showMsg(KNOT_LINES.tear.first+' '+KNOT_LINES.tear.school[L.school],'#c8d0e0');
+    const at=(ms,f)=>setTimeout(()=>{try{f();}catch(e){console.warn('unmake',e);}},Math.max(0,ms-(performance.now()-t0)));
+    at(2500,()=>showMsg(KNOT_LINES.gain(S,L.name),'#d8b04a'));
+    at(5000,()=>unmakeWorld().then(()=>KNOT_UNMAKE_THEN()));
+    return r;}
   function knotBind(){const L=KNOT_LIE;if(!L)return null;const r=bindKnot(L.school);if(r.ok)_knotSay(r,'bind');return r;}
   // E at the knot
   function knotUse(){const L=KNOT_LIE;if(!L)return null;const st=greatGateState(L.school),t=knotTools(),f=greatFate();
@@ -2228,9 +2249,9 @@ const giver=`${lord.title} ${lord.name}`;
         {label:'Cut the knot.',quest:true,fn:()=>{setTimeout(()=>{try{closeDialog();}catch(e){}knotCut();},60);return '';}},
         {label:'Bind the knot.',quest:true,fn:()=>{setTimeout(()=>{try{closeDialog();}catch(e){}knotBind();},60);return '';}},
         {label:'Leave it.',bye:true}]});return 'choice';}
-      if(t.knife)return knotCut()?'cut':null;if(t.needle)return knotBind()?'bind':null;showMsg(KNOT_LINES.examine.untied,'#c8d0e0');return 'untied';}
+      if(t.knife){const r=knotCut();return r&&r.ask?'ask':r?'cut':null;}if(t.needle)return knotBind()?'bind':null;showMsg(KNOT_LINES.examine.untied,'#c8d0e0');return 'untied';}
     if(st==='torn'&&t.needle&&!f)return knotBind()?'bind':null;
-    if(st==='sealed'&&t.knife&&!f)return knotCut()?'cut':null;
+    if(st==='sealed'&&t.knife&&!f){const r=knotCut();return r&&r.ask?'ask':r?'cut':null;}
     showMsg(KNOT_LINES.examine[st],'#c8d0e0');return 'examine';}
 
   // ── the way back (Session 1354; piece I §4, the Gate-Blade's precedent, Michael's 3A on #263): once a great gate's ring has
@@ -2299,6 +2320,64 @@ const giver=`${lord.title} ${lord.name}`;
   // the knife at a lesser gate's sigil, once a sigil (the character's: stats.knifeSigils); the sigil's own touch goes on
   function knifeAtSigil(sigil){if(!sigil||!knotTools().knife)return false;const st=worldState.stats||(worldState.stats={}),k=st.knifeSigils||(st.knifeSigils={});if(k[sigil.uuid])return false;k[sigil.uuid]=1;
     setTimeout(()=>{try{showMsg(KNIFE_SAY.sigil,'#c8d0e0');}catch(e){}},1800);return true;}
+
+  // ── the needle (S1366; piece II §3, the great gates' build sheet's session 2, its second half; Michael's A on #656) ── Whichever
+  // comes first, the first knot cut or a second great ring reached with nothing cut, the next town you walk into sends a Herald's
+  // runner to you (ev.runner). From then on Aldwyn, the Royal Herald, stands in Ironhaven's plaza beside its lord, where the
+  // generated world keeps its people of rank, and his talk (the draft's folder *The great anchor places*, his only talk, so its
+  // topics stand at the top and his opening is his greeting) gives the needle (ev.needleGiven). If you
+  // already hold the needle when you first cut, the runner does not come again and his next opening is the knife's (ev.knifeAlso).
+  // Every line is the draft's, as written. ev gains runner, cutFirst, needleGiven, knifeAlso, knifeAlsoSaid; no new worldState key.
+  const HERALD_SAY={runner:'A Herald’s runner falls in beside you, out of breath. "The Herald asks you to call on him at Ironhaven. He says it will keep, but not long."',
+    openCut:'You have been to the end of one of the great anchor places, and you cut what you found there. The sky over Ironhaven told me before the runner did.',
+    openRings:'You have been to the end of two of the great anchor places and left them as they were. That is rarer than you would think. Most people who reach a thing like that do something to it.',
+    openKnife:'You found the knife as well. I had hoped he would take longer to think of you.',
+    how:'Because I was taught to tie it. Not that one; nobody living tied that one. But a knot is a knot. The house I was trained in kept two things against the day someone came to the end of a great anchor place with an edge. One of them, it seems, was not kept well enough.',
+    varek:'He would. He has wanted that edge used since before I was born, and he has never once been able to use it himself. Ask yourself why the anchor places let you through and not him. I have asked myself for a century and a half, and I like none of my answers.',
+    house:'One that no longer exists. It was small at its largest, and at the end it was three old men and a cupboard. I am what is left of it, and this is what was in the cupboard.',
+    want:'Very little, and that is the difficulty. I want you to carry this.\n\n(He sets a long bone needle on the desk between you.)\n\nIt is the knife’s opposite. It does not undo the cut. It draws the cut ends together and ties them as they were first tied, and the anchor place goes on doing its work. The Compact bricks its gates shut and calls that sealing. This is not that. Please do not let the Prior explain the difference to you.',
+    cost:'I will not pretend it costs nothing. What the knife gave you, the needle takes back, and a little more. A knot tied by hand is tied with something of the hand. It is not a great deal. It is not nothing.',
+    wrist:'Yes. I have kept my sleeves long in Ironhaven for a hundred and fifty years, and I find I am too old to mind who sees it now. Ask me about it another day. Not today.',
+    which:'I will not tell you. I have spent my life telling people what to do with the anchor places, and you have seen where that has left them. Go carefully. Come back and tell me what you chose. I keep a record, as you may imagine.'};
+  function greatCutEver(){const g=greatGates(),ev=greatEv();return !!ev.cutFirst||Object.values(g.gates||{}).indexOf('torn')>=0;}
+  // read, never stored: the runner is due once a knot has been cut or two rings seen, until he has come or the needle is held
+  function heraldDue(){const ev=greatEv();if(ev.runner||ev.needleGiven||knotTools().needle)return false;return greatCutEver()||Object.keys(ev.ring||{}).length>=2;}
+  // called by cutKnot: the first cut, and the knife's opening if the needle was already yours
+  function heraldOnCut(){const ev=greatEv();if(!ev.cutFirst)ev.cutFirst=worldState.gameTimeAbsMinutes||1;if(ev.needleGiven&&!ev.knifeAlso)ev.knifeAlso=worldState.gameTimeAbsMinutes||1;}
+  // the named action: the runner finds you (in the town you have just walked into)
+  function heraldRunner(){if(!heraldDue())return false;greatEv().runner=worldState.gameTimeAbsMinutes||1;
+    showMsgLong(HERALD_SAY.runner,'#e8d8a0');if(typeof addLog==='function')addLog('📜','The Herald has sent for you.');return true;}
+  // the named action: Aldwyn's needle (once; the character's bag, the world's flag)
+  function heraldGiveNeedle(){const ev=greatEv();if(ev.needleGiven)return false;ev.needleGiven=worldState.gameTimeAbsMinutes||1;
+    if(!knotTools().needle)bagAdd(greatToolItem('bindNeedle'));if(typeof addLog==='function')addLog('🪡','Aldwyn gave you the Binding Needle.');if(typeof updateHUD==='function')updateHUD();return true;}
+  // his opening, by what you have done (a cut, else two rings left alone); the knife's, once, the first time he greets you after it
+  function aldwynOpening(){const ev=greatEv();if(ev.knifeAlso&&!ev.knifeAlsoSaid)return HERALD_SAY.openKnife;return greatCutEver()?HERALD_SAY.openCut:HERALD_SAY.openRings;}
+  function aldwynTopics(){const ev=greatEv(),given=!!ev.needleGiven,f=[];
+    f.push({label:'How do you know about the knot?',response:HERALD_SAY.how});
+    if(knotTools().knife)f.push({label:'Varek left me the knife.',response:HERALD_SAY.varek});
+    f.push({label:'What house?',response:HERALD_SAY.house});
+    if(!given)f.push({label:'What do you want from me?',quest:true,fn:()=>{heraldGiveNeedle();return HERALD_SAY.want;}});
+    if(given){f.push({label:'What does it cost?',response:HERALD_SAY.cost});f.push({label:'Your wrist.',response:HERALD_SAY.wrist});}
+    f.push({label:'Which should I do?',response:HERALD_SAY.which});
+    return f;}
+  // where he stands: beside the lord's place in Ironhaven's plaza (the lord's own spot is the plaza +3, −4)
+  const ALDWYN={npc:null};let _heraldT=0,_heraldIn=null;
+  function aldwynSpot(t){for(let k=0;k<12;k++){const a=k*.5236,r=k<1?0:1.2,x=t.x+4.8+Math.cos(a)*r,z=t.z-4.4+Math.sin(a)*r;if(!solidAt(x,z))return {x,z};}return {x:t.x+4.8,z:t.z-4.4};}
+  function aldwynRemove(){const n=ALDWYN.npc;if(!n)return;sc.remove(n.g);if(n.dot)sc.remove(n.dot);const k=npcs.indexOf(n);if(k>=0)npcs.splice(k,1);ALDWYN.npc=null;}
+  function aldwynDef(t){const sp=aldwynSpot(t);
+    const def={name:'Aldwyn',role:'Royal Herald',ico:'📜',authored:true,people:'gatelander',sCol:0xd8c0a8,hairCol:0xc8c4bc,bodyScale:[.95,1,.95],bCol:0x7a1e22,x:sp.x,z:sp.z,_siteId:t.id,
+      get greeting(){const o=aldwynOpening();if(o===HERALD_SAY.openKnife)greatEv().knifeAlsoSaid=worldState.gameTimeAbsMinutes||1;return [o];},
+      get topics(){return [...aldwynTopics(),{label:'Farewell.',bye:true}];}};def.temper='weary';return def;}
+  // twice a second from the world's tick: the runner on walking into a settlement, and Aldwyn while you are near Ironhaven
+  function tickHerald(){const t=performance.now();if(t-_heraldT<500)return;_heraldT=t;
+    if(activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior()))return;
+    let inSite=null;for(const S of SETTLE.values()){const s=S.site;if(!s||!s.pad||S.dead||['town','city','port','village'].indexOf(s.kind)<0)continue;if(Math.hypot(px-s.x,pz-s.z)<s.pad){inSite=s.id;break;}}
+    if(inSite!==_heraldIn){_heraldIn=inSite;if(inSite)heraldRunner();}
+    const ev=greatEv(),I=siteAnywhere('ironhaven');
+    if(!I||!(ev.runner||ev.needleGiven)||!SETTLE.has('ironhaven')){aldwynRemove();return;}
+    const d=Math.hypot(px-I.x,pz-I.z);if(d>(I.pad||60)+220){aldwynRemove();return;}
+    if(ALDWYN.npc&&ALDWYN.npc.g.parent)return;aldwynRemove();if(d>(I.pad||60)+180)return;
+    const def=aldwynDef(I);const n=spawnNPC(def,Math.atan2(I.x-def.x,I.z-def.z),true);n.sched={type:'lost'};n.g.position.set(def.x,worldH(def.x,def.z),def.z);ALDWYN.npc=n;}
 
   // ═══ THE READER (Session Q) — Varek's discoveries, the fields, the Guest's chapel ═══
   // Varek reads the frame through the player. Each discovery is a real
