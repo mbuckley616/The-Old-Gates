@@ -351,3 +351,15 @@ Written by the producer once a day, after 12:00 UTC. Newest last.
 **Blocked.** #527 (the bundle check) still waits on QA's fresh branch. QA's #636 has no CI on its head.
 
 **Roadmap.** 258 of 318 stories done (257 yesterday). The new look is 6 of 16 cards done; F12 under way. No deep-work card is queued: F14 comes last.
+
+## 24 Oct 2026
+
+**Waiting on you.** Four decisions, each with a recommendation: exported files after the unmaking (#650, A: refuse them); where Aldwyn stands in 2.0's Ironhaven (#656, A: the plaza beside the lord); the coaching inn's first floor at the front (#660, A: rooms to let); what a failing gate with no nave or chasm loses (#664, A: its crossings take gaps). No PR is held.
+
+**Landed on main since yesterday.** Bodies to 1356: the Faolchú and the dragon on the creature kit, F4's last family (#649, #657), and the Skeleton, the kit's first biped on the people's driver (#665). Look to 1351: the coaching inn on its plot beside the main street with the lots re-pinned round it (#653), and its own room as a prototype (#661). QA to 1345: #636 carried onto main, the settings sheet's crash measured (#654). The build sheet for the great gates' two paths (#651) and the critic's playtest at s863 (#659). Build s869.
+
+**Under way.** Systems #663 (Sessions 1355, 1358–1359): floor-one gaps in two-floor gates and the tolls from three torn; CI running.
+
+**Blocked.** #527 (the bundle check) still waits on QA's fresh branch.
+
+**Roadmap.** 258 of 318 stories done (258 yesterday). The new look is 6 of 16 cards done; F6, F9 and F12 under way. No deep-work card is queued: F14 comes last.
