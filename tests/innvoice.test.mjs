@@ -28,7 +28,7 @@ const r = await page.evaluate((P) => {
     worldState.rented = { id: inn.id, room: null, until: worldState.gameTimeAbsMinutes + 60 }; row.madePlain = bed.response;
     worldState.rented = null;
     // a house of one room: the offer reads the empty house
-    const one = Object.assign({}, inn, { id: inn.id + '_one', w: 3 }); row.emptyOffer = ask(WORLD.innTopics(one, people)).response;
+    const one = Object.assign({}, inn, { id: inn.id + '_one', w: 3, kit: null }); /* S1368: not the kit's room, whose rooms are its own (Dunmore's first inn is the coaching inn, eight) */ row.emptyOffer = ask(WORLD.innTopics(one, people)).response;
     out[people] = row; }
   // the real keepers: Dunmore's inn (Gatelander), and the people a coaching inn is given
   const real = inn.dlg.topics.find(x => /A bed for the night/.test(x.label)).follow[1].response;
