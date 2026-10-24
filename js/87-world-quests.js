@@ -1304,8 +1304,8 @@ const giver=`${lord.title} ${lord.name}`;
   // (bladeStoneSpot), found once the gate's cell is loaded and its compound built. The first time you come within ten
   // units, the draft's line, once (the character's: stats.bladeSeen). E within 1.8 takes hold of the hilt: Might 30, the base
   // plus at most 2 from gear (artifactTry); short of it, one of the draft's three lines by how short, each logged with 🗝, costing
-  // nothing and kept for the Journal. Taken, the stone stays, and E at it says what is left. The stone and the hilt are a
-  // placeholder; the look builder's prop is owed. The stone is not solid.
+  // nothing and kept for the Journal. Taken, the stone stays, and E at it says what is left. The stone and the hilt are the
+  // look builder's prop (bladeStoneProp, Session 1360). The stone is not solid.
   const BLADE_SAY={seen:'A blade stands in a stone to a hand’s breadth below its guard. The stone has grown round it, the way bark grows round a nail.',
     weak:'You might as well pull at the hill. The stone does not move.',mid:'The stone does not move. Not yet.',near:'Something gives: a grain of grit, no more. Not yet.',
     take:'It comes out of the stone the way a key comes out of a lock: all at once, after nothing.',
@@ -1320,7 +1320,9 @@ const giver=`${lord.title} ${lord.name}`;
       for(let q=0;q<8&&ok;q++)if(solidAt(x+Math.cos(q/8*Math.PI*2)*1.4,z+Math.sin(q/8*Math.PI*2)*1.4)||solidAt(x,z))ok=false;
       if(ok)return {x,z,y:worldH(x,z)};}
     return null;}
-  function bladeStoneBuild(P){const sp=bladeStoneSpot(P);if(!sp)return null;const g=new THREE.Group();
+  function bladeStoneBuild(P){const sp=bladeStoneSpot(P);if(!sp)return null;
+    if(typeof bladeStoneProp==='function'){const S=bladeStoneProp(),g=S.group;g.position.set(sp.x,sp.y-.05,sp.z);g.rotation.y=Math.atan2(P.x-sp.x,P.z-sp.z);sc.add(g);return {x:sp.x,z:sp.z,door:P.door,name:P.name,mesh:g,hilt:S.hilt,slot:S.slot};} /* S1360 — the look builder's prop (82-world-structures.js) */
+    const g=new THREE.Group();
     const stone=new THREE.Mesh(new THREE.BoxGeometry(.95,1.1,.62),new THREE.MeshLambertMaterial({color:0x7d7a72}));stone.position.y=.5; /* S993 — 1.1 m, the critic's s632: the hilt at waist to chest, not over the eye */stone.rotation.z=.04;g.add(stone);
     const hilt=new THREE.Group();const iron=new THREE.MeshLambertMaterial({color:0x6c7078,emissive:0x101216}),leather=new THREE.MeshLambertMaterial({color:0x3a2616});
     const blade=new THREE.Mesh(new THREE.BoxGeometry(.06,.12,.012),iron);blade.position.y=.06;hilt.add(blade);
@@ -1335,7 +1337,7 @@ const giver=`${lord.title} ${lord.name}`;
     if(activeZoneId!=='world'||!sc){bladeStoneDrop();return;}const P=artifactPlaces().gate_blade;if(!P)return;
     if(Math.hypot(px-P.x,pz-P.z)>=300||!LOADED.has(cellKey(...cellOf(P.x,P.z)))){if(BLADE_STONE)bladeStoneDrop();return;}
     if(!BLADE_STONE||BLADE_STONE.door!==P.door||!BLADE_STONE.mesh.parent){bladeStoneDrop();BLADE_STONE=bladeStoneBuild(P);}
-    const B=BLADE_STONE;if(!B)return;B.hilt.visible=!artifactState('gate_blade');
+    const B=BLADE_STONE;if(!B)return;B.hilt.visible=!artifactState('gate_blade');if(B.slot)B.slot.visible=!B.hilt.visible;
     if(typeof isInterior==='function'&&isInterior())return;const st=worldState.stats||(worldState.stats={});
     if(!st.bladeSeen&&!artifactState('gate_blade')&&Math.hypot(px-B.x,pz-B.z)<10){st.bladeSeen=1;showMsgLong(BLADE_SAY.seen,'#c8c0a8');}}
   function bladeStoneNear(){const B=BLADE_STONE;return !!(B&&B.mesh&&B.mesh.parent&&activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior())&&Math.hypot(px-B.x,pz-B.z)<BLADE_REACH);}
@@ -1344,7 +1346,7 @@ const giver=`${lord.title} ${lord.name}`;
   function bladeStoneUse(){const B=BLADE_STONE;if(!B)return null;if(artifactState('gate_blade')){showMsg(BLADE_SAY.after,'#c8c0a8');return {gone:true};}
     const c=artifactTry('gate_blade',`Took the Gate-Blade from the stone by ${B.name}.`);
     if(!c.ok){const t=c.have<20?BLADE_SAY.weak:c.have<27?BLADE_SAY.mid:BLADE_SAY.near;showMsg(t,'#c8c0a8');if(typeof addLog==='function')addLog('🗝',t);return c;}
-    showMsg(BLADE_SAY.take,'#c8c0a8');B.hilt.visible=false;if(typeof updateHUD==='function')updateHUD();return c;}
+    showMsg(BLADE_SAY.take,'#c8c0a8');B.hilt.visible=false;if(B.slot)B.slot.visible=true;if(typeof updateHUD==='function')updateHUD();return c;}
   // S801 — the Drowned Bell's trial (the page's Sea row; the approved draft's second run, §2): the bell hangs from the last beam
   // of a wreck on a rock off a home-island port (artifactPlaces().drowned_bell, picked from the seed as the others are: a port,
   // then a point of open sea 50 to 140 units off it by the bare land mask, seaBare, which reads no loaded state). The sea does
@@ -2249,7 +2251,7 @@ const giver=`${lord.title} ${lord.name}`;
   // (restAtBed). Read, it stars the Ashfeld on the map, and under the flagstone in the middle of its stone ring lies the knife.
   // The tools are the character's: bag items, `unique` (never sold or destroyed), never stashed, kept on death. Which events
   // have fired is the world's: worldState.greatGates.ev {ringFirst, ringGate, noteDue, noteGiven, noteRead, knifeLifted}.
-  // The flagstone is a placeholder slab; the look builder's prop is owed. It is not solid.
+  // The flagstone is the look builder's prop (flagstoneProp, Session 1360). It is not solid.
   const GREAT_TOOLS={
     looseKnife:{name:'The Loosing Knife',sub:'an Scian',ico:'🗡',desc:'A knife of grey stone, no longer than a hand and as thin as a leaf. The script on its blade runs one way only, toward the edge. It will not cut bread.'},
     bindNeedle:{name:'The Binding Needle',sub:'an tSnáthaid',ico:'🪡',desc:'A needle of pale bone as long as a forearm, its eye wide enough to put a finger through. The script on it runs round and round and comes back to where it began.'}};
@@ -2274,12 +2276,13 @@ const giver=`${lord.title} ${lord.name}`;
   // the flagstone: in the middle of the Ashfeld's ring of six stones, where the road's path in ends
   const FLAG_REACH=1.6;let FLAG_STONE=null,_flagT=0;
   function flagstoneSpot(){const f=siteAnywhere('ashfeld');return f?{x:f.x,z:f.z}:null;}
-  function flagstoneBuild(sp){const g=new THREE.Group(),y=worldH(sp.x,sp.z);
+  function flagstoneBuild(sp){if(typeof flagstoneProp==='function'){const P=flagstoneProp(sp.x,sp.z);sc.add(P.group);return {x:sp.x,z:sp.z,mesh:P.group,slab:P.slab,hollow:P.hollow};} /* S1360 — the look builder's prop (82-world-structures.js) */
+    const g=new THREE.Group(),y=worldH(sp.x,sp.z);
     const earth=new THREE.Mesh(new THREE.CircleGeometry(.95,20),new THREE.MeshLambertMaterial({color:0x4a3a28}));earth.rotation.x=-Math.PI/2;earth.position.y=.02;earth.scale.set(1,.8,1);g.add(earth);
     const slab=new THREE.Mesh(new THREE.BoxGeometry(1.0,.09,.72),new THREE.MeshLambertMaterial({color:0x77746c}));slab.position.y=.05;g.add(slab);
     g.position.set(sp.x,y,sp.z);sc.add(g);return {x:sp.x,z:sp.z,mesh:g,slab};}
   function flagstoneDrop(){if(FLAG_STONE&&FLAG_STONE.mesh&&FLAG_STONE.mesh.parent)FLAG_STONE.mesh.parent.remove(FLAG_STONE.mesh);FLAG_STONE=null;}
-  function flagstoneLifted(F){if(F&&F.slab){F.slab.position.set(.75,.18,.1);F.slab.rotation.set(0,.4,1.1);}}
+  function flagstoneLifted(F){if(F&&F.slab){if(F.hollow&&typeof flagstoneTip==='function'){if(!F.tipped){flagstoneTip(F.slab,F.mesh.userData.path,F.hollow);F.tipped=true;}return;}F.slab.position.set(.75,.18,.1);F.slab.rotation.set(0,.4,1.1);}}
   // once a second from the loop: built while the Ashfeld's cell is loaded and you are within 300 m
   function tickFlagstone(force){const t=performance.now();if(!force&&t-_flagT<1000)return;_flagT=t;
     if(activeZoneId!=='world'||!sc){flagstoneDrop();return;}const sp=flagstoneSpot();if(!sp)return;
