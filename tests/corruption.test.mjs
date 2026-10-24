@@ -10,6 +10,7 @@
 // Session 1349 (session 3, piece III): the gifts while a gate is torn: fire halved, carry ×1.5, sea speed ×1.5, the undead at peace
 // until one of a room is struck.
 // Session 1350 (session 4's talk, piece I §5): Any news? by the count torn in the site's people's voice, Normal after a bind, the lords.
+// Session 1360 (look): the flagstone is the look builder's prop, its hollow and oilcloth shown once the slab is tipped aside.
 import { boot, check } from './lib/game.mjs';
 import { enterDungeon } from './lib/dungeonshot.mjs';
 const g = await boot(); const { page } = g;
@@ -100,6 +101,12 @@ const ash = await page.evaluate(() => { const f = siteAnywhere('ashfeld'); goToZ
 await page.waitForFunction(([x, z]) => document.getElementById('fd').style.opacity === '0' && activeZoneId === 'world' && Math.hypot(px - x, pz - z) < 50, ash, { timeout: 60000, polling: 200 });
 await g.cells();
 const pre = await page.evaluate(() => { tickFlagstone(true); const F = FLAG_STONE; if (!F) return 'none'; px = F.x + .6; pz = F.z; return flagstonePrompt(); });
+// Session 1360: the look builder's prop. The slab's top stands a few cm proud of the worn earth, the hollow under it shows only once
+// it is lifted, and the whole is a small prop (triangles, draws)
+const propOf = () => page.evaluate(() => { const F = FLAG_STONE; if (!F || !F.hollow) return null; F.mesh.updateMatrixWorld(true); let tris = 0, draws = 0;
+  F.mesh.traverse(o => { if (o.isMesh) { draws++; tris += (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3; } });
+  const bb = new THREE.Box3().setFromObject(F.slab), y = worldH(F.x, F.z); return { tris, draws, top: +(bb.max.y - y).toFixed(3), low: +(bb.min.y - y).toFixed(3), hollow: F.hollow.visible }; });
+const prop0 = await propOf();
 await page.evaluate(() => restAtBed(1));
 await page.waitForFunction(() => BAG.some(it => it && it.bookId === 'varek_note'), null, { timeout: 30000, polling: 200 });
 const n = await page.evaluate((gate) => {
@@ -125,6 +132,8 @@ check(`the note names the ring reached (${n.page} times), and reading it stars t
 check(`the flagstone asks nothing before the note and lifts after it: "${n.prompt}"`, pre === null && n.prompt === "A flagstone at the end of the path — Press 'E' to lift it" && n.use === true && !n.solid, n);
 check('under it the Loosing Knife: unique, a quest item, its card as written, the log line', !!n.knife && n.knife[0] === 'The Loosing Knife' && n.knife[1] && n.knife[2] && n.knife[3] && n.took, n);
 check('lifted once: no prompt, no star', n.after[0] === null && n.after[1] === false, n.after);
+const prop1 = await page.evaluate(() => { tickFlagstone(true); return 1; }).then(propOf);
+check(`the flagstone is the prop: ${prop0 && prop0.tris} tris in ${prop0 && prop0.draws} draws, its top ${prop0 && prop0.top} m up, the hollow shown once lifted`, !!prop0 && prop0.tris < 1500 && prop0.draws <= 6 && prop0.top > .06 && prop0.top < .16 && !prop0.hollow && !!prop1 && prop1.hollow && prop1.top > prop0.top, { prop0, prop1 });
 check('the knife cannot be stashed; it rides the character\'s row, the lifting the world\'s', !n.stashed && n.rows.every(Boolean), n);
 // the way back (Session 1354)
 const w = await page.evaluate(() => {
