@@ -25,6 +25,16 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 
 Recommendation: A — it is what makes "truly unmakes the world" true for a player who keeps backups. The build sheet: `docs/design/great-gates-build.md` (*The open number*).
 
+### Where does Aldwyn stand in 2.0's Ironhaven, to hand over the Binding Needle? (from the systems builder, 2026-10-24, #656)
+**The question.** The great gates' second tool, the Binding Needle, is handed over by Aldwyn at Ironhaven (piece II, approved 16 Oct; `docs/design/great-gates-build.md`, session 2): a Herald's runner sends you to him, and his folder *The great anchor places* gives the needle, with the line *(He sets a long bone needle on the desk between you.)* But Aldwyn exists only in the old look's legacy Ironhaven; the new world's Ironhaven is a generated town whose lord stands outdoors in the plaza. The knife's half is built (Sessions 1346–1348); the runner, Aldwyn and the needle wait on this.
+
+**Options.**
+- **A (recommended).** In Ironhaven's plaza beside its lord, where the generated world puts its people of rank. He appears once the runner has come and stays after. Buildable now; the quest writer rewords *on the desk between you* (e.g. *holds out a long bone needle*).
+- **B.** Indoors, at a desk in a Herald's office: a new building and room in Ironhaven (the look builder's work), the draft as written. Fuller, but waits on the look builder's queue.
+- **C.** A to start, then B: build A now; when the look builder gives Ironhaven a Herald's office, Aldwyn moves indoors and the desk line comes back.
+
+Recommendation: A — the generated world's own pattern, and it lets a player hold both tools now. Devlog: `docs/devlog/1348.md` on `auto/systems-1345`.
+
 ## Answered
 ### Where does a town's coaching inn stand? (from the look builder, 2026-10-23, #642)
 **The question.** Card F6's coaching inn (#411 A: three storeys, a gateway and a stable yard) is in the game's kit as `PKIT.gl.coachInn` (Session 1339). With its yard and stables it is 17.6 by 23 m, and a town's inn lots are 5–7 m by 4–6 m, so it fits none of 36 inns in 14 Gatelands settlements. It needs a plot of its own, laid before the lots, as the church and the keep got under #433. Where should that plot be?
