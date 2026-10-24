@@ -961,6 +961,24 @@ function buildGateSpaces(gen,baseY,wallCol,floorCol,floorIdx){
     FOOTHOLDS.push({x0:q.x0,x1:q.x1,z0:q.z0,z1:q.z1,y,gate:'stone',id:q.id});}
   if(parts.length)dScene.add(dunMerge(parts,'spaces'));
 }
+// S1376 — Cloch's fallen blocks (gateBlock, 52-dungeon-gen.js), drawn after the scaling pass, in metres: the passage's cell is rock, so
+// the shell walls it off both ways, and against each face leans a block fallen from the vault (2.6 by 1.8 m in a 3 m passage), a
+// broken course stone beyond it and rubble spilled 0.8 to 2.2 m out. One mesh a block, at its cell, both faces; the turns and the
+// rubble are cosmetic (Math.random).
+function gateFallBuild(gen){const out=[];
+  for(const b of (gen&&gen.blocks)||[]){if(!b.col)continue;const parts=[],cx=dAt(b.c),cz=dAt(b.r),H=DCELL/2;
+    const put=(geo,col,x,y,z,ry,rx,rz)=>parts.push([geo,col,new THREE.Matrix4().compose(new THREE.Vector3(x,y,z),new THREE.Quaternion().setFromEuler(new THREE.Euler(rx||0,ry||0,rz||0,'YXZ')),new THREE.Vector3(1,1,1))]);
+    for(const e of [-1,1]){const nx=b.ew?e:0,nz=b.ew?0:e,ax=b.ew?0:1,az=b.ew?1:0,ry=b.ew?Math.PI/2:0,fx=nx*H,fz=nz*H;
+      put(SK.rbox(2.6,1.8,.9,.14,2),b.col.clone().multiplyScalar(.8),fx+nx*.6,.82,fz+nz*.6,ry+(Math.random()-.5)*.2,-e*.3,(Math.random()-.5)*.1);
+      {const a=(Math.random()-.5)*1.2;put(SK.rbox(1.3,.5,.7,.06,2),b.col.clone().multiplyScalar(.9),fx+nx*1.6+ax*a,.22,fz+nz*1.6+az*a,ry+(Math.random()-.5)*.8,(Math.random()-.5)*.2,(Math.random()-.5)*.25);}
+      for(let k=0;k<11;k++){const sz=.15+Math.random()*.3,d=.8+Math.random()*1.4,a=(Math.random()-.5)*2.4;
+        put(SK.rbox(sz*1.4,sz,sz*1.1,sz*.25,1),b.col.clone().multiplyScalar(.75+Math.random()*.35),fx+nx*d+ax*a,sz*.4,fz+nz*d+az*a,Math.random()*Math.PI,(Math.random()-.5)*.6,(Math.random()-.5)*.6);}}
+    const m=dunMerge(parts,'fall');m.position.set(cx,b.y||0,cz);m.castShadow=m.receiveShadow=true;m.userData.fall=b;dScene.add(m);b.mesh=m;out.push(m);}
+  return out;}
+// S1376 — whether a gate's floors take Cloch's fallen blocks: a lesser gate (not a great one, not the tutorial) whose door stands on
+// the Mark, while Cloch's toll holds (gateToll, 87-world-quests.js: Cloch torn, and three torn in all). Read on entering, so a gate
+// entered before the toll keeps its passages until you next come in.
+function clochBlockDue(portal){try{return !!(portal&&!portal.tutorial&&portal.x!=null&&typeof gateToll==='function'&&gateToll('cloch')&&!(typeof greatSchoolOf==='function'&&greatSchoolOf(portal))&&nationAt(portal.x,portal.z)==='mark');}catch(e){return false;}}
 function buildDungeon(portal){
   if(dScene)while(dScene.children.length)dScene.remove(dScene.children[0]);
   dScene=new THREE.Scene();ENEMIES=[];CORPSES=[];CHESTS=[];BARRELS=[];TORCHES=[];BALLS=[];DOORS=[];KEYS=[];DUNGEON_COLUMNS=[];DUNGEON_PROPS=[];
@@ -978,6 +996,7 @@ function buildDungeon(portal){
   // (#613 A), read by its seed, the gate's id, so a portal copied from another keeps none of its floors
   let gen=interiorKey==='cave'&&!dunKeepKind(portal)?makeGate(portal.size,portal.seed,(WORLD_DUNGEONS.find(e=>e.seed===portal.seed)||{}).floors,(WORLD_DUNGEONS.find(e=>e.seed===portal.seed)||{}).cond):interiorFn(portal.size,portal.seed);
   if(interiorKey!=='cave'&&!gen.map2&&portal.size!=='small')gen=addUpperFloor(gen,portal.seed); // v80 — forts get an upper floor
+  if(gen.gate&&clochBlockDue(portal))gateBlock(gen,portal.seed); /* S1376 — Cloch's toll: a fallen block on each floor of the Mark's lesser gates (52-dungeon-gen.js) */
   if(gen.hall)FLOOR2_Y=-gen.hall.D; /* S1298 — a massive gate's floor two lies its stair hall's flights down (2 or 3 of 4.2 m) */
   dMap=gen.map;dMap2=gen.map2||null;dR=gen.H;dC=gen.W;
   mmRevealed=Array.from({length:dR},()=>new Uint8Array(dC));
@@ -1338,6 +1357,7 @@ function buildDungeon(portal){
       for(const [dc,dr] of [[1,0],[-1,0],[0,1],[0,-1]]){const nr=r+dr,nc=c+dc;if(!(nr<0||nr>=dR||nc<0||nc>=dC||map[nr][nc]===0))continue;if(Math.random()>=rateH)continue;
         const along=(Math.random()-.5)*.7,wx=c+dc*.36+(dr?along:0),wz=r+dr*.36+(dc?along:0);heap(wx,wz,4+Math.floor(Math.random()*6),.34);
         if(Math.random()<.25)addP(SK.rbox(.36,.18,.24,.035,2),stoneCol.clone().multiplyScalar(.95),wx-dc*.12,baseY+.09,wz-dr*.12,Math.random()*Math.PI,0,(Math.random()-.5)*.3);}}}
+    for(const b of (gen.blocks||[]))if(b.floor===floorIdx){b.col=stoneCol.clone();b.y=baseY;} /* S1376 — Cloch's fallen blocks take this floor's stone; drawn after the scaling (gateFallBuild) */
     for(let r=0;r<dR;r++)for(let c=0;c<dC;c++){
       const v=map[r][c];
       if(v===0){
@@ -3197,7 +3217,11 @@ function buildDungeon(portal){
     });
     const pool=availableEnemies.length?availableEnemies:['Skeleton'];
     const ds=portal.diffScale||DIFF_SCALE.normal;
-    const fc=[];for(let r=0;r<dR;r++)for(let c=0;c<dC;c++)if(map[r][c]===1)fc.push([c,r]);
+    // S1376 — the foes' cells read as if nothing had fallen (a foe's id is its index in this list): the way round is left out and the
+    // fallen block's cell stays in, its foe set in the passage beside it
+    const _blk=(gen.blocks||[]).filter(b=>b.floor===floorIdx),_way=new Set();for(const b of _blk)for(const [c,r] of b.way)_way.add(r*dC+c);
+    const fc=[];for(let r=0;r<dR;r++)for(let c=0;c<dC;c++){const b=_blk.length?_blk.find(q=>q.c===c&&q.r===r):null;
+      if(b)fc.push(b.ew?[c-1,r]:[c,r-1]);else if(map[r][c]===1&&!_way.has(r*dC+c))fc.push([c,r]);}
     // v61b8: candidate filter for enemy spawn placement.
     //   - Standard rule: stay >5 cells from the dungeon entrance (so the
     //     player isn't ambushed the moment they step inside on a normal
@@ -3445,6 +3469,7 @@ function buildDungeon(portal){
   // scaling pass carries it with the rest
   try{lairFinish(portal);}catch(e){}try{shuttleLay(portal);}catch(e){}try{cloakDenLay(portal,window._lairBoss);}catch(e){}
   dunScaleWhole(dunCellFor(portal),thWallMat);
+  try{gateFallBuild(gen);}catch(e){console.warn('gateFallBuild',e);} /* S1376 — Cloch's fallen blocks, in metres */
   try{knotLay(portal,gen);}catch(e){console.warn('knotLay',e);} /* S1346 — a great gate's knot over the ring's dais, in metres (87-world-quests.js) */
   /* S1302 — a gate draws by space (dZoneBuild, dRender) and lights 8 at a time; its pool is made now, so the compile below has its lights */
   DZONE=gen.gate?dZoneBuild(gen):null;if(gen.gate){dScene.userData.lightPool=8;try{_sweepScenePool(dScene);}catch(e){}}

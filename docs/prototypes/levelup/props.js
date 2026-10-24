@@ -28,6 +28,15 @@
 //   10 m span and 9 m to its crown, 14 m long, on dark slabs of 2.5 m, engaged piers with amber script up their faces, the unread
 //   sigil, a ring of 2.4 m, on the end wall, the door an arched slit of 3.2 by 6 m at the other end. The Shuttle: a weaver's shuttle of
 //   pale wood, 0.32 m, its pirn in the cavity and a thread end lying from its eye. o.taken: the floor bare under the sigil.
+// greatKnot(o, r) (Session 1376): a great gate's ring and its knot (the approved draft, The Great Gates I: "At the hall's end stands a
+//   ring of stone, higher than the hall. The script on every wall runs toward it, and in the dark at its heart it is all drawn into
+//   one knot"; visual-foundation §2: "a ring 30 to 40 m high, dark at its heart"). y 0 is the top of the ring chamber's dais (10 m
+//   square, 0.4 high, the game's); the ring stands free on the chamber's floor behind it, a round ring of 40 dressed stones 30.8 m
+//   high, 3.6 m of face, the script cut round its face and its soffit, the dark filling its heart. Threads of the school's light
+//   leave the soffit all round and are drawn into the knot. o.place 'low' (default): the knot hangs before the dark 2.1 m over the
+//   dais's middle, within a hand's reach; 'high': the knot sits at the ring's heart, 15 m up, and one cord runs down from it to a
+//   stone on the dais, where the act is done. o.state 'untied' (default; drawn tight), 'torn' (cut: the two ends hang apart, the
+//   light low) or 'sealed' (bound: whole, smaller, tighter, a whipping of pale thread round its middle). o.school dresses the light.
 // All -> { group, tris, draws, top, grip | ring | handle } (the grip's or the ring's place in the prop's own frame). One mesh per material.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
@@ -230,8 +239,8 @@ export function beastDen(o = {}, r = stream('den')) {
 }
 
 // the gate's script: amber strokes on black, drawn on a canvas from the prop's stream (the gate slice's glyph columns, simplified)
-function scriptTex(r) { const c = document.createElement('canvas'); c.width = 64; c.height = 512; const x = c.getContext('2d'); x.fillStyle = '#000'; x.fillRect(0, 0, 64, 512);
-  x.strokeStyle = '#ffb048'; x.lineWidth = 4.5; x.lineCap = 'round'; for (let y = 10; y < 500; y += 22 + r() * 8) { x.beginPath(); const n = 2 + Math.floor(r() * 3);
+function scriptTex(r, col = '#ffb048') { const c = document.createElement('canvas'); c.width = 64; c.height = 512; const x = c.getContext('2d'); x.fillStyle = '#000'; x.fillRect(0, 0, 64, 512);
+  x.strokeStyle = col; x.lineWidth = 4.5; x.lineCap = 'round'; for (let y = 10; y < 500; y += 22 + r() * 8) { x.beginPath(); const n = 2 + Math.floor(r() * 3);
     for (let k = 0; k < n; k++) { const a = 14 + r() * 36, b = y + r() * 16; k ? x.lineTo(a, b) : x.moveTo(a, b); } x.stroke(); if (r() < .4) { x.beginPath(); x.arc(32, y + 8, 4 + r() * 4, 0, 6.3); x.stroke(); } }
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapT = THREE.RepeatWrapping; return t; }
 export function shuttleRoom(o = {}, r = stream('shuttle')) {
@@ -271,4 +280,60 @@ export function shuttleRoom(o = {}, r = stream('shuttle')) {
     const ex = shx + Math.cos(sa) * .02, ez = shz - Math.sin(sa) * .02, pts = [[0, .03, 0], [.04, .012, .05], [.02, .004, .14], [.09, .003, .22], [.06, .003, .3]].map(([a, b, c]) => new THREE.Vector3(ex + a, b, ez + c));
     put(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 16, .0016, 4), 'thread'); thread = pts[pts.length - 1].toArray().map(v => +v.toFixed(3)); }
   return finish({ sigil: [0, sy, +sz.toFixed(3)], shuttle: [+shx.toFixed(3), +(.028 * .72 * 2).toFixed(3), +shz.toFixed(3)], door: [0, 0, L / 2 + T], span: SP, crown: +(SPRING + Math.sqrt(R * R - cx * cx)).toFixed(2), len: L, doorW: DW, doorH: DH, slab: SL, thread, taken: !!o.taken });
+}
+
+// ── greatKnot (Session 1376) ──
+const KNOT_GLOW = { tine: [1.0, .34, .10], uisce: [.30, .72, 1.0], cloch: [1.0, .66, .30], scath: [.70, .34, 1.0], solas: [1.0, .86, .52], gaoth: [.66, .92, 1.0] };
+export function greatKnot(o = {}, r = stream('knot')) {
+  const { put, finish } = kit(), M = mats(), school = KNOT_GLOW[o.school] ? o.school : 'cloch', state = o.state || 'untied', high = o.place === 'high', G = KNOT_GLOW[school];
+  const kGlow = state === 'torn' ? .7 : state === 'sealed' ? 1.4 : 2.2, sk = 'kscript:' + school + ':' + state, tk = 'kthread:' + school + ':' + state;
+  if (!M.kscriptTex) M.kscriptTex = scriptTex(stream('knot-script'), '#ffffff'); /* white, so the school's light colours it */
+  if (!M[sk]) M[sk] = new THREE.MeshStandardMaterial({ color: 0x000000, emissive: new THREE.Color(...G), emissiveMap: M.kscriptTex, emissiveIntensity: kGlow * .8, roughness: .7 });
+  if (!M[tk]) M[tk] = new THREE.MeshStandardMaterial({ color: new THREE.Color(...G).multiplyScalar(.2), emissive: new THREE.Color(...G), emissiveIntensity: kGlow, roughness: .5 });
+  const kk = 'kknot:' + school + ':' + state; if (!M[kk]) M[kk] = new THREE.MeshStandardMaterial({ color: new THREE.Color(...G).multiplyScalar(.35), emissive: new THREE.Color(...G), emissiveIntensity: state === 'sealed' ? .35 : .55, roughness: .55 });
+  if (!M.kvoid) M.kvoid = new THREE.MeshBasicMaterial({ color: 0x020203 });
+  if (!M.kbound) M.kbound = new THREE.MeshStandardMaterial({ color: 0xe8e0cc, emissive: new THREE.Color(1, .94, .82), emissiveIntensity: 1.6, roughness: .6 });
+  // the ring: 40 voussoirs on the chamber's floor (y -0.4), its centre RO - 1.2 up so the foot sits 1.2 m in a socket of the floor
+  const RO = 16, RI = 12.4, D = 3, Zr = -7.6, FL = -.4, Cy = FL + RO - 1.2, N = 40, gap = .006;
+  for (let i = 0; i < N; i++) { const a0 = i / N * Math.PI * 2 + gap, a1 = (i + 1) / N * Math.PI * 2 - gap, am = (a0 + a1) / 2;
+    if (Cy + Math.cos(am) * (RO + RI) / 2 < FL - .6) continue;
+    const j = (r() - .5) * .08, pt = (rr, a) => new THREE.Vector2(Math.sin(a) * rr, Math.cos(a) * rr), sh = new THREE.Shape([pt(RI + j, a0), pt(RI + j, a1), pt(RO + j, a1), pt(RO + j, a0)]);
+    const g = new THREE.ExtrudeGeometry(sh, { depth: D + (r() - .5) * .12, bevelEnabled: false }); g.translate(0, 0, -D / 2); put(g, 'gateStone', 0, Cy, Zr, 0, 0, 0, .25);
+    // the script round the face, read along the ring, and up the soffit
+    const mid = (RO + RI) / 2, arc = (a1 - a0) * mid; put(new THREE.PlaneGeometry(.9, arc * .96).rotateZ(Math.PI / 2), sk, Math.sin(am) * mid, Cy + Math.cos(am) * mid, Zr + D / 2 + .03, 0, 0, -am, null);
+    const so = new THREE.PlaneGeometry(1.6, (a1 - a0) * RI * .96); so.rotateZ(Math.PI / 2); so.rotateX(Math.PI / 2); put(so, sk, Math.sin(am) * (RI - .02), Cy + Math.cos(am) * (RI - .02), Zr, 0, 0, -am, null); }
+  // the socket: dressed stones about the ring's foot on the chamber's floor
+  for (const e of [-1, 1]) put(new THREE.BoxGeometry(5.5, 1.6, D + 1.6), 'gateStone', e * 4.2, FL + .8 - .2, Zr, 0, 0, 0, .3);
+  // the dark at its heart
+  put(new THREE.CircleGeometry(RI + .05, 64), 'kvoid', 0, Cy, Zr);
+  // the knot: over the dais's middle within reach (low), or at the ring's heart (high)
+  const K = high ? new THREE.Vector3(0, Cy, Zr + .4) : new THREE.Vector3(0, 2.1, -1.2), threads = [], NT = 11;
+  const tube = (pts, rad, key, seg = 48, rs = 5) => { const c = new THREE.CatmullRomCurve3(pts), g = new THREE.TubeGeometry(c, seg, rad, rs), uv = g.attributes.uv, L = c.getLength();
+    for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getY(i), uv.getX(i) * L * 1.5); put(g, key, 0, 0, 0, 0, 0, 0, null); return L; };
+  const knotR = state === 'sealed' ? .24 : .3, ends = [];
+  for (let i = 0; i < NT; i++) { const th = (i + .5) / NT * Math.PI * 2 + (r() - .5) * .2, S = new THREE.Vector3(Math.sin(th) * (RI - .1), Cy + Math.cos(th) * (RI - .1), Zr + (r() - .5) * 1.4);
+    const side = Math.sin(th) >= 0 ? 1 : -1, toward = K.clone().add(new THREE.Vector3(Math.sin(th) * knotR, Math.cos(th) * knotR * .8, 0));
+    let pts;
+    if (high) pts = [S, S.clone().lerp(K, .35).add(new THREE.Vector3(0, -.6, .3)), S.clone().lerp(K, .75).add(new THREE.Vector3(0, -.3, .4)), toward];
+    else { const mid = new THREE.Vector3(S.x * .35, Math.max(K.y + 3, S.y * .55 + K.y * .45), (Zr + K.z) / 2 + .6);
+      pts = [S, S.clone().lerp(mid, .5).add(new THREE.Vector3(0, -1.2, .4)), mid, mid.clone().lerp(toward, .6).add(new THREE.Vector3(0, .4, 0)), toward]; }
+    if (state === 'torn' && !high) { // cut: each thread comes down short of the knot and its end hangs, the two sides apart
+      const last = pts.pop(), endAt = K.clone().add(new THREE.Vector3(side * (.35 + r() * .25), -.55 - r() * .6, (r() - .5) * .3));
+      pts.push(last.clone().lerp(pts[pts.length - 1], .3).add(new THREE.Vector3(side * .25, .1, 0)), endAt); ends.push(endAt); }
+    threads.push(+tube(pts, .035, tk).toFixed(2)); }
+  // the knot itself
+  const knotAt = (k, rad, tubeR, p, q) => { const g = new THREE.TorusKnotGeometry(rad, tubeR, 160, 8, p, q); g.rotateY(r() * .6); put(g, kk, k.x, k.y, k.z); };
+  if (state !== 'torn') { knotAt(K, knotR, .06, 2, 3); knotAt(K, knotR * .72, .045, 3, 4);
+    if (state === 'sealed') { const hp = []; for (let k = 0; k <= 160; k++) { const t = k / 160, a = t * Math.PI * 2 * 9; hp.push(new THREE.Vector3(K.x + Math.cos(a) * (knotR + .08), K.y + (t - .5) * .2, K.z + Math.sin(a) * (knotR + .08))); }
+      tube(hp, .014, 'kbound', 320, 4); } }
+  else if (high) { // cut at the heart: the knot's two halves pulled apart in the dark
+    for (const e of [-1, 1]) { const g = new THREE.TorusGeometry(knotR * .8, .05, 6, 40, Math.PI * 1.3); g.rotateZ(e > 0 ? .3 : Math.PI + .3); put(g, tk, K.x + e * .9, K.y - .3, K.z); } }
+  else for (const e of ends) for (let f = 0; f < 3; f++) tube([e, e.clone().add(new THREE.Vector3((r() - .5) * .12, -.08 - r() * .1, (r() - .5) * .12))], .01, tk, 3, 3);
+  // high: one cord down to a stone on the dais, where you stand to act
+  let stone = null;
+  if (high) { const st = new THREE.Vector3(0, 0, -1.2); put(rough(new THREE.BoxGeometry(.9, 1.1, .9, 3, 3, 3), r, .05), 'gateStone', st.x, .55, st.z, 0, r(), 0, .4); stone = [0, 1.1, -1.2];
+    const top = new THREE.Vector3(0, 1.12, -1.2);
+    if (state === 'torn') { tube([K.clone().add(new THREE.Vector3(0, -.3, 0)), K.clone().add(new THREE.Vector3(.2, -3, .3)), K.clone().add(new THREE.Vector3(.1, -5.5, .2))], .04, tk, 24); tube([top, top.clone().add(new THREE.Vector3(.1, .9, 0)), top.clone().add(new THREE.Vector3(.4, .5, .3))], .04, tk, 12); }
+    else tube([K.clone().add(new THREE.Vector3(0, -.3, 0)), K.clone().lerp(top, .5).add(new THREE.Vector3(0, 0, .8)), top], .04, tk, 64); }
+  return finish({ knot: K.toArray().map(v => +v.toFixed(2)), ring: { top: +(Cy + RO).toFixed(2), centre: [0, +Cy.toFixed(2), Zr], RO, RI, depth: D }, threads, ends: ends.length, stone, state, place: high ? 'high' : 'low', school });
 }

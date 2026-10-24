@@ -601,6 +601,38 @@ function gateCondition(gen,spaces,seed,cond){
     sp.gone=gone;}
   cutGaps('crossing');
 }
+// S1376 — Cloch's toll on the Mark (great-gates-build.md §4 and piece III, from three torn with Cloch among them; the systems builder's
+// S1370 left it to this file): in a lesser gate a fallen block closes one passage on each floor, and the way round is longer. A gate is
+// a tree (its side rooms hang off one corridor each; 2 floors in 120 had a loop), so the way round is cut with it: a U of five cells
+// through the rock on one side, three times the walk of the one cell it replaces. A passage is a straight corridor cell outside every
+// space, with corridor either side, 2 cells from a threshold or a door, 4 from the way in, and 3 from any room (so no chest's dead end
+// changes); the U is cut only where it and every cell beside it is rock, so it opens into nothing but the passage. Pure, from the
+// gate's seed on its own stream: a gate falls the same way every visit while the toll holds. The block's cell turns to rock (0) and
+// the way round to floor (1); gen.blocks holds {floor,c,r,ew,side,way}. buildDungeon calls it (clochBlockDue, 56-dungeon-build.js).
+function gateBlock(gen,seed){
+  gen.blocks=[];if(!gen||!gen.gate)return gen.blocks;
+  const r=dunLcg((hashSeed(((seed|0)+0xb10c)>>>0)>>>0)||1),W=gen.W,H=gen.H,thr=gen.thresholds||[];
+  for(const [fl,M,CS,RM] of [[1,gen.map,gen.cellSpace,gen.rooms],[2,gen.map2,gen.cellSpace2,gen.rooms2]]){if(!M)continue;
+    const rooms=(RM||[]).concat((gen.side||[]).filter(q=>(q.floor||1)===fl)),nearRoom=(c,y,d)=>rooms.some(q=>c>=q.x-d&&c<q.x+q.w+d&&y>=q.y-d&&y<q.y+q.h+d);
+    const cand=[];
+    for(let y=3;y<H-3;y++)for(let x=3;x<W-3;x++){if(M[y][x]!==1||CS&&CS[y][x]>=0)continue;
+      const ew=M[y][x-1]===1&&M[y][x+1]===1&&M[y-1][x]===0&&M[y+1][x]===0,ns=M[y-1][x]===1&&M[y+1][x]===1&&M[y][x-1]===0&&M[y][x+1]===0;
+      if(!ew&&!ns)continue;
+      if(fl===1&&Math.abs(x-gen.entC)+Math.abs(y-gen.entR)<4||nearRoom(x,y,3))continue;
+      if(thr.some(t=>(t.floor||1)===fl&&Math.abs(t.c-x)+Math.abs(t.r-y)<=2))continue;
+      let near=false;for(let dy=-2;dy<=2&&!near;dy++)for(let dx=-2;dx<=2;dx++){const v=M[y+dy][x+dx];if(v>=2&&v!==99){near=true;break;}if(CS&&CS[y+dy][x+dx]>=0&&Math.abs(dx)+Math.abs(dy)<=1){near=true;break;}}
+      if(!near)cand.push([x,y,ew]);}
+    for(let i=cand.length-1;i>0;i--){const j=Math.floor(r()*(i+1));const t=cand[i];cand[i]=cand[j];cand[j]=t;}
+    let done=false;
+    for(const [x,y,ew] of cand){if(done)break;
+      for(const s of r()<.5?[1,-1]:[-1,1]){
+        const at=(a,b)=>ew?[x+a,y+s*b]:[x+s*b,y+a],way=[at(-1,1),at(-1,2),at(0,2),at(1,2),at(1,1)];
+        const keep=new Set([...way,at(-1,0),at(0,0),at(1,0),at(0,1)].map(([c,yy])=>yy*W+c));let ok=true;
+        for(const [c,yy] of way){if(c<1||yy<1||c>=W-1||yy>=H-1||M[yy][c]!==0||nearRoom(c,yy,1)){ok=false;break;}
+          for(const [dc,dr] of [[1,0],[-1,0],[0,1],[0,-1]])if(!keep.has((yy+dr)*W+c+dc)&&M[yy+dr][c+dc]!==0){ok=false;break;}if(!ok)break;}
+        if(!ok)continue;
+        M[y][x]=0;for(const [c,yy] of way)M[yy][c]=1;gen.blocks.push({floor:fl,c:x,r:y,ew,side:s,way});done=true;break;}}}
+  return gen.blocks;}
 // S1323 (card F5, the build sheet's session 3, "Pockets and the leash") — where a gate's fights stand. Each space of a floor
 // (the stair hall aside) holds pockets along its way, evenly: 25 to 42 m apart (one alone in a short space), so two
 // pockets never wake as one, and each end is within 25 m of one, so no stretch of the way runs 50 m without a fight. A pocket's radius is 0.4 of its spacing,
