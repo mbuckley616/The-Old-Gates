@@ -198,6 +198,7 @@ function renderStash(){
 function depositToStash(idx){
   const it=BAG[idx];
   if(!it)return;
+  if(it.quest&&typeof GREAT_TOOLS!=='undefined'&&GREAT_TOOLS[it.artifact]){showMsg(`${it.name} cannot be stashed.`,'#c8a84a');return;} /* S1353 — the knife and the needle stay with you */
   // Splice removes the entry whether stackable or not — for stackable
   // items we deposit the whole stack at once. (Splitting stacks would be
   // a nice-to-have for a future pass; not in MVP.)
@@ -415,6 +416,7 @@ function restAtBed(hours){
       worldState.gameTimeAbsMinutes = (worldState.gameTimeAbsMinutes||0) + hours*60;
     }
     if(typeof addLog==='function')addLog('🛏️',`Slept ${restDur(hours*60)}.`);
+    if(typeof greatNoteOnWake==='function')greatNoteOnWake(); /* S1353 — Varek's note, folded into the pack */
     showMsg(`You wake after ${restDur(hours*60)}. ${gameDateLine()}`,'#c8b880');
     updateHUD();
     if(typeof saveGame==='function')saveGame(); /* S353 — #66 A: sleeping anywhere autosaves */

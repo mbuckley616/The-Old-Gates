@@ -331,7 +331,7 @@ function castSpell(){
   }
   const sp=SPELLS.find(s=>s.id===activeSpellId);
   if(!sp){showMsg('Spell not learned!','#6688cc');return;}
-  const tier=getSpellTier(sp.id);
+  const tier=effTier(sp.id); /* S1346 — a great gate torn or bound moves the tier cast */
   if(!tier){showMsg('Spell not learned!','#6688cc');return;}
 
   // Block re-cast while hand animation is in flight — prevents double-spawns and tangled state
@@ -521,7 +521,7 @@ function updateSpellButton(){
   }
   const sp=SPELLS.find(s=>s.id===activeSpellId);
   if(!sp){btn.textContent='◯ No magic (F)';return;}
-  const tier=getSpellTier(sp.id);
+  const tier=effTier(sp.id);
   btn.textContent=`${sp.ico} ${spellDisplayName(sp,tier)} (F)`;
   btn.style.opacity='1';
   btn.style.fontStyle='normal';

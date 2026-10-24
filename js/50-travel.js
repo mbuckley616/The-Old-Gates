@@ -299,8 +299,11 @@ const CAOR_RISK=1.2,FORTUNE_CRIT_PCT=.005,FORTUNE_CRIT_MULT=1.5; /* S953 — For
 const RENEWAL_RATE=.5;
 function _fortuneCrit(e){const c=Math.min(.5,(ATTRS.fortune||0)*FORTUNE_CRIT_PCT);return c>0&&(typeof foeRand==='function'?foeRand(e):Math.random())<c?FORTUNE_CRIT_MULT:1;} // S480 — on the struck foe's stream (co-op rules)
 // S320 — the same ward on every other blow, shot and trap that reaches you (at least 1 when something landed)
-function _warded(d,src){if(!(d>0))return d;d=Math.max(1,Math.round(d*_wardMult()*(src&&src.beast?_buffMult('beastResist',1):1)));return src&&src.trap?d:challengeTaken(d);} /* S684 — the challenge scales a foe's blow after the ward; a trap's is its own */
+function _warded(d,src){if(!(d>0))return d;d=Math.max(1,Math.round(d*_wardMult()*(src&&src.beast?_buffMult('beastResist',1):1)*(src&&(src.fire||FIRE_FOES[src.baseType||src.baseName])&&typeof gateGift==='function'&&gateGift('tine')?.5:1)));return src&&src.trap?d:challengeTaken(d);} /* S684 — the challenge scales a foe's blow after the ward; a trap's is its own */
 const TRAP_SRC={trap:true};
+// S1349 — a source of fire, for Tine's gift (fire takes half while its great gate is torn): a source tagged `fire` or a fire foe
+const FIRE_FOES={'Fire Elemental':1};
+const FIRE_SRC={fire:true};
 // S321 — the herbs' hidden effects, read where their text says: Wolf's Bane (`beastResist`, above, from a beast's blow),
 // Thornberry (`blockBoost`, a raised guard stops a larger share, to .9), Briarweed (`atkSpeed`, in `_weaponSwingFactor`),
 // Duilleog Ghorm (`spellDuration`, in `applySpellBuff`)
@@ -1117,7 +1120,7 @@ function interact(){
     }
     // Dungeon portals — any zone
     const nearPortal=PORTALS.find(p=>Math.hypot(px-p.x,pz-p.z)<2.0);
-    if(nearPortal){goToDungeon(nearPortal);return;}
+    if(nearPortal){if(typeof greatRingBack==='function'&&greatRingBack(nearPortal)){greatDoorChoice(nearPortal);return;} /* S1354 — the way back to a great gate's ring */goToDungeon(nearPortal);return;}
     // House doors — Ashenmoor, Hearthwick, or Ironhaven
     if(activeZoneId==='overworld'){
       const nearHouse=HOUSES.find(h=>Math.hypot(px-h.doorX,pz-h.doorZ)<TOUCH);
@@ -1166,6 +1169,7 @@ function interact(){
     }
     if(typeof ringCairnNear==='function'&&ringCairnNear()){ringCairnUse();return;} /* S800 — the Noon Ring's cairn */
     if(typeof bellWreckNear==='function'&&bellWreckNear()){bellWreckUse();return;} /* S801 — the Drowned Bell's wreck */
+    if(typeof flagstonePrompt==='function'&&flagstonePrompt()){flagstoneUse();return;} /* S1353 — the Ashfeld's flagstone */
     if(typeof bladeStoneNear==='function'&&bladeStoneNear()){bladeStoneUse();return;} /* S802 — the Gate-Blade's stone */
     if(activeZoneId==='world'&&typeof WORLD!=='undefined'&&WORLD.shipInteract())return; // v80 C — the helm
     // v80 S9 — camp bedrolls in the open world
@@ -1323,6 +1327,7 @@ function interact(){
     }
     return;
   }
+  if(typeof knotNear==='function'&&knotNear()){knotUse();return;} /* S1346 — a great gate's knot */
   if(typeof shuttleNear==='function'&&shuttleNear()){shuttleTake();return;} /* S797 — the Shuttle, in its gate's deepest room */
   if(typeof cloakDenNear==='function'&&cloakDenNear()){cloakDenTake();return;} /* S992 — the cloak, from under its sleeping master */
   // Sigil touch — floor 2 only, closer range than most interactables

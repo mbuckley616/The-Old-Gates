@@ -833,6 +833,7 @@ function loop(now){
   if(typeof tickShuttle==='function')tickShuttle(); /* S782 — the Shuttle's Cold, in every zone (once a second) */
   if(typeof tickWaylamp==='function')tickWaylamp(); /* S783 — the Waylamp lit again, and its first sight */
   if(typeof tickRingCairn==='function')tickRingCairn(); /* S800 — the Noon Ring's cairn, and its first sight */
+  if(typeof tickFlagstone==='function')tickFlagstone(); /* S1353 — the Ashfeld's flagstone */
   if(typeof tickBladeStone==='function')tickBladeStone(); /* S802 — the Gate-Blade's stone, and its first sight */
   if(typeof tickBellWreck==='function')tickBellWreck(); /* S801 — the Drowned Bell's wreck, set by the tide, and its first sight */
   if(lid==='overworld'){
@@ -948,7 +949,8 @@ function loop(now){
     // loot panel and getting the investigate branch instead.
     const nearBramBodyPrompt=ZONE_CORPSES.find(c=>c.zone===activeZoneId&&c.bramBody&&Math.hypot(px-c.x,pz-c.z)<1.3);
     const iprOW=document.getElementById('ipr');
-    if(nearPortal){const ds=nearPortal.diffScale||DIFF_SCALE.normal;iprOW.innerHTML=`Press 'E' to enter <b>${nearPortal.name}</b> &nbsp;<span style="color:${ds.col};font-size:10px">[${ds.label} · ${nearPortal.theme} · ${nearPortal.size}]</span>`;iprOW.style.opacity='1';iprOW.style.display='block';}
+    if(nearPortal&&typeof greatDoorPrompt==='function'&&greatDoorPrompt(nearPortal)){iprOW.textContent=greatDoorPrompt(nearPortal);iprOW.style.opacity='1';iprOW.style.display='block';} /* S1354 — a great gate's way back */
+    else if(nearPortal){const ds=nearPortal.diffScale||DIFF_SCALE.normal;iprOW.innerHTML=`Press 'E' to enter <b>${nearPortal.name}</b> &nbsp;<span style="color:${ds.col};font-size:10px">[${ds.label} · ${nearPortal.theme} · ${nearPortal.size}]</span>`;iprOW.style.opacity='1';iprOW.style.display='block';}
     else if(nearGate){
       // v61d7: tide-guarded gates show a different prompt when blocked.
       // v61d9: commission-guarded gates likewise.
@@ -1011,6 +1013,7 @@ function loop(now){
     // here. Removed v61f9 — see interact() comment block above for the
     // rationale. The fort_door portal handles its own E-prompt.
     else if(nearBoard){iprOW.textContent=`Press 'E' to read ${nearBoard.title}`;iprOW.style.opacity='1';iprOW.style.display='block';}
+    else if(typeof flagstonePrompt==='function'&&flagstonePrompt()){iprOW.textContent=flagstonePrompt();iprOW.style.opacity='1';iprOW.style.display='block';} /* S1353 */
     else if(typeof bladeStonePrompt==='function'&&bladeStonePrompt()){iprOW.textContent=bladeStonePrompt();iprOW.style.opacity='1';iprOW.style.display='block';} /* S802 — the Gate-Blade's stone */
     else if(typeof bellWreckPrompt==='function'&&bellWreckPrompt()){iprOW.textContent=bellWreckPrompt();iprOW.style.opacity='1';iprOW.style.display='block';} /* S801 — the Drowned Bell's wreck */
     else if(typeof ringCairnPrompt==='function'&&ringCairnPrompt()){iprOW.textContent=ringCairnPrompt();iprOW.style.opacity='1';iprOW.style.display='block';} /* S800 — the Noon Ring's cairn */
@@ -1228,7 +1231,8 @@ function loop(now){
       // v63 — Directional detection. canSeePlayer combines distance,
       // sneak/buff modulation, vision cone, and hearing radius. LOS still
       // checked separately (existing dungeon behavior) since it uses dSolid.
-      const _calm=typeof beastAtPeace==='function'&&beastAtPeace(e);if(_calm)e.alert=false;if(_calm&&typeof cloakTurnAway==='function')cloakTurnAway(e,()=>canSeePlayer(e,dist,8)); /* S777 — the Wolf-Mother's Cloak, underground as in the open */
+      const _ward=typeof solasWards==='function'&&solasWards(e); /* S1349 — Solas's gift: the undead leave you be until one is struck */
+      const _calm=_ward||(typeof beastAtPeace==='function'&&beastAtPeace(e));if(_calm)e.alert=false;if(_calm&&!_ward&&typeof cloakTurnAway==='function')cloakTurnAway(e,()=>canSeePlayer(e,dist,8)); /* S777 — the Wolf-Mother's Cloak, underground as in the open */
       const _sight=e.pocket&&e.ranged?GATE_ARCHER_SIGHT:8;
       if(!e.alert && !_calm && !e._homing && canSeePlayer(e, dist, _sight)){ /* S635 — 3.5 → 8 (Michael's A on #190); S1323 — an archer in a gate's pocket sees 20 m, and a foe walking home sees nothing until it is home */
         // Quick LOS: cast ~8 steps between enemy and player, check for walls
@@ -1512,6 +1516,7 @@ function loop(now){
     });
     // Drive the ambient hum based on closest-sigil proximity
     if(typeof updateSigilHum==='function')updateSigilHum(maxSigilProx);
+    if(typeof knotTick==='function')knotTick(); /* S1346 — a great gate's ring, seen the first time */
     if(typeof shuttleTick==='function')shuttleTick(); /* S797 — the Shuttle's room, seen the first time */
     if(typeof cloakDenTick==='function')cloakDenTick(); /* S992 — the cloak's den, seen the first time */
     const nearSigilPrompt=SIGILS.find(s=>s.floor===currentFloor&&Math.hypot(px-s.x,pz-s.z)<1.5);
@@ -1537,6 +1542,7 @@ function loop(now){
       const stairLabel=DUNGEON_STAIRWELL?'':currentFloor===1&&dMap2?"Press 'E' to descend to Floor 2":"Press 'E' to ascend to Floor 1"; // v80 S8 — physical stairs need no prompt
       if(stairLabel){iprEl.textContent=stairLabel;iprEl.style.opacity='1';iprEl.style.display='block';}
     }
+    else if(typeof knotNear==='function'&&knotNear()){iprEl.textContent=knotPrompt();iprEl.style.opacity='1';iprEl.style.display='block';} /* S1346 */
     else if(typeof shuttleNear==='function'&&shuttleNear()){iprEl.textContent="Press 'E' to take up the shuttle";iprEl.style.opacity='1';iprEl.style.display='block';} /* S797 */
     else if(typeof cloakDenNear==='function'&&cloakDenNear()){iprEl.textContent="Press 'E' to take the grey cloak from under it";iprEl.style.opacity='1';iprEl.style.display='block';} /* S992 */
     else if(nearSigilPrompt){
