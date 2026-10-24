@@ -1819,6 +1819,66 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     else{intNPCMesh=null;intNPCPos={x:-99,z:-99};}
     return sc_;
   }
+  // S1368 (card F9, Michael's A on #660) — on the new look a Gatelands town's coaching inn (lot.kit.kind 'coachinn', S1339) is its own
+  // room inside (PKIT.gl.coachRoom, rooms.js's Session 1351, with three rooms to let across the first floor's front): the taproom 11.7
+  // by 8.1 m inside the street's own 12.6 by 9 m front (the open hearth under the west stack, the bar across the back, three tables and
+  // the coach passengers' corner at the east grate), the dog-leg stair in the fourth bay, and up it a corridor on each floor with the
+  // rooms off it, eight in all. It is drawn in metres and moved into the room's frame as the taproom is (nothing scaled). Room k is the
+  // prototype's order: the first floor's three front rooms from the west, the second floor's three, then the first floor's two behind.
+  const COACH_ROOM_NAMES=['first floor’s west front room','first floor’s middle front room','first floor’s east front room','second floor’s west front room','second floor’s middle front room','second floor’s east front room','first floor’s west back room','first floor’s east back room'];
+  function kitCoachRoom(house){return !!(house&&house.type==='inn'&&house.kit&&house.kit.kind==='coachinn'&&!house.coachInn&&window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.gl&&PKIT.gl.coachRoom);}
+  function buildKitCoachRoom(house){
+    const T=PKIT.gl.coachRoom({first:'rooms',color:house.kit.colour,paint:house.kit.paint},PKIT.stream(house.id+':coachroom')),I=T.inner,X=I.x1,Z=I.z1,F0=T.floors[0],W=2*X,D=2*Z;
+    const rx=x=>x+X,rz=z=>z+Z,ry=y=>y-F0,FL=T.floors.map(y=>+(y-F0).toFixed(3));
+    house._counterFront=null;house.intW=W;house.intD=D;house._roomH=+(T.ceils[2]-F0).toFixed(3);house._exitD=.8;house._exitW=1.0;house._exitX=+rx(T.door.x).toFixed(3);house._coachRoom=T;
+    const sc_=new THREE.Scene();interiorScene=sc_;landRoomPost(sc_);sc_.background=new THREE.Color(0x120a06);sc_.fog=new THREE.Fog(0x120a06,Math.max(W,D)*.8*SCALE.ROOM_K,Math.max(W,D)*2.4*SCALE.ROOM_K);
+    intNPCMesh=null;intBedPos=null;intStashPos=null;
+    const SOL=[];INT_SOL=SOL;FOOTHOLDS=[];INT_BEDS=[];INT_DOORS=[];INT_DOORS.house=house.id;INT_CHAIR=null;INT_NPCS=[];HATCH.active=false;HATCH.roof=false;INT_LOOT=null;INT_BOX=null;INT_SHELF=null;
+    T.group.position.set(X,-F0,Z);T.group.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false;}});sc_.add(T.group);
+    // the solids are the prototype's boxes (the furniture, the partitions of each floor, the breasts, the cupboard under the flights,
+    // the rail round the well on the top floor, the doors' leaves); a seat or a table stands from its floor (its legs are not boxes),
+    // so you step up onto a bench or a chair (0.44, held to STEP_UP); a box's top is a foothold, except a wall's, the rail's and a leaf's
+    for(const q of T.boxes){if(q.tag==='hearthstone')continue;const b={x0:rx(q.x0),x1:rx(q.x1),z0:rz(q.z0),z1:rz(q.z1),y0:ry(q.y0),y1:ry(q.y1)};
+      if(['bench','chair','stool'].includes(q.tag)){b.y0=FL[q.fl];b.y1=FL[q.fl]+STEP_UP;}else if(q.tag==='table')b.y0=FL[q.fl];SOL.push(b);
+      if(!['partition','wellrail','leaf','breast'].includes(q.tag))FOOTHOLDS.push({x0:b.x0,x1:b.x1,z0:b.z0,z1:b.z1,y:b.y1});}
+    // the stair's treads and half-landings (the prototype keeps them as lists, not boxes): each a solid of its own thickness and a foothold
+    for(const q of T.steps){const b={x0:rx(q.x0),x1:rx(q.x1),z0:rz(q.z0),z1:rz(q.z1),y0:ry(q.y)-.22,y1:ry(q.y)};SOL.push(b);FOOTHOLDS.push({x0:b.x0,x1:b.x1,z0:b.z0,z1:b.z1,y:b.y1});}
+    for(const q of T.landings){const b={x0:rx(q.x0),x1:rx(q.x1),z0:rz(q.z0),z1:rz(q.z1),y0:ry(q.y)-.2,y1:ry(q.y)};SOL.push(b);FOOTHOLDS.push({x0:b.x0,x1:b.x1,z0:b.z0,z1:b.z1,y:b.y1});}
+    // the two upper floors over the whole house, each open over the stair's well
+    const hole={x0:rx(T.well.x0),x1:rx(T.well.x1),z0:rz(T.well.z0),z1:rz(T.well.z1)};
+    for(const y of [FL[1],FL[2]])FOOTHOLDS.push({x0:0,x1:W,z0:0,z1:D,y,hole});
+    // the eight rooms off the corridors: a door in each doorway (the prototype leaves them open), the bed in each the inn's to let, room k
+    T.rooms.forEach(R=>{intDoorAt(sc_,SOL,rx(R.door.x),rz(R.door.z),FL[R.fl],Math.PI/2,0x4a3420,{w:R.door.w-.04,h:R.door.h-.04});});
+    T.rooms.forEach((R,k)=>{const b=R.bed;INT_BEDS.push({x:rx((b.x0+b.x1)/2),z:rz((b.z0+b.z1)/2),y:FL[R.fl],owner:'inn',room:k,cz:rz((b.z0+b.z1)/2)});});
+    intBedPos={x:INT_BEDS[INT_BEDS.length-1].x,z:INT_BEDS[INT_BEDS.length-1].z};
+    // the cellar's hatch in the flags of the front west corner, between the window table's bench and the gable
+    if(hasCellar(house)){const hx=rx(-X+.6),hz=rz(Z-.55);const lid=new THREE.Mesh(new THREE.BoxGeometry(.8,.04,.8),new THREE.MeshLambertMaterial({color:0x3a2612}));lid.position.set(hx,.02,hz);sc_.add(lid);
+      const ring=new THREE.Mesh(new THREE.TorusGeometry(.07,.015,5,10),new THREE.MeshLambertMaterial({color:0x2a2622}));ring.position.set(hx+.25,.05,hz);ring.rotation.x=Math.PI/2;sc_.add(ring);house._hatch={x:hx,z:hz};HATCH.x=hx;HATCH.z=hz;HATCH.y=0;HATCH.active=true;}
+    // the day beyond every window of the three floors and the open front and back doors, by the hour: one mesh of planes outside them
+    {const hr=typeof gameHour==='function'?gameHour():12,day=hr>=7&&hr<18?0xc4d0dc:hr>=5&&hr<20?0x8a7a7a:0x0e1420,M=new THREE.MeshBasicMaterial({color:day}),hw=T.w/2+.08,hd=T.d/2+.08;
+      const P=[],out=(x,y,z,w,h,a)=>{const g=new THREE.PlaneGeometry(w+.1,h+.1).toNonIndexed();g.rotateY(a);g.translate(rx(x),ry(y+h/2),rz(z));P.push(g.attributes.position.array);g.dispose();};
+      for(const q of T.windows){if(q.face==='front')out(q.x,q.y,hd,q.w,q.h,Math.PI);else if(q.face==='back')out(q.x,q.y,-hd,q.w,q.h,0);else if(q.face==='right')out(hw,q.y,q.z,q.w,q.h,-Math.PI/2);else out(-hw,q.y,q.z,q.w,q.h,Math.PI/2);}
+      out(T.door.x,F0,hd,T.door.w,T.door.h,Math.PI);out(T.back.x,F0,-hd,T.back.w,T.back.h,0);
+      const A=new Float32Array(P.reduce((n,a)=>n+a.length,0));let o=0;for(const a of P){A.set(a,o);o+=a.length;}
+      const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(A,3));const m=new THREE.Mesh(g,M);m.userData.daylight=true;sc_.add(m);}
+    // the light: the open hearth and the passengers' grate, the lantern over the bar and the one over their long table, one on each
+    // corridor, one over each floor's front rooms and one over the first floor's back rooms, and the room's warmth (nine in all)
+    sc_.add(new THREE.AmbientLight(0xffb070,.45));
+    const L=(x,y,z,c,i,d)=>{const l=new THREE.PointLight(c,i,d);l.position.set(x,y,z);sc_.add(l);return l;};
+    for(const F of T.fires.filter(f=>f[3]===0))L(rx(F[0]+(F[0]<0?.6:-.4)),ry(F[1]+.3),rz(F[2]),0xff6a20,F[4]==='open'?1.5:1.0,F[4]==='open'?7:5);
+    const tap=T.lamps.filter(p=>p[3]===0),barL=tap[0],coachL=tap.find(p=>p[0]>4)||tap[tap.length-1];
+    for(const p of [barL,coachL])L(rx(p[0]),ry(p[1]),rz(p[2]),0xffaa44,1.4,8);
+    const cz=(T.corridor.z0+T.corridor.z1)/2;
+    for(const fl of [1,2]){L(W/2,FL[fl]+2.0,rz(cz),0xffaa44,.6,8);L(W/2,FL[fl]+1.7,rz((T.corridor.z1+Z)/2),0xffb070,.55,7);}
+    L(W/2,FL[1]+1.7,rz((-Z+T.corridor.z0)/2),0xffb070,.5,7);
+    // the innkeeper behind the bar, between it and the rack of kegs, facing the room
+    const npc={x:rx((T.bar.x0+T.bar.x1)/2),z:rz(T.bar.z0-.2)};
+    if(npcInsideNow(house)){const g=buildNPCMesh({role:'Innkeeper',name:house.keeper,_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
+      g.rotation.y=Math.PI;g.position.set(npc.x,0,npc.z);sc_.add(g);intNPCMesh=g;intNPCPos={x:npc.x,z:npc.z};
+      intNPCMesh.userData.amble={wa:0,wt:1,minZ:npc.z,maxZ:npc.z,minX:rx(T.bar.x0+.3),maxX:rx(T.bar.x1-.3),speed:.25,paused:true};}
+    else{intNPCMesh=null;intNPCPos={x:-99,z:-99};}
+    return sc_;
+  }
   // S1326 (card F9; OG-043, OG-061) — on the new look an Aurennais town's church standing as the Church of the Weaver (lot.kit.kind
   // 'aurchurch', S1305) is its own room inside (PKIT.au.churchHall, rooms.js's Session 947): the nave 12.4 m square and 10.1 m to the
   // ceiling, open in an oculus into the drum and the painted dome; the bier of the dead under it, the benches by the door, the altar on
@@ -1870,6 +1930,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     if(kitTaproom(house))return buildKitTaproom(house); /* S1161 — the kit's taproom, at its true size */
     if(kitAlehall(house))return buildKitAlehall(house); /* S1288 — the Mark's alehall, at its true size */
     if(kitTavern(house))return buildKitTavern(house); /* S1320 — Aurenne's tavern on the quay, at its true size */
+    if(kitCoachRoom(house))return buildKitCoachRoom(house); /* S1368 — a town's coaching inn inside, at its true size */
     if(kitChurchHall(house))return buildKitChurchHall(house); /* S1326 — the Church of the Weaver inside, at its true size */
     const two=!!house.two;
     // S896 (F2a) — the room's true size in metres (07-scale.js; visual-foundation.md §1: a cottage room 4 to 6 across, an inn's hall

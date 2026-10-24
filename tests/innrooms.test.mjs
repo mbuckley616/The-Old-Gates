@@ -44,7 +44,8 @@ const tryBeds = () => page.evaluate(() => { const out = []; const _m = showMsg; 
 const rows = [], refusals = [], counts = [];
 const sels = [];
 for (const town of ['dunmore', 'portclare']) { await g.settle(town);
-  for (const id of await page.evaluate((t) => WORLD.settle.get(t).houses.filter(x => x.type === 'inn' && x.dlg).map(h => h.id), town)) sels.push({ town, id }); }
+  /* Session 1368: a town's coaching inn on the new look is the kit's own room, its eight rooms named by floor and side (kitcoachroom) */
+  for (const id of await page.evaluate((t) => WORLD.settle.get(t).houses.filter(x => x.type === 'inn' && x.dlg && !kitCoachRoom(x)).map(h => h.id), town)) sels.push({ town, id }); }
 // a coaching inn, raised on the first town-to-town road with one (as `coachinn` does)
 const key = await page.evaluate(() => { worldState.lairs = new Proxy({}, { get: () => true }); worldState.routes = {};
   const C0 = WORLD.coaches(); const town = s => s && /town|city|port/.test(s.kind);
