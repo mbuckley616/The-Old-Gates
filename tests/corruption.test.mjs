@@ -170,5 +170,26 @@ console.log(JSON.stringify(tk));
 check(`no great gate touched, no talk of them and no lord's topic (${tk.P})`, tk.none[0] === 0 && tk.none[1] === 0, tk);
 check(`four torn: the fourth line in the site's own voice, one line only, and the Crown's lord on the tear`, tk.four[0] && tk.four[1] === 1 && tk.four[2] === 'The great gates?|true', tk);
 check('a bind: the Normal line instead for seven days, the lord on the seal; then the count\'s line again', tk.bound[0] && !tk.bound[1] && tk.bound[2] && tk.later[0] && !tk.later[1], tk);
+// the tolls' start and Uisce's water (Session 1357; the sheet's session 4, piece III): the log's line once, at the third tear; two
+// fish a catch in the Gatelands' waters while Uisce is torn, none there once three are torn, and the catch again when it is bound
+const tl = await page.evaluate(() => {
+  const keep = JSON.stringify(worldState.greatGates || null), swim = isSwimming, logN = () => GAME_LOG.filter(e => e.text === 'Somewhere, something gave.').length;
+  worldState.greatGates = { gates: {}, ev: {} }; const out = { at: [] };
+  for (const s of ['tine', 'uisce', 'cloch', 'scath']) { cutKnot(s); out.at.push(logN()); }
+  out.flag = !!worldState.greatGates.ev.toll;
+  const P0 = [px, pz], cv = siteAnywhere('coeur_de_vie'); px = cv.x; pz = cv.z; /* the Crown's seat: the Gatelands */
+  isSwimming = () => true; const school = { cx: px, cz: pz, r: 3, y: jumpY, cool: 0, chunk: 'toll:test' }; LIFE.fish.push(school);
+  const fish = () => BAG.filter(it => it && it._typeKey === 'fish').reduce((n, it) => n + (it.qty || 1), 0);
+  const catchN = () => { school.cool = 0; const a = fish(), ok = catchFish(); return [ok, fish() - a]; };
+  out.waters = uisceWaters();
+  worldState.greatGates = { gates: { uisce: 'torn' }, ev: {} }; out.face = catchN(); out.tollOff = gateToll('uisce');
+  worldState.greatGates.gates.tine = 'torn'; worldState.greatGates.gates.cloch = 'torn'; out.toll = [gateToll('uisce'), fishPrompt(), catchN()];
+  worldState.greatGates.gates.uisce = 'sealed'; out.bound = [gateToll('uisce'), catchN()];
+  LIFE.fish.splice(LIFE.fish.indexOf(school), 1); isSwimming = swim; [px, pz] = P0; worldState.greatGates = JSON.parse(keep);
+  for (let i = BAG.length - 1; i >= 0; i--) if (BAG[i] && BAG[i]._typeKey === 'fish') BAG.splice(i, 1);
+  return out; });
+console.log(JSON.stringify(tl));
+check(`the tolls begin at three torn: *Somewhere, something gave.* once in the log, and a fourth tear adds none (${tl.at})`, tl.at.join() === '0,0,1,1' && tl.flag, tl);
+check('Uisce torn, in the Gatelands\' waters: a catch brings two fish; from three torn, no fish there and no prompt; bound, one again', tl.waters && tl.face[0] && tl.face[1] === 2 && !tl.tollOff && tl.toll[0] && tl.toll[1] === null && tl.toll[2][0] === false && tl.toll[2][1] === 0 && !tl.bound[0] && tl.bound[1][0] && tl.bound[1][1] === 1, tl);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

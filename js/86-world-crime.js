@@ -1062,7 +1062,7 @@
   }
   // ── fish ──
   const FISH_KINDS={shallow:['Herring','Bream','Mackerel'],deep:['Cod','Silverfin','Ling'],cold:['Char','Haddock'],warm:['Grouper','Snapper']};
-  function nearSchool(){if(!isSwimming())return null;for(const s of LIFE.fish){if(s.cool>0)continue;if(Math.hypot(px-s.cx,pz-s.cz)<s.r+1.4&&Math.abs(jumpY-s.y)<1.6)return s;}return null;}
+  function nearSchool(){if(!isSwimming())return null;if(typeof gateToll==='function'&&gateToll('uisce')&&uisceWaters())return null; /* S1357 — Uisce's toll: no fish in the Gatelands' waters */for(const s of LIFE.fish){if(s.cool>0)continue;if(Math.hypot(px-s.cx,pz-s.cz)<s.r+1.4&&Math.abs(jumpY-s.y)<1.6)return s;}return null;}
   function fishPrompt(){return nearSchool()?"Press 'E' to catch a fish":null;}
   function catchFish(){const s=nearSchool();if(!s)return false;
     const [i,j]=cellOf(px,pz);const cl=climateOfCell(i,j);const bed=worldH(px,pz);
@@ -1072,7 +1072,7 @@
     const name=pool[Math.floor(R()*pool.length)];const big=R()<.12;
     const item={name:(big?'Fine ':'')+name,ico:'🐟',type:'misc',weight:big?1.2:.6,sellMult:big?1.2:.7,buyPrice:big?26:9,qty:1,_typeKey:'fish'};
     if(typeof canCarry==='function'&&!canCarry(item)){showMsg('Too heavy to carry!','#cc8844');return true;}
-    if(typeof bagAdd==='function')bagAdd(item);s.cool=18+R()*12;splash(false);showMsg(`Caught a ${item.name}.`,'#88cc88');if(typeof addLog==='function')addLog('🐟',`Caught a ${item.name}.`);return true;}
+    if(typeof bagAdd==='function'){bagAdd(item);if(typeof gateGift==='function'&&gateGift('uisce')&&uisceWaters()&&(typeof canCarry!=='function'||canCarry(item)))bagAdd(Object.assign({},item));} /* S1357 — Uisce's face: two fish a catch in the Gatelands' waters */s.cool=18+R()*12;splash(false);showMsg(`Caught a ${item.name}.`,'#88cc88');if(typeof addLog==='function')addLog('🐟',`Caught a ${item.name}.`);return true;}
   function tickSchoolCool(dt){for(const s of LIFE.fish)if(s.cool>0)s.cool-=dt;}
   // ── whales ──
   const WHALES=[];

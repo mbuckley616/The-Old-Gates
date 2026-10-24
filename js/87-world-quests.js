@@ -2083,6 +2083,15 @@ const giver=`${lord.title} ${lord.name}`;
   // torn, never written into the player's numbers. Tine: fire takes half (_warded). Uisce: breath does not fall (the dive). Cloch:
   // carry ×1.5 (maxCarry). Scáth: at night (20:00 to 05:00) a witness sees you only within 4 m (witnessOf). Solas: Skeletons,
   // Wraiths and Phantoms leave you be until you strike one, and then that room fights (solasWards). Gaoth: top speed ×1.5 at sea.
+  // S1357 — the tolls (piece III): a torn school's toll holds while three or more great gates are torn anywhere, and ends for that
+  // school the moment its gate is bound (gateGift goes false). The log's line fires once, the first time the count reaches three.
+  const GATE_TOLL_AT=3;
+  function gateToll(school){return gateGift(school)&&corruptionLevel()>=GATE_TOLL_AT;}
+  function gateTollStart(){const ev=greatEv();if(ev.toll||corruptionLevel()<GATE_TOLL_AT)return false;ev.toll=worldState.gameTimeAbsMinutes||1;
+    if(typeof addLog==='function')addLog('◎','Somewhere, something gave.');return true;}
+  // Uisce's face and toll on the Gatelands' waters (the sheet's table): while torn a catch brings two fish; from three torn the
+  // schools there cannot be caught at all. Read where you swim, by the cell's nation.
+  function uisceWaters(){try{const [i,j]=cellOf(px,pz);return nationKeyOf(i,j)==='gatelands';}catch(e){return false;}}
   function gateGift(school){const g=worldState.greatGates;return !!(g&&g.gates&&g.gates[school]==='torn');}
   // S1350 — the world's talk of the great gates (great-gates-build.md session 4, its talk; piece I §5, approved 14 Oct): one line in
   // *Any news?* by the count torn, in the voice of the site's people; the *Normal* lines instead for seven days after a bind, and for a
@@ -2173,7 +2182,7 @@ const giver=`${lord.title} ${lord.name}`;
   // the named actions over setGreatGate: false-ish ({ok:false}) when the knot is already so or fate is fixed. A cut that lifts a spell
   // to Mastery counts as a Mastery touch for Varek, once per spell per cut (the sheet: the tearing path draws him sooner).
   function cutKnot(school){const prev=greatGateState(school);if(prev==='torn'||greatFate())return {ok:false};const before=_knotMastery(school);
-    if(!setGreatGate(school,'torn'))return {ok:false};greatGateLast('torn');
+    if(!setGreatGate(school,'torn'))return {ok:false};greatGateLast('torn');gateTollStart(); /* S1357 — the third tear's log line */
     const lifted=_knotMastery(school).filter(id=>before.indexOf(id)<0);for(const id of lifted)onMasteryTouch(id);
     return {ok:true,again:prev==='sealed',lifted,fate:greatFate()};}
   function bindKnot(school){const prev=greatGateState(school);if(prev==='sealed'||greatFate())return {ok:false};
