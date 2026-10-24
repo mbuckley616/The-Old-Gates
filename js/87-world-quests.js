@@ -2078,6 +2078,21 @@ const giver=`${lord.title} ${lord.name}`;
   function greatFate(){const g=worldState.greatGates;return (g&&g.fate)||null;}
   function corruptionTorn(){const g=worldState.greatGates;if(!g||!g.gates)return [];return GREAT_SCHOOLS.filter(s=>g.gates[s]==='torn');}
   function corruptionLevel(){return corruptionTorn().length;}
+  // S1349 — the six gifts (great-gates-build.md session 3, Session 1349; piece III): each is read where it applies while its gate is
+  // torn, never written into the player's numbers. Tine: fire takes half (_warded). Uisce: breath does not fall (the dive). Cloch:
+  // carry ×1.5 (maxCarry). Scáth: at night (20:00 to 05:00) a witness sees you only within 4 m (witnessOf). Solas: Skeletons,
+  // Wraiths and Phantoms leave you be until you strike one, and then that room fights (solasWards). Gaoth: top speed ×1.5 at sea.
+  function gateGift(school){const g=worldState.greatGates;return !!(g&&g.gates&&g.gates[school]==='torn');}
+  const SOLAS_KINDS={Skeleton:1,Wraith:1,Phantom:1};
+  // a foe of those kinds is at peace while Solas is torn and none of its room has been struck: a blow on one (its health below
+  // full) wakes every one of those kinds in its zone of the gate (or within 20 m, outside a gate's zones)
+  function solasWards(e){if(!e||e.dead||!SOLAS_KINDS[e.baseType||e.baseName||e.name]||e._solasStruck||!gateGift('solas'))return false;
+    if(!(e.hp<e.maxHp))return true;
+    const L=activeZoneId==='dungeon'?ENEMIES:(ZONES.world&&ZONES.world.enemies)||[],ex=e.x!=null?e.x:e.mesh.position.x,ez=e.z!=null?e.z:e.mesh.position.z;
+    const zone=activeZoneId==='dungeon'&&typeof dZoneAt==='function'&&DZONE?dZoneAt(ex,ez,e.floor||1):-1;
+    for(const o of L){if(!o||o.dead||!SOLAS_KINDS[o.baseType||o.baseName||o.name])continue;const ox=o.x!=null?o.x:o.mesh.position.x,oz=o.z!=null?o.z:o.mesh.position.z;
+      if(o===e||(zone>=0?dZoneAt(ox,oz,o.floor||1)===zone:Math.hypot(ox-ex,oz-ez)<20))o._solasStruck=true;}
+    return false;}
 
   // ═══ THE KNOT AT THE RING (great-gates-build.md session 1, Session 1346; piece I, approved 14 Oct 2026; Michael's A on #292) ═══
   // A great gate's script runs into one knot at the heart of its ring. The Loosing Knife cuts it (torn) and the Binding Needle binds

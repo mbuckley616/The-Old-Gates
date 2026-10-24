@@ -584,7 +584,7 @@
     DIVE.depth=Math.min(SWIM_Y,Math.max(bed+.9,DIVE.depth+vy*dt)); /* S1084 (F2b) — a body lying in the water clears the bed by 0.90 (0.55), and never rises over the swimmer's line */
     const under=DIVE.depth<SWIM_Y-.15;
     if(under!==DIVE.under){DIVE.under=under;if(under)splash(false);}
-    if(under){if(!(typeof fxOn==='function'&&fxOn('waterbreath')))DIVE.breath=Math.max(0,DIVE.breath-dt/breathSecs()); /* S976 — Long breath (Athletics 50) */if(DIVE.breath<=0){DIVE.hurtT-=dt;if(DIVE.hurtT<=0){DIVE.hurtT=1;PHP=Math.max(0,PHP-6);updateHUD();if(PHP<=0&&typeof playerDead==='function')playerDead();}}}
+    if(under){if(!(typeof fxOn==='function'&&fxOn('waterbreath'))&&!(typeof gateGift==='function'&&gateGift('uisce')))DIVE.breath=Math.max(0,DIVE.breath-dt/breathSecs()); /* S976 — Long breath (Athletics 50) */if(DIVE.breath<=0){DIVE.hurtT-=dt;if(DIVE.hurtT<=0){DIVE.hurtT=1;PHP=Math.max(0,PHP-6);updateHUD();if(PHP<=0&&typeof playerDead==='function')playerDead();}}}
     else DIVE.breath=Math.min(1,DIVE.breath+dt/4);
     breathUI();return DIVE.depth;
   }

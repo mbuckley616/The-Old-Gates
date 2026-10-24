@@ -7,6 +7,8 @@
 // Session 1347 (session 2's first half, piece II): reaching a ring with neither tool, the next waking leaves Varek's note naming
 // it; read, it stars the Ashfeld, and the flagstone there gives the Loosing Knife, which cannot be stashed and rides the character.
 // Session 1348 (piece I §4): once its ring is reached, a great gate's door offers the way down to the ring, landing beside the knot.
+// Session 1349 (session 3, piece III): the gifts while a gate is torn: fire halved, carry ×1.5, sea speed ×1.5, the undead at peace
+// until one of a room is struck.
 import { boot, check } from './lib/game.mjs';
 import { enterDungeon } from './lib/dungeonshot.mjs';
 const g = await boot(); const { page } = g;
@@ -135,5 +137,23 @@ const wl = await page.evaluate(() => ({ d: +Math.hypot(px - KNOT_LIE.x, pz - KNO
 console.log(JSON.stringify(w), JSON.stringify(wl));
 check(`a great gate whose ring you reached offers the way down at its door: "${w.prompt}"`, w.prompt === "The Test Gate — Press 'E' to go down to the ring" && w.plain === null && w.choice === 'Go down to the ring. / Go in. / Leave it.', w);
 check(`going down lands you on the dais by the knot (${wl.d} m), with the draft's line`, wl.d < 2.5 && wl.near && wl.floor && wl.msg === 'The way to the ring is open. The hall does not ask the long way of you twice.' && wl.prompt === "The bound knot of G — Press 'E' to cut it", wl);
+// the gifts (Session 1349), measured torn against not, in the gate the way back landed in
+const gf = await page.evaluate(() => {
+  const G = worldState.greatGates.gates, save = Object.assign({}, G), out = {};
+  const m = () => ({ fire: _warded(40, { fire: true }), elem: _warded(40, { baseType: 'Fire Elemental' }), plain: _warded(40, {}), carry: maxCarry(), sea: shipTopSpeed() });
+  for (const s of ['tine', 'cloch', 'gaoth', 'solas']) delete G[s]; out.off = m();
+  for (const s of ['tine', 'cloch', 'gaoth']) G[s] = 'torn'; out.on = m();
+  const live = ENEMIES.filter(e => !e.dead && e.floor === 1), z = e => dZoneAt(e.x, e.z, 1);
+  const a = live.find(e => live.some(o => o !== e && z(o) === z(e) && z(e) >= 0)), b = a && live.find(o => o !== a && z(o) === z(a)), c = a && live.find(o => z(o) !== z(a) && z(o) >= 0);
+  if (a && b && c) { const keep = [a, b, c].map(e => [e.baseType, e.hp]); [a, b, c].forEach(e => { e.baseType = 'Skeleton'; e.hp = e.maxHp; e._solasStruck = false; });
+    out.offWard = solasWards(a); G.solas = 'torn'; out.ward = [solasWards(a), solasWards(b), solasWards(c)];
+    a.hp = a.maxHp - 1; out.struck = [solasWards(a), solasWards(b), solasWards(c)];
+    [a, b, c].forEach((e, i) => { e.baseType = keep[i][0]; e.hp = keep[i][1]; e._solasStruck = false; }); } else out.ward = 'no three foes in two zones';
+  for (const k of Object.keys(G)) delete G[k]; Object.assign(G, save);
+  return out; });
+console.log(JSON.stringify(gf));
+check(`Tine torn: fire takes half (${gf.off.fire} → ${gf.on.fire}, a Fire Elemental ${gf.off.elem} → ${gf.on.elem}), other blows whole`, gf.on.fire === Math.max(1, Math.round(gf.off.fire / 2)) && gf.on.elem === gf.on.fire && gf.on.plain === gf.off.plain, gf);
+check(`Cloch torn: carry ×1.5 (${gf.off.carry} → ${gf.on.carry}); Gaoth torn: top speed ×1.5 (${gf.off.sea} → ${gf.on.sea})`, Math.abs(gf.on.carry - gf.off.carry * 1.5) < 1e-9 && Math.abs(gf.on.sea - gf.off.sea * 1.5) < 1e-9, gf);
+check('Solas torn: the undead are at peace until one is struck, then its zone wakes and the next zone stays at peace', gf.offWard === false && Array.isArray(gf.ward) && gf.ward.every(x => x === true) && gf.struck[0] === false && gf.struck[1] === false && gf.struck[2] === true, gf);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

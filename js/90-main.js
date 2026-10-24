@@ -1231,7 +1231,8 @@ function loop(now){
       // v63 — Directional detection. canSeePlayer combines distance,
       // sneak/buff modulation, vision cone, and hearing radius. LOS still
       // checked separately (existing dungeon behavior) since it uses dSolid.
-      const _calm=typeof beastAtPeace==='function'&&beastAtPeace(e);if(_calm)e.alert=false;if(_calm&&typeof cloakTurnAway==='function')cloakTurnAway(e,()=>canSeePlayer(e,dist,8)); /* S777 — the Wolf-Mother's Cloak, underground as in the open */
+      const _ward=typeof solasWards==='function'&&solasWards(e); /* S1349 — Solas's gift: the undead leave you be until one is struck */
+      const _calm=_ward||(typeof beastAtPeace==='function'&&beastAtPeace(e));if(_calm)e.alert=false;if(_calm&&!_ward&&typeof cloakTurnAway==='function')cloakTurnAway(e,()=>canSeePlayer(e,dist,8)); /* S777 — the Wolf-Mother's Cloak, underground as in the open */
       const _sight=e.pocket&&e.ranged?GATE_ARCHER_SIGHT:8;
       if(!e.alert && !_calm && !e._homing && canSeePlayer(e, dist, _sight)){ /* S635 — 3.5 → 8 (Michael's A on #190); S1323 — an archer in a gate's pocket sees 20 m, and a foe walking home sees nothing until it is home */
         // Quick LOS: cast ~8 steps between enemy and player, check for walls
