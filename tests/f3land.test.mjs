@@ -77,6 +77,21 @@ const want = [K(1, 45, [10, 28], [8, 28], [50, 60], [70, 30]), K(1.5, 70, [16, 4
 const knobsOk = (r, w) => r.knobs.px === Math.min(r.knobs.dpr, w.px) && r.knobs.box === w.box && ['people', 'creatures', 'houses', 'herbs'].every(k => r.knobs[k].join() === w[k].join()) && r.knobs.lights === w.lights;
 check('every knob of each level is its row of the table (pixel ratio, shadow box, people, creatures, houses, herbs), and Middle is as before', knobsOk(lo, want[0]) && knobsOk(mid, want[1]) && knobsOk(hi, want[2]) && knobsOk(back, want[1]), { lo: lo.knobs, mid: mid.knobs, hi: hi.knobs, back: back.knobs });
 check('the world is the same at Low, Middle and High: every chunk with its solids, herbs and foes', lo.world === mid.world && hi.world === mid.world && back.world === mid.world, { lo: lo.world, mid: mid.world, hi: hi.world, back: back.world });
+// Session 1342: the first-run probe (the sheet's `qualityprobe`). The suites run under a webdriver, so the world's entry never
+// started it; forced here with every frame time held. 40 ms gives Low and one message; 16 ms leaves Middle, says nothing and marks it
+// probed; once probed, or with the row moved first, it never runs; the level and the mark are in og.settings, never in a save.
+const probe = await page.evaluate(() => {
+  const run = ms => { SETTINGS.quality = 1; SETTINGS.qualityProbed = false; qualityApply(); MSGEL.textContent = ''; const started = qualityProbe({ force: true, ms });
+    let n = 0; while (QPROBE.on && n < 1200) { WORLD.tick(1 / 60, performance.now()); n++; }
+    return { started, n, result: QPROBE.result, median: QPROBE.median, kept: QPROBE.ft.length, level: SETTINGS.quality, probed: SETTINGS.qualityProbed, msg: MSGEL.textContent,
+      stored: JSON.parse(localStorage.getItem('og.settings') || '{}'), px: REN.getPixelRatio(), people: HBODY.near }; };
+  const unforced = qualityProbe(), slow = run(40), fast = run(16);
+  const again = qualityProbe({ force: true });
+  SETTINGS.qualityProbed = false; const row = settingRows().find(r => r.k === 'quality'); settingSet(row, 1); const moved = { probed: SETTINGS.qualityProbed, started: qualityProbe({ force: true }) };
+  const inSave = typeof ssSplitPayload === 'function' ? JSON.stringify(worldState).includes('qualityProbed') : false;
+  return { unforced, slow, fast, again, moved, inSave }; });
+check('the probe never starts unforced under a webdriver; held at 40 ms it sets Low once, says so once, and marks it probed', !probe.unforced && probe.slow.started && probe.slow.result === 'low' && probe.slow.median === 40 && probe.slow.kept === 120 && probe.slow.level === 0 && probe.slow.people === 10 && probe.slow.probed && probe.slow.stored.qualityProbed === true && probe.slow.stored.quality === 0 && probe.slow.msg === 'Set to Low for this machine. Settings can change it.', probe.slow);
+check('held at 16 ms it leaves Middle, says nothing and marks it probed; probed, or with the row moved first, it never runs again; nothing of it in the world state', probe.fast.started && probe.fast.result === 'kept' && probe.fast.level === 1 && probe.fast.probed && probe.fast.msg === '' && probe.fast.stored.qualityProbed === true && !probe.again && probe.moved.probed && !probe.moved.started && !probe.inSave, { fast: probe.fast, again: probe.again, moved: probe.moved, inSave: probe.inSave });
 // Session 1184: a chunk whose ground changes after its grass grew (a stamp arriving flattens it, snow settles or melts) loses its
 // grass and grows it again on the new ground: none left floating over a flattened pad, none standing on settled snow
 const regrow = await page.evaluate(() => { const ch = [...chunks.values()].filter(c => c.landGrass).sort((a, b) => b.landGrass.grass.count - a.landGrass.grass.count)[0];

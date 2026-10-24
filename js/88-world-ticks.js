@@ -256,6 +256,7 @@
       atmosphere(10);
       if(typeof prewarmFoes==='function')prewarmFoes(sc,CAM); /* S688 — every foe's shaders, once, behind the fade */
       showZoneName(label||'🌍 The open country');
+      if(typeof qualityProbe==='function')qualityProbe(); /* S1342 — the first-run probe, once in this browser */
       const fb=document.getElementById('fbtn');if(fb)fb.style.display='block';
       if(typeof saveGame==='function')saveGame();
     };
@@ -268,6 +269,7 @@
     stream(px,pz,false);
     houseLod();
     landTick(dt); // S1181 (F3): the new look's grass, a chunk a frame, and its wind
+    qualityProbeTick(); /* S1342 — the first-run probe's frame times */
     atmosphere(dt);
     tickSettlements(dt,false);
     tickTownNPCs(dt,now||performance.now());try{tickCrime(dt,now||performance.now());}catch(e){}

@@ -942,7 +942,7 @@ function settingSet(row,v){
     else if(row.k==='invert'){SETTINGS.invert=v===1;settingsSave();}
     else if(row.k==='challenge')setChallenge(v);
     else if(row.k==='renderer')setRenderer(v===1?'new':'old',{reload:!started});
-    else if(row.k==='quality'){SETTINGS.quality=v;settingsSave();qualityApply();} /* S1341 — every knob of the level, not the land's alone */
+    else if(row.k==='quality'){SETTINGS.quality=v;SETTINGS.qualityProbed=true;settingsSave();qualityApply();} /* S1341 — every knob of the level, not the land's alone; S1342 — a level chosen is never probed */
     return;}
   v=Math.max(row.min,Math.min(row.max,Math.round(v/row.st)*row.st));SETTINGS[row.k]=+v.toFixed(2);settingsSave();
   if(['master','music','effects','voices'].includes(row.k)&&typeof applyVolumes==='function')applyVolumes();
@@ -954,7 +954,7 @@ function rendererNote(){const want=rendererChoice(),run=window.OG_LOOK||'new';
   return want===run?(run==='new'?'running on three.js 0.170: the same world, the new look to come':'three.js r128, the game as it has been'):'takes hold when the game next loads: save, then reload';}
 function setRenderer(look,o){look=look==='new'?'new':'old';try{if(look==='old')localStorage.setItem('og.renderer','old');else localStorage.removeItem('og.renderer');}catch(e){}
   if(o&&o.reload){const u=new URL(location.href);u.searchParams.delete('look');location.replace(u.href);}return look;}
-function settingsBack(){Object.assign(SETTINGS,SETTINGS_DEF);settingsSave();if(typeof applyVolumes==='function')applyVolumes();settingsLight();qualityApply();}
+function settingsBack(){Object.assign(SETTINGS,SETTINGS_DEF,{qualityProbed:true});settingsSave();if(typeof applyVolumes==='function')applyVolumes();settingsLight();qualityApply();}
 function settingsSheetHTML(){const L=pauseLeaf,rows=settingRows(),ink='#3a2c18',rub='#7a1f10',soft='#8a7050';
   const cols=[['Sound'],['The light'],['The mouse','The renderer','The challenge']],grp={};let cur=null;rows.forEach((r,i)=>{if(r.g)cur=r.g;(grp[cur]=grp[cur]||[]).push([r,i]);});
   const rowHTML=([r,i])=>{const on=i===L.set,wide=r.k==='challenge';let ctl='',val=wide?r.opts[r.get()]:'';
