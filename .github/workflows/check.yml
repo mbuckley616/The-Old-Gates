@@ -49,6 +49,13 @@ jobs:
       - run: python3 scripts/parsecheck.py
       # Session 822 (F1): the new look's classic three.js 0.170 is what scripts/three_bundle.py makes from the pinned module
       - run: python3 scripts/three_bundle.py --check
+      # Session 1225 (carried onto main by Session 1373): the people's builder and the creature kit are generated from
+      # docs/prototypes/levelup/people.js (with its sibling modules) and creatures.js. A PR that edits them is docs-only to the
+      # selection and runs no suite, so a stale vendor/people.builder.js reached main in three merges on 20 Oct (#507, #517,
+      # #525: f4people red on main from 169dcd6). Checked here, every PR: one that changes the source runs the script and commits
+      # the bundle with it.
+      - run: python3 scripts/people_bundle.py --check
+      - run: python3 scripts/creatures_bundle.py --check
       # Session 368 (backlog K): the split script's anchors are patterns on main's code. This shows when a change moves
       # one, so switch-over day finds no surprise; it never blocks a merge. Once index.html is split it reports so and passes.
       - run: python3 scripts/split.py --check

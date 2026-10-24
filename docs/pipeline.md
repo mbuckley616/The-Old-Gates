@@ -14,7 +14,9 @@ and the PRs queued 8 to 31 minutes behind each one. So:
 - **A pull request runs the smoke set and the suites it adds or edits** (`tests/lib/select.mjs`): `looknew`, `saves`,
   `resolver`, `player`, `dungeon`, `autosave`, about eleven minutes of suites in two short shards. The selection by the
   names a change reaches (19 Oct, `tests/lib/toplevel.cjs`) is gone.
-- **A docs-only PR runs no suites** (parse only).
+- **A docs-only PR runs no suites** (parse only). Parse also checks the generated bundles (`three_bundle.py`,
+  `people_bundle.py`, `creatures_bundle.py --check`; the last two since Session 1373, carrying Session 1225's #527), so a PR
+  that edits `docs/prototypes/levelup/people.js`, a sibling it imports, or `creatures.js` commits the rebuilt `vendor/` copy with it.
 - **Every suite runs once a week**, Sunday at 06:00 UTC, and whenever `check` is run by hand (Actions, check, Run workflow;
   on a branch, to try all of it before it lands). Main no longer runs every suite after each merge. The producer files each
   red of the weekly run in the backlog's section I for the builder that owns it; nothing is reverted for it.
