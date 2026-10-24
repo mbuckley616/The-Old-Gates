@@ -2258,7 +2258,10 @@ const giver=`${lord.title} ${lord.name}`;
   // on waking (restAtBed): the note, once, while it is due and the knife still lies where it is
   function greatNoteOnWake(){const ev=greatEv();if(!ev.noteDue||ev.noteGiven||ev.knifeLifted)return false;ev.noteGiven=worldState.gameTimeAbsMinutes||1;
     bagAdd(Object.assign(makeBookItem(BOOKS.find(b=>b.id==='varek_note')),{weight:.05,sellMult:0}));
-    if(typeof addLog==='function')addLog('📜',KNIFE_SAY.note);setTimeout(()=>{try{showMsg(KNIFE_SAY.note,'#c8c0a8');}catch(e){}},1800);return true;}
+    /* S1356 — the line follows the waking's own by 1.8 s, and only where you woke: gone through a door by then, it would overwrite
+       the new place's line (the way down to a ring's, corruption on CI); the log keeps it either way */
+    const at=activeZoneId+'|'+(typeof isInterior==='function'&&isInterior());
+    if(typeof addLog==='function')addLog('📜',KNIFE_SAY.note);setTimeout(()=>{try{if(activeZoneId+'|'+(typeof isInterior==='function'&&isInterior())===at)showMsg(KNIFE_SAY.note,'#c8c0a8');}catch(e){}},1800);return true;}
   // the flagstone: in the middle of the Ashfeld's ring of six stones, where the road's path in ends
   const FLAG_REACH=1.6;let FLAG_STONE=null,_flagT=0;
   function flagstoneSpot(){const f=siteAnywhere('ashfeld');return f?{x:f.x,z:f.z}:null;}
