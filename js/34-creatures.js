@@ -755,6 +755,8 @@ const HC_GOB_COAT={coat:0x6a8a42,saddle:0x4e6a30,belly:0x86a058,skin:0x72924a};
 // Session 1370: the trolls' (OG-041's hunched cave troll, Session 926, with its lashed-on armour and the game's maul, Session 1370), in the
 // game's hides by where they live (FOE_DRESS: skin to skin2; the moss on what faces the sky the forest's deeper, the frost troll's rime)
 // and its eyes in the driver's colour; the driver stands upright, so nothing is taken off its turns
+// Session 1371: the golem's (Session 1175: OG-018's mossy golem, hewn blocks on the skeleton's frame), sized by its stature as the
+// Skeleton is, since it stands upright; its eyes lit the game's rune-blue (FOE_DRESS: 0x6ab0ff) at the plan's own size
 const HC_TROLL_COAT={cave:{coat:0x6e7a5c,saddle:0x5a664c,belly:0x7e8a6c,skin:0x646e54},forest:{coat:0x5a6e40,saddle:0x4a5a34,belly:0x6a7e50,skin:0x52643a,moss:0x34501a},
   frost:{coat:0xaebac2,saddle:0x96a4ae,belly:0xc0cad0,skin:0xa2aeb6,moss:0xe0e4e8}};
 const HC_KINDS={'Wolf':{plan:'wolf'},'Snow Wolf':{plan:'wolf',own:true},'Dire Wolf':{plan:'ironwolf',own:true},'Boar':{plan:'boar'},'Cave Bear':{plan:'bear',own:true},'Ash Hound':{plan:'ashhound'},'Horse':{plan:'horse',own:true,ik:true},'Grey Horse':{plan:'horse',own:true,ik:true},
@@ -767,7 +769,8 @@ const HC_KINDS={'Wolf':{plan:'wolf'},'Snow Wolf':{plan:'wolf',own:true},'Dire Wo
   'Goblin Slinger':{plan:'goblin',own:true,person:true,cell:.05,merge:true,ik:true,rest:HC_GOB_REST,coat:HC_GOB_COAT,gear:null},
   'Cave Troll':{plan:'troll',own:true,person:true,merge:true,ik:true,coat:HC_TROLL_COAT.cave,eye:0xd0a020,gear:'plan'},
   'Forest Troll':{plan:'troll',own:true,person:true,merge:true,ik:true,coat:HC_TROLL_COAT.forest,eye:0xd8b030,gear:'plan'},
-  'Frost Troll':{plan:'troll',own:true,person:true,merge:true,ik:true,coat:HC_TROLL_COAT.frost,eye:0x70b0ff,gear:'plan'}};
+  'Frost Troll':{plan:'troll',own:true,person:true,merge:true,ik:true,coat:HC_TROLL_COAT.frost,eye:0x70b0ff,gear:'plan'},
+  'Golem':{plan:'golem',own:true,person:true,merge:true,ik:true,tall:true,glow:[.42,.69,1],glowR:.02}};
 // the driver's joints and the kit's bones they move, parents first (the kit's front legs hang on spine3, the hind on spine0)
 const HC_MAP=[['hips','spine0'],['spine','spine1'],['neck','neck0'],['head','head'],['jaw','jaw'],['tail1','tail0'],['tail2','tail1'],['tail3','tail2'],
   ['shL','leg0L_0'],['elL','leg0L_1'],['wrL','leg0L_2'],['pfL','leg0L_3'],['shR','leg0R_0'],['elR','leg0R_1'],['wrR','leg0R_2'],['pfR','leg0R_3'],
@@ -797,7 +800,7 @@ function hcPlan(name){const K=HC_KINDS[name];if(!K.own)return K.plan;const id='g
   if(!HC.PLANS[id]&&K.person){const P=HC.PLANS[K.plan],c=h=>[(h>>16&255)/255,(h>>8&255)/255,(h&255)/255],pal=K.coat?Object.fromEntries(Object.entries(K.coat).map(([k,h])=>[k,c(h)])):null;
     // a troll's (Session 1370): the plan's own maul (gear 'plan'), and its eyes in the driver's colour (K.eye)
     HC.PLANS[id]=Object.assign({},P,K.cell?{name,cell:K.cell}:{name},pal?{palette:Object.assign({},P.palette,pal)}:{},{parts:P.parts.map(([k,o])=>k==='gear'&&K.gear!=='plan'?[k,{list:K.gear?[K.gear]:[]}]
-    :k==='head'&&K.glow?[k,Object.assign({},o,{eyes:o.eyes.map(e=>Object.assign({},e,{r:.017,glow:1.6,color:K.glow}))})]
+    :k==='head'&&K.glow?[k,Object.assign({},o,{eyes:o.eyes.map(e=>Object.assign({},e,{r:K.glowR||.017,glow:1.6,color:K.glow}))})]
     :k==='head'&&K.eye!=null?[k,Object.assign({},o,{eyes:o.eyes.map(e=>Object.assign({},e,{color:c(K.eye)}))})]:[k,o])});}
   if(!HC.PLANS[id]&&(K.spider||!WOLF_KINDS[name]))HC.PLANS[id]=Object.assign({},HC.PLANS[K.plan],{name,cell:K.cell});
   if(!HC.PLANS[id]){const k=WOLF_KINDS[name],c=h=>[(h>>16&255)/255,(h>>8&255)/255,(h&255)/255];
@@ -829,7 +832,7 @@ function hcAttach(rig){const tA=performance.now();let C;
   // A goblin's (Session 1364) by its legs: the kit's stands hunched, so its head is no measure of the driver's upright rest; its legs from
   // hip to ankle are the driver's, whose crouch they take (hcLegIK holds the ankles at the driver's)
   else if(K.person){C.root.updateMatrixWorld(true);const P=n=>by[n].getWorldPosition(new THREE.Vector3());
-    f=K.ik?(B.knL.position.length()+B.anL.position.length())/(P('leg0L_0').distanceTo(P('leg0L_1'))+P('leg0L_1').distanceTo(P('leg0L_2')))
+    f=K.ik&&!K.tall?(B.knL.position.length()+B.anL.position.length())/(P('leg0L_0').distanceTo(P('leg0L_1'))+P('leg0L_1').distanceTo(P('leg0L_2')))
       :(PW.HIPS+B.spine.position.y+B.neck.position.y+B.head.position.y)/P('head').y;W.scale.setScalar(f);W.position.set(0,0,-h0.z*f);}
   else{f=wolfHipY(rig.k)/h0.y;W.scale.setScalar(f);W.position.set(B.hips.position.x,0,B.hips.position.z-h0.z*f);}
   W.add(C.root);rig.root.add(W);
@@ -939,7 +942,7 @@ function hcWings(rig){const w=rig.wing||0,C=rig.hc.C,fold=(C.plan.wingFold??.5)*
     W.fing.forEach((b,k)=>b.rotation.set(0,s*(k/W.fing.length)*.4*fold,0));}
   const T=rig.hc.sway;if(T){const B=rig.B,y=1.5*(B.tail1.rotation.y+B.tail2.rotation.y+B.tail3.rotation.y)/T.length;for(const b of T)b.rotation.set(0,y,0);}}
 function hcLevel(rig,L){const H=rig.hc;if(H.L===L)return;H.L=L;H.W.visible=L<2;rig.mesh.visible=L===2;
-  for(const o of [rig.weapon,rig.eyeGlow])if(o)o.visible=L===2; /* a person's (Session 1356): the driver's weapon and lit eyes go with its body; the kit's own show */
+  for(const o of [rig.weapon,rig.eyeGlow,...(rig.runes||[])])if(o)o.visible=L===2; /* a person's (Session 1356): the driver's weapon and lit eyes go with its body (a golem's runes too, Session 1371); the kit's own show */
   if(H.merge&&L===1&&!H.mid)hcBake(rig);
   if(H.mid){const one=L===1;H.mid.visible=one;for(const m of H.hide)m.visible=!one;for(const o of H.bits)o.visible=!one;}
   for(const m of H.fur)m.visible=L===0;for(const m of H.small)m.visible=L===0;}
