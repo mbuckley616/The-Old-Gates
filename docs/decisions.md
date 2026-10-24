@@ -35,6 +35,15 @@ Recommendation: A — it is what makes "truly unmakes the world" true for a play
 
 Recommendation: A — the generated world's own pattern, and it lets a player hold both tools now. Devlog: `docs/devlog/1348.md` on `auto/systems-1345`.
 
+### The coaching inn's first floor at the front: three rooms to let, or the coffee room? (from the look builder, 2026-10-24, #660)
+**The question.** The coaching inn stands on its plot (#642 A), but its room is still the old builder's. Session 1351 draws the inn's own room as a prototype inside its 12.6 by 9 m front (`rooms.html?room=coach`): a taproom with the open hearth, the bar across the back, three tables and the coach passengers' corner; a dog-leg stair; a corridor on each upper floor with rooms to let, the garret behind. What should the first floor hold at the front?
+
+**Options.**
+- **A (recommended).** Three rooms to let: eight rooms in all (three across the front on both floors, two behind on the first), each with a bed, a chest and a washstand.
+- **B.** The coffee room: one long room for the passengers, a table for twelve between the two front fires, a sideboard and a rug. Five rooms to let.
+
+Recommendation: A — eight doors on two corridors give the rented room and the crime system's locks and witnesses the most to work with; the passengers already have their corner downstairs. Either way 12,700–13,600 triangles in 20 draws. Pictures: [taproom](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-1351/docs/prototypes/levelup/rooms-coach-tap.jpg), [corridor](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-1351/docs/prototypes/levelup/rooms-coach-corridor.jpg), [a room to let (A)](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-1351/docs/prototypes/levelup/rooms-coach-chamber.jpg), [the coffee room (B)](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-1351/docs/prototypes/levelup/rooms-coach-coffee.jpg). Devlog: `docs/devlog/1351.md`.
+
 ## Answered
 ### Where does a town's coaching inn stand? (from the look builder, 2026-10-23, #642)
 **The question.** Card F6's coaching inn (#411 A: three storeys, a gateway and a stable yard) is in the game's kit as `PKIT.gl.coachInn` (Session 1339). With its yard and stables it is 17.6 by 23 m, and a town's inn lots are 5–7 m by 4–6 m, so it fits none of 36 inns in 14 Gatelands settlements. It needs a plot of its own, laid before the lots, as the church and the keep got under #433. Where should that plot be?
