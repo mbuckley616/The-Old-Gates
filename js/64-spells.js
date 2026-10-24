@@ -351,6 +351,7 @@ function sigilEligibleTier(spellId){
 // Handle the player interacting with a sigil. Grants the highest tier their INT qualifies for,
 // upgrading from any current tier. First visit fires different flavor than re-touches.
 function touchSigil(sigil){
+  if(typeof knifeAtSigil==='function')knifeAtSigil(sigil); /* S1347 — the knife does nothing here, once a sigil */
   const sp=SPELLS.find(s=>s.id===sigil.spellId);
   if(!sp)return;
   // v80 — the deep register: a sigil teaches by touch. Guilds stop at Comprehension; only a sigil resolves Mastery.

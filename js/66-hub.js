@@ -22,6 +22,7 @@ function openBookReader(bagIndex){
   _releasePointerLockForMenu();
 
   const firstRead=!booksRead.has(def.id);
+  if(def.onRead)try{def.onRead();}catch(e){} /* S1347 — a book that changes something when read (Varek's note stars the Ashfeld) */
   _bookState={bagIndex, bookDef:def, page:0, firstRead};
 
   if(firstRead){

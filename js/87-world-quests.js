@@ -344,6 +344,7 @@ const giver=`${lord.title} ${lord.name}`;
     // rubbings and the reader
     const rub=worldState.rubbings||{};for(const seed in rub){const p=dungeonWorldPos[seed];const read=worldState.sigilsRead||{};if(p&&!read[seed])push(p.x,p.z,RED,rub[seed]);}
     if(VX.npc)push(VX.npc.g.position.x,VX.npc.g.position.z,GREEN,'someone at the field');
+    {const ev=worldState.greatGates&&worldState.greatGates.ev;if(ev&&ev.noteRead&&!ev.knifeLifted){const sp=flagstoneSpot();if(sp)push(sp.x,sp.z,RED,'a flagstone');}} /* S1347 — Varek's note, read */
     // the main story's next giver, when a quest is waiting on an authored NPC in this world
     try{if(typeof QUEST_DEFS!=='undefined'){for(const q of QUEST_DEFS){const st=qState(q.id);if(!q.giver)continue;if(st==='available'||st==='reward'){const h=ZONES.world.houses.find(x=>x.keeper===q.giver);const n=npcs.find(x=>x.def&&x.def.name===q.giver);if(n)push(n.g.position.x,n.g.position.z,GREEN,q.giver);else if(h)push(h.doorX,h.doorZ,GREEN,q.giver);else if(typeof NPC_DEF!=='undefined'&&NPC_DEF.some(d=>d.name===q.giver)&&SITE.ashenmoor)push(SITE.ashenmoor.x,SITE.ashenmoor.z,GREEN,q.giver+' — Ashenmoor'); /* v80 S133 — an outdoor giver far away still points at the village */}}}}catch(e){}
     // v80 S138 — a marker at a place takes the place's glyph (the same set the compass shows for places)
@@ -2120,6 +2121,7 @@ const giver=`${lord.title} ${lord.name}`;
     return {ok:true,again:prev==='sealed',lifted,fate:greatFate()};}
   function bindKnot(school){const prev=greatGateState(school);if(prev==='sealed'||greatFate())return {ok:false};
     if(!setGreatGate(school,'sealed'))return {ok:false};greatGateLast('sealed');
+    if(greatFate()==='sealed')for(const it of BAG)if(it&&it.artifact==='looseKnife')it.desc=greatToolItem('looseKnife').desc; /* S1347 — the knife's card at six bound */
     return {ok:true,again:prev==='torn',fate:greatFate()};}
   // laid by buildDungeon after the scaling pass, in metres: the knot over the middle of the ring chamber's dais
   let KNOT_LIE=null;
@@ -2134,7 +2136,9 @@ const giver=`${lord.title} ${lord.name}`;
   // the first sight of the ring, once a gate (called from the dungeon's frame); worldState.greatGates.ev.ring records it (the way back's)
   function knotTick(){const L=KNOT_LIE;if(!L||activeZoneId!=='dungeon'||currentFloor!==L.floor)return false;if(L.knot)L.knot.rotation.y+=.002;
     if(Math.hypot(px-L.x,pz-L.z)>24)return false;const g=greatGates(),ev=g.ev||(g.ev={}),ring=ev.ring||(ev.ring={});if(ring[L.school])return false;
-    ring[L.school]=true;if(!ev.ringFirst)ev.ringFirst=worldState.gameTimeAbsMinutes||1;showMsg(KNOT_LINES.ringFirst,'#c8d0e0');if(typeof addLog==='function')addLog('◎',`Reached the ring of ${L.name}.`);return true;}
+    ring[L.school]=true;if(!ev.ringFirst)ev.ringFirst=worldState.gameTimeAbsMinutes||1;
+    {const t=knotTools();if(!t.knife&&!t.needle&&!ev.knifeLifted&&!ev.noteDue){ev.noteDue=worldState.gameTimeAbsMinutes||1;ev.ringGate=L.name;}} /* S1347 — Varek's note, on the next waking */
+   showMsg(KNOT_LINES.ringFirst,'#c8d0e0');if(typeof addLog==='function')addLog('◎',`Reached the ring of ${L.name}.`);return true;}
   // the prompt by state and what you carry (piece I §1's table)
   function knotPrompt(){const L=KNOT_LIE;if(!L)return '';const st=greatGateState(L.school),t=knotTools(),n=L.name;
     if(!st){if(t.knife&&t.needle)return `The knot of ${n} — Press 'E'`;if(t.knife)return `The knot of ${n} — Press 'E' to cut it`;if(t.needle)return `The knot of ${n} — Press 'E' to bind it`;return `The knot of ${n}`;}
@@ -2160,6 +2164,56 @@ const giver=`${lord.title} ${lord.name}`;
     if(st==='torn'&&t.needle&&!f)return knotBind()?'bind':null;
     if(st==='sealed'&&t.knife&&!f)return knotCut()?'cut':null;
     showMsg(KNOT_LINES.examine[st],'#c8d0e0');return 'examine';}
+
+  // ═══ THE LOOSING KNIFE (great-gates-build.md session 2, its first half, Session 1347; piece II, approved 16 Oct 2026) ═══
+  // The first time a great ring is reached carrying neither tool, Varek's note is folded into your pack on your next waking
+  // (restAtBed). Read, it stars the Ashfeld on the map, and under the flagstone in the middle of its stone ring lies the knife.
+  // The tools are the character's: bag items, `unique` (never sold or destroyed), never stashed, kept on death. Which events
+  // have fired is the world's: worldState.greatGates.ev {ringFirst, ringGate, noteDue, noteGiven, noteRead, knifeLifted}.
+  // The flagstone is a placeholder slab; the look builder's prop is owed. It is not solid.
+  const GREAT_TOOLS={
+    looseKnife:{name:'The Loosing Knife',sub:'an Scian',ico:'🗡',desc:'A knife of grey stone, no longer than a hand and as thin as a leaf. The script on its blade runs one way only, toward the edge. It will not cut bread.'},
+    bindNeedle:{name:'The Binding Needle',sub:'an tSnáthaid',ico:'🪡',desc:'A needle of pale bone as long as a forearm, its eye wide enough to put a finger through. The script on it runs round and round and comes back to where it began.'}};
+  const KNIFE_LOCKED='It has not cut anything since the sixth knot was tied, and it will not.';
+  function greatToolItem(id){const T=GREAT_TOOLS[id];if(!T)return null;const locked=id==='looseKnife'&&greatFate()==='sealed';
+    return {type:'misc',name:T.name,ico:T.ico,sub:T.sub,desc:`${T.sub} · ${T.desc}${locked?' '+KNIFE_LOCKED:''}`,weight:.3,sellMult:0,buyPrice:0,unique:true,quest:true,artifact:id,qty:1};}
+  function greatEv(){const g=greatGates();return g.ev||(g.ev={});}
+  const KNIFE_SAY={note:'A paper you did not put there is folded in your pack.',
+    lift:'Under the flagstone, wrapped in an oilcloth gone stiff with age, is a knife of grey stone. The grass round the stone is worn to earth in the shape of two feet.',
+    oldblood:'It is warm in your hand, the way a stone is warm with a sigil under it, though there is none.',
+    sigil:'The knife does nothing here. It was made for six knots and no others.'};
+  BOOKS.push({id:'varek_note',name:'A note in a cramped hand',ico:'📜',attr:null,
+    get pages(){const gate=greatEv().ringGate||'the ring';return [`You reached the ring of ${gate} and came away with your hands empty. I know the feeling. I have had it for two hundred years.\n\nAt the Ashfeld, where the path in the grass ends, there is a flagstone. What you need is under it. I have stood on that stone every time I went there, because it was the one place I could be sure nobody would dig.\n\nI cannot carry it where you go. What it cuts stands between me and every ring, and it knows me. A woman called Orla Fenn got as far as the second hall of ${gate} in my time. She is on my list. You went further, and it let you. Why do you think that is?`];},
+    onRead(){const ev=greatEv();if(!ev.noteRead)ev.noteRead=worldState.gameTimeAbsMinutes||1;}});
+  // on waking (restAtBed): the note, once, while it is due and the knife still lies where it is
+  function greatNoteOnWake(){const ev=greatEv();if(!ev.noteDue||ev.noteGiven||ev.knifeLifted)return false;ev.noteGiven=worldState.gameTimeAbsMinutes||1;
+    bagAdd(Object.assign(makeBookItem(BOOKS.find(b=>b.id==='varek_note')),{weight:.05,sellMult:0}));
+    if(typeof addLog==='function')addLog('📜',KNIFE_SAY.note);setTimeout(()=>{try{showMsg(KNIFE_SAY.note,'#c8c0a8');}catch(e){}},1800);return true;}
+  // the flagstone: in the middle of the Ashfeld's ring of six stones, where the road's path in ends
+  const FLAG_REACH=1.6;let FLAG_STONE=null,_flagT=0;
+  function flagstoneSpot(){const f=siteAnywhere('ashfeld');return f?{x:f.x,z:f.z}:null;}
+  function flagstoneBuild(sp){const g=new THREE.Group(),y=worldH(sp.x,sp.z);
+    const earth=new THREE.Mesh(new THREE.CircleGeometry(.95,20),new THREE.MeshLambertMaterial({color:0x4a3a28}));earth.rotation.x=-Math.PI/2;earth.position.y=.02;earth.scale.set(1,.8,1);g.add(earth);
+    const slab=new THREE.Mesh(new THREE.BoxGeometry(1.0,.09,.72),new THREE.MeshLambertMaterial({color:0x77746c}));slab.position.y=.05;g.add(slab);
+    g.position.set(sp.x,y,sp.z);sc.add(g);return {x:sp.x,z:sp.z,mesh:g,slab};}
+  function flagstoneDrop(){if(FLAG_STONE&&FLAG_STONE.mesh&&FLAG_STONE.mesh.parent)FLAG_STONE.mesh.parent.remove(FLAG_STONE.mesh);FLAG_STONE=null;}
+  function flagstoneLifted(F){if(F&&F.slab){F.slab.position.set(.75,.18,.1);F.slab.rotation.set(0,.4,1.1);}}
+  // once a second from the loop: built while the Ashfeld's cell is loaded and you are within 300 m
+  function tickFlagstone(force){const t=performance.now();if(!force&&t-_flagT<1000)return;_flagT=t;
+    if(activeZoneId!=='world'||!sc){flagstoneDrop();return;}const sp=flagstoneSpot();if(!sp)return;
+    if(Math.hypot(px-sp.x,pz-sp.z)>=300||!LOADED.has(cellKey(...cellOf(sp.x,sp.z)))){if(FLAG_STONE)flagstoneDrop();return;}
+    if(!FLAG_STONE||!FLAG_STONE.mesh.parent){flagstoneDrop();FLAG_STONE=flagstoneBuild(sp);}
+    if(greatEv().knifeLifted)flagstoneLifted(FLAG_STONE);}
+  function flagstoneNear(){const F=FLAG_STONE;return !!(F&&F.mesh&&F.mesh.parent&&activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior())&&Math.hypot(px-F.x,pz-F.z)<FLAG_REACH);}
+  function flagstonePrompt(){if(!flagstoneNear())return null;const ev=greatEv();if(!ev.noteGiven||ev.knifeLifted)return null;return "A flagstone at the end of the path — Press 'E' to lift it";}
+  // the named action: the knife out from under the stone (the world remembers it is gone; the knife rides the character)
+  function liftFlagstone(){const ev=greatEv();if(!ev.noteGiven||ev.knifeLifted)return false;ev.knifeLifted=worldState.gameTimeAbsMinutes||1;
+    bagAdd(greatToolItem('looseKnife'));if(typeof addLog==='function')addLog('🗡','Took the Loosing Knife from under the Ashfeld.');return true;}
+  function flagstoneUse(){if(!flagstonePrompt())return null;if(!liftFlagstone())return null;flagstoneLifted(FLAG_STONE);showMsgLong(KNIFE_SAY.lift,'#c8c0a8');
+    if(playerPeople()==='oldblood')setTimeout(()=>{try{showMsg(KNIFE_SAY.oldblood,'#c8c0a8');}catch(e){}},1600);if(typeof updateHUD==='function')updateHUD();return true;}
+  // the knife at a lesser gate's sigil, once a sigil (the character's: stats.knifeSigils); the sigil's own touch goes on
+  function knifeAtSigil(sigil){if(!sigil||!knotTools().knife)return false;const st=worldState.stats||(worldState.stats={}),k=st.knifeSigils||(st.knifeSigils={});if(k[sigil.uuid])return false;k[sigil.uuid]=1;
+    setTimeout(()=>{try{showMsg(KNIFE_SAY.sigil,'#c8d0e0');}catch(e){}},1800);return true;}
 
   // ═══ THE READER (Session Q) — Varek's discoveries, the fields, the Guest's chapel ═══
   // Varek reads the frame through the player. Each discovery is a real

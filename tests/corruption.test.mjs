@@ -4,6 +4,8 @@
 // Session 1346 (great-gates-build.md session 1): the knot. A torn school casts one tier deeper and a bound one a tier shallower
 // (effTier), the tier learned untouched; a cut that lifts a spell to Mastery is a Mastery touch; in a gate flagged great the knot
 // stands over the ring's dais and answers by what you carry (piece I's table).
+// Session 1347 (session 2's first half, piece II): reaching a ring with neither tool, the next waking leaves Varek's note naming
+// it; read, it stars the Ashfeld, and the flagstone there gives the Loosing Knife, which cannot be stashed and rides the character.
 import { boot, check } from './lib/game.mjs';
 import { enterDungeon } from './lib/dungeonshot.mjs';
 const g = await boot(); const { page } = g;
@@ -63,6 +65,7 @@ check(`cut again: the again line, Mastery cast, a second touch (${k.recut})`, k.
 await page.evaluate(() => devGreatGate('tine', 2055));
 await enterDungeon(page, { theme: 'ruins', size: 'medium', seed: 2055 });
 const d = await page.evaluate(() => {
+  for (let i = BAG.length - 1; i >= 0; i--) if (BAG[i] && (BAG[i].artifact || BAG[i].bookId === 'varek_note')) BAG.splice(i, 1);
   const L = KNOT_LIE, gen = window._lastGen, sp = gen && gen.spaces[gen.ring], out = { laid: !!L, school: L && L.school };
   if (!L) return out;
   out.onDais = Math.abs(L.x - dAt((sp.dais.x0 + sp.dais.x1) / 2)) < .01 && Math.abs(L.z - dAt((sp.dais.z0 + sp.dais.z1) / 2)) < .01 && L.floor === (sp.floor || 1) && !!L.mesh.parent;
@@ -77,6 +80,7 @@ const d = await page.evaluate(() => {
   BAG.splice(BAG.indexOf(knife), 1); out.p4 = p(); out.u4 = knotUse();
   BAG.splice(BAG.indexOf(needle), 1);
   out.log = GAME_LOG.slice(-4).map(e => e.text.replace(L.name, 'G'));
+  const ev = worldState.greatGates.ev; out.note = [!!ev.noteDue, ev.ringGate === L.name, !!ev.noteGiven]; out.gate = L.name;
   return out; });
 console.log(JSON.stringify(d));
 check('in a gate flagged great the knot stands over the ring chamber\'s dais', d.laid && d.school === 'tine' && d.onDais, d);
@@ -86,5 +90,37 @@ check(`with the knife it cuts: "${d.p1}"`, d.p1 === "The knot of G — Press 'E'
 check(`with the needle a cut knot binds: "${d.p2}"`, d.p2 === "The cut knot of G — Press 'E' to bind it" && d.u2 === 'bind' && d.s2[0] === 'sealed' && d.s2[1] === 1, d);
 check(`a bound knot offers the cut again, and with neither tool is only looked at ("${d.p3}", "${d.p4}")`, d.p3 === "The bound knot of G — Press 'E' to cut it" && d.p4 === 'The bound knot of G' && d.u4 === 'examine', d);
 check('the log keeps the ring and both acts', d.log.includes('Reached the ring of G.') && d.log.includes('Cut the knot of G.') && d.log.includes('Bound the knot of G again.'), d.log);
+check('a ring reached with neither tool makes Varek\'s note due, naming that gate', d.note[0] && d.note[1] && !d.note[2], d.note);
+// the knife (Session 1347): out to the Ashfeld, sleep, read the note, lift the flagstone
+const ash = await page.evaluate(() => { const f = siteAnywhere('ashfeld'); goToZone('world', f.x + 3, f.z + 3, 0, 'x'); return [f.x, f.z]; });
+await page.waitForFunction(([x, z]) => document.getElementById('fd').style.opacity === '0' && activeZoneId === 'world' && Math.hypot(px - x, pz - z) < 50, ash, { timeout: 60000, polling: 200 });
+await g.cells();
+const pre = await page.evaluate(() => { tickFlagstone(true); const F = FLAG_STONE; if (!F) return 'none'; px = F.x + .6; pz = F.z; return flagstonePrompt(); });
+await page.evaluate(() => restAtBed(1));
+await page.waitForFunction(() => BAG.some(it => it && it.bookId === 'varek_note'), null, { timeout: 30000, polling: 200 });
+const n = await page.evaluate((gate) => {
+  const out = {}, ev = worldState.greatGates.ev;
+  out.log = GAME_LOG.some(e => e.text === 'A paper you did not put there is folded in your pack.');
+  out.starBefore = liveMarkers().some(m => m.label === 'a flagstone');
+  px = FLAG_STONE.x + .6; pz = FLAG_STONE.z;
+  const i = BAG.findIndex(it => it && it.bookId === 'varek_note'); openBookReader(i);
+  out.page = (BOOKS.find(b => b.id === 'varek_note').pages[0] || '').split(gate).length - 1;
+  document.getElementById('book-overlay').style.display = 'none';
+  out.read = !!ev.noteRead; out.star = liveMarkers().some(m => m.label === 'a flagstone');
+  out.solid = solidAt(FLAG_STONE.x, FLAG_STONE.z);
+  out.prompt = flagstonePrompt(); out.use = flagstoneUse();
+  const k = BAG.find(it => it && it.artifact === 'looseKnife'); out.knife = k ? [k.name, k.unique, k.quest, k.desc.startsWith('an Scian · A knife of grey stone')] : null;
+  out.took = GAME_LOG.some(e => e.text === 'Took the Loosing Knife from under the Ashfeld.');
+  out.after = [flagstonePrompt(), liveMarkers().some(m => m.label === 'a flagstone')];
+  depositToStash(BAG.indexOf(k)); out.stashed = !BAG.includes(k);
+  const p = ssSplitPayload(_buildSavePayload()); out.rows = [JSON.stringify(p.c).includes('looseKnife'), !JSON.stringify(p.w).includes('looseKnife'), !!(p.w.wS.greatGates.ev.knifeLifted)];
+  return out; }, d.gate);
+console.log(JSON.stringify(n));
+check('on waking the note is in the pack, and the log says so', n.log, n);
+check(`the note names the ring reached (${n.page} times), and reading it stars the Ashfeld`, n.page === 2 && !n.starBefore && n.read && n.star, n);
+check(`the flagstone asks nothing before the note and lifts after it: "${n.prompt}"`, pre === null && n.prompt === "A flagstone at the end of the path — Press 'E' to lift it" && n.use === true && !n.solid, n);
+check('under it the Loosing Knife: unique, a quest item, its card as written, the log line', !!n.knife && n.knife[0] === 'The Loosing Knife' && n.knife[1] && n.knife[2] && n.knife[3] && n.took, n);
+check('lifted once: no prompt, no star', n.after[0] === null && n.after[1] === false, n.after);
+check('the knife cannot be stashed; it rides the character\'s row, the lifting the world\'s', !n.stashed && n.rows.every(Boolean), n);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

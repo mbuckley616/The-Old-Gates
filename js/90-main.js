@@ -833,6 +833,7 @@ function loop(now){
   if(typeof tickShuttle==='function')tickShuttle(); /* S782 — the Shuttle's Cold, in every zone (once a second) */
   if(typeof tickWaylamp==='function')tickWaylamp(); /* S783 — the Waylamp lit again, and its first sight */
   if(typeof tickRingCairn==='function')tickRingCairn(); /* S800 — the Noon Ring's cairn, and its first sight */
+  if(typeof tickFlagstone==='function')tickFlagstone(); /* S1347 — the Ashfeld's flagstone */
   if(typeof tickBladeStone==='function')tickBladeStone(); /* S802 — the Gate-Blade's stone, and its first sight */
   if(typeof tickBellWreck==='function')tickBellWreck(); /* S801 — the Drowned Bell's wreck, set by the tide, and its first sight */
   if(lid==='overworld'){
@@ -1011,6 +1012,7 @@ function loop(now){
     // here. Removed v61f9 — see interact() comment block above for the
     // rationale. The fort_door portal handles its own E-prompt.
     else if(nearBoard){iprOW.textContent=`Press 'E' to read ${nearBoard.title}`;iprOW.style.opacity='1';iprOW.style.display='block';}
+    else if(typeof flagstonePrompt==='function'&&flagstonePrompt()){iprOW.textContent=flagstonePrompt();iprOW.style.opacity='1';iprOW.style.display='block';} /* S1347 */
     else if(typeof bladeStonePrompt==='function'&&bladeStonePrompt()){iprOW.textContent=bladeStonePrompt();iprOW.style.opacity='1';iprOW.style.display='block';} /* S802 — the Gate-Blade's stone */
     else if(typeof bellWreckPrompt==='function'&&bellWreckPrompt()){iprOW.textContent=bellWreckPrompt();iprOW.style.opacity='1';iprOW.style.display='block';} /* S801 — the Drowned Bell's wreck */
     else if(typeof ringCairnPrompt==='function'&&ringCairnPrompt()){iprOW.textContent=ringCairnPrompt();iprOW.style.opacity='1';iprOW.style.display='block';} /* S800 — the Noon Ring's cairn */
