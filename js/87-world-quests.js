@@ -1412,8 +1412,8 @@ const giver=`${lord.title} ${lord.name}`;
   // then). The first time you come within ten units of it, the draft's line, once (the character's: stats.ringSeen). E within 2.2
   // tries it, the draft's order: the hour (noon is the game's hour 12, 12:00 to 12:59, the sundial's hour), then the sky (clear
   // only), then Swiftness 30 (artifactTry: the base, plus at most 2 from gear). Every failure costs nothing and is kept for the
-  // Journal's *Things not yet yours*. Taken, the cairn stays, and E at it says what is left. The cairn and the ring are a
-  // placeholder of stacked stones and a gold band; the look builder's prop is owed.
+  // Journal's *Things not yet yours*. Taken, the cairn stays, and E at it says what is left. The cairn and the ring are the
+  // look builder's prop (ringCairnProp, Session 1372). The cairn is not solid.
   const RING_SAY={seen:'A cairn at the top of the world, and on its top stone a ring of gold in a hollow worn to fit it. A line is cut across the stone, and the cairn’s shadow lies on it.',
     hour:'The ring will not lift. The light is wrong for it.',sky:'Noon, and no sun to read it by. The ring stays where it is.',
     swift:'The cairn’s shadow is already off the line by the time your hand is on the stone. Not yet.',
@@ -1421,7 +1421,9 @@ const giver=`${lord.title} ${lord.name}`;
     after:'An empty hollow in the top stone, and a line no shadow reaches at noon.'};
   const RING_NOON=12,RING_REACH=2.2;let RING_CAIRN=null,_ringT=0;
   function ringCairnSpot(P){let best=null;for(let dx=-24;dx<=24;dx+=3)for(let dz=-24;dz<=24;dz+=3){if(dx*dx+dz*dz>24*24)continue;const x=P.x+dx,z=P.z+dz,h=worldH(x,z);if(!best||h>best.y)best={x,z,y:h};}return best;}
-  function ringCairnBuild(P){const sp=ringCairnSpot(P);if(!sp)return null;const g=new THREE.Group();const stone=new THREE.MeshLambertMaterial({color:0x8a8780});
+  function ringCairnBuild(P){const sp=ringCairnSpot(P);if(!sp)return null;
+    if(typeof ringCairnProp==='function'){const S=ringCairnProp(sp.x,sp.z),g=S.group;g.position.set(sp.x,meshH(sp.x,sp.z),sp.z);sc.add(g);return {x:sp.x,z:sp.z,y:sp.y,mesh:g,ring:S.ring,peak:P.peak,name:P.name};} /* S1372 — the look builder's prop (82-world-structures.js) */
+    const g=new THREE.Group();const stone=new THREE.MeshLambertMaterial({color:0x8a8780});
     [[.62,.0,0],[.5,.42,.4],[.4,.78,1.1],[.3,1.06,2.0]].forEach(([r,y,a])=>{const m=new THREE.Mesh(new THREE.DodecahedronGeometry(r,0),stone);m.scale.y=.6;m.position.y=y+r*.3;m.rotation.y=a;g.add(m);});
     const ring=new THREE.Mesh(new THREE.TorusGeometry(.06,.016,6,14),new THREE.MeshLambertMaterial({color:0xe8c050,emissive:0x3a2a08}));ring.rotation.x=Math.PI/2;ring.position.y=1.42;g.add(ring);
     g.position.set(sp.x,sp.y-.1,sp.z);sc.add(g);return {x:sp.x,z:sp.z,y:sp.y,mesh:g,ring,peak:P.peak,name:P.name};}

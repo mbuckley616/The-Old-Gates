@@ -1896,4 +1896,35 @@
       add(new THREE.BoxGeometry(.055,.24,.012),iron,.12);add(SK.rbox(.3,.035,.05,.012,1),iron,.255);add(SK.cyl(.021,.023,.22,7),leather,.38);add(SK.ball(.038,8,6),iron,.51);}
     hilt.position.set(.02,1.02,0);g.add(hilt);
     return {group:g,hilt,slot};}
+  // S1372 — the Noon Ring's cairn (the Makers' trials, §4: "a cairn at the top of the world, and on its top stone a ring of gold in a
+  // hollow worn to fit it. A line is cut across the stone, and the cairn's shadow lies on it"). Dry-laid field stones in five courses
+  // narrowing upward, the foot course bedded on the ground at (x,z), loose stones fallen at the foot, lichen on the weather side; the
+  // top stone a flat slab 1.26 m up (chest high, in reach), with the line cut across it north to south and the hollow worn into it.
+  // The ring lies in the hollow, its own mesh so the take can hide it. Built at the origin with the drawn ground (meshH) read round
+  // (x,z); returns {group, ring}; ringCairnBuild (87) places it at meshH(x,z). About 2,500 triangles in 4 draws.
+  function ringCairnProp(x,z){const r=pRng(0xca1f1e),g=new THREE.Group(),P=[],y0=meshH(x,z),hAt=(lx,lz)=>meshH(x+lx,z+lz)-y0; /* the drawn ground: on a summit the 4 m mesh lies up to a metre under worldH */
+    const grey=()=>new THREE.Color().setHSL(.1+r()*.04,.04+r()*.04,.42+r()*.12),stone=(sz,k)=>SK.bumpy(sz<.12?SK.ball(sz,5,3):SK.ball(sz,7,4),sz*.16,5+r()*3,k);
+    // the courses: radius, height of the stones' middle, count, size; each a ring of flattish stones, turned by half a stone from the last
+    const C=[[.74,.1,9,.3],[.55,.36,8,.26],[.38,.6,6,.22],[.22,.83,5,.18],[.09,1.03,3,.15]];
+    C.forEach(([rad,y,n,s],ci)=>{for(let k=0;k<n;k++){const a=(k+(ci%2)*.5)/n*Math.PI*2+(r()-.5)*.3,rr=rad*(.92+r()*.16),lx=Math.sin(a)*rr,lz=Math.cos(a)*rr;
+      const yy=ci?y:Math.min(y,hAt(lx,lz)+.06),c=grey();if(ci===0&&r()<.5)c.lerp(new THREE.Color(0x4a5232),.35); /* the foot course damp and greened where it meets the ground */
+      P.push({geo:stone(s,k*7+ci),color:c,x:lx,y:yy,z:lz,sx:1.1+r()*.3,sy:.5+r()*.15,sz:.85+r()*.2,ry:a+(r()-.5)*.6,rx:(r()-.5)*.25,rz:(ci?-1:0)*.12*Math.cos(a),jitter:.08});}});
+    // chinking: small stones wedged between the courses' faces
+    for(let k=0;k<10;k++){const ci=Math.floor(r()*3),a=r()*Math.PI*2,rr=C[ci][0]+.05;P.push({geo:stone(.07+r()*.04,40+k),color:grey().multiplyScalar(.9),x:Math.sin(a)*rr,y:C[ci][1]+.12,z:Math.cos(a)*rr,sy:.6,ry:r()*3,jitter:.1});}
+    // fallen at the foot
+    for(let k=0;k<7;k++){const a=r()*Math.PI*2,rr=1.0+r()*.55,lx=Math.sin(a)*rr,lz=Math.cos(a)*rr,s=.1+r()*.12;P.push({geo:stone(s,60+k),color:grey(),x:lx,y:hAt(lx,lz)+s*.15,z:lz,sx:1.2,sy:.55,ry:r()*3,rz:(r()-.5)*.4,jitter:.1});}
+    // lichen on the weather side (west), pale and ochre
+    for(let k=0;k<14;k++){const ci=Math.floor(r()*4),a=-Math.PI/2+(r()-.5)*2.2,rr=C[ci][0]+C[ci][3]*.95,d=SK.ball(.03+r()*.04,5,3);
+      P.push({geo:d,color:new THREE.Color(r()<.6?0xa4a25e:0xb8944e),x:Math.sin(a)*rr,y:C[ci][1]+(r()-.3)*.08,z:Math.cos(a)*rr,sx:1,sy:.7,sz:.25,ry:a,jitter:.12});}
+    // the top stone: a flat slab, paler than the courses, its top dressed level at 1.26
+    {const s=SK.bumpy(SK.rbox(.56,.14,.46,.04,2),.012,7,3),pa=s.attributes.position;for(let i=0;i<pa.count;i++)if(pa.getY(i)>.06)pa.setY(i,.07);s.computeVertexNormals();
+      P.push({geo:s,color:new THREE.Color(0x908d84),x:0,y:1.19,z:0,ry:.15,jitter:.06});}
+    const sm=new THREE.Mesh(mergeParts(P),VC_MAT);sm.castShadow=true;sm.receiveShadow=true;sm.name='ringCairn';g.add(sm);
+    // the line cut across the top stone, north to south, and the hollow worn to the ring's shape where it crosses the middle
+    {const m=new THREE.MeshLambertMaterial({color:0x2c2a26,polygonOffset:true,polygonOffsetFactor:-3,polygonOffsetUnits:-3}),cut=new THREE.Group();cut.name='ringCut';
+      const ln=new THREE.PlaneGeometry(.012,.42);ln.rotateX(-Math.PI/2);const a=new THREE.Mesh(ln,m);a.position.y=1.262;
+      const ho=new THREE.RingGeometry(.03,.078,20);ho.rotateX(-Math.PI/2);const b=new THREE.Mesh(ho,m);b.position.y=1.263;cut.add(a,b);g.add(cut);}
+    // the ring, gold, lying in its hollow
+    const ring=new THREE.Mesh(new THREE.TorusGeometry(.054,.012,6,20),new THREE.MeshLambertMaterial({color:0xe8c050,emissive:0x3a2a08}));ring.rotation.x=Math.PI/2;ring.position.y=1.268;ring.name='ringBand';g.add(ring);
+    return {group:g,ring};}
   const SETTLE_MAT=VC_MAT;
