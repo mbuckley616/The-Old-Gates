@@ -2,6 +2,8 @@
 // counts by gate"). makeGate lays a gate's great spaces first on its 3 m grid, joined through thresholds (a slit 1 cell wide and
 // 8 m high), never a corridor, with the ring chamber last; side rooms hang off one space each. Twenty seeds a size through the
 // generator alone, then one gate of each lesser size built and measured with the game's own solids and roof (dSolid, dCeil).
+// S1376: Cloch's toll on the Mark (gateBlock): a fallen block closes a passage on each floor and a way round of five cells is cut
+// beside it; the generator's 100 gates, then a gate on the Mark built with the toll off and on.
 import { boot, check } from './lib/game.mjs';
 import { enterDungeon } from './lib/dungeonshot.mjs';
 const g = await boot(); const { page } = g;
@@ -100,5 +102,40 @@ const ch = B.filter(b => b.pits);
 check('built: a chasm\'s open air is solid to walk into and its walls go down 25 m', ch.every(b => b.pitOk && b.wallLow <= -24.9), B.map(b => [b.size, b.pits, b.pitOk, b.wallLow]));
 check('built: islands and the ring\'s dais stand 0.4 (a step up), the dais 10 m across', B.every(b => b.isl.some(i => i[0] === 'dais' && Math.abs(i[1] - 10) < .05) && b.isl.every(i => Math.abs(i[2] - .4) < 1e-6 && Math.abs(i[3] - .4) < 1e-6)), B.map(b => [b.size, b.isl]));
 check('built: every foe on open floor, and you start clear', B.every(b => b.foesIn && b.clear), B.map(b => [b.size, b.foesIn, b.clear]));
+// S1376 — Cloch's fallen blocks: the generator's own rule over the same 100 gates, then a large gate on the Mark built twice
+const BL = await page.evaluate(() => {
+  const open = v => v !== 0 && v !== 8 && v !== 9, out = { floors: 0, blocked: 0, conn: 0, six: 0, round: [], same: 0 };
+  const parts = (M, W, H) => { const seen = new Uint8Array(W * H); let n = 0; for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { if (!open(M[y][x]) || seen[y * W + x]) continue; n++; const q = [y * W + x]; seen[q[0]] = 1; while (q.length) { const i = q.pop(), cx = i % W, cy = (i / W) | 0; for (const [dc, dr] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = cx + dc, ny = cy + dr, j = ny * W + nx; if (nx < 0 || ny < 0 || nx >= W || ny >= H || seen[j] || !open(M[ny][nx])) continue; seen[j] = 1; q.push(j); } } } return n; };
+  const dist = (M, W, H, a, b) => { const D = new Int32Array(W * H).fill(-1), q = [a[1] * W + a[0]]; D[q[0]] = 0; for (let h = 0; h < q.length; h++) { const i = q[h], cx = i % W, cy = (i / W) | 0; for (const [dc, dr] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = cx + dc, ny = cy + dr, j = ny * W + nx; if (nx < 0 || ny < 0 || nx >= W || ny >= H || D[j] >= 0 || !open(M[ny][nx])) continue; D[j] = D[i] + 1; q.push(j); } } return D[b[1] * W + b[0]]; };
+  for (const size of ['tiny', 'small', 'medium', 'large', 'massive']) for (let k = 0; k < 20; k++) {
+    const seed = 57 + k * 1231, A = makeGate(size, seed, 0, 'steady'), W = A.W, H = A.H, M0 = [A.map, A.map2].map(M => M && M.map(r => r.slice())), P0 = M0.map(M => M ? parts(M, W, H) : 0);
+    const B2 = JSON.parse(JSON.stringify({ map: A.map, map2: A.map2 })), bl = gateBlock(A, seed), bl2 = gateBlock(Object.assign({}, A, B2), seed);
+    out.floors += A.map2 ? 2 : 1; out.blocked += bl.length; if (JSON.stringify(bl) === JSON.stringify(bl2)) out.same++;
+    for (const b of bl) { const M = b.floor === 2 ? A.map2 : A.map, m0 = M0[b.floor - 1]; if (parts(M, W, H) === P0[b.floor - 1]) out.conn++;
+      let d = 0; for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (M[y][x] !== m0[y][x]) d++; if (d === 6) out.six++;
+      const a = b.ew ? [b.c - 1, b.r] : [b.c, b.r - 1], c = b.ew ? [b.c + 1, b.r] : [b.c, b.r + 1]; out.round.push(dist(M, W, H, a, c)); } }
+  for (let j = 0; j < GRID && !out.mark; j++) for (let i = 0; i < GRID; i++) if (isLandCell(i, j) && nationKeyOf(i, j) === 'mark') { out.mark = [(i + .5) * SIZE, (j + .5) * SIZE]; break; }
+  for (let j = 0; j < GRID && !out.home; j++) for (let i = 0; i < GRID; i++) if (isLandCell(i, j) && nationKeyOf(i, j) === 'gatelands') { out.home = [(i + .5) * SIZE, (j + .5) * SIZE]; break; }
+  greatGates().gates = { cloch: 'torn', tine: 'torn', uisce: 'torn' }; out.due = [clochBlockDue({ seed: 9, x: out.mark[0], z: out.mark[1] }), clochBlockDue({ seed: 9, x: out.home[0], z: out.home[1] }), nationAt(out.home[0], out.home[1])];
+  greatGates().gates = { tine: 'torn', uisce: 'torn', scath: 'torn' }; out.due.push(clochBlockDue({ seed: 9, x: out.mark[0], z: out.mark[1] }));
+  return out; });
+console.log(JSON.stringify({ ...BL, round: [...new Set(BL.round)] }));
+check('Cloch\'s blocks: a passage closed on most floors of the 100 gates (a straight corridor 3 from any room), the same from the seed every time', BL.blocked >= BL.floors * .6 && BL.same === 100, [BL.blocked, BL.floors, BL.same]);
+check('Cloch\'s blocks: every floor as connected after as before, the block\'s cell rock and the five of the way round floor, nothing else changed', BL.conn === BL.blocked && BL.six === BL.blocked, [BL.conn, BL.six, BL.blocked]);
+check('Cloch\'s blocks: the way round is 6 steps where the passage was 2', BL.round.every(n => n === 6), [...new Set(BL.round)]);
+check('Cloch\'s blocks: due in a lesser gate on the Mark while Cloch\'s toll holds; not in the Gatelands, not with Cloch whole', BL.due[0] && !BL.due[1] && !BL.due[3], BL.due);
+const fallSeed = 4242, built = {};
+for (const on of [false, true]) {
+  await page.evaluate((on) => { greatGates().gates = on ? { cloch: 'torn', tine: 'torn', uisce: 'torn' } : {}; }, on);
+  await enterDungeon(page, { theme: 'ruins', size: 'large', seed: fallSeed, x: BL.mark[0] + (on ? 1 : 0), z: BL.mark[1] });
+  built[on] = await page.evaluate(() => { const falls = dScene.children.filter(o => o.userData && o.userData.fall), b = falls[0] && falls[0].userData.fall;
+    return { foes: ENEMIES.map(e => e.id + ':' + e.name + ':' + (+e.homeX).toFixed(2) + ':' + (+e.homeZ).toFixed(2)).join(','), chests: CHESTS.map(c => c.floor + ':' + c.x + ':' + c.z).join(','),
+      falls: falls.length, tris: falls.map(m => m.geometry.index.count / 3), solid: b ? dSolid(dAt(b.c), dAt(b.r)) : null, way: b ? b.way.every(([c, r]) => !dSolid(dAt(c), dAt(r))) : null,
+      near: b ? Math.hypot(falls[0].position.x - dAt(b.c), falls[0].position.z - dAt(b.r)) : null }; }); }
+console.log(JSON.stringify({ off: { falls: built[false].falls }, on: { ...built[true], foes: undefined, chests: undefined } }));
+check('Cloch\'s blocks built: none with the toll off; with it on a fall drawn at each block (one mesh), its cell solid and the way round open', built[false].falls === 0 && built[true].falls >= 1 && built[true].solid === true && built[true].way === true && built[true].near < .01, [built[false].falls, built[true].falls, built[true].tris, built[true].solid, built[true].way]);
+{ const fo = built[false].foes.split(','), fn = built[true].foes.split(','), co = built[false].chests.split(','), cn = built[true].chests.split(',');
+  check('Cloch\'s blocks built: every foe (id, kind and spawn) and every chest where it stood without them (a foe\'s and a chest\'s id is its index)', built[false].foes === built[true].foes && built[false].chests === built[true].chests,
+    { foes: [fo.length, fn.length, fo.filter((f, i) => f !== fn[i]).slice(0, 3), fn.filter((f, i) => f !== fo[i]).slice(0, 3)], chests: [co.length, cn.length, co.filter((c, i) => c !== cn[i]).slice(0, 3)] }); }
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
