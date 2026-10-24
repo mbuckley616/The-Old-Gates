@@ -101,7 +101,7 @@ const X = await page.evaluate(() => {
 console.log(JSON.stringify(X));
 check('a broken gate\'s gone span: a foe meets a wall, you jump from stone to stone across it at a walk, and lose nothing', X.foeWall && X.air && X.crossed && X.jumps >= X.stones && X.minY > -1 && X.hp === 100, X);
 check('off the bridge\'s side you fall the pit\'s 25 m, and it kills', X.dead && X.fell <= -24, X);
-// S1356 — a gate of two floors shows its condition on floor one too (critic, s863: the Dungeon of Shadows and the Vault of the Tide read
+// S1358 — a gate of two floors shows its condition on floor one too (critic, s863: the Dungeon of Shadows and the Vault of the Tide read
 // 0 stones and 0 gaps): a failing or broken gate's floor-one naves have their gaps, each over floor two's rock a cell round and open in
 // floor one's foothold; and the loop, walked into one, keeps you on floor one down its 25 m pit, which kills
 const T = await page.evaluate(() => {

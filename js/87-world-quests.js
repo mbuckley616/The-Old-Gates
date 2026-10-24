@@ -2083,7 +2083,7 @@ const giver=`${lord.title} ${lord.name}`;
   // torn, never written into the player's numbers. Tine: fire takes half (_warded). Uisce: breath does not fall (the dive). Cloch:
   // carry ×1.5 (maxCarry). Scáth: at night (20:00 to 05:00) a witness sees you only within 4 m (witnessOf). Solas: Skeletons,
   // Wraiths and Phantoms leave you be until you strike one, and then that room fights (solasWards). Gaoth: top speed ×1.5 at sea.
-  // S1357 — the tolls (piece III): a torn school's toll holds while three or more great gates are torn anywhere, and ends for that
+  // S1359 — the tolls (piece III): a torn school's toll holds while three or more great gates are torn anywhere, and ends for that
   // school the moment its gate is bound (gateGift goes false). The log's line fires once, the first time the count reaches three.
   const GATE_TOLL_AT=3;
   function gateToll(school){return gateGift(school)&&corruptionLevel()>=GATE_TOLL_AT;}
@@ -2182,7 +2182,7 @@ const giver=`${lord.title} ${lord.name}`;
   // the named actions over setGreatGate: false-ish ({ok:false}) when the knot is already so or fate is fixed. A cut that lifts a spell
   // to Mastery counts as a Mastery touch for Varek, once per spell per cut (the sheet: the tearing path draws him sooner).
   function cutKnot(school){const prev=greatGateState(school);if(prev==='torn'||greatFate())return {ok:false};const before=_knotMastery(school);
-    if(!setGreatGate(school,'torn'))return {ok:false};greatGateLast('torn');gateTollStart(); /* S1357 — the third tear's log line */
+    if(!setGreatGate(school,'torn'))return {ok:false};greatGateLast('torn');gateTollStart(); /* S1359 — the third tear's log line */
     const lifted=_knotMastery(school).filter(id=>before.indexOf(id)<0);for(const id of lifted)onMasteryTouch(id);
     return {ok:true,again:prev==='sealed',lifted,fate:greatFate()};}
   function bindKnot(school){const prev=greatGateState(school);if(prev==='sealed'||greatFate())return {ok:false};
@@ -2267,7 +2267,7 @@ const giver=`${lord.title} ${lord.name}`;
   // on waking (restAtBed): the note, once, while it is due and the knife still lies where it is
   function greatNoteOnWake(){const ev=greatEv();if(!ev.noteDue||ev.noteGiven||ev.knifeLifted)return false;ev.noteGiven=worldState.gameTimeAbsMinutes||1;
     bagAdd(Object.assign(makeBookItem(BOOKS.find(b=>b.id==='varek_note')),{weight:.05,sellMult:0}));
-    /* S1356 — the line follows the waking's own by 1.8 s, and only where you woke: gone through a door by then, it would overwrite
+    /* S1358 — the line follows the waking's own by 1.8 s, and only where you woke: gone through a door by then, it would overwrite
        the new place's line (the way down to a ring's, corruption on CI); the log keeps it either way */
     const at=activeZoneId+'|'+(typeof isInterior==='function'&&isInterior());
     if(typeof addLog==='function')addLog('📜',KNIFE_SAY.note);setTimeout(()=>{try{if(activeZoneId+'|'+(typeof isInterior==='function'&&isInterior())===at)showMsg(KNIFE_SAY.note,'#c8c0a8');}catch(e){}},1800);return true;}

@@ -565,7 +565,7 @@ function gateCondition(gen,spaces,seed,cond){
   // only where everything you could reach before stays reachable (the way round)
   const parts=M=>{const seen=new Uint8Array(W*H);let n=0;for(let y=0;y<H;y++)for(let x=0;x<W;x++){const v=M[y][x];if(v===0||v===8||v===9||seen[y*W+x])continue;n++;
     const q=[y*W+x];seen[q[0]]=1;while(q.length){const i=q.pop(),cx=i%W,cy=(i/W)|0;for(const [dc,dr] of [[1,0],[-1,0],[0,1],[0,-1]]){const nx=cx+dc,ny=cy+dr;if(nx<0||ny<0||nx>=W||ny>=H)continue;const j=ny*W+nx,w=M[ny][nx];if(seen[j]||w===0||w===8||w===9)continue;seen[j]=1;q.push(j);}}}return n;};
-  // S1356 — on floor one of a gate of two floors too, but only over floor two's rock a cell round (the pit's 25 m shaft stays in the
+  // S1358 — on floor one of a gate of two floors too, but only over floor two's rock a cell round (the pit's 25 m shaft stays in the
   // rock, clear of floor two's spaces); the gap is a hole in floor one's foothold (gen.stairHoles), and the loop keeps you on floor
   // one while you fall in it (dGapOne). Before, floor one's naves were kept whole and a two-floor gate showed nothing of its condition.
   const rock2=(c,y)=>{const M2=gen.map2;for(let dy=-1;dy<=1;dy++)for(let dc=-1;dc<=1;dc++){const yy=y+dy,cc=c+dc;if(yy>=0&&cc>=0&&yy<H&&cc<W&&M2[yy][cc]!==0)return false;}return true;};

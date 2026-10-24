@@ -170,7 +170,7 @@ console.log(JSON.stringify(tk));
 check(`no great gate touched, no talk of them and no lord's topic (${tk.P})`, tk.none[0] === 0 && tk.none[1] === 0, tk);
 check(`four torn: the fourth line in the site's own voice, one line only, and the Crown's lord on the tear`, tk.four[0] && tk.four[1] === 1 && tk.four[2] === 'The great gates?|true', tk);
 check('a bind: the Normal line instead for seven days, the lord on the seal; then the count\'s line again', tk.bound[0] && !tk.bound[1] && tk.bound[2] && tk.later[0] && !tk.later[1], tk);
-// the tolls' start and Uisce's water (Session 1357; the sheet's session 4, piece III): the log's line once, at the third tear; two
+// the tolls' start and Uisce's water (Session 1359; the sheet's session 4, piece III): the log's line once, at the third tear; two
 // fish a catch in the Gatelands' waters while Uisce is torn, none there once three are torn, and the catch again when it is bound
 const tl = await page.evaluate(() => {
   const keep = JSON.stringify(worldState.greatGates || null), swim = isSwimming, logN = () => GAME_LOG.filter(e => e.text === 'Somewhere, something gave.').length;
