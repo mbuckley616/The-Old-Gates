@@ -750,7 +750,9 @@ const HC_RIGS=new Set();
 const HC_KINDS={'Wolf':{plan:'wolf'},'Snow Wolf':{plan:'wolf',own:true},'Dire Wolf':{plan:'ironwolf',own:true},'Boar':{plan:'boar'},'Cave Bear':{plan:'bear',own:true},'Ash Hound':{plan:'ashhound'},'Horse':{plan:'horse',own:true,ik:true},'Grey Horse':{plan:'horse',own:true,ik:true},
   'Spider':{plan:'spider',own:true,spider:true,cell:.028,merge:true},'Sand Scorpion':{plan:'dunescorpion',own:true,spider:true,cell:.02,merge:true},
   'Bog Crawler':{plan:'bogcrawler',own:true,spider:true,cell:.018,merge:true},'Faolchú':{plan:'faolchu',own:true,cell:.03,unhunch:true,arms:true},
-  'Dragon':{plan:'dragon',own:true,cell:.11,wings:true,sway:true}};
+  'Dragon':{plan:'dragon',own:true,cell:.11,wings:true,sway:true},
+  'Skeleton':{plan:'skeleton',own:true,person:true,gear:{kind:'sword',arm:0,side:-1,len:.7,w:.05,rise:-40,splay:.1,notches:5}},
+  'Skeleton (spear)':{plan:'skeleton',own:true,person:true,gear:{kind:'spear',arm:0,side:-1,len:1.75,r:.017,head:.17,grip:.32,rise:72,splay:.05}}};
 // the driver's joints and the kit's bones they move, parents first (the kit's front legs hang on spine3, the hind on spine0)
 const HC_MAP=[['hips','spine0'],['spine','spine1'],['neck','neck0'],['head','head'],['jaw','jaw'],['tail1','tail0'],['tail2','tail1'],['tail3','tail2'],
   ['shL','leg0L_0'],['elL','leg0L_1'],['wrL','leg0L_2'],['pfL','leg0L_3'],['shR','leg0R_0'],['elR','leg0R_1'],['wrR','leg0R_2'],['pfR','leg0R_3'],
@@ -766,9 +768,18 @@ function hcMap(by){const out=[];
 // a spider's (Session 1319): its body and abdomen; the legs are set by their feet (hcSpFeet)
 function hcSpMap(by,sc){const out=[];for(const [j,n] of sc?[['body','spine0']]:[['body','spine0'],['abd','tail0']]){if(!by[n])return n;out.push([j,by[n]]);}
   if(sc)for(const n of ['tail0','arm0L_0','arm0R_0'])if(!by[n])return n;return out;}
+// Session 1356: a person's 17-bone driver (buildPerson's: the Skeleton foe) and the kit's biped bones it moves: its one spine bone the
+// kit's first above the hips (the three over it follow), each arm and leg joint for joint (the kit's toe, …_3, has no driver's)
+const HC_PMAP=[['hips','spine0'],['spine','spine1'],['neck','neck0'],['head','head'],['shL','arm0L_0'],['elL','arm0L_1'],['wrL','arm0L_2'],['shR','arm0R_0'],['elR','arm0R_1'],['wrR','arm0R_2'],
+  ['thL','leg0L_0'],['knL','leg0L_1'],['anL','leg0L_2'],['thR','leg0R_0'],['knR','leg0R_1'],['anR','leg0R_2']];
+function hcPMap(by){const out=[];for(const [j,n] of HC_PMAP){if(!by[n])return n;out.push([j,by[n]]);}return out;}
 function hcOn(){return HC_BODY.on&&window.OG_LOOK==='new'&&typeof HC!=='undefined';}
 // a kind's plan: the kit's own, or (k.own) a copy of it in the kind's coat, saddle and belly, made once
 function hcPlan(name){const K=HC_KINDS[name];if(!K.own)return K.plan;const id='game:'+name;
+  // a person's (Session 1356): what it holds is the game's (a sword, or a spear), not the plan's sword and shield, which no rule of the
+  // Skeleton's fight has; its sockets lit in the foe's eye colour (ZONE_FOE_DEF's 0x80c0ff), as the old body's are
+  if(!HC.PLANS[id]&&K.person){const P=HC.PLANS[K.plan];HC.PLANS[id]=Object.assign({},P,{name,cell:K.cell,parts:P.parts.map(([k,o])=>k==='gear'?[k,{list:[K.gear]}]
+    :k==='head'?[k,Object.assign({},o,{eyes:o.eyes.map(e=>Object.assign({},e,{r:.017,glow:1.6,color:[.5,.75,1]}))})]:[k,o])});}
   if(!HC.PLANS[id]&&(K.spider||!WOLF_KINDS[name]))HC.PLANS[id]=Object.assign({},HC.PLANS[K.plan],{name,cell:K.cell});
   if(!HC.PLANS[id]){const k=WOLF_KINDS[name],c=h=>[(h>>16&255)/255,(h>>8&255)/255,(h&255)/255];
     HC.PLANS[id]=Object.assign({},HC.PLANS[K.plan],K.cell?{cell:K.cell}:{},{name,palette:Object.assign({},HC.PLANS[K.plan].palette,{coat:c(k.coat),saddle:c(k.saddle),belly:c(k.belly)},HC.PLANS[K.plan].palette.mane?{mane:c(k.saddle)}:{})});}
@@ -777,8 +788,8 @@ function hcPlan(name){const K=HC_KINDS[name];if(!K.own)return K.plan;const id='g
 function hcKind(rig){return rig.hcKind||rig.name;}
 function hcOk(rig){const K=HC_KINDS[hcKind(rig)];return !!K&&!rig.spider===!K.spider&&(!!rig.hcKind||!rig.hunch&&!(rig.e&&rig.e.bossId));}
 function hcAttach(rig){const tA=performance.now();let C;
-  try{const key=rig.hcKey||'wolf:'+(rig.e&&rig.e.id!=null?rig.e.id:rig.name);C=HC.build(HC.genome(hcPlan(hcKind(rig)),key));}catch(e){rig.hcFail=true;console.warn('F4: the kit could not build',rig.name,e);return;}
-  const sp=!!rig.spider,sc=!!(rig.k&&rig.k.scorpion),by=C.byName,K=HC_KINDS[hcKind(rig)];let map=sp?hcSpMap(by,sc):hcMap(by);
+  try{const key=rig.hcKey||(HC_KINDS[hcKind(rig)].person?'foe:'+(rig.e&&rig.e.id!=null?rig.e.id:rig.g.seed):'wolf:'+(rig.e&&rig.e.id!=null?rig.e.id:rig.name));C=HC.build(HC.genome(hcPlan(hcKind(rig)),key));}catch(e){rig.hcFail=true;console.warn('F4: the kit could not build',rig.name,e);return;}
+  const sp=!!rig.spider,sc=!!(rig.k&&rig.k.scorpion),by=C.byName,K=HC_KINDS[hcKind(rig)];let map=sp?hcSpMap(by,sc):K.person?hcPMap(by):hcMap(by);
   // a dragon's tail (Session 1348) is the kit's ten joints at their own rest: the driver's three hang a wolf's tail (0.5 rad down in all),
   // which on the first three of ten dragged it to the ground; only the driver's side-to-side sway is spread over them (hcWings)
   if(K.sway&&typeof map!=='string')map=map.filter(([j])=>!/^tail/.test(j));if(typeof map==='string'){rig.hcFail=true;console.warn('F4: the kit\'s',rig.name,'has no bone',map);return;}
@@ -794,6 +805,9 @@ function hcAttach(rig){const tA=performance.now();let C;
     const cd=new THREE.Vector3(),ck=new THREE.Vector3();for(const F of feet){cd.add(F.d0);ck.add(F.k);}cd.divideScalar(feet.length);ck.divideScalar(feet.length);
     let sd=0,sk=0;for(const F of feet){sd+=Math.hypot(F.d0.x-cd.x,F.d0.z-cd.z);sk+=Math.hypot(F.k.x-ck.x,F.k.z-ck.z);}
     f=sd/sk;W.scale.setScalar(f);W.position.set(cd.x-ck.x*f,0,cd.z-ck.z*f);}
+  // a person's (Session 1356) by its stature: the kit's head at the driver's at rest. The kit's skeleton stands on longer legs than the
+  // people's rig (its hips at 0.57 of its height to the rig's 0.49), so sized by the hips it stood 11–12 cm short; its own legs reach the ground
+  else if(K.person){C.root.updateMatrixWorld(true);f=(PW.HIPS+B.spine.position.y+B.neck.position.y+B.head.position.y)/by.head.getWorldPosition(new THREE.Vector3()).y;W.scale.setScalar(f);W.position.set(0,0,-h0.z*f);}
   else{f=wolfHipY(rig.k)/h0.y;W.scale.setScalar(f);W.position.set(B.hips.position.x,0,B.hips.position.z-h0.z*f);}
   W.add(C.root);rig.root.add(W);
   // a spider's feet: the kit's at rest in the driver's root, once W is placed
@@ -827,7 +841,7 @@ function hcAttach(rig){const tA=performance.now();let C;
   // a dragon's wings (Session 1348): the kit's membrane wings, each arm's three bones and its fingers, posed by hcWings from the driver's
   const wings=HC_KINDS[hcKind(rig)].wings?C.B.wings.filter(W=>!W.feathered).map(W=>({side:W.side,ph:W.phase||0,arm:W.arm.map(n=>by[n]),fing:W.fingers.map(f=>by[f[0]])})):null;
   const sway=K.sway?Object.keys(by).filter(n=>/^tail\d+$/.test(n)).map(n=>by[n]):null;
-  rig.hc={W,C,map,s0,t0,fur,small,ik,feet,hb,scorp,bug,arms,wings,sway,merge:!!HC_KINDS[hcKind(rig)].merge,unhunch:!!HC_KINDS[hcKind(rig)].unhunch,glow:meshes.map(m=>m.material.userData&&m.material.userData.uGlow).filter(u=>u&&u.value&&u.value.isColor),mid:null,bits:C.B.bits.map(b=>b.obj),hide:meshes.filter(m=>!fur.includes(m)),hip0:sp?B.body.position.clone():new THREE.Vector3(B.hips.position.x,wolfHipY(rig.k),B.hips.position.z),pos0:by.spine0.position.clone(),k:1/(f*C.S),L:-1,drv:rig.mesh.material,em:-1};
+  rig.hc={W,C,map,s0,t0,fur,small,ik,feet,hb,scorp,bug,arms,wings,sway,merge:!!HC_KINDS[hcKind(rig)].merge,unhunch:!!HC_KINDS[hcKind(rig)].unhunch,glow:meshes.map(m=>m.material.userData&&m.material.userData.uGlow).filter(u=>u&&u.value&&u.value.isColor),mid:null,bits:C.B.bits.map(b=>b.obj),hide:meshes.filter(m=>!fur.includes(m)),hip0:sp?B.body.position.clone():K.person?new THREE.Vector3(0,PW.HIPS,0):new THREE.Vector3(B.hips.position.x,wolfHipY(rig.k),B.hips.position.z),pos0:by.spine0.position.clone(),k:1/(f*C.S),L:-1,drv:rig.mesh.material,em:-1};
   HC_BODY.ms+=performance.now()-tA;HC_BODY.n++;}
 function hcPose(rig){const H=rig.hc,B=rig.B,map=H.map,uh=H.unhunch&&rig.hunch;
   if(uh){B.spine.rotation.x-=uh[0];B.neck.rotation.x-=uh[1];B.head.rotation.x-=uh[2];}
@@ -894,6 +908,7 @@ function hcWings(rig){const w=rig.wing||0,C=rig.hc.C,fold=(C.plan.wingFold??.5)*
     W.fing.forEach((b,k)=>b.rotation.set(0,s*(k/W.fing.length)*.4*fold,0));}
   const T=rig.hc.sway;if(T){const B=rig.B,y=1.5*(B.tail1.rotation.y+B.tail2.rotation.y+B.tail3.rotation.y)/T.length;for(const b of T)b.rotation.set(0,y,0);}}
 function hcLevel(rig,L){const H=rig.hc;if(H.L===L)return;H.L=L;H.W.visible=L<2;rig.mesh.visible=L===2;
+  for(const o of [rig.weapon,rig.eyeGlow])if(o)o.visible=L===2; /* a person's (Session 1356): the driver's weapon and lit eyes go with its body; the kit's own show */
   if(H.merge&&L===1&&!H.mid)hcBake(rig);
   if(H.mid){const one=L===1;H.mid.visible=one;for(const m of H.hide)m.visible=!one;for(const o of H.bits)o.visible=!one;}
   for(const m of H.fur)m.visible=L===0;for(const m of H.small)m.visible=L===0;}
@@ -904,7 +919,7 @@ function hcBake(rig){const H=rig.hc,C=H.C,t=performance.now();let mid;
   mid.material=HB_MID_MAT.clone();if(H.em>0)mid.material.emissive.setHex(H.em);if(rig.e&&rig.e.dead)mid.material.color.multiplyScalar(.35);mid.frustumCulled=false;mid.name='kitmid';C.rig.add(mid);H.mid=mid;H.bakeMs=performance.now()-t;}
 function hcDrop(rig){const H=rig.hc;if(!H)return;if(H.W.parent)H.W.parent.remove(H.W);
   H.C.root.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material)for(const m of Array.isArray(o.material)?o.material:[o.material])m.dispose();});
-  if(H.C.skel.boneTexture)H.C.skel.dispose();rig.hc=null;rig.mesh.visible=true;}
+  if(H.C.skel.boneTexture)H.C.skel.dispose();rig.hc=null;rig.mesh.visible=true;for(const o of [rig.weapon,rig.eyeGlow])if(o)o.visible=true;}
 // each frame, after the driver is posed (tickCreatures' end): the level by distance, the pose copied, and at most one body built
 function hcTick(now){let best=null,bd=HC_BODY.build;
   const busy=now-HBODY.last<HBODY.gap||(typeof JOBS!=='undefined'&&JOBS.length&&!(typeof isInterior==='function'&&isInterior()));
