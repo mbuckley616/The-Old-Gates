@@ -2151,7 +2151,9 @@ function seamRun(S, z) { let k = 1; if (S.z) k = sstep(S.z[0] - .05, S.z[0], z) 
 const GLOW_HEAD = 'attribute float aGlow; attribute float aFur; varying float vGlow; varying float vFur; varying vec3 vRP;\n';
 function hideMat(o) {
   const m = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: o.rough ?? .85, metalness: 0, ...(o.opacity < 1 ? { transparent: true, opacity: o.opacity, depthWrite: false } : {}) });
-  m.onBeforeCompile = s => { s.uniforms.uGlow = { value: new THREE.Color(...(o.glow || [0, 0, 0])) };
+  // the glow's colour is one uniform kept on the material (userData.uGlow), so a caller may recolour it (the game's Faolchú by its phase)
+  const uGlow = m.userData.uGlow = { value: new THREE.Color(...(o.glow || [0, 0, 0])) };
+  m.onBeforeCompile = s => { s.uniforms.uGlow = uGlow;
     s.vertexShader = GLOW_HEAD + (o.face ? 'attribute float aAlpha; varying float vAlpha;\n' : '') + s.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vGlow = aGlow; vFur = aFur; vRP = position;' + (o.face ? ' vAlpha = aAlpha;' : ''));
     s.fragmentShader = 'uniform vec3 uGlow; varying float vGlow; varying float vFur; varying vec3 vRP;\n' + (o.face ? 'varying float vAlpha;\n' : '') + s.fragmentShader.replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n totalEmissiveRadiance += uGlow * vGlow;')
       .replace('vec4 diffuseColor = vec4( diffuse, opacity );', o.face ? 'vec4 diffuseColor = vec4( diffuse, opacity * vAlpha );' : 'vec4 diffuseColor = vec4( diffuse, opacity );'); };
@@ -2552,7 +2554,9 @@ const PLANS = {
       ['legs', { at: 1, kind: 'canidFore', out: .12, drop: .08, claws: { r: .01, len: .04 } }],
       ['legs', { at: 0, kind: 'canidHind', out: .12, drop: .04, claws: { r: .01, len: .04 } }],
       // the extra arms that come out of the seam down its back (canon: "extra arms emerging from a spine seam that glows red")
-      ['arms', { at: .6, out: .08, up: .18, len: 1.05, r: [.055, .042, .03], dir: [.75, .45, .45], dir2: [.3, -.8, .5], tone: 'skin', claws: { r: .008, len: .06 }, swing: .35, phase: .8 }]
+      ['arms', { at: .6, out: .08, up: .18, len: 1.05, r: [.055, .042, .03], dir: [.75, .45, .45], dir2: [.3, -.8, .5], tone: 'skin', claws: { r: .008, len: .06 }, swing: .35, phase: .8 }],
+      // Session 1342: the second pair, behind and lower, as the game's Faolchú has had since Session 211 (Michael's "great as is" on S201)
+      ['arms', { at: .32, out: .08, up: .16, len: .85, r: [.048, .036, .026], dir: [.8, .4, -.2], dir2: [.35, -.85, -.1], tone: 'skin', claws: { r: .008, len: .05 }, swing: .3, phase: 2.4 }]
     ] },
   bear: { name: 'Frostreach Bear', src: 'OG-031, OG-084 (Crag Bear)', gaits: ['walk', 'trot', 'gallop', 'stand'], fold: .6,
     palette: { coat: [.8, .78, .72], saddle: [.64, .61, .55], belly: [.88, .86, .81], dark: [.08, .07, .06] },

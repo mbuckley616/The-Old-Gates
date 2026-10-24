@@ -40,5 +40,30 @@ const shot = await page.evaluate(() => { forceTime(12); const cv = REN.domElemen
   const o = document.createElement('canvas'); o.width = cv.width; o.height = cv.height; o.getContext('2d').drawImage(cv, 0, 0);
   sc.remove(man.root); sc.remove(G); sc.remove(floor); return o.toDataURL(); });
 fs.writeFileSync('tests/out/faolchu.png', Buffer.from(shot.split(',')[1], 'base64'));
+
+// Session 1342 (card F4): on the new look the creature kit's own Faolchú dresses it, driven by the same rig. Its two pairs of arms come
+// from the seam, the seam takes the phases' colour, and the kit's body is not hunched twice (the plan has its own arch)
+const kit = await page.evaluate(() => { forceTime(12); { const t1 = performance.now(); while (JOBS.length && performance.now() - t1 < 20000) runJobs(); }
+  const fx = -Math.sin(yaw), fz = -Math.cos(yaw), x = px + fx * 9, z = pz + fz * 9;
+  const { g: G, limbs } = buildFaolchuMesh(BOSSES.Faolchu); G.position.set(x, WORLD.worldH(x, z), z); WORLD.scene.add(G);
+  const w = limbs.wolf, e = { x, z, dead: false, alert: true, id: 'f4faol:0' }; w.e = e;
+  CAM.position.set(px, worldH(px, pz) + 1.65, pz); CAM.updateMatrixWorld(true);
+  let k = 0, t = 9e5; HBODY.last = -1e9; while (!w.hc && !w.hcFail && k++ < 100) tickCreatures(1 / 60, t += HBODY.gap + 1);
+  const H = w.hc; if (!H) return { ok: hcOk(w), fail: !!w.hcFail };
+  G.updateMatrixWorld(true); const a = H.C.byName.spine0.getWorldPosition(new THREE.Vector3()), b = w.B.hips.getWorldPosition(new THREE.Vector3());
+  const neck = w.B.neck.rotation.x; hcPose(w); const kept = Math.abs(w.B.neck.rotation.x - neck) < 1e-6;
+  limbs.sigilTrace.color.setRGB(1, .85, .6); tickCreatures(1 / 60, t += 17); const flare = H.glow.map(u => u.value.toArray().map(v => +v.toFixed(2)));
+  limbs.sigilTrace.color.setRGB(1, .1, .04); tickCreatures(1 / 60, t += 17);
+  const L = buildFaolchuMesh({ ...BOSSES.Faolchu, scale: 1.1 }); const lesser = hcOk(L.limbs.wolf);
+  WORLD.scene.remove(G); tickCreatures(1 / 60, t += 17);
+  return { plan: H.C.g.plan, bones: H.C.bones.length, tris: H.C.stats.tris, ms: Math.round(HC_BODY.ms / Math.max(1, HC_BODY.n)), map: H.map.length, unhunch: H.unhunch, kept,
+    arms: Object.keys(H.C.byName).filter(n => /^arm\d[LR]_0$/.test(n)).length, hips: +a.distanceTo(b).toFixed(3), glow: H.glow.length, flare, lesser, dropped: !w.hc }; });
+console.log('  kit:', JSON.stringify(kit));
+check(`new look: the kit's own Faolchú dresses it (${kit.bones} bones, ${kit.tris} triangles), its hips at the driver's (${kit.hips} m), all ${kit.map} joints copied`,
+  kit.plan === 'game:Faolchú' && kit.bones > 40 && kit.map === 24 && kit.hips < .03, kit);
+check('its two pairs of arms come out of its back; the driver keeps its hunch while the kit, arched by its plan, is not hunched again',
+  kit.arms === 4 && kit.unhunch && kit.kept, kit);
+check(`the phases recolour the kit's seam (the flare: ${JSON.stringify(kit.flare)}); the lesser Faolchú is dressed too; and gone from the scene, it is dropped`,
+  kit.glow === 1 && Math.abs(kit.flare[0][1] - 2.72) < .02 && kit.lesser && kit.dropped, kit);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

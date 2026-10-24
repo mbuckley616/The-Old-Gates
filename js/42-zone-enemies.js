@@ -114,6 +114,7 @@ function buildFaolchuMesh(d){
   eyeGl.position.set(0, .70*sc, 1.05*sc);
   g.add(eyeGl);
   limbs.sigilTrace = sigilMat;
+  w.hcKind = 'Faolchú'; w.sigil = sigilMat; // S1342 — on the new look the creature kit's Faolchú dresses it (hcOk, hcPose)
   limbs.sigilMeshes = sigilMeshes;
   const auraGl=new THREE.PointLight(d.light, 2.2, 9);
   auraGl.position.set(0, .6*sc, 0);

@@ -740,13 +740,16 @@ function tickSpider(rig,g,e,dt,now){
 // on the kit's skeleton (HC_KINDS' merge; people's hbMerge, each bit on the bone it hangs from), made the first time the spider comes
 // to the middle level, in a material of its own (the wind-up's red and the kill's darkening are its alone). The wolves, the boar, the
 // bear and the horses keep theirs: three draw calls, and the Ash Hound's ember seam is the hide's own shader, which the bake would lose.
-// The dragon and the Faolchú keep the old body: their plans are later work.
+// The dragon keeps the old body: its plan is later work.
+// Session 1342: the Faolchú (the boss and its lesser kin) wears the kit's own Faolchú, with both pairs of arms from its seam, over the
+// Dire Wolf's rig it is driven by. buildFaolchuMesh names it (rig.hcKind; a boss is otherwise never dressed) and hands over its sigil
+// material (rig.sigil), whose colour the phases set: the kit's seam takes it, at the plan's own brightness (hcPose).
 const HC_BODY={on:true,near:12,mid:40,build:44,small:.03,ms:0,n:0};
 const HC_RIGS=new Set();
 // the game's kinds and the kit's plans: a kind's own colours over the plan's (the kit's palettes are sRGB triples)
 const HC_KINDS={'Wolf':{plan:'wolf'},'Snow Wolf':{plan:'wolf',own:true},'Dire Wolf':{plan:'ironwolf',own:true},'Boar':{plan:'boar'},'Cave Bear':{plan:'bear',own:true},'Ash Hound':{plan:'ashhound'},'Horse':{plan:'horse',own:true,ik:true},'Grey Horse':{plan:'horse',own:true,ik:true},
   'Spider':{plan:'spider',own:true,spider:true,cell:.028,merge:true},'Sand Scorpion':{plan:'dunescorpion',own:true,spider:true,cell:.02,merge:true},
-  'Bog Crawler':{plan:'bogcrawler',own:true,spider:true,cell:.018,merge:true}};
+  'Bog Crawler':{plan:'bogcrawler',own:true,spider:true,cell:.018,merge:true},'Faolchú':{plan:'faolchu',own:true,cell:.03,unhunch:true}};
 // the driver's joints and the kit's bones they move, parents first (the kit's front legs hang on spine3, the hind on spine0)
 const HC_MAP=[['hips','spine0'],['spine','spine1'],['neck','neck0'],['head','head'],['jaw','jaw'],['tail1','tail0'],['tail2','tail1'],['tail3','tail2'],
   ['shL','leg0L_0'],['elL','leg0L_1'],['wrL','leg0L_2'],['pfL','leg0L_3'],['shR','leg0R_0'],['elR','leg0R_1'],['wrR','leg0R_2'],['pfR','leg0R_3'],
@@ -765,14 +768,15 @@ function hcSpMap(by,sc){const out=[];for(const [j,n] of sc?[['body','spine0']]:[
 function hcOn(){return HC_BODY.on&&window.OG_LOOK==='new'&&typeof HC!=='undefined';}
 // a kind's plan: the kit's own, or (k.own) a copy of it in the kind's coat, saddle and belly, made once
 function hcPlan(name){const K=HC_KINDS[name];if(!K.own)return K.plan;const id='game:'+name;
-  if(!HC.PLANS[id]&&K.spider)HC.PLANS[id]=Object.assign({},HC.PLANS[K.plan],{name,cell:K.cell});
+  if(!HC.PLANS[id]&&(K.spider||!WOLF_KINDS[name]))HC.PLANS[id]=Object.assign({},HC.PLANS[K.plan],{name,cell:K.cell});
   if(!HC.PLANS[id]){const k=WOLF_KINDS[name],c=h=>[(h>>16&255)/255,(h>>8&255)/255,(h&255)/255];
     HC.PLANS[id]=Object.assign({},HC.PLANS[K.plan],{name,palette:Object.assign({},HC.PLANS[K.plan].palette,{coat:c(k.coat),saddle:c(k.saddle),belly:c(k.belly)},HC.PLANS[K.plan].palette.mane?{mane:c(k.saddle)}:{})});}
   return id;}
-// a wolf the kit may dress: one of HC_KINDS, on the wolf's own body (not a boss on it: the Faolchú's hunch and arms are its own)
-function hcOk(rig){return !!HC_KINDS[rig.name]&&!rig.spider===!HC_KINDS[rig.name].spider&&!rig.hunch&&!(rig.e&&rig.e.bossId);}
+// a wolf the kit may dress: one of HC_KINDS, on the wolf's own body (not a boss on it, unless its builder names its kind: rig.hcKind)
+function hcKind(rig){return rig.hcKind||rig.name;}
+function hcOk(rig){const K=HC_KINDS[hcKind(rig)];return !!K&&!rig.spider===!K.spider&&(!!rig.hcKind||!rig.hunch&&!(rig.e&&rig.e.bossId));}
 function hcAttach(rig){const tA=performance.now();let C;
-  try{const key=rig.hcKey||'wolf:'+(rig.e&&rig.e.id!=null?rig.e.id:rig.name);C=HC.build(HC.genome(hcPlan(rig.name),key));}catch(e){rig.hcFail=true;console.warn('F4: the kit could not build',rig.name,e);return;}
+  try{const key=rig.hcKey||'wolf:'+(rig.e&&rig.e.id!=null?rig.e.id:rig.name);C=HC.build(HC.genome(hcPlan(hcKind(rig)),key));}catch(e){rig.hcFail=true;console.warn('F4: the kit could not build',rig.name,e);return;}
   const sp=!!rig.spider,sc=!!(rig.k&&rig.k.scorpion),by=C.byName,map=sp?hcSpMap(by,sc):hcMap(by);if(typeof map==='string'){rig.hcFail=true;console.warn('F4: the kit\'s',rig.name,'has no bone',map);return;}
   // at the driver's size: the kit's hips (spine0) at the driver's hips' height, and over them, in the driver's root (rig.root, which
   // carries the kind's size in play); the kit's rig carries its own size (C.S)
@@ -808,15 +812,16 @@ function hcAttach(rig){const tA=performance.now();let C;
   // the hips' travel: the driver's hips from their rest (the trot's bob, the crouch, the ragdoll's fall), in the driver's root,
   // into the kit's rig at f·C.S
   // the horses' hooves (HC_KINDS' ik): each leg's paw bone and its height over the driver's paw at rest, for hcLegIK
-  let ik=null;if(HC_KINDS[rig.name].ik){rig.root.updateMatrixWorld(true);ik=[['pfL','leg0L'],['pfR','leg0R'],['phL','leg1L'],['phR','leg1R']].map(([d,l])=>
+  let ik=null;if(HC_KINDS[hcKind(rig)].ik){rig.root.updateMatrixWorld(true);ik=[['pfL','leg0L'],['pfR','leg0R'],['phL','leg1L'],['phR','leg1R']].map(([d,l])=>
     ({d,bs:[by[l+'_2'],by[l+'_1'],by[l+'_0']],end:by[l+'_3'],oy:by[l+'_3'].getWorldPosition(new THREE.Vector3()).y-B[d].getWorldPosition(new THREE.Vector3()).y}));}
   const hb=sp?B.body:B.hips;
   const scorp=sc?{tail:Object.keys(by).filter(n=>/^tail\d+$/.test(n)).map(n=>by[n]),arms:[[by.arm0L_0,1],[by.arm0R_0,-1]]}:null;
   // a water bug's forelegs (Session 1337): each femur and tibia, and the tibia's hinge from the kit's rest (its bones' rest turns are the identity)
   const bug=rig.k&&rig.k.bug&&by.arm0L_2?['L','R'].map(n=>({n,fem:by['arm0'+n+'_0'],tib:by['arm0'+n+'_1'],ax:by['arm0'+n+'_1'].position.clone().cross(by['arm0'+n+'_2'].position).normalize()})):null;
-  rig.hc={W,C,map,s0,t0,fur,small,ik,feet,hb,scorp,bug,merge:!!HC_KINDS[rig.name].merge,mid:null,bits:C.B.bits.map(b=>b.obj),hide:meshes.filter(m=>!fur.includes(m)),hip0:sp?B.body.position.clone():new THREE.Vector3(B.hips.position.x,wolfHipY(rig.k),B.hips.position.z),pos0:by.spine0.position.clone(),k:1/(f*C.S),L:-1,drv:rig.mesh.material,em:-1};
+  rig.hc={W,C,map,s0,t0,fur,small,ik,feet,hb,scorp,bug,merge:!!HC_KINDS[hcKind(rig)].merge,unhunch:!!HC_KINDS[hcKind(rig)].unhunch,glow:meshes.map(m=>m.material.userData&&m.material.userData.uGlow).filter(u=>u&&u.value&&u.value.isColor),mid:null,bits:C.B.bits.map(b=>b.obj),hide:meshes.filter(m=>!fur.includes(m)),hip0:sp?B.body.position.clone():new THREE.Vector3(B.hips.position.x,wolfHipY(rig.k),B.hips.position.z),pos0:by.spine0.position.clone(),k:1/(f*C.S),L:-1,drv:rig.mesh.material,em:-1};
   HC_BODY.ms+=performance.now()-tA;HC_BODY.n++;}
-function hcPose(rig){const H=rig.hc,B=rig.B,map=H.map;
+function hcPose(rig){const H=rig.hc,B=rig.B,map=H.map,uh=H.unhunch&&rig.hunch;
+  if(uh){B.spine.rotation.x-=uh[0];B.neck.rotation.x-=uh[1];B.head.rotation.x-=uh[2];}
   for(let i=0;i<map.length;i++){const [j,b]=map[i];
     hbRel(B[j],rig.root,_hbq).multiply(H.s0[i]).multiply(H.t0[i]);
     if(b.parent&&b.parent.isBone){hbRel(b.parent,H.W,_hbq2).invert();b.quaternion.copy(_hbq2.multiply(_hbq));}else b.quaternion.copy(_hbq);}
@@ -825,6 +830,9 @@ function hcPose(rig){const H=rig.hc,B=rig.B,map=H.map;
   if(H.feet)hcSpFeet(rig);
   if(H.scorp)hcScorp(rig);
   if(H.bug)hcBug(rig);
+  if(uh){B.spine.rotation.x+=uh[0];B.neck.rotation.x+=uh[1];B.head.rotation.x+=uh[2];}
+  // the Faolchú's seam in the phase's colour (its sigils' red, 1,0.1,0.04, is the plan's 3.2,0.55,0.2 at a third)
+  if(rig.sigil)for(const u of H.glow)u.value.copy(rig.sigil.color).multiplyScalar(3.2);
   // the wind-up's red and the parry's gold on the driver's material, on the kit's (its eyes and claws keep their own)
   const m=rig.mesh.material;let em=m&&m.emissive?m.emissive.getHex():0;if(m!==H.drv&&m&&m.color&&m.color.getHex()===0xffdd44)em=0xb08010;
   if(em!==H.em){H.em=em;for(const o of [...H.hide,...H.fur,...(H.mid?[H.mid]:[])])for(const x of Array.isArray(o.material)?o.material:[o.material])if(x.emissive)x.emissive.setHex(em);}}
