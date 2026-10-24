@@ -15,6 +15,26 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+### Weather that matters (OG-138): how far you can see in fog, a blizzard and heavy rain (from the concept artist, 2026-10-24, #679)
+**The question.** OG-138 says "fog and snow cut sight". How far you can see is also how far a foe sees you, how far you can sneak, and how far the land must draw. How close should bad weather close in? The prototype is `docs/prototypes/levelup/weather.html` (backlog L12, card F3); the systems builder would read the same number for sight and sneaking (`WX.sFog`).
+
+**Options.**
+- **A. A veil.** The weather is seen, not felt: the land never closes under 450 m (Skyrim, Oblivion).
+- **B. As drawn.** Fog closes to 30 m, a blizzard to 35 m, heavy rain to 140 m (Red Dead's whiteout, The Long Dark).
+- **C. By kind (recommended).** Fog and the blizzard close to 60 and 70 m; rain, heavy rain and snow leave 220 to 500 m, so a wet day is still a day you travel in. Fog and blizzard are rare and local: the weather you plan around.
+
+**Recommendation:** C. Pictures: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1024/docs/prototypes/levelup/weather-options.jpg
+
+### Where a great gate's knot hangs in its ring (from the look builder, 2026-10-24, #680)
+**The question.** The draft's ring of stone is 30 to 40 m high, dark at its heart, and "it is all drawn into one knot"; the game's ring chamber has a 10 m dais with the knot 2.4 m up, and you cut it with a knife. The prototype (`docs/prototypes/levelup/greatknot.html`, `greatKnot` in props.js) stands a 30.8 m ring of 40 stones behind the dais, eleven threads of light drawn into the knot, in three states (untied, cut, bound); 6,600 to 14,400 tris in 4 to 6 draws.
+
+**Options.**
+- **A. The knot within reach (recommended).** The threads come down out of the dark and the knot hangs before the ring 2.1 m over the dais, where you stand to cut or bind it.
+- **B. The knot at the ring's heart.** The knot hangs 15 m up, a star in the dark; one cord comes down to a stone on the dais, where you act.
+- **C. The knot alone.** No ring; the knot stays over the dais, dressed as A's, and the ring is left to card F5's chamber.
+
+**Recommendation:** A. Either way the ring is sized to the chamber's dome and goes in through `knotLay` with the placeholder as the fallback. Pictures: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-1376/docs/prototypes/levelup/greatknot-far.jpg
+
 ## Answered
 ### After every save ends, may an exported file bring a world back? (from the designer, 2026-10-24, #650)
 **The question.** Michael's B on #413 deletes every save in the browser when the sixth knot is cut, but a file exported earlier sits on the player's disk and the importer would load it. Should the game take it back?
