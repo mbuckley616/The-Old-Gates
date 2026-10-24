@@ -275,7 +275,7 @@
     tickTownNPCs(dt,now||performance.now());try{tickCrime(dt,now||performance.now());}catch(e){}
     tickChatter(dt);
     ensureTaskWorldObjects();tickPickups();qTick();
-    tickHerbSync(dt);tickAshenmoorStory();tickProsperity();tickRents();tickDatedWork();tickCaravans(dt);tickCoaches(dt);tickStory();try{tickDuel(dt);}catch(e){console.warn('duel',e);}try{tickSpire(dt);}catch(e){console.warn('spire',e);}tickSiteDeaths();tickVarek(dt);sweepLights();
+    tickHerbSync(dt);tickAshenmoorStory();tickProsperity();tickRents();tickDatedWork();tickCaravans(dt);tickCoaches(dt);tickStory();try{tickDuel(dt);}catch(e){console.warn('duel',e);}try{tickSpire(dt);}catch(e){console.warn('spire',e);}tickSiteDeaths();tickVarek(dt);tickHerald();sweepLights();
     tickCleared();
     tickDiscovery(dt);
   }
