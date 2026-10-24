@@ -2127,6 +2127,32 @@ const giver=`${lord.title} ${lord.name}`;
     if(activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior())||!gateToll('cloch'))return;
     const abs=worldState.gameTimeAbsMinutes||0,day=Math.floor(abs/1440);if(greatEv().tremor===day||abs<clochTremorAt(day)||natHere()!=='mark')return;
     clochTremor(day);}
+  // S1374 — Scáth's and Solas's tolls on the roads (piece III, the faces and the tolls): from three torn, one or two Phantoms on each
+  // road between settlements of the Mark (Scáth), and Skeletons and Wraiths on Aurenne's (Solas), from dusk to dawn (20:00 to 05:00, the
+  // clock's night of Scáth's gift). Each road's night is rolled from seededRng(school, roadId+':'+night): how many, which kinds, where on
+  // the road. The night is the day it fell, so the hours after midnight keep the evening's roll. They rise when you come within
+  // NIGHT_WATCH of their place and go at dawn, indoors, on a bind, or once you are NIGHT_LEAVE away; one killed stays dead that night.
+  // Nothing is saved, as the spire's waves: a load lays the night again.
+  const NIGHT_ROAD={scath:{nat:'mark',kinds:['Phantom']},solas:{nat:'aurenne',kinds:['Skeleton','Wraith']}};
+  const NIGHT_WATCH=150,NIGHT_LEAVE=400;const NIGHT_FOES=new Map();let _nightT=0;
+  function roadNight(abs){const m=abs%1440,d=Math.floor(abs/1440);return m>=1200?d:m<300?d-1:null;}
+  function nightRoadRoll(school,roadId,night,pts){const r=seededRng(school,roadId+':'+night),n=r()<.5?1:2,p=roadAt(pts,.2+r()*.6),K=NIGHT_ROAD[school].kinds,kinds=[];
+    for(let k=0;k<n;k++)kinds.push(K[Math.floor(r()*K.length)]);return {n,kinds,x:p.x,z:p.z,ang:p.ang};}
+  function nightRoads(){const out=[],seen=new Set();for(const rd of ROADS){const d=rd.def;if(!d||d.via==='spur'||d.via==='quay'||!rd.pts||rd.pts.length<2)continue;
+    const id=routeKey(d.a,d.b);if(seen.has(id))continue;const a=siteAnywhere(d.a),b=siteAnywhere(d.b);if(!a||!b||!(a.kind in BASE_P)||!(b.kind in BASE_P))continue;seen.add(id);out.push({rd,id});}return out;}
+  function nightFoesRise(N){N.foes=[];for(let k=0;k<N.n;k++){if(N.dead[k])continue;const t=N.ang+Math.PI/2+(k?Math.PI:0),off=N.n>1?3:0,ex=N.x+Math.sin(t)*off,ez=N.z+Math.cos(t)*off;
+    const e=keyFoe(unlockFoe(buildZoneEnemy(sc,STATIC_SOL,ex,ez,N.kinds[k],null)),N.school+':'+N.id+':'+N.night+':'+k);e.homeX=N.x;e.homeZ=N.z;e._nightRoad=N.school;e._nightK=k;ZONES.world.enemies.push(e);N.foes.push(e);}}
+  function nightFoesDrop(N){N.foes.forEach(e=>{if(e.dead)return;if(e.mesh&&e.mesh.parent)e.mesh.parent.remove(e.mesh);const i=ZONES.world.enemies.indexOf(e);if(i>=0)ZONES.world.enemies.splice(i,1);});N.foes=[];}
+  function tickNightRoads(){const now=performance.now();if(now-_nightT<500)return;_nightT=now;
+    const night=roadNight(worldState.gameTimeAbsMinutes||0),open=activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior());
+    for(const [key,N] of NIGHT_FOES){N.foes.forEach(e=>{if(e.dead)N.dead[e._nightK]=1;});const live=N.night===night&&gateToll(N.school);
+      if(!live||!open||Math.hypot(px-N.x,pz-N.z)>NIGHT_LEAVE)nightFoesDrop(N);if(!live)NIGHT_FOES.delete(key);}
+    if(night==null||!open)return;
+    for(const school in NIGHT_ROAD){if(!gateToll(school))continue;
+      for(const {rd,id} of nightRoads()){const key=school+':'+id+':'+night;let N=NIGHT_FOES.get(key);if(N&&(N.off||N.foes.length))continue;
+        if(!N){const R=nightRoadRoll(school,id,night,rd.pts);let nat=null;try{nat=nationKeyOf(...cellOf(R.x,R.z));}catch(e){}
+          N={school,id,night,...R,foes:[],dead:{},off:nat!==NIGHT_ROAD[school].nat};NIGHT_FOES.set(key,N);if(N.off)continue;}
+        if(Math.hypot(px-N.x,pz-N.z)<NIGHT_WATCH)nightFoesRise(N);}}}
   function gateWindy(){return gateToll('gaoth')&&natHere()==='aurenne';}
   function gatePortP(site,p){if(!site||site.kind!=='port'||!gateGift('gaoth'))return p;try{if(nationKeyOf(...cellOf(site.x,site.z))!=='aurenne')return p;}catch(e){return p;}return Math.min(100,p+1);}
   // S1350 — the world's talk of the great gates (great-gates-build.md session 4, its talk; piece I §5, approved 14 Oct): one line in
