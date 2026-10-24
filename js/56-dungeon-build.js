@@ -3522,6 +3522,30 @@ function dRender(sc,cam){
 //  - the doors: 1.2 wide and 2.2 high in the middle of the cell (the F2b sheet), the wall either side and above it.
 // Every record moves with its piece (foes, chests, barrels, doors, cots, traps, footholds, columns, props' solids, the Shuttle,
 // the cloak's den); the map stays in cells and is read at dCellOf(x). k is 1 on nothing: every dungeon has its cell.
+// S1373 — the Shuttle (the Makers' trials, §5; its item: "a weaver's shuttle of pale wood, worn smooth by a hand that is not yours, with
+// a thread end in it that nothing will pull out"; the first sight: "something small and pale ... the shape of a boat, or a fish, or
+// neither"). A boat-shaped shuttle 0.3 m long, lying on its side's curve on the floor: oval in section, tapering to two worn points, the
+// long hollow on top with its quill wound in pale thread, and the thread's end run out of the eye in the flank and across the stones.
+// A faint light over it, as the placeholder had. Built in metres at the origin, its belly on y 0 (dunScaleWhole moves it, never
+// stretches it); shuttleLay (87-world-quests.js) places it. Returns the group. About 700 triangles in 5 draws.
+function shuttleProp(){const g=new THREE.Group();g.name='shuttleProp';
+  const wood=new THREE.MeshLambertMaterial({color:0xe6dbc2,emissive:0x2a2418}),dark=new THREE.MeshLambertMaterial({color:0x5e5038,emissive:0x0c0a06}),
+    thread=new THREE.MeshLambertMaterial({color:0xd8e0ee,emissive:0x303848});
+  // the body: a lathe along x, oval in section (narrower across than up), full in the middle and drawn to a point at each end
+  {const pts=[];for(let i=0;i<=16;i++){const t=i/16,r=Math.max(.0015,.031*Math.pow(Math.sin(Math.PI*t),.62));pts.push(new THREE.Vector2(r,(t-.5)*.3));}
+    const geo=new THREE.LatheGeometry(pts,14);geo.rotateZ(Math.PI/2);geo.scale(1,1,.78);geo.computeVertexNormals();
+    const m=new THREE.Mesh(geo,wood);m.position.y=.031;m.castShadow=true;m.receiveShadow=true;m.name='shuttleBody';g.add(m);}
+  // the hollow on top, a long dark well, and the eye in the flank the thread comes out of
+  {const w=new THREE.CircleGeometry(1,18);w.rotateX(-Math.PI/2);const m=new THREE.Mesh(w,dark);m.scale.set(.06,1,.013);m.position.y=.063;g.add(m);
+    const e=new THREE.CircleGeometry(.0045,8);const me=new THREE.Mesh(e,dark);me.position.set(.012,.034,.0244);g.add(me);}
+  // the quill in the hollow, wound full with thread, its wooden ends showing
+  {const q=new THREE.Mesh(new THREE.CylinderGeometry(.0105,.0105,.085,10),thread);q.rotation.z=Math.PI/2;q.position.y=.058;g.add(q);
+    const c=new THREE.Mesh(new THREE.CylinderGeometry(.004,.004,.11,6),wood);c.rotation.z=Math.PI/2;c.position.y=.058;g.add(c);}
+  // the thread's end: out of the eye, down the flank and across the floor in a loose curve
+  {const cv=new THREE.CatmullRomCurve3([new THREE.Vector3(.012,.034,.025),new THREE.Vector3(.02,.02,.04),new THREE.Vector3(.04,.003,.07),new THREE.Vector3(.09,.002,.1),new THREE.Vector3(.15,.002,.09),new THREE.Vector3(.2,.002,.12)]);
+    const m=new THREE.Mesh(new THREE.TubeGeometry(cv,24,.0018,4,false),thread);m.name='shuttleThread';g.add(m);}
+  const l=new THREE.PointLight(0xdfe8ff,.55,2.6);l.position.set(0,.4,0);g.add(l);
+  return g;}
 function dunScaleWhole(k,wallMat){
   if(!dScene||!(k>0))return;{const w=dScene.children.find(o=>o.userData&&o.userData.dunShell==='walls');if(w&&w.material)wallMat=w.material;}
   const box=new THREE.Box3(),V=new THREE.Vector3();
