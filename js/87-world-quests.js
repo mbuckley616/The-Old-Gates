@@ -2078,6 +2078,89 @@ const giver=`${lord.title} ${lord.name}`;
   function corruptionTorn(){const g=worldState.greatGates;if(!g||!g.gates)return [];return GREAT_SCHOOLS.filter(s=>g.gates[s]==='torn');}
   function corruptionLevel(){return corruptionTorn().length;}
 
+  // ═══ THE KNOT AT THE RING (great-gates-build.md session 1, Session 1346; piece I, approved 14 Oct 2026; Michael's A on #292) ═══
+  // A great gate's script runs into one knot at the heart of its ring. The Loosing Knife cuts it (torn) and the Binding Needle binds
+  // it (sealed): bag items keyed by `artifact` ('looseKnife', 'bindNeedle'), which the sheet's session 2 brings into the world. The
+  // tier a cast reads follows the gate (effTier, 64-spells.js); nothing is written into the character. Until card F5 places the six,
+  // a great gate is a generated gate flagged with its school, `portal.great`, or a stand-in flagged from the console (devGreatGate),
+  // never saved. The knot is drawn at the ring chamber's dais in plain geometry until the look builder makes the ring.
+  const KNOT_LINES={
+    tear:{first:'The knot parts under the edge like a wet thread. What it held goes through you, and out, and on.',
+      again:'The knot you bound parts as easily as if it had never been tied. Easier.',
+      school:{tine:'Your hands are warm to the elbow, and the warmth stays.',uisce:'There is salt on your lips, a long way from any sea.',
+        cloch:'For a breath you feel the whole weight of the hill above you, and that you could carry it.',
+        scath:'Your shadow is a moment late in following you, and then it is not.',solas:'Every flame in the hall leans toward you.',
+        gaoth:'The air in the hall goes out past you, as if it had somewhere to be.'}},
+    bind:{first:'The ends come together under it and do not come apart again. The knot is whole, and the hall is very quiet.',
+      again:'You draw the cut ends together. They remember each other.',
+      school:{tine:'Your hands are cold. You had not known they were warm.',uisce:'Your mouth is dry, and stays dry a while.',
+        cloch:'You are lighter on your feet, and less sure of the floor.',scath:'Your shadow is very exact.',
+        solas:'The flames in the hall stand straight and pay you no attention.',
+        gaoth:'You notice your own breathing, the way you do in a shut room.'}},
+    gain:(S,gate)=>`${S} runs deeper in you while ${gate} is torn.`,
+    cost:(S,gate)=>`${S} runs shallower in you while ${gate} is bound.`,
+    lockSeal:'The knot is whole, and five others answer it, each to each. The world settles round you like a house at night.',
+    locked:'The knot will not take the edge. It holds, and five others hold it.',
+    ringFirst:'At the hall’s end stands a ring of stone, higher than the hall. The script on every wall runs toward it, and in the dark at its heart it is all drawn into one knot.',
+    examine:{torn:'The two ends hang apart in the dark, and the dark goes back further than the hall did.',
+      sealed:'The knot is whole, and tighter than it was. Nothing moves in it.',
+      untied:'The knot is drawn tight past any fingers. It was not tied to be undone by hand.'}};
+  const GREAT_STANDIN={};
+  function greatSchoolOf(portal){if(!portal||portal.seed==null)return null;const s=portal.great||GREAT_STANDIN[portal.seed];return GREAT_SCHOOLS.indexOf(s)>=0?s:null;}
+  // the console's stand-in: flag a gate's seed (the one you are in, by default) as the great gate of a school, for this page only
+  function devGreatGate(school,seed){if(GREAT_SCHOOLS.indexOf(school)<0)return false;const sd=seed!=null?seed:(currentPortal&&currentPortal.seed);if(sd==null)return false;GREAT_STANDIN[sd]=school;return true;}
+  function knotTools(){const has=k=>BAG.some(it=>it&&it.artifact===k);return {knife:has('looseKnife'),needle:has('bindNeedle')};}
+  function greatGateLast(kind){const g=greatGates();g.last={day:Math.floor((worldState.gameTimeAbsMinutes||0)/1440),kind};}
+  function _knotMastery(school){return SPELLS.filter(sp=>sp.school===school&&effTier(sp.id)===3).map(sp=>sp.id);}
+  // the named actions over setGreatGate: false-ish ({ok:false}) when the knot is already so or fate is fixed. A cut that lifts a spell
+  // to Mastery counts as a Mastery touch for Varek, once per spell per cut (the sheet: the tearing path draws him sooner).
+  function cutKnot(school){const prev=greatGateState(school);if(prev==='torn'||greatFate())return {ok:false};const before=_knotMastery(school);
+    if(!setGreatGate(school,'torn'))return {ok:false};greatGateLast('torn');
+    const lifted=_knotMastery(school).filter(id=>before.indexOf(id)<0);for(const id of lifted)onMasteryTouch(id);
+    return {ok:true,again:prev==='sealed',lifted,fate:greatFate()};}
+  function bindKnot(school){const prev=greatGateState(school);if(prev==='sealed'||greatFate())return {ok:false};
+    if(!setGreatGate(school,'sealed'))return {ok:false};greatGateLast('sealed');
+    return {ok:true,again:prev==='torn',fate:greatFate()};}
+  // laid by buildDungeon after the scaling pass, in metres: the knot over the middle of the ring chamber's dais
+  let KNOT_LIE=null;
+  function knotLay(portal,gen){KNOT_LIE=null;const school=greatSchoolOf(portal);if(!school||!gen||!gen.gate||gen.ring==null)return null;
+    const sp=gen.spaces[gen.ring];if(!sp||!sp.dais)return null;const fl=sp.floor||1,x=dAt((sp.dais.x0+sp.dais.x1)/2),z=dAt((sp.dais.z0+sp.dais.z1)/2),y=(fl===2?FLOOR2_Y:0)+.4;
+    const col=parseInt(SCHOOL_DEF[school].col.slice(1),16),g=new THREE.Group();
+    const knot=new THREE.Mesh(new THREE.TorusKnotGeometry(.9,.11,128,10,2,3),new THREE.MeshLambertMaterial({color:0x14110e,emissive:col,emissiveIntensity:.35}));
+    knot.position.y=2.4;g.add(knot);g.position.set(x,y,z);g.userData.knot=school;dScene.add(g);
+    const name=portal.canonicalName||(typeof dungeonName==='function'?dungeonName(portal.seed,portal.theme):'the great gate');
+    KNOT_LIE={x,z,floor:fl,school,name,mesh:g,knot};return KNOT_LIE;}
+  function knotNear(){const L=KNOT_LIE;return !!(L&&activeZoneId==='dungeon'&&currentFloor===L.floor&&Math.hypot(px-L.x,pz-L.z)<2.6);}
+  // the first sight of the ring, once a gate (called from the dungeon's frame); worldState.greatGates.ev.ring records it (the way back's)
+  function knotTick(){const L=KNOT_LIE;if(!L||activeZoneId!=='dungeon'||currentFloor!==L.floor)return false;if(L.knot)L.knot.rotation.y+=.002;
+    if(Math.hypot(px-L.x,pz-L.z)>24)return false;const g=greatGates(),ev=g.ev||(g.ev={}),ring=ev.ring||(ev.ring={});if(ring[L.school])return false;
+    ring[L.school]=true;if(!ev.ringFirst)ev.ringFirst=worldState.gameTimeAbsMinutes||1;showMsg(KNOT_LINES.ringFirst,'#c8d0e0');if(typeof addLog==='function')addLog('◎',`Reached the ring of ${L.name}.`);return true;}
+  // the prompt by state and what you carry (piece I §1's table)
+  function knotPrompt(){const L=KNOT_LIE;if(!L)return '';const st=greatGateState(L.school),t=knotTools(),n=L.name;
+    if(!st){if(t.knife&&t.needle)return `The knot of ${n} — Press 'E'`;if(t.knife)return `The knot of ${n} — Press 'E' to cut it`;if(t.needle)return `The knot of ${n} — Press 'E' to bind it`;return `The knot of ${n}`;}
+    if(st==='torn')return t.needle&&!greatFate()?`The cut knot of ${n} — Press 'E' to bind it`:`The cut knot of ${n}`;
+    return t.knife&&!greatFate()?`The bound knot of ${n} — Press 'E' to cut it`:`The bound knot of ${n}`;}
+  function _knotSay(r,kind){const L=KNOT_LIE,S=SCHOOL_DEF[L.school].name,K=KNOT_LINES[kind];
+    const first=kind==='bind'&&r.fate==='sealed'?KNOT_LINES.lockSeal:r.again?K.again:K.first;
+    showMsg(first+' '+K.school[L.school],'#c8d0e0');const second=kind==='tear'?KNOT_LINES.gain(S,L.name):KNOT_LINES.cost(S,L.name);
+    setTimeout(()=>{try{showMsg(second,kind==='tear'?'#d8b04a':'#9a9a92');}catch(e){}},1600);
+    if(typeof addLog==='function'){addLog('◎',kind==='tear'?`Cut the knot of ${L.name}${r.again?' again':''}.`:`Bound the knot of ${L.name}${r.again?' again':''}.`);
+      if(kind==='bind'&&r.fate==='sealed')addLog('◎','The six great gates are bound.');}
+    if(typeof updateHUD==='function')updateHUD();}
+  function knotCut(){const L=KNOT_LIE;if(!L)return null;const r=cutKnot(L.school);if(r.ok)_knotSay(r,'tear');return r;}
+  function knotBind(){const L=KNOT_LIE;if(!L)return null;const r=bindKnot(L.school);if(r.ok)_knotSay(r,'bind');return r;}
+  // E at the knot
+  function knotUse(){const L=KNOT_LIE;if(!L)return null;const st=greatGateState(L.school),t=knotTools(),f=greatFate();
+    if(f==='sealed'&&t.knife){showMsg(KNOT_LINES.locked,'#c8d0e0');return 'locked';}
+    if(!st){if(t.knife&&t.needle){openDialog({name:`The knot of ${L.name}`,role:SCHOOL_DEF[L.school].name,ico:'◎',noIntro:true,greeting:[''],topics:[
+        {label:'Cut the knot.',quest:true,fn:()=>{setTimeout(()=>{try{closeDialog();}catch(e){}knotCut();},60);return '';}},
+        {label:'Bind the knot.',quest:true,fn:()=>{setTimeout(()=>{try{closeDialog();}catch(e){}knotBind();},60);return '';}},
+        {label:'Leave it.',bye:true}]});return 'choice';}
+      if(t.knife)return knotCut()?'cut':null;if(t.needle)return knotBind()?'bind':null;showMsg(KNOT_LINES.examine.untied,'#c8d0e0');return 'untied';}
+    if(st==='torn'&&t.needle&&!f)return knotBind()?'bind':null;
+    if(st==='sealed'&&t.knife&&!f)return knotCut()?'cut':null;
+    showMsg(KNOT_LINES.examine[st],'#c8d0e0');return 'examine';}
+
   // ═══ THE READER (Session Q) — Varek's discoveries, the fields, the Guest's chapel ═══
   // Varek reads the frame through the player. Each discovery is a real
   // property of play: deaths, the gap between sessions, the order places

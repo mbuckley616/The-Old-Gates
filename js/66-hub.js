@@ -881,7 +881,7 @@ function renderHubMagic(){
   } else {
     if(activeBar){activeBar.style.opacity='1';}
     const sp=SPELLS.find(s=>s.id===activeSpellId);
-    const tier=sp?getSpellTier(sp.id):0;
+    const tier=sp?effTier(sp.id):0; /* S1346 — the tier cast */
     const disp=sp&&tier?`<b id="spell-active-name">${spellDisplayName(sp,tier)}</b> <span style="color:#7a6030">${TIER_STARS[tier-1]}</span>`:'<b id="spell-active-name">None</b>';
     if(activeBar){activeBar.innerHTML=`Active spell: ${disp} &nbsp;·&nbsp; Press <b style="color:#c8e88a">F</b> to cast &nbsp;·&nbsp; Click a spell below to select it`;}
   }
@@ -896,8 +896,9 @@ function renderHubMagic(){
     card.className='spell-card'+(s.id===activeSpellId?' active-spell':locked?' locked':partial?' partial':'');
 
     // Name shown depends on tier: Impression hides the translation to preserve reveal
-    const nameShown=known?spellDisplayName(s,tier):s.nameIr;
-    const displayCost=known?spellCost(s,tier):s.cost;
+    const et=effTier(s.id); /* S1346 — the name and cost cast follow the great gate; the tier row stays the tier learned */
+    const nameShown=known?spellDisplayName(s,et):s.nameIr;
+    const displayCost=known?spellCost(s,et):s.cost;
 
     // Tier row: stars + current tier label, or INT gate if locked
     let tierRow='';

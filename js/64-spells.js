@@ -80,6 +80,11 @@ function spellDisplayName(sp, tier){
 }
 // Fetch the current tier (1–3) for a spell id, or 0 if not known.
 function getSpellTier(id){return knownSpells[id]||0;}
+// S1346 — the tier a cast reads (great-gates-build.md, Michael's A on #292): the tier learned, one deeper while the school's great gate is
+// torn and one shallower while it is bound, from Impression to Mastery; a spell not known stays 0. Casting, its name, cost, cooldown and
+// the wild roll read this; learning (a sigil, a guild's Deepen, Intelligence's requirements) reads getSpellTier.
+function effTier(id){const t=getSpellTier(id);if(!t)return 0;const sp=SPELLS.find(s=>s.id===id);const st=sp&&typeof greatGateState==='function'?greatGateState(sp.school):null;
+  return Math.max(1,Math.min(3,t+(st==='torn'?1:st==='sealed'?-1:0)));}
 // Tier-scaled numeric stats for a cast.
 function spellMag(sp,tier){return (sp.dmgBase||0)*TIER_MULT.magnitude[tier-1];}
 function spellHealMag(sp,tier){return (sp.healBase||0)*TIER_MULT.magnitude[tier-1];}

@@ -1512,6 +1512,7 @@ function loop(now){
     });
     // Drive the ambient hum based on closest-sigil proximity
     if(typeof updateSigilHum==='function')updateSigilHum(maxSigilProx);
+    if(typeof knotTick==='function')knotTick(); /* S1346 — a great gate's ring, seen the first time */
     if(typeof shuttleTick==='function')shuttleTick(); /* S797 — the Shuttle's room, seen the first time */
     if(typeof cloakDenTick==='function')cloakDenTick(); /* S992 — the cloak's den, seen the first time */
     const nearSigilPrompt=SIGILS.find(s=>s.floor===currentFloor&&Math.hypot(px-s.x,pz-s.z)<1.5);
@@ -1537,6 +1538,7 @@ function loop(now){
       const stairLabel=DUNGEON_STAIRWELL?'':currentFloor===1&&dMap2?"Press 'E' to descend to Floor 2":"Press 'E' to ascend to Floor 1"; // v80 S8 — physical stairs need no prompt
       if(stairLabel){iprEl.textContent=stairLabel;iprEl.style.opacity='1';iprEl.style.display='block';}
     }
+    else if(typeof knotNear==='function'&&knotNear()){iprEl.textContent=knotPrompt();iprEl.style.opacity='1';iprEl.style.display='block';} /* S1346 */
     else if(typeof shuttleNear==='function'&&shuttleNear()){iprEl.textContent="Press 'E' to take up the shuttle";iprEl.style.opacity='1';iprEl.style.display='block';} /* S797 */
     else if(typeof cloakDenNear==='function'&&cloakDenNear()){iprEl.textContent="Press 'E' to take the grey cloak from under it";iprEl.style.opacity='1';iprEl.style.display='block';} /* S992 */
     else if(nearSigilPrompt){
