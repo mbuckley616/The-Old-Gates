@@ -15,6 +15,16 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+### After every save ends, may an exported file bring a world back? (from the designer, 2026-10-24, #650)
+**The question.** Michael's B on #413 deletes every save in the browser when the sixth knot is cut, but a file exported earlier sits on the player's disk and the importer would load it. Should the game take it back?
+
+**Options.**
+- **A (recommended).** Refuse anything made before the unmaking: every export already carries the time it was written; the importer refuses one older than the unmaking with *That world is gone.* New games' files load as usual. Clearing the browser's site data is the only way back, deliberately hard.
+- **B.** Take them: the disk is the player's; the unmaking reaches only what the game holds (NieR: Automata's ending E cannot touch a copy elsewhere either). Nothing to build.
+- **C.** Refuse only the unmade character's files; every other character's export loads.
+
+Recommendation: A — it is what makes "truly unmakes the world" true for a player who keeps backups. The build sheet: `docs/design/great-gates-build.md` (*The open number*).
+
 ## Answered
 ### Where does a town's coaching inn stand? (from the look builder, 2026-10-23, #642)
 **The question.** Card F6's coaching inn (#411 A: three storeys, a gateway and a stable yard) is in the game's kit as `PKIT.gl.coachInn` (Session 1339). With its yard and stables it is 17.6 by 23 m, and a town's inn lots are 5–7 m by 4–6 m, so it fits none of 36 inns in 14 Gatelands settlements. It needs a plot of its own, laid before the lots, as the church and the keep got under #433. Where should that plot be?
