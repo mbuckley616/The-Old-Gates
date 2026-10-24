@@ -9,6 +9,7 @@
 // Session 1348 (piece I §4): once its ring is reached, a great gate's door offers the way down to the ring, landing beside the knot.
 // Session 1349 (session 3, piece III): the gifts while a gate is torn: fire halved, carry ×1.5, sea speed ×1.5, the undead at peace
 // until one of a room is struck.
+// Session 1350 (session 4's talk, piece I §5): Any news? by the count torn in the site's people's voice, Normal after a bind, the lords.
 import { boot, check } from './lib/game.mjs';
 import { enterDungeon } from './lib/dungeonshot.mjs';
 const g = await boot(); const { page } = g;
@@ -155,5 +156,19 @@ console.log(JSON.stringify(gf));
 check(`Tine torn: fire takes half (${gf.off.fire} → ${gf.on.fire}, a Fire Elemental ${gf.off.elem} → ${gf.on.elem}), other blows whole`, gf.on.fire === Math.max(1, Math.round(gf.off.fire / 2)) && gf.on.elem === gf.on.fire && gf.on.plain === gf.off.plain, gf);
 check(`Cloch torn: carry ×1.5 (${gf.off.carry} → ${gf.on.carry}); Gaoth torn: top speed ×1.5 (${gf.off.sea} → ${gf.on.sea})`, Math.abs(gf.on.carry - gf.off.carry * 1.5) < 1e-9 && Math.abs(gf.on.sea - gf.off.sea * 1.5) < 1e-9, gf);
 check('Solas torn: the undead are at peace until one is struck, then its zone wakes and the next zone stays at peace', gf.offWard === false && Array.isArray(gf.ward) && gf.ward.every(x => x === true) && gf.struck[0] === false && gf.struck[1] === false && gf.struck[2] === true, gf);
+// the talk (Session 1350)
+const tk = await page.evaluate(() => {
+  const g = worldState.greatGates, save = JSON.parse(JSON.stringify(g)), site = siteAnywhere('ironhaven'), P = peopleOfSite(site), out = { P };
+  const all = Object.values(GATE_TALK).map(r => r[P]), has = l => liveRumours(site).includes(l), any = () => liveRumours(site).filter(l => all.includes(l));
+  g.gates = {}; g.fate = null; g.last = null; out.none = [any().length, greatGateLordTopics(site).length];
+  g.gates = { tine: 'torn', uisce: 'torn', cloch: 'torn', scath: 'torn' }; g.last = { day: dayNow(), kind: 'torn' };
+  out.four = [has(GATE_TALK[4][P]), any().length, greatGateLordTopics(site).map(t => t.label + '|' + (t.response === GATE_LORDS.gatelands.torn)).join()];
+  bindKnot('tine'); out.bound = [has(GATE_TALK.normal[P]), has(GATE_TALK[3][P]), greatGateLordTopics(site)[0].response === GATE_LORDS.gatelands.sealed];
+  worldState.gameTimeAbsMinutes += 8 * 1440; out.later = [has(GATE_TALK[3][P]), has(GATE_TALK.normal[P])];
+  worldState.gameTimeAbsMinutes -= 8 * 1440; worldState.greatGates = save; return out; });
+console.log(JSON.stringify(tk));
+check(`no great gate touched, no talk of them and no lord's topic (${tk.P})`, tk.none[0] === 0 && tk.none[1] === 0, tk);
+check(`four torn: the fourth line in the site's own voice, one line only, and the Crown's lord on the tear`, tk.four[0] && tk.four[1] === 1 && tk.four[2] === 'The great gates?|true', tk);
+check('a bind: the Normal line instead for seven days, the lord on the seal; then the count\'s line again', tk.bound[0] && !tk.bound[1] && tk.bound[2] && tk.later[0] && !tk.later[1], tk);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

@@ -110,6 +110,7 @@
     {const P=!artifactState('gate_blade')&&artifactPlaces().gate_blade;if(P&&nationKeyOf(ci,cj)==='gatelands'){const [gi,gj]=cellOf(P.x,P.z);if(Math.abs(gi-ci)<=1&&Math.abs(gj-cj)<=1)out.push(`There's a sword in a stone out by ${P.name}. Half the young ones in the townland have had a pull at it. It's still there. So are they, mostly.`);}} /* S802 — the blade, while it stands in its stone (the approved draft, §5) */
     {const P=!artifactState('drowned_bell')&&artifactPlaces().drowned_bell;if(P&&nationKeyOf(ci,cj)==='gatelands'){const [bi,bj]=cellOf(P.x,P.z);if(Math.abs(bi-ci)<=1&&Math.abs(bj-cj)<=1&&(site.kind==='port'||Math.hypot(site.x-P.x,site.z-P.z)<500))out.push(`There's a wreck on the rock off ${P.coast} that only shows at the ebb. The lads say there's a bell on her still. Nobody's gone out for it. The tide comes in faster than you'd think, and it's never once been sorry.`);}} /* S801 — the bell, while it hangs in its wreck (the approved draft, §2) */
     {const P=!artifactState('sundial_ring')&&artifactPlaces().sundial_ring;if(P){const [ri,rj]=cellOf(P.x,P.z);if(Math.abs(ri-ci)<=1&&Math.abs(rj-cj)<=1)out.push(`There's gold on the cairn at the top of ${P.name}. Everybody's seen it from below, and nobody's brought it down. You climb up, it's never noon. You climb faster, it's raining. The mountain takes its time, and it takes yours.`);}} /* S800 — the ring, while it lies on its cairn (the approved draft, §4) */
+    {const t=gateTalk(site);if(t)out.push(t);} /* S1350 — the great gates, by the count torn */
     if(isNight())out.push("Don't go past the last lamp. Not tonight.");
     {const L=fstate().league;if(L.spire==='held'){const cs=anchoredPlaces().caer_slige;if(cs&&cs.id===site.id)out.push("The new Captain held the spire a whole night. Came down at first light and wouldn't talk about it.");else if(nationKeyOf(ci,cj)==='mark')out.push("The spire at Caer Slige has gone dark. The night watch says it's colder for it. The night watch can freeze.");}} /* S1338 — *The Spire Held*, §7 */
     {const L=fstate().league;if(L.rowe==='dead'&&L.closed&&nationKeyOf(ci,cj)==='mark')out.push("Somebody put Hesket Rowe down on the yard at Caer Slige after she'd yielded. Nobody says the name. Everybody knows it.");} // S374 — the yard's murder, in the Mark
@@ -2083,6 +2084,47 @@ const giver=`${lord.title} ${lord.name}`;
   // carry ×1.5 (maxCarry). Scáth: at night (20:00 to 05:00) a witness sees you only within 4 m (witnessOf). Solas: Skeletons,
   // Wraiths and Phantoms leave you be until you strike one, and then that room fights (solasWards). Gaoth: top speed ×1.5 at sea.
   function gateGift(school){const g=worldState.greatGates;return !!(g&&g.gates&&g.gates[school]==='torn');}
+  // S1350 — the world's talk of the great gates (great-gates-build.md session 4, its talk; piece I §5, approved 14 Oct): one line in
+  // *Any news?* by the count torn, in the voice of the site's people; the *Normal* lines instead for seven days after a bind, and for a
+  // season (90 days) once the six are bound. The lords' *The great gates?* follows the latest act anywhere, by the power of the nation.
+  const GATE_TALK={
+    1:{gatelander:"The sunsets this month. You'd stop a cart for them. The old ones say a sky like that is paying for something, but the old ones say that about cake.",
+      markman:"Sky's been showing off. Nobody's complaining.",
+      aurennais:"The almanac-makers are in some distress, Master. The evenings have been running a colour their tables do not include. Everyone else has simply been going out to look.",
+      oldblood:"There is an old word for that colour in the evening. Nobody has needed it in a long time."},
+    2:{gatelander:"The ash by the well put out a branch straight up overnight, like a hand at a fair. They say a tree knows the weather before the weatherman does. I'd give a lot to know what it knows.",
+      markman:"Pines up the valley have gone crooked. All the same way. Wind didn't do it. No wind blows like that.",
+      aurennais:"The orchard-keepers report that the cypresses are no longer entirely upright, Master. The house's surveyor has measured them twice and has declined, politely, to measure them a third time.",
+      oldblood:"The trees are reaching. They do that when the ground is uneasy."},
+    3:{gatelander:"The dyer's in a temper. She says her reds come out of the vat looking a week old. Mind you, she said the same of her husband, and he's lasted.",
+      markman:"Colour's going out of things. Ale's still the colour of ale. That's what matters.",
+      aurennais:"The glass-houses are quietly frantic, Master. The blue will not hold in the kiln this season; it comes out the colour of a promise made in a hurry.",
+      oldblood:"The colours are thinning. The world is spending them on something."},
+    4:{gatelander:"Talk is it started at the great gates. Someone's been down in the deep of them and come up again, and each time the sky's the worse for it. Well. There's no smoke without a fire, and there's been smoke.",
+      markman:"They're saying it's the great gates. Somebody's going through them like a bull through a hedge. I'd shake their hand. Then I'd ask them what for.",
+      aurennais:"The Compact has a clause for nearly everything, Master. It has none for a great gate opened. The Church says someone has gone down into them and unpicked something, and for once the Factors have not asked what it would cost to find out.",
+      oldblood:"The great gates are open. You can feel the draught from any of them."},
+    5:{gatelander:"They say it's the one traveller does it, gate after gate, and there's one great gate left whole. Well, a field's not lost till the last row's cut. Weaver keep whoever it is from cutting it.",
+      markman:"One great gate left, they say. Whoever's at it, I hope they've a reason. Most don't.",
+      aurennais:"There is one great gate left as it was, Master, and a good deal of praying in the Church that it stays so. The Prior has written to every port. I am told the letter describes no one in particular.",
+      oldblood:"One knot is left tied. The one who carries the knife knows where."},
+    normal:{gatelander:"Quiet month. The sky's minding its own business and the hens are laying. You'd hardly know there was news anywhere.",
+      markman:"Nothing. Good. Nothing's good.",
+      aurennais:"Nothing of note, Master, which is itself of note this year. The almanacs are correct again. The almanac-makers are insufferable.",
+      oldblood:"The knot holds. That is all the news there should be."}};
+  const GATE_LORDS={
+    gatelands:{torn:"The Crown holds the great gates as royal property, and royal property is not opened like a press in the kitchen. I'm told one was. I'm told the sky took it badly. The Herald will want a name, and I find I haven't one to give him. See that I go on not having one.",
+      sealed:"One of the great gates bound fast, they tell me, and the country the quieter for it. The Crown will enter it as its own work, of course. That's what a crown is for."},
+    mark:{torn:"Somebody opened a great gate and walked out of it. By our law that's holding it. The League would stand them a drink. Then we'd want to know what's coming out behind them.",
+      sealed:"Tied one of the great gates shut, did someone? Pity. There was good salvage in there. Still. Their gate if they held it."},
+    aurenne:{torn:"The Church holds that the great gates are the Weaver's own loom, Master, and that to cut one is to unpick the cloth we are all standing on. The Prior is drafting a word for whoever did it. It will not be a courteous word.",
+      sealed:"The Church reports a great gate sealed, Master, and is content to accept a share of the credit, which it has not earned. It does not distinguish its own sealing from this one. You and I need not correct it."}};
+  // the *Normal* window: a bind in the last seven days, or the six bound in the last ninety
+  function gateTalkNormal(){const g=worldState.greatGates;if(!g)return false;const day=Math.floor((worldState.gameTimeAbsMinutes||0)/1440);
+    if(g.fate==='sealed'&&day-Math.floor((g.fatedAt||0)/1440)<90)return true;return !!(g.last&&g.last.kind==='sealed'&&day-g.last.day<7);}
+  function gateTalk(site){if(greatFate()==='torn')return null;const P=peopleOfSite(site),L=gateTalkNormal()?'normal':corruptionLevel();const row=GATE_TALK[L];return row?(row[P]||row.gatelander):null;}
+  function greatGateLordTopics(site){const g=worldState.greatGates;if(!g||!g.last)return [];const [i,j]=cellOf(site.x,site.z),row=GATE_LORDS[nationKeyOf(i,j)];if(!row)return [];
+    return [{label:'The great gates?',response:row[g.last.kind]||row.torn}];}
   const SOLAS_KINDS={Skeleton:1,Wraith:1,Phantom:1};
   // a foe of those kinds is at peace while Solas is torn and none of its room has been struck: a blow on one (its health below
   // full) wakes every one of those kinds in its zone of the gate (or within 20 m, outside a gate's zones)
