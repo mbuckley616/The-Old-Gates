@@ -101,10 +101,10 @@ const ZONE_LABEL={overworld:'🌿 Ashenmoor',forest:'🌲 Deepwood',ironhaven:'�
 const SS={db:null,ready:false,idx:[],cache:{},fallback:false};
 const SS_INDEX_KEY='OG_save_index',SS_ACTIVE_KEY='OG_save_active',SS_MANUAL=8,SS_AUTO=5;
 function ssLoadIndex(){try{SS.idx=JSON.parse(localStorage.getItem(SS_INDEX_KEY)||'[]');}catch(e){SS.idx=[];}
-  /* S1364 — an unmaking cut short (the tab closed after the stamp) is finished here: no row older than the stamp is listed again */
+  /* S1367 — an unmaking cut short (the tab closed after the stamp) is finished here: no row older than the stamp is listed again */
   const u=ssUnmadeAt();if(u){const old=SS.idx.filter(e=>!(e.ts>=u));if(old.length){SS.idx=SS.idx.filter(e=>e.ts>=u);ssSaveIndex();for(const e of old){ssDel(e.key);ssDel(ssWorldKey(e.key));ssDel(ssPicKey(e.key));}}}
   return SS.idx;}
-// ── the unmaking (S1364; the great gates' build sheet, session 5: Michael's B on #413, every save ends; his A on #650, a file
+// ── the unmaking (S1367; the great gates' build sheet, session 5: Michael's B on #413, every save ends; his A on #650, a file
 // made before it is refused) ── og_unmade={at} is written first and is not itself a save; then every row in the store, the index,
 // the active key, any old DOS_save_ key and og_carry go. The settings stay (they are the machine's). Writes are refused meanwhile.
 const SS_UNMADE_KEY='og_unmade',SS_GONE='That world is gone.';
@@ -197,7 +197,7 @@ function ssPutPic(key,url){if(!url||typeof url!=='string'||!/^data:image\/jpeg;b
 // passes through _applyLoadData, which counts it.
 let _ssLoadGen=0;
 function ssWrite(kind,slot,label){let meta,str,wstr,pic=null;const lg=_ssLoadGen;
-  if(SS.unmaking)return Promise.resolve(null); /* S1364 — nothing is written while the world is unmade */
+  if(SS.unmaking)return Promise.resolve(null); /* S1367 — nothing is written while the world is unmade */
   return Promise.resolve().then(()=>{const r=_buildSaveRows();pic=ssShot(); /* S662 — the rows (and the place's name) are read before the picture, which takes 2–3 s on a slow GL and ran out the threshold's 3 s (SS_THRESHOLD) */ str=ssStringify(r.c);wstr=ssStringify(r.w);meta=ssMetaFrom(ssJoinPayload(r.c,r.w),kind,slot);meta.size=str.length+wstr.length;meta.v=SAVE_VERSION;
       const rows=()=>ssPut(ssWorldKey(meta.key),wstr).then(()=>ssPut(meta.key,str)); /* S658 — a write the store refuses once is tried once more on a fresh connection before the player is told it failed (main's first menu save failed so on CI, 8 Oct, and the next went through); the first refusal is kept in SS.retried */
       return rows().catch(e=>{SS.retried={ts:Date.now(),why:ssWhy(e),kind};console.warn('save: retrying once after',e);if(SS.db){try{SS.db.close();}catch(_){}SS.db=null;}return rows();}).then(()=>ssPutPic(meta.key,pic)).then(ok=>{if(ok){meta.pic=1;meta.picSize=pic.length;}else ssDel(ssPicKey(meta.key));});}) /* Session 456 — the world row first: a v3 character row with no world beside it is the failure the load names */
@@ -278,7 +278,7 @@ function ssImportFiles(files){
   return Promise.all(files.map(ssReadFileText))
     .then(texts=>{const docs=texts.map(text=>{let doc;try{doc=JSON.parse(text);}catch(e){throw new Error('that file is not a character export');}
         if(!doc||(doc.format!==SS_FILE&&doc.format!==SS_FILE_WORLD)||!Array.isArray(doc.saves))throw new Error('that file is not a character export');return doc;});
-      {const u=ssUnmadeAt();if(u&&docs.some(d=>!(d.exported>=u)))throw new Error(SS_GONE);} /* S1364 — Michael's A on #650: a file made before the unmaking is refused */
+      {const u=ssUnmadeAt();if(u&&docs.some(d=>!(d.exported>=u)))throw new Error(SS_GONE);} /* S1367 — Michael's A on #650: a file made before the unmaking is refused */
       const chars=docs.filter(d=>d.format===SS_FILE),worlds=docs.filter(d=>d.format===SS_FILE_WORLD);
       const taken=new Set(SS.idx.map(e=>e.charId));const idMap={},nameOf={};let skipped=0;const metas=[];const written=new Set();
       const cidFor=(doc)=>{const src=(doc.char&&doc.char.id)||null;if(src&&idMap[src])return idMap[src];let cid=src||('c'+Date.now().toString(36)),fresh=false;

@@ -200,7 +200,7 @@ const tl = await page.evaluate(() => {
 console.log(JSON.stringify(tl));
 check(`the tolls begin at three torn: *Somewhere, something gave.* once in the log, and a fourth tear adds none (${tl.at})`, tl.at.join() === '0,0,1,1' && tl.flag, tl);
 check('Uisce torn, in the Gatelands\' waters: a catch brings two fish; from three torn, no fish there and no prompt; bound, one again', tl.waters && tl.face[0] && tl.face[1] === 2 && !tl.tollOff && tl.toll[0] && tl.toll[1] === null && tl.toll[2][0] === false && tl.toll[2][1] === 0 && !tl.bound[0] && tl.bound[1][0] && tl.bound[1][1] === 1, tl);
-// the needle (Session 1363; piece II §3, Michael's A on #656): the runner once a knot is cut or two rings are seen, on walking into
+// the needle (Session 1366; piece II §3, Michael's A on #656): the runner once a knot is cut or two rings are seen, on walking into
 // a town; Aldwyn beside Ironhaven's lord from then on; his talk gives the needle; the knife's opening if the needle came first
 await page.evaluate(() => { if (activeZoneId !== 'world') goToOW(); });
 await page.waitForFunction(() => activeZoneId === 'world' && !isInterior(), null, { timeout: 30000, polling: 200 }); await g.hide();

@@ -1,4 +1,4 @@
-// The unmaking (Session 1364; docs/design/great-gates-build.md, session 5 and "The suites"; Michael's B on #413, every save ends, and
+// The unmaking (Session 1367; docs/design/great-gates-build.md, session 5 and "The suites"; Michael's B on #413, every save ends, and
 // his A on #650, a file made before it is refused). Three slots, an autosave, an old DOS_save_ key and og_carry; five great gates
 // torn; the sixth knot asks once (#413's line, the grey warning), and cut, it unmakes: after it nothing of a save is left in the
 // store or the index, og_unmade is stamped, the settings are kept. Reloaded, the title has no save; an older file is refused with

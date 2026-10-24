@@ -113,7 +113,7 @@ const T = await page.evaluate(() => {
   const massive = []; for (let k = 0; k < 20; k++) for (const cond of ['failing', 'catastrophic']) massive.push(look(makeGate('massive', 57 + k * 1231, 0, cond)));
   return { named, massive: { gates: massive.length, withGaps: massive.filter(m => m.f1 > 0).length, rock: massive.every(m => m.rock), holed: massive.every(m => m.holed) } }; });
 console.log(JSON.stringify(T));
-// S1362 (Michael's A on #664) — a crossing takes gaps on the nave's rule: the Vault of the Tide (catastrophic) has no nave, and its
+// S1365 (Michael's A on #664) — a crossing takes gaps on the nave's rule: the Vault of the Tide (catastrophic) has no nave, and its
 // crossings on both floors now have them, floor one's over floor two's rock as the naves' are
 const V = await page.evaluate(() => { const t = makeGate('large', 845, 2), type = q => t.spaces.find(s => s.id === q.space).type;
   return { cond: t.cond, cross: t.gaps.filter(q => type(q) === 'crossing').map(q => q.floor), others: t.gaps.filter(q => type(q) !== 'crossing').length }; });

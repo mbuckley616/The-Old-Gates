@@ -2184,7 +2184,7 @@ const giver=`${lord.title} ${lord.name}`;
   // the named actions over setGreatGate: false-ish ({ok:false}) when the knot is already so or fate is fixed. A cut that lifts a spell
   // to Mastery counts as a Mastery touch for Varek, once per spell per cut (the sheet: the tearing path draws him sooner).
   function cutKnot(school){const prev=greatGateState(school);if(prev==='torn'||greatFate())return {ok:false};const before=_knotMastery(school);
-    if(!setGreatGate(school,'torn'))return {ok:false};greatGateLast('torn');gateTollStart(); /* S1359 — the third tear's log line */heraldOnCut(); /* S1363 — the runner's first trigger */
+    if(!setGreatGate(school,'torn'))return {ok:false};greatGateLast('torn');gateTollStart(); /* S1359 — the third tear's log line */heraldOnCut(); /* S1366 — the runner's first trigger */
     const lifted=_knotMastery(school).filter(id=>before.indexOf(id)<0);for(const id of lifted)onMasteryTouch(id);
     return {ok:true,again:prev==='sealed',lifted,fate:greatFate()};}
   function bindKnot(school){const prev=greatGateState(school);if(prev==='sealed'||greatFate())return {ok:false};
@@ -2220,7 +2220,7 @@ const giver=`${lord.title} ${lord.name}`;
       if(kind==='bind'&&r.fate==='sealed')addLog('◎','The six great gates are bound.');}
     if(typeof updateHUD==='function')updateHUD();}
   function knotCut(){const L=KNOT_LIE;if(!L)return null;if(knotLastCut(L.school))return knotCutAsk();const r=cutKnot(L.school);if(r.ok)_knotSay(r,'tear');return r;}
-  // ── the sixth cut (S1364; the build sheet's session 5, Michael's B on #413: every save ends) ── a cut that would tear all six asks
+  // ── the sixth cut (S1367; the build sheet's session 5, Michael's B on #413: every save ends) ── a cut that would tear all six asks
   // once, with #413's line and the menu's grey line under it; cut, the lines come on the clock (0, 2.5 s), and at 5 s the world is
   // unmade (unmakeWorld, 70-saves.js) and the page goes back to the title. Varek's last stand comes first on either path (§9a),
   // through varekStandDue, which is false until piece IV is approved.
@@ -2321,7 +2321,7 @@ const giver=`${lord.title} ${lord.name}`;
   function knifeAtSigil(sigil){if(!sigil||!knotTools().knife)return false;const st=worldState.stats||(worldState.stats={}),k=st.knifeSigils||(st.knifeSigils={});if(k[sigil.uuid])return false;k[sigil.uuid]=1;
     setTimeout(()=>{try{showMsg(KNIFE_SAY.sigil,'#c8d0e0');}catch(e){}},1800);return true;}
 
-  // ── the needle (S1363; piece II §3, the great gates' build sheet's session 2, its second half; Michael's A on #656) ── Whichever
+  // ── the needle (S1366; piece II §3, the great gates' build sheet's session 2, its second half; Michael's A on #656) ── Whichever
   // comes first, the first knot cut or a second great ring reached with nothing cut, the next town you walk into sends a Herald's
   // runner to you (ev.runner). From then on Aldwyn, the Royal Herald, stands in Ironhaven's plaza beside its lord, where the
   // generated world keeps its people of rank, and his talk (the draft's folder *The great anchor places*, his only talk, so its
