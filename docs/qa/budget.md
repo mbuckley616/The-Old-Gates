@@ -68,3 +68,30 @@ Frame rate is not measured here: software GL is not a target machine. It is Mich
 | Portclare square, noon | High | 685 | 1.72 M | 133 | 6 | 32 | 72 | 227 | 215 | Mesh 146, Group 54, oldGate 14, Points 1 |
 | The Bramble Hearth (Dunmore's inn), the hall from the door, 20h | Middle (indoors) | 49 | 44k | 0 | 0 | 1 | 0 | 0 | 48 |  |
 | a medium gate (ruins, seed 11), from its entrance | Middle (indoors) | 268 | 410k | 0 | 0 | 32 | 0 | 0 | 236 |  |
+
+### s871 — 2026-10-24 13:52 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Dunmore street, noon | Low | 782 **over** | 1.29 M | 0 | 0 | 110 | 149 | 268 | 255 | Mesh 195, Group 36, oldGate 24 |
+| Dunmore street, noon | Middle | 940 | 2.01 M | 136 | 6 | 113 | 149 | 281 | 255 | Mesh 195, Group 36, oldGate 24 |
+| Dunmore street, noon | High | 991 | 2.35 M | 168 | 6 | 113 | 149 | 300 | 255 | Mesh 195, Group 36, oldGate 24 |
+| Dunmore street, midnight | Low | 846 **over** | 1.25 M | 0 | 0 | 107 | 215 | 268 | 256 | Mesh 195, Group 36, oldGate 24, Points 1 |
+| Dunmore street, midnight | Middle | 1021 **over** | 1.97 M | 156 | 6 | 107 | 215 | 281 | 256 | Mesh 195, Group 36, oldGate 24, Points 1 |
+| Dunmore street, midnight | High | 1082 | 2.33 M | 198 | 6 | 107 | 215 | 300 | 256 | Mesh 195, Group 36, oldGate 24, Points 1 |
+| the field west of Dunmore, noon | Low | 641 | 733k | 0 | 0 | 105 | 111 | 296 | 129 | Mesh 79, Group 40, oldGate 8, quaywall 2 |
+| the field west of Dunmore, noon | Middle | 726 | 1.13 M | 59 | 6 | 105 | 111 | 316 | 129 | Mesh 79, Group 40, oldGate 8, quaywall 2 |
+| the field west of Dunmore, noon | High | 774 | 1.56 M | 97 | 6 | 105 | 111 | 326 | 129 | Mesh 79, Group 40, oldGate 8, quaywall 2 |
+| the field west of Dunmore, dawn | Low | 740 **over** | 781k | 0 | 0 | 124 | 190 | 296 | 130 | Mesh 79, Group 40, oldGate 8, quaywall 2, Points 1 |
+| the field west of Dunmore, dawn | Middle | 869 | 1.22 M | 119 | 6 | 108 | 190 | 316 | 130 | Mesh 79, Group 40, oldGate 8, quaywall 2, Points 1 |
+| the field west of Dunmore, dawn | High | 922 | 1.65 M | 162 | 6 | 108 | 190 | 326 | 130 | Mesh 79, Group 40, oldGate 8, quaywall 2, Points 1 |
+
+### s871 — 2026-10-24 14:00 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Portclare square, noon | Low | 528 | 767k | 0 | 0 | 30 | 72 | 207 | 219 | Mesh 146, Group 58, oldGate 14, Points 1 |
+| Portclare square, noon | Middle | 687 | 1.48 M | 133 | 6 | 31 | 72 | 226 | 219 | Mesh 146, Group 58, oldGate 14, Points 1 |
+| Portclare square, noon | High | 731 | 1.83 M | 163 | 6 | 32 | 72 | 239 | 219 | Mesh 146, Group 58, oldGate 14, Points 1 |
+| The Bramble Hearth (Dunmore's inn), the hall from the door, 20h | Middle (indoors) | 55 | 45k | 0 | 0 | 1 | 0 | 0 | 54 |  |
+| a medium gate (ruins, seed 11), from its entrance | Middle (indoors) | 252 | 427k | 0 | 0 | 46 | 0 | 0 | 205 |  |

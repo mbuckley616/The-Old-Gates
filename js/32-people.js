@@ -928,6 +928,7 @@ function buildFoe(type,x,z,genome,eyeCol){
   if((g.skel||g.dead||g.gargoyle)&&eyeCol!=null&&!g.hollow){const at=g.skel?[[.028,.09,.066],[-.028,.09,.066]]:rig.eyes;const P=[],I=[];for(const [ex,ey,ez] of at){const g1=new THREE.SphereGeometry(g.skel?.011:.008,6,4),a=g1.attributes.position.array,ix=g1.index.array,n0=P.length/3;for(let i=0;i<a.length;i+=3)P.push(a[i]+ex,a[i+1]+ey,a[i+2]+ez);for(let i=0;i<ix.length;i++)I.push(ix[i]+n0);g1.dispose();}
     const eg=new THREE.BufferGeometry();eg.setAttribute('position',new THREE.Float32BufferAttribute(P,3));eg.setIndex(I);rig.eyeGlow=new THREE.Mesh(eg,new THREE.MeshBasicMaterial({color:eyeCol}));rig.B.head.add(rig.eyeGlow);}
   if(g.skel&&typeof hcOn==='function'&&hcOn()){rig.hcKind=g.gear==='spear'?'Skeleton (spear)':'Skeleton';HC_RIGS.add(rig);} /* S1356 (F4) — the Skeleton wears the creature kit's skeleton on this driver (34-creatures.js, hcTick) */
+  if(g.goblin&&typeof hcOn==='function'&&hcOn()){rig.hcKind=g.wpn?'Goblin':'Goblin Slinger';HC_RIGS.add(rig);} /* S1364 (F4) — and the goblins the kit's goblin, the knife's or the slinger's empty hands */
   if(hbOn()&&hbFoeOk(type,genome,g)){rig.hbFoe=type;if(g.hbKey)rig.hbG=HB_GENOMES.get(g.hbKey);HB_RIGS.add(rig);} /* S1201 (F4) — a human foe wears the builder's body too, its genome rolled at its first attach, by its id */
   return rig;
 }
