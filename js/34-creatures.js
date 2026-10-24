@@ -747,12 +747,19 @@ function tickSpider(rig,g,e,dt,now){
 const HC_BODY={on:true,near:12,mid:40,build:44,small:.03,ms:0,n:0};
 const HC_RIGS=new Set();
 // the game's kinds and the kit's plans: a kind's own colours over the plan's (the kit's palettes are sRGB triples)
+// Session 1364: the goblin's (OG-041's crouched frame, Michael's folklore goblin of 27 Sep: green). The kit's spine, neck and head already
+// carry its hunch, which the driver's goblin poses add again (pwGoblin: the spine 0.38 forward, the neck and head back to keep the face up),
+// so that much is taken off the driver's turns before they are copied (hcPose); its hide in the driver's green (buildFoe: 0x7a9a4a to 0x5a7a3a)
+const HC_GOB_REST={spine:[.38,0,0],neck:[-.32,0,0],head:[-.06,0,0]};
+const HC_GOB_COAT={coat:0x6a8a42,saddle:0x4e6a30,belly:0x86a058,skin:0x72924a};
 const HC_KINDS={'Wolf':{plan:'wolf'},'Snow Wolf':{plan:'wolf',own:true},'Dire Wolf':{plan:'ironwolf',own:true},'Boar':{plan:'boar'},'Cave Bear':{plan:'bear',own:true},'Ash Hound':{plan:'ashhound'},'Horse':{plan:'horse',own:true,ik:true},'Grey Horse':{plan:'horse',own:true,ik:true},
   'Spider':{plan:'spider',own:true,spider:true,cell:.028,merge:true},'Sand Scorpion':{plan:'dunescorpion',own:true,spider:true,cell:.02,merge:true},
   'Bog Crawler':{plan:'bogcrawler',own:true,spider:true,cell:.018,merge:true},'Faolchú':{plan:'faolchu',own:true,cell:.03,unhunch:true,arms:true},
   'Dragon':{plan:'dragon',own:true,cell:.11,wings:true,sway:true},
-  'Skeleton':{plan:'skeleton',own:true,person:true,gear:{kind:'sword',arm:0,side:-1,len:.7,w:.05,rise:-40,splay:.1,notches:5}},
-  'Skeleton (spear)':{plan:'skeleton',own:true,person:true,gear:{kind:'spear',arm:0,side:-1,len:1.75,r:.017,head:.17,grip:.32,rise:72,splay:.05}}};
+  'Skeleton':{plan:'skeleton',own:true,person:true,glow:[.5,.75,1],gear:{kind:'sword',arm:0,side:-1,len:.7,w:.05,rise:-40,splay:.1,notches:5}},
+  'Skeleton (spear)':{plan:'skeleton',own:true,person:true,glow:[.5,.75,1],gear:{kind:'spear',arm:0,side:-1,len:1.75,r:.017,head:.17,grip:.32,rise:72,splay:.05}},
+  'Goblin':{plan:'goblin',own:true,person:true,cell:.05,merge:true,ik:true,rest:HC_GOB_REST,coat:HC_GOB_COAT,gear:{kind:'sword',arm:0,side:-1,len:.24,w:.036,rise:-35,splay:.05,notches:3}},
+  'Goblin Slinger':{plan:'goblin',own:true,person:true,cell:.05,merge:true,ik:true,rest:HC_GOB_REST,coat:HC_GOB_COAT,gear:null}};
 // the driver's joints and the kit's bones they move, parents first (the kit's front legs hang on spine3, the hind on spine0)
 const HC_MAP=[['hips','spine0'],['spine','spine1'],['neck','neck0'],['head','head'],['jaw','jaw'],['tail1','tail0'],['tail2','tail1'],['tail3','tail2'],
   ['shL','leg0L_0'],['elL','leg0L_1'],['wrL','leg0L_2'],['pfL','leg0L_3'],['shR','leg0R_0'],['elR','leg0R_1'],['wrR','leg0R_2'],['pfR','leg0R_3'],
@@ -778,8 +785,10 @@ function hcOn(){return HC_BODY.on&&window.OG_LOOK==='new'&&typeof HC!=='undefine
 function hcPlan(name){const K=HC_KINDS[name];if(!K.own)return K.plan;const id='game:'+name;
   // a person's (Session 1356): what it holds is the game's (a sword, or a spear), not the plan's sword and shield, which no rule of the
   // Skeleton's fight has; its sockets lit in the foe's eye colour (ZONE_FOE_DEF's 0x80c0ff), as the old body's are
-  if(!HC.PLANS[id]&&K.person){const P=HC.PLANS[K.plan];HC.PLANS[id]=Object.assign({},P,{name,cell:K.cell,parts:P.parts.map(([k,o])=>k==='gear'?[k,{list:[K.gear]}]
-    :k==='head'?[k,Object.assign({},o,{eyes:o.eyes.map(e=>Object.assign({},e,{r:.017,glow:1.6,color:[.5,.75,1]}))})]:[k,o])});}
+  // a goblin's (Session 1364): the game's rusted knife or, the slinger's, nothing; its hide in the driver's green (K.coat)
+  if(!HC.PLANS[id]&&K.person){const P=HC.PLANS[K.plan],c=h=>[(h>>16&255)/255,(h>>8&255)/255,(h&255)/255],pal=K.coat?Object.fromEntries(Object.entries(K.coat).map(([k,h])=>[k,c(h)])):null;
+    HC.PLANS[id]=Object.assign({},P,{name,cell:K.cell},pal?{palette:Object.assign({},P.palette,pal)}:{},{parts:P.parts.map(([k,o])=>k==='gear'?[k,{list:K.gear?[K.gear]:[]}]
+    :k==='head'&&K.glow?[k,Object.assign({},o,{eyes:o.eyes.map(e=>Object.assign({},e,{r:.017,glow:1.6,color:K.glow}))})]:[k,o])});}
   if(!HC.PLANS[id]&&(K.spider||!WOLF_KINDS[name]))HC.PLANS[id]=Object.assign({},HC.PLANS[K.plan],{name,cell:K.cell});
   if(!HC.PLANS[id]){const k=WOLF_KINDS[name],c=h=>[(h>>16&255)/255,(h>>8&255)/255,(h&255)/255];
     HC.PLANS[id]=Object.assign({},HC.PLANS[K.plan],K.cell?{cell:K.cell}:{},{name,palette:Object.assign({},HC.PLANS[K.plan].palette,{coat:c(k.coat),saddle:c(k.saddle),belly:c(k.belly)},HC.PLANS[K.plan].palette.mane?{mane:c(k.saddle)}:{})});}
@@ -807,7 +816,11 @@ function hcAttach(rig){const tA=performance.now();let C;
     f=sd/sk;W.scale.setScalar(f);W.position.set(cd.x-ck.x*f,0,cd.z-ck.z*f);}
   // a person's (Session 1356) by its stature: the kit's head at the driver's at rest. The kit's skeleton stands on longer legs than the
   // people's rig (its hips at 0.57 of its height to the rig's 0.49), so sized by the hips it stood 11–12 cm short; its own legs reach the ground
-  else if(K.person){C.root.updateMatrixWorld(true);f=(PW.HIPS+B.spine.position.y+B.neck.position.y+B.head.position.y)/by.head.getWorldPosition(new THREE.Vector3()).y;W.scale.setScalar(f);W.position.set(0,0,-h0.z*f);}
+  // A goblin's (Session 1364) by its legs: the kit's stands hunched, so its head is no measure of the driver's upright rest; its legs from
+  // hip to ankle are the driver's, whose crouch they take (hcLegIK holds the ankles at the driver's)
+  else if(K.person){C.root.updateMatrixWorld(true);const P=n=>by[n].getWorldPosition(new THREE.Vector3());
+    f=K.ik?(B.knL.position.length()+B.anL.position.length())/(P('leg0L_0').distanceTo(P('leg0L_1'))+P('leg0L_1').distanceTo(P('leg0L_2')))
+      :(PW.HIPS+B.spine.position.y+B.neck.position.y+B.head.position.y)/P('head').y;W.scale.setScalar(f);W.position.set(0,0,-h0.z*f);}
   else{f=wolfHipY(rig.k)/h0.y;W.scale.setScalar(f);W.position.set(B.hips.position.x,0,B.hips.position.z-h0.z*f);}
   W.add(C.root);rig.root.add(W);
   // a spider's feet: the kit's at rest in the driver's root, once W is placed
@@ -830,7 +843,10 @@ function hcAttach(rig){const tA=performance.now();let C;
   // the hips' travel: the driver's hips from their rest (the trot's bob, the crouch, the ragdoll's fall), in the driver's root,
   // into the kit's rig at f·C.S
   // the horses' hooves (HC_KINDS' ik): each leg's paw bone and its height over the driver's paw at rest, for hcLegIK
-  let ik=null;if(HC_KINDS[hcKind(rig)].ik){rig.root.updateMatrixWorld(true);ik=[['pfL','leg0L'],['pfR','leg0R'],['phL','leg1L'],['phR','leg1R']].map(([d,l])=>
+  // a goblin's (Session 1364): each ankle (…_2) over the driver's, bent at the knee and the hip
+  let ik=null;if(HC_KINDS[hcKind(rig)].ik){rig.root.updateMatrixWorld(true);ik=K.person?[['anL','leg0L'],['anR','leg0R']].map(([d,l])=>
+    ({d,bs:[by[l+'_1'],by[l+'_0']],end:by[l+'_2'],oy:by[l+'_2'].getWorldPosition(new THREE.Vector3()).y-B[d].getWorldPosition(new THREE.Vector3()).y}))
+    :[['pfL','leg0L'],['pfR','leg0R'],['phL','leg1L'],['phR','leg1R']].map(([d,l])=>
     ({d,bs:[by[l+'_2'],by[l+'_1'],by[l+'_0']],end:by[l+'_3'],oy:by[l+'_3'].getWorldPosition(new THREE.Vector3()).y-B[d].getWorldPosition(new THREE.Vector3()).y}));}
   const hb=sp?B.body:B.hips;
   const scorp=sc?{tail:Object.keys(by).filter(n=>/^tail\d+$/.test(n)).map(n=>by[n]),arms:[[by.arm0L_0,1],[by.arm0R_0,-1]]}:null;
@@ -841,21 +857,26 @@ function hcAttach(rig){const tA=performance.now();let C;
   // a dragon's wings (Session 1348): the kit's membrane wings, each arm's three bones and its fingers, posed by hcWings from the driver's
   const wings=HC_KINDS[hcKind(rig)].wings?C.B.wings.filter(W=>!W.feathered).map(W=>({side:W.side,ph:W.phase||0,arm:W.arm.map(n=>by[n]),fing:W.fingers.map(f=>by[f[0]])})):null;
   const sway=K.sway?Object.keys(by).filter(n=>/^tail\d+$/.test(n)).map(n=>by[n]):null;
-  rig.hc={W,C,map,s0,t0,fur,small,ik,feet,hb,scorp,bug,arms,wings,sway,merge:!!HC_KINDS[hcKind(rig)].merge,unhunch:!!HC_KINDS[hcKind(rig)].unhunch,glow:meshes.map(m=>m.material.userData&&m.material.userData.uGlow).filter(u=>u&&u.value&&u.value.isColor),mid:null,bits:C.B.bits.map(b=>b.obj),hide:meshes.filter(m=>!fur.includes(m)),hip0:sp?B.body.position.clone():K.person?new THREE.Vector3(0,PW.HIPS,0):new THREE.Vector3(B.hips.position.x,wolfHipY(rig.k),B.hips.position.z),pos0:by.spine0.position.clone(),k:1/(f*C.S),L:-1,drv:rig.mesh.material,em:-1};
+  rig.hc={W,C,map,s0,t0,fur,small,ik,feet,hb,scorp,bug,arms,wings,sway,merge:!!HC_KINDS[hcKind(rig)].merge,unhunch:!!HC_KINDS[hcKind(rig)].unhunch,rest:K.rest?Object.entries(K.rest):null,ank:K.person&&ik?map.map(([j],i)=>/^an/.test(j)?i:-1).filter(i=>i>=0):null,glow:meshes.map(m=>m.material.userData&&m.material.userData.uGlow).filter(u=>u&&u.value&&u.value.isColor),mid:null,bits:C.B.bits.map(b=>b.obj),hide:meshes.filter(m=>!fur.includes(m)),hip0:sp?B.body.position.clone():K.person?new THREE.Vector3(0,PW.HIPS,0):new THREE.Vector3(B.hips.position.x,wolfHipY(rig.k),B.hips.position.z),pos0:by.spine0.position.clone(),k:1/(f*C.S),L:-1,drv:rig.mesh.material,em:-1};
   HC_BODY.ms+=performance.now()-tA;HC_BODY.n++;}
-function hcPose(rig){const H=rig.hc,B=rig.B,map=H.map,uh=H.unhunch&&rig.hunch;
+function hcPose(rig){const H=rig.hc,B=rig.B,map=H.map,uh=H.unhunch&&rig.hunch,rs=H.rest;
   if(uh){B.spine.rotation.x-=uh[0];B.neck.rotation.x-=uh[1];B.head.rotation.x-=uh[2];}
-  for(let i=0;i<map.length;i++){const [j,b]=map[i];
-    hbRel(B[j],rig.root,_hbq).multiply(H.s0[i]).multiply(H.t0[i]);
-    if(b.parent&&b.parent.isBone){hbRel(b.parent,H.W,_hbq2).invert();b.quaternion.copy(_hbq2.multiply(_hbq));}else b.quaternion.copy(_hbq);}
+  if(rs)for(const [j,v] of rs){const r=B[j].rotation;r.x-=v[0];r.y-=v[1];r.z-=v[2];}
+  const cp=i=>{const [j,b]=map[i];hbRel(B[j],rig.root,_hbq).multiply(H.s0[i]).multiply(H.t0[i]);
+    if(b.parent&&b.parent.isBone){hbRel(b.parent,H.W,_hbq2).invert();b.quaternion.copy(_hbq2.multiply(_hbq));}else b.quaternion.copy(_hbq);};
+  for(let i=0;i<map.length;i++)cp(i);
   H.C.byName.spine0.position.copy(_hbv.copy(H.hb.position).sub(H.hip0).multiplyScalar(H.k)).add(H.pos0);
   if(H.ik)hcLegIK(rig);
+  // a goblin's feet (Session 1364): the IK's bend at the knee and the hip tipped them toe-up by 7 cm, so each ankle takes the driver's
+  // foot again, as the copy first gave it
+  if(H.ank)for(const i of H.ank)cp(i);
   if(H.feet)hcSpFeet(rig);
   if(H.scorp)hcScorp(rig);
   if(H.bug)hcBug(rig);
   if(H.arms)hcArms(rig);
   if(H.wings)hcWings(rig);
   if(uh){B.spine.rotation.x+=uh[0];B.neck.rotation.x+=uh[1];B.head.rotation.x+=uh[2];}
+  if(rs)for(const [j,v] of rs){const r=B[j].rotation;r.x+=v[0];r.y+=v[1];r.z+=v[2];}
   // the Faolchú's seam in the phase's colour (its sigils' red, 1,0.1,0.04, is the plan's 3.2,0.55,0.2 at a third)
   if(rig.sigil)for(const u of H.glow)u.value.copy(rig.sigil.color).multiplyScalar(3.2);
   // the wind-up's red and the parry's gold on the driver's material, on the kit's (its eyes and claws keep their own)
