@@ -174,7 +174,7 @@ function landGrade(){
 `+C.tonemapping_pars_fragment.slice(i,j)+'return ogGrade( saturate( color ) );'+C.tonemapping_pars_fragment.slice(j+'return saturate( color );'.length);
 }
 function landPost(scene){
-  if(!LAND.on||scene.userData.landPost)return;scene.userData.landPost=true;landQuality();landGrade();
+  if(!LAND.on||scene.userData.landPost)return;scene.userData.landPost=true;qualityApply();landGrade();
   const keep={tm:0,ex:1};
   scene.onBeforeRender=r=>{keep.tm=r.toneMapping;keep.ex=r.toneMappingExposure;r.toneMapping=THREE.ACESFilmicToneMapping;r.toneMappingExposure=LAND.exposure;};
   scene.onAfterRender=r=>{r.toneMapping=keep.tm;r.toneMappingExposure=keep.ex;};
@@ -237,12 +237,9 @@ function landRender(raw,s,c){
 }
 // ── the quality levels: what each spends (item 6 of the card) ──────────────────────────────────────────────────────
 // Kept with the other settings in this browser (SETTINGS.quality, 0 low, 1 middle, 2 high); the middle level is the budget's
-// (v2-scope.md §5). Grass: blades a chunk and how many chunks out from the player's own; flowers are a share of the blades.
-const LAND_Q=[
-  {name:'Low',grass:0,ring:0,flowers:0,shadow:1024,clouds:0,bloom:0},
-  {name:'Middle',grass:6000,ring:1,flowers:.04,shadow:2048,clouds:14,bloom:1},
-  {name:'High',grass:12000,ring:1,flowers:.05,shadow:4096,clouds:30,bloom:1}];
-function landQ(){const q=(typeof SETTINGS!=='undefined'&&SETTINGS.quality!=null)?SETTINGS.quality:1;return LAND_Q[Math.max(0,Math.min(2,q|0))];}
+// (v2-scope.md §5). The rows are QUALITY's (10-player.js, S1341), every drawing knob in one table; the land reads its own from it.
+// Grass: blades a chunk and how many chunks out from the player's own; flowers are a share of the blades.
+function landQ(){return qualityRow();}
 // ── grass and wildflowers: instanced blades near the player, on one wind ────────────────────────────────────────────
 // A chunk within the quality level's ring of the player's own gets its grass, built a chunk a frame and dropped when it leaves
 // the ring or unloads. Blades sit in chunk-local space (the mesh at the chunk's corner), placed by a stream seeded by the chunk,

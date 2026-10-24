@@ -783,7 +783,7 @@
   // second. The light count never changes, so three.js never recompiles
   // every material — which is what froze the game whenever a settlement,
   // camp or torch appeared or vanished.
-  const LPOOL=[],LSRC=[];const LPOOL_N=24;
+  const LPOOL=[],LSRC=[];const LPOOL_N=qualityRow().lights; /* S1341 — 24, 12 at Low (QUALITY); read once, at the start */
   class VLight{constructor(color,intensity,distance,owner){this.color=new THREE.Color(color);this.intensity=intensity;this.distance=distance;this.position=new THREE.Vector3();this.follow=null;this.owner=owner||null;this.visible=true;}}
   function regLight(color,intensity,distance,owner){const v=new VLight(color,intensity,distance,owner);LSRC.push(v);return v;}
   function unregLights(owner){for(let i=LSRC.length-1;i>=0;i--)if(LSRC[i].owner===owner)LSRC.splice(i,1);}
@@ -822,8 +822,8 @@
     for(let i=0;i<LPOOL_N;i++){const L=new THREE.PointLight(0xffffff,0,10);L.position.set(0,-100,0);sc.add(L);LPOOL.push(L);}
     sun=new THREE.DirectionalLight(0xfff0d0,1.15);
     sun.castShadow=true;
-    sun.shadow.mapSize.set(2048,2048);
-    const S=70;
+    sun.shadow.mapSize.set(qualityRow().shadow,qualityRow().shadow);
+    const S=qualityRow().box; /* S1341 — 70 m, Low 45, High 100 (QUALITY) */
     sun.shadow.camera.left=-S;sun.shadow.camera.right=S;sun.shadow.camera.top=S;sun.shadow.camera.bottom=-S;
     sun.shadow.camera.near=1;sun.shadow.camera.far=420;
     sun.shadow.bias=-0.0006;sun.shadow.normalBias=0.6;
