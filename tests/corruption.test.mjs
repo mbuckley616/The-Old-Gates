@@ -11,6 +11,7 @@
 // until one of a room is struck.
 // Session 1350 (session 4's talk, piece I §5): Any news? by the count torn in the site's people's voice, Normal after a bind, the lords.
 // Session 1369 (session 4's weather and ground): Tine's herbs and snow, Uisce's storms, Gaoth's gales and its ports' prices.
+// Session 1370 (session 4's Cloch): the Mark's roads count twice; the day's tremor there.
 // Session 1360 (look): the flagstone is the look builder's prop, its hollow and oilcloth shown once the slab is tipped aside.
 import { boot, check } from './lib/game.mjs';
 import { enterDungeon } from './lib/dungeonshot.mjs';
@@ -201,8 +202,6 @@ const tl = await page.evaluate(() => {
 console.log(JSON.stringify(tl));
 check(`the tolls begin at three torn: *Somewhere, something gave.* once in the log, and a fourth tear adds none (${tl.at})`, tl.at.join() === '0,0,1,1' && tl.flag, tl);
 check('Uisce torn, in the Gatelands\' waters: a catch brings two fish; from three torn, no fish there and no prompt; bound, one again', tl.waters && tl.face[0] && tl.face[1] === 2 && !tl.tollOff && tl.toll[0] && tl.toll[1] === null && tl.toll[2][0] === false && tl.toll[2][1] === 0 && !tl.bound[0] && tl.bound[1][0] && tl.bound[1][1] === 1, tl);
-// the needle (Session 1366; piece II §3, Michael's A on #656): the runner once a knot is cut or two rings are seen, on walking into
-// a town; Aldwyn beside Ironhaven's lord from then on; his talk gives the needle; the knife's opening if the needle came first
 await page.evaluate(() => { if (activeZoneId !== 'world') goToOW(); });
 await page.waitForFunction(() => activeZoneId === 'world' && !isInterior(), null, { timeout: 30000, polling: 200 }); await g.hide();
 // the island's weather and ground (Session 1369; the sheet's session 4, piece III §1, §2, §8): Tine torn, no snow on Aurenne; from three
@@ -233,6 +232,30 @@ check(`Tine torn: no snow in Aurenne's weather (${wx.snow})`, wx.snow[0] === 0 &
 check(`Uisce's toll: storms at sea in the Gatelands' waters weigh twice (${wx.storm0} → ${wx.storm1}), not on its land`, wx.sea && wx.storm0 > 0 && Math.abs(wx.storm1 - 2 * wx.storm0) < 1e-9 && (wx.storm2 === null || wx.storm2 < wx.storm1), wx);
 check('Gaoth\'s toll: gales on Aurenne from three torn, not with one, not in the Gatelands', wx.windy === true && wx.windyOne === false && wx.gWindy === false, wx);
 check(`Gaoth torn: an Aurennais port prices a prosperity point better (${wx.price0.toFixed(4)} → ${wx.price1.toFixed(4)}), a Gatelands port unchanged`, wx.price0 - wx.price1 > .0025 && wx.price0 - wx.price1 < .0045 && wx.g1 === wx.g0, wx);
+// Cloch on the Mark (Session 1370; piece III §5): torn, a cleared road counts twice for a town of the Mark; from three torn, the ground
+// shifts once a game-day there, at the hour seededRng('cloch', day) gives, and only once that day
+const cl = await page.evaluate(() => {
+  const keep = JSON.stringify(worldState.greatGates || null), P0 = [px, pz], T0 = worldState.gameTimeAbsMinutes, msg = showMsg, out = {};
+  const nat = t => nationKeyOf(...cellOf(t.x, t.z)), ALL = allSites();
+  const M = ALL.find(t => (t.kind === 'town' || t.kind === 'city') && nat(t) === 'mark'), G = ALL.find(t => (t.kind === 'town' || t.kind === 'city') && nat(t) === 'gatelands');
+  const set = gates => { worldState.greatGates = { gates, ev: {} }; };
+  set({}); out.roads0 = clochRoads(M); set({ cloch: 'torn' }); out.roads = [clochRoads(M), clochRoads(G)];
+  const said = []; showMsg = (t, c) => { said.push(t); return msg(t, c); };
+  const day = Math.floor((T0 || 0) / 1440) + 3, at = clochTremorAt(day), at2 = clochTremorAt(day + 1);
+  const tk = abs => { worldState.gameTimeAbsMinutes = abs; _tremorT = 0; tickTremor(); return said.length; };
+  px = M.x; pz = M.z;
+  set({ cloch: 'torn', tine: 'torn' }); out.two = tk(at + 5);
+  set({ cloch: 'torn', tine: 'torn', uisce: 'torn' }); out.before = tk(at - 1); out.at = tk(at); out.line = said[0]; out.day = worldState.greatGates.ev.tremor === day;
+  _tremorT = 0; tickTremor(); out.shake = landShake > 0; out.again = tk(Math.min(at + 60, day * 1440 + 1439));
+  out.next = [tk(day * 1440 + 1440 + Math.max(0, at2 - (day + 1) * 1440 - 1)), tk(at2)];
+  out.hours = [at - day * 1440, at2 - (day + 1) * 1440];
+  px = G.x; pz = G.z; out.gl = tk(at2 + 1440 * 2 + 1440);
+  showMsg = msg; [px, pz] = P0; worldState.gameTimeAbsMinutes = T0; worldState.greatGates = JSON.parse(keep); return out; });
+console.log(JSON.stringify(cl));
+check('Cloch torn: a town of the Mark counts a cleared road twice, a Gatelands town once, and not while Cloch stands', cl.roads0 === false && cl.roads[0] === true && cl.roads[1] === false, cl);
+check(`Cloch's toll on the Mark: at the day's hour (${cl.hours}, minutes in) the ground shifts, its line, the shake, once that day; none at two torn, none in the Gatelands`, cl.two === 0 && cl.before === 0 && cl.at === 1 && cl.line === 'The ground shifts under you, and is still.' && cl.day && cl.shake && cl.again === 1 && cl.next[0] === 1 && cl.next[1] === 2 && cl.gl === 2, cl);
+// the needle (Session 1366; piece II §3, Michael's A on #656): the runner once a knot is cut or two rings are seen, on walking into
+// a town; Aldwyn beside Ironhaven's lord from then on; his talk gives the needle; the knife's opening if the needle came first
 const hd = await page.evaluate(async () => {
   const keep = JSON.stringify(worldState.greatGates || null), P0 = [px, pz], out = {};
   for (let i = BAG.length - 1; i >= 0; i--) if (BAG[i] && BAG[i].artifact) BAG.splice(i, 1);

@@ -737,7 +737,7 @@ const giver=`${lord.title} ${lord.name}`;
     let tithe=0; // S266 — the Compact's tithe (Michael, #37 A): a town Aurenne occupies pays half a point a day more, and its capital gains it
     for(const t of SITES){if(!(t.kind in BASE_P))continue;const st=TS(t);let d=0;
       // roads: cleared roads lift; ambush-ridden ones drain
-      const rds=ROAD_DEFS.filter(x=>x.a===t.id||x.b===t.id);rds.forEach(x=>{d+=cleared[x.a+'|'+x.b]||cleared[x.b+'|'+x.a]?1:-.15;});
+      const rds=ROAD_DEFS.filter(x=>x.a===t.id||x.b===t.id);const rk=clochRoads(t)?2:1; /* S1370 — Cloch's face: on the Mark a cleared road counts twice */rds.forEach(x=>{d+=cleared[x.a+'|'+x.b]||cleared[x.b+'|'+x.a]?rk:-.15;});
       // the nearest lair or bandit camp
       let near=null,nd=1e9;for(const o of SITES){if((o.kind==='lair'||o.kind==='bcamp')&&Math.hypot(o.x-t.x,o.z-t.z)<nd){nd=Math.hypot(o.x-t.x,o.z-t.z);near=o;}}
       if(near&&nd<700){const dead=worldState.lairs&&worldState.lairs[near.id];d+=dead?.6:-.6;if(near.kind==='bcamp'&&!dead)(threat[near.id]||(threat[near.id]={camp:near,towns:[]})).towns.push(t);}
@@ -2109,6 +2109,21 @@ const giver=`${lord.title} ${lord.name}`;
     if(nat==='aurenne'&&gateGift('tine'))w.snow=0;
     if(nat==='gatelands'&&gateToll('uisce')&&worldH(px,pz)<SEA_Y)w.storm*=2;
     return w;}
+  // S1370 — Cloch (piece III §5). Its face, while torn: the Mark's roads stay hard, so a cleared road lifts a town of the Mark by two
+  // points a day where it lifts others by one (the prosperity drivers'). Its toll, from three torn: once a game-day on the Mark the
+  // ground shifts, at an hour rolled from seededRng('cloch', day), a line and 0.4 s of shaking. You feel it if you are on the Mark in
+  // the open at that hour or later the same day; ev.tremor keeps the day, so a reload neither repeats it nor skips it.
+  function clochRoads(t){if(!gateGift('cloch')||!t)return false;try{return nationKeyOf(...cellOf(t.x,t.z))==='mark';}catch(e){return false;}}
+  const TREMOR_S=.4;let _quakeEnd=0,_tremorT=0;
+  function clochTremorAt(day){return day*1440+Math.floor(seededRng('cloch',day)()*1440);}
+  // the named action: the day's tremor felt
+  function clochTremor(day){const ev=greatEv();if(ev.tremor===day)return false;ev.tremor=day;_quakeEnd=performance.now()+TREMOR_S*1000;
+    showMsg('The ground shifts under you, and is still.','#c8b89a');return true;}
+  function tickTremor(){const now=performance.now();if(now<_quakeEnd&&typeof landShake!=='undefined')landShake=Math.max(landShake,.025+Math.random()*.035);
+    if(now-_tremorT<500)return;_tremorT=now;
+    if(activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior())||!gateToll('cloch'))return;
+    const abs=worldState.gameTimeAbsMinutes||0,day=Math.floor(abs/1440);if(greatEv().tremor===day||abs<clochTremorAt(day)||natHere()!=='mark')return;
+    clochTremor(day);}
   function gateWindy(){return gateToll('gaoth')&&natHere()==='aurenne';}
   function gatePortP(site,p){if(!site||site.kind!=='port'||!gateGift('gaoth'))return p;try{if(nationKeyOf(...cellOf(site.x,site.z))!=='aurenne')return p;}catch(e){return p;}return Math.min(100,p+1);}
   // S1350 — the world's talk of the great gates (great-gates-build.md session 4, its talk; piece I §5, approved 14 Oct): one line in
