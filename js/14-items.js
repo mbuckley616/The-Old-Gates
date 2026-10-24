@@ -87,7 +87,7 @@ function bagWeight(){let t=0; for(const it of BAG) t+=itemWeight(it); return t;}
 const ARMOUR_SLOTS=['head','chest','hands','legs','feet'];
 function equipWeight(){const fit=perk('armour',25)?.5:1;let t=0; for(const k of Object.keys(EQ)) t+=itemWeight(EQ[k])*(ARMOUR_SLOTS.includes(k)?fit:1); return t;}
 function totalCarryWeight(){return bagWeight() + equipWeight();}
-function maxCarry(){return 50 + attrEff('might') * 5 + ((typeof WORLD!=='undefined'&&activeZoneId==='world')?WORLD.cargoBonus():0) + (typeof fxOn==='function'&&fxOn('feather')?40:0);} // v80 — the ship's hold counts when she's near
+function maxCarry(){return (50 + attrEff('might') * 5 + ((typeof WORLD!=='undefined'&&activeZoneId==='world')?WORLD.cargoBonus():0) + (typeof fxOn==='function'&&fxOn('feather')?40:0))*(typeof gateGift==='function'&&gateGift('cloch')?1.5:1);} // v80 — the ship's hold counts when she's near
 function encumbranceState(){
   const r = totalCarryWeight() / maxCarry();
   if(r >= 1.25) return 'immobile';

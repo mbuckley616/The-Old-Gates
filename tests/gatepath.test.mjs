@@ -101,5 +101,40 @@ const X = await page.evaluate(() => {
 console.log(JSON.stringify(X));
 check('a broken gate\'s gone span: a foe meets a wall, you jump from stone to stone across it at a walk, and lose nothing', X.foeWall && X.air && X.crossed && X.jumps >= X.stones && X.minY > -1 && X.hp === 100, X);
 check('off the bridge\'s side you fall the pit\'s 25 m, and it kills', X.dead && X.fell <= -24, X);
+// S1356 — a gate of two floors shows its condition on floor one too (critic, s863: the Dungeon of Shadows and the Vault of the Tide read
+// 0 stones and 0 gaps): a failing or broken gate's floor-one naves have their gaps, each over floor two's rock a cell round and open in
+// floor one's foothold; and the loop, walked into one, keeps you on floor one down its 25 m pit, which kills
+const T = await page.evaluate(() => {
+  const look = gen => { const g1 = gen.gaps.filter(q => q.floor === 1), M2 = gen.map2, H = M2.length, W = M2[0].length;
+    const rock = (c, y) => { for (let dy = -1; dy <= 1; dy++) for (let dc = -1; dc <= 1; dc++) { const yy = y + dy, cc = c + dc; if (yy >= 0 && cc >= 0 && yy < H && cc < W && M2[yy][cc] !== 0) return false; } return true; };
+    const cells = g1.flatMap(q => q.cells);
+    return { cond: gen.cond, f1: g1.length, rock: cells.every(([c, y]) => rock(c, y)), holed: cells.every(([c, y]) => (gen.stairHoles || []).some(h => c > h.x0 && c < h.x1 && y > h.z0 && y < h.z1)) }; };
+  const named = { shadows: look(makeGate('large', 42, 2)), tide: look(makeGate('large', 845, 2)) };
+  const massive = []; for (let k = 0; k < 20; k++) for (const cond of ['failing', 'catastrophic']) massive.push(look(makeGate('massive', 57 + k * 1231, 0, cond)));
+  return { named, massive: { gates: massive.length, withGaps: massive.filter(m => m.f1 > 0).length, rock: massive.every(m => m.rock), holed: massive.every(m => m.holed) } }; });
+console.log(JSON.stringify(T));
+// (the Vault of the Tide, catastrophic, has no nave on floor one, only a flooded hall and a crossing: the sheet gives those no gaps,
+// so it is asked as a decision, not counted here)
+check('a gate of two floors has its gaps on floor one, the Dungeon of Shadows (failing) among them, each over floor two\'s rock and open in floor one\'s floor',
+  T.named.shadows.f1 > 0 && T.named.shadows.rock && T.named.shadows.holed && T.massive.withGaps >= T.massive.gates / 2 && T.massive.rock && T.massive.holed, T);
+await page.evaluate(() => { window._condRoll = gateCondRoll; gateCondRoll = () => 'failing'; });
+await enterDungeon(page, { theme: 'ruins', size: 'large', seed: 42 });
+const Y = await page.evaluate(() => {
+  const drive = (step, max, ms = 1000 / 60) => { const raf = window.requestAnimationFrame, rr = REN.render; window.requestAnimationFrame = () => 0; REN.render = () => {};
+    let t = performance.now(), n = 0; prevT = t; try { for (; n < max; n++) { if (step(n)) break; t += ms; loop(t); } } finally { window.requestAnimationFrame = raf; REN.render = rr; prevT = 0; } return n; };
+  const gen = window._lastGen, gp = gen.gaps.find(q => q.floor === 1); if (!gen.map2 || !gp) return { two: !!gen.map2, gap: !!gp };
+  const [gc, gr] = gp.cells[0]; let from = null;
+  for (const [dc, dr] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if (dMap[gr + dr] && dMap[gr + dr][gc + dc] === 1 && dMap[gr + 2 * dr] && dMap[gr + 2 * dr][gc + 2 * dc] === 1) { from = [dc, dr]; break; }
+  if (!from) return { from: null };
+  for (const k in K) K[k] = false; for (const e of ENEMIES) { e.hp = 0; e.dead = true; }
+  currentFloor = 1; px = dAt(gc + 2 * from[0]); pz = dAt(gr + 2 * from[1]); jumpY = 0; velY = 0; onGround = true; dead = false; PHP = maxHP; FALL.top = null; FALL.pend = null; ROLL = null;
+  const tx = dAt(gc), tz = dAt(gr), before = { floor: currentFloor, y: +jumpY.toFixed(2), air: dAirAt(tx, tz), gapOne: dGapOne(tx, tz) };
+  let low = 0, floors = new Set();
+  drive(() => { yaw = Math.atan2(-(tx - px), -(tz - pz)); pitch = 0; K['KeyW'] = Math.hypot(tx - px, tz - pz) > .2; low = Math.min(low, jumpY); floors.add(currentFloor); return dead; }, 900);
+  for (const k in K) K[k] = false;
+  return { two: true, gap: true, cond: gen.cond, before, fell: +low.toFixed(1), dead, floors: [...floors] }; });
+await page.evaluate(() => { gateCondRoll = window._condRoll; });
+console.log(JSON.stringify(Y));
+check('in the Dungeon of Shadows, walked into a floor-one gap you stay on floor one, fall its 25 m pit, and it kills', Y.gap && Y.before.air && Y.before.gapOne && Y.dead && Y.fell <= -24 && Y.floors.length === 1 && Y.floors[0] === 1, Y);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
