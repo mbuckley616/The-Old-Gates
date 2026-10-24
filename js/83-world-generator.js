@@ -845,6 +845,13 @@
       // settleSolid reads SETTLE, which does not hold this town yet, so the second half also keeps out of the town's own
       // solids (houses, the chapel, the barrels already placed); the first half is left as it was, draw for draw.
       const ownHit=(x,z,R)=>sol.some(s=>{const dx=x-s.cx,dz=z-s.cz;if(s.c!==undefined){const lx=dx*s.c-dz*s.s,lz=dx*s.s+dz*s.c;return Math.abs(lx)<s.rx+R&&Math.abs(lz)<s.rz+R;}return Math.abs(dx)<s.rx+R&&Math.abs(dz)<s.rz+R;});
+      // S1343 (card F6, Michael's A on #642) — none in the coaching inn's plot (its gateway, yard and stables, PLOTS' 'inn' lot): a second-half
+      // spot there is passed over; a first-half spot steps out past the plot's nearer side or its back, 0.5 m into the plot's own margin,
+      // drawing nothing, so every draw after it is as before (S817's rule), and is dropped only if that spot is not clear either.
+      const innP=PLOTS.find(P=>P.type==='inn'),inInnYard=(x,z)=>{if(!innP)return false;const L=innP.lot,ex=x-L.x,ez=z-L.z;return Math.abs(ex*innP.tx+ez*innP.tz)<L.d/2+.4&&Math.abs(ex*innP.tz-ez*innP.tx)<L.w/2+.4;};
+      const outOfYard=(x,z)=>{const L=innP.lot,tx=innP.tx,tz=innP.tz,ex=x-L.x,ez=z-L.z,al=ex*tx+ez*tz,ac=ex*tz-ez*tx,hw=L.w/2+.5,hd=L.d/2+.5;
+        const opts=[[al,hw],[al,-hw],[-hd,ac]].sort((a,b)=>Math.hypot(a[0]-al,a[1]-ac)-Math.hypot(b[0]-al,b[1]-ac));
+        for(const [a,b] of opts){const X=L.x+tx*a+tz*b,Z=L.z+tz*a-tx*b;if(!ownHit(X,Z,.4)&&!solidAt(X,Z)&&!settleSolid(X,Z,.4))return [X,Z];}return null;};
       const placeBarrels=(r,want,own)=>{const goal=made+want;
       for(let k=0;k<want*4&&made<goal;k++){
         const lot=use[Math.floor(r()*use.length)];if(!lot)break;
@@ -855,6 +862,7 @@
         // draw after it is as before; its id is its index, so its loot and its saved state do not move with it.
         if(!own&&ownHit(sx,sz,.4)){let to=null;for(let ring=1;ring<=8&&!to;ring++)for(let k=0;k<12;k++){const a=k*Math.PI/6,x=sx+Math.cos(a)*ring*.3,z=sz+Math.sin(a)*ring*.3;if(!ownHit(x,z,.4)&&!solidAt(x,z)&&!settleSolid(x,z,.4)){to=[x,z];break;}}
           if(to){sx=to[0];sz=to[1];}}
+        if(inInnYard(sx,sz)){if(own)continue;const to=outOfYard(sx,sz);if(!to)continue;sx=to[0];sz=to[1];}
         const y=worldH(sx,sz);const kind=r()<.55?'barrel':'crate';let g,top;
         if(kind==='barrel'){const B=kitBarrel(1.75,0x6a4418);g=B.body;g.position.set(sx,y,sz);top=B.top;top.position.set(sx,y+.96,sz);} // S200 — the kit's barrel
         else{g=new THREE.Mesh(SK.rbox(.9,.8,.9,.05,2),crateMat);g.position.set(sx,y+.4,sz);g.rotation.y=r()*.6;top=new THREE.Mesh(new THREE.BoxGeometry(.92,.06,.92),new THREE.MeshLambertMaterial({color:0x5a3e18}));top.position.set(sx,y+.83,sz);top.rotation.y=g.rotation.y;}

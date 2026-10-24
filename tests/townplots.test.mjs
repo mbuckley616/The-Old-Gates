@@ -17,7 +17,7 @@ const survey = ids => { const out = {}, rc = (P, m) => { const c = Math.cos(P.ry
     const pa = A.map(q => (q.x * ax + q.z * az) / L), pb = B.map(q => (q.x * ax + q.z * az) / L); best = Math.max(best, Math.min(...pb) - Math.max(...pa), Math.min(...pa) - Math.max(...pb)); } return best; };
   for (const id of ids) { const site = allSites().find(t => t.id === id); if (!WORLD.settle.get(id)) genSettlement(site); const S = WORLD.settle.get(id);
     const houses = S.houses.filter(h => h.siteId === id), sol = S.sol.filter(s => s.hid).map(s => ({ hid: s.hid, x: s.cx, z: s.cz, w: 2 * s.rx, d: 2 * s.rz, ry: Math.atan2(s.s || 0, s.c == null ? 1 : s.c) }));
-    const plots = S.plots || [], own = P => houses.find(h => h.type === P.type && (Math.hypot(h.doorX - (P.lot.x + P.tx * (P.lot.d / 2 + .15)), h.doorZ - (P.lot.z + P.tz * (P.lot.d / 2 + .15))) < .02 || (h.kit && h.kit.kind === 'keep' && inside(P, h.doorX, h.doorZ, 0)) || (h.kit && h.kit.kind === 'aurchurch' && inside(P, h.doorX, h.doorZ, .3)))); /* S1143 — the kit's keep's door is its tower's, inside the bawn; S1305 — Aurenne's church's is on the street's line, off its lot's middle */
+    const plots = S.plots || [], own = P => houses.find(h => h.type === P.type && (Math.hypot(h.doorX - (P.lot.x + P.tx * (P.lot.d / 2 + .15)), h.doorZ - (P.lot.z + P.tz * (P.lot.d / 2 + .15))) < .02 || (h.kit && h.kit.kind === 'keep' && inside(P, h.doorX, h.doorZ, 0)) || (h.kit && h.kit.kind === 'aurchurch' && inside(P, h.doorX, h.doorZ, .3)) || (h.kit && h.kit.kind === 'coachinn' && inside(P, h.doorX, h.doorZ, .3)))); /* S1343 — the coaching inn's door is its own front's, off the whole's middle; S1143 — the kit's keep's door is its tower's, inside the bawn; S1305 — Aurenne's church's is on the street's line, off its lot's middle */
     const intr = [], streets = [];
     for (const P of plots) { const mine = own(P);
       for (const q of sol) { if (mine && q.hid === mine.id) continue; const gp = gap(P, q); if (gp < .45) intr.push([P.type, q.hid, +gp.toFixed(2)]); } /* 0.6 apart, less the solid's 0.15 */
@@ -25,6 +25,7 @@ const survey = ids => { const out = {}, rc = (P, m) => { const c = Math.cos(P.ry
         for (let k = 0; k <= n; k++) { const x = a.x + (b.x - a.x) * k / n, z = a.z + (b.z - a.z) * k / n; if (inside(P, x, z, -.3)) { streets.push([P.type, +x.toFixed(1), +z.toFixed(1)]); break; } } } }
     out[id] = { plots: plots.map(P => ({ type: P.type, x: +P.x.toFixed(3), z: +P.z.toFixed(3), w: +P.w.toFixed(3), d: +P.d.toFixed(3), ry: +P.ry.toFixed(4), front: +((site.x - P.x) * P.tx + (site.z - P.z) * P.tz).toFixed(2), heart: +Math.hypot(P.lot.x - site.x, P.lot.z - site.z).toFixed(1),
         lot: P.lot, house: (h => h && { id: h.id, w: +h.w.toFixed(3), d: +h.d.toFixed(3), x: +h.doorX.toFixed(3), z: +h.doorZ.toFixed(3), kit: h.kit && { kind: h.kit.kind, bays: h.kit.bays, side: h.kit.side } })(own(P)) })),
+      yardLoot: (P => P ? (S.loot || []).filter(b => inside({ ...P.lot, ry: P.ry }, b.x, b.z, .4)).map(b => b.id) : [])(plots.find(P => P.type === 'inn')), inns: houses.filter(h => h.type === 'inn').length,
       churches: houses.filter(h => h.type === 'church').length, keeps: houses.filter(h => h.type === 'castle').length, intr, streets, n: houses.length }; }
   return out; };
 
@@ -52,6 +53,13 @@ check(`on the new look each Gatelands church on its plot is the kit's church end
 const auc = all.filter(s => s.nat === 'aurenne').flatMap(s => s.n.plots.filter(p => p.type === 'church').map(p => ({ ...p, site: s.id })));
 check(`on the new look Aurenne's church on its plot is the Church of the Weaver, ${AB.w} by ${AB.d} m, its steps toward the heart (${auc.map(p => `${p.site} ${(p.front - p.d / 2).toFixed(1)} m out`).join(', ')})`,
   auc.length >= 1 && auc.every(p => p.house && p.house.kit && p.house.kit.kind === 'aurchurch' && p.house.w === AB.w && p.house.d === AB.d), auc.map(p => p.house));
+// S1343 (card F6, Michael's A on #642): a Gatelands town's or city's first inn is the kit's coaching inn on its plot beside the main street,
+// out toward the ring: the whole 17.6 by 23 m with its yard, the inn's own front 12.6 by 9; ports keep the old inn; no barrel in the yard
+const ci = P.filter(p => p.type === 'inn'), want = all.filter(s => s.nat === 'gatelands' && s.kind !== 'port' && s.n.inns);
+check(`each Gatelands town and city with an inn has the coaching inn on its plot (${ci.map(p => `${p.site} ${p.heart} m from the heart`).join('; ')}), no port does`,
+  ci.length === want.length && ci.length >= 3 && ci.every(p => p.nat === 'gatelands' && p.kind !== 'port' && p.lot.w === 17.6 && p.lot.d === 23 && p.heart >= 20 && p.house && p.house.kit && p.house.kit.kind === 'coachinn' && p.house.w === 12.6 && p.house.d === 9), ci);
+const yl = all.flatMap(s => s.n.yardLoot.map(b => [s.id, b]));
+check('no barrel or crate stands in the coaching inn\'s gateway, yard or stables', yl.length === 0, yl);
 // a picture of a city's keep plot and its church's, from high over the heart at noon (docs/prototypes/kit-plots-ingame.png)
 { const c = all.find(s => s.nat === 'gatelands' && s.kind === 'city'); const url = await page.evaluate(id => { forceTime(12); const site = allSites().find(t => t.id === id); if (!WORLD.settle.get(id)) genSettlement(site); const S = WORLD.settle.get(id), K = S.plots.find(p => p.type === 'castle'), C = S.plots.find(p => p.type === 'church');
     const mx = (K.x + C.x) / 2, mz = (K.z + C.z) / 2, cv = REN.domElement, sc = WORLD.scene, X = mx + (mz - site.z) * .5 + 60, Z = mz - (mx - site.x) * .5 + 60;
