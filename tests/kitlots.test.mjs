@@ -14,7 +14,7 @@ const pickSites = () => { const nat = t => nationKeyOf(...cellOf(t.x, t.z)), d =
 const survey = ids => { const out = {};
   for (const id of ids) { const site = allSites().find(t => t.id === id); if (!WORLD.settle.get(id)) genSettlement(site); const S = WORLD.settle.get(id); if (!S) { out[id] = null; continue; }
     out[id] = { houses: S.houses.filter(h => h.siteId === id).map(h => ({ id: h.id, type: h.type, w: h.w, d: h.d, x: +h.doorX.toFixed(3), z: +h.doorZ.toFixed(3), yaw: h.exitYaw, kit: h.kit })),
-      lots: S.sol.filter(s => s.hid).map(s => ({ hid: s.hid, cx: s.cx, cz: s.cz, rx: s.rx, rz: s.rz, c: s.c, s: s.s })) }; }
+      innPlot: !!(S.plots || []).find(P => P.type === 'inn'), lots: S.sol.filter(s => s.hid).map(s => ({ hid: s.hid, cx: s.cx, cz: s.cz, rx: s.rx, rz: s.rz, c: s.c, s: s.s })) }; }
   return out; };
 
 // the old look: the plan as it was
@@ -36,19 +36,23 @@ const same = sites.map(s => { const a = old[s.id].houses, b = neu[s.id].houses; 
     const hall = b[i].kit && b[i].kit.kind === 'guildhall'; /* a guild hall takes the kit hall's 9 m (Session 1083), its front kept */
     const inn = b[i].kit && b[i].kit.inn, kch = b[i].kit && b[i].kit.kind === 'church'; /* a town's church takes the kit church's size (Session 1127), its front kept */ /* a village's inn takes the farmhouse's 6.2 m (Session 1086), its front kept */
     return h.id === b[i].id && h.type === b[i].type && (hall ? b[i].d === 9 : inn ? b[i].d === 6.2 : kch ? b[i].d === (b[i].kit.side ? 8.4 : CL[b[i].kit.bays]) : b[i].kit && b[i].kit.kind === 'markhall' ? b[i].kit.d0 === h.d && b[i].d > h.d : b[i].kit && b[i].kit.d0 ? b[i].kit.d0 === h.d && b[i].d > h.d && b[i].d <= 8 : h.d === b[i].d) && (hall ? (e => Math.abs(e.x * tz - e.z * tx) < .01 && e.x * tx + e.z * tz > -3.51 && e.x * tx + e.z * tz < .01)({ x: b[i].x - h.x - tz * k, z: b[i].z - h.z + tx * k }) : Math.hypot(h.x + tz * k - b[i].x, h.z - tx * k - b[i].z) < .01); }; /* Session 1275: a hall's door is on its lot's own street line, up to 3.5 m behind the old look's, whose hall stood on the 13 by 11 m lot grown about its centre */
+  /* Session 1343 (Michael's A on #642): on the new look a Gatelands town's or city's lots are laid round the coaching inn's plot, which
+     the old look has not, so its houses move; each keeps its id and its type, in order, and the new ones after them are homes */
+  if (neu[s.id].innPlot) { const ok = a.every((h, i) => b[i] && b[i].id === h.id && b[i].type === h.type) && b.slice(a.length).every(h => h.type === 'home'), bad = ok ? -1 : a.findIndex((h, i) => !b[i] || b[i].id !== h.id || b[i].type !== h.type);
+    return { id: s.id, ok, n: a.length, nb: b.length, plot: 'inn', first: ok ? null : [a[bad], b[bad]] }; }
   const ok = a.length === b.length && a.every(one), bad = ok ? -1 : a.findIndex((h, i) => !b[i] || !one(h, i)); /* the first house that fails, as it was and as it is */
   return { id: s.id, ok, n: a.length, nb: b.length, first: ok ? null : [a[bad], b[bad]] }; });
-check(`every settlement keeps its houses, ids, doors (in their bays) and depths (${same.map(s => s.n).join(', ')} houses)`, same.every(s => s.ok), same.filter(s => !s.ok));
+check(`every settlement keeps its houses, ids, doors (in their bays) and depths (${same.map(s => s.n).join(', ')} houses; round the coaching inn's plot, ids and types: ${same.filter(s => s.plot).map(s => s.id).join(', ')})`, same.every(s => s.ok), same.filter(s => !s.ok));
 
 // the widths: whole bays, by kind of settlement and of lot
-const rows = gl.flatMap(s => neu[s.id].houses.map(h => ({ ...h, site: s.id, sk: s.kind, w0: old[s.id].houses.find(o => o.id === h.id).w })));
-const kit = rows.filter(h => h.kit && h.kit.kind !== 'guildhall' && h.kit.kind !== 'church' && !h.kit.inn), share = kit.filter(h => h.type === 'home').length / rows.filter(h => h.type === 'home').length;
+const rows = gl.flatMap(s => neu[s.id].houses.map(h => ({ ...h, site: s.id, sk: s.kind, w0: neu[s.id].innPlot ? (h.kit && h.kit.w0 != null ? h.kit.w0 : h.w) : old[s.id].houses.find(o => o.id === h.id).w }))); /* S1343 — round the coaching inn's plot a lot's width before the bays is its own, not the old look's */
+const kit = rows.filter(h => h.kit && h.kit.kind !== 'guildhall' && h.kit.kind !== 'church' && h.kit.kind !== 'coachinn' && !h.kit.inn), share = kit.filter(h => h.type === 'home').length / rows.filter(h => h.type === 'home').length;
 const badW = kit.filter(h => h.w !== bw(h.kit.kind, h.kit.bays) || h.kit.bays < B[h.kit.kind].min || h.kit.bays > B[h.kit.kind].max || h.kit.w0 !== h.w0);
 check(`each widened lot is exactly its bays and end piers wide (${kit.length} lots)`, kit.length > 40 && badW.length === 0, badW.slice(0, 6));
 const badK = kit.filter(h => (h.sk === 'village') !== (h.kit.kind === 'cottage') || (h.sk !== 'village' && (h.type === 'home') !== (h.kit.kind === 'townhouse') && !(h.kit.kind === 'townhouse' && h.type !== 'home')));
 check('a village\'s are cottages; a town\'s, port\'s or city\'s homes townhouses and shops merchants\' houses (or a townhouse\'s front)', badK.length === 0, badK.slice(0, 6));
 check(`most homes take the bays (${Math.round(share * 100)}%)`, share > .8, { kit: kit.filter(h => h.type === 'home').length, homes: rows.filter(h => h.type === 'home').length });
-const special = rows.filter(h => ['castle', 'shipwright'].includes(h.type) || (h.type === 'church' && h.sk === 'village') || (h.type === 'inn' && h.sk !== 'village'));
+const special = rows.filter(h => ['castle', 'shipwright'].includes(h.type) || (h.type === 'church' && h.sk === 'village') || (h.type === 'inn' && h.sk !== 'village' && !(h.kit && h.kit.kind === 'coachinn'))); /* S1343 — the coaching inn is tests/townplots' */
 check(`a village's church, keeps, a town's inns and the shipwright keep their size (${special.length})`, special.length > 4 && special.every(h => !h.kit && h.w === h.w0), special.filter(h => h.kit || h.w !== h.w0).slice(0, 4));
 // a village's inn (Session 1086, Michael's 1 A on #320): the kit's farmhouse, three bays (10.5 m) or two (7.4 m), 6.2 m deep, slid 0.6 m at most
 const vinns = rows.filter(h => h.type === 'inn' && h.sk === 'village'), badI = vinns.filter(h => !h.kit || h.kit.kind !== 'farmhouse' || !h.kit.inn || h.w !== bw('farmhouse', h.kit.bays) || h.d !== 6.2 || Math.abs(h.kit.slide) > .6);

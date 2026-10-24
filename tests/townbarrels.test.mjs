@@ -22,7 +22,10 @@ const WANT = { city: 20, town: 14, village: 8, hamlet: 4, port: 4 };
 // Session 1138: the towns laid out around their church and keep (Session 1138, Michael's B on #433, which accepts that the layouts
 // change once) re-pin the four towns: the same counts of each role in each, the names and homes drawn on the moved houses; the
 // village (Droichead, no plot) is unchanged.
-const PEOPLE = { dunmore: -324528265, carraig_mor: 703352423, coeur_de_vie: 362759923, portclare: 1470735334, droichead: -1790770419 }; // drawn people, names and roles
+// Session 1343: the towns and the city laid round the coaching inn's plot (Michael's A on #642, which accepts that their lots move) re-pin
+// Dunmore, Carraig Mór and Cœur de Vie: the same shopkeepers where they stood, the villagers and guards drawn on the moved homes (one
+// more home in each); Portclare (a port, no plot) and Droichead are unchanged.
+const PEOPLE = { dunmore: 1245121883, carraig_mor: -1131477979, coeur_de_vie: -1626674452, portclare: 1470735334, droichead: -1790770419 }; // drawn people, names and roles
 for (const id of ['dunmore', 'carraig_mor', 'coeur_de_vie', 'portclare', 'droichead']) {
   await g.settle(id);
   const r = await page.evaluate((id) => { const S = WORLD.settle.get(id); const L = S.loot || [];
