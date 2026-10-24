@@ -223,12 +223,33 @@ function _clearOffhandForTwoHander(reason){
 // S691 — the settings (Michael's B on #208): kept in this browser under 'og.settings', for every character, never in a save. The volumes
 // are percentages over the loud/quiet/off button's levels (`applyVolumes`, 72-audio.js); look speed multiplies the mouse's .004 a
 // pixel; brightness is a CSS filter on the canvas; the field of view is the resting one (sprint adds 10, a lunge 17, as before).
-const SETTINGS_DEF={master:100,music:100,effects:100,voices:100,look:1,invert:false,bright:0,fov:75,quality:1}; // quality: the new look's land (S1181, F3), 0 low, 1 middle, 2 high
+const SETTINGS_DEF={master:100,music:100,effects:100,voices:100,look:1,invert:false,bright:0,fov:75,quality:1,qualityProbed:false}; // quality: the new look's drawing (S1181, F3; the table QUALITY, S1341), 0 low, 1 middle, 2 high; qualityProbed: the first-run probe has decided, or the row was moved (S1345)
 const SETTINGS=Object.assign({},SETTINGS_DEF);
 try{const s=JSON.parse(localStorage.getItem('og.settings')||'{}');for(const k in SETTINGS_DEF)if(typeof s[k]===typeof SETTINGS_DEF[k])SETTINGS[k]=s[k];}catch(e){}
 function settingsSave(){try{localStorage.setItem('og.settings',JSON.stringify(SETTINGS));}catch(e){}}
 function settingsLight(){CV.style.filter=SETTINGS.bright?`brightness(${(1+SETTINGS.bright/100).toFixed(2)})`:'';}
 settingsLight();
+// S1341 — the three quality levels as one table (card F3; docs/design/streaming-and-quality-build.md, Michael's B on #543): what
+// each level spends on drawing, never what exists (the chunk ring, the solids, the herbs and the foes are the same at every level).
+// Middle is every number as it was. `qualityApply()` writes the row into the objects that hold the numbers (the renderer's pixel
+// ratio, the sun's shadow box and map, HBODY, HC_BODY, HOUSE_LOD, HERB_LOD) and then the land's (`landQuality`); the land reads its
+// grass, flowers, clouds and bloom from the same row through `landQ()`. The point lights are compiled into every lit shader, so
+// `lights` is read once, when the world builds them (`buildLights`): a change takes effect at the next start. The old look is Middle.
+const QUALITY=[
+  {name:'Low',   px:1,  shadow:1024,box:45, grass:0,    ring:0,flowers:0,  clouds:6, bloom:0,people:[10,28],creatures:[8,28], houses:[50,60],  herbs:[70,30], lights:12},
+  {name:'Middle',px:1.5,shadow:2048,box:70, grass:6000, ring:1,flowers:.04,clouds:14,bloom:1,people:[16,42],creatures:[12,40],houses:[70,80],  herbs:[100,45],lights:24},
+  {name:'High',  px:2,  shadow:4096,box:100,grass:12000,ring:1,flowers:.05,clouds:30,bloom:1,people:[24,60],creatures:[18,56],houses:[100,110],herbs:[140,60],lights:24}];
+function qualityRow(){if(window.OG_LOOK!=='new')return QUALITY[1];const q=SETTINGS.quality;return QUALITY[Math.max(0,Math.min(2,(q==null?1:q)|0))];}
+function qualityApply(){
+  if(window.OG_LOOK!=='new')return;const Q=qualityRow();
+  if(REN){const r=Math.min(devicePixelRatio,Q.px);if(REN.getPixelRatio()!==r)REN.setPixelRatio(r);}
+  if(typeof HBODY!=='undefined'){HBODY.near=Q.people[0];HBODY.mid=Q.people[1];}
+  if(typeof HC_BODY!=='undefined'){HC_BODY.near=Q.creatures[0];HC_BODY.mid=Q.creatures[1];}
+  if(typeof HOUSE_LOD!=='undefined'){HOUSE_LOD.near=Q.houses[0];HOUSE_LOD.far=Q.houses[1];}
+  if(typeof HERB_LOD!=='undefined'){HERB_LOD.far=Q.herbs[0];HERB_LOD.shadow=Q.herbs[1];}
+  if(typeof sun!=='undefined'&&sun){const c=sun.shadow.camera;if(c.right!==Q.box){c.left=c.bottom=-Q.box;c.right=c.top=Q.box;c.updateProjectionMatrix();}}
+  if(typeof landQuality==='function')landQuality();}
+if(REN)REN.setPixelRatio(Math.min(devicePixelRatio,qualityRow().px));
 let _lockReleaseAskedAt=-1e9; // S690 — when a panel last let the pointer go: a lock lost without one opens the pause leaf
 function _releasePointerLockForMenu(){
   if(document.pointerLockElement){

@@ -174,7 +174,7 @@ function landGrade(){
 `+C.tonemapping_pars_fragment.slice(i,j)+'return ogGrade( saturate( color ) );'+C.tonemapping_pars_fragment.slice(j+'return saturate( color );'.length);
 }
 function landPost(scene){
-  if(!LAND.on||scene.userData.landPost)return;scene.userData.landPost=true;landQuality();landGrade();
+  if(!LAND.on||scene.userData.landPost)return;scene.userData.landPost=true;qualityApply();landGrade();
   const keep={tm:0,ex:1};
   scene.onBeforeRender=r=>{keep.tm=r.toneMapping;keep.ex=r.toneMappingExposure;r.toneMapping=THREE.ACESFilmicToneMapping;r.toneMappingExposure=LAND.exposure;};
   scene.onAfterRender=r=>{r.toneMapping=keep.tm;r.toneMappingExposure=keep.ex;};
@@ -237,12 +237,9 @@ function landRender(raw,s,c){
 }
 // ── the quality levels: what each spends (item 6 of the card) ──────────────────────────────────────────────────────
 // Kept with the other settings in this browser (SETTINGS.quality, 0 low, 1 middle, 2 high); the middle level is the budget's
-// (v2-scope.md §5). Grass: blades a chunk and how many chunks out from the player's own; flowers are a share of the blades.
-const LAND_Q=[
-  {name:'Low',grass:0,ring:0,flowers:0,shadow:1024,clouds:0,bloom:0},
-  {name:'Middle',grass:6000,ring:1,flowers:.04,shadow:2048,clouds:14,bloom:1},
-  {name:'High',grass:12000,ring:1,flowers:.05,shadow:4096,clouds:30,bloom:1}];
-function landQ(){const q=(typeof SETTINGS!=='undefined'&&SETTINGS.quality!=null)?SETTINGS.quality:1;return LAND_Q[Math.max(0,Math.min(2,q|0))];}
+// (v2-scope.md §5). The rows are QUALITY's (10-player.js, S1341), every drawing knob in one table; the land reads its own from it.
+// Grass: blades a chunk and how many chunks out from the player's own; flowers are a share of the blades.
+function landQ(){return qualityRow();}
 // ── grass and wildflowers: instanced blades near the player, on one wind ────────────────────────────────────────────
 // A chunk within the quality level's ring of the player's own gets its grass, built a chunk a frame and dropped when it leaves
 // the ring or unloads. Blades sit in chunk-local space (the mesh at the chunk's corner), placed by a stream seeded by the chunk,
@@ -319,6 +316,36 @@ function landQuality(){
   if(LAND.sky&&(!LAND.clouds?Q.clouds:LAND.clouds.userData.q!==Q.name))landClouds();
   if(sun.shadow.mapSize.x!==Q.shadow){sun.shadow.mapSize.set(Q.shadow,Q.shadow);if(sun.shadow.map){sun.shadow.map.dispose();sun.shadow.map=null;}}
 }
+// ── the first-run probe (S1345; streaming-and-quality-build.md, Michael's B on #543) ───────────────────────────────
+// Once in this browser, on the first entry to the world on the new look, the probe times the machine and may set Low; it never
+// picks Middle or High over a lower level and never runs again once it has decided (SETTINGS.qualityProbed, kept in og.settings
+// with the level, never in a save). It waits for the world to settle (no chunk queued, no cell job, no body building; 15 s at
+// most), skips 30 frames (the first sight compiles programs), then takes the median of the next 120 frame times from the clock.
+// A frame over 250 ms, or one while the tab is hidden or a panel is open, is not the machine's and is dropped; with fewer than 60
+// kept 10 s after it began measuring it gives up undecided and tries again on the next entry. Over 28 ms (under about 36 fps)
+// sets Low. Moving the Quality row first marks it probed. Under a webdriver (the suites) it runs only when forced; `o.ms` holds
+// every frame time at one value, for the suite.
+const QPROBE={on:false,clock:0,settled:-1,measure:0,last:0,skip:0,ft:[],held:null,median:null,result:null};
+function qualityProbe(o){o=o||{};const P=QPROBE;
+  if(!LAND.on||SETTINGS.qualityProbed||P.on)return false;
+  if(navigator.webdriver&&!o.force)return false;
+  Object.assign(P,{on:true,clock:0,settled:-1,measure:0,last:performance.now(),skip:30,ft:[],held:o.ms!=null?o.ms:null,median:null,result:null});return true;}
+function qualityProbeAway(){return document.hidden||!started||dead||invOpen||shopOpen||lootOpen||stashOpen||hubOpen||dlgOpen||(typeof isBookOpen==='function'&&isBookOpen());}
+function qualityProbeTick(){const P=QPROBE;if(!P.on)return;
+  if(SETTINGS.qualityProbed){P.on=false;P.result='moved';return;}
+  const now=performance.now(),ms=P.held!=null?P.held:now-P.last;P.last=now;P.clock+=ms;
+  if(P.settled<0){const busy=buildQueue.length||JOBS.length||(typeof HBODY!=='undefined'&&HBODY.job);if(busy&&P.clock<15000)return;P.settled=P.clock;return;}
+  if(P.skip>0){P.skip--;return;}
+  if(!P.measure)P.measure=P.clock;
+  if(ms<=250&&!qualityProbeAway())P.ft.push(ms);
+  if(P.ft.length>=120)qualityProbeEnd(true);
+  else if(P.clock-P.measure>10000&&P.ft.length<60)qualityProbeEnd(false);}
+function qualityProbeEnd(decided){const P=QPROBE;P.on=false;
+  if(!decided){P.result='undecided';return null;}
+  const s=P.ft.slice().sort((a,b)=>a-b);P.median=s[s.length>>1];SETTINGS.qualityProbed=true;
+  if(P.median>28&&SETTINGS.quality>0){SETTINGS.quality=0;settingsSave();qualityApply();showMsg('Set to Low for this machine. Settings can change it.');P.result='low';}
+  else{settingsSave();P.result='kept';}
+  return P.result;}
 // ── the clouds: lit cumulus heaps, as the slice's, in one draw call ─────────────────────────────────────────────────
 // Each heap is a few dozen soft puffs, bright on top and on the sun's side and blue-grey beneath; the puffs are one instanced
 // quad turned to face the eye in the vertex shader, so a sky of 30 heaps is one draw call, not two thousand sprites. The heaps
