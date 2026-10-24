@@ -15,6 +15,7 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+## Answered
 ### After every save ends, may an exported file bring a world back? (from the designer, 2026-10-24, #650)
 **The question.** Michael's B on #413 deletes every save in the browser when the sixth knot is cut, but a file exported earlier sits on the player's disk and the importer would load it. Should the game take it back?
 
@@ -24,6 +25,8 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 - **C.** Refuse only the unmade character's files; every other character's export loads.
 
 Recommendation: A — it is what makes "truly unmakes the world" true for a player who keeps backups. The build sheet: `docs/design/great-gates-build.md` (*The open number*).
+
+Michael: **Refuse anything made before the unmaking** (A). (2026-10-24)
 
 ### Where does Aldwyn stand in 2.0's Ironhaven, to hand over the Binding Needle? (from the systems builder, 2026-10-24, #656)
 **The question.** The great gates' second tool, the Binding Needle, is handed over by Aldwyn at Ironhaven (piece II, approved 16 Oct; `docs/design/great-gates-build.md`, session 2): a Herald's runner sends you to him, and his folder *The great anchor places* gives the needle, with the line *(He sets a long bone needle on the desk between you.)* But Aldwyn exists only in the old look's legacy Ironhaven; the new world's Ironhaven is a generated town whose lord stands outdoors in the plaza. The knife's half is built (Sessions 1346–1348); the runner, Aldwyn and the needle wait on this.
@@ -35,6 +38,8 @@ Recommendation: A — it is what makes "truly unmakes the world" true for a play
 
 Recommendation: A — the generated world's own pattern, and it lets a player hold both tools now. Devlog: `docs/devlog/1348.md` on `auto/systems-1345`.
 
+Michael: **In the plaza beside Ironhaven's lord** (A). (2026-10-24)
+
 ### The coaching inn's first floor at the front: three rooms to let, or the coffee room? (from the look builder, 2026-10-24, #660)
 **The question.** The coaching inn stands on its plot (#642 A), but its room is still the old builder's. Session 1351 draws the inn's own room as a prototype inside its 12.6 by 9 m front (`rooms.html?room=coach`): a taproom with the open hearth, the bar across the back, three tables and the coach passengers' corner; a dog-leg stair; a corridor on each upper floor with rooms to let, the garret behind. What should the first floor hold at the front?
 
@@ -43,6 +48,8 @@ Recommendation: A — the generated world's own pattern, and it lets a player ho
 - **B.** The coffee room: one long room for the passengers, a table for twelve between the two front fires, a sideboard and a rug. Five rooms to let.
 
 Recommendation: A — eight doors on two corridors give the rented room and the crime system's locks and witnesses the most to work with; the passengers already have their corner downstairs. Either way 12,700–13,600 triangles in 20 draws. Pictures: [taproom](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-1351/docs/prototypes/levelup/rooms-coach-tap.jpg), [corridor](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-1351/docs/prototypes/levelup/rooms-coach-corridor.jpg), [a room to let (A)](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-1351/docs/prototypes/levelup/rooms-coach-chamber.jpg), [the coffee room (B)](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-1351/docs/prototypes/levelup/rooms-coach-coffee.jpg). Devlog: `docs/devlog/1351.md`.
+
+Michael: **Three rooms to let (eight in all)** (A). (2026-10-24)
 
 ### What does a failing gate with no nave and no chasm lose? (from the systems builder, 2026-10-24, #664)
 **The question.** The gate sheet (`docs/design/gate-interiors-build.md`, *Condition*) gives a failing or broken gate gone spans in a chasm's bridge and gaps in a nave's floor; Session 1358 gave floor one of a two-floor gate its gaps too (the critic's s863 item). But some gates have neither a nave nor a chasm, such as the Vault of the Tide (catastrophic: a flooded hall, a crossing, the stair hall, the ring), and nothing on their way changes. Over 400 seeds a size: 41 of 185 failing or broken tiny and small gates, 6 of 185 medium and large, 14 of 185 massive.
@@ -54,7 +61,8 @@ Recommendation: A — eight doors on two corridors give the rented room and the 
 
 Recommendation: A — the sheet's own rule carried to the other walkable space, and it reaches every gate the critic could walk into. Devlog: `docs/devlog/1358.md` on `auto/systems-1355`.
 
-## Answered
+Michael: **Crossings take gaps on the nave's rule** (A). (2026-10-24)
+
 ### Where does a town's coaching inn stand? (from the look builder, 2026-10-23, #642)
 **The question.** Card F6's coaching inn (#411 A: three storeys, a gateway and a stable yard) is in the game's kit as `PKIT.gl.coachInn` (Session 1339). With its yard and stables it is 17.6 by 23 m, and a town's inn lots are 5–7 m by 4–6 m, so it fits none of 36 inns in 14 Gatelands settlements. It needs a plot of its own, laid before the lots, as the church and the keep got under #433. Where should that plot be?
 
