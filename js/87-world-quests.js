@@ -1057,7 +1057,7 @@ const giver=`${lord.title} ${lord.name}`;
   // floor, at the open cell farthest by walking from where you arrive on that floor (the entrance, or the stair). The first time
   // you come within four units of it, the draft's line, once (the character's: worldState.stats.shuttleSeen). E within 1.4 takes
   // it at Intelligence 35 (artifactTry: the base, plus at most 2 from gear); short of that the hand closes beside it, and it costs
-  // nothing. Its shape is a placeholder, a pale spindle with a faint light; the look builder's prop is owed.
+  // nothing. Its shape is the look builder's prop (shuttleProp, Session 1373).
   let SHUTTLE_LIE=null;
   const SHUTTLE_SAY={seen:'Something small and pale lies on the floor under the sigil, the shape of a boat, or a fish, or neither.',
     fail:'You can see it, and you cannot see where it is. Your hand closes beside it every time. Not yet.',
@@ -1073,11 +1073,12 @@ const giver=`${lord.title} ${lord.name}`;
     const best=far.find(k=>room(k.c,k.r,8))||far.find(k=>room(k.c,k.r,4))||cells[0];return {x:best.c,z:best.r,d:best.d};}
   function shuttleLay(portal){SHUTTLE_LIE=null;try{const P=artifactPlaces().shuttle;if(!P||!portal||portal.seed!==P.door||artifactState('shuttle'))return null;
     const fl=dMap2?2:1,map=fl===2?dMap2:dMap;if(!map)return null;const sp=shuttleSpot(fl,map);if(!sp)return null;
-    const g=new THREE.Group();const wood=new THREE.MeshLambertMaterial({color:0xe2d6bc,emissive:0x2a2418});
+    let g;if(typeof shuttleProp==='function'){g=shuttleProp();g.position.set(sp.x,(fl===2?FLOOR2_Y:0),sp.z);} /* S1373 — the look builder's prop (56-dungeon-build.js) */
+    else{g=new THREE.Group();const wood=new THREE.MeshLambertMaterial({color:0xe2d6bc,emissive:0x2a2418});
     const body=new THREE.Mesh(new THREE.SphereGeometry(.05,10,6),wood);body.scale.set(3.4,.9,1.1);g.add(body);
     const thread=new THREE.Mesh(new THREE.CylinderGeometry(.006,.006,.22,4),new THREE.MeshLambertMaterial({color:0xcfd8e8,emissive:0x303848}));thread.rotation.z=Math.PI/2;thread.rotation.y=.5;thread.position.set(.16,-.02,.06);g.add(thread);
     const l=new THREE.PointLight(0xdfe8ff,.55,2.6);l.position.set(0,.4,0);g.add(l);
-    g.position.set(sp.x,(fl===2?FLOOR2_Y:0)+.05,sp.z);g.rotation.y=(portal.seed%628)/100;dScene.add(g);
+    g.position.set(sp.x,(fl===2?FLOOR2_Y:0)+.05,sp.z);}g.rotation.y=(portal.seed%628)/100;dScene.add(g);
     SHUTTLE_LIE={x:sp.x,z:sp.z,floor:fl,mesh:g,seed:portal.seed,name:P.name,walk:sp.d};return SHUTTLE_LIE;}catch(e){console.warn('shuttleLay',e);return null;}}
   function shuttleNear(){const L=SHUTTLE_LIE;return !!(L&&L.mesh&&activeZoneId==='dungeon'&&currentFloor===L.floor&&Math.hypot(px-L.x,pz-L.z)<1.4);}
   // the first sight of it, once (called from the dungeon's frame)
@@ -1412,8 +1413,8 @@ const giver=`${lord.title} ${lord.name}`;
   // then). The first time you come within ten units of it, the draft's line, once (the character's: stats.ringSeen). E within 2.2
   // tries it, the draft's order: the hour (noon is the game's hour 12, 12:00 to 12:59, the sundial's hour), then the sky (clear
   // only), then Swiftness 30 (artifactTry: the base, plus at most 2 from gear). Every failure costs nothing and is kept for the
-  // Journal's *Things not yet yours*. Taken, the cairn stays, and E at it says what is left. The cairn and the ring are a
-  // placeholder of stacked stones and a gold band; the look builder's prop is owed.
+  // Journal's *Things not yet yours*. Taken, the cairn stays, and E at it says what is left. The cairn and the ring are the
+  // look builder's prop (ringCairnProp, Session 1372). The cairn is not solid.
   const RING_SAY={seen:'A cairn at the top of the world, and on its top stone a ring of gold in a hollow worn to fit it. A line is cut across the stone, and the cairn’s shadow lies on it.',
     hour:'The ring will not lift. The light is wrong for it.',sky:'Noon, and no sun to read it by. The ring stays where it is.',
     swift:'The cairn’s shadow is already off the line by the time your hand is on the stone. Not yet.',
@@ -1421,7 +1422,9 @@ const giver=`${lord.title} ${lord.name}`;
     after:'An empty hollow in the top stone, and a line no shadow reaches at noon.'};
   const RING_NOON=12,RING_REACH=2.2;let RING_CAIRN=null,_ringT=0;
   function ringCairnSpot(P){let best=null;for(let dx=-24;dx<=24;dx+=3)for(let dz=-24;dz<=24;dz+=3){if(dx*dx+dz*dz>24*24)continue;const x=P.x+dx,z=P.z+dz,h=worldH(x,z);if(!best||h>best.y)best={x,z,y:h};}return best;}
-  function ringCairnBuild(P){const sp=ringCairnSpot(P);if(!sp)return null;const g=new THREE.Group();const stone=new THREE.MeshLambertMaterial({color:0x8a8780});
+  function ringCairnBuild(P){const sp=ringCairnSpot(P);if(!sp)return null;
+    if(typeof ringCairnProp==='function'){const S=ringCairnProp(sp.x,sp.z),g=S.group;g.position.set(sp.x,meshH(sp.x,sp.z),sp.z);sc.add(g);return {x:sp.x,z:sp.z,y:sp.y,mesh:g,ring:S.ring,peak:P.peak,name:P.name};} /* S1372 — the look builder's prop (82-world-structures.js) */
+    const g=new THREE.Group();const stone=new THREE.MeshLambertMaterial({color:0x8a8780});
     [[.62,.0,0],[.5,.42,.4],[.4,.78,1.1],[.3,1.06,2.0]].forEach(([r,y,a])=>{const m=new THREE.Mesh(new THREE.DodecahedronGeometry(r,0),stone);m.scale.y=.6;m.position.y=y+r*.3;m.rotation.y=a;g.add(m);});
     const ring=new THREE.Mesh(new THREE.TorusGeometry(.06,.016,6,14),new THREE.MeshLambertMaterial({color:0xe8c050,emissive:0x3a2a08}));ring.rotation.x=Math.PI/2;ring.position.y=1.42;g.add(ring);
     g.position.set(sp.x,sp.y-.1,sp.z);sc.add(g);return {x:sp.x,z:sp.z,y:sp.y,mesh:g,ring,peak:P.peak,name:P.name};}

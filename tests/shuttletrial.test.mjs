@@ -35,6 +35,15 @@ const lie = await page.evaluate(() => { const L = SHUTTLE_LIE; if (!L) return { 
 console.log('lie', JSON.stringify(lie));
 check(`it lies on the gate's lowest floor (${lie.floor}), on open floor, ${lie.walk} cells' walk from the arrival (the farthest is ${lie.max})`, !lie.none && lie.floor === lie.floors && lie.cell === 1 && lie.walk >= lie.max * 0.85 && lie.inScene, lie);
 
+// the Shuttle is the look builder's prop (Session 1373): a boat-shaped shuttle a forearm long, at its true size once the gate is scaled
+const prop = await page.evaluate(() => { const L = SHUTTLE_LIE; if (!L || !L.mesh) return { none: true }; let tris = 0, draws = 0;
+  L.mesh.traverse(o => { if (o.isMesh) { draws++; const gg = o.geometry; tris += (gg.index ? gg.index.count : gg.attributes.position.count) / 3; } });
+  L.mesh.updateMatrixWorld(true); const b = new THREE.Box3().setFromObject(L.mesh), floorY = L.floor === 2 ? FLOOR2_Y : 0;
+  return { prop: L.mesh.name === 'shuttleProp', thread: !!L.mesh.getObjectByName('shuttleThread'), tris: Math.round(tris), draws, long: Math.max(b.max.x - b.min.x, b.max.z - b.min.z), low: b.min.y - floorY, high: b.max.y - floorY }; });
+console.log('prop', JSON.stringify(prop));
+check(`the Shuttle is the prop: ${prop.tris} triangles in ${prop.draws} draws, ${prop.long && prop.long.toFixed(2)} m across with its thread, on the floor (${prop.low && prop.low.toFixed(3)} to ${prop.high && prop.high.toFixed(3)} m)`,
+  !prop.none && prop.prop && prop.thread && prop.tris > 300 && prop.tris < 1500 && prop.draws <= 6 && prop.long > .28 && prop.long < .45 && prop.low > -.005 && prop.low < .01 && prop.high < .09, prop);
+
 // the first sight, driven by the loop
 const seen = await page.evaluate(() => { const L = SHUTTLE_LIE; window._put = (dx) => { currentFloor = L.floor; jumpY = L.floor === 2 ? FLOOR2_Y : 0; velY = 0; onGround = true; px = L.x + dx; pz = L.z; }; ENEMIES.forEach(e => { e.dead = true; }); window._put(3.5); window._said.length = 0; return true; });
 await g.frames(6);

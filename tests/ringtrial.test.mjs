@@ -33,6 +33,14 @@ console.log('cairn', JSON.stringify(cairn));
 check(`the cairn stands at the peak's top: height ${cairn && cairn.y.toFixed(1)}, the highest ground within 24 is ${cairn && cairn.top.toFixed(1)}, the centre ${cairn && cairn.centre.toFixed(1)}`,
   cairn && cairn.inScene && cairn.ring && cairn.y >= cairn.top - 1.5 && cairn.y > cairn.centre - .01 && cairn.off <= 24, cairn);
 
+// the cairn is the look builder's prop (Session 1372): dry-laid courses and a top stone, the ring in its hollow at chest height
+const prop = await page.evaluate(() => { const C = RING_CAIRN; let tris = 0, draws = 0; C.mesh.traverse(o => { if (o.isMesh) { draws++; const gg = o.geometry; tris += (gg.index ? gg.index.count : gg.attributes.position.count) / 3; } });
+  C.mesh.updateMatrixWorld(true); const v = new THREE.Vector3(); C.ring.getWorldPosition(v);
+  return { prop: !!C.mesh.getObjectByName('ringCairn'), cut: !!C.mesh.getObjectByName('ringCut'), tris: Math.round(tris), draws, ringUp: v.y - meshH(C.x, C.z), sunk: C.mesh.position.y - meshH(C.x, C.z) }; });
+console.log('prop', JSON.stringify(prop));
+check(`the cairn is the prop: ${prop.tris} triangles in ${prop.draws} draws, the line and the hollow cut, the ring ${prop.ringUp.toFixed(2)} m over the drawn ground`,
+  prop.prop && prop.cut && prop.tris > 800 && prop.tris < 4000 && prop.draws <= 5 && prop.ringUp > 1.1 && prop.ringUp < 1.45 && Math.abs(prop.sunk) < .01, prop);
+
 await page.evaluate(() => { window._said = []; const sm = showMsg, sl = showMsgLong; showMsg = function (t) { window._said.push(t); return sm.apply(this, arguments); };
   showMsgLong = function (t) { window._said.push(t); return sl.apply(this, arguments); };
   window._put = d => { const C = RING_CAIRN; px = C.x + d; pz = C.z; }; ENEMIES.length = 0; });
