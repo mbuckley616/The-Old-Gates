@@ -1814,4 +1814,60 @@
   function tentGeo(r){const lo=tentGeoLo(r),hi=tentGeoHi(lo.userData.picks);hi.userData.lo=lo;return hi;}
   function ruinGeo(r){const lo=ruinGeoLo(r),hi=ruinGeoHi({picks:lo.userData.picks});hi.userData.lo=lo;return hi;}
   function standingStoneGeo(r){const lo=standingStoneGeoLo(r),hi=standingStoneGeoHi(lo.userData.picks);hi.userData.lo=lo;return hi;}
+  // S1360 — the Ashfeld's flagstone (great-gates piece II: "where the path in the grass ends, there is a flagstone"; under it, "wrapped
+  // in an oilcloth gone stiff with age", the knife; "the grass round the stone is worn to earth in the shape of two feet"). Built at
+  // (x,z) in metres: the ground (bare earth hugging the terrain, fading to the land's own colour, two footprints on the path's side,
+  // grass round the rim), the hollow and the oilcloth under the stone, and the slab, its own group so the lift can tip it aside.
+  // Returns {group, slab, hollow}; flagstoneBuild (87-world-quests.js) adds it to the scene. About 900 triangles in four draws.
+  let _flagMat=null,_flagPit=null;
+  function flagstoneProp(x,z){
+    const r=pRng(0x5a1fa6),y0=worldH(x,z),g=new THREE.Group();g.position.set(x,y0,z);
+    if(!_flagMat){_flagMat=new THREE.MeshLambertMaterial({vertexColors:true,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2});_flagPit=new THREE.MeshLambertMaterial({vertexColors:true,polygonOffset:true,polygonOffsetFactor:-5,polygonOffsetUnits:-5});}
+    const hAt=(lx,lz)=>worldH(x+lx,z+lz)-y0,onRd=(lx,lz)=>{const ri=roadInfo(x+lx,z+lz);return !!(ri&&ri.d<ROAD_HALF+.3);},eAt=(lx,lz)=>hAt(lx,lz)+(onRd(lx,lz)?.085:.05); /* the earth's top: over the road's ribbon (.07) where it runs */
+    // the path's side: the road that ends here (its first segment out of the stone), else south
+    let fx=0,fz=1;{const ri=roadInfo(x,z);if(ri&&ri.d<4){const s=ri.seg,ea=Math.hypot(s.ax-x,s.az-z),eb=Math.hypot(s.bx-x,s.bz-z),ox=ea<eb?s.bx:s.ax,oz=ea<eb?s.bz:s.az,L=Math.hypot(ox-x,oz-z);if(L>.5){fx=(ox-x)/L;fz=(oz-z)/L;}}}
+    // the ground: four rings of an uneven round, earth inside, laid on the terrain (over the road's ribbon, .07, where it runs); the outer
+    // ring dips under the land, so the terrain itself cuts the patch's ragged edge in its own colour
+    {const N=20,R=[0,.42,.8,1.1,1.45],wob=[],pos=[],col=[],c=new THREE.Color(),earth=new THREE.Color(0x5b4631),rim=new THREE.Color(0x58542e);
+      for(let k=0;k<N;k++)wob.push(.85+r()*.3);
+      const vtx=(ring,k)=>{const a=k/N*Math.PI*2,rr=R[ring]*(ring?wob[k%N]:1),lx=Math.sin(a)*rr*1.12,lz=Math.cos(a)*rr*.9;
+        const h=hAt(lx,lz),t=ring<2?0:ring===2?.2:ring===3?.55:.8;c.copy(earth).lerp(rim,t).multiplyScalar(1+(r()-.5)*.08);return [lx,ring<3||onRd(lx,lz)?eAt(lx,lz):h+(ring===3?.03*r()-.012:-.06),lz,c.r,c.g,c.b];};
+      const V=[];for(let ring=0;ring<R.length;ring++){V.push([]);for(let k=0;k<N;k++)V[ring].push(vtx(ring,k));}
+      const tri=(a,b,d)=>{for(const v of [a,b,d]){pos.push(v[0],v[1],v[2]);col.push(v[3],v[4],v[5]);}};
+      for(let ring=0;ring<R.length-1;ring++)for(let k=0;k<N;k++){const a=V[ring][k],b=V[ring][(k+1)%N],c1=V[ring+1][k],d=V[ring+1][(k+1)%N];if(ring===0)tri(a,c1,d);else{tri(a,c1,d);tri(a,d,b);}}
+      const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));geo.setAttribute('color',new THREE.Float32BufferAttribute(col,3));geo.computeVertexNormals();
+      const m=new THREE.Mesh(geo,_flagMat);m.receiveShadow=true;m.name='flagEarth';g.add(m);}
+    const P=[],ang=Math.atan2(fx,fz);
+    // two feet, toes to the stone, on the path's side: pressed darker into the earth
+    for(const sd of [-1,1]){const fx0=fx*.72+fz*sd*.09,fz0=fz*.72-fx*sd*.09;const f=new THREE.CircleGeometry(.5,12);f.rotateX(-Math.PI/2);
+      P.push({geo:f,color:new THREE.Color(0x3d2f21),x:fx0,y:eAt(fx0,fz0)+.008,z:fz0,ry:ang,sx:.1,sz:.27,jitter:.1});}
+    // grass round the rim: tufts of three blades, the land's green
+    {const gc=new THREE.Color();for(let k=0;k<16;k++){const a=k/16*Math.PI*2+r()*.3,rr=1.15+r()*.35,lx=Math.sin(a)*rr*1.12,lz=Math.cos(a)*rr*.9;if(lx*fx+lz*fz>1.0&&Math.abs(lx*fz-lz*fx)<.5)continue;
+      groundColor(x+lx,z+lz,y0+hAt(lx,lz),1,gc);gc.multiplyScalar(.85);for(let b=0;b<3;b++){const h=.12+r()*.12,bl=new THREE.ConeGeometry(.018,h,3);bl.translate(0,h/2,0);
+        P.push({geo:bl,color:gc.clone().offsetHSL(0,0,(r()-.5)*.06),x:lx+(r()-.5)*.08,y:hAt(lx,lz)+.06,z:lz+(r()-.5)*.08,rx:(r()-.5)*.5,ry:r()*3,rz:(r()-.5)*.5,jitter:.1});}}}
+    // the hollow under the stone, and the oilcloth left in it once the knife is out
+    const hollow=new THREE.Group();hollow.name='flagHollow';hollow.visible=false;g.add(hollow); /* shown when the slab is tipped */
+    {const H=[];const hy=eAt(0,0)+.01;const pit=new THREE.CircleGeometry(.5,14);pit.rotateX(-Math.PI/2);H.push({geo:pit,color:new THREE.Color(0x2a2017),x:0,y:hy,z:0,sx:.8,sz:.62,jitter:.12});
+      const cl=SK.bumpy(new THREE.BoxGeometry(.34,.025,.22,4,1,3),.012,9,2);H.push({geo:cl,color:new THREE.Color(0x4a4426),x:-.05,y:hy+.012,z:.03,ry:.5,jitter:.1});
+      const cl2=SK.bumpy(new THREE.BoxGeometry(.18,.02,.14,3,1,2),.01,9,5);H.push({geo:cl2,color:new THREE.Color(0x3c3820),x:.1,y:hy+.022,z:-.05,rx:.12,ry:-.4,jitter:.1});
+      const hm=new THREE.Mesh(mergeParts(H),_flagPit);hm.receiveShadow=true;hollow.add(hm);}
+    {const gm=new THREE.Mesh(mergeParts(P),VC_MAT);gm.receiveShadow=true;gm.name='flagGround';g.add(gm);}
+    // the slab: an old field stone, uneven outline, eased edges, worn paler on top, lichen at its margins, earth on its underside
+    const slab=new THREE.Group();slab.name='flagSlab';
+    {const sh=new THREE.Shape(),n=11;for(let k=0;k<n;k++){const a=k/n*Math.PI*2,rr=.88+r()*.18,px_=Math.cos(a)*.48*rr,pz_=Math.sin(a)*.35*rr;k?sh.lineTo(px_,pz_):sh.moveTo(px_,pz_);}sh.closePath();
+      const geo=new THREE.ExtrudeGeometry(sh,{depth:.06,bevelEnabled:true,bevelThickness:.022,bevelSize:.03,bevelSegments:2,curveSegments:2});geo.rotateX(-Math.PI/2);geo.translate(0,.022,0);
+      const pa=geo.attributes.position,col=[],top=new THREE.Color(0x8d897e),side=new THREE.Color(0x6c685f),under=new THREE.Color(0x3f3427),c=new THREE.Color();
+      for(let i=0;i<pa.count;i++){const yy=pa.getY(i);if(yy>.1)c.copy(top);else if(yy<.005)c.copy(under);else c.copy(side).lerp(top,Math.max(0,(yy-.03)/.07));c.multiplyScalar(1+(Math.random()-.5)*.1);col.push(c.r,c.g,c.b);}
+      geo.setAttribute('color',new THREE.Float32BufferAttribute(col,3));geo.computeVertexNormals();
+      const sm=new THREE.Mesh(geo,VC_MAT);sm.castShadow=true;sm.receiveShadow=true;slab.add(sm);
+      const L=[];for(let k=0;k<7;k++){const a=r()*Math.PI*2,rr=.28+r()*.12,d=new THREE.CircleGeometry(.025+r()*.035,6);d.rotateX(-Math.PI/2);
+        L.push({geo:d,color:new THREE.Color(r()<.6?0x9c9a56:0xb4904c),x:Math.cos(a)*rr,y:.1045,z:-Math.sin(a)*rr*.7,jitter:.12});}
+      const lm=new THREE.Mesh(mergeParts(L),VC_MAT);slab.add(lm);}
+    // the slab sits on the highest ground under it, its top 4 cm proud of the earth
+    {let hi=-1e9;for(const [lx,lz] of [[0,0],[.45,0],[-.45,0],[0,.33],[0,-.33]])hi=Math.max(hi,eAt(lx,lz));slab.position.set(0,hi+.04-.104,0);slab.userData.rest=slab.position.y;}
+    g.add(slab);g.userData.path=[fx,fz];
+    return {group:g,slab,hollow};}
+  // the slab lifted: tipped over onto the far side of the hollow, its earthy underside up, one edge on the rim
+  function flagstoneTip(slab,path,hollow){if(!slab)return;if(hollow)hollow.visible=true;const [fx,fz]=path||[0,1],y=slab.userData.rest||0;slab.position.set(-fx*.62,y+.13,-fz*.62);slab.rotation.set(0,0,0);
+    slab.rotateY(Math.atan2(fx,fz));slab.rotateX(Math.PI-.42);}
   const SETTLE_MAT=VC_MAT;

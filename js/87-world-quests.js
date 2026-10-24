@@ -2249,7 +2249,7 @@ const giver=`${lord.title} ${lord.name}`;
   // (restAtBed). Read, it stars the Ashfeld on the map, and under the flagstone in the middle of its stone ring lies the knife.
   // The tools are the character's: bag items, `unique` (never sold or destroyed), never stashed, kept on death. Which events
   // have fired is the world's: worldState.greatGates.ev {ringFirst, ringGate, noteDue, noteGiven, noteRead, knifeLifted}.
-  // The flagstone is a placeholder slab; the look builder's prop is owed. It is not solid.
+  // The flagstone is the look builder's prop (flagstoneProp, Session 1360). It is not solid.
   const GREAT_TOOLS={
     looseKnife:{name:'The Loosing Knife',sub:'an Scian',ico:'🗡',desc:'A knife of grey stone, no longer than a hand and as thin as a leaf. The script on its blade runs one way only, toward the edge. It will not cut bread.'},
     bindNeedle:{name:'The Binding Needle',sub:'an tSnáthaid',ico:'🪡',desc:'A needle of pale bone as long as a forearm, its eye wide enough to put a finger through. The script on it runs round and round and comes back to where it began.'}};
@@ -2274,12 +2274,13 @@ const giver=`${lord.title} ${lord.name}`;
   // the flagstone: in the middle of the Ashfeld's ring of six stones, where the road's path in ends
   const FLAG_REACH=1.6;let FLAG_STONE=null,_flagT=0;
   function flagstoneSpot(){const f=siteAnywhere('ashfeld');return f?{x:f.x,z:f.z}:null;}
-  function flagstoneBuild(sp){const g=new THREE.Group(),y=worldH(sp.x,sp.z);
+  function flagstoneBuild(sp){if(typeof flagstoneProp==='function'){const P=flagstoneProp(sp.x,sp.z);sc.add(P.group);return {x:sp.x,z:sp.z,mesh:P.group,slab:P.slab,hollow:P.hollow};} /* S1360 — the look builder's prop (82-world-structures.js) */
+    const g=new THREE.Group(),y=worldH(sp.x,sp.z);
     const earth=new THREE.Mesh(new THREE.CircleGeometry(.95,20),new THREE.MeshLambertMaterial({color:0x4a3a28}));earth.rotation.x=-Math.PI/2;earth.position.y=.02;earth.scale.set(1,.8,1);g.add(earth);
     const slab=new THREE.Mesh(new THREE.BoxGeometry(1.0,.09,.72),new THREE.MeshLambertMaterial({color:0x77746c}));slab.position.y=.05;g.add(slab);
     g.position.set(sp.x,y,sp.z);sc.add(g);return {x:sp.x,z:sp.z,mesh:g,slab};}
   function flagstoneDrop(){if(FLAG_STONE&&FLAG_STONE.mesh&&FLAG_STONE.mesh.parent)FLAG_STONE.mesh.parent.remove(FLAG_STONE.mesh);FLAG_STONE=null;}
-  function flagstoneLifted(F){if(F&&F.slab){F.slab.position.set(.75,.18,.1);F.slab.rotation.set(0,.4,1.1);}}
+  function flagstoneLifted(F){if(F&&F.slab){if(F.hollow&&typeof flagstoneTip==='function'){if(!F.tipped){flagstoneTip(F.slab,F.mesh.userData.path,F.hollow);F.tipped=true;}return;}F.slab.position.set(.75,.18,.1);F.slab.rotation.set(0,.4,1.1);}}
   // once a second from the loop: built while the Ashfeld's cell is loaded and you are within 300 m
   function tickFlagstone(force){const t=performance.now();if(!force&&t-_flagT<1000)return;_flagT=t;
     if(activeZoneId!=='world'||!sc){flagstoneDrop();return;}const sp=flagstoneSpot();if(!sp)return;
