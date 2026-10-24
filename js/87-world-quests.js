@@ -2165,6 +2165,19 @@ const giver=`${lord.title} ${lord.name}`;
     if(st==='sealed'&&t.knife&&!f)return knotCut()?'cut':null;
     showMsg(KNOT_LINES.examine[st],'#c8d0e0');return 'examine';}
 
+  // ── the way back (Session 1348; piece I §4, the Gate-Blade's precedent, Michael's 3A on #263): once a great gate's ring has
+  // been reached (ev.ring[school]), its door offers both, *go down to the ring* and *go in*; the first lands you on the dais
+  // beside the knot, each time with the draft's line. The realm is still there to walk the long way.
+  const RING_BACK='The way to the ring is open. The hall does not ask the long way of you twice.';
+  function greatRingBack(portal){const s=greatSchoolOf(portal);if(!s)return false;const g=worldState.greatGates,r=g&&g.ev&&g.ev.ring;return !!(r&&r[s]);}
+  function greatDoorPrompt(portal){if(!greatRingBack(portal))return null;return `${portal.canonicalName||portal.name||'The great gate'} — Press 'E' to go down to the ring`;}
+  function greatDoorChoice(portal){const n=portal.canonicalName||portal.name||'The great gate';const go=ring=>{setTimeout(()=>{try{closeDialog();}catch(e){}portal._toRing=ring;goToDungeon(portal);},60);return '';};
+    openDialog({name:n,role:SCHOOL_DEF[greatSchoolOf(portal)].name,ico:'◎',noIntro:true,greeting:[''],topics:[
+      {label:'Go down to the ring.',quest:true,fn:()=>go(true)},{label:'Go in.',quest:true,fn:()=>go(false)},{label:'Leave it.',bye:true}]});return true;}
+  // called by goToDungeon once you stand at the way in: to the dais, 2.2 m short of the knot, facing it
+  function knotLandAtRing(){const L=KNOT_LIE;if(!L)return false;currentFloor=L.floor;px=L.x;pz=L.z+2.2;yaw=0;pitch=0;velY=0;
+    jumpY=(L.floor===2?FLOOR2_Y:0)+.45;onGround=false;showMsg(RING_BACK,'#c8d0e0');return true;}
+
   // ═══ THE LOOSING KNIFE (great-gates-build.md session 2, its first half, Session 1347; piece II, approved 16 Oct 2026) ═══
   // The first time a great ring is reached carrying neither tool, Varek's note is folded into your pack on your next waking
   // (restAtBed). Read, it stars the Ashfeld on the map, and under the flagstone in the middle of its stone ring lies the knife.

@@ -6,6 +6,7 @@
 // stands over the ring's dais and answers by what you carry (piece I's table).
 // Session 1347 (session 2's first half, piece II): reaching a ring with neither tool, the next waking leaves Varek's note naming
 // it; read, it stars the Ashfeld, and the flagstone there gives the Loosing Knife, which cannot be stashed and rides the character.
+// Session 1348 (piece I §4): once its ring is reached, a great gate's door offers the way down to the ring, landing beside the knot.
 import { boot, check } from './lib/game.mjs';
 import { enterDungeon } from './lib/dungeonshot.mjs';
 const g = await boot(); const { page } = g;
@@ -122,5 +123,17 @@ check(`the flagstone asks nothing before the note and lifts after it: "${n.promp
 check('under it the Loosing Knife: unique, a quest item, its card as written, the log line', !!n.knife && n.knife[0] === 'The Loosing Knife' && n.knife[1] && n.knife[2] && n.knife[3] && n.took, n);
 check('lifted once: no prompt, no star', n.after[0] === null && n.after[1] === false, n.after);
 check('the knife cannot be stashed; it rides the character\'s row, the lifting the world\'s', !n.stashed && n.rows.every(Boolean), n);
+// the way back (Session 1348)
+const w = await page.evaluate(() => {
+  const p = Object.assign({}, PORTALS[0], { theme: 'ruins', seed: 2055, size: 'medium', interior: 'cave', zone: 'world', tutorial: false, lair: null, name: 'The Test Gate' });
+  const q = Object.assign({}, p, { seed: 2056 }); window._gp = p; window._prevDScene = dScene;
+  const out = { prompt: greatDoorPrompt(p), plain: greatDoorPrompt(q) };
+  greatDoorChoice(p); out.choice = dlgOpen && dlgNPC && dlgNPC.topics.map(t => t.label).join(' / '); closeDialog();
+  p._toRing = true; goToDungeon(p); return out; });
+await page.waitForFunction(() => activeZoneId === 'dungeon' && scene === dScene && dScene !== window._prevDScene && document.getElementById('fd').style.opacity === '0', null, { timeout: 60000, polling: 200 });
+const wl = await page.evaluate(() => ({ d: +Math.hypot(px - KNOT_LIE.x, pz - KNOT_LIE.z).toFixed(2), near: knotNear(), floor: currentFloor === KNOT_LIE.floor, msg: MSGEL.textContent, prompt: knotPrompt().replace(KNOT_LIE.name, 'G') }));
+console.log(JSON.stringify(w), JSON.stringify(wl));
+check(`a great gate whose ring you reached offers the way down at its door: "${w.prompt}"`, w.prompt === "The Test Gate — Press 'E' to go down to the ring" && w.plain === null && w.choice === 'Go down to the ring. / Go in. / Leave it.', w);
+check(`going down lands you on the dais by the knot (${wl.d} m), with the draft's line`, wl.d < 2.5 && wl.near && wl.floor && wl.msg === 'The way to the ring is open. The hall does not ask the long way of you twice.' && wl.prompt === "The bound knot of G — Press 'E' to cut it", wl);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

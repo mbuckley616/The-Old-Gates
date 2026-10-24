@@ -3674,6 +3674,7 @@ function goToDungeon(portal){if(!portal.tutorial&&activeZoneId==='world'&&typeof
   px=dAt(dEntranceX+stepC*2);pz=dAt(dEntranceZ+stepR*2);
   yaw=Math.atan2(-stepC,-stepR);pitch=0;velY=0;jumpY=0;onGround=true;
   showMsg('Entered '+portal.name+'. Press E at entrance to leave.','#aaaaff');
+  if(portal._toRing){portal._toRing=false;if(typeof knotLandAtRing==='function')knotLandAtRing();} /* S1348 — a great gate's way back to its ring */
 });}
 function goToOW(){
   // v61aw: tutorial exit branch. When the player ascends the stair from

@@ -949,7 +949,8 @@ function loop(now){
     // loot panel and getting the investigate branch instead.
     const nearBramBodyPrompt=ZONE_CORPSES.find(c=>c.zone===activeZoneId&&c.bramBody&&Math.hypot(px-c.x,pz-c.z)<1.3);
     const iprOW=document.getElementById('ipr');
-    if(nearPortal){const ds=nearPortal.diffScale||DIFF_SCALE.normal;iprOW.innerHTML=`Press 'E' to enter <b>${nearPortal.name}</b> &nbsp;<span style="color:${ds.col};font-size:10px">[${ds.label} · ${nearPortal.theme} · ${nearPortal.size}]</span>`;iprOW.style.opacity='1';iprOW.style.display='block';}
+    if(nearPortal&&typeof greatDoorPrompt==='function'&&greatDoorPrompt(nearPortal)){iprOW.textContent=greatDoorPrompt(nearPortal);iprOW.style.opacity='1';iprOW.style.display='block';} /* S1348 — a great gate's way back */
+    else if(nearPortal){const ds=nearPortal.diffScale||DIFF_SCALE.normal;iprOW.innerHTML=`Press 'E' to enter <b>${nearPortal.name}</b> &nbsp;<span style="color:${ds.col};font-size:10px">[${ds.label} · ${nearPortal.theme} · ${nearPortal.size}]</span>`;iprOW.style.opacity='1';iprOW.style.display='block';}
     else if(nearGate){
       // v61d7: tide-guarded gates show a different prompt when blocked.
       // v61d9: commission-guarded gates likewise.
