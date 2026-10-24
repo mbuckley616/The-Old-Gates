@@ -749,7 +749,7 @@ const HC_RIGS=new Set();
 // the game's kinds and the kit's plans: a kind's own colours over the plan's (the kit's palettes are sRGB triples)
 const HC_KINDS={'Wolf':{plan:'wolf'},'Snow Wolf':{plan:'wolf',own:true},'Dire Wolf':{plan:'ironwolf',own:true},'Boar':{plan:'boar'},'Cave Bear':{plan:'bear',own:true},'Ash Hound':{plan:'ashhound'},'Horse':{plan:'horse',own:true,ik:true},'Grey Horse':{plan:'horse',own:true,ik:true},
   'Spider':{plan:'spider',own:true,spider:true,cell:.028,merge:true},'Sand Scorpion':{plan:'dunescorpion',own:true,spider:true,cell:.02,merge:true},
-  'Bog Crawler':{plan:'bogcrawler',own:true,spider:true,cell:.018,merge:true},'Faolchú':{plan:'faolchu',own:true,cell:.03,unhunch:true}};
+  'Bog Crawler':{plan:'bogcrawler',own:true,spider:true,cell:.018,merge:true},'Faolchú':{plan:'faolchu',own:true,cell:.03,unhunch:true,arms:true}};
 // the driver's joints and the kit's bones they move, parents first (the kit's front legs hang on spine3, the hind on spine0)
 const HC_MAP=[['hips','spine0'],['spine','spine1'],['neck','neck0'],['head','head'],['jaw','jaw'],['tail1','tail0'],['tail2','tail1'],['tail3','tail2'],
   ['shL','leg0L_0'],['elL','leg0L_1'],['wrL','leg0L_2'],['pfL','leg0L_3'],['shR','leg0R_0'],['elR','leg0R_1'],['wrR','leg0R_2'],['pfR','leg0R_3'],
@@ -818,7 +818,9 @@ function hcAttach(rig){const tA=performance.now();let C;
   const scorp=sc?{tail:Object.keys(by).filter(n=>/^tail\d+$/.test(n)).map(n=>by[n]),arms:[[by.arm0L_0,1],[by.arm0R_0,-1]]}:null;
   // a water bug's forelegs (Session 1337): each femur and tibia, and the tibia's hinge from the kit's rest (its bones' rest turns are the identity)
   const bug=rig.k&&rig.k.bug&&by.arm0L_2?['L','R'].map(n=>({n,fem:by['arm0'+n+'_0'],tib:by['arm0'+n+'_1'],ax:by['arm0'+n+'_1'].position.clone().cross(by['arm0'+n+'_2'].position).normalize()})):null;
-  rig.hc={W,C,map,s0,t0,fur,small,ik,feet,hb,scorp,bug,merge:!!HC_KINDS[hcKind(rig)].merge,unhunch:!!HC_KINDS[hcKind(rig)].unhunch,glow:meshes.map(m=>m.material.userData&&m.material.userData.uGlow).filter(u=>u&&u.value&&u.value.isColor),mid:null,bits:C.B.bits.map(b=>b.obj),hide:meshes.filter(m=>!fur.includes(m)),hip0:sp?B.body.position.clone():new THREE.Vector3(B.hips.position.x,wolfHipY(rig.k),B.hips.position.z),pos0:by.spine0.position.clone(),k:1/(f*C.S),L:-1,drv:rig.mesh.material,em:-1};
+  // the Faolchú's two pairs of arms (Session 1347): the kit's own list, posed by hcArms (the driver has no arm bones)
+  const arms=HC_KINDS[hcKind(rig)].arms?C.B.arms.map(A=>({b:A.names.slice(0,3).map(n=>by[n]),side:A.side,ph:A.phase,sw:A.swing,pair:+A.names[0][3]})):null;
+  rig.hc={W,C,map,s0,t0,fur,small,ik,feet,hb,scorp,bug,arms,merge:!!HC_KINDS[hcKind(rig)].merge,unhunch:!!HC_KINDS[hcKind(rig)].unhunch,glow:meshes.map(m=>m.material.userData&&m.material.userData.uGlow).filter(u=>u&&u.value&&u.value.isColor),mid:null,bits:C.B.bits.map(b=>b.obj),hide:meshes.filter(m=>!fur.includes(m)),hip0:sp?B.body.position.clone():new THREE.Vector3(B.hips.position.x,wolfHipY(rig.k),B.hips.position.z),pos0:by.spine0.position.clone(),k:1/(f*C.S),L:-1,drv:rig.mesh.material,em:-1};
   HC_BODY.ms+=performance.now()-tA;HC_BODY.n++;}
 function hcPose(rig){const H=rig.hc,B=rig.B,map=H.map,uh=H.unhunch&&rig.hunch;
   if(uh){B.spine.rotation.x-=uh[0];B.neck.rotation.x-=uh[1];B.head.rotation.x-=uh[2];}
@@ -830,6 +832,7 @@ function hcPose(rig){const H=rig.hc,B=rig.B,map=H.map,uh=H.unhunch&&rig.hunch;
   if(H.feet)hcSpFeet(rig);
   if(H.scorp)hcScorp(rig);
   if(H.bug)hcBug(rig);
+  if(H.arms)hcArms(rig);
   if(uh){B.spine.rotation.x+=uh[0];B.neck.rotation.x+=uh[1];B.head.rotation.x+=uh[2];}
   // the Faolchú's seam in the phase's colour (its sigils' red, 1,0.1,0.04, is the plan's 3.2,0.55,0.2 at a third)
   if(rig.sigil)for(const u of H.glow)u.value.copy(rig.sigil.color).multiplyScalar(3.2);
@@ -861,6 +864,18 @@ function hcScorp(rig){const S=rig.hc.scorp,B=rig.B,a=B.tail?B.tail.rotation.x*1.
 // Session 1337: a water bug's forelegs from its driver's fangs and hooks (tickSpider: the fang lifted -0.5·P.fang about x, the hook
 // folded -1.2·P.fang about its hinge)
 function hcBug(rig){const B=rig.B;for(const A of rig.hc.bug){const o=B['fang'+A.n].rotation.x/-.5;A.fem.quaternion.setFromAxisAngle(_hcA.set(1,0,0),-.5*o);A.tib.quaternion.setFromAxisAngle(A.ax,-1.2*o);}}
+// Session 1347: the Faolchú's arms. The driver has none to copy, so the kit's four are posed here from what drives the rest: they
+// swing with the stride as the kit's own gait swings them (against the legs, each pair at its plan's phase, still at a stand); through
+// the wind-up (e._wind) they rise and draw back over the seam, the forearms cocked; in the strike (e._lunge, 0.3 s) they rake down and
+// forward past their rest and settle, the hind pair a beat behind the fore. The kit's arm bones rest at the identity, so a turn about
+// x swings an arm fore and aft in the body's plane, as the kit's gait does (creatures.js, pose's "arms swing against the legs")
+const HC_FAOL={rise:.7,cock:-1.1,push:.9,reach:-.9,lag:.3};
+function hcArms(rig){const H=rig.hc,e=rig.e,w=e?(e._wind||0):0,lk=e&&e._lunge!=null?1-Math.max(0,e._lunge)/.3:-1,mv=1-((rig.w&&rig.w.stand)||0),tau=Math.PI*2,F=HC_FAOL;
+  for(const A of H.arms){let u=-w;
+    // the strike's course: from drawn back (-1) through the rake (+1) to the rest (0); the hind pair starts a beat late
+    if(lk>=0){const k=Math.max(0,Math.min(1,(lk-(A.pair?F.lag:0))/(1-F.lag)));u=-Math.cos(1.5*Math.PI*k);}
+    const s=A.sw*mv*Math.sin(tau*(rig.phase||0)+(A.side>0?0:Math.PI)+A.ph);
+    A.b[0].rotation.set(s+(u<0?F.rise:F.push)*u,0,0);A.b[1].rotation.set(-Math.abs(s)*.6-.2-F.cock*Math.max(0,-u)+F.reach*Math.max(0,u),0,0);A.b[2].rotation.set(.3*u,0,0);}}
 function hcLevel(rig,L){const H=rig.hc;if(H.L===L)return;H.L=L;H.W.visible=L<2;rig.mesh.visible=L===2;
   if(H.merge&&L===1&&!H.mid)hcBake(rig);
   if(H.mid){const one=L===1;H.mid.visible=one;for(const m of H.hide)m.visible=!one;for(const o of H.bits)o.visible=!one;}
