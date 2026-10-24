@@ -937,7 +937,7 @@ function loop(now){
     const nearHouse = (nearHouseRaw && activeZoneId==='overworld' && _houseDestroyed(nearHouseRaw)) ? null : nearHouseRaw;
     const activeNPCs=(ZONES[activeZoneId]&&ZONES[activeZoneId].npcs)||[];
     const nearNPC=talkAimedNPC(activeNPCs); // v80 — aimed, not near; S596 — the nearest of those aimed at, the one E talks to
-    const nearHerbPrompt=activeHerbs().find(h=>!h.harvested&&Math.hypot(px-h.x,pz-h.z)<TOUCH);
+    const nearHerbPrompt=activeHerbs().find(h=>!h.harvested&&!h._tolled&&Math.hypot(px-h.x,pz-h.z)<TOUCH);
     // v61b: notice boards zone-scoped (each entry carries a `zone` tag).
     const nearBoard=(typeof isSettlementZone==='function' && isSettlementZone(activeZoneId))
       ? OW_NOTICE_BOARDS.find(b=>b.zone===activeZoneId&&Math.hypot(px-b.x,pz-b.z)<TOUCH) : null;

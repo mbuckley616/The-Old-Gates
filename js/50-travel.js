@@ -224,7 +224,11 @@ function tickHerbs(dt,now){
   // Tick all zone herb arrays
   const allHerbs=activeZoneId==='world'?activeHerbs():activeZoneId==='forest'?FOREST_HERBS:activeZoneId==='ironhaven'?IH_HERBS:OW_HERBS; // v80 — streamed world keeps its herbs in ZONES.world.herbs
   const nH=allHerbs.length;if(nH){for(let k=0;k<Math.min(nH,HERB_RR);k++){const h=allHerbs[(_herbRR+k)%nH];if(h)h._by=null;}_herbRR=(_herbRR+HERB_RR)%nH;}
+  const tine=activeZoneId==='world'&&typeof gateToll==='function'&&gateToll('tine'); /* S1369 — Tine's toll: half of Aurenne's herbs gone */
   allHerbs.forEach(h=>{
+    if((tine||h._tolled)&&activeZoneId==='world'){const t=tine&&herbTolled(h,true);
+      if(t){if(!h._tolled){h._tolled=true;h.harvested=false;h.g.visible=false;h.gl.intensity=0;}return;}
+      h._tolled=false;if(!h.harvested)h.g.visible=true;}
     if(h.harvested){
       if(h.def.respawn!=null){h.respawnT-=dt;if(h.respawnT<=0){h.harvested=false;h.g.visible=true;h.gl.intensity=h.def.glowInt||.5;const u=h.g.userData;if(u&&u.picked){u.whole.visible=true;u.picked.visible=false;}}}
       return;
@@ -1175,7 +1179,7 @@ function interact(){
     // v80 S9 — camp bedrolls in the open world
     if(activeZoneId==='world'&&ZONES.world&&ZONES.world.beds){const bd=ZONES.world.beds.find(b=>Math.hypot(px-b.x,pz-b.z)<TOUCH);if(bd){openSleepUI();return;}}
     // Herb harvest — all zones
-    const nearHerb=activeHerbs().find(h=>!h.harvested&&Math.hypot(px-h.x,pz-h.z)<TOUCH);
+    const nearHerb=activeHerbs().find(h=>!h.harvested&&!h._tolled&&Math.hypot(px-h.x,pz-h.z)<TOUCH);
     if(nearHerb){harvestHerb(nearHerb);return;}
     // v61ae: Bram's body needs special handling. The standard zone-corpse
     // check below requires items.length>0, which means an already-looted body
