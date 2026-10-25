@@ -210,7 +210,7 @@ function tpHBHold(R){const H=R.rig.hb;if(!H||!R.hbHeld)return;R.root.updateMatri
         _tpHm2.makeRotationFromQuaternion(_tpHq).setPosition(_tpHe.copy(De).applyQuaternion(_tpHq).negate().add(Be));h.c.matrix.premultiply(_tpHm2);}}
     if(h.f&&h.f.length){const v=_tpHv.set(0,0,0);for(const b of h.f)v.add(_tpHv2.setFromMatrixPosition(b.matrixWorld));v.multiplyScalar(1/h.f.length).applyMatrix4(_tpHm);h.c.matrix.setPosition(v);}
     h.c.matrixWorldNeedsUpdate=true;}}
-function tpHBPose(R){if(!R||!R.rig.hb)return;hbPose(R.rig);if(R.hbHook)tpHBBowHand(R);R.root.updateMatrixWorld(true);tpHBHold(R);}
+function tpHBPose(R){if(!R||!R.rig.hb)return;hbPose(R.rig);if(R.mantle)tpHBMantle(R);if(R.hbHook)tpHBBowHand(R);R.root.updateMatrixWorld(true);tpHBHold(R);}
 // S1270 — the bow's draw on the builder's fingers: the right hand, a fist while the bow is carried, opens into the archer's hook as the
 // string comes back (or is held at the ready): the first three fingers bent round the string at their last two joints and barely at the
 // knuckle, the little finger and the thumb left folded. The knuckles' line is hbCloseFist's, read once when the body is built; the hand
@@ -411,6 +411,11 @@ function tpPose(R,dt,st){
     tpSet(R.thighL,(-.95-.35*s)*w-.3*q,0,0,c);tpSet(R.kneeL,(1.35+.3*s)*w+.3*q,0,0,c);tpSet(R.thighR,(-.95+.35*s)*w-.3*q,0,0,c);tpSet(R.kneeR,(1.35-.3*s)*w+.3*q,0,0,c);
     if(R.ankleL){tpSet(R.ankleL,0,0,0,c);tpSet(R.ankleR,0,0,0,c);}
     tpSet(R.torso,.18+.25*q,0,0,c);tpSet(R.head,-.4+.3*q,0,0,c);}
+  // S1401 — the mantle's pull (S1385, the systems builder's ask): both hands planted on the ledge a hand's breadth past its edge, shoulder
+  // width apart, and kept there while the pull lifts you (tpReach); the arms bend as the shoulders come level with the ledge and press
+  // straight under you past it; the right knee comes up onto it as the pull carries you on, and the body stands up over the last fifth,
+  // the hands let go. Read from MANTLE and the loop's clock, as the pull itself is.
+  tpMantle(R);
   // death: down on the back
   R.root.rotation.x=-TP.deadT*Math.PI/2;R.root.position.y-=TP.deadT*.1;
 }
@@ -427,6 +432,50 @@ function tpGripL(R){
   // the turn in the world, carried into the shoulder's own frame: q_local' = parentWorld⁻¹ · turn · jointWorld
   _tgQ.setFromUnitVectors(_tgA.normalize(),_tgB.normalize());R.shL.getWorldQuaternion(_tgQ2);_tgQ.multiply(_tgQ2);R.shL.parent.getWorldQuaternion(_tgQ2);_tgQ.premultiply(_tgQ2.invert());R.shL.quaternion.copy(_tgQ);
   R.shL.updateMatrixWorld(true);
+}
+// S1401 — the pull's holds on the builder's body: twice, the driver's wrists aimed short by how far the builder's miss, and copied again
+const _tmE=[new THREE.Vector3(),new THREE.Vector3()],_tmW=new THREE.Vector3();
+function tpHBMantle(R){const H=R.rig.hb,M=R.mantle;if(M.w<=0)return;const wb=[H.P.byName['wrist.L'],H.P.byName['wrist.R']];if(!wb[0]||!wb[1])return;
+  _tmE[0].set(0,0,0);_tmE[1].set(0,0,0);
+  for(let k=0;k<2;k++){R.root.updateMatrixWorld(true);for(let i=0;i<2;i++){wb[i].getWorldPosition(_tmW);_tmE[i].add(_tmW.sub(M.T[i]));}
+    tpMantleArms(R,_tmE);hbPose(R.rig);}}
+// S1401 — a two-bone reach for any arm, as tpGripL's for the left: the elbow bent until shoulder to wrist is shoulder to T, then the
+// shoulder turned to put the wrist on T; out of reach the arm points straight at it
+function tpReach(sh,el,wr,T){
+  sh.getWorldPosition(_tgS);const dT=_tgS.distanceTo(T);
+  const reach=b=>{el.rotation.set(b,0,0);el.updateMatrixWorld(true);return wr.getWorldPosition(_tgW).distanceTo(_tgS);};
+  let lo=-2.5,hi=0;if(reach(hi)>dT){for(let k=0;k<14;k++){const m=(lo+hi)/2;if(reach(m)>dT)hi=m;else lo=m;}reach((lo+hi)/2);}
+  wr.getWorldPosition(_tgW);_tgA.subVectors(_tgW,_tgS);_tgB.subVectors(T,_tgS);
+  if(_tgA.lengthSq()<1e-8||_tgB.lengthSq()<1e-8)return;
+  _tgQ.setFromUnitVectors(_tgA.normalize(),_tgB.normalize());sh.getWorldQuaternion(_tgQ2);_tgQ.multiply(_tgQ2);sh.parent.getWorldQuaternion(_tgQ2);_tgQ.premultiply(_tgQ2.invert());sh.quaternion.copy(_tgQ);
+  sh.updateMatrixWorld(true);}
+const _tmT=new THREE.Vector3(),_tmQ=[new THREE.Quaternion(),new THREE.Quaternion(),new THREE.Quaternion(),new THREE.Quaternion()];
+// the pull's pose (S1401): p is the pull's own time, 0 to 1; the ledge's edge is MANTLE's start plus its run less the 0.35 m past it
+function tpMantle(R){
+  if(typeof MANTLE==='undefined'||MANTLE.t0==null||dead||!R.rig){R.mantle=null;return;}
+  const p=Math.max(0,Math.min(1,(FALL.clock-MANTLE.t0)/MANTLE_DUR)),sm=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t);};
+  const dx=MANTLE.x1-MANTLE.x0,dz=MANTLE.z1-MANTLE.z0,d=Math.hypot(dx,dz)||1,fx=dx/d,fz=dz/d,e=Math.max(0,d-.35)+.1;
+  const s=R.root.scale.x||1,knee=sm((p-.4)/.3)*(1-sm((p-.8)/.2)),stand=sm((p-.8)/.2),hang=1-sm((p-.35)/.3);
+  // legs: hanging a little bent, then the right knee up onto the ledge and the left trailing, then standing
+  tpSet(R.thighL,-.25*hang+.15*knee,0,0,1);tpSet(R.kneeL,.45*hang+.35*knee,0,0,1);
+  tpSet(R.thighR,-.25*hang-1.55*knee,0,0,1);tpSet(R.kneeR,.45*hang+1.9*knee,0,0,1);
+  if(R.ankleL){tpSet(R.ankleL,0,0,0,1);tpSet(R.ankleR,.3*knee,0,0,1);}
+  // the body bows forward over the ledge as it comes up past the hands, so they stay on it, and straightens as it stands
+  tpSet(R.torso,.12+1.05*sm((p-.2)/.35)*(1-stand),0,0,1);tpSet(R.head,-.25+.35*sm((p-.2)/.35)*(1-stand),0,0,1);
+  // arms: the hands on the ledge until they let go over the last part of the pull
+  R.root.updateMatrixWorld(true);
+  R.mantle={w:1-sm((p-.72)/.2),T:[0,1].map(i=>{const side=i?1:-1;
+    return new THREE.Vector3(MANTLE.x0+fx*e-fz*side*.2*s,MANTLE.y1+.04*s,MANTLE.z0+fz*e+fx*side*.2*s);}), /* the body's right is (−fz, fx) from its facing (fx, fz) */
+    q:[R.shL.quaternion.clone(),R.elL.quaternion.clone(),R.shR.quaternion.clone(),R.elR.quaternion.clone()]};
+  tpMantleArms(R,null);
+}
+// the arms onto the pull's two holds (R.mantle, set by tpMantle this frame); err, the builder's wrists less the holds, aims the driver's
+// wrists that much short so that the builder's body, whose arms are its own length, puts its wrists on them (tpHBPose)
+function tpMantleArms(R,err){const M=R.mantle;if(!M||M.w<=0)return;
+  const arms=[[R.shL,R.elL,R.handL],[R.shR,R.elR,R.handR]];
+  for(let i=0;i<2;i++){const[sh,el,wr]=arms[i];_tmT.copy(M.T[i]);if(err)_tmT.sub(err[i]);
+    tpReach(sh,el,wr,_tmT);
+    if(M.w<1){_tmQ[0].copy(sh.quaternion);_tmQ[1].copy(el.quaternion);sh.quaternion.slerpQuaternions(M.q[i*2],_tmQ[0],M.w);el.quaternion.slerpQuaternions(M.q[i*2+1],_tmQ[1],M.w);sh.updateMatrixWorld(true);}}
 }
 // the body for what is worn now, built (or its builder's body carried over) when the kit or the look has changed; first person's hands
 // are cut from it too (fpHBFist), so it is kept current in either view when the hands are built

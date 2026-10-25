@@ -180,6 +180,9 @@ function buildPanel() {
   { const sc = el('select', {}, ...[['', 'no scar'], ['L', 'scar over the left eye'], ['R', 'scar over the right eye']].map(([v, t]) => el('option', { value: v, textContent: t }))); sc.value = G.scar || ''; sc.onchange = () => { G.scar = sc.value || null; schedule(); };
     const ps = el('select', {}, ...[['L', 'patch on the left'], ['R', 'patch on the right']].map(([v, t]) => el('option', { value: v, textContent: t }))); ps.value = D().eyepatchSide || 'L'; ps.onchange = () => { D().eyepatchSide = ps.value; schedule(); };
     panel.append(el('div', { className: 'bar' }, sc, ps)); inputs.scar = () => { sc.value = G.scar || ''; ps.value = D().eyepatchSide || 'L'; }; }
+  // the risen dead (Session 1403): the skin's rot, 0 the living to 1 long in the grave
+  { const rt = el('input', { type: 'range', min: 0, max: 1, step: .05, value: G.rot || 0, oninput: () => { G.rot = +rt.value || null; schedule(); } });
+    panel.append(el('div', { className: 'crow' }, el('label', { textContent: 'rot' }), rt, el('span'))); inputs.rot = () => rt.value = G.rot || 0; }
   // the old's walking staff (Session 1085, OG-001, OG-042, OG-065): its make, or the people's own
   { const sm = el('select', {}, ...[['', 'staff by people'], ['hazel', 'hazel, a root knob'], ['ash', 'ash, iron-shod'], ['olive', 'olive, a bronze knob'], ['carved', 'carved knotwork, tall']].map(([v, t]) => el('option', { value: v, textContent: t }))); sm.value = D().staffMake || ''; sm.onchange = () => { D().staffMake = sm.value || null; schedule(); };
     panel.append(el('div', { className: 'crow' }, el('label', { textContent: 'staff' }), sm, el('span'))); inputs.staffMake = () => sm.value = D().staffMake || ''; }
@@ -261,9 +264,11 @@ function peoplesSheet() {
 (SP === 'human' ? needPack() : Promise.resolve()).then(() => { if (SP === 'human' && !G) G = rollPerson(Q.get('seed') || 'builder'); if (Q.has('peoples')) { peoplesSheet(); comp.render(); window.__done = true; return; }
   if (Q.has('sheet')) { sheet(); comp.render(); window.__done = true; return; }
   if (SP === 'human') { if (Q.get('dress')) Object.assign(G.dress, JSON.parse(Q.get('dress')));
-    if (Q.get('style')) G.hair = { ...(G.hair || {}), style: Q.get('style') }; if (Q.get('len')) G.hair = { ...(G.hair || {}), len: +Q.get('len') }; if (Q.has('marks')) G.marks = Q.get('marks') === 'none' ? null : +Q.get('marks'); if (Q.has('scar')) G.scar = Q.get('scar') === 'none' ? null : Q.get('scar'); if (Q.has('stoop')) G.pose = { ...(G.pose || {}), stoop: +Q.get('stoop') };
+    if (Q.get('style')) G.hair = { ...(G.hair || {}), style: Q.get('style') }; if (Q.get('len')) G.hair = { ...(G.hair || {}), len: +Q.get('len') }; if (Q.has('marks')) G.marks = Q.get('marks') === 'none' ? null : +Q.get('marks'); if (Q.has('scar')) G.scar = Q.get('scar') === 'none' ? null : Q.get('scar'); if (Q.has('rot')) G.rot = +Q.get('rot') || null; if (Q.has('stoop')) G.pose = { ...(G.pose || {}), stoop: +Q.get('stoop') };
     // the beard and the age (Session 1106, for Garrick's pictures)
-    if (Q.has('beard')) G.beard = +Q.get('beard'); if (Q.has('age')) G.age = +Q.get('age'); }
+    if (Q.has('beard')) G.beard = +Q.get('beard'); if (Q.has('age')) G.age = +Q.get('age');
+    // the risen dead's pictures (Session 1403): the skin's colour as r,g b in 0..1, and the build's weight
+    if (Q.has('skin')) G.skin = Q.get('skin').split(',').map(Number); if (Q.has('weight')) G.weight = +Q.get('weight'); if (Q.has('hairc')) G.hairCol = Q.get('hairc').split(',').map(Number); }
   if (!STILL) buildPanel(); rebuild(); comp.render(); window.__done = true;
   // a creature walks on the spot in its gait (the bestiary's step, with the body kept where it stands); a person is still
   let t0 = performance.now();
