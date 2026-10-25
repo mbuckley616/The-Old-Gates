@@ -1825,7 +1825,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   // the coach passengers' corner at the east grate), the dog-leg stair in the fourth bay, and up it a corridor on each floor with the
   // rooms off it, eight in all. It is drawn in metres and moved into the room's frame as the taproom is (nothing scaled). Room k is the
   // prototype's order: the first floor's three front rooms from the west, the second floor's three, then the first floor's two behind.
-  const COACH_ROOM_NAMES=['first floor’s west front room','first floor’s middle front room','first floor’s east front room','second floor’s west front room','second floor’s middle front room','second floor’s east front room','first floor’s west back room','first floor’s east back room'];
+  const COACH_ROOM_NAMES=['west front room on the first floor','middle front room on the first floor','east front room on the first floor','west front room on the second floor','middle front room on the second floor','east front room on the second floor','west back room on the first floor','east back room on the first floor'];
   function kitCoachRoom(house){return !!(house&&house.type==='inn'&&house.kit&&house.kit.kind==='coachinn'&&!house.coachInn&&window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.gl&&PKIT.gl.coachRoom);}
   function buildKitCoachRoom(house){
     const T=PKIT.gl.coachRoom({first:'rooms',color:house.kit.colour,paint:house.kit.paint},PKIT.stream(house.id+':coachroom')),I=T.inner,X=I.x1,Z=I.z1,F0=T.floors[0],W=2*X,D=2*Z;
