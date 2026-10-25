@@ -896,7 +896,12 @@ function buildCloak(G, body, byName, rnd) {
   // the shoulder line: for each angle round the neck, the surface point furthest out and a little down from the neck
   // with a spear in the right fist (Session 909) a full cloak is thrown back off the right shoulder, as a Markman frees his
   // weapon arm: it opens from the throat round to just behind the shoulder, so the forearm held forward is out of it
-  const thrown = !!(D.spear || D.crossbow || D.staff || D.basket) && !cape, th0 = thrown ? -Math.PI / 2 + .35 : -Math.PI + open, th1 = Math.PI - open, cols = [], tops = [];
+  // A walking staff (Session 1408, the critic's s896 note on the Marsh Hag) is leant on by the hip, the forearm forward and down from
+  // an elbow at the side: thrown back to behind the shoulder, the cloak hung from the left alone, a board beside her. It now starts just
+  // forward of the right side (−1.9 rad), over the shoulder and the upper arm, so it hangs round her and the hand comes out in front of
+  // its edge. A basket still throws it back: hung over the arm, the cloak pushed the arm 0.6 rad out to clear the basket's sides
+  const thrown = !!(D.spear || D.crossbow || D.staff || D.basket) && !cape, low = thrown && !D.spear && !D.crossbow && !D.basket;
+  const th0 = low ? -Math.PI / 2 - .33 : thrown ? -Math.PI / 2 + .35 : -Math.PI + open, th1 = Math.PI - open, cols = [], tops = [];
   for (let k = 0; k < K; k++) { const th = th0 + (k / (K - 1)) * (th1 - th0), dir = new THREE.Vector3(Math.sin(th), 0, -Math.cos(th));
     const e = S.extreme(neck, dir.clone().add(new THREE.Vector3(0, -.42, 0)).normalize(), p => p.y > neckY - .16 && p.y < neckY + .03);
     const start = e.p.clone().addScaledVector(e.n, clearAt(e.p) + .006); tops.push({ start, dir, n: e.n });
