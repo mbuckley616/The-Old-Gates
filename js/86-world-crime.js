@@ -152,23 +152,31 @@
   }
   // called from atmosphere() after the day/night targets are computed
   function applyWeather(){
-    const I=WX.intensity;if(I<=0&&!(WX.flash>0))return;
     const cur=WX.type,nxt=WX.next,mix=(nxt!==cur)?WX.k:0;
+    WX.sightM=wxSightBlend(cur,nxt,mix);
+    const I=WX.intensity;if(I<=0&&!(WX.flash>0))return;
     const col=(t)=>_tmpWx.setHex(WX_COL[t]||0x8a8f96);
     _tmpWx2.copy(col(cur));if(mix>0)_tmpWx2.lerp(col(nxt),mix);
     const night=(typeof _nightFactor==='function')?_nightFactor():0;
     _atm.sky.lerp(_tmpWx2,I*.85);
     // fog colour: the weather's grey by day, a dim blue-grey at night (never black — fogged things must still read)
     _tmpWx.setHex(0x2c3440).lerp(_tmpWx2,.35);_atm.fog.lerp(night>.5?_tmpWx:_tmpWx2,I*.85);
-    // visibility: a storm roughly halves the view; fog closes it right down. v80 S145 — fog was 2.2x a
-    // biome density of ~.008, which is barely a haze; it now also carries a floor so it reads anywhere.
+    // visibility: S1420 — Michael's C on #679, by kind: the weather closes the land to its own sight in metres (WX_SIGHT) and
+    // no nearer, at any hour and in any country, so fog is 60 m everywhere and a wet day is still a day you travel in. The
+    // place's own haze stays under it (a forest's clear day is thicker than rain's 500 m); the weather no longer multiplies it.
     const foggy=(cur==='fog'?1:0)*(1-mix)+(nxt==='fog'?1:0)*mix;
-    const sFog=WX.sFog||1; // v80 S146 — a fen fogs harder than a downland
-    const fogK=(1.2+foggy*5.0)*sFog;WX.fogMul=1+I*fogK*(1-night*.35);
-    WX.fogFloor=foggy*(night>.5?.020:.028)*sFog; // ~35-50 steps of sight in the thick of it
+    WX.fogMul=1;WX.fogFloor=wxSightDen(WX.sightM);
     WX.sunMul=1-I*(.55+foggy*.18);
     if(WX.flash>0){_atm.sky.setHex(0xe8eefc);_atm.fog.lerp(_tmpWx.setHex(0xdde6f4),.6);WX.sunMul=2.2;}
   }
+  /* S1420 — how far you see in each weather (Michael's C on #679, the concept artist's table in weather.js): metres to where the land
+     is 95% gone in the fog (FogExp2's density √3 / sight). The game has no heavy rain or blizzard of its own yet (280 and 70 m in the
+     table); rain, storm and snow take their own rows. A change of weather blends in density, as the fog itself does. */
+  const WX_SIGHT={clear:2400,overcast:1100,rain:500,storm:220,snow:400,fog:60};
+  function wxSightDen(m){return Math.sqrt(3)/Math.max(1,m);}
+  function wxSightBlend(cur,nxt,mix){const a=wxSightDen(WX_SIGHT[cur]||WX_SIGHT.clear),b=wxSightDen(WX_SIGHT[nxt]||WX_SIGHT.clear);return Math.sqrt(3)/(a+(b-a)*(mix||0));}
+  // the same figure for the foes' sight in the open (canSeePlayer): nobody sees you through fog the land itself is lost in
+  function wxSightCap(){if(typeof activeZoneId==='undefined'||activeZoneId!=='world'||lid!=='overworld'||(typeof isInterior==='function'&&isInterior()))return Infinity;return WX.sightM||WX_SIGHT.clear;}
   const _tmpWx=new THREE.Color(),_tmpWx2=new THREE.Color();
   window.devWeather=function(t){if(!t)return WX.type+(WX.next!==WX.type?' → '+WX.next:'');WX.next=t;WX.k=0;WX.timer=240;return 'weather → '+t;};
 

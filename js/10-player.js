@@ -907,6 +907,7 @@ function hearingRadius(){return _pStep?(_sneaking?HEARING_SNEAK:HEARING_WALK):HE
 // Uses e.combatYaw which is the canonical facing field (frozen during
 // attacks, live during idle alert, randomized at spawn for unaware enemies).
 function canSeePlayer(e, dist, baseSightRadius){
+  if(typeof wxSightCap === 'function') baseSightRadius = Math.min(baseSightRadius, wxSightCap()); /* S1420 — the weather's sight (#679 C) */
   const sightMult = _buffMult('detectReduce', 1) * _sneakDetectMult();
   const sightRadius = baseSightRadius * sightMult;
   // Hearing: omnidirectional, NOT modulated by sneak. The player is
