@@ -534,7 +534,8 @@ function openDialog(npc){
     // form to keep Oswin's/Edna's talk_to events firing normally while only
     // Aldwyn triggers the custom dialog.
     const woken=dlgWokenLine;dlgWokenLine=null;
-    const greet=woken||(typeof knowingGreet==='function'&&knowingGreet(npc))||dlgGreeting(npc); /* S1030 — Back to Their Bread */
+    const greet0=woken||(typeof knowingGreet==='function'&&knowingGreet(npc))||dlgGreeting(npc); /* S1030 — Back to Their Bread */
+    const toolPre=typeof greatToolGreet==='function'?greatToolGreet(npc):'',greet=toolPre?toolPre+' '+greet0:greet0; /* S1398 — the great gates' tools, said first */
     const npcZone=questZoneNow();
     // v61ae: use the hoisted resolver so prereqIndices are respected here too.
     // hasCustomDialog should ONLY block talk_to auto-fire if the custom dialog

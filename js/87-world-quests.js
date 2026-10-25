@@ -2250,8 +2250,10 @@ const giver=`${lord.title} ${lord.name}`;
   function gateTalkNormal(){const g=worldState.greatGates;if(!g)return false;const day=Math.floor((worldState.gameTimeAbsMinutes||0)/1440);
     if(g.fate==='sealed'&&day-Math.floor((g.fatedAt||0)/1440)<90)return true;return !!(g.last&&g.last.kind==='sealed'&&day-g.last.day<7);}
   function gateTalk(site){if(greatFate()==='torn')return null;const P=peopleOfSite(site),L=gateTalkNormal()?'normal':corruptionLevel();const row=GATE_TALK[L];return row?(row[P]||row.gatelander):null;}
-  function greatGateLordTopics(site){const g=worldState.greatGates;if(!g||!g.last)return [];const [i,j]=cellOf(site.x,site.z),row=GATE_LORDS[nationKeyOf(i,j)];if(!row)return [];
-    return [{label:'The great gates?',response:row[g.last.kind]||row.torn}];}
+  function greatGateLordTopics(site){const g=worldState.greatGates;if(!g)return [];const [i,j]=cellOf(site.x,site.z),nat=nationKeyOf(i,j),row=GATE_LORDS[nat];if(!row)return [];
+    const out=[];if(g.last)out.push({label:'The great gates?',response:row[g.last.kind]||row.torn});
+    if(g.ev&&g.ev.knifeLifted&&TOOL_SAY.lords[nat])out.push({label:'The knife from the Ashfeld?',response:TOOL_SAY.lords[nat]}); /* S1398 — piece II §5 */
+    return out;}
   const SOLAS_KINDS={Skeleton:1,Wraith:1,Phantom:1};
   // a foe of those kinds is at peace while Solas is torn and none of its room has been struck: a blow on one (its health below
   // full) wakes every one of those kinds in its zone of the gate (or within 20 m, outside a gate's zones)
@@ -2295,16 +2297,18 @@ const giver=`${lord.title} ${lord.name}`;
   // the console's stand-in: flag a gate's seed (the one you are in, by default) as the great gate of a school, for this page only
   function devGreatGate(school,seed){if(GREAT_SCHOOLS.indexOf(school)<0)return false;const sd=seed!=null?seed:(currentPortal&&currentPortal.seed);if(sd==null)return false;GREAT_STANDIN[sd]=school;return true;}
   function knotTools(){const has=k=>BAG.some(it=>it&&it.artifact===k);return {knife:has('looseKnife'),needle:has('bindNeedle')};}
+  function greatGateName(school,name){if(!name)return;const g=greatGates(),N=g.names||(g.names={});N[school]=String(name);}
   function greatGateLast(kind){const g=greatGates();g.last={day:Math.floor((worldState.gameTimeAbsMinutes||0)/1440),kind};}
   function _knotMastery(school){return SPELLS.filter(sp=>sp.school===school&&effTier(sp.id)===3).map(sp=>sp.id);}
   // the named actions over setGreatGate: false-ish ({ok:false}) when the knot is already so or fate is fixed. A cut that lifts a spell
   // to Mastery counts as a Mastery touch for Varek, once per spell per cut (the sheet: the tearing path draws him sooner).
-  function cutKnot(school){const prev=greatGateState(school);if(prev==='torn'||greatFate())return {ok:false};const before=_knotMastery(school);
-    if(!setGreatGate(school,'torn'))return {ok:false};greatGateLast('torn');gateTollStart(); /* S1359 — the third tear's log line */heraldOnCut(); /* S1366 — the runner's first trigger */
+  // S1397 — name: the gate's, kept for the journal's page (greatJournal), since a great gate's name is known only at its knot
+  function cutKnot(school,name){const prev=greatGateState(school);if(prev==='torn'||greatFate())return {ok:false};const before=_knotMastery(school);
+    if(!setGreatGate(school,'torn'))return {ok:false};greatGateName(school,name);greatGateLast('torn');gateTollStart(); /* S1359 — the third tear's log line */heraldOnCut(); /* S1366 — the runner's first trigger */
     const lifted=_knotMastery(school).filter(id=>before.indexOf(id)<0);for(const id of lifted)onMasteryTouch(id);
     return {ok:true,again:prev==='sealed',lifted,fate:greatFate()};}
-  function bindKnot(school){const prev=greatGateState(school);if(prev==='sealed'||greatFate())return {ok:false};
-    if(!setGreatGate(school,'sealed'))return {ok:false};greatGateLast('sealed');
+  function bindKnot(school,name){const prev=greatGateState(school);if(prev==='sealed'||greatFate())return {ok:false};
+    if(!setGreatGate(school,'sealed'))return {ok:false};greatGateName(school,name);greatGateLast('sealed');
     if(greatFate()==='sealed')for(const it of BAG)if(it&&it.artifact==='looseKnife')it.desc=greatToolItem('looseKnife').desc; /* S1353 — the knife's card at six bound */
     return {ok:true,again:prev==='torn',fate:greatFate()};}
   // laid by buildDungeon after the scaling pass, in metres: the knot over the middle of the ring chamber's dais
@@ -2335,7 +2339,7 @@ const giver=`${lord.title} ${lord.name}`;
     if(typeof addLog==='function'){addLog('◎',kind==='tear'?`Cut the knot of ${L.name}${r.again?' again':''}.`:`Bound the knot of ${L.name}${r.again?' again':''}.`);
       if(kind==='bind'&&r.fate==='sealed')addLog('◎','The six great gates are bound.');}
     if(typeof updateHUD==='function')updateHUD();}
-  function knotCut(){const L=KNOT_LIE;if(!L)return null;if(knotLastCut(L.school))return knotCutAsk();const r=cutKnot(L.school);if(r.ok)_knotSay(r,'tear');return r;}
+  function knotCut(){const L=KNOT_LIE;if(!L)return null;if(knotLastCut(L.school))return knotCutAsk();const r=cutKnot(L.school,L.name);if(r.ok)_knotSay(r,'tear');return r;}
   // ── the sixth cut (S1367; the build sheet's session 5, Michael's B on #413: every save ends) ── a cut that would tear all six asks
   // once, with #413's line and the menu's grey line under it; cut, the lines come on the clock (0, 2.5 s), and at 5 s the world is
   // unmade (unmakeWorld, 70-saves.js) and the page goes back to the title. Varek's last stand comes first on either path (§9a),
@@ -2351,13 +2355,13 @@ const giver=`${lord.title} ${lord.name}`;
     {const el=document.getElementById('dlg-text');if(el)el.innerHTML=`${KNOT_LAST.ask}<br><br><span style="color:#8a8478;font-size:.9em">${KNOT_LAST.warn}</span>`;}
     return {ok:false,ask:true};}
   function knotUnmake(){const L=KNOT_LIE;if(!L||!knotLastCut(L.school))return null;if(varekStandDue(L.school))return {ok:false,stand:true};
-    if(typeof SS!=='undefined')SS.unmaking=true;const r=cutKnot(L.school);if(!r.ok){if(typeof SS!=='undefined')SS.unmaking=false;return r;}
+    if(typeof SS!=='undefined')SS.unmaking=true;const r=cutKnot(L.school,L.name);if(!r.ok){if(typeof SS!=='undefined')SS.unmaking=false;return r;}
     const S=SCHOOL_DEF[L.school].name,t0=performance.now();showMsg(KNOT_LINES.tear.first+' '+KNOT_LINES.tear.school[L.school],'#c8d0e0');
     const at=(ms,f)=>setTimeout(()=>{try{f();}catch(e){console.warn('unmake',e);}},Math.max(0,ms-(performance.now()-t0)));
     at(2500,()=>showMsg(KNOT_LINES.gain(S,L.name),'#d8b04a'));
     at(5000,()=>unmakeWorld().then(()=>KNOT_UNMAKE_THEN()));
     return r;}
-  function knotBind(){const L=KNOT_LIE;if(!L)return null;const r=bindKnot(L.school);if(r.ok)_knotSay(r,'bind');return r;}
+  function knotBind(){const L=KNOT_LIE;if(!L)return null;const r=bindKnot(L.school,L.name);if(r.ok)_knotSay(r,'bind');return r;}
   // E at the knot
   function knotUse(){const L=KNOT_LIE;if(!L)return null;const st=greatGateState(L.school),t=knotTools(),f=greatFate();
     if(f==='sealed'&&t.knife){showMsg(KNOT_LINES.locked,'#c8d0e0');return 'locked';}
@@ -2466,6 +2470,37 @@ const giver=`${lord.title} ${lord.name}`;
   // the named action: Aldwyn's needle (once; the character's bag, the world's flag)
   function heraldGiveNeedle(){const ev=greatEv();if(ev.needleGiven)return false;ev.needleGiven=worldState.gameTimeAbsMinutes||1;
     if(!knotTools().needle)bagAdd(greatToolItem('bindNeedle'));if(typeof addLog==='function')addLog('🪡','Aldwyn gave you the Binding Needle.');if(typeof updateHUD==='function')updateHUD();return true;}
+  // ── the journal's *Great gates* page (S1397; the build sheet's UI, pieces I and II's journal lines as written) ── what the knife's
+  // and the needle's paths have shown you, in the order it happened (ev's times), then a row for each gate torn or sealed, by its name
+  // as kept at its knot (greatGateName), then the lock's line under the six rows once all six are bound. Read, never stored. A gate
+  // whose state was set before its name was kept (a save from before S1397) shows its school alone.
+  const GATE_PAGE={note:'A note says something lies under a flagstone at the Ashfeld.',runner:'Aldwyn asks to see you at Ironhaven.',
+    knife:'The Loosing Knife. It cuts the knot at a great gate’s ring.',needle:'The Binding Needle. It binds the knot at a great gate’s ring.',
+    row:(gate,S,st)=>`${gate?gate.charAt(0).toUpperCase()+gate.slice(1)+' — ':''}${S}. ${st==='torn'?'Torn':'Sealed'}.`,lock:'Bound, all six, and held.'};
+  function greatJournal(){const g=worldState.greatGates;if(!g||!g.gates)return null;const ev=g.ev||{},N=g.names||{};
+    const lines=[['noteRead','note'],['runner','runner'],['knifeLifted','knife'],['needleGiven','needle']].filter(([k])=>ev[k]).map(([k,w])=>({t:+ev[k]||0,text:GATE_PAGE[w]})).sort((a,b)=>a.t-b.t);
+    const rows=GREAT_SCHOOLS.filter(s=>g.gates[s]==='torn'||g.gates[s]==='sealed').map(s=>GATE_PAGE.row(N[s],SCHOOL_DEF[s].name,g.gates[s]));
+    if(!lines.length&&!rows.length)return null;return {lines,rows,lock:g.fate==='sealed'?GATE_PAGE.lock:null};}
+  // ── what people say of the tools (S1398; piece II §5, approved 16 Oct 2026, as written) ── An Old Blood townsperson or hermit
+  // puts a line before the greeting while you carry a tool: the knife's, the needle's, or both's, each line once a speaker. A Prior (a
+  // city lord of Aurenne, or the steward who speaks for one) puts the Church's line before the greeting once any knot is bound, once.
+  // The lords' topic *The knife from the Ashfeld?* is greatGateLordTopics'. Who has said what is the world's: ev.said {speaker: letters}.
+  const TOOL_SAY={greet:{knife:'You carry the knife. Keep it out of the light.',needle:'You carry the needle. That one was kept, not hidden.',
+      both:'You carry both. Most hands are only big enough for one.'},
+    lords:{gatelands:"The Herald's office has a knife entered in its rolls as found at the Ashfeld, owner unknown. I'd leave it that way. A thing with no owner can't be taken off him, and the Crown takes a great deal off a great many people.",
+      mark:"Hear you've a knife that opens the great gates. Our law's plain. It's yours while you hold it. Hold it, then.",
+      aurenne:"The Church has a word for the instrument you carry, Master. It is the Unpicker, and it is not used kindly. I would keep it under your coat in the capital. The Prior is courteous to everyone in the street, and remembers them afterwards."},
+    church:"The Church gives thanks that a great gate has been sealed, Master, by the Weaver's Needle, which it is pleased to call its own. It has never held the thing, nor seen it. That has not, historically, stopped it."};
+  function _toolSaid(npc,letter){const ev=greatEv(),S=ev.said||(ev.said={}),k=npc._siteId+':'+npc.name+(npc._twin?':'+npc._twin:'');
+    if((S[k]||'').indexOf(letter)>=0)return true;S[k]=(S[k]||'')+letter;return false;}
+  function _priorVoice(npc){if(npc.role==='Prior')return true;if(npc.role!=='Steward')return false;const site=siteAnywhere(npc._siteId);
+    return !!(site&&site.kind==='city'&&lordFor(site).title==='Prior');}
+  // the named action, called as a dialogue opens (openDialog): the line to put before the greeting, '' if none
+  function greatToolGreet(npc){if(!npc||!npc._siteId||greatFate()==='torn')return '';
+    if(npc.people==='oldblood'){const t=knotTools(),w=t.knife&&t.needle?'both':t.knife?'knife':t.needle?'needle':null;
+      if(w&&!_toolSaid(npc,w[0]))return TOOL_SAY.greet[w];return '';}
+    const g=worldState.greatGates;if(g&&g.gates&&Object.values(g.gates).indexOf('sealed')>=0&&_priorVoice(npc)&&!_toolSaid(npc,'c'))return TOOL_SAY.church;
+    return '';}
   // his opening, by what you have done (a cut, else two rings left alone); the knife's, once, the first time he greets you after it
   function aldwynOpening(){const ev=greatEv();if(ev.knifeAlso&&!ev.knifeAlsoSaid)return HERALD_SAY.openKnife;return greatCutEver()?HERALD_SAY.openCut:HERALD_SAY.openRings;}
   function aldwynTopics(){const ev=greatEv(),given=!!ev.needleGiven,f=[];
