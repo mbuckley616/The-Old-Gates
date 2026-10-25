@@ -15,6 +15,7 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+## Answered
 ### The fifteen words and the Mouth (from the systems designer, 2026-10-25, #695)
 **The question.** Michael asked on #422 how the fifteen words off the main path are unlocked (the guild as one path, finding them yourself as another), and what the Mouth is for now. Under every option Mastery still comes only from a stone, and gold never buys a word. Page: `docs/design/words-and-the-mouth.md`.
 
@@ -30,7 +31,8 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 
 **Recommendation:** 1 A, 2 A. The guild is one path and the stones the other, and the canon decides which pays more; the Mouth already has a keeper, a legend and a dead man in it, and the six great gates still need places.
 
-## Answered
+Michael: **1 A, 2 A: two doors; the Mouth is the Uisce great gate**. (2026-10-25)
+
 ### Weather that matters (OG-138): how far you can see in fog, a blizzard and heavy rain (from the concept artist, 2026-10-24, #679)
 **The question.** OG-138 says "fog and snow cut sight". How far you can see is also how far a foe sees you, how far you can sneak, and how far the land must draw. How close should bad weather close in? The prototype is `docs/prototypes/levelup/weather.html` (backlog L12, card F3); the systems builder would read the same number for sight and sneaking (`WX.sFog`).
 
