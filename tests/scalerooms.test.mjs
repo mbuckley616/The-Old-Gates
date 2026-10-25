@@ -27,7 +27,7 @@ for (const ty of types) {
     const ceilAt = (x, z) => { const v = hit(x, 1.7, z, 0, 1, 0, 12); return v == null ? null : +(v + 1.7).toFixed(2); };
     const ceil = ceilAt(W / 2, D - 1.6);
     const doors = (INT_DOORS || []).map(q => { const b = new THREE.Box3().setFromObject(q.g); return +(b.max.y - b.min.y).toFixed(2); });
-    const tables = (FOOTHOLDS || []).filter(f => f.y != null && f.y > .55 && f.y < .85 && f.x1 - f.x0 > .9).map(f => +f.y.toFixed(2));
+    const tables = (FOOTHOLDS || []).filter(f => f.y != null && f.y > .55 && f.y < .85 && f.x1 - f.x0 > .9 && f.z1 - f.z0 > .5) /* a table is deep as well as long: a stair's tread of 0.9 by 0.27 is not one (S1393) */.map(f => +f.y.toFixed(2));
     const walls = s => (s.x1 - s.x0 < .5 && s.z1 - s.z0 > 1.5) || (s.z1 - s.z0 < .5 && s.x1 - s.x0 > 1.5);
     const fur = INT_SOL.filter(s => !walls(s) && s.y1 < 3);
     const out = fur.filter(s => s.x0 < -.05 || s.z0 < -.05 || s.x1 > W + .05 || s.z1 > D + .05).map(s => [s.x0, s.z0, s.x1, s.z1].map(v => +v.toFixed(2)));
@@ -43,11 +43,12 @@ for (const ty of types) {
 }
 const H = all.home, I = all.inn;
 check('a cottage is 4.6 to 6 m across and 4.5 to 6 deep', H && H.W >= 4.59 && H.W <= 6.01 && H.D >= 4.49 && H.D <= 6.01, H);
-check('an inn\'s hall is 10 to 12 m by 11.7 to 13 (the gallery\'s rooms over its north end)', I && I.W >= 9.99 && I.W <= 12.01 && I.D >= 11.69 && I.D <= 13.01, I);
+// Dunmore's inn is the kit's coaching inn since S1368: its taproom is the whole ground floor of its 12.6 by 9 m front, inside the walls (S1393)
+check('an inn\'s taproom is 10 to 12 m by 7.5 to 9 (the coaching inn\'s front, inside its walls)', I && I.W >= 9.99 && I.W <= 12.01 && I.D >= 7.49 && I.D <= 9.01, I);
 check('a shop is 7 to 9 m wide and 7 to 8.5 deep, with 4.7 more for the keeper\'s room behind its partition in a deep house', ['weapon', 'armor', 'potion', 'misc'].every(t => !all[t] || (all[t].W >= 6.99 && all[t].W <= 9.01 && all[t].D >= 6.99 && all[t].D <= 13.21)), Object.fromEntries(['weapon', 'armor', 'potion', 'misc', 'barber'].map(t => [t, all[t] && [all[t].W, all[t].D]])));
 check('a church\'s nave is 8 to 10 m wide', !all.church || (all.church.W >= 7.99 && all.church.W <= 10.01), all.church && [all.church.W, all.church.D]);
 for (const t of types) { const r = all[t]; if (!r) continue;
-  check(`${t}: the entrance's leaf is 1.1 to 1.25 of a 1.8 m person (or a church's or a keep's great door), and the eye .75 to .85 of it`, (t === 'church' || t === 'castle') ? r.entrance > 2.6 : (r.entrance / P >= 1.1 && r.entrance / P <= 1.25 && 1.65 / r.entrance >= .75 && 1.65 / r.entrance <= .85), r.entrance);
+  check(`${t}: the entrance's leaf is 1.1 to 1.25 of a 1.8 m person (or a church's or a keep's great door), and the eye .75 to .85 of it`, (t === 'church' || t === 'castle') ? r.entrance > 2.6 : (r.entrance / P >= 1.1 && r.entrance / P <= 1.25 && 1.65 / r.entrance >= .749 /* 2.2 m, the foundation's door (#514), is .75 to the float (S1393) */ && 1.65 / r.entrance <= .85), r.entrance);
   check(`${t}: the ceiling stands over the eye, a storey of 1.45 to 1.7 of the person (a hall or a nave higher)`, r.ceil != null && r.ceil > 1.65 + .5 && ((t === 'church' || t === 'castle' || t === 'guild_f' || r.two) ? true : r.ceil / P >= 1.45 && r.ceil / P <= 1.7), r.ceil);
   check(`${t}: every inner door is 1.1 to 1.25 of the person`, r.doors.every(h => h / P >= 1.1 && h / P <= 1.25), r.doors);
   check(`${t}: nothing stands outside the walls, the furniture stands clear of itself, the spot you arrive at and the door's way are free`, !r.out.length && r.nOver === 0 && r.spawn && r.way, { out: r.out, over: r.over, spawn: r.spawn, way: r.way });

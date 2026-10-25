@@ -1077,11 +1077,13 @@ function church(o = {}) {
 }
 // the coaching inn's front alone (Session 1351): the plan coachInn builds its inn from, so a room (rooms.js's gatelandsCoachRoom) is built
 // inside the very same shell. o.kind 'three' | 'two'; -> the plan, with nb (its bays) and xs (the bays' middles)
+// (Session 1393: the front door 2.8 m, its leaf 2.2 to the fanlight's spring as the townhouse's, Michael's A on #514; it was 3.0, a leaf of
+// 2.4, 1.33 of a 1.8 m person, past F2a's 1.1 to 1.25)
 function coachInnPlan(o = {}) {
   const kind = o.kind || 'three', r = o.r || stream('coachinn'), three = kind === 'three', nb = three ? 5 : 7, bay = 2.4, w = +(nb * bay + .6).toFixed(2), d = three ? 9 : 7.5, g = three ? [3.0, 2.9, 2.6] : [3.0, 2.9], xs = Array.from({ length: nb }, (_, k) => +((k - (nb - 1) / 2) * bay).toFixed(2));
   const P = PLANS.townhouse({ color: o.color || 'cream', paint: o.paint || 'green' }); Object.assign(P, { name: three ? 'Coaching inn' : 'Coaching inn, two storeys', w, d, floors: g, r, doorFace: 'front' });
   P.chim = [{ gable: -1, flues: 4 }, { gable: 1, flues: 4 }]; P.sign = { x: bay / 2, y: g[0] + .55 };
-  P.open = { front: [{ kind: 'fan', x: 0, y: 0, w: 1.2, h: 3.0, arch: true, dress: true }, ...xs.filter(x => x).map(x => win(x, .75, 1.0, 1.85, [3, 2])), ...xs.map(x => win(x, g[0] + .4, 1.0, three ? 2.0 : 1.8, [3, 3])),
+  P.open = { front: [{ kind: 'fan', x: 0, y: 0, w: 1.2, h: 2.8, arch: true, dress: true }, ...xs.filter(x => x).map(x => win(x, .75, 1.0, 1.85, [3, 2])), ...xs.map(x => win(x, g[0] + .4, 1.0, three ? 2.0 : 1.8, [3, 3])),
       ...(three ? xs.map(x => win(x, g[0] + g[1] + .35, .95, 1.4, [3, 1])) : [])],
     back: [{ kind: 'plank', x: -xs[1], y: 0, w: 1.0, h: 2.2 }, ...xs.filter((x, k) => k % 2 === 0).map(x => win(x, .9, .9, 1.6, [2, 2])), ...xs.filter((x, k) => k % 2 === 0).map(x => win(x, g[0] + .4, .9, 1.7, [2, 2]))],
     right: [win(-1.6, .9, .8, 1.4, [2, 2]), win(1.6, g[0] + .4, .8, 1.5, [2, 2])] };

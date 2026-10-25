@@ -605,11 +605,13 @@ function keep(o = {}) {
 }
 // the coaching inn's front alone (Session 1351): the plan coachInn builds its inn from, so a room (rooms.js's gatelandsCoachRoom) is built
 // inside the very same shell. o.kind 'three' | 'two'; -> the plan, with nb (its bays) and xs (the bays' middles)
+// (Session 1393: the front door 2.8 m, its leaf 2.2 to the fanlight's spring as the townhouse's, Michael's A on #514; it was 3.0, a leaf of
+// 2.4, 1.33 of a 1.8 m person, past F2a's 1.1 to 1.25)
 function coachInnPlan(o = {}) {
   const kind = o.kind || 'three', r = o.r || stream('coachinn'), three = kind === 'three', nb = three ? 5 : 7, bay = 2.4, w = +(nb * bay + .6).toFixed(2), d = three ? 9 : 7.5, g = three ? [3.0, 2.9, 2.6] : [3.0, 2.9], xs = Array.from({ length: nb }, (_, k) => +((k - (nb - 1) / 2) * bay).toFixed(2));
   const P = PLANS.townhouse({ color: o.color || 'cream', paint: o.paint || 'green' }); Object.assign(P, { name: three ? 'Coaching inn' : 'Coaching inn, two storeys', w, d, floors: g, r, doorFace: 'front' });
   P.chim = [{ gable: -1, flues: 4 }, { gable: 1, flues: 4 }]; P.sign = { x: bay / 2, y: g[0] + .55 };
-  P.open = { front: [{ kind: 'fan', x: 0, y: 0, w: 1.2, h: 3.0, arch: true, dress: true }, ...xs.filter(x => x).map(x => win(x, .75, 1.0, 1.85, [3, 2])), ...xs.map(x => win(x, g[0] + .4, 1.0, three ? 2.0 : 1.8, [3, 3])),
+  P.open = { front: [{ kind: 'fan', x: 0, y: 0, w: 1.2, h: 2.8, arch: true, dress: true }, ...xs.filter(x => x).map(x => win(x, .75, 1.0, 1.85, [3, 2])), ...xs.map(x => win(x, g[0] + .4, 1.0, three ? 2.0 : 1.8, [3, 3])),
       ...(three ? xs.map(x => win(x, g[0] + g[1] + .35, .95, 1.4, [3, 1])) : [])],
     back: [{ kind: 'plank', x: -xs[1], y: 0, w: 1.0, h: 2.2 }, ...xs.filter((x, k) => k % 2 === 0).map(x => win(x, .9, .9, 1.6, [2, 2])), ...xs.filter((x, k) => k % 2 === 0).map(x => win(x, g[0] + .4, .9, 1.7, [2, 2]))],
     right: [win(-1.6, .9, .8, 1.4, [2, 2]), win(1.6, g[0] + .4, .8, 1.5, [2, 2])] };
@@ -895,7 +897,7 @@ function coachRoom(o = {}, r = stream('coachroom')) {
   for (const x of [S0 - .05, S1 + .05]) cut('plaster', x - pt, x + pt, -Z, WZ1, F0, CE[0], [], 'partition', 0);
   bx('deal', S0, S1, F0, 1.25, -Z, LZ, 'understair', 0); bx('deal', S0, SM, F0, 1.25, LZ, -1.75, 'understair', 0); bx('paint', SM - .02, SM, F0 + .1, 1.15, -2.7, -1.95) /* its door */;
   // the doors' leaves: the front's hung open inside against the front wall west of it, the back's against the back wall
-  { const fd = plan.open.front[0], bd = plan.open.back[0], fx0 = fd.x - fd.w / 2, bx0 = -bd.x - bd.w / 2; bx('paint', fx0 - .06, fx0, F0, F0 + 2.4, Z - fd.w + .05, Z - .02, 'leaf', 0); bx('paint', bx0, bx0 + .06, F0, F0 + bd.h - .05, -Z + .02, -Z + bd.w - .02, 'leaf', 0); }
+  { const fd = plan.open.front[0], bd = plan.open.back[0], fx0 = fd.x - fd.w / 2, bx0 = -bd.x - bd.w / 2; bx('paint', fx0 - .06, fx0, F0, F0 + fd.h - fd.w / 2, Z - fd.w + .05, Z - .02, 'leaf', 0) /* Session 1393: the leaf to the fanlight's spring, 2.2 m */; bx('paint', bx0, bx0 + .06, F0, F0 + bd.h - .05, -Z + .02, -Z + bd.w - .02, 'leaf', 0); }
   // ── the floors: the taproom flagged; the upper floors boarded on joists with the plaster ceiling under, open over the well; the top ceiling
   const slabs = []; { for (let z = -Z; z < Z - .05;) { const d = Math.min(Z - z, .5 + r() * .3); for (let x = -X; x < X - .05;) { const w = Math.min(X - x, .55 + r() * .4); put(new THREE.BoxGeometry(w - .02, F0, d - .02), 'flag', x + w / 2, F0 / 2 + (r() - .5) * .004, z + d / 2, 0, .7); x += w; } z += d; }
     for (const [fl, y] of [[1, F1], [2, F2]]) { for (const [x0, x1, z0, z1] of [[-X, S0, -Z, Z], [S0, S1, WZ1, Z], [S1, X, -Z, Z]]) { bx('deal', x0, x1, y - .04, y, z0, z1); bx('oak', x0, x1, y - SL + .03, y - .04, z0, z1); bx('plaster', x0, x1, y - SL, y - SL + .03, z0, z1); slabs.push({ x0, x1, z0, z1, y0: y - SL, y1: y, fl }); }
