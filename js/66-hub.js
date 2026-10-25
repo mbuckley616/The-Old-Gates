@@ -226,7 +226,7 @@ function renderJournal(){
     // S776 — the Makers' tools you have tried and not taken (DECISION #175, B): the rule, with its number, in the menu voice
     const notYet=(typeof artifactsNotYet==='function')?artifactsNotYet():[];
     if(notYet.length)html+=`<div class="jn-day jn-notyet"><div class="jn-head">Things not yet yours</div>${notYet.map(x=>`<div class="jn-line"><span class="jn-time"></span><span class="jn-text">${_jnEsc(x.text)}</span></div>`).join('')}</div>`;
-    // S1394 — the great gates' page (great-gates-build.md's UI): the tools' lines by date, a row a gate torn or sealed, the lock's line under them
+    // S1397 — the great gates' page (great-gates-build.md's UI): the tools' lines by date, a row a gate torn or sealed, the lock's line under them
     const gp=(typeof greatJournal==='function')?greatJournal():null,gl=(t,x)=>`<div class="jn-line"><span class="jn-time">${t}</span><span class="jn-text">${_jnEsc(x)}</span></div>`;
     if(gp)html+=`<div class="jn-day jn-great"><div class="jn-head">Great gates</div>${gp.lines.map(x=>gl(_jnEsc(gameDateLine(x.t,x.t%1440,'short')),x.text)).join('')}${gp.rows.map(x=>gl('',x)).join('')}${gp.lock?gl('',gp.lock):''}</div>`;
     if(!ids.length)html+='<div class="jn-empty">No quest has been written into the journal yet.</div>';
