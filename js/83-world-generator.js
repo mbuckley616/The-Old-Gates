@@ -1682,7 +1682,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   // the door at W/2 on z = D, the floor at 0). A coaching inn keeps the old room (its board and its travellers are laid out there).
   // S1276 — a village inn on two bays (7.4 m, its door in the west bay) is the same taproom in the narrower house: one table, two rooms.
   function kitTaproom(house){return !!(house&&house.type==='inn'&&house.kit&&house.kit.inn&&(house.kit.bays===3||house.kit.bays===2)&&!house.coachInn&&window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.gl&&PKIT.gl.inn);}
-  // S1401 — the kit rooms' light by the hour (the critic, 25 Oct: the cottage and the taproom were orange floor to thatch at noon and at
+  // S1405 — the kit rooms' light by the hour (the critic, 25 Oct: the cottage and the taproom were orange floor to thatch at noon and at
   // night alike, an amber ambient of .45 under a fire of 1.5 in a 4.2 m room). The room's air is a low neutral ambient and the day's
   // sky through its windows and door (a cool hemisphere, as the church hall's); the lamps burn low by day and full at
   // night; the fire is three quarters of what it was, the same at every hour. Returns the factors each room's light helper multiplies by.
@@ -1742,7 +1742,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     house._counterFront=null;house.intW=W;house.intD=D;house._roomH=+(PKIT.gl.PS.storey.cottage+1.35).toFixed(3);house._exitD=T.one?.8:.4;house._exitW=1.0;house._exitX=+rx(T.door.x).toFixed(3);house._cottage=T; /* the head stops under the collars */
     /* the lobby is 0.9 m deep: you arrive in it 0.3 m east of the door, clear of the breast and the jamb, and the door's reach is its last 0.4 m */
     house._arriveX=T.one?null:+rx(T.door.x+.3).toFixed(3);house._arriveZ=T.one?null:+(D-.5).toFixed(3);
-    /* S1402 — and facing the way on, the lobby's first turn (T.path[1]), not the jamb wall 0.4 m ahead (the critic, s896: 60% of the first frame was plaster) */
+    /* S1406 — and facing the way on, the lobby's first turn (T.path[1]), not the jamb wall 0.4 m ahead (the critic, s896: 60% of the first frame was plaster) */
     house._arriveYaw=T.one?null:+Math.atan2(-(rx(T.path[1][0])-house._arriveX),-(rz(T.path[1][1])-house._arriveZ)).toFixed(4);
     const sc_=new THREE.Scene();interiorScene=sc_;landRoomPost(sc_);sc_.background=new THREE.Color(0x120a06);sc_.fog=new THREE.Fog(0x120a06,Math.max(W,D)*.8*SCALE.ROOM_K,Math.max(W,D)*2.4*SCALE.ROOM_K);
     intNPCMesh=null;intBedPos=null;intStashPos=null;
