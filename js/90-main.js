@@ -735,6 +735,7 @@ function loop(now){
     if(_bowDrawing&&_bowFullS>0){const _sw=bowSway();vmSword.rotation.y+=_sw.yaw*1.5;vmSword.rotation.x+=_sw.pitch*1.5;} /* S1028 — the bow wobbles with the aim's sway */
     // S396 — the fists keep their own poses: the jab, the guard and the power punch's draw
     if(vmSword.userData.fists)vmFistPose(gb,pb,walkSway,totalBob+jumpDisp*.04);
+    vmMantle(); /* S1401 — the mantle's pull in first person (16-viewmodel.js) */
     // Animate enchant sparks (orbitPhase children)
     if(EQ.weapon&&EQ.weapon.enchant){
       vmSword.children.forEach(c=>{
