@@ -4,10 +4,15 @@
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld(); await g.settle('dunmore');
+// Session 1423 — enter and leave wait for the room's fade to have run (doFade's callback builds the room), not 3 s and 1.5 s: on a
+// slow runner the weekly run of 25 Oct read the last visit's woken resident at 2.9 (asleep0 false, no prompt; FLAKY, docs/qa/flaky.md)
+const until = async (what, fn) => { const t0 = Date.now(); try { await page.waitForFunction(fn, null, { polling: 100, timeout: 60000 }); }
+  catch (e) { console.log(`  ${what} not seen after ${Math.round((Date.now() - t0) / 1000)} s`); } };
 const enter = async (hr, k) => { await page.evaluate(([hr, k]) => { forceTime(hr); const S = WORLD.settle.get('dunmore');
   const hs = S.houses.filter(x => x.type === 'home' && !x.ownedByPlayer && !x.shuttered); const h = hs[k]; window._h = h; px = h.exitX; pz = h.exitZ; goToInterior(h); }, [hr, k]);
-  await page.waitForTimeout(3000); await g.hide(); };
-const leave = async () => { await page.evaluate(() => { try { closeDialog(); } catch (e) {} exitInterior(); }); await page.waitForTimeout(1500); };
+  await until('in the room', () => currentHouse === window._h && document.getElementById('fd').style.opacity === '0'); await g.hide(); await g.frames(4); };
+const leave = async () => { await page.evaluate(() => { try { closeDialog(); } catch (e) {} exitInterior(); });
+  await until('back in the street', () => currentHouse === null && document.getElementById('fd').style.opacity === '0'); };
 // stand d from her body on open floor, look at her for a few of the loop's frames, read the prompt, then press E
 const tryAt = (d, look) => page.evaluate(async ([d, look]) => { const m = intNPCMesh; const b = INT_BEDS.find(b => b.owner === 'home');
   for (let i = 0; i < 4; i++) await new Promise(r => requestAnimationFrame(() => r()));
