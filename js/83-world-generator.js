@@ -2142,7 +2142,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       // S289 — the smithy on the kit (#46 A): a coursed forge with a hood, chimney and bellows, an anvil on a stump, a quench
       // tub, racks of the weapon kit's blades and hafts on the east wall, a grindstone, a dagger on the counter; one bake
       {const K=furnKit(),room=K.bake(K.smithy(W,DS,H,FN,FSEED));room.userData.furn=true;sc_.add(room);furnSwap(room);}
-      solid(1.2,1.4,.9,.8,1.2);light(1.2,1.0,2.0,0xff6a20,1.6,6);solid(W-2.0,1.6,.3,.3,1.0);solid(W-.75,3.9,.3,.3,.7);
+      solid(1.2,1.4,.9,.8,1.2);light(1.2,1.0,2.0,0xff6a20,1.6,6);solid(W-2.0,1.6,.3,.3,1.0);solid(W-.75,smithyTubZ(DS),.3,.3,.7); /* S1394 — the tub where the kit draws it */
       counter();
     } else if(type==='armor'){
       // S290 — the armourer on the kit (#46 A): three stands (plate, leather, mail) with helms, the kit's shields on the

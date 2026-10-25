@@ -9,11 +9,11 @@ const enter = async type => { await page.evaluate(() => { try { if (interiorScen
   if (ok) { await page.waitForTimeout(4000); await g.hide(); } return ok; };
 // S896 (card F2a): a shop is laid out in the furniture kit's unit and built SCALE.ROOM_K (1.444) larger, so the places and heights
 // below are the kit's (W and D ÷ KR), and the footholds are read back at true size; the tub stands at W − .75, 3.9 now, clear of
-// the counter's end in a shop of true size
+// the counter's end in a shop of true size (S1394: at smithyTubZ, 4.5, a body's width past the counter's front)
 // S1252: a shop with the keeper's room has it at the north end, and its own layout starts _shopZ (3.2) further south
 const look = () => page.evaluate(() => { const sc = interiorScene, KR = SCALE.ROOM_K, W = _S.intW / KR, D = _S.intD / KR, Z = _S._shopZ || 0, furn = sc.children.filter(o => o.userData.furn); let meshes = 0; sc.traverse(o => { if (o.isMesh) meshes++; });
   const fh = (x, z, lo, hi) => FOOTHOLDS.some(f => f.y / KR > lo && f.y / KR < hi && x * KR > f.x0 && x * KR < f.x1 && z * KR > f.z0 && z * KR < f.z1);
-  return { type: _S.type, W, D, furn: furn.length, tris: furn.map(f => f.userData.tris), fire: furn.some(f => f.userData.fire), meshes, counter: fh(W / 2, 3.0 + Z, .6, .7), forge: fh(1.2, 1.4 + Z, .7, .8), anvil: fh(W - 2.0, 1.6 + Z, .55, .65), tub: fh(W - .75, 3.9 + Z, .4, .46) }; });
+  return { type: _S.type, W, D, furn: furn.length, tris: furn.map(f => f.userData.tris), fire: furn.some(f => f.userData.fire), meshes, counter: fh(W / 2, 3.0 + Z, .6, .7), forge: fh(1.2, 1.4 + Z, .7, .8), anvil: fh(W - 2.0, 1.6 + Z, .55, .65), tub: fh(W - .75, smithyTubZ(D - Z) + Z, .4, .46) }; });
 check('Dunmore (or a town near it) has a smithy', await enter('weapon'));
 const sm = await look(); console.log(JSON.stringify(sm));
 check('the smithy is two bakes (the room with the forge\'s fire, and the counter), 10–45k triangles in all', sm.furn === 2 && sm.fire && sm.tris.reduce((a, b) => a + b, 0) > 10000 && sm.tris.reduce((a, b) => a + b, 0) < 45000, sm);
