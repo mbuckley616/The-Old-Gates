@@ -62,11 +62,15 @@ check(`the dash spent, Q 0.1 s before landing rolls and halves it as before (${r
 await page.evaluate(() => { const p = PORTALS.find(p => p && p.seed != null && p.zone === 'world'); px = p.x; pz = p.z + 3; goToDungeon(p); });
 await page.waitForTimeout(6000); await g.hide();
 const wall = await page.evaluate(() => {
-  let cell = null; for (let z = 1; z < 60 && !cell; z++) for (let x = 1; x < 60 && !cell; x++) if (!dSolid(x, z) && !dSolid(x - 1, z) && !dSolid(x - 2, z) && dSolid(x + 1, z) && !dSolid(x, z - 1) && !dSolid(x, z + 1)) cell = { x, z };
+  // S1390 — the dungeon is in metres since F5 (S1283): the search runs over the map's cells and stands you at dAt(c), 1.5 m short of
+  // the wall's face; it had scanned 1 m steps over the first 60 m, all rock once a gate's spaces moved its rooms out (red at s884)
+  const open = (x, z) => !dSolid(x, z), H = DCELL / 2; let cell = null;
+  for (let r = 1; r < dR - 1 && !cell; r++) for (let c = 2; c < dC - 1 && !cell; c++) { const x = dAt(c), z = dAt(r), f = x + H;
+    if (open(x, z) && open(x - DCELL, z) && !open(f + .05, z) && open(x, z - DCELL) && open(x, z + DCELL) && [0, .5, 1, 1.5].every(d => open(f - 1.8 + d, z))) cell = { c, r, x, z, f }; }
   if (!cell) return { noCell: true };
-  px = cell.x - 1; pz = cell.z; const r = _dash(100, { yaw: -Math.PI / 2 });
-  return { cell, ...r, endX: +(px).toFixed(3), wallFace: cell.x + .5, dun: lid.startsWith('dyn_') };
+  px = cell.f - 1.5; pz = cell.z; const x0 = px, r = _dash(100, { yaw: -Math.PI / 2 });
+  return { cell, ...r, endX: +(px).toFixed(3), wallFace: +(cell.f - x0).toFixed(3), dun: lid.startsWith('dyn_') };
 });
-check(`in a dungeon, a wall 1.5 m ahead: the dash stops short of it (${wall.dist} m, the wall's face at ${wall.wallFace - (wall.cell ? wall.cell.x - 1 : 0)} m)`, wall.dun && !wall.noCell && wall.dist > .8 && wall.dist < 1.5 && wall.dx > 0, wall);
+check(`in a dungeon, a wall 1.5 m ahead: the dash stops short of it (${wall.dist} m, the wall's face at ${wall.wallFace} m)`, wall.dun && !wall.noCell && wall.dist > .8 && wall.dist < 1.5 && wall.dx > 0, wall);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
