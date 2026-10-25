@@ -1360,7 +1360,9 @@ function hbPrep(g,key){if(g.hbKey)return;g.hbKey=key;try{hbTint(g,hbGenome(g));}
 // and what each wears over the builder's own rolled clothes, from its FOE_DRESS colour (c): the weapon and shield stay the game's
 // kit, held by the driver's bones, so the builder's own spear, staff, crossbow, basket and shield are taken off every one
 const HB_FOE_NOT=/^(skel|dead|goblin|troll|gargoyle|golem|wraith)$/;
-function hbFoeOk(type,genome,g){if(genome)return !!g.hbKey;const dr=FOE_DRESS[type];return !!dr&&!Object.keys(dr).some(k=>dr[k]&&HB_FOE_NOT.test(k));}
+// S1400 — of the risen dead, the Hollowed and the Ghoul wear the builder's body (its skin's rot, S1399); the Ash Wight and the ghosts not yet
+const HB_FOE_DEAD=/^(Hollowed|Ghoul)$/;
+function hbFoeOk(type,genome,g){if(genome)return !!g.hbKey;const dr=FOE_DRESS[type];return !!dr&&!Object.keys(dr).some(k=>dr[k]&&HB_FOE_NOT.test(k)&&!(k==='dead'&&HB_FOE_DEAD.test(type)));}
 const HB_FOE_DRESS={
   'Bandit':        c=>({cloak:c.map(v=>v*.8),cape:true,hood:'up'}),
   'Bandit Archer': c=>({cloak:c.map(v=>v*.85),cape:true,hood:'up'}),
@@ -1379,6 +1381,9 @@ const HB_FOE_DRESS={
   // S1389 — the Marsh Hag (S216: the fen's witch, an old woman in bog rags, hooded, a crooked staff): a robe in her bog green under a
   // long cloak of peat brown, its hood up, a cord at the waist, and the builder's own walking staff of hazel with its root's knob (S1085)
   // for her crooked staff, in the right fist where the driver's stick was
+  // S1400 — the risen dead (S173) in what they were buried in: a tunic and trousers of the grave's drab, barefoot, nothing over them
+  'Hollowed':      c=>({trousers:c.map(v=>v*.85),skirtColor:c.map(v=>v*.9),boots:null,belt:null,mantle:null,cuffs:null,cuffBand:null,cloak:null,hood:null,helm:null,brooch:null,necklace:null,earrings:null,circlet:null,tartan:null,tartanLine:null,bands:null,bandsMotif:null}),
+  'Ghoul':         c=>({trousers:c.map(v=>v*.8),skirtColor:c.map(v=>v*.85),boots:null,belt:null,mantle:null,cuffs:null,cuffBand:null,cloak:null,hood:null,helm:null,brooch:null,necklace:null,earrings:null,circlet:null,tartan:null,tartanLine:null,bands:null,bandsMotif:null}),
   'Marsh Hag':     c=>({robe:c,cord:[.3,.27,.18],cloak:[.2,.18,.12],tartan:null,tartanLine:null,cloakLen:.85,cape:false,hood:'up',cloakFur:null,cloakHem:null,brooch:null,mantle:null,belt:null,staff:[.3,.23,.15],staffMake:'hazel',necklace:null,earrings:null,circlet:null})};
 // S1379 — what a foe's genome is beyond its clothes: a kobold is an old man, short and thickset, with a long grey beard (the driver's
 // greybeard, S184); it is sized to its driver's stature like every foe, so its height slider only moves its proportions
@@ -1389,6 +1394,11 @@ const HB_FOE_BODY={
   // man, S1379's try), here a little past it; cropped to the scalp, ruddy, half of them with a short beard (the people's own roll)
   // S1389 — a hag is an old woman, thin and bony, her skin sallow toward the fen's green (the driver's lerp to 0x9aa078), her hair grey
   'Marsh Hag':     G=>{G.g=0;G.age=.95;G.height=0;G.prop=.2;G.weight=.3;G.muscle=.25;G.hair={style:'loose',len:.8};G.hairCol=[.54,.54,.47];G.skin=[.64,.6,.46];},
+  // S1400 — the risen dead: old and wasted, their hair greyed and their skin the driver's (a .75 lerp to FOE_DRESS's), rotted in the
+  // builder's skin (people.js's rot, S1399): the Hollowed at .7, the Ghoul, longer in the fen, at 1; the hair short and lank (the people's
+  // braids took a body to 113k triangles)
+  'Hollowed':      G=>{G.hair={style:'short',len:.3};G.age=.82;G.height=0;G.weight=.22;G.muscle=.3;G.hairCol=[.42,.41,.38];G.beard=Math.min(G.beard||0,.4);G.skin=[.56,.54,.49];G.rot=.7;},
+  'Ghoul':         G=>{G.hair={style:'short',len:.2};G.age=.8;G.height=0;G.weight=.15;G.muscle=.25;G.hairCol=[.36,.37,.33];G.beard=Math.min(G.beard||0,.3);G.skin=[.44,.5,.37];G.rot=1;},
   'Ogre':          G=>{G.g=1;G.age=.6;G.height=1;G.prop=.35;G.weight=1.35;G.muscle=0;G.hair={style:'short',len:0};G.hairCol=[.23,.16,.1];G.beard=G.beard>.8?.35:0;G.skin=[.74,.55,.42];}};
 // a foe's genome, at its first attach (its id is given after it is built, keyFoe): `foe:<id>`, the co-op rule's place and index; a
 // foe with no id yet (the inspector's) takes its type and its old genome's seed, which is the same each time it is built
@@ -1464,7 +1474,19 @@ function hbAttach(rig,P){const tA=performance.now();
   // S1224 — one already asleep when the body comes (it is built after the room, so a sleeper always is) is laid again by its own shape:
   // the builder's head is longer than the driver's, and laid by the driver's shape its head bone sat 6 cm past the mattress's end, in the headboard, under the driver's quilt
   if(rig.sleep&&rig.bed&&rig.root.parent)personLie(rig.root,rig.bed);
+  if(rig.eyeGlow)hbEyeGlow(rig);
   HBODY.ms+=performance.now()-tA;HBODY.n++;}
+// S1400 — the risen dead's burning eyes (S173) on the builder's body: the driver's lit eyes sit where the driver's eyes are, which the
+// builder's face does not share, so a copy is laid in the builder's head over its own eyeballs, a little in front of them, at the driver's
+// size in the world; it shows with the builder's body and the driver's with the driver (hbLevel)
+function hbEyeGlow(rig){const H=rig.hb,hd=H.P.byName.head,eyes=[];hd.children.forEach(o=>{if(o.isMesh&&o.geometry.type==='SphereGeometry')eyes.push(o);});if(eyes.length<2)return;
+  rig.root.updateMatrixWorld(true);const ws=new THREE.Vector3(),hs=new THREE.Vector3();rig.eyeGlow.getWorldScale(ws);hd.getWorldScale(hs);
+  const r=.008*ws.x/hs.x,fwd=new THREE.Vector3(0,0,1).applyQuaternion(rig.root.getWorldQuaternion(new THREE.Quaternion())),P=[],I=[];
+  for(const e of eyes.slice(0,2)){e.geometry.computeBoundingSphere();const b=e.geometry.boundingSphere,c=e.localToWorld(b.center.clone()),ew=new THREE.Vector3();e.getWorldScale(ew);
+    hd.worldToLocal(c.addScaledVector(fwd,b.radius*ew.x*.55));
+    const g1=new THREE.SphereGeometry(r,6,4),a=g1.attributes.position.array,ix=g1.index.array,n0=P.length/3;for(let i=0;i<a.length;i+=3)P.push(a[i]+c.x,a[i+1]+c.y,a[i+2]+c.z);for(let i=0;i<ix.length;i++)I.push(ix[i]+n0);g1.dispose();}
+  const eg=new THREE.BufferGeometry();eg.setAttribute('position',new THREE.Float32BufferAttribute(P,3));eg.setIndex(I);
+  const m=new THREE.Mesh(eg,rig.eyeGlow.material);m.name='eyeGlow';m.frustumCulled=false;hd.add(m);H.eyeGlow=m;}
 // S1259 (F10) — what people.js hangs on the person's root and not on a bone (the cloak, its hood laid down, the brooch and its knot)
 // stood where the body stood: a dead bandit fell out of his cloak and left it upright on the road, searchable. Each is skinned whole to
 // the builder's root bone (the pelvis, which takes the driver's hips), as hbMerge already bakes it for the middle level, so the cloak
@@ -1522,7 +1544,7 @@ function hbPose(rig){const H=rig.hb,B=rig.B,map=H.map;
 // material for a yellow clone, 74-strikes.js) as a strong gold; the materials the kill clones are the ones on the meshes now
 function hbGlow(rig){const H=rig.hb,m=rig.mesh.material;let em=m&&m.emissive?m.emissive.getHex():0;if(m!==H.drv&&m&&m.color&&m.color.getHex()===0xffdd44)em=0xb08010;
   if(em===H.em)return;H.em=em;for(const o of H.mid?[...H.full,H.mid]:H.full)for(const x of Array.isArray(o.material)?o.material:[o.material])if(x.emissive)x.emissive.setHex(em);} // the body's own: what it holds keeps the kit's shared materials
-function hbLevel(rig,L){const H=rig.hb;if(H.L===L)return;H.L=L;if(L===2)hbGive(rig);if(L===1)hbMid(rig);H.root.visible=L<2;rig.mesh.visible=L===2;for(const m of H.full)m.visible=L===0;if(H.mid)H.mid.visible=L===1;}
+function hbLevel(rig,L){const H=rig.hb;if(H.L===L)return;H.L=L;if(H.eyeGlow&&rig.eyeGlow)rig.eyeGlow.visible=L===2;if(L===2)hbGive(rig);if(L===1)hbMid(rig);H.root.visible=L<2;rig.mesh.visible=L===2;for(const m of H.full)m.visible=L===0;if(H.mid)H.mid.visible=L===1;}
 // the middle level, baked now if the body was attached without it (rig.hbLazy); null if the bake fails
 function hbMid(rig){const H=rig.hb;if(!H)return null;if(H.mid||H.midFail)return H.mid;const t=performance.now();
   try{const m=hbMerge(H.P,H.cards);m.geometry.boundingSphere=H.sph.clone();m.visible=H.L===1;if(rig.foe)m.material=HB_MID_MAT.clone();
