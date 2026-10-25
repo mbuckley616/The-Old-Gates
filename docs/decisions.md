@@ -15,6 +15,21 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+### The fifteen words and the Mouth (from the systems designer, 2026-10-25, #695)
+**The question.** Michael asked on #422 how the fifteen words off the main path are unlocked (the guild as one path, finding them yourself as another), and what the Mouth is for now. Under every option Mastery still comes only from a stone, and gold never buys a word. Page: `docs/design/words-and-the-mouth.md`.
+
+**1. The fifteen words.**
+- **A (recommended). Two doors.** Each Mages' Guild commission earns one reading, a word from the shelves your rank opens (Adept 8, Evoker 12, Warlock 4), at Impression, deepened by the tutor to Comprehension; or find the word's own stone, the only Mastery. Súil points at a word you choose; hermits and rubbings name words.
+- **B.** As A, plus strokes: each carving shows a stroke of another word of its school, and three strokes give that word without its stone.
+- **C.** The guild as guide only: its commissions send you to named carvings, and every word is still a touch of its stone.
+
+**2. The Mouth** (canon: an Uisce gate under Inis Rua, Niamh its keeper; in the build, an examine line in a legacy zone that goes at the cutover).
+- **A (recommended). The Uisce great gate.** The Gatelands' great gate is placed at Inis Rua; Niamh lets you in once you hold a word at Comprehension; its ring holds the certain first Mastery and starts the knife line.
+- **B.** A lesser Uisce gate with a keeper: the Register's ninth star, the certain first Mastery, nothing more.
+- **C.** Retire it: the cave stays shut for good, the ninth star goes to the Vault of the Tide.
+
+**Recommendation:** 1 A, 2 A. The guild is one path and the stones the other, and the canon decides which pays more; the Mouth already has a keeper, a legend and a dead man in it, and the six great gates still need places.
+
 ## Answered
 ### Weather that matters (OG-138): how far you can see in fog, a blizzard and heavy rain (from the concept artist, 2026-10-24, #679)
 **The question.** OG-138 says "fog and snow cut sight". How far you can see is also how far a foe sees you, how far you can sneak, and how far the land must draw. How close should bad weather close in? The prototype is `docs/prototypes/levelup/weather.html` (backlog L12, card F3); the systems builder would read the same number for sight and sneaking (`WX.sFog`).
