@@ -2,6 +2,7 @@
 // does: old and wasted, barefoot in a grave's drab tunic and trousers, their skin rotted in the builder's shader (people.js's rot, S1403;
 // .7 and 1), and the driver's burning eyes laid over the builder's own eyes (hbEyeGlow). Picture: docs/prototypes/f4/f4-dead.jpg.
 // Session 1409: the Ash Wight with them, rotted at .85 under Iron's mail, kettle helm and mail greaves, rusted; f4-wight.jpg.
+// Session 1426: his spear stands as the builder's grip stands it (it lay 67° across him), and still moves with a blow's wind-up.
 import { boot, check, ROOT } from './lib/game.mjs';
 import fs from 'fs'; import path from 'path';
 const OUT = path.join(ROOT, 'docs', 'prototypes', 'f4'); fs.mkdirSync(OUT, { recursive: true });
@@ -55,6 +56,17 @@ const walk = await page.evaluate(() => { const { e, rig } = _F[0], H = rig.hb, s
   rig.root.parent.updateMatrixWorld(true); sk.update(); const b = mats(); let moved = 0; for (let i = 0; i < a.length; i++) moved = Math.max(moved, Math.abs(a[i] - b[i])); return { moved: +moved.toFixed(3), w: +w.toFixed(2) }; });
 console.log('  walk:', JSON.stringify(walk));
 check(`it walks: the builder's bones turn with the driver's stride (by ${walk.moved})`, walk.moved > .02, walk);
+
+// S1426 — the Ash Wight's spear stands in his fist as the builder's grip stands it, its foot by the ground (the driver's hold bend,
+// copied over the grip, laid it 67° across him with its foot a metre up), and it still moves with the wind-up (attackPose turns the shoulder)
+const sp = await page.evaluate(() => { const { e, rig } = _F[3], H = rig.hb; let s = null; H.root.traverse(o => { if (o.name === 'spear') s = s || o; });
+  const top = rig.root.parent, Y = new THREE.Vector3(0, 1, 0), at = () => { tickPeople(1 / 60, 5e5); top.updateMatrixWorld(true);
+    const a = Y.clone().applyQuaternion(s.getWorldQuaternion(new THREE.Quaternion())), bb = new THREE.Box3().setFromObject(s), c = top.getWorldPosition(new THREE.Vector3());
+    return { lean: +(Math.acos(Math.min(1, Math.abs(a.y))) * 57.3).toFixed(1), foot: +(bb.min.y - WORLD.worldH(c.x, c.z)).toFixed(3), tip: s.localToWorld(new THREE.Vector3(0, 2, 0)) }; };
+  const r = at(); e._wind = 1; attackPose(e, false); top.updateMatrixWorld(true); const w = s.localToWorld(new THREE.Vector3(0, 2, 0)); e._wind = 0; attackPose(e, false);
+  return { lean: r.lean, foot: r.foot, wind: +w.distanceTo(r.tip).toFixed(3), grip: !!H.grip }; });
+console.log('  spear:', JSON.stringify(sp));
+check(`the Ash Wight's spear stands in the builder's grip, ${sp.lean}° off plumb, its foot ${sp.foot} m off the ground, and its head moves ${sp.wind} m with the wind-up`, sp.grip && sp.lean < 15 && sp.foot > -.05 && sp.foot < .2 && sp.wind > .1, sp);
 
 // the picture: the line from 6 m, and close on the Hollowed's face
 await page.evaluate(() => { const f = _F[1].e; const fx = -Math.sin(yaw), fz = -Math.cos(yaw); px = f.x - fx * 6; pz = f.z - fz * 6; pitch = .05; });

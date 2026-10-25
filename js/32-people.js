@@ -1128,7 +1128,7 @@ const RD_AIM=[['spine','neck'],['neck','head'],['head','top'],['shL','elL'],['el
 // world point, opts.solid(x,z) (optional) says a point is inside a wall. Returns the ragdoll, or null when the rig has no body.
 function ragdollStart(rig,push,opts){
   const B=rig&&rig.B;if(!B||!B.hips||!B.anL||!B.wrR||!opts||!opts.ground)return null;
-  for(const r of RAGDOLLS)if(r.rig===rig)RAGDOLLS.delete(r);
+  for(const r of RAGDOLLS)if(r.rig===rig)RAGDOLLS.delete(r);rig.limp=true;
   const top=rig.foe?rig.root.parent:rig.root;top.updateMatrixWorld(true);
   const O=top.getWorldPosition(new THREE.Vector3()),V=(x,y,z)=>new THREE.Vector3(x||0,y||0,z||0);
   const s=rig.root.getWorldScale(new THREE.Vector3()).y||1;
@@ -1471,7 +1471,13 @@ function hbAttach(rig,P){const tA=performance.now();
   // fallen foe's builder body stayed standing on its driver
   const rb=by.root;rig.root.updateMatrixWorld(true);const inv=new THREE.Matrix4().copy(rig.root.matrixWorld).invert(),Ah=new THREE.Matrix4().multiplyMatrices(inv,B.hips.parent.matrixWorld),Bp=new THREE.Matrix4().multiplyMatrices(inv,rb.parent.matrixWorld);
   const hD=new THREE.Vector3(0,PW.HIPS,0).applyMatrix4(Ah).y,hB=rb.position.clone().applyMatrix4(Bp).y;
-  rig.hb={root:W,P,map,s0,t0,full,mid,cards:mid?null:cards,sph:mid?null:sph,pos0:rb.position.clone(),A:new THREE.Matrix3().setFromMatrix4(Ah),Bi:new THREE.Matrix3().setFromMatrix4(Bp).invert(),kh:hB/hD,L:-1,st,glow:!!rig.foe,drv:rig.mesh.material,em:0,held:[]};
+  // S1426 — a spear or staff in the builder's own fist (a guard's, the Ash Wight's, the hag's) is held by the builder's grip, the
+  // forearm turned forward and the wrist set so the shaft stands as people.js stood it; the driver's hold (pwHold) bends its elbow
+  // 1.2 rad (.45 for a stick) to stand its own spear, and copied over the builder's grip that bend laid the spear 69° off plumb across
+  // the body. So the right forearm and wrist keep the grip's turn (from the upper arm, which still takes the walk's swing and a blow's
+  // wind-up) while the driver holds and stands; a ragdoll or a sleeper takes the driver's again
+  const gD=rig.hbG&&rig.hbG.dress||{},grip=(gD.spear||gD.staff)&&!gD.chair?map.map(([j],i)=>j==='elR'||j==='wrR'?i:-1).filter(i=>i>=0).map(i=>({i,q:map[i][1].quaternion.clone()})):null;
+  rig.hb={root:W,P,map,s0,t0,grip,full,mid,cards:mid?null:cards,sph:mid?null:sph,pos0:rb.position.clone(),A:new THREE.Matrix3().setFromMatrix4(Ah),Bi:new THREE.Matrix3().setFromMatrix4(Bp).invert(),kh:hB/hD,L:-1,st,glow:!!rig.foe,drv:rig.mesh.material,em:0,held:[]};
   // a foe's weapon (the game's kit, on the driver's gear bone, or the bow in its left hand) and shield (on the left forearm) hang on
   // the driver's bones, inside the driver's mesh, which is hidden while the builder's body shows: so they are carried in the builder's
   // group then, following their bone each frame (hbHold), the weapon's grip in the builder's fist, closed on it as people.js closes a
@@ -1545,8 +1551,9 @@ function hbHold(rig){const H=rig.hb,top=rig.foe?rig.root.parent:rig.root;top.upd
 // so the body and what it holds showed no wind-up and no strike: copied again here, for a foe whose body is near enough to pose
 function hbRepose(rig){if(rig&&rig.hb&&rig.hb.L<2&&!rig.hb.cold){hbPose(rig);if(rig.hb.held.length)hbHold(rig);}}
 function hbGive(rig){const H=rig.hb;for(const h of H.held)if(h.o.parent===H.root){h.par.add(h.o);h.m0.decompose(h.o.position,h.o.quaternion,h.o.scale);}}
-function hbPose(rig){const H=rig.hb,B=rig.B,map=H.map;
+function hbPose(rig){const H=rig.hb,B=rig.B,map=H.map,grip=H.grip&&rig.holds&&!rig.limp&&!rig.sleep?H.grip:null;
   for(let i=0;i<map.length;i++){const [j,b]=map[i];
+    if(grip&&(i===grip[0].i||grip[1]&&i===grip[1].i)){b.quaternion.copy(grip[0].i===i?grip[0].q:grip[1].q);continue;}
     hbRel(B[j],rig.root,_hbq).multiply(H.s0[i]).multiply(H.t0[i]);
     if(b.parent&&b.parent!==H.P.root){hbRel(b.parent,H.root,_hbq2).invert();b.quaternion.copy(_hbq2.multiply(_hbq));}else b.quaternion.copy(_hbq);}
   const hp=B.hips.position,rb=map[0][1];_hbv.set(hp.x,hp.y-PW.HIPS,hp.z).applyMatrix3(H.A);_hbv.y*=H.kh;rb.position.copy(H.pos0).add(_hbv.applyMatrix3(H.Bi));}
