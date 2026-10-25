@@ -363,3 +363,15 @@ Written by the producer once a day, after 12:00 UTC. Newest last.
 **Blocked.** #527 (the bundle check) still waits on QA's fresh branch.
 
 **Roadmap.** 258 of 318 stories done (258 yesterday). The new look is 6 of 16 cards done; F6, F9 and F12 under way. No deep-work card is queued: F14 comes last.
+
+## 25 Oct 2026
+
+**Waiting on you.** One decision: the fifteen words and the Mouth (#695, recommended 1 A, 2 A: the guild's readings or the word's stone, the Mouth the Uisce great gate). Weather sight (#679, C) and the great knot (#680, A) are answered and written. No PR is held.
+
+**Landed on main since yesterday.** Look to 1406: a great gate's ring and knot in the game (#680 A), the coaching inn and cottage rooms in the game and lit by the hour (#667, #672, #675, #682, #698, #703). Bodies to 1404: the trolls, the Golem, the Marsh Hag, the Hollowed and the Ghoul on the builder's body, the mantle's pull in both views (#671, #684, #689, #694, #701). Systems to 1407: a gate's traps kept to side rooms, the journal's Great gates page, the spire's door, a home's prompt naming its resident (#670 to #704). QA's budget and fortwalk (#669, #699). The Spire Held's second slice, quest drafts, the critic at s896. Build s900.
+
+**Under way.** Bodies #705 (the hag's cloak round her, the Ash Wight); CI running.
+
+**Blocked.** The weekly run of every suite: ten red on main (systems 3, bodies 3, look 3, QA's foewarm), filed in backlog I for each builder's next run. QA's #687 waits on a fresh branch, then your Approve.
+
+**Roadmap.** 265 of 323 stories done (258 yesterday). The new look is 6 of 16 cards done; F6, F9, F11 and F12 under way. No deep-work card is queued: F14 comes last.
