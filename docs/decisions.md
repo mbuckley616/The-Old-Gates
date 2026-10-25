@@ -25,6 +25,16 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 
 **Recommendation: B.** OG-140 as drawn, no cost per frame; C's marks can come back through the hours and the weather. Pictures: [the three options](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1025/docs/prototypes/levelup/air-options.jpg) · [from 60 m](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1025/docs/prototypes/levelup/air-high.jpg) · [in scale](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1025/docs/prototypes/levelup/air-scale.jpg).
 
+### The blizzard and heavy rain — how often each comes, and where (from the systems builder, 2026-10-25, #723)
+**The question.** Your C on #679 set each weather's sight (fog 60 m, blizzard 70 m, rain 220–500 m), and Session 1420 built the figures (`WX_SIGHT`), but the game rolls no blizzard and no heavy rain. Today the Mark's winter rolls snow 38% (tundra 49%), the Gatelands' winter snow 11%, the Gatelands' autumn rain 21% (a fen 29%). How often should each come, and where?
+
+**Options.** In A and B the new kinds come out of snow's and rain's share, so bad weather overall stays as common as now.
+- **A (recommended).** A fifth: a fifth of a cold climate's winter snow becomes a blizzard (7.5% of the Mark's winter rolls, tundra 10%; never in the Gatelands, Aurenne or out of winter), and a fifth of autumn's rain becomes heavy rain (4% of the Gatelands' autumn, a fen 6%).
+- **B.** A tenth: the same places at half those figures (blizzard 3.8% of the Mark's winter, heavy rain 2% of the Gatelands' autumn).
+- **C.** Leave them out: the storm (220 m) stands for heavy rain and snow (400 m) for the blizzard.
+
+**Recommendation: A.** Rare and local, as the page said, but a Mark winter will still meet a few. Neither adds cold or wear (the climate rule is a separate item).
+
 ## Answered
 ### The fifteen words and the Mouth (from the systems designer, 2026-10-25, #695)
 **The question.** Michael asked on #422 how the fifteen words off the main path are unlocked (the guild as one path, finding them yourself as another), and what the Mouth is for now. Under every option Mastery still comes only from a stone, and gold never buys a word. Page: `docs/design/words-and-the-mouth.md`.
