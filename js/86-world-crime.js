@@ -407,8 +407,15 @@
     const fl=typeof jumpY==='number'?jumpY:0,eye=fl+(_sneaking?SCALE.EYE_CROUCH:SCALE.EYE_STAND); /* S1105 — F2b: the line at your eye, 1.65 standing and 1.1 crouched (it was 1.1 always) */const B=S_.filter(s=>s.y0!=null&&s.y1!=null&&s.y0<=eye&&s.y1>=eye&&(s.y1-s.y0>=1.8||D_.some(d=>d.sol===s)));
     const C=cover&&_sneaking?S_.filter(s=>s.y0!=null&&s.y1!=null&&s.y0<=fl+.3&&s.y1>=fl+COVER_H&&!(bx>s.x0&&bx<s.x1&&bz>s.z0&&bz<s.z1)):[];
     const d=Math.hypot(bx-ax,bz-az);const n=Math.max(1,Math.ceil(d/.1));
-    for(let i=1;i<n;i++){const t=i/n,x=ax+(bx-ax)*t,z=az+(bz-az)*t;for(const s of B)if(x>s.x0&&x<s.x1&&z>s.z0&&z<s.z1)return false;
-      if(C.length&&d*(1-t)<=COVER_R)for(const s of C)if(x>s.x0&&x<s.x1&&z>s.z0&&z<s.z1)return false;}return true;}
+    /* S1416 — a wall is met along the whole line, not at points 0.1 m apart: the kit's partitions are 0.06 thick, and a line could
+       step over one (sightline: the coaching inn's, 0.86 m long, sampled at 5.17 and 5.27 either side of a wall at 5.19 to 5.25).
+       The line's ends keep the old 5 cm of grace, as the first and last samples did */
+    const e_=d>0?Math.min(.5,.05/d):.5,dx_=bx-ax,dz_=bz-az;
+    const cut=s=>{let t0=e_,t1=1-e_;for(const [o,v,lo,hi] of [[ax,dx_,s.x0,s.x1],[az,dz_,s.z0,s.z1]]){
+      if(Math.abs(v)<1e-9){if(!(o>lo&&o<hi))return false;continue;}let u=(lo-o)/v,w=(hi-o)/v;if(u>w){const k=u;u=w;w=k;}if(u>t0)t0=u;if(w<t1)t1=w;}return t0<t1;};
+    for(const s of B)if(cut(s))return false;
+    if(C.length)for(let i=1;i<n;i++){const t=i/n,x=ax+(bx-ax)*t,z=az+(bz-az)*t;
+      if(d*(1-t)<=COVER_R)for(const s of C)if(x>s.x0&&x<s.x1&&z>s.z0&&z<s.z1)return false;}return true;}
   // S368 — indoors a person sees what they face (Michael's B on #73): a 120° cone about the way they look, (sin ry, cos ry)
   const INT_FOV=Math.cos(Math.PI/3);
   const WIT_HEAR=2;

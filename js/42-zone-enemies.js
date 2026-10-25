@@ -909,10 +909,12 @@ function prewarmFoes(sc,cam){
   /* S1299 — the same for the beasts the creature kit dresses (the Wolf, the Snow Wolf, the Dire Wolf…; hcAttach, built by hcTick when first
      near): their hide and nine fur shells keyed programs of their own that compiled on the frame they were first seen (foewarm, 29 programs
      once main built the townsfolk a few pieces a frame and no wild wolf had shown its body during the settle). Built here at the near
-     level, compiled with the rest, its materials kept and its geometry dropped; the kit's own count (HC_BODY.n, .ms) is left as it was */
+     level, compiled with the rest, its materials kept and its geometry dropped; the kit's own count (HC_BODY.n, .ms) is left as it was.
+     S1414 — and the person-plan kinds (the Goblin, the Skeleton, the trolls, the Golem, the Gargoyle), whose drivers buildPerson puts in
+     HC_RIGS, not WOLF_RIGS: the kit's flat-shaded iron sword keyed a program of its own on the first one seen (QA's foewarm, s901) */
   const hcw=[];
   if(typeof hcOn==='function'&&hcOn()){const n0=HC_BODY.n,ms0=HC_BODY.ms;
-    for(const r of [...WOLF_RIGS]){if(!inTmp(r)||r.hc||!hcOk(r))continue;
+    for(const r of new Set([...WOLF_RIGS,...HC_RIGS])){if(!inTmp(r)||r.hc||!hcOk(r))continue;
       try{hcAttach(r);}catch(e){}
       if(r.hc){try{hcLevel(r,0);hcPose(r);}catch(e){}r.hc.W.traverse(o=>{o.visible=true;});r.mesh.visible=true;hcw.push(r);}} /* the driver too, which the shadow pass draws */
     HC_BODY.n=n0;HC_BODY.ms=ms0;}
@@ -928,6 +930,7 @@ function prewarmFoes(sc,cam){
   for(const r of hbw){r.hb.root.traverse(o=>{if(o.geometry)o.geometry.dispose();});if(r.hb.P.skeleton.boneTexture)r.hb.P.skeleton.dispose();}
   for(const r of hcw){const H=r.hc;H.C.root.traverse(o=>{if(o.geometry)o.geometry.dispose();});if(H.C.skel.boneTexture)H.C.skel.dispose();r.hc=null;}
   for(const r of [...WOLF_RIGS])if(inTmp(r))WOLF_RIGS.delete(r);
+  if(typeof HC_RIGS!=='undefined')for(const r of [...HC_RIGS])if(inTmp(r))HC_RIGS.delete(r);
   for(const r of [...PEOPLE_RIGS])if(inTmp(r))PEOPLE_RIGS.delete(r);
   return _foesWarm={kinds:kinds.length+1,programs:(REN.info.programs?REN.info.programs.length:0)-p0,ms:Math.round(performance.now()-t0)};
 }
