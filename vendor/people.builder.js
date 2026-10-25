@@ -717,9 +717,9 @@ function shellMat(color, layer, layers, o = {}) {
   m.customProgramCacheKey = () => 'shell' + layer + '/' + layers + JSON.stringify({ ...o, skin: !!o.skin });
   return m;
 }
-function skinMat(c, marks = null, scar = null) {
+function skinMat(c, marks = null, scar = null, rot = 0) {
   const m = new THREE.MeshPhysicalMaterial({ color: c, roughness: .6, metalness: 0, sheen: .18, sheenColor: new THREE.Color(1, .45, .35), sheenRoughness: .5, vertexColors: true });
-  if (marks != null) markSkin(m, marks); if (scar) scarSkin(m, scar); return m;
+  if (marks != null) markSkin(m, marks); if (scar) scarSkin(m, scar); if (rot > 0) rotSkin(m, rot); return m;
 }
 // the Old Blood's marks (Session 1052; canon §3.1, Michael's 2 B on OG-066): not ink but pale raised lines under the skin, branching
 // like veins, at the wrist, the back of the hand and the shoulder blade, on both sides. They spread as the Cold rises (§3.3), up the
@@ -789,6 +789,36 @@ void scScar(vec3 p) { if (p.z < scZ) return; vec2 ab = scB - scA; float l = leng
  { float h = scK * .0005 - scM * .00015; vec3 sx = dFdx(-vViewPosition), sy = dFdy(-vViewPosition), r1 = cross(sy, normal), r2 = cross(normal, sx); float det = dot(sx, r1) * faceDirection;
    vec3 g = sign(det) * (dFdx(h) * r1 + dFdy(h) * r2); if (abs(det) > 0.) normal = normalize(abs(det) * normal - g); }`); };
   m.customProgramCacheKey = () => (key ? key.call(m) : 'skin') + '+scar' + side;
+}
+
+// the risen dead's skin (Session 1399; S173's Hollowed and Ghoul, card F4's foes): `rot` 0..1. The skin greys and loses its blood, and
+// is mottled in two slow noises, a grey-green of the grave and a dull bruise-purple; dark veins show through it (the half-way
+// contours of a warped noise, as the Old Blood's marks are drawn, but darker and only where a third noise lets them); the eyes sink
+// into dark hollows (from the eyes' rest places, 3.6 cm round) and the lips go grey. It is dry: rougher, and the skin's warm sheen
+// goes. All in the skin's shader on the rest body (aBase), the same on every face and build, with no new triangles.
+function rotSkin(m, rot) {
+  const r = Math.max(0, Math.min(1, rot)), eyes = ['L', 'R'].map(s => new THREE.Vector3(...scarLine(s).eye)), prev = m.onBeforeCompile, key = m.customProgramCacheKey;
+  m.sheen = .18 * (1 - r); m.roughness = .6 + .3 * r;
+  m.onBeforeCompile = (sh, rr) => { if (prev && prev !== THREE.Material.prototype.onBeforeCompile) prev(sh, rr);
+    Object.assign(sh.uniforms, { rtK: { value: r }, rtE: { value: eyes } });
+    sh.vertexShader = (sh.vertexShader.includes('attribute vec3 aBase;') ? '' : 'attribute vec3 aBase;\n') + 'varying vec3 vRt;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vRt = aBase;');
+    sh.fragmentShader = `varying vec3 vRt; uniform float rtK; uniform vec3 rtE[2];
+float rtH(vec3 p) { return fract(sin(dot(p, vec3(43.7, 171.3, 97.9))) * 31718.927); }
+float rtN(vec3 p) { vec3 i = floor(p), f = fract(p); f = f * f * (3. - 2. * f);
+  return mix(mix(mix(rtH(i), rtH(i + vec3(1, 0, 0)), f.x), mix(rtH(i + vec3(0, 1, 0)), rtH(i + vec3(1, 1, 0)), f.x), f.y), mix(mix(rtH(i + vec3(0, 0, 1)), rtH(i + vec3(1, 0, 1)), f.x), mix(rtH(i + vec3(0, 1, 1)), rtH(i + vec3(1, 1, 1)), f.x), f.y), f.z); }
+vec3 rtSkin(vec3 c, vec3 p) {
+  float k = rtK, lum = dot(c, vec3(.3, .55, .15));
+  c = mix(c, vec3(lum) * vec3(.95, .97, .9), .6 * k) * (1. - .12 * k);
+  float n1 = rtN(p * 7.) * .65 + rtN(p * 19.) * .35, n2 = rtN(p * 4. + 11.3) * .6 + rtN(p * 13. + 2.1) * .4;
+  c = mix(c, c * vec3(.64, .78, .55), smoothstep(.38, .68, n1) * k);
+  c = mix(c, c * vec3(.72, .5, .66), smoothstep(.5, .78, n2) * .9 * k);
+  vec3 q = p * 30. + vec3(rtN(p * 6.), rtN(p * 6. + 4.4), rtN(p * 6. + 8.8)) * 2.; float v = rtN(q), w = fwidth(v);
+  float vein = (1. - smoothstep(0., .045 + w, abs(v - .5))) * smoothstep(.4, .62, rtN(p * 5. + 21.7)) * (1. - smoothstep(.15, .4, w));
+  c = mix(c, c * vec3(.42, .44, .6), vein * .85 * k);
+  float e = min(length(p - rtE[0]), length(p - rtE[1])); c *= 1. - .6 * k * (1. - smoothstep(.012, .036, e));
+  return c; }
+` + sh.fragmentShader.replace('#include <color_fragment>', '#include <color_fragment>\n diffuseColor.rgb = rtSkin(diffuseColor.rgb, vRt);'); };
+  m.customProgramCacheKey = () => (key ? key.call(m) : 'skin') + '+rot';
 }
 
 // ── the genome ──
@@ -3435,7 +3465,7 @@ function* makePersonSteps(G, o = {}) {
   for (const b of ix.bones) { const bone = new THREE.Bone(); bone.name = b.name; heads[b.name] = jp(b.head); bones.push(bone); byName[b.name] = bone;
     if (b.parent) { byName[b.parent].add(bone); bone.position.copy(heads[b.name]).sub(heads[b.parent]); } else bone.position.copy(heads[b.name]); }
   const skeleton = new THREE.Skeleton(bones), root = new THREE.Group(), meshes = [];
-  const D0 = G.dress || {}, bodyIdx = D0.tunic ? (D0.trousers || D0.skirt === 'long' ? (D0.sandals ? PACK.R.bareFeet || (PACK.R.bareFeet = new Uint32Array([...PACK.R.bare, ...PACK.R.feet])) : PACK.R.bare) : PACK.R.bareLegs) : PACK.G.body, body = new THREE.SkinnedMesh(geomFor(P, bodyIdx), skinMat(sRGB(...G.skin), G.marks ?? null, G.scar || null));
+  const D0 = G.dress || {}, bodyIdx = D0.tunic ? (D0.trousers || D0.skirt === 'long' ? (D0.sandals ? PACK.R.bareFeet || (PACK.R.bareFeet = new Uint32Array([...PACK.R.bare, ...PACK.R.feet])) : PACK.R.bare) : PACK.R.bareLegs) : PACK.G.body, body = new THREE.SkinnedMesh(geomFor(P, bodyIdx), skinMat(sRGB(...G.skin), G.marks ?? null, G.scar || null, G.rot || 0));
   // skin tones by region: lips and cheeks warmer, the brow a touch darker
   { const col = new Float32Array(PACK.N * 3), BS = browShape(G); for (let i = 0; i < PACK.N; i++) { const x = rest0[i * 3], y = rest0[i * 3 + 1], z = rest0[i * 3 + 2]; let r = 1, g = 1, b = 1;
       const lip = Math.exp(-((x / .022) ** 2) - ((y - .655) / .009) ** 2) * (z > .13 ? 1 : 0), cheek = Math.exp(-(((Math.abs(x) - .05) / .025) ** 2) - ((y - .69) / .02) ** 2) * (z > .07 ? 1 : 0), nose = Math.exp(-((x / .02) ** 2) - ((y - .69) / .015) ** 2) * (z > .14 ? 1 : 0);
@@ -3750,14 +3780,14 @@ function toSaved(G) {
   const style = G.hair?.style ?? ((G.hairLen ?? .3) < .45 ? 'short' : 'loose');
   return { species: 'human', v: 1, seed: String(G.seed ?? 'person'), people: G.people || 'markman', sliders: round({ ...Object.fromEntries(BODY_SLIDERS.map(k => [k, G[k] ?? (k === 'prop' ? .6 : .5)])), ...(G.face || {}) }),
     race: round(G.race || { caucasian: 1 }), palette: { skin: hex(G.skin), hair: hex(G.hairCol || [0, 0, 0]), eyes: hex(G.eyes) }, hair: { style, len: r3(G.hair?.len ?? G.hairLen ?? .3), beard: r3(G.beard || 0), ...(G.brow ? { brow: [r3(G.brow.thick), r3(G.brow.arch)] } : {}) },
-    dress, pose: round(G.pose || {}), ...(G.marks != null ? { marks: { cold: r3(G.marks) } } : {}), ...(G.scar ? { scar: G.scar } : {}) };
+    dress, pose: round(G.pose || {}), ...(G.marks != null ? { marks: { cold: r3(G.marks) } } : {}), ...(G.scar ? { scar: G.scar } : {}), ...(G.rot ? { rot: r3(G.rot) } : {}) };
 }
 function fromSaved(J) {
   if (!J || J.species !== 'human') throw new Error('not a human genome'); const S = J.sliders || {}, G = { seed: J.seed, people: J.people, race: { ...(J.race || { caucasian: 1 }) }, face: {} };
   for (const [k, v] of Object.entries(S)) if (BODY_SLIDERS.includes(k)) G[k] = v; else G.face[k] = v;
   G.skin = unhex(J.palette.skin); G.hairCol = unhex(J.palette.hair); G.eyes = unhex(J.palette.eyes);
   G.hair = { style: J.hair?.style || 'short', len: J.hair?.len ?? .3 }; G.beard = J.hair?.beard || 0; if (J.hair?.brow) G.brow = { thick: J.hair.brow[0], arch: J.hair.brow[1] };
-  G.dress = { skirt: J.dress?.skirt || null }; for (const [k, d] of Object.entries(DRESS_FLAGS)) G.dress[k] = J.dress?.[k] ?? d; for (const k of GARMENTS) if (J.dress?.[k]) G.dress[k] = unhex(J.dress[k]); G.pose = { ...(J.pose || {}) }; if (J.marks) G.marks = J.marks.cold ?? 0; if (J.scar) G.scar = J.scar; return G;
+  G.dress = { skirt: J.dress?.skirt || null }; for (const [k, d] of Object.entries(DRESS_FLAGS)) G.dress[k] = J.dress?.[k] ?? d; for (const k of GARMENTS) if (J.dress?.[k]) G.dress[k] = unhex(J.dress[k]); G.pose = { ...(J.pose || {}) }; if (J.marks) G.marks = J.marks.cold ?? 0; if (J.scar) G.scar = J.scar; if (J.rot) G.rot = J.rot; return G;
 }
 // ── the four peoples (Session 806, B3): slider ranges over the one human body, from the canon's peoples table (§2) and the
 // kept sheets (OG-048 and OG-059 Gatelanders, OG-025 Markmen, OG-044 Aurennais, OG-066 the Old Blood). A people sets the
