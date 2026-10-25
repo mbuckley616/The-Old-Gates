@@ -1359,7 +1359,7 @@ function hbPrep(g,key){if(g.hbKey)return;g.hbKey=key;try{hbTint(g,hbGenome(g));}
 // the human foes (S1201): which of FOE_DRESS wear the builder's body (the people, not the dead, the stone or the folk of the hills),
 // and what each wears over the builder's own rolled clothes, from its FOE_DRESS colour (c): the weapon and shield stay the game's
 // kit, held by the driver's bones, so the builder's own spear, staff, crossbow, basket and shield are taken off every one
-const HB_FOE_NOT=/^(skel|dead|goblin|troll|hag|gargoyle|golem|wraith)$/;
+const HB_FOE_NOT=/^(skel|dead|goblin|troll|gargoyle|golem|wraith)$/;
 function hbFoeOk(type,genome,g){if(genome)return !!g.hbKey;const dr=FOE_DRESS[type];return !!dr&&!Object.keys(dr).some(k=>dr[k]&&HB_FOE_NOT.test(k));}
 const HB_FOE_DRESS={
   'Bandit':        c=>({cloak:c.map(v=>v*.8),cape:true,hood:'up'}),
@@ -1375,7 +1375,11 @@ const HB_FOE_DRESS={
   'Kobold':        c=>({cloak:c.map(v=>v*.75),cape:true,hood:'up',mantle:null}),
   'Kobold Thief':  c=>({cloak:c.map(v=>v*.7),cape:true,hood:'up',mantle:null}),
   // S1386 — the Ogre (Michael's answer on Session 214, S221's look): bare to the waist and barefoot, a knee-length leather kilt under a belt
-  'Ogre':          c=>({tunic:null,trousers:null,boots:null,mantle:null,cuffs:null,cloak:null,hood:null,skirt:'knee',skirtColor:c,belt:c.map(v=>v*.6)})};
+  'Ogre':          c=>({tunic:null,trousers:null,boots:null,mantle:null,cuffs:null,cloak:null,hood:null,skirt:'knee',skirtColor:c,belt:c.map(v=>v*.6)}),
+  // S1389 — the Marsh Hag (S216: the fen's witch, an old woman in bog rags, hooded, a crooked staff): a robe in her bog green under a
+  // long cloak of peat brown, its hood up, a cord at the waist, and the builder's own walking staff of hazel with its root's knob (S1085)
+  // for her crooked staff, in the right fist where the driver's stick was
+  'Marsh Hag':     c=>({robe:c,cord:[.3,.27,.18],cloak:[.2,.18,.12],tartan:null,tartanLine:null,cloakLen:.85,cape:false,hood:'up',cloakFur:null,cloakHem:null,brooch:null,mantle:null,belt:null,staff:[.3,.23,.15],staffMake:'hazel',necklace:null,earrings:null,circlet:null})};
 // S1379 — what a foe's genome is beyond its clothes: a kobold is an old man, short and thickset, with a long grey beard (the driver's
 // greybeard, S184); it is sized to its driver's stature like every foe, so its height slider only moves its proportions
 const HB_FOE_BODY={
@@ -1383,6 +1387,8 @@ const HB_FOE_BODY={
   'Kobold Thief':  G=>{G.g=1;G.age=.8;G.beard=.8;G.height=0;G.prop=.15;G.weight=.6;G.muscle=.6;G.hairCol=[.5,.49,.45];G.skin=[.66,.52,.4];},
   // S1386 — an ogre is huge and fat: MakeHuman's fat body is its least muscle at its most weight (average muscle at weight 1 is a lean
   // man, S1379's try), here a little past it; cropped to the scalp, ruddy, half of them with a short beard (the people's own roll)
+  // S1389 — a hag is an old woman, thin and bony, her skin sallow toward the fen's green (the driver's lerp to 0x9aa078), her hair grey
+  'Marsh Hag':     G=>{G.g=0;G.age=.95;G.height=0;G.prop=.2;G.weight=.3;G.muscle=.25;G.hair={style:'loose',len:.8};G.hairCol=[.54,.54,.47];G.skin=[.64,.6,.46];},
   'Ogre':          G=>{G.g=1;G.age=.6;G.height=1;G.prop=.35;G.weight=1.35;G.muscle=0;G.hair={style:'short',len:0};G.hairCol=[.23,.16,.1];G.beard=G.beard>.8?.35:0;G.skin=[.74,.55,.42];}};
 // a foe's genome, at its first attach (its id is given after it is built, keyFoe): `foe:<id>`, the co-op rule's place and index; a
 // foe with no id yet (the inspector's) takes its type and its old genome's seed, which is the same each time it is built
