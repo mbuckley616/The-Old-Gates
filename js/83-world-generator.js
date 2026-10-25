@@ -1669,7 +1669,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     (INT_SOL||[]).forEach(r=>S(r,BOX));
     (FOOTHOLDS||[]).forEach(r=>S(r,[...BOX,'y','cx','cz','r0','r1']));
     (INT_BEDS||[]).forEach(r=>S(r,['x','z','y','cz']));
-    (INT_DOORS||[]).forEach(r=>{S(r,['x','z','y']);S(r.sol,BOX);S(r.box,BOX);});
+    (INT_DOORS||[]).forEach(r=>{S(r,['x','z','y','w','h']);S(r.sol,BOX);S(r.box,BOX);});
     (INT_NPCS||[]).forEach(r=>S(r.box,BOX));
     for(const r of [intBedPos,intStashPos,INT_CHAIR,INT_LOOT,INT_BOX,INT_SHELF,house._hatch])S(r,['x','z','y']);
     if(HATCH.active||HATCH.x!=null)S(HATCH,['x','z','y']);

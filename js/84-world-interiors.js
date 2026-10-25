@@ -16,7 +16,8 @@
     const sol={x0:x-Math.abs(ux)*w/2-.07,x1:x+Math.abs(ux)*w/2+.07,z0:z-Math.abs(uz)*w/2-.07,z1:z+Math.abs(uz)*w/2+.07,y0:by,y1:by+h};
     SOL.push(sol);
     // S517 — its id, <house id>:door:<n> in the order the room hangs them (co-op rules); buildInteriorFor names the house
-    INT_DOORS.push({id:(INT_DOORS.house||'room')+':door:'+INT_DOORS.length,x,z,y:by,g,ang,dir,open:false,a:0,from:0,want:0,t0:0,sol,box:{x0:sol.x0,x1:sol.x1,z0:sol.z0,z1:sol.z1}});
+    // S1412 — the leaf's own w and h with it (the kit's rooms hang 0.76 m leaves; the old unit's is 1.34), for intdoors to swing
+    INT_DOORS.push({id:(INT_DOORS.house||'room')+':door:'+INT_DOORS.length,x,z,y:by,w,h,g,ang,dir,open:false,a:0,from:0,want:0,t0:0,sol,box:{x0:sol.x0,x1:sol.x1,z0:sol.z0,z1:sol.z1}});
     return INT_DOORS[INT_DOORS.length-1];
   }
   // S680 — in reach AND under the crosshair (Michael, 6 Oct playtest): the ray meets the doorway, shut or open, and nothing stands
