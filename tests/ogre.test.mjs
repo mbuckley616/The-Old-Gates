@@ -11,20 +11,21 @@ const built = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.
     const e = buildZoneEnemy(WORLD.scene, [], x, z, n, null); e.mesh.position.y = WORLD.worldH(x, z); e.locked = false; e.mesh.visible = true; _T[n] = e; const r = e.limbs && e.limbs.person;
     e.mesh.updateMatrixWorld(true); const bb = r ? new THREE.Box3().setFromObject(r.mesh) : null;
     let boxes = 0; e.mesh.traverse(o => { if (o.isMesh && o.geometry && o.geometry.type === 'BoxGeometry') boxes++; });
-    out[n] = r ? { person: true, skinned: r.mesh.isSkinnedMesh, ownMat: r.mesh.material !== PEOPLE_MAT, armR: e.limbs.armR === r.B.shR, ogre: !!r.g.ogre, gear: r.g.gear, build: r.g.build, style: r.g.style,
+    out[n] = r ? { person: true, skinned: r.mesh.isSkinnedMesh, ownMat: r.mesh.material !== PEOPLE_MAT, armR: e.limbs.armR === r.B.shR, ogre: !!r.g.ogre, gear: r.g.gear, wpn: r.g.wpn || null, build: r.g.build, style: r.g.style,
       tall: +(bb.max.y - bb.min.y).toFixed(2), wide: +(bb.max.x - bb.min.x).toFixed(2), deep: +(bb.max.z - bb.min.z).toFixed(2), tris: r.tris, shape: e.shape, hp: e.maxHp, boxes } : { person: false, boxes }; });
-  // the club reaches above the fist further than the kobold's hammer
-  const reach = t => { const r = buildFoe(t, 5, 5); const gb = r.B.gear; let top = 0; const pos = r.mesh.geometry.attributes.position, sk = r.mesh.geometry.attributes.skinIndex;
-    for (let i = 0; i < pos.count; i++) if (sk.getX(i) === gb.userData.i) top = Math.max(top, pos.getY(i)); PEOPLE_RIGS.delete(r); r.mesh.geometry.dispose(); return +top.toFixed(3); };
+  // the club reaches further than the kobold's mattock: since S1379 and S1386 both are the weapon kit's, held on the gear bone,
+  // so the reach is the held weapon's own length (its bounding box's longest side), no longer the baked gear's top
+  const reach = t => { const r = buildFoe(t, 5, 5); const w = r.weapon; let top = 0; if (w) { w.updateMatrixWorld(true); const s = new THREE.Box3().setFromObject(w).getSize(new THREE.Vector3()); top = Math.max(s.x, s.y, s.z) / r.root.scale.y; }
+    PEOPLE_RIGS.delete(r); r.mesh.geometry.dispose(); return +top.toFixed(3); };
   out.reachOgre = reach('Ogre'); out.reachKobold = reach('Kobold');
   // each ogre is someone: skin and beard from its own seed; and the same place gives the same ogre
   const seen = new Set(), beards = new Set(); for (let i = 0; i < 12; i++) { const r = buildFoe('Ogre', i * 37, i * 11); seen.add(r.g.skin.getHexString()); beards.add(r.g.beard); PEOPLE_RIGS.delete(r); r.mesh.geometry.dispose(); }
   const a = buildFoe('Ogre', 40, 40), b = buildFoe('Ogre', 40, 40); out.same = a.g.skin.getHex() === b.g.skin.getHex() && a.g.beard === b.g.beard; [a, b].forEach(r => { PEOPLE_RIGS.delete(r); r.mesh.geometry.dispose(); });
   out.skins = seen.size; out.beards = [...beards]; return out; });
 check('the ogre is a person on its own material, the right shoulder striking, still a brute with its numbers', built.Ogre.person && built.Ogre.skinned && built.Ogre.ownMat && built.Ogre.armR && built.Ogre.ogre && built.Ogre.shape === 'brute' && built.Ogre.boxes === 0, built.Ogre);
-check('an ogre is fat and bald, and carries a club', built.Ogre.gear === 'club' && built.Ogre.build > 1.9 && built.Ogre.style === 'thin', built.Ogre);
+check('an ogre is fat and bald, and carries a club', built.Ogre.gear === 'kit' && built.Ogre.wpn === 'greatclub' /* S1386: the kit's greatclub in the fist */ && built.Ogre.build > 1.9 && built.Ogre.style === 'thin', built.Ogre);
 check('an ogre stands taller than a frost troll and a bandit, and is wider and deeper than the troll', built.Ogre.tall > built['Frost Troll'].tall && built.Ogre.tall > built.Bandit.tall * 1.4 && built.Ogre.wide > built['Frost Troll'].wide && built.Ogre.deep > built['Frost Troll'].deep, { ogre: built.Ogre, troll: built['Frost Troll'], bandit: built.Bandit });
-check('the club\'s head stands above the fist, further than the kobold\'s hammer', built.reachOgre > built.reachKobold, { ogre: built.reachOgre, kobold: built.reachKobold });
+check('the club reaches further than the kobold\'s mattock', built.reachOgre > built.reachKobold, { ogre: built.reachOgre, kobold: built.reachKobold });
 check('ogres differ from each other (skin, beard) and the same place gives the same ogre', built.skins >= 6 && built.beards.length === 2 && built.same, { skins: built.skins, beards: built.beards, same: built.same });
 
 const move = await page.evaluate(() => { const e = _T.Ogre, r = e.limbs.person, G = e.mesh; let t = 3e5;

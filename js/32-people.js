@@ -1541,6 +1541,9 @@ function hbHold(rig){const H=rig.hb,top=rig.foe?rig.root.parent:rig.root;top.upd
   for(const h of H.held){const o=h.o;if(o.parent!==H.root&&o.parent!==h.par)continue;if(o.parent!==H.root)H.root.add(o);
     _hbm.multiplyMatrices(_hbm2,h.par.matrixWorld).multiply(h.m0);_hbm.decompose(o.position,o.quaternion,o.scale);
     if(h.f&&h.f.length){const v=_hbv.set(0,0,0);for(const b of h.f)v.add(_hbv2.setFromMatrixPosition(b.matrixWorld));o.position.copy(v.multiplyScalar(1/h.f.length).applyMatrix4(_hbm2));}}}
+// S1415 — a blow's pose (attackPose, 42-zone-enemies.js) is set on the driver after tickPeople has copied it to the builder's body,
+// so the body and what it holds showed no wind-up and no strike: copied again here, for a foe whose body is near enough to pose
+function hbRepose(rig){if(rig&&rig.hb&&rig.hb.L<2&&!rig.hb.cold){hbPose(rig);if(rig.hb.held.length)hbHold(rig);}}
 function hbGive(rig){const H=rig.hb;for(const h of H.held)if(h.o.parent===H.root){h.par.add(h.o);h.m0.decompose(h.o.position,h.o.quaternion,h.o.scale);}}
 function hbPose(rig){const H=rig.hb,B=rig.B,map=H.map;
   for(let i=0;i<map.length;i++){const [j,b]=map[i];
