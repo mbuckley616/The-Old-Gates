@@ -383,13 +383,32 @@
       if(AU&&town)use.forEach((lot,i)=>{if(shopTypes[i]==='church'&&lot.plot==='church'&&lot.au)lot.kit={kind:'aurchurch',w0:lot.w,d0:lot.d};});
       // S1320 — the tavern's lot (planLots, above) is the tavern's ground: the kit builds it whole (kitAurTavern)
       if(AU)use.forEach((lot,i)=>{if(lot.k==='tv'&&shopTypes[i]==='inn')lot.kit={kind:'aurtavern',w0:lot.w,d0:lot.d};});
-      if(MK||AU)use.forEach((lot,i)=>{const t=shopTypes[i]||null,inn=MK&&t==='inn';if(t&&!KIT_SHOPS.has(t)&&!inn)return;if(lot.k==='sw'||(site.kind==='port'&&site.quayStart&&Math.hypot(lot.x-site.quayStart.x,lot.z-site.quayStart.z)<34))return;
+      // S1419 (card F6, Michael's A on #329 and #318; OG-115) — the better quarter: an Aurennais town's or port's courtyard house, a city's two
+      // (PKIT.au.courtyard, 15 by 15 m, its plinth 0.08 m round and its door step 0.45 m before the front). It takes the home's lot nearest the
+      // heart where it stands with its front on that lot's street line, slid along it by up to 3 m: clear of the ring, every road, every other
+      // street, every plot, every shop and every kit lot, its own 1.8 m apron clear too, and on ground level to 0.2 m (its plinth is 0.24). The homes it would stand on, up to four and never your
+      // own, are let go; the lot keeps its id and its resident. Kept off the quay as the houses are.
+      if(AU&&town){const S0=15,E=[.08,.45,.08,.08],nS=shopTypes.length,ap=l=>({x:l.x+l.tx*.9,z:l.z+l.tz*.9,w:l.w,d:l.d+1.8,ry:l.ry,tx:l.tx,tz:l.tz});let n=site.kind==='city'?2:1;
+        const edgeOk=l=>{const C=corners(l,0);for(let j=0;j<4;j++){const A=C[j],B=C[(j+1)%4];for(let s=0;s<=10;s++){const x=A.x+(B.x-A.x)*s/10,z=A.z+(B.z-A.z)*s/10;if(Math.hypot(x-cx,z-cz)>inner-1)return false;const ri=roadInfo(x,z,true);if(ri&&ri.d<ROAD_HALF+1.2)return false;
+          for(const L of streetLines){if(l.street&&L.px===l.street.px&&L.pz===l.street.pz&&L.dx===l.street.dx&&L.dz===l.street.dz)continue;if(Math.abs((x-L.px)*(-L.dz)+(z-L.pz)*L.dx)<1.6)return false;}}}
+          {const ri=roadInfo(l.x,l.z,true);if(ri&&ri.d<ROAD_HALF+1.2)return false;}
+          {const y0=worldH(l.x,l.z);for(const q of [...C,...C.map((q,j)=>({x:(q.x+C[(j+1)%4].x)/2,z:(q.z+C[(j+1)%4].z)/2}))])if(Math.abs(worldH(q.x,q.z)-y0)>.2)return false;} /* on the level: its plinth is 0.24 m */
+          return offPlots(l);};
+        const order=use.map((l,i)=>i).filter(i=>i>=nS).sort((p,q)=>Math.hypot(use[p].x-cx,use[p].z-cz)-Math.hypot(use[q].x-cx,use[q].z-cz));
+        for(const i of order){if(n<=0)break;const lot=use[i];if(!lot||lot.kit||lot.plot||typeof lot.k!=='number'||ownedHouse(lot.id)||(site.kind==='port'&&site.quayStart&&Math.hypot(lot.x-site.quayStart.x,lot.z-site.quayStart.z)<34))continue;
+          const w0=lot.w,d0=lot.d,x0=lot.x,z0=lot.z,W=S0+.16,D=S0+E[0]+E[1],sh=(d0-D)/2;let go=null;lot.w=W;lot.d=D;
+          for(const sl of [0,1,-1,2,-2,3,-3]){lot.x=x0+lot.tx*sh+lot.tz*sl;lot.z=z0+lot.tz*sh-lot.tx*sl;if(!edgeOk(lot))continue;const A=ap(lot),g=[];let ok=true;
+            for(let j=0;j<use.length&&ok;j++){const u=use[j];if(u===lot||(apart(lot,u)&&apart(A,u)))continue;if(j>=nS&&!u.kit&&!u.plot&&typeof u.k==='number'&&!ownedHouse(u.id))g.push(u);else ok=false;}
+            if(ok&&g.length<=4){go=g;break;}}
+          if(!go){lot.w=w0;lot.d=d0;lot.x=x0;lot.z=z0;continue;}
+          lot.kit={kind:'aurcourt',ext:E,w0,d0,slide:0};lot.two=true;for(const u of go)use.splice(use.indexOf(u),1);n--;}}
+      if(MK||AU)use.forEach((lot,i)=>{const t=shopTypes[i]||null,inn=MK&&t==='inn';if(t&&!KIT_SHOPS.has(t)&&!inn)return;if(lot.kit&&lot.kit.kind==='aurcourt')return;if(lot.k==='sw'||(site.kind==='port'&&site.quayStart&&Math.hypot(lot.x-site.quayStart.x,lot.z-site.quayStart.z)<34))return;
         const o1=(MK?PKIT.mk:PKIT.au).lot(site.id,lot.n).o,o0=inn?Object.assign({},o1,{roof:'shingle',porch:true,chimney:false,carve:true,w:10,d:18}):o1,w0=lot.w,d0=lot.d,x0=lot.x,z0=lot.z,W0=inn?7:MK?5.6:5.4,D0=inn?10:MK?6.5:5;
         // what stands round the house, by side: [back, front, the -x side, the +x side]
         const ext=o=>MK?[.15,o.porch?3.35:1.8,.15,.15]:[.08,o.kind==='tile'&&o.arcade?2.46:.71,o.stair&&o.kind!=='tile'?.95:.08,.08];
         const vars=MK?(o0.porch?[o0,{...o0,porch:false}]:[o0]):[o0,...(o0.stair?[{...o0,stair:false}]:[]),...(o0.arcade?[{...o0,arcade:false}]:[])];
         // an apron of 1.8 m before the front is kept clear of every other lot, and this lot of every other kit house's apron, so no door looks onto a wall
-        const ap=l=>({x:l.x+l.tx*.9,z:l.z+l.tz*.9,w:l.w,d:l.d+1.8,ry:l.ry,tx:l.tx,tz:l.tz}),apK=u=>u.kit&&(u.kit.kind==='markhall'||u.kit.kind==='aurhouse');
+        const ap=l=>({x:l.x+l.tx*.9,z:l.z+l.tz*.9,w:l.w,d:l.d+1.8,ry:l.ry,tx:l.tx,tz:l.tz}),apK=u=>u.kit&&(u.kit.kind==='markhall'||u.kit.kind==='aurhouse'||u.kit.kind==='aurcourt');
         const fit=(w,d,E)=>{const D=d+E[0]+E[1],sh=(d0-D)/2;lot.w=w+E[2]+E[3];lot.d=D;lot.x=x0+lot.tx*sh;lot.z=z0+lot.tz*sh;if(!clear(lot,lot.street))return false;const A=ap(lot);
           return use.every(u=>u===lot||(apart(A,u)&&!(apK(u)&&!apart(lot,ap(u)))));};
         // the widest that fits at the least depth, then the deepest at that width (each halved to within 5 cm: a house that fits fits smaller)
@@ -537,6 +556,13 @@
       if(o.stair&&!tile)part(.9,H.top*.6,o.d-.6,-(o.w/2+.5),0,.3); /* the outside stair, its flight as a block of 0.6 of the wall */
       if(tile){const rw=o.w/2+.45,rd=o.d/2+.45,r=rw>=rd?kitRoof(rw,rd,hgt,hgt+Math.tan(22*Math.PI/180)*rd):kitRoof(rd,rw,hgt,hgt+Math.tan(22*Math.PI/180)*rw);if(rw<rd)r.rotateY(Math.PI/2);kitLo.push([r,mx,new THREE.Color(.58,.32,.22)]);}
       lot._kitDoor=+(u+H.doorX).toFixed(3);lot._wallH=+(H.top-H.yW).toFixed(3);lot._storeys=o.two?2:1; /* S1321 — the wall over its floor, the plinth's top (H.yW, 0.24): a storey is floor to eaves, as SCALE's table measures it */lot.two=!!o.two;k.tris=H.tris;k.calls=H.draws;k.colour=o.kind;k.door=lot._kitDoor;}
+    // S1419 — the courtyard house (PKIT.au.courtyard, its own stream keyed by the town and the lot), its front on the lot's less the step;
+    // its far copy one box to the cornice in its wall's colour (the roof slopes in, under the parapet)
+    function kitAurCourt(lot){const k=lot.kit,E=k.ext,H=PKIT.au.courtyard({},PKIT.stream(`${site.id}:court:${lot.n}`)),y=worldH(lot.x,lot.z)-.06,c=Math.cos(lot.ry),s_=Math.sin(lot.ry),u=(E[2]-E[3])/2,v=lot.d/2-H.d/2-E[1];
+      const X=lot.x+u*c+v*s_,Z=lot.z-u*s_+v*c;H.group.position.set(X-cx,y,Z-cz);H.group.rotation.y=lot.ry;H.group.traverse(m=>{if(m.isMesh){m.castShadow=true;m.receiveShadow=true;}});kitG.add(H.group);
+      const wm=H.group.children.find(m=>/^wall:/.test(m.name)),col=wm?wm.material.color.clone().multiplyScalar(.9):new THREE.Color(.86,.82,.72),b=new THREE.BoxGeometry(H.w+.16,H.top+.14,H.d+.16).toNonIndexed();
+      b.translate(0,(H.top+.14)/2,0);kitLo.push([b,new THREE.Matrix4().makeRotationY(lot.ry).setPosition(X,y,Z),col]);
+      lot._kitDoor=+u.toFixed(3);lot._wallH=+(2*(H.F1-H.F0)).toFixed(3);lot._storeys=2;lot.two=true;k.tris=H.tris;k.calls=H.draws;k.colour='court';k.door=lot._kitDoor;k.top=+H.top.toFixed(3);}
     // S1305 — the Church of the Weaver (PKIT.au.church, a town's, its own stream keyed by the town), the foot of its steps on the lot's front
     // and its door on the street's line; its far copy a box for the podium and the cube, one for the porch, a block for the drum and
     // the dome, one for the tower and one for its little dome; no smoke
@@ -568,6 +594,7 @@
       if(lot.kit.kind==='aurhouse'){kitAurHouse(lot);return;}
       if(lot.kit.kind==='aurchurch'){kitAurChurch(lot);return;}
       if(lot.kit.kind==='aurtavern'){kitAurTavern(lot);return;}
+      if(lot.kit.kind==='aurcourt'){kitAurCourt(lot);return;}
       if(lot.kit.kind==='coachinn'){kitCoachInn(lot);return;}
       const L=lot.kit.kind==='guildhall'?kitHall(lot):PKIT.gl.lot(site.id,lot.n,{kind:lot.kit.kind,bays:lot.kit.bays,d:lot.d,trade:KIT_TRADE[type]});const b=PKIT.gl.building(L.plan),U=b.userData;
       b.position.set(lot.x-cx,worldH(lot.x,lot.z)-.06,lot.z-cz);b.rotation.y=lot.ry;b.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});kitG.add(b);
