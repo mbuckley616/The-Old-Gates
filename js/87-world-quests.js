@@ -2250,8 +2250,10 @@ const giver=`${lord.title} ${lord.name}`;
   function gateTalkNormal(){const g=worldState.greatGates;if(!g)return false;const day=Math.floor((worldState.gameTimeAbsMinutes||0)/1440);
     if(g.fate==='sealed'&&day-Math.floor((g.fatedAt||0)/1440)<90)return true;return !!(g.last&&g.last.kind==='sealed'&&day-g.last.day<7);}
   function gateTalk(site){if(greatFate()==='torn')return null;const P=peopleOfSite(site),L=gateTalkNormal()?'normal':corruptionLevel();const row=GATE_TALK[L];return row?(row[P]||row.gatelander):null;}
-  function greatGateLordTopics(site){const g=worldState.greatGates;if(!g||!g.last)return [];const [i,j]=cellOf(site.x,site.z),row=GATE_LORDS[nationKeyOf(i,j)];if(!row)return [];
-    return [{label:'The great gates?',response:row[g.last.kind]||row.torn}];}
+  function greatGateLordTopics(site){const g=worldState.greatGates;if(!g)return [];const [i,j]=cellOf(site.x,site.z),nat=nationKeyOf(i,j),row=GATE_LORDS[nat];if(!row)return [];
+    const out=[];if(g.last)out.push({label:'The great gates?',response:row[g.last.kind]||row.torn});
+    if(g.ev&&g.ev.knifeLifted&&TOOL_SAY.lords[nat])out.push({label:'The knife from the Ashfeld?',response:TOOL_SAY.lords[nat]}); /* S1395 — piece II §5 */
+    return out;}
   const SOLAS_KINDS={Skeleton:1,Wraith:1,Phantom:1};
   // a foe of those kinds is at peace while Solas is torn and none of its room has been struck: a blow on one (its health below
   // full) wakes every one of those kinds in its zone of the gate (or within 20 m, outside a gate's zones)
@@ -2479,6 +2481,26 @@ const giver=`${lord.title} ${lord.name}`;
     const lines=[['noteRead','note'],['runner','runner'],['knifeLifted','knife'],['needleGiven','needle']].filter(([k])=>ev[k]).map(([k,w])=>({t:+ev[k]||0,text:GATE_PAGE[w]})).sort((a,b)=>a.t-b.t);
     const rows=GREAT_SCHOOLS.filter(s=>g.gates[s]==='torn'||g.gates[s]==='sealed').map(s=>GATE_PAGE.row(N[s],SCHOOL_DEF[s].name,g.gates[s]));
     if(!lines.length&&!rows.length)return null;return {lines,rows,lock:g.fate==='sealed'?GATE_PAGE.lock:null};}
+  // ── what people say of the tools (S1395; piece II §5, approved 16 Oct 2026, as written) ── An Old Blood townsperson or hermit
+  // puts a line before the greeting while you carry a tool: the knife's, the needle's, or both's, each line once a speaker. A Prior (a
+  // city lord of Aurenne, or the steward who speaks for one) puts the Church's line before the greeting once any knot is bound, once.
+  // The lords' topic *The knife from the Ashfeld?* is greatGateLordTopics'. Who has said what is the world's: ev.said {speaker: letters}.
+  const TOOL_SAY={greet:{knife:'You carry the knife. Keep it out of the light.',needle:'You carry the needle. That one was kept, not hidden.',
+      both:'You carry both. Most hands are only big enough for one.'},
+    lords:{gatelands:"The Herald's office has a knife entered in its rolls as found at the Ashfeld, owner unknown. I'd leave it that way. A thing with no owner can't be taken off him, and the Crown takes a great deal off a great many people.",
+      mark:"Hear you've a knife that opens the great gates. Our law's plain. It's yours while you hold it. Hold it, then.",
+      aurenne:"The Church has a word for the instrument you carry, Master. It is the Unpicker, and it is not used kindly. I would keep it under your coat in the capital. The Prior is courteous to everyone in the street, and remembers them afterwards."},
+    church:"The Church gives thanks that a great gate has been sealed, Master, by the Weaver's Needle, which it is pleased to call its own. It has never held the thing, nor seen it. That has not, historically, stopped it."};
+  function _toolSaid(npc,letter){const ev=greatEv(),S=ev.said||(ev.said={}),k=npc._siteId+':'+npc.name+(npc._twin?':'+npc._twin:'');
+    if((S[k]||'').indexOf(letter)>=0)return true;S[k]=(S[k]||'')+letter;return false;}
+  function _priorVoice(npc){if(npc.role==='Prior')return true;if(npc.role!=='Steward')return false;const site=siteAnywhere(npc._siteId);
+    return !!(site&&site.kind==='city'&&lordFor(site).title==='Prior');}
+  // the named action, called as a dialogue opens (openDialog): the line to put before the greeting, '' if none
+  function greatToolGreet(npc){if(!npc||!npc._siteId||greatFate()==='torn')return '';
+    if(npc.people==='oldblood'){const t=knotTools(),w=t.knife&&t.needle?'both':t.knife?'knife':t.needle?'needle':null;
+      if(w&&!_toolSaid(npc,w[0]))return TOOL_SAY.greet[w];return '';}
+    const g=worldState.greatGates;if(g&&g.gates&&Object.values(g.gates).indexOf('sealed')>=0&&_priorVoice(npc)&&!_toolSaid(npc,'c'))return TOOL_SAY.church;
+    return '';}
   // his opening, by what you have done (a cut, else two rings left alone); the knife's, once, the first time he greets you after it
   function aldwynOpening(){const ev=greatEv();if(ev.knifeAlso&&!ev.knifeAlsoSaid)return HERALD_SAY.openKnife;return greatCutEver()?HERALD_SAY.openCut:HERALD_SAY.openRings;}
   function aldwynTopics(){const ev=greatEv(),given=!!ev.needleGiven,f=[];
