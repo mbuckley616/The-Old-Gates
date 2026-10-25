@@ -2,7 +2,7 @@
 // back room to be judged for its height against the ceiling and its swing against the furniture. Measured here in every
 // interior of Dunmore and Portclare: the leaf swept through its whole swing against every solid of the room, the gap it
 // closes, the lintel against the ceiling, and the tallest townsperson's head against the lintel.
-// Session 1410: a door is swung at its own leaf's width (`w` on the door since S1410: the coaching inn's room doors are 0.76 m, hung in
+// Session 1412: a door is swung at its own leaf's width (`w` on the door since S1412: the coaching inn's room doors are 0.76 m, hung in
 // metres, where the old builder's are 1.34 in the kit's unit), and its gap is the clear run through the doorway, not the first to the
 // last clear point of the ray (which ran out of the room's end wall in the inn).
 import { boot, check } from './lib/game.mjs';
