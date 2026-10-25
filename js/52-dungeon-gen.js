@@ -151,11 +151,14 @@ function makeDungeon(size,seed){
 // space pass (makeGate) shares it: `rest` are the rooms a treasure room or the well may hang off (makeDungeon's all but the first),
 // `noDoor` the cells no door is hung in (a gate's thresholds). The stream r is the caller's, so makeDungeon rolls as it always did.
 function dunLcg(s){let v=s;return()=>{v=(v*1664525+1013904223)>>>0;return v/4294967296;};}
+// S1378 — a seeded shuffle in place (Fisher–Yates on the stream r). sort(()=>r()-.5) was used before: how many times an engine calls a
+// comparator that lies depends on the engine and on what it ran before, so one seed laid two gates in one page (and would in two browsers).
+function dunShuffle(a,r){for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));const t=a[i];a[i]=a[j];a[j]=t;}return a;}
 function dunAfterLayout(map,rooms,rest,cfg,r,rand,seed,entC,entR,noDoor){
   const{W,H}=cfg;
   // Treasure rooms attached to non-entrance rooms
   const treasureDoors=[];
-  const anchors=[...rest].sort(()=>r()-.5);
+  const anchors=dunShuffle([...rest],r);
   let trCount=0;
   for(const anchor of anchors){
     if(trCount>=cfg.tr)break;
@@ -165,7 +168,7 @@ function dunAfterLayout(map,rooms,rest,cfg,r,rand,seed,entC,entR,noDoor){
       {dx:0,dy:1, corridor_y:anchor.y+anchor.h,corridor_x:anchor.cx,isEW:false},
       {dx:-1,dy:0,corridor_x:anchor.x-1,corridor_y:anchor.cy,isEW:true},
       {dx:1,dy:0, corridor_x:anchor.x+anchor.w,corridor_y:anchor.cy,isEW:true},
-    ].sort(()=>r()-.5);
+    ];dunShuffle(sides,r);
     for(const side of sides){
       const tx=side.isEW?side.corridor_x+(side.dx>0?1:-(3)):side.corridor_x-1;
       const ty=side.isEW?side.corridor_y-1:side.corridor_y+(side.dy>0?1:-(3));
@@ -218,7 +221,7 @@ function dunAfterLayout(map,rooms,rest,cfg,r,rand,seed,entC,entR,noDoor){
     if((isHCorridor||isVCorridor)&&!(noDoor&&noDoor(x,y)))corridorCells.push({x,y,isEW:isHCorridor});
   }
   // Shuffle corridorCells with the seeded RNG and pick up to cfg.ur
-  corridorCells.sort(()=>r()-.5);
+  dunShuffle(corridorCells,r);
   for(const cc of corridorCells){
     if(urCount>=cfg.ur)break;
     if(map[cc.y][cc.x]===1){// still a plain floor cell
