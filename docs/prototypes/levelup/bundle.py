@@ -64,6 +64,7 @@ def build(name, title, note, srcfile, use_common, query=''):
     src = open(os.path.join(here, srcfile), encoding='utf-8').read()
     if use_common:
         s = scene(src)
+        if "from './air.js'" in s: s = kits(s, ['gatekit', 'pieces', 'shrines', 'corruption', 'air'])
         if "from './weather.js'" in s: s = kits(s, ['gatekit', 'pieces', 'shrines', 'corruption', 'seasons', 'weather'])
         if "from './hours.js'" in s: s = kits(s, ['gatekit', 'pieces', 'shrines', 'corruption', 'hours'])
         if "from './seasons.js'" in s: s = kits(s, ['gatekit', 'pieces', 'shrines', 'corruption', 'seasons'])
@@ -167,4 +168,5 @@ build('corruption-field.html', 'The world corrupted', 'The world’s corruption,
 build('seasons-field.html', 'The seasons in the land', 'The seasons in the land (L12, OG-139; F3): one Gatelands lane through the year. The year, the rows (OG-139’s four seasons or OG-140’s green all year) and the snow are top left; ?season=spring|summer|autumn|winter, &rows=full|gentle, &snow=0..1, &cam=field|high|hedge|scale. Drag to look.', 'seasons-view.js', True, '?season=autumn')
 build('hours-lane.html', 'The hours of the day', 'The hours, island by island (L12, OG-137; F3): one Gatelands lane through a summer day and night. The hour, the night (A readable, B by the moon’s phase, C by phase with a starlit floor) and the moon are top left; ?hour=dawn|sunrise|midday|golden|twilight|moonlit|deep, &night=readable|phase|floor, &moon=0..1, &cam=field|hill|scale|high. Drag to look.', 'hours-view.js', True, '?hour=twilight')
 build('weather-lane.html', 'Weather that matters', 'Weather that matters (L12, OG-138; F3): one Gatelands lane through OG-138’s nine conditions, a rainbow and a gate storm. The weather, how far you see (A a veil, B as drawn, C by kind) and the season are top left; ?wx=clear|partly|overcast|rain|heavy|storm|snow|blizzard|fog|rainbow|gate, &sight=veil|drawn|kind, &cam=field|hill|scale|high. Drag to look.', 'weather-view.js', True, '?wx=rain')
+build('air-islands.html', 'Each island’s air', 'Each island’s air (L12, OG-140; F3): one viewpoint an island at a summer mid-afternoon, its light, sky, haze, grade, land and trees as one row. The island and the air (A one air, B each its own, C its mark always on) are top left; ?island=gatelands|mark|aurenne, &air=one|own|marked, &cam=vista|scale|high. Drag to look.', 'air-view.js', True, '?island=mark')
 print('ok')
