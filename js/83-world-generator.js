@@ -1742,6 +1742,8 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     house._counterFront=null;house.intW=W;house.intD=D;house._roomH=+(PKIT.gl.PS.storey.cottage+1.35).toFixed(3);house._exitD=T.one?.8:.4;house._exitW=1.0;house._exitX=+rx(T.door.x).toFixed(3);house._cottage=T; /* the head stops under the collars */
     /* the lobby is 0.9 m deep: you arrive in it 0.3 m east of the door, clear of the breast and the jamb, and the door's reach is its last 0.4 m */
     house._arriveX=T.one?null:+rx(T.door.x+.3).toFixed(3);house._arriveZ=T.one?null:+(D-.5).toFixed(3);
+    /* S1402 — and facing the way on, the lobby's first turn (T.path[1]), not the jamb wall 0.4 m ahead (the critic, s896: 60% of the first frame was plaster) */
+    house._arriveYaw=T.one?null:+Math.atan2(-(rx(T.path[1][0])-house._arriveX),-(rz(T.path[1][1])-house._arriveZ)).toFixed(4);
     const sc_=new THREE.Scene();interiorScene=sc_;landRoomPost(sc_);sc_.background=new THREE.Color(0x120a06);sc_.fog=new THREE.Fog(0x120a06,Math.max(W,D)*.8*SCALE.ROOM_K,Math.max(W,D)*2.4*SCALE.ROOM_K);
     intNPCMesh=null;intBedPos=null;intStashPos=null;
     const SOL=[];INT_SOL=SOL;FOOTHOLDS=[];INT_BEDS=[];INT_DOORS=[];INT_DOORS.house=house.id;INT_CHAIR=null;INT_NPCS=[];HATCH.active=false;HATCH.roof=false;INT_LOOT=null;INT_BOX=null;INT_SHELF=null;
