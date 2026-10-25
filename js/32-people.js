@@ -865,7 +865,7 @@ const FOE_DRESS={
   'Frost Troll':   {troll:true,skin:0xaebac2,skin2:0x96a4ae,hair:0xe0e4e8,eye:0x70b0ff,cloth:0x5a5048,gear:'maul'},
   // S221 — the Ogre (Michael's answer on Session 214: as shown): the people's body grown huge and fat, bald and ruddy,
   // sometimes bearded, in a leather kilt, carrying a knotted tree-limb club
-  'Ogre':          {ogre:true,cloth:0x6a5034,gear:'club'}
+  'Ogre':          {ogre:true,cloth:0x6a5034,gear:'club',wpn:'greatclub'} /* S1386 — the weapon kit's greatclub, held by the builder's fist on the new look */
 };
 function buildFoe(type,x,z,genome,eyeCol){
   let g=genome;
@@ -1359,7 +1359,7 @@ function hbPrep(g,key){if(g.hbKey)return;g.hbKey=key;try{hbTint(g,hbGenome(g));}
 // the human foes (S1201): which of FOE_DRESS wear the builder's body (the people, not the dead, the stone or the folk of the hills),
 // and what each wears over the builder's own rolled clothes, from its FOE_DRESS colour (c): the weapon and shield stay the game's
 // kit, held by the driver's bones, so the builder's own spear, staff, crossbow, basket and shield are taken off every one
-const HB_FOE_NOT=/^(skel|dead|goblin|troll|ogre|hag|gargoyle|golem|wraith)$/;
+const HB_FOE_NOT=/^(skel|dead|goblin|troll|hag|gargoyle|golem|wraith)$/;
 function hbFoeOk(type,genome,g){if(genome)return !!g.hbKey;const dr=FOE_DRESS[type];return !!dr&&!Object.keys(dr).some(k=>dr[k]&&HB_FOE_NOT.test(k));}
 const HB_FOE_DRESS={
   'Bandit':        c=>({cloak:c.map(v=>v*.8),cape:true,hood:'up'}),
@@ -1373,12 +1373,17 @@ const HB_FOE_DRESS={
   'Shieldbearer':  c=>({mail:[.5,.5,.52],helm:[.44,.45,.47],tabard:c,cloak:null,hood:null}),
   // S1379 — the kobolds (Michael's B on Session 178: the old mine-sprite): hooded, a short cape over the shoulders (HB_FOE_BODY ages them)
   'Kobold':        c=>({cloak:c.map(v=>v*.75),cape:true,hood:'up',mantle:null}),
-  'Kobold Thief':  c=>({cloak:c.map(v=>v*.7),cape:true,hood:'up',mantle:null})};
+  'Kobold Thief':  c=>({cloak:c.map(v=>v*.7),cape:true,hood:'up',mantle:null}),
+  // S1386 — the Ogre (Michael's answer on Session 214, S221's look): bare to the waist and barefoot, a knee-length leather kilt under a belt
+  'Ogre':          c=>({tunic:null,trousers:null,boots:null,mantle:null,cuffs:null,cloak:null,hood:null,skirt:'knee',skirtColor:c,belt:c.map(v=>v*.6)})};
 // S1379 — what a foe's genome is beyond its clothes: a kobold is an old man, short and thickset, with a long grey beard (the driver's
 // greybeard, S184); it is sized to its driver's stature like every foe, so its height slider only moves its proportions
 const HB_FOE_BODY={
   'Kobold':        G=>{G.g=1;G.age=.86;G.beard=1;G.height=0;G.prop=.15;G.weight=.68;G.muscle=.6;G.hairCol=[.56,.56,.52];G.skin=[.69,.54,.42];},
-  'Kobold Thief':  G=>{G.g=1;G.age=.8;G.beard=.8;G.height=0;G.prop=.15;G.weight=.6;G.muscle=.6;G.hairCol=[.5,.49,.45];G.skin=[.66,.52,.4];}};
+  'Kobold Thief':  G=>{G.g=1;G.age=.8;G.beard=.8;G.height=0;G.prop=.15;G.weight=.6;G.muscle=.6;G.hairCol=[.5,.49,.45];G.skin=[.66,.52,.4];},
+  // S1386 — an ogre is huge and fat: MakeHuman's fat body is its least muscle at its most weight (average muscle at weight 1 is a lean
+  // man, S1379's try), here a little past it; cropped to the scalp, ruddy, half of them with a short beard (the people's own roll)
+  'Ogre':          G=>{G.g=1;G.age=.6;G.height=1;G.prop=.35;G.weight=1.35;G.muscle=0;G.hair={style:'short',len:0};G.hairCol=[.23,.16,.1];G.beard=G.beard>.8?.35:0;G.skin=[.74,.55,.42];}};
 // a foe's genome, at its first attach (its id is given after it is built, keyFoe): `foe:<id>`, the co-op rule's place and index; a
 // foe with no id yet (the inspector's) takes its type and its old genome's seed, which is the same each time it is built
 function hbFoeGenome(rig){const g=rig.g,dr=FOE_DRESS[rig.hbFoe]||{},id=rig.e&&rig.e.id;
