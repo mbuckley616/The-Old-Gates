@@ -357,8 +357,8 @@ else if (LONG) { const Z = C.inner.z1, F = C.floor + 1.62;
   else { eye = [.3, F, Z - .4]; at = [-.2, C.floor + 1.0, C.partition]; } }
 // the cottage by bays (Session 1380): the same four views, placed from what the room returns
 else if (C.bays) { const D = C.boxes.find(q => q.tag === 'dresser'), sx = C.one ? -1 : 1, T = C.boxes.find(q => q.tag === 'table');
-  if (VIEW === 'table') { eye = C.one ? [C.door.x + .2, 1.62, -C.inner.z1 + .4] : [C.fire[0] + 1.1, 1.62, C.fire[2] - .5]; at = [(T.x0 + T.x1) / 2, .8, (T.z0 + T.z1) / 2]; cam.fov = 74; }
-  else if (VIEW === 'dresser') { eye = [(D.x0 + D.x1) / 2 + .3, 1.6, .9]; at = [(D.x0 + D.x1) / 2, 1.3, -C.inner.z1]; cam.fov = 74; }
+  if (VIEW === 'table') { eye = C.one ? [C.hearth[0] - .3, 1.62, -.3] : [C.fire[0] + 1.1, 1.62, C.fire[2] - .5]; at = [(T.x0 + T.x1) / 2, .8, (T.z0 + T.z1) / 2]; cam.fov = 74; }
+  else if (VIEW === 'dresser') { const f = C.one ? -1 : 1; eye = [(D.x0 + D.x1) / 2 + .3, 1.6, -f * .3]; at = [(D.x0 + D.x1) / 2, 1.3, -f * C.inner.z1]; cam.fov = 74; }
   else if (VIEW === 'outside') { eye = [C.w / 2 + 2, 1.65, 11]; at = [0, 2.2, 0]; cam.fov = 45; }
   else { eye = C.one ? [C.door.x + .1, 1.62, C.inner.z1 - .3] : [(C.hearth[0] + C.kitchen.x1) / 2 + .9, 1.62, 1.0]; at = [C.hearth[0], .9, C.hearth[2]]; cam.fov = C.one ? 80 : 75; } }
 else if (VIEW === 'table') { eye = [C.fire[0] + 1.1, 1.62, C.fire[2] - .4]; at = [1.9, .9, .6]; }

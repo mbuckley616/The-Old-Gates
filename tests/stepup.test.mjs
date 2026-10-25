@@ -37,7 +37,9 @@ if (cot !== 'dunmore') check(`${cot} stands, a village with a cottage of one sto
 await room(cot, 'home');
 const r = await page.evaluate(() => {
   const near = (y, w) => INT_SOL.filter(s => s.y1 != null && Math.abs(s.y1 - y) < .02 && (!w || w(s))).sort((a, b) => (b.x1 - b.x0) * (b.z1 - b.z0) - (a.x1 - a.x0) * (a.z1 - a.z0));
-  const bed = near(.448, s => (s.x1 - s.x0) * (s.z1 - s.z0) > 2)[0], chest = near(.448, s => (s.x1 - s.x0) * (s.z1 - s.z0) < 1)[0];
+  // the old room's bed and chest stood 0.448 m; the kit's cottage (S1381) is found by what they are: the resident's bed and the home's chest
+  const under = (x, z) => INT_SOL.filter(s => s.y1 != null && s.y1 < 1 && x > s.x0 && x < s.x1 && z > s.z0 && z < s.z1).sort((a, b) => b.y1 - a.y1)[0], rb = residentBed();
+  const kit = !!currentHouse._cottage, bed = kit ? rb && under(rb.x, rb.cz) : near(.448, s => (s.x1 - s.x0) * (s.z1 - s.z0) > 2)[0], chest = kit ? INT_BOX && under(INT_BOX.x, INT_BOX.z) : near(.448, s => (s.x1 - s.x0) * (s.z1 - s.z0) < 1)[0];
   const table = INT_SOL.filter(s => s.y1 != null && s.y1 > .6 && s.y1 < .8).sort((a, b) => (b.x1 - b.x0) * (b.z1 - b.z0) - (a.x1 - a.x0) * (a.z1 - a.z0))[0];
   const mid = s => s && [(s.x0 + s.x1) / 2, (s.z0 + s.z1) / 2];
   const at = (s, y) => s ? intSolidAt(...mid(s), .3, y) : null;
@@ -59,21 +61,27 @@ check('walked at, the bed stops you at its edge: your feet stay on the floor, ou
 check('walked at, the table stops you too', !!r.walkTable && r.walkTable.y < .01 && r.walkTable.left > .3, r.walkTable);
 check(`a running jump puts you on the table (the apex ${r.jumpTable && r.jumpTable.top} over the floor; you stand at ${r.jumpTable && r.jumpTable.y})`, !!r.jumpTable && Math.abs(r.jumpTable.y - r.table) < .01, r.jumpTable);
 
-// the inn: its stair is walked, and a bench is stepped onto
+// the inn: its stair is walked, and a bench is stepped onto (the old room's 0.39 m bench). On the new look Dunmore's inn is the kit's
+// coaching inn (S1368) and a village's the kit's taproom (S1161): the cottage's village's inn is taken, its stair is the taproom's treads,
+// walked as kittaproom walks them, and its benches are seats of 0.45 m, which stop you as a chair's do (S1381)
 await page.evaluate(() => exitInterior()); await page.waitForTimeout(2500);
-if (cot !== 'dunmore') await g.settle('dunmore');
-await room('dunmore', 'inn');
+const innAt = await page.evaluate(cot => WORLD.settle.get(cot).houses.some(x => x.type === 'inn') ? cot : 'dunmore', cot);
+if (innAt === 'dunmore' && cot !== 'dunmore') await g.settle('dunmore');
+await room(innAt, 'inn');
 const inn = await page.evaluate(() => {
-  const f = FOOTHOLDS.find(f => f.axis); if (!f) return { none: true };
-  const along = f.axis === 'x' ? 'x' : 'z', a0 = f[along + '0'], a1 = f[along + '1'], up = f.y1 > f.y0 ? 1 : -1, c = f.axis === 'x' ? (f.z0 + f.z1) / 2 : (f.x0 + f.x1) / 2;
-  // up the flight from its foot, 5 cm a sample, each time from where you stand: the largest rise between samples
-  let y = Math.min(f.y0, f.y1), worst = 0, n = 0; const start = up > 0 ? a0 : a1, end = up > 0 ? a1 : a0;
-  for (let a = start; up > 0 ? a <= end : a >= end; a += .05 * up) { const [x, z] = f.axis === 'x' ? [a, c] : [c, a]; const ny = footholdY(x, z, y, 0); worst = Math.max(worst, ny - y); y = ny; n++; }
-  const bench = FOOTHOLDS.filter(q => !q.axis && q.kind !== 'spiral' && q.y > .3 && q.y < .4)[0];
+  const h = currentHouse, T = h._taproom, f = FOOTHOLDS.find(f => f.axis); let y = 0, worst = 0, n = 0, top;
+  if (f) { const along = f.axis === 'x' ? 'x' : 'z', a0 = f[along + '0'], a1 = f[along + '1'], up = f.y1 > f.y0 ? 1 : -1, c = f.axis === 'x' ? (f.z0 + f.z1) / 2 : (f.x0 + f.x1) / 2;
+    // up the flight from its foot, 5 cm a sample, each time from where you stand: the largest rise between samples
+    y = Math.min(f.y0, f.y1); top = Math.max(f.y0, f.y1); const start = up > 0 ? a0 : a1, end = up > 0 ? a1 : a0;
+    for (let a = start; up > 0 ? a <= end : a >= end; a += .05 * up) { const [x, z] = f.axis === 'x' ? [a, c] : [c, a]; const ny = footholdY(x, z, y, 0); worst = Math.max(worst, ny - y); y = ny; n++; } }
+  else if (T) { const S = T.stair, W = h._roomW, D = h._roomD, sx = S.x0 + (S.x1 - S.x0) / 2 + W / 2; top = T.floors[1] - T.floors[0];
+    for (let z = S.z1 + D / 2 + .35; z >= S.z0 + D / 2 - .4 - 1e-6; z -= .05) { const ny = footholdY(sx, z, y, 0); worst = Math.max(worst, ny - y); y = ny; n++; } }
+  else return { none: true, kit: Object.keys(h).filter(k => /^_(taproom|coachRoom|alehall|tavern)$/.test(k)) };
+  const bench = FOOTHOLDS.filter(q => !q.axis && q.kind !== 'spiral' && q.y > .3 && q.y < .5).sort((a, b) => a.y - b.y)[0];
   const onBench = bench ? footholdY((bench.x0 + bench.x1) / 2, (bench.z0 + bench.z1) / 2, 0, 0) : null;
-  return { top: +Math.max(f.y0, f.y1).toFixed(3), reached: +y.toFixed(3), worst: +worst.toFixed(3), n, bench: bench && +bench.y.toFixed(3), onBench: onBench && +onBench.toFixed(3) }; });
+  return { top: +top.toFixed(3), reached: +y.toFixed(3), worst: +worst.toFixed(3), n, bench: bench && +bench.y.toFixed(3), onBench: onBench == null ? null : +onBench.toFixed(3), kit: !!T }; });
 console.log(JSON.stringify(inn));
 check(`the inn's stair is climbed to its top (${inn.reached} of ${inn.top} m), no rise between 5 cm steps over ${inn.worst}`, !inn.none && Math.abs(inn.reached - inn.top) < .01 && inn.worst < .4, inn);
-check(`a bench's seat (${inn.bench} m) is still a step: you stand on it from the floor`, inn.bench != null && inn.onBench === inn.bench, inn);
+check(`a bench's seat (${inn.bench} m) is a step if it is ${'0.40'} or lower and stops you if higher (you stand at ${inn.onBench})`, inn.bench != null && (inn.bench <= .4 ? inn.onBench === inn.bench : inn.onBench < .01), inn);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

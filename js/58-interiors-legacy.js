@@ -73,7 +73,8 @@ function _intBarrel(sc,x,z){
 // S896 (F2a) — where a room stands you as you come in, on the line down its middle: 1.75 to 2.2 in from the door (z = the room's
 // depth), and in a shallow shop at least half a metre in front of the counter (buildInteriorFor keeps its front edge, true metres)
 function intDoorX(house){return house&&house._exitX!=null?house._exitX:((house&&house._roomW)||10)/2;} /* S1276 — the room's door along its front wall: the middle, unless the room says otherwise (_exitX: a two-bay inn's door in its west bay) */
-function intArrivalZ(house){const D=house._roomD||house.intD||6;let z=D-Math.min(2.2,Math.max(1.75,D*.3));if(house._counterFront!=null)z=Math.max(z,Math.min(D-1.2,house._counterFront+.55));return z;}
+function intArriveX(house){return house&&house._arriveX!=null?house._arriveX:intDoorX(house);} /* S1381 — where you stand on coming in, along the front: the door, unless the room says otherwise */
+function intArrivalZ(house){if(house._arriveZ!=null)return house._arriveZ; /* S1381 — a room that says where you stand (the cottage's lobby) */const D=house._roomD||house.intD||6;let z=D-Math.min(2.2,Math.max(1.75,D*.3));if(house._counterFront!=null)z=Math.max(z,Math.min(D-1.2,house._counterFront+.55));return z;}
 function _intCrate(sc,x,y,z,s=.38){
   const K=furnKit(),n=INT_BED_NATION||'gatelands',key='crate|'+n+'|'+s.toFixed(2);let geo=INT_KIT_GEO.get(key);
   if(!geo){geo=K.bake(K.crate(s,n,Math.round(s*100))).children[0].geometry;INT_KIT_GEO.set(key,geo);}
@@ -546,11 +547,11 @@ function goToInterior(house){
     // (_RW/2, _D), which is what the compass uses for its bearing.
     house._roomW=_RW;
     house._roomD=house.intD||_D;
-    px=intDoorX(house); pz=intArrivalZ(house); yaw=0; /* S896 — 1.75 in from the door in a cottage of true size (it was 2.2, the middle of a 4.5 m room) */ pitch=0; velY=0; jumpY=0; onGround=true;
+    px=intArriveX(house); pz=intArrivalZ(house); yaw=0; /* S896 — 1.75 in from the door in a cottage of true size (it was 2.2, the middle of a 4.5 m room) */ pitch=0; velY=0; jumpY=0; onGround=true;
     if(window._pendingPos){const P=window._pendingPos;window._pendingPos=null;if(P.x!=null){px=P.x;pz=P.z;}if(P.yaw!=null)yaw=P.yaw;if(P.jumpY!=null)jumpY=P.jumpY;} // v80 — a load puts you where you stood
     // S896 (F2a) — a save made inside a room before the rooms came to true size holds a spot in the old, larger room: off the floor
     // or inside something now, it stands you at the door instead (full save migration is card F13)
-    if(String(house.id||'').startsWith('g_')&&(px<.3||pz<.3||px>_RW-.3||pz>house._roomD-.3||(typeof intSolidAt==='function'&&intSolidAt(px,pz,.3,jumpY)))){px=intDoorX(house);pz=intArrivalZ(house);jumpY=0;}
+    if(String(house.id||'').startsWith('g_')&&(px<.3||pz<.3||px>_RW-.3||pz>house._roomD-.3||(typeof intSolidAt==='function'&&intSolidAt(px,pz,.3,jumpY)))){px=intArriveX(house);pz=intArrivalZ(house);jumpY=0;}
     startMusic('shop');
     showMsg(`You enter ${house.name}.`,'#c8b880');
   });
