@@ -391,7 +391,7 @@ function airStepTick(K){
 // time; the loop's dt is capped at 0.05, so no frame of it moves more than 0.75 m and fallTrack's 3 m travel rule holds.
 const AIRDASH={used:false,t0:null,dx:0,dz:0,done:0,endAt:-9,soft:false},AIRDASH_DIST=3.0,AIRDASH_DUR=.2,AIRDASH_STAM=20;
 function airDashStart(K){
-  if(AIRDASH.used||AIRDASH.t0!=null||!perk('acrobatics',100)||dead||!started)return false;
+  if(AIRDASH.used||AIRDASH.t0!=null||!perk('acrobatics',100)||dead||!started||mantling())return false;
   const nowS=performance.now()/1000;if(playerStaggered(nowS))return false;
   if(typeof WORLD!=='undefined'&&activeZoneId==='world'&&WORLD.isSwimming())return false;
   if(typeof spellLevitating==='function'&&spellLevitating())return false;
@@ -418,6 +418,53 @@ function airDashing(){return AIRDASH.t0!=null;}
 function dashGroundY(){const dun=lid&&lid.startsWith('dyn_');
   if(dun||isInterior()){const b=(dun&&DUNGEON_STAIRWELL)?Math.min(0,FLOOR2_Y):((dun&&currentFloor===2)?FLOOR2_Y:0);return footholdY(px,pz,jumpY,dun?dPitBase(px,pz,b):b);} /* S1327 — a chasm's pit */
   return activeTerrainH(px,pz);}
+// S1385 — the mantle, everyone's (platforming B; the numbers are F2b's, scale-numbers-build.md's Movement table): in the
+// air, pressed forward into a ledge the flight's own top cannot step onto (higher than its apex plus STEP_UP) and no more than
+// 1.6 m over your feet, you pull up onto it in 0.5 s, for no stamina. Anyone does it on the way up and at the top; Catch
+// (Acrobatics 25) reaches 2.2 m and catches an edge on the way down too, and the catch ends the fall's count. A ledge is a
+// top the ground already stands you on (a foothold, a gate's floating stone, a chasm's rim from below), with room to stand
+// on it: clear of solids at that height and the head under the ceiling. Indoors and in dungeons only: outdoors the world's
+// solids have no tops yet (platforming's heights for solids, the deep-work session), so nothing there is a ledge.
+// The clock is the loop's (FALL.clock), so a dropped frame changes nothing.
+const MANTLE={t0:null,x0:0,z0:0,y0:0,x1:0,z1:0,y1:0,key:''},MANTLE_HI=1.6,MANTLE_CATCH=2.2,MANTLE_DUR=.5,MANTLE_FALL_V=-.5,MANTLE_G=18; /* MANTLE_G is the loop's GRAVITY */
+function mantling(){return MANTLE.t0!=null;}
+// the highest top at x,z no higher than cap, as the loop's ground reads it
+function mantleSurf(x,z,cap){const dun=lid&&lid.startsWith('dyn_');
+  const b=(dun&&DUNGEON_STAIRWELL)?Math.min(0,FLOOR2_Y):((dun&&currentFloor===2)?FLOOR2_Y:0);
+  return footholdY(x,z,cap-STEP_UP,dun?dPitBase(x,z,b):b);}
+// room to stand at x,z with your feet at y
+function mantleClear(x,z,y){const R=.3;
+  if(isInterior()){if(intSolidAt(x,z,R,y))return false;const h=currentHouse;
+    if(h&&h._roomW&&(x<R||x>h._roomW-R||z<R||z>(h._roomD||1e9)-R))return false;}
+  else for(const[a,b]of[[-R,-R],[R,-R],[-R,R],[R,R]])if(!dAirAt(x+a,z+b)&&dSolid(x+a,z+b))return false;
+  if(mantleSurf(x,z,y+HEAD_H)>y+STEP_UP)return false; /* a foothold within your height over the ledge (headCeil reads only what is over the head) */
+  if(isInterior()&&(INT_SOL||[]).some(s=>s.y0!=null&&s.y0>y+STEP_UP&&s.y0<y+HEAD_H&&x>s.x0-R&&x<s.x1+R&&z>s.z0-R&&z<s.z1+R))return false;
+  return headCeil(x,z,y)-y>=HEAD_H;}
+// called by the loop before the double jump; true while the pull holds you (the loop leaves your flight alone)
+function mantleTick(K){
+  if(MANTLE.t0!=null){
+    if(dead||fallKey()!==MANTLE.key){MANTLE.t0=null;return false;}
+    const p=Math.min(1,(FALL.clock-MANTLE.t0)/MANTLE_DUR),sm=t=>t*t*(3-2*t);
+    const up=sm(Math.min(1,p/.7)),on=sm(Math.max(0,(p-.45)/.55));
+    jumpY=MANTLE.y0+(MANTLE.y1-MANTLE.y0)*up;px=MANTLE.x0+(MANTLE.x1-MANTLE.x0)*on;pz=MANTLE.z0+(MANTLE.z1-MANTLE.z0)*on;velY=0;
+    if(p>=1){MANTLE.t0=null;jumpY=MANTLE.y1;onGround=true;fallLand(jumpY);}
+    return true;
+  }
+  if(onGround||dead||!started||airDashing())return false;
+  if(!(K&&(K['KeyW']||K['ArrowUp'])))return false;
+  const dun=lid&&lid.startsWith('dyn_');if(!dun&&!isInterior())return false;
+  if(encumbranceState()==='immobile')return false;
+  const caught=perk('acrobatics',25);if(velY<MANTLE_FALL_V&&!caught)return false;
+  const cap=jumpY+(caught?MANTLE_CATCH:MANTLE_HI),v=Math.max(0,velY),apex=jumpY+v*v/(2*MANTLE_G);
+  const fx=-Math.sin(yaw),fz=-Math.cos(yaw);let edge=null,top=0;
+  for(let d=.05;d<=.46;d+=.05){const y=mantleSurf(px+fx*d,pz+fz*d,cap);if(y>apex+STEP_UP+.001){edge=d;top=y;break;}}
+  if(edge==null)return false;
+  const d1=edge+.35,x1=px+fx*d1,z1=pz+fz*d1,y1=mantleSurf(x1,z1,cap);
+  if(Math.abs(y1-top)>.08||!mantleClear(x1,z1,y1))return false;
+  Object.assign(MANTLE,{t0:FALL.clock,x0:px,z0:pz,y0:jumpY,x1,z1,y1,key:fallKey()});velY=0;
+  FALL.top=jumpY;
+  return true;
+}
 // the dash's move this frame, {dx,dz,p}, or null; it ends at its 3 m, or on landing
 function tickAirDash(nowS){
   if(AIRDASH.t0==null)return null;

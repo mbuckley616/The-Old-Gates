@@ -137,5 +137,15 @@ check('Cloch\'s blocks built: none with the toll off; with it on a fall drawn at
 { const fo = built[false].foes.split(','), fn = built[true].foes.split(','), co = built[false].chests.split(','), cn = built[true].chests.split(',');
   check('Cloch\'s blocks built: every foe (id, kind and spawn) and every chest where it stood without them (a foe\'s and a chest\'s id is its index)', built[false].foes === built[true].foes && built[false].chests === built[true].chests,
     { foes: [fo.length, fn.length, fo.filter((f, i) => f !== fn[i]).slice(0, 3), fn.filter((f, i) => f !== fo[i]).slice(0, 3)], chests: [co.length, cn.length, co.filter((c, i) => c !== cn[i]).slice(0, 3)] }); }
+// S1384 — one seed, one gate: every gate and dungeon laid twice in this page, after all the others above, comes out the same. A shuffle
+// by sort(()=>r()-.5) made small 57, 13598 and 20984 (and four plain dungeons) lay their treasure rooms and doors elsewhere on a second call.
+const twice = await page.evaluate(() => {
+  const sig = gen => JSON.stringify([gen.map, gen.map2 || null, gen.treasureDoors, gen.keyLocations]), out = [];
+  for (const size of ['tiny', 'small', 'medium', 'large', 'massive']) for (let k = 0; k < 20; k++) { const seed = 57 + k * 1231;
+    for (const c of ['steady', 'failing', undefined]) if (sig(makeGate(size, seed, 0, c)) !== sig(makeGate(size, seed, 0, c))) out.push(size + ':' + seed + ':' + c); }
+  for (const size of ['small', 'medium', 'large']) for (let k = 0; k < 30; k++) { const seed = 11 + k * 733;
+    if (sig(makeDungeon(size, seed)) !== sig(makeDungeon(size, seed))) out.push('dungeon:' + size + ':' + seed); }
+  return out; });
+check('one seed, one layout: 300 gates and 90 dungeons laid twice in one page are the same each time', twice.length === 0, twice);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

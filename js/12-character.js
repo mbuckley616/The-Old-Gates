@@ -149,7 +149,7 @@ const PERK_DEF={
   bow:[['Steady','a full draw holds 3 s without sway'],['Quick nock','draw 30% faster'],['Long eye','half the drop past 50 m'],['Through','a full-draw arrow passes the first foe']],
   guard:[['Deflect','a held shield turns arrows'],['Bulwark','a bash drains +50% posture'],['Iron wall','a heavy attack no longer breaks a held block'],['Second parry','within 0.4 s of a perfect parry, the next parry is perfect too']],
   athletics:[['Swimmer','swim at run speed'],['Long breath','three times the air underwater'],['Road legs','no sprint cost on a road'],['Tireless','stamina comes back at once after a sprint']],
-  acrobatics:[['Catch','mantle to 1.6 m, and catch an edge while falling'],['Cat’s fall','falls free to 8 m (was 4)'],['Second step','the double jump'],['Swallow’s turn','the air dash']],
+  acrobatics:[['Catch','mantle to 2.2 m, and catch an edge while falling'],['Cat’s fall','falls free to 8 m (was 4)'],['Second step','the double jump'],['Swallow’s turn','the air dash']],
   armour:[['Fitted','worn armour weighs half'],['Unbowed','your posture +25%'],['Hold the line','a light hit doesn’t stagger you above half posture'],['Second skin','worn armour never slows the roll']],
   stealth:[['Soft step','sneak at walking speed'],['In the dark','sight on you −25% more out of light'],['Light foot','plates and crumbling floors don’t trigger while sneaking or sprinting'],['Shadow’s hand','a backstab does +50%']],
   locks:[['Feel for it','the pin you work glows faintly at the shear'],['Sure hand','a snapped pick keeps the set pins'],['Quiet work','picking halves a witness’s range'],['No mark','a picked town lock is never found']],
@@ -157,6 +157,7 @@ const PERK_DEF={
 const PERK_LIVE=new Set(['locks:25','locks:50','locks:75','speech:25','speech:50',
   'stealth:25','stealth:50','stealth:75','stealth:100','athletics:25','athletics:50','athletics:75','athletics:100', /* S976 — Stealth's three and Athletics' four */
   'acrobatics:50','armour:25', /* S977 — Cat's fall and Fitted */
+  'acrobatics:25', /* S1385 — Catch, the mantle to 2.2 m and on the way down (mantleTick, 10-player.js) */
   'acrobatics:75','acrobatics:100', /* S1009 — Second step, the double jump (airStepTick, 10-player.js); S1011 — Swallow's turn, the air dash (airDashStart) */
   'bow:25','bow:50','bow:75','bow:100', /* S1048 — Guard's Deflect, Bulwark and Second parry; Iron wall waits on a foe's heavy attack (FOE_ATTACKS' heavy column) */
   'guard:25','guard:50','guard:75','guard:100', /* S1136 — Iron wall, with the foes' heavy blow */

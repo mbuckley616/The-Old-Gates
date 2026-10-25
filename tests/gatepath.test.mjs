@@ -56,7 +56,7 @@ check('its length at a jog (3.83 m/s) is inside the size\'s time to clear (12, 2
 check('it passes through spaces, not round them (at least the ring and one more)', Rr.every(r => r.spacesOn >= 2), Rr.filter(r => r.spacesOn < 2).map(r => [r.cond, r.size, r.seed, r.spacesOn, r.nSpaces]));
 check('in a massive gate it goes down the stair hall to floor two, where the ring is (S1298)', Rr.every(r => r.floorsOn === r.floors), Rr.filter(r => r.floorsOn !== r.floors).map(r => [r.cond, r.size, r.seed]));
 // walked: three gates built steady (the foes' bfs meets a gone span as a wall; the stones are walked below), a body 0.3 round led
-// cell by cell along the game's own bfs from the way in to the ring's middle
+// cell by cell along the game's own bfs from the way in to the ring's middle, its unlocked doors open
 const Wk = [];
 await page.evaluate(() => { window._condRoll = gateCondRoll; gateCondRoll = () => 'steady'; });
 for (const [size, seed] of [['small', 101], ['large', 1078], ['massive', 3032]]) {
@@ -66,6 +66,8 @@ for (const [size, seed] of [['small', 101], ['large', 1078], ['massive', 3032]])
     // S1298 — in a gate of two floors, first to the stair hall's foot on floor one's map, then on floor two's to the ring
     const legs = []; const hs = gen.hall; if (hs) { const [fc, fr] = gateCellAt(hs, hs.L - 1, Math.floor(hs.A / 2)); legs.push([1, dAt(fc), dAt(fr)]); }
     legs.push([ring.floor || 1, tx, tz]);
+    // S1384 — the side doors on the way are opened, as you open them (a shut door is solid to bfs); the locked treasure doors stay shut
+    for (const d of DOORS) if (!d.locked) d.open = true;
     let x = px, z = pz, stuck = 0, steps = 0, cells = 0, thrOn = 0, path = [];
     for (const [f, gx0, gz0] of legs) { currentFloor = f; path = bfs(x, z, gx0, gz0); cells += path.length;
       for (const [c, r] of path) { const gx = dAt(c), gz = dAt(r);

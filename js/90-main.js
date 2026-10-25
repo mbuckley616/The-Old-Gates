@@ -399,12 +399,13 @@ function loop(now){
   const floorBaseY0=(inDungeon&&DUNGEON_STAIRWELL)?Math.min(0,FLOOR2_Y):((inDungeon&&currentFloor===2)?FLOOR2_Y:0); // v80 — with a stairwell the base is the lower floor; the upper floor is a foothold with the shaft as its hole
   const floorBaseY=(inDungeon||isInterior())?footholdY(px,pz,jumpY,inDungeon?dPitBase(px,pz,floorBaseY0):floorBaseY0):floorBaseY0; /* S1327 — over a chasm's air the ground is its pit's floor */ // v80 — footholds (stairs, galleries)
   if(typeof tickSheath==='function')tickSheath(); /* S1080 — the sheath: on its own after 5 s at peace */
+  if(!mantleTick(K)) /* S1385 — the mantle (10-player.js): while it pulls you up, nothing else moves your flight */
   airStepTick(K); /* S1009 — Second step, the double jump (10-player.js); before the ground's jump, so a landing always resets it first */
   if(onGround&&K['Space']){
     if(inOverworld) jumpY=activeTerrainH(px,pz);
     velY=JUMP_VEL;onGround=false;sndJump();_jumpFrom=jumpY;
   }
-  if(!onGround&&airDashing())velY=0; /* S1011 — the dash holds you level; the fall starts again from rest after it */
+  if(!onGround&&(airDashing()||mantling()))velY=0; /* S1011 — the dash holds you level; the fall starts again from rest after it */
   else if(!onGround){
     /* S1009 — the flight is integrated exactly, so its height is the same at any frame rate (the dropped-frame rule); it was
        velY first and then jumpY, which lost velY×dt/2 of every rise (0.05 of a jump at 60 fps, 0.16 at 20) */
