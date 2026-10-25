@@ -791,6 +791,8 @@ function hpTailStep(frac,now){
   const past=(now-T.t)/1000-HP_TAIL_HOLD_S;if(past>0)T.v=Math.max(frac,T.v-HP_TAIL_DRAIN*Math.min(dt,past));
   return T.v;
 }
+/* S1407 — a home's line names its resident, and says so while they sleep (the critic's s896): *keeper* is a shop's word */
+function homeTalkLine(){const h=currentHouse;if(!h||h.type!=='home'||!h.keeper)return 'Press E near the keeper to talk';return (typeof sleeperAsleep==='function'&&sleeperAsleep())?h.keeper+' is asleep · Press E to wake':'Press E near '+h.keeper+' to talk';}
 function updateHUD(){
   const emHP=effMaxHP(),emMana=effMaxMana(),emSt=effMaxStamina();
   document.getElementById('hb').style.width=(PHP/emHP*100)+'%';document.getElementById('hv').textContent=Math.floor(PHP);
@@ -835,7 +837,7 @@ function updateHUD(){
   if(activeZoneId==='forest'){const alive=ZE.filter(e=>!e.dead&&!e.locked).length;ob.textContent=alive?`${alive} creature${alive>1?'s':''} nearby · Stay on the path`:'Deep in the Deepwood Forest · E near gate to travel';}
   else if(activeZoneId==='ironhaven'){ob.textContent='Press E near a soldier or gate · Press E near a building to enter';}
   else{ob.textContent='Press E near a villager to talk · Press E near a door or cave to enter';}
-}else if(lid==='overworld'&&activeZoneId==='world'&&typeof WORLD!=='undefined'&&WORLD.shipPrompt()){ob.style.color='#c8b880';ob.textContent=WORLD.shipPrompt();}else if(lid&&isInterior()){ob.style.color='#c8b880';const _nb=intBedTarget();const _hp=(typeof WORLD!=='undefined')?(WORLD.guestPrompt()||WORLD.hatchPrompt()||WORLD.lootPrompt()||WORLD.shelfPrompt()||WORLD.boxPrompt()):null;ob.textContent=_hp?_hp:nearBarberChair()?"Press 'E' to sit in the barber’s chair":_nb?((typeof WORLD!=='undefined'&&WORLD.bedPrompt(_nb))||"Someone else's bed")+' · Walk south to exit':(intNPCMesh?'Press E near the keeper to talk · Walk south to exit':'No one is in · Walk south to exit');}else{const a=ENEMIES.filter(e=>!e.dead).length;const uk=KEYS.filter(k=>!k.collected).length;const ud=DOORS.filter(d=>!d.open&&d.locked).length;const sh=EQ.offhand&&EQ.offhand.shieldType==='shield';ob.style.color=blocking?'#88aaff':'#c8a84a';ob.textContent=a+' enemies'+(uk?' · '+uk+' key'+(uk>1?'s':'')+(ud?' to find':''):'')+(ud&&!uk?' · '+ud+' locked door'+(ud>1?'s':''):'')+(blocking?' · 🛡 '+(sh?'Blocking':'Guarding'):'');}}
+}else if(lid==='overworld'&&activeZoneId==='world'&&typeof WORLD!=='undefined'&&WORLD.shipPrompt()){ob.style.color='#c8b880';ob.textContent=WORLD.shipPrompt();}else if(lid&&isInterior()){ob.style.color='#c8b880';const _nb=intBedTarget();const _hp=(typeof WORLD!=='undefined')?(WORLD.guestPrompt()||WORLD.hatchPrompt()||WORLD.lootPrompt()||WORLD.shelfPrompt()||WORLD.boxPrompt()):null;ob.textContent=_hp?_hp:nearBarberChair()?"Press 'E' to sit in the barber’s chair":_nb?((typeof WORLD!=='undefined'&&WORLD.bedPrompt(_nb))||"Someone else's bed")+' · Walk south to exit':(intNPCMesh?homeTalkLine()+' · Walk south to exit':'No one is in · Walk south to exit');}else{const a=ENEMIES.filter(e=>!e.dead).length;const uk=KEYS.filter(k=>!k.collected).length;const ud=DOORS.filter(d=>!d.open&&d.locked).length;const sh=EQ.offhand&&EQ.offhand.shieldType==='shield';ob.style.color=blocking?'#88aaff':'#c8a84a';ob.textContent=a+' enemies'+(uk?' · '+uk+' key'+(uk>1?'s':'')+(ud?' to find':''):'')+(ud&&!uk?' · '+ud+' locked door'+(ud>1?'s':''):'')+(blocking?' · 🛡 '+(sh?'Blocking':'Guarding'):'');}}
 
 const mmC=document.getElementById('mm').getContext('2d');
 function drawMM(){

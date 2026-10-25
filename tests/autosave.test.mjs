@@ -13,7 +13,9 @@ const saves = () => page.evaluate(() => _saves.slice());
 const R = {};
 
 // 1. sleep: restAtBed runs its fade, then saves
-await reset(); await page.evaluate(() => restAtBed(2)); await W(3000); await g.hide();
+await reset(); await page.evaluate(() => restAtBed(2));
+/* S1407: wait for the save, not 3 s of wall clock: the fade's 440 ms timer ran late on a runner still loading the world (CI, #704) */
+await page.waitForFunction(() => _saves.length > 0, null, { timeout: 30000, polling: 200 }).catch(() => {}); await W(1000); await g.hide();
 R.sleep = await saves();
 check('sleeping autosaves', R.sleep.length === 1, R.sleep);
 

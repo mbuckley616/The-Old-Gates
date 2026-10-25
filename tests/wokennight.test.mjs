@@ -30,6 +30,9 @@ await page.evaluate(() => { metNPCs.clear(); });
 await enter(2.0, 6);
 const pr = { ipr: await stand() , ...(await page.evaluate(() => ({ asleep: !!intNPCMesh.userData.asleep, keeper: _h.keeper }))) };
 check('at 2h the prompt over a sleeping resident reads "<name> (asleep) — Press \'E\' to wake"', pr.asleep && pr.ipr === `${pr.keeper} (asleep) — Press 'E' to wake`, pr);
+/* S1407: the HUD's line names a home's resident and says she sleeps, not *the keeper* (the critic's s896) */
+const ob1 = await page.evaluate(() => { updateHUD(); return document.getElementById('ob').textContent; });
+check('at 2h the HUD line reads "<name> is asleep · Press E to wake", never "the keeper"', ob1 === `${pr.keeper} is asleep · Press E to wake · Walk south to exit`, ob1);
 // 2. E wakes her: the night line, and the introduction is there but not first
 const crime0 = await page.evaluate(() => JSON.stringify(worldState.crime || {}));
 const t1 = await talk(); const L1 = await lineNow();
@@ -55,6 +58,8 @@ await leave();
 await page.evaluate(() => { metNPCs.clear(); });
 await enter(22, 6);
 const pr3 = await stand(true);
+const ob3 = await page.evaluate(() => { updateHUD(); return document.getElementById('ob').textContent; }), k3 = await page.evaluate(() => _h.keeper);
+check('at 22h the HUD line names her: "Press E near <name> to talk"', ob3 === `Press E near ${k3} to talk · Walk south to exit`, ob3);
 const t4 = await talk();
 const i4 = t4.choices.findIndex(c => /^My name is /.test(c)), a4 = t4.choices.findIndex(c => /^About you/.test(c));
 check('at 22h (awake) the prompt and greeting are the ordinary ones, and the introduction comes before her own topics as before', /— Press 'E' to talk$/.test(pr3) && t4.open === 'block' && t4.text && !Object.values(NIGHT).includes(t4.text) && i4 >= 0 && i4 < a4, { pr3, text: t4.text, choices: t4.choices });
