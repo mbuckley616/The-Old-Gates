@@ -336,5 +336,21 @@ check('after a cut he opens with the cut\'s line; the knife\'s topic only with t
 check('"What do you want from me?" gives the Binding Needle: unique, a quest item, its card as written, the log line; once', !!hd.needle && hd.needle[0] === 'The Binding Needle' && hd.needle.slice(1, 5).every(Boolean) && hd.needle[5] === 1 && hd.again === false, hd.needle);
 check('the needle rides the character\'s row, the runner and the giving the world\'s; far from Ironhaven he is gone', hd.rows.every(Boolean) && hd.gone, hd.rows);
 check('two rings left alone: that opening; the needle held at the first cut: no runner, and the knife\'s opening once', hd.rings.startsWith('You have been to the end of two') && hd.knifeAlso[0] === false && hd.knifeAlso[1] && hd.knifeOpen[0] === 'You found the knife as well. I had hoped he would take longer to think of you.' && hd.knifeOpen[1].startsWith('You have been to the end of one'), hd);
+// the journal's Great gates page (Session 1394; the build sheet's UI, pieces I and II's lines): empty in a new world; the tools'
+// lines by date, a row a gate torn or sealed under the name kept at its knot, the lock's line once six are bound; in the Quests view
+const jp = await page.evaluate(() => {
+  const keep = JSON.stringify(worldState.greatGates || null), out = {};
+  const page = () => { openHub('journal'); journalView('quest'); const el = document.querySelector('#jn-body .jn-great'); const t = el ? [...el.querySelectorAll('.jn-text')].map(x => x.textContent) : null; closeHub(); return t; };
+  worldState.greatGates = { gates: {}, fate: null, fatedAt: null }; out.empty = [greatJournal(), page()];
+  worldState.greatGates.ev = { noteRead: 500, knifeLifted: 900, runner: 700 };
+  cutKnot('tine', 'Dún na Tine'); bindKnot('cloch', 'the Hollow Hill'); cutKnot('uisce');
+  out.mid = page();
+  for (const s of ['tine', 'uisce', 'cloch', 'scath', 'solas', 'gaoth']) bindKnot(s, s === 'tine' ? 'Dún na Tine' : null);
+  out.lock = page(); out.fate = greatFate();
+  worldState.greatGates = JSON.parse(keep); return out; });
+console.log(JSON.stringify(jp));
+check('a new world\'s journal has no Great gates page', jp.empty[0] === null && jp.empty[1] === null, jp.empty);
+check('the page: the note, the runner and the knife in the order they happened; a row for each gate torn or sealed, by its name', JSON.stringify(jp.mid) === JSON.stringify(['A note says something lies under a flagstone at the Ashfeld.', 'Aldwyn asks to see you at Ironhaven.', 'The Loosing Knife. It cuts the knot at a great gate’s ring.', 'Dún na Tine — Tine. Torn.', 'Uisce. Torn.', 'The Hollow Hill — Cloch. Sealed.']), jp.mid);
+check('six bound: six rows, and the lock\'s line under them', jp.fate === 'sealed' && jp.lock.length === 10 && jp.lock[3] === 'Dún na Tine — Tine. Sealed.' && jp.lock[9] === 'Bound, all six, and held.', jp.lock);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
