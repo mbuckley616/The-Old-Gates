@@ -547,7 +547,7 @@ function goToInterior(house){
     // (_RW/2, _D), which is what the compass uses for its bearing.
     house._roomW=_RW;
     house._roomD=house.intD||_D;
-    px=intArriveX(house); pz=intArrivalZ(house); yaw=0; /* S896 — 1.75 in from the door in a cottage of true size (it was 2.2, the middle of a 4.5 m room) */ pitch=0; velY=0; jumpY=0; onGround=true;
+    px=intArriveX(house); pz=intArrivalZ(house); yaw=house._arriveYaw!=null?house._arriveYaw:0; /* S1406 — a room may say which way you face */ /* S896 — 1.75 in from the door in a cottage of true size (it was 2.2, the middle of a 4.5 m room) */ pitch=0; velY=0; jumpY=0; onGround=true;
     if(window._pendingPos){const P=window._pendingPos;window._pendingPos=null;if(P.x!=null){px=P.x;pz=P.z;}if(P.yaw!=null)yaw=P.yaw;if(P.jumpY!=null)jumpY=P.jumpY;} // v80 — a load puts you where you stood
     // S896 (F2a) — a save made inside a room before the rooms came to true size holds a spot in the old, larger room: off the floor
     // or inside something now, it stands you at the door instead (full save migration is card F13)

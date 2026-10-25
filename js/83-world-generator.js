@@ -1682,6 +1682,13 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   // the door at W/2 on z = D, the floor at 0). A coaching inn keeps the old room (its board and its travellers are laid out there).
   // S1276 — a village inn on two bays (7.4 m, its door in the west bay) is the same taproom in the narrower house: one table, two rooms.
   function kitTaproom(house){return !!(house&&house.type==='inn'&&house.kit&&house.kit.inn&&(house.kit.bays===3||house.kit.bays===2)&&!house.coachInn&&window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.gl&&PKIT.gl.inn);}
+  // S1405 — the kit rooms' light by the hour (the critic, 25 Oct: the cottage and the taproom were orange floor to thatch at noon and at
+  // night alike, an amber ambient of .45 under a fire of 1.5 in a 4.2 m room). The room's air is a low neutral ambient and the day's
+  // sky through its windows and door (a cool hemisphere, as the church hall's); the lamps burn low by day and full at
+  // night; the fire is three quarters of what it was, the same at every hour. Returns the factors each room's light helper multiplies by.
+  function kitRoomAir(sc_,amb){const hr=typeof gameHour==='function'?gameHour():12,dayK=hr>=7&&hr<18?1:hr>=5&&hr<20?.45:.08;
+    sc_.add(new THREE.AmbientLight(0xffe2c4,(amb||.45)*.45));sc_.add(new THREE.HemisphereLight(0xdfe6f0,0xa89a84,.06+.4*dayK));
+    return {day:dayK,lamp:.3+.7*(1-dayK),fire:.75};}
   function buildKitTaproom(house){
     const T=PKIT.gl.inn({paint:house.kit.paint||'green',bays:house.kit.bays},PKIT.stream(house.id+':taproom')),I=T.inner,X=I.x1,Z=I.z1,F0=T.floors[0],F1=T.floors[1]-F0,W=2*X,D=2*Z;
     const rx=x=>x+X,rz=z=>z+Z,ry=y=>y-F0;
@@ -1711,8 +1718,8 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       for(const w of T.windows)if(w.face==='front'||w.face==='back')out(w.x,w.y,w.z,w.w,w.h,w.face==='front'?1:-1);
       out(T.door.x,F0,T.door.z,T.door.w,T.door.h,1);}
     // the light: the fire in the hearth, the lantern over the bar, one on the passage upstairs, and the room's warmth
-    sc_.add(new THREE.AmbientLight(0xffb070,.45));
-    const L=(x,y,z,c,i,d)=>{const l=new THREE.PointLight(c,i,d);l.position.set(x,y,z);sc_.add(l);return l;};
+    const KA=kitRoomAir(sc_,.45);
+    const L=(x,y,z,c,i,d)=>{const l=new THREE.PointLight(c,i*(c===0xff6a20?KA.fire:KA.lamp),d);l.position.set(x,y,z);sc_.add(l);return l;};
     L(rx(T.fire[0]+.6),ry(T.fire[1]+.3),rz(T.fire[2]),0xff6a20,1.5,7);L(rx(T.lamp[0]),ry(T.lamp[1]),rz(T.lamp[2]),0xffaa44,1.6,9);L(W/2,F1+2.1,rz(T.passage-.3),0xffaa44,.5,7);
     for(const R of T.rooms)L(rx((R.x0+R.x1)/2),F1+1.6,rz(Z-1.2),0xffb070,.5,4);
     // the innkeeper behind the bar, between it and the rack of kegs, facing the room
@@ -1735,6 +1742,8 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     house._counterFront=null;house.intW=W;house.intD=D;house._roomH=+(PKIT.gl.PS.storey.cottage+1.35).toFixed(3);house._exitD=T.one?.8:.4;house._exitW=1.0;house._exitX=+rx(T.door.x).toFixed(3);house._cottage=T; /* the head stops under the collars */
     /* the lobby is 0.9 m deep: you arrive in it 0.3 m east of the door, clear of the breast and the jamb, and the door's reach is its last 0.4 m */
     house._arriveX=T.one?null:+rx(T.door.x+.3).toFixed(3);house._arriveZ=T.one?null:+(D-.5).toFixed(3);
+    /* S1406 — and facing the way on, the lobby's first turn (T.path[1]), not the jamb wall 0.4 m ahead (the critic, s896: 60% of the first frame was plaster) */
+    house._arriveYaw=T.one?null:+Math.atan2(-(rx(T.path[1][0])-house._arriveX),-(rz(T.path[1][1])-house._arriveZ)).toFixed(4);
     const sc_=new THREE.Scene();interiorScene=sc_;landRoomPost(sc_);sc_.background=new THREE.Color(0x120a06);sc_.fog=new THREE.Fog(0x120a06,Math.max(W,D)*.8*SCALE.ROOM_K,Math.max(W,D)*2.4*SCALE.ROOM_K);
     intNPCMesh=null;intBedPos=null;intStashPos=null;
     const SOL=[];INT_SOL=SOL;FOOTHOLDS=[];INT_BEDS=[];INT_DOORS=[];INT_DOORS.house=house.id;INT_CHAIR=null;INT_NPCS=[];HATCH.active=false;HATCH.roof=false;INT_LOOT=null;INT_BOX=null;INT_SHELF=null;
@@ -1769,9 +1778,9 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     // the light: the fire on the hearth, the lantern from the kitchen's collar, the room's warmth. The hearth's flames and embers ride in
     // their own group (the candle's flame stays out of it), so the cold hearth of a Mages' task (S676) shows ash and no light until
     // tickInterior lights it
-    sc_.add(new THREE.AmbientLight(0xffb070,.45));
-    const L=(x,y,z,c,i,d)=>{const l=new THREE.PointLight(c,i,d);l.position.set(x,y,z);sc_.add(l);return l;};
-    const cold=coldHearthHouse(house),hl=L(rx(T.fire[0]+(T.one?-.6:.6)),T.fire[1]+.3,rz(T.fire[2]),0xff6a20,cold?0:1.5,7);L(rx(T.lantern[0]),T.lantern[1],rz(T.lantern[2]),0xffaa44,1.2,7);
+    const KA=kitRoomAir(sc_,.45);
+    const L=(x,y,z,c,i,d)=>{const l=new THREE.PointLight(c,i*(c===0xff6a20?KA.fire:KA.lamp),d);l.position.set(x,y,z);sc_.add(l);return l;};
+    const cold=coldHearthHouse(house),hl=L(rx(T.fire[0]+(T.one?-.6:.6)),T.fire[1]+.3,rz(T.fire[2]),0xff6a20,cold?0:1.5,7);hl.userData.lit=1.5*KA.fire;L(rx(T.lantern[0]),T.lantern[1],rz(T.lantern[2]),0xffaa44,1.2,7);
     {const hf=new THREE.Group();hf.name='hearthFire';T.room.add(hf);
       for(const m of T.room.children.filter(m=>m.isMesh&&(m.name==='ember'||m.name==='flame'))){if(m.name==='ember'){hf.add(m);continue;}
         const P=m.geometry.attributes.position,lo=[],hi=[];for(let i=0;i<P.count;i+=3){const y=(P.getY(i)+P.getY(i+1)+P.getY(i+2))/3,dst=y<.6?lo:hi;for(let k=0;k<3;k++)dst.push(P.getX(i+k),P.getY(i+k),P.getZ(i+k));}
@@ -1819,8 +1828,8 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       const n=Math.max(1,Math.floor(T.d/4));for(let i=0;i<n;i++){const z=-T.d/2+(i+.5)*T.d/n;for(const sx of [-1,1]){const m=new THREE.Mesh(new THREE.PlaneGeometry(.7,.6),M);m.position.set(rx(sx*(T.w/2+.08)),ry(FY+1.55),rz(z));m.rotation.y=-sx*Math.PI/2;m.userData.daylight=true;sc_.add(m);}}
       const m=new THREE.Mesh(new THREE.PlaneGeometry(T.door.w+.1,T.door.h+.1),M);m.position.set(rx(T.door.x),T.door.h/2,rz(T.door.z)+.08);m.rotation.y=Math.PI;m.userData.daylight=true;sc_.add(m);}
     // the light: the long fire, the three iron lamps over the tables and the aisle, and the hall's warmth
-    sc_.add(new THREE.AmbientLight(0xffb070,.4));
-    const L=(x,y,z,c,i,d)=>{const l=new THREE.PointLight(c,i,d);l.position.set(x,y,z);sc_.add(l);return l;};
+    const KA=kitRoomAir(sc_,.4);
+    const L=(x,y,z,c,i,d)=>{const l=new THREE.PointLight(c,i*(c===0xff6a20?KA.fire:KA.lamp),d);l.position.set(x,y,z);sc_.add(l);return l;};
     L(rx(T.fire[0]),ry(T.fire[1]+.5),rz(T.fire[2]),0xff6a20,1.8,10);for(const P of T.lamps)L(rx(P[0]),ry(P[1]),rz(P[2]),0xffaa44,1.1,8);
     // the keeper behind the counter, between it and the kegs, facing the hall
     const C=T.counter,npc={x:rx((C.x0+C.x1)/2),z:rz(C.z0-.35)};
@@ -1870,8 +1879,8 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(A,3));const m=new THREE.Mesh(g,M);m.userData.daylight=true;sc_.add(m);}
     // the light: the brass lamps (over the left table, by the counter, in the well and over the passage), the braziers' glow, and the
     // room's warmth; one more in each guest room
-    sc_.add(new THREE.AmbientLight(0xffb070,.42));
-    const L=(x,y,z,c,i,d)=>{const l=new THREE.PointLight(c,i,d);l.position.set(x,y,z);sc_.add(l);return l;};
+    const KA=kitRoomAir(sc_,.42);
+    const L=(x,y,z,c,i,d)=>{const l=new THREE.PointLight(c,i*(c===0xff6a20?KA.fire:KA.lamp),d);l.position.set(x,y,z);sc_.add(l);return l;};
     for(const P of T.lamps)L(rx(P[0]),ry(P[1]),rz(P[2]),0xffaa44,P[1]>T.floors[1]?.7:1.3,P[1]>T.floors[1]?6:8);
     {const B=T.braziers[0];L(rx(B[0]-.3),ry(B[1]+.4),rz(B[2]+.4),0xff6a20,1.0,5);}
     for(const R of T.rooms)L(rx((R.x0+R.x1)/2),F1+1.6,rz(Z-1.2),0xffb070,.45,4);
@@ -1928,8 +1937,8 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(A,3));const m=new THREE.Mesh(g,M);m.userData.daylight=true;sc_.add(m);}
     // the light: the open hearth and the passengers' grate, the lantern over the bar and the one over their long table, one on each
     // corridor, one over each floor's front rooms and one over the first floor's back rooms, and the room's warmth (nine in all)
-    sc_.add(new THREE.AmbientLight(0xffb070,.45));
-    const L=(x,y,z,c,i,d)=>{const l=new THREE.PointLight(c,i,d);l.position.set(x,y,z);sc_.add(l);return l;};
+    const KA=kitRoomAir(sc_,.45);
+    const L=(x,y,z,c,i,d)=>{const l=new THREE.PointLight(c,i*(c===0xff6a20?KA.fire:KA.lamp),d);l.position.set(x,y,z);sc_.add(l);return l;};
     for(const F of T.fires.filter(f=>f[3]===0))L(rx(F[0]+(F[0]<0?.6:-.4)),ry(F[1]+.3),rz(F[2]),0xff6a20,F[4]==='open'?1.5:1.0,F[4]==='open'?7:5);
     const tap=T.lamps.filter(p=>p[3]===0),barL=tap[0],coachL=tap.find(p=>p[0]>4)||tap[tap.length-1];
     for(const p of [barL,coachL])L(rx(p[0]),ry(p[1]),rz(p[2]),0xffaa44,1.4,8);

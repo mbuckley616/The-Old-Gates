@@ -98,6 +98,20 @@ check(`with the knife it cuts: "${d.p1}"`, d.p1 === "The knot of G — Press 'E'
 check(`with the needle a cut knot binds: "${d.p2}"`, d.p2 === "The cut knot of G — Press 'E' to bind it" && d.u2 === 'bind' && d.s2[0] === 'sealed' && d.s2[1] === 1, d);
 check(`a bound knot offers the cut again, and with neither tool is only looked at ("${d.p3}", "${d.p4}")`, d.p3 === "The bound knot of G — Press 'E' to cut it" && d.p4 === 'The bound knot of G' && d.u4 === 'examine', d);
 check('the log keeps the ring and both acts', d.log.includes('Reached the ring of G.') && d.log.includes('Cut the knot of G.') && d.log.includes('Bound the knot of G again.'), d.log);
+// Session 1400 (look, #680 A): the ring and its knot are the look builder's prop on the new look (greatKnotProp), under the dome,
+// behind the dais from the way in, the knot 2.1 m over the dais; dressed again when the knot is cut or bound
+const kp = await page.evaluate(() => { const L = KNOT_LIE, gen = window._lastGen, out = { prop: !!(L && L.prop) }; if (!out.prop) return out;
+  const g = L.mesh, base = L.floor === 2 ? FLOOR2_Y : 0, f = D_CEIL[L.floor], st = g.getObjectByName('knot:stone'); g.updateMatrixWorld(true);
+  let clear = 99; const v = new THREE.Vector3(), P = st.geometry.attributes.position; for (let i = 0; i < P.count; i += 5) { v.fromBufferAttribute(P, i).applyMatrix4(st.matrixWorld); clear = Math.min(clear, f(v.x / DCELL, v.z / DCELL) + base - v.y); }
+  const t = gen.thresholds.find(t => (t.a === gen.ring || t.b === gen.ring) && (t.floor || 1) === L.floor), c = new THREE.Box3().setFromObject(g.getObjectByName('knot:void')).getCenter(new THREE.Vector3());
+  out.clear = +clear.toFixed(2); out.behind = Math.hypot(dAt(t.c) - c.x, dAt(t.r) - c.z) > Math.hypot(dAt(t.c) - L.x, dAt(t.r) - L.z) + 5;
+  out.top = L.prop.top; out.tris = L.prop.tris; out.draws = L.prop.draws; out.state = L.prop.group.userData.greatKnot.state;
+  const w = new THREE.Vector3(); L.knot.getWorldPosition(w); out.knot = [+(w.y - base - .4).toFixed(2), +Math.hypot(w.x - L.x, w.z - L.z).toFixed(2)];
+  const G = worldState.greatGates.gates, was = G[L.school]; G[L.school] = 'torn'; knotDress(); out.torn = [L.prop.ends, !!L.knot]; G[L.school] = was; knotDress(); out.sealed = [L.prop.group.userData.greatKnot.state, !!L.knot];
+  return out; });
+console.log(JSON.stringify(kp));
+check(`the ring stands ${kp.top} m behind the dais from the way in, ${kp.clear} m under the dome, in ${kp.tris} tris and ${kp.draws} draws`, kp.prop && kp.behind && kp.clear >= 1 && kp.top >= 25 && kp.tris < 16000 && kp.draws <= 6, kp);
+check(`the knot 2.1 m over the dais within reach, bound after the bind; cut it hangs in eleven ends`, kp.prop && kp.knot[0] === 2.1 && kp.knot[1] < 2.6 && kp.state === 'sealed' && kp.torn[0] === 11 && !kp.torn[1] && kp.sealed[0] === 'sealed' && kp.sealed[1], kp);
 check('a ring reached with neither tool makes Varek\'s note due, naming that gate', d.note[0] && d.note[1] && !d.note[2], d.note);
 // the knife (Session 1353): out to the Ashfeld, sleep, read the note, lift the flagstone
 const ash = await page.evaluate(() => { const f = siteAnywhere('ashfeld'); goToZone('world', f.x + 3, f.z + 3, 0, 'x'); return [f.x, f.z]; });

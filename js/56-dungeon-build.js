@@ -978,6 +978,72 @@ function gateFallBuild(gen){const out=[];
         put(SK.rbox(sz*1.4,sz,sz*1.1,sz*.25,1),b.col.clone().multiplyScalar(.75+Math.random()*.35),fx+nx*d+ax*a,sz*.4,fz+nz*d+az*a,Math.random()*Math.PI,(Math.random()-.5)*.6,(Math.random()-.5)*.6);}}
     const m=dunMerge(parts,'fall');m.position.set(cx,b.y||0,cz);m.castShadow=m.receiveShadow=true;m.userData.fall=b;dScene.add(m);b.mesh=m;out.push(m);}
   return out;}
+// S1400 — a great gate's ring and its knot (#680, Michael's A: the knot within reach, 2.1 m over the dais), ported from the prototype's
+// greatKnot (docs/prototypes/levelup/props.js, Session 1376) for the new look; knotLay (87-world-quests.js) places it and keeps its torus
+// knot on the old look and as the fallback. In the prop's frame y 0 is the dais's top, +z faces the way in, and the ring stands free
+// on the chamber's floor behind the dais: 40 voussoirs, 30.8 m high at most, scaled down whole (to 0.6) so its top clears the dome
+// by o.ceil(x, z) (the roof over the chamber's floor at a point of the prop's frame) less 1.2 m. The script round its face and soffit,
+// the dark at its heart, eleven threads of the school's light drawn from the soffit into the knot. o.state 'untied', 'torn' (no knot:
+// each thread's end hangs short, the two sides apart, the light at a third) or 'sealed' (smaller, tighter, a pale whipping round it).
+// Returns {group, knot (its own group at the knot's place, so it turns in place; null when cut), tris, draws, scale, top}.
+const GK_GLOW={tine:[1,.34,.1],uisce:[.3,.72,1],cloch:[1,.66,.3],scath:[.7,.34,1],solas:[1,.86,.52],gaoth:[.66,.92,1]};
+let GK_MAT=null;
+function gkScriptTex(r){const c=document.createElement('canvas');c.width=64;c.height=512;const x=c.getContext('2d');x.fillStyle='#000';x.fillRect(0,0,64,512);
+  x.strokeStyle='#fff';x.lineWidth=4.5;x.lineCap='round';for(let y=10;y<500;y+=22+r()*8){x.beginPath();const n=2+Math.floor(r()*3);
+    for(let k=0;k<n;k++){const a=14+r()*36,b=y+r()*16;k?x.lineTo(a,b):x.moveTo(a,b);}x.stroke();if(r()<.4){x.beginPath();x.arc(32,y+8,4+r()*4,0,6.3);x.stroke();}}
+  const t=new THREE.CanvasTexture(c);t.wrapT=THREE.RepeatWrapping;return t;}
+function gkMats(school,state){if(!GK_MAT){GK_MAT={tex:gkScriptTex(PKIT.stream('knot-script')),void:new THREE.MeshBasicMaterial({color:0x020203}),
+    stone:(()=>{const m=PKIT.gl.mats().ashlar.clone();m.color.setHex(0x3a3734);m.roughness=.75;return m;})(),
+    bound:new THREE.MeshStandardMaterial({color:0xe8e0cc,emissive:new THREE.Color(1,.94,.82),emissiveIntensity:.6,roughness:.6,metalness:0})};}
+  const M=GK_MAT,G=GK_GLOW[school],k=school+':'+state,glow=state==='torn'?.32:state==='sealed'?.64:1; /* the prototype's 2.2, 1.4 and .7 over 2.2: the dungeon's frame has no tone mapping, and over 1 Tine's orange clips to yellow */
+  if(!M['s:'+k]){M['s:'+k]=new THREE.MeshStandardMaterial({color:0,emissive:new THREE.Color(...G),emissiveMap:M.tex,emissiveIntensity:glow*.8,roughness:.7,metalness:0});
+    M['t:'+k]=new THREE.MeshStandardMaterial({color:new THREE.Color(...G).multiplyScalar(.2),emissive:new THREE.Color(...G),emissiveIntensity:glow,roughness:.5,metalness:0});
+    M['k:'+k]=new THREE.MeshStandardMaterial({color:new THREE.Color(...G).multiplyScalar(.35),emissive:new THREE.Color(...G),emissiveIntensity:state==='sealed'?.35:.55,roughness:.55,metalness:0});}
+  return {stone:M.stone,void:M.void,bound:M.bound,script:M['s:'+k],thread:M['t:'+k],knot:M['k:'+k]};}
+function greatKnotProp(o){o=o||{};const school=GK_GLOW[o.school]?o.school:'cloch',state=o.state||'untied',r=PKIT.stream('knot:'+school),M=gkMats(school,state);
+  const B=new Map(),put=(geo,key,x,y,z,rx,ry,rz,uv)=>{const g=geo.index?geo.toNonIndexed():geo;for(const a of Object.keys(g.attributes))if(!['position','normal','uv'].includes(a))g.deleteAttribute(a);
+    if(uv&&g.attributes.uv){const U=g.attributes.uv;for(let i=0;i<U.count;i++)U.setXY(i,U.getX(i)*uv,U.getY(i)*uv);}
+    g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x||0,y||0,z||0),new THREE.Quaternion().setFromEuler(new THREE.Euler(rx||0,ry||0,rz||0,'YXZ')),new THREE.Vector3(1,1,1)));
+    if(!B.has(key))B.set(key,[]);B.get(key).push(g);};
+  // the ring's size: the prototype's 30.8 m, or less where the dome comes down (its top and its shoulders, over the face and the back)
+  const FL=-.4,ceil=o.ceil||(()=>99);let s=1;
+  for(;s>.6;s-=.02){const RO=16*s,D=3*s,Zr=-6.1-D/2,hc=RO-1.2*s;let fits=true;
+    for(let i=0;i<=20&&fits;i++){const a=i/20*Math.PI,x=Math.sin(a)*RO,y=hc+Math.cos(a)*RO;for(const z of [Zr-D/2,Zr+D/2])if(y+1.2>ceil(x,z))fits=false;}if(fits)break;}
+  const RO=16*s,RI=12.4*s,D=3*s,Zr=-6.1-D/2,Cy=FL+RO-1.2*s,N=40,gap=.006;
+  for(let i=0;i<N;i++){const a0=i/N*Math.PI*2+gap,a1=(i+1)/N*Math.PI*2-gap,am=(a0+a1)/2;
+    if(Cy+Math.cos(am)*(RO+RI)/2<FL-.6)continue;
+    const j=(r()-.5)*.08,pt=(rr,a)=>new THREE.Vector2(Math.sin(a)*rr,Math.cos(a)*rr),sh=new THREE.Shape([pt(RI+j,a0),pt(RI+j,a1),pt(RO+j,a1),pt(RO+j,a0)]);
+    const g=new THREE.ExtrudeGeometry(sh,{depth:D+(r()-.5)*.12,bevelEnabled:false});g.translate(0,0,-D/2);put(g,'stone',0,Cy,Zr,0,0,0,.25);
+    const mid=(RO+RI)/2,arc=(a1-a0)*mid;put(new THREE.PlaneGeometry(.9*s,arc*.96).rotateZ(Math.PI/2),'script',Math.sin(am)*mid,Cy+Math.cos(am)*mid,Zr+D/2+.03,0,0,-am);
+    const so=new THREE.PlaneGeometry(1.6*s,(a1-a0)*RI*.96);so.rotateZ(Math.PI/2);so.rotateX(Math.PI/2);put(so,'script',Math.sin(am)*(RI-.02),Cy+Math.cos(am)*(RI-.02),Zr,0,0,-am);}
+  for(const e of [-1,1])put(new THREE.BoxGeometry(5.5*s,1.6,D+1.6),'stone',e*4.2*s,FL+.6,Zr,0,0,0,.3);
+  put(new THREE.CircleGeometry(RI+.05,64),'void',0,Cy,Zr);
+  // the threads, from the soffit to the knot 2.1 m over the dais (Michael's A on #680), or cut short and hanging
+  const K=new THREE.Vector3(0,2.1,-1.2),knotR=state==='sealed'?.24:.3,NT=11;
+  const tube=(pts,rad,key,seg,rs)=>{const c=new THREE.CatmullRomCurve3(pts),g=new THREE.TubeGeometry(c,seg||48,rad,rs||5),uv=g.attributes.uv,L=c.getLength();
+    for(let i=0;i<uv.count;i++)uv.setXY(i,uv.getY(i),uv.getX(i)*L*1.5);put(g,key);};
+  const ends=[];
+  for(let i=0;i<NT;i++){const th=(i+.5)/NT*Math.PI*2+(r()-.5)*.2,S=new THREE.Vector3(Math.sin(th)*(RI-.1),Cy+Math.cos(th)*(RI-.1),Zr+(r()-.5)*1.4*s);
+    const side=Math.sin(th)>=0?1:-1,toward=K.clone().add(new THREE.Vector3(Math.sin(th)*knotR,Math.cos(th)*knotR*.8,0));
+    const mid=new THREE.Vector3(S.x*.35,Math.max(K.y+3,S.y*.55+K.y*.45),(Zr+K.z)/2+.6);
+    const pts=[S,S.clone().lerp(mid,.5).add(new THREE.Vector3(0,-1.2,.4)),mid,mid.clone().lerp(toward,.6).add(new THREE.Vector3(0,.4,0)),toward];
+    if(state==='torn'){const last=pts.pop(),endAt=K.clone().add(new THREE.Vector3(side*(.35+r()*.25),-.55-r()*.6,(r()-.5)*.3));
+      pts.push(last.clone().lerp(pts[pts.length-1],.3).add(new THREE.Vector3(side*.25,.1,0)),endAt);ends.push(endAt);}
+    tube(pts,.035,'thread');}
+  if(state==='torn')for(const e of ends)for(let f=0;f<3;f++)tube([e,e.clone().add(new THREE.Vector3((r()-.5)*.12,-.08-r()*.1,(r()-.5)*.12))],.01,'thread',3,3);
+  else{const kg=(rad,tr,p,q)=>{const g=new THREE.TorusKnotGeometry(rad,tr,160,8,p,q);g.rotateY(r()*.6);put(g,'kknot');};
+    kg(knotR,.06,2,3);kg(knotR*.72,.045,3,4);
+    if(state==='sealed'){const hp=[];for(let k=0;k<=160;k++){const t=k/160,a=t*Math.PI*2*9;hp.push(new THREE.Vector3(Math.cos(a)*(knotR+.08),(t-.5)*.2,Math.sin(a)*(knotR+.08)));}tube(hp,.014,'kbound',320,4);}}
+  // one mesh a material; the knot's own two in a group at its place
+  const group=new THREE.Group(),knot=state==='torn'?null:new THREE.Group();let tris=0,draws=0;
+  const MK={stone:M.stone,script:M.script,void:M.void,thread:M.thread,kknot:M.knot,kbound:M.bound};
+  for(const [k,gs] of B){let n=0;for(const g of gs)n+=g.attributes.position.count;const P=new Float32Array(n*3),Nn=new Float32Array(n*3),U=new Float32Array(n*2);let at=0;
+    for(const g of gs){const c=g.attributes.position.count;P.set(g.attributes.position.array.subarray(0,c*3),at*3);Nn.set(g.attributes.normal.array.subarray(0,c*3),at*3);if(g.attributes.uv)U.set(g.attributes.uv.array.subarray(0,c*2),at*2);at+=c;g.dispose();}
+    const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(P,3));geo.setAttribute('normal',new THREE.BufferAttribute(Nn,3));geo.setAttribute('uv',new THREE.BufferAttribute(U,2));geo.computeBoundingSphere();
+    const m=new THREE.Mesh(geo,MK[k]);m.name='knot:'+k;m.castShadow=false;m.receiveShadow=k==='stone';(k==='kknot'||k==='kbound'?knot:group).add(m);tris+=n/3;draws++;}
+  if(knot){knot.position.copy(K);knot.name='knot';group.add(knot);}
+  group.name='greatKnot';group.userData.greatKnot={school,state,scale:+s.toFixed(2)};
+  return {group,knot,tris:Math.round(tris),draws,scale:+s.toFixed(2),top:+(Cy+RO).toFixed(2),ends:ends.length};}
 // S1376 — whether a gate's floors take Cloch's fallen blocks: a lesser gate (not a great one, not the tutorial) whose door stands on
 // the Mark, while Cloch's toll holds (gateToll, 87-world-quests.js: Cloch torn, and three torn in all). Read on entering, so a gate
 // entered before the toll keeps its passages until you next come in.
