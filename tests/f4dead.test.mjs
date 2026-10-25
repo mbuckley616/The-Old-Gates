@@ -1,11 +1,12 @@
 // Card F4 (Session 1404): on the new look the risen dead (S173), the Hollowed and the Ghoul, wear the builder's body, as the hag (S1389)
 // does: old and wasted, barefoot in a grave's drab tunic and trousers, their skin rotted in the builder's shader (people.js's rot, S1403;
 // .7 and 1), and the driver's burning eyes laid over the builder's own eyes (hbEyeGlow). Picture: docs/prototypes/f4/f4-dead.jpg.
+// Session 1409: the Ash Wight with them, rotted at .85 under Iron's mail, kettle helm and mail greaves, rusted; f4-wight.jpg.
 import { boot, check, ROOT } from './lib/game.mjs';
 import fs from 'fs'; import path from 'path';
 const OUT = path.join(ROOT, 'docs', 'prototypes', 'f4'); fs.mkdirSync(OUT, { recursive: true });
 
-const KINDS = ['Hollowed', 'Bandit', 'Ghoul'];
+const KINDS = ['Hollowed', 'Bandit', 'Ghoul', 'Ash Wight'];
 const g = await boot({ look: 'new' }); const { page } = g;
 await g.intoWorld();
 
@@ -26,12 +27,13 @@ console.log('  built:', JSON.stringify(made));
 const who = await page.evaluate(() => _F.map(({ n, e, rig }) => { const H = rig && rig.hb, names = new Set(); if (H) H.root.traverse(o => { if (o.isMesh || o.isGroup) names.add(o.name); });
   const G = rig && rig.hbG; let tris = 0, rot = false; if (H) for (const o of H.full) { if (o.isMesh && o.geometry.index) tris += o.geometry.index.count / 3; if (o.isSkinnedMesh && o.material.customProgramCacheKey && /\+rot/.test(o.material.customProgramCacheKey())) rot = true; }
   return { n, id: e.id, hb: !!H, fail: !!(rig && rig.hbFail), key: G ? [...HB_GENOMES].find(([, x]) => x === G)?.[0] : null, bones: H ? H.P.skeleton.bones.length : 0, tris,
-    age: G && G.age, weight: G && G.weight, rot: G && G.rot, rotSkin: rot, boots: !!(G && G.dress && G.dress.boots), drab: !!(G && G.dress && [G.dress.tunic, G.dress.trousers, G.dress.skirtColor].every(c => !c || Math.max(...c) < .35)), cloak: names.has('cloak'), glow: !!(H && H.eyeGlow), names: [...names].slice(0, 40) }; }));
+    age: G && G.age, weight: G && G.weight, rot: G && G.rot, rotSkin: rot, boots: !!(G && G.dress && G.dress.boots), drab: !!(G && G.dress && [G.dress.tunic, G.dress.trousers, G.dress.skirtColor].every(c => !c || Math.max(...c) < .35)), cloak: names.has('cloak'), armour: ['mail', 'helm', 'greaves'].map(k => [...names].some(m => m.startsWith(k))), spear: names.has('spear'), glow: !!(H && H.eyeGlow), names: [...names].slice(0, 60) }; }));
 console.log('  foes:', JSON.stringify(who.map(w => ({ ...w, names: undefined }))));
-const dd = who.filter(w => w.n !== 'Bandit'), ban = who[1];
-check(`the Hollowed and the Ghoul wear the builder's body on its 163-bone skeleton, keyed by their foe id (${dd.map(w => w.tris + ' tris').join(', ')})`, made.left === 0 && dd.length === 2 && dd.every(w => w.hb && !w.fail && w.bones === 163 && w.key === 'foe:' + w.id && w.tris < 70000), who);
-check(`their skin is rotted in the builder's shader: the Hollowed at ${dd[0].rot}, the Ghoul at ${dd[1].rot}`, dd[0].rot === .7 && dd[1].rot === 1 && dd.every(w => w.rotSkin), dd);
-check(`each is old and wasted, barefoot, in the grave's drab with nothing over it: age ${dd.map(w => w.age).join(', ')}, weight ${dd.map(w => w.weight).join(', ')}`, dd.every(w => w.age > .7 && w.weight < .3 && !w.boots && !w.cloak && w.drab), dd);
+const dd = who.filter(w => w.n !== 'Bandit'), ban = who[1], wt = who[3], hg = dd.slice(0, 2);
+check(`the Hollowed, the Ghoul and the Ash Wight wear the builder's body on its 163-bone skeleton, keyed by their foe id (${dd.map(w => w.tris + ' tris').join(', ')})`, made.left === 0 && dd.length === 3 && dd.every(w => w.hb && !w.fail && w.bones === 163 && w.key === 'foe:' + w.id && w.tris < 70000), who);
+check(`their skin is rotted in the builder's shader: the Hollowed at ${dd[0].rot}, the Ghoul at ${dd[1].rot}, the Ash Wight at ${dd[2].rot}`, dd[0].rot === .7 && dd[1].rot === 1 && dd[2].rot === .85 && dd.every(w => w.rotSkin), dd);
+check(`the Hollowed and the Ghoul are old and wasted, barefoot, in the grave's drab with nothing over it: age ${hg.map(w => w.age).join(', ')}, weight ${hg.map(w => w.weight).join(', ')}`, hg.every(w => w.age > .7 && w.weight < .3 && !w.boots && !w.cloak && w.drab), dd);
+check(`the Ash Wight wears the builder's mail, helm and greaves (${wt.armour.join(', ')}), booted, wasted (weight ${wt.weight}), and holds the builder's spear (the driver's is baked into its hidden mesh)`, wt.armour.every(Boolean) && wt.boots && wt.weight < .3 && wt.spear, wt);
 check('the Bandit beside them is alive: no rot, no lit eyes', ban.hb && !ban.rot && !ban.rotSkin && !ban.glow, ban);
 
 // the burning eyes over the builder's own, and the driver's with the driver's body
@@ -61,6 +63,11 @@ await page.screenshot({ path: path.join(OUT, 'f4-dead.jpg') });
 await page.evaluate(() => { const f = _F[0].e; const fx = -Math.sin(yaw), fz = -Math.cos(yaw); px = f.x - fx * 1.6; pz = f.z - fz * 1.6; pitch = -.05; });
 for (let i = 0; i < 8; i++) { await page.evaluate(() => tickPeople(1 / 60, performance.now())); await g.frames(1); }
 await page.screenshot({ path: path.join(OUT, 'f4-dead-near.jpg') });
+
+// and close on the Ash Wight
+await page.evaluate(() => { const f = _F[3].e; const fx = -Math.sin(yaw), fz = -Math.cos(yaw); px = f.x - fx * 2.6; pz = f.z - fz * 2.6; pitch = -.02; });
+for (let i = 0; i < 8; i++) { await page.evaluate(() => tickPeople(1 / 60, performance.now())); await g.frames(1); }
+await page.screenshot({ path: path.join(OUT, 'f4-wight.jpg') });
 
 const dead = await page.evaluate(() => { const f = _F[0], rig = f.rig;
   f.e.hp = 0; killZoneEnemy(f.e, WORLD.scene, '');
