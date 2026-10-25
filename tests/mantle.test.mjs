@@ -101,5 +101,13 @@ const P = await page.evaluate(() => { thirdPerson = true; const at = []; let hb 
 console.log(JSON.stringify(P));
 const off = P.at.length ? Math.max(...P.at.map(a => Math.max(a[0], a[1]))) : null;
 check(`in third person the pull plants the builder's wrists on the ledge (within ${off} m of the hold over ${P.at.length} frames) and ends on it`, P.r.pulled && P.r.on && P.hb && P.at.length > 3 && off < .06 && P.at.every(a => a[2] > 0 && a[2] < .1 && a[3] > .5), P);
+// and in first person, empty-handed: both fists come down onto the ledge (FIST_POSE.press) and sink as the pull lifts you past them
+const V = await page.evaluate(() => { thirdPerson = false; const ys = [];
+  const r = _try(5, 1.5, { onPull: () => { const p = (FALL.clock - MANTLE.t0) / MANTLE_DUR, u = vmSword && vmSword.userData; if (u && u.fists && u.fistL) ys.push([+p.toFixed(2), +vmSword.position.y.toFixed(3), +u.fistL.position.y.toFixed(3)]); } });
+  return { r, ys, rest: FIST_POSE.rest[1], press: FIST_POSE.press[1] }; });
+console.log(JSON.stringify(V));
+const at = q => V.ys.find(y => y[0] >= q);
+check(`in first person both fists come down to the ledge (${at(.2) && at(.2).slice(1)} at 0.2 of the pull, the rest ${V.rest}) and sink below it (${at(.6) && at(.6).slice(1)} at 0.6)`,
+  V.r.pulled && at(.2) && at(.6) && Math.abs(at(.2)[1] - V.press) < .03 && Math.abs(at(.2)[2] - V.press) < .03 && at(.6)[1] < V.press - .15 && at(.6)[2] < V.press - .15, V);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
