@@ -2315,11 +2315,20 @@ const giver=`${lord.title} ${lord.name}`;
   let KNOT_LIE=null;
   function knotLay(portal,gen){KNOT_LIE=null;const school=greatSchoolOf(portal);if(!school||!gen||!gen.gate||gen.ring==null)return null;
     const sp=gen.spaces[gen.ring];if(!sp||!sp.dais)return null;const fl=sp.floor||1,x=dAt((sp.dais.x0+sp.dais.x1)/2),z=dAt((sp.dais.z0+sp.dais.z1)/2),y=(fl===2?FLOOR2_Y:0)+.4;
-    const col=parseInt(SCHOOL_DEF[school].col.slice(1),16),g=new THREE.Group();
-    const knot=new THREE.Mesh(new THREE.TorusKnotGeometry(.9,.11,128,10,2,3),new THREE.MeshLambertMaterial({color:0x14110e,emissive:col,emissiveIntensity:.35}));
-    knot.position.y=2.4;g.add(knot);g.position.set(x,y,z);g.userData.knot=school;dScene.add(g);
+    const g=new THREE.Group();g.position.set(x,y,z);g.userData.knot=school;dScene.add(g);
+    // S1400 — the ring stands behind the dais from the way in (the threshold into the ring chamber), the knot before it (#680 A)
+    {const t=(gen.thresholds||[]).find(t=>(t.a===gen.ring||t.b===gen.ring)&&(t.floor||1)===fl);if(t){const dx=dAt(t.c)-x,dz=dAt(t.r)-z;g.rotation.y=Math.abs(dx)>Math.abs(dz)?(dx>0?Math.PI/2:-Math.PI/2):(dz>0?0:Math.PI);}}
     const name=portal.canonicalName||(typeof dungeonName==='function'?dungeonName(portal.seed,portal.theme):'the great gate');
-    KNOT_LIE={x,z,floor:fl,school,name,mesh:g,knot};return KNOT_LIE;}
+    KNOT_LIE={x,z,floor:fl,school,name,mesh:g,knot:null};knotDress();return KNOT_LIE;}
+  // the knot as it stands now: the look builder's ring and knot (greatKnotProp, 56-dungeon-build.js) on the new look, the plain torus
+  // knot on the old look or if the prop fails; called by knotLay and again when the knot is cut or bound
+  function knotDress(){const L=KNOT_LIE;if(!L||!L.mesh)return;const g=L.mesh,st=greatGateState(L.school),state=st==='torn'?'torn':st==='sealed'?'sealed':'untied';
+    while(g.children.length){const c=g.children.pop();c.traverse(o=>{if(o.geometry)o.geometry.dispose();});}L.knot=null;
+    if(typeof OG_LOOK!=='undefined'&&OG_LOOK==='new'&&typeof greatKnotProp==='function')try{const th=g.rotation.y,c=Math.cos(th),s=Math.sin(th),f=D_CEIL[L.floor];
+      const P=greatKnotProp({school:L.school,state,ceil:(lx,lz)=>f?f((L.x+lx*c+lz*s)/DCELL,(L.z-lx*s+lz*c)/DCELL)-.4:99});g.add(P.group);L.knot=P.knot;L.prop=P;return;}catch(e){console.warn('greatKnotProp',e);}
+    const col=parseInt(SCHOOL_DEF[L.school].col.slice(1),16);
+    const knot=new THREE.Mesh(new THREE.TorusKnotGeometry(.9,.11,128,10,2,3),new THREE.MeshLambertMaterial({color:0x14110e,emissive:col,emissiveIntensity:.35}));
+    knot.position.y=2.4;knot.visible=state!=='torn';g.add(knot);L.knot=knot;L.prop=null;}
   function knotNear(){const L=KNOT_LIE;return !!(L&&activeZoneId==='dungeon'&&currentFloor===L.floor&&Math.hypot(px-L.x,pz-L.z)<2.6);}
   // the first sight of the ring, once a gate (called from the dungeon's frame); worldState.greatGates.ev.ring records it (the way back's)
   function knotTick(){const L=KNOT_LIE;if(!L||activeZoneId!=='dungeon'||currentFloor!==L.floor)return false;if(L.knot)L.knot.rotation.y+=.002;
@@ -2332,7 +2341,7 @@ const giver=`${lord.title} ${lord.name}`;
     if(!st){if(t.knife&&t.needle)return `The knot of ${n} — Press 'E'`;if(t.knife)return `The knot of ${n} — Press 'E' to cut it`;if(t.needle)return `The knot of ${n} — Press 'E' to bind it`;return `The knot of ${n}`;}
     if(st==='torn')return t.needle&&!greatFate()?`The cut knot of ${n} — Press 'E' to bind it`:`The cut knot of ${n}`;
     return t.knife&&!greatFate()?`The bound knot of ${n} — Press 'E' to cut it`:`The bound knot of ${n}`;}
-  function _knotSay(r,kind){const L=KNOT_LIE,S=SCHOOL_DEF[L.school].name,K=KNOT_LINES[kind];
+  function _knotSay(r,kind){knotDress();const L=KNOT_LIE,S=SCHOOL_DEF[L.school].name,K=KNOT_LINES[kind];
     const first=kind==='bind'&&r.fate==='sealed'?KNOT_LINES.lockSeal:r.again?K.again:K.first;
     showMsg(first+' '+K.school[L.school],'#c8d0e0');const second=kind==='tear'?KNOT_LINES.gain(S,L.name):KNOT_LINES.cost(S,L.name);
     setTimeout(()=>{try{showMsg(second,kind==='tear'?'#d8b04a':'#9a9a92');}catch(e){}},1600);
@@ -2355,7 +2364,7 @@ const giver=`${lord.title} ${lord.name}`;
     {const el=document.getElementById('dlg-text');if(el)el.innerHTML=`${KNOT_LAST.ask}<br><br><span style="color:#8a8478;font-size:.9em">${KNOT_LAST.warn}</span>`;}
     return {ok:false,ask:true};}
   function knotUnmake(){const L=KNOT_LIE;if(!L||!knotLastCut(L.school))return null;if(varekStandDue(L.school))return {ok:false,stand:true};
-    if(typeof SS!=='undefined')SS.unmaking=true;const r=cutKnot(L.school,L.name);if(!r.ok){if(typeof SS!=='undefined')SS.unmaking=false;return r;}
+    if(typeof SS!=='undefined')SS.unmaking=true;const r=cutKnot(L.school,L.name);if(!r.ok){if(typeof SS!=='undefined')SS.unmaking=false;return r;}knotDress();
     const S=SCHOOL_DEF[L.school].name,t0=performance.now();showMsg(KNOT_LINES.tear.first+' '+KNOT_LINES.tear.school[L.school],'#c8d0e0');
     const at=(ms,f)=>setTimeout(()=>{try{f();}catch(e){console.warn('unmake',e);}},Math.max(0,ms-(performance.now()-t0)));
     at(2500,()=>showMsg(KNOT_LINES.gain(S,L.name),'#d8b04a'));

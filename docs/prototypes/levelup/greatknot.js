@@ -16,7 +16,7 @@ scene.add(new THREE.HemisphereLight(new THREE.Color(.30, .32, .40), new THREE.Co
 // the chamber: floor, four walls of 22 m and a dome to 38 m
 const stone = mat('ashlar', { ns: 1.0, color: 0x6c665e }), slab = mat('slab', { ns: .8, color: 0x5a554e, rough: .45 });
 { const g = new THREE.PlaneGeometry(60, 60); g.rotateX(-Math.PI / 2); worldUV(g, .2); const m = new THREE.Mesh(g, slab); m.position.y = -.4; m.receiveShadow = true; scene.add(m); }
-{ const g = new THREE.BoxGeometry(60, 22, 60); worldUV(g, .12); const m = new THREE.Mesh(g, stone.clone()); m.material.side = THREE.BackSide; m.position.y = 10.6; m.receiveShadow = true; scene.add(m); }
+{ const g = new THREE.BoxGeometry(60, 22, 60); worldUV(g, .12); const keep = g.groups.filter((q, i) => i !== 2); g.clearGroups(); keep.forEach(q => g.addGroup(q.start, q.count, 0)); /* S1400 — no top face: the dome is the roof (the critic, 25 Oct: the box's lid at 21.6 m cut the ring) */ const m = new THREE.Mesh(g, [stone.clone()]); m.material[0].side = THREE.BackSide; m.position.y = 10.6; m.receiveShadow = true; scene.add(m); }
 { const g = new THREE.SphereGeometry(30, 48, 16, 0, Math.PI * 2, 0, Math.PI / 2); g.scale(1, 16 / 30, 1); worldUV(g, .12); const m = new THREE.Mesh(g, stone.clone()); m.material.side = THREE.BackSide; m.position.y = 21.6; scene.add(m); }
 // the dais, the game's 10 m by 0.4
 { const g = new THREE.BoxGeometry(10, .4, 10); worldUV(g, .3); const m = new THREE.Mesh(g, mat('ashlar', { ns: .8, color: 0x8a847a })); m.position.y = -.2; m.receiveShadow = m.castShadow = true; scene.add(m); }
