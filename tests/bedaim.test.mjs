@@ -31,9 +31,12 @@ const out = [];
 for (const h of houses) { await enter(h.id);
   const L = await page.evaluate(() => ({ beds: INT_BEDS.map(b => ({ x: b.x, z: b.z, y: b.y || 0 })), ibp: intBedPos, W: currentHouse._roomW, D: currentHouse._roomD }));
   // one spot per bed: the free ground nearest it in the 1.0–1.5 ring on its own floor, the wall in no way between
-  const spots = await page.evaluate(() => INT_BEDS.map(b => { for (let r = 1.0; r <= 1.5; r += .1) for (let a = 0; a < 6.28; a += .2) { const x = b.x + Math.cos(a) * r, z = b.z + Math.sin(a) * r;
+  // the sight line is the game's, at the eye on the bed's own floor (intSightLine reads jumpY): from the ground a gallery bed's spot sees the
+  // ground floor's partitions, which do not stand between you and the bed upstairs (S1395)
+  await page.evaluate(() => { window._sl = (x, z, b) => { const j = jumpY; jumpY = b.y || 0; try { return intSightLine(x, z, b.x, b.z); } finally { jumpY = j; } }; });
+  const spots = await page.evaluate(() => { const sl = window._sl; return INT_BEDS.map(b => { for (let r = 1.0; r <= 1.5; r += .1) for (let a = 0; a < 6.28; a += .2) { const x = b.x + Math.cos(a) * r, z = b.z + Math.sin(a) * r;
     if (x < .3 || z < .3 || x > currentHouse._roomW - .3 || z > currentHouse._roomD - .3) continue; if (typeof intSolidAt === 'function' && intSolidAt(x, z, .3, b.y || 0)) continue;
-    if (INT_BEDS.some(o => o !== b && Math.hypot(o.x - x, o.z - z) < 1.6 && Math.abs((o.y || 0) - (b.y || 0)) < .9)) continue; if (!intSightLine(x, z, b.x, b.z)) continue; if ((INT_DOORS || []).some(d => Math.hypot(d.x - x, d.z - z) < 1.8)) continue; return { x, z, y: b.y || 0, b }; } return null; }));
+    if (INT_BEDS.some(o => o !== b && Math.hypot(o.x - x, o.z - z) < 1.6 && Math.abs((o.y || 0) - (b.y || 0)) < .9)) continue; if (!sl(x, z, b)) continue; if ((INT_DOORS || []).some(d => Math.hypot(d.x - x, d.z - z) < 1.8)) continue; return { x, z, y: b.y || 0, b }; } return null; }); });
   let n = 0;
   for (const s of spots) { if (!s || n >= 3) continue; n++;
     const on = await stand({ x: s.x, z: s.z, y: s.y, tx: s.b.x, ty: s.y + .45, tz: s.b.z });
@@ -44,9 +47,9 @@ for (const h of houses) { await enter(h.id);
   if (upper.length && L.ibp) { out.push({ house: h.name, kind: 'under', at: 'intBedPos', r: await stand({ x: L.ibp.x, z: L.ibp.z, y: 0, tx: L.ibp.x, ty: 3, tz: L.ibp.z - 1 }) });
     for (const b of upper.slice(0, 2)) out.push({ house: h.name, kind: 'under', at: 'bed', r: await stand({ x: b.x, z: b.z + 1.0, y: 0, tx: b.x, ty: b.y + .45, tz: b.z }) }); }
   // through a wall: a spot within 1.5 of a bed on its floor with a wall between, looking at the bed
-  const thru = await page.evaluate(() => { for (const b of INT_BEDS) for (let r = .9; r <= 1.5; r += .1) for (let a = 0; a < 6.28; a += .15) { const x = b.x + Math.cos(a) * r, z = b.z + Math.sin(a) * r;
+  const thru = await page.evaluate(() => { const sl = window._sl; for (const b of INT_BEDS) for (let r = .9; r <= 1.5; r += .1) for (let a = 0; a < 6.28; a += .15) { const x = b.x + Math.cos(a) * r, z = b.z + Math.sin(a) * r;
     if (x < .3 || z < .3 || x > currentHouse._roomW - .3 || z > currentHouse._roomD - .3) continue; if (typeof intSolidAt === 'function' && intSolidAt(x, z, .3, b.y || 0)) continue;
-    if (!intSightLine(x, z, b.x, b.z)) return { x, z, y: b.y || 0, b }; } return null; });
+    if (!sl(x, z, b)) return { x, z, y: b.y || 0, b }; } return null; });
   if (thru) out.push({ house: h.name, kind: 'wall', r: await stand({ x: thru.x, z: thru.z, y: thru.y, tx: thru.b.x, ty: thru.y + .45, tz: thru.b.z }) });
   await leave(); }
 for (const o of out) console.log(' ', JSON.stringify(o));
