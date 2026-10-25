@@ -34,7 +34,9 @@ fs.writeFileSync('tests/out/homefurn.png', Buffer.from(shot.split(',')[1], 'base
 // tables' and benches' footholds and the hearth's solid as before
 await page.evaluate(() => { try { exitInterior(); } catch (e) {} });
 await page.waitForTimeout(2500); await g.hide();
-await page.evaluate(() => { const h = WORLD.settle.get('dunmore').houses.find(x => x.type === 'inn'); window._I = h; px = h.exitX; pz = h.exitZ; goToInterior(h); });
+// on the new look Dunmore's inn is the kit's coaching inn (S1368) and every Gatelands inn a kit room; the old builder's taproom still
+// stands in the inns that have none (an inland Aurennais inn, a port's second), so it is built here with Dunmore's inn's kit set aside
+await page.evaluate(() => { const h = WORLD.settle.get('dunmore').houses.find(x => x.type === 'inn'); window._I = h; h._kitWas = h.kit; h.kit = null; px = h.exitX; pz = h.exitZ; goToInterior(h); });
 await page.waitForTimeout(5000); await g.hide();
 // the taproom's places are the kit's too (innAt): the bar under the gallery, the hearth on the wall the stair does not climb, as many
 // tables as the hall holds between them (two in a hall of true size)
@@ -60,6 +62,7 @@ await page.evaluate(() => { px = _I.exitX; pz = _I.exitZ; goToInterior(_I); });
 await page.waitForTimeout(4000); await g.hide();
 const coach = await page.evaluate(() => ({ coaching: !!_I._coaching, furn: interiorScene.children.filter(o => o.userData.furn).length, boxes: (() => { let n = 0; interiorScene.traverse(o => { if (o.isMesh && o.geometry.type === 'BoxGeometry' && o.material.color && o.material.color.getHex() === 0xc8a850) n++; }); return n; })() }));
 check('the coaching inn\'s board, tack and bales are one more bake, and the old straw boxes are gone', coach.coaching && coach.furn === inn.furn + 1 && coach.boxes === 0, { coach, before: inn.furn });
+await page.evaluate(() => { _I.kit = _I._kitWas; delete _I._kitWas; });
 // the picture: an inn room's bed upstairs, close
 const shot3 = await page.evaluate(() => { const b = INT_BEDS[0], sc = interiorScene, cv = REN.domElement, cam = new THREE.PerspectiveCamera(55, cv.width / cv.height, .05, 60); const y = b.y || 0;
   cam.position.set(b.x + 1.5, y + 1.2, b.z + 1.9); cam.lookAt(b.x, y + .3, b.z); sc.updateMatrixWorld(true); REN.render(sc, cam); const o = document.createElement('canvas'); o.width = cv.width / 2; o.height = cv.height / 2; o.getContext('2d').drawImage(cv, 0, 0, o.width, o.height); return o.toDataURL(); });
