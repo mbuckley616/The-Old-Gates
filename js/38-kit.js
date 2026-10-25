@@ -1357,7 +1357,7 @@ function aurenneCourtyard(o = {}, r = stream('courtyard')) {
     g.computeVertexNormals(); put(g, 'leaf', x, F0 + 1.95, z); for (let j = 0; j < 9; j++) { const a = r() * Math.PI * 2, b = (r() - .3) * 1.2; put(new THREE.SphereGeometry(.05, 6, 5), 'orange', x + Math.cos(a) * Math.cos(b) * .6, F0 + 1.95 + Math.sin(b) * .5, z + Math.sin(a) * Math.cos(b) * .6); }
     solids.push({ tag: 'tree', x0: x - .34, x1: x + .34, z0: z - .34, z1: z + .34, y0: F0, y1: F0 + 2.6, fl: 0 }); }
   const { group, tris, draws, roofTop } = finish(); group.userData = { roofTop, kind: 'courtyard' };
-  return { group, tris, draws, roofTop, kind: 'courtyard', w: S, d: S, A, C, Rg, Ti, T, yW, F0, F1, SL, BM, yE, yA, Yr, under, solids, doors, beams, stair: { x0: SX[0], x1: SX[1], z0: LZ, z1: Z0, rise: +rise.toFixed(4), going, n: N, landing: [LZ0, LZ] }, well, fountain, trees, front: h + .5, top, outer /* the outer walls' windows by storey, for the rooms' daylight (Session 1423) */ };
+  return { group, tris, draws, roofTop, kind: 'courtyard', w: S, d: S, A, C, Rg, Ti, T, yW, F0, F1, SL, BM, yE, yA, Yr, under, solids, doors, beams, stair: { x0: SX[0], x1: SX[1], z0: LZ, z1: Z0, rise: +rise.toFixed(4), going, n: N, landing: [LZ0, LZ] }, well, fountain, trees, front: h + .5, top, outer /* the outer walls' windows by storey, for the rooms' daylight (Session 1425) */ };
 }
 
 function aurenneHouse(o, r) {
@@ -1641,7 +1641,7 @@ function aurenneChurchHall(o = {}, r = stream('church')) {
     bier, sanctuary, altar, shuttle, lectern, benches, ring, door: { x: 0, z: I.D / 2, w: C.door.w, h: C.door.h }, paths, boxes, w: I.W, d: I.D, front: C.front };
 }
 // aurenneCourtyardHouse(o, r) (Session 899, card F9; Michael's A on #318: OG-115's courtyard house, built next as its own piece; copied from
-//   rooms.js as it stands in Session 1423, o.shell the shell's stream key, so the game's shell is the street's own house): the
+//   rooms.js as it stands in Session 1425, o.shell the shell's stream key, so the game's shell is the street's own house): the
 //   rooms of pieces.js's aurenneCourtyard (15 by 15 m, four ranges two storeys high round an arcaded court with a fountain). Ground:
 //   the vestibule with its masonry benches; the store of oil jars and sacks; the kitchen of OG-115 (a cooking bench of three braziers
 //   under a rail of hanging copper pots, a bread oven, a work table, plates on shelves); the west range's stair and a loom; the

@@ -57,7 +57,7 @@ if (shot) {
   await page.screenshot({ path: path.join(here, '../docs/prototypes/courtyard-street-ingame.png') }); console.log('  (picture: docs/prototypes/courtyard-street-ingame.png)');
 }
 
-// Inside (Session 1423; card F9, rooms.js's aurenneCourtyardHouse of Session 899): the street door opens on the house's own rooms, in the
+// Inside (Session 1425; card F9, rooms.js's aurenneCourtyardHouse of Session 899): the street door opens on the house's own rooms, in the
 // street's own shell at its true size; you arrive clear in the vestibule; the prototype's eleven walks of both floors, and up the stair to
 // the landing, on foot with the game's ground and solids, clear by the prototype's 0.15 m; the ground floor's head room is the floor above, the court's is the sky; the
 // resident's bed and the home's chest are upstairs, in reach; the room is lit and within its draws; you leave by the door. Pictures.
