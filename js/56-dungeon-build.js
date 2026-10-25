@@ -199,7 +199,9 @@ function buildDunShell(map,baseY,wallCol,floorCol,opts){
 // the builders once; the materials are shared by every room.
 // the quench tub's z (S1394): its box 0.8 past the counter's front (3.4), so a body of 0.6 passes the counter's east end to the keeper's side
 // (at 3.9 the tub's box and the counter's left 0.29 m, and the forge's back room was walled off: intreach); never nearer the street door than 0.9
-function smithyTubZ(D){return Math.max(3.9,Math.min(4.5,D-.9));}
+// S1412: never nearer the street wall than 0.5 (it was 0.9, which in a forge 4.85 deep, Ashenmoor's Bram's, held the tub at 3.95, its box
+// 0.25 past the counter's and the way round its end shut again, the strongbox beside it out of reach: boxspots)
+function smithyTubZ(D){return Math.max(3.9,Math.min(4.5,D-.5));}
 function furnBuild(THREE, SK) {
   const C = x => (x && x.isColor) ? x.clone() : new THREE.Color(x);
   const rng = s => { let a = (s >>> 0) % 2147483647 || 1; return () => (a = (a * 16807) % 2147483647) / 2147483647; };
