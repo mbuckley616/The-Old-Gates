@@ -38,7 +38,7 @@ const R = await page.evaluate(() => {
     const p0 = acro(); let pulled = false, pullFrames = 0, startY = null;
     const n = _drive(i => {
       K['KeyW'] = true; K['Space'] = opt.fall == null && i === 0;
-      if (mantling()) { pulled = true; pullFrames++; if (startY == null) startY = MANTLE.y0; }
+      if (mantling()) { pulled = true; pullFrames++; if (startY == null) startY = MANTLE.y0; if (opt.onPull) opt.onPull(); }
       return i > 2 && onGround && !mantling() && (pulled || i > 4) && !FALL.pend;
     }, 400, ms);
     for (const k in K) K[k] = false;
@@ -46,6 +46,7 @@ const R = await page.evaluate(() => {
     FOOTHOLDS.splice(FOOTHOLDS.indexOf(L), 1); if (S) FOOTHOLDS.splice(FOOTHOLDS.indexOf(S), 1);
     return res;
   };
+  window._spotX = () => spot.x;
   const out = { spot, ceil: +dCeil(spot.x + 1, spot.z).toFixed(2) };
   out.chest = _try(5, 1.5); out.table = _try(5, 1.1); out.top = _try(5, 2.3); out.tooHigh = _try(24, 2.7); out.caught = _try(25, 2.7);
   out.slow = _try(5, 1.5, { ms: 50 });
@@ -89,5 +90,16 @@ const C = await page.evaluate(() => {
 console.log(JSON.stringify(C));
 check(`a broken gate's chasm: falling just under its rim, untrained you go down the pit (${C.untrained && C.untrained.low} m); with Catch you catch the rim and stand on the floor (${C.caught && C.caught.y} m)`,
   C.rim && !C.untrained.pulled && C.untrained.low < -20 && C.caught.pulled && Math.abs(C.caught.y) < .01 && !C.caught.air && !C.caught.dead, C);
+
+// S1397 — the pull's pose in third person: the builder's body plants both wrists on the ledge, a hand's breadth past its edge, while the
+// pull lifts it, and lets go as it stands
+const P = await page.evaluate(() => { thirdPerson = true; const at = []; let hb = false;
+  const r = _try(5, 1.5, { onPull: () => { const p = (FALL.clock - MANTLE.t0) / MANTLE_DUR, H = TP.rig && TP.rig.rig.hb; hb = hb || !!H; if (!H || p < .1 || p > .3) return;
+    TP.rig.root.updateMatrixWorld(true); const M = TP.rig.mantle; if (!M) return;
+    at.push(['wrist.L', 'wrist.R'].map((k, i) => +H.P.byName[k].getWorldPosition(new THREE.Vector3()).distanceTo(M.T[i]).toFixed(3)).concat(+(M.T[0].y - 1.5).toFixed(3), +(M.T[0].x - _spotX()).toFixed(2))); } });
+  thirdPerson = false; return { r, hb, at }; });
+console.log(JSON.stringify(P));
+const off = P.at.length ? Math.max(...P.at.map(a => Math.max(a[0], a[1]))) : null;
+check(`in third person the pull plants the builder's wrists on the ledge (within ${off} m of the hold over ${P.at.length} frames) and ends on it`, P.r.pulled && P.r.on && P.hb && P.at.length > 3 && off < .06 && P.at.every(a => a[2] > 0 && a[2] < .1 && a[3] > .5), P);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
