@@ -988,6 +988,9 @@ function hcTick(now){let best=null,bd=HC_BODY.build;
     const L=rig.hc.L,a=HC_BODY.near+(L>0?-1:1),b=HC_BODY.mid+(L>1?-1:1);hcLevel(rig,d<a?0:d<b?1:2);
     if(rig.hc.L<2)hcPose(rig);}
   if(best){hcAttach(best);HBODY.last=now;if(best.hc){const g=best.root.parent,d=Math.hypot(CAM.position.x-g.position.x,CAM.position.z-g.position.z);hcLevel(best,d<HC_BODY.near?0:d<HC_BODY.mid?1:2);if(best.hc.L<2)hcPose(best);}}}
+// Session 1421: a foe's blow (attackPose, 42-zone-enemies.js) turns its driver's arm after hcTick has copied the frame's pose, so the kit's
+// body of a person-plan kind (the Goblin, the Skeleton, the trolls) never wound up: the copy again, as hbRepose does for the people's
+function hcRepose(rig){if(rig&&rig.hc&&rig.hc.L<2)hcPose(rig);}
 // the shadow pass draws the driver (hidden for the eye while the kit's body shows), as the townsfolk's does (32-people.js)
 {const _r=REN.shadowMap.render;
   REN.shadowMap.render=function(){const hv=[];for(const rig of HC_RIGS)if(rig.hc&&!rig.mesh.visible){rig.mesh.visible=true;hv.push(rig);}

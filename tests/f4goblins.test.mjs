@@ -38,6 +38,14 @@ check(`a goblin and a slinger wear the kit's goblin (${who.map(w => w.bones + ' 
 check(`each holds what the game dealt it, from the kit (${who.map(w => w.k + ': ' + (w.gear.join('+') || 'nothing')).join('; ')}), no spear or shield; the driver's knife hidden while the kit shows`,
   who[0].gear.join() === 'sword' && who[0].driverWpn && who[0].weapon === false && who[1].gear.length === 0 && who.every(w => !w.driver), who);
 
+// S1421 — the blow's wind-up shows on the kit's body: attackPose turns the driver's arm after hcTick has copied it (hcRepose)
+const blow = await page.evaluate(() => _S.map(({ k, e, rig }) => { const H = rig.hc; if (!H) return { k, none: true };
+  const ix = H.map.findIndex(m => m[0] === 'elR'), kb = H.map[ix][1], db = rig.B.elR, at = b => { e.mesh.updateMatrixWorld(true); return new THREE.Vector3().setFromMatrixPosition(b.matrixWorld); };
+  let t = 9e5; const step = () => { tickPeople(1 / 60, t += 16.7); tickCreatures(1 / 60, t); attackPose(e, false); };
+  e._wind = 0; for (let i = 0; i < 20; i++) step(); const a = at(kb), ad = at(db); e._wind = 1; for (let i = 0; i < 20; i++) step(); const b = at(kb), bd = at(db); e._wind = 0; step();
+  return { k, kit: +a.distanceTo(b).toFixed(3), driver: +ad.distanceTo(bd).toFixed(3) }; }));
+check(`in play order the wind-up moves the kit's right elbow (${blow.map(b => b.k + ' ' + b.kit + ' m, its driver ' + b.driver).join('; ')})`, blow.every(b => !b.none && b.driver > .1 && b.kit > .1), blow);
+
 // its size, by its legs: its hips over the driver's, its ankles at the driver's, its toes on the ground in the goblin's crouch
 const size = await page.evaluate(() => _S.map(({ k, e, rig }) => { for (let i = 0; i < 30; i++) { tickPeople(1 / 60, 3e5 + i * 16.7); tickCreatures(1 / 60, 3e5 + i * 16.7); }
   rig.root.parent.updateMatrixWorld(true); const by = rig.hc.C.byName, W = o => o.getWorldPosition(new THREE.Vector3());
