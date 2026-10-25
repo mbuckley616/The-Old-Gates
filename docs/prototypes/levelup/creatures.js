@@ -85,7 +85,8 @@ P.head = (B, o) => {
   if (hn === 'head') B.headFrame = { base, dir, up, len, r };
   const at = (f, u, x) => base.clone().addScaledVector(dir, len * f).addScaledVector(up, r * u).add(V(r * x, 0, 0));
   if (o.skull) skullBits(B, o, S * (o.skull.k || 1), base, dir, up);
-  else for (const e of o.eyes || []) for (const sd of [1, -1]) { const m = B.bit(hn, eye(e.r * S, e.color, at(e.f, e.up, e.out * sd))); if (e.slit) m.scale.set(e.slit, .4, .5); if (e.glow) m.material.emissive.copy(m.material.color).multiplyScalar(e.glow); } // a slit, and a glow of its own (Session 1177)
+  else for (const e of o.eyes || []) for (const sd of e.out ? [1, -1] : [1]) { const m = B.bit(hn, eye(e.r * S, e.color, at(e.f, e.up, e.out * sd))); if (e.slit) m.scale.set(e.slit, .4, .5); if (e.sc) m.scale.set(...e.sc); if (e.glow) m.material.emissive.copy(m.material.color).multiplyScalar(e.glow);
+    if (e.hollow) Object.assign(m.material, { clearcoat: 0, roughness: 1 }).emissive.setRGB(0, 0, 0); } // `sc`, an eye's own shape, and `hollow`, a dull dark pit, not a glossy eye (Session 1428, the phantom's sockets and mouth) // a slit, and a glow of its own (Session 1177)
   if (o.ears) for (const sd of [1, -1]) B.bit(hn, ear(o.ears, S, B.tone(o.ears.tone || o.tone || 'coat'), at(o.ears.f, o.ears.up, o.ears.out * sd), sd));
   if (o.horns) for (const sd of [1, -1]) B.bit(hn, horn(o.horns, S, B.tone(o.horns.tone || 'horn'), at(o.horns.f, o.horns.up, o.horns.out * sd), sd));
   if (o.antlers) for (const sd of [1, -1]) { const m = B.bit(hn, antler(o.antlers, S, B.tone('horn'), at(o.antlers.f, o.antlers.up, o.antlers.out * sd), sd, rng(B.g.seed + (sd > 0 ? 1 : 2))));
@@ -407,7 +408,7 @@ P.rags = (B, o) => { const r = rng(B.g.seed + 43), h = B.spinePts[0].clone().add
       pts.push(p); bones.push(hip); blend.push([bone, bone === hip ? 0 : .7 * v * v * (3 - 2 * v)]); cols.push(c0.clone().lerp(c1, v).multiplyScalar(.85 + .3 * r())); low = Math.min(low, p.y); } }
     for (let i = 0; i < ROWS; i++) for (let j = 0; j < 2; j++) { const a = i * 3 + j, b = a + 1, c = a + 3, d = c + 1; tris.push(a, c, b, b, c, d); }
     B.sheets.push({ pts, tris, bones, blend, cols }); strips++; }
-  const g = new THREE.TorusGeometry(1, .06, 6, 28); g.rotateX(Math.PI / 2); g.scale(o.rx * S + .006, 1, o.rz * S + .006); const cord = new THREE.Mesh(g, stdMat(B.tone(o.cord || 'leather'), { rough: .8 })); cord.position.copy(h); cord.scale.y = .15; B.bit(B.spineNames[0], cord);
+  if (o.cord !== false) { const g = new THREE.TorusGeometry(1, .06, 6, 28); g.rotateX(Math.PI / 2); g.scale(o.rx * S + .006, 1, o.rz * S + .006); const cord = new THREE.Mesh(g, stdMat(B.tone(o.cord || 'leather'), { rough: .8 })); cord.position.copy(h); cord.scale.y = .15; B.bit(B.spineNames[0], cord); } // `cord: false` (Session 1428, the phantom's): no cord round a clear robe
   B.rags = { strips: (B.rags?.strips || 0) + strips, low: +Math.min(low, B.rags?.low ?? 1e9).toFixed(3) }; }; // a second ring adds to the first (Session 1178)
 
 // straps (Session 944, OG-041's goblin, "a scrap-leather harness"): a harness laid on the grown skin. Each strap is a path of
@@ -2264,6 +2265,30 @@ Object.assign(PLANS, {
       ['rags', { n: 14, len: .4, w: .11, rx: .26, rz: .21, up: -.32, gaps: .1, tone: 'cloth', tip: 'clothTip', cord: 'clothTip' }]] })
 });
 FAILING.push('failingwraith');
+// ── Session 1428: the phantom (OG-018's Scáth and Solas rows: "Phantom, Wraith"; OG-003's "residual echoes of the dead"). The game's
+// own since S212, the wraith's lesser kin: bare-headed, bluer and fainter, and Michael's B on DECISION #158 gave it the wraith's claws
+// and hunched, reaching stance but kept its face. So: the wraith's body, no legs, a robe that floats clear of the ground, torn at the
+// hem, a little smaller; no hood, a gaunt face with its jaw dropped in a wail, two pale lights for eyes under a thin brow; long hair
+// streaming down its back (the crests of Session 1174, rooted on the head as the fire elemental's crown is, and stirring as they do);
+// the whole far clearer than the wraith (0.58 against 0.82). Nothing lit but the eyes ──
+const HAIR = { n: 3, r: [.06, .05, .036, .022], s: [1.6, .6, 1], tone: 'hair', on: 'head' };
+Object.assign(PLANS, {
+  phantom: re(PLANS.wraith, { name: 'Phantom', src: 'OG-018 (Scáth and Solas: a Phantom), OG-003 (the Phantom: residual echoes of the dead)', school: 'Scáth', scale: .88, finOpacity: .5, cell: .028,
+    hover: .06, clear: .58,
+    palette: { coat: [.3, .36, .6], saddle: [.24, .29, .52], belly: [.36, .42, .66], skin: [.66, .72, .88], cloth: [.34, .4, .62], clothTip: [.56, .62, .8], hair: [.82, .86, .95], leather: [.12, .14, .24], bone: [.8, .82, .86], dark: [0, 0, 0] },
+    parts: [...PLANS.wraith.parts.map(([k, o]) => k === 'head'
+        ? [k, { len: .27, r: .12, pitch: 0, s: [.88, 1.12, 1], tone: 'skin', brow: { f: .5, up: .62, out: .5, r: .026 }, jaw: { len: .62, r: .05, drop: 1.1 },
+            eyes: [{ f: .48, up: .26, out: .36, r: .026, sc: [1, 1.3, .6], hollow: 1, color: [.02, .02, .05] }, { f: .6, up: .24, out: .36, r: .01, glow: 1.6, color: [.78, .92, 1.5] }, { f: .6, up: -.5, out: 0, r: .028, sc: [.8, 1.6, .6], hollow: 1, color: [.02, .02, .05] }] }]
+        : k === 'arms' ? [k, { ...o, len: .95, claws: { ...o.claws, len: .14 } }]
+        : k === 'rags' ? [k, { ...o, len: .34, w: .1, gaps: .12, n: 20, cord: false }] : [k, o]),
+      ['crests', { list: [
+        { ...HAIR, f: .0, out: 0, sink: .8, len: 1.01, lean: -112, curl: -20, phase: 0 },
+        { ...HAIR, f: .06, out: .55, sink: .7, len: .90, lean: -118, curl: -20, splay: 12, phase: 1.3 },
+        { ...HAIR, f: .06, out: -.55, sink: .7, len: .93, lean: -118, curl: -20, splay: 12, phase: 2.6 },
+        { ...HAIR, f: .14, out: .85, sink: .45, len: .75, lean: -135, curl: -16, splay: 20, phase: 3.9 },
+        { ...HAIR, f: .14, out: -.85, sink: .45, len: .78, lean: -135, curl: -16, splay: 20, phase: 5.2 }] }]] })
+});
+export const PHANTOMS = ['phantom'];
 // ── Session 1185: the fire elemental (OG-018's Tine row: "Fire Elemental"; canon §9a's forge-hot halls; the game's own since S222,
 // Michael's B on Session 214: "a figure of flame over a molten core, with arms of fire, clawed hands of flame and a crown of fire").
 // No legs: a man's height of body that narrows below the hips into a column of flame and floats clear of the floor, as the game's does.
