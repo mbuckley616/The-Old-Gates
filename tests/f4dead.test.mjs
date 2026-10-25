@@ -1,5 +1,5 @@
-// Card F4 (Session 1400): on the new look the risen dead (S173), the Hollowed and the Ghoul, wear the builder's body, as the hag (S1389)
-// does: old and wasted, barefoot in a grave's drab tunic and trousers, their skin rotted in the builder's shader (people.js's rot, S1399;
+// Card F4 (Session 1404): on the new look the risen dead (S173), the Hollowed and the Ghoul, wear the builder's body, as the hag (S1389)
+// does: old and wasted, barefoot in a grave's drab tunic and trousers, their skin rotted in the builder's shader (people.js's rot, S1403;
 // .7 and 1), and the driver's burning eyes laid over the builder's own eyes (hbEyeGlow). Picture: docs/prototypes/f4/f4-dead.jpg.
 import { boot, check, ROOT } from './lib/game.mjs';
 import fs from 'fs'; import path from 'path';

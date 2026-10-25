@@ -91,7 +91,7 @@ console.log(JSON.stringify(C));
 check(`a broken gate's chasm: falling just under its rim, untrained you go down the pit (${C.untrained && C.untrained.low} m); with Catch you catch the rim and stand on the floor (${C.caught && C.caught.y} m)`,
   C.rim && !C.untrained.pulled && C.untrained.low < -20 && C.caught.pulled && Math.abs(C.caught.y) < .01 && !C.caught.air && !C.caught.dead, C);
 
-// S1397 — the pull's pose in third person: the builder's body plants both wrists on the ledge, a hand's breadth past its edge, while the
+// S1401 — the pull's pose in third person: the builder's body plants both wrists on the ledge, a hand's breadth past its edge, while the
 // pull lifts it, and lets go as it stands
 const P = await page.evaluate(() => { thirdPerson = true; const at = []; let hb = false;
   const r = _try(5, 1.5, { onPull: () => { const p = (FALL.clock - MANTLE.t0) / MANTLE_DUR, H = TP.rig && TP.rig.rig.hb; hb = hb || !!H; if (!H || p < .1 || p > .3) return;

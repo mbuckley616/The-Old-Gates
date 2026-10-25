@@ -1,5 +1,5 @@
 // Card F4 (Session 1201): on the new look the human foes wear the builder's bodies, as the townsfolk have since Session 1195.
-// A line of the nine kinds of FOE_DRESS that are people (and an Ash Wight, which is not: the Hollowed and the Ghoul, risen dead, have their own suite since Session 1400, f4dead) ahead of you in the open world: each is
+// A line of the nine kinds of FOE_DRESS that are people (and an Ash Wight, which is not: the Hollowed and the Ghoul, risen dead, have their own suite since Session 1404, f4dead) ahead of you in the open world: each is
 // built on the builder's 163-bone skeleton over its 17-bone driver, its genome rolled from its foe id (keyFoe, the co-op rule's
 // place and index) and dressed from its kind; its weapon stays the game's, in the builder's fist; it glows with the tell; and
 // killed, its corpse is darkened with the garments' shaders kept. Pictures: docs/prototypes/f4/f4-foes.jpg and f4-foes-near.jpg.

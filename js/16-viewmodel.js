@@ -227,7 +227,7 @@ function _fistBridge(shoulder,fist){const b=buildArmBridge();b.userData.shoulder
 // The left mirrors them. rest: low in the corners, thumbs up; jab: out at the middle of the view, palm down; guard: both
 // fists before the face; cock: the power punch's draw, back by the shoulder.
 const FIST_POSE={rest:[.18,-.215,-.48,.85,.2,-.45],jab:[.035,-.13,-.74,.1,.02,0],guard:[.09,-.075,-.4,1.3,.18,-.4],cock:[.24,-.19,-.36,1,.3,-.55],
-  press:[.15,-.24,-.62,.05,.05,-.1]}; /* S1397 — the mantle's: low before you, palm down on the ledge (vmMantle) */
+  press:[.15,-.24,-.62,.05,.05,-.1]}; /* S1401 — the mantle's: low before you, palm down on the ledge (vmMantle) */
 function vmFistPose(gb,pb,sway,bob){
   const u=vmSword.userData,fL=u.fistL,SP=ANIM_PARAMS.swing,R=FIST_POSE;
   const ease=t=>(1-Math.cos(Math.max(0,Math.min(1,t))*Math.PI))/2,mix=(A,B,t)=>A.map((v,i)=>v+(B[i]-v)*t);
@@ -239,7 +239,7 @@ function vmFistPose(gb,pb,sway,bob){
   if(u.swingIsPower&&e>0){r[1]+=.02*e;r[2]-=.07*e;}
   vmSword.position.set(r[0]+sway,r[1]+bob,r[2]);vmSword.rotation.set(r[3],r[4],r[5]);
   if(fL){const l=mix(R.rest,R.guard,gb);fL.position.set(-l[0]+sway,l[1]+bob,l[2]);fL.rotation.set(l[3],-l[4],-l[5]);}}
-// S1397 — the mantle's pull in first person (S1385): empty-handed, both fists come down onto the ledge before you, palms flat
+// S1401 — the mantle's pull in first person (S1385): empty-handed, both fists come down onto the ledge before you, palms flat
 // (FIST_POSE.press), and sink below the view as the pull lifts you past them; a held weapon's hand goes to the ledge with it, so
 // the weapon drops out of the view's lower edge, lying flat. Both come back as you stand. Laid over the pose the loop set this
 // frame; read from MANTLE and the loop's clock, as the pull is (and the third person's, tpMantle).

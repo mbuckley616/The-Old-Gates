@@ -1360,7 +1360,7 @@ function hbPrep(g,key){if(g.hbKey)return;g.hbKey=key;try{hbTint(g,hbGenome(g));}
 // and what each wears over the builder's own rolled clothes, from its FOE_DRESS colour (c): the weapon and shield stay the game's
 // kit, held by the driver's bones, so the builder's own spear, staff, crossbow, basket and shield are taken off every one
 const HB_FOE_NOT=/^(skel|dead|goblin|troll|gargoyle|golem|wraith)$/;
-// S1400 — of the risen dead, the Hollowed and the Ghoul wear the builder's body (its skin's rot, S1399); the Ash Wight and the ghosts not yet
+// S1404 — of the risen dead, the Hollowed and the Ghoul wear the builder's body (its skin's rot, S1403); the Ash Wight and the ghosts not yet
 const HB_FOE_DEAD=/^(Hollowed|Ghoul)$/;
 function hbFoeOk(type,genome,g){if(genome)return !!g.hbKey;const dr=FOE_DRESS[type];return !!dr&&!Object.keys(dr).some(k=>dr[k]&&HB_FOE_NOT.test(k)&&!(k==='dead'&&HB_FOE_DEAD.test(type)));}
 const HB_FOE_DRESS={
@@ -1381,7 +1381,7 @@ const HB_FOE_DRESS={
   // S1389 — the Marsh Hag (S216: the fen's witch, an old woman in bog rags, hooded, a crooked staff): a robe in her bog green under a
   // long cloak of peat brown, its hood up, a cord at the waist, and the builder's own walking staff of hazel with its root's knob (S1085)
   // for her crooked staff, in the right fist where the driver's stick was
-  // S1400 — the risen dead (S173) in what they were buried in: a tunic and trousers of the grave's drab, barefoot, nothing over them
+  // S1404 — the risen dead (S173) in what they were buried in: a tunic and trousers of the grave's drab, barefoot, nothing over them
   'Hollowed':      c=>({trousers:c.map(v=>v*.85),skirtColor:c.map(v=>v*.9),boots:null,belt:null,mantle:null,cuffs:null,cuffBand:null,cloak:null,hood:null,helm:null,brooch:null,necklace:null,earrings:null,circlet:null,tartan:null,tartanLine:null,bands:null,bandsMotif:null}),
   'Ghoul':         c=>({trousers:c.map(v=>v*.8),skirtColor:c.map(v=>v*.85),boots:null,belt:null,mantle:null,cuffs:null,cuffBand:null,cloak:null,hood:null,helm:null,brooch:null,necklace:null,earrings:null,circlet:null,tartan:null,tartanLine:null,bands:null,bandsMotif:null}),
   'Marsh Hag':     c=>({robe:c,cord:[.3,.27,.18],cloak:[.2,.18,.12],tartan:null,tartanLine:null,cloakLen:.85,cape:false,hood:'up',cloakFur:null,cloakHem:null,brooch:null,mantle:null,belt:null,staff:[.3,.23,.15],staffMake:'hazel',necklace:null,earrings:null,circlet:null})};
@@ -1394,8 +1394,8 @@ const HB_FOE_BODY={
   // man, S1379's try), here a little past it; cropped to the scalp, ruddy, half of them with a short beard (the people's own roll)
   // S1389 — a hag is an old woman, thin and bony, her skin sallow toward the fen's green (the driver's lerp to 0x9aa078), her hair grey
   'Marsh Hag':     G=>{G.g=0;G.age=.95;G.height=0;G.prop=.2;G.weight=.3;G.muscle=.25;G.hair={style:'loose',len:.8};G.hairCol=[.54,.54,.47];G.skin=[.64,.6,.46];},
-  // S1400 — the risen dead: old and wasted, their hair greyed and their skin the driver's (a .75 lerp to FOE_DRESS's), rotted in the
-  // builder's skin (people.js's rot, S1399): the Hollowed at .7, the Ghoul, longer in the fen, at 1; the hair short and lank (the people's
+  // S1404 — the risen dead: old and wasted, their hair greyed and their skin the driver's (a .75 lerp to FOE_DRESS's), rotted in the
+  // builder's skin (people.js's rot, S1403): the Hollowed at .7, the Ghoul, longer in the fen, at 1; the hair short and lank (the people's
   // braids took a body to 113k triangles)
   'Hollowed':      G=>{G.hair={style:'short',len:.3};G.age=.82;G.height=0;G.weight=.22;G.muscle=.3;G.hairCol=[.42,.41,.38];G.beard=Math.min(G.beard||0,.4);G.skin=[.56,.54,.49];G.rot=.7;},
   'Ghoul':         G=>{G.hair={style:'short',len:.2};G.age=.8;G.height=0;G.weight=.15;G.muscle=.25;G.hairCol=[.36,.37,.33];G.beard=Math.min(G.beard||0,.3);G.skin=[.44,.5,.37];G.rot=1;},
@@ -1476,7 +1476,7 @@ function hbAttach(rig,P){const tA=performance.now();
   if(rig.sleep&&rig.bed&&rig.root.parent)personLie(rig.root,rig.bed);
   if(rig.eyeGlow)hbEyeGlow(rig);
   HBODY.ms+=performance.now()-tA;HBODY.n++;}
-// S1400 — the risen dead's burning eyes (S173) on the builder's body: the driver's lit eyes sit where the driver's eyes are, which the
+// S1404 — the risen dead's burning eyes (S173) on the builder's body: the driver's lit eyes sit where the driver's eyes are, which the
 // builder's face does not share, so a copy is laid in the builder's head over its own eyeballs, a little in front of them, at the driver's
 // size in the world; it shows with the builder's body and the driver's with the driver (hbLevel)
 function hbEyeGlow(rig){const H=rig.hb,hd=H.P.byName.head,eyes=[];hd.children.forEach(o=>{if(o.isMesh&&o.geometry.type==='SphereGeometry')eyes.push(o);});if(eyes.length<2)return;

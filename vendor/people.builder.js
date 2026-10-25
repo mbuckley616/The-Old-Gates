@@ -791,7 +791,7 @@ void scScar(vec3 p) { if (p.z < scZ) return; vec2 ab = scB - scA; float l = leng
   m.customProgramCacheKey = () => (key ? key.call(m) : 'skin') + '+scar' + side;
 }
 
-// the risen dead's skin (Session 1399; S173's Hollowed and Ghoul, card F4's foes): `rot` 0..1. The skin greys and loses its blood, and
+// the risen dead's skin (Session 1403; S173's Hollowed and Ghoul, card F4's foes): `rot` 0..1. The skin greys and loses its blood, and
 // is mottled in two slow noises, a grey-green of the grave and a dull bruise-purple; dark veins show through it (the half-way
 // contours of a warped noise, as the Old Blood's marks are drawn, but darker and only where a third noise lets them); the eyes sink
 // into dark hollows (from the eyes' rest places, 3.6 cm round) and the lips go grey. It is dry: rougher, and the skin's warm sheen

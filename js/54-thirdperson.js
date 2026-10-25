@@ -411,7 +411,7 @@ function tpPose(R,dt,st){
     tpSet(R.thighL,(-.95-.35*s)*w-.3*q,0,0,c);tpSet(R.kneeL,(1.35+.3*s)*w+.3*q,0,0,c);tpSet(R.thighR,(-.95+.35*s)*w-.3*q,0,0,c);tpSet(R.kneeR,(1.35-.3*s)*w+.3*q,0,0,c);
     if(R.ankleL){tpSet(R.ankleL,0,0,0,c);tpSet(R.ankleR,0,0,0,c);}
     tpSet(R.torso,.18+.25*q,0,0,c);tpSet(R.head,-.4+.3*q,0,0,c);}
-  // S1397 — the mantle's pull (S1385, the systems builder's ask): both hands planted on the ledge a hand's breadth past its edge, shoulder
+  // S1401 — the mantle's pull (S1385, the systems builder's ask): both hands planted on the ledge a hand's breadth past its edge, shoulder
   // width apart, and kept there while the pull lifts you (tpReach); the arms bend as the shoulders come level with the ledge and press
   // straight under you past it; the right knee comes up onto it as the pull carries you on, and the body stands up over the last fifth,
   // the hands let go. Read from MANTLE and the loop's clock, as the pull itself is.
@@ -433,13 +433,13 @@ function tpGripL(R){
   _tgQ.setFromUnitVectors(_tgA.normalize(),_tgB.normalize());R.shL.getWorldQuaternion(_tgQ2);_tgQ.multiply(_tgQ2);R.shL.parent.getWorldQuaternion(_tgQ2);_tgQ.premultiply(_tgQ2.invert());R.shL.quaternion.copy(_tgQ);
   R.shL.updateMatrixWorld(true);
 }
-// S1397 — the pull's holds on the builder's body: twice, the driver's wrists aimed short by how far the builder's miss, and copied again
+// S1401 — the pull's holds on the builder's body: twice, the driver's wrists aimed short by how far the builder's miss, and copied again
 const _tmE=[new THREE.Vector3(),new THREE.Vector3()],_tmW=new THREE.Vector3();
 function tpHBMantle(R){const H=R.rig.hb,M=R.mantle;if(M.w<=0)return;const wb=[H.P.byName['wrist.L'],H.P.byName['wrist.R']];if(!wb[0]||!wb[1])return;
   _tmE[0].set(0,0,0);_tmE[1].set(0,0,0);
   for(let k=0;k<2;k++){R.root.updateMatrixWorld(true);for(let i=0;i<2;i++){wb[i].getWorldPosition(_tmW);_tmE[i].add(_tmW.sub(M.T[i]));}
     tpMantleArms(R,_tmE);hbPose(R.rig);}}
-// S1397 — a two-bone reach for any arm, as tpGripL's for the left: the elbow bent until shoulder to wrist is shoulder to T, then the
+// S1401 — a two-bone reach for any arm, as tpGripL's for the left: the elbow bent until shoulder to wrist is shoulder to T, then the
 // shoulder turned to put the wrist on T; out of reach the arm points straight at it
 function tpReach(sh,el,wr,T){
   sh.getWorldPosition(_tgS);const dT=_tgS.distanceTo(T);
@@ -450,7 +450,7 @@ function tpReach(sh,el,wr,T){
   _tgQ.setFromUnitVectors(_tgA.normalize(),_tgB.normalize());sh.getWorldQuaternion(_tgQ2);_tgQ.multiply(_tgQ2);sh.parent.getWorldQuaternion(_tgQ2);_tgQ.premultiply(_tgQ2.invert());sh.quaternion.copy(_tgQ);
   sh.updateMatrixWorld(true);}
 const _tmT=new THREE.Vector3(),_tmQ=[new THREE.Quaternion(),new THREE.Quaternion(),new THREE.Quaternion(),new THREE.Quaternion()];
-// the pull's pose (S1397): p is the pull's own time, 0 to 1; the ledge's edge is MANTLE's start plus its run less the 0.35 m past it
+// the pull's pose (S1401): p is the pull's own time, 0 to 1; the ledge's edge is MANTLE's start plus its run less the 0.35 m past it
 function tpMantle(R){
   if(typeof MANTLE==='undefined'||MANTLE.t0==null||dead||!R.rig){R.mantle=null;return;}
   const p=Math.max(0,Math.min(1,(FALL.clock-MANTLE.t0)/MANTLE_DUR)),sm=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t);};

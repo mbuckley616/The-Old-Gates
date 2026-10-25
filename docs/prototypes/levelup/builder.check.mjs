@@ -326,7 +326,7 @@ if (!process.argv.includes('--shots-only')) { const page = await browser.newPage
       for (const side of ['L', 'R']) { const b = look({ ...bare, scar: side }); let n = 0, lum = 0, red = 0, sx = 0, still = 0;
         for (let i = 0; i < a.length; i += 4) { if (Math.max(...[0, 1, 2].map(k => Math.abs(again[i + k] - a[i + k]))) >= 12) still++; const d = [0, 1, 2].map(k => b[i + k] - a[i + k]); if (Math.max(...d.map(Math.abs)) < 12) continue; n++; lum += d[0] + d[1] + d[2]; red += b[i] - b[i + 2]; sx += (i / 4) % 320; }
         out.scar[side] = { changed: +(n / (320 * 320)).toFixed(4), lighter: n ? +(lum / n / 3).toFixed(1) : 0, warm: n ? +(red / n).toFixed(1) : 0, x: n ? Math.round(sx / n) : 0, still }; }
-      // the risen dead's rot (Session 1399): the face greyer and darker, the eyes' hollows darkest; saved and loaded back
+      // the risen dead's rot (Session 1403): the face greyer and darker, the eyes' hollows darkest; saved and loaded back
       { const b = look({ ...bare, scar: null, rot: .7 }); let n = 0, lum = 0, sat0 = 0, sat1 = 0;
         for (let i = 0; i < a.length; i += 4) { if (a[i] + a[i + 1] + a[i + 2] < 60) continue; n++; lum += (b[i] + b[i + 1] + b[i + 2] - a[i] - a[i + 1] - a[i + 2]) / 3; sat0 += a[i] - a[i + 2]; sat1 += b[i] - b[i + 2]; }
         const g = { ...G0, rot: .7 }, s1 = JSON.stringify(K.toSaved(g)), g2 = K.fromSaved(JSON.parse(s1));
@@ -1059,7 +1059,7 @@ if (shotArg) { const only = shotArg.split('=')[1];
     await shot('gown-saffron', 'people=aurennais&seed=gw2&sex=f&view=full&turn=-.45&dress=' + dq(gown([.78, .55, .16], [.5, .1, .08])));
     await shot('gown-teal', 'people=aurennais&seed=gw3&sex=f&view=full&turn=.5&dress=' + dq(gown([.1, .38, .38], [.85, .66, .3])));
     await shot('gown-og110', 'people=aurennais&seed=c1&sex=f&style=braids&view=full&turn=.4&dress=' + dq({ ...red, sashBelt: [.85, .66, .3], circlet: [.85, .66, .3], circletStone: [.5, .06, .08], earrings: [.85, .66, .3] })); }
-  // the risen dead (Session 1399, S173's Hollowed and Ghoul): the same old man living, Hollowed at rot .7 and a Ghoul at 1 in the fen's green, full and face
+  // the risen dead (Session 1403, S173's Hollowed and Ghoul): the same old man living, Hollowed at rot .7 and a Ghoul at 1 in the fen's green, full and face
   { const dq = d => encodeURIComponent(JSON.stringify(d)), rags = dq({ tunic: [.27, .26, .23], trousers: [.22, .21, .19], boots: null, belt: null, cloak: null, hood: null, mantle: null, apron: null, bib: false, wrap: null, helm: null, staff: null, basket: null, spear: null, sash: null }),
       man = 'people=gatelander&seed=dead:1&sex=m&age=.85&weight=.25&style=short&len=.35&beard=.3&hairc=.42,.41,.38';
     for (const [n, q] of [['living', ''], ['hollowed', '&rot=.7&skin=.62,.6,.55'], ['ghoul', '&rot=1&skin=.5,.56,.43']]) { await shot('dead-' + n, man + q + '&view=full&turn=.4&dress=' + rags, 1280, 960); await shot('dead-' + n + '-face', man + q + '&view=face&turn=.25&dress=' + rags, 1280, 960); } }
