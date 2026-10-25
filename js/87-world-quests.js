@@ -1655,6 +1655,7 @@ const giver=`${lord.title} ${lord.name}`;
     let fk=null,st=null;for(const k in FACTIONS){const s=fstate()[k];if(s.active||s.done>0){if(!fk||s.done>st.done){fk=k;st=s;}}}
     if(!fk){if(RIVAL.npc)removeRival();return;}
     const F=FACTIONS[fk];const seat=F.seat?siteAnywhere(F.seat):null;const beat=seat?rivalBeat(fk,st):null;
+    if(fk==='league'&&spireMorning()){if(RIVAL.npc)removeRival();return;} /* S1387 — the morning the spire is held she is at its foot */
     if(!beat||beat==='mention'||Math.hypot(px-seat.x,pz-seat.z)>160){if(RIVAL.npc&&(!beat||Math.hypot(px-RIVAL.npc.g.position.x,pz-RIVAL.npc.g.position.z)>240))removeRival();return;}
     const key=fk+'|'+st.done+'|'+st.rank+'|'+(fk==='league'&&duelLostBeat(st)?'lost':'')+(fk==='league'&&st.spire==='held'?'|held':'');if(RIVAL.npc){if(RIVAL.key!==key)removeRival();else return;}
     const L=rivalLines(fk,st,F);const x=seat.x+6,z=seat.z+9;
@@ -1818,7 +1819,60 @@ const giver=`${lord.title} ${lord.name}`;
       if(e.mesh&&!e.mesh.parent)sc.add(e.mesh);ZONES.world.enemies.push(e);SPIRE.foes.push(e);}
     d.wave=n+1;addLog('🌙',SPIRE_LINES.waves[n]);}
   function spireHeld(q){const L=fstate().league;q.data.state='held';L.spire='held';L.spireDay=dayNow();SPIRE.foes=[];qComplete(q);showMsg(SPIRE_LINES.held,'#e8d8a0');addLog('🏛',SPIRE_LINES.heldLog);}
+  // S1387 — the people at the spire's foot and the roof's words (the approved draft's §2, §3 and §5, word for word). The night
+  // sergeant stands by the door from 20h to 6h while the spire is unheld; with the quest his *Let me up.* gives you his watch, and
+  // he is at the garrison for the rest of that night. On the morning it is held, 6h to 9h, Rowe waits at the spire's foot and not
+  // at the seat. Coming up through the hatch with the quest, the roof says what it is by night, or once a visit by day; the
+  // parapet's stone can be looked at (league.spireSeen, the hook the main quest can read). The door is not barred: the sergeant's
+  // refusal is his word, not a lock. Nothing here is saved but spireSeen: a load lays the night again.
+  const SPIRE_SGT={hello:["Night watch. The spire's shut to anyone the Captain didn't send.","Warm up there tonight. Always is.","Stand where you like. Just not between me and the door."],
+    helloQ:"So you're the one. Captain says you're to have my watch. Captain says a lot.",
+    up:"Stair, a top room with a chest somebody emptied before my grandfather, and the roof. And the light, after dark. It runs in the cuts on the parapet like rain down a pane. You don't look at it long. You don't have to.",
+    pay:"Silver, same as any watch. And you come down warm. In the Mark that's worth more than the silver. I've not been cold since the spring. Nor has any man who's stood up there. Ask them.",
+    down:"Wolves, near enough. They come out of the light on the roof, and down the stair after. We kill them at the door, a few every night. Captain calls it the hill's tax.",
+    no:"Not without the Captain's word. I don't care whose Captain you are.",
+    yes:"Aye. Iron and blood, then. It's your watch. I'll be at the garrison, freezing like an honest man."};
+  const SPIRE_ROOF={night:'The parapet’s inner face is cut with old strokes, and across them new ones, pale in the grey stone. Light moves in the new cuts. It is warm up here.',
+    day:'By day the spire is only stone. The light comes after dark.',
+    stoneLit:'An old carving runs round the inside of the parapet, worn soft by fifteen hundred winters. Someone has cut across it: short, straight strokes, with the dust still in them. The light comes out of the new cuts, not the old ones. Where it falls, the stone is as warm as a hand.',
+    stoneDay:'An old carving runs round the inside of the parapet, worn soft by fifteen hundred winters. Someone has cut across it: short, straight strokes, with the dust still in them. The stone is cold.',
+    oldblood:'You could read the old strokes, if you let yourself. You don’t.'};
+  const SPIRE_ROWE={greet:"Still standing. Good. I stood under it all night. Warm as a hearth, and I didn't want any of it.",
+    came:"Nobody up, nobody down, nobody near the door. I'd swear it on iron. So those cuts weren't made tonight. Whoever made them had a key, or the time, or both.",
+    light:"Pay. That's the whole trick, I think. You stand in it, you want it, and you stop asking who's paying. The sergeants never asked. Nor did the garrison.",
+    where:"Ships come into the strait at night with no lamps. Port Blackhand's the only harbour on this coast that doesn't ask what's in the hold. I'd start there.",
+    whereNone:"Ships come into the strait at night with no lamps. Find the harbour that doesn't ask what's in the hold. I'd start there."};
+  const SPIRE_FOLK={sgt:null,rowe:null,offNight:null,roof:false,dayTold:false};
+  function spireLit(){const h=hourNow();return fstate().league.spire!=='held'&&(h>=20||h<6);}
+  function spireNight(){return hourNow()>=20?dayNow():dayNow()-1;}
+  function spireQuestOpen(){const q=spireQuest();return !!q&&!q.done&&(q.data.state==='wait'||q.data.state==='watch');}
+  function spireMorning(){const L=fstate().league,h=hourNow();return L.spire==='held'&&L.rowe==='alive'&&L.spireDay===dayNow()&&h>=6&&h<9;}
+  function spireTower(){const sp=anchoredPlaces().spire;return sp&&ZONES.world.houses?ZONES.world.houses.find(h=>h.type==='tower'&&h.siteId===sp.id)||null:null;}
+  function spireSgtDef(sp,x,z){const r=seededRng('spire-sgt',sp.id),M=NAMES.anglo.m;
+    return {name:M[Math.floor(r()*M.length)],role:'Sergeant',ico:'⚔',authored:true,people:'markman',bCol:0x3a3a40,sCol:0xe8d4bc,x,z,temper:'dry',
+      get greeting(){return [spireQuestOpen()?SPIRE_SGT.helloQ:SPIRE_SGT.hello[dayNow()%3]];},
+      get topics(){return [{label:"What's up there?",response:SPIRE_SGT.up},{label:'What does it pay?',response:SPIRE_SGT.pay},{label:'What comes down off it?',response:SPIRE_SGT.down},
+        {label:'Let me up.',quest:true,fn:()=>{if(!spireQuestOpen())return SPIRE_SGT.no;SPIRE_FOLK.offNight=spireNight();setTimeout(()=>{try{if(dlgOpen)closeDialog();}catch(e){}spireFolkGone('sgt');},1400);return SPIRE_SGT.yes;}},
+        {label:'Farewell.',bye:true}];}};}
+  function spireRoweDef(x,z){return {name:RIVAL.name,role:'',ico:'⚔',authored:true,people:'markman',sCol:0xf0dcc8,hairCol:0xd8c8a0,bodyScale:[1.04,1.06,1.04],bCol:0x2a2a30,x,z,temper:'dry',greeting:[SPIRE_ROWE.greet],
+    topics:[{label:'Did anyone come?',response:SPIRE_ROWE.came},{label:'What was the light?',response:SPIRE_ROWE.light},{label:'Where now?',response:anchoredPlaces().blackhand?SPIRE_ROWE.where:SPIRE_ROWE.whereNone},{label:'Farewell.',bye:true}]};}
+  function spireFolkGone(k){duelRemoveNpc(SPIRE_FOLK[k]);SPIRE_FOLK[k]=null;}
+  function spireFolk(){const sp=anchoredPlaces().spire,inside=typeof isInterior==='function'&&isInterior(),near=!!sp&&!inside&&Math.hypot(px-sp.x,pz-sp.z)<180,h=near?spireTower():null;
+    const wantS=!!h&&spireLit()&&SPIRE_FOLK.offNight!==spireNight(),wantR=!!h&&spireMorning();
+    if(!wantS&&SPIRE_FOLK.sgt)spireFolkGone('sgt');if(!wantR&&SPIRE_FOLK.rowe)spireFolkGone('rowe');
+    if(wantS&&!SPIRE_FOLK.sgt){const x=h.doorX+1.4,z=h.doorZ+.9;SPIRE_FOLK.sgt=duelPerson(spireSgtDef(sp,x,z),x,z,0);}
+    if(wantR&&!SPIRE_FOLK.rowe){const x=h.doorX-2.2,z=h.doorZ+3.2;SPIRE_FOLK.rowe=duelPerson(spireRoweDef(x,z),x,z,Math.atan2(h.doorX-x,h.doorZ-z));}
+    if(!sp||(!near&&!inside))SPIRE_FOLK.dayTold=false;
+    const on=!!sp&&spireOnRoof();
+    if(on&&!SPIRE_FOLK.roof&&spireQuestOpen()){if(spireLit())showMsgLong(SPIRE_ROOF.night,'#c8c0a8');else if(!SPIRE_FOLK.dayTold){SPIRE_FOLK.dayTold=true;showMsg(SPIRE_ROOF.day,'#c8c0a8');}}
+    SPIRE_FOLK.roof=on;}
+  // the stone: anywhere on the roof by the parapet, clear of the hatch
+  function spireStoneNear(){const r=spireRoof();if(!r||!spireOnRoof())return false;return Math.hypot(px-r.x,pz-r.z)>=2.6&&Math.hypot(px-r.hatch.x,pz-r.hatch.z)>=TOUCH;}
+  function spireStonePrompt(){return spireStoneNear()?"Press 'E' to look at the stone":null;}
+  function spireStoneUse(){if(!spireStoneNear())return false;fstate().league.spireSeen=true;showMsgLong(spireLit()?SPIRE_ROOF.stoneLit:SPIRE_ROOF.stoneDay,'#c8c0a8');
+    if(playerPeople()==='oldblood')setTimeout(()=>{try{showMsg(SPIRE_ROOF.oldblood,'#c8c0a8');}catch(e){}},1600);return true;}
   function tickSpire(dt){
+    spireFolk();
     const q=spireQuest();if(SPIRE.q&&SPIRE.q!==q){spireClearFoes();SPIRE.q=null;}if(!q)return;SPIRE.q=q;const d=q.data;
     if(d.state!=='wait'&&d.state!=='watch')return;
     if(d.state==='wait'&&Math.hypot(px-d.x,pz-d.z)>180)return;

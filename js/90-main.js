@@ -1015,6 +1015,7 @@ function loop(now){
     // rationale. The fort_door portal handles its own E-prompt.
     else if(nearBoard){iprOW.textContent=`Press 'E' to read ${nearBoard.title}`;iprOW.style.opacity='1';iprOW.style.display='block';}
     else if(typeof flagstonePrompt==='function'&&flagstonePrompt()){iprOW.textContent=flagstonePrompt();iprOW.style.opacity='1';iprOW.style.display='block';} /* S1353 */
+    else if(typeof spireStonePrompt==='function'&&spireStonePrompt()){iprOW.textContent=spireStonePrompt();iprOW.style.opacity='1';iprOW.style.display='block';} /* S1387 — the spire's stone */
     else if(typeof bladeStonePrompt==='function'&&bladeStonePrompt()){iprOW.textContent=bladeStonePrompt();iprOW.style.opacity='1';iprOW.style.display='block';} /* S802 — the Gate-Blade's stone */
     else if(typeof bellWreckPrompt==='function'&&bellWreckPrompt()){iprOW.textContent=bellWreckPrompt();iprOW.style.opacity='1';iprOW.style.display='block';} /* S801 — the Drowned Bell's wreck */
     else if(typeof ringCairnPrompt==='function'&&ringCairnPrompt()){iprOW.textContent=ringCairnPrompt();iprOW.style.opacity='1';iprOW.style.display='block';} /* S800 — the Noon Ring's cairn */
