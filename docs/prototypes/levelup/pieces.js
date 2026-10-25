@@ -1000,7 +1000,9 @@ function bayPlan(kind, n, o = {}) {
     O.back = [{ kind: 'plank', x: -last * .5, y: 0, w: .95, h: 2.05 }, win(last * .65, 1.0, .8, 1.2, [2, 2]), win(-last * .5, up + .05, .8, 1.1, [2, 2])]; P.doorX = dx; }
   else if (kind === 'townhouse') { const g = SCALE.storey.town, dx = (o.doorX ?? -1) < 0 ? xs[0] : last, far = dx < 0 ? last : xs[0];
     O.front = [{ kind: 'fan', x: dx, y: 0, w: 1.1, h: 2.75, arch: true, dress: true }, ...but(dx).map(x => win(x, .75, .95, 1.85, [3, 2])), ...xs.map(x => win(x, g[0] + .4, 1.0, 2.15, [3, 3])), ...xs.map(x => win(x, g[0] + g[1] + .35, .95, 1.4, [3, 1]))];
-    O.back = [{ kind: 'plank', x: -dx, y: 0, w: .95, h: 2.1 }, win(-far, .9, .9, 1.6, [2, 2]), win(0, g[0] + .4, .9, 1.7, [2, 2]), win(0, g[0] + g[1] + .35, .9, 1.4, [2, 2])]; P.doorX = dx; }
+    // (Session 1427) the back door into the kitchen, 0.35 m in from the far bay's middle (1.6 m from the house's on three bays, as the
+    // drawn plan's), and the ground window between it and the hall's partition: behind the hall they stood under the stair's half-landing (a back face's x runs mirrored)
+    const sf = Math.sign(far), two = n === 2 /* two bays (seven houses in the game) keep the old back: no room to part them */; O.back = [{ kind: 'plank', x: two ? -dx : -far + sf * .35, y: 0, w: .95, h: 2.1 }, win(two ? -far : -sf * .1875, .9, .9, 1.6, [2, 2]), win(0, g[0] + .4, .9, 1.7, [2, 2]), win(0, g[0] + g[1] + .35, .9, 1.4, [2, 2])]; P.doorX = dx; }
   else if (kind === 'merchant') { const g = SCALE.storey.shop, dx = last - .35, x0 = xs[0] - .45, x1 = dx - .55 - .45;
     O.front = [{ kind: 'shopwin', x: (x0 + x1) / 2, y: .62, w: x1 - x0, h: 2.05, bars: [Math.max(2, Math.round((x1 - x0) / 1.15)), 2] }, { kind: 'shopdoor', x: dx, y: 0, w: 1.1, h: 2.65 },
       ...xs.map(x => win(x, g[0] + .4, .95, 1.95, [3, 3])), ...xs.map(x => win(x, g[0] + g[1] + .35, .9, 1.35, [3, 1]))];
