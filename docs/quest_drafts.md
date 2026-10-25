@@ -2,7 +2,7 @@
 
 These are the quest writer's drafts. None of them is canon until Michael promotes it into `quest_writing.md`, and none is a spec until it is approved. Each draft gives the quest's shape, every line verbatim with its speaker and people, and a note on what in the code would carry it.
 
-Calls read to: 2026-10-16T17:51:09.360Z (run 26, 23 Oct: no new calls on the page)
+Calls read to: 2026-10-16T17:51:09.360Z (run 27, 25 Oct: no new calls on the page)
 
 ---
 
@@ -503,7 +503,7 @@ The Compact's ninth *after* line (grep `Cold-eyes always find their own`) reads:
 
 ## The Spire Held — a night on the roof at Caer Slige
 
-*Approved by Michael, 14 Oct 2026.* *The rule is on main (the systems builder's night watch, Session 1112, with §4's narration word for word). Built in part, Session 1338 (PR #640): §1 and §6 (the Captain's* The spire?*, the turn-in), §7 (Rowe at the seat, the rumours). The rumour for "any town of the Mark" is given to the Mark's other towns, and the seat keeps its own. Next slice: the night sergeant (§2), the roof and the stone (§3), Rowe's morning (§5).* *Drafted 1 Oct 2026. Backlog A, the faction line's last owed item: "the spire to hold after the League's finale". The League's ninth service now ends with the Captain of Caer Slige saying "the spire's yours to hold. Something up there pays my sergeants in light", and Rowe, spared, saying "You hold it, and I'll watch what comes down off it at night." Nothing in the game yet lets the player do either. This draft is what holding it means.*
+*Approved by Michael, 14 Oct 2026.* *The rule is on main (the systems builder's night watch, Session 1112, with §4's narration word for word). Built in part, Session 1338 (PR #640): §1 and §6 (the Captain's* The spire?*, the turn-in), §7 (Rowe at the seat, the rumours). The rumour for "any town of the Mark" is given to the Mark's other towns, and the seat keeps its own. Built whole in words, Session 1387 (PR #690): the night sergeant (§2), the roof and the stone (§3), Rowe's morning (§5). The sergeant's refusal does not bar the door; the lock is the systems builder's (backlog A).* *Drafted 1 Oct 2026. Backlog A, the faction line's last owed item: "the spire to hold after the League's finale". The League's ninth service now ends with the Captain of Caer Slige saying "the spire's yours to hold. Something up there pays my sergeants in light", and Rowe, spared, saying "You hold it, and I'll watch what comes down off it at night." Nothing in the game yet lets the player do either. This draft is what holding it means.*
 
 ### What the canon fixes, and where it is silent
 
@@ -3064,7 +3064,7 @@ The pool a townsperson draws from when no live rumour is due. In the Aurennais r
 
 ## The Great Gates, I — the knot at the ring
 
-*Approved by Michael, 14 Oct 2026.* *Small fix, 15 Oct: the Church's word for the knot is* the Nodus*, not* le Nœud*, under the approved Aurennais register (see piece II).* The first piece of backlog A's *The six great gates: what clearing one means*, which Michael put ahead of every other story item on 13 Oct (the new look's card F5 needs it). This piece is **the act at a great gate on each path**: where in the gate it happens, what the player does, what they see and are told, how it is undone, how the six lock, and how the people's talk follows the world as it changes. The pieces still owed, one a run: the two artifacts' names and lines; each gate's own reward and its cost to the world; Varek's two arcs; the Act III outline reconciled with all of it. The act itself is asked as **DECISION #292** (A, the knot, B, the door, C, the heart carried); this draft writes A, the recommendation, in full. Only §1 and §6 change under B or C.
+*Approved by Michael, 14 Oct 2026.* *Built by the systems builder from `docs/design/great-gates-build.md`, Sessions 1346–1354 (the knot, its lines, the way back), on main 24 Oct; the knot's look waits on DECISION #680.* *Small fix, 15 Oct: the Church's word for the knot is* the Nodus*, not* le Nœud*, under the approved Aurennais register (see piece II).* The first piece of backlog A's *The six great gates: what clearing one means*, which Michael put ahead of every other story item on 13 Oct (the new look's card F5 needs it). This piece is **the act at a great gate on each path**: where in the gate it happens, what the player does, what they see and are told, how it is undone, how the six lock, and how the people's talk follows the world as it changes. The pieces still owed, one a run: the two artifacts' names and lines; each gate's own reward and its cost to the world; Varek's two arcs; the Act III outline reconciled with all of it. The act itself is asked as **DECISION #292** (A, the knot, B, the door, C, the heart carried); this draft writes A, the recommendation, in full. Only §1 and §6 change under B or C.
 
 ### What the canon fixes, and where it is silent
 
@@ -3261,7 +3261,7 @@ The rumour pool's *Normal* lines become the *Any news?* pool's lasting default f
 
 ## The Great Gates, II — the knife and the needle
 
-*Approved by Michael, 16 Oct 2026.* *Drafted 15 Oct 2026.* The second piece of backlog A's *The six great gates: what clearing one means*. The first piece, *the knot at the ring*, was approved on 14 Oct along with Michael's A on DECISION #292. That piece wrote the act and left its tools as *the tearing artifact* and *the sealing artifact*. This piece names them and writes every line about them: what they are, where each comes from and who hands it over, the item cards, what the Old Blood and the three powers say of them, and what they do away from a knot. Still owed, one piece a run: each gate's own reward and its cost to the world; Varek's two arcs; the Act III outline reconciled with all of it.
+*Approved by Michael, 16 Oct 2026.* *Built by the systems builder, Sessions 1353 and 1363–1367 (the knife, the note, the flagstone, the runner, Aldwyn, the needle), on main 24 Oct; §5's talk and the journal's page owed.* *Drafted 15 Oct 2026.* The second piece of backlog A's *The six great gates: what clearing one means*. The first piece, *the knot at the ring*, was approved on 14 Oct along with Michael's A on DECISION #292. That piece wrote the act and left its tools as *the tearing artifact* and *the sealing artifact*. This piece names them and writes every line about them: what they are, where each comes from and who hands it over, the item cards, what the Old Blood and the three powers say of them, and what they do away from a knot. Still owed, one piece a run: each gate's own reward and its cost to the world; Varek's two arcs; the Act III outline reconciled with all of it.
 
 ### What the canon fixes, and where it is silent
 
@@ -3416,7 +3416,7 @@ Piece I's lines stand. One line is added. At six bound, the knife's card gains t
 
 ## The Great Gates, III — what each gate gives, and what it costs
 
-*Approved by Michael, 16 Oct 2026.* *Drafted 16 Oct 2026.* The third piece of backlog A's *The six great gates: what clearing one means*. Piece I (approved 14 Oct) wrote the act at the ring and gave every tear the same gain, one tier deeper in the gate's school. It left *the gate's own reward* to be added to that line. Piece II (15 Oct, unapproved) named the knife and the needle. This piece gives each of the six its own gift to the player and its own cost to the world, and writes every line about them. Still owed, one piece a run: Varek's two arcs, and the Act III outline reconciled with all of it.
+*Approved by Michael, 16 Oct 2026.* *Built by the systems builder, Sessions 1349–1377 (the gifts, the faces and the tolls, the talk), on main 24 Oct.* *Drafted 16 Oct 2026.* The third piece of backlog A's *The six great gates: what clearing one means*. Piece I (approved 14 Oct) wrote the act at the ring and gave every tear the same gain, one tier deeper in the gate's school. It left *the gate's own reward* to be added to that line. Piece II (15 Oct, unapproved) named the knife and the needle. This piece gives each of the six its own gift to the player and its own cost to the world, and writes every line about them. Still owed, one piece a run: Varek's two arcs, and the Act III outline reconciled with all of it.
 
 ### What the canon fixes, and where it is silent
 
@@ -4798,3 +4798,258 @@ On the Mark's three, a Markman in a town of another island (a port's blend, a ga
 - *The duel.* By yield and with no steel drawn, a quarrel finished by noon (§1.2). Lost in an occupied town (§12a).
 - *No chosen one.* First Snow's *Nobody asked yours* is about nicknames, not a prophecy. The Old Blood line about the old ones watching the sky for something says no more than §3.1 does: the makers saw something look through.
 - *Silent, chosen plainly:* the lights (a hook, nothing hangs on them), what the Mark believes (iron, blood, fire and oath, and no god's day), the inland Strait Fair (lake, river or feet).
+
+---
+
+## Festivals on the Calendar, III — the Commencement, the Caravan and the Lamps on the Water
+
+*Unapproved.* *Drafted 25 Oct 2026. Backlog L9, *Festivals on the calendar* (OG-107), the third and last run: Aurenne's three, placed on the calendar by the first run (21 Oct, unapproved) and left for this one. The frame is the first run's exactly: no quest, a greeting by people, the square filled, a *Due* line, and one small act a year per town, remembered as `worldState.festivals[<key>:<site.id>]=year`. The concept sheet's *a festival of learning, a spice caravan, lamps set afloat* are these three.*
+
+### What the canon fixes, and where it is silent
+
+- *Aurenne* (§1.3): warm; dunes and salt marsh, terraced coasts, *the sea is a road, not a wall*; the academy's white towers; oasis towns and caravanserai inland. **The Compact**: merchant houses under the Church of the Weaver, Priors over the Church's towns, Factors over the houses' ports, every hull tithed. **Known for ships that come back.** **Pride:** ledgers, learning, paper over oaths. **Contempt:** brawling, duels, *gate-grubbing*. So Aurenne's festivals are kept on paper: a roll read out, a contract honoured, a ledger read at the quay. Nobody fights, and nobody swears.
+- *Aurennais speech* (§2): formal, with honorifics (*Master*, *Factor*, *Prior*), qualifiers and contract metaphors, and never an oath. Its names are the approved *Aurennais Register*'s, drawn from `NAMES.aurennais`.
+- *The Church* (§3.1) is a later Aurennais institution that took the Weaver's name and forgot the price. It reads the Commencement's names, because it sits beside the academy (§1.3). It has no part in the Caravan, which is the Factors' business, or in the Lamps, which belong to the harbour. It is not the Gatelands' many gods (the first run's note), so none of the three goes to a god by its work. The weekday is only the calendar's name for the day.
+- *The Lamps and the Lanterns* (the first run): each mirrors the other, on purpose. The Gatelands send a light *up* after those who went *in*. Aurenne sets one *out* on the water for those who are *out*, and the ships mostly come back. The Lamps are glad first and sad second, the Lanterns the other way round.
+- *§10a*: the surface is pleasant. The Commencement is proud, the Caravan rich, and the Lamps lovely.
+- *Silent: where the saffron grows.* The concept sheet has *a spice caravan* and the first run has *the saffron caravan in from the dunes*. Saffron is a flower's threads, and dunes grow no flowers. I chose the plainest reading: it is grown in the oasis gardens beyond the dunes and carried across them. One caravan cannot reach every town in a day, so the caravan splits at the last well into as many strings as there are towns. The custom is what makes the date one date.
+- *Silent: the academy's name, and where it stands.* The canon names neither, and this draft names neither. A person says *the academy*, as the canon does.
+- *Silent: what the Old Blood of Aurenne call the three.* Canon §2 gives the Old Blood one register everywhere, the Irish deep register, so they give the older name in it, as the first two runs did.
+
+### 1. The three, on the calendar (the first run's table, unchanged)
+
+| Festival | Date | Weekday | Custom |
+|---|---|---|---|
+| **The Commencement** | Shearing 6 | Weaverday | the academy's year opens: the town's admitted are read from the steps at ten, and the scholars' purse is subscribed |
+| **The Caravan** | Reaping 9 | Stoneday | the saffron in from beyond the dunes, the first bale opened on the square, a pinch to every household by the old contract |
+| **The Lamps on the Water** | Lean 4 | Seaday | at dusk, the harbour's ledger read from the quay and a lamp set on the ebb for every hull at sea; the lost are struck and their lamps go last |
+
+**The names stand.** *The Commencement* is the academy's own word. Aurennais say it in full and nobody shortens it. *The Caravan* needs no other name in Aurenne. *The Lamps on the Water* is said *the Lamps*, as the Gatelands say *Lantern night*. An inland town keeps the Lamps at its fountain, and says the fountain is going to the sea too, only by way of the drains.
+
+### 2. The Commencement — Shearing 6, a Weaverday
+
+**The custom.** The academy writes to every town of Aurenne in the spring with the names of the town's children it has admitted, and on Shearing 6 the names are read from the steps of the town's church (or its customs house, in a port) at ten in the morning, by the Prior or the Factor. The admitted stand when they are named. From nine until noon a bursar sits at a table on the square taking subscriptions to the town's scholars' purse, which pays for the admitted's books and passage, and at noon the subscribers are read too, in the order they paid. The order is by date of payment, never by rank, and the town is very proud of that.
+
+**How many.** Each town has none, one or two admitted a year, drawn from `seededRng('commencement', site.id+':'+year)`: none half the time, one a third of the time, two otherwise. A city has one more. Their names come from `NAMES.aurennais` on the same stream, and they are not residents (the academy's children are already packed).
+
+**Due line:** *The Commencement — the academy's year opens; the town's admitted are read from the steps at ten.*
+
+**Greetings** (by the speaker's people):
+
+**Aurennais:**
+> "It is the Commencement, Master. The academy's year opens today, and the names it has admitted from the town are read from the steps at ten. There is a subscription for their books, should you be minded. There is always a subscription."
+
+**Gatelander:**
+> "It's their Commencement. They read out on the steps which of their children are off to the academy, and the whole town claps like it's a wedding. A child that goes up the white towers comes home talking strange, they say. They clap anyway, and I'd clap with them."
+
+**Markman:**
+> "Reading day. They read the kids' names off a paper and clap. Kid goes off to learn letters. I learned mine at forty. Took a week."
+
+**Old Blood:**
+> "An Chéad Léamh. The first reading. There was a law about reading, once. It was not about names."
+
+**The Prior or the Factor** (the town's lord), on the day, before their topics:
+> "It is the Commencement, Master. I am reading names at ten, and I have nothing else to read before then. Tomorrow, if it is business."
+
+**At ten, the reading** (a `showMsg`, once, if the player is on the square from 10:00 to 10:30; `{title}` is the lord's title, `{A}` and `{B}` the admitted):
+
+- Two:
+  > *At ten the {title} reads two names from the steps, admitted to the academy: {A} and {B}. They stand. Their families are applauded as if they had written the letters themselves.*
+- One:
+  > *At ten the {title} reads one name from the steps, admitted to the academy: {A}. She stands* (or *He stands*) *, and the square applauds until she sits* (*he sits*) *again.*
+- None:
+  > *At ten the {title} reads from the steps that the academy admits no one from {town} this year. There is applause anyway, for the attempt.*
+
+**The act: a subscription to the purse.** The bursar (a townsperson of the town, the role *Bursar*, generated from the town's people; Aurennais in an Aurennais town but for a port's blend) sits on the square from 9:00 to 12:00. Greeting:
+> "The scholars' purse, Master. Books and passage for the town's admitted, by subscription. Two gold enters a name on the roll, and the roll is read at noon."
+
+Topic: **A subscription** (2 gold; once a year per town, `'commencement:'+site.id`). It opens the choice:
+
+**How shall I enter it?**
+- *Under my name.*
+- *As a friend of the town.*
+- *Leave my name off.*
+
+The answers (Aurennais bursar):
+
+- *Under my name.*
+  > "Entered, Master: {player}. You will be read at noon in the order you paid, which is after the cooper. The order is by date of payment and not by rank. It is the whole of the town's democracy, and the town is very proud of it."
+- *As a friend of the town.*
+  > "Entered, Master: *a friend of the town*. It is the commonest name on the roll, and the most generous. I have never known why."
+- *Leave my name off.*
+  > "Then I shall enter the sum and not the name. The ledger must balance. The roll need not."
+
+The log:
+> *You subscribe two gold to the scholars' purse.*
+
+**At noon, the subscribers** (a `showMsg`, once, if the player subscribed that day and is on the square from 12:00 to 12:30):
+
+- Under their name:
+  > *At noon the subscribers are read in the order they paid. Yours is among them, after the cooper's. Nobody turns round, which in Aurenne is a compliment.*
+- As a friend of the town:
+  > *At noon the subscribers are read in the order they paid. "A friend of the town" is read four times. One of them is yours.*
+- Left off:
+  > *At noon the subscribers are read in the order they paid. Yours is not among them, and the sum is.*
+
+**The next day**, an Aurennais of that town, once, if the player subscribed:
+> "You subscribed to the purse yesterday, Master. The town will remember it, in writing, which is the only way we remember anything."
+
+The bursar in another people's voice, where a port's blend puts one there:
+
+- **Gatelander:** "It's the scholars' purse. Two gold puts your name on the roll, and the roll's read at noon. I'd not say it buys you anything, but a name read in a square is a name that's been heard." The answers: *Under my name:* "Down you go, after the cooper. They read by who paid first, not who's grandest. It's the one thing here I'd take home." *A friend of the town:* "A friend of the town. Half the roll's that. You'd think the town had more friends than people." *Leave my name off:* "Then it's a coin with no name on it, and the books won't mind."
+- **Markman:** "Purse for the kids' books. Two gold. Your name's read at noon." The answers: *Under my name:* "Down. After the cooper." *A friend of the town:* "Friend of the town. Aye. Most are." *Leave my name off:* "No name. Fine. Coin's coin."
+- **Old Blood:** "The purse for their books. Two. Your name is read at noon, if you wish it read." The answers: *Under my name:* "Written." *A friend of the town:* "Written, as a friend." *Leave my name off:* "The coin, then, and not the name. That is the older way."
+
+### 3. The Caravan — Reaping 9, a Stoneday
+
+**The custom.** The caravan comes in from the oasis gardens beyond the dunes with the year's saffron, and splits at the last well into as many strings as there are towns, so that every town of Aurenne has its string in on the same morning. At first light the caravan-master opens the first bale on the square. By a contract older than the Compact, every household is weighed one pinch of the first bale, and anyone who is not a household may buy a pinch for two gold. Then the fair runs till dusk: the rest of the saffron, dates, salt from the pans, glass, and a man who sells carpets. The town's Factor weighs at the scale, and every pinch is weighed in front of the buyer, because that is in the contract too.
+
+**Due line:** *The Caravan — the saffron in from beyond the dunes, and a pinch of the first bale to every household.*
+
+**Greetings:**
+
+**Aurennais:**
+> "The caravan is in, Master, from beyond the dunes. The first bale is open on the square, a pinch to every household by the old contract. The contract is older than the Compact, and it has been renegotiated less."
+
+**Gatelander:**
+> "The caravan's in. Saffron and dates and salt, and a man who'll sell you a carpet if you stand still. Never stand still at a caravan, they say. I stood still once. It's a good carpet."
+
+**Markman:**
+> "Caravan's in. Spice and dates. Dear, but it's honest dear. They weigh it in front of you."
+
+**Old Blood:**
+> "An Cróch. The saffron. A flower's heart, pulled by hand, three threads at a time. They carry it across the dunes for that. Nothing else is worth carrying so far."
+
+**The Factor or the Prior** (the town's lord), on the day, before their topics:
+> "The caravan is in, Master, and the scale is the only business in the town today. Tomorrow I am at your disposal, at a slightly better rate."
+
+**A trader of the town** (any shopkeeper in an Aurennais town, the shop's greeting that day; Aurennais):
+> "Caravan day, Master. My prices are unchanged, and I would ask you not to compare them with the caravan-master's, who pays no rent."
+
+**The caravan-master** (on the square from 6:00 to 18:00; a townsperson generated from the Aurennais bank by `seededRng('caravan', site.id+':'+year)`, the role *Caravan-master*, never a resident: the strings are the dunes' people, not the town's). Greeting:
+> "The first bale is open, Master. A pinch to every household, by weight and by the old contract, and two gold for a pinch to anyone who is not a household. You may count yourself one if you like. The scale will not argue."
+
+Topics:
+- **How was the road?**
+  > "Long, which is its nature, and dry, which is its habit. We lost no beast and no bale, and one quarrel, which we left at the last well. Quarrels keep badly in the heat."
+- **Why the same day everywhere?**
+  > "Because the contract says the first bale is opened in every town on one morning, Master, so that no town has its saffron before another and charges the rest for the privilege. We split at the last well. It is the only morning of the year the Factors are all equally disappointed."
+- **A pinch of saffron** (2 gold; once a year per town, `'caravan:'+site.id`):
+  > "Weighed, Master. Eleven threads. The contract says ten. The eleventh is the road's, and the road is in a good mood."
+
+The pinch goes into the bag as **A twist of saffron** (misc, weight 0, sells for 1): *Eleven red threads in a twist of paper, from the first bale of the year. In Aurenne a thread goes into the first bread of the season. Nobody calls it luck.*
+
+The log:
+> *You buy a pinch from the first bale. It is weighed in front of you, as the contract says.*
+
+**The next day**, an Aurennais of that town, once, if the player bought a pinch:
+> "You were weighed a pinch yesterday, Master. Put a thread in your bread. It does nothing whatever, and everyone does it."
+
+**An occupied town** (`TS(site).flags.occupied`). No string comes in, and there is no caravan-master or scale. The greeting, Aurennais:
+> "The caravan has gone round us this year, Master. A string does not enter a town under another flag. The contract is silent on the point, and the caravan-master is not."
+
+### 4. The Lamps on the Water — Lean 4, a Seaday
+
+**The custom.** At dusk (18:00), the harbourmaster stands on the quay steps with the harbour's ledger of hulls, the one the tithe is kept in, and reads every hull of the town that is at sea, with her master's name. A small clay lamp of oil goes onto the water for each, on a board, and the ebb takes them out toward the harbour mouth in a slow line. Then the hulls lost that year are read, and struck through in the ledger, and their lamps go last. The ships of the Compact come back. The Aurennais say it is the lamps, and they say it as if it were a joke. Lamps are sold on the quay from 17:00 to 22:00 to anyone who wants to set one. An inland town keeps it at its fountain, reads the names of its own people at sea, and sets the lamps on the basin, where they go nowhere and nobody minds.
+
+**How many are struck.** None, one or two hulls a year, from `seededRng('lamps', site.id+':'+year)`: none six years in ten, one three in ten, two one in ten. The lost hulls' names are drawn from the game's ship names on the same stream.
+
+**Due line:** *The Lamps on the Water — at dusk, the ledger read at the quay and a lamp on the ebb for every hull at sea.*
+
+**Greetings** (all day):
+
+**Aurennais:**
+> "It is the Lamps tonight, Master. A lamp on the water for every hull in the ledger that is out, to light her in. The ships of the Compact come back, as you will have heard. We should not like to be asked to prove that it is the lamps."
+
+**Gatelander:**
+> "It's their Lamps tonight. A light on the water for every ship they've got out, and one for each that's not coming home. Their ships come back, mostly. Ours don't, and we've no lamps for them. I've wondered about that."
+
+**Markman:**
+> "Lamps tonight. They float one out for every ship they've got at sea. Pretty. We just count ours when they're back."
+
+**Old Blood:**
+> "Soilse na Mara. The sea's lights. They set them out to bring the ships in. The sea takes the lamps either way."
+
+**The Factor or the Prior** (the town's lord), on the day, before their topics:
+> "It is the Lamps tonight, Master. I keep no business after noon on this day, and before noon only a little."
+
+**The lampseller** (on the quay from 17:00 to 22:00, or at the fountain inland; a townsperson of the town, the role *Lampseller*, generated from the town's people). Greeting:
+> "Two for a lamp, Master: oil, wick, and a board that will float until the tide forgets it. Name the hull or don't. The water reads no ledger."
+
+Topic: **A lamp** (2 gold; once a year per town, `'lamps:'+site.id`). It opens the choice:
+
+**Who is it for?**
+- *For a ship at sea.*
+- *For one that did not come back.*
+- *For the next ship in.*
+- *For my own ship.* (only while the player has a ship, `worldState.ship`)
+
+The answers (Aurennais lampseller):
+
+- *For a ship at sea.*
+  > "Then set it on the ebb, Master, and it will go out to meet her. They never do, of course. But they go the right way."
+- *For one that did not come back.*
+  > "Then it goes last, Master, with the ones the harbourmaster strikes. It is no less a lamp for that. Some would say more."
+- *For the next ship in.*
+  > "Generous terms, Master: a lamp for whoever is owed one. The water will settle the account."
+- *For my own ship.*
+  > "Then it will be lit when she comes in, Master, which is the whole of the contract. Do be sure to come in."
+
+**Setting it on the water.** After the choice, the log, and the lamp goes out from the quay's edge:
+> *You set the lamp on the water. The ebb takes it out among the others, a slow line of lights toward the harbour mouth.*
+
+Inland:
+> *You set the lamp on the fountain's basin among the others. It turns once, and stays.*
+
+**At dusk, the ledger** (a `showMsg`, once, if the player is within 30 of the quay, or of the fountain inland, from 18:00 to 18:30; `{A}` and `{B}` are the struck hulls):
+
+- None struck:
+  > *At dusk the harbourmaster reads the ledger from the quay steps: every hull out, and her master's name, and a lamp onto the water for each. Then the ledger is closed. Nothing is struck this year, and the quay cheers as if it had rowed every one of them home.*
+- One struck:
+  > *At dusk the harbourmaster reads the ledger from the quay steps: every hull out, and her master's name, and a lamp onto the water for each. Then one more is read, the {A}, and struck through, and her lamp goes last.*
+- Two struck:
+  > *At dusk the harbourmaster reads the ledger from the quay steps: every hull out, and her master's name, and a lamp onto the water for each. Then two more are read, the {A} and the {B}, and struck through, and their lamps go last.*
+- Inland (none struck, or any, the same line):
+  > *At dusk the {title} reads from the ledger the names of the town's people at sea, and a lamp is set on the fountain for each. They do not go anywhere. Nobody minds.*
+
+**The next day**, an Aurennais of that town, once, if the player set a lamp:
+> "You set a lamp last night, Master. I saw. Lamps are entered on no ledger, which is, I think, the one kindness the Compact allows itself."
+
+The lampseller in another people's voice, where a port's blend puts one there:
+
+- **Gatelander:** "Two for a lamp, and it'll float. You needn't say who it's for. The water's not asking." *For my own ship:* "Then she'll have a light to come home by. Mind she does."
+- **Markman:** "Two. It floats. Who for's your business." *For my own ship:* "Your own. Aye. Then come back for it."
+- **Old Blood:** "Two. It goes out on the ebb. You need not say." *For my own ship:* "Then it waits for you on the water. Come in."
+
+### 5. In the Gatelands and in the Mark
+
+On Aurenne's three, an Aurennais in a town of another island (a port's blend, a Factor's house, a Church) greets once that day:
+
+- The Commencement: "The academy reads its names today, Master, at home. I was read once. I find I still stand up a little when I think of it."
+- The Caravan: "The caravan is in at home today, Master. I am told the saffron here comes from the same bale, by way of four Factors and a considerable margin."
+- The Lamps: "It is the Lamps at home tonight, Master. If you are near the water at dusk, I should be obliged if you would look at it for a moment."
+
+### What in the code would carry it
+
+- `60-shop.js`, the first run's `FESTIVALS`: fills Aurenne's three entries (`commencement`, `caravan`, `lamps`) with `greet` for the four peoples and `due`. All three are fixed dates, so `festivalOn(at,nation)` needs nothing new.
+- `feastGreeting(def)` as the first run gives it, reading Aurenne's three. The lord's line goes before `lordTopics` on the day, as the first two runs do. The trader's Caravan line goes in the shop greeting on that day. The abroad lines (§5) are the second run's §5 mechanism with an Aurennais speaker.
+- **The readings**: three `showMsg`s on the clock, once a visit within reach of the square (the Commencement at 10:00 and 12:00) or the quay or fountain (the Lamps at 18:00), as the second run's Blaze and Strait Fair narrations do. Their numbers come from `seededRng('commencement'|'lamps', site.id+':'+year)`, so they are the same on any machine and after a load. The admitted's names come from `NAMES.aurennais`, and *She stands* or *He stands* is taken from the bank the name came from. The struck hulls' names come from the ship-name pool the other ships draw from (`85-world-sea.js`).
+- **The three people**, each a townsperson on the plaza in their hours with one topic, as the first run's lanternmaker: the bursar (9:00–12:00), the caravan-master (6:00–18:00, not in an occupied town) and the lampseller (17:00–22:00, on the quay in a port, at the plaza's fountain inland).
+- **The acts**: each costs 2 gold and writes `worldState.festivals[<key>:<site.id>]=year` (a world key, on `_applyLoadData`'s list with the first run's `festivals`). The Commencement's choice is kept for the noon line in the session only (`FEST.subscribed`). After a load the noon line is skipped, which is harmless. The Caravan's pinch is a misc item made in place (`{type:'misc',name:'A twist of saffron',ico:'🌼',weight:0,sellMult:…,desc:…}`, `bagAdd`). The player's name in the bursar's line is `playerName`.
+- **The test** (the first run's `tests/festivals.test.mjs`, extended):
+  - on Shearing 6 in an Aurennais town a townsperson greets with the Commencement's line for their people, and the same day in a Gatelands town greets as any day;
+  - the subscription takes 2 gold once and its key saves and loads;
+  - on Reaping 9 the pinch is bagged and the occupied town has no caravan-master;
+  - on Lean 4 the ledger's struck count is the same on two boots, and *For my own ship* shows only with a ship.
+
+**For the look builder** (backlog A, under this draft's name): the bursar's table on the square; the caravan's string on the square from 6:00 to 18:00 (pack-beasts and bales, the scale, an awning), which the words do not need; the lamps going out on the ebb from the quay (small lit lamps drifting out over two minutes, a few dozen at once) and turning on the fountain's basin inland.
+
+### Checked against the canon
+
+- *Register.* Every Aurennais is formal and qualified, with *Master* to the player and the titles as offices (*the Prior*, *the Factor*, *the harbourmaster*). Every one uses contract and ledger words (*the old contract*, *renegotiated*, *by date of payment*, *the ledger must balance*, *generous terms*, *settle the account*, *the whole of the contract*), and none swears. Gatelanders speak in proverb and hearsay (*they say*, *Never stand still at a caravan*), and none gives a bare yes. Markmen use short sentences and *aye*. The Old Blood give the older name first in the deep register's Irish (*An Chéad Léamh*, *An Cróch*, *Soilse na Mara*) and say little after it.
+- *Slurs and their contradiction.* None is said outright. The Markman who *learned letters at forty* contradicts *the unlettered* (§2.1). The Markman's *honest dear … they weigh it in front of you* contradicts *tithe-men … charge for the knot*. The Gatelander's *Their ships come back. Ours don't* is §2.1's own line, given to a Gatelander at the Lamps.
+- *The Church.* It reads the Commencement's names and nothing more. It has no part in the Caravan or the Lamps, and no festival is given to a god.
+- *The Withdrawal.* The Old Blood's *There was a law about reading, once. It was not about names.* keeps §3.1's law (*touching is permitted; understanding is not*) as a fact remembered, not explained.
+- *No chosen one.* Nothing here names the player but the bursar's roll, and that is a subscription.
+- *§10a.* All three are glad on the surface. The struck hulls go last and are no less lamps for it. Six years in ten nothing is struck, and the quay cheers.
+- *Silent, chosen plainly:* where the saffron grows (the oases beyond the dunes), why every town has its caravan on one morning (the string splits at the last well), and the academy's name (none given).

@@ -6,11 +6,12 @@ Every player-readable string added or changed in `index.html` and, since the spl
 
 | Branch | Reviewed to | Note |
 |---|---|---|
-| main | `2ca98115` | run 26: Sessions 1286–1337 as merged (F5's gates as spaces and their two floors, F6 and F9's Church of the Weaver with the six gods' row and its board, Aurenne's tavern, the bench's lines merged, the dungeon saves): the church board reads in register; clean. Run 25: Sessions 1219–1284 as merged (F5's dungeon at true size, F10's player body and the creator's *Body*, *Height* (*Short*, *Middling*, *Tall*) and *Build* (*Slight*, *Middling*, *Strong*) rows, the bodies' kit, the herbs' ground, the witness reach); clean. Run 24: F3's land (the *Quality* row: Finding 33), F4's people and foes (the foes' dress table, the wolves' kit: no line a person reads), Systems 1218 (Finding 32 as written: *Bad Penny*), the look and bodies prototypes; one finding. Run 23 to `c91bf97`: Sessions 1143–1190 (the kit's church and keep, the inn's taproom, the two-hit string, the guard's blow at the yield's line, F3's land) and my own Session 1092 merged (PR #414); clean. Run 22: auto/systems' Sessions 1104–1141 merged (the Spire Held's watch, the draft's own lines word for word; the shelf's *You take … from the shelf.*; the heavy blow and the feint, no line), the Look's kit sessions and the concept and QA merges; clean. Before that, run 21 to `5521ba1`: the Look sessions 1031–1053, the Quest builds 979–1030; clean |
+| main | `008a7dec` | run 27: Sessions 1338–1386 as merged (the great gates built from my approved pieces I–III by the systems builder, Sessions 1346–1377: the knot's lines, the ring, the knife, the note, the flagstone, the runner, Aldwyn, the gifts and the tolls, the talk, the last cut's ask; the coaching inn's eight rooms; Acrobatics' *Catch*; the Quality probe's *Set to Low for this machine*): every great-gates line is the drafts' word for word; one finding (Finding 34, the coaching inn's room names). Run 26 to `2ca98115`: Sessions 1286–1337 as merged (F5's gates as spaces and their two floors, F6 and F9's Church of the Weaver with the six gods' row and its board, Aurenne's tavern, the bench's lines merged, the dungeon saves): the church board reads in register; clean. Run 25: Sessions 1219–1284 as merged (F5's dungeon at true size, F10's player body and the creator's *Body*, *Height* (*Short*, *Middling*, *Tall*) and *Build* (*Slight*, *Middling*, *Strong*) rows, the bodies' kit, the herbs' ground, the witness reach); clean. Run 24: F3's land (the *Quality* row: Finding 33), F4's people and foes (the foes' dress table, the wolves' kit: no line a person reads), Systems 1218 (Finding 32 as written: *Bad Penny*), the look and bodies prototypes; one finding. Run 23 to `c91bf97`: Sessions 1143–1190 (the kit's church and keep, the inn's taproom, the two-hit string, the guard's blow at the yield's line, F3's land) and my own Session 1092 merged (PR #414); clean. Run 22: auto/systems' Sessions 1104–1141 merged (the Spire Held's watch, the draft's own lines word for word; the shelf's *You take … from the shelf.*; the heavy blow and the feint, no line), the Look's kit sessions and the concept and QA merges; clean. Before that, run 21 to `5521ba1`: the Look sessions 1031–1053, the Quest builds 979–1030; clean |
 | auto/systems | `2b0ee4e` | run 22: merged into main (PR #353), nothing ahead. Run 21 to `9b2f0e1`: Sessions 1061–1089; clean |
 | auto/fable-combat-resolver | `f1976a3` | run 20: merged into main, nothing ahead |
 | auto/fable-f2a-scale, auto/wip-fable-f2a-scale | `e82ad5c`, `a5a4667` | run 19: merged into main, nothing ahead |
 | auto/bodies, auto/backlog, auto/wip-town-plots, auto/producer, auto/producer-look, auto/producer-bodies, auto/producer-decisions, auto/qa, auto/qa-perkbody, auto/qa-skillcurve, auto/critic, auto/concept, auto/design, auto/wip-spear | `372b869`, `0272203`, `aa74c47`, `7a71e51`, `86f05bb`, `56e437c`, `570cd5e`, `db349a9`, `bac01b0`, `ff40184`, `92afe03`, `dc5902f`, `2b9d1d4`, `5a1b57d` | run 22: bodies (the wall hold) and backlog and wip-town-plots (the church, the bawn, the steward's route) add only the inspector's part names (*Church with a west tower*, *Bawn wall, gate and flankers*); auto/producer and auto/qa-skillcurve hold old merges of auto/systems read in runs 19–20; the rest nothing ahead of main in `js/` or `index.html` |
+| auto/look-1380, auto/qa-1381, auto/quests-build-1387 | `71b92b97`, `fa174193`, — | run 27: open PRs #686 (the resident's role, no new line), #687 (tests only) and #690, my own build (the approved draft's words, verbatim) |
 | auto/qa-1329, auto/quests-build-1338 | `eae9444`, — | run 26: open PRs #636 (tests only, no line a player reads) and #640, my own build (the approved draft's words, verbatim) |
 | auto/bodies-1284, auto/systems-1282, auto/look-1280, auto/qa-1225 | `733c65f`, `2ed113e`, `7a6adf6`, `7140783` | run 25: open PRs #594, #591, #587, #527. #591 carries Finding 33 as written (*Middle suits most machines, Low a slow one*); the rest add no player-readable text in `js/` or `index.html` |
 | claude/new-look-1226, auto/look-1224, claude/look-443-1217, auto/look-1216, auto/bodies-1230, auto/qa-1225, ci/basic-tests | `af9e22f`, `7664f32`, `b871782`, `1cd807a`, `4928b7a`, `7140783`, `9b67be7` | run 24: open PRs. auto/look-1224 hangs the six gods' plates at the town church (*An Mhuir*, *An Spéir*, *Na Beithígh*, *An Chloch*, *An Teallach*, *An Fíodóir*, with their common names), as canon §4.1 has them; the rest add no player-readable text in `js/` or `index.html` |
@@ -26,6 +27,32 @@ Every player-readable string added or changed in `index.html` and, since the spl
 | auto/fable-co-op-door, auto/fable-world-file, auto/fable-rivers | — | no merge base with main; not read |
 | auto/split | — | merged into main, nothing ahead |
 | claude/lucid-faraday-6qlft7 | — | shares no history with main; not read |
+---
+
+## Run 27 — 25 Oct 2026
+
+About 130 player-readable strings read on main from `2ca98115` to `008a7dec` (Sessions 1338–1386) and on the two open PRs from other lanes. One finding.
+
+**main.** Most of the new text is the great gates, built by the systems builder from my approved pieces I to III. That covers the knot's lines at the ring, the knife and its card, Varek's note, the flagstone, the Herald's runner and Aldwyn's folder, the needle, the six gifts' and tolls' lines, *Any news?* by the count torn, the lords' *The great gates?*, and the last cut's ask. Every sentence matched the drafts word for word, checked by machine against `quest_drafts.md` and then read. The lines the drafts did not give are UI and read plainly: the knot's and the door's prompts, *Go down to the ring.*, *Go in.*, *Every saved game in this browser will be deleted.*, *The Loosing Knife cannot be stashed.*, the Quality probe's *Set to Low for this machine. Settings can change it.*, and Acrobatics' *Catch* (*mantle to 2.2 m, and catch an edge while falling*). The one fault is the coaching inn's new room names (Finding 34).
+
+**The PRs.** #686 (look) gives a house's keeper the role *Resident* and adds no line. #687 (QA) is tests only. #690 is this run's build.
+
+**Michael's calls:** none newer than 16 Oct on the drafts page.
+
+**Built:** Session 1387 (PR #690), the second and last slice of *The Spire Held*'s words: the night sergeant, the roof and its stone, Rowe's morning. No `FREEZE:` issue is open.
+
+**Drafted:** *Festivals on the Calendar, III*, Aurenne's three.
+
+### Finding 34 — main — the coaching inn's rooms are named like an inventory
+
+**Where.** `83-world-generator.js`, `COACH_ROOM_NAMES` (Session 1368), read by `innRoomName` (`86-world-crime.js`) into the keeper's offer, *paid* and *made* lines and the log's *Rented … at …*.
+
+**Text.** `['first floor’s west front room','first floor’s middle front room','first floor’s east front room','second floor’s west front room','second floor’s middle front room','second floor’s east front room','first floor’s west back room','first floor’s east back room']`, so the keeper says *"12 gold, and thank you. The first floor’s west front room, up the stairs, and yours till this time tomorrow."*
+
+**Why.** Three qualifiers stacked on a possessive floor read like a builder's plan, not a keeper showing a guest up. Nobody of any people says *the first floor's west front room*. They name the room and then the floor. The fix is word order alone, and it reads right in every line that takes the name, in all four peoples' keepers' mouths.
+
+**Replacement.** `const COACH_ROOM_NAMES=['west front room on the first floor','middle front room on the first floor','east front room on the first floor','west front room on the second floor','middle front room on the second floor','east front room on the second floor','west back room on the first floor','east back room on the first floor'];` (with `innRoomName`'s `'the '+` and `cap()` unchanged: *The west front room on the first floor, up the stairs, and yours till this time tomorrow.*). Nothing else changes.
+
 ---
 
 ## Run 26 — 23 Oct 2026
