@@ -94,7 +94,7 @@ Started 15 Oct 2026 (QA run of 18:51 UTC, main 0773903 plus Sessions 946–949).
 | `foearmour` | 5/14 | pass | pass | 43 |  |
 | `foelogname` | 7/14 | pass | pass | 51 |  |
 | `foes` | 1/14 | pass | pass | 71 |  |
-| `foewarm` | 5/14 | pass | **red** | 170 | Red twice (identical): *raising every foe kind compiles no shader and adds no program* read 2 compiles and one new program (41→42, 42→43) when every kind is raised and drawn; the prewarm itself ran (33 kinds, 17 programs). On 0.170 the prewarm (`prewarmFoes`, `js/42-zone-enemies.js`) leaves one foe program to be compiled on its first draw: the game's, filed in backlog I for the systems builder. |
+| `foewarm` | 5/14 | pass | **red** | 170 | Red twice (identical): *raising every foe kind compiles no shader and adds no program* read 2 compiles and one new program (41→42, 42→43) when every kind is raised and drawn; the prewarm itself ran (33 kinds, 17 programs). On 0.170 the prewarm (`prewarmFoes`, `js/42-zone-enemies.js`) leaves one foe program to be compiled on its first draw: the game's, filed in backlog I for the systems builder. **Fixed S988, S1267; red again on main since about S1364 (S1374 saw it at 819f6e4; weekly run 25 Oct; S1411 at ed26b39): 2 compiled, 1 program added, the creature kit's flat-shaded sword on the Goblin and the Skeleton, which the prewarm never builds; filed in I for the systems builder, S1411.** |
 | `fortbarracks` | 10/14 | pass | pass | 101 |  |
 | `fortcot` | 4/14 | pass | pass | 122 |  |
 | `fortfurn` | 3/14 | pass | pass | 110 |  |
