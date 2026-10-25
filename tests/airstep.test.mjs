@@ -75,11 +75,15 @@ check(`a 12 m drop, the step pressed 1 m up: the fall is counted from the top ($
 
 // the head at the ceiling: a cottage in Dunmore, then a dungeon
 await g.settle('dunmore');
+// Session 1424 — the room, the street and the dungeon are each waited for (each is built in doFade's callback), not 4, 3 and 6 s: in
+// the weekly run of 25 Oct the dungeon's jump ran with `dun: false` under the open sky, FLAKY (docs/qa/flaky.md)
+const until = async (what, fn, arg) => { const t0 = Date.now(); try { await page.waitForFunction(fn, arg, { polling: 100, timeout: 60000 }); }
+  catch (e) { console.log(`  ${what} not seen after ${Math.round((Date.now() - t0) / 1000)} s`); } };
 // Session 1212: on the new look every Dunmore home is a kit townhouse, two storeys outside (`two`) and one floor within (2.887 m to
 // the ceiling, nothing over you), so it is taken next; the fallback had been the church, 7.2 m up, out of the double jump's reach.
 const room = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'); const h = S.houses.find(x => x.type === 'home' && !x.two) || S.houses.find(x => x.type === 'home' && x.kit && x.kit.kind === 'townhouse') || S.houses.find(x => !x.two && x.type !== 'inn');
   forceTime(13); px = h.exitX; pz = h.exitZ; goToInterior(h); return { id: h.id, type: h.type }; });
-await page.waitForTimeout(4000); await g.hide();
+await until('in the room', id => currentHouse && currentHouse.id === id && document.getElementById('fd').style.opacity === '0', room.id); await g.hide(); await g.frames(4);
 const inRoom = await page.evaluate(() => { const H = currentHouse._roomH, W = currentHouse.intW, D = currentHouse.intD;
   // a clear spot: no foothold or solid within 0.6 m, 0.8 m in from the walls
   const clear = (x, z) => FOOTHOLDS.every(f => f.kind === 'spiral' || x < f.x0 - .6 || x > f.x1 + .6 || z < f.z0 - .6 || z > f.z1 + .6) && (INT_SOL || []).every(s => x < s.x0 - .6 || x > s.x1 + .6 || z < s.z0 - .6 || z > s.z1 + .6);
@@ -91,9 +95,9 @@ const inRoomLow = await page.evaluate(() => { const r = _jump(5); return { ...r,
 check(`indoors, an untrained jump stays under it (head at ${inRoomLow.headAt} m)`, inRoomLow.headAt < inRoomLow.H - .05 && Math.abs(inRoomLow.top - apex(5)) < .01, inRoomLow);
 
 const dun = await page.evaluate(() => { exitInterior && exitInterior(); return true; });
-await page.waitForTimeout(3000);
+await until('back in the street', () => currentHouse === null && document.getElementById('fd').style.opacity === '0');
 await page.evaluate(() => { const p = PORTALS.find(p => p && p.seed != null && p.zone === 'world'); px = p.x; pz = p.z + 3; goToDungeon(p); });
-await page.waitForTimeout(6000); await g.hide();
+await until('in the dungeon', () => String(lid).startsWith('dyn_') && document.getElementById('fd').style.opacity === '0'); await g.hide(); await g.frames(4);
 const inDun = await page.evaluate(() => { const r = _jump(100, { second: 'top' }); return { dun: lid.startsWith('dyn_'), floorH: FLOOR_HEIGHT, floor: currentFloor, ...r, headAt: +(r.top + HEAD_H).toFixed(3), ceil: +(headCeil(px, pz, _ground()) - _ground()).toFixed(3) }; });
 const dunWant = Math.min(1.77, inDun.ceil - 1.8);
 check(`in a dungeon (${inDun.floorH} m to the ceiling over you: ${inDun.ceil}): the double jump's top is ${inDun.top} m (${dunWant.toFixed(2)} wanted)`, inDun.dun && inDun.used && Math.abs(inDun.top - dunWant) < .03 && inDun.landed, inDun);
