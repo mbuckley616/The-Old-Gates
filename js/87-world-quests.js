@@ -1856,6 +1856,8 @@ const giver=`${lord.title} ${lord.name}`;
         {label:'Farewell.',bye:true}];}};}
   function spireRoweDef(x,z){return {name:RIVAL.name,role:'',ico:'⚔',authored:true,people:'markman',sCol:0xf0dcc8,hairCol:0xd8c8a0,bodyScale:[1.04,1.06,1.04],bCol:0x2a2a30,x,z,temper:'dry',greeting:[SPIRE_ROWE.greet],
     topics:[{label:'Did anyone come?',response:SPIRE_ROWE.came},{label:'What was the light?',response:SPIRE_ROWE.light},{label:'Where now?',response:anchoredPlaces().blackhand?SPIRE_ROWE.where:SPIRE_ROWE.whereNone},{label:'Farewell.',bye:true}]};}
+  // S1390 — the door is his while he stands (§2: *Let me up.* … "and the door is the player's"): E at it turns you to him
+  function spireDoorHeld(h){if(!SPIRE_FOLK.sgt||!h)return false;const t=spireTower();return !!t&&t.id===h.id;}
   function spireFolkGone(k){duelRemoveNpc(SPIRE_FOLK[k]);SPIRE_FOLK[k]=null;}
   function spireFolk(){const sp=anchoredPlaces().spire,inside=typeof isInterior==='function'&&isInterior(),near=!!sp&&!inside&&Math.hypot(px-sp.x,pz-sp.z)<180,h=near?spireTower():null;
     const wantS=!!h&&spireLit()&&SPIRE_FOLK.offNight!==spireNight(),wantR=!!h&&spireMorning();

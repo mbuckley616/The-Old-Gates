@@ -1097,6 +1097,10 @@ function keeperAimed(){return !!(intNPCMesh&&Math.hypot(px-intNPCPos.x,pz-intNPC
 // bed does (S650): in a room of true size the door's 1.6 by 3.2 reaches the people waiting by it (the coaching inn's driver)
 function personAimedIn(){return keeperAimed()||!!(typeof INT_NPCS!=='undefined'&&INT_NPCS.some(n=>Math.hypot(px-n.g.position.x,pz-n.g.position.z)<2.2&&Math.abs(jumpY-n.g.position.y)<1.2&&aimAt(n,3.6)));}
 function keeperInReach(){return !!(intNPCMesh&&Math.abs(jumpY)<1.2&&(Math.hypot(px-intNPCPos.x,pz-intNPCPos.z)<2.2||keeperAimed()));}
+// S1390 — a world door is taken only from the ground it stands on: on the spire's roof by its south parapet the tower's door is
+// 4.8 m away across and 39 m below, and E took it in place of the stone (the quest writer's note, backlog A). Three metres is over
+// any jump or step and under a storey.
+function doorAtFeet(h){if(activeZoneId!=='world'||h.doorX==null)return true;return Math.abs(jumpY-activeTerrainH(h.doorX,h.doorZ))<3;}
 function interact(){
   if(lid==='overworld'){
     // Zone gates — highest priority after portals
@@ -1163,9 +1167,10 @@ function interact(){
       // gets a near-house find without per-zone hardcoded branches.
       const zHouses=(ZONES[activeZoneId]&&ZONES[activeZoneId].houses)||null;
       if(zHouses){
-        const nearZH=zHouses.find(h=>!h.byAim&&Math.hypot(px-h.doorX,pz-h.doorZ)<TOUCH); /* S614 — the ship's hatch is entered by the crosshair (WORLD.shipInteract) */
+        const nearZH=zHouses.find(h=>!h.byAim&&Math.hypot(px-h.doorX,pz-h.doorZ)<TOUCH&&doorAtFeet(h)); /* S614 — the ship's hatch is entered by the crosshair (WORLD.shipInteract) */
         if(nearZH){
           // S155 — a shop after hours or a home at night is locked: pick it (S142's lock), or come back
+          if(typeof spireDoorHeld==='function'&&spireDoorHeld(nearZH)){openDialog(SPIRE_FOLK.sgt.def);return;} /* S1390 — the night sergeant's door: you ask him */
           if(activeZoneId==='world'&&typeof WORLD!=='undefined'&&WORLD.doorLockNow(nearZH)&&!WORLD.doorPicked(nearZH)){tryLockpick(WORLD.doorLockFor(nearZH));return;}
           goToInterior(nearZH);return;
         }
