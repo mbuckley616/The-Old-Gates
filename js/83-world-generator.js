@@ -1899,7 +1899,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     intNPCMesh=null;intBedPos=null;intStashPos=null;
     const SOL=[];INT_SOL=SOL;FOOTHOLDS=[];INT_BEDS=[];INT_DOORS=[];INT_DOORS.house=house.id;INT_CHAIR=null;INT_NPCS=[];HATCH.active=false;HATCH.roof=false;INT_LOOT=null;INT_BOX=null;INT_SHELF=null;
     T.group.position.set(X,-F0,Z);T.group.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false;}});sc_.add(T.group);
-    {const E=new THREE.Object3D();E.position.set(rx(T.door.x),0,D);E.userData.entrance=true;E.userData.leaf=[T.door.w,+(T.door.h-T.door.w/2).toFixed(3)];sc_.add(E);} /* S1393 — the front door's leaf, as the old builder's door records it (scalerooms) */
+    {const E=new THREE.Object3D();E.position.set(rx(T.door.x),0,D);E.userData.entrance=true;E.userData.leaf=[T.door.w,+(T.door.h-T.door.w/2).toFixed(3)];sc_.add(E);} /* S1396 — the front door's leaf, as the old builder's door records it (scalerooms) */
     // the solids are the prototype's boxes (the furniture, the partitions of each floor, the breasts, the cupboard under the flights,
     // the rail round the well on the top floor, the doors' leaves); a seat or a table stands from its floor (its legs are not boxes),
     // so you step up onto a bench or a chair (0.44, held to STEP_UP); a box's top is a foothold, except a wall's, the rail's and a leaf's
