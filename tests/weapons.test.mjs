@@ -27,7 +27,7 @@ check('deserters carry a mace or a spear, every one with a kite shield', has('De
 check('archers a bow in the left hand, mages a staff, cultists a dagger, pirates a cutlass, the captain a sword',
   T['Bandit Archer'].bowLeft === 24 && T['Rogue Mage'].wpn.staff === 24 && T.Cultist.wpn.dagger === 24 && T.Pirate.wpn.cutlass === 24 && T['Bandit Captain'].wpn.sword === 24, { a: T['Bandit Archer'], m: T['Rogue Mage'], c: T.Cultist, p: T.Pirate, cap: T['Bandit Captain'] });
 check('every kit weapon hangs on the gear bone (the bow on the left wrist)', Object.values(T).every(t => t.onBone === 24 - (t.wpn['-'] || 0)), T);
-check('a skeleton carries a rusted sword or its spear; kobolds and trolls keep their own tools', has('Skeleton', 'sword') && T.Skeleton.rust === T.Skeleton.wpn.sword && T.Skeleton.gear.spear > 0 && T.Kobold.wpn['-'] === 24 && T['Cave Troll'].wpn['-'] === 24, { s: T.Skeleton, k: T.Kobold, t: T['Cave Troll'] });
+check('a skeleton carries a rusted sword or its spear; kobolds the kit\'s mattock, trolls their own tools', has('Skeleton', 'sword') && T.Skeleton.rust === T.Skeleton.wpn.sword && T.Skeleton.gear.spear > 0 && T.Kobold.wpn.mattock === 24 /* S1379: the kit's mattock */ && T['Cave Troll'].wpn['-'] === 24, { s: T.Skeleton, k: T.Kobold, t: T['Cave Troll'] });
 
 // in play: a zone bandit's weapon follows the fist through the strike
 const swing = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.cos(yaw), x = px + fx * 20, z = pz + fz * 20; const e = buildZoneEnemy(WORLD.scene, [], x, z, 'Highwayman', null); e.mesh.position.set(x, WORLD.worldH(x, z), z); e.locked = false; e.mesh.visible = true; if (!e.mesh.parent) WORLD.scene.add(e.mesh);

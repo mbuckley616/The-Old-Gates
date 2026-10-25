@@ -1360,8 +1360,8 @@ function hbPrep(g,key){if(g.hbKey)return;g.hbKey=key;try{hbTint(g,hbGenome(g));}
 // and what each wears over the builder's own rolled clothes, from its FOE_DRESS colour (c): the weapon and shield stay the game's
 // kit, held by the driver's bones, so the builder's own spear, staff, crossbow, basket and shield are taken off every one
 const HB_FOE_NOT=/^(skel|dead|goblin|troll|gargoyle|golem|wraith)$/;
-// S1404 — of the risen dead, the Hollowed and the Ghoul wear the builder's body (its skin's rot, S1403); the Ash Wight and the ghosts not yet
-const HB_FOE_DEAD=/^(Hollowed|Ghoul)$/;
+// S1404 — of the risen dead, the Hollowed and the Ghoul wear the builder's body (its skin's rot, S1403); the Ash Wight since S1409; the ghosts not yet
+const HB_FOE_DEAD=/^(Hollowed|Ghoul|Ash Wight)$/;
 function hbFoeOk(type,genome,g){if(genome)return !!g.hbKey;const dr=FOE_DRESS[type];return !!dr&&!Object.keys(dr).some(k=>dr[k]&&HB_FOE_NOT.test(k)&&!(k==='dead'&&HB_FOE_DEAD.test(type)));}
 const HB_FOE_DRESS={
   'Bandit':        c=>({cloak:c.map(v=>v*.8),cape:true,hood:'up'}),
@@ -1384,6 +1384,10 @@ const HB_FOE_DRESS={
   // S1404 — the risen dead (S173) in what they were buried in: a tunic and trousers of the grave's drab, barefoot, nothing over them
   'Hollowed':      c=>({trousers:c.map(v=>v*.85),skirtColor:c.map(v=>v*.9),boots:null,belt:null,mantle:null,cuffs:null,cuffBand:null,cloak:null,hood:null,helm:null,brooch:null,necklace:null,earrings:null,circlet:null,tartan:null,tartanLine:null,bands:null,bandsMotif:null}),
   'Ghoul':         c=>({trousers:c.map(v=>v*.8),skirtColor:c.map(v=>v*.85),boots:null,belt:null,mantle:null,cuffs:null,cuffBand:null,cloak:null,hood:null,helm:null,brooch:null,necklace:null,earrings:null,circlet:null,tartan:null,tartanLine:null,bands:null,bandsMotif:null}),
+  // S1409 — the Ash Wight (S403: Iron mail rusted nearly black, as the dead's blades are): the builder's mail, Iron's kettle helm (tier 3,
+  // as the player's, tpHBDress) and mail greaves with cuisses, all in the rust; under them the grave's drab, and boots, the foe's own;
+  // the builder's spear in his right fist, as the hag has its staff: the driver's spear is baked into the driver's hidden mesh
+  'Ash Wight':     c=>({mail:[.29,.24,.2],helm:[.29,.24,.2],tier:3,greaves:[.29,.24,.2],greavesKind:'mail',cuisses:true,spear:[.3,.25,.19],trousers:c.map(v=>v*1.2),boots:[.12,.1,.09],belt:[.16,.12,.09],mantle:null,cuffs:null,cuffBand:null,cloak:null,hood:null,brooch:null,necklace:null,earrings:null,circlet:null,tartan:null,tartanLine:null,bands:null,bandsMotif:null}),
   'Marsh Hag':     c=>({robe:c,cord:[.3,.27,.18],cloak:[.2,.18,.12],tartan:null,tartanLine:null,cloakLen:.85,cape:false,hood:'up',cloakFur:null,cloakHem:null,brooch:null,mantle:null,belt:null,staff:[.3,.23,.15],staffMake:'hazel',necklace:null,earrings:null,circlet:null})};
 // S1379 — what a foe's genome is beyond its clothes: a kobold is an old man, short and thickset, with a long grey beard (the driver's
 // greybeard, S184); it is sized to its driver's stature like every foe, so its height slider only moves its proportions
@@ -1399,6 +1403,9 @@ const HB_FOE_BODY={
   // braids took a body to 113k triangles)
   'Hollowed':      G=>{G.hair={style:'short',len:.3};G.age=.82;G.height=0;G.weight=.22;G.muscle=.3;G.hairCol=[.42,.41,.38];G.beard=Math.min(G.beard||0,.4);G.skin=[.56,.54,.49];G.rot=.7;},
   'Ghoul':         G=>{G.hair={style:'short',len:.2};G.age=.8;G.height=0;G.weight=.15;G.muscle=.25;G.hairCol=[.36,.37,.33];G.beard=Math.min(G.beard||0,.3);G.skin=[.44,.5,.37];G.rot=1;},
+  // S1409 — the Ash Wight: a man dead longer than the Hollowed, rotted at .85 under the rusted iron, the driver's ash-grey skin (0x5a5450 at .75),
+  // shaven (the armour took him over 70k triangles with a beard)
+  'Ash Wight':     G=>{G.g=1;G.hair={style:'short',len:.2};G.age=.75;G.height=0;G.weight=.2;G.muscle=.35;G.hairCol=[.36,.35,.33];G.beard=0;G.skin=[.4,.38,.36];G.rot=.85;},
   'Ogre':          G=>{G.g=1;G.age=.6;G.height=1;G.prop=.35;G.weight=1.35;G.muscle=0;G.hair={style:'short',len:0};G.hairCol=[.23,.16,.1];G.beard=G.beard>.8?.35:0;G.skin=[.74,.55,.42];}};
 // a foe's genome, at its first attach (its id is given after it is built, keyFoe): `foe:<id>`, the co-op rule's place and index; a
 // foe with no id yet (the inspector's) takes its type and its old genome's seed, which is the same each time it is built
@@ -1534,6 +1541,9 @@ function hbHold(rig){const H=rig.hb,top=rig.foe?rig.root.parent:rig.root;top.upd
   for(const h of H.held){const o=h.o;if(o.parent!==H.root&&o.parent!==h.par)continue;if(o.parent!==H.root)H.root.add(o);
     _hbm.multiplyMatrices(_hbm2,h.par.matrixWorld).multiply(h.m0);_hbm.decompose(o.position,o.quaternion,o.scale);
     if(h.f&&h.f.length){const v=_hbv.set(0,0,0);for(const b of h.f)v.add(_hbv2.setFromMatrixPosition(b.matrixWorld));o.position.copy(v.multiplyScalar(1/h.f.length).applyMatrix4(_hbm2));}}}
+// S1415 — a blow's pose (attackPose, 42-zone-enemies.js) is set on the driver after tickPeople has copied it to the builder's body,
+// so the body and what it holds showed no wind-up and no strike: copied again here, for a foe whose body is near enough to pose
+function hbRepose(rig){if(rig&&rig.hb&&rig.hb.L<2&&!rig.hb.cold){hbPose(rig);if(rig.hb.held.length)hbHold(rig);}}
 function hbGive(rig){const H=rig.hb;for(const h of H.held)if(h.o.parent===H.root){h.par.add(h.o);h.m0.decompose(h.o.position,h.o.quaternion,h.o.scale);}}
 function hbPose(rig){const H=rig.hb,B=rig.B,map=H.map;
   for(let i=0;i<map.length;i++){const [j,b]=map[i];

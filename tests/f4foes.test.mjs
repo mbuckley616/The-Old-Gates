@@ -1,5 +1,5 @@
 // Card F4 (Session 1201): on the new look the human foes wear the builder's bodies, as the townsfolk have since Session 1195.
-// A line of the nine kinds of FOE_DRESS that are people (and an Ash Wight, which is not: the Hollowed and the Ghoul, risen dead, have their own suite since Session 1404, f4dead) ahead of you in the open world: each is
+// A line of the nine kinds of FOE_DRESS that are people (and a Wraith, which is not: the risen dead have their own suite since Session 1404, f4dead, and the Ash Wight is in it since Session 1409) ahead of you in the open world: each is
 // built on the builder's 163-bone skeleton over its 17-bone driver, its genome rolled from its foe id (keyFoe, the co-op rule's
 // place and index) and dressed from its kind; its weapon stays the game's, in the builder's fist; it glows with the tell; and
 // killed, its corpse is darkened with the garments' shaders kept. Pictures: docs/prototypes/f4/f4-foes.jpg and f4-foes-near.jpg.
@@ -7,7 +7,7 @@ import { boot, check, ROOT } from './lib/game.mjs';
 import fs from 'fs'; import path from 'path';
 const OUT = path.join(ROOT, 'docs', 'prototypes', 'f4'); fs.mkdirSync(OUT, { recursive: true });
 
-const KINDS = ['Bandit', 'Bandit Archer', 'Highwayman', 'Deserter', 'Cultist', 'Rogue Mage', 'Pirate', 'Bandit Captain', 'Shieldbearer', 'Ash Wight'];
+const KINDS = ['Bandit', 'Bandit Archer', 'Highwayman', 'Deserter', 'Cultist', 'Rogue Mage', 'Pirate', 'Bandit Captain', 'Shieldbearer', 'Wraith'];
 const g = await boot({ look: 'new' }); const { page } = g;
 await g.intoWorld();
 
@@ -44,9 +44,9 @@ const who = await page.evaluate(() => _F.map(({ n, e, rig }) => { const H = rig 
     hood: names.has('hoodUp'), mail: [...names].some(x => /^mail/.test(x)), helm: [...names].some(x => /helm/i.test(x)), robe: [...names].some(x => /robe|cord/.test(x)), coat: names.has('coat'), tabard: names.has('tabard'),
     spear: names.has('spear'), weapon: !!(rig && rig.weapon) }; }));
 console.log('  foes:', JSON.stringify(who.map(w => [w.n, w.key, w.hood, w.mail, w.helm, w.robe, w.coat, w.tabard])));
-const people = who.filter(w => w.n !== 'Ash Wight');
+const people = who.filter(w => w.n !== 'Wraith');
 check('the nine human foes wear the builder\'s body on its 163-bone skeleton, keyed by their foe id', people.every(w => w.hb && w.bones === 163 && w.key === 'foe:' + w.id), people.filter(w => !(w.hb && w.key === 'foe:' + w.id)));
-check('the Ash Wight keeps its own body (the armoured dead are not on the builder\'s yet)', !who.find(w => w.n === 'Ash Wight').hb && made.left === 0, who.find(w => w.n === 'Ash Wight'));
+check('the Wraith keeps its own body (the ghosts are not on the builder\'s yet)', !who.find(w => w.n === 'Wraith').hb && made.left === 0, who.find(w => w.n === 'Wraith'));
 const by = Object.fromEntries(who.map(w => [w.n, w]));
 check('each dressed as its kind: hooded bandits and cultists, mail and helm on the deserter, the captain and the shieldbearer, a coat on the highwayman, a tabard on the shieldbearer, the builder\'s own spear on none',
   by.Bandit.hood && by['Bandit Archer'].hood && by.Cultist.hood && by['Rogue Mage'].hood && by.Deserter.mail && by.Deserter.helm && by['Bandit Captain'].mail && by.Shieldbearer.mail && by.Shieldbearer.tabard && by.Highwayman.coat && people.every(w => !w.spear), by);
