@@ -934,7 +934,7 @@ function loop(now){
                    :activeZoneId==='hearthwick'?HEARTHWICK_HOUSES.find(h=>Math.hypot(px-h.doorX,pz-h.doorZ)<TOUCH)
                    :activeZoneId==='ironhaven'?IRONHAVEN_HOUSES.find(h=>Math.hypot(px-h.doorX,pz-h.doorZ)<TOUCH)
                    // v61e1: generic per-zone houses lookup mirrors the interact handler.
-                   :((ZONES[activeZoneId]&&ZONES[activeZoneId].houses)||[]).find(h=>!h.byAim&&Math.hypot(px-h.doorX,pz-h.doorZ)<TOUCH)||null; /* S614 — a door entered by the crosshair (the ship's hatch) is not found by standing on it */
+                   :((ZONES[activeZoneId]&&ZONES[activeZoneId].houses)||[]).find(h=>!h.byAim&&Math.hypot(px-h.doorX,pz-h.doorZ)<TOUCH&&doorAtFeet(h))||null; /* S614 — a door entered by the crosshair (the ship's hatch) is not found by standing on it */
     const nearHouse = (nearHouseRaw && activeZoneId==='overworld' && _houseDestroyed(nearHouseRaw)) ? null : nearHouseRaw;
     const activeNPCs=(ZONES[activeZoneId]&&ZONES[activeZoneId].npcs)||[];
     const nearNPC=talkAimedNPC(activeNPCs); // v80 — aimed, not near; S596 — the nearest of those aimed at, the one E talks to
@@ -972,6 +972,8 @@ function loop(now){
       // it isn't your door yet" rather than a silent no-op.
       if(nearHouse.id==='ih7' && !worldState.safehouseGranted){
         iprOW.textContent='Locked. Lord Caldric has the key.';
+      } else if(typeof spireDoorHeld==='function'&&spireDoorHeld(nearHouse)){
+        iprOW.textContent="Press 'E' to talk"; /* S1390 — the night sergeant's door: E turns you to him */
       } else if(activeZoneId==='world'&&typeof WORLD!=='undefined'&&WORLD.doorLockNow(nearHouse)&&!WORLD.doorPicked(nearHouse)){
         const lk=WORLD.doorLockNow(nearHouse);iprOW.textContent=lk.kind==='home'?`${nearHouse.name} — locked for the night · E to pick the lock`:`${nearHouse.name} — locked till ${lk.opens} · E to pick the lock`; // S155
       } else {

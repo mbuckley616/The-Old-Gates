@@ -22,7 +22,7 @@ check(`the kit's room builds as the prototype's (${Object.values(K).map(v => `${
 const pre = await page.evaluate(() => { forceTime(12); const S = WORLD.settle.get('dunmore'), h = S.houses.find(h => h.siteId === 'dunmore' && h.type === 'inn' && h.kit && h.kit.kind === 'coachinn'); window._ci = h;
   return h ? { name: h.name, room: kitCoachRoom(h), rooms: innRooms(h), names: [0, 1, 2, 3, 4, 5, 6, 7].map(k => innRoomName(k, 8, h)), colour: h.kit.colour, paint: h.kit.paint } : null; });
 check(`Dunmore's coaching inn (${pre && pre.name}) is the kit's, so its room is the coaching inn's own`, !!pre && pre.room, pre);
-check(`the innkeeper lets eight rooms, named by floor and side (${pre && pre.names[0]}; … ${pre && pre.names[7]})`, !!pre && pre.rooms === 8 && new Set(pre.names).size === 8 && pre.names.every(s => /^the (first|second) floor’s (west|middle|east) (front|back) room$/.test(s)), pre && pre.names);
+check(`the innkeeper lets eight rooms, named by floor and side (${pre && pre.names[0]}; … ${pre && pre.names[7]})`, !!pre && pre.rooms === 8 && new Set(pre.names).size === 8 && pre.names.every(s => /^the (west|middle|east) (front|back) room on the (first|second) floor$/.test(s)), pre && pre.names);
 
 await page.evaluate(() => { const h = _ci; px = h.exitX; pz = h.exitZ; goToInterior(h); });
 for (let k = 0; k < 40 && !(await page.evaluate(() => isInterior())); k++) await page.waitForTimeout(250);
