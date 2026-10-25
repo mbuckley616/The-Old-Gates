@@ -145,6 +145,18 @@ function _dContainer(kind,wx,wz,floorIdx,baseY,r,id){const g=new THREE.Group();l
     if(kind==='sarcophagus')openTop=()=>{top.position.x+=.34;top.position.z+=.12;top.rotation.z=-.1;top.rotation.y=.12;};}
   g.position.set(wx,baseY,wz);g.rotation.y=r()*Math.PI*2;dScene.add(g);
   BARRELS.push({id:id||null,x:wx,z:wz,floor:floorIdx,opened:false,items:_dLoot(kind,r),displayName:kind==='urn'?'Urn':kind==='sarcophagus'?'Sarcophagus':'Weapon Rack',mesh:g,top,openTop});}
+// the cells a trap may stand on, [c, r, 'h'|'v'] on floor one's map: a run of corridor one cell wide (S1399: pulled out of
+// decorateDungeonRooms as it was, so a suite can read it from the generator alone)
+function dTrapCells(gen,map){map=map||gen.map;
+  const isFloor=(c,rr)=>map[rr]&&map[rr][c]===1;
+  const corridor=[];for(let rr=1;rr<map.length-1;rr++)for(let c=1;c<map[rr].length-1;c++){if(!isFloor(c,rr))continue;const h=isFloor(c-1,rr)&&isFloor(c+1,rr)&&!isFloor(c,rr-1)&&!isFloor(c,rr+1);const v=isFloor(c,rr-1)&&isFloor(c,rr+1)&&!isFloor(c-1,rr)&&!isFloor(c+1,rr);if(h||v)corridor.push([c,rr,h?'h':'v']);}
+  // a real run: the two cells beyond on each side along the corridor are floor too, and nothing but wall to the sides
+  const run=corridor.filter(([c,rr,dir])=>dir==='h'?(isFloor(c-2,rr)&&isFloor(c+2,rr)&&!isFloor(c,rr-1)&&!isFloor(c,rr+1)):(isFloor(c,rr-2)&&isFloor(c,rr+2)&&!isFloor(c-1,rr)&&!isFloor(c+1,rr)));
+  // S1399 — a gate's traps keep to its side rooms and their ways in, and to its thresholds (gate-interiors-build.md, "What it touches"):
+  // never on a space's floor, where a failing gate's gap beside a pier or the wall leaves a one-cell run (about 1 in 100 of the runs)
+  const CS=gen.gate&&gen.cellSpace,TH=CS?new Set((gen.thresholds||[]).filter(t=>(t.floor||1)===1).map(t=>t.r*map[0].length+t.c)):null;
+  return CS?run.filter(([c,rr])=>CS[rr][c]<0||TH.has(rr*map[0].length+c)):run;
+}
 function decorateDungeonRooms(gen,portal){
   D_TRAPS.length=0;if(!gen||!gen.rooms)return;window._lastGen=gen;const r=_dRng((portal&&portal.seed)||1);const theme=(portal&&portal.theme)||'ruins';
   const floors=[[gen.rooms,1,0],[gen.rooms2||[],2,FLOOR2_Y]];
@@ -204,11 +216,7 @@ function decorateDungeonRooms(gen,portal){
       else if(type==='treasury'){_dContainerF('urn',cx-1.2,cz-1.2,fi,baseY,r);_dContainerF('urn',cx+1.2,cz+1.2,fi,baseY,r);if(r()<.5)_dContainerF('rack',cx+1.6,cz-1.6,fi,baseY,r);}
     }}
   // traps in corridors: spike plates (a pressure plate, spikes rise for a moment) and swinging blades (a blade sweeps a corridor cell)
-  const map=gen.map||dMap;if(!map)return;const isFloor=(c,rr)=>map[rr]&&map[rr][c]===1;
-  const corridor=[];for(let rr=1;rr<map.length-1;rr++)for(let c=1;c<map[rr].length-1;c++){if(!isFloor(c,rr))continue;const h=isFloor(c-1,rr)&&isFloor(c+1,rr)&&!isFloor(c,rr-1)&&!isFloor(c,rr+1);const v=isFloor(c,rr-1)&&isFloor(c,rr+1)&&!isFloor(c-1,rr)&&!isFloor(c+1,rr);if(h||v)corridor.push([c,rr,h?'h':'v']);}
-  // a real run: the two cells beyond on each side along the corridor are floor too, and nothing but wall to the sides
-  const run=corridor.filter(([c,rr,dir])=>dir==='h'?(isFloor(c-2,rr)&&isFloor(c+2,rr)&&!isFloor(c,rr-1)&&!isFloor(c,rr+1)):(isFloor(c,rr-2)&&isFloor(c,rr+2)&&!isFloor(c-1,rr)&&!isFloor(c+1,rr)));
-  corridor.length=0;corridor.push(...run);
+  const map=gen.map||dMap;if(!map)return;const corridor=dTrapCells(gen,map);
   const nTraps=Math.min(corridor.length,2+Math.floor(r()*4));
   for(let k=0;k<nTraps;k++){const [c,rr,dir]=corridor[Math.floor(r()*corridor.length)];const x=c,z=rr; /* S582 — a cell is centred on its integer (c−½ to c+½): at c+.5 every trap stood on its cell's corner, a blade in the wall's line */if(D_TRAPS.some(t=>Math.hypot(t.x-x,t.z-z)<3))continue;
     if(r()<.6){const plate=_dBox(.62,.04,.62,0x3a3630,x,.02,z);const spikes=new THREE.Group();for(let i=0;i<9;i++){const s=new THREE.Mesh(new THREE.ConeGeometry(.04,.34,5),new THREE.MeshLambertMaterial({color:0x9a9ea6}));s.position.set(-.18+(i%3)*.18,.17,-.18+Math.floor(i/3)*.18);spikes.add(s);}spikes.position.set(x,-.4,z);dScene.add(spikes);D_TRAPS.push({kind:'spike',x,z,floor:1,plate,spikes,t:0,armed:true});}

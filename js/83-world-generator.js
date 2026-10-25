@@ -1723,6 +1723,70 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     else{intNPCMesh=null;intNPCPos={x:-99,z:-99};}
     return sc_;
   }
+  // S1392 (card F9, Michael's A on #303; OG-115) — on the new look a Gatelands village home standing as the kit's cottage (2, 3 or 4
+  // bays, lot.kit) is the kit's cottage inside (PKIT.gl.cottage, rooms.js's Session 852 laid out by bays in Session 1380): its own walls
+  // and thatch, the hearth-lobby kitchen, the room below and (on four bays) the room above; on two bays one room, the hearth in the east
+  // gable. Drawn in metres and moved into the room's frame as the taproom is (nothing scaled). The box bed is the resident's, head to the
+  // wall (-z) as every home's bed; the home's chest at its foot (beside its head on three bays, by the back wall in one room).
+  function kitCottage(house){return !!(house&&house.type==='home'&&house.kit&&house.kit.kind==='cottage'&&[2,3,4].includes(house.kit.bays)&&window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.gl&&PKIT.gl.cottage);}
+  function buildKitCottage(house){
+    const T=PKIT.gl.cottage({paint:house.kit.paint||'red',bays:house.kit.bays},PKIT.stream(house.id+':cottage')),I=T.inner,X=I.x1,Z=I.z1,W=2*X,D=2*Z,n=T.bays;
+    const rx=x=>x+X,rz=z=>z+Z;
+    house._counterFront=null;house.intW=W;house.intD=D;house._roomH=+(PKIT.gl.PS.storey.cottage+1.35).toFixed(3);house._exitD=T.one?.8:.4;house._exitW=1.0;house._exitX=+rx(T.door.x).toFixed(3);house._cottage=T; /* the head stops under the collars */
+    /* the lobby is 0.9 m deep: you arrive in it 0.3 m east of the door, clear of the breast and the jamb, and the door's reach is its last 0.4 m */
+    house._arriveX=T.one?null:+rx(T.door.x+.3).toFixed(3);house._arriveZ=T.one?null:+(D-.5).toFixed(3);
+    const sc_=new THREE.Scene();interiorScene=sc_;landRoomPost(sc_);sc_.background=new THREE.Color(0x120a06);sc_.fog=new THREE.Fog(0x120a06,Math.max(W,D)*.8*SCALE.ROOM_K,Math.max(W,D)*2.4*SCALE.ROOM_K);
+    intNPCMesh=null;intBedPos=null;intStashPos=null;
+    const SOL=[];INT_SOL=SOL;FOOTHOLDS=[];INT_BEDS=[];INT_DOORS=[];INT_DOORS.house=house.id;INT_CHAIR=null;INT_NPCS=[];HATCH.active=false;HATCH.roof=false;INT_LOOT=null;INT_BOX=null;INT_SHELF=null;
+    T.group.position.set(X,0,Z);T.group.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false;}});sc_.add(T.group);
+    const box=(x0,x1,y0,y1,z0,z1,foot)=>{const b={x0:rx(x0),x1:rx(x1),z0:rz(z0),z1:rz(z1),y0,y1};SOL.push(b);if(foot)FOOTHOLDS.push({x0:b.x0,x1:b.x1,z0:b.z0,z1:b.z1,y:y1});return b;};
+    // the solids are the boxes the prototype keeps for its checks (every piece of furniture, the hearth's cheeks, the jamb wall; a bed's
+    // to the top of its blanket); a box's top is a foothold, except the cheeks' and the jamb's
+    for(const q of T.boxes){if(q.tag==='hearthstone')continue;box(q.x0,q.x1,q.y0,/^bed/.test(q.tag)?.55:q.y1,q.z0,q.z1,!['breast','jamb'].includes(q.tag));} /* a bed stands to its tick and blanket (0.55), as the step's rule wants a bed to stop you */
+    // the hearth wall and the room above's partition, each open at its door; the chimney breast over the hearth and the hearth's own
+    // recess (no walking into the fire); the dresser's rack; the box bed's ends and back
+    for(const d of T.doors){const t=d.wall==='hearth'?.3:.05;box(d.x-t,d.x+t,0,9,-Z,d.z-d.w/2);box(d.x-t,d.x+t,0,9,d.z+d.w/2,Z);box(d.x-t,d.x+t,d.h,9,d.z-d.w/2,d.z+d.w/2);}
+    {const s=T.one?-1:1,f=T.hearth[0],w=f-s*.55,hz=T.hearth[2];box(Math.min(w,f),Math.max(w,f),1.25,9,hz-1.15,hz+1.15);box(Math.min(w,f),Math.max(w,f),0,1.25,hz-.8,hz+.8);}
+    {const q=T.boxes.find(q=>q.tag==='dresser'),f=T.one?-1:1,zw=f>0?q.z0:q.z1;box(q.x0,q.x1,.85,2.16,Math.min(zw,zw+f*.34),Math.max(zw,zw+f*.34));}
+    {const b=T.bed;box(b.x0,b.x1,.32,2.0,b.z0,b.z0+.05);box(b.x0,b.x1,.32,2.0,b.z1-.05,b.z1);box(b.x1-.04,b.x1,.32,2.0,b.z0,b.z1);}
+    // the doors in the hearth wall and the partition: a leaf hung in each doorway (the prototype leaves them open)
+    for(const d of T.doors)intDoorAt(sc_,SOL,rx(d.x),rz(d.z),0,0,0x4a3420,{w:d.w-.04,h:d.h-.04});
+    // the box bed is the resident's (the sleeper lies in it, head to -z)
+    {const b=T.bed,x=rx((b.x0+b.x1)/2),cz=rz((b.z0+b.z1)/2);INT_BEDS.push({x,z:cz+.2,y:0,owner:'home',room:null,cz});intBedPos={x,z:cz+.2};}
+    // the home's chest: at the box bed's foot (four bays), in the room below between its bed and the hearth wall (three: the box bed
+    // stands in the gable's middle), by the back wall between the bed and the fire (one)
+    {const b=T.bed,[cx,cz]=n===4?[(b.x0+b.x1)/2+.07,b.z1+.31]:n===3?[T.doors[0].x-.8,-.5]:[b.x1+.33,-Z+.35],bx=rx(cx),bz=rz(cz);
+      const bg=new THREE.Group(),shell=buildChestShell(bg,.45,0x6a4a2c);bg.position.set(bx,0,bz);sc_.add(bg);SOL.push({x0:bx-.32,x1:bx+.32,z0:bz-.28,z1:bz+.28,y0:0,y1:.5});
+      INT_BOX={x:bx,z:bz,lid:shell.lid,g:bg,id:house.id,kind:'home',type:'home',house,open:false};}
+    // a bought house's cellar: the hatch in the kitchen's flags, off the chair, the dresser and the walks (in one room, in the passage)
+    if(hasCellar(house)){const [hx0,hz0]=n===4?[.4,-1.1]:n===3?[1.5,-1.1]:[T.door.x,-.4],hx=rx(hx0),hz=rz(hz0);const lid=new THREE.Mesh(new THREE.BoxGeometry(.8,.04,.8),new THREE.MeshLambertMaterial({color:0x3a2612}));lid.position.set(hx,.07,hz);sc_.add(lid);
+      const ring=new THREE.Mesh(new THREE.TorusGeometry(.07,.015,5,10),new THREE.MeshLambertMaterial({color:0x2a2622}));ring.position.set(hx+.25,.1,hz);ring.rotation.x=Math.PI/2;sc_.add(ring);house._hatch={x:hx,z:hz};HATCH.x=hx;HATCH.z=hz;HATCH.y=0;HATCH.active=true;}
+    // the day beyond the windows and the open front door: a plane outside each, lit by the hour (the room's own background is the dark)
+    {const hr=typeof gameHour==='function'?gameHour():12,day=hr>=7&&hr<18?0xc4d0dc:hr>=5&&hr<20?0x8a7a7a:0x0e1420,M=new THREE.MeshBasicMaterial({color:day});
+      const out=(x,y,z,w,h,f)=>{const m=new THREE.Mesh(new THREE.PlaneGeometry(w+.1,h+.1),M);m.position.set(rx(x),y+h/2,rz(z)+f*.08);m.rotation.y=f>0?Math.PI:0;m.userData.daylight=true;sc_.add(m);};
+      for(const w of T.windows)if(w.face==='front'||w.face==='back')out(w.x,w.y,w.z,w.w,w.h,w.face==='front'?1:-1);
+      out(T.door.x,0,T.door.z,T.door.w,T.door.h,1);}
+    // the light: the fire on the hearth, the lantern from the kitchen's collar, the room's warmth. The hearth's flames and embers ride in
+    // their own group (the candle's flame stays out of it), so the cold hearth of a Mages' task (S676) shows ash and no light until
+    // tickInterior lights it
+    sc_.add(new THREE.AmbientLight(0xffb070,.45));
+    const L=(x,y,z,c,i,d)=>{const l=new THREE.PointLight(c,i,d);l.position.set(x,y,z);sc_.add(l);return l;};
+    const cold=coldHearthHouse(house),hl=L(rx(T.fire[0]+(T.one?-.6:.6)),T.fire[1]+.3,rz(T.fire[2]),0xff6a20,cold?0:1.5,7);L(rx(T.lantern[0]),T.lantern[1],rz(T.lantern[2]),0xffaa44,1.2,7);
+    {const hf=new THREE.Group();hf.name='hearthFire';T.room.add(hf);
+      for(const m of T.room.children.filter(m=>m.isMesh&&(m.name==='ember'||m.name==='flame'))){if(m.name==='ember'){hf.add(m);continue;}
+        const P=m.geometry.attributes.position,lo=[],hi=[];for(let i=0;i<P.count;i+=3){const y=(P.getY(i)+P.getY(i+1)+P.getY(i+2))/3,dst=y<.6?lo:hi;for(let k=0;k<3;k++)dst.push(P.getX(i+k),P.getY(i+k),P.getZ(i+k));}
+        const mk=a=>{const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(a,3));g.computeVertexNormals();const q=new THREE.Mesh(g,m.material);q.name='flame';return q;};
+        m.geometry.dispose();T.room.remove(m);hf.add(mk(lo));if(hi.length)T.room.add(mk(hi));}
+      hf.visible=!cold;const holder=new THREE.Group();holder.userData.hearthFire=hf;holder.userData.hearthLight=hl;if(cold)holder.userData.coldHouse=house;sc_.add(holder);furnSwap(holder);}
+    // the resident, in the kitchen where the way from the door turns to the fire, facing into the room
+    const np=T.path[T.one?1:2],npc={x:rx(np[0]),z:rz(np[1])};
+    if(npcInsideNow(house)){const g=buildNPCMesh({role:'Resident',name:house.keeper,_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
+      g.rotation.y=Math.PI;g.position.set(npc.x,0,npc.z);sc_.add(g);intNPCMesh=g;intNPCPos={x:npc.x,z:npc.z};
+      intNPCMesh.userData.amble={wa:0,wt:1,minZ:npc.z,maxZ:npc.z,minX:npc.x,maxX:npc.x,speed:.25,paused:true};
+      if(homeAsleepNow(house))laySleeper(intNPCMesh);}
+    else{intNPCMesh=null;intNPCPos={x:-99,z:-99};}
+    return sc_;
+  }
   // S1288 (card F9, Michael's A on #321 and #588) — on the new look a Markish inn standing as the kit's hall (lot.kit.alehall, S1288's
   // planning) is the Mark's alehall inside (PKIT.mk.alehall, rooms.js's Session 894, as drawn: 10 by 18 m): the long hearth under the
   // louver, the long tables, the counter across the back with the kegs behind it, and the furred wall benches the guests sleep on. It is
@@ -1835,6 +1899,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     intNPCMesh=null;intBedPos=null;intStashPos=null;
     const SOL=[];INT_SOL=SOL;FOOTHOLDS=[];INT_BEDS=[];INT_DOORS=[];INT_DOORS.house=house.id;INT_CHAIR=null;INT_NPCS=[];HATCH.active=false;HATCH.roof=false;INT_LOOT=null;INT_BOX=null;INT_SHELF=null;
     T.group.position.set(X,-F0,Z);T.group.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false;}});sc_.add(T.group);
+    {const E=new THREE.Object3D();E.position.set(rx(T.door.x),0,D);E.userData.entrance=true;E.userData.leaf=[T.door.w,+(T.door.h-T.door.w/2).toFixed(3)];sc_.add(E);} /* S1396 — the front door's leaf, as the old builder's door records it (scalerooms) */
     // the solids are the prototype's boxes (the furniture, the partitions of each floor, the breasts, the cupboard under the flights,
     // the rail round the well on the top floor, the doors' leaves); a seat or a table stands from its floor (its legs are not boxes),
     // so you step up onto a bench or a chair (0.44, held to STEP_UP); a box's top is a foothold, except a wall's, the rail's and a leaf's
@@ -1926,11 +1991,12 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     const reg=house.reg||'irish',type=house.type||'misc',st=house.style||'irish';
     INT_BED_NATION=nationAt(house.doorX,house.doorZ); // S288 — the beds' wood
     furnFree();
-    house._exitX=null; /* S1276 — the door in the middle unless the room built now says otherwise */
+    house._exitX=null;house._arriveX=null;house._arriveZ=null; /* S1276 (S1392: and where you arrive) — the door in the middle unless the room built now says otherwise */
     if(kitTaproom(house))return buildKitTaproom(house); /* S1161 — the kit's taproom, at its true size */
     if(kitAlehall(house))return buildKitAlehall(house); /* S1288 — the Mark's alehall, at its true size */
     if(kitTavern(house))return buildKitTavern(house); /* S1320 — Aurenne's tavern on the quay, at its true size */
     if(kitCoachRoom(house))return buildKitCoachRoom(house); /* S1368 — a town's coaching inn inside, at its true size */
+    if(kitCottage(house))return buildKitCottage(house); /* S1392 — a Gatelands village's cottage inside, at its true size */
     if(kitChurchHall(house))return buildKitChurchHall(house); /* S1326 — the Church of the Weaver inside, at its true size */
     const two=!!house.two;
     // S896 (F2a) — the room's true size in metres (07-scale.js; visual-foundation.md §1: a cottage room 4 to 6 across, an inn's hall
@@ -2076,7 +2142,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       // S289 — the smithy on the kit (#46 A): a coursed forge with a hood, chimney and bellows, an anvil on a stump, a quench
       // tub, racks of the weapon kit's blades and hafts on the east wall, a grindstone, a dagger on the counter; one bake
       {const K=furnKit(),room=K.bake(K.smithy(W,DS,H,FN,FSEED));room.userData.furn=true;sc_.add(room);furnSwap(room);}
-      solid(1.2,1.4,.9,.8,1.2);light(1.2,1.0,2.0,0xff6a20,1.6,6);solid(W-2.0,1.6,.3,.3,1.0);solid(W-.75,3.9,.3,.3,.7);
+      solid(1.2,1.4,.9,.8,1.2);light(1.2,1.0,2.0,0xff6a20,1.6,6);solid(W-2.0,1.6,.3,.3,1.0);solid(W-.75,smithyTubZ(DS),.3,.3,.7); /* S1394 — the tub where the kit draws it */
       counter();
     } else if(type==='armor'){
       // S290 — the armourer on the kit (#46 A): three stands (plate, leather, mail) with helms, the kit's shields on the

@@ -197,6 +197,9 @@ function buildDunShell(map,baseY,wallCol,floorCol,opts){
 // the kit's idioms (lathes, SK.rbox, SK.ball), each a list of parts baked into ONE vertex-coloured mesh a room plus one unlit
 // mesh for the flames. Sizes are final room units (buildInteriorFor's F is already applied). WOOD by nation. furnKit() makes
 // the builders once; the materials are shared by every room.
+// the quench tub's z (S1394): its box 0.8 past the counter's front (3.4), so a body of 0.6 passes the counter's east end to the keeper's side
+// (at 3.9 the tub's box and the counter's left 0.29 m, and the forge's back room was walled off: intreach); never nearer the street door than 0.9
+function smithyTubZ(D){return Math.max(3.9,Math.min(4.5,D-.9));}
 function furnBuild(THREE, SK) {
   const C = x => (x && x.isColor) ? x.clone() : new THREE.Color(x);
   const rng = s => { let a = (s >>> 0) % 2147483647 || 1; return () => (a = (a * 16807) % 2147483647) / 2147483647; };
@@ -442,7 +445,7 @@ function furnBuild(THREE, SK) {
   function smithy(W, D, H, n, seed) { const p = Parts(), s = seed || 1;
     p.put(forge(H, n, s + 1), 1.2, 1.4, 0);
     p.put(anvil(n, s + 2), W - 2.0, 1.6, .3);
-    p.put(tub(n, s + 3), W - .75, 3.9, 0); /* S896 — clear of the counter's end in a shop of true size */
+    p.put(tub(n, s + 3), W - .75, smithyTubZ(D), 0); /* S896 — clear of the counter's end in a shop of true size; S1394: a body's width clear of it, smithyTubZ */
     const R = [['sword', 'longsword', 'claymore'], ['axe', 'greataxe', 'warhammer'], ['mace', 'flail', 'greatclub'], ['cutlass', 'dagger', 'sword']];
     /* S896 (F2a) — in a shop of true size the racks run down the east wall from the counter's end, as many as fit, and the
        grindstone stands by the door on the west */

@@ -2,6 +2,7 @@
 // stream keyed by place and id). The plate drew its 8–15 (+ level × 0.8) from Math.random. A trap now takes an id the
 // first time it is sprung, `<seed>:<floor>:trap:<n>` (the seed's placement makes the list the same every visit), and
 // `trapRand(t)` draws its hits in turn from `seededRng('trap', id)`, as `foeRand(e)` does a foe's blows.
+// S1399: a gate's traps keep out of its spaces (dTrapCells), checked over 100 gates from the generator.
 import { boot, check } from './lib/game.mjs';
 import { enterDungeon } from './lib/dungeonshot.mjs';
 const g = await boot(); const { page } = g;
@@ -33,6 +34,17 @@ check('six springs: the same hits in the same order whatever Math.random says', 
 // since Session 1061 the plate's level is its floor's tier's (`trapTierLevel`), not yours
 const lo = 8 + Math.floor(a.lv * .8), hi = 15 + Math.floor(a.lv * .8);
 check('the hits stay in the plate\'s band (8–15 + the floor tier\'s level × 0.8, before any ward) and vary', a.hits.every(h => h <= hi) && new Set(a.hits).size >= 2, { hits: a.hits, lo, hi });
+// S1399 — a gate's traps keep to its side rooms and their ways in, and its thresholds (gate-interiors-build.md): the cells offered
+// over 100 gates (20 a size, through the generator alone), against the same pick with the gate's spaces ignored
+const tc = await page.evaluate(() => { const out = { old: 0, inSpace: 0, thr: 0, side: 0, empty: 0 };
+  for (const size of ['tiny', 'small', 'medium', 'large', 'massive']) for (let k = 0; k < 20; k++) {
+    const gen = makeGate(size, 101 + k * 977), W = gen.W, T = new Set(gen.thresholds.filter(t => (t.floor || 1) === 1).map(t => t.r * W + t.c));
+    const inSp = ([c, r]) => gen.cellSpace[r][c] >= 0 && !T.has(r * W + c), cells = dTrapCells(gen);
+    out.old += dTrapCells(Object.assign({}, gen, { gate: false })).filter(inSp).length; if (!cells.length) out.empty++;
+    for (const q of cells) { if (inSp(q)) out.inSpace++; else if (T.has(q[1] * W + q[0])) out.thr++; else out.side++; } }
+  return out; });
+console.log(' ', JSON.stringify(tc));
+check(`a gate's trap cells: none on a space's floor (${tc.old} were before), ${tc.side} in side rooms and their ways in, ${tc.thr} in thresholds; every gate has some`, tc.old > 0 && tc.inSpace === 0 && tc.side > 0 && tc.thr > 0 && tc.empty === 0, tc);
 stop();
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

@@ -1100,3 +1100,36 @@ A playtest run (the last entry was the new look). Five boots of the new look, al
 
 ### Backlog notes (not changed)
 - Nothing done-but-unmarked found this run. Section I's own line for the coaching inn's room (item 2) should be struck by the taproom session.
+
+## 2026-10-25 — The new look: the great gates' ring and knot (S1376's page), the coaching inn's and the cottage's rooms on their page and in the game, the F4 foes since S1348 from their own pictures (build s896, read to Session 1399)
+
+This is the new-look turn. I opened `greatknot.html` (far, near and torn, and the knot hung high) and `rooms.html` (the coaching inn's taproom, the cottage on 2 bays at noon and on 4 bays at night) over http with the folder's own `shoot.mjs`. In the game on the default look I went into Donnacha's House in Cill Beag, a 4-bay Gatelands cottage, at 12h and 22h, and with its kit set to 2 bays at 1h. I also went into Dunmore's coaching inn, The Bramble Hearth, at 12h and 21h. The harness ran (`export` 1/1) and nothing threw on boot or on any page. I did not shoot the F4 foes myself: the dragon (S1348), the ogres (S1386) and the hags (S1389) are judged from the bodies builder's own committed pictures in `docs/prototypes/f4/`.
+
+**The ring and its knot** (`docs/critic/2026-10-25-gk-view-far.jpg`, `-gk-view-near-state-torn.jpg`, `-gk-view-far-place-high.jpg`). The ring is right by visual-foundation §2: 30.4 m tall, 32 m across, dark at its heart, with amber script on its inner face. It reads as the "ring sigil on the far wall" of OG-120's steady gate. The page cuts it, though. The chamber is a `BoxGeometry(60, 22, 60)` drawn BackSide with the dome set on top at 21.6 m, and the box keeps its top face. So a flat ceiling of ashlar sits at 21.6 m, and the ring's upper third (21.6 to 30.4 m) goes through it. In the far view the ring has no top, and the dome is never seen. That is the page's fault, not the design's. But it means none of the seven S1376 pictures that went to Michael for #680 shows a ring "higher than the hall", which is the one thing the draft asks of it. S1376 asks whether the threads read as script or as wires. They read as wires: eleven neon tubes of one thickness and one brightness. In the "low" knot they fan up from the dais like a shell, and in the "high" one they make a spoked wheel. Nothing along a thread looks drawn or written. The script is on the ring and none of it is in the threads. Torn, the eleven ends fall to the floor as bundles of light, and that is the best of the three states. Near, a pale untextured peg with a ball on top stands at the dais's front edge, the one object in the picture with no material. 11,128 tris and 5 draws for the whole prop.
+
+**The coaching inn's taproom** (`-rm-coach-tap.jpg` on the page, `-game-coachinn-12h.png` and `-21h.png` in the game). On the page S1351 is right: from the door the settle's back is a blank dark box in the middle of the frame, and the hearth is behind it. In the game the arrival is turned and the settle is off to the left. What you see is the bar, the keeper, the stair and the hearth at the right, so that complaint doesn't stand in play. The room is 11.7 by 8.1 m, and the door, at 2.2 m since S1396, reads as a door. The page's whitewash is cream at noon. In the game the same walls and ceiling are a saturated orange at noon and at 21h alike. Only the window panes change, to night blue. See the cottage below: it is the same light.
+
+**The cottage on 2 and 4 bays** (`-rm-kitchen-bays-2.jpg` and `-rm-kitchen-bays-4-hour-night.jpg` on the page; `-game-cottage4-12h.png`, `-game-cottage4-22h.png` and `-game-cottage2-1h-a.png` in the game). On the page the 4-bay kitchen at night is the best room I have seen on the new look: the hanging pot over a low fire, the plate dresser, the rush chair and warm-grey whitewash. That is OG-115's cottage. The 2-bay at noon on the page is near black, with the box bed's face filling half the frame and the camera canted. S1380 asks whether it reads as a home or a hut, and from that picture it reads as a hut. In the game:
+- You arrive 0.3 m in front of the 4-bay's jamb wall, as S1392 says. The first frame is about 60% flat brown plaster, with a red curtain at the right edge. It is the plan's own lobby, but it is the first picture of every Gatelands village home.
+- S1392 asks whether the fire is too strong. In the game, yes. Two point lights (the hearth at 1.5 and a second at 1.2, both 7 m) light a 3.6 or 8.4 by 4.2 m room, and they turn the whitewash orange from floor to thatch, at noon as at 1h. The page's night picture of the same room is grey-white, lit by the same fire. In the game the 2-bay at 1h is orange from the floor to the thatch.
+- At 22h and at 1h the HUD says *Press E near the keeper to talk* in a private home. At 1h Donnacha should be in the box bed.
+
+**The F4 foes, from their own pictures.**
+- The dragon (`f4-dragon.jpg`) reads as long and lean, the tail about twice the spine. S1348's question was the lair's ceiling, and I didn't go into one.
+- The ogres (`f4-ogres-side.jpg`) read as stout, bare-chested men in kilts, the greatclub held upright like a standard. Nothing in the pose says brute.
+- The hag (`f4-hags.jpg`, `-side.jpg`): seen from the front, her peat-brown cloak is a flat dark panel standing off her left side down to the ground, a board beside her rather than a cloth around her. In the side view it hangs behind her as a slab. As S1389 says, the hazel staff is held out forward with its foot clear of the ground, so it reads as a pointer, not something she leans on.
+
+**What else I saw.** Inside the coaching inn the keeper stayed on the 19-bone driver body (a mannequin with ball shoulders) for over 400 ticks and about 40 s of wall clock. That was because `HBODY.job` was still building a townsperson left outside in the world. Once that finished, the room's own people started. On a real machine at 60 fps the job is a fraction of a second, so I am noting it here, not filing it. `hbBuildStep` does not drop a job whose rig is no longer in `scene`. A test-harness line, *Traveled to x*, sits in `GAME_LOG` from `intoWorld`'s jump. It is the harness, not the game.
+
+**Needs eyes, from the devlogs since S1345.**
+- S1376 (wires or script): wires, above. S1351 (the bare taproom, the settle): the settle stands in the page only; whether 11.7 m is too bare can't be called while every wall is orange.
+- S1380 and S1392 (home or hut, the fire): judged above.
+- S1389 (the staff): judged above, from the builder's picture.
+- I could not judge headless:
+  - S1348: the dragon's horns under a lair's ceiling and its wingbeat on the ground.
+  - S1386: the ogres' feet on a slope.
+  - S1360, S1361, S1372 and S1373: the props' slot, thread and courses at a real eye.
+  - S1385: the mantle's feel, which has no pose yet.
+  - S1399: the spike plate's 0.55 m trigger in a 3 m corridor, which the systems builder asked me about. That one wants a playtest turn with a gate.
+
+**Backlog notes.** The section I items from s863 are all struck. I saw nothing done but unmarked.

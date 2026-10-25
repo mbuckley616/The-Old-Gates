@@ -172,6 +172,7 @@ check('Solas torn: the undead are at peace until one is struck, then its zone wa
 const tk = await page.evaluate(() => {
   const g = worldState.greatGates, save = JSON.parse(JSON.stringify(g)), site = siteAnywhere('ironhaven'), P = peopleOfSite(site), out = { P };
   const all = Object.values(GATE_TALK).map(r => r[P]), has = l => liveRumours(site).includes(l), any = () => liveRumours(site).filter(l => all.includes(l));
+  if (g.ev) g.ev.knifeLifted = 0; /* S1398 — the knife's topic is checked on its own below */
   g.gates = {}; g.fate = null; g.last = null; out.none = [any().length, greatGateLordTopics(site).length];
   g.gates = { tine: 'torn', uisce: 'torn', cloch: 'torn', scath: 'torn' }; g.last = { day: dayNow(), kind: 'torn' };
   out.four = [has(GATE_TALK[4][P]), any().length, greatGateLordTopics(site).map(t => t.label + '|' + (t.response === GATE_LORDS.gatelands.torn)).join()];
@@ -336,5 +337,50 @@ check('after a cut he opens with the cut\'s line; the knife\'s topic only with t
 check('"What do you want from me?" gives the Binding Needle: unique, a quest item, its card as written, the log line; once', !!hd.needle && hd.needle[0] === 'The Binding Needle' && hd.needle.slice(1, 5).every(Boolean) && hd.needle[5] === 1 && hd.again === false, hd.needle);
 check('the needle rides the character\'s row, the runner and the giving the world\'s; far from Ironhaven he is gone', hd.rows.every(Boolean) && hd.gone, hd.rows);
 check('two rings left alone: that opening; the needle held at the first cut: no runner, and the knife\'s opening once', hd.rings.startsWith('You have been to the end of two') && hd.knifeAlso[0] === false && hd.knifeAlso[1] && hd.knifeOpen[0] === 'You found the knife as well. I had hoped he would take longer to think of you.' && hd.knifeOpen[1].startsWith('You have been to the end of one'), hd);
+// the journal's Great gates page (Session 1397; the build sheet's UI, pieces I and II's lines): empty in a new world; the tools'
+// lines by date, a row a gate torn or sealed under the name kept at its knot, the lock's line once six are bound; in the Quests view
+const jp = await page.evaluate(() => {
+  const keep = JSON.stringify(worldState.greatGates || null), out = {};
+  const page = () => { openHub('journal'); journalView('quest'); const el = document.querySelector('#jn-body .jn-great'); const t = el ? [...el.querySelectorAll('.jn-text')].map(x => x.textContent) : null; closeHub(); return t; };
+  worldState.greatGates = { gates: {}, fate: null, fatedAt: null }; out.empty = [greatJournal(), page()];
+  worldState.greatGates.ev = { noteRead: 500, knifeLifted: 900, runner: 700 };
+  cutKnot('tine', 'Dún na Tine'); bindKnot('cloch', 'the Hollow Hill'); cutKnot('uisce');
+  out.mid = page();
+  for (const s of ['tine', 'uisce', 'cloch', 'scath', 'solas', 'gaoth']) bindKnot(s, s === 'tine' ? 'Dún na Tine' : null);
+  out.lock = page(); out.fate = greatFate();
+  worldState.greatGates = JSON.parse(keep); return out; });
+console.log(JSON.stringify(jp));
+check('a new world\'s journal has no Great gates page', jp.empty[0] === null && jp.empty[1] === null, jp.empty);
+check('the page: the note, the runner and the knife in the order they happened; a row for each gate torn or sealed, by its name', JSON.stringify(jp.mid) === JSON.stringify(['A note says something lies under a flagstone at the Ashfeld.', 'Aldwyn asks to see you at Ironhaven.', 'The Loosing Knife. It cuts the knot at a great gate’s ring.', 'Dún na Tine — Tine. Torn.', 'Uisce. Torn.', 'The Hollow Hill — Cloch. Sealed.']), jp.mid);
+check('six bound: six rows, and the lock\'s line under them', jp.fate === 'sealed' && jp.lock.length === 10 && jp.lock[3] === 'Dún na Tine — Tine. Sealed.' && jp.lock[9] === 'Bound, all six, and held.', jp.lock);
+// what people say of the tools (Session 1398; piece II §5, as written): an Old Blood speaker's line before the greeting, each line
+// once a speaker; the lords' topic once the knife is lifted, by nation; a Prior's Church line once a knot is bound
+const ts = await page.evaluate(() => {
+  const keep = JSON.stringify(worldState.greatGates || null), out = {};
+  for (let i = BAG.length - 1; i >= 0; i--) if (BAG[i] && BAG[i].artifact) BAG.splice(i, 1);
+  worldState.greatGates = { gates: {}, fate: null, fatedAt: null, ev: {} };
+  const mk = (name, people, role) => ({ name, people, role: role || 'Villager', _siteId: 'testsite', greeting: ['Well met.'], topics: [] });
+  const say = def => { openDialog(def); const t = document.getElementById('dlg-text').textContent; closeDialog(); return t; };
+  const ob = mk('Áine', 'oldblood'), gl = mk('Tom', 'gatelander');
+  out.none = say(ob);
+  BAG.push(greatToolItem('looseKnife'));
+  out.knife = [say(ob), say(ob), say(gl)];
+  BAG.push(greatToolItem('bindNeedle'));
+  out.both = [say(ob), say(ob), say(mk('Fiachra', 'oldblood', 'Hermit'))];
+  const sites = {}; for (let i = 0; i < GRID; i++) for (let j = 0; j < GRID; j++) { if (!isLandCell(i, j)) continue; const n = nationKeyOf(i, j); if (!sites[n]) sites[n] = { x: (i + .5) * SIZE, z: (j + .5) * SIZE }; }
+  const lab = s => greatGateLordTopics(s).map(t => t.label);
+  out.lordsBefore = Object.values(sites).map(lab);
+  worldState.greatGates.ev.knifeLifted = 1;
+  out.lords = Object.entries(sites).map(([n, s]) => [n, (greatGateLordTopics(s).find(t => t.label === 'The knife from the Ashfeld?') || {}).response || null]);
+  const pr = mk('Delphine', 'aurennais', 'Prior');
+  out.prior0 = say(pr); worldState.greatGates.gates.cloch = 'sealed'; out.prior = [say(pr), say(pr), say(mk('Hugues', 'aurennais', 'Factor'))];
+  for (let i = BAG.length - 1; i >= 0; i--) if (BAG[i] && BAG[i].artifact) BAG.splice(i, 1);
+  worldState.greatGates = JSON.parse(keep); return out; });
+console.log(JSON.stringify(ts));
+check('carrying nothing, an Old Blood speaker greets as ever', ts.none === 'Well met.', ts.none);
+check('the knife: an Old Blood speaker says its line before the greeting, once; a Gatelander says nothing of it', ts.knife[0] === 'You carry the knife. Keep it out of the light. Well met.' && ts.knife[1] === 'Well met.' && ts.knife[2] === 'Well met.', ts.knife);
+check('both: the same speaker says the both line once; another (the hermit) its own first time', ts.both[0] === 'You carry both. Most hands are only big enough for one. Well met.' && ts.both[1] === 'Well met.' && ts.both[2].startsWith('You carry both.'), ts.both);
+check(`the lords' *The knife from the Ashfeld?* only once the knife is lifted, in each nation's words (${ts.lords.map(x => x[0]).join(', ')})`, ts.lordsBefore.every(l => !l.includes('The knife from the Ashfeld?')) && ts.lords.length === 3 && ts.lords.every(([n, r]) => !!r && r.startsWith({ gatelands: "The Herald's office", mark: "Hear you've a knife", aurenne: 'The Church has a word' }[n])), ts.lords);
+check('a Prior says the Church\'s line before the greeting once a knot is bound, once; a Factor does not', ts.prior0 === 'Well met.' && ts.prior[0].startsWith('The Church gives thanks that a great gate has been sealed, Master, by the Weaver\'s Needle') && ts.prior[0].endsWith(' Well met.') && ts.prior[1] === 'Well met.' && ts.prior[2] === 'Well met.', ts.prior);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
