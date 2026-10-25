@@ -790,6 +790,11 @@ function wpnBuild(kind,rust,tint){tint=tint||{};
     mace:()=>{add(SK.cyl(.015,.018,.4,8),'matte',DWOOD,[0,.12,0]);grip(.1,.019,-.08);add(SK.ball(.045,12,9),'metal',DSTEEL,[0,.34,0]);
       for(let i=0;i<6;i++){const a=i/6*Math.PI*2;add(SK.rbox(.012,.09,.05,.004,1),'metal',DSTEEL,[Math.cos(a)*.035,.34,Math.sin(a)*.035],[0,-a,0]);}add(SK.cone(.02,.05,6),'metal',DSTEEL,[0,.4,0]);},
     warhammer:()=>{add(SK.cyl(.018,.022,.72,8),'matte',WOOD,[0,.22,0]);grip(.14,.023,-.12);add(SK.rbox(.2,.085,.085,.018,2),'metal',DSTEEL,[.02,.56,0]);add(SK.cone(.03,.12,6),'metal',DSTEEL,[-.14,.56,0],[0,0,Math.PI/2]);add(SK.cone(.02,.08,6),'metal',DSTEEL,[0,.64,0]);},
+    // S1379 — the kobold's mattock (Michael's B on Session 178: the old mine-sprite's tool): an ash haft, an iron head through it, a
+    // narrow adze blade on one side and a pick on the other, both drooping a little toward the hand
+    mattock:()=>{add(SK.cyl(.015,.019,.62,8),'matte',WOOD,[0,.18,0]);grip(.12,.02,-.1);add(SK.rbox(.05,.06,.045,.01,2),'metal',DSTEEL,[0,.47,0]);
+      add(SK.cyl(.023,.023,.012,8),'metal',DSTEEL,[0,.505,0]);add(SK.cone(.017,.2,6),'metal',DSTEEL,[-.12,.455,0],[0,0,Math.PI/2+.18]);
+      add(SK.rbox(.15,.011,.062,.004,1),'metal',DSTEEL,[.095,.455,0],[0,0,-.2]);add(SK.rbox(.014,.016,.068,.004,1),'metal',STEEL,[.168,.44,0],[0,0,-.2]);},
     staff:()=>{add(SK.bumpy(SK.cyl(.016,.022,1.0,8,10),.004,23,30),'matte',DWOOD,[0,.22,0]);for(let i=0;i<3;i++){const a=i/3*Math.PI*2;add(SK.cone(.008,.12,5),'matte',DWOOD,[Math.cos(a)*.022,.76,Math.sin(a)*.022],[Math.sin(a)*-.35,0,Math.cos(a)*.35]);}
       add(new THREE.OctahedronGeometry(.04,0),'glow',GLOW,[0,.8,0],null,[1,1.5,1]);add(SK.ball(.09,10,8),'halo',HALO,[0,.8,0]);},
     claymore:()=>{grip(.22,.016,-.14);add(SK.ball(.028,10,8),'metal',DSTEEL,[0,-.155,0]);add(SK.rbox(.27,.026,.036,.01,2),'metal',DSTEEL,[0,.065,0]);[-1,1].forEach(sd=>add(SK.ball(.016,6,5),'metal',DSTEEL,[sd*.135,.065,0]));add(blade(.76,.052,.06),'metal',STEEL,[0,.078,0]);},
@@ -849,8 +854,8 @@ const FOE_DRESS={
   'Goblin Slinger':{goblin:true,cloth:0x4e4430,gear:null},
   'Marsh Hag':     {hag:true,cloth:0x3a4a2a,hat:'hood',gear:'stick'}, // S216 — the fen's witch, a lair's mistress: an old woman in bog rags, hooded, a crooked staff
   'Shieldbearer':  {cloth:0x3a3e4a,hat:'helm',wpn:'mace',kit:{head:4,chest:4,hands:3,legs:3}}, // S199 — the dungeon's shield wall: a person, the shield on the left arm as the captain's
-  'Kobold Thief':  {kobold:true,cloth:0x4a3a2a,hat:'hood',gear:'hammer'}, // S196 — the dungeon's kobold, on the same body
-  'Kobold':        {kobold:true,cloth:0x6a3a22,hat:'hood',gear:'hammer'}, // S184 — the old mine-sprite (Michael's B): bearded, hooded, a mattock
+  'Kobold Thief':  {kobold:true,cloth:0x4a3a2a,hat:'hood',gear:'hammer',wpn:'mattock'}, // S196 — the dungeon's kobold, on the same body
+  'Kobold':        {kobold:true,cloth:0x6a3a22,hat:'hood',gear:'hammer',wpn:'mattock'}, // S184 — the old mine-sprite (Michael's B): bearded, hooded, a mattock
   // S208 — the trolls on the people's body (Michael's answer on Session 201: as shown, a hammer for the cane): heavy, stooped,
   // tusked, in a hide tunic, carrying a maul; the hide by where they live
   'Cave Troll':    {troll:true,skin:0x6e7a5c,skin2:0x5a664c,hair:0x3a3e30,eye:0xd0a020,cloth:0x4e4030,gear:'maul'},
@@ -929,6 +934,9 @@ function buildFoe(type,x,z,genome,eyeCol){
     const eg=new THREE.BufferGeometry();eg.setAttribute('position',new THREE.Float32BufferAttribute(P,3));eg.setIndex(I);rig.eyeGlow=new THREE.Mesh(eg,new THREE.MeshBasicMaterial({color:eyeCol}));rig.B.head.add(rig.eyeGlow);}
   if(g.skel&&typeof hcOn==='function'&&hcOn()){rig.hcKind=g.gear==='spear'?'Skeleton (spear)':'Skeleton';HC_RIGS.add(rig);} /* S1356 (F4) — the Skeleton wears the creature kit's skeleton on this driver (34-creatures.js, hcTick) */
   if(g.goblin&&typeof hcOn==='function'&&hcOn()){rig.hcKind=g.wpn?'Goblin':'Goblin Slinger';HC_RIGS.add(rig);} /* S1364 (F4) — and the goblins the kit's goblin, the knife's or the slinger's empty hands */
+  if(g.troll&&typeof hcOn==='function'&&hcOn()&&HC_KINDS[type]){rig.hcKind=type;HC_RIGS.add(rig);} /* S1378 (F4) — the trolls the kit's troll, with its maul, in their kind's hide */
+  if(g.golem&&typeof hcOn==='function'&&hcOn()){rig.hcKind='Golem';HC_RIGS.add(rig);} /* S1371 (F4) — the Golem the kit's golem, its eyes rune-lit */
+  if(g.gargoyle&&typeof hcOn==='function'&&hcOn()){rig.hcKind='Gargoyle';HC_RIGS.add(rig);} /* S1375 (F4) — the Gargoyle the kit's gargoyle, its stone wings folded by its fold (hcGarg) */
   if(hbOn()&&hbFoeOk(type,genome,g)){rig.hbFoe=type;if(g.hbKey)rig.hbG=HB_GENOMES.get(g.hbKey);HB_RIGS.add(rig);} /* S1201 (F4) — a human foe wears the builder's body too, its genome rolled at its first attach, by its id */
   return rig;
 }
@@ -1299,7 +1307,7 @@ function tickPeople(dt,now){
     if((rig.B.cloak||rig.B.hairB)&&!rig.lod&&!rig.sleep)peopleSwing(rig,dt); // S267; a sleeper's hair and cloak lie still (S752)
     // a captain's shield guard (S175): while it is up the left arm holds the shield across the body, the elbow bent
     // a gargoyle's wings fold down its back while it sleeps and spread and beat slowly once it wakes; the tail sways
-    if(rig.g.gargoyle){const f=rig.e&&rig.e.dormant?1:0;rig.fold+=(f-rig.fold)*(1-Math.exp(-dt/.3));const fo=rig.fold,beat=Math.sin(now*.005+rig.g.phase)*(1-fo);
+    if(rig.g.gargoyle){const f=rig.e&&rig.e.dormant?1:0;rig.fold+=(f-rig.fold)*(1-Math.exp(-dt/.3));const fo=rig.fold,beat=Math.sin(now*.005+rig.g.phase)*(1-fo);rig.beat=beat;
       rig.B.wingL.rotation.set(.1+.2*fo,.35+.95*fo,-.75*fo+.3*beat);rig.B.wingR.rotation.set(.1+.2*fo,-.35-.95*fo,.75*fo-.3*beat);
       rig.B.tail.rotation.set(.35*fo,.3*Math.sin(now*.0017+rig.g.phase)*(1-fo),0);}
     if(rig.foe&&rig.e&&rig.e.shieldUp){const L=rig.e.limbs;if(L&&L.shieldArm){L.shieldArm.rotation.x=L.shieldArmUpX;L.shieldArm.rotation.z=L.shieldArmUpZ;rig.B.elL.rotation.x=-1.1;}}
@@ -1351,7 +1359,7 @@ function hbPrep(g,key){if(g.hbKey)return;g.hbKey=key;try{hbTint(g,hbGenome(g));}
 // the human foes (S1201): which of FOE_DRESS wear the builder's body (the people, not the dead, the stone or the folk of the hills),
 // and what each wears over the builder's own rolled clothes, from its FOE_DRESS colour (c): the weapon and shield stay the game's
 // kit, held by the driver's bones, so the builder's own spear, staff, crossbow, basket and shield are taken off every one
-const HB_FOE_NOT=/^(skel|dead|goblin|kobold|troll|ogre|hag|gargoyle|golem|wraith)$/;
+const HB_FOE_NOT=/^(skel|dead|goblin|troll|ogre|hag|gargoyle|golem|wraith)$/;
 function hbFoeOk(type,genome,g){if(genome)return !!g.hbKey;const dr=FOE_DRESS[type];return !!dr&&!Object.keys(dr).some(k=>dr[k]&&HB_FOE_NOT.test(k));}
 const HB_FOE_DRESS={
   'Bandit':        c=>({cloak:c.map(v=>v*.8),cape:true,hood:'up'}),
@@ -1362,13 +1370,22 @@ const HB_FOE_DRESS={
   'Rogue Mage':    c=>({robe:c,cloak:c.map(v=>v*.75),cloakLen:.85,hood:'up'}),
   'Pirate':        c=>({wrap:[.55,.18,.12],cloak:null,hood:null}),
   'Bandit Captain':c=>({mail:[.42,.42,.44],helm:[.38,.39,.41],cloak:c,cape:true,hood:null}),
-  'Shieldbearer':  c=>({mail:[.5,.5,.52],helm:[.44,.45,.47],tabard:c,cloak:null,hood:null})};
+  'Shieldbearer':  c=>({mail:[.5,.5,.52],helm:[.44,.45,.47],tabard:c,cloak:null,hood:null}),
+  // S1379 — the kobolds (Michael's B on Session 178: the old mine-sprite): hooded, a short cape over the shoulders (HB_FOE_BODY ages them)
+  'Kobold':        c=>({cloak:c.map(v=>v*.75),cape:true,hood:'up',mantle:null}),
+  'Kobold Thief':  c=>({cloak:c.map(v=>v*.7),cape:true,hood:'up',mantle:null})};
+// S1379 — what a foe's genome is beyond its clothes: a kobold is an old man, short and thickset, with a long grey beard (the driver's
+// greybeard, S184); it is sized to its driver's stature like every foe, so its height slider only moves its proportions
+const HB_FOE_BODY={
+  'Kobold':        G=>{G.g=1;G.age=.86;G.beard=1;G.height=0;G.prop=.15;G.weight=.68;G.muscle=.6;G.hairCol=[.56,.56,.52];G.skin=[.69,.54,.42];},
+  'Kobold Thief':  G=>{G.g=1;G.age=.8;G.beard=.8;G.height=0;G.prop=.15;G.weight=.6;G.muscle=.6;G.hairCol=[.5,.49,.45];G.skin=[.66,.52,.4];}};
 // a foe's genome, at its first attach (its id is given after it is built, keyFoe): `foe:<id>`, the co-op rule's place and index; a
 // foe with no id yet (the inspector's) takes its type and its old genome's seed, which is the same each time it is built
 function hbFoeGenome(rig){const g=rig.g,dr=FOE_DRESS[rig.hbFoe]||{},id=rig.e&&rig.e.id;
   const key='foe:'+(id!=null?id:rig.hbFoe+':'+g.seed);HB.loadPack();
   const G=HB.rollGenome(key,{people:HB.PEOPLES[g.people]?g.people:'gatelander',g:g.female?0:1});
   const h=dr.cloth!=null?dr.cloth:0x3a3a3a,c=[(h>>16&255)/255,(h>>8&255)/255,(h&255)/255];
+  if(HB_FOE_BODY[rig.hbFoe])HB_FOE_BODY[rig.hbFoe](G);
   G.dress=Object.assign({},G.dress,{tunic:c,spear:null,staff:null,crossbow:null,basket:null,basketCloth:null,shield:null,chair:null,apron:null,bib:null,cape:null,coat:null,scarf:null,wrap:null},(HB_FOE_DRESS[rig.hbFoe]||(()=>({})))(c));
   HB_GENOMES.set(key,G);return G;}
 // S1224 — named (keyFoe), a foe rolls its genome at once, and the driver's two baked copies take its colours: the skin, the hair, the
