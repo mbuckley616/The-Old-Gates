@@ -13,9 +13,17 @@ console.log('prewarm', warm ? JSON.stringify(pw) : 'held off');
 await g.settle('dunmore');
 await page.evaluate(() => { forceTime(12); const S = WORLD.settle.get('dunmore'); px = S.site.x; pz = S.site.z + 4;
   const gl = REN.getContext(); window.__cs = 0; const o = gl.compileShader.bind(gl); gl.compileShader = s => { window.__cs++; return o(s); }; });
+// S1421 — no new townsperson's body is begun from here, and the windows below are quiet only once the one being built, if any, is
+// hung on and warm: a body built after them (a Dunmore woman with a basket, S1414) compiled its own programs behind its driver's
+// stand-in while the foes were raised, as hbWarm means it to, and those are not a foe's
+const unbuilt = () => page.evaluate(() => { if (typeof hbOn !== 'function' || !hbOn()) return 0; HBODY.build = 0; let n = HBODY.job ? 1 : 0;
+  for (const r of HB_RIGS) if (r.hb && r.hb.cold) n++;
+  return n; });
+await unbuilt();
 let still = 0;
-for (let i = 0; i < 40 && still < 4; i++) { const a = await page.evaluate(() => __cs); await page.waitForTimeout(1500); await g.frames(3); still = (await page.evaluate(() => __cs)) === a ? still + 1 : 0; }
+for (let i = 0; i < 40 && still < 4; i++) { const a = await page.evaluate(() => __cs); await page.waitForTimeout(1500); await g.frames(3); still = (await page.evaluate(() => __cs)) === a && !(await unbuilt()) ? still + 1 : 0; }
 const base = await page.evaluate(() => ({ cs: __cs, progs: REN.info.programs.length }));
+base.unbuilt = await unbuilt();
 console.log('settled', JSON.stringify(base));
 // every kind, in front of you, unlocked, in the world's scene, through the game's own builder
 const raised = await page.evaluate(() => { const out = []; const kinds = Object.keys(ZONE_FOE_DEF);
