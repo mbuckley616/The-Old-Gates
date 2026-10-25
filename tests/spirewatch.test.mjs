@@ -111,13 +111,15 @@ const folk = () => page.evaluate(() => { WORLD.tickSpire(1 / 60); const S = SPIR
 const sgtFn = () => page.evaluate(() => SPIRE_FOLK.sgt.def.topics.find(t => t.label === 'Let me up.').fn());
 await setup(); const D3 = DAY + 3 * 1440;
 await clock(D3 + 14 * 60); await foot(); const dayF = await folk();
-await clock(D3 + 22 * 60); const nightF = await folk(); const up = await sgtFn();
-await page.waitForTimeout(1600); const afterUp = await folk();
+const atDoor = () => page.evaluate(() => { const h = spireTower(); px = h.doorX; pz = h.doorZ; jumpY = activeTerrainH(px, pz); if (dlgOpen) closeDialog(); const go = window.goToInterior; let went = null; window.goToInterior = (x) => { went = x.id; }; try { interact(); } finally { window.goToInterior = go; } const out = { inside: went === h.id, talk: dlgOpen && !!SPIRE_FOLK.sgt && dlgNPC === SPIRE_FOLK.sgt.def, open: dlgOpen }; if (dlgOpen) closeDialog(); return out; });
+await clock(D3 + 22 * 60); const nightF = await folk(); const barred = await atDoor(); const up = await sgtFn();
+await page.waitForTimeout(1600); const afterUp = await folk(); const freed = await atDoor();
 await clock(D3 + 1440 + 21 * 60); const nextNight = await folk();
 const noQ = await page.evaluate(() => { for (const q of worldState.quests) if (q.kind === 'spire') q.turnedIn = true; return { greet: SPIRE_FOLK.sgt.def.greeting[0], up: SPIRE_FOLK.sgt.def.topics.find(t => t.label === 'Let me up.').fn() }; });
 console.log('sergeant', JSON.stringify({ dayF, nightF, up, afterUp, nextNight, noQ }));
 check('no sergeant by day; at 22h one stands at the door, a Sergeant of the Mark, with the quest\'s greeting and the four asks', !dayF.sgt && nightF.sgt && nightF.sgt.role === 'Sergeant' && nightF.sgt.name && /^So you're the one\./.test(nightF.sgt.greet) && ["What's up there?", 'What does it pay?', 'What comes down off it?', 'Let me up.'].every(l => nightF.sgt.labels.includes(l)), nightF);
 check('with the quest *Let me up.* gives the watch and he is gone for the night; back the next night', /^Aye\. Iron and blood, then\. It's your watch\./.test(up) && !afterUp.sgt && !!nextNight.sgt, { up, afterUp, nextNight });
+check('while he stands the door is his: E at it turns you to him and does not go in; once he has given the watch it goes in', !barred.inside && barred.talk && freed.inside, { barred, freed });
 check('without the quest he refuses, and greets with one of the three', noQ.up === "Not without the Captain's word. I don't care whose Captain you are." && ["Night watch. The spire's shut to anyone the Captain didn't send.", 'Warm up there tonight. Always is.', 'Stand where you like. Just not between me and the door.'].includes(noQ.greet), noQ);
 // the roof's words, coming up with the quest; the stone
 await setup();
@@ -131,6 +133,12 @@ check('by day on the roof with the quest: the day line, once a visit', day1 === 
 check('by night: the new cuts and the warmth', /^The parapet’s inner face is cut with old strokes/.test(night1) && night1.endsWith('It is warm up here.'), night1);
 check('the stone\'s prompt by the parapet, not at the hatch; looked at by night it is lit and warm, and spireSeen is kept', stNight.mid === null && stNight.prompt === "Press 'E' to look at the stone" && stNight.text.endsWith('Where it falls, the stone is as warm as a hand.') && stNight.seen, stNight);
 check('by day the stone is cold; an Old Blood player could read the old strokes, and doesn\'t', stDay.text.endsWith('The stone is cold.') && ob === 'You could read the old strokes, if you let yourself. You don’t.', { stDay, ob });
+// S1390 — on the roof by its south parapet the tower's door is 1.5 m across and 39 m below: E looks at the stone, it does not go in
+const south = await page.evaluate(() => { const r = WORLD.settle.get(WORLD.anchoredPlaces().spire.id).roof, h = spireTower(); px = r.x; pz = r.z + 3.3; jumpY = r.y; MSGEL.textContent = '';
+  const out = { toDoor: +Math.hypot(px - h.doorX, pz - h.doorZ).toFixed(2), prompt: spireStonePrompt(), feet: doorAtFeet(h) }; const go = window.goToInterior; let went = null; window.goToInterior = (x) => { went = x.id; }; try { interact(); } finally { window.goToInterior = go; } out.inside = went === h.id; out.text = MSGEL.textContent;
+  px = h.doorX; pz = h.doorZ; jumpY = worldH(h.doorX, h.doorZ); out.groundFeet = doorAtFeet(h); return out; });
+console.log('south parapet', JSON.stringify(south));
+check(`by the south parapet, ${south.toDoor} m across from the tower's door 39 m below, E looks at the stone and does not go in; at the door on the ground it would`, south.toDoor < 1.6 && south.prompt === "Press 'E' to look at the stone" && !south.feet && !south.inside && /stone/.test(south.text) && south.groundFeet, south);
 // Rowe's morning: at the foot from 6h to 9h on the day it was held, not at the seat
 const morning = await page.evaluate(() => { const L = WORLD.fstate().league; L.spire = 'held'; L.rowe = 'alive'; return true; });
 await clock(D3 + 4 * 1440 + 7 * 60); await page.evaluate(() => { WORLD.fstate().league.spireDay = dayNow(); }); await foot(); const m7 = await folk();
