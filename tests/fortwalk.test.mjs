@@ -25,15 +25,15 @@ const walkList = forts.map(f => ({ ...f, d: Math.hypot(f.x - 13100, f.z - 25450)
 const rows = [];
 for (const f of walkList) {
   // set down near the door and let its cell build (the compound is a static of a near cell)
-  let ready = false;
-  for (let k = 0; k < 30 && !ready; k++) {
-    await page.evaluate((f) => { const a = WORLD.arrivalFor('door_' + f.seed); const t = a || { x: f.x, z: f.z + 30 }; if (Math.hypot(px - t.x, pz - t.z) > 6) { px = t.x; pz = t.z; } }, f);
-    await page.waitForTimeout(2500);
-    /* S447 — since the rivers (S432) a cell's load is heavier: a fort beside home took 60 s of the queue's two jobs a frame
-       on software GL, against the 75 s this loop allowed. Run the game's own queued load jobs here instead of waiting on the clock */
-    await page.evaluate(() => { for (let n = 0; n < 400 && WORLD.jobs.length; n++) { const jb = WORLD.jobs.shift(); let more = false; try { more = jb.fn(); } catch (e) { console.warn('job failed', e); } if (more) WORLD.jobs.push(jb); } });
-    ready = await page.evaluate((s) => !!WORLD.settle.get('fort_' + s) && PORTALS.some(p => p.seed === s), f.seed);
-  }
+  /* S1393 — FLAKY at s888 (fort 578200 not built in 30 × 2.5 s with two browsers running): the wait was on the wall clock,
+     for the loop's own tickCells (every 0.75 s of game time) to queue the cell and then its statics. Do what fast travel
+     does on arrival instead (88-world-ticks.js, tickCells(0,true)): the 3×3 loads and the near statics build now, then the
+     queue left by an earlier part-way load is run out and the cells asked again, until the fort stands or nothing changes */
+  const ready = await page.evaluate((f) => { const a = WORLD.arrivalFor('door_' + f.seed); const t = a || { x: f.x, z: f.z + 30 }; px = t.x; pz = t.z;
+    const built = () => !!WORLD.settle.get('fort_' + f.seed) && PORTALS.some(p => p.seed === f.seed);
+    for (let pass = 0; pass < 6 && !built(); pass++) { tickCells(0, true);
+      for (let n = 0; n < 4000 && WORLD.jobs.length; n++) { const jb = WORLD.jobs.shift(); let more = false; try { more = jb.fn(); } catch (e) { console.warn('job failed', e); } if (more) WORLD.jobs.push(jb); } }
+    return built(); }, f);
   if (!ready) { rows.push({ seed: f.seed, notBuilt: true }); continue; }
   await g.hide();
   const r = await page.evaluate((s) => {
