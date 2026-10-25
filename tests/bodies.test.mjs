@@ -50,11 +50,12 @@ const dun = await page.evaluate(() => { const out = [];
   const live = ENEMIES.filter(e => !e.dead && !e.disguised && !e.dormant && e.floor === 1 && !e.ranged && !e.master);
   const spots = []; currentFloor = 1;
   for (let r = 3; r < dR - 1; r++) for (let c = 1; c < dC - 1; c++) { let open = true;
-    for (let i = -1; i <= 1 && open; i++) for (let j = -3; j <= 1; j++) if (dSolid(c + i, r + j)) { open = false; break; }
+    for (let i = -1; i <= 1 && open; i++) for (let j = -3; j <= 1; j++) if (dSolid(dAt(c + i), dAt(r + j))) { open = false; break; }
     if (open && spots.every(s => Math.hypot(s.c - c, s.r - r) > 6)) spots.push({ c, r }); }
   for (const e of live) { if (out.length >= 3 || !spots.length) break; const { c, r } = spots.shift();
     ENEMIES.forEach(x => { if (x !== e && !x.dead) { x.dead = true; x._tmp = true; } });
-    e.x = c; e.z = r - 1; px = c; pz = r + 1; jumpY = 0; currentFloor = 1; staggered.length = 0; e.fleeT = 0; e._fleeTriggered = true;
+    /* S1414 — the dungeon is in metres since S1283 (dAt, and dSolid reads metres, above); and a gate pocket's foe set down outside its pocket's leash (S1323) forgets you */
+    e.x = dAt(c); e.z = dAt(r) - 1; px = dAt(c); pz = dAt(r) + 1; e.pocket = null; jumpY = 0; currentFloor = 1; staggered.length = 0; e.fleeT = 0; e._fleeTriggered = true;
     const w = _walkInto(() => ({ x: e.x, z: e.z }), () => { e.alert = true; e.atkCd = 0; e.telegraphT = 0; return e; });
     out.push({ name: e.name, R: +(bodyR(e, .5) + BODY_YOU).toFixed(3), ...w });
     ENEMIES.forEach(x => { if (x._tmp) { x.dead = false; x._tmp = false; } }); e.dead = true; }
