@@ -9,7 +9,7 @@ await g.intoWorld(); await g.settle('dunmore');
 const K = await page.evaluate(() => SCALE.ROOM_K);
 const [homes, gal] = await page.evaluate(() => { const hs = WORLD.settle.get('dunmore').houses.filter(x => x.type === 'home' && !x.ownedByPlayer && !x.shuttered); return [hs.length, 1]; });
 const enter = async (hr, k) => { await page.evaluate(([hr, k, gal]) => { forceTime(hr); const S = WORLD.settle.get('dunmore');
-  const h = S.houses.filter(x => x.type === 'home' && !x.ownedByPlayer && !x.shuttered)[k]; window._h = h; /* S1430: the generated home's rules; a Dunmore home's kit townhouse room is kittownhouse's, so the visit sets its kit aside */ if (h.kit) { h._kitWas = h.kit; h.kit = null; } if (k === gal) { h._two0 = h.two; h.two = true; } px = h.exitX; pz = h.exitZ; goToInterior(h); }, [hr, k, gal]);
+  const h = S.houses.filter(x => x.type === 'home' && !x.ownedByPlayer && !x.shuttered)[k]; window._h = h; /* S1437: the generated home's rules; a Dunmore home's kit townhouse room is kittownhouse's, so the visit sets its kit aside */ if (h.kit) { h._kitWas = h.kit; h.kit = null; } if (k === gal) { h._two0 = h.two; h.two = true; } px = h.exitX; pz = h.exitZ; goToInterior(h); }, [hr, k, gal]);
   await page.waitForTimeout(3000); await g.hide();
   // S1224 (card F4): on the new look the resident's builder body comes a moment after the room and lays the sleeper again by its own
   // shape (hbAttach); it is built here first, so what is measured is the body that shows and the loop below does not move it

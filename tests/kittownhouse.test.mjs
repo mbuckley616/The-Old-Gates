@@ -1,4 +1,4 @@
-// The Gatelands townhouse inside a town home on the new look (Session 1430; card F9, Michael's A on DECISION #303: the rooms inside the
+// The Gatelands townhouse inside a town home on the new look (Session 1437; card F9, Michael's A on DECISION #303: the rooms inside the
 // street's own shell; laid out by bays in Session 1427). On ?look=new a Gatelands town's home stands as the kit's townhouse on 3, 4 or 5
 // bays, 6.75 to 8 m deep (S1072, S1126), its door at either end; inside it is PKIT.gl.townhouse on the same bays and depth, at its true
 // size, not scaled, mirrored for a west door. In Dunmore, one home of each kind: the kit's room builds to the prototype's triangles and
@@ -91,6 +91,15 @@ for (const H of picks) { const tag = `${H.bays} bays, ${H.door > 0 ? 'east' : 'w
   check(`[${tag}] a bought house's cellar hatch lies in the hall's flags at ${more.hatch && [more.hatch.x, more.hatch.z].join(', ')}, clear to stand by`, !!more.hatch && more.hatch.clear, more.hatch);
   check(`[${tag}] a Mages' cold hearth shows no fire and no light on the four, and they catch when its task is done`, more.cold && more.lit, more);
 
+  // S1437: awake at 22h the resident faces into her kitchen, the heading held through the loop's paused sway, and sees you in its
+  // middle (the systems builder on #728: the sway had turned every one to +z, the kitchen's front wall 0.8 m off, and she saw nothing)
+  await page.evaluate(() => { forceTime(22); WORLD.buildInteriorFor(currentHouse); scene = interiorScene; });
+  await g.frames(4);
+  const eye = await page.evaluate(() => { const m = intNPCMesh, h = currentHouse; if (!m) return null; const T = h._townhouse, s = h._mirror, X = T.inner.x1, Z = T.inner.z1, K = T.rooms.kitchen;
+    const p = m.position, ry = m.rotation.y; let d = 0; for (; d < 12; d += .05) { const x = p.x + Math.sin(ry) * d, z = p.z + Math.cos(ry) * d; if (INT_SOL.some(b => x > b.x0 && x < b.x1 && z > b.z0 && z < b.z1 && b.y0 < 1.5 && b.y1 > 1)) break; }
+    const was = [px, pz, jumpY]; px = X + s * (K.x0 + K.x1) / 2; pz = Z + (K.z0 + K.z1) / 2; jumpY = 0; const w = witnessOf(h); [px, pz, jumpY] = was;
+    forceTime(12); WORLD.buildInteriorFor(h); scene = interiorScene; return { ry: +ry.toFixed(2), ahead: +d.toFixed(2), sees: !!w }; });
+  check(`[${tag}] awake at 22h the resident faces into the kitchen (${eye && eye.ahead} m clear ahead) and sees you in its middle`, !!eye && eye.ahead >= 2.5 && eye.sees, eye);
   await page.evaluate(() => { const h = currentHouse; px = intArriveX(h); pz = intArrivalZ(h); jumpY = 0; interact(); });
   await g.frames(30);
   check(`[${tag}] at the arrival spot E does not take you out`, await page.evaluate(() => isInterior()));

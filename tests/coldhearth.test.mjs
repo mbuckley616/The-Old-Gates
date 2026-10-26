@@ -11,7 +11,7 @@ const enter = (i, task) => page.evaluate(async ([i, task]) => {
   if (typeof isInterior === 'function' && isInterior()) { exitInterior(); await new Promise(r => setTimeout(r, 2500)); }
   const S = WORLD.settle.get('dunmore'), h = S.houses.filter(x => x.type === 'home')[i];
   gstate().guild_m.active = task ? { id: 'guild_m:test:1', g: 'guild_m', kind: 'hearth', siteId: 'dunmore', house: null, gold: 40, desc: '', short: 'Light a hearth' } : null;
-  /* S1430: the generated home's rules; a Dunmore home's kit townhouse room is kittownhouse's, so the visit sets its kit aside */ if (h.kit) h.kit = null; /* never put back: no other check here reads it */ px = h.exitX; pz = h.exitZ; goToInterior(h);
+  /* S1437: the generated home's rules; a Dunmore home's kit townhouse room is kittownhouse's, so the visit sets its kit aside */ if (h.kit) h.kit = null; /* never put back: no other check here reads it */ px = h.exitX; pz = h.exitZ; goToInterior(h);
   for (let k = 0; k < 40 && !(currentHouse && currentHouse.id === h.id); k++) await new Promise(r => setTimeout(r, 250));
   await new Promise(r => setTimeout(r, 1500));
   return currentHouse && currentHouse.id === h.id; }, [i, task]);

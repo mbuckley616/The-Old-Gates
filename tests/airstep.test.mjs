@@ -84,7 +84,7 @@ const until = async (what, fn, arg) => { const t0 = Date.now(); try { await page
 const room = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'); const h = S.houses.find(x => x.type === 'home' && !x.two) || S.houses.find(x => x.type === 'home' && x.kit && x.kit.kind === 'townhouse') || S.houses.find(x => !x.two && x.type !== 'inn');
   forceTime(13); px = h.exitX; pz = h.exitZ; goToInterior(h); return { id: h.id, type: h.type }; });
 await until('in the room', id => currentHouse && currentHouse.id === id && document.getElementById('fd').style.opacity === '0', room.id); await g.hide(); await g.frames(4);
-// Session 1430: the kit townhouse's own room (three floors): the ceiling over you is the first floor's underside, read where you stand
+// Session 1437: the kit townhouse's own room (three floors): the ceiling over you is the first floor's underside, read where you stand
 const inRoom = await page.evaluate(() => { let H = currentHouse._roomH; const W = currentHouse.intW, D = currentHouse.intD;
   // a clear spot: no foothold or solid within 0.6 m below a floor overhead (2.2 m up), 0.8 m in from the walls
   const clear = (x, z) => FOOTHOLDS.every(f => f.kind === 'spiral' || f.y > 2.2 || x < f.x0 - .6 || x > f.x1 + .6 || z < f.z0 - .6 || z > f.z1 + .6) && (INT_SOL || []).every(s => s.y0 > 2.2 || x < s.x0 - .6 || x > s.x1 + .6 || z < s.z0 - .6 || z > s.z1 + .6);

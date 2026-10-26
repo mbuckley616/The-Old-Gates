@@ -5,7 +5,7 @@ import { boot, check } from './lib/game.mjs';
 import fs from 'fs';
 const g = await boot(); const { page } = g;
 await g.intoWorld(); await g.settle('dunmore');
-await page.evaluate(() => { const h = WORLD.settle.get('dunmore').houses.find(x => x.type === 'home'); window._H = h; /* S1430: the generated home's rules; a Dunmore home's kit townhouse room is kittownhouse's, so the visit sets its kit aside */ h._kitWas = h.kit; h.kit = null; px = h.exitX; pz = h.exitZ; goToInterior(h); });
+await page.evaluate(() => { const h = WORLD.settle.get('dunmore').houses.find(x => x.type === 'home'); window._H = h; /* S1437: the generated home's rules; a Dunmore home's kit townhouse room is kittownhouse's, so the visit sets its kit aside */ h._kitWas = h.kit; h.kit = null; px = h.exitX; pz = h.exitZ; goToInterior(h); });
 await page.waitForTimeout(5000); await g.hide();
 // S896 (card F2a): a room is laid out in the kit's unit at its true size ÷ K and built K times larger (SCALE.ROOM_K); the cottage's places
 // are the kit's (homeAt), and every place and height below is the kit's times K

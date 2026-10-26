@@ -1824,7 +1824,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     else{intNPCMesh=null;intNPCPos={x:-99,z:-99};}
     return sc_;
   }
-  // S1430 (card F9, Michael's A on #303; OG-115) — on the new look a Gatelands town's home standing as the kit's townhouse on 3, 4 or 5
+  // S1437 (card F9, Michael's A on #303; OG-115) — on the new look a Gatelands town's home standing as the kit's townhouse on 3, 4 or 5
   // bays and 6.75 m deep or more (lot.kit, S1072 and S1126) is the kit's townhouse inside (PKIT.gl.townhouse, rooms.js's Session 1189
   // laid out by bays in Session 1427), in its street's render and paint: the hall and the dog-leg stair in the door's bay, the parlour
   // and the kitchen beside it; up the stair the drawing room and the dining room, then the bedroom and the children's room. The room is
@@ -1896,11 +1896,12 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
         const mk=a=>{const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(a,3));g.computeVertexNormals();const q=new THREE.Mesh(g,m.material);q.name='flame';return q;};
         m.geometry.dispose();T.room.remove(m);hf.add(mk(lo));if(hi.length)T.room.add(mk(hi));}
       hf.visible=!cold;const holder=new THREE.Group();holder.userData.hearthFire=hf;holder.userData.hearthLight=fls[1];holder.userData.hearthLights=fls;if(cold)holder.userData.coldHouse=house;sc_.add(holder);furnSwap(holder);}
-    // the resident, in the kitchen where the way from the hall turns to the back door, facing the hall
-    const np=T.paths[0].pts[4],npc={x:rx(np[0]),z:rz(np[1])};
+    // the resident, in the kitchen where the way from the hall turns to the back door, facing into the kitchen (its middle; S1437: she
+    // faced the hall through the partition 0.35 m off, and the paused sway then turned her to +z, the kitchen's front wall 0.8 m off)
+    const np=T.paths[0].pts[4],npc={x:rx(np[0]),z:rz(np[1])},KR=T.rooms.kitchen,nry=Math.atan2(rx((KR.x0+KR.x1)/2)-npc.x,rz((KR.z0+KR.z1)/2)-npc.z);
     if(npcInsideNow(house)){const g=buildNPCMesh({role:'Resident',name:house.keeper,_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
-      g.rotation.y=s*Math.PI/2;g.position.set(npc.x,0,npc.z);sc_.add(g);intNPCMesh=g;intNPCPos={x:npc.x,z:npc.z};
-      intNPCMesh.userData.amble={wa:0,wt:1,minZ:npc.z,maxZ:npc.z,minX:npc.x,maxX:npc.x,speed:.25,paused:true};
+      g.rotation.y=nry;g.position.set(npc.x,0,npc.z);sc_.add(g);intNPCMesh=g;intNPCPos={x:npc.x,z:npc.z};
+      intNPCMesh.userData.amble={wa:0,wt:1,minZ:npc.z,maxZ:npc.z,minX:npc.x,maxX:npc.x,speed:.25,paused:true,ry:nry};
       if(homeAsleepNow(house))laySleeper(intNPCMesh);}
     else{intNPCMesh=null;intNPCPos={x:-99,z:-99};}
     return sc_;
@@ -2186,7 +2187,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     if(kitTavern(house))return buildKitTavern(house); /* S1320 — Aurenne's tavern on the quay, at its true size */
     if(kitCoachRoom(house))return buildKitCoachRoom(house); /* S1368 — a town's coaching inn inside, at its true size */
     if(kitCottage(house))return buildKitCottage(house); /* S1392 — a Gatelands village's cottage inside, at its true size */
-    if(kitTownhouse(house))return buildKitTownhouse(house); /* S1430 — a Gatelands town's townhouse inside, at its true size */
+    if(kitTownhouse(house))return buildKitTownhouse(house); /* S1437 — a Gatelands town's townhouse inside, at its true size */
     if(kitCourtHouse(house))return buildKitCourtHouse(house); /* S1425 — Aurenne's courtyard house inside, at its true size */
     if(kitChurchHall(house))return buildKitChurchHall(house); /* S1326 — the Church of the Weaver inside, at its true size */
     const two=!!house.two;

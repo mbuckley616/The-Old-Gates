@@ -1034,7 +1034,7 @@ function loop(now){
         intAmbleStep(intNPCMesh,dt); // S365 — the step lives in intAmbleStep so a test can walk the keeper
       } else if(am&&am.paused){
         // Priest: gentle rotation sway only, stays at altar
-        intNPCMesh.rotation.y=0+Math.sin(swT*.4)*.08;
+        intNPCMesh.rotation.y=(am.ry||0)+Math.sin(swT*.4)*.08; /* S1437 — about the heading its builder gave (am.ry), else 0 as before */
       }
       // Subtle unified breath bob — same scale as exterior NPCs
       intNPCMesh.position.y=(intNPCMesh.userData.floorY||0)+Math.sin(swT*1.4)*.006; /* S1436 — on her own floor (a resident woken upstairs) */

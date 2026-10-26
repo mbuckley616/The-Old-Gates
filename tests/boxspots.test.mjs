@@ -16,7 +16,7 @@ for (const id of TOWNS) { await g.settle(id);
       // than the chest, .64 × .56 about a .30 × .24 shop chest, so two collision boxes may touch where nothing does)
       X.g.updateMatrixWorld(true); cb.setFromObject(X.g); cb.expandByScalar(-.02);
       const own = INT_SOL.find(s => Math.abs((s.x0 + s.x1) / 2 - X.x) < .01 && Math.abs((s.z0 + s.z1) / 2 - X.z) < .01);
-      const fy = X.y || 0; /* S1430: the chest's own floor (a kit townhouse's is on the second floor) */
+      const fy = X.y || 0; /* S1437: the chest's own floor (a kit townhouse's is on the second floor) */
       const solHits = INT_SOL.filter(s => s !== own && s.x0 < cb.max.x && s.x1 > cb.min.x && s.z0 < cb.max.z && s.z1 > cb.min.z && (s.y0 == null || s.y0 < cb.max.y) && (s.y1 == null || s.y1 > fy + .02))
         .map(s => [s.x0, s.x1, s.z0, s.z1, s.y0, s.y1].map(v => v == null ? v : +v.toFixed(2)));
       // the nearest other solid to the chest, for the log

@@ -26,12 +26,12 @@ const probe = (what, s, t) => page.evaluate(([what, s, t]) => {
 // a free spot about r from (x, z) on floor y, clear of furniture and walls, with nothing in the way
 const spot = (x, z, y, r) => page.evaluate(([x, z, y, r]) => { for (let rr = r; rr <= r + .3; rr += .1) for (let a = 0; a < 6.28; a += .2) { const sx = x + Math.sin(a) * rr, sz = z + Math.cos(a) * rr;
   if (sx < .35 || sz < .35 || sx > currentHouse._roomW - .35 || sz > currentHouse._roomD - .35) continue; if (intSolidAt(sx, sz, .3, y)) continue; if (!intSightLine(sx, sz, x, z)) continue;
-  if ((INT_DOORS || []).some(d => Math.abs((d.y || 0) - y) < 1 && Math.hypot(d.x - sx, d.z - sz) < 1.6)) continue; /* S1430: a door on this floor */ return { x: sx, z: sz, y }; } return null; }, [x, z, y, r]);
+  if ((INT_DOORS || []).some(d => Math.abs((d.y || 0) - y) < 1 && Math.hypot(d.x - sx, d.z - sz) < 1.6)) continue; /* S1437: a door on this floor */ return { x: sx, z: sz, y }; } return null; }, [x, z, y, r]);
 const out = [];
 // a shop's strongbox and a home's chest, at night, locked
 for (const kind of ['shop', 'home']) {
   await into((kind) => { const S = WORLD.settle.get('dunmore'); const h = S.houses.find(x => kind === 'shop' ? (x.type === 'misc' || x.type === 'weapon' || x.type === 'potion') : (x.type === 'home' && !x.ownedByPlayer)); window._want = h; px = h.exitX; pz = h.exitZ; goToInterior(h); }, kind);
-  const X = await page.evaluate(() => WORLD.intBox && { x: WORLD.intBox.x, z: WORLD.intBox.z, y: WORLD.intBox.y || 0, kind: WORLD.intBox.kind }); /* S1430: on the chest's own floor (a townhouse's is upstairs) */
+  const X = await page.evaluate(() => WORLD.intBox && { x: WORLD.intBox.x, z: WORLD.intBox.z, y: WORLD.intBox.y || 0, kind: WORLD.intBox.kind }); /* S1437: on the chest's own floor (a townhouse's is upstairs) */
   if (X) { const s = await spot(X.x, X.z, X.y, .8); if (s) out.push({ where: kind, ...(await probe('box', s, { x: X.x, y: X.y + .35, z: X.z })) }); }
   await leave(); }
 // an inn's cellar hatch, down; then up out of the cellar
