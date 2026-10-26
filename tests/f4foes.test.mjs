@@ -42,14 +42,14 @@ check('and its driver, near and far, is in the genome\'s skin, not the old genom
 const who = await page.evaluate(() => _F.map(({ n, e, rig }) => { const H = rig && rig.hb, names = new Set(); if (H) H.root.traverse(o => { if (o.isMesh || o.isGroup) names.add(o.name); });
   return { n, id: e.id, hb: !!H, fail: !!(rig && rig.hbFail), key: rig && rig.hbG ? [...HB_GENOMES].find(([, G]) => G === rig.hbG)?.[0] : null, bones: H ? H.P.skeleton.bones.length : 0,
     hood: names.has('hoodUp'), mail: [...names].some(x => /^mail/.test(x)), helm: [...names].some(x => /helm/i.test(x)), robe: [...names].some(x => /robe|cord/.test(x)), coat: names.has('coat'), tabard: names.has('tabard'),
-    spear: names.has('spear'), weapon: !!(rig && rig.weapon) }; }));
+    spear: names.has('spear'), gear: rig && rig.g.gear, weapon: !!(rig && rig.weapon) }; }));
 console.log('  foes:', JSON.stringify(who.map(w => [w.n, w.key, w.hood, w.mail, w.helm, w.robe, w.coat, w.tabard])));
 const people = who.filter(w => w.n !== 'Wraith');
 check('the nine human foes wear the builder\'s body on its 163-bone skeleton, keyed by their foe id', people.every(w => w.hb && w.bones === 163 && w.key === 'foe:' + w.id), people.filter(w => !(w.hb && w.key === 'foe:' + w.id)));
 check('the Wraith keeps its own body (the ghosts are not on the builder\'s yet)', !who.find(w => w.n === 'Wraith').hb && made.left === 0, who.find(w => w.n === 'Wraith'));
 const by = Object.fromEntries(who.map(w => [w.n, w]));
-check('each dressed as its kind: hooded bandits and cultists, mail and helm on the deserter, the captain and the shieldbearer, a coat on the highwayman, a tabard on the shieldbearer, the builder\'s own spear on none',
-  by.Bandit.hood && by['Bandit Archer'].hood && by.Cultist.hood && by['Rogue Mage'].hood && by.Deserter.mail && by.Deserter.helm && by['Bandit Captain'].mail && by.Shieldbearer.mail && by.Shieldbearer.tabard && by.Highwayman.coat && people.every(w => !w.spear), by);
+check('each dressed as its kind: hooded bandits and cultists, mail and helm on the deserter, the captain and the shieldbearer, a coat on the highwayman, a tabard on the shieldbearer, the builder\'s own spear only on one that carries a spear (a Deserter one time in two, S1464)',
+  by.Bandit.hood && by['Bandit Archer'].hood && by.Cultist.hood && by['Rogue Mage'].hood && by.Deserter.mail && by.Deserter.helm && by['Bandit Captain'].mail && by.Shieldbearer.mail && by.Shieldbearer.tabard && by.Highwayman.coat && people.every(w => w.spear === (w.gear === 'spear')), by);
 
 // the same foe is the same body: the genome comes from the id alone
 const same = await page.evaluate(() => _F.filter(f => f.rig && f.rig.hb).every(f => { const k = JSON.stringify(HB.toSaved(f.rig.hbG)); const r = { ...f.rig, hbG: null }; return JSON.stringify(HB.toSaved(hbFoeGenome(r))) === k; }));

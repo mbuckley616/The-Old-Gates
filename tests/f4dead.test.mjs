@@ -68,6 +68,20 @@ const sp = await page.evaluate(() => { const { e, rig } = _F[3], H = rig.hb; let
 console.log('  spear:', JSON.stringify(sp));
 check(`the Ash Wight's spear stands in the builder's grip, ${sp.lean}° off plumb, its foot ${sp.foot} m off the ground, and its head moves ${sp.wind} m with the wind-up`, sp.grip && sp.lean < 15 && sp.foot > -.05 && sp.foot < .2 && sp.wind > .1, sp);
 
+// S1464 — a spearman's blow is a thrust (#755 A): through the tell the spear comes down level along his facing, the arm drawn back; on
+// the blow it drives forward, and after it the spear stands in the grip again
+const th = await page.evaluate(() => { const { e, rig } = _F[3], H = rig.hb; let s = null; H.root.traverse(o => { if (o.name === 'spear') s = s || o; });
+  const top = rig.root.parent, at = () => { top.updateMatrixWorld(true); const iq = top.getWorldQuaternion(new THREE.Quaternion()).invert(), inv = top.matrixWorld.clone().invert();
+    const a = new THREE.Vector3(0, 1, 0).transformDirection(s.matrixWorld).applyQuaternion(iq), h = s.localToWorld(new THREE.Vector3(0, 2, 0)).applyMatrix4(inv);
+    return { off: +(Math.acos(Math.min(1, a.z)) * 57.3).toFixed(1), lean: +(Math.acos(Math.min(1, Math.abs(a.y))) * 57.3).toFixed(1), z: +h.z.toFixed(2), y: +h.y.toFixed(2) }; };
+  tickPeople(1 / 60, 8e5); e._wind = 1; e._lunge = null; attackPose(e, false); const tell = at();
+  e._wind = 0; e._lunge = .15; attackPose(e, false); const blow = at();
+  e._lunge = null; attackPose(e, false); tickPeople(1 / 60, 8e5 + 17); const after = at();
+  return { tell, blow, after, thrust: rig.thrust }; });
+console.log('  thrust:', JSON.stringify(th));
+check(`the Ash Wight's blow is a thrust: told, the spear lies ${th.tell.off}° off his facing; struck, ${th.blow.off}°, its head ${(th.blow.z - th.tell.z).toFixed(2)} m further out; after, ${th.after.lean}° off plumb in the grip again`,
+  th.tell.off < 10 && th.blow.off < 10 && th.blow.z - th.tell.z > .25 && th.after.lean < 15 && th.thrust === 0, th);
+
 // the picture: the line from 6 m, and close on the Hollowed's face
 await page.evaluate(() => { const f = _F[1].e; const fx = -Math.sin(yaw), fz = -Math.cos(yaw); px = f.x - fx * 6; pz = f.z - fz * 6; pitch = .05; });
 for (let i = 0; i < 8; i++) { await page.evaluate(() => tickPeople(1 / 60, performance.now())); await g.frames(1); }

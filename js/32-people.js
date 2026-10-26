@@ -1439,6 +1439,8 @@ function hbFoeGenome(rig){const g=rig.g,dr=FOE_DRESS[rig.hbFoe]||{},id=rig.e&&ri
   const h=dr.cloth!=null?dr.cloth:0x3a3a3a,c=[(h>>16&255)/255,(h>>8&255)/255,(h&255)/255];
   if(HB_FOE_BODY[rig.hbFoe])HB_FOE_BODY[rig.hbFoe](G);
   G.dress=Object.assign({},G.dress,{tunic:c,spear:null,staff:null,crossbow:null,basket:null,basketCloth:null,shield:null,chair:null,apron:null,bib:null,cape:null,coat:null,scarf:null,wrap:null},(HB_FOE_DRESS[rig.hbFoe]||(()=>({})))(c));
+  // S1464 — a foe that rolled the gear kit's spear (a Deserter one time in two) holds the builder's, as the Ash Wight does: the driver's is baked into its hidden mesh
+  if(g.gear==='spear'&&!G.dress.spear)G.dress.spear=[.46,.33,.2];
   HB_GENOMES.set(key,G);return G;}
 // S1224 — named (keyFoe), a foe rolls its genome at once, and the driver's two baked copies take its colours: the skin, the hair, the
 // tunic, the legs and the boots, from a bake of the same shape in the genome's colours (the vertices are the same, so only the colour
@@ -1571,6 +1573,29 @@ function hbHold(rig){const H=rig.hb,top=rig.foe?rig.root.parent:rig.root;top.upd
   for(const h of H.held){const o=h.o;if(o.parent!==H.root&&o.parent!==h.par)continue;if(o.parent!==H.root)H.root.add(o);
     _hbm.multiplyMatrices(_hbm2,h.par.matrixWorld).multiply(h.m0);_hbm.decompose(o.position,o.quaternion,o.scale);
     if(h.f&&h.f.length){const v=_hbv.set(0,0,0);for(const b of h.f)v.add(_hbv2.setFromMatrixPosition(b.matrixWorld));o.position.copy(v.multiplyScalar(1/h.f.length).applyMatrix4(_hbm2));}}}
+// S1464 — a spearman's blow is a thrust (Michael's A on #755: 2.4 m in a 40° line), not the overhand swing every armed foe has
+// (attackPose): through the tell the head comes down level at the foe's front and the arm draws back; on the blow the arm drives
+// forward and comes back as the spear rises again. rig.thrust (0 to 1) is how level the spear lies: the hand holding it (the builder's
+// grip, the kit's, or the driver's gear bone) is turned so the shaft points along the foe's facing, a little down, after the arm is posed
+// (hbPose, hcPose), so the head stays on its line whatever the shoulder does; at 0, or fallen (limp), every hold is its own again
+const FOE_THRUST={back:.6,fwd:-1.15,dip:-.08};
+function foeThrust(rig,w,st){const T=FOE_THRUST,f=st>0?Math.sin((1-st)*Math.PI):0,lv=Math.max(w,st>0?Math.min(1,st*2):0),B=rig.B;
+  rig.thrust=lv*lv*(3-2*lv);B.shR.rotation.x=T.back*(st>0?st*(1-f):w)+T.fwd*f;
+  B.gear.rotation.x=-(B.hips.rotation.x+B.spine.rotation.x+B.shR.rotation.x+B.elR.rotation.x+B.wrR.rotation.x);if(rig.thrust>0)foeSpearAim(rig,B.gear,null);}
+const _fsa={m:new THREE.Vector3(),a:new THREE.Vector3(),t:new THREE.Vector3(),q:new THREE.Quaternion(),q2:new THREE.Quaternion(),r:new THREE.Quaternion()};
+// turn bone wb so the shaft (s's own +y, or wb's when s is null) points along the foe's facing, by rig.thrust
+function foeSpearAim(rig,wb,s){const top=rig.root.parent,k=rig.thrust;if(!top||!wb||!wb.parent||!(k>0))return;const V=_fsa;
+  wb.parent.updateWorldMatrix(true,false);wb.updateMatrixWorld(true);V.a.set(0,1,0).transformDirection((s||wb).matrixWorld);
+  V.t.set(0,0,1).transformDirection(top.matrixWorld);V.t.y=FOE_THRUST.dip;V.t.normalize();
+  // part-way, the shaft's pitch in the foe's own frame goes from its own to level over the top (the Skeleton's is sloped back and down
+  // at rest, and one slerp from it across to the facing swung it out sideways or under), its sideways lean easing out with it
+  if(k<1){top.getWorldQuaternion(V.q2);V.m.copy(V.a).applyQuaternion(V.q2.invert());let th=Math.atan2(V.m.y,V.m.z);if(th<-Math.PI/2)th+=2*Math.PI;
+    const tt=Math.atan2(FOE_THRUST.dip,1),p=th+(tt-th)*k,x=V.m.x*(1-k),c=Math.sqrt(Math.max(0,1-x*x));
+    V.t.set(x,Math.sin(p)*c,Math.cos(p)*c).applyQuaternion(V.q2.invert());}
+  V.r.setFromUnitVectors(V.a,V.t);
+  wb.getWorldQuaternion(V.q);wb.parent.getWorldQuaternion(V.q2);wb.quaternion.copy(V.q2.invert().multiply(V.r.multiply(V.q)));}
+// the held spear of a builder's or a kit's body (by name, under the hand), found once
+function foeSpearOf(rig,root,wb){if(rig._spearOf!==root){rig._spearOf=root;rig._spear=null;wb.traverse(o=>{if(!rig._spear&&o.name==='spear')rig._spear=o;});}return rig._spear;}
 // S1415 — a blow's pose (attackPose, 42-zone-enemies.js) is set on the driver after tickPeople has copied it to the builder's body,
 // so the body and what it holds showed no wind-up and no strike: copied again here, for a foe whose body is near enough to pose
 function hbRepose(rig){if(rig&&rig.hb&&rig.hb.L<2&&!rig.hb.cold){hbPose(rig);if(rig.hb.held.length)hbHold(rig);}}
@@ -1592,7 +1617,8 @@ function hbPose(rig){const H=rig.hb,B=rig.B,map=H.map,grip=H.grip&&rig.holds&&!r
     if(grip&&(i===grip[0].i||grip[1]&&i===grip[1].i)){b.quaternion.copy(grip[0].i===i?grip[0].q:grip[1].q);continue;}
     hbRel(B[j],rig.root,_hbq).multiply(H.s0[i]);if(hf>0&&H.hold.has(i)){const k=rig.tpHold?hf*(rig.tpHold[j.slice(-1)]||0):hf;if(k>0)_hbq.copy(_hbqA.copy(_hbq).slerp(_hbqH,k));}_hbq.multiply(H.t0[i]);
     if(b.parent&&b.parent!==H.P.root){hbRel(b.parent,H.root,_hbq2).invert();b.quaternion.copy(_hbq2.multiply(_hbq));}else b.quaternion.copy(_hbq);}
-  const hp=B.hips.position,rb=map[0][1];_hbv.set(hp.x,hp.y-PW.HIPS,hp.z).applyMatrix3(H.A);_hbv.y*=H.kh;rb.position.copy(H.pos0).add(_hbv.applyMatrix3(H.Bi));}
+  const hp=B.hips.position,rb=map[0][1];_hbv.set(hp.x,hp.y-PW.HIPS,hp.z).applyMatrix3(H.A);_hbv.y*=H.kh;rb.position.copy(H.pos0).add(_hbv.applyMatrix3(H.Bi));
+  if(grip&&rig.thrust>0){const wb=(map.find(m=>m[0]==='wrR')||[])[1],sp=wb&&foeSpearOf(rig,H.root,wb);if(sp)foeSpearAim(rig,wb,sp);}}
 // a foe's glow: the driver's emissive on every material of the builder's body, and the parry's stagger (which swaps the driver's
 // material for a yellow clone, 74-strikes.js) as a strong gold; the materials the kill clones are the ones on the meshes now
 function hbGlow(rig){const H=rig.hb,m=rig.mesh.material;let em=m&&m.emissive?m.emissive.getHex():0;if(m!==H.drv&&m&&m.color&&m.color.getHex()===0xffdd44)em=0xb08010;

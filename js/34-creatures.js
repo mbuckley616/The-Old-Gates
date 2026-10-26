@@ -910,6 +910,7 @@ function hcPose(rig){const H=rig.hc,B=rig.B,map=H.map,uh=H.unhunch&&rig.hunch,rs
   if(H.arms)hcArms(rig);
   if(H.wings)hcWings(rig);
   if(H.garg)hcGarg(rig);
+  if(rig.thrust>0&&!rig.limp){const wb=(map.find(m=>m[0]==='wrR')||[])[1],sp=wb&&foeSpearOf(rig,H.W,wb);if(sp)foeSpearAim(rig,wb,sp);} /* S1464 — a spearman's thrust levels the kit's spear (32-people.js, foeThrust) */
   if(uh){B.spine.rotation.x+=uh[0];B.neck.rotation.x+=uh[1];B.head.rotation.x+=uh[2];}
   if(rs)for(const [j,v] of rs){const r=B[j].rotation;r.x+=v[0];r.y+=v[1];r.z+=v[2];}
   // the Faolchú's seam in the phase's colour (its sigils' red, 1,0.1,0.04, is the plan's 3.2,0.55,0.2 at a third)
