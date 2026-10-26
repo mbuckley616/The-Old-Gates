@@ -860,8 +860,9 @@ if (!process.argv.includes('--shots-only')) { const page = await browser.newPage
     return out; });
   { const F = Object.values(c.fits), bad = Object.entries(c.fits).filter(([, f]) => !f || f.through > 0).map(([k]) => k), r = k => [Math.min(...F.map(f => f[k])), Math.max(...F.map(f => f[k]))];
     check(`the circlet over every hair style (${F.length} heads): no point of the head or the hair inside the band (${F.reduce((a, f) => a + (f?.hairPts || 0), 0)} hair points read)`, F.length >= 15 && bad.length === 0, bad);
+    // (Session 1443: over a crown braid the band rides on the braid at the sides, 20.5–21.2 cm across, where loose hair makes it 20)
     check(`the circlet sits ${r('overBrow').map(v => (v * 100).toFixed(1)).join('–')} cm over the brows, ${r('overEar').map(v => (v * 1000).toFixed(0)).join('–')} mm over the ears' tops, ${r('gapFront').map(v => (v * 1000).toFixed(1)).join('–')} mm off the forehead, ${r('width').map(v => (v * 100).toFixed(1)).join('–')} cm across; ${F[0].tris} triangles in ${F[0].draws} draws`,
-      F.every(f => f.overBrow > .02 && f.overEar >= .007 && f.gapFront > .001 && f.gapFront < .008 && f.width > .15 && f.width < .21 && f.underTop > .03), { overBrow: r('overBrow'), overEar: r('overEar'), gapFront: r('gapFront'), width: r('width'), underTop: r('underTop') }); }
+      Object.entries(c.fits).every(([k, f]) => f.overBrow > .02 && f.overEar >= .007 && f.gapFront > .001 && f.gapFront < .008 && f.width > .15 && f.width < (k.startsWith('crown:') ? .22 : .21) && f.underTop > .03), { overBrow: r('overBrow'), overEar: r('overEar'), gapFront: r('gapFront'), width: r('width'), underTop: r('underTop') }); }
   check(`the circlet rides the head bone: its middle moved ${(c.moved * 100).toFixed(1)} cm with the head nodded .6 rad`, c.parent === 'head' && c.moved > .01, { parent: c.parent, moved: c.moved });
   check(`no circlet under a head-wrap, a helm or a raised hood; one with no stone has none; saved and loaded the same`, c.none.every(Boolean) && c.noStone && c.saved, { none: c.none, noStone: c.noStone, saved: c.saved });
   { const r = c.roll; check(`the Aurennais women's circlets: ${r.worn} of ${r.open} bare-headed women (of ${r.women}), ${r.stones} set with a stone, ${r.onCovered} on a covered head; in the hoops' or coins' metal; ${r.men} men and ${r.others} of 180 other peoples; every other roll the same`,
@@ -1071,6 +1072,13 @@ if (shotArg) { const only = shotArg.split('=')[1];
   await shot('peoples', 'peoples', 2400, 900);
   await shot('styles-back', 'seed=styles&sex=f&sheet&ang=2.4&dist=1.5&y=-.2&nomantle');
   await shot('styles-front', 'seed=styles&sex=f&sheet&ang=.35&dist=1.5&y=-.1');
+  // the crown braid and the plait over the shoulder (Session 1443, OG-025, OG-001; Michael's A on #272): the crown from the front, the side and
+  // behind; the plait close, over a hooded cloak and over a Markwoman's pale fur mantle
+  { const dq = d => encodeURIComponent(JSON.stringify(d)), bare = dq({ mantle: null, cloak: null });
+    for (const [n, t] of [['front', .3], ['side', 1.4], ['back', 2.7]]) await shot('crown-' + n, `people=markman&seed=styles&sex=f&style=crown&view=head&zoom=.75&turn=${t}&dress=${bare}`, 1280, 1120);
+    await shot('plait-close', `people=markman&seed=pl1&sex=f&style=plait&view=head&zoom=.6&turn=.9&dress=${bare}`, 1280, 1440);
+    await shot('plait-cloak', 'people=markman&seed=pl1&sex=f&style=plait&view=full&turn=.5&dress=' + dq({ cloak: [.32, .26, .2], hood: 'down', mantle: null }), 1280, 1600);
+    await shot('plait-mantle', 'people=markman&seed=pl2&sex=f&style=plait&view=full&turn=-.4&dress=' + dq({ mantle: [.55, .5, .44], cloak: null }), 1280, 1600); }
   // the temples (Session 879): three-quarter heads, where the hair's root region stops on a mesh edge by the brow
   for (const [n, q] of [['temples-man', 'seed=b7&sex=m&view=head&turn=.75'], ['temples-woman', 'seed=styles&sex=f&style=bun&view=head&turn=-.75']]) await shot(n, q + '&dress=' + encodeURIComponent('{"mantle":null}'), 2400, 1350, false, [.33, 0, .38, .42]);
   // the cuffs (Session 889): a Markman's woven band, close; and a plain cuff before and after

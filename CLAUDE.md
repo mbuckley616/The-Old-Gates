@@ -319,6 +319,9 @@ Corrections to earlier entries go in the new entry, named as corrections. Histor
   by it: they are built at their true height. The tower is the exception (scaled by 1).
 - A test's check label is usually a template literal: a backtick inside it (`` `goldtier` ``) ends the string and the suite no longer parses
   (S1135's `tierloot`, found by QA in CI, S1141). parsecheck reads `js/` only: `node --check tests/<name>.test.mjs` after editing a label.
+- `scripts/people_bundle.py` rewrites `vendor/mh-pack.js` from any local `docs/prototypes/levelup/mh/` (which the builder's checks need), and a
+  pack built here differs from the committed one. After a change to `people.js`, run it with `--pack /nonexistent` so only the builder's copy
+  is rewritten, against the committed pack's SHA (S1443).
 - Most lines of `index.html` hold several statements. A scripted replace that appends `// note` after a matched fragment comments out
   the rest of that line, and parsecheck still passes (S237 lost the coaching inn's `g.add(inn)` this way; S239 found it). Mid-line, use `/* */`.
 
