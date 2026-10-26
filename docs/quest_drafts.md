@@ -2,7 +2,7 @@
 
 These are the quest writer's drafts. None of them is canon until Michael promotes it into `quest_writing.md`, and none is a spec until it is approved. Each draft gives the quest's shape, every line verbatim with its speaker and people, and a note on what in the code would carry it.
 
-Calls read to: 2026-10-16T17:51:09.360Z (run 27, 25 Oct: no new calls on the page)
+Calls read to: 2026-10-16T17:51:09.360Z (run 28, 26 Oct: no new calls on the page)
 
 ---
 
@@ -1254,7 +1254,7 @@ Each feast's weekday follows from `dom` (`(dom-1)%7`, because a tale's first day
 
 ## First Words — the townsperson's greeting, by who speaks and who listens
 
-*Approved by Michael, 14 Oct 2026.* Owed to Michael's control-room note of 5 Oct (backlog A, *Dialogue still stiff, greetings too expository*): *"There's too much exposition when greeting you ('You're a markmen? those people kill bears at 10!') — should be more subtle intros, like 'Greetings, Markman.' Or 'What is it?'"* This draft rebuilds the generated townsperson's greeting. The named cast, the lords, the guild heads, the guards with a fine to read, Rowe and the feast days keep their own lines.
+*Approved by Michael, 14 Oct 2026.* *Built, Session 1432 (PR #729), word for word: `firstWords` and its four tables in `87-world-quests.js`, the trade's line from `makeDef`. The pious temper (§4) was already on main (Finding 18). §5's rule was the systems builder's, Session 586.* Owed to Michael's control-room note of 5 Oct (backlog A, *Dialogue still stiff, greetings too expository*): *"There's too much exposition when greeting you ('You're a markmen? those people kill bears at 10!') — should be more subtle intros, like 'Greetings, Markman.' Or 'What is it?'"* This draft rebuilds the generated townsperson's greeting. The named cast, the lords, the guild heads, the guards with a fine to read, Rowe and the feast days keep their own lines.
 
 ### What is wrong now
 
@@ -3261,7 +3261,7 @@ The rumour pool's *Normal* lines become the *Any news?* pool's lasting default f
 
 ## The Great Gates, II — the knife and the needle
 
-*Approved by Michael, 16 Oct 2026.* *Built by the systems builder, Sessions 1353 and 1363–1367 (the knife, the note, the flagstone, the runner, Aldwyn, the needle), on main 24 Oct; §5's talk and the journal's page owed.* *Drafted 15 Oct 2026.* The second piece of backlog A's *The six great gates: what clearing one means*. The first piece, *the knot at the ring*, was approved on 14 Oct along with Michael's A on DECISION #292. That piece wrote the act and left its tools as *the tearing artifact* and *the sealing artifact*. This piece names them and writes every line about them: what they are, where each comes from and who hands it over, the item cards, what the Old Blood and the three powers say of them, and what they do away from a knot. Still owed, one piece a run: each gate's own reward and its cost to the world; Varek's two arcs; the Act III outline reconciled with all of it.
+*Approved by Michael, 16 Oct 2026.* *Built by the systems builder, Sessions 1353 and 1363–1367 (the knife, the note, the flagstone, the runner, Aldwyn, the needle), on main 24 Oct; §5's talk and the journal's page, Sessions 1397–1398, on main 25 Oct, word for word.* *Drafted 15 Oct 2026.* The second piece of backlog A's *The six great gates: what clearing one means*. The first piece, *the knot at the ring*, was approved on 14 Oct along with Michael's A on DECISION #292. That piece wrote the act and left its tools as *the tearing artifact* and *the sealing artifact*. This piece names them and writes every line about them: what they are, where each comes from and who hands it over, the item cards, what the Old Blood and the three powers say of them, and what they do away from a knot. Still owed, one piece a run: each gate's own reward and its cost to the world; Varek's two arcs; the Act III outline reconciled with all of it.
 
 ### What the canon fixes, and where it is silent
 
@@ -5053,3 +5053,152 @@ On Aurenne's three, an Aurennais in a town of another island (a port's blend, a 
 - *No chosen one.* Nothing here names the player but the bursar's roll, and that is a subscription.
 - *§10a.* All three are glad on the surface. The struck hulls go last and are no less lamps for it. Six years in ten nothing is struck, and the quay cheers.
 - *Silent, chosen plainly:* where the saffron grows (the oases beyond the dunes), why every town has its caravan on one morning (the string splits at the last well), and the academy's name (none given).
+
+---
+
+## The Underworld — a fence, a broker, a smuggler, a duellist and a pilgrim
+
+*Unapproved.* *Drafted 26 Oct 2026. Backlog L2, *The underworld* (OG-006): "an information broker, a river smuggler, a contract killer whose hook cuts both ways, a cheerful goggled fence who knows relics, a highwayman-pilgrim. Fills the crime system's fences and black market. The Church of the Weaver needs its own sign where these sheets draw a cross." Five named people, one for each line of the sheet, one of each people and two of the Gatelands', each standing where the game already has a place for them, with a service on machinery that exists and one thread that the world remembers. Two places where the game has no rule yet are marked **Rule read** for the systems builder; the lines do not depend on which way the rule goes.*
+
+### What the canon fixes, and where it is silent
+
+- *The Gatelands: a salvage economy of adventurers, rubbings and relics that the Crown licenses and taxes* (§1.1). *The Compact: the Gatelands' salvage trade is sacrilege to the Church* (§1.3). So a relic has three prices: the Crown's tax, the Church's anathema, and whatever a fence will give.
+- *The Mark: disputes by duel; Mark duels legal* (§1.2, §1.5). A Markish killer for hire is a duellist for hire, and works in the open.
+- *Port Blackhand: a port on the strait; pirate-friendly* (§9). *Ports blend: two peoples in the crowd and a third at the quay* (§1.5). An Aurennais fence there is the foreign quarter, not a stranger.
+- *Every rubbing-seller and hermit who points the player at a gate is Old Blood* (§3.3). *The Withdrawal forbade the reading of sigils; touching is permitted, understanding is not* (§3.1). The broker is Old Blood, and sells what she sees, never what she reads.
+- *Royal roads with patrols* (§1.1); the moor's road foe is already the Highwayman (`ENC_BIOME.moor`, `82-world-structures.js`). The six gods have shrines (§4.1), and a prayer is counted per shrine (`worldState.shrines`).
+- *The Church needs its own sign* (backlog L2). The canon gives the Weaver's icon: **a shuttle** (§4.1). Where the concept sheets draw a cross, the look builder draws a shuttle.
+- *Silent:* whether an honest trader buys stolen goods (today every shop does); what Varek is called by those who fear to name him (the plainer thing: they do not name him). Both are read the plain way below.
+
+### The five
+
+| | People | Where | What they do |
+|---|---|---|---|
+| **Philo**, the glass-grinder | Aurennais | Port Blackhand, the tavern's back room, any hour | the fence: buys stolen goods and relics, asks nothing |
+| **Uallach** | Old Blood | Aurenne's capital, the tavern, from dusk | the broker: sells answers the size of the question |
+| **Brógán** | Gatelander | the Gatelands' port at the mouth of its greatest river, on the quay, at night | the black market: cheap goods off carts, and they are stolen |
+| **Eadburh Two-Purses** | Markman | Caer Slige, by the yard, by day | the duellist for hire: tells you who paid her |
+| **Siadhal** | Gatelander | a moor road of the Gatelands, on the road, once a game-week | the highwayman-pilgrim: robs the Crown, tithes to the gods |
+
+Faces for the bodies builder: Philo lean and quick, olive, a leather harness of lenses pushed up on his brow (two lenses and a third on a hinge); Uallach small, grey-pale, black-haired, the marks at both wrists, very still; Brógán broad and wet to the knee in a short oilskin; Eadburh tall, ash-blond, a scar through one eyebrow, two purses at her belt; Siadhal thin, in a pilgrim's hooded cloak over a highwayman's leather, a staff and a short sword.
+
+### 1. Philo, the glass-grinder (Aurennais; formal, *Master*, contracts, never an oath)
+
+**Greeting, first:** "Master! Come in, and mind the lenses. They are the only honest things in the room."
+**Greeting, again:** "Master. Again, and on the same terms, I trust."
+
+**Topics**
+- *What do you deal in?* — "Glass, officially. I grind lenses for the captains here, who like to see a Compact sail before it sees them. Unofficially, Master, I buy what the honest shops will not, and I ask nothing about it. Asking is a service. I do not offer it."
+- *Why the lenses?* — "Two, and a third that swings down. Gate work is cut finer than a hair in places, and I like to read the price before I pay it. The price, Master. Not the script. I am cheerful, not a fool."
+- *What do you make of old things?* — "Ah. Gate work. The Crown would tax it, the Church would call it sacrilege to sell and a sin to keep, which leaves only me. I give a fair price and forget the face that brought it. The forgetting is included."
+- *A long way from Aurenne.* — "The Compact tithes every hull, Master, and Port Blackhand tithes none. A man of business goes where the arithmetic is kind. The Church would not approve. The Church is not here."
+- *Show me what you'll buy.* (opens his trade) — "Show me. I promise to be unimpressed, and then to pay you anyway."
+- *Farewell.* — "Good day, Master. We never met, on the usual terms."
+
+**His trade.** He buys anything, stolen or not, at the honest price, and sells nothing but lenses (none in the items table yet; until one is, his shop sells nothing). A stolen thing sold to him leaves your pack, and the cells cannot take it back.
+
+**Rule read (systems): an honest trader in the town where a thing was stolen will not buy it.** Elsewhere they buy it as now. This is what makes a fence worth the walk. A stolen item would carry the site it was taken from (`stolen: <site id>`, where it is `true` today; a save's `true` reads as *unknown*, and an honest trader then buys it). The refusal, said instead of the sale, in the trader's people's words:
+- Gatelander: "I'd know that anywhere. It came out of a house on this street. I would not buy it, and I'd not be the last to say so."
+- Markman: "That's from up the street. Put it down. I don't buy off thieves."
+- Aurennais: "Forgive me, Master. I know that piece; it belongs to a house in this town. I cannot take it on any terms."
+- Old Blood: "That is not yours. I will not."
+
+### 2. Uallach (Old Blood; sparing, exact, the older word for the thing)
+
+**Greeting, first:** "You want to know a thing. Sit."
+**Greeting, first, to an Old Blood player:** "You want to know a thing. You could ask me for nothing. Sit."
+**Greeting, again:** "Again. What is it you want to know."
+
+**Topics**
+- *Who are you?* — "Uallach. In the old tongue it is a boast. My mother did not know that. I do."
+- *What do you sell?* — "Answers. Exactly the size of the question. Ask a small one, pay a small price."
+- *Where is a warm stone? (30 gold)* — "{gate}. {direction} of here. It is warm. I have not touched it, and I will not." When no unread gate is within reach: "None near enough to feel. Keep your coin."
+- *Who is looking for me? (20 gold)* — one line per town that holds a bounty on you, nearest first, at most three: "{town} wants {n} gold of you." Then, if any town has shut its gates to you: "{town} has shut its gates. That one will not be bought off with the fine alone." With no bounty anywhere: "Nobody. Yet. That changes. It always does." (The 20 gold is taken only when the answer is not *nobody*: "Nobody. Keep your coin.")
+- *Can you read the stones?* — "I could. We were told not to, fifteen hundred years ago, and the ones who did went quiet. I sell what I see. Not what I read."
+- *The Church?* — "They built a house on our name and pray in it. They would pay well for what I know of them. I do not sell it to them."
+- *The cold man?* (once the player has met Varek) — "No. Not for any price. He would know I had said it, and he would come to ask me why."
+- *Farewell.* — "Go gently."
+
+When an Old Blood player asks a paid question, she takes no coin and says, before the answer: "Keep it."
+
+### 3. Brógán (Gatelander; proverbs, indirection, the Weaver)
+
+**Greeting, first:** "A dry boat on a wet river, and you'll want to know why. Weaver keep you."
+**Greeting, again:** "Yourself again. The river's lower. The price is not."
+
+**Topics**
+- *What do you carry?* — "Whatever the Crown would tax, if the Crown were looking. It mostly isn't. A river has two banks, and the Herald's men only ever stand on the one."
+- *Where does it come from?* — "Ask the fish where it got its water. Off carts, mostly. The carts don't miss it, and the men who drove them miss it less."
+- *Is it stolen?* — "Nothing's stolen that's been a week on the river, my father said. My father was hanged at Coeur de Vie, so I'd not lean on it."
+- *Any trouble on the river?* — "The Herald's men have a boat now. They row it like a grudge. You'd hear them a mile off, and I do."
+- *Show me what you have.* (opens his trade) — "Look all you like. Touching is paying."
+- *Farewell.* — "Weaver keep you dry."
+
+**His trade.** At night only (from 21h to 4h; by day his boat is tied and he is not there). The town's general goods at three-fifths of their price, and lockpicks always, every item marked stolen (`stolen:true`), so the cells take it as they take anything else. That is the black market's cost, and he has told you so.
+
+### 4. Eadburh Two-Purses (Markman; short, *aye*, nicknames, iron and blood)
+
+**Greeting, first:** "Aye. Two-Purses. You'll have heard."
+**Greeting, first, to an Old Blood player:** "Speak. I'll stand."
+**Greeting, again:** "You again. Paying, or paid for?"
+
+**Topics**
+- *Why Two-Purses?* — "One purse to fight. One to tell. Whoever hires me, the other side hears who. Then it's fair. Then it's a duel, not a knifing."
+- *You kill for money?* — "I fight for money. On the yard, by the law, with a ring and a yield. If he won't yield, that's his choice. Our law's plain."
+- *Has anyone paid you for me?* — the thread below; with nothing to tell: "Not yet. You'd know. That's the second purse."
+- *Farewell.* — "Iron and blood."
+
+**The thread: paid for.** When a town's lord has cause against you (the town holds a bounty on you of 100 gold or more, or its favour has fallen to −10 or below), there is a chance, one game-week in three, keyed by the week and that town, that its lord has paid Eadburh. Then *Has anyone paid you for me?* answers:
+- "Aye. {lord's title} of {town} paid me to meet you on the yard. That's the first purse. This is the second: it was {lord's title} of {town}. Now we're square. The yard's open at noon, any day you like. Or never. I'm not proud."
+
+A topic opens beside it, *Meet you on the yard.*: "Noon, then. Bring your own blade. I bring mine." At noon at the yard she fights you under the yard's rules as they stand (the ring, the yield). Then:
+- She yields: "Yielded. Tell {lord's title} I fought it. I keep both purses."
+- You yield: "Yield taken. Get up. I'll tell {lord's title} you bled. That's what was paid for."
+- You kill her after she yields: the yard's own ending for a killing after the yield, and the League's line for it, as for Rowe. Her two purses are on her (her fee, 2 × 40 gold by the town's tier).
+
+Either way the thread is done for that town; another town can pay her later. *Or never* is a real answer: nothing happens if you do not come.
+
+### 5. Siadhal, the highwayman-pilgrim (Gatelander)
+
+He leads one of the moor's Highwayman bands on a Crown road of the Gatelands, once a game-week at most, keyed by the week and the cell.
+
+**Rule read (systems): he yields.** At a third of his health he drops his blade, as a guard yields to you today, and the band's others run. His yield:
+- "Hold, hold. I'm a pilgrim, and a pilgrim's not to be killed on the road. It's bad luck for the both of us, and worse for you."
+
+Then he can be talked to:
+**Greeting:** "Siadhal. I walk the six, the Sea to the Weaver, and the Crown pays my way, whether it knows or no."
+- *You rob people.* — "I rob carts. The carts are the Crown's, and the Crown takes a tithe of every field it never ploughed. I give the shrines a tenth. That's more than the Crown gives them."
+- *Which shrine now?* — "{god}'s, next. {shrine}, {direction} of here. The road's long enough for two, but I'd sooner walk it alone." (the next of the six in the canon's order, after the last he had reached, and the nearest shrine of that god)
+- *Go, then.* — "Weaver keep you. You'll not see me again, unless you're on the Crown's road with the Crown's cart." He walks off the road and is not met again.
+- *(killing him after the yield)* — no line. His purse holds 12–30 gold and *A pilgrim's token* ("A tin shuttle on a cord, worn smooth. Six notches, five of them filled.").
+
+**If he was let go:** the next time you pray at the shrine of the god he was walking to, before the boon's own line: "Someone has left a coin on the altar, and a name scratched beside it. Yours." Once only.
+
+### 6. Talk about them, in the towns
+
+One rumour each, for `liveRumours` in the towns named:
+- Port Blackhand and the Mark's ports: "There's an Aurennais in the back of the tavern grinding glass. Buys anything. Won't look you in the eye, and won't need to."
+- Aurenne's capital: "If you need a thing known, there's an Old Blood woman at the tavern after dark. She doesn't haggle. She doesn't need to."
+- The Gatelands' river towns: "Lamps on the river at night with no boat under them, near enough. The Herald's men are slower than the lamps."
+- The Mark's towns: "Two-Purses fought a reeve's quarrel at the yard last month. The reeve knew who'd paid her before she'd drawn."
+- The Gatelands' moor towns: "A man on the moor road took a tax cart and left the driver his dinner. Says he's a pilgrim. The Herald says otherwise."
+
+### What in the code would carry it
+
+- **The five defs**: authored defs in the manner of `spireRoweDef` and `SPIRE_FOLK` (`87-world-quests.js`), `authored:true`, with a `people`, a `temper`, a fixed name, and `topics` as a getter where a topic reads the world. Placed by `anchoredPlaces()` (Port Blackhand's `blackhand`; Aurenne's capital, `FACTIONS.compact.seat`; Caer Slige, `caer_slige`) and, for Brógán, the Gatelands port nearest the mouth of the home island's longest great river in `WORLD.routed` (picked once per seed, kept in `anchoredPlaces` as `brogan`). Siadhal by `ENC_BIOME.moor`'s Highwayman, with a seeded roll per week and cell (`seededRng('pilgrim', i+','+j+':'+week)`), id `pilgrim:<i>,<j>`.
+- **Philo's trade**: a shop of the fence's kind in `60-shop.js` that buys stolen goods; the refusal is the **Rule read** above, in the sell path, with the four lines by the keeper's people.
+- **Uallach's answers**: *Where is a warm stone?* is `rubbingTopics`' lookup (`nearestSigilDoorFrom`) without the item, writing `worldState.rubbings[seed]` so the compass marks it as a rubbing does. *Who is looking for me?* reads `worldState.crime` (`bountyAt`, `c.shut`) over `allSites()`. *The cold man?* shows once `vstate()` has any `done` key.
+- **Brógán's trade**: `SHOP_STOCK.misc` at ×0.6 with the lockpick, each item `stolen:true`; open by `forceTime`'s hour.
+- **Eadburh's thread**: the yard's duel (`q.kind==='duel'`, S373) with Eadburh as the opponent. Saved: `worldState.twoPurses[siteId]={week, state:'told'|'won'|'lost'|'killed'}`. It is the character's quarrel, so `twoPurses` goes in `SS_CHAR_WS` and in `_applyLoadData`'s list.
+- **Siadhal**: the yield is the **Rule read** above, on the guard's yield (`86-world-crime.js`). Saved: `worldState.pilgrim={fate:'spared'|'killed', god, coin:false}`, the world's (in `_applyLoadData`'s list); the coin line on the shrine's prayer (`87-world-quests.js`, the altar's `worldState.shrines` path). *A pilgrim's token* is a misc item.
+- **Rolls**: Eadburh's week and Siadhal's week are seeded streams keyed by place and week (co-op rules); which line is said is cosmetic.
+- **The Church's sign**: a shuttle, for the look builder, wherever a concept sheet draws a cross (backlog L2).
+
+### Checked against the canon
+
+- *Registers* (§2): Philo has *Master*, *terms*, *arithmetic*, and no oath; Uallach's lines are the shortest and take the older word (*the cold man* is not a name, and nobody names him); Brógán answers nothing straight and blesses by the Weaver; Eadburh says *aye*, swears on iron and blood, and goes by a nickname; Siadhal is a Gatelander with a proverb's turn and the Weaver.
+- *Slurs* (§2.1): none. Brógán's father, hanged by the Crown, and Philo's *the Church is not here* are about work and gods.
+- *The Withdrawal* (§3.1): Uallach and Philo both stop at the script: she will not read it, he will not try.
+- *§10a*: none of the five is a villain. Two of them hurt you only if you choose them (Brógán's goods, Eadburh's yard), and one of them tells you who wants you hurt.
+- *No chosen one*: Siadhal's coin is a pilgrim's courtesy, not a sign.
+- *Silent, chosen plainly*: whether honest traders refuse stolen goods (they refuse it only in the town it was taken from); what the Old Blood call Varek (*the cold man*, from the canon's own Cold, §3.3; nobody names him).
