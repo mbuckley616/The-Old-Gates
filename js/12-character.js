@@ -239,7 +239,7 @@ function throwFoe(e,nowS){const s=staggered.find(q=>q.e===e);if(!s||e.dead||e.hp
 function secondParryOpen(){return blocking&&perk('guard',100)&&playClockS-_lastParryG<SECOND_PARRY_S;}
 // the sheet's Blade is swords, daggers, axes and spears, Blunt maces, clubs, staves and hammers; bare fists are Hand-to-hand,
 // the 23rd skill (Michael's C on #357, Session 950): the fists' roll on its multiplier, a punch on an alert foe a use
-function weaponSkill(w){if(!w)return 'hand';if(w.weaponShape==='bow'||w.grantsAmmo==='arrow')return 'bow';return w.wType==='blunt'?'blunt':'blade';}
+function weaponSkill(w){if(!w)return 'hand';if(w.weaponShape==='bow'||w.weaponShape==='crossbow'||w.grantsAmmo==='arrow')return 'bow';return w.wType==='blunt'?'blunt':'blade';}
 function skillUse(id,w,target){const S=skillsReady(),s=S[id];if(!s||s.lv>=100)return false;
   const now=performance.now(),key=target==null?'':target;let m=SKILL_LAST.get(id);if(!m)SKILL_LAST.set(id,m=new Map());
   const t=m.get(key);if(t!=null&&now-t<1000)return false;

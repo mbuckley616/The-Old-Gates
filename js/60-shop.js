@@ -619,6 +619,10 @@ function _shopAffordanceNote(it, stockItems){
       if(!hasArrows) return `<span class="sh-note warn">Needs arrows — none in stock</span>`;
       return `<span class="sh-note">Ranged · arrows sold here</span>`;
     }
+    if(it.weaponShape==='crossbow'){ /* S1457 — the crossbow shoots bolts */
+      if(!stockItems.some(s=>s.type==='ammo' && s.ammoType==='bolt')) return `<span class="sh-note warn">Needs bolts — none in stock</span>`;
+      return `<span class="sh-note">Ranged · bolts sold here</span>`;
+    }
     if(EQ.offhand) return `<span class="sh-note warn">Two-handed · stows your ${EQ.offhand.name}</span>`;
     return `<span class="sh-note">Two-handed</span>`;
   }

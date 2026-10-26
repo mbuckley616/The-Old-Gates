@@ -1256,6 +1256,8 @@ const ARROW_IRON={
   // Broadhead arrows will set wType explicitly to override.
   tier:2, material:'Iron', matCol:0xa8b0b8,
 };
+// S1457 — bolts for the crossbow (Michael's 2 A on #745): the iron arrow's dozen, price and damage, sold beside it
+const BOLT_IRON=Object.assign({},ARROW_IRON,{name:'Iron Bolt',ammoType:'bolt'});
 
 const SHOP_STOCK={
   weapon:[
@@ -1290,6 +1292,7 @@ const SHOP_STOCK={
     // who keeps one in the corner. Arrows in bundles of 12.
     makeItem(1,WEAPON_TYPES.find(t=>t.type==='Bow'),  null, false),
     {...ARROW_IRON},
+    {...BOLT_IRON},
     // v65 — Barnaby's two-handed starter. Wooden Great Club at T1 — the most
     // lore-coherent wooden 2H (a heavy stick, not a wooden version of a metal
     // weapon). War-hammer family identity at entry tier: single-target focus,

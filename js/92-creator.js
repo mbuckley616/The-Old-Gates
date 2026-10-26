@@ -309,7 +309,9 @@ function _enterGame(){
       return;
     }
     if(!isInterior()&&!blocking){
-      if(_isBowEquipped()){
+      if(_isCrossbowEquipped()){
+        xbowShoot(); /* S1457 — no draw: the click shoots */
+      } else if(_isBowEquipped()){
         if(_hasArrows()){
           _bowDrawing = true;
           _bowDrawT = 0;
@@ -372,7 +374,7 @@ function _enterGame(){
       // correct behavior is "do nothing" — NOT swing the bow as a sword.
       // The melee swing animation on a bow viewmodel was the v64 ship bug
       // playtest caught immediately.
-      if(_isBowEquipped()){
+      if(_isBowEquipped()||_isCrossbowEquipped()){ /* S1457 — nor the crossbow */
         // No-op. Reset charge state below catches any stale powerCharging too.
         powerCharging=false;powerCharge=0;powerArmed=false;
         return;

@@ -168,7 +168,7 @@ function loop(now){
   // sneaking is a deliberate stealth posture).
   const _canSprint = _encState!=='overloaded' && _encState!=='immobile' && !_sneaking;
   const _sprintAttempt = K['ShiftLeft']&&stamina>0&&staminaCD<=0&&(K['KeyW']||K['ArrowUp']);
-  const sprinting = _sprintAttempt && _canSprint && !DRINK; /* S940 — a potion is drunk at walking pace */
+  const sprinting = _sprintAttempt && _canSprint && !DRINK && !xbowSpanning(); /* S940 — a potion is drunk at walking pace; S1457 — a crossbow spanned at it */
   // Feedback: if player tries to sprint but is too encumbered, show message (throttled to once per 2s).
   if(_sprintAttempt && !_canSprint){
     if(!window._lastEncMsg || performance.now()-window._lastEncMsg > 2000){
@@ -203,6 +203,7 @@ function loop(now){
   // somehow becomes true (defensive — the mousedown branch blocks the RMB
   // path during drawing, but a save/load mid-draw or hurt-cancel could leave
   // a stale state).
+  tickCrossbow(dt); /* S1457 — the crossbow's span */
   if(!_bowDrawing) _bowFullS = -1; /* S1028 — the sway's hold ends with the draw */
   if(_bowDrawing){
     _bowDrawT += dt * bowDrawRate(); /* S982 — Quick nock */

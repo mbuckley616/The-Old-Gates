@@ -53,6 +53,7 @@ const WEAPON_ATTACKS={
   Sword:    {tell:.303,strike:.064,recovery:.183,reach:1.6,arc:126.5,dmg:1,posture:8, cleave:1,blockable:true,parryable:false,heavy:null,third:null},
   Scimitar: {tell:.303,strike:.064,recovery:.183,reach:1.6,arc:126.5,dmg:1,posture:8, cleave:1,blockable:true,parryable:false,heavy:null,third:null},
   Bow:      {tell:.303,strike:.064,recovery:.183,reach:1.6,arc:126.5,dmg:1,posture:8, cleave:1,blockable:true,parryable:false,heavy:null,third:null},
+  Crossbow: {tell:.336,strike:.071,recovery:.204,reach:1.6,arc:126.5,dmg:1,posture:8, cleave:1,blockable:true,parryable:false,heavy:null,third:null}, /* S1457 — as the bow's row, at its weight's (4) pace; a click shoots, so nothing swings it yet */
   Longsword:{tell:.336,strike:.071,recovery:.204,reach:1.8,arc:126.5,dmg:1,posture:8, cleave:1,blockable:true,parryable:false,heavy:null,third:null},
   Mace:     {tell:.336,strike:.071,recovery:.204,reach:1.6,arc:126.5,dmg:1,posture:8, cleave:1,blockable:true,parryable:false,heavy:null,third:null},
   GreatClub:{tell:.336,strike:.071,recovery:.204,reach:1.9,arc:126.5,dmg:1,posture:12,cleave:1,blockable:true,parryable:false,heavy:null,third:null},
@@ -81,7 +82,7 @@ function hullOf(e){
 }
 // the centre-to-centre distance a blow of reach r (hull to hull) lands within, against e
 function reachTo(e,r){return HULL_YOU+r+hullOf(e);}
-const WSHAPE_TO_ROW={dagger:'Dagger',sword:'Sword',longsword:'Longsword',scimitar:'Scimitar',mace:'Mace',flail:'Flail',spear:'Spear',bow:'Bow',claymore:'Claymore',greataxe:'GreatAxe',warhammer:'WarHammer',greatclub:'GreatClub'};
+const WSHAPE_TO_ROW={dagger:'Dagger',sword:'Sword',longsword:'Longsword',scimitar:'Scimitar',mace:'Mace',flail:'Flail',spear:'Spear',bow:'Bow',crossbow:'Crossbow',claymore:'Claymore',greataxe:'GreatAxe',warhammer:'WarHammer',greatclub:'GreatClub'};
 function weaponAttack(w){if(!w)return WEAPON_ATTACKS.Fists;return WEAPON_ATTACKS[WSHAPE_TO_ROW[w.weaponShape]]||WEAPON_ATTACKS.Sword;}
 // The foes, a row per family built today. Each has one attack, its light one, from today's numbers: a tell by kind
 // (S282's 0.45–0.9 s; a kind not named takes the family's 0.61), a blow in a 1.6-unit, 90° arc about the way it faced
@@ -384,7 +385,7 @@ function raiseGuard(){
   blocking=true;lastBlockAttemptT=performance.now()/1000;lastBlockAttemptG=playClockS;
   return true;
 }
-function commitMoveMult(){return swingCommitted()?COMMIT.move:DRINK?COMMIT.drinkMove:1;}
+function commitMoveMult(){return swingCommitted()?COMMIT.move:(DRINK||xbowSpanning())?COMMIT.drinkMove:1;} /* S1457 — a crossbow is spanned at a potion's walk */
 // the turn this frame, held to 90° a second while committed: the view's yaw is pulled back toward last frame's
 let _commitYaw=null;
 function commitTurn(dt){
