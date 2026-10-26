@@ -15,16 +15,7 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
-### Each island's air — one air for the world, each island its own, or its own with its mark always on (from the concept artist, 2026-10-25, #719)
-**The question.** Backlog L12 (OG-140; card F3's `groundColor`, `landSky`, `landAtmosphere`, `landPost`). Today one sky, one fog and one grade cover all three islands. The prototype (`docs/prototypes/levelup/air.html`) makes each island's air one row of numbers (sun, sky, haze, grade, land colour, water, trees). How far apart should the three islands look?
-
-**Options.**
-- **A.** One air for the world: the Gatelands' light, sky, haze and grade everywhere, as now; land, trees and buildings alone say where you are.
-- **B (recommended).** Each island its own air (OG-140 as drawn): the Gatelands soft and hazy (2.5 km sight, sun 35°), the Mark a low hard sun (21°), deep blue sky and 7.9 km sight, Aurenne a high white sun (64°), bleached horizon and 4.3 km sight. The row follows your island and blends across the sea; hours, seasons and weather lay their rows over it.
-- **C.** B plus a signature that never leaves: mist in the Gatelands' hollows, the Mark at twice the sight with a 15° sun, Aurenne's heat shimmer and dust.
-
-**Recommendation: B.** OG-140 as drawn, no cost per frame; C's marks can come back through the hours and the weather. Pictures: [the three options](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1025/docs/prototypes/levelup/air-options.jpg) · [from 60 m](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1025/docs/prototypes/levelup/air-high.jpg) · [in scale](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1025/docs/prototypes/levelup/air-scale.jpg).
-
+## Answered
 ### The blizzard and heavy rain — how often each comes, and where (from the systems builder, 2026-10-25, #723)
 **The question.** Your C on #679 set each weather's sight (fog 60 m, blizzard 70 m, rain 220–500 m), and Session 1420 built the figures (`WX_SIGHT`), but the game rolls no blizzard and no heavy rain. Today the Mark's winter rolls snow 38% (tundra 49%), the Gatelands' winter snow 11%, the Gatelands' autumn rain 21% (a fen 29%). How often should each come, and where?
 
@@ -35,7 +26,20 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 
 **Recommendation: A.** Rare and local, as the page said, but a Mark winter will still meet a few. Neither adds cold or wear (the climate rule is a separate item).
 
-## Answered
+Michael: **A fifth.** (2026-10-25)
+
+### Each island's air — one air for the world, each island its own, or its own with its mark always on (from the concept artist, 2026-10-25, #719)
+**The question.** Backlog L12 (OG-140; card F3's `groundColor`, `landSky`, `landAtmosphere`, `landPost`). Today one sky, one fog and one grade cover all three islands. The prototype (`docs/prototypes/levelup/air.html`) makes each island's air one row of numbers (sun, sky, haze, grade, land colour, water, trees). How far apart should the three islands look?
+
+**Options.**
+- **A.** One air for the world: the Gatelands' light, sky, haze and grade everywhere, as now; land, trees and buildings alone say where you are.
+- **B (recommended).** Each island its own air (OG-140 as drawn): the Gatelands soft and hazy (2.5 km sight, sun 35°), the Mark a low hard sun (21°), deep blue sky and 7.9 km sight, Aurenne a high white sun (64°), bleached horizon and 4.3 km sight. The row follows your island and blends across the sea; hours, seasons and weather lay their rows over it.
+- **C.** B plus a signature that never leaves: mist in the Gatelands' hollows, the Mark at twice the sight with a 15° sun, Aurenne's heat shimmer and dust.
+
+**Recommendation: B.** OG-140 as drawn, no cost per frame; C's marks can come back through the hours and the weather. Pictures: [the three options](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1025/docs/prototypes/levelup/air-options.jpg) · [from 60 m](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1025/docs/prototypes/levelup/air-high.jpg) · [in scale](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1025/docs/prototypes/levelup/air-scale.jpg).
+
+Michael: **Each island its own air.** (2026-10-25)
+
 ### The fifteen words and the Mouth (from the systems designer, 2026-10-25, #695)
 **The question.** Michael asked on #422 how the fifteen words off the main path are unlocked (the guild as one path, finding them yourself as another), and what the Mouth is for now. Under every option Mastery still comes only from a stone, and gold never buys a word. Page: `docs/design/words-and-the-mouth.md`.
 
