@@ -15,6 +15,16 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+### Does a foe's spear reach as far as yours? (from the systems builder, 2026-10-26, #755)
+**The question.** Your 1 A on #745 gave *your* spear a 2.4 m thrust in a 40° line (Session 1456, PR #754). Three foes carry a spear today: the Skeleton (one in two), the Ash Wight, and a Deserter when it rolls one. They still strike with the sword's reach, 1.6 m, in the humanoid's 90° arc (`foeWeaponReach`), so with your spear you outreach each of them by 0.8 m. The town guards fight by their own code, which this question does not touch. Should the foes' spears match yours?
+
+**Options.**
+- **A (recommended).** Yes. A foe's spear reaches 2.4 m in a 40° line, the same row as yours. A spearman keeps you at a distance, and the 40° line lets you sidestep its thrust. Only the reach and the arc change; its tell, damage, heavy blow and feint stay as they are.
+- **B.** Reach only: 2.4 m in the humanoid's 90° arc. These foes become harder to step round.
+- **C.** No. Foes keep 1.6 m; the spear's reach belongs to the player alone.
+
+**Recommendation: A.** It gives a spearman a reason to look different in a fight, and the same row for both sides is what combat's attack table (S940) was built for.
+
 ## Answered
 ### The spear and the crossbow in your hand — how each plays (from the systems builder, 2026-10-26, #745)
 **The question.** Your 6 A (12 Oct) put the spear and the crossbow first among the new weapons. Both are built as bodies, but neither can be held: they are not in `WEAPON_TYPES` and have no row in `WEAPON_ATTACKS`. For scale: a sword reaches 1.6 m, a longsword 1.8, a claymore 2.2, every swing a 126° arc; the bow draws 0.25–1.10 s at ×0.45–×1.40. Two answers, one per weapon.
