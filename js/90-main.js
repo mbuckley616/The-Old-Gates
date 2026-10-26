@@ -620,6 +620,7 @@ function loop(now){
       swingX    = phasePitch;
       swingZ    = phaseZ;
       swingY    = 0;
+      if(EQ.weapon&&EQ.weapon.weaponShape==='spear'&&vmSword.userData.level){const o=fpThrust(p,vmSword.userData.swingIsPower,_SP);swingPosX=o.x;swingPosY=o.y;swingPosZ=o.z;swingX=swingZ=0;} /* S1465 — the spear thrusts along its shaft (16-viewmodel.js) */
       if(swingT===0){
         // v66.1 — Safety net: if the swing ended without ever crossing
         // impactPoint (e.g. impactPoint mis-set high in the debug panel, or a

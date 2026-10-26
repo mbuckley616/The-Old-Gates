@@ -769,7 +769,7 @@ function buildPerson(g,opts){
 const WPN_MAT={metal:new THREE.MeshStandardMaterial({vertexColors:true,metalness:.7,roughness:.34}),matte:new THREE.MeshStandardMaterial({vertexColors:true,metalness:0,roughness:.85}),
   glow:new THREE.MeshBasicMaterial({vertexColors:true}),halo:new THREE.MeshBasicMaterial({vertexColors:true,transparent:true,opacity:.15,depthWrite:false})};
 const WPN_GEO=new Map();
-const WPN_KINDS=['dagger','sword','cutlass','longsword','claymore','axe','greataxe','mace','flail','warhammer','greatclub','staff','bow','round','kite','tower'];
+const WPN_KINDS=['dagger','sword','cutlass','longsword','claymore','axe','greataxe','mace','flail','warhammer','greatclub','staff','bow','spear','crossbow','round','kite','tower'];
 // tint (S227, the player's weapons): {metal, guard, wood, glow} colours in place of steel, brass, the bow's wood and the crystal
 function wpnBuild(kind,rust,tint){tint=tint||{};
   const L=[],o=new THREE.Object3D();const RU=0x6a3e24;
@@ -806,6 +806,29 @@ function wpnBuild(kind,rust,tint){tint=tint||{};
       for(let i=0;i<6;i++){const a=i*1.05;add(SK.cone(.012,.035,5),'metal',DSTEEL,[Math.cos(a)*.052,.53+(i%2)*.05,Math.sin(a)*.052],[0,-a,-Math.PI/2]);}},
     bow:()=>{const pts=[];for(let i=0;i<=20;i++){const t=i/20*2-1;pts.push(new THREE.Vector3(0,t*.34,-.05*(1-t*t)+.025*Math.pow(Math.abs(t),6)));}
       add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),30,.011,6),'matte',WOOD);add(SK.cyl(.016,.016,.09,8),'matte',LEATH,[0,0,-.05]);add(SK.cyl(.0025,.0025,.68,4),'matte',0xe8e0c8,[0,0,.025]);},
+    // S1458 — your spear (#745 1 A, a one-handed thrust): the builder's Gatelands spear (people.js, buildSpear: an ash shaft 2.6 cm
+    // thick, an iron shoe, a socket bound with two bronze rings, a leaf head 18 cm long with a midrib) at 2.2 m, gripped at its
+    // balance 0.85 m up from the butt, the leaf's flat across x as a sword's blade is
+    spear:()=>{const R=.013,B=-.85,L=2.2,HB=.18,SO=.09,top=B+L-HB,s0=top-SO;
+      add(SK.cyl(R*.92,R,s0-B-.06,10),'matte',WOOD,[0,(B+.06+s0)/2,0]);grip(.13,R+.0012,-.07);
+      add(SK.cyl(R+.001,R*.55,.06,10),'metal',DSTEEL,[0,B+.03,0]);add(SK.cyl(R*.62,R*.95,SO,10),'metal',STEEL,[0,s0+SO/2,0]);
+      for(const f of [.2,.8])add(SK.torus(R*(.95-.33*f)+.0012,.0016,4,14),'metal',BRASS,[0,s0+SO*f,0],[Math.PI/2,0,0]);
+      const prof=[];for(let k=0;k<=16;k++){const t=k/16,w=.0235*Math.sin(Math.PI*Math.min(1,t*1.25)**.8)*(1-t*.15)+.007*(1-t);prof.push([t<1?w:4e-4,t*HB]);}
+      add(SK.lathe(prof,4),'metal',STEEL,[0,top,0],null,[1,1,.22]);},
+    // S1458 — your crossbow (#745 2 A): the builder's (people.js, crossbowParts: Session 941's wood make) in the kit's frame, +y from
+    // the grip to the prod as a blade runs from the hilt; the tiller round in the fist, squared to the prod 0.54 ahead and deepening to
+    // the butt 0.31 behind, the prod bowed back 5 cm at its tips over a 0.66 m span, the string braced across, the nut, the bolt's
+    // groove along the top (+x), the trigger lever under the belly and the stirrup at the front. The prod is the item's metal
+    crossbow:()=>{const R=.013,PY=.54,SP=.66,BD=.05,px=.03,yAt=z=>PY-BD*(2*z/SP)**2;
+      add(SK.rbox(.044,.48,.036,.008,2),'matte',WOOD,[0,.36,0]);add(SK.cyl(R,R,.27,10),'matte',WOOD,[0,0,0]);
+      add(SK.rbox(.07,.2,.042,.012,2),'matte',WOOD,[-.012,-.215,0],[0,0,-.08]);add(SK.rbox(.03,.04,.03,.006,1),'matte',WOOD,[0,.135,0]);
+      const pts=[];for(let k=0;k<=16;k++){const z=-SP/2+SP*k/16;pts.push(new THREE.Vector3(px,yAt(z),z));}
+      add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),24,.011,6),'metal',STEEL);
+      add(SK.cyl(.0022,.0022,SP-.02,4),'matte',0xe8e0c8,[px,yAt(SP/2)-.004,0],[Math.PI/2,0,0]);
+      for(const y of [PY-.026,PY+.026])add(SK.rbox(.05,.01,.042,.003,1),'metal',DSTEEL,[0,y,0]);
+      add(SK.cyl(.012,.012,.03,10),'metal',BRASS,[.022,.15,0],[Math.PI/2,0,0]);add(SK.rbox(.003,.33,.006,.001,1),'matte',0x141008,[.0222,.335,0]);
+      add(SK.rbox(.007,.075,.008,.002,1),'metal',DSTEEL,[-.026,.115,0],[0,0,.06]);
+      add(SK.torus(.05,.0055,5,18),'metal',DSTEEL,[0,PY+.112,0],[0,Math.PI/2,0],[1,1.3,1]);},
     // S266 — the bow without its string, for first person, where the view model's own string draws back
     bowbare:()=>{const pts=[];for(let i=0;i<=20;i++){const t=i/20*2-1;pts.push(new THREE.Vector3(0,t*.34,-.05*(1-t*t)+.025*Math.pow(Math.abs(t),6)));}
       add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),30,.011,6),'matte',WOOD);add(SK.cyl(.016,.016,.09,8),'matte',LEATH,[0,0,-.05]);},
@@ -1416,6 +1439,8 @@ function hbFoeGenome(rig){const g=rig.g,dr=FOE_DRESS[rig.hbFoe]||{},id=rig.e&&ri
   const h=dr.cloth!=null?dr.cloth:0x3a3a3a,c=[(h>>16&255)/255,(h>>8&255)/255,(h&255)/255];
   if(HB_FOE_BODY[rig.hbFoe])HB_FOE_BODY[rig.hbFoe](G);
   G.dress=Object.assign({},G.dress,{tunic:c,spear:null,staff:null,crossbow:null,basket:null,basketCloth:null,shield:null,chair:null,apron:null,bib:null,cape:null,coat:null,scarf:null,wrap:null},(HB_FOE_DRESS[rig.hbFoe]||(()=>({})))(c));
+  // S1464 — a foe that rolled the gear kit's spear (a Deserter one time in two) holds the builder's, as the Ash Wight does: the driver's is baked into its hidden mesh
+  if(g.gear==='spear'&&!G.dress.spear)G.dress.spear=[.46,.33,.2];
   HB_GENOMES.set(key,G);return G;}
 // S1224 — named (keyFoe), a foe rolls its genome at once, and the driver's two baked copies take its colours: the skin, the hair, the
 // tunic, the legs and the boots, from a bake of the same shape in the genome's colours (the vertices are the same, so only the colour
@@ -1548,6 +1573,29 @@ function hbHold(rig){const H=rig.hb,top=rig.foe?rig.root.parent:rig.root;top.upd
   for(const h of H.held){const o=h.o;if(o.parent!==H.root&&o.parent!==h.par)continue;if(o.parent!==H.root)H.root.add(o);
     _hbm.multiplyMatrices(_hbm2,h.par.matrixWorld).multiply(h.m0);_hbm.decompose(o.position,o.quaternion,o.scale);
     if(h.f&&h.f.length){const v=_hbv.set(0,0,0);for(const b of h.f)v.add(_hbv2.setFromMatrixPosition(b.matrixWorld));o.position.copy(v.multiplyScalar(1/h.f.length).applyMatrix4(_hbm2));}}}
+// S1464 — a spearman's blow is a thrust (Michael's A on #755: 2.4 m in a 40° line), not the overhand swing every armed foe has
+// (attackPose): through the tell the head comes down level at the foe's front and the arm draws back; on the blow the arm drives
+// forward and comes back as the spear rises again. rig.thrust (0 to 1) is how level the spear lies: the hand holding it (the builder's
+// grip, the kit's, or the driver's gear bone) is turned so the shaft points along the foe's facing, a little down, after the arm is posed
+// (hbPose, hcPose), so the head stays on its line whatever the shoulder does; at 0, or fallen (limp), every hold is its own again
+const FOE_THRUST={back:.6,fwd:-1.15,dip:-.08};
+function foeThrust(rig,w,st){const T=FOE_THRUST,f=st>0?Math.sin((1-st)*Math.PI):0,lv=Math.max(w,st>0?Math.min(1,st*2):0),B=rig.B;
+  rig.thrust=lv*lv*(3-2*lv);B.shR.rotation.x=T.back*(st>0?st*(1-f):w)+T.fwd*f;
+  B.gear.rotation.x=-(B.hips.rotation.x+B.spine.rotation.x+B.shR.rotation.x+B.elR.rotation.x+B.wrR.rotation.x);if(rig.thrust>0)foeSpearAim(rig,B.gear,null);}
+const _fsa={m:new THREE.Vector3(),a:new THREE.Vector3(),t:new THREE.Vector3(),q:new THREE.Quaternion(),q2:new THREE.Quaternion(),r:new THREE.Quaternion()};
+// turn bone wb so the shaft (s's own +y, or wb's when s is null) points along the foe's facing, by rig.thrust
+function foeSpearAim(rig,wb,s){const top=rig.root.parent,k=rig.thrust;if(!top||!wb||!wb.parent||!(k>0))return;const V=_fsa;
+  wb.parent.updateWorldMatrix(true,false);wb.updateMatrixWorld(true);V.a.set(0,1,0).transformDirection((s||wb).matrixWorld);
+  V.t.set(0,0,1).transformDirection(top.matrixWorld);V.t.y=FOE_THRUST.dip;V.t.normalize();
+  // part-way, the shaft's pitch in the foe's own frame goes from its own to level over the top (the Skeleton's is sloped back and down
+  // at rest, and one slerp from it across to the facing swung it out sideways or under), its sideways lean easing out with it
+  if(k<1){top.getWorldQuaternion(V.q2);V.m.copy(V.a).applyQuaternion(V.q2.invert());let th=Math.atan2(V.m.y,V.m.z);if(th<-Math.PI/2)th+=2*Math.PI;
+    const tt=Math.atan2(FOE_THRUST.dip,1),p=th+(tt-th)*k,x=V.m.x*(1-k),c=Math.sqrt(Math.max(0,1-x*x));
+    V.t.set(x,Math.sin(p)*c,Math.cos(p)*c).applyQuaternion(V.q2.invert());}
+  V.r.setFromUnitVectors(V.a,V.t);
+  wb.getWorldQuaternion(V.q);wb.parent.getWorldQuaternion(V.q2);wb.quaternion.copy(V.q2.invert().multiply(V.r.multiply(V.q)));}
+// the held spear of a builder's or a kit's body (by name, under the hand), found once
+function foeSpearOf(rig,root,wb){if(rig._spearOf!==root){rig._spearOf=root;rig._spear=null;wb.traverse(o=>{if(!rig._spear&&o.name==='spear')rig._spear=o;});}return rig._spear;}
 // S1415 — a blow's pose (attackPose, 42-zone-enemies.js) is set on the driver after tickPeople has copied it to the builder's body,
 // so the body and what it holds showed no wind-up and no strike: copied again here, for a foe whose body is near enough to pose
 function hbRepose(rig){if(rig&&rig.hb&&rig.hb.L<2&&!rig.hb.cold){hbPose(rig);if(rig.hb.held.length)hbHold(rig);}}
@@ -1569,7 +1617,8 @@ function hbPose(rig){const H=rig.hb,B=rig.B,map=H.map,grip=H.grip&&rig.holds&&!r
     if(grip&&(i===grip[0].i||grip[1]&&i===grip[1].i)){b.quaternion.copy(grip[0].i===i?grip[0].q:grip[1].q);continue;}
     hbRel(B[j],rig.root,_hbq).multiply(H.s0[i]);if(hf>0&&H.hold.has(i)){const k=rig.tpHold?hf*(rig.tpHold[j.slice(-1)]||0):hf;if(k>0)_hbq.copy(_hbqA.copy(_hbq).slerp(_hbqH,k));}_hbq.multiply(H.t0[i]);
     if(b.parent&&b.parent!==H.P.root){hbRel(b.parent,H.root,_hbq2).invert();b.quaternion.copy(_hbq2.multiply(_hbq));}else b.quaternion.copy(_hbq);}
-  const hp=B.hips.position,rb=map[0][1];_hbv.set(hp.x,hp.y-PW.HIPS,hp.z).applyMatrix3(H.A);_hbv.y*=H.kh;rb.position.copy(H.pos0).add(_hbv.applyMatrix3(H.Bi));}
+  const hp=B.hips.position,rb=map[0][1];_hbv.set(hp.x,hp.y-PW.HIPS,hp.z).applyMatrix3(H.A);_hbv.y*=H.kh;rb.position.copy(H.pos0).add(_hbv.applyMatrix3(H.Bi));
+  if(grip&&rig.thrust>0){const wb=(map.find(m=>m[0]==='wrR')||[])[1],sp=wb&&foeSpearOf(rig,H.root,wb);if(sp)foeSpearAim(rig,wb,sp);}}
 // a foe's glow: the driver's emissive on every material of the builder's body, and the parry's stagger (which swaps the driver's
 // material for a yellow clone, 74-strikes.js) as a strong gold; the materials the kill clones are the ones on the meshes now
 function hbGlow(rig){const H=rig.hb,m=rig.mesh.material;let em=m&&m.emissive?m.emissive.getHex():0;if(m!==H.drv&&m&&m.color&&m.color.getHex()===0xffdd44)em=0xb08010;
