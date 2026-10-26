@@ -336,7 +336,7 @@
   // stream keyed by the village, so it stands in the same place whatever has loaded: the roads' lines from their defs (roadCurve), the
   // sea and the routed rivers and lakes (seaBare, the carve grid), the pads of the sites round it and the farms of villages before it
   // by id, and the gates and forts round it (fixedDoorSpot). -> {id, x, z, ry, cx, cz} (the farmstead's origin, its turn and the lot's middle), kept on the site, or null.
-  const FARM_LOT={x0:-11.4,x1:12.4,z0:-18.7,z1:3.27},FARM_SET=ROAD_BLEND+.7,FARM_R=23; /* the pad flat 23 m round the middle: the lot reaches 16.6, and the ground is drawn from a vertex every 4 m */ /* the kit's yard farm's lot (PKIT.gl.farmstead's userData.lot) */
+  const FARM_N=5000,FARM_LOT={x0:-11.4,x1:12.4,z0:-18.7,z1:3.27},FARM_SET=ROAD_BLEND+.7,FARM_R=23; /* the pad flat 23 m round the middle: the lot reaches 16.6, and the ground is drawn from a vertex every 4 m */ /* the kit's yard farm's lot (PKIT.gl.farmstead's userData.lot) */
   function villageFarm(t,c){
     if(t._farm!==undefined)return t._farm;t._farm=null;
     if(t.kind!=='village'||!(t.pad>0)||window.OG_LOOK!=='new'||window.OG_KIT_TOWNS===false||typeof PKIT==='undefined'||!PKIT.gl||!PKIT.gl.farmstead)return null;
