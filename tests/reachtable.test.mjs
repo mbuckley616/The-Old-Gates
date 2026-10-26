@@ -8,13 +8,13 @@ import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
 
-const SHEET = { Fists: .9, Dagger: 1.2, Sword: 1.6, Scimitar: 1.6, Mace: 1.6, Longsword: 1.8, Flail: 1.8, GreatClub: 1.9, WarHammer: 1.9, Claymore: 2.2, GreatAxe: 2.2 };
+const SHEET = { Fists: .9, Dagger: 1.2, Sword: 1.6, Scimitar: 1.6, Mace: 1.6, Longsword: 1.8, Flail: 1.8, GreatClub: 1.9, WarHammer: 1.9, Claymore: 2.2, GreatAxe: 2.2, Spear: 2.4 };
 const HULL = { you: .30, Bandit: .30, Wolf: .35, 'Cave Troll': .8 };
 const r = await page.evaluate(([SHEET]) => {
   const sc = new THREE.Group(); scene.add(sc); sc.visible = false;
   const foes = {}; for (const k of ['Bandit', 'Wolf', 'Cave Troll']) { const e = buildZoneEnemy(sc, [], px + 50, pz + 50, k, null); e.alert = true; e.locked = false; foes[k] = e; }
   const saveZE = ZE.slice(), w0 = EQ.weapon, sh0 = EQ.offhand;
-  const shapes = { Dagger: 'dagger', Sword: 'sword', Scimitar: 'scimitar', Mace: 'mace', Longsword: 'longsword', Flail: 'flail', GreatClub: 'greatclub', WarHammer: 'warhammer', Claymore: 'claymore', GreatAxe: 'greataxe' };
+  const shapes = { Dagger: 'dagger', Sword: 'sword', Scimitar: 'scimitar', Mace: 'mace', Longsword: 'longsword', Flail: 'flail', GreatClub: 'greatclub', WarHammer: 'warhammer', Claymore: 'claymore', GreatAxe: 'greataxe', Spear: 'spear' };
   const weapon = cls => { if (cls === 'Fists') return null; const T = WEAPON_TYPES.find(t => t.shape === shapes[cls] || t.weaponShape === shapes[cls]); if (!T) return undefined; const it = makeItem(1, T, null, false); return it; };
   const place = (e, d) => { e.x = px + fwdX * d; e.z = pz + fwdZ * d; if (e.mesh) e.mesh.position.set(e.x, e.mesh.position.y, e.z); };
   const rows = [];
@@ -34,8 +34,13 @@ const r = await page.evaluate(([SHEET]) => {
   // still hearing: the Bandit faces away, you stand still, stepped in from 2 m
   _pStep = false; _sneaking = false; let heard = null;
   for (let k = 200; k > 10; k -= 5) { const d = k / 100; place(b, d); b.combatYaw = Math.atan2(fwdX, fwdZ); if (canSeePlayer(b, d, 20)) { heard = +d.toFixed(2); break; } }
+  // S1456 — the spear's 40° line (#745 1 A): a Bandit 1.5 m off, 15° and 25° off your facing, against the spear and the sword
+  const line = {}; ZE.length = 0; ZE.push(b);
+  for (const cls of ['Spear', 'Sword']) { EQ.weapon = weapon(cls); for (const deg of [15, 25]) { const a = deg * Math.PI / 180;
+    b.x = px + (fwdX * Math.cos(a) + rgtX * Math.sin(a)) * 1.5; b.z = pz + (fwdZ * Math.cos(a) + rgtZ * Math.sin(a)) * 1.5; b.hp = b.maxHp = 1e6; b.dead = false; delete b.staggerUntil; b.shieldUp = false;
+    resolvePlayerStrike(false); line[cls + deg] = b.hp < 1e6; } }
   ZE.length = 0; saveZE.forEach(e => ZE.push(e)); EQ.weapon = w0; EQ.offhand = sh0; scene.remove(sc); atkCd = 0;
-  return { rows, shove, heard };
+  return { rows, shove, heard, line };
 }, [SHEET]);
 console.log(JSON.stringify(r));
 const rows = r.rows.filter(x => !x.missing);
@@ -43,9 +48,11 @@ check('every weapon class in the sheet is in the game', r.rows.every(x => !x.mis
 check('the hulls are the sheet\'s: a Bandit 0.30, a wolf 0.35, a troll 0.8', rows.every(x => Math.abs(x.hull - HULL[x.kind]) < 1e-9), rows.map(x => [x.kind, x.hull]));
 check('each class\'s reach is the sheet\'s, hull to hull', Object.keys(SHEET).every(c => rows.filter(x => x.cls === c).every(x => Math.abs(x.row - SHEET[c]) < 1e-9)), rows.map(x => [x.cls, x.row]));
 check('the first distance that lands is within 0.05 of you + reach + its hull, all classes × three foes',
-  rows.length === 33 && rows.every(x => x.first != null && Math.abs(x.first - (HULL.you + SHEET[x.cls] + HULL[x.kind])) <= 0.05 + 1e-9), rows.map(x => [x.cls, x.kind, x.first, +(HULL.you + SHEET[x.cls] + HULL[x.kind]).toFixed(2)]));
+  rows.length === 36 && rows.every(x => x.first != null && Math.abs(x.first - (HULL.you + SHEET[x.cls] + HULL[x.kind])) <= 0.05 + 1e-9), rows.map(x => [x.cls, x.kind, x.first, +(HULL.you + SHEET[x.cls] + HULL[x.kind]).toFixed(2)]));
 const sw = rows.find(x => x.cls === 'Sword' && x.kind === 'Bandit'), dg = rows.find(x => x.cls === 'Dagger' && x.kind === 'Bandit'), cl = rows.find(x => x.cls === 'Claymore' && x.kind === 'Bandit');
 check('against a townsperson a sword still lands at 2.2 centre to centre; the dagger at 1.8, the claymore at 2.8', Math.abs(sw.first - 2.2) <= .05 + 1e-9 && Math.abs(dg.first - 1.8) <= .05 + 1e-9 && Math.abs(cl.first - 2.8) <= .05 + 1e-9, { sw, dg, cl });
+check('the spear (#745) lands at 3.0 on a townsperson, 0.2 past the claymore; its thrust is a 40° line: 15° off your facing it lands, 25° off only the sword does',
+  Math.abs(rows.find(x => x.cls === 'Spear' && x.kind === 'Bandit').first - 3.0) <= .05 + 1e-9 && r.line.Spear15 && !r.line.Spear25 && r.line.Sword15 && r.line.Sword25, r.line);
 check('the shove reaches a Bandit at 0.8 hull to hull (1.4 centre to centre; it was 2.0)', r.shove != null && Math.abs(r.shove - 1.4) <= .05 + 1e-9, r.shove);
 check('standing still behind a guard, you are heard at 0.9 (it was 0.5)', r.heard != null && Math.abs(r.heard - 0.9) <= .05 + 1e-9, r.heard);
 check('no page errors', g.errs.length === 0, g.errs);

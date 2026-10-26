@@ -184,8 +184,26 @@ function _isBowEquipped(){
   const w = EQ.weapon;
   return !!(w && w.weaponShape === 'bow');
 }
-function _hasArrows(){
-  return !!(EQ.ammo && (EQ.ammo.qty||0) > 0);
+function _hasArrows(){ /* S1457 — and the right kind: a bow takes arrows, a crossbow bolts (ammoType) */
+  return !!(EQ.ammo && (EQ.ammo.qty||0) > 0 && (EQ.ammo.ammoType||'arrow') === (_isCrossbowEquipped()?'bolt':'arrow'));
+}
+// S1457 — the crossbow (Michael's 2 A on #745): no draw. A click shoots at once, at the bow's full draw ×1.15 (XBOW_DMG_MULT)
+// with no sway (xbowShoot, 62-actions.js); then the string is spanned again over 2.0 s (XBOW_SPAN_S), at a potion's walking pace
+// with no sprint (commitMoveMult, the loop's sprint). A roll, or a blow that wounds you (hurtT set anew), starts the span over.
+// A crossbow taken in hand starts unspanned. It shoots bolts (ammoType 'bolt'), the bow arrows; it is trained by Bow (weaponSkill).
+const XBOW_SPAN_S=2.0,XBOW_DMG_MULT=1.15;
+const XBOW={w:null,spanT:0,lastHurt:0};
+function _isCrossbowEquipped(){const w=EQ.weapon;return !!(w&&w.weaponShape==='crossbow');}
+function xbowSpanned(){return _isCrossbowEquipped()&&XBOW.w===EQ.weapon&&XBOW.spanT>=XBOW_SPAN_S;}
+function xbowSpanning(){return _isCrossbowEquipped()&&!xbowSpanned();}
+function tickCrossbow(dt){
+  if(!_isCrossbowEquipped()){XBOW.w=null;XBOW.lastHurt=hurtT;return;}
+  if(XBOW.w!==EQ.weapon){XBOW.w=EQ.weapon;XBOW.spanT=0;}
+  const hit=hurtT>XBOW.lastHurt+1e-6;XBOW.lastHurt=hurtT;
+  if(XBOW.spanT>=XBOW_SPAN_S)return;
+  if(hit||ROLL){XBOW.spanT=0;return;}
+  XBOW.spanT+=dt;
+  if(XBOW.spanT>=XBOW_SPAN_S&&typeof showMsg==='function')showMsg('The crossbow is spanned.','#c8a878');
 }
 // Draw strength normalized 0..1, clamped. Damage multiplier is a linear
 // interpolation BOW_DAMAGE_MULT_MIN → BOW_DAMAGE_MULT_MAX over BOW_DRAW_MIN

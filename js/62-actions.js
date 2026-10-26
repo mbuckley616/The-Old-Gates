@@ -113,7 +113,15 @@ function _resolveDungeonStrike(_isPow){return resolvePlayerStrike(_isPow);} // S
 // swing does; anything else takes the roll made at release
 function arrowRawFor(u,e){const R=u&&u.roll;if(!R||!e||!e.rng)return u.arrowDmg;
   const b=R.bLo+Math.floor(foeRand(e)*Math.max(1,R.bHi-R.bLo)),a=R.aLo+Math.floor(foeRand(e)*Math.max(1,R.aHi-R.aLo));return Math.max(1,Math.floor((b+a+R.lv)*R.m));}
-function fireArrow(strength){
+// S1457 — the crossbow's shot (#745 2 A): a click while spanned, with bolts in the quiver, shoots at once; the span starts over
+function xbowShoot(){
+  if(!_hasArrows()){sndBowEmpty();showMsg('No bolts equipped.','#cc8844');return false;}
+  if(!xbowSpanned()){showMsg('The crossbow is not spanned yet.','#aaa');return false;}
+  stamina=Math.max(0,stamina-_stamCost(BOW_RELEASE_STAM_COST));
+  XBOW.spanT=0;fireArrow(1,{xbow:true});return true;
+}
+function fireArrow(strength,o){
+  const xb=!!(o&&o.xbow);
   const ammo = EQ.ammo;
   const bow = EQ.weapon;
   if(!ammo || !bow) return; // defensive — caller already checked
@@ -136,7 +144,7 @@ function fireArrow(strength){
   const aHi = (ammo.arrowDmg && ammo.arrowDmg[1]) || 0;
   const arrowRoll = aLo + Math.floor(Math.random() * Math.max(1, aHi - aLo));
   // Draw scaling — linear MIN..MAX over strength 0..1.
-  const drawMult = BOW_DAMAGE_MULT_MIN + (BOW_DAMAGE_MULT_MAX - BOW_DAMAGE_MULT_MIN) * strength;
+  const drawMult = xb ? BOW_DAMAGE_MULT_MAX * XBOW_DMG_MULT : BOW_DAMAGE_MULT_MIN + (BOW_DAMAGE_MULT_MAX - BOW_DAMAGE_MULT_MIN) * strength; /* S1457 — a crossbow: the full draw ×1.15 */
   // Finesse — bow's primary attribute, mirrors Might’s melee scaling (ATTR_DMG_PER_POINT).
   const finesseMult = 1 + attrEff('finesse') * BOW_FINESSE_DMG;
   // S941 — the Bow skill carries the damage (skills and perks A); the per-level floor is gone.
@@ -183,7 +191,7 @@ function fireArrow(strength){
   const speedMult = ARROW_SPEED_MULT_MIN + (ARROW_SPEED_MULT_MAX - ARROW_SPEED_MULT_MIN) * strength;
   const arrowSpd = ARROW_SPEED * speedMult;
   // S1028 — the aim's sway (bowSway, 10-player.js): the line the arrow leaves on is turned by the drift of a long full draw
-  const _sw = bowSway();
+  const _sw = xb ? {yaw:0,pitch:0} : bowSway(); /* S1457 — a crossbow does not sway */
   const _ay = (_tpShot ? Math.atan2(-_tpShot.dir.x, -_tpShot.dir.z) : yaw) + _sw.yaw;
   const _ap = (_tpShot ? Math.asin(Math.max(-1, Math.min(1, _tpShot.dir.y))) : pitch) + _sw.pitch;
   const vx = -Math.sin(_ay) * Math.cos(_ap) * arrowSpd;
@@ -217,7 +225,7 @@ function fireArrow(strength){
   // player learns the rhythm. Shorter than melee hit messages because the
   // arrow flight itself is the primary feedback channel.
   const pct = Math.round(strength*100);
-  showMsg(`🏹 Fired (${pct}% draw) — ${arrowsLeft} arrows left`,'#c8a878');
+  showMsg(xb?`🏹 Loosed — ${arrowsLeft} bolts left`:`🏹 Fired (${pct}% draw) — ${arrowsLeft} arrows left`,'#c8a878');
   // Stats tracking — reuse the existing arrowsFired counter if present,
   // otherwise add it. lvAct is per-life stats; lifetime stats go elsewhere.
   if(typeof lvAct.arrowsFired === 'number') lvAct.arrowsFired++;

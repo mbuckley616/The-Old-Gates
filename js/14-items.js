@@ -137,6 +137,9 @@ const WEAPON_TYPES=[
   {type:'Scimitar',  slot:'weapon',weight:3,  atkMult:[0.80,0.95],shape:'scimitar', wType:'slash'},
   {type:'Mace',      slot:'weapon',weight:4,  atkMult:[0.90,1.15],shape:'mace',     wType:'blunt'},
   {type:'Flail',     slot:'weapon',weight:5,  atkMult:[0.95,1.25],shape:'flail',    wType:'blunt'},
+  // S1456 — the spear (Michael's 1 A on #745): a one-handed thrust, the shield kept, 2.4 m hull to hull in a 40° line, one
+  // target, the longsword's tell (its row, WEAPON_ATTACKS.Spear in 74-strikes.js). Pierce, trained by Blade (weaponSkill).
+  {type:'Spear',     slot:'weapon',weight:3.5,atkMult:[0.80,1.00],shape:'spear',    wType:'pierce'},
   // v64 — Bow. Two-handed (clears offhand on equip via _clearOffhandForTwoHander).
   // atkMult is the BOW's contribution; the arrow's arrowDmg stacks on top via
   // applyBowDamage at release time. Bows are deliberately lighter than swords on
@@ -146,6 +149,9 @@ const WEAPON_TYPES=[
   // dagger tier at the same material — appropriate for an "approach weapon"
   // class that also requires ammo.
   {type:'Bow',       slot:'weapon',weight:3,  atkMult:[0.60,0.80],shape:'bow',      wType:'pierce', twoHand:true},
+  // S1457 — the crossbow (Michael's 2 A on #745): the bow's roll, no draw, shot at the full draw ×1.15, a 2.0 s span (XBOW,
+  // 10-player.js); bolts, not arrows. Two-handed, so it stows the shield. Weight 4, a pound over the bow.
+  {type:'Crossbow',  slot:'weapon',weight:4,  atkMult:[0.60,0.80],shape:'crossbow', wType:'pierce', twoHand:true},
   // v65 — Two-handed melee weapons. Shipped as the second user of the
   // _clearOffhandForTwoHander() helper (Bow was the first). Defining traits:
   //   - twoHand:true            → auto-stows offhand on equip
@@ -173,7 +179,7 @@ const WEAPON_TYPES=[
 // (Rusty Sword, quest rewards) falls back via weaponShape. Unarmed defaults to blunt.
 // Declared here (not near applyMeleeDamage) because itemStatShort/itemDesc reference it and need
 // guaranteed visibility — forward-referencing a later `const` was causing ReferenceErrors in some browsers.
-const WSHAPE_TO_WTYPE = {dagger:'pierce', sword:'slash', longsword:'slash', scimitar:'slash', mace:'blunt', flail:'blunt', bow:'pierce', claymore:'slash', greataxe:'slash', warhammer:'blunt', greatclub:'blunt'};
+const WSHAPE_TO_WTYPE = {dagger:'pierce', sword:'slash', longsword:'slash', scimitar:'slash', mace:'blunt', flail:'blunt', spear:'pierce', bow:'pierce', crossbow:'pierce', claymore:'slash', greataxe:'slash', warhammer:'blunt', greatclub:'blunt'};
 function weaponDamageType(w){
   if(!w) return 'blunt';
   if(w.wType) return w.wType;
@@ -555,7 +561,7 @@ function makeItem(matTier, typeObj, enchant, isArmor){
     const lo=Math.round(TIER_BASE_ATK[t]*typeObj.atkMult[0]);
     const hi=Math.round(TIER_BASE_ATK[t]*typeObj.atkMult[1]);
     item.name=`${mat.name} ${typeObj.type}`;
-    item.ico=typeObj.shape==='dagger'?'🗡':typeObj.shape==='mace'?'🔨':typeObj.shape==='flail'?'⛓':typeObj.shape==='bow'?'🏹':'⚔️';
+    item.ico=typeObj.shape==='dagger'?'🗡':typeObj.shape==='mace'?'🔨':typeObj.shape==='flail'?'⛓':(typeObj.shape==='bow'||typeObj.shape==='crossbow')?'🏹':'⚔️';
     item.atk=[lo,hi];
     item.weight=typeObj.weight;
     item.weaponType=typeObj.type;
