@@ -562,6 +562,8 @@
     const steps=[
       ()=>{c.regions.forEach(r_=>REGIONS.push(r_));c.peaks.forEach(p=>PEAKS.push(p));c.lakes.forEach(l=>LAKES.push(l));c.rivers.forEach(rv=>RIVERS.push(rv));(c.inlets||[]).forEach(inl=>INLETS.push(inl));try{refreshChunksNearWater([...(c.inlets||[]),...c.peaks]);}catch(e){console.warn('refresh',e);}
            c.sites.forEach(t=>{SITES.push(t);SITE[t.id]=t;});if(c.home&&SITE.ashenmoor){ASH_X=SITE.ashenmoor.x;ASH_Z=SITE.ashenmoor.z;}c.sites.forEach(t=>{if(t.pad>0){const s=addStamp({id:'site_'+t.id,kind:'site',port:t.kind==='port',x:t.x,z:t.z,r:t.kind==='port'?t.pad*.72:t.pad,blend:t.kind==='port'?t.pad*.3:Math.max(30,t.pad*.7),y:t.kind==='port'?Math.max(SEA_Y+1.3,Math.min(landH(t.x,t.z),3.0)):Math.max(SEA_Y+1.6,landH(t.x,t.z))});L.stamps.push(s);}});
+           // S1455 — a Gatelands village's farm on the new look (villageFarm): its yard's pad, flat at the ground under its middle, the trees cleared off it
+           c.sites.forEach(t=>{const F=villageFarm(t,c);if(!F)return;const s=addStamp({id:F.id,kind:'door',farm:true,x:F.cx,z:F.cz,r:FARM_R,blend:12,cell:k});L.stamps.push(s);try{refreshChunksNearWater([s]);}catch(e){console.warn('farm',e);}});
            // ports: the shore shelf that meets the quay, stamped now so the chunks are built with it
            c.sites.forEach(t=>{if(t.kind!=='port')return;const sd=shoreDir(t);if(!sd)return;let x=t.x+sd.dx*t.pad,z=t.z+sd.dz*t.pad,n=0;while(worldH(x,z)>1.3&&n<80){x+=sd.dx*3;z+=sd.dz*3;n++;}t.quayStart={x,z};const q=addStamp({id:'quay_'+t.id,kind:'door',x:x-sd.dx*6,z:z-sd.dz*6,r:9,blend:16,y:1.05,cell:cellKey(c.i,c.j)});L.stamps.push(q);
              // the shipwright's own flat pad at the quay head
