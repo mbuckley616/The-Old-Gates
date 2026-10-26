@@ -23,7 +23,7 @@ for (const [size, seed] of GATES) {
     const diff = (a, b) => { let d = 0; for (let i = 0; i < a.length; i += 4) if (Math.abs(a[i] - b[i]) + Math.abs(a[i + 1] - b[i + 1]) + Math.abs(a[i + 2] - b[i + 2]) > 24) d++; return d / (a.length / 4); };
     const lightsLive = () => { let n = 0; dScene.traverseVisible(o => { if (o.isPointLight) n++; }); return n; };
     const visN = () => dScene.children.filter(o => o.visible).length;
-    const out = []; let restored = true, propsSeen = 0;
+    const out = [], culprits = []; let restored = true, propsSeen = 0;
     for (const [where, f, x, z] of spots) { px = x; pz = z; currentFloor = f; let calls = 0, whole = 0, lights = 0, px0 = 0, ms = 0, msWhole = 0;
       for (let h = 0; h < 4; h++) { CAM.position.set(x, (f === 2 ? FLOOR2_Y : 0) + 1.65, z); CAM.rotation.order = 'YXZ'; CAM.rotation.set(-.05, h * Math.PI / 2, 0); CAM.updateMatrixWorld(true);
         _sweepScenePool(dScene); lights = Math.max(lights, lightsLive());
@@ -31,19 +31,25 @@ for (const [size, seed] of GATES) {
         const v0 = visN(); t = performance.now(); dRender(dScene, CAM); ms = Math.max(ms, performance.now() - t); calls = Math.max(calls, REN.info.render.calls); if (visN() !== v0) restored = false;
         // the flat light: every piece in view shows, so a piece the cull hid that should show is a changed pixel
         amb.intensity = 4; amb.color.set(0xffffff);
-        REN.render(dScene, CAM); const a = grab(); dRender(dScene, CAM); const b = grab(); px0 = Math.max(px0, diff(a, b));
+        REN.render(dScene, CAM); const a = grab(); const vis0 = dScene.children.filter(o => o.visible); let hid = [];
+        const R0 = REN.render; REN.render = function (s, c) { hid = vis0.filter(o => !o.visible); return R0.call(this, s, c); }; try { dRender(dScene, CAM); } finally { REN.render = R0; }
+        const b = grab(), d0 = diff(a, b); px0 = Math.max(px0, d0);
+        // S1450: a view that differs names the piece: each piece the cull hid is hidden alone in the whole render, and the ones that
+        // change it were in view (CI's one miss, 0.001% at the large gate's threshold on 25 Oct, did not reproduce; the next one says who)
+        if (d0 > 0) for (const o of hid.slice(0, 80)) { o.visible = false; REN.render(dScene, CAM); const d1 = diff(a, grab()); o.visible = true; if (d1 > 0) { let skin = false; o.traverse(q => { if (q.isSkinnedMesh) skin = true; });
+          culprits.push({ where, h, px: +(d1 * 100).toFixed(4), type: o.type, name: o.name, kids: o.children.length, skin, at: [o.position.x, o.position.y, o.position.z].map(v => +v.toFixed(2)), zone: dZoneOf(o), dz: o._dz && [o._dz.ox, o._dz.oz, o._dz.rad].map(v => +v.toFixed(2)).concat(o._dz.multi), shown: [...(dZoneShown() || [])], cam: [+px.toFixed(2), +pz.toFixed(2)] }); } }
         // and the check can see: with every piece but the shell hidden, the same view changes
         const pcs = dScene.children.filter(o => o.visible && !o.isLight && !(o.userData && o.userData.dunShell)); pcs.forEach(o => o.visible = false); REN.render(dScene, CAM); propsSeen = Math.max(propsSeen, diff(a, grab())); pcs.forEach(o => o.visible = true);
         amb.intensity = amb0[0]; amb.color.setHex(amb0[1]); }
       out.push({ where, floor: f, calls, whole, lights, px: +(px0 * 100).toFixed(3), ms: +ms.toFixed(1), msWhole: +msWhole.toFixed(1) }); }
-    return { zones: DZONE ? DZONE.n + DZONE.side.length : 0, pool: dScene.userData.lightPool, spots: out, restored, propsSeen: +(propsSeen * 100).toFixed(2) }; })));
+    return { zones: DZONE ? DZONE.n + DZONE.side.length : 0, pool: dScene.userData.lightPool, spots: out, culprits: culprits.slice(0, 12), restored, propsSeen: +(propsSeen * 100).toFixed(2) }; })));
 }
 for (const r of R) console.log(r.size, r.seed, 'zones', r.zones, 'propsSeen', r.propsSeen + '%', r.spots.map(s => `${s.where}@${s.floor}: ${s.calls} (whole ${s.whole}) ${s.lights}L ${s.px}% ${s.ms}/${s.msWhole} ms`).join(' | '));
 const all = R.flatMap(r => r.spots.map(s => Object.assign({ size: r.size }, s)));
 check(`five spots a gate size, every gate cut into zones by space (${all.length} spots)`, R.every(r => r.spots.length >= 4 && r.zones >= 2), R.map(r => [r.size, r.spots.length, r.zones]));
 check('under 200 draw calls at every spot, over four headings', all.every(s => s.calls < 200), all.map(s => [s.size, s.where, s.calls]));
 check('at most 8 point lights live in every gate (the pool of 8)', R.every(r => r.pool === 8) && all.every(s => s.lights <= 8), all.map(s => [s.size, s.where, s.lights]));
-check('the cull hides nothing in view: culled and whole renders under a flat light differ by no pixel', all.every(s => s.px === 0), all.filter(s => s.px > 0).map(s => [s.size, s.where, s.px]));
+check('the cull hides nothing in view: culled and whole renders under a flat light differ by no pixel', all.every(s => s.px === 0), [all.filter(s => s.px > 0).map(s => [s.size, s.where, s.px]), R.filter(r => r.culprits.length).map(r => [r.size, r.seed, r.culprits])]);
 check('and that check can see: hiding every piece but the shell changes the view somewhere in every gate', R.every(r => r.propsSeen > .2), R.map(r => [r.size, r.propsSeen]));
 check('what the cull hides is shown again after the frame', R.every(r => r.restored));
 check('the cull spends draws: a massive gate draws fewer than half its whole frame from its first space', (() => { const s = R.find(r => r.size === 'massive').spots.find(s => s.where === 'space'); return s.calls * 2 < s.whole; })(), R.find(r => r.size === 'massive').spots);
