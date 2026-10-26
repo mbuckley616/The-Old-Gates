@@ -2145,6 +2145,14 @@ const giver=`${lord.title} ${lord.name}`;
     else if(cl==='cold'){if(se==='winter'){w.snow*=1.5;w.rain*=.5;}else if(se==='autumn'){w.rain*=1.5;w.snow*=1.2;}else if(se==='summer')w.snow*=.5;}
     else if(cl==='warm'){if(se==='summer'){w.rain*=.5;w.storm*=.5;}}
     return w;}
+  // S1433 — the blizzard and the heavy rain (Michael's A on #723, a fifth): a fifth of a cold climate's winter snow is a blizzard,
+  // and a fifth of autumn's rain is heavy rain, out of their own share, so bad weather stays as common as it was. Called last by
+  // weatherWeights, after the biome's and the gates' weights: the Mark's winter rolls 7.5% blizzard (a tundra 10%), the
+  // Gatelands' autumn 4% heavy rain (a fen 6%). Never a blizzard in the Gatelands, in Aurenne or out of winter.
+  function heavyWx(w,cl,at){const se=calDay(at).season;
+    if(cl==='cold'&&se==='winter'&&w.snow>0){w.blizzard=w.snow*.2;w.snow-=w.blizzard;}
+    if(se==='autumn'&&w.rain>0){w.heavyrain=w.rain*.2;w.rain-=w.heavyrain;}
+    return w;}
   // S498 — what the calendar owes you (DECISION #132, part B; the Journal's Due view): every dated thing already kept,
   // as {at, icon, text}, soonest first. The rent from the towns you own, the ship on the shipwright's slip, the masons at
   // a town, the room you have let, the coach seat held. Read from the absolute clock alone.

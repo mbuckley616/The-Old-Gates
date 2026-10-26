@@ -18,6 +18,16 @@ console.log(JSON.stringify({ clearM: sightOf(clear), fogM: sightOf(fog), rainM: 
 check('fog closes the land to 60 m', near(fog, want(60)), { fogM: sightOf(fog) });
 check('rain leaves 500 m and a storm 220 m (or the place\'s own haze, if thicker)', near(rain, want(500)) && near(storm, want(220)), { rainM: sightOf(rain), stormM: sightOf(storm), clearM: sightOf(clear) });
 check('a foe in the open sees no farther than the fog', Math.round(capFog) === 60, capFog);
+// S1433 — #723: a blizzard and heavy rain, rolled as snow and rain with WX.heavy, close the land to 70 m and 280 m; set by hand
+// to plain snow again, the heavy mark goes with it
+const heavyOf = async (k) => { await page.evaluate(k => devWeather(k), k); await g.spin(null, 1800); return page.evaluate(() => ({ d: WORLD.scene.fog.density, type: WORLD.wx.type, heavy: WORLD.wx.heavy, name: devWeather() })); };
+const bliz = await heavyOf('blizzard'), heavyRain = await heavyOf('heavyrain');
+await g.spin('snow', 240); const plain = await page.evaluate(() => ({ d: WORLD.scene.fog.density, heavy: WORLD.wx.heavy }));
+console.log(JSON.stringify({ blizM: sightOf(bliz.d), heavyRainM: sightOf(heavyRain.d), snowM: sightOf(plain.d) }));
+check('a blizzard is snow, heavy, and closes the land to 70 m', bliz.type === 'snow' && bliz.heavy === 1 && bliz.name === 'blizzard' && near(bliz.d, want(70)), { bliz, m: sightOf(bliz.d) });
+check('heavy rain is rain, heavy, and leaves 280 m', heavyRain.type === 'rain' && heavyRain.heavy === 1 && heavyRain.name === 'heavyrain' && near(heavyRain.d, want(280)), { heavyRain, m: sightOf(heavyRain.d) });
+check('snow set by hand after a blizzard is plain snow (400 m)', plain.heavy === 0 && near(plain.d, want(400)), { plain, m: sightOf(plain.d) });
+await page.evaluate(() => { WORLD.wx.timer = 900; });
 const audio = await page.evaluate(() => { try { initAudio(); } catch (e) {}
   const run = (w, where) => { const wx = WORLD.wx; wx.type = w; wx.next = w; wx.k = 1; const save = [activeZoneId, lid];
     if (where === 'inside') lid = 'int_test'; if (where === 'dungeon') activeZoneId = 'dungeon';

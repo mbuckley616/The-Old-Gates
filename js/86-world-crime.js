@@ -91,13 +91,15 @@
     // v80 S450 — weather carried into a cell that could never roll it (snow off the Mark's border, or a ship's snow
     // brought into the Gatelands) is rolled again there, and blends out as any change does. A timer past the roll's
     // own 330 s is a weather held on purpose (the tests'), and is left alone.
-    if(inWorld){const c=cellOf(px,pz),ck=c[0]+','+c[1];if(ck!==WX.cell){const moved=WX.cell!=null;WX.cell=ck;if(moved&&WX.timer<=330){const w=weatherWeights();if(!(w[WX.type]>0)||!(w[WX.next]>0)){WX.timer=0;WX.rerolls=(WX.rerolls||0)+1;}}}}
+    if(inWorld){const c=cellOf(px,pz),ck=c[0]+','+c[1];if(ck!==WX.cell){const moved=WX.cell!=null;WX.cell=ck;if(moved&&WX.timer<=330){const w=weatherWeights();if(!(w[WX.type]>0)||!(w[WX.next]>0)||(WX.nextHeavy&&!(w[wxName(WX.next,1)]>0))){WX.timer=0;WX.rerolls=(WX.rerolls||0)+1;}}}}
     WX.timer-=dt;
-    if(WX.timer<=0){WX.timer=150+Math.random()*180;WX.next=WX.ahead||pickWeather();WX.ahead=null;if(WX.next!==WX.type)WX.k=0;} /* S553 — a shift the oilskin foretold comes as foretold */
+    if(WX.timer<=0){WX.timer=150+Math.random()*180;wxSetNext(WX.ahead||pickWeather());WX.ahead=null;if(WX.next!==WX.type)WX.k=0;} /* S553 — a shift the oilskin foretold comes as foretold */
+    // S1433 — a blizzard is snow and heavy rain is rain, with WX.heavy (0 to 1) easing in and out over the 25 s a change takes
+    {const ht=WX.nextHeavy&&WX.nextHeavy===WX.next?1:0,h0=WX.heavy||0;WX.heavy=ht>h0?Math.min(ht,h0+dt/25):Math.max(ht,h0-dt/25);}
     if(WX.next!==WX.type){WX.k+=dt/25;if(WX.k>=1){WX.type=WX.next;WX.k=0;}}
     const cur=WX.type,nxt=WX.next,mix=(nxt!==cur)?WX.k:0;
     const inten=t=>t==='rain'?.7:t==='storm'?1:t==='snow'?.8:t==='fog'?.6:t==='overcast'?.35:0;
-    WX.intensity=inten(cur)*(1-mix)+inten(nxt)*mix;
+    WX.intensity=(inten(cur)*(1-mix)+inten(nxt)*mix)*(1+.2*WX.heavy);
     const rainAmt=(cur==='rain'||cur==='storm'?1:0)*(1-mix)+(nxt==='rain'||nxt==='storm'?1:0)*mix;
     const snowAmt=(cur==='snow'?1:0)*(1-mix)+(nxt==='snow'?1:0)*mix;
     const storm=(cur==='storm'?1:0)*(1-mix)+(nxt==='storm'?1:0)*mix;WX.storm=storm;WX.wind=windDir();WX.windy=gateWindy(); /* S1369 — Gaoth's toll on Aurenne, for the look's trees */
@@ -115,8 +117,8 @@
     // v80 S146 — strength where you stand
     const sRain=wxLocal('rain'),sSnow=wxLocal('snow'),sFog=wxLocal('fog'),cold=wxLocal('cold');
     WX.sRain=sRain;WX.sSnow=sSnow;WX.sFog=sFog;WX.cold=cold;
-    const rainShown=Math.min(1,rainAmt*.62*sRain),snowShown=Math.min(1,snowAmt*.58*sSnow);
-    upd(WX.rain,rainShown,26,1.5,12);upd(WX.snow,snowShown,2.2,1.2,12);
+    const hv=1+.6*WX.heavy,rainShown=Math.min(1,rainAmt*.62*sRain*hv),snowShown=Math.min(1,snowAmt*.58*sSnow*hv);
+    upd(WX.rain,rainShown,26,1.5,12);upd(WX.snow,snowShown,2.2+2*WX.heavy,1.2+6*WX.heavy,12); /* S1433 — a blizzard's snow is driven */
     // snow settles on the ground while it falls, and goes off again when it stops — slowly where it is cold
     if(inWorld){
       const falling=snowAmt*sSnow;
@@ -143,7 +145,7 @@
     const open=activeZoneId==='world'&&lid==='overworld';
     const inside=(typeof isInterior==='function'&&isInterior());
     const mul=open?1:inside?.22:(activeZoneId==='dungeon')?.05:.3; // muffled through a wall, all but gone underground
-    const target=(rainAmt*.055*(WX.sRain||1)+stormAmt*.075*(WX.sRain||1)+snowAmt*.012*(WX.sSnow||1))*mul; // rain was .11 flat: too loud in the open
+    const target=(rainAmt*.055*(WX.sRain||1)+stormAmt*.075*(WX.sRain||1)+snowAmt*.012*(WX.sSnow||1))*mul*(1+.6*(WX.heavy||0)); // rain was .11 flat: too loud in the open
     WX.rainG.gain.value+=(target-WX.rainG.gain.value)*Math.min(1,dt*(target<WX.rainG.gain.value?3.5:2));
     // snow is a breath of wind, not a hiss: the same noise, filtered low
     if(WX.rainF){const snowy=snowAmt>(rainAmt+stormAmt);
@@ -153,7 +155,7 @@
   // called from atmosphere() after the day/night targets are computed
   function applyWeather(){
     const cur=WX.type,nxt=WX.next,mix=(nxt!==cur)?WX.k:0;
-    WX.sightM=wxSightBlend(cur,nxt,mix);
+    WX.sightM=wxSightBlend(cur,nxt,mix,WX.heavy||0);
     const I=WX.intensity;if(I<=0&&!(WX.flash>0))return;
     const col=(t)=>_tmpWx.setHex(WX_COL[t]||0x8a8f96);
     _tmpWx2.copy(col(cur));if(mix>0)_tmpWx2.lerp(col(nxt),mix);
@@ -170,15 +172,21 @@
     if(WX.flash>0){_atm.sky.setHex(0xe8eefc);_atm.fog.lerp(_tmpWx.setHex(0xdde6f4),.6);WX.sunMul=2.2;}
   }
   /* S1420 — how far you see in each weather (Michael's C on #679, the concept artist's table in weather.js): metres to where the land
-     is 95% gone in the fog (FogExp2's density √3 / sight). The game has no heavy rain or blizzard of its own yet (280 and 70 m in the
-     table); rain, storm and snow take their own rows. A change of weather blends in density, as the fog itself does. */
-  const WX_SIGHT={clear:2400,overcast:1100,rain:500,storm:220,snow:400,fog:60};
+     is 95% gone in the fog (FogExp2's density √3 / sight). A change of weather blends in density, as the fog itself does. S1433 — the
+     blizzard (70 m) and the heavy rain (280 m) are snow and rain with WX.heavy at 1 (#723): the weather's kind stays one of the six,
+     so everything that reads 'snow' or 'rain' reads them too, and the sight eases from the kind's row to the heavy one's. */
+  const WX_SIGHT={clear:2400,overcast:1100,rain:500,storm:220,snow:400,fog:60,blizzard:70,heavyrain:280};
+  const WX_HEAVY={blizzard:'snow',heavyrain:'rain'};
+  function wxName(t,h){return h?(t==='snow'?'blizzard':t==='rain'?'heavyrain':t):t;}
+  // the next weather by the roll's name: a heavy kind is its own kind, marked heavy
+  function wxSetNext(k){WX.next=WX_HEAVY[k]||k;WX.nextHeavy=WX_HEAVY[k]?WX.next:null;}
   function wxSightDen(m){return Math.sqrt(3)/Math.max(1,m);}
-  function wxSightBlend(cur,nxt,mix){const a=wxSightDen(WX_SIGHT[cur]||WX_SIGHT.clear),b=wxSightDen(WX_SIGHT[nxt]||WX_SIGHT.clear);return Math.sqrt(3)/(a+(b-a)*(mix||0));}
+  function wxDen(t,h){const d=wxSightDen(WX_SIGHT[t]||WX_SIGHT.clear),hk=h>0&&wxName(t,1);return hk&&hk!==t?d+(wxSightDen(WX_SIGHT[hk])-d)*h:d;}
+  function wxSightBlend(cur,nxt,mix,h){const a=wxDen(cur,h||0),b=wxDen(nxt,h||0);return Math.sqrt(3)/(a+(b-a)*(mix||0));}
   // the same figure for the foes' sight in the open (canSeePlayer): nobody sees you through fog the land itself is lost in
   function wxSightCap(){if(typeof activeZoneId==='undefined'||activeZoneId!=='world'||lid!=='overworld'||(typeof isInterior==='function'&&isInterior()))return Infinity;return WX.sightM||WX_SIGHT.clear;}
   const _tmpWx=new THREE.Color(),_tmpWx2=new THREE.Color();
-  window.devWeather=function(t){if(!t)return WX.type+(WX.next!==WX.type?' → '+WX.next:'');WX.next=t;WX.k=0;WX.timer=240;return 'weather → '+t;};
+  window.devWeather=function(t){if(!t)return wxName(WX.type,WX.heavy>.5)+(WX.next!==WX.type?' → '+wxName(WX.next,WX.nextHeavy===WX.next):'');wxSetNext(t);WX.k=0;WX.timer=240;return 'weather → '+t;};
 
   // ═══ INTERIORS II (Session G) ════════════════════════════════════════
   // Beds have owners: 'inn' (rent a room for the night, 5–25 gold), 'home'
@@ -879,9 +887,9 @@
   // S553 — the oilskin's hint (Michael's B on #148): at sea in rain or storm, the sea line says the next shift of weather. It
   // is rolled when first shown (WX.ahead) and the next shift takes it, so the hint never lies; with no hint shown the weather
   // is rolled when it comes, as before
-  const AHEAD_WORD={clear:'clearing',overcast:'clouding over',rain:'rain',storm:'a storm',fog:'fog',snow:'snow'};
+  const AHEAD_WORD={clear:'clearing',overcast:'clouding over',rain:'rain',storm:'a storm',fog:'fog',snow:'snow',blizzard:'a blizzard',heavyrain:'heavy rain'};
   function seaHint(){if(typeof cloakOn!=='function'||!cloakOn('oilskin')||(WX.type!=='rain'&&WX.type!=='storm'))return '';if(!WX.ahead)WX.ahead=pickWeather();
-    return WX.ahead===WX.type?'':` · ${AHEAD_WORD[WX.ahead]||WX.ahead} ahead`;}
+    return WX.ahead===wxName(WX.type,WX.heavy>.5)?'':` · ${AHEAD_WORD[WX.ahead]||WX.ahead} ahead`;}
   function weatherSea(){const t=(WX.next!==WX.type&&WX.k>=.5)?WX.next:WX.type;return t==='storm'?3:(t==='clear'||t==='fog')?0:1;}
   function openWater(x,z){if(worldH(x,z)>-7.9)return false;for(let k=0;k<12;k++){const a=k/12*Math.PI*2;for(const r of [50,100,150])if(worldH(x+Math.cos(a)*r,z+Math.sin(a)*r)>SEA_Y-1.4)return false;}return true;}
   function seaState(x,z){if(x==null){x=SHIP.x;z=SHIP.z;}return Math.min(3,weatherSea()+(openWater(x,z)?1:0));}

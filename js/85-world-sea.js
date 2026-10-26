@@ -917,7 +917,10 @@
   // are Points around the camera; storms flash and thunder; rain/snow/fog
   // thicken the fog (visibility), overcast dims the sun. Particles and the
   // loop stop indoors and in dungeons.
-  const WX={type:'clear',next:'clear',k:0,intensity:0,timer:0,rain:null,snow:null,flashT:0,rainG:null,rainSrc:null,windT:0,cover:0,coverPainted:0,coverQ:null,sRain:1,sSnow:1,sFog:1,cold:.4};
+  // S1433 — a blizzard and heavy rain are snow and rain with WX.heavy (#723). Setting the next weather by hand (devWeather, the
+  // tests' spin, the Noon Ring) clears its heavy mark, and setting the weather itself snaps WX.heavy to it, so no heavy roll lingers.
+  const WX={_type:'clear',_next:'clear',get type(){return this._type;},set type(v){this._type=v;this.heavy=this.nextHeavy&&this.nextHeavy===v?1:0;},
+    get next(){return this._next;},set next(v){this._next=v;this.nextHeavy=null;},k:0,intensity:0,timer:0,rain:null,snow:null,flashT:0,rainG:null,rainSrc:null,windT:0,cover:0,coverPainted:0,coverQ:null,sRain:1,sSnow:1,sFog:1,cold:.4,heavy:0,nextHeavy:null};
   const WX_COL={overcast:0x8a8f96,fog:0xb8bcc0,rain:0x6a717a,storm:0x4a4e56,snow:0xb8c0c8};
   function weatherWeights(){
     const [i,j]=cellOf(px,pz);const cl=climateOfCell(i,j);const b=dominantRegion(px,pz).r.biome;
@@ -930,6 +933,7 @@
     if(b==='tundra'){w.snow+=.15;w.clear*=.7;}
     if(b==='wasteland'){w.overcast+=.2;w.clear*=.6;w.snow=0;}
     if(typeof gateWeather==='function')gateWeather(w); /* S1369 — the great gates' faces and tolls on the weights */
+    if(typeof heavyWx==='function')heavyWx(w,cl); /* S1433 — a fifth of the snow and the rain is the heavy kind (#723) */
     return w;
   }
   function pickWeather(){const w=weatherWeights();let s=0;for(const k in w)s+=w[k];let r=Math.random()*s;for(const k in w){r-=w[k];if(r<=0)return k;}return 'clear';}
