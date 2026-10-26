@@ -95,3 +95,30 @@ Frame rate is not measured here: software GL is not a target machine. It is Mich
 | Portclare square, noon | High | 731 | 1.83 M | 163 | 6 | 32 | 72 | 239 | 219 | Mesh 146, Group 58, oldGate 14, Points 1 |
 | The Bramble Hearth (Dunmore's inn), the hall from the door, 20h | Middle (indoors) | 55 | 45k | 0 | 0 | 1 | 0 | 0 | 54 |  |
 | a medium gate (ruins, seed 11), from its entrance | Middle (indoors) | 252 | 427k | 0 | 0 | 46 | 0 | 0 | 205 |  |
+
+### s884 — 2026-10-25 01:11 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Portclare square, noon | Low | 523 | 758k | 0 | 0 | 30 | 72 | 207 | 214 | Mesh 146, Group 54, oldGate 14 |
+| Portclare square, noon | Middle | 682 | 1.48 M | 133 | 6 | 31 | 72 | 226 | 214 | Mesh 146, Group 54, oldGate 14 |
+| Portclare square, noon | High | 725 | 1.82 M | 163 | 6 | 31 | 72 | 239 | 214 | Mesh 146, Group 54, oldGate 14 |
+| The Bramble Hearth (Dunmore's inn), the hall from the door, 20h | Middle (indoors) | 38 | 26k | 0 | 0 | 1 | 0 | 0 | 37 |  |
+| a medium gate (ruins, seed 11), from its entrance | Middle (indoors) | 269 | 431k | 0 | 0 | 43 | 0 | 0 | 225 |  |
+
+### s884 — 2026-10-25 01:11 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Dunmore street, noon | Low | 782 **over** | 1.29 M | 0 | 0 | 110 | 149 | 268 | 255 | Mesh 195, Group 36, oldGate 24 |
+| Dunmore street, noon | Middle | 940 | 2.02 M | 136 | 6 | 113 | 149 | 281 | 255 | Mesh 195, Group 36, oldGate 24 |
+| Dunmore street, noon | High | 991 | 2.35 M | 168 | 6 | 113 | 149 | 300 | 255 | Mesh 195, Group 36, oldGate 24 |
+| Dunmore street, midnight | Low | 846 **over** | 1.25 M | 0 | 0 | 107 | 215 | 268 | 256 | Mesh 195, Group 36, oldGate 24, Points 1 |
+| Dunmore street, midnight | Middle | 1020 **over** | 1.97 M | 155 | 6 | 107 | 215 | 281 | 256 | Mesh 195, Group 36, oldGate 24, Points 1 |
+| Dunmore street, midnight | High | 1082 | 2.33 M | 198 | 6 | 107 | 215 | 300 | 256 | Mesh 195, Group 36, oldGate 24, Points 1 |
+| the field west of Dunmore, noon | Low | 640 | 731k | 0 | 0 | 105 | 111 | 295 | 129 | Mesh 79, Group 40, oldGate 8, quaywall 2 |
+| the field west of Dunmore, noon | Middle | 725 | 1.13 M | 59 | 6 | 105 | 111 | 315 | 129 | Mesh 79, Group 40, oldGate 8, quaywall 2 |
+| the field west of Dunmore, noon | High | 773 | 1.55 M | 97 | 6 | 105 | 111 | 325 | 129 | Mesh 79, Group 40, oldGate 8, quaywall 2 |
+| the field west of Dunmore, dawn | Low | 723 **over** | 722k | 0 | 0 | 108 | 190 | 295 | 130 | Mesh 79, Group 40, oldGate 8, quaywall 2, Points 1 |
+| the field west of Dunmore, dawn | Middle | 868 | 1.23 M | 119 | 6 | 108 | 190 | 315 | 130 | Mesh 79, Group 40, oldGate 8, quaywall 2, Points 1 |
+| the field west of Dunmore, dawn | High | 921 | 1.65 M | 162 | 6 | 108 | 190 | 325 | 130 | Mesh 79, Group 40, oldGate 8, quaywall 2, Points 1 |
