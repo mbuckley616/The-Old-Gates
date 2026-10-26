@@ -180,7 +180,8 @@ function tpBuild(lookIn,ppIn,reuse){
       rig.hb=H;H.L=-1;H.drv=rig.mesh.material;rig.root.add(H.root);TP_HB.kept=(TP_HB.kept||0)+1;}
     else{rig.hbLazy=true;try{hbAttach(rig);}catch(e){rig.hb=null;console.warn('F10: the player\'s body failed',e);}
       if(rig.hb){TP_HB.ms+=performance.now()-t0;TP_HB.n++;}}
-    if(rig.hb){R.hbSaved=E.saved;
+    // S1434 — the townsfolk's arms are held under a cloak in the walk (hbCloakArms); yours swing a blade and draw a bow as you walk, so not yet
+    if(rig.hb){R.hbSaved=E.saved;rig.hb.hold=null;
       root.scale.setScalar(rig.hb.st*PW.BODY/SCALE.PERSON_MODEL);hbLevel(rig,0);
       // what the hands hold rides in the builder's group: a copy of each piece (its geometry shared) in a carrier that follows the piece,
       // which stays on its driver bone where tpPose turns it, each frame (tpHBHold); a weapon's grip goes to the builder's curled fingers
