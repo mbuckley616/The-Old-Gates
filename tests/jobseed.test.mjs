@@ -23,13 +23,19 @@ const before = await ask(towns);
 const taken = await page.evaluate((id) => { const s = WORLD.siteAnywhere(id);
   for (let i = 0; i < 200; i++) { const q = townQuestFor(s, 'retrieve', true, 'jobseed:r' + i); if (q.kind === 'retrieve' && q.data.fixed) { qAdd(q); return { id: q.id, x: q.data.x, z: q.data.z, seed: q.data.seed }; } }
   return null; }, towns[0]);
-const after = [], spotD = [], placed = []; let anchored = null;
+const after = [], spotD = [], placed = []; let anchored = null; const firstOut = new Map();
+// S1438 — the first road out of each built town, read while it stands: the end alone saw 0 of 0 when Dunmore had not built in
+// settle's 180 s on a loaded runner (weekly run 25 Oct), and the towns before it are disposed once you leave them
+const firstRoads = () => page.evaluate(() => { const out = [];
+  for (const S of WORLD.settle.values()) { const s = S.site; if (!s || !/^c\d|^[a-z]/.test(s.id)) continue; const live = ROADS.find(rr => rr.def.a === s.id || rr.def.b === s.id); const f = roadOutFixed(s);
+    if (!live || !f) continue; out.push([s.id, live.def === f]); } return out; });
 // each town is measured while it stands loaded, once the gates near it have been placed (the cell's door job runs after the cell)
 const spotsAt = (id) => page.evaluate((id) => { const s = WORLD.siteAnywhere(id), d = [];
   for (const o of doorsNearFixed(s, 700)) { const w = dungeonWorldPos[o.e.seed]; if (w) d.push(+Math.hypot(w.x - o.p.x, w.z - o.p.z).toFixed(1)); } return d; }, id);
 for (const id of [...towns, 'dunmore']) { await g.settle(id);
   for (let k = 0; k < 20; k++) { const want = await page.evaluate((id) => doorsNearFixed(WORLD.siteAnywhere(id), 700).length, id); if ((await spotsAt(id)).length >= want) break; await page.waitForTimeout(1500); }
   const d = await spotsAt(id); spotD.push(...d); placed.push(id + ' ' + d.length);
+  for (const [t, same] of await firstRoads()) firstOut.set(t, same);
   if (id !== 'dunmore') after.push((await ask([id]))[0]);
   if (id === towns[0] && taken) anchored = await page.evaluate((t) => { WORLD.tick(1 / 60, performance.now()); const q = qActive().find(q => q.id === t.id); const w = dungeonWorldPos[t.seed];
     const pk = pickups.find(o => o.id === t.id + ':pickup');
@@ -53,14 +59,14 @@ check(`a retrieve taken before its gate was placed is moved to the real door onc
 check(`the world's spot for a gate lies near where its cell placed it: ${spots.n} gates, median ${spots.median} m, the farthest ${spots.max} m`, spots.n > 0 && spots.median < 60, spots);
 // S1002 — the road job's camp, from the cell's data: the same spot before and after (in the jobs above), and the line worked out
 // without building (`roadLineFixed`) is the built road's own, point for point, for every loaded road of a settlement's cell
-const roads = await page.evaluate(() => { let n = 0, worst = 0, diffLen = 0, firstSame = 0, firstN = 0;
+for (const [t, same] of await firstRoads()) firstOut.set(t, same);
+const roads = await page.evaluate(() => { let n = 0, worst = 0, diffLen = 0;
   for (const rd of ROADS) { if (!rd.def || rd.def.via === 'spur' || rd.def.via === 'quay' || rd.def.via === 'coach') continue; const c = getCell(...rd.cell.split(',').map(Number));
     if (!c.roadDefs.includes(rd.def)) continue; const pts = roadLineFixed(rd.def, c); n++; if (!pts || pts.length !== rd.pts.length) { diffLen++; continue; }
     for (let i = 0; i < pts.length; i++) worst = Math.max(worst, Math.hypot(pts[i].x - rd.pts[i].x, pts[i].z - rd.pts[i].z)); }
-  // and the road the job names is the first loaded road out of the town, where the old code looked, for every loaded town
-  for (const S of WORLD.settle.values()) { const s = S.site; if (!s || !/^c\d|^[a-z]/.test(s.id)) continue; const live = ROADS.find(rr => rr.def.a === s.id || rr.def.b === s.id); const f = roadOutFixed(s);
-    if (!live || !f) continue; firstN++; if (live.def === f) firstSame++; }
-  return { n, worst: +worst.toFixed(6), diffLen, firstSame, firstN }; });
+  return { n, worst: +worst.toFixed(6), diffLen }; });
+// and the road the job names is the first loaded road out of the town, where the old code looked, for every town seen built
+roads.firstN = firstOut.size; roads.firstSame = [...firstOut.values()].filter(Boolean).length; roads.firstOff = [...firstOut].filter(([, v]) => !v).map(([t]) => t);
 console.log('roads', JSON.stringify(roads));
 const roadJobs = before.flatMap((b, i) => b.jobs.map((j, k) => [j, after[i].jobs[k]]).filter(([j]) => j.startsWith('road|')));
 check(`the road job's camp is the same before and after its town loads (${roadJobs.filter(([a, b]) => a === b).length} of ${roadJobs.length}), on a road of its own cell (${roadJobs.filter(([a]) => !a.endsWith('null>null')).length}; a glade has no road, and its camp is the fixed 300 m east)`,
