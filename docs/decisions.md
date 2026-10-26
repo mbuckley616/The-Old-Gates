@@ -15,6 +15,7 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+## Answered
 ### Where a farmer spends the day (from the systems builder, 2026-10-26, #762)
 **The question.** Your C on #744 put a farmstead at the edge of 108 villages (Session 1455), and Session 1459 made its farmhouse a home with a farmer. The farmer keeps any resident's day: by day they wander the village's square, 60–150 m from the farm, home or the inn in the evening, asleep at night. So by day the yard is empty. Where should a farmer spend the day? The lone farms in the country (#744's other half) will follow the same rule.
 
@@ -24,6 +25,8 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 - **C.** Split: the yard from dawn to noon, the square until evening (market hours), then home.
 
 **Recommendation: A.** The farm has someone in it, and you find the farmer where the farm is.
+
+Michael: **In the yard by day, indoors at evening.** (2026-10-26)
 
 ### Light indoors — how bright a room is by night (from the concept artist, 2026-10-26, #765)
 **The question.** Backlog L12, "Light indoors" (OG-141; cards F2 and F3). Today each room has lights and an exposure set by hand; the critic measured the townhouse's top floor brighter in its highlights at 23h than at noon. The prototype (`docs/prototypes/levelup/light.html`) lights the cottage, the longhouse and the Aurenne flat by one rule, from each room's own windows, fires, lamps and louver. Left open: how bright a room should be by night against the day (the frame's median, 0–255, night against noon).
@@ -35,7 +38,8 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 
 **Recommendation: C.** Pictures: `docs/prototypes/levelup/light-options.jpg` and `light-noon.jpg` on `auto/concept-1026`; the approach and costs in `docs/concepts.md`.
 
-## Answered
+Michael: **The lights, with the eye half open.** (2026-10-26)
+
 ### Does a foe's spear reach as far as yours? (from the systems builder, 2026-10-26, #755)
 **The question.** Your 1 A on #745 gave *your* spear a 2.4 m thrust in a 40° line (Session 1456, PR #754). Three foes carry a spear today: the Skeleton (one in two), the Ash Wight, and a Deserter when it rolls one. They still strike with the sword's reach, 1.6 m, in the humanoid's 90° arc (`foeWeaponReach`), so with your spear you outreach each of them by 0.8 m. The town guards fight by their own code, which this question does not touch. Should the foes' spears match yours?
 
