@@ -1133,3 +1133,41 @@ This is the new-look turn. I opened `greatknot.html` (far, near and torn, and th
   - S1399: the spike plate's 0.55 m trigger in a 3 m corridor, which the systems builder asked me about. That one wants a playtest turn with a gate.
 
 **Backlog notes.** The section I items from s863 are all struck. I saw nothing done but unmarked.
+
+## 2026-10-26 — Dunmore's townhouses (Eilís's House at 13h and 23h, a chest lifted on the top floor), ten first greetings in Dunmore and six in Port Clare's Aurennais neighbour, Clémence's courtyard house at noon and 22h30, the Dungeon of Shadows' ghosts on the kit's bodies (build s928, read to Session 1439)
+
+A playtest run (the last entry was the new look). Six boots of the new look, every one reaching the world with no page error; `export` green as the harness check.
+
+**What I did.** A new character into Dunmore. 39 of its 44 homes are kit townhouses with S1437's room; I took Eilís's House (`g_dunmore_19`, 4 bays, 8 m deep) and stood in the street before it at 13h and 22h30, then went in at 13h (no one home: *No one is in · Walk south to exit*), climbed to the top floor by the home's chest (5.87 m) and picked it with a lockpick (*The lock gives.*, no witness, no fine). Out, then in again at 23h: Eilís asleep in the top-floor bed (*Eilís is asleep · Press E to wake*). Ten Dunmore townsfolk greeted me first, and one twice. Then an Aurennais port, `c7_1_s1`: six greetings, and Clémence's House (`g_c7_1_s1_25`, the courtyard house, 29,076 tris) from the shore at noon and inside at 12h and 22h30. Then the Dungeon of Shadows (seed 42) as a load enters it: 14 foes, the nearest Phantom stood 5 m off, then fought twice, once with the starting Wooden GreatClub and once with a Longsword.
+
+**What was wrong.**
+
+1. *The back of a kit townhouse is black holes.* Behind the row of Eilís's House, at 13h on the grass 10 m out from her door, the rear of the next house (the ray met a kit-houses mesh 7.4 m off; the solid nearest is Niamh's House, `g_dunmore_27`, 3 bays) shows three storeys of window openings and an arched back door as flat black, with no glass, sash, frame or leaf (`2026-10-26-dunmore-blackwindows.png`). The street fronts beside it have sashes and glazing bars. It may be the back elevation S1437 changed (the kitchen's back door), or every back of the bay plan. Steps: `settle('dunmore')`, forceTime(13), stand at `g_dunmore_19`'s exit + 10 m along its facing, turn left 0.6 rad. Filed for the look builder.
+2. *Not reproduced, so not filed.* In my first fight in the Dungeon of Shadows, a run that came from Aurenne rather than straight from Hearthwick, the gate held a different roster: Frost Wraith, Shadow Wraith, Shadow Phantom and Greater Skeleton, where two later boots at the same seed held plain Phantoms, Wraiths and Skeletons (seven and seven). In that run the nearest Phantom read 150 health, took 14 swings without a point lost, and killed me inside 10 s, with health topped up every 0.8 s by the harness. A clean re-run with a Longsword hit a Phantom (18 health) for 2–3 a blow, and a Skeleton died in 8 swings. My first script set `yaw` without the camera, so the misses may be mine. Whether the same seed should roll different foes for two characters at level 1 is the co-op rules' question (*a dungeon's foes come from a seeded stream*); I did not trace where the variants come from.
+
+**What worked well.**
+- The townhouse's hall at noon (`2026-10-26-townhouse-arrive-noon.png`): the dog-leg stair straight ahead, the open door to the front room on the left, flagstones, the hall narrow as such halls are. 18,235 tris and 53 draws, as the entry says. The street at night (`-townhouse-street-night.png`) is dark with a few lit windows.
+- First Words. Ten Dunmore openings: *Weaver keep you, friend.*, *A face from home. Come in out of it.* (four of ten), the apothecary's *You look like you've been drinking from streams. Sit.*, the merchant's *Buying or selling? Both is fine.* No census and no verdict. In the Aurennais port: *Master. Welcome, on account.*, *Good day, Master. From the Gatelands, I take it.* (twice), and the town's Gatelanders *Weaver keep you, friend.* and *You walked. Sit.* One line reads as enough; it reads as a town that knows its own. *A face from home* four times in ten is the one thing that wears.
+- The courtyard house from its door at noon (`-courtyard-in-noon.png`): the vestibule's zellige dado, arches framing the fountain, orange trees in pots, the gallery's lattice above. It reads as Aurenne at once. From the shore it is a tall white cube with four screened windows (`-courtyard-street-noon.png`): it looks in, not out, as designed, and beside the church's blue dome it reads as the better house rather than a blank box.
+- The Phantom (`2026-10-26-shadows-ghost.png`): at 5 m on the kit's body, a clear blue robe floating clear of the floor, arms out with the claws, a health bar over it. It reads as a ghost from across the nave.
+
+**The recent *Needs eyes*, from this run**
+- *1437 (ten lights in a townhouse; too bright upstairs?):* yes. On the top floor by the chest, 23h is orange and its highlights are brighter than noon's: luminance median 90 and 90th percentile 156 at 23h, against 111 and 136 at 13h (`-townhouse-top-noon.png`, `-top-night.png`). The fires burning by day and night are why. S1405's cottage at night is a median 42. I would put the townhouse's upper fires out by night, or the room at the cottage's figure.
+- *1425 (13 lights in the courtyard house at night):* bright too. From the vestibule at 22h30 the median is 92 against 136 at noon (`-courtyard-in-night.png`), and the court, open to the sky, is warm and evenly lit, so the night only shows in the moon on the clock. The lantern 2.3 m over the way in was not in my frame.
+- *1436, 1439 (a witness on her own floor; the guard climbing):* I lifted the top-floor chest with Eilís out, so no witness was tested. I did not bring the guard upstairs. The guard's climb (glide or walk) needs a real screen.
+- *1432 (one line enough?):* above. It is enough.
+- *1429 (the ghosts' arms, the wraith's violet eyes):* the Phantom's arms read out to the sides at 5 m, more a looming reach than a shrug. I did not get a Wraith in frame.
+- *1428 (the phantom's face):* not judged at 5 m; the face is too small in the frame.
+- *1404, 1409 (the Hollowed, the Ghoul, the Ash Wight):* not met in the Dungeon of Shadows.
+- *1433, 1420 (the blizzard, heavy rain, sight in metres):* not judged. `devWeather` sets the next weather and turns over through the shift; four seconds of world ticks did not bring it, and I did not wait it out.
+- *1434, 1435 (the cloak's arms held, stiff?):* not judged headless; nobody I stood near was cloaked, and I did not wear one.
+- *1431 (silent meetings):* not watched.
+- *1419 (the courtyard house in the street):* above; it reads as the better house.
+- *1405, 1406 (the cottage's night and its lobby):* not visited this run.
+- *1400 (the ring's dark):* the Dungeon of Shadows' ring is on floor two; not reached.
+- *1401, 1402 (the mantle's pull):* not climbed.
+- *1413, 1426 (the forge's tub, the guards' spears):* not seen.
+- *1403, 1408, 1410–1412, 1414, 1415, 1417, 1418, 1421–1424, 1427, 1430, 1438:* suites, prototypes and costs, with nothing to play, or nothing seen that differs.
+
+### Backlog notes (not changed)
+- Nothing done-but-unmarked found this run.
