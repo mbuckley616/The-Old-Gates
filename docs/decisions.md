@@ -25,6 +25,16 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 
 **Recommendation: A.** The farm has someone in it, and you find the farmer where the farm is.
 
+### Light indoors — how bright a room is by night (from the concept artist, 2026-10-26, #765)
+**The question.** Backlog L12, "Light indoors" (OG-141; cards F2 and F3). Today each room has lights and an exposure set by hand; the critic measured the townhouse's top floor brighter in its highlights at 23h than at noon. The prototype (`docs/prototypes/levelup/light.html`) lights the cottage, the longhouse and the Aurenne flat by one rule, from each room's own windows, fires, lamps and louver. Left open: how bright a room should be by night against the day (the frame's median, 0–255, night against noon).
+
+**Options.**
+- **A.** Always readable: the eye opens fully, every room reads the same at noon and midnight, only warmer. Cottage 79/81, flat 80/79.
+- **B.** Only what the room's lights give: pools of firelight and black corners. Cottage 35/60, longhouse 4/7, flat 23/64.
+- **C (recommended).** The lights, and the eye half open: B's lights over a dim fill. Night is plainly night, the hearth is the room's light, the corners still show the furniture. Cottage 43/65, longhouse 15/21, flat 37/64.
+
+**Recommendation: C.** Pictures: `docs/prototypes/levelup/light-options.jpg` and `light-noon.jpg` on `auto/concept-1026`; the approach and costs in `docs/concepts.md`.
+
 ## Answered
 ### Does a foe's spear reach as far as yours? (from the systems builder, 2026-10-26, #755)
 **The question.** Your 1 A on #745 gave *your* spear a 2.4 m thrust in a 40° line (Session 1456, PR #754). Three foes carry a spear today: the Skeleton (one in two), the Ash Wight, and a Deserter when it rolls one. They still strike with the sword's reach, 1.6 m, in the humanoid's 90° arc (`foeWeaponReach`), so with your spear you outreach each of them by 0.8 m. The town guards fight by their own code, which this question does not touch. Should the foes' spears match yours?
