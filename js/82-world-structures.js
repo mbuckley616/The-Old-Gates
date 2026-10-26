@@ -953,8 +953,8 @@
     else{t.position.set(-.26,.42,.14);t.rotation.z=.3;n.g.add(t);}
     n._torch=t;return t;
   }
-  // A few words when two of them meet: bubbles over both heads for a moment.
-  const PLEASANTRIES=["Morning.","Fine day for it.","Mind the road after dark.","Any news from the coast?","Heard the wolves again last night.","Keep well.","The smith's prices, eh?","Rain's coming, I can feel it.","Good to see you.","Aye.","Watch yourself out there.","Bread's dear this week."];
+  // A line over a head, for the duel's yard (87). Two townsfolk who meet stop and face each other, and say nothing
+  // you can read: no bubble over a head while you walk about (Michael, 18 Oct 2026; Session 1431).
   const _bubbleTex={};
   function bubbleFor(text){
     if(_bubbleTex[text])return _bubbleTex[text];
@@ -971,16 +971,15 @@
   }
   let _chatT=0;
   function tickChatter(dt){
-    for(const n of npcs){if(n._bubble){n._bubbleT-=dt;if(n._bubbleT<=0){n.g.remove(n._bubble);n._bubble=null;}}}
+    for(const n of npcs){if(n._met>0)n._met-=dt;if(n._bubble){n._bubbleT-=dt;if(n._bubbleT<=0){n.g.remove(n._bubble);n._bubble=null;}}}
     _chatT-=dt;if(_chatT>0)return;_chatT=1.2;
     const near=npcs.filter(n=>n.g.visible&&!n._bubble&&Math.hypot(px-n.g.position.x,pz-n.g.position.z)<45);
     for(let i=0;i<near.length;i++)for(let j=i+1;j<near.length;j++){
-      const a=near[i],b=near[j];if(a._bubble||b._bubble)continue;
+      const a=near[i],b=near[j];if(a._bubble||b._bubble||a._met>0||b._met>0)continue;
       const d=Math.hypot(a.g.position.x-b.g.position.x,a.g.position.z-b.g.position.z);
       if(d<2.4&&Math.random()<.35){
         a.g.rotation.y=Math.atan2(b.g.position.x-a.g.position.x,b.g.position.z-a.g.position.z);b.g.rotation.y=a.g.rotation.y+Math.PI;
-        sayBubble(a,pick(Math.random,PLEASANTRIES));setTimeout(()=>{if(b.g.visible)sayBubble(b,pick(Math.random,PLEASANTRIES));},900);
-        a.wt=Math.max(a.wt||0,4);b.wt=Math.max(b.wt||0,4);a._tgt=null;b._tgt=null;
+        a.wt=Math.max(a.wt||0,4);b.wt=Math.max(b.wt||0,4);a._tgt=null;b._tgt=null;a._met=b._met=4.1;
       }
     }
   }
