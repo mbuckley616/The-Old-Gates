@@ -438,14 +438,19 @@
   /* S1244 — indoors a witness sees within 8.7 m (Michael's B on #516): Session 167's six in the old unit, at true scale (6 × ROOM_K, 1.444),
      so a keeper at a kit shop's counter sees through an open back-room door to the box, not through a shut one; Quiet work halves it */
   const WIT_IN=8.7;
+  /* S1434 — a witness indoors sees you on their own floor only: the line (intSightLine) is cut by walls at your eye, but no floor
+     stops it, so in a home of three storeys the resident below saw you on the floor above (#728's townhouses). The same 1.6 m as the
+     talk's same level (S13); a body's floor is userData.floorY when it has one (a resident woken in an upstairs bed), else its feet */
+  function intFloorOf(o){const f=o&&o.userData&&o.userData.floorY;return f!=null?f:(o?o.position.y:0);}
+  function intSameFloor(o){return Math.abs((typeof jumpY==='number'?jumpY:0)-intFloorOf(o))<1.6;}
   function intFaces(o){const dx=px-o.position.x,dz=pz-o.position.z,d=Math.hypot(dx,dz);if(d<1e-3)return true;return (Math.sin(o.rotation.y)*dx+Math.cos(o.rotation.y)*dz)/d>=INT_FOV;}
   function witnessOf(house,picking){const quiet=!!picking&&perk('locks',75); /* S973 — Quiet work (Locks 75): a pick is seen from half as far */
     const sneak=(typeof _sneaking!=='undefined')&&_sneaking;let R=cloakOn('hood')?11:12;if(quiet)R*=.5;if(sneak)R*=.5*(1-.4*skillLv('stealth')/100)*inTheDarkMult(); /* S941 — Stealth; S976 — In the dark (Stealth 50) */ /* S552 — the dark hood */if(isNight())R*=.5;
     const scath=gateGift('scath')&&(()=>{const h=((worldState.gameTimeMinutes||0)%1440)/60;return h>=20||h<5;})();if(scath)R=Math.min(R,4); /* S1349 — Scáth's gift: at night, 4 m */
     if(typeof isInterior==='function'&&isInterior()){const inR=Math.min(quiet?WIT_IN/2:WIT_IN,scath?4:1e9); // indoors: whoever is in the room with you, facing you, and can see you
       if(sleeperNear()){wakeSleeper(intNPCMesh,true);return {name:currentHouse.keeper||'the resident'};} /* S739 — a sleeper sees nothing, and hears within two units */
-      if(typeof intNPCMesh!=='undefined'&&intNPCMesh&&!sleeperAsleep()&&Math.hypot(px-intNPCMesh.position.x,pz-intNPCMesh.position.z)<inR&&intFaces(intNPCMesh)&&intSightLine(intNPCMesh.position.x,intNPCMesh.position.z,px,pz,true))return {name:currentHouse.keeper||'the keeper'};
-      const m=(INT_NPCS||[]).find(n=>Math.hypot(px-n.g.position.x,pz-n.g.position.z)<inR&&intFaces(n.g)&&intSightLine(n.g.position.x,n.g.position.z,px,pz,true));return m?{name:(m.def&&m.def.name)||'someone'}:null;}
+      if(typeof intNPCMesh!=='undefined'&&intNPCMesh&&!sleeperAsleep()&&intSameFloor(intNPCMesh)&&Math.hypot(px-intNPCMesh.position.x,pz-intNPCMesh.position.z)<inR&&intFaces(intNPCMesh)&&intSightLine(intNPCMesh.position.x,intNPCMesh.position.z,px,pz,true))return {name:currentHouse.keeper||'the keeper'};
+      const m=(INT_NPCS||[]).find(n=>intSameFloor(n.g)&&Math.hypot(px-n.g.position.x,pz-n.g.position.z)<inR&&intFaces(n.g)&&intSightLine(n.g.position.x,n.g.position.z,px,pz,true));return m?{name:(m.def&&m.def.name)||'someone'}:null;}
     // S705 — the street as the shop (Michael's A on #222): a townsperson or guard sees in the same 120° cone the way they face,
     // to the same ranges; within two units they hear you whichever way they face
     let best=null,bd=R;for(const n of npcs){if(!n.g.visible||n._retreated)continue;const d=Math.hypot(px-n.g.position.x,pz-n.g.position.z);if(d>=bd)continue;if(d>=WIT_HEAR&&!intFaces(n.g))continue;if(!clearLine(px,pz,n.g.position.x,n.g.position.z))continue;best=n;bd=d;}
@@ -465,7 +470,7 @@
   function wakeSleeper(m,woken){if(!m||!m.userData.asleep)return false;const b=m.userData.asleep;m.userData.asleep=null;if(typeof personRise==='function')personRise(m);if(woken)m.userData.woke=true;
     const am=m.userData.amble;if(am){am.paused=!!am.stand;am.wt=1.5;}
     let x=b.x+1.1,z=b.z+.6;for(const [ox,oz] of [[1.1,.6],[1.1,1.4],[0,1.6],[1.1,-.2]]){if(!intSolidAt(b.x+ox,b.z+oz,.3,b.y)){x=b.x+ox;z=b.z+oz;break;}}
-    m.rotation.set(0,woken?Math.atan2(px-x,pz-z):Math.PI,0);m.position.set(x,b.y,z);intNPCPos.x=x;intNPCPos.z=z;return true;}
+    m.rotation.set(0,woken?Math.atan2(px-x,pz-z):Math.PI,0);m.position.set(x,b.y,z);m.userData.floorY=b.y||0; /* S1434 — she stands on the bed's floor, and the loop's breath keeps her there */intNPCPos.x=x;intNPCPos.z=z;return true;}
   function sleeperNear(){const b=sleeperAsleep()&&intNPCMesh.userData.asleep;return !!b&&Math.hypot(px-b.x,pz-b.z)<WIT_HEAR&&Math.abs(jumpY-b.y)<1.2;}
   // S770 — woken in the night (Michael's A on #255): the first talk after a householder is woken while the house sleeps opens with a
   // night line by her people, and the introduction is not first. No crime. WOKEN_LINES is the quest writer's, one line per people

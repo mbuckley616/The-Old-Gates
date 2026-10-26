@@ -1037,7 +1037,7 @@ function loop(now){
         intNPCMesh.rotation.y=0+Math.sin(swT*.4)*.08;
       }
       // Subtle unified breath bob — same scale as exterior NPCs
-      intNPCMesh.position.y=Math.sin(swT*1.4)*.006;
+      intNPCMesh.position.y=(intNPCMesh.userData.floorY||0)+Math.sin(swT*1.4)*.006; /* S1434 — on her own floor (a resident woken upstairs) */
       const armSwing=am&&!am.paused?Math.sin(swT*3.2)*.28:Math.sin(swT*1.2)*.08;
       // Arms are children index 3 and 4 in buildNPCMesh (after body=0,head=1,eyes=2)
       if(intNPCMesh.children[3])intNPCMesh.children[3].rotation.x= armSwing;
