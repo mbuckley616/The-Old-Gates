@@ -685,6 +685,7 @@ if (!process.argv.includes('--shots-only')) { const page = await browser.newPage
   for (const x of r.roll) { check(`genome ${x.seed} (${x.style}) saves and loads back to itself (${x.bytes} bytes)`, x.same && x.bytes < 1000, x);
     check(`genome ${x.seed}: the same seed rolls the same genome`, x.again);
     check(`genome ${x.seed}: brows of ${x.brows.hairs} hairs, every root on the skin (${x.brows.roots} of ${x.brows.tried}), lying flat (tips ${(x.brows.lift * 1000).toFixed(1)} mm off it)`, x.brows.hairs > 500 && x.brows.roots === x.brows.tried && x.brows.lift < .003, x.brows); check(`genome ${x.seed}: the brow's head combed up and out, not upright (its hairs ${x.brows.headUp} of vertical on average), none past the brow's top by more than 1.5 mm (${(x.brows.over * 1000).toFixed(1)} mm)`, x.brows.headUp < .75 && x.brows.over < .0015, x.brows);
+    check(`genome ${x.seed}: the brow thins to its upper edge (${x.brows.top} roots in its top 30%, ${x.brows.mid} in the 35% of its lower middle) and ${x.brows.strays} fine strays sit under it`, x.brows.top / .3 < .5 * x.brows.mid / .35 && x.brows.strays > 20, x.brows);
     check(`genome ${x.seed}: a loaded genome builds the same body and hair, twice`, x.body); }
   for (const [k, s] of Object.entries(r.styles)) { console.log(k, JSON.stringify(s));
     check(`${k}: builds (${s.strands} strands, ${s.tris} triangles, ${s.ms} ms)`, s.strands > 500 && s.tris > 10000);
