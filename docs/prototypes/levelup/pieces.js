@@ -245,7 +245,7 @@ export function aurenneCourtyard(o = {}, r = stream('courtyard')) {
   const H0 = F1 - yW, top = Yr(h) + .45, H1 = top - F1, Hc = Yr(C + Ti / 2) - RT - F1;
   // ── the outer walls, by storey: the street door; small barred windows below (the house looks in, not out); arched windows above,
   // latticed on the street
-  const door = { at: 0, y: 0, w: 1.3, h: 2.6, arch: 1, door: 1 }, upY = .75, win = (at, y, w, ht, arch = 1) => ({ at, y, w, h: ht, arch });
+  const door = { at: 0, y: 0, w: 1.1, h: 2.65, arch: 1, door: 1 }, upY = .75, win = (at, y, w, ht, arch = 1) => ({ at, y, w, h: ht, arch });
   put(box(S + .16, pl, S + .16), 'plinth', 0, pl / 2, 0);
   const outer = { front: [[door, win(-4.6, 1.5, .55, .75, 0), win(4.6, 1.5, .55, .75, 0)], [-4.6, -2.0, 2.0, 4.6].map(x => win(x, upY, .72, 1.25))],
     back: [[-4.4, 4.4].map(x => win(x, 1.6, .55, .7, 0)), [-5.0, -2.2, 2.2, 5.0].map(x => win(x, upY, .66, 1.1))], side: [[win(0, 1.5, .55, .75, 0)], [-1.9, 1.9].map(z => win(z, upY, .66, 1.1))] };
@@ -255,10 +255,13 @@ export function aurenneCourtyard(o = {}, r = stream('courtyard')) {
   // the cornice: four bars round the top of the outer walls
   const cornice = []; { const t2 = .5; for (const sz of [-1, 1]) cornice.push([0, sz * (h - t2 / 2 + .1), S + .2, t2]); for (const sx of [-1, 1]) cornice.push([sx * (h - t2 / 2 + .1), 0, t2, S + .2 - 2 * t2]); }
   put(box(S + .3, .14, .24), 'stone', 0, F1 - .02, h + .07); /* a string course over the door */
-  // the street door: a tile frame, a stone step, its leaf of studded cedar boards (left off when the rooms hang it open)
-  { const sh2 = door.h - door.w / 2, dz = h - T * .7; if (!o.interior) { for (let i = 0; i < 6; i++) put(box(door.w / 6 - .012, sh2 + .02, .06), doorK, -door.w / 2 + (i + .5) * door.w / 6, yW + sh2 / 2, dz);
-      put(new THREE.CylinderGeometry(door.w / 2, door.w / 2, .06, 16, 1, false, -Math.PI / 2, Math.PI), doorK, 0, yW + sh2, dz, 0, -Math.PI / 2);
+  // the street door: a tile frame, a stone step, its leaf of studded cedar boards to the arch's spring (left off when the rooms hang it
+  // open), a cedar transom there and a fanlight of cedar spokes in the half-round (Session 1466: a house door's leaf is 2.1 m, as the
+  // townhouse's and the coaching inn's are 2.2 under their fanlights, #514 A; the leaf had been 2.6 m to its crown, a church's)
+  { const sh2 = door.h - door.w / 2, dz = h - T * .7, R = door.w / 2; if (!o.interior) { for (let i = 0; i < 6; i++) put(box(door.w / 6 - .012, sh2 + .02, .06), doorK, -door.w / 2 + (i + .5) * door.w / 6, yW + sh2 / 2, dz);
       for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) put(new THREE.SphereGeometry(.025, 6, 4), 'iron', -.45 + j * .3, yW + .4 + i * .5, dz + .04); }
+    put(box(door.w + .02, .1, .12), 'cedar', 0, yW + sh2 + .05, dz); for (let i = 1; i < 6; i++) { const a = i * Math.PI / 6, g = box(.035, R - .1, .04); g.translate(0, (R - .1) / 2, 0); g.rotateZ(a - Math.PI / 2); put(g, 'cedar', 0, yW + sh2 + .1, dz); }
+    put(new THREE.TorusGeometry(R * .55, .02, 4, 10, Math.PI), 'cedar', 0, yW + sh2 + .1, dz);
     put(box(door.w + .5, .12, .5), 'stone', 0, yW - .04, h + .2); const tz = h + .02, ts = .2, tp = yW + door.h + .14;
     for (const sx of [-1, 1]) put(box(ts, tp - yW - .05, .03), 'zellige', sx * (door.w / 2 + .2), yW + .05 + (tp - yW - .05) / 2, tz); put(box(door.w + .4 + ts, ts, .03), 'zellige', 0, tp + ts / 2, tz); }
   // windows: stone sills, iron bars below; lattice screens on brackets upstairs on the street; plain bars elsewhere
