@@ -72,7 +72,7 @@ check(`by bays: a person fits (the bed ${mm(COT, x => x.bedIn).join(' to ')} m i
 // no two pieces in each other; the way from the front door down the left of the hearth and through the partition clear by 0.15 m, with
 // 2.1 m or more under the tie beams; a person fits (benches 0.40 to 0.48 m high and 0.9 m deep or more, the bed 1.85 m or more, the
 // doors 1.9 m or more); the fire on its hearth, under the louver.
-// By size (Session 1450): the same checks over the game's halls (PKIT.mk.lot fitted to the lot: 5.6 to 8.4 m wide, 6.5 to 14.5 deep),
+// By size (Session 1452): the same checks over the game's halls (PKIT.mk.lot fitted to the lot: 5.6 to 8.4 m wide, 6.5 to 14.5 deep),
 // shingle and turf, with a louver and with a chimney: nothing in the stack, the walk clear of it, the fire on the peis against it; and
 // the walk clear by 0.3 m (a body's half-width) everywhere, the drawn hall included.
 const LH = [{}, {}, {}, {}].map((o, i) => ({ o, key: 'longhouse:' + i }));

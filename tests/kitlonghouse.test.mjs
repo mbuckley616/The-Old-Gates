@@ -1,5 +1,5 @@
-// The Mark's longhouse inside a Markish home on the new look (Session 1451; card F9, Michael's A on DECISION #311, as drawn, and on #303:
-// the rooms inside the street's own shell; laid out by size in Session 1450). On ?look=new a Markish home stands as the kit's hall
+// The Mark's longhouse inside a Markish home on the new look (Session 1453; card F9, Michael's A on DECISION #311, as drawn, and on #303:
+// the rooms inside the street's own shell; laid out by size in Session 1452). On ?look=new a Markish home stands as the kit's hall
 // fitted to its lot (S1286); inside it is PKIT.mk.longhouse in that hall's own shell and options, at its true size, not scaled: the drawn
 // plan (the long hearth, the partition and the family quarters) where it fits, else one room with a bench bed, and a hall with a chimney
 // round a peis at the stack. In the first Markish town, one home of each plan (the drawn one on a home given the drawn hall's size if
@@ -10,7 +10,7 @@
 import { boot, check } from './lib/game.mjs';
 import path from 'path'; import { fileURLToPath } from 'url';
 const here = path.dirname(fileURLToPath(import.meta.url));
-// the prototype's counts (rooms.check.mjs, Session 1450: 2,364 to 5,744 triangles in 18 meshes or fewer over 76 sizes)
+// the prototype's counts (rooms.check.mjs, Session 1452: 2,364 to 5,744 triangles in 18 meshes or fewer over 76 sizes)
 const PROTO = { min: 2300, max: 5800, draws: 18 };
 const pickTown = () => { anchoredPlaces(); const S = [...CELLS.values()].filter(c => c.type !== 'sea' && nationKeyOf(c.i, c.j) === 'mark').flatMap(c => c.sites); return (S.find(s => s.kind === 'town') || {}).id; };
 

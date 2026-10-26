@@ -147,7 +147,7 @@ function longMats() {
     herb: mat('thatch', { ns: .6, color: 0x7a8a4a, rough: 1 }), log: mat('beam', { ns: 1.4, color: 0x6a5040 }) };
   return LM;
 }
-// By size (Session 1450, card F9; for the game's halls, 5.6 to 8.4 m wide and 6.5 to 14.5 m deep, PKIT.mk.lot's mix): o.w, o.d and the
+// By size (Session 1452, card F9; for the game's halls, 5.6 to 8.4 m wide and 6.5 to 14.5 m deep, PKIT.mk.lot's mix): o.w, o.d and the
 //   shell's own o.roof, o.turf, o.porch, o.chimney, o.carve and o.wall (a stream key in o.shell) build the room inside the hall the street
 //   stands. With no options it is the hall as drawn, unchanged. The drawn plan (the partition and the family quarters) needs a louver
 //   hall deep enough for the long hearth between the partition and the door; any other hall is one room: the bed a bench bed of furs at
@@ -156,7 +156,7 @@ function longMats() {
 //   the stack's face to the axis (the hunting cabin's, Session 1199) in place of the long hearth, the bed on the right, the walk down
 //   the axis; the posts and the bench give way round the stack. Under 5.8 m inside (X < 2.9) the benches are 0.9 m deep and the posts
 //   1.0 m in, so the aisle each side of the hearth is 0.6 m or more.
-//   o.chest false leaves the drawn chest out (the game's own, that opens, stands in its place; Session 1451).
+//   o.chest false leaves the drawn chest out (the game's own, that opens, stands in its place; Session 1453).
 //   -> also { plan: 'parted' | 'one', chimney, stack, peis, chest } (doors and partition are [] and null in one room).
 export function markLonghouse(o = {}, r = stream('longhouse')) {
   const w = o.w ?? 7.6, d = o.d ?? 14, chim = !!o.chimney, hall = markHall({ roof: o.roof || 'shingle', turf: o.turf, w, d, porch: o.porch ?? true, chimney: chim, carve: o.carve ?? true, wall: o.wall ?? 1, interior: true }, stream(o.shell || 'longhouse-shell'));

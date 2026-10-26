@@ -2022,9 +2022,9 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     else{intNPCMesh=null;intNPCPos={x:-99,z:-99};}
     return sc_;
   }
-  // S1451 (card F9, Michael's A on #311 and #303; OG-115) — on the new look a Markish home standing as the kit's hall (lot.kit.kind
+  // S1453 (card F9, Michael's A on #311 and #303; OG-115) — on the new look a Markish home standing as the kit's hall (lot.kit.kind
   // 'markhall', S1286, fitted to its lot: 5.6 to 8.4 m wide, 6.5 to 14.5 deep) is the Mark's longhouse inside (PKIT.mk.longhouse,
-  // rooms.js's Session 870, laid out by size in Session 1450), in the street's own shell with its own options: the drawn plan (the long
+  // rooms.js's Session 870, laid out by size in Session 1452), in the street's own shell with its own options: the drawn plan (the long
   // hearth under the louver, the partition and the family quarters) where it fits, else one room, the bed a bench bed of furs at the back
   // of a wall bench; a hall with a chimney round a peis at the shell's stack. Drawn in metres and moved into the room's frame as the
   // alehall is (nothing scaled). The bed is the resident's, head to the back wall (-z); the home's chest takes the drawn chest's place.
@@ -2253,7 +2253,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     if(kitCottage(house))return buildKitCottage(house); /* S1392 — a Gatelands village's cottage inside, at its true size */
     if(kitTownhouse(house))return buildKitTownhouse(house); /* S1437 — a Gatelands town's townhouse inside, at its true size */
     if(kitCourtHouse(house))return buildKitCourtHouse(house); /* S1425 — Aurenne's courtyard house inside, at its true size */
-    if(kitLonghouse(house))return buildKitLonghouse(house); /* S1451 — a Markish home: the longhouse inside, at its true size */
+    if(kitLonghouse(house))return buildKitLonghouse(house); /* S1453 — a Markish home: the longhouse inside, at its true size */
     if(kitChurchHall(house))return buildKitChurchHall(house); /* S1326 — the Church of the Weaver inside, at its true size */
     const two=!!house.two;
     // S896 (F2a) — the room's true size in metres (07-scale.js; visual-foundation.md §1: a cottage room 4 to 6 across, an inn's hall

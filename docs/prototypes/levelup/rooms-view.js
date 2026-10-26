@@ -4,7 +4,7 @@
 // &hour=morning | noon (default) | golden | night. &cam=x,y,z,tx,ty,tz puts the camera anywhere.
 // ?room=longhouse (Session 870): the Markish longhouse. view=hall (default): from inside the door down the hall past the fire;
 // view=hearth: across the fire to the benches; view=larder: the larder and the workshop by the door; view=back: through the partition's
-// doorway into the family quarters; view=outside: the hall from its yard. By size (Session 1450): &lw=&ld= (the game's 5.6-8.4 by 6.5-14.5),
+// doorway into the family quarters; view=outside: the hall from its yard. By size (Session 1452): &lw=&ld= (the game's 5.6-8.4 by 6.5-14.5),
 // &chimney=1 (the fire on a peis at the stack), &roof=turf; view=back in one room looks at the bench bed.
 // ?room=home (Session 891): Aurenne's flat over a dyer's shop. view=shop (default): from the door into the shop; view=stair: from the shop
 // to the stair's foot; view=flat: upstairs from the landing to the divan; view=kitchen: the cooking bench and its pots; view=roof: the
