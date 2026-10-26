@@ -5,6 +5,8 @@
 // sword or an axe 1.6) in 90°; a wolf engages at 0.6 after a lunge of 1.5 and bites within 0.9 in 70°; a spider or a bear
 // engages at 0.8 and strikes within 1.2 in 100°; a troll engages at 1.6 and sweeps 2.4 in 140°; the Faolchú bites at its
 // biteRange less 0.9. Each engage is measured in the open world's own tick (tickZoneEnemies) and the wolf's lunge by its bite.
+// S1462 (Michael's A on #755): a foe's spear is your Spear's row, 2.4 in a 40° line, and it engages 0.8 farther out (2.0); a
+// Bandit handed a spear stands for the Skeleton, the Ash Wight and a Deserter that carry one.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
@@ -14,6 +16,7 @@ const SHEET = {
   Bandit: { hull: .30, engage: 1.2, arc: 90 }, Cultist: { hull: .30, engage: 1.2, blow: 1.2, arc: 90 },
   Wolf: { hull: .35, engage: .6, lunge: 1.5, blow: .9, arc: 70 }, Spider: { hull: .6, engage: .8, blow: 1.2, arc: 100 },
   'Cave Bear': { hull: .6, engage: .8, blow: 1.2, arc: 100 }, 'Cave Troll': { hull: .8, engage: 1.6, blow: 2.4, arc: 140 },
+  'Bandit (spear)': { hull: .30, engage: 2.0, blow: 2.4, arc: 40 },
 };
 const WPN = { dagger: 1.2, sword: 1.6, axe: 1.6 };
 const r = await page.evaluate((kinds) => {
@@ -24,7 +27,8 @@ const r = await page.evaluate((kinds) => {
   const place = (e, d, ang) => { const a = Math.atan2(fwdX, fwdZ) + (ang || 0); e.x = px + Math.sin(a) * d; e.z = pz + Math.cos(a) * d; if (e.mesh) e.mesh.position.set(e.x, e.mesh.position.y, e.z); };
   const reset = e => { e.dead = false; e.alert = true; e.locked = false; e.atkCd = 0; e.telegraphT = 0; e._windup = null; e.hp = e.maxHp; delete e.staggerUntil; };
   for (const k of kinds) {
-    const e = buildZoneEnemy(sc, [], px + 40, pz + 40, k, null); ZE.length = 0; ZE.push(e);
+    const e = buildZoneEnemy(sc, [], px + 40, pz + 40, k.replace(' (spear)', ''), null); ZE.length = 0; ZE.push(e);
+    if (/spear/.test(k)) e.limbs.person.g.gear = 'spear';
     // engage: stepped in by 0.05 from 5 m, one tick of a tenth of a millisecond each (it does not walk), the first tell
     let engage = null;
     for (let c = 500; c > 20; c -= 5) { const d = c / 100; reset(e); place(e, d); tickZoneEnemies(1e-4, performance.now(), sc); if (e.telegraphT > 0) { engage = d; break; } }
