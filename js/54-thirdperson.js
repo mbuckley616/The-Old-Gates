@@ -23,7 +23,7 @@ const LOOK_BOOTS=[0x2a1c10,0x4a3018,0x1a1a1a,0x5a4a3a];
 // fur-lined, the Aurennais short cape to the waist with a gold hem, the pilgrim's grey with its hood
 const TP_CLOAK={wool:{col:0x6a5a46,cut:'long'},hood:{col:0x24242a,cut:'long',hood:true},oilskin:{col:0x4e4a2e,cut:'long'},
   fur:{col:0x4a382a,cut:'long',fur:0x9a8a70},cape:{col:0x2a3a7a,cut:'short',trim:0xc8a040},pilgrim:{col:0x8a8880,cut:'long',hood:true}};
-const LOOK_STYLES=[['short','Cropped'],['long','Long'],['tied','Tied back'],['bald','Shorn'],['braid','A braid'],['twin','Two braids'],['warrior','Warrior braids'],['mohawk','A crest'],['curly','Curly'],['afro','An afro'],['shaggy','Shaggy'],['bun','A bun'],['thin','Thinning']];
+const LOOK_STYLES=[['short','Cropped'],['long','Long'],['tied','Tied back'],['bald','Shorn'],['braid','A braid'],['twin','Two braids'],['warrior','Warrior braids'],['mohawk','A crest'],['curly','Curly'],['afro','An afro'],['shaggy','Shaggy'],['bun','A bun'],['thin','Thinning']].concat(window.OG_LOOK==='new'?[['crown','A crown braid'],['plait','A plait over the shoulder']]:[]);
 const LOOK_BEARDS=[['no','None'],['full','Full'],['short','Trimmed'],['long','Long'],['braided','Braided'],['forked','Forked'],['goatee','Goatee'],['vandyke','Goatee and moustache'],['walrus','Walrus'],['handlebar','Handlebar'],['pencil','Pencil'],['horseshoe','Horseshoe'],['mutton','Mutton chops'],['chinstrap','Chinstrap'],['stubble','Stubble']];
 function lookDefault(pp,arch,name){let P=null;try{P=WORLD.PEOPLES[pp];}catch(e){}const h=[...(name||'you')].reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,7);
   return {skin:P&&P.skin?P.skin[h%P.skin.length]:0xd4a878,hair:P&&P.hair?P.hair[(h>>3)%P.hair.length]:0x3a2a1a,style:h%3===0?'long':'short',beard:false,tunic:arch==='mage'?0x2a3a6a:arch==='rogue'?0x2a2a2a:0x5a2a20,breeches:0x3a2a1a,boots:0x2a1c10};}
@@ -53,7 +53,7 @@ const TP_LINEN=0xa89c80;
 // from before F10; F13 maps those) is rolled from its seed, `player:<name>`, inside its people's ranges, the same on every load.
 // The look's choices are laid over it: the skin, the hair's colour and cut, the beard, the body (man or woman), the height and the
 // build. What is worn is not in it: tpHBDress dresses a copy from EQ on each build, as tpBuild dresses the old body.
-const LOOK_HB_STYLE={short:['short',.22],long:['loose',.7],tied:['tail',.6],bald:['short',.03],braid:['braid',.75],twin:['braids',.7],warrior:['braids',.55],mohawk:['short',.3],curly:['short',.35],afro:['short',.42],shaggy:['loose',.45],bun:['bun',.65],thin:['short',.12]};
+const LOOK_HB_STYLE={short:['short',.22],long:['loose',.7],tied:['tail',.6],bald:['short',.03],braid:['braid',.75],twin:['braids',.7],warrior:['braids',.55],mohawk:['short',.3],curly:['short',.35],afro:['short',.42],shaggy:['loose',.45],bun:['bun',.65],thin:['short',.12],crown:['crown',.8],plait:['plait',.8]};
 const LOOK_HB_BEARD={no:0,stubble:.12,pencil:.18,goatee:.35,chinstrap:.35,short:.45,vandyke:.45,mutton:.5,handlebar:.5,horseshoe:.55,walrus:.6,full:.85,long:1,braided:1,forked:1};
 const LOOK_HB_TALL=[[0,'Short'],[.5,'Middling'],[1,'Tall']],LOOK_HB_BUILD=[[0,'Slight'],[.5,'Middling'],[1,'Strong']];
 const TP_HB={cache:new Map(),ms:0,n:0};
