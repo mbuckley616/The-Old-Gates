@@ -72,27 +72,39 @@ check(`by bays: a person fits (the bed ${mm(COT, x => x.bedIn).join(' to ')} m i
 // no two pieces in each other; the way from the front door down the left of the hearth and through the partition clear by 0.15 m, with
 // 2.1 m or more under the tie beams; a person fits (benches 0.40 to 0.48 m high and 0.9 m deep or more, the bed 1.85 m or more, the
 // doors 1.9 m or more); the fire on its hearth, under the louver.
-const L = await page.evaluate(async () => { const K = await import('./rooms.js'), S = await import('./pieces.js'), out = [];
+// By size (Session 1452): the same checks over the game's halls (PKIT.mk.lot fitted to the lot: 5.6 to 8.4 m wide, 6.5 to 14.5 deep),
+// shingle and turf, with a louver and with a chimney: nothing in the stack, the walk clear of it, the fire on the peis against it; and
+// the walk clear by 0.3 m (a body's half-width) everywhere, the drawn hall included.
+const LH = [{}, {}, {}, {}].map((o, i) => ({ o, key: 'longhouse:' + i }));
+for (const w of [5.6, 6.2, 7.0, 7.6, 8.4]) for (const d of [6.5, 7.5, 9, 10.5, 12, 14.5]) for (const chimney of [false, true]) {
+  LH.push({ o: { w, d, chimney, porch: d > 9, shell: `lh:${w}:${d}` }, key: `lh:${w}:${d}:${chimney}` });
+  if (w <= 6.8 && d <= 11) LH.push({ o: { w, d, chimney, roof: 'turf', porch: false, shell: `lt:${w}:${d}` }, key: `lt:${w}:${d}:${chimney}` }); }
+const L = await page.evaluate(async (LH) => { const K = await import('./rooms.js'), S = await import('./pieces.js'), out = [];
   const hash = g => { let h = 0; g.traverse(m => { if (!m.isMesh) return; const a = m.geometry.attributes.position.array; for (let i = 0; i < a.length; i += 7) h = (h * 31 + Math.round(a[i] * 1e4)) | 0; }); return h; };
-  for (let i = 0; i < 4; i++) { const a = K.markLonghouse({}, S.stream('longhouse:' + i)), b = K.markLonghouse({}, S.stream('longhouse:' + i)), I = a.inner, e = .015, B = a.boxes, WP = a.tieBeam - .25;
+  for (const { o, key } of LH) { const a = K.markLonghouse(o, S.stream(key)), b = K.markLonghouse(o, S.stream(key)), I = a.inner, e = .015, B = a.boxes, WP = a.tieBeam - .25;
     const outside = B.filter(q => q.x0 < I.x0 - e || q.x1 > I.x1 + e || q.z0 < I.z0 - e || q.z1 > I.z1 + e || q.y1 > a.under(Math.max(Math.abs(q.x0), Math.abs(q.x1))) + e).map(q => q.tag);
+    const st = a.stack, inStack = (x, z) => st && x > st.x0 + .02 && x < st.x1 - .02 && z > st.z0 + .02 && z < st.z1 - .02;
     let through = 0, bad = null; a.room.traverse(m => { if (!m.isMesh) return; const P = m.geometry.attributes.position; for (let k = 0; k < P.count; k++) { const x = P.getX(k), y = P.getY(k), z = P.getZ(k);
-      if ((Math.abs(x) > I.x1 + .06 && y < WP - .05) || Math.abs(x) > I.x1 + .27 || Math.abs(z) > I.z1 + .06 || y > a.under(x) + .05 || y < a.floor - .9) { through++; if (!bad) bad = [m.name, +x.toFixed(2), +y.toFixed(2), +z.toFixed(2)]; } } });
-    const overl = []; for (let p = 0; p < B.length; p++) for (let q = p + 1; q < B.length; q++) { const A = B[p], C = B[q]; if (A.tag === C.tag) continue;
+      if ((Math.abs(x) > I.x1 + .06 && y < WP - .05) || Math.abs(x) > I.x1 + .27 || Math.abs(z) > I.z1 + .06 || y > a.under(x) + .05 || y < a.floor - .9 || (inStack(x, z) && m.name !== 'post' && m.name !== 'board')) { through++; if (!bad) bad = [m.name, +x.toFixed(2), +y.toFixed(2), +z.toFixed(2)]; } } });
+    const BB = st ? [...B, { tag: 'stack', ...st, y0: 0, y1: 99 }] : B;
+    const overl = []; for (let p = 0; p < BB.length; p++) for (let q = p + 1; q < BB.length; q++) { const A = BB[p], C = BB[q]; if (A.tag === C.tag || (A.tag === 'peis' && C.tag === 'stack')) continue;
       if (A.x0 < C.x1 - e && C.x0 < A.x1 - e && A.z0 < C.z1 - e && C.z0 < A.z1 - e && A.y0 < C.y1 - e && C.y0 < A.y1 - e) overl.push(A.tag + '/' + C.tag); }
-    const blocked = []; for (let s = 0; s + 1 < a.path.length; s++) for (let k = 0; k <= 24; k++) { const [x0, z0] = a.path[s], [x1, z1] = a.path[s + 1], x = x0 + (x1 - x0) * k / 24, z = z0 + (z1 - z0) * k / 24;
-      for (const q of B) if (q.y1 > a.floor + .1 && q.y0 < a.floor + 1.8 && x > q.x0 - .15 && x < q.x1 + .15 && z > q.z0 - .15 && z < q.z1 + .15) blocked.push(q.tag); }
-    const H = a.hearth; out.push({ same: hash(a.group) === hash(b.group), tris: a.tris, draws: a.draws, shellTris: a.shellTris, shellCalls: a.shellCalls, outside, through, bad, overl: [...new Set(overl)], blocked: [...new Set(blocked)],
-      head: +(a.tieBeam - a.floor).toFixed(2), bench: a.benches.map(q => [+(q.y - a.floor).toFixed(2), +(q.x1 - q.x0).toFixed(2)]), bed: +(a.bed.x1 - a.bed.x0).toFixed(2), doors: [[a.door.w, a.door.h], ...a.doors.map(d => [d.w, d.h])],
-      fire: a.fire[0] > H.x0 && a.fire[0] < H.x1 && a.fire[2] > H.z0 && a.fire[2] < H.z1, louver: +Math.abs(a.fire[2] - a.louver).toFixed(2) }); }
-  return out; });
-check(`the longhouse, 4 keys: the room ${mm(L, x => x.tris).join(' to ')} triangles in ${Math.max(...L.map(x => x.draws))} meshes, on the hall's ${L[0].shellTris} in ${L[0].shellCalls}; each the same twice`, L.every(x => x.same && x.tris < 30000 && x.draws <= 20));
-check(`the longhouse: every piece inside the walls and under the roof: ${Math.max(...L.map(x => x.outside.length))} pieces out, ${Math.max(...L.map(x => x.through))} points through a wall or the roof`, L.every(x => !x.outside.length && !x.through), L.map(x => x.outside.length ? x.outside : x.bad).filter(Boolean).slice(0, 2));
-check(`the longhouse: no two pieces in each other: ${Math.max(...L.map(x => x.overl.length))} clashes`, L.every(x => !x.overl.length), L.map(x => x.overl).filter(o => o.length));
-check(`the longhouse: the way from the front door past the hearth and through the partition is clear by 0.15 m (${Math.max(...L.map(x => x.blocked.length))} pieces in it), ${L[0].head} m under the tie beams`, L.every(x => !x.blocked.length && x.head >= 2.1), L.map(x => x.blocked).filter(o => o.length));
-check(`the longhouse: a person fits: benches ${L[0].bench.map(b => b.join(' m high, ') + ' m deep').join(' and ')}, the bed ${L[0].bed} m, the doors ${L[0].doors.map(d => d.join(' by ')).join(' and ')} m`,
-  L.every(x => x.bench.every(([h, d]) => h >= .4 && h <= .48 && d >= .9) && x.bed >= 1.85 && x.doors.every(([w, h]) => w >= .8 && h >= 1.9)));
-check(`the longhouse: the fire on its hearth, ${Math.max(...L.map(x => x.louver))} m from under the louver`, L.every(x => x.fire && x.louver <= .6));
+    const walk = (m, hi = .1) => { const blocked = []; for (let s = 0; s + 1 < a.path.length; s++) for (let k = 0; k <= 24; k++) { const [x0, z0] = a.path[s], [x1, z1] = a.path[s + 1], x = x0 + (x1 - x0) * k / 24, z = z0 + (z1 - z0) * k / 24;
+      for (const q of BB) { if (q.tag === 'bed' && s === a.path.length - 2) continue; if (q.y1 > a.floor + hi && q.y0 < a.floor + 1.8 && x > q.x0 - m && x < q.x1 + m && z > q.z0 - m && z < q.z1 + m) blocked.push(q.tag); } } return [...new Set(blocked)]; };
+    const H = a.hearth, P = a.peis, bd = a.bed;
+    out.push({ key, plan: a.plan, chim: a.chimney, same: hash(a.group) === hash(b.group), tris: a.tris, draws: a.draws, shellTris: a.shellTris, shellCalls: a.shellCalls, outside, through, bad, overl: [...new Set(overl)], blocked: walk(.15), body: walk(.3, .25), bedWall: a.bed.x0 < 0 ? -1 : 1,
+      head: +(a.tieBeam - a.floor).toFixed(2), bench: a.benches.map(q => [+(q.y - a.floor).toFixed(2), +(q.x1 - q.x0).toFixed(2), q.x0 < 0 ? -1 : 1]), bed: +Math.max(bd.x1 - bd.x0, bd.z1 - bd.z0).toFixed(2), doors: [[a.door.w, a.door.h], ...a.doors.map(d => [d.w, d.h])],
+      fire: H ? a.fire[0] > H.x0 && a.fire[0] < H.x1 && a.fire[2] > H.z0 && a.fire[2] < H.z1 : a.fire[0] > P.x0 && a.fire[0] < P.x1 && a.fire[2] > P.z0 && a.fire[2] < P.z1, louver: H ? +Math.abs(a.fire[2] - a.louver).toFixed(2) : 0, cradle: !!a.cradle }); }
+  return out; }, LH);
+const L0 = L.slice(0, 4), LS = L.slice(4), lk = x => x.key;
+check(`the longhouse, 4 keys: the room ${mm(L0, x => x.tris).join(' to ')} triangles in ${Math.max(...L0.map(x => x.draws))} meshes, on the hall's ${L0[0].shellTris} in ${L0[0].shellCalls}; each the same twice; as drawn (${L0[0].plan})`, L0.every(x => x.same && x.tris < 30000 && x.draws <= 20 && x.plan === 'parted' && !x.chim));
+check(`by size, ${LS.length} halls (${LS.filter(x => x.plan === 'parted').length} parted, ${LS.filter(x => x.plan === 'one' && !x.chim).length} one room round the long hearth, ${LS.filter(x => x.chim).length} round a peis at the stack): ${mm(LS, x => x.tris).join(' to ')} triangles in ${Math.max(...LS.map(x => x.draws))} meshes; each the same twice`, LS.every(x => x.same && x.tris < 30000 && x.draws <= 20), LS.filter(x => !x.same || x.tris >= 30000 || x.draws > 20).map(lk));
+check(`the longhouse: every piece inside the walls and under the roof, none in the stack: ${Math.max(...L.map(x => x.outside.length))} pieces out, ${Math.max(...L.map(x => x.through))} points through a wall, the roof or the stack`, L.every(x => !x.outside.length && !x.through), L.filter(x => x.outside.length || x.through).map(x => [x.key, x.outside, x.bad]).slice(0, 3));
+check(`the longhouse: no two pieces in each other, nor in the stack: ${Math.max(...L.map(x => x.overl.length))} clashes`, L.every(x => !x.overl.length), L.filter(x => x.overl.length).map(x => [x.key, x.overl]).slice(0, 4));
+check(`the longhouse: the walk from the front door past the fire to the partition's doorway or the bed's side is clear by 0.15 m (${Math.max(...L.map(x => x.blocked.length))} pieces in it) and by a body's 0.3 m of anything over the hearth's 0.2 m kerb (${Math.max(...L.map(x => x.body.length))}), ${mm(L, x => x.head).join(' to ')} m under the tie beams`, L.every(x => !x.blocked.length && !x.body.length && x.head >= 2.1), L.filter(x => x.body.length).map(x => [x.key, x.body]).slice(0, 4));
+check(`the longhouse: a person fits: benches ${[...new Set(L.flatMap(x => x.bench.map(b => b[0])))].join(', ')} m high and ${mm(L.flatMap(x => x.bench), b => b[1]).join(' to ')} m deep, the bed ${mm(L, x => x.bed).join(' to ')} m, the doors ${L0[0].doors.map(d => d.join(' by ')).join(' and ')} m; a bench or the bench bed along each wall`,
+  L.every(x => [-1, 1].every(s => x.bench.some(b => b[2] === s) || (x.plan === 'one' && x.bedWall === s)) && x.bench.every(([h, d]) => h >= .4 && h <= .48 && d >= .9) && x.bed >= 1.85 && x.doors.every(([w, h]) => w >= .8 && h >= 1.9)), L.filter(x => ![-1, 1].every(s => x.bench.some(b => b[2] === s) || (x.plan === 'one' && x.bedWall === s))).map(lk));
+check(`the longhouse: the fire on its hearth, ${Math.max(...L.map(x => x.louver))} m from under the louver, or on the peis; the cradle in ${L.filter(x => x.cradle).length} of ${L.length}`, L.every(x => x.fire && x.louver <= .6));
 // Aurenne's flat over a dyer's shop (Session 891): 4 keys (the shell turned both ways), each the same twice and in budget; every piece
 // inside the walls and no two in each other on their floor; the walks clear by 0.15 m on each floor (in at the door past the counter to
 // the stair's foot; off the landing to the divan's table; to the roof stair's foot); the stair (its rise and going, 2 m over every
