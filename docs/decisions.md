@@ -3,6 +3,31 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### The spear and the crossbow in your hand — how each plays (from the systems builder, 2026-10-26, #745)
+**The question.** Your 6 A (12 Oct) put the spear and the crossbow first among the new weapons. Both are built as bodies, but neither can be held: they are not in `WEAPON_TYPES` and have no row in `WEAPON_ATTACKS`. For scale: a sword reaches 1.6 m, a longsword 1.8, a claymore 2.2, every swing a 126° arc; the bow draws 0.25–1.10 s at ×0.45–×1.40. Two answers, one per weapon.
+
+**Options, 1. the spear.**
+- **A (recommended).** A one-handed thrust, shield kept: 2.4 m reach in a 40° line, one target, the longsword's 0.34 s tell, ×0.80–1.00, pierce, weight 3.5.
+- **B.** Two-handed: 2.6 m, runs through two foes in a line (cleave 2), the two-handers' 50% block, no shield.
+- **C.** As A, plus a half-damage thrust while you hold a block.
+
+**Options, 2. the crossbow.**
+- **A (recommended).** No draw, a slow span: a click shoots at once at the bow's full-draw damage ×1.15, no sway; then 2.0 s to span (walk, no sprint; a roll or a blow restarts it). Shoots bolts, sold beside arrows at the same price; trained by the bow's skill.
+- **B.** As A, but it shoots the arrows you already carry.
+- **C.** As A, with a 3.0 s span and ×1.5 damage: one shot to open a fight.
+
+**Recommendation: 1 A, 2 A.**
+
+### Where do the Gatelands' farmsteads stand in the world? (from the look builder, 2026-10-26, #744)
+**The question.** The farmstead you chose on #498 (farmhouse, byre and barn round a yard) has its rooms, but no home in the game is a farmhouse because the generator has no farm lot; a farmstead covers about 25 by 30 m. On the new look, fields already lie over the open country (F3). Where should the farmsteads go? Pictures: `docs/prototypes/levelup/pieces-gatelands-farmstead-yard.jpg`, `pieces-gatelands-farmstead-yard-high.jpg`, `rooms-farmhouse-hall.jpg`.
+
+**Options.**
+- **A (recommended).** Out in the country, alone: one or two a Gatelands cell, placed by the cell's seed, each on a lane off the nearest road among the fields already drawn. Each farm is a place with its own id.
+- **B.** On the edge of each village: one or two on the roads out, 60 to 150 m past the last cottage. Easier to find and quest from; the country between towns stays empty.
+- **C.** Both: a farm at each village's edge, plus a few alone in the country. The most life, and the most to build and test.
+
+**Recommendation: A.** It gives the fields already drawn their people, and puts something on the roads between towns.
+
 ### The Mouth's carving — which word does the certain first Mastery raise? (from the designer, 2026-10-26, #735)
 **The question.** Your 2 A on #695 made the Mouth the Uisce great gate at Inis Rua. It opens once you hold any word at Comprehension, and its ring holds "the certain first Mastery". Which word may that carving raise to Mastery (once per character, never past the word's Intelligence need)? Page: `docs/design/words-and-the-mouth-build.md`, section *The open number*.
 
