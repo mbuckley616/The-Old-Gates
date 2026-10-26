@@ -84,14 +84,15 @@ const until = async (what, fn, arg) => { const t0 = Date.now(); try { await page
 const room = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'); const h = S.houses.find(x => x.type === 'home' && !x.two) || S.houses.find(x => x.type === 'home' && x.kit && x.kit.kind === 'townhouse') || S.houses.find(x => !x.two && x.type !== 'inn');
   forceTime(13); px = h.exitX; pz = h.exitZ; goToInterior(h); return { id: h.id, type: h.type }; });
 await until('in the room', id => currentHouse && currentHouse.id === id && document.getElementById('fd').style.opacity === '0', room.id); await g.hide(); await g.frames(4);
-const inRoom = await page.evaluate(() => { const H = currentHouse._roomH, W = currentHouse.intW, D = currentHouse.intD;
-  // a clear spot: no foothold or solid within 0.6 m, 0.8 m in from the walls
-  const clear = (x, z) => FOOTHOLDS.every(f => f.kind === 'spiral' || x < f.x0 - .6 || x > f.x1 + .6 || z < f.z0 - .6 || z > f.z1 + .6) && (INT_SOL || []).every(s => x < s.x0 - .6 || x > s.x1 + .6 || z < s.z0 - .6 || z > s.z1 + .6);
+// Session 1430: the kit townhouse's own room (three floors): the ceiling over you is the first floor's underside, read where you stand
+const inRoom = await page.evaluate(() => { let H = currentHouse._roomH; const W = currentHouse.intW, D = currentHouse.intD;
+  // a clear spot: no foothold or solid within 0.6 m below a floor overhead (2.2 m up), 0.8 m in from the walls
+  const clear = (x, z) => FOOTHOLDS.every(f => f.kind === 'spiral' || f.y > 2.2 || x < f.x0 - .6 || x > f.x1 + .6 || z < f.z0 - .6 || z > f.z1 + .6) && (INT_SOL || []).every(s => s.y0 > 2.2 || x < s.x0 - .6 || x > s.x1 + .6 || z < s.z0 - .6 || z > s.z1 + .6);
   let best = null; for (let x = .8; x < W - .8; x += .2) for (let z = .8; z < D - .8; z += .2) if (clear(x, z)) { const d = Math.hypot(x - W / 2, z - D / 2); if (!best || d < best.d) best = { x, z, d }; }
-  const free = !!best; if (best) { px = best.x; pz = best.z; }
+  const free = !!best; if (best) { px = best.x; pz = best.z; H = Math.min(H, headCeil(px, pz, 0)); }
   const r = _jump(100, { second: 'top' }); return { inside: isInterior(), H: +H.toFixed(3), free, ...r, headAt: +(r.top + HEAD_H).toFixed(3) }; });
 check(`indoors (${room.type}, ${inRoom.H} m to the ceiling): the double jump's head stops at the ceiling (${inRoom.headAt} m)`, inRoom.inside && inRoom.free && inRoom.H > 2.5 && inRoom.H < 3.4 && Math.abs(inRoom.headAt - inRoom.H) < .01 && inRoom.landed, { room, inRoom });
-const inRoomLow = await page.evaluate(() => { const r = _jump(5); return { ...r, headAt: +(r.top + HEAD_H).toFixed(3), H: currentHouse._roomH }; });
+const inRoomLow = await page.evaluate(() => { const r = _jump(5); return { ...r, headAt: +(r.top + HEAD_H).toFixed(3), H: Math.min(currentHouse._roomH, headCeil(px, pz, 0)) }; });
 check(`indoors, an untrained jump stays under it (head at ${inRoomLow.headAt} m)`, inRoomLow.headAt < inRoomLow.H - .05 && Math.abs(inRoomLow.top - apex(5)) < .01, inRoomLow);
 
 const dun = await page.evaluate(() => { exitInterior && exitInterior(); return true; });

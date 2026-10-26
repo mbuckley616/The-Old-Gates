@@ -728,7 +728,7 @@
   function boxCoins(p,type){const mult=/weapon|armor|armoury|forge/.test(type)?1.2:/potion|apothecary/.test(type)?.8:1;return (10+50*Math.max(0,Math.min(100,p))/100)*mult;}
   function boxState(){if(!INT_BOX)return null;const B=worldState.boxes||(worldState.boxes={});const r=B[INT_BOX.id];if(r&&dayNow()-r.taken<5)return 'empty';if(r&&INT_BOX.open)INT_BOX.open=false; // refilled: locked again
     return INT_BOX.open?'open':'locked';}
-  function boxPrompt(){if(!INT_BOX||!currentHouse)return null;if(Math.hypot(px-INT_BOX.x,pz-INT_BOX.z)>TOUCH||jumpY>.6)return null;if(!aimBox(INT_BOX.x,INT_BOX.z,INT_BOX.y||0,.42,.42,.7))return null; /* S646 — and under the crosshair */const st=boxState();const name=INT_BOX.kind==='home'?'the chest':'the strongbox';
+  function boxPrompt(){if(!INT_BOX||!currentHouse)return null;if(Math.hypot(px-INT_BOX.x,pz-INT_BOX.z)>TOUCH||Math.abs(jumpY-(INT_BOX.y||0))>.6)return null; /* S1430 — from the chest's own floor (a chest upstairs, INT_BOX.y; it was jumpY > 0.6, so no chest upstairs would open) */if(!aimBox(INT_BOX.x,INT_BOX.z,INT_BOX.y||0,.42,.42,.7))return null; /* S646 — and under the crosshair */const st=boxState();const name=INT_BOX.kind==='home'?'the chest':'the strongbox';
     return st==='empty'?(INT_BOX.kind==='home'?'The chest is empty':'The strongbox is empty'):st==='locked'?`Press 'E' to pick the lock on ${name}`:`Press 'E' to open ${name}`;}
   function boxInteract(){if(!boxPrompt())return false;const st=boxState(),X=INT_BOX;
     if(st==='empty'){showMsg(X.kind==='home'?'Nothing left in it.':'The takings are gone; they will not have refilled it yet.','#c8b880');return true;}

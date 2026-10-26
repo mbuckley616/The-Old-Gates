@@ -9,10 +9,11 @@ await g.intoWorld(); await g.settle('dunmore');
 const until = async (what, fn) => { const t0 = Date.now(); try { await page.waitForFunction(fn, null, { polling: 100, timeout: 60000 }); }
   catch (e) { console.log(`  ${what} not seen after ${Math.round((Date.now() - t0) / 1000)} s`); } };
 const enter = async (hr, k) => { await page.evaluate(([hr, k]) => { forceTime(hr); const S = WORLD.settle.get('dunmore');
-  const hs = S.houses.filter(x => x.type === 'home' && !x.ownedByPlayer && !x.shuttered); const h = hs[k]; window._h = h; px = h.exitX; pz = h.exitZ; goToInterior(h); }, [hr, k]);
+  const hs = S.houses.filter(x => x.type === 'home' && !x.ownedByPlayer && !x.shuttered); const h = hs[k]; window._h = h; /* S1430: this suite's rules are the one-room home's; a Dunmore home's kit townhouse room (three floors, the bed upstairs) is kittownhouse's, so the visit sets its kit aside */ if (h.kit) { h._kitWas = h.kit; h.kit = null; } px = h.exitX; pz = h.exitZ; goToInterior(h); }, [hr, k]);
   await until('in the room', () => currentHouse === window._h && document.getElementById('fd').style.opacity === '0'); await g.hide(); await g.frames(4); };
 const leave = async () => { await page.evaluate(() => { try { closeDialog(); } catch (e) {} exitInterior(); });
-  await until('back in the street', () => currentHouse === null && document.getElementById('fd').style.opacity === '0'); };
+  await until('back in the street', () => currentHouse === null && document.getElementById('fd').style.opacity === '0');
+  await page.evaluate(() => { const h = window._h; if (h && h._kitWas) { h.kit = h._kitWas; delete h._kitWas; } }); };
 // stand d from her body on open floor, look at her for a few of the loop's frames, read the prompt, then press E
 const tryAt = (d, look) => page.evaluate(async ([d, look]) => { const m = intNPCMesh; const b = INT_BEDS.find(b => b.owner === 'home');
   for (let i = 0; i < 4; i++) await new Promise(r => requestAnimationFrame(() => r()));

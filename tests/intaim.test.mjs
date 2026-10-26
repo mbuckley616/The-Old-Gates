@@ -31,8 +31,8 @@ const out = [];
 // a shop's strongbox and a home's chest, at night, locked
 for (const kind of ['shop', 'home']) {
   await into((kind) => { const S = WORLD.settle.get('dunmore'); const h = S.houses.find(x => kind === 'shop' ? (x.type === 'misc' || x.type === 'weapon' || x.type === 'potion') : (x.type === 'home' && !x.ownedByPlayer)); window._want = h; px = h.exitX; pz = h.exitZ; goToInterior(h); }, kind);
-  const X = await page.evaluate(() => WORLD.intBox && { x: WORLD.intBox.x, z: WORLD.intBox.z, kind: WORLD.intBox.kind });
-  if (X) { const s = await spot(X.x, X.z, 0, .8); if (s) out.push({ where: kind, ...(await probe('box', s, { x: X.x, y: .35, z: X.z })) }); }
+  const X = await page.evaluate(() => WORLD.intBox && { x: WORLD.intBox.x, z: WORLD.intBox.z, y: WORLD.intBox.y || 0, kind: WORLD.intBox.kind }); /* S1430: on the chest's own floor (a townhouse's is upstairs) */
+  if (X) { const s = await spot(X.x, X.z, X.y, .8); if (s) out.push({ where: kind, ...(await probe('box', s, { x: X.x, y: X.y + .35, z: X.z })) }); }
   await leave(); }
 // an inn's cellar hatch, down; then up out of the cellar
 { await into(() => { const S = WORLD.settle.get('dunmore'); const h = S.houses.find(x => x.type === 'inn' && x.dlg); window._want = h; px = h.exitX; pz = h.exitZ; goToInterior(h); });
