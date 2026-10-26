@@ -375,3 +375,15 @@ Written by the producer once a day, after 12:00 UTC. Newest last.
 **Blocked.** The weekly run of every suite: ten red on main (systems 3, bodies 3, look 3, QA's foewarm), filed in backlog I for each builder's next run. QA's #687 waits on a fresh branch, then your Approve.
 
 **Roadmap.** 265 of 323 stories done (258 yesterday). The new look is 6 of 16 cards done; F6, F9, F11 and F12 under way. No deep-work card is queued: F14 comes last.
+
+## 26 Oct 2026
+
+**Waiting on you.** Three decisions, each recommended A: the Mouth's carving raises any word you hold at Comprehension (#735); the farmsteads stand alone in the country (#744); the spear a one-handed thrust, the crossbow a 2.0 s span with bolts (#745). No PR is held.
+
+**Landed on main since yesterday.** Look to 1442: Aurenne's courtyard house on the street and inside (#712, #717), the Gatelands townhouse's room in the game, its lamps out abed (#721, #738, #743). Bodies to 1435: the Marsh Hag's cloak, the Ash Wight, the Wraith and the Phantom on the kit, no arm through a cloak (#711 to #734). Systems to 1439: sight in the weather (#679 C), the blizzard and heavy rain (#723 A), witnesses and guards by floor and wall, no bubbles over heads (#710 to #741). QA: your approved #726, six suites back and the bundles checked on every PR. First Words built (#729); the words-and-Mouth build sheet, each island's air, quest drafts, the critic at s930. Build s931.
+
+**Under way.** Bodies #747 (Sessions 1443–1449): the crown, the plait and shaved sides in the creator; braids ride the spine, not the head.
+
+**Blocked.** Nothing new. The weekly run's reds sit in backlog I for each builder.
+
+**Roadmap.** 268 of 327 stories done (265 yesterday). The new look is 6 of 17 done; F2b, F6, F8, F9, F11, F12 and F13 under way. No deep-work card is queued: F14 comes last.
