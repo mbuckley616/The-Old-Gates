@@ -3,6 +3,19 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### The dungeon's cell by kind: old gates at 3 m, and forts and lairs at what? (systems builder, Session 1105) — DECISION #421
+**The question.** F2b's last session sets a dungeon's grid cell at true scale; it is one unit today, so corridors are 1 m wide for a 1.8 m body. Michael chose **C, 3 m** on #300 and added: "If by dungeon we mean Old Gates, they should be extremely massive and cavernous. A normal 'dungeon' like a mine, or a cave can be a more typical size." The game has three kinds of underground place: the **old gates** (the world's portals, themed by school: crypts, haunted halls, elemental and deep caverns, ruins), **fort interiors** (the `fort_` layouts), and **lairs and dens** (a beast's lair, the cloak's den). So the cell can differ by kind, and "a more typical size" is a number a player feels.
+
+**Options.**
+- **A (recommended).** Old gates at **3 m** (corridors 3 m, rooms 9 to 36 m) with a gate's ceiling at 6 m (cavernous; `DUN_FLOOR_H` 3.2 today, the sheet's 3.6 is for the typical size); forts' interiors, lairs and dens at **2.5 m** (the designer's B: rooms 7.5 to 30 m, ceiling 3.6). One grid, two cells, read from the portal's kind.
+- **B.** **3 m everywhere**, ceiling 3.6, as #300's C reads alone. Simplest; a fort's cellar is as roomy as a gate.
+- **C.** Old gates at 3 m (ceiling 6 m), forts and lairs at **2 m**: a squeeze, the third-person camera tight in their corridors.
+
+**The build.** Whichever is chosen, the dungeon is laid out in 1-unit cells throughout `52-dungeon-gen.js`, `56-dungeon-build.js` and `68-dungeon-misc.js` (the look builder's files and the systems builder's), so the plan is F2a's: build in cells and scale the dungeon whole at the end, with every record of it (solids, footholds, foes, traps, doors, stairs). It touches shared files, so it may want a deep-work card or a FREEZE; the producer's call.
+
+Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
+
+## Answered
 ### The spear and the crossbow in your hand — how each plays (from the systems builder, 2026-10-26, #745)
 **The question.** Your 6 A (12 Oct) put the spear and the crossbow first among the new weapons. Both are built as bodies, but neither can be held: they are not in `WEAPON_TYPES` and have no row in `WEAPON_ATTACKS`. For scale: a sword reaches 1.6 m, a longsword 1.8, a claymore 2.2, every swing a 126° arc; the bow draws 0.25–1.10 s at ×0.45–×1.40. Two answers, one per weapon.
 
@@ -18,6 +31,8 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 **Recommendation: 1 A, 2 A.**
 
+Michael: **Spear one-handed thrust; crossbow 2.0 s span, bolts** (1 A, 2 A). (2026-10-26)
+
 ### Where do the Gatelands' farmsteads stand in the world? (from the look builder, 2026-10-26, #744)
 **The question.** The farmstead you chose on #498 (farmhouse, byre and barn round a yard) has its rooms, but no home in the game is a farmhouse because the generator has no farm lot; a farmstead covers about 25 by 30 m. On the new look, fields already lie over the open country (F3). Where should the farmsteads go? Pictures: `docs/prototypes/levelup/pieces-gatelands-farmstead-yard.jpg`, `pieces-gatelands-farmstead-yard-high.jpg`, `rooms-farmhouse-hall.jpg`.
 
@@ -28,6 +43,8 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 **Recommendation: A.** It gives the fields already drawn their people, and puts something on the roads between towns.
 
+Michael: **Both** (C: a farm at each village's edge, plus a few alone in the country). (2026-10-26)
+
 ### The Mouth's carving — which word does the certain first Mastery raise? (from the designer, 2026-10-26, #735)
 **The question.** Your 2 A on #695 made the Mouth the Uisce great gate at Inis Rua. It opens once you hold any word at Comprehension, and its ring holds "the certain first Mastery". Which word may that carving raise to Mastery (once per character, never past the word's Intelligence need)? Page: `docs/design/words-and-the-mouth-build.md`, section *The open number*.
 
@@ -36,19 +53,8 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 - **B.** Uisce's words only (Sioc, Uisce, Anáil, Tonn, Reo). It fits the gate's school, but a player who came in on Caor gets nothing.
 - **C.** Its own word, drawn by seed like any carving. This is the simplest, but it is not certain.
 
-### The dungeon's cell by kind: old gates at 3 m, and forts and lairs at what? (systems builder, Session 1105) — DECISION #421
-**The question.** F2b's last session sets a dungeon's grid cell at true scale; it is one unit today, so corridors are 1 m wide for a 1.8 m body. Michael chose **C, 3 m** on #300 and added: "If by dungeon we mean Old Gates, they should be extremely massive and cavernous. A normal 'dungeon' like a mine, or a cave can be a more typical size." The game has three kinds of underground place: the **old gates** (the world's portals, themed by school: crypts, haunted halls, elemental and deep caverns, ruins), **fort interiors** (the `fort_` layouts), and **lairs and dens** (a beast's lair, the cloak's den). So the cell can differ by kind, and "a more typical size" is a number a player feels.
+Michael: **Any word you hold at Comprehension** (A). (2026-10-26)
 
-**Options.**
-- **A (recommended).** Old gates at **3 m** (corridors 3 m, rooms 9 to 36 m) with a gate's ceiling at 6 m (cavernous; `DUN_FLOOR_H` 3.2 today, the sheet's 3.6 is for the typical size); forts' interiors, lairs and dens at **2.5 m** (the designer's B: rooms 7.5 to 30 m, ceiling 3.6). One grid, two cells, read from the portal's kind.
-- **B.** **3 m everywhere**, ceiling 3.6, as #300's C reads alone. Simplest; a fort's cellar is as roomy as a gate.
-- **C.** Old gates at 3 m (ceiling 6 m), forts and lairs at **2 m**: a squeeze, the third-person camera tight in their corridors.
-
-**The build.** Whichever is chosen, the dungeon is laid out in 1-unit cells throughout `52-dungeon-gen.js`, `56-dungeon-build.js` and `68-dungeon-misc.js` (the look builder's files and the systems builder's), so the plan is F2a's: build in cells and scale the dungeon whole at the end, with every record of it (solids, footholds, foes, traps, doors, stairs). It touches shared files, so it may want a deep-work card or a FREEZE; the producer's call.
-
-Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
-
-## Answered
 ### The blizzard and heavy rain — how often each comes, and where (from the systems builder, 2026-10-25, #723)
 **The question.** Your C on #679 set each weather's sight (fog 60 m, blizzard 70 m, rain 220–500 m), and Session 1420 built the figures (`WX_SIGHT`), but the game rolls no blizzard and no heavy rain. Today the Mark's winter rolls snow 38% (tundra 49%), the Gatelands' winter snow 11%, the Gatelands' autumn rain 21% (a fen 29%). How often should each come, and where?
 
