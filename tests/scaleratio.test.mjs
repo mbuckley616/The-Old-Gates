@@ -59,6 +59,18 @@ const measure = () => page.evaluate(() => {
     const footAt = y => { const c = kind(at(y).find(q => !(kind(q) === 'dress' && q.point.y < base + .3))); return c === 'leaf' || c === 'glass' || c === 'frame'; };
     let f = .6; fine = false; for (let y = .58; y > -1;) { if (footAt(y)) { f = y; y -= fine ? .005 : .02; continue; } if (fine) break; fine = true; y = f - .005; }
     return { f, t }; };
+  const clipped = [], va = new THREE.Vector3(), vb = new THREE.Vector3(), vc = new THREE.Vector3();
+  const clipNear = (ms, dx, dz, nx, nz) => { const qx = [dx + nx * 1.1, dx - nx * 2.1], qz = [dz + nz * 1.1, dz - nz * 2.1], pad = .25;
+    const x0 = Math.min(...qx) - pad, x1 = Math.max(...qx) + pad, z0 = Math.min(...qz) - pad, z1 = Math.max(...qz) + pad, res = [];
+    for (const m of ms) { if (m.isInstancedMesh || Array.isArray(m.material)) { res.push(m); continue; }
+      const p = m.geometry.attributes.position, ix = m.geometry.index, n = ix ? ix.count : p.count, keep = [];
+      for (let i = 0; i < n; i += 3) { const ia = ix ? ix.getX(i) : i, ib = ix ? ix.getX(i + 1) : i + 1, ic = ix ? ix.getX(i + 2) : i + 2;
+        va.fromBufferAttribute(p, ia).applyMatrix4(m.matrixWorld); vb.fromBufferAttribute(p, ib).applyMatrix4(m.matrixWorld); vc.fromBufferAttribute(p, ic).applyMatrix4(m.matrixWorld);
+        if (Math.max(va.x, vb.x, vc.x) < x0 || Math.min(va.x, vb.x, vc.x) > x1 || Math.max(va.z, vb.z, vc.z) < z0 || Math.min(va.z, vb.z, vc.z) > z1) continue;
+        keep.push(va.x, va.y, va.z, vb.x, vb.y, vb.z, vc.x, vc.y, vc.z); }
+      if (!keep.length) continue; const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(keep, 3));
+      const c = new THREE.Mesh(geo, m.material); c.updateMatrixWorld(true); clipped.push(c); res.push(c); }
+    return res; };
   const out = [];
   for (const h of Sx.houses) {
     if (!(h.type === 'home' || h.type === 'inn' || h.type === 'misc' || h.type === 'potion' || h.type === 'weapon' || h.type === 'armor' || h.type === 'barber')) continue;
@@ -68,6 +80,9 @@ const measure = () => page.evaluate(() => {
     let nx = h.doorX - b.cx, nz = h.doorZ - b.cz; if (b.c != null) { const sg = Math.sign(nx * b.s + nz * b.c) || 1; nx = b.s * sg; nz = b.c * sg; }
     { const L = Math.hypot(nx, nz) || 1; nx /= L; nz /= L; }
     near = (h.kit && ownKit(b)) || reach.filter(q => Math.hypot(q.x - h.doorX, q.z - h.doorZ) < q.r + 4).map(q => q.m);
+    // S1466: only the triangles a door's rays can cross (from 1 m out to 2 m in, 0.2 m to either side), in world space with their own
+    // materials, so each ray tests hundreds of triangles, not a whole house's merged meshes (Dunmore's 56 doors took 284 s, over CI's 900)
+    near = clipNear(near, h.doorX, h.doorZ, nx, nz);
     // the leaf: the flat face met straight on at the door's middle, 1.3 over the ground; then down and up from there while the
     // ray still meets that face (within 6 mm), to the leaf's foot and its head
     // (12 cm to either side of the middle, clear of the planks' battens; the strap hinges cross one side, so the longer run counts)
@@ -81,6 +96,7 @@ const measure = () => page.evaluate(() => {
     if (!best) continue; const foot = best.f, top = best.t;
     out.push({ id: h.id, type: h.type, kit: h.kit ? h.kit.kind : null, two: !!h.two, storeys: h.storeys || 1, style: h.style, leafTop: top, foot, wallH: h.wallH || null });
   }
+  for (const c of clipped) c.geometry.dispose();
   return { n: out.length, houses: out };
 });
 
