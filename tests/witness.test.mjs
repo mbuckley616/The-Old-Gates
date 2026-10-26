@@ -20,6 +20,8 @@ for (const id of shops) {
     px = X.x; pz = X.z + .8; const dBox = Math.hypot(px - kx, pz - kz); const atBox = W(); const lineBox = WORLD.intSightLine(kx, kz, px, pz);
     // a step from the keeper, in plain view: always seen
     px = kx + (X.x > kx ? 1.5 : -1.5); pz = kz; const near = W();
+    // Session 1436: the same spot a storey up (3 m) is not seen, and seen again with the keeper on that floor too (a resident woken upstairs)
+    jumpY = 3; const nearUp = W(); K.userData.floorY = 3; const nearBoth = W(); K.userData.floorY = null; jumpY = 0;
     // at the strongbox again with every door of the room open: the keeper at the counter sees you exactly when the box is in reach
     // with a clear line (Session 1244)
     const D0 = WORLD.intDoors, sols = D0.map(d => ({ ...d.sol })); D0.forEach(d => { d.sol.x0 = d.sol.x1 = d.sol.z0 = d.sol.z1 = -9e5; });
@@ -41,13 +43,14 @@ for (const id of shops) {
       let hid = 0, hidSeen = 0; for (let x = .5; x < 30; x += .5) for (let z = .5; z < 30; z += .5) { if (Math.hypot(x - kx, z - kz) >= R || WORLD.intSightLine(kx, kz, x, z)) continue; px = x; pz = z; hid++; if (W()) hidSeen++; }
       door = { dist: +dist.toFixed(2), moved, fromCounter, shutSeen, openSeen, openLine, hid, hidSeen }; }
     exitInterior();
-    return { name: h.name, R, dBox: +dBox.toFixed(2), dRaw: dBox, doors: D.length, lineBox, atBox, openBox, openBoxLine, near, door }; }));
+    return { name: h.name, R, dBox: +dBox.toFixed(2), dRaw: dBox, doors: D.length, lineBox, atBox, openBox, openBoxLine, near, nearUp, nearBoth, door }; }));
   await page.waitForTimeout(2500); await g.hide();
 }
 console.log(JSON.stringify(rows));
 const ok = rows.filter(r => !r.none);
 check('every shop was entered with a keeper and a strongbox', ok.length === shops.length && ok.length >= 5, rows);
 check('a step from the keeper you are always seen', ok.every(r => r.near), ok.map(r => [r.name, r.near]));
+check('a step from the keeper but a storey up you are not seen; on the keeper\'s own floor you are (S1436)', ok.every(r => !r.nearUp && r.nearBoth), ok.map(r => [r.name, r.nearUp, r.nearBoth]));
 check('indoors the reach is 8.7 m (#516)', ok.length > 0 && ok.every(r => r.R === 8.7), ok.map(r => r.R));
 check('at the strongbox you are seen exactly when the keeper is within reach with a clear line', ok.every(r => r.atBox === (r.dRaw < r.R && r.lineBox)), ok.map(r => [r.name, r.dBox, r.lineBox, r.atBox]));
 // (Session 1244: in Dunmore's seven kit shops the box stands 7.6–7.9 from the counter, inside the reach, but off the doorway's line
