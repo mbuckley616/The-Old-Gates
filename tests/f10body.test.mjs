@@ -21,12 +21,12 @@ check('the creator offers the body, the height and the build on the new look', r
 check('the creator\'s figure is the builder\'s body (163 bones) over a hidden driver, and the look carries its genome', cc.hb && cc.bones === 163 && cc.driverHidden && cc.g === 0 && cc.hbPeople === cc.people, cc);
 check('a tall Markish woman\'s body is at the top of her people\'s range (1.72 to 1.84 m, crown to sole), and there is no beard row', cc.body > 1.82 && cc.body < 1.85 && !cc.beardRow, cc);
 fs.writeFileSync(path.join(OUT, 'f10-creator.png'), await page.locator('#cc-look-cv').screenshot());
-// the crown braid and the plait over the shoulder (Session 1444): the creator's Style row offers them on the new look and the figure wears them
+// the crown braid and the plait over the shoulder (Session 1444), and shaved sides (Session 1447): the creator's Style row offers them on the new look and the figure wears them
 { const was = await page.evaluate(() => window._ccLook.style), st = {};
-  for (const [label, want] of [['A crown braid', 'crown'], ['A plait over the shoulder', 'plait']]) { const ok = await pick(label); await page.waitForTimeout(3000);
+  for (const [label, want] of [['A crown braid', 'crown'], ['A plait over the shoulder', 'plait'], ['Shaved sides', 'shaved']]) { const ok = await pick(label); await page.waitForTimeout(3000);
     st[want] = await page.evaluate(() => { const R = CCL.rig; return { ok: true, look: window._ccLook.style, hair: R && R.rig.hbG && R.rig.hbG.hair.style, tris: R && R.rig.hb ? R.rig.hb.full.filter(m => m.name === 'hair').reduce((a, m) => a + (m.geometry.index ? m.geometry.index.count / 3 : 0), 0) : 0 }; }); st[want].ok = ok; }
   await page.evaluate(w => { window._ccLook.style = w; }, was); await pick('Woman'); await page.waitForTimeout(1500);
-  check('the creator offers the crown braid and the plait over the shoulder, and the figure wears each', ['crown', 'plait'].every(k => st[k].ok && st[k].look === k && st[k].hair === k && st[k].tris > 5000), st); }
+  check('the creator offers the crown braid, the plait over the shoulder and shaved sides, and the figure wears each', ['crown', 'plait', 'shaved'].every(k => st[k].ok && st[k].look === k && st[k].hair === k && st[k].tris > 5000), st); }
 
 // ── into the world, third person ──
 await page.evaluate(() => ccBegin()); await page.waitForTimeout(9000); await g.hide();
