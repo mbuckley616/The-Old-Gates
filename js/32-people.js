@@ -1336,6 +1336,7 @@ function tickPeople(dt,now){
       rig.B.tail.rotation.set(.35*fo,.3*Math.sin(now*.0017+rig.g.phase)*(1-fo),0);}
     if(rig.foe&&rig.e&&rig.e.shieldUp){const L=rig.e.limbs;if(L&&L.shieldArm){L.shieldArm.rotation.x=L.shieldArmUpX;L.shieldArm.rotation.z=L.shieldArmUpZ;rig.B.elL.rotation.x=-1.1;}}
   }
+  if(HB_TINTQ.length)hbTintDrain(4); // S1468 — the named foes' drivers take their genome's colours, a few a frame
   if(HB_RIGS.size)hbTick(now); // S1195 (F4) — the builder's bodies follow their drivers
 }
 // ═══ THE BUILDER'S BODIES (v80 S1195, card F4) ═══════════════════════════════════════════════════════════════════════════
@@ -1446,18 +1447,27 @@ function hbFoeGenome(rig){const g=rig.g,dr=FOE_DRESS[rig.hbFoe]||{},id=rig.e&&ri
 // tunic, the legs and the boots, from a bake of the same shape in the genome's colours (the vertices are the same, so only the colour
 // attribute is copied). Rolled at the first attach instead (S1201), the driver beyond 42 m kept the old genome's colours, and a foe's
 // skin and hair changed at the line every time it crossed it.
+// S1468 — the genome is still rolled at the naming (5 ms since heightFor's stature reads only the heights), but the two bakes for the
+// driver's colours (10–20 ms a foe, a Bandit Captain 60–80) wait in HB_TINTQ, taken one or more a frame by tickPeople within 4 ms
+// (hbTintDrain): a chunk names all its foes in one job, and twenty chunks come in a row as you arrive. A foe's own body is never built
+// before its driver is tinted (hbAttach takes it first), so the far driver never shows the old genome's colours past the first frames.
+const HB_TINTQ=[];
 function hbFoeKeyed(rig,e){if(!hbOn()||!HB_RIGS.has(rig)||rig.hbG||!rig.hbFoe||!e||e.id==null)return;rig.e=rig.e||e;
   try{rig.hbG=hbFoeGenome(rig);}catch(err){rig.hbFail=true;console.warn('F4: no genome for the foe',rig.hbFoe,err);return;}
+  rig.hbTintOwed=[[rig.geoLo,PEOPLE_LOD.q],[rig.geoHi,1]].filter(x=>x[0]);for(const x of rig.hbTintOwed)HB_TINTQ.push(rig);}
+// one bake a turn, the far copy first (it is the one drawn when a chunk's foes are named); `all` takes every copy still owed
+function hbTintDrain(ms){const t=performance.now();do{const rig=HB_TINTQ.shift();if(rig)hbFoeTint(rig);}while(HB_TINTQ.length&&performance.now()-t<ms);}
+function hbFoeTint(rig,all){const W=rig.hbTintOwed;if(!W||!W.length)return;if(!HB_RIGS.has(rig)||!rig.hbG){rig.hbTintOwed=null;return;}
   const g=Object.assign({},rig.g);hbTint(g,rig.hbG);
-  for(const [geo,q] of [[rig.geoHi,1],[rig.geoLo,PEOPLE_LOD.q]]){if(!geo)continue;const b=personBake(g,q),c=b.geo.attributes.color,o=geo.attributes.color;
-    if(c&&o&&c.count===o.count){o.array.set(c.array);o.needsUpdate=true;}else console.warn('F4: the tinted bake does not match the foe',rig.hbFoe);b.geo.dispose();}}
+  do{const [geo,q]=W.shift(),b=personBake(g,q),c=b.geo.attributes.color,o=geo.attributes.color;
+    if(c&&o&&c.count===o.count){o.array.set(c.array);o.needsUpdate=true;}else console.warn('F4: the tinted bake does not match the foe',rig.hbFoe);b.geo.dispose();}while(all&&W.length);}
 // a garment's material carries its weave and cut in onBeforeCompile, which Material.copy leaves behind: a foe's corpse is darkened by
 // cloning every material on it (killE, killZoneEnemy), so the builder's materials clone with their shaders
 function hbClone(){const c=new this.constructor().copy(this);c.onBeforeCompile=this.onBeforeCompile;c.customProgramCacheKey=this.customProgramCacheKey;c.clone=hbClone;return c;}
 const _hbq=new THREE.Quaternion(),_hbq2=new THREE.Quaternion(),_hbq3=new THREE.Quaternion(),_hbqH=new THREE.Quaternion(),_hbqA=new THREE.Quaternion(),_hbv=new THREE.Vector3(),_hbv2=new THREE.Vector3();
 // a bone's rotation in the frame of `top` (an ancestor), from the local quaternions up the chain: no matrices, no world numbers
 function hbRel(b,top,q){q.copy(b.quaternion);let p=b.parent;while(p&&p!==top){q.premultiply(p.quaternion);p=p.parent;}return q;}
-function hbAttach(rig,P){const tA=performance.now();
+function hbAttach(rig,P){if(rig.hbTintOwed)hbFoeTint(rig,true);const tA=performance.now();
   if(!P)try{P=HB.makePerson(rig.hbG,HB_LEAN);}catch(e){rig.hbFail=true;console.warn('F4: makePerson failed for',rig.g.hbKey,e);return;}
   const root=P.root,by=P.byName,sk=P.skeleton;
   for(const [,n] of HB_MAP)if(!by[n]){rig.hbFail=true;console.warn('F4: the builder has no bone',n);return;}

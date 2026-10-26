@@ -3564,8 +3564,20 @@ export const PEOPLES = {
     wool: [[.18, .17, .2], [.3, .12, .12], [.28, .22, .32], [.82, .8, .74], [.36, .34, .33]], cloak: .5, hood: .2, brooch: [.4, .4, .42], apron: [0, 0], mantle: 0, amulet: .5, charms: .45, dots: .6, shoulderWrap: .45, marks: .8, brow: { m: { thick: [.3, .5], arch: [.1, .3] }, f: { thick: [.2, .4], arch: [.2, .4] } } },
 };
 // standing height in metres of a genome's body (crown to sole, unposed), and the height slider that gives a wanted stature
-export function statureOf(G) { const P = morph(G), tri = PACK.G['body']; let lo = 1e9, hi = -1e9; for (let t = 0; t < tri.length; t++) { const y = P[tri[t] * 3 + 1]; if (y < lo) lo = y; if (y > hi) hi = y; } return hi - lo; }
-export function heightFor(G, metres) { let a = 0, b = 1; for (let i = 0; i < 9; i++) { const m = (a + b) / 2; if (statureOf({ ...G, height: m }) < metres) a = m; else b = m; } return (a + b) / 2; }
+// Session 1468: the stature from the heights alone, morphed as morph() morphs them (the same adds in the same order into float32, so the
+// same numbers to the bit), over the body's vertices each once. heightFor asks it nine times a genome (1.8 ms each when every vertex was
+// morphed): every target before the first of height's is the same in all nine, so `pre` keeps the heights as they stand there
+function morphY(G, pre) {
+  const { rest, T, ix, N } = PACK, add = (t, w) => { if (!t || Math.abs(w) < 1e-4) return; const { idx, d } = t; for (let k = 0; k < idx.length; k++) Y[idx[k]] += d[k * 3 + 1] * 1e-4 * w; };
+  const W = Object.entries(macroWeights(G)); let Y, i = 0;
+  if (pre && pre.Y) { Y = pre.Y.slice(); i = pre.n; } else { Y = new Float32Array(N); for (let v = 0; v < N; v++) Y[v] = rest[v * 3 + 1]; }
+  if (pre && !pre.Y) { const h = W.findIndex(([n]) => n.includes('/height/')); for (; i < h; i++) add(T[W[i][0]], W[i][1]); pre.Y = Y.slice(); pre.n = i; }
+  for (; i < W.length; i++) add(T[W[i][0]], W[i][1]);
+  for (const [n, v] of Object.entries(G.face || {})) { const pair = ix.face.filter(f => f.name.startsWith(n + '|')); if (pair.length) { add(T[pair[v > 0 ? 1 : 0].name], Math.abs(v)); } else add(T[n], Math.max(0, v)); }
+  return Y;
+}
+export function statureOf(G, pre) { const Y = morphY(G, pre), V = bodyV(); let lo = 1e9, hi = -1e9; for (let t = 0; t < V.length; t++) { const y = Y[V[t]]; if (y < lo) lo = y; if (y > hi) hi = y; } return hi - lo; }
+export function heightFor(G, metres) { let a = 0, b = 1; const pre = {}; for (let i = 0; i < 9; i++) { const m = (a + b) / 2; if (statureOf({ ...G, height: m }, pre) < metres) a = m; else b = m; } return (a + b) / 2; }
 export function peopleGenome(rnd, people, g, o = {}) {
   const P = PEOPLES[people] || PEOPLES.markman, G = markGenome(rnd, g, { ...o, mantle: false }), sx = g > .5 ? 'm' : 'f', pick = a => a[Math.floor(rnd() * a.length)], in_ = ([a, b]) => a + (b - a) * rnd();
   const pickW = W => { let r = rnd() * Object.values(W).reduce((a, b) => a + b, 0); for (const [k, w] of Object.entries(W)) if ((r -= w) < 0) return k; return Object.keys(W)[0]; };
