@@ -156,7 +156,8 @@ function longMats() {
 //   the stack's face to the axis (the hunting cabin's, Session 1199) in place of the long hearth, the bed on the right, the walk down
 //   the axis; the posts and the bench give way round the stack. Under 5.8 m inside (X < 2.9) the benches are 0.9 m deep and the posts
 //   1.0 m in, so the aisle each side of the hearth is 0.6 m or more.
-//   -> also { plan: 'parted' | 'one', chimney, stack, peis } (doors and partition are [] and null in one room).
+//   o.chest false leaves the drawn chest out (the game's own, that opens, stands in its place; Session 1451).
+//   -> also { plan: 'parted' | 'one', chimney, stack, peis, chest } (doors and partition are [] and null in one room).
 export function markLonghouse(o = {}, r = stream('longhouse')) {
   const w = o.w ?? 7.6, d = o.d ?? 14, chim = !!o.chimney, hall = markHall({ roof: o.roof || 'shingle', turf: o.turf, w, d, porch: o.porch ?? true, chimney: chim, carve: o.carve ?? true, wall: o.wall ?? 1, interior: true }, stream(o.shell || 'longhouse-shell'));
   const M = longMats(), B = new Map(), boxes = [];
@@ -168,11 +169,15 @@ export function markLonghouse(o = {}, r = stream('longhouse')) {
   const narrow = X < 2.9, BD = narrow ? .9 : 1.1, hit = (a, b, m = 0) => a.x0 < b.x1 + m && b.x0 < a.x1 + m && a.z0 < b.z1 + m && b.z0 < a.z1 + m;
   // the shell's stack, when it has one (markHall: 0.9 m square at x = -w/4, z = -d/4, from the ground through the roof)
   const stack = chim ? { x0: -w / 4 - .45, x1: -w / 4 + .45, z0: -d * .25 - .45, z1: -d * .25 + .45 } : null, peisB = chim ? { x0: stack.x1, x1: stack.x1 + .44, z0: stack.z0 - .02, z1: stack.z1 + .02 } : null;
+  // the plan: the drawn one (parted) when the long hearth fits between the partition (0.5 m clear before it) and the door's turn; its
+  // length is the longest of 2.6 down to 1.1 m that fits, centred under the louver
+  const hz = chim ? null : hall.louver ?? -1.5, PZ0 = -Z + 2.6, Ls = [2.6, 2.3, 2.0, 1.7, 1.4, 1.1], front = Z - 2.1;
+  const Lp = chim ? null : Ls.find(L => hz + L / 2 <= front && hz - L / 2 - .2 >= PZ0 + .5), parted = !chim && Lp >= 1.7;
   // the floor: planks along the hall on the footing
   for (let x = -X; x < X - .01; x += .28) bx('plank', x + .005, Math.min(x + .275, X), hall.sill, FY, -Z, Z);
   // the frame: two rows of posts 1.25 m in from the walls (1.0 in a narrow hall), purlins along their heads, tie beams across each pair;
   // rafters every metre up each slope with a board lining over them under the roof. A post that would stand in the stack is left out.
-  const PXr = narrow ? X - 1.0 : X - 1.25, TB = WP + .25, posts = []; for (let z = -Z + 2.6; z < Z - 1.2; z += 2.75) posts.push(z); /* the first pair on the partition's line */
+  const PXr = narrow ? X - 1.0 : X - 1.25, TB = WP + .25, posts = []; for (let z = -Z + (parted ? 2.6 : 3.4); z < Z - 1.2; z += 2.75) posts.push(z); /* the first pair on the partition's line; in one room 0.8 m on, clear of the chest's front */
   const xa = Math.min(1.3, (.75 + PXr - .11) / 2) /* the aisle beside the long hearth */;
   for (const sx of [-1, 1]) { for (const z of posts) if (!(stack && hit({ x0: sx * PXr - .11, x1: sx * PXr + .11, z0: z - .11, z1: z + .11 }, stack, .05))) bx('post', sx * PXr - .11, sx * PXr + .11, FY, TB, z - .11, z + .11, 'post'); bx('post', sx * PXr - .12, sx * PXr + .12, TB, TB + .24, -Z, Z); }
   for (const z of posts) bx('post', -PXr - .1, PXr + .1, TB, TB + .24, z - .1, z + .1);
@@ -180,10 +185,6 @@ export function markLonghouse(o = {}, r = stream('longhouse')) {
   const XL = w / 2 - .02, rl = X / Math.cos(hall.pitch); for (const sx of [-1, 1]) { const xm = sx * X / 2, rz = -sx * hall.pitch;
     for (let z = -Z + .3; z < Z; z += 1.0) put(new THREE.BoxGeometry(rl, .14, .1), 'post', xm, under(xm) - .03 - .07 / Math.cos(hall.pitch), z, 0, .8, 0, rz);
     put(new THREE.BoxGeometry(XL / Math.cos(hall.pitch), .02, 2 * Z), 'board', sx * XL / 2, under(XL / 2) - .01, 0, 0, .8, 0, rz); /* the lining runs out onto the wall plate, so no shingle shows over the wall */ }
-  // the plan: the drawn one (parted) when the long hearth fits between the partition (0.5 m clear before it) and the door's turn; its
-  // length is the longest of 2.6 down to 1.1 m that fits, centred under the louver
-  const hz = chim ? null : hall.louver ?? -1.5, PZ0 = -Z + 2.6, Ls = [2.6, 2.3, 2.0, 1.7, 1.4, 1.1], front = Z - 2.1;
-  const Lp = chim ? null : Ls.find(L => hz + L / 2 <= front && hz - L / 2 - .2 >= PZ0 + .5), parted = !chim && Lp >= 1.7;
   const L = chim ? null : parted ? Lp : Ls.find(L => hz + L / 2 <= front && hz - L / 2 >= -Z + .5) ?? 1.1;
   const PZ = parted ? PZ0 : null, H = chim ? null : { x0: -.55, x1: .55, z0: hz - L / 2, z1: hz + L / 2 };
   let fire;
@@ -213,7 +214,7 @@ export function markLonghouse(o = {}, r = stream('longhouse')) {
   bx('oak', bed.x0, bed.x1, FY, FY + .4, bed.z0, bed.z1, 'bed'); bx('fur', bed.x0 + .05, bed.x1 - .05, FY + .4, FY + .5, bed.z0 + .05, bed.z1 - .05);
   if (parted) bx('furPale', bed.x0 + .1, bed.x0 + .9, FY + .5, FY + .58, bed.z0 + .1, bed.z1 - .1); else bx('furPale', bed.x0 + .1, bed.x1 - .1, FY + .5, FY + .58, bed.z0 + .1, bed.z0 + .7) /* the pillow at the back wall */;
   const chest = parted ? { x0: bed.x1 + .1, x1: bed.x1 + 1.0, z0: -Z, z1: -Z + .55 } : bs < 0 ? { x0: -X, x1: -X + .55, z0: bed.z1 + .1, z1: bed.z1 + 1.0 } : { x0: X - .55, x1: X, z0: bed.z1 + .1, z1: bed.z1 + 1.0 };
-  bx('oak', chest.x0, chest.x1, FY, FY + .5, chest.z0, chest.z1, 'chest'); if (parted) bx('iron', chest.x0, chest.x1, FY + .3, FY + .34, chest.z1, chest.z1 + .02); else { const e = bs < 0 ? chest.x1 : chest.x0 - .02; bx('iron', e, e + .02, FY + .3, FY + .34, chest.z0, chest.z1); }
+  if (o.chest !== false) { bx('oak', chest.x0, chest.x1, FY, FY + .5, chest.z0, chest.z1, 'chest'); if (parted) bx('iron', chest.x0, chest.x1, FY + .3, FY + .34, chest.z1, chest.z1 + .02); else { const e = bs < 0 ? chest.x1 : chest.x0 - .02; bx('iron', e, e + .02, FY + .3, FY + .34, chest.z0, chest.z1); } } /* o.chest false: the game's own chest, that opens, stands in its place */
   // a small stone lamp of oil on the chest, the bed's own light
   const lamp2 = parted ? [bed.x1 + .55, FY + .56, -Z + .3] : [(chest.x0 + chest.x1) / 2, FY + .56, (chest.z0 + chest.z1) / 2]; put(new THREE.CylinderGeometry(.07, .05, .06, 10), 'kerb', lamp2[0], FY + .53, lamp2[2]); put(new THREE.SphereGeometry(.015, 6, 5).scale(1, 2, 1), 'flame', lamp2[0], FY + .585, lamp2[2]);
   let cradle = null; { const cx = -bs * (X - .7), cz = -Z + .85, c = { x0: cx - .3, x1: cx + .3, z0: cz - .45, z1: cz + .45 };
