@@ -13,10 +13,11 @@ const pickSites = () => { const nat = t => nationKeyOf(...cellOf(t.x, t.z)), d =
   return [...near('gatelands', 'town', 2), ...near('gatelands', 'village', 2), ...near('gatelands', 'port', 1), ...near('gatelands', 'city', 1), ...near('mark', 'town', 1)].map(t => ({ id: t.id, kind: t.kind, nat: nat(t) })); };
 const survey = ids => { const out = {};
   for (const id of ids) { const site = allSites().find(t => t.id === id); if (!WORLD.settle.get(id)) genSettlement(site); const S = WORLD.settle.get(id); if (!S) { out[id] = null; continue; }
-    out[id] = { houses: S.houses.filter(h => h.siteId === id).map(h => ({ id: h.id, type: h.type, w: h.w, d: h.d, x: +h.doorX.toFixed(3), z: +h.doorZ.toFixed(3), yaw: h.exitYaw, kit: h.kit })),
-      innPlot: !!(S.plots || []).find(P => P.type === 'inn'), lots: S.sol.filter(s => s.hid).map(s => ({ hid: s.hid, cx: s.cx, cz: s.cz, rx: s.rx, rz: s.rz, c: s.c, s: s.s })) }; }
+    out[id] = { houses: S.houses.filter(h => h.siteId === id && !h.farm).map(h => ({ id: h.id, type: h.type, w: h.w, d: h.d, x: +h.doorX.toFixed(3), z: +h.doorZ.toFixed(3), yaw: h.exitYaw, kit: h.kit })),
+      innPlot: !!(S.plots || []).find(P => P.type === 'inn'), lots: S.sol.filter(s => s.hid && !s.farm).map(s => ({ hid: s.hid, cx: s.cx, cz: s.cz, rx: s.rx, rz: s.rz, c: s.c, s: s.s })) }; }
   return out; };
 
+// (a village's farm on the new look, S1455, a home since S1459, stands off the lots by a road out: tests/kitfarm and kitfarmhouse)
 // the old look: the plan as it was
 const g0 = await boot({ look: 'old' }); await g0.intoWorld();
 const sites = await g0.page.evaluate(pickSites);
