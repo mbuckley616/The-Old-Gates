@@ -43,7 +43,7 @@ function tpWeapon(it){const g=new THREE.Group();if(!it)return g;
   // material colour, and it turns to put the string on your side of the grip, as the box bow had it
   const kind={scimitar:'cutlass',flail:'flail',greatclub:'greatclub',greataxe:'greataxe',claymore:'claymore'}[sh]||(WPN_KINDS.includes(sh)?sh:'sword');
   const w=buildWeapon(kind,{tint:{metal:blade,guard,glow:tpHex(it.matGlow,0x88c0ff),wood:sh==='bow'?tpHex(it.matCol,0x6a4428):null}});g.add(w);
-  if(kind==='bow'){w.rotation.y=Math.PI;g.userData.bow=true;}g.userData.kit=kind;
+  if(kind==='bow'){w.rotation.y=Math.PI;g.userData.bow=true;}if(kind==='crossbow')w.rotation.x=Math.PI;g.userData.kit=kind;
   return g;}
 const TP_LINEN=0xa89c80;
 // ── F10 (Session 1246): the player's own body from the builder's genome, in the new look ──
@@ -143,7 +143,9 @@ function tpBuild(lookIn,ppIn,reuse){
   const root=rig.root;root.rotation.order='YXZ';
   const R={root,rig,hips:B.hips,hipsY0:PW.HIPS,thighL:B.thL,thighR:B.thR,kneeL:B.knL,kneeR:B.knR,ankleL:B.anL,ankleR:B.anR,torso:B.spine,head:B.head,shL:B.shL,shR:B.shR,elL:B.elL,elR:B.elR,handL:B.wrL,handR:B.wrR};
   // what the hands hold (the weapon kit itself is a later pass)
-  R.twoH=!!(w&&w.twoHand&&w.weaponShape!=='bow');R.bow=bowW;R.unarmed=!w&&!oh;
+  // S1458 — a crossbow is carried in the right fist alone, by the wrist of its tiller, its prod down behind (people.js carries it
+  // point down): two hands on it held it up before the face as a claymore, the prod over the head
+  R.twoH=!!(w&&w.twoHand&&w.weaponShape!=='bow'&&w.weaponShape!=='crossbow');R.bow=bowW;R.unarmed=!w&&!oh;
   const grip=(hand,m)=>{m.position.set(0,-.04,.008);hand.add(m);return m;};
   if(w){const wm=tpWeapon(w);
     // S246: where the left hand goes on a two-handed grip: a hand's width from the right fist towards the pommel (the

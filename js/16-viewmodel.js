@@ -254,6 +254,7 @@ function vmMantle(){if(!vmSword||typeof MANTLE==='undefined'||MANTLE.t0==null)re
       fL.rotation.set(mix(fL.rotation.x,P[3]),mix(fL.rotation.y,-P[4]),mix(fL.rotation.z,-P[5]));}
     return;}
   vmSword.position.x+=-.06*w;vmSword.position.y+=-.42*w;vmSword.position.z+=-.1*w;vmSword.rotation.x+=-1.1*w;vmSword.rotation.z+=.35*w;}
+const FP_LEVEL={spear:1.15,crossbow:1.5};
 function buildViewmodel(){
   if(vmSword){if(vmSword.userData.fistL)VM_SCENE.remove(vmSword.userData.fistL);VM_SCENE.remove(vmSword);vmSword=null;}
   vmGlow=null;vmEnchantLight=null;
@@ -744,6 +745,14 @@ function buildViewmodel(){
     k.traverse(o=>{if(o.isMesh&&o.material.metalness>.3){o.material=o.material.clone();o.material.metalness=.25;o.material.roughness=.4;}});
     k.userData.fpKit=true;g.add(k);g.userData.kit=k;
   }
+  // S1458 — a spear or a crossbow is held pointing ahead, not up as a blade is: the fist, the kit's piece and the crossbow's left hand
+  // turn together about the grip (FP_LEVEL, toward −z), so the spear's head and the crossbow's prod stand out before you. The
+  // crossbow's left hand is under its fore-stock, a hand's breadth ahead of the right, not lower on a haft
+  if(FP_LEVEL[shape]!=null&&g.userData.kit){const pv=new THREE.Group();pv.position.set(0,_gripY,0);pv.rotation.x=-FP_LEVEL[shape];g.add(pv);
+    if(shape==='crossbow'&&g.userData.handLow)g.userData.handLow.position.set(0,_gripY+.15,-.004);
+    if(shape==='crossbow'){const k=g.userData.kit;k.rotation.y=-Math.PI/2;if(k.children[0])k.children[0].rotation.x=0;}
+    for(const o of [handMain,g.userData.handLow,g.userData.kit])if(o){o.position.y-=_gripY;pv.add(o);}
+    g.userData.level=pv;}
 
   // ── v70.2 — Arm bridges ────────────────────────────────────────────────
   // Weapon arm: right shoulder → primary hand. Recreated here (fresh chest
