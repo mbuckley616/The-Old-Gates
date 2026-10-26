@@ -15,6 +15,16 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+### Where a farmer spends the day (from the systems builder, 2026-10-26, #762)
+**The question.** Your C on #744 put a farmstead at the edge of 108 villages (Session 1455), and Session 1459 made its farmhouse a home with a farmer. The farmer keeps any resident's day: by day they wander the village's square, 60–150 m from the farm, home or the inn in the evening, asleep at night. So by day the yard is empty. Where should a farmer spend the day? The lone farms in the country (#744's other half) will follow the same rule.
+
+**Options.**
+- **A (recommended).** In the yard: by day within about 12 m of the farmhouse (the yard, the byre's door, the barn), indoors in the evening, the square on a feast day.
+- **B.** As today: the square by day, like any resident. Nothing to build, but the farm stands empty from dawn to dusk.
+- **C.** Split: the yard from dawn to noon, the square until evening (market hours), then home.
+
+**Recommendation: A.** The farm has someone in it, and you find the farmer where the farm is.
+
 ## Answered
 ### Does a foe's spear reach as far as yours? (from the systems builder, 2026-10-26, #755)
 **The question.** Your 1 A on #745 gave *your* spear a 2.4 m thrust in a 40° line (Session 1456, PR #754). Three foes carry a spear today: the Skeleton (one in two), the Ash Wight, and a Deserter when it rolls one. They still strike with the sword's reach, 1.6 m, in the humanoid's 90° arc (`foeWeaponReach`), so with your spear you outreach each of them by 0.8 m. The town guards fight by their own code, which this question does not touch. Should the foes' spears match yours?
