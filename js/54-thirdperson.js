@@ -12,7 +12,7 @@ let thirdPerson=false,PLAYER_MODEL=null; // v80 S12 — V toggles third person
 // S244: the viewmodel's variants (0 the forehand diagonal, 1 the backhand diagonal, 2 the overhead chop) as the body's
 // (0 the flat cut, 1 the overhead chop, 2 the rising diagonal)
 const TP_SWING_OF=[0,2,1];
-const TP={rig:null,sig:'',dist:SCALE.TP_DIST,want:SCALE.TP_DIST,cur:SCALE.TP_DIST,phase:0,lastHP:null,hurtT:0,deadT:0,swingSeen:0,swMax:0,swVar:0,swPow:false,hidVM:false,near:0};
+const TP={rig:null,sig:'',dist:SCALE.TP_DIST,want:SCALE.TP_DIST,cur:SCALE.TP_DIST,phase:0,lastHP:null,hurtT:0,deadT:0,swingSeen:0,swMax:0,swVar:0,swPow:false,hidVM:false,near:0,hbHold:{L:0,R:0,S:0,lean:0}};
 try{const v=localStorage.getItem('og_tp');if(v==='1')thirdPerson=true;const d=parseFloat(localStorage.getItem('og_tp_m'));if(d>0)TP.want=Math.max(SCALE.TP_MIN,Math.min(SCALE.TP_MAX,d));}catch(e){}
 // ── the look (Session 127): worldState.look = {skin,hair,style,beard,tunic,breeches,boots}
 // Chosen in the creator; the rig, the first-person hands and the base garments read it.
@@ -180,8 +180,9 @@ function tpBuild(lookIn,ppIn,reuse){
       rig.hb=H;H.L=-1;H.drv=rig.mesh.material;rig.root.add(H.root);TP_HB.kept=(TP_HB.kept||0)+1;}
     else{rig.hbLazy=true;try{hbAttach(rig);}catch(e){rig.hb=null;console.warn('F10: the player\'s body failed',e);}
       if(rig.hb){TP_HB.ms+=performance.now()-t0;TP_HB.n++;}}
-    // S1434 — the townsfolk's arms are held under a cloak in the walk (hbCloakArms); yours swing a blade and draw a bow as you walk, so not yet
-    if(rig.hb){R.hbSaved=E.saved;rig.hb.hold=null;
+    // S1435 — your arms under a cloak are held in the walk as the townsfolk's are (hbCloakArms, S1434), each arm only while it is on the
+    // gait's swing (tpPose's TP.hbHold): a blow, a guard, a draw, a cast, a torch, a shield, the swim and the climb keep the arm
+    if(rig.hb){R.hbSaved=E.saved;rig.tpHold=rig.hb.hold?TP.hbHold:null;
       root.scale.setScalar(rig.hb.st*PW.BODY/SCALE.PERSON_MODEL);hbLevel(rig,0);
       // what the hands hold rides in the builder's group: a copy of each piece (its geometry shared) in a carrier that follows the piece,
       // which stays on its driver bone where tpPose turns it, each frame (tpHBHold); a weapon's grip goes to the builder's curled fingers
@@ -393,6 +394,18 @@ function tpPose(R,dt,st){
     tpSet(R.thighL,thL,0,0,1);tpSet(R.thighR,thR,0,0,1);tpSet(R.kneeL,knL,0,0,1);tpSet(R.kneeR,knR,0,0,1);}
   // a hit rocks you back
   if(TP.hurtT>0){tx+=.35*(TP.hurtT/.28);}
+  // S1435 — an arm still on the gait's swing (its pose the gait's own, nothing above took it) is held under a cloak by the builder's
+  // body (hbPose, rig.tpHold); the hold eases in and out at the arm's own rate, so a blow begun mid-stride comes up from the hold
+  // standing, the same for an arm left as it hangs, and the blade's rest up and forward, which put the fist 18 cm out through a cloak
+  {const HH=TP.hbHold,free=!TP.swim&&!dead&&TP.deadT<.01&&!(typeof climbPose==='function'&&climbPose())&&!(typeof MANTLE!=='undefined'&&MANTLE.t0!=null),
+      on=GP&&free,stand=free&&!st.moving&&!air&&!sneak;
+    const fL=on&&aL.x===GP.shL&&aL.y===0&&eL===GP.elL||stand&&!aL.x&&!aL.y&&eL===-.2?1:0,
+      fR=on&&aR.x===GP.shR&&aR.y===0&&eR===GP.elR||stand&&(!aR.x&&!aR.y&&eR===-.2||R.weapon&&aR.x===-.22&&aR.y===0&&aR.z===-.12&&eR===-.5)?1:0;
+    HH.L+=(fL-HH.L)*ka;HH.R+=(fR-HH.R)*ka;if(Math.abs(HH.L-fL)<.002)HH.L=fL;if(Math.abs(HH.R-fR)<.002)HH.R=fR;
+    // the walk's forward lean (0.2 rad) carried the shoulders 5 cm out through a cloak that rides the pelvis: under one, while the torso
+    // is the gait's, you walk upright (HH.S eases it as the arms' hold does; HH.lean is the lean taken off)
+    const lean=GP?GP.spine+(st.sprinting?.08:0):0,fS=R.rig&&R.rig.tpHold&&on&&tx===lean?1:0;if(fS)HH.lean=lean;
+    HH.S+=(fS-HH.S)*ka;if(Math.abs(HH.S-fS)<.002)HH.S=fS;tx-=HH.S*(HH.lean||0);}
   tpSet(R.torso,tx,ty,tz,ka);tpSet(R.shL,aL.x,aL.y,aL.z,ka);tpSet(R.shR,aR.x,aR.y,aR.z,ka);tpSet(R.elL,eL,0,0,ka);tpSet(R.elR,eR,0,0,ka);
   // weapon grip follows the forearm; the bow stays vertical in the fist
   tpSet(R.handR,wR,0,0,ka);if(R.shield)tpSet(R.shield,0,shY,shZ,kf);

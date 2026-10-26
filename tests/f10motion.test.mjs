@@ -54,6 +54,46 @@ const r = await page.evaluate(() => { const keep = { w: EQ.weapon, o: EQ.offhand
       WORLD.isSwimming = sw; jumpY = jy; tick(5, {}); }
   } finally { window.requestAnimationFrame = raf; EQ.weapon = keep.w; EQ.offhand = keep.o; buildViewmodel(); buildShieldViewmodel(); reset(); }
   return out; });
+// S1435 — your arms under a cloak (Michael's #274, as the townsfolk's in S1434): walking with a sword and a wool cloak, the hand and
+// forearm points under the cloak are read round the neck's axis against its columns (f4people's test) on every third tick of a 60-tick
+// walk and standing with the blade at rest, with the hold and without it; and an arm the pose takes (a swing, a block) is let go at once to the driver's pose
+const ck = await page.evaluate(() => { const keep = { w: EQ.weapon, o: EQ.offhand, b: EQ.back }, raf = window.requestAnimationFrame; window.requestAnimationFrame = () => 0;
+  const v = new THREE.Vector3(), W = o => new THREE.Vector3().setFromMatrixPosition(o.matrixWorld);
+  const test = rig => { const P = rig.hb.P, cloak = rig.hb.full.find(m => m.name === 'cloak'), body = rig.hb.full.filter(m => m.isSkinnedMesh && !m.name).sort((a, b) => b.geometry.attributes.position.count - a.geometry.attributes.position.count)[0];
+    rig.root.updateMatrixWorld(true); const inv = cloak.matrixWorld.clone().invert(), K = 56, R = cloak.geometry.attributes.position.count / K, at = (m, i) => { m.getVertexPosition(i, v); return v.applyMatrix4(inv).clone(); };
+    const neck = P.byName['neck01'].getWorldPosition(new THREE.Vector3()).applyMatrix4(inv), ax = neck.x, az = neck.z, pol = [];
+    for (let k = 0; k < K; k++) { const c = []; for (let r = 0; r < R; r++) { const q = at(cloak, k * R + r); c.push({ th: Math.atan2(q.x - ax, -(q.z - az)), r: Math.hypot(q.x - ax, q.z - az), y: q.y }); } pol.push(c); }
+    const col = (k, y) => { const c = pol[k]; let lo = 0; while (lo < R - 2 && c[lo + 1].y > y) lo++; const a = c[lo], b = c[lo + 1], t = Math.max(0, Math.min(1, (a.y - y) / Math.max(1e-6, a.y - b.y))); return { th: a.th + (b.th - a.th) * t, r: a.r + (b.r - a.r) * t }; };
+    let yHem = -1e9; for (const c of pol) yHem = Math.max(yHem, c[R - 1].y); const yTop = neck.y - .14, bones = body.skeleton.bones, si = body.geometry.attributes.skinIndex, sw = body.geometry.attributes.skinWeight;
+    if (!rig._arm) { rig._arm = []; for (let i = 0; i < si.count; i += 2) { let b = 0, w = 0; for (let q = 0; q < 4; q++) if (sw.getComponent(i, q) > w) { w = sw.getComponent(i, q); b = si.getComponent(i, q); } if (/upperarm|lowerarm|wrist|finger|metacarpal/.test(bones[b].name)) rig._arm.push(i); } }
+    let tested = 0, out = 0, worst = 0;
+    for (const i of rig._arm) { const p = at(body, i); if (p.y > yTop || p.y < yHem + .01) continue; const th = Math.atan2(p.x - ax, -(p.z - az)), r = Math.hypot(p.x - ax, p.z - az);
+      if (th < col(1, p.y).th || th > col(K - 2, p.y).th) continue; let k = 1, A = col(1, p.y), B = col(2, p.y); while (k < K - 3 && B.th < th) { k++; A = B; B = col(k + 1, p.y); }
+      const t = Math.max(0, Math.min(1, (th - A.th) / Math.max(1e-6, B.th - A.th))), cr = A.r + (B.r - A.r) * t; tested++; worst = Math.max(worst, r - cr); if (r > cr + .003) out++; }
+    return { tested, out, worst }; };
+  const tick = (n, st) => { for (let i = 0; i < n; i++) { if (st.move) px += .05; tpUpdate(1 / 60, { moving: !!st.move, sprinting: false, camY: 1.6, now: performance.now() + i * 16.7, roll: null }); } };
+  const reset = () => { _sneaking = false; blocking = false; onGround = true; velY = 0; swingT = 0; castT = 0; dead = false; };
+  const fore = () => { const R = TP.rig, B = R.rig.B, by = R.rig.hb.P.byName, t = HBODY.swap ? 'L' : 'R'; R.root.updateMatrixWorld(true);
+    const a = W(B.wrR).sub(W(B.elR)).normalize(), b = W(by['wrist.' + t]).sub(W(by['lowerarm01.' + t])).normalize(); return +(Math.acos(Math.max(-1, Math.min(1, a.dot(b)))) * 180 / Math.PI).toFixed(1); };
+  const walk = hold => { const rig = TP.rig.rig, keepH = rig.tpHold; if (!hold) rig.tpHold = null; const o = { tested: 0, out: 0, worst: 0 };
+    tick(15, { move: 1 }); for (let i = 1; i <= 45; i++) { tick(1, { move: 1 }); if (i % 3 === 0) { const c = test(rig); o.tested += c.tested; o.out += c.out; o.worst = Math.max(o.worst, c.worst); } }
+    rig.tpHold = keepH; o.worst = +o.worst.toFixed(3); return o; };
+  const out = {};
+  try { reset(); thirdPerson = true; EQ.weapon = { name: 'Steel Sword', slot: 'weapon', weaponShape: 'sword', matCol: '#dde8ec', matGuard: '#a0b0b8' }; EQ.offhand = null;
+    EQ.back = { name: 'Wool Cloak', slot: 'back', cloak: 'wool' }; buildViewmodel(); buildShieldViewmodel(); tick(10, {});
+    const rig = TP.rig.rig; out.cloak = !!rig.hb.full.find(m => m.name === 'cloak'); out.held = rig.hb.hold ? rig.hb.hold.size : 0; tick(30, {}); out.rest = test(rig); rig.tpHold = null; tick(1, {}); out.restFree = test(rig); rig.tpHold = TP.hbHold; tick(30, {});
+    out.free = walk(false); out.hold = walk(true); out.k = { L: TP.hbHold.L, R: TP.hbHold.R, S: TP.hbHold.S, lean: +TP.rig.torso.rotation.x.toFixed(3) };
+    out.forearmWalk = fore();
+    vmSword.userData.swingMax = .5; vmSword.userData.swingVariant = 0; swingT = .5; for (let i = 0; i < 10; i++) { swingT = Math.max(0, .5 - i / 60); tick(1, { move: 1 }); }
+    out.swing = { L: +TP.hbHold.L.toFixed(2), R: +TP.hbHold.R.toFixed(2), forearm: fore() }; reset(); tick(20, { move: 1 });
+    blocking = true; tick(12, { move: 1 }); out.block = { L: +TP.hbHold.L.toFixed(2), R: +TP.hbHold.R.toFixed(2), forearm: fore() }; reset();
+  } finally { window.requestAnimationFrame = raf; EQ.weapon = keep.w; EQ.offhand = keep.o; EQ.back = keep.b; buildViewmodel(); buildShieldViewmodel(); reset(); tick(4, {}); }
+  return out; });
+console.log('  cloak:', JSON.stringify(ck));
+check(`walking in a cloak, none of your hand and forearm points under it comes out by 3 mm (${ck.hold.out} of ${ck.hold.tested}, at most ${ck.hold.worst * 1000} mm; ${ck.free.out} of ${ck.free.tested} without the hold), nor standing with the sword (${ck.rest.out} of ${ck.rest.tested}; ${ck.restFree.out} without)`,
+  ck.cloak && ck.held > 0 && ck.rest.out === 0 && ck.restFree.out > 0 && ck.hold.tested > 1000 && ck.hold.out === 0 && ck.hold.worst < .006 && ck.free.out > ck.hold.out, ck);
+check('a swing or a block begun in the walk lets the arm go from the hold to the driver\'s pose (the right forearm within 30° of the driver\'s: 18° at rest)',
+  ck.swing.R < .1 && ck.swing.forearm < 30 && ck.block.R === 0 && ck.block.forearm < 30, { swing: ck.swing, block: ck.block });
 for (const [k, v] of Object.entries(r)) console.log(k.padEnd(10), String(v.deg).padStart(5), v.worst, 'head', v.head, 'driver', v.headD, 'foot', v.foot, 'driver', v.footD);
 const rest = r.rest.deg, moving = Object.entries(r).filter(([k]) => k !== 'rest');
 check('at rest each limb of the builder\'s body lies along the driver\'s within 20°', rest < 20, r.rest);
