@@ -936,6 +936,7 @@ function buildFoe(type,x,z,genome,eyeCol){
   if(g.goblin&&typeof hcOn==='function'&&hcOn()){rig.hcKind=g.wpn?'Goblin':'Goblin Slinger';HC_RIGS.add(rig);} /* S1364 (F4) — and the goblins the kit's goblin, the knife's or the slinger's empty hands */
   if(g.troll&&typeof hcOn==='function'&&hcOn()&&HC_KINDS[type]){rig.hcKind=type;HC_RIGS.add(rig);} /* S1378 (F4) — the trolls the kit's troll, with its maul, in their kind's hide */
   if(g.golem&&typeof hcOn==='function'&&hcOn()){rig.hcKind='Golem';HC_RIGS.add(rig);} /* S1371 (F4) — the Golem the kit's golem, its eyes rune-lit */
+  if(g.wraith&&typeof hcOn==='function'&&hcOn()){rig.hcKind=g.phantom?'Phantom':'Wraith';HC_RIGS.add(rig);} /* S1429 (F4) — the Wraith and the Phantom the kit's, floating legless with their claws (hcPose takes off the driver's stance) */
   if(g.gargoyle&&typeof hcOn==='function'&&hcOn()){rig.hcKind='Gargoyle';HC_RIGS.add(rig);} /* S1375 (F4) — the Gargoyle the kit's gargoyle, its stone wings folded by its fold (hcGarg) */
   if(hbOn()&&hbFoeOk(type,genome,g)){rig.hbFoe=type;if(g.hbKey)rig.hbG=HB_GENOMES.get(g.hbKey);HB_RIGS.add(rig);} /* S1201 (F4) — a human foe wears the builder's body too, its genome rolled at its first attach, by its id */
   return rig;

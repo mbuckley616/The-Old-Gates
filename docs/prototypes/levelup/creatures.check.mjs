@@ -355,6 +355,32 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
     check(`${k}: no head under its hood, a black hollow on the head bone, seen only through the hood's opening (Session 1187), with ${t.slits.length} slits of light in it, Scáth's violet`, t.hood?.black && t.hood.onHead && t.hood.facing && t.slits.length === 2 && t.slits.every(e => e.sx > 2 && e.em[2] > e.em[0] && e.em[0] > e.em[1] && e.em[2] > .5) && t.school === 'Scáth' && /OG-018/.test(t.src), t);
     check(`${k}: arms ${t.arm} m long (a man's are about 0.75), reaching ${t.reach} m ahead of its chest standing, ${t.claws} bone claws; nothing else lit (${t.lit})`, t.arm > .9 && t.reach > .4 && t.claws >= 6 && t.lit === 0, t); }
   check(`the wraiths: ${Object.keys(wr).join(', ')}`, Object.keys(wr).length >= 1, Object.keys(wr));
+  // the phantom (Session 1428; OG-018's Scáth and Solas phantom, the game's since S212, Michael's B on #158: the wraith's claws and stance,
+  // its face kept): no legs, floating; no hood but a face, two dull hollow sockets with a pale light in each and a hollow mouth; long hair
+  // that stirs as it goes; clearer and a little smaller than the wraith; nothing lit but the eyes
+  const ph = await page.evaluate(async () => { const T = await import('three'), K = await import('./creatures.js'), out = {};
+    const tall = C => { C.gait = 'stand'; K.pose(C, 0); C.rig.updateMatrixWorld(true); const b = new T.Box3(); for (const m of C.meshes) b.union(new T.Box3().setFromObject(m, true)); return (b.max.y - b.min.y) / (C.S / (C.plan.scale || 1)); }; // at the size slider's one, so a seed's size does not decide it
+    const W = K.build(K.genome('wraith', 'wraith:check')), wTall = tall(W);
+    for (const k of K.PHANTOMS || []) { const C = K.build(K.genome(k, k + ':check')), box = new T.Box3(); let low = 1e9, hood = false, hollows = 0, lights = [], claws = 0, lit = 0;
+      const hair = C.B.crests.map(Cr => ({ tip: C.byName[Cr.names[Cr.names.length - 1]], mn: 1e9, mx: -1e9 })), P = new T.Vector3(), inv = new T.Matrix4();
+      for (const gait of C.plan.gaits) { C.gait = gait; for (let i = 0; i < 24; i++) { K.pose(C, i / 24); C.rig.updateMatrixWorld(true); inv.copy(C.rig.matrixWorld).invert();
+        for (const m of C.meshes) { box.setFromObject(m, true); low = Math.min(low, box.min.y - C.root.position.y); }
+        if (gait === 'hover') for (const h of hair) { h.tip.getWorldPosition(P).applyMatrix4(inv); h.mn = Math.min(h.mn, P.y); h.mx = Math.max(h.mx, P.y); } } }
+      C.byName.head.traverse(o => { if (o.name === 'hood') hood = true; if (o.isMesh && o.material?.clearcoat === 0 && o.material.roughness === 1 && o.material.color.r < .01) hollows++;
+        if (o.isMesh && o.material?.clearcoat === 1 && o.material.emissive.b > .5) lights.push(o.material.emissive.toArray().map(v => +v.toFixed(2))); });
+      C.rig.traverse(o => { if (o.isMesh && o.geometry.type === 'ConeGeometry') claws++; });
+      const gl = C.meshes[0].geometry.attributes.aGlow; for (let v = 0; v < gl.count; v++) if (gl.getX(v) > .01) lit++;
+      const arm = C.plan.parts.find(([q]) => q === 'arms')[1];
+      out[k] = { legs: C.B.legs.length, low: +low.toFixed(3), rags: C.B.rags, hood, hollows, lights, hair: hair.length, stir: hair.map(h => +((h.mx - h.mn) * C.S).toFixed(3)), claws, lit, arm: +(arm.len * C.S).toFixed(2),
+        clear: C.plan.clear, wClear: W.plan.clear, tall: +tall(C).toFixed(2), wTall: +wTall.toFixed(2), school: C.plan.school, src: C.plan.src, tris: C.stats.tris, bones: C.stats.bones }; }
+    return out; });
+  for (const [k, t] of Object.entries(ph)) { console.log(k, JSON.stringify(t));
+    check(`${k}: no legs, floating clear of the ground through its bob (lowest ${t.low} m, its hem torn into ${t.rags?.strips} tongues)`, t.legs === 0 && t.low > .03 && t.rags?.strips >= 12, t);
+    check(`${k}: its face kept, no hood: ${t.hollows} dull hollows (two sockets and a mouth) and ${t.lights.length} pale lights for eyes`, !t.hood && t.hollows === 3 && t.lights.length === 2 && t.lights.every(e => e[2] > e[0]), t);
+    check(`${k}: ${t.hair} locks of hair, each tip stirring ${Math.min(...t.stir)}–${Math.max(...t.stir)} m through the hover`, t.hair >= 4 && t.stir.every(v => v > .01), t.stir);
+    check(`${k}: the wraith's claws and reach (${t.claws} bone claws, arms ${t.arm} m); nothing lit but its eyes (${t.lit})`, t.claws >= 6 && t.arm > .85 && t.lit === 0, t);
+    check(`${k}: fainter and smaller than the wraith (clear ${t.clear} against ${t.wClear}, ${t.tall} m tall against ${t.wTall} at one size), in ${t.school}, from OG-018`, t.clear < t.wClear - .1 && t.tall < t.wTall && /OG-018/.test(t.src), t); }
+  check(`the phantoms: ${Object.keys(ph).join(', ')}`, Object.keys(ph).length >= 1, Object.keys(ph));
   // the fire elemental (Session 1185; OG-018's Tine row, the game's since S222, Michael's B on Session 214): no legs, floating clear of the
   // ground; a crust lit only in its cracks over a column of flame; tongues of flame grown from the body and a crown of them on the head,
   // licking at rest; arms of flame, lit claws, lit eyes
