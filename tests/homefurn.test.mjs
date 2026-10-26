@@ -5,7 +5,7 @@ import { boot, check } from './lib/game.mjs';
 import fs from 'fs';
 const g = await boot(); const { page } = g;
 await g.intoWorld(); await g.settle('dunmore');
-await page.evaluate(() => { const h = WORLD.settle.get('dunmore').houses.find(x => x.type === 'home'); window._H = h; px = h.exitX; pz = h.exitZ; goToInterior(h); });
+await page.evaluate(() => { const h = WORLD.settle.get('dunmore').houses.find(x => x.type === 'home'); window._H = h; /* S1437: the generated home's rules; a Dunmore home's kit townhouse room is kittownhouse's, so the visit sets its kit aside */ h._kitWas = h.kit; h.kit = null; px = h.exitX; pz = h.exitZ; goToInterior(h); });
 await page.waitForTimeout(5000); await g.hide();
 // S896 (card F2a): a room is laid out in the kit's unit at its true size ÷ K and built K times larger (SCALE.ROOM_K); the cottage's places
 // are the kit's (homeAt), and every place and height below is the kit's times K
@@ -32,7 +32,7 @@ fs.mkdirSync('tests/out', { recursive: true });
 fs.writeFileSync('tests/out/homefurn.png', Buffer.from(shot.split(',')[1], 'base64'));
 // the inn's taproom (Session 287): the bar, dresser, casks, hearth, tables and benches on the kit; the beds, the bar's,
 // tables' and benches' footholds and the hearth's solid as before
-await page.evaluate(() => { try { exitInterior(); } catch (e) {} });
+await page.evaluate(() => { try { exitInterior(); } catch (e) {} _H.kit = _H._kitWas; delete _H._kitWas; });
 await page.waitForTimeout(2500); await g.hide();
 // on the new look Dunmore's inn is the kit's coaching inn (S1368) and every Gatelands inn a kit room; the old builder's taproom still
 // stands in the inns that have none (an inland Aurennais inn, a port's second), so it is built here with Dunmore's inn's kit set aside

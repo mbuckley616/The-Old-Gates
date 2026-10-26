@@ -1824,6 +1824,88 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     else{intNPCMesh=null;intNPCPos={x:-99,z:-99};}
     return sc_;
   }
+  // S1437 (card F9, Michael's A on #303; OG-115) — on the new look a Gatelands town's home standing as the kit's townhouse on 3, 4 or 5
+  // bays and 6.75 m deep or more (lot.kit, S1072 and S1126) is the kit's townhouse inside (PKIT.gl.townhouse, rooms.js's Session 1189
+  // laid out by bays in Session 1427), in its street's render and paint: the hall and the dog-leg stair in the door's bay, the parlour
+  // and the kitchen beside it; up the stair the drawing room and the dining room, then the bedroom and the children's room. The room is
+  // drawn with its door at the east end; a west-door house is the same room mirrored (s = -1, the group scaled -1 in x). It is drawn in
+  // metres and moved into the room's frame as the coaching inn's is (nothing scaled). The curtained bed on the second floor is the
+  // resident's, head to the cross wall (-z); the chest at its foot is the home's.
+  function kitTownhouse(house){const k=house&&house.kit;return !!(house&&house.type==='home'&&k&&k.kind==='townhouse'&&[3,4,5].includes(k.bays)&&house.d>=6.75-1e-6&&window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.gl&&PKIT.gl.townhouse);}
+  function buildKitTownhouse(house){
+    const T=PKIT.gl.townhouse({bays:house.kit.bays,d:+house.d.toFixed(2),color:house.kit.colour,paint:house.kit.paint},PKIT.stream(house.id+':townhouse')),I=T.inner,X=I.x1,Z=I.z1,F0=T.floors[0],W=2*X,D=2*Z;
+    const s=(house.kit.door||0)<0?-1:1,rx=x=>X+s*x,rz=z=>z+Z,ry=y=>y-F0,FL=T.floors.map(y=>+(y-F0).toFixed(3));
+    house._counterFront=null;house.intW=W;house.intD=D;house._roomH=+(T.ceils[2]-F0).toFixed(3);house._exitD=.8;house._exitW=1.0;house._exitX=+rx(T.door.x).toFixed(3);house._townhouse=T;house._mirror=s;
+    const sc_=new THREE.Scene();interiorScene=sc_;landRoomPost(sc_);sc_.background=new THREE.Color(0x120a06);sc_.fog=new THREE.Fog(0x120a06,Math.max(W,D)*.8*SCALE.ROOM_K,Math.max(W,D)*2.4*SCALE.ROOM_K);
+    intNPCMesh=null;intBedPos=null;intStashPos=null;
+    const SOL=[];INT_SOL=SOL;FOOTHOLDS=[];INT_BEDS=[];INT_DOORS=[];INT_DOORS.house=house.id;INT_CHAIR=null;INT_NPCS=[];HATCH.active=false;HATCH.roof=false;INT_LOOT=null;INT_BOX=null;INT_SHELF=null;
+    T.group.position.set(X,-F0,Z);T.group.scale.x=s;T.group.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false;}});sc_.add(T.group);
+    {const E=new THREE.Object3D();E.position.set(rx(T.door.x),0,D);E.userData.entrance=true;E.userData.leaf=[T.door.w,+(T.door.h-T.door.w/2).toFixed(3)];sc_.add(E);} /* the front door's leaf to the fanlight's spring, as the coaching inn's records it */
+    const fr=(q,y0,y1)=>{const a=rx(q.x0),b=rx(q.x1);return {x0:Math.min(a,b),x1:Math.max(a,b),z0:rz(q.z0),z1:rz(q.z1),y0,y1};}; /* a box in the room's frame, mirrored or not */
+    const foot=b=>FOOTHOLDS.push({x0:b.x0,x1:b.x1,z0:b.z0,z1:b.z1,y:b.y1});
+    // the solids are the prototype's boxes (the partitions of each floor cut at their doors, the breasts, the furniture, the front and
+    // back doors' open leaves); a seat or a table stands from its floor (its legs are not boxes), so you step up onto a chair, a stool,
+    // the settee or the settle (held to STEP_UP); a bed stands to its tick and blanket (0.55); a box's top is a foothold, except a wall's,
+    // a leaf's and the tall pieces'
+    const TALL=['partition','leaf','breast','press','dresser','clothespress','bunks'];
+    for(const q of T.boxes){const f=FL[q.fl];let y0=ry(q.y0),y1=ry(q.y1);
+      if(['chair','stool','settee','settle'].includes(q.tag)){y0=f;y1=f+STEP_UP;}else if(['table','halltable','washstand','smalltable'].includes(q.tag))y0=f;else if(q.tag==='bed'){y0=f;y1=f+.55;}
+      const b=fr(q,y0,y1);SOL.push(b);if(!TALL.includes(q.tag))foot(b);}
+    // the stair's treads and half-landings (the prototype keeps them as lists, not boxes): each a solid of its own thickness and a foothold;
+    // the rail round the top of the well on the second floor
+    for(const q of T.steps){const b=fr(q,ry(q.y)-.22,ry(q.y));SOL.push(b);foot(b);}
+    for(const q of T.landings){const b=fr(q,ry(q.y)-.2,ry(q.y));SOL.push(b);foot(b);}
+    for(const q of T.rail)SOL.push(fr({x0:q.x0,x1:q.x1,z0:q.z,z1:q.z+.07},FL[2],ry(q.y)));
+    // the two upper floors over the whole house, each open over the stair's well
+    const wl=fr(T.well,0,0),hole={x0:wl.x0,x1:wl.x1,z0:wl.z0,z1:wl.z1};
+    for(const y of [FL[1],FL[2]])FOOTHOLDS.push({x0:0,x1:W,z0:0,z1:D,y,hole});
+    // the doors (the prototype leaves its doorways open): in the hall's partition the parlour's and the kitchen's; upstairs the landing's
+    // into the front room's bay over the hall, and the back room's off the landing where it stands clear of the well, else (shallower
+    // than 9 m) the second floor's beside the bed; the drawing room's double doors stand open
+    {const P=T.part,K=T.kdoor,kz=(K.z0+K.z1)/2,kw=K.z1-K.z0,dr=(x,z,fl,ang,w,h)=>intDoorAt(sc_,SOL,rx(x),rz(z),FL[fl],ang,0x4a3420,{w:w-.04,h:h-.04});
+      dr(P.x,Z-1.7,0,0,.9,2.1);dr(P.x,kz,0,0,kw,2.1);
+      for(const fl of [1,2]){dr(P.x+1.05,P.h,fl,Math.PI/2,.9,2.05);if(T.upOK)dr(P.x,kz,fl,0,kw,2.05);}
+      if(!T.upOK)dr(-X+3.025,P.z,2,Math.PI/2,.85,2.05);}
+    // the curtained bed on the second floor is the resident's (the sleeper lies in it, head to -z)
+    {const b=T.boxes.find(q=>q.tag==='bed'),B=fr(b,0,0),x=(B.x0+B.x1)/2,cz=(B.z0+B.z1)/2;INT_BEDS.push({x,z:cz+.2,y:FL[2],owner:'home',room:null,cz});intBedPos={x,z:cz+.2};}
+    // the home's chest, in the bedroom against the front wall, on the pier between the door bay's window and the next (1.0 m), its lid
+    // to the room; the chest drawn at the bed's foot stays the room's furniture
+    {const bx=rx(T.door.x-.975),bz=D-.3,bg=new THREE.Group(),shell=buildChestShell(bg,.45,0x6a4a2c);bg.position.set(bx,FL[2],bz);bg.rotation.y=Math.PI;sc_.add(bg);SOL.push({x0:bx-.32,x1:bx+.32,z0:bz-.28,z1:bz+.28,y0:FL[2],y1:FL[2]+.5});
+      INT_BOX={x:bx,z:bz,y:FL[2],lid:shell.lid,g:bg,id:house.id,kind:'home',type:'home',house,open:false};}
+    // a bought house's cellar: the hatch in the hall's flags, in front of the stair's foot
+    if(hasCellar(house)){const hx=rx((T.part.x+T.part.t+I.x1)/2),hz=rz(T.well.z1+.75);const lid=new THREE.Mesh(new THREE.BoxGeometry(.8,.04,.8),new THREE.MeshLambertMaterial({color:0x3a2612}));lid.position.set(hx,.02,hz);sc_.add(lid);
+      const ring=new THREE.Mesh(new THREE.TorusGeometry(.07,.015,5,10),new THREE.MeshLambertMaterial({color:0x2a2622}));ring.position.set(hx,.05,hz+.25);ring.rotation.x=Math.PI/2;sc_.add(ring);house._hatch={x:hx,z:hz};HATCH.x=hx;HATCH.z=hz;HATCH.y=0;HATCH.active=true;}
+    // the day beyond every window of the three floors and the open front and back doors, by the hour: one mesh of planes outside them
+    {const hr=typeof gameHour==='function'?gameHour():12,day=hr>=7&&hr<18?0xc4d0dc:hr>=5&&hr<20?0x8a7a7a:0x0e1420,M=new THREE.MeshBasicMaterial({color:day}),hd=T.d/2+.08;
+      const P=[],out=(x,y,z,w,h,a)=>{const g=new THREE.PlaneGeometry(w+.1,h+.1).toNonIndexed();g.rotateY(a);g.translate(rx(x),ry(y+h/2),rz(z));P.push(g.attributes.position.array);g.dispose();};
+      for(const q of T.windows)out(q.x,q.y,q.face==='front'?hd:-hd,q.w,q.h,q.face==='front'?Math.PI:0);
+      out(T.door.x,F0,hd,T.door.w,T.door.h,Math.PI);out(T.back.x,F0,-hd,T.back.w,T.back.h,0);
+      const A=new Float32Array(P.reduce((n,a)=>n+a.length,0));let o=0;for(const a of P){A.set(a,o);o+=a.length;}
+      const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(A,3));const m=new THREE.Mesh(g,M);m.userData.daylight=true;sc_.add(m);}
+    // the light: the four fires on the west gable (the parlour's grate and the kitchen's range, the drawing room's and the dining room's
+    // grates), a lamp in the hall and in each of the six rooms but the parlour (its candle), and the room's warmth: ten in all. The fires'
+    // embers and flames ride in a group of their own (the candles' flames stay out of it), so a Mages' cold hearth (S676) shows ash and
+    // no fire on any of the four until tickInterior lights them
+    const KA=kitRoomAir(sc_,.45);
+    const L=(x,y,z,c,i,d)=>{const l=new THREE.PointLight(c,i*(c===0xff6a20?KA.fire:KA.lamp),d);l.position.set(x,y,z);sc_.add(l);return l;};
+    const cold=coldHearthHouse(house),fls=T.fires.map(F=>{const l=L(rx(F[0]+.5),ry(F[1]),rz(F[2]),0xff6a20,cold?0:1.3,6);l.userData.lit=1.3*KA.fire;return l;});
+    for(const p of T.lamps)L(rx(p[0]),ry(p[1]),rz(p[2]),0xffaa44,1.0,7);
+    {const hf=new THREE.Group();hf.name='hearthFire';T.room.add(hf);
+      for(const m of T.room.children.filter(m=>m.isMesh&&(m.name==='ember'||m.name==='flame'))){if(m.name==='ember'){hf.add(m);continue;}
+        const P=m.geometry.attributes.position,lo=[],hi=[];for(let i=0;i<P.count;i+=3){const x=(P.getX(i)+P.getX(i+1)+P.getX(i+2))/3,dst=x<-X+.45?lo:hi;for(let k=0;k<3;k++)dst.push(P.getX(i+k),P.getY(i+k),P.getZ(i+k));}
+        const mk=a=>{const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(a,3));g.computeVertexNormals();const q=new THREE.Mesh(g,m.material);q.name='flame';return q;};
+        m.geometry.dispose();T.room.remove(m);hf.add(mk(lo));if(hi.length)T.room.add(mk(hi));}
+      hf.visible=!cold;const holder=new THREE.Group();holder.userData.hearthFire=hf;holder.userData.hearthLight=fls[1];holder.userData.hearthLights=fls;if(cold)holder.userData.coldHouse=house;sc_.add(holder);furnSwap(holder);}
+    // the resident, in the kitchen where the way from the hall turns to the back door, facing into the kitchen (its middle; S1437: she
+    // faced the hall through the partition 0.35 m off, and the paused sway then turned her to +z, the kitchen's front wall 0.8 m off)
+    const np=T.paths[0].pts[4],npc={x:rx(np[0]),z:rz(np[1])},KR=T.rooms.kitchen,nry=Math.atan2(rx((KR.x0+KR.x1)/2)-npc.x,rz((KR.z0+KR.z1)/2)-npc.z);
+    if(npcInsideNow(house)){const g=buildNPCMesh({role:'Resident',name:house.keeper,_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
+      g.rotation.y=nry;g.position.set(npc.x,0,npc.z);sc_.add(g);intNPCMesh=g;intNPCPos={x:npc.x,z:npc.z};
+      intNPCMesh.userData.amble={wa:0,wt:1,minZ:npc.z,maxZ:npc.z,minX:npc.x,maxX:npc.x,speed:.25,paused:true,ry:nry};
+      if(homeAsleepNow(house))laySleeper(intNPCMesh);}
+    else{intNPCMesh=null;intNPCPos={x:-99,z:-99};}
+    return sc_;
+  }
   // S1425 (card F9, Michael's A on #318 and #329; OG-115) — on the new look the courtyard house of an Aurennais town's better quarter
   // (lot.kit.kind 'aurcourt', S1419) is its own rooms inside (PKIT.au.courtyardHouse, rooms.js's Session 899): the street's own shell
   // (its stream keyed by the town and the lot), four ranges two storeys high round the arcaded court, the fountain and the four orange
@@ -2105,6 +2187,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     if(kitTavern(house))return buildKitTavern(house); /* S1320 — Aurenne's tavern on the quay, at its true size */
     if(kitCoachRoom(house))return buildKitCoachRoom(house); /* S1368 — a town's coaching inn inside, at its true size */
     if(kitCottage(house))return buildKitCottage(house); /* S1392 — a Gatelands village's cottage inside, at its true size */
+    if(kitTownhouse(house))return buildKitTownhouse(house); /* S1437 — a Gatelands town's townhouse inside, at its true size */
     if(kitCourtHouse(house))return buildKitCourtHouse(house); /* S1425 — Aurenne's courtyard house inside, at its true size */
     if(kitChurchHall(house))return buildKitChurchHall(house); /* S1326 — the Church of the Weaver inside, at its true size */
     const two=!!house.two;

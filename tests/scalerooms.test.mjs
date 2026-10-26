@@ -12,7 +12,7 @@ const P = 1.8;
 const types = ['home', 'inn', 'weapon', 'armor', 'potion', 'misc', 'barber', 'church', 'guild_f', 'castle'];
 const all = {};
 for (const ty of types) {
-  const ok = await page.evaluate(ty => { forceTime(12); const S = WORLD.settle.get('dunmore'); const h = S.houses.find(x => x.type === ty); if (!h) return false; px = h.exitX; pz = h.exitZ; goToInterior(h); return true; }, ty);
+  const ok = await page.evaluate(ty => { forceTime(12); const S = WORLD.settle.get('dunmore'); const h = S.houses.find(x => x.type === ty && !(ty === 'home' && kitTownhouse(x))); /* S1437: the generated home; a kit townhouse's room is kittownhouse's */ if (!h) return false; px = h.exitX; pz = h.exitZ; goToInterior(h); return true; }, ty);
   if (!ok) { all[ty] = null; continue; }
   for (let k = 0; k < 40 && !(await page.evaluate(() => isInterior())); k++) await page.waitForTimeout(250);
   await g.frames(2);

@@ -57,7 +57,7 @@ await page.evaluate(() => {
 const rows = [], shut = [];
 for (const town of TOWNS) {
   await g.settle(town);
-  const ids = await page.evaluate((town) => { forceTime(13); const S = WORLD.settle.get(town); return S ? S.houses.filter(h => String(h.id).startsWith('g_')).map(h => h.id) : []; }, town);
+  const ids = await page.evaluate((town) => { forceTime(13); const S = WORLD.settle.get(town); return S ? S.houses.filter(h => String(h.id).startsWith('g_') && !kitTownhouse(h)).map(h => h.id) : []; }, town); /* S1437: a kit townhouse (three floors, the bed and chest upstairs, you set down at its door) is walked by kittownhouse */
   for (const id of ids) {
     const r = await page.evaluate(([town, id]) => {
       const h = WORLD.settle.get(town).houses.find(x => x.id === id); forceTime(13);

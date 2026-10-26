@@ -5,9 +5,9 @@ import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld(); await g.settle('dunmore');
 const enter = async (hr, k = 0) => { await page.evaluate(([hr, k]) => { forceTime(hr); const S = WORLD.settle.get('dunmore');
-  const hs = S.houses.filter(x => x.type === 'home' && !x.ownedByPlayer && !x.shuttered); const h = hs[k]; window._h = h; px = h.exitX; pz = h.exitZ; goToInterior(h); }, [hr, k]);
+  const hs = S.houses.filter(x => x.type === 'home' && !x.ownedByPlayer && !x.shuttered); const h = hs[k]; window._h = h; /* S1437: this suite's rules are the one-room home's; a Dunmore home's kit townhouse room (three floors, the bed upstairs) is kittownhouse's, so the visit sets its kit aside */ if (h.kit) { h._kitWas = h.kit; h.kit = null; } px = h.exitX; pz = h.exitZ; goToInterior(h); }, [hr, k]);
   await page.waitForTimeout(3000); await g.hide(); };
-const leave = async () => { await page.evaluate(() => exitInterior()); await page.waitForTimeout(1500); };
+const leave = async () => { await page.evaluate(() => exitInterior()); await page.waitForTimeout(1500); await page.evaluate(() => { const h = window._h; if (h && h._kitWas) { h.kit = h._kitWas; delete h._kitWas; } }); };
 const state = () => page.evaluate(() => { const m = intNPCMesh; const b = INT_BEDS.find(b => b.owner === 'home');
   return { has: !!m, asleep: !!(m && m.userData.asleep), rx: m ? +m.rotation.x.toFixed(2) : null, x: m ? +m.position.x.toFixed(2) : null, z: m ? +m.position.z.toFixed(2) : null,
     y: m ? +m.position.y.toFixed(2) : null, bed: b ? [b.x, b.z] : null, hour: +gameHour().toFixed(2) }; });

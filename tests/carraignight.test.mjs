@@ -41,8 +41,8 @@ for (let k = 0; k < 8; k++) {
     // wait for the fade's callback to have put us in this home, not for a fixed time: a late fade left INT_BOX the last room's
     // while lid was still the overworld, and the room's coordinates outdoors made the world drop Carraig Mór (Session 947)
     await page.waitForFunction(() => isInterior() && currentHouse === window._h, null, { timeout: 30000 });
-    row.push(await page.evaluate(() => { if (!isInterior() || currentHouse !== _h) throw new Error('not in the home'); if (!INT_BOX || !intNPCMesh) { exitInterior(); return null; } px = INT_BOX.x + .6; pz = INT_BOX.z - .6; jumpY = 0; let seen = false;
-      for (let f = 0; f < 300; f++) { WORLD.tickInterior(1 / 60, performance.now()); if (f % 15 === 0 && WORLD.witnessOf(_h)) seen = true; } exitInterior(); return seen; }));
+    row.push(await page.evaluate(() => { if (!isInterior() || currentHouse !== _h) throw new Error('not in the home'); if (!INT_BOX || !intNPCMesh) { exitInterior(); return null; } px = INT_BOX.x + .6; pz = INT_BOX.z - .6; jumpY = INT_BOX.y || 0; /* S1437: on the chest's floor */ let seen = false;
+      for (let f = 0; f < 300; f++) { WORLD.tickInterior(1 / 60, performance.now()); if (f % 15 === 0 && WORLD.witnessOf(_h)) seen = true; } jumpY = 0; exitInterior(); return seen; })); /* back on the ground floor first: a townhouse's chest is upstairs */
     await page.waitForFunction(() => !isInterior() && lid === 'overworld', null, { timeout: 30000 });
   }
   homesIn.push(row);
