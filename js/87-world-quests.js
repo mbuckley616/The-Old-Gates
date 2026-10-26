@@ -192,7 +192,7 @@
       // remember what was asked (wrap fn/response so choosing marks it)
       return expanded.map(tp=>{const w=Object.assign({},tp);const orig=w.fn;w.fn=(c)=>{(def._asked||(def._asked=new Set())).add(tp.label);const rr=orig?orig(c):undefined;return rr;};if(!orig&&!w.response&&Object.getOwnPropertyDescriptor(tp,'response')){}return w;});
     }});
-    Object.defineProperty(def,'greeting',{configurable:true,get(){const n=metCount(metKey(def,site));const P=PEOPLES[def.people||'gatelander'];const pg=peopleGreeting(def);const pp=playerPeople();const asideOK=n===0&&pg&&(pp==='oldblood'||Math.random()<.5);const aside=asideOK?(pp==='oldblood'?' '+pg:(pp===def.people?' '+pg:` You're ${pp==='aurennais'?'Aurennais':pp==='markman'?'a Markman':'a Gatelander'}, by the look of you. ${pg}`)):'';const g=(n>0?pick(Math.random,["Back again?","You. Good.","I remember you.","Thought I'd seen the last of you."]):(Math.random()<.5?pick(Math.random,P.greet):pick(Math.random,T.greet)))+aside;const rank=worldState.guild&&(worldState.guild.guild_f.done>=3||worldState.guild.guild_m.done>=3)?" Guildsman.":"";const owner=worldState.owned&&Object.values(worldState.owned).some(o=>o.site===site.id)?" Neighbour.":"";noteMet(metKey(def,site));return [g+owner+rank];}});
+    Object.defineProperty(def,'greeting',{configurable:true,get(){return [firstWords(def,site)];}}); /* S1432 — First Words (approved 14 Oct 2026): one line, never an opinion */
     return def;
   }
 
@@ -680,12 +680,54 @@ const giver=`${lord.title} ${lord.name}`;
   // the player's people
   function playerPeople(){return worldState.people||'gatelander';}
   // what an NPC says of the player's people, and how they describe the player (the Old Blood can't be pinned)
-  function peopleGreeting(def){
-    const P=PEOPLES[def.people||'gatelander'];const pp=playerPeople();
-    if(pp==='oldblood'){const d=pick(Math.random,["I'd have said dark hair. I'd have said it. Now I'm not sure.","Your eyes were grey a moment ago.","I keep losing your face when I look away. Forgive me.","I never could look straight at you, could I."]);return d;}
-    if(pp===def.people)return pick(Math.random,[P.honor?`One of our own, ${P.honor}.`:'One of our own.',"You've the look of home about you."]);
-    const line=P.of[pp];return line?pick(Math.random,line):null;
+  function peopleGreeting(def){ // S1432 — only the Old Blood player's four descriptions are left (canon §2.2); the census and the verdict went with First Words
+    if(playerPeople()!=='oldblood')return null;
+    return pick(Math.random,["I'd have said dark hair. I'd have said it. Now I'm not sure.","Your eyes were grey a moment ago.","I keep losing your face when I look away. Forgive me.","I never could look straight at you, could I."]);
   }
+  // ── First Words (S1432; the quest writer's draft, approved 14 Oct 2026, word for word) ── the generated townsperson's greeting:
+  // the first meeting by the speaker's people and then yours, later meetings by the speaker's, the tags in the speaker's words
+  const GREET_FIRST={
+    gatelander:{gatelander:["Weaver keep you, friend.","You've the look of home about you.","A face from home. Come in out of it."],
+      markman:["Good day to you, Markman.","A long way south, and the road still under you.","Markman. You'll find us slower than you're used to, and no worse for it."],
+      aurennais:["Good day to you, and to whoever sent you.","From over the water, are you? Come in, so.","An Aurennais. Weaver keep you all the same."],
+      oldblood:["Good day to you. Have we met? We'd have met.","Weaver keep you. Stand where I can see you, so.","You'll have walked a way."]},
+    markman:{markman:["Aye.","Aye. One of ours.","Mark-born. Good. Speak."],
+      gatelander:["Aye, Gatelander. What is it?","Long way north for a turf-cutter. Speak.","Gatelander. Go on."],
+      aurennais:["Aurennais. Buying or selling?","Aye. Compact. Say it plain, it's quicker.","What is it?"],
+      oldblood:["What is it.","Aye. Stand there, then.","Speak. I'll not sit."]},
+    aurennais:{aurennais:["Master. Good day.","Master. A countryman, unless I misread you.","Good day, Master. Welcome, on the usual terms."],
+      gatelander:["Good day, Master. From the Gatelands, I take it.","Master. You have business? Then let us do it properly.","Master. Welcome, on account."],
+      markman:["Good day, Master.","Master. A Markman, if I am not mistaken. You are welcome here on the same terms as anyone.","Master. You have business? State it, and we will see."],
+      oldblood:["Master. Good day. Forgive me, I had taken you for someone else.","Master. You have business? Then let us do it properly.","Good day, Master."]},
+    oldblood:{gatelander:["You are here.","The stones are warm today.","You walked. Sit."],markman:["You are here.","The stones are warm today.","You walked. Sit."],
+      aurennais:["You are here.","The stones are warm today.","You walked. Sit."],
+      oldblood:["I know your face. No. I do not.","You are here. That is enough.","Sit. There are few enough of us."]}};
+  const GREET_AGAIN={gatelander:["Yourself again. Come in.","I'd a feeling it'd be you.","Back, and the road no shorter."],
+    markman:["You again. Good.","Aye. Back.","Thought it'd be you."],
+    aurennais:["Master. Again, and welcome.","Good day, Master. We have spoken before; I keep the terms.","Master. You return. I am glad of it."],
+    oldblood:["You came back.","Again. Sit.","You are here again. Or still."]};
+  const GREET_AGAIN_OB={gatelander:["I never could look straight at you, could I.","It's you. It is you. Forgive me, I'd a different face in my head."],
+    markman:["You. I think.","Aye. You were taller."],
+    aurennais:["Master. I would swear your eyes were grey, last we met. I would not swear it in writing."],
+    oldblood:["You came back."]};
+  const GREET_TAG={gatelander:{owner:" Neighbour.",guild:" Guildsman."},markman:{owner:" Neighbour.",guild:" Guild-hand."},
+    aurennais:{owner:" We are neighbours now, I believe.",guild:" Of the Guild, I see."},oldblood:{owner:" You live here now.",guild:" You are of the Guild."}};
+  // the line itself: the first meeting from GREET_FIRST (or, one time in three, the trade's own line), later ones from GREET_AGAIN
+  // (GREET_AGAIN_OB to an Old Blood player; one time in three the temper's); an Old Blood player's first meeting may carry a
+  // description after the address. Which line is cosmetic (Math.random); worldState.met already counts the meetings.
+  function firstWords(def,site){
+    const key=metKey(def,site),n=metCount(key),sp=GREET_FIRST[def.people]?def.people:'gatelander',pp=GREET_FIRST[playerPeople()]?playerPeople():'gatelander',T=TEMPERS[def.temper];
+    let g;
+    if(n===0){
+      if(def._roleGreet&&Math.random()<1/3)g=pick(Math.random,def._roleGreet);
+      else{g=pick(Math.random,GREET_FIRST[sp][pp]);if(pp==='oldblood'&&Math.random()<1/3)g+=' '+peopleGreeting(def);}
+    }else g=(T&&Math.random()<1/3)?pick(Math.random,T.greet):pick(Math.random,(pp==='oldblood'?GREET_AGAIN_OB:GREET_AGAIN)[sp]);
+    const G=GREET_TAG[sp];
+    const owner=worldState.owned&&site&&Object.values(worldState.owned).some(o=>o.site===site.id)?G.owner:'';
+    const rank=worldState.guild&&((worldState.guild.guild_f&&worldState.guild.guild_f.done>=3)||(worldState.guild.guild_m&&worldState.guild.guild_m.done>=3))?G.guild:'';
+    noteMet(key);return g+owner+rank;
+  }
+
   function nationSubtitle(cell){const nat=nationOf(cell.i,cell.j);return `${nat.name} · ${(CULTURES[cell.reg]||{}).name||cell.reg} · ${cell.climate||nat.climate}`;}
 
   // ═══ SETTLEMENT STATES (Session O) — the prosperity model ═══════════

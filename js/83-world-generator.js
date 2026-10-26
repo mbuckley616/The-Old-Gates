@@ -86,6 +86,7 @@
       F.forEach(([k,b],i)=>{const v=kept&&kept[i+2];if(v){if(k==='sCol'||k==='hairCol'||(extra&&extra[k]!=null))o[k]=b?parseInt(v,b):v;rec.push(v);}else{const c=extra&&extra[k];rec.push(c==null?'':b?Number(c).toString(b):String(c));}});
       extra=Object.assign({},extra||{},o);_curNM[NK]=rec.join('|');}
     const def=Object.assign({name,role,ico:ICO[role]||'👤',greeting:greetPool[role]||greetPool.Villager,topics,x:0,z:0},extra||{});
+    if(role!=='Villager'&&greetPool[role])def._roleGreet=greetPool[role]; /* S1432 — First Words: the trade's own line, one first meeting in three */
     def.people=people;def._siteId=site&&site.id;{const tw=noteName(def.name,role!=='Villager',kept?kept[6]:null);if(tw)def._twin=tw; // S248 — the second of a name in the town is another face
       if(NK){const p=String(_curNM[NK]).split('|');while(p.length<6)p.push('');p[6]=String(tw);_curNM[NK]=p.join('|');}} // S250 — and keeps its number through a rebuild
     def.temper=temperOf(name);def.bio=bioFor(site,reg,r,role,name);def._roadLine=roadLine;def._doorLine=doorLine;def._extra=extraTopics;
