@@ -943,6 +943,21 @@
     if(S._forge&&storyRuin(site)&&typeof buildBramBody==='function'){ // S270 — Bram's body at his forge, as in the legacy burned zone
       for(let k=ZONE_CORPSES.length-1;k>=0;k--)if(ZONE_CORPSES[k].bramBody&&ZONE_CORPSES[k].zone==='world')ZONE_CORPSES.splice(k,1);
       buildBramBody(group,S._forge.x,worldH(S._forge.x,S._forge.z),S._forge.z,'world');}
+    // S1455 (card F6, Michael's C on #744) — the village's farm (villageFarm laid it and its pad as the cell loaded): the kit's farmstead
+    // round its yard (#498 A), its house to the road; every building, wall, pier, the gate's leaf and each thing in the yard a solid; its
+    // far copy a box and a roof prism for the house, the byre and the barn and a box for each wall (S.farmLod, by houseLod's rule); smoke
+    // from the house's two gable stacks. Nothing in it opens yet: the farmhouse's room is the next session's.
+    if(site._farm&&typeof PKIT!=='undefined'&&PKIT.gl&&PKIT.gl.farmstead)try{const F=site._farm,FS=PKIT.gl.farmstead({kind:'yard',r:PKIT.stream(`${F.id}:windows`),paint:['red','green','blue','black'][Math.floor(PKIT.stream(F.id)()*4)]}),U=FS.userData;
+      const y=worldH(F.cx,F.cz),c=Math.cos(F.ry),s_=Math.sin(F.ry),mx=new THREE.Matrix4().makeRotationY(F.ry).setPosition(F.x,y,F.z),lo=[],lime=new THREE.Color(.86,.84,.79),stone=new THREE.Color(.62,.60,.56),slate=new THREE.Color(.24,.26,.30);
+      FS.position.set(F.x,y,F.z);FS.rotation.y=F.ry;FS.name='farmstead';FS.userData.noBake=true;FS.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});group.add(FS);
+      for(const p of U.foot){const u=(p.x0+p.x1)/2,v=(p.z0+p.z1)/2;sol.push({cx:F.x+u*c+v*s_,cz:F.z-u*s_+v*c,rx:(p.x1-p.x0)/2,rz:(p.z1-p.z0)/2,c,s:s_,bt:'wall',farm:p.name});
+        const P=U.parts[{Farmhouse:'house',Byre:'byre',Barn:'barn'}[p.name]];
+        if(P){const b=new THREE.BoxGeometry(p.x1-p.x0,P.eave,p.z1-p.z0).toNonIndexed();b.translate(u,P.eave/2,v);const along=p.x1-p.x0>=p.z1-p.z0,hl=Math.max(p.x1-p.x0,p.z1-p.z0)/2,hs=Math.min(p.x1-p.x0,p.z1-p.z0)/2,rf=kitRoof(hl+.3,hs+.3,P.eave,P.ridge);if(!along)rf.rotateY(Math.PI/2);rf.translate(u,0,v);lo.push([b,mx,p.name==='Barn'?stone:lime],[rf,mx,slate]);}
+        else if(p.name==='wall'){const b=new THREE.BoxGeometry(p.x1-p.x0,1.4,p.z1-p.z0).toNonIndexed();b.translate(u,.7,v);lo.push([b,mx,lime]);}}
+      const far=new THREE.Mesh(mergeGeos(lo),VC_MAT);far.name='farmstead far';far.userData.noBake=true;far.castShadow=true;far.receiveShadow=true;far.visible=false;group.add(far);lo.forEach(([g])=>g.dispose());
+      const H=U.parts.house;for(const gx of [-1,1]){const x=gx*(H.w/2-.36);S.chimneys.push({x:F.x+x*c,y:y+H.ridge+.85,z:F.z-x*s_,t:'home',k:0});}
+      S.farm={id:F.id,x:F.x,z:F.z,ry:F.ry,cx:F.cx,cz:F.cz,y,tris:U.tris,calls:U.calls,farTris:far.geometry.attributes.position.count/3,gate:{x:F.x+U.gate.x*c+U.gate.z*s_,z:F.z-U.gate.x*s_+U.gate.z*c},lot:U.lot};
+      S.farmLod={hi:FS,lo:far,x:F.cx,z:F.cz,r:FARM_R};}catch(e){console.warn('farm',e);}
     S.reach=t_reach(sol,site);
     /* S1216 — a door that faces the next building across a lane of 2.5 m had its step-out point (2.4 out) in that building's
        footprint (14 of Dunmore's 58 on the new look): it is pulled back along the same line, a quarter metre short of the first
@@ -984,8 +999,8 @@
   const HOUSE_LOD={near:70,far:80};
   // S1073 — a kit town's houses (one group for the town, S.kitLod) by the same rule, measured from the town's centre less half its
   // houses' reach: near the town the kit's houses, from outside it their far copy
-  function houseLod(){const cp=CAM.position;for(const S of SETTLE.values()){const K=S.kitLod;
-    if(K){const d=Math.max(0,Math.hypot(K.x-cp.x,K.z-cp.z)-K.r*.5),near=d<HOUSE_LOD.near?true:d>HOUSE_LOD.far?false:K.hi.visible;K.hi.visible=near;K.lo.visible=!near;}
+  function houseLod(){const cp=CAM.position;for(const S of SETTLE.values()){
+    for(const K of [S.kitLod,S.farmLod])if(K){const d=Math.max(0,Math.hypot(K.x-cp.x,K.z-cp.z)-K.r*.5),near=d<HOUSE_LOD.near?true:d>HOUSE_LOD.far?false:K.hi.visible;K.hi.visible=near;K.lo.visible=!near;} /* S1455 — and a village's farm */
     const L=S.lodMeshes;if(!L)continue;
     for(const m of L){if(m.userData.lod!=='hi')continue;const b=m.geometry.boundingSphere;const d=Math.max(0,Math.hypot(b.center.x-cp.x,b.center.z-cp.z)-b.radius*.5);
       const twin=m.userData.twin||(m.userData.twin=L.find(o=>o.userData.lod==='lo'&&o.userData.ckey===m.userData.ckey));

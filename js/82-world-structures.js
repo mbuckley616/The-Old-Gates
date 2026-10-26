@@ -301,6 +301,10 @@
   function buildRoad(def){
       const A=SITE[def.a],B=SITE[def.b];if(!A||!B)return null;
       ROAD_DEFS.push(def);
+      return registerRoad(def,roadCurve(def,A,B));
+  }
+  // S1455 — the road's line from its def and its two ends alone (buildRoad's, unchanged), so a farm can be laid beside a road before it is built
+  function roadCurve(def,A,B){
       // S619 — the bends are seeded by the road itself. They were seeded by ROAD_DEFS.length, the count of roads loaded before
       // it, so a road and every town planned along it moved with the order the cells loaded in (house ids with them). A home
       // road keeps the number it always had, its place in HOME_ROAD_DEFS (the home cell loads first); any other, its ends.
@@ -324,7 +328,50 @@
         for(let sI=0;sI<steps;sI++){pts.push(catmull(p0,p1,p2,p3,sI/steps));}
       }
       pts.push({x:B.x,z:B.z});
-      return registerRoad(def,pts);
+      return pts;
+  }
+  // S1455 (card F6, Michael's C on #744: a farm at each village's edge, and a few alone in the country) — a Gatelands village's farm on
+  // the new look: the kit's farmstead round its yard (#498 A), beside one of the village's roads out, its front 10.2 m off the road's line
+  // (clear of the road's bed, which blends 9.5 m out) and its gate to the road, its middle 60 to 150 m past the village's last lots (inner, pad less 5). Laid from the cells alone, by a
+  // stream keyed by the village, so it stands in the same place whatever has loaded: the roads' lines from their defs (roadCurve), the
+  // sea and the routed rivers and lakes (seaBare, the carve grid), the pads of the sites round it and the farms of villages before it
+  // by id, and the gates and forts round it (fixedDoorSpot). -> {id, x, z, ry, cx, cz} (the farmstead's origin, its turn and the lot's middle), kept on the site, or null.
+  const FARM_LOT={x0:-11.4,x1:12.4,z0:-18.7,z1:3.27},FARM_SET=ROAD_BLEND+.7,FARM_R=23; /* the pad flat 23 m round the middle: the lot reaches 16.6, and the ground is drawn from a vertex every 4 m */ /* the kit's yard farm's lot (PKIT.gl.farmstead's userData.lot) */
+  function villageFarm(t,c){
+    if(t._farm!==undefined)return t._farm;t._farm=null;
+    if(t.kind!=='village'||!(t.pad>0)||window.OG_LOOK!=='new'||window.OG_KIT_TOWNS===false||typeof PKIT==='undefined'||!PKIT.gl||!PKIT.gl.farmstead)return null;
+    if(!c){const [ci,cj]=cellOf(t.x,t.z);c=getCell(ci,cj);}
+    if(c.type==='sea'||nationOf(c.i,c.j).people!=='gatelander')return null;
+    if(!RV.ready)routeWorld();
+    const near=[];for(let dj=-1;dj<=1;dj++)for(let di=-1;di<=1;di++){const i=c.i+di,j=c.j+dj;if(i>=0&&j>=0&&i<GRID&&j<GRID)near.push(getCell(i,j));}
+    const byId={};near.forEach(n=>n.sites.forEach(s=>{byId[s.id]=s;}));
+    const roads=[];near.forEach(n=>n.roadDefs.forEach(d=>{const A=byId[d.a],B=byId[d.b];if(A&&B)roads.push({def:d,pts:roadCurve(d,A,B)});}));
+    const outs=roads.filter(R=>(R.def.a===t.id||R.def.b===t.id)&&R.def.via!=='spur');if(!outs.length)return null;
+    const pads=near.flatMap(n=>n.sites).filter(s=>s.pad>0);
+    /* the gates' and forts' pads by where the world draws them (fixedDoorSpot): a gate nudged off a road or a pad moves 25 m at most, and a
+       home fort stands 90 to 120 m off its road's line at its fortAt; a gate or fort placed in a cell loaded before this one must not stand in the yard */
+    const gates=near.flatMap(n=>n.doors.filter(e=>!e.wet).map(e=>{const p=fixedDoorSpot(e);if(!p)return null;const home=e.kind==='fort_door'&&HOME_ROAD_DEFS.some(d=>d.fort===e.seed);
+      return {x:p.x,z:p.z,m:home?240:e.kind==='fort_door'?46+34+FARM_R+25:7+12+FARM_R+30};})).filter(Boolean);
+    const farms=near.flatMap(n=>n.sites.filter(s=>s!==t&&s.kind==='village'&&s.id<t.id).map(s=>villageFarm(s,n))).filter(Boolean);
+    const segD=(x,z,P)=>{let b=1e9;for(let i=0;i<P.length-1;i++){const a=P[i],q=P[i+1],vx=q.x-a.x,vz=q.z-a.z,l2=vx*vx+vz*vz||1;let u=((x-a.x)*vx+(z-a.z)*vz)/l2;u=u<0?0:u>1?1:u;const d=Math.hypot(x-a.x-vx*u,z-a.z-vz*u);if(d<b)b=d;}return b;};
+    const wet=(x,z)=>{const [i,j]=cellOf(x,z);if(seaBare(x,z,getCell(i,j).islets)>0)return true;const bk=RVG.get(sgKey(Math.floor(x/RVSG),Math.floor(z/RVSG)));
+      if(bk)for(const e of bk){if(e.lk){if(Math.hypot(x-e.lk.x,z-e.lk.z)<e.lk.r+15)return true;continue;}riverSample(e.rv,e.i0,e.i1,x,z,_rs);if(_rs[0]<_rs[1]+12)return true;}return false;};
+    const inner=t.pad-5,r=PKIT.stream('farm:'+t.id),k0=Math.floor(r()*outs.length),s0=r()<.5?1:-1,a0=60+r()*90;
+    for(let q=0;q<outs.length;q++){const R=outs[(k0+q)%outs.length],P=R.def.a===t.id?R.pts:R.pts.slice().reverse(),cand=[];
+      for(let i=1;i<P.length;i++){const a=P[i-1],b=P[i],L=Math.hypot(b.x-a.x,b.z-a.z)||1,tx=(b.x-a.x)/L,tz=(b.z-a.z)/L;
+        for(const sd of [s0,-s0]){const nx=-tz*sd,nz=tx*sd,ox=a.x+nx*(FARM_SET+FARM_LOT.z1),oz=a.z+nz*(FARM_SET+FARM_LOT.z1),ry=Math.atan2(-nx,-nz),c_=Math.cos(ry),s_=Math.sin(ry);
+          const mu=(FARM_LOT.x0+FARM_LOT.x1)/2,mv=(FARM_LOT.z0+FARM_LOT.z1)/2,cx=ox+mu*c_+mv*s_,cz=oz-mu*s_+mv*c_,past=Math.hypot(cx-t.x,cz-t.z)-inner;
+          if(past<60||past>150)continue;cand.push({ox,oz,ry,cx,cz,c_,s_,k:Math.abs(past-a0)});}}
+      cand.sort((A,B)=>A.k-B.k);
+      for(const C of cand){let ok=true;
+        for(const s of pads){if(Math.hypot(C.cx-s.x,C.cz-s.z)<s.pad+Math.max(30,s.pad*.7)+FARM_R+5){ok=false;break;}}
+        for(const f of farms)if(ok&&Math.hypot(C.cx-f.cx,C.cz-f.cz)<2*FARM_R+20)ok=false;
+        for(const q of gates)if(ok&&Math.hypot(C.cx-q.x,C.cz-q.z)<q.m)ok=false;
+        for(let u=FARM_LOT.x0-1;ok&&u<=FARM_LOT.x1+1.01;u+=(FARM_LOT.x1-FARM_LOT.x0+2)/8)for(let v=FARM_LOT.z0-1;ok&&v<=FARM_LOT.z1+1.01;v+=(FARM_LOT.z1-FARM_LOT.z0+2)/8){
+          const x=C.ox+u*C.c_+v*C.s_,z=C.oz-u*C.s_+v*C.c_;if(wet(x,z)){ok=false;break;}const uu=Math.max(FARM_LOT.x0,Math.min(FARM_LOT.x1,u)),vv=Math.max(FARM_LOT.z0,Math.min(FARM_LOT.z1,v)); /* the roads' beds kept off the lot itself */
+          for(const R2 of roads)if(segD(C.ox+uu*C.c_+vv*C.s_,C.oz-uu*C.s_+vv*C.c_,R2.pts)<ROAD_BLEND+.4){ok=false;break;}}
+        if(ok){t._farm={id:'farm_'+t.id,x:+C.ox.toFixed(3),z:+C.oz.toFixed(3),ry:C.ry,cx:+C.cx.toFixed(3),cz:+C.cz.toFixed(3)};return t._farm;}}}
+    return null;
   }
   function rebuildRoadGrid(){
     RSEG.length=0;RGRID.clear();ROAD_DEFS.length=0;
@@ -788,7 +835,7 @@
         const cx=b.x+(-dz/L)*side*16,cz=b.z+(dx/L)*side*16;
         if(worldH(cx,cz)<1.5||slopeNormalY(cx,cz)<.75)continue;
         if(SITES.some(t=>t.pad>0&&Math.hypot(cx-t.x,cz-t.z)<t.pad+60))continue;
-        if(stampAt(cx,cz))continue;
+        if(stampAt(cx,cz)||stampsNear(cx,cz).some(o=>o.farm&&Math.hypot(cx-o.x,cz-o.z)<o.r+18))continue; /* S1455 — nor on a farm's yard or its edge */
         const cs=addStamp({id:'camp_'+k+'_'+ri+'_'+i,kind:'door',x:cx,z:cz,r:7,blend:9,cell:k});LD.stamps.push(cs);
         const y=worldH(cx,cz);
         [[-2.6,-1.2,.4],[2.4,-1.6,2.6]].forEach(([ox,oz,ry],ti)=>{const t=new THREE.Mesh(campTentGeo(ri+i+ti),VC_MAT);t.position.set(cx+ox,worldH(cx+ox,cz+oz),cz+oz);t.rotation.y=ry;t.castShadow=true;t.receiveShadow=true;t.userData.roadCamp=true;sc.add(t); // S254 — the bandit camp's ridge tent (it was an open cone on a pole)
