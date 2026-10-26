@@ -760,6 +760,10 @@ const HC_GOB_COAT={coat:0x6a8a42,saddle:0x4e6a30,belly:0x86a058,skin:0x72924a};
 // Session 1375: the gargoyle's (Session 956: OG-018's stone Gargoyle, the goblin's crouched frame with stone bat wings, horns and a tail),
 // sized by its legs as the goblin is, its eyes the driver's ember (0xff5020), set out from under the heavy brow (glowAt) where the plan's
 // small grey ones are lost; its wings and tail posed by hcGarg from the driver's fold
+// Session 1429: the ghosts' (Session 1177's wraith, Session 1428's phantom: no legs, a robe floating clear of the ground, the long clawed
+// arms). The kit's plan already stands in the hunting stance the driver's pwWraith gives (Michael's B on #158), so that stance is taken
+// off the driver's turns before they are copied, as the goblin's hunch is; what is left is its sway, the claws' flex and a blow's swing
+const HC_WRAITH_REST={spine:[.42,0,0],neck:[.22,0,0],head:[-.42,0,0],shL:[-1.8,0,.08],shR:[-1.74,0,-.08],elL:[-.3,0,.04],elR:[-.3,0,-.04],wrL:[.28,0,0],wrR:[.28,0,0]};
 const HC_TROLL_COAT={cave:{coat:0x6e7a5c,saddle:0x5a664c,belly:0x7e8a6c,skin:0x646e54},forest:{coat:0x5a6e40,saddle:0x4a5a34,belly:0x6a7e50,skin:0x52643a,moss:0x34501a},
   frost:{coat:0xaebac2,saddle:0x96a4ae,belly:0xc0cad0,skin:0xa2aeb6,moss:0xe0e4e8}};
 const HC_KINDS={'Wolf':{plan:'wolf'},'Snow Wolf':{plan:'wolf',own:true},'Dire Wolf':{plan:'ironwolf',own:true},'Boar':{plan:'boar'},'Cave Bear':{plan:'bear',own:true},'Ash Hound':{plan:'ashhound'},'Horse':{plan:'horse',own:true,ik:true},'Grey Horse':{plan:'horse',own:true,ik:true},
@@ -774,7 +778,8 @@ const HC_KINDS={'Wolf':{plan:'wolf'},'Snow Wolf':{plan:'wolf',own:true},'Dire Wo
   'Forest Troll':{plan:'troll',own:true,person:true,merge:true,ik:true,coat:HC_TROLL_COAT.forest,eye:0xd8b030,gear:'plan'},
   'Frost Troll':{plan:'troll',own:true,person:true,merge:true,ik:true,coat:HC_TROLL_COAT.frost,eye:0x70b0ff,gear:'plan'},
   'Golem':{plan:'golem',own:true,person:true,merge:true,ik:true,tall:true,glow:[.42,.69,1],glowR:.02},
-  'Gargoyle':{plan:'gargoyle',own:true,person:true,merge:true,ik:true,glow:[1,.31,.13],glowR:.032,glowAt:{f:.8,up:.55,out:.5},garg:true}};
+  'Gargoyle':{plan:'gargoyle',own:true,person:true,merge:true,ik:true,glow:[1,.31,.13],glowR:.032,glowAt:{f:.8,up:.55,out:.5},garg:true},
+  'Wraith':{plan:'wraith',own:true,person:true,legless:true,rest:HC_WRAITH_REST},'Phantom':{plan:'phantom',own:true,person:true,legless:true,rest:HC_WRAITH_REST}};
 // the driver's joints and the kit's bones they move, parents first (the kit's front legs hang on spine3, the hind on spine0)
 const HC_MAP=[['hips','spine0'],['spine','spine1'],['neck','neck0'],['head','head'],['jaw','jaw'],['tail1','tail0'],['tail2','tail1'],['tail3','tail2'],
   ['shL','leg0L_0'],['elL','leg0L_1'],['wrL','leg0L_2'],['pfL','leg0L_3'],['shR','leg0R_0'],['elR','leg0R_1'],['wrR','leg0R_2'],['pfR','leg0R_3'],
@@ -794,7 +799,8 @@ function hcSpMap(by,sc){const out=[];for(const [j,n] of sc?[['body','spine0']]:[
 // kit's first above the hips (the three over it follow), each arm and leg joint for joint (the kit's toe, …_3, has no driver's)
 const HC_PMAP=[['hips','spine0'],['spine','spine1'],['neck','neck0'],['head','head'],['shL','arm0L_0'],['elL','arm0L_1'],['wrL','arm0L_2'],['shR','arm0R_0'],['elR','arm0R_1'],['wrR','arm0R_2'],
   ['thL','leg0L_0'],['knL','leg0L_1'],['anL','leg0L_2'],['thR','leg0R_0'],['knR','leg0R_1'],['anR','leg0R_2']];
-function hcPMap(by){const out=[];for(const [j,n] of HC_PMAP){if(!by[n])return n;out.push([j,by[n]]);}return out;}
+// a ghost's (Session 1429, HC_KINDS' legless): the driver keeps its leg bones (its poses read them) but the kit has none to move
+function hcPMap(by,legless){const out=[];for(const [j,n] of HC_PMAP){if(legless&&/^leg/.test(n))continue;if(!by[n])return n;out.push([j,by[n]]);}return out;}
 function hcOn(){return HC_BODY.on&&window.OG_LOOK==='new'&&typeof HC!=='undefined';}
 // a kind's plan: the kit's own, or (k.own) a copy of it in the kind's coat, saddle and belly, made once
 function hcPlan(name){const K=HC_KINDS[name];if(!K.own)return K.plan;const id='game:'+name;
@@ -815,7 +821,7 @@ function hcKind(rig){return rig.hcKind||rig.name;}
 function hcOk(rig){const K=HC_KINDS[hcKind(rig)];return !!K&&!rig.spider===!K.spider&&(!!rig.hcKind||!rig.hunch&&!(rig.e&&rig.e.bossId));}
 function hcAttach(rig){const tA=performance.now();let C;
   try{const key=rig.hcKey||(HC_KINDS[hcKind(rig)].person?'foe:'+(rig.e&&rig.e.id!=null?rig.e.id:rig.g.seed):'wolf:'+(rig.e&&rig.e.id!=null?rig.e.id:rig.name));C=HC.build(HC.genome(hcPlan(hcKind(rig)),key));}catch(e){rig.hcFail=true;console.warn('F4: the kit could not build',rig.name,e);return;}
-  const sp=!!rig.spider,sc=!!(rig.k&&rig.k.scorpion),by=C.byName,K=HC_KINDS[hcKind(rig)];let map=sp?hcSpMap(by,sc):K.person?hcPMap(by):hcMap(by);
+  const sp=!!rig.spider,sc=!!(rig.k&&rig.k.scorpion),by=C.byName,K=HC_KINDS[hcKind(rig)];let map=sp?hcSpMap(by,sc):K.person?hcPMap(by,K.legless):hcMap(by);
   // a dragon's tail (Session 1348) is the kit's ten joints at their own rest: the driver's three hang a wolf's tail (0.5 rad down in all),
   // which on the first three of ten dragged it to the ground; only the driver's side-to-side sway is spread over them (hcWings)
   if(K.sway&&typeof map!=='string')map=map.filter(([j])=>!/^tail/.test(j));if(typeof map==='string'){rig.hcFail=true;console.warn('F4: the kit\'s',rig.name,'has no bone',map);return;}
@@ -882,7 +888,7 @@ function hcAttach(rig){const tA=performance.now();let C;
   // a gargoyle's (Session 1375): the same wings, and its tail's joints
   const garg=K.garg?{wings:C.B.wings.map(W=>({side:W.side,arm:W.arm.map(n=>by[n]),fing:W.fingers.map(f=>by[f[0]])})),tail:Object.keys(by).filter(n=>/^tail\d+$/.test(n)).map(n=>by[n]),R:C.plan.wingRest}:null;
   const sway=K.sway?Object.keys(by).filter(n=>/^tail\d+$/.test(n)).map(n=>by[n]):null;
-  rig.hc={W,C,map,s0,t0,fur,small,ik,feet,hb,scorp,bug,arms,wings,sway,garg,merge:!!HC_KINDS[hcKind(rig)].merge,unhunch:!!HC_KINDS[hcKind(rig)].unhunch,rest:K.rest?Object.entries(K.rest):null,ank:K.person&&ik?map.map(([j],i)=>/^an/.test(j)?i:-1).filter(i=>i>=0):null,glow:meshes.map(m=>m.material.userData&&m.material.userData.uGlow).filter(u=>u&&u.value&&u.value.isColor),mid:null,bits:C.B.bits.map(b=>b.obj),hide:meshes.filter(m=>!fur.includes(m)),hip0:sp?B.body.position.clone():K.person?new THREE.Vector3(0,PW.HIPS,0):new THREE.Vector3(B.hips.position.x,wolfHipY(rig.k),B.hips.position.z),pos0:by.spine0.position.clone(),k:1/(f*C.S),L:-1,drv:rig.mesh.material,em:-1};
+  rig.hc={W,C,map,s0,t0,fur,small,ik,feet,hb,scorp,bug,arms,wings,sway,garg,merge:!!HC_KINDS[hcKind(rig)].merge,unhunch:!!HC_KINDS[hcKind(rig)].unhunch,rest:K.rest?Object.entries(K.rest):null,ank:K.person&&ik?map.map(([j],i)=>/^an/.test(j)?i:-1).filter(i=>i>=0):null,glow:meshes.map(m=>m.material.userData&&m.material.userData.uGlow).filter(u=>u&&u.value&&u.value.isColor),mid:null,bits:C.B.bits.map(b=>b.obj),hide:meshes.filter(m=>!fur.includes(m)),lift:K.legless?.24*SCALE.ROOM_K:0,hip0:sp?B.body.position.clone():K.person?new THREE.Vector3(0,PW.HIPS,0):new THREE.Vector3(B.hips.position.x,wolfHipY(rig.k),B.hips.position.z),pos0:by.spine0.position.clone(),k:1/(f*C.S),L:-1,drv:rig.mesh.material,em:-1};
   HC_BODY.ms+=performance.now()-tA;HC_BODY.n++;}
 function hcPose(rig){const H=rig.hc,B=rig.B,map=H.map,uh=H.unhunch&&rig.hunch,rs=H.rest;
   if(uh){B.spine.rotation.x-=uh[0];B.neck.rotation.x-=uh[1];B.head.rotation.x-=uh[2];}
@@ -892,6 +898,9 @@ function hcPose(rig){const H=rig.hc,B=rig.B,map=H.map,uh=H.unhunch&&rig.hunch,rs
   for(let i=0;i<map.length;i++)cp(i);
   H.C.byName.spine0.position.copy(_hbv.copy(H.hb.position).sub(H.hip0).multiplyScalar(H.k)).add(H.pos0);
   if(H.ik)hcLegIK(rig);
+  // a ghost's (Session 1429): tickPeople floats the driver's root 0.35 m up for the old body's long robe; the kit's robe already clears
+  // the ground, so it is set back down by that much and keeps only the bob
+  if(H.lift)H.W.position.y=-H.lift/(rig.root.scale.y||1);
   // a goblin's feet (Session 1364): the IK's bend at the knee and the hip tipped them toe-up by 7 cm, so each ankle takes the driver's
   // foot again, as the copy first gave it
   if(H.ank)for(const i of H.ank)cp(i);
@@ -964,7 +973,7 @@ function hcGarg(rig){const G=rig.hc.garg,fo=rig.fold??1,b=rig.beat||0,R=G.R,o=1-
     W.fing.forEach((f,k)=>f.rotation.set(0,s*(k/W.fing.length)*((R[3]??.2)*fo+.1*o),0));}
   if(B.tail&&G.tail.length){const y=1.5*B.tail.rotation.y/G.tail.length;for(const t of G.tail)t.rotation.set(0,y,0);}}
 function hcLevel(rig,L){const H=rig.hc;if(H.L===L)return;H.L=L;H.W.visible=L<2;rig.mesh.visible=L===2;
-  for(const o of [rig.weapon,rig.eyeGlow,...(rig.runes||[])])if(o)o.visible=L===2; /* a person's (Session 1356): the driver's weapon and lit eyes go with its body (a golem's runes too, Session 1371); the kit's own show */
+  for(const o of [rig.weapon,rig.eyeGlow,...(rig.runes||[]),...(rig.hollow||[])])if(o)o.visible=L===2; /* a person's (Session 1356): the driver's weapon and lit eyes go with its body (a golem's runes too, Session 1371); the kit's own show */
   if(H.merge&&L===1&&!H.mid)hcBake(rig);
   if(H.mid){const one=L===1;H.mid.visible=one;for(const m of H.hide)m.visible=!one;for(const o of H.bits)o.visible=!one;}
   for(const m of H.fur)m.visible=L===0;for(const m of H.small)m.visible=L===0;}
@@ -975,7 +984,7 @@ function hcBake(rig){const H=rig.hc,C=H.C,t=performance.now();let mid;
   mid.material=HB_MID_MAT.clone();if(H.em>0)mid.material.emissive.setHex(H.em);if(rig.e&&rig.e.dead)mid.material.color.multiplyScalar(.35);mid.frustumCulled=false;mid.name='kitmid';C.rig.add(mid);H.mid=mid;H.bakeMs=performance.now()-t;}
 function hcDrop(rig){const H=rig.hc;if(!H)return;if(H.W.parent)H.W.parent.remove(H.W);
   H.C.root.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material)for(const m of Array.isArray(o.material)?o.material:[o.material])m.dispose();});
-  if(H.C.skel.boneTexture)H.C.skel.dispose();rig.hc=null;rig.mesh.visible=true;for(const o of [rig.weapon,rig.eyeGlow])if(o)o.visible=true;}
+  if(H.C.skel.boneTexture)H.C.skel.dispose();rig.hc=null;rig.mesh.visible=true;for(const o of [rig.weapon,rig.eyeGlow,...(rig.hollow||[])])if(o)o.visible=true;}
 // each frame, after the driver is posed (tickCreatures' end): the level by distance, the pose copied, and at most one body built
 function hcTick(now){let best=null,bd=HC_BODY.build;
   const busy=now-HBODY.last<HBODY.gap||(typeof JOBS!=='undefined'&&JOBS.length&&!(typeof isInterior==='function'&&isInterior()));
