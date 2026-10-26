@@ -33,5 +33,20 @@ check('every weapon but the Forge-Man\'s Hammer shows the kit in first person, a
 check('the Forge-Man\'s Hammer keeps its own model', !o["The Forge-Man's Hammer"].kit && o["The Forge-Man's Hammer"].boxShown > 0, o["The Forge-Man's Hammer"]);
 check('the bow faces out: its grip further from the eye than its tips, and its string (the view model\'s, which draws) shown', o['Hunting Bow'].midZ < o['Hunting Bow'].tipZ - .03 && o['Hunting Bow'].string, o['Hunting Bow']);
 check('the spear and the crossbow are the kit\'s own, pointing ahead of the fist: the head 0.8 m or more out, the prod 0.4 m (S1458)', o['Iron Spear'].kitKind === 'spear' && o['Iron Spear'].ahead > .8 && o['Iron Spear'].up > 0 && o['Iron Crossbow'].kitKind === 'crossbow' && o['Iron Crossbow'].ahead > .4 && o['Iron Crossbow'].up > 0, { spear: o['Iron Spear'], crossbow: o['Iron Crossbow'] });
+// S1465 — your spear's blow is a thrust: through a swing (the loop's own frames) its head goes out along the shaft and back, and the
+// shaft keeps its line, where a sword's swing turns the blade through a wide arc
+const th = await page.evaluate(() => { thirdPerson = false; let t = performance.now(); prevT = t; const step = () => { t += 1000 / 60; loop(t); };
+  const run = w => { SHEATHED = false; _sheathedItem = null; _lastSwingG = 1e9; EQ.weapon = w; buildViewmodel(); swingT = 0; _pendingStrike = null; for (let i = 0; i < 4; i++) step(); const k = vmSword.userData.kit, h = vmSword.userData.handMain; vmSword.updateMatrixWorld(true);
+    const inv = new THREE.Matrix4().copy(vmSword.matrixWorld).invert(), v = new THREE.Vector3(); let tip = null, tm = null;
+    k.traverse(m => { if (!m.isMesh) return; const p = m.geometry.attributes.position; for (let i = 0; i < p.count; i++) { v.fromBufferAttribute(p, i).applyMatrix4(m.matrixWorld).applyMatrix4(inv); if (!tip || v.z < tip.z) { tip = v.clone(); tm = [m, i]; } } });
+    const at = () => { const P = new THREE.Vector3().fromBufferAttribute(tm[0].geometry.attributes.position, tm[1]); vmSword.updateMatrixWorld(true); P.applyMatrix4(tm[0].matrixWorld); const H = h.getWorldPosition(new THREE.Vector3()); return { P, d: P.clone().sub(H).normalize() }; };
+    const r0 = at(); let out = 0, back = 0, turn = 0, n = 0; swingT = ANIM_PARAMS.swing.normalDur; vmSword.userData.swingMax = 0; _pendingStrike = { resolveFn: () => {}, isPow: false, fired: false };
+    while (swingT > 0 && n++ < 120) { step(); const a = at(); out = Math.max(out, r0.P.z - a.P.z); back = Math.max(back, a.P.z - r0.P.z); turn = Math.max(turn, Math.acos(Math.min(1, a.d.dot(r0.d))) * 57.3); }
+    return { out: +out.toFixed(3), back: +back.toFixed(3), turn: +turn.toFixed(1), frames: n }; };
+  const sp = run({ name: 'Iron Spear', slot: 'weapon', weaponShape: 'spear', matCol: '#a8b0b8', matGuard: '#787880' }), sw = run({ name: 'Steel Sword', slot: 'weapon', weaponShape: 'sword', matCol: '#dde8ec', matGuard: '#a0b0b8' });
+  EQ.weapon = null; buildViewmodel(); return { sp, sw }; });
+console.log('  thrust:', JSON.stringify(th));
+check(`your spear thrusts: its head ${th.sp.out} m out along the shaft and ${th.sp.back} m back in the draw, the shaft turned at most ${th.sp.turn}° (a sword's swing turns its blade ${th.sw.turn}°) (S1465)`,
+  th.sp.out > .25 && th.sp.back > .05 && th.sp.turn < 8 && th.sw.turn > 20, th);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

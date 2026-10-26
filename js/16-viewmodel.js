@@ -255,6 +255,13 @@ function vmMantle(){if(!vmSword||typeof MANTLE==='undefined'||MANTLE.t0==null)re
     return;}
   vmSword.position.x+=-.06*w;vmSword.position.y+=-.42*w;vmSword.position.z+=-.1*w;vmSword.rotation.x+=-1.1*w;vmSword.rotation.z+=.35*w;}
 const FP_LEVEL={spear:1.15,crossbow:1.5};
+// S1465 — your spear's blow is a thrust (#745 1 A: 2.4 m in a 40° line), not the blade's slash it played: the swing's own phases
+// (ANIM_PARAMS.swing's antEnd, sweepEnd, holdEnd), drawn back along the shaft in the anticipation, driven out along it in the sweep,
+// held, and eased home, with no roll and no pitch, so the head keeps its line. Returned as the offset the loop adds to the view model
+const FP_THRUST={back:.14,out:.42,pow:1.35};
+function fpThrust(p,pow,S){const e=t=>(1-Math.cos(t*Math.PI))/2,out=FP_THRUST.out*(pow?FP_THRUST.pow:1),bk=-FP_THRUST.back;
+  const a=p<S.antEnd?bk*e(p/S.antEnd):p<S.sweepEnd?bk+(out-bk)*e((p-S.antEnd)/(S.sweepEnd-S.antEnd)):p<S.holdEnd?out:out*(1-e((p-S.holdEnd)/(1-S.holdEnd)));
+  const L=FP_LEVEL.spear,d=new THREE.Vector3(0,Math.cos(L),-Math.sin(L)).applyEuler(vmSword.rotation);return d.multiplyScalar(a);}
 function buildViewmodel(){
   if(vmSword){if(vmSword.userData.fistL)VM_SCENE.remove(vmSword.userData.fistL);VM_SCENE.remove(vmSword);vmSword=null;}
   vmGlow=null;vmEnchantLight=null;
