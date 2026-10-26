@@ -147,45 +147,91 @@ function longMats() {
     herb: mat('thatch', { ns: .6, color: 0x7a8a4a, rough: 1 }), log: mat('beam', { ns: 1.4, color: 0x6a5040 }) };
   return LM;
 }
+// By size (Session 1450, card F9; for the game's halls, 5.6 to 8.4 m wide and 6.5 to 14.5 m deep, PKIT.mk.lot's mix): o.w, o.d and the
+//   shell's own o.roof, o.turf, o.porch, o.chimney, o.carve and o.wall (a stream key in o.shell) build the room inside the hall the street
+//   stands. With no options it is the hall as drawn, unchanged. The drawn plan (the partition and the family quarters) needs a louver
+//   hall deep enough for the long hearth between the partition and the door; any other hall is one room: the bed a bench bed of furs at
+//   the back of the left wall's bench, its chest at its foot, the cradle in the other back corner. A hall with a chimney (the shell's
+//   stack, 0.9 m square, a quarter of the width left of the axis and a quarter of the depth back) has its fire on a peis raised against
+//   the stack's face to the axis (the hunting cabin's, Session 1199) in place of the long hearth, the bed on the right, the walk down
+//   the axis; the posts and the bench give way round the stack. Under 5.8 m inside (X < 2.9) the benches are 0.9 m deep and the posts
+//   1.0 m in, so the aisle each side of the hearth is 0.6 m or more.
+//   -> also { plan: 'parted' | 'one', chimney, stack, peis } (doors and partition are [] and null in one room).
 export function markLonghouse(o = {}, r = stream('longhouse')) {
-  const w = o.w ?? 7.6, d = o.d ?? 14, hall = markHall({ roof: 'shingle', w, d, porch: true, chimney: false, carve: true, wall: o.wall ?? 1, interior: true }, stream('longhouse-shell'));
+  const w = o.w ?? 7.6, d = o.d ?? 14, chim = !!o.chimney, hall = markHall({ roof: o.roof || 'shingle', turf: o.turf, w, d, porch: o.porch ?? true, chimney: chim, carve: o.carve ?? true, wall: o.wall ?? 1, interior: true }, stream(o.shell || 'longhouse-shell'));
   const M = longMats(), B = new Map(), boxes = [];
   const put = (geo, key, x = 0, y = 0, z = 0, ry = 0, uv = .6, rx = 0, rz = 0) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const k of Object.keys(g.attributes)) if (!['position', 'normal'].includes(k)) g.deleteAttribute(k);
     g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), new THREE.Vector3(1, 1, 1))); worldUV(g, uv);
     if (!B.has(key)) B.set(key, []); B.get(key).push(g); return g; };
   const bx = (key, x0, x1, y0, y1, z0, z1, tag) => { put(new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0), key, (x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2); if (tag) boxes.push({ tag, x0, x1, y0, y1, z0, z1 }); };
   const X = w / 2 - .25, Z = d / 2 - .25, FY = hall.sill + .04, tp = Math.tan(hall.pitch), under = x => hall.ry0 + (w / 2 + hall.ov - Math.abs(x)) * tp - .02, WP = hall.sill + hall.wh;
+  const narrow = X < 2.9, BD = narrow ? .9 : 1.1, hit = (a, b, m = 0) => a.x0 < b.x1 + m && b.x0 < a.x1 + m && a.z0 < b.z1 + m && b.z0 < a.z1 + m;
+  // the shell's stack, when it has one (markHall: 0.9 m square at x = -w/4, z = -d/4, from the ground through the roof)
+  const stack = chim ? { x0: -w / 4 - .45, x1: -w / 4 + .45, z0: -d * .25 - .45, z1: -d * .25 + .45 } : null, peisB = chim ? { x0: stack.x1, x1: stack.x1 + .44, z0: stack.z0 - .02, z1: stack.z1 + .02 } : null;
   // the floor: planks along the hall on the footing
   for (let x = -X; x < X - .01; x += .28) bx('plank', x + .005, Math.min(x + .275, X), hall.sill, FY, -Z, Z);
-  // the frame: two rows of posts 1.25 m in from the walls, purlins along their heads, tie beams across each pair; rafters every metre
-  // up each slope with a board lining over them under the shingle
-  const PXr = X - 1.25, TB = WP + .25, posts = []; for (let z = -Z + 2.6; z < Z - 1.2; z += 2.75) posts.push(z); /* the first pair on the partition's line */
-  for (const sx of [-1, 1]) { for (const z of posts) bx('post', sx * PXr - .11, sx * PXr + .11, FY, TB, z - .11, z + .11, 'post'); bx('post', sx * PXr - .12, sx * PXr + .12, TB, TB + .24, -Z, Z); }
+  // the frame: two rows of posts 1.25 m in from the walls (1.0 in a narrow hall), purlins along their heads, tie beams across each pair;
+  // rafters every metre up each slope with a board lining over them under the roof. A post that would stand in the stack is left out.
+  const PXr = narrow ? X - 1.0 : X - 1.25, TB = WP + .25, posts = []; for (let z = -Z + 2.6; z < Z - 1.2; z += 2.75) posts.push(z); /* the first pair on the partition's line */
+  const xa = Math.min(1.3, (.75 + PXr - .11) / 2) /* the aisle beside the long hearth */;
+  for (const sx of [-1, 1]) { for (const z of posts) if (!(stack && hit({ x0: sx * PXr - .11, x1: sx * PXr + .11, z0: z - .11, z1: z + .11 }, stack, .05))) bx('post', sx * PXr - .11, sx * PXr + .11, FY, TB, z - .11, z + .11, 'post'); bx('post', sx * PXr - .12, sx * PXr + .12, TB, TB + .24, -Z, Z); }
   for (const z of posts) bx('post', -PXr - .1, PXr + .1, TB, TB + .24, z - .1, z + .1);
   // (each slope from the ridge: the rafters stop at the wall's inner face, the lining runs on to the wall plate)
   const XL = w / 2 - .02, rl = X / Math.cos(hall.pitch); for (const sx of [-1, 1]) { const xm = sx * X / 2, rz = -sx * hall.pitch;
     for (let z = -Z + .3; z < Z; z += 1.0) put(new THREE.BoxGeometry(rl, .14, .1), 'post', xm, under(xm) - .03 - .07 / Math.cos(hall.pitch), z, 0, .8, 0, rz);
     put(new THREE.BoxGeometry(XL / Math.cos(hall.pitch), .02, 2 * Z), 'board', sx * XL / 2, under(XL / 2) - .01, 0, 0, .8, 0, rz); /* the lining runs out onto the wall plate, so no shingle shows over the wall */ }
-  // the long hearth on the axis, under the louver: a kerb of stones round an ash bed, logs and embers, a cauldron on a tripod
-  const hz = hall.louver ?? -1.5, H = { x0: -.55, x1: .55, z0: hz - 1.3, z1: hz + 1.3 };
-  for (let z = H.z0; z < H.z1 - .01; z += .3) for (const x of [H.x0, H.x1]) { const s = .13 + r() * .04, g = new THREE.IcosahedronGeometry(s, 1); g.scale(1.3, .7, 1.1); put(g, 'kerb', x, FY + s * .55, z + .15, r() * 3); }
-  for (let x = H.x0 + .3; x < H.x1 - .2; x += .3) for (const z of [H.z0, H.z1]) { const s = .13 + r() * .04, g = new THREE.IcosahedronGeometry(s, 1); g.scale(1.1, .7, 1.3); put(g, 'kerb', x, FY + s * .55, z, r() * 3); }
-  boxes.push({ tag: 'hearth', x0: H.x0 - .2, x1: H.x1 + .2, y0: FY, y1: FY + .2, z0: H.z0 - .2, z1: H.z1 + .2 }); bx('ash', H.x0 + .1, H.x1 - .1, FY, FY + .04, H.z0 + .1, H.z1 - .1);
-  const fire = [0, FY + .25, hz]; for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI, g = new THREE.CylinderGeometry(.06, .07, .9, 7); g.rotateZ(Math.PI / 2); put(g, 'log', 0, FY + .1 + (i % 2) * .07, hz + (i - 2.5) * .14, a * .4 + .2); }
-  put(new THREE.SphereGeometry(.22, 10, 6).scale(1.4, .35, 2.2), 'ember', 0, FY + .08, hz); for (let i = 0; i < 4; i++) put(new THREE.ConeGeometry(.09, .34 + (i % 2) * .12, 7), 'flame', (i % 2 - .5) * .12, FY + .3, hz + (i - 1.5) * .18);
-  { const cz = hz + .95; for (const a of [0, 2.1, 4.2]) { const g = new THREE.CylinderGeometry(.015, .015, 1.25, 5); put(g, 'iron', Math.cos(a) * .32, FY + .58, cz + Math.sin(a) * .32, 0, .6, Math.sin(a) * .26, -Math.cos(a) * .26); }
-    bx('iron', -.006, .006, FY + .62, FY + 1.18, cz - .006, cz + .006); const pot = new THREE.SphereGeometry(.2, 14, 10, 0, Math.PI * 2, .4, Math.PI - .4); put(pot, 'iron', 0, FY + .55, cz); }
-  // the benches down both long walls, between the larder and workshop at the front and the partition at the back; furs laid on them
-  const BZ0 = -Z + 3.0, BZ1 = Z - 2.4, BH = .45, BD = 1.1, benches = [];
-  for (const sx of [-1, 1]) { const x0 = sx > 0 ? X - BD : -X, x1 = sx > 0 ? X : -X + BD; bx('board', x0, x1, FY, FY + BH - .04, BZ0, BZ1, 'bench'); bx('plank', x0, x1, FY + BH - .04, FY + BH, BZ0, BZ1); benches.push({ x0, x1, y: FY + BH, z0: BZ0, z1: BZ1 });
-    for (let z = BZ0 + .3, k = 0; z < BZ1 - 1.2; z += 1.7 + r() * .6, k++) { const L = 1.5 + r() * .4, W2 = .8 + r() * .2, g = new THREE.PlaneGeometry(W2, L, 6, 6), P = g.attributes.position;
-      for (let i = 0; i < P.count; i++) { const ex = Math.abs(P.getX(i)) / (W2 / 2), ey = Math.abs(P.getY(i)) / (L / 2); P.setZ(i, .015 + .02 * Math.sin(P.getX(i) * 9 + k) * Math.cos(P.getY(i) * 7) - (ex > .85 && ey > .8 ? .01 : 0)); }
-      g.rotateX(-Math.PI / 2); g.computeVertexNormals(); put(g, ['fur', 'furPale', 'furGrey'][k % 3], (x0 + x1) / 2 + (r() - .5) * .1, FY + BH, z + L / 2, (r() - .5) * .12, .9); } }
-  // the workshop corner, front left: a bench along the front wall, tools on pegs over it, a chopping block with an axe
-  { const x0 = -X, x1 = -.95, z1 = Z, z0 = Z - .7; bx('oak', x0, x1, FY + .8, FY + .88, z0, z1, 'workbench'); for (const x of [x0 + .1, x1 - .15]) for (const z of [z0 + .1, z1 - .1]) bx('oak', x - .05, x + .05, FY, FY + .8, z - .05, z + .05);
-    for (let k = 0; k < 5; k++) { const x = x0 + .4 + k * .45; bx('oak', x - .015, x + .015, FY + 1.45, FY + 1.48, Z - .1, Z); const L = .4 + r() * .3; bx(k % 2 ? 'oak' : 'iron', x - .02, x + .02, FY + 1.45 - L, FY + 1.45, Z - .07, Z - .03); }
-    put(new THREE.CylinderGeometry(.22, .25, .5, 12), 'log', -1.7, FY + .25, Z - 1.25); boxes.push({ tag: 'block', x0: -1.95, x1: -1.45, y0: FY, y1: FY + .5, z0: Z - 1.5, z1: Z - 1.0 });
-    bx('oak', -1.72, -1.68, FY + .5, FY + 1.1, Z - 1.27, Z - 1.23); bx('iron', -1.74, -1.66, FY + .5, FY + .62, Z - 1.38, Z - 1.18); }
+  // the plan: the drawn one (parted) when the long hearth fits between the partition (0.5 m clear before it) and the door's turn; its
+  // length is the longest of 2.6 down to 1.1 m that fits, centred under the louver
+  const hz = chim ? null : hall.louver ?? -1.5, PZ0 = -Z + 2.6, Ls = [2.6, 2.3, 2.0, 1.7, 1.4, 1.1], front = Z - 2.1;
+  const Lp = chim ? null : Ls.find(L => hz + L / 2 <= front && hz - L / 2 - .2 >= PZ0 + .5), parted = !chim && Lp >= 1.7;
+  const L = chim ? null : parted ? Lp : Ls.find(L => hz + L / 2 <= front && hz - L / 2 >= -Z + .5) ?? 1.1;
+  const PZ = parted ? PZ0 : null, H = chim ? null : { x0: -.55, x1: .55, z0: hz - L / 2, z1: hz + L / 2 };
+  let fire;
+  if (!chim) {
+    // the long hearth on the axis, under the louver: a kerb of stones round an ash bed, logs and embers, a cauldron on a tripod
+    for (let z = H.z0; z < H.z1 - .01; z += .3) for (const x of [H.x0, H.x1]) { const s = .13 + r() * .04, g = new THREE.IcosahedronGeometry(s, 1); g.scale(1.3, .7, 1.1); put(g, 'kerb', x, FY + s * .55, z + .15, r() * 3); }
+    for (let x = H.x0 + .3; x < H.x1 - .2; x += .3) for (const z of [H.z0, H.z1]) { const s = .13 + r() * .04, g = new THREE.IcosahedronGeometry(s, 1); g.scale(1.1, .7, 1.3); put(g, 'kerb', x, FY + s * .55, z, r() * 3); }
+    boxes.push({ tag: 'hearth', x0: H.x0 - .2, x1: H.x1 + .2, y0: FY, y1: FY + .2, z0: H.z0 - .2, z1: H.z1 + .2 }); bx('ash', H.x0 + .1, H.x1 - .1, FY, FY + .04, H.z0 + .1, H.z1 - .1);
+    fire = [0, FY + .25, hz]; for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI, g = new THREE.CylinderGeometry(.06, .07, .9, 7); g.rotateZ(Math.PI / 2); put(g, 'log', 0, FY + .1 + (i % 2) * .07, hz + (i - 2.5) * .14, a * .4 + .2); }
+    put(new THREE.SphereGeometry(.22, 10, 6).scale(1.4, .35, 2.2), 'ember', 0, FY + .08, hz); for (let i = 0; i < 4; i++) put(new THREE.ConeGeometry(.09, .34 + (i % 2) * .12, 7), 'flame', (i % 2 - .5) * .12, FY + .3, hz + (i - 1.5) * .18);
+    { const cz = hz + Math.min(.95, L / 2 - .3); for (const a of [0, 2.1, 4.2]) { const g = new THREE.CylinderGeometry(.015, .015, 1.25, 5); put(g, 'iron', Math.cos(a) * .32, FY + .58, cz + Math.sin(a) * .32, 0, .6, Math.sin(a) * .26, -Math.cos(a) * .26); }
+      bx('iron', -.006, .006, FY + .62, FY + 1.18, cz - .006, cz + .006); const pot = new THREE.SphereGeometry(.2, 14, 10, 0, Math.PI * 2, .4, Math.PI - .4); put(pot, 'iron', 0, FY + .55, cz); }
+  } else {
+    // the peis: the hearth raised against the stack's face to the axis, a cheek each side, a stone hood back to the stack; the fire on it
+    const hx1 = stack.x1 + .42, HY = FY + .32, HH = FY + 1.02, fz = (stack.z0 + stack.z1) / 2; bx('kerb', stack.x1, hx1, FY, HY, stack.z0, stack.z1); for (const z of [stack.z0, stack.z1 - .12]) bx('kerb', stack.x1, hx1 - .04, HY, HH, z, z + .12);
+    bx('kerb', stack.x1 - .02, hx1 + .02, HH, HH + .26, stack.z0 - .02, stack.z1 + .02); bx('soot', stack.x1, stack.x1 + .015, HY, HH, stack.z0 + .12, stack.z1 - .12); bx('soot', stack.x1, hx1 - .04, HH - .02, HH, stack.z0 + .12, stack.z1 - .12);
+    boxes.push({ tag: 'peis', x0: peisB.x0, x1: peisB.x1, y0: FY, y1: HH + .26, z0: peisB.z0, z1: peisB.z1 });
+    const fx = stack.x1 + .2; for (let i = 0; i < 3; i++) { const q = new THREE.CylinderGeometry(.045, .05, .34, 6); q.rotateZ(Math.PI / 2); put(q, 'log', fx, HY + .05 + (i === 2 ? .07 : 0), fz + (i - 1) * .09, (i - 1) * .5); }
+    put(new THREE.SphereGeometry(.13, 10, 6).scale(1.1, .35, 1.3), 'ember', fx, HY + .03, fz); for (let i = 0; i < 3; i++) put(new THREE.ConeGeometry(.055, .24 + i * .05, 7), 'flame', fx + (i - 1) * .03, HY + .2, fz + (i - 1) * .07);
+    fire = [fx, HY + .25, fz];
+    // a pot on a crane's hook over the fire, swung from the hood
+    bx('iron', fx - .006, fx + .006, HY + .45, HH, fz - .006, fz + .006); put(new THREE.SphereGeometry(.13, 12, 8, 0, Math.PI * 2, .4, Math.PI - .4), 'iron', fx, HY + .38, fz);
+  }
+  // the bed: in the family quarters behind the partition (parted), else a bench bed of furs at the back of the left wall's bench (the
+  // right's with a chimney), its chest at its foot; the cradle in the other back corner, where it is clear of the stack
+  const bs = chim ? 1 : -1, bed = parted ? { x0: -X + .1, x1: -X + 2.2, z0: -Z, z1: -Z + 1.95 } : bs < 0 ? { x0: -X, x1: -X + BD, z0: -Z, z1: -Z + 2.1 } : { x0: X - BD, x1: X, z0: -Z, z1: -Z + 2.1 };
+  bx('oak', bed.x0, bed.x1, FY, FY + .4, bed.z0, bed.z1, 'bed'); bx('fur', bed.x0 + .05, bed.x1 - .05, FY + .4, FY + .5, bed.z0 + .05, bed.z1 - .05);
+  if (parted) bx('furPale', bed.x0 + .1, bed.x0 + .9, FY + .5, FY + .58, bed.z0 + .1, bed.z1 - .1); else bx('furPale', bed.x0 + .1, bed.x1 - .1, FY + .5, FY + .58, bed.z0 + .1, bed.z0 + .7) /* the pillow at the back wall */;
+  const chest = parted ? { x0: bed.x1 + .1, x1: bed.x1 + 1.0, z0: -Z, z1: -Z + .55 } : bs < 0 ? { x0: -X, x1: -X + .55, z0: bed.z1 + .1, z1: bed.z1 + 1.0 } : { x0: X - .55, x1: X, z0: bed.z1 + .1, z1: bed.z1 + 1.0 };
+  bx('oak', chest.x0, chest.x1, FY, FY + .5, chest.z0, chest.z1, 'chest'); if (parted) bx('iron', chest.x0, chest.x1, FY + .3, FY + .34, chest.z1, chest.z1 + .02); else { const e = bs < 0 ? chest.x1 : chest.x0 - .02; bx('iron', e, e + .02, FY + .3, FY + .34, chest.z0, chest.z1); }
+  // a small stone lamp of oil on the chest, the bed's own light
+  const lamp2 = parted ? [bed.x1 + .55, FY + .56, -Z + .3] : [(chest.x0 + chest.x1) / 2, FY + .56, (chest.z0 + chest.z1) / 2]; put(new THREE.CylinderGeometry(.07, .05, .06, 10), 'kerb', lamp2[0], FY + .53, lamp2[2]); put(new THREE.SphereGeometry(.015, 6, 5).scale(1, 2, 1), 'flame', lamp2[0], FY + .585, lamp2[2]);
+  let cradle = null; { const cx = -bs * (X - .7), cz = -Z + .85, c = { x0: cx - .3, x1: cx + .3, z0: cz - .45, z1: cz + .45 };
+    if (!(stack && hit(c, stack, .4))) { cradle = c; /* its rockers reach 0.32 m past its ends */ bx('oak', c.x0, c.x1, FY + .1, FY + .42, c.z0, c.z1, 'cradle'); bx('furPale', cx - .25, cx + .25, FY + .42, FY + .46, cz - .4, cz + .4); for (const s of [-1, 1]) put(new THREE.TorusGeometry(.32, .03, 4, 12, Math.PI).rotateY(Math.PI / 2), 'oak', cx, FY + .1, cz + s * .45); } }
+  // the benches down both long walls, laid with furs (to sit on by day, sleep on by night): between the larder and workshop at the front
+  // and the partition at the back (parted); in one room from the chest or the cradle on, and round the stack where it stands in one
+  const BH = .45, benches = [], BZ1 = Z - 2.4;
+  for (const sx of [-1, 1]) { const x0 = sx > 0 ? X - BD : -X, x1 = sx > 0 ? X : -X + BD, z0 = parted ? -Z + 3.0 : sx === bs ? chest.z1 + .1 : cradle ? cradle.z1 + .2 : -Z + .3;
+    let runs = [[z0, BZ1]]; if (stack && stack.x0 < x1 + .05 && x0 < stack.x1 + .05) runs = runs.flatMap(([a, b]) => [[a, Math.min(b, stack.z0 - .1)], [Math.max(a, stack.z1 + .1), b]]);
+    for (const [a, b] of runs.filter(([a, b]) => b - a >= 1.0)) { bx('board', x0, x1, FY, FY + BH - .04, a, b, 'bench'); bx('plank', x0, x1, FY + BH - .04, FY + BH, a, b); benches.push({ x0, x1, y: FY + BH, z0: a, z1: b });
+      for (let z = a + .3, k = 0; z < b - 1.2; z += 1.7 + r() * .6, k++) { const L = Math.min(1.5 + r() * .4, b - z - .1), W2 = Math.min(.8 + r() * .2, BD - .1), g = new THREE.PlaneGeometry(W2, L, 6, 6), P = g.attributes.position;
+        for (let i = 0; i < P.count; i++) { const ex = Math.abs(P.getX(i)) / (W2 / 2), ey = Math.abs(P.getY(i)) / (L / 2); P.setZ(i, .015 + .02 * Math.sin(P.getX(i) * 9 + k) * Math.cos(P.getY(i) * 7) - (ex > .85 && ey > .8 ? .01 : 0)); }
+        g.rotateX(-Math.PI / 2); g.computeVertexNormals(); put(g, ['fur', 'furPale', 'furGrey'][k % 3], (x0 + x1) / 2 + (r() - .5) * .1, FY + BH, z + L / 2, (r() - .5) * .12, .9); } } }
+  // the workshop corner, front left: a bench along the front wall, tools on pegs over it (as many as its length holds), a chopping block with an axe
+  { const x0 = -X, x1 = -.95, z1 = Z, z0 = Z - .7, nT = Math.min(5, Math.floor((x1 - x0 - .3) / .45)); bx('oak', x0, x1, FY + .8, FY + .88, z0, z1, 'workbench'); for (const x of [x0 + .1, x1 - .15]) for (const z of [z0 + .1, z1 - .1]) bx('oak', x - .05, x + .05, FY, FY + .8, z - .05, z + .05);
+    for (let k = 0; k < nT; k++) { const x = x0 + .4 + k * .45; bx('oak', x - .015, x + .015, FY + 1.45, FY + 1.48, Z - .1, Z); const L = .4 + r() * .3; bx(k % 2 ? 'oak' : 'iron', x - .02, x + .02, FY + 1.45 - L, FY + 1.45, Z - .07, Z - .03); }
+    const kx = narrow ? -X + .45 : -1.7 /* by the wall, clear of the posts, in a narrow hall */; put(new THREE.CylinderGeometry(.22, .25, .5, 12), 'log', kx, FY + .25, Z - 1.25); boxes.push({ tag: 'block', x0: kx - .25, x1: kx + .25, y0: FY, y1: FY + .5, z0: Z - 1.5, z1: Z - 1.0 });
+    bx('oak', kx - .02, kx + .02, FY + .5, FY + 1.1, Z - 1.27, Z - 1.23); bx('iron', kx - .04, kx + .04, FY + .5, FY + .62, Z - 1.38, Z - 1.18); }
   // the larder, front right: a beam across the corner on two posts, hung with hams, dried fish and bunches of herbs; barrels and a crock below
   { const x0 = .95, x1 = X, z = Z - .9, by = FY + 2.05; for (const x of [x0 + .1, x1 - .1]) bx('post', x - .07, x + .07, FY, by, z - .07, z + .07, 'larderpost'); bx('post', x0, x1, by, by + .14, z - .07, z + .07);
     for (let k = 0; k < 7; k++) { const x = x0 + .4 + k * (x1 - x0 - .7) / 6, kind = k % 3; bx('linen', x - .006, x + .006, by - .3, by, z - .006, z + .006);
@@ -193,28 +239,25 @@ export function markLonghouse(o = {}, r = stream('longhouse')) {
       else put(new THREE.ConeGeometry(.09, .32, 7), 'herb', x, by - .46, z); }
     for (const [x, zz] of [[x1 - .4, Z - .4], [x1 - 1.05, Z - .38]]) { put(new THREE.CylinderGeometry(.3, .27, .75, 14), 'oak', x, FY + .375, zz); boxes.push({ tag: 'barrel', x0: x - .3, x1: x + .3, y0: FY, y1: FY + .75, z0: zz - .3, z1: zz + .3 }); }
     put(new THREE.CylinderGeometry(.13, .16, .4, 12), 'crock', x1 - .3, FY + .2, z - .45); }
-  // the partition across the back: planks on a frame, a doorway right of the axis into the family quarters
-  const PZ = -Z + 2.6, dP = { x: 1.0, w: .9, h: 2.0 }; { const s = new THREE.Shape(); s.moveTo(-X, 0); s.lineTo(X, 0); s.lineTo(X, TB - FY); s.lineTo(-X, TB - FY); s.lineTo(-X, 0);
+  // the partition across the back: planks on a frame, a doorway right of the axis into the family quarters (the drawn plan only)
+  const dP = { x: 1.0, w: .9, h: 2.0 }; if (parted) { const s = new THREE.Shape(); s.moveTo(-X, 0); s.lineTo(X, 0); s.lineTo(X, TB - FY); s.lineTo(-X, TB - FY); s.lineTo(-X, 0);
     const h = new THREE.Path(); h.moveTo(dP.x - dP.w / 2, 0); h.lineTo(dP.x + dP.w / 2, 0); h.lineTo(dP.x + dP.w / 2, dP.h); h.lineTo(dP.x - dP.w / 2, dP.h); h.lineTo(dP.x - dP.w / 2, 0); s.holes.push(h);
     const g = new THREE.ExtrudeGeometry(s, { depth: .08, bevelEnabled: false }); g.translate(0, FY, PZ - .04); put(g, 'board', 0, 0, 0, 0, .7); }
-  // the family quarters: a platform bed of furs along the back wall, a chest at its foot, a small cradle
-  const bed = { x0: -X + .1, x1: -X + 2.2, z0: -Z, z1: -Z + 1.95 }; bx('oak', bed.x0, bed.x1, FY, FY + .4, bed.z0, bed.z1, 'bed'); bx('fur', bed.x0 + .05, bed.x1 - .05, FY + .4, FY + .5, bed.z0 + .05, bed.z1 - .05); bx('furPale', bed.x0 + .1, bed.x0 + .9, FY + .5, FY + .58, bed.z0 + .1, bed.z1 - .1);
-  bx('oak', bed.x1 + .1, bed.x1 + 1.0, FY, FY + .5, -Z, -Z + .55, 'chest'); bx('iron', bed.x1 + .1, bed.x1 + 1.0, FY + .3, FY + .34, -Z + .55, -Z + .57);
-  // a small stone lamp of oil on the chest, the quarters' own light
-  const lamp2 = [bed.x1 + .55, FY + .56, -Z + .3]; put(new THREE.CylinderGeometry(.07, .05, .06, 10), 'kerb', lamp2[0], FY + .53, lamp2[2]); put(new THREE.SphereGeometry(.015, 6, 5).scale(1, 2, 1), 'flame', lamp2[0], FY + .585, lamp2[2]);
-  { const cx = X - .7, cz = -Z + .85; bx('oak', cx - .3, cx + .3, FY + .1, FY + .42, cz - .45, cz + .45, 'cradle'); bx('furPale', cx - .25, cx + .25, FY + .42, FY + .46, cz - .4, cz + .4); for (const s of [-1, 1]) put(new THREE.TorusGeometry(.32, .03, 4, 12, Math.PI).rotateY(Math.PI / 2), 'oak', cx, FY + .1, cz + s * .45); }
-  // the lamp: an iron bowl of oil on a chain from the middle tie beam
-  const lz = posts[Math.floor(posts.length / 2)] ?? 0, lamp = [-1.2, TB - .6, lz]; bx('iron', lamp[0] - .005, lamp[0] + .005, lamp[1] + .05, TB, lz - .005, lz + .005);
+  // the lamp: an iron bowl of oil on a chain from the middle tie beam (over the right aisle with a chimney)
+  const lz = posts[Math.floor(posts.length / 2)] ?? 0, lamp = [(chim ? 1 : -1) * Math.min(1.2, PXr - .4), TB - .6, lz]; bx('iron', lamp[0] - .005, lamp[0] + .005, lamp[1] + .05, TB, lz - .005, lz + .005);
   put(new THREE.SphereGeometry(.09, 10, 6, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), 'iron', ...lamp); put(new THREE.SphereGeometry(.02, 6, 5).scale(1, 2, 1), 'flame', lamp[0] + .05, lamp[1] + .03, lamp[2]);
   // the front door, hung open: its leaf swung in against the front wall, left of the doorway
   { const leaf = { x0: -hall.door.w / 2 - .07, x1: -hall.door.w / 2 - .01, z0: Z - hall.door.w - .01, z1: Z - .01 }; bx('board', leaf.x0, leaf.x1, FY, FY + hall.door.h - .12, leaf.z0, leaf.z1, 'door');
     for (const y of [.5, 1.5]) bx('iron', leaf.x0 - .02, leaf.x0, FY + y - .03, FY + y + .03, leaf.z0 + .1, leaf.z1 - .05); }
   // the walk: in at the door, between the larder and the workshop, down the left of the hearth, and through the partition's doorway
-  const path = [[0, Z - .1], [0, Z - 1.6], [-1.3, H.z1 + .3], [-1.3, PZ + .35], [dP.x, PZ + .35], [dP.x, PZ - .6]];
+  // (parted) or to the bed's side (one room); with a chimney, straight down the axis past the peis to the bed's side
+  const bedSide = [bs * (X - BD - .35), (bed.z0 + bed.z1) / 2];
+  const path = parted ? [[0, Z - .1], [0, Z - 1.6], [-xa, H.z1 + .3], [-xa, PZ + .35], [dP.x, PZ + .35], [dP.x, PZ - .6]] : chim ? [[0, Z - .1], [0, Z - 1.6], [0, bedSide[1]], bedSide] : [[0, Z - .1], [0, Z - 1.6], [-xa, H.z1 + .3], [-xa, bedSide[1]], bedSide];
   const group = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = !['flame', 'ember', 'glow'].includes(k); m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
   const all = new THREE.Group(); all.add(hall.group, group);
   return { group: all, shell: hall.group, room: group, tris: Math.round(tris), draws: group.children.length, shellTris: hall.tris, shellCalls: hall.draws, inner: { x0: -X, x1: X, z0: -Z, z1: Z }, under, floor: FY, tieBeam: TB,
-    fire, hearth: H, louver: hall.louver, door: { x: 0, z: d / 2, w: hall.door.w, h: hall.door.h }, doors: [{ x: dP.x, z: PZ, w: dP.w, h: dP.h, wall: 'partition' }], partition: PZ, path, boxes, benches, bed, lamp, lamp2, windows: hall.windows, w, d };
+    fire, hearth: H, louver: hall.louver, door: { x: 0, z: d / 2, w: hall.door.w, h: hall.door.h }, doors: parted ? [{ x: dP.x, z: PZ, w: dP.w, h: dP.h, wall: 'partition' }] : [], partition: PZ, path, boxes, benches, bed, chest, cradle, lamp, lamp2, windows: hall.windows, w, d,
+    plan: parted ? 'parted' : 'one', chimney: chim, stack, peis: peisB, narrow };
 }
 
 // aurenneHome(o, r) (Session 891, card F9; Michael's A on #303: rooms inside the street's own shell; OG-115's Aurenne panel, "an urban
