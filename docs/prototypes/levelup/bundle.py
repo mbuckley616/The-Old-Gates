@@ -60,10 +60,20 @@ def kits(s, mods):
     head = '\n'.join(pre) + '\n' + '\n'.join(uses(s)) + '\n'
     s = re.sub(r"^import \{[^}]*\} from './(%s)\.js';\n" % '|'.join(mods), '', s, flags=re.M)
     return head + s
+# light indoors (concept, 26 Oct 2026): two kits importing the same name from one module (pieces.js and places.js both take
+# mergeGeometries) met as a duplicate declaration; named imports are merged by module, each name once
+def merge_imports(imps):
+    named, other = {}, []
+    for i in imps:
+        m = re.match(r"^import \{([^}]*)\} from '([^']+)';$", i)
+        if m: named.setdefault(m.group(2), []).extend(x.strip() for x in m.group(1).split(',') if x.strip())
+        else: other.append(i)
+    return list(dict.fromkeys(other)) + ['import { ' + ', '.join(dict.fromkeys(v)) + " } from '" + k + "';" for k, v in named.items()]
 def build(name, title, note, srcfile, use_common, query=''):
     src = open(os.path.join(here, srcfile), encoding='utf-8').read()
     if use_common:
         s = scene(src)
+        if "from './light.js'" in s: s = kits(s, ['pieces', 'ships', 'places', 'rooms', 'light'])
         if "from './air.js'" in s: s = kits(s, ['gatekit', 'pieces', 'shrines', 'corruption', 'air'])
         if "from './weather.js'" in s: s = kits(s, ['gatekit', 'pieces', 'shrines', 'corruption', 'seasons', 'weather'])
         if "from './hours.js'" in s: s = kits(s, ['gatekit', 'pieces', 'shrines', 'corruption', 'hours'])
@@ -76,7 +86,7 @@ def build(name, title, note, srcfile, use_common, query=''):
         if "from './shrines.js'" in s: s = shrinekit(s)
         if "from './musicians.js'" in s: s = musickit(s)
         imps = re.findall(r"^import .*;$", s, flags=re.M); body = re.sub(r"^import .*;\n", '', s, flags=re.M)
-        allimps = list(dict.fromkeys(imports_c + imps)); code = '\n'.join(allimps) + '\n' + common_body + '\n' + body
+        allimps = merge_imports(imports_c + imps); code = '\n'.join(allimps) + '\n' + common_body + '\n' + body
     else: code = src
     if query: code = code.replace("new URLSearchParams(location.search)", f"new URLSearchParams(location.search || '{query}')")
     open(os.path.join(out, name), 'w', encoding='utf-8').write(HEAD.format(title=title, note=note, V=V) + code + '\n</script></body></html>\n')
@@ -169,4 +179,5 @@ build('seasons-field.html', 'The seasons in the land', 'The seasons in the land 
 build('hours-lane.html', 'The hours of the day', 'The hours, island by island (L12, OG-137; F3): one Gatelands lane through a summer day and night. The hour, the night (A readable, B by the moon’s phase, C by phase with a starlit floor) and the moon are top left; ?hour=dawn|sunrise|midday|golden|twilight|moonlit|deep, &night=readable|phase|floor, &moon=0..1, &cam=field|hill|scale|high. Drag to look.', 'hours-view.js', True, '?hour=twilight')
 build('weather-lane.html', 'Weather that matters', 'Weather that matters (L12, OG-138; F3): one Gatelands lane through OG-138’s nine conditions, a rainbow and a gate storm. The weather, how far you see (A a veil, B as drawn, C by kind) and the season are top left; ?wx=clear|partly|overcast|rain|heavy|storm|snow|blizzard|fog|rainbow|gate, &sight=veil|drawn|kind, &cam=field|hill|scale|high. Drag to look.', 'weather-view.js', True, '?wx=rain')
 build('air-islands.html', 'Each island’s air', 'Each island’s air (L12, OG-140; F3): one viewpoint an island at a summer mid-afternoon, its light, sky, haze, grade, land and trees as one row. The island and the air (A one air, B each its own, C its mark always on) are top left; ?island=gatelands|mark|aurenne, &air=one|own|marked, &cam=vista|scale|high. Drag to look.', 'air-view.js', True, '?island=mark')
+build('light-rooms.html', 'Light indoors', 'Light indoors (L12, OG-141; F2 and F3): one rule lights three rooms from what each records, its openings, fires and lamps, at four hours. ?room=cottage|longhouse|home, &hour=morning|noon|golden|night, &mode=even|sources|eye (A the eye wide open, B the sources alone, C the sources and the eye half open), &view=room|scale, &hand=1. Drag to look.', 'light-view.js', True, '?room=cottage&hour=night&mode=eye')
 print('ok')
