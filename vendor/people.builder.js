@@ -989,7 +989,7 @@ function drape(S, start, dir0, L, clearAt, o = {}) {
   for (const q of line.slice(1)) { const c = clearAt(q), hit = heightOver(S, q); if (hit && hit.h < c) q.addScaledVector(hit.e.n, c - hit.h); }
   return line;
 }
-const HAIR_STYLES = ['short', 'loose', 'braid', 'braids', 'tail', 'bun', 'crown', 'plait'];
+const HAIR_STYLES = ['short', 'loose', 'braid', 'braids', 'tail', 'bun', 'crown', 'plait', 'shaved'];
 // the sleeve's place along the forearm (Session 1228), for the checks
 function buildHair(P, G, heads, scalpTris, headB, rnd, checks = true) {
   const out = [], style = G.hair?.style ?? ((G.hairLen ?? .3) < .45 ? 'short' : 'loose'), len = G.hair?.len ?? G.hairLen ?? .3, col = sRGB(...G.hairCol);
@@ -1010,7 +1010,9 @@ function buildHair(P, G, heads, scalpTris, headB, rnd, checks = true) {
   const gp = d => { const e = S.extreme(hc, d.normalize(), p => p.y > heads['neck01'].y + .02); return { p: e.p.clone().addScaledVector(e.n, .012), n: e.n.clone() }; };
   // the plait over the shoulder (Session 1443, OG-025, OG-001; Michael's A on #272): gathered low behind one ear, its side by the seed
   const plaitS = style === 'plait' ? (rnd() < .5 ? -1 : 1) : 0;
-  const gather = style === 'braid' || style === 'tail' ? [gp(new THREE.Vector3(0, -.55, -1))] : style === 'braids' ? [gp(new THREE.Vector3(-.75, -.75, -.55)), gp(new THREE.Vector3(.75, -.75, -.55))] : style === 'bun' ? [gp(new THREE.Vector3(0, .2, -1))] : plaitS ? [gp(new THREE.Vector3(.8 * plaitS, -.75, -.5))] : [];
+  // shaved sides (Session 1446, OG-025's Markmen; Michael's A on #272, "a shaved side"): both sides of the head shorn to a stubble and
+  // a strip over the top, about 8 cm wide, combed back into one braid that starts high on the back of the head
+  const gather = style === 'shaved' ? [gp(new THREE.Vector3(0, -.2, -1))] : style === 'braid' || style === 'tail' ? [gp(new THREE.Vector3(0, -.55, -1))] : style === 'braids' ? [gp(new THREE.Vector3(-.75, -.75, -.55)), gp(new THREE.Vector3(.75, -.75, -.55))] : style === 'bun' ? [gp(new THREE.Vector3(0, .2, -1))] : plaitS ? [gp(new THREE.Vector3(.8 * plaitS, -.75, -.5))] : [];
   // the crown braid (Session 1443, OG-025's Markwomen): one braid laid round the head as a ring, over the top behind the hairline and low
   // round the back over the occiput, every strand combed to the ring's nearest point. The ring is the head's own surface by bearing, set out
   // by the braid's half-thickness, smoothed round and laid again 1 cm apart, closed
@@ -1028,12 +1030,13 @@ function buildHair(P, G, heads, scalpTris, headB, rnd, checks = true) {
   // the strands over the head
   const area = [], A = new THREE.Vector3(), B = new THREE.Vector3(), C = new THREE.Vector3(); let tot = 0;
   for (let t = 0; t < scalpTris.length; t += 3) { A.fromArray(P, scalpTris[t] * 3); B.fromArray(P, scalpTris[t + 1] * 3); C.fromArray(P, scalpTris[t + 2] * 3); tot += B.clone().sub(A).cross(C.clone().sub(A)).length() / 2; area.push(tot); }
-  let crownMiss = 0, edgeN = 0, edgeW = 0, backN = 0, backW = 0, tN = 0, tW = 0, tbN = 0, tbW = 0; const strands = [], short = style === 'short', free = style === 'loose', L = short ? .05 + .1 * len : free ? .12 + .5 * len : .5, nS = short ? 1400 : free ? 2200 : style === 'crown' ? 3000 : 1700, step = .009, thick = short ? .009 : free ? .02 : .011;
+  let crownMiss = 0, edgeN = 0, edgeW = 0, backN = 0, backW = 0, tN = 0, tW = 0, tbN = 0, tbW = 0; const strands = [], short = style === 'short', free = style === 'loose', L = short ? .05 + .1 * len : free ? .12 + .5 * len : .5, nS = short ? 1400 : free ? 2200 : style === 'crown' ? 3000 : style === 'shaved' ? 4200 : 1700, step = .009, thick = short ? .009 : free ? .02 : .011;
   for (let k = 0; k < nS; k++) {
     let r = rnd() * tot, lo = 0, hi = area.length - 1; while (lo < hi) { const m = (lo + hi) >> 1; if (area[m] < r) lo = m + 1; else hi = m; } const t = lo * 3;
     A.fromArray(P, scalpTris[t] * 3); B.fromArray(P, scalpTris[t + 1] * 3); C.fromArray(P, scalpTris[t + 2] * 3); let u = rnd(), v = rnd(); if (u + v > 1) { u = 1 - u; v = 1 - v; }
     const p = A.clone().multiplyScalar(1 - u - v).addScaledVector(B, u).addScaledVector(C, v), side = Math.abs(p.x - hc.x) < .004 ? (rnd() < .5 ? -1 : 1) : Math.sign(p.x - hc.x);
-    const off = .003 + thick * rnd() ** .7, g = crown ? crown.near(p) : gather.length === 2 ? gather[side < 0 ? 0 : 1] : gather[0];
+    // a root off the strip, on a shaved style, is stubble: 3 to 7 mm, lying flat on the skin, not gathered
+    const shv = style === 'shaved' && Math.abs(p.x - hc.x) > .036 + .008 * rnd(), off = shv ? .0015 : .003 + thick * rnd() ** .7, g = shv ? null : crown ? crown.near(p) : gather.length === 2 ? gather[side < 0 ? 0 : 1] : gather[0];
     let q = p.clone(), e = S.near(q), n = e ? e.n.clone() : p.clone().sub(hc).normalize(); q.addScaledVector(n, .003);
     // the parting (Session 874): only the strands rooted forward of the crown split to either side; behind it the side pull
     // grows smoothly from nothing at the midline, so no seam of bare scalp runs down the back of the head
@@ -1045,7 +1048,9 @@ function buildHair(P, G, heads, scalpTris, headB, rnd, checks = true) {
     // is not a step of full-width strands where the region's triangles stop
     const E = PACK.scalpEdge, eD = E[scalpTris[t]] * (1 - u - v) + E[scalpTris[t + 1]] * u + E[scalpTris[t + 2]] * v, wS = Math.max(0, Math.min(1, (r0.z + .04) / .03)) * (1 - Math.max(0, Math.min(1, (r0.z - .04) / .02)));
     const eF = Math.min(r0.z > .04 ? Math.max(0, Math.min(1, (r0.y - (.796 - .03 * (r0.x / .075) ** 2)) / .015)) : 1, 1 - wS * (1 - Math.min(1, eD / .015))), fine = .35 + .65 * eF * eF * (3 - 2 * eF);
-    const pts = [q.clone()], ns = [n.clone()], dir = new THREE.Vector3(), myL = L * (free ? (.7 + .45 * rnd()) * (1 - .22 * sx * sx) : .75 + .4 * rnd()), relY = free ? hc.y - .03 - .035 * rnd() : 0; let fell = -1, under = false, nRel = null;
+    // stubble thins out over the last 2 cm to the scalp's border, so the shorn side has no edge of its own at the temple or over the ear
+    if (shv && rnd() > Math.min(1, eD / .02)) continue;
+    const pts = [q.clone()], ns = [n.clone()], dir = new THREE.Vector3(), myL = shv ? .003 + .004 * rnd() : L * (free ? (.7 + .45 * rnd()) * (1 - .22 * sx * sx) : .75 + .4 * rnd()), relY = free ? hc.y - .03 - .035 * rnd() : 0; let fell = -1, under = false, nRel = null;
     // the root sits on the skin and the strand rises into its layer over its first 5 cm (Session 877), so the hairline is not
     // a row of strands standing off the forehead and the crown has some lift; loose and short hair stand higher than pulled-back styles
     const offAt = l => { const k = Math.min(1, l / .05); return .003 + (off - .003) * k * k * (3 - 2 * k); };
@@ -1077,7 +1082,7 @@ function buildHair(P, G, heads, scalpTris, headB, rnd, checks = true) {
     if (r0.z > .04) { if (eF < .5) { edgeN++; edgeW += fine; } else if (eF >= 1) { backN++; backW += fine; } }
     if (r0.z > -.01 && r0.z < .04 && Math.abs(r0.x) > .05) { if (eD < .0075) { tN++; tW += fine; } else if (eD >= .015) { tbN++; tbW += fine; } }
     if (crown && q.distanceTo(g.p) > off + .008) crownMiss++;
-    strands.push({ pts, ns, w: (short ? .008 : free ? .008 : crown ? .015 : .011) * (.8 + .4 * rnd()) * fine, tip: free ? .85 : .5, v0: 0, v1: Math.min(1, pts.length * step / (g ? .35 : myL)) });
+    strands.push({ pts, ns, w: (shv ? .004 : short ? .008 : free ? .008 : crown ? .015 : .011) * (.8 + .4 * rnd()) * fine, tip: free ? .85 : .5, v0: 0, v1: Math.min(1, pts.length * step / (g ? .35 : myL)) });
   }
   // the checks' numbers: strand points under the skin, and strand points lying on the face (by the rest place of the skin under them)
   // and Session 877's: how high the roots sit on the skin, and how high the hair stands over the crown
@@ -3834,7 +3839,7 @@ const PEOPLES = {
   markman: { name: 'Markmen', race: { caucasian: [1, 1], african: [0, 0], asian: [0, 0] },
     body: { m: { metres: [1.84, 1.98], muscle: [.66, .92], weight: [.48, .7] }, f: { metres: [1.72, 1.84], muscle: [.52, .7], weight: [.46, .64] } },
     skin: [[.92, .8, .74], [.9, .77, .7], [.88, .74, .66]], hair: [[.8, .72, .56], [.72, .64, .5], [.86, .8, .66], [.62, .54, .42]], eyes: [[.55, .6, .62], [.5, .56, .6], [.45, .55, .62]],
-    styles: { m: { short: 5, braids: 2, tail: 2 }, f: { braids: 4, braid: 3, bun: 1, plait: 3, crown: 2 } },
+    styles: { m: { short: 5, braids: 2, tail: 2, shaved: 3 }, f: { braids: 4, braid: 3, bun: 1, plait: 3, crown: 2 } },
     wool: [[.32, .26, .2], [.24, .27, .32], [.3, .32, .26], [.2, .2, .22], [.45, .16, .12]], cloak: .3, fur: true, brooch: [.35, .35, .37], apron: [.15, .1], mantle: .8, paleMantle: .4, cuffBands: .7, brow: { m: { thick: [.7, .95], arch: [.15, .35] }, f: { thick: [.45, .65], arch: [.35, .55] } } },
   aurennais: { name: 'Aurennais', race: { caucasian: [.3, .65], african: [.25, .7], asian: [0, .15] },
     body: { m: { metres: [1.74, 1.86], muscle: [.5, .66], weight: [.32, .46] }, f: { metres: [1.62, 1.74], muscle: [.42, .56], weight: [.34, .48] } },

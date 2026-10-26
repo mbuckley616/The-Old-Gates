@@ -1079,6 +1079,10 @@ if (shotArg) { const only = shotArg.split('=')[1];
     await shot('plait-close', `people=markman&seed=pl1&sex=f&style=plait&view=head&zoom=.6&turn=.9&dress=${bare}`, 1280, 1440);
     await shot('plait-cloak', 'people=markman&seed=pl1&sex=f&style=plait&view=full&turn=.5&dress=' + dq({ cloak: [.32, .26, .2], hood: 'down', mantle: null }), 1280, 1600);
     await shot('plait-mantle', 'people=markman&seed=pl2&sex=f&style=plait&view=full&turn=-.4&dress=' + dq({ mantle: [.55, .5, .44], cloak: null }), 1280, 1600); }
+  // shaved sides (Session 1446, OG-025's Markmen; Michael's A on #272): a Markman's head from the front, the side and behind, and full under a cloak
+  { const dq = d => encodeURIComponent(JSON.stringify(d)), bare = dq({ mantle: null, cloak: null });
+    for (const [n, t] of [['front', .3], ['side', 1.4], ['back', 2.7]]) await shot('shaved-' + n, `people=markman&seed=sh1&sex=m&style=shaved&view=head&zoom=.75&turn=${t}&dress=${bare}`, 1280, 1120);
+    await shot('shaved-full', 'people=markman&seed=sh2&sex=m&style=shaved&view=full&turn=2.4&dress=' + dq({ cloak: [.32, .26, .2], hood: 'down', mantle: null }), 1280, 1600); }
   // the temples (Session 879): three-quarter heads, where the hair's root region stops on a mesh edge by the brow
   for (const [n, q] of [['temples-man', 'seed=b7&sex=m&view=head&turn=.75'], ['temples-woman', 'seed=styles&sex=f&style=bun&view=head&turn=-.75']]) await shot(n, q + '&dress=' + encodeURIComponent('{"mantle":null}'), 2400, 1350, false, [.33, 0, .38, .42]);
   // the cuffs (Session 889): a Markman's woven band, close; and a plain cuff before and after
