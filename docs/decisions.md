@@ -3,6 +3,14 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### The Mouth's carving — which word does the certain first Mastery raise? (from the designer, 2026-10-26, #735)
+**The question.** Your 2 A on #695 made the Mouth the Uisce great gate at Inis Rua. It opens once you hold any word at Comprehension, and its ring holds "the certain first Mastery". Which word may that carving raise to Mastery (once per character, never past the word's Intelligence need)? Page: `docs/design/words-and-the-mouth-build.md`, section *The open number*.
+
+**Options.**
+- **A (recommended).** Any word you hold at Comprehension, your choice. The carving predates every word, so it answers whichever one you bring, and it is certain for everyone the door lets in.
+- **B.** Uisce's words only (Sioc, Uisce, Anáil, Tonn, Reo). It fits the gate's school, but a player who came in on Caor gets nothing.
+- **C.** Its own word, drawn by seed like any carving. This is the simplest, but it is not certain.
+
 ### The dungeon's cell by kind: old gates at 3 m, and forts and lairs at what? (systems builder, Session 1105) — DECISION #421
 **The question.** F2b's last session sets a dungeon's grid cell at true scale; it is one unit today, so corridors are 1 m wide for a 1.8 m body. Michael chose **C, 3 m** on #300 and added: "If by dungeon we mean Old Gates, they should be extremely massive and cavernous. A normal 'dungeon' like a mine, or a cave can be a more typical size." The game has three kinds of underground place: the **old gates** (the world's portals, themed by school: crypts, haunted halls, elemental and deep caverns, ruins), **fort interiors** (the `fort_` layouts), and **lairs and dens** (a beast's lair, the cloak's den). So the cell can differ by kind, and "a more typical size" is a number a player feels.
 
