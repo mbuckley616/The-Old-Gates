@@ -24,6 +24,13 @@ if (!process.argv.includes('--shots-only')) { const page = await browser.newPage
     const G = K.rollGenome('styles', { g: 0 });
     for (const style of K.HAIR_STYLES) for (const mantle of [true, false]) { const g = { ...G, hair: { style, len: .8 }, dress: { ...G.dress, mantle: mantle ? G.dress.mantle || [.4, .3, .2] : null } }, t0 = performance.now(), p = K.makePerson(g);
       let tris = 0; for (const m of p.meshes) tris += m.geometry.index ? m.geometry.index.count / 3 : 0; out.styles[style + (mantle ? '+mantle' : '')] = { ...p.hair, tris, ms: Math.round(performance.now() - t0) }; }
+    // the plait over the shoulder rides the chest below the neck (Session 1448), and every braid and tail down the back (Session 1449): the head turned
+    // 0.6 rad about its own bone, what lies on the breast or the back stays, the top by the head goes with it
+    out.plaitTurn = {}; for (const style of ['plait', 'braid', 'braids', 'tail', 'shaved']) { const G0 = K.rollGenome('pl1', { people: 'markman', g: 0 }), p = K.makePerson({ ...G0, hair: { style, len: .8 }, dress: { ...G0.dress, mantle: null, cloak: null, hood: null, helm: null, wrap: null } }), V = p.root.position.constructor;
+      const ms = p.meshes.filter(m => /^(braid\d|tail)$/.test(m.name)), at = () => { p.root.updateMatrixWorld(true); return ms.map(m => Array.from({ length: m.geometry.attributes.position.count }, (_, i) => m.getVertexPosition(i, new V()).applyMatrix4(m.matrixWorld))); };
+      const neckY = p.byName['neck01'].getWorldPosition(new V()).y, a0 = at(); p.byName['head'].rotation.y += .6; const a1 = at(); p.byName['head'].rotation.y -= .6;
+      let low = 0, lowN = 0, top = 0, topY = -1e9; a0.forEach((L, j) => L.forEach((q, i) => { const d = q.distanceTo(a1[j][i]); if (q.y < neckY - .12) { low = Math.max(low, d); lowN++; } if (q.y > topY) { topY = q.y; top = d; } }));
+      out.plaitTurn[style] = { locks: ms.length, low: +low.toFixed(4), lowN, top: +top.toFixed(4) }; }
     out.cloaks = {}; for (const [name, sex, dress] of [['woman, cloak and hood down, apron with bib', 0, { cloak: [.32, .38, .24], hood: 'down', apron: [.8, .76, .66], bib: true, mantle: null }], ['man, short cloak, hood up', 1, { cloak: [.45, .16, .12], hood: 'up', cloakLen: .3 }],
         ['man, fur-collared long cloak over the mantle', 1, { cloak: [.25, .2, .16], cloakFur: [.5, .42, .32], cloakLen: 1 }], ['woman, leather apron', 0, { apron: [.36, .25, .16], apronLeather: true, bib: true }],
         ['woman, shoulder cape with an embroidered hem', 0, { cloak: [.5, .14, .1], cape: true, cloakLen: .5, cloakHem: [.62, .47, .22], brooch: [.62, .47, .22], mantle: null }], ['man, shoulder cape', 1, { cloak: [.3, .36, .22], cape: true, cloakLen: 1, mantle: null }]]) {
@@ -578,6 +585,7 @@ if (!process.argv.includes('--shots-only')) { const page = await browser.newPage
       : c.tier === 3 ? `${k}: the kettle helm, as before, and no helm by tier; saved and loaded back` : `${k}: tier ${c.tier}'s helm on the head bone in place of the kettle (${c.stats?.tris} triangles in ${c.stats?.draws} draws, ${((c.stats?.gap ?? 0) * 100).toFixed(1)} cm clear of the head); saved and loaded back`,
     c.saved && (c.robe ? c.tierHelm && !c.kettle && c.stats?.tris > 0 : c.tier === 3 ? c.kettle && !c.tierHelm : c.tierHelm && !c.kettle && c.stats.tris < 12000 && c.stats.draws <= 6 && c.stats.gap > .008), c);
   check(`a child never rolls an armour tier (${r.tierKids} of 60)`, r.tierKids === 0, r.tierKids);
+  for (const [k, t] of Object.entries(r.plaitTurn)) check(`${k}: it rides the chest below the neck, the head turned 0.6 rad moving what lies on the breast or the back ${(t.low * 1000).toFixed(1)} mm (${t.lowN} points), and its top by the head ${(t.top * 100).toFixed(1)} cm`, t.locks >= 1 && t.lowN > 300 && t.low < .002 && t.top > .01, t);
   for (const [k, c] of Object.entries(r.coatHoods)) check(`${k}: the coat's hood up, 0 of ${c.tested} head and hair points through it (${c.poke}), the hair tucked, no earrings or necklace under it; ${c.fur} fur shells round the face (${c.furTris} triangles, ${c.dead} of them wholly where the shells' shader discards); none built with it down; saved and loaded back`,
     c.poke === 0 && c.tested > 1000 && c.fur === c.want && (c.want ? c.furTris > 0 && c.furTris < 6000 : c.furTris === 0) && c.dead === 0 && !c.hair && !c.ear && !c.neck && !c.downHood && c.saved, c);
   for (const [k, c] of Object.entries(r.coatHoodsDown)) check(`${k}: a roll across the upper back ${(c.drop * 100).toFixed(1)} cm under the neck (${c.tris} triangles), ${(c.clear * 1000).toFixed(1)} mm clear of ${c.n} points of the coat and its fur; ${c.hairIn} of ${c.hairN} points of the hair below the nape in it; no hood over the head; saved and loaded back`,
@@ -860,8 +868,9 @@ if (!process.argv.includes('--shots-only')) { const page = await browser.newPage
     return out; });
   { const F = Object.values(c.fits), bad = Object.entries(c.fits).filter(([, f]) => !f || f.through > 0).map(([k]) => k), r = k => [Math.min(...F.map(f => f[k])), Math.max(...F.map(f => f[k]))];
     check(`the circlet over every hair style (${F.length} heads): no point of the head or the hair inside the band (${F.reduce((a, f) => a + (f?.hairPts || 0), 0)} hair points read)`, F.length >= 15 && bad.length === 0, bad);
+    // (Session 1443: over a crown braid the band rides on the braid at the sides, 20.5–21.2 cm across, where loose hair makes it 20)
     check(`the circlet sits ${r('overBrow').map(v => (v * 100).toFixed(1)).join('–')} cm over the brows, ${r('overEar').map(v => (v * 1000).toFixed(0)).join('–')} mm over the ears' tops, ${r('gapFront').map(v => (v * 1000).toFixed(1)).join('–')} mm off the forehead, ${r('width').map(v => (v * 100).toFixed(1)).join('–')} cm across; ${F[0].tris} triangles in ${F[0].draws} draws`,
-      F.every(f => f.overBrow > .02 && f.overEar >= .007 && f.gapFront > .001 && f.gapFront < .008 && f.width > .15 && f.width < .21 && f.underTop > .03), { overBrow: r('overBrow'), overEar: r('overEar'), gapFront: r('gapFront'), width: r('width'), underTop: r('underTop') }); }
+      Object.entries(c.fits).every(([k, f]) => f.overBrow > .02 && f.overEar >= .007 && f.gapFront > .001 && f.gapFront < .008 && f.width > .15 && f.width < (k.startsWith('crown:') ? .22 : .21) && f.underTop > .03), { overBrow: r('overBrow'), overEar: r('overEar'), gapFront: r('gapFront'), width: r('width'), underTop: r('underTop') }); }
   check(`the circlet rides the head bone: its middle moved ${(c.moved * 100).toFixed(1)} cm with the head nodded .6 rad`, c.parent === 'head' && c.moved > .01, { parent: c.parent, moved: c.moved });
   check(`no circlet under a head-wrap, a helm or a raised hood; one with no stone has none; saved and loaded the same`, c.none.every(Boolean) && c.noStone && c.saved, { none: c.none, noStone: c.noStone, saved: c.saved });
   { const r = c.roll; check(`the Aurennais women's circlets: ${r.worn} of ${r.open} bare-headed women (of ${r.women}), ${r.stones} set with a stone, ${r.onCovered} on a covered head; in the hoops' or coins' metal; ${r.men} men and ${r.others} of 180 other peoples; every other roll the same`,
@@ -1071,6 +1080,17 @@ if (shotArg) { const only = shotArg.split('=')[1];
   await shot('peoples', 'peoples', 2400, 900);
   await shot('styles-back', 'seed=styles&sex=f&sheet&ang=2.4&dist=1.5&y=-.2&nomantle');
   await shot('styles-front', 'seed=styles&sex=f&sheet&ang=.35&dist=1.5&y=-.1');
+  // the crown braid and the plait over the shoulder (Session 1443, OG-025, OG-001; Michael's A on #272): the crown from the front, the side and
+  // behind; the plait close, over a hooded cloak and over a Markwoman's pale fur mantle
+  { const dq = d => encodeURIComponent(JSON.stringify(d)), bare = dq({ mantle: null, cloak: null });
+    for (const [n, t] of [['front', .3], ['side', 1.4], ['back', 2.7]]) await shot('crown-' + n, `people=markman&seed=styles&sex=f&style=crown&view=head&zoom=.75&turn=${t}&dress=${bare}`, 1280, 1120);
+    await shot('plait-close', `people=markman&seed=pl1&sex=f&style=plait&view=head&zoom=.6&turn=.9&dress=${bare}`, 1280, 1440);
+    await shot('plait-cloak', 'people=markman&seed=pl1&sex=f&style=plait&view=full&turn=.5&dress=' + dq({ cloak: [.32, .26, .2], hood: 'down', mantle: null }), 1280, 1600);
+    await shot('plait-mantle', 'people=markman&seed=pl2&sex=f&style=plait&view=full&turn=-.4&dress=' + dq({ mantle: [.55, .5, .44], cloak: null }), 1280, 1600); }
+  // shaved sides (Session 1446, OG-025's Markmen; Michael's A on #272): a Markman's head from the front, the side and behind, and full under a cloak
+  { const dq = d => encodeURIComponent(JSON.stringify(d)), bare = dq({ mantle: null, cloak: null });
+    for (const [n, t] of [['front', .3], ['side', 1.4], ['back', 2.7]]) await shot('shaved-' + n, `people=markman&seed=sh1&sex=m&style=shaved&view=head&zoom=.75&turn=${t}&dress=${bare}`, 1280, 1120);
+    await shot('shaved-full', 'people=markman&seed=sh2&sex=m&style=shaved&view=full&turn=2.4&dress=' + dq({ cloak: [.32, .26, .2], hood: 'down', mantle: null }), 1280, 1600); }
   // the temples (Session 879): three-quarter heads, where the hair's root region stops on a mesh edge by the brow
   for (const [n, q] of [['temples-man', 'seed=b7&sex=m&view=head&turn=.75'], ['temples-woman', 'seed=styles&sex=f&style=bun&view=head&turn=-.75']]) await shot(n, q + '&dress=' + encodeURIComponent('{"mantle":null}'), 2400, 1350, false, [.33, 0, .38, .42]);
   // the cuffs (Session 889): a Markman's woven band, close; and a plain cuff before and after
