@@ -769,7 +769,7 @@ function buildPerson(g,opts){
 const WPN_MAT={metal:new THREE.MeshStandardMaterial({vertexColors:true,metalness:.7,roughness:.34}),matte:new THREE.MeshStandardMaterial({vertexColors:true,metalness:0,roughness:.85}),
   glow:new THREE.MeshBasicMaterial({vertexColors:true}),halo:new THREE.MeshBasicMaterial({vertexColors:true,transparent:true,opacity:.15,depthWrite:false})};
 const WPN_GEO=new Map();
-const WPN_KINDS=['dagger','sword','cutlass','longsword','claymore','axe','greataxe','mace','flail','warhammer','greatclub','staff','bow','round','kite','tower'];
+const WPN_KINDS=['dagger','sword','cutlass','longsword','claymore','axe','greataxe','mace','flail','warhammer','greatclub','staff','bow','spear','crossbow','round','kite','tower'];
 // tint (S227, the player's weapons): {metal, guard, wood, glow} colours in place of steel, brass, the bow's wood and the crystal
 function wpnBuild(kind,rust,tint){tint=tint||{};
   const L=[],o=new THREE.Object3D();const RU=0x6a3e24;
@@ -806,6 +806,29 @@ function wpnBuild(kind,rust,tint){tint=tint||{};
       for(let i=0;i<6;i++){const a=i*1.05;add(SK.cone(.012,.035,5),'metal',DSTEEL,[Math.cos(a)*.052,.53+(i%2)*.05,Math.sin(a)*.052],[0,-a,-Math.PI/2]);}},
     bow:()=>{const pts=[];for(let i=0;i<=20;i++){const t=i/20*2-1;pts.push(new THREE.Vector3(0,t*.34,-.05*(1-t*t)+.025*Math.pow(Math.abs(t),6)));}
       add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),30,.011,6),'matte',WOOD);add(SK.cyl(.016,.016,.09,8),'matte',LEATH,[0,0,-.05]);add(SK.cyl(.0025,.0025,.68,4),'matte',0xe8e0c8,[0,0,.025]);},
+    // S1458 — your spear (#745 1 A, a one-handed thrust): the builder's Gatelands spear (people.js, buildSpear: an ash shaft 2.6 cm
+    // thick, an iron shoe, a socket bound with two bronze rings, a leaf head 18 cm long with a midrib) at 2.2 m, gripped at its
+    // balance 0.85 m up from the butt, the leaf's flat across x as a sword's blade is
+    spear:()=>{const R=.013,B=-.85,L=2.2,HB=.18,SO=.09,top=B+L-HB,s0=top-SO;
+      add(SK.cyl(R*.92,R,s0-B-.06,10),'matte',WOOD,[0,(B+.06+s0)/2,0]);grip(.13,R+.0012,-.07);
+      add(SK.cyl(R+.001,R*.55,.06,10),'metal',DSTEEL,[0,B+.03,0]);add(SK.cyl(R*.62,R*.95,SO,10),'metal',STEEL,[0,s0+SO/2,0]);
+      for(const f of [.2,.8])add(SK.torus(R*(.95-.33*f)+.0012,.0016,4,14),'metal',BRASS,[0,s0+SO*f,0],[Math.PI/2,0,0]);
+      const prof=[];for(let k=0;k<=16;k++){const t=k/16,w=.0235*Math.sin(Math.PI*Math.min(1,t*1.25)**.8)*(1-t*.15)+.007*(1-t);prof.push([t<1?w:4e-4,t*HB]);}
+      add(SK.lathe(prof,4),'metal',STEEL,[0,top,0],null,[1,1,.22]);},
+    // S1458 — your crossbow (#745 2 A): the builder's (people.js, crossbowParts: Session 941's wood make) in the kit's frame, +y from
+    // the grip to the prod as a blade runs from the hilt; the tiller round in the fist, squared to the prod 0.54 ahead and deepening to
+    // the butt 0.31 behind, the prod bowed back 5 cm at its tips over a 0.66 m span, the string braced across, the nut, the bolt's
+    // groove along the top (+x), the trigger lever under the belly and the stirrup at the front. The prod is the item's metal
+    crossbow:()=>{const R=.013,PY=.54,SP=.66,BD=.05,px=.03,yAt=z=>PY-BD*(2*z/SP)**2;
+      add(SK.rbox(.044,.48,.036,.008,2),'matte',WOOD,[0,.36,0]);add(SK.cyl(R,R,.27,10),'matte',WOOD,[0,0,0]);
+      add(SK.rbox(.07,.2,.042,.012,2),'matte',WOOD,[-.012,-.215,0],[0,0,-.08]);add(SK.rbox(.03,.04,.03,.006,1),'matte',WOOD,[0,.135,0]);
+      const pts=[];for(let k=0;k<=16;k++){const z=-SP/2+SP*k/16;pts.push(new THREE.Vector3(px,yAt(z),z));}
+      add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),24,.011,6),'metal',STEEL);
+      add(SK.cyl(.0022,.0022,SP-.02,4),'matte',0xe8e0c8,[px,yAt(SP/2)-.004,0],[Math.PI/2,0,0]);
+      for(const y of [PY-.026,PY+.026])add(SK.rbox(.05,.01,.042,.003,1),'metal',DSTEEL,[0,y,0]);
+      add(SK.cyl(.012,.012,.03,10),'metal',BRASS,[.022,.15,0],[Math.PI/2,0,0]);add(SK.rbox(.003,.33,.006,.001,1),'matte',0x141008,[.0222,.335,0]);
+      add(SK.rbox(.007,.075,.008,.002,1),'metal',DSTEEL,[-.026,.115,0],[0,0,.06]);
+      add(SK.torus(.05,.0055,5,18),'metal',DSTEEL,[0,PY+.112,0],[0,Math.PI/2,0],[1,1.3,1]);},
     // S266 — the bow without its string, for first person, where the view model's own string draws back
     bowbare:()=>{const pts=[];for(let i=0;i<=20;i++){const t=i/20*2-1;pts.push(new THREE.Vector3(0,t*.34,-.05*(1-t*t)+.025*Math.pow(Math.abs(t),6)));}
       add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),30,.011,6),'matte',WOOD);add(SK.cyl(.016,.016,.09,8),'matte',LEATH,[0,0,-.05]);},

@@ -6,12 +6,12 @@ const g = await boot(); const { page } = g;
 await g.intoWorld();
 fs.mkdirSync('tests/out', { recursive: true });
 
-const shapes = await page.evaluate(() => { const S = ['dagger', 'sword', 'scimitar', 'longsword', 'claymore', 'axe', 'greataxe', 'mace', 'flail', 'warhammer', 'greatclub', 'staff', 'bow'];
+const shapes = await page.evaluate(() => { const S = ['dagger', 'sword', 'scimitar', 'longsword', 'claymore', 'axe', 'greataxe', 'mace', 'flail', 'warhammer', 'greatclub', 'staff', 'bow', 'spear', 'crossbow'];
   return S.map(sh => { const w = tpWeapon({ name: 'Test ' + sh, weaponShape: sh }); let boxes = 0, meshes = 0; w.traverse(o => { if (o.isMesh) { meshes++; if (o.geometry.type === 'BoxGeometry') boxes++; } });
     const bb = new THREE.Box3().setFromObject(w); return { sh, kit: w.userData.kit, boxes, meshes, h: +(bb.max.y - bb.min.y).toFixed(2), bow: !!w.userData.bow }; }); });
 check('every weapon shape the items name builds from the kit, with no box', shapes.every(s => s.kit && s.boxes === 0 && s.meshes >= 1), shapes);
 const H = Object.fromEntries(shapes.map(s => [s.sh, s.h]));
-check('blades grow from dagger to sword to longsword to claymore; the great axe outreaches the axe', H.dagger < H.sword && H.sword < H.longsword && H.longsword < H.claymore && H.greataxe > H.axe && shapes.find(s => s.sh === 'bow').bow, H);
+check('blades grow from dagger to sword to longsword to claymore; the great axe outreaches the axe', H.dagger < H.sword && H.sword < H.longsword && H.longsword < H.claymore && H.greataxe > H.axe && shapes.find(s => s.sh === 'bow').bow && H.spear > 2 && H.crossbow > .8 && H.crossbow < 1.1 /* S1458 */, H);
 
 // the item's own colours: an elven blade's metal and a gilt guard reach the vertex colours; the same item shares its geometry
 const tint = await page.evaluate(() => { const it = { name: 'Elven Sword', weaponShape: 'sword', matCol: '#9ad8b0', matGuard: '#d8b040' };
@@ -26,6 +26,12 @@ const body = await page.evaluate(() => { thirdPerson = true; EQ.weapon = { name:
   tpUpdate(1 / 60, { moving: false, sprinting: false, camY: 1.6, now: performance.now() + 20 }); R = TP.rig; const kite = R.shield && R.shield.userData.kit, bowLeft = R.weaponL && R.weaponL.parent === R.handL && R.weaponL.userData.kit;
   EQ.offhand = { name: 'Tower Shield', slot: 'offhand', shieldType: 'shield' }; tpUpdate(1 / 60, { moving: false, sprinting: false, camY: 1.6, now: performance.now() + 40 }); R = TP.rig; return { ...a, kite, bowLeft, tower: R.shield && R.shield.userData.kit }; });
 check('the sword goes in the right hand and the round shield on the left forearm; a kite shield and a bow in the left hand likewise; a tower shield its own shape (S231)', body.sword === 'sword' && body.shield === 'round' && body.kite === 'kite' && body.bowLeft === 'bow' && body.tower === 'tower', body);
+
+// S1458 — the spear and the crossbow in the right hand alone (the crossbow two-handed for the shield's sake, carried in one fist, its prod down)
+const pair = await page.evaluate(() => { const o = {}; for (const [k, w] of [['spear', { name: 'Iron Spear', slot: 'weapon', weaponShape: 'spear' }], ['crossbow', { name: 'Iron Crossbow', slot: 'weapon', weaponShape: 'crossbow', twoHand: true }]]) {
+    EQ.weapon = w; EQ.offhand = null; tpUpdate(1 / 60, { moving: false, sprinting: false, camY: 1.6, now: performance.now() + 60 }); const R = TP.rig; o[k] = { kit: R.weapon && R.weapon.parent === R.handR && R.weapon.userData.kit, twoH: R.twoH, left: !!R.weaponL }; }
+  return o; });
+check('the spear and the crossbow are the kit\'s, in the right hand alone (S1458)', pair.spear.kit === 'spear' && pair.crossbow.kit === 'crossbow' && !pair.crossbow.twoH && !pair.crossbow.left && !pair.spear.twoH, pair);
 
 // the photograph: the kit tinted as the items tint it, in a row, and the player with sword and shield from behind
 const shot = await page.evaluate(() => { forceTime(12); const cv = REN.domElement, sc = scene; const bx = px + 300, bz = pz, y = 60; const objs = [];
