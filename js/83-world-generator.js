@@ -1886,10 +1886,12 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     // grates), a lamp in the hall and in each of the six rooms but the parlour (its candle), and the room's warmth: ten in all. The fires'
     // embers and flames ride in a group of their own (the candles' flames stay out of it), so a Mages' cold hearth (S676) shows ash and
     // no fire on any of the four until tickInterior lights them
-    const KA=kitRoomAir(sc_,.45);
+    // S1441 — a household abed (homeAsleepNow, 23h to 5h) has put its lamps out but the hall's, left at a third on the stair's foot, and
+    // banked its four grates to 0.4 (the critic, 26 Oct: the top floor at 23h read brighter than at noon, its two lamps at 0.94)
+    const KA=kitRoomAir(sc_,.45),abed=homeAsleepNow(house);if(abed)KA.fire*=.4;
     const L=(x,y,z,c,i,d)=>{const l=new THREE.PointLight(c,i*(c===0xff6a20?KA.fire:KA.lamp),d);l.position.set(x,y,z);sc_.add(l);return l;};
     const cold=coldHearthHouse(house),fls=T.fires.map(F=>{const l=L(rx(F[0]+.5),ry(F[1]),rz(F[2]),0xff6a20,cold?0:1.3,6);l.userData.lit=1.3*KA.fire;return l;});
-    for(const p of T.lamps)L(rx(p[0]),ry(p[1]),rz(p[2]),0xffaa44,1.0,7);
+    T.lamps.forEach((p,i)=>L(rx(p[0]),ry(p[1]),rz(p[2]),0xffaa44,abed?(i?0:.35):1.0,7));
     {const hf=new THREE.Group();hf.name='hearthFire';T.room.add(hf);
       for(const m of T.room.children.filter(m=>m.isMesh&&(m.name==='ember'||m.name==='flame'))){if(m.name==='ember'){hf.add(m);continue;}
         const P=m.geometry.attributes.position,lo=[],hi=[];for(let i=0;i<P.count;i+=3){const x=(P.getX(i)+P.getX(i+1)+P.getX(i+2))/3,dst=x<-X+.45?lo:hi;for(let k=0;k<3;k++)dst.push(P.getX(i+k),P.getY(i+k),P.getZ(i+k));}

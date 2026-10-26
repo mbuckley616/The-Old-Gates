@@ -81,13 +81,15 @@ for (const H of picks) { const tag = `${H.bays} bays, ${H.door > 0 ? 'east' : 'w
   const more = await page.evaluate(id => { const h = currentHouse, rebuild = () => { WORLD.buildInteriorFor(h); scene = interiorScene; };
     forceTime(22); rebuild(); const res22 = intNPCMesh ? { x: +intNPCPos.x.toFixed(2), z: +intNPCPos.z.toFixed(2), clear: !intSolidAt(intNPCPos.x, intNPCPos.z, .2, 0) } : null;
     forceTime(1); rebuild(); const am = intNPCMesh && intNPCMesh.userData.asleep, b = residentBed(), asleep = !!am && !!b && Math.abs(am.x - b.x) < .01 && Math.abs(am.z - b.z) < .01;
+    const pts = () => { const a = []; interiorScene.traverse(o => { if (o.isPointLight && o.intensity > 0) a.push(o); }); return a; }, abed = { lamps: pts().filter(l => l.color.getHex() === 0xffaa44).length, fire: Math.max(...pts().filter(l => l.color.getHex() === 0xff6a20).map(l => +l.intensity.toFixed(3))) };
     forceTime(12); h.ownedByPlayer = true; rebuild(); const hatch = HATCH.active ? { x: +HATCH.x.toFixed(2), z: +HATCH.z.toFixed(2), clear: !intSolidAt(HATCH.x, HATCH.z, .2, 0) && [[0, .6], [0, -.6], [.6, 0], [-.6, 0]].some(([dx, dz]) => !intSolidAt(HATCH.x + dx, HATCH.z + dz, .3, 0)) } : null; h.ownedByPlayer = false;
     const G = worldState.guild || (worldState.guild = {}); G.guild_m = G.guild_m || {}; const was = G.guild_m.active; G.guild_m.active = { kind: 'hearth', done: false, house: h.id, siteId: h.siteId };
     rebuild(); const holder = interiorScene.children.find(c => c.userData && c.userData.hearthFire), cold = !!holder && !holder.userData.hearthFire.visible && holder.userData.hearthLights.every(l => l.intensity === 0);
     G.guild_m.active.done = true; WORLD.tickInterior(1 / 60, performance.now()); const lit = !!holder && holder.userData.hearthFire.visible && holder.userData.hearthLights.every(l => l.intensity > 0);
-    G.guild_m.active = was; rebuild(); return { res22, asleep, hatch, cold, lit }; }, H.id);
+    G.guild_m.active = was; rebuild(); return { res22, asleep, abed, hatch, cold, lit }; }, H.id);
   check(`[${tag}] at 22h the resident is in, standing clear in the kitchen at ${more.res22 && [more.res22.x, more.res22.z].join(', ')}`, !!more.res22 && more.res22.clear, more.res22);
   check(`[${tag}] at night the resident lies in the curtained bed`, more.asleep, more);
+  check(`[${tag}] a household abed has one lamp lit (${more.abed.lamps}, the hall's) and its grates banked (${more.abed.fire}, 0.4 of their 0.975)`, more.abed.lamps === 1 && more.abed.fire > 0 && more.abed.fire <= .4, more.abed);
   check(`[${tag}] a bought house's cellar hatch lies in the hall's flags at ${more.hatch && [more.hatch.x, more.hatch.z].join(', ')}, clear to stand by`, !!more.hatch && more.hatch.clear, more.hatch);
   check(`[${tag}] a Mages' cold hearth shows no fire and no light on the four, and they catch when its task is done`, more.cold && more.lit, more);
 
