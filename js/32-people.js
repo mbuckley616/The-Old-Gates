@@ -1429,7 +1429,7 @@ function hbFoeKeyed(rig,e){if(!hbOn()||!HB_RIGS.has(rig)||rig.hbG||!rig.hbFoe||!
 // a garment's material carries its weave and cut in onBeforeCompile, which Material.copy leaves behind: a foe's corpse is darkened by
 // cloning every material on it (killE, killZoneEnemy), so the builder's materials clone with their shaders
 function hbClone(){const c=new this.constructor().copy(this);c.onBeforeCompile=this.onBeforeCompile;c.customProgramCacheKey=this.customProgramCacheKey;c.clone=hbClone;return c;}
-const _hbq=new THREE.Quaternion(),_hbq2=new THREE.Quaternion(),_hbq3=new THREE.Quaternion(),_hbv=new THREE.Vector3(),_hbv2=new THREE.Vector3();
+const _hbq=new THREE.Quaternion(),_hbq2=new THREE.Quaternion(),_hbq3=new THREE.Quaternion(),_hbqH=new THREE.Quaternion(),_hbqA=new THREE.Quaternion(),_hbv=new THREE.Vector3(),_hbv2=new THREE.Vector3();
 // a bone's rotation in the frame of `top` (an ancestor), from the local quaternions up the chain: no matrices, no world numbers
 function hbRel(b,top,q){q.copy(b.quaternion);let p=b.parent;while(p&&p!==top){q.premultiply(p.quaternion);p=p.parent;}return q;}
 function hbAttach(rig,P){const tA=performance.now();
@@ -1478,7 +1478,7 @@ function hbAttach(rig,P){const tA=performance.now();
   // the body. So the right forearm and wrist keep the grip's turn (from the upper arm, which still takes the walk's swing and a blow's
   // wind-up) while the driver holds and stands; a ragdoll or a sleeper takes the driver's again
   const gD=rig.hbG&&rig.hbG.dress||{},grip=(gD.spear||gD.staff)&&!gD.chair?map.map(([j],i)=>j==='elR'||j==='wrR'?i:-1).filter(i=>i>=0).map(i=>({i,q:map[i][1].quaternion.clone()})):null;
-  rig.hb={root:W,P,map,s0,t0,grip,full,mid,cards:mid?null:cards,sph:mid?null:sph,pos0:rb.position.clone(),A:new THREE.Matrix3().setFromMatrix4(Ah),Bi:new THREE.Matrix3().setFromMatrix4(Bp).invert(),kh:hB/hD,L:-1,st,glow:!!rig.foe,drv:rig.mesh.material,em:0,held:[]};
+  rig.hb={root:W,P,map,s0,t0,grip,hold:hbCloakArms(gD,map),full,mid,cards:mid?null:cards,sph:mid?null:sph,pos0:rb.position.clone(),A:new THREE.Matrix3().setFromMatrix4(Ah),Bi:new THREE.Matrix3().setFromMatrix4(Bp).invert(),kh:hB/hD,L:-1,st,glow:!!rig.foe,drv:rig.mesh.material,em:0,held:[]};
   // a foe's weapon (the game's kit, on the driver's gear bone, or the bow in its left hand) and shield (on the left forearm) hang on
   // the driver's bones, inside the driver's mesh, which is hidden while the builder's body shows: so they are carried in the builder's
   // group then, following their bone each frame (hbHold), the weapon's grip in the builder's fist, closed on it as people.js closes a
@@ -1552,10 +1552,21 @@ function hbHold(rig){const H=rig.hb,top=rig.foe?rig.root.parent:rig.root;top.upd
 // so the body and what it holds showed no wind-up and no strike: copied again here, for a foe whose body is near enough to pose
 function hbRepose(rig){if(rig&&rig.hb&&rig.hb.L<2&&!rig.hb.cold){hbPose(rig);if(rig.hb.held.length)hbHold(rig);}}
 function hbGive(rig){const H=rig.hb;for(const h of H.held)if(h.o.parent===H.root){h.par.add(h.o);h.m0.decompose(h.o.position,h.o.quaternion,h.o.scale);}}
-function hbPose(rig){const H=rig.hb,B=rig.B,map=H.map,grip=H.grip&&rig.holds&&!rig.limp&&!rig.sleep?H.grip:null;
+// S1432 — the arms under a cloak (Michael's #274: "as long as this doesn't have the arms phasing through the clothing"). The cloak is
+// skinned whole to the pelvis (hbSkinLoose), built round the arms where they hang, and the driver's walk swung them 0.13 to 0.26 m out
+// through it (a quarter of the hand and forearm points under it, on every cloaked walker in Dunmore). So the arms it covers are held
+// to the hips as the gait comes in, HB_CLOAK_HOLD of the swing taken off: both under a full cloak or a shoulder cape, the left alone
+// under one thrown back off the right shoulder (a spear, a crossbow, a staff, a basket). A blow, a ragdoll and a sleeper are left alone
+const HB_CLOAK_HOLD=1;
+function hbCloakArms(D,map){if(!D||!D.cloak)return null;const thrown=!D.cape&&!!(D.spear||D.crossbow||D.staff||D.basket),sides=thrown?/L$/:/[LR]$/;
+  const i=map.map(([j],k)=>/^(sh|el|wr)[LR]$/.test(j)&&sides.test(j)?k:-1).filter(k=>k>=0);return i.length?new Set(i):null;}
+function hbHoldF(rig){const H=rig.hb,w=rig.w;if(!H.hold||!w||rig.limp||rig.sleep)return 0;const e=rig.e;
+  if(e&&((e._wind||0)>0||(e._lunge!=null&&e._lunge>0)||(e.atkAnim||0)>0))return 0;return HB_CLOAK_HOLD*Math.min(1,(w.walk||0)+(w.run||0));}
+function hbPose(rig){const H=rig.hb,B=rig.B,map=H.map,grip=H.grip&&rig.holds&&!rig.limp&&!rig.sleep?H.grip:null,hf=hbHoldF(rig);
+  if(hf>0)hbRel(B[map[0][0]],rig.root,_hbqH).multiply(H.s0[0]);
   for(let i=0;i<map.length;i++){const [j,b]=map[i];
     if(grip&&(i===grip[0].i||grip[1]&&i===grip[1].i)){b.quaternion.copy(grip[0].i===i?grip[0].q:grip[1].q);continue;}
-    hbRel(B[j],rig.root,_hbq).multiply(H.s0[i]).multiply(H.t0[i]);
+    hbRel(B[j],rig.root,_hbq).multiply(H.s0[i]);if(hf>0&&H.hold.has(i))_hbq.copy(_hbqA.copy(_hbq).slerp(_hbqH,hf));_hbq.multiply(H.t0[i]);
     if(b.parent&&b.parent!==H.P.root){hbRel(b.parent,H.root,_hbq2).invert();b.quaternion.copy(_hbq2.multiply(_hbq));}else b.quaternion.copy(_hbq);}
   const hp=B.hips.position,rb=map[0][1];_hbv.set(hp.x,hp.y-PW.HIPS,hp.z).applyMatrix3(H.A);_hbv.y*=H.kh;rb.position.copy(H.pos0).add(_hbv.applyMatrix3(H.Bi));}
 // a foe's glow: the driver's emissive on every material of the builder's body, and the parry's stagger (which swaps the driver's
