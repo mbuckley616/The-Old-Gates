@@ -38,7 +38,7 @@ let _forestTerrainH=null;   // (wx,wz)=>height — set in buildForest
 const FOREST_PATH_W=3.5;    // path half-width — used by minimap and buildForest
 let _ironhavenTerrainH=null; // (wx,wz)=>height — set in buildIronhaven
 function activeTerrainH(wx,wz){
-  if(typeof isInterior==='function'&&isInterior())return 0; // v80 S241 — indoors the floor is at 0 (a guard fights you in a room)
+  if(typeof isInterior==='function'&&isInterior())return INT_FOE_Y!=null?footholdY(wx,wz,INT_FOE_Y,0):0; // v80 S241 — indoors the floor is at 0 (a guard fights you in a room); S1439 — or his own floor upstairs
   // v61d: prefer ZONES[id].getY (populated by every builder). Legacy per-zone
   // terrain globals (_forestTerrainH etc.) remain as a safety fallback because
   // they're set late inside the builder closures and the ZONES entry might not

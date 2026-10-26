@@ -1630,7 +1630,7 @@ let ZONE_CORPSES=[]; // active zone corpses; reset on zone switch. Unified with 
 let ZB=[]; // active zone projectile balls (overworld spells)
 
 function currentZoneSolid(x,z){
-  if(typeof isInterior==='function'&&isInterior()&&typeof intSolidAt==='function')return intSolidAt(x,z,.3,0); // v80 S241 — indoors, the room's own solids
+  if(typeof isInterior==='function'&&isInterior()&&typeof intSolidAt==='function')return intSolidAt(x,z,.3,INT_FOE_Y!=null?INT_FOE_Y:0); // v80 S241 — indoors, the room's own solids
   const z2=ZONES[activeZoneId];
   if(!z2)return owSolid(x,z);
   if(z2.solidFn)return z2.solidFn(x,z); // v80: streamed world supplies its own solid test

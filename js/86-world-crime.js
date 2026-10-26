@@ -557,20 +557,21 @@
       if(s.phase==='fight'){const e=s.enemy;if(!e||e.dead){endSent();return;} // S241 — killed (guardKilled has run) or stood down
         if(talking){e.alert=false;e.atkCd=Math.max(e.atkCd||0,.6);return;}
         e.alert=true;if(!CR.yielded&&PHP<maxHP*.3&&c.bounty>0){CR.yielded=true;offerYield(S,c);return;}
-        const keep=ZE;ZE=[e];try{tickZoneEnemies(dt,performance.now(),interiorScene);}finally{ZE=keep;}return;}
+        const keep=ZE;ZE=[e];INT_FOE_Y=e._fy||0;try{tickZoneEnemies(dt,performance.now(),interiorScene);e._fy=footholdY(e.x,e.z,e._fy||0,0);}finally{ZE=keep;INT_FOE_Y=null;}return;} /* S1439 — on his own floor */
       if(s.phase==='coming'&&s.t>=Math.max(GUARD_IN,s.walk)){ // he comes in by the door
         const W=currentHouse._roomW||currentHouse.intW||10,D=currentHouse._roomD||currentHouse.intD||10;
         const g=buildNPCMesh({role:'guard',name:(n.def&&n.def.name)||'Guard',_twin:n.def&&n.def._twin,bCol:(n.def&&n.def.bCol)||0x6a2a2a,sCol:(n.def&&n.def.sCol)||0xd4a878},{nation:nationAt(currentHouse.doorX,currentHouse.doorZ),key:currentHouse.siteId||''});
         g.position.set(currentHouse._exitX!=null?currentHouse._exitX:W/2,0,D-1.0);g.rotation.y=Math.PI;if(interiorScene)interiorScene.add(g);s.mesh=g;s.phase='inside';
         showMsg(`${(n.def&&n.def.name)||'A guard'} comes in.`,'#e88a8a');return;}
-      if(s.phase==='inside'&&s.mesh){const g=s.mesh,T=targetOf(n),dx=T.x-g.position.x,dz=T.z-g.position.z,d=Math.hypot(dx,dz);g.rotation.y=Math.atan2(dx,dz);
-        if(d>1.5&&!talking){let wx=T.x,wz=T.z,wd=d,st=Math.min(d-1.4,1.8*dt); /* S1190 — round the kit's partitions: a straight line when the floor between is clear, else the route */
-          if(!walkClear(g.position.x,g.position.z,T.x,T.z)){s.rt=(s.rt||0)-dt;if(s.rt<=0||!s.wp||Math.hypot(s.wp.x-g.position.x,s.wp.z-g.position.z)<.25){s.rt=1;s.wp=guardRoute(g.position.x,g.position.z,T.x,T.z);}
-            if(s.wp){wx=s.wp.x;wz=s.wp.z;wd=Math.max(.001,Math.hypot(wx-g.position.x,wz-g.position.z));st=Math.min(wd,1.8*dt);g.rotation.y=Math.atan2(wx-g.position.x,wz-g.position.z);}}else s.wp=null;
+      if(s.phase==='inside'&&s.mesh){const g=s.mesh,T=targetOf(n),gy=g.position.y,ty=T.y!=null?T.y:jumpY,dx=T.x-g.position.x,dz=T.z-g.position.z,d=Math.hypot(dx,dz),same=Math.abs(ty-gy)<1.2;g.rotation.y=Math.atan2(dx,dz);
+        if((d>1.5||!same)&&!talking){let wx=T.x,wz=T.z,wd=Math.max(.001,d),st=Math.min(Math.max(0,d-1.4),1.8*dt); /* S1190 — round the kit's partitions: a straight line when the floor between is clear, else the route; S1439 — and up the stair to your floor */
+          if(!same||walkTo(g.position.x,g.position.z,gy,T.x,T.z)==null){s.rt=(s.rt||0)-dt;if(s.rt<=0||!s.wp||Math.hypot(s.wp.x-g.position.x,s.wp.z-g.position.z)<.25){s.rt=1;s.wp=guardRoute(g.position.x,g.position.z,gy,T.x,T.z,ty);}
+            if(s.wp){wx=s.wp.x;wz=s.wp.z;wd=Math.max(.001,Math.hypot(wx-g.position.x,wz-g.position.z));st=Math.min(wd,1.8*dt);g.rotation.y=Math.atan2(wx-g.position.x,wz-g.position.z);}else st=0;}else s.wp=null;
           const nx=g.position.x+(wx-g.position.x)/wd*st,nz=g.position.z+(wz-g.position.z)/wd*st;
-          if(intSolidAt(nx,nz,.3,0)){const dr=INT_DOORS.find(q=>!q.open&&Math.hypot(q.x-g.position.x,q.z-g.position.z)<1.2);if(dr)intDoorInteract(dr);} /* he opens a shut door he has walked up to */
-          if(!intSolidAt(nx,nz,.3,0)){g.position.x=nx;g.position.z=nz;}else if(!intSolidAt(nx,g.position.z,.3,0))g.position.x=nx;else if(!intSolidAt(g.position.x,nz,.3,0))g.position.z=nz;}
-        else if(d<=1.5&&!talking&&CR.cool<=0&&Math.abs(jumpY)<1.2)confrontIndoor(s,S,c);}
+          if(guardSolid(nx,nz,gy)){const dr=INT_DOORS.find(q=>!q.open&&Math.hypot(q.x-g.position.x,q.z-g.position.z)<1.2);if(dr)intDoorInteract(dr);} /* he opens a shut door he has walked up to */
+          if(!guardSolid(nx,nz,gy)||guardSolid(g.position.x,g.position.z,gy)){g.position.x=nx;g.position.z=nz;} /* S1439 — a solid his own rise has put him in by a few centimetres (a flight above, at chest height) does not hold him */else if(!guardSolid(nx,g.position.z,gy))g.position.x=nx;else if(!guardSolid(g.position.x,nz,gy))g.position.z=nz;
+          g.position.y=guardGround(g.position.x,g.position.z,gy);}
+        else if(d<=1.5&&same&&!talking&&CR.cool<=0)confrontIndoor(s,S,c);}
       return;}
     // out of doors
     if(s.phase==='fight'){const e=s.enemy;const hp=e?e.hp:null;if(e){e.dead=true;try{e.mesh&&e.mesh.parent&&e.mesh.parent.remove(e.mesh);}catch(err){}const i=ZONES.world.enemies.indexOf(e);if(i>=0)ZONES.world.enemies.splice(i,1);} // S241 — you ran out mid-fight: he follows and fights on in the street
@@ -590,25 +591,36 @@
   // between two points, sampled every quarter metre at his girth. guardRoute: a breadth-first path on a 0.4 grid over the room's
   // floor to the nearest floor within 1.4 of you (you may stand where his girth cannot), a shut door counted open (he opens it
   // when he reaches it); it gives the furthest point of the path he can walk straight to, or null. No roll: the same room and the same two points give the same route.
-  function walkClear(ax,az,bx,bz){const d=Math.hypot(bx-ax,bz-az),n=Math.max(1,Math.ceil(d/.25));for(let i=1;i<=n;i++){const t=i/n;if(intSolidAt(ax+(bx-ax)*t,az+(bz-az)*t,.3,0))return false;}return true;}
-  function guardRoute(ax,az,bx,bz){const C=.4;let x0=Math.min(ax,bx),x1=Math.max(ax,bx),z0=Math.min(az,bz),z1=Math.max(az,bz);
+  // S1439 — a house of storeys (the kit's townhouse, three floors): he walks on the room's ground as you do, the highest foothold
+  // within a step of his feet (footholdY), and is stopped by the solids at his own height. walkTo: a straight walk from a point at
+  // height ay, sampled every quarter metre; the height it ends at, or null if a solid stops it. guardRoute: the breadth-first path
+  // over a 0.2 grid (the stair's flights are 0.92 wide, a girth's band in them 0.32) and the floors (a state is a cell and its height), to the nearest floor within 1.4 of you and on your floor
+  // (within the halt's 1.2 of your feet).
+  // guardSolid: the room's solids against his height, 1.7 m (intSolidAt's body is a metre: he walked in under the half-landing's 1.29 m soffit);
+  // over a metre, his head's 0.12 m and not his girth (on the stair's second flight his shoulders' 0.3 m met the flight above the first).
+  const GUARD_BODY=1.7;
+  function guardSolid(x,z,y){for(let i=0;i<INT_SOL.length;i++){const s=INT_SOL[i];if(s.y1!=null&&s.y1<=y+STEP_UP)continue;if(s.y0!=null&&s.y0>=y+GUARD_BODY)continue;const R=s.y0!=null&&s.y0>=y+PLAYER_H?.12:.3;if(x>s.x0-R&&x<s.x1+R&&z>s.z0-R&&z<s.z1+R)return true;}return false;}
+  // guardGround: the highest foothold under his girth, not under one point (he fell through the 5 cm between the stair's two flights).
+  function guardGround(x,z,y){let b=footholdY(x,z,y,0);for(const [ox,oz] of [[.15,0],[-.15,0],[0,.15],[0,-.15]])b=Math.max(b,footholdY(x+ox,z+oz,y,0));return b;}
+  function walkTo(ax,az,ay,bx,bz){const d=Math.hypot(bx-ax,bz-az),n=Math.max(1,Math.ceil(d/.25));let y=ay;for(let i=1;i<=n;i++){const t=i/n,x=ax+(bx-ax)*t,z=az+(bz-az)*t;if(guardSolid(x,z,y))return null;y=guardGround(x,z,y);}return y;}
+  function guardRoute(ax,az,ay,bx,bz,by){const C=.2;let x0=Math.min(ax,bx),x1=Math.max(ax,bx),z0=Math.min(az,bz),z1=Math.max(az,bz);
     for(const q of INT_SOL){if(q.x0<-1e5)continue;x0=Math.min(x0,q.x0);x1=Math.max(x1,q.x1);z0=Math.min(z0,q.z0);z1=Math.max(z1,q.z1);}
     const nx=Math.ceil((x1-x0)/C)+1,nz=Math.ceil((z1-z0)/C)+1;if(nx*nz>40000)return null;
     const shut=INT_DOORS.filter(q=>!q.open),keep=shut.map(q=>[q.sol.x0,q.sol.x1,q.sol.z0,q.sol.z1]);shut.forEach(q=>{q.sol.x0=q.sol.x1=q.sol.z0=q.sol.z1=-9e5;});
     try{const at=i=>({x:x0+(i%nx)*C,z:z0+Math.floor(i/nx)*C}),idx=(x,z)=>Math.min(nx-1,Math.max(0,Math.round((x-x0)/C)))+Math.min(nz-1,Math.max(0,Math.round((z-z0)/C)))*nx;
-      const a=idx(ax,az),free=new Int8Array(nx*nz),prev=new Int32Array(nx*nz).fill(-1);let b=-1;
-      const ok=i=>{if(free[i]===0){const p=at(i);free[i]=!intSolidAt(p.x,p.z,.3,0)?1:2;}return free[i]===1;};
-      const near=i=>{const p=at(i);return Math.hypot(p.x-bx,p.z-bz)<1.4;}; /* the end: any floor he can stand on within the halt's reach of you */
-      const q=[a];prev[a]=a;for(let h=0;h<q.length&&b<0;h++){const i=q[h],cx=i%nx;if(i!==a&&near(i)){b=i;break;}
-        for(const j of [cx>0?i-1:-1,cx<nx-1?i+1:-1,i-nx,i+nx]){if(j<0||j>=nx*nz||prev[j]>=0||!ok(j))continue;prev[j]=i;q.push(j);}}
-      if(b<0)return null;const path=[];for(let i=b;i!==a;i=prev[i])path.push(i);path.reverse();
-      let best=path[0];for(let k=1;k<Math.min(path.length,30);k++){const p=at(path[k]);if(walkClear(ax,az,p.x,p.z))best=path[k];else break;}
-      return at(best);}
+      const key=(i,y)=>i*32+Math.max(0,Math.min(31,Math.round(y*2))),a=idx(ax,az),prev=new Map(),Y=[],I=[],P=[];let b=-1;
+      Y.push(ay);I.push(a);P.push(-1);prev.set(key(a,ay),0);
+      const near=(i,y)=>{const p=at(i);return Math.hypot(p.x-bx,p.z-bz)<1.4&&Math.abs(y-by)<1.2;}; /* the end: any floor he can stand on within the halt's reach of you */
+      for(let h=0;h<I.length&&b<0&&I.length<60000;h++){const i=I[h],y=Y[h],cx=i%nx;if(h>0&&near(i,y)){b=h;break;}
+        for(const j of [cx>0?i-1:-1,cx<nx-1?i+1:-1,i-nx,i+nx]){if(j<0||j>=nx*nz)continue;const p=at(j);if(guardSolid(p.x,p.z,y))continue;const ny=guardGround(p.x,p.z,y),k=key(j,ny);if(prev.has(k))continue;prev.set(k,I.length);I.push(j);Y.push(ny);P.push(h);}}
+      if(b<0)return null;const path=[];for(let h=b;h>0;h=P[h])path.push(h);path.reverse();
+      let best=path[0];for(let k=1;k<Math.min(path.length,30);k++){const p=at(I[path[k]]),e=walkTo(ax,az,ay,p.x,p.z);if(e!=null&&Math.abs(e-Y[path[k]])<.3)best=path[k];else break;}
+      return at(I[best]);}
     finally{shut.forEach((q,k)=>{q.sol.x0=keep[k][0];q.sol.x1=keep[k][1];q.sol.z0=keep[k][2];q.sol.z1=keep[k][3];});}}
   // S241 — refused indoors, the guard draws where he stands: a Town Guard in the room, fought through the zone-enemy code
   // (run on him alone, with the room's floor and solids); the yield comes at a fifth of health, as in the street.
-  function guardFightIndoor(s,S){if(!interiorScene||!s.mesh)return;const n=s.npc;const x=s.mesh.position.x,z=s.mesh.position.z;if(s.mesh.parent)s.mesh.parent.remove(s.mesh);s.mesh=null;
-    const e=guardEnemy(n,S,interiorScene,[],x,z);e._indoor=s.house;s.enemy=e;s.phase='fight';CR.yielded=false;}
+  function guardFightIndoor(s,S){if(!interiorScene||!s.mesh)return;const n=s.npc;const x=s.mesh.position.x,z=s.mesh.position.z,fy=s.mesh.position.y;if(s.mesh.parent)s.mesh.parent.remove(s.mesh);s.mesh=null;
+    const e=guardEnemy(n,S,interiorScene,[],x,z);e._indoor=s.house;e._fy=fy;if(e.mesh)e.mesh.position.y=fy;s.enemy=e;s.phase='fight';CR.yielded=false;}
   // S254 — the halt and the yield in the voice of the town's people; markman is the old text (quest review, run 1, findings 2–3)
   const HALT_LINES={
     gatelander:{greet:(f,t)=>`Stand a moment. There’s a fine of ${f} gold owed in ${t}, and it won’t pay itself. Settle it, or I’ll have to draw.`,

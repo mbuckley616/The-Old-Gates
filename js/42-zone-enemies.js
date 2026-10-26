@@ -1608,10 +1608,11 @@ function killZoneEnemy(e,sc,tag=''){
   const firstKill=!seenEnemyTypes.has(e.name);
   if(firstKill){seenEnemyTypes.add(e.name);addLog('⚔','First blood — slew '+foeLogName(e));}
   // Corpse system — unified with dungeon via the same loot panel. Mesh slumps + tints; glow+spark mark the body.
-  const terrainY = typeof activeTerrainH==='function' ? activeTerrainH(e.x,e.z) : 0;
+  const groundH=e._fy!=null&&isInterior()?(x,z)=>footholdY(x,z,e._fy,0):activeTerrainH; /* S1439 — a guard killed upstairs falls on his own floor */
+  const terrainY = typeof activeTerrainH==='function' ? groundH(e.x,e.z) : 0;
   // S419 — a people-bodied foe falls as a ragdoll on the ground (Michael's C on #102); the rest slump as before
   if(typeof parryFlashEnd==='function')parryFlashEnd(e); /* S564 — a foe killed while parried falls in its own colours */
-  if(!(typeof ragdollFoe==='function'&&ragdollFoe(e,tag,activeTerrainH,activeZoneId==='world'&&typeof WORLD!=='undefined'?WORLD.solidAt:null))){
+  if(!(typeof ragdollFoe==='function'&&ragdollFoe(e,tag,groundH,activeZoneId==='world'&&typeof WORLD!=='undefined'?WORLD.solidAt:null))){
   e.mesh.rotation.z=Math.PI/2;
   e.mesh.position.set(e.x, terrainY+0.15, e.z);}
   e.mesh.traverse(c=>{if(c.isMesh&&c.material){c.material=c.material.clone();c.material.color.multiplyScalar(.35);if(c.material.emissive&&c.material.emissive.getHex()===0xffaa00)c.material.emissive.setHex(0);}}); /* S626 — a guard-break flash still on at the kill: its timer clears the old material, not this clone */
