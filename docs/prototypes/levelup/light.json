@@ -1,0 +1,392 @@
+{
+ "cottage-noon-even": {
+  "luma": {
+   "median": 81,
+   "p90": 193,
+   "mean": 97
+  },
+  "m0": 84,
+  "exposure": 1.244,
+  "tris": 36085,
+  "calls": 182,
+  "lights": 8,
+  "roomTris": 3702,
+  "beamTris": 1536,
+  "person": null
+ },
+ "cottage-noon-sources": {
+  "luma": {
+   "median": 60,
+   "p90": 186,
+   "mean": 82
+  },
+  "m0": 60,
+  "exposure": 1.3,
+  "tris": 36085,
+  "calls": 182,
+  "lights": 8,
+  "roomTris": 3702,
+  "beamTris": 1536,
+  "person": null
+ },
+ "cottage-noon-eye": {
+  "luma": {
+   "median": 65,
+   "p90": 188,
+   "mean": 86
+  },
+  "m0": 65,
+  "exposure": 1.3,
+  "tris": 36085,
+  "calls": 182,
+  "lights": 8,
+  "roomTris": 3702,
+  "beamTris": 1536,
+  "person": null
+ },
+ "cottage-night-even": {
+  "luma": {
+   "median": 79,
+   "p90": 181,
+   "mean": 93
+  },
+  "m0": 57,
+  "exposure": 1.959,
+  "tris": 36049,
+  "calls": 176,
+  "lights": 9,
+  "roomTris": 3702,
+  "beamTris": 0,
+  "person": null
+ },
+ "cottage-night-sources": {
+  "luma": {
+   "median": 35,
+   "p90": 132,
+   "mean": 56
+  },
+  "m0": 35,
+  "exposure": 1.3,
+  "tris": 36049,
+  "calls": 176,
+  "lights": 9,
+  "roomTris": 3702,
+  "beamTris": 0,
+  "person": null
+ },
+ "cottage-night-eye": {
+  "luma": {
+   "median": 43,
+   "p90": 145,
+   "mean": 64
+  },
+  "m0": 38,
+  "exposure": 1.475,
+  "tris": 36049,
+  "calls": 176,
+  "lights": 9,
+  "roomTris": 3702,
+  "beamTris": 0,
+  "person": null
+ },
+ "longhouse-noon-even": {
+  "luma": {
+   "median": 42,
+   "p90": 109,
+   "mean": 52
+  },
+  "m0": 9,
+  "exposure": 5.2,
+  "tris": 54985,
+  "calls": 170,
+  "lights": 6,
+  "roomTris": 5708,
+  "beamTris": 512,
+  "person": null
+ },
+ "longhouse-noon-sources": {
+  "luma": {
+   "median": 7,
+   "p90": 35,
+   "mean": 15
+  },
+  "m0": 7,
+  "exposure": 1.3,
+  "tris": 54985,
+  "calls": 170,
+  "lights": 6,
+  "roomTris": 5708,
+  "beamTris": 512,
+  "person": null
+ },
+ "longhouse-noon-eye": {
+  "luma": {
+   "median": 21,
+   "p90": 70,
+   "mean": 31
+  },
+  "m0": 8,
+  "exposure": 2.86,
+  "tris": 54985,
+  "calls": 170,
+  "lights": 6,
+  "roomTris": 5708,
+  "beamTris": 512,
+  "person": null
+ },
+ "longhouse-night-even": {
+  "luma": {
+   "median": 33,
+   "p90": 95,
+   "mean": 42
+  },
+  "m0": 6,
+  "exposure": 5.2,
+  "tris": 54973,
+  "calls": 168,
+  "lights": 6,
+  "roomTris": 5708,
+  "beamTris": 0,
+  "person": null
+ },
+ "longhouse-night-sources": {
+  "luma": {
+   "median": 4,
+   "p90": 29,
+   "mean": 11
+  },
+  "m0": 4,
+  "exposure": 1.3,
+  "tris": 54973,
+  "calls": 168,
+  "lights": 6,
+  "roomTris": 5708,
+  "beamTris": 0,
+  "person": null
+ },
+ "longhouse-night-eye": {
+  "luma": {
+   "median": 15,
+   "p90": 59,
+   "mean": 24
+  },
+  "m0": 5,
+  "exposure": 2.86,
+  "tris": 54973,
+  "calls": 168,
+  "lights": 6,
+  "roomTris": 5708,
+  "beamTris": 0,
+  "person": null
+ },
+ "home-noon-even": {
+  "luma": {
+   "median": 79,
+   "p90": 172,
+   "mean": 84
+  },
+  "m0": 77,
+  "exposure": 1.345,
+  "tris": 26061,
+  "calls": 85,
+  "lights": 8,
+  "roomTris": 5698,
+  "beamTris": 1536,
+  "person": null
+ },
+ "home-noon-sources": {
+  "luma": {
+   "median": 62,
+   "p90": 158,
+   "mean": 71
+  },
+  "m0": 62,
+  "exposure": 1.3,
+  "tris": 26061,
+  "calls": 85,
+  "lights": 8,
+  "roomTris": 5698,
+  "beamTris": 1536,
+  "person": null
+ },
+ "home-noon-eye": {
+  "luma": {
+   "median": 64,
+   "p90": 161,
+   "mean": 74
+  },
+  "m0": 64,
+  "exposure": 1.3,
+  "tris": 26061,
+  "calls": 85,
+  "lights": 8,
+  "roomTris": 5698,
+  "beamTris": 1536,
+  "person": null
+ },
+ "home-night-even": {
+  "luma": {
+   "median": 80,
+   "p90": 205,
+   "mean": 92
+  },
+  "m0": 33,
+  "exposure": 3.674,
+  "tris": 26025,
+  "calls": 79,
+  "lights": 9,
+  "roomTris": 5698,
+  "beamTris": 0,
+  "person": null
+ },
+ "home-night-sources": {
+  "luma": {
+   "median": 23,
+   "p90": 114,
+   "mean": 37
+  },
+  "m0": 23,
+  "exposure": 1.3,
+  "tris": 26025,
+  "calls": 79,
+  "lights": 9,
+  "roomTris": 5698,
+  "beamTris": 0,
+  "person": null
+ },
+ "home-night-eye": {
+  "luma": {
+   "median": 37,
+   "p90": 145,
+   "mean": 51
+  },
+  "m0": 26,
+  "exposure": 1.881,
+  "tris": 26025,
+  "calls": 79,
+  "lights": 9,
+  "roomTris": 5698,
+  "beamTris": 0,
+  "person": null
+ },
+ "cottage-morning-eye": {
+  "luma": {
+   "median": 54,
+   "p90": 172,
+   "mean": 75
+  },
+  "m0": 54,
+  "exposure": 1.3,
+  "tris": 36085,
+  "calls": 182,
+  "lights": 8,
+  "roomTris": 3702,
+  "beamTris": 1536,
+  "person": null
+ },
+ "cottage-golden-eye": {
+  "luma": {
+   "median": 78,
+   "p90": 168,
+   "mean": 83
+  },
+  "m0": 78,
+  "exposure": 1.3,
+  "tris": 36097,
+  "calls": 184,
+  "lights": 9,
+  "roomTris": 3702,
+  "beamTris": 2048,
+  "person": null
+ },
+ "west-morning": {
+  "luma": {
+   "median": 88,
+   "p90": 181,
+   "mean": 94
+  },
+  "m0": 88,
+  "exposure": 1.3,
+  "tris": 36085,
+  "calls": 182,
+  "lights": 8,
+  "roomTris": 3702,
+  "beamTris": 1536,
+  "person": null
+ },
+ "home-golden-eye": {
+  "luma": {
+   "median": 58,
+   "p90": 140,
+   "mean": 67
+  },
+  "m0": 58,
+  "exposure": 1.3,
+  "tris": 26061,
+  "calls": 85,
+  "lights": 9,
+  "roomTris": 5698,
+  "beamTris": 1536,
+  "person": null
+ },
+ "hand": {
+  "luma": {
+   "median": 14,
+   "p90": 35,
+   "mean": 19
+  },
+  "m0": 14,
+  "exposure": 1.3,
+  "tris": 55263,
+  "calls": 170,
+  "lights": 6,
+  "roomTris": 5708,
+  "beamTris": 0,
+  "person": null
+ },
+ "scale-cottage": {
+  "luma": {
+   "median": 46,
+   "p90": 124,
+   "mean": 61
+  },
+  "m0": 44,
+  "exposure": 1.363,
+  "tris": 532977,
+  "calls": 326,
+  "lights": 9,
+  "roomTris": 3702,
+  "beamTris": 0,
+  "person": 1.762
+ },
+ "scale-longhouse": {
+  "luma": {
+   "median": 14,
+   "p90": 60,
+   "mean": 24
+  },
+  "m0": 4,
+  "exposure": 2.86,
+  "tris": 859481,
+  "calls": 293,
+  "lights": 6,
+  "roomTris": 5708,
+  "beamTris": 0,
+  "person": 1.771
+ },
+ "scale-home": {
+  "luma": {
+   "median": 37,
+   "p90": 142,
+   "mean": 50
+  },
+  "m0": 27,
+  "exposure": 1.774,
+  "tris": 183641,
+  "calls": 113,
+  "lights": 9,
+  "roomTris": 5698,
+  "beamTris": 0,
+  "person": 1.719
+ }
+}
