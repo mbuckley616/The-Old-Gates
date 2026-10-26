@@ -137,6 +137,9 @@ const WEAPON_TYPES=[
   {type:'Scimitar',  slot:'weapon',weight:3,  atkMult:[0.80,0.95],shape:'scimitar', wType:'slash'},
   {type:'Mace',      slot:'weapon',weight:4,  atkMult:[0.90,1.15],shape:'mace',     wType:'blunt'},
   {type:'Flail',     slot:'weapon',weight:5,  atkMult:[0.95,1.25],shape:'flail',    wType:'blunt'},
+  // S1456 — the spear (Michael's 1 A on #745): a one-handed thrust, the shield kept, 2.4 m hull to hull in a 40° line, one
+  // target, the longsword's tell (its row, WEAPON_ATTACKS.Spear in 74-strikes.js). Pierce, trained by Blade (weaponSkill).
+  {type:'Spear',     slot:'weapon',weight:3.5,atkMult:[0.80,1.00],shape:'spear',    wType:'pierce'},
   // v64 — Bow. Two-handed (clears offhand on equip via _clearOffhandForTwoHander).
   // atkMult is the BOW's contribution; the arrow's arrowDmg stacks on top via
   // applyBowDamage at release time. Bows are deliberately lighter than swords on
@@ -173,7 +176,7 @@ const WEAPON_TYPES=[
 // (Rusty Sword, quest rewards) falls back via weaponShape. Unarmed defaults to blunt.
 // Declared here (not near applyMeleeDamage) because itemStatShort/itemDesc reference it and need
 // guaranteed visibility — forward-referencing a later `const` was causing ReferenceErrors in some browsers.
-const WSHAPE_TO_WTYPE = {dagger:'pierce', sword:'slash', longsword:'slash', scimitar:'slash', mace:'blunt', flail:'blunt', bow:'pierce', claymore:'slash', greataxe:'slash', warhammer:'blunt', greatclub:'blunt'};
+const WSHAPE_TO_WTYPE = {dagger:'pierce', sword:'slash', longsword:'slash', scimitar:'slash', mace:'blunt', flail:'blunt', spear:'pierce', bow:'pierce', claymore:'slash', greataxe:'slash', warhammer:'blunt', greatclub:'blunt'};
 function weaponDamageType(w){
   if(!w) return 'blunt';
   if(w.wType) return w.wType;

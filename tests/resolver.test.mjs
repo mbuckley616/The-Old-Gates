@@ -16,7 +16,7 @@ const tbl = await page.evaluate(() => {
   const out = []; const SP = ANIM_PARAMS.swing;
   for (const T of [...WEAPON_TYPES, { type: 'Fists', weight: FISTS.weight, shape: null }]) {
     const r = T.shape ? WEAPON_ATTACKS[WSHAPE_TO_ROW[T.shape]] : WEAPON_ATTACKS.Fists;
-    const f = Math.min(SP.weightMax, Math.max(SP.weightMin, SP.weightA + SP.weightB * T.weight)), D = SP.normalDur * f;
+    const f = Math.min(SP.weightMax, Math.max(SP.weightMin, SP.weightA + SP.weightB * (T.type === 'Spear' ? 4 : T.weight))), D = SP.normalDur * f; /* S1456 — the spear swings at the longsword's pace, #745's 1 A, not its weight's */
     out.push({ t: T.type, total: +(r.tell + r.strike + r.recovery).toFixed(3), today: +D.toFixed(3), impact: +(r.tell / D).toFixed(3), rec: +(r.recovery / D).toFixed(3), post: r.posture, want: 8 * (T.postureMult || 1), cleave: r.cleave, wantC: T.cleaveTargets || 1 });
   }
   const fams = Object.keys(FOE_ATTACKS), cols = ['tell', 'strike', 'recovery', 'reach', 'arc', 'dmg', 'posture', 'blockable', 'parryable', 'heavy', 'third'];

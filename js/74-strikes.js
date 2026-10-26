@@ -46,6 +46,7 @@ function applySpellDamage(e, sp, tier){
 // between ×0.72 and ×1.40, its impact at 0.55 of the swing and its recovery the last third. A power attack keeps its own
 // (powerDur, POWER_DMG_MULT, POSTURE_DRAIN_POWER) until the heavy column is filled. The cone is cos .45 either side of
 // the facing, which is 126.5° whole (the old comments said 117°; the number never changed).
+// S1456 — the spear's row is #745's 1 A: the longsword's times (so not its weight's, 3.5), a thrust that reaches 2.4 m in a 40° line.
 const WEAPON_ATTACKS={
   Fists:    {tell:.236,strike:.050,recovery:.143,reach:0.9,arc:126.5,dmg:1,posture:8, cleave:1,blockable:true,parryable:false,heavy:null,third:null},
   Dagger:   {tell:.253,strike:.054,recovery:.153,reach:1.2,arc:126.5,dmg:1,posture:8, cleave:1,blockable:true,parryable:false,heavy:null,third:null},
@@ -55,6 +56,7 @@ const WEAPON_ATTACKS={
   Longsword:{tell:.336,strike:.071,recovery:.204,reach:1.8,arc:126.5,dmg:1,posture:8, cleave:1,blockable:true,parryable:false,heavy:null,third:null},
   Mace:     {tell:.336,strike:.071,recovery:.204,reach:1.6,arc:126.5,dmg:1,posture:8, cleave:1,blockable:true,parryable:false,heavy:null,third:null},
   GreatClub:{tell:.336,strike:.071,recovery:.204,reach:1.9,arc:126.5,dmg:1,posture:12,cleave:1,blockable:true,parryable:false,heavy:null,third:null},
+  Spear:    {tell:.336,strike:.071,recovery:.204,reach:2.4,arc:40,   dmg:1,posture:8, cleave:1,blockable:true,parryable:false,heavy:null,third:null},
   Flail:    {tell:.369,strike:.078,recovery:.224,reach:1.8,arc:126.5,dmg:1,posture:8, cleave:1,blockable:true,parryable:false,heavy:null,third:null},
   Claymore: {tell:.402,strike:.085,recovery:.244,reach:2.2,arc:126.5,dmg:1,posture:14,cleave:3,blockable:true,parryable:false,heavy:null,third:null},
   GreatAxe: {tell:.424,strike:.090,recovery:.257,reach:2.2,arc:126.5,dmg:1,posture:14,cleave:2,blockable:true,parryable:false,heavy:null,third:null},
@@ -79,7 +81,7 @@ function hullOf(e){
 }
 // the centre-to-centre distance a blow of reach r (hull to hull) lands within, against e
 function reachTo(e,r){return HULL_YOU+r+hullOf(e);}
-const WSHAPE_TO_ROW={dagger:'Dagger',sword:'Sword',longsword:'Longsword',scimitar:'Scimitar',mace:'Mace',flail:'Flail',bow:'Bow',claymore:'Claymore',greataxe:'GreatAxe',warhammer:'WarHammer',greatclub:'GreatClub'};
+const WSHAPE_TO_ROW={dagger:'Dagger',sword:'Sword',longsword:'Longsword',scimitar:'Scimitar',mace:'Mace',flail:'Flail',spear:'Spear',bow:'Bow',claymore:'Claymore',greataxe:'GreatAxe',warhammer:'WarHammer',greatclub:'GreatClub'};
 function weaponAttack(w){if(!w)return WEAPON_ATTACKS.Fists;return WEAPON_ATTACKS[WSHAPE_TO_ROW[w.weaponShape]]||WEAPON_ATTACKS.Sword;}
 // The foes, a row per family built today. Each has one attack, its light one, from today's numbers: a tell by kind
 // (S282's 0.45–0.9 s; a kind not named takes the family's 0.61), a blow in a 1.6-unit, 90° arc about the way it faced
