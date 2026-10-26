@@ -44,5 +44,26 @@ const shot = await page.evaluate(() => { forceTime(12); const cv = REN.domElemen
   cam.position.set(bx + .2, y + .6, bz + 5.4); cam.lookAt(bx + .2, y + .5, bz); sc.updateMatrixWorld(true); REN.render(sc, cam);
   const o = document.createElement('canvas'); o.width = cv.width; o.height = cv.height; o.getContext('2d').drawImage(cv, 0, 0); objs.forEach(x => sc.remove(x)); return o.toDataURL(); });
 fs.writeFileSync('tests/out/tpweapons.png', Buffer.from(shot.split(',')[1], 'base64'));
+// S1466 — your spear's blow in third person is a thrust: through the coil the shaft comes down level, and at the hit it lies along
+// your facing at chest height, its head further out than in the coil; driven by the game's loop at 1/60
+const tt = await page.evaluate(async () => { forceTime(11);
+  thirdPerson = true; let t = performance.now(); prevT = t; const step = () => { t += 1000 / 60; loop(t); };
+  SHEATHED = false; _sheathedItem = null; _lastSwingG = 1e9; EQ.weapon = { name: 'Iron Spear', slot: 'weapon', weaponShape: 'spear', matCol: '#a8b0b8', matGuard: '#787880' }; buildViewmodel();
+  for (let i = 0; i < 400; i++) { step(); if (TP.rig && TP.rig.rig && TP.rig.rig.hb && i > 30) break; }
+  for (let i = 0; i < 10; i++) step();
+  const R = TP.rig; const h = R.hbHeld && R.hbHeld.find(x => x.o === R.weapon); const obj = h ? h.c : R.weapon;
+  obj.updateWorldMatrix(true, false); let tipL = null, far = -1; const v = new THREE.Vector3(), o0 = new THREE.Vector3().setFromMatrixPosition(obj.matrixWorld);
+  obj.traverse(m => { if (!m.isMesh) return; m.updateWorldMatrix(true, false); const p = m.geometry.attributes.position; for (let i = 0; i < p.count; i++) { v.fromBufferAttribute(p, i).applyMatrix4(m.matrixWorld); const d = v.distanceTo(o0); if (d > far) { far = d; tipL = [m, i]; } } });
+  const f = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw)), sd = new THREE.Vector3(-f.z, 0, f.x);
+  const at = () => { R.root.updateMatrixWorld(true); obj.updateWorldMatrix(true, false); tipL[0].updateWorldMatrix(true, false); const P = new THREE.Vector3().fromBufferAttribute(tipL[0].geometry.attributes.position, tipL[1]).applyMatrix4(tipL[0].matrixWorld);
+    const O = new THREE.Vector3().setFromMatrixPosition(obj.matrixWorld), d = P.clone().sub(O).normalize(), rel = P.clone().sub(new THREE.Vector3(px, P.y, pz));
+    return { fwd: +d.dot(f).toFixed(2), up: +d.y.toFixed(2), side: +d.dot(sd).toFixed(2), headOut: +rel.dot(f).toFixed(2), headY: +(P.y - worldH(px, pz)).toFixed(2), handY: +(O.y - worldH(px, pz)).toFixed(2) }; };
+  const out = { rest: at(), tl: [] }; const S = ANIM_PARAMS.swing, D = S.normalDur; swingT = D; _pendingStrike = { resolveFn: () => {}, isPow: false, fired: false };
+  let n = 0; while (swingT > 0 && n++ < 60) { step(); out.tl.push([+(1 - swingT / (vmSword.userData.swingMax || D)).toFixed(2), at()]); }
+  const tl = out.tl.map(x => x[1]), hit = tl.reduce((a, b) => b.headOut > a.headOut ? b : a), coil = out.tl.filter(x => x[0] < ANIM_PARAMS.swing.antEnd).map(x => x[1]).pop();
+  thirdPerson = false; EQ.weapon = null; buildViewmodel(); return { rest: out.rest, coil, hit, frames: tl.length }; });
+console.log('  thrust:', JSON.stringify(tt));
+check(`your spear thrusts in third person: coiled, the shaft ${(Math.asin(tt.coil.up) * 57.3).toFixed(0)}° off level; at the hit along your facing (${tt.hit.fwd}), ${(Math.asin(tt.hit.up) * 57.3).toFixed(0)}° up, its head ${tt.hit.headY} m high and ${(tt.hit.headOut - tt.coil.headOut).toFixed(2)} m further out (S1466)`,
+  Math.abs(tt.coil.up) < .2 && tt.hit.fwd > .96 && Math.abs(tt.hit.up) < .2 && tt.hit.headY > 1 && tt.hit.headY < 1.7 && tt.hit.headOut - tt.coil.headOut > .35, tt);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

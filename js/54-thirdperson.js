@@ -12,6 +12,10 @@ let thirdPerson=false,PLAYER_MODEL=null; // v80 S12 — V toggles third person
 // S244: the viewmodel's variants (0 the forehand diagonal, 1 the backhand diagonal, 2 the overhead chop) as the body's
 // (0 the flat cut, 1 the overhead chop, 2 the rising diagonal)
 const TP_SWING_OF=[0,2,1];
+// S1466 — your spear's blow in third person is a thrust (#745 1 A), keyed as the swing's arcs are (rest, the coil's end, the hit,
+// the carry): the fist drawn back to the hip with the elbow bent, then driven out at the chest's height with the arm straight and the
+// shoulder turned into it, the shaft levelled along your facing by the wrist
+const TP_THRUST={sx:[-.22,.4,-1.25,-1.15],sy:[0,.2,-.25,-.25],el:[-.5,-1.6,-.15,-.25],wr:[.35,1.6,1.45,1.45],ty:[0,-.35,.25,.3],tx:[0,-.05,.15,.2]};
 const TP={rig:null,sig:'',dist:SCALE.TP_DIST,want:SCALE.TP_DIST,cur:SCALE.TP_DIST,phase:0,lastHP:null,hurtT:0,deadT:0,swingSeen:0,swMax:0,swVar:0,swPow:false,hidVM:false,near:0,hbHold:{L:0,R:0,S:0,lean:0}};
 try{const v=localStorage.getItem('og_tp');if(v==='1')thirdPerson=true;const d=parseFloat(localStorage.getItem('og_tp_m'));if(d>0)TP.want=Math.max(SCALE.TP_MIN,Math.min(SCALE.TP_MAX,d));}catch(e){}
 // ── the look (Session 127): worldState.look = {skin,hair,style,beard,tunic,breeches,boots}
@@ -145,7 +149,7 @@ function tpBuild(lookIn,ppIn,reuse){
   // what the hands hold (the weapon kit itself is a later pass)
   // S1458 — a crossbow is carried in the right fist alone, by the wrist of its tiller, its prod down behind (people.js carries it
   // point down): two hands on it held it up before the face as a claymore, the prod over the head
-  R.twoH=!!(w&&w.twoHand&&w.weaponShape!=='bow'&&w.weaponShape!=='crossbow');R.bow=bowW;R.unarmed=!w&&!oh;
+  R.twoH=!!(w&&w.twoHand&&w.weaponShape!=='bow'&&w.weaponShape!=='crossbow');R.bow=bowW;R.unarmed=!w&&!oh;R.spear=!!(w&&w.weaponShape==='spear');
   const grip=(hand,m)=>{m.position.set(0,-.04,.008);hand.add(m);return m;};
   if(w){const wm=tpWeapon(w);
     // S246: where the left hand goes on a two-handed grip: a hand's width from the right fist towards the pommel (the
@@ -347,7 +351,7 @@ function tpPose(R,dt,st){
         // backhand: high across on the left, down to the low right
         {sx:[-.22,-2.3,-1.2,-.7],sy:[0,1.05,-.35,-.95],el:[-.5,-1.5,-.12,-.25],wr:[.35,1.0,1.4,1.2],ty:[0,.5,-.3,-.6],tx:[0,-.05,.15,.22]},
         // overhead chop: up behind the head, straight down in front
-        {sx:[-.22,-3.0,-1.2,-.8],sy:[0,-.12,-.05,0],el:[-.5,-1.2,-.08,-.2],wr:[.35,1.25,1.15,1.0],ty:[0,-.12,0,.05],tx:[0,-.18,.32,.4]}][TP.swRaw||0];
+        {sx:[-.22,-3.0,-1.2,-.8],sy:[0,-.12,-.05,0],el:[-.5,-1.2,-.08,-.2],wr:[.35,1.25,1.15,1.0],ty:[0,-.12,0,.05],tx:[0,-.18,.32,.4]}][TP.swRaw||0],VT=R.spear?TP_THRUST:V;
       // S402 — the empty hand's punch (Michael's A on #80, the first person's jab): from a guard by the chin, a short draw
       // with the shoulder turned back, the arm straight out at shoulder height on the body's middle line as the strike
       // lands, held a beat, back to guard; the left fist keeps its guard by the face throughout. The sword's arcs are not
@@ -358,7 +362,7 @@ function tpPose(R,dt,st){
       if(fist){const pv=TP.swPow?1.3:1;aR={x:L3(...VF.sx),y:L3(...VF.sy),z:0};eR=L3(...VF.el);wR=0;ty=L3(...VF.ty.map(v=>v*pv));tx=L3(...VF.tx.map(v=>v*pv));
         aL={x:-1.25,y:-.32,z:0};eL=-1.85;}
       else{
-      aR={x:L3(...V.sx.map((v,i)=>i?v*(i===1?mg:1):v)),y:L3(...V.sy.map((v,i)=>v*(i?mg:1))),z:0};eR=L3(...V.el);wR=L3(...V.wr);ty=L3(...V.ty.map(v=>v*mg));tx=L3(...V.tx);}
+      aR={x:L3(...VT.sx.map((v,i)=>i?v*(i===1?mg:1):v)),y:L3(...VT.sy.map((v,i)=>v*(i?mg:1))),z:0};eR=L3(...VT.el);wR=L3(...VT.wr);ty=L3(...VT.ty.map(v=>v*mg));tx=L3(...VT.tx);}
       // the weight: back onto the right foot through the coil, a step of the left into the hit, held through the carry
       const coil=w*(1-s2),step=s2*(1-r);thL=_tpL(thL,-.5*mg,step)+.12*coil;thR=_tpL(thR,.22,step)-.1*coil;
       tpSet(R.thighL,thL,0,0,kf);tpSet(R.thighR,thR,0,0,kf);tpSet(R.kneeL,.1+.45*step+.2*coil,0,0,kf);tpSet(R.kneeR,.15+.25*step+.3*coil,0,0,kf);
