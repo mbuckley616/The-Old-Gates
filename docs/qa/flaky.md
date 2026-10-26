@@ -49,6 +49,11 @@ retry"), cleared by Sessions 797–814.
 - `jobseed` (fixed, Session 1438; shard 6, 990 s): *the first road out is the one the loaded roads gave in 0 of 0 towns*: no town had loaded when the road check asked (69 roads, all the right length).
 - `gatedraws` (shard 13): *the cull hides nothing in view* at the large gate's threshold, 0.001% of pixels differing; 0% at all 24 other spots and on the retry. A single pixel's edge, or a piece that is truly culled at the edge of the view: the next run's to tell.
 - Each is still owed its own session, worst first by runs lost.
+- `carraignight` (the look builder's note in Session 1437, not a CI run: on main's files before #738 it timed out at the wait after leaving a
+  home, having called `exitInterior()` from the chest's floor 5.87 m up). Session 1450: green on main at s932 with 1437's step-down, 1/1,
+  about 4 min. Every home now reads 0 seen at every hour, awake ones too, because the awake resident stands two floors below the chest; the
+  asleep check is still live (at 1h each sleeper lies on the chest's floor 2.5–6 m from it, and stepping beside her wakes her and she sees).
+  A new check pins that: 32 of 32 asleep-hour visits find her asleep on the chest's floor. Nothing filed.
 
 ## CI, 21 Oct 00:52 to 06:52 (read 07:00, under FREEZE #528: ledgers only)
 - **The new look landed on main** (#529, 0f6c911, 06:42). Its skip list (`tests/skip.json`, 21 suites, `docs/qa/skipped.md`) now leaves `f4people` and `fistfight` out of every run, so the two reds below stop on main from that commit on. Main's first full new-look run is 2329 (39557093477), queued at the read behind 2325 (a9d3dc8) and 2328 (9718cfd), the last two old-look runs.
