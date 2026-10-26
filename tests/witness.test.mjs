@@ -20,7 +20,7 @@ for (const id of shops) {
     px = X.x; pz = X.z + .8; const dBox = Math.hypot(px - kx, pz - kz); const atBox = W(); const lineBox = WORLD.intSightLine(kx, kz, px, pz);
     // a step from the keeper, in plain view: always seen
     px = kx + (X.x > kx ? 1.5 : -1.5); pz = kz; const near = W();
-    // Session 1434: the same spot a storey up (3 m) is not seen, and seen again with the keeper on that floor too (a resident woken upstairs)
+    // Session 1436: the same spot a storey up (3 m) is not seen, and seen again with the keeper on that floor too (a resident woken upstairs)
     jumpY = 3; const nearUp = W(); K.userData.floorY = 3; const nearBoth = W(); K.userData.floorY = null; jumpY = 0;
     // at the strongbox again with every door of the room open: the keeper at the counter sees you exactly when the box is in reach
     // with a clear line (Session 1244)
@@ -50,7 +50,7 @@ console.log(JSON.stringify(rows));
 const ok = rows.filter(r => !r.none);
 check('every shop was entered with a keeper and a strongbox', ok.length === shops.length && ok.length >= 5, rows);
 check('a step from the keeper you are always seen', ok.every(r => r.near), ok.map(r => [r.name, r.near]));
-check('a step from the keeper but a storey up you are not seen; on the keeper\'s own floor you are (S1434)', ok.every(r => !r.nearUp && r.nearBoth), ok.map(r => [r.name, r.nearUp, r.nearBoth]));
+check('a step from the keeper but a storey up you are not seen; on the keeper\'s own floor you are (S1436)', ok.every(r => !r.nearUp && r.nearBoth), ok.map(r => [r.name, r.nearUp, r.nearBoth]));
 check('indoors the reach is 8.7 m (#516)', ok.length > 0 && ok.every(r => r.R === 8.7), ok.map(r => r.R));
 check('at the strongbox you are seen exactly when the keeper is within reach with a clear line', ok.every(r => r.atBox === (r.dRaw < r.R && r.lineBox)), ok.map(r => [r.name, r.dBox, r.lineBox, r.atBox]));
 // (Session 1244: in Dunmore's seven kit shops the box stands 7.6–7.9 from the counter, inside the reach, but off the doorway's line

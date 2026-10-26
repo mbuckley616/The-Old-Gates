@@ -438,7 +438,7 @@
   /* S1244 — indoors a witness sees within 8.7 m (Michael's B on #516): Session 167's six in the old unit, at true scale (6 × ROOM_K, 1.444),
      so a keeper at a kit shop's counter sees through an open back-room door to the box, not through a shut one; Quiet work halves it */
   const WIT_IN=8.7;
-  /* S1434 — a witness indoors sees you on their own floor only: the line (intSightLine) is cut by walls at your eye, but no floor
+  /* S1436 — a witness indoors sees you on their own floor only: the line (intSightLine) is cut by walls at your eye, but no floor
      stops it, so in a home of three storeys the resident below saw you on the floor above (#728's townhouses). The same 1.6 m as the
      talk's same level (S13); a body's floor is userData.floorY when it has one (a resident woken in an upstairs bed), else its feet */
   function intFloorOf(o){const f=o&&o.userData&&o.userData.floorY;return f!=null?f:(o?o.position.y:0);}
@@ -470,7 +470,7 @@
   function wakeSleeper(m,woken){if(!m||!m.userData.asleep)return false;const b=m.userData.asleep;m.userData.asleep=null;if(typeof personRise==='function')personRise(m);if(woken)m.userData.woke=true;
     const am=m.userData.amble;if(am){am.paused=!!am.stand;am.wt=1.5;}
     let x=b.x+1.1,z=b.z+.6;for(const [ox,oz] of [[1.1,.6],[1.1,1.4],[0,1.6],[1.1,-.2]]){if(!intSolidAt(b.x+ox,b.z+oz,.3,b.y)){x=b.x+ox;z=b.z+oz;break;}}
-    m.rotation.set(0,woken?Math.atan2(px-x,pz-z):Math.PI,0);m.position.set(x,b.y,z);m.userData.floorY=b.y||0; /* S1434 — she stands on the bed's floor, and the loop's breath keeps her there */intNPCPos.x=x;intNPCPos.z=z;return true;}
+    m.rotation.set(0,woken?Math.atan2(px-x,pz-z):Math.PI,0);m.position.set(x,b.y,z);m.userData.floorY=b.y||0; /* S1436 — she stands on the bed's floor, and the loop's breath keeps her there */intNPCPos.x=x;intNPCPos.z=z;return true;}
   function sleeperNear(){const b=sleeperAsleep()&&intNPCMesh.userData.asleep;return !!b&&Math.hypot(px-b.x,pz-b.z)<WIT_HEAR&&Math.abs(jumpY-b.y)<1.2;}
   // S770 — woken in the night (Michael's A on #255): the first talk after a householder is woken while the house sleeps opens with a
   // night line by her people, and the introduction is not first. No crime. WOKEN_LINES is the quest writer's, one line per people
