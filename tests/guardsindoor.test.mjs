@@ -1,7 +1,7 @@
 // Guards indoors (Session 239; Michael, issue #23: B, "the guard should come in, but mind the player leaving quickly:
 // guards should still give chase and confront if they can catch the player"). Seen indoors with a fine on you, the
 // nearest guard on duty is sent: half a minute on he comes in and halts you; leave first and he chases you in the street.
-// Refuse him indoors and he draws there (Session 241).
+// Refuse him indoors and he draws there (Session 241). In a house of storeys he climbs to your floor (Session 1439).
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld(); await g.settle('dunmore');
@@ -123,5 +123,24 @@ await leave(); await spinOut(.5);
 const street = await page.evaluate(() => { const es = ZONES.world.enemies.filter(e => e._guard && !e.dead); return { inside: isInterior(), n: es.length, indoor: es.filter(e => e._indoor).length, hp: es[0] && es[0].hp, d: es[0] && +Math.hypot(es[0].x - px, es[0].z - pz).toFixed(1) }; });
 console.log('ran out', hurt, JSON.stringify(street));
 check('run out mid-fight: he follows and fights on in the street, as hurt as he was', hurt != null && !street.inside && street.n === 1 && street.indoor === 0 && street.hp === hurt && street.d < 4, { hurt, street });
+// 7. a house of storeys (Session 1439): the kit's townhouse on the new look has three floors on a dog-leg stair. You stand by the
+// home's chest on the top floor (5.87 m) with a fine on you: he comes in by the front door, climbs both storeys and halts you
+// there (before, he stood on the ground floor under you for good); refused, he fights you on that floor.
+await page.evaluate(() => { for (const e of ZONES.world.enemies) if (e._guard && !e.dead) { e.dead = true; if (e.mesh && e.mesh.parent) e.mesh.parent.remove(e.mesh); if (e._guard.npc) e._guard.npc._drawn = false; } forceTime(13); const c = worldState.crime.dunmore; c.bounty = 60; c.shut = false; });
+const kit = await page.evaluate(() => { const h = WORLD.settle.get('dunmore').houses.find(h => h.type === 'home' && !h.shuttered && kitTownhouse(h) && h.kit && h.kit.bays === 4); return h ? h.id : null; });
+await enter(kit);
+const up = await page.evaluate(() => { const X = WORLD.intBox; if (!X || !(X.y > 5)) return null; for (const [ox, oz] of [[0, .8], [0, -.8], [.8, 0], [-.8, 0]]) { const x = X.x + ox, z = X.z + oz, y = footholdY(x, z, X.y + .1, 0); if (Math.abs(y - X.y) < .3 && !intSolidAt(x, z, .3, y)) { px = x; pz = z; jumpY = y; return { x: +x.toFixed(2), z: +z.toFixed(2), y }; } } return null; });
+await page.evaluate(() => { PHP = maxHP; WORLD.dispatchGuard(window._h, WORLD.settle.get('dunmore').site); });
+const climb = await page.evaluate(() => { let t = 0, top = 0, inAt = null, upAt = null; for (; t < 120; t += 1 / 60) { WORLD.tickInterior(1 / 60, performance.now()); const s = WORLD.guardSent; if (s && s.mesh) { if (inAt == null) inAt = t; top = Math.max(top, s.mesh.position.y); if (upAt == null && Math.abs(s.mesh.position.y - jumpY) < .3 && Math.hypot(s.mesh.position.x - px, s.mesh.position.z - pz) < 1.6) upAt = t; } if (dlgOpen) break; } const s = WORLD.guardSent;
+  return { t: +t.toFixed(1), climbed: inAt != null && upAt != null ? +(upAt - inAt).toFixed(1) : null, dlg: dlgOpen, text: dlgOpen ? document.getElementById('dlg-text').textContent : null, gy: s && s.mesh ? +s.mesh.position.y.toFixed(2) : null, top: +top.toFixed(2), me: +jumpY.toFixed(2) }; });
+console.log('upstairs', kit, JSON.stringify(up), JSON.stringify(climb));
+check(`with you by the chest on the top floor, he climbs both storeys and halts you there (${climb.climbed} s from the door)`, kit && up && climb.dlg && /fine of \d+ gold/.test(climb.text || '') && Math.abs(climb.gy - climb.me) < .3, { kit, up, climb });
+await page.evaluate(() => { const b = [...document.querySelectorAll('#dlg-choices > *')].find(x => /not pay/.test(x.textContent)); if (b) b.click(); });
+await g.frames(3);
+const upFight = await page.evaluate(() => { const e = ZONES.world.enemies.find(e => e._guard && e._indoor && !e.dead); if (!e) return null; let lost = 0, low = 99;
+  for (let t = 0; t < 8; t += 1 / 60) { PHP = maxHP; WORLD.tickInterior(1 / 60, performance.now()); lost += maxHP - PHP; low = Math.min(low, e.mesh.position.y); }
+  PHP = maxHP; return { lost, low: +low.toFixed(2), me: +jumpY.toFixed(2), d: +Math.hypot(e.x - px, e.z - pz).toFixed(2) }; });
+console.log('upstairs fight', JSON.stringify(upFight));
+check('refused up there, he draws and fights you on that floor', upFight && upFight.lost > 0 && Math.abs(upFight.low - upFight.me) < .3, upFight);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

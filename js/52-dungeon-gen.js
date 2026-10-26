@@ -13,6 +13,8 @@ let FLOOR2_Y=-5.0; // v80 — floor two lies BELOW floor one: you go down into a
 // resolver picks the highest foothold no more than STEP_UP above the player,
 // so you climb ramps, walk under decks, and fall off edges. Reset per room.
 let FOOTHOLDS=[],INT_SOL=[],DUNGEON_STAIRWELL=false;
+// S1439 — the feet of the foe being ticked indoors (the guard who draws upstairs): the room's ground and solids at his height, else 0
+let INT_FOE_Y=null;
 // S1070 (card F2b, the body in the world) — a step at true scale is 0.40 m: over a stair's rise (0.18) and a kerb, not onto a
 // chair (0.45), a bed (0.5) or a table (0.75), which a jump (apex 0.84) puts you on. It was 0.62, for the old 1.1 m body.
 const STEP_UP=.40;
