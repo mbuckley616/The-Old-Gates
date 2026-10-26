@@ -185,18 +185,24 @@ function foeWindUp(e){
   return base;
 }
 // S1041 — the weapon a person-bodied foe holds (its genome's, 32-people.js), and that weapon's reach from your table: a knife
-// the dagger's 1.2, the rest (sword, axe, mace, cutlass, and the staff and spear the sheet does not list) the sword's 1.6
-const FOE_WPN_ROW={dagger:'Dagger',sword:'Sword',axe:'Mace',mace:'Mace',cutlass:'Scimitar',fists:'Fists'};
+// the dagger's 1.2, the rest (sword, axe, mace, cutlass, and the staff the sheet does not list) the sword's 1.6
+// S1462 — a spear is your Spear's row (Michael's A on #755): 2.4 m in a 40° line, the Skeleton's, the Ash Wight's and a Deserter's.
+// Only its reach and arc are the row's; its tell, damage, heavy blow and feint stay the humanoid's. It starts its tell as much
+// farther out as its reach is past the sword's (2.0 m, hull to hull), so a spearman thrusts from its own distance.
+const FOE_WPN_ROW={dagger:'Dagger',sword:'Sword',axe:'Mace',mace:'Mace',cutlass:'Scimitar',spear:'Spear',fists:'Fists'};
 function foeWeaponKind(e){if(e&&e._disarmed)return 'fists';const P=e&&e.limbs&&e.limbs.person,G=P&&P.g;return G?(G.gear==='spear'?'spear':G.wpn||null):null;}
-function foeWeaponReach(e){const k=foeWeaponKind(e);return WEAPON_ATTACKS[FOE_WPN_ROW[k]||'Sword'].reach;}
+function foeWeaponRow(e){return WEAPON_ATTACKS[FOE_WPN_ROW[foeWeaponKind(e)]||'Sword'];}
+function foeWeaponReach(e){return foeWeaponRow(e).reach;}
+function foeWeaponArc(e,deg){const k=foeWeaponKind(e);return k==='spear'?WEAPON_ATTACKS.Spear.arc:deg;}
 // a foe's reach, centre to centre: engage (its tell starts inside it; null = the place's own, 1.1 or 0.9), the blow, its arc,
 // and the wolf's lunge. A boss with a bite (the Faolchú) engages and bites at its biteRange less 0.9 (its snout), hull to hull.
 function foeReach(e,inDun){
   const r=foeAttack(e);
   if(e&&e.isBoss&&e.bossDef&&e.bossDef.biteRange){const b=reachTo(e,e.bossDef.biteRange-.9);return {engage:b,blow:b,deg:r.arc,lunge:0};}
   if(!r.hulls)return {engage:inDun?.9:1.1,blow:r.reach,deg:r.arc,lunge:0};
-  const blow=foeFamily(e)==='humanoid'?foeWeaponReach(e):r.reach,L=r.lunge||0;
-  return {engage:reachTo(e,r.engage+L),blow:reachTo(e,blow),deg:r.arc,lunge:L,stand:reachTo(e,r.engage)};
+  const hum=foeFamily(e)==='humanoid',blow=hum?foeWeaponReach(e):r.reach,L=r.lunge||0;
+  const eng=r.engage+(hum?Math.max(0,blow-WEAPON_ATTACKS.Sword.reach):0); /* S1462 — the spear's 0.8 past the sword */
+  return {engage:reachTo(e,eng+L),blow:reachTo(e,blow),deg:hum?foeWeaponArc(e,r.arc):r.arc,lunge:L,stand:reachTo(e,eng)};
 }
 // ── Armour as a share (decision #181 B, held for this table): every blow on you is × 50 / (50 + armour), so 50 armour
 // halves it and nothing reaches 1 by armour alone. It replaces the flat half a point a point that put the cliff between
