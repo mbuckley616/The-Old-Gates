@@ -72,11 +72,15 @@ for (const id of auIds) { await g.settle(id);
   check(`${id}: the row faces the nave (${q.toNave}), the walk inside its railing is ${q.walk} m to the church's solid and open its whole length; the church's door still clear`, q.toNave > .9 && q.walk >= 1.15 && q.walk < 1.6 && q.walkAlong && q.door, q);
   check(`${id}: the gate is open from the walk to An Chloch's kneeling place, the railing either side of it and the tithe box are solid`, q.gate.every(v => !v) && q.rail.every(v => v) && q.tithe, q);
   check(`${id}: every basin is solid and the place before it open; each niche on its own ground within 8 cm`, q.kneel.every(([b, k]) => b && !k) && q.ground.every(v => Math.abs(v) < .08), q); }
-// the pictures through the game's own frame (its land and its post), as kitislands' are: through the gate, and along the walk
+// the pictures through the game's own frame (its land and its post): through the gate, and along the walk
 { const id = auIds[0]; for (const [name, view] of [['kit-gods-aurenne.png', 'gate'], ['kit-gods-aurenne-walk.png', 'walk']]) {
   await page.evaluate(([id, view]) => { forceTime(10); VM_SCENE.visible = false; const S = WORLD.settle.get(id), G = S.gods, fx = Math.sin(G.ry), fz = Math.cos(G.ry), ax = Math.cos(G.ry), az = -Math.sin(G.ry);
     const [u, v, tu, tv] = view === 'gate' ? [-1.6, 3.3, .4, 0] : [-7.5, 2.75, 2, 1.6]; px = G.x + u * ax + v * fx; pz = G.z + u * az + v * fz; py = WORLD.worldH(px, pz) + 1.65;
     const lx = G.x + tu * ax + tv * fx - px, lz = G.z + tu * az + tv * fz - pz; yaw = Math.atan2(-lx, -lz); pitch = view === 'gate' ? -.08 : 0; }, [id, view]);
-  await g.frames(6); await page.screenshot({ path: new URL('../docs/prototypes/' + name, import.meta.url).pathname }); console.log(`  (picture: docs/prototypes/${name}, ${id})`); } }
+  await g.frames(6);
+  // S1450: drawn and copied in one evaluate, as the Gatelands pictures above are: REN.render on the world's scene is landRender's (the
+  // land, the bloom and the grade), and no 120 s screenshot timer waits on the page's next paint (FLAKY in the weekly run of 25 Oct)
+  const url = await page.evaluate(() => { CAM.updateMatrixWorld(true); REN.render(WORLD.scene, CAM); const cv = REN.domElement, o = document.createElement('canvas'); o.width = cv.width; o.height = cv.height; o.getContext('2d').drawImage(cv, 0, 0); return o.toDataURL('image/png'); });
+  fs.writeFileSync(new URL('../docs/prototypes/' + name, import.meta.url), Buffer.from(url.split(',')[1], 'base64')); console.log(`  (picture: docs/prototypes/${name}, ${id})`); } }
 check('no errors', g.errs.length === 0, g.errs);
 await g.close();

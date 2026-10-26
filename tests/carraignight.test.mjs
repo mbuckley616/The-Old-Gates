@@ -33,7 +33,7 @@ check('Carraig Mór\'s doors measured through a night', res.shops >= 3 && res.ho
 check('sneaking is never seen more than walking', rows.every(r => r.shopSneak <= r.shop + 1e-9 && r.homeSneak <= r.home + 1e-9));
 // indoors: a home's chest, opened by the player standing at it, hour by hour, in eight homes
 const IN_HOURS = [21.5, 22.5, 23.5, 1, 3, 4.5, 5.5, 6.5];
-const homesIn = [];
+const homesIn = []; const asleep = [];
 for (let k = 0; k < 8; k++) {
   const row = [];
   for (const hr of IN_HOURS) {
@@ -42,7 +42,8 @@ for (let k = 0; k < 8; k++) {
     // while lid was still the overworld, and the room's coordinates outdoors made the world drop Carraig Mór (Session 947)
     await page.waitForFunction(() => isInterior() && currentHouse === window._h, null, { timeout: 30000 });
     row.push(await page.evaluate(() => { if (!isInterior() || currentHouse !== _h) throw new Error('not in the home'); if (!INT_BOX || !intNPCMesh) { exitInterior(); return null; } px = INT_BOX.x + .6; pz = INT_BOX.z - .6; jumpY = INT_BOX.y || 0; /* S1437: on the chest's floor */ let seen = false;
-      for (let f = 0; f < 300; f++) { WORLD.tickInterior(1 / 60, performance.now()); if (f % 15 === 0 && WORLD.witnessOf(_h)) seen = true; } jumpY = 0; exitInterior(); return seen; })); /* back on the ground floor first: a townhouse's chest is upstairs */
+      for (let f = 0; f < 300; f++) { WORLD.tickInterior(1 / 60, performance.now()); if (f % 15 === 0 && WORLD.witnessOf(_h)) seen = true; } const a = intNPCMesh.userData.asleep; window._asl = a ? (Math.abs(a.y - (INT_BOX.y || 0)) < 1.2 ? 2 : 1) : 0; /* S1450: 2 = asleep on the chest's floor */ jumpY = 0; exitInterior(); return seen; }));
+    asleep.push(await page.evaluate(() => window._asl)); /* back on the ground floor first: a townhouse's chest is upstairs */
     await page.waitForFunction(() => !isInterior() && lid === 'overworld', null, { timeout: 30000 });
   }
   homesIn.push(row);
@@ -54,6 +55,11 @@ const col = j => homesIn.map(r => r[j]).filter(v => v !== null);
 const share = j => { const c = col(j); return c.length ? c.filter(Boolean).length + '/' + c.length : '-'; };
 console.log('  seen by hour: ' + IN_HOURS.map((h, j) => h + 'h ' + share(j)).join(', '));
 check('asleep from 23h to 5h, no resident sees their chest opened (23h30, 1h, 3h, 4h30)', [2, 3, 4, 5].every(j => col(j).every(v => !v)), [2, 3, 4, 5].map(share));
+// S1450: the check above holds only while the resident lies asleep by the chest: on the townhouse's three floors the awake resident is
+// two floors below it, so the asleep hours are the only ones where anyone could see it, and a sleeper not laid down would pass it unseen
+const aslH = asleep.filter((v, i) => [2, 3, 4, 5].includes(i % IN_HOURS.length));
+console.log(`  asleep hours: ${aslH.filter(v => v === 2).length} of ${aslH.length} visits found the resident asleep on the chest's floor, ${aslH.filter(v => v === 1).length} asleep on another`);
+check('from 23h to 5h the resident is asleep in every home visited, at least half on the chest\'s floor', aslH.length >= 24 && aslH.every(v => v > 0) && aslH.filter(v => v === 2).length * 2 >= aslH.length, aslH);
 stop();
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
