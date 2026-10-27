@@ -74,10 +74,11 @@ check('the tell\'s glow lights the builder\'s body and goes out with it', glow.o
 // the picture: the line from 4 m, then each kind killed
 await page.evaluate(() => { const f = _F[4].e; const fx = -Math.sin(yaw), fz = -Math.cos(yaw); px = f.x - fx * 6; pz = f.z - fz * 6; pitch = -.05; });
 for (let i = 0; i < 8; i++) { await page.evaluate(() => tickPeople(1 / 60, performance.now())); await g.frames(1); }
-await page.screenshot({ path: path.join(OUT, 'f4-foes.jpg') });
+// S1468: the line's first frame on software GL is 60–90 s here, on main and on this branch alike, and went past the library's 120 s on CI twice
+await page.screenshot({ path: path.join(OUT, 'f4-foes.jpg'), timeout: 240000 });
 await page.evaluate(() => { const f = _F[0].e; const fx = -Math.sin(yaw), fz = -Math.cos(yaw); px = f.x - fx * 2.6 + fz * .8; pz = f.z - fz * 2.6 - fx * .8; pitch = -.1; });
 for (let i = 0; i < 6; i++) { await page.evaluate(() => tickPeople(1 / 60, performance.now())); await g.frames(1); }
-await page.screenshot({ path: path.join(OUT, 'f4-foes-near.jpg') });
+await page.screenshot({ path: path.join(OUT, 'f4-foes-near.jpg'), timeout: 240000 });
 
 const dead = await page.evaluate(() => { const f = _F[0], rig = f.rig, before = []; rig.hb.root.traverse(o => { if (o.isMesh) before.push([o, o.material]); });
   f.e.hp = 0; killZoneEnemy(f.e, WORLD.scene, '');
