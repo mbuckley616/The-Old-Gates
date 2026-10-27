@@ -114,6 +114,7 @@
     return mergeParts(P);}
   // S1065 — the settlements whose lots take the kit's bays on the new look, and the shops that are merchants' houses
   const KIT_SITE={village:'village',outpost:'village',town:'town',port:'town',city:'town'},KIT_SHOPS=new Set(['weapon','armor','potion','misc','barber']);
+  const AU_VCH={rank:'village',w:12,tower:1}; /* S1485 — an Aurennais village's Church of the Weaver (#294 C: limewash by rank) */
   function genSettlement(site){
     if(SETTLE.has(site.id)||site.pad<=0)return;
     let r=rngFor(site.c*31+7,site.r*17+3);_townNames=new Set();_twinUsed=new Map();_roleNames=new Set();const _innNames=new Set();if(!site.lordless)try{const ln_=lordFor(site).name;_townNames.add(ln_);_roleNames.add(ln_);}catch(e){} // S248 — the lord's name is his own; the guild heads drawn before him leave it // S172 — names unique within the town where the bank allows
@@ -170,7 +171,7 @@
     const rectsApart=(a,b,m)=>{const A=plotC(a,m),B=plotC(b,0);for(const P of [A,B])for(let k=0;k<2;k++){const ex=P[k+1].x-P[k].x,ez=P[k+1].z-P[k].z;const pa=A.map(q=>q.x*ex+q.z*ez),pb=B.map(q=>q.x*ex+q.z*ez);if(Math.max(...pa)<Math.min(...pb)||Math.max(...pb)<Math.min(...pa))return true;}return false;};
     function inPlot(x,z,m){for(const P of PLOTS){const ex=x-P.x,ez=z-P.z,c=Math.cos(P.ry),s_=Math.sin(P.ry);if(Math.abs(ex*c-ez*s_)<P.w/2+m&&Math.abs(ex*s_+ez*c)<P.d/2+m)return true;}return false;}
     const offPlots=(l,m=.6)=>!!l.plot||PLOTS.every(P=>rectsApart(l,P,m)); /* a plot's own building is in it by right */
-    function townPlots(){const out=[];if(!(site.kind==='town'||site.kind==='city'||site.kind==='port'))return out;
+    function townPlots(vil){const out=[];if(!(vil||site.kind==='town'||site.kind==='city'||site.kind==='port'))return out;
       const h0=heroShops(site),types=h0?h0.map(h=>h.type):plan.shops;
       // a rect in a frame: along u from t0 to t1, across it (v) from a0 to a1, its front toward -u; with ok() over its edges every 1.5 m
       const frame=(ux,uz,vx,vz,t0,t1,a0,a1)=>{const tm=(t0+t1)/2,am=(a0+a1)/2;return {x:cx+ux*tm+vx*am,z:cz+uz*tm+vz*am,w:a1-a0,d:t1-t0,ry:Math.atan2(-ux,-uz),tx:-ux,tz:-uz};};
@@ -189,12 +190,19 @@
       // tower on its right) is 4.5 m where the plot fits so, and the six gods' row of seven in Aurenne's dress stands along it facing the
       // nave, its middle by the cube's, a walk of 1.2 m inside its railing (lot.gods, kitGods); where 4.5 m will not fit, 1.5 m and no row.
       const AUC=window.OG_LOOK==='new'&&window.OG_KIT_TOWNS!==false&&typeof PKIT!=='undefined'&&nationOf(ni,nj).people==='aurennais';
-      if(types.includes('church')&&AUC){const B=PKIT.au.churchBox({rank:'town',w:14,tower:1}),D=+(B.z1-B.z0).toFixed(2),M=1.5,YG=4.5;
-        outer:for(const YL of [YG,M])for(const t0 of [14,18,10])for(const [ux,uz] of dirs){const vx=-uz,vz=ux,P=frame(ux,uz,vx,vz,t0,t0+D+M,B.x0-YL,B.x1+M);if(!fits(P,along(ux,uz)))continue; /* v is the church's own +x */
-          const lot=Object.assign(frame(ux,uz,vx,vz,t0,t0+D,B.x0,B.x1),{w:+(B.x1-B.x0).toFixed(2),d:D,row:0,street:null,k:-1,plot:'church',au:true});
+      // S1485 (Michael's C on #294) — with vil, an Aurennais village's: the village's church (12 m a side under the limewashed dome, its bell
+      // tower on the right; 16.85 by 18.98 m) on the same rule, with the 1.5 m yard and no row of the gods, on ground level to 0.5 m over its
+      // own 3×3 (a village's ground is not a town's, and the podium stands on it with no footing), the foot of its steps 14, 10, 12, 16 or 8 m out
+      // (a village's ring is 40 m out: 18 will not fit); where none is, the old church on its lot
+      if(vil&&!AUC)return out;
+      const level=P=>{const c=Math.cos(P.ry),s_=Math.sin(P.ry),h=[];for(const u of [-.5,0,.5])for(const v of [-.5,0,.5]){const x=P.x+u*P.w*c+v*P.d*s_,z=P.z-u*P.w*s_+v*P.d*c;h.push(worldH(x,z));}return Math.max(...h)-Math.min(...h)<=.5;}; /* the podium has no footing */
+      if((vil||types.includes('church'))&&AUC){const B=PKIT.au.churchBox(vil?AU_VCH:{rank:'town',w:14,tower:1}),D=+(B.z1-B.z0).toFixed(2),M=1.5,YG=4.5;
+        outer:for(const YL of vil?[M]:[YG,M])for(const t0 of vil?[14,10,12,16,8]:[14,18,10])for(const [ux,uz] of dirs){const vx=-uz,vz=ux,P=frame(ux,uz,vx,vz,t0,t0+D+M,B.x0-YL,B.x1+M);if(!fits(P,along(ux,uz)))continue; /* v is the church's own +x */if(vil&&!level(frame(ux,uz,vx,vz,t0,t0+D,B.x0,B.x1)))continue;
+          const lot=Object.assign(frame(ux,uz,vx,vz,t0,t0+D,B.x0,B.x1),{w:+(B.x1-B.x0).toFixed(2),d:D,row:0,street:null,k:-1,plot:'church',au:true,vil:!!vil});
           if(YL===YG){const t=t0+B.z1,a=B.x0-1.35-2.17; /* the cube's middle (the church's z 0); the railing's outer face 1.35 m off the wall (1.2 off its solid) */ lot.gods={x:cx+ux*t+vx*a,z:cz+uz*t+vz*a,ry:Math.atan2(vx,vz),island:'aurenne'};}
           P.type='church';P.lot=lot;out.push(P);break outer;}}
-      else if(types.includes('church'))outer:for(const n of [3,2]){const L=PKIT.gl.churchLen(n),W=8.4,YARD=4.5,t0=Math.sqrt(14*14-2.8*2.8);
+      if(vil)return out;
+      if(!AUC&&types.includes('church'))outer:for(const n of [3,2]){const L=PKIT.gl.churchLen(n),W=8.4,YARD=4.5,t0=Math.sqrt(14*14-2.8*2.8);
         for(const [ux,uz] of dirs)for(const sd of [1,-1]){const vx=-uz*sd,vz=ux*sd,P=frame(ux,uz,vx,vz,t0,t0+L+3,2.8,2.8+W+YARD);if(!fits(P,null))continue;
           const t=t0+L/2+.4,a=2.8+W+YARD-.58; /* S1232 — the row of seven: its niches' faces .58 in from the yard's edge, its middle .4 east of the nave's, facing the church */
           const lot=Object.assign(frame(ux,uz,vx,vz,t0,t0+L,2.8,2.8+W),{w:W,d:L,row:0,street:null,k:-1,plot:'church',bays:n,gods:{x:cx+ux*t+vx*a,z:cz+uz*t+vz*a,ry:Math.atan2(-vx,-vz)}});P.type='church';P.lot=lot;out.push(P);break outer;}}
@@ -210,6 +218,8 @@
           if(!fits(P,along(sx,sz))||!out.every(Q=>rectsApart(P,Q,1)))continue;
           const lot=Object.assign(frame(ux,uz,sx,sz,2.8,2.8+D,a1-W,a1),{w:W,d:D,row:0,street:null,k:-3,plot:'inn'});P.type='inn';P.lot=lot;out.push(P);break outer;}}
       return out;}
+    // (S1485: the town's state read here, before the streets, so a village's plot can ask planLots, below, whether it has a church)
+    const TST=(site.kind in BASE_P)?TS(site):null;const burnedV=!!(TST&&TST.flags.burned!=null),sackedV=!!(TST&&TST.flags.sacked!=null),abandonedV=!!(TST&&TST.flags.abandoned!=null);
     if(useGrid){
       const G=site.kind==='city'?38:site.kind==='village'?17:site.kind==='port'?22:34; // block size; villages/ports one row per side
       const nmax=Math.floor((inner-6)/G);
@@ -218,6 +228,9 @@
         streetLines.push({px:cx+ax*k*G,pz:cz+az*k*G,dx:bx,dz:bz});   // cross streets
       }
       PLOTS=townPlots();
+      // S1485 — an Aurennais village whose lots give it a church lays the Church of the Weaver's plot (townPlots(true)) before its streets
+      // are drawn, as a town does; the lots are then laid round it, and the church keeps its place in the list (planLots, below)
+      if(site.kind==='village'){const V=townPlots(true);if(V.length&&planLots(TST?prosperity(site):0,true).shopTypes.includes('church'))PLOTS=V;}
       // draw them (skip the real road's own lines roughly — they overlap harmlessly)
       streetLines.forEach(l=>{
         const half=Math.sqrt(Math.max(0,inner*inner-((l.px-cx)*(l.px-cx)+(l.pz-cz)*(l.pz-cz))));
@@ -237,7 +250,6 @@
     // prosperity (fewer lots; the guild halls gone below 60) used to hand every id in the town to another building, and
     // your own house (worldState.owned is keyed by id) with it. Ids are now the lot's place in the town's layout at its
     // starting prosperity with no builds paid for, which is the layout every existing id was given in.
-    const TST=(site.kind in BASE_P)?TS(site):null;const burnedV=!!(TST&&TST.flags.burned!=null),sackedV=!!(TST&&TST.flags.sacked!=null),abandonedV=!!(TST&&TST.flags.abandoned!=null);
     function planLots(P,withBuilds){const r=rngFor(site.c*31+7,site.r*17+3);const placed=[],lots=[];
       // Candidate lots along a line direction (dx,dz) through (px,pz): both sides.
       function lotsAlong(px_,pz_,dx,dz,extent,latBase,rowsN){
@@ -303,6 +315,7 @@
       let shopTypes=hero?[...hero.map(h=>h.type),...((site.kind==='town'||site.kind==='city')?['guild_f','guild_m']:[])]:[...plan.shops,...plan.optional.filter(()=>r()<.5),...(plan.late||[])]; // hero towns get guild halls too
       if(TST&&!hero)shopTypes=shopsFor(site,shopTypes,P);
       if(TST&&withBuilds){TST.builds.forEach(b=>{if(!b.done)return;if(b.key==='inn'&&!shopTypes.includes('inn'))shopTypes.push('inn');if(b.key==='chapel'&&!shopTypes.includes('church'))shopTypes.push('church');if(b.key==='guild'&&!shopTypes.includes('guild_f'))shopTypes.push('guild_f');});}
+      if(site.kind==='village'&&PLOTS.some(P=>P.type==='church')&&!shopTypes.includes('church'))shopTypes.push('church'); /* S1485 — a village's plot was laid for its church: a later roll keeps it */
       // Size shop lots by type first, then drop any later lot that overlaps an
       // earlier one (shops come first, so churches/keeps keep their room).
       // S1138 — a type with a plot takes it (below): the other lots are sized as if it were not in the list
@@ -386,7 +399,8 @@
       // smaller than 7 by 10; inside always PKIT.mk.alehall at 10 by 18 (buildKitAlehall), its six places on the wall benches let by the
       // keeper's bench lines (lot.kit.alehall, which innBench reads). An inn lot with no room for the hall keeps the old inn and its rooms.
       // S1305 — an Aurennais town's church on its plot is the Church of the Weaver (the plot was laid for it, so it fits by construction)
-      if(AU&&town)use.forEach((lot,i)=>{if(shopTypes[i]==='church'&&lot.plot==='church'&&lot.au)lot.kit={kind:'aurchurch',w0:lot.w,d0:lot.d};});
+      // S1485 — a village's on its plot is the village's church (lot.kit.o, at rank 'village')
+      if(AU)use.forEach((lot,i)=>{if(shopTypes[i]==='church'&&lot.plot==='church'&&lot.au)lot.kit=lot.vil?{kind:'aurchapel',o:AU_VCH,w0:lot.w,d0:lot.d}:{kind:'aurchurch',w0:lot.w,d0:lot.d};});
       // S1320 — the tavern's lot (planLots, above) is the tavern's ground: the kit builds it whole (kitAurTavern)
       if(AU)use.forEach((lot,i)=>{if(lot.k==='tv'&&shopTypes[i]==='inn')lot.kit={kind:'aurtavern',w0:lot.w,d0:lot.d};});
       // S1419 (card F6, Michael's A on #329 and #318; OG-115) — the better quarter: an Aurennais town's or port's courtyard house, a city's two
@@ -572,11 +586,12 @@
     // S1305 — the Church of the Weaver (PKIT.au.church, a town's, its own stream keyed by the town), the foot of its steps on the lot's front
     // and its door on the street's line; its far copy a box for the podium and the cube, one for the porch, a block for the drum and
     // the dome, one for the tower and one for its little dome; no smoke
-    function kitAurChurch(lot){const o={rank:'town',w:14,tower:1},B=PKIT.au.churchBox(o),C=PKIT.au.church(o,PKIT.stream(`${site.id}:church`)),y=worldH(lot.x,lot.z)-.06,c=Math.cos(lot.ry),s_=Math.sin(lot.ry);
+    // (S1485: a village's, lot.kit.o, at 12 m under the limewashed dome, its far copy's dome and the tower's in limewash)
+    function kitAurChurch(lot){const o=lot.kit.o||{rank:'town',w:14,tower:1},B=PKIT.au.churchBox(o),C=PKIT.au.church(o,PKIT.stream(`${site.id}:church`)),y=worldH(lot.x,lot.z)-.06,c=Math.cos(lot.ry),s_=Math.sin(lot.ry);
       const u=-(B.x0+B.x1)/2,v=-(B.z0+B.z1)/2,X=lot.x+u*c+v*s_,Z=lot.z-u*s_+v*c,I=C.inner;C.group.position.set(X-cx,y,Z-cz);C.group.rotation.y=lot.ry;C.group.traverse(m=>{if(m.isMesh){m.castShadow=m.name!=='dark';m.receiveShadow=true;}});kitG.add(C.group);
       const mx=new THREE.Matrix4().makeRotationY(lot.ry).setPosition(X,y,Z),lime=new THREE.Color(.9,.88,.82),blue=new THREE.Color(.25,.42,.62),part=(bw,bh,bd,bx,y0,bz,col)=>{const b=new THREE.BoxGeometry(bw,bh,bd).toNonIndexed();b.translate(bx,y0+bh/2,bz);kitLo.push([b,mx,col||lime]);};
-      part(I.W+.6,I.top+1.2,I.D+.6,0,0,0);part(I.W+.6,I.pl+4.2+(I.W+.4)/(I.W>16?7:5)/2+.9+.85,4.4,0,0,I.D/2+2.2);part(2*I.R,I.y0+I.dh+I.R*1.12-I.top,2*I.R,0,I.top,0,blue); /* the cube, the porch, the drum and the dome */
-      {const s=3.6,tx=I.W/2+s/2+.4,tz=I.D/2+4.4-s/2-.2,ty=B.towerTop-1.1-1.0-s*.44*1.15;part(s,ty,s,tx,0,tz);part(s*.88,B.towerTop-1.1-ty,s*.88,tx,ty,tz,blue);}
+      part(I.W+.6,I.top+1.2,I.D+.6,0,0,0);part(I.W+.6,I.pl+4.2+(I.W+.4)/(I.W>16?7:5)/2+.9+.85,4.4,0,0,I.D/2+2.2);part(2*I.R,I.y0+I.dh+I.R*1.12-I.top,2*I.R,0,I.top,0,o.rank==='village'?lime:blue); /* the cube, the porch, the drum and the dome */
+      {const s=3.6,tx=I.W/2+s/2+.4,tz=I.D/2+4.4-s/2-.2,ty=B.towerTop-1.1-1.0-s*.44*1.15;part(s,ty,s,tx,0,tz);part(s*.88,B.towerTop-1.1-ty,s*.88,tx,ty,tz,o.rank==='village'?lime:blue);}
       lot._kitDoor=+u.toFixed(3);lot._wallH=I.top;lot._storeys=1;lot.two=false;lot.kit.tris=C.tris;lot.kit.calls=C.draws;lot.kit.colour='lime';lot.kit.door=lot._kitDoor;lot.kit.r=Math.hypot(lot.w,lot.d)/2;
       if(lot.gods)kitGods(lot.gods);}
     // S1320 (card F9, Michael's 1 A and 2 B on #602) — Aurenne's tavern with its rooms upstairs (PKIT.au.tavern, o.rooms) on the quay: the
@@ -598,7 +613,7 @@
       if(lot.kit.kind==='keep'){kitKeep(lot);return;}
       if(lot.kit.kind==='markhall'){kitMarkHall(lot,type);return;}
       if(lot.kit.kind==='aurhouse'){kitAurHouse(lot);return;}
-      if(lot.kit.kind==='aurchurch'){kitAurChurch(lot);return;}
+      if(lot.kit.kind==='aurchurch'||lot.kit.kind==='aurchapel'){kitAurChurch(lot);return;}
       if(lot.kit.kind==='aurtavern'){kitAurTavern(lot);return;}
       if(lot.kit.kind==='aurcourt'){kitAurCourt(lot);return;}
       if(lot.kit.kind==='coachinn'){kitCoachInn(lot);return;}
