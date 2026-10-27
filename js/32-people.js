@@ -819,16 +819,22 @@ function wpnBuild(kind,rust,tint){tint=tint||{};
     // the grip to the prod as a blade runs from the hilt; the tiller round in the fist, squared to the prod 0.54 ahead and deepening to
     // the butt 0.31 behind, the prod bowed back 5 cm at its tips over a 0.66 m span, the string braced across, the nut, the bolt's
     // groove along the top (+x), the trigger lever under the belly and the stirrup at the front. The prod is the item's metal
-    crossbow:()=>{const R=.013,PY=.54,SP=.66,BD=.05,px=.03,yAt=z=>PY-BD*(2*z/SP)**2;
+    crossbow:bare=>{const R=.013,PY=.54,SP=.66,BD=.05,px=.03,yAt=z=>PY-BD*(2*z/SP)**2;
       add(SK.rbox(.044,.48,.036,.008,2),'matte',WOOD,[0,.36,0]);add(SK.cyl(R,R,.27,10),'matte',WOOD,[0,0,0]);
       add(SK.rbox(.07,.2,.042,.012,2),'matte',WOOD,[-.012,-.215,0],[0,0,-.08]);add(SK.rbox(.03,.04,.03,.006,1),'matte',WOOD,[0,.135,0]);
       const pts=[];for(let k=0;k<=16;k++){const z=-SP/2+SP*k/16;pts.push(new THREE.Vector3(px,yAt(z),z));}
       add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),24,.011,6),'metal',STEEL);
-      add(SK.cyl(.0022,.0022,SP-.02,4),'matte',0xe8e0c8,[px,yAt(SP/2)-.004,0],[Math.PI/2,0,0]);
+      if(bare!==true)add(SK.cyl(.0022,.0022,SP-.02,4),'matte',0xe8e0c8,[px,yAt(SP/2)-.004,0],[Math.PI/2,0,0]);
       for(const y of [PY-.026,PY+.026])add(SK.rbox(.05,.01,.042,.003,1),'metal',DSTEEL,[0,y,0]);
       add(SK.cyl(.012,.012,.03,10),'metal',BRASS,[.022,.15,0],[Math.PI/2,0,0]);add(SK.rbox(.003,.33,.006,.001,1),'matte',0x141008,[.0222,.335,0]);
       add(SK.rbox(.007,.075,.008,.002,1),'metal',DSTEEL,[-.026,.115,0],[0,0,.06]);
       add(SK.torus(.05,.0055,5,18),'metal',DSTEEL,[0,PY+.112,0],[0,Math.PI/2,0],[1,1.3,1]);},
+    // S1476 — your crossbow without its string, which xbowRig draws as two lengths that come back to the nut over the span; the
+    // string's length is one metre along +y from 0, set by xbowRigSet. The bolt: an ash shaft 9 mm thick, an iron bodkin, two vanes
+    crossbowbare:()=>K.crossbow(true),
+    xbowstring:()=>add(SK.cyl(.0022,.0022,1,4),'matte',0xe8e0c8,[0,.5,0]),
+    xbowbolt:()=>{add(SK.cyl(.0045,.0045,.35,6),'matte',0x8a6a44,[0,.175,0]);add(SK.cone(.0065,.045,6),'metal',DSTEEL,[0,.3725,0]);
+      for(const sd of [-1,1])add(SK.rbox(.0016,.065,.02,.0006,1),'matte',0x5a3a22,[0,.045,sd*.011]);},
     // S266 — the bow without its string, for first person, where the view model's own string draws back
     bowbare:()=>{const pts=[];for(let i=0;i<=20;i++){const t=i/20*2-1;pts.push(new THREE.Vector3(0,t*.34,-.05*(1-t*t)+.025*Math.pow(Math.abs(t),6)));}
       add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),30,.011,6),'matte',WOOD);add(SK.cyl(.016,.016,.09,8),'matte',LEATH,[0,0,-.05]);},
@@ -856,6 +862,18 @@ function wpnBuild(kind,rust,tint){tint=tint||{};
     out.push({geo:g,mat:m});}
   return out;
 }
+// S1476 — the crossbow's span drawn (#745 2 A's 2.0 s, XBOW): the string in two lengths from the prod's tips (the kit's frame: 0.33
+// across, 0.49 up the tiller) to a middle that comes back from where it is braced (0.486) to the nut's catch (0.163), and the bolt
+// laid in the groove ahead of the nut once it is spanned. xbowRig adds them to the kit's crossbow; xbowRigSet poses any copy of it
+const XBOW_RIG={px:.03,tipY:.49,tipZ:.33,restY:.486,nutY:.163,boltX:.0265,boltY:.17};
+function xbowRig(w){for(const nm of ['xbowStringL','xbowStringR']){const s=buildWeapon('xbowstring');s.name=nm;w.add(s);}
+  const b=buildWeapon('xbowbolt');b.name='xbowBolt';b.position.set(XBOW_RIG.boltX,XBOW_RIG.boltY,0);w.add(b);xbowRigSet(w,0,false);return w;}
+const _xbA=new THREE.Vector3(),_xbB=new THREE.Vector3(),_xbY=new THREE.Vector3(0,1,0);
+function xbowRigSet(root,f,bolt){const P=root.userData.xbowParts||(root.userData.xbowParts=(()=>{const o={};root.traverse(c=>{if(/^xbow(StringL|StringR|Bolt)$/.test(c.name))o[c.name]=c;});return o;})());
+  const K=XBOW_RIG,my=K.restY+(K.nutY-K.restY)*f;
+  for(const [nm,sd] of [['xbowStringL',-1],['xbowStringR',1]]){const s=P[nm];if(!s)continue;_xbA.set(K.px,K.tipY,sd*K.tipZ);_xbB.set(K.px,my,0).sub(_xbA);
+    const L=_xbB.length();s.position.copy(_xbA);s.quaternion.setFromUnitVectors(_xbY,_xbB.multiplyScalar(1/L));s.scale.set(1,L,1);}
+  if(P.xbowBolt)P.xbowBolt.visible=!!bolt;}
 function buildWeapon(kind,opts){opts=opts||{};const t=opts.tint;const key=kind+(opts.rust?'|rust':'')+(t?'|'+[t.metal,t.guard,t.wood,t.glow,t.face].join(','):'');let parts=WPN_GEO.get(key);if(!parts){parts=wpnBuild(kind,!!opts.rust,t);WPN_GEO.set(key,parts);}
   const G=new THREE.Group();G.name='weapon:'+kind;G.userData.wpn=kind;for(const p of parts){const m=new THREE.Mesh(p.geo,WPN_MAT[p.mat]);m.castShadow=false;G.add(m);}return G;}
 const FOE_DRESS={

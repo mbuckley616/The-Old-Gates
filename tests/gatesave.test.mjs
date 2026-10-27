@@ -35,7 +35,7 @@ check(`the load puts you at the gate's entrance, on floor one, where walking in 
 check(`the foe killed is dead, gone from the floor, and the rest still stand (${after.foes} of ${before.foes})`, after.foeDead && !after.foeShown && after.foes === before.foes, after);
 check(`the chest opened is open, without the ${before.took} taken from it`, after.opened && JSON.stringify(after.left) === JSON.stringify(before.left), { before: before.left, after: after.left });
 check('a locked door opened stays open', before.door == null || after.door === true, { door: before.door, after: after.door });
-// S1476 — the same gate loaded while its cell is not loaded (the critic, 26 Oct: a load from Aurenne met Frost Wraiths and 150-health
+// S1479 — the same gate loaded while its cell is not loaded (the critic, 26 Oct: a load from Aurenne met Frost Wraiths and 150-health
 // Phantoms here): the portal stood at the old zone's x, z, the world's empty corner, and read tier 3 and *hard*. It now stands where
 // the door does, so its tier and every foe are the same as walking in.
 const unloaded = await page.evaluate(() => { delete WORLD.dungeonPos[42]; window._prevDScene = dScene; _reenterPlace({ kind: 'dungeon', seed: 42, floor: 1 }); return true; })

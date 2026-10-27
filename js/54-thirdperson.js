@@ -46,8 +46,8 @@ function tpWeapon(it){const g=new THREE.Group();if(!it)return g;
   // S227 — the weapon kit (Michael's A on Session 220), tinted by the item's own metal, guard and glow; the bow's wood is its
   // material colour, and it turns to put the string on your side of the grip, as the box bow had it
   const kind={scimitar:'cutlass',flail:'flail',greatclub:'greatclub',greataxe:'greataxe',claymore:'claymore'}[sh]||(WPN_KINDS.includes(sh)?sh:'sword');
-  const w=buildWeapon(kind,{tint:{metal:blade,guard,glow:tpHex(it.matGlow,0x88c0ff),wood:sh==='bow'?tpHex(it.matCol,0x6a4428):null}});g.add(w);
-  if(kind==='bow'){w.rotation.y=Math.PI;g.userData.bow=true;}if(kind==='crossbow')w.rotation.x=Math.PI;g.userData.kit=kind;
+  const w=buildWeapon(kind==='crossbow'?'crossbowbare':kind,{tint:{metal:blade,guard,glow:tpHex(it.matGlow,0x88c0ff),wood:sh==='bow'?tpHex(it.matCol,0x6a4428):null}});g.add(w);
+  if(kind==='bow'){w.rotation.y=Math.PI;g.userData.bow=true;}if(kind==='crossbow'){w.rotation.x=Math.PI;g.userData.xbow=xbowRig(w);}g.userData.kit=kind; /* S1476 — its string and bolt drawn by the span */
   return g;}
 const TP_LINEN=0xa89c80;
 // ── F10 (Session 1246): the player's own body from the builder's genome, in the new look ──
@@ -285,10 +285,14 @@ function tpCamera(dt,camY){
 // and the torso unwinding, a carry past the hit, then back to guard; the first person's three swings, not the body's
 // nearest; a power swing a quarter wider; the arm eased fast enough (dt*50) through the ~60 ms strike. false for the old swing.
 const TP_SWING_NEW=true;
+// S1476 — the crossbow's string and bolt by the span (xbowSpanPose, 16-viewmodel.js), on the driver's piece and the builder's copy of it
+function tpXbowSpan(R){const S=xbowSpanPose();xbowRigSet(R.weapon.userData.xbow,S.f,S.bolt);
+  if(R.hbHeld)for(const h of R.hbHeld)if(h.o===R.weapon)xbowRigSet(h.c,S.f,S.bolt);}
 function tpPose(R,dt,st){
   const k=Math.min(1,dt*14),kf=Math.min(1,dt*22);
   const now=st.now/1000;
   if(R.motes)tpMotesTick(R,now); // S539
+  if(R.weapon&&R.weapon.userData.xbow)tpXbowSpan(R);
   // hurt / death
   if(TP.lastHP!=null&&PHP<TP.lastHP-.5)TP.hurtT=.28;TP.lastHP=PHP;TP.hurtT=Math.max(0,TP.hurtT-dt);
   if(dead){TP.deadT=Math.min(1,TP.deadT+dt*2.2);}else TP.deadT=Math.max(0,TP.deadT-dt*4);

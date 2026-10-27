@@ -301,7 +301,7 @@
     }
   }
   function setRadius(n){RADIUS=Math.max(1,Math.min(8,n|0));lastCX=null;lastCZ=null;if(sc)stream(px,pz,true);}
-  // S1476 — where a gate's door stands, whether or not its cell is loaded: where placeDoor put it if it has; a home fort as placeDoor
+  // S1479 — where a gate's door stands, whether or not its cell is loaded: where placeDoor put it if it has; a home fort as placeDoor
   // places it, on its road's line from its def (roadCurve) and the home cell's and its neighbours' pads; anything else where
   // fixedDoorSpot reads it. A load inside a gate whose cell had not loaded built the portal at the old zone's x, z (72, 8 for the
   // Dungeon of Shadows), the world's empty corner, so its tier, its grade and its rare kinds read the corner's: tier 3 there, 1 at home.
