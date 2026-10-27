@@ -271,6 +271,7 @@ function killE(e,tag=''){
   const ds = currentPortal?currentPortal.diffScale:null;
   const th = currentPortal?currentPortal.theme:null;
   const items = rollContainerLoot('corpse', ds, th, lootDropChance(e), e.id?`${e.id}:corpse:${lootDay()}`:undefined, e.tier); // S478 — a keyed foe's corpse rolls on its id
+  bodyMeat(e,items,e.id?`${e.id}:corpse:${lootDay()}`:undefined); /* S1486 — meat off a bear, a boar or a wolf */
   bodyPicks(e,items,e.id?`${e.id}:corpse:${lootDay()}`:undefined); // S633 — a bandit's, kobold's, skeleton's or goblin's body may hold picks (#191 A)
   const drops = items.length > 0;
   CORPSES.push({id:e.id?`${e.id}:corpse`:null,x:e.x,z:e.z,name:e.name,looted:false,items,gl:lootGl,spark:lootSpark,age:0,floorY:floorGroundY,displayName:e.name,body:e.mesh});
@@ -693,6 +694,8 @@ function useItem(i){
   if(it.type==='herb'){useHerb(i);return;}
   if(it.brew){useTincture(i);return;} /* S1483 — a tincture drunk, a poison on the blade */
   if(it.name===MORTAR_NAME){openBrewPage();return;}
+  if(it.meal){eatMeal(i);return;} /* S1486 — a meal leaves you fed */
+  if(it.name===TINDERBOX_NAME||it.log||it.food){useFireThing(i);return;} /* S1486 — a fire, and what it makes */
   if(it.type==='spellbook'){readSpellbook(i);return;} // v80
   if(it.artifact==='sundial_ring'){if(typeof noonRingTurn==='function')noonRingTurn();return;} /* S786 — the Noon Ring turns the weather */
   if(it.type==='rubbing'){(worldState.rubbings||(worldState.rubbings={}))[it.seed]=it.gate;showMsg(`${it.gate} is marked on your map.`,'#c0e0ff');it.qty=(it.qty||1)-1;if(it.qty<=0)BAG.splice(i,1);if(typeof renderInv==='function')renderInv();return;} // v80 — a rubbing marks a sigil gate
@@ -827,9 +830,10 @@ function updateHUD(){
       minimapPulse:'🗺', detectReduce:'👁',
       maxStamBuff:'⚡',
     };
-    if(ACTIVE_BUFFS.length){
+    const _fedP = typeof fedPill==='function' ? fedPill() : ''; // S1486 — fed
+    if(ACTIVE_BUFFS.length||_fedP){
       buffEl.classList.add('has-buffs');
-      buffEl.innerHTML = ACTIVE_BUFFS.map(b=>{
+      buffEl.innerHTML = _fedP + ACTIVE_BUFFS.map(b=>{
         const ico = BUFF_ICONS[b.type] || '✧';
         const secs = Math.ceil(b.remaining);
         const lbl = (b.label||b.type).replace(/"/g,'');

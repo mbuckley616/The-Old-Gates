@@ -88,7 +88,7 @@ function loop(now){
   const _qpop = document.getElementById('quest-popup');
   const _qpopOpen = _qpop && _qpop.style.display==='flex';
   if(typeof lockOpen!=='undefined'&&lockOpen&&LP.live)lpWatch(); // S327 — before the pause: a halt's dialogue must close the lock
-  if(!started||dead||won||invOpen||shopOpen||lootOpen||stashOpen||luOpen||hubOpen||dlgOpen||nbOpen||isBookOpen()||_qpopOpen||_introFadeActive||(typeof lockOpen!=='undefined'&&lockOpen&&!LP.live)||(typeof sleepOpen!=='undefined'&&sleepOpen)||(typeof barberOpen!=='undefined'&&barberOpen)||(typeof cargoOpen!=='undefined'&&cargoOpen)||(typeof brewOpen!=='undefined'&&brewOpen)||(typeof yardOpen!=='undefined'&&yardOpen)||(typeof pauseOpen!=='undefined'&&pauseOpen))return;
+  if(!started||dead||won||invOpen||shopOpen||lootOpen||stashOpen||luOpen||hubOpen||dlgOpen||nbOpen||isBookOpen()||_qpopOpen||_introFadeActive||(typeof lockOpen!=='undefined'&&lockOpen&&!LP.live)||(typeof sleepOpen!=='undefined'&&sleepOpen)||(typeof barberOpen!=='undefined'&&barberOpen)||(typeof cargoOpen!=='undefined'&&cargoOpen)||(typeof brewOpen!=='undefined'&&brewOpen)||(typeof cookOpen!=='undefined'&&cookOpen)||(typeof yardOpen!=='undefined'&&yardOpen)||(typeof pauseOpen!=='undefined'&&pauseOpen))return;
   // v61e6 Session A: clock tick. Placed AFTER the pause bailout so UI-open
   // pauses the clock (consistent with stamina/buffs/cooldowns pausing).
   advanceClock(dt);
@@ -111,7 +111,7 @@ function loop(now){
   const _stRegenMult = (_encState==='burdened' || _encState==='overloaded' || _encState==='immobile') ? 0.8 : 1.0;
   if(staminaCD>0){staminaCD=Math.max(0,staminaCD-dt);}
   else if(stamina<_emSt){stamina=Math.min(_emSt,stamina+dt*(3+(level-1)*0.4+ATTRS.resolve*0.3+_ab.stRegen)*_stRegenMult*(furWarm()?1.1:1));}
-  mana=Math.min(_emMana,mana+dt*(0.8+(level-1)*0.15+attrEff('intelligence')*0.2+_ab.mpRegen));
+  mana=Math.min(_emMana,mana+dt*(0.8+(level-1)*0.15+attrEff('intelligence')*0.2+_ab.mpRegen)*fedManaMult()); /* S1486 — Clear, +10% */
   // HP regen from armor enchants
   if(PHP<_emHP&&_ab.hpRegen>0){PHP=Math.min(_emHP,PHP+dt*_ab.hpRegen);}
   // Herb + potion hpRegen buffs (v61x adds potion source; mechanism unchanged)
@@ -129,6 +129,7 @@ function loop(now){
   // pill in the HUD ticked down outdoors and stalled the moment the
   // player entered a portal. Now decoupled from zone dispatch entirely.
   tickActiveBuffs(dt);
+  tickSurvival(dt); /* S1486 — the fires, and Steady */
   // v62.5 — Screen-edge tint priority chain:
   //   hurtT > 0           → red (full damage taken)
   //   blockFlashT > 0     → blue (held block) or gold (perfect parry)
