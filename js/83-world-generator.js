@@ -1790,6 +1790,13 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   function kitRoomAir(sc_,amb){const hr=typeof gameHour==='function'?gameHour():12,dayK=hr>=7&&hr<18?1:hr>=5&&hr<20?.45:.08;
     sc_.add(new THREE.AmbientLight(0xffe2c4,(amb||.45)*.45));sc_.add(new THREE.HemisphereLight(0xdfe6f0,0xa89a84,.06+.4*dayK));
     return {day:dayK,lamp:.3+.7*(1-dayK),fire:.75};}
+  // S1489 (#765, Michael's C: the room lit from its own openings, fires and lamps; docs/prototypes/levelup/light.js's lightRoom) — the sky
+  // through each opening: a soft spot just inside it, aimed in and down, by the opening's area and the hour (none after dark). ops are
+  // in the room's frame: {x,y,z} the opening's middle, {nx,nz} the way into the room, w and h; K the room's own share (1 if not given)
+  const KD_SKY=2; /* the spot's strength a square metre of opening at noon: Dáire's hall (S1489) reads 37 at noon with it, 17 without */
+  function kitDaylight(sc_,ops,K){const hr=typeof gameHour==='function'?gameHour():12,k=(hr>=7&&hr<18?1:hr>=5&&hr<20?.4:0)*(K||1);if(!k)return [];
+    return ops.map(q=>{const s=new THREE.SpotLight(0xd4dcea,Math.min(6,KD_SKY*k*q.w*q.h),9,1.15,1,1);s.position.set(q.x+q.nx*.3,q.y,q.z+q.nz*.3);
+      s.target.position.set(q.x+q.nx*3.3,Math.max(0,q.y-1.6),q.z+q.nz*3.3);s.userData.daylight=true;sc_.add(s,s.target);return s;});}
   function buildKitTaproom(house){
     const T=PKIT.gl.inn({paint:house.kit.paint||'green',bays:house.kit.bays},PKIT.stream(house.id+':taproom')),I=T.inner,X=I.x1,Z=I.z1,F0=T.floors[0],F1=T.floors[1]-F0,W=2*X,D=2*Z;
     const rx=x=>x+X,rz=z=>z+Z,ry=y=>y-F0;
@@ -2136,6 +2143,11 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       for(const q of T.windows)out(q);for(const q of T.doors)out({...q,y:F0});
       const A=new Float32Array(P.reduce((n,a)=>n+a.length,0));let o=0;for(const a of P){A.set(a,o);o+=a.length;}
       const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(A,3));const m=new THREE.Mesh(g,M);m.userData.daylight=true;sc_.add(m);}
+    // and the day in through the big openings (S1489): both doorways on the yard and the pitching door, at 0.4 (the stable door's
+    // spot stands a metre from the partition's boards, which at the full share read 96 from the arrival); the slits, 0.16 m wide, light
+    // only themselves
+    kitDaylight(sc_,[...T.doors.map(q=>({...q,y:F0})),...T.windows].filter(q=>q.w*q.h>=.5).map(q=>{const f=q.face||'front',fb=f==='front'||f==='back';
+      return {x:fb?rx(q.x):f==='right'?W:0,y:ry(q.y+q.h*.7),z:fb?(f==='front'?D:0):rz(q.z||0),nx:fb?0:f==='right'?-1:1,nz:fb?(f==='front'?-1:1):0,w:q.w,h:q.h};}),.4);
     // the light: the three lanterns (the bay's and the stable's under the loft, the loft's from the collars) and the room's air
     const KA=kitRoomAir(sc_,.4);
     for(const p of T.lamps){const l=new THREE.PointLight(0xffaa44,1.0*KA.lamp,8);l.position.set(rx(p[0]),ry(p[1]),rz(p[2]));sc_.add(l);}
@@ -2294,6 +2306,8 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     {const hr=typeof gameHour==='function'?gameHour():12,day=hr>=7&&hr<18?0xc4d0dc:hr>=5&&hr<20?0x8a7a7a:0x0e1420,M=new THREE.MeshBasicMaterial({color:day});
       for(const z of T.windows)for(const sx of [-1,1]){const m=new THREE.Mesh(new THREE.PlaneGeometry(.7,.6),M);m.position.set(rx(sx*(T.w/2+.08)),ry(T.floor-.04+1.55),rz(z));m.rotation.y=-sx*Math.PI/2;m.userData.daylight=true;sc_.add(m);}
       const m=new THREE.Mesh(new THREE.PlaneGeometry(T.door.w+.1,T.door.h+.1),M);m.position.set(rx(T.door.x),T.door.h/2,rz(T.door.z)+.08);m.rotation.y=Math.PI;m.userData.daylight=true;sc_.add(m);}
+    // and the day in through them (S1489): a sky spot inside each window and the open door, the hall's one big opening
+    kitDaylight(sc_,[...T.windows.flatMap(z=>[-1,1].map(sx=>({x:rx(sx*X),y:1.55,z:rz(z),nx:-sx,nz:0,w:.6,h:.5}))),{x:rx(T.door.x),y:T.door.h*.7,z:D,nx:0,nz:-1,w:T.door.w,h:T.door.h}]);
     // the light: the fire (the long hearth or the peis), the iron lamp from the tie beam, the oil lamp by the bed, the hall's warmth. Abed
     // (23h to 5h) the house has put its lamps out but the little one by the bed, at a third, and banked the fire to 0.4 (S1441's rule).
     // The fire's embers and flames ride in a group of their own (the lamps' flames stay out of it), so a Mages' cold hearth (S676) shows

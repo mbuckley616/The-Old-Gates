@@ -35,7 +35,7 @@ for (const H of picks) { const tag = H.plan; console.log(`  -- ${H.id}: ${tag}`)
   const r = await page.evaluate(() => {
     const h = currentHouse, T = h._longhouse, W = h._roomW, D = h._roomD, X = T.inner.x1, Z = T.inner.z1, rx = x => x + X, rz = z => z + Z; interiorScene.updateMatrixWorld(true);
     const meshes = []; let lights = 0, draws = 0, tris = 0; const inNpc = o => { for (let p = o; p; p = p.parent) if (p === intNPCMesh) return true; return false; };
-    interiorScene.traverse(o => { if (o.isLight && !o.isAmbientLight && o.intensity > 0) lights++; if (o.isMesh && o.visible && !inNpc(o)) { draws++; tris += (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3; if (!o.isSkinnedMesh && !o.userData.daylight) meshes.push(o); } });
+    let day = 0; interiorScene.traverse(o => { if (o.isLight && o.userData.daylight) { day++; return; } if (o.isLight && !o.isAmbientLight && o.intensity > 0) lights++; if (o.isMesh && o.visible && !inNpc(o)) { draws++; tris += (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3; if (!o.isSkinnedMesh && !o.userData.daylight) meshes.push(o); } });
     const rc = new THREE.Raycaster(), O = new THREE.Vector3(), Dv = new THREE.Vector3();
     const hit = (x, y, z, dx, dz, far) => { O.set(x, y, z); Dv.set(dx, 0, dz).normalize(); rc.set(O, Dv); rc.far = far; return !!rc.intersectObjects(meshes, false)[0]; };
     // walled all round: every half metre along each wall at 0.6 and 2 m, a ray from the middle meets something, but at the open front door
@@ -53,7 +53,7 @@ for (const H of picks) { const tag = H.plan; console.log(`  -- ${H.id}: ${tag}`)
     const box = INT_BOX, boxSide = box ? [[0, .62], [0, -.62], [.7, 0], [-.7, 0]].filter(([dx, dz]) => { const x = box.x + dx, z = box.z + dz; return x > .3 && x < W - .3 && z > .3 && z < D - .3 && !intSolidAt(x, z, .25, 0); }).length : 0;
     const resident = intNPCMesh ? { x: +intNPCPos.x.toFixed(2), z: +intNPCPos.z.toFixed(2), clear: !intSolidAt(intNPCPos.x, intNPCPos.z, .2, 0) } : null;
     const fire = interiorScene.children.find(c => c.userData && c.userData.hearthFire);
-    return { W, D, want: [+(h.kit.o.w - .5).toFixed(3), +(h.kit.o.d - .5).toFixed(3)], plan: T.chimney ? 'peis' : T.plan, scale: T.group.scale.x, open, arrive, exitZ: +exitZ.toFixed(2), blocked, off, stack, bed: bed && { x: +bed.x.toFixed(2), cz: +bed.cz.toFixed(2), owner: bed.owner }, inBed, box: !!box, boxSide, resident, lights, draws, tris: Math.round(tris), doors: INT_DOORS.length,
+    return { W, D, want: [+(h.kit.o.w - .5).toFixed(3), +(h.kit.o.d - .5).toFixed(3)], plan: T.chimney ? 'peis' : T.plan, scale: T.group.scale.x, open, arrive, exitZ: +exitZ.toFixed(2), blocked, off, stack, bed: bed && { x: +bed.x.toFixed(2), cz: +bed.cz.toFixed(2), owner: bed.owner }, inBed, box: !!box, boxSide, resident, day, wins: T.windows.length, lights, draws, tris: Math.round(tris), doors: INT_DOORS.length,
       fireOn: !!fire && fire.userData.hearthFire.visible && fire.userData.hearthLight.intensity > 0 };
   });
   check(`[${tag}] the room is the hall's inside, ${r.W} by ${r.D} m (${r.want.join(' by ')}), at its true size (scale ${r.scale}), the ${r.plan} plan`, Math.abs(r.W - r.want[0]) < .01 && Math.abs(r.D - r.want[1]) < .01 && r.scale === 1 && r.plan === H.plan, r);
@@ -63,6 +63,7 @@ for (const H of picks) { const tag = H.plan; console.log(`  -- ${H.id}: ${tag}`)
     !r.blocked.length && !r.off.length && r.stack !== false && (tag !== 'parted' || r.doors === 1), { blocked: r.blocked.slice(0, 5), off: r.off.slice(0, 5), stack: r.stack, doors: r.doors });
   check(`[${tag}] the bed is the resident's (${r.bed && r.bed.owner}, at ${r.bed && [r.bed.x, r.bed.cz].join(', ')}); the home's chest has ${r.boxSide} sides clear to open it from`, r.inBed && r.bed.owner === 'home' && r.box && r.boxSide >= 1, r);
   check(`[${tag}] lit by the fire and the lamps (${r.lights} lights), ${r.draws} draws (40 or fewer), ${r.tris.toLocaleString()} triangles`, r.fireOn && r.lights >= 4 && r.lights <= 8 && r.draws <= 40, r);
+  check(`[${tag}] at noon the day comes in through its ${r.wins * 2} windows and the door (${r.day} sky spots, S1489)`, r.day === r.wins * 2 + 1, r);
 
   // at night the resident lies in the bed; a bought house has its cellar hatch, clear; a Mages' cold hearth is dark until done
   const more = await page.evaluate(() => { const h = currentHouse, rebuild = () => { WORLD.buildInteriorFor(h); scene = interiorScene; };
