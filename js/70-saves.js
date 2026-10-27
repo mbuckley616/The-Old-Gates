@@ -27,7 +27,7 @@ function _serItem(it){
                   'zone','col','glowCol','respawn','desc','knownDesc','hiddenDesc',
                   'herbKey','isHerb','isMisc','shieldType','torchType','block','blockMult',
                   'bookId','virtue','cloak','line', // S552 — a cloak's kind; S564 — an armour piece's line (light, robe)
-                  'unique','stolen','artifact','half','licence','brew','brewKey','meal','food','log']){ /* S1486 — a meal's kind and strength, a food, a log */ /* S781 — the Wolf-Mother's Cloak gone thin */  // S776 — kept through a reload: a quest piece stays unsellable, stolen goods stay stolen, a Maker's tool knows which it is
+                  'unique','stolen','artifact','half','licence','brew','brewKey','meal','food','log','ore','tool','ingot','made','tempers','baseAtk','baseDef']){ /* S1494 — ore and the pick (S1491's were lost on a reload), an ingot, a made piece and its tempers */ /* S1486 — a meal's kind and strength, a food, a log */ /* S781 — the Wolf-Mother's Cloak gone thin */  // S776 — kept through a reload: a quest piece stays unsellable, stolen goods stay stolen, a Maker's tool knows which it is
     if(it[k]!==undefined)s[k]=it[k];
   }
   if(it.enchant){
@@ -467,6 +467,7 @@ function _applyLoadData(d,w){
     const newLo=Math.round(base*typeObj.atkMult[0]);
     const newHi=Math.round(base*typeObj.atkMult[1]);
     it.atk=[newLo,newHi];
+    if(it.tempers&&typeof temperApply==='function'){it.baseAtk=[newLo,newHi];const n=it.tempers;it.tempers=n-1;temperApply(it);} /* S1494 — a tempered blade keeps its tempers */
   }
   // v57 migration: price curve + requirement curve updated. Recompute buyPrice from TIER_VALUE
   // and reqVal from MATERIALS (weapons) or ARMOR_FORT_REQ (armor). Replaces stored values outright

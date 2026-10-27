@@ -696,7 +696,7 @@ function useItem(i){
   if(it.name===MORTAR_NAME){openBrewPage();return;}
   if(it.meal){eatMeal(i);return;} /* S1486 — a meal leaves you fed */
   if(it.name===TINDERBOX_NAME||it.log||it.food){useFireThing(i);return;} /* S1486 — a fire, and what it makes */
-  if(it.tool==='pick'||it.ore){useOreThing(i);return;} /* S1491 — a pick at a vein */
+  if(it.tool==='pick'||it.ore||it.ingot){useOreThing(i);return;} /* S1491 — a pick at a vein */
   if(it.type==='spellbook'){readSpellbook(i);return;} // v80
   if(it.artifact==='sundial_ring'){if(typeof noonRingTurn==='function')noonRingTurn();return;} /* S786 — the Noon Ring turns the weather */
   if(it.type==='rubbing'){(worldState.rubbings||(worldState.rubbings={}))[it.seed]=it.gate;showMsg(`${it.gate} is marked on your map.`,'#c0e0ff');it.qty=(it.qty||1)-1;if(it.qty<=0)BAG.splice(i,1);if(typeof renderInv==='function')renderInv();return;} // v80 — a rubbing marks a sigil gate
