@@ -27,6 +27,8 @@ const made = await page.evaluate((KINDS) => { forceTime(12);
   // vertices, the share in the genome's skin (within .02 a channel) and in the old genome's skin, near and far, against the share of
   // the old skin in a bake of the old colours (`before`: the face and hands, a few per cent, less under a hood or a helm)
   const share = (geo, c) => { const a = geo.attributes.color.array; let n = 0; for (let i = 0; i < a.length; i += 3) if (Math.abs(a[i] - c.r) < .02 && Math.abs(a[i + 1] - c.g) < .02 && Math.abs(a[i + 2] - c.b) < .02) n++; return +(n / (a.length / 3)).toFixed(3); };
+  // S1468: the driver's two bakes wait in HB_TINTQ, a frame's 4 ms at a time (tickPeople's hbTintDrain); taken here as the frames would
+  window._tintQ = { queued: HB_TINTQ.length, frames: 0 }; while (HB_TINTQ.length && _tintQ.frames < 60) { hbTintDrain(4); _tintQ.frames++; }
   window._tint = _F.filter(f => f.rig && HB_RIGS.has(f.rig)).map(({ n, e, rig }) => { const G = rig.hbG, t = G && G.skin ? new THREE.Color(G.skin[0], G.skin[1], G.skin[2]) : null, old = new THREE.Color(rig.g.skin);
     return { n, key: G ? [...HB_GENOMES].find(([, x]) => x === G)?.[0] : null, want: 'foe:' + e.id, built: !!rig.hb, hi: t && share(rig.geoHi, t), lo: t && rig.geoLo && share(rig.geoLo, t), oldHi: share(rig.geoHi, old), before: (() => { const b = personBake(rig.g, 1), v = share(b.geo, old); b.geo.dispose(); return v; })(), same: !!t && t.equals(old) }; });
   CAM.position.set(px, worldH(px, pz) + 1.65, pz); CAM.updateMatrixWorld(true);
@@ -36,6 +38,8 @@ const made = await page.evaluate((KINDS) => { forceTime(12);
 console.log('  built:', JSON.stringify(made));
 const tint = await page.evaluate(() => _tint);
 console.log('  tint:', JSON.stringify(tint));
+const tintQ = await page.evaluate(() => _tintQ); console.log('  tint queue:', JSON.stringify(tintQ));
+check('the drivers\' colours wait for the frames after the naming, and are all taken within a few', tintQ.queued >= 16 && tintQ.frames <= 24, tintQ);
 check('named, each human foe has its genome before its body is built, keyed by its foe id', tint.length === 9 && tint.every(t => t.key === t.want && !t.built), tint.filter(t => t.key !== t.want || t.built));
 check('and its driver, near and far, is in the genome\'s skin, not the old genome\'s', tint.every(t => t.before > .004 && t.hi >= .9 * t.before && t.lo > .004 && (t.same || t.oldHi < .5 * t.before)), tint.map(t => [t.n, t.before, t.hi, t.lo, t.oldHi]));
 
@@ -70,10 +74,11 @@ check('the tell\'s glow lights the builder\'s body and goes out with it', glow.o
 // the picture: the line from 4 m, then each kind killed
 await page.evaluate(() => { const f = _F[4].e; const fx = -Math.sin(yaw), fz = -Math.cos(yaw); px = f.x - fx * 6; pz = f.z - fz * 6; pitch = -.05; });
 for (let i = 0; i < 8; i++) { await page.evaluate(() => tickPeople(1 / 60, performance.now())); await g.frames(1); }
-await page.screenshot({ path: path.join(OUT, 'f4-foes.jpg') });
+// S1468: the line's first frame on software GL is 60–90 s here, on main and on this branch alike, and went past the library's 120 s on CI twice
+await page.screenshot({ path: path.join(OUT, 'f4-foes.jpg'), timeout: 240000 });
 await page.evaluate(() => { const f = _F[0].e; const fx = -Math.sin(yaw), fz = -Math.cos(yaw); px = f.x - fx * 2.6 + fz * .8; pz = f.z - fz * 2.6 - fx * .8; pitch = -.1; });
 for (let i = 0; i < 6; i++) { await page.evaluate(() => tickPeople(1 / 60, performance.now())); await g.frames(1); }
-await page.screenshot({ path: path.join(OUT, 'f4-foes-near.jpg') });
+await page.screenshot({ path: path.join(OUT, 'f4-foes-near.jpg'), timeout: 240000 });
 
 const dead = await page.evaluate(() => { const f = _F[0], rig = f.rig, before = []; rig.hb.root.traverse(o => { if (o.isMesh) before.push([o, o.material]); });
   f.e.hp = 0; killZoneEnemy(f.e, WORLD.scene, '');
