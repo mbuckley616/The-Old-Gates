@@ -151,3 +151,32 @@ Frame rate is not measured here: software GL is not a target machine. It is Mich
 | the field west of Dunmore, dawn | High | 919 | 1.65 M | 163 | 6 | 108 | 190 | 325 | 127 | Mesh 79, Group 36, oldGate 8, quaywall 2, Points 2 |
 
 *s956, QA Session 1481: `node tests/run.mjs budget` matches `budgetport` too, so the square and the indoor spots were measured twice (07:05 and 07:11). The second read the same to ±4 calls outdoors; the gate read 241 calls, not 286 (other 197): the gate's count moves by about 45 between boots. Since s884 no view has moved more than 6% (the gate, 269 to 286), and every outdoor view within 1%.*
+
+### s972 — 2026-10-27 19:27 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Dunmore street, noon | Low | 1235 **over** | 1.29 M | 0 | 0 | 110 | 149 | 721 | 255 | Mesh 195, Group 36, oldGate 24 |
+| Dunmore street, noon | Middle | 1393 **over** | 2.03 M | 136 | 6 | 113 | 149 | 734 | 255 | Mesh 195, Group 36, oldGate 24 |
+| Dunmore street, noon | High | 1444 **over** | 2.35 M | 168 | 6 | 113 | 149 | 753 | 255 | Mesh 195, Group 36, oldGate 24 |
+| Dunmore street, midnight | Low | 1299 **over** | 1.25 M | 0 | 0 | 107 | 215 | 721 | 256 | Mesh 195, Group 36, oldGate 24, Points 1 |
+| Dunmore street, midnight | Middle | 1475 **over** | 1.97 M | 157 | 6 | 107 | 215 | 734 | 256 | Mesh 195, Group 36, oldGate 24, Points 1 |
+| Dunmore street, midnight | High | 1536 **over** | 2.34 M | 199 | 6 | 107 | 215 | 753 | 256 | Mesh 195, Group 36, oldGate 24, Points 1 |
+| the field west of Dunmore, noon | Low | 1120 **over** | 734k | 0 | 0 | 105 | 111 | 775 | 129 | Mesh 79, Group 40, oldGate 8, quaywall 2 |
+| the field west of Dunmore, noon | Middle | 1205 **over** | 1.13 M | 59 | 6 | 105 | 111 | 795 | 129 | Mesh 79, Group 40, oldGate 8, quaywall 2 |
+| the field west of Dunmore, noon | High | 1253 | 1.56 M | 97 | 6 | 105 | 111 | 805 | 129 | Mesh 79, Group 40, oldGate 8, quaywall 2 |
+| the field west of Dunmore, dawn | Low | 1203 **over** | 725k | 0 | 0 | 108 | 190 | 775 | 130 | Mesh 79, Group 40, oldGate 8, quaywall 2, Points 1 |
+| the field west of Dunmore, dawn | Middle | 1349 **over** | 1.22 M | 120 | 6 | 108 | 190 | 795 | 130 | Mesh 79, Group 40, oldGate 8, quaywall 2, Points 1 |
+| the field west of Dunmore, dawn | High | 1402 **over** | 1.65 M | 163 | 6 | 108 | 190 | 805 | 130 | Mesh 79, Group 40, oldGate 8, quaywall 2, Points 1 |
+
+### s972 — 2026-10-27 19:33 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Portclare square, noon | Low | 881 **over** | 771k | 0 | 0 | 30 | 72 | 569 | 210 | Mesh 146, Group 50, oldGate 14 |
+| Portclare square, noon | Middle | 1040 **over** | 1.48 M | 133 | 6 | 31 | 72 | 588 | 210 | Mesh 146, Group 50, oldGate 14 |
+| Portclare square, noon | High | 1083 | 1.83 M | 163 | 6 | 31 | 72 | 601 | 210 | Mesh 146, Group 50, oldGate 14 |
+| The Bramble Hearth (Dunmore's inn), the hall from the door, 20h | Middle (indoors) | 38 | 26k | 0 | 0 | 1 | 0 | 0 | 37 |  |
+| a medium gate (ruins, seed 11), from its entrance | Middle (indoors) | 267 | 432k | 0 | 0 | 44 | 0 | 0 | 222 |  |
+
+*s972, QA Session 1497: every outdoor view rose 360–480 calls since s956 (Dunmore at noon, Middle, 941 → 1,393; Portclare's square 684 → 1,040), all of it in the land column (281 → 734 on Dunmore's street) and none in bodies, houses, the shadow pass or the rest. It is S1491's ore veins (#796): four meshes a vein, 265 of them in the 81 chunks round Dunmore; hiding them in the same frame takes Dunmore's street at noon from 1,382 to 929. Filed in backlog section I for the systems builder. Triangles did not move (the veins are 20 and 8 faces). The indoor spots are unchanged (the inn 38; the gate 237 and 267, inside its ±45).*
