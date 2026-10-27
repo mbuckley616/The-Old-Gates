@@ -255,6 +255,17 @@ function vmMantle(){if(!vmSword||typeof MANTLE==='undefined'||MANTLE.t0==null)re
     return;}
   vmSword.position.x+=-.06*w;vmSword.position.y+=-.42*w;vmSword.position.z+=-.1*w;vmSword.rotation.x+=-1.1*w;vmSword.rotation.z+=.35*w;}
 const FP_LEVEL={spear:1.15,crossbow:1.5};
+// S1476 — the crossbow's 2.0 s span drawn (XBOW, #745 2 A): the prod tipped up toward you and the bow drawn in (0–0.35 s), so the
+// string is in view as it is hauled back to the nut (0.35–1.45), the bolt laid in the groove (1.55), the bow let back down level
+// (1.6–2.0). Spanned: the string on the nut and the bolt in place until the shot lets the string fly home (spanT back to 0). d is
+// the tip (FP_SPAN.dip, negative: up), f how far the string is back
+function xbowSpanPose(){const t=typeof XBOW!=='undefined'&&EQ.weapon&&XBOW.w===EQ.weapon?XBOW.spanT:0;
+  if(t>=XBOW_SPAN_S)return {d:0,f:1,bolt:true};const e=x=>(1-Math.cos(Math.max(0,Math.min(1,x))*Math.PI))/2;
+  return {d:t<.35?e(t/.35):t<1.6?1:1-e((t-1.6)/.4),f:e((t-.35)/1.1),bolt:t>=1.55};}
+const FP_SPAN={dip:-.35,drop:.03,back:.06};
+function vmXbowSpan(){const pv=vmSword&&vmSword.userData.level,k=vmSword&&vmSword.userData.kit;if(!pv||!k||!k.userData.xbow)return;
+  const S=xbowSpanPose();pv.rotation.x=-FP_LEVEL.crossbow-FP_SPAN.dip*S.d;vmSword.position.y-=FP_SPAN.drop*S.d;vmSword.position.z+=FP_SPAN.back*S.d;
+  xbowRigSet(k.userData.xbow,S.f,S.bolt);}
 // S1465 — your spear's blow is a thrust (#745 1 A: 2.4 m in a 40° line), not the blade's slash it played: the swing's own phases
 // (ANIM_PARAMS.swing's antEnd, sweepEnd, holdEnd), drawn back along the shaft in the anticipation, driven out along it in the sweep,
 // held, and eased home, with no roll and no pitch, so the head keeps its line. Returned as the offset the loop adds to the view model

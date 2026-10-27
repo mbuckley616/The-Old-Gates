@@ -738,6 +738,7 @@ function loop(now){
     // S396 — the fists keep their own poses: the jab, the guard and the power punch's draw
     if(vmSword.userData.fists)vmFistPose(gb,pb,walkSway,totalBob+jumpDisp*.04);
     vmMantle(); /* S1401 — the mantle's pull in first person (16-viewmodel.js) */
+    vmXbowSpan(); /* S1476 — the crossbow's span drawn (16-viewmodel.js) */
     // Animate enchant sparks (orbitPhase children)
     if(EQ.weapon&&EQ.weapon.enchant){
       vmSword.children.forEach(c=>{

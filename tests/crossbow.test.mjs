@@ -16,8 +16,13 @@ const r = await page.evaluate(() => {
   out.item = { skill: weaponSkill(xb), twoHand: !!xb.twoHand, ico: xb.ico, wType: xb.wType };
   EQ.weapon = xb; EQ.offhand = null; EQ.ammo = Object.assign({}, BOLT_IRON, { qty: 10 });
   drive(1);
+  // S1476 — the span drawn: the string's middle (in the kit's frame) and the bolt, on the first-person piece
+  const rig = () => { const k = vmSword.userData.kit, w = k && k.userData.xbow, P = w ? w.userData.xbowParts || {} : {}, s = P.xbowStringL; if (!s) return null;
+    const m = new THREE.Vector3(0, 1, 0).applyQuaternion(s.quaternion).multiplyScalar(s.scale.y).add(s.position);
+    return { mid: +m.y.toFixed(3), bolt: !!(P.xbowBolt && P.xbowBolt.visible), tip: +vmSword.userData.level.rotation.x.toFixed(3) }; };
+  out.rig0 = rig();
   out.fresh = { spanned: xbowSpanned(), move: commitMoveMult(), shot: xbowShoot(), qty: EQ.ammo.qty };
-  out.spanFrames = drive(240, () => xbowSpanned());
+  out.spanFrames = drive(240, n => { if (n === 60) out.rigMid = rig(); return xbowSpanned(); }); drive(1); out.rigSpanned = rig();
   out.moveSpanned = commitMoveMult();
   yaw = .4; pitch = .05; const keep = ZB.length; const shot = xbowShoot(), a = ZB[ZB.length - 1], u = ZB.length > keep ? a.userData : null;
   const cx = -Math.sin(yaw) * Math.cos(pitch), cy = Math.sin(pitch), cz = -Math.cos(yaw) * Math.cos(pitch), L = u ? Math.hypot(u.vx, u.vy, u.vz) : 1;
@@ -26,7 +31,7 @@ const r = await page.evaluate(() => {
   if (u) { a.parent && a.parent.remove(a); ZB.splice(ZB.indexOf(a), 1); }
   out.again = xbowShoot();
   // a blow at 1 s into the span starts it over; so does a roll
-  drive(60); const before = XBOW.spanT; hurtT = .4; drive(1); out.blow = { before: +before.toFixed(3), after: +XBOW.spanT.toFixed(3) };
+  drive(60, n => { if (n === 1) out.rigShot = rig(); }); const before = XBOW.spanT; hurtT = .4; drive(1); out.blow = { before: +before.toFixed(3), after: +XBOW.spanT.toFixed(3) };
   out.blowFrames = drive(240, () => xbowSpanned());
   XBOW.spanT = 0; drive(60); const b2 = XBOW.spanT; K['KeyW'] = true; startRoll(performance.now() / 1000, K); K['KeyW'] = false; const rolled = !!ROLL; drive(1);
   out.roll = { rolled, before: +b2.toFixed(3), after: +XBOW.spanT.toFixed(3) };
@@ -36,6 +41,12 @@ const r = await page.evaluate(() => {
   EQ.weapon = xb; out.xbArrows = _hasArrows();
   out.shop = { stocked: Object.values(SHOP_STOCK).some(s => Array.isArray(s) && s.some(i => i.name === 'Iron Bolt') && s.some(i => i.name === 'Iron Arrow')),
     price: BOLT_IRON.buyPrice === ARROW_IRON.buyPrice && BOLT_IRON.qty === ARROW_IRON.qty && BOLT_IRON.ammoType === 'bolt' };
+  // in third person: the driver's piece and the builder's copy of it both spanned, the string on the nut and the bolt laid
+  XBOW.spanT = XBOW_SPAN_S; thirdPerson = true; drive(3); { const R = TP.rig, at = o => { const P = o.userData.xbowParts || {}, s = P.xbowStringL; if (!s) return null;
+    const m = new THREE.Vector3(0, 1, 0).applyQuaternion(s.quaternion).multiplyScalar(s.scale.y).add(s.position); return { mid: +m.y.toFixed(3), bolt: !!(P.xbowBolt && P.xbowBolt.visible) }; };
+    const h = R && R.hbHeld ? R.hbHeld.find(h => h.o === R.weapon) : null;
+    out.tp = { drv: R && R.weapon && R.weapon.userData.xbow ? at(R.weapon.userData.xbow) : null, copy: h ? at(h.c) : 'none' }; }
+  thirdPerson = false;
   EQ.weapon = w0; EQ.ammo = a0; EQ.offhand = o0; drive(1);
   return out;
 });
@@ -47,6 +58,9 @@ check(`a click shoots one bolt at once at the full draw ×1.15 (×${r.shot.mult}
 check('then it is unspanned and a second click shoots nothing', !r.shot.after && !r.again, r);
 check(`a blow 1 s into the span starts it over (${r.blow.before} → ${r.blow.after}); then 2.0 s more`, r.blow.before > .9 && r.blow.after < .02 && Math.abs((r.blowFrames + 1) / 60 - 2) <= 2 / 60, r);
 check(`so does a roll (${r.roll.before} → ${r.roll.after})`, r.roll.rolled && r.roll.before > .9 && r.roll.after < .02, r.roll);
+check(`the span is drawn: braced at the prod with no bolt when taken (${r.rig0 && r.rig0.mid}), hauled back by 1 s (${r.rigMid && r.rigMid.mid}, the prod tipped ${r.rigMid && r.rigMid.tip}), on the nut with the bolt laid once spanned (${r.rigSpanned && r.rigSpanned.mid}), home again when shot (S1476)`,
+  r.rig0 && r.rig0.mid > .48 && !r.rig0.bolt && r.rigMid.mid < .4 && r.rigMid.mid > .17 && !r.rigMid.bolt && r.rigMid.tip > -1.4 && Math.abs(r.rigSpanned.mid - .163) < .002 && r.rigSpanned.bolt && Math.abs(r.rigSpanned.tip + 1.5) < .01 && r.rigShot.mid > .48 && !r.rigShot.bolt, r);
+check('in third person the carried crossbow is spanned too, the builder\'s copy as the driver\'s piece (S1476)', r.tp.drv && Math.abs(r.tp.drv.mid - .163) < .002 && r.tp.drv.bolt && (r.tp.copy === 'none' || (r.tp.copy && Math.abs(r.tp.copy.mid - .163) < .002 && r.tp.copy.bolt)), r.tp);
 check('a bow takes no bolts, a crossbow no arrows', !r.bowBolts && r.bowArrows && !r.xbArrows, r);
 check('bolts are sold beside arrows, the same dozen at the same price', r.shop.stocked && r.shop.price, r.shop);
 check('no page errors', g.errs.length === 0, g.errs);
