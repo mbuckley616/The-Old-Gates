@@ -977,6 +977,30 @@ function hoodLine(raw) { const pts = [raw[0]]; for (const q of raw.slice(1)) if 
   const c = new THREE.CatmullRomCurve3(pts); return c.getSpacedPoints(Math.max(4, Math.round(c.getLength() / .015))); }
 function turnOut(g) { const ix = g.index.array; for (let i = 0; i < ix.length; i += 3) { const t = ix[i + 1]; ix[i + 1] = ix[i + 2]; ix[i + 2] = t; } g.computeVertexNormals(); return g; }
 const lockMat = color => new THREE.MeshStandardMaterial({ map: lockTex(), color, roughness: .78 });
+// a braid's three locks and its core (Session 1501). The locks were laid on the braid's 1 cm line, about four and a half points to a
+// crossing, so the depth term (twice the crossing's rate) had two points a wave and each lock was a zigzag of straight sticks; round, apart
+// and with the hair's texture wound round them, they read as a chain of twisted links with daylight between. Now: the line is laid again
+// three times finer along a curve through it; each lock is an oval, wide in the braid's face and thin through it, so neighbours meet
+// edge to edge; the texture runs along the lock as combed hair does (no wind); and a darker core down the middle fills what shows between them.
+// pts: the braid's centre line; nrm(i): the outward normal at its point i; per: points to a crossing; tp(s): the taper at point s (a float)
+function braidLocks(pts, nrm, w, per, closed, tp, col, bone, mat) {
+  const SUB = 3, n = pts.length, M = closed ? n * SUB : (n - 1) * SUB + 1, curve = new THREE.CatmullRomCurve3(pts.map(p => p.clone()), closed, 'centripetal'), out = [];
+  const C = [], X = [], N2 = [], S = [];
+  for (let j = 0; j < M; j++) { const s = j / SUB, q = curve.getPoint(closed ? j / M : j / (M - 1)), i0 = Math.floor(s) % n, i1 = closed ? (i0 + 1) % n : Math.min(i0 + 1, n - 1), f = s - Math.floor(s);
+    const T = curve.getTangent(closed ? j / M : j / (M - 1)).normalize(), Nn = nrm(i0).clone().lerp(nrm(i1), f), x = T.clone().cross(Nn).normalize(); C.push(q); X.push(x); N2.push(x.clone().cross(T)); S.push(s); }
+  for (let i = 0; i < 3; i++) { const lk = [];
+    for (let j = 0; j < M; j++) { const t = tp(S[j]), ph = S[j] / per * Math.PI * 2 + i * Math.PI * 2 / 3; lk.push(C[j].clone().addScaledVector(X[j], Math.sin(ph) * w * .36 * t).addScaledVector(N2[j], Math.sin(2 * ph) * w * .16 * t)); }
+    const pos = [], uv = [], idx = [], sides = 6; let len = 0;
+    for (let j = 0; j < M; j++) { if (j) len += lk[j].distanceTo(lk[j - 1]); const T = (closed ? lk[(j + 1) % M].clone().sub(lk[(j + M - 1) % M]) : lk[Math.min(j + 1, M - 1)].clone().sub(lk[Math.max(j - 1, 0)])).normalize();
+      const W = N2[j].clone().cross(T).normalize(), Th = T.clone().cross(W), t = tp(S[j]);
+      for (let k = 0; k <= sides; k++) { const a = k / sides * Math.PI * 2, p = lk[j].clone().addScaledVector(W, Math.cos(a) * w * .4 * t).addScaledVector(Th, Math.sin(a) * w * .22 * t); pos.push(p.x, p.y, p.z); uv.push(k / sides, len * 14); }
+      if (j < M - 1 || closed) for (let k = 0; k < sides; k++) { const a = j * (sides + 1) + k, b = ((j + 1) % M) * (sides + 1) + k; idx.push(a, b, a + 1, a + 1, b, b + 1); } }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx);
+    const m = new THREE.SkinnedMesh(skinTo(turnOut(g), bone), mat); m.name = 'braid' + i; m.userData.axis = { line: lk, sides }; out.push(m); }
+  { const line = closed ? pts.concat([pts[0]]) : pts, rad = line.map((q, s) => w * .24 * tp(closed ? 1 : s)), core = new THREE.SkinnedMesh(skinTo(turnOut(tubeGeom(line, rad, 5)), bone), lockMat(col.clone().multiplyScalar(.55)));
+    core.name = 'braid3'; core.userData.axis = { line, sides: 5 }; out.push(core); }
+  return out;
+}
 // a line falling from a start under gravity, pushed off the body to a clearance
 function drape(S, start, dir0, L, clearAt, o = {}) {
   const line = [start.clone()], dir = dir0.clone().normalize(), step = .01;
@@ -1109,10 +1133,7 @@ function buildHair(P, G, heads, scalpTris, headB, rnd, checks = true) {
   const bodyOnly = surfGrid(P, PACK.G['body'], (x, y, z) => y > .25 && Math.abs(x) < .2);
   // the crown's three locks round the closed ring, a whole number of crossings so they meet where they began (no tie: its ends are tucked)
   if (crown) { const { line, n } = crown, per = n / Math.max(1, Math.round(n / 4.5)), w = crownW;
-    for (let i = 0; i < 3; i++) { const lk = [], rad = []; for (let s = 0; s <= n; s++) { const q = line[s % n], T = line[(s + 1) % n].clone().sub(line[(s + n - 1) % n]).normalize(), hit = S.near(q);
-        const Nn = hit ? q.clone().sub(hit.p).normalize() : q.clone().sub(hc).normalize(), X = T.clone().cross(Nn).normalize(), N2 = X.clone().cross(T), ph = s / per * Math.PI * 2 + i * Math.PI * 2 / 3;
-        lk.push(q.clone().addScaledVector(X, Math.sin(ph) * w * .36).addScaledVector(N2, Math.sin(2 * ph) * w * .16)); rad.push(w * .3); }
-      const m = new THREE.SkinnedMesh(skinTo(turnOut(tubeGeom(lk, rad, 7, 25 + i * 3)), headB), lm); m.name = 'braid' + i; m.userData.axis = { line: lk, sides: 7 }; out.push(m); }
+    out.push(...braidLocks(line, i => { const q = line[i], hit = S.near(q); return hit ? q.clone().sub(hit.p).normalize() : q.clone().sub(hc).normalize(); }, w, per, true, () => 1, col, headB, lm));
     { let lo = 1; for (const q of line) { const hit = heightOver(S, q); if (hit) lo = Math.min(lo, hit.h); } drapeMin = lo; } }
   for (const g of gather) {
     if (style === 'bun') { // a coil of one lock, two and a half turns, domed out from the head
@@ -1140,10 +1161,7 @@ function buildHair(P, G, heads, scalpTris, headB, rnd, checks = true) {
     // (the locks, the bun and the braid's lower tie turned out, Session 1255: wound inward on a single-sided material, each drew the far wall
     // of its own inside, lit from within, so a braid read as crumpled foil; the upper tie was turned out in Session 1154)
     const w = .034 * (.85 + .3 * len), endAt = line.length - 6;
-    for (let i = 0; i < 3; i++) { const lk = [], rad = []; for (let s = 0; s <= endAt; s++) { const T = (line[Math.min(s + 1, line.length - 1)].clone().sub(line[Math.max(0, s - 1)])).normalize(), hit = bodyOnly.near(line[s]);
-        const Nn = hit ? line[s].clone().sub(hit.p).normalize() : new THREE.Vector3(0, 0, -1), X = T.clone().cross(Nn).normalize(), N2 = X.clone().cross(T), taper = 1 - .45 * s / endAt, ph = s * .01 / .045 * Math.PI * 2 + i * Math.PI * 2 / 3;
-        lk.push(line[s].clone().addScaledVector(X, Math.sin(ph) * w * .36 * taper).addScaledVector(N2, Math.sin(2 * ph) * w * .16 * taper)); rad.push(w * .3 * taper * (s < 3 ? s / 3 * .5 + .5 : 1)); }
-      const m = new THREE.SkinnedMesh(skinTo(turnOut(tubeGeom(lk, rad, 7, 25 + i * 3)), headB), lm); m.name = 'braid' + i; m.userData.axis = { line: lk, sides: 7 }; out.push(m); }
+    out.push(...braidLocks(line.slice(0, endAt + 1), i => { const hit = bodyOnly.near(line[i]); return hit ? line[i].clone().sub(hit.p).normalize() : new THREE.Vector3(0, 0, -1); }, w, 4.5, false, s => (1 - .45 * s / endAt) * (s < 3 ? s / 3 * .5 + .5 : 1), col, headB, lm));
     { const band = line.slice(endAt - 1, endAt + 2), m = new THREE.SkinnedMesh(skinTo(turnOut(tubeGeom(band, band.map(() => w * .36), 10)), headB), tie); m.name = 'tie'; m.userData.axis = { line: band, sides: 10 }; out.push(m);
       const brush = []; for (let k = 0; k < 60; k++) { const a = rnd() * Math.PI * 2, pts = [], ns = []; for (let s = endAt; s < line.length; s++) { const f = (s - endAt) / (line.length - endAt), rr = w * .25 * (1 + f); pts.push(line[s].clone().add(new THREE.Vector3(Math.cos(a) * rr, 0, Math.sin(a) * rr))); ns.push(new THREE.Vector3(Math.cos(a), 0, Math.sin(a))); }
         brush.push({ pts, ns, w: .007, v0: .5, v1: 1 }); }
