@@ -736,6 +736,8 @@ window.addEventListener('keydown',e=>{if(!cookOpen)return;const c=e.code;let hit
 // 0.9 s breaks an ore at 35% + 0.5% a Mining point, rolled on seededRng('ore', the vein, its returns and the strike's count),
 // so a reload strikes the same ore at the same strike. `worldState.veins` (the world's): id → {n taken, s strikes, d day, e returns}.
 const VEIN_ORE_N=3,VEIN_DAYS=7,VEIN_STRIKE=.9,PICK_NAME='Pick';
+// S1495 — Seam (Mining 100): a vein holds 5
+function veinCap(){return perk('mining',100)?5:VEIN_ORE_N;}
 const ORE_DEF={copper:{name:'Copper Ore',col:0xc07040,price:3},tin:{name:'Tin Ore',col:0xb8b8a8,price:3},iron:{name:'Iron Ore',col:0x8a5a48,price:5},
   silver:{name:'Silver Ore',col:0xe0e4ec,price:8},mithril:{name:'Mithril Ore',col:0x4466cc,price:12},adamant:{name:'Adamant Ore',col:0x33aa33,price:18},
   obsidian:{name:'Obsidian',col:0x221830,price:24}};
@@ -774,22 +776,30 @@ function spawnChunkVeins(ch){
 function veinLive(v){return !v.g||!!(v.g.parent&&v.g.parent.parent);}
 // the vein's record, brought back if 7 days have passed since it was worked out
 function veinRec(v){const W=worldState.veins||(worldState.veins={});let r=W[v.id];
-  if(r&&r.n>=VEIN_ORE_N&&gameMinNow()/1440-r.d>=VEIN_DAYS){r={n:0,s:0,d:r.d,e:(r.e||0)+1};W[v.id]=r;}
+  if(r&&r.n>=veinCap()&&gameMinNow()/1440-r.d>=VEIN_DAYS){r={n:0,s:0,d:r.d,e:(r.e||0)+1};W[v.id]=r;}
   return r||{n:0,s:0,d:0,e:0};}
-function veinLeft(v){return VEIN_ORE_N-veinRec(v).n;}
+function veinLeft(v){return Math.max(0,veinCap()-veinRec(v).n);}
 function veinShow(v){if(!v.g)return;const left=veinLeft(v);v.g.userData.seams.forEach((s,i)=>s.visible=i<left);}
 function veinNear(){if(activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior()))return null;
   for(let i=VEINS.length-1;i>=0;i--){const v=VEINS[i];if(!veinLive(v)){VEINS.splice(i,1);continue;}if(Math.hypot(px-v.x,pz-v.z)<TOUCH+.5)return v;}return null;}
 // one strike at a vein: the outcome is the vein's seeded stream at this strike. Returns {ore, left} or {why}
 function strikeVein(v){
   if(!hasPick())return {why:'You need a pick.'};
-  let r=veinRec(v);if(r.n>=VEIN_ORE_N)return {why:'The vein is worked out.'};
+  let r=veinRec(v);if(r.n>=veinCap())return {why:'The vein is worked out.'};
   const it=oreItem(v.ore);if(!canCarry(it))return {why:'Too heavy to carry!'};
   const roll=seededRng('ore',v.id+':'+(r.e||0)+':'+r.s)();
   r={...r,s:r.s+1};const got=roll<.35+.005*skillLv('mining');
-  if(got){r.n++;r.d=Math.floor(gameMinNow()/1440);bagAdd(it);skillUse('mining',4);}else skillUse('mining',1);
+  /* S1495 — Mining 50: one ore in four comes double, on the strike's own second roll */
+  let two=false;if(got){two=perk('mining',50)&&seededRng('ore2',v.id+':'+(r.e||0)+':'+(r.s-1))()<.25;if(two)it.qty=2;r.n++;r.d=Math.floor(gameMinNow()/1440);bagAdd(it);skillUse('mining',4);}else skillUse('mining',1);
   (worldState.veins||(worldState.veins={}))[v.id]=r;veinShow(v);
-  return {ore:got?it.name:null,left:VEIN_ORE_N-r.n};}
+  return {ore:got?(two?'2 '+it.name:it.name):null,left:Math.max(0,veinCap()-r.n)};}
+// S1495 — Prospector (Mining 25): the veins within 40 m on the minimap (drawLocalMap's frame: north up, 58 m to the edge)
+function prospectorDots(ctx,size,radius){if(!perk('mining',25)||activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior()))return 0;
+  const s=size/(radius*2);let n=0;
+  for(const v of VEINS){if(!veinLive(v)||Math.hypot(v.x-px,v.z-pz)>40)continue;const x=size/2+(v.x-px)*s,y=size/2+(v.z-pz)*s;
+    ctx.fillStyle=veinLeft(v)>0?'#'+ORE_DEF[v.ore].col.toString(16).padStart(6,'0'):'#5a5a5a';ctx.strokeStyle='#111';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(x,y-3);ctx.lineTo(x+3,y);ctx.lineTo(x,y+3);ctx.lineTo(x-3,y);ctx.closePath();ctx.fill();ctx.stroke();n++;}
+  return n;}
 // working a vein: E starts it, E again, walking off, or the vein worked out stops it
 let MINE=null;
 function mineVein(v){if(MINE&&MINE.v===v){MINE=null;showMsg('You stop working the vein.','#c8b890');return;}
@@ -814,8 +824,9 @@ function minersPickFor(h){return h&&(h.type==='weapon'||h.type==='misc')?[{...PI
 // helm 2, chest 5, legs 3, feet 2, hands 1) and 30 game-minutes, and Smithing must stand at the metal's gate (SKILL_GATE,
 // the same gate that wearing it reads). A made piece is never enchanted, carries `made`, and sells back at 20%. A temper is
 // 3 ore of the piece's own metal, +8% attack or defence, three to a piece; the smith does it for 20 gold × tier instead.
-// Smithing: an ingot 2, a piece 10 + 5 × tier (the skills sheet). The grip's plank waits for the bench (session 6), and the
-// quality steps (*Fine work*, *Masterwork*) and *Smelter*'s and *Temper*'s numbers for the perks (session 7).
+// Smithing: an ingot 2, a piece 10 + 5 × tier (the skills sheet). The grip's plank waits for the bench (session 6).
+// S1495 — Smithing's perks: *Smelter* (25) 3 ore → 2 ingots; *Fine work* (50) a made piece is Fine, +10%; *Temper* (75) four
+// tempers; *Masterwork* (100) the first piece of each metal made after it is a Masterwork, +20% (`worldState.masterworks`).
 const FORGE_FEE=5,FORGE_MIN=30,TEMPER_ORE=3,TEMPER_STEP=.08,MADE_SELL=.2;
 const INGOT_DEF=[
   {tier:2,ore:[['copper',1],['tin',1]]},{tier:3,ore:[['iron',2]]},{tier:4,ore:[['iron',2]],charcoal:1},
@@ -840,26 +851,38 @@ let _forgeN=0;
 function forgeSmelt(tier){
   if(!forgeHere())return {made:false,why:'You need a forge.'};
   const D=INGOT_DEF.find(d=>d.tier===tier);if(!D)return {made:false,why:''};
-  for(const [k,n] of D.ore)if(oreCount(k)<n)return {made:false,why:`You need ${n} ${ORE_DEF[k].name.toLowerCase()}.`};
+  const two=smelterTwo(D);
+  if(!two)for(const [k,n] of D.ore)if(oreCount(k)<n)return {made:false,why:`You need ${n} ${ORE_DEF[k].name.toLowerCase()}.`};
   if(D.charcoal&&bagCount(b=>b.name===SURV_ITEMS.charcoal.name)<D.charcoal)return {made:false,why:'Steel needs a charcoal.'};
   const f=forgeFee();if(f)return {made:false,why:f};
-  for(const [k,n] of D.ore)bagTake(b=>b.ore===k,n);if(D.charcoal)bagTake(b=>b.name===SURV_ITEMS.charcoal.name,D.charcoal);
-  const it=ingotItem(tier);bagAdd(it);skillUse('smithing',2,'f'+(_forgeN++));
+  if(two)two.forEach(([k,n])=>bagTake(b=>b.ore===k,n));else for(const [k,n] of D.ore)bagTake(b=>b.ore===k,n);if(D.charcoal)bagTake(b=>b.name===SURV_ITEMS.charcoal.name,D.charcoal);
+  const it=ingotItem(tier,two?2:1);bagAdd(it);skillUse('smithing',2,'f'+(_forgeN++));
   return {made:true,item:it};}
+// Smelter: 3 ore of the recipe make 2 ingots when you have them (bronze: 3 of copper and tin, one of each at least, the more
+// plentiful taken twice); the charcoal is one a smelt either way. Returns the ore to take, or null for the plain 2 → 1
+function smelterTwo(D){if(!perk('smithing',25))return null;
+  if(D.ore.length===1){const [k]=D.ore[0];return oreCount(k)>=3?[[k,3]]:null;}
+  const [[a],[b]]=D.ore,na=oreCount(a),nb=oreCount(b);if(na<1||nb<1||na+nb<3)return null;return na>=nb?[[a,2],[b,1]]:[[a,1],[b,2]];}
+// a made piece's quality: Masterwork once a metal at 100, else Fine at 50, else plain
+function forgeQuality(tier){const M=worldState.masterworks||[];if(perk('smithing',100)&&!M.includes(tier))return 'master';return perk('smithing',50)?'fine':null;}
+const FORGE_QUALITY={fine:{mult:1.1,word:'Fine'},master:{mult:1.2,word:'Masterwork'}};
+function forgeQualityApply(it,q){const Q=FORGE_QUALITY[q];if(!Q)return it;it.quality=q;it.name=`${Q.word} ${it.name}`;
+  if(it.atk)it.atk=it.atk.map(v=>Math.round(v*Q.mult));if(it.def)it.def=Math.max(1,Math.round(it.def*Q.mult));return it;}
 // make a piece of one type in one metal. Returns {made, item, why}
 function forgeMake(type,tier){
   if(!forgeHere())return {made:false,why:'You need a forge.'};
   const F=FORGE_TYPES.find(f=>f.T.type===type);if(!F||!INGOT_DEF.some(d=>d.tier===tier))return {made:false,why:''};
   const gate=SKILL_GATE[tier]||0;if(skillLv('smithing')<gate)return {made:false,why:`${MATERIALS[tier-1].name} asks Smithing ${gate} (you have ${skillLv('smithing')}).`};
   const n=forgeIngots(F.T);if(ingotCount(tier)<n)return {made:false,why:`You need ${n} ${MATERIALS[tier-1].name.toLowerCase()} ingot${n>1?'s':''}.`};
-  const it=makeItem(tier,F.T,null,F.arm);it.made=true;it.sellMult=MADE_SELL;
+  const it=makeItem(tier,F.T,null,F.arm);it.made=true;it.sellMult=MADE_SELL;const q=forgeQuality(tier);forgeQualityApply(it,q);
   if(!canCarry(it))return {made:false,why:'Too heavy to carry!'};
   const f=forgeFee();if(f)return {made:false,why:f};
   bagTake(b=>b.ingot===tier,n);bagAdd(it);skillUse('smithing',10+5*tier,'f'+(_forgeN++));
+  if(q==='master')(worldState.masterworks||(worldState.masterworks=[])).push(tier);
   if(typeof advanceClock==='function')advanceClock(FORGE_MIN);
   return {made:true,item:BAG[BAG.length-1]};}
 // a piece's tempers: +8% each on the attack or defence it was made with, three to a piece
-function temperMax(){return 3;}
+function temperMax(){return perk('smithing',75)?4:3;}
 function temperable(it){return !!(it&&it.type==='equip'&&it.tier>=2&&it.tier<=10&&(it.atk||it.def)&&!it.cloak&&(it.tempers||0)<temperMax());}
 function temperApply(it){if(it.atk&&!it.baseAtk)it.baseAtk=it.atk.slice();if(it.def&&it.baseDef==null)it.baseDef=it.def;
   it.tempers=(it.tempers||0)+1;const k=1+TEMPER_STEP*it.tempers;

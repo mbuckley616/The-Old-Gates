@@ -54,12 +54,26 @@ const r = await page.evaluate(() => {
   const rate = lv => { SKILLS.mining = { lv, p: 0 }; let got = 0; const N = 600; for (let i = 0; i < N; i++) { const t = { id: 'rate:' + lv + ':' + i, ore: 'iron', g: null };
     worldState.veins[t.id] = undefined; delete worldState.veins[t.id]; BAG.length = 0; bagAdd({ ...PICK_ITEM }); if (strikeVein(t).ore) got++; } return +(got / N).toFixed(3); };
   out.rate5 = rate(5); out.rate100 = rate(100);
+  // ── Mining's perks (S1495): Seam, the doubled ore, Prospector ──
+  const t5 = { id: 'seam:0', ore: 'iron', g: null }; delete worldState.veins[t5.id]; BAG.length = 0; bagAdd({ ...PICK_ITEM });
+  SKILLS.mining = { lv: 99, p: 0 }; const cap99 = veinLeft(t5); SKILLS.mining = { lv: 100, p: 0 }; let n5 = 0;
+  for (let i = 0; i < 400 && veinLeft(t5) > 0; i++) if (strikeVein(t5).ore) n5++;
+  out.seam = { cap99, cap100: 5 - (worldState.veins[t5.id] || { n: 0 }).n + n5, ores: n5, spent: strikeVein(t5).why };
+  const dbl = lv => { SKILLS.mining = { lv, p: 0 }; let got = 0, two = 0; for (let i = 0; i < 800; i++) { const t = { id: 'dbl:' + lv + ':' + i, ore: 'iron', g: null }; delete worldState.veins[t.id];
+    BAG.length = 0; bagAdd({ ...PICK_ITEM }); const s = strikeVein(t); if (s.ore) { got++; if (bagCount(b => b.ore === 'iron') === 2) two++; } } return { got, two }; };
+  out.dbl49 = dbl(49); out.dbl50 = dbl(50);
+  const cv = document.createElement('canvas'); cv.width = cv.height = 104; const ctx = cv.getContext('2d');
+  px = v.x + 1; pz = v.z; SKILLS.mining = { lv: 24, p: 0 }; out.dots24 = prospectorDots(ctx, 104, 58);
+  SKILLS.mining = { lv: 25, p: 0 }; out.dots25 = prospectorDots(ctx, 104, 58); out.within40 = VEINS.filter(u => veinLive(u) && Math.hypot(u.x - px, u.z - pz) <= 40).length;
   // ── the shops ──
   out.pickAt = { weapon: minersPickFor({ type: 'weapon' }).length, misc: minersPickFor({ type: 'misc' }).length, potion: minersPickFor({ type: 'potion' }).length };
   out.oreW = oreItem('iron').weight; out.pickW = PICK_ITEM.weight; out.pickPrice = PICK_ITEM.buyPrice;
   return out;
 });
 console.log(JSON.stringify(r));
+check('Seam (100): a vein holds 5 (3 at 99)', r.seam.cap99 === 3 && r.seam.ores === 5 && /worked out/.test(r.seam.spent), r.seam);
+check('Mining 50: about one ore in four comes double; none at 49', r.dbl49.two === 0 && Math.abs(r.dbl50.two / r.dbl50.got - .25) < .07, [r.dbl49, r.dbl50]);
+check('Prospector (25): the veins within 40 m on the minimap; none at 24', r.dots24 === 0 && r.dots25 === r.within40 && r.dots25 >= 1, [r.dots24, r.dots25, r.within40]);
 check('veins lie about the home province', r.n >= 2, r.n);
 check('2 to 5 a chunk', r.perMin >= 2 && r.perMax <= 5, [r.perMin, r.perMax]);
 check('each keyed <cx,cz>:<i>', r.ids);

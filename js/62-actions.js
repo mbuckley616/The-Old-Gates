@@ -856,7 +856,7 @@ function updateHUD(){
 
 const mmC=document.getElementById('mm').getContext('2d');
 function drawMM(){
-  if(activeZoneId==='world'&&lid==='overworld'&&typeof WORLD!=='undefined'){WORLD.drawMinimap(mmC,104);return;} // v80 S12 — local map
+  if(activeZoneId==='world'&&lid==='overworld'&&typeof WORLD!=='undefined'){WORLD.drawMinimap(mmC,104);if(typeof prospectorDots==='function')prospectorDots(mmC,104,58);return;} /* S1495 — Prospector's veins */ // v80 S12 — local map
   mmC.clearRect(0,0,104,104);mmC.fillStyle='rgba(0,0,0,.78)';mmC.fillRect(0,0,104,104);
   let sc=1;
   if(lid==='overworld'){

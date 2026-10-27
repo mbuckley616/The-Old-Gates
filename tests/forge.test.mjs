@@ -48,6 +48,23 @@ const r = await page.evaluate(() => {
   BAG.length = 0; _applyLoadData(d);
   const back = BAG.find(b => b.made); out.reload = back && { name: back.name, tempers: back.tempers, atk: back.atk, sale: sellPrice(back) };
   out.oreBack = BAG.some(b => b.ore === 'iron') && BAG.some(b => b.ingot === 3);
+  // ── Smithing's perks (S1495) ──
+  lid = 'int_test'; currentHouse = { type: 'weapon', name: 'The Forge', keeper: 'Bram', tagline: '"Iron."' }; gold = 500; BAG.length = 0; worldState.masterworks = [];
+  const P = {}; S(24); bagAdd(oreItem('iron', 3)); forgeSmelt(3); P.smelt24 = { ingots: bagCount(b => b.ingot === 3), ore: bagCount(b => b.ore === 'iron') };
+  BAG.length = 0; S(25); bagAdd(oreItem('iron', 3)); forgeSmelt(3); P.smelt25 = { ingots: bagCount(b => b.ingot === 3), ore: bagCount(b => b.ore === 'iron') };
+  bagAdd(oreItem('iron', 2)); forgeSmelt(3); P.smelt25two = bagCount(b => b.ingot === 3);
+  bagAdd(oreItem('copper', 2)); bagAdd(oreItem('tin', 1)); forgeSmelt(2); P.bronze = { ingots: bagCount(b => b.ingot === 2), cu: bagCount(b => b.ore === 'copper'), sn: bagCount(b => b.ore === 'tin') };
+  BAG.length = 0; bagAdd(ingotItem(3, 12)); const base = makeItem(3, WEAPON_TYPES.find(t => t.type === 'Sword'), null, false);
+  S(49); P.plain = forgeMake('Sword', 3).item.name;
+  S(50); const fine = forgeMake('Sword', 3).item; P.fine = { name: fine.name, atk: fine.atk, base: base.atk, q: fine.quality };
+  S(74); P.max74 = temperMax(); S(75); P.max75 = temperMax();
+  S(100); const dg = makeItem(3, WEAPON_TYPES.find(t => t.type === 'Dagger'), null, false);
+  const m1 = forgeMake('Dagger', 3).item, m2 = forgeMake('Dagger', 3).item;
+  P.master = { a: m1.name, aAtk: m1.atk, b: m2.name, bAtk: m2.atk, base: dg.atk, kept: (worldState.masterworks || []).slice() };
+  const d2 = JSON.parse(ssStringify(_buildSavePayload())); BAG.length = 0; _applyLoadData(d2);
+  const fb2 = BAG.find(b => b.quality === 'fine' && b.weaponType === 'Sword'); P.reload = fb2 && { name: fb2.name, atk: fb2.atk, kept: (worldState.masterworks || []).slice() };
+  P.charKey = !!SS_CHAR_WS.masterworks;
+  out.perks = P;
   // ── the page (the load set where you stand; back into the smith's room) ──
   lid = 'int_test'; currentHouse = { type: 'weapon', name: 'The Forge', keeper: 'Bram', tagline: '"Iron."' };
   bagAdd(found); openShop(); const fb = document.getElementById('sh-forge'); out.tab = !!fb && fb.style.display !== 'none';
@@ -75,6 +92,14 @@ check('a temper is +8% and takes 3 ore', r.t1.done && r.t1.atk[1] === Math.round
 check('the smith\'s temper costs 20 gold × tier; three is the most', r.t3.done && r.t3.tempers === 3 && r.t3.paid === 60 && r.t3.atk[1] === Math.round(r.a0[1] * 1.24) && /no more/.test(r.t4), r.t3);
 check('the save keeps the made flag, the tempers and the 20% sale', r.reload && r.reload.tempers === 3 && r.reload.atk[1] === r.t3.atk[1] && r.reload.sale === r.sale.made, r.reload);
 check('ore and an ingot keep their kinds through the save', r.oreBack);
+const P = r.perks;
+check('below Smithing 25, 3 iron ore smelt one ingot', P.smelt24.ingots === 1 && P.smelt24.ore === 1, P.smelt24);
+check('Smelter (25): 3 iron ore make 2 ingots; 2 ore still make 1', P.smelt25.ingots === 2 && P.smelt25.ore === 0 && P.smelt25two === 3, P);
+check('Smelter: 2 copper and a tin make 2 bronze ingots', P.bronze.ingots === 2 && P.bronze.cu === 0 && P.bronze.sn === 0, P.bronze);
+check('Fine work (50): a made sword is Fine, +10%; at 49 plain', P.plain === 'Iron Sword' && P.fine.name === 'Fine Iron Sword' && P.fine.atk[1] === Math.round(P.fine.base[1] * 1.1) && P.fine.atk[0] === Math.round(P.fine.base[0] * 1.1), P);
+check('Temper (75): four tempers', P.max74 === 3 && P.max75 === 4, P);
+check('Masterwork (100): the first iron piece is a Masterwork, +20%; the next is Fine', P.master.a === 'Masterwork Iron Dagger' && P.master.aAtk[1] === Math.round(P.master.base[1] * 1.2) && P.master.b === 'Fine Iron Dagger' && P.master.kept.join() === '3', P.master);
+check('the save keeps a Fine blade\'s step and the masterworks (the character\'s)', P.reload && P.reload.atk.join() === P.fine.atk.join() && P.reload.kept.join() === '3' && P.charKey, P.reload);
 check('the smith\'s shop has a Forge tab; it opens the forge\'s page', r.tab && r.page && r.closed, { tab: r.tab, page: r.page, closed: r.closed });
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
