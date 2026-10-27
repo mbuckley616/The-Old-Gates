@@ -751,13 +751,30 @@ function veinTier(x,z){let t=typeof worldTierAt==='function'?worldTierAt(x,z):1;
   return Math.max(1,Math.min(4,t|0||1));}
 function veinOre(id,tier){const T=VEIN_TABLE[tier]||VEIN_TABLE[1];let r=seededRng('vein',id)();for(const [k,w] of T){r-=w;if(r<=0)return k;}return T[T.length-1][0];}
 const VEINS=[];
-let _veinGeo=null;const _veinMat={};
-function veinMesh(v){if(!_veinGeo)_veinGeo={rock:new THREE.IcosahedronGeometry(.55,0),seam:new THREE.OctahedronGeometry(.2,0)};
-  const rk=_veinMat.rock||(_veinMat.rock=new THREE.MeshLambertMaterial({color:0x6a6460,flatShading:true}));
-  const sm=_veinMat[v.ore]||(_veinMat[v.ore]=new THREE.MeshLambertMaterial({color:ORE_DEF[v.ore].col,flatShading:true}));
-  const g=new THREE.Group();const a=new THREE.Mesh(_veinGeo.rock,rk);a.scale.set(1.2,.8,1);g.add(a);
-  for(let i=0;i<3;i++){const s=new THREE.Mesh(_veinGeo.seam,sm);const t=i*2.1;s.position.set(Math.cos(t)*.42,.18+i*.08,Math.sin(t)*.42);g.add(s);}
-  g.userData.seams=g.children.slice(1);g.position.set(v.x,worldH(v.x,v.z)-.12,v.z);g.rotation.y=v.ph;return g;}
+// S1498 (look) — a vein is one mesh: the rock and its three seams merged, coloured by vertex, on one shared material, so a chunk's
+// 2–5 veins are 2–5 draw calls and not four each (S1491's rock and seams were 460 of Dunmore's 1,150 at noon, most of them
+// 120–440 m off). The rock is an icosahedron of 80 faces pushed in and out by its own corners, grey with a paler crown; the seams
+// are stretched octahedra set into its flank. A seam goes as its ore is taken: the geometry is the one for that ore and that many
+// seams (`_veinGeo[ore:n]`, the rock's faces first). Past VEIN_FAR the vein is not drawn (a THREE.LOD with nothing at that level).
+const VEIN_FAR=80;
+let _veinGeo=null,_veinMat=null;
+function veinGeo(ore,n){const G=_veinGeo||(_veinGeo={});const k=ore+':'+n;if(G[k])return G[k];
+  if(!G._rock){const g=new THREE.IcosahedronGeometry(.55,1).toNonIndexed(),p=g.attributes.position,c=[],v=new THREE.Vector3();
+    const h=(x,y,z)=>{const t=Math.sin(x*127.1+y*311.7+z*74.7)*43758.5453;return t-Math.floor(t);};
+    for(let i=0;i<p.count;i++){v.fromBufferAttribute(p,i);const d=.82+.36*h(+v.x.toFixed(3),+v.y.toFixed(3),+v.z.toFixed(3));v.multiplyScalar(d);v.set(v.x*1.25,v.y*.75,v.z*1.05);p.setXYZ(i,v.x,v.y,v.z);}
+    for(let f=0;f<p.count;f+=3){const y=(p.getY(f)+p.getY(f+1)+p.getY(f+2))/3,k2=.3+.08*h(f,1,2)+.08*Math.max(0,y)/.4;for(let j=0;j<3;j++)c.push(k2,k2*.97,k2*.93);}
+    g.setAttribute('color',new THREE.Float32BufferAttribute(c,3));g.computeVertexNormals();G._rock=g;
+    G._seams=[0,1,2].map(i=>{const s=new THREE.OctahedronGeometry(.2,0).toNonIndexed(),t=i*2.1;s.scale(1,.6,1.5);s.rotateY(-t);s.rotateZ(.35);s.translate(Math.cos(t)*.44,.14+i*.08,Math.sin(t)*.44);return s;});}
+  const col=new THREE.Color(ORE_DEF[ore]?ORE_DEF[ore].col:0x888888),parts=[G._rock,...G._seams.slice(0,n)];let N=0;parts.forEach(q=>N+=q.attributes.position.count);
+  const pos=new Float32Array(N*3),nor=new Float32Array(N*3),cc=new Float32Array(N*3);let o=0;
+  parts.forEach((q,pi)=>{const P=q.attributes.position,Nn=q.attributes.normal,C=q.attributes.color;for(let i=0;i<P.count;i++,o++){pos[o*3]=P.getX(i);pos[o*3+1]=P.getY(i);pos[o*3+2]=P.getZ(i);
+    nor[o*3]=Nn.getX(i);nor[o*3+1]=Nn.getY(i);nor[o*3+2]=Nn.getZ(i);const sh=pi?.85+.3*((i>>1)%2):1;if(C){cc[o*3]=C.getX(i);cc[o*3+1]=C.getY(i);cc[o*3+2]=C.getZ(i);}else{cc[o*3]=col.r*sh;cc[o*3+1]=col.g*sh;cc[o*3+2]=col.b*sh;}}});
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));g.setAttribute('normal',new THREE.BufferAttribute(nor,3));g.setAttribute('color',new THREE.BufferAttribute(cc,3));g.computeBoundingSphere();
+  return G[k]=g;}
+function veinMesh(v){const M=_veinMat||(_veinMat=new THREE.MeshLambertMaterial({vertexColors:true,flatShading:true}));
+  const m=new THREE.Mesh(veinGeo(v.ore,3),M);m.name='vein';m.castShadow=true;m.receiveShadow=true;const s=.9+.25*((v.ph*7.3)%1);m.scale.set(s,s,s);
+  const g=new THREE.LOD();g.addLevel(m,0);g.addLevel(new THREE.Object3D(),VEIN_FAR);g.userData.mesh=m;g.userData.shown=3;
+  g.position.set(v.x,worldH(v.x,v.z)-.12,v.z);g.rotation.y=v.ph;return g;}
 // a chunk's veins, when it builds (called beside spawnChunkHerbs)
 function spawnChunkVeins(ch){
   if(typeof hash01!=='function'||typeof slopeNormalY!=='function')return;
@@ -779,7 +796,7 @@ function veinRec(v){const W=worldState.veins||(worldState.veins={});let r=W[v.id
   if(r&&r.n>=veinCap()&&gameMinNow()/1440-r.d>=VEIN_DAYS){r={n:0,s:0,d:r.d,e:(r.e||0)+1};W[v.id]=r;}
   return r||{n:0,s:0,d:0,e:0};}
 function veinLeft(v){return Math.max(0,veinCap()-veinRec(v).n);}
-function veinShow(v){if(!v.g)return;const left=veinLeft(v);v.g.userData.seams.forEach((s,i)=>s.visible=i<left);}
+function veinShow(v){if(!v.g)return;const n=Math.min(3,veinLeft(v));v.g.userData.shown=n;v.g.userData.mesh.geometry=veinGeo(v.ore,n);}
 function veinNear(){if(activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior()))return null;
   for(let i=VEINS.length-1;i>=0;i--){const v=VEINS[i];if(!veinLive(v)){VEINS.splice(i,1);continue;}if(Math.hypot(px-v.x,pz-v.z)<TOUCH+.5)return v;}return null;}
 // one strike at a vein: the outcome is the vein's seeded stream at this strike. Returns {ore, left} or {why}

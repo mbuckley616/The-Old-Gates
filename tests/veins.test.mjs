@@ -24,6 +24,10 @@ const r = await page.evaluate(() => {
   out.byTable = live.every(v => VEIN_TABLE[v.tier].some(([k]) => k === v.ore));
   out.tiers = [...new Set(live.map(v => v.tier))].sort();
   out.mesh = live.filter(v => v.g && v.g.parent).length;
+  // S1498 — one mesh a vein, not drawn past VEIN_FAR
+  out.one = live.map(v => { let n = 0; v.g.traverse(o => { if (o.isMesh) n++; }); return n; });
+  { const v = live[0], c = new THREE.PerspectiveCamera(), at = d => { c.position.set(v.x + d, worldH(v.x, v.z) + 1.6, v.z); c.updateMatrixWorld(true); v.g.updateMatrixWorld(true); v.g.update(c); return v.g.userData.mesh.visible; };
+    out.lod = [at(10), at(VEIN_FAR + 10), at(10)]; out.full = v.g.userData.mesh.geometry.attributes.position.count; }
   // ── each tier's metals, over 400 ids ──
   out.metals = {};
   for (const t of [1, 2, 3, 4]) { const c = {}; for (let i = 0; i < 400; i++) { const k = veinOre('t:' + i, t); c[k] = (c[k] || 0) + 1; } out.metals[t] = c; }
@@ -35,7 +39,7 @@ const r = await page.evaluate(() => {
   bagAdd({ ...PICK_ITEM }); SKILLS.mining = { lv: 25, p: 0 };
   const p0 = SKILLS.mining.p; let strikes = 0, ores = 0, seq = [];
   while (veinLeft(v) > 0 && strikes < 200) { const s = strikeVein(v); strikes++; seq.push(s.ore ? 1 : 0); if (s.ore) ores++; }
-  out.work = { strikes, ores, left: veinLeft(v), bag: bagCount(b => b.ore === v.ore), seams: v.g ? v.g.userData.seams.filter(s => s.visible).length : -1,
+  out.work = { strikes, ores, left: veinLeft(v), bag: bagCount(b => b.ore === v.ore), seams: v.g ? v.g.userData.shown : -1, bare: v.g ? v.g.userData.mesh.geometry.attributes.position.count : -1,
     rec: worldState.veins[v.id], learned: SKILLS.mining.p > p0 || SKILLS.mining.lv > 25 };
   out.spent = strikeVein(v).why;
   // ── back after 7 days ──
@@ -80,6 +84,8 @@ check('each keyed <cx,cz>:<i>', r.ids);
 check('on the steepest of the chunk\'s tries', r.steep);
 check('each vein\'s metal is on its tier\'s row', r.byTable, r.tiers);
 check('each vein is drawn in its chunk', r.mesh === r.n, r.mesh);
+check('each vein is one mesh, the rock and its seams (one draw call)', r.one.length && r.one.every(n => n === 1), r.one);
+check(`a vein is drawn within ${80} m and not past it`, r.lod.join() === 'true,false,true', r.lod);
 const M = r.metals;
 check('tier 1: copper and tin, iron one in four', !M[1].silver && Math.abs(M[1].iron / 400 - .25) < .07 && M[1].copper > 100 && M[1].tin > 100, M[1]);
 check('tier 2: iron and silver', Object.keys(M[2]).sort().join() === 'iron,silver', M[2]);
@@ -88,7 +94,7 @@ check('tier 4: mithril, adamant and obsidian', Object.keys(M[4]).sort().join() =
 check('the vein is found at hand', r.near);
 check('no pick, no strike', r.noPick === 'You need a pick.', r.noPick);
 check('a vein gives 3 ore, then none', r.work && r.work.ores === 3 && r.work.left === 0 && r.work.bag === 3 && r.spent === 'The vein is worked out.', [r.work, r.spent]);
-check('the seams go as the ore is taken', r.work && r.work.seams === 0, r.work && r.work.seams);
+check('the seams go as the ore is taken', r.work && r.work.seams === 0 && r.work.bare === r.full - 72, r.work && [r.work.seams, r.work.bare, r.full]);
 check('a strike teaches Mining', r.work && r.work.learned);
 check('worked out at day 6, back at day 7', r.day6 === 0 && r.day7 === 3, [r.day6, r.day7]);
 check('the save keeps the vein\'s strikes', r.reload.rec && r.reload.rec.s === 2, r.reload.rec);
