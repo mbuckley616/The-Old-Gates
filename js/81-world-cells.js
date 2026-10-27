@@ -76,6 +76,7 @@
     irish:[['Bally','Kil','Dun','Carrig','Glen','Rath','Cnoc','Inis','Cluain','Lis','Ard','Tully'],['more','beg','ard','ross','owen','shane','derry','carra','ree','lough','nagh','keel']],
     french:[['Saint-','Mont','Ville','Château','Pont','Val','Beau','Fort','Bel','Clair'],['ferrand','rouge','clair','neuf','ancy','argent','brun','vert','mont','lac']],
     anglo:[['Ash','Wulf','Ealdor','Grim','Stan','Wood','Hag','Black','Ox','Bran'],['ford','ham','wick','thorpe','burgh','mere','stead','ley','worth','den']],
+    aurennais:[['Al','Qar','Ser','Tam','Ner','Phar','Sel','Mas','Hel','Dar','Kef','Zar'],['ia','ara','ion','assa','enna','is','ona','ouda','ane','oum','ira','os']], /* S1474 — Aurenne's own register (the Aurennais Register, §2) */
   };
   // v80 S442 — after a hyphen the name takes a capital (Saint-Rouge); no draw changes (quest review run 6, Finding 8)
   function genName(r,reg){const s=SYL[reg]||SYL.irish;const a=s[0][Math.floor(r()*s[0].length)];let k=Math.floor(r()*s[1].length);if(a.replace('-','').toLowerCase()===s[1][k])k=(k+1)%s[1].length;const b=s[1][k];return a.endsWith('-')?a+b.charAt(0).toUpperCase()+b.slice(1):a+b;}
@@ -111,6 +112,7 @@
     if(reg==='irish')A.forEach(a=>B.forEach(b=>long.push(a+'na'+b)));
     else if(reg==='french')short.forEach(n=>['-sur-Mer','-le-Vieux','-la-Forêt','-en-Val','-les-Prés','-sous-Bois'].forEach(q=>long.push(n+q)));
     else if(reg==='anglo')A.forEach(a=>B.forEach(b=>long.push(a+'en'+b)));
+    else if(reg==='aurennais')short.forEach(n=>{[' Maior',' Minor',' Paralia',' al-Qasr',' al-Bir'].forEach(q=>long.push(n+q));long.push('Per-'+n);});
     else A.forEach(a=>A.forEach(a2=>{if(a2!==a)B.forEach(b=>long.push(a+a2.toLowerCase()+b));}));
     return [short,long];}
   function uniqueSiteNames(){
@@ -291,11 +293,11 @@
   const RV_STEP=80,RV_T=1e6/(RV_STEP*RV_STEP);              // the lattice; 156 nodes of catchment (1 km²) make a river
   const RV_NAV=16;                                             // a ship (13 by 4.4) needs sixteen units of water
   const rvWidth=a=>2+6.5*Math.log(1+a*RV_STEP*RV_STEP/400000); // catchment (nodes) → wet width: 10u at 1 km², 16u at 3.2 km², 25u at 12 km²
-  const RIVER_NAMES={gatelands:['An Dubh','An Bhán','An Fhada','An Ghlas','An Rua','An Chaol'],mark:['Blackwater','Wulfwater','Greywater','Stanwater','Hagwater','Oxwater'],aurenne:['La Dorée','La Blanche','La Sauvage','La Verte','La Lente','La Claire']};
+  const RIVER_NAMES={gatelands:['An Dubh','An Bhán','An Fhada','An Ghlas','An Rua','An Chaol'],mark:['Blackwater','Wulfwater','Greywater','Stanwater','Hagwater','Oxwater'],aurenne:['Chrysa','Albana','Agria','Khadra','Lenta','Safia']}; /* S1474 — the Aurennais Register, §3 */
   // a feature's word is its people's (quest review, Finding 9): a generated culture takes its nation's people's register
-  const PEAK_FORM={irish:[n=>`Sliabh ${n}`,n=>`Cnoc ${n}`],french:[n=>`Mont ${n}`,n=>`Pic ${n}`],anglo:[n=>`${n} Fell`,n=>`${n} Tor`]};
-  const LAKE_FORM={irish:n=>`Loch ${n}`,french:n=>`Lac ${n}`,anglo:n=>/mere$/.test(n)?`${n} Water`:`${n} Mere`};
-  const REG_OF_PEOPLE={gatelander:'irish',markman:'anglo',aurennais:'french',oldblood:'irish'};
+  const PEAK_FORM={irish:[n=>`Sliabh ${n}`,n=>`Cnoc ${n}`],french:[n=>`Mont ${n}`,n=>`Pic ${n}`],anglo:[n=>`${n} Fell`,n=>`${n} Tor`],aurennais:[n=>`Jebel ${n}`,n=>`Akra ${n}`]};
+  const LAKE_FORM={irish:n=>`Loch ${n}`,french:n=>`Lac ${n}`,anglo:n=>/mere$/.test(n)?`${n} Water`:`${n} Mere`,aurennais:n=>`Birket ${n}`};
+  const REG_OF_PEOPLE={gatelander:'irish',markman:'anglo',aurennais:'aurennais',oldblood:'irish'};
   function formReg(reg,i,j){return PEAK_FORM[reg]?reg:REG_OF_PEOPLE[nationOf(i,j).people]||'irish';}
   function polyDistM(pts,x,z,m){ // polyDist with its own bbox margin (polyDist rejects beyond 80u; a range reaches 520)
     let best=1e9;
