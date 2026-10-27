@@ -1171,3 +1171,68 @@ A playtest run (the last entry was the new look). Six boots of the new look, eve
 
 ### Backlog notes (not changed)
 - Nothing done-but-unmarked found this run.
+
+## 2026-10-27 — The new look: light.html's three rooms at night under #765's options; the crown braid, the plait and the shaved sides from the builder's pictures; Eoin's Farm at Salthaven (the house, the byre and the barn, by day and at 23h) and a Markish longhouse in the game; the spear and crossbow from their own pictures (build s959, read to Session 1483)
+
+This is the new-look turn. I opened `light.html` over http with the concept artist's own `light-shoot.mjs` at 1280×720. I took the cottage at night under C (*eye*) and B (*sources*), the cottage at noon under C, the longhouse at night under C and A (*even*), and Aurenne's house at night and golden hour under C. In the game, on the default look, I went to the first Gatelands village with a farm (Salthaven, Eoin's Farm). I looked at it from the road at 10h and 22h30, then went into the farmhouse at 12h and 23h, the byre at 12h and 23h and the barn at 12h and 23h. I also went into a Markish longhouse (Dáire's House in c2_1_s7, one of the town's 30 halls) at 12h and 23h. The hair styles (S1443–S1449), the spear and the crossbow (S1458–S1476) are judged from their builders' committed pictures, not shot again. The harness ran (`export` 1/1). Nothing threw on any page or in the game (`pageerror` empty over the whole run).
+
+**Light indoors, for #765** (`docs/critic/2026-10-27-light-*.jpg`; OG-141, sheet P5, *Homes & living spaces*). The medians I read back match the decision's own numbers. Cottage C at night was 43 against 65 at noon. Cottage B at night was 35. Aurenne's house C at night was 37 against 58 at golden hour.
+- Under C the cottage at night is the best of the three: the hearth leads, the whitewash stays cream, and the table and the dresser's corner still read (`-light-cot-night-eye.jpg`). That is P5's *Cottage Home — Gatelands*.
+- C does not carry to the longhouse. Its median at night is **15**, against the cottage's 43 (`-light-lh-night-eye.jpg`). Past the fire the side benches are lost, and the floor between you and the hearth is one hard black wedge: the long hearth's kerb stands higher than the fire's light and shadows the boards toward the door. P5's longhouse is "closed and fire-lit". Its fire lights the floor round it, and the kerb should not throw a shadow as long as the hall. Under A (even) the median is 33 and the wedge is still there (`-light-lh-night-even.jpg`), so it is the fire's height, not the exposure.
+- The boards in both longhouse frames ripple with moiré from wall to wall. That may be software GL's filtering, not the texture, but every longhouse frame shows it.
+- Aurenne's house under C at night reads plainly as night, with the tiles and the bench still there. The lamp is a white box with no glow round it.
+- My read for Michael: C is right for the cottage and Aurenne's house. The longhouse needs its own fire raised, or a second low light, before C will hold there. 23h in the game's longhouse is already darker than the page (below).
+
+**The hair, from the builder's pictures** (`docs/prototypes/levelup/builder-crown-back.jpg`, `-plait-close.jpg`, `-shaved-side.jpg`; OG-025, OG-001).
+- The crown braid (S1443) does not sit on the head. From behind it is a ring standing off the skull at the front and on top, with daylight between the braid and the hair. It reads as a halo or a hoop, not a braid pinned round. The locks are still the chain of twists S1443 owns up to. S1443 offers 1.05 rad as the one-number fix, and I would take it.
+- The plait over the shoulder (S1448) reads, from the tie behind the ear down to the breast. Its locks are faceted shards rather than strands, the same chain as the crown's.
+- The shaved sides (S1446) read as bare scalp on a blond head, as S1446 warns. The line between shorn and long is a ragged step of blocky cards above the ear. On the same Markman the beard's lower edge drops loose straws over the tunic's collar, and they stand clear of the cloth.
+
+**Eoin's Farm, outside** (`-game-farm-10h.png`, `-game-farm-22h.png`). From 24 m out on the road side it reads as a farm at once: a two-storey whitewashed house under slate, two chimneys, a green door, the yard wall with its gate piers, a five-bar gate and a yellow rick. That is OG-115's farmstead. At 22h30 one upstairs window is lit and the front stays grey-white under the moon, which is right. The foreground is wrong at the eye. The near grass is dark green blades as long as a forearm, scattered singly over bare olive ground rather than as a sward. A flat untextured green slab (a bush's nearest card, I think) fills the left fifth of both frames.
+
+**The farmhouse** (`-game-home-12h.png`, `-game-home-23h.png`). You arrive in the hall at the stair's foot, and the room is the prototype's: a straight stair with its rail, the hall's flags and a door ajar at the far end. Two things are off:
+- The hall's right wall stands about 0.3 m from your eye and fills 40% of the frame. It is the same lobby-first arrival as the cottage's on 25 Oct.
+- At noon the walls are saturated orange (median 130, mean RGB 141/99/67), the same light as the coaching inn and the cottage two runs ago. That is #765's to settle.
+
+At 23h the HUD says *Eoin is asleep · Press E to wake*, and at noon *No one is in*, which is S1471's rule working: he is out in the yard by day. The farmhouse at 23h reads 57.
+
+**The byre and the barn** (`-game-byre-12h.png`, `-game-barn-12h.png`, `-game-barn-23h.png`).
+- The byre (10.8 by 4.2 m) arrives under the hay-rack's slats, with the one window in the gable and the stall boards below. It is bare and reads as a byre with no cows, as S1480 says. Median 60 at noon and 44 at 23h.
+- The barn (10.6 by 5.0 m) is the one that fails. Its arrival puts a dark post dead centre about a metre from your eye, with a stall's partition across the lower right. At noon its median is **21**, against the byre's 60, and at 23h it is 23. Noon and midnight in the barn are the same picture. S1475's own shot looks west at the arch's daylight. From the door you get the post, and the daylight is behind it.
+- In both, the HUD says *No one is in*. That is true, but the line is written for a home. *Walk south to exit* is the useful half.
+- At 23h your first-person hands are lit a bright tan in the dark barn, brighter than at noon.
+
+**A Markish longhouse in the game** (`-game-longhouse-12h.png`, `-game-longhouse-23h.png`). Dáire's House is the chimney hall (S1453): the stone stack at the left, the side benches with their furs, a bed at the far right and a lamp hung from a chain at the upper right. The plan reads as OG-025's hall. The light does not:
+- At noon the median is **17**, darker than the prototype's longhouse at *night* under A (33). The two small side windows are the only bright things in the frame, and they light nothing.
+- At 23h the median is **6**. The frame is black but for the stack's edge, and Dáire, asleep, is a shape you have to know is there. The HUD's *Dáire is asleep · Press E to wake* is right.
+- S1441 put the townhouse's lamps out abed and judged the cottage's 42 right. The hall at 6 is as far below that as the barn at noon.
+
+**The spear and the crossbow, from their pictures** (`docs/prototypes/levelup/game-spear-thrust-tp.jpg`, `game-crossbow-span-fp.jpg`).
+- In third person (S1466) the thrust reads: rest, coil, and the shaft driven level at the shoulder. As S1466 says, held near its middle the butt sticks out behind the hip in the coil as far as the head is ahead. At that camera distance I saw it before I saw the head.
+- In first person the crossbow's prod is a pale grey tube with the stirrup ring facing you, and the right arm's bridge is a plain tan cylinder under the fist. S1458 asks whether it is too much arm. It is too much plain arm: the cylinder has no sleeve and no wrist, so it reads as a pipe.
+- In the span's middle frame the string's V runs back to the nut under your fist and reads as hauling. S1476 asks about the prod tipped up toward the eye. In the third frame the bow has nearly left the frame, so the tip-up is doing its job only in the middle of the span.
+
+**Needs eyes, from the devlogs since S1439.**
+- Judged above:
+  - S1443 and S1449 (the crown, the braid's locks), S1446 (the shaved side on a blond head), S1448 (the plait).
+  - S1453 (the hall at night, judged against the cottage's 42; it is 6).
+  - S1459 (the farm's name *<name>'s Farm* reads well on the HUD and the door).
+  - S1475 (the barn, from its door rather than from the bay's middle), S1480 (the byre empty: yes, it reads empty).
+  - S1458 (the crossbow's arm), S1466 (the spear's butt), S1476 (the tip-up).
+  - #765, for the producer: C, with the longhouse excepted.
+- Not judged headless:
+  - S1444 and S1447: the creator's styles from the third-person camera.
+  - S1448 and S1449: a townswoman turning her head at 3 m.
+  - S1455: one farm or two at a village's edge.
+  - S1457: 2.0 s of span at a walk.
+  - S1462 and S1464: a spearman's reach in a 2.5 m corridor.
+  - S1467, S1468 and S1472: the stutter, which wants Michael's machine.
+  - S1471 and S1478: the farmer in the yard. I did not watch Eoin walk.
+  - S1473 and S1482: the lone farms and their icon on the map.
+  - S1474: the Aurennais names in play.
+  - S1483: the poison numbers and the mortar's page. I did not brew. That is a playtest turn's, next run.
+- S1441's owed rooms (the taproom, the coaching inn and Aurenne's houses abed) I did not enter.
+
+**What worked.** The farm from the road is the best new building I have seen arrive in the game this week: one look and it says Gatelands farm. The farmer's hours read correctly on the HUD at both hours. The cottage under #765's C is the right night. Nothing threw on boot, on any page or in any room.
+
+**Backlog notes.** None of the section I items from 26 Oct's run are open but done. The townhouse's black back was answered in S1440 as no fault, and the lamps abed are struck by S1441. I saw nothing done but unmarked.
