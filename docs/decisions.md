@@ -3,6 +3,20 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### Lighting the halls — what hangs on a hall's walls at night (from the concept artist, 2026-10-27, #805)
+**The question.** Backlog L12, "Light indoors" (OG-141): torches on corridor walls, a tavern warm and crowded in the evening. The prototype (`docs/prototypes/levelup/halls.html`, kit `halls.js`) lights four halls from rooms.js under Michael's C on #765: the Gatelands guild hall, the Mark's alehall, Aurenne's tavern and the Gatelands inn. What hangs on a hall's walls at night?
+
+**Options.**
+- **A. The room's own lights.** The hearth, the guild's wheel of candles, the Mark's iron lamps, Aurenne's two pendant lamps; the walls between go dark. Night medians (0–255): guild 29, alehall 25, tavern 42. Point lights 2, 5, 4.
+- **B. Torches on every wall.** A pitch torch in an iron bracket every 3.5–4 m (ring 1.95 m, flame 2.25 m), soot above, the same in every hall on every island. Medians 41, 32, 55.
+- **C. Each island its own (recommended).** Gatelands: iron sconces of two candles at 1.75 m and candlesticks on tables; the Mark: B's torches; Aurenne: bronze lamp stands with a clay oil lamp at 1.45 m and wall lamps. Medians 36, 32, 58. Point lights 10, 13, 11.
+
+**Cost.** A torch 426 tris, a sconce 730, a table candle 360, Aurenne's lamps about 560. Each fixture is one point light; over a gate's pool of 8 the builder lights the nearest 8 and leaves the rest as glowing flames.
+
+**Pictures.** [A, B and C](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/halls-options.jpg) · [in scale and the crowd](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/halls-scale.jpg) · [a torch](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/halls-torch.jpg) · [a sconce](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/halls-sconce.jpg) · [a lamp stand](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/halls-lampstand.jpg)
+
+Recommendation: **C**.
+
 ### The dungeon's cell by kind: old gates at 3 m, and forts and lairs at what? (systems builder, Session 1105) — DECISION #421
 **The question.** F2b's last session sets a dungeon's grid cell at true scale; it is one unit today, so corridors are 1 m wide for a 1.8 m body. Michael chose **C, 3 m** on #300 and added: "If by dungeon we mean Old Gates, they should be extremely massive and cavernous. A normal 'dungeon' like a mine, or a cave can be a more typical size." The game has three kinds of underground place: the **old gates** (the world's portals, themed by school: crypts, haunted halls, elemental and deep caverns, ruins), **fort interiors** (the `fort_` layouts), and **lairs and dens** (a beast's lair, the cloak's den). So the cell can differ by kind, and "a more typical size" is a number a player feels.
 
