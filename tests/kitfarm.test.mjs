@@ -77,7 +77,7 @@ const LF = await page.evaluate(id => { const S = WORLD.settle.get(id), F = S.far
   const sol = S.sol.find(q => q.farm === 'Farmhouse');
   return { name: S.site.name, id: h.id, house: h.name, kit: kitFarmhouse(h), listed: ZONES.world.houses.includes(h), resident: S.residents.some(r => r.def === h.dlg), keepsYard: S.residents.some(r => r.def === h.dlg && r.farm) && !!(F.yard && F.yardDoor), sol: S.sol.length, home: sol && sol.hid === h.id, dev, exitClear: !settleSolid(h.exitX, h.exitZ, .3), calls: S.group.children.find(o => o.name === 'farmstead').children.length }; }, N.first);
 check(`it is ${LF.name}: the farmstead (${LF.calls} draws) on its flat pad (${LF.dev != null ? LF.dev.toFixed(3) : '?'} m), ${LF.sol} solids, its farmhouse a home with its farmer, the step out clear`, !LF.none && LF.dev < .05 && LF.sol === K.foot.length && LF.home && LF.kit && LF.listed && LF.resident && LF.exitClear && LF.house === LF.name, LF);
-// Session 1481: a lone farm on the map. Its name is known before it is built (loneFarmName, the farmer's stream's first two draws) and
+// Session 1482: a lone farm on the map. Its name is known before it is built (loneFarmName, the farmer's stream's first two draws) and
 // is the built house's; standing by it discovers it; the map's entries for its cell carry it with its own icon; the search finds it;
 // fast travel puts you on the road's verge in front of it, clear of its solids, facing it.
 const MP = await page.evaluate(id => { const S = WORLD.settle.get(id), t = siteAnywhere(id), F = t._farm, [ci, cj] = cellOf(t.x, t.z);

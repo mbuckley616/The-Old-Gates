@@ -427,7 +427,7 @@
   function loneFarmSite(F,c){if(F._site)return F._site;
     F._site={id:F.id,name:'',kind:'farm',x:F.cx,z:F.cz,pad:FARM_R,cell:F.cell,reg:REGISTER[dominantRegionOf(c.regions,F.cx,F.cz).id]||'irish',lordless:true,_farm:F};
     F._site.name=loneFarmName(F._site);return F._site;}
-  /* S1481 — its name before it is built (the map, the search, discovery): genSettlement's first two draws of the farmer's stream, as
+  /* S1482 — its name before it is built (the map, the search, discovery): genSettlement's first two draws of the farmer's stream, as
      buildFarm's nameFn makes them (its makeDef keeps that name, keepName), and *Your Farm* once it is bought; genSettlement still
      names it from the house it builds */
   function loneFarmName(t){if(typeof ownedHouse==='function'&&ownedHouse(`g_${t.id}_${FARM_N}`))return 'Your Farm';
@@ -992,7 +992,7 @@
       case 'farmer': {const Y=sc_.yard;
         if(night)return {hide:true};
         if(feastNow()||!Y)return {wander:sc_.plaza,r:feastR(sc_.padR||14),from:sc_.door};
-        if(eve)return {go:Y.door,thenHide:true,from:Y.door};
+        if(eve)return {go:Y.door,thenHide:true,from:Y.door,yard:Y};
         return {pts:Y.pts,from:Y.door};}
       case 'villager':
         if(night||eve&&h>=20&&!feastNow())return {hide:true};
@@ -1096,6 +1096,14 @@
       }
     }
   }
+  // S1478 — the way to a farm's yard door over the yard's own spots (farmYard's 1 m grid, each 0.45 m clear of the solids), from the spot
+  // nearest (x, z): breadth first, a spot's neighbours the eight round it, the door's step joined to the spots within 1.6 m of it
+  function yardPath(Y,x,z){const P=Y.pts,D=Y.door,N=P.length;if(!N)return [];
+    let s0=0,b=1e9;for(let i=0;i<N;i++){const d=Math.hypot(P[i].x-x,P[i].z-z);if(d<b){b=d;s0=i;}}
+    const prev=new Int32Array(N).fill(-1);prev[s0]=s0;const q=[s0];let end=-1;
+    for(let h=0;h<q.length&&end<0;h++){const i=q[h];if(Math.hypot(P[i].x-D.x,P[i].z-D.z)<=1.6){end=i;break;}
+      for(let j=0;j<N;j++)if(prev[j]<0&&Math.hypot(P[j].x-P[i].x,P[j].z-P[i].z)<=1.5){prev[j]=i;q.push(j);}}
+    if(end<0)return [];const out=[];for(let i=end;;i=prev[i]){out.unshift(P[i]);if(i===s0)break;}return out;}
   function npcStep(n,tx,tz,spd,dt,near){
     const gx=n.g.position.x,gz=n.g.position.z,dx=tx-gx,dz=tz-gz,d=Math.hypot(dx,dz);
     if(d<(near||.8))return true;
@@ -1164,9 +1172,14 @@
         if(n._gwT!==t||(n._gwArr===t&&Math.hypot(t.x-n.g.position.x,t.z-n.g.position.z)>2)){n._gwT=t;n._gwArr=null;n._gwp=townRoute(n._settle)({x:n.g.position.x,z:n.g.position.z},t);} /* again when he is far from a place he reached (the next day) */
         if(n._gwp&&n._gwp.length){const w=n._gwp[0];npcStep(n,w.x,w.z,spd,dt,.2);if(Math.hypot(w.x-n.g.position.x,w.z-n.g.position.z)<.3)n._gwp.shift();moving=true;}
         else{const arrived=npcStep(n,t.x,t.z,spd,dt);if(arrived){n._gwArr=t;if(plan.thenHide)n._arrivedHide=true;}moving=!arrived;}}
+      else if(plan.go&&plan.yard){const t=plan.go; /* S1478 — a farmer walking in: the straight line to the yard door can meet the rick or the cart, where npcStep gives up and they went in 4 to 7 m from the door; then over the yard's spots */
+        if(n._ywp&&n._ywp.length){const w=n._ywp[0];if(npcStep(n,w.x,w.z,spd,dt,.2))n._ywp.shift();moving=true;}
+        else{const arrived=npcStep(n,t.x,t.z,spd,dt);
+          if(arrived&&Math.hypot(t.x-n.g.position.x,t.z-n.g.position.z)>=.8&&n._ywTry!==t){n._ywTry=t;n._ywp=yardPath(plan.yard,n.g.position.x,n.g.position.z);moving=true;}
+          else{if(arrived&&plan.thenHide){n._arrivedHide=true;n._ywTry=null;}moving=!arrived;}}}
       else if(plan.go){const arrived=npcStep(n,plan.go.x,plan.go.z,spd,dt);if(arrived&&plan.thenHide)n._arrivedHide=true;moving=!arrived;}
       else if(plan.pts){ /* S1471 — a farmer's yard: to one of its spots in a clear straight line, a pause, the next */
-        n.wt-=dt;const P=plan.pts;
+        n.wt-=dt;const P=plan.pts;n._ywp=null;n._ywTry=null; /* S1478 — yesterday's way in is not today's */
         if(!n._tgt||n.wt<=0||!P.includes(n._tgt)){let t=null;for(let k=0;k<8&&!t;k++){const q=P[Math.floor(Math.random()*P.length)];if(clearLine(n.g.position.x,n.g.position.z,q.x,q.z))t=q;}
           n._tgt=t||P[Math.floor(Math.random()*P.length)];n.wt=10+Math.random()*12;}
         const arrived=npcStep(n,n._tgt.x,n._tgt.z,spd*.75,dt);if(arrived){n._tgt=null;n.wt=3+Math.random()*6;}moving=!arrived;

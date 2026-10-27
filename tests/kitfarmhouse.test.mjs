@@ -40,6 +40,14 @@ check(`by day the farmer keeps the yard (${day[0].pts} spots): out of its door (
   day.every(s => s.type === 'farmer' && s.vis && s.d <= 12.5 && !s.solid) && day[0].d < 1 && day[0].pts >= 20, day);
 await page.evaluate(() => forceTime(18.2)); await g.spin(null, 3600); const eve = await st();
 check(`at evening the farmer goes in by the yard door (${eve.d} m from it, hidden), and the house has them in`, !eve.vis && eve.d < 1.5 && eve.inside, eve);
+// S1478 — from wherever in the yard evening finds them: the walk from one spot in ten (the look builder saw one run in five go in 4.1 m
+// off, where the straight line met the rick and npcStep gave up)
+const ways = await page.evaluate(tid => new Promise(res => { const S = WORLD.settle.get(tid), m = S.residents.find(r => r.farm).n, Y = m.sched.yard, out = []; let i = 0;
+  const one = () => { if (i >= Y.pts.length) return res(out); forceTime(18.2); const q = Y.pts[i]; m.g.visible = true; m._arrivedHide = false; m.g.position.x = q.x; m.g.position.z = q.z; m._stuck = 0; let k = 0;
+    const f = () => { for (let j = 0; j < 60; j++) WORLD.tick(1 / 60, performance.now()); k += 60;
+      if (!m.g.visible || k >= 2400) { out.push({ i, hid: !m.g.visible, d: +Math.hypot(m.g.position.x - Y.door.x, m.g.position.z - Y.door.z).toFixed(2) }); i += 10; setTimeout(one, 0); } else setTimeout(f, 0); }; f(); };
+  one(); }), tid);
+check(`from ${ways.length} spots of the yard the farmer goes in by its door (at most ${Math.max(...ways.map(w => w.d))} m from it)`, ways.length >= 2 && ways.every(w => w.hid && w.d < 1.5), ways.filter(w => !w.hid || w.d >= 1.5));
 
 await page.evaluate(id => { forceTime(12); const h = ZONES.world.houses.find(x => x.id === id); px = h.exitX; pz = h.exitZ; goToInterior(h); }, H.id);
 for (let k = 0; k < 40 && !(await page.evaluate(() => isInterior())); k++) await page.waitForTimeout(250);
