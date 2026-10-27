@@ -398,9 +398,10 @@ function useHerb(i){
   // Track consumption and check for hidden unlock
   const countKey=herbKeyOf(it)||it.name.toLowerCase().replace(/[^a-z]/g,''); /* S1483 — by HERB_DEF's key: a reload drops _typeKey, and Fearnóg's name made 'fearng' */
   HERB_CONSUME_COUNTS[countKey]=(HERB_CONSUME_COUNTS[countKey]||0)+1;
-  const count=HERB_CONSUME_COUNTS[countKey];
-  const justUnlocked=(count===HIDDEN_UNLOCK_COUNT);
-  const unlocked=(count>=HIDDEN_UNLOCK_COUNT);
+  const count=HERB_CONSUME_COUNTS[countKey],N=herbTellCount(),HK=herbsKnown(),told=HK.told||(HK.told={});
+  // S1499 — Tell moves the reveal to 5 eats, so the flash is once a herb (told), not at one count; past 15 it was told already
+  const justUnlocked=count>=N&&count-1<HIDDEN_UNLOCK_COUNT&&!told[countKey];if(justUnlocked)told[countKey]=1;
+  const unlocked=(count>=N);
   // Apply hidden effect if already unlocked (not on the unlock consume itself — let the message land first)
   if(unlocked&&!justUnlocked&&HERB_DEF[countKey]&&HERB_DEF[countKey].zone==='sea'){const f=HERB_FX[countKey]&&HERB_FX[countKey][1],d=f&&ALCH_FX[f];if(d&&d.drink)d.drink(1);else if(d&&d.buff)_applyBuff({duration:ALCH_FORTIFY_S,...d.buff(1),label:d.label,col:d.col});} /* S1483 — a sea herb's hidden effect is its second brewing effect (its hiddenEffect was Firemoss's, copied) */
   else if(unlocked&&!justUnlocked&&it.hiddenEffect){
@@ -475,7 +476,9 @@ const HERB_KIN=new Set(['firemoss','silverleaf','muirfhear','thornberry','shadow
 function herbKeyOf(it){if(!it)return null;if(it._typeKey&&HERB_FX[it._typeKey])return it._typeKey;if(typeof HERB_DEF!=='undefined')for(const k in HERB_DEF)if(HERB_DEF[k].name===it.name)return k;
   const k=String(it.name||'').toLowerCase().replace(/[^a-z]/g,'');return HERB_FX[k]?k:null;}
 function herbsKnown(){return worldState.herbsKnown||(worldState.herbsKnown={fx:{},none:{}});}
-function herbFxKnown(k,i){const n=HERB_CONSUME_COUNTS[k]||0;if(i===0&&n>0)return true;if(i===1&&HERB_KIN.has(k)&&n>=HIDDEN_UNLOCK_COUNT)return true;const f=herbsKnown().fx[k];return !!(f&&f[i]);}
+// S1499 — Tell (Alchemy 25): a herb's hidden effect is learnt at 5 eats, not HIDDEN_UNLOCK_COUNT's 15
+function herbTellCount(){return perk('alchemy',25)?5:HIDDEN_UNLOCK_COUNT;}
+function herbFxKnown(k,i){const n=HERB_CONSUME_COUNTS[k]||0;if(i===0&&n>0)return true;if(i===1&&HERB_KIN.has(k)&&n>=herbTellCount())return true;const f=herbsKnown().fx[k];return !!(f&&f[i]);}
 function learnHerbFx(k,i){const K=herbsKnown();const f=K.fx[k]||(K.fx[k]=[0,0,0,0]);const was=herbFxKnown(k,i);f[i]=1;return !was;}
 function brewPairKey(a,b){return [a,b].sort().join('|');}
 function alchStrength(){return skillMult('alchemy')*(1+.01*attrEff('intelligence'));}
@@ -506,9 +509,10 @@ function brewHerbs(keys){
   const item={name:brewName(sh.fx,sh.poison),ico:sh.poison?'☠️':'🧪',type:'potion',weight:.5,sellMult:.4,
     buyPrice:Math.max(...sh.fx.map(f=>ALCH_FX[f].price||25)),brew:{fx:sh.fx,s,day,poison:sh.poison}};
   item.brewKey=sh.fx.join('+')+'@'+s+'/'+day;
+  const n=perk('alchemy',100)?2:1;if(n>1)item.qty=n; /* S1499 — Double measure (Alchemy 100): two from one grinding */
   bagAdd(item);
   skillUse('alchemy',8+(newPair?25:0));
-  return {made:true,item:BAG.find(b=>sameStack(b,item))||item,learnt,newPair};
+  return {made:true,item:BAG.find(b=>sameStack(b,item))||item,learnt,newPair,n};
 }
 // drink a tincture, or coat the blade with a poison
 let BLADE_POISON=null;
@@ -576,7 +580,7 @@ function brewDraw(){const ov=document.getElementById('brewui');if(!ov)return;con
 }
 function brewPick(k){const i=brewSel.indexOf(k);if(i>=0)brewSel.splice(i,1);else{if(brewSel.length>=brewMax())brewSel.shift();brewSel.push(k);}brewSaid='';brewDraw();}
 function brewGo(){const r=brewHerbs(brewSel);
-  if(r.made){brewSaid=`${r.item.name}.${r.learnt.length?' You learn '+r.learnt.length+(r.learnt.length>1?' effects.':' effect.'):''}`;if(typeof uiTone==='function')uiTone(260,340,.1,.08,'sine');addLog('🧪','Made '+r.item.name);}
+  if(r.made){brewSaid=`${r.n>1?'Two: ':''}${r.item.name}.${r.learnt.length?' You learn '+r.learnt.length+(r.learnt.length>1?' effects.':' effect.'):''}`;if(typeof uiTone==='function')uiTone(260,340,.1,.08,'sine');addLog('🧪','Made '+r.item.name);}
   else brewSaid=r.why||'';
   brewSel=brewSel.filter(k=>BAG.some(b=>b&&b.type==='herb'&&herbKeyOf(b)===k));brewDraw();}
 window.addEventListener('keydown',e=>{if(!brewOpen)return;const c=e.code;let hit=true;
@@ -646,6 +650,8 @@ function fedNow(){const F=worldState.fed;if(!F||!(F.until>gameMinNow()))return n
 function fedKind(){const F=fedNow();return F?F.kind:null;}
 function fedStamMult(){return fedKind()==='hearty'?1.15:1;}
 function fedManaMult(){return fedKind()==='clear'?1.1:1;}
+// S1500 — Full belly (Cooking 75): fed lasts through sleep; restAtBed (60-shop.js) moves its end on by the hours slept
+function fedSleep(mins){const F=fedNow();if(F&&perk('cooking',75))F.until+=mins;}
 function setFed(kind,s){const was=fedNow();worldState.fed={kind,until:gameMinNow()+Math.round(FED_MIN*s),s:+(+s).toFixed(3)};
   stamina=Math.min(stamina,effMaxStamina());return was;}
 function mealItem(food,s){const m=FOOD_MEAL[food];return {name:m.name,ico:m.ico,type:'potion',weight:.4,buyPrice:10,sellMult:.3,meal:{kind:m.kind,s},brewKey:'meal@'+s};}
@@ -667,8 +673,10 @@ function cookAt(id){
   if(!atFire())return {made:false,why:'You need a fire.'};
   const R=COOK_RECIPES.find(r=>r.id===id);if(!R)return {made:false,why:''};
   if(!R.has())return {made:false,why:`You need ${R.need.toLowerCase()}.`};
-  if(FOOD_MEAL[id]){bagTake(b=>b.food===id,1);const s=+skillMult('cooking').toFixed(3);const it=mealItem(id,s);bagAdd(it);skillUse('cooking',6);
-    return {made:true,item:BAG.find(b=>sameStack(b,it))||it};}
+  if(FOOD_MEAL[id]){bagTake(b=>b.food===id,1);const s=+skillMult('cooking').toFixed(3);const it=mealItem(id,s);
+    const n=perk('cooking',25)?2:1;if(n>1)it.qty=n; /* S1500 — Two portions (Cooking 25) */
+    bagAdd(it);skillUse('cooking',6);
+    return {made:true,item:BAG.find(b=>sameStack(b,it))||it,n};}
   if(id==='charcoal'){const plain=bagCount(b=>b.log==='log');bagTake(b=>b.log==='log',Math.min(2,plain));if(plain<2)bagTake(b=>!!b.log,2-plain);const it=survItem('charcoal');bagAdd(it);return {made:true,item:it};}
   if(id==='pitch'){bagTake(b=>b.log==='pine',1);const it=survItem('pitch',3);bagAdd(it);return {made:true,item:it};}
   return {made:false,why:''};}
@@ -722,7 +730,7 @@ function cookDraw(){const ov=document.getElementById('cookui');if(!ov)return;
   const F=fedNow();if(F)t+=`<div style="margin-top:8px;border-top:1px dotted #a89060;padding-top:4px;font-style:italic">You are ${FED_KIND[F.kind].label.toLowerCase()}, ${Math.ceil(F.until-gameMinNow())} min more.</div>`;
   ov.querySelector('#ck-right').innerHTML=t;ov.querySelector('#ck-said').textContent=cookSaid;}
 function cookGo(){const r=cookAt(cookSel);
-  if(r.made){cookSaid=`${r.item.name}.`;if(typeof uiTone==='function')uiTone(220,300,.1,.08,'sine');}else cookSaid=r.why||'';
+  if(r.made){cookSaid=`${r.n>1?'Two: ':''}${r.item.name}.`;if(typeof uiTone==='function')uiTone(220,300,.1,.08,'sine');}else cookSaid=r.why||'';
   if(!atFire()){closeCookPage();return;}cookDraw();}
 window.addEventListener('keydown',e=>{if(!cookOpen)return;const c=e.code;let hit=true;
   if(c==='Escape')closeCookPage();else if(c==='Enter'){if(!e.repeat)cookGo();}else hit=false;
@@ -751,13 +759,30 @@ function veinTier(x,z){let t=typeof worldTierAt==='function'?worldTierAt(x,z):1;
   return Math.max(1,Math.min(4,t|0||1));}
 function veinOre(id,tier){const T=VEIN_TABLE[tier]||VEIN_TABLE[1];let r=seededRng('vein',id)();for(const [k,w] of T){r-=w;if(r<=0)return k;}return T[T.length-1][0];}
 const VEINS=[];
-let _veinGeo=null;const _veinMat={};
-function veinMesh(v){if(!_veinGeo)_veinGeo={rock:new THREE.IcosahedronGeometry(.55,0),seam:new THREE.OctahedronGeometry(.2,0)};
-  const rk=_veinMat.rock||(_veinMat.rock=new THREE.MeshLambertMaterial({color:0x6a6460,flatShading:true}));
-  const sm=_veinMat[v.ore]||(_veinMat[v.ore]=new THREE.MeshLambertMaterial({color:ORE_DEF[v.ore].col,flatShading:true}));
-  const g=new THREE.Group();const a=new THREE.Mesh(_veinGeo.rock,rk);a.scale.set(1.2,.8,1);g.add(a);
-  for(let i=0;i<3;i++){const s=new THREE.Mesh(_veinGeo.seam,sm);const t=i*2.1;s.position.set(Math.cos(t)*.42,.18+i*.08,Math.sin(t)*.42);g.add(s);}
-  g.userData.seams=g.children.slice(1);g.position.set(v.x,worldH(v.x,v.z)-.12,v.z);g.rotation.y=v.ph;return g;}
+// S1498 (look) — a vein is one mesh: the rock and its three seams merged, coloured by vertex, on one shared material, so a chunk's
+// 2–5 veins are 2–5 draw calls and not four each (S1491's rock and seams were 460 of Dunmore's 1,150 at noon, most of them
+// 120–440 m off). The rock is an icosahedron of 80 faces pushed in and out by its own corners, grey with a paler crown; the seams
+// are stretched octahedra set into its flank. A seam goes as its ore is taken: the geometry is the one for that ore and that many
+// seams (`_veinGeo[ore:n]`, the rock's faces first). Past VEIN_FAR the vein is not drawn (a THREE.LOD with nothing at that level).
+const VEIN_FAR=80;
+let _veinGeo=null,_veinMat=null;
+function veinGeo(ore,n){const G=_veinGeo||(_veinGeo={});const k=ore+':'+n;if(G[k])return G[k];
+  if(!G._rock){const g=new THREE.IcosahedronGeometry(.55,1),p=g.attributes.position,c=[],v=new THREE.Vector3();
+    const h=(x,y,z)=>{const t=Math.sin(x*127.1+y*311.7+z*74.7)*43758.5453;return t-Math.floor(t);};
+    for(let i=0;i<p.count;i++){v.fromBufferAttribute(p,i);const d=.82+.36*h(+v.x.toFixed(3),+v.y.toFixed(3),+v.z.toFixed(3));v.multiplyScalar(d);v.set(v.x*1.25,v.y*.75,v.z*1.05);p.setXYZ(i,v.x,v.y,v.z);}
+    for(let f=0;f<p.count;f+=3){const y=(p.getY(f)+p.getY(f+1)+p.getY(f+2))/3,k2=.3+.08*h(f,1,2)+.08*Math.max(0,y)/.4;for(let j=0;j<3;j++)c.push(k2,k2*.97,k2*.93);}
+    g.setAttribute('color',new THREE.Float32BufferAttribute(c,3));g.computeVertexNormals();G._rock=g;
+    G._seams=[0,1,2].map(i=>{const s=new THREE.OctahedronGeometry(.2,0),t=i*2.1;s.scale(1,.6,1.5);s.rotateY(-t);s.rotateZ(.35);s.translate(Math.cos(t)*.44,.14+i*.08,Math.sin(t)*.44);return s;});}
+  const col=new THREE.Color(ORE_DEF[ore]?ORE_DEF[ore].col:0x888888),parts=[G._rock,...G._seams.slice(0,n)];let N=0;parts.forEach(q=>N+=q.attributes.position.count);
+  const pos=new Float32Array(N*3),nor=new Float32Array(N*3),cc=new Float32Array(N*3);let o=0;
+  parts.forEach((q,pi)=>{const P=q.attributes.position,Nn=q.attributes.normal,C=q.attributes.color;for(let i=0;i<P.count;i++,o++){pos[o*3]=P.getX(i);pos[o*3+1]=P.getY(i);pos[o*3+2]=P.getZ(i);
+    nor[o*3]=Nn.getX(i);nor[o*3+1]=Nn.getY(i);nor[o*3+2]=Nn.getZ(i);const sh=pi?.85+.3*((i>>1)%2):1;if(C){cc[o*3]=C.getX(i);cc[o*3+1]=C.getY(i);cc[o*3+2]=C.getZ(i);}else{cc[o*3]=col.r*sh;cc[o*3+1]=col.g*sh;cc[o*3+2]=col.b*sh;}}});
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));g.setAttribute('normal',new THREE.BufferAttribute(nor,3));g.setAttribute('color',new THREE.BufferAttribute(cc,3));g.computeBoundingSphere();
+  return G[k]=g;}
+function veinMesh(v){const M=_veinMat||(_veinMat=new THREE.MeshLambertMaterial({vertexColors:true,flatShading:true}));
+  const m=new THREE.Mesh(veinGeo(v.ore,3),M);m.name='vein';m.castShadow=true;m.receiveShadow=true;const s=.9+.25*((v.ph*7.3)%1);m.scale.set(s,s,s);
+  const g=new THREE.LOD();g.addLevel(m,0);g.addLevel(new THREE.Object3D(),VEIN_FAR);g.userData.mesh=m;g.userData.shown=3;
+  g.position.set(v.x,worldH(v.x,v.z)-.12,v.z);g.rotation.y=v.ph;return g;}
 // a chunk's veins, when it builds (called beside spawnChunkHerbs)
 function spawnChunkVeins(ch){
   if(typeof hash01!=='function'||typeof slopeNormalY!=='function')return;
@@ -779,7 +804,7 @@ function veinRec(v){const W=worldState.veins||(worldState.veins={});let r=W[v.id
   if(r&&r.n>=veinCap()&&gameMinNow()/1440-r.d>=VEIN_DAYS){r={n:0,s:0,d:r.d,e:(r.e||0)+1};W[v.id]=r;}
   return r||{n:0,s:0,d:0,e:0};}
 function veinLeft(v){return Math.max(0,veinCap()-veinRec(v).n);}
-function veinShow(v){if(!v.g)return;const left=veinLeft(v);v.g.userData.seams.forEach((s,i)=>s.visible=i<left);}
+function veinShow(v){if(!v.g)return;const n=Math.min(3,veinLeft(v));v.g.userData.shown=n;v.g.userData.mesh.geometry=veinGeo(v.ore,n);}
 function veinNear(){if(activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior()))return null;
   for(let i=VEINS.length-1;i>=0;i--){const v=VEINS[i];if(!veinLive(v)){VEINS.splice(i,1);continue;}if(Math.hypot(px-v.x,pz-v.z)<TOUCH+.5)return v;}return null;}
 // one strike at a vein: the outcome is the vein's seeded stream at this strike. Returns {ore, left} or {why}
