@@ -1980,7 +1980,9 @@ function capDist(c, x, y, z) {
   const ox = (px - bx * t) / c.s[0], oy = (py - by * t) / c.s[1], oz = (pz - bz * t) / c.s[2];
   return (Math.sqrt(ox * ox + oy * oy + oz * oz) - (c.ra + (c.rb - c.ra) * t)) * c.sm;
 }
-function growFlesh(flesh, o) {
+// a step at a time (Session 1484): a yield after each capsule's share of the field, the holes, each six slabs of the surface, each 24 of the
+// faces, the neighbours and each 6,000 vertices of each pass of the smoothing, so the game can grow one body over several frames (buildIter)
+function* growFlesh(flesh, o) {
   const k = o.blend, cell = o.cell, pad = k * 5;
   for (const c of flesh) c.sm = (c.s[0] + c.s[1] + c.s[2]) / 3;
   const mn = V(1e9, 1e9, 1e9), mx = V(-1e9, -1e9, -1e9);
@@ -2008,7 +2010,7 @@ function growFlesh(flesh, o) {
       for (let l = c0; l <= c1; l++) { const pz = mn.z + l * cell - az; for (let j = b0; j <= b1; j++) { const py = mn.y + j * cell - ay, row = (j - j0 + gy * (l - l0)) * gx - i0;
         for (let i = a0; i <= a1; i++) { const px = mn.x + i * cell - ax, t = bb > 0 ? Math.max(0, Math.min(1, (px * bx + py * by + pz * bz) / bb)) : 0;
           const ox = (px - bx * t) / s0, oy = (py - by * t) / s1, oz = (pz - bz * t) / s2, e = (Math.sqrt(ox * ox + oy * oy + oz * oz) - (ra + dr * t)) * sm;
-          if (e < D[row + i]) D[row + i] = e; } } } }
+          if (e < D[row + i]) D[row + i] = e; } } } yield; }
     for (let l = l0; l <= l1; l++) for (let j = j0; j <= j1; j++) { const row = (j - j0 + gy * (l - l0)) * gx - i0;
       for (let i = i0; i <= i1; i++) { const d = D[row + i]; if (d < pad) F[idx(i, j, l)] += Math.exp(-d / k); } }
   }
@@ -2018,6 +2020,7 @@ function growFlesh(flesh, o) {
     const j0 = Math.max(0, Math.floor((Math.min(h.a.y, h.b.y) - R - mn.y) / cell)), j1 = Math.min(ny - 1, Math.ceil((Math.max(h.a.y, h.b.y) + R - mn.y) / cell));
     const l0 = Math.max(0, Math.floor((Math.min(h.a.z, h.b.z) - R - mn.z) / cell)), l1 = Math.min(nz - 1, Math.ceil((Math.max(h.a.z, h.b.z) + R - mn.z) / cell));
     for (let l = l0; l <= l1; l++) for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) { const q = idx(i, j, l); if (F[q] > 0) F[q] *= sstep(0, e, capDist(h, mn.x + i * cell, mn.y + j * cell, mn.z + l * cell)); } }
+  if (o.holes?.length) yield;
   // surface nets: a vertex in every cell the surface crosses, at the mean of its edge crossings; a quad across every crossed edge
   const L = v => Math.log(Math.max(v, 1e-9)), cellV = new Int32Array(nx * ny * nz).fill(-1), pos = [];
   const CO = [[0, 0, 0], [1, 0, 0], [0, 1, 0], [1, 1, 0], [0, 0, 1], [1, 0, 1], [0, 1, 1], [1, 1, 1]], ED = [[0, 1], [2, 3], [4, 5], [6, 7], [0, 2], [1, 3], [4, 6], [5, 7], [0, 4], [1, 5], [2, 6], [3, 7]];
@@ -2025,7 +2028,7 @@ function growFlesh(flesh, o) {
   // and a row of cells is passed over when none of its four rows of points holds one inside
   const cv = new Float64Array(8), CQ = CO.map(([a, b, c]) => a + nx * (b + ny * c)), rin = new Uint8Array(ny * nz);
   for (let r = 0; r < ny * nz; r++) for (let q = r * nx, e = q + nx; q < e; q++) if (F[q] > 1) { rin[r] = 1; break; }
-  for (let l = 0; l < nz - 1; l++) for (let j = 0; j < ny - 1; j++) { const r = j + ny * l; if (!(rin[r] | rin[r + 1] | rin[r + ny] | rin[r + ny + 1])) continue;
+  for (let l = 0; l < nz - 1; l++) { if (l && !(l % 6)) yield; for (let j = 0; j < ny - 1; j++) { const r = j + ny * l; if (!(rin[r] | rin[r + 1] | rin[r + ny] | rin[r + ny + 1])) continue;
     const q0 = nx * r; for (let i = 0; i < nx - 1; i++) { const q = q0 + i;
     let inside = 0; for (let c = 0; c < 8; c++) if (F[q + CQ[c]] > 1) inside++;
     if (inside === 0 || inside === 8) continue;
@@ -2033,21 +2036,24 @@ function growFlesh(flesh, o) {
     let sx = 0, sy = 0, sz = 0, n = 0;
     for (const [a, b] of ED) { if ((cv[a] > 0) === (cv[b] > 0)) continue; const t = cv[a] / (cv[a] - cv[b]); sx += lerp(CO[a][0], CO[b][0], t); sy += lerp(CO[a][1], CO[b][1], t); sz += lerp(CO[a][2], CO[b][2], t); n++; }
     cellV[q] = pos.length / 3; pos.push(mn.x + (i + sx / n) * cell, mn.y + (j + sy / n) * cell, mn.z + (l + sz / n) * cell);
-  } }
+  } } }
+  yield;
   const ind = [], quad = (a, b, c, d, flip) => { if (a < 0 || b < 0 || c < 0 || d < 0) return; if (flip) ind.push(a, c, b, a, d, c); else ind.push(a, b, c, a, c, d); };
-  for (let l = 1; l < nz - 1; l++) for (let j = 1; j < ny - 1; j++) for (let i = 1; i < nx - 1; i++) {
+  for (let l = 1; l < nz - 1; l++) { if (!(l % 24)) yield; for (let j = 1; j < ny - 1; j++) for (let i = 1; i < nx - 1; i++) {
     const v0 = F[idx(i, j, l)] > 1;
     if ((F[idx(i + 1, j, l)] > 1) !== v0) quad(cellV[idx(i, j - 1, l - 1)], cellV[idx(i, j, l - 1)], cellV[idx(i, j, l)], cellV[idx(i, j - 1, l)], !v0);
     if ((F[idx(i, j + 1, l)] > 1) !== v0) quad(cellV[idx(i - 1, j, l - 1)], cellV[idx(i - 1, j, l)], cellV[idx(i, j, l)], cellV[idx(i, j, l - 1)], !v0);
     if ((F[idx(i, j, l + 1)] > 1) !== v0) quad(cellV[idx(i - 1, j - 1, l)], cellV[idx(i, j - 1, l)], cellV[idx(i, j, l)], cellV[idx(i - 1, j, l)], !v0);
-  }
+  } }
+  yield;
   // two passes of Taubin smoothing take the grid's steps out without shrinking the body
   // each vertex's neighbours in the order first met (a handful each, so a list beats a Set), summed in that order as before
   const nv = pos.length / 3, nb = Array.from({ length: nv }, () => []);
   for (let t = 0; t < ind.length; t += 3) for (let e = 0; e < 3; e++) { const a = ind[t + e], b = ind[t + (e + 1) % 3]; if (!nb[a].includes(b)) nb[a].push(b); if (!nb[b].includes(a)) nb[b].push(a); }
+  yield;
   const P0 = Float32Array.from(pos), tmp = new Float32Array(P0.length);
-  for (let it = 0; it < 4; it++) { const f = it % 2 ? -.53 : .5; for (let v = 0; v < nv; v++) { let x = 0, y = 0, z = 0; for (const w of nb[v]) { x += P0[w * 3]; y += P0[w * 3 + 1]; z += P0[w * 3 + 2]; } const c = nb[v].length || 1;
-    tmp[v * 3] = P0[v * 3] + f * (x / c - P0[v * 3]); tmp[v * 3 + 1] = P0[v * 3 + 1] + f * (y / c - P0[v * 3 + 1]); tmp[v * 3 + 2] = P0[v * 3 + 2] + f * (z / c - P0[v * 3 + 2]); } P0.set(tmp); }
+  for (let it = 0; it < 4; it++) { const f = it % 2 ? -.53 : .5; for (let v = 0; v < nv; v++) { if (v && !(v % 6000)) yield; let x = 0, y = 0, z = 0; for (const w of nb[v]) { x += P0[w * 3]; y += P0[w * 3 + 1]; z += P0[w * 3 + 2]; } const c = nb[v].length || 1;
+    tmp[v * 3] = P0[v * 3] + f * (x / c - P0[v * 3]); tmp[v * 3 + 1] = P0[v * 3 + 1] + f * (y / c - P0[v * 3 + 1]); tmp[v * 3 + 2] = P0[v * 3 + 2] + f * (z / c - P0[v * 3 + 2]); } P0.set(tmp); yield; }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(P0, 3)); g.setIndex(ind); g.computeVertexNormals();
   return { geo: g, grid: [nx, ny, nz] };
 }
@@ -2128,12 +2134,13 @@ P.frame = (B, o) => { const M = stdMat(B.tone(o.tone || 'stone'), { rough: .95, 
     m.material = M; m.name = 'spur'; B.bit(at.bone, m); }
   let n = 0; for (const [bone, list] of Object.entries(gs)) { const m = new THREE.Mesh(mergeGeometries(list), M); m.name = 'frame'; B.bit(bone, m); n += list.length; }
   B.frame = { pieces: n, spurs: (o.spurs || []).length * 2 }; };
-function dressFlesh(geo, B, pal, plan) {
+// a step at a time (Session 1484): a yield every 800 vertices
+function* dressFlesh(geo, B, pal, plan) {
   const pos = geo.attributes.position, nrm = geo.attributes.normal, n = pos.count;
   const si = new Uint16Array(n * 4), sw = new Float32Array(n * 4), col = new Float32Array(n * 3), fur = new Float32Array(n), glow = new Float32Array(n), alpha = plan.faceClear ? new Float32Array(n).fill(1) : null;
   const wb = new Float32Array(B.bones.length), tones = Object.keys(pal), tw = new Float32Array(tones.length), toneI = Object.fromEntries(tones.map((t, i) => [t, i]));
   const kw = B.flesh.map(c => Math.max(.006, .32 * (c.ra + c.rb) / 2)), C = new THREE.Color(), D = new THREE.Color(), pat = plan.pattern, gl = plan.glow;
-  for (let v = 0; v < n; v++) {
+  for (let v = 0; v < n; v++) { if (v && !(v % 800)) yield;
     const x = pos.getX(v), y = pos.getY(v), z = pos.getZ(v); wb.fill(0); tw.fill(0);
     for (let c = 0; c < B.flesh.length; c++) { const f = B.flesh[c], d = capDist(f, x, y, z); if (d > kw[c] * 9) continue; const w = Math.exp(-Math.max(0, d) / kw[c]) * (d < 0 ? 1 + Math.min(4, -d / kw[c]) : 1); wb[f.bone] += w; tw[toneI[f.tone] ?? 0] += w * f.tk; }
     const top = []; for (let b = 0; b < wb.length; b++) if (wb[b] > 0) top.push(b); top.sort((a, b) => wb[b] - wb[a]); const tsum = top.slice(0, 4).reduce((s, b) => s + wb[b], 0) || 1;
@@ -2219,26 +2226,36 @@ function fromSaved(J) {
 }
 
 // ── build: run the plan's parts, grow the flesh, bind it to the skeleton ──
-function build(g) {
-  const plan = PLANS[g.plan], t0 = performance.now(), pal = {};
+// a body built in one go (build), or a step at a time (buildIter, Session 1484): buildSteps is the build, with a yield after the
+// parts, through the flesh's growing and dressing, after the hide and after each shell of fur, so the game can spread one body over
+// several frames as it does a person's (people.js's makePersonIter). Every roll is the body's own seeded stream (rng(seed)), so the
+// steps of two builds may interleave and each comes out the same. stats.ms is the time spent in its steps, not between them
+function build(g) { const it = buildSteps(g); for (;;) { const r = it.next(); if (r.done) return r.value; } }
+function buildIter(g) { return buildSteps(g); }
+function* buildSteps(g) {
+  const plan = PLANS[g.plan], pal = {}; let ms = 0, t0 = performance.now(); const pause = () => { ms += performance.now() - t0; }, go = () => { t0 = performance.now(); };
   for (const [k, c] of Object.entries({ ...plan.palette, ...(COATS[g.island]?.[g.plan] || {}) })) { const C = new THREE.Color().setRGB(...c, THREE.SRGBColorSpace), hsl = {}; C.getHSL(hsl); C.setHSL((hsl.h + g.tint + 1) % 1, hsl.s, Math.max(0, Math.min(1, hsl.l * (1 + g.light)))); pal[k] = C; }
   const sg = { ...g, sliders: { ...g.sliders, size: 1 } }; // parts build at size 1; the size slider scales the finished body
   const B = new Body(plan, sg); B.tone = t => pal[t] || pal.coat;
   for (const [part, o] of plan.parts) P[part](B, o);
+  pause(); yield; go();
   const minR = Math.min(...B.flesh.map(c => Math.min(c.ra, c.rb) * Math.min(...c.s)));
   const ext = B.flesh.reduce((m, c) => Math.max(m, Math.abs(c.a.z), Math.abs(c.b.z), Math.abs(c.a.x), Math.abs(c.b.x), c.a.y, c.b.y), 0) * 2;
   const cell = plan.cell ?? Math.max(minR * .7, ext / 240), blend = plan.blend ?? Math.max(cell * 1.2, .25 * minR);
-  const { geo, grid } = plan.bare ? bareGeo(B, plan.bare) : growFlesh(B.flesh, { cell, blend, holes: B.holes });
-  dressFlesh(geo, B, pal, plan);
+  let geo, grid; if (plan.bare) ({ geo, grid } = bareGeo(B, plan.bare));
+  else { const it = growFlesh(B.flesh, { cell, blend, holes: B.holes }); for (;;) { const r = it.next(); if (r.done) { ({ geo, grid } = r.value); break; } pause(); yield; go(); } }
+  pause(); yield; go();
+  { const it = dressFlesh(geo, B, pal, plan); while (!it.next().done) { pause(); yield; go(); } }
   for (const f of B.after || []) f(geo); // what is laid on the grown skin (a harness, Session 944)
   // the skeleton
   const root = new THREE.Group(), bones = B.bones.map(b => { const o = new THREE.Bone(); o.name = b.name; o.position.copy(b.parent ? b.p.clone().sub(b.parent.p) : b.p); return o; });
   B.bones.forEach((b, i) => { if (b.parent) bones[b.parent.i].add(bones[i]); }); const rig = new THREE.Group(); rig.add(bones[0]); root.add(rig); rig.updateMatrixWorld(true);
   const skel = new THREE.Skeleton(bones), meshes = [];
   const hide = new THREE.SkinnedMesh(geo, hideMat({ glow: plan.glow?.color, rough: plan.rough, opacity: plan.clear, face: !!plan.faceClear })); hide.castShadow = true; hide.name = 'hide'; meshes.push(hide);
+  pause(); yield; go();
   if (plan.fur) for (let k = 1; k <= plan.fur.layers; k++) { const fg = geo.clone(); fg.setAttribute('aBase', new THREE.BufferAttribute(geo.attributes.position.array.slice(), 3)); const p = fg.attributes.position, nm = fg.attributes.normal, fa = fg.attributes.aFur, d = plan.fur.len * k / plan.fur.layers;
-    for (let v = 0; v < p.count; v++) { const e = d * fa.getX(v); p.setXYZ(v, p.getX(v) + nm.getX(v) * e, p.getY(v) + nm.getY(v) * e + (plan.fur.droop || 0) * -e * e / plan.fur.len, p.getZ(v) + nm.getZ(v) * e); }
-    const m = new THREE.SkinnedMesh(fg, furMat(plan.fur, k, plan.fur.layers)); m.castShadow = k < 3; m.name = 'fur' + k; meshes.push(m); }
+    for (let v = 0; v < p.count; v++) { if (v && !(v % 3000)) { pause(); yield; go(); } const e = d * fa.getX(v); p.setXYZ(v, p.getX(v) + nm.getX(v) * e, p.getY(v) + nm.getY(v) * e + (plan.fur.droop || 0) * -e * e / plan.fur.len, p.getZ(v) + nm.getZ(v) * e); }
+    const m = new THREE.SkinnedMesh(fg, furMat(plan.fur, k, plan.fur.layers)); m.castShadow = k < 3; m.name = 'fur' + k; meshes.push(m); pause(); yield; go(); }
   if (B.sheets.length) { const m = new THREE.SkinnedMesh(sheetGeo(B, pal), new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: plan.finRough ?? .5, transparent: true, opacity: plan.finOpacity ?? .9 })); m.castShadow = true; m.name = 'fins'; meshes.push(m); }
   if (B.tubes.length) { const m = new THREE.SkinnedMesh(tubeGeo(B, pal, plan.threadGlow || 1), plan.threadGlow ? new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: .85, blending: THREE.AdditiveBlending, depthWrite: false }) : new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .6 })); m.name = 'threads'; meshes.push(m); }
   for (const w of B.wings) { const m = new THREE.SkinnedMesh(wingGeo(B, w, pal), new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: .75, ...(plan.wingOpacity < 1 ? { transparent: true, opacity: plan.wingOpacity, depthWrite: false } : {}) })); m.castShadow = true; m.name = 'wing';
@@ -2251,7 +2268,7 @@ function build(g) {
   if (B.mist) B.mistObj = B.bit('head', mistPoints(B.mist, g.seed));
   for (const { bone, obj } of B.bits) { const b = B.by[bone]; obj.position.sub(b.p); obj.castShadow = !obj.isPoints && !obj.userData.noShadow; bones[b.i].add(obj); }
   rig.scale.setScalar(g.sliders.size * (plan.scale || 1)); // a plan may stand at a multiple of its parts (the post hare is a hare at 5.5)
-  const C = { g, plan, B, root, rig, bones, byName: Object.fromEntries(bones.map(b => [b.name, b])), skel, meshes, phase: 0, gait: plan.gaits[0], stats: { bones: bones.length, tris: geo.index.count / 3, verts: geo.attributes.position.count, grid: grid.join('x'), cell: +cell.toFixed(3), ms: Math.round(performance.now() - t0) } };
+  const C = { g, plan, B, root, rig, bones, byName: Object.fromEntries(bones.map(b => [b.name, b])), skel, meshes, phase: 0, gait: plan.gaits[0], stats: { bones: bones.length, tris: geo.index.count / 3, verts: geo.attributes.position.count, grid: grid.join('x'), cell: +cell.toFixed(3), ms: 0 } };
   for (const L of B.legs) { L.bones = L.names.map(n => C.byName[n]); L.restLocal = L.bones[0].position.clone(); L.rest = L.J.map(p => p.clone()); L.dirs = L.J.slice(1).map((p, k) => p.clone().sub(L.J[k]).normalize()); L.lens = L.J.slice(1).map((p, k) => p.distanceTo(L.J[k]));
     // the knee's side of the line from the solved chain's root to its end: the way this leg bends
     const a = L.J[L.ik], b = L.J[L.ik + 2], u = b.clone().sub(a).normalize(), kn = L.J[L.ik + 1].clone().sub(a); L.pole = kn.sub(u.clone().multiplyScalar(kn.dot(u))).normalize(); if (!isFinite(L.pole.x) || L.pole.lengthSq() < .5) L.pole = V(0, 0, 1); }
@@ -2259,7 +2276,7 @@ function build(g) {
   C.legH = Math.max(.1, ...B.legs.map(L => L.hR)) || .3; C.S = g.sliders.size * (plan.scale || 1); C.air = {}; C.sac = B.sac; C.mist = B.mistObj;
   if (C.mist) C.mist.material.uniforms.uS.value = C.S;
   const hd = (plan.heading || 0) * DEG; C.dir = V(Math.sin(hd), 0, Math.cos(hd)); // the way it walks in its own frame: a crab goes sideways
-  return C;
+  pause(); C.stats.ms = Math.round(ms); return C;
 }
 // the wing's membrane: panels between neighbouring fingers and from the last finger back to the flank, skinned to both edges
 // fins and other sheets: each vertex rigid on its bone, or shared with a second (`blend`: [bone, weight], the rags'), both faces drawn
@@ -3857,5 +3874,5 @@ Object.assign(PLANS, {
 });
 const CRAWLERS = ['bogcrawler'];
 
-return {hashKey,rng,genome,toSaved,fromSaved,build,speedOf,strideOf,step,pose,footAt,SLIDERS,GAITS,PLANS,COMMON,ISLES,COATS,LIVESTOCK,GATELANDS,MARK,AURENNE,STRANGE,SEA,BURDEN,HARNESSED,CORRUPTED,TROLLS,SLIMES,GOBLINS,GARGOYLES,SKELETONS,FROST,FAILING,GOLEMS,WRAITHS,PHANTOMS,ELEMENTALS,HOUNDS,CRAWLERS};
+return {hashKey,rng,genome,toSaved,fromSaved,build,buildIter,speedOf,strideOf,step,pose,footAt,SLIDERS,GAITS,PLANS,COMMON,ISLES,COATS,LIVESTOCK,GATELANDS,MARK,AURENNE,STRANGE,SEA,BURDEN,HARNESSED,CORRUPTED,TROLLS,SLIMES,GOBLINS,GARGOYLES,SKELETONS,FROST,FAILING,GOLEMS,WRAITHS,PHANTOMS,ELEMENTALS,HOUNDS,CRAWLERS};
 })();

@@ -22,8 +22,8 @@ const made = await page.evaluate((KINDS) => { forceTime(12);
     e.combatYaw = e.mesh.rotation.y; e.locked = false; e.mesh.visible = true; if (!e.mesh.parent) WORLD.scene.add(e.mesh); const rig = e.limbs && e.limbs.wolf; if (rig) rig.e = e; return { n, e, rig }; });
   CAM.position.set(px, worldH(px, pz) + 1.65, pz); CAM.updateMatrixWorld(true);
   const want = () => _W.filter(f => f.rig && hcOk(f.rig) && !f.rig.hc && !f.rig.hcFail).length;
-  let k = 0; const t0 = performance.now(); HBODY.last = -1e9; while (want() && k++ < 100) tickCreatures(1 / 60, 2e5 + k * (HBODY.gap + 1));
-  return { d, ticks: k, left: want(), ms: Math.round(performance.now() - t0), each: Math.round(HC_BODY.ms / Math.max(1, HC_BODY.n)) }; }, KINDS);
+  let k = 0; const t0 = performance.now(); HBODY.last = -1e9; HC_BODY.worst = 0; HC_BODY.frames = 0; const n0 = HC_BODY.n; while (want() && k++ < 100) tickCreatures(1 / 60, 2e5 + k * (HBODY.gap + 1));
+  return { d, ticks: k, left: want(), ms: Math.round(performance.now() - t0), each: Math.round(HC_BODY.ms / Math.max(1, HC_BODY.n)), bodies: HC_BODY.n - n0, frames: HC_BODY.frames, worst: Math.round(HC_BODY.worst) }; }, KINDS);
 console.log('  built:', JSON.stringify(made));
 
 const who = await page.evaluate(() => _W.map(({ n, e, rig }) => { const H = rig.hc;
@@ -32,6 +32,8 @@ const who = await page.evaluate(() => _W.map(({ n, e, rig }) => { const H = rig.
 console.log('  wolves:', JSON.stringify(who));
 const wolves = who.filter(w => w.n !== 'Ash Hound');
 check(`the three wolves wear the kit's body on its own skeleton (${wolves.map(w => w.bones).join(', ')} bones), keyed by their foe id, built in ${made.each} ms each`, wolves.every(w => w.hc && w.bones > 20 && w.seed === w.want) && made.left === 0, wolves);
+// S1484 — the kit's body is built a step at a time (hcBuildStep), at most HC_BODY.slice ms of a frame and always one step
+check(`each body is built over several frames (${made.bodies} bodies in ${made.frames} frames), the longest ${made.worst} ms against ${made.each} ms a body`, made.bodies >= 3 && made.frames >= 3 * made.bodies && made.worst < made.each, made);
 check('the Wolf and the Snow Wolf are the kit\'s grey wolf, the Dire Wolf its Ironwolf; the Snow Wolf pale and the Dire Wolf dark in their own coats',
   who[0].plan === 'wolf' && who[1].plan === 'game:Snow Wolf' && who[2].plan === 'game:Dire Wolf' && who[1].coat[0] > .8 && who[2].coat[0] < .3, who.map(w => [w.n, w.plan, w.coat]));
 check('the Ash Hound wears the kit\'s own Ash Hound, keyed by its foe id (Session 1274)', who[3].hc && who[3].plan === 'ashhound' && who[3].seed === who[3].want, who[3]);
