@@ -131,19 +131,20 @@ for (let k = 0; k < 40 && !(await page.evaluate(() => isInterior())); k++) await
 await g.frames(2);
 const b = await page.evaluate(() => {
   const h = currentHouse, T = h._byre; if (!T) return null; const W = h._roomW, D = h._roomD, X = T.inner.x1, Z = T.inner.z1, rx = x => X + x, rz = z => z + Z, F = T.floors.map(y => +(y - T.floors[0]).toFixed(3)); interiorScene.updateMatrixWorld(true);
-  let lights = 0, draws = 0, tris = 0; interiorScene.traverse(o => { if (o.isLight && !o.isAmbientLight && !o.isHemisphereLight && o.intensity > 0) lights++; if (o.isMesh && o.visible) { draws++; tris += (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3; } });
+  let lights = 0, day = 0, draws = 0, tris = 0; interiorScene.traverse(o => { if (o.isLight && o.userData.daylight) { day++; return; } if (o.isLight && !o.isAmbientLight && !o.isHemisphereLight && o.intensity > 0) lights++; if (o.isMesh && o.visible) { draws++; tris += (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3; } });
   const ax = intArriveX(h), az = intArrivalZ(h), arrive = { x: +ax.toFixed(2), z: +az.toFixed(2), clear: !intSolidAt(ax, az, .3, 0), exits: az > D - h._exitD, floor: footholdY(ax, az, 0, 0) };
   const walks = T.paths.map(P => { let blocked = [], off = 0; for (let i = 0; i + 1 < P.pts.length; i++) { const [a, c] = [P.pts[i], P.pts[i + 1]], n = Math.ceil(Math.hypot(c[0] - a[0], c[1] - a[1]) / .1);
     for (let k = 0; k <= n; k++) { const x = rx(a[0] + (c[0] - a[0]) * k / n), z = rz(a[1] + (c[1] - a[1]) * k / n); if (intSolidAt(x, z, .15, F[P.fl])) blocked.push([+x.toFixed(2), +z.toFixed(2)]); if (Math.abs(footholdY(x, z, F[P.fl], 0) - F[P.fl]) > .02) off++; } }
     return { fl: P.fl, blocked: blocked.length, at: blocked.slice(0, 3), off }; });
   // the loft (2.1 m to the slate under the ridge) is out of reach: under it the head stops at the joists, and no foothold stands over the step
   const ux = rx(-3), uz = rz(1.2), under = +(headCeil(ux, uz, 0)).toFixed(2), high = FOOTHOLDS.filter(f => (f.y || 0) > .7).length;
-  return { W, D, want: [+(T.inner.x1 - T.inner.x0).toFixed(2), +(T.inner.z1 - T.inner.z0).toFixed(2)], lights, draws, tris: Math.round(tris), arrive, walks: walks.filter(w => w.fl === 0), under, joists: +(T.loft.joists - T.floors[0]).toFixed(2), high, npc: !!intNPCMesh }; });
+  return { W, D, want: [+(T.inner.x1 - T.inner.x0).toFixed(2), +(T.inner.z1 - T.inner.z0).toFixed(2)], lights, day, hour: gameHour(), draws, tris: Math.round(tris), arrive, walks: walks.filter(w => w.fl === 0), under, joists: +(T.loft.joists - T.floors[0]).toFixed(2), high, npc: !!intNPCMesh }; });
 check(`inside is the byre's room, ${b && b.W.toFixed(1)} by ${b && b.D.toFixed(1)} m, at its true size, with nobody in it`, !!b && Math.abs(b.W - b.want[0]) < .01 && Math.abs(b.D - b.want[1]) < .01 && !b.npc, b);
 check(`you arrive clear in the passage at ${b && [b.arrive.x, b.arrive.z].join(', ')}, on its flags, outside the door's reach`, !!b && b.arrive.clear && !b.arrive.exits && Math.abs(b.arrive.floor) < .02, b && b.arrive);
 check(`the prototype's four walks on the passage are clear (${b && b.walks.map(w => w.blocked).join(', ')} points in something)`, !!b && b.walks.length === 4 && b.walks.every(w => !w.blocked && !w.off), b && b.walks);
 check(`the hay loft is out of reach: under it a jump's head stops at its joists (${b && b.under} m, ${b && b.joists}), no foothold above 0.7 m (${b && b.high})`, !!b && Math.abs(b.under - b.joists) < .02 && b.high === 0, b);
 check(`lit by its two lanterns (${b && b.lights}), ${b && b.draws} draws (20 or fewer), ${b && b.tris.toLocaleString()} triangles`, !!b && b.lights === 2 && b.draws <= 20, b);
+check(`by day the day comes in through both half-doors (${b && b.day} sky spots at ${b && Math.floor(b.hour)}h; the small lights and the loft's hatch light only themselves, S1493)`, !!b && b.hour >= 7 && b.hour < 18 && b.day === 2, b && { day: b.day, hour: b.hour });
 await page.evaluate(() => { forceTime(12); WORLD.buildInteriorFor(currentHouse); scene = interiorScene; const h = currentHouse; px = intArriveX(h); pz = intArrivalZ(h); jumpY = 0; interact(); });
 await g.frames(30);
 check(`at the byre's arrival spot E does not take you out`, await page.evaluate(() => isInterior()));
