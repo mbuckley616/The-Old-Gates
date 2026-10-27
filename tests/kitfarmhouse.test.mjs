@@ -7,7 +7,7 @@
 // head's height over you; the prototype's seven walks are clear (the doors open); four doors hung; the parents' bed is the resident's and
 // at night the resident lies in it; the home's chest upstairs has a side clear to open it from; a bought house's cellar hatch is clear;
 // the four fires and the two lanterns light it, and a Mages' cold hearth is dark on all four until its task is done; E at the arrival
-// spot keeps you in; and a picture of the kitchen.
+// spot keeps you in; and a picture of the kitchen. And the farmer's day (S1471): the yard by day, in at evening.
 import { boot, check } from './lib/game.mjs';
 import path from 'path'; import { fileURLToPath } from 'url';
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -28,6 +28,18 @@ const H = await page.evaluate(tid => { const S = WORLD.settle.get(tid), F = S.fa
     listed: ZONES.world.houses.includes(h), resident: S.residents.some(r => r.def === h.dlg) }; }, tid);
 check(`its farmhouse is a home (${H && H.name}, ${H && H.keeper}'s), a kit farmhouse inside, listed, its farmer among the village's people`, !!H && H.kit && H.listed && H.resident && H.hid, H);
 check(`the home's door is the farmhouse's front door (${H && H.door.toFixed(2)} m off its middle), outside the house's solid, the step out clear`, !!H && H.door < .2 && !H.inSolid && H.exitClear, H);
+
+// the farmer's day (Session 1471, Michael's A on #762): out of the yard door in the morning, about the yard within 12 m of it by day,
+// never in a solid; in by that door at evening, and the house has them in from 18h
+const st = () => page.evaluate(tid => { const S = WORLD.settle.get(tid), res = S.residents.find(r => r.farm), n = res && res.n, Y = n && n.sched.yard, h = S.houses.find(x => x.farm);
+  return { type: n && n.sched.type, pts: Y ? Y.pts.length : 0, vis: !!n && n.g.visible, d: n && Y ? +Math.hypot(n.g.position.x - Y.door.x, n.g.position.z - Y.door.z).toFixed(2) : 99,
+    solid: !!n && settleSolid(n.g.position.x, n.g.position.z, .2), inside: npcInsideNow(h) }; }, tid);
+await page.evaluate(tid => { forceTime(10); const F = WORLD.settle.get(tid).farm; px = F.x; pz = F.z + 12; }, tid);
+await g.spin(null, 60); const day = [await st()]; for (let k = 0; k < 4; k++) { await g.spin(null, 600); day.push(await st()); }
+check(`by day the farmer keeps the yard (${day[0].pts} spots): out of its door (${day[0].d} m), then ${day.slice(1).map(s => s.d).join(', ')} m from it, never in a solid`,
+  day.every(s => s.type === 'farmer' && s.vis && s.d <= 12.5 && !s.solid) && day[0].d < 1 && day[0].pts >= 20, day);
+await page.evaluate(() => forceTime(18.2)); await g.spin(null, 3600); const eve = await st();
+check(`at evening the farmer goes in by the yard door (${eve.d} m from it, hidden), and the house has them in`, !eve.vis && eve.d < 1.5 && eve.inside, eve);
 
 await page.evaluate(id => { forceTime(12); const h = ZONES.world.houses.find(x => x.id === id); px = h.exitX; pz = h.exitZ; goToInterior(h); }, H.id);
 for (let k = 0; k < 40 && !(await page.evaluate(() => isInterior())); k++) await page.waitForTimeout(250);
