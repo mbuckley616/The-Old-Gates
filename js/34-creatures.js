@@ -744,7 +744,7 @@ function tickSpider(rig,g,e,dt,now){
 // Session 1342: the Faolchú (the boss and its lesser kin) wears the kit's own Faolchú, with both pairs of arms from its seam, over the
 // Dire Wolf's rig it is driven by. buildFaolchuMesh names it (rig.hcKind; a boss is otherwise never dressed) and hands over its sigil
 // material (rig.sigil), whose colour the phases set: the kit's seam takes it, at the plan's own brightness (hcPose).
-const HC_BODY={on:true,near:12,mid:40,build:44,small:.03,ms:0,n:0};
+const HC_BODY={on:true,near:12,mid:40,build:44,small:.03,ms:0,n:0,slice:8,job:null,worst:0,frames:0};
 const HC_RIGS=new Set();
 // the game's kinds and the kit's plans: a kind's own colours over the plan's (the kit's palettes are sRGB triples)
 // Session 1364: the goblin's (OG-041's crouched frame, Michael's folklore goblin of 27 Sep: green). The kit's spine, neck and head already
@@ -819,8 +819,11 @@ function hcPlan(name){const K=HC_KINDS[name];if(!K.own)return K.plan;const id='g
 // a wolf the kit may dress: one of HC_KINDS, on the wolf's own body (not a boss on it, unless its builder names its kind: rig.hcKind)
 function hcKind(rig){return rig.hcKind||rig.name;}
 function hcOk(rig){const K=HC_KINDS[hcKind(rig)];return !!K&&!rig.spider===!K.spider&&(!!rig.hcKind||!rig.hunch&&!(rig.e&&rig.e.bossId));}
-function hcAttach(rig){const tA=performance.now();let C;
-  try{const key=rig.hcKey||(HC_KINDS[hcKind(rig)].person?'foe:'+(rig.e&&rig.e.id!=null?rig.e.id:rig.g.seed):'wolf:'+(rig.e&&rig.e.id!=null?rig.e.id:rig.name));C=HC.build(HC.genome(hcPlan(hcKind(rig)),key));}catch(e){rig.hcFail=true;console.warn('F4: the kit could not build',rig.name,e);return;}
+// its genome, keyed by its foe id (or its name)
+function hcGenome(rig){const key=rig.hcKey||(HC_KINDS[hcKind(rig)].person?'foe:'+(rig.e&&rig.e.id!=null?rig.e.id:rig.g.seed):'wolf:'+(rig.e&&rig.e.id!=null?rig.e.id:rig.name));return HC.genome(hcPlan(hcKind(rig)),key);}
+// C, the kit's body when hcTick has built it a step at a time; without it (foewarm) the body is built here in one go
+function hcAttach(rig,C){const tA=performance.now();
+  if(!C)try{C=HC.build(hcGenome(rig));}catch(e){rig.hcFail=true;console.warn('F4: the kit could not build',rig.name,e);return;}
   const sp=!!rig.spider,sc=!!(rig.k&&rig.k.scorpion),by=C.byName,K=HC_KINDS[hcKind(rig)];let map=sp?hcSpMap(by,sc):K.person?hcPMap(by,K.legless):hcMap(by);
   // a dragon's tail (Session 1348) is the kit's ten joints at their own rest: the driver's three hang a wolf's tail (0.5 rad down in all),
   // which on the first three of ten dragged it to the ground; only the driver's side-to-side sway is spread over them (hcWings)
@@ -986,6 +989,20 @@ function hcBake(rig){const H=rig.hc,C=H.C,t=performance.now();let mid;
 function hcDrop(rig){const H=rig.hc;if(!H)return;if(H.W.parent)H.W.parent.remove(H.W);
   H.C.root.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material)for(const m of Array.isArray(o.material)?o.material:[o.material])m.dispose();});
   if(H.C.skel.boneTexture)H.C.skel.dispose();rig.hc=null;rig.mesh.visible=true;for(const o of [rig.weapon,rig.eyeGlow,...(rig.hollow||[])])if(o)o.visible=true;}
+// S1484 — a body is built a step at a time (the kit's buildIter: the parts, each capsule's share of the flesh's field, slabs of its
+// surface and faces, the smoothing, 800 vertices of its dressing at a time, each shell of fur), at most HC_BODY.slice ms of a frame and
+// always one step, as the people's are (hbBuildStep), instead of 100 to 250 ms in one frame; the driver's own body stands in meanwhile.
+// One creature's at a time, beside the people's one (so at most two slices a frame).
+// A body left behind (its creature gone from the scene) is dropped half made, and one that fails is never tried again
+function hcBuildStep(){const J=HC_BODY.job,rig=J.rig,g=rig.root.parent;
+  // gone, or dressed meanwhile in one go (foewarm's hcAttach)
+  if(!g||!g.parent||rig.hc){HC_BODY.job=null;return null;}
+  const t0=performance.now();let r;
+  try{do{r=J.it.next();J.steps++;}while(!r.done&&performance.now()-t0<HC_BODY.slice);}
+  catch(e){HC_BODY.job=null;rig.hcFail=true;console.warn('F4: the kit could not build',rig.name,e);return null;}
+  const dt=performance.now()-t0;J.ms+=dt;HC_BODY.ms+=dt;HC_BODY.worst=Math.max(HC_BODY.worst,dt);HC_BODY.frames++;
+  if(!r.done)return null;
+  HC_BODY.job=null;rig.hcC=r.value;return rig;}
 // each frame, after the driver is posed (tickCreatures' end): the level by distance, the pose copied, and at most one body built
 function hcTick(now){let best=null,bd=HC_BODY.build;
   const busy=now-HBODY.last<HBODY.gap||(typeof JOBS!=='undefined'&&JOBS.length&&!(typeof isInterior==='function'&&isInterior()));
@@ -994,10 +1011,12 @@ function hcTick(now){let best=null,bd=HC_BODY.build;
     if(!g||!g.parent){hcDrop(rig);HC_RIGS.delete(rig);continue;}
     if(g.parent!==scene||!g.visible)continue;
     const d=Math.hypot(CAM.position.x-g.position.x,CAM.position.z-g.position.z);
-    if(!rig.hc){if(!busy&&!rig.hcFail&&d<bd){bd=d;best=rig;}continue;}
+    if(!rig.hc){if(!busy&&!HC_BODY.job&&!rig.hcFail&&d<bd){bd=d;best=rig;}continue;}
     const L=rig.hc.L,a=HC_BODY.near+(L>0?-1:1),b=HC_BODY.mid+(L>1?-1:1);hcLevel(rig,d<a?0:d<b?1:2);
     if(rig.hc.L<2)hcPose(rig);}
-  if(best){hcAttach(best);HBODY.last=now;if(best.hc){const g=best.root.parent,d=Math.hypot(CAM.position.x-g.position.x,CAM.position.z-g.position.z);hcLevel(best,d<HC_BODY.near?0:d<HC_BODY.mid?1:2);if(best.hc.L<2)hcPose(best);}}}
+  if(best&&HC.buildIter){try{HC_BODY.job={rig:best,it:HC.buildIter(hcGenome(best)),ms:0,steps:0};}catch(e){best.hcFail=true;console.warn('F4: the kit could not build',best.name,e);}best=null;}
+  if(!best&&HC_BODY.job&&!busy)best=hcBuildStep();
+  if(best){const C=best.hcC;best.hcC=null;hcAttach(best,C);HBODY.last=now;if(best.hc){const g=best.root.parent,d=Math.hypot(CAM.position.x-g.position.x,CAM.position.z-g.position.z);hcLevel(best,d<HC_BODY.near?0:d<HC_BODY.mid?1:2);if(best.hc.L<2)hcPose(best);}}}
 // Session 1421: a foe's blow (attackPose, 42-zone-enemies.js) turns its driver's arm after hcTick has copied the frame's pose, so the kit's
 // body of a person-plan kind (the Goblin, the Skeleton, the trolls) never wound up: the copy again, as hbRepose does for the people's
 function hcRepose(rig){if(rig&&rig.hc&&rig.hc.L<2)hcPose(rig);}
