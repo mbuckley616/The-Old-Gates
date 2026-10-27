@@ -813,7 +813,7 @@ function showBagTooltip(idx,ev){
     // Hidden effect
     const countKey=it._typeKey||it.name.toLowerCase().replace(/[^a-z]/g,'');
     const count=HERB_CONSUME_COUNTS[countKey]||0;
-    const unlocked=count>=HIDDEN_UNLOCK_COUNT;
+    const unlocked=count>=herbTellCount();
     html+='<div class="bt-sep"></div>';
     if(unlocked&&it.hiddenEffect){
       const he=it.hiddenEffect;
@@ -821,7 +821,7 @@ function showBagTooltip(idx,ev){
       if(he.duration)hDesc+=` (${he.duration}s)`;
       html+=`<div class="bt-row" style="color:#c8a84a;font-size:9px">✦ ${hDesc}</div>`;
     } else {
-      const needed=Math.max(0,HIDDEN_UNLOCK_COUNT-count);
+      const needed=Math.max(0,herbTellCount()-count);
       html+=`<div class="bt-row" style="color:#4a3820;font-size:9px">✦ Hidden effect — consume ${needed} more to reveal</div>`;
     }
     const def=HERB_DEF[it._typeKey]||HERB_DEF[it.name.toLowerCase().replace(/[^a-z]/g,'')];

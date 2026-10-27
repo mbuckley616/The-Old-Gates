@@ -415,6 +415,7 @@ function restAtBed(hours){
   doFade(()=>{
     {const p=restPreview(hours);PHP=p.hp;mana=p.mp;stamina=effMaxStamina();}
     if(typeof worldState !== 'undefined' && typeof worldState.gameTimeMinutes === 'number'){
+      if(typeof fedSleep==='function')fedSleep(hours*60); /* S1500 — Full belly */
       worldState.gameTimeMinutes = (worldState.gameTimeMinutes + hours*60) % 1440;
       worldState.gameTimeAbsMinutes = (worldState.gameTimeAbsMinutes||0) + hours*60;
     }

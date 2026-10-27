@@ -35,6 +35,8 @@ const r = await page.evaluate(() => {
   PHP = 10; tickSurvival(5); out.steady = +(PHP - 10).toFixed(3);
   worldState.fed = null; bagAdd(survItem('produce')); const pot = cookAt('produce').item; eatMeal(BAG.indexOf(pot)); playClockS += 1; tickDrink();
   out.clear = { kind: fedKind(), mult: fedManaMult() };
+  // ── Cooking's perks (S1500): Two portions at 25 (Full belly at 75 below, once the fire is out) ──
+  bagAdd(survItem('meat', 2)); S(24); out.n24 = cookAt('meat').n; S(25); out.n25 = cookAt('meat').n;
   // ── charcoal and pitch ──
   out.charcoal = cookAt('charcoal').made && bagCount(b => b.name === 'Charcoal'); out.logsAfter = bagCount(b => !!b.log);
   out.pitch = cookAt('pitch').made && bagCount(b => b.name === 'Pitch'); out.pineAfter = bagCount(b => b.log === 'pine');
@@ -47,6 +49,11 @@ const r = await page.evaluate(() => {
   // ── the fire burns out ──
   worldState.gameTimeAbsMinutes += 61; tickSurvival(1 / 60); out.out = { at: atFire(), left: CAMPFIRES.length, mesh: !!(f.mesh && f.mesh.parent) };
   out.cold = cookAt('meat').why;
+  const sleep = lv => { S(lv); worldState.fed = null; setFed('hearty', 1); const left0 = Math.round(fedNow().until - gameMinNow());
+    const _f = doFade, _s = window.saveGame; doFade = cb => cb(); window.saveGame = () => {};
+    try { restAtBed(8); } finally { doFade = _f; window.saveGame = _s; }
+    const F = fedNow(); return { left0, left: F ? Math.round(F.until - gameMinNow()) : 0 }; };
+  out.sleep74 = sleep(74); out.sleep75 = sleep(75);
   // ── the hearth ──
   const lid0 = lid, h0 = currentHouse; lid = 'int_test'; currentHouse = { type: 'inn' }; out.inn = atFire(); currentHouse = { type: 'home' }; out.home = atFire();
   currentHouse = { type: 'weapon' }; out.smithy = atFire(); lid = lid0; currentHouse = h0;
@@ -69,7 +76,9 @@ check(`a fish after it replaces it: ${r.fed2.kind} for ${r.fed2.mins} min (×1.4
   r.fed2.kind === 'steady' && Math.abs(r.fed2.mins - 168) <= 1 && Math.abs(r.fed2.stam - 1) < .01 && Math.abs(r.steady - 1) < .01, r.fed2);
 check(`Pottage: ${r.clear.kind}, mana regeneration ×${r.clear.mult}`, r.clear.kind === 'clear' && r.clear.mult === 1.1);
 check(`two logs make ${r.charcoal} Charcoal (${r.logsAfter} log left); a pine log ${r.pitch} Pitch; with none: "${r.noPitch}"`, r.charcoal === 1 && r.logsAfter === 1 && r.pitch === 3 && r.pineAfter === 0 && /pine/i.test(r.noPitch || ''));
-check(`the page: ${r.rows} recipes, cooks one ("${r.said}"), Esc closes`, r.page && r.rows === 5 && r.paged === 1 && r.closed);
+check(`Two portions: a meal cooked makes ${r.n24} at Cooking 24, ${r.n25} at 25`, r.n24 === 1 && r.n25 === 2);
+check(`Full belly: fed with ${r.sleep74.left0} min left, 8 hours' sleep leaves ${r.sleep74.left} at 74 and ${r.sleep75.left} at 75`, r.sleep74.left === 0 && r.sleep75.left === r.sleep74.left0 && r.sleep75.left0 > 0, { s74: r.sleep74, s75: r.sleep75 });
+check(`the page: ${r.rows} recipes, cooks two at 100 ("${r.said}"), Esc closes`, r.page && r.rows === 5 && r.paged === 2 && /^Two: /.test(r.said) && r.closed);
 check(`after an hour the fire is out and gone ("${r.cold}")`, !r.out.at && r.out.left === 0 && !r.out.mesh && /fire/.test(r.cold || ''), r.out);
 check('an inn\'s and a home\'s hearth is a fire; a smithy\'s room is not', r.inn && r.home && !r.smithy);
 check(`the inn's Hot Stew is ${r.shop.stew} and Mulled Cider ${r.shop.cider}; the goods shop sells ${r.shop.misc.join(', ')}; the weaponsmith none`,
