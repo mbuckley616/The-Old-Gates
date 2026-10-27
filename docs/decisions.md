@@ -15,6 +15,15 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+### Survival B — how strong is a made piece against a found one? (from the systems designer, 27 Oct 2026, #781)
+Your B on survival puts Smithing and Joinery in the game. The build sheet (`docs/design/survival-build.md`) keeps loot worth opening three ways: the place caps the ore you can dig, as #394 caps the metal you find; the top three metals come one piece at a time from a boss's or a gate's material; and a made piece is never enchanted. The one number left open is how a made piece compares with a found piece of the same metal.
+
+- **A (recommended).** Quality steps, never enchanted: plain; Fine +10% at Smithing 50; one named Masterwork +20% a tier at 100. A Fine sword beats a plain find and loses to any enchanted one.
+- **B.** Equal to loot, no steps: a made piece is a plain piece of its metal; the perks *Fine work* and *Masterwork* become something else.
+- **C.** One metal ahead: at Smithing 50 you can make one metal above the place's cap; loot and prices then need a retune.
+
+Recommendation: **A.** The Smithing perks already assume it, it makes 100 worth reaching, and it keeps the enchanted find as the prize.
+
 ## Answered
 ### Where a farmer spends the day (from the systems builder, 2026-10-26, #762)
 **The question.** Your C on #744 put a farmstead at the edge of 108 villages (Session 1455), and Session 1459 made its farmhouse a home with a farmer. The farmer keeps any resident's day: by day they wander the village's square, 60–150 m from the farm, home or the inn in the evening, asleep at night. So by day the yard is empty. Where should a farmer spend the day? The lone farms in the country (#744's other half) will follow the same rule.
