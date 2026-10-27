@@ -37,6 +37,25 @@ const r = await page.evaluate(() => {
   out.clear = { kind: fedKind(), mult: fedManaMult() };
   // ── Cooking's perks (S1500): Two portions at 25 (Full belly at 75 below, once the fire is out) ──
   bagAdd(survItem('meat', 2)); S(24); out.n24 = cookAt('meat').n; S(25); out.n25 = cookAt('meat').n;
+  // ── Seasoned (S1503, Cooking 100): a herb in the pot adds its known effect at a third, to both portions ──
+  const hk = Object.keys(HERB_DEF).find(k => HERB_DEF[k].item && HERB_DEF[k].item.effect && HERB_DEF[k].item.effect.type === 'heal' && HERB_DEF[k].item.effect.amount >= 12);
+  const herb = () => ({ ...HERB_DEF[hk].item, qty: 2, _typeKey: hk }), full = HERB_DEF[hk].item.effect.amount;
+  BAG.filter(b => b.meal).forEach(b => { b.qty = 0; }); for (let i = BAG.length - 1; i >= 0; i--) if (BAG[i].qty <= 0) BAG.splice(i, 1);
+  bagAdd(herb()); bagAdd(survItem('meat', 3));
+  S(99); out.sea99 = cookAt('meat', hk); out.sea99 = { name: out.sea99.item.name, herbs: bagCount(b => herbKeyOf(b) === hk) };
+  S(100); const sc = cookAt('meat', hk);
+  out.sea = { name: sc.item.name, n: sc.n, qty: sc.item.qty, herbs: bagCount(b => herbKeyOf(b) === hk), amt: sc.item.meal.season && sc.item.meal.season.eff.amount, full, list: seasonHerbs().map(h => h.key + ':' + h.n) };
+  worldState.fed = null; PHP = 20; eatMeal(BAG.indexOf(sc.item)); playClockS += 1; tickDrink();
+  out.sea.healed = PHP - 20; out.sea.fed = fedKind(); out.sea.left = sc.item.qty;
+  const rg = Object.keys(HERB_DEF).find(k => HERB_DEF[k].item && HERB_DEF[k].item.effect && HERB_DEF[k].item.effect.type === 'hpRegen');
+  out.seaRegen = rg ? seasonOf({ ...HERB_DEF[rg].item, _typeKey: rg }).eff : null; out.regenFull = rg ? HERB_DEF[rg].item.effect : null;
+  bagTake(b => herbKeyOf(b) === hk, 9); out.seaNone = cookAt('meat', hk).why;
+  out.seaSer = !!(_serItem(sc.item).meal.season && _serItem(sc.item).meal.season.eff.amount === out.sea.amt);
+  // the page at 100: the herbs to season with, one cooking takes one
+  bagAdd(herb()); cookSel = 'meat'; cookSeason = null; openCookPage(); const srows = [...document.querySelectorAll('#ck-right [data-s]')];
+  out.seaPage = { rows: srows.length, has: srows.some(d => d.dataset.s === hk) };
+  srows.find(d => d.dataset.s === hk).click(); cookGo(); out.seaPage.said = document.getElementById('ck-said').textContent; out.seaPage.herbs = bagCount(b => herbKeyOf(b) === hk);
+  closeCookPage(); bagTake(b => herbKeyOf(b) === hk, 9); cookSeason = null;
   // ── charcoal and pitch ──
   out.charcoal = cookAt('charcoal').made && bagCount(b => b.name === 'Charcoal'); out.logsAfter = bagCount(b => !!b.log);
   out.pitch = cookAt('pitch').made && bagCount(b => b.name === 'Pitch'); out.pineAfter = bagCount(b => b.log === 'pine');
@@ -77,6 +96,13 @@ check(`a fish after it replaces it: ${r.fed2.kind} for ${r.fed2.mins} min (×1.4
 check(`Pottage: ${r.clear.kind}, mana regeneration ×${r.clear.mult}`, r.clear.kind === 'clear' && r.clear.mult === 1.1);
 check(`two logs make ${r.charcoal} Charcoal (${r.logsAfter} log left); a pine log ${r.pitch} Pitch; with none: "${r.noPitch}"`, r.charcoal === 1 && r.logsAfter === 1 && r.pitch === 3 && r.pineAfter === 0 && /pine/i.test(r.noPitch || ''));
 check(`Two portions: a meal cooked makes ${r.n24} at Cooking 24, ${r.n25} at 25`, r.n24 === 1 && r.n25 === 2);
+check(`Seasoned: at Cooking 99 the herb is not taken (${r.sea99.name}, ${r.sea99.herbs} herbs kept); at 100 "${r.sea.name}", ${r.sea.qty} portions for 1 herb (${r.sea.herbs} left), +${r.sea.amt} HP of its ${r.sea.full}`,
+  !/ with /.test(r.sea99.name) && r.sea99.herbs === 2 && / with /.test(r.sea.name) && r.sea.qty === 2 && r.sea.herbs === 1 && r.sea.amt === Math.max(1, Math.round(r.sea.full / 3)), r.sea);
+check(`a seasoned meal eaten: fed ${r.sea.fed} and healed ${r.sea.healed}, ${r.sea.left} portion left; a regeneration herb seasons at rate ${r.seaRegen && r.seaRegen.rate} of ${r.regenFull && r.regenFull.rate} for the same ${r.seaRegen && r.seaRegen.duration} s`,
+  r.sea.fed === 'hearty' && r.sea.healed === r.sea.amt && r.sea.left === 1 && r.seaRegen && Math.abs(r.seaRegen.rate - r.regenFull.rate / 3) < .01 && r.seaRegen.duration === r.regenFull.duration, { sea: r.sea, rg: r.seaRegen });
+check(`no herb left: "${r.seaNone}"; the seasoning keeps through the save`, /none/.test(r.seaNone || '') && r.seaSer);
+check(`the page at 100 offers ${r.seaPage.rows} seasonings (nothing and the herb); a cooking with it says "${r.seaPage.said}" and takes one (${r.seaPage.herbs} left)`,
+  r.seaPage.rows === 2 && r.seaPage.has && / with /.test(r.seaPage.said) && r.seaPage.herbs === 1, r.seaPage);
 check(`Full belly: fed with ${r.sleep74.left0} min left, 8 hours' sleep leaves ${r.sleep74.left} at 74 and ${r.sleep75.left} at 75`, r.sleep74.left === 0 && r.sleep75.left === r.sleep74.left0 && r.sleep75.left0 > 0, { s74: r.sleep74, s75: r.sleep75 });
 check(`the page: ${r.rows} recipes, cooks two at 100 ("${r.said}"), Esc closes`, r.page && r.rows === 5 && r.paged === 2 && /^Two: /.test(r.said) && r.closed);
 check(`after an hour the fire is out and gone ("${r.cold}")`, !r.out.at && r.out.left === 0 && !r.out.mesh && /fire/.test(r.cold || ''), r.out);
