@@ -122,3 +122,32 @@ Frame rate is not measured here: software GL is not a target machine. It is Mich
 | the field west of Dunmore, dawn | Low | 723 **over** | 722k | 0 | 0 | 108 | 190 | 295 | 130 | Mesh 79, Group 40, oldGate 8, quaywall 2, Points 1 |
 | the field west of Dunmore, dawn | Middle | 868 | 1.23 M | 119 | 6 | 108 | 190 | 315 | 130 | Mesh 79, Group 40, oldGate 8, quaywall 2, Points 1 |
 | the field west of Dunmore, dawn | High | 921 | 1.65 M | 162 | 6 | 108 | 190 | 325 | 130 | Mesh 79, Group 40, oldGate 8, quaywall 2, Points 1 |
+
+### s956 — 2026-10-27 07:05 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Portclare square, noon | Low | 525 | 767k | 0 | 0 | 30 | 72 | 207 | 216 | Mesh 146, Group 56, oldGate 14 |
+| Portclare square, noon | Middle | 684 | 1.48 M | 133 | 6 | 31 | 72 | 226 | 216 | Mesh 146, Group 56, oldGate 14 |
+| Portclare square, noon | High | 727 | 1.83 M | 163 | 6 | 31 | 72 | 239 | 216 | Mesh 146, Group 56, oldGate 14 |
+| The Bramble Hearth (Dunmore's inn), the hall from the door, 20h | Middle (indoors) | 38 | 26k | 0 | 0 | 1 | 0 | 0 | 37 |  |
+| a medium gate (ruins, seed 11), from its entrance | Middle (indoors) | 286 | 427k | 0 | 0 | 43 | 0 | 0 | 242 |  |
+
+### s956 — 2026-10-27 07:05 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Dunmore street, noon | Low | 784 **over** | 1.29 M | 0 | 0 | 111 | 149 | 268 | 256 | Mesh 195, Group 36, oldGate 24, Points 1 |
+| Dunmore street, noon | Middle | 941 | 2.01 M | 136 | 6 | 113 | 149 | 281 | 256 | Mesh 195, Group 36, oldGate 24, Points 1 |
+| Dunmore street, noon | High | 992 | 2.35 M | 168 | 6 | 113 | 149 | 300 | 256 | Mesh 195, Group 36, oldGate 24, Points 1 |
+| Dunmore street, midnight | Low | 847 **over** | 1.25 M | 0 | 0 | 107 | 215 | 268 | 257 | Mesh 195, Group 36, oldGate 24, Points 2 |
+| Dunmore street, midnight | Middle | 1022 **over** | 1.97 M | 156 | 6 | 107 | 215 | 281 | 257 | Mesh 195, Group 36, oldGate 24, Points 2 |
+| Dunmore street, midnight | High | 1084 | 2.33 M | 199 | 6 | 107 | 215 | 300 | 257 | Mesh 195, Group 36, oldGate 24, Points 2 |
+| the field west of Dunmore, noon | Low | 637 | 729k | 0 | 0 | 105 | 111 | 295 | 126 | Mesh 79, Group 36, oldGate 8, quaywall 2, Points 1 |
+| the field west of Dunmore, noon | Middle | 722 | 1.13 M | 59 | 6 | 105 | 111 | 315 | 126 | Mesh 79, Group 36, oldGate 8, quaywall 2, Points 1 |
+| the field west of Dunmore, noon | High | 770 | 1.55 M | 97 | 6 | 105 | 111 | 325 | 126 | Mesh 79, Group 36, oldGate 8, quaywall 2, Points 1 |
+| the field west of Dunmore, dawn | Low | 720 **over** | 714k | 0 | 0 | 108 | 190 | 295 | 127 | Mesh 79, Group 36, oldGate 8, quaywall 2, Points 2 |
+| the field west of Dunmore, dawn | Middle | 866 | 1.22 M | 120 | 6 | 108 | 190 | 315 | 127 | Mesh 79, Group 36, oldGate 8, quaywall 2, Points 2 |
+| the field west of Dunmore, dawn | High | 919 | 1.65 M | 163 | 6 | 108 | 190 | 325 | 127 | Mesh 79, Group 36, oldGate 8, quaywall 2, Points 2 |
+
+*s956, QA Session 1481: `node tests/run.mjs budget` matches `budgetport` too, so the square and the indoor spots were measured twice (07:05 and 07:11). The second read the same to ±4 calls outdoors; the gate read 241 calls, not 286 (other 197): the gate's count moves by about 45 between boots. Since s884 no view has moved more than 6% (the gate, 269 to 286), and every outdoor view within 1%.*
