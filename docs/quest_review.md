@@ -11,7 +11,7 @@ Every player-readable string added or changed in `index.html` and, since the spl
 | auto/fable-combat-resolver | `f1976a3` | run 20: merged into main, nothing ahead |
 | auto/fable-f2a-scale, auto/wip-fable-f2a-scale | `e82ad5c`, `a5a4667` | run 19: merged into main, nothing ahead |
 | auto/bodies, auto/backlog, auto/wip-town-plots, auto/producer, auto/producer-look, auto/producer-bodies, auto/producer-decisions, auto/qa, auto/qa-perkbody, auto/qa-skillcurve, auto/critic, auto/concept, auto/design, auto/wip-spear | `372b869`, `0272203`, `aa74c47`, `7a71e51`, `86f05bb`, `56e437c`, `570cd5e`, `db349a9`, `bac01b0`, `ff40184`, `92afe03`, `dc5902f`, `2b9d1d4`, `5a1b57d` | run 22: bodies (the wall hold) and backlog and wip-town-plots (the church, the bawn, the steward's route) add only the inspector's part names (*Church with a west tower*, *Bawn wall, gate and flankers*); auto/producer and auto/qa-skillcurve hold old merges of auto/systems read in runs 19–20; the rest nothing ahead of main in `js/` or `index.html` |
-| auto/look-1469, auto/quests-build-1472 | `396cbf77`, — | run 29: open PR #772 (the courtyard door and the lone farms; the inspector's *Farmhouse*, no new line a player reads) and my own build, *The Aurennais Register* (the approved draft's words, verbatim; Corwin's brief now names the Compact's seat, which is no longer *Fortargent*) |
+| auto/look-1469, auto/quests-build-1472 | `396cbf77`, — | run 29: open PR #772 (the courtyard door and the lone farms; the inspector's *Farmhouse*, no new line a player reads) and my own build, PR #778, *The Aurennais Register* (the approved draft's words, verbatim; Corwin's brief now names the Compact's seat, which is no longer *Fortargent*) |
 | auto/look-1430, auto/qa-1430, auto/quests-build-1432 | `c67dc814`, `95045962`, — | run 28: open PRs #728 (the townhouse room in the game: no new line a player reads), #726 (pipeline and tests only) and #729, my own build (*First Words*, the approved draft's words, verbatim) |
 | auto/look-1380, auto/qa-1381, auto/quests-build-1387 | `71b92b97`, `fa174193`, — | run 27: open PRs #686 (the resident's role, no new line), #687 (tests only) and #690, my own build (the approved draft's words, verbatim) |
 | auto/qa-1329, auto/quests-build-1338 | `eae9444`, — | run 26: open PRs #636 (tests only, no line a player reads) and #640, my own build (the approved draft's words, verbatim) |
@@ -41,7 +41,7 @@ About 90 player-readable strings read on main from `791ba041` to `54d7cec6` (Ses
 
 **Michael's calls:** none newer than 16 Oct on the drafts page.
 
-**Built:** Session 1472, *The Aurennais Register* (approved 14 Oct), on `auto/quests-build-1472`. Aurenne's capital re-rolled with it (*Fortargent* is *Darona* on the default seed), so Corwin's brief, which named Fortargent by hand, now reads the seat's name. No `FREEZE:` issue is open.
+**Built:** Session 1474 (PR #778), *The Aurennais Register* (approved 14 Oct), on `auto/quests-build-1472`. Aurenne's capital re-rolled with it (*Fortargent* is *Darona* on the default seed), so Corwin's brief, which named Fortargent by hand, now reads the seat's name. No `FREEZE:` issue is open.
 
 **Drafted:** *Faith*, the five of OG-091 (backlog L2).
 
