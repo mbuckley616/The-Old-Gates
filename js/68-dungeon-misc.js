@@ -657,7 +657,7 @@ function _reenterPlace(W,tries){tries=tries||0;try{
     if(!hs){if(tries<60||performance.now()-W._t0<30000){if(typeof WORLD!=='undefined')WORLD.tick(1/60,performance.now());setTimeout(()=>_reenterPlace(W,tries+1),100);}else showMsg('The door you saved behind has moved on. You are outside it.','#c8b880');return;}
     window._pendingPos={x:W.x,z:W.z,yaw:W.yaw,jumpY:W.jumpY};goToInterior(hs);return;}
   if(W.kind==='dungeon'){const e=(typeof WORLD!=='undefined')&&WORLD.doorAnywhere(W.seed);if(!e){showMsg('The gate you saved in is closed to you. You are outside it.','#c8b880');return;}
-    const p=makePortalDef(e);const wp=WORLD.dungeonPos[W.seed];if(wp){p.x=wp.x;p.z=wp.z;}p.zone='world';
+    const p=makePortalDef(e);const wp=WORLD.dungeonPos[W.seed]||(WORLD.doorSpot&&WORLD.doorSpot(e));if(wp){p.x=wp.x;p.z=wp.z;}p.zone='world'; /* S1476 — where the door stands even when its cell has not loaded: the old zone's x, z was the world's corner, and its tier */
     if(W.gone)p._gone=W.gone;goToDungeon(p);return;} /* S1283 — a load inside a dungeon puts you at its entrance (the F2b sheet, until F13): the place saved was in cells of an older build, and a dungeon's cell is its kind's now */
 }catch(err){console.warn('reenter',err);}}
 function playerDead(){
