@@ -954,11 +954,11 @@
     if(t==='church')return h>=6&&h<21;
     if(t==='castle')return h>=8&&h<20;
     if(t==='guild_f'||t==='guild_m')return true;
-    if(t==='cabin'||t==='cellar'||t==='tower'||t==='chapel'||t==='byre')return false; /* S1474 — and a farm's byre: nobody keeps it */
+    if(t==='cabin'||t==='cellar'||t==='tower'||t==='chapel'||t==='byre'||t==='barn')return false; /* S1474 — and a farm's byre (S1475, and its barn): nobody keeps them */
     if(t==='home'){if(house.shuttered)return false;if(house.ownedByPlayer||ownedHouse(house.id))return false;return h>=(house.farm&&!feastNow()?HRS.eve:HRS.night)||h<HRS.dawn;} /* S1471 — a farmer is in from the evening (#762 A) */
     return h>=HRS.shopOpen&&h<HRS.shopClose; // shops
   }
-  function shopClosedNow(house){const t=house.type;if(t==='home'||t==='inn'||t==='church'||t==='castle'||t==='guild_f'||t==='guild_m'||t==='cabin'||t==='cellar'||t==='tower'||t==='chapel'||t==='byre')return false;return !npcInsideNow(house);} /* S1474 — a byre is never locked */
+  function shopClosedNow(house){const t=house.type;if(t==='home'||t==='inn'||t==='church'||t==='castle'||t==='guild_f'||t==='guild_m'||t==='cabin'||t==='cellar'||t==='tower'||t==='chapel'||t==='byre'||t==='barn')return false;return !npcInsideNow(house);} /* S1474 — a byre (S1475, a barn) is never locked */
   function feastNow(){return typeof feastOn==='function'&&!!feastOn();}
   function feastR(r){return feastNow()?Math.min(r,18):r;}
   function scheduleFor(n,h){

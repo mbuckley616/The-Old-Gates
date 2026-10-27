@@ -144,5 +144,41 @@ await g.frames(6); await page.screenshot({ path: path.join(here, '../docs/protot
 console.log('  (picture: docs/prototypes/kit-byre-passage.png)');
 await page.evaluate(() => { exitInterior(); });
 for (let k = 0; k < 40 && (await page.evaluate(() => isInterior())); k++) await page.waitForTimeout(250);
+// the barn (Session 1475): its cart arch or stable door, whichever is nearer the farmhouse's yard door, opens into the barn's rooms
+// (PKIT.gl.barn, rooms.js's Session 1198): the cart bay and the stable below, the stair of 16 risers up the west gable to the loft
+const BN = await page.evaluate(tid => { const S = WORLD.settle.get(tid), h = S.houses.find(x => x.type === 'barn'); if (!h) return null;
+  const sol = S.sol.find(q => q.farm === 'Barn'), inSol = (x, z) => { const dx = x - sol.cx, dz = z - sol.cz, lx = dx * sol.c - dz * sol.s, lz = dx * sol.s + dz * sol.c; return Math.abs(lx) < sol.rx && Math.abs(lz) < sol.rz; };
+  forceTime(2); const night = WORLD.doorLockNow(h);
+  return { id: h.id, name: h.name, door: h.kit.door, onWall: inSol(h.doorX - (h.exitX - h.doorX) * .2, h.doorZ - (h.exitZ - h.doorZ) * .2) && !inSol(h.exitX, h.exitZ), exitClear: !settleSolid(h.exitX, h.exitZ, .3), listed: ZONES.world.houses.includes(h), night }; }, tid);
+check(`the barn is a door of its own (${BN && BN.name}, its ${BN && (BN.door ? 'stable door' : 'cart arch')}), on the barn's wall, the step out clear, never locked (at 2h: ${BN && JSON.stringify(BN.night)})`, !!BN && BN.onWall && BN.exitClear && BN.listed && !BN.night, BN);
+await page.evaluate(id => { forceTime(12); const h = ZONES.world.houses.find(x => x.id === id); px = h.exitX; pz = h.exitZ; goToInterior(h); }, BN.id);
+for (let k = 0; k < 40 && !(await page.evaluate(() => isInterior() && currentHouse && currentHouse.type === 'barn')); k++) await page.waitForTimeout(250);
+await g.frames(2);
+const n = await page.evaluate(() => {
+  const h = currentHouse, T = h._barn; if (!T) return null; const W = h._roomW, D = h._roomD, X = T.inner.x1, Z = T.inner.z1, rx = x => X + x, rz = z => z + Z, F = T.floors.map(y => +(y - T.floors[0]).toFixed(3)); interiorScene.updateMatrixWorld(true);
+  let lights = 0, draws = 0, tris = 0; interiorScene.traverse(o => { if (o.isLight && !o.isAmbientLight && !o.isHemisphereLight && o.intensity > 0) lights++; if (o.isMesh && o.visible) { draws++; tris += (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3; } });
+  const ax = intArriveX(h), az = intArrivalZ(h), arrive = { x: +ax.toFixed(2), z: +az.toFixed(2), clear: !intSolidAt(ax, az, .3, 0), exits: az > D - h._exitD, floor: footholdY(ax, az, 0, 0) };
+  const walks = T.paths.map(P => { let blocked = [], off = 0; for (let i = 0; i + 1 < P.pts.length; i++) { const [a, c] = [P.pts[i], P.pts[i + 1]], m = Math.ceil(Math.hypot(c[0] - a[0], c[1] - a[1]) / .1);
+    for (let k = 0; k <= m; k++) { const x = rx(a[0] + (c[0] - a[0]) * k / m), z = rz(a[1] + (c[1] - a[1]) * k / m); if (intSolidAt(x, z, .15, F[P.fl])) blocked.push([+x.toFixed(2), +z.toFixed(2)]); if (Math.abs(footholdY(x, z, F[P.fl], 0) - F[P.fl]) > .02) off++; } }
+    return { fl: P.fl, blocked: blocked.length, at: blocked.slice(0, 3), off }; });
+  // the stair with the game's own ground, solids and ceiling: from the bay in front of its foot up the one flight to the landing at the back
+  const sx = rx((T.steps[0].x0 + T.steps[0].x1) / 2), z0 = rz(T.steps[0].z1 + .35), z1 = rz(T.well.z0 - .4);
+  let y = 0, maxStep = 0, blocked = 0, minHead = 99; { const m = Math.ceil(Math.abs(z1 - z0) / .04); for (let k = 0; k <= m; k++) { const z = z0 + (z1 - z0) * k / m;
+    if (intSolidAt(sx, z, .25, y)) blocked++; const ny = footholdY(sx, z, y, 0); maxStep = Math.max(maxStep, ny - y); y = ny; minHead = Math.min(minHead, headCeil(sx, z, y) - y); } }
+  const climb = { top: +y.toFixed(3), want: F[1], maxStep: +maxStep.toFixed(3), blocked, minHead: +minHead.toFixed(2) };
+  return { W, D, want: [+(T.inner.x1 - T.inner.x0).toFixed(2), +(T.inner.z1 - T.inner.z0).toFixed(2)], lights, draws, tris: Math.round(tris), arrive, walks, climb, npc: !!intNPCMesh }; });
+check(`inside is the barn's room, ${n && n.W.toFixed(1)} by ${n && n.D.toFixed(1)} m, at its true size, with nobody in it`, !!n && Math.abs(n.W - n.want[0]) < .01 && Math.abs(n.D - n.want[1]) < .01 && !n.npc, n);
+check(`you arrive clear at ${n && [n.arrive.x, n.arrive.z].join(', ')}, on the floor, outside the door's reach`, !!n && n.arrive.clear && !n.arrive.exits && Math.abs(n.arrive.floor) < .02, n && n.arrive);
+check(`the prototype's five walks are clear on their floors, through the partition's doorway and across the loft (${n && n.walks.map(w => w.blocked).join(', ')} points in something)`, !!n && n.walks.length === 5 && n.walks.every(w => !w.blocked && !w.off), n && n.walks);
+check(`the stair climbs to the loft at ${n && n.climb.want} m in steps of ${n && n.climb.maxStep} m or less, nothing in the way, ${n && n.climb.minHead} m over the head`, !!n && Math.abs(n.climb.top - n.climb.want) < .02 && n.climb.maxStep <= .2 && !n.climb.blocked && n.climb.minHead >= 1.9, n && n.climb);
+check(`lit by its three lanterns (${n && n.lights}), ${n && n.draws} draws (20 or fewer), ${n && n.tris.toLocaleString()} triangles`, !!n && n.lights === 3 && n.draws <= 20, n);
+await page.evaluate(() => { forceTime(12); WORLD.buildInteriorFor(currentHouse); scene = interiorScene; const h = currentHouse; px = intArriveX(h); pz = intArrivalZ(h); jumpY = 0; interact(); });
+await g.frames(30);
+check(`at the barn's arrival spot E does not take you out`, await page.evaluate(() => isInterior()));
+await page.evaluate(() => { const h = currentHouse, T = h._barn, X = T.inner.x1, Z = T.inner.z1; try { closeDialog(); } catch (e) {} VM_SCENE.visible = false; px = X + .1; pz = Z + 2.0; jumpY = 0; yaw = 1.3; pitch = .12; });
+await g.frames(6); await page.screenshot({ path: path.join(here, '../docs/prototypes/kit-barn-bay.png') });
+console.log('  (picture: docs/prototypes/kit-barn-bay.png)');
+await page.evaluate(() => { exitInterior(); });
+for (let k = 0; k < 40 && (await page.evaluate(() => isInterior())); k++) await page.waitForTimeout(250);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
