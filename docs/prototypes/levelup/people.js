@@ -783,7 +783,11 @@ function buildHair(P, G, heads, scalpTris, headB, rnd, checks = true) {
     if (r0.z > .04) { if (eF < .5) { edgeN++; edgeW += fine; } else if (eF >= 1) { backN++; backW += fine; } }
     if (r0.z > -.01 && r0.z < .04 && Math.abs(r0.x) > .05) { if (eD < .0075) { tN++; tW += fine; } else if (eD >= .015) { tbN++; tbW += fine; } }
     if (crown && q.distanceTo(g.p) > off + .008) crownMiss++;
-    strands.push({ pts, ns, w: (shv ? .004 : short ? .008 : free ? .008 : crown ? .015 : .011) * (.8 + .4 * rnd()) * fine, tip: free ? .85 : .5, v0: 0, v1: Math.min(1, pts.length * step / (g ? .35 : myL)) });
+    // (Session 1494: a crown's strand ends at the ring at the strand texture's opaque end, v 1, and runs back from there at a braid's .35 m to
+    // the texture; run 0 up, as the braids' are, its 2 to 10 cm took only the texture's faded foot, under the alpha test, so the hair round
+    // the ring was all but bare skin and the braid stood on it as a hoop. A root by the hairline, finer, starts lower in the fade, so the
+    // short strands there thin out onto the brow and do not stop on one hard line)
+    strands.push({ pts, ns, w: (shv ? .004 : short ? .008 : free ? .008 : crown ? .015 : .011) * (.8 + .4 * rnd()) * fine, tip: free ? .85 : .5, ...crown ? { v0: Math.max(0, Math.min(1 - pts.length * step / .35, .2 + .65 * (fine - .35) / .65)), v1: 1 } : { v0: 0, v1: Math.min(1, pts.length * step / (g ? .35 : myL)) } });
   }
   // the checks' numbers: strand points under the skin, and strand points lying on the face (by the rest place of the skin under them)
   // and Session 877's: how high the roots sit on the skin, and how high the hair stands over the crown
