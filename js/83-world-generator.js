@@ -973,7 +973,15 @@
         const hh={id:`g_${site.id}_${FARM_N}`,doorX,doorZ,doorFace:cardinalFace(tx,tz),exitX:exX,exitZ:exZ,exitYaw:Math.atan2(-tx,-tz),name:`${rdef.name}'s Farm`,keeper:rdef.name,_twin:rdef._twin,type:'home',tagline:'',bCol:rdef.bCol,sCol:rdef.sCol,dlg:rdef,
           w:U.parts.house.w,d:U.parts.house.d,two:true,reg,style:st===STYLE.stone?'stone':st===STYLE.garrison?'garrison':reg,roleTag:'farmer',siteKind:site.kind,siteId:site.id,kit:{kind:'farm',paint:'green'},farm:F.id};
         if(ownedHouse(hh.id)){hh.name='Your Farm';hh.ownedByPlayer=true;}else rdef._extra.unshift(...houseTopics(hh));
-        houses.push(hh);if(!hh.ownedByPlayer)S.residents.push({def:rdef,ry:F.ry+Math.PI,n:null,door:{x:exX,z:exZ},farm:true});}
+        houses.push(hh);if(!hh.ownedByPlayer)S.residents.push({def:rdef,ry:F.ry+Math.PI,n:null,door:{x:exX,z:exZ},farm:true});
+        // S1474 (card F9; Michael's C on #744, A on #303; OG-115, OG-114) — the byre opens: its half-door nearer the farmhouse's yard door
+        // (the k-th of the farmstead's 'Byre, half-door's is the room's k-th, PKIT.gl.byre), the room inside the byre's own (buildKitByre).
+        // Nobody keeps it and it is never locked (its half-doors stand open, as the prototype draws them); its id is FARM_N+1, so no earlier
+        // id or draw moves. It carries the farm's id on its kit, not as .farm, which names the farmhouse
+        {const BD=(U.doors||[]).filter(d=>/^Byre/.test(d.name)),yd=S.farm.yardDoor,W_=d=>({x:F.x+d.x*c+d.z*s_,z:F.z-d.x*s_+d.z*c,nx:d.nx*c+d.nz*s_,nz:-d.nx*s_+d.nz*c});
+          if(BD.length){let k=0;if(yd&&BD.length>1){const dd=d=>Math.hypot(d.x-yd.x,d.z-yd.z);k=dd(BD[1])<dd(BD[0])?1:0;}const D_=W_(BD[k]),bx_=D_.x+D_.nx*1.4,bz_=D_.z+D_.nz*1.4;
+            houses.push({id:`g_${site.id}_${FARM_N+1}`,doorX:D_.x,doorZ:D_.z,doorFace:cardinalFace(D_.nx,D_.nz),exitX:bx_,exitZ:bz_,exitYaw:Math.atan2(-D_.nx,-D_.nz),name:hh.ownedByPlayer?'Your Byre':`${rdef.name}'s Byre`,keeper:'',type:'byre',tagline:'',
+              w:U.parts.byre.w,d:U.parts.byre.d,two:false,reg,style:hh.style,siteKind:site.kind,siteId:site.id,kit:{kind:'byre',farm:F.id,door:k}});}}}
     }catch(e){console.warn('farm',e);}}
     S.reach=t_reach(sol,site);
     /* S1216 — a door that faces the next building across a lane of 2.5 m had its step-out point (2.4 out) in that building's
@@ -2024,6 +2032,48 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     else{intNPCMesh=null;intNPCPos={x:-99,z:-99};}
     return sc_;
   }
+  // S1474 (card F9; Michael's C on #744, A on #303; OG-115, OG-114) — on the new look a Gatelands farm's byre (its record S1474's, in
+  // buildFarm) is the byre's own room inside (PKIT.gl.byre, rooms.js's Session 1198), in the shell of the farmstead's byre in the farm's
+  // paint: six cows' standings in three double stalls facing the back wall, the manger and its rack, the passage along the front from
+  // both half-doors, the calf pen at the east end, the hay loft over the west half on its joists, open to the couples over the east.
+  // Drawn in metres and moved into the room's frame as the farmhouse's is. You come in by the half-door the record names.
+  function kitByre(house){return !!(house&&house.type==='byre'&&house.kit&&house.kit.kind==='byre'&&window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.gl&&PKIT.gl.byre);}
+  function buildKitByre(house){
+    const paint=['red','green','blue','black'][Math.floor(PKIT.stream(house.kit.farm)()*4)]; /* the farmstead's paint (buildFarm's first draw of the farm's stream) */
+    const T=PKIT.gl.byre({paint},PKIT.stream(house.id+':byre')),I=T.inner,X=I.x1,Z=I.z1,F0=T.floors[0],W=2*X,D=2*Z;
+    const rx=x=>x+X,rz=z=>z+Z,ry=y=>y-F0,FL=T.floors.map(y=>+(y-F0).toFixed(3)),dr=T.doors[house.kit.door||0]||T.doors[0];
+    house._counterFront=null;house.intW=W;house.intD=D;house._roomH=+(T.under(0)-F0).toFixed(3);house._exitD=.8;house._exitW=1.0;house._exitX=+rx(dr.x).toFixed(3);house._byre=T;
+    house._arriveX=+rx(dr.x).toFixed(3);house._arriveZ=+rz(1.05).toFixed(3); /* in the passage, a step past the leaf, clear of the dung channel */
+    const sc_=new THREE.Scene();interiorScene=sc_;landRoomPost(sc_);sc_.background=new THREE.Color(0x120a06);sc_.fog=new THREE.Fog(0x120a06,Math.max(W,D)*.8*SCALE.ROOM_K,Math.max(W,D)*2.4*SCALE.ROOM_K);
+    intNPCMesh=null;intNPCPos={x:-99,z:-99};intBedPos=null;intStashPos=null;
+    const SOL=[];INT_SOL=SOL;FOOTHOLDS=[];INT_BEDS=[];INT_DOORS=[];INT_DOORS.house=house.id;INT_CHAIR=null;INT_NPCS=[];HATCH.active=false;HATCH.roof=false;INT_LOOT=null;INT_BOX=null;INT_SHELF=null;
+    T.group.position.set(X,-F0,Z);T.group.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false;}});sc_.add(T.group);
+    {const E=new THREE.Object3D();E.position.set(rx(dr.x),0,D);E.userData.entrance=true;E.userData.leaf=[dr.w,dr.h];sc_.add(E);}
+    const fr=(q,y0,y1)=>({x0:rx(q.x0),x1:rx(q.x1),z0:rz(q.z0),z1:rz(q.z1),y0,y1});
+    const foot=b=>FOOTHOLDS.push({x0:b.x0,x1:b.x1,z0:b.z0,z1:b.z1,y:b.y1});
+    // the solids are the prototype's boxes on the passage's floor (the loft's hay and the ladder's head are out of reach); the low things'
+    // tops are footholds (the manger's kerb, the trough, the stool, a pail, the meal bin), the boards, posts, rails, leaves, the fork and
+    // the ladder are not
+    const TALL=['division','post','penwall','penfront','leaf','fork','rack','ladder'];
+    for(const q of T.boxes){if(q.fl===1)continue;const f=FL[q.fl||0],b=fr(q,Math.max(f,ry(q.y0)),ry(q.y1));SOL.push(b);if(!TALL.includes(q.tag))foot(b);}
+    // the cobbled standings, a step up from the passage
+    foot(fr({x0:I.x0,x1:T.stalls[T.stalls.length-1].x1+.05,z0:T.standing.z0,z1:T.standing.z1},0,ry(T.standing.y)));
+    // the loft is out of reach: under the ridge it stands 2.1 m to the slate and 1.6 m where the ladder comes up, a hay loft you would
+    // crawl in, and you cannot crouch under a ceiling yet; the barn's loft is the one you climb to. Its boards and joists are one solid
+    // over the passage, so a jump's head stops at the joists; the ladder is a prop
+    SOL.push({x0:rx(I.x0),x1:rx(T.loft.x1),z0:0,z1:D,y0:ry(T.loft.joists),y1:FL[1]});
+    // the day beyond every window, the open hatch in the west gable and both open half-doors: one mesh of planes outside them
+    {const hr=typeof gameHour==='function'?gameHour():12,day=hr>=7&&hr<18?0xc4d0dc:hr>=5&&hr<20?0x8a7a7a:0x0e1420,M=new THREE.MeshBasicMaterial({color:day}),hd=T.d/2+.08,hw=T.w/2+.08;
+      const P=[],out=(q)=>{const g=new THREE.PlaneGeometry(q.w+.1,q.h+.1).toNonIndexed(),f=q.face;g.rotateY(f==='front'?Math.PI:f==='back'?0:f==='left'?Math.PI/2:-Math.PI/2);
+        g.translate(f==='left'?rx(-hw):f==='right'?rx(hw):rx(q.x),ry(q.y+q.h/2),f==='front'?rz(hd):f==='back'?rz(-hd):rz(q.z));P.push(g.attributes.position.array);g.dispose();};
+      for(const q of T.windows)out(q);for(const q of T.doors)out({...q,y:F0});
+      const A=new Float32Array(P.reduce((n,a)=>n+a.length,0));let o=0;for(const a of P){A.set(a,o);o+=a.length;}
+      const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(A,3));const m=new THREE.Mesh(g,M);m.userData.daylight=true;sc_.add(m);}
+    // the light: the two lanterns (the passage's under the loft, the one hung from the couples over the pen) and the room's air
+    const KA=kitRoomAir(sc_,.4);
+    for(const p of T.lamps){const l=new THREE.PointLight(0xffaa44,1.0*KA.lamp,7);l.position.set(rx(p[0]),ry(p[1]),rz(p[2]));sc_.add(l);}
+    return sc_;
+  }
   // S1425 (card F9, Michael's A on #318 and #329; OG-115) — on the new look the courtyard house of an Aurennais town's better quarter
   // (lot.kit.kind 'aurcourt', S1419) is its own rooms inside (PKIT.au.courtyardHouse, rooms.js's Session 899): the street's own shell
   // (its stream keyed by the town and the lot), four ranges two storeys high round the arcaded court, the fountain and the four orange
@@ -2369,6 +2419,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     if(kitCottage(house))return buildKitCottage(house); /* S1392 — a Gatelands village's cottage inside, at its true size */
     if(kitTownhouse(house))return buildKitTownhouse(house); /* S1437 — a Gatelands town's townhouse inside, at its true size */
     if(kitFarmhouse(house))return buildKitFarmhouse(house); /* S1459 — a Gatelands village farm's house inside, at its true size */
+    if(kitByre(house))return buildKitByre(house); /* S1474 — a Gatelands farm's byre inside, at its true size */
     if(kitCourtHouse(house))return buildKitCourtHouse(house); /* S1425 — Aurenne's courtyard house inside, at its true size */
     if(kitLonghouse(house))return buildKitLonghouse(house); /* S1453 — a Markish home: the longhouse inside, at its true size */
     if(kitChurchHall(house))return buildKitChurchHall(house); /* S1326 — the Church of the Weaver inside, at its true size */
