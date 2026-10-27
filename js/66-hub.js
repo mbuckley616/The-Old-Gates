@@ -780,6 +780,7 @@ function showBagTooltip(idx,ev){
       if(e.duration) html+=`<div class="bt-row"><span class="bt-label">Duration</span><span class="bt-val">${e.duration}s</span></div>`;
       html+=`<div class="bt-row" style="color:#7a6848;font-size:9px;font-style:italic">A stronger elixir of the same kind cannot be overwritten.</div>`;
     }
+    if(it.brew&&typeof brewLines==='function')html+=brewLines(it); /* S1483 — a tincture's effects */
     html+='<div class="bt-hint">Click to use</div>';
   } else if(it.type==='book'){
     const def=BOOKS.find(b=>b.id===it.bookId);

@@ -42,7 +42,7 @@ function isStackable(it){
   return false;
 }
 // S732 — a stack is one name and one mark: stolen goods stack only with stolen goods (the cells take BAG[i].stolen whole).
-function sameStack(a,b){return a.name===b.name&&!a.stolen===!b.stolen;}
+function sameStack(a,b){return a.name===b.name&&!a.stolen===!b.stolen&&(a.brewKey||'')===(b.brewKey||'');} /* S1483 — tinctures stack by strength and day */
 function bagAdd(item){
   // v64 — Honor the incoming item's qty when stackable. Pre-v64 this always
   // added "1 of name" regardless of the item.qty field, so arrow bundles
@@ -87,7 +87,7 @@ function bagWeight(){let t=0; for(const it of BAG) t+=itemWeight(it); return t;}
 const ARMOUR_SLOTS=['head','chest','hands','legs','feet'];
 function equipWeight(){const fit=perk('armour',25)?.5:1;let t=0; for(const k of Object.keys(EQ)) t+=itemWeight(EQ[k])*(ARMOUR_SLOTS.includes(k)?fit:1); return t;}
 function totalCarryWeight(){return bagWeight() + equipWeight();}
-function maxCarry(){return (50 + attrEff('might') * 5 + ((typeof WORLD!=='undefined'&&activeZoneId==='world')?WORLD.cargoBonus():0) + (typeof fxOn==='function'&&fxOn('feather')?40:0))*(typeof gateGift==='function'&&gateGift('cloch')?1.5:1);} // v80 — the ship's hold counts when she's near
+function maxCarry(){return (50 + attrEff('might') * 5 + ((typeof WORLD!=='undefined'&&activeZoneId==='world')?WORLD.cargoBonus():0) + (typeof fxOn==='function'&&fxOn('feather')?40:0) + (typeof _hasBuff==='function'&&_hasBuff('carryBoost')?(_activeBuffs('carryBoost')[0].amount||0):0))*(typeof gateGift==='function'&&gateGift('cloch')?1.5:1);} // v80 — the ship's hold counts when she's near
 function encumbranceState(){
   const r = totalCarryWeight() / maxCarry();
   if(r >= 1.25) return 'immobile';

@@ -703,7 +703,8 @@ function renderShop(){
   }
   if(typeof cloaksFor==='function'){const ck=cloaksFor(currentHouse);if(ck.length)stock=[...stock,...ck];} // S552 — cloaks
   if(typeof loreBooksFor==='function'){const lb=loreBooksFor(currentHouse);if(lb.length)stock=[...stock,...lb];} /* S979 — The Seventh Niche at the Mages' Guild */
-  {const ln=armorLinesFor(currentHouse);if(ln.length)stock=[...stock,...ln];} // S564 — the light line at the armourer, robes at a goods shop
+  {const ln=armorLinesFor(currentHouse);if(ln.length)stock=[...stock,...ln];}
+  {const mo=mortarFor(currentHouse);if(mo.length)stock=[...stock,...mo];} /* S1483 — the mortar at an apothecary and the Mages' Guild */ // S564 — the light line at the armourer, robes at a goods shop
   // v61au: Charisma-gated stock (chaReq). No-op until items carry the field.
   const _cha = ATTRS.charisma||0;
   stock = stock.filter(it => !it.chaReq || _cha >= it.chaReq);
@@ -848,7 +849,7 @@ function armorLinesFor(h){const ln=h&&(h.type==='armor'?'light':(h.type==='misc'
 // S552 — the Aurennais cape: +2% at a counter in Aurenne, the nation whose cut it is (#148)
 function capeCounter(){if(typeof cloakOn!=='function'||!cloakOn('cape'))return false;try{const h=typeof currentHouse!=='undefined'&&currentHouse;const t=h&&h.siteId&&siteAnywhere(h.siteId);return !!(t&&nationKeyOf(...cellOf(t.x,t.z))==='aurenne');}catch(e){return false;}}
 // S552 — the fur-lined cloak: stamina +10% in falling snow, or at night above the snowline, in the open world
-function furWarm(){if(typeof cloakOn!=='function'||!cloakOn('fur')||activeZoneId!=='world')return false;try{if(typeof isInterior==='function'&&isInterior())return false;if(WX.type==='snow')return true;return isNight()&&worldH(px,pz)>snowLineAt(px,pz);}catch(e){return false;}}
+function furWarm(){if(!(typeof cloakOn==='function'&&cloakOn('fur'))&&!(typeof _hasBuff==='function'&&_hasBuff('resistCold'))||activeZoneId!=='world')return false; /* S1483 — a tincture's Resist Cold warms as the fur cloak does */try{if(typeof isInterior==='function'&&isInterior())return false;if(WX.type==='snow')return true;return isNight()&&worldH(px,pz)>snowLineAt(px,pz);}catch(e){return false;}}
 function shopCost(it){const b=it.buyPrice||0;if(it._boughtBack||b<=0)return b;return Math.max(1,Math.round(b*shopMul()*(1-barterPct())));}
 function counterSellPrice(it){const sp=sellPrice(it);return sp<=0?0:Math.max(1,Math.round(sp*(1+barterPct())));}
 function buyItem(it){

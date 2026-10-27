@@ -148,7 +148,7 @@ function fireArrow(strength,o){
   // Finesse — bow's primary attribute, mirrors Might’s melee scaling (ATTR_DMG_PER_POINT).
   const finesseMult = 1 + attrEff('finesse') * BOW_FINESSE_DMG;
   // S941 — the Bow skill carries the damage (skills and perks A); the per-level floor is gone.
-  const rawDmg = Math.max(1, Math.floor((bowRoll + arrowRoll) * skillMult('bow') * drawMult * finesseMult));
+  const rawDmg = Math.max(1, Math.floor((bowRoll + arrowRoll) * skillMult('bow') * drawMult * finesseMult * _buffMult('bowDmg',1))); /* S1483 — a tincture's Fortify Bow */
   // ── Resolve damage type ───────────────────────────────────────
   // Arrow overrides bow's wType (per lore: silver/broadhead arrows). Iron
   // arrows omit wType → falls through to bow's 'pierce'.
@@ -691,6 +691,8 @@ function renderInv(){[['head','🪖'],['chest','👕'],['hands','🧤'],['legs',
 function useItem(i){
   const it=BAG[i];if(!it)return;
   if(it.type==='herb'){useHerb(i);return;}
+  if(it.brew){useTincture(i);return;} /* S1483 — a tincture drunk, a poison on the blade */
+  if(it.name===MORTAR_NAME){openBrewPage();return;}
   if(it.type==='spellbook'){readSpellbook(i);return;} // v80
   if(it.artifact==='sundial_ring'){if(typeof noonRingTurn==='function')noonRingTurn();return;} /* S786 — the Noon Ring turns the weather */
   if(it.type==='rubbing'){(worldState.rubbings||(worldState.rubbings={}))[it.seed]=it.gate;showMsg(`${it.gate} is marked on your map.`,'#c0e0ff');it.qty=(it.qty||1)-1;if(it.qty<=0)BAG.splice(i,1);if(typeof renderInv==='function')renderInv();return;} // v80 — a rubbing marks a sigil gate

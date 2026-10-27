@@ -115,7 +115,7 @@ function _enterGame(){
     // DOM-flagged modals — checked via display style. Catches sigil overlay,
     // book reader, wait menu, save/load menu, character creator, title overlay.
     // Each id is gated on existence because the DOM is built lazily.
-    const ids=['sigil-overlay','book-overlay','sleepui','slmenu','cc-modal','ov','quest-popup','lockpick','barberui','pauseui'];
+    const ids=['sigil-overlay','book-overlay','sleepui','slmenu','cc-modal','ov','quest-popup','lockpick','barberui','pauseui','brewui'];
     for(const id of ids){
       const el=document.getElementById(id);
       if(el && el.style.display && el.style.display!=='none') return true;
@@ -1019,7 +1019,7 @@ function pauseLeafDraw(){const ov=pauseLeafEl(),P=ov.querySelector('#pause-paper
 function openPauseLeaf(){
   if(pauseOpen||!started||dead||won)return false;
   if(typeof isMenuOpenNow==='function'&&isMenuOpenNow())return false;
-  if((typeof cargoOpen!=='undefined'&&cargoOpen)||(typeof yardOpen!=='undefined'&&yardOpen))return false; /* the systems builder's factor's board and yard (auto/systems) */
+  if((typeof cargoOpen!=='undefined'&&cargoOpen)||(typeof brewOpen!=='undefined'&&brewOpen)||(typeof yardOpen!=='undefined'&&yardOpen))return false; /* the systems builder's factor's board and yard (auto/systems) */
   if(typeof _releasePointerLockForMenu==='function')_releasePointerLockForMenu();
   K.KeyW=K.KeyA=K.KeyS=K.KeyD=K.ShiftLeft=K.Space=false;blocking=false;powerCharging=false;powerCharge=0;
   Object.assign(pauseLeaf,{on:0,view:'leaf',quit:false,sub:null});
