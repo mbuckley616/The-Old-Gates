@@ -644,7 +644,7 @@ const giver=`${lord.title} ${lord.name}`;
       greet:["You are here.","The stones are warm today.","Sit. You have been walking since before you woke."],bye:["Go gently.","The loom holds."],yes:"It is so.",no:"It is not.",oath:"by the loom",honor:"",
       of:{gatelander:["They dig. They have always dug. We taught them where.","Good people. They give what they are asked and don't ask what for."],markman:["They will not sit with us. That is fair. We would not sit with us.","Honest. Loud, but honest."],aurennais:["They built a church on our name. It is a fine church.","They write everything down. Someone must."]}},
   };
-  NAMES.oldblood={m:['Fíachra','Cúán','Éimhín','Lonán','Odhrán','Senán','Dáire','Fáelán','Bécán','Cellach'],f:['Sadb','Étaín','Muirenn','Lasair','Fionnuala','Damhnait','Gormlaith','Bébinn','Caílte','Ercnat']};
+  NAMES.oldblood={m:['Fíachra','Cúán','Éimhín','Lonán','Odhrán','Senán','Dáire','Fáelán','Bécán','Cellach'],f:['Sadb','Étaín','Muirenn','Lasair','Fionnuala','Damhnait','Gormlaith','Bébinn','Sárnat','Ercnat']};
   // ── which island is which nation ──
   let _landmass=null;
   function landmassOf(i,j){
