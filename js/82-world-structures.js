@@ -184,6 +184,7 @@
     const L=LOADED.get(k);if(!L)return;const c=L.cell;
     // settlements in this cell go first
     c.sites.forEach(t=>{if(SETTLE.has(t.id))disposeSettlement(t.id);});
+    (c._lone||[]).forEach(F=>{if(SETTLE.has(F.id))disposeSettlement(F.id);const i=F._site?LONE_FARMS.indexOf(F._site):-1;if(i>=0)LONE_FARMS.splice(i,1);}); /* S1470 — and its lone farms */
     if(L.staticsBuilt||L.staticsPending)dropStatics(L);
     L.statics.forEach(o=>{sc.remove(o);});
     c.regions.forEach(r_=>{const i=REGIONS.indexOf(r_);if(i>=0)REGIONS.splice(i,1);});
@@ -342,20 +343,10 @@
     if(t.kind!=='village'||!(t.pad>0)||window.OG_LOOK!=='new'||window.OG_KIT_TOWNS===false||typeof PKIT==='undefined'||!PKIT.gl||!PKIT.gl.farmstead)return null;
     if(!c){const [ci,cj]=cellOf(t.x,t.z);c=getCell(ci,cj);}
     if(c.type==='sea'||nationOf(c.i,c.j).people!=='gatelander')return null;
-    if(!RV.ready)routeWorld();
-    const near=[];for(let dj=-1;dj<=1;dj++)for(let di=-1;di<=1;di++){const i=c.i+di,j=c.j+dj;if(i>=0&&j>=0&&i<GRID&&j<GRID)near.push(getCell(i,j));}
-    const byId={};near.forEach(n=>n.sites.forEach(s=>{byId[s.id]=s;}));
-    const roads=[];near.forEach(n=>n.roadDefs.forEach(d=>{const A=byId[d.a],B=byId[d.b];if(A&&B)roads.push({def:d,pts:roadCurve(d,A,B)});}));
+    const X=farmNear(c),near=X.near,roads=X.roads;
     const outs=roads.filter(R=>(R.def.a===t.id||R.def.b===t.id)&&R.def.via!=='spur');if(!outs.length)return null;
-    const pads=near.flatMap(n=>n.sites).filter(s=>s.pad>0);
-    /* the gates' and forts' pads by where the world draws them (fixedDoorSpot): a gate nudged off a road or a pad moves 25 m at most, and a
-       home fort stands 90 to 120 m off its road's line at its fortAt; a gate or fort placed in a cell loaded before this one must not stand in the yard */
-    const gates=near.flatMap(n=>n.doors.filter(e=>!e.wet).map(e=>{const p=fixedDoorSpot(e);if(!p)return null;const home=e.kind==='fort_door'&&HOME_ROAD_DEFS.some(d=>d.fort===e.seed);
-      return {x:p.x,z:p.z,m:home?240:e.kind==='fort_door'?46+34+FARM_R+25:7+12+FARM_R+30};})).filter(Boolean);
-    const farms=near.flatMap(n=>n.sites.filter(s=>s!==t&&s.kind==='village'&&s.id<t.id).map(s=>villageFarm(s,n))).filter(Boolean);
-    const segD=(x,z,P)=>{let b=1e9;for(let i=0;i<P.length-1;i++){const a=P[i],q=P[i+1],vx=q.x-a.x,vz=q.z-a.z,l2=vx*vx+vz*vz||1;let u=((x-a.x)*vx+(z-a.z)*vz)/l2;u=u<0?0:u>1?1:u;const d=Math.hypot(x-a.x-vx*u,z-a.z-vz*u);if(d<b)b=d;}return b;};
-    const wet=(x,z)=>{const [i,j]=cellOf(x,z);if(seaBare(x,z,getCell(i,j).islets)>0)return true;const bk=RVG.get(sgKey(Math.floor(x/RVSG),Math.floor(z/RVSG)));
-      if(bk)for(const e of bk){if(e.lk){if(Math.hypot(x-e.lk.x,z-e.lk.z)<e.lk.r+15)return true;continue;}riverSample(e.rv,e.i0,e.i1,x,z,_rs);if(_rs[0]<_rs[1]+12)return true;}return false;};
+    X.pads=near.flatMap(n=>n.sites).filter(s=>s.pad>0);X.gates=farmGates(near);
+    X.farms=near.flatMap(n=>n.sites.filter(s=>s!==t&&s.kind==='village'&&s.id<t.id).map(s=>villageFarm(s,n))).filter(Boolean);
     const inner=t.pad-5,r=PKIT.stream('farm:'+t.id),k0=Math.floor(r()*outs.length),s0=r()<.5?1:-1,a0=60+r()*90;
     for(let q=0;q<outs.length;q++){const R=outs[(k0+q)%outs.length],P=R.def.a===t.id?R.pts:R.pts.slice().reverse(),cand=[];
       for(let i=1;i<P.length;i++){const a=P[i-1],b=P[i],L=Math.hypot(b.x-a.x,b.z-a.z)||1,tx=(b.x-a.x)/L,tz=(b.z-a.z)/L;
@@ -363,16 +354,78 @@
           const mu=(FARM_LOT.x0+FARM_LOT.x1)/2,mv=(FARM_LOT.z0+FARM_LOT.z1)/2,cx=ox+mu*c_+mv*s_,cz=oz-mu*s_+mv*c_,past=Math.hypot(cx-t.x,cz-t.z)-inner;
           if(past<60||past>150)continue;cand.push({ox,oz,ry,cx,cz,c_,s_,k:Math.abs(past-a0)});}}
       cand.sort((A,B)=>A.k-B.k);
-      for(const C of cand){let ok=true;
-        for(const s of pads){if(Math.hypot(C.cx-s.x,C.cz-s.z)<s.pad+Math.max(30,s.pad*.7)+FARM_R+5){ok=false;break;}}
-        for(const f of farms)if(ok&&Math.hypot(C.cx-f.cx,C.cz-f.cz)<2*FARM_R+20)ok=false;
-        for(const q of gates)if(ok&&Math.hypot(C.cx-q.x,C.cz-q.z)<q.m)ok=false;
-        for(let u=FARM_LOT.x0-1;ok&&u<=FARM_LOT.x1+1.01;u+=(FARM_LOT.x1-FARM_LOT.x0+2)/8)for(let v=FARM_LOT.z0-1;ok&&v<=FARM_LOT.z1+1.01;v+=(FARM_LOT.z1-FARM_LOT.z0+2)/8){
-          const x=C.ox+u*C.c_+v*C.s_,z=C.oz-u*C.s_+v*C.c_;if(wet(x,z)){ok=false;break;}const uu=Math.max(FARM_LOT.x0,Math.min(FARM_LOT.x1,u)),vv=Math.max(FARM_LOT.z0,Math.min(FARM_LOT.z1,v)); /* the roads' beds kept off the lot itself */
-          for(const R2 of roads)if(segD(C.ox+uu*C.c_+vv*C.s_,C.oz-uu*C.s_+vv*C.c_,R2.pts)<ROAD_BLEND+.4){ok=false;break;}}
+      for(const C of cand){const ok=farmFits(C,X,0);
         if(ok){t._farm={id:'farm_'+t.id,x:+C.ox.toFixed(3),z:+C.oz.toFixed(3),ry:C.ry,cx:+C.cx.toFixed(3),cz:+C.cz.toFixed(3)};return t._farm;}}}
     return null;
   }
+  // S1470 — what villageFarm and loneFarms both read: the cell and its eight neighbours, their roads' lines (roadCurve), the gates and
+  // forts where the world draws them, and whether a farm's lot fits a spot (farmFits: clear of the pads by gap more than a village's
+  // farm keeps, of the farms already laid, of the gates, of the sea, the rivers and the lakes, and of every road's bed)
+  function farmNear(c){
+    if(!RV.ready)routeWorld();
+    const near=[];for(let dj=-1;dj<=1;dj++)for(let di=-1;di<=1;di++){const i=c.i+di,j=c.j+dj;if(i>=0&&j>=0&&i<GRID&&j<GRID)near.push(getCell(i,j));}
+    const byId={};near.forEach(n=>n.sites.forEach(s=>{byId[s.id]=s;}));
+    const roads=[];near.forEach(n=>n.roadDefs.forEach(d=>{const A=byId[d.a],B=byId[d.b];if(A&&B)roads.push({def:d,pts:roadCurve(d,A,B)});}));
+    return {near,byId,roads};
+  }
+  /* the gates' and forts' pads by where the world draws them (fixedDoorSpot): a gate nudged off a road or a pad moves 25 m at most, and a
+     home fort stands 90 to 120 m off its road's line at its fortAt; a gate or fort placed in a cell loaded before this one must not stand in the yard */
+  function farmGates(near){return near.flatMap(n=>n.doors.filter(e=>!e.wet).map(e=>{const p=fixedDoorSpot(e);if(!p)return null;const home=e.kind==='fort_door'&&HOME_ROAD_DEFS.some(d=>d.fort===e.seed);
+      return {x:p.x,z:p.z,m:home?240:e.kind==='fort_door'?46+34+FARM_R+25:7+12+FARM_R+30};})).filter(Boolean);}
+  function farmSegD(x,z,P){let b=1e9;for(let i=0;i<P.length-1;i++){const a=P[i],q=P[i+1],vx=q.x-a.x,vz=q.z-a.z,l2=vx*vx+vz*vz||1;let u=((x-a.x)*vx+(z-a.z)*vz)/l2;u=u<0?0:u>1?1:u;const d=Math.hypot(x-a.x-vx*u,z-a.z-vz*u);if(d<b)b=d;}return b;}
+  function farmWet(x,z){const [i,j]=cellOf(x,z);if(seaBare(x,z,getCell(i,j).islets)>0)return true;const bk=RVG.get(sgKey(Math.floor(x/RVSG),Math.floor(z/RVSG)));
+    if(bk)for(const e of bk){if(e.lk){if(Math.hypot(x-e.lk.x,z-e.lk.z)<e.lk.r+15)return true;continue;}riverSample(e.rv,e.i0,e.i1,x,z,_rs);if(_rs[0]<_rs[1]+12)return true;}return false;}
+  function farmFits(C,X,gap){
+    for(const s of X.pads){if(Math.hypot(C.cx-s.x,C.cz-s.z)<s.pad+Math.max(30,s.pad*.7)+FARM_R+5+gap)return false;}
+    for(const f of X.farms)if(Math.hypot(C.cx-f.cx,C.cz-f.cz)<2*FARM_R+20+gap)return false;
+    for(const q of X.gates)if(Math.hypot(C.cx-q.x,C.cz-q.z)<q.m)return false;
+    for(let u=FARM_LOT.x0-1;u<=FARM_LOT.x1+1.01;u+=(FARM_LOT.x1-FARM_LOT.x0+2)/8)for(let v=FARM_LOT.z0-1;v<=FARM_LOT.z1+1.01;v+=(FARM_LOT.z1-FARM_LOT.z0+2)/8){
+      const x=C.ox+u*C.c_+v*C.s_,z=C.oz-u*C.s_+v*C.c_;if(farmWet(x,z))return false;const uu=Math.max(FARM_LOT.x0,Math.min(FARM_LOT.x1,u)),vv=Math.max(FARM_LOT.z0,Math.min(FARM_LOT.z1,v)); /* the roads' beds kept off the lot itself */
+      for(const R2 of X.roads)if(farmSegD(C.ox+uu*C.c_+vv*C.s_,C.oz-uu*C.s_+vv*C.c_,R2.pts)<ROAD_BLEND+.4)return false;}
+    return true;
+  }
+  // S1470 (card F6, Michael's C on #744, its second half) — the farms alone in the country: in a Gatelands cell on the new look, one
+  // (one cell in three, two) beside the cell's own roads between its places, each on a road of its own, the house to the road as a
+  // village's farm stands. Each stands at least LONE_GAP farther from every pad than a village's farm may, and as far from another lone
+  // farm, so it is out in the fields; and on ground that rises no more than 5 m across its lot, so its pad is not a cutting. Laid from
+  // the cells alone, by a stream keyed by the cell, after the village farms round it and the lone farms of the cells before it (by j,
+  // then i), so the same farms stand whatever has loaded. -> [{id, x, z, ry, cx, cz, lone, cell}], kept on the cell (c._lone)
+  const LONE_GAP=170,LONE_OPEN=.3;
+  /* how open the country is at a spot: the fields' weight of its regions (89's LAND_FIELD_BIOMES, the F3 land's patchwork) less their
+     woods' (the trees' density), read from the cell's and its neighbours' own regions (never REGIONS, which holds what has loaded, S701) */
+  function farmOpen(x,z,near){let f=0,w=0,W=0;for(const n of near)for(const r_ of n.regions){const k=Math.max(0,1-Math.hypot(x-r_.x,z-r_.z)/r_.r);if(k<=0)continue;W+=k;
+      f+=k*({plains:1,autumn:.8,moor:.25}[r_.biome]||0);w+=k*(r_.density||0)*(r_.trees&&r_.trees!=='dead'?1:.3);}
+    return W>0?(f-w)/W:-1;}
+  function loneFarms(c){
+    if(c._lone!==undefined)return c._lone;c._lone=[];
+    if(c.type==='sea'||c.home||window.OG_LOOK!=='new'||window.OG_KIT_TOWNS===false||typeof PKIT==='undefined'||!PKIT.gl||!PKIT.gl.farmstead)return c._lone;
+    if(nationOf(c.i,c.j).people!=='gatelander')return c._lone;
+    const X=farmNear(c),near=X.near,k=cellKey(c.i,c.j);
+    const own=X.roads.filter(R=>c.roadDefs.includes(R.def)&&R.def.via!=='spur'&&X.byId[R.def.a].kind!=='portal'&&X.byId[R.def.b].kind!=='portal');if(!own.length)return c._lone;
+    X.pads=near.flatMap(n=>n.sites).filter(s=>s.pad>0);X.gates=farmGates(near);
+    X.farms=near.flatMap(n=>n.sites.filter(s=>s.kind==='village').map(s=>villageFarm(s,n))).filter(Boolean);
+    for(const n of near)if(n!==c&&(n.j<c.j||(n.j===c.j&&n.i<c.i)))X.farms.push(...loneFarms(n));
+    const r=PKIT.stream('lonefarm:'+k),want=r()<1/3?2:1,k0=Math.floor(r()*own.length),s0=r()<.5?1:-1;
+    for(let q=0;q<own.length&&c._lone.length<want;q++){const P=own[(k0+q)%own.length].pts,a0=.3+r()*.4;let len=0;const at=[0];
+      for(let i=1;i<P.length;i++){len+=Math.hypot(P[i].x-P[i-1].x,P[i].z-P[i-1].z);at.push(len);}
+      const cand=[];
+      for(let i=1;i<P.length;i++){const a=P[i-1],b=P[i],L=Math.hypot(b.x-a.x,b.z-a.z)||1,tx=(b.x-a.x)/L,tz=(b.z-a.z)/L;
+        for(const sd of [s0,-s0]){const nx=-tz*sd,nz=tx*sd,ox=a.x+nx*(FARM_SET+FARM_LOT.z1),oz=a.z+nz*(FARM_SET+FARM_LOT.z1),ry=Math.atan2(-nx,-nz),c_=Math.cos(ry),s_=Math.sin(ry);
+          const mu=(FARM_LOT.x0+FARM_LOT.x1)/2,mv=(FARM_LOT.z0+FARM_LOT.z1)/2,cx=ox+mu*c_+mv*s_,cz=oz-mu*s_+mv*c_;
+          if(cellOf(cx,cz)[0]!==c.i||cellOf(cx,cz)[1]!==c.j)continue;cand.push({ox,oz,ry,cx,cz,c_,s_,k:Math.abs(at[i-1]/len-a0)+(sd===s0?0:.001)});}}
+      cand.sort((A,B)=>A.k-B.k);
+      for(const C of cand){if(farmOpen(C.cx,C.cz,near)<LONE_OPEN||!farmFits(C,X,LONE_GAP))continue;
+        let lo=1e9,hi=-1e9;for(const [u,v] of [[FARM_LOT.x0,FARM_LOT.z0],[FARM_LOT.x1,FARM_LOT.z0],[FARM_LOT.x0,FARM_LOT.z1],[FARM_LOT.x1,FARM_LOT.z1],[0,(FARM_LOT.z0+FARM_LOT.z1)/2]]){const y=landH(C.ox+u*C.c_+v*C.s_,C.oz-u*C.s_+v*C.c_);lo=Math.min(lo,y);hi=Math.max(hi,y);}
+        if(hi-lo>5)continue;
+        const F={id:`c${c.i}_${c.j}_f${c._lone.length}`,x:+C.ox.toFixed(3),z:+C.oz.toFixed(3),ry:C.ry,cx:+C.cx.toFixed(3),cz:+C.cz.toFixed(3),lone:true,cell:k};
+        c._lone.push(F);X.farms.push(F);break;}}
+    return c._lone;
+  }
+  // a lone farm as a place the settlements' tick builds and drops (genSettlement's 'farm' kind): kept out of the cell's sites, which the
+  // rivers' routing, the gates and the roads all read, so no farm moves anything drawn before it
+  const LONE_FARMS=[];
+  function loneFarmSite(F,c){if(F._site)return F._site;
+    F._site={id:F.id,name:'',kind:'farm',x:F.cx,z:F.cz,pad:FARM_R,cell:F.cell,reg:REGISTER[dominantRegionOf(c.regions,F.cx,F.cz).id]||'irish',lordless:true,_farm:F};return F._site;}
   function rebuildRoadGrid(){
     RSEG.length=0;RGRID.clear();ROAD_DEFS.length=0;
     ROADS.forEach(road=>{ROAD_DEFS.push(road.def);indexRoad(road);});
@@ -1283,7 +1336,8 @@
     // sites loaded so far, so a chunk built before its shrine's cell had pushed its sites put a Highwayman at the altar (S533's rule)
     for(const t of SITES){if(t.pad>0&&Math.hypot(cxw-t.x,czw-t.z)<t.pad+70)return;}
     const [ci,cj]=cellOf(cxw,czw);
-    for(let j=cj-1;j<=cj+1;j++)for(let i=ci-1;i<=ci+1;i++){if(i<0||j<0||i>=GRID||j>=GRID)continue;const c=getCell(i,j);if(!c||!c.sites)continue;for(const t of c.sites){if(t.pad>0&&Math.hypot(cxw-t.x,czw-t.z)<t.pad+70)return;}}
+    for(let j=cj-1;j<=cj+1;j++)for(let i=ci-1;i<=ci+1;i++){if(i<0||j<0||i>=GRID||j>=GRID)continue;const c=getCell(i,j);if(!c||!c.sites)continue;for(const t of c.sites){if(t.pad>0&&Math.hypot(cxw-t.x,czw-t.z)<t.pad+70)return;}
+      for(const F of loneFarms(c))if(Math.hypot(cxw-F.cx,czw-F.cz)<FARM_R+70)return;} /* S1470 — nor by a farm alone in the country */
     const nearRoad=(()=>{const ri=roadInfo(cxw,czw);return ri&&ri.d<40;})();
     const patrolled=nationKeyOf(ci,cj)==='gatelands'&&roadInfo(cxw,czw)&&roadInfo(cxw,czw).d<40; // the Crown patrols its roads
     const ambush=nearRoad&&hash01(ch.cx*3+epoch,ch.cz*5+epoch,96)<(patrolled?.12:nationKeyOf(ci,cj)==='mark'?.34:.26); // bandits work the roads; more in the Mark
