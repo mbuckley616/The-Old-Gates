@@ -183,7 +183,7 @@ check(`you arrive facing into the barn with ${n && n.arrive.sight} m clear befor
 check(`the prototype's five walks are clear on their floors, through the partition's doorway and across the loft (${n && n.walks.map(w => w.blocked).join(', ')} points in something)`, !!n && n.walks.length === 5 && n.walks.every(w => !w.blocked && !w.off), n && n.walks);
 check(`the stair climbs to the loft at ${n && n.climb.want} m in steps of ${n && n.climb.maxStep} m or less, nothing in the way, ${n && n.climb.minHead} m over the head`, !!n && Math.abs(n.climb.top - n.climb.want) < .02 && n.climb.maxStep <= .2 && !n.climb.blocked && n.climb.minHead >= 1.9, n && n.climb);
 check(`lit by its three lanterns (${n && n.lights}), ${n && n.draws} draws (20 or fewer), ${n && n.tris.toLocaleString()} triangles`, !!n && n.lights === 3 && n.draws <= 20, n);
-check(`at noon the day comes in through both doorways and the pitching door (${n && n.day} sky spots; the slits light only themselves, S1489)`, !!n && n.day === 3, n);
+check(`at noon the day comes in through both doorways and the pitching door (${n && n.day} sky spots; the slits light only themselves, S1490)`, !!n && n.day === 3, n);
 await page.evaluate(() => { forceTime(12); WORLD.buildInteriorFor(currentHouse); scene = interiorScene; const h = currentHouse; px = intArriveX(h); pz = intArrivalZ(h); jumpY = 0; interact(); });
 await g.frames(30);
 check(`at the barn's arrival spot E does not take you out`, await page.evaluate(() => isInterior()));

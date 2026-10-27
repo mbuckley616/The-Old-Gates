@@ -63,7 +63,7 @@ for (const H of picks) { const tag = H.plan; console.log(`  -- ${H.id}: ${tag}`)
     !r.blocked.length && !r.off.length && r.stack !== false && (tag !== 'parted' || r.doors === 1), { blocked: r.blocked.slice(0, 5), off: r.off.slice(0, 5), stack: r.stack, doors: r.doors });
   check(`[${tag}] the bed is the resident's (${r.bed && r.bed.owner}, at ${r.bed && [r.bed.x, r.bed.cz].join(', ')}); the home's chest has ${r.boxSide} sides clear to open it from`, r.inBed && r.bed.owner === 'home' && r.box && r.boxSide >= 1, r);
   check(`[${tag}] lit by the fire and the lamps (${r.lights} lights), ${r.draws} draws (40 or fewer), ${r.tris.toLocaleString()} triangles`, r.fireOn && r.lights >= 4 && r.lights <= 8 && r.draws <= 40, r);
-  check(`[${tag}] at noon the day comes in through its ${r.wins * 2} windows and the door (${r.day} sky spots, S1489)`, r.day === r.wins * 2 + 1, r);
+  check(`[${tag}] at noon the day comes in through its ${r.wins * 2} windows and the door (${r.day} sky spots, S1490)`, r.day === r.wins * 2 + 1, r);
 
   // at night the resident lies in the bed; a bought house has its cellar hatch, clear; a Mages' cold hearth is dark until done
   const more = await page.evaluate(() => { const h = currentHouse, rebuild = () => { WORLD.buildInteriorFor(h); scene = interiorScene; };
