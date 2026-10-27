@@ -902,7 +902,7 @@
     if(t==='castle')return h>=8&&h<20;
     if(t==='guild_f'||t==='guild_m')return true;
     if(t==='cabin'||t==='cellar'||t==='tower'||t==='chapel')return false;
-    if(t==='home'){if(house.shuttered)return false;if(house.ownedByPlayer||ownedHouse(house.id))return false;return h>=HRS.night||h<HRS.dawn;}
+    if(t==='home'){if(house.shuttered)return false;if(house.ownedByPlayer||ownedHouse(house.id))return false;return h>=(house.farm&&!feastNow()?HRS.eve:HRS.night)||h<HRS.dawn;} /* S1471 — a farmer is in from the evening (#762 A) */
     return h>=HRS.shopOpen&&h<HRS.shopClose; // shops
   }
   function shopClosedNow(house){const t=house.type;if(t==='home'||t==='inn'||t==='church'||t==='castle'||t==='guild_f'||t==='guild_m'||t==='cabin'||t==='cellar'||t==='tower'||t==='chapel')return false;return !npcInsideNow(house);}
@@ -928,6 +928,13 @@
         if(night)return {hide:true};
         if(eve&&!feastNow())return sc_.inn?{go:sc_.inn,thenHide:true}:{go:sc_.door,idle:true};
         return {wander:sc_.plaza,r:feastR(sc_.padR||14)};
+      // S1471 (Michael's A on #762) — a farmer keeps the yard by day, from the yard door to the spots of it (farmYard), and goes in by
+      // that door at evening; on a feast day the square, as a resident, from the front door. No yard read: a resident's day.
+      case 'farmer': {const Y=sc_.yard;
+        if(night)return {hide:true};
+        if(feastNow()||!Y)return {wander:sc_.plaza,r:feastR(sc_.padR||14),from:sc_.door};
+        if(eve)return {go:Y.door,thenHide:true,from:Y.door};
+        return {pts:Y.pts,from:Y.door};}
       case 'villager':
         if(night||eve&&h>=20&&!feastNow())return {hide:true};
         return {wander:sc_.plaza,r:feastR(sc_.padR||14)};
@@ -1072,7 +1079,7 @@
       if(!plan.thenHide)n._arrivedHide=false;
       if(plan.hide||(n._arrivedHide)){if(n.g.visible){n.g.visible=false;n.dot.visible=false;}if(n._torch&&n._torch.visible){n._torch.visible=false;n._torch.userData.light.intensity=0;}n._retreated=true;if(plan.hide)n._arrivedHide=false;continue;}
       if(n._drawn)continue; // S157 — drawn against you; the enemy stands in
-      if(!n.g.visible){n.g.visible=true;n._retreated=false;n.g.position.set(n.home.x,worldH(n.home.x,n.home.z),n.home.z);}
+      if(!n.g.visible){n.g.visible=true;n._retreated=false;const H=plan.from||n.home;n.g.position.set(H.x,worldH(H.x,H.z),H.z);n._tgt=null;}
       n._retreated=false;
       if(n._scared&&now<n._scared){const a=Math.atan2(n.g.position.x-px,n.g.position.z-pz);npcStep(n,n.g.position.x+Math.sin(a)*6,n.g.position.z+Math.cos(a)*6,1.3,dt);n.g.position.y=worldH(n.g.position.x,n.g.position.z);n.dot.position.set(n.g.position.x,n.g.position.y+1.52,n.g.position.z);continue;} // S157 — struck: runs
       const spd=n.sched&&n.sched.type==='guard'?.95:.7;
@@ -1099,6 +1106,12 @@
         if(n._gwp&&n._gwp.length){const w=n._gwp[0];npcStep(n,w.x,w.z,spd,dt,.2);if(Math.hypot(w.x-n.g.position.x,w.z-n.g.position.z)<.3)n._gwp.shift();moving=true;}
         else{const arrived=npcStep(n,t.x,t.z,spd,dt);if(arrived){n._gwArr=t;if(plan.thenHide)n._arrivedHide=true;}moving=!arrived;}}
       else if(plan.go){const arrived=npcStep(n,plan.go.x,plan.go.z,spd,dt);if(arrived&&plan.thenHide)n._arrivedHide=true;moving=!arrived;}
+      else if(plan.pts){ /* S1471 — a farmer's yard: to one of its spots in a clear straight line, a pause, the next */
+        n.wt-=dt;const P=plan.pts;
+        if(!n._tgt||n.wt<=0||!P.includes(n._tgt)){let t=null;for(let k=0;k<8&&!t;k++){const q=P[Math.floor(Math.random()*P.length)];if(clearLine(n.g.position.x,n.g.position.z,q.x,q.z))t=q;}
+          n._tgt=t||P[Math.floor(Math.random()*P.length)];n.wt=10+Math.random()*12;}
+        const arrived=npcStep(n,n._tgt.x,n._tgt.z,spd*.75,dt);if(arrived){n._tgt=null;n.wt=3+Math.random()*6;}moving=!arrived;
+      }
       else if(plan.wander){
         n.wt-=dt;
         if(!n._tgt||n.wt<=0){const a=Math.random()*Math.PI*2,r=Math.random()*plan.r;n._tgt={x:plan.wander.x+Math.cos(a)*r,z:plan.wander.z+Math.sin(a)*r};n.wt=10+Math.random()*12;}

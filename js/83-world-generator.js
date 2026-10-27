@@ -956,7 +956,7 @@
         else if(p.name==='wall'){const b=new THREE.BoxGeometry(p.x1-p.x0,1.4,p.z1-p.z0).toNonIndexed();b.translate(u,.7,v);lo.push([b,mx,lime]);}}
       const far=new THREE.Mesh(mergeGeos(lo),VC_MAT);far.name='farmstead far';far.userData.noBake=true;far.castShadow=true;far.receiveShadow=true;far.visible=false;group.add(far);lo.forEach(([g])=>g.dispose());
       const H=U.parts.house;for(const gx of [-1,1]){const x=gx*(H.w/2-.36);S.chimneys.push({x:F.x+x*c,y:y+H.ridge+.85,z:F.z-x*s_,t:'home',k:0});}
-      S.farm={id:F.id,x:F.x,z:F.z,ry:F.ry,cx:F.cx,cz:F.cz,y,tris:U.tris,calls:U.calls,farTris:far.geometry.attributes.position.count/3,gate:{x:F.x+U.gate.x*c+U.gate.z*s_,z:F.z-U.gate.x*s_+U.gate.z*c},lot:U.lot};
+      S.farm={id:F.id,x:F.x,z:F.z,ry:F.ry,cx:F.cx,cz:F.cz,y,tris:U.tris,calls:U.calls,farTris:far.geometry.attributes.position.count/3,gate:{x:F.x+U.gate.x*c+U.gate.z*s_,z:F.z-U.gate.x*s_+U.gate.z*c},lot:U.lot,yard:U.yard,yardDoor:(U.doors||[]).find(d=>/^Farmhouse/.test(d.name))||null};
       S.farmLod={hi:FS,lo:far,x:F.cx,z:F.cz,r:FARM_R};
       // S1459 (card F9; Michael's C on #744, A on #303) — the farmhouse is a home: its front door is the kit's (the house's middle, on the
       // road side), a farmer keeps it, and the room inside is the farmhouse's own (buildKitFarmhouse). Its id is the town's g_<site>_<n>, n
@@ -968,7 +968,7 @@
         const hh={id:`g_${site.id}_${FARM_N}`,doorX,doorZ,doorFace:cardinalFace(tx,tz),exitX:exX,exitZ:exZ,exitYaw:Math.atan2(-tx,-tz),name:`${rdef.name}'s Farm`,keeper:rdef.name,_twin:rdef._twin,type:'home',tagline:'',bCol:rdef.bCol,sCol:rdef.sCol,dlg:rdef,
           w:U.parts.house.w,d:U.parts.house.d,two:true,reg,style:st===STYLE.stone?'stone':st===STYLE.garrison?'garrison':reg,roleTag:'farmer',siteKind:site.kind,siteId:site.id,kit:{kind:'farm',paint:'green'},farm:F.id};
         if(ownedHouse(hh.id)){hh.name='Your Farm';hh.ownedByPlayer=true;}else rdef._extra.unshift(...houseTopics(hh));
-        houses.push(hh);if(!hh.ownedByPlayer)S.residents.push({def:rdef,ry:F.ry+Math.PI,n:null,door:{x:exX,z:exZ}});}
+        houses.push(hh);if(!hh.ownedByPlayer)S.residents.push({def:rdef,ry:F.ry+Math.PI,n:null,door:{x:exX,z:exZ},farm:true});}
     }catch(e){console.warn('farm',e);}
     S.reach=t_reach(sol,site);
     /* S1216 — a door that faces the next building across a lane of 2.5 m had its step-out point (2.4 out) in that building's
@@ -1036,6 +1036,14 @@
   }
   function t_reach(sol,site){let m=site.pad+6;for(const s of sol){m=Math.max(m,Math.abs(s.cx-site.x)+Math.max(s.rx,s.rz)+2,Math.abs(s.cz-site.z)+Math.max(s.rx,s.rz)+2);}return m;}
   function nationAt(x,z){try{const c=cellOf(x,z);return nationKeyOf(c[0],c[1]);}catch(e){return 'gatelands';}}
+  // S1471 (Michael's A on #762) — a farmer keeps the yard by day: the farmhouse's yard door, a step out (where they come out in the
+  // morning and go in at evening), and the spots of the yard within 12 m of it, a metre apart, each clear of the solids by 0.45 m
+  // (the dunghill, the pump and trough, the rick, the cart, the walls). Read once, when the farmer first comes out: the solids are the town's then.
+  function farmYard(S){const F=S.farm;if(!F||!F.yard||!F.yardDoor)return null;if(F._yd!==undefined)return F._yd;
+    const c=Math.cos(F.ry),s_=Math.sin(F.ry),W=(lx,lz)=>({x:F.x+lx*c+lz*s_,z:F.z-lx*s_+lz*c}),D=F.yardDoor,dl={x:D.x+D.nx*.7,z:D.z+D.nz*.7},pts=[];
+    for(const R of F.yard)for(let lx=Math.ceil(R.x0)+.5;lx<R.x1;lx+=1)for(let lz=Math.ceil(R.z0)+.5;lz<R.z1;lz+=1){if(Math.hypot(lx-dl.x,lz-dl.z)>12)continue;
+      const q=W(lx,lz);if(!settleSolid(q.x,q.z,.45))pts.push({x:+q.x.toFixed(2),z:+q.z.toFixed(2)});}
+    F._yd=pts.length>=4?{door:W(dl.x,dl.z),pts,ry:Math.atan2(D.nx*c+D.nz*s_,-D.nx*s_+D.nz*c)}:null;return F._yd;}
   function spawnNPC(def,ry,isStatic){ // S248 — the face is keyed by his own town (def._siteId), not the last one built: residents spawn as you come near
     const g=buildNPCMesh(def,{nation:nationAt(def.x,def.z),key:def._siteId||(_curSettle&&_curSettle.site?_curSettle.site.id:'')});g.position.set(def.x,worldH(def.x,def.z),def.z);g.rotation.y=ry;sc.add(g);
     const dot=new THREE.Mesh(new THREE.SphereGeometry(.06,6,6),new THREE.MeshBasicMaterial({color:0xffdd00}));dot.position.set(def.x,worldH(def.x,def.z)+1.5,def.z);dot.visible=false;sc.add(dot);
@@ -1074,7 +1082,8 @@
       if(S.lamps&&S._lit!==_dark){S._lit=_dark;S.lamps.forEach(l=>{l.glass.visible=_dark;if(l.light)l.light.intensity=_dark?2.4:0;});}
       for(const res of S.residents){
         const d=Math.hypot(px-res.def.x,pz-res.def.z);
-        if(d<70&&!res.n&&_spawned<2){_spawned++;res.n=spawnNPC(res.def,res.ry,false);res.n.home={x:res.def.x,z:res.def.z};res.n.sched={type:'resident',door:res.door,plaza:{x:S.site.x,z:S.site.z},padR:Math.max(10,S.site.pad-22),inn:S.innDoor||null};S.npcs.push(res.n);}
+        if(d<70&&!res.n&&_spawned<2){_spawned++;res.n=spawnNPC(res.def,res.ry,false);res.n.home={x:res.def.x,z:res.def.z};res.n.sched={type:'resident',door:res.door,plaza:{x:S.site.x,z:S.site.z},padR:Math.max(10,S.site.pad-22),inn:S.innDoor||null};
+          if(res.farm){const Y=farmYard(S);if(Y){res.n.sched.type='farmer';res.n.sched.yard=Y;if(!feastNow()){const n=res.n;n.g.position.set(Y.door.x,worldH(Y.door.x,Y.door.z),Y.door.z);n.g.rotation.y=Y.ry;}}}S.npcs.push(res.n);}
         else if(d>95&&res.n){const n=res.n;if(n._torch&&n._torch.userData.light)unregLight(n._torch.userData.light);sc.remove(n.g);sc.remove(n.dot);let i=npcs.indexOf(n);if(i>=0)npcs.splice(i,1);i=S.npcs.indexOf(n);if(i>=0)S.npcs.splice(i,1);res.n=null;}
       }
     }
