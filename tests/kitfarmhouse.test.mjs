@@ -166,6 +166,8 @@ const n = await page.evaluate(() => {
   const h = currentHouse, T = h._barn; if (!T) return null; const W = h._roomW, D = h._roomD, X = T.inner.x1, Z = T.inner.z1, rx = x => X + x, rz = z => z + Z, F = T.floors.map(y => +(y - T.floors[0]).toFixed(3)); interiorScene.updateMatrixWorld(true);
   let lights = 0, draws = 0, tris = 0; interiorScene.traverse(o => { if (o.isLight && !o.isAmbientLight && !o.isHemisphereLight && o.intensity > 0) lights++; if (o.isMesh && o.visible) { draws++; tris += (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3; } });
   const ax = intArriveX(h), az = intArrivalZ(h), arrive = { x: +ax.toFixed(2), z: +az.toFixed(2), clear: !intSolidAt(ax, az, .3, 0), exits: az > D - h._exitD, floor: footholdY(ax, az, 0, 0) };
+  // S1488: the way you face on arriving (the room's _arriveYaw), and how far the line you face runs along the floor before it meets a solid
+  { const ya = h._arriveYaw != null ? h._arriveYaw : 0; let d = 0; while (d < 6 && !intSolidAt(ax - Math.sin(ya) * d, az - Math.cos(ya) * d, .05, 0)) d += .05; arrive.yaw = ya; arrive.sight = +d.toFixed(2); }
   const walks = T.paths.map(P => { let blocked = [], off = 0; for (let i = 0; i + 1 < P.pts.length; i++) { const [a, c] = [P.pts[i], P.pts[i + 1]], m = Math.ceil(Math.hypot(c[0] - a[0], c[1] - a[1]) / .1);
     for (let k = 0; k <= m; k++) { const x = rx(a[0] + (c[0] - a[0]) * k / m), z = rz(a[1] + (c[1] - a[1]) * k / m); if (intSolidAt(x, z, .15, F[P.fl])) blocked.push([+x.toFixed(2), +z.toFixed(2)]); if (Math.abs(footholdY(x, z, F[P.fl], 0) - F[P.fl]) > .02) off++; } }
     return { fl: P.fl, blocked: blocked.length, at: blocked.slice(0, 3), off }; });
@@ -177,6 +179,7 @@ const n = await page.evaluate(() => {
   return { W, D, want: [+(T.inner.x1 - T.inner.x0).toFixed(2), +(T.inner.z1 - T.inner.z0).toFixed(2)], lights, draws, tris: Math.round(tris), arrive, walks, climb, npc: !!intNPCMesh }; });
 check(`inside is the barn's room, ${n && n.W.toFixed(1)} by ${n && n.D.toFixed(1)} m, at its true size, with nobody in it`, !!n && Math.abs(n.W - n.want[0]) < .01 && Math.abs(n.D - n.want[1]) < .01 && !n.npc, n);
 check(`you arrive clear at ${n && [n.arrive.x, n.arrive.z].join(', ')}, on the floor, outside the door's reach`, !!n && n.arrive.clear && !n.arrive.exits && Math.abs(n.arrive.floor) < .02, n && n.arrive);
+check(`you arrive facing into the barn with ${n && n.arrive.sight} m clear before the eye (2.5 or more; a stall's post stood 0.9 m off, S1488)`, !!n && n.arrive.sight >= 2.5, n && n.arrive);
 check(`the prototype's five walks are clear on their floors, through the partition's doorway and across the loft (${n && n.walks.map(w => w.blocked).join(', ')} points in something)`, !!n && n.walks.length === 5 && n.walks.every(w => !w.blocked && !w.off), n && n.walks);
 check(`the stair climbs to the loft at ${n && n.climb.want} m in steps of ${n && n.climb.maxStep} m or less, nothing in the way, ${n && n.climb.minHead} m over the head`, !!n && Math.abs(n.climb.top - n.climb.want) < .02 && n.climb.maxStep <= .2 && !n.climb.blocked && n.climb.minHead >= 1.9, n && n.climb);
 check(`lit by its three lanterns (${n && n.lights}), ${n && n.draws} draws (20 or fewer), ${n && n.tris.toLocaleString()} triangles`, !!n && n.lights === 3 && n.draws <= 20, n);

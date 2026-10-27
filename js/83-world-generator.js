@@ -2109,6 +2109,9 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     const rx=x=>x+X,rz=z=>z+Z,ry=y=>y-F0,FL=T.floors.map(y=>+(y-F0).toFixed(3)),dr=T.doors[house.kit.door||0]||T.doors[0];
     house._counterFront=null;house.intW=W;house.intD=D;house._roomH=+(6.6-.14-F0).toFixed(3);house._exitD=.8;house._exitW=Math.min(1.4,dr.w/2);house._exitX=+rx(dr.x).toFixed(3);house._barn=T;
     house._arriveX=+rx(dr.x).toFixed(3);house._arriveZ=+rz(Z-1.1).toFixed(3);
+    // S1488 — from the stable door you face down the passage to the partition's doorway, the bay and the stair beyond it (straight in, a
+    // stall's heel post stood 0.9 m before the eye); from the cart arch, straight in up the bay
+    house._arriveYaw=dr.kind==='plank'?+Math.atan2(-(rx(T.part.x)-house._arriveX),-(rz((T.doorIn.z0+T.doorIn.z1)/2)-house._arriveZ)).toFixed(4):null;
     const sc_=new THREE.Scene();interiorScene=sc_;landRoomPost(sc_);sc_.background=new THREE.Color(0x120a06);sc_.fog=new THREE.Fog(0x120a06,Math.max(W,D)*.8*SCALE.ROOM_K,Math.max(W,D)*2.4*SCALE.ROOM_K);
     intNPCMesh=null;intNPCPos={x:-99,z:-99};intBedPos=null;intStashPos=null;
     const SOL=[];INT_SOL=SOL;FOOTHOLDS=[];INT_BEDS=[];INT_DOORS=[];INT_DOORS.house=house.id;INT_CHAIR=null;INT_NPCS=[];HATCH.active=false;HATCH.roof=false;INT_LOOT=null;INT_BOX=null;INT_SHELF=null;
