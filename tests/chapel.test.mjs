@@ -44,6 +44,6 @@ await page.waitForTimeout(3600);
 const after = await probe();
 check('after four seconds the black lifts and the log says: It saw you.', after.overlays === 0 && after.log.some(t => /It saw you/.test(t)), after);
 const flag = await page.evaluate(() => [worldState.chapelAt, WORLD.guestChapelHouse().name]);
-check('the chapel is remembered for Varek, by the capital\'s name (Fortargent until Session 1472\'s Aurennais register)', flag[0] && flag[0] === flag[1] && /^(Al|Qar|Ser|Tam|Ner|Phar|Sel|Mas|Hel|Dar|Kef|Zar|Per-)/.test(flag[0]), flag);
+check('the chapel is remembered for Varek, by the capital\'s name (Fortargent until Session 1474\'s Aurennais register)', flag[0] && flag[0] === flag[1] && /^(Al|Qar|Ser|Tam|Ner|Phar|Sel|Mas|Hel|Dar|Kef|Zar|Per-)/.test(flag[0]), flag);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

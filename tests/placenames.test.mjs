@@ -2,7 +2,7 @@
 // port and outpost from its culture's hundred names: 610 places held 368 names, two ports in one realm were both
 // *Woushstouir*, and six harbourmasters offered *Passage to* their own harbour's name. Now one pass over the whole grid
 // gives each place its own name; Home's hand-placed towns keep theirs.
-// Session 1472: Aurenne draws from its own register now (the Aurennais Register), so its long names are *Maior*, *Paralia*, *Per-*.
+// Session 1474: Aurenne draws from its own register now (the Aurennais Register), so its long names are *Maior*, *Paralia*, *Per-*.
 import { boot, check } from './lib/game.mjs';
 const KINDS = ['village', 'town', 'city', 'port', 'outpost'];
 const HOME = ['Dunmore', 'Portclare', 'Ironhaven', 'Hearthwick', 'Ashenmoor', 'Carraig Mór', 'Coeur de Vie', 'Salthaven'];

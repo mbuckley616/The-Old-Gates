@@ -3,7 +3,7 @@
 // coaching inn greeted *Be welcome, Master* and then answered like a Mark tavern. The French long names were two endings
 // joined by *-le-* (*Valclair-le-Ancy*), the short ones could double a word (*Montmont*) and kept a small letter after
 // *Saint-*.
-// Session 1472: Aurenne took its own register (the Aurennais Register) and no generated French place is left in the world, so
+// Session 1474: Aurenne took its own register (the Aurennais Register) and no generated French place is left in the world, so
 // the French forms are read from the Crown’s bank (`nameBanks('french')`), not from the map.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
@@ -36,7 +36,7 @@ const r = await page.evaluate((P) => {
   const real = inn.dlg.topics.find(x => /A bed for the night/.test(x.label)).follow[1].response;
   // names: every settlement in the world
   const all = []; for (let j = 0; j < 12; j++) for (let i = 0; i < 12; i++) WORLD.getCell(i, j).sites.forEach(t => { if (t.name && /village|town|city|port|outpost|garrison/.test(t.kind)) all.push({ n: t.name, reg: t.reg, drawn: t.drawnName }); });
-  const fb = nameBanks('french'); /* S1472 — the French forms read from the Crown's bank */
+  const fb = nameBanks('french'); /* S1474 — the French forms read from the Crown's bank */
   return { out, real, inn: inn.name, people: inn.dlg.people, all, frBank: fb[0].concat(fb[1]) };
 }, Object.keys(EXPECT));
 

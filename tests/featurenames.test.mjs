@@ -2,7 +2,7 @@
 // Session 446. Before it a peak drew Sliabh, Mont, Ben or Cnoc anywhere (*Mont Ballymore* in the Gatelands, the Scots
 // *Ben* that no people speaks), a lake in the Mark was *Mere Ashford*, and Aurenne's rivers began with a small *la*.
 // Home's authored landmarks (The Cinder) are not drawn and are left out.
-// Session 1472 (the Aurennais Register, approved 14 Oct): Aurenne takes its own register, not the Crown's Norman one.
+// Session 1474 (the Aurennais Register, approved 14 Oct): Aurenne takes its own register, not the Crown's Norman one.
 // Its peaks are *Jebel* and *Akra*, its lakes *Birket*, its rivers *Chrysa* to *Safia*; its places, people, signs, inns and
 // rumours are drawn from the `aurennais` banks, and the Crown's *french* places on the home island are unchanged.
 import { boot, check } from './lib/game.mjs';

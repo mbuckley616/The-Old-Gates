@@ -94,7 +94,7 @@
     RUMORS[id]=[`The ${word(2)} clan still pays no tithe. Nobody makes them.`,`They say ${(w=>aOrAn(w)+' '+w)(word(1).toLowerCase())} walks the ${pick_(['marsh','ridge','shore','wood'])} at dusk. They say a lot of things.`,`The old road to ${word(2)} is closed. Or it closed itself.`,`There's a door in the ${pick_(['hills','cliffs','wood','fen'])} that was shut when my father was a boy. Still shut.`,`Ships from ${word(2)} stopped coming two seasons back.`];
     return {id,name:word(2)+pick_(['ish','ic','an','ari','ese']),reg:id,thatch};
   }
-  const CULTURES={irish:{id:'irish',name:'Irish'},french:{id:'french',name:'Royale'},anglo:{id:'anglo',name:'Anglic'},aurennais:{id:'aurennais',name:'Aurennais'}}; /* S1472 — Aurenne's own register; no capital, so CULTURE_IDS keeps its draws */
+  const CULTURES={irish:{id:'irish',name:'Irish'},french:{id:'french',name:'Royale'},anglo:{id:'anglo',name:'Anglic'},aurennais:{id:'aurennais',name:'Aurennais'}}; /* S1474 — Aurenne's own register; no capital, so CULTURE_IDS keeps its draws */
   const CULTURE_IDS=['irish','french','anglo'];
   for(let k=0;k<5;k++){const id='cul'+k;CULTURES[id]=makeCulture(id,1000+k);CULTURE_IDS.push(id);}
   // spread: each culture has a capital cell; a cell takes the culture of the
@@ -102,7 +102,7 @@
   const CAPITALS=(()=>{const r=cellRng(4242,1,1);const caps=[{id:'irish',i:HOME_I,j:HOME_J}];CULTURE_IDS.slice(1).forEach(id=>caps.push({id,i:1+Math.floor(r()*(GRID-2)),j:1+Math.floor(r()*(GRID-2))}));return caps;})();
   function cultureOfCell(i,j){
     if(i===HOME_I&&j===HOME_J)return 'irish';
-    if(nationKeyOf(i,j)==='aurenne')return 'aurennais'; /* S1472 — a place's name is its nation's (the Aurennais Register) */
+    if(nationKeyOf(i,j)==='aurenne')return 'aurennais'; /* S1474 — a place's name is its nation's (the Aurennais Register) */
     let best='irish',bd=1e9;CAPITALS.forEach(c=>{const d=Math.hypot(c.i-i,c.j-j)+(cellHash(i,j,300+c.id.length)-.5)*1.4;if(d<bd){bd=d;best=c.id;}});
     return best;
   }
