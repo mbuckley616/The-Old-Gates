@@ -10,6 +10,9 @@ function openShop(){
   document.getElementById('sh-title').textContent=currentHouse.name;
   document.getElementById('sh-sub').textContent=`${currentHouse.keeper} · ${currentHouse.tagline}`;
   setShopTab('all'); // v67 — reset category each open; setShopTab calls renderShop
+  {let fb=document.getElementById('sh-forge');const on=typeof forgeHere==='function'&&forgeHere(); /* S1494 — a smith's room: the forge */
+    if(on&&!fb){fb=document.createElement('button');fb.id='sh-forge';fb.className='sh-tab';fb.textContent='Forge';fb.onclick=()=>openForgePage();document.getElementById('sh-tabs').appendChild(fb);}
+    if(fb)fb.style.display=on?'':'none';}
 }
 function closeShop(){
   shopOpen=false;

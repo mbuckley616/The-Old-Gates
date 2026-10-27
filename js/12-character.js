@@ -153,8 +153,11 @@ const PERK_DEF={
   armour:[['Fitted','worn armour weighs half'],['Unbowed','your posture +25%'],['Hold the line','a light hit doesn’t stagger you above half posture'],['Second skin','worn armour never slows the roll']],
   stealth:[['Soft step','sneak at walking speed'],['In the dark','sight on you −25% more out of light'],['Light foot','plates and crumbling floors don’t trigger while sneaking or sprinting'],['Shadow’s hand','a backstab does +50%']],
   locks:[['Feel for it','the pin you work glows faintly at the shear'],['Sure hand','a snapped pick keeps the set pins'],['Quiet work','picking halves a witness’s range'],['No mark','a picked town lock is never found']],
+  smithing:[['Smelter','two ingots from three ore'],['Fine work','a made piece is Fine: +10% attack or defence'],['Temper','four tempers (was three)'],['Masterwork','the first piece of each metal you make is a Masterwork: +20%']], /* S1495 */
+  mining:[['Prospector','veins on the minimap within 40 m'],['Rich vein','one ore in four comes double'],['Lodestone','the magnetic ore of La Grise'],['Seam','a vein holds 5 (was 3)']],
   speech:[['Haggle','5% better prices both ways'],['Talk it down','a guard’s fine halved, once in each town'],['Hearing','a person at favour −1 still talks'],['Word given','once a day a guard takes your word for a trespass']]};
-const PERK_LIVE=new Set(['locks:25','locks:50','locks:75','speech:25','speech:50',
+const PERK_LIVE=new Set(['smithing:25','smithing:50','smithing:75','smithing:100','mining:25','mining:50','mining:100', /* S1495 — the forge's and the vein's (survival B, session 7's first part) */
+  'locks:25','locks:50','locks:75','speech:25','speech:50',
   'stealth:25','stealth:50','stealth:75','stealth:100','athletics:25','athletics:50','athletics:75','athletics:100', /* S976 — Stealth's three and Athletics' four */
   'acrobatics:50','armour:25', /* S977 — Cat's fall and Fitted */
   'acrobatics:25', /* S1385 — Catch, the mantle to 2.2 m and on the way down (mantleTick, 10-player.js) */
