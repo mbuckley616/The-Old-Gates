@@ -28,7 +28,7 @@ function inspRegistry(){
       const rig=buildPerson(g,{noLod:true});PEOPLE_RIGS.delete(rig);const anim=personAnim(rig);anim(0,0,'idle');
       return {obj:rig.root,anim,modes:['idle','walk','wave']};});}
   for(const type of Object.keys(FOE_DRESS))add('People','Foes on the body',type,'32-people.js',()=>{
-    const rig=buildFoe(type,0,0);PEOPLE_RIGS.delete(rig);if(FOE_DRESS[type].goblin)rig.root.scale.multiplyScalar(.72); /* S535 — at the size the game builds a goblin */const anim=personAnim(rig);anim(0,0,'idle');return {obj:rig.root,anim,modes:['idle','walk','wave']};});
+    const rig=buildFoe(type,0,0);personHi(rig);PEOPLE_RIGS.delete(rig);if(FOE_DRESS[type].goblin)rig.root.scale.multiplyScalar(.72); /* S535 — at the size the game builds a goblin */const anim=personAnim(rig);anim(0,0,'idle');return {obj:rig.root,anim,modes:['idle','walk','wave']};});
   // 2. Creatures — the wolf kit's kinds, the spider kit's, then the zone and dungeon foes that have a body of their own
   for(const name of Object.keys(WOLF_KINDS))add('Creatures','On the wolf kit',name,'34-creatures.js',()=>{
     const rig=buildWolf(name,WOLF_KINDS[name].world||(WOLF_KINDS[name].play?WOLF_KINDS[name].play*SCALE.BEAST:1));WOLF_RIGS.delete(rig);let ph=0; /* S524 — at the size the game builds it (the dragon's 2.88); S632 — the wolves' and the bear's too (play) */
@@ -224,7 +224,7 @@ function openInspector(){const I=INSPECTOR;if(I.open)return I;I.open=true;
     I.hemi=new THREE.HemisphereLight(0xbcd6ff,0x6b7a48,.6);I.scene.add(I.hemi);I.amb=new THREE.AmbientLight(0x90a0c0,.3);I.scene.add(I.amb);
     I.sun=new THREE.DirectionalLight(0xfff0d0,1.1);I.sun.castShadow=true;I.sun.shadow.mapSize.set(2048,2048);I.scene.add(I.sun);I.scene.add(I.sun.target);
     I.orbit={target:new THREE.Vector3(0,.8,0),dist:5,theta:.65,phi:1.2};
-    try{const f=buildFoe('Bandit',0,0);PEOPLE_RIGS.delete(f);pwApply(f,pwIdle(0,{holds:f.holds,gear:f.g.gear}));
+    try{const f=buildFoe('Bandit',0,0);personHi(f);PEOPLE_RIGS.delete(f);pwApply(f,pwIdle(0,{holds:f.holds,gear:f.g.gear}));
       f.root.scale.setScalar(SCALE.PERSON*PW.BODY/SCALE.PERSON_MODEL);f.root.userData.yardstick=SCALE.PERSON;I.figure=f;}catch(e){I.figure=null;}} /* S881 (F2a) — the yardstick: exactly SCALE.PERSON, 1.8 m, beside every piece */
   if(!I.ui)inspBuildUI();
   I.canvasHome=REN.domElement.parentNode;I.ui.querySelector('#insp-stage').appendChild(REN.domElement);
