@@ -2,7 +2,7 @@
 
 These are the quest writer's drafts. None of them is canon until Michael promotes it into `quest_writing.md`, and none is a spec until it is approved. Each draft gives the quest's shape, every line verbatim with its speaker and people, and a note on what in the code would carry it.
 
-Calls read to: 2026-10-16T17:51:09.360Z (run 28, 26 Oct: no new calls on the page)
+Calls read to: 2026-10-16T17:51:09.360Z (run 29, 27 Oct: no new calls on the page)
 
 ---
 
@@ -2966,7 +2966,7 @@ The garrison does not only stand on the plaza. By day (6h–20h), two of its sol
 
 ## The Aurennais Register — names, places, signs and talk
 
-*Approved by Michael, 14 Oct 2026.* *Drafted 13 Oct 2026. Owed since Michael's answer of 12 Oct on Aurenne (`decisions.md`, *The concept art's first batch*, item 4; canon §1.3 and §2): the Norman register is dropped for Aurenne, and its names are *to be written by the quest writer*. Backlog J, *The world's tone*: "Owed for Aurenne: the quest writer's new name pools in its register (the code's `NAMES.french`, read by `PEOPLES.aurennais`)". This is not a quest. It is the bank every Aurennais name and place is drawn from, so it comes before any quest set there.*
+*Approved by Michael, 14 Oct 2026.* *Built, Session 1474 (PR #778), word for word (`NAMES.aurennais`, `SYL.aurennais` and its long forms, the rivers, *Jebel*, *Akra*, *Birket*, the signs, the inns, the rumours; every cell of Aurenne takes the register by its nation). Aurenne's capital re-rolled with it, from *Fortargent* to *Darona* on the default seed, and Corwin's brief now reads the seat's name. Correction to *Owed* below: an Old Blood bank (`NAMES.oldblood`) was already on main when this was built, so that short draft is not owed; its one slip is Finding 35 in `quest_review.md`.* *Drafted 13 Oct 2026. Owed since Michael's answer of 12 Oct on Aurenne (`decisions.md`, *The concept art's first batch*, item 4; canon §1.3 and §2): the Norman register is dropped for Aurenne, and its names are *to be written by the quest writer*. Backlog J, *The world's tone*: "Owed for Aurenne: the quest writer's new name pools in its register (the code's `NAMES.french`, read by `PEOPLES.aurennais`)". This is not a quest. It is the bank every Aurennais name and place is drawn from, so it comes before any quest set there.*
 
 ### What the canon fixes, and where it is silent
 
@@ -5202,3 +5202,153 @@ One rumour each, for `liveRumours` in the towns named:
 - *§10a*: none of the five is a villain. Two of them hurt you only if you choose them (Brógán's goods, Eadburh's yard), and one of them tells you who wants you hurt.
 - *No chosen one*: Siadhal's coin is a pilgrim's courtesy, not a sign.
 - *Silent, chosen plainly*: whether honest traders refuse stolen goods (they refuse it only in the town it was taken from); what the Old Blood call Varek (*the cold man*, from the canon's own Cold, §3.3; nobody names him).
+
+---
+
+## Faith — a priestess, a Church brother, a tide-reader, a smiling man and a child who sweeps
+
+*Unapproved.* *Drafted 27 Oct 2026. Backlog L2, *Faith* (OG-091): "Mother Amani, Brother Alain (an Aurennais hunter of salvagers), Shevra the tide-reader (not a priest: the Mark scorns them), Father Calix (one of the awake or a villain, never the surface tone), the Veiled Child." Five named people, one for each figure on the sheet, each standing where the game already has a place for them, each with one service on machinery that exists and one thread the world remembers. Two of the five are tied to each other (Alain hunts Calix), and the player decides how that ends. One place where the game has no rule yet is marked **Rule read** for the systems builder; no line depends on which way it goes.*
+
+### What the canon fixes, and where it is silent
+
+- *The Compact: merchant houses under the Church of the Weaver; Priors over the church's towns* (§1.3). *The Gatelands' salvage trade is sacrilege to the Church* (§1.3); *to clear a gate is to unpick the Weaver's loom*. A brother who hunts salvagers is the Church's ordinary business, not a zealot's.
+- *The Church blesses the dead into the gates without knowing what happens there* (§3.1). *The dead are erased so the world can continue* (the Clearing). Nobody on the surface knows it. A priestess who carries the dead to the gates is the gentlest face of the Church and the one closest to the thing it does not know.
+- *The Mark: contempt for priests* (§1.2). So the Mark's woman of faith is not a priest. She reads water for people who need to know it, and she is paid in fish.
+- *The awake look like villains from inside the world, and that is the horror* (§10a). *Grimdark belongs to the villains; the surface is pleasant.* Father Calix is one of the awake. He smiles, he is kind, and he is right about one thing nobody should be right about.
+- *The Church's attention falls on the Old Blood* (§2.2). *A child either shows the marks or does not* (§3.1). An Old Blood child goes veiled where the Church counts. The sheet's white hair and glowing eyes are dropped: canon gives the Old Blood black hair, and their eyes grey only with the Cold.
+- *The Guest is found in defaced niches* (§4.2). The child sweeps the shrines, the empty niche beside the altar included.
+- *No chosen-one prophecies; the three descriptions are applied to the player once, in Act III* (§4.2). Calix sees something in the player and says what he sees. He does not name it, quote the descriptions or promise anything.
+- *Names.* Amani is Arabic and Calix Greek, both in the Aurennais register (*The Aurennais Register*, approved 14 Oct). Alain is Norman, and the Norman register is dropped for Aurenne, so he is a Gatelander of the Crown's country, born near Coeur de Vie, who took the Church's vows in Aurenne; the sheet's note allows a convert, and speech follows the speaker (§1.5), so he talks like a Gatelander who has learned a book by heart. *Shevra* is not a Markish name. Her name is **Sæwynn**, and *Shevra* is what the strait calls her: a Gatelander deckhand's version of it, which she has never corrected. The child gives no name.
+- *The sign.* The sheet draws Alain in white with a red cross. The Church's sign is the Weaver's **shuttle** (§4.1, and *The Underworld*'s note), so his tabard carries a red shuttle.
+- *Silent:* what the Church does with a heretic (the plainer thing: holds him, and says no more); whether the weather can be foretold (the game already knows the weather coming, `WX.next`, so she can tell it, and only that far).
+
+### The five
+
+| | People | Where | What they do |
+|---|---|---|---|
+| **Mother Amani**, the Lantern of Ash | Aurennais | the church of the Compact's port nearest its capital, in place of its priest | heals and blesses, and carries the dead's lamp to the gates; asks the player to carry one |
+| **Brother Alain** | Gatelander (the Crown's country), of the Church | the cathedral square in Aurenne's capital, by day | searches packs for rubbings; hunts *the Lamb* |
+| **Sæwynn**, called *Shevra* | Markman | the quay at Port Blackhand, first light to noon | reads the weather coming, for a fish |
+| **Father Calix**, the Smiling Lamb | Aurennais | the door of the lesser gate nearest Aurenne's capital, at dusk | preaches the gates; one of the awake |
+| **The Veiled Child** | Old Blood | one shrine of the Gatelands a game-week, dawn to dusk | sweeps the shrine, the empty niche included |
+
+Faces for the bodies builder: Amani tall and dark-skinned, in a white head-cloth and robes of white, blue and gold, a staff topped with a caged lantern; Alain lean and weathered, freckled, hooded, white over mail, a red shuttle on the breast; Sæwynn broad and ash-blond, her braids stiff with salt, shells and a lantern on a driftwood staff; Calix round-faced and handsome, open-handed, a gilt sunburst stitched behind his shoulders, a smiling mask at his belt; the child slight and grey-pale under a white veil to the waist, a short broom, the marks hidden at the wrists by long sleeves.
+
+### 1. Mother Amani, the Lantern of Ash (Aurennais; formal, *Master*, the Church's contracts, never an oath)
+
+**Greeting, first:** "Be welcome, Master. Sit, if you are tired; stand, if you are not. The house charges for neither."
+**Greeting, again:** "Master. You came back, which the Church counts in your favour, though I keep no such book."
+**Greeting, to an Old Blood player, first:** "Be welcome, Master. You are cold through. Sit by the lamp; it costs nothing, and I will not write it down."
+
+**Topics**
+- *Who are you?* — "Amani. The priest of this house, for my sins, which the Prior assures me are modest. The fishers call me the Lantern of Ash. It is kinder than it sounds."
+- *Why the Lantern of Ash?* — "When one of the town dies, I carry a lamp from the pyre to the nearest gate and leave it at the door. The Church teaches that the dead go in to hold the world up. Somebody ought to light their way. I am told I walk too slowly for the work, and I have never once been late."
+- *What do the gates do with the dead?* — "They hold them, Master. That is the teaching, and it is a comfort, and in twenty years nobody has asked me to prove it. You are welcome to be the first. I will answer you the same."
+- *A blessing?* — (as every priest's: eight health) "Kneel. There. The Weaver keeps the thread; I only mind the knots."
+- *Confess.* — every priest's penance (`penanceTopics`), in her own words where she says it: "It is heard, Master, and entered nowhere. Go gently, and do not make me hear it twice."
+
+**Her thread: *A Lamp for the Door*.** Offered once, from her topic *Is there anything I can do?*, which shows while she has a dead to carry for.
+- *Is there anything I can do?* — "There is, Master, if your road runs out of town. A net-mender died at the turn of the tide, and her people cannot leave the boats this week. Her lamp should go to the gate on the hill. Carry it, set it inside the door, and come back. It is a small contract. The family has paid me for it already, and I will pay you from it."
+  - *I'll carry it.* — "Mind the cage; the flame is older than you are, in a manner of speaking. The gate is {dir} of here, {far}." (*A Mourner's Lamp* goes to the bag.)
+  - *Not now.* — "Then she will wait. The dead are patient. It is one of their virtues."
+- At the gate's door, with the lamp in the bag: the prompt *Press 'E' to set down the lamp* takes the place of the door's own for one press. Pressing it: the lamp leaves the bag and stands lit on the threshold, and one line: *The lamp stands inside the door. The flame leans in.* The door is the gate's own and opens as ever after it.
+- *It's done.* (turn-in, shows once the lamp is set down) — "Then she is held. Thank you, Master. Twenty gold, from her family, with their thanks, which I have also been paid to convey." (20 gold; a point of the town's favour.)
+- *It's done.* to an Old Blood player, or one who has read a sigil to Mastery (`worldState.masteries`), the same and then: "You looked at the door a long time before you came back. I can see it on your hands. Whatever it was, Master, I would rather not be told."
+- After: *How is her family?* — "Mending nets. It is what the living do. They ask after you, a little, the way one asks after weather."
+
+### 2. Brother Alain (a Gatelander of the Crown's country, of the Church; proverbs turned to scripture, no bare yes or no, oaths on the Weaver)
+
+**Greeting, first:** "Stand there, friend, in the light where the Weaver can see you. What a man carries is the shape of what he means. Let me see your pack."
+**Greeting, again:** "Yourself again. A pack gets no lighter for being looked at twice, but we'll look."
+**Greeting, to a Gatelander player, first:** "A face from home, under the Church's roof. Don't take it ill if I ask what's in the bag. My own mother would get the same."
+
+**Topics**
+- *Who are you?* — "Alain. Born under Coeur de Vie, where a bell rings for the King and another for the harvest and nobody minds which is which. I came over the water to hear the Weaver's book read properly. I'm hearing it yet."
+- *Why look in my pack?* — "Because the gates are the Weaver's loom, and every rubbing sold off them is a thread pulled out to sell by the yard. At home we call that a living. Here we call it what it is. The one doesn't make the other untrue."
+- *Show him the pack.* — reads the bag.
+  - With no rubbing in it: "Nothing of the loom. Go on, so, and the Weaver keep you clean of it."
+  - With rubbings: "There it is. {n} of them, and the stone still warm on the paper, I'd swear on the Weaver. Give them to me and we'll say no more. Keep them and I'll say a good deal more, to people who write it down."
+    - *Hand them over.* — the rubbings leave the bag. "Good. A thread given back is half mended. I'll see they're burned decently."
+    - *They're mine.* — "So's a cough, friend, till you give it to someone. It's noted." (The Church's note: **Rule read** below.)
+- *Who are you looking for?* — "A man who calls himself a father and isn't one of ours. He smiles. He stands at the doors of the gates at dusk and tells people they'll be lighter for walking in. Some of them have walked in. The Church calls him the Lamb, which is a joke, and I'm the only one in this square who laughs at it."
+  - Shows once the player has met Calix: *I've seen him.* — "Have you, now. And where would a man see a lamb, at the end of the day?"
+    - *At the gate, {dir} of here.* — "Then that's where he'll be found. The Weaver keep you for it. You did a hard thing well, and I'll not thank you for it in the street." (Calix's fate: *taken*.)
+    - *I don't remember.* — "A short memory's a long road. Go on." (Nothing changes.)
+- After Calix is taken: *The Lamb?* — "We found him where you said, smiling. He smiled the whole way in. He's in the Prior's keeping now, and the Prior's house has no windows on that side. I've said a prayer for him. It's the most the Church will give him, and more than he asked."
+- *What is under the cathedral?* (shows once `worldState.chapelAt` is set) — "There are doors in this city I've been asked not to open, and I'm a good son of the Church. A shut door's a sermon too, friend. It only takes longer to hear."
+
+**Rule read (systems): refusing Alain writes a note to the Church** (`worldState.church.notes`, `{kind:'salvage', site, day}`), which any priest of Aurenne then hears at *Confess.* as a guard's death is heard today, for a tithe and without the town's favour (salvage costs none). Confessed, it is struck through. Until then a priest of Aurenne opens with "There is a note against your name, Master, from Brother Alain. Paper. You will want to deal with it." Elsewhere nobody reads it.
+
+### 3. Sæwynn, called Shevra (Markman; short sentences, *aye*, nicknames, oaths on iron and blood, no honorifics)
+
+**Greeting, first:** "You're between me and the water. Shift."
+**Greeting, again:** "You. Fish?"
+**Greeting, to a Markman player, first:** "Aye. Mark-born. Stand to the side, you're in my light."
+
+**Topics**
+- *Who are you?* — "Sæwynn. They call me Shevra. A Gatelander boy off a salt-boat couldn't say it, and the strait took his side. I let it. Names wear like rope."
+- *Are you a priest?* — "Iron and blood, no. Priests talk to the gods. I watch the water. The gods talk to that. I listen in."
+- *What do you read?* — "Weather. What's coming over the strait, and when. Fishers pay me, and the other kind of sailor pays me better. Same weather for both."
+- *Read me the water.* — "A fish. Any fish. I'm not proud." (With a fish in the bag, the fish leaves it and she reads `WX`.)
+  - No fish: "No fish, no water. The sea's full of them. Go on."
+  - The weather turning (`WX.next` is not `WX.type`): "{next} coming. Before the tide turns. Get your hatches down, or don't, it's your hatches."
+  - The weather holding: "Holds. {now} now, {now} after. The sea's bored. Make the most of it."
+  - Fog, either way: "Fog. Things sing in it out past the light. Don't steer for them." (Sea Legends I's singing ship, unapproved; the line stands without it.)
+- *Read me.* — "I read water. You I'd not read. You'd come up the same either way, and I don't like that in a tide."
+- *What do you make of the Church?* — "Their tithe-ships ride high and come back. That's the whole of what I know about their god. It's not nothing."
+- *Farewell.* — "Aye. Mind the weed on the steps."
+
+### 4. Father Calix, the Smiling Lamb (Aurennais; formal, honorifics, qualifiers and terms, never an oath; one of the awake)
+
+**Greeting, first:** "Oh, Master. You came at the best hour. Everything looks honest at dusk, even the gates. Especially the gates."
+**Greeting, again:** "Master! I had hoped. One does, at my age, and is so seldom paid for it."
+
+**Topics**
+- *Who are you?* — "Calix. Father Calix, though not, I am afraid, by the Church's leave. The Church and I have a disagreement over terms. They believe the gates take something from the world. I believe they take something off it."
+- *What do you preach?* — "That the gates make things lighter, Master. Everything that goes through one comes out lighter, or does not come out at all, which is the same thing done thoroughly. The Church calls that a loss. I call it the only honest arrangement in the world."
+- *Where are your people?* — "Seven of them went in at the spring. Not one came out, and not one of them, I promise you, was sorry. I keep their masks. Smiling. I had them made to look as they would after."
+- *Why do you smile?* — "Because I have read the terms, Master, and almost nobody else has."
+- *What do you see when you look at me?* (shows on the second meeting) — "Most people come to a gate afraid. Some come greedy. You come to it the way I come to supper. I have stood at this door eleven years and you are the first I have envied."
+- To a player with `worldState.chapelAt` set, one line before his greeting, once: "You have been down under the cathedral. No, do not tell me. It is on you like a scent. I have been trying to find that stair for eleven years."
+- *A Church man is asking after you.* (shows once the player has met Alain and while Calix's fate is open) — "Of course he is. Brother Alain, with the freckles and the good heart. Thank you, Master. Nobody warns a lamb." (Calix's fate: *moved*. Next dusk he stands at the next nearest lesser gate to the capital, and Alain's *Who are you looking for?* gains: "He's moved. Somebody told him. I'll not ask who. A man can tell the wind which way to blow as well.")
+- *Farewell.* — "Go lightly, Master. You are already halfway there."
+
+### 5. The Veiled Child (Old Blood; sparing, exact, the older word for the thing)
+
+**Greeting, first:** "You are standing on the swept part."
+**Greeting, again:** "You found me."
+**Greeting, to an Old Blood player:** (she lifts the edge of the veil, and drops it) "You too. Keep it covered, near their churches. They count us."
+
+**Topics**
+- *Who are you?* — "The one who sweeps."
+- *Whose shrine is this?* — the shrine's god by its old name and its work: "An Chloch's. The gate-maker. Your word is the Stone." (by `godShrineOwner`, each of the six: *An Mhuir's. The hull-maker. Your word is the Sea.*; *An Spéir's. The one who turns the day. Your word is the Sky.*; *Na Beithígh's. Her children do not know her. Your word is the Beasts.*; *An Teallach's. The lamp-keeper. Your word is the Hearth.*; *An Fíodóir's. The one who makes the cloth. Your word is the Weaver.* The canon gives a pronoun only to the Beasts, *her children*, so the others take none.)
+- *Why sweep it?* — "Nobody comes. Dust comes."
+- *Why sweep that one? There's nothing in it.* (the empty niche, once the look builder lays it) — "That is why."
+- *Where are your people?* — "Up the hill. They know where I am. Everyone does, once a week."
+- After she has been found three times (`worldState.faith.child.found >= 3`), her greeting, once: "Every week you find me. I am not hard to find. I am hard to look at. You are the same."
+
+She asks nothing and gives nothing, and fights nobody; a struck child is the crime system's assault, as any townsperson's.
+
+### What in the code would carry it
+
+- **The five defs**: authored defs in the manner of `spireRoweDef` and `SPIRE_FOLK` (`87-world-quests.js`), `authored:true`, with a `people`, a fixed name and `topics` as a getter. Placed by `anchoredPlaces()`: Aurenne's capital (`FACTIONS.compact.seat`) for Alain in its square by day; Port Blackhand (`blackhand`) for Sæwynn on the quay, 6h–12h; Amani as the church's keeper (the `Priest` of `buildInteriorFor`'s church, `83-world-generator.js`, at the Compact port nearest the seat, picked once per seed and kept in `anchoredPlaces` as `amani`); Calix at the door of the nearest lesser gate to the seat (`nearbyDoors(seat)`, not a great gate and not a fort), 18h–21h; the child at one Gatelands shrine (`site.kind==='shrine'`) a game-week, by `seededRng('child', week)`, 6h–20h.
+- **Amani's lamp**: *A Mourner's Lamp*, a misc item `{name:'A Mourner\'s Lamp',ico:'🏮',type:'misc',quest:'amani',weight:1,sellMult:0}`; the door's prompt in the world's door prompt (`88-world-ticks.js`, the gate door's *Press 'E'*) takes *Press 'E' to set down the lamp* for one press while the bag holds it and the door is the one she named (by seed). Saved: `worldState.faith.amani={state:'given'|'laid'|'paid', seed, day}`.
+- **Alain's search**: reads `BAG` for `type:'rubbing'`. The note is the **Rule read** above, in `penanceTopics` (`86-world-crime.js`). Saved: the note in `worldState.church.notes` (the character's, already in `SS_CHAR_WS`).
+- **Calix's fate**: `worldState.faith.calix={met:n, fate:null|'taken'|'moved', door:seed}`. *Taken* removes him; *moved* sets `door` to the next nearest lesser gate.
+- **Sæwynn's reading**: a fish from `catchFish` (`86-world-crime.js`) leaves the bag; the words read `WX.type` and `WX.next` (`86-world-crime.js`, `wxSetNext`) through the weather's names (*rain*, *a storm*, *snow*, *fog*, *clear skies*).
+- **The child**: `worldState.faith.child={found:n, week}`; *Whose shrine is this?* by `godShrineOwner`.
+- **Saved**: `faith` is one new `worldState` key, the world's (what became of the people in it), added to `_applyLoadData`'s list. The church note is the character's, as today.
+- **Rolls**: the child's shrine is a seeded stream keyed by week; which greeting is said is cosmetic.
+- **A test worth having**: the lamp given, carried to its door, set down and paid (`faith.amani.state==='paid'`, 20 gold), saved and loaded; Alain told of Calix and Calix gone at dusk; a fish read into *Holds* or a turn.
+
+### Checked against the canon
+
+- *The Church: Aurennais, salvage is sacrilege, Priors over its towns* (§1.3). Alain's search and Amani's teaching are the Church's ordinary line, said by two kind people.
+- *The Church blesses the dead into the gates without knowing* (§3.1). Amani carries the lamp and has never been asked to prove the teaching; the player who has read a sigil may know more, and she does not want to be told.
+- *The Mark scorns priests* (§1.2). Sæwynn is no priest, and says so on iron and blood.
+- *The awake look like villains* (§10a). Calix's cult has taken seven people into a gate, and he is the only one in the five who is near the truth (*they take something off it*). He envies the player and does not say why.
+- *No chosen-one prophecies* (§4.2). Calix sees, and the child sees, and neither names anything or quotes the three descriptions.
+- *The Old Blood: black hair, grey-pale, the marks at the wrist* (§2, §3.1). The child keeps her sleeves long and her veil down near the Church, because the Church's attention falls on her people (§2.2).
+- *Registers* (§2): Amani and Calix have *Master*, terms and no oath; Alain swears on the Weaver and turns proverbs (*a short memory's a long road*); Sæwynn has *aye*, iron and blood, short sentences and her own nickname; the child answers with the older name for the thing (*the gate-maker*, *the one who makes the cloth*).
+- *Slurs are about work, land and gods* (§2.1). None here; Alain's *we call that a living* is the canon's quarrel over salvage.
+- *Where the canon is silent:* the Church's way with a heretic (held, no more), and the weather foretold (only as far as `WX.next`). Both the plainer thing.
