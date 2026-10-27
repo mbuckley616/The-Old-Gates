@@ -693,7 +693,7 @@ export function aurenneCourtyardHouse(o = {}, r = stream('courtyard')) {
   // the vestibule: tile to 1.2 m, a masonry bench down each side, the street door's leaf hung open, a lantern
   dado(rooms.vestibule, 1.2);
   for (const s of [-1, 1]) { const [x0, x1] = s < 0 ? [-.88, -.43] : [.43, .88]; bx('plaster', x0, x1, F0, F0 + .41, 4.0, 5.6, 'bench', 0); bx('zellige', x0 - (s > 0 ? .02 : 0), x1 + (s < 0 ? .02 : 0), F0 + .41, F0 + .45, 3.98, 5.62); } seats.push(.45);
-  bx('cedarD', .66, .72, F0, F0 + 1.95, A - 1.32, A - .02, 'leaf', 0);
+  bx('cedarD', .56, .62, F0, F0 + 2.1, A - 1.12, A - .02, 'leaf', 0);
   lantern(0, CEIL0 - .5, 5.4, 0, CEIL0);
   // the store: oil jars down the street wall, sacks of grain, a chest of the house's silver
   for (let x = -6.7; x < -2.9; x += .7) jar(x, A - .38, 0, 1.0, 'terra', 'oiljar');
@@ -770,7 +770,7 @@ export function aurenneCourtyardHouse(o = {}, r = stream('courtyard')) {
   const group = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const geo = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(geo, M[k]); m.name = k; m.castShadow = !['flame', 'ember', 'glow'].includes(k); m.receiveShadow = true; group.add(m); tris += geo.attributes.position.count / 3; }
   const all = new THREE.Group(); all.add(sh.group, group);
   return { group: all, shell: sh.group, room: group, sh, tris: Math.round(tris), draws: group.children.length, shellTris: sh.tris, shellCalls: sh.draws, rooms, boxes, paths, lamps, braziers, tables, seats, beds, floors: FL, ceil0: CEIL0,
-    door: { x: 0, z: sh.d / 2, w: 1.3, h: 2.6 }, w: sh.w, d: sh.d };
+    door: { x: 0, z: sh.d / 2, w: 1.1, h: 2.65 }, w: sh.w, d: sh.d };
 }
 
 // gatelandsForge(o, r) (Session 929, card F9; L5's interiors by nation, OG-043's Gatelands blacksmith; Michael's A on #303: rooms inside
