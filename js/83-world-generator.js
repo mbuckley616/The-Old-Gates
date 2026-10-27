@@ -2099,6 +2099,9 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       for(const q of T.windows)out(q);for(const q of T.doors)out({...q,y:F0});
       const A=new Float32Array(P.reduce((n,a)=>n+a.length,0));let o=0;for(const a of P){A.set(a,o);o+=a.length;}
       const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(A,3));const m=new THREE.Mesh(g,M);m.userData.daylight=true;sc_.add(m);}
+    // S1493 — and the day in through the two half-doors at the barn's 0.4 (S1490's kitDaylight): from the arrival the byre reads 57 at
+    // noon (26 without, 110 at the full share); the lights between them (a third of a square metre) and the loft's hatch light only themselves
+    kitDaylight(sc_,T.doors.map(q=>({x:rx(q.x),y:q.h*.7,z:D,nx:0,nz:-1,w:q.w,h:q.h})),.4);
     // the light: the two lanterns (the passage's under the loft, the one hung from the couples over the pen) and the room's air
     const KA=kitRoomAir(sc_,.4);
     for(const p of T.lamps){const l=new THREE.PointLight(0xffaa44,1.0*KA.lamp,7);l.position.set(rx(p[0]),ry(p[1]),rz(p[2]));sc_.add(l);}
