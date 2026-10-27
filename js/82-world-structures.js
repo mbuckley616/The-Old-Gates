@@ -425,7 +425,13 @@
   // rivers' routing, the gates and the roads all read, so no farm moves anything drawn before it
   const LONE_FARMS=[];
   function loneFarmSite(F,c){if(F._site)return F._site;
-    F._site={id:F.id,name:'',kind:'farm',x:F.cx,z:F.cz,pad:FARM_R,cell:F.cell,reg:REGISTER[dominantRegionOf(c.regions,F.cx,F.cz).id]||'irish',lordless:true,_farm:F};return F._site;}
+    F._site={id:F.id,name:'',kind:'farm',x:F.cx,z:F.cz,pad:FARM_R,cell:F.cell,reg:REGISTER[dominantRegionOf(c.regions,F.cx,F.cz).id]||'irish',lordless:true,_farm:F};
+    F._site.name=loneFarmName(F._site);return F._site;}
+  /* S1481 — its name before it is built (the map, the search, discovery): genSettlement's first two draws of the farmer's stream, as
+     buildFarm's nameFn makes them (its makeDef keeps that name, keepName), and *Your Farm* once it is bought; genSettlement still
+     names it from the house it builds */
+  function loneFarmName(t){if(typeof ownedHouse==='function'&&ownedHouse(`g_${t.id}_${FARM_N}`))return 'Your Farm';
+    const r=PKIT.stream('farmer:'+t.id),nm=NAMES[t.reg]||NAMES.irish;return `${pick(r,r()<.5?nm.m:nm.f)}'s Farm`;}
   function rebuildRoadGrid(){
     RSEG.length=0;RGRID.clear();ROAD_DEFS.length=0;
     ROADS.forEach(road=>{ROAD_DEFS.push(road.def);indexRoad(road);});

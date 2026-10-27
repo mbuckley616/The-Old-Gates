@@ -77,6 +77,22 @@ const LF = await page.evaluate(id => { const S = WORLD.settle.get(id), F = S.far
   const sol = S.sol.find(q => q.farm === 'Farmhouse');
   return { name: S.site.name, id: h.id, house: h.name, kit: kitFarmhouse(h), listed: ZONES.world.houses.includes(h), resident: S.residents.some(r => r.def === h.dlg), keepsYard: S.residents.some(r => r.def === h.dlg && r.farm) && !!(F.yard && F.yardDoor), sol: S.sol.length, home: sol && sol.hid === h.id, dev, exitClear: !settleSolid(h.exitX, h.exitZ, .3), calls: S.group.children.find(o => o.name === 'farmstead').children.length }; }, N.first);
 check(`it is ${LF.name}: the farmstead (${LF.calls} draws) on its flat pad (${LF.dev != null ? LF.dev.toFixed(3) : '?'} m), ${LF.sol} solids, its farmhouse a home with its farmer, the step out clear`, !LF.none && LF.dev < .05 && LF.sol === K.foot.length && LF.home && LF.kit && LF.listed && LF.resident && LF.exitClear && LF.house === LF.name, LF);
+// Session 1481: a lone farm on the map. Its name is known before it is built (loneFarmName, the farmer's stream's first two draws) and
+// is the built house's; standing by it discovers it; the map's entries for its cell carry it with its own icon; the search finds it;
+// fast travel puts you on the road's verge in front of it, clear of its solids, facing it.
+const MP = await page.evaluate(id => { const S = WORLD.settle.get(id), t = siteAnywhere(id), F = t._farm, [ci, cj] = cellOf(t.x, t.z);
+  const pre = loneFarmName(t); if (worldState.wdisc) delete worldState.wdisc[id]; const before = discovered(id);
+  px = t.x; pz = t.z; for (let i = 0; i < 3; i++) tickDiscovery(1); const after = discovered(id);
+  const e = mapEntries(getCell(ci, cj)).find(x => x.id === id);
+  let search = null; const box = document.getElementById('wm-results'); if (box) { mapSearch(t.name.slice(0, 6)); search = [...box.querySelectorAll('.wm-res')].some(el => el.textContent.includes(t.name)); box.style.display = 'none'; }
+  const a = arrivalFor(id); const cs = Math.cos(F.ry), sn = Math.sin(F.ry), dx = a.x - F.x, dz = a.z - F.z, lu = dx * cs - dz * sn, lv = dx * sn + dz * cs;
+  const look = { x: -Math.sin(a.yaw), z: -Math.cos(a.yaw) }, toF = { x: t.x - a.x, z: t.z - a.z }, faces = (look.x * toF.x + look.z * toF.z) / Math.hypot(toF.x, toF.z);
+  px = t.x + 900; pz = t.z; const went = fastTravel(id);
+  return { pre, built: t.name, house: S.houses[0].name, before, after, entry: e ? { kind: e.kind, name: e.name, sub: e.sub } : null, search, a: { x: +a.x.toFixed(2), z: +a.z.toFixed(2) }, lu: +lu.toFixed(2), lv: +lv.toFixed(2), clear: !settleSolid(a.x, a.z, .3), faces: +faces.toFixed(3), went, ax: a.x, az: a.z, z1: FARM_LOT.z1 }; }, N.first);
+for (let k = 0; k < 120 && (MP.at = await page.evaluate(([x, z]) => Math.hypot(px - x, pz - z), [MP.ax, MP.az])) > .5; k++) await page.waitForTimeout(250);
+check(`a lone farm is named before it is built (${MP.pre}), the built house's name (${MP.house})`, MP.pre === MP.built && MP.pre === MP.house, MP);
+check(`standing by it discovers it, and the map carries it in its cell (kind ${MP.entry && MP.entry.kind}, ${MP.entry && MP.entry.sub})${MP.search == null ? '' : ', the search finds it'}`, !MP.before && MP.after && MP.entry && MP.entry.kind === 'farm' && MP.entry.name === MP.built && MP.search !== false, MP);
+check(`fast travel puts you on the road's verge ${MP.lv} m out from its lot's origin, past the front at ${MP.z1} (${MP.lu} across), clear of its solids, facing it (${MP.faces})`, MP.went && MP.at < .5 && MP.clear && Math.abs(MP.lu) < .01 && MP.lv > MP.z1 && MP.faces > .9, MP);
 await page.evaluate(id => { forceTime(12); const h = ZONES.world.houses.find(x => x.id === id); px = h.exitX; pz = h.exitZ; goToInterior(h); }, LF.id);
 for (let k = 0; k < 40 && !(await page.evaluate(() => isInterior())); k++) await page.waitForTimeout(250);
 const IN = await page.evaluate(() => ({ inside: isInterior(), id: currentHouse && currentHouse.id, room: !!(currentHouse && currentHouse._farmhouse), w: currentHouse && currentHouse._roomW, d: currentHouse && currentHouse._roomD }));

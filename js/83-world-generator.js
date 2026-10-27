@@ -128,7 +128,8 @@
     const pad=site.pad;
     const cx=site.x,cz=site.z;
     // S1473 (card F6, #744 C) — a farm alone in the country (loneFarms): the village's farm and nothing round it, its farmer named from its own stream
-    if(site.kind==='farm'){r=PKIT.stream('farmer:'+site.id);const nm=NAMES[reg]||NAMES.irish;buildFarm(site._farm,()=>pick(r,r()<.5?nm.m:nm.f));if(houses[0])site.name=houses[0].name;
+    if(site.kind==='farm'){r=PKIT.stream('farmer:'+site.id);_curNM=null; /* S1481 — no town's record of names: the last town built's lent its farmer's name to the farm */
+      const nm=NAMES[reg]||NAMES.irish;buildFarm(site._farm,()=>pick(r,r()<.5?nm.m:nm.f));if(houses[0])site.name=houses[0].name;
       S.reach=t_reach(sol,site);bakeSettlement(S);sc.add(group);houses.forEach(h=>ZONES.world.houses.push(h));SETTLE.set(site.id,S);return S;}
     if(POI_KINDS.includes(site.kind)){buildPoi(S,site,r);S.reach=t_reach(sol,site);bakeSettlement(S);sc.add(group);houses.forEach(h=>ZONES.world.houses.push(h));if(IMPOSTORS[site.id])IMPOSTORS[site.id].visible=false;SETTLE.set(site.id,S);return S;}
     function addMesh(geo,x,z,ry,solR){
@@ -969,7 +970,8 @@
       // FARM_N, past every lot's (idOf: 1000 and up). Drawn from the town's stream after everything else, so no earlier draw moves. A
       // burned or abandoned village keeps nobody at its farm either.
       if(!S.dead){const fh=U.foot.find(p=>p.name==='Farmhouse'),v=fh.z1+.15,doorX=F.x+v*s_,doorZ=F.z+v*c,tx=s_,tz=c,exX=doorX+tx*2.4,exZ=doorZ+tz*2.4,resident=nameFn();
-        const rdef=makeDef(site,reg,r,'Villager',resident,{nameKey:'farm',x:doorX+tx*1.4+tz*1.0,z:doorZ+tz*1.4-tx*1.0,bCol:pick(r,[0x5a4030,0x3a5a3a,0x604828,0x504058,0x6a5a3a]),sCol:pick(r,[0xd4a878,0xc09070,0xb08060]),role:'farmer'});
+        const rdef=makeDef(site,reg,r,'Villager',resident,{nameKey:'farm',keepName:!!F.lone,x:doorX+tx*1.4+tz*1.0,z:doorZ+tz*1.4-tx*1.0,bCol:pick(r,[0x5a4030,0x3a5a3a,0x604828,0x504058,0x6a5a3a]),sCol:pick(r,[0xd4a878,0xc09070,0xb08060]),role:'farmer'});
+        /* S1481 — a lone farm's farmer keeps the name the farm is known by on the map before it is built (loneFarmName): keepName */
         rdef.roleTag='farmer';rdef.role='Villager';
         const hh={id:`g_${site.id}_${FARM_N}`,doorX,doorZ,doorFace:cardinalFace(tx,tz),exitX:exX,exitZ:exZ,exitYaw:Math.atan2(-tx,-tz),name:`${rdef.name}'s Farm`,keeper:rdef.name,_twin:rdef._twin,type:'home',tagline:'',bCol:rdef.bCol,sCol:rdef.sCol,dlg:rdef,
           w:U.parts.house.w,d:U.parts.house.d,two:true,reg,style:st===STYLE.stone?'stone':st===STYLE.garrison?'garrison':reg,roleTag:'farmer',siteKind:site.kind,siteId:site.id,kit:{kind:'farm',paint:'green'},farm:F.id};
@@ -1181,6 +1183,7 @@
   function tickDiscovery(dt){
     _discT+=dt;if(_discT<.5)return;_discT=0;try{tickTownArrival();}catch(e){console.warn('arrival save',e);}
     for(const t of SITES){if(t.pad<0)continue;if(Math.hypot(px-t.x,pz-t.z)<t.pad+30)discover(t.id,t.name);}
+    for(const t of LONE_FARMS)if(Math.hypot(px-t.x,pz-t.z)<t.pad+30)discover(t.id,t.name); /* S1481 — and a farm alone in the country */
     for(const e of CELL_DOORS){const p=dungeonWorldPos[e.seed];if(Math.hypot(px-p.x,pz-p.z)<34)discover('door_'+e.seed,e.canonicalName||(typeof dungeonName==='function'?dungeonName(e.seed,e.theme):'an old gate'));}
     for(const p of PEAKS){if(Math.hypot(px-p.x,pz-p.z)<140)discover(p.id,p.name);}
     for(const l of LAKES){if(Math.hypot(px-l.x,pz-l.z)<l.r+60)discover(l.id,l.name);}
@@ -1201,6 +1204,7 @@
   function arrivalFor(id){
     if(id==='ship'&&SHIP.mesh)return {x:SHIP.x,z:SHIP.z,yaw:SHIP.yaw,name:`the ${SHIP.name}`};
     const t=siteAnywhere(id);
+    if(t&&t.kind==='farm'&&t._farm){const F=t._farm,v=FARM_LOT.z1+2,sx=Math.sin(F.ry),cz_=Math.cos(F.ry);return {x:F.x+v*sx,z:F.z+v*cz_,yaw:F.ry,name:t.name};} /* S1481 — a lone farm: on the road's verge 2 m off the lot's front, facing it */
     if(t&&t.kind==='port'){const sd=shoreDir(t);if(sd){const q=t.quayStart||{x:t.x+sd.dx*t.pad,z:t.z+sd.dz*t.pad};return {x:q.x-sd.dx*8,z:q.z-sd.dz*8,yaw:Math.atan2(sd.dx,sd.dz)+Math.PI,name:t.name};}}
     if(t){
       const cell=getCell(...cellOf(t.x,t.z));const byId={};cell.sites.forEach(x=>byId[x.id]=x);
@@ -1378,6 +1382,7 @@
     if(kind==='city'){ctx.beginPath();ctx.rect(-7,-4,14,8);ctx.fill();ctx.stroke();for(let i=-6;i<=6;i+=4){ctx.beginPath();ctx.rect(i-1.2,-8,2.4,4);ctx.fill();ctx.stroke();}ctx.beginPath();ctx.rect(-2.5,-13,5,9);ctx.fill();ctx.stroke();}
     else if(kind==='town'||kind==='garrison'||kind==='port'){ctx.beginPath();ctx.rect(-6,-3,12,6);ctx.fill();ctx.stroke();for(let i=-5;i<=5;i+=5){ctx.beginPath();ctx.rect(i-1.2,-6,2.4,3);ctx.fill();ctx.stroke();}house(0,-3,3);if(kind==='port'){ctx.fillStyle='#2a3a6a';ctx.fillRect(-1,4,2,6);ctx.beginPath();ctx.arc(0,8,4,.2*Math.PI,.8*Math.PI);ctx.stroke();}}
     else if(kind==='village'){house(-3,3,3);house(3,2,2.6);}
+    else if(kind==='farm'){house(-3,3,2.6);ctx.beginPath();ctx.rect(.5,-.5,7,3.5);ctx.fill();ctx.stroke();ctx.beginPath();ctx.moveTo(-7,5.5);ctx.lineTo(8,5.5);ctx.stroke();} /* S1481 — a lone farm: the house, the long byre beside it, the field's edge */
     else if(kind==='outpost'){ctx.beginPath();ctx.rect(-2.5,-6,5,10);ctx.fill();ctx.stroke();ctx.beginPath();ctx.moveTo(-3.5,-6);ctx.lineTo(0,-9.5);ctx.lineTo(3.5,-6);ctx.closePath();ctx.fill();ctx.stroke();}
     else if(kind==='fort'){ctx.beginPath();ctx.rect(-4,-4,8,9);ctx.fill();ctx.stroke();for(let i=-3;i<=3;i+=3){ctx.beginPath();ctx.rect(i-.9,-7,1.8,3);ctx.fill();ctx.stroke();}}
     else if(kind==='cave'){ctx.beginPath();ctx.moveTo(-5,4);ctx.lineTo(-5,-1);ctx.arc(0,-1,5,Math.PI,0);ctx.lineTo(5,4);ctx.closePath();ctx.fill();ctx.stroke();ctx.fillStyle='#2a1c10';ctx.beginPath();ctx.moveTo(-2.5,4);ctx.lineTo(-2.5,0);ctx.arc(0,0,2.5,Math.PI,0);ctx.lineTo(2.5,4);ctx.closePath();ctx.fill();}
@@ -1402,6 +1407,7 @@
     const SUB={glade:'Glade',shrine:'Shrine',lair:'Lair',tower:'Spire',bcamp:'Bandit camp',bridge:'Bridge'};
     c.sites.forEach(t=>{if(t.kind==='portal')return;out.push({id:t.id,name:t.name,kind:t.kind,x:t.x,z:t.z,sub:t.kind==='glade'&&typeof gladeDoubled==='function'&&gladeDoubled(t)?'Glade · grown thick since the beast died':SUB[t.kind]||(t.kind.charAt(0).toUpperCase()+t.kind.slice(1)),major:t.kind==='city'||t.kind==='town'||t.kind==='port'||t.kind==='garrison'||t.kind==='tower'||t.kind==='shrine'});});
     c.doors.forEach(e=>{if(e.wet)return;const p=dungeonWorldPos[e.seed]||(e.zone==='gen'?{x:e.x,z:e.z}:null);if(!p)return;out.push({id:'door_'+e.seed,name:e.canonicalName||(typeof dungeonName==='function'?dungeonName(e.seed,e.theme):'Old gate'),kind:e.kind==='fort_door'?'fort':'cave',x:p.x,z:p.z,sub:`${e.kind==='fort_door'?'Fort':'Old gate'} · ${e.theme}`+mapDoorGrade(e,p),major:e.kind==='fort_door'});});
+    try{loneFarms(c).forEach(F=>{const t=loneFarmSite(F,c);out.push({id:t.id,name:t.name,kind:'farm',x:t.x,z:t.z,sub:'Farm',major:false});});}catch(e){} /* S1481 — the farms alone in the country */
     c.peaks.forEach(p=>out.push({id:p.id,name:p.name,kind:'peak',x:p.x,z:p.z,sub:'Mountain',major:true}));
     c.lakes.forEach(l=>out.push({id:l.id,name:l.name,kind:'lake',x:l.x,z:l.z,sub:'Lake',major:true}));
     const wk=worldState.ship&&worldState.ship.sunk;if(wk&&wk.x>=c.ox&&wk.x<c.ox+SIZE&&wk.z>=c.oz&&wk.z<c.oz+SIZE)out.push({id:'shipwreck',name:`The wreck of the ${worldState.ship.name||SHIP.name}`,kind:'ship',x:wk.x,z:wk.z,sub:'Where she went down',major:true});
@@ -1583,7 +1589,7 @@
   function mapKindClass(e){if(!e||!e.kind)return 'pois';if(e.kind in BASE_P)return 'towns';if(/door|gate/.test(e.kind))return 'gates';if(e.kind==='quest')return 'quests';return 'pois';}
   function mapAllowed(e){return MAP.filt[mapKindClass(e)]!==false;}
   function mapSearch(q){const box=document.getElementById('wm-results');if(!box)return;q=(q||'').trim().toLowerCase();if(!q){box.style.display='none';return;}
-    const out=[];for(const c of CELLS.values()){c.sites.forEach(t=>{if(t.name&&t.name.toLowerCase().includes(q)&&discovered(t.id))out.push({name:t.name,sub:t.kind,x:t.x,z:t.z,id:t.id,kind:t.kind});});(c.doors||[]).forEach(d=>{const n=d.canonicalName||'';if(n.toLowerCase().includes(q)){const p=dungeonWorldPos[d.seed]||d;if(discovered('door_'+d.seed))out.push({name:n,sub:'gate',x:p.x,z:p.z,id:'door_'+d.seed,kind:'door'});}});}
+    const out=[];for(const c of CELLS.values()){c.sites.forEach(t=>{if(t.name&&t.name.toLowerCase().includes(q)&&discovered(t.id))out.push({name:t.name,sub:t.kind,x:t.x,z:t.z,id:t.id,kind:t.kind});});try{loneFarms(c).forEach(F=>{const t=loneFarmSite(F,c);if(t.name.toLowerCase().includes(q)&&discovered(t.id))out.push({name:t.name,sub:'farm',x:t.x,z:t.z,id:t.id,kind:'farm'});});}catch(e){}(c.doors||[]).forEach(d=>{const n=d.canonicalName||'';if(n.toLowerCase().includes(q)){const p=dungeonWorldPos[d.seed]||d;if(discovered('door_'+d.seed))out.push({name:n,sub:'gate',x:p.x,z:p.z,id:'door_'+d.seed,kind:'door'});}});}
     out.sort((a,b)=>a.name.localeCompare(b.name));box.innerHTML=out.slice(0,12).map((o,i)=>`<div class="wm-res" data-i="${i}" style="padding:5px 10px;cursor:pointer;border-bottom:1px solid rgba(60,80,40,.4);font:12px Georgia,serif;color:#e8dcc0">${o.name} <span style="color:#8a9a70">· ${o.sub}</span></div>`).join('')||'<div style="padding:6px 10px;color:#8a9a70;font:12px Georgia,serif">Nothing you know of by that name.</div>';box.style.display='block';
     box.querySelectorAll('.wm-res').forEach(el=>el.onclick=()=>{const o=out[+el.dataset.i];const s=baseScale()*MAP.zoom;MAP.ox=mapCssW()/2-o.x*s;MAP.oy=mapCssH()/2-o.z*s;mapClamp();MAP.sel=o.id;MAP.dirty=true;mapDraw();mapPanel({id:o.id,name:o.name,kind:o.kind,x:o.x,z:o.z,sub:o.sub});box.style.display='none';});}
   function wireMapSearch(){const inp=document.getElementById('wm-search');if(!inp||inp._wired)return;inp._wired=true;const pb=document.getElementById('wm-pin');if(pb)pb.onclick=()=>mapNoteArm();inp.addEventListener('input',()=>mapSearch(inp.value));['keydown','keyup','keypress'].forEach(ev=>inp.addEventListener(ev,e=>e.stopPropagation()));document.querySelectorAll('.wm-filt').forEach(cb=>cb.addEventListener('change',()=>{MAP.filt[cb.value]=cb.checked;MAP.dirty=true;mapDraw();}));}
