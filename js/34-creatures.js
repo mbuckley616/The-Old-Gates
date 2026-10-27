@@ -848,7 +848,7 @@ function hcAttach(rig,C){const tA=performance.now();
     f=K.ik&&!K.tall?(B.knL.position.length()+B.anL.position.length())/(P('leg0L_0').distanceTo(P('leg0L_1'))+P('leg0L_1').distanceTo(P('leg0L_2')))
       :(PW.HIPS+B.spine.position.y+B.neck.position.y+B.head.position.y)/P('head').y;W.scale.setScalar(f);W.position.set(0,0,-h0.z*f);}
   else{f=wolfHipY(rig.k)/h0.y;W.scale.setScalar(f);W.position.set(B.hips.position.x,0,B.hips.position.z-h0.z*f);}
-  W.add(C.root);rig.root.add(W);
+  W.add(C.root);rig.root.add(W);HB_ATTACH_N++; /* S1492 — a corpse's search (bodyAimed) collects its bones again: the kit's skeleton hangs under the driver's */
   // a spider's feet: the kit's at rest in the driver's root, once W is placed
   if(feet){rig.root.updateMatrixWorld(true);for(const F of feet){const F0=C.B.legs[F.i].rest[C.B.legs[F.i].rest.length-1];F.k0=rig.root.worldToLocal(C.rig.localToWorld(F0.clone()));}}
   // skinned in the mesh's own frame (CLAUDE.md: bone matrices kept local; the world sits at x, z ≈ 13,000–25,000): each bone's
@@ -986,7 +986,7 @@ function hcLevel(rig,L){const H=rig.hc;if(H.L===L)return;H.L=L;H.W.visible=L<2;r
 function hcBake(rig){const H=rig.hc,C=H.C,t=performance.now();let mid;
   try{mid=hbMerge({skeleton:C.skel,byName:{root:C.bones[0]},root:C.root},new Set(H.small));}catch(e){H.merge=false;console.warn('F4: the kit\'s',rig.name,'would not bake',e);return;}
   mid.material=HB_MID_MAT.clone();if(H.em>0)mid.material.emissive.setHex(H.em);if(rig.e&&rig.e.dead)mid.material.color.multiplyScalar(.35);mid.frustumCulled=false;mid.name='kitmid';C.rig.add(mid);H.mid=mid;H.bakeMs=performance.now()-t;}
-function hcDrop(rig){const H=rig.hc;if(!H)return;if(H.W.parent)H.W.parent.remove(H.W);
+function hcDrop(rig){const H=rig.hc;if(!H)return;if(H.W.parent)H.W.parent.remove(H.W);HB_ATTACH_N++;
   H.C.root.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material)for(const m of Array.isArray(o.material)?o.material:[o.material])m.dispose();});
   if(H.C.skel.boneTexture)H.C.skel.dispose();rig.hc=null;rig.mesh.visible=true;for(const o of [rig.weapon,rig.eyeGlow,...(rig.hollow||[])])if(o)o.visible=true;}
 // S1484 — a body is built a step at a time (the kit's buildIter: the parts, each capsule's share of the flesh's field, slabs of its
