@@ -15,7 +15,7 @@ const before = await page.evaluate(() => { const start = { x: px, z: pz };
   const ch = CHESTS.concat(BARRELS).find(b => b.id && !b.opened && b.items && b.items.length >= 2 && b.floor === 1);
   openLoot(ch); const took = ch.items.shift(); if (typeof closeLoot === 'function') closeLoot();
   const door = DOORS.find(d => d.id && !d.open); if (door) { door.open = true; if (door.mesh && door.mesh.parent) door.mesh.parent.remove(door.mesh); }
-  return { foe: foe.id, foes: ENEMIES.filter(e => !e.dead).length, chest: ch.id, left: ch.items.map(i => i.name), took: took && took.name, door: door ? door.id : null, start, ids: ENEMIES.filter(e => e.id).length, all: ENEMIES.length };
+  return { roster: ENEMIES.map(e => e.id + ' ' + e.name + ' ' + e.maxHp).sort(), tier: dungeonTier(currentPortal, 1), foe: foe.id, foes: ENEMIES.filter(e => !e.dead).length, chest: ch.id, left: ch.items.map(i => i.name), took: took && took.name, door: door ? door.id : null, start, ids: ENEMIES.filter(e => e.id).length, all: ENEMIES.length };
 });
 console.log('before', JSON.stringify(before));
 check(`every foe the gate placed has an id of seed, floor and index (${before.ids} of ${before.all})`, before.ids === before.all && /^42:1:\d+$/.test(before.foe), before);
@@ -35,5 +35,14 @@ check(`the load puts you at the gate's entrance, on floor one, where walking in 
 check(`the foe killed is dead, gone from the floor, and the rest still stand (${after.foes} of ${before.foes})`, after.foeDead && !after.foeShown && after.foes === before.foes, after);
 check(`the chest opened is open, without the ${before.took} taken from it`, after.opened && JSON.stringify(after.left) === JSON.stringify(before.left), { before: before.left, after: after.left });
 check('a locked door opened stays open', before.door == null || after.door === true, { door: before.door, after: after.door });
+// S1479 — the same gate loaded while its cell is not loaded (the critic, 26 Oct: a load from Aurenne met Frost Wraiths and 150-health
+// Phantoms here): the portal stood at the old zone's x, z, the world's empty corner, and read tier 3 and *hard*. It now stands where
+// the door does, so its tier and every foe are the same as walking in.
+const unloaded = await page.evaluate(() => { delete WORLD.dungeonPos[42]; window._prevDScene = dScene; _reenterPlace({ kind: 'dungeon', seed: 42, floor: 1 }); return true; })
+  .then(() => page.waitForFunction(() => typeof dScene !== 'undefined' && dScene !== window._prevDScene, null, { timeout: 120000, polling: 200 }))
+  .then(() => inGate()).then(() => page.evaluate(() => ({ roster: ENEMIES.map(e => e.id + ' ' + e.name + ' ' + e.maxHp).sort(), tier: dungeonTier(currentPortal, 1), diff: currentPortal.diff, x: Math.round(currentPortal.x), z: Math.round(currentPortal.z) })));
+console.log('unloaded', JSON.stringify({ tier: unloaded.tier, diff: unloaded.diff, x: unloaded.x, z: unloaded.z }));
+check(`loaded with its cell not loaded, the gate reads the tier walking in reads (${unloaded.tier} and ${before.tier}) and stands where its door does (${unloaded.x}, ${unloaded.z})`, unloaded.tier === before.tier && unloaded.x > 2500, unloaded);
+check(`and its ${unloaded.roster.length} foes are the same kinds and health`, JSON.stringify(unloaded.roster) === JSON.stringify(before.roster), { before: before.roster, unloaded: unloaded.roster });
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
