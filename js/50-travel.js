@@ -398,9 +398,10 @@ function useHerb(i){
   // Track consumption and check for hidden unlock
   const countKey=herbKeyOf(it)||it.name.toLowerCase().replace(/[^a-z]/g,''); /* S1483 — by HERB_DEF's key: a reload drops _typeKey, and Fearnóg's name made 'fearng' */
   HERB_CONSUME_COUNTS[countKey]=(HERB_CONSUME_COUNTS[countKey]||0)+1;
-  const count=HERB_CONSUME_COUNTS[countKey];
-  const justUnlocked=(count===HIDDEN_UNLOCK_COUNT);
-  const unlocked=(count>=HIDDEN_UNLOCK_COUNT);
+  const count=HERB_CONSUME_COUNTS[countKey],N=herbTellCount(),HK=herbsKnown(),told=HK.told||(HK.told={});
+  // S1499 — Tell moves the reveal to 5 eats, so the flash is once a herb (told), not at one count; past 15 it was told already
+  const justUnlocked=count>=N&&count-1<HIDDEN_UNLOCK_COUNT&&!told[countKey];if(justUnlocked)told[countKey]=1;
+  const unlocked=(count>=N);
   // Apply hidden effect if already unlocked (not on the unlock consume itself — let the message land first)
   if(unlocked&&!justUnlocked&&HERB_DEF[countKey]&&HERB_DEF[countKey].zone==='sea'){const f=HERB_FX[countKey]&&HERB_FX[countKey][1],d=f&&ALCH_FX[f];if(d&&d.drink)d.drink(1);else if(d&&d.buff)_applyBuff({duration:ALCH_FORTIFY_S,...d.buff(1),label:d.label,col:d.col});} /* S1483 — a sea herb's hidden effect is its second brewing effect (its hiddenEffect was Firemoss's, copied) */
   else if(unlocked&&!justUnlocked&&it.hiddenEffect){
@@ -475,7 +476,9 @@ const HERB_KIN=new Set(['firemoss','silverleaf','muirfhear','thornberry','shadow
 function herbKeyOf(it){if(!it)return null;if(it._typeKey&&HERB_FX[it._typeKey])return it._typeKey;if(typeof HERB_DEF!=='undefined')for(const k in HERB_DEF)if(HERB_DEF[k].name===it.name)return k;
   const k=String(it.name||'').toLowerCase().replace(/[^a-z]/g,'');return HERB_FX[k]?k:null;}
 function herbsKnown(){return worldState.herbsKnown||(worldState.herbsKnown={fx:{},none:{}});}
-function herbFxKnown(k,i){const n=HERB_CONSUME_COUNTS[k]||0;if(i===0&&n>0)return true;if(i===1&&HERB_KIN.has(k)&&n>=HIDDEN_UNLOCK_COUNT)return true;const f=herbsKnown().fx[k];return !!(f&&f[i]);}
+// S1499 — Tell (Alchemy 25): a herb's hidden effect is learnt at 5 eats, not HIDDEN_UNLOCK_COUNT's 15
+function herbTellCount(){return perk('alchemy',25)?5:HIDDEN_UNLOCK_COUNT;}
+function herbFxKnown(k,i){const n=HERB_CONSUME_COUNTS[k]||0;if(i===0&&n>0)return true;if(i===1&&HERB_KIN.has(k)&&n>=herbTellCount())return true;const f=herbsKnown().fx[k];return !!(f&&f[i]);}
 function learnHerbFx(k,i){const K=herbsKnown();const f=K.fx[k]||(K.fx[k]=[0,0,0,0]);const was=herbFxKnown(k,i);f[i]=1;return !was;}
 function brewPairKey(a,b){return [a,b].sort().join('|');}
 function alchStrength(){return skillMult('alchemy')*(1+.01*attrEff('intelligence'));}
@@ -506,9 +509,10 @@ function brewHerbs(keys){
   const item={name:brewName(sh.fx,sh.poison),ico:sh.poison?'☠️':'🧪',type:'potion',weight:.5,sellMult:.4,
     buyPrice:Math.max(...sh.fx.map(f=>ALCH_FX[f].price||25)),brew:{fx:sh.fx,s,day,poison:sh.poison}};
   item.brewKey=sh.fx.join('+')+'@'+s+'/'+day;
+  const n=perk('alchemy',100)?2:1;if(n>1)item.qty=n; /* S1499 — Double measure (Alchemy 100): two from one grinding */
   bagAdd(item);
   skillUse('alchemy',8+(newPair?25:0));
-  return {made:true,item:BAG.find(b=>sameStack(b,item))||item,learnt,newPair};
+  return {made:true,item:BAG.find(b=>sameStack(b,item))||item,learnt,newPair,n};
 }
 // drink a tincture, or coat the blade with a poison
 let BLADE_POISON=null;
@@ -576,7 +580,7 @@ function brewDraw(){const ov=document.getElementById('brewui');if(!ov)return;con
 }
 function brewPick(k){const i=brewSel.indexOf(k);if(i>=0)brewSel.splice(i,1);else{if(brewSel.length>=brewMax())brewSel.shift();brewSel.push(k);}brewSaid='';brewDraw();}
 function brewGo(){const r=brewHerbs(brewSel);
-  if(r.made){brewSaid=`${r.item.name}.${r.learnt.length?' You learn '+r.learnt.length+(r.learnt.length>1?' effects.':' effect.'):''}`;if(typeof uiTone==='function')uiTone(260,340,.1,.08,'sine');addLog('🧪','Made '+r.item.name);}
+  if(r.made){brewSaid=`${r.n>1?'Two: ':''}${r.item.name}.${r.learnt.length?' You learn '+r.learnt.length+(r.learnt.length>1?' effects.':' effect.'):''}`;if(typeof uiTone==='function')uiTone(260,340,.1,.08,'sine');addLog('🧪','Made '+r.item.name);}
   else brewSaid=r.why||'';
   brewSel=brewSel.filter(k=>BAG.some(b=>b&&b.type==='herb'&&herbKeyOf(b)===k));brewDraw();}
 window.addEventListener('keydown',e=>{if(!brewOpen)return;const c=e.code;let hit=true;
