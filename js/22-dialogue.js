@@ -1303,8 +1303,8 @@ const SHOP_STOCK={
   ],
   // v61: Hearthwick inn (Oda) — comfort food + travel essentials. No weapons or armor.
   inn:[
-    {name:'Hot Stew',       ico:'🥣',type:'potion',heal:35,                buyPrice:14,sellMult:.3,weight:.4},
-    {name:'Mulled Cider',   ico:'🍺',type:'potion',heal:0,stam:30,mana:10, buyPrice:18,sellMult:.3,weight:.5},
+    {name:'Hot Stew',       ico:'🥣',type:'potion',meal:{kind:'hearty',s:1},buyPrice:14,sellMult:.3,weight:.4}, // S1486 — meals now (survival B): Hearty and Clear
+    {name:'Mulled Cider',   ico:'🍺',type:'potion',meal:{kind:'clear',s:1}, buyPrice:18,sellMult:.3,weight:.5},
     {name:'Health Potion',  ico:'🧪',type:'potion',heal:25,                buyPrice:18,sellMult:.4},
     {name:'Stamina Draught',ico:'🥤',type:'potion',stam:40,                buyPrice:22,sellMult:.5},
     {name:'Road Rations',   ico:'🥖',type:'potion',heal:12,stam:15,        buyPrice:10,sellMult:.3,weight:.3},

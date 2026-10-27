@@ -582,6 +582,150 @@ function brewGo(){const r=brewHerbs(brewSel);
 window.addEventListener('keydown',e=>{if(!brewOpen)return;const c=e.code;let hit=true;
   if(c==='Escape')closeBrewPage();else if(c==='Enter'){if(!e.repeat)brewGo();}else hit=false;
   if(hit){e.preventDefault();e.stopPropagation();}},true);
+
+// ── S1486 — Survival B, session 2: fires and meals (`docs/design/survival-build.md`) ──
+// A tinderbox (5 gold, never used up) lights a campfire from one log; it burns one game-hour. The hearth of an inn or a home
+// is a fire too. At a fire one food makes a meal (Cooking 6); two logs make a charcoal and a pine log three pitch. A meal
+// eaten leaves you *fed*, one kind at a time, for 2 game-hours times the cook's Cooking curve: Hearty (+15% stamina) from
+// meat, Steady (+1 HP every 5 s) from fish, Clear (+10% mana regeneration) from produce. There is no hunger: fed is a gift.
+// Meat comes off a bear, a boar or a wolf (1 to 3, seeded by the corpse's key); produce and fish from the goods shop and the
+// inn, fish only in a port. Fed is kept by the game clock (`worldState.fed`, the character's), so sleep runs it down.
+const FIRE_HOURS=1,FIRE_REACH=2.5,FED_MIN=120,TINDERBOX_NAME='Tinderbox';
+const FED_KIND={hearty:{label:'Hearty',ico:'🍖',col:'#e8a060',say:'+15% stamina'},steady:{label:'Steady',ico:'🐟',col:'#80c8a0',say:'+1 health every 5 s'},
+  clear:{label:'Clear',ico:'🥕',col:'#88aaff',say:'+10% mana regeneration'}};
+const FOOD_MEAL={meat:{name:'Roast Meat',ico:'🍖',kind:'hearty'},fish:{name:'Baked Fish',ico:'🐟',kind:'steady'},produce:{name:'Pottage',ico:'🥣',kind:'clear'}};
+const SURV_ITEMS={
+  tinderbox:{name:TINDERBOX_NAME,ico:'🔥',type:'misc',weight:.2,buyPrice:5,sellMult:.4},
+  log:{name:'Log',ico:'🪵',type:'misc',weight:3,buyPrice:4,sellMult:.3,log:'log'},
+  pine:{name:'Pine Log',ico:'🪵',type:'misc',weight:3,buyPrice:5,sellMult:.3,log:'pine'},
+  charcoal:{name:'Charcoal',ico:'⚫',type:'misc',weight:.5,buyPrice:6,sellMult:.3},
+  pitch:{name:'Pitch',ico:'🛢',type:'misc',weight:.5,buyPrice:8,sellMult:.3},
+  meat:{name:'Raw Meat',ico:'🥩',type:'misc',weight:.5,buyPrice:3,sellMult:.3,food:'meat'},
+  fish:{name:'Fresh Fish',ico:'🐟',type:'misc',weight:.5,buyPrice:4,sellMult:.3,food:'fish'},
+  produce:{name:'Root Vegetables',ico:'🥕',type:'misc',weight:.5,buyPrice:3,sellMult:.3,food:'produce'},
+};
+function survItem(k,qty){return {...SURV_ITEMS[k],qty:qty||1};}
+function hasTinderbox(){return BAG.some(b=>b&&b.name===TINDERBOX_NAME);}
+function bagCount(pred){let n=0;BAG.forEach(b=>{if(b&&pred(b))n+=b.qty||1;});return n;}
+function bagTake(pred,n){for(let i=BAG.length-1;i>=0&&n>0;i--){const b=BAG[i];if(!b||!pred(b))continue;const t=Math.min(n,b.qty||1);b.qty=(b.qty||1)-t;n-=t;if(b.qty<=0)BAG.splice(i,1);}return n<=0;}
+function gameMinNow(){return worldState.gameTimeAbsMinutes||0;}
+// the fires burning now, outdoors in the world: {x,z,until,mesh}
+const CAMPFIRES=[];
+function hearthHere(){if(typeof isInterior!=='function'||!isInterior()||typeof currentHouse==='undefined'||!currentHouse)return false;return currentHouse.type==='inn'||currentHouse.type==='home';}
+function campfireNear(){if(activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior()))return null;const t=gameMinNow();
+  return CAMPFIRES.find(f=>f.until>t&&Math.hypot(f.x-px,f.z-pz)<=FIRE_REACH)||null;}
+function atFire(){return hearthHere()||!!campfireNear();}
+function fireSpotOk(){if(activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior()))return false;
+  if(typeof WORLD!=='undefined'&&WORLD.isSwimming&&WORLD.isSwimming())return false;if(typeof SHIP!=='undefined'&&SHIP.sailing)return false;return true;}
+// a plain stand-in until the kit's fire arrives (the look builder's): three logs and a flame
+function campfireMesh(x,z){const g=new THREE.Group();const y=typeof worldH==='function'?worldH(x,z):0;
+  const wood=new THREE.MeshLambertMaterial({color:0x5a3a20});
+  for(let i=0;i<3;i++){const l=new THREE.Mesh(new THREE.CylinderGeometry(.06,.06,.6,6),wood);l.rotation.z=Math.PI/2;l.rotation.y=i*Math.PI/3;l.position.y=.06;g.add(l);}
+  const fl=new THREE.Mesh(new THREE.ConeGeometry(.16,.45,7),new THREE.MeshBasicMaterial({color:0xff8a30,transparent:true,opacity:.85}));fl.position.y=.3;g.add(fl);g.userData.flame=fl;
+  g.position.set(x,y,z);return g;}
+// light a fire at your feet from one log (a plain log before a pine one). Returns the fire, or null with a reason said
+function lightFire(){
+  if(!hasTinderbox()){showMsg('You need a tinderbox.','#cc8844');return null;}
+  if(!fireSpotOk()){showMsg('There is no place for a fire here.','#cc8844');return null;}
+  const plain=bagCount(b=>b.log==='log')>0;
+  if(!bagTake(b=>plain?b.log==='log':!!b.log,1)){showMsg('A fire needs a log.','#cc8844');return null;}
+  const x=px-Math.sin(yaw)*.9,z=pz-Math.cos(yaw)*.9;
+  const f={x,z,until:gameMinNow()+FIRE_HOURS*60,mesh:null};
+  try{f.mesh=campfireMesh(x,z);scene.add(f.mesh);f.scn=scene;}catch(e){f.mesh=null;}
+  CAMPFIRES.push(f);showMsg('The fire catches.','#ffb060');if(typeof renderHubInv==='function')renderHubInv();return f;}
+function dropFire(f){if(f.mesh&&f.mesh.parent)f.mesh.parent.remove(f.mesh);}
+// each frame: a fire burnt out is taken away, the flame flickers; Steady's health. Called from the loop beside the buffs
+function tickSurvival(dt){const t=gameMinNow();
+  for(let i=CAMPFIRES.length-1;i>=0;i--){const f=CAMPFIRES[i];if(f.until<=t){dropFire(f);CAMPFIRES.splice(i,1);continue;}
+    const fl=f.mesh&&f.mesh.userData.flame;if(fl){const k=.85+.15*Math.sin(performance.now()*.013+i);fl.scale.set(1,k,1);}}
+  if(fedKind()==='steady'&&!dead)PHP=Math.min(effMaxHP(),PHP+dt*.2);
+  if(stamina>effMaxStamina())stamina=effMaxStamina();}
+// fed: one kind at a time, by the game clock
+function fedNow(){const F=worldState.fed;if(!F||!(F.until>gameMinNow()))return null;return F;}
+function fedKind(){const F=fedNow();return F?F.kind:null;}
+function fedStamMult(){return fedKind()==='hearty'?1.15:1;}
+function fedManaMult(){return fedKind()==='clear'?1.1:1;}
+function setFed(kind,s){const was=fedNow();worldState.fed={kind,until:gameMinNow()+Math.round(FED_MIN*s),s:+(+s).toFixed(3)};
+  stamina=Math.min(stamina,effMaxStamina());return was;}
+function mealItem(food,s){const m=FOOD_MEAL[food];return {name:m.name,ico:m.ico,type:'potion',weight:.4,buyPrice:10,sellMult:.3,meal:{kind:m.kind,s},brewKey:'meal@'+s};}
+function eatMeal(i){const it=BAG[i];if(!it||!it.meal)return;
+  if(typeof DRINK!=='undefined'&&DRINK){showMsg('You are still eating.','#cc8844');return;}
+  const m=it.meal,nm=it.name;it.qty=(it.qty||1)-1;if(it.qty<=0)BAG.splice(i,1);
+  const go=()=>{setFed(m.kind,m.s||1);const K=FED_KIND[m.kind];showMsg(`${nm} — ${K.label}: ${K.say} for ${Math.round(FED_MIN*(m.s||1)/60*10)/10} hours.`,K.col);if(typeof updateHUD==='function')updateHUD();};
+  if(typeof startDrink==='function')startDrink(go,nm);else go();}
+// what the fire can make from the bag: each recipe, what it takes, whether you have it
+const COOK_RECIPES=[
+  {id:'meat',name:'Roast Meat',need:'1 Raw Meat',has:()=>bagCount(b=>b.food==='meat')>=1},
+  {id:'fish',name:'Baked Fish',need:'1 Fresh Fish',has:()=>bagCount(b=>b.food==='fish')>=1},
+  {id:'produce',name:'Pottage',need:'1 Root Vegetables',has:()=>bagCount(b=>b.food==='produce')>=1},
+  {id:'charcoal',name:'Charcoal',need:'2 logs',has:()=>bagCount(b=>!!b.log)>=2},
+  {id:'pitch',name:'Pitch ×3',need:'1 Pine Log',has:()=>bagCount(b=>b.log==='pine')>=1},
+];
+// cook one recipe at the fire. Returns {made, item, why}
+function cookAt(id){
+  if(!atFire())return {made:false,why:'You need a fire.'};
+  const R=COOK_RECIPES.find(r=>r.id===id);if(!R)return {made:false,why:''};
+  if(!R.has())return {made:false,why:`You need ${R.need.toLowerCase()}.`};
+  if(FOOD_MEAL[id]){bagTake(b=>b.food===id,1);const s=+skillMult('cooking').toFixed(3);const it=mealItem(id,s);bagAdd(it);skillUse('cooking',6);
+    return {made:true,item:BAG.find(b=>sameStack(b,it))||it};}
+  if(id==='charcoal'){const plain=bagCount(b=>b.log==='log');bagTake(b=>b.log==='log',Math.min(2,plain));if(plain<2)bagTake(b=>!!b.log,2-plain);const it=survItem('charcoal');bagAdd(it);return {made:true,item:it};}
+  if(id==='pitch'){bagTake(b=>b.log==='pine',1);const it=survItem('pitch',3);bagAdd(it);return {made:true,item:it};}
+  return {made:false,why:''};}
+// using a tinderbox, a log or a food from the bag: at a fire, the fire's page; else light one if you can
+function useFireThing(i){const it=BAG[i];if(!it)return;
+  if(atFire()){openCookPage();return;}
+  if(it.food){showMsg('Cook it at a fire.','#cc8844');return;}
+  if(lightFire())openCookPage();}
+// meat off a bear, a boar or a wolf: 1 to 3, seeded by the corpse's key (as bodyPicks)
+const MEAT_BODIES=/(^|\s)(Wolf|Bear|Boar)$/;
+function bodyMeat(e,items,key){if(!e||!MEAT_BODIES.test(e.name||''))return items;
+  const r=key!=null?seededRng('meat',key):lootRand;items.push(survItem('meat',1+Math.floor(r()*3)));return items;}
+// the goods shop and the inn: the tinderbox and produce; fish in a port
+function survivalFor(h){if(!h||!(h.type==='misc'||h.type==='inn'))return [];const out=[{...SURV_ITEMS.tinderbox},{...SURV_ITEMS.produce}];
+  const st=h.siteId&&typeof SITE!=='undefined'?SITE[h.siteId]:null;if(st&&st.kind==='port')out.push({...SURV_ITEMS.fish});return out;}
+// the buff bar's pill for fed
+function fedPill(){const F=fedNow();if(!F)return '';const K=FED_KIND[F.kind],m=Math.ceil(F.until-gameMinNow());
+  return `<span class="buff-pill" title="${K.label} — ${K.say}, ${m} min remaining"><span class="bp-ico">${K.ico}</span><span class="bp-time">${m}m</span></span>`;}
+
+// ── the fire's page (the brewing page's layout): what can be made on the left, the recipe on the right ──
+let cookOpen=false,cookSel=null,cookSaid='';
+function openCookPage(){
+  if(!atFire()){showMsg('You need a fire.','#cc8844');return;}
+  if(typeof hubOpen!=='undefined'&&hubOpen&&typeof closeHub==='function')closeHub();
+  if(typeof _releasePointerLockForMenu==='function')_releasePointerLockForMenu();
+  let ov=document.getElementById('cookui');
+  if(!ov){ov=document.createElement('div');ov.id='cookui';
+    ov.style.cssText='position:fixed;inset:0;z-index:8500;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.35)';
+    ov.innerHTML='<div style="width:560px;max-width:calc(100vw - 32px);max-height:calc(100vh - 32px);overflow:auto;box-sizing:border-box;padding:18px 24px 16px;background:#e9dcc2;color:#3a2c18;border:6px double #8a7040;border-radius:6px;font-family:Georgia,serif;box-shadow:0 10px 40px #000a">'+
+      '<div style="display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid #a89060;padding-bottom:6px"><span style="font-size:22px;color:#7a1f10;letter-spacing:.06em;font-variant:small-caps">The Fire</span><span id="ck-skill" style="font-style:italic;font-size:13px;color:#8a7050"></span></div>'+
+      '<div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:10px"><div id="ck-list" style="flex:1 1 180px;min-width:0;font-size:14px;line-height:1.7"></div><div id="ck-right" style="flex:1.3 1 220px;min-width:0;font-size:14px;line-height:1.6"></div></div>'+
+      '<div id="ck-said" style="min-height:20px;margin-top:8px;font-style:italic;color:#7a1f10;font-size:14px"></div>'+
+      '<div style="display:flex;align-items:center;gap:12px;margin-top:8px;border-top:1px solid #a89060;padding-top:8px"><button type="button" id="ck-go" style="background:none;border:1px solid #7a1f10;border-radius:3px;font:18px Georgia,serif;color:#7a1f10;font-variant:small-caps;cursor:pointer;padding:2px 14px">Cook</button>'+
+      '<span style="flex:1"></span><span style="font-size:12px;font-style:italic;color:#8a7050"><button type="button" id="ck-no" style="background:none;border:1px solid #a89060;border-radius:3px;font:13px Georgia,serif;color:#3a2c18;cursor:pointer;padding:2px 7px">Esc</button> as you were · Enter cooks</span></div></div>';
+    document.body.appendChild(ov);
+    ov.querySelector('#ck-go').onclick=()=>cookGo();ov.querySelector('#ck-no').onclick=()=>closeCookPage();}
+  cookSaid='';if(!cookSel||!COOK_RECIPES.some(r=>r.id===cookSel&&r.has())){const r=COOK_RECIPES.find(r=>r.has());cookSel=r?r.id:COOK_RECIPES[0].id;}
+  ov.style.display='flex';cookOpen=true;cookDraw();
+}
+function closeCookPage(){const ov=document.getElementById('cookui');if(ov)ov.style.display='none';cookOpen=false;if(typeof refocusView==='function')refocusView();}
+function cookDraw(){const ov=document.getElementById('cookui');if(!ov)return;
+  const f=campfireNear();ov.querySelector('#ck-skill').textContent=`Cooking ${skillLv('cooking')}`+(f?` · the fire burns ${Math.max(1,Math.ceil(f.until-gameMinNow()))} min more`:' · the hearth');
+  ov.querySelector('#ck-list').innerHTML=COOK_RECIPES.map(r=>{const on=r.id===cookSel,ok=r.has();
+    return `<div data-k="${r.id}" style="cursor:pointer;padding:0 6px;border-radius:2px;${on?'background:rgba(122,31,16,.12);color:#7a1f10':''}${!ok&&!on?';color:#a09070':''}">${on?'◆':'◇'} ${r.name}</div>`;}).join('');
+  ov.querySelectorAll('#ck-list [data-k]').forEach(d=>d.onclick=()=>{cookSel=d.dataset.k;cookSaid='';cookDraw();});
+  const R=COOK_RECIPES.find(r=>r.id===cookSel);let t='';
+  if(R){t=`<div style="font-variant:small-caps;color:#7a1f10">${R.name}</div><div style="padding-left:12px">Takes ${R.need}${R.has()?'':' <i style="font-size:12px;color:#8a2a20">(you have none)</i>'}</div>`;
+    const m=FOOD_MEAL[R.id];if(m){const K=FED_KIND[m.kind];t+=`<div style="padding-left:12px">${K.label}: ${K.say}, ${Math.round(FED_MIN*skillMult('cooking')/60*10)/10} hours</div>`;}
+    else if(R.id==='charcoal')t+='<div style="padding-left:12px;color:#8a7050;font-style:italic">for steel, at the forge</div>';
+    else if(R.id==='pitch')t+='<div style="padding-left:12px;color:#8a7050;font-style:italic">for a ship’s patch</div>';}
+  const F=fedNow();if(F)t+=`<div style="margin-top:8px;border-top:1px dotted #a89060;padding-top:4px;font-style:italic">You are ${FED_KIND[F.kind].label.toLowerCase()}, ${Math.ceil(F.until-gameMinNow())} min more.</div>`;
+  ov.querySelector('#ck-right').innerHTML=t;ov.querySelector('#ck-said').textContent=cookSaid;}
+function cookGo(){const r=cookAt(cookSel);
+  if(r.made){cookSaid=`${r.item.name}.`;if(typeof uiTone==='function')uiTone(220,300,.1,.08,'sine');}else cookSaid=r.why||'';
+  if(!atFire()){closeCookPage();return;}cookDraw();}
+window.addEventListener('keydown',e=>{if(!cookOpen)return;const c=e.code;let hit=true;
+  if(c==='Escape')closeCookPage();else if(c==='Enter'){if(!e.repeat)cookGo();}else hit=false;
+  if(hit){e.preventDefault();e.stopPropagation();}},true);
 // v61e5: Per-gate flavor copy for the commission lock. Keyed by targetZone.
 // The four canonical commission-gated edges (per v61d9) each get bespoke
 // prompt + toast text leaning into their region's flavor — Ironhaven gates

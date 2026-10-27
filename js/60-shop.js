@@ -704,7 +704,8 @@ function renderShop(){
   if(typeof cloaksFor==='function'){const ck=cloaksFor(currentHouse);if(ck.length)stock=[...stock,...ck];} // S552 — cloaks
   if(typeof loreBooksFor==='function'){const lb=loreBooksFor(currentHouse);if(lb.length)stock=[...stock,...lb];} /* S979 — The Seventh Niche at the Mages' Guild */
   {const ln=armorLinesFor(currentHouse);if(ln.length)stock=[...stock,...ln];}
-  {const mo=mortarFor(currentHouse);if(mo.length)stock=[...stock,...mo];} /* S1483 — the mortar at an apothecary and the Mages' Guild */ // S564 — the light line at the armourer, robes at a goods shop
+  {const mo=mortarFor(currentHouse);if(mo.length)stock=[...stock,...mo];}
+  {const sv=survivalFor(currentHouse);if(sv.length)stock=[...stock,...sv.filter(a=>!stock.some(b=>b.name===a.name))];} /* S1486 — the tinderbox and produce at the goods shop and the inn, fish in a port */ /* S1483 — the mortar at an apothecary and the Mages' Guild */ // S564 — the light line at the armourer, robes at a goods shop
   // v61au: Charisma-gated stock (chaReq). No-op until items carry the field.
   const _cha = ATTRS.charisma||0;
   stock = stock.filter(it => !it.chaReq || _cha >= it.chaReq);
@@ -981,7 +982,7 @@ function attrEff(k){const b={might:'mightBonus',fortitude:'fortitudeBonus',fines
 // Effective max stat helpers — base + armor enchant bonuses (a fortified Fortitude or Intelligence adds what a point of it adds)
 function effMaxHP(){const b=getArmorEnchantBonuses();return maxHP+(b.maxHPBonus||0)+10*(b.fortitudeBonus||0);}
 function effMaxMana(){const b=getArmorEnchantBonuses();return maxMana+(b.maxManaBonus||0)+10*(b.intBonus||0);}
-function effMaxStamina(){const b=getArmorEnchantBonuses();return maxStamina+(b.maxStaminaBonus||0)+5*(b.fortitudeBonus||0);}
+function effMaxStamina(){const b=getArmorEnchantBonuses();return Math.round((maxStamina+(b.maxStaminaBonus||0)+5*(b.fortitudeBonus||0))*(typeof fedStamMult==='function'?fedStamMult():1));} /* S1486 — Hearty, +15% */
 
 // Returns {tag, col} for the caller to render alongside its hit message, or null.
 // v61k: no longer calls showMsg directly — doing so raced with the caller's own
