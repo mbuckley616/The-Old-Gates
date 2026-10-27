@@ -736,6 +736,8 @@ window.addEventListener('keydown',e=>{if(!cookOpen)return;const c=e.code;let hit
 // 0.9 s breaks an ore at 35% + 0.5% a Mining point, rolled on seededRng('ore', the vein, its returns and the strike's count),
 // so a reload strikes the same ore at the same strike. `worldState.veins` (the world's): id → {n taken, s strikes, d day, e returns}.
 const VEIN_ORE_N=3,VEIN_DAYS=7,VEIN_STRIKE=.9,PICK_NAME='Pick';
+// S1495 — Seam (Mining 100): a vein holds 5
+function veinCap(){return perk('mining',100)?5:VEIN_ORE_N;}
 const ORE_DEF={copper:{name:'Copper Ore',col:0xc07040,price:3},tin:{name:'Tin Ore',col:0xb8b8a8,price:3},iron:{name:'Iron Ore',col:0x8a5a48,price:5},
   silver:{name:'Silver Ore',col:0xe0e4ec,price:8},mithril:{name:'Mithril Ore',col:0x4466cc,price:12},adamant:{name:'Adamant Ore',col:0x33aa33,price:18},
   obsidian:{name:'Obsidian',col:0x221830,price:24}};
@@ -774,22 +776,30 @@ function spawnChunkVeins(ch){
 function veinLive(v){return !v.g||!!(v.g.parent&&v.g.parent.parent);}
 // the vein's record, brought back if 7 days have passed since it was worked out
 function veinRec(v){const W=worldState.veins||(worldState.veins={});let r=W[v.id];
-  if(r&&r.n>=VEIN_ORE_N&&gameMinNow()/1440-r.d>=VEIN_DAYS){r={n:0,s:0,d:r.d,e:(r.e||0)+1};W[v.id]=r;}
+  if(r&&r.n>=veinCap()&&gameMinNow()/1440-r.d>=VEIN_DAYS){r={n:0,s:0,d:r.d,e:(r.e||0)+1};W[v.id]=r;}
   return r||{n:0,s:0,d:0,e:0};}
-function veinLeft(v){return VEIN_ORE_N-veinRec(v).n;}
+function veinLeft(v){return Math.max(0,veinCap()-veinRec(v).n);}
 function veinShow(v){if(!v.g)return;const left=veinLeft(v);v.g.userData.seams.forEach((s,i)=>s.visible=i<left);}
 function veinNear(){if(activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior()))return null;
   for(let i=VEINS.length-1;i>=0;i--){const v=VEINS[i];if(!veinLive(v)){VEINS.splice(i,1);continue;}if(Math.hypot(px-v.x,pz-v.z)<TOUCH+.5)return v;}return null;}
 // one strike at a vein: the outcome is the vein's seeded stream at this strike. Returns {ore, left} or {why}
 function strikeVein(v){
   if(!hasPick())return {why:'You need a pick.'};
-  let r=veinRec(v);if(r.n>=VEIN_ORE_N)return {why:'The vein is worked out.'};
+  let r=veinRec(v);if(r.n>=veinCap())return {why:'The vein is worked out.'};
   const it=oreItem(v.ore);if(!canCarry(it))return {why:'Too heavy to carry!'};
   const roll=seededRng('ore',v.id+':'+(r.e||0)+':'+r.s)();
   r={...r,s:r.s+1};const got=roll<.35+.005*skillLv('mining');
-  if(got){r.n++;r.d=Math.floor(gameMinNow()/1440);bagAdd(it);skillUse('mining',4);}else skillUse('mining',1);
+  /* S1495 — Mining 50: one ore in four comes double, on the strike's own second roll */
+  let two=false;if(got){two=perk('mining',50)&&seededRng('ore2',v.id+':'+(r.e||0)+':'+(r.s-1))()<.25;if(two)it.qty=2;r.n++;r.d=Math.floor(gameMinNow()/1440);bagAdd(it);skillUse('mining',4);}else skillUse('mining',1);
   (worldState.veins||(worldState.veins={}))[v.id]=r;veinShow(v);
-  return {ore:got?it.name:null,left:VEIN_ORE_N-r.n};}
+  return {ore:got?(two?'2 '+it.name:it.name):null,left:Math.max(0,veinCap()-r.n)};}
+// S1495 — Prospector (Mining 25): the veins within 40 m on the minimap (drawLocalMap's frame: north up, 58 m to the edge)
+function prospectorDots(ctx,size,radius){if(!perk('mining',25)||activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior()))return 0;
+  const s=size/(radius*2);let n=0;
+  for(const v of VEINS){if(!veinLive(v)||Math.hypot(v.x-px,v.z-pz)>40)continue;const x=size/2+(v.x-px)*s,y=size/2+(v.z-pz)*s;
+    ctx.fillStyle=veinLeft(v)>0?'#'+ORE_DEF[v.ore].col.toString(16).padStart(6,'0'):'#5a5a5a';ctx.strokeStyle='#111';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(x,y-3);ctx.lineTo(x+3,y);ctx.lineTo(x,y+3);ctx.lineTo(x-3,y);ctx.closePath();ctx.fill();ctx.stroke();n++;}
+  return n;}
 // working a vein: E starts it, E again, walking off, or the vein worked out stops it
 let MINE=null;
 function mineVein(v){if(MINE&&MINE.v===v){MINE=null;showMsg('You stop working the vein.','#c8b890');return;}
@@ -805,9 +815,151 @@ function tickMining(dt){if(!MINE)return;const v=MINE.v;
   if(!r.left)MINE=null;}
 function useOreThing(i){const it=BAG[i];if(!it)return;
   if(it.tool==='pick'){const v=veinNear();if(v)mineVein(v);else showMsg('Strike a vein with it.','#c8b890');return;}
-  if(it.ore)showMsg('Smelt it at a forge.','#c8b890');}
+  if(it.ore||it.ingot){if(forgeHere())openForgePage();else showMsg(it.ore?'Smelt it at a forge.':'Work it at a forge.','#c8b890');}} /* S1494 — at a smith's, the forge's page */
 // the smith's and the goods shop's pick
 function minersPickFor(h){return h&&(h.type==='weapon'||h.type==='misc')?[{...PICK_ITEM}]:[];}
+// ── S1494 — Survival B, session 5: the forge (`docs/design/survival-build.md`; Michael's A on #781) ──
+// A forge is a smith's room (5 gold a use). Smelting is 2 ore → 1 ingot: bronze from a copper and a tin, steel from 2 iron
+// ore and a charcoal; silver has no ingot. A piece takes its type's ingots (dagger 1, one-handed 2, two-handed 4, shield 3,
+// helm 2, chest 5, legs 3, feet 2, hands 1) and 30 game-minutes, and Smithing must stand at the metal's gate (SKILL_GATE,
+// the same gate that wearing it reads). A made piece is never enchanted, carries `made`, and sells back at 20%. A temper is
+// 3 ore of the piece's own metal, +8% attack or defence, three to a piece; the smith does it for 20 gold × tier instead.
+// Smithing: an ingot 2, a piece 10 + 5 × tier (the skills sheet). The grip's plank waits for the bench (session 6).
+// S1495 — Smithing's perks: *Smelter* (25) 3 ore → 2 ingots; *Fine work* (50) a made piece is Fine, +10%; *Temper* (75) four
+// tempers; *Masterwork* (100) the first piece of each metal made after it is a Masterwork, +20% (`worldState.masterworks`).
+const FORGE_FEE=5,FORGE_MIN=30,TEMPER_ORE=3,TEMPER_STEP=.08,MADE_SELL=.2;
+const INGOT_DEF=[
+  {tier:2,ore:[['copper',1],['tin',1]]},{tier:3,ore:[['iron',2]]},{tier:4,ore:[['iron',2]],charcoal:1},
+  {tier:5,ore:[['mithril',2]]},{tier:6,ore:[['adamant',2]]},{tier:7,ore:[['obsidian',2]]}];
+// the ore a piece of each metal is tempered with
+const TEMPER_ORES={2:['copper','tin'],3:['iron'],4:['iron'],5:['mithril'],6:['adamant'],7:['obsidian']};
+function ingotItem(tier,qty){const D=INGOT_DEF.find(d=>d.tier===tier),M=MATERIALS[tier-1];
+  const p=D.ore.reduce((s,[k,n])=>s+ORE_DEF[k].price*n,0)+(D.charcoal?SURV_ITEMS.charcoal.buyPrice:0);
+  return {name:`${M.name} Ingot`,ico:'🧱',type:'misc',weight:1,buyPrice:p,sellMult:.3,ingot:tier,qty:qty||1};}
+// what a piece costs in ingots, and the types the forge makes: the heavy line, the shield, every blade and haft but the bows'
+// (the bench's) and the wooden club
+function forgeIngots(T){if(T.slot==='weapon')return T.type==='Dagger'?1:T.twoHand?4:2;
+  return T.shieldType==='shield'?3:{head:2,chest:5,legs:3,feet:2,hands:1}[T.slot]||0;}
+const FORGE_TYPES=[...WEAPON_TYPES.filter(T=>!/^(Bow|Crossbow|GreatClub)$/.test(T.type)).map(T=>({T,arm:false})),
+  ...ARMOR_TYPES.filter(T=>forgeIngots(T)>0).map(T=>({T,arm:true}))];
+function forgeHere(){return typeof isInterior==='function'&&isInterior()&&typeof currentHouse!=='undefined'&&!!currentHouse&&currentHouse.type==='weapon';}
+function forgeFee(){if(gold<FORGE_FEE)return `The smith asks ${FORGE_FEE} gold for the forge.`;gold-=FORGE_FEE;return null;}
+function oreCount(k){return bagCount(b=>b.ore===k);}
+function ingotCount(t){return bagCount(b=>b.ingot===t);}
+let _forgeN=0;
+// smelt one ingot. Returns {made, item, why}
+function forgeSmelt(tier){
+  if(!forgeHere())return {made:false,why:'You need a forge.'};
+  const D=INGOT_DEF.find(d=>d.tier===tier);if(!D)return {made:false,why:''};
+  const two=smelterTwo(D);
+  if(!two)for(const [k,n] of D.ore)if(oreCount(k)<n)return {made:false,why:`You need ${n} ${ORE_DEF[k].name.toLowerCase()}.`};
+  if(D.charcoal&&bagCount(b=>b.name===SURV_ITEMS.charcoal.name)<D.charcoal)return {made:false,why:'Steel needs a charcoal.'};
+  const f=forgeFee();if(f)return {made:false,why:f};
+  if(two)two.forEach(([k,n])=>bagTake(b=>b.ore===k,n));else for(const [k,n] of D.ore)bagTake(b=>b.ore===k,n);if(D.charcoal)bagTake(b=>b.name===SURV_ITEMS.charcoal.name,D.charcoal);
+  const it=ingotItem(tier,two?2:1);bagAdd(it);skillUse('smithing',2,'f'+(_forgeN++));
+  return {made:true,item:it};}
+// Smelter: 3 ore of the recipe make 2 ingots when you have them (bronze: 3 of copper and tin, one of each at least, the more
+// plentiful taken twice); the charcoal is one a smelt either way. Returns the ore to take, or null for the plain 2 → 1
+function smelterTwo(D){if(!perk('smithing',25))return null;
+  if(D.ore.length===1){const [k]=D.ore[0];return oreCount(k)>=3?[[k,3]]:null;}
+  const [[a],[b]]=D.ore,na=oreCount(a),nb=oreCount(b);if(na<1||nb<1||na+nb<3)return null;return na>=nb?[[a,2],[b,1]]:[[a,1],[b,2]];}
+// a made piece's quality: Masterwork once a metal at 100, else Fine at 50, else plain
+function forgeQuality(tier){const M=worldState.masterworks||[];if(perk('smithing',100)&&!M.includes(tier))return 'master';return perk('smithing',50)?'fine':null;}
+const FORGE_QUALITY={fine:{mult:1.1,word:'Fine'},master:{mult:1.2,word:'Masterwork'}};
+function forgeQualityApply(it,q){const Q=FORGE_QUALITY[q];if(!Q)return it;it.quality=q;it.name=`${Q.word} ${it.name}`;
+  if(it.atk)it.atk=it.atk.map(v=>Math.round(v*Q.mult));if(it.def)it.def=Math.max(1,Math.round(it.def*Q.mult));return it;}
+// make a piece of one type in one metal. Returns {made, item, why}
+function forgeMake(type,tier){
+  if(!forgeHere())return {made:false,why:'You need a forge.'};
+  const F=FORGE_TYPES.find(f=>f.T.type===type);if(!F||!INGOT_DEF.some(d=>d.tier===tier))return {made:false,why:''};
+  const gate=SKILL_GATE[tier]||0;if(skillLv('smithing')<gate)return {made:false,why:`${MATERIALS[tier-1].name} asks Smithing ${gate} (you have ${skillLv('smithing')}).`};
+  const n=forgeIngots(F.T);if(ingotCount(tier)<n)return {made:false,why:`You need ${n} ${MATERIALS[tier-1].name.toLowerCase()} ingot${n>1?'s':''}.`};
+  const it=makeItem(tier,F.T,null,F.arm);it.made=true;it.sellMult=MADE_SELL;const q=forgeQuality(tier);forgeQualityApply(it,q);
+  if(!canCarry(it))return {made:false,why:'Too heavy to carry!'};
+  const f=forgeFee();if(f)return {made:false,why:f};
+  bagTake(b=>b.ingot===tier,n);bagAdd(it);skillUse('smithing',10+5*tier,'f'+(_forgeN++));
+  if(q==='master')(worldState.masterworks||(worldState.masterworks=[])).push(tier);
+  if(typeof advanceClock==='function')advanceClock(FORGE_MIN);
+  return {made:true,item:BAG[BAG.length-1]};}
+// a piece's tempers: +8% each on the attack or defence it was made with, three to a piece
+function temperMax(){return perk('smithing',75)?4:3;}
+function temperable(it){return !!(it&&it.type==='equip'&&it.tier>=2&&it.tier<=10&&(it.atk||it.def)&&!it.cloak&&(it.tempers||0)<temperMax());}
+function temperApply(it){if(it.atk&&!it.baseAtk)it.baseAtk=it.atk.slice();if(it.def&&it.baseDef==null)it.baseDef=it.def;
+  it.tempers=(it.tempers||0)+1;const k=1+TEMPER_STEP*it.tempers;
+  if(it.baseAtk)it.atk=it.baseAtk.map(v=>Math.round(v*k));if(it.baseDef!=null)it.def=Math.max(1,Math.round(it.baseDef*k));return it;}
+// temper a piece (a bag item or one worn): with 3 of its own ore, or paid to the smith (bySmith). Returns {done, why}
+function forgeTemper(it,bySmith){
+  if(!forgeHere())return {done:false,why:'You need a forge.'};
+  if(!temperable(it))return {done:false,why:it&&(it.tempers||0)>=temperMax()?'It will take no more tempering.':'That cannot be tempered.'};
+  if(bySmith){const c=20*it.tier;if(gold<c)return {done:false,why:`The smith asks ${c} gold.`};gold-=c;temperApply(it);return {done:true};}
+  const ores=TEMPER_ORES[it.tier];if(!ores)return {done:false,why:`There is no ore for ${MATERIALS[it.tier-1].name.toLowerCase()}: the smith can temper it.`};
+  const gate=SKILL_GATE[it.tier]||0;if(skillLv('smithing')<gate)return {done:false,why:`${MATERIALS[it.tier-1].name} asks Smithing ${gate}.`};
+  if(bagCount(b=>ores.includes(b.ore))<TEMPER_ORE)return {done:false,why:`You need ${TEMPER_ORE} ${ores.map(k=>ORE_DEF[k].name.toLowerCase()).join(' or ')}.`};
+  const f=forgeFee();if(f)return {done:false,why:f};
+  bagTake(b=>ores.includes(b.ore),TEMPER_ORE);temperApply(it);return {done:true};}
+// ── the forge's page (the fire's layout): smelt, make and temper on the left, the recipe and its gate on the right ──
+let forgeOpen=false,forgeSel={k:'s',tier:2},forgeTier=null,forgeSaid='';
+function forgePieces(){const out=[];for(const s in EQ){const it=EQ[s];if(temperable(it)&&!out.includes(it))out.push(it);}BAG.forEach(b=>{if(temperable(b))out.push(b);});return out;}
+function forgeMetals(){return INGOT_DEF.map(d=>d.tier);}
+function forgeCanSmelt(t){const D=INGOT_DEF.find(d=>d.tier===t);return D.ore.every(([k,n])=>oreCount(k)>=n)&&(!D.charcoal||bagCount(b=>b.name===SURV_ITEMS.charcoal.name)>=D.charcoal);}
+function openForgePage(){
+  if(!forgeHere()){showMsg('You need a forge.','#cc8844');return;}
+  if(typeof hubOpen!=='undefined'&&hubOpen&&typeof closeHub==='function')closeHub();
+  if(typeof shopOpen!=='undefined'&&shopOpen&&typeof closeShop==='function')closeShop();
+  if(typeof _releasePointerLockForMenu==='function')_releasePointerLockForMenu();
+  let ov=document.getElementById('forgeui');
+  if(!ov){ov=document.createElement('div');ov.id='forgeui';
+    ov.style.cssText='position:fixed;inset:0;z-index:8500;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.35)';
+    ov.innerHTML='<div style="width:600px;max-width:calc(100vw - 32px);max-height:calc(100vh - 32px);overflow:auto;box-sizing:border-box;padding:18px 24px 16px;background:#e9dcc2;color:#3a2c18;border:6px double #8a7040;border-radius:6px;font-family:Georgia,serif;box-shadow:0 10px 40px #000a">'+
+      '<div style="display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid #a89060;padding-bottom:6px"><span style="font-size:22px;color:#7a1f10;letter-spacing:.06em;font-variant:small-caps">The Forge</span><span id="fg-skill" style="font-style:italic;font-size:13px;color:#8a7050"></span></div>'+
+      '<div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:10px"><div id="fg-list" style="flex:1 1 180px;min-width:0;font-size:14px;line-height:1.6;max-height:52vh;overflow:auto"></div><div id="fg-right" style="flex:1.3 1 220px;min-width:0;font-size:14px;line-height:1.6"></div></div>'+
+      '<div id="fg-said" style="min-height:20px;margin-top:8px;font-style:italic;color:#7a1f10;font-size:14px"></div>'+
+      '<div style="display:flex;align-items:center;gap:12px;margin-top:8px;border-top:1px solid #a89060;padding-top:8px"><button type="button" id="fg-go" style="background:none;border:1px solid #7a1f10;border-radius:3px;font:18px Georgia,serif;color:#7a1f10;font-variant:small-caps;cursor:pointer;padding:2px 14px">Work</button>'+
+      '<span style="flex:1"></span><span style="font-size:12px;font-style:italic;color:#8a7050"><button type="button" id="fg-no" style="background:none;border:1px solid #a89060;border-radius:3px;font:13px Georgia,serif;color:#3a2c18;cursor:pointer;padding:2px 7px">Esc</button> as you were · Enter works</span></div></div>';
+    document.body.appendChild(ov);
+    ov.querySelector('#fg-go').onclick=()=>forgeGo(false);ov.querySelector('#fg-no').onclick=()=>closeForgePage();}
+  forgeSaid='';if(forgeSel.k==='t'&&!forgePieces().includes(forgeSel.it))forgeSel={k:'s',tier:2};
+  ov.style.display='flex';forgeOpen=true;forgeDraw();
+}
+function closeForgePage(){const ov=document.getElementById('forgeui');if(ov)ov.style.display='none';forgeOpen=false;if(typeof refocusView==='function')refocusView();}
+function forgeDraw(){const ov=document.getElementById('forgeui');if(!ov)return;
+  ov.querySelector('#fg-skill').textContent=`Smithing ${skillLv('smithing')} · ${FORGE_FEE} gold a use · ${gold} gold`;
+  const row=(on,ok,key,label)=>`<div data-k="${key}" style="cursor:pointer;padding:0 6px;border-radius:2px;${on?'background:rgba(122,31,16,.12);color:#7a1f10':''}${!ok&&!on?';color:#a09070':''}">${on?'◆':'◇'} ${label}</div>`;
+  const head=t=>`<div style="font-variant:small-caps;color:#8a7050;margin-top:4px">${t}</div>`;const S=forgeSel,P=forgePieces();
+  let h=head('Smelt')+INGOT_DEF.map(d=>row(S.k==='s'&&S.tier===d.tier,forgeCanSmelt(d.tier),'s'+d.tier,`${MATERIALS[d.tier-1].name} Ingot`)).join('');
+  h+=head('Make')+FORGE_TYPES.map((f,i)=>row(S.k==='m'&&S.type===f.T.type,forgeMetals().some(t=>ingotCount(t)>=forgeIngots(f.T)),'m'+i,f.T.type.replace(/([a-z])([A-Z])/g,'$1 $2'))).join('');
+  if(P.length)h+=head('Temper')+P.map((it,i)=>row(S.k==='t'&&S.it===it,true,'t'+i,`${it.name}${it.tempers?` (${it.tempers})`:''}`)).join('');
+  ov.querySelector('#fg-list').innerHTML=h;
+  ov.querySelectorAll('#fg-list [data-k]').forEach(d=>d.onclick=()=>{const k=d.dataset.k,n=+k.slice(1);
+    forgeSel=k[0]==='s'?{k:'s',tier:n}:k[0]==='m'?{k:'m',type:FORGE_TYPES[n].T.type}:{k:'t',it:P[n]};forgeSaid='';forgeDraw();});
+  const pad=s=>`<div style="padding-left:12px">${s}</div>`,note=s=>`<div style="padding-left:12px;color:#8a7050;font-style:italic">${s}</div>`;let t='';
+  if(S.k==='s'){const D=INGOT_DEF.find(d=>d.tier===S.tier),M=MATERIALS[S.tier-1];
+    t=`<div style="font-variant:small-caps;color:#7a1f10">${M.name} Ingot</div>`+D.ore.map(([k,n])=>pad(`${n} ${ORE_DEF[k].name} <i style="font-size:12px;color:#8a7050">(you have ${oreCount(k)})</i>`)).join('')+
+      (D.charcoal?pad(`1 Charcoal <i style="font-size:12px;color:#8a7050">(you have ${bagCount(b=>b.name===SURV_ITEMS.charcoal.name)})</i>`):'')+note(`you hold ${ingotCount(S.tier)}`);}
+  else if(S.k==='m'){const F=FORGE_TYPES.find(f=>f.T.type===S.type),n=forgeIngots(F.T);
+    if(forgeTier==null||!forgeMetals().includes(forgeTier))forgeTier=forgeMetals().find(m=>ingotCount(m)>=n)||2;
+    t=`<div style="font-variant:small-caps;color:#7a1f10">${MATERIALS[forgeTier-1].name} ${S.type.replace(/([a-z])([A-Z])/g,'$1 $2')}</div>`+pad(`${n} ingot${n>1?'s':''} and ${FORGE_MIN} minutes`)+
+      '<div style="padding-left:12px;display:flex;flex-wrap:wrap;gap:4px;margin:4px 0">'+forgeMetals().map(m=>{const g=SKILL_GATE[m]||0,ok=ingotCount(m)>=n&&skillLv('smithing')>=g;
+        return `<button type="button" data-m="${m}" style="background:${m===forgeTier?'rgba(122,31,16,.12)':'none'};border:1px solid ${m===forgeTier?'#7a1f10':'#a89060'};border-radius:3px;font:13px Georgia,serif;color:${ok?'#3a2c18':'#a09070'};cursor:pointer;padding:1px 6px">${MATERIALS[m-1].name} ${ingotCount(m)}${g?` · ${g}`:''}</button>`;}).join('')+'</div>'+
+      ((SKILL_GATE[forgeTier]||0)>skillLv('smithing')?note(`asks Smithing ${SKILL_GATE[forgeTier]}`):'')+note('made, never enchanted; sold back at a fifth');}
+  else if(S.k==='t'){const it=S.it,ores=TEMPER_ORES[it.tier];
+    t=`<div style="font-variant:small-caps;color:#7a1f10">${it.name}</div>`+pad(it.atk?`Attack ${it.atk[0]}–${it.atk[1]}`:`Defence ${it.def}`)+pad(`Tempered ${it.tempers||0} of ${temperMax()}, +${Math.round(TEMPER_STEP*100)}% each`)+
+      (ores?pad(`${TEMPER_ORE} ${ores.map(k=>ORE_DEF[k].name).join(' or ')} <i style="font-size:12px;color:#8a7050">(you have ${bagCount(b=>ores.includes(b.ore))})</i>`):note('no ore of its metal'))+
+      `<div style="padding-left:12px;margin-top:4px"><button type="button" id="fg-smith" style="background:none;border:1px solid #a89060;border-radius:3px;font:13px Georgia,serif;color:#3a2c18;cursor:pointer;padding:1px 8px">The smith tempers it · ${20*it.tier} gold</button></div>`;}
+  const R=ov.querySelector('#fg-right');R.innerHTML=t;
+  R.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{forgeTier=+b.dataset.m;forgeSaid='';forgeDraw();});
+  const sm=R.querySelector('#fg-smith');if(sm)sm.onclick=()=>forgeGo(true);
+  ov.querySelector('#fg-said').textContent=forgeSaid;}
+function forgeGo(bySmith){const S=forgeSel;let r;
+  if(S.k==='s'){r=forgeSmelt(S.tier);forgeSaid=r.made?`${r.item.name}.`:r.why||'';}
+  else if(S.k==='m'){r=forgeMake(S.type,forgeTier||2);forgeSaid=r.made?`${r.item.name}.`:r.why||'';}
+  else if(S.k==='t'){r=forgeTemper(S.it,bySmith);forgeSaid=r.done?`${S.it.name}, tempered ${S.it.tempers} of ${temperMax()}.`:r.why||'';if(r.done&&typeof updateHUD==='function')updateHUD();}
+  if(r&&(r.made||r.done)&&typeof uiTone==='function')uiTone(660,880,.08,.08,'triangle');
+  if(typeof renderHubInv==='function')renderHubInv();
+  if(!forgeHere()){closeForgePage();return;}forgeDraw();}
+window.addEventListener('keydown',e=>{if(!forgeOpen)return;const c=e.code;let hit=true;
+  if(c==='Escape')closeForgePage();else if(c==='Enter'){if(!e.repeat)forgeGo(false);}else hit=false;
+  if(hit){e.preventDefault();e.stopPropagation();}},true);
 // v61e5: Per-gate flavor copy for the commission lock. Keyed by targetZone.
 // The four canonical commission-gated edges (per v61d9) each get bespoke
 // prompt + toast text leaning into their region's flavor — Ironhaven gates

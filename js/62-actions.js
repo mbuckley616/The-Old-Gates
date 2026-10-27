@@ -696,7 +696,7 @@ function useItem(i){
   if(it.name===MORTAR_NAME){openBrewPage();return;}
   if(it.meal){eatMeal(i);return;} /* S1486 — a meal leaves you fed */
   if(it.name===TINDERBOX_NAME||it.log||it.food){useFireThing(i);return;} /* S1486 — a fire, and what it makes */
-  if(it.tool==='pick'||it.ore){useOreThing(i);return;} /* S1491 — a pick at a vein */
+  if(it.tool==='pick'||it.ore||it.ingot){useOreThing(i);return;} /* S1491 — a pick at a vein */
   if(it.type==='spellbook'){readSpellbook(i);return;} // v80
   if(it.artifact==='sundial_ring'){if(typeof noonRingTurn==='function')noonRingTurn();return;} /* S786 — the Noon Ring turns the weather */
   if(it.type==='rubbing'){(worldState.rubbings||(worldState.rubbings={}))[it.seed]=it.gate;showMsg(`${it.gate} is marked on your map.`,'#c0e0ff');it.qty=(it.qty||1)-1;if(it.qty<=0)BAG.splice(i,1);if(typeof renderInv==='function')renderInv();return;} // v80 — a rubbing marks a sigil gate
@@ -856,7 +856,7 @@ function updateHUD(){
 
 const mmC=document.getElementById('mm').getContext('2d');
 function drawMM(){
-  if(activeZoneId==='world'&&lid==='overworld'&&typeof WORLD!=='undefined'){WORLD.drawMinimap(mmC,104);return;} // v80 S12 — local map
+  if(activeZoneId==='world'&&lid==='overworld'&&typeof WORLD!=='undefined'){WORLD.drawMinimap(mmC,104);if(typeof prospectorDots==='function')prospectorDots(mmC,104,58);return;} /* S1495 — Prospector's veins */ // v80 S12 — local map
   mmC.clearRect(0,0,104,104);mmC.fillStyle='rgba(0,0,0,.78)';mmC.fillRect(0,0,104,104);
   let sc=1;
   if(lid==='overworld'){
