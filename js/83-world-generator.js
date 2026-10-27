@@ -1140,6 +1140,28 @@
   // so a city reads from a ridge long before it streams in. Hidden while
   // the real settlement is built.
   const IMPOSTORS={};const impostorList=[];
+  // S1502 — every impostor in view was its own draw call (67 of Dunmore's 993 at noon, most of them 0.6–4.8 km off). Each
+  // stays a Mesh that the cells and settlements show and hide as before, but none is in the scene: the shown ones are drawn
+  // as one geometry (IMP_B.mesh), merged again whenever one is shown, hidden, added or dropped. The merge sits about its first
+  // impostor, so its vertices stay within the island's span of the origin (float32 to a millimetre).
+  const IMP_B={mesh:null,o:null,mat:null,n:0,merges:0};
+  function impostorMat(){return IMP_B.mat||(IMP_B.mat=new THREE.MeshLambertMaterial({vertexColors:true,side:THREE.DoubleSide}));}
+  function impostorMerge(){impostorMat();
+    const list=impostorList.map(e=>IMPOSTORS[e.id]).filter(m=>m&&m._shown);
+    let nv=0;list.forEach(m=>{nv+=m.geometry.attributes.position.count;});
+    const pos=new Float32Array(nv*3),nor=new Float32Array(nv*3),col=new Float32Array(nv*3);let k=0;
+    if(!IMP_B.o&&list.length)IMP_B.o={x:list[0].position.x,z:list[0].position.z};
+    list.forEach(m=>{const a=m.geometry.attributes,n=a.position.count,dx=m.position.x-IMP_B.o.x,dy=m.position.y,dz=m.position.z-IMP_B.o.z;
+      for(let i=0;i<n;i++){const j=(k+i)*3;pos[j]=a.position.getX(i)+dx;pos[j+1]=a.position.getY(i)+dy;pos[j+2]=a.position.getZ(i)+dz;}
+      nor.set(a.normal.array,k*3);col.set(a.color.array,k*3);k+=n;});
+    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));g.setAttribute('normal',new THREE.BufferAttribute(nor,3));g.setAttribute('color',new THREE.BufferAttribute(col,3));g.computeBoundingSphere();
+    if(!IMP_B.mesh){IMP_B.mesh=new THREE.Mesh(g,IMP_B.mat);IMP_B.mesh.name='impostors';IMP_B.mesh.userData.noBake=true;IMP_B.mesh.castShadow=false;IMP_B.mesh.receiveShadow=false;}
+    else{IMP_B.mesh.geometry.dispose();IMP_B.mesh.geometry=g;}
+    if(IMP_B.o)IMP_B.mesh.position.set(IMP_B.o.x,0,IMP_B.o.z);IMP_B.mesh.updateMatrixWorld(true);
+    IMP_B.mesh.visible=list.length>0;if(!IMP_B.mesh.parent)sc.add(IMP_B.mesh);IMP_B.n=list.length;IMP_B.merges++;}
+  // an impostor's `visible` is its own: setting it merges the batch again (only when it changes)
+  function impostorAdd(id,m){m._shown=true;Object.defineProperty(m,'visible',{get(){return this._shown;},set(v){v=!!v;if(v===this._shown)return;this._shown=v;impostorMerge();},configurable:true});
+    m.updateMatrixWorld(true);IMPOSTORS[id]=m;}
   function buildImpostors(){}
   function buildImpostorsFor(cell){
     const c=x=>new THREE.Color(x);
@@ -1165,14 +1187,15 @@
       if(t.kind==='village'&&r()<.5)parts.push({geo:new THREE.BoxGeometry(2.2,8,2.2),color:c(0x7c7870),x:8,z:-6,y:4,jitter:.05});
       if(!parts.length)return;
       const g=mergeParts(parts);
-      const m=new THREE.Mesh(g,new THREE.MeshLambertMaterial({vertexColors:true,side:THREE.DoubleSide}));
-      m.position.set(t.x,base,t.z);m.castShadow=false;m.receiveShadow=false;m.userData.noBake=true;sc.add(m);IMPOSTORS[t.id]=m;impostorList.push({id:t.id,cell:t.cell});
+      const m=new THREE.Mesh(g,impostorMat());
+      m.position.set(t.x,base,t.z);m.castShadow=false;m.receiveShadow=false;m.userData.noBake=true;impostorAdd(t.id,m);impostorList.push({id:t.id,cell:t.cell});
     });
     cell.doors.filter(e=>e.kind==='fort_door'&&dungeonWorldPos[e.seed]).forEach(e=>{
       const p=dungeonWorldPos[e.seed];const base=worldH(p.x,p.z);
       const g=mergeParts([{geo:new THREE.BoxGeometry(6,9,6),color:c(0x7c7870),y:4.5,jitter:.06},{geo:new THREE.ConeGeometry(4.6,3,4),color:c(0x4a4c56),y:10.4,ry:Math.PI/4,jitter:.05},{geo:new THREE.CylinderGeometry(24,24,4,20,1,true),color:c(0x7c7870),y:2,jitter:.05}]);
-      const m=new THREE.Mesh(g,new THREE.MeshLambertMaterial({vertexColors:true,side:THREE.DoubleSide}));m.position.set(p.x,base,p.z);m.userData.noBake=true;sc.add(m);IMPOSTORS['door_'+e.seed]=m;impostorList.push({id:'door_'+e.seed,cell:cell.i+','+cell.j});
+      const m=new THREE.Mesh(g,impostorMat());m.position.set(p.x,base,p.z);m.userData.noBake=true;impostorAdd('door_'+e.seed,m);impostorList.push({id:'door_'+e.seed,cell:cell.i+','+cell.j});
     });
+    impostorMerge();
   }
 
   // ═══ DISCOVERY ═══════════════════════════════════════════════════════

@@ -105,13 +105,16 @@
     FORT_KEEP[p.seed]={lo:parts,x:cx,z:cz,y:y-.06,banner:nationOf(...cellOf(cx,cz)).banner};
     // the windows are lit, so the keep reads from the gate at night
     // S583 — the door is shut now: the warm line of light under it, not a glowing doorway
-    const glow=new THREE.Mesh(new THREE.PlaneGeometry(2.2,.05),new THREE.MeshBasicMaterial({color:0xffa040}));glow.position.set(cx,y+.045,cz+D_/2-.85); /* the keep stands .06 down: the sill's top is y+.02, the leaves' foot y+.07 */sc.add(glow);
-    for(let k=-1;k<=1;k+=2){const w=new THREE.Mesh(new THREE.PlaneGeometry(.6,.8),new THREE.MeshBasicMaterial({color:0xffc870}));w.position.set(cx+k*3.4,y+H_*.62,cz+D_/2+.14);sc.add(w);const fl=new THREE.Mesh(new THREE.ConeGeometry(.12,.35,6),new THREE.MeshBasicMaterial({color:0xffa030}));fl.position.set(cx+k*2.2,y+2.9,cz+D_/2+.5);sc.add(fl);}
+    // S1502 — the line under the door, the two windows and the two torches' flames are one mesh on one shared unlit material (five draws a keep, each its own material, before)
+    {const lit=[{geo:new THREE.PlaneGeometry(2.2,.05),color:c(0xffa040),y:.045,z:D_/2-.85,jitter:0}]; /* the keep stands .06 down: the sill's top is y+.02, the leaves' foot y+.07 */
+      for(let k=-1;k<=1;k+=2){lit.push({geo:new THREE.PlaneGeometry(.6,.8),color:c(0xffc870),x:k*3.4,y:H_*.62,z:D_/2+.14,jitter:0});lit.push({geo:new THREE.ConeGeometry(.12,.35,6),color:c(0xffa030),x:k*2.2,y:2.9,z:D_/2+.5,jitter:0});}
+      const glow=new THREE.Mesh(mergeParts(lit),KEEP_LIT_MAT());glow.position.set(cx,y,cz);glow.userData.keepLit=p.seed;sc.add(glow);}
     for(let k=-1;k<=1;k+=2){const l=regLight(0xffb060,1.4,9,'keep:'+p.seed);l.position.set(cx+k*2.2,y+2.8,cz+D_/2+.7);}
     // solids: the whole keep is a mass — the door is the portal, not a way in
     STATIC_SOL.push({cx,cz,rx:W_/2+.5,rz:D_/2+.5});
     addStamp({id:'keep_'+p.seed,kind:'site',x:cx,z:cz,r:Math.max(W_,D_)*.9,blend:6,y});
   }
+  let _keepLit=null;function KEEP_LIT_MAT(){return _keepLit||(_keepLit=new THREE.MeshBasicMaterial({vertexColors:true}));}
   function buildFortCompound(e,p,cellK){
     const cx=p.x,cz=p.z+4,R=27;const st=STYLE.garrison;const c=x=>new THREE.Color(x);const wallC=c(st.wall),capC=c(st.wall2);
     const r=(function(){let q=e.seed%2147483647;return()=>{q=(q*48271)%2147483647;return q/2147483647;};})();
@@ -135,7 +138,7 @@
     towers.forEach((a,i)=>{const tx=cx+Math.cos(a)*R,tz=cz+Math.sin(a)*R;const gate=i>=4;const h=gate?5.6:4.8;sol.push({cx:tx,cz:tz,rx:2.0,rz:2.0});
       // S251 — a coursed round tower near, the old tower its distant copy, both where the tower stands
       for(const [geo,lod] of [[gateTowerHi('stone',h-2.4,capC,c(st.roof),pRng(pHash('fortT|'+e.seed+'|'+i))),'hi'],[mergeParts([{geo:new THREE.CylinderGeometry(1.4,1.6,h,8),color:capC,y:h/2,jitter:.05},{geo:new THREE.ConeGeometry(1.7,1.4,8),color:c(st.roof),y:h+.8,jitter:.05}]),'lo']]){const m=new THREE.Mesh(geo,VC_MAT);m.position.set(tx,y0,tz);m.castShadow=true;m.receiveShadow=true;m.userData.lod=lod;group.add(m);}
-      if(gate){ /* S251 — the banner hangs clear of the wider tower */ const pole=new THREE.Mesh(new THREE.BoxGeometry(.06,.06,1.0),new THREE.MeshLambertMaterial({color:0x2a2622}));pole.position.set(tx,y0+h+.4,tz+2.05);group.add(pole);const cloth=new THREE.Mesh(new THREE.PlaneGeometry(.9,2.6),new THREE.MeshLambertMaterial({color:nationOf(...cellOf(cx,cz)).banner,side:THREE.DoubleSide}));cloth.position.set(tx,y0+h-.9,tz+2.3);group.add(cloth);}});
+      if(gate){ /* S251 — the banner hangs clear of the wider tower */ const pole=new THREE.Mesh(new THREE.BoxGeometry(.06,.06,1.0),new THREE.MeshLambertMaterial({color:0x2a2622}));pole.position.set(tx,y0+h+.4,tz+2.05);group.add(pole);const cloth=new THREE.Mesh(new THREE.BoxGeometry(.9,2.6,.02),new THREE.MeshLambertMaterial({color:nationOf(...cellOf(cx,cz)).banner}));/* S1502 — a thin box, not a two-sided plane, so the bake takes it with the pole (a draw a banner before) */cloth.position.set(tx,y0+h-.9,tz+2.3);group.add(cloth);}});
     // S256 — the keep, in detail near and its old boxes far, both where the keep stands so they share a bake cluster
     {const K=FORT_KEEP[e.seed];if(K){delete FORT_KEEP[e.seed];for(const [geo,lod] of [[fortKeepGeoHi(11,9,7.2,K.banner,pRng(pHash('fortK|'+e.seed))),'hi'],[mergeParts(K.lo),'lo']]){const m=new THREE.Mesh(geo,VC_MAT);m.position.set(K.x,K.y,K.z);m.castShadow=true;m.receiveShadow=true;m.userData.lod=lod;m.userData.keep=true;group.add(m);}}}
     // barracks either side of the yard, doors toward the keep
@@ -195,7 +198,7 @@
     L.doorSeeds.forEach(sd=>{delete dungeonWorldPos[sd];const i=CELL_DOORS.findIndex(e=>e.seed===sd);if(i>=0)CELL_DOORS.splice(i,1);});
     for(let i=STATIC_SOL.length-1;i>=0;i--)if(STATIC_SOL[i].cell===k)STATIC_SOL.splice(i,1);
     for(let i=beds.length-1;i>=0;i--)if(beds[i].cell===k)beds.splice(i,1);
-    for(let i=impostorList.length-1;i>=0;i--)if(impostorList[i].cell===k){delete IMPOSTORS[impostorList[i].id];impostorList.splice(i,1);}
+    {let n=0;for(let i=impostorList.length-1;i>=0;i--)if(impostorList[i].cell===k){const m=IMPOSTORS[impostorList[i].id];if(m)m.geometry.dispose();delete IMPOSTORS[impostorList[i].id];impostorList.splice(i,1);n++;}if(n)impostorMerge();} /* S1502 — the batch drops them too */
     // roads: drop this cell's segments and rebuild the grid
     L.roads.forEach(rd=>{const i=ROADS.indexOf(rd);if(i>=0)ROADS.splice(i,1);});
     rebuildRoadGrid();
@@ -834,6 +837,17 @@
     }
     return new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshLambertMaterial({map:tex}));
   }
+  // S1502 — lettering by the road is two faces of one texture, drawn as one mesh, and not drawn at all past `far` (a 0.26 m
+  // arm's letters are 2 px at 60 m): each face was its own draw at every distance, 74 of Dunmore's at noon, most 0.1–1.5 km off.
+  // `faces` are [x,y,z,ry] about the LOD's own origin; the planks themselves are the posts' meshes and stay.
+  const TEXT_FAR={arm:60,board:90};
+  function textFaces(str,w,h,fg,bg,faces,far){const one=textPlane(str,w,h,fg,bg),P=[];
+    for(const [x,y,z,ry] of faces){const g=one.geometry.clone();g.rotateY(ry);g.translate(x,y,z);P.push(g);}
+    const n=P[0].attributes.position.count,ix=P[0].index.array,geo=new THREE.BufferGeometry();
+    for(const a of ['position','normal','uv']){const k=P[0].attributes[a].itemSize,arr=new Float32Array(n*k*P.length);P.forEach((g,i)=>arr.set(g.attributes[a].array,i*n*k));geo.setAttribute(a,new THREE.BufferAttribute(arr,k));}
+    const idx=[];P.forEach((g,i)=>{for(const v of ix)idx.push(v+i*n);});geo.setIndex(idx);geo.computeBoundingSphere();
+    const m=new THREE.Mesh(geo,one.material);P.forEach(g=>g.dispose());one.geometry.dispose();
+    const L=new THREE.LOD();L.addLevel(m,0);L.addLevel(new THREE.Object3D(),far);L.userData.textFar=far;return L;}
   // S253 — the signpost and the town's name boards on the kit, each one vertex-coloured mesh (they were boxes): a
   // round weathered post with a cap on a little cairn, arms of plank cut to a point; the name board framed on two round
   // posts with caps and stone footings. The lettering stays the textured planes it was, on the planks' faces.
@@ -854,9 +868,7 @@
     const y=worldH(x,z);const angs=arms.map(a=>Math.atan2(a.tx-x,a.tz-z)); // yaw toward target (+z forward)
     const post=new THREE.Mesh(signpostGeo(angs,Math.round(x)*7+Math.round(z)),VC_MAT);post.position.set(x,y,z);post.castShadow=true;post.receiveShadow=true;post.userData.signpost=true;sc.add(post);
     arms.forEach((a,i)=>{
-      const g=new THREE.Group();g.position.set(x,y+2.7-i*.42,z);g.rotation.y=angs[i];
-      const t1=textPlane(a.label,1.3,.26);t1.position.set(.068,0,.85);t1.rotation.y=Math.PI/2;g.add(t1);
-      const t2=textPlane(a.label,1.3,.26);t2.position.set(-.068,0,.85);t2.rotation.y=-Math.PI/2;g.add(t2);
+      const g=textFaces(a.label,1.3,.26,null,null,[[.068,0,.85,Math.PI/2],[-.068,0,.85,-Math.PI/2]],TEXT_FAR.arm);g.position.set(x,y+2.7-i*.42,z);g.rotation.y=angs[i];
       sc.add(g);
     });
     STATIC_SOL.push({cx:x,cz:z,rx:.25,rz:.25});
@@ -871,7 +883,7 @@
       if(!outs.length)return;
       outs.slice(0,3).forEach(o=>{const dx=o.x-t.x,dz=o.z-t.z,L=Math.hypot(dx,dz)||1;const ux=dx/L,uz=dz/L;const bx=t.x+ux*(t.pad+3)-uz*3.4,bz=t.z+uz*(t.pad+3)+ux*3.4;const y=worldH(bx,bz);const ang=Math.atan2(ux,uz);
         const board=new THREE.Mesh(nameBoardGeo(Math.round(bx)*7+Math.round(bz)),VC_MAT);board.position.set(bx,y,bz);board.rotation.y=ang;board.castShadow=true;board.receiveShadow=true;board.userData.nameBoard=true;sc.add(board); // S253 — framed, on round posts (it was three boxes)
-        [1,-1].forEach(sd=>{const nb=textPlane(t.name,2.5,.5,'#f4e6c0','#3a2a16');nb.position.set(bx+ux*sd*.05,y+2.0,bz+uz*sd*.05);nb.rotation.y=ang+(sd<0?Math.PI:0);sc.add(nb);});
+        {const nb=textFaces(t.name,2.5,.5,'#f4e6c0','#3a2a16',[[0,0,.05,0],[0,0,-.05,Math.PI]],TEXT_FAR.board);nb.position.set(bx,y+2.0,bz);nb.rotation.y=ang;sc.add(nb);}
         STATIC_SOL.push({cx:bx,cz:bz,rx:1.4,rz:.3});});
       const o=outs[0];const dx=o.x-t.x,dz=o.z-t.z,L=Math.hypot(dx,dz);
       const sx=t.x+dx/L*(t.pad+4)+(-dz/L)*4,sz=t.z+dz/L*(t.pad+4)+(dx/L)*4;
@@ -906,7 +918,7 @@
           {const [x,z]=at(0,-.72);P.push({geo:SK.cyl(.11,.11,.74,8),color:q(0x7a6a48),x,z,y:worldH(cx+x,cz+z)-y+.11,ry:.3,rz:Math.PI/2,jitter:.08});}
           {const [x,z]=at(-.62,-.5);P.push({geo:SK.rbox(.34,.4,.26,.06,1),color:q(0x5a3a1e),x,z,y:worldH(cx+x,cz+z)-y+.2,ry:.3+.4,jitter:.06});}
           const m=new THREE.Mesh(mergeParts(P),VC_MAT);m.position.set(cx,y,cz);m.castShadow=true;m.receiveShadow=true;m.userData.roadCamp=true;sc.add(m);}
-        const ember=new THREE.Mesh(new THREE.SphereGeometry(.24,6,6),new THREE.MeshBasicMaterial({color:0xff7a22}));ember.position.set(cx,y+.2,cz+1.2);sc.add(ember);
+        const ember=new THREE.LOD();ember.addLevel(new THREE.Mesh(new THREE.SphereGeometry(.24,6,6),new THREE.MeshBasicMaterial({color:0xff7a22})),0);ember.addLevel(new THREE.Object3D(),300);ember.position.set(cx,y+.2,cz+1.2);sc.add(ember); /* S1502 — a 0.24 m ember is under a pixel past 300 m */
         const fl=regLight(0xff8a30,1.1,9,'cell:'+k);fl.position.set(cx,y+.9,cz+1.2);STATIC_SOL.push({cx,cz:cz+1.2,rx:.8,rz:.8});
         const bx=cx-.2,bz=cz+3.6;
         beds.push({x:bx,z:bz,cell:k});n++;

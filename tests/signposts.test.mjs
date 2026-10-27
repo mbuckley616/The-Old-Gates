@@ -25,5 +25,11 @@ check('a signpost is one mesh of under 2.5k triangles, no taller than the old po
 check('its arms reach to their points (1.72) and their faces lie inside the lettering (.068 out)', Math.abs(r.sp.tipZ - 1.72) < .02 && r.sp.armX > .05 && r.sp.armX < .068, r.sp);
 check('the name board is one mesh of under 2k triangles, its face inside its lettering (.05 out)', r.nb.tris < 2000 && r.nb.face < .05, r.nb);
 check('a real town\'s signpost and name board keep their colliders', r.t && r.t.sol && r.t.board, r.t);
+// S1502 — the lettering by the road: each arm's two faces and each board's two are one mesh, drawn near and not far
+const tx = await page.evaluate(() => { const L = []; WORLD.scene.traverse(o => { if (o.isLOD && o.userData.textFar) L.push(o); }); const cam = new THREE.PerspectiveCamera(50, 1, .1, 4000), p = new THREE.Vector3();
+  const one = L.filter(o => { const m = o.levels[0].object; return m.isMesh && m.material.map && m.geometry.index.count === 12; }).length;
+  const at = d => L.filter(o => { o.getWorldPosition(p); cam.position.set(p.x + d, p.y, p.z); cam.updateMatrixWorld(true); o.update(cam); return o.levels[0].object.visible; }).length;
+  return { n: L.length, arms: L.filter(o => o.userData.textFar === 60).length, boards: L.filter(o => o.userData.textFar === 90).length, one, near: at(10), far: at(200) }; });
+check(`the lettering on ${tx.arms} arms and ${tx.boards} boards is one mesh of its two faces each, drawn at 10 m (${tx.near}) and not at 200 (${tx.far})`, tx.arms > 0 && tx.boards > 0 && tx.one === tx.n && tx.near === tx.n && tx.far === 0, tx);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
