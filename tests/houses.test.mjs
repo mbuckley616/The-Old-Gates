@@ -38,6 +38,13 @@ await page.evaluate(() => { const rd = WORLD.roads.find(r => (r.def.a === 'dunmo
 const road = await page.evaluate(() => { const out = { inns: 0, lods: 0, forts: 0, fortPaired: 0 }; for (const C of (WORLD.coachLines || new Map()).values()) { C.group.traverse(o => { if (o.isLOD) { out.inns++; if (o.levels.length === 2 && o.levels[1].distance === 80) out.lods++; } }); }
   for (const S of WORLD.settlements.values()) { if (!S.impostorId || !S.lodMeshes) continue; out.forts++; const hi = S.lodMeshes.filter(m => m.userData.lod === 'hi'); if (hi.length && hi.every(m => S.lodMeshes.some(o => o.userData.lod === 'lo' && o.userData.ckey === m.userData.ckey))) out.fortPaired++; } return out; });
 check('every roadside inn (a coach line funded out of Dunmore) is a LOD of its detailed and plain selves; a fort compound\'s barracks pair with their copies (Session 202)', road.inns > 0 && road.lods === road.inns && road.fortPaired === road.forts, road);
+// S1502 — the settlements' and forts' stand-ins are drawn as one mesh: every shown one in it, a hidden one merged out and back
+const imp = await page.evaluate(() => { const ms = Object.values(IMPOSTORS), shown = ms.filter(m => m.visible), tri = m => m.geometry.attributes.position.count;
+  const inScene = ms.filter(m => m.parent).length, B = IMP_B.mesh, v0 = B.geometry.attributes.position.count, want = shown.reduce((a, m) => a + tri(m), 0);
+  const one = shown[0]; one.visible = false; const v1 = B.geometry.attributes.position.count; one.visible = true; const v2 = B.geometry.attributes.position.count;
+  let drawn = 0; WORLD.scene.traverse(o => { if (o.isMesh && o.material === IMP_B.mat && o.visible) drawn++; });
+  return { n: ms.length, shown: shown.length, inScene, v0, want, v1, v2, gone: tri(one), drawn }; });
+check(`the ${imp.shown} shown stand-ins of ${imp.n} are one mesh (${imp.drawn} drawn), none in the scene by itself; hiding one takes its ${imp.gone} vertices out, showing it puts them back`, imp.shown > 5 && imp.inScene === 0 && imp.drawn === 1 && imp.v0 === imp.want && imp.v1 === imp.v0 - imp.gone && imp.v2 === imp.v0, imp);
 const shot = await houseLineup(page, ['irish', 'anglo', 'french', 'bavarian', 'mark', 'aurenne', 'stone', 'garrison'], 3, { lo: false, gap: 10 });
 fs.writeFileSync('tests/out/houses-lineup.png', Buffer.from(shot.split(',')[1], 'base64'));
 console.log('  cost', JSON.stringify({ dunmoreHi: lod.triHi, dunmoreLo: lod.triLo }));
