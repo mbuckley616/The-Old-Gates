@@ -759,12 +759,12 @@ const VEINS=[];
 const VEIN_FAR=80;
 let _veinGeo=null,_veinMat=null;
 function veinGeo(ore,n){const G=_veinGeo||(_veinGeo={});const k=ore+':'+n;if(G[k])return G[k];
-  if(!G._rock){const g=new THREE.IcosahedronGeometry(.55,1).toNonIndexed(),p=g.attributes.position,c=[],v=new THREE.Vector3();
+  if(!G._rock){const g=new THREE.IcosahedronGeometry(.55,1),p=g.attributes.position,c=[],v=new THREE.Vector3();
     const h=(x,y,z)=>{const t=Math.sin(x*127.1+y*311.7+z*74.7)*43758.5453;return t-Math.floor(t);};
     for(let i=0;i<p.count;i++){v.fromBufferAttribute(p,i);const d=.82+.36*h(+v.x.toFixed(3),+v.y.toFixed(3),+v.z.toFixed(3));v.multiplyScalar(d);v.set(v.x*1.25,v.y*.75,v.z*1.05);p.setXYZ(i,v.x,v.y,v.z);}
     for(let f=0;f<p.count;f+=3){const y=(p.getY(f)+p.getY(f+1)+p.getY(f+2))/3,k2=.3+.08*h(f,1,2)+.08*Math.max(0,y)/.4;for(let j=0;j<3;j++)c.push(k2,k2*.97,k2*.93);}
     g.setAttribute('color',new THREE.Float32BufferAttribute(c,3));g.computeVertexNormals();G._rock=g;
-    G._seams=[0,1,2].map(i=>{const s=new THREE.OctahedronGeometry(.2,0).toNonIndexed(),t=i*2.1;s.scale(1,.6,1.5);s.rotateY(-t);s.rotateZ(.35);s.translate(Math.cos(t)*.44,.14+i*.08,Math.sin(t)*.44);return s;});}
+    G._seams=[0,1,2].map(i=>{const s=new THREE.OctahedronGeometry(.2,0),t=i*2.1;s.scale(1,.6,1.5);s.rotateY(-t);s.rotateZ(.35);s.translate(Math.cos(t)*.44,.14+i*.08,Math.sin(t)*.44);return s;});}
   const col=new THREE.Color(ORE_DEF[ore]?ORE_DEF[ore].col:0x888888),parts=[G._rock,...G._seams.slice(0,n)];let N=0;parts.forEach(q=>N+=q.attributes.position.count);
   const pos=new Float32Array(N*3),nor=new Float32Array(N*3),cc=new Float32Array(N*3);let o=0;
   parts.forEach((q,pi)=>{const P=q.attributes.position,Nn=q.attributes.normal,C=q.attributes.color;for(let i=0;i<P.count;i++,o++){pos[o*3]=P.getX(i);pos[o*3+1]=P.getY(i);pos[o*3+2]=P.getZ(i);
