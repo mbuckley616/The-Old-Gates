@@ -303,7 +303,7 @@ const CAOR_RISK=1.2,FORTUNE_CRIT_PCT=.005,FORTUNE_CRIT_MULT=1.5; /* S953 — For
 const RENEWAL_RATE=.5;
 function _fortuneCrit(e){const c=Math.min(.5,(ATTRS.fortune||0)*FORTUNE_CRIT_PCT);return c>0&&(typeof foeRand==='function'?foeRand(e):Math.random())<c?FORTUNE_CRIT_MULT:1;} // S480 — on the struck foe's stream (co-op rules)
 // S320 — the same ward on every other blow, shot and trap that reaches you (at least 1 when something landed)
-function _warded(d,src){if(!(d>0))return d;d=Math.max(1,Math.round(d*_wardMult()*(src&&src.beast?_buffMult('beastResist',1):1)*(src&&(src.fire||FIRE_FOES[src.baseType||src.baseName])&&typeof gateGift==='function'&&gateGift('tine')?.5:1)));return src&&src.trap?d:challengeTaken(d);} /* S684 — the challenge scales a foe's blow after the ward; a trap's is its own */
+function _warded(d,src){if(!(d>0))return d;d=Math.max(1,Math.round(d*_wardMult()*(src&&src.beast?_buffMult('beastResist',1):1)*(src&&(src.fire||FIRE_FOES[src.baseType||src.baseName])?(typeof gateGift==='function'&&gateGift('tine')?.5:1)*_buffMult('resistHeat',1):1)));return src&&src.trap?d:challengeTaken(d);} /* S684 — the challenge scales a foe's blow after the ward; a trap's is its own */
 const TRAP_SRC={trap:true};
 // S1349 — a source of fire, for Tine's gift (fire takes half while its great gate is torn): a source tagged `fire` or a fire foe
 const FIRE_FOES={'Fire Elemental':1};
@@ -328,7 +328,7 @@ function _finesseSprint(){return Math.max(.25,1-attrEff('finesse')*.01);} /* S95
 // and a weaker one that outlasts it waits underneath (`_under`, counting down all the while) and holds again when the
 // stronger ends. So Firemoss eaten under the Boon of the Arm no longer ends the boon, and a Shield cast under the Boon
 // of Stone gives the boon back when it lapses. For these kinds a lower multiplier is the stronger.
-const BUFF_LOW_GOOD=new Set(['spellCost','warding','dmgReduce','detectReduce','staminaCost','physResist','beastResist']);
+const BUFF_LOW_GOOD=new Set(['spellCost','warding','dmgReduce','detectReduce','staminaCost','physResist','beastResist','resistHeat']); /* S1483 — a tincture's Resist Heat */
 function _buffStrength(b){if(b.rate!=null)return b.rate;if(b.amount!=null)return b.amount;const m=b.mult!=null?b.mult:1;return BUFF_LOW_GOOD.has(b.type)?1/Math.max(1e-6,m):m;}
 function _stackBuffs(list){
   const order=list.slice().sort((a,b)=>_buffStrength(b)-_buffStrength(a)||b.remaining-a.remaining);
@@ -385,8 +385,9 @@ function harvestHerb(h){
 
 function useHerb(i){
   const it=BAG[i];if(!it||it.type!=='herb')return;
-  const eff=it.effect;
+  let eff=it.effect;
   if(!eff)return;
+  if(!eff.type)eff=eff.heal?{type:'heal',amount:eff.heal}:eff.mana?{type:'mana',amount:eff.mana}:eff.stam?{type:'stamina',amount:eff.stam}:eff; /* S1483 — the sea's herbs are written {stam:20}, and eaten did nothing */
   sndUsePotion();
   // Apply known effect
   if(eff.type==='heal'){PHP=Math.min(effMaxHP(),PHP+eff.amount);showMsg(`${it.name} — +${eff.amount} HP`,'#44ee44');}
@@ -395,13 +396,14 @@ function useHerb(i){
   else if(eff.type==='hpRegen'){_applyBuff({...eff,label:it.name+' Regen',col:'#44cc44'});}
   else if(eff.type==='damage'){PHP=Math.max(1,PHP-eff.amount);showMsg(`${it.name} — -${eff.amount} HP (bitter)...`,'#cc4444');}
   // Track consumption and check for hidden unlock
-  const countKey=it._typeKey||it.name.toLowerCase().replace(/[^a-z]/g,'');
+  const countKey=herbKeyOf(it)||it.name.toLowerCase().replace(/[^a-z]/g,''); /* S1483 — by HERB_DEF's key: a reload drops _typeKey, and Fearnóg's name made 'fearng' */
   HERB_CONSUME_COUNTS[countKey]=(HERB_CONSUME_COUNTS[countKey]||0)+1;
   const count=HERB_CONSUME_COUNTS[countKey];
   const justUnlocked=(count===HIDDEN_UNLOCK_COUNT);
   const unlocked=(count>=HIDDEN_UNLOCK_COUNT);
   // Apply hidden effect if already unlocked (not on the unlock consume itself — let the message land first)
-  if(unlocked&&!justUnlocked&&it.hiddenEffect){
+  if(unlocked&&!justUnlocked&&HERB_DEF[countKey]&&HERB_DEF[countKey].zone==='sea'){const f=HERB_FX[countKey]&&HERB_FX[countKey][1],d=f&&ALCH_FX[f];if(d&&d.drink)d.drink(1);else if(d&&d.buff)_applyBuff({duration:ALCH_FORTIFY_S,...d.buff(1),label:d.label,col:d.col});} /* S1483 — a sea herb's hidden effect is its second brewing effect (its hiddenEffect was Firemoss's, copied) */
+  else if(unlocked&&!justUnlocked&&it.hiddenEffect){
     const he=it.hiddenEffect;
     if(he.type==='manaFull'){mana=effMaxMana();showMsg('Luibh Uisce — Mana fully restored!','#66eebb');}
     else{_applyBuff(he);}
@@ -417,6 +419,169 @@ function useHerb(i){
   it.qty--;if(it.qty<=0)BAG.splice(i,1);
   renderHubInv();updateHUD();
 }
+// ── S1483 — Survival B, session 1: herbs and brewing (`docs/design/survival-build.md`, Michael's B of 30 Sep 2026) ──
+// Every herb has four brewing effects from one pool of 22. The first is the one you learn by eating it; the second is its
+// hidden effect's kin in the pool where it has one (learnt at 15 eats, as before), otherwise dealt; the third and fourth
+// are dealt. A hidden effect with no kin in the pool (Luibh Uisce's flood, Goldenrod's luck) is still eaten as today and
+// never brews. Two herbs ground together with a mortar make a tincture of every effect both carry; no shared effect, and
+// nothing is made, the herbs are kept and the pair is marked. A shared harmful effect makes a poison that coats the blade
+// for three blows. A tincture turns after five days to half its strength. Strength is the Alchemy curve (skillMult) and
+// 1% an Intelligence point. Every effect sits on 4 to 7 herbs, Restore Health and Restore Mana on 8 (eight herbs already
+// restore each when eaten), and no two herbs share more than two (`tests/herbpool`).
+const ALCH_FX={
+  restoreHealth:{label:'Restore Health',col:'#44ee44',price:15,drink:s=>{const n=Math.round(20*s);PHP=Math.min(effMaxHP(),PHP+n);return `+${n} HP`;}},
+  restoreStamina:{label:'Restore Stamina',col:'#88ee44',price:22,drink:s=>{const n=Math.round(30*s);stamina=Math.min(effMaxStamina(),stamina+n);return `+${n} Stamina`;}},
+  restoreMana:{label:'Restore Mana',col:'#88aaff',price:30,drink:s=>{const n=Math.round(30*s);mana=Math.min(effMaxMana(),mana+n);return `+${n} Mana`;}},
+  regenHealth:{label:'Regenerate Health',col:'#44cc44',price:30,buff:s=>({type:'hpRegen',rate:+(1.5*s).toFixed(2)})},
+  regenMana:{label:'Regenerate Mana',col:'#4a8ad4',price:35,buff:s=>({type:'mpRegen',rate:+(1*s).toFixed(2)})},
+  fortifyMelee:{label:'Fortify Melee',col:'#ff6622',buff:s=>({type:'meleeDmg',mult:+(1+.1*s).toFixed(3)})},
+  fortifyBlock:{label:'Fortify Block',col:'#ff4444',buff:s=>({type:'blockBoost',mult:+(1+.15*s).toFixed(3)})},
+  fortifyBow:{label:'Fortify Bow',col:'#c8a878',buff:s=>({type:'bowDmg',mult:+(1+.1*s).toFixed(3)})},
+  fortifyCarry:{label:'Fortify Carry',col:'#eedd88',buff:s=>({type:'carryBoost',amount:Math.round(20*s)})},
+  swiftness:{label:'Swiftness',col:'#aaccaa',price:32,buff:s=>({type:'swiftness',mult:+(1+.1*s).toFixed(3)})},
+  quiet:{label:'Quiet',col:'#446622',buff:s=>({type:'detectReduce',mult:+Math.max(.5,1-.2*s).toFixed(3)})},
+  featherfall:{label:'Featherfall',col:'#d8e8ff',buff:()=>({type:'featherfall',amount:8})},
+  resistCold:{label:'Resist Cold',col:'#a0c8ff',buff:()=>({type:'resistCold',amount:1})},
+  resistHeat:{label:'Resist Heat',col:'#ff9a50',buff:s=>({type:'resistHeat',mult:+Math.max(.4,1-.25*s).toFixed(3)})},
+  curePoison:{label:'Cure Poison',col:'#9adf9a',drink:()=>{let n=0;for(let i=ACTIVE_BUFFS.length-1;i>=0;i--)if(ACTIVE_BUFFS[i].harm){ACTIVE_BUFFS.splice(i,1);n++;}return n?'the poison is gone':'nothing to cure';}},
+  waterBreathing:{label:'Water Breathing',col:'#80c0ff',drink:s=>{SPELL_FX.waterbreath=Math.max(SPELL_FX.waterbreath||0,performance.now()+60000*s);return 'you can breathe water';}},
+  nightEye:{label:'Night Eye',col:'#c0c0ff',drink:s=>{SPELL_FX.nighteye=Math.max(SPELL_FX.nighteye||0,performance.now()+60000*s);return 'the dark gives way';}},
+  vanish:{label:'Vanish',col:'#8833cc',buff:s=>({type:'vanish',duration:Math.round(5*s)})},
+  damageHealth:{label:'Damage Health',col:'#cc2222',harm:(e,s)=>{const d=Math.max(1,Math.round(8*s));e.hp=Math.max(0,e.hp-d);if(e.hpFg){e.hpFg.scale.x=e.hp/e.maxHp;e.hpFg.position.x=(e.hp/e.maxHp-1)*.275;}return d;}},
+  drainStamina:{label:'Drain Stamina',col:'#887733',harm:(e,s)=>{if(typeof e.posture==='number'&&applyPostureDamage(e,10*s,performance.now()/1000)){staggered.push({e,t:dazeS(POSTURE_BREAK_STUN)});staggerFlash(e);}return 0;}},
+  slow:{label:'Slow',col:'#6a7a9a',harm:(e,s)=>{e._slowUntil=playClockS+4*s;return 0;}},
+  weaken:{label:'Weaken',col:'#9a5a8a',harm:(e,s)=>{if(typeof e.posture==='number'&&applyPostureDamage(e,.25*(e.maxPosture||e.posture)*Math.min(1.4,s),performance.now()/1000)){staggered.push({e,t:dazeS(POSTURE_BREAK_STUN)});staggerFlash(e);}return 0;}},
+};
+const ALCH_FORTIFY_S=60,TINCTURE_TURN_DAYS=5,POISON_BLOWS=3,FOE_SLOW=.6,MORTAR_NAME='Mortar and Pestle';
+const HERB_FX={
+  firemoss:['restoreHealth','fortifyMelee','resistCold','swiftness'],silverleaf:['restoreStamina','swiftness','drainStamina','featherfall'],
+  heartroot:['restoreMana','regenMana','fortifyCarry','slow'],ashwort:['restoreHealth','resistHeat','nightEye','vanish'],
+  muirfhear:['restoreStamina','quiet','fortifyBow','drainStamina'],goldenrod:['restoreHealth','curePoison','vanish','fortifyCarry'],
+  thornberry:['restoreHealth','fortifyBlock','damageHealth','curePoison'],coldmoss:['restoreMana','resistHeat','regenMana','fortifyBlock'],
+  fearnog:['restoreHealth','fortifyBlock','resistCold','weaken'],shadowcap:['restoreMana','vanish','nightEye','weaken'],
+  wolfsbane:['regenHealth','damageHealth','fortifyMelee','slow'],caorthann:['restoreStamina','fortifyBow','curePoison','vanish'],
+  deepmoss:['restoreMana','regenHealth','nightEye','swiftness'],briarweed:['restoreStamina','slow','damageHealth','weaken'],
+  luibhuisce:['restoreMana','waterBreathing','featherfall','resistHeat'],ferrousweed:['restoreHealth','fortifyBlock','resistHeat','slow'],
+  graywort:['regenHealth','curePoison','vanish','quiet'],caordubh:['damageHealth','fortifyMelee','weaken','drainStamina'],
+  mistfern:['restoreMana','quiet','featherfall','resistCold'],stonecress:['restoreStamina','fortifyCarry','featherfall','vanish'],
+  veilwort:['restoreHealth','quiet','curePoison','featherfall'],credearg:['regenHealth','fortifyCarry','slow','swiftness'],
+  duilleogghorm:['restoreMana','regenMana','waterBreathing','fortifyBow'],
+  kelp:['restoreStamina','waterBreathing','slow','fortifyMelee'],sealily:['restoreMana','nightEye','regenMana','drainStamina'],
+  pearlweed:['restoreHealth','waterBreathing','resistCold','fortifyBow'],
+};
+// the herbs whose second effect is their hidden one's kin, so 15 eats teach it as well; the sea's three have no hidden of their own
+const HERB_KIN=new Set(['firemoss','silverleaf','muirfhear','thornberry','shadowcap','deepmoss','caordubh','kelp','sealily','pearlweed']);
+// a herb in the bag by its HERB_DEF key: the pick's _typeKey, which a reload drops, else its name
+function herbKeyOf(it){if(!it)return null;if(it._typeKey&&HERB_FX[it._typeKey])return it._typeKey;if(typeof HERB_DEF!=='undefined')for(const k in HERB_DEF)if(HERB_DEF[k].name===it.name)return k;
+  const k=String(it.name||'').toLowerCase().replace(/[^a-z]/g,'');return HERB_FX[k]?k:null;}
+function herbsKnown(){return worldState.herbsKnown||(worldState.herbsKnown={fx:{},none:{}});}
+function herbFxKnown(k,i){const n=HERB_CONSUME_COUNTS[k]||0;if(i===0&&n>0)return true;if(i===1&&HERB_KIN.has(k)&&n>=HIDDEN_UNLOCK_COUNT)return true;const f=herbsKnown().fx[k];return !!(f&&f[i]);}
+function learnHerbFx(k,i){const K=herbsKnown();const f=K.fx[k]||(K.fx[k]=[0,0,0,0]);const was=herbFxKnown(k,i);f[i]=1;return !was;}
+function brewPairKey(a,b){return [a,b].sort().join('|');}
+function alchStrength(){return skillMult('alchemy')*(1+.01*attrEff('intelligence'));}
+function gameDayNow(){return Math.floor((worldState.gameTimeAbsMinutes||0)/1440);}
+function brewTurned(it){return !!(it&&it.brew&&gameDayNow()-it.brew.day>=TINCTURE_TURN_DAYS&&!perk('alchemy',75));}
+function brewStrength(it){return it.brew.s*(brewTurned(it)?.5:1);}
+function brewMax(){return perk('alchemy',50)?3:2;}
+// what these herbs would make: every effect at least two of them carry; a harmful one makes it a poison of the harmful alone
+function brewShared(keys){const c={};keys.forEach(k=>new Set(HERB_FX[k]||[]).forEach(f=>{c[f]=(c[f]||0)+1;}));
+  const fx=Object.keys(c).filter(f=>c[f]>=2);const harm=fx.filter(f=>ALCH_FX[f].harm);return {fx:harm.length?harm:fx,poison:harm.length>0,all:fx};}
+function hasMortar(){return BAG.some(b=>b&&b.name===MORTAR_NAME);}
+function brewName(fx,poison){const l=fx.map(f=>ALCH_FX[f].label);return (poison?'Poison of ':'Tincture of ')+(l.length>1?l.slice(0,-1).join(', ')+' and '+l[l.length-1]:l[0]);}
+// grind the herbs (HERB_DEF keys, one of each from the bag) into a tincture or a poison. Returns {made, item, learnt, kept}
+function brewHerbs(keys){
+  keys=[...new Set(keys)];
+  if(!hasMortar())return {made:false,why:'You need a mortar and pestle.'};
+  if(keys.length<2||keys.length>brewMax())return {made:false,why:brewMax()===3?'Two or three herbs.':'Two herbs.'};
+  const idx=keys.map(k=>BAG.findIndex(b=>b&&b.type==='herb'&&herbKeyOf(b)===k));
+  if(idx.some(i=>i<0))return {made:false,why:'You do not have those herbs.'};
+  const sh=brewShared(keys),K=herbsKnown();
+  if(!sh.all.length){for(let i=0;i<keys.length;i++)for(let j=i+1;j<keys.length;j++)K.none[brewPairKey(keys[i],keys[j])]=1;
+    return {made:false,kept:true,why:'Nothing between them. The herbs are kept.'};}
+  const newPair=keys.some((a,i)=>keys.some((b,j)=>j>i&&!(K.pairs&&K.pairs[brewPairKey(a,b)])));
+  K.pairs=K.pairs||{};for(let i=0;i<keys.length;i++)for(let j=i+1;j<keys.length;j++)K.pairs[brewPairKey(keys[i],keys[j])]=1;
+  const learnt=[];keys.forEach(k=>HERB_FX[k].forEach((f,i)=>{if(sh.all.includes(f)&&learnHerbFx(k,i))learnt.push(k+':'+f);}));
+  idx.sort((a,b)=>b-a).forEach(i=>{const b=BAG[i];b.qty=(b.qty||1)-1;if(b.qty<=0)BAG.splice(i,1);});
+  const s=+alchStrength().toFixed(3),day=gameDayNow();
+  const item={name:brewName(sh.fx,sh.poison),ico:sh.poison?'☠️':'🧪',type:'potion',weight:.5,sellMult:.4,
+    buyPrice:Math.max(...sh.fx.map(f=>ALCH_FX[f].price||25)),brew:{fx:sh.fx,s,day,poison:sh.poison}};
+  item.brewKey=sh.fx.join('+')+'@'+s+'/'+day;
+  bagAdd(item);
+  skillUse('alchemy',8+(newPair?25:0));
+  return {made:true,item:BAG.find(b=>sameStack(b,item))||item,learnt,newPair};
+}
+// drink a tincture, or coat the blade with a poison
+let BLADE_POISON=null;
+function useTincture(i){
+  const it=BAG[i];if(!it||!it.brew)return;const s=brewStrength(it),fx=it.brew.fx.slice();
+  if(it.brew.poison){const w=EQ.weapon;if(!w||(typeof _isBowEquipped==='function'&&_isBowEquipped())){showMsg('Poison needs a blade in your hand.','#cc8844');return;}
+    BLADE_POISON={fx,s,blows:POISON_BLOWS,name:it.name};it.qty=(it.qty||1)-1;if(it.qty<=0)BAG.splice(i,1);
+    showMsg(`${it.name} coats your ${w.name}.`,'#9adf9a');if(typeof renderHubInv==='function')renderHubInv();return;}
+  if(DRINK){showMsg('You are still drinking.','#cc8844');return;}
+  const nm=it.name;it.qty=(it.qty||1)-1;if(it.qty<=0)BAG.splice(i,1);
+  startDrink(()=>drinkBrew(fx,s,nm),nm);
+}
+function drinkBrew(fx,s,nm){const said=[];
+  fx.forEach(f=>{const d=ALCH_FX[f];if(d.drink)said.push(d.drink(s));else if(d.buff){const b=d.buff(s);_applyBuff({duration:ALCH_FORTIFY_S,...b,label:d.label,col:d.col});}});
+  if(said.length)showMsg(`${nm} — ${said.join(', ')}`,ALCH_FX[fx[0]].col);
+  if(typeof updateHUD==='function')updateHUD();}
+// a landed blow with a poisoned blade (74's resolver): each harmful effect on the foe, three blows
+function bladePoisonHit(e){const P=BLADE_POISON;if(!P||!e||e.hp<=0)return 0;let d=0;
+  P.fx.forEach(f=>{d+=ALCH_FX[f].harm(e,P.s)||0;});e.alert=true;
+  if(--P.blows<=0){BLADE_POISON=null;showMsg('The poison is spent.','#888888');}
+  return d;}
+function foeSlowMult(e){return e&&e._slowUntil>playClockS?FOE_SLOW:1;}
+// the brewing page's text for a tincture in the bag
+function brewLines(it){const b=it.brew;if(!b)return '';const t=brewTurned(it),s=brewStrength(it);
+  return b.fx.map(f=>`<div class="bt-row" style="color:${ALCH_FX[f].col}">${ALCH_FX[f].label}</div>`).join('')+
+    `<div class="bt-row" style="color:#a08860;font-size:9px">${b.poison?'Coats a blade for '+POISON_BLOWS+' blows':'Strength ×'+s.toFixed(2)}${t?' · turned':''}</div>`;}
+// the mortar at an apothecary and the Mages' Guild (40 gold, weight 1)
+const MORTAR_ITEM={name:MORTAR_NAME,ico:'🥣',type:'misc',weight:1,buyPrice:40,sellMult:.4};
+function mortarFor(h){return h&&(h.type==='potion'||h.type==='apothecary'||h.type==='guild_m')?[{...MORTAR_ITEM}]:[];}
+
+// ── the brewing page (parchment, Michael's A on the interface): the herbs on the left, the chosen herbs' four rows right ──
+let brewOpen=false,brewSel=[],brewSaid='';
+function openBrewPage(){
+  if(!hasMortar()){showMsg('You need a mortar and pestle.','#cc8844');return;}
+  if(typeof hubOpen!=='undefined'&&hubOpen&&typeof closeHub==='function')closeHub();
+  if(typeof _releasePointerLockForMenu==='function')_releasePointerLockForMenu();
+  let ov=document.getElementById('brewui');
+  if(!ov){ov=document.createElement('div');ov.id='brewui';
+    ov.style.cssText='position:fixed;inset:0;z-index:8500;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.35)';
+    ov.innerHTML='<div style="width:640px;max-width:calc(100vw - 32px);max-height:calc(100vh - 32px);overflow:auto;box-sizing:border-box;padding:18px 24px 16px;background:#e9dcc2;color:#3a2c18;border:6px double #8a7040;border-radius:6px;font-family:Georgia,serif;box-shadow:0 10px 40px #000a">'+
+      '<div style="display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid #a89060;padding-bottom:6px"><span style="font-size:22px;color:#7a1f10;letter-spacing:.06em;font-variant:small-caps">The Mortar</span><span id="br-skill" style="font-style:italic;font-size:13px;color:#8a7050"></span></div>'+
+      '<div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:10px"><div id="br-herbs" style="flex:1 1 200px;min-width:0;font-size:14px;line-height:1.7"></div><div id="br-right" style="flex:1.4 1 260px;min-width:0;font-size:14px;line-height:1.6"></div></div>'+
+      '<div id="br-said" style="min-height:20px;margin-top:8px;font-style:italic;color:#7a1f10;font-size:14px"></div>'+
+      '<div style="display:flex;align-items:center;gap:12px;margin-top:8px;border-top:1px solid #a89060;padding-top:8px"><button type="button" id="br-go" style="background:none;border:1px solid #7a1f10;border-radius:3px;font:18px Georgia,serif;color:#7a1f10;font-variant:small-caps;cursor:pointer;padding:2px 14px">Grind</button>'+
+      '<span style="flex:1"></span><span style="font-size:12px;font-style:italic;color:#8a7050"><button type="button" id="br-no" style="background:none;border:1px solid #a89060;border-radius:3px;font:13px Georgia,serif;color:#3a2c18;cursor:pointer;padding:2px 7px">Esc</button> as you were · Enter grinds</span></div></div>';
+    document.body.appendChild(ov);
+    ov.querySelector('#br-go').onclick=()=>brewGo();ov.querySelector('#br-no').onclick=()=>closeBrewPage();}
+  brewSel=brewSel.filter(k=>BAG.some(b=>b&&b.type==='herb'&&herbKeyOf(b)===k));brewSaid='';
+  ov.style.display='flex';brewOpen=true;brewDraw();
+}
+function closeBrewPage(){const ov=document.getElementById('brewui');if(ov)ov.style.display='none';brewOpen=false;if(typeof refocusView==='function')refocusView();}
+function brewHerbList(){const m=new Map();BAG.forEach(b=>{if(!b||b.type!=='herb')return;const k=herbKeyOf(b);if(!k)return;m.set(k,(m.get(k)||0)+(b.qty||1));});return [...m].map(([k,n])=>({k,n,name:(HERB_DEF[k]&&HERB_DEF[k].name)||k}));}
+function brewDraw(){const ov=document.getElementById('brewui');if(!ov)return;const K=herbsKnown();
+  ov.querySelector('#br-skill').textContent=`Alchemy ${skillLv('alchemy')} · strength ×${alchStrength().toFixed(2)}`;
+  const list=brewHerbList();
+  ov.querySelector('#br-herbs').innerHTML=list.length?list.map(h=>{const on=brewSel.includes(h.k),nn=brewSel.some(o=>o!==h.k&&K.none[brewPairKey(o,h.k)]);
+    return `<div data-k="${h.k}" style="cursor:pointer;padding:0 6px;border-radius:2px;${on?'background:rgba(122,31,16,.12);color:#7a1f10':''}${nn&&!on?';color:#a09070':''}">${on?'◆':'◇'} ${h.name} <span style="color:#8a7050;font-size:12px">×${h.n}</span>${nn&&!on?' <i style="font-size:12px">· nothing between</i>':''}</div>`;}).join(''):'<i>You carry no herbs.</i>';
+  ov.querySelectorAll('#br-herbs [data-k]').forEach(d=>d.onclick=()=>brewPick(d.dataset.k));
+  let r='';brewSel.forEach(k=>{r+=`<div style="font-variant:small-caps;color:#7a1f10;margin-top:4px">${(HERB_DEF[k]&&HERB_DEF[k].name)||k}</div>`;
+    HERB_FX[k].forEach((f,i)=>{const kn=herbFxKnown(k,i);r+=`<div style="padding-left:12px">${kn?ALCH_FX[f].label+(ALCH_FX[f].harm?' <i style="font-size:12px;color:#8a2a20">(harmful)</i>':''):'<span style="color:#a09070">— unknown —</span>'}</div>`;});});
+  if(brewSel.length>=2){const kn=new Set();brewSel.forEach(k=>HERB_FX[k].forEach((f,i)=>{if(herbFxKnown(k,i)&&brewSel.filter(o=>o!==k).some(o=>HERB_FX[o].some((g,j)=>g===f&&herbFxKnown(o,j))))kn.add(f);}));
+    r+=`<div style="margin-top:8px;border-top:1px dotted #a89060;padding-top:4px;font-style:italic">${kn.size?'Known to share: '+[...kn].map(f=>ALCH_FX[f].label).join(', '):'Nothing known between them.'}</div>`;}
+  ov.querySelector('#br-right').innerHTML=r||`<i style="color:#8a7050">Choose ${brewMax()===3?'two or three herbs':'two herbs'}.</i>`;
+  ov.querySelector('#br-said').textContent=brewSaid;
+}
+function brewPick(k){const i=brewSel.indexOf(k);if(i>=0)brewSel.splice(i,1);else{if(brewSel.length>=brewMax())brewSel.shift();brewSel.push(k);}brewSaid='';brewDraw();}
+function brewGo(){const r=brewHerbs(brewSel);
+  if(r.made){brewSaid=`${r.item.name}.${r.learnt.length?' You learn '+r.learnt.length+(r.learnt.length>1?' effects.':' effect.'):''}`;if(typeof uiTone==='function')uiTone(260,340,.1,.08,'sine');addLog('🧪','Made '+r.item.name);}
+  else brewSaid=r.why||'';
+  brewSel=brewSel.filter(k=>BAG.some(b=>b&&b.type==='herb'&&herbKeyOf(b)===k));brewDraw();}
+window.addEventListener('keydown',e=>{if(!brewOpen)return;const c=e.code;let hit=true;
+  if(c==='Escape')closeBrewPage();else if(c==='Enter'){if(!e.repeat)brewGo();}else hit=false;
+  if(hit){e.preventDefault();e.stopPropagation();}},true);
 // v61e5: Per-gate flavor copy for the commission lock. Keyed by targetZone.
 // The four canonical commission-gated edges (per v61d9) each get bespoke
 // prompt + toast text leaning into their region's flavor — Ironhaven gates

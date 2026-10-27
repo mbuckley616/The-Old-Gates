@@ -319,6 +319,7 @@ function resolvePlayerStrike(_isPow){
     else{
       const enc=applyWeaponEnchant(dmg,e);
       dmgNumRider(e,enc);
+      if(e.hp>0&&BLADE_POISON)bladePoisonHit(e); /* S1483 — a poisoned blade, three blows */
       if(e.hp<=0)kill();
       else if(_spent)showMsg('Too spent to break the guard.','#ff9944');
     }
