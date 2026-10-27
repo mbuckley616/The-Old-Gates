@@ -705,6 +705,7 @@ function renderShop(){
   if(typeof loreBooksFor==='function'){const lb=loreBooksFor(currentHouse);if(lb.length)stock=[...stock,...lb];} /* S979 — The Seventh Niche at the Mages' Guild */
   {const ln=armorLinesFor(currentHouse);if(ln.length)stock=[...stock,...ln];}
   {const mo=mortarFor(currentHouse);if(mo.length)stock=[...stock,...mo];}
+  {const pk=minersPickFor(currentHouse);if(pk.length)stock=[...stock,...pk.filter(a=>!stock.some(b=>b.name===a.name))];} /* S1491 — the pick at the smith's and the goods shop */
   {const sv=survivalFor(currentHouse);if(sv.length)stock=[...stock,...sv.filter(a=>!stock.some(b=>b.name===a.name))];} /* S1486 — the tinderbox and produce at the goods shop and the inn, fish in a port */ /* S1483 — the mortar at an apothecary and the Mages' Guild */ // S564 — the light line at the armourer, robes at a goods shop
   // v61au: Charisma-gated stock (chaReq). No-op until items carry the field.
   const _cha = ATTRS.charisma||0;

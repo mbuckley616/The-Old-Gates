@@ -638,6 +638,7 @@ function dropFire(f){if(f.mesh&&f.mesh.parent)f.mesh.parent.remove(f.mesh);}
 function tickSurvival(dt){const t=gameMinNow();
   for(let i=CAMPFIRES.length-1;i>=0;i--){const f=CAMPFIRES[i];if(f.until<=t){dropFire(f);CAMPFIRES.splice(i,1);continue;}
     const fl=f.mesh&&f.mesh.userData.flame;if(fl){const k=.85+.15*Math.sin(performance.now()*.013+i);fl.scale.set(1,k,1);}}
+  tickMining(dt);
   if(fedKind()==='steady'&&!dead)PHP=Math.min(effMaxHP(),PHP+dt*.2);
   if(stamina>effMaxStamina())stamina=effMaxStamina();}
 // fed: one kind at a time, by the game clock
@@ -726,6 +727,87 @@ function cookGo(){const r=cookAt(cookSel);
 window.addEventListener('keydown',e=>{if(!cookOpen)return;const c=e.code;let hit=true;
   if(c==='Escape')closeCookPage();else if(c==='Enter'){if(!e.repeat)cookGo();}else hit=false;
   if(hit){e.preventDefault();e.stopPropagation();}},true);
+
+// ── S1491 — Survival B, session 3: veins and ore (`docs/design/survival-build.md`) ──
+// 2 to 5 veins a 64 m chunk, on the steepest of 40 tries by the chunk's dice (rock where it has any, as groundColor paints
+// it; a bank on flat land), placed as the herbs are; each is <cx,cz>:<i>, the try that put it. The place sets the metal, as #394 set loot's: tier 1 copper and tin
+// (iron one in four), 2 iron and silver, 3 iron and mithril, the wastes (4) mithril, adamant and obsidian. A vein holds 3 ore
+// and comes back 7 game-days after its last is taken. With a pick (40 gold) in the bag, E at a vein works it: a strike every
+// 0.9 s breaks an ore at 35% + 0.5% a Mining point, rolled on seededRng('ore', the vein, its returns and the strike's count),
+// so a reload strikes the same ore at the same strike. `worldState.veins` (the world's): id → {n taken, s strikes, d day, e returns}.
+const VEIN_ORE_N=3,VEIN_DAYS=7,VEIN_STRIKE=.9,PICK_NAME='Pick';
+const ORE_DEF={copper:{name:'Copper Ore',col:0xc07040,price:3},tin:{name:'Tin Ore',col:0xb8b8a8,price:3},iron:{name:'Iron Ore',col:0x8a5a48,price:5},
+  silver:{name:'Silver Ore',col:0xe0e4ec,price:8},mithril:{name:'Mithril Ore',col:0x4466cc,price:12},adamant:{name:'Adamant Ore',col:0x33aa33,price:18},
+  obsidian:{name:'Obsidian',col:0x221830,price:24}};
+const VEIN_TABLE={1:[['copper',.375],['tin',.375],['iron',.25]],2:[['iron',2/3],['silver',1/3]],3:[['iron',2/3],['mithril',1/3]],4:[['mithril',1/3],['adamant',1/3],['obsidian',1/3]]};
+const PICK_ITEM={name:PICK_NAME,ico:'⛏',type:'misc',weight:4,buyPrice:40,sellMult:.4,tool:'pick'};
+function oreItem(k,qty){const o=ORE_DEF[k];return {name:o.name,ico:'🪨',type:'misc',weight:2,buyPrice:o.price,sellMult:.3,ore:k,qty:qty||1};}
+function hasPick(){return BAG.some(b=>b&&b.tool==='pick');}
+// the vein's tier: the place's danger tier, and 4 in the wastes (the open world's regions stop at 3)
+function veinTier(x,z){let t=typeof worldTierAt==='function'?worldTierAt(x,z):1;
+  try{const r=dominantRegion(x,z).r;if(r&&(r.id==='wastes'||r.biome==='wastes'||r.biome==='wasteland'))t=4;}catch(e){}
+  return Math.max(1,Math.min(4,t|0||1));}
+function veinOre(id,tier){const T=VEIN_TABLE[tier]||VEIN_TABLE[1];let r=seededRng('vein',id)();for(const [k,w] of T){r-=w;if(r<=0)return k;}return T[T.length-1][0];}
+const VEINS=[];
+let _veinGeo=null;const _veinMat={};
+function veinMesh(v){if(!_veinGeo)_veinGeo={rock:new THREE.IcosahedronGeometry(.55,0),seam:new THREE.OctahedronGeometry(.2,0)};
+  const rk=_veinMat.rock||(_veinMat.rock=new THREE.MeshLambertMaterial({color:0x6a6460,flatShading:true}));
+  const sm=_veinMat[v.ore]||(_veinMat[v.ore]=new THREE.MeshLambertMaterial({color:ORE_DEF[v.ore].col,flatShading:true}));
+  const g=new THREE.Group();const a=new THREE.Mesh(_veinGeo.rock,rk);a.scale.set(1.2,.8,1);g.add(a);
+  for(let i=0;i<3;i++){const s=new THREE.Mesh(_veinGeo.seam,sm);const t=i*2.1;s.position.set(Math.cos(t)*.42,.18+i*.08,Math.sin(t)*.42);g.add(s);}
+  g.userData.seams=g.children.slice(1);g.position.set(v.x,worldH(v.x,v.z)-.12,v.z);g.rotation.y=v.ph;return g;}
+// a chunk's veins, when it builds (called beside spawnChunkHerbs)
+function spawnChunkVeins(ch){
+  if(typeof hash01!=='function'||typeof slopeNormalY!=='function')return;
+  const n=2+Math.floor(hash01(ch.cx,ch.cz,301)*4),cand=[];
+  for(let i=0;i<40;i++){
+    const x=ch.cx*CHUNK+3+hash01(ch.cx+i,ch.cz,302)*(CHUNK-6),z=ch.cz*CHUNK+3+hash01(ch.cz,ch.cx+i,303)*(CHUNK-6);
+    const h=worldH(x,z);if(h<1.5)continue;
+    if(solidAt(x,z))continue;const ri=roadInfo(x,z);if(ri&&ri.d<ROAD_HALF+2)continue;const st=stampAt(x,z);if(st&&st.kind==='site'&&Math.hypot(x-st.x,z-st.z)<st.r)continue;
+    cand.push({i,x,z,ny:slopeNormalY(x,z)});}
+  cand.sort((a,b)=>a.ny-b.ny||a.i-b.i); /* the steepest of the chunk's tries: rock where it has any, a bank where it is flat */
+  for(const c of cand.slice(0,n)){
+    const id=ch.cx+','+ch.cz+':'+c.i,tier=veinTier(c.x,c.z);
+    const v={id,x:c.x,z:c.z,tier,ore:veinOre(id,tier),ph:hash01(ch.cx+c.i,ch.cz,304)*Math.PI*2,g:null};
+    try{v.g=veinMesh(v);ch.group.add(v.g);}catch(e){}
+    (ch.veins||(ch.veins=[])).push(v);VEINS.push(v);veinShow(v);}}
+function veinLive(v){return !v.g||!!(v.g.parent&&v.g.parent.parent);}
+// the vein's record, brought back if 7 days have passed since it was worked out
+function veinRec(v){const W=worldState.veins||(worldState.veins={});let r=W[v.id];
+  if(r&&r.n>=VEIN_ORE_N&&gameMinNow()/1440-r.d>=VEIN_DAYS){r={n:0,s:0,d:r.d,e:(r.e||0)+1};W[v.id]=r;}
+  return r||{n:0,s:0,d:0,e:0};}
+function veinLeft(v){return VEIN_ORE_N-veinRec(v).n;}
+function veinShow(v){if(!v.g)return;const left=veinLeft(v);v.g.userData.seams.forEach((s,i)=>s.visible=i<left);}
+function veinNear(){if(activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior()))return null;
+  for(let i=VEINS.length-1;i>=0;i--){const v=VEINS[i];if(!veinLive(v)){VEINS.splice(i,1);continue;}if(Math.hypot(px-v.x,pz-v.z)<TOUCH+.5)return v;}return null;}
+// one strike at a vein: the outcome is the vein's seeded stream at this strike. Returns {ore, left} or {why}
+function strikeVein(v){
+  if(!hasPick())return {why:'You need a pick.'};
+  let r=veinRec(v);if(r.n>=VEIN_ORE_N)return {why:'The vein is worked out.'};
+  const it=oreItem(v.ore);if(!canCarry(it))return {why:'Too heavy to carry!'};
+  const roll=seededRng('ore',v.id+':'+(r.e||0)+':'+r.s)();
+  r={...r,s:r.s+1};const got=roll<.35+.005*skillLv('mining');
+  if(got){r.n++;r.d=Math.floor(gameMinNow()/1440);bagAdd(it);skillUse('mining',4);}else skillUse('mining',1);
+  (worldState.veins||(worldState.veins={}))[v.id]=r;veinShow(v);
+  return {ore:got?it.name:null,left:VEIN_ORE_N-r.n};}
+// working a vein: E starts it, E again, walking off, or the vein worked out stops it
+let MINE=null;
+function mineVein(v){if(MINE&&MINE.v===v){MINE=null;showMsg('You stop working the vein.','#c8b890');return;}
+  if(!hasPick()){showMsg('You need a pick.','#cc8844');return;}
+  if(veinLeft(v)<=0){showMsg('The vein is worked out.','#cc8844');return;}
+  MINE={v,t:VEIN_STRIKE};showMsg(`You set to the ${ORE_DEF[v.ore].name.toLowerCase()}.`,'#c8b890');}
+function tickMining(dt){if(!MINE)return;const v=MINE.v;
+  if(!veinLive(v)||activeZoneId!=='world'||Math.hypot(px-v.x,pz-v.z)>TOUCH+1.2||(typeof dead!=='undefined'&&dead)){MINE=null;return;}
+  MINE.t-=dt;if(MINE.t>0)return;MINE.t+=VEIN_STRIKE;
+  const r=strikeVein(v);if(typeof uiNoise==='function')uiNoise(.06,.12,2400);
+  if(r.why){showMsg(r.why,'#cc8844');MINE=null;return;}
+  if(r.ore){showMsg(`${r.ore}.`+(r.left?'':' The vein is worked out.'),'#d8c8a0');if(typeof renderHubInv==='function')renderHubInv();}
+  if(!r.left)MINE=null;}
+function useOreThing(i){const it=BAG[i];if(!it)return;
+  if(it.tool==='pick'){const v=veinNear();if(v)mineVein(v);else showMsg('Strike a vein with it.','#c8b890');return;}
+  if(it.ore)showMsg('Smelt it at a forge.','#c8b890');}
+// the smith's and the goods shop's pick
+function minersPickFor(h){return h&&(h.type==='weapon'||h.type==='misc')?[{...PICK_ITEM}]:[];}
 // v61e5: Per-gate flavor copy for the commission lock. Keyed by targetZone.
 // The four canonical commission-gated edges (per v61d9) each get bespoke
 // prompt + toast text leaning into their region's flavor — Ironhaven gates
@@ -1496,6 +1578,7 @@ function interact(){
     // Herb harvest — all zones
     const nearHerb=activeHerbs().find(h=>!h.harvested&&!h._tolled&&Math.hypot(px-h.x,pz-h.z)<TOUCH);
     if(nearHerb){harvestHerb(nearHerb);return;}
+    {const v=veinNear();if(v){mineVein(v);return;}} /* S1491 — a vein, with a pick */
     // v61ae: Bram's body needs special handling. The standard zone-corpse
     // check below requires items.length>0, which means an already-looted body
     // with empty items becomes NON-interactable. But Bram's body should always

@@ -683,7 +683,7 @@
     const ch={cx,cz,group,sol,terrain:geo,enemies:[],herbs:[],treePts:_treePts.slice()};
     chunks.set(key,ch);
     spawnChunkEncounters(ch);
-    spawnChunkHerbs(ch);spawnSeaHerbs(ch);spawnWreck(ch);spawnFishSchool(ch);
+    spawnChunkHerbs(ch);spawnSeaHerbs(ch);spawnChunkVeins(ch);spawnWreck(ch);spawnFishSchool(ch);
   }
   function dropChunk(key){
     const ch=chunks.get(key);if(!ch)return;

@@ -987,6 +987,7 @@ function loop(now){
       iprOW.style.opacity='1';iprOW.style.display='block';
     }
     else if(nearHerbPrompt){iprOW.textContent=`Press 'E' to harvest ${nearHerbPrompt.def.name}`;iprOW.style.opacity='1';iprOW.style.display='block';}
+    else if(typeof veinNear==='function'&&veinNear()){const v=veinNear(),n=veinLeft(v);iprOW.textContent=n<=0?'Worked out':MINE&&MINE.v===v?`Working the ${ORE_DEF[v.ore].name.toLowerCase()} · E to stop`:`Press 'E' to mine ${ORE_DEF[v.ore].name.toLowerCase()}`+(hasPick()?'':' (you need a pick)');iprOW.style.opacity='1';iprOW.style.display='block';} /* S1491 — a vein */
     else if(nearBramBodyPrompt){
       // v61al: prompt changes based on whether the body has been read yet.
       // First-read branch advances the quest and shows the flavor text.
