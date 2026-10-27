@@ -155,9 +155,11 @@ const PERK_DEF={
   locks:[['Feel for it','the pin you work glows faintly at the shear'],['Sure hand','a snapped pick keeps the set pins'],['Quiet work','picking halves a witness’s range'],['No mark','a picked town lock is never found']],
   smithing:[['Smelter','two ingots from three ore'],['Fine work','a made piece is Fine: +10% attack or defence'],['Temper','four tempers (was three)'],['Masterwork','the first piece of each metal you make is a Masterwork: +20%']], /* S1495 */
   alchemy:[['Tell','a herb’s hidden effect after 5 eats (was 15)'],['Third hand','a third herb in the mortar'],['Stoppered','tinctures don’t turn'],['Double measure','two tinctures from one grinding']], /* S1499 */
+  cooking:[['Two portions','a meal cooked makes two'],['Shared pot','everyone at the fire is fed'],['Full belly','fed lasts through sleep'],['Seasoned','a herb in the pot adds its known effect at a third']], /* S1500 */
   mining:[['Prospector','veins on the minimap within 40 m'],['Rich vein','one ore in four comes double'],['Lodestone','the magnetic ore of La Grise'],['Seam','a vein holds 5 (was 3)']],
   speech:[['Haggle','5% better prices both ways'],['Talk it down','a guard’s fine halved, once in each town'],['Hearing','a person at favour −1 still talks'],['Word given','once a day a guard takes your word for a trespass']]};
 const PERK_LIVE=new Set(['alchemy:25','alchemy:50','alchemy:75','alchemy:100', /* S1499 — Alchemy's four (survival B, session 7's second part) */
+  'cooking:25','cooking:75', /* S1500 — Two portions and Full belly; Shared pot waits on someone else at the fire */
   'smithing:25','smithing:50','smithing:75','smithing:100','mining:25','mining:50','mining:100', /* S1495 — the forge's and the vein's (survival B, session 7's first part) */
   'locks:25','locks:50','locks:75','speech:25','speech:50',
   'stealth:25','stealth:50','stealth:75','stealth:100','athletics:25','athletics:50','athletics:75','athletics:100', /* S976 — Stealth's three and Athletics' four */

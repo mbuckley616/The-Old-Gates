@@ -650,6 +650,8 @@ function fedNow(){const F=worldState.fed;if(!F||!(F.until>gameMinNow()))return n
 function fedKind(){const F=fedNow();return F?F.kind:null;}
 function fedStamMult(){return fedKind()==='hearty'?1.15:1;}
 function fedManaMult(){return fedKind()==='clear'?1.1:1;}
+// S1500 — Full belly (Cooking 75): fed lasts through sleep; restAtBed (60-shop.js) moves its end on by the hours slept
+function fedSleep(mins){const F=fedNow();if(F&&perk('cooking',75))F.until+=mins;}
 function setFed(kind,s){const was=fedNow();worldState.fed={kind,until:gameMinNow()+Math.round(FED_MIN*s),s:+(+s).toFixed(3)};
   stamina=Math.min(stamina,effMaxStamina());return was;}
 function mealItem(food,s){const m=FOOD_MEAL[food];return {name:m.name,ico:m.ico,type:'potion',weight:.4,buyPrice:10,sellMult:.3,meal:{kind:m.kind,s},brewKey:'meal@'+s};}
@@ -671,8 +673,10 @@ function cookAt(id){
   if(!atFire())return {made:false,why:'You need a fire.'};
   const R=COOK_RECIPES.find(r=>r.id===id);if(!R)return {made:false,why:''};
   if(!R.has())return {made:false,why:`You need ${R.need.toLowerCase()}.`};
-  if(FOOD_MEAL[id]){bagTake(b=>b.food===id,1);const s=+skillMult('cooking').toFixed(3);const it=mealItem(id,s);bagAdd(it);skillUse('cooking',6);
-    return {made:true,item:BAG.find(b=>sameStack(b,it))||it};}
+  if(FOOD_MEAL[id]){bagTake(b=>b.food===id,1);const s=+skillMult('cooking').toFixed(3);const it=mealItem(id,s);
+    const n=perk('cooking',25)?2:1;if(n>1)it.qty=n; /* S1500 — Two portions (Cooking 25) */
+    bagAdd(it);skillUse('cooking',6);
+    return {made:true,item:BAG.find(b=>sameStack(b,it))||it,n};}
   if(id==='charcoal'){const plain=bagCount(b=>b.log==='log');bagTake(b=>b.log==='log',Math.min(2,plain));if(plain<2)bagTake(b=>!!b.log,2-plain);const it=survItem('charcoal');bagAdd(it);return {made:true,item:it};}
   if(id==='pitch'){bagTake(b=>b.log==='pine',1);const it=survItem('pitch',3);bagAdd(it);return {made:true,item:it};}
   return {made:false,why:''};}
@@ -726,7 +730,7 @@ function cookDraw(){const ov=document.getElementById('cookui');if(!ov)return;
   const F=fedNow();if(F)t+=`<div style="margin-top:8px;border-top:1px dotted #a89060;padding-top:4px;font-style:italic">You are ${FED_KIND[F.kind].label.toLowerCase()}, ${Math.ceil(F.until-gameMinNow())} min more.</div>`;
   ov.querySelector('#ck-right').innerHTML=t;ov.querySelector('#ck-said').textContent=cookSaid;}
 function cookGo(){const r=cookAt(cookSel);
-  if(r.made){cookSaid=`${r.item.name}.`;if(typeof uiTone==='function')uiTone(220,300,.1,.08,'sine');}else cookSaid=r.why||'';
+  if(r.made){cookSaid=`${r.n>1?'Two: ':''}${r.item.name}.`;if(typeof uiTone==='function')uiTone(220,300,.1,.08,'sine');}else cookSaid=r.why||'';
   if(!atFire()){closeCookPage();return;}cookDraw();}
 window.addEventListener('keydown',e=>{if(!cookOpen)return;const c=e.code;let hit=true;
   if(c==='Escape')closeCookPage();else if(c==='Enter'){if(!e.repeat)cookGo();}else hit=false;
