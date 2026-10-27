@@ -30,7 +30,8 @@ export const LIGHT_MODES = {
 const WARM = new THREE.Color(1, .72, .46), FIRE = new THREE.Color(1, .55, .24), LAMP = new THREE.Color(1, .72, .42), CANDLE = new THREE.Color(1, .7, .4), EMBER = new THREE.Color(1, .5, .2);
 
 // what lights a room, from its own record. kind: 'cottage' | 'longhouse' | 'home' (rooms.js's gatelandsCottage, markLonghouse,
-// aurenneHome); another room adds its line here.
+// aurenneHome) | 'guild' | 'inn' | 'alehall' | 'tavern' (gatelandsGuildHall, gatelandsInn, markAlehall, aurenneTavern; halls.js); another
+// room adds its line here. o.fixtures: more lamps [{ p, k, r, col }] (halls.js's torches, sconces and lamps).
 export function sourcesOf(C, kind, o = {}) {
   const fires = [], lamps = [], openings = [], fl = o.floor ?? 0;
   const face = (f, x, z) => f === 'front' ? [0, 0, 1] : f === 'back' ? [0, 0, -1] : f === 'east' || f === 'right' || x > 0 ? [1, 0, 0] : [-1, 0, 0];
@@ -49,7 +50,22 @@ export function sourcesOf(C, kind, o = {}) {
     for (const b of C.braziers) if ((b[1] > C.floors[1] - .2) === (fl >= 1)) fires.push({ p: [b[0] - .2, b[1] + .25, b[2]], k: 2.5, r: 4, ember: true });
     lamps.push({ p: [C.lamp[0], C.lamp[1] - .1, C.lamp[2]], k: 5, r: 8 }); if (fl === 0) lamps.push({ p: [C.lamp0[0], C.lamp0[1] + .15, C.lamp0[2]], k: 2.5, r: 6 });
     for (const w of C.windows) if (w.y > F - .2 && w.y < F + 2.6) openings.push({ c: [w.x, w.y + w.h / 2, w.z], n: face(w.face, w.x, w.z), w: w.w, h: w.h, wall: .45 });
+  } else if (kind === 'guild' || kind === 'inn') {
+    // the halls (concept, 27 Oct 2026; halls.js): the guild hall's hearth and its wheel of candles, the inn's hearth and the lantern over the bar
+    fires.push({ p: [C.fire[0] + .35, C.fire[1] + .2, C.fire[2]], k: kind === 'guild' ? 11 : 8, r: kind === 'guild' ? 12 : 9, open: true });
+    lamps.push({ p: [C.lamp[0], C.lamp[1] - .05, C.lamp[2]], k: kind === 'guild' ? 7 : 4, r: kind === 'guild' ? 10 : 7, col: kind === 'guild' ? [1, .7, .4] : null });
+    for (const w of C.windows) if (w.y < C.floors[1] - .3 && (w.face === 'front' || w.face === 'back') && (kind !== 'guild' || w.x < C.part.x0)) openings.push({ c: [w.x, w.y + w.h / 2, w.z], n: face(w.face, w.x, w.z), w: w.w, h: w.h, wall: kind === 'guild' ? .7 : .5 });
+  } else if (kind === 'alehall') {
+    fires.push({ p: [C.fire[0], C.fire[1] + .45, C.fire[2]], k: 40, r: 20, open: true }); fires.push({ p: [C.fire[0], C.fire[1] + .35, C.fire[2] + 1.4], k: 14, r: 12 });
+    for (const l of C.lamps) lamps.push({ p: [l[0], l[1] - .12, l[2]], k: 4, r: 7 });
+    openings.push({ c: [0, C.tieBeam + .72, C.d / 2], n: [0, 0, 1], w: .6, h: .45, wall: .2 });
+  } else if (kind === 'tavern') {
+    for (const b of C.braziers) fires.push({ p: [b[0] - .2, b[1] + .25, b[2]], k: 2.5, r: 4, ember: true });
+    for (const l of C.lamps) lamps.push({ p: [l[0], l[1] - .12, l[2]], k: 4, r: 7 });
+    for (const q of C.open.front) openings.push({ c: [q.x, C.floor + q.y + q.h / 2, C.inner.z1 + .3], n: [0, 0, 1], w: q.w, h: q.h, wall: .3 });
   }
+  // a hall's added fixtures (halls.js's torches, sconces and lamps), lit by the hour's share like the lamps
+  for (const f of o.fixtures || []) lamps.push(f);
   return { fires, lamps, openings, louver: kind === 'longhouse' && C.louver != null ? { x: 0, y: C.under(0) - .2, z: C.louver, floor: C.floor } : null };
 }
 
@@ -105,7 +121,7 @@ export function lightRoom(scene, C, kind, hour, mode, o = {}) {
   // the fires burn at every hour; the lamps and candles by the hour's share (lit at dusk, all by night)
   const flick = [];
   for (const f of S.fires) { const L = new THREE.PointLight(f.ember ? EMBER : FIRE, f.k, f.r, 1.4); L.position.set(...f.p); if (f.open) { L.castShadow = true; L.shadow.mapSize.set(1024, 1024); L.shadow.bias = -.002; } scene.add(L); lights.push(L); flick.push([L, f.k, f.p[0] * 3.1]); }
-  for (const f of S.lamps) { const k = f.always ? f.k : f.k * Hr.lamps; if (k <= 0) continue; const L = new THREE.PointLight(LAMP, k, f.r, 1.6); L.position.set(...f.p); scene.add(L); lights.push(L); flick.push([L, k, f.p[2] * 2.3]); }
+  for (const f of S.lamps) { const k = f.always ? f.k : f.k * Hr.lamps; if (k <= 0) continue; const L = new THREE.PointLight(f.col ? new THREE.Color(...f.col) : LAMP, k, f.r, 1.6); L.position.set(...f.p); scene.add(L); lights.push(L); flick.push([L, k, f.p[2] * 2.3]); }
   // the fill: what a room's walls throw back. A holds it at every hour; B has almost none; C a dim floor, warmer by night
   const fk = night ? M.fillNight : M.fill * (.45 + Hr.skyK * .8), fillSky = skyCol.clone().lerp(WARM, night ? M.warm : M.warm * .25);
   const fill = new THREE.HemisphereLight(fillSky, new THREE.Color(.36, .3, .24).lerp(WARM, M.warm * .4), fk); scene.add(fill); lights.push(fill);
