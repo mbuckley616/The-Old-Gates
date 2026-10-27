@@ -126,6 +126,9 @@
     const S={site,group,sol,houses,npcs:snpcs,reg,residents:[],lamps:[],_gates:[],chimneys:[],tundra:biome==='tundra'};_curSettle=S;
     const pad=site.pad;
     const cx=site.x,cz=site.z;
+    // S1473 (card F6, #744 C) — a farm alone in the country (loneFarms): the village's farm and nothing round it, its farmer named from its own stream
+    if(site.kind==='farm'){r=PKIT.stream('farmer:'+site.id);const nm=NAMES[reg]||NAMES.irish;buildFarm(site._farm,()=>pick(r,r()<.5?nm.m:nm.f));if(houses[0])site.name=houses[0].name;
+      S.reach=t_reach(sol,site);bakeSettlement(S);sc.add(group);houses.forEach(h=>ZONES.world.houses.push(h));SETTLE.set(site.id,S);return S;}
     if(POI_KINDS.includes(site.kind)){buildPoi(S,site,r);S.reach=t_reach(sol,site);bakeSettlement(S);sc.add(group);houses.forEach(h=>ZONES.world.houses.push(h));if(IMPOSTORS[site.id])IMPOSTORS[site.id].visible=false;SETTLE.set(site.id,S);return S;}
     function addMesh(geo,x,z,ry,solR){
       const m=new THREE.Mesh(geo,SETTLE_MAT);m.position.set(x,worldH(x,z)-.06,z);m.rotation.y=ry||0;m.castShadow=true;m.receiveShadow=true;group.add(m);
@@ -947,7 +950,9 @@
     // round its yard (#498 A), its house to the road; every building, wall, pier, the gate's leaf and each thing in the yard a solid; its
     // far copy a box and a roof prism for the house, the byre and the barn and a box for each wall (S.farmLod, by houseLod's rule); smoke
     // from the house's two gable stacks. Nothing in it opens yet: the farmhouse's room is the next session's.
-    if(site._farm&&typeof PKIT!=='undefined'&&PKIT.gl&&PKIT.gl.farmstead)try{const F=site._farm,FS=PKIT.gl.farmstead({kind:'yard',r:PKIT.stream(`${F.id}:windows`),paint:['red','green','blue','black'][Math.floor(PKIT.stream(F.id)()*4)]}),U=FS.userData;
+    // S1473 — the farmstead's build is buildFarm (below), which a lone farm in the country calls too (genSettlement's 'farm' kind)
+    if(site._farm)buildFarm(site._farm,newName);
+    function buildFarm(F,nameFn){if(typeof PKIT==='undefined'||!PKIT.gl||!PKIT.gl.farmstead)return;try{const FS=PKIT.gl.farmstead({kind:'yard',r:PKIT.stream(`${F.id}:windows`),paint:['red','green','blue','black'][Math.floor(PKIT.stream(F.id)()*4)]}),U=FS.userData;
       const y=worldH(F.cx,F.cz),c=Math.cos(F.ry),s_=Math.sin(F.ry),mx=new THREE.Matrix4().makeRotationY(F.ry).setPosition(F.x,y,F.z),lo=[],lime=new THREE.Color(.86,.84,.79),stone=new THREE.Color(.62,.60,.56),slate=new THREE.Color(.24,.26,.30);
       FS.position.set(F.x,y,F.z);FS.rotation.y=F.ry;FS.name='farmstead';FS.userData.noBake=true;FS.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});group.add(FS);
       for(const p of U.foot){const u=(p.x0+p.x1)/2,v=(p.z0+p.z1)/2;sol.push(Object.assign({cx:F.x+u*c+v*s_,cz:F.z-u*s_+v*c,rx:(p.x1-p.x0)/2,rz:(p.z1-p.z0)/2,c,s:s_,bt:'wall',farm:p.name},p.name==='Farmhouse'&&!S.dead?{bt:'home',hid:`g_${site.id}_${FARM_N}`}:{}));
@@ -962,14 +967,14 @@
       // road side), a farmer keeps it, and the room inside is the farmhouse's own (buildKitFarmhouse). Its id is the town's g_<site>_<n>, n
       // FARM_N, past every lot's (idOf: 1000 and up). Drawn from the town's stream after everything else, so no earlier draw moves. A
       // burned or abandoned village keeps nobody at its farm either.
-      if(!S.dead){const fh=U.foot.find(p=>p.name==='Farmhouse'),v=fh.z1+.15,doorX=F.x+v*s_,doorZ=F.z+v*c,tx=s_,tz=c,exX=doorX+tx*2.4,exZ=doorZ+tz*2.4,resident=newName();
+      if(!S.dead){const fh=U.foot.find(p=>p.name==='Farmhouse'),v=fh.z1+.15,doorX=F.x+v*s_,doorZ=F.z+v*c,tx=s_,tz=c,exX=doorX+tx*2.4,exZ=doorZ+tz*2.4,resident=nameFn();
         const rdef=makeDef(site,reg,r,'Villager',resident,{nameKey:'farm',x:doorX+tx*1.4+tz*1.0,z:doorZ+tz*1.4-tx*1.0,bCol:pick(r,[0x5a4030,0x3a5a3a,0x604828,0x504058,0x6a5a3a]),sCol:pick(r,[0xd4a878,0xc09070,0xb08060]),role:'farmer'});
         rdef.roleTag='farmer';rdef.role='Villager';
         const hh={id:`g_${site.id}_${FARM_N}`,doorX,doorZ,doorFace:cardinalFace(tx,tz),exitX:exX,exitZ:exZ,exitYaw:Math.atan2(-tx,-tz),name:`${rdef.name}'s Farm`,keeper:rdef.name,_twin:rdef._twin,type:'home',tagline:'',bCol:rdef.bCol,sCol:rdef.sCol,dlg:rdef,
           w:U.parts.house.w,d:U.parts.house.d,two:true,reg,style:st===STYLE.stone?'stone':st===STYLE.garrison?'garrison':reg,roleTag:'farmer',siteKind:site.kind,siteId:site.id,kit:{kind:'farm',paint:'green'},farm:F.id};
         if(ownedHouse(hh.id)){hh.name='Your Farm';hh.ownedByPlayer=true;}else rdef._extra.unshift(...houseTopics(hh));
         houses.push(hh);if(!hh.ownedByPlayer)S.residents.push({def:rdef,ry:F.ry+Math.PI,n:null,door:{x:exX,z:exZ},farm:true});}
-    }catch(e){console.warn('farm',e);}
+    }catch(e){console.warn('farm',e);}}
     S.reach=t_reach(sol,site);
     /* S1216 — a door that faces the next building across a lane of 2.5 m had its step-out point (2.4 out) in that building's
        footprint (14 of Dunmore's 58 on the new look): it is pulled back along the same line, a quarter metre short of the first
@@ -1069,7 +1074,7 @@
   let _settleT=0;
   function tickSettlements(dt,force){
     _settleT+=dt;if(!force&&_settleT<.5)return;_settleT=0;
-    for(const t of SITES){
+    for(const t of LONE_FARMS.length?SITES.concat(LONE_FARMS):SITES){ /* S1473 — and the lone farms */
       if(t.pad<=0)continue;
       const d=Math.hypot(px-t.x,pz-t.z);
       const IN_=POI_KINDS.includes(t.kind)?900:SETTLE_IN,OUT_=POI_KINDS.includes(t.kind)?1000:SETTLE_OUT;
@@ -1175,6 +1180,7 @@
   function siteAnywhere(id){
     if(SITE[id])return SITE[id];
     const m=/^c(-?\d+)_(-?\d+)_[spi]\d+$/.exec(id);if(m){return getCell(+m[1],+m[2]).sites.find(t=>t.id===id)||null;}
+    {const f=/^c(-?\d+)_(-?\d+)_f\d+$/.exec(id);if(f){const c=getCell(+f[1],+f[2]),F=loneFarms(c).find(x=>x.id===id);return F?loneFarmSite(F,c):null;}} // S1473 — a lone farm
     return getCell(HOME_I,HOME_J).sites.find(t=>t.id===id)||null;
   }
   function doorAnywhere(seed){

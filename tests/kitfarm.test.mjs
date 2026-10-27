@@ -6,6 +6,10 @@
 // one another. In the first village: the farm stands on its own pad, flat under the whole lot; its buildings, walls and things in the
 // yard are solids that match the kit's footprints, and the way in from the road through the gate to the yard is clear; its far copy
 // stands in for it from outside 80 m, its 20 draws near.
+// Session 1473 (#744 C's second half): loneFarms lays one farm (one Gatelands cell in three, two) beside a road between the cell's
+// places, from the cells alone: the same answer twice, only in the Gatelands, each LONE_GAP farther from every pad than a village's farm
+// and as far from every other farm, none on a gate's spot, the ground across its lot rising 5 m at most, among the fields (farmOpen). The one nearest the start
+// stands as a place of its own: its farmstead and pad as a village's, a home with a farmer, its door taking you into the farmhouse's room.
 import { boot, check } from './lib/game.mjs';
 // the prototype's counts (pieces.check.mjs, Session 1194: about 8.5k triangles in 20 draws a layout)
 const PROTO = { min: 8000, max: 9000, draws: 20 };
@@ -51,4 +55,31 @@ check(`the way in from the road through the gate into the yard is clear (${S.blo
 const L = await page.evaluate(tid => { const S = WORLD.settle.get(tid), F = S.farm, K = S.farmLod, out = {};
   for (const [k, d] of [['near', 20], ['far', 160]]) { CAM.position.set(F.cx + d, F.y + 2, F.cz); houseLod(); houseLod(); out[k] = { hi: K.hi.visible, lo: K.lo.visible }; } return out; }, tid);
 check(`its far copy (${S.farTris} triangles) stands in for it from 160 m, the farmstead (${S.calls} draws) at 20 m`, L.near.hi && !L.near.lo && !L.far.hi && L.far.lo && S.hasFar && S.calls <= PROTO.draws, L);
+const N = await page.evaluate(() => { const all = [], other = []; let cells = 0;
+  for (const c of CELLS.values()) { if (c.type === 'sea') continue; const gl = nationOf(c.i, c.j).people === 'gatelander'; if (gl && !c.home) cells++;
+    const L = loneFarms(c), was = c._lone; if (!gl && L.length) other.push(c.i + ',' + c.j); if (!gl) continue;
+    delete c._lone; for (const F of was) delete F._site; const L2 = loneFarms(c); c._lone = was; for (const F of L) all.push({ F, c, same: JSON.stringify(L) === JSON.stringify(L2) }); }
+  const vf = []; for (const c of CELLS.values()) if (c.type !== 'sea') for (const t of c.sites) if (t.kind === 'village') { const F = villageFarm(t, c); if (F) vf.push(F); }
+  let pad = 1e9, near = 1e9, gates = 0, rise = 0, open = 9;
+  for (const { F, c } of all) { for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) { const n = getCell(c.i + di, c.j + dj); if (!n) continue;
+      for (const s of n.sites) if (s.pad > 0) pad = Math.min(pad, Math.hypot(F.cx - s.x, F.cz - s.z) - (s.pad + Math.max(30, s.pad * .7) + FARM_R + 5));
+      for (const e of n.doors) { if (e.wet) continue; const p = fixedDoorSpot(e); if (p && Math.hypot(p.x - F.cx, p.z - F.cz) < FARM_R + 30) gates++; } }
+    for (const G of all.map(a => a.F).concat(vf)) if (G !== F) near = Math.min(near, Math.hypot(G.cx - F.cx, G.cz - F.cz));
+    open = Math.min(open, farmOpen(F.cx, F.cz, [-1, 0, 1].flatMap(dj => [-1, 0, 1].map(di => getCell(c.i + di, c.j + dj))).filter(Boolean)));
+    const cs = Math.cos(F.ry), sn = Math.sin(F.ry); let lo = 1e9, hi = -1e9; for (const [u, v] of [[FARM_LOT.x0, FARM_LOT.z0], [FARM_LOT.x1, FARM_LOT.z0], [FARM_LOT.x0, FARM_LOT.z1], [FARM_LOT.x1, FARM_LOT.z1]]) { const y = landH(F.x + u * cs + v * sn, F.z - u * sn + v * cs); lo = Math.min(lo, y); hi = Math.max(hi, y); } rise = Math.max(rise, hi - lo); }
+  let first = null, fd = 1e9; for (const { F } of all) { const d = Math.hypot(F.cx - px, F.cz - pz); if (d < fd) { fd = d; first = F.id; } }
+  return { n: all.length, cells, same: all.every(a => a.same), other, pad, near, gap: LONE_GAP, gates, rise, open, want: LONE_OPEN, first }; });
+check(`loneFarms lays ${N.n} farms alone in the country over the Gatelands' ${N.cells} cells, the same answer twice, none in another people's (${N.other.length})`, N.n >= 5 && N.n <= N.cells * 2 && N.same && !N.other.length, N);
+check(`each stands ${N.pad.toFixed(0)} m or more past a village farm's margin from every pad, ${N.near.toFixed(0)} m or more from another farm, none on a gate's spot (${N.gates}), its lot rising ${N.rise.toFixed(2)} m at most, in open country (fields less woods ${N.open.toFixed(2)} or more)`, N.open >= N.want && N.pad >= N.gap && N.near >= 2 * 23 + 20 + N.gap && !N.gates && N.rise <= 5.01, N);
+check(`${N.first}, the lone farm nearest the start, stands`, !!N.first && await g.settle(N.first));
+const LF = await page.evaluate(id => { const S = WORLD.settle.get(id), F = S.farm, h = S.houses[0]; if (!F || !h) return { none: true }; const c = Math.cos(F.ry), s_ = Math.sin(F.ry), L = FARM_LOT;
+  let dev = 0; for (let u = L.x0; u <= L.x1 + 1e-6; u += (L.x1 - L.x0) / 8) for (let v = L.z0; v <= L.z1 + 1e-6; v += (L.z1 - L.z0) / 8) dev = Math.max(dev, Math.abs(worldH(F.x + u * c + v * s_, F.z - u * s_ + v * c) - F.y));
+  const sol = S.sol.find(q => q.farm === 'Farmhouse');
+  return { name: S.site.name, id: h.id, house: h.name, kit: kitFarmhouse(h), listed: ZONES.world.houses.includes(h), resident: S.residents.some(r => r.def === h.dlg), keepsYard: S.residents.some(r => r.def === h.dlg && r.farm) && !!(F.yard && F.yardDoor), sol: S.sol.length, home: sol && sol.hid === h.id, dev, exitClear: !settleSolid(h.exitX, h.exitZ, .3), calls: S.group.children.find(o => o.name === 'farmstead').children.length }; }, N.first);
+check(`it is ${LF.name}: the farmstead (${LF.calls} draws) on its flat pad (${LF.dev != null ? LF.dev.toFixed(3) : '?'} m), ${LF.sol} solids, its farmhouse a home with its farmer, the step out clear`, !LF.none && LF.dev < .05 && LF.sol === K.foot.length && LF.home && LF.kit && LF.listed && LF.resident && LF.exitClear && LF.house === LF.name, LF);
+await page.evaluate(id => { forceTime(12); const h = ZONES.world.houses.find(x => x.id === id); px = h.exitX; pz = h.exitZ; goToInterior(h); }, LF.id);
+for (let k = 0; k < 40 && !(await page.evaluate(() => isInterior())); k++) await page.waitForTimeout(250);
+const IN = await page.evaluate(() => ({ inside: isInterior(), id: currentHouse && currentHouse.id, room: !!(currentHouse && currentHouse._farmhouse), w: currentHouse && currentHouse._roomW, d: currentHouse && currentHouse._roomD }));
+check(`its farmer keeps the yard by day, as the village farm's (S1471's rule: the resident marked a farmer's, the yard and its door on the farm)`, !!LF.keepsYard, LF);
+check(`its door takes you into the farmhouse's own room (${IN.w && IN.w.toFixed(1)} by ${IN.d && IN.d.toFixed(1)} m)`, IN.inside && IN.id === LF.id && IN.room, IN);
 await g.close();
