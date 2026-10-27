@@ -1384,20 +1384,23 @@
             f:['Isabeau','Margaux','Aliénor','Ysolde','Clémence','Blanche','Héloïse','Odile','Sabine','Adèle','Mireille','Colette']},
     anglo:{m:['Wulfstan','Eadric','Godwin','Leofric','Eadwulf','Osric','Cuthbert','Hereward','Beorn','Wigmund','Wilfrid','Dunstan'],
            f:['Æthelflæd','Eadgyth','Hilda','Wynflæd','Mildrith','Godgifu','Ealhswith','Leofgifu','Cynethryth','Eanflæd','Elfrida','Osgyth']},
+    aurennais:{m:['Iskander','Hanno','Cassian','Tarek','Nikasios','Faris','Severan','Menas','Zenon','Rashid','Aurelian','Hamilcar','Kosmas','Sabri','Theron','Nasir'], /* S1472 — the Aurennais Register, §1 */
+           f:['Livia','Neferet','Thalassa','Yasmin','Cassia','Amira','Elissa','Aurelia','Nadira','Eirene','Damaris','Tamit','Salma','Octavia','Leila','Berenike']},
   };
   const SHOP_NOUN={
-    weapon:{irish:'Forge',french:'Forge',anglo:'Smithy'},
-    armor:{irish:'Armoury',french:'Armurerie',anglo:'Armoury'},
-    potion:{irish:'Apothecary',french:'Herboristerie',anglo:'Physic'},
-    misc:{irish:'Goods',french:'Comptoir',anglo:'Stores'},
-    shipwright:{irish:'Boatyard',french:'Chantier',anglo:'Shipwright'},
-    church:{irish:'Oratory',french:'Chapelle',anglo:'Chapel'},
-    barber:{irish:'Barber',french:'Barbier',anglo:'Barber'}, // S512 — the barber and dyer (Michael's B on #144)
+    weapon:{irish:'Forge',french:'Forge',anglo:'Smithy',aurennais:'Forge'},
+    armor:{irish:'Armoury',french:'Armurerie',anglo:'Armoury',aurennais:'Armoury'},
+    potion:{irish:'Apothecary',french:'Herboristerie',anglo:'Physic',aurennais:'Apothecary'},
+    misc:{irish:'Goods',french:'Comptoir',anglo:'Stores',aurennais:'Emporium'},
+    shipwright:{irish:'Boatyard',french:'Chantier',anglo:'Shipwright',aurennais:'Dockyard'},
+    church:{irish:'Oratory',french:'Chapelle',anglo:'Chapel',aurennais:'Chapel'},
+    barber:{irish:'Barber',french:'Barbier',anglo:'Barber',aurennais:'Barber'}, // S512 — the barber and dyer (Michael's B on #144)
   };
   const INN_NAMES={
     irish:['The Grey Heron','The Salt Hound','The Wandering Ram','The Broken Oar','The Rowan Cup','The Bramble Hearth'],
     french:['Auberge du Cerf','Le Coq Doré','Auberge de la Grise','La Lanterne','Le Vieux Pressoir','Auberge du Pont'],
     anglo:['The Ash and Bone','The Hollow Lamp','The Crooked Gate','The Last Ember','The Black Ram','The Wayfarer'],
+    aurennais:['The Two Cypresses','The Copper Ewer','The Painted Tile','The Cistern','The Saffron Lamp','The Ninth Milestone'], /* S1472 — the Aurennais Register, §4 */
   };
   const SHOP_ROLE={weapon:'Smith',armor:'Armourer',potion:'Apothecary',misc:'Merchant',inn:'Innkeeper',church:'Priest',castle:'Steward',guild_f:'Guildmaster',guild_m:'Archmage',shipwright:'Shipwright',barber:'Barber'};
   const TAGLINES={

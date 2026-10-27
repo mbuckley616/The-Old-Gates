@@ -3,6 +3,8 @@
 // coaching inn greeted *Be welcome, Master* and then answered like a Mark tavern. The French long names were two endings
 // joined by *-le-* (*Valclair-le-Ancy*), the short ones could double a word (*Montmont*) and kept a small letter after
 // *Saint-*.
+// Session 1472: Aurenne took its own register (the Aurennais Register) and no generated French place is left in the world, so
+// the French forms are read from the Crown’s bank (`nameBanks('french')`), not from the map.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
@@ -34,7 +36,8 @@ const r = await page.evaluate((P) => {
   const real = inn.dlg.topics.find(x => /A bed for the night/.test(x.label)).follow[1].response;
   // names: every settlement in the world
   const all = []; for (let j = 0; j < 12; j++) for (let i = 0; i < 12; i++) WORLD.getCell(i, j).sites.forEach(t => { if (t.name && /village|town|city|port|outpost|garrison/.test(t.kind)) all.push({ n: t.name, reg: t.reg, drawn: t.drawnName }); });
-  return { out, real, inn: inn.name, people: inn.dlg.people, all };
+  const fb = nameBanks('french'); /* S1472 — the French forms read from the Crown's bank */
+  return { out, real, inn: inn.name, people: inn.dlg.people, all, frBank: fb[0].concat(fb[1]) };
 }, Object.keys(EXPECT));
 
 for (const [p, x] of Object.entries(r.out)) console.log(p, JSON.stringify(x));
@@ -67,11 +70,11 @@ check('an inn with no alehall keeps its rooms', !b.benchInn && /room/i.test(b.pl
 check('Dunmore’s innkeeper is a Gatelander and speaks as one', r.people === 'gatelander' && r.real === EXPECT.gatelander.not, [r.inn, r.people, r.real]);
 
 const names = r.all.map(x => x.n), french = r.all.filter(x => x.reg === 'french');
-const doubled = names.filter(n => /^(.+)\1$/i.test(n)), smallAfter = names.filter(n => /^Saint-[a-z]/.test(n)), oldLong = names.filter(n => /-le-(?!Vieux$)[A-Z]/.test(n));
-const longFr = french.filter(x => /-(sur-Mer|le-Vieux|la-Forêt|en-Val|les-Prés|sous-Bois)$/.test(x.n));
+const doubled = names.filter(n => /^(.+)\1$/i.test(n)), smallAfter = r.frBank.filter(n => /^Saint-[a-z]/.test(n)), oldLong = r.frBank.filter(n => /-le-(?!Vieux$)[A-Z]/.test(n));
+const longFr = r.frBank.filter(n => /-(sur-Mer|le-Vieux|la-Forêt|en-Val|les-Prés|sous-Bois)$/.test(n)).map(n => ({ n }));
 console.log(JSON.stringify({ places: names.length, french: french.length, saint: names.filter(n => /^Saint-/.test(n)).slice(0, 5), longFr: longFr.slice(0, 6).map(x => x.n), doubledDrawn: r.all.filter(x => x.drawn && /^(.+)\1$/i.test(x.drawn)).map(x => `${x.drawn} → ${x.n}`).slice(0, 6) }));
 check('no place name doubles a word (Montmont, Clairclair, Ardard)', doubled.length === 0, doubled);
-check('a name after *Saint-* takes a capital', smallAfter.length === 0 && names.some(n => /^Saint-[A-Z]/.test(n)), smallAfter);
+check('a name after *Saint-* takes a capital', smallAfter.length === 0 && r.frBank.some(n => /^Saint-[A-Z]/.test(n)), smallAfter);
 check('the French long names take a real qualifier, never *-le-* and an ending', oldLong.length === 0 && longFr.length > 0, { oldLong: oldLong.slice(0, 5), longFr: longFr.length });
 check('every place still has its own name', new Set(names).size === names.length, names.length);
 check('no page errors', g.errs.length === 0, g.errs);
