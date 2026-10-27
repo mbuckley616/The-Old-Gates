@@ -387,3 +387,15 @@ Written by the producer once a day, after 12:00 UTC. Newest last.
 **Blocked.** Nothing new. The weekly run's reds sit in backlog I for each builder.
 
 **Roadmap.** 268 of 327 stories done (265 yesterday). The new look is 6 of 17 done; F2b, F6, F8, F9, F11, F12 and F13 under way. No deep-work card is queued: F14 comes last.
+
+## 27 Oct 2026
+
+**Waiting on you.** One decision: how strong a made piece is against a found one (#781, survival B; recommended A, quality steps, never enchanted). No PR is held.
+
+**Landed on main since yesterday.** Look to 1485: a farm at each Gatelands village's edge and nine alone in the country, with the byre, the barn and a place on the map (#753, #759, #784); the Mark's longhouse inside Markish homes (#750); the village Church of the Weaver in 24 of Aurenne's 39 churched villages (#789). Bodies to 1484: shaved sides, braids on the back, the brows (#747, #751); the spear and crossbow in your hand, a spearman's thrust, the crossbow's span (#764, #779); named foes and the creature kit no longer stall the frame (#771, #775, #787). Systems to 1486: the spear's and crossbow's rules, a foe's spear at 2.4 m (#754, #761); the farmer's day (#774); survival B's herbs and brewing, then fires and meals (#786, #790). QA's pictures and budgets (#760, #773, #785). The Aurennais Register built (#778); the survival build sheet, light indoors, quest drafts, the critic at s959. Answered: #735, #744, #745, #755, #762, #765. Build s963.
+
+**Under way.** Bodies #791 (Session 1487, draft).
+
+**Blocked.** Nothing new. The weekly run's reds sit in backlog I; corpsebody's Cave Bear joined them.
+
+**Roadmap.** 274 of 335 stories done (268 yesterday). The new look is 6 of 17 done. No deep-work card is queued: F14 comes last.
