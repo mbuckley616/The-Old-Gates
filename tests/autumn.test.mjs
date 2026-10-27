@@ -38,9 +38,18 @@ const auW = K.filter(k => r.world[k]), auN = auW.reduce((a, k) => a + r.world[k]
 check('in a real autumn chunk at least four of the kinds stand, and every one of their trees is still warm under the chunk\'s tint', auW.length >= 4 && auN > 20 && auWarm === auN, { world: r.world });
 check('the autumn wood keeps its mixed tree for a share and some conifers', r.mix.some(x => x[0] === 'conifer') && r.mix.reduce((a, x) => a + x[1], 0) < .8, r.mix);
 // in game: stand in that autumn wood at noon and look along the ground
+// S1470: one frame of this wood costs minutes on software GL (187 s on a 4-core box at s948; S1381 measured 6.7 s), and the live loop
+// queued several before Playwright's screenshot could get one from the compositor, so the shot ran past 120 s alone, every time, with
+// the loop's drawing stubbed only after it (the queue was already there). The loop now draws nothing from the walk on, and the picture
+// is the one frame it needs, drawn and read back from the canvas in one call (the world's frame, without the HUD)
+await page.evaluate(() => { window._ogDraw = REN.render; REN.render = () => {}; });
 await page.evaluate(([x, z]) => { forceTime(13); px = x; pz = z; py = WORLD.worldH(x, z) + 1.7; yaw = 0.6; pitch = .05; }, r.at);
 await g.spin(null, 240); await page.evaluate(([x, z]) => { px = x; pz = z; py = WORLD.worldH(x, z) + 1.7; }, r.at); await g.spin(null, 30); await g.frames(3);
-await page.screenshot({ path: 'docs/prototypes/autumn-ingame.png', timeout: 120000 });
+const shot = await page.evaluate(() => { REN.render = window._ogDraw; const t = performance.now(); CAM.updateMatrixWorld(true); REN.render(scene, CAM);
+  const url = REN.domElement.toDataURL('image/png'); REN.render = () => {}; return { url, ms: Math.round(performance.now() - t), calls: REN.info.render.calls, tris: REN.info.render.triangles }; });
+fs.writeFileSync('docs/prototypes/autumn-ingame.png', Buffer.from(shot.url.split(',')[1], 'base64'));
+console.log(`  (picture: docs/prototypes/autumn-ingame.png, one frame in ${(shot.ms / 1000).toFixed(1)} s, ${shot.calls} calls, ${shot.tris} triangles with the bloom's passes)`);
+await page.evaluate(() => { REN.render = window._ogDraw; });
 await inspShots(g, [['plants-trees-rocks/trees-and-scrub/autumn', 'autumn-after.png']]);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
