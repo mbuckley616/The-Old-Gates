@@ -29,6 +29,9 @@ const made = await page.evaluate((KINDS) => { forceTime(12);
   const share = (geo, c) => { const a = geo.attributes.color.array; let n = 0; for (let i = 0; i < a.length; i += 3) if (Math.abs(a[i] - c.r) < .02 && Math.abs(a[i + 1] - c.g) < .02 && Math.abs(a[i + 2] - c.b) < .02) n++; return +(n / (a.length / 3)).toFixed(3); };
   // S1468: the driver's two bakes wait in HB_TINTQ, a frame's 4 ms at a time (tickPeople's hbTintDrain); taken here as the frames would
   window._tintQ = { queued: HB_TINTQ.length, frames: 0 }; while (HB_TINTQ.length && _tintQ.frames < 60) { hbTintDrain(4); _tintQ.frames++; }
+  // S1487: a foe is built with its far copy only; the near one is baked when the driver is seen near (personHi), in the genome's colours
+  window._lazy = { owed: _F.filter(f => f.rig).every(f => !f.rig.geoHi && f.rig.geoLo && f.rig.mesh.geometry === f.rig.geoLo) };
+  _F.forEach(f => f.rig && HB_RIGS.has(f.rig) && personHi(f.rig));
   window._tint = _F.filter(f => f.rig && HB_RIGS.has(f.rig)).map(({ n, e, rig }) => { const G = rig.hbG, t = G && G.skin ? new THREE.Color(G.skin[0], G.skin[1], G.skin[2]) : null, old = new THREE.Color(rig.g.skin);
     return { n, key: G ? [...HB_GENOMES].find(([, x]) => x === G)?.[0] : null, want: 'foe:' + e.id, built: !!rig.hb, hi: t && share(rig.geoHi, t), lo: t && rig.geoLo && share(rig.geoLo, t), oldHi: share(rig.geoHi, old), before: (() => { const b = personBake(rig.g, 1), v = share(b.geo, old); b.geo.dispose(); return v; })(), same: !!t && t.equals(old) }; });
   CAM.position.set(px, worldH(px, pz) + 1.65, pz); CAM.updateMatrixWorld(true);
@@ -39,7 +42,9 @@ console.log('  built:', JSON.stringify(made));
 const tint = await page.evaluate(() => _tint);
 console.log('  tint:', JSON.stringify(tint));
 const tintQ = await page.evaluate(() => _tintQ); console.log('  tint queue:', JSON.stringify(tintQ));
-check('the drivers\' colours wait for the frames after the naming, and are all taken within a few', tintQ.queued >= 16 && tintQ.frames <= 24, tintQ);
+check('the drivers\' colours wait for the frames after the naming, and are all taken within a few', tintQ.queued >= 8 && tintQ.frames <= 24, tintQ);
+const lazy = await page.evaluate(() => _lazy);
+check('built, a foe carries its far copy alone; the near one waits until it is seen near (S1487)', lazy.owed, lazy);
 check('named, each human foe has its genome before its body is built, keyed by its foe id', tint.length === 9 && tint.every(t => t.key === t.want && !t.built), tint.filter(t => t.key !== t.want || t.built));
 check('and its driver, near and far, is in the genome\'s skin, not the old genome\'s', tint.every(t => t.before > .004 && t.hi >= .9 * t.before && t.lo > .004 && (t.same || t.oldHi < .5 * t.before)), tint.map(t => [t.n, t.before, t.hi, t.lo, t.oldHi]));
 

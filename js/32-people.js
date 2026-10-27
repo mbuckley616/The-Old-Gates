@@ -152,13 +152,21 @@ function personAO(pos,nor,col,PR,O){O=O||PAO;if(!O.on)return;const S=[];
   PR.forEach(([s,c],pi)=>{const mn=[1e9,1e9,1e9],mx=[-1e9,-1e9,-1e9];for(let i=s;i<s+c;i++)for(let k=0;k<3;k++){const v=pos[i*3+k];if(v<mn[k])mn[k]=v;if(v>mx[k])mx[k]=v;}
     const e=[0,1,2].map(k=>(mx[k]-mn[k])/2),ax=e.indexOf(Math.max(e[0],e[1],e[2])),o=[0,1,2].filter(k=>k!==ax),r=Math.max(.004,(e[o[0]]+e[o[1]])/2),n=Math.min(6,Math.max(1,Math.round(e[ax]/r)));
     if(O.minR&&r<O.minR)return;for(let j=0;j<n;j++){const c3=[0,1,2].map(k=>(mn[k]+mx[k])/2);c3[ax]=mn[ax]+e[ax]*2*(j+.5)/n;S.push(c3[0],c3[1],c3[2],Math.min(r,e[ax]),pi);}});
+  // S1487 — the same sums, faster (a foe's two bakes spent 56% of buildFoe here): the spheres in typed columns with r² made once; a
+  // part's own spheres, which lie together in S, skipped as one range instead of asked one by one; the facing tested on the dot
+  // before the square root (cs≤0 exactly when the dot is). Every term is added in the same order, so every colour is the same to the bit.
+  const nS=S.length/5,SX=new Float64Array(nS),SY=new Float64Array(nS),SZ=new Float64Array(nS),SR=new Float64Array(nS),SP=new Int32Array(nS);
+  for(let j=0;j<nS;j++){SX[j]=S[j*5];SY[j]=S[j*5+1];SZ[j]=S[j*5+2];SR[j]=S[j*5+3]*S[j*5+3];SP[j]=S[j*5+4];}
+  const occAt=(Q,j0,j1,x,y,z,nx,ny,nz,occ)=>{for(let j=j0;j<j1;j++){const q=Q?Q[j]:j,dx=SX[q]-x,dy=SY[q]-y,dz=SZ[q]-z,dt=dx*nx+dy*ny+dz*nz;if(dt<=0)continue;
+    const L2=dx*dx+dy*dy+dz*dz,L=Math.sqrt(L2)||1e-6;occ+=dt/L*Math.min(1,SR[q]/L2);}return occ;};
   // O.cut (the houses, S276): a part only asks the spheres within cut radii of its own box; past that a sphere darkens by
   // under 1/cut², and a house has thousands of them. O.minR: only parts at least that thick (twice it) shade others.
-  const all=[];for(let q=0;q<S.length;q+=5)all.push(q);
-  PR.forEach(([s,c],pi)=>{let Q=all;if(O.cut){const mn=[1e9,1e9,1e9],mx=[-1e9,-1e9,-1e9];for(let i=s;i<s+c;i++)for(let k=0;k<3;k++){const v=pos[i*3+k];if(v<mn[k])mn[k]=v;if(v>mx[k])mx[k]=v;}
-      Q=[];for(let q=0;q<S.length;q+=5){if(S[q+4]===pi)continue;let d2=0;for(let k=0;k<3;k++){const v=S[q+k],e=v<mn[k]?mn[k]-v:v>mx[k]?v-mx[k]:0;d2+=e*e;}const R=O.cut*S[q+3];if(d2<R*R)Q.push(q);}}
-    for(let i=s;i<s+c;i++){const x=pos[i*3],y=pos[i*3+1],z=pos[i*3+2],nx=nor[i*3],ny=nor[i*3+1],nz=nor[i*3+2];let occ=0;
-    for(let qi=0;qi<Q.length;qi++){const q=Q[qi];if(S[q+4]===pi)continue;const dx=S[q]-x,dy=S[q+1]-y,dz=S[q+2]-z,L2=dx*dx+dy*dy+dz*dz,L=Math.sqrt(L2)||1e-6;const cs=(dx*nx+dy*ny+dz*nz)/L;if(cs<=0)continue;occ+=cs*Math.min(1,S[q+3]*S[q+3]/L2);}
+  let own=0;
+  PR.forEach(([s,c],pi)=>{let Q=null,nQ=nS,a0=own;while(a0<nS&&SP[a0]<pi)a0++;let a1=a0;while(a1<nS&&SP[a1]===pi)a1++;own=a1;
+    if(O.cut){const mn=[1e9,1e9,1e9],mx=[-1e9,-1e9,-1e9];for(let i=s;i<s+c;i++)for(let k=0;k<3;k++){const v=pos[i*3+k];if(v<mn[k])mn[k]=v;if(v>mx[k])mx[k]=v;}
+      Q=new Int32Array(nS);nQ=0;for(let q=0;q<S.length;q+=5){if(S[q+4]===pi)continue;let d2=0;for(let k=0;k<3;k++){const v=S[q+k],e=v<mn[k]?mn[k]-v:v>mx[k]?v-mx[k]:0;d2+=e*e;}const R=O.cut*S[q+3];if(d2<R*R)Q[nQ++]=q/5;}}
+    for(let i=s;i<s+c;i++){const x=pos[i*3],y=pos[i*3+1],z=pos[i*3+2],nx=nor[i*3],ny=nor[i*3+1],nz=nor[i*3+2];
+      const occ=Q?occAt(Q,0,nQ,x,y,z,nx,ny,nz,0):occAt(null,a1,nS,x,y,z,nx,ny,nz,occAt(null,0,a0,x,y,z,nx,ny,nz,0));
     const a=1-Math.min(O.max,occ*O.k);col[i*3]*=a;col[i*3+1]*=a;col[i*3+2]*=a;}});}
 // S384 — the worn armour kit (Michael's B on decision #76; the concept artist's prototype, docs/prototypes/armour on
 // auto/concept). The armour each material makes, dressed on the people's bones and baked with the body, so it bends and
@@ -735,11 +743,16 @@ function personBakeQ(g,q){
   geo.computeBoundingSphere();geo.boundingSphere.radius*=1.35;
   return {geo,bones,B,hips,tris:idx.length/3,eyes};
 }
+// S1487 — opts.lazyHi (a foe, buildFoe): the far copy is baked first and carries the skeleton (every quality makes the same bones), and
+// the near copy waits until the driver is seen within PEOPLE_LOD.far (personHiAsk, then personHi, one a frame). On the new look a human
+// foe's builder body is on before then and the driver shows only past 42 m, so the near copy is seldom baked at all: a chunk's foes
+// were 30–68 ms of two bakes each as you arrived.
 function buildPerson(g,opts){
-  const {geo,bones,B,hips,tris,eyes}=personBake(g,1);
+  const lazy=!!(opts&&opts.lazyHi),lo0=lazy?personBake(g,PEOPLE_LOD.q):null;
+  const {geo,bones,B,hips,tris,eyes}=lazy?lo0:personBake(g,1);
   B.thL.rotation.order=B.thR.rotation.order='YXZ'; // a thigh's turn is about the pelvis's upright, before it swings (pwRun)
   // the distant copy, on the same skeleton: tickPeople swaps it in past PEOPLE_LOD.far (opts.noLod for the player)
-  const lo=opts&&opts.noLod?null:personBake(g,PEOPLE_LOD.q);
+  const lo=lazy?lo0:opts&&opts.noLod?null:personBake(g,PEOPLE_LOD.q);
   const mesh=new THREE.SkinnedMesh(geo,PEOPLE_MAT);mesh.add(hips);mesh.updateMatrixWorld(true);mesh.bind(new THREE.Skeleton(bones));
   mesh.castShadow=true;mesh.receiveShadow=false;
   // Bone matrices stay local to the mesh. three.js feeds the shader world-space bone matrices and cancels the
@@ -753,10 +766,20 @@ function buildPerson(g,opts){
   const root=new THREE.Group();root.add(mesh);
   root.scale.setScalar(g.height*PW.BODY*personScale(g)); /* S880 (F2a) — at the people's stature in metres (07-scale.js) */if(g.bodyScale)root.scale.multiply(new THREE.Vector3(g.bodyScale[0],g.bodyScale[1],g.bodyScale[2]));
   const rig={root,mesh,B,g,eyes,w:{idle:1,walk:0,run:0,wave:0},phase:g.phase%1,v:0,run:false,lx:null,lz:null,lastNear:99,wavedAt:-1e9,holds:!!g.gear,tris,
-    geoHi:geo,geoLo:lo?lo.geo:null,trisLo:lo?lo.tris:tris,lod:0};
+    geoHi:lazy?null:geo,geoLo:lo?lo.geo:null,trisLo:lo?lo.tris:tris,lod:lazy?1:0};
   root.userData.rig=rig;PEOPLE_RIGS.add(rig);
   return rig;
 }
+// S1487 — the near copy owed by a lazy rig, asked for when the driver is seen near and baked a few a frame by tickPeople (personHiDrain);
+// a named foe's is baked straight in its genome's colours, as hbFoeTint would have tinted it (the shape does not read the colours)
+const PEOPLE_HIQ=[];
+function personHiAsk(rig){if(rig.hiAsked||rig.geoHi||!rig.geoLo)return;rig.hiAsked=true;PEOPLE_HIQ.push(rig);}
+function personHi(rig){if(rig.geoHi||!rig.geoLo)return rig.geoHi;let g=rig.g;if(rig.hbG&&HB_RIGS.has(rig)){g=Object.assign({},rig.g);hbTint(g,rig.hbG);}
+  const b=personBake(g,1);rig.geoHi=b.geo;rig.tris=b.tris;if(!rig.lod)rig.mesh.geometry=b.geo;PEOPLE_LOD.hiBaked=(PEOPLE_LOD.hiBaked||0)+1;return b.geo;}
+// one bake a frame at most (10–40 ms, as each was at the spawn); a rig gone, dead, hidden or far again by now is passed over, to be asked again
+function personHiDrain(){while(PEOPLE_HIQ.length){const rig=PEOPLE_HIQ.shift();rig.hiAsked=false;
+  if(rig.geoHi||!PEOPLE_RIGS.has(rig)||rig.lod||!rig.mesh.visible||(rig.e&&rig.e.dead))continue;
+  try{personHi(rig);}catch(e){console.warn('the near copy failed for',rig.g&&rig.g.name,e);rig.hiAsked=true;}return;}}
 // ── Foes on the townsfolk's body (backlog H.4, Session 171): bandits and the other human enemies ──
 // A human enemy is a person: a genome seeded from its kind and where it was met (so each bandit in a camp is someone),
 // dressed for what it is, on its own copy of the people's material (a wind-up's red flash, a corpse's darkening, touch it
@@ -948,7 +971,7 @@ function buildFoe(type,x,z,genome,eyeCol){
       if(w==='spear')g.gear='spear';else{g.wpn=w;g.gear=w==='bow'?null:'kit';}
       if(dr.shield&&r()<(dr.shieldP==null?1:dr.shieldP))g.shieldKit=dr.shield;}
     if(g.skel&&g.gear==='stick'){g.gear='kit';g.wpn='sword';}}
-  const rig=buildPerson(g);rig.foe=true;rig.mesh.material=PEOPLE_MAT.clone();
+  const rig=buildPerson(g,{lazyHi:true});rig.foe=true;rig.mesh.material=PEOPLE_MAT.clone();
   // S226 — the kit's weapon in the fist (the bow in the left hand), a shield on the left forearm; the dead's are rusted
   // S520 — the kit is built with its edge (and an axe's bit) along x, which held in the fist put the flat towards the foe's target
   // and the edge to the side (Michael, the inspector: the bandit's axe turned the wrong way, the cultist's sword sideways): a
@@ -1317,14 +1340,15 @@ function tickPeople(dt,now){
     // a foe's body (S171) hangs in its enemy's group: that group is what stands in the scene, and the enemy's own
     // position is where it is (the lunge's lurch moves the group, not the feet)
     const top=rig.foe?root.parent:root;
-    if(!root.parent||(rig.foe&&!top.parent)){PEOPLE_RIGS.delete(rig);if(rig.hb){hbDrop(rig);HB_RIGS.delete(rig);}try{rig.geoHi.dispose();if(rig.geoLo)rig.geoLo.dispose();if(rig.foe)rig.mesh.material.dispose();}catch(e){}continue;}
+    if(!root.parent||(rig.foe&&!top.parent)){PEOPLE_RIGS.delete(rig);if(rig.hb){hbDrop(rig);HB_RIGS.delete(rig);}try{if(rig.geoHi)rig.geoHi.dispose();if(rig.geoLo)rig.geoLo.dispose();if(rig.foe)rig.mesh.material.dispose();}catch(e){}continue;}
     if(top.parent!==scene||!top.visible||!root.visible)continue;
     if(rig.foe&&rig.e&&rig.e.dead)continue; // a body on the ground lies still
     const at=rig.foe&&rig.e?rig.e:top.position;
     // level of detail by distance from the eye, with a gap between the two thresholds so no one flickers at the line
     if(rig.geoLo){const cd=Math.hypot(CAM.position.x-at.x,CAM.position.z-at.z);
       const lod=rig.lod?(cd>PEOPLE_LOD.near?1:0):(cd>PEOPLE_LOD.far?1:0);
-      if(lod!==rig.lod){rig.lod=lod;rig.mesh.geometry=lod?rig.geoLo:rig.geoHi;}}
+      if(lod!==rig.lod){rig.lod=lod;rig.mesh.geometry=lod||!rig.geoHi?rig.geoLo:rig.geoHi;}
+      if(!lod&&!rig.geoHi&&rig.mesh.visible)personHiAsk(rig);} /* S1487 — a lazy rig's near copy, owed until it is baked */
     let d=rig.lx==null?0:Math.hypot(at.x-rig.lx,at.z-rig.lz);rig.lx=at.x;rig.lz=at.z;
     // a teleport, not a stride: a jump, or more than 12 m/s, which no one walks or runs (S1223: the town's schedule moving someone on
     // through a hitch, or ticks with no tickPeople between, read as one step of a metre in a frame and latched the run for half a second)
@@ -1356,6 +1380,7 @@ function tickPeople(dt,now){
   }
   if(HB_TINTQ.length)hbTintDrain(4); // S1468 — the named foes' drivers take their genome's colours, a few a frame
   if(HB_RIGS.size)hbTick(now); // S1195 (F4) — the builder's bodies follow their drivers
+  if(PEOPLE_HIQ.length)personHiDrain(); // S1487 — a foe's near copy, once its driver is seen near without a builder's body over it
 }
 // ═══ THE BUILDER'S BODIES (v80 S1195, card F4) ═══════════════════════════════════════════════════════════════════════════
 // On the new look a townsperson wears the builder's body (docs/design/character-builder.md): MakeHuman's CC0 body morphed by
