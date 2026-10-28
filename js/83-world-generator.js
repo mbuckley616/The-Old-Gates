@@ -1848,6 +1848,11 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       const out=(x,y,z,w,h,f)=>{const m=new THREE.Mesh(new THREE.PlaneGeometry(w+.1,h+.1),M);m.position.set(rx(x),ry(y+h/2),rz(z)+f*.08);m.rotation.y=f>0?Math.PI:0;m.userData.daylight=true;sc_.add(m);};
       for(const w of T.windows)if(w.face==='front'||w.face==='back')out(w.x,w.y,w.z,w.w,w.h,w.face==='front'?1:-1);
       out(T.door.x,F0,T.door.z,T.door.w,T.door.h,1);}
+    // S1506 — and the day in through them (S1490's kitDaylight): a sky spot inside the open door and each window of the taproom's floor, at
+    // the barn's 0.4. From the arrival the taproom read 19 at noon and 27 at 23h (darker by day than by night, the lamps burning low);
+    // with them 40 at noon (0.7 → 51, the full share 64, the hands in the door's spot burning white past 0.4), 27 by night unchanged
+    kitDaylight(sc_,[...T.windows.filter(q=>(q.face==='front'||q.face==='back')&&ry(q.y)<F1-.3).map(q=>({x:rx(q.x),y:ry(q.y+q.h*.7),z:q.face==='front'?D:0,nx:0,nz:q.face==='front'?-1:1,w:q.w,h:q.h})),
+      {x:rx(T.door.x),y:T.door.h*.7,z:D,nx:0,nz:-1,w:T.door.w,h:T.door.h}],.4);
     // the light: the fire in the hearth, the lantern over the bar, one on the passage upstairs, and the room's warmth
     const KA=kitRoomAir(sc_,.45);
     const L=(x,y,z,c,i,d)=>{const l=new THREE.PointLight(c,i*(c===0xff6a20?KA.fire:KA.lamp),d);l.position.set(x,y,z);sc_.add(l);return l;};
@@ -2281,6 +2286,10 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     {const hr=typeof gameHour==='function'?gameHour():12,day=hr>=7&&hr<18?0xc4d0dc:hr>=5&&hr<20?0x8a7a7a:0x0e1420,M=new THREE.MeshBasicMaterial({color:day});
       const n=Math.max(1,Math.floor(T.d/4));for(let i=0;i<n;i++){const z=-T.d/2+(i+.5)*T.d/n;for(const sx of [-1,1]){const m=new THREE.Mesh(new THREE.PlaneGeometry(.7,.6),M);m.position.set(rx(sx*(T.w/2+.08)),ry(FY+1.55),rz(z));m.rotation.y=-sx*Math.PI/2;m.userData.daylight=true;sc_.add(m);}}
       const m=new THREE.Mesh(new THREE.PlaneGeometry(T.door.w+.1,T.door.h+.1),M);m.position.set(rx(T.door.x),T.door.h/2,rz(T.door.z)+.08);m.rotation.y=Math.PI;m.userData.daylight=true;sc_.add(m);}
+    // S1507 — and the day in through them, as the longhouse's (S1490's kitDaylight): a sky spot inside each window and the open door. From
+    // the arrival the hall read 14 at noon and at 23h alike
+    {const n=Math.max(1,Math.floor(T.d/4));kitDaylight(sc_,[...Array.from({length:n},(_,i)=>-T.d/2+(i+.5)*T.d/n).flatMap(z=>[-1,1].map(sx=>({x:rx(sx*X),y:1.55,z:rz(z),nx:-sx,nz:0,w:.6,h:.5}))),
+      {x:rx(T.door.x),y:T.door.h*.7,z:D,nx:0,nz:-1,w:T.door.w,h:T.door.h}]);}
     // the light: the long fire, the three iron lamps over the tables and the aisle, and the hall's warmth
     const KA=kitRoomAir(sc_,.4);
     const L=(x,y,z,c,i,d)=>{const l=new THREE.PointLight(c,i*(c===0xff6a20?KA.fire:KA.lamp),d);l.position.set(x,y,z);sc_.add(l);return l;};

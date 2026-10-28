@@ -58,6 +58,9 @@ check(`before you rent, a place says to ask the keeper (“${r.prompt}”)`, /^A
 check(`the keeper stands behind the counter at ${r.keeper && [r.keeper.x, r.keeper.z].join(', ')}, ${r.keeper && r.keeper.reach} m from you across it (in reach under 2.2)`, !!r.keeper && r.keeper.behind && r.keeper.clearFront && r.keeper.reach < 2.2, r.keeper);
 if (r.hatch) check(`the cellar's hatch is in the boards at ${r.hatch.x}, ${r.hatch.z}, clear to stand at`, r.hatch.clear, r.hatch);
 check(`the room is lit (${r.lights} lights) and draws ${r.draws} meshes (60 or fewer), ${r.tris.toLocaleString()} triangles; the keeper ${r.kDraws}`, r.lights >= 4 && r.draws <= 60 && r.kDraws >= 1, r);
+const sky = await page.evaluate(() => { const h = currentHouse, T = h._alehall, W = h._roomW, D = h._roomD, S = []; interiorScene.traverse(o => { if (o.isLight && o.userData.daylight) S.push({ x: +o.position.x.toFixed(2), z: +o.position.z.toFixed(2), i: +o.intensity.toFixed(2), in: o.position.x > 0 && o.position.x < W && o.position.z > 0 && o.position.z <= D }); });
+  return { hr: +gameHour().toFixed(1), want: 2 * Math.max(1, Math.floor(T.d / 4)) + 1, S }; });
+check(`at noon the day comes in through the hall's ${sky.want - 1} shuttered windows and the door (${sky.S.length} sky spots inside the hall; S1507)`, sky.hr >= 7 && sky.hr < 18 ? sky.S.length === sky.want && sky.S.every(q => q.in && q.i > 0) : sky.S.length === 0, sky);
 
 // renting: the keeper's yes takes a place, and that place is yours to rest on, the others not
 const rent = await page.evaluate(() => { const h = currentHouse; gold = 200; const t = h.dlg._extra.find(t => /bed for the night/i.test(t.label)); const yes = t.follow.find(f => /^Yes/.test(f.label)); const said = yes.fn();
