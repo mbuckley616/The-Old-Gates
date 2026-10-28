@@ -390,11 +390,7 @@ function useHerb(i){
   if(!eff.type)eff=eff.heal?{type:'heal',amount:eff.heal}:eff.mana?{type:'mana',amount:eff.mana}:eff.stam?{type:'stamina',amount:eff.stam}:eff; /* S1483 — the sea's herbs are written {stam:20}, and eaten did nothing */
   sndUsePotion();
   // Apply known effect
-  if(eff.type==='heal'){PHP=Math.min(effMaxHP(),PHP+eff.amount);showMsg(`${it.name} — +${eff.amount} HP`,'#44ee44');}
-  else if(eff.type==='stamina'){stamina=Math.min(effMaxStamina(),stamina+eff.amount);showMsg(`${it.name} — +${eff.amount} Stamina`,'#88ee44');}
-  else if(eff.type==='mana'){mana=Math.min(effMaxMana(),mana+eff.amount);showMsg(`${it.name} — +${eff.amount} Mana`,'#88aaff');}
-  else if(eff.type==='hpRegen'){_applyBuff({...eff,label:it.name+' Regen',col:'#44cc44'});}
-  else if(eff.type==='damage'){PHP=Math.max(1,PHP-eff.amount);showMsg(`${it.name} — -${eff.amount} HP (bitter)...`,'#cc4444');}
+  const said=herbKnownApply(eff,it.name);if(said)showMsg(`${it.name} — ${said[0]}`,said[1]);
   // Track consumption and check for hidden unlock
   const countKey=herbKeyOf(it)||it.name.toLowerCase().replace(/[^a-z]/g,''); /* S1483 — by HERB_DEF's key: a reload drops _typeKey, and Fearnóg's name made 'fearng' */
   HERB_CONSUME_COUNTS[countKey]=(HERB_CONSUME_COUNTS[countKey]||0)+1;
@@ -420,6 +416,17 @@ function useHerb(i){
   it.qty--;if(it.qty<=0)BAG.splice(i,1);
   renderHubInv();updateHUD();
 }
+// a herb's known effect, applied: eaten whole (useHerb) or at a third in a seasoned meal (eatMeal). Returns [what, colour],
+// or null for a buff, which says its own
+function herbKnownEff(it){let eff=it&&it.effect;if(!eff)return null;
+  if(!eff.type)eff=eff.heal?{type:'heal',amount:eff.heal}:eff.mana?{type:'mana',amount:eff.mana}:eff.stam?{type:'stamina',amount:eff.stam}:eff;return eff;}
+function herbKnownApply(eff,name){
+  if(eff.type==='heal'){PHP=Math.min(effMaxHP(),PHP+eff.amount);return [`+${eff.amount} HP`,'#44ee44'];}
+  if(eff.type==='stamina'){stamina=Math.min(effMaxStamina(),stamina+eff.amount);return [`+${eff.amount} Stamina`,'#88ee44'];}
+  if(eff.type==='mana'){mana=Math.min(effMaxMana(),mana+eff.amount);return [`+${eff.amount} Mana`,'#88aaff'];}
+  if(eff.type==='hpRegen'){_applyBuff({...eff,label:name+' Regen',col:'#44cc44'});return null;}
+  if(eff.type==='damage'){PHP=Math.max(1,PHP-eff.amount);return [`-${eff.amount} HP (bitter)...`,'#cc4444'];}
+  return null;}
 // ── S1483 — Survival B, session 1: herbs and brewing (`docs/design/survival-build.md`, Michael's B of 30 Sep 2026) ──
 // Every herb has four brewing effects from one pool of 22. The first is the one you learn by eating it; the second is its
 // hidden effect's kin in the pool where it has one (learnt at 15 eats, as before), otherwise dealt; the third and fourth
@@ -654,11 +661,21 @@ function fedManaMult(){return fedKind()==='clear'?1.1:1;}
 function fedSleep(mins){const F=fedNow();if(F&&perk('cooking',75))F.until+=mins;}
 function setFed(kind,s){const was=fedNow();worldState.fed={kind,until:gameMinNow()+Math.round(FED_MIN*s),s:+(+s).toFixed(3)};
   stamina=Math.min(stamina,effMaxStamina());return was;}
-function mealItem(food,s){const m=FOOD_MEAL[food];return {name:m.name,ico:m.ico,type:'potion',weight:.4,buyPrice:10,sellMult:.3,meal:{kind:m.kind,s},brewKey:'meal@'+s};}
+function mealItem(food,s,sea){const m=FOOD_MEAL[food];const it={name:m.name,ico:m.ico,type:'potion',weight:.4,buyPrice:10,sellMult:.3,meal:{kind:m.kind,s},brewKey:'meal@'+s};
+  if(sea){it.name=`${m.name} with ${sea.name}`;it.meal.season=sea;it.brewKey+='@'+sea.key;}return it;}
+// S1503 — Seasoned (Cooking 100): a herb in the pot adds its known effect at a third, to every portion. The herbs in the bag
+// that can season, one row each by HERB_DEF's key; what a herb gives a meal: its eaten effect, a third of the amount (at least 1)
+// or of a regeneration's rate over the same time
+function seasonHerbs(){const out=[],seen={};BAG.forEach(b=>{if(!b||b.type!=='herb')return;const k=herbKeyOf(b);if(!k||seen[k]||!herbKnownEff(b))return;seen[k]=1;out.push({key:k,name:b.name,n:bagCount(x=>x.type==='herb'&&herbKeyOf(x)===k)});});return out;}
+function seasonOf(herb){const e=herbKnownEff(herb);if(!e)return null;const eff={...e};
+  if(eff.type==='hpRegen')eff.rate=+(e.rate/3).toFixed(2);else if(eff.amount!=null)eff.amount=Math.max(1,Math.round(e.amount/3));else return null;
+  return {key:herbKeyOf(herb),name:herb.name,eff};}
+function seasonSay(sea){const e=sea.eff;return e.type==='heal'?`+${e.amount} HP`:e.type==='stamina'?`+${e.amount} Stamina`:e.type==='mana'?`+${e.amount} Mana`:e.type==='hpRegen'?`+${e.rate} HP a second for ${e.duration} s`:e.type==='damage'?`−${e.amount} HP, bitter`:'';}
 function eatMeal(i){const it=BAG[i];if(!it||!it.meal)return;
   if(typeof DRINK!=='undefined'&&DRINK){showMsg('You are still eating.','#cc8844');return;}
   const m=it.meal,nm=it.name;it.qty=(it.qty||1)-1;if(it.qty<=0)BAG.splice(i,1);
-  const go=()=>{setFed(m.kind,m.s||1);const K=FED_KIND[m.kind];showMsg(`${nm} — ${K.label}: ${K.say} for ${Math.round(FED_MIN*(m.s||1)/60*10)/10} hours.`,K.col);if(typeof updateHUD==='function')updateHUD();};
+  const go=()=>{setFed(m.kind,m.s||1);const K=FED_KIND[m.kind];const sd=m.season&&m.season.eff?herbKnownApply(m.season.eff,m.season.name):null; /* S1503 — Seasoned */
+    showMsg(`${nm} — ${K.label}: ${K.say} for ${Math.round(FED_MIN*(m.s||1)/60*10)/10} hours.${sd?' '+sd[0].replace(/\.+$/,'')+'.':''}`,K.col);if(typeof updateHUD==='function')updateHUD();};
   if(typeof startDrink==='function')startDrink(go,nm);else go();}
 // what the fire can make from the bag: each recipe, what it takes, whether you have it
 const COOK_RECIPES=[
@@ -669,11 +686,13 @@ const COOK_RECIPES=[
   {id:'pitch',name:'Pitch ×3',need:'1 Pine Log',has:()=>bagCount(b=>b.log==='pine')>=1},
 ];
 // cook one recipe at the fire. Returns {made, item, why}
-function cookAt(id){
+function cookAt(id,sk){
   if(!atFire())return {made:false,why:'You need a fire.'};
   const R=COOK_RECIPES.find(r=>r.id===id);if(!R)return {made:false,why:''};
   if(!R.has())return {made:false,why:`You need ${R.need.toLowerCase()}.`};
-  if(FOOD_MEAL[id]){bagTake(b=>b.food===id,1);const s=+skillMult('cooking').toFixed(3);const it=mealItem(id,s);
+  if(FOOD_MEAL[id]){let sea=null;
+    if(sk&&perk('cooking',100)){const h=BAG.find(b=>b&&b.type==='herb'&&herbKeyOf(b)===sk);sea=h?seasonOf(h):null;if(!sea)return {made:false,why:'You have none of that herb.'};}
+    bagTake(b=>b.food===id,1);if(sea)bagTake(b=>b.type==='herb'&&herbKeyOf(b)===sk,1);const s=+skillMult('cooking').toFixed(3);const it=mealItem(id,s,sea);
     const n=perk('cooking',25)?2:1;if(n>1)it.qty=n; /* S1500 — Two portions (Cooking 25) */
     bagAdd(it);skillUse('cooking',6);
     return {made:true,item:BAG.find(b=>sameStack(b,it))||it,n};}
@@ -697,7 +716,7 @@ function fedPill(){const F=fedNow();if(!F)return '';const K=FED_KIND[F.kind],m=M
   return `<span class="buff-pill" title="${K.label} — ${K.say}, ${m} min remaining"><span class="bp-ico">${K.ico}</span><span class="bp-time">${m}m</span></span>`;}
 
 // ── the fire's page (the brewing page's layout): what can be made on the left, the recipe on the right ──
-let cookOpen=false,cookSel=null,cookSaid='';
+let cookOpen=false,cookSel=null,cookSaid='',cookSeason=null;
 function openCookPage(){
   if(!atFire()){showMsg('You need a fire.','#cc8844');return;}
   if(typeof hubOpen!=='undefined'&&hubOpen&&typeof closeHub==='function')closeHub();
@@ -724,12 +743,16 @@ function cookDraw(){const ov=document.getElementById('cookui');if(!ov)return;
   ov.querySelectorAll('#ck-list [data-k]').forEach(d=>d.onclick=()=>{cookSel=d.dataset.k;cookSaid='';cookDraw();});
   const R=COOK_RECIPES.find(r=>r.id===cookSel);let t='';
   if(R){t=`<div style="font-variant:small-caps;color:#7a1f10">${R.name}</div><div style="padding-left:12px">Takes ${R.need}${R.has()?'':' <i style="font-size:12px;color:#8a2a20">(you have none)</i>'}</div>`;
-    const m=FOOD_MEAL[R.id];if(m){const K=FED_KIND[m.kind];t+=`<div style="padding-left:12px">${K.label}: ${K.say}, ${Math.round(FED_MIN*skillMult('cooking')/60*10)/10} hours</div>`;}
+    const m=FOOD_MEAL[R.id];if(m){const K=FED_KIND[m.kind];t+=`<div style="padding-left:12px">${K.label}: ${K.say}, ${Math.round(FED_MIN*skillMult('cooking')/60*10)/10} hours</div>`;
+      if(perk('cooking',100)){const H=seasonHerbs();if(cookSeason&&!H.some(h=>h.key===cookSeason))cookSeason=null; /* S1503 — Seasoned: the pot's herb, one a cooking */
+        const row=(k,lab)=>`<div data-s="${k}" style="cursor:pointer;padding-left:18px;${(cookSeason||'')===k?'color:#7a1f10':''}">${(cookSeason||'')===k?'◆':'◇'} ${lab}</div>`;
+        t+=`<div style="margin-top:6px;font-variant:small-caps;color:#7a1f10">Season with</div>`+row('','nothing')+H.map(h=>{const sea=seasonOf(BAG.find(b=>b&&b.type==='herb'&&herbKeyOf(b)===h.key));return row(h.key,`${h.name} (${h.n}) <i style="font-size:12px;color:#8a7050">${seasonSay(sea)}</i>`);}).join('');}}
     else if(R.id==='charcoal')t+='<div style="padding-left:12px;color:#8a7050;font-style:italic">for steel, at the forge</div>';
     else if(R.id==='pitch')t+='<div style="padding-left:12px;color:#8a7050;font-style:italic">for a ship’s patch</div>';}
   const F=fedNow();if(F)t+=`<div style="margin-top:8px;border-top:1px dotted #a89060;padding-top:4px;font-style:italic">You are ${FED_KIND[F.kind].label.toLowerCase()}, ${Math.ceil(F.until-gameMinNow())} min more.</div>`;
-  ov.querySelector('#ck-right').innerHTML=t;ov.querySelector('#ck-said').textContent=cookSaid;}
-function cookGo(){const r=cookAt(cookSel);
+  ov.querySelector('#ck-right').innerHTML=t;ov.querySelector('#ck-said').textContent=cookSaid;
+  ov.querySelectorAll('#ck-right [data-s]').forEach(d=>d.onclick=()=>{cookSeason=d.dataset.s||null;cookSaid='';cookDraw();});}
+function cookGo(){const r=cookAt(cookSel,FOOD_MEAL[cookSel]?cookSeason:null);
   if(r.made){cookSaid=`${r.n>1?'Two: ':''}${r.item.name}.`;if(typeof uiTone==='function')uiTone(220,300,.1,.08,'sine');}else cookSaid=r.why||'';
   if(!atFire()){closeCookPage();return;}cookDraw();}
 window.addEventListener('keydown',e=>{if(!cookOpen)return;const c=e.code;let hit=true;

@@ -781,7 +781,7 @@ function showBagTooltip(idx,ev){
       html+=`<div class="bt-row" style="color:#7a6848;font-size:9px;font-style:italic">A stronger elixir of the same kind cannot be overwritten.</div>`;
     }
     if(it.brew&&typeof brewLines==='function')html+=brewLines(it); /* S1483 — a tincture's effects */
-    if(it.meal&&typeof FED_KIND!=='undefined'&&FED_KIND[it.meal.kind]){const K=FED_KIND[it.meal.kind];html+=`<div class="bt-row" style="color:${K.col}">${K.label}: ${K.say}</div><div class="bt-row" style="color:#a08860;font-size:9px">${Math.round(FED_MIN*(it.meal.s||1)/60*10)/10} hours · one meal at a time</div>`;} /* S1486 — a meal's fed */
+    if(it.meal&&typeof FED_KIND!=='undefined'&&FED_KIND[it.meal.kind]){const K=FED_KIND[it.meal.kind];html+=`<div class="bt-row" style="color:${K.col}">${K.label}: ${K.say}</div><div class="bt-row" style="color:#a08860;font-size:9px">${Math.round(FED_MIN*(it.meal.s||1)/60*10)/10} hours · one meal at a time</div>`;if(it.meal.season&&typeof seasonSay==='function')html+=`<div class="bt-row" style="color:#88cc88">Seasoned: ${seasonSay(it.meal.season)}</div>`;} /* S1486 — a meal's fed; S1503 — its seasoning */
     html+='<div class="bt-hint">Click to use</div>';
   } else if(it.type==='book'){
     const def=BOOKS.find(b=>b.id===it.bookId);

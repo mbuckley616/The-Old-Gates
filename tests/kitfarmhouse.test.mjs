@@ -188,6 +188,8 @@ check(`at noon the day comes in through both doorways and the pitching door (${n
 await page.evaluate(() => { forceTime(12); WORLD.buildInteriorFor(currentHouse); scene = interiorScene; const h = currentHouse; px = intArriveX(h); pz = intArrivalZ(h); jumpY = 0; interact(); });
 await g.frames(30);
 check(`at the barn's arrival spot E does not take you out`, await page.evaluate(() => isInterior()));
+const OB = await page.evaluate(() => { try { updateHUD(); } catch (e) {} return (document.getElementById('ob') || {}).textContent || ''; });
+check(`the barn's line is the way out, not a home's "No one is in" (the critic, 27 Oct; S1508): "${OB}"`, /Walk south to exit/.test(OB) && !/No one is in/.test(OB), OB);
 await page.evaluate(() => { const h = currentHouse, T = h._barn, X = T.inner.x1, Z = T.inner.z1; try { closeDialog(); } catch (e) {} VM_SCENE.visible = false; px = X + .1; pz = Z + 2.0; jumpY = 0; yaw = 1.3; pitch = .12; });
 await g.frames(6); await page.screenshot({ path: path.join(here, '../docs/prototypes/kit-barn-bay.png') });
 console.log('  (picture: docs/prototypes/kit-barn-bay.png)');
