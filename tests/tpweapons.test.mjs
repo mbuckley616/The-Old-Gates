@@ -6,7 +6,7 @@ const g = await boot(); const { page } = g;
 await g.intoWorld();
 fs.mkdirSync('tests/out', { recursive: true });
 
-const shapes = await page.evaluate(() => { const S = ['dagger', 'sword', 'scimitar', 'longsword', 'claymore', 'axe', 'greataxe', 'mace', 'flail', 'warhammer', 'greatclub', 'staff', 'bow', 'spear', 'crossbow'];
+const shapes = await page.evaluate(() => { const S = ['dagger', 'sword', 'scimitar', 'longsword', 'claymore', 'axe', 'greataxe', 'mace', 'flail', 'warhammer', 'greatclub', 'staff', 'bow', 'spear', 'pick', 'hatchet', 'crossbow'];
   return S.map(sh => { const w = tpWeapon({ name: 'Test ' + sh, weaponShape: sh }); let boxes = 0, meshes = 0; w.traverse(o => { if (o.isMesh) { meshes++; if (o.geometry.type === 'BoxGeometry') boxes++; } });
     const bb = new THREE.Box3().setFromObject(w); return { sh, kit: w.userData.kit, boxes, meshes, h: +(bb.max.y - bb.min.y).toFixed(2), bow: !!w.userData.bow }; }); });
 check('every weapon shape the items name builds from the kit, with no box', shapes.every(s => s.kit && s.boxes === 0 && s.meshes >= 1), shapes);
@@ -44,6 +44,30 @@ const shot = await page.evaluate(() => { forceTime(12); const cv = REN.domElemen
   cam.position.set(bx + .2, y + .6, bz + 5.4); cam.lookAt(bx + .2, y + .5, bz); sc.updateMatrixWorld(true); REN.render(sc, cam);
   const o = document.createElement('canvas'); o.width = cv.width; o.height = cv.height; o.getContext('2d').drawImage(cv, 0, 0); objs.forEach(x => sc.remove(x)); return o.toDataURL(); });
 fs.writeFileSync('tests/out/tpweapons.png', Buffer.from(shot.split(',')[1], 'base64'));
+// S1520 — the hatchet in hand while you fell a tree: shown in both views in place of the sword, an overhead chop whose hit lands on
+// each strike, carried at its own size (world scale 1) in third person, and the sword back in hand once you stop. Driven by the
+// felling's and the work's own ticks at 1/60 with the view model's swing clock counted down as the loop does (a stepped loop() here
+// leaves the next real frame over a minute long on software GL)
+const wk = await page.evaluate(() => { const x0 = px, z0 = pz, dt = 1 / 60; try {
+  const st = { moving: false, sprinting: false, camY: 1.6 };
+  const step = () => { tickFelling(dt); tpUpdate(dt, { ...st, now: performance.now() }); if (swingT > 0) swingT = Math.max(0, swingT - dt); if (swingT === 0 && vmSword) vmSword.userData.swingMax = 0; };
+  thirdPerson = false; SHEATHED = false; _sheathedItem = null; CHOP = null; MINE = null; worldState.felled = {};
+  const sw = { name: 'Iron Sword', slot: 'weapon', weaponShape: 'sword', matCol: '#a8b0b8', matGuard: '#787880' }; EQ.weapon = sw; EQ.offhand = null; buildViewmodel(); step();
+  const all = []; for (const ch of chunks.values()) for (const tr of ch.trees || []) if (fellable(tr)) all.push({ ch, tr });
+  all.sort((a, b) => Math.hypot(a.tr.x - px, a.tr.z - pz) - Math.hypot(b.tr.x - px, b.tr.z - pz)); if (!all.length) return null;
+  const { ch, tr } = all[0]; px = tr.x + tr.r + .6; pz = tr.z; bagAdd({ ...HATCHET_ITEM }); SKILLS.woodcutting = { lv: 5, p: 0 }; chopTree(ch, tr);
+  const kit = () => vmSword && vmSword.userData.kit && vmSword.userData.kit.userData.kit;
+  const out = { fp: null, gaps: [] }; let hitAt = null, lastN = 0;
+  for (let n = 0; n < 60 * 3.2 && CHOP; n++) { step(); if (n === 10) out.fp = kit();
+    const u = vmSword.userData; if (swingT > 0 && u.swingMax && hitAt == null && 1 - swingT / u.swingMax >= ANIM_PARAMS.swing.impactPoint) hitAt = n;
+    if (swingT <= 0) hitAt = null; if (CHOP && CHOP.n !== lastN) { lastN = CHOP.n; out.gaps.push(hitAt == null ? null : n - hitAt); } }
+  thirdPerson = true; for (let n = 0; n < 4; n++) step(); const R = TP.rig; R.weapon.children[0].updateMatrixWorld(true);
+  out.tp = { kit: R.weapon.userData.kit, ws: +new THREE.Vector3().setFromMatrixColumn(R.weapon.children[0].matrixWorld, 1).length().toFixed(3) };
+  CHOP = null; step(); out.tpAfter = TP.rig.weapon && TP.rig.weapon.userData.kit; thirdPerson = false; step();
+  out.fpAfter = kit(); out.eq = EQ.weapon === sw; EQ.weapon = null; buildViewmodel(); swingT = 0; return out; } finally { px = x0; pz = z0; thirdPerson = false; } });
+console.log('  work:', JSON.stringify(wk));
+check(`felling: the hatchet in hand (first person ${wk && wk.fp}, third ${wk && wk.tp.kit} at world scale ${wk && wk.tp.ws}), each strike within 2 frames of the chop's hit (${wk && wk.gaps.join(', ')}), the sword back after`,
+  !!wk && wk.fp === 'hatchet' && wk.tp.kit === 'hatchet' && Math.abs(wk.tp.ws - 1) < .01 && wk.gaps.length >= 2 && wk.gaps.every(x => x != null && x >= 0 && x <= 2) && wk.fpAfter === 'sword' && wk.tpAfter === 'sword' && wk.eq, wk);
 // S1466 — your spear's blow in third person is a thrust: through the coil the shaft comes down level, and at the hit it lies along
 // your facing at chest height, its head further out than in the coil; driven by the game's loop at 1/60
 const tt = await page.evaluate(async () => { forceTime(11);

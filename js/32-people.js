@@ -795,9 +795,9 @@ const WPN_GEO=new Map();
 // S1509 — the kit's pieces are drawn to the old person (1.233 tall) and grow with the body that carries them (×1.2 to ×1.35), which
 // brings most of them to their true length: a sword 0.89 m, a longsword 1.17, an axe 0.76. Three were drawn in true metres and came out
 // too big: the knife 0.49 m, the spear 2.97, the crossbow 1.40. These are carried at their own size, whatever the stature (wpnTrue)
-const WPN_TRUE=new Set(['dagger','spear','crossbow']);
+const WPN_TRUE=new Set(['dagger','spear','crossbow','pick','hatchet']);
 function wpnTrue(kind,w,holder){if(WPN_TRUE.has(kind)&&holder&&holder.scale.x>0)w.scale.setScalar(1/holder.scale.x);return w;}
-const WPN_KINDS=['dagger','sword','cutlass','longsword','claymore','axe','greataxe','mace','flail','warhammer','greatclub','staff','bow','spear','crossbow','round','kite','tower'];
+const WPN_KINDS=['dagger','sword','cutlass','longsword','claymore','axe','greataxe','mace','flail','warhammer','greatclub','staff','bow','spear','crossbow','pick','hatchet','round','kite','tower'];
 // tint (S227, the player's weapons): {metal, guard, wood, glow} colours in place of steel, brass, the bow's wood and the crystal
 function wpnBuild(kind,rust,tint){tint=tint||{};
   const L=[],o=new THREE.Object3D();const RU=0x6a3e24;
@@ -823,6 +823,12 @@ function wpnBuild(kind,rust,tint){tint=tint||{};
     mattock:()=>{add(SK.cyl(.015,.019,.62,8),'matte',WOOD,[0,.18,0]);grip(.12,.02,-.1);add(SK.rbox(.05,.06,.045,.01,2),'metal',DSTEEL,[0,.47,0]);
       add(SK.cyl(.023,.023,.012,8),'metal',DSTEEL,[0,.505,0]);add(SK.cone(.017,.2,6),'metal',DSTEEL,[-.12,.455,0],[0,0,Math.PI/2+.18]);
       add(SK.rbox(.15,.011,.062,.004,1),'metal',DSTEEL,[.095,.455,0],[0,0,-.2]);add(SK.rbox(.014,.016,.068,.004,1),'metal',STEEL,[.168,.44,0],[0,0,-.2]);},
+    // S1520 — the miner's pick and the woodsman's hatchet (50-travel.js's tools), drawn in true metres (WPN_TRUE): the pick an ash haft
+    // 0.85 m, an iron head 0.5 m across, a point each way drooping toward the hand; the hatchet a haft 0.4 m, a bearded head 11 cm deep
+    pick:()=>{add(SK.cyl(.014,.018,.84,8),'matte',WOOD,[0,.32,0]);grip(.13,.019,-.1);add(SK.rbox(.05,.055,.04,.01,2),'metal',DSTEEL,[0,.7,0]);
+      for(const sd of [-1,1])add(SK.cone(.016,.23,6),'metal',DSTEEL,[sd*.135,.685,0],[0,0,-sd*(Math.PI/2+.16)]);},
+    hatchet:()=>{add(SK.cyl(.013,.016,.4,8),'matte',WOOD,[0,.12,0]);grip(.09,.017,-.07);const sh=new THREE.Shape();sh.moveTo(0,-.02);sh.lineTo(-.04,-.035);sh.quadraticCurveTo(-.1,-.06,-.095,.015);sh.quadraticCurveTo(-.1,.07,-.065,.08);sh.lineTo(0,.03);sh.lineTo(0,-.02);
+      add(new THREE.ExtrudeGeometry(sh,{depth:.005,bevelEnabled:true,bevelThickness:.004,bevelSize:.003,bevelSegments:2}),'metal',STEEL,[-.01,.27,-.0025]);add(SK.rbox(.032,.055,.03,.008,2),'metal',DSTEEL,[0,.285,0]);},
     staff:()=>{add(SK.bumpy(SK.cyl(.016,.022,1.0,8,10),.004,23,30),'matte',DWOOD,[0,.22,0]);for(let i=0;i<3;i++){const a=i/3*Math.PI*2;add(SK.cone(.008,.12,5),'matte',DWOOD,[Math.cos(a)*.022,.76,Math.sin(a)*.022],[Math.sin(a)*-.35,0,Math.cos(a)*.35]);}
       add(new THREE.OctahedronGeometry(.04,0),'glow',GLOW,[0,.8,0],null,[1,1.5,1]);add(SK.ball(.09,10,8),'halo',HALO,[0,.8,0]);},
     claymore:()=>{grip(.22,.016,-.14);add(SK.ball(.028,10,8),'metal',DSTEEL,[0,-.155,0]);add(SK.rbox(.27,.026,.036,.01,2),'metal',DSTEEL,[0,.065,0]);[-1,1].forEach(sd=>add(SK.ball(.016,6,5),'metal',DSTEEL,[sd*.135,.065,0]));add(blade(.76,.052,.06),'metal',STEEL,[0,.078,0]);},

@@ -565,12 +565,31 @@ function tpMantleArms(R,err){const M=R.mantle;if(!M||M.w<=0)return;
 }
 // the body for what is worn now, built (or its builder's body carried over) when the kit or the look has changed; first person's hands
 // are cut from it too (fpHBFist), so it is kept current in either view when the hands are built
-function tpEnsure(){const sig=tpSig();if(!TP.rig||sig!==TP.sig){const old=TP.rig;TP.rig=tpBuild(null,null,old);TP.sig=sig;TP.armSig=tpArmSig();if(old){TP.rig.root.rotation.copy(old.root.rotation);tpDispose(old);}}return TP.rig;}
+function tpEnsure(){const sig=workWield(tpSig);if(!TP.rig||sig!==TP.sig){const old=TP.rig;TP.rig=workWield(()=>tpBuild(null,null,old));TP.sig=sig;TP.armSig=tpArmSig();if(old){TP.rig.root.rotation.copy(old.root.rotation);tpDispose(old);}}return TP.rig;}
 // what the hands' cut depends on: the look and what is worn, not what is held (a weapon sheathed after five seconds at peace rebuilds the
 // view model with an empty hand; that must not build the body again)
 function tpArmSig(){const L=lookNow();let pp='gatelander';try{pp=WORLD.playerPeople();}catch(e){}
   return (L?JSON.stringify(L):'')+['head','chest','hands','legs','feet','back'].map(s=>EQ[s]?(EQ[s].name||'?')+(EQ[s].col!=null?'~'+EQ[s].col:''):'-').join('|')+'#'+pp+'#'+(playerName||'')+'#'+playerArchetype;}
+// S1520 — the pick and the hatchet in hand while you work a vein or a tree (50-travel.js's MINE and CHOP): shown in both views in place
+// of what you carry (buildViewmodel and tpBuild take WORK_TOOL's piece as the weapon for the call, as the sheath's view does), with an
+// overhead chop each strike, begun so that its hit (ANIM_PARAMS.swing.impactPoint) lands on the strike. A war axe at a tree is its own
+// tool and swings as it is. Nothing here decides an outcome: the strikes are tickMining's and tickFelling's, on their own clocks.
+const WORK_TOOL={pick:{name:'Pick',weaponShape:'pick',twoHand:true,matCol:0x7a7e86,matGuard:0x5a3a22},hatchet:{name:'Hatchet',weaponShape:'hatchet',matCol:0x9a9ea6,matGuard:0x5a3a22}};
+const WORK_SWING=.72;
+const WORK={tool:null,axe:null,swung:false,left:1e9,n:0};
+function workKind(){if(typeof MINE!=='undefined'&&MINE)return 'pick';if(typeof CHOP!=='undefined'&&CHOP)return chopTool()==='axe'?'axe':'hatchet';return null;}
+function workShown(){const k=WORK.tool;return k==='axe'?WORK.axe:k?WORK_TOOL[k]:null;}
+// fn run with the work's piece as the weapon in hand, and the real one put back after
+function workWield(fn){const t=workShown(),w=EQ.weapon;if(!t||t===w)return fn();EQ.weapon=t;try{return fn();}finally{EQ.weapon=w;}}
+function workTick(){const k=workKind();
+  if(k!==WORK.tool){WORK.tool=k;WORK.axe=k==='axe'?EQ.weapon:null;WORK.swung=false;WORK.left=1e9;
+    if(typeof sheathView==='function')sheathView();else if(typeof buildViewmodel==='function')buildViewmodel();}
+  if(!k)return;
+  const left=MINE?MINE.t:CHOP.tm;if(left>WORK.left+.05)WORK.swung=false;WORK.left=left;
+  if(WORK.swung||left>ANIM_PARAMS.swing.impactPoint*WORK_SWING||swingT>0||(typeof SWING!=='undefined'&&SWING)||typeof vmSword==='undefined'||!vmSword)return;
+  WORK.swung=true;WORK.n++;swingT=WORK_SWING;const u=vmSword.userData;u.swingMax=WORK_SWING;u.swingVariant=2;u.swingIsPower=false;}
 function tpUpdate(dt,st){
+  workTick();
   if(!thirdPerson){
     if(TP.rig&&TP.rig.root.visible)TP.rig.root.visible=false;
     if(TP.hidVM){TP.hidVM=false;VM_SCENE.visible=true;}
