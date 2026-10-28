@@ -1151,7 +1151,24 @@ function pwBlend(rig,mode,t,ph,dt,o){const w=rig.w;const k=1-Math.exp(-dt/.11);f
 function pwApply(rig,P){const B=rig.B;PW.JOINTS.forEach(j=>{const r=P[j];B[j].rotation.set(r[0],r[1],r[2]);});
   B.hips.position.y=P.hipsY;B.hips.position.x=P.sway;
   // the wrist keeps a held shaft upright whatever the arm is doing
-  B.gear.rotation.x=-(P.hips[0]+P.spine[0]+P.shR[0]+P.elR[0]+P.wrR[0]);B.gear.rotation.z=-(P.hips[2]+P.spine[2]+P.shR[2]+P.elR[2]+P.wrR[2]);}
+  B.gear.rotation.x=-(P.hips[0]+P.spine[0]+P.shR[0]+P.elR[0]+P.wrR[0]);B.gear.rotation.z=-(P.hips[2]+P.spine[2]+P.shR[2]+P.elR[2]+P.wrR[2]);
+  if(rig.foe&&rig.weapon)foeUnderRoof(rig);}
+// S1548 — the upright shaft under a dungeon's roof (QA's s1008: a lair's Ogre master, 3.45 m, held its greatclub's head 3.63–3.67 m
+// up in a 3.6 m cavern). Where the weapon standing straight up from the fist would reach the rock, it tips forward, the head out
+// in front of the foe, just far enough to clear it by 18 cm (a lair's master stands to 14 cm under it). The roof is the foe's own floor's (`D_CEIL`). The weapon's box is taken
+// once in its own frame; its reach above the fist is read each frame from last frame's matrices, the gear bone's and the weapon's,
+// in the bone's own units (the pivot does not move with the tilt, so nothing feeds back).
+const _fur={inv:new THREE.Matrix4(),m:new THREE.Matrix4(),v:new THREE.Vector3()};
+function foeUnderRoof(rig){if(activeZoneId!=='dungeon'||typeof D_CEIL==='undefined')return;const e=rig.e;if(!e)return;
+  const G=rig.B.gear,W=rig.weapon,m=G.matrixWorld.elements;
+  if(!rig._wBox){const b=new THREE.Box3();W.updateMatrixWorld(true);_fur.inv.copy(W.matrixWorld).invert();
+    W.traverse(o=>{if(!o.isMesh||!o.geometry)return;if(!o.geometry.boundingBox)o.geometry.computeBoundingBox();b.union(o.geometry.boundingBox.clone().applyMatrix4(_fur.m.multiplyMatrices(_fur.inv,o.matrixWorld)));});
+    rig._wBox=b.isEmpty()?null:b;if(!rig._wBox)return;}
+  const B=rig._wBox,M=_fur.m.multiplyMatrices(_fur.inv.copy(G.matrixWorld).invert(),W.matrixWorld);let r=0;
+  for(let k=0;k<8;k++)r=Math.max(r,_fur.v.set(k&1?B.max.x:B.min.x,k&2?B.max.y:B.min.y,k&4?B.max.z:B.min.z).applyMatrix4(M).y);
+  const L=r*Math.hypot(m[4],m[5],m[6]);if(L<=0)return;
+  const f=D_CEIL[e.floor||1],room=(e.baseY||0)+(f?f(e.x/DCELL,e.z/DCELL):FLOOR_HEIGHT)-.18-m[13];if(room>=L)return;
+  G.rotation.x+=Math.acos(Math.max(0,room)/L);}
 // The sun's shadow pass draws every townsperson from the distant copy, whatever the range: a person's shadow is
 // ~25 texels tall in the 2048 map, where the two copies cast the same shape. The renderer has already listed each
 // mesh's geometry for the eye before it draws the shadows, so swapping it for the shadow pass alone costs nothing.
