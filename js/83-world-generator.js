@@ -2294,6 +2294,12 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     const KA=kitRoomAir(sc_,.4);
     const L=(x,y,z,c,i,d)=>{const l=new THREE.PointLight(c,i*(c===0xff6a20?KA.fire:KA.lamp),d);l.position.set(x,y,z);sc_.add(l);return l;};
     L(rx(T.fire[0]),ry(T.fire[1]+.5),rz(T.fire[2]),0xff6a20,1.8,10);for(const P of T.lamps)L(rx(P[0]),ry(P[1]),rz(P[2]),0xffaa44,1.1,8);
+    // S1516 (#805, Michael's C: each island its own) — the Mark's torches (the concept's halls.js): a pitch torch in an iron bracket on each
+    // side wall halfway between the windows (one every 4.5 m, so three a side), its flame at 2.25 m over the wall bench's sleepers, soot
+    // above it. Each is a lamp by the hour as the iron lamps are (KA.lamp); the room's pool of 20 lights takes the nearest
+    if(PKIT.halls){const n=Math.max(1,Math.floor(T.d/4)),list=[];for(let i=1;i<n;i++)for(const sx of [-1,1])list.push({type:'torch',x:rx(sx*X),y:0,z:rz(-T.d/2+i*T.d/n),nx:-sx,nz:0});
+      const HF=PKIT.halls.fixtures(list);sc_.add(HF.group);sc_.userData.hallTick=HF.tick;house._hallFix=HF;
+      for(const f of HF.lights){const l=new THREE.PointLight(new THREE.Color(...f.col),f.k*KA.lamp,f.r);l.position.set(...f.p);l.userData.hallFix=f.type;sc_.add(l);}}
     // the keeper behind the counter, between it and the kegs, facing the hall
     const C=T.counter,npc={x:rx((C.x0+C.x1)/2),z:rz(C.z0-.35)};
     if(npcInsideNow(house)){const g=buildNPCMesh({role:'Innkeeper',name:house.keeper,_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
