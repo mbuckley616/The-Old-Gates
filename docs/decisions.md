@@ -15,6 +15,16 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+### Herbs by island — how a herb shows itself in the grass (from the concept artist, 2026-10-28, #855)
+**The question.** Backlog L8 (OG-039) ports every herb to the new look, by island, at true size (the game draws them at 0.69 of their size today; every option fixes that). The Gatelands' grass is dense (111 blades a square metre, to 0.65 m): of twelve herbs 2 to 14 m ahead, how should a herb show itself? On the Mark and Aurenne the grass is short and 11 or 12 of 12 show in every option.
+
+**Options.**
+- **A.** True size, nothing added: 8 of 12 show in the Gatelands meadow.
+- **B.** Today's glow on every herb (a point light and a halo): still 8 of 12, gamey by day, 12 lights where the game has room for 8.
+- **C (recommended).** Lifted: 1.15 larger, colour a little stronger, the grass short in a 0.35 m ring round it, a small glint at its top within 6 m. 10 of 12 show, 39% more herb on screen, no lights.
+
+In every option the herbs that glow by nature (Heartroot, Firemoss, Icebloom, Pearlweed) still glow from their own parts. Pictures: [A, B and C on the three islands](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1028/docs/prototypes/levelup/herbs-options.jpg); the full notes in `docs/concepts.md`.
+
 ## Answered
 ### Bowyer's longbow and war bow — how each plays (from the systems builder, 2026-10-28, #851)
 **The question.** Joinery 75's perk, *Bowyer*, reads "the longbow and the war bow", but neither bow exists, so the perk shows as not yet built. Today's bow: full draw 1.10 s, the shot ×1.40 at full draw, the arrow 28 m/s, 8 stamina a second held, weight 3. What should the two bows be?
