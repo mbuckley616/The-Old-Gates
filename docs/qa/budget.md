@@ -209,3 +209,32 @@ Frame rate is not measured here: software GL is not a target machine. It is Mich
 | a medium gate (ruins, seed 11), from its entrance | Middle (indoors) | 241 | 428k | 0 | 0 | 43 | 0 | 0 | 197 |  |
 
 *s979, QA Session 1505 (`budget` 431 s, `budgetport` 375 s, one pass each): every view is under its draw-call ceiling at every level for the first time since the ledger began. Against s972: Dunmore at noon, Middle, 1,393 → 751; at midnight 1,475 → 832; the field west at dawn 1,349 → 827; Portclare's square 1,040 → 566; Low's worst view 1,299 → 660 (ceiling 700). The fall is the land column (734 → 281 on Dunmore's street, Session 1498's one-mesh veins) and the other column (255 → 80, Session 1502's stand-ins, keep lights and lettering as one mesh each). Triangles did not move, and they are now the suite's only red: Dunmore's street at noon reads 1.29 M at Low (ceiling 1.2 M) and 2.02 M at Middle (2.0 M), and at midnight 1.25 M at Low. Split by draw (each mesh's share of `REN.info` read in `onBeforeRender`, noon, Low then Middle): the land's instanced scatter 402k / 597k (leaf-card trees 348k of it, in five species of 174–444 triangles a card set; Middle adds the grass, 189k), the kit houses 341k, the town's other house meshes 97k, top-level unnamed meshes 222k (182k opaque, 39k transparent), bodies 166k / 172k, the old gate 30k, impostors 12k; at Middle the sun's shadow pass adds 519k. The inn's hall 38, the gate 241.*
+
+### s1000 — 2026-10-28 13:11 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Dunmore street, noon | Low | 593 | 1.10 M | 0 | 0 | 110 | 135 | 268 | 80 | Mesh 52, oldGate 24, LOD 2, impostors 1, Points 1 |
+| Dunmore street, noon | Middle | 752 | 1.86 M | 136 | 6 | 113 | 135 | 282 | 80 | Mesh 52, oldGate 24, LOD 2, impostors 1, Points 1 |
+| Dunmore street, noon | High | 803 | 2.35 M | 168 | 6 | 113 | 135 | 301 | 80 | Mesh 52, oldGate 24, LOD 2, impostors 1, Points 1 |
+| Dunmore street, midnight | Low | 657 | 1.06 M | 0 | 0 | 107 | 201 | 268 | 81 | Mesh 52, oldGate 24, LOD 2, Points 2, impostors 1 |
+| Dunmore street, midnight | Middle | 833 | 1.77 M | 156 | 6 | 107 | 201 | 282 | 81 | Mesh 52, oldGate 24, LOD 2, Points 2, impostors 1 |
+| Dunmore street, midnight | High | 895 | 2.33 M | 199 | 6 | 107 | 201 | 301 | 81 | Mesh 52, oldGate 24, LOD 2, Points 2, impostors 1 |
+| the field west of Dunmore, noon | Low | 583 | 642k | 0 | 0 | 105 | 107 | 301 | 70 | Group 30, Mesh 28, oldGate 8, quaywall 2, impostors 1 |
+| the field west of Dunmore, noon | Middle | 690 | 1.06 M | 81 | 6 | 105 | 107 | 321 | 70 | Group 30, Mesh 28, oldGate 8, quaywall 2, impostors 1 |
+| the field west of Dunmore, noon | High | 738 | 1.55 M | 119 | 6 | 105 | 107 | 331 | 70 | Group 30, Mesh 28, oldGate 8, quaywall 2, impostors 1 |
+| the field west of Dunmore, dawn | Low | 665 | 632k | 0 | 0 | 108 | 186 | 301 | 70 | Group 30, Mesh 28, oldGate 8, quaywall 2, impostors 1 |
+| the field west of Dunmore, dawn | Middle | 833 | 1.12 M | 142 | 6 | 108 | 186 | 321 | 70 | Group 30, Mesh 28, oldGate 8, quaywall 2, impostors 1 |
+| the field west of Dunmore, dawn | High | 886 | 1.64 M | 185 | 6 | 108 | 186 | 331 | 70 | Group 30, Mesh 28, oldGate 8, quaywall 2, impostors 1 |
+
+### s1000 — 2026-10-28 13:18 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Portclare square, noon | Low | 393 | 673k | 0 | 0 | 30 | 67 | 208 | 88 | Mesh 36, Group 36, oldGate 14, impostors 1, LOD 1 |
+| Portclare square, noon | Middle | 560 | 1.42 M | 141 | 6 | 31 | 67 | 227 | 88 | Mesh 36, Group 36, oldGate 14, impostors 1, LOD 1 |
+| Portclare square, noon | High | 609 | 1.83 M | 176 | 6 | 32 | 67 | 240 | 88 | Mesh 36, Group 36, oldGate 14, impostors 1, LOD 1 |
+| The Bramble Hearth (Dunmore's inn), the hall from the door, 20h | Middle (indoors) | 38 | 26k | 0 | 0 | 1 | 0 | 0 | 37 |  |
+| a medium gate (ruins, seed 11), from its entrance | Middle (indoors) | 261 | 422k | 0 | 0 | 43 | 0 | 0 | 217 |  |
+
+*s1000, QA Session 1532 (`budget` and `budgetport` 763 s and 385 s, run beside `autumn` and `scaleratio` on 4 cores; one pass each): every view under its draw calls and its triangles at every level, 18/18 and 9/9, so `budget` leaves `tests/skip.json`. Against s979: Dunmore's street at noon, Middle, 751 → 752 calls and 2.02 M → 1.86 M triangles (Low 1.29 M → 1.10 M: Session 1515's far trees); at midnight 832 → 833; the field west at dawn 827 → 833; Portclare's square 566 → 560; the inn's hall 38 → 38; the medium gate 241 → 261 (+8%, all in the other column, 197 → 217). No spot rose by more than 10%.*
