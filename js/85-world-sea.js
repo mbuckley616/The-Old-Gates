@@ -146,8 +146,10 @@
   };
   const SHIP_GEO=new Map();
   // kind 'sloop' | 'cog' | 'galleon' | 'cutter' | 'caravel'; look 'player' | 'pirate' | 'merchant'. One bake per kind and look, shared.
-  function shipBake(kind,look){const key=kind+'|'+look;let r=SHIP_GEO.get(key);if(r)return r;
-    if(kind==='sloop'&&look==='player'&&window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.ships){r=shipBakeKit();SHIP_GEO.set(key,r);return r;}
+  function shipBake(kind,look,dress){const kit=(kind==='sloop'||kind==='cutter')&&look==='player'&&window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.ships;
+    if(kit)dress=kind==='cutter'?'mark':shipDress(dress); /* S1539 — the cutter is sold only at the Mark's yards */
+    const key=kind+'|'+look+(kit?'|'+dress:'');let r=SHIP_GEO.get(key);if(r)return r;
+    if(kit){r=shipBakeKit(kind,dress);SHIP_GEO.set(key,r);return r;}
     const D=SHIP_DECK,lk=SHIP_LOOKS[look]||SHIP_LOOKS.player;const B=new ShipBake();B.props=[]; /* S616 — what stands on her deck, kept for shipPropSolid */
     const cls={sloop:{L:13,W:4.4},cog:{L:17,W:5.6},galleon:{L:22,W:7.0},cutter:{L:14,W:4.0},caravel:{L:17.5,W:5.0}}[kind];const L=cls.L,W=cls.W;
     const hopt={sloop:{draft:1.05,sheer:.42,bowRise:.45,sternRise:.3,stem:2.4,transom:.34,full:1.8},
@@ -248,11 +250,15 @@
   // Michael's A on #306): one geometry a group a material, the square yard and sail a rig of their own about the mast, and a tiller
   // for the wheel. The game's contracts are kept: the deck's outline (at, inside the stanchions), what stands on her deck as props, the
   // hull's section for the nets, and the hatch forward at L/2-3.2 where the cabin's door is (cabinUpdate).
-  function shipBakeKit(){const S=PKIT.ships.sloop({hatchZ:13/2-3.2}),P=[];
+  // S1538 (Michael's A on #839) — she wears the dress of the island whose yard sold or last refitted her, kept on the ship
+  // (worldState.ship.dress, 'gatelands' | 'mark' | 'aurenne'; a ship from before it is the Gatelands', as she was built)
+  function shipDress(d){if(d==null)d=worldState.ship&&worldState.ship.dress;return d==='mark'||d==='aurenne'?d:'gatelands';}
+  // S1539 — and the Mark's cutter (PKIT.ships.cutter, ships.js's markCutter): the same contracts, the hatch at her own L/2-3.2 as the old cutter's
+  function shipBakeKit(kind,dress){const S=kind==='cutter'?PKIT.ships.cutter({hatchZ:14/2-3.2}):PKIT.ships.sloop({hatchZ:13/2-3.2,dress}),P=[];
     const zz=[];for(let z=S.zs;z<=S.zb;z+=.05)if(S.deckAt(z)>.45)zz.push(z);const z0=zz[0],z1=zz[zz.length-1];
     P.push({x:0,z:S.mast[1],r:.17},{x:-.45,z:S.mast[1]-.7,r:.17});const h=S.hatch;P.push({x:0,z:(h.z0+h.z1)/2,hx:(h.x1-h.x0)/2,hz:(h.z1-h.z0)/2,ry:0});
     return {geo:S.hull.geo,mats:S.hull.mats,deck:{z0,z1,at:z=>z<z0||z>z1?0:S.deckAt(z)-.06},L:S.L,W:S.W,zs:S.zs,zb:S.zb,
-      rigs:[{geo:S.rig.geo,mats:S.rig.mats,z:S.mast[1],type:'square'}],props:P,at:S.at,tiller:S.tiller,kit:S};}
+      rigs:S.rigs.map(q=>({geo:q.geo,mats:q.mats,z:q.z,type:q.type})),props:P,at:S.at,tiller:S.tiller,kit:S,dress};}
   // a harbour boat: an open clinker boat with thwarts, oars shipped, a stubby mast with the sail furled; four paints
   function boatBake(v){const key='boat|'+v;let r=SHIP_GEO.get(key);if(r)return r;
     const R=(()=>{let s=(v*2654435761+12345)>>>0;return ()=>{s=(s*1664525+1013904223)>>>0;return s/4294967296;};})();const B=new ShipBake();const paint=[0x5a6a4a,0x6a3a2a,0x3a4a6a,0x7a6a4a][v%4];
@@ -403,11 +409,11 @@
   // S665 — `hull` names the bake outright; without it your own ship (no look given) takes her class's hull when it has one of its own
   function buildShipMesh(SHIP_L,SHIP_W,look,hull){
     const own=!look&&!hull&&worldState.ship&&worldState.ship.cls;if(own==='cutter'||own==='caravel')hull=own;
-    const kind=hull||((SHIP_L||13)>=20?'galleon':(SHIP_L||13)>=15?'cog':'sloop');const r=shipBake(kind,look||'player');
+    const kind=hull||((SHIP_L||13)>=20?'galleon':(SHIP_L||13)>=15?'cog':'sloop');const r=shipBake(kind,look||'player');const bk=kind+'|'+(look||'player')+(r.dress?'|'+r.dress:'');
     const mesh=new THREE.Mesh(r.geo,r.mats||SHIP_MAT);mesh.castShadow=true;mesh.receiveShadow=true;
     const wheel=r.tiller?r.tiller.clone():shipWheelMesh();if(!r.tiller)wheel.position.set(0,SHIP_DECK+.95,-r.L/2+2.8);mesh.add(wheel);mesh.userData.tiller=!!r.tiller; /* S1531 — the kit's sloop steers by a tiller */
     mesh.add(r.at?shipNetsMesh(r):shipNetMesh(SHIP_W||r.W||4.4)); /* S723 — the boarding nets laid on the hull (S638's stand-in where a bake has no section) */
-    mesh.userData.wheel=wheel;mesh.userData.deck=r.deck;mesh.userData.kind=kind;mesh.userData.props=r.props||[];mesh.userData.bakeKey=kind+'|'+(look||'player');
+    mesh.userData.wheel=wheel;mesh.userData.deck=r.deck;mesh.userData.kind=kind;mesh.userData.props=r.props||[];mesh.userData.bakeKey=bk;
     mesh.userData.rigs=(r.rigs||[]).map(q=>{const m=new THREE.Mesh(q.geo,q.mats||SHIP_MAT);m.castShadow=true;m.position.z=q.z;mesh.add(m);if(q.extra){const e=new THREE.Mesh(q.extra,SHIP_MAT);e.castShadow=true;m.add(e);}return {m,type:q.type,a:0};});
     mesh.userData.trimSnap=true;
     return mesh;
@@ -468,7 +474,7 @@
     const plat=ZONES.world.platforms.find(p=>p.site===site.id);const sd=shoreDir(site);
     if(!plat||!sd)return 'No berth here to launch from.';
     const {x:bx,z:bz}=quayBerth(plat,sd);
-    gold-=price;updateHUD();spawnShip(bx,bz,seawardYaw(sd));if(price<SHIP_PRICE&&typeof addLog==='function')addLog('📜',"The shipwright read Corwin's note and took a quarter off.");
+    gold-=price;updateHUD();worldState.ship={dress:nationAt(site.x,site.z)};spawnShip(bx,bz,seawardYaw(sd)); /* S1538 — #839 A */if(price<SHIP_PRICE&&typeof addLog==='function')addLog('📜',"The shipwright read Corwin's note and took a quarter off.");
     if(typeof addLog==='function')addLog('⛵',`Bought a ship at ${site.name}.`);
     return `She\u2019s the ${SHIP.name}, and she\u2019s yours — moored off the seaward end of the quay, ${compassWord(bx-site.x,bz-site.z)} of here. Walk to the end of the quay, look at the net down her side and press E to climb aboard; E again for the wheel.`;
   }
@@ -496,7 +502,7 @@
     let plat=ZONES.world.platforms.find(p=>p.site===port.id&&!p.river&&!p.shallow);
     if(!plat){const L=quayLine(port,sd,1.1),hw=Math.abs(sd.dx)?L.len/2:4,hd=Math.abs(sd.dz)?L.len/2:4;plat={x0:L.mx-hw,x1:L.mx+hw,z0:L.mz-hd,z1:L.mz+hd};}
     const {x:bx,z:bz}=quayBerth(plat,sd);
-    spawnShip(bx,bz,seawardYaw(sd));if(typeof addLog==='function')addLog('⛵',`The Compact deeded you a ship at ${port.name}.`);
+    worldState.ship={dress:nationAt(port.x,port.z)};spawnShip(bx,bz,seawardYaw(sd));if(typeof addLog==='function')addLog('⛵',`The Compact deeded you a ship at ${port.name}.`);
     return port;
   }
   // E near the wheel takes / leaves the helm

@@ -965,10 +965,12 @@ function layTrunk(ch,t,yw){const dx=-Math.sin(yw),dz=-Math.cos(yw),L=Math.max(4,
   const T={id:t.id,ch,x0,z0,dx,dz,L,R,hw:Math.max(.45,R),y:bot+2*R,until:gameMinNow()+TRUNK_MIN,mesh:null};
   const x1=x0+dx*L,z1=z0+dz*L;T.plat={x0:Math.min(x0,x1)-T.hw,x1:Math.max(x0,x1)+T.hw,z0:Math.min(z0,z1)-T.hw,z1:Math.max(z0,z1)+T.hw,y:T.y,inside:(x,z)=>trunkOn(T,x,z),trunk:t.id};
   ZONES.world.platforms.push(T.plat);
+  /* S1540 — on the new look the kit's felled trunk (PKIT.props.trunk): bark, the butt chopped, the top torn, branch stubs */
+  if(window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.props&&PKIT.props.trunk)try{const K=PKIT.props.trunk(L,R,t.id);K.group.position.set(x0,bot+R,z0);K.group.rotation.y=Math.atan2(dx,dz);ch.group.add(K.group);T.mesh=K.group;TRUNKS.push(T);return T;}catch(e){}
   try{if(!_stumpMat)stumpMesh(t);const g=new THREE.CylinderGeometry(R*.85,R,L,9),m=new THREE.Mesh(g,_stumpMat);
     m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),new THREE.Vector3(dx,0,dz));m.position.set(x0+dx*L/2,bot+R,z0+dz*L/2);m.name='trunk';m.castShadow=true;m.receiveShadow=true;ch.group.add(m);T.mesh=m;}catch(e){}
   TRUNKS.push(T);return T;}
-function dropTrunk(T){const P=ZONES.world.platforms,i=P.indexOf(T.plat);if(i>=0)P.splice(i,1);if(T.mesh){if(T.mesh.parent)T.mesh.parent.remove(T.mesh);T.mesh.geometry.dispose();}}
+function dropTrunk(T){const P=ZONES.world.platforms,i=P.indexOf(T.plat);if(i>=0)P.splice(i,1);if(T.mesh){if(T.mesh.parent)T.mesh.parent.remove(T.mesh);T.mesh.traverse(o=>{if(o.geometry)o.geometry.dispose();});}}
 function tickTrunks(){const now=gameMinNow();for(let i=TRUNKS.length-1;i>=0;i--){const T=TRUNKS[i];if(T.until<=now||!chunkLive(T.ch)){dropTrunk(T);TRUNKS.splice(i,1);}}}
 function useHatchet(){const n=treeNear();if(n)chopTree(n.ch,n.t);else showMsg('Stand at a tree to fell it.','#c8b890');}
 // the smith's and the goods shop's hatchet, beside the pick

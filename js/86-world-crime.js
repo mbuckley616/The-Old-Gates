@@ -1153,7 +1153,7 @@
     const cls=st.cls||'sloop';
     for(const next of yardHulls(site)){if(next===cls)continue;const c0=refitCost(cls,next);
       out.push({label:c0>=0?`Refit her as a ${next} (${c0} gold)`:`Refit her as a ${next} (the yard pays ${-c0} gold)`,cls:next,quest:true,fn:()=>{const from=st.cls||'sloop',p=refitCost(from,next);if(p>0&&gold<p)return L.refitPoor(next,p);gold-=p;updateHUD();
-        st.cls=next;st.hull=SHIP_CLASSES[next].hull;applyShipClass();if(typeof addLog==='function')addLog('⛵',`The ${SHIP.name} refitted as a ${next}.`);
+        st.cls=next;st.hull=SHIP_CLASSES[next].hull;st.dress=nationAt(site.x,site.z);applyShipClass(); /* S1538 — #839 A: refitted, she takes this yard's dress */if(typeof addLog==='function')addLog('⛵',`The ${SHIP.name} refitted as a ${next}.`);
         const line=L.refitted(next);return SHIP_CLASSES[next].L>SHIP_CLASSES[from].L?line:line.split(/[.:]/)[0]+'.';}});}
     const sails=st.sails||0;if(sails<SAIL_TIERS.length-1)out.push({label:`Better sails, tier ${sails+1} (${SAIL_TIERS[sails+1]} gold)`,cls,quest:true,fn:()=>{const p=SAIL_TIERS[sails+1];if(gold<p)return L.sailsPoor(p);gold-=p;updateHUD();st.sails=sails+1;return L.sailed(shipTopSpeed().toFixed(1));}});
     const cargo=st.cargo||0;if(cargo<2)out.push({label:`Bigger hold, tier ${cargo+1} (${CARGO_TIERS[cargo+1]} gold)`,cls,quest:true,fn:()=>{const p=CARGO_TIERS[cargo+1];if(gold<p)return L.holdPoor(p);gold-=p;updateHUD();st.cargo=cargo+1;return L.held(25*(cargo+1));}});
