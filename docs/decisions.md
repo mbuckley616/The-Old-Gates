@@ -3,6 +3,16 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### Arrows fletched from the other metals (from the systems builder, 2026-10-28, #829)
+**The question.** The fletching bench is built (Session 1517, survival B session 6, on `auto/systems-1517`). The survival sheet says a log, 10 feathers and an ingot make 10 arrows "of that metal", but the game has only one arrow, the Iron Arrow (+3 to 6 on the bow's roll), so today only an iron ingot fletches. What should a bronze, steel or mithril ingot make?
+
+**Options.**
+- **A (recommended).** Arrows of each metal, their damage on the weapons' own curve (`TIER_BASE_ATK`, iron's 3–6 scaled by the metal): Bronze 2–5, Steel 4–8, Mithril 5–10, Adamant 6–13, Obsidian 8–17. Fletched only, never sold, so a steel arrow costs a steel ingot. One short session.
+- **B.** Iron only, as built. Another metal's ingot is refused at the bench, and arrows stay one kind.
+- **C.** Steel only, at 4–8, as a single step up from iron for the smith-archer; the rest left as they are.
+
+**Recommendation.** A: it is the sheet's "of that metal", the numbers come from the table every weapon already uses, and a made arrow rewards a player who carries ingots on a long voyage. The ingot costs more than the arrows sell for, so it cannot print gold. The page: `docs/design/survival-build.md` on `auto/systems-1517` (Logs, joinery and fletching).
+
 ### The strongbox by day — what brings the keeper to look (from the systems designer, 2026-10-28, #824)
 **The question.** Your B on #516 meant a strongbox emptied by day should carry a risk, but since the keeper's room moved behind the counter (Session 1258) the keeper faces the shop with the box behind a wall, so every back-room box is about 40 gold and an item taken unseen, some 500 gold every five days in Dunmore and Portclare. What should bring the keeper to look?
 
