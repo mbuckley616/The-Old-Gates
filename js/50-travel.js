@@ -649,7 +649,7 @@ function dropFire(f){if(f.mesh&&f.mesh.parent)f.mesh.parent.remove(f.mesh);}
 function tickSurvival(dt){const t=gameMinNow();
   for(let i=CAMPFIRES.length-1;i>=0;i--){const f=CAMPFIRES[i];if(f.until<=t){dropFire(f);CAMPFIRES.splice(i,1);continue;}
     const fl=f.mesh&&f.mesh.userData.flame;if(fl){const k=.85+.15*Math.sin(performance.now()*.013+i);fl.scale.set(1,k,1);}}
-  tickMining(dt);tickFelling(dt);tickShipWork(dt);
+  tickMining(dt);tickFelling(dt);tickTrunks();tickShipWork(dt);
   if(fedKind()==='steady'&&!dead)PHP=Math.min(effMaxHP(),PHP+dt*.2);
   if(stamina>effMaxStamina())stamina=effMaxStamina();}
 // fed: one kind at a time, by the game clock
@@ -934,7 +934,7 @@ function strikeTree(ch,t,n){
   const it=survItem(t.sp==='pine'?'pine':'log');if(!canCarry(it))return {why:'Too heavy to carry!'};
   n++;const need=fellStrikes();
   if(n<need){skillUse('woodcutting',1);return {n,need};}
-  const k=treeLogs(t);fellTree(ch,t);it.qty=k;bagAdd(it);skillUse('woodcutting',4);
+  const k=treeLogs(t);fellTree(ch,t);it.qty=k;bagAdd(it);skillUse('woodcutting',4);if(perk('woodcutting',25))layTrunk(ch,t,yaw);
   return {n,need,logs:k,item:it};}
 // working a tree: E starts it, E again, walking off, or the fall stops it
 let CHOP=null;
@@ -952,6 +952,24 @@ function tickFelling(dt){
   // the stumps of loaded chunks: back to a tree once its 10 days are up
   for(let i=STUMPS.length-1;i>=0;i--){const s=STUMPS[i];if(!chunkLive(s.ch)||!s.t.out){STUMPS.splice(i,1);continue;}
     if(!treeDown(s.t.id)){treePutBack(s.ch,s.t);STUMPS.splice(i,1);}}}
+// S1534 — Felling (Woodcutting 25; survival B, session 7): the trunk falls where you face and lies there 10 minutes (600 on the
+// world clock, as a campfire burns), a log you can walk: a level deck of ZONES.world.platforms along it, its top on the highest
+// ground under it, so laid over a gully or a stream it is a bridge. Its length is the tree's own height (the instance taken out,
+// ×0.85, 4 to 18 m), its girth the stump's. Not saved: like a campfire it is gone on a reload. A plain stand-in mesh, the stump's bark.
+const TRUNK_MIN=600,TRUNKS=[];
+function treeHeight(t){const o=t.out;try{if(o&&o.im&&o.m){const g=o.im.geometry;if(!g.boundingBox)g.computeBoundingBox();const s=new THREE.Vector3();o.m.decompose(new THREE.Vector3(),new THREE.Quaternion(),s);const H=g.boundingBox.max.y*s.y;if(H>2)return H;}}catch(e){}return 9;}
+function trunkOn(T,x,z){const u=(x-T.x0)*T.dx+(z-T.z0)*T.dz,v=-(x-T.x0)*T.dz+(z-T.z0)*T.dx;return u>=0&&u<=T.L&&Math.abs(v)<=T.hw&&worldH(x,z)<T.y;}
+// the named action: the trunk down from the stump along (dx,dz), its deck in the world's platforms
+function layTrunk(ch,t,yw){const dx=-Math.sin(yw),dz=-Math.cos(yw),L=Math.max(4,Math.min(18,treeHeight(t)*.85)),R=Math.max(.25,.9*Math.max(.14,Math.min(.5,t.r*.55)));
+  const x0=t.x+dx*.3,z0=t.z+dz*.3;let bot=-1e9;for(let i=0;i<=8;i++){const h=worldH(x0+dx*L*i/8,z0+dz*L*i/8);if(h>bot)bot=h;}
+  const T={id:t.id,ch,x0,z0,dx,dz,L,R,hw:Math.max(.45,R),y:bot+2*R,until:gameMinNow()+TRUNK_MIN,mesh:null};
+  const x1=x0+dx*L,z1=z0+dz*L;T.plat={x0:Math.min(x0,x1)-T.hw,x1:Math.max(x0,x1)+T.hw,z0:Math.min(z0,z1)-T.hw,z1:Math.max(z0,z1)+T.hw,y:T.y,inside:(x,z)=>trunkOn(T,x,z),trunk:t.id};
+  ZONES.world.platforms.push(T.plat);
+  try{if(!_stumpMat)stumpMesh(t);const g=new THREE.CylinderGeometry(R*.85,R,L,9),m=new THREE.Mesh(g,_stumpMat);
+    m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),new THREE.Vector3(dx,0,dz));m.position.set(x0+dx*L/2,bot+R,z0+dz*L/2);m.name='trunk';m.castShadow=true;m.receiveShadow=true;ch.group.add(m);T.mesh=m;}catch(e){}
+  TRUNKS.push(T);return T;}
+function dropTrunk(T){const P=ZONES.world.platforms,i=P.indexOf(T.plat);if(i>=0)P.splice(i,1);if(T.mesh){if(T.mesh.parent)T.mesh.parent.remove(T.mesh);T.mesh.geometry.dispose();}}
+function tickTrunks(){const now=gameMinNow();for(let i=TRUNKS.length-1;i>=0;i--){const T=TRUNKS[i];if(T.until<=now||!chunkLive(T.ch)){dropTrunk(T);TRUNKS.splice(i,1);}}}
 function useHatchet(){const n=treeNear();if(n)chopTree(n.ch,n.t);else showMsg('Stand at a tree to fell it.','#c8b890');}
 // the smith's and the goods shop's hatchet, beside the pick
 function hatchetFor(h){return h&&(h.type==='weapon'||h.type==='misc')?[{...HATCHET_ITEM}]:[];}
