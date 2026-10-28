@@ -19,7 +19,7 @@ for (const [k, kind] of KINDS.entries()) {
     const dm = D.dmg / 15 * ds.dmg * fm * enemyDmgScale(T) * 1.6 * (1 + LT * .04);
     const rig = e.limbs && (e.limbs.person || e.limbs.wolf); const root = rig && rig.root;
     e.mesh.updateMatrixWorld(true);
-    /* S1545 — the body alone: since the weapon kit the rig's tree holds what the fist carries (`gear` under the right wrist), and
+    /* S1546 — the body alone: since the weapon kit the rig's tree holds what the fist carries (`gear` under the right wrist), and
        a whole-tree box measured the Ogre's raised greatclub (3.63–3.67 by the idle's sway) instead of the Ogre (3.45). The club's
        top is reported as `held`, not checked here. */
     const gearOf = o => { for (let q = o; q && q !== root; q = q.parent) if (/^(gear|weapon:)/.test(q.name || '')) return true; return false; };
