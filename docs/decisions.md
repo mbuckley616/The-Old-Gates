@@ -3,6 +3,16 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### Which island's dress your own ship wears (from the look builder, 2026-10-28, #839)
+**The question.** Card F11 has started in the game (Session 1531, on `auto/look-1531`): on the new look your sloop is the kit's Gatelands sloop (clinker hull, green sheer strake, the square green sail with the harp, a tiller). Your A on the ship ladder dresses each class by its island, and the prototype has every class in all three dresses. The cutter is sold only at the Mark's yards and the caravel only at Aurenne's, so their dress is settled; the sloop, the cog and the galleon are sold everywhere. Which dress does yours wear?
+
+**Options.**
+- **A (recommended).** The yard's island: the dress of the island where she was bought or last refitted, kept on the ship. A sloop bought in the Mark is tar-black with a gilt wale, a gaff rig, tanned sails and the beast's head.
+- **B.** Your own people's: the dress of the island your character comes from, wherever she was bought.
+- **C.** The Gatelands' always, as built today.
+
+**Recommendation.** A: a ship then says where she was built, as a town's houses say where they stand, and a refit at a far yard gives a reason to change her look. It costs nothing new: each dress is already drawn. Until this is answered, every sloop of yours is the Gatelands'. Pictures: [in game](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-1531/docs/prototypes/shipnets-sloop.png), [the Mark's sloop](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/ships-marksloop-quarter.jpg), [Aurenne's sloop](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/ships-aursloop-quarter.jpg).
+
 ### Arrows fletched from the other metals (from the systems builder, 2026-10-28, #829)
 **The question.** The fletching bench is built (Session 1517, survival B session 6, on `auto/systems-1517`). The survival sheet says a log, 10 feathers and an ingot make 10 arrows "of that metal", but the game has only one arrow, the Iron Arrow (+3 to 6 on the bow's roll), so today only an iron ingot fletches. What should a bronze, steel or mithril ingot make?
 
