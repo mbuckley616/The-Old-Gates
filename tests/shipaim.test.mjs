@@ -22,7 +22,7 @@ const look = (where) => page.evaluate((where) => {
   const at = where.at === 'helm' ? S.helm : where.at === 'hatch' ? hatch : where.at === 'nearHatch' ? { x: hatch.x - fx * 1.6, z: hatch.z - fz * 1.6 } : { x: S.helm.x - fx * where.back, z: S.helm.z - fz * where.back };
   px = at.x; pz = at.z; jumpY = 1.0; onGround = true;
   const eye = new THREE.Vector3(px, jumpY + 1.6, pz); CAM.position.copy(eye);
-  const tgt = where.look === 'wheel' ? wheel : where.look === 'hatch' ? new THREE.Vector3(hatch.x, 1.05, hatch.z) : where.look === 'astern' ? eye.clone().add(new THREE.Vector3(-fx, -.3, -fz)) : eye.clone().add(new THREE.Vector3(-fz, 0, fx));
+  const tgt = where.look === 'wheel' ? wheel : where.look === 'hatch' ? new THREE.Vector3(hatch.x, 1.05, hatch.z) : where.look === 'astern' ? (S.mesh.userData.tiller ? eye.clone().add(new THREE.Vector3(fx, .3, fz)) /* S1531: a tiller lies astern of the helm, so away from it is forward */ : eye.clone().add(new THREE.Vector3(-fx, -.3, -fz))) : eye.clone().add(new THREE.Vector3(-fz, 0, fx));
   CAM.lookAt(tgt); CAM.updateMatrixWorld(true);
   const prompt = WORLD.shipPrompt(), d = +Math.hypot(px - S.wheel.x, pz - S.wheel.z).toFixed(2), dh = +Math.hypot(px - hatch.x, pz - hatch.z).toFixed(2);
   // going below fades first, so the door's call is caught rather than waited for
@@ -38,7 +38,7 @@ const r3 = await look({ at: 'helm', look: 'side', press: 'ship' });
 const r4 = await look({ back: -3.8, look: 'wheel', press: 'ship' }); // on her deck, forward of the wheel
 console.log(JSON.stringify({ r1, r2, r3, r4 }));
 check(`at the helm (${r1.d} from the wheel) looking at the wheel: the prompt, and E takes the wheel`, /pilot the/.test(r1.prompt || '') && r1.took === true, r1);
-check('at the helm looking astern: no prompt, and E does not take the wheel', !/pilot/.test(r2.prompt || '') && r2.took === false, r2);
+check('at the helm looking away from the wheel (astern of a wheel, forward over a tiller): no prompt, and E does not take the wheel', !/pilot/.test(r2.prompt || '') && r2.took === false, r2);
 check('at the helm looking over the side: no prompt, E does nothing', !/pilot/.test(r3.prompt || '') && r3.took === false, r3);
 check(`on her deck looking at the wheel from ${r4.d} units (beyond 2.4): no prompt, E does nothing`, !/pilot/.test(r4.prompt || '') && r4.took === false && r4.d > 2.4, r4);
 

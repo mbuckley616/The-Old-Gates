@@ -8,7 +8,7 @@ await g.intoWorld();
 const r = await page.evaluate(() => { const out = {};
   const tris = b => { let t = b.geo.attributes.position.count / 3; for (const q of b.rigs) t += q.geo.attributes.position.count / 3 + (q.extra ? q.extra.attributes.position.count / 3 : 0); return Math.round(t); };
   for (const k of ['sloop', 'cog', 'galleon', 'cutter', 'caravel']) for (const look of ['player', 'pirate', 'merchant']) {
-    const b = shipBake(k, look); out[k + '|' + look] = { tris: tris(b), L: b.L, W: b.W, rigs: b.rigs.map(q => q.type).join(','), extra: b.rigs.some(q => q.extra), deck: typeof b.deck }; }
+    const b = shipBake(k, look); out[k + '|' + look] = { tris: tris(b), L: b.L, W: b.W, rigs: b.rigs.map(q => q.type).join(','), extra: b.rigs.some(q => q.extra), deck: typeof b.deck, kit: !!b.kit }; }
   // the caravel's lateens to leeward: wind on the starboard beam, then the port
   const m = WORLD.buildShipMesh(17.5, 5, 'player', 'caravel'); const lat = m.userData.rigs.filter(q => q.type === 'lateen');
   shipTrim(m, Math.PI / 2); out.latA = lat.map(q => +q.m.rotation.y.toFixed(2)); shipTrim(m, -Math.PI / 2); out.latB = lat.map(q => +q.m.rotation.y.toFixed(2));
@@ -26,7 +26,7 @@ for (const look of ['player', 'pirate', 'merchant']) {
   check(`the caravel (${look}) bakes 17.5 × 5.0 with three lateens`, r['caravel|' + look].L === 17.5 && r['caravel|' + look].W === 5 && (r['caravel|' + look].rigs.match(/lateen/g) || []).length === 3, r['caravel|' + look]);
 }
 check('the two new hulls stay in the old ones\' range of triangles (under 7,000)', r['cutter|player'].tris < 7000 && r['caravel|player'].tris < 7000, [r['cutter|player'].tris, r['caravel|player'].tris]);
-check('the sloop, cog and galleon keep their rigs', r['sloop|player'].rigs === 'gaff,jib' && /square/.test(r['cog|player'].rigs) && !/lateen/.test(r['galleon|player'].rigs), [r['sloop|player'].rigs, r['cog|player'].rigs, r['galleon|player'].rigs]);
+check('the sloop, cog and galleon keep their rigs', r['sloop|player'].rigs === (r['sloop|player'].kit ? 'square' : 'gaff,jib') /* S1531: the kit's Gatelands sloop on the new look, #306's square sail */ && /square/.test(r['cog|player'].rigs) && !/lateen/.test(r['galleon|player'].rigs), [r['sloop|player'].rigs, r['cog|player'].rigs, r['galleon|player'].rigs]);
 check('the caravel\'s three yards swing to leeward, and over when the wind crosses', r.latA.length === 3 && r.latA.every(a => a < -.1) && r.latB.every(a => a > .1), [r.latA, r.latB]);
 check('the cutter\'s gaff carries its topsail', r.cutterTop === 1, r.cutterTop);
 check('your own ship takes her class\'s hull', r.own.cutter === 'cutter' && r.own.caravel === 'caravel' && r.own.sloop === 'sloop' && r.own.cog === 'cog', r.own);
