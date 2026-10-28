@@ -79,6 +79,17 @@ check(`the cellar's hatch is in the flags at ${r.hatch && [r.hatch.x, r.hatch.z]
 check(`at noon the day comes in through the door and the taproom's ${r.wins} windows (${r.sky.length} sky spots inside the room, aimed in; S1506)`, r.sky.length === r.wins + 1 && r.wins >= 2 && r.sky.every(q => q.in && q.i > 0), { wins: r.wins, sky: r.sky });
 check(`the room is lit (${r.lights} lights) and draws ${r.draws} meshes (59 or fewer), ${r.tris.toLocaleString()} triangles with the innkeeper`, r.lights >= 6 && r.draws <= 59, { lights: r.lights, kinds: r.kinds, draws: r.draws, tris: r.tris });
 check(`the innkeeper is a body of ${r.kDraws} draw calls${r.kBuilder ? ', the builder\'s' : ''}`, r.kDraws >= 1, { kDraws: r.kDraws, kBuilder: r.kBuilder });
+// Session 1516 (#805, Michael's C: each island its own): the Gatelands' candle sconces on the front and back walls, clear of the windows,
+// the door and its open leaf, and a candle on each table; each its own light; the small flames one mesh for the room, flickering
+const sc = await page.evaluate(() => { const h = currentHouse, T = h._taproom, F = h._hallFix, D = h._roomD, X = T.inner.x1; if (!F) return null; interiorScene.updateMatrixWorld(true);
+  const wall = F.lights.filter(l => l.type === 'sconce').map(l => { const x = l.p[0] - X, z = l.p[2] - T.inner.z1, face = z > 0 ? 'front' : 'back';
+    const gaps = [...T.windows.filter(q => q.face === face && q.y < T.floors[1]).map(q => Math.abs(x - q.x) - q.w / 2), ...(face === 'front' ? [Math.abs(x - T.door.x) - T.door.w / 2, ...T.boxes.filter(q => q.tag === 'leaf').map(q => Math.max(q.x0 - x, x - q.x1))] : [])];
+    return { face, x: +x.toFixed(2), y: +l.p[1].toFixed(2), off: +(Z => Math.abs(Math.abs(z) - Z))(T.inner.z1).toFixed(2), clear: +Math.min(9, ...gaps).toFixed(2) }; });
+  const cand = F.lights.filter(l => l.type === 'tablecandle'), L = []; interiorScene.traverse(o => { if (o.isLight && o.userData.hallFix) L.push(o); }); const P = _LPS.get(interiorScene); if (P) for (const v of P.src) if (v.mirror.userData.hallFix && !L.includes(v.mirror)) L.push(v.mirror);
+  const fm = F.group.children.find(m => m.name === 'hall:flames'), o0 = fm && fm.material.opacity; interiorScene.userData.hallTick(performance.now() + 53); const o1 = fm && fm.material.opacity;
+  return { wall, candles: cand.length, tables: T.tables.length, onTable: cand.every(c => T.tables.some(t => Math.abs(c.p[1] - (t.y - T.floors[0]) - .3) < .02)), lights: L.length, n: F.lights.length, tris: F.tris, draws: F.draws, flick: o0 !== o1 }; });
+check(`the Gatelands' sconces: ${sc && sc.wall.length} on the front and back walls at ${sc && sc.wall.map(w => w.x).join(', ')} m, ${sc && Math.min(...sc.wall.map(w => w.clear))} m or more clear of a window, the door and its leaf; a candle on each of the ${sc && sc.tables} tables; each its own light; ${sc && sc.tris} triangles in ${sc && sc.draws} draws (S1516)`,
+  !!sc && sc.wall.length >= 3 && sc.wall.some(w => w.face === 'front') && sc.wall.some(w => w.face === 'back') && sc.wall.every(w => w.off < .3 && w.clear >= .2 && w.y > 1.7 && w.y < 1.95) && sc.candles === sc.tables && sc.onTable && sc.lights === sc.n && sc.draws <= 10 && sc.flick, sc);
 
 // leaving: at the arrival spot E does not take you out; at the door it does
 const stay = await page.evaluate(() => { px = intDoorX(currentHouse); pz = intArrivalZ(currentHouse); jumpY = 0; interact(); return true; });

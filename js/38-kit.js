@@ -2784,7 +2784,7 @@ function shrineRow(o = {}) {
 // docs/prototypes/levelup/halls.js (27 Oct): the Mark's pitch torch in an iron bracket, the Gatelands' sconce of two candles, Aurenne's
 // lamp stand and wall lamp, and a candle on a table. A bracket's ring is at 1.95 m, a torch's flame 2.25, a sconce's candles 1.75, a
 // stand's lamp 1.45: over a 1.9 m man's head, under a 2.4 m ceiling.
-//   PKIT.halls.fixtures(list) -> { group, flames, lights: [{ p, k, r, col, type }], tris, draws, tick(ms) }; list is [{ type, x, y, z,
+//   PKIT.halls.fixtures(list) -> { group, flames (the torches'), small, lights: [{ p, k, r, col, type }], tris, draws, tick(ms) }; list is [{ type, x, y, z,
 //   nx, nz }] in the caller's frame: y the floor (or a table's top for 'tablecandle'), (nx, nz) the wall's way into the room (a stand
 //   or a candle stands free). A light's k is the prototype's ×0.275, on the scale of the game's room lamps (the alehall's iron lamp,
 //   1.1 here, is 4 there). The flames flicker by tick; the rest is one mesh a material.
@@ -2850,13 +2850,14 @@ function hallParts(type) {
   throw new Error('fixture ' + type);
 }
 function hallFixtures(list) {
-  const M = hallMats(), buckets = new Map(), flames = [], lights = [], group = new THREE.Group(); group.name = 'hall fixtures';
+  const M = hallMats(), buckets = new Map(), flames = [], lights = [], small = [], group = new THREE.Group(); group.name = 'hall fixtures';
   for (const f of list) {
     const { P, F, light } = hallParts(f.type), ry = f.nx == null ? 0 : Math.atan2(f.nx, f.nz);
     const T = new THREE.Matrix4().compose(new THREE.Vector3(f.x, f.y || 0, f.z), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, ry, 0)), new THREE.Vector3(1, 1, 1));
     for (const [g, k] of P) { const q = g.index ? g.toNonIndexed() : g; for (const a of Object.keys(q.attributes)) if (!['position', 'normal', 'uv'].includes(a)) q.deleteAttribute(a);
       if (!q.attributes.uv) q.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(q.attributes.position.count * 2), 2)); q.applyMatrix4(T); if (!buckets.has(k)) buckets.set(k, []); buckets.get(k).push(q); }
-    for (const fl of F) { const p = fl.p.clone().applyMatrix4(T), m = new THREE.Mesh(fl.g, M.flame), c = new THREE.Mesh(fl.g, M.core); c.scale.setScalar(fl.core); m.add(c); m.position.copy(p); m.renderOrder = 6;
+    if (f.type !== 'torch') { for (const fl of F) { const p = fl.p.clone().applyMatrix4(T); small.push([fl.g, p, fl.core]); } }
+    else for (const fl of F) { const p = fl.p.clone().applyMatrix4(T), m = new THREE.Mesh(fl.g, M.flame), c = new THREE.Mesh(fl.g, M.core); c.scale.setScalar(fl.core); m.add(c); m.position.copy(p); m.renderOrder = 6;
       const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: hallPuff(), color: new THREE.Color(1, .55, .22), transparent: true, opacity: f.type === 'torch' ? .35 : .22, depthWrite: false, blending: THREE.AdditiveBlending }));
       const hs = f.type === 'torch' ? .7 : .16; halo.scale.set(hs, hs, 1); halo.position.y = fl.g.parameters.points.at(-1).y * .45; m.add(halo); m.userData.hallFlame = true; group.add(m); flames.push([m, flames.length * 1.7]); }
     const L = new THREE.Vector3(...light.at).applyMatrix4(T); lights.push({ p: L.toArray(), k: +(light.k * .275).toFixed(3), r: light.r, col: light.col, type: f.type });
@@ -2864,8 +2865,19 @@ function hallFixtures(list) {
   let tris = 0;
   for (const [k, gs] of buckets) { const g = mergeGeometries(gs); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = 'hall:' + k; if (k === 'soot') m.renderOrder = 4; group.add(m); tris += g.attributes.position.count / 3; }
   for (const [m] of flames) tris += m.geometry.index.count / 3 * 2;
-  const tick = t => { const s = t * .001; for (const [m, ph] of flames) { const a = 1 + .08 * Math.sin(s * 13 + ph) + .05 * Math.sin(s * 29 + ph * 2.3); m.scale.set(1 / Math.sqrt(a), a, 1 / Math.sqrt(a)); m.rotation.z = .05 * Math.sin(s * 7 + ph); } };
-  return { group, flames: flames.map(f => f[0]), lights, tris: Math.round(tris), draws: buckets.size + flames.length * 3, tick };
+  // a candle's or a lamp's flame is a few centimetres: all of them are one flame mesh, one core and one set of halos (three draws for
+  // the room, not three a flame), flickered by their brightness and the halos' size rather than one by one
+  let sm = null;
+  if (small.length) { const fg = [], cg = [], hp = [];
+    for (const [g, p, c] of small) { const q = g.toNonIndexed(); fg.push(q.clone().translate(p.x, p.y, p.z)); cg.push(q.scale(c, c, c).translate(p.x, p.y, p.z)); hp.push(p.x, p.y + g.parameters.points.at(-1).y * .45, p.z); }
+    const fm = M.flame.clone(), cm = M.core.clone(), F1 = new THREE.Mesh(mergeGeometries(fg), fm), C1 = new THREE.Mesh(mergeGeometries(cg), cm); fg.concat(cg).forEach(x => x.dispose());
+    const hg = new THREE.BufferGeometry(); hg.setAttribute('position', new THREE.Float32BufferAttribute(hp, 3));
+    const hm = new THREE.PointsMaterial({ map: hallPuff(), color: new THREE.Color(1, .55, .22), size: .16, sizeAttenuation: true, transparent: true, opacity: .22, depthWrite: false, blending: THREE.AdditiveBlending }), H1 = new THREE.Points(hg, hm);
+    for (const m of [F1, C1, H1]) { m.renderOrder = 6; m.userData.hallFlame = true; group.add(m); } F1.name = 'hall:flames'; C1.name = 'hall:cores'; H1.name = 'hall:halos';
+    tris += F1.geometry.attributes.position.count / 3 * 2; sm = { fm, cm, hm }; }
+  const tick = t => { const s = t * .001; for (const [m, ph] of flames) { const a = 1 + .08 * Math.sin(s * 13 + ph) + .05 * Math.sin(s * 29 + ph * 2.3); m.scale.set(1 / Math.sqrt(a), a, 1 / Math.sqrt(a)); m.rotation.z = .05 * Math.sin(s * 7 + ph); }
+    if (sm) { const a = .08 * Math.sin(s * 11) + .05 * Math.sin(s * 23.7); sm.fm.opacity = .85 + a; sm.cm.opacity = .92 + a * .5; sm.hm.size = .16 * (1 + a); } };
+  return { group, flames: flames.map(f => f[0]), small: small.length, lights, tris: Math.round(tris), draws: buckets.size + flames.length * 3 + (sm ? 3 : 0), tick };
 }
   return { stream, hashKey, mergeByMaterial, halls: { fixtures: hallFixtures }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
     mk: { hall: markHall, lot: markLot, alehall: markAlehall, longhouse: markLonghouse, mats: markMats },
