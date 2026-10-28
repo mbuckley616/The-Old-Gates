@@ -621,7 +621,7 @@ function loop(now){
       swingX    = phasePitch;
       swingZ    = phaseZ;
       swingY    = 0;
-      if(EQ.weapon&&EQ.weapon.weaponShape==='spear'&&vmSword.userData.level){const o=fpThrust(p,vmSword.userData.swingIsPower,_SP);swingPosX=o.x;swingPosY=o.y;swingPosZ=o.z;swingX=swingZ=0;} /* S1465 — the spear thrusts along its shaft (16-viewmodel.js) */
+      if(((typeof workShown==='function'&&workShown())||EQ.weapon||{}).weaponShape==='spear'&&vmSword.userData.level){ /* S1526 — the tool in hand while you work, not the spear on the belt */ const o=fpThrust(p,vmSword.userData.swingIsPower,_SP);swingPosX=o.x;swingPosY=o.y;swingPosZ=o.z;swingX=swingZ=0;} /* S1465 — the spear thrusts along its shaft (16-viewmodel.js) */
       if(swingT===0){
         // v66.1 — Safety net: if the swing ended without ever crossing
         // impactPoint (e.g. impactPoint mis-set high in the debug panel, or a
@@ -989,6 +989,7 @@ function loop(now){
     else if(nearHerbPrompt){iprOW.textContent=`Press 'E' to harvest ${nearHerbPrompt.def.name}`;iprOW.style.opacity='1';iprOW.style.display='block';}
     else if(typeof veinNear==='function'&&veinNear()){const v=veinNear(),n=veinLeft(v);iprOW.textContent=n<=0?'Worked out':MINE&&MINE.v===v?`Working the ${ORE_DEF[v.ore].name.toLowerCase()} · E to stop`:`Press 'E' to mine ${ORE_DEF[v.ore].name.toLowerCase()}`+(hasPick()?'':' (you need a pick)');iprOW.style.opacity='1';iprOW.style.display='block';} /* S1491 — a vein */
     else if(typeof treeNear==='function'&&(chopTool()||CHOP)&&treeNear()){const n=treeNear();iprOW.textContent=CHOP&&CHOP.t===n.t?`Felling · ${CHOP.n} of ${fellStrikes()} · E to stop`:`Press 'E' to fell the tree`+(chopTool()==='axe'?' (slow with an axe)':'');iprOW.style.opacity='1';iprOW.style.display='block';} /* S1511 — a tree, with a hatchet */
+    else if(typeof campfireNear==='function'&&campfireNear()&&!cookOpen){iprOW.textContent="Press 'E' to tend the fire";iprOW.style.opacity='1';iprOW.style.display='block';} /* S1525 — a lit fire */
     else if(nearBramBodyPrompt){
       // v61al: prompt changes based on whether the body has been read yet.
       // First-read branch advances the quest and shows the flavor text.
@@ -1063,6 +1064,7 @@ function loop(now){
     if(nearExit){iprInt.textContent="Press 'E' to leave";iprInt.style.opacity='1';iprInt.style.display='block';}
     else if(_dpr&&!(_nbd&&nearBed)){iprInt.textContent=_dpr;iprInt.style.opacity='1';iprInt.style.display='block';}
     else if(nearStash){iprInt.textContent="Press 'E' to access stash";iprInt.style.opacity='1';iprInt.style.display='block';}
+    else if(typeof benchNear==='function'&&benchNear()&&!benchOpen){iprInt.textContent="Press 'E' to work at the bench";iprInt.style.opacity='1';iprInt.style.display='block';} /* S1527 — the cabin's bench */
     else if(nearBed){iprInt.textContent=(_nbd&&typeof WORLD!=='undefined'&&WORLD.bedPrompt(_nbd))||"Press 'E' to rest";iprInt.style.opacity='1';iprInt.style.display='block';} // v80 S141 — the bed says whose it is
     else if(nearKeeper){iprInt.textContent=(typeof sleeperAsleep==='function'&&sleeperAsleep())?(currentHouse&&currentHouse.keeper?currentHouse.keeper:'The resident')+" (asleep) — Press 'E' to wake":(currentHouse&&currentHouse.keeper?currentHouse.keeper+" — ":"")+"Press 'E' to talk"; /* S770 — over a sleeper (#255) */iprInt.style.opacity='1';iprInt.style.display='block';}
     else{iprInt.style.opacity='0';setTimeout(()=>{if(iprInt.style.opacity==='0')iprInt.style.display='none';},260);}
