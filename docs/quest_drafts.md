@@ -2,7 +2,7 @@
 
 These are the quest writer's drafts. None of them is canon until Michael promotes it into `quest_writing.md`, and none is a spec until it is approved. Each draft gives the quest's shape, every line verbatim with its speaker and people, and a note on what in the code would carry it.
 
-Calls read to: 2026-10-16T17:51:09.360Z (run 29, 27 Oct: no new calls on the page)
+Calls read to: 2026-10-16T17:51:09.360Z (run 30, 28 Oct: no new calls on the page)
 
 ---
 
@@ -2079,7 +2079,7 @@ The three ending rows and his answers to them are as built (*Break it. Let the w
 
 ## Asked in Passing — six townsfolk's errands
 
-*Approved by Michael, 14 Oct 2026.* The first piece of Michael's control-room note of 5 Oct (backlog A, *Questing, a big effort pass*): *"we also need to add probably 50–100 somewhat unique quests. We can probably generalize these and make it so that these can be recycled in different areas, but I want quests to be something far more likely to stumble upon / something that will incentivize players to talk to NPCs."* Today every town job comes from the lord (`townQuestFor`, `87-world-quests.js`: cull, retrieve, deliver, find, road) and every guild task from a guild head. The people in the street give nothing. This draft gives them six errands, each a template that recycles across every town, trade and people, each with a choice or a clock that the world remembers. Six templates × the twelve trades that can give them × four peoples × the towns they point at is the variety the note asks for; a second run can add six more on the same frame.
+*Approved by Michael, 14 Oct 2026.* *Building: the frame and errand 3, A Fever, Session 1510 (PR #817), word for word but for two plain fixes: only a giver with children asks for a fever (the offer says* My youngest*), and the giver answers* I’ll do it. *with the people's line added to the shared table below.* The first piece of Michael's control-room note of 5 Oct (backlog A, *Questing, a big effort pass*): *"we also need to add probably 50–100 somewhat unique quests. We can probably generalize these and make it so that these can be recycled in different areas, but I want quests to be something far more likely to stumble upon / something that will incentivize players to talk to NPCs."* Today every town job comes from the lord (`townQuestFor`, `87-world-quests.js`: cull, retrieve, deliver, find, road) and every guild task from a guild head. The people in the street give nothing. This draft gives them six errands, each a template that recycles across every town, trade and people, each with a choice or a clock that the world remembers. Six templates × the twelve trades that can give them × four peoples × the towns they point at is the variety the note asks for; a second run can add six more on the same frame.
 
 ### What the canon fixes, and where it is silent
 
@@ -2103,6 +2103,8 @@ The three ending rows and his answers to them are as built (*Break it. Let the w
 | **Markman** | "Aye. Someone else, then." | "Not done, then. Off you go." | "Good. Here. We're square." |
 | **Aurennais** | "Of course, Master. The offer stands until it is taken up elsewhere." | "When it is done, Master, and not before. The terms are as they were." | "Done as agreed, Master. Your fee, and my thanks besides." |
 | **Old Blood** | "Then not." | "Not yet." | "Good. Take this." |
+
+*Added in the build (S1510), the giver's answer to* I’ll do it.*: Gatelander "Go on, so, and mind the road home." · Markman "Good. Go." · Aurennais "Then we are agreed, Master." · Old Blood "Go."*
 
 The player's labels: **ask** (per errand, below); **I'll do it.** · **Not now.** · **About that errand.** · and the errand's own choices.
 
@@ -5352,3 +5354,142 @@ She asks nothing and gives nothing, and fights nobody; a struck child is the cri
 - *Registers* (§2): Amani and Calix have *Master*, terms and no oath; Alain swears on the Weaver and turns proverbs (*a short memory's a long road*); Sæwynn has *aye*, iron and blood, short sentences and her own nickname; the child answers with the older name for the thing (*the gate-maker*, *the one who makes the cloth*).
 - *Slurs are about work, land and gods* (§2.1). None here; Alain's *we call that a living* is the canon's quarrel over salvage.
 - *Where the canon is silent:* the Church's way with a heretic (held, no more), and the weather foretold (only as far as `WX.next`). Both the plainer thing.
+
+---
+
+## Travellers — a navigator, a hunter, a sister, a reader and a patron
+
+*Unapproved.* *Drafted 28 Oct 2026. Backlog L2, *Travellers* (OG-051, sheet E7, *diverse roots, shared paths*): "Zahra al-Mahdi, Tavio Rusen, Sister Elidan, Khemrik Voss, Marco di Serra. Khemrik reads the gates, which the Withdrawal forbids: a candidate for one of the awake (§10a)." Five named people who move, where *The Underworld* and *Faith* stood still: each is found in one of a few places by the game-week, rolled on the person's own stream (`seededRng('traveller', key+':'+week)`, the co-op rule), each with one service on machinery that exists and one thread the world remembers. One **Rule read** for the systems builder; no line depends on which way it goes.*
+
+### What the canon fixes, and where it is silent
+
+- *Aurenne: known for ships that come back; knowledge; the Mages' academy* (§1.3). A navigator who charts the gates for the houses is Aurenne's ordinary trade. *The Compact keeps paper over oaths*: she sells a chart, not a promise.
+- *The Mark exports men; half the Fighters' Guild is Markish* (§1.2). A hunter who guides for pay is the Mark's. *Some ordinary animals are the owners', not the player's* (Michael's A on companions, decision 12 of the art batch): the wolf is his, walks with him, and never follows the player.
+- *The Gatelands: never leaving a wounded man; the old faith's six gods* (§1.1, §4.1). The sister keeps a Gatelands shrine order, not the Church of the Weaver, which is Aurenne's (§3.1). Her reliquary is what the Gatelands' salvage trade brings up, and the Compact calls that sacrilege (§1.3).
+- *The Withdrawal forbade the reading of sigils; every Old Blood reader who ignored it went strange, then quiet; the marks spread to the face with the Cold* (§3.1, §3.3). The sheet's reader with gold marks on his face and his hand to a sigil is that, exactly. He is one of the awake (§10a). The sheet's white hair is kept as the Cold's, on a man whose hair was black: canon gives the Cold pallor and grey eyes and is silent on hair, and an old man greying is the plainer thing.
+- *No chosen-one prophecies* (§4.2). The reader sees the player's hands and says what he sees. He does not name it or quote the three descriptions.
+- *Names* (§2; *The Aurennais Register*, approved 14 Oct). *Zahra al-Mahdi* is in Aurenne's register and stands (the register's note kept *Zahra* free for her). *Marco di Serra* is Italian, which the register does not draw on: he is **Markos Serra**, of the house of Serra, *Markos* the Greek form. *Tavio Rusen* is in no register; the Mark's is Anglo, and he is **Tidwulf**, which the strait shortens to *Tid*. *Sister Elidan* stands: an Irish-register woman's name would be the plainer thing, but *Elidan* is a saint's name in the Welsh fringe of that world and sits beside *Gormlaith* without strain. *Khemrik Voss* is in no register; he is Old Blood, and his name is **Cuimín**, an older form, with no byname (the Old Blood have none).
+- *Silent:* whether a gate can be charted from outside (the plainer thing: its door and its kind can, which is what the map already shows once a gate is found); whether a reader can teach (he cannot, and will not try).
+
+### The five
+
+| | People | Where, by the game-week | What they do |
+|---|---|---|---|
+| **Zahra al-Mahdi** | Aurennais | the quay of one of Aurenne's three largest ports | sells a chart that marks the nearest gate the player has not found |
+| **Tidwulf**, called *Tid* | Markman | the inn door of the Mark's town nearest a living lair | names the lair and pays a bounty when its beast is dead |
+| **Sister Elidan** | Gatelander | the church of one Gatelands town in four, a week in each | heals for nothing; buys what comes out of the gates, for the shrines |
+| **Cuimín** | Old Blood | the door of the nearest gate with a warm stone to the player's last town, by day | asks what the stone said; one of the awake |
+| **Markos Serra** | Aurennais | the counting-house steps of Aurenne's capital (the castle lot's door), by day | buys gate relics at a fifth over any shop, for his own shelves |
+
+Faces for the bodies builder (the sheet's): Zahra dark-skinned, long locs, gold hoops and a coin necklace, a navy-and-cream coat, a brass compass at the belt and a roll of charts; Tidwulf broad and scarred, braided, in furs, a horned skull on his pack, a grey wolf at heel; Elidan older, cream and crimson robes, a candle lantern and a small reliquary box; Cuimín slight and grey-pale, white-haired, the marks in gold up the throat and over one cheek, a thin circlet; Markos dark-bearded, a velvet coat, a cup in his hand more often than not.
+
+### 1. Zahra al-Mahdi (Aurennais; formal, *Master*, contracts, never an oath)
+
+**Greeting, first:** "Master. You are standing on my chart. It is an old one, and it will survive you, but I would rather not test it."
+**Greeting, again:** "Master. Back from the blank parts of the map, I see. Good. They are where the money is."
+**Greeting, to a player who has bought a chart:** "Master. Did it lie where I said? It usually does. The ground moves less than people do."
+
+**Topics**
+- *Who are you?* — "Zahra al-Mahdi. A navigator, by trade and by the houses' paper, and lately a cartographer of the old gates, which no house asked for and every house buys. I go where the ships go, and a little further."
+- *Why chart the gates?* — "Because they do not move, Master, and nothing else in this world can be relied upon to stay where it was drawn. A coast silts. A town burns. The gates are where they were when the first map was made. I find that restful."
+- *What does the Church say of it?* — "That I draw the Weaver's loom for people who mean to unpick it. The Prior has said so to my face, courteously, and then bought two charts. I have the receipt."
+- *Buy a chart.* (her service) — "Forty gold, Master, and it marks the nearest gate you have not stood before, wherever you are standing when you open it. Terms are on the back. Nobody reads the back."
+  - Bought: the chart goes to the bag; reading it marks the nearest gate the player has not discovered (the map's *discovered*, as a rubbing's star does) and is spent. With none left undiscovered within the island: "Then you have found them all on this island, Master, and I owe you nothing but my admiration. Take your forty back."
+
+**Her thread: *The Blank at {gate}*.** Once, after a chart is bought and read: *Is there a gate you can't reach?* — "One. {Gate}, {dir} of {town}. I have its door on three charts and its name on none, and the houses will not buy a gate without a name. Go in as far as the first sigil. Tell me what it is called inside. The people who built it wrote its name on the wall, I am told, and nobody has read it to me."
+  - *I'll go.* — "Then we are agreed, Master. Mind the doorway; it is the only part of the chart I am sure of."
+  - Once the player has stood before that gate's sigil (`worldState.sigilsRead[seed]` set, or touched at any tier): *It's called {gate's name}.* — "So it is. {Gate's name}. I will write it in, Master, with your name in the margin where nobody will read it. Sixty gold, and the chart is yours to keep." (60 gold; the gate's name stands on her later charts.)
+  - To an Old Blood player who turns it in: the same, and then: "You said it as if you were reading it off the wall. Forgive me. A navigator notices how people say names. It is most of the job."
+
+### 2. Tidwulf, called Tid (Markman; short sentences, *aye*, nicknames, oaths on iron and blood, no honorifics)
+
+**Greeting, first:** "Mind the wolf. She minds you."
+**Greeting, again:** "You. She remembers you. That's one of us."
+**Greeting, to a Markman player, first:** "Aye. Mark-born. She'll let you pass."
+
+**Topics**
+- *Who are you?* — "Tidwulf. Tid, on the strait. I hunt what the guild won't, and guide them that want to watch."
+- *The wolf?* — "Hers, not mine. She came with me off the hill and stayed. Don't call her. She won't come, and then you'll feel foolish."
+- *What do you hunt?* — "Whatever lives in the hole up at {lair}. {Beast}, they say. I've seen the tracks. Big as a cart-wheel."
+- *Will you guide me there?* — "No. I'll point. {Lair}, {dir}, {far}. Guiding's for them that pay twice."
+- After the lair is dead: *What now?* — "Next hole. There's always a next hole. That's the trade, aye."
+
+**His thread: *A Bounty on {lair}*.** Offered with *What do you hunt?*, while the lair nearest his town is alive.
+- *I'll take it.* — "Good. Kill it. Come back. Fifty. Iron and blood on it."
+- Turned in once `worldState.lairs[id]` is set (*It's dead.*): "Saw the crows go up. Knew it was you. Here. Fifty." (50 gold, or the lair's tier × 25 if more; a point of favour at his town.)
+- If someone else's work killed it first (the lair dead before he offered): *What do you hunt?* answers "Nothing. Somebody did {lair} before me. Good work. Annoys me."
+- He moves on after: from the next game-week he stands at the inn of the town nearest the next living lair in the Mark, and his first line to the player there is "You. Knew you'd come this way."
+
+### 3. Sister Elidan (Gatelander; proverbs, indirection, no bare yes or no, oaths on the Weaver)
+
+**Greeting, first:** "Come in, so, and close the door after the cold. You've the walk of someone who's been underground. It never leaves the knees."
+**Greeting, again:** "Yourself again, and in one piece. The Weaver's been kind, or you've been quick."
+**Greeting, to a Markman player, first:** "A Mark face, in out of the weather. You're welcome to the fire. We don't ask a man's country before we ask after his feet."
+
+**Topics**
+- *Who are you?* — "Elidan. A sister of the shrines, which is a long way of saying I walk between them with a box of bones and a pot of salve, and stop where I'm needed. The towns take turns needing me."
+- *What's in the box?* — "What the gates give back. A finger-bone from a door in the hills, a ring off a hand nobody knew, a scrap of a shroud. The Compact would have them burned for sacrilege. I'd sooner keep them, and say their names if I find them. It's the same respect, done slower."
+- *Heal me.* — every priest's blessing, and full: "Sit. There. Never leave a wounded man, my mother said, and she'd no time for wounded women either, so she healed the lot of us." (Health to full; no charge.)
+- *Will you take what I found below?* (her service) — she buys any item the game marks as from a gate (`it.gate` or the relic loot table, **Rule read** below) at a shop's price, and never sells it on. "I'll give you what the shop would, and not a copper more, for I'm not a shop. But it won't go to a mantelpiece in Aurenne, and that's worth something to someone."
+- *What does the Church say of you?* — "That I keep what should be burned. I say a thing kept is a thing remembered, and a thing burned is a thing forgotten twice. We've agreed to say it to each other only once a year."
+
+**Her thread: *A Name for the Ring*.** Once, after the player has sold her three things: *Is there anything I can do?* — "There's a ring in the box with letters inside it, worn near away. I've read four of them. Someone in {town} may know the rest. A ring's made for a finger, and a finger has a name. Would you ask?"
+  - *I'll ask.* — "Go on, so. Ask the old ones. The young have no use for rings with letters in them."
+  - At that town, any generated townsperson over forty years (`bio.years`) answers *Do you know this ring?* with: "Let me see. … That's Murchadh's. He went to the gate on the hill when I was a girl and didn't come back. His wife wore its pair till she died. Well. Well, now." (Others: "A ring? No. My grandmother might have.")
+  - Back to Elidan, *It was Murchadh's.* — "Murchadh. There. It's a name again, and not a thing in a box. I'll say it at the shrine on my way through. Here, for your trouble, and the Weaver keep you for the asking." (25 gold; she keeps the ring.)
+
+**Rule read (systems):** *from a gate.* The game has no flag on an item that came out of a gate. The plain reading: an item rolled from a dungeon's chest or a gate foe's drop carries `gate:true` from then on, and Elidan buys only those. No line depends on it; without the flag she buys the relic loot table's items alone.
+
+### 4. Cuimín (Old Blood; sparing, exact, the older word for the thing)
+
+He stands at the door of the gate with a warm stone nearest the town the player was last in (`nearestSigilDoorFrom`), by day, with his hand on the stone of the arch. He is there only while that gate's sigil is unread.
+
+**Greeting, first:** "You see ruins. I see unfinished sentences."
+**Greeting, again:** "The sentence is longer than it was."
+**Greeting, to an Old Blood player, first:** "You hear it too. Do not answer it."
+
+**Topics**
+- *Who are you?* — "Cuimín. I kept the words. Now they keep me."
+- *What are you doing?* — "Reading. It is not allowed. Nobody has stopped me in sixty years. That is not the same as allowed."
+- *What does it say?* — "The door says *door*. Inside, the stone says what the stone is for. I will not tell you. It would do to you what it did to me." (He lifts his face to the light; the marks go up to the eye.)
+- *Who forbade it?* — "The gate-makers. Their last law. Touch, not read. They were right. I read anyway. So did one other. He is further along."
+- *Are you ill?* — "Cold. It does not stop. It is not unpleasant. That is the worst of it."
+
+**His thread: *What the Stone Said*.** He asks once, after the player has touched this gate's sigil (`worldState.sigilsRead[seed]`), on the next meeting at any gate: *It was warm.* is the player's label.
+- To a player who touched it at Impression or Comprehension: "Warm. Yes. And it showed you a word, and you thought you understood it. Good. Stop there. Go home." (Nothing changes; he moves to the next unread gate.)
+- To a player who touched it at Mastery, the first time: "You read it. Through. I see it on your hands." A pause the line does not fill. "Something on the other side looked up. It always does. It looked at me for sixty years. It did not look at you the same way. It looked at you the way I look at a door." He takes his hand off the arch, and does not stand at a gate again; from then his place is empty, and a rumour in that province says: *"The cold-eyed man at the gate's gone. Walked into it, the shepherds say. Or out of it."* (He is one of the awake. That he walked in is never confirmed.)
+- To an Old Blood player at Mastery, the same, with the last sentence: "It looked at you the way I look at a door. Or the way a door looks at a hand."
+
+### 5. Markos Serra (Aurennais; formal, *Master*, contracts, never an oath)
+
+**Greeting, first:** "Master. Come up out of the wind. Will you drink? It is from my own house's vineyard, which is to say it is bought, but bought from someone I like."
+**Greeting, again:** "Master. You have the look of someone carrying something heavier than gold. Come and set it down."
+**Greeting, to a Gatelander player, first:** "A Gatelander, on my steps. The Church will be scandalised. I am delighted. Sit."
+
+**Topics**
+- *Who are you?* — "Markos, of the house of Serra. Wine, glass, a share in eleven hulls and a twelfth that is, I am told, still at sea. And a collection. I am the house's patron of curiosities, which my brother calls a waste and my accountant calls a line in red."
+- *What do you collect?* — "What comes out of the old gates, Master. Quietly. The Church calls it sacrilege when a Gatelander sells it and scholarship when a Serra buys it. I did not write the rule. I only read it carefully."
+- *Sell him something from the gates.* (his service) — he buys the same items as Elidan (the same **Rule read**) at a fifth over a shop's price. "A fifth over the market, Master, and no questions, and no receipt. The receipt is the expensive part."
+- *Isn't that hypocrisy?* — "Yes, Master. It is also the economy. The two are often confused, and I make a modest living in the difference."
+- To a player who has sold Elidan anything: *Sister Elidan pays less.* — "She does, and she keeps them in a box and says their names. I keep them on shelves and say my own. If I were the dead I know which I would prefer. I am not, yet, and I pay a fifth over."
+
+**His thread: none.** He has no errand. He is the price on the other side of Elidan's, and the player's choice between them is the thread: every relic sold goes to one or the other, and the count is kept (`worldState.relicsTo={sister,serra}`), read only by these two lines:
+- Elidan, once the player has sold Markos five more than her: "You've been selling to the Serra. No, don't tell me. A ring on a shelf is still a ring. But it's not a name, and that's the difference between us."
+- Markos, once the player has sold Elidan five more than him: "You have been giving my curiosities to the sister, Master. I cannot fault the theology. I can fault the arithmetic."
+
+### What in the code would carry it
+
+- **`83-world-generator.js`** (or a small `TRAVELLERS` table beside `NAMED` in `87-world-quests.js`): each traveller a `makeDef` with `authored:true`, `keepName:true`, the people given, placed by `travellerAt(key,week)` from `seededRng('traveller', key+':'+week)` among the places the table above names, and spawned when the player is within a cell of it (as the duel's Rowe and the lost person are, `spawnNPC`). Tidwulf's wolf is a `Wolf` rig from `34-creatures.js` with no foe tag, kept at his heel.
+- **Zahra:** the chart is a misc item read with `useItem` that sets the nearest undiscovered `CELL_DOOR`'s `discovered` (the rubbing's star, `rubbings`); the thread reads `worldState.sigilsRead[seed]`.
+- **Tidwulf:** the nearest living lair from `worldState.lairs` and `lairBeast(site)`; the bounty a quest record (`kind:'bounty'`, id `tr:tid:<lair id>`).
+- **Elidan and Markos:** a buy-only shop topic each (`trade:true` with a filter on the item), the **Rule read** flag, and `worldState.relicsTo` (a world key, in `_applyLoadData`'s S242 list). Elidan's ring: a topic on generated townsfolk at the named town while her quest record is open, as errand 1 of *Asked in Passing* does.
+- **Cuimín:** a def at the door of `nearestSigilDoorFrom(lastTown)`, hidden once his record says *gone* (`worldState.travellers.cuimin='gone'`, a world key); the Mastery test reads the tier the player touched at (`onMasteryTouch`).
+- **Journal titles:** *The Blank at {gate}* · *A Bounty on {lair}* · *A Name for the Ring* · *What the Stone Said* (no journal entry; it is a meeting, not a task).
+
+### The register, checked
+
+- Zahra and Markos: *Master*, terms, receipts, the back of the contract; no oath anywhere. Markos's *I did not write the rule. I only read it carefully* is the Compact's paper over oaths.
+- Tidwulf: *aye*, *iron and blood*, sentences of four words; no honorific; a nickname of his own.
+- Elidan: proverbs (*a thing kept is a thing remembered*), no bare yes or no (*I'd sooner keep them*), *the Weaver keep you*. Her *never leave a wounded man* is the Gatelands' pride (§1.1).
+- Cuimín: *the gate-makers* for the Weavers, *the words* for the sigils, *the door*; never more than three sentences.
+- Slurs: none. The Church's *sacrilege* is the canon's quarrel over salvage (§1.3), contradicted by Markos and by the Prior who buys Zahra's charts.
