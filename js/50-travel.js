@@ -2029,6 +2029,7 @@ function interact(){
     if(nearHerb){harvestHerb(nearHerb);return;}
     {const v=veinNear();if(v){mineVein(v);return;}} /* S1491 — a vein, with a pick */
     {const n=treeNear();if(n&&(chopTool()||(CHOP&&CHOP.t===n.t))){chopTree(n.ch,n.t);return;}} /* S1511 — a tree, with a hatchet */
+    if(campfireNear()){openCookPage();return;} /* S1525 — a lit fire: its page (the critic's s995: only the bag opened it) */
     // v61ae: Bram's body needs special handling. The standard zone-corpse
     // check below requires items.length>0, which means an already-looted body
     // with empty items becomes NON-interactable. But Bram's body should always
