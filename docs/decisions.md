@@ -25,6 +25,17 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 
 In every option the herbs that glow by nature (Heartroot, Firemoss, Icebloom, Pearlweed) still glow from their own parts. Pictures: [A, B and C on the three islands](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1028/docs/prototypes/levelup/herbs-options.jpg); the full notes in `docs/concepts.md`.
 
+### Lodestone (Mining 75) and Heartwood (Woodcutting 75) — what each perk gives (from the systems builder, 2026-10-28, #860)
+**The question.** Survival B's perks are all built but four; two wait on #376. Lodestone (Mining 75, "the magnetic ore of La Grise") and Heartwood (Woodcutting 75, "heartwood for masts") have a name and a line in the skills sheet but no rule, and the game has no lodestone or great tree yet.
+
+**Options.**
+- **A (recommended).** Each does a job in a loop you already play. *Heartwood:* one oak or pine in ten is a great tree (by its seed); at 75 felling one gives a heartwood log, which makes a heartwood spar; its splice gives +40 rig, past the field cap to full — the one way to mend a mast fully at sea. *Lodestone:* at 75, one ore in ten from a vein in the Mark's highlands comes with a lodestone (0.5); carried, Prospector shows veins to 120 m instead of 40 and the compass points to the nearest vein.
+- **B.** Trade goods only: heartwood 60 gold at a shipwright's, lodestone 40 at a smith's.
+- **C.** Plain numbers, renamed: *Deep seam* (one ore in five a metal up the vein's table) and *Clean cut* (one more spar-grade pine log a tree); both names drop out of the sheet.
+- **D.** Leave both unbuilt until sailing's or the Mark's next work needs them.
+
+Each of A's two is one systems session; the great tree is one in ten of the trees already scattered, so it needs no new model.
+
 ## Answered
 ### Bowyer's longbow and war bow — how each plays (from the systems builder, 2026-10-28, #851)
 **The question.** Joinery 75's perk, *Bowyer*, reads "the longbow and the war bow", but neither bow exists, so the perk shows as not yet built. Today's bow: full draw 1.10 s, the shot ×1.40 at full draw, the arrow 28 m/s, 8 stamina a second held, weight 3. What should the two bows be?
