@@ -2728,7 +2728,8 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       // book, pews with shaped ends and kneelers, an eight-sided pulpit with steps, columns with bases and capitals; one bake
       {const K=furnKit(),room=K.bake(K.church(W,D,H,FN,FSEED));room.userData.furn=true;sc_.add(room);furnSwap(room);}
       solid(W/2,1.6,1.2,.55,1.3);light(W/2,2.2,1.8,0xffc070,1.4,8);
-      {const zs=[];for(let z=2.5;z<D-1.8;z+=Math.max(2.2,D/4))zs.push(z);tallWins(zs,3.4,.9,2.6,0xc89050);} /* S896 — three a side in a nave of true size (14 to 18 m), as in the old, longer one; from 3 by 3 it held two */
+      {const zs=[];for(let z=2.5;z<D-1.8;z+=Math.max(2.2,D/4))zs.push(z);tallWins(zs,3.4,.9,2.6,0xc89050);
+        kitDaylight(sc_,zs.flatMap(z=>[{x:0,y:3.8,z,nx:1,nz:0,w:.9,h:2.6},{x:W,y:3.8,z,nx:-1,nz:0,w:.9,h:2.6}]),.25);} /* S1513 — the sky through each tall window by the hour, in the old unit (scaleRoom carries the spots); 64 at noon and 64 at 23h before */ /* S896 — three a side in a nave of true size (14 to 18 m), as in the old, longer one; from 3 by 3 it held two */
       for(const x of furnKit().churchAt(W,D).colX)for(let z=5.5;z<D-3;z+=3.5)solid(x,z,.4,.4,H/F); /* S896 — between the pews and the walls in a nave of true size */ // S303 — the columns outside the pews (at W/2 ± 3 they stood in them)
       npc={x:W/2,z:3.2,maxZ:3.6,paused:true};
     } else if(type==='castle'){

@@ -17,7 +17,12 @@ const shoot = views => page.evaluate(views => { const sc = interiorScene, W = _S
   views.forEach((v, i) => { const f = new Function('W', 'D', 'return ' + v)(W, D); cam.position.set(f[0], f[1], f[2]); cam.lookAt(f[3], f[4], f[5]); sc.updateMatrixWorld(true); REN.render(sc, cam); x.drawImage(cv, 0, 0, CW, CH, i * CW / 2, 0, CW / 2, CH / 2); });
   return c.toDataURL(); }, views);
 fs.mkdirSync('tests/out', { recursive: true });
+await page.evaluate(() => forceTime(12));
 check('a church is found', await enter('church'));
+// S1513: at noon the sky comes in through each of the nave's tall windows, a spot inside each (kitDaylight; scaleRoom carries them)
+const sky = await page.evaluate(() => { const W = _S.intW, D = _S.intD, s = []; interiorScene.traverse(o => { if (o.isLight && o.userData.daylight) s.push({ x: +o.position.x.toFixed(2), z: +o.position.z.toFixed(2), i: +o.intensity.toFixed(2), in: o.position.x > 0 && o.position.x < W && o.position.z > 0 && o.position.z < D && Math.abs(o.target.position.x - W / 2) < Math.abs(o.position.x - W / 2) }); });
+  return { hour: gameHour(), s }; });
+check(`at noon the day comes in through the nave's tall windows (${sky.s.length} sky spots, both walls, aimed in)`, sky.hour >= 7 && sky.hour < 18 && sky.s.length >= 4 && sky.s.length % 2 === 0 && sky.s.every(q => q.in && q.i > 0), sky);
 const ch = await look(); console.log(JSON.stringify(ch));
 // S896 (card F2a): a nave of true size holds fewer pews (two or three rows a side), so the bake is lighter: 5k, not 10k, is its floor
 check('the church is one bake with the altar\'s candle flames, 5–60k triangles, and none of the old cylinder pillars', ch.furn === 1 && ch.fire && ch.tris[0] > 5000 && ch.tris[0] < 60000 && ch.cyl === 0, ch);
