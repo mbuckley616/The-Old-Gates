@@ -1064,6 +1064,7 @@ function loop(now){
     if(nearExit){iprInt.textContent="Press 'E' to leave";iprInt.style.opacity='1';iprInt.style.display='block';}
     else if(_dpr&&!(_nbd&&nearBed)){iprInt.textContent=_dpr;iprInt.style.opacity='1';iprInt.style.display='block';}
     else if(nearStash){iprInt.textContent="Press 'E' to access stash";iprInt.style.opacity='1';iprInt.style.display='block';}
+    else if(typeof benchNear==='function'&&benchNear()&&!benchOpen){iprInt.textContent="Press 'E' to work at the bench";iprInt.style.opacity='1';iprInt.style.display='block';} /* S1527 — the cabin's bench */
     else if(nearBed){iprInt.textContent=(_nbd&&typeof WORLD!=='undefined'&&WORLD.bedPrompt(_nbd))||"Press 'E' to rest";iprInt.style.opacity='1';iprInt.style.display='block';} // v80 S141 — the bed says whose it is
     else if(nearKeeper){iprInt.textContent=(typeof sleeperAsleep==='function'&&sleeperAsleep())?(currentHouse&&currentHouse.keeper?currentHouse.keeper:'The resident')+" (asleep) — Press 'E' to wake":(currentHouse&&currentHouse.keeper?currentHouse.keeper+" — ":"")+"Press 'E' to talk"; /* S770 — over a sleeper (#255) */iprInt.style.opacity='1';iprInt.style.display='block';}
     else{iprInt.style.opacity='0';setTimeout(()=>{if(iprInt.style.opacity==='0')iprInt.style.display='none';},260);}
