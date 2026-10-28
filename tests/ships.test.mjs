@@ -44,12 +44,13 @@ check('the merchantman\'s deck follows the cog\'s hull (the middle, 2.5 out besi
 
 // the three classes differ in rig as well as size; every bake is made once and shared; the harbour boats
 const cls = await page.evaluate(() => { const out = {};
-  for (const k of ['sloop', 'cog', 'galleon']) { const r = WORLD.shipBake(k, 'player'); const bb = r.geo.boundingBox; out[k] = { tris: r.geo.attributes.position.count / 3, L: r.L, len: +(bb.max.z - bb.min.z).toFixed(1), top: +bb.max.y.toFixed(1), beam: +(bb.max.x - bb.min.x).toFixed(1), deckTo: +r.deck.z1.toFixed(2) }; }
+  for (const k of ['sloop', 'cog', 'galleon']) { const r = WORLD.shipBake(k, 'player'); const bb = r.geo.boundingBox; out[k] = { tris: r.geo.attributes.position.count / 3, L: r.L, len: +(bb.max.z - bb.min.z).toFixed(1), top: +bb.max.y.toFixed(1), beam: +(bb.max.x - bb.min.x).toFixed(1), deckTo: +r.deck.z1.toFixed(2), kit: !!r.kit }; }
   const m1 = WORLD.buildShipMesh(17, 5.6), m2 = WORLD.buildShipMesh(17, 5.6); out.shared = m1.geometry === m2.geometry && m1.userData.kind === 'cog';
   out.boats = [0, 1, 2, 3].map(v => WORLD.boatBake(v).geo.attributes.position.count / 3); out.boatShared = WORLD.boatBake(2) === WORLD.boatBake(2);
   return out; });
-check('sloop, cog and galleon: longer, taller and broader in turn, 4–8k triangles each, one bake shared by every ship of a class',
-  cls.sloop.len < cls.cog.len && cls.cog.len < cls.galleon.len && cls.sloop.top < cls.cog.top && cls.cog.top < cls.galleon.top && ['sloop', 'cog', 'galleon'].every(k => cls[k].tris > 3500 && cls[k].tris < 9000) && cls.shared, cls);
+// S1531: on the new look your sloop is the kit's (card F11), its mast as tall as the cog's and its clinker strakes about 24k triangles
+check(`sloop, cog and galleon: longer, taller and broader in turn, 4–8k triangles each (the kit's sloop ${cls.sloop.tris}, under 30k), one bake shared by every ship of a class`,
+  cls.sloop.len < cls.cog.len && cls.cog.len < cls.galleon.len && (cls.sloop.kit ? cls.sloop.top <= cls.cog.top : cls.sloop.top < cls.cog.top) && cls.cog.top < cls.galleon.top && ['sloop', 'cog', 'galleon'].every(k => cls[k].tris > 3500 && cls[k].tris < (cls[k].kit ? 30000 : 9000)) && cls.shared, cls);
 check('the harbour boats are four paints of an open boat, 1–2.5k triangles, baked once each', cls.boats.every(t => t > 1000 && t < 2500) && cls.boatShared, { boats: cls.boats });
 
 // the photograph: the classes with the player's look side on; below, the merchantman (a cog) and the black sail from the bow
