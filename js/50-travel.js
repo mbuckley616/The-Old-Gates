@@ -1131,8 +1131,14 @@ window.addEventListener('keydown',e=>{if(!forgeOpen)return;const c=e.code;let hi
 // wooden shield (the Wooden Buckler) is 3 planks. Both take the forge's 30 minutes, are never enchanted, carry `made` and sell
 // back at a fifth (Joinery 15 each). The longbow and the war bow (Bowyer, Joinery 75) wait for those bows to exist. Fletching
 // is everyone's: a log, 10 feathers and an iron ingot make 10 Iron Arrows, 15 with Fletcher (Woodcutting 50; Woodcutting 2).
-// Feathers are 1 gold for ten at the goods shop, beside its arrows. Arrows of the other metals wait on their damage.
+// Feathers are 1 gold for ten at the goods shop, beside its arrows.
+// S1541 — an arrow of each metal (Michael's A on #829): any ingot fletches its own, the iron arrow's 3–6 scaled along the weapons'
+// curve (`TIER_BASE_ATK`, iron's 13): Bronze 2–5, Steel 4–8, Mithril 5–10, Adamant 6–13, Obsidian 8–17. Fletched only, never sold.
 const JOINER_NAME="Joiner's Kit",BENCH_PIECE=15,FLETCH_N=10,FLETCH_FEATHERS=10;
+function arrowOf(t,qty){if(t===3)return {...ARROW_IRON,qty};const M=MATERIALS[t-1],B=TIER_BASE_ATK[t]/TIER_BASE_ATK[3];
+  return {...ARROW_IRON,name:`${M.name} Arrow`,qty,arrowDmg:ARROW_IRON.arrowDmg.map(v=>Math.round(v*B)),buyPrice:Math.round(ARROW_IRON.buyPrice*B),tier:t,material:M.name,matCol:M.blade};}
+// the metal the bench fletches when none is chosen: iron if you hold it, else the first you hold
+function fletchMetal(t){return t&&benchMetals().includes(t)?t:ingotCount(3)>=1?3:benchMetals().find(m=>ingotCount(m)>=1)||3;}
 const JOINER_ITEM={name:JOINER_NAME,ico:'🧰',type:'misc',weight:4,buyPrice:25,sellMult:.4,tool:'joiner'};
 const BENCH_ITEMS={
   plank:{name:'Plank',ico:'🪵',type:'misc',weight:2,buyPrice:3,sellMult:.3,plank:true},
@@ -1151,7 +1157,7 @@ const BENCH_RECIPES=[
   {id:'spar',name:'Spar',need:'1 Pine Log',has:()=>bagCount(b=>b.log==='pine')>=1},
   {id:'bow',name:'Bow',need:'2 planks and an ingot',has:()=>plankCount()>=2&&benchMetals().some(t=>ingotCount(t)>=1)},
   {id:'shield',name:'Wooden Buckler',need:'3 planks',has:()=>plankCount()>=3},
-  {id:'arrows',name:'Arrows',need:'1 log, 10 feathers and an iron ingot',has:()=>bagCount(b=>!!b.log)>=1&&bagCount(b=>b.feather)>=FLETCH_FEATHERS&&ingotCount(3)>=1},
+  {id:'arrows',name:'Arrows',need:'1 log, 10 feathers and an ingot',has:()=>bagCount(b=>!!b.log)>=1&&bagCount(b=>b.feather)>=FLETCH_FEATHERS&&benchMetals().some(t=>ingotCount(t)>=1)},
   {id:'patch',name:'Patch the hull',need:'a plank and a pitch',ship:true,has:()=>!shipWorkWhy('patch')}, /* S1519 — shown only at your ship */
   {id:'splice',name:'Splice the rig',need:'a spar and a pitch',ship:true,has:()=>!shipWorkWhy('splice')}];
 function benchRows(){return BENCH_RECIPES.filter(r=>!r.ship||shipWorkHere());}
@@ -1177,9 +1183,11 @@ function benchMake(id,tier){
     bagTake(b=>b.plank,3);bagAdd(it);skillUse('joinery',BENCH_PIECE,'b'+(_benchN++));
     if(typeof advanceClock==='function')advanceClock(FORGE_MIN);return {made:true,item:BAG[BAG.length-1],n:1};}
   if(R.ship){const s=shipWorkStart(id);return s.started?{made:true,work:true}:{made:false,why:s.why};}
-  if(id==='arrows'){if(!R.has())return {made:false,why:`You need ${R.need}.`};
-    const plain=bagCount(b=>b.log==='log')>0;bagTake(b=>plain?b.log==='log':!!b.log,1);bagTake(b=>b.feather,FLETCH_FEATHERS);bagTake(b=>b.ingot===3,1);
-    const n=perk('woodcutting',50)?15:FLETCH_N;const it={...ARROW_IRON,qty:n};bagAdd(it);skillUse('woodcutting',2,'b'+(_benchN++));
+  if(id==='arrows'){const t=fletchMetal(tier),m=MATERIALS[t-1].name.toLowerCase();
+    if(!bagCount(b=>!!b.log)||bagCount(b=>b.feather)<FLETCH_FEATHERS)return {made:false,why:`You need ${R.need}.`};
+    if(ingotCount(t)<1)return {made:false,why:`You need ${'aeiou'.includes(m[0])?'an':'a'} ${m} ingot.`};
+    const plain=bagCount(b=>b.log==='log')>0;bagTake(b=>plain?b.log==='log':!!b.log,1);bagTake(b=>b.feather,FLETCH_FEATHERS);bagTake(b=>b.ingot===t,1);
+    const n=perk('woodcutting',50)?15:FLETCH_N;const it=arrowOf(t,n);bagAdd(it);skillUse('woodcutting',2,'b'+(_benchN++));
     return {made:true,item:BAG.find(b=>sameStack(b,it))||it,n};}
   return {made:false,why:''};}
 // using the kit, a plank, a spar or feathers from the bag opens the bench's page
@@ -1268,11 +1276,14 @@ function benchDraw(){const ov=document.getElementById('benchui');if(!ov)return;
   else if(R.ship){const b=shipBars(),pl=R.id==='patch',why=shipWorkWhy(R.id); /* S1519 */
     t+=pad(pl?'1 Plank'+have(plankCount()):'1 Spar'+have(bagCount(x=>x.spar)))+pad('1 Pitch'+have(pitchCount()))+pad(pl?`hull +${patchAmt()}, ${patchSecs()} s of work`:`rig +${SPLICE_RIG}, ${patchSecs()} s of work`)+
       note(`${pl?'hull':'rig'} ${pl?b.hull:b.rig} of ${pl?b.hullMax:b.rigMax}; field work to ${fieldCap(pl?b.hullMax:b.rigMax)}`)+(why?note(why):'');}
-  else if(R.id==='arrows')t+=pad('1 log'+have(bagCount(b=>!!b.log)))+pad(`${FLETCH_FEATHERS} Feathers`+have(bagCount(b=>b.feather)))+pad('1 Iron Ingot'+have(ingotCount(3)))+note(`${perk('woodcutting',50)?15:FLETCH_N} Iron Arrows`);
+  else if(R.id==='arrows'){benchTier=fletchMetal(benchTier);const A=arrowOf(benchTier,1); /* S1541 — the metal chosen as the bow's is */
+    t+=pad('1 log'+have(bagCount(b=>!!b.log)))+pad(`${FLETCH_FEATHERS} Feathers`+have(bagCount(b=>b.feather)))+pad('1 ingot')+
+      '<div style="padding-left:12px;display:flex;flex-wrap:wrap;gap:4px;margin:4px 0">'+benchMetals().map(m=>`<button type="button" data-m="${m}" style="background:${m===benchTier?'rgba(122,31,16,.12)':'none'};border:1px solid ${m===benchTier?'#7a1f10':'#a89060'};border-radius:3px;font:13px Georgia,serif;color:${ingotCount(m)>=1?'#3a2c18':'#a09070'};cursor:pointer;padding:1px 6px">${MATERIALS[m-1].name} ${ingotCount(m)}</button>`).join('')+'</div>'+
+      note(`${perk('woodcutting',50)?15:FLETCH_N} ${A.name}s, +${A.arrowDmg[0]}–${A.arrowDmg[1]} on the bow`);}
   const Rt=ov.querySelector('#bn-right');Rt.innerHTML=t;
   Rt.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{benchTier=+b.dataset.m;benchSaid='';benchDraw();});
   ov.querySelector('#bn-said').textContent=benchSaid;}
-function benchGo(){const r=benchMake(benchSel,benchSel==='bow'?benchTier:null);
+function benchGo(){const r=benchMake(benchSel,benchSel==='bow'||benchSel==='arrows'?benchTier:null);
   if(r.work){closeBenchPage();return;} /* S1519 — the patch and the splice are worked with the page shut */
   benchSaid=r.made?(r.n>1?`${r.n} × ${r.item.name}.`:`${r.item.name}.`):r.why||'';
   if(r.made&&typeof uiTone==='function')uiTone(330,440,.08,.08,'triangle');
