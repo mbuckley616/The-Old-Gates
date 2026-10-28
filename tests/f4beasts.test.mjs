@@ -74,6 +74,23 @@ check(`the bear standing puts its four toes on the ground (${trot.toes.join(', '
 // the kit's bear carries its shoulders about 0.19 m ahead of the wolf rig's, so its fore paw lands that far forward of the driver's
 check(`the bear's run turns the kit's bones (by ${trot.moved}); its paws rise and fall within ${trot.dy} m of the driver's and keep within ${trot.worst} m`, trot.moved > .02 && trot.dy < .08 && trot.worst < .35, trot);
 
+// Session 1542: on a slope each toe meets the ground under it (hcGround). The bear set on the steepest clear spot near the start,
+// facing down the fall line, left to come to a stand (the jump there reads as a gallop); its four toes against activeTerrainH under
+// each, with the ground pass and without it (rig.hc.gr off)
+const slope = await page.evaluate(() => { const f = _W[1], e = f.e, rig = f.rig, by = rig.hc.C.byName, Hh = (x, z) => activeTerrainH(x, z), was = [e.x, e.z, e.mesh.position.y, e.mesh.rotation.y]; let best = null;
+  for (let d = 6; d < 60; d += 2) for (let a = 0; a < 6.28; a += .2) { const x = px + Math.cos(a) * d, z = pz + Math.sin(a) * d; if (WORLD.solidAt(x, z) || Hh(x, z) < WORLD.SEA_Y + .5) continue;
+    const gx = Hh(x + .5, z) - Hh(x - .5, z), gz = Hh(x, z + .5) - Hh(x, z - .5), sl = Math.hypot(gx, gz); if (!best || sl > best.sl) best = { x, z, sl, ang: Math.atan2(gx, gz) }; }
+  e.x = best.x; e.z = best.z; e.mesh.position.set(e.x, Hh(e.x, e.z), e.z); e.mesh.rotation.y = e.combatYaw = best.ang;
+  CAM.position.set(e.x + 5, e.mesh.position.y + 1.65, e.z); CAM.updateMatrixWorld(true);
+  const toes = () => { for (let i = 0; i < 3; i++) tickCreatures(1 / 60, 7e5 + i * 17); rig.root.parent.updateMatrixWorld(true);
+    return ['leg0L_3', 'leg0R_3', 'leg1L_3', 'leg1R_3'].map(n => { const p = by[n].getWorldPosition(new THREE.Vector3()); return +(p.y - Hh(p.x, p.z)).toFixed(3); }); };
+  for (let i = 0; i < 90; i++) tickCreatures(1 / 60, 6.5e5 + i * 17);
+  const gr = rig.hc.gr; rig.hc.gr = null; const off = toes(); rig.hc.gr = gr; const on = toes();
+  e.x = was[0]; e.z = was[1]; e.mesh.position.set(e.x, was[2], e.z); e.mesh.rotation.y = e.combatYaw = was[3]; CAM.position.set(px, worldH(px, pz) + 1.65, pz); CAM.updateMatrixWorld(true); tickCreatures(1 / 60, 7e5 + 99);
+  return { slope: +best.sl.toFixed(2), off, on, worstOff: Math.max(...off.map(Math.abs)), worstOn: Math.max(...on.map(Math.abs)), drop: +(rig.hc.drop || 0).toFixed(3), stand: +rig.w.stand.toFixed(2) }; });
+check(`on a slope of ${slope.slope} the bear's toes meet the ground under each (${slope.on.join(', ')} m; ${slope.off.join(', ')} without the ground pass)`,
+  slope.stand > .9 && slope.worstOn < .05 && (slope.slope < .15 || slope.worstOn < slope.worstOff * .5), slope);
+
 // the tell's glow reaches the kit's hide, and goes out with it
 const glow = await page.evaluate(() => { const f = _W[0], rig = f.rig, mats = () => [...rig.hc.hide, ...rig.hc.fur].map(o => o.material);
   const lit = () => mats().filter(m => m.emissive && m.emissive.getHex() !== 0).length;

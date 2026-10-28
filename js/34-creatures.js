@@ -893,6 +893,7 @@ function hcAttach(rig,C){const tA=performance.now();
   const garg=K.garg?{wings:C.B.wings.map(W=>({side:W.side,arm:W.arm.map(n=>by[n]),fing:W.fingers.map(f=>by[f[0]])})),tail:Object.keys(by).filter(n=>/^tail\d+$/.test(n)).map(n=>by[n]),R:C.plan.wingRest}:null;
   const sway=K.sway?Object.keys(by).filter(n=>/^tail\d+$/.test(n)).map(n=>by[n]):null;
   rig.hc={W,C,map,s0,t0,fur,small,ik,feet,hb,scorp,bug,arms,wings,sway,garg,merge:!!HC_KINDS[hcKind(rig)].merge,unhunch:!!HC_KINDS[hcKind(rig)].unhunch,rest:K.rest?Object.entries(K.rest):null,ank:K.person&&ik?map.map(([j],i)=>/^an/.test(j)?i:-1).filter(i=>i>=0):null,glow:meshes.map(m=>m.material.userData&&m.material.userData.uGlow).filter(u=>u&&u.value&&u.value.isColor),mid:null,bits:C.B.bits.map(b=>b.obj),hide:meshes.filter(m=>!fur.includes(m)),lift:K.legless?.24*SCALE.ROOM_K:0,hip0:sp?B.body.position.clone():K.person?new THREE.Vector3(0,PW.HIPS,0):new THREE.Vector3(B.hips.position.x,wolfHipY(rig.k),B.hips.position.z),pos0:by.spine0.position.clone(),k:1/(f*C.S),L:-1,drv:rig.mesh.material,em:-1};
+  rig.hc.gr=hcGroundLegs(rig,by,K,W);
   HC_BODY.ms+=performance.now()-tA;HC_BODY.n++;}
 function hcPose(rig){const H=rig.hc,B=rig.B,map=H.map,uh=H.unhunch&&rig.hunch,rs=H.rest;
   if(uh){B.spine.rotation.x-=uh[0];B.neck.rotation.x-=uh[1];B.head.rotation.x-=uh[2];}
@@ -908,6 +909,7 @@ function hcPose(rig){const H=rig.hc,B=rig.B,map=H.map,uh=H.unhunch&&rig.hunch,rs
   // a goblin's feet (Session 1364): the IK's bend at the knee and the hip tipped them toe-up by 7 cm, so each ankle takes the driver's
   // foot again, as the copy first gave it
   if(H.ank)for(const i of H.ank)cp(i);
+  if(H.gr)hcGround(rig);
   if(H.feet)hcSpFeet(rig);
   if(H.scorp)hcScorp(rig);
   if(H.bug)hcBug(rig);
@@ -928,11 +930,45 @@ function hcPose(rig){const H=rig.hc,B=rig.B,map=H.map,uh=H.unhunch&&rig.hunch,rs
 // driver's; a turn is held to 0.35 rad a pass
 const _hcA=new THREE.Vector3(),_hcE=new THREE.Vector3(),_hcT=new THREE.Vector3(),_hcJ=new THREE.Vector3(),_hcQ=new THREE.Quaternion(),_hcP=new THREE.Quaternion();
 function hcLegIK(rig){const H=rig.hc,B=rig.B;rig.root.updateMatrixWorld(true);_hcA.set(1,0,0).transformDirection(H.W.matrixWorld);
-  for(const L of H.ik){const ty=B[L.d].getWorldPosition(_hcT).y+L.oy;
-    for(let it=0;it<2;it++)for(const b of L.bs){b.updateMatrixWorld(true);b.getWorldPosition(_hcJ);L.end.getWorldPosition(_hcE);_hcT.copy(_hcE);_hcT.y=ty;
-      _hcE.sub(_hcJ).projectOnPlane(_hcA);_hcT.sub(_hcJ).projectOnPlane(_hcA);if(_hcE.lengthSq()<1e-8||_hcT.lengthSq()<1e-8)continue;
-      const a=Math.max(-.35,Math.min(.35,Math.atan2(_hcA.dot(_hcJ.crossVectors(_hcE,_hcT)),_hcE.dot(_hcT))));if(Math.abs(a)<1e-4)continue;
-      b.parent.getWorldQuaternion(_hcP);_hcQ.setFromAxisAngle(_hcA,a);b.quaternion.premultiply(_hcP).premultiply(_hcQ).premultiply(_hcP.invert());}}}
+  for(const L of H.ik)hcBend(L,B[L.d].getWorldPosition(_hcT).y+L.oy);}
+// one leg (L.bs its joints, distal first; L.end its tip) bent so the tip comes to the height ty, about _hcA, the body's side axis
+function hcBend(L,ty){for(let it=0;it<2;it++)for(const b of L.bs){b.updateMatrixWorld(true);b.getWorldPosition(_hcJ);L.end.getWorldPosition(_hcE);_hcT.copy(_hcE);_hcT.y=ty;
+    _hcE.sub(_hcJ).projectOnPlane(_hcA);_hcT.sub(_hcJ).projectOnPlane(_hcA);if(_hcE.lengthSq()<1e-8||_hcT.lengthSq()<1e-8)continue;
+    const a=Math.max(-.35,Math.min(.35,Math.atan2(_hcA.dot(_hcJ.crossVectors(_hcE,_hcT)),_hcE.dot(_hcT))));if(Math.abs(a)<1e-4)continue;
+    b.parent.getWorldQuaternion(_hcP);_hcQ.setFromAxisAngle(_hcA,a);b.quaternion.premultiply(_hcP).premultiply(_hcQ).premultiply(_hcP.invert());}}
+// Session 1542: the feet on a slope (character-builder.md's B5: "a foot's target takes the ground's height under it"). The driver
+// stands on the ground at its middle (activeTerrainH), so on a 14° hillside the kit's Cave Bear held its downhill paws 19 cm over the
+// ground and its uphill paws 16 cm under it, a wolf's 8 and 6. Each leg's tip (its last bone) is moved by the ground's height under it
+// less the ground's under the body, held to a third of the leg's length. hcBend's turns cannot lengthen or shorten a leg that stands
+// nearly straight, so this is a two-bone reach: the knee or elbow (…_1) opened or closed by the law of cosines for the hip's distance
+// to the target, bending the way it bends at rest, then the hip (…_0) swung to point the tip at it, all about the body's side axis.
+// Not while it lies dead (the ragdoll has the ground), nor when the body is not standing on the ground it reads (a deck, a coach's road)
+const _hcG=new THREE.Vector3(),_hcK=new THREE.Vector3(),_hcU=new THREE.Vector3(),_hcV=new THREE.Vector3(),_hcX=new THREE.Vector3();
+function hcGroundLegs(rig,by,K,W){if(rig.spider||K.fish||K.legless)return null;rig.root.updateMatrixWorld(true);_hcA.set(1,0,0).transformDirection(W.matrixWorld);const out=[];
+  for(const l of ['leg0L','leg0R','leg1L','leg1R']){if(!by[l+'_0'])continue;let n=0;while(by[l+'_'+(n+1)])n++;if(n<2)continue;
+    let len=0;for(let j=0;j<n;j++)len+=by[l+'_'+j].getWorldPosition(_hcJ).distanceTo(by[l+'_'+(j+1)].getWorldPosition(_hcE));
+    const L={hip:by[l+'_0'],knee:by[l+'_1'],end:by[l+'_'+n],len,s:1};L.s=hcKnee(L)<0?-1:1;out.push(L);}
+  return out.length?out:null;}
+// the knee's signed angle between the hip and the tip, about _hcA (_hcJ the hip, _hcK the knee, _hcE the tip, as found)
+function hcKnee(L){L.hip.getWorldPosition(_hcJ);L.knee.getWorldPosition(_hcK);L.end.getWorldPosition(_hcE);
+  _hcU.subVectors(_hcJ,_hcK).projectOnPlane(_hcA);_hcV.subVectors(_hcE,_hcK).projectOnPlane(_hcA);return Math.atan2(_hcA.dot(_hcX.crossVectors(_hcU,_hcV)),_hcU.dot(_hcV));}
+function hcTurn(b,a){a=Math.max(-.6,Math.min(.6,a));if(Math.abs(a)<1e-4)return;b.parent.getWorldQuaternion(_hcP);_hcQ.setFromAxisAngle(_hcA,a);b.quaternion.premultiply(_hcP).premultiply(_hcQ).premultiply(_hcP.invert());}
+function hcReach(L,ty){for(let it=0;it<2;it++){const th=hcKnee(L);_hcT.copy(_hcE);_hcT.y=ty;
+    const a=_hcJ.distanceTo(_hcK),b=_hcK.distanceTo(_hcE),d=Math.min(a+b-1e-3,Math.max(Math.abs(a-b)+1e-3,_hcJ.distanceTo(_hcT)));
+    const want=Math.acos(Math.max(-1,Math.min(1,(a*a+b*b-d*d)/(2*a*b)))),s=Math.abs(th)<.02?L.s:Math.sign(th);hcTurn(L.knee,s*want-th);
+    L.end.getWorldPosition(_hcE);_hcU.subVectors(_hcE,_hcJ).projectOnPlane(_hcA);_hcV.subVectors(_hcT,_hcJ).projectOnPlane(_hcA);
+    if(_hcU.lengthSq()>1e-8&&_hcV.lengthSq()>1e-8)hcTurn(L.hip,Math.atan2(_hcA.dot(_hcX.crossVectors(_hcU,_hcV)),_hcU.dot(_hcV)));}}
+function hcGround(rig){const H=rig.hc,G=H.gr;if(!G)return;if(H.drop){H.W.position.y+=H.drop;H.drop=0;}if(rig.limp||rig.deadPosed||(rig.e&&rig.e.dead))return;
+  rig.root.updateMatrixWorld(true);rig.root.getWorldPosition(_hcG);const g0=activeTerrainH(_hcG.x,_hcG.z);if(!(Math.abs(_hcG.y-g0)<.25))return;
+  _hcA.set(1,0,0).transformDirection(H.W.matrixWorld);let any=false,m=1e9;
+  for(const L of G){L.end.getWorldPosition(_hcG);const k=L.len/3,dg=Math.max(-k,Math.min(k,activeTerrainH(_hcG.x,_hcG.z)-g0));m=Math.min(m,L.len);
+    L.ty=Math.abs(dg)>.005?_hcG.y+dg:null;if(L.ty!==null){any=true;hcReach(L,L.ty);}}
+  if(!any)return;
+  // a downhill leg already straight still stands short: the body comes down by the worst of it (to a quarter of the shortest leg),
+  // and every leg reaches again, the uphill ones bending the more
+  let r=0;for(const L of G)if(L.ty!==null)r=Math.max(r,L.end.getWorldPosition(_hcG).y-L.ty);if(r<.01)return;
+  const sy=rig.root.getWorldScale(_hcG).y||1;H.drop=Math.min(r,m/4)/sy;H.W.position.y-=H.drop;H.W.updateMatrixWorld(true);
+  for(const L of G)if(L.ty!==null)hcReach(L,L.ty);}
 // Session 1319: a spider's eight feet, each the kit's at rest plus the driver's foot's travel from its own rest (the tibia's tip), in
 // the driver's root; then the kit's solve in its rig's frame
 const _hcF=new THREE.Vector3();
