@@ -1795,7 +1795,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     (INT_BEDS||[]).forEach(r=>S(r,['x','z','y','cz']));
     (INT_DOORS||[]).forEach(r=>{S(r,['x','z','y','w','h']);S(r.sol,BOX);S(r.box,BOX);});
     (INT_NPCS||[]).forEach(r=>S(r.box,BOX));
-    for(const r of [intBedPos,intStashPos,INT_CHAIR,INT_LOOT,INT_BOX,INT_SHELF,house._hatch])S(r,['x','z','y']);
+    for(const r of [intBedPos,intStashPos,INT_CHAIR,INT_LOOT,INT_BOX,INT_SHELF,house._hatch,house._bench])S(r,['x','z','y']);
     if(HATCH.active||HATCH.x!=null)S(HATCH,['x','z','y']);
     house.intW*=k;house.intD*=k;
   }
@@ -2874,6 +2874,10 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       {const K=furnKit(),room=K.bake(K.cabin(W,D,H,FN,FSEED));room.userData.furn=true;sc_.add(room);furnSwap(room);}solid(W/2+.6,D*.45,.9,.55,.76);
       if(typeof _intStashChest==='function'){_intStashChest(sc_,W-1.2,1.2);intStashPos={x:W-1.2,z:1.2};}
       const port=new THREE.Mesh(new THREE.CircleGeometry(.32,12),new THREE.MeshBasicMaterial({color:0x7ac8ff}));port.position.set(W-.04,1.3,D*.6);port.rotation.y=-Math.PI/2;sc_.add(port);
+      // S1524 — the cabin's bench (the survival sheet's props; the ship bases' workbench, #418 A): the kit's joiner's bench against the
+      // west wall forward of the bunk, its tools racked over it. Drawn in metres, so laid in at 1/KR to be scaled up with the room
+      if(typeof PKIT!=='undefined'&&PKIT.props){const B=PKIT.props.bench(),k=1/KR,zc=D-1.6;B.group.rotation.y=Math.PI/2;B.group.scale.setScalar(k);B.group.position.set(0,0,zc);sc_.add(B.group);
+        const f=B.foot;SOL.push({x0:f.z0*k,x1:f.z1*k,z0:zc-f.x1*k,z1:zc-f.x0*k,y0:-.5,y1:B.top*k});FOOTHOLDS.push({x0:f.z0*k,x1:f.z1*k,z0:zc-f.x1*k,z1:zc-f.x0*k,y:B.top*k});house._bench={x:(f.z1*k)/2+.1*k,z:zc,draws:B.draws,tris:B.tris};}
       npc={x:-99,z:-99,maxZ:1,paused:true};
     } else { // home
       const HA=furnKit().homeAt(W,D); /* S896 (F2a) — the cottage's places, shared with the kit's layout */

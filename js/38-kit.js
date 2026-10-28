@@ -2879,7 +2879,34 @@ function hallFixtures(list) {
     if (sm) { const a = .08 * Math.sin(s * 11) + .05 * Math.sin(s * 23.7); sm.fm.opacity = .85 + a; sm.cm.opacity = .92 + a * .5; sm.hm.size = .16 * (1 + a); } };
   return { group, flames: flames.map(f => f[0]), small: small.length, lights, tris: Math.round(tris), draws: buckets.size + flames.length * 3 + (sm ? 3 : 0), tick };
 }
-  return { stream, hashKey, mergeByMaterial, halls: { fixtures: hallFixtures }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
+// ── the joiner's bench (Session 1524; the survival sheet's props, "the bench"), drawn from the ship bases' workbench (shipbase.js,
+// Michael's A on #418): an elm top 1.5 by 0.6 m at 0.85 on four square legs and a stretcher, an iron vice at its right end, a plank
+// and an offcut on the top with shavings, and a rack of tools on the wall over it (a saw, a plane, a mallet, two chisels).
+//   PKIT.props.bench() -> { group, tris, draws, foot: { x0, x1, z0, z1 }, top } in the wall's frame: the wall at z = 0, the bench
+//   toward +z, its length along x centred on 0, the floor at y = 0. One mesh a material, three in all.
+let BM = null;
+function joinerBench() {
+  if (!BM) BM = { wood: new THREE.MeshStandardMaterial({ color: 0x9a7650, roughness: .8 }), dark: new THREE.MeshStandardMaterial({ color: 0x4e3622, roughness: .85 }), iron: new THREE.MeshStandardMaterial({ color: 0x2a2826, roughness: .5, metalness: .6 }) };
+  const L = 1.5, D = .6, H = .85, T = .08, B = new Map(), box = (k, w, h, d, x, y, z, ry = 0) => { const g = new THREE.BoxGeometry(w, h, d).toNonIndexed(); if (ry) g.rotateY(ry); g.translate(x, y, z); if (!B.has(k)) B.set(k, []); B.get(k).push(g); };
+  box('wood', L, T, D, 0, H - T / 2, D / 2 + .02);
+  for (const sx of [-1, 1]) for (const z of [.08, D - .04]) box('dark', .08, H - T, .08, sx * (L / 2 - .1), (H - T) / 2, z);
+  for (const sx of [-1, 1]) box('dark', .06, .06, D - .12, sx * (L / 2 - .1), .22, D / 2 + .02); box('dark', L - .2, .06, .06, 0, .22, D - .04);
+  // the vice: a jaw block over the right front leg and its screw's bar
+  box('iron', .22, .14, .1, L / 2 - .2, H + .07, D + .06); box('iron', .04, .04, .2, L / 2 - .2, H + .07, D + .14); box('iron', .3, .03, .03, L / 2 - .2, H + .07, D + .24);
+  // a plank in work and an offcut on the top, shavings
+  box('wood', .9, .04, .14, -.15, H + .02, D * .55, .04); box('wood', .3, .04, .12, .35, H + .02, .16, -.3);
+  for (let k = 0; k < 6; k++) box('wood', .05, .006, .02, -.55 + k * .09, H + .003, .32 + (k % 3) * .05, k * .9);
+  // the rack on the wall: a board, and on its pegs the tools
+  box('dark', 1.1, .05, .04, 0, 1.3, .02); for (let k = 0; k < 5; k++) box('dark', .02, .02, .08, -.44 + k * .22, 1.32, .06);
+  box('iron', .5, .12, .006, -.44, 1.16, .07); box('dark', .12, .1, .03, -.13, 1.16, .07) /* the saw, its blade and handle */;
+  box('dark', .22, .07, .06, .02, 1.22, .08); box('iron', .04, .02, .06, .02, 1.27, .08) /* the plane */;
+  box('dark', .03, .22, .03, .24, 1.17, .07); box('dark', .12, .07, .07, .24, 1.05, .07) /* the mallet, head down */;
+  for (const x of [.4, .46]) { box('dark', .025, .1, .025, x, 1.22, .07); box('iron', .012, .12, .006, x, 1.11, .07); }
+  const group = new THREE.Group(); group.name = 'joiner bench'; let tris = 0;
+  for (const [k, gs] of B) { const g = mergeGeometries(gs); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, BM[k]); m.name = 'bench:' + k; group.add(m); tris += g.attributes.position.count / 3; }
+  return { group, tris: Math.round(tris), draws: group.children.length, foot: { x0: -L / 2, x1: L / 2, z0: 0, z1: D + .26 }, top: H };
+}
+  return { stream, hashKey, mergeByMaterial, halls: { fixtures: hallFixtures }, props: { bench: joinerBench }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
     mk: { hall: markHall, lot: markLot, alehall: markAlehall, longhouse: markLonghouse, mats: markMats },
     au: { house: aurenneHouse, lot: aurenneLot, courtyard: aurenneCourtyard, church: aurenneChurch, churchBox: aurenneChurchBox, churchHall: aurenneChurchHall, courtyardHouse: aurenneCourtyardHouse, tavern: aurenneTavern, mats: aurMats, roomMats: homeMats, AUR },
     gl: { PLANS, FIN, PS, PAINTS, TOWN: GL_TOWN, building, church, keep, farmstead, coachInn, coachInnPlan, coachRoom, townhouse: townhouseRoom, farmhouse: farmhouseRoom, byre: byreRoom, barn: barnRoom, row: shrineRow, ROW_GODS, inn: gatelandsInn, cottage: gatelandsCottage, churchLen: n => +((n === 2 ? 2 : 3) * 4.8 + 1.6 + 5.6 - .5 + 7.2 - .9 - .02).toFixed(2), lot: gatelandsLot, mats: glMats, BAYS, bayPlan, bayWidth, baysFor } };
