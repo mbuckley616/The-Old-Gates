@@ -3,6 +3,18 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### Ore in the guilds' gather tasks — which guild asks for it (from the systems builder, 2026-10-27, #814)
+**The question.** Survival B's session 7 (`docs/design/survival-build.md`) owes "ore and logs in the guilds' gather tasks". Ore can be mined now (Session 1491); the only gathering task today is the Mages' Guild's *Gather* (3 + tier of one herb, 60–100 + 50 a tier gold), fed by `WORLD.guild.onHarvest`. The sheet does not say which guild asks for ore, how often, or which metal. Who sends you to a vein?
+
+**Options.**
+- **A. The Fighters' Guild, a new fifth kind (recommended).** *Supply*: bring 3 + tier ore of the metal the hall's own country yields (copper or tin at tier 1, iron from tier 2, mithril in the highlands, by the vein table), at a task's usual pay. The guild's four kinds become five, each rolled one in five.
+- **B. The Mages' Guild's *Gather*, as the hook stands.** One *Gather* in three asks for ore in place of a herb, same count and pay. Smallest change; mages asking for copper reads oddly.
+- **C. Neither.** Ore stays for the forge and the market; gather tasks keep to herbs, and logs once felling lands.
+
+Either A or B is one systems session; the task's line is the builder's until the quest writer words it.
+
+Recommendation: **A**.
+
 ### Lighting the halls — what hangs on a hall's walls at night (from the concept artist, 2026-10-27, #805)
 **The question.** Backlog L12, "Light indoors" (OG-141): torches on corridor walls, a tavern warm and crowded in the evening. The prototype (`docs/prototypes/levelup/halls.html`, kit `halls.js`) lights four halls from rooms.js under Michael's C on #765: the Gatelands guild hall, the Mark's alehall, Aurenne's tavern and the Gatelands inn. What hangs on a hall's walls at night?
 
