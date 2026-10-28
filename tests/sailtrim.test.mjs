@@ -11,7 +11,7 @@ fs.mkdirSync('tests/out', { recursive: true });
 const rigs = await page.evaluate(() => { const out = {};
   for (const [k, L, W] of [['sloop', 13, 4.4], ['cog', 17, 5.6], ['galleon', 22, 7.0]]) { const m = WORLD.buildShipMesh(L, W, 'player');
     const tri = gm => (gm.index ? gm.index.count : gm.attributes.position.count) / 3;
-    out[k] = { kind: m.userData.kind, types: m.userData.rigs.map(q => q.type).join(','), hull: tri(m.geometry), rigs: m.userData.rigs.reduce((a, q) => a + tri(q.m.geometry), 0), children: m.children.length, kit: !!m.userData.tiller }; }
+    out[k] = { kind: m.userData.kind, types: m.userData.rigs.map(q => q.type).join(','), hull: tri(m.geometry), rigs: m.userData.rigs.reduce((a, q) => a + tri(q.m.geometry), 0), children: m.children.length, kit: !!(m.userData.tiller || m.userData.castle) /* S1548: the kit's cog steers by a wheel on her castle */ }; }
   return out; });
 // S1531: on the new look your sloop is the kit's Gatelands sloop (card F11; #306's square sail), about 24k triangles in its clinker
 check('the sloop has a gaff and a jib (the kit\'s sloop one square sail), the cog one square rig, the galleon two square masts and a gaff mizzen',
