@@ -779,7 +779,8 @@ const HC_KINDS={'Wolf':{plan:'wolf'},'Snow Wolf':{plan:'wolf',own:true},'Dire Wo
   'Frost Troll':{plan:'troll',own:true,person:true,merge:true,ik:true,coat:HC_TROLL_COAT.frost,eye:0x70b0ff,gear:'plan'},
   'Golem':{plan:'golem',own:true,person:true,merge:true,ik:true,tall:true,glow:[.42,.69,1],glowR:.02},
   'Gargoyle':{plan:'gargoyle',own:true,person:true,merge:true,ik:true,glow:[1,.31,.13],glowR:.032,glowAt:{f:.8,up:.55,out:.5},garg:true},
-  'Wraith':{plan:'wraith',own:true,person:true,legless:true,rest:HC_WRAITH_REST},'Phantom':{plan:'phantom',own:true,person:true,legless:true,rest:HC_WRAITH_REST}};
+  'Wraith':{plan:'wraith',own:true,person:true,legless:true,rest:HC_WRAITH_REST},'Phantom':{plan:'phantom',own:true,person:true,legless:true,rest:HC_WRAITH_REST},
+  'Shark':{plan:'reefshark',fish:true}};
 // the driver's joints and the kit's bones they move, parents first (the kit's front legs hang on spine3, the hind on spine0)
 const HC_MAP=[['hips','spine0'],['spine','spine1'],['neck','neck0'],['head','head'],['jaw','jaw'],['tail1','tail0'],['tail2','tail1'],['tail3','tail2'],
   ['shL','leg0L_0'],['elL','leg0L_1'],['wrL','leg0L_2'],['pfL','leg0L_3'],['shR','leg0R_0'],['elR','leg0R_1'],['wrR','leg0R_2'],['pfR','leg0R_3'],
@@ -818,7 +819,7 @@ function hcPlan(name){const K=HC_KINDS[name];if(!K.own)return K.plan;const id='g
   return id;}
 // a wolf the kit may dress: one of HC_KINDS, on the wolf's own body (not a boss on it, unless its builder names its kind: rig.hcKind)
 function hcKind(rig){return rig.hcKind||rig.name;}
-function hcOk(rig){const K=HC_KINDS[hcKind(rig)];return !!K&&!rig.spider===!K.spider&&(!!rig.hcKind||!rig.hunch&&!(rig.e&&rig.e.bossId));}
+function hcOk(rig){const K=HC_KINDS[hcKind(rig)];return !!K&&!K.fish&&!rig.spider===!K.spider&&(!!rig.hcKind||!rig.hunch&&!(rig.e&&rig.e.bossId));}
 // its genome, keyed by its foe id (or its name)
 function hcGenome(rig){const key=rig.hcKey||(HC_KINDS[hcKind(rig)].person?'foe:'+(rig.e&&rig.e.id!=null?rig.e.id:rig.g.seed):'wolf:'+(rig.e&&rig.e.id!=null?rig.e.id:rig.name));return HC.genome(hcPlan(hcKind(rig)),key);}
 // C, the kit's body when hcTick has built it a step at a time; without it (foewarm) the body is built here in one go
@@ -1004,19 +1005,54 @@ function hcBuildStep(){const J=HC_BODY.job,rig=J.rig,g=rig.root.parent;
   if(!r.done)return null;
   HC_BODY.job=null;rig.hcC=r.value;return rig;}
 // each frame, after the driver is posed (tickCreatures' end): the level by distance, the pose copied, and at most one body built
+// Session 1529: the Shark wears the kit's reef shark (Session 1528's plan: a pointed snout over an underslung mouth, gill slits, a
+// heterocercal tail). The game's shark has no skeleton to copy: its old body is two lathed meshes, the tail on a pivot that tickSharks
+// sweeps. So the kit's own swim gait poses it (HC.pose, the fish's wave from head to tail, the pectorals' scull), its phase running at
+// the old tail's beat (3.4 rad a second cruising, 7 hunting). The old body is gathered into one group (rig.mesh), which stays as the
+// far level and the corpse's tint carries to both. The kit's body is sized to the old one's length and laid on its axis (y 0.2 of the
+// old body's unit, 1.2), nose to nose; its genome keyed by the foe's id (`shark:<id>`), the co-op rule's place and index.
+function hcFishRig(e){const g=e.mesh,root=new THREE.Group();root.name='kitroot';g.add(root);
+  const old=new THREE.Group();old.name='sharkold';g.add(old);for(const o of [e.limbs&&e.limbs.torso,g._sharkTail])if(o)old.add(o);
+  e._hcRig=true;return {name:'Shark',fish:true,e,root,mesh:old,hcKey:'shark:'+(e.id!=null?e.id:'0'),ph:(e.homeX||0)%1,t:0};}
+function hcFishAttach(rig,C){const tA=performance.now();
+  if(!C)try{C=HC.build(hcGenome(rig));}catch(e){rig.hcFail=true;console.warn('F4: the kit could not build',rig.name,e);return;}
+  const g=rig.e.mesh,W=new THREE.Group();W.name='kit';C.gait='swim';HC.pose(C,0);C.root.updateMatrixWorld(true);
+  // the two bodies' extents along the axis (the kit's rest pose is its bind), and the kit's spine root's height
+  const kb=new THREE.Box3();for(const m of C.meshes){m.geometry.computeBoundingBox();kb.union(m.geometry.boundingBox.clone().applyMatrix4(m.matrixWorld));}
+  const ob=new THREE.Box3(),inv=new THREE.Matrix4();g.updateMatrixWorld(true);inv.copy(g.matrixWorld).invert();
+  rig.mesh.traverse(o=>{if(!o.isMesh)return;o.geometry.computeBoundingBox();ob.union(o.geometry.boundingBox.clone().applyMatrix4(_hcM.multiplyMatrices(inv,o.matrixWorld)));});
+  const f=(ob.max.z-ob.min.z)/(kb.max.z-kb.min.z),ky=C.byName.spine0.getWorldPosition(new THREE.Vector3()).y;
+  W.scale.setScalar(f);W.position.set(0,.2*1.2-ky*f,ob.max.z-kb.max.z*f);W.add(C.root);rig.root.add(W);HB_ATTACH_N++;
+  const meshes=C.meshes,bind=meshes[0].bindMatrix.clone();
+  {const inv2=new THREE.Matrix4(),off=new THREE.Matrix4(),sk=C.skel;
+    sk.update=function(){inv2.copy(C.rig.matrixWorld).invert();const bs=this.bones;
+      for(let i=0;i<bs.length;i++){off.multiplyMatrices(inv2,bs[i].matrixWorld).multiply(this.boneInverses[i]).multiply(bind);off.toArray(this.boneMatrices,i*16);}
+      if(this.boneTexture)this.boneTexture.needsUpdate=true;};}
+  const small=[];for(const {obj} of C.B.bits)obj.traverse(o=>{if(!o.isMesh)return;o.geometry.computeBoundingSphere();if(o.geometry.boundingSphere.radius*Math.max(o.scale.x,o.scale.y,o.scale.z)*f<HC_BODY.small)small.push(o);});
+  for(const m of meshes){m.bindMode='detached';m.bindMatrix.identity();m.bindMatrixInverse.identity();m.castShadow=false;m.receiveShadow=true;}
+  C.root.traverse(o=>{if(o.isMesh||o.isPoints)o.castShadow=false;if(o.isMesh)for(const m of Array.isArray(o.material)?o.material:[o.material])if(m.onBeforeCompile!==THREE.Material.prototype.onBeforeCompile)m.clone=hbClone;});
+  rig.hc={W,C,f,fur:[],small,mid:null,merge:false,bits:C.B.bits.map(b=>b.obj),hide:meshes,L:-1,em:0};
+  HC_BODY.ms+=performance.now()-tA;HC_BODY.n++;}
+function hcFishPose(rig){const H=rig.hc,e=rig.e,now=performance.now()/1000,dt=rig.t?Math.min(.1,now-rig.t):0;rig.t=now;
+  if(e.dead)return;rig.ph+=dt*(e.alert?7:3.4)/(Math.PI*2);HC.pose(H.C,rig.ph);
+  // the wind-up's red and the parry's gold, lit on the old body's torso (enemyBodyMesh), on the kit's hide
+  const m=e.limbs&&e.limbs.torso&&e.limbs.torso.material,em=m&&m.emissive?m.emissive.getHex():0;
+  if(em!==H.em){H.em=em;for(const o of H.hide)for(const x of Array.isArray(o.material)?o.material:[o.material])if(x.emissive)x.emissive.setHex(em);}}
+const _hcM=new THREE.Matrix4();
 function hcTick(now){let best=null,bd=HC_BODY.build;
   const busy=now-HBODY.last<HBODY.gap||(typeof JOBS!=='undefined'&&JOBS.length&&!(typeof isInterior==='function'&&isInterior()));
   for(const rig of WOLF_RIGS){if(!rig.hc&&(rig.hcFail||!hcOk(rig)))continue;HC_RIGS.add(rig);}
+  if(activeZoneId==='world')for(const e of ZONES.world.enemies)if(e.name==='Shark'&&!e.dead&&!e._hcRig&&e.mesh&&e.mesh._sharkTail)HC_RIGS.add(hcFishRig(e));
   for(const rig of HC_RIGS){const g=rig.root.parent;
     if(!g||!g.parent){hcDrop(rig);HC_RIGS.delete(rig);continue;}
     if(g.parent!==scene||!g.visible)continue;
     const d=Math.hypot(CAM.position.x-g.position.x,CAM.position.z-g.position.z);
-    if(!rig.hc){if(!busy&&!HC_BODY.job&&!rig.hcFail&&d<bd){bd=d;best=rig;}continue;}
+    if(!rig.hc){if(!busy&&!HC_BODY.job&&!rig.hcFail&&!(rig.fish&&rig.e.dead)&&d<bd){bd=d;best=rig;}continue;} /* S1529 — a shark killed before its body was built keeps the old one */
     const L=rig.hc.L,a=HC_BODY.near+(L>0?-1:1),b=HC_BODY.mid+(L>1?-1:1);hcLevel(rig,d<a?0:d<b?1:2);
-    if(rig.hc.L<2)hcPose(rig);}
+    if(rig.hc.L<2)(rig.fish?hcFishPose:hcPose)(rig);}
   if(best&&HC.buildIter){try{HC_BODY.job={rig:best,it:HC.buildIter(hcGenome(best)),ms:0,steps:0};}catch(e){best.hcFail=true;console.warn('F4: the kit could not build',best.name,e);}best=null;}
   if(!best&&HC_BODY.job&&!busy)best=hcBuildStep();
-  if(best){const C=best.hcC;best.hcC=null;hcAttach(best,C);HBODY.last=now;if(best.hc){const g=best.root.parent,d=Math.hypot(CAM.position.x-g.position.x,CAM.position.z-g.position.z);hcLevel(best,d<HC_BODY.near?0:d<HC_BODY.mid?1:2);if(best.hc.L<2)hcPose(best);}}}
+  if(best){const C=best.hcC;best.hcC=null;(best.fish?hcFishAttach:hcAttach)(best,C);HBODY.last=now;if(best.hc){const g=best.root.parent,d=Math.hypot(CAM.position.x-g.position.x,CAM.position.z-g.position.z);hcLevel(best,d<HC_BODY.near?0:d<HC_BODY.mid?1:2);if(best.hc.L<2)(best.fish?hcFishPose:hcPose)(best);}}}
 // Session 1421: a foe's blow (attackPose, 42-zone-enemies.js) turns its driver's arm after hcTick has copied the frame's pose, so the kit's
 // body of a person-plan kind (the Goblin, the Skeleton, the trolls) never wound up: the copy again, as hbRepose does for the people's
 function hcRepose(rig){if(rig&&rig.hc&&rig.hc.L<2)hcPose(rig);}
