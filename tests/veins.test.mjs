@@ -72,6 +72,19 @@ const r = await page.evaluate(() => {
   // ── the shops ──
   out.pickAt = { weapon: minersPickFor({ type: 'weapon' }).length, misc: minersPickFor({ type: 'misc' }).length, potion: minersPickFor({ type: 'potion' }).length };
   out.oreW = oreItem('iron').weight; out.pickW = PICK_ITEM.weight; out.pickPrice = PICK_ITEM.buyPrice;
+  // ── S1533: the Fighters' Guild's Supply (#814 A): one task in five; the hall's country's ore; dug, carried, and taken at turn-in ──
+  { const site = siteAnywhere('dunmore'), G = gstate(), keep = JSON.stringify(G.guild_f), kinds = {}; let sup = null;
+    G.guild_f = { done: 3, active: null };
+    for (let i = 0; i < 400; i++) { const t = genTask('guild_f', site); kinds[t.kind] = (kinds[t.kind] || 0) + 1; if (t.kind === 'supply' && !sup) sup = t; }
+    const want = SUPPLY_ORE[veinTier(site.x, site.z)];
+    out.supply = { kinds, tier: veinTier(site.x, site.z), want, ore: sup && sup.ore, need: sup && sup.need, short: sup && sup.short };
+    if (sup) { G.guild_f.active = sup; BAG.length = 0; bagAdd({ ...PICK_ITEM }); SKILLS.mining = { lv: 100, p: 0 };
+      out.supply.before = turnIn('guild_f');
+      const t = { id: 'supply:0', ore: sup.ore, g: null }; delete worldState.veins[t.id];
+      for (let i = 0; i < 400 && oreCount(sup.ore) < sup.need + 1; i++) { if (veinLeft(t) <= 0) { worldState.veins[t.id] = undefined; delete worldState.veins[t.id]; t.id += 'x'; } strikeVein(t); }
+      out.supply.carried = oreCount(sup.ore); out.supply.stamped = sup.doneAt != null && !!sup._told;
+      const g0 = gold; out.supply.said = turnIn('guild_f'); out.supply.paid = gold - g0; out.supply.left = oreCount(sup.ore); out.supply.active = G.guild_f.active; }
+    G.guild_f = JSON.parse(keep); }
   return out;
 });
 console.log(JSON.stringify(r));
@@ -102,4 +115,8 @@ check('a reload strikes the same ore at the same strike', r.reload.a.join() === 
 check('35% + 0.5% a Mining point: 37.5% at 5, 85% at 100', Math.abs(r.rate5 - .375) < .06 && Math.abs(r.rate100 - .85) < .05, [r.rate5, r.rate100]);
 check('the pick at the smith and the goods shop', r.pickAt.weapon === 1 && r.pickAt.misc === 1 && r.pickAt.potion === 0, r.pickAt);
 check('ore weighs 2, the pick 4 and costs 40', r.oreW === 2 && r.pickW === 4 && r.pickPrice === 40);
+const S = r.supply;
+check('the Fighters\' Guild rolls Supply about one task in five', S.kinds.supply >= 55 && S.kinds.supply <= 105, S.kinds);
+check('Supply asks 3 + tier of the ore the hall\'s own country yields', S.ore && S.want.includes(S.ore) && S.need === 4 && /^Supply 4 /.test(S.short), S);
+check('dug ore counts: not yet with none, done when carried, the guild takes what it asked and leaves the rest', /^Not yet\. 0\/4\./.test(S.before) && S.carried >= 5 && S.stamped && /^Good work\. \d+ gold/.test(S.said) && S.paid > 0 && S.left === S.carried - 4 && !S.active, S);
 await g.close();
