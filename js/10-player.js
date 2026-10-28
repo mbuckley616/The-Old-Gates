@@ -254,9 +254,9 @@ settingsLight();
 // grass, flowers, clouds and bloom from the same row through `landQ()`. The point lights are compiled into every lit shader, so
 // `lights` is read once, when the world builds them (`buildLights`): a change takes effect at the next start. The old look is Middle.
 const QUALITY=[
-  {name:'Low',   px:1,  shadow:1024,box:45, grass:0,    ring:0,flowers:0,  clouds:6, bloom:0,people:[10,28],creatures:[8,28], houses:[50,60],  herbs:[70,30], lights:12,trees:1},
-  {name:'Middle',px:1.5,shadow:2048,box:70, grass:6000, ring:1,flowers:.04,clouds:14,bloom:1,people:[16,42],creatures:[12,40],houses:[70,80],  herbs:[100,45],lights:24,trees:2},
-  {name:'High',  px:2,  shadow:4096,box:100,grass:12000,ring:1,flowers:.05,clouds:30,bloom:1,people:[24,60],creatures:[18,56],houses:[100,110],herbs:[140,60],lights:24,trees:4}];
+  {name:'Low',   px:1,  shadow:1024,box:45, grass:0,    ring:0,flowers:0,  clouds:6, bloom:0,people:[10,28],creatures:[8,28], houses:[50,60],  herbs:[70,30], lights:12},
+  {name:'Middle',px:1.5,shadow:2048,box:70, grass:6000, ring:1,flowers:.04,clouds:14,bloom:1,people:[16,42],creatures:[12,40],houses:[70,80],  herbs:[100,45],lights:24},
+  {name:'High',  px:2,  shadow:4096,box:100,grass:12000,ring:1,flowers:.05,clouds:30,bloom:1,people:[24,60],creatures:[18,56],houses:[100,110],herbs:[140,60],lights:24}];
 function qualityRow(){if(window.OG_LOOK!=='new')return QUALITY[1];const q=SETTINGS.quality;return QUALITY[Math.max(0,Math.min(2,(q==null?1:q)|0))];}
 function qualityApply(){
   if(window.OG_LOOK!=='new')return;const Q=qualityRow();

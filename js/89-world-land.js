@@ -238,7 +238,7 @@ function landRender(raw,s,c){
 // ── the quality levels: what each spends (item 6 of the card) ──────────────────────────────────────────────────────
 // Kept with the other settings in this browser (SETTINGS.quality, 0 low, 1 middle, 2 high); the middle level is the budget's
 // (v2-scope.md §5). The rows are QUALITY's (10-player.js, S1341), every drawing knob in one table; the land reads its own from it.
-// Grass: blades a chunk and how many chunks out from the player's own; flowers are a share of the blades; trees: how many chunks out a tree keeps all its cards (S1511).
+// Grass: blades a chunk and how many chunks out from the player's own; flowers are a share of the blades.
 function landQ(){return qualityRow();}
 // ── grass and wildflowers: instanced blades near the player, on one wind ────────────────────────────────────────────
 // A chunk within the quality level's ring of the player's own gets its grass, built a chunk a frame and dropped when it leaves
@@ -306,7 +306,7 @@ function landTick(dt){
   if(!LAND.on||!sc)return;
   LAND_WIND.value=(performance.now()*.001)%1000;
   const Q=landQ(),cx=Math.floor(px/CHUNK),cz=Math.floor(pz/CHUNK);let built=0;
-  for(const ch of chunks.values()){if(ch.group)landTreeRing(ch);const near=Q.grass&&Math.abs(ch.cx-cx)<=Q.ring&&Math.abs(ch.cz-cz)<=Q.ring;
+  for(const ch of chunks.values()){const near=Q.grass&&Math.abs(ch.cx-cx)<=Q.ring&&Math.abs(ch.cz-cz)<=Q.ring;
     if(ch.landGrass&&(!near||ch.landGrass.q!==Q.name))landGrassDrop(ch);
     if(near&&!ch.landGrass&&built<1){landGrassChunk(ch);built++;}}
 }
@@ -418,18 +418,16 @@ function landTreeMat(pal){
   const depth=new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking,map,alphaTest:.42});
   return(_landTreeMat[pal]={mat:m,depth});
 }
-// one template a kind of kit and prototype, built to the prototype's own height and spread. The far one (S1511, the budget's
-// triangles at Dunmore) lays the same clumps with fewer, larger cards on a four-sided trunk: 88 triangles a broadleaf against
-// 204, 200 a conifer against 444. A chunk past the level's ring (`trees` in QUALITY) draws it; `landTick` swaps as you walk.
-function landTreeGeo(sp,far){
-  const key=far?sp+'|far':sp;if(_landTreeGeo[key])return _landTreeGeo[key];
+// one template a kind of kit and prototype, built to the prototype's own height and spread
+function landTreeGeo(sp){
+  if(_landTreeGeo[sp])return _landTreeGeo[sp];
   const kit=LAND_TREE_KIT[sp],pg=PROTO[sp];if(!pg.boundingBox)pg.computeBoundingBox();const B=pg.boundingBox;
   const H=Math.max(2,B.max.y),R=Math.max(1,Math.max(-B.min.x,B.max.x,-B.min.z,B.max.z));
   let s=0;for(const ch of sp)s=(s*31+ch.charCodeAt(0))>>>0;s=s%2147483646+1;const r=()=>{s=(s*16807)%2147483647;return(s-1)/2147483646;};
   const pos=[],nor=[],uv=[],col=[],idx=[];
   const cone=kit==='cone'||kit==='pine';
   // the trunk: a tapered prism up into the crown, its UVs on the bark patch
-  const tH=kit==='pine'?H*.72:cone?H*.6:kit==='birch'?H*.62:H*.5,tR=Math.min(R*.06,H*.026)*(kit==='oak'?1.35:kit==='birch'?.8:1),SEG=far?4:6;
+  const tH=kit==='pine'?H*.72:cone?H*.6:kit==='birch'?H*.62:H*.5,tR=Math.min(R*.06,H*.026)*(kit==='oak'?1.35:kit==='birch'?.8:1),SEG=6;
   {const b=pos.length/3;for(let k=0;k<=1;k++)for(let i=0;i<SEG;i++){const a=i/SEG*Math.PI*2,rr=tR*(k?.55:1),y=k?tH:-.3;pos.push(Math.cos(a)*rr,y,Math.sin(a)*rr);nor.push(Math.cos(a),0,Math.sin(a));uv.push(.95,.045);const g=k?.9:.55;col.push(g,g,g);}
     for(let i=0;i<SEG;i++){const a=b+i,b2=b+(i+1)%SEG,c=a+SEG,d=b2+SEG;idx.push(a,c,b2,b2,c,d);}}
   // the crown's clumps
@@ -442,33 +440,27 @@ function landTreeGeo(sp,far){
     for(let i=0;i<n;i++){const a=i/n*Math.PI*2+r(),rr=cr*(.35+.25*r());cl.push([Math.cos(a)*rr,cy+(r()-.3)*cr*(kit==='birch'?.9:.6),Math.sin(a)*rr,cr*(.5+.2*r())]);}
     cl.push([0,Math.min(H-cr*.35,cy+cr*.4),0,cr*.62]);}
   const ctrY=cone?H*.55:(kit==='birch'?H*.68:H*.62),q=new THREE.Quaternion(),e=new THREE.Euler(),v=new THREE.Vector3(),nv=new THREE.Vector3(),cv=new THREE.Vector3();
-  const per=far?(cone?4:5):(cone?9:12),grow=far?1.35:1;
+  const per=cone?9:12;
   for(const [cx,cy,cz,cr] of cl)for(let i=0;i<per;i++){
     const d=new THREE.Vector3(r()-.5,(r()-.5)*(cone?.5:1),r()-.5).normalize(),p=new THREE.Vector3(cx,cy,cz).addScaledVector(d,cr*(.5+.5*Math.sqrt(r())));
-    e.set(r()*6.3,r()*6.3,r()*6.3);q.setFromEuler(e);const sz=cr*(cone?1.1:1.05)*(.8+.4*r())*grow,b=pos.length/3;
+    e.set(r()*6.3,r()*6.3,r()*6.3);q.setFromEuler(e);const sz=cr*(cone?1.1:1.05)*(.8+.4*r()),b=pos.length/3;
     for(const [a,bb,uu,vv] of [[-1,-1,0,0],[1,-1,.88,0],[1,1,.88,.88],[-1,1,0,.88]]){v.set(a*sz*.5,bb*sz*.5,0).applyQuaternion(q).add(p);pos.push(v.x,v.y,v.z);
       nv.set(v.x,(v.y-ctrY)*(cone?.6:1),v.z).normalize().multiplyScalar(.7).add(cv.set(v.x-cx,v.y-cy,v.z-cz).normalize().multiplyScalar(.3)).normalize();nor.push(nv.x,nv.y,nv.z);uv.push(uu,vv);
       const ao=(cone?.56:.42)+(cone?.44:.58)*sstep(-H*.25,H*.3,v.y-ctrY+(v.x*.35+v.z*.2));col.push(ao,ao,ao);}
     idx.push(b,b+1,b+2,b,b+2,b+3);}
   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('normal',new THREE.Float32BufferAttribute(nor,3));
   g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setAttribute('color',new THREE.Float32BufferAttribute(col,3));g.setIndex(idx);g.computeBoundingSphere();
-  return(_landTreeGeo[key]=g);
+  return(_landTreeGeo[sp]=g);
 }
 // from scatterChunk, for one species' list in a chunk: the same matrices, tints and colliders `place` would make; false: not ours
 function landTrees(group,list,sp,tint,solR,sol){
   if(!LAND.on||!LAND_TREE_KIT[sp]||!PROTO[sp]||!list.length)return false;
-  const far=landTreeFar(Math.floor(list[0].x/CHUNK),Math.floor(list[0].z/CHUNK));
-  const T=landTreeMat(LAND_LEAF_PAL[sp]||'green'),im=new THREE.InstancedMesh(landTreeGeo(sp,far),T.mat,list.length);
+  const T=landTreeMat(LAND_LEAF_PAL[sp]||'green'),im=new THREE.InstancedMesh(landTreeGeo(sp),T.mat,list.length);
   const m4=new THREE.Matrix4(),q=new THREE.Quaternion(),e=new THREE.Euler(),v=new THREE.Vector3(),s3=new THREE.Vector3(),c=new THREE.Color();
   list.forEach((t,i)=>{e.set(0,t.r,0);q.setFromEuler(e);v.set(t.x,t.h,t.z);s3.set(t.s*(t.g||1),t.s*(t.sy||1),t.s*(t.g||1));m4.compose(v,q,s3);im.setMatrixAt(i,m4);
     tint(t,c);if(sp==='snowpine')c.lerp(_lC.tmp.setRGB(1.25,1.28,1.32),.35);im.setColorAt(i,c);
     if(solR)sol.push({cx:t.x,cz:t.z,rx:solR*t.s*(t.g||1),rz:solR*t.s*(t.g||1)});});
   im.instanceMatrix.needsUpdate=true;if(im.instanceColor)im.instanceColor.needsUpdate=true;
-  im.customDepthMaterial=T.depth;im.castShadow=true;im.receiveShadow=false; /* a crown in its own shadow map went near black; its normals already shade it as one volume */ im.userData.scatter=sp;im.userData.landTree=true;im.userData.far=far;im.frustumCulled=true;
+  im.customDepthMaterial=T.depth;im.castShadow=true;im.receiveShadow=false; /* a crown in its own shadow map went near black; its normals already shade it as one volume */ im.userData.scatter=sp;im.userData.landTree=true;im.frustumCulled=true;
   im.computeBoundingSphere();group.add(im);return true;
 }
-// is a chunk past the level's near ring of the player's own (in chunks, as the grass's ring)
-function landTreeFar(cx,cz){const R=landQ().trees;return R!=null&&Math.max(Math.abs(cx-Math.floor(px/CHUNK)),Math.abs(cz-Math.floor(pz/CHUNK)))>R;}
-// a chunk's trees take the template its ring calls for; a geometry is shared, so a swap is two assignments
-function landTreeRing(ch){const far=landTreeFar(ch.cx,ch.cz);if(ch.landTreeFar===far)return;ch.landTreeFar=far;
-  for(const o of ch.group.children)if(o.userData.landTree&&o.userData.far!==far){o.geometry=landTreeGeo(o.userData.scatter,far);o.userData.far=far;}}

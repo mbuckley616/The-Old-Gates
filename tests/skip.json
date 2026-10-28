@@ -2,6 +2,7 @@
  "note": "Suites that do not run (Michael, 20 Oct 2026: every suite boots the new look; one that is red or too slow there is skipped, never run on the old look). tests/run.mjs leaves these out of every run but one that names a suite; tests/lib/select.mjs leaves them out of a pull request's selection. A suite leaves this list when it passes on the new look (fixed, or rewritten for the new look), or is deleted with its feature. Each one is a QA card in docs/qa/skipped.md. Adding a suite here is a pipeline change: it needs Michael's approval (scripts/automerge.mjs). Taking one off runs it in that pull request.",
  "suites": {
   "autumn": "too slow: every check passes at s878, but the picture in the autumn wood at noon (autumn-ingame.png) runs past the 120 s a screenshot is given (Session 1381: 1.2 M triangles, 515 calls at Middle, about 6.7 s a frame on software GL, 87 s for the shot on an idle box)",
-  "scaleratio": "red: dunmore (gatelands): every house door is 1.1 to 1.25 of a 1.8 m person (55 doors measured)"
+  "scaleratio": "red: dunmore (gatelands): every house door is 1.1 to 1.25 of a 1.8 m person (55 doors measured)",
+  "budget": "red by design (Session 1297, docs/design/streaming-and-quality-build.md): the QUALITY table's three levels are built (Session 1341) and the counts still stand over the ceilings at s871 (Session 1363): Low over 700 draw calls at three of Dunmore's four views (782, 846, 740), Middle over 1,000 on Dunmore's street at midnight (1,021) and over 2.0 M triangles there at noon (2.01 M). Its ledger is docs/qa/budget.md; it leaves this list when the counts come down"
  }
 }

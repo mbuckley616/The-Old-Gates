@@ -130,22 +130,6 @@ const trees = await page.evaluate(() => {
   return out; });
 check('every leafy tree and conifer stands where the old look puts it, at its size, turn and tint, drawn from leaf cards', trees.land > 50 && trees.moved === 0 && trees.tint === 0 && trees.oldKinds === 0, trees);
 check('the trees keep their colliders and tree points', trees.sol === 0 && trees.pts === 0, trees);
-// Session 1511: past the level's ring (QUALITY's `trees`: Low 1 chunk, Middle 2, High 4) a chunk's trees draw the far template,
-// the same clumps in fewer cards, and they take every card again as you walk up to them
-const ring = await page.evaluate(() => { const q0 = SETTINGS.quality, x0 = px, z0 = pz, out = {};
-  const tick = () => { for (let i = 0; i < 3; i++) WORLD.tick(1 / 60, performance.now()); };
-  const tris = o => o.geometry.index.count / 3; const cx = () => Math.floor(px / CHUNK), cz = () => Math.floor(pz / CHUNK);
-  try { SETTINGS.quality = 0; tick();
-    const all = [...chunks.values()].filter(ch => ch.group && ch.group.children.some(o => o.userData.landTree)), d = ch => Math.max(Math.abs(ch.cx - cx()), Math.abs(ch.cz - cz()));
-    const far = all.find(ch => d(ch) >= 3), near = all.filter(ch => d(ch) <= 1);
-    const fm = far && far.group.children.find(o => o.userData.landTree);
-    out.nearFull = near.length > 0 && near.every(ch => ch.group.children.every(o => !o.userData.landTree || !o.userData.far));
-    out.farLow = !!fm && fm.userData.far; out.cut = fm ? [tris(fm), tris(fm) && landTreeGeo(fm.userData.scatter, false).index.count / 3] : null;
-    if (far) { px = far.cx * CHUNK + CHUNK / 2; pz = far.cz * CHUNK + CHUNK / 2; tick(); out.walkedUp = !fm.userData.far && tris(fm) === out.cut[1]; px = x0; pz = z0; tick(); out.back = fm.userData.far; }
-    SETTINGS.quality = 2; tick(); out.highFull = [...chunks.values()].filter(ch => ch.group).filter(ch => d(ch) <= 4).every(ch => ch.group.children.every(o => !o.userData.landTree || !o.userData.far));
-  } finally { SETTINGS.quality = q0; px = x0; pz = z0; tick(); }
-  return out; });
-check('at Low a tree three chunks off draws the far template, under half the triangles, and takes every card as you walk up; the near ring and High\'s four keep them all', ring.nearFull && ring.farLow && ring.cut && ring.cut[0] < ring.cut[1] * .5 && ring.walkedUp && ring.back && ring.highFull, ring);
 
 // the post: the world's frame is tone-mapped and graded, and the renderer is left as it was after it
 const post = await page.evaluate(() => { forceTime(12); for (let i = 0; i < 120; i++) WORLD.tick(1 / 60, performance.now());
