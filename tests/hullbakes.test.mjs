@@ -1,7 +1,7 @@
 // Session 665 (Michael's A on DECISION #202): the Mark's cutter and Aurenne's caravel on hulls of their own, as the
 // Session 643 prototype showed them. The bakes, their sizes and rigs, the caravel's lateens trimmed to leeward, your own
 // ship taking her class's hull, the three older hulls untouched; writes docs/prototypes/shiphulls-ingame-*.png and, since
-// Session 1538, shipdress-*.png (your sloop in each island's dress). Session 1543: your caravel is the kit's Aurenne caravel, her
+// Session 1538, shipdress-*.png (your sloop in each island's dress). Session 1544: your caravel is the kit's Aurenne caravel, her
 // sterncastle a second deck walked by its ladders, her wheel on it (shipdress-caravel.png).
 import { boot, check } from './lib/game.mjs';
 import { inspShots } from './lib/inspshot.mjs';
@@ -64,7 +64,7 @@ if (d.gatelands.kit) {
   await page.evaluate(sk => { INSPECTOR.select('ships/cog/player'); const e = INSPECTOR.entries.find(x => x.key === sk); INSPECTOR.built.delete(e.id); }, key('cutter/player')); await inspShots(g, [[key('cutter/player'), 'shipdress-cutter.png', quarter]]);
   for (const k of ['gatelands', 'mark', 'aurenne']) { await page.evaluate(([dr, sk]) => { worldState.ship = Object.assign(worldState.ship || {}, { dress: dr }); INSPECTOR.select('ships/cog/player'); const e = INSPECTOR.entries.find(x => x.key === sk); INSPECTOR.built.delete(e.id); }, [k, key('sloop/player')]); /* the inspector keeps what it built: build the sloop again in this dress */ await inspShots(g, [[key('sloop/player'), `shipdress-${k}.png`, quarter]]); }
 }
-// Session 1543: your caravel on the new look is the kit's Aurenne caravel. Her sterncastle is a deck 2.15 m over the main one: up its
+// Session 1544: your caravel on the new look is the kit's Aurenne caravel. Her sterncastle is a deck 2.15 m over the main one: up its
 // ladders you stand on it, through the bulkhead's doorway you walk into the cabin under it; the bulkhead stops you on the main deck,
 // the castle's forward rail up there; the wheel stands on the castle and answers only from it, and taking it puts you up there.
 const cv = await page.evaluate(() => { const out = {};

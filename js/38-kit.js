@@ -3202,7 +3202,7 @@ function mkCutter(o = {}) {
   return { hull, rig: rigs[0], rigs, tiller, L, W, zs, zb, mast: [0, MZ], hatch, deckAt, at, sheerAt, sailFoot: BY, boom: { y: BY, z0: MZ - .2, z1: BZ1 }, transom: ZT, tip: TT, dress: 'mark', head, shields: [],
     tris: Math.round(hull.tris + rigs.reduce((a, q) => a + q.tris, 0) + tb.tris), draws: hull.mats.length + rigs.reduce((a, q) => a + q.mats.length, 0) + tb.mats.length };
 }
-// ── Aurenne's caravel (Session 1543; ships.js's aurenneCaravel, Session 890, Michael's A on #316): the game's caravel (L 17.5, W 5.0,
+// ── Aurenne's caravel (Session 1544; ships.js's aurenneCaravel, Session 890, Michael's A on #316): the game's caravel (L 17.5, W 5.0,
 // draft 1.3), carvel, tallowed white below the water and oiled above, the top two strakes blue under a gilt wale; a curved raked stem and a
 // square stern; the deck at 1.0. Her sterncastle is a real deck 2.15 m over it across her last 4.6 m, walled in blue with gilt panels and
 // railed at 1.0 m, a cabin under it behind a bulkhead with a doorway and two windows, a companion ladder up either side; the wheel stands

@@ -147,7 +147,7 @@
   const SHIP_GEO=new Map();
   // kind 'sloop' | 'cog' | 'galleon' | 'cutter' | 'caravel'; look 'player' | 'pirate' | 'merchant'. One bake per kind and look, shared.
   function shipBake(kind,look,dress){const kit=(kind==='sloop'||kind==='cutter'||kind==='caravel')&&look==='player'&&window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.ships;
-    if(kit)dress=kind==='cutter'?'mark':kind==='caravel'?'aurenne':shipDress(dress); /* S1539 — the cutter is sold only at the Mark's yards; S1543 — the caravel only at Aurenne's */
+    if(kit)dress=kind==='cutter'?'mark':kind==='caravel'?'aurenne':shipDress(dress); /* S1539 — the cutter is sold only at the Mark's yards; S1544 — the caravel only at Aurenne's */
     const key=kind+'|'+look+(kit?'|'+dress:'');let r=SHIP_GEO.get(key);if(r)return r;
     if(kit){r=shipBakeKit(kind,dress);SHIP_GEO.set(key,r);return r;}
     const D=SHIP_DECK,lk=SHIP_LOOKS[look]||SHIP_LOOKS.player;const B=new ShipBake();B.props=[]; /* S616 — what stands on her deck, kept for shipPropSolid */
@@ -254,7 +254,7 @@
   // (worldState.ship.dress, 'gatelands' | 'mark' | 'aurenne'; a ship from before it is the Gatelands', as she was built)
   function shipDress(d){if(d==null)d=worldState.ship&&worldState.ship.dress;return d==='mark'||d==='aurenne'?d:'gatelands';}
   // S1539 — and the Mark's cutter (PKIT.ships.cutter, ships.js's markCutter): the same contracts, the hatch at her own L/2-3.2 as the old cutter's
-  // S1543 — and Aurenne's caravel (PKIT.ships.caravel, ships.js's aurenneCaravel): her sterncastle is a second deck 2.15 m up (castle,
+  // S1544 — and Aurenne's caravel (PKIT.ships.caravel, ships.js's aurenneCaravel): her sterncastle is a second deck 2.15 m up (castle,
   // walked by shipCastlePlat), her wheel stands on it (helm), and her hatch is her own, between the main and the fore (hatchZ), since the
   // fore mast stands where L/2-3.2 would put it. A prop with lv 'lo' stands on the main deck only (the bulkhead either side of the
   // cabin's doorway) and one with 'hi' on the castle only (its forward rail, the wheel's post); the masts stand through both. Behind
@@ -292,7 +292,7 @@
   // box in the deck's own frame (recorded by the bake), widened by the walker's radius. Any ship within reach: yours, a
   // black sail's, a merchantman's. A chest set on a deck since (boardOther) is a box like the crates.
   function shipPropHit(mesh,x,z,R){const P=mesh.userData.props;if(!P||!P.length)return false;const ry=mesh.rotation.y,c=Math.cos(ry),s=Math.sin(ry);
-    const dx=x-mesh.position.x,dz=z-mesh.position.z;const lx=dx*c-dz*s,lz=dx*s+dz*c;const h=typeof jumpY==='number'?jumpY-DECK_Y:0; /* S1543 — the castle's level */
+    const dx=x-mesh.position.x,dz=z-mesh.position.z;const lx=dx*c-dz*s,lz=dx*s+dz*c;const h=typeof jumpY==='number'?jumpY-DECK_Y:0; /* S1544 — the castle's level */
     for(const p of P){if(p.lv&&(p.lv==='hi'?h<=1.6:p.lv==='lo'?h>1.6:h>=.5))continue;if(p.r!=null){if(Math.hypot(lx-p.x,lz-p.z)<p.r+R)return true;continue;}
       const cr=Math.cos(p.ry),sr=Math.sin(p.ry),ux=lx-p.x,uz=lz-p.z,bx=ux*cr-uz*sr,bz=ux*sr+uz*cr;if(Math.abs(bx)<p.hx+R&&Math.abs(bz)<p.hz+R)return true;}
     return false;}
@@ -351,7 +351,7 @@
   const STOW_COL={grain:0xb39a66,salt:0xd2c9b4,wool:0xd6c9aa,furs:0x6a4a30,hides:0x986a44,beef:0x7a5228,fish:0x5e4424,iron:0x6e5638,silver:0x4a3222,dyes:0x8a6a40,glass:0xa8865a,timber:0xa27a4a};
   function shipStowSlots(key){const r=SHIP_GEO.get(key);if(!r||!r.deck)return null;if(r.stow)return r.stow;
     const L=r.L,W=r.W,P=r.props||[],kind=key.split('|')[0],lim=W/2-.8-.35-.27;const n=Math.max(1,Math.floor(2*Math.max(0,lim)/STOW_U)+1);
-    const zA=Math.max(-L/2+4.2,r.castle?r.castle.z1+.3:-1e9),zB=L/2-4.2,zM=(zA+zB)/2,slots=[]; /* S1543 — not under a castle */
+    const zA=Math.max(-L/2+4.2,r.castle?r.castle.z1+.3:-1e9),zB=L/2-4.2,zM=(zA+zB)/2,slots=[]; /* S1544 — not under a castle */
     for(let z=zA+STOW_U/2;z<=zB-STOW_U/2+1e-6;z+=STOW_U)for(let i=0;i<n;i++){const x=(i-(n-1)/2)*STOW_U;
       if(Math.abs(x)+.28>r.deck.at(z)-.9)continue;
       if(P.some(p=>p.r!=null?Math.hypot(x-p.x,z-p.z)<p.r+.34:Math.abs(x-p.x)<p.hx+.32&&Math.abs(z-p.z)<p.hz+.32))continue;
@@ -441,7 +441,7 @@
   function shipPlatBox(plat,mesh,x,z,yaw,L,W){const d=mesh&&mesh.userData.deck;const hl=d?Math.max(-d.z0,d.z1):L/2;
     const c=Math.abs(Math.cos(yaw)),s=Math.abs(Math.sin(yaw));const hw=W/2*c+hl*s,hd=W/2*s+hl*c;
     plat.x0=x-hw;plat.x1=x+hw;plat.z0=z-hd;plat.z1=z+hd;if(mesh&&!plat.inside)plat.inside=(wx,wz)=>onShipDeck(mesh,wx,wz);}
-  // S1543 — a castle's deck, a second platform over her main one: the castle when you are up there (over 1.6 m above the main deck,
+  // S1544 — a castle's deck, a second platform over her main one: the castle when you are up there (over 1.6 m above the main deck,
   // so under it is the cabin), and either companion ladder as a ramp from the main deck to the castle's edge when you are on it (within
   // 0.9 m of its height there, so it is not stepped onto from the side halfway up). Its height is worked out by inside() and read as
   // y straight after (activeTerrainH). One platform, kept for your own ship; it answers only while she is the one it was made for.
@@ -462,7 +462,7 @@
     if(!SHIP.plat){SHIP.plat={x0:0,x1:0,z0:0,z1:0,y:DECK_Y,ship:true};ZONES.world.platforms.push(SHIP.plat);}
     if(SHIP.plat.mesh!==m){SHIP.plat.mesh=m;SHIP.plat.inside=null;}m.updateMatrix();
     shipPlatBox(SHIP.plat,m,SHIP.x,SHIP.z,SHIP.yaw,SHIP.L,SHIP.W);shipCastlePlat(m);
-    // the wheel in world space (S1543 — a kit hull's own, on her castle)
+    // the wheel in world space (S1544 — a kit hull's own, on her castle)
     const H=m.userData.helm,wl=H?H.wheelZ:-SHIP.L/2+2.8,hl=H?H.z:-SHIP.L/2+1.7;
     SHIP.wheel.x=SHIP.x-Math.sin(SHIP.yaw)*wl;SHIP.wheel.z=SHIP.z-Math.cos(SHIP.yaw)*wl;
     // the helmsman stands a pace aft of the wheel, looking forward over it
@@ -528,7 +528,7 @@
   }
   // E near the wheel takes / leaves the helm
   function onDeck(){const p=SHIP.plat;if(!p||!(px>p.x0&&px<p.x1&&pz>p.z0&&pz<p.z1))return false;if((!p.inside||p.inside(px,pz))&&Math.abs(jumpY-DECK_Y)<1)return true;
-    const c=SHIP.castle;return !!(c&&c.inside(px,pz)&&Math.abs(jumpY-c.y)<1);} /* S1543 — or her castle, or a ladder up to it */
+    const c=SHIP.castle;return !!(c&&c.inside(px,pz)&&Math.abs(jumpY-c.y)<1);} /* S1544 — or her castle, or a ladder up to it */
   function hullDist(){const p=SHIP.plat;if(!p)return 1e9;const dx=Math.max(p.x0-px,0,px-p.x1),dz=Math.max(p.z0-pz,0,pz-p.z1);return Math.hypot(dx,dz);}
   function nearShip(){return !!SHIP.mesh&&!onDeck()&&jumpY<4&&!climbing()&&!!shipNetSide(SHIP.mesh,SHIP.W);} /* S638 — her net under the crosshair, or swum against */
   // S614 (Michael's sailing playtest, 6 Oct: "targeting to pilot the ship / go below deck is area-based, not mesh-based") — the
@@ -538,7 +538,7 @@
   function eyeOnBox(box,reach){if(typeof CAM==='undefined'||!CAM)return false;CAM.updateMatrixWorld();CAM.getWorldDirection(_eyeD);_eyeR.set(CAM.position,_eyeD);
     const tpb=(typeof thirdPerson!=='undefined'&&thirdPerson&&typeof TP!=='undefined')?TP.dist:0;return !!_eyeR.intersectBox(box,_eyeP)&&CAM.position.distanceTo(_eyeP)<=reach+tpb;}
   function wheelAimed(){const w=SHIP.mesh&&SHIP.mesh.userData.wheel;if(!w)return false;w.updateMatrixWorld(true);_eyeB.setFromObject(w).expandByScalar(.15);return eyeOnBox(_eyeB,3.2);}
-  function nearWheel(){return onDeck()&&Math.hypot(px-SHIP.wheel.x,pz-SHIP.wheel.z)<TOUCH&&(!SHIP.mesh.userData.castle||shipUpper(SHIP.mesh))&&wheelAimed();} /* S1543 — a castle's wheel from the castle, not the cabin under it */
+  function nearWheel(){return onDeck()&&Math.hypot(px-SHIP.wheel.x,pz-SHIP.wheel.z)<TOUCH&&(!SHIP.mesh.userData.castle||shipUpper(SHIP.mesh))&&wheelAimed();} /* S1544 — a castle's wheel from the castle, not the cabin under it */
   function shipInteract(){
     if(climbing())return true;
     if(roofInteract())return true;
@@ -699,7 +699,7 @@
   function cabinUpdate(){
     if(!SHIP.mesh)return;const h=CABIN.house;h.name=`The ${SHIP.name} — cabin`;
     const fwd=[-Math.sin(SHIP.yaw),-Math.cos(SHIP.yaw)];
-    const hz=SHIP.mesh.userData.hatchZ!=null?SHIP.mesh.userData.hatchZ:SHIP.L/2-3.2; /* S1543 — a kit hull's own hatch */
+    const hz=SHIP.mesh.userData.hatchZ!=null?SHIP.mesh.userData.hatchZ:SHIP.L/2-3.2; /* S1544 — a kit hull's own hatch */
     h.doorX=SHIP.x+fwd[0]*hz;h.doorZ=SHIP.z+fwd[1]*hz; // forward hatch, clear of the wheel
     h.exitX=SHIP.x+fwd[0]*(hz-1.2);h.exitZ=SHIP.z+fwd[1]*(hz-1.2);h.exitYaw=SHIP.yaw+Math.PI;
     if(!ZONES.world.houses.includes(h))ZONES.world.houses.push(h);
