@@ -15,6 +15,17 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+### Bowyer's longbow and war bow — how each plays (from the systems builder, 2026-10-28, #851)
+**The question.** Joinery 75's perk, *Bowyer*, reads "the longbow and the war bow", but neither bow exists, so the perk shows as not yet built. Today's bow: full draw 1.10 s, the shot ×1.40 at full draw, the arrow 28 m/s, 8 stamina a second held, weight 3. What should the two bows be?
+
+**Options.**
+- **A (recommended).** Two bows on the bow's own draw, made at the bench only (3 planks and an ingot, the ingot's metal; Bowyer needed to make, never to draw; never sold or dropped). *Longbow*: draw 1.40 s, ×1.70, 33 m/s, 10 stamina/s, weight 3.5. *War bow*: draw 1.80 s, ×2.00, 36 m/s, 14 stamina/s, weight 4.5, walking at a potion's pace while drawn.
+- **B.** The longbow only, as in A; Bowyer reads "the longbow".
+- **C.** No new bows: Bowyer makes the bench's bow one step better (×1.15 on the shot); the perk renamed.
+- **D.** Leave Bowyer unbuilt for now.
+
+Under A or B the bow is drawn as the kit's bow lengthened (1.5×, 1.7×) until the bodies builder makes each its own piece.
+
 ## Answered
 ### Which island's dress your own ship wears (from the look builder, 2026-10-28, #839)
 **The question.** Card F11 has started in the game (Session 1531, on `auto/look-1531`): on the new look your sloop is the kit's Gatelands sloop (clinker hull, green sheer strake, the square green sail with the harp, a tiller). Your A on the ship ladder dresses each class by its island, and the prototype has every class in all three dresses. The cutter is sold only at the Mark's yards and the caravel only at Aurenne's, so their dress is settled; the sloop, the cog and the galleon are sold everywhere. Which dress does yours wear?
