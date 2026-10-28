@@ -7,8 +7,7 @@ spec until `docs/decisions.md` carries a `Michael:` line under it.
 Backlog J, routed by the producer on 21 Oct from the systems builder's Session 1240 (1244 on main): "Michael's B on #516 expected
 the keeper at the counter to see through the open back-room door to the box. At 8.7 m the box is in reach (7.6–7.9 m) in all seven
 of Dunmore's kit shops, but off the doorway's line behind the partition, so the counter never sees it; only the doorway is watched.
-For the designer: either the kit shops' layout puts the box on the doorway's line (the look builder, `js/38-kit.js`), or #516's C
-(a keeper who looks into the back room now and then). A DECISION for Michael before either is built."
+For the designer: either the kit shops' layout puts the box on the doorway's line, or #516's C (a keeper who looks into the back room now and then). A DECISION for Michael before either is built."
 
 His B on #516 said what he wanted: a strongbox emptied by day should carry a risk. The build does not give it one.
 
@@ -19,8 +18,7 @@ room's door is at one end of the partition behind them; the strongbox stands aga
 partition, off the doorway's line. `witnessOf` (`86-world-crime.js`) sees indoors within `WIT_IN`, 8.7 m, in a 120° cone the way a
 person faces, along a clear `intSightLine`, and hears within two metres whichever way they face. The keeper ambles between the
 counter and the shop floor (z 5.5 to 11.1 m, the partition at 4.6) and faces the shop, so the room's doorway is behind them most of
-the time and the box always is: a full-height wall stands between the counter and the box (Session 1312 measured it, which is why
-`theft` now stages its keeper inside the room). The box is a lock of three or four pins (`lockPins`, four where prosperity is 60 or
+the time and the box always is: a full-height wall stands between the counter and the box. The box is a lock of three or four pins (`lockPins`, four where prosperity is 60 or
 more), worked in a live world since Session 327; a pin let go early or late snaps the pick (`lpBreak`). Opened, it holds
 `boxCoins`: 10 + 50 a 100 prosperity, ×1.2 at an armourer or smith, ×0.8 at an apothecary, ±20% by the day's seeded roll, plus one
 thing from the stock, and it refills after five days (`boxState`). So by day the box is unseen money: about 40 gold and an item in
@@ -35,7 +33,7 @@ spots that saw it. The risk has to come from the keeper turning round, not from 
 ### A. The back room is the thief's
 Keep the build. By day a shop's box is taken unseen if you are not caught stepping through the open door; shut it behind you and
 nothing can see you. At night the shop is empty and the door's lock is the risk, the watch on the street. The loop is: walk in, wait
-for the keeper's back, go through, pick, leave. It costs nothing and touches nothing. What it gives up is Michael's B on #516: a
+for the keeper's back, go through, pick, leave. What it gives up is Michael's B on #516: a
 day theft is easier than a night one, and 500 gold a week of no-risk money is what the brief's *Not this* calls a system that
 reduces to buy more. No sessions.
 
@@ -50,7 +48,7 @@ inside the room, which is the only warning you get with the door shut.
 
 The loop is Thief's: watch the keeper go back, count, pick. A four-pin box takes 5 to 15 seconds for a fair hand, so a thief who
 starts just after a look has 15 to 45 seconds of quiet and rarely needs it all; one who starts blind is caught about one time in
-three. Skill matters less than patience: Locks shortens the job, but the schedule does the work. One ordinary systems session (the
+three. One ordinary systems session (the
 look in `86-world-crime.js` as one named action, `keeperLooks(house)`, the walk through `intAmbleStep`, the door through
 `intDoorAt`'s open and shut), and the `witness` suite extended: a keeper's two looks an hour by the seed, the box spot seen during
 one and not outside it, the latch heard 1.5 s before.
@@ -74,8 +72,7 @@ nothing), the keeper's walk as in B; the `witness` suite extended with a staged 
 the door in four seconds, the box spot seen), the same snap with the keeper 8 m off (unheard), and Quiet work at 4 m (unheard).
 
 Neither B nor C adds a `worldState` key: the keeper's look is the room's live state and starts fresh on entering. Nothing new goes
-in the save, `SS_CHAR_WS` or the S242 list. Both reach your position through `witnessOf` as today, so the later `targetOf` pass
-covers them with the rest of the crime system.
+in the save, `SS_CHAR_WS` or the S242 list. Both see you through `witnessOf`, so the later `targetOf` pass covers them.
 
 ## Recommendation
 **C, the keeper hears the work.** It answers #516's B with the lock Michael already plays rather than a timer to wait out, and it
@@ -95,4 +92,3 @@ Nothing outstanding. The keeper's room behind the counter (Session 1258), the 8.
   either). That is the crime system's investigation, a larger piece, and Michael has not asked for it.
 - **Homes' chests and the barber's box.** A home's resident sleeps and hears within two metres (Session 739), and the barber's box
   stands in his cone (Session 590); both already carry their risk.
-- **The box's takings.** Michael's A on #68 set them; this page leaves them alone.
