@@ -274,6 +274,7 @@ function fpThrust(p,pow,S){const e=t=>(1-Math.cos(t*Math.PI))/2,out=FP_THRUST.ou
   const a=p<S.antEnd?bk*e(p/S.antEnd):p<S.sweepEnd?bk+(out-bk)*e((p-S.antEnd)/(S.sweepEnd-S.antEnd)):p<S.holdEnd?out:out*(1-e((p-S.holdEnd)/(1-S.holdEnd)));
   const L=FP_LEVEL.spear,d=new THREE.Vector3(0,Math.cos(L),-Math.sin(L)).applyEuler(vmSword.rotation);return d.multiplyScalar(a);}
 function buildViewmodel(){
+  if(typeof workShown==='function'){const t=workShown();if(t&&EQ.weapon!==t)return workWield(buildViewmodel);} /* S1520 — the pick or the hatchet while you work (54-thirdperson.js) */
   if(vmSword){if(vmSword.userData.fistL)VM_SCENE.remove(vmSword.userData.fistL);VM_SCENE.remove(vmSword);vmSword=null;}
   vmGlow=null;vmEnchantLight=null;
   // v70.2 — clear the weapon arm bridge; rebuilt at the end with the new hand.
