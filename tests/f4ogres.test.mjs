@@ -69,6 +69,23 @@ const dead = await page.evaluate(() => { const f = _F[0], rig = f.rig, before = 
   rig.root.parent.updateMatrixWorld(true); const hb = rig.hb.map.find(([j]) => j === 'head')[1].getWorldPosition(new THREE.Vector3()), hd = rig.B.head.getWorldPosition(new THREE.Vector3());
   return { n: before.length, darker: before.filter(([o, m]) => o.material !== m && o.material.color && o.material.color.r <= m.color.r * .36 + 1e-6).length, head: +(hb.y - WORLD.worldH(hb.x, hb.z)).toFixed(2), gap: +hb.distanceTo(hd).toFixed(2) }; });
 check('killed, its body is darkened and falls with its driver', dead.darker === dead.n && dead.head < .7 && dead.gap < .45, dead);
+// Session 1548 — under a cavern's roof the club tips forward (foeUnderRoof; QA's s1008: a lair's Ogre master, 3.45 m, held the
+// greatclub's head 3.63–3.67 m up in a 3.6 m cavern). In the open it stands upright from the fist, as before.
+const upright = await page.evaluate(() => { const rig = _F[2].rig; tickPeople(1 / 60, 5e5); rig.root.parent.updateMatrixWorld(true); const m = rig.B.gear.matrixWorld.elements;
+  return +(m[5] / Math.hypot(m[4], m[5], m[6])).toFixed(3); });
+await page.evaluate(() => { window._lairBoss = null; delete (worldState.masters || {})[5104];
+  goToDungeon(Object.assign({}, PORTALS[0], { theme: 'deep', seed: 5104, size: 'medium', interior: 'cave', zone: 'world', tutorial: false, diff: 'hard', diffScale: DIFF_SCALE.hard, lair: { place: 'Testmoor', boss: 'Ogre' } })); });
+for (let i = 0; i < 60; i++) { await page.waitForTimeout(400); if (await page.evaluate(() => activeZoneId === 'dungeon' && !!window._lairBoss)) break; }
+await page.evaluate(() => { const e = window._lairBoss; if (e) { px = e.mesh.position.x + 6; pz = e.mesh.position.z; } });
+for (let i = 0; i < 60; i++) { if (await page.evaluate(() => { const r = window._lairBoss && window._lairBoss.limbs.person; return !r || (r.hb && !r.hb.cold) || r.hbFail; })) break; await page.waitForTimeout(500); }
+const roof = await page.evaluate(() => { const e = window._lairBoss; if (!e) return { none: true }; const rig = e.limbs.person;
+  const f = D_CEIL[e.floor || 1], ceil = f ? f(e.x / DCELL, e.z / DCELL) : FLOOR_HEIGHT; let top = -1e9, lo = 1e9;
+  for (let i = 0; i < 90; i++) { tickPeople(1 / 60, 7e5 + i * 16.7); if (i < 2) continue; e.mesh.updateMatrixWorld(true); const b = new THREE.Box3().setFromObject(rig.weapon);
+    const t = b.max.y - e.baseY; top = Math.max(top, t); lo = Math.min(lo, t); }
+  return { hb: !!rig.hb, carried: !!rig.hb && rig.weapon.parent === rig.hb.root, ceil, top: +top.toFixed(2), lo: +lo.toFixed(2) }; });
+console.log('  roof:', JSON.stringify({ upright, ...roof }));
+check(`in the open the club stands upright from the fist (${upright}); in a ${roof.ceil} m cavern the master's tips forward, its top ${roof.lo}–${roof.top} m up through 1.5 s of the idle (${roof.hb ? 'in the builder\'s fist' : 'on the driver'})`,
+  upright > .97 && !roof.none && (!roof.hb || roof.carried) && roof.top <= roof.ceil - .05 && roof.top > roof.ceil - .6, roof);
 await page.evaluate(() => { REN.render(scene, CAM); });
 check('no page errors', g.errs.length === 0, g.errs.slice(0, 3));
 await g.close();
