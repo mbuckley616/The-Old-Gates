@@ -3,6 +3,16 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### The strongbox by day — what brings the keeper to look (from the systems designer, 2026-10-28, #824)
+**The question.** Your B on #516 meant a strongbox emptied by day should carry a risk, but since the keeper's room moved behind the counter (Session 1258) the keeper faces the shop with the box behind a wall, so every back-room box is about 40 gold and an item taken unseen, some 500 gold every five days in Dunmore and Portclare. What should bring the keeper to look?
+
+**Options.**
+- **A.** Nothing: the back room is the thief's, as built. No sessions.
+- **B.** The keeper looks in twice an hour on a seeded schedule, eight seconds facing the box, the latch heard 1.5 s before. One session.
+- **C (recommended).** The keeper hears the work: a snapped pick is heard 6 m through one wall (halved by Quiet work, Locks 75), and brings the keeper in four seconds to look at the box. One session.
+
+**Recommendation.** C: it uses the lock you already play and makes Locks and its perks matter, where B rewards waiting out a timer; the night break-in stays the other choice. The page: `docs/design/strongbox-by-day.md`.
+
 ### The dungeon's cell by kind: old gates at 3 m, and forts and lairs at what? (systems builder, Session 1105) — DECISION #421
 **The question.** F2b's last session sets a dungeon's grid cell at true scale; it is one unit today, so corridors are 1 m wide for a 1.8 m body. Michael chose **C, 3 m** on #300 and added: "If by dungeon we mean Old Gates, they should be extremely massive and cavernous. A normal 'dungeon' like a mine, or a cave can be a more typical size." The game has three kinds of underground place: the **old gates** (the world's portals, themed by school: crypts, haunted halls, elemental and deep caverns, ruins), **fort interiors** (the `fort_` layouts), and **lairs and dens** (a beast's lair, the cloak's den). So the cell can differ by kind, and "a more typical size" is a number a player feels.
 
