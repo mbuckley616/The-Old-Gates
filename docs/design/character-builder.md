@@ -229,7 +229,7 @@ The game reads genomes; it never needs the tool.
 5. **B5, creatures:** the kit of parts (Session 772, prototype: ten plans). Owed, in order:
    - ~~the fin and radial parts, the hop and the bound, feathered wings, shells;~~ done, Sessions 773 to 775 (`creatures.js`: `FIN`, the radials, the `bound` and `hop` gaits, `feather`, the shell; struck in Session 1136);
    - ~~the kit on the builder's page with the people (one tool, one genome format);~~ done, Session 815 (`kit.js`, `builder.html`);
-   - in the game: the wolves move over first (their `WOLF_KINDS` become plans), then the bear, the spider, the horses and the dragon, then the bestiary sheet by sheet. Two things wait for the foundation's renderer. First, feet on uneven ground: a foot's target takes the ground's height under it, which is one line. Second, turning: the sweep follows the velocity in the body's frame.
+   - in the game: the wolves move over first (their `WOLF_KINDS` become plans), then the bear, the spider, the horses and the dragon, then the bestiary sheet by sheet. Two things wait for the foundation's renderer. First, ~~feet on uneven ground: a foot's target takes the ground's height under it~~ — done, Session 1547 (`hcGround` in `34-creatures.js`: each leg's tip moved by the ground under it, a two-bone reach at the knee and hip, and the body lowered when a downhill leg is already straight; more than one line, since the copied legs stand nearly straight). Second, turning: the sweep follows the velocity in the body's frame.
 6. **B6, in the game:** behind the foundation's switch, replacing `buildPerson` for townsfolk, then foes.
 
 ## Risks
