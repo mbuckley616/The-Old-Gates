@@ -146,8 +146,10 @@
   };
   const SHIP_GEO=new Map();
   // kind 'sloop' | 'cog' | 'galleon' | 'cutter' | 'caravel'; look 'player' | 'pirate' | 'merchant'. One bake per kind and look, shared.
-  function shipBake(kind,look,dress){const kit=kind==='sloop'&&look==='player'&&window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.ships,key=kind+'|'+look+(kit?'|'+shipDress(dress):'');let r=SHIP_GEO.get(key);if(r)return r;
-    if(kit){r=shipBakeKit(shipDress(dress));SHIP_GEO.set(key,r);return r;}
+  function shipBake(kind,look,dress){const kit=(kind==='sloop'||kind==='cutter')&&look==='player'&&window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.ships;
+    if(kit)dress=kind==='cutter'?'mark':shipDress(dress); /* S1539 — the cutter is sold only at the Mark's yards */
+    const key=kind+'|'+look+(kit?'|'+dress:'');let r=SHIP_GEO.get(key);if(r)return r;
+    if(kit){r=shipBakeKit(kind,dress);SHIP_GEO.set(key,r);return r;}
     const D=SHIP_DECK,lk=SHIP_LOOKS[look]||SHIP_LOOKS.player;const B=new ShipBake();B.props=[]; /* S616 — what stands on her deck, kept for shipPropSolid */
     const cls={sloop:{L:13,W:4.4},cog:{L:17,W:5.6},galleon:{L:22,W:7.0},cutter:{L:14,W:4.0},caravel:{L:17.5,W:5.0}}[kind];const L=cls.L,W=cls.W;
     const hopt={sloop:{draft:1.05,sheer:.42,bowRise:.45,sternRise:.3,stem:2.4,transom:.34,full:1.8},
@@ -251,7 +253,8 @@
   // S1538 (Michael's A on #839) — she wears the dress of the island whose yard sold or last refitted her, kept on the ship
   // (worldState.ship.dress, 'gatelands' | 'mark' | 'aurenne'; a ship from before it is the Gatelands', as she was built)
   function shipDress(d){if(d==null)d=worldState.ship&&worldState.ship.dress;return d==='mark'||d==='aurenne'?d:'gatelands';}
-  function shipBakeKit(dress){const S=PKIT.ships.sloop({hatchZ:13/2-3.2,dress}),P=[];
+  // S1539 — and the Mark's cutter (PKIT.ships.cutter, ships.js's markCutter): the same contracts, the hatch at her own L/2-3.2 as the old cutter's
+  function shipBakeKit(kind,dress){const S=kind==='cutter'?PKIT.ships.cutter({hatchZ:14/2-3.2}):PKIT.ships.sloop({hatchZ:13/2-3.2,dress}),P=[];
     const zz=[];for(let z=S.zs;z<=S.zb;z+=.05)if(S.deckAt(z)>.45)zz.push(z);const z0=zz[0],z1=zz[zz.length-1];
     P.push({x:0,z:S.mast[1],r:.17},{x:-.45,z:S.mast[1]-.7,r:.17});const h=S.hatch;P.push({x:0,z:(h.z0+h.z1)/2,hx:(h.x1-h.x0)/2,hz:(h.z1-h.z0)/2,ry:0});
     return {geo:S.hull.geo,mats:S.hull.mats,deck:{z0,z1,at:z=>z<z0||z>z1?0:S.deckAt(z)-.06},L:S.L,W:S.W,zs:S.zs,zb:S.zb,
