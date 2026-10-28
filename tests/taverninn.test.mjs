@@ -74,7 +74,10 @@ const r = await page.evaluate(() => {
     return { room: i, ...w, upstairs: Math.abs(w.y - F1) < .01 }; });
   const C = T.counter, cf = C.z1 + Z, keeper = intNPCMesh ? { x: +intNPCPos.x.toFixed(2), z: +intNPCPos.z.toFixed(2), behind: intNPCPos.z < C.z0 + Z, reach: +(cf + .3 - intNPCPos.z).toFixed(2), clearFront: !intSolidAt(intNPCPos.x, cf + .3, .25, 0) } : null;
   const hatch = HATCH.active ? { x: +HATCH.x.toFixed(2), z: +HATCH.z.toFixed(2), clear: !intSolidAt(HATCH.x, HATCH.z, .3, 0) } : null;
-  return { W: +W.toFixed(2), D: +D.toFixed(2), open, arrive, beds, order, walks, doors: INT_DOORS.length, keeper, hatch, lights, draws, kDraws, tris: Math.round(tris), scaledBy: T.group.scale.x, rise: S.rise, prompt: WORLD.bedPrompt(INT_BEDS[1]) };
+  /* S1512: at noon a sky spot inside each of the ground floor's openings (the door and five windows), aimed in */
+  const sky = []; interiorScene.traverse(o => { if (o.isLight && o.userData.daylight) sky.push({ x: +o.position.x.toFixed(2), z: +o.position.z.toFixed(2), i: +o.intensity.toFixed(2), in: o.position.x > 0 && o.position.x < W && o.position.z > 0 && o.position.z < D && Math.hypot(o.target.position.x - W / 2, o.target.position.z - D / 2) < Math.hypot(o.position.x - W / 2, o.position.z - D / 2) }); });
+  const ground = Object.values(T.open).flat().filter(q => T.yW + q.y < F1 - .3).length, hour = gameHour();
+  return { W: +W.toFixed(2), D: +D.toFixed(2), open, arrive, sky, ground, hour, beds, order, walks, doors: INT_DOORS.length, keeper, hatch, lights, draws, kDraws, tris: Math.round(tris), scaledBy: T.group.scale.x, rise: S.rise, prompt: WORLD.bedPrompt(INT_BEDS[1]) };
 });
 check(`the room is the tavern's inside, ${r.W} by ${r.D} m, at its true size (scale ${r.scaledBy})`, r.W > 8.5 && r.W < 9.6 && r.D > 6.9 && r.D < 8 && r.scaledBy === 1, r);
 check(`walled all round downstairs: no opening at 0.6 or 2.2 m but the door (${r.open.length}); you arrive clear at ${r.arrive.x}, ${r.arrive.z} m`, r.open.length === 0 && r.arrive.clear && !r.arrive.exits, { open: r.open.slice(0, 6), arrive: r.arrive });
@@ -83,6 +86,7 @@ check(`each bed is reached on foot from the door, up ${16} risers of ${r.rise} m
 check(`before you rent, a bed says to ask the keeper (“${r.prompt}”)`, /keeper/i.test(r.prompt || ''), r.prompt);
 check(`the keeper stands behind the counter at ${r.keeper && [r.keeper.x, r.keeper.z].join(', ')}, ${r.keeper && r.keeper.reach} m from you across it`, !!r.keeper && r.keeper.behind && r.keeper.clearFront && r.keeper.reach < 2.2, r.keeper);
 if (r.hatch) check(`the cellar's hatch is in the tiles at ${r.hatch.x}, ${r.hatch.z}, clear to stand at`, r.hatch.clear, r.hatch);
+check(`at noon the day comes in through the ground floor's ${r.ground} openings (${r.sky.length} sky spots inside the room, aimed in; S1512)`, r.hour >= 7 && r.hour < 18 && r.ground >= 4 && r.sky.length === r.ground && r.sky.every(q => q.in && q.i > 0), { hour: r.hour, ground: r.ground, sky: r.sky });
 check(`the room is lit (${r.lights} lights) and draws ${r.draws} meshes (50 or fewer), ${r.tris.toLocaleString()} triangles; the keeper ${r.kDraws}`, r.lights >= 6 && r.draws <= 50 && r.kDraws >= 1, r);
 
 const rent = await page.evaluate(() => { const h = currentHouse; gold = 200; const t = h.dlg._extra.find(t => /room|bed/i.test(t.label) && t.follow); const yes = t && t.follow.find(f => /^Yes/.test(f.label)); const said = yes ? yes.fn() : null;

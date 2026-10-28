@@ -2403,7 +2403,13 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       const O=T.open;for(const q of O.front)out(q.x,T.yW+q.y,hd,q.w,q.h+(q.arch?q.w/2:0),Math.PI);for(const q of O.back)out(-q.x,T.yW+q.y,-hd,q.w,q.h+(q.arch?q.w/2:0),0);
       for(const q of O.side)out(hw,T.yW+q.y,q.x,q.w,q.h+(q.arch?q.w/2:0),-Math.PI/2);for(const q of O.west)out(-hw,T.yW+q.y,-q.x,q.w,q.h+(q.arch?q.w/2:0),Math.PI/2);
       const A=new Float32Array(P.reduce((n,a)=>n+a.length,0));let o=0;for(const a of P){A.set(a,o);o+=a.length;} /* one mesh for them all */
-      const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(A,3));const m=new THREE.Mesh(g,M);m.userData.daylight=true;sc_.add(m);}
+      const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(A,3));const m=new THREE.Mesh(g,M);m.userData.daylight=true;sc_.add(m);
+      // S1512 — and the sky in through the ground floor's openings, a spot inside each (kitDaylight, at 0.55): from the
+      // arrival the tavern read 44 at noon and 55 at 23h, darker by day than by night as the taproom was before S1506; now 81 by day
+      // (0.4 read 71: night 0.77 of the day, where the taproom keeps 0.68)
+      const sky=[];for(const q of O.front)sky.push({x:rx(q.x),z:D,nx:0,nz:-1,q});for(const q of O.back)sky.push({x:rx(-q.x),z:0,nx:0,nz:1,q});
+      for(const q of O.side)sky.push({x:W,z:rz(q.x),nx:-1,nz:0,q});for(const q of O.west)sky.push({x:0,z:rz(-q.x),nx:1,nz:0,q});
+      kitDaylight(sc_,sky.filter(o=>ry(T.yW+o.q.y)<F1-.3).map(o=>({x:o.x,y:ry(T.yW+o.q.y+o.q.h*.7),z:o.z,nx:o.nx,nz:o.nz,w:o.q.w,h:o.q.h})),.55);}
     // the light: the brass lamps (over the left table, by the counter, in the well and over the passage), the braziers' glow, and the
     // room's warmth; one more in each guest room
     const KA=kitRoomAir(sc_,.42);
