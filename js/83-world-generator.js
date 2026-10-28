@@ -2435,6 +2435,21 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     for(const P of T.lamps)L(rx(P[0]),ry(P[1]),rz(P[2]),0xffaa44,P[1]>T.floors[1]?.7:1.3,P[1]>T.floors[1]?6:8);
     {const B=T.braziers[0];L(rx(B[0]-.3),ry(B[1]+.4),rz(B[2]+.4),0xff6a20,1.0,5);}
     for(const R of T.rooms)L(rx((R.x0+R.x1)/2),F1+1.6,rz(Z-1.2),0xffb070,.45,4);
+    // S1523 (#805, Michael's C: each island its own) — Aurenne's wall lamps and lamp stands (the concept's halls.js). A bronze wall lamp in
+    // the middle of each stretch of the east, west and back walls at least 0.6 m clear (0.2 m from a window, the cooking bench, the stair
+    // and its landing, the counter's shelves; 0.5 m from a corner); the front's arcade is left to the street's light. Two stands on the
+    // floor, each at the clear spot nearest the concept's (±2.2, 0.95): 0.45 m off the furniture, 0.6 m off the walks, 0.8 m off a wall
+    if(PKIT.halls){const list=[],M=.2,G=T.boxes.filter(q=>q.y0<T.floors[1]-.3&&q.z0<Z),O=T.open,low=q=>T.yW+q.y<T.floors[1]-.3;
+      for(const [along,lim,at,n,wins,tags] of [['z',Z,X,-1,O.side.filter(low).map(q=>[q.x,q.w]),['cookbench']],['z',Z,-X,1,O.west.filter(low).map(q=>[-q.x,q.w]),['stair','landing','oiljar']],['x',X,-Z,1,O.back.filter(low).map(q=>[-q.x,q.w]),['landing','counter']]]){
+        const bl=[[-lim-1,-lim+.5],[lim-.5,lim+1]];for(const [c,w] of wins)bl.push([c-w/2-M,c+w/2+M]);
+        for(const q of G)if(tags.includes(q.tag))bl.push(along==='z'?[q.z0-M,q.z1+M]:[q.x0-M,q.x1+M]);
+        bl.sort((a,b)=>a[0]-b[0]);let s=-lim;for(const [a,b] of bl){if(a-s>=.6){const c=(s+a)/2;list.push(along==='z'?{type:'walllamp',x:rx(at),y:0,z:rz(c),nx:n,nz:0}:{type:'walllamp',x:rx(c),y:0,z:rz(at),nx:0,nz:n});}s=Math.max(s,b);}}
+      const rect=(x,z,q)=>Math.hypot(Math.max(q.x0-x,0,x-q.x1),Math.max(q.z0-z,0,z-q.z1)),seg=(x,z,[a,b],[c,d])=>{const L2=(c-a)**2+(d-b)**2,t=L2?Math.max(0,Math.min(1,((x-a)*(c-a)+(z-b)*(d-b))/L2)):0;return Math.hypot(x-a-t*(c-a),z-b-t*(d-b));};
+      const walks=[T.path,T.paths[0][1]],clear=(x,z)=>G.every(q=>rect(x,z,q)>=.45)&&walks.every(P=>P.slice(1).every((p,k)=>seg(x,z,P[k],p)>=.6));
+      for(const [tx,tz] of [[-2.2,.95],[2.2,.95]]){let best=null;for(let x=-X+.8;x<=X-.8;x+=.05)for(let z=-Z+.8;z<=Z-.8;z+=.05){const d=Math.hypot(x-tx,z-tz);if((!best||d<best[2])&&clear(x,z))best=[x,z,d];}
+        if(best){list.push({type:'stand',x:rx(best[0]),y:0,z:rz(best[1])});SOL.push({x0:rx(best[0])-.18,x1:rx(best[0])+.18,z0:rz(best[1])-.18,z1:rz(best[1])+.18,y0:0,y1:1.55});}}
+      const HF=PKIT.halls.fixtures(list);sc_.add(HF.group);sc_.userData.hallTick=HF.tick;house._hallFix=HF;
+      for(const f of HF.lights){const l=new THREE.PointLight(new THREE.Color(...f.col),f.k*KA.lamp,f.r);l.position.set(...f.p);l.userData.hallFix=f.type;sc_.add(l);}}
     // the keeper behind the counter, between it and the shelves, facing the room
     const C=T.counter,npc={x:rx((C.x0+C.x1)/2),z:rz(C.z0-.3)};
     if(npcInsideNow(house)){const g=buildNPCMesh({role:'Innkeeper',name:house.keeper,_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});

@@ -88,6 +88,25 @@ check(`the keeper stands behind the counter at ${r.keeper && [r.keeper.x, r.keep
 if (r.hatch) check(`the cellar's hatch is in the tiles at ${r.hatch.x}, ${r.hatch.z}, clear to stand at`, r.hatch.clear, r.hatch);
 check(`at noon the day comes in through the ground floor's ${r.ground} openings (${r.sky.length} sky spots inside the room, aimed in; S1512)`, r.hour >= 7 && r.hour < 18 && r.ground >= 4 && r.sky.length === r.ground && r.sky.every(q => q.in && q.i > 0), { hour: r.hour, ground: r.ground, sky: r.sky });
 check(`the room is lit (${r.lights} lights) and draws ${r.draws} meshes (50 or fewer), ${r.tris.toLocaleString()} triangles; the keeper ${r.kDraws}`, r.lights >= 6 && r.draws <= 50 && r.kDraws >= 1, r);
+// Session 1523 (#805, Michael's C: each island its own): Aurenne's wall lamps on the east, west and back walls, clear of the windows, the
+// stair, the cooking bench and the counter's shelves; two lamp stands on the floor, clear of the furniture and the walks, each a solid;
+// each fixture its own light; the small flames one mesh for the room, flickering
+const lp = await page.evaluate(() => { const h = currentHouse, T = h._tavern, F = h._hallFix, X = T.inner.x1, Z = T.inner.z1, F0 = T.floors[0]; if (!F) return null;
+  const low = q => T.yW + q.y < T.floors[1] - .3, O = T.open, G = T.boxes.filter(q => q.y0 < T.floors[1] - .3 && q.z0 < Z);
+  const rect = (x, z, q) => Math.hypot(Math.max(q.x0 - x, 0, x - q.x1), Math.max(q.z0 - z, 0, z - q.z1));
+  const wall = F.lights.filter(l => l.type === 'walllamp').map(l => { const x = l.p[0] - X, z = l.p[2] - Z, face = x > X - .5 ? 'east' : x < -X + .5 ? 'west' : z < -Z + .5 ? 'back' : 'front';
+    const c = face === 'back' ? x : z, wins = face === 'east' ? O.side.filter(low).map(q => [q.x, q.w]) : face === 'west' ? O.west.filter(low).map(q => [-q.x, q.w]) : face === 'back' ? O.back.filter(low).map(q => [-q.x, q.w]) : [];
+    const tags = { east: ['cookbench'], west: ['stair', 'landing', 'oiljar'], back: ['landing', 'counter'] }[face] || [];
+    const gaps = [...wins.map(([m, w]) => Math.abs(c - m) - w / 2), ...G.filter(q => tags.includes(q.tag)).map(q => face === 'back' ? Math.max(q.x0 - c, c - q.x1) : Math.max(q.z0 - c, c - q.z1))];
+    return { face, at: +c.toFixed(2), y: +l.p[1].toFixed(2), off: +(face === 'back' ? z + Z : X - Math.abs(x)).toFixed(2), clear: +Math.min(9, ...gaps).toFixed(2) }; });
+  const seg = (x, z, [a, b], [c, d]) => { const L2 = (c - a) ** 2 + (d - b) ** 2, t = L2 ? Math.max(0, Math.min(1, ((x - a) * (c - a) + (z - b) * (d - b)) / L2)) : 0; return Math.hypot(x - a - t * (c - a), z - b - t * (d - b)); };
+  const walks = [T.path, T.paths[0][1]], stands = F.lights.filter(l => l.type === 'stand').map(l => { const x = l.p[0] - .1 - X, z = l.p[2] - Z;
+    return { x: +x.toFixed(2), z: +z.toFixed(2), furn: +Math.min(...G.map(q => rect(x, z, q))).toFixed(2), walk: +Math.min(...walks.flatMap(P => P.slice(1).map((p, k) => seg(x, z, P[k], p)))).toFixed(2), solid: !!intSolidAt(x + X, z + Z, .05, 0) }; });
+  const L = []; interiorScene.traverse(o => { if (o.isLight && o.userData.hallFix) L.push(o); }); const P = _LPS.get(interiorScene); if (P) for (const v of P.src) if (v.mirror.userData.hallFix && !L.includes(v.mirror)) L.push(v.mirror);
+  const fm = F.group.children.find(m => m.name === 'hall:flames'), o0 = fm && fm.material.opacity; interiorScene.userData.hallTick(performance.now() + 53); const o1 = fm && fm.material.opacity;
+  return { wall, stands, lights: L.length, n: F.lights.length, tris: F.tris, draws: F.draws, flick: o0 !== o1 }; });
+check(`Aurenne's lamps: ${lp && lp.wall.length} on the walls (${lp && lp.wall.map(w => w.face + ' ' + w.at).join(', ')} m), ${lp && Math.min(...lp.wall.map(w => w.clear))} m or more clear of a window, the stair, the bench and the shelves; ${lp && lp.stands.length} stands, ${lp && Math.min(...lp.stands.map(s => s.furn))} m off the furniture and ${lp && Math.min(...lp.stands.map(s => s.walk))} off the walks; each its own light; ${lp && lp.tris} triangles in ${lp && lp.draws} draws (S1523)`,
+  !!lp && lp.wall.length >= 2 && lp.wall.every(w => w.face !== 'front' && w.off < .3 && w.clear >= .2 && w.y > 1.6 && w.y < 1.9) && lp.stands.length === 2 && lp.stands.every(s => s.furn >= .45 && s.walk >= .6 && s.solid) && lp.lights === lp.n && lp.draws <= 6 && lp.flick, lp);
 
 const rent = await page.evaluate(() => { const h = currentHouse; gold = 200; const t = h.dlg._extra.find(t => /room|bed/i.test(t.label) && t.follow); const yes = t && t.follow.find(f => /^Yes/.test(f.label)); const said = yes ? yes.fn() : null;
   const mine = worldState.rented && worldState.rented.room, b = INT_BEDS.find(b => b.room === mine), o = INT_BEDS.find(b => b.room !== mine);
