@@ -1,7 +1,8 @@
 // Session 665 (Michael's A on DECISION #202): the Mark's cutter and Aurenne's caravel on hulls of their own, as the
 // Session 643 prototype showed them. The bakes, their sizes and rigs, the caravel's lateens trimmed to leeward, your own
 // ship taking her class's hull, the three older hulls untouched; writes docs/prototypes/shiphulls-ingame-*.png and, since
-// Session 1538, shipdress-*.png (your sloop in each island's dress).
+// Session 1538, shipdress-*.png (your sloop in each island's dress). Session 1543: your caravel is the kit's Aurenne caravel, her
+// sterncastle a second deck walked by its ladders, her wheel on it (shipdress-caravel.png).
 import { boot, check } from './lib/game.mjs';
 import { inspShots } from './lib/inspshot.mjs';
 const g = await boot(); const { page } = g;
@@ -27,7 +28,7 @@ for (const look of ['player', 'pirate', 'merchant']) {
   check(`the cutter (${look}) bakes 14 × 4.0 with a gaff, a topsail on it and two headsails`, r['cutter|' + look].L === 14 && r['cutter|' + look].W === 4 && /gaff/.test(r['cutter|' + look].rigs) && (r['cutter|' + look].kit ? r['cutter|' + look].rigs === 'gaff,jib' : (r['cutter|' + look].rigs.match(/jib/g) || []).length === 2 && r['cutter|' + look].extra), r['cutter|' + look]);
   check(`the caravel (${look}) bakes 17.5 × 5.0 with three lateens`, r['caravel|' + look].L === 17.5 && r['caravel|' + look].W === 5 && (r['caravel|' + look].rigs.match(/lateen/g) || []).length === 3, r['caravel|' + look]);
 }
-check('the two new hulls stay in the old ones\' range of triangles (under 7,000; the kit\'s cutter under 30,000)', r['cutter|player'].tris < (r['cutter|player'].kit ? 30000 : 7000) && r['caravel|player'].tris < 7000, [r['cutter|player'].tris, r['caravel|player'].tris]);
+check('the two new hulls stay in the old ones\' range of triangles (under 7,000; the kit\'s cutter under 30,000, its caravel under 36,000)', r['cutter|player'].tris < (r['cutter|player'].kit ? 30000 : 7000) && r['caravel|player'].tris < (r['caravel|player'].kit ? 36000 : 7000), [r['cutter|player'].tris, r['caravel|player'].tris]);
 check('the sloop, cog and galleon keep their rigs', r['sloop|player'].rigs === (r['sloop|player'].kit ? 'square' : 'gaff,jib') /* S1531: the kit's Gatelands sloop on the new look, #306's square sail */ && /square/.test(r['cog|player'].rigs) && !/lateen/.test(r['galleon|player'].rigs), [r['sloop|player'].rigs, r['cog|player'].rigs, r['galleon|player'].rigs]);
 check('the caravel\'s three yards swing to leeward, and over when the wind crosses', r.latA.length === 3 && r.latA.every(a => a < -.1) && r.latB.every(a => a > .1), [r.latA, r.latB]);
 check('the cutter\'s gaff carries its topsail', r.cutterTop === 1 || r['cutter|player'].kit, r.cutterTop);
@@ -62,6 +63,46 @@ if (d.gatelands.kit) {
   const quarter = 'INSPECTOR.orbit.theta=Math.PI/2+.6;INSPECTOR.orbit.phi=1.3;INSPECTOR.orbit.dist*=.8;';
   await page.evaluate(sk => { INSPECTOR.select('ships/cog/player'); const e = INSPECTOR.entries.find(x => x.key === sk); INSPECTOR.built.delete(e.id); }, key('cutter/player')); await inspShots(g, [[key('cutter/player'), 'shipdress-cutter.png', quarter]]);
   for (const k of ['gatelands', 'mark', 'aurenne']) { await page.evaluate(([dr, sk]) => { worldState.ship = Object.assign(worldState.ship || {}, { dress: dr }); INSPECTOR.select('ships/cog/player'); const e = INSPECTOR.entries.find(x => x.key === sk); INSPECTOR.built.delete(e.id); }, [k, key('sloop/player')]); /* the inspector keeps what it built: build the sloop again in this dress */ await inspShots(g, [[key('sloop/player'), `shipdress-${k}.png`, quarter]]); }
+}
+// Session 1543: your caravel on the new look is the kit's Aurenne caravel. Her sterncastle is a deck 2.15 m over the main one: up its
+// ladders you stand on it, through the bulkhead's doorway you walk into the cabin under it; the bulkhead stops you on the main deck,
+// the castle's forward rail up there; the wheel stands on the castle and answers only from it, and taking it puts you up there.
+const cv = await page.evaluate(() => { const out = {};
+  closeInspector(); /* the inspector takes the loop's frames while it is open */
+  window._drive = (step, max, ms = 1000 / 60) => { const raf = window.requestAnimationFrame, rr = REN.render; window.requestAnimationFrame = () => 0; REN.render = () => {};
+    let t = performance.now(), n = 0; prevT = t; try { for (; n < max; n++) { if (step(n)) break; t += ms; loop(t); } } finally { window.requestAnimationFrame = raf; REN.render = rr; prevT = 0; for (const k in K) K[k] = false; } return n; };
+  const b = shipBake('caravel', 'player'); out.bake = { kit: !!b.kit, dress: b.kit && b.kit.dress, tris: b.kit && b.kit.tris, draws: b.kit && b.kit.draws, rigs: b.rigs.map(q => q.type).join(), castleY: b.castle && b.castle.y, hatchZ: b.hatchZ };
+  if (!b.kit) return out;
+  const s = WORLD.allPorts().sort((a, c) => Math.hypot(a.x - px, a.z - pz) - Math.hypot(c.x - px, c.z - pz))[0];
+  let sx = null, sz = null; for (let rr = 300; rr < 3000 && sx === null; rr += 30) for (let a = 0; a < 6.28; a += .3) { const x = s.x + Math.cos(a) * rr, z = s.z + Math.sin(a) * rr;
+    if ([[0, 0], [40, 0], [-40, 0], [0, 40], [0, -40]].every(([dx, dz]) => WORLD.worldH(x + dx, z + dz) < -5)) { sx = x; sz = z; break; } }
+  for (const o of [...WORLD.others]) WORLD.despawnOtherShip(o);
+  if (SHIP.mesh) { sc.remove(SHIP.mesh); SHIP.mesh = null; }
+  const was = worldState.ship; worldState.ship = { cls: 'caravel', name: 'Test Swift', sails: 0, cargo: 0 }; WORLD.spawnShip(sx, sz, 0.7);
+  const m = SHIP.mesh, C = m.userData.castle, D = DECK_Y, ry = m.rotation.y; out.key = m.userData.bakeKey; out.slots = shipStowSlots(out.key).slots.length;
+  const put = (lx, lz, jy, fwd) => { m.updateMatrixWorld(true); const v = new THREE.Vector3(lx, 1, lz).applyMatrix4(m.matrixWorld); px = v.x; pz = v.z; jumpY = jy; velY = 0; onGround = true; yaw = fwd ? ry + Math.PI : ry; pitch = 0; };
+  const loc = () => { const [lx, lz] = shipLocal(m, px, pz); return [+lx.toFixed(2), +lz.toFixed(2), +(jumpY - D).toFixed(2)]; };
+  const walk = n => { let top = -9; _drive(() => { PHP = maxHP; stamina = maxStamina; K['KeyW'] = true; top = Math.max(top, jumpY - D); }, n); return { end: loc(), top: +top.toFixed(2), swim: isSwimming() }; };
+  out.z1 = C.z1; out.lad = C.lad;
+  put(1.55, C.z1 + 1.7, D, false); out.up = walk(80);
+  put(1.55, C.z1 - .8, D + 2.15, true); out.down = walk(80);
+  put(0, C.z1 + 1.5, D, false); out.cabin = walk(70);
+  put(1.1, C.z1 + 1.5, D, false); out.bulk = walk(60);
+  put(1.55, C.z1 + .7, D, false); out.under = walk(40);
+  put(.8, C.z1 - 1.0, D + 2.15, true); out.rail = walk(60);
+  put(0, m.userData.helm.z, D, true); pitch = .5; _drive(() => false, 3); out.promptDown = shipPrompt();
+  put(0, m.userData.helm.z, D + 2.15, true); pitch = -.25; _drive(() => false, 3); out.promptUp = shipPrompt();
+  out.take = shipInteract(); out.sailing = SHIP.sailing; _drive(() => false, 20); out.atHelm = loc(); shipInteract();
+  sc.remove(SHIP.mesh); SHIP.mesh = null; worldState.ship = was; return out; });
+console.log(JSON.stringify(cv));
+if (cv.bake.kit) {
+  check('your caravel is the kit\'s Aurenne caravel: three lateens, under 36,000 triangles and 20 draws, her castle 2.15 m over the deck', cv.bake.dress === 'aurenne' && cv.key === 'caravel|player|aurenne' && cv.bake.rigs === 'lateen,lateen,lateen' && cv.bake.tris < 36000 && cv.bake.draws <= 20 && Math.abs(cv.bake.castleY - 3.15) < .01, cv.bake);
+  check('her hold\'s stowage keeps forward of the castle and its ladders, enough for her base hold three high', cv.slots * 3 >= 55, cv.slots);
+  check('up the ladder to stand on the castle, and down it again to the deck', cv.up.end[2] === 2.15 && cv.up.end[1] < cv.z1 && !cv.up.swim && cv.down.end[2] === 0 && cv.down.end[1] > cv.z1 + cv.lad && !cv.down.swim, [cv.up, cv.down]);
+  check('through the doorway into the cabin under the castle, on the main deck', cv.cabin.end[1] < cv.z1 - 2 && cv.cabin.top === 0, cv.cabin);
+  check('the bulkhead stops you on the deck, under a ladder too; the castle\'s rail stops you up there', cv.bulk.end[1] > cv.z1 + .3 && cv.under.end[1] > cv.z1 + .3 && cv.under.top === 0 && cv.rail.end[1] < cv.z1 - .3 && cv.rail.end[2] === 2.15, [cv.bulk, cv.under, cv.rail]);
+  check('the wheel answers from the castle, not from the cabin under it, and takes you to the helm up there', cv.promptDown === null && /pilot/.test(cv.promptUp || '') && cv.take && cv.sailing && cv.atHelm[2] === 2.15, [cv.promptDown, cv.promptUp, cv.atHelm]);
+  await inspShots(g, [[key('caravel/player'), 'shipdress-caravel.png', 'INSPECTOR.orbit.theta=Math.PI/2+.6;INSPECTOR.orbit.phi=1.3;INSPECTOR.orbit.dist*=.8;']]);
 }
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
