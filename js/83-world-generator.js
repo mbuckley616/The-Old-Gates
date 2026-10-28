@@ -1848,6 +1848,11 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       const out=(x,y,z,w,h,f)=>{const m=new THREE.Mesh(new THREE.PlaneGeometry(w+.1,h+.1),M);m.position.set(rx(x),ry(y+h/2),rz(z)+f*.08);m.rotation.y=f>0?Math.PI:0;m.userData.daylight=true;sc_.add(m);};
       for(const w of T.windows)if(w.face==='front'||w.face==='back')out(w.x,w.y,w.z,w.w,w.h,w.face==='front'?1:-1);
       out(T.door.x,F0,T.door.z,T.door.w,T.door.h,1);}
+    // S1504 — and the day in through them (S1490's kitDaylight): a sky spot inside the open door and each window of the taproom's floor, at
+    // the barn's 0.4. From the arrival the taproom read 19 at noon and 27 at 23h (darker by day than by night, the lamps burning low);
+    // with them 40 at noon (0.7 → 51, the full share 64, the hands in the door's spot burning white past 0.4), 27 by night unchanged
+    kitDaylight(sc_,[...T.windows.filter(q=>(q.face==='front'||q.face==='back')&&ry(q.y)<F1-.3).map(q=>({x:rx(q.x),y:ry(q.y+q.h*.7),z:q.face==='front'?D:0,nx:0,nz:q.face==='front'?-1:1,w:q.w,h:q.h})),
+      {x:rx(T.door.x),y:T.door.h*.7,z:D,nx:0,nz:-1,w:T.door.w,h:T.door.h}],.4);
     // the light: the fire in the hearth, the lantern over the bar, one on the passage upstairs, and the room's warmth
     const KA=kitRoomAir(sc_,.45);
     const L=(x,y,z,c,i,d)=>{const l=new THREE.PointLight(c,i*(c===0xff6a20?KA.fire:KA.lamp),d);l.position.set(x,y,z);sc_.add(l);return l;};
