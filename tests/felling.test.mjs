@@ -82,6 +82,8 @@ const r = await page.evaluate(() => {
     if (T) { const mid = (k, off) => [T.x0 + T.dx * T.L * k - T.dz * off, T.z0 + T.dz * T.L * k + T.dx * off];
       const [mx, mz] = mid(.5, 0), [ox, oz] = mid(.5, T.hw + .6), [bx, bz] = mid(-.3, 0);
       out.trunk = { down: b.down, trunks: b.trunks, plats: b.plats, dir: [+T.dx.toFixed(3), +T.dz.toFixed(3)], L: +T.L.toFixed(2), R: +T.R.toFixed(2), mesh: !!(T.mesh && T.mesh.parent === b.t.out.stump.parent),
+        kit: !!(T.mesh && T.mesh.name === 'felled trunk'), kitTop: T.mesh ? +(new THREE.Box3().setFromObject(T.mesh).max.y - T.y).toFixed(3) : null, kitLen: T.mesh ? (() => { const b = new THREE.Box3().setFromObject(T.mesh); return +Math.hypot(b.max.x - b.min.x, b.max.z - b.min.z).toFixed(2); })() : null,
+        kitTris: T.mesh ? (() => { let n = 0; T.mesh.traverse(o => { if (o.isMesh) n += o.geometry.attributes.position.count / 3; }); return n; })() : 0,
         onTop: +(activeTerrainH(mx, mz) - T.y).toFixed(3), clear: worldH(mx, mz) < T.y, beside: +(activeTerrainH(ox, oz) - worldH(ox, oz)).toFixed(3), behind: +(activeTerrainH(bx, bz) - worldH(bx, bz)).toFixed(3) };
       worldState.gameTimeAbsMinutes += 599; tickTrunks(); out.trunk.at599 = TRUNKS.includes(T) && ZONES.world.platforms.includes(T.plat);
       worldState.gameTimeAbsMinutes += 1; tickTrunks(); out.trunk.at600 = { held: TRUNKS.includes(T), plat: ZONES.world.platforms.includes(T.plat), mesh: !!(T.mesh && T.mesh.parent), ground: +(activeTerrainH(mx, mz) - worldH(mx, mz)).toFixed(3) };
@@ -94,6 +96,7 @@ const r = await page.evaluate(() => {
 });
 console.log(JSON.stringify(r));
 check('Felling (25): the trunk falls where you face, the length of its tree; none at 24', r.trunk24 && r.trunk24.down && r.trunk24.trunks === 0 && r.trunk24.plats === 0 && r.trunk && r.trunk.down && r.trunk.trunks === 1 && r.trunk.plats === 1 && r.trunk.mesh && Math.abs(r.trunk.dir[0] + 1) < 1e-3 && Math.abs(r.trunk.dir[1]) < 1e-3 && r.trunk.L >= 4 && r.trunk.L <= 18, [r.trunk24, r.trunk]);
+check('on the new look the log is the kit\'s felled trunk, its top within a fifth of its radius of the deck, under 3,000 triangles (S1540)', r.trunk && r.trunk.kit && Math.abs(r.trunk.kitTop) <= r.trunk.R * .2 + .02 && r.trunk.kitTris < 3000 && r.trunk.kitLen >= r.trunk.L, r.trunk && [r.trunk.kit, r.trunk.kitTop, r.trunk.R, r.trunk.kitTris, r.trunk.kitLen, r.trunk.L]);
 check('you walk on its top along its length, and on the ground beside it and behind the stump', r.trunk && r.trunk.clear && r.trunk.onTop === 0 && r.trunk.beside === 0 && r.trunk.behind === 0, r.trunk);
 check('it lies 10 minutes (600 on the world clock), then the deck and the log are gone', r.trunk && r.trunk.at599 && !r.trunk.at600.held && !r.trunk.at600.plat && !r.trunk.at600.mesh && r.trunk.at600.ground === 0, r.trunk && [r.trunk.at599, r.trunk.at600]);
 check('trees about the home province, each keyed <cx,cz>:<i>, none twice', r.trees > 20 && r.ids && r.unique, r.trees);

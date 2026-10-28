@@ -57,6 +57,9 @@ const idr = id => { let n = (id * 2654435761) >>> 0; n ^= n >>> 15; return (n % 
     const gap = rx < .04 || rx > .96; const h = gap ? 0 : ry * .8 + .2 * tfbm(x, y, 20, 2, r); const v = .26 + .08 * r; return [h, ...(gap ? [.1, .1, .11] : [v * .92, v * .98, v * 1.1])]; }, 3),
     wood: () => texPair(256, (x, y) => { const p = 5, pl = Math.floor(x * p), px = x * p - pl, r = idr(pl + 1), g = Math.sin((y * 14 + tfbm(x, y, 4, 3, pl) * 3 + r * 6) * Math.PI * 2) * .5 + .5, gap = px < .03;
     const h = gap ? 0 : .6 + .25 * g; const v = .33 + .1 * r + .06 * g; return [h, ...(gap ? [.08, .06, .05] : [v * 1.0, v * .74, v * .52])]; }, 2),
+    // bark (Session 1540, the felled trunk): deep furrows along the trunk (y) between plates broken by short cross-cracks, grey-brown
+    bark: () => texPair(256, (x, y) => { const w = tfbm(x, y, 3, 3, 61) * 1.6, f = Math.abs(Math.sin((x * 9 + w) * Math.PI)), cr = Math.pow(Math.abs(Math.sin((y * 7 + tfbm(x, y, 9, 2, 63) * 2) * Math.PI)), 18) * (f > .5 ? 1 : 0), n = tfbm(x, y, 20, 3, 67);
+      const h = Math.max(0, f ** .6 - cr * .6) * .8 + n * .2, v = .14 + .12 * h + .03 * n; return [h, v * 1.05, v * .9, v * .74]; }, 2.6),
     // the flags and the rock, for the rooms (Session 1157: the taproom's floor and its turf fire, rooms.js)
     flag: () => texPair(512, (x, y) => { const rows = 4, row = Math.floor(y * rows), ry = y * rows - row, xx = x * 3 + (row % 2) * .5, col = Math.floor(xx), rx = xx - col, r = idr(row * 7 + ((col % 3) + 3) % 3);
     const edge = Math.min(rx, 1 - rx, ry, 1 - ry), n = tfbm(x, y, 14, 4, r * 3), gap = edge < .025; const h = gap ? 0 : Math.min(1, edge * 6) * (.8 + .2 * n); const v = .3 + .1 * r + .1 * n; return [h, ...(gap ? [.06, .06, .06] : [v * .95, v * .97, v])]; }, 2.4),
@@ -2906,6 +2909,46 @@ function joinerBench() {
   for (const [k, gs] of B) { const g = mergeGeometries(gs); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, BM[k]); m.name = 'bench:' + k; group.add(m); tris += g.attributes.position.count / 3; }
   return { group, tris: Math.round(tris), draws: group.children.length, foot: { x0: -L / 2, x1: L / 2, z0: 0, z1: D + .26 }, top: H };
 }
+// ── a felled trunk (Session 1540, for survival B's Felling, Session 1534: "the trunk falls where you face"; the systems builder's ask):
+// a log lying along +z from its butt at 0 to its top at L, its axis R over the ground (y = 0 the axis, the underside at −R), tapering
+// to 0.8 R, a little crooked; bark of the kit's own (furrowed plates); the butt chopped round to a blunt point (pale, its rings drawn),
+// the top torn off in splinters, four or five branch stubs off the sides, their sawn ends pale. Its top stays within 0.2 R of 2R over
+// the ground, so the game's flat deck along it stays on it. Seeded: one id, one log.
+//   PKIT.props.trunk(L, R, seed) -> { group, tris, draws, L, R }
+let TKM = null;
+function trunkEndTex() { const c = document.createElement('canvas'); c.width = c.height = 256; const x = c.getContext('2d');
+  x.fillStyle = '#c9a874'; x.fillRect(0, 0, 256, 256); for (let r = 6; r < 128; r += 5 + (r % 3)) { x.strokeStyle = r % 2 ? 'rgba(120,80,40,.35)' : 'rgba(150,105,60,.25)'; x.lineWidth = 1.5; x.beginPath(); x.arc(128 + Math.sin(r) * 2, 128 + Math.cos(r * .7) * 2, r, 0, Math.PI * 2); x.stroke(); }
+  x.strokeStyle = 'rgba(70,45,25,.5)'; x.lineWidth = 2; for (const a of [.4, 2.1, 3.9, 5.2]) { x.beginPath(); x.moveTo(128 + 12 * Math.cos(a), 128 + 12 * Math.sin(a)); x.lineTo(128 + 90 * Math.cos(a + .08), 128 + 90 * Math.sin(a + .08)); x.stroke(); }
+  x.fillStyle = '#4a3020'; x.beginPath(); x.arc(128, 128, 122, 0, Math.PI * 2); x.arc(128, 128, 112, 0, Math.PI * 2, true); x.fill(); /* the bark's rim */
+  const t = finishTex(c); t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; return t; }
+function felledTrunk(L = 9, R = .35, seed = 1) {
+  if (!TKM) TKM = { bark: mat('bark', { ns: 1.4, color: 0xd8ccc0, rough: .95 }), end: new THREE.MeshStandardMaterial({ map: trunkEndTex(), roughness: .85 }), heart: new THREE.MeshStandardMaterial({ color: 0xc8a070, roughness: .9, side: THREE.DoubleSide }) };
+  const rnd = stream('trunk:' + seed), B = new Map(), add = (k, g) => { g = g.index ? g.toNonIndexed() : g; for (const a of Object.keys(g.attributes)) if (!['position', 'normal', 'uv'].includes(a)) g.deleteAttribute(a);
+    if (!g.attributes.uv) g.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(g.attributes.position.count * 2), 2)); if (!B.has(k)) B.set(k, []); B.get(k).push(g); };
+  const NR = 12, NS = Math.max(4, Math.round(L / .5)), bend = (rnd() - .5) * .5 * R, ph = rnd() * 6.28;
+  // the axis and the radius at t (0 the butt, 1 the top): tapering, crooked to one side, the underside kept on the ground
+  const rad = (t, a) => R * (1 - .2 * t) * (1 + .05 * Math.sin(a * 3 + ph + t * 7) + .03 * Math.sin(a * 7 - t * 13)), cx = t => bend * Math.sin(Math.PI * t), cy = t => -.2 * R * t;
+  const P = [], U = [], ring = (t, k) => { const a = k / NR * Math.PI * 2, r = rad(t, a); return [cx(t) + r * Math.sin(a), cy(t) + r * Math.cos(a), t * L]; };
+  for (let i = 0; i < NS; i++) for (let k = 0; k < NR; k++) { const t0 = i / NS, t1 = (i + 1) / NS, q = [ring(t0, k), ring(t1, k), ring(t1, k + 1), ring(t0, k + 1)], uv = [[k / NR, t0 * L / 1.2], [k / NR, t1 * L / 1.2], [(k + 1) / NR, t1 * L / 1.2], [(k + 1) / NR, t0 * L / 1.2]];
+    for (const j of [0, 1, 2, 0, 2, 3]) { P.push(...q[j]); U.push(uv[j][0] * 2, uv[j][1]); } }
+  { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(U, 2)); g.computeVertexNormals(); add('bark', g); }
+  // the butt: chopped round to a blunt point by the axe, a low cone from the bark's last ring, its rings drawn on it
+  { const E = [], EU = [], dz = R * .35; for (let k = 0; k < NR; k++) { const a0 = k / NR * Math.PI * 2, a1 = (k + 1) / NR * Math.PI * 2, q0 = ring(0, k), q1 = ring(0, k + 1), c = [cx(0), cy(0), -dz];
+      for (const [p, a] of [[c, null], [q0, a0], [q1, a1]]) { E.push(...p); EU.push(a == null ? .5 : .5 + .47 * Math.sin(a), a == null ? .5 : .5 + .47 * Math.cos(a)); } }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(E, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(EU, 2)); g.computeVertexNormals(); add('end', g); }
+  // the top: torn off, a crown of splinters standing out of the last ring, pale inside
+  { const E = [], c = [cx(1), cy(1), L]; for (let k = 0; k < NR; k++) { const p0 = ring(1, k), p1 = ring(1, k + 1), h = R * (.25 + rnd() * .9), m = [(p0[0] + p1[0]) / 2 * .55 + c[0] * .45, (p0[1] + p1[1]) / 2 * .55 + c[1] * .45, L + h];
+      E.push(...p0, ...p1, ...m, ...c, ...p0, ...m, ...c, ...m, ...p1); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(E, 3)); g.computeVertexNormals(); add('heart', g); }
+  // the branch stubs: off the sides, 80° to 105° from the top (never up, where you walk), cut 0.2 to 0.45 m out, their ends pale
+  const nb = 4 + Math.floor(rnd() * 2); for (let b = 0; b < nb; b++) { const t = .4 + .55 * (b + rnd() * .8) / nb, side = b % 2 ? 1 : -1, a = side * (Math.PI / 2 - .17 + rnd() * .45), r = rad(t, a) * (.3 + rnd() * .14), len = .2 + rnd() * .25;
+    const o = new THREE.Vector3(cx(t) + rad(t, a) * .8 * Math.sin(a), cy(t) + rad(t, a) * .8 * Math.cos(a), t * L), d = new THREE.Vector3(Math.sin(a), Math.cos(a), .4).normalize(), q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), d);
+    const g = new THREE.CylinderGeometry(r * .8, r, len + rad(t, a) * .2, 6, 1, true); g.translate(0, (len + rad(t, a) * .2) / 2, 0); g.applyQuaternion(q); g.translate(o.x, o.y, o.z); add('bark', g);
+    const cap = new THREE.CircleGeometry(r * .8, 6); cap.rotateX(-Math.PI / 2); cap.translate(0, len + rad(t, a) * .2, 0); cap.applyQuaternion(q); cap.translate(o.x, o.y, o.z); add('heart', cap); }
+  const group = new THREE.Group(); group.name = 'felled trunk'; let tris = 0;
+  for (const [k, gs] of B) { const g = mergeGeometries(gs); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, TKM[k]); m.name = 'trunk:' + k; m.castShadow = true; m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
+  return { group, tris: Math.round(tris), draws: group.children.length, L, R };
+}
 // ── ships (card F11, backlog L6, OG-004; Session 1531): the Gatelands sloop of docs/prototypes/levelup/ships.js (gatelandsSloop,
 // Session 858; Michael's A on #306: the square sail, the harp, a tiller on the small hulls), in the game's sloop's numbers (L 13, W 4.4,
 // draft 1.05, the deck 1.0 over the sea): clinker strakes lapped, tarred below the water and oak above, the sheer strake green under a
@@ -3159,7 +3202,7 @@ function mkCutter(o = {}) {
   return { hull, rig: rigs[0], rigs, tiller, L, W, zs, zb, mast: [0, MZ], hatch, deckAt, at, sheerAt, sailFoot: BY, boom: { y: BY, z0: MZ - .2, z1: BZ1 }, transom: ZT, tip: TT, dress: 'mark', head, shields: [],
     tris: Math.round(hull.tris + rigs.reduce((a, q) => a + q.tris, 0) + tb.tris), draws: hull.mats.length + rigs.reduce((a, q) => a + q.mats.length, 0) + tb.mats.length };
 }
-  return { stream, hashKey, mergeByMaterial, halls: { fixtures: hallFixtures }, props: { bench: joinerBench }, ships: { sloop: glSloop, cutter: mkCutter }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
+  return { stream, hashKey, mergeByMaterial, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, trunk: felledTrunk }, ships: { sloop: glSloop, cutter: mkCutter }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
     mk: { hall: markHall, lot: markLot, alehall: markAlehall, longhouse: markLonghouse, mats: markMats },
     au: { house: aurenneHouse, lot: aurenneLot, courtyard: aurenneCourtyard, church: aurenneChurch, churchBox: aurenneChurchBox, churchHall: aurenneChurchHall, courtyardHouse: aurenneCourtyardHouse, tavern: aurenneTavern, mats: aurMats, roomMats: homeMats, AUR },
     gl: { PLANS, FIN, PS, PAINTS, TOWN: GL_TOWN, building, church, keep, farmstead, coachInn, coachInnPlan, coachRoom, townhouse: townhouseRoom, farmhouse: farmhouseRoom, byre: byreRoom, barn: barnRoom, row: shrineRow, ROW_GODS, inn: gatelandsInn, cottage: gatelandsCottage, churchLen: n => +((n === 2 ? 2 : 3) * 4.8 + 1.6 + 5.6 - .5 + 7.2 - .9 - .02).toFixed(2), lot: gatelandsLot, mats: glMats, BAYS, bayPlan, bayWidth, baysFor } };
