@@ -649,7 +649,7 @@ function dropFire(f){if(f.mesh&&f.mesh.parent)f.mesh.parent.remove(f.mesh);}
 function tickSurvival(dt){const t=gameMinNow();
   for(let i=CAMPFIRES.length-1;i>=0;i--){const f=CAMPFIRES[i];if(f.until<=t){dropFire(f);CAMPFIRES.splice(i,1);continue;}
     const fl=f.mesh&&f.mesh.userData.flame;if(fl){const k=.85+.15*Math.sin(performance.now()*.013+i);fl.scale.set(1,k,1);}}
-  tickMining(dt);tickFelling(dt);
+  tickMining(dt);tickFelling(dt);tickShipWork(dt);
   if(fedKind()==='steady'&&!dead)PHP=Math.min(effMaxHP(),PHP+dt*.2);
   if(stamina>effMaxStamina())stamina=effMaxStamina();}
 // fed: one kind at a time, by the game clock
@@ -1118,7 +1118,7 @@ const BENCH_ITEMS={
   feathers:{name:'Feathers',ico:'🪶',type:'misc',weight:.01,qty:FLETCH_FEATHERS,bundle:FLETCH_FEATHERS,buyPrice:1,sellMult:.4,feather:true}};
 function benchItem(k,qty){return {...BENCH_ITEMS[k],qty:qty||1};}
 function hasJoinerKit(){return BAG.some(b=>b&&b.tool==='joiner');}
-function benchHere(){return hasJoinerKit();}
+function benchHere(){return hasJoinerKit()||cabinBench();}
 function joinerKitFor(h){return h&&(h.type==='weapon'||h.type==='misc')?[{...JOINER_ITEM}]:[];}
 function feathersFor(h){return h&&h.type==='misc'?[{...BENCH_ITEMS.feathers}]:[];}
 function plankCount(){return bagCount(b=>b.plank);}
@@ -1129,7 +1129,10 @@ const BENCH_RECIPES=[
   {id:'spar',name:'Spar',need:'1 Pine Log',has:()=>bagCount(b=>b.log==='pine')>=1},
   {id:'bow',name:'Bow',need:'2 planks and an ingot',has:()=>plankCount()>=2&&benchMetals().some(t=>ingotCount(t)>=1)},
   {id:'shield',name:'Wooden Shield',need:'3 planks',has:()=>plankCount()>=3},
-  {id:'arrows',name:'Arrows',need:'1 log, 10 feathers and an iron ingot',has:()=>bagCount(b=>!!b.log)>=1&&bagCount(b=>b.feather)>=FLETCH_FEATHERS&&ingotCount(3)>=1}];
+  {id:'arrows',name:'Arrows',need:'1 log, 10 feathers and an iron ingot',has:()=>bagCount(b=>!!b.log)>=1&&bagCount(b=>b.feather)>=FLETCH_FEATHERS&&ingotCount(3)>=1},
+  {id:'patch',name:'Patch the hull',need:'a plank and a pitch',ship:true,has:()=>!shipWorkWhy('patch')}, /* S1519 — shown only at your ship */
+  {id:'splice',name:'Splice the rig',need:'a spar and a pitch',ship:true,has:()=>!shipWorkWhy('splice')}];
+function benchRows(){return BENCH_RECIPES.filter(r=>!r.ship||shipWorkHere());}
 let _benchN=0;
 // a made bow or shield: never enchanted, `made`, a fifth back, the forge's half-hour
 function benchPiece(tier,T,arm){const it=makeItem(tier,T,null,arm);it.made=true;it.sellMult=MADE_SELL;return it;}
@@ -1151,6 +1154,7 @@ function benchMake(id,tier){
     const it=benchPiece(1,ARMOR_TYPES.find(T=>T.type==='Buckler'),true);if(!canCarry(it))return {made:false,why:'Too heavy to carry!'};
     bagTake(b=>b.plank,3);bagAdd(it);skillUse('joinery',BENCH_PIECE,'b'+(_benchN++));
     if(typeof advanceClock==='function')advanceClock(FORGE_MIN);return {made:true,item:BAG[BAG.length-1],n:1};}
+  if(R.ship){const s=shipWorkStart(id);return s.started?{made:true,work:true}:{made:false,why:s.why};}
   if(id==='arrows'){if(!R.has())return {made:false,why:`You need ${R.need}.`};
     const plain=bagCount(b=>b.log==='log')>0;bagTake(b=>plain?b.log==='log':!!b.log,1);bagTake(b=>b.feather,FLETCH_FEATHERS);bagTake(b=>b.ingot===3,1);
     const n=perk('woodcutting',50)?15:FLETCH_N;const it={...ARROW_IRON,qty:n};bagAdd(it);skillUse('woodcutting',2,'b'+(_benchN++));
@@ -1158,6 +1162,48 @@ function benchMake(id,tier){
   return {made:false,why:''};}
 // using the kit, a plank, a spar or feathers from the bag opens the bench's page
 function useBenchThing(i){if(benchHere())openBenchPage();else showMsg('Work it at a bench: a joiner’s kit is one.','#c8b890');}
+
+// S1519 — the ship's patch and splice (`sailing.md` A, the survival sheet's joinery row; the skills sheet's Joinery perks). Her cabin
+// is a bench, and so is a joiner's kit at her side while she is hove to (within SHIP_WORK_R of her, not sailing). A patch is a
+// plank and a pitch: +8 + Joinery/5 hull (×1.5 with Tight seams, 50) after 8 s of work (4 with Shipwright's hand, 100). A splice
+// is a spar and a pitch: +20 rig, after the same work; at sea (no land within 25 m of her) only with Field splice (25). Field work
+// reaches 60% + 0.4% a Joinery point of the bar (100% at 100); past that, the yard. Each is a Joinery use of 6. The work is timed
+// by the frame's dt, and walking off or setting sail stops it with nothing spent.
+const PATCH_BASE=8,SPLICE_RIG=20,PATCH_S=8,SHIP_WORK_R=10,AT_SEA_R=25;
+function cabinBench(){return typeof isInterior==='function'&&isInterior()&&typeof currentHouse!=='undefined'&&!!currentHouse&&currentHouse.type==='cabin';}
+function shipWorkHere(){if(typeof SHIP==='undefined'||!worldState.ship||!SHIP.mesh||SHIP.sailing)return false;if(cabinBench())return true;
+  return activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior())&&hasJoinerKit()&&Math.hypot(px-SHIP.x,pz-SHIP.z)<SHIP_WORK_R;}
+function fieldCap(max){return Math.round(max*Math.min(1,.6+.004*skillLv('joinery')));}
+function patchAmt(){return Math.round((PATCH_BASE+Math.floor(skillLv('joinery')/5))*(perk('joinery',50)?1.5:1));}
+function patchSecs(){return perk('joinery',100)?PATCH_S/2:PATCH_S;}
+function pitchCount(){return bagCount(b=>b.name===SURV_ITEMS.pitch.name);}
+// no land within 25 m of her: the open water a splice needs Field splice for
+function shipAtSea(){if(typeof worldH!=='function')return false;for(let a=0;a<8;a++){const c=Math.cos(a*Math.PI/4),s=Math.sin(a*Math.PI/4);
+  for(let r=0;r<=AT_SEA_R;r+=5)if(worldH(SHIP.x+c*r,SHIP.z+s*r)>WORLD.SEA_Y)return false;}return true;}
+// why a patch or a splice cannot start now, or null
+function shipWorkWhy(kind){if(!shipWorkHere())return 'She must be hove to, and you at her side or in her cabin.';
+  const b=shipBars(),pl=kind==='patch';
+  if(pl?plankCount()<1:bagCount(b=>b.spar)<1)return pl?'A patch needs a plank.':'A splice needs a spar.';
+  if(pitchCount()<1)return 'It needs a pitch.';
+  if(!pl&&shipAtSea()&&!perk('joinery',25))return 'At sea the rig will not take a splice: bring her in to the shore.';
+  const cap=fieldCap(pl?b.hullMax:b.rigMax),now=pl?b.hull:b.rig;
+  if(now>=cap)return `Her ${pl?'hull':'rig'} is as sound as field work makes it (${now} of ${pl?b.hullMax:b.rigMax}). The rest is the yard’s.`;
+  return null;}
+let SHIPWORK=null;
+// begin a patch or a splice. Returns {started, why}
+function shipWorkStart(kind){const why=shipWorkWhy(kind);if(why)return {started:false,why};
+  SHIPWORK={kind,t:patchSecs(),x:px,z:pz};showMsg(kind==='patch'?'You set to the patch.':'You set to the splice.','#c8b890');return {started:true};}
+// the work done: the plank or spar and the pitch go, the bar rises to the field cap. Returns {hull} or {rig}, or {why}
+function shipWorkFinish(kind){const why=shipWorkWhy(kind);if(why)return {why};const st=shipCfg(),b=shipBars();
+  bagTake(kind==='patch'?(x=>x.plank):(x=>x.spar),1);bagTake(x=>x.name===SURV_ITEMS.pitch.name,1);skillUse('joinery',6,'w'+(_benchN++));
+  if(kind==='patch'){const to=Math.min(fieldCap(b.hullMax),b.hull+patchAmt());st.hull=to;if(typeof shipBarsUI==='function')shipBarsUI();return {hull:to-b.hull};}
+  const to=Math.min(fieldCap(b.rigMax),b.rig+SPLICE_RIG);st.rig=to;if(typeof shipBarsUI==='function')shipBarsUI();return {rig:to-b.rig};}
+// each frame, from tickSurvival
+function tickShipWork(dt){if(!SHIPWORK)return;const W=SHIPWORK;
+  if(!shipWorkHere()||Math.hypot(px-W.x,pz-W.z)>1.5||(typeof dead!=='undefined'&&dead)){SHIPWORK=null;showMsg('You leave the work.','#cc8844');return;}
+  W.t-=dt;if(W.t>0)return;SHIPWORK=null;const r=shipWorkFinish(W.kind);
+  if(r.why)showMsg(r.why,'#cc8844');else{const b=shipBars();showMsg(W.kind==='patch'?`The patch holds: hull +${r.hull}, ${b.hull} of ${b.hullMax}.`:`The splice holds: rig +${r.rig}, ${b.rig} of 100.`,'#d8c8a0');}
+  if(typeof renderHubInv==='function')renderHubInv();}
 
 // ── the bench's page (the fire's layout): what can be made on the left, the recipe on the right ──
 let benchOpen=false,benchSel='plank',benchTier=null,benchSaid='';
@@ -1176,13 +1222,13 @@ function openBenchPage(){
       '<span style="flex:1"></span><span style="font-size:12px;font-style:italic;color:#8a7050"><button type="button" id="bn-no" style="background:none;border:1px solid #a89060;border-radius:3px;font:13px Georgia,serif;color:#3a2c18;cursor:pointer;padding:2px 7px">Esc</button> as you were · Enter works</span></div></div>';
     document.body.appendChild(ov);
     ov.querySelector('#bn-go').onclick=()=>benchGo();ov.querySelector('#bn-no').onclick=()=>closeBenchPage();}
-  benchSaid='';if(!BENCH_RECIPES.some(r=>r.id===benchSel&&r.has())){const r=BENCH_RECIPES.find(r=>r.has());benchSel=r?r.id:BENCH_RECIPES[0].id;}
+  benchSaid='';if(!benchRows().some(r=>r.id===benchSel&&r.has())){const r=benchRows().find(r=>r.has());benchSel=r?r.id:BENCH_RECIPES[0].id;}
   ov.style.display='flex';benchOpen=true;benchDraw();
 }
 function closeBenchPage(){const ov=document.getElementById('benchui');if(ov)ov.style.display='none';benchOpen=false;if(typeof refocusView==='function')refocusView();}
 function benchDraw(){const ov=document.getElementById('benchui');if(!ov)return;
   ov.querySelector('#bn-skill').textContent=`Joinery ${skillLv('joinery')} · Woodcutting ${skillLv('woodcutting')}`;
-  ov.querySelector('#bn-list').innerHTML=BENCH_RECIPES.map(r=>{const on=r.id===benchSel,ok=r.has();
+  ov.querySelector('#bn-list').innerHTML=benchRows().map(r=>{const on=r.id===benchSel,ok=r.has();
     return `<div data-k="${r.id}" style="cursor:pointer;padding:0 6px;border-radius:2px;${on?'background:rgba(122,31,16,.12);color:#7a1f10':''}${!ok&&!on?';color:#a09070':''}">${on?'◆':'◇'} ${r.name}</div>`;}).join('');
   ov.querySelectorAll('#bn-list [data-k]').forEach(d=>d.onclick=()=>{benchSel=d.dataset.k;benchSaid='';benchDraw();});
   const R=BENCH_RECIPES.find(r=>r.id===benchSel),pad=s=>`<div style="padding-left:12px">${s}</div>`,note=s=>`<div style="padding-left:12px;color:#8a7050;font-style:italic">${s}</div>`;
@@ -1195,11 +1241,15 @@ function benchDraw(){const ov=document.getElementById('benchui');if(!ov)return;
         return `<button type="button" data-m="${m}" style="background:${m===benchTier?'rgba(122,31,16,.12)':'none'};border:1px solid ${m===benchTier?'#7a1f10':'#a89060'};border-radius:3px;font:13px Georgia,serif;color:${ok?'#3a2c18':'#a09070'};cursor:pointer;padding:1px 6px">${MATERIALS[m-1].name} ${ingotCount(m)}${g?` · ${g}`:''}</button>`;}).join('')+'</div>'+
       ((SKILL_GATE[benchTier]||0)>skillLv('joinery')?note(`asks Joinery ${SKILL_GATE[benchTier]}`):'')+note('made, never enchanted; sold back at a fifth');}
   else if(R.id==='shield')t+=pad('3 Planks'+have(plankCount()))+pad(`${FORGE_MIN} minutes`)+note('a Wooden Buckler; made, sold back at a fifth');
+  else if(R.ship){const b=shipBars(),pl=R.id==='patch',why=shipWorkWhy(R.id); /* S1519 */
+    t+=pad(pl?'1 Plank'+have(plankCount()):'1 Spar'+have(bagCount(x=>x.spar)))+pad('1 Pitch'+have(pitchCount()))+pad(pl?`hull +${patchAmt()}, ${patchSecs()} s of work`:`rig +${SPLICE_RIG}, ${patchSecs()} s of work`)+
+      note(`${pl?'hull':'rig'} ${pl?b.hull:b.rig} of ${pl?b.hullMax:b.rigMax}; field work to ${fieldCap(pl?b.hullMax:b.rigMax)}`)+(why?note(why):'');}
   else if(R.id==='arrows')t+=pad('1 log'+have(bagCount(b=>!!b.log)))+pad(`${FLETCH_FEATHERS} Feathers`+have(bagCount(b=>b.feather)))+pad('1 Iron Ingot'+have(ingotCount(3)))+note(`${perk('woodcutting',50)?15:FLETCH_N} Iron Arrows`);
   const Rt=ov.querySelector('#bn-right');Rt.innerHTML=t;
   Rt.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{benchTier=+b.dataset.m;benchSaid='';benchDraw();});
   ov.querySelector('#bn-said').textContent=benchSaid;}
 function benchGo(){const r=benchMake(benchSel,benchSel==='bow'?benchTier:null);
+  if(r.work){closeBenchPage();return;} /* S1519 — the patch and the splice are worked with the page shut */
   benchSaid=r.made?(r.n>1?`${r.n} × ${r.item.name}.`:`${r.item.name}.`):r.why||'';
   if(r.made&&typeof uiTone==='function')uiTone(330,440,.08,.08,'triangle');
   if(typeof renderHubInv==='function')renderHubInv();

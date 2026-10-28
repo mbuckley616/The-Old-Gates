@@ -162,6 +162,7 @@ const PERK_DEF={
   speech:[['Haggle','5% better prices both ways'],['Talk it down','a guard’s fine halved, once in each town'],['Hearing','a person at favour −1 still talks'],['Word given','once a day a guard takes your word for a trespass']]};
 const PERK_LIVE=new Set(['alchemy:25','alchemy:50','alchemy:75','alchemy:100', /* S1499 — Alchemy's four (survival B, session 7's second part) */
   'woodcutting:50','woodcutting:100', /* S1517 — Fletcher at the bench; One more since S1511 (fellLogs reads the level) */
+  'joinery:25','joinery:50','joinery:100', /* S1519 — Field splice, Tight seams and Shipwright's hand, with the ship's patch and splice; Bowyer waits for its bows */
   'cooking:25','cooking:75','cooking:100', /* S1503 — Seasoned; S1500 — Two portions and Full belly; Shared pot waits on someone else at the fire */
   'smithing:25','smithing:50','smithing:75','smithing:100','mining:25','mining:50','mining:100', /* S1495 — the forge's and the vein's (survival B, session 7's first part) */
   'locks:25','locks:50','locks:75','speech:25','speech:50',
