@@ -62,7 +62,7 @@ const sky = await page.evaluate(() => { const h = currentHouse, T = h._alehall, 
   return { hr: +gameHour().toFixed(1), want: 2 * Math.max(1, Math.floor(T.d / 4)) + 1, S }; });
 check(`at noon the day comes in through the hall's ${sky.want - 1} shuttered windows and the door (${sky.S.length} sky spots inside the hall; S1507)`, sky.hr >= 7 && sky.hr < 18 ? sky.S.length === sky.want && sky.S.every(q => q.in && q.i > 0) : sky.S.length === 0, sky);
 
-// Session 1516 (#805, Michael's C: each island its own): the Mark's torches, three on each side wall halfway between its windows, each
+// Session 1517 (#805, Michael's C: each island its own): the Mark's torches, three on each side wall halfway between its windows, each
 // flame at about 2.25 m, each with its own light, the flames flickering from one tick to the next
 const tor = await page.evaluate(() => { const h = currentHouse, T = h._alehall, W = h._roomW, F = h._hallFix; if (!F) return null; interiorScene.updateMatrixWorld(true);
   const n = Math.max(1, Math.floor(T.d / 4)), win = Array.from({ length: n }, (_, i) => T.inner.z1 + (-T.d / 2 + (i + .5) * T.d / n)), v = new THREE.Vector3();
@@ -70,7 +70,7 @@ const tor = await page.evaluate(() => { const h = currentHouse, T = h._alehall, 
   const L = []; interiorScene.traverse(o => { if (o.isLight && o.userData.hallFix) L.push(o); }); const P = _LPS.get(interiorScene); if (P) for (const v of P.src) if (v.mirror.userData.hallFix && !L.includes(v.mirror)) L.push(v.mirror); /* the room's pool takes them as sources */
   const s0 = F.flames[0].scale.y; interiorScene.userData.hallTick(performance.now() + 37); const s1 = F.flames[0].scale.y;
   return { n: fl.length, fl, lights: L.length, lit: L.every(l => l.intensity > 0), tris: F.tris, draws: F.draws, flick: s0 !== s1 }; });
-check(`the Mark's torches: ${tor && tor.n} on the side walls, flames at ${tor && [...new Set(tor.fl.map(f => f.y))].join(', ')} m, ${tor && Math.min(...tor.fl.map(f => f.win))} m or more from a window, each its own light, flickering; ${tor && tor.tris} triangles in ${tor && tor.draws} draws (S1516)`,
+check(`the Mark's torches: ${tor && tor.n} on the side walls, flames at ${tor && [...new Set(tor.fl.map(f => f.y))].join(', ')} m, ${tor && Math.min(...tor.fl.map(f => f.win))} m or more from a window, each its own light, flickering; ${tor && tor.tris} triangles in ${tor && tor.draws} draws (S1517)`,
   !!tor && tor.n === 6 && tor.fl.every(f => f.wall < .45 && f.y > 2.1 && f.y < 2.4 && f.win > 1.5) && tor.lights === 6 && tor.lit && tor.flick, tor);
 
 // renting: the keeper's yes takes a place, and that place is yours to rest on, the others not

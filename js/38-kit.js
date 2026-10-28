@@ -2780,7 +2780,7 @@ function shrineRow(o = {}) {
   return { group, tris: Math.round(tris), draws: group.children.length, niches, len: X(6) - X(0) + W, foot: { x0: X(0) - .6, x1: X(6) + .6, z0: -.58, z1: .14 }, rail, island: isl,
     ...(AU ? { piers: [[X(0) - 1.3, X(0) - .6], [X(6) + .6, X(6) + 1.3]].map(([a, b]) => ({ x0: a, x1: b, z0: -.7, z1: -.55 })), tithe: { x: .98, z: 1.6 }, reach: { z0: -.9, z1: 2.17 } } : {}) };
 }
-// ── the halls' fixtures (Session 1516; Michael's C on #805, 28 Oct 2026: each island its own), copied from the concept artist's
+// ── the halls' fixtures (Session 1517; Michael's C on #805, 28 Oct 2026: each island its own), copied from the concept artist's
 // docs/prototypes/levelup/halls.js (27 Oct): the Mark's pitch torch in an iron bracket, the Gatelands' sconce of two candles, Aurenne's
 // lamp stand and wall lamp, and a candle on a table. A bracket's ring is at 1.95 m, a torch's flame 2.25, a sconce's candles 1.75, a
 // stand's lamp 1.45: over a 1.9 m man's head, under a 2.4 m ceiling.

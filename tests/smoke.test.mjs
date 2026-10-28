@@ -14,10 +14,14 @@ const town = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'), 
   // on a roof: over 3 m up, with the town's own stack under it (a ray straight down from a metre over the point meets a mesh of the
   // town's between .6 below the point and a metre over it: the stack's head). It was 3 to 12 m over the ground, the old builder's houses; the
   // kit's three-storey townhouses and shops on the new look (S1065, card F6) put theirs at 12.4 (S1209)
+  // S1516 — the rays are cast at each house's near copy, whichever copy the eye's distance shows: the baked clusters swap at 70–80 m
+  // (`houseLod`, keeping their state in the band) and a far copy has no stack, so a camera last 120 m out left the centre's cluster far
+  // and its 3 chimneys read "with no stack" (S1502's FLAKY retry)
+  const lod = []; (S.lodMeshes || []).forEach(m => { lod.push([m, m.visible]); m.visible = m.userData.lod === 'hi'; }); if (S.kitLod) [S.kitLod.hi, S.kitLod.lo].forEach((m, i) => { lod.push([m, m.visible]); m.visible = !i; });
   WORLD.scene.updateMatrixWorld(true); const meshes = []; S.group.traverse(o => { if (o.isMesh && o.visible && !o.isSkinnedMesh && o.geometry && o.geometry.attributes.position) meshes.push(o); });
   const rc = new THREE.Raycaster(), down = new THREE.Vector3(0, -1, 0);
   const stack = c => { rc.set(new THREE.Vector3(c.x, c.y + 1, c.z), down); rc.far = 1.6; const h = rc.intersectObjects(meshes, false)[0]; return h ? +(h.point.y - c.y).toFixed(2) : null; };
-  const up = S.chimneys.map(c => +(c.y - WORLD.worldH(c.x, c.z)).toFixed(2)), head = S.chimneys.map(stack);
+  const up = S.chimneys.map(c => +(c.y - WORLD.worldH(c.x, c.z)).toFixed(2)), head = S.chimneys.map(stack); lod.forEach(([m, v]) => m.visible = v);
   const onRoofs = up.every(u => u > 3) && head.every(d => d != null), heights = [Math.min(...up), Math.max(...up)], heads = head.some(d => d == null) ? head.filter(d => d == null).length + ' with no stack' : [Math.min(...head), Math.max(...head)];
   const inLots = S.chimneys.every(c => S.sol.some(b => { if (b.c == null) return false; const dx = c.x - b.cx, dz = c.z - b.cz, u = dx * b.c - dz * b.s, v = dx * b.s + dz * b.c; return Math.abs(u) < b.rx + .5 && Math.abs(v) < b.rz + .5 || Math.abs(v) < b.rx + .5 && Math.abs(u) < b.rz + .5; }));
   return { n: S.chimneys.length, types, onRoofs, heights, heads, inLots, pts: !!P && P.isPoints, count: P && P.geometry.attributes.position.count, inGroup: P && P.parent === S.group,

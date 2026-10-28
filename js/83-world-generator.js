@@ -1858,7 +1858,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     const L=(x,y,z,c,i,d)=>{const l=new THREE.PointLight(c,i*(c===0xff6a20?KA.fire:KA.lamp),d);l.position.set(x,y,z);sc_.add(l);return l;};
     L(rx(T.fire[0]+.6),ry(T.fire[1]+.3),rz(T.fire[2]),0xff6a20,1.5,7);L(rx(T.lamp[0]),ry(T.lamp[1]),rz(T.lamp[2]),0xffaa44,1.6,9);L(W/2,F1+2.1,rz(T.passage-.3),0xffaa44,.5,7);
     for(const R of T.rooms)L(rx((R.x0+R.x1)/2),F1+1.6,rz(Z-1.2),0xffb070,.5,4);
-    // S1516 (#805, Michael's C: each island its own) — the Gatelands' candle sconces (the concept's halls.js): one in the middle of each
+    // S1518 (#805, Michael's C: each island its own) — the Gatelands' candle sconces (the concept's halls.js): one in the middle of each
     // stretch of the front and back walls at least 0.6 m clear (0.2 m from a window's or the door's edge, the open leaf and the stair's
     // landing, 0.5 m from a corner), and a candle in a stick on each table. Lamps by the hour, as the lantern over the bar
     if(PKIT.halls){const list=[],M=.2;
@@ -2306,7 +2306,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     const KA=kitRoomAir(sc_,.4);
     const L=(x,y,z,c,i,d)=>{const l=new THREE.PointLight(c,i*(c===0xff6a20?KA.fire:KA.lamp),d);l.position.set(x,y,z);sc_.add(l);return l;};
     L(rx(T.fire[0]),ry(T.fire[1]+.5),rz(T.fire[2]),0xff6a20,1.8,10);for(const P of T.lamps)L(rx(P[0]),ry(P[1]),rz(P[2]),0xffaa44,1.1,8);
-    // S1516 (#805, Michael's C: each island its own) — the Mark's torches (the concept's halls.js): a pitch torch in an iron bracket on each
+    // S1517 (#805, Michael's C: each island its own) — the Mark's torches (the concept's halls.js): a pitch torch in an iron bracket on each
     // side wall halfway between the windows (one every 4.5 m, so three a side), its flame at 2.25 m over the wall bench's sleepers, soot
     // above it. Each is a lamp by the hour as the iron lamps are (KA.lamp); the room's pool of 20 lights takes the nearest
     if(PKIT.halls){const n=Math.max(1,Math.floor(T.d/4)),list=[];for(let i=1;i<n;i++)for(const sx of [-1,1])list.push({type:'torch',x:rx(sx*X),y:0,z:rz(-T.d/2+i*T.d/n),nx:-sx,nz:0});
