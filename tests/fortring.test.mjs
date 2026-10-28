@@ -34,7 +34,7 @@ check('the canonical forts are all new shapes, and every shape turns up', !Objec
 // dungeon by the loop (S603: on CI it was not, so the flight was walked as open ground)
 await page.evaluate(() => { const p = Object.assign({}, PORTALS[0], { id: 'dyn_7104', theme: 'ruins', seed: 7104, size: 'medium', interior: 'fort_ring', kind: 'fort_door', zone: 'world', tutorial: false }); goToDungeon(p); });
 for (let k = 0; k < 25 && !(await page.evaluate(() => activeZoneId === 'dungeon' && scene === dScene && FOOTHOLDS.filter(f => f.kind === 'flight').length === 2)); k++) await page.waitForTimeout(300);
-await page.waitForTimeout(1200); await g.spin(30);
+await page.waitForTimeout(1200); await g.spin(null, 30);
 const built = await page.evaluate(() => { const G = window._lastGen, Y = G.yard, fl = FOOTHOLDS.filter(f => f.kind === 'flight');
   const tag = t => dScene.children.filter(o => o.userData && o.userData.dunShell === t).length;
   const near = (x, z) => fl.some(f => x > f.x0 - 1.2 && x < f.x1 + 1.2 && z > f.z0 - 1.2 && z < f.z1 + 1.2) || (x > dAt(Y.c0) - 1.7 && x < dAt(Y.c1) + 1.7 && z > dAt(Y.r0) - 1.7 && z < dAt(Y.r1) + 1.7); /* S1283 — the yard's cells to metres */
@@ -70,7 +70,7 @@ for (const name of ['ring', 'yard', 'tower']) {
     const Yc = window._lastGen.yard, Y = { c0: dAt(Yc.c0), c1: dAt(Yc.c1), r0: dAt(Yc.r0), r1: dAt(Yc.r1) }, f = FOOTHOLDS.filter(f => f.kind === 'flight')[0], ymx = (Y.c0 + Y.c1) / 2;
     const V = { ring: [ymx + 2, Y.r1 + 2.2, .3, -.42, 0], yard: [ymx - 2, Y.r1 - 1, -.3, .45, FLOOR2_Y], tower: [(f.x0 + f.x1) / 2, f.z1 + .6, 0, -.55, 0] }[name];
     px = V[0]; pz = V[1]; yaw = V[2]; pitch = V[3]; jumpY = V[4]; velY = 0; currentFloor = V[4] < -2 ? 2 : 1; }, name);
-  await g.spin(3); await page.evaluate(() => { if (typeof vmSword !== 'undefined' && vmSword) vmSword.visible = false; if (typeof vmArmR !== 'undefined' && vmArmR) vmArmR.visible = false; }); await g.frames(3);
+  await g.spin(null, 3); await page.evaluate(() => { if (typeof vmSword !== 'undefined' && vmSword) vmSword.visible = false; if (typeof vmArmR !== 'undefined' && vmArmR) vmArmR.visible = false; }); await g.frames(3);
   await page.screenshot({ path: `${OUT}/fortring-${name}.png` });
 }
 check('no page errors', g.errs.length === 0, g.errs);

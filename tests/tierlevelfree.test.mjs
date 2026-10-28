@@ -37,7 +37,7 @@ async function enter(lv) {
   await page.evaluate(([lv, D]) => { level = lv; window._lairBoss = null; delete (worldState.masters || {})[7363];
     const L = { place: 'Testwood', boss: 'Cave Bear' }, p = makePortalDef({ x: D.x, z: D.z, zone: 'world', seed: 7363, size: 'medium', theme: 'deep', lair: L }); p.lair = L; goToDungeon(p); }, [lv, open.D]);
   for (let i = 0; i < 60; i++) { await page.waitForTimeout(400); if (await page.evaluate(() => activeZoneId === 'dungeon' && ENEMIES.length > 0 && !!window._lairBoss)) break; }
-  await g.spin(30);
+  await g.spin(null, 30);
   const r = await page.evaluate(() => { const ROW = e => [e.baseName || e.name, e.variant || null, e.tier || null, e.maxHp, +(e.dmgMult || 0).toFixed(4), +(e.dmg || 0).toFixed(3), +(e.spd || 0).toFixed(4), !!e.locked];
     const traps = D_TRAPS.map((t, i) => [t.kind || 'blade', +(t.x || 0).toFixed(2), +(t.z || 0).toFixed(2), t.kind === 'spike' ? spikeTrapRaw(t) : bladeTrapRaw()]);
     const h = (worldState.masters || {})[currentPortal.seed]; const hoard = h && h.hoard ? h.hoard.items.map(it => [it.name, it.value || 0]) : null;

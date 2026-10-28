@@ -39,7 +39,7 @@ for (let k = 0; k < 60; k++) { await page.waitForTimeout(400); if (await page.ev
 const inside = await page.evaluate(() => activeZoneId);
 await page.evaluate(() => goToOW());
 for (let k = 0; k < 60; k++) { await page.waitForTimeout(400); if (await page.evaluate(() => activeZoneId === 'world')) break; }
-await g.spin(30);
+await g.spin(null, 30);
 const out = await page.evaluate((p) => { const s = WORLD.siteAnywhere(p.id); const w = dungeonWorldPos[p.seed]; if (!w) return { zone: activeZoneId, noDoor: true }; return { zone: activeZoneId, fromDoor: +Math.hypot(px - w.x, pz - w.z).toFixed(1), fromLair: +Math.hypot(px - s.x, pz - s.z).toFixed(1), solid: solidAt(px, pz) }; }, p);
 console.log(JSON.stringify({ ent, inside, out }));
 check('the lair\'s portal is the cavern\'s, and it opens', ent.ok && ent.lair === p.id && inside === 'dungeon', { ent, inside });
