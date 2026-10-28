@@ -26,9 +26,11 @@ const r = await page.evaluate(() => {
   out.silver = !INGOT_DEF.some(d => MATERIALS[d.tier - 1].name === 'Silver');
   // ── the gate: an Iron sword at 14 refused, at 15 made ──
   bagAdd(ingotItem(3, 3)); const ing0 = bagCount(b => b.ingot === 3);
+  // S1518 — a weapon takes a plank for its grip: refused without one, then given one
+  S(15); out.noPlank = forgeMake('Sword', 3).why; out.noPlankKept = bagCount(b => b.ingot === 3) === ing0; bagAdd(benchItem('plank', 1)); S(14);
   out.gate14 = forgeMake('Sword', 3).why; out.ingotsKept = bagCount(b => b.ingot === 3) === ing0;
   S(15); const t0 = gameMinNow(), g1 = gold;
-  const mk = forgeMake('Sword', 3), sw = mk.item;
+  const mk = forgeMake('Sword', 3), sw = mk.item; out.plankUsed = plankCount() === 0;
   out.make = { made: mk.made, name: sw && sw.name, flag: sw && sw.made, ench: !!(sw && (sw.enchant || sw.enchantId)), ingots: ing0 - bagCount(b => b.ingot === 3),
     mins: Math.round(gameMinNow() - t0), use: SKILLS.smithing.p + (SKILLS.smithing.lv > 15 ? skillCost(15) : 0), fee: g1 - gold };
   const found = makeItem(3, WEAPON_TYPES.find(t => t.type === 'Sword'), null, false);
@@ -55,7 +57,7 @@ const r = await page.evaluate(() => {
   BAG.length = 0; S(25); bagAdd(oreItem('iron', 3)); forgeSmelt(3); P.smelt25 = { ingots: bagCount(b => b.ingot === 3), ore: bagCount(b => b.ore === 'iron') };
   bagAdd(oreItem('iron', 2)); forgeSmelt(3); P.smelt25two = bagCount(b => b.ingot === 3);
   bagAdd(oreItem('copper', 2)); bagAdd(oreItem('tin', 1)); forgeSmelt(2); P.bronze = { ingots: bagCount(b => b.ingot === 2), cu: bagCount(b => b.ore === 'copper'), sn: bagCount(b => b.ore === 'tin') };
-  BAG.length = 0; bagAdd(ingotItem(3, 12)); const base = makeItem(3, WEAPON_TYPES.find(t => t.type === 'Sword'), null, false);
+  BAG.length = 0; bagAdd(ingotItem(3, 12)); bagAdd(benchItem('plank', 4)); const base = makeItem(3, WEAPON_TYPES.find(t => t.type === 'Sword'), null, false);
   S(49); P.plain = forgeMake('Sword', 3).item.name;
   S(50); const fine = forgeMake('Sword', 3).item; P.fine = { name: fine.name, atk: fine.atk, base: base.atk, q: fine.quality };
   S(74); P.max74 = temperMax(); S(75); P.max75 = temperMax();
@@ -82,6 +84,7 @@ check('a copper and a tin → bronze', r.bronze === 'Bronze Ingot', r.bronze);
 check('steel asks a charcoal and takes it', /charcoal/.test(r.steelNoCoal) && r.steel === 'Steel Ingot' && r.coalLeft === 0, r);
 check('silver has no ingot', r.silver);
 check('an Iron sword refused at Smithing 14, the ingots kept', /Smithing 15/.test(r.gate14) && r.ingotsKept, r.gate14);
+check('a weapon needs a plank for its grip; refused without one, the ingots kept, and the plank taken when made', /plank/.test(r.noPlank) && r.noPlankKept && r.plankUsed, { why: r.noPlank, kept: r.noPlankKept, used: r.plankUsed });
 check('an Iron sword made at 15: made, never enchanted, 2 ingots, 30 minutes, Smithing +25', r.make.made && r.make.name === 'Iron Sword' && r.make.flag && !r.make.ench && r.make.ingots === 2 && r.make.mins === 30 && r.make.use === 25 && r.make.fee === 5, r.make);
 check('a made sword sells at 20% of its price, a found one at 45%; the same blade', r.sale.made === Math.floor(r.sale.buy * .2) && r.sale.found === Math.floor(r.sale.buy * .45) && r.sale.atkSame, r.sale);
 check('ingots by type: dagger 1, two-handed 4, shield 3, helm 2, chest 5, legs 3, feet 2, hands 1',
@@ -121,7 +124,7 @@ for (const [interior, seed] of [['fort_tee', 23], ['fort_linear', 31], ['fort_co
     out.here = forgeHere(); out.near = !!dunForgeNear();
     BAG.length = 0; gold = 50; SKILLS.smithing = { lv: 20, p: 0 };
     bagAdd(oreItem('iron', 2)); const s1 = forgeSmelt(3); out.smelt = { made: s1.made, name: s1.item && s1.item.name, paid: 50 - gold };
-    bagAdd(ingotItem(3, 1)); const mk = forgeMake('Dagger', 3); out.make = { made: mk.made, paid: 50 - gold };
+    bagAdd(ingotItem(3, 1)); bagAdd(benchItem('plank', 1)); const mk = forgeMake('Dagger', 3); out.make = { made: mk.made, paid: 50 - gold };
     out.bySmith = forgeTemper(mk.item, true).why;
     bagAdd(oreItem('iron', 3)); const t = forgeTemper(mk.item); out.temper = { done: t.done, paid: 50 - gold };
     interact(); const ov = document.getElementById('forgeui'); out.page = forgeOpen && !!ov && ov.style.display === 'flex';
