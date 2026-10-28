@@ -975,8 +975,13 @@ function forgeIngots(T){if(T.slot==='weapon')return T.type==='Dagger'?1:T.twoHan
   return T.shieldType==='shield'?3:{head:2,chest:5,legs:3,feet:2,hands:1}[T.slot]||0;}
 const FORGE_TYPES=[...WEAPON_TYPES.filter(T=>!/^(Bow|Crossbow|GreatClub)$/.test(T.type)).map(T=>({T,arm:false})),
   ...ARMOR_TYPES.filter(T=>forgeIngots(T)>0).map(T=>({T,arm:true}))];
-function forgeHere(){return typeof isInterior==='function'&&isInterior()&&typeof currentHouse!=='undefined'&&!!currentHouse&&currentHouse.type==='weapon';}
-function forgeFee(){if(gold<FORGE_FEE)return `The smith asks ${FORGE_FEE} gold for the forge.`;gold-=FORGE_FEE;return null;}
+function forgeHere(){return smithForge()||!!dunForgeNear();}
+function smithForge(){return typeof isInterior==='function'&&isInterior()&&typeof currentHouse!=='undefined'&&!!currentHouse&&currentHouse.type==='weapon';}
+// S1514 — the sheet's second forge: a fort armoury's smelter (D_FORGES, 56-dungeon-build.js), within touch on its floor. No smith
+// keeps it, so it asks no fee and nobody tempers for gold there
+function dunForgeNear(){if(activeZoneId!=='dungeon'||typeof D_FORGES==='undefined')return null;
+  return D_FORGES.find(f=>f.floor===currentFloor&&Math.hypot(px-f.x,pz-f.z)<TOUCH)||null;}
+function forgeFee(){if(!smithForge())return null;if(gold<FORGE_FEE)return `The smith asks ${FORGE_FEE} gold for the forge.`;gold-=FORGE_FEE;return null;}
 function oreCount(k){return bagCount(b=>b.ore===k);}
 function ingotCount(t){return bagCount(b=>b.ingot===t);}
 let _forgeN=0;
@@ -1024,6 +1029,7 @@ function temperApply(it){if(it.atk&&!it.baseAtk)it.baseAtk=it.atk.slice();if(it.
 function forgeTemper(it,bySmith){
   if(!forgeHere())return {done:false,why:'You need a forge.'};
   if(!temperable(it))return {done:false,why:it&&(it.tempers||0)>=temperMax()?'It will take no more tempering.':'That cannot be tempered.'};
+  if(bySmith&&!smithForge())return {done:false,why:'No smith keeps this forge.'};
   if(bySmith){const c=20*it.tier;if(gold<c)return {done:false,why:`The smith asks ${c} gold.`};gold-=c;temperApply(it);return {done:true};}
   const ores=TEMPER_ORES[it.tier];if(!ores)return {done:false,why:`There is no ore for ${MATERIALS[it.tier-1].name.toLowerCase()}: the smith can temper it.`};
   const gate=SKILL_GATE[it.tier]||0;if(skillLv('smithing')<gate)return {done:false,why:`${MATERIALS[it.tier-1].name} asks Smithing ${gate}.`};
@@ -1056,7 +1062,7 @@ function openForgePage(){
 }
 function closeForgePage(){const ov=document.getElementById('forgeui');if(ov)ov.style.display='none';forgeOpen=false;if(typeof refocusView==='function')refocusView();}
 function forgeDraw(){const ov=document.getElementById('forgeui');if(!ov)return;
-  ov.querySelector('#fg-skill').textContent=`Smithing ${skillLv('smithing')} · ${FORGE_FEE} gold a use · ${gold} gold`;
+  ov.querySelector('#fg-skill').textContent=`Smithing ${skillLv('smithing')} · ${smithForge()?`${FORGE_FEE} gold a use · `:''}${gold} gold`;
   const row=(on,ok,key,label)=>`<div data-k="${key}" style="cursor:pointer;padding:0 6px;border-radius:2px;${on?'background:rgba(122,31,16,.12);color:#7a1f10':''}${!ok&&!on?';color:#a09070':''}">${on?'◆':'◇'} ${label}</div>`;
   const head=t=>`<div style="font-variant:small-caps;color:#8a7050;margin-top:4px">${t}</div>`;const S=forgeSel,P=forgePieces();
   let h=head('Smelt')+INGOT_DEF.map(d=>row(S.k==='s'&&S.tier===d.tier,forgeCanSmelt(d.tier),'s'+d.tier,`${MATERIALS[d.tier-1].name} Ingot`)).join('');
@@ -1078,7 +1084,7 @@ function forgeDraw(){const ov=document.getElementById('forgeui');if(!ov)return;
   else if(S.k==='t'){const it=S.it,ores=TEMPER_ORES[it.tier];
     t=`<div style="font-variant:small-caps;color:#7a1f10">${it.name}</div>`+pad(it.atk?`Attack ${it.atk[0]}–${it.atk[1]}`:`Defence ${it.def}`)+pad(`Tempered ${it.tempers||0} of ${temperMax()}, +${Math.round(TEMPER_STEP*100)}% each`)+
       (ores?pad(`${TEMPER_ORE} ${ores.map(k=>ORE_DEF[k].name).join(' or ')} <i style="font-size:12px;color:#8a7050">(you have ${bagCount(b=>ores.includes(b.ore))})</i>`):note('no ore of its metal'))+
-      `<div style="padding-left:12px;margin-top:4px"><button type="button" id="fg-smith" style="background:none;border:1px solid #a89060;border-radius:3px;font:13px Georgia,serif;color:#3a2c18;cursor:pointer;padding:1px 8px">The smith tempers it · ${20*it.tier} gold</button></div>`;}
+      (smithForge()?`<div style="padding-left:12px;margin-top:4px"><button type="button" id="fg-smith" style="background:none;border:1px solid #a89060;border-radius:3px;font:13px Georgia,serif;color:#3a2c18;cursor:pointer;padding:1px 8px">The smith tempers it · ${20*it.tier} gold</button></div>`:'');}
   const R=ov.querySelector('#fg-right');R.innerHTML=t;
   R.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{forgeTier=+b.dataset.m;forgeSaid='';forgeDraw();});
   const sm=R.querySelector('#fg-smith');if(sm)sm.onclick=()=>forgeGo(true);
@@ -2040,6 +2046,7 @@ function interact(){
   // barrel — same pattern as chests. v61g7: radius 1.0 → 1.1 for the larger
   // v61g7 container meshes (0.5u footprint vs the old 0.3u).
   if(fortCotNear()){openSleepUI();return;} // v80 S9 — fort cots; S624 — the exit wins when it is nearer
+  if(dunForgeNear()){openForgePage();return;} /* S1514 — a fort armoury's smelter is a forge */
   const br=BARRELS.find(b=>b.floor===currentFloor&&lookingAt(b,2.6)&&(!b.opened||b.items.length>0)); // v80 — look-at
   if(br){ openLoot(br); return; }
   // exit via entrance cell (floor 1 only)
