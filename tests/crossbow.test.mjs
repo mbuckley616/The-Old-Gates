@@ -46,6 +46,17 @@ const r = await page.evaluate(() => {
     const m = new THREE.Vector3(0, 1, 0).applyQuaternion(s.quaternion).multiplyScalar(s.scale.y).add(s.position); return { mid: +m.y.toFixed(3), bolt: !!(P.xbowBolt && P.xbowBolt.visible) }; };
     const h = R && R.hbHeld ? R.hbHeld.find(h => h.o === R.weapon) : null;
     out.tp = { drv: R && R.weapon && R.weapon.userData.xbow ? at(R.weapon.userData.xbow) : null, copy: h ? at(h.c) : 'none' }; }
+  // S1504 — the body spans it in third person: standing, a second in, the bow is off the hand and stands on its stirrup, both hands on
+  // the string; walking it stays in the fist; once spanned it is back in the fist
+  { const Wp = o => new THREE.Vector3().setFromMatrixPosition(o.matrixWorld);
+    const look = () => { const R = TP.rig, k = R.weapon.userData.xbow, H = R.rig.hb, by = H && H.P.byName; R.root.updateMatrixWorld(true);
+      const X = XBOW_RIG, f = xbowSpanPose().f, mid = k.localToWorld(new THREE.Vector3(X.px, X.restY + (X.nutY - X.restY) * f, 0));
+      const wr = by ? [by['wrist.L'], by['wrist.R']] : [R.handL, R.handR];
+      return { w: +(R.xw || 0).toFixed(3), off: R.weapon.parent === R.root, fist: R.weapon.parent === R.handR, stir: +(k.localToWorld(new THREE.Vector3(0, .70, 0)).y - jumpY).toFixed(3),
+        hands: wr.map(b => +Wp(b).distanceTo(mid).toFixed(3)) }; };
+    ROLL = null; /* the roll above runs on the wall clock and would start the span over */ XBOW.spanT = 0; drive(60); out.tpSpan = look();
+    XBOW.spanT = 0; K['KeyW'] = true; drive(60); out.tpWalk = look(); K['KeyW'] = false;
+    drive(240, () => xbowSpanned()); drive(40); out.tpDone = look(); }
   thirdPerson = false;
   EQ.weapon = w0; EQ.ammo = a0; EQ.offhand = o0; drive(1);
   return out;
@@ -61,6 +72,9 @@ check(`so does a roll (${r.roll.before} → ${r.roll.after})`, r.roll.rolled && 
 check(`the span is drawn: braced at the prod with no bolt when taken (${r.rig0 && r.rig0.mid}), hauled back by 1 s (${r.rigMid && r.rigMid.mid}, the prod tipped ${r.rigMid && r.rigMid.tip}), on the nut with the bolt laid once spanned (${r.rigSpanned && r.rigSpanned.mid}), home again when shot (S1476)`,
   r.rig0 && r.rig0.mid > .48 && !r.rig0.bolt && r.rigMid.mid < .4 && r.rigMid.mid > .17 && !r.rigMid.bolt && r.rigMid.tip > -1.4 && Math.abs(r.rigSpanned.mid - .163) < .002 && r.rigSpanned.bolt && Math.abs(r.rigSpanned.tip + 1.5) < .01 && r.rigShot.mid > .48 && !r.rigShot.bolt, r);
 check('in third person the carried crossbow is spanned too, the builder\'s copy as the driver\'s piece (S1476)', r.tp.drv && Math.abs(r.tp.drv.mid - .163) < .002 && r.tp.drv.bolt && (r.tp.copy === 'none' || (r.tp.copy && Math.abs(r.tp.copy.mid - .163) < .002 && r.tp.copy.bolt)), r.tp);
+check(`in third person the body spans it: a second in, standing, the bow stands on its stirrup (${r.tpSpan.stir} m up) off the hand, both wrists by the string (${r.tpSpan.hands} m) (S1504)`,
+  r.tpSpan.w > .95 && r.tpSpan.off && r.tpSpan.stir > -.02 && r.tpSpan.stir < .08 && r.tpSpan.hands.every(d => d < .2), r.tpSpan);
+check(`walking through the span it stays in the fist (${r.tpWalk.w}), and spanned it is back in the fist (${r.tpDone.w}) (S1504)`, r.tpWalk.w < .02 && r.tpWalk.fist && r.tpDone.w === 0 && r.tpDone.fist, { walk: r.tpWalk, done: r.tpDone });
 check('a bow takes no bolts, a crossbow no arrows', !r.bowBolts && r.bowArrows && !r.xbArrows, r);
 check('bolts are sold beside arrows, the same dozen at the same price', r.shop.stocked && r.shop.price, r.shop);
 check('no page errors', g.errs.length === 0, g.errs);

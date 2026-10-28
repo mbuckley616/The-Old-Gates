@@ -211,12 +211,14 @@ const _tpHm=new THREE.Matrix4(),_tpHv=new THREE.Vector3(),_tpHv2=new THREE.Vecto
 // the shield on the driver's arm); a grip is then set in the builder's fingers as before
 const _tpHq=new THREE.Quaternion(),_tpHa=new THREE.Vector3(),_tpHb=new THREE.Vector3(),_tpHe=new THREE.Vector3(),_tpHm2=new THREE.Matrix4();
 function tpHBHold(R){const H=R.rig.hb;if(!H||!R.hbHeld)return;R.root.updateMatrixWorld(true);_tpHm.copy(H.root.matrixWorld).invert();
-  for(const h of R.hbHeld){h.c.matrix.multiplyMatrices(_tpHm,h.o.matrixWorld);
+  for(const h of R.hbHeld){const XS=h.o===R.weapon&&R.xspan;h.c.matrix.multiplyMatrices(_tpHm,XS?XS.carry:h.o.matrixWorld);
     const A=h.arm;if(A&&A[0]&&A[1]&&A[2]&&A[3]){const P=o=>new THREE.Vector3().setFromMatrixPosition(o.matrixWorld).applyMatrix4(_tpHm);
       const De=P(A[0]),Be=P(A[2]);_tpHa.copy(P(A[1])).sub(De);_tpHb.copy(P(A[3])).sub(Be);
       if(_tpHa.lengthSq()>1e-10&&_tpHb.lengthSq()>1e-10){_tpHq.setFromUnitVectors(_tpHa.normalize(),_tpHb.normalize());
         _tpHm2.makeRotationFromQuaternion(_tpHq).setPosition(_tpHe.copy(De).applyQuaternion(_tpHq).negate().add(Be));h.c.matrix.premultiply(_tpHm2);}}
     if(h.f&&h.f.length){const v=_tpHv.set(0,0,0);for(const b of h.f)v.add(_tpHv2.setFromMatrixPosition(b.matrixWorld));v.multiplyScalar(1/h.f.length).applyMatrix4(_tpHm);h.c.matrix.setPosition(v);}
+    if(XS){tpXbowPlace(R);_tpHm2.multiplyMatrices(_tpHm,XS.mid); /* S1504 — set down to span, by way of the middle key */
+      if(XS.w<.5)tpBlendM(h.c.matrix,h.c.matrix,_tpHm2,XS.w*2);else tpBlendM(h.c.matrix,_tpHm2,_txJ.multiplyMatrices(_tpHm,XS.free),XS.w*2-1);}
     h.c.matrixWorldNeedsUpdate=true;}}
 function tpHBPose(R){if(!R||!R.rig.hb)return;hbPose(R.rig);if(R.mantle)tpHBMantle(R);if(R.hbHook)tpHBBowHand(R);R.root.updateMatrixWorld(true);tpHBHold(R);}
 // S1270 — the bow's draw on the builder's fingers: the right hand, a fist while the bow is carried, opens into the archer's hook as the
@@ -288,6 +290,60 @@ const TP_SWING_NEW=true;
 // S1476 — the crossbow's string and bolt by the span (xbowSpanPose, 16-viewmodel.js), on the driver's piece and the builder's copy of it
 function tpXbowSpan(R){const S=xbowSpanPose();xbowRigSet(R.weapon.userData.xbow,S.f,S.bolt);
   if(R.hbHeld)for(const h of R.hbHeld)if(h.o===R.weapon)xbowRigSet(h.c,S.f,S.bolt);}
+// S1504 — the body spans it (owed since S1476). Standing, the bow is set down nose first, its stirrup on the ground a short stride
+// ahead with the right foot in it and the tiller leaning back to the belt; the body bows over it, both hands take the string either
+// side of the tiller and haul it up the groove to the nut as the back comes up (xbowSpanPose's f), and over the span's last 0.4 s the
+// bow comes back up into the right fist (its d). Walking, blocking, a blow, the air, the water or a pull: carried as before. The hands
+// are the mantle's two-handed reach (R.mantle, tpMantleArms; the builder's wrists by tpHBMantle); the piece is set in the world, its
+// carry kept in R.xspan for the builder's copy (tpHBHold). Metres: the stirrup's foot of the bow, the butt's height, the wrist over the string
+const TP_XSPAN={fwd:.62,side:.07,up:.04,toe:.07,buttFwd:.85,lean:[1.2,1.0],drop:[.32,.15],hand:.07,ease:10};
+const _txA=new THREE.Vector3(),_txB=new THREE.Vector3(),_txC=new THREE.Vector3(),_txQa=new THREE.Quaternion(),_txQb=new THREE.Quaternion(),_txSa=new THREE.Vector3(),_txSb=new THREE.Vector3();
+const _txM=new THREE.Matrix4(),_txJ=new THREE.Matrix4(),_txF=new THREE.Matrix4(),_txI=new THREE.Matrix4(),_txX=new THREE.Vector3(),_txY=new THREE.Vector3(),_txZ=new THREE.Vector3();
+function tpBlendM(out,a,b,w){a.decompose(_txA,_txQa,_txSa);b.decompose(_txB,_txQb,_txSb);_txA.lerp(_txB,w);_txQa.slerp(_txQb,w);_txSa.lerp(_txSb,w);return out.compose(_txA,_txQa,_txSa);}
+function tpXbowSpanBody(R,dt,st){const W=R.weapon,k=W.userData.xbow,X=TP_XSPAN;if(!R.xhome)R.xhome={p:W.position.clone(),q:W.quaternion.clone()};
+  if(W.parent!==R.handR){R.handR.add(W);W.visible=true;}W.position.copy(R.xhome.p);W.quaternion.copy(R.xhome.q);W.scale.set(1,1,1);
+  const S=xbowSpanPose(),free=!st.moving&&!st.roll&&onGround&&!blocking&&swingT<=0&&TP.hurtT<=0&&!TP.swim&&!dead&&TP.deadT<.01&&!R.mantle&&
+    !(typeof castT!=='undefined'&&castT>0)&&!(typeof climbPose==='function'&&climbPose());
+  const want=free?S.d:0,w0=R.xw||0;R.xw=w0+(want-w0)*Math.min(1,dt*X.ease);if(Math.abs(R.xw-want)<.002)R.xw=want;
+  if(R.xw<=0){R.xspan=null;if(!st.moving&&onGround&&R.ankleL){R.root.updateMatrixWorld(true);R.xank=R.root.worldToLocal(R.ankleL.getWorldPosition(_txB)).y;}return;}
+  const w=R.xw,f=S.f;
+  // the body: bowed over the bow, the back coming up with the string; the right foot forward in the stirrup, the left knee bent
+  // the arm is short (0.4 m) to a bow that stands 1.3 m: the knees bend and the hips go down (the root, set afresh each frame) until the
+  // left ankle is as high over the ground as it stands at rest (R.xank, read while you stand); the stirrup goes under the right foot
+  const rs=R.root.matrixWorld.getMaxScaleOnAxis(),j=1-f;
+  tpSet(R.torso,X.lean[0]+(X.lean[1]-X.lean[0])*f,0,0,w);tpSet(R.head,-.7+.3*f,0,0,w);
+  tpSet(R.thighL,-.9+.2*f,0,0,w);tpSet(R.kneeL,1.9-.5*f,0,0,w);tpSet(R.thighR,-1.45+.25*f,0,0,w);tpSet(R.kneeR,1.45-.25*f,0,0,w);
+  if(R.ankleL){tpSet(R.ankleL,-.7+.3*f,0,0,w);tpSet(R.ankleR,-.15,0,0,w);}
+  R.root.updateMatrixWorld(true);let drop=(X.drop[0]*j+X.drop[1]*f)*w;
+  if(R.ankleL&&R.xank!=null)drop=Math.max(0,R.root.worldToLocal(R.ankleL.getWorldPosition(_txB)).y-R.xank)*rs;
+  const foot=R.ankleR?R.root.worldToLocal(R.ankleR.getWorldPosition(_txA)):_txA.set(-X.side*rs,0,X.fwd*rs);
+  R.root.position.y-=drop;R.root.updateMatrixWorld(true);
+  // where the bow stands, in the body's frame (+z ahead, +y up, −x the right): the stirrup's foot (the kit's 0.70) on the ground, the
+  // tiller upright with its butt (−0.30) a little further out, clear of the chest bowed over it, the string's face (the kit's +x) toward you
+  const ku=_txB.setFromMatrixColumn(k.matrixWorld,1).length()/rs,m=1/rs,L=1.0*ku;
+  const dz=Math.max(-L*.5,Math.min(L*.5,(X.fwd-X.buttFwd)*m)),dy=Math.sqrt(L*L-dz*dz);
+  _txY.set(0,-dy,dz).normalize();_txX.set(0,0,-1).addScaledVector(_txY,_txY.z).normalize();_txZ.crossVectors(_txX,_txY);
+  _txF.makeBasis(_txX,_txY,_txZ).scale(_txSa.set(ku,ku,ku)).setPosition(_txC.set(foot.x,(X.up+drop)*m,foot.z+X.toe*m).addScaledVector(_txY,-.70*ku));
+  _txF.premultiply(R.root.matrixWorld);
+  // the kit's frame, carried (in the fist, its prod down behind) and set down, blended by w by way of a middle key: the fist where it is
+  // and the bow hanging down beside the right leg, tipped out a little, so the bow goes round the body, not through it; the piece (the kit's parent)
+  // placed to match
+  const XS=R.xspan||(R.xspan={carry:new THREE.Matrix4(),want:new THREE.Matrix4(),free:new THREE.Matrix4(),mid:new THREE.Matrix4(),w:0});XS.w=w;
+  W.updateMatrixWorld(true);XS.carry.copy(W.matrixWorld);_txC.setFromMatrixPosition(k.matrixWorld);
+  _txI.copy(k.matrix).invert();XS.free.multiplyMatrices(_txF,_txI);
+  _txM.makeBasis(_txX.set(.89,-.45,0),_txY.set(-.45,-.89,0),_txZ.set(0,0,-1)).scale(_txSa.set(ku,ku,ku)).premultiply(R.root.matrixWorld).setPosition(_txC);
+  XS.mid.multiplyMatrices(_txM,_txI);
+  if(w<.5)tpBlendM(_txM,k.matrixWorld,_txM,w*2);else tpBlendM(_txM,_txM,_txF,w*2-1);
+  XS.want.copy(_txM.multiply(_txI));tpXbowPlace(R);
+  // the hands on the string, either side of the tiller where the string runs from its middle (f of the way to the nut) to the prod's tips
+  const K=XBOW_RIG,my=K.restY+(K.nutY-K.restY)*f,T=[-1,1].map(sd=>k.localToWorld(new THREE.Vector3(K.px+.012,my+(K.tipY-my)*.16,sd*.052)).add(_txA.set(0,X.hand,0)));
+  if(R.root.worldToLocal(_txB.copy(T[0])).x<R.root.worldToLocal(_txC.copy(T[1])).x)T.reverse(); /* the left hand on the body's left (+x) */
+  R.mantle={w,T,q:[R.shL.quaternion.clone(),R.elL.quaternion.clone(),R.shR.quaternion.clone(),R.elR.quaternion.clone()],xbow:true};
+  tpMantleArms(R,null);tpXbowPlace(R);}
+// the piece where the span wants it in the world (R.xspan.want), hung from the body's root while it is set down: the hand's bones are
+// scaled unevenly, which a turn under them would shear; there it shows only when the driver's body does (the builder's copy is what shows)
+function tpXbowPlace(R){const W=R.weapon;if(W.parent!==R.root)R.root.add(W);W.visible=R.rig.mesh.visible; /* off the driver's hidden mesh, it hides with it */
+  R.root.updateMatrixWorld(true);_txI.copy(R.root.matrixWorld).invert().multiply(R.xspan.want).decompose(W.position,W.quaternion,W.scale);W.updateMatrixWorld(true);}
 function tpPose(R,dt,st){
   const k=Math.min(1,dt*14),kf=Math.min(1,dt*22);
   const now=st.now/1000;
@@ -440,6 +496,7 @@ function tpPose(R,dt,st){
   // straight under you past it; the right knee comes up onto it as the pull carries you on, and the body stands up over the last fifth,
   // the hands let go. Read from MANTLE and the loop's clock, as the pull itself is.
   tpMantle(R);
+  if(R.weapon&&R.weapon.userData.xbow)tpXbowSpanBody(R,dt,st);
   // death: down on the back
   R.root.rotation.x=-TP.deadT*Math.PI/2;R.root.position.y-=TP.deadT*.1;
 }
