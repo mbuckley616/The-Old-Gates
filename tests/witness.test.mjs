@@ -3,6 +3,7 @@
 // 3.9–8.9 units across Dunmore's shops, and the back-room wall doing nothing either way.
 // Session 1244 (Michael's B on #516): the six were the old unit's; indoors the reach is now `WIT_IN`, 8.7 m, and the test reads it,
 // so a keeper at a kit shop's counter sees the strongbox through the open back-room door and not through the shut one.
+// Session 1542 (Michael's C on #824): a pick snapped at the back-room box is heard by the keeper, who comes to look.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld(); await g.settle('dunmore');
@@ -42,8 +43,27 @@ for (const id of shops) {
       // and the whole room: every spot within reach of the keeper that a wall hides
       let hid = 0, hidSeen = 0; for (let x = .5; x < 30; x += .5) for (let z = .5; z < 30; z += .5) { if (Math.hypot(x - kx, z - kz) >= R || WORLD.intSightLine(kx, kz, x, z)) continue; px = x; pz = z; hid++; if (W()) hidSeen++; }
       door = { dist: +dist.toFixed(2), moved, fromCounter, shutSeen, openSeen, openLine, hid, hidSeen }; }
+    // Session 1542 (Michael's C on #824): a pick snapped at the back-room box is heard by the keeper at the counter (6 m through one
+    // wall), who comes to look: at the door in 4 s, opened; 8 s facing the box, where you are seen; back, the door shut again.
+    // From the shop's far end it is not heard, nor at the counter with Quiet work (Locks 75: 3 m).
+    let snap = null; K.position.x = kx; K.position.z = kz;
+    if (h._backRoom && D.length) { const bd = D.slice().sort((a, b) => Math.hypot(a.x - X.x, a.z - X.z) - Math.hypot(b.x - X.x, b.z - X.z))[0];
+      px = X.x; pz = X.z + .8; SKILLS.locks = { lv: 10, p: 0 }; bagAdd({ name: 'Lockpick', ico: '🗝', type: 'misc', qty: 5, weight: .1 });
+      const dK = Math.hypot(px - kx, pz - kz), walls = wallsBetween(kx, kz, px, pz, 0), shut0 = !bd.open;
+      openLockpick({ seed: 'box_' + X.id, live: true, house: h, minPins: 3, lockTitle: 'A strongbox' }); lpBreak('Too early.'); const heard = !!K.userData.look;
+      let atDoor = null, hold = 0, seen = 0, inSol = 0;
+      for (let f = 1; f <= 60 * 19; f++) { tickKeeperLook(1 / 60); const L = K.userData.look;
+        if (f === 60 * 4 + 6) atDoor = { open: bd.open, d: +Math.hypot(K.position.x - bd.x, K.position.z - bd.z).toFixed(2) };
+        if (L && L.legs[L.ph] && L.legs[L.ph].a === L.legs[L.ph].b) { hold++; if (WORLD.witnessOf(h, true)) seen++; }
+        if (L && intSolidAt(K.position.x, K.position.z, .22, 0)) inSol++; }
+      closeLockpick();
+      const back = { look: !!K.userData.look, shut: !bd.open, d: +Math.hypot(K.position.x - kx, K.position.z - kz).toFixed(2), amble: !K.userData.amble.paused };
+      const clr = () => { K.userData.look = null; K.userData.amble.paused = false; K.position.x = kx; K.position.z = kz; };
+      K.position.x = bd.x; K.position.z = h.intD - .6; const dFar = +Math.hypot(px - K.position.x, pz - K.position.z).toFixed(2), far = snapHeard({ house: h }); clr();
+      SKILLS.locks = { lv: 75, p: 0 }; const quiet = snapHeard({ house: h }); clr(); SKILLS.locks = { lv: 10, p: 0 };
+      snap = { dK: +dK.toFixed(2), walls, shut0, heard, atDoor, hold, seen, inSol, back, dFar, far, quiet }; }
     exitInterior();
-    return { name: h.name, R, dBox: +dBox.toFixed(2), dRaw: dBox, doors: D.length, lineBox, atBox, openBox, openBoxLine, near, nearUp, nearBoth, door }; }));
+    return { name: h.name, R, dBox: +dBox.toFixed(2), dRaw: dBox, doors: D.length, lineBox, atBox, openBox, openBoxLine, near, nearUp, nearBoth, door, snap }; }));
   await page.waitForTimeout(2500); await g.hide();
 }
 console.log(JSON.stringify(rows));
@@ -62,5 +82,10 @@ const withDoor = ok.filter(r => r.door && r.door.dist < r.R);
 check('at 8.7 m the keeper at the counter reaches past the open back-room door unmoved, in at least one shop', ok.some(r => r.door && !r.door.moved && r.door.openSeen), ok.map(r => [r.name, r.door && r.door.fromCounter, r.door && r.door.moved]));
 check('a step past the back-room door, within reach of the keeper: unseen while it is shut, seen when it is open', withDoor.length >= 1 && withDoor.every(r => !r.door.shutSeen && r.door.openSeen === r.door.openLine) && withDoor.some(r => r.door.openSeen), ok.map(r => [r.name, r.door]));
 check('no spot within reach that a wall hides from the keeper is seen', ok.filter(r => r.door).every(r => r.door.hidSeen === 0) && ok.some(r => r.door && r.door.hid > 0), ok.map(r => [r.name, r.door && r.door.hid, r.door && r.door.hidSeen]));
+const snaps = ok.filter(r => r.snap);
+check('a pick snapped at a back-room box is heard by the keeper at the counter, 6 m through one wall (#824 C)', snaps.length >= 4 && snaps.every(r => r.snap.walls === 1 && r.snap.dK < 6 && r.snap.shut0 && r.snap.heard), snaps.map(r => [r.name, r.snap.dK, r.snap.walls, r.snap.heard]));
+check('the keeper is at the box\'s door in 4 s and opens it, then sees you at the box for all 8 s of the look', snaps.every(r => r.snap.atDoor.open && r.snap.atDoor.d < 1 && r.snap.hold === 480 && r.snap.seen === r.snap.hold), snaps.map(r => [r.name, r.snap.atDoor, r.snap.hold, r.snap.seen]));
+check('the keeper walks round the room\'s solids, then goes back to the spot, shuts the door found shut and ambles again', snaps.every(r => r.snap.inSol === 0 && !r.snap.back.look && r.snap.back.shut && r.snap.back.d < .05 && r.snap.back.amble), snaps.map(r => [r.name, r.snap.inSol, r.snap.back]));
+check('a snap is not heard from the shop\'s far end, nor at the counter with Quiet work (Locks 75)', snaps.every(r => r.snap.dFar > 6 && !r.snap.far && !r.snap.quiet), snaps.map(r => [r.name, r.snap.dFar, r.snap.far, r.snap.quiet]));
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

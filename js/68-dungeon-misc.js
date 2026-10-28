@@ -463,6 +463,7 @@ function lpBreak(why){
   const p=LP.pins[LP.cur];if(p)p.y=0;LP.phase='idle';LP.pushed=0;LP.broke++;
   const left=lpSpendPick();
   try{sfxTone(2600,1400,.06,.16,'square');}catch(e){}
+  if(LP.live&&typeof snapHeard==='function')try{snapHeard(LP.door);}catch(e){} /* S1542 — a snap is heard (#824 C): a shop's keeper comes to look */
   const box=document.getElementById('lp-pins');if(box&&box.children[LP.cur]){const el=box.children[LP.cur];el.classList.add('broke');setTimeout(()=>el.classList.remove('broke'),260);}
   // the last pin you set falls with it — the lock gives ground grudgingly; S973 — Sure hand (Locks 50) keeps them
   if(!perk('locks',50))for(let i=LP.pins.length-1;i>=0;i--){if(LP.pins[i].set){LP.pins[i].set=false;LP.pins[i].y=0;break;}}

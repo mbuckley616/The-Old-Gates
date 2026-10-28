@@ -49,7 +49,7 @@ const r = await page.evaluate(async () => {
   // the Skills tab: four perks under Locks; at Locks 50 two are lit; Speech's 75 and 100 are marked not yet built
   set('locks', 50); set('speech', 50); openHub('skills');
   const row = sel => [...document.querySelectorAll(`.sk-perk[data-perk^="${sel}:"]`)].map(e => ({ t: e.textContent, held: e.classList.contains('held'), later: e.classList.contains('later') }));
-  out.tabLocks = row('locks'); out.tabSpeech = row('speech'); out.tabCount = document.querySelectorAll('.sk-perks').length; closeHub();
+  out.tabLocks = row('locks'); out.tabSpeech = row('speech'); out.tabCount = document.querySelectorAll('.sk-perks').length; out.perkSkills = Object.keys(PERK_DEF).length; closeHub();
   for (const k in sk0) SKILLS[k] = sk0[k]; return out; });
 console.log(JSON.stringify(r));
 check('found open ground on Dunmore’s pad', !r.noGround, r);
@@ -67,6 +67,7 @@ check(`and the next halt in that town greets as before: "${r.saidIn.slice(0, 60)
 check('once in a town: it is not offered again, in the street or indoors', !r.halt2.some(l => /Talk it down/.test(l)) && !r.indoor2.some(l => /Talk it down/.test(l)), r);
 check(`the Skills tab: Locks shows four perks, two lit at 50 (${r.tabLocks.map(p => p.t + (p.held ? '*' : '')).join(', ')})`, r.tabLocks.length === 4 && r.tabLocks.filter(p => p.held).length === 2, r.tabLocks);
 check(`Speech 75 and 100 are marked not yet in the game`, r.tabSpeech[2].later && r.tabSpeech[3].later && !r.tabSpeech[0].later, r.tabSpeech);
-check(`eleven skills carry a perk line (${r.tabCount})`, r.tabCount === 11, r);
+/* S1542 — eleven until survival B's six skills took theirs (S1494–S1519): every skill with perks carries its line */
+check(`every skill with perks carries a perk line (${r.tabCount} of ${r.perkSkills})`, r.perkSkills >= 17 && r.tabCount === r.perkSkills, r);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

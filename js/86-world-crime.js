@@ -493,6 +493,65 @@
   // S327 — asked each frame of a town pick (Michael's A on #54): whoever sees you now sees the lock picked
   function pickSeen(house){const w=witnessOf(house,true);if(!w)return null;
     (worldState.crimes||(worldState.crimes=[])).push({kind:'lock',site:house.siteId||null,house:house.id,day:dayNow(),min:absMin()});seenCrime('lock',house,w);return w;}
+  // S1542 — the keeper hears the work (Michael's C on #824, `docs/design/strongbox-by-day.md`). A pick snapped in a live lock indoors is
+  // a sound: heard within 9 m with no wall between, 6 m through one, not through two (a wall: a solid a person's height or a shut door,
+  // crossed at your floor's 1.2 m); Quiet work (Locks 75) halves both. A shop's keeper who hears it comes to look, the named action
+  // `keeperLooks`: four seconds to the box's door (the latch and the footsteps at once), opening it if it is shut, a second in, eight
+  // seconds facing the box, and back the same way, shutting a door found shut. No roll: your hands, the room and where the keeper stood.
+  // Seen while they look is the lock crime as ever (pickSeen); the look is the room's live state, never saved.
+  const SNAP_HEAR=[9,6],LOOK_GO=4,LOOK_IN=1,LOOK_HOLD=8;
+  function wallsBetween(ax,az,bx,bz,fl){const S_=(typeof INT_SOL!=='undefined'&&INT_SOL)||[],D_=(typeof INT_DOORS!=='undefined'&&INT_DOORS)||[],y=(fl||0)+1.2;
+    const dx=bx-ax,dz=bz-az,T=[];
+    for(const s of S_){if(s.y0==null||s.y1==null||s.y0>y||s.y1<y||!(s.y1-s.y0>=1.8||D_.some(d=>d.sol===s)))continue;let t0=0,t1=1,ok=true;
+      for(const [o,v,lo,hi] of [[ax,dx,s.x0,s.x1],[az,dz,s.z0,s.z1]]){if(Math.abs(v)<1e-9){if(!(o>lo&&o<hi))ok=false;continue;}let u=(lo-o)/v,w=(hi-o)/v;if(u>w){const k=u;u=w;w=k;}if(u>t0)t0=u;if(w<t1)t1=w;}
+      if(ok&&t0<t1)T.push([t0,t1]);}
+    T.sort((p,q)=>p[0]-q[0]);const L=Math.hypot(dx,dz)||1,gap=.15/L;let n=0,end=-1;for(const [t0,t1] of T){if(t0>end+gap)n++;end=Math.max(end,t1);} // a wall and the leaf in it are one
+    return n;}
+  function snapReach(walls){const r=SNAP_HEAR[walls];return r==null?0:perk('locks',75)?r/2:r;}
+  // asked by lpBreak for a live lock: true when the shop's keeper heard it and comes
+  function snapHeard(lock){const house=lock&&lock.house;const m=typeof intNPCMesh!=='undefined'&&intNPCMesh;
+    if(!house||!m||house!==currentHouse||house.type==='home'||!(typeof isInterior==='function'&&isInterior())||m.userData.asleep||m.userData.look||!m.userData.amble)return false;
+    const fl=(INT_BOX&&INT_BOX.y)||0,d=Math.hypot(px-m.position.x,pz-m.position.z);
+    if(d>=snapReach(wallsBetween(m.position.x,m.position.z,px,pz,fl)))return false;
+    keeperLooks(house);return true;}
+  // a leg the keeper can walk straight (the amble's own test, every 0.1 m)
+  function lookClear(a,b){const d=Math.hypot(b.x-a.x,b.z-a.z),n=Math.max(1,Math.ceil(d/.1));for(let i=0;i<=n;i++){const t=i/n;if(intSolidAt(a.x+(b.x-a.x)*t,a.z+(b.z-a.z)*t,.22,0))return false;}return true;}
+  // the way across the room's free floor (a 0.2 m grid, breadth first), drawn tight: each point the farthest the last can walk straight to
+  function lookPath(s,e,R){if(R==null)return lookPath(s,e,.32)||lookPath(s,e,.22)||[s,e]; /* a margin past the walk's own 0.22 first, so a step between cells keeps clear */
+    const St=.2,W=Math.ceil(((currentHouse&&currentHouse.intW)||20)/St)+1,H=Math.ceil(((currentHouse&&currentHouse.intD)||20)/St)+1;
+    const id=(x,z)=>Math.round(z/St)*W+Math.round(x/St),free=new Map(),ok=k=>{if(!free.has(k))free.set(k,!intSolidAt((k%W)*St,Math.floor(k/W)*St,R,0));return free.get(k);};
+    const a=id(s.x,s.z),b=id(e.x,e.z),prev=new Map([[a,-1]]),Q=[a];
+    for(let i=0;i<Q.length&&!prev.has(b);i++){const k=Q[i],cx=k%W,cz=Math.floor(k/W);
+      for(const [dx,dz] of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]){const nx=cx+dx,nz=cz+dz,n=nz*W+nx;if(nx<0||nz<0||nx>=W||nz>=H||prev.has(n))continue;if(n!==b&&!ok(n))continue;prev.set(n,k);Q.push(n);}}
+    if(!prev.has(b))return null;const P=[];for(let k=b;k!==-1;k=prev.get(k))P.unshift({x:(k%W)*St,z:Math.floor(k/W)*St});P[0]=s;P[P.length-1]=e;
+    const out=[s];let i=0;while(i<P.length-1){let j=P.length-1;while(j>i+1&&!lookClear(P[i],P[j]))j--;out.push(P[j]);i=j;}return out;}
+  function keeperLooks(house){const m=typeof intNPCMesh!=='undefined'&&intNPCMesh;if(!m||house!==currentHouse||m.userData.look)return false;const am=m.userData.amble,X=INT_BOX;
+    const tx=X?X.x:px,tz=X?X.z:pz,s={x:m.position.x,z:m.position.z};
+    // the box's door: with a wall between the keeper and the box, the room's door nearest the box
+    const door=wallsBetween(s.x,s.z,tx,tz,X&&X.y)>0?(INT_DOORS||[]).slice().sort((a,b)=>Math.hypot(a.x-tx,a.z-tz)-Math.hypot(b.x-tx,b.z-tz))[0]||null:null;
+    let front,inside=null;
+    if(door){const nx=Math.cos(door.ang),nz=-Math.sin(door.ang),side=((s.x-door.x)*nx+(s.z-door.z)*nz)<0?-1:1;
+      front={x:door.x+nx*side*.8,z:door.z+nz*side*.8};inside={x:door.x-nx*side*1.2,z:door.z-nz*side*1.2};}
+    else{const d=Math.hypot(s.x-tx,s.z-tz);front=d>2?{x:tx+(s.x-tx)*2/d,z:tz+(s.z-tz)*2/d}:{x:s.x,z:s.z};}
+    // to the door: straight, or round the counter and the racks by the room's free floor
+    const way=lookClear(s,front)?[s,front]:lookPath(s,front);
+    const len=[];for(let i=1;i<way.length;i++)len.push(Math.hypot(way[i].x-way[i-1].x,way[i].z-way[i-1].z));const sum=len.reduce((a,b)=>a+b,0)||1;
+    const legs=len.map((l,i)=>({a:way[i],b:way[i+1],T:LOOK_GO*l/sum}));legs[legs.length-1].atDoor=!!door;
+    if(inside)legs.push({a:front,b:inside,T:LOOK_IN});const end=inside||front;legs.push({a:end,b:end,T:LOOK_HOLD});
+    if(inside)legs.push({a:inside,b:front,T:LOOK_IN,shutAfter:true});
+    for(let i=way.length-1;i>0;i--)legs.push({a:way[i],b:way[i-1],T:LOOK_GO*len[i-1]/sum});
+    m.userData.look={legs,door,shut:!!door&&!door.open,ph:0,t:0,paused:am.paused,ry:am.ry,tx,tz,home:s};am.paused=true;
+    showMsg(`${house.keeper||'The keeper'} heard the pick snap.`,'#e8a880');
+    return true;}
+  // each frame indoors: the look's legs, timed by the frame's dt; at the door it is opened, and leaving it a door found shut is shut
+  function tickKeeperLook(dt){const m=typeof intNPCMesh!=='undefined'&&intNPCMesh,L=m&&m.userData.look;if(!L)return;const am=m.userData.amble,G=L.legs;
+    L.t+=dt;while(L.ph<G.length&&L.t>=G[L.ph].T){const g=G[L.ph];L.t-=g.T;L.ph++;
+      if(g.atDoor&&L.door&&!L.door.open)intDoorInteract(L.door);
+      if(g.shutAfter&&L.shut&&L.door.open&&Math.hypot(px-L.door.x,pz-L.door.z)>.8)intDoorInteract(L.door);} /* unless you stand in it */
+    if(L.ph>=G.length){const e=L.home;m.position.x=e.x;m.position.z=e.z;am.paused=L.paused;am.ry=L.ry;am.wt=0;m.userData.look=null;intNPCPos.x=e.x;intNPCPos.z=e.z;return;}
+    const g=G[L.ph],k=g.T>0?Math.min(1,L.t/g.T):1,x=g.a.x+(g.b.x-g.a.x)*k,z=g.a.z+(g.b.z-g.a.z)*k;
+    m.position.x=x;m.position.z=z;intNPCPos.x=x;intNPCPos.z=z;
+    const ry=g.a===g.b?Math.atan2(L.tx-x,L.tz-z):Math.atan2(g.b.x-g.a.x,g.b.z-g.a.z);am.ry=ry;m.rotation.y=ry;}
   function noteCrime(kind,house,value,coins){(worldState.crimes||(worldState.crimes=[])).push({kind,site:house.siteId||null,house:house.id,day:dayNow(),min:absMin()});
     if(coins>0&&house.siteId){const C=worldState.crime||(worldState.crime={});const c=C[house.siteId]||(C[house.siteId]={bounty:0,debt:0,last:0});c.loot=(c.loot||0)+coins;} // S168 — the gold taken in a town, for the cells to take back
     const w=witnessOf(house,kind==='lock');if(w)seenCrime(kind,house,w,value);return !!w;}
