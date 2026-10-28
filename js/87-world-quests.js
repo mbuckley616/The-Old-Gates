@@ -161,6 +161,7 @@
     t.push({cat:'news',label:'Any word from the sea?',get response(){const pirates=OTHER.some(o=>o.kind==='pirate');return pirates?"Black sails, this week. The fishermen came in early and won't say why.":pick(Math.random,["The ferries are running. That's news enough.","A whale off the point, they say. Big as a church.","Quiet. Too quiet for the harbourmaster, who likes a tithe."]);}});
     t.push({cat:'news',label:'How\u2019s trade?',get response(){const R=worldState.routes||{};const open=Object.keys(R).filter(k=>!R[k].broken&&(R[k].a===site.id||R[k].b===site.id)).length;return open?`A cart in the morning, a cart at night. ${open>1?'Two routes now.':'One route.'} Prices are kinder for it.`:prosperity(site)>=50?"Steady. We could do with a route to somewhere, if anyone with coin were listening.":"What trade. The road's a road; nothing comes down it.";}});
     t.push({cat:'news',label:'Heard anything strange?',get response(){return pick(Math.random,["A man at the old field who doesn't age. Everyone's uncle has seen him.","The stones in the gates are warmer than they were. Or colder. Depends who you ask.","Someone's been carving over the old marks. Down in the gates. Nobody knows what for.","The church has a room it bricked up. You didn't hear that from me."]);}});
+    {const a=errandAsk(def,site);if(a)t.push(a);} /* S1510 — Asked in Passing: the ask */
     if(role==='Villager')t.push({cat:'you',label:'Any work going?',response:`Not from me. The ${site.kind==='city'||site.kind==='town'?'guilds take contracts, and':''} ${lord.title} pays for real trouble. Ask at the ${site.kind==='city'?'keep':'well'}.`});
     if(role==='Innkeeper')t.push({label:'Who\u2019s passing through?',get response(){return pick(Math.random,["A carter from the north who won't say what he carried.","Two guild swords, drinking like they'd earned it.","Nobody. It's you and the fire."+(isNight()?" And whatever's outside.":""),"A priest who paid in silver and ate nothing."]);}});
     if(role==='Priest')t.push({label:'A blessing?',fn:()=>{PHP=Math.min(effMaxHP(),PHP+8);updateHUD();return "Kneel. There. Go easier on the road.";}});
@@ -180,7 +181,7 @@
       const place=rich.filter(t=>t.cat==='place'||(!t.cat&&/this place|roads go|dangerous|land here|make of|would you do/i.test(t.label)&&!/make of the/.test(t.label)));
       const folk=rich.filter(t=>/make of the/.test(t.label));
       const news=rich.filter(t=>t.cat==='news'||(!t.cat&&/news|weather/i.test(t.label)));
-      const list=[...rest];
+      const list=[...rest,...errandTopics(def,site)]; /* S1510 — Asked in Passing: About that errand. */
       if(ferries.length)list.push(folder(`Passage \u2026 (${ferries.length} routes)`,ferries,'Where to? The fares are what they are.'));
       {const where=directionTopics(site,def);if(where.length)list.push(folder('Where can I find \u2026',where,pick(Math.random,['What are you after?','Lost? It happens.','Depends what you want.'])));} // v80 S138
       list.push(folder('About you \u2026',you,'Me? Not much to tell. Ask.'),folder('About this place \u2026',place,'This place. Go on.'),folder('Other folk \u2026',folk,'Other folk. Careful what you ask.'),folder('News \u2026',news,'News travels slow here. What I have:'));
@@ -192,7 +193,7 @@
       // remember what was asked (wrap fn/response so choosing marks it)
       return expanded.map(tp=>{const w=Object.assign({},tp);const orig=w.fn;w.fn=(c)=>{(def._asked||(def._asked=new Set())).add(tp.label);const rr=orig?orig(c):undefined;return rr;};if(!orig&&!w.response&&Object.getOwnPropertyDescriptor(tp,'response')){}return w;});
     }});
-    Object.defineProperty(def,'greeting',{configurable:true,get(){return [firstWords(def,site)];}}); /* S1432 — First Words (approved 14 Oct 2026): one line, never an opinion */
+    Object.defineProperty(def,'greeting',{configurable:true,get(){return [errandGreet(def,site)||firstWords(def,site)];}}); /* S1432 — First Words (approved 14 Oct 2026): one line, never an opinion; S1510 — an errand's hint after it */
     return def;
   }
 
@@ -218,7 +219,7 @@
   function datedPay(q){return q.due&&q.doneAt!=null&&q.doneAt<q.due?Math.round((q.reward||0)*1.25):(q.reward||0);}
   function datedLapse(q){if(!q||!q.due||q.done||q.turnedIn||(worldState.gameTimeAbsMinutes||0)<q.due)return false;q.turnedIn=true;q.lapsed=true;if(typeof addLog==='function')addLog('📜',`${q.title}: the date passed, and ${q.giver} has given the work to someone else.`);qJournal(q,'lapsed',`The date passed, and ${q.giver} has given the work to someone else.`);showMsg(`${q.title}: the date has passed. The work is taken back.`,'#c8b880');return true;}
   let _datedAt=0;
-  function tickDatedWork(){const now=worldState.gameTimeAbsMinutes||0;if(now<_datedAt&&now>=_datedAt-60)return;_datedAt=Math.floor(now/60)*60+60;QJ().forEach(datedLapse);gLapse();}
+  function tickDatedWork(){const now=worldState.gameTimeAbsMinutes||0;if(now<_datedAt&&now>=_datedAt-60)return;_datedAt=Math.floor(now/60)*60+60;QJ().forEach(q=>{datedLapse(q);erLapse(q);});gLapse();} /* S1510 — an errand's date too */
   function qComplete(q){if(q.done||q.lapsed)return;if(datedLapse(q))return;q.done=true;q.doneAt=Math.floor(worldState.gameTimeAbsMinutes||0);showMsg(`${q.title}: done — report to ${q.giver}.`,'#e8d8a0');if(typeof addLog==='function')addLog('✅',`${q.title}: objective complete.`);qJournal(q,'ready',`Done — report to ${q.giver}.`);}
   function qTurnIn(q){q.turnedIn=true;if(q.rival&&q.kind==='find'){const j=qFind(q.id),n=q._npc||(j&&j._npc);if(n)duelRemoveNpc(n);q._npc=null;if(j)j._npc=null;} /* S463 — Rowe, found, rides back: she is not left sitting on the land */const paid=questGold(datedPay(q));q.paid=paid;gold+=paid;(worldState.stats||(worldState.stats={})).goldIn=((worldState.stats||{}).goldIn||0)+paid;xp+=Math.round((q.reward||0)*.9);chkLvl();updateHUD();if(typeof addLog==='function')addLog('🏅',`${q.title}: ${paid} gold.`);qJournal(q,'complete',paid>0?`Turned in to ${q.giver}: ${paid} gold.`:`Turned in to ${q.giver}.`);return paid;}
   // ── town quests ──
@@ -727,6 +728,70 @@ const giver=`${lord.title} ${lord.name}`;
     const rank=worldState.guild&&((worldState.guild.guild_f&&worldState.guild.guild_f.done>=3)||(worldState.guild.guild_m&&worldState.guild.guild_m.done>=3))?G.guild:'';
     noteMet(key);return g+owner+rank;
   }
+
+  // S1510 — *Asked in Passing* (approved 14 Oct 2026), the frame and errand 3, *A Fever*. A generated townsperson has an
+  // errand one game-week in five, rolled on a stream keyed by the town, the giver and the week (the co-op rule on rolls). While
+  // it is on offer the greeting carries its hint (from the second meeting), *About you* carries the ask, and while it is open the
+  // top level carries *About that errand.* Each errand is a quest record (kind 'errand', id er:<site>:<giver>:<n>), so nothing
+  // new is kept in worldState. The other five errands take the same frame as they are built.
+  const ER_ROLES=new Set(['Villager','Smith','Armourer','Apothecary','Merchant','Innkeeper','Priest','Harbourmaster','Shipwright']);
+  const ER_SHARED={
+    gatelander:{no:"A thing asked isn't a thing owed. Another day, maybe.",notYet:"The day's long yet, and so's the road.",yes:"Go on, so, and mind the road home."},
+    markman:{no:"Aye. Someone else, then.",notYet:"Not done, then. Off you go.",yes:"Good. Go."},
+    aurennais:{no:"Of course, Master. The offer stands until it is taken up elsewhere.",notYet:"When it is done, Master, and not before. The terms are as they were.",yes:"Then we are agreed, Master."},
+    oldblood:{no:"Then not.",notYet:"Not yet.",yes:"Go."}};
+  const ER_NUM=['','one','two','three','four'];
+  const ER_HERB={silverleaf:'trees',coldmoss:'rocks',ashwort:'rocks',goldenrod:'roadside'};
+  const ER_FEVER={
+    hint:{gatelander:"Mind the door, there's sickness in the house.",markman:"Sick in the house. Keep your voice down.",
+      aurennais:"Forgive me, Master. There is illness in the house; I am a little distracted.",oldblood:"Quiet. Someone is ill."},
+    offer:{gatelander:o=>`My youngest. A fever that won't break. My mother swore by ${o.herb}, and I've none, and I can't leave the bed. It grows out ${o.dir}, by the ${o.place}. ${erCap(o.nw)} of it, before ${o.date}, and I'll owe you more than the coin.`,
+      markman:o=>`Little one. Fever. Needs ${o.herb}. ${erCap(o.nw)} of them. Grows ${o.dir}. Before ${o.date}. Go.`,
+      aurennais:o=>`My son, Master. A fever. The apothecary prescribes ${o.herb}, and has none to sell me before the next ship. If you could bring ${o.nw}, by ${o.date}, I would pay above the market, and gladly.`,
+      oldblood:o=>`A child. A fever. ${o.herb}, ${o.nw} of it. It grows ${o.dir}. Before ${o.date}.`},
+    done:{gatelander:"There. There, now. Steep it and she'll sleep. The Weaver sent you, and I don't care who denies it.",markman:"Good. That'll do it. Here.",
+      aurennais:"You have my thanks, Master, and more than the agreed sum. The account between us is in your favour.",oldblood:"Yes. That one. Good."},
+    lapse:{gatelander:"It broke on its own, the third night. Keep them. They'll keep longer than a promise does.",markman:"Fever broke. No thanks to you. Keep them.",
+      aurennais:"The fever broke without them, Master. Keep the herbs. The contract lapsed on the date; I would rather not discuss it further.",oldblood:"It broke. Keep them."},
+    cold:{gatelander:"Yourself. Well.",markman:"You.",aurennais:"Master.",oldblood:"…"}};
+  function erCap(s){return s.charAt(0).toUpperCase()+s.slice(1);}
+  function erPeople(def){return ER_SHARED[def.people]?def.people:'gatelander';}
+  function erTag(def){return def.name+(def._twin?' '+def._twin:'');}
+  function erPre(def,site){return 'er:'+site.id+':'+erTag(def)+':';}
+  function erRecs(def,site){const pre=erPre(def,site);return QJ().filter(q=>q.kind==='errand'&&String(q.id).startsWith(pre));}
+  function erWeek(){return Math.floor((worldState.gameTimeAbsMinutes||0)/(1440*7));}
+  function erGiver(def,site){return !!(site&&def&&def.bio&&ER_ROLES.has(def.role)&&!def.authored&&!def.keepName&&!def._lost);}
+  function erHerb(site,r){const b=lairBiome(site);const k=b==='tundra'||b==='moor'?'coldmoss':b==='wastes'||b==='wasteland'||b==='dunes'?'ashwort':b==='forest'||b==='autumn'||b==='plains'?'silverleaf':'goldenrod';
+    const rd=roadOutFixed(site),o=rd&&siteAnywhere(rd.a===site.id?rd.b:rd.a);const dir=o?compassWord(o.x-site.x,o.z-site.z):['north','north-east','east','south-east','south','south-west','west','north-west'][Math.floor(r()*8)];
+    return {key:k,herb:HERB_DEF[k].name,place:ER_HERB[k],dir};}
+  // the week's roll: null, or the errand on offer (which, how many, how long). Only the fever is built, so only a giver with children has one.
+  function errandFor(def,site){
+    if(!erGiver(def,site)||!(def.bio.kids>0))return null;const wk=erWeek(),R=erRecs(def,site);
+    if(R.some(q=>!q.turnedIn||q.week===wk))return null;
+    const r=seededRng('errand',site.id+':'+erTag(def)+':'+wk);if(r()>=.2)return null;
+    const n=2+Math.floor(r()*3),days=3+Math.floor(r()*3),H=erHerb(site,r),day=Math.floor((worldState.gameTimeAbsMinutes||0)/1440);
+    return Object.assign(H,{sub:'fever',n,nw:ER_NUM[n],due:(day+days)*1440,date:calDateLine((day+days)*1440),week:wk,idx:R.length});}
+  function erLapse(q){if(!q||q.kind!=='errand'||q.turnedIn||!q.erDue||(worldState.gameTimeAbsMinutes||0)<q.erDue)return false;
+    q.turnedIn=true;q.lapsed=true;q.erUnsaid=true;qJournal(q,'lapsed',`The date passed, and the fever in ${q.giver}'s house broke without the ${q.data.herb}.`);return true;}
+  function errandAccept(def,site,E){const p=erPeople(def),tier=Math.max(1,worldTierAt(site.x,site.z)||1),base=Math.min(40,15+5*(tier-1));
+    const q={id:erPre(def,site)+E.idx,kind:'errand',sub:E.sub,giver:def.name,erSite:site.id,week:E.week,erDue:E.due,erPeople:p,
+      title:`${E.herb} for a fever`,desc:`${def.name} of ${site.name} wants ${E.nw} ${E.herb} for a fever in the house, before ${E.date}.`,
+      objective:`Bring ${E.nw} ${E.herb} to ${def.name} at ${site.name} before ${E.date}`,reward:Math.round(base*1.25),data:{x:site.x,z:site.z,herb:E.herb,n:E.n}};
+    qAdd(q);return ER_SHARED[p].yes;}
+  function errandTurnIn(q,site){const p=q.erPeople||'gatelander';
+    if(q.lapsed||erLapse(q)){q.erUnsaid=false;return ER_FEVER.lapse[p];}
+    const isH=b=>b.type==='herb'&&b.name===q.data.herb;if(bagCount(isH)<q.data.n)return ER_SHARED[p].notYet;
+    bagTake(isH,q.data.n);qTurnIn(q);addFavor(site,1);return ER_FEVER.done[p];}
+  // the ask, in *About you*, while an errand is on offer
+  function errandAsk(def,site){const E=errandFor(def,site);if(!E)return null;const p=erPeople(def);
+    return {cat:'you',label:'Who’s sick?',response:ER_FEVER.offer[p](E),follow:[{label:'I’ll do it.',fn:()=>errandFor(def,site)?errandAccept(def,site,E):ER_SHARED[p].no},{label:'Not now.',response:ER_SHARED[p].no}]};}
+  // the top level: *About that errand.* while one is open, or once more to hear how a lapsed one ended
+  function errandTopics(def,site){if(!erGiver(def,site))return [];const q=erRecs(def,site).find(q=>!q.turnedIn||(q.lapsed&&q.erUnsaid));if(!q)return [];
+    return [{label:'About that errand.',quest:true,fn:()=>errandTurnIn(q,site)}];}
+  // the greeting: the hint after First Words while an errand is on offer (from the second meeting), or for a week after a lapse the colder line
+  function errandGreet(def,site){if(!erGiver(def,site))return null;const met=metCount(metKey(def,site));const line=firstWords(def,site);
+    const now=worldState.gameTimeAbsMinutes||0,cold=met>0&&erRecs(def,site).some(q=>q.lapsed&&now<q.erDue+1440*7);if(cold)return ER_FEVER.cold[erPeople(def)];
+    const E=met>0&&errandFor(def,site);return E?line+' '+ER_FEVER.hint[erPeople(def)]:line;}
 
   function nationSubtitle(cell){const nat=nationOf(cell.i,cell.j);return `${nat.name} · ${(CULTURES[cell.reg]||{}).name||cell.reg} · ${cell.climate||nat.climate}`;}
 
