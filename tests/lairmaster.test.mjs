@@ -11,7 +11,7 @@ for (const [k, kind] of KINDS.entries()) {
     const p = Object.assign({}, PORTALS[0], { theme: 'deep', seed: 5100 + k, size: 'medium', interior: 'cave', zone: 'world', tutorial: false, diff: 'hard', diffScale: DIFF_SCALE.hard, lair: { place: 'Testmoor', boss: kind } });
     goToDungeon(p); }, [kind, k]);
   for (let i = 0; i < 60; i++) { await page.waitForTimeout(400); if (await page.evaluate(() => activeZoneId === 'dungeon' && !!window._lairBoss)) break; }
-  await g.spin(30);
+  await g.spin(null, 30);
   rows.push(await page.evaluate((kind) => { const e = window._lairBoss; if (!e) return { kind, none: true };
     const D = ZONE_FOE_DEF[kind], ds = DIFF_SCALE.hard, fm = 1; /* S1058 — floor 2's ×1.5 went: the floor steps by its tier's +1 alone (the enemies-by-place sheet) */
     const T = dungeonTier(currentPortal, e.floor || 1), LT = tierLevel(T); /* S1034 — the cavern's tier, not your level (#373 A) */

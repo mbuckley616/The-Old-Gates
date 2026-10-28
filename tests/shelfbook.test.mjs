@@ -21,13 +21,13 @@ const otherNone = await page.evaluate(() => { if (window._O) return WORLD.shelfB
 check('a Mages\' Guild of another people offers no book (the rule names the Gatelands)', otherNone, found && found.other);
 const enter = async () => { await page.evaluate(() => { forceTime(12); px = _G.exitX; pz = _G.exitZ; goToInterior(_G); });
   for (let k = 0; k < 40 && !(await page.evaluate(() => isInterior() && !!INT_SHELF && INT_SHELF.id === _G.id)); k++) await page.waitForTimeout(250);
-  await g.spin(10); };
+  await g.spin(null, 10); };
 await enter();
 const room = await page.evaluate(() => ({ shelf: { x: +INT_SHELF.x.toFixed(2), z: +INT_SHELF.z.toFixed(2) }, w: +_G.intW.toFixed(2), d: +_G.intD.toFixed(2) }));
 console.log(JSON.stringify(room));
 check('the shelf stands on the east wall inside the room', room.shelf.x > room.w - .5 && room.shelf.x < room.w && room.shelf.z > 0 && room.shelf.z < room.d, room);
 const prompt = async (dx, look) => { await page.evaluate(([dx, look]) => { const S = INT_SHELF; px = S.x - dx; pz = S.z; jumpY = 0; if (look) lookAtPt(S.x, 1.1, S.z); else lookAtPt(S.x - dx - 3, 1.1, S.z); }, [dx, look]);
-  await g.spin(3); await g.frames(3); return page.evaluate(() => ({ ob: document.getElementById('ob').textContent, p: WORLD.shelfPrompt() })); };
+  await g.spin(null, 3); await g.frames(3); return page.evaluate(() => ({ ob: document.getElementById('ob').textContent, p: WORLD.shelfPrompt() })); };
 const near = await prompt(1.0, true);
 check('1 m from the shelf with the crosshair on it, E offers the book by name', /take The Words on the Stones from the shelf/.test(near.ob), near);
 const far = await prompt(2.0, true);
@@ -45,7 +45,7 @@ check('the shelf offers nothing more', took.p === null, took);
 const twice = await page.evaluate(() => WORLD.takeShelfBook(_G));
 check('the named action refuses a second copy', twice === false, twice);
 // leaving sets your spot outside on a 700 ms timer (58-interiors-legacy.js); going back in sooner, it fires in the room
-await page.evaluate(() => exitInterior()); await page.waitForTimeout(1500); await g.spin(20); await enter();
+await page.evaluate(() => exitInterior()); await page.waitForTimeout(1500); await g.spin(null, 20); await enter();
 const back = await prompt(1.0, true);
 check('back in the room, still nothing on the shelf', back.p === null, back);
 await prompt(1.0, true);

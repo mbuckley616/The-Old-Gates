@@ -24,7 +24,7 @@ check('every lair cavern is haunted in fen or swamp and deep elsewhere', a.every
 // load the cells round six lairs, fen ones first, then every islet lair's: the answers do not move
 const picks = [...fen, ...a.filter(x => x.want !== 'haunted')].slice(0, 6).concat(bare);
 await page.evaluate((picks) => { for (const x of picks) for (let i = x.cell[0] - 1; i <= x.cell[0] + 1; i++) for (let j = x.cell[1] - 1; j <= x.cell[1] + 1; j++) WORLD.loadCell(i, j); }, picks);
-for (let k = 0; k < 40; k++) { await g.spin(30); if (await page.evaluate(() => !WORLD.jobs || !WORLD.jobs.length)) break; }
+for (let k = 0; k < 40; k++) { await g.spin(null, 30); if (await page.evaluate(() => !WORLD.jobs || !WORLD.jobs.length)) break; }
 const b = await read();
 const moved = b.filter(x => { const y = a.find(z => z.id === x.id); return !y || y.boss !== x.boss || y.theme !== x.theme || y.biome !== x.biome; }).map(x => [x.name, a.find(z => z.id === x.id), x]);
 check(`after the cells round ${picks.length} lairs are loaded (${bare.length} on islets with no region in their nine cells), no lair's biome, beast or theme has changed`, moved.length === 0 && b.length === a.length && bare.length > 0, moved);

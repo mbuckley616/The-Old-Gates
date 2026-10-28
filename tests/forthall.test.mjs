@@ -38,7 +38,7 @@ check('some forts are halls and some are not', picks.n === 0 || (picks.hall > 0 
 // dungeon by the loop (S603: on CI it was not, so the flight was walked as open ground)
 await page.evaluate(() => { const p = Object.assign({}, PORTALS[0], { id: 'dyn_7100', theme: 'ruins', seed: 7100, size: 'medium', interior: 'fort_hall', kind: 'fort_door', zone: 'world', tutorial: false }); goToDungeon(p); });
 for (let k = 0; k < 25 && !(await page.evaluate(() => activeZoneId === 'dungeon' && scene === dScene && FOOTHOLDS.some(f => f.kind === 'flight'))); k++) await page.waitForTimeout(300);
-await page.waitForTimeout(1200); await g.spin(30);
+await page.waitForTimeout(1200); await g.spin(null, 30);
 const built = await page.evaluate(() => { const f = FOOTHOLDS.find(f => f.kind === 'flight'), fl = dScene.children.find(o => o.userData && o.userData.dunShell === 'flight');
   const inHole = (x, z, m) => x > f.x0 - m && x < f.x1 + m && z > f.z0 - m && z < f.z1 + m;
   return { f, f2: FLOOR2_Y, stairwell: DUNGEON_STAIRWELL, mesh: !!fl, tris: fl ? fl.geometry.index.count / 3 : 0, walls: !!dScene.children.find(o => o.userData && o.userData.dunShell === 'flightWalls'),
@@ -68,7 +68,7 @@ for (const name of ['hall', 'down', 'below']) {
     const f = FOOTHOLDS.find(f => f.kind === 'flight'), mx = (f.x0 + f.x1) / 2;
     const V = { hall: [mx + 1.2, f.z1 + 5.5, .12, -.2, 0], down: [mx, f.z1 + 1.0, 0, -.62, 0], below: [mx + 1.2, f.z0 - 5, Math.PI + .15, .2, FLOOR2_Y] }[name];
     px = V[0]; pz = V[1]; yaw = V[2]; pitch = V[3]; jumpY = V[4]; velY = 0; currentFloor = V[4] < -2 ? 2 : 1; }, name);
-  await g.spin(3); await page.evaluate(() => { if (typeof vmSword !== 'undefined' && vmSword) vmSword.visible = false; if (typeof vmArmR !== 'undefined' && vmArmR) vmArmR.visible = false; }); await g.frames(3);
+  await g.spin(null, 3); await page.evaluate(() => { if (typeof vmSword !== 'undefined' && vmSword) vmSword.visible = false; if (typeof vmArmR !== 'undefined' && vmArmR) vmArmR.visible = false; }); await g.frames(3);
   await page.screenshot({ path: `${OUT}/forthall-${name}.png` });
 }
 check('no page errors', g.errs.length === 0, g.errs);

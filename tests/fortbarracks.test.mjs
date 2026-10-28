@@ -34,7 +34,7 @@ check('a small fort is a hall and undercroft instead', plan.every(p => p.small =
 // dungeon by the loop (S603: on CI it was not, so the flight was walked as open ground)
 await page.evaluate(() => { const p = Object.assign({}, PORTALS[0], { id: 'dyn_7101', theme: 'ruins', seed: 7101, size: 'medium', interior: 'fort_barracks', kind: 'fort_door', zone: 'world', tutorial: false }); goToDungeon(p); });
 for (let k = 0; k < 25 && !(await page.evaluate(() => activeZoneId === 'dungeon' && scene === dScene && FOOTHOLDS.some(f => f.kind === 'flight'))); k++) await page.waitForTimeout(300);
-await page.waitForTimeout(1200); await g.spin(30);
+await page.waitForTimeout(1200); await g.spin(null, 30);
 const built = await page.evaluate(() => { const f = FOOTHOLDS.find(f => f.kind === 'flight'), fl = dScene.children.find(o => o.userData && o.userData.dunShell === 'flight'), gr = dScene.children.find(o => o.userData && o.userData.dunShell === 'gaolGrilles');
   const inHole = (x, z, m) => x > f.x0 - m && x < f.x1 + m && z > f.z0 - m && z < f.z1 + m;
   return { f, mesh: !!fl, grilles: gr ? gr.geometry.index.count / 3 : 0, cols: DUNGEON_COLUMNS.filter(c => inHole(c.x, c.z, 1.2)).length, colsAll: DUNGEON_COLUMNS.length,
@@ -60,7 +60,7 @@ for (const name of ['hall', 'down', 'gaol']) {
     const f = FOOTHOLDS.find(f => f.kind === 'flight'), mx = (f.x0 + f.x1) / 2;
     const V = { hall: [mx + .8, f.z1 + 5, .05, -.25, 0], down: [mx, f.z1 + 1.0, 0, -.62, 0], gaol: [mx + .6, f.z0 - 1.2, 0, -.05, FLOOR2_Y] }[name];
     px = V[0]; pz = V[1]; yaw = V[2]; pitch = V[3]; jumpY = V[4]; velY = 0; currentFloor = V[4] < -2 ? 2 : 1; }, name);
-  await g.spin(3); await page.evaluate(() => { if (typeof vmSword !== 'undefined' && vmSword) vmSword.visible = false; if (typeof vmArmR !== 'undefined' && vmArmR) vmArmR.visible = false; }); await g.frames(3);
+  await g.spin(null, 3); await page.evaluate(() => { if (typeof vmSword !== 'undefined' && vmSword) vmSword.visible = false; if (typeof vmArmR !== 'undefined' && vmArmR) vmArmR.visible = false; }); await g.frames(3);
   await page.screenshot({ path: `${OUT}/fortbarracks-${name}.png` });
 }
 check('no page errors', g.errs.length === 0, g.errs);

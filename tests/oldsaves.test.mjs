@@ -14,7 +14,7 @@ const load = async (raw) => {
   const W = JSON.parse(raw).where;
   if (W.kind === 'house') await page.waitForFunction((id) => currentHouse && currentHouse.id === id, W.id, { timeout: 120000, polling: 250 }).catch(() => {});
   else await page.waitForFunction(() => !currentHouse && activeZoneId === 'world', null, { timeout: 60000, polling: 250 }).catch(() => {});
-  await g.spin(20).catch(() => {});
+  await g.spin(null, 20).catch(() => {});
   return page.evaluate(() => ({ zone: activeZoneId, house: currentHouse && currentHouse.id, x: +px.toFixed(2), z: +pz.toFixed(2), y: +jumpY.toFixed(2),
     W: currentHouse && +currentHouse._roomW.toFixed(2), D: currentHouse && +currentHouse._roomD.toFixed(2),
     solid: currentHouse ? intSolidAt(px, pz, .3, jumpY) : null, door: currentHouse ? [+intDoorX(currentHouse).toFixed(2), +intArrivalZ(currentHouse).toFixed(2)] : null }));

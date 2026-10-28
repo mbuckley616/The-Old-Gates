@@ -33,7 +33,7 @@ check('each has a floor-2 beam that would cross the shaft uncut, and no beam ver
 // the pictures: the prototype's two places on seed 4021
 await page.evaluate(() => { window._oldStair = dScene.children.find(o => o.userData && o.userData.dunShell === 'stair'); const p = Object.assign({}, PORTALS[0], { id: 'dyn_4021', theme: 'ruins', seed: 4021, size: 'large', interior: 'cave', lairDoor: true, zone: 'world', tutorial: false }); goToDungeon(p); });
 for (let k = 0; k < 20 && !(await page.evaluate(() => activeZoneId === 'dungeon' && scene === dScene)); k++) await page.waitForTimeout(300);
-await page.waitForTimeout(1500); await g.spin(30);
+await page.waitForTimeout(1500); await g.spin(null, 30);
 await page.evaluate(() => { ENEMIES.forEach(e => { e.dead = true; if (e.mesh) e.mesh.visible = false; }); PHP = 1e6; if (typeof vmSword !== 'undefined' && vmSword) vmSword.visible = false; if (typeof vmArmR !== 'undefined' && vmArmR) vmArmR.visible = false; });
 for (const view of ['above', 'up']) {
   await page.evaluate((view) => { ENEMIES.forEach(e => { if (e.mesh) e.mesh.visible = false; }); const f = FOOTHOLDS.find(f => f.kind === 'spiral'), a = f.a0, c = Math.cos(a), s = Math.sin(a);
