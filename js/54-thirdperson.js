@@ -189,7 +189,7 @@ function tpBuild(lookIn,ppIn,reuse){
     // S1435 — your arms under a cloak are held in the walk as the townsfolk's are (hbCloakArms, S1434), each arm only while it is on the
     // gait's swing (tpPose's TP.hbHold): a blow, a guard, a draw, a cast, a torch, a shield, the swim and the climb keep the arm
     if(rig.hb){R.hbSaved=E.saved;rig.tpHold=rig.hb.hold?TP.hbHold:null;
-      root.scale.setScalar(rig.hb.st*PW.BODY/SCALE.PERSON_MODEL);hbLevel(rig,0);
+      root.scale.setScalar(rig.hb.st*PW.BODY/SCALE.PERSON_MODEL);hbLevel(rig,0);tpTrue(R);
       // what the hands hold rides in the builder's group: a copy of each piece (its geometry shared) in a carrier that follows the piece,
       // which stays on its driver bone where tpPose turns it, each frame (tpHBHold); a weapon's grip goes to the builder's curled fingers
       R.hbHeld=[];const by=rig.hb.P.byName,sw=HBODY.swap,side=s=>sw?(s==='L'?'R':'L'):s;
@@ -199,7 +199,12 @@ function tpBuild(lookIn,ppIn,reuse){
       // Michael's D on #99: an empty hand is a folded fist, and a hand that holds something closes on it; a tome is held open-handed
       hbCloseFist(by,side('R'));hbThumb(by,side('R'));R.hbHook=R.bow?tpHBHookOf(by,side('R')):null;if(!R.tome){hbCloseFist(by,side('L'));hbThumb(by,side('L'));}else for(let f=1;f<=5;f++)for(let j=1;j<=3;j++){const b=by[`finger${f}-${j}.${side('L')}`];if(b)b.quaternion.identity();} /* a body carried over may have closed it */
       root.traverse(o=>{if(o.isMesh)o.userData.tp=true;});}}
+  if(!R.trueK)tpTrue(R);
   return R;}
+// S1509 — a knife, a spear or a crossbow at its true size in the hand (wpnTrue): the kit's piece under the carried group, and with it the
+// group's other things drawn in that piece's frame (an enchantment's motes, the left hand's place on a two-handed grip), by the body's scale
+function tpTrue(R){const W=R.weapon||R.weaponL,k=W&&W.children[0];R.trueK=1;if(!k||!WPN_TRUE.has(W.userData.kit))return;
+  wpnTrue(W.userData.kit,k,R.root);const f=k.scale.x;R.trueK=f;for(const c of W.children)if(c.isPoints)c.scale.setScalar(f);if(R.gripL)R.gripL.multiplyScalar(f);}
 // a held piece's copy for the builder's group: its meshes and points on the same geometry and materials, its own turns below the top
 // (Object3D.clone copies userData through JSON, which the kit's pieces do not all survive)
 function tpHBCopy(o,top){const k=o.isMesh?new THREE.Mesh(o.geometry,o.material):o.isPoints?new THREE.Points(o.geometry,o.material):new THREE.Group();k.name=o.name;k.visible=o.visible;k.frustumCulled=o.frustumCulled;
@@ -296,7 +301,7 @@ function tpXbowSpan(R){const S=xbowSpanPose();xbowRigSet(R.weapon.userData.xbow,
 // bow comes back up into the right fist (its d). Walking, blocking, a blow, the air, the water or a pull: carried as before. The hands
 // are the mantle's two-handed reach (R.mantle, tpMantleArms; the builder's wrists by tpHBMantle); the piece is set in the world, its
 // carry kept in R.xspan for the builder's copy (tpHBHold). Metres: the stirrup's foot of the bow, the butt's height, the wrist over the string
-const TP_XSPAN={fwd:.62,side:.07,up:.04,toe:.07,buttFwd:.85,lean:[1.2,1.0],drop:[.32,.15],hand:.07,ease:10};
+const TP_XSPAN={fwd:.62,side:.07,up:.04,toe:.07,buttFwd:.85,lean:[1.35,1.08],drop:[.32,.15],hand:.07,ease:10};
 const _txA=new THREE.Vector3(),_txB=new THREE.Vector3(),_txC=new THREE.Vector3(),_txQa=new THREE.Quaternion(),_txQb=new THREE.Quaternion(),_txSa=new THREE.Vector3(),_txSb=new THREE.Vector3();
 const _txM=new THREE.Matrix4(),_txJ=new THREE.Matrix4(),_txF=new THREE.Matrix4(),_txI=new THREE.Matrix4(),_txX=new THREE.Vector3(),_txY=new THREE.Vector3(),_txZ=new THREE.Vector3();
 function tpBlendM(out,a,b,w){a.decompose(_txA,_txQa,_txSa);b.decompose(_txB,_txQb,_txSb);_txA.lerp(_txB,w);_txQa.slerp(_txQb,w);_txSa.lerp(_txSb,w);return out.compose(_txA,_txQa,_txSa);}

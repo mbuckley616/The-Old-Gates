@@ -792,6 +792,11 @@ function personHiDrain(){while(PEOPLE_HIQ.length){const rig=PEOPLE_HIQ.shift();r
 const WPN_MAT={metal:new THREE.MeshStandardMaterial({vertexColors:true,metalness:.7,roughness:.34}),matte:new THREE.MeshStandardMaterial({vertexColors:true,metalness:0,roughness:.85}),
   glow:new THREE.MeshBasicMaterial({vertexColors:true}),halo:new THREE.MeshBasicMaterial({vertexColors:true,transparent:true,opacity:.15,depthWrite:false})};
 const WPN_GEO=new Map();
+// S1509 — the kit's pieces are drawn to the old person (1.233 tall) and grow with the body that carries them (×1.2 to ×1.35), which
+// brings most of them to their true length: a sword 0.89 m, a longsword 1.17, an axe 0.76. Three were drawn in true metres and came out
+// too big: the knife 0.49 m, the spear 2.97, the crossbow 1.40. These are carried at their own size, whatever the stature (wpnTrue)
+const WPN_TRUE=new Set(['dagger','spear','crossbow']);
+function wpnTrue(kind,w,holder){if(WPN_TRUE.has(kind)&&holder&&holder.scale.x>0)w.scale.setScalar(1/holder.scale.x);return w;}
 const WPN_KINDS=['dagger','sword','cutlass','longsword','claymore','axe','greataxe','mace','flail','warhammer','greatclub','staff','bow','spear','crossbow','round','kite','tower'];
 // tint (S227, the player's weapons): {metal, guard, wood, glow} colours in place of steel, brass, the bow's wood and the crystal
 function wpnBuild(kind,rust,tint){tint=tint||{};
@@ -976,7 +981,7 @@ function buildFoe(type,x,z,genome,eyeCol){
   // S520 — the kit is built with its edge (and an axe's bit) along x, which held in the fist put the flat towards the foe's target
   // and the edge to the side (Michael, the inspector: the bandit's axe turned the wrong way, the cultist's sword sideways): a
   // quarter turn about the shaft puts the edge forward. The bow was drawn belly-out; a half turn puts its back to the target.
-  if(g.wpn){const w=buildWeapon(g.wpn,{rust:!!(g.skel||g.dead||g.goblin)});if(g.wpn==='bow'){w.position.set(0,-.05,.01);w.rotation.y=Math.PI;rig.B.wrL.add(w);}else{w.rotation.y=Math.PI/2;rig.B.gear.add(w);}rig.weapon=w;}
+  if(g.wpn){const w=buildWeapon(g.wpn,{rust:!!(g.skel||g.dead||g.goblin)});if(g.wpn==='bow'){w.position.set(0,-.05,.01);w.rotation.y=Math.PI;rig.B.wrL.add(w);}else{w.rotation.y=Math.PI/2;rig.B.gear.add(w);}wpnTrue(g.wpn,w,rig.root);rig.weapon=w;}
   if(g.shieldKit){const sh=buildWeapon(g.shieldKit);sh.position.set(.07,-.05,.02);sh.scale.setScalar(.9);rig.B.elL.add(sh);rig.shieldKit=sh;}
   if(g.wraith){const m=rig.mesh.material;m.transparent=true;m.opacity=g.phantom?.5:.68;rig.mesh.castShadow=false;}
   // a golem's rune-light: a slit for eyes and an X cut in the chest, unlit, on the head and spine bones
