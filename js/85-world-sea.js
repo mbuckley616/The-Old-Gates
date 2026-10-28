@@ -147,6 +147,7 @@
   const SHIP_GEO=new Map();
   // kind 'sloop' | 'cog' | 'galleon' | 'cutter' | 'caravel'; look 'player' | 'pirate' | 'merchant'. One bake per kind and look, shared.
   function shipBake(kind,look){const key=kind+'|'+look;let r=SHIP_GEO.get(key);if(r)return r;
+    if(kind==='sloop'&&look==='player'&&window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.ships){r=shipBakeKit();SHIP_GEO.set(key,r);return r;}
     const D=SHIP_DECK,lk=SHIP_LOOKS[look]||SHIP_LOOKS.player;const B=new ShipBake();B.props=[]; /* S616 — what stands on her deck, kept for shipPropSolid */
     const cls={sloop:{L:13,W:4.4},cog:{L:17,W:5.6},galleon:{L:22,W:7.0},cutter:{L:14,W:4.0},caravel:{L:17.5,W:5.0}}[kind];const L=cls.L,W=cls.W;
     const hopt={sloop:{draft:1.05,sheer:.42,bowRise:.45,sternRise:.3,stem:2.4,transom:.34,full:1.8},
@@ -243,6 +244,15 @@
     if(look==='pirate'){const fl=new THREE.PlaneGeometry(1.4,.9,3,1);const p=fl.attributes.position;for(let i=0;i<p.count;i++)p.setZ(i,Math.sin(p.getX(i)*3)*.08);fl.computeVertexNormals();
       const FB=new ShipBake();FB.add(fl,[0,mastTop+.9,-.8],[0,Math.PI/2,0],null,0x111111);FB.add(SK.ball(.14,8,6),[.03,mastTop+.95,-.8],0,[1,1,.6],0xd8d0c0);rigs.push({geo:FB.bake(),z:mastZ,type:'flag'});/* S332 — the black flag streams downwind */B.rod([0,mastTop,mastZ],[0,mastTop+1.4,mastZ],.03,.03,0x2a2622,4);}
     r={geo:B.bake(),deck:deckAt,L,W,zs:H.zs,zb:H.zb,rigs,props:B.props,at:H.at};SHIP_GEO.set(key,r);return r;}
+  // S1531 (card F11, backlog L6) — on the new look your sloop is the kit's Gatelands sloop (PKIT.ships.sloop, ships.js's gatelandsSloop,
+  // Michael's A on #306): one geometry a group a material, the square yard and sail a rig of their own about the mast, and a tiller
+  // for the wheel. The game's contracts are kept: the deck's outline (at, inside the stanchions), what stands on her deck as props, the
+  // hull's section for the nets, and the hatch forward at L/2-3.2 where the cabin's door is (cabinUpdate).
+  function shipBakeKit(){const S=PKIT.ships.sloop({hatchZ:13/2-3.2}),P=[];
+    const zz=[];for(let z=S.zs;z<=S.zb;z+=.05)if(S.deckAt(z)>.45)zz.push(z);const z0=zz[0],z1=zz[zz.length-1];
+    P.push({x:0,z:S.mast[1],r:.17},{x:-.45,z:S.mast[1]-.7,r:.17});const h=S.hatch;P.push({x:0,z:(h.z0+h.z1)/2,hx:(h.x1-h.x0)/2,hz:(h.z1-h.z0)/2,ry:0});
+    return {geo:S.hull.geo,mats:S.hull.mats,deck:{z0,z1,at:z=>z<z0||z>z1?0:S.deckAt(z)-.06},L:S.L,W:S.W,zs:S.zs,zb:S.zb,
+      rigs:[{geo:S.rig.geo,mats:S.rig.mats,z:S.mast[1],type:'square'}],props:P,at:S.at,tiller:S.tiller,kit:S};}
   // a harbour boat: an open clinker boat with thwarts, oars shipped, a stubby mast with the sail furled; four paints
   function boatBake(v){const key='boat|'+v;let r=SHIP_GEO.get(key);if(r)return r;
     const R=(()=>{let s=(v*2654435761+12345)>>>0;return ()=>{s=(s*1664525+1013904223)>>>0;return s/4294967296;};})();const B=new ShipBake();const paint=[0x5a6a4a,0x6a3a2a,0x3a4a6a,0x7a6a4a][v%4];
@@ -284,7 +294,7 @@
   // and lashed inboard. One bake a hull, on SHIP_MAT (two-sided), cached on the bake; the climb and the crosshair's box (86) unchanged.
   function shipNetsGeo(at){const pos=[],nor=[],col=[];const H=1.3,N=10,h=2*H/N,BOT=-.6;
     const sec=z=>{const a=at(z),P=[];let s=0,q=null;for(let k=0;k<=60;k++){const th=Math.PI/2*(1-k/60),sx=Math.pow(Math.sin(th),.45),cy=Math.pow(Math.cos(th),.55),fl=1+.05*Math.max(0,(1-cy)-.6);
-      const x=a.b*sx*fl,y=a.g-(a.g-a.k)*cy;if(q)s+=Math.hypot(x-q[0],y-q[1]);P.push([x,y,s]);q=[x,y];if(y<BOT-.1)break;}return {P,a};};
+      const ks=a.sect&&a.sect(1-k/60),x=ks?ks[0]+.05:a.b*sx*fl,y=ks?ks[1]:a.g-(a.g-a.k)*cy; /* S1531 — the kit's hull gives its own section, the net laid outside its laps */if(q)s+=Math.hypot(x-q[0],y-q[1]);P.push([x,y,s]);q=[x,y];if(y<BOT-.1)break;}return {P,a};};
     const S=new Map(),secAt=z=>{const k=Math.round(z*100);let o=S.get(k);if(!o){o=sec(k/100);S.set(k,o);}return o;};
     const vBot=z=>{const {P}=secAt(z);for(let i=1;i<P.length;i++)if(P[i][1]<=BOT){const t=(P[i-1][1]-BOT)/(P[i-1][1]-P[i][1]);return P[i-1][2]+(P[i][2]-P[i-1][2])*t;}return P[P.length-1][2];};
     const VM=vBot(0),M=Math.max(4,Math.round(VM/h)),hv=VM/M;
@@ -394,11 +404,11 @@
   function buildShipMesh(SHIP_L,SHIP_W,look,hull){
     const own=!look&&!hull&&worldState.ship&&worldState.ship.cls;if(own==='cutter'||own==='caravel')hull=own;
     const kind=hull||((SHIP_L||13)>=20?'galleon':(SHIP_L||13)>=15?'cog':'sloop');const r=shipBake(kind,look||'player');
-    const mesh=new THREE.Mesh(r.geo,SHIP_MAT);mesh.castShadow=true;mesh.receiveShadow=true;
-    const wheel=shipWheelMesh();wheel.position.set(0,SHIP_DECK+.95,-r.L/2+2.8);mesh.add(wheel);
+    const mesh=new THREE.Mesh(r.geo,r.mats||SHIP_MAT);mesh.castShadow=true;mesh.receiveShadow=true;
+    const wheel=r.tiller?r.tiller.clone():shipWheelMesh();if(!r.tiller)wheel.position.set(0,SHIP_DECK+.95,-r.L/2+2.8);mesh.add(wheel);mesh.userData.tiller=!!r.tiller; /* S1531 — the kit's sloop steers by a tiller */
     mesh.add(r.at?shipNetsMesh(r):shipNetMesh(SHIP_W||r.W||4.4)); /* S723 — the boarding nets laid on the hull (S638's stand-in where a bake has no section) */
     mesh.userData.wheel=wheel;mesh.userData.deck=r.deck;mesh.userData.kind=kind;mesh.userData.props=r.props||[];mesh.userData.bakeKey=kind+'|'+(look||'player');
-    mesh.userData.rigs=(r.rigs||[]).map(q=>{const m=new THREE.Mesh(q.geo,SHIP_MAT);m.castShadow=true;m.position.z=q.z;mesh.add(m);if(q.extra){const e=new THREE.Mesh(q.extra,SHIP_MAT);e.castShadow=true;m.add(e);}return {m,type:q.type,a:0};});
+    mesh.userData.rigs=(r.rigs||[]).map(q=>{const m=new THREE.Mesh(q.geo,q.mats||SHIP_MAT);m.castShadow=true;m.position.z=q.z;mesh.add(m);if(q.extra){const e=new THREE.Mesh(q.extra,SHIP_MAT);e.castShadow=true;m.add(e);}return {m,type:q.type,a:0};});
     mesh.userData.trimSnap=true;
     return mesh;
   }
@@ -430,7 +440,7 @@
     SHIP.wheel.x=SHIP.x+wx;SHIP.wheel.z=SHIP.z+wz;
     // the helmsman stands a pace aft of the wheel, looking forward over it
     SHIP.helm={x:SHIP.x-Math.sin(SHIP.yaw)*(-SHIP.L/2+1.7),z:SHIP.z-Math.cos(SHIP.yaw)*(-SHIP.L/2+1.7)};
-    if(m.userData.wheel)m.userData.wheel.rotation.z=(SHIP.sailing?SHIP.turn||0:0)*.6;
+    if(m.userData.wheel){const t=(SHIP.sailing?SHIP.turn||0:0);if(m.userData.tiller)m.userData.wheel.rotation.y=-t*.45;else m.userData.wheel.rotation.z=t*.6;} /* S1531 — a tiller is put over against the turn */
   }
   function spawnShip(x,z,yaw){
     const cc=shipClass();SHIP.L=cc.L;SHIP.W=cc.W;
