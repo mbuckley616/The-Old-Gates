@@ -2403,7 +2403,13 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       const O=T.open;for(const q of O.front)out(q.x,T.yW+q.y,hd,q.w,q.h+(q.arch?q.w/2:0),Math.PI);for(const q of O.back)out(-q.x,T.yW+q.y,-hd,q.w,q.h+(q.arch?q.w/2:0),0);
       for(const q of O.side)out(hw,T.yW+q.y,q.x,q.w,q.h+(q.arch?q.w/2:0),-Math.PI/2);for(const q of O.west)out(-hw,T.yW+q.y,-q.x,q.w,q.h+(q.arch?q.w/2:0),Math.PI/2);
       const A=new Float32Array(P.reduce((n,a)=>n+a.length,0));let o=0;for(const a of P){A.set(a,o);o+=a.length;} /* one mesh for them all */
-      const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(A,3));const m=new THREE.Mesh(g,M);m.userData.daylight=true;sc_.add(m);}
+      const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(A,3));const m=new THREE.Mesh(g,M);m.userData.daylight=true;sc_.add(m);
+      // S1512 — and the sky in through the ground floor's openings, a spot inside each (kitDaylight, at 0.55): from the
+      // arrival the tavern read 44 at noon and 55 at 23h, darker by day than by night as the taproom was before S1506; now 81 by day
+      // (0.4 read 71: night 0.77 of the day, where the taproom keeps 0.68)
+      const sky=[];for(const q of O.front)sky.push({x:rx(q.x),z:D,nx:0,nz:-1,q});for(const q of O.back)sky.push({x:rx(-q.x),z:0,nx:0,nz:1,q});
+      for(const q of O.side)sky.push({x:W,z:rz(q.x),nx:-1,nz:0,q});for(const q of O.west)sky.push({x:0,z:rz(-q.x),nx:1,nz:0,q});
+      kitDaylight(sc_,sky.filter(o=>ry(T.yW+o.q.y)<F1-.3).map(o=>({x:o.x,y:ry(T.yW+o.q.y+o.q.h*.7),z:o.z,nx:o.nx,nz:o.nz,w:o.q.w,h:o.q.h})),.55);}
     // the light: the brass lamps (over the left table, by the counter, in the well and over the passage), the braziers' glow, and the
     // room's warmth; one more in each guest room
     const KA=kitRoomAir(sc_,.42);
@@ -2722,7 +2728,8 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       // book, pews with shaped ends and kneelers, an eight-sided pulpit with steps, columns with bases and capitals; one bake
       {const K=furnKit(),room=K.bake(K.church(W,D,H,FN,FSEED));room.userData.furn=true;sc_.add(room);furnSwap(room);}
       solid(W/2,1.6,1.2,.55,1.3);light(W/2,2.2,1.8,0xffc070,1.4,8);
-      {const zs=[];for(let z=2.5;z<D-1.8;z+=Math.max(2.2,D/4))zs.push(z);tallWins(zs,3.4,.9,2.6,0xc89050);} /* S896 — three a side in a nave of true size (14 to 18 m), as in the old, longer one; from 3 by 3 it held two */
+      {const zs=[];for(let z=2.5;z<D-1.8;z+=Math.max(2.2,D/4))zs.push(z);tallWins(zs,3.4,.9,2.6,0xc89050);
+        kitDaylight(sc_,zs.flatMap(z=>[{x:0,y:3.8,z,nx:1,nz:0,w:.9,h:2.6},{x:W,y:3.8,z,nx:-1,nz:0,w:.9,h:2.6}]),.25);} /* S1513 — the sky through each tall window by the hour, in the old unit (scaleRoom carries the spots); 64 at noon and 64 at 23h before */ /* S896 — three a side in a nave of true size (14 to 18 m), as in the old, longer one; from 3 by 3 it held two */
       for(const x of furnKit().churchAt(W,D).colX)for(let z=5.5;z<D-3;z+=3.5)solid(x,z,.4,.4,H/F); /* S896 — between the pews and the walls in a nave of true size */ // S303 — the columns outside the pews (at W/2 ± 3 they stood in them)
       npc={x:W/2,z:3.2,maxZ:3.6,paused:true};
     } else if(type==='castle'){
