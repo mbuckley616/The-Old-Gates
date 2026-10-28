@@ -392,7 +392,7 @@ function raiseGuard(){
   blocking=true;lastBlockAttemptT=performance.now()/1000;lastBlockAttemptG=playClockS;
   return true;
 }
-function commitMoveMult(){return swingCommitted()?COMMIT.move:(DRINK||xbowSpanning())?COMMIT.drinkMove:1;} /* S1457 — a crossbow is spanned at a potion's walk */
+function commitMoveMult(){return swingCommitted()?COMMIT.move:(DRINK||xbowSpanning()||warBowDrawn())?COMMIT.drinkMove:1;} /* S1549 — and a war bow drawn */ /* S1457 — a crossbow is spanned at a potion's walk */
 // the turn this frame, held to 90° a second while committed: the view's yaw is pulled back toward last frame's
 let _commitYaw=null;
 function commitTurn(dt){
