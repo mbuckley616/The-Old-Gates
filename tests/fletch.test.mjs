@@ -2,6 +2,7 @@
 // makes 2 planks and a pine log a spar (Joinery 2); a bow is 2 planks and an ingot and takes its metal, gated by Joinery at the
 // metal's SKILL_GATE; a wooden shield is 3 planks (Joinery 15 each, 30 minutes, made, a fifth back). Fletching: a log, 10
 // feathers and an iron ingot make 10 Iron Arrows, 15 with Fletcher (Woodcutting 50); since S1541 any ingot fletches its own metal's (#829 A).
+// S1549 — Bowyer (Joinery 75, #851 A): the longbow and the war bow, 3 planks and an ingot, each with its own draw, shot, speed and stamina.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
@@ -59,6 +60,23 @@ const r = await page.evaluate(() => {
   bagAdd(benchItem('spar', 1)); bagAdd(bow);
   const d = JSON.parse(ssStringify(_buildSavePayload())); BAG.length = 0; _applyLoadData(d);
   out.reload = { planks: plankCount(), spar: bagCount(b => b.spar), bow: !!BAG.find(b => b.made && b.weaponType === 'Bow'), kit: hasJoinerKit() };
+  // ── S1549: Bowyer's longbow and war bow ──
+  BAG.length = 0; bagAdd({ ...JOINER_ITEM }); bagAdd(benchItem('plank', 6)); bagAdd(ingotItem(3, 2)); J(74);
+  out.noBowyer = { why: benchMake('longbow', 3).why, kept: plankCount() === 6 && ingotCount(3) === 2, row: BENCH_RECIPES.find(r => r.id === 'longbow').has() };
+  J(75); const lb = benchMake('longbow', 3), wb = benchMake('warbow', 3);
+  out.bows = { lb: lb.made && lb.item.name, wb: wb.made && wb.item.name, lbW: lb.item && lb.item.weight, wbW: wb.item && wb.item.weight, planks: plankCount(), ingots: ingotCount(3),
+    made: !!(lb.item && lb.item.made && wb.item && wb.item.made), type: wb.item && wb.item.weaponType, atk: wb.item && wb.item.atk.join() === bow.atk.join() };
+  out.live = PERK_LIVE.has('joinery:75');
+  const longbow = lb.item, warbow = wb.item;
+  const play = w => { EQ.weapon = w; _bowDrawing = true; const o = { rate: +(bowDrawRate()).toFixed(3), mult: bowNow().mult, speed: bowNow().speed, stam: bowNow().stam, walk: warBowDrawn(), move: commitMoveMult() }; _bowDrawing = false; return o; };
+  out.play = { bow: play(bow), long: play(longbow), war: play(warbow) };
+  // the arrow leaves at the bow's speed: a full-draw shot's velocity
+  const shot = w => { EQ.weapon = w; EQ.ammo = { ...ARROW_IRON, qty: 5 }; stamina = 100; const L = ZB.length; fireArrow(1); const a = ZB[ZB.length - 1], u = a && ZB.length > L ? a.userData : null;
+    return u ? { v: +Math.hypot(u.vx, u.vy, u.vz).toFixed(2), m: +(u.roll.m / skillMult('bow') / (1 + attrEff('finesse') * BOW_FINESSE_DMG)).toFixed(2) } : null; };
+  out.shot = { bow: shot(bow), war: shot(warbow) }; EQ.weapon = null; EQ.ammo = null;
+  // the page's rows
+  benchSel = 'warbow'; benchTier = 3; benchDraw(); out.warPage = document.getElementById('bn-right').textContent;
+  const d2 = JSON.parse(ssStringify(_buildSavePayload())); BAG.length = 0; _applyLoadData(d2); out.warSaved = (BAG.find(b => b.bowKind === 'warbow') || {}).name;
   out.perk = PERK_LIVE.has('woodcutting:50') && PERK_DEF.joinery.length === 4;
   return out;
 });
@@ -78,9 +96,17 @@ check('a steel ingot fletches 10 Steel Arrows (4–8), spends the steel and keep
 check('ten steel arrows sell for less than the ingot; they go in the quiver', r.steelSale && r.quiver === 'Steel Arrow 10', r);
 check('a feather sells for nothing (ten are bought for a gold)', r.featherSale === 0, r.featherSale);
 check('the kit at the smith\'s and the goods shop, feathers at the goods shop only', r.shops.smith === 1 && r.shops.goods === 1 && r.shops.inn === 0 && r.shops.feathers === 1 && r.shops.smithFeathers === 0, r.shops);
-check('the kit used from the bag opens the bench\'s page, five rows; Work makes planks', r.page && r.rows === 5 && /2 × Plank/.test(r.pageSaid) && r.closed, r);
+check('the kit used from the bag opens the bench\'s page, seven rows; Work makes planks', r.page && r.rows === 7 && /2 × Plank/.test(r.pageSaid) && r.closed, r);
 check('the page\'s Arrows row picks the metal: Mithril Arrows, +5–10', /Mithril Arrows, \+5–10 on the bow/.test(r.arrowPage) && /Obsidian 0/.test(r.arrowPage), r.arrowPage);
 check('the save keeps planks, a spar, a made bow and the kit', r.reload.planks === 2 && r.reload.spar === 1 && r.reload.bow && r.reload.kit, r.reload);
+check('Bowyer: no longbow at Joinery 74, nothing spent; the row shut', /Bowyer/.test(r.noBowyer.why) && r.noBowyer.kept && !r.noBowyer.row, r.noBowyer);
+check('Bowyer at 75: an Iron Longbow (3.5) and an Iron War Bow (4.5), 3 planks and an ingot each, made, the bow\'s roll', r.bows.lb === 'Iron Longbow' && r.bows.wb === 'Iron War Bow' && r.bows.lbW === 3.5 && r.bows.wbW === 4.5 && r.bows.planks === 0 && r.bows.ingots === 0 && r.bows.made && r.bows.type === 'Bow' && r.bows.atk && r.live, r.bows);
+check('the draw: a bow full in 1.10 s, a longbow 1.40, a war bow 1.80', r.play.bow.rate === 1 && r.play.long.rate === +(1.1 / 1.4).toFixed(3) && r.play.war.rate === +(1.1 / 1.8).toFixed(3), r.play);
+check('the full draw ×1.40, ×1.70, ×2.00; 28, 33, 36 m/s; 8, 10, 14 stamina a second', [r.play.bow, r.play.long, r.play.war].map(p => p.mult + '/' + p.speed + '/' + p.stam).join() === '1.4/28/8,1.7/33/10,2/36/14', r.play);
+check('a war bow drawn walks at a potion\'s pace; a longbow does not', r.play.war.walk && r.play.war.move < 1 && !r.play.long.walk && r.play.long.move === 1, r.play);
+check('a war bow\'s full-draw arrow leaves at 36 m/s, ×2.00; a bow\'s at 28, ×1.40', r.shot.bow && r.shot.war && r.shot.bow.v === 28 && r.shot.war.v === 36 && r.shot.bow.m === 1.4 && r.shot.war.m === 2, r.shot);
+check('the page\'s War Bow row: 3 planks, full draw in 1.80 s, drawn at a walk', /Iron War Bow/.test(r.warPage) && /3 Planks/.test(r.warPage) && /1\.80 s, ×2\.00, 36 m\/s; 14 stamina/.test(r.warPage) && /at a walk/.test(r.warPage), r.warPage);
+check('the save keeps a war bow', r.warSaved === 'Iron War Bow', r.warSaved);
 check('Fletcher is live; Joinery has its four perks on the sheet', r.perk, r.perk);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

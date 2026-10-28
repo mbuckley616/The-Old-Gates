@@ -169,7 +169,7 @@ function loop(now){
   // sneaking is a deliberate stealth posture).
   const _canSprint = _encState!=='overloaded' && _encState!=='immobile' && !_sneaking;
   const _sprintAttempt = K['ShiftLeft']&&stamina>0&&staminaCD<=0&&(K['KeyW']||K['ArrowUp']);
-  const sprinting = _sprintAttempt && _canSprint && !DRINK && !xbowSpanning(); /* S940 — a potion is drunk at walking pace; S1457 — a crossbow spanned at it */
+  const sprinting = _sprintAttempt && _canSprint && !DRINK && !xbowSpanning() && !warBowDrawn(); /* S1549 — a war bow is drawn at it; S940 — a potion is drunk at walking pace; S1457 — a crossbow spanned at it */
   // Feedback: if player tries to sprint but is too encumbered, show message (throttled to once per 2s).
   if(_sprintAttempt && !_canSprint){
     if(!window._lastEncMsg || performance.now()-window._lastEncMsg > 2000){
@@ -211,7 +211,7 @@ function loop(now){
     // Stamina drain — continuous, so the player can't infinitely hold a draw.
     // Tunable via BOW_STAM_DRAIN_PER_SEC; current 8/sec means a full-tier
     // 1 player can hold a max draw for ~6 seconds before running dry.
-    const drain = _stamCost(BOW_STAM_DRAIN_PER_SEC * dt);
+    const drain = _stamCost(bowNow().stam * dt); /* S1549 — the bow's kind: 8, a longbow 10, a war bow 14 */
     stamina = Math.max(0, stamina - drain);
     // Cap draw at BOW_DRAW_MAX (further hold = no more damage but still costs
     // stamina, which is the realistic feel — "you can't draw harder than the

@@ -1135,6 +1135,17 @@ const BOW_DAMAGE_MULT_MAX = 1.40;     // damage multiplier at BOW_DRAW_MAX (full
 const BOW_STAM_DRAIN_PER_SEC = 8;     // stamina drained per second while holding draw
 const BOW_RELEASE_STAM_COST = 6;      // flat stamina paid at release on top of drain
 const ARROW_SPEED = 28;               // u/s arrow flight speed at FULL draw (was uniform pre-v64.1)
+// S1549 — Bowyer's two bows (Michael's A on #851): a bow's kind is `bowKind` on the item, none for the plain bow. The draw
+// runs on the plain bow's clock (`_bowDrawT` to BOW_DRAW_MAX, so the hands, the string and the strength read as before),
+// filled at BOW_DRAW_MAX/draw of its pace (bowDrawRate); the full draw's multiplier, the arrow's speed and the stamina held
+// are the kind's. A war bow is drawn at a potion's walk, with no sprint (warBowDrawn: commitMoveMult and the loop's sprint).
+const BOW_KINDS={
+  bow:    {name:'Bow',     draw:1.10,mult:1.40,speed:28,stam:8, weight:3,  planks:2},
+  longbow:{name:'Longbow', draw:1.40,mult:1.70,speed:33,stam:10,weight:3.5,planks:3},
+  warbow: {name:'War Bow', draw:1.80,mult:2.00,speed:36,stam:14,weight:4.5,planks:3,walk:true}};
+function bowKindOf(w){return BOW_KINDS[w&&w.bowKind]||BOW_KINDS.bow;}
+function bowNow(){return bowKindOf(EQ.weapon);}
+function warBowDrawn(){return _bowDrawing&&!!bowNow().walk;}
 const ARROW_LIFE = 2.2;               // seconds before arrow despawns mid-air
 const ARROW_HIT_RADIUS = 0.55;        // arrow-vs-enemy collision radius (matches spell orbs)
 // v64.1 — Arrow speed also scales with draw strength. Mirrors the damage

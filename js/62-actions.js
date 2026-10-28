@@ -144,7 +144,7 @@ function fireArrow(strength,o){
   const aHi = (ammo.arrowDmg && ammo.arrowDmg[1]) || 0;
   const arrowRoll = aLo + Math.floor(Math.random() * Math.max(1, aHi - aLo));
   // Draw scaling — linear MIN..MAX over strength 0..1.
-  const drawMult = xb ? BOW_DAMAGE_MULT_MAX * XBOW_DMG_MULT : BOW_DAMAGE_MULT_MIN + (BOW_DAMAGE_MULT_MAX - BOW_DAMAGE_MULT_MIN) * strength; /* S1457 — a crossbow: the full draw ×1.15 */
+  const drawMult = xb ? BOW_DAMAGE_MULT_MAX * XBOW_DMG_MULT : BOW_DAMAGE_MULT_MIN + (bowNow().mult - BOW_DAMAGE_MULT_MIN) * strength; /* S1457 — a crossbow: the full draw ×1.15; S1549 — a longbow's full draw ×1.70, a war bow's ×2.00 */
   // Finesse — bow's primary attribute, mirrors Might’s melee scaling (ATTR_DMG_PER_POINT).
   const finesseMult = 1 + attrEff('finesse') * BOW_FINESSE_DMG;
   // S941 — the Bow skill carries the damage (skills and perks A); the per-level floor is gone.
@@ -189,7 +189,7 @@ function fireArrow(strength,o){
   // v64.1 — Speed scales with draw strength (mirrors damage scaling). A weak
   // shot fires slower (more readable, more arc-feeling); a full draw snaps.
   const speedMult = ARROW_SPEED_MULT_MIN + (ARROW_SPEED_MULT_MAX - ARROW_SPEED_MULT_MIN) * strength;
-  const arrowSpd = ARROW_SPEED * speedMult;
+  const arrowSpd = (xb ? ARROW_SPEED : bowNow().speed) * speedMult; /* S1549 — a longbow's 33, a war bow's 36 */
   // S1028 — the aim's sway (bowSway, 10-player.js): the line the arrow leaves on is turned by the drift of a long full draw
   const _sw = xb ? {yaw:0,pitch:0} : bowSway(); /* S1457 — a crossbow does not sway */
   const _ay = (_tpShot ? Math.atan2(-_tpShot.dir.x, -_tpShot.dir.z) : yaw) + _sw.yaw;

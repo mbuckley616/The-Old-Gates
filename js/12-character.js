@@ -162,7 +162,7 @@ const PERK_DEF={
   speech:[['Haggle','5% better prices both ways'],['Talk it down','a guard’s fine halved, once in each town'],['Hearing','a person at favour −1 still talks'],['Word given','once a day a guard takes your word for a trespass']]};
 const PERK_LIVE=new Set(['alchemy:25','alchemy:50','alchemy:75','alchemy:100', /* S1499 — Alchemy's four (survival B, session 7's second part) */
   'woodcutting:25','woodcutting:50','woodcutting:100', /* S1534 — Felling's trunk */ /* S1517 — Fletcher at the bench; One more since S1511 (fellLogs reads the level) */
-  'joinery:25','joinery:50','joinery:100', /* S1519 — Field splice, Tight seams and Shipwright's hand, with the ship's patch and splice; Bowyer waits for its bows */
+  'joinery:25','joinery:50','joinery:75','joinery:100', /* S1519 — Field splice, Tight seams and Shipwright's hand, with the ship's patch and splice; S1549 — Bowyer, its two bows */
   'cooking:25','cooking:75','cooking:100', /* S1503 — Seasoned; S1500 — Two portions and Full belly; Shared pot waits on someone else at the fire */
   'smithing:25','smithing:50','smithing:75','smithing:100','mining:25','mining:50','mining:100', /* S1495 — the forge's and the vein's (survival B, session 7's first part) */
   'locks:25','locks:50','locks:75','speech:25','speech:50',
@@ -193,7 +193,7 @@ let _sprintNow=false;
 // S977 — Cat's fall (Acrobatics 50): a fall is free to 8 m, not FALL_FREE's 4 (10-player.js)
 function fallFree(){return perk('acrobatics',50)||(typeof _hasBuff==='function'&&_hasBuff('featherfall'))?8:FALL_FREE;} /* S1483 — a tincture's Featherfall, as Cat's fall */
 // S982 — the Bow's perks. Quick nock (Bow 50): the draw fills 30% faster, BOW_DRAW_MAX in 0.7 of the time (10-player.js)
-function bowDrawRate(){return perk('bow',50)?1/.7:1;}
+function bowDrawRate(){return (perk('bow',50)?1/.7:1)*BOW_DRAW_MAX/bowNow().draw;} /* S1549 — a longbow's or a war bow's draw is longer */
 // Long eye (Bow 75): an arrow that has flown 50 m on the level falls at half the gravity from there (tickArrowMotion)
 function arrowGravity(a){const ud=a.userData;return ARROW_GRAVITY*(ud.longEye&&Math.hypot(a.position.x-ud.x0,a.position.z-ud.z0)>50?.5:1);}
 // Through (Bow 100): a full-draw arrow goes on past the first foe it strikes, and can strike one more; true when this hit

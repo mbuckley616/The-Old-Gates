@@ -1131,7 +1131,8 @@ window.addEventListener('keydown',e=>{if(!forgeOpen)return;const c=e.code;let hi
 // The cabin's bench comes with the ship's patch and splice. At it a log makes 2 planks and a pine log 1 spar (Joinery 2 each).
 // A bow is 2 planks and an ingot for its fittings and takes the ingot's metal, gated by Joinery at the metal's SKILL_GATE; a
 // wooden shield (the Wooden Buckler) is 3 planks. Both take the forge's 30 minutes, are never enchanted, carry `made` and sell
-// back at a fifth (Joinery 15 each). The longbow and the war bow (Bowyer, Joinery 75) wait for those bows to exist. Fletching
+// back at a fifth (Joinery 15 each). S1549 — Bowyer (Joinery 75, Michael's A on #851): the longbow and the war bow, 3 planks and
+// an ingot each, made only here and only with the perk (any hand draws one); BOW_KINDS (10-player.js) holds how each plays. Fletching
 // is everyone's: a log, 10 feathers and an iron ingot make 10 Iron Arrows, 15 with Fletcher (Woodcutting 50; Woodcutting 2).
 // Feathers are 1 gold for ten at the goods shop, beside its arrows.
 // S1541 — an arrow of each metal (Michael's A on #829): any ingot fletches its own, the iron arrow's 3–6 scaled along the weapons'
@@ -1158,6 +1159,8 @@ const BENCH_RECIPES=[
   {id:'plank',name:'Planks',need:'1 Log',has:()=>bagCount(b=>b.log==='log')>=1},
   {id:'spar',name:'Spar',need:'1 Pine Log',has:()=>bagCount(b=>b.log==='pine')>=1},
   {id:'bow',name:'Bow',need:'2 planks and an ingot',has:()=>plankCount()>=2&&benchMetals().some(t=>ingotCount(t)>=1)},
+  {id:'longbow',name:'Longbow',need:'3 planks and an ingot',bowyer:true,has:()=>perk('joinery',75)&&plankCount()>=3&&benchMetals().some(t=>ingotCount(t)>=1)},
+  {id:'warbow',name:'War Bow',need:'3 planks and an ingot',bowyer:true,has:()=>perk('joinery',75)&&plankCount()>=3&&benchMetals().some(t=>ingotCount(t)>=1)},
   {id:'shield',name:'Wooden Buckler',need:'3 planks',has:()=>plankCount()>=3},
   {id:'arrows',name:'Arrows',need:'1 log, 10 feathers and an ingot',has:()=>bagCount(b=>!!b.log)>=1&&bagCount(b=>b.feather)>=FLETCH_FEATHERS&&benchMetals().some(t=>ingotCount(t)>=1)},
   {id:'patch',name:'Patch the hull',need:'a plank and a pitch',ship:true,has:()=>!shipWorkWhy('patch')}, /* S1519 — shown only at your ship */
@@ -1173,12 +1176,15 @@ function benchMake(id,tier){
   if(id==='plank'||id==='spar'){const pine=id==='spar';if(!bagCount(b=>b.log===(pine?'pine':'log')))return {made:false,why:`You need ${pine?'a pine log':'a log'}.`};
     bagTake(b=>b.log===(pine?'pine':'log'),1);const it=benchItem(id,pine?1:2);bagAdd(it);skillUse('joinery',2,'b'+(_benchN++));
     return {made:true,item:BAG.find(b=>sameStack(b,it))||it,n:it.qty};}
-  if(id==='bow'){const t=tier||benchMetals().find(m=>ingotCount(m)>=1)||3;if(!benchMetals().includes(t))return {made:false,why:''};
+  if(id==='bow'||R.bowyer){const t=tier||benchMetals().find(m=>ingotCount(m)>=1)||3;if(!benchMetals().includes(t))return {made:false,why:''};
+    const K=BOW_KINDS[id];if(R.bowyer&&!perk('joinery',75))return {made:false,why:`A ${K.name.toLowerCase()} asks Bowyer (Joinery 75).`};
     const gate=SKILL_GATE[t]||0;if(skillLv('joinery')<gate)return {made:false,why:`${MATERIALS[t-1].name} asks Joinery ${gate} (you have ${skillLv('joinery')}).`};
-    if(plankCount()<2)return {made:false,why:'You need 2 planks.'};
+    if(plankCount()<K.planks)return {made:false,why:`You need ${K.planks} planks.`};
     if(ingotCount(t)<1)return {made:false,why:`You need ${MATERIALS[t-1].name.toLowerCase()==='iron'?'an':'a'} ${MATERIALS[t-1].name.toLowerCase()} ingot.`};
-    const it=benchPiece(t,WEAPON_TYPES.find(T=>T.type==='Bow'),false);if(!canCarry(it))return {made:false,why:'Too heavy to carry!'};
-    bagTake(b=>b.plank,2);bagTake(b=>b.ingot===t,1);bagAdd(it);skillUse('joinery',BENCH_PIECE,'b'+(_benchN++));
+    const it=benchPiece(t,WEAPON_TYPES.find(T=>T.type==='Bow'),false);
+    if(R.bowyer){it.bowKind=id;it.name=`${MATERIALS[t-1].name} ${K.name}`;it.weight=K.weight;it.buyPrice=Math.round(it.buyPrice*K.mult/BOW_KINDS.bow.mult);} /* S1549 */
+    if(!canCarry(it))return {made:false,why:'Too heavy to carry!'};
+    bagTake(b=>b.plank,K.planks);bagTake(b=>b.ingot===t,1);bagAdd(it);skillUse('joinery',BENCH_PIECE,'b'+(_benchN++));
     if(typeof advanceClock==='function')advanceClock(FORGE_MIN);return {made:true,item:BAG[BAG.length-1],n:1};}
   if(id==='shield'){if(plankCount()<3)return {made:false,why:'You need 3 planks.'};
     const it=benchPiece(1,ARMOR_TYPES.find(T=>T.type==='Buckler'),true);if(!canCarry(it))return {made:false,why:'Too heavy to carry!'};
@@ -1269,11 +1275,13 @@ function benchDraw(){const ov=document.getElementById('benchui');if(!ov)return;
   const have=n=>` <i style="font-size:12px;color:#8a7050">(you have ${n})</i>`;let t=`<div style="font-variant:small-caps;color:#7a1f10">${R.name}</div>`;
   if(R.id==='plank')t+=pad('1 Log'+have(bagCount(b=>b.log==='log')))+note('two planks, for a grip, a bow, a shield or a ship’s patch');
   else if(R.id==='spar')t+=pad('1 Pine Log'+have(bagCount(b=>b.log==='pine')))+note('for a ship’s splice');
-  else if(R.id==='bow'){if(benchTier==null||!benchMetals().includes(benchTier))benchTier=benchMetals().find(m=>ingotCount(m)>=1)||3;
-    t=`<div style="font-variant:small-caps;color:#7a1f10">${MATERIALS[benchTier-1].name} Bow</div>`+pad('2 Planks'+have(plankCount()))+pad(`1 ingot and ${FORGE_MIN} minutes`)+
+  else if(R.id==='bow'||R.bowyer){if(benchTier==null||!benchMetals().includes(benchTier))benchTier=benchMetals().find(m=>ingotCount(m)>=1)||3;const K=BOW_KINDS[R.id];
+    t=`<div style="font-variant:small-caps;color:#7a1f10">${MATERIALS[benchTier-1].name} ${K.name}</div>`+pad(`${K.planks} Planks`+have(plankCount()))+pad(`1 ingot and ${FORGE_MIN} minutes`)+
       '<div style="padding-left:12px;display:flex;flex-wrap:wrap;gap:4px;margin:4px 0">'+benchMetals().map(m=>{const g=SKILL_GATE[m]||0,ok=ingotCount(m)>=1&&skillLv('joinery')>=g;
         return `<button type="button" data-m="${m}" style="background:${m===benchTier?'rgba(122,31,16,.12)':'none'};border:1px solid ${m===benchTier?'#7a1f10':'#a89060'};border-radius:3px;font:13px Georgia,serif;color:${ok?'#3a2c18':'#a09070'};cursor:pointer;padding:1px 6px">${MATERIALS[m-1].name} ${ingotCount(m)}${g?` · ${g}`:''}</button>`;}).join('')+'</div>'+
-      ((SKILL_GATE[benchTier]||0)>skillLv('joinery')?note(`asks Joinery ${SKILL_GATE[benchTier]}`):'')+note('made, never enchanted; sold back at a fifth');}
+      ((SKILL_GATE[benchTier]||0)>skillLv('joinery')?note(`asks Joinery ${SKILL_GATE[benchTier]}`):'')+
+      (R.bowyer?note(`full draw in ${K.draw.toFixed(2)} s, ×${K.mult.toFixed(2)}, ${K.speed} m/s; ${K.stam} stamina a second held${K.walk?', drawn at a walk':''}`)+(perk('joinery',75)?'':note('asks Bowyer (Joinery 75)')):'')+
+      note('made, never enchanted; sold back at a fifth');}
   else if(R.id==='shield')t+=pad('3 Planks'+have(plankCount()))+pad(`${FORGE_MIN} minutes`)+note('a Wooden Buckler; made, sold back at a fifth');
   else if(R.ship){const b=shipBars(),pl=R.id==='patch',why=shipWorkWhy(R.id); /* S1519 */
     t+=pad(pl?'1 Plank'+have(plankCount()):'1 Spar'+have(bagCount(x=>x.spar)))+pad('1 Pitch'+have(pitchCount()))+pad(pl?`hull +${patchAmt()}, ${patchSecs()} s of work`:`rig +${SPLICE_RIG}, ${patchSecs()} s of work`)+
@@ -1285,7 +1293,7 @@ function benchDraw(){const ov=document.getElementById('benchui');if(!ov)return;
   const Rt=ov.querySelector('#bn-right');Rt.innerHTML=t;
   Rt.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{benchTier=+b.dataset.m;benchSaid='';benchDraw();});
   ov.querySelector('#bn-said').textContent=benchSaid;}
-function benchGo(){const r=benchMake(benchSel,benchSel==='bow'||benchSel==='arrows'?benchTier:null);
+function benchGo(){const r=benchMake(benchSel,benchSel==='bow'||benchSel==='arrows'||BOW_KINDS[benchSel]?benchTier:null);
   if(r.work){closeBenchPage();return;} /* S1519 — the patch and the splice are worked with the page shut */
   benchSaid=r.made?(r.n>1?`${r.n} × ${r.item.name}.`:`${r.item.name}.`):r.why||'';
   if(r.made&&typeof uiTone==='function')uiTone(330,440,.08,.08,'triangle');
