@@ -294,7 +294,7 @@
   // and lashed inboard. One bake a hull, on SHIP_MAT (two-sided), cached on the bake; the climb and the crosshair's box (86) unchanged.
   function shipNetsGeo(at){const pos=[],nor=[],col=[];const H=1.3,N=10,h=2*H/N,BOT=-.6;
     const sec=z=>{const a=at(z),P=[];let s=0,q=null;for(let k=0;k<=60;k++){const th=Math.PI/2*(1-k/60),sx=Math.pow(Math.sin(th),.45),cy=Math.pow(Math.cos(th),.55),fl=1+.05*Math.max(0,(1-cy)-.6);
-      const ks=a.sect&&a.sect(1-k/60),x=ks?ks[0]+.05:a.b*sx*fl,y=ks?ks[1]:a.g-(a.g-a.k)*cy; /* S1531 — the kit's hull gives its own section, the net laid outside its laps */if(q)s+=Math.hypot(x-q[0],y-q[1]);P.push([x,y,s]);q=[x,y];if(y<BOT-.1)break;}return {P,a};};
+      const ks=a.sect&&a.sect(1-k/60),x=ks?ks[0]+.045:a.b*sx*fl,y=ks?ks[1]:a.g-(a.g-a.k)*cy; /* S1531 — the kit's hull gives its own section, the net laid outside its laps, 4.5 cm */if(q)s+=Math.hypot(x-q[0],y-q[1]);P.push([x,y,s]);q=[x,y];if(y<BOT-.1)break;}return {P,a};};
     const S=new Map(),secAt=z=>{const k=Math.round(z*100);let o=S.get(k);if(!o){o=sec(k/100);S.set(k,o);}return o;};
     const vBot=z=>{const {P}=secAt(z);for(let i=1;i<P.length;i++)if(P[i][1]<=BOT){const t=(P[i-1][1]-BOT)/(P[i-1][1]-P[i][1]);return P[i-1][2]+(P[i][2]-P[i-1][2])*t;}return P[P.length-1][2];};
     const VM=vBot(0),M=Math.max(4,Math.round(VM/h)),hv=VM/M;
