@@ -73,6 +73,7 @@ def build(name, title, note, srcfile, use_common, query=''):
     src = open(os.path.join(here, srcfile), encoding='utf-8').read()
     if use_common:
         s = scene(src)
+        if "from './herbs.js'" in s: s = kits(s, ['herbs'])
         if "from './halls.js'" in s: s = kits(s, ['pieces', 'ships', 'places', 'rooms', 'light', 'halls'])
         if "from './light.js'" in s: s = kits(s, ['pieces', 'ships', 'places', 'rooms', 'light'])
         if "from './air.js'" in s: s = kits(s, ['gatekit', 'pieces', 'shrines', 'corruption', 'air'])
@@ -182,4 +183,5 @@ build('weather-lane.html', 'Weather that matters', 'Weather that matters (L12, O
 build('air-islands.html', 'Each island’s air', 'Each island’s air (L12, OG-140; F3): one viewpoint an island at a summer mid-afternoon, its light, sky, haze, grade, land and trees as one row. The island and the air (A one air, B each its own, C its mark always on) are top left; ?island=gatelands|mark|aurenne, &air=one|own|marked, &cam=vista|scale|high. Drag to look.', 'air-view.js', True, '?island=mark')
 build('light-rooms.html', 'Light indoors', 'Light indoors (L12, OG-141; F2 and F3): one rule lights three rooms from what each records, its openings, fires and lamps, at four hours. ?room=cottage|longhouse|home, &hour=morning|noon|golden|night, &mode=even|sources|eye (A the eye wide open, B the sources alone, C the sources and the eye half open), &view=room|scale, &hand=1. Drag to look.', 'light-view.js', True, '?room=cottage&hour=night&mode=eye')
 build('light-halls.html', 'Lighting the halls', 'Lighting the halls (L12, OG-141; F2 and F3): the fixtures a hall carries by night, under the lights and the eye half open (C on #765). ?hall=guild|alehall|tavern|inn, &fix=own|torches|island (A the room’s own, B torches on every wall, C each island’s own: Gatelands candle sconces, the Mark’s torches, Aurenne’s lamp stands and wall lamps), &hour=night|golden|noon, &view=hall|scale|crowd. Drag to look.', 'halls-view.js', True, '?hall=guild&fix=island')
+build('herbs-field.html', 'Herbs by island', 'Every herb’s look, by island (L8, OG-039): the game’s herbs and OG-039’s new ones at their true size on their island’s ground. ?view=atlas|field|scale|close, &island=gatelands|mark|aurenne, &mode=true|glow|lifted (A the plant alone, B today’s light and halo on every herb, C the plant 1.15 larger, its colour lifted, the grass short about it and a glint within 6 m), &herb=<key>. Drag to look.', 'herbs-view.js', True, '?view=field&island=gatelands&mode=lifted')
 print('ok')
