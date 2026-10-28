@@ -780,7 +780,7 @@ const HC_KINDS={'Wolf':{plan:'wolf'},'Snow Wolf':{plan:'wolf',own:true},'Dire Wo
   'Golem':{plan:'golem',own:true,person:true,merge:true,ik:true,tall:true,glow:[.42,.69,1],glowR:.02},
   'Gargoyle':{plan:'gargoyle',own:true,person:true,merge:true,ik:true,glow:[1,.31,.13],glowR:.032,glowAt:{f:.8,up:.55,out:.5},garg:true},
   'Wraith':{plan:'wraith',own:true,person:true,legless:true,rest:HC_WRAITH_REST},'Phantom':{plan:'phantom',own:true,person:true,legless:true,rest:HC_WRAITH_REST},
-  'Shark':{plan:'reefshark',fish:true}};
+  'Shark':{plan:'reefshark',fish:true},'Whale':{plan:'stormwhale',fish:true},'Dolphin':{plan:'stormswift',fish:true}};
 // the driver's joints and the kit's bones they move, parents first (the kit's front legs hang on spine3, the hind on spine0)
 const HC_MAP=[['hips','spine0'],['spine','spine1'],['neck','neck0'],['head','head'],['jaw','jaw'],['tail1','tail0'],['tail2','tail1'],['tail3','tail2'],
   ['shL','leg0L_0'],['elL','leg0L_1'],['wrL','leg0L_2'],['pfL','leg0L_3'],['shR','leg0R_0'],['elR','leg0R_1'],['wrR','leg0R_2'],['pfR','leg0R_3'],
@@ -1013,7 +1013,22 @@ function hcBuildStep(){const J=HC_BODY.job,rig=J.rig,g=rig.root.parent;
 // old body's unit, 1.2), nose to nose; its genome keyed by the foe's id (`shark:<id>`), the co-op rule's place and index.
 function hcFishRig(e){const g=e.mesh,root=new THREE.Group();root.name='kitroot';g.add(root);
   const old=new THREE.Group();old.name='sharkold';g.add(old);for(const o of [e.limbs&&e.limbs.torso,g._sharkTail])if(o)old.add(o);
-  e._hcRig=true;return {name:'Shark',fish:true,e,root,mesh:old,hcKey:'shark:'+(e.id!=null?e.id:'0'),ph:(e.homeX||0)%1,t:0};}
+  e._hcRig=true;return {name:'Shark',fish:true,e,root,mesh:old,hcKey:'shark:'+(e.id!=null?e.id:'0'),ph:(e.homeX||0)%1,t:0,rate:[3.4,7],axis:.2*1.2,reach:1};}
+// Session 1536: the whales at sea (86-world-crime.js' spawnWhale, peaceful, one merged mesh 18 m long on its own axis, y 0) wear the
+// kit's Storm Whale by the same path. The old mesh is put in a group in its place (w.m), so tickWhales moves, pitches and removes the
+// group, and the old mesh in it is the far level. The fluke beats at a quarter stroke a second (1.6 rad), a whale's slow drive; its
+// levels and its build reach five times the shark's (60 m near, 200 m middle, built within 220 m), as the body is five times as long.
+// A whale has no id and decides nothing, so its genome is keyed by its spawn's count (`whale:<n>`).
+// Session 1537: the two dolphins that ride the bow wave (85-world-sea.js' tickDolphins, LIFE.dolphins: a 1.5 m lathe, its head at +z)
+// wear the kit's Stormswift the same way, at the old body's length; the fluke at 9 rad a second (1.4 strokes), the shark's levels.
+// tickDolphins hides them (the group) when the ship slows, and a hidden one is not posed; they are made once and kept, `dolphin:<k>`
+let HC_WHALE_N=0;
+function hcSeaRig(w,name,key,o){const old=w.m,g=new THREE.Group();g.name=name.toLowerCase();g.position.copy(old.position);g.rotation.copy(old.rotation);g.visible=old.visible;
+  if(old.parent){old.parent.add(g);old.parent.remove(old);}old.position.set(0,0,0);old.rotation.set(0,0,0);old.visible=true;g.add(old);w.m=g;
+  const root=new THREE.Group();root.name='kitroot';g.add(root);w._hcRig=true;
+  return {name,fish:true,e:{mesh:g},w,root,mesh:old,hcKey:key,ph:(w.ph||0)%1,t:0,...o};}
+function hcWhaleRig(w){return hcSeaRig(w,'Whale','whale:'+(HC_WHALE_N++),{rate:[1.6,1.6],axis:0,reach:5});}
+function hcDolphinRig(d,k){return hcSeaRig(d,'Dolphin','dolphin:'+k,{rate:[9,9],axis:0,reach:1});}
 function hcFishAttach(rig,C){const tA=performance.now();
   if(!C)try{C=HC.build(hcGenome(rig));}catch(e){rig.hcFail=true;console.warn('F4: the kit could not build',rig.name,e);return;}
   const g=rig.e.mesh,W=new THREE.Group();W.name='kit';C.gait='swim';HC.pose(C,0);C.root.updateMatrixWorld(true);
@@ -1022,7 +1037,7 @@ function hcFishAttach(rig,C){const tA=performance.now();
   const ob=new THREE.Box3(),inv=new THREE.Matrix4();g.updateMatrixWorld(true);inv.copy(g.matrixWorld).invert();
   rig.mesh.traverse(o=>{if(!o.isMesh)return;o.geometry.computeBoundingBox();ob.union(o.geometry.boundingBox.clone().applyMatrix4(_hcM.multiplyMatrices(inv,o.matrixWorld)));});
   const f=(ob.max.z-ob.min.z)/(kb.max.z-kb.min.z),ky=C.byName.spine0.getWorldPosition(new THREE.Vector3()).y;
-  W.scale.setScalar(f);W.position.set(0,.2*1.2-ky*f,ob.max.z-kb.max.z*f);W.add(C.root);rig.root.add(W);HB_ATTACH_N++;
+  W.scale.setScalar(f);W.position.set(0,rig.axis-ky*f,ob.max.z-kb.max.z*f);W.add(C.root);rig.root.add(W);HB_ATTACH_N++;
   const meshes=C.meshes,bind=meshes[0].bindMatrix.clone();
   {const inv2=new THREE.Matrix4(),off=new THREE.Matrix4(),sk=C.skel;
     sk.update=function(){inv2.copy(C.rig.matrixWorld).invert();const bs=this.bones;
@@ -1034,7 +1049,7 @@ function hcFishAttach(rig,C){const tA=performance.now();
   rig.hc={W,C,f,fur:[],small,mid:null,merge:false,bits:C.B.bits.map(b=>b.obj),hide:meshes,L:-1,em:0};
   HC_BODY.ms+=performance.now()-tA;HC_BODY.n++;}
 function hcFishPose(rig){const H=rig.hc,e=rig.e,now=performance.now()/1000,dt=rig.t?Math.min(.1,now-rig.t):0;rig.t=now;
-  if(e.dead)return;rig.ph+=dt*(e.alert?7:3.4)/(Math.PI*2);HC.pose(H.C,rig.ph);
+  if(e.dead)return;rig.ph+=dt*rig.rate[e.alert?1:0]/(Math.PI*2);HC.pose(H.C,rig.ph);
   // the wind-up's red and the parry's gold, lit on the old body's torso (enemyBodyMesh), on the kit's hide
   const m=e.limbs&&e.limbs.torso&&e.limbs.torso.material,em=m&&m.emissive?m.emissive.getHex():0;
   if(em!==H.em){H.em=em;for(const o of H.hide)for(const x of Array.isArray(o.material)?o.material:[o.material])if(x.emissive)x.emissive.setHex(em);}}
@@ -1043,16 +1058,18 @@ function hcTick(now){let best=null,bd=HC_BODY.build;
   const busy=now-HBODY.last<HBODY.gap||(typeof JOBS!=='undefined'&&JOBS.length&&!(typeof isInterior==='function'&&isInterior()));
   for(const rig of WOLF_RIGS){if(!rig.hc&&(rig.hcFail||!hcOk(rig)))continue;HC_RIGS.add(rig);}
   if(activeZoneId==='world')for(const e of ZONES.world.enemies)if(e.name==='Shark'&&!e.dead&&!e._hcRig&&e.mesh&&e.mesh._sharkTail)HC_RIGS.add(hcFishRig(e));
+  if(activeZoneId==='world'&&typeof WHALES!=='undefined')for(const w of WHALES)if(!w._hcRig&&w.m&&w.m.parent)HC_RIGS.add(hcWhaleRig(w));
+  if(activeZoneId==='world'&&typeof LIFE!=='undefined')LIFE.dolphins.forEach((d,k)=>{if(!d._hcRig&&d.m&&d.m.parent)HC_RIGS.add(hcDolphinRig(d,k));});
   for(const rig of HC_RIGS){const g=rig.root.parent;
     if(!g||!g.parent){hcDrop(rig);HC_RIGS.delete(rig);continue;}
     if(g.parent!==scene||!g.visible)continue;
-    const d=Math.hypot(CAM.position.x-g.position.x,CAM.position.z-g.position.z);
+    const d=Math.hypot(CAM.position.x-g.position.x,CAM.position.z-g.position.z)/(rig.reach||1); /* S1536 — a whale's levels by its size */
     if(!rig.hc){if(!busy&&!HC_BODY.job&&!rig.hcFail&&!(rig.fish&&rig.e.dead)&&d<bd){bd=d;best=rig;}continue;} /* S1529 — a shark killed before its body was built keeps the old one */
     const L=rig.hc.L,a=HC_BODY.near+(L>0?-1:1),b=HC_BODY.mid+(L>1?-1:1);hcLevel(rig,d<a?0:d<b?1:2);
     if(rig.hc.L<2)(rig.fish?hcFishPose:hcPose)(rig);}
   if(best&&HC.buildIter){try{HC_BODY.job={rig:best,it:HC.buildIter(hcGenome(best)),ms:0,steps:0};}catch(e){best.hcFail=true;console.warn('F4: the kit could not build',best.name,e);}best=null;}
   if(!best&&HC_BODY.job&&!busy)best=hcBuildStep();
-  if(best){const C=best.hcC;best.hcC=null;(best.fish?hcFishAttach:hcAttach)(best,C);HBODY.last=now;if(best.hc){const g=best.root.parent,d=Math.hypot(CAM.position.x-g.position.x,CAM.position.z-g.position.z);hcLevel(best,d<HC_BODY.near?0:d<HC_BODY.mid?1:2);if(best.hc.L<2)(best.fish?hcFishPose:hcPose)(best);}}}
+  if(best){const C=best.hcC;best.hcC=null;(best.fish?hcFishAttach:hcAttach)(best,C);HBODY.last=now;if(best.hc){const g=best.root.parent,d=Math.hypot(CAM.position.x-g.position.x,CAM.position.z-g.position.z)/(best.reach||1);hcLevel(best,d<HC_BODY.near?0:d<HC_BODY.mid?1:2);if(best.hc.L<2)(best.fish?hcFishPose:hcPose)(best);}}}
 // Session 1421: a foe's blow (attackPose, 42-zone-enemies.js) turns its driver's arm after hcTick has copied the frame's pose, so the kit's
 // body of a person-plan kind (the Goblin, the Skeleton, the trolls) never wound up: the copy again, as hbRepose does for the people's
 function hcRepose(rig){if(rig&&rig.hc&&rig.hc.L<2)hcPose(rig);}
