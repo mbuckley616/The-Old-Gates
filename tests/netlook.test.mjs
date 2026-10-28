@@ -18,7 +18,8 @@ const r = await page.evaluate(() => { const out = {};
       const yy = s.g - (s.g - s.k) * cy; if (best == null || Math.abs(yy - y) < best.d) best = { d: Math.abs(yy - y), x: s.b * sx * fl }; } return best.x; };
     let minOff = 9, maxOff = -9, inBox = true, minY = 9, maxY = -9, sides = { p: 0, s: 0 };
     for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i); minY = Math.min(minY, y); maxY = Math.max(maxY, y); if (x > 0) sides.s++; else sides.p++;
-      if (y > 0 && (Math.abs(z) > 1.35 || Math.abs(x) < hw - (b.kit ? .3 : .25) || Math.abs(x) > hw + .35)) inBox = false;
+      /* S1544: the kit's caravel's full bilge lies 0.34 m inside her beam just over the waterline; a swimmer's aim meets the box's outer face first */
+      if (y > 0 && (Math.abs(z) > 1.35 || Math.abs(x) < hw - (b.kit ? .36 : .25) || Math.abs(x) > hw + .35)) inBox = false;
       if (y < a.g - .2 && y > -.55 && i % 3 === 0) { const off = Math.abs(x) - hullX(y, z); minOff = Math.min(minOff, off); maxOff = Math.max(maxOff, off); } }
     out[k + '|' + look] = { trisSide: n.geometry.userData.perSide, minOff: +minOff.toFixed(3), maxOff: +maxOff.toFixed(3), inBox, minY: +minY.toFixed(2), maxY: +maxY.toFixed(2), rail: +a.g.toFixed(2), even: sides.p === sides.s, shared: m.getObjectByName('nets').geometry === WORLD.buildShipMesh(L, W, look, k).getObjectByName('nets').geometry }; }
   return out; });
