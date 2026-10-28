@@ -1377,7 +1377,8 @@ function _typeWord(it){return it.type==='equip'?(it.slot==='weapon'?'Weapon':it.
 function sellPrice(it){
   // S366 — ammo is priced by the bundle it is sold in (a dozen arrows for 2), so one piece is worth a twelfth of that:
   // under a coin, and nothing at the counter. Was the whole bundle's price a piece (a dozen bought for 2 sold for 12–60).
-  if(it.type==='ammo')return Math.floor((it.buyPrice||2)*(it.sellMult||.4)/(it.bundle||12));
+  // S1517 — anything sold in a bundle (the bench's feathers, ten for 1) sells the same way
+  if(it.type==='ammo'||it.bundle)return Math.floor((it.buyPrice||2)*(it.sellMult||.4)/(it.bundle||12));
   if(it.buyPrice)return Math.max(1,Math.floor(it.buyPrice*(it.sellMult||.4)));
   if(it.type==='cargo')return 0; // S390 — trade goods go to a harbour's factor, not a counter
   if(it.type==='gold')return it.value||5;

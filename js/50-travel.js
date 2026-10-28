@@ -1099,6 +1099,111 @@ function forgeGo(bySmith){const S=forgeSel;let r;
 window.addEventListener('keydown',e=>{if(!forgeOpen)return;const c=e.code;let hit=true;
   if(c==='Escape')closeForgePage();else if(c==='Enter'){if(!e.repeat)forgeGo(false);}else hit=false;
   if(hit){e.preventDefault();e.stopPropagation();}},true);
+// ── S1517 — Survival B, session 6: the bench (`docs/design/survival-build.md`) ──
+// A bench is a joiner's kit in the bag (25 gold, weight 4, never used up; at the smith's and the goods shop, beside the pick).
+// The cabin's bench comes with the ship's patch and splice. At it a log makes 2 planks and a pine log 1 spar (Joinery 2 each).
+// A bow is 2 planks and an ingot for its fittings and takes the ingot's metal, gated by Joinery at the metal's SKILL_GATE; a
+// wooden shield (the Wooden Buckler) is 3 planks. Both take the forge's 30 minutes, are never enchanted, carry `made` and sell
+// back at a fifth (Joinery 15 each). The longbow and the war bow (Bowyer, Joinery 75) wait for those bows to exist. Fletching
+// is everyone's: a log, 10 feathers and an iron ingot make 10 Iron Arrows, 15 with Fletcher (Woodcutting 50; Woodcutting 2).
+// Feathers are 1 gold for ten at the goods shop, beside its arrows. Arrows of the other metals wait on their damage.
+const JOINER_NAME="Joiner's Kit",BENCH_PIECE=15,FLETCH_N=10,FLETCH_FEATHERS=10;
+const JOINER_ITEM={name:JOINER_NAME,ico:'🧰',type:'misc',weight:4,buyPrice:25,sellMult:.4,tool:'joiner'};
+const BENCH_ITEMS={
+  plank:{name:'Plank',ico:'🪵',type:'misc',weight:2,buyPrice:3,sellMult:.3,plank:true},
+  spar:{name:'Spar',ico:'🪵',type:'misc',weight:3,buyPrice:7,sellMult:.3,spar:true},
+  feathers:{name:'Feathers',ico:'🪶',type:'misc',weight:.01,qty:FLETCH_FEATHERS,bundle:FLETCH_FEATHERS,buyPrice:1,sellMult:.4,feather:true}};
+function benchItem(k,qty){return {...BENCH_ITEMS[k],qty:qty||1};}
+function hasJoinerKit(){return BAG.some(b=>b&&b.tool==='joiner');}
+function benchHere(){return hasJoinerKit();}
+function joinerKitFor(h){return h&&(h.type==='weapon'||h.type==='misc')?[{...JOINER_ITEM}]:[];}
+function feathersFor(h){return h&&h.type==='misc'?[{...BENCH_ITEMS.feathers}]:[];}
+function plankCount(){return bagCount(b=>b.plank);}
+// the bow's metals: those an ingot is smelted of
+function benchMetals(){return INGOT_DEF.map(d=>d.tier);}
+const BENCH_RECIPES=[
+  {id:'plank',name:'Planks',need:'1 Log',has:()=>bagCount(b=>b.log==='log')>=1},
+  {id:'spar',name:'Spar',need:'1 Pine Log',has:()=>bagCount(b=>b.log==='pine')>=1},
+  {id:'bow',name:'Bow',need:'2 planks and an ingot',has:()=>plankCount()>=2&&benchMetals().some(t=>ingotCount(t)>=1)},
+  {id:'shield',name:'Wooden Shield',need:'3 planks',has:()=>plankCount()>=3},
+  {id:'arrows',name:'Arrows',need:'1 log, 10 feathers and an iron ingot',has:()=>bagCount(b=>!!b.log)>=1&&bagCount(b=>b.feather)>=FLETCH_FEATHERS&&ingotCount(3)>=1}];
+let _benchN=0;
+// a made bow or shield: never enchanted, `made`, a fifth back, the forge's half-hour
+function benchPiece(tier,T,arm){const it=makeItem(tier,T,null,arm);it.made=true;it.sellMult=MADE_SELL;return it;}
+// work one recipe at the bench (tier: the bow's metal). Returns {made, item, n, why}
+function benchMake(id,tier){
+  if(!benchHere())return {made:false,why:'You need a bench.'};
+  const R=BENCH_RECIPES.find(r=>r.id===id);if(!R)return {made:false,why:''};
+  if(id==='plank'||id==='spar'){const pine=id==='spar';if(!bagCount(b=>b.log===(pine?'pine':'log')))return {made:false,why:`You need ${pine?'a pine log':'a log'}.`};
+    bagTake(b=>b.log===(pine?'pine':'log'),1);const it=benchItem(id,pine?1:2);bagAdd(it);skillUse('joinery',2,'b'+(_benchN++));
+    return {made:true,item:BAG.find(b=>sameStack(b,it))||it,n:it.qty};}
+  if(id==='bow'){const t=tier||benchMetals().find(m=>ingotCount(m)>=1)||3;if(!benchMetals().includes(t))return {made:false,why:''};
+    const gate=SKILL_GATE[t]||0;if(skillLv('joinery')<gate)return {made:false,why:`${MATERIALS[t-1].name} asks Joinery ${gate} (you have ${skillLv('joinery')}).`};
+    if(plankCount()<2)return {made:false,why:'You need 2 planks.'};
+    if(ingotCount(t)<1)return {made:false,why:`You need ${MATERIALS[t-1].name.toLowerCase()==='iron'?'an':'a'} ${MATERIALS[t-1].name.toLowerCase()} ingot.`};
+    const it=benchPiece(t,WEAPON_TYPES.find(T=>T.type==='Bow'),false);if(!canCarry(it))return {made:false,why:'Too heavy to carry!'};
+    bagTake(b=>b.plank,2);bagTake(b=>b.ingot===t,1);bagAdd(it);skillUse('joinery',BENCH_PIECE,'b'+(_benchN++));
+    if(typeof advanceClock==='function')advanceClock(FORGE_MIN);return {made:true,item:BAG[BAG.length-1],n:1};}
+  if(id==='shield'){if(plankCount()<3)return {made:false,why:'You need 3 planks.'};
+    const it=benchPiece(1,ARMOR_TYPES.find(T=>T.type==='Buckler'),true);if(!canCarry(it))return {made:false,why:'Too heavy to carry!'};
+    bagTake(b=>b.plank,3);bagAdd(it);skillUse('joinery',BENCH_PIECE,'b'+(_benchN++));
+    if(typeof advanceClock==='function')advanceClock(FORGE_MIN);return {made:true,item:BAG[BAG.length-1],n:1};}
+  if(id==='arrows'){if(!R.has())return {made:false,why:`You need ${R.need}.`};
+    const plain=bagCount(b=>b.log==='log')>0;bagTake(b=>plain?b.log==='log':!!b.log,1);bagTake(b=>b.feather,FLETCH_FEATHERS);bagTake(b=>b.ingot===3,1);
+    const n=perk('woodcutting',50)?15:FLETCH_N;const it={...ARROW_IRON,qty:n};bagAdd(it);skillUse('woodcutting',2,'b'+(_benchN++));
+    return {made:true,item:BAG.find(b=>sameStack(b,it))||it,n};}
+  return {made:false,why:''};}
+// using the kit, a plank, a spar or feathers from the bag opens the bench's page
+function useBenchThing(i){if(benchHere())openBenchPage();else showMsg('Work it at a bench: a joiner’s kit is one.','#c8b890');}
+
+// ── the bench's page (the fire's layout): what can be made on the left, the recipe on the right ──
+let benchOpen=false,benchSel='plank',benchTier=null,benchSaid='';
+function openBenchPage(){
+  if(!benchHere()){showMsg('You need a bench.','#cc8844');return;}
+  if(typeof hubOpen!=='undefined'&&hubOpen&&typeof closeHub==='function')closeHub();
+  if(typeof _releasePointerLockForMenu==='function')_releasePointerLockForMenu();
+  let ov=document.getElementById('benchui');
+  if(!ov){ov=document.createElement('div');ov.id='benchui';
+    ov.style.cssText='position:fixed;inset:0;z-index:8500;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.35)';
+    ov.innerHTML='<div style="width:560px;max-width:calc(100vw - 32px);max-height:calc(100vh - 32px);overflow:auto;box-sizing:border-box;padding:18px 24px 16px;background:#e9dcc2;color:#3a2c18;border:6px double #8a7040;border-radius:6px;font-family:Georgia,serif;box-shadow:0 10px 40px #000a">'+
+      '<div style="display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid #a89060;padding-bottom:6px"><span style="font-size:22px;color:#7a1f10;letter-spacing:.06em;font-variant:small-caps">The Bench</span><span id="bn-skill" style="font-style:italic;font-size:13px;color:#8a7050"></span></div>'+
+      '<div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:10px"><div id="bn-list" style="flex:1 1 180px;min-width:0;font-size:14px;line-height:1.7"></div><div id="bn-right" style="flex:1.3 1 220px;min-width:0;font-size:14px;line-height:1.6"></div></div>'+
+      '<div id="bn-said" style="min-height:20px;margin-top:8px;font-style:italic;color:#7a1f10;font-size:14px"></div>'+
+      '<div style="display:flex;align-items:center;gap:12px;margin-top:8px;border-top:1px solid #a89060;padding-top:8px"><button type="button" id="bn-go" style="background:none;border:1px solid #7a1f10;border-radius:3px;font:18px Georgia,serif;color:#7a1f10;font-variant:small-caps;cursor:pointer;padding:2px 14px">Work</button>'+
+      '<span style="flex:1"></span><span style="font-size:12px;font-style:italic;color:#8a7050"><button type="button" id="bn-no" style="background:none;border:1px solid #a89060;border-radius:3px;font:13px Georgia,serif;color:#3a2c18;cursor:pointer;padding:2px 7px">Esc</button> as you were · Enter works</span></div></div>';
+    document.body.appendChild(ov);
+    ov.querySelector('#bn-go').onclick=()=>benchGo();ov.querySelector('#bn-no').onclick=()=>closeBenchPage();}
+  benchSaid='';if(!BENCH_RECIPES.some(r=>r.id===benchSel&&r.has())){const r=BENCH_RECIPES.find(r=>r.has());benchSel=r?r.id:BENCH_RECIPES[0].id;}
+  ov.style.display='flex';benchOpen=true;benchDraw();
+}
+function closeBenchPage(){const ov=document.getElementById('benchui');if(ov)ov.style.display='none';benchOpen=false;if(typeof refocusView==='function')refocusView();}
+function benchDraw(){const ov=document.getElementById('benchui');if(!ov)return;
+  ov.querySelector('#bn-skill').textContent=`Joinery ${skillLv('joinery')} · Woodcutting ${skillLv('woodcutting')}`;
+  ov.querySelector('#bn-list').innerHTML=BENCH_RECIPES.map(r=>{const on=r.id===benchSel,ok=r.has();
+    return `<div data-k="${r.id}" style="cursor:pointer;padding:0 6px;border-radius:2px;${on?'background:rgba(122,31,16,.12);color:#7a1f10':''}${!ok&&!on?';color:#a09070':''}">${on?'◆':'◇'} ${r.name}</div>`;}).join('');
+  ov.querySelectorAll('#bn-list [data-k]').forEach(d=>d.onclick=()=>{benchSel=d.dataset.k;benchSaid='';benchDraw();});
+  const R=BENCH_RECIPES.find(r=>r.id===benchSel),pad=s=>`<div style="padding-left:12px">${s}</div>`,note=s=>`<div style="padding-left:12px;color:#8a7050;font-style:italic">${s}</div>`;
+  const have=n=>` <i style="font-size:12px;color:#8a7050">(you have ${n})</i>`;let t=`<div style="font-variant:small-caps;color:#7a1f10">${R.name}</div>`;
+  if(R.id==='plank')t+=pad('1 Log'+have(bagCount(b=>b.log==='log')))+note('two planks, for a grip, a bow, a shield or a ship’s patch');
+  else if(R.id==='spar')t+=pad('1 Pine Log'+have(bagCount(b=>b.log==='pine')))+note('for a ship’s splice');
+  else if(R.id==='bow'){if(benchTier==null||!benchMetals().includes(benchTier))benchTier=benchMetals().find(m=>ingotCount(m)>=1)||3;
+    t=`<div style="font-variant:small-caps;color:#7a1f10">${MATERIALS[benchTier-1].name} Bow</div>`+pad('2 Planks'+have(plankCount()))+pad(`1 ingot and ${FORGE_MIN} minutes`)+
+      '<div style="padding-left:12px;display:flex;flex-wrap:wrap;gap:4px;margin:4px 0">'+benchMetals().map(m=>{const g=SKILL_GATE[m]||0,ok=ingotCount(m)>=1&&skillLv('joinery')>=g;
+        return `<button type="button" data-m="${m}" style="background:${m===benchTier?'rgba(122,31,16,.12)':'none'};border:1px solid ${m===benchTier?'#7a1f10':'#a89060'};border-radius:3px;font:13px Georgia,serif;color:${ok?'#3a2c18':'#a09070'};cursor:pointer;padding:1px 6px">${MATERIALS[m-1].name} ${ingotCount(m)}${g?` · ${g}`:''}</button>`;}).join('')+'</div>'+
+      ((SKILL_GATE[benchTier]||0)>skillLv('joinery')?note(`asks Joinery ${SKILL_GATE[benchTier]}`):'')+note('made, never enchanted; sold back at a fifth');}
+  else if(R.id==='shield')t+=pad('3 Planks'+have(plankCount()))+pad(`${FORGE_MIN} minutes`)+note('a Wooden Buckler; made, sold back at a fifth');
+  else if(R.id==='arrows')t+=pad('1 log'+have(bagCount(b=>!!b.log)))+pad(`${FLETCH_FEATHERS} Feathers`+have(bagCount(b=>b.feather)))+pad('1 Iron Ingot'+have(ingotCount(3)))+note(`${perk('woodcutting',50)?15:FLETCH_N} Iron Arrows`);
+  const Rt=ov.querySelector('#bn-right');Rt.innerHTML=t;
+  Rt.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{benchTier=+b.dataset.m;benchSaid='';benchDraw();});
+  ov.querySelector('#bn-said').textContent=benchSaid;}
+function benchGo(){const r=benchMake(benchSel,benchSel==='bow'?benchTier:null);
+  benchSaid=r.made?(r.n>1?`${r.n} × ${r.item.name}.`:`${r.item.name}.`):r.why||'';
+  if(r.made&&typeof uiTone==='function')uiTone(330,440,.08,.08,'triangle');
+  if(typeof renderHubInv==='function')renderHubInv();
+  if(!benchHere()){closeBenchPage();return;}benchDraw();}
+window.addEventListener('keydown',e=>{if(!benchOpen)return;const c=e.code;let hit=true;
+  if(c==='Escape')closeBenchPage();else if(c==='Enter'){if(!e.repeat)benchGo();}else hit=false;
+  if(hit){e.preventDefault();e.stopPropagation();}},true);
 // v61e5: Per-gate flavor copy for the commission lock. Keyed by targetZone.
 // The four canonical commission-gated edges (per v61d9) each get bespoke
 // prompt + toast text leaning into their region's flavor — Ironhaven gates
