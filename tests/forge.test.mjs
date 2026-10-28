@@ -4,6 +4,7 @@
 // enchanted, carries `made` and sells back at 20%. A temper is 3 ore of its metal, +8%, three to a piece; the smith does it
 // for 20 gold × tier.
 import { boot, check } from './lib/game.mjs';
+import { enterDungeon } from './lib/dungeonshot.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
 const r = await page.evaluate(() => {
@@ -101,5 +102,42 @@ check('Temper (75): four tempers', P.max74 === 3 && P.max75 === 4, P);
 check('Masterwork (100): the first iron piece is a Masterwork, +20%; the next is Fine', P.master.a === 'Masterwork Iron Dagger' && P.master.aAtk[1] === Math.round(P.master.base[1] * 1.2) && P.master.b === 'Fine Iron Dagger' && P.master.kept.join() === '3', P.master);
 check('the save keeps a Fine blade\'s step and the masterworks (the character\'s)', P.reload && P.reload.atk.join() === P.fine.atk.join() && P.reload.kept.join() === '3' && P.charKey, P.reload);
 check('the smith\'s shop has a Forge tab; it opens the forge\'s page', r.tab && r.page && r.closed, { tab: r.tab, page: r.page, closed: r.closed });
+// ── S1514: a fort armoury's smelter is a forge with no smith: no fee, no temper for gold, and only beside it ──
+let D = null;
+for (const [interior, seed] of [['fort_tee', 23], ['fort_linear', 31], ['fort_courtyard', 47], ['fort_tee', 59], ['fort_linear', 73], ['fort_courtyard', 91]]) {
+  await enterDungeon(page, { theme: 'ruins', seed, interior, size: 'medium' });
+  D = await page.evaluate(() => {
+    const arm = dScene.children.filter(o => o.userData && o.userData.fortFurn && o.userData.fortFurn.kind === 'armory').map(o => o.userData.fortFurn);
+    if (!arm.length) return null;
+    const out = { n: D_FORGES.length, rooms: arm.length, k: DCELL };
+    const f = D_FORGES[0], R = arm.find(R => f.x > R.x0 && f.x < R.x0 + R.w && f.z > R.z0 && f.z < R.z0 + R.h);
+    out.inRoom = !!R;
+    // the smelter's own footprint (1.1 square, padded by the dungeon props' 0.22) still stands on the record after the dungeon was scaled whole
+    out.onProp = DUNGEON_PROPS.some(q => !q.doorWall && Math.abs((q.x0 + q.x1) / 2 - f.x) < .05 && Math.abs((q.z0 + q.z1) / 2 - f.z) < .05 && Math.abs(q.x1 - q.x0 - 1.54) < .05);
+    // stand on free floor beside it, within touch
+    let spot = null; for (let a = 0; a < 16 && !spot; a++) { const x = f.x + Math.cos(a / 16 * 6.283) * 1.1, z = f.z + Math.sin(a / 16 * 6.283) * 1.1; if (!dBlk(x, z)) spot = [x, z]; }
+    out.spot = !!spot; if (!spot) return out;
+    px = spot[0]; pz = spot[1]; currentFloor = 1;
+    out.here = forgeHere(); out.near = !!dunForgeNear();
+    BAG.length = 0; gold = 50; SKILLS.smithing = { lv: 20, p: 0 };
+    bagAdd(oreItem('iron', 2)); const s1 = forgeSmelt(3); out.smelt = { made: s1.made, name: s1.item && s1.item.name, paid: 50 - gold };
+    bagAdd(ingotItem(3, 1)); const mk = forgeMake('Dagger', 3); out.make = { made: mk.made, paid: 50 - gold };
+    out.bySmith = forgeTemper(mk.item, true).why;
+    bagAdd(oreItem('iron', 3)); const t = forgeTemper(mk.item); out.temper = { done: t.done, paid: 50 - gold };
+    interact(); const ov = document.getElementById('forgeui'); out.page = forgeOpen && !!ov && ov.style.display === 'flex';
+    out.head = ov && ov.querySelector('#fg-skill').textContent; forgeSel = { k: 't', it: mk.item }; forgeDraw(); out.smithBtn = !!ov.querySelector('#fg-smith'); closeForgePage();
+    // ten metres off, nothing
+    const far = [[f.x - 6, f.z], [f.x, f.z + 6], [f.x + 6, f.z], [f.x, f.z - 6]].find(([x, z]) => !dBlk(x, z) && Math.hypot(x - f.x, z - f.z) > TOUCH);
+    if (far) { px = far[0]; pz = far[1]; out.farHere = forgeHere(); out.farWhy = forgeSmelt(3).why; }
+    return out;
+  });
+  if (D) break;
+}
+console.log(JSON.stringify(D));
+check('a fort with an armoury records its smelter, in the room, on its own footprint after the dungeon is scaled', D && D.n >= 1 && D.inRoom && D.onProp && D.k > 1, D);
+check('beside the smelter you stand at a forge', D && D.spot && D.here && D.near, D);
+check('there a smelt, a piece and your own temper cost no gold; no smith tempers for gold', D && D.smelt.made && D.smelt.name === 'Iron Ingot' && D.make.made && D.temper.done && D.temper.paid === 0 && /No smith/.test(D.bySmith), D);
+check('E there opens the forge\'s page, with no fee in its head and no smith\'s button', D && D.page && /Smithing 20/.test(D.head) && !/a use/.test(D.head) && !D.smithBtn, D && { head: D.head, smithBtn: D.smithBtn });
+check('away from the smelter there is no forge', D && D.farHere === false && /forge/.test(D.farWhy), D && D.farWhy);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

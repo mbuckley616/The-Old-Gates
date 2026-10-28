@@ -1548,6 +1548,7 @@ function loop(now){
     const iprEl=document.getElementById('ipr');
     if(nearEntrance){iprEl.textContent="Press 'E' to leave dungeon";iprEl.style.opacity='1';iprEl.style.display='block';}
     else if(nearCot){iprEl.textContent="Press 'E' to rest";iprEl.style.opacity='1';iprEl.style.display='block';}
+    else if(typeof dunForgeNear==='function'&&dunForgeNear()){iprEl.textContent="Press 'E' to work the forge";iprEl.style.opacity='1';iprEl.style.display='block';} /* S1514 */
     else if(nearStair){
       const stairLabel=DUNGEON_STAIRWELL?'':currentFloor===1&&dMap2?"Press 'E' to descend to Floor 2":"Press 'E' to ascend to Floor 1"; // v80 S8 — physical stairs need no prompt
       if(stairLabel){iprEl.textContent=stairLabel;iprEl.style.opacity='1';iprEl.style.display='block';}
