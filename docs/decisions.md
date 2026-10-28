@@ -3,36 +3,6 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
-### Which island's dress your own ship wears (from the look builder, 2026-10-28, #839)
-**The question.** Card F11 has started in the game (Session 1531, on `auto/look-1531`): on the new look your sloop is the kit's Gatelands sloop (clinker hull, green sheer strake, the square green sail with the harp, a tiller). Your A on the ship ladder dresses each class by its island, and the prototype has every class in all three dresses. The cutter is sold only at the Mark's yards and the caravel only at Aurenne's, so their dress is settled; the sloop, the cog and the galleon are sold everywhere. Which dress does yours wear?
-
-**Options.**
-- **A (recommended).** The yard's island: the dress of the island where she was bought or last refitted, kept on the ship. A sloop bought in the Mark is tar-black with a gilt wale, a gaff rig, tanned sails and the beast's head.
-- **B.** Your own people's: the dress of the island your character comes from, wherever she was bought.
-- **C.** The Gatelands' always, as built today.
-
-**Recommendation.** A: a ship then says where she was built, as a town's houses say where they stand, and a refit at a far yard gives a reason to change her look. It costs nothing new: each dress is already drawn. Until this is answered, every sloop of yours is the Gatelands'. Pictures: [in game](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-1531/docs/prototypes/shipnets-sloop.png), [the Mark's sloop](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/ships-marksloop-quarter.jpg), [Aurenne's sloop](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/ships-aursloop-quarter.jpg).
-
-### Arrows fletched from the other metals (from the systems builder, 2026-10-28, #829)
-**The question.** The fletching bench is built (Session 1517, survival B session 6, on `auto/systems-1517`). The survival sheet says a log, 10 feathers and an ingot make 10 arrows "of that metal", but the game has only one arrow, the Iron Arrow (+3 to 6 on the bow's roll), so today only an iron ingot fletches. What should a bronze, steel or mithril ingot make?
-
-**Options.**
-- **A (recommended).** Arrows of each metal, their damage on the weapons' own curve (`TIER_BASE_ATK`, iron's 3–6 scaled by the metal): Bronze 2–5, Steel 4–8, Mithril 5–10, Adamant 6–13, Obsidian 8–17. Fletched only, never sold, so a steel arrow costs a steel ingot. One short session.
-- **B.** Iron only, as built. Another metal's ingot is refused at the bench, and arrows stay one kind.
-- **C.** Steel only, at 4–8, as a single step up from iron for the smith-archer; the rest left as they are.
-
-**Recommendation.** A: it is the sheet's "of that metal", the numbers come from the table every weapon already uses, and a made arrow rewards a player who carries ingots on a long voyage. The ingot costs more than the arrows sell for, so it cannot print gold. The page: `docs/design/survival-build.md` on `auto/systems-1517` (Logs, joinery and fletching).
-
-### The strongbox by day — what brings the keeper to look (from the systems designer, 2026-10-28, #824)
-**The question.** Your B on #516 meant a strongbox emptied by day should carry a risk, but since the keeper's room moved behind the counter (Session 1258) the keeper faces the shop with the box behind a wall, so every back-room box is about 40 gold and an item taken unseen, some 500 gold every five days in Dunmore and Portclare. What should bring the keeper to look?
-
-**Options.**
-- **A.** Nothing: the back room is the thief's, as built. No sessions.
-- **B.** The keeper looks in twice an hour on a seeded schedule, eight seconds facing the box, the latch heard 1.5 s before. One session.
-- **C (recommended).** The keeper hears the work: a snapped pick is heard 6 m through one wall (halved by Quiet work, Locks 75), and brings the keeper in four seconds to look at the box. One session.
-
-**Recommendation.** C: it uses the lock you already play and makes Locks and its perks matter, where B rewards waiting out a timer; the night break-in stays the other choice. The page: `docs/design/strongbox-by-day.md`.
-
 ### The dungeon's cell by kind: old gates at 3 m, and forts and lairs at what? (systems builder, Session 1105) — DECISION #421
 **The question.** F2b's last session sets a dungeon's grid cell at true scale; it is one unit today, so corridors are 1 m wide for a 1.8 m body. Michael chose **C, 3 m** on #300 and added: "If by dungeon we mean Old Gates, they should be extremely massive and cavernous. A normal 'dungeon' like a mine, or a cave can be a more typical size." The game has three kinds of underground place: the **old gates** (the world's portals, themed by school: crypts, haunted halls, elemental and deep caverns, ruins), **fort interiors** (the `fort_` layouts), and **lairs and dens** (a beast's lair, the cloak's den). So the cell can differ by kind, and "a more typical size" is a number a player feels.
 
@@ -46,6 +16,42 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
 ## Answered
+### Which island's dress your own ship wears (from the look builder, 2026-10-28, #839)
+**The question.** Card F11 has started in the game (Session 1531, on `auto/look-1531`): on the new look your sloop is the kit's Gatelands sloop (clinker hull, green sheer strake, the square green sail with the harp, a tiller). Your A on the ship ladder dresses each class by its island, and the prototype has every class in all three dresses. The cutter is sold only at the Mark's yards and the caravel only at Aurenne's, so their dress is settled; the sloop, the cog and the galleon are sold everywhere. Which dress does yours wear?
+
+**Options.**
+- **A (recommended).** The yard's island: the dress of the island where she was bought or last refitted, kept on the ship. A sloop bought in the Mark is tar-black with a gilt wale, a gaff rig, tanned sails and the beast's head.
+- **B.** Your own people's: the dress of the island your character comes from, wherever she was bought.
+- **C.** The Gatelands' always, as built today.
+
+**Recommendation.** A: a ship then says where she was built, as a town's houses say where they stand, and a refit at a far yard gives a reason to change her look. It costs nothing new: each dress is already drawn. Until this is answered, every sloop of yours is the Gatelands'. Pictures: [in game](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-1531/docs/prototypes/shipnets-sloop.png), [the Mark's sloop](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/ships-marksloop-quarter.jpg), [Aurenne's sloop](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/ships-aursloop-quarter.jpg).
+
+Michael: **The yard's island, kept on the ship.** (2026-10-28)
+
+### Arrows fletched from the other metals (from the systems builder, 2026-10-28, #829)
+**The question.** The fletching bench is built (Session 1517, survival B session 6, on `auto/systems-1517`). The survival sheet says a log, 10 feathers and an ingot make 10 arrows "of that metal", but the game has only one arrow, the Iron Arrow (+3 to 6 on the bow's roll), so today only an iron ingot fletches. What should a bronze, steel or mithril ingot make?
+
+**Options.**
+- **A (recommended).** Arrows of each metal, their damage on the weapons' own curve (`TIER_BASE_ATK`, iron's 3–6 scaled by the metal): Bronze 2–5, Steel 4–8, Mithril 5–10, Adamant 6–13, Obsidian 8–17. Fletched only, never sold, so a steel arrow costs a steel ingot. One short session.
+- **B.** Iron only, as built. Another metal's ingot is refused at the bench, and arrows stay one kind.
+- **C.** Steel only, at 4–8, as a single step up from iron for the smith-archer; the rest left as they are.
+
+**Recommendation.** A: it is the sheet's "of that metal", the numbers come from the table every weapon already uses, and a made arrow rewards a player who carries ingots on a long voyage. The ingot costs more than the arrows sell for, so it cannot print gold. The page: `docs/design/survival-build.md` on `auto/systems-1517` (Logs, joinery and fletching).
+
+Michael: **An arrow of each metal, on the weapons' curve.** (2026-10-28)
+
+### The strongbox by day — what brings the keeper to look (from the systems designer, 2026-10-28, #824)
+**The question.** Your B on #516 meant a strongbox emptied by day should carry a risk, but since the keeper's room moved behind the counter (Session 1258) the keeper faces the shop with the box behind a wall, so every back-room box is about 40 gold and an item taken unseen, some 500 gold every five days in Dunmore and Portclare. What should bring the keeper to look?
+
+**Options.**
+- **A.** Nothing: the back room is the thief's, as built. No sessions.
+- **B.** The keeper looks in twice an hour on a seeded schedule, eight seconds facing the box, the latch heard 1.5 s before. One session.
+- **C (recommended).** The keeper hears the work: a snapped pick is heard 6 m through one wall (halved by Quiet work, Locks 75), and brings the keeper in four seconds to look at the box. One session.
+
+**Recommendation.** C: it uses the lock you already play and makes Locks and its perks matter, where B rewards waiting out a timer; the night break-in stays the other choice. The page: `docs/design/strongbox-by-day.md`.
+
+Michael: **The keeper hears a snapped pick.** (2026-10-28)
+
 ### Ore in the guilds' gather tasks — which guild asks for it (from the systems builder, 2026-10-27, #814)
 **The question.** Survival B's session 7 (`docs/design/survival-build.md`) owes "ore and logs in the guilds' gather tasks". Ore can be mined now (Session 1491); the only gathering task today is the Mages' Guild's *Gather* (3 + tier of one herb, 60–100 + 50 a tier gold), fed by `WORLD.guild.onHarvest`. The sheet does not say which guild asks for ore, how often, or which metal. Who sends you to a vein?
 
