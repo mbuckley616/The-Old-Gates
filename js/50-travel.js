@@ -1150,7 +1150,7 @@ const BENCH_RECIPES=[
   {id:'plank',name:'Planks',need:'1 Log',has:()=>bagCount(b=>b.log==='log')>=1},
   {id:'spar',name:'Spar',need:'1 Pine Log',has:()=>bagCount(b=>b.log==='pine')>=1},
   {id:'bow',name:'Bow',need:'2 planks and an ingot',has:()=>plankCount()>=2&&benchMetals().some(t=>ingotCount(t)>=1)},
-  {id:'shield',name:'Wooden Shield',need:'3 planks',has:()=>plankCount()>=3},
+  {id:'shield',name:'Wooden Buckler',need:'3 planks',has:()=>plankCount()>=3},
   {id:'arrows',name:'Arrows',need:'1 log, 10 feathers and an iron ingot',has:()=>bagCount(b=>!!b.log)>=1&&bagCount(b=>b.feather)>=FLETCH_FEATHERS&&ingotCount(3)>=1},
   {id:'patch',name:'Patch the hull',need:'a plank and a pitch',ship:true,has:()=>!shipWorkWhy('patch')}, /* S1519 — shown only at your ship */
   {id:'splice',name:'Splice the rig',need:'a spar and a pitch',ship:true,has:()=>!shipWorkWhy('splice')}];

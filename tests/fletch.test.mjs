@@ -27,7 +27,7 @@ const r = await page.evaluate(() => {
   bagAdd(ingotItem(2, 1)); bagAdd(benchItem('plank', 2)); out.bronze = benchMake('bow', 2).item.name;
   // ── a wooden shield ──
   out.shieldShort = benchMake('shield').why;
-  bagAdd(benchItem('plank', 3)); const sh = benchMake('shield'); out.shield = { made: sh.made, name: sh.item && sh.item.name, block: !!(sh.item && sh.item.shieldType === 'shield'), flag: sh.item && sh.item.made, planks: plankCount() };
+  bagAdd(benchItem('plank', 3)); const sh = benchMake('shield'); out.shield = { made: sh.made, name: sh.item && sh.item.name, block: !!(sh.item && sh.item.shieldType === 'shield'), flag: sh.item && sh.item.made, planks: plankCount(), row: BENCH_RECIPES.find(x => x.id === 'shield').name }; /* S1535 — the page's row names what it makes */
   // ── fletching ──
   BAG.length = 0; bagAdd({ ...JOINER_ITEM }); SKILLS.woodcutting = { lv: 49, p: 0 };
   bagAdd(survItem('log', 2)); bagAdd(ingotItem(3, 2)); bagAdd({ ...BENCH_ITEMS.feathers }); bagAdd({ ...BENCH_ITEMS.feathers });
@@ -60,7 +60,7 @@ check('an Iron bow asks Joinery 15 and keeps the planks and ingot when refused',
 check('an Iron Bow at 15: made, never enchanted, 2 planks and an ingot, 30 minutes, Joinery +15', r.bow.made && r.bow.name === 'Iron Bow' && r.bow.type === 'Bow' && r.bow.flag && !r.bow.ench && r.bow.planks === 0 && r.bow.ingots === 0 && r.bow.mins === 30 && r.bow.use === 15, r.bow);
 check('a made bow sells at a fifth, a found one at 45%, the same attack', r.bowSale.made < r.bowSale.found && r.bowSale.atkSame, r.bowSale);
 check('a bronze ingot makes a Bronze Bow', r.bronze === 'Bronze Bow', r.bronze);
-check('a wooden shield is 3 planks, a made Wooden Buckler', /3 planks/.test(r.shieldShort) && r.shield.made && r.shield.name === 'Wooden Buckler' && r.shield.block && r.shield.flag && r.shield.planks === 0, r.shield);
+check('a wooden shield is 3 planks, a made Wooden Buckler', /3 planks/.test(r.shieldShort) && r.shield.made && r.shield.name === 'Wooden Buckler' && r.shield.block && r.shield.flag && r.shield.planks === 0 && r.shield.row === r.shield.name, r.shield);
 check('fletching: a log, 10 feathers and an iron ingot make 10 Iron Arrows (Woodcutting +2)', r.fletch.made && r.fletch.n === 10 && r.fletch.arrows === 10 && r.fletch.name === 'Iron Arrow' && r.fletch.feathers === 10 && r.fletch.use === 2, r.fletch);
 check('Fletcher (Woodcutting 50): fifteen', r.fletcher.n === 15 && r.fletcher.arrows === 25 && /feathers/.test(r.noFeathers), r.fletcher);
 check('a feather sells for nothing (ten are bought for a gold)', r.featherSale === 0, r.featherSale);
