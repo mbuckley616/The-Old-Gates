@@ -1236,3 +1236,40 @@ At 23h the HUD says *Eoin is asleep · Press E to wake*, and at noon *No one is 
 **What worked.** The farm from the road is the best new building I have seen arrive in the game this week: one look and it says Gatelands farm. The farmer's hours read correctly on the HUD at both hours. The cottage under #765's C is the right night. Nothing threw on boot, on any page or in any room.
 
 **Backlog notes.** None of the section I items from 26 Oct's run are open but done. The townhouse's black back was answered in S1440 as no fault, and the lamps abed are struck by S1441. I saw nothing done but unmarked.
+
+## 2026-10-28 — Survival B from a new warrior's purse in Dunmore (the goods shop, four trees felled, a fire at 21h30, a pottage, the bench, an iron vein, Lorcan's Forge), and *A Fever* asked, taken and let lapse (build s995, read to Session 1520)
+
+This is a playtest turn. Survival B landed across S1486–S1520, so I played it as one evening's work, from the shop to the forge. I booted a new character (the harness's warrior, 0 gold), settled Dunmore and gave myself 150 gold, as if from a first dungeon. At Clodagh's Goods at 9h I bought, from the shop's own rows, a Pick (38), a Hatchet (29), a Joiner's Kit (24), a Tinderbox (5), two Root Vegetables (3 each) and Feathers ×10 (1). That left 47 gold. I walked to the nearest broadleaf 97 m out of town and felled it with E, then felled three more. At 21h30 I lit a fire from the tinderbox, cooked a pottage and charcoal, ate the pottage, and worked the bench by the fire. Next I went to the nearest vein, iron, 13 m off, and mined it out. Last, at Lorcan's Forge at 13h, I smelted the ore. Separately I spoke to Dunmore's 23 street folk week by week, took Aoife's fever errand and let it lapse.
+
+**What was wrong**
+- **Survival's goods do not stack.** Every fall and every strike adds a new row to the bag. Four trees gave `Log ×4, Log ×4, Log ×2, Log ×2`, and three strikes at the vein gave `Iron Ore ×1` three times. `isStackable` (`14-items.js`) knows potions, herbs, ammo, cargo, picks and coins, and none of S1486–S1519's misc goods: logs, pine logs, ore, ingots, planks, spars, charcoal, pitch, feathers, raw meat, fish and roots. An afternoon of felling and mining is dozens of rows. Filed in section I.
+- **"Feathers ×10" for 1 gold gives one feather.** `buyItem` honours a bundle's count only for a stackable type, so the template's `qty:10` is dropped. The bag held `Feathers ×1`. Fletching wants 10, so it costs ten purchases and ten rows, and the shop row says otherwise. `fletch` passes because it `bagAdd`s the bundle directly. Filed.
+- **A lit fire has no prompt, and E at it does nothing.** I stood 2.2 m from my fire (its reach is 2.5) at 21h30: no line on the HUD, and `interact` has no fire branch. The cook page opens only by *using* a tinderbox, a log or a food from the bag. Close the page once and nothing in the world tells you how to get back to it. A vein says *Press 'E' to mine iron ore* and a tree *Press 'E' to fell the tree*; the fire should say the same. Filed.
+- The fire itself (`-campfire-2130.jpg`) is S1486's stand-in, a solid orange cone. At 21h30 it lights nothing: the ground, your hands and the stump behind it are as dark as the wood round them. That is the look builder's, with the kit's fire, so it stays in this entry. When the fire arrives it wants a light.
+- The bench's row reads *Wooden Shield*, and what it makes is a *Wooden Buckler* (defence 1, sells for 1). One of the two names is wrong.
+- *A Fever* comes back fast. Aoife (Merchant, three children) offered the errand, I let it lapse, and she gave the cold *Yourself. Well.* for the week. On the eighth day after the date her greeting was *Mind the door, there's sickness in the house.* again, and the offer was the same *My youngest. A fever that won't break.* Nothing stops a giver's next week rolling the same fever right after a lapse. It is a one-in-five roll, so it is rare, but it reads as the same child twice. That is the quest writer's call, so it stays in this entry.
+
+**What worked**
+- The prompts at the tree and the vein are right and honest: *Press 'E' to fell the tree*, then *Felling · 3 of 6 · E to stop* (`-felling-hatchet.jpg`, the hatchet in hand, S1520). At the vein, *Press 'E' to mine iron ore*, then *Worked out*. Once the tree is down the prompt clears.
+- The tree fell at the 6th strike, as Woodcutting 15 should, with *The tree falls. 4 Logs.* Its stump stands where it was.
+- The fire's page is clear. It shows *Cooking 5 · the fire burns 60 min more*, the five recipes with the one you can make marked, and what Pottage gives (*Clear: +10% mana regeneration, 1.3 hours*). Eating it said the same, and `worldState.fed` matched: 0.64 × 120 min.
+- The bench page (`-bench-page.jpg`) reads like the fire's. 2 logs made 4 planks and 3 planks made the buckler in 30 game-minutes.
+- The vein gave 3 iron ore in 5.4 s at Mining 15. The forge page at Lorcan's charged 5 gold and smelted it. No page errors in any run.
+- `-after-fall-copper-vein.jpg` shows a copper vein in the grass beside the felled tree's spot. At 15 m it reads as an outcrop with a seam (S1491's question).
+- Silverleaf grows where the errand says. Aoife said *it grows out north, by the trees*, and I found six Silverleaf 92–108 m north and north-east of Dunmore. Three before Skyday is a fair ask.
+
+**The Needs eyes, from play**
+- S1486, the prices: 3 to 5 gold for food and logs is right next to a 10-gold meal. A log sells for about 1, so felling is for use, not money, which I think is the intent.
+- S1491, 3 ore in about 5 s: I measured 5.4 s. That is quick, but I would keep it. The limit is not the swing but the 7-day refill, and the walk between veins. The loaded ground round Dunmore held 288 veins, though, so the walk is short. If ore should feel earned, thin the veins rather than slow the pick.
+- S1494, 5 gold a use: I could judge it, and it is fine. One thing the sheet may not have meant: the warrior starts at Smithing 25, so he has *Smelter* from the first minute, and my 3 iron ore made **2** ingots. Every class's major skill starts at its first perk.
+- S1510, how often: over ten game-weeks, Dunmore's 23 street folk (10 with children) held 0, 1, 2, 0, 3, 1, 1, 0, 1, 1 errands, about one a week. That feels right for a town of this size.
+- S1511, 6 strikes in about 5 s: it felt like felling. The hatchet's chop lands on the count.
+- S1514, a free forge in a fort: not judged. I did not reach a fort's armoury this run.
+- S1517, a portable 25-gold bench: not too easy. What it makes from logs is worth little (a buckler at 5, sold for 1). What is worth more, a bow or arrows, needs an ingot, so the forge is still the gate.
+- S1520, the tool in hand: it reads in first person. I did not see third person.
+- The other asks in the room (the alehall at night, the tavern at 81, the knife at 0.36 m, the crossbow span, the shark's gills, the braid's locks) are not judged this run. They belong to the next new-look turn.
+
+**Backlog notes**
+None this run.
+
+No proposals.
