@@ -459,7 +459,7 @@ function landTrees(group,list,sp,tint,solR,sol){
   const m4=new THREE.Matrix4(),q=new THREE.Quaternion(),e=new THREE.Euler(),v=new THREE.Vector3(),s3=new THREE.Vector3(),c=new THREE.Color();
   list.forEach((t,i)=>{e.set(0,t.r,0);q.setFromEuler(e);v.set(t.x,t.h,t.z);s3.set(t.s*(t.g||1),t.s*(t.sy||1),t.s*(t.g||1));m4.compose(v,q,s3);im.setMatrixAt(i,m4);
     tint(t,c);if(sp==='snowpine')c.lerp(_lC.tmp.setRGB(1.25,1.28,1.32),.35);im.setColorAt(i,c);
-    if(solR)sol.push({cx:t.x,cz:t.z,rx:solR*t.s*(t.g||1),rz:solR*t.s*(t.g||1)});});
+    if(solR)sol.push({cx:t.x,cz:t.z,rx:solR*t.s*(t.g||1),rz:solR*t.s*(t.g||1),tid:t.id});}); /* tid: the tree it is, for felling (S1511) */
   im.instanceMatrix.needsUpdate=true;if(im.instanceColor)im.instanceColor.needsUpdate=true;
   im.customDepthMaterial=T.depth;im.castShadow=true;im.receiveShadow=false; /* a crown in its own shadow map went near black; its normals already shade it as one volume */ im.userData.scatter=sp;im.userData.landTree=true;im.frustumCulled=true;
   im.computeBoundingSphere();group.add(im);return true;

@@ -649,7 +649,7 @@ function dropFire(f){if(f.mesh&&f.mesh.parent)f.mesh.parent.remove(f.mesh);}
 function tickSurvival(dt){const t=gameMinNow();
   for(let i=CAMPFIRES.length-1;i>=0;i--){const f=CAMPFIRES[i];if(f.until<=t){dropFire(f);CAMPFIRES.splice(i,1);continue;}
     const fl=f.mesh&&f.mesh.userData.flame;if(fl){const k=.85+.15*Math.sin(performance.now()*.013+i);fl.scale.set(1,k,1);}}
-  tickMining(dt);
+  tickMining(dt);tickFelling(dt);
   if(fedKind()==='steady'&&!dead)PHP=Math.min(effMaxHP(),PHP+dt*.2);
   if(stamina>effMaxStamina())stamina=effMaxStamina();}
 // fed: one kind at a time, by the game clock
@@ -866,6 +866,91 @@ function useOreThing(i){const it=BAG[i];if(!it)return;
   if(it.ore||it.ingot){if(forgeHere())openForgePage();else showMsg(it.ore?'Smelt it at a forge.':'Work it at a forge.','#c8b890');}} /* S1494 — at a smith's, the forge's page */
 // the smith's and the goods shop's pick
 function minersPickFor(h){return h&&(h.type==='weapon'||h.type==='misc')?[{...PICK_ITEM}]:[];}
+// ── S1511 — Survival B, session 4: felling (deep work; `docs/design/survival-build.md`) ──
+// A tree is `<cx,cz>:<i>` by its cell of the chunk's scatter lattice (80-world-terrain.js), so its id holds whatever had loaded.
+// With a hatchet (30 gold, weight 3) in the bag, or a war axe in hand at half pace, E at a tree works it: a strike every 0.9 s
+// (1.8 with the axe), and it falls at the 6th strike, one fewer for each 20 Woodcutting. It gives 2 to 4 logs (+1 at 100), a pine
+// Pine Logs, rolled on seededRng('log', the tree and the day it last fell), so a reload fells it for the same logs. Every strike is
+// a Woodcutting use. A felled tree goes from its chunk's mesh and its solids, and a stump stands in its place (a plain stand-in until
+// the look builder's kit stump) for 10 game-days; then the tree is back. `worldState.felled` (the world's): id → the day felled,
+// changed only by `fellTree`. A chunk built while a tree is down takes it out as it builds (`spawnChunkStumps`).
+const FELL_STRIKES=6,FELL_DAYS=10,FELL_STRIKE=.9,HATCHET_NAME='Hatchet';
+const HATCHET_ITEM={name:HATCHET_NAME,ico:'🪓',type:'misc',weight:3,buyPrice:30,sellMult:.4,tool:'hatchet'};
+const FELL_NOT=['scrub'];
+function hasHatchet(){return BAG.some(b=>b&&b.tool==='hatchet');}
+function warAxeHeld(){const w=typeof EQ!=='undefined'&&EQ.weapon;return !!(w&&/axe/.test(w.weaponShape||''));}
+// the hatchet first; a war axe in hand at half pace; null: nothing to cut with
+function chopTool(){return hasHatchet()?'hatchet':warAxeHeld()?'axe':null;}
+function fellStrikes(){return Math.max(1,FELL_STRIKES-Math.floor(skillLv('woodcutting')/20));}
+function treeDown(id){const d=(worldState.felled||{})[id];return d!=null&&gameMinNow()/1440-d<FELL_DAYS;}
+function fellable(t){return t&&t.r>0&&!FELL_NOT.includes(t.sp)&&!(typeof MUSH_KINDS!=='undefined'&&MUSH_KINDS.includes(t.sp));}
+// the stump: one short trunk, its cut face pale, shared by every stump and scaled to the trunk's collider
+let _stumpGeo=null,_stumpMat=null;
+function stumpMesh(t){if(!_stumpGeo){_stumpGeo=new THREE.CylinderGeometry(.8,1,1,9);_stumpGeo.translate(0,.5,0);
+    _stumpMat=[new THREE.MeshLambertMaterial({color:0x5a4030}),new THREE.MeshLambertMaterial({color:0xc8a878}),new THREE.MeshLambertMaterial({color:0x5a4030})];}
+  const m=new THREE.Mesh(_stumpGeo,_stumpMat),rr=Math.max(.14,Math.min(.5,t.r*.55));m.scale.set(rr,.42,rr);
+  m.position.set(t.x,t.h-.06,t.z);m.name='stump';m.castShadow=true;m.receiveShadow=true;m.userData.tree=t.id;return m;}
+// take a standing tree out of its chunk: its instance (the last takes the gap), its collider; a stump in its place
+function treeTakeOut(ch,t){if(t.out)return;const m=new THREE.Matrix4(),c=new THREE.Color();t.out={sol:[]};
+  for(const o of ch.group.children){const T=o.isInstancedMesh&&o.userData.tids;if(!T)continue;const j=T.indexOf(t.id);if(j<0||j>=o.count)continue;
+    o.getMatrixAt(j,m);t.out.im=o;t.out.m=m.clone();if(o.instanceColor){o.getColorAt(j,c);t.out.c=c.clone();}
+    const last=o.count-1;if(j<last){o.getMatrixAt(last,m);o.setMatrixAt(j,m);if(o.instanceColor){o.getColorAt(last,c);o.setColorAt(j,c);}}
+    T[j]=T[last];T.length=last;o.count=last;o.instanceMatrix.needsUpdate=true;if(o.instanceColor)o.instanceColor.needsUpdate=true;break;}
+  for(let i=ch.sol.length-1;i>=0;i--)if(ch.sol[i].tid===t.id)t.out.sol.push(ch.sol.splice(i,1)[0]);
+  try{t.out.stump=stumpMesh(t);ch.group.add(t.out.stump);}catch(e){}
+  STUMPS.push({ch,t});}
+// and back: the instance at the mesh's end, the collider, the stump gone
+function treePutBack(ch,t){const o=t.out;if(!o)return;
+  if(o.im&&o.im.userData.tids&&o.im.count<o.im.instanceMatrix.count){const k=o.im.count;o.im.setMatrixAt(k,o.m);if(o.c&&o.im.instanceColor)o.im.setColorAt(k,o.c);
+    o.im.userData.tids[k]=t.id;o.im.count=k+1;o.im.instanceMatrix.needsUpdate=true;if(o.im.instanceColor)o.im.instanceColor.needsUpdate=true;}
+  ch.sol.push(...o.sol);if(o.stump&&o.stump.parent)o.stump.parent.remove(o.stump);t.out=null;}
+const STUMPS=[];
+// a chunk's trees that are down, taken out as it builds (called beside spawnChunkVeins)
+function spawnChunkStumps(ch){if(!ch.trees||!worldState.felled)return;for(const t of ch.trees)if(treeDown(t.id))treeTakeOut(ch,t);}
+// a stamp that arrives after the chunk (clearScatterUnder): its trees are gone for good, standing or felled
+function stumpsClearUnder(ch,hit){if(!ch.trees)return;const at=t=>hit.some(st=>Math.hypot(t.x-st.x,t.z-st.z)<st.r);
+  for(const t of ch.trees)if(t.out&&at(t)){if(t.out.stump&&t.out.stump.parent)t.out.stump.parent.remove(t.out.stump);}
+  ch.trees=ch.trees.filter(t=>!at(t));}
+function chunkLive(ch){return typeof chunks!=='undefined'&&chunks.get(chunkKey(ch.cx,ch.cz))===ch;}
+// the standing tree whose trunk you are at, nearest first: {ch,t}
+function treeNear(){if(activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior())||typeof chunks==='undefined')return null;
+  const cx=Math.floor(px/CHUNK),cz=Math.floor(pz/CHUNK);let best=null,bd=1e9;
+  for(let dz=-1;dz<=1;dz++)for(let dx=-1;dx<=1;dx++){const ch=chunks.get(chunkKey(cx+dx,cz+dz));if(!ch||!ch.trees)continue;
+    for(const t of ch.trees){if(t.out||!fellable(t))continue;const d=Math.hypot(px-t.x,pz-t.z)-t.r;if(d<TOUCH&&d<bd){bd=d;best={ch,t};}}}
+  return best;}
+// the named action: the tree is down from today (the world's), and out of its chunk
+function fellTree(ch,t){(worldState.felled||(worldState.felled={}))[t.id]=Math.floor(gameMinNow()/1440);treeTakeOut(ch,t);}
+// the logs a tree gives, on its stream: keyed by the tree and the day it last fell (none: 'n'), so the same fall gives the same logs
+function treeLogs(t){const prev=(worldState.felled||{})[t.id],r=seededRng('log',t.id+':'+(prev!=null?prev:'n'))();
+  return 2+Math.floor(r*3)+(skillLv('woodcutting')>=100?1:0);}
+// one strike at a tree. Returns {n strikes so far, need, logs on the fall} or {why}
+function strikeTree(ch,t,n){
+  if(!chopTool())return {why:'You need a hatchet.'};
+  if(t.out||treeDown(t.id))return {why:'It is down already.'};
+  const it=survItem(t.sp==='pine'?'pine':'log');if(!canCarry(it))return {why:'Too heavy to carry!'};
+  n++;const need=fellStrikes();
+  if(n<need){skillUse('woodcutting',1);return {n,need};}
+  const k=treeLogs(t);fellTree(ch,t);it.qty=k;bagAdd(it);skillUse('woodcutting',4);
+  return {n,need,logs:k,item:it};}
+// working a tree: E starts it, E again, walking off, or the fall stops it
+let CHOP=null;
+function chopTree(ch,t){if(CHOP&&CHOP.t===t){CHOP=null;showMsg('You stop.','#c8b890');return;}
+  const tool=chopTool();if(!tool){showMsg('You need a hatchet.','#cc8844');return;}
+  const step=FELL_STRIKE*(tool==='axe'?2:1);CHOP={ch,t,n:0,step,tm:step};showMsg(tool==='axe'?'You set to the tree with the axe. It is slow work.':'You set to the tree.','#c8b890');}
+function tickFelling(dt){
+  if(CHOP){const {ch,t}=CHOP;
+    if(!chunkLive(ch)||t.out||activeZoneId!=='world'||Math.hypot(px-t.x,pz-t.z)-t.r>TOUCH+.8||(typeof dead!=='undefined'&&dead))CHOP=null;
+    else{CHOP.tm-=dt;if(CHOP.tm<=0){CHOP.tm+=CHOP.step;
+      const r=strikeTree(ch,t,CHOP.n);if(typeof uiNoise==='function')uiNoise(.08,.1,900);
+      if(r.why){showMsg(r.why,'#cc8844');CHOP=null;}
+      else if(r.logs){showMsg(`The tree falls. ${r.logs} ${r.item.name}${r.logs>1?'s':''}.`,'#d8c8a0');CHOP=null;if(typeof renderHubInv==='function')renderHubInv();}
+      else CHOP.n=r.n;}}}
+  // the stumps of loaded chunks: back to a tree once its 10 days are up
+  for(let i=STUMPS.length-1;i>=0;i--){const s=STUMPS[i];if(!chunkLive(s.ch)||!s.t.out){STUMPS.splice(i,1);continue;}
+    if(!treeDown(s.t.id)){treePutBack(s.ch,s.t);STUMPS.splice(i,1);}}}
+function useHatchet(){const n=treeNear();if(n)chopTree(n.ch,n.t);else showMsg('Stand at a tree to fell it.','#c8b890');}
+// the smith's and the goods shop's hatchet, beside the pick
+function hatchetFor(h){return h&&(h.type==='weapon'||h.type==='misc')?[{...HATCHET_ITEM}]:[];}
 // ── S1494 — Survival B, session 5: the forge (`docs/design/survival-build.md`; Michael's A on #781) ──
 // A forge is a smith's room (5 gold a use). Smelting is 2 ore → 1 ingot: bronze from a copper and a tin, steel from 2 iron
 // ore and a charcoal; silver has no ingot. A piece takes its type's ingots (dagger 1, one-handed 2, two-handed 4, shield 3,
@@ -1779,6 +1864,7 @@ function interact(){
     const nearHerb=activeHerbs().find(h=>!h.harvested&&!h._tolled&&Math.hypot(px-h.x,pz-h.z)<TOUCH);
     if(nearHerb){harvestHerb(nearHerb);return;}
     {const v=veinNear();if(v){mineVein(v);return;}} /* S1491 — a vein, with a pick */
+    {const n=treeNear();if(n&&(chopTool()||(CHOP&&CHOP.t===n.t))){chopTree(n.ch,n.t);return;}} /* S1511 — a tree, with a hatchet */
     // v61ae: Bram's body needs special handling. The standard zone-corpse
     // check below requires items.length>0, which means an already-looted body
     // with empty items becomes NON-interactable. But Bram's body should always

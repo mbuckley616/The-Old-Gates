@@ -535,9 +535,12 @@
 
   // ── Deterministic per-chunk scatter ──────────────────────────────────
   function hash01(a,b,c){return _nrand(a*3+c*17,b*5-c*29,SEED*31+c*101);}
-  let _treePts=[];
+  let _treePts=[],_treeRecs=[];
+  // S1511 — a tree's id is `<cx,cz>:<i>`, i its cell of the chunk's lattice (iz*100+ix): stable whatever else had loaded, because a
+  // stamp or a road that skips one tree moves no other's. `ch.trees` holds each tree's id, place, species and trunk; each tree mesh
+  // names its instances' ids (`userData.tids`) and each trunk's collider its tree (`tid`), so felling (50-travel.js) can take one out.
   function scatterChunk(cx,cz,group,sol){
-    _treePts=[];
+    _treePts=[];_treeRecs=[];
     const ox=cx*CHUNK,oz=cz*CHUNK;
     const trees={},bushes=[],rocks=[],embers=[];
     // Candidate lattice at 4u; each cell rolls against local density.
@@ -565,7 +568,7 @@
         let sp=dom.r.trees;const base=sp;
         const mix=hash01(gx,gz,4);const MX=TREE_MIX[sp];if(MX){let acc=0;for(const [k,w] of MX){acc+=w;if(mix<acc){sp=k;break;}}}
         if(h>26&&sp!=='dead'&&sp!=='snowpine'&&sp!=='spruce')sp=(snowLineAt(x,z)<30?'snowpine':'conifer');
-        const sc_=hash01(gx,gz,5);const gi=.84+hash01(gx,gz,12)*.34;(trees[sp]=trees[sp]||[]).push({x,z,h,s:sc_<.06?1.7+sc_*3:.8+sc_*.7,r:hash01(gx,gz,6)*Math.PI*2,t:hash01(gx,gz,7),g:gi,sy:1+(1-gi)*.7,au:base==='autumn'}); // .8–1.5, rare giants; the girth (S192) a squat tree wider, a tall one slimmer
+        const sc_=hash01(gx,gz,5);const gi=.84+hash01(gx,gz,12)*.34;(trees[sp]=trees[sp]||[]).push({id:cx+','+cz+':'+(iz*100+ix),x,z,h,s:sc_<.06?1.7+sc_*3:.8+sc_*.7,r:hash01(gx,gz,6)*Math.PI*2,t:hash01(gx,gz,7),g:gi,sy:1+(1-gi)*.7,au:base==='autumn'}); // .8–1.5, rare giants; the girth (S192) a squat tree wider, a tall one slimmer
         _treePts.push(x,z);
         continue;
       }
@@ -593,7 +596,7 @@
         v.set(t.x,t.h+(t.sink||0),t.z);s3.set(t.s*(t.g||1),t.s*(t.sy||1),t.s*(t.g||1));
         m4.compose(v,q,s3);im.setMatrixAt(i,m4);
         tint(t,c);im.setColorAt(i,c);
-        if(solR)sol.push({cx:t.x,cz:t.z,rx:solR*t.s*(t.g||1),rz:solR*t.s*(t.g||1)});
+        if(solR)sol.push({cx:t.x,cz:t.z,rx:solR*t.s*(t.g||1),rz:solR*t.s*(t.g||1),tid:t.id});
       });
       im.instanceMatrix.needsUpdate=true;
       if(im.instanceColor)im.instanceColor.needsUpdate=true;
@@ -619,6 +622,8 @@
         c.r=.72+c.r*.5;c.g=.72+c.g*.5;c.b=.72+c.b*.5;
       },solR=sp==='scrub'?0:({oak:.85,oakAutumn:.85,birch:.35,birchAutumn:.35,spruce:.45,pine:.45}[sp]||.5);
       if(!landTrees(group,trees[sp],sp,tint,solR,sol))place(trees[sp],sp,tint,true,solR); // S1182 (F3): the new look draws the leafy kinds and conifers from leaf cards, at the same places
+      {const im=group.children[group.children.length-1];if(im&&im.isInstancedMesh)im.userData.tids=trees[sp].map(t=>t.id);
+        for(const t of trees[sp])_treeRecs.push({id:t.id,x:t.x,z:t.z,h:t.h,sp,r:solR*t.s*(t.g||1)});} /* S1511 — felling's records */
     }
     {const by={};rocks.forEach(r=>{r.sink=0;(by[r.proto]||(by[r.proto]=[])).push(r);});for(const k in by)place(by[k],k,(t,c)=>{c.setRGB(.9+t.ny*.1,.9+t.ny*.08,.9);},true,.55);} // S264 — one instanced mesh per kind of rock in the chunk
     place(bushes,'bush',(t,c)=>{c.setRGB(.92+(t.s-1)*.2,1,.9);},false,0);
@@ -638,13 +643,14 @@
   // collider and tree point, and refresh the ground so the stamp's flattening shows. Nothing is rebuilt or respawned.
   function clearScatterUnder(stamps){let n=0;const m=new THREE.Matrix4(),v=new THREE.Vector3(),c=new THREE.Color();
     for(const ch of chunks.values()){const x0=ch.cx*CHUNK,z0=ch.cz*CHUNK;const hit=stamps.filter(st=>st.x+st.r>x0&&st.x-st.r<x0+CHUNK&&st.z+st.r>z0&&st.z-st.r<z0+CHUNK);if(!hit.length)continue;
-      const gone=[];for(const o of ch.group.children){if(!o.isInstancedMesh||!o.userData.scatter)continue;let k=0;
+      const gone=[];for(const o of ch.group.children){if(!o.isInstancedMesh||!o.userData.scatter)continue;let k=0;const T=o.userData.tids;
         for(let i=0;i<o.count;){o.getMatrixAt(i,m);v.setFromMatrixPosition(m);if(!hit.some(st=>Math.hypot(v.x-st.x,v.z-st.z)<st.r)){i++;continue;}
-          gone.push(v.x,v.z);k++;const last=o.count-1;if(i<last){o.getMatrixAt(last,m);o.setMatrixAt(i,m);if(o.instanceColor){o.getColorAt(last,c);o.setColorAt(i,c);}}o.count=last;} // the last instance takes the gap
+          gone.push(v.x,v.z);k++;const last=o.count-1;if(i<last){o.getMatrixAt(last,m);o.setMatrixAt(i,m);if(o.instanceColor){o.getColorAt(last,c);o.setColorAt(i,c);}}if(T){T[i]=T[last];T.length=last;}o.count=last;} // the last instance takes the gap (and its tree's id, S1511)
         if(k){o.instanceMatrix.needsUpdate=true;if(o.instanceColor)o.instanceColor.needsUpdate=true;n+=k;}}
       if(gone.length){const at=(x,z)=>{for(let i=0;i<gone.length;i+=2)if(Math.abs(gone[i]-x)<.05&&Math.abs(gone[i+1]-z)<.05)return true;return false;}; // float32 positions against the colliders' own
         for(let i=ch.sol.length-1;i>=0;i--)if(at(ch.sol[i].cx,ch.sol[i].cz))ch.sol.splice(i,1);
         if(ch.treePts){const tp=[];for(let i=0;i<ch.treePts.length;i+=2)if(!hit.some(st=>Math.hypot(ch.treePts[i]-st.x,ch.treePts[i+1]-st.z)<st.r))tp.push(ch.treePts[i],ch.treePts[i+1]);ch.treePts=tp;}}
+      if(typeof stumpsClearUnder==='function')stumpsClearUnder(ch,hit); /* S1511 — no tree to fell, and no stump, in a stamp's core */
       refreshChunkTerrain(ch);}
     return n;}
   function refreshChunksNearWater(feats){let n=0;for(const ch of chunks.values()){const cx0=ch.cx*CHUNK,cz0=ch.cz*CHUNK;let hit=false;
@@ -680,10 +686,10 @@
     scatterChunk(cx,cz,group,sol);
     buildRoadRibbons(cx,cz,group);
     sc.add(group);
-    const ch={cx,cz,group,sol,terrain:geo,enemies:[],herbs:[],treePts:_treePts.slice()};
+    const ch={cx,cz,group,sol,terrain:geo,enemies:[],herbs:[],treePts:_treePts.slice(),trees:_treeRecs.slice()};
     chunks.set(key,ch);
     spawnChunkEncounters(ch);
-    spawnChunkHerbs(ch);spawnSeaHerbs(ch);spawnChunkVeins(ch);spawnWreck(ch);spawnFishSchool(ch);
+    spawnChunkHerbs(ch);spawnSeaHerbs(ch);spawnChunkVeins(ch);spawnChunkStumps(ch);spawnWreck(ch);spawnFishSchool(ch);
   }
   function dropChunk(key){
     const ch=chunks.get(key);if(!ch)return;
