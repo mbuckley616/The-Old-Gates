@@ -4,7 +4,7 @@
 // distance (the hide, fins and eyes near; without the eyes at 25 m; the old body far); a swim that moves the kit's bones, faster
 // hunting; the tell's glow on its hide; and killed, a corpse darkened with its shaders kept and its wave stilled.
 // Pictures: docs/prototypes/f4/f4-shark.jpg (from 13 m) and f4-shark-near.jpg.
-// Session 1536: the whales too (the kit's Storm Whale), below the shark's checks; f4-whale.jpg.
+// Session 1536: the whales too (the kit's Storm Whale), below the shark's checks; f4-whale.jpg. Session 1537: the bow-wave dolphins (the Stormswift); f4-dolphin.jpg.
 import { boot, check, ROOT } from './lib/game.mjs';
 import fs from 'fs'; import path from 'path';
 const OUT = path.join(ROOT, 'docs', 'prototypes', 'f4'); fs.mkdirSync(OUT, { recursive: true });
@@ -99,6 +99,31 @@ check(`a whale's fluke beats ${wsw.rate} strokes a second and turns the bones ($
   fs.writeFileSync(path.join(OUT, 'f4-whale.jpg'), Buffer.from(shot.split(',')[1], 'base64')); }
 await page.evaluate(() => { WORLD.scene.remove(_W.m); WHALES.splice(WHALES.indexOf(_W), 1); tickCreatures(1 / 60, 5e6); });
 check('a whale removed from the sea drops its kit body', await page.evaluate(() => !_RW.hc && ![...HC_RIGS].includes(_RW)));
+
+// Session 1537: a bow-wave dolphin (LIFE.dolphins, made here as tickDolphins makes one, since the suite does not sail) wears the kit's Stormswift
+const dol = await page.evaluate(() => { const sc = WORLD.scene, m = new THREE.Mesh(mergeParts([{ geo: new THREE.CylinderGeometry(.16, .06, 1.5, 6), color: new THREE.Color(0x6a7a8a), rx: Math.PI / 2, jitter: .05 }, { geo: new THREE.ConeGeometry(.12, .35, 3), color: new THREE.Color(0x5a6a7a), y: .18, z: .1, rx: -.6 }]), VC_MAT);
+  sc.add(m); const d = { m, ph: 0, side: 1 }; LIFE.dolphins.push(d); window._D = d; m.position.set(px + 8, worldH(px, pz) + 20, pz - 8); const old = m;
+  CAM.position.set(px, worldH(px, pz) + 1.65, pz); CAM.updateMatrixWorld(true);
+  const rig = () => [...HC_RIGS].find(r => r.w === d); let k = 0; HBODY.last = -1e9;
+  while (!(rig() && rig().hc) && k++ < 300) tickCreatures(1 / 60, 6e6 + k * (HBODY.gap + 1));
+  const R = rig(); window._RD = R; if (!R || !R.hc) return { k, rig: !!R, fail: R && R.hcFail };
+  const g = d.m; g.updateMatrixWorld(true); const inv = new THREE.Matrix4().copy(g.matrixWorld).invert(), box = (root, skin) => { const b = new THREE.Box3(), v = new THREE.Vector3();
+    root.traverse(o => { if (!o.isMesh) return; const p = o.geometry.attributes.position; for (let i = 0; i < p.count; i += 5) { v.fromBufferAttribute(p, i); if (skin && o.isSkinnedMesh) o.applyBoneTransform(i, v); else v.applyMatrix4(o.matrixWorld); v.applyMatrix4(inv); b.expandByPoint(v); } }); return b; };
+  HC.pose(R.hc.C, 0); R.hc.C.root.updateMatrixWorld(true); R.hc.C.skel.update(); const kb = box(R.hc.W, true), ob = box(R.mesh, false);
+  const a = Array.from(R.hc.C.skel.boneMatrices), p0 = R.ph; for (let i = 0; i < 8; i++) { R.t = performance.now() / 1000 - 1 / 30; tickCreatures(1 / 60, 7e6 + i * 17); R.hc.C.skel.update(); }
+  const b = Array.from(R.hc.C.skel.boneMatrices); let mv = 0; for (let i = 0; i < a.length; i++) mv = Math.max(mv, Math.abs(a[i] - b[i]));
+  return { wrapped: g !== old && old.parent === g && g.parent === sc, plan: R.hc.C.g.plan, bones: R.hc.C.bones.length, tris: R.hc.C.stats.tris, key: R.hcKey, kit: [kb.min.z, kb.max.z].map(v => +v.toFixed(2)), old: [ob.min.z, ob.max.z].map(v => +v.toFixed(2)), mv: +mv.toFixed(3), rate: +((R.ph - p0) * 30 / 8).toFixed(2), L: R.hc.L }; });
+console.log('  dolphin:', JSON.stringify(dol));
+check(`a bow-wave dolphin wears the kit's Stormswift (${dol.bones} bones, ${dol.tris} tris), ${dol.kit && (dol.kit[1] - dol.kit[0]).toFixed(2)} m against the old ${dol.old && (dol.old[1] - dol.old[0]).toFixed(2)}, nose to nose`,
+  dol.plan === 'stormswift' && dol.wrapped && /^dolphin:\d+$/.test(dol.key) && (dol.kit[1] - dol.kit[0]) / (dol.old[1] - dol.old[0]) > .85 && Math.abs(dol.kit[1] - dol.old[1]) < .05, dol);
+check(`its fluke beats ${dol.rate} strokes a second and turns the bones (${dol.mv})`, dol.mv > .01 && Math.abs(dol.rate - 9 / 6.283) < .06, dol);
+{ const shot = await page.evaluate(() => { const sc = WORLD.scene, m = _D.m; m.visible = true; /* the page's own loop runs tickDolphins between evaluates, which hides them while the ship is not sailing */ _RD.ph = .2; HC.pose(_RD.hc.C, .2); m.rotation.set(-.3, 0, 0); m.updateMatrixWorld(true);
+    const cv = REN.domElement, cam = new THREE.PerspectiveCamera(40, cv.width / cv.height, .05, 200); cam.position.set(m.position.x + 2.6, m.position.y + .5, m.position.z + .4); cam.lookAt(m.position.x, m.position.y, m.position.z);
+    sc.updateMatrixWorld(true); const f = sc.fog; sc.fog = null; REN.render(sc, cam); sc.fog = f; const o = document.createElement('canvas'); o.width = cv.width; o.height = cv.height; o.getContext('2d').drawImage(cv, 0, 0); return o.toDataURL('image/jpeg', .85); });
+  fs.writeFileSync(path.join(OUT, 'f4-dolphin.jpg'), Buffer.from(shot.split(',')[1], 'base64')); }
+const dh = await page.evaluate(() => { _D.m.visible = false; const p0 = _RD.ph; _RD.t = performance.now() / 1000 - .1; tickCreatures(1 / 60, 8e6); const still = _RD.ph === p0; _D.m.visible = true; _RD.t = performance.now() / 1000 - .1; tickCreatures(1 / 60, 8e6 + 17);
+  const on = _RD.ph !== p0; WORLD.scene.remove(_D.m); LIFE.dolphins.splice(LIFE.dolphins.indexOf(_D), 1); tickCreatures(1 / 60, 8e6 + 34); return { still, on, dropped: !_RD.hc && ![...HC_RIGS].includes(_RD) }; });
+check('hidden (the ship slowed) a dolphin is not posed, shown it swims again, and removed its body is dropped', dh.still && dh.on && dh.dropped, dh);
 
 await page.evaluate(() => { for (const e of [_S, _O]) { ZONES.world.enemies.splice(ZONES.world.enemies.indexOf(e), 1); WORLD.scene.remove(e.mesh); } tickCreatures(1 / 60, 9e5); REN.render(scene, CAM); });
 check('removed, the kit body is dropped', await page.evaluate(() => !_R.hc && ![...HC_RIGS].includes(_R)));
