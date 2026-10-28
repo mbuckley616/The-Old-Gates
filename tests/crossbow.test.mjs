@@ -45,7 +45,10 @@ const r = await page.evaluate(() => {
   XBOW.spanT = XBOW_SPAN_S; thirdPerson = true; drive(3); { const R = TP.rig, at = o => { const P = o.userData.xbowParts || {}, s = P.xbowStringL; if (!s) return null;
     const m = new THREE.Vector3(0, 1, 0).applyQuaternion(s.quaternion).multiplyScalar(s.scale.y).add(s.position); return { mid: +m.y.toFixed(3), bolt: !!(P.xbowBolt && P.xbowBolt.visible) }; };
     const h = R && R.hbHeld ? R.hbHeld.find(h => h.o === R.weapon) : null;
-    out.tp = { drv: R && R.weapon && R.weapon.userData.xbow ? at(R.weapon.userData.xbow) : null, copy: h ? at(h.c) : 'none' }; }
+    out.tp = { drv: R && R.weapon && R.weapon.userData.xbow ? at(R.weapon.userData.xbow) : null, copy: h ? at(h.c) : 'none' };
+    /* S1509 — carried at its own size: the kit's piece (drawn in metres) at world scale 1 in the builder's group, whatever the stature */
+    const ws = o => { o.updateMatrixWorld(true); return +new THREE.Vector3().setFromMatrixColumn(o.matrixWorld, 1).length().toFixed(3); };
+    out.trueSize = { copy: h && h.c.children[0] ? ws(h.c.children[0].children[0] || h.c.children[0]) : null, drv: ws(R.weapon.userData.xbow), root: +R.root.scale.x.toFixed(3) }; }
   // S1504 — the body spans it in third person: standing, a second in, the bow is off the hand and stands on its stirrup, both hands on
   // the string; walking it stays in the fist; once spanned it is back in the fist
   { const Wp = o => new THREE.Vector3().setFromMatrixPosition(o.matrixWorld);
@@ -75,6 +78,7 @@ check('in third person the carried crossbow is spanned too, the builder\'s copy 
 check(`in third person the body spans it: a second in, standing, the bow stands on its stirrup (${r.tpSpan.stir} m up) off the hand, both wrists by the string (${r.tpSpan.hands} m) (S1504)`,
   r.tpSpan.w > .95 && r.tpSpan.off && r.tpSpan.stir > -.02 && r.tpSpan.stir < .08 && r.tpSpan.hands.every(d => d < .2), r.tpSpan);
 check(`walking through the span it stays in the fist (${r.tpWalk.w}), and spanned it is back in the fist (${r.tpDone.w}) (S1504)`, r.tpWalk.w < .02 && r.tpWalk.fist && r.tpDone.w === 0 && r.tpDone.fist, { walk: r.tpWalk, done: r.tpDone });
+check(`in third person the crossbow is carried at its own size (world scale ${r.trueSize.copy}; the body's ${r.trueSize.root}), not grown with the body (S1509)`, r.trueSize.copy != null && Math.abs(r.trueSize.copy - 1) < .02 && Math.abs(r.trueSize.drv - 1) < .02 && r.trueSize.root > 1.1, r.trueSize);
 check('a bow takes no bolts, a crossbow no arrows', !r.bowBolts && r.bowArrows && !r.xbArrows, r);
 check('bolts are sold beside arrows, the same dozen at the same price', r.shop.stocked && r.shop.price, r.shop);
 check('no page errors', g.errs.length === 0, g.errs);
