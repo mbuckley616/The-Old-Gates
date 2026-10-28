@@ -707,6 +707,30 @@ P.frame = (B, o) => { const M = stdMat(B.tone(o.tone || 'stone'), { rough: .95, 
   let n = 0; for (const [bone, list] of Object.entries(gs)) { const m = new THREE.Mesh(mergeGeometries(list), M); m.name = 'frame'; B.bit(bone, m); n += list.length; }
   B.frame = { pieces: n, spurs: (o.spurs || []).length * 2 }; };
 // a step at a time (Session 1484): a yield every 800 vertices
+// gill slits as lines (Session 1527): painted into the hide, five slits a centimetre or two apart aliased into a chequer on a grid of
+// about the same pitch, so each slit is a thin ribbon laid on the grown skin instead. The skin is found by rays cast in from the side
+// at `Q.rows` heights along the slit's line (the same line the painted bands followed: `from`, `step`, leaning back by `tilt`), the
+// ribbon `Q.slit` wide along the body and lifted a hair off the skin; all of them one mesh in the `tone`, on the bone the gills lie over
+function gillSlits(geo, B, Q, pal) {
+  const H = B.headFrame, p = geo.attributes.position, idx = geo.index, nT = (idx ? idx.count : p.count) / 3, vi = i => idx ? idx.getX(i) : i;
+  const zs = []; for (let k = 0; k < Q.n; k++) zs.push(H.base.z + H.dir.z * (Q.from - k * Q.step * (1 - .06 * k)) * H.len);
+  const z0 = Math.min(...zs) - H.r, z1 = Math.max(...zs) + H.r, tris = [[], []], a = V(), b = V(), c = V();
+  for (let t = 0; t < nT; t++) { a.fromBufferAttribute(p, vi(t * 3)); b.fromBufferAttribute(p, vi(t * 3 + 1)); c.fromBufferAttribute(p, vi(t * 3 + 2));
+    if (Math.max(a.z, b.z, c.z) < z0 || Math.min(a.z, b.z, c.z) > z1) continue; const x = a.x + b.x + c.x; if (x > 0) tris[0].push([a.clone(), b.clone(), c.clone()]); else if (x < 0) tris[1].push([a.clone(), b.clone(), c.clone()]); }
+  const ray = new THREE.Ray(), hit = V(), pos = [], ix = [], rows = Q.rows || 6, lift = Q.lift ?? .0015;
+  for (const sd of [1, -1]) for (let k = 0; k < Q.n; k++) { const line = [];
+    for (let j = 0; j < rows; j++) { const up = lerp(Q.up[0] * .85, Q.up[1] * .85, j / (rows - 1)), al = Q.from - k * Q.step * (1 - .06 * k) - up * (Q.tilt || 0);
+      const at = H.base.clone().addScaledVector(H.dir, al * H.len).addScaledVector(H.up, up * H.r); ray.set(V(sd * H.r * 4, at.y, at.z), V(-sd, 0, 0));
+      let best = null, bd = 1e9; for (const [ta, tb, tc] of tris[sd > 0 ? 0 : 1]) if (ray.intersectTriangle(ta, tb, tc, false, hit)) { const d = hit.distanceTo(ray.origin); if (d < bd) { bd = d; best = { p: hit.clone(), n: V().subVectors(tb, ta).cross(V().subVectors(tc, ta)).normalize() }; } }
+      if (best) { if (best.n.x * sd < 0) best.n.negate(); line.push(best); } }
+    if (line.length < 2) continue;
+    const v0 = pos.length / 3, half = Q.slit / 2;
+    line.forEach(({ p: q, n }, j) => { const fade = j === 0 || j === line.length - 1 ? .35 : 1, o = q.clone().addScaledVector(n, lift);
+      pos.push(o.x, o.y, o.z - half * fade, o.x, o.y, o.z + half * fade); if (j) { const i = v0 + j * 2; ix.push(i - 2, i - 1, i, i - 1, i + 1, i); } }); }
+  if (!pos.length) return;
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(ix); g.computeVertexNormals();
+  const m = new THREE.Mesh(g, stdMat(pal[Q.tone] || pal.dark, { rough: .8 }).clone()); m.material.side = THREE.DoubleSide; /* a copy: stdMat's are shared */ m.name = 'gills'; m.userData.noShadow = true;
+  B.bit(B.spineNames[B.spineNames.length - 1], m); }
 function* dressFlesh(geo, B, pal, plan) {
   const pos = geo.attributes.position, nrm = geo.attributes.normal, n = pos.count;
   const si = new Uint16Array(n * 4), sw = new Float32Array(n * 4), col = new Float32Array(n * 3), fur = new Float32Array(n), glow = new Float32Array(n), alpha = plan.faceClear ? new Float32Array(n).fill(1) : null;
@@ -735,7 +759,7 @@ function* dressFlesh(geo, B, pal, plan) {
       if (along > (F.back ?? -.3) && upw > -.35) C.copy(pal[side > F.from && side < F.to ? F.stripe : F.ground]).multiplyScalar(.95 + .1 * PN.noise(x * 40, y * 40, z * 40)); }
     // gill slits (Session 1525, the shark's): `n` dark bands across the flank behind the head, `step` apart along the head's line
     // from `from` (in the head's lengths; behind its root is negative), each `w` wide, between two distances out and two heights, leaning back by `tilt` as it rises
-    if (plan.gills && B.headFrame) { const Q = plan.gills, H = B.headFrame, rel = V(x, y, z).sub(H.base), al = rel.dot(H.dir) / H.len, sd = Math.abs(rel.x) / H.r, up = rel.dot(H.up) / H.r;
+    if (plan.gills && !plan.gills.slit && B.headFrame) { const Q = plan.gills, H = B.headFrame, rel = V(x, y, z).sub(H.base), al = rel.dot(H.dir) / H.len, sd = Math.abs(rel.x) / H.r, up = rel.dot(H.up) / H.r;
       if (sd > Q.side[0] && sd < Q.side[1] && up > Q.up[0] && up < Q.up[1]) for (let k = 0; k < Q.n; k++) { const c = Q.from - k * Q.step * (1 - .06 * k), d = Math.abs(al - c + up * (Q.tilt || 0)) * H.len; if (d < Q.w) { C.lerp(pal[Q.tone], sstep(Q.w, Q.w * .35, d) * sstep(Q.side[0], Q.side[0] + .2, sd) * sstep(Q.up[1], Q.up[1] - .25, up) * sstep(Q.up[0], Q.up[0] + .25, up) * (Q.k ?? .9)); break; } } }
     const mott = 1 + (PN.noise(x * 4.1, y * 4.1, z * 4.1) * .16 + PN.noise(x * 17, y * 17, z * 17) * .06) * (plan.mottle ?? 1); C.multiplyScalar(mott);
     col[v * 3] = C.r; col[v * 3 + 1] = C.g; col[v * 3 + 2] = C.b; fur[v] = furry;
@@ -823,6 +847,7 @@ function* buildSteps(g) {
   pause(); yield; go();
   { const it = dressFlesh(geo, B, pal, plan); while (!it.next().done) { pause(); yield; go(); } }
   for (const f of B.after || []) f(geo); // what is laid on the grown skin (a harness, Session 944)
+  if (plan.gills?.slit && B.headFrame) gillSlits(geo, B, plan.gills, pal);
   // the skeleton
   const root = new THREE.Group(), bones = B.bones.map(b => { const o = new THREE.Bone(); o.name = b.name; o.position.copy(b.parent ? b.p.clone().sub(b.parent.p) : b.p); return o; });
   B.bones.forEach((b, i) => { if (b.parent) bones[b.parent.i].add(bones[i]); }); const rig = new THREE.Group(); rig.add(bones[0]); root.add(rig); rig.updateMatrixWorld(true);
@@ -1785,7 +1810,7 @@ Object.assign(PLANS, {
   reefshark: { name: 'Reef Shark', src: 'OG-016 (open ocean: a reef shark); the game’s shark, Michael’s A on Session 230', gaits: ['swim', 'stand'], scale: 2.6, bl: .9, waveAmp: .16,
     water: 1.2, rough: .4, mottle: .25, wag: 0, pant: 0,
     palette: { coat: [.4, .45, .49], saddle: [.3, .35, .39], belly: [.88, .88, .86], dark: [.03, .03, .035], fin: [.33, .38, .42], gill: [.17, .2, .23] },
-    gills: { n: 5, from: -.04, step: .085, w: .008, side: [.5, 1.15], up: [-.45, .5], tilt: .12, k: .6, tone: 'gill' },
+    gills: { n: 5, from: -.04, step: .085, w: .008, side: [.5, 1.15], up: [-.45, .5], tilt: .12, k: .6, tone: 'gill', slit: .0035 },
     parts: [
       ['spine', { hip: [.8, -.13], chest: [.8, .17], n: 4, r: [.07, .1, .09], s: [.86, 1], rump: .03, front: .04 }],
       ['head', { len: .21, r: .076, pitch: 0, s: [.88, .78, 1], muzzle: { len: .95, r: .068, s: [.95, .62, 1], taper: .42, drop: -.02 }, jaw: { len: .55, r: .03, drop: .35 },
