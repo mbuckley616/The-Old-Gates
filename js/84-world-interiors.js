@@ -50,6 +50,7 @@
   function tickInterior(dt,now){
     try{tickSent(dt,true);}catch(e){} // S239 — a guard sent after you
     tickIntDoors(); // v80 S143
+    if(interiorScene&&interiorScene.userData.hallTick)interiorScene.userData.hallTick(performance.now()); /* S1521 — a hall's torches, sconces and lamps */
     try{tickSleeper();}catch(e){} /* S739 — a householder sleeps 23h to 5h */
     for(const r of FURN_LIVE)if(r.userData.fire&&r.parent===interiorScene)furnKit().flicker(r.userData.fire,performance.now()*.001);
     for(const r of FURN_LIVE){const hf=r.userData.hearthFire;if(!hf||r.parent!==interiorScene)continue; /* S676 — the cold hearth catches once its task is done */

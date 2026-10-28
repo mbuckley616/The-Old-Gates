@@ -2780,7 +2780,133 @@ function shrineRow(o = {}) {
   return { group, tris: Math.round(tris), draws: group.children.length, niches, len: X(6) - X(0) + W, foot: { x0: X(0) - .6, x1: X(6) + .6, z0: -.58, z1: .14 }, rail, island: isl,
     ...(AU ? { piers: [[X(0) - 1.3, X(0) - .6], [X(6) + .6, X(6) + 1.3]].map(([a, b]) => ({ x0: a, x1: b, z0: -.7, z1: -.55 })), tithe: { x: .98, z: 1.6 }, reach: { z0: -.9, z1: 2.17 } } : {}) };
 }
-  return { stream, hashKey, mergeByMaterial, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
+// ── the halls' fixtures (Session 1521; Michael's C on #805, 28 Oct 2026: each island its own), copied from the concept artist's
+// docs/prototypes/levelup/halls.js (27 Oct): the Mark's pitch torch in an iron bracket, the Gatelands' sconce of two candles, Aurenne's
+// lamp stand and wall lamp, and a candle on a table. A bracket's ring is at 1.95 m, a torch's flame 2.25, a sconce's candles 1.75, a
+// stand's lamp 1.45: over a 1.9 m man's head, under a 2.4 m ceiling.
+//   PKIT.halls.fixtures(list) -> { group, flames (the torches'), small, lights: [{ p, k, r, col, type }], tris, draws, tick(ms) }; list is [{ type, x, y, z,
+//   nx, nz }] in the caller's frame: y the floor (or a table's top for 'tablecandle'), (nx, nz) the wall's way into the room (a stand
+//   or a candle stands free). A light's k is the prototype's ×0.275, on the scale of the game's room lamps (the alehall's iron lamp,
+//   1.1 here, is 4 there). The flames flicker by tick; the rest is one mesh a material.
+let HM = null, HPUFF = null;
+function hallPuff() { if (HPUFF) return HPUFF; const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d'), g = x.createRadialGradient(32, 32, 0, 32, 32, 32);
+  g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(.4, 'rgba(255,255,255,.45)'); g.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = g; x.fillRect(0, 0, 64, 64); return (HPUFF = new THREE.CanvasTexture(c)); }
+function hallMats() {
+  if (HM) return HM;
+  HM = { iron: new THREE.MeshStandardMaterial({ color: 0x1c1a18, roughness: .55, metalness: .6 }), brand: new THREE.MeshStandardMaterial({ color: 0x5a3e26, roughness: .8 }),
+    pitch: new THREE.MeshStandardMaterial({ color: 0x120c08, emissive: new THREE.Color(.6, .18, .04), emissiveIntensity: .6, roughness: 1 }),
+    wax: new THREE.MeshStandardMaterial({ color: 0xeee2c4, roughness: .45, emissive: new THREE.Color(.5, .3, .12), emissiveIntensity: .25 }),
+    bronze: new THREE.MeshStandardMaterial({ color: 0x9a6a32, roughness: .35, metalness: .85 }), clay: new THREE.MeshStandardMaterial({ color: 0xb0643a, roughness: .7 }),
+    soot: new THREE.MeshBasicMaterial({ map: hallPuff(), color: 0x000000, transparent: true, opacity: .55, depthWrite: false }),
+    flame: new THREE.MeshBasicMaterial({ color: new THREE.Color(2.6, 1.35, .45), transparent: true, opacity: .9, depthWrite: false, blending: THREE.AdditiveBlending }),
+    core: new THREE.MeshBasicMaterial({ color: new THREE.Color(3, 2.3, 1.2), transparent: true, opacity: .95, depthWrite: false, blending: THREE.AdditiveBlending }) };
+  HM.soot.polygonOffset = true; HM.soot.polygonOffsetFactor = -2; return HM;
+}
+function hallFlameGeo(r, h) { const pts = []; for (let i = 0; i <= 8; i++) { const t = i / 8; pts.push(new THREE.Vector2(r * Math.sin(Math.PI * Math.pow(t, .7)) * (1 - t * .35), t * h)); } return new THREE.LatheGeometry(pts, 8); }
+function hallParts(type) {
+  const cyl = (r0, r1, h, n = 8) => new THREE.CylinderGeometry(r1, r0, h, n);
+  const at = (g, x, y, z, rx = 0, ry = 0, rz = 0) => g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz)), new THREE.Vector3(1, 1, 1)));
+  const P = [], F = [];
+  if (type === 'torch') {
+    // an iron plate on the wall, an arm out 0.15 m to a ring, the brand through the ring leaning 20 degrees out, its head wound in pitch
+    P.push([at(new THREE.BoxGeometry(.07, .24, .015), 0, 1.95, .008), 'iron'], [at(new THREE.BoxGeometry(.018, .018, .15), 0, 1.92, .08), 'iron'], [at(new THREE.TorusGeometry(.03, .006, 4, 10), 0, 1.92, .155, Math.PI / 2), 'iron']);
+    const lean = .35, d = new THREE.Vector3(0, Math.cos(lean), Math.sin(lean)), ring = new THREE.Vector3(0, 1.92, .155), foot = ring.clone().addScaledVector(d, -.3), tip = ring.clone().addScaledVector(d, .26);
+    const mid = foot.clone().lerp(tip, .5); P.push([at(cyl(.016, .022, .56), mid.x, mid.y, mid.z, lean), 'brand']);
+    const head = tip.clone().addScaledVector(d, -.05); P.push([at(cyl(.032, .028, .12, 8), head.x, head.y, head.z, lean), 'pitch']);
+    F.push({ g: hallFlameGeo(.06, .34), p: tip.clone().addScaledVector(d, .005), core: .45 });
+    P.push([at(new THREE.PlaneGeometry(.55, 1.0), 0, 2.55, .004), 'soot']);
+    return { P, F, light: { at: [0, tip.y + .14, tip.z + .1], k: 5, r: 8, col: [1, .55, .24] } };
+  }
+  if (type === 'sconce') {
+    // an iron back-plate with a scrolled top, an arm to a drip pan, two candles of 0.14 m
+    P.push([at(new THREE.BoxGeometry(.11, .3, .012), 0, 1.6, .007), 'iron'], [at(new THREE.TorusGeometry(.04, .006, 4, 10, Math.PI), 0, 1.76, .01), 'iron'],
+      [at(new THREE.BoxGeometry(.014, .014, .12), 0, 1.56, .07), 'iron'], [at(cyl(.06, .065, .012, 12), 0, 1.6, .12), 'iron']);
+    for (const x of [-.035, .035]) { P.push([at(cyl(.011, .011, .14, 8), x, 1.676, .12), 'wax']); F.push({ g: hallFlameGeo(.008, .04), p: new THREE.Vector3(x, 1.752, .12), core: .5 }); }
+    P.push([at(new THREE.PlaneGeometry(.22, .4), 0, 1.95, .004), 'soot']);
+    return { P, F, light: { at: [0, 1.82, .2], k: 1.8, r: 5.5, col: [1, .68, .38] } };
+  }
+  if (type === 'stand') {
+    // a bronze tripod, a shaft of 1.3 m, a disc, and on it a clay oil lamp, its flame at the nozzle
+    for (let k = 0; k < 3; k++) { const a = k / 3 * Math.PI * 2 + .5, foot = new THREE.Vector3(Math.cos(a) * .17, 0, Math.sin(a) * .17), top = new THREE.Vector3(0, .22, 0), d = top.clone().sub(foot), g = cyl(.012, .008, d.length(), 5);
+      g.applyMatrix4(new THREE.Matrix4().compose(foot.clone().lerp(top, .5), new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize()), new THREE.Vector3(1, 1, 1))); P.push([g, 'bronze']); }
+    P.push([at(cyl(.014, .011, 1.3, 8), 0, .82, 0), 'bronze'], [at(new THREE.SphereGeometry(.03, 8, 6), 0, .2, 0), 'bronze'], [at(cyl(.1, .09, .014, 16), 0, 1.47, 0), 'bronze']);
+    P.push([at(new THREE.SphereGeometry(1, 12, 6).scale(.07, .028, .045), 0, 1.5, 0), 'clay'], [at(cyl(.012, .012, .07, 6), .07, 1.51, 0, 0, 0, Math.PI / 2), 'clay']);
+    F.push({ g: hallFlameGeo(.012, .06), p: new THREE.Vector3(.105, 1.515, 0), core: .5 });
+    return { P, F, light: { at: [.1, 1.62, 0], k: 2.6, r: 6.5, col: [1, .74, .44] } };
+  }
+  if (type === 'walllamp') {
+    // a bronze shelf on a curved arm, the clay lamp, its nozzle turned out into the room
+    P.push([at(new THREE.BoxGeometry(.06, .16, .012), 0, 1.5, .007), 'bronze'], [at(new THREE.TorusGeometry(.07, .007, 4, 8, Math.PI / 2), 0, 1.5, .013, 0, Math.PI / 2, Math.PI), 'bronze'],
+      [at(cyl(.06, .065, .01, 12), 0, 1.57, .08), 'bronze'], [at(new THREE.SphereGeometry(1, 12, 6).scale(.045, .028, .07), 0, 1.6, .08), 'clay'], [at(cyl(.012, .012, .07, 6), 0, 1.61, .15, Math.PI / 2), 'clay']);
+    F.push({ g: hallFlameGeo(.012, .06), p: new THREE.Vector3(0, 1.615, .185), core: .5 });
+    P.push([at(new THREE.PlaneGeometry(.2, .35), 0, 1.9, .004), 'soot']);
+    return { P, F, light: { at: [0, 1.72, .28], k: 1.9, r: 5.5, col: [1, .74, .44] } };
+  }
+  if (type === 'tablecandle') {
+    P.push([at(cyl(.035, .03, .015, 10), 0, .008, 0), 'iron'], [at(cyl(.008, .01, .07, 8), 0, .05, 0), 'iron'], [at(cyl(.011, .011, .12, 8), 0, .145, 0), 'wax']);
+    F.push({ g: hallFlameGeo(.008, .04), p: new THREE.Vector3(0, .207, 0), core: .5 });
+    return { P, F, light: { at: [0, .3, 0], k: .9, r: 3.5, col: [1, .68, .38] } };
+  }
+  throw new Error('fixture ' + type);
+}
+function hallFixtures(list) {
+  const M = hallMats(), buckets = new Map(), flames = [], lights = [], small = [], group = new THREE.Group(); group.name = 'hall fixtures';
+  for (const f of list) {
+    const { P, F, light } = hallParts(f.type), ry = f.nx == null ? 0 : Math.atan2(f.nx, f.nz);
+    const T = new THREE.Matrix4().compose(new THREE.Vector3(f.x, f.y || 0, f.z), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, ry, 0)), new THREE.Vector3(1, 1, 1));
+    for (const [g, k] of P) { const q = g.index ? g.toNonIndexed() : g; for (const a of Object.keys(q.attributes)) if (!['position', 'normal', 'uv'].includes(a)) q.deleteAttribute(a);
+      if (!q.attributes.uv) q.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(q.attributes.position.count * 2), 2)); q.applyMatrix4(T); if (!buckets.has(k)) buckets.set(k, []); buckets.get(k).push(q); }
+    if (f.type !== 'torch') { for (const fl of F) { const p = fl.p.clone().applyMatrix4(T); small.push([fl.g, p, fl.core]); } }
+    else for (const fl of F) { const p = fl.p.clone().applyMatrix4(T), m = new THREE.Mesh(fl.g, M.flame), c = new THREE.Mesh(fl.g, M.core); c.scale.setScalar(fl.core); m.add(c); m.position.copy(p); m.renderOrder = 6;
+      const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: hallPuff(), color: new THREE.Color(1, .55, .22), transparent: true, opacity: f.type === 'torch' ? .35 : .22, depthWrite: false, blending: THREE.AdditiveBlending }));
+      const hs = f.type === 'torch' ? .7 : .16; halo.scale.set(hs, hs, 1); halo.position.y = fl.g.parameters.points.at(-1).y * .45; m.add(halo); m.userData.hallFlame = true; group.add(m); flames.push([m, flames.length * 1.7]); }
+    const L = new THREE.Vector3(...light.at).applyMatrix4(T); lights.push({ p: L.toArray(), k: +(light.k * .275).toFixed(3), r: light.r, col: light.col, type: f.type });
+  }
+  let tris = 0;
+  for (const [k, gs] of buckets) { const g = mergeGeometries(gs); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = 'hall:' + k; if (k === 'soot') m.renderOrder = 4; group.add(m); tris += g.attributes.position.count / 3; }
+  for (const [m] of flames) tris += m.geometry.index.count / 3 * 2;
+  // a candle's or a lamp's flame is a few centimetres: all of them are one flame mesh, one core and one set of halos (three draws for
+  // the room, not three a flame), flickered by their brightness and the halos' size rather than one by one
+  let sm = null;
+  if (small.length) { const fg = [], cg = [], hp = [];
+    for (const [g, p, c] of small) { const q = g.toNonIndexed(); fg.push(q.clone().translate(p.x, p.y, p.z)); cg.push(q.scale(c, c, c).translate(p.x, p.y, p.z)); hp.push(p.x, p.y + g.parameters.points.at(-1).y * .45, p.z); }
+    const fm = M.flame.clone(), cm = M.core.clone(), F1 = new THREE.Mesh(mergeGeometries(fg), fm), C1 = new THREE.Mesh(mergeGeometries(cg), cm); fg.concat(cg).forEach(x => x.dispose());
+    const hg = new THREE.BufferGeometry(); hg.setAttribute('position', new THREE.Float32BufferAttribute(hp, 3));
+    const hm = new THREE.PointsMaterial({ map: hallPuff(), color: new THREE.Color(1, .55, .22), size: .16, sizeAttenuation: true, transparent: true, opacity: .22, depthWrite: false, blending: THREE.AdditiveBlending }), H1 = new THREE.Points(hg, hm);
+    for (const m of [F1, C1, H1]) { m.renderOrder = 6; m.userData.hallFlame = true; group.add(m); } F1.name = 'hall:flames'; C1.name = 'hall:cores'; H1.name = 'hall:halos';
+    tris += F1.geometry.attributes.position.count / 3 * 2; sm = { fm, cm, hm }; }
+  const tick = t => { const s = t * .001; for (const [m, ph] of flames) { const a = 1 + .08 * Math.sin(s * 13 + ph) + .05 * Math.sin(s * 29 + ph * 2.3); m.scale.set(1 / Math.sqrt(a), a, 1 / Math.sqrt(a)); m.rotation.z = .05 * Math.sin(s * 7 + ph); }
+    if (sm) { const a = .08 * Math.sin(s * 11) + .05 * Math.sin(s * 23.7); sm.fm.opacity = .85 + a; sm.cm.opacity = .92 + a * .5; sm.hm.size = .16 * (1 + a); } };
+  return { group, flames: flames.map(f => f[0]), small: small.length, lights, tris: Math.round(tris), draws: buckets.size + flames.length * 3 + (sm ? 3 : 0), tick };
+}
+// ── the joiner's bench (Session 1524; the survival sheet's props, "the bench"), drawn from the ship bases' workbench (shipbase.js,
+// Michael's A on #418): an elm top 1.5 by 0.6 m at 0.85 on four square legs and a stretcher, an iron vice at its right end, a plank
+// and an offcut on the top with shavings, and a rack of tools on the wall over it (a saw, a plane, a mallet, two chisels).
+//   PKIT.props.bench() -> { group, tris, draws, foot: { x0, x1, z0, z1 }, top } in the wall's frame: the wall at z = 0, the bench
+//   toward +z, its length along x centred on 0, the floor at y = 0. One mesh a material, three in all.
+let BM = null;
+function joinerBench() {
+  if (!BM) BM = { wood: new THREE.MeshStandardMaterial({ color: 0x9a7650, roughness: .8 }), dark: new THREE.MeshStandardMaterial({ color: 0x4e3622, roughness: .85 }), iron: new THREE.MeshStandardMaterial({ color: 0x2a2826, roughness: .5, metalness: .6 }) };
+  const L = 1.5, D = .6, H = .85, T = .08, B = new Map(), box = (k, w, h, d, x, y, z, ry = 0) => { const g = new THREE.BoxGeometry(w, h, d).toNonIndexed(); if (ry) g.rotateY(ry); g.translate(x, y, z); if (!B.has(k)) B.set(k, []); B.get(k).push(g); };
+  box('wood', L, T, D, 0, H - T / 2, D / 2 + .02);
+  for (const sx of [-1, 1]) for (const z of [.08, D - .04]) box('dark', .08, H - T, .08, sx * (L / 2 - .1), (H - T) / 2, z);
+  for (const sx of [-1, 1]) box('dark', .06, .06, D - .12, sx * (L / 2 - .1), .22, D / 2 + .02); box('dark', L - .2, .06, .06, 0, .22, D - .04);
+  // the vice: a jaw block over the right front leg and its screw's bar
+  box('iron', .22, .14, .1, L / 2 - .2, H + .07, D + .06); box('iron', .04, .04, .2, L / 2 - .2, H + .07, D + .14); box('iron', .3, .03, .03, L / 2 - .2, H + .07, D + .24);
+  // a plank in work and an offcut on the top, shavings
+  box('wood', .9, .04, .14, -.15, H + .02, D * .55, .04); box('wood', .3, .04, .12, .35, H + .02, .16, -.3);
+  for (let k = 0; k < 6; k++) box('wood', .05, .006, .02, -.55 + k * .09, H + .003, .32 + (k % 3) * .05, k * .9);
+  // the rack on the wall: a board, and on its pegs the tools
+  box('dark', 1.1, .05, .04, 0, 1.3, .02); for (let k = 0; k < 5; k++) box('dark', .02, .02, .08, -.44 + k * .22, 1.32, .06);
+  box('iron', .5, .12, .006, -.44, 1.16, .07); box('dark', .12, .1, .03, -.13, 1.16, .07) /* the saw, its blade and handle */;
+  box('dark', .22, .07, .06, .02, 1.22, .08); box('iron', .04, .02, .06, .02, 1.27, .08) /* the plane */;
+  box('dark', .03, .22, .03, .24, 1.17, .07); box('dark', .12, .07, .07, .24, 1.05, .07) /* the mallet, head down */;
+  for (const x of [.4, .46]) { box('dark', .025, .1, .025, x, 1.22, .07); box('iron', .012, .12, .006, x, 1.11, .07); }
+  const group = new THREE.Group(); group.name = 'joiner bench'; let tris = 0;
+  for (const [k, gs] of B) { const g = mergeGeometries(gs); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, BM[k]); m.name = 'bench:' + k; group.add(m); tris += g.attributes.position.count / 3; }
+  return { group, tris: Math.round(tris), draws: group.children.length, foot: { x0: -L / 2, x1: L / 2, z0: 0, z1: D + .26 }, top: H };
+}
+  return { stream, hashKey, mergeByMaterial, halls: { fixtures: hallFixtures }, props: { bench: joinerBench }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
     mk: { hall: markHall, lot: markLot, alehall: markAlehall, longhouse: markLonghouse, mats: markMats },
     au: { house: aurenneHouse, lot: aurenneLot, courtyard: aurenneCourtyard, church: aurenneChurch, churchBox: aurenneChurchBox, churchHall: aurenneChurchHall, courtyardHouse: aurenneCourtyardHouse, tavern: aurenneTavern, mats: aurMats, roomMats: homeMats, AUR },
     gl: { PLANS, FIN, PS, PAINTS, TOWN: GL_TOWN, building, church, keep, farmstead, coachInn, coachInnPlan, coachRoom, townhouse: townhouseRoom, farmhouse: farmhouseRoom, byre: byreRoom, barn: barnRoom, row: shrineRow, ROW_GODS, inn: gatelandsInn, cottage: gatelandsCottage, churchLen: n => +((n === 2 ? 2 : 3) * 4.8 + 1.6 + 5.6 - .5 + 7.2 - .9 - .02).toFixed(2), lot: gatelandsLot, mats: glMats, BAYS, bayPlan, bayWidth, baysFor } };

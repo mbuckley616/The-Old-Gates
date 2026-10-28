@@ -63,5 +63,18 @@ check('Tight seams: a patch at 50 is (8 + 10) × 1.5 = 27', r.patch50 === 27 && 
 check('Shipwright\'s hand: 4 s at 100; field work to full', r.secs100 === 4 && r.patch100 === 42 && r.cap100 === 100, r);
 check('her cabin is a bench, kit or none: a patch there', r.cabin && r.cabinHull === 53, r);
 check('Field splice, Tight seams and Shipwright\'s hand live; Bowyer not yet', r.perks, r.perks);
+// Session 1524 — the cabin's bench drawn: below deck the kit's joiner's bench stands against the west wall at its true height (0.85 m),
+// in one mesh a material, its solid the bench's own footprint, clear of the bunk, the chart table, the chest and the sacks
+await page.evaluate(() => { cabinUpdate(); goToInterior(CABIN.house); });
+for (let k = 0; k < 40 && !(await page.evaluate(() => isInterior())); k++) await page.waitForTimeout(250);
+const cb = await page.evaluate(() => { if (!isInterior() || currentHouse.type !== 'cabin') return null;
+  const B = currentHouse._bench; let g = null; interiorScene.traverse(o => { if (o.name === 'joiner bench') g = o; }); if (!B || !g) return { B, g: !!g };
+  interiorScene.updateMatrixWorld(true); const bb = new THREE.Box3().setFromObject(g), top = g.children.find(m => m.name === 'bench:wood');
+  const sol = INT_SOL.find(q => q.x0 <= B.x && q.x1 >= B.x && q.z0 <= B.z && q.z1 >= B.z && Math.abs(q.y1 - .85) < .03);
+  const over = sol ? INT_SOL.filter(q => q !== sol && q.y1 > .1 && q.x0 < sol.x1 - .01 && q.x1 > sol.x0 + .01 && q.z0 < sol.z1 - .01 && q.z1 > sol.z0 + .01).length : -1;
+  return { x: +B.x.toFixed(2), z: +B.z.toFixed(2), draws: g.children.filter(m => m.isMesh).length, tris: B.tris, w: +(bb.max.z - bb.min.z).toFixed(2), d: +(bb.max.x - bb.min.x).toFixed(2), wall: +bb.min.x.toFixed(2), hi: +bb.max.y.toFixed(2),
+    sol: !!sol, solTop: sol && +sol.y1.toFixed(2), over, inRoom: bb.max.z < currentHouse.intD && bb.min.z > 0, W: +currentHouse.intW.toFixed(2), D: +currentHouse.intD.toFixed(2), bench: benchHere() }; });
+check(`below deck the cabin's joiner's bench stands at the west wall (${cb && cb.wall} m off it), ${cb && cb.w} m long and ${cb && cb.d} m deep, its top a solid at ${cb && cb.solTop} m, clear of the rest (${cb && cb.over} overlaps); ${cb && cb.tris} triangles in ${cb && cb.draws} draws (S1524)`,
+  !!cb && cb.sol && cb.wall < .05 && cb.w > 1.45 && cb.w < 1.6 && cb.d > .8 && cb.d < .95 && cb.hi < 1.5 && cb.over === 0 && cb.inRoom && cb.draws <= 3 && cb.bench, cb);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
