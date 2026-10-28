@@ -1005,7 +1005,7 @@ function hcBuildStep(){const J=HC_BODY.job,rig=J.rig,g=rig.root.parent;
   if(!r.done)return null;
   HC_BODY.job=null;rig.hcC=r.value;return rig;}
 // each frame, after the driver is posed (tickCreatures' end): the level by distance, the pose copied, and at most one body built
-// Session 1526: the Shark wears the kit's reef shark (Session 1525's plan: a pointed snout over an underslung mouth, gill slits, a
+// Session 1529: the Shark wears the kit's reef shark (Session 1528's plan: a pointed snout over an underslung mouth, gill slits, a
 // heterocercal tail). The game's shark has no skeleton to copy: its old body is two lathed meshes, the tail on a pivot that tickSharks
 // sweeps. So the kit's own swim gait poses it (HC.pose, the fish's wave from head to tail, the pectorals' scull), its phase running at
 // the old tail's beat (3.4 rad a second cruising, 7 hunting). The old body is gathered into one group (rig.mesh), which stays as the
@@ -1047,7 +1047,7 @@ function hcTick(now){let best=null,bd=HC_BODY.build;
     if(!g||!g.parent){hcDrop(rig);HC_RIGS.delete(rig);continue;}
     if(g.parent!==scene||!g.visible)continue;
     const d=Math.hypot(CAM.position.x-g.position.x,CAM.position.z-g.position.z);
-    if(!rig.hc){if(!busy&&!HC_BODY.job&&!rig.hcFail&&!(rig.fish&&rig.e.dead)&&d<bd){bd=d;best=rig;}continue;} /* S1526 — a shark killed before its body was built keeps the old one */
+    if(!rig.hc){if(!busy&&!HC_BODY.job&&!rig.hcFail&&!(rig.fish&&rig.e.dead)&&d<bd){bd=d;best=rig;}continue;} /* S1529 — a shark killed before its body was built keeps the old one */
     const L=rig.hc.L,a=HC_BODY.near+(L>0?-1:1),b=HC_BODY.mid+(L>1?-1:1);hcLevel(rig,d<a?0:d<b?1:2);
     if(rig.hc.L<2)(rig.fish?hcFishPose:hcPose)(rig);}
   if(best&&HC.buildIter){try{HC_BODY.job={rig:best,it:HC.buildIter(hcGenome(best)),ms:0,steps:0};}catch(e){best.hcFail=true;console.warn('F4: the kit could not build',best.name,e);}best=null;}

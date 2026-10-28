@@ -22,6 +22,9 @@ const r = await page.evaluate(() => {
   bagAdd(survItem('log', 3)); bagAdd(survItem('pine', 1));
   const f = lightFire(); out.lit = !!f; out.logsLeft = bagCount(b => b.log === 'log'); out.pineLeft = bagCount(b => b.log === 'pine');
   out.box = hasTinderbox(); out.at = atFire(); out.burns = f && f.until - gameMinNow(); out.mesh = !!(f && f.mesh && f.mesh.parent);
+  // S1525 — E at a lit fire opens its page; a log joins the logs' row (the critic's s995)
+  if (cookOpen) closeCookPage(); interact(); out.eFire = cookOpen; closeCookPage();
+  bagAdd(survItem('log', 2)); out.logRows = BAG.filter(b => b.log === 'log').length; bagTake(b => b.log === 'log', 2);
   // ── a meal ──
   m1.qty = 2; bagAdd(m1); S(50); const p0 = SKILLS.cooking.p;
   const c = cookAt('meat'); out.cook = { made: c.made, name: c.item && c.item.name, s: c.item && c.item.meal.s, uses: SKILLS.cooking.p - p0, rawLeft: bagCount(b => b.food === 'meat') };
@@ -110,5 +113,6 @@ check('an inn\'s and a home\'s hearth is a fire; a smithy\'s room is not', r.inn
 check(`the inn's Hot Stew is ${r.shop.stew} and Mulled Cider ${r.shop.cider}; the goods shop sells ${r.shop.misc.join(', ')}; the weaponsmith none`,
   r.shop.stew === 'hearty' && r.shop.cider === 'clear' && r.shop.misc.includes('Tinderbox') && r.shop.misc.includes('Root Vegetables') && r.shop.weapon === 0, r.shop);
 check('a meal, a log and a food keep their kinds through the save; fed is the character\'s', r.ser && r.charKey);
+check(`E at a lit fire opens its page; logs keep one row (${r.logRows})`, r.eFire && r.logRows === 1, { eFire: r.eFire, logRows: r.logRows });
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

@@ -76,5 +76,10 @@ const cb = await page.evaluate(() => { if (!isInterior() || currentHouse.type !=
     sol: !!sol, solTop: sol && +sol.y1.toFixed(2), over, inRoom: bb.max.z < currentHouse.intD && bb.min.z > 0, W: +currentHouse.intW.toFixed(2), D: +currentHouse.intD.toFixed(2), bench: benchHere() }; });
 check(`below deck the cabin's joiner's bench stands at the west wall (${cb && cb.wall} m off it), ${cb && cb.w} m long and ${cb && cb.d} m deep, its top a solid at ${cb && cb.solTop} m, clear of the rest (${cb && cb.over} overlaps); ${cb && cb.tris} triangles in ${cb && cb.draws} draws (S1524)`,
   !!cb && cb.sol && cb.wall < .05 && cb.w > 1.45 && cb.w < 1.6 && cb.d > .8 && cb.d < .95 && cb.hi < 1.5 && cb.over === 0 && cb.inRoom && cb.draws <= 3 && cb.bench, cb);
+// Session 1527 — E at the bench: within 1.6 m of it the prompt asks, and E opens the bench's page
+const bx = await page.evaluate(() => { if (!isInterior() || !currentHouse._bench) return null; const B = currentHouse._bench; px = B.x + .9; pz = B.z; return { far: (px = B.x + 2.2, benchNear()), near: (px = B.x + .9, benchNear()) }; });
+await g.frames(3);
+const be = await page.evaluate(() => { const o = { prompt: document.getElementById('ipr').textContent }; interact(); o.open = benchOpen; if (benchOpen) closeBenchPage(); return o; });
+check(`at the cabin's bench: "${be.prompt}", and E opens its page; 2.2 m off it is not near`, !!bx && bx.near && !bx.far && /work at the bench/.test(be.prompt) && be.open, { bx, be });
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

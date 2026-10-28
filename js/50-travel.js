@@ -1171,6 +1171,8 @@ function useBenchThing(i){if(benchHere())openBenchPage();else showMsg('Work it a
 // by the frame's dt, and walking off or setting sail stops it with nothing spent.
 const PATCH_BASE=8,SPLICE_RIG=20,PATCH_S=8,SHIP_WORK_R=10,AT_SEA_R=25;
 function cabinBench(){return typeof isInterior==='function'&&isInterior()&&typeof currentHouse!=='undefined'&&!!currentHouse&&currentHouse.type==='cabin';}
+// S1527 — the cabin's bench prop (the look builder's S1524, `house._bench`, in the room's metres): E within 1.6 m of it, as at a fort's forge
+function benchNear(){const b=cabinBench()&&currentHouse._bench;return !!b&&Math.hypot(px-b.x,pz-b.z)<=1.6;}
 function shipWorkHere(){if(typeof SHIP==='undefined'||!worldState.ship||!SHIP.mesh||SHIP.sailing)return false;if(cabinBench())return true;
   return activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior())&&hasJoinerKit()&&Math.hypot(px-SHIP.x,pz-SHIP.z)<SHIP_WORK_R;}
 function fieldCap(max){return Math.round(max*Math.min(1,.6+.004*skillLv('joinery')));}
@@ -2029,6 +2031,7 @@ function interact(){
     if(nearHerb){harvestHerb(nearHerb);return;}
     {const v=veinNear();if(v){mineVein(v);return;}} /* S1491 — a vein, with a pick */
     {const n=treeNear();if(n&&(chopTool()||(CHOP&&CHOP.t===n.t))){chopTree(n.ch,n.t);return;}} /* S1511 — a tree, with a hatchet */
+    if(campfireNear()){openCookPage();return;} /* S1525 — a lit fire: its page (the critic's s995: only the bag opened it) */
     // v61ae: Bram's body needs special handling. The standard zone-corpse
     // check below requires items.length>0, which means an already-looted body
     // with empty items becomes NON-interactable. But Bram's body should always
@@ -2155,6 +2158,7 @@ function interact(){
       openStash();
       return;
     }
+    if(benchNear()){openBenchPage();return;} /* S1527 — the cabin's bench */
     if(intBedPos && !INT_BEDS.length && Math.hypot(px-intBedPos.x,pz-intBedPos.z)<TOUCH && bedAimed(intBedPos)){ // v80 S11 — generated rooms use INT_BEDS (height-aware)
       openSleepUI();
       return;

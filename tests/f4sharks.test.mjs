@@ -1,4 +1,4 @@
-// Card F4 (Session 1526): on the new look the Shark wears the creature kit's reef shark (Session 1525's plan), posed by the kit's own
+// Card F4 (Session 1529): on the new look the Shark wears the creature kit's reef shark (Session 1528's plan), posed by the kit's own
 // swim gait (HC.pose) at the old tail's beat, since the game's shark has no skeleton to copy. One shark held in the air ahead of you
 // in the open world: its genome keyed by its foe id (`shark:<id>`); the old body's length, nose to nose, on its axis; three levels by
 // distance (the hide, fins and eyes near; without the eyes at 25 m; the old body far); a swim that moves the kit's bones, faster

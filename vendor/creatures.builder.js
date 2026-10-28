@@ -1742,7 +1742,7 @@ P.wings = (B, o) => {
 const FIN = { tri: [[-.15, 0], [.12, .75], [.3, 1], [.45, .8], [.62, .35], [.8, 0]],
   // Session 864: a moth's wings, the forewing pointed at its tip and the hindwing rounded
   fore: [[-.05, 0], [-.04, .5], [.06, .94], [.2, 1], [.36, .82], [.5, .52], [.56, .22], [.46, 0]], hind: [[0, 0], [.08, .55], [.28, .88], [.55, .82], [.74, .52], [.8, .2], [.6, 0]], fork: [[0, .22], [.55, 1], [.42, .5], [.38, .15], [.5, 0], [.38, -.15], [.42, -.5], [.55, -1], [0, -.22]],
-  // Session 1525: a shark's tail, heterocercal: the upper lobe long and swept back, a notch under its tip, the lower lobe short
+  // Session 1528: a shark's tail, heterocercal: the upper lobe long and swept back, a notch under its tip, the lower lobe short
   shark: [[0, .2], [.6, .9], [.95, 1.2], [.84, .98], [.58, .5], [.44, .16], [.4, 0], [.5, -.52], [.42, -.6], [.15, -.3], [0, -.2]] };
 P.fins = (B, o) => { for (const f of o.list) for (const side of f.pair ? [1, -1] : [0]) {
   const onTail = f.on === 'tail', sp = onTail ? null : B.spineAt(f.at), parent = onTail ? B.tailBone : sp.bone;
@@ -2137,7 +2137,7 @@ P.frame = (B, o) => { const M = stdMat(B.tone(o.tone || 'stone'), { rough: .95, 
   let n = 0; for (const [bone, list] of Object.entries(gs)) { const m = new THREE.Mesh(mergeGeometries(list), M); m.name = 'frame'; B.bit(bone, m); n += list.length; }
   B.frame = { pieces: n, spurs: (o.spurs || []).length * 2 }; };
 // a step at a time (Session 1484): a yield every 800 vertices
-// gill slits as lines (Session 1527): painted into the hide, five slits a centimetre or two apart aliased into a chequer on a grid of
+// gill slits as lines (Session 1530): painted into the hide, five slits a centimetre or two apart aliased into a chequer on a grid of
 // about the same pitch, so each slit is a thin ribbon laid on the grown skin instead. The skin is found by rays cast in from the side
 // at `Q.rows` heights along the slit's line (the same line the painted bands followed: `from`, `step`, leaning back by `tilt`), the
 // ribbon `Q.slit` wide along the body and lifted a hair off the skin; all of them one mesh in the `tone`, on the bone the gills lie over
@@ -2187,7 +2187,7 @@ function* dressFlesh(geo, B, pal, plan) {
     // the eyes to the ears, a stripe of one tone, and the rest of the face another (the badger's black stripes on white)
     if (plan.face && B.headFrame && B.by.head && (wb[B.by.head.i] + (B.by.jaw ? wb[B.by.jaw.i] : 0)) / tsum > .5) { const F = plan.face, H = B.headFrame, rel = V(x, y, z).sub(H.base), along = rel.dot(H.dir) / H.len, side = Math.abs(rel.x) / H.r, upw = rel.dot(H.up) / H.r;
       if (along > (F.back ?? -.3) && upw > -.35) C.copy(pal[side > F.from && side < F.to ? F.stripe : F.ground]).multiplyScalar(.95 + .1 * PN.noise(x * 40, y * 40, z * 40)); }
-    // gill slits (Session 1525, the shark's): `n` dark bands across the flank behind the head, `step` apart along the head's line
+    // gill slits (Session 1528, the shark's): `n` dark bands across the flank behind the head, `step` apart along the head's line
     // from `from` (in the head's lengths; behind its root is negative), each `w` wide, between two distances out and two heights, leaning back by `tilt` as it rises
     if (plan.gills && !plan.gills.slit && B.headFrame) { const Q = plan.gills, H = B.headFrame, rel = V(x, y, z).sub(H.base), al = rel.dot(H.dir) / H.len, sd = Math.abs(rel.x) / H.r, up = rel.dot(H.up) / H.r;
       if (sd > Q.side[0] && sd < Q.side[1] && up > Q.up[0] && up < Q.up[1]) for (let k = 0; k < Q.n; k++) { const c = Q.from - k * Q.step * (1 - .06 * k), d = Math.abs(al - c + up * (Q.tilt || 0)) * H.len; if (d < Q.w) { C.lerp(pal[Q.tone], sstep(Q.w, Q.w * .35, d) * sstep(Q.side[0], Q.side[0] + .2, sd) * sstep(Q.up[1], Q.up[1] - .25, up) * sstep(Q.up[0], Q.up[0] + .25, up) * (Q.k ?? .9)); break; } } }
@@ -3233,7 +3233,7 @@ Object.assign(PLANS, {
   skyskimmer: re(PLANS.riverjaw, { name: 'Skyskimmer', src: 'OG-016 (open ocean: a flying fish that glides on its fins)', scale: .45, mottle: .3,
     palette: { coat: [.66, .72, .8], saddle: [.16, .28, .5], belly: [.92, .93, .94], dark: [.04, .04, .06], fin: [.55, .66, .82] }, finOpacity: .8,
     parts: PLANS.riverjaw.parts.map(([k, o]) => k === 'fins' ? [k, { list: o.list.map(f => f.role === 'pec' ? { ...f, out: [1, .1, 0], len: .32, h: .26 } : f) }] : [k, o]) }),
-  // Session 1525: the reef shark as a shark of its own, not a salmon recoloured (it read as one: a blunt nose, a gold eye, a
+  // Session 1528: the reef shark as a shark of its own, not a salmon recoloured (it read as one: a blunt nose, a gold eye, a
   // forked salmon's tail). The game's shark (Michael's A on Session 230) is the brief: a pointed snout over an underslung mouth,
   // a small black eye, five gill slits, a tall dorsal well forward, long pectorals swept back, a small second dorsal and anal
   // fin by the tail's root, and the tail heterocercal (the upper lobe long, the lower short: FIN.shark); grey above, pale beneath
