@@ -8,7 +8,7 @@
 // bays (7.4 m, its door in the west bay) is the same taproom in the narrower house (6.4 by 5.2 m inside, one table, two rooms): the
 // nearest village's inn is built again as the two-bay house's room and walked through the same checks; you arrive, and leave, by
 // its door, not the room's middle.
-// Session 1504: at noon the day comes in through the open door and the taproom's windows, a sky spot inside each (kitDaylight).
+// Session 1506: at noon the day comes in through the open door and the taproom's windows, a sky spot inside each (kitDaylight).
 import { boot, check } from './lib/game.mjs';
 import fs from 'fs'; import path from 'path'; import { fileURLToPath } from 'url';
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -76,7 +76,7 @@ check(`the innkeeper stands behind the bar at ${r.keeper && [r.keeper.x, r.keepe
 check(`the cellar's hatch is in the flags at ${r.hatch && [r.hatch.x, r.hatch.z].join(', ')}, clear to stand at`, !!r.hatch && r.hatch.clear, r.hatch);
 // F4 (Session 1200): the budget was the room and the old innkeeper, whose body was one draw call; on the new look the innkeeper wears
 // the builder's body (F4), counted on its own. The room keeps its number: 60 less the old body's one call.
-check(`at noon the day comes in through the door and the taproom's ${r.wins} windows (${r.sky.length} sky spots inside the room, aimed in; S1504)`, r.sky.length === r.wins + 1 && r.wins >= 2 && r.sky.every(q => q.in && q.i > 0), { wins: r.wins, sky: r.sky });
+check(`at noon the day comes in through the door and the taproom's ${r.wins} windows (${r.sky.length} sky spots inside the room, aimed in; S1506)`, r.sky.length === r.wins + 1 && r.wins >= 2 && r.sky.every(q => q.in && q.i > 0), { wins: r.wins, sky: r.sky });
 check(`the room is lit (${r.lights} lights) and draws ${r.draws} meshes (59 or fewer), ${r.tris.toLocaleString()} triangles with the innkeeper`, r.lights >= 6 && r.draws <= 59, { lights: r.lights, kinds: r.kinds, draws: r.draws, tris: r.tris });
 check(`the innkeeper is a body of ${r.kDraws} draw calls${r.kBuilder ? ', the builder\'s' : ''}`, r.kDraws >= 1, { kDraws: r.kDraws, kBuilder: r.kBuilder });
 
