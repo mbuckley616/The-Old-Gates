@@ -10,7 +10,7 @@ const r = await page.evaluate(() => {
   const dayWith = (from, dated) => { for (let d = from; d < from + 80; d++) if ((seededRng('dated:guild_f:dunmore', d)() < 1 / 3) === dated) return d; };
   let n = 0; for (let d = 0; d < 600; d++) if (seededRng('dated:guild_f:dunmore', d)() < 1 / 3) n++;
   const reset = () => { const G = gstate(); G.guild_f = { done: 0, active: null }; };
-  const finish = t => { if ('need' in t) t.have = t.need; else if ('count' in t) { t.spawned = true; t.have = t.count; } else if (t.kind === 'relic') t.got = true; else t.done = true; };
+  const finish = t => { if (t.kind === 'supply') bagAdd(oreItem(t.ore, t.need)); /* S1533 — Supply is done by the ore carried */ else if ('need' in t) t.have = t.need; else if ('count' in t) { t.spawned = true; t.have = t.count; } else if (t.kind === 'relic') t.got = true; else t.done = true; };
   // 1. a dated task, done by the kill hook a day before its date, paid a quarter more
   reset(); const d1 = dayWith(40, true); worldState.gameTimeAbsMinutes = d1 * 1440 + 600; worldState.gameTimeMinutes = 600;
   const said = offer('guild_f', site); const t1 = gstate().guild_f.active;

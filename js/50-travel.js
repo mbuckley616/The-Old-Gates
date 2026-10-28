@@ -773,6 +773,10 @@ const ORE_DEF={copper:{name:'Copper Ore',col:0xc07040,price:3},tin:{name:'Tin Or
   silver:{name:'Silver Ore',col:0xe0e4ec,price:8},mithril:{name:'Mithril Ore',col:0x4466cc,price:12},adamant:{name:'Adamant Ore',col:0x33aa33,price:18},
   obsidian:{name:'Obsidian',col:0x221830,price:24}};
 const VEIN_TABLE={1:[['copper',.375],['tin',.375],['iron',.25]],2:[['iron',2/3],['silver',1/3]],3:[['iron',2/3],['mithril',1/3]],4:[['mithril',1/3],['adamant',1/3],['obsidian',1/3]]};
+// S1533 — the Fighters' Guild's *Supply* (Michael's A on #814): the ore a hall's own country yields, by the vein table's tier —
+// copper or tin at 1, iron at 2, mithril in the highlands (3), and the wastes' three at 4
+const SUPPLY_ORE={1:['copper','tin'],2:['iron'],3:['mithril'],4:['mithril','adamant','obsidian']};
+function supplyOre(x,z,r){const L=SUPPLY_ORE[veinTier(x,z)]||SUPPLY_ORE[1];return L[Math.floor(r()*L.length)%L.length];}
 const PICK_ITEM={name:PICK_NAME,ico:'⛏',type:'misc',weight:4,buyPrice:40,sellMult:.4,tool:'pick'};
 function oreItem(k,qty){const o=ORE_DEF[k];return {name:o.name,ico:'🪨',type:'misc',weight:2,buyPrice:o.price,sellMult:.3,ore:k,qty:qty||1};}
 function hasPick(){return BAG.some(b=>b&&b.tool==='pick');}
@@ -838,7 +842,7 @@ function strikeVein(v){
   const roll=seededRng('ore',v.id+':'+(r.e||0)+':'+r.s)();
   r={...r,s:r.s+1};const got=roll<.35+.005*skillLv('mining');
   /* S1495 — Mining 50: one ore in four comes double, on the strike's own second roll */
-  let two=false;if(got){two=perk('mining',50)&&seededRng('ore2',v.id+':'+(r.e||0)+':'+(r.s-1))()<.25;if(two)it.qty=2;r.n++;r.d=Math.floor(gameMinNow()/1440);bagAdd(it);skillUse('mining',4);}else skillUse('mining',1);
+  let two=false;if(got){two=perk('mining',50)&&seededRng('ore2',v.id+':'+(r.e||0)+':'+(r.s-1))()<.25;if(two)it.qty=2;r.n++;r.d=Math.floor(gameMinNow()/1440);bagAdd(it);skillUse('mining',4);if(typeof WORLD!=='undefined'&&WORLD.guild&&WORLD.guild.onOre)WORLD.guild.onOre(v.ore);}else skillUse('mining',1);
   (worldState.veins||(worldState.veins={}))[v.id]=r;veinShow(v);
   return {ore:got?(two?'2 '+it.name:it.name):null,left:Math.max(0,veinCap()-r.n)};}
 // S1495 — Prospector (Mining 25): the veins within 40 m on the minimap (drawLocalMap's frame: north up, 58 m to the edge)
