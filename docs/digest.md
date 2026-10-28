@@ -399,3 +399,15 @@ Written by the producer once a day, after 12:00 UTC. Newest last.
 **Blocked.** Nothing new. The weekly run's reds sit in backlog I; corpsebody's Cave Bear joined them.
 
 **Roadmap.** 274 of 335 stories done (268 yesterday). The new look is 6 of 17 done. No deep-work card is queued: F14 comes last.
+
+## 28 Oct 2026
+
+**Waiting on you.** Two decisions: what brings the keeper to look at a strongbox by day (#824; recommended C, the keeper hears a snapped pick), and what an ingot of another metal fletches (#829; recommended A, an arrow of each metal on the weapons' curve). No PR is held.
+
+**Landed on main since yesterday.** Survival B nearly whole: the forge and its perks, Alchemy's and Cooking's perks, Felling as a deep-work card (#821), the bench with planks, bows, the wooden shield, fletching and the ship's patch, and the critic's three survival bugs fixed (Systems 1494–1527; #799, #803, #813, #830, #837). Light by day through the longhouse, barn, byre, taproom, alehall, tavern and church, then the halls' fixtures by island (#805 C: torches, sconces, lamps); the ore veins and the land's small things in fewer draws; far trees bring Dunmore under its triangles (Look 1490–1524). Bodies: braids, the crossbow's span, weapons at their own size, the pick and hatchet in hand, and the Shark in the kit's reef shark (to 1530, #836). QA: the budgets at s979, smoke's chimney flake (#812, #828). Asked in Passing's first slice, A Fever (#817). Answered: #805 C, #814 A. Build s999.
+
+**Under way.** No PR is open.
+
+**Blocked.** Nothing new. The weekly run's reds sit in backlog I.
+
+**Roadmap.** 283 of 343 stories done (274 yesterday). The new look is 6 of 17. No deep-work card is queued: F14 comes last.
