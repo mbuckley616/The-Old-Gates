@@ -1,6 +1,7 @@
 // Session 665 (Michael's A on DECISION #202): the Mark's cutter and Aurenne's caravel on hulls of their own, as the
 // Session 643 prototype showed them. The bakes, their sizes and rigs, the caravel's lateens trimmed to leeward, your own
-// ship taking her class's hull, the three older hulls untouched; writes docs/prototypes/shiphulls-ingame-*.png.
+// ship taking her class's hull, the three older hulls untouched; writes docs/prototypes/shiphulls-ingame-*.png and, since
+// Session 1538, shipdress-*.png (your sloop in each island's dress).
 import { boot, check } from './lib/game.mjs';
 import { inspShots } from './lib/inspshot.mjs';
 const g = await boot(); const { page } = g;
@@ -36,5 +37,27 @@ const key = n => r.keys.find(k => k.includes(n));
 const side = 'INSPECTOR.orbit.theta=Math.PI/2+.12;INSPECTOR.orbit.phi=1.42;INSPECTOR.orbit.dist*=1.05;';
 await inspShots(g, [[key('cutter/player'), 'shiphulls-ingame-cutter.png'], [key('caravel/player'), 'shiphulls-ingame-caravel.png'],
   [key('cutter/player'), 'shiphulls-ingame-cutter-side.png', side], [key('caravel/player'), 'shiphulls-ingame-caravel-side.png', side]]);
+// Session 1538 (Michael's A on #839): on the new look your sloop wears the dress of the island whose yard sold or last refitted her,
+// kept on the ship: the Gatelands' square sail, the Mark's gaff and headsails with the beast's head and shields, Aurenne's lateen.
+const d = await page.evaluate(() => { const out = {}, was = worldState.ship;
+  for (const dr of ['gatelands', 'mark', 'aurenne', null]) { worldState.ship = dr ? { dress: dr } : {}; const m = WORLD.buildShipMesh(13, 4.4), b = shipBake('sloop', 'player');
+    const R = m.userData.rigs; shipTrim(m, Math.PI / 2); const a = R.map(q => [q.type, +q.m.rotation.y.toFixed(2), q.m.scale.x]); shipTrim(m, -Math.PI / 2); const c = R.map(q => [q.type, +q.m.rotation.y.toFixed(2), q.m.scale.x]);
+    out[dr || 'none'] = { kit: !!b.kit, dress: b.kit && b.kit.dress, key: m.userData.bakeKey, tris: b.kit && b.kit.tris, draws: b.kit && b.kit.draws, rigs: b.rigs.map(q => q.type).join(), a, c, head: b.kit && b.kit.head, shields: b.kit ? b.kit.shields.length : 0, stow: ((shipStowSlots(m.userData.bakeKey) || {}).slots || []).length }; }
+  // a refit at one of the Mark's yards: a cog taken down to a sloop comes out in the Mark's dress
+  const mk = allPorts().find(p => nationAt(p.x, p.z) === 'mark'); const g0 = gold; gold = 99999; worldState.ship = { cls: 'cog', dress: 'gatelands', hull: 140, rig: 100 };
+  const o = yardOffers(mk).find(q => q.cls === 'sloop' && /Refit/.test(q.label)); if (o) o.fn(); out.refit = { port: mk && mk.name, cls: worldState.ship.cls, dress: worldState.ship.dress, key: WORLD.buildShipMesh(13, 4.4).userData.bakeKey };
+  gold = g0; worldState.ship = was; return out; });
+console.log(JSON.stringify(d));
+if (d.gatelands.kit) {
+  check('the three dresses bake as three sloops, each under 30,000 triangles and 16 draws', ['gatelands', 'mark', 'aurenne'].every(k => d[k].dress === k && d[k].key === 'sloop|player|' + k && d[k].tris < 30000 && d[k].draws <= 16), ['gatelands', 'mark', 'aurenne'].map(k => [k, d[k].dress, d[k].tris, d[k].draws]));
+  check('a ship from before the dress is the Gatelands\'', d.none.dress === 'gatelands', d.none);
+  check('each island its rig: the square sail, the gaff with its headsails, the lateen', d.gatelands.rigs === 'square' && d.mark.rigs === 'gaff,head' && d.aurenne.rigs === 'lateen', [d.gatelands.rigs, d.mark.rigs, d.aurenne.rigs]);
+  check('the Mark\'s carries the beast\'s head and a row of shields; the others neither', d.mark.head && d.mark.shields >= 8 && !d.aurenne.head && !d.gatelands.shields, [d.mark.head, d.mark.shields]);
+  check('the boom and the lateen swing to leeward and over when the wind crosses; the headsails only belly over', d.mark.a[0][1] < -.2 && d.mark.c[0][1] > .2 && d.mark.a[1][1] === 0 && d.mark.a[1][2] === -d.mark.c[1][2] && d.aurenne.a[0][1] < -.1 && d.aurenne.c[0][1] > .1, [d.mark.a, d.mark.c, d.aurenne.a, d.aurenne.c]);
+  check('every dress keeps the hold\'s stowage on deck', ['gatelands', 'mark', 'aurenne'].every(k => d[k].stow === d.gatelands.stow && d[k].stow > 0), ['gatelands', 'mark', 'aurenne'].map(k => d[k].stow));
+  check('refitted at a Mark yard, she wears the Mark\'s dress', d.refit.cls === 'sloop' && d.refit.dress === 'mark' && d.refit.key === 'sloop|player|mark', d.refit);
+  const quarter = 'INSPECTOR.orbit.theta=Math.PI/2+.6;INSPECTOR.orbit.phi=1.3;INSPECTOR.orbit.dist*=.8;';
+  for (const k of ['gatelands', 'mark', 'aurenne']) { await page.evaluate(([dr, sk]) => { worldState.ship = Object.assign(worldState.ship || {}, { dress: dr }); INSPECTOR.select('ships/cog/player'); const e = INSPECTOR.entries.find(x => x.key === sk); INSPECTOR.built.delete(e.id); }, [k, key('sloop/player')]); /* the inspector keeps what it built: build the sloop again in this dress */ await inspShots(g, [[key('sloop/player'), `shipdress-${k}.png`, quarter]]); }
+}
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
