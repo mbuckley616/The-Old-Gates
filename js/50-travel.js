@@ -649,7 +649,7 @@ function dropFire(f){if(f.mesh&&f.mesh.parent)f.mesh.parent.remove(f.mesh);}
 function tickSurvival(dt){const t=gameMinNow();
   for(let i=CAMPFIRES.length-1;i>=0;i--){const f=CAMPFIRES[i];if(f.until<=t){dropFire(f);CAMPFIRES.splice(i,1);continue;}
     const fl=f.mesh&&f.mesh.userData.flame;if(fl){const k=.85+.15*Math.sin(performance.now()*.013+i);fl.scale.set(1,k,1);}}
-  tickMining(dt);tickFelling(dt);
+  tickMining(dt);tickFelling(dt);tickShipWork(dt);
   if(fedKind()==='steady'&&!dead)PHP=Math.min(effMaxHP(),PHP+dt*.2);
   if(stamina>effMaxStamina())stamina=effMaxStamina();}
 // fed: one kind at a time, by the game clock
@@ -957,7 +957,8 @@ function hatchetFor(h){return h&&(h.type==='weapon'||h.type==='misc')?[{...HATCH
 // helm 2, chest 5, legs 3, feet 2, hands 1) and 30 game-minutes, and Smithing must stand at the metal's gate (SKILL_GATE,
 // the same gate that wearing it reads). A made piece is never enchanted, carries `made`, and sells back at 20%. A temper is
 // 3 ore of the piece's own metal, +8% attack or defence, three to a piece; the smith does it for 20 gold × tier instead.
-// Smithing: an ingot 2, a piece 10 + 5 × tier (the skills sheet). The grip's plank waits for the bench (session 6).
+// Smithing: an ingot 2, a piece 10 + 5 × tier (the skills sheet). S1518 — a weapon takes one plank more, for its grip or haft
+// (`forgePlanks`), now that the bench makes them.
 // S1495 — Smithing's perks: *Smelter* (25) 3 ore → 2 ingots; *Fine work* (50) a made piece is Fine, +10%; *Temper* (75) four
 // tempers; *Masterwork* (100) the first piece of each metal made after it is a Masterwork, +20% (`worldState.masterworks`).
 const FORGE_FEE=5,FORGE_MIN=30,TEMPER_ORE=3,TEMPER_STEP=.08,MADE_SELL=.2;
@@ -971,12 +972,18 @@ function ingotItem(tier,qty){const D=INGOT_DEF.find(d=>d.tier===tier),M=MATERIAL
   return {name:`${M.name} Ingot`,ico:'🧱',type:'misc',weight:1,buyPrice:p,sellMult:.3,ingot:tier,qty:qty||1};}
 // what a piece costs in ingots, and the types the forge makes: the heavy line, the shield, every blade and haft but the bows'
 // (the bench's) and the wooden club
+function forgePlanks(T){return T.slot==='weapon'?1:0;}
 function forgeIngots(T){if(T.slot==='weapon')return T.type==='Dagger'?1:T.twoHand?4:2;
   return T.shieldType==='shield'?3:{head:2,chest:5,legs:3,feet:2,hands:1}[T.slot]||0;}
 const FORGE_TYPES=[...WEAPON_TYPES.filter(T=>!/^(Bow|Crossbow|GreatClub)$/.test(T.type)).map(T=>({T,arm:false})),
   ...ARMOR_TYPES.filter(T=>forgeIngots(T)>0).map(T=>({T,arm:true}))];
-function forgeHere(){return typeof isInterior==='function'&&isInterior()&&typeof currentHouse!=='undefined'&&!!currentHouse&&currentHouse.type==='weapon';}
-function forgeFee(){if(gold<FORGE_FEE)return `The smith asks ${FORGE_FEE} gold for the forge.`;gold-=FORGE_FEE;return null;}
+function forgeHere(){return smithForge()||!!dunForgeNear();}
+function smithForge(){return typeof isInterior==='function'&&isInterior()&&typeof currentHouse!=='undefined'&&!!currentHouse&&currentHouse.type==='weapon';}
+// S1514 — the sheet's second forge: a fort armoury's smelter (D_FORGES, 56-dungeon-build.js), within touch on its floor. No smith
+// keeps it, so it asks no fee and nobody tempers for gold there
+function dunForgeNear(){if(activeZoneId!=='dungeon'||typeof D_FORGES==='undefined')return null;
+  return D_FORGES.find(f=>f.floor===currentFloor&&Math.hypot(px-f.x,pz-f.z)<TOUCH)||null;}
+function forgeFee(){if(!smithForge())return null;if(gold<FORGE_FEE)return `The smith asks ${FORGE_FEE} gold for the forge.`;gold-=FORGE_FEE;return null;}
 function oreCount(k){return bagCount(b=>b.ore===k);}
 function ingotCount(t){return bagCount(b=>b.ingot===t);}
 let _forgeN=0;
@@ -1007,10 +1014,11 @@ function forgeMake(type,tier){
   const F=FORGE_TYPES.find(f=>f.T.type===type);if(!F||!INGOT_DEF.some(d=>d.tier===tier))return {made:false,why:''};
   const gate=SKILL_GATE[tier]||0;if(skillLv('smithing')<gate)return {made:false,why:`${MATERIALS[tier-1].name} asks Smithing ${gate} (you have ${skillLv('smithing')}).`};
   const n=forgeIngots(F.T);if(ingotCount(tier)<n)return {made:false,why:`You need ${n} ${MATERIALS[tier-1].name.toLowerCase()} ingot${n>1?'s':''}.`};
+  const pl=forgePlanks(F.T);if(plankCount()<pl)return {made:false,why:'It needs a plank for the grip.'};
   const it=makeItem(tier,F.T,null,F.arm);it.made=true;it.sellMult=MADE_SELL;const q=forgeQuality(tier);forgeQualityApply(it,q);
   if(!canCarry(it))return {made:false,why:'Too heavy to carry!'};
   const f=forgeFee();if(f)return {made:false,why:f};
-  bagTake(b=>b.ingot===tier,n);bagAdd(it);skillUse('smithing',10+5*tier,'f'+(_forgeN++));
+  bagTake(b=>b.ingot===tier,n);if(pl)bagTake(b=>b.plank,pl);bagAdd(it);skillUse('smithing',10+5*tier,'f'+(_forgeN++));
   if(q==='master')(worldState.masterworks||(worldState.masterworks=[])).push(tier);
   if(typeof advanceClock==='function')advanceClock(FORGE_MIN);
   return {made:true,item:BAG[BAG.length-1]};}
@@ -1024,6 +1032,7 @@ function temperApply(it){if(it.atk&&!it.baseAtk)it.baseAtk=it.atk.slice();if(it.
 function forgeTemper(it,bySmith){
   if(!forgeHere())return {done:false,why:'You need a forge.'};
   if(!temperable(it))return {done:false,why:it&&(it.tempers||0)>=temperMax()?'It will take no more tempering.':'That cannot be tempered.'};
+  if(bySmith&&!smithForge())return {done:false,why:'No smith keeps this forge.'};
   if(bySmith){const c=20*it.tier;if(gold<c)return {done:false,why:`The smith asks ${c} gold.`};gold-=c;temperApply(it);return {done:true};}
   const ores=TEMPER_ORES[it.tier];if(!ores)return {done:false,why:`There is no ore for ${MATERIALS[it.tier-1].name.toLowerCase()}: the smith can temper it.`};
   const gate=SKILL_GATE[it.tier]||0;if(skillLv('smithing')<gate)return {done:false,why:`${MATERIALS[it.tier-1].name} asks Smithing ${gate}.`};
@@ -1056,11 +1065,11 @@ function openForgePage(){
 }
 function closeForgePage(){const ov=document.getElementById('forgeui');if(ov)ov.style.display='none';forgeOpen=false;if(typeof refocusView==='function')refocusView();}
 function forgeDraw(){const ov=document.getElementById('forgeui');if(!ov)return;
-  ov.querySelector('#fg-skill').textContent=`Smithing ${skillLv('smithing')} · ${FORGE_FEE} gold a use · ${gold} gold`;
+  ov.querySelector('#fg-skill').textContent=`Smithing ${skillLv('smithing')} · ${smithForge()?`${FORGE_FEE} gold a use · `:''}${gold} gold`;
   const row=(on,ok,key,label)=>`<div data-k="${key}" style="cursor:pointer;padding:0 6px;border-radius:2px;${on?'background:rgba(122,31,16,.12);color:#7a1f10':''}${!ok&&!on?';color:#a09070':''}">${on?'◆':'◇'} ${label}</div>`;
   const head=t=>`<div style="font-variant:small-caps;color:#8a7050;margin-top:4px">${t}</div>`;const S=forgeSel,P=forgePieces();
   let h=head('Smelt')+INGOT_DEF.map(d=>row(S.k==='s'&&S.tier===d.tier,forgeCanSmelt(d.tier),'s'+d.tier,`${MATERIALS[d.tier-1].name} Ingot`)).join('');
-  h+=head('Make')+FORGE_TYPES.map((f,i)=>row(S.k==='m'&&S.type===f.T.type,forgeMetals().some(t=>ingotCount(t)>=forgeIngots(f.T)),'m'+i,f.T.type.replace(/([a-z])([A-Z])/g,'$1 $2'))).join('');
+  h+=head('Make')+FORGE_TYPES.map((f,i)=>row(S.k==='m'&&S.type===f.T.type,forgeMetals().some(t=>ingotCount(t)>=forgeIngots(f.T))&&plankCount()>=forgePlanks(f.T),'m'+i,f.T.type.replace(/([a-z])([A-Z])/g,'$1 $2'))).join('');
   if(P.length)h+=head('Temper')+P.map((it,i)=>row(S.k==='t'&&S.it===it,true,'t'+i,`${it.name}${it.tempers?` (${it.tempers})`:''}`)).join('');
   ov.querySelector('#fg-list').innerHTML=h;
   ov.querySelectorAll('#fg-list [data-k]').forEach(d=>d.onclick=()=>{const k=d.dataset.k,n=+k.slice(1);
@@ -1071,14 +1080,14 @@ function forgeDraw(){const ov=document.getElementById('forgeui');if(!ov)return;
       (D.charcoal?pad(`1 Charcoal <i style="font-size:12px;color:#8a7050">(you have ${bagCount(b=>b.name===SURV_ITEMS.charcoal.name)})</i>`):'')+note(`you hold ${ingotCount(S.tier)}`);}
   else if(S.k==='m'){const F=FORGE_TYPES.find(f=>f.T.type===S.type),n=forgeIngots(F.T);
     if(forgeTier==null||!forgeMetals().includes(forgeTier))forgeTier=forgeMetals().find(m=>ingotCount(m)>=n)||2;
-    t=`<div style="font-variant:small-caps;color:#7a1f10">${MATERIALS[forgeTier-1].name} ${S.type.replace(/([a-z])([A-Z])/g,'$1 $2')}</div>`+pad(`${n} ingot${n>1?'s':''} and ${FORGE_MIN} minutes`)+
+    t=`<div style="font-variant:small-caps;color:#7a1f10">${MATERIALS[forgeTier-1].name} ${S.type.replace(/([a-z])([A-Z])/g,'$1 $2')}</div>`+pad(`${n} ingot${n>1?'s':''}${forgePlanks(F.T)?` and a plank <i style="font-size:12px;color:#8a7050">(you have ${plankCount()})</i>`:''}, ${FORGE_MIN} minutes`)+
       '<div style="padding-left:12px;display:flex;flex-wrap:wrap;gap:4px;margin:4px 0">'+forgeMetals().map(m=>{const g=SKILL_GATE[m]||0,ok=ingotCount(m)>=n&&skillLv('smithing')>=g;
         return `<button type="button" data-m="${m}" style="background:${m===forgeTier?'rgba(122,31,16,.12)':'none'};border:1px solid ${m===forgeTier?'#7a1f10':'#a89060'};border-radius:3px;font:13px Georgia,serif;color:${ok?'#3a2c18':'#a09070'};cursor:pointer;padding:1px 6px">${MATERIALS[m-1].name} ${ingotCount(m)}${g?` · ${g}`:''}</button>`;}).join('')+'</div>'+
       ((SKILL_GATE[forgeTier]||0)>skillLv('smithing')?note(`asks Smithing ${SKILL_GATE[forgeTier]}`):'')+note('made, never enchanted; sold back at a fifth');}
   else if(S.k==='t'){const it=S.it,ores=TEMPER_ORES[it.tier];
     t=`<div style="font-variant:small-caps;color:#7a1f10">${it.name}</div>`+pad(it.atk?`Attack ${it.atk[0]}–${it.atk[1]}`:`Defence ${it.def}`)+pad(`Tempered ${it.tempers||0} of ${temperMax()}, +${Math.round(TEMPER_STEP*100)}% each`)+
       (ores?pad(`${TEMPER_ORE} ${ores.map(k=>ORE_DEF[k].name).join(' or ')} <i style="font-size:12px;color:#8a7050">(you have ${bagCount(b=>ores.includes(b.ore))})</i>`):note('no ore of its metal'))+
-      `<div style="padding-left:12px;margin-top:4px"><button type="button" id="fg-smith" style="background:none;border:1px solid #a89060;border-radius:3px;font:13px Georgia,serif;color:#3a2c18;cursor:pointer;padding:1px 8px">The smith tempers it · ${20*it.tier} gold</button></div>`;}
+      (smithForge()?`<div style="padding-left:12px;margin-top:4px"><button type="button" id="fg-smith" style="background:none;border:1px solid #a89060;border-radius:3px;font:13px Georgia,serif;color:#3a2c18;cursor:pointer;padding:1px 8px">The smith tempers it · ${20*it.tier} gold</button></div>`:'');}
   const R=ov.querySelector('#fg-right');R.innerHTML=t;
   R.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{forgeTier=+b.dataset.m;forgeSaid='';forgeDraw();});
   const sm=R.querySelector('#fg-smith');if(sm)sm.onclick=()=>forgeGo(true);
@@ -1092,6 +1101,161 @@ function forgeGo(bySmith){const S=forgeSel;let r;
   if(!forgeHere()){closeForgePage();return;}forgeDraw();}
 window.addEventListener('keydown',e=>{if(!forgeOpen)return;const c=e.code;let hit=true;
   if(c==='Escape')closeForgePage();else if(c==='Enter'){if(!e.repeat)forgeGo(false);}else hit=false;
+  if(hit){e.preventDefault();e.stopPropagation();}},true);
+// ── S1517 — Survival B, session 6: the bench (`docs/design/survival-build.md`) ──
+// A bench is a joiner's kit in the bag (25 gold, weight 4, never used up; at the smith's and the goods shop, beside the pick).
+// The cabin's bench comes with the ship's patch and splice. At it a log makes 2 planks and a pine log 1 spar (Joinery 2 each).
+// A bow is 2 planks and an ingot for its fittings and takes the ingot's metal, gated by Joinery at the metal's SKILL_GATE; a
+// wooden shield (the Wooden Buckler) is 3 planks. Both take the forge's 30 minutes, are never enchanted, carry `made` and sell
+// back at a fifth (Joinery 15 each). The longbow and the war bow (Bowyer, Joinery 75) wait for those bows to exist. Fletching
+// is everyone's: a log, 10 feathers and an iron ingot make 10 Iron Arrows, 15 with Fletcher (Woodcutting 50; Woodcutting 2).
+// Feathers are 1 gold for ten at the goods shop, beside its arrows. Arrows of the other metals wait on their damage.
+const JOINER_NAME="Joiner's Kit",BENCH_PIECE=15,FLETCH_N=10,FLETCH_FEATHERS=10;
+const JOINER_ITEM={name:JOINER_NAME,ico:'🧰',type:'misc',weight:4,buyPrice:25,sellMult:.4,tool:'joiner'};
+const BENCH_ITEMS={
+  plank:{name:'Plank',ico:'🪵',type:'misc',weight:2,buyPrice:3,sellMult:.3,plank:true},
+  spar:{name:'Spar',ico:'🪵',type:'misc',weight:3,buyPrice:7,sellMult:.3,spar:true},
+  feathers:{name:'Feathers',ico:'🪶',type:'misc',weight:.01,qty:FLETCH_FEATHERS,bundle:FLETCH_FEATHERS,buyPrice:1,sellMult:.4,feather:true}};
+function benchItem(k,qty){return {...BENCH_ITEMS[k],qty:qty||1};}
+function hasJoinerKit(){return BAG.some(b=>b&&b.tool==='joiner');}
+function benchHere(){return hasJoinerKit()||cabinBench();}
+function joinerKitFor(h){return h&&(h.type==='weapon'||h.type==='misc')?[{...JOINER_ITEM}]:[];}
+function feathersFor(h){return h&&h.type==='misc'?[{...BENCH_ITEMS.feathers}]:[];}
+function plankCount(){return bagCount(b=>b.plank);}
+// the bow's metals: those an ingot is smelted of
+function benchMetals(){return INGOT_DEF.map(d=>d.tier);}
+const BENCH_RECIPES=[
+  {id:'plank',name:'Planks',need:'1 Log',has:()=>bagCount(b=>b.log==='log')>=1},
+  {id:'spar',name:'Spar',need:'1 Pine Log',has:()=>bagCount(b=>b.log==='pine')>=1},
+  {id:'bow',name:'Bow',need:'2 planks and an ingot',has:()=>plankCount()>=2&&benchMetals().some(t=>ingotCount(t)>=1)},
+  {id:'shield',name:'Wooden Shield',need:'3 planks',has:()=>plankCount()>=3},
+  {id:'arrows',name:'Arrows',need:'1 log, 10 feathers and an iron ingot',has:()=>bagCount(b=>!!b.log)>=1&&bagCount(b=>b.feather)>=FLETCH_FEATHERS&&ingotCount(3)>=1},
+  {id:'patch',name:'Patch the hull',need:'a plank and a pitch',ship:true,has:()=>!shipWorkWhy('patch')}, /* S1519 — shown only at your ship */
+  {id:'splice',name:'Splice the rig',need:'a spar and a pitch',ship:true,has:()=>!shipWorkWhy('splice')}];
+function benchRows(){return BENCH_RECIPES.filter(r=>!r.ship||shipWorkHere());}
+let _benchN=0;
+// a made bow or shield: never enchanted, `made`, a fifth back, the forge's half-hour
+function benchPiece(tier,T,arm){const it=makeItem(tier,T,null,arm);it.made=true;it.sellMult=MADE_SELL;return it;}
+// work one recipe at the bench (tier: the bow's metal). Returns {made, item, n, why}
+function benchMake(id,tier){
+  if(!benchHere())return {made:false,why:'You need a bench.'};
+  const R=BENCH_RECIPES.find(r=>r.id===id);if(!R)return {made:false,why:''};
+  if(id==='plank'||id==='spar'){const pine=id==='spar';if(!bagCount(b=>b.log===(pine?'pine':'log')))return {made:false,why:`You need ${pine?'a pine log':'a log'}.`};
+    bagTake(b=>b.log===(pine?'pine':'log'),1);const it=benchItem(id,pine?1:2);bagAdd(it);skillUse('joinery',2,'b'+(_benchN++));
+    return {made:true,item:BAG.find(b=>sameStack(b,it))||it,n:it.qty};}
+  if(id==='bow'){const t=tier||benchMetals().find(m=>ingotCount(m)>=1)||3;if(!benchMetals().includes(t))return {made:false,why:''};
+    const gate=SKILL_GATE[t]||0;if(skillLv('joinery')<gate)return {made:false,why:`${MATERIALS[t-1].name} asks Joinery ${gate} (you have ${skillLv('joinery')}).`};
+    if(plankCount()<2)return {made:false,why:'You need 2 planks.'};
+    if(ingotCount(t)<1)return {made:false,why:`You need ${MATERIALS[t-1].name.toLowerCase()==='iron'?'an':'a'} ${MATERIALS[t-1].name.toLowerCase()} ingot.`};
+    const it=benchPiece(t,WEAPON_TYPES.find(T=>T.type==='Bow'),false);if(!canCarry(it))return {made:false,why:'Too heavy to carry!'};
+    bagTake(b=>b.plank,2);bagTake(b=>b.ingot===t,1);bagAdd(it);skillUse('joinery',BENCH_PIECE,'b'+(_benchN++));
+    if(typeof advanceClock==='function')advanceClock(FORGE_MIN);return {made:true,item:BAG[BAG.length-1],n:1};}
+  if(id==='shield'){if(plankCount()<3)return {made:false,why:'You need 3 planks.'};
+    const it=benchPiece(1,ARMOR_TYPES.find(T=>T.type==='Buckler'),true);if(!canCarry(it))return {made:false,why:'Too heavy to carry!'};
+    bagTake(b=>b.plank,3);bagAdd(it);skillUse('joinery',BENCH_PIECE,'b'+(_benchN++));
+    if(typeof advanceClock==='function')advanceClock(FORGE_MIN);return {made:true,item:BAG[BAG.length-1],n:1};}
+  if(R.ship){const s=shipWorkStart(id);return s.started?{made:true,work:true}:{made:false,why:s.why};}
+  if(id==='arrows'){if(!R.has())return {made:false,why:`You need ${R.need}.`};
+    const plain=bagCount(b=>b.log==='log')>0;bagTake(b=>plain?b.log==='log':!!b.log,1);bagTake(b=>b.feather,FLETCH_FEATHERS);bagTake(b=>b.ingot===3,1);
+    const n=perk('woodcutting',50)?15:FLETCH_N;const it={...ARROW_IRON,qty:n};bagAdd(it);skillUse('woodcutting',2,'b'+(_benchN++));
+    return {made:true,item:BAG.find(b=>sameStack(b,it))||it,n};}
+  return {made:false,why:''};}
+// using the kit, a plank, a spar or feathers from the bag opens the bench's page
+function useBenchThing(i){if(benchHere())openBenchPage();else showMsg('Work it at a bench: a joiner’s kit is one.','#c8b890');}
+
+// S1519 — the ship's patch and splice (`sailing.md` A, the survival sheet's joinery row; the skills sheet's Joinery perks). Her cabin
+// is a bench, and so is a joiner's kit at her side while she is hove to (within SHIP_WORK_R of her, not sailing). A patch is a
+// plank and a pitch: +8 + Joinery/5 hull (×1.5 with Tight seams, 50) after 8 s of work (4 with Shipwright's hand, 100). A splice
+// is a spar and a pitch: +20 rig, after the same work; at sea (no land within 25 m of her) only with Field splice (25). Field work
+// reaches 60% + 0.4% a Joinery point of the bar (100% at 100); past that, the yard. Each is a Joinery use of 6. The work is timed
+// by the frame's dt, and walking off or setting sail stops it with nothing spent.
+const PATCH_BASE=8,SPLICE_RIG=20,PATCH_S=8,SHIP_WORK_R=10,AT_SEA_R=25;
+function cabinBench(){return typeof isInterior==='function'&&isInterior()&&typeof currentHouse!=='undefined'&&!!currentHouse&&currentHouse.type==='cabin';}
+function shipWorkHere(){if(typeof SHIP==='undefined'||!worldState.ship||!SHIP.mesh||SHIP.sailing)return false;if(cabinBench())return true;
+  return activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior())&&hasJoinerKit()&&Math.hypot(px-SHIP.x,pz-SHIP.z)<SHIP_WORK_R;}
+function fieldCap(max){return Math.round(max*Math.min(1,.6+.004*skillLv('joinery')));}
+function patchAmt(){return Math.round((PATCH_BASE+Math.floor(skillLv('joinery')/5))*(perk('joinery',50)?1.5:1));}
+function patchSecs(){return perk('joinery',100)?PATCH_S/2:PATCH_S;}
+function pitchCount(){return bagCount(b=>b.name===SURV_ITEMS.pitch.name);}
+// no land within 25 m of her: the open water a splice needs Field splice for
+function shipAtSea(){if(typeof worldH!=='function')return false;for(let a=0;a<8;a++){const c=Math.cos(a*Math.PI/4),s=Math.sin(a*Math.PI/4);
+  for(let r=0;r<=AT_SEA_R;r+=5)if(worldH(SHIP.x+c*r,SHIP.z+s*r)>WORLD.SEA_Y)return false;}return true;}
+// why a patch or a splice cannot start now, or null
+function shipWorkWhy(kind){if(!shipWorkHere())return 'She must be hove to, and you at her side or in her cabin.';
+  const b=shipBars(),pl=kind==='patch';
+  if(pl?plankCount()<1:bagCount(b=>b.spar)<1)return pl?'A patch needs a plank.':'A splice needs a spar.';
+  if(pitchCount()<1)return 'It needs a pitch.';
+  if(!pl&&shipAtSea()&&!perk('joinery',25))return 'At sea the rig will not take a splice: bring her in to the shore.';
+  const cap=fieldCap(pl?b.hullMax:b.rigMax),now=pl?b.hull:b.rig;
+  if(now>=cap)return `Her ${pl?'hull':'rig'} is as sound as field work makes it (${now} of ${pl?b.hullMax:b.rigMax}). The rest is the yard’s.`;
+  return null;}
+let SHIPWORK=null;
+// begin a patch or a splice. Returns {started, why}
+function shipWorkStart(kind){const why=shipWorkWhy(kind);if(why)return {started:false,why};
+  SHIPWORK={kind,t:patchSecs(),x:px,z:pz};showMsg(kind==='patch'?'You set to the patch.':'You set to the splice.','#c8b890');return {started:true};}
+// the work done: the plank or spar and the pitch go, the bar rises to the field cap. Returns {hull} or {rig}, or {why}
+function shipWorkFinish(kind){const why=shipWorkWhy(kind);if(why)return {why};const st=shipCfg(),b=shipBars();
+  bagTake(kind==='patch'?(x=>x.plank):(x=>x.spar),1);bagTake(x=>x.name===SURV_ITEMS.pitch.name,1);skillUse('joinery',6,'w'+(_benchN++));
+  if(kind==='patch'){const to=Math.min(fieldCap(b.hullMax),b.hull+patchAmt());st.hull=to;if(typeof shipBarsUI==='function')shipBarsUI();return {hull:to-b.hull};}
+  const to=Math.min(fieldCap(b.rigMax),b.rig+SPLICE_RIG);st.rig=to;if(typeof shipBarsUI==='function')shipBarsUI();return {rig:to-b.rig};}
+// each frame, from tickSurvival
+function tickShipWork(dt){if(!SHIPWORK)return;const W=SHIPWORK;
+  if(!shipWorkHere()||Math.hypot(px-W.x,pz-W.z)>1.5||(typeof dead!=='undefined'&&dead)){SHIPWORK=null;showMsg('You leave the work.','#cc8844');return;}
+  W.t-=dt;if(W.t>0)return;SHIPWORK=null;const r=shipWorkFinish(W.kind);
+  if(r.why)showMsg(r.why,'#cc8844');else{const b=shipBars();showMsg(W.kind==='patch'?`The patch holds: hull +${r.hull}, ${b.hull} of ${b.hullMax}.`:`The splice holds: rig +${r.rig}, ${b.rig} of 100.`,'#d8c8a0');}
+  if(typeof renderHubInv==='function')renderHubInv();}
+
+// ── the bench's page (the fire's layout): what can be made on the left, the recipe on the right ──
+let benchOpen=false,benchSel='plank',benchTier=null,benchSaid='';
+function openBenchPage(){
+  if(!benchHere()){showMsg('You need a bench.','#cc8844');return;}
+  if(typeof hubOpen!=='undefined'&&hubOpen&&typeof closeHub==='function')closeHub();
+  if(typeof _releasePointerLockForMenu==='function')_releasePointerLockForMenu();
+  let ov=document.getElementById('benchui');
+  if(!ov){ov=document.createElement('div');ov.id='benchui';
+    ov.style.cssText='position:fixed;inset:0;z-index:8500;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.35)';
+    ov.innerHTML='<div style="width:560px;max-width:calc(100vw - 32px);max-height:calc(100vh - 32px);overflow:auto;box-sizing:border-box;padding:18px 24px 16px;background:#e9dcc2;color:#3a2c18;border:6px double #8a7040;border-radius:6px;font-family:Georgia,serif;box-shadow:0 10px 40px #000a">'+
+      '<div style="display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid #a89060;padding-bottom:6px"><span style="font-size:22px;color:#7a1f10;letter-spacing:.06em;font-variant:small-caps">The Bench</span><span id="bn-skill" style="font-style:italic;font-size:13px;color:#8a7050"></span></div>'+
+      '<div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:10px"><div id="bn-list" style="flex:1 1 180px;min-width:0;font-size:14px;line-height:1.7"></div><div id="bn-right" style="flex:1.3 1 220px;min-width:0;font-size:14px;line-height:1.6"></div></div>'+
+      '<div id="bn-said" style="min-height:20px;margin-top:8px;font-style:italic;color:#7a1f10;font-size:14px"></div>'+
+      '<div style="display:flex;align-items:center;gap:12px;margin-top:8px;border-top:1px solid #a89060;padding-top:8px"><button type="button" id="bn-go" style="background:none;border:1px solid #7a1f10;border-radius:3px;font:18px Georgia,serif;color:#7a1f10;font-variant:small-caps;cursor:pointer;padding:2px 14px">Work</button>'+
+      '<span style="flex:1"></span><span style="font-size:12px;font-style:italic;color:#8a7050"><button type="button" id="bn-no" style="background:none;border:1px solid #a89060;border-radius:3px;font:13px Georgia,serif;color:#3a2c18;cursor:pointer;padding:2px 7px">Esc</button> as you were · Enter works</span></div></div>';
+    document.body.appendChild(ov);
+    ov.querySelector('#bn-go').onclick=()=>benchGo();ov.querySelector('#bn-no').onclick=()=>closeBenchPage();}
+  benchSaid='';if(!benchRows().some(r=>r.id===benchSel&&r.has())){const r=benchRows().find(r=>r.has());benchSel=r?r.id:BENCH_RECIPES[0].id;}
+  ov.style.display='flex';benchOpen=true;benchDraw();
+}
+function closeBenchPage(){const ov=document.getElementById('benchui');if(ov)ov.style.display='none';benchOpen=false;if(typeof refocusView==='function')refocusView();}
+function benchDraw(){const ov=document.getElementById('benchui');if(!ov)return;
+  ov.querySelector('#bn-skill').textContent=`Joinery ${skillLv('joinery')} · Woodcutting ${skillLv('woodcutting')}`;
+  ov.querySelector('#bn-list').innerHTML=benchRows().map(r=>{const on=r.id===benchSel,ok=r.has();
+    return `<div data-k="${r.id}" style="cursor:pointer;padding:0 6px;border-radius:2px;${on?'background:rgba(122,31,16,.12);color:#7a1f10':''}${!ok&&!on?';color:#a09070':''}">${on?'◆':'◇'} ${r.name}</div>`;}).join('');
+  ov.querySelectorAll('#bn-list [data-k]').forEach(d=>d.onclick=()=>{benchSel=d.dataset.k;benchSaid='';benchDraw();});
+  const R=BENCH_RECIPES.find(r=>r.id===benchSel),pad=s=>`<div style="padding-left:12px">${s}</div>`,note=s=>`<div style="padding-left:12px;color:#8a7050;font-style:italic">${s}</div>`;
+  const have=n=>` <i style="font-size:12px;color:#8a7050">(you have ${n})</i>`;let t=`<div style="font-variant:small-caps;color:#7a1f10">${R.name}</div>`;
+  if(R.id==='plank')t+=pad('1 Log'+have(bagCount(b=>b.log==='log')))+note('two planks, for a grip, a bow, a shield or a ship’s patch');
+  else if(R.id==='spar')t+=pad('1 Pine Log'+have(bagCount(b=>b.log==='pine')))+note('for a ship’s splice');
+  else if(R.id==='bow'){if(benchTier==null||!benchMetals().includes(benchTier))benchTier=benchMetals().find(m=>ingotCount(m)>=1)||3;
+    t=`<div style="font-variant:small-caps;color:#7a1f10">${MATERIALS[benchTier-1].name} Bow</div>`+pad('2 Planks'+have(plankCount()))+pad(`1 ingot and ${FORGE_MIN} minutes`)+
+      '<div style="padding-left:12px;display:flex;flex-wrap:wrap;gap:4px;margin:4px 0">'+benchMetals().map(m=>{const g=SKILL_GATE[m]||0,ok=ingotCount(m)>=1&&skillLv('joinery')>=g;
+        return `<button type="button" data-m="${m}" style="background:${m===benchTier?'rgba(122,31,16,.12)':'none'};border:1px solid ${m===benchTier?'#7a1f10':'#a89060'};border-radius:3px;font:13px Georgia,serif;color:${ok?'#3a2c18':'#a09070'};cursor:pointer;padding:1px 6px">${MATERIALS[m-1].name} ${ingotCount(m)}${g?` · ${g}`:''}</button>`;}).join('')+'</div>'+
+      ((SKILL_GATE[benchTier]||0)>skillLv('joinery')?note(`asks Joinery ${SKILL_GATE[benchTier]}`):'')+note('made, never enchanted; sold back at a fifth');}
+  else if(R.id==='shield')t+=pad('3 Planks'+have(plankCount()))+pad(`${FORGE_MIN} minutes`)+note('a Wooden Buckler; made, sold back at a fifth');
+  else if(R.ship){const b=shipBars(),pl=R.id==='patch',why=shipWorkWhy(R.id); /* S1519 */
+    t+=pad(pl?'1 Plank'+have(plankCount()):'1 Spar'+have(bagCount(x=>x.spar)))+pad('1 Pitch'+have(pitchCount()))+pad(pl?`hull +${patchAmt()}, ${patchSecs()} s of work`:`rig +${SPLICE_RIG}, ${patchSecs()} s of work`)+
+      note(`${pl?'hull':'rig'} ${pl?b.hull:b.rig} of ${pl?b.hullMax:b.rigMax}; field work to ${fieldCap(pl?b.hullMax:b.rigMax)}`)+(why?note(why):'');}
+  else if(R.id==='arrows')t+=pad('1 log'+have(bagCount(b=>!!b.log)))+pad(`${FLETCH_FEATHERS} Feathers`+have(bagCount(b=>b.feather)))+pad('1 Iron Ingot'+have(ingotCount(3)))+note(`${perk('woodcutting',50)?15:FLETCH_N} Iron Arrows`);
+  const Rt=ov.querySelector('#bn-right');Rt.innerHTML=t;
+  Rt.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{benchTier=+b.dataset.m;benchSaid='';benchDraw();});
+  ov.querySelector('#bn-said').textContent=benchSaid;}
+function benchGo(){const r=benchMake(benchSel,benchSel==='bow'?benchTier:null);
+  if(r.work){closeBenchPage();return;} /* S1519 — the patch and the splice are worked with the page shut */
+  benchSaid=r.made?(r.n>1?`${r.n} × ${r.item.name}.`:`${r.item.name}.`):r.why||'';
+  if(r.made&&typeof uiTone==='function')uiTone(330,440,.08,.08,'triangle');
+  if(typeof renderHubInv==='function')renderHubInv();
+  if(!benchHere()){closeBenchPage();return;}benchDraw();}
+window.addEventListener('keydown',e=>{if(!benchOpen)return;const c=e.code;let hit=true;
+  if(c==='Escape')closeBenchPage();else if(c==='Enter'){if(!e.repeat)benchGo();}else hit=false;
   if(hit){e.preventDefault();e.stopPropagation();}},true);
 // v61e5: Per-gate flavor copy for the commission lock. Keyed by targetZone.
 // The four canonical commission-gated edges (per v61d9) each get bespoke
@@ -2040,6 +2204,7 @@ function interact(){
   // barrel — same pattern as chests. v61g7: radius 1.0 → 1.1 for the larger
   // v61g7 container meshes (0.5u footprint vs the old 0.3u).
   if(fortCotNear()){openSleepUI();return;} // v80 S9 — fort cots; S624 — the exit wins when it is nearer
+  if(dunForgeNear()){openForgePage();return;} /* S1514 — a fort armoury's smelter is a forge */
   const br=BARRELS.find(b=>b.floor===currentFloor&&lookingAt(b,2.6)&&(!b.opened||b.items.length>0)); // v80 — look-at
   if(br){ openLoot(br); return; }
   // exit via entrance cell (floor 1 only)

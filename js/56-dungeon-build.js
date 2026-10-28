@@ -1,6 +1,7 @@
 let _exhaustedStrike=false; // v80 S9 — set per swing when stamina was below the minimum
 function flashStamina(){const el=document.getElementById('stb');if(!el)return;el.style.transition='none';el.style.background='#ffd040';el.style.boxShadow='0 0 10px #ffd040';setTimeout(()=>{el.style.transition='background .35s, box-shadow .35s';el.style.boxShadow='';},60);}
 let D_BEDS=[]; // v80 S9 — {x,z,floor} cots you can rest on (forts)
+let D_FORGES=[]; // S1514 — {x,z,floor} a fort armoury's smelter: a forge with no smith (survival B, 50-travel.js's forgeHere)
 function dPropHit(x, z){
   if(!DUNGEON_PROPS || DUNGEON_PROPS.length === 0) return false;
   for(const p of DUNGEON_PROPS){
@@ -2956,7 +2957,7 @@ function buildDungeon(portal){
         q(SK.rbox(0.34, 0.26, 0.1, 0.03, 1), 0x1a1210, 0, 0.18, -0.52);
         q.flame(SK.cone(0.08, 0.18, 6), 0xff7a20, -0.06, 0.16, -0.5); q.flame(SK.cone(0.06, 0.14, 6), 0xffa030, 0.07, 0.14, -0.5);
         FP.put(q, smelterX, smelterZ, 0); }
-      registerProp(smelterX, smelterZ, 1.1, 1.1);
+      registerProp(smelterX, smelterZ, 1.1, 1.1); D_FORGES.push({x: smelterX, z: smelterZ, floor: 1});
       const smelterLight = new THREE.PointLight(0xff6020, 0.9, 3.5);
       smelterLight.position.set(smelterX - 0.1, baseY + 0.2, smelterZ - 0.7);
       dScene.add(smelterLight);
@@ -3025,6 +3026,7 @@ function buildDungeon(portal){
 
   FOOTHOLDS=[];DUNGEON_STAIRWELL=false; // v80 S8
   D_BEDS=[]; // v80 S9 — a cot near a fort's entrance: rest, and take a banked level
+  D_FORGES=[]; // S1514 — the armouries' smelters, filled by decorateFortRoom below
   if(isFort&&gen.entC!=null){
     let spot=null;for(const [dc,dr] of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,1]]){const c=gen.entC+dc,r=gen.entR+dr;if(c>=0&&r>=0&&c<dC&&r<dR&&(dMap[r][c]===1||dMap[r][c]===7)){spot=[c,r];break;}} // S317 — a fort’s entry is hallway (7), not room floor (1), so the cot never found a cell (the look builder, 29 Sep)
     if(spot){const [c,r]=spot;const K=furnKit(),cot=K.bake(K.bed('gatelands',(portal.seed|0)%97+7,1.0,.6));cot.position.set(c,0,r);cot.userData.fortCot=true;dScene.add(cot); // S308 — a narrow kit bed, head north as the old pillow lay
@@ -3704,6 +3706,7 @@ function dunScaleWhole(k,wallMat){
   for(const q of KEYS){q.x*=k;q.z*=k;}
   if(typeof SIGILS!=='undefined')for(const q of SIGILS){const sh=q.mesh&&shiftOf.get(q.mesh);q.x*=k;q.z*=k;if(typeof q.wx==='number'){if(sh){q.wx+=sh[0];q.wz+=sh[1];}else{q.wx*=k;q.wz*=k;}}}
   for(const q of D_BEDS){q.x*=k;q.z*=k;}
+  for(const q of D_FORGES){const u=near(q.x,q.z);if(u){q.x+=u.dx;q.z+=u.dz;}else{q.x*=k;q.z*=k;}} /* S1514 — the smelter moves with its bake's part */
   if(typeof D_TRAPS!=='undefined')for(const t of D_TRAPS){t.x*=k;t.z*=k;}
   for(const q of DUNGEON_COLUMNS){if(q.span){q.x*=k;q.z*=k;q.r*=k;continue;} /* S1293 — a gate's pier spans its cells: stretched, not moved */ const u=near(q.x,q.z);if(u){q.x+=u.dx;q.z+=u.dz;}else{q.x*=k;q.z*=k;}}
   for(const q of DUNGEON_PROPS){const cx=(q.x0+q.x1)/2,cz=(q.z0+q.z1)/2,u=near(cx,cz);

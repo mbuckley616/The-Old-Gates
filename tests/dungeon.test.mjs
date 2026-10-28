@@ -13,7 +13,9 @@ await page.evaluate(() => { window._prevDScene = typeof dScene !== 'undefined' ?
 await page.evaluate(() => goToDungeon(Object.assign({}, PORTALS[0], { theme: 'ruins', seed: 11, size: 'medium', interior: 'cave', zone: 'world', tutorial: false, lair: null, lairDoor: true })));
 for (let k = 0; k < 40 && !(await page.evaluate(() => activeZoneId === 'dungeon' && scene === dScene && dScene !== window._prevDScene)); k++) await page.waitForTimeout(500);
 await page.waitForTimeout(1500);
-const r = await page.evaluate(() => { const out = {}; let meshes = 0; const shell = []; dScene.traverse(o => { if (o.isMesh) meshes++; if (o.userData && o.userData.dunShell) shell.push(o); });
+// S1514 — the rays below read the shell's world matrices, which only a rendered frame updates; on a slow runner none has run 1.5 s
+// after the fade (CI on PR #822: 0 calls, 279 of 346 cells missed, the floor still at its unscaled cell), so update them first
+const r = await page.evaluate(() => { dScene.updateMatrixWorld(true); const out = {}; let meshes = 0; const shell = []; dScene.traverse(o => { if (o.isMesh) meshes++; if (o.userData && o.userData.dunShell) shell.push(o); });
   out.zone = activeZoneId; out.meshes = meshes; out.floors = dMap2 ? 2 : 1; out.shell = shell.map(o => o.userData.dunShell).filter(k => k === 'walls' || k === 'floor' || k === 'ceiling').sort().join(','); out.beams = shell.filter(o => o.userData.dunShell === 'beams').map(o => o.geometry.index.count / 36);
   // no box left standing in for a wall cell
   let boxes = 0; dScene.traverse(o => { if (o.isMesh && o.geometry && o.geometry.type === 'BoxGeometry' && Math.abs(o.geometry.parameters.height - FLOOR_HEIGHT) < 1e-6 && o.geometry.parameters.width === 1) boxes++; }); out.wallBoxes = boxes;

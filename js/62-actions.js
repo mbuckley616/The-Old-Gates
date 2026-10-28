@@ -698,6 +698,7 @@ function useItem(i){
   if(it.name===TINDERBOX_NAME||it.log||it.food){useFireThing(i);return;} /* S1486 — a fire, and what it makes */
   if(it.tool==='pick'||it.ore||it.ingot){useOreThing(i);return;} /* S1491 — a pick at a vein */
   if(it.tool==='hatchet'){useHatchet();return;} /* S1511 — a hatchet at a tree */
+  if(it.tool==='joiner'||it.plank||it.spar||it.feather||(it.name===SURV_ITEMS.pitch.name&&benchHere())){useBenchThing(i);return;} /* S1517 — the bench */
   if(it.type==='spellbook'){readSpellbook(i);return;} // v80
   if(it.artifact==='sundial_ring'){if(typeof noonRingTurn==='function')noonRingTurn();return;} /* S786 — the Noon Ring turns the weather */
   if(it.type==='rubbing'){(worldState.rubbings||(worldState.rubbings={}))[it.seed]=it.gate;showMsg(`${it.gate} is marked on your map.`,'#c0e0ff');it.qty=(it.qty||1)-1;if(it.qty<=0)BAG.splice(i,1);if(typeof renderInv==='function')renderInv();return;} // v80 — a rubbing marks a sigil gate
