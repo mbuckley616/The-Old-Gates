@@ -104,5 +104,48 @@ if (cv.bake.kit) {
   check('the wheel answers from the castle, not from the cabin under it, and takes you to the helm up there', cv.promptDown === null && /pilot/.test(cv.promptUp || '') && cv.take && cv.sailing && cv.atHelm[2] === 2.15, [cv.promptDown, cv.promptUp, cv.atHelm]);
   await inspShots(g, [[key('caravel/player'), 'shipdress-caravel.png', 'INSPECTOR.orbit.theta=Math.PI/2+.6;INSPECTOR.orbit.phi=1.3;INSPECTOR.orbit.dist*=.8;']]);
 }
+// Session 1548: your cog on the new look is the kit's cog in the yard's dress (#839 A): the square sail with the harp, the Mark's gaff,
+// Aurenne's lateen. Her aftcastle is walked as the caravel's; her forecastle is a deck 2.15 m up too, open beneath on two posts, its
+// ladder up the middle running aft from its edge: up it you stand on the forecastle, under it you walk at the deck's height to the bow.
+const cg = await page.evaluate(() => { const out = {}, was = worldState.ship;
+  for (const dr of ['gatelands', 'mark', 'aurenne']) { worldState.ship = { cls: 'cog', dress: dr }; const m = WORLD.buildShipMesh(17, 5.6), b = shipBake('cog', 'player'); shipTrim(m, Math.PI / 2); const a = m.userData.rigs.map(q => +q.m.rotation.y.toFixed(2)); shipTrim(m, -Math.PI / 2);
+    out[dr] = { kit: !!b.kit, dress: b.kit && b.kit.dress, key: m.userData.bakeKey, tris: b.kit && b.kit.tris, draws: b.kit && b.kit.draws, rigs: b.rigs.map(q => q.type).join(), a, c: m.userData.rigs.map(q => +q.m.rotation.y.toFixed(2)), fore: b.fore && b.fore.y, hatchZ: b.hatchZ, stow: ((shipStowSlots(m.userData.bakeKey) || {}).slots || []).length }; }
+  if (!out.gatelands.kit) { worldState.ship = was; return out; }
+  closeInspector(); /* the caravel's pictures left it open, and it takes the loop's frames */
+  const s = WORLD.allPorts().sort((a, c) => Math.hypot(a.x - px, a.z - pz) - Math.hypot(c.x - px, c.z - pz))[0];
+  let sx = null, sz = null; for (let rr = 300; rr < 3000 && sx === null; rr += 30) for (let a = 0; a < 6.28; a += .3) { const x = s.x + Math.cos(a) * rr, z = s.z + Math.sin(a) * rr;
+    if ([[0, 0], [40, 0], [-40, 0], [0, 40], [0, -40]].every(([dx, dz]) => WORLD.worldH(x + dx, z + dz) < -5)) { sx = x; sz = z; break; } }
+  for (const o of [...WORLD.others]) WORLD.despawnOtherShip(o);
+  if (SHIP.mesh) { sc.remove(SHIP.mesh); SHIP.mesh = null; }
+  worldState.ship = { cls: 'cog', dress: 'mark', name: 'Test Cog', sails: 0, cargo: 0 }; WORLD.spawnShip(sx, sz, -1.1);
+  const m = SHIP.mesh, C = m.userData.castle, F = m.userData.fore, D = DECK_Y, ry = m.rotation.y; out.walkKey = m.userData.bakeKey; out.C = [C.z1, C.lad]; out.F = [F.z0, F.lad, F.z1];
+  const put = (lx, lz, jy, fwd) => { m.updateMatrixWorld(true); const v = new THREE.Vector3(lx, 1, lz).applyMatrix4(m.matrixWorld); px = v.x; pz = v.z; jumpY = jy; velY = 0; onGround = true; yaw = fwd ? ry + Math.PI : ry; pitch = 0; };
+  const loc = () => { const [lx, lz] = shipLocal(m, px, pz); return [+lx.toFixed(2), +lz.toFixed(2), +(jumpY - D).toFixed(2)]; };
+  const walk = n => { let top = -9; _drive(() => { PHP = maxHP; stamina = maxStamina; K['KeyW'] = true; top = Math.max(top, jumpY - D); }, n); return { end: loc(), top: +top.toFixed(2), swim: isSwimming() }; };
+  put(0, F.z0 - 1.7, D, true); out.fup = walk(80);
+  put(0, F.z0 + .8, D + 2.15, false); out.fdown = walk(80);
+  put(1.0, F.z0 - 1.5, D, true); out.under = walk(80);
+  put(1.0, F.z0 + 1.2, D + 2.15, false); out.frail = walk(60);
+  put(0, F.z0 + .7, D, false); out.ladUnder = walk(40);
+  put(0, F.z0 + 1.2, D + 2.15, true); out.bow = walk(80);
+  put(1.6, C.z1 + 1.7, D, false); out.aup = walk(80);
+  put(0, C.z1 + .9, D, false); out.cabin = walk(70);
+  cabinUpdate(); { const h = CABIN.house; out.exit = shipLocal(m, h.exitX, h.exitZ).map(v => +v.toFixed(2)); out.exitFree = !shipPropSolid(h.exitX, h.exitZ); }
+  put(0, m.userData.helm.z, D + 2.15, true); pitch = -.25; _drive(() => false, 3); out.promptUp = shipPrompt();
+  out.take = shipInteract(); out.sailing = SHIP.sailing; _drive(() => false, 20); out.atHelm = loc(); shipInteract();
+  sc.remove(SHIP.mesh); SHIP.mesh = null; worldState.ship = was; return out; });
+console.log(JSON.stringify(cg));
+if (cg.gatelands.kit) {
+  check('your cog bakes in the yard\'s three dresses, each under 36,000 triangles and 16 draws, both castles 2.15 m over the deck', ['gatelands', 'mark', 'aurenne'].every(k => cg[k].dress === k && cg[k].key === 'cog|player|' + k && cg[k].tris < 36000 && cg[k].draws <= 16 && Math.abs(cg[k].fore - 3.15) < .01), ['gatelands', 'mark', 'aurenne'].map(k => [k, cg[k].tris, cg[k].draws, cg[k].fore]));
+  check('each island its rig on the cog: the square sail, the gaff, the lateen; the gaff and the lateen swing to leeward and over', cg.gatelands.rigs === 'square' && cg.mark.rigs === 'gaff' && cg.aurenne.rigs === 'lateen' && cg.mark.a[0] < -.2 && cg.mark.c[0] > .2 && cg.aurenne.a[0] < -.1 && cg.aurenne.c[0] > .1, [cg.mark.a, cg.mark.c, cg.aurenne.a, cg.aurenne.c]);
+  check('her hold\'s stowage stands between the castles, off the ladders, enough for her 60 three high, the same in every dress', ['gatelands', 'mark', 'aurenne'].every(k => cg[k].stow === cg.gatelands.stow) && cg.gatelands.stow * 3 >= 60, ['gatelands', 'mark', 'aurenne'].map(k => cg[k].stow));
+  check('up the forecastle\'s ladder to stand on it, and down it again to the deck', cg.fup.end[2] === 2.15 && cg.fup.end[1] > cg.F[0] && !cg.fup.swim && cg.fdown.end[2] === 0 && cg.fdown.end[1] < cg.F[0] - cg.F[1] && !cg.fdown.swim, [cg.fup, cg.fdown]);
+  check('under the forecastle at the deck\'s height, past its posts towards the bow', cg.under.end[1] > cg.F[0] + .8 && cg.under.top === 0 && !cg.under.swim, cg.under);
+  check('the forecastle\'s rail stops you up there; nobody walks in under its ladder from the bow', cg.frail.end[1] > cg.F[0] + .2 && cg.frail.end[2] === 2.15 && cg.ladUnder.end[1] > cg.F[0] - .1 && cg.ladUnder.top < .5, [cg.frail, cg.ladUnder]);
+  check('the forecastle\'s forward end stops you at the bow up there', cg.bow.end[2] === 2.15 && cg.bow.end[1] < cg.F[2] - .2, cg.bow);
+  check('the aftcastle as the caravel\'s: up its ladder, the cabin through the doorway, the wheel from up there', cg.aup.end[2] === 2.15 && cg.aup.end[1] < cg.C[0] && cg.aup.end[1] > -8.5 + .3 /* the after end stops you */ && cg.cabin.end[1] < cg.C[0] - 1.5 && cg.cabin.top === 0 && cg.exitFree && /pilot/.test(cg.promptUp || '') && cg.take && cg.atHelm[2] === 2.15, [cg.aup, cg.cabin, cg.exit, cg.exitFree, cg.promptUp, cg.atHelm]);
+  for (const k of ['gatelands', 'mark', 'aurenne']) { await page.evaluate(([dr, sk]) => { if (!INSPECTOR.open) openInspector(); worldState.ship = Object.assign(worldState.ship || {}, { dress: dr }); INSPECTOR.select('ships/sloop/player'); const e = INSPECTOR.entries.find(x => x.key === sk); INSPECTOR.built.delete(e.id); }, [k, key('cog/player')]);
+    await inspShots(g, [[key('cog/player'), `shipdress-cog-${k}.png`, 'INSPECTOR.orbit.theta=Math.PI/2+.6;INSPECTOR.orbit.phi=1.3;INSPECTOR.orbit.dist*=.8;']]); }
+}
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
