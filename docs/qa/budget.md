@@ -250,3 +250,49 @@ Frame rate is not measured here: software GL is not a target machine. It is Mich
 | a medium gate (ruins, seed 11), from its entrance | Middle (indoors) | 243 | 422k | 0 | 0 | 45 | 0 | 0 | 197 |  |
 
 *s1017, QA Session 1553 (`budgetport` 9/9, run beside `budget`; `budget` hit the 900 s cap with five browsers on four cores, its table owed): Portclare's square at noon, Middle, 560 → 559 calls and 1.42 M → 1.43 M triangles; the inn's hall 38 → 38; the medium gate 261 → 243 (the other column 217 → 197). No spot rose by more than 10%.*
+
+### s1035 — 2026-10-29 13:07 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Dunmore street, noon | Low | 592 | 1.10 M | 0 | 0 | 110 | 135 | 268 | 79 | Mesh 52, oldGate 24, LOD 2, impostors 1 |
+| Dunmore street, noon | Middle | 750 | 1.86 M | 136 | 6 | 113 | 135 | 281 | 79 | Mesh 52, oldGate 24, LOD 2, impostors 1 |
+| Dunmore street, noon | High | 801 | 2.35 M | 168 | 6 | 113 | 135 | 300 | 79 | Mesh 52, oldGate 24, LOD 2, impostors 1 |
+| Dunmore street, midnight | Low | 656 | 1.06 M | 0 | 0 | 107 | 201 | 268 | 80 | Mesh 52, oldGate 24, LOD 2, impostors 1, Points 1 |
+| Dunmore street, midnight | Middle | 831 | 1.77 M | 156 | 6 | 107 | 201 | 281 | 80 | Mesh 52, oldGate 24, LOD 2, impostors 1, Points 1 |
+| Dunmore street, midnight | High | 893 | 2.33 M | 199 | 6 | 107 | 201 | 300 | 80 | Mesh 52, oldGate 24, LOD 2, impostors 1, Points 1 |
+| the field west of Dunmore, noon | Low | 573 | 643k | 0 | 0 | 105 | 107 | 302 | 59 | Mesh 28, Group 20, oldGate 8, quaywall 2, impostors 1 |
+| the field west of Dunmore, noon | Middle | 680 | 1.06 M | 81 | 6 | 105 | 107 | 322 | 59 | Mesh 28, Group 20, oldGate 8, quaywall 2, impostors 1 |
+| the field west of Dunmore, noon | High | 728 | 1.55 M | 119 | 6 | 105 | 107 | 332 | 59 | Mesh 28, Group 20, oldGate 8, quaywall 2, impostors 1 |
+| the field west of Dunmore, dawn | Low | 656 | 634k | 0 | 0 | 108 | 186 | 302 | 60 | Mesh 28, Group 20, oldGate 8, quaywall 2, impostors 1 |
+| the field west of Dunmore, dawn | Middle | 824 | 1.12 M | 142 | 6 | 108 | 186 | 322 | 60 | Mesh 28, Group 20, oldGate 8, quaywall 2, impostors 1 |
+| the field west of Dunmore, dawn | High | 877 | 1.65 M | 185 | 6 | 108 | 186 | 332 | 60 | Mesh 28, Group 20, oldGate 8, quaywall 2, impostors 1 |
+
+### s1035 — 2026-10-29 13:08 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Dunmore street, noon | Low | 593 | 1.10 M | 0 | 0 | 110 | 135 | 268 | 80 | Mesh 52, oldGate 24, LOD 2, impostors 1, Points 1 |
+| Dunmore street, noon | Middle | 751 | 1.86 M | 136 | 6 | 113 | 135 | 281 | 80 | Mesh 52, oldGate 24, LOD 2, impostors 1, Points 1 |
+| Dunmore street, noon | High | 802 | 2.35 M | 168 | 6 | 113 | 135 | 300 | 80 | Mesh 52, oldGate 24, LOD 2, impostors 1, Points 1 |
+| Dunmore street, midnight | Low | 657 | 1.06 M | 0 | 0 | 107 | 201 | 268 | 81 | Mesh 52, oldGate 24, LOD 2, Points 2, impostors 1 |
+| Dunmore street, midnight | Middle | 832 | 1.77 M | 156 | 6 | 107 | 201 | 281 | 81 | Mesh 52, oldGate 24, LOD 2, Points 2, impostors 1 |
+| Dunmore street, midnight | High | 894 | 2.33 M | 199 | 6 | 107 | 201 | 300 | 81 | Mesh 52, oldGate 24, LOD 2, Points 2, impostors 1 |
+| the field west of Dunmore, noon | Low | 576 | 644k | 0 | 0 | 105 | 107 | 302 | 62 | Mesh 28, Group 22, oldGate 8, quaywall 2, impostors 1 |
+| the field west of Dunmore, noon | Middle | 683 | 1.06 M | 81 | 6 | 105 | 107 | 322 | 62 | Mesh 28, Group 22, oldGate 8, quaywall 2, impostors 1 |
+| the field west of Dunmore, noon | High | 731 | 1.55 M | 119 | 6 | 105 | 107 | 332 | 62 | Mesh 28, Group 22, oldGate 8, quaywall 2, impostors 1 |
+| the field west of Dunmore, dawn | Low | 659 | 634k | 0 | 0 | 108 | 186 | 302 | 63 | Mesh 28, Group 22, oldGate 8, quaywall 2, Points 2 |
+| the field west of Dunmore, dawn | Middle | 827 | 1.12 M | 142 | 6 | 108 | 186 | 322 | 63 | Mesh 28, Group 22, oldGate 8, quaywall 2, Points 2 |
+| the field west of Dunmore, dawn | High | 880 | 1.65 M | 185 | 6 | 108 | 186 | 332 | 63 | Mesh 28, Group 22, oldGate 8, quaywall 2, Points 2 |
+
+### s1035 — 2026-10-29 13:14 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Portclare square, noon | Low | 393 | 673k | 0 | 0 | 30 | 67 | 208 | 88 | Mesh 36, Group 36, oldGate 14, impostors 1, LOD 1 |
+| Portclare square, noon | Middle | 560 | 1.42 M | 141 | 6 | 31 | 67 | 227 | 88 | Mesh 36, Group 36, oldGate 14, impostors 1, LOD 1 |
+| Portclare square, noon | High | 608 | 1.83 M | 176 | 6 | 31 | 67 | 240 | 88 | Mesh 36, Group 36, oldGate 14, impostors 1, LOD 1 |
+| The Bramble Hearth (Dunmore's inn), the hall from the door, 20h | Middle (indoors) | 38 | 26k | 0 | 0 | 1 | 0 | 0 | 37 |  |
+| a medium gate (ruins, seed 11), from its entrance | Middle (indoors) | 254 | 427k | 0 | 0 | 46 | 0 | 0 | 207 |  |
+
+*s1035, QA Session 1569 (`budget` 18/18 and `budgetport` 9/9, alone on 4 cores: 605 s and 322 s; the 13:07 table is a first pass of `budget` whose run was stopped during `budgetport`, the 13:08 table the second; the two agree to 3 calls, the triangles to the digit). This pays the `budget` table s1017 owed. Against s1000: Dunmore's street at noon, Middle, 752 → 751 calls and 1.86 M → 1.86 M triangles; at midnight 833 → 832; the field west at noon 690 → 683 and at dawn 833 → 827 (the other column 70 → 62–63); against s1017: Portclare's square 559 → 560, the inn's hall 38 → 38, the medium gate 243 → 254 (+4.5%: bodies 45 → 46, the gate's own 197 → 207; it read 261 at s1000). No spot rose by more than 10%. The ships' holds (S1555, S1564) and the kit wolves' fur (S1561) stand at none of these spots.*
