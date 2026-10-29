@@ -7,12 +7,12 @@ await g.intoWorld();
 fs.mkdirSync('tests/out', { recursive: true });
 
 // every herb with a kind bakes; its height is what it is
-const kinds = await page.evaluate(() => { const out = {};
+const kinds = await page.evaluate(() => { const out = {}; ensureSeaHerbs(); /* S1589 — the sea's three herbs are defined when the sea's chunks first load */
   for (const k in PLANT_KIND) { const geo = plantGeo(k, false); const bb = geo.boundingBox; const pg = plantGeo(k, true);
     out[k] = { kind: PLANT_KIND[k], h: +bb.max.y.toFixed(2), w: +Math.max(bb.max.x - bb.min.x, bb.max.z - bb.min.z).toFixed(2), tris: geo.attributes.position.count / 3, picked: pg ? pg.attributes.position.count / 3 : null, stub: !!(pg && pg.userData.stub), stubTop: pg && pg.userData.stub ? +pg.boundingSphere.radius.toFixed(2) : null }; }
   out._missing = Object.keys(HERB_DEF).filter(k => !PLANT_KIND[k]); return out; });
 const K = Object.fromEntries(Object.entries(kinds).filter(([k]) => k !== '_missing'));
-check('all 23 land herbs bake as plants (only the sea\'s keep the old tuft)', Object.keys(K).length === 23 && kinds._missing.every(k => /kelp|lily|pearl/.test(k)), { n: Object.keys(K).length, missing: kinds._missing });
+check('all 26 herbs bake as plants, the sea\'s three among them (S1589: kelp, sea lily, pearlweed)', Object.keys(K).length === 26 && kinds._missing.length === 0, { n: Object.keys(K).length, missing: kinds._missing });
 check('sizes follow what they are: mosses and the rosette hug the ground, goldenrod and the rowan are waist-high, the bush wider than tall',
   K.graywort.h < .07 && K.firemoss.h < .1 && K.goldenrod.h > .7 && K.caorthann.h > .7 && K.thornberry.w > K.thornberry.h && K.thornberry.h > .4 && K.muirfhear.h > .45,
   Object.fromEntries(Object.entries(K).map(([k, v]) => [k, [v.h, v.w]])));
@@ -26,7 +26,7 @@ const same = await page.evaluate(() => { const a = plantGeo('thornberry', false)
   let d = 0; for (let i = 0; i < pb.length; i++) d = Math.max(d, Math.abs(pa[i] - pb[i])); return { maxDiff: d, same: plantGeo('thornberry', false) === a }; });
 // Session 263 (Michael's A on Session 237): every other kind leaves a stub on turned earth, well under the whole plant
 const stubs = Object.entries(K).filter(([, v]) => v.stub);
-check('the other 17 kinds each leave a stub on turned earth, smaller than the whole plant', stubs.length === 17 && stubs.every(([, v]) => v.picked < v.tris + 200 && v.picked > 20),
+check('the other 20 kinds each leave a stub on turned earth, smaller than the whole plant', stubs.length === 20 && stubs.every(([, v]) => v.picked < v.tris + 200 && v.picked > 20),
   Object.fromEntries(stubs.map(([k, v]) => [k, [v.tris, v.picked]])));
 check('the picked bush is the same bush without its berries (and each bake is made once)', same.maxDiff < 1e-6 && same.same, same);
 
@@ -83,8 +83,8 @@ const glow = await page.evaluate(() => { const n = k => { const a = plantGeo(k, 
     const d = x.getImageData(0, 0, 128, 128).data; let t = 0; for (let i = 0; i < d.length; i += 4) t += d[i] + d[i + 1] + d[i + 2]; return +(t / (d.length / 4) / 3).toFixed(1); };
   const dark = shot(HERB_MAT), bright = shot(HERB_GLOW_MAT); sc.remove(grp); forceTime(12);
   return { lit, embers: n('firemoss'), root: n('heartroot'), mat: im.material === HERB_GLOW_MAT, ims: grp.children.length, dark, bright }; });
-check(`Firemoss and Heartroot glow from their own parts (${glow.embers} and ${glow.root} vertices), in their one InstancedMesh; nothing else glows; the root at midnight ${glow.dark} → ${glow.bright}`,
-  glow.lit.sort().join() === 'firemoss,heartroot' && glow.mat && glow.ims <= 2 && glow.bright > glow.dark * 1.5, glow);
+check(`Firemoss and Heartroot glow from their own parts (${glow.embers} and ${glow.root} vertices), in their one InstancedMesh; Pearlweed's beads too (S1589); nothing else glows; the root at midnight ${glow.dark} → ${glow.bright}`,
+  glow.lit.sort().join() === 'firemoss,heartroot,pearlweed' && glow.mat && glow.ims <= 2 && glow.bright > glow.dark * 1.5, glow);
 
 // what the herbs cost: every loaded chunk's herb meshes, against those drawn near the player; the tall kinds'
 // shadows only close by, the low kinds' never. The frame's triangles with the herbs on and off.

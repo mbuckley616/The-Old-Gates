@@ -667,6 +667,12 @@
     mk('sealily','Sea Lily',0xd8d0f0,0x6a6a8a,'single','A pale flower that opens on the sea bed.','Restores 15 mana',{name:'Sea Lily',type:'herb',effect:{mana:15},weight:.2,sellMult:.5,buyPrice:14});
     mk('pearlweed','Pearlweed',0xc0e0e8,0x4a6a6a,'clump','Beaded weed that shines faintly in the dark.','Restores 25 HP',{name:'Pearlweed',type:'herb',effect:{heal:25},weight:.2,sellMult:.6,buyPrice:18});
   }
+  // S1589 (backlog L8, OG-039; Michael's C on #855) — on the new look a sea-bed herb is its own kind (kelp, sealily, pearl in PLANT_BUILD)
+  // lifted as the land's are (herbLift, herbLiftGeo), Pearlweed's beads lit from their own colour (HERB_GLOW_MAT); a plant taller than its
+  // water less 0.25 m is drawn smaller so it stays under the surface (kelp's 1.9 m in the 1.2 m shallows). The picked copy keeps its colour.
+  function seaHerbLift(g,bed){if(window.OG_LOOK!=='new')return;const u=g.userData,m=u&&u.whole;if(!m)return;
+    m.geometry=herbLiftGeo(m.geometry);if(m.geometry.attributes.glow)m.material=HERB_GLOW_MAT;
+    const top=(m.geometry.userData.top||.3),room=Math.max(.3,SEA_Y-bed-.25);g.scale.setScalar(Math.min(herbLift(),room/top));}
   function spawnSeaHerbs(ch){
     if(typeof mkHerbMesh!=='function')return;ensureSeaHerbs();if(!HERB_DEF.kelp)return;
     const n=Math.floor(hash01(ch.cx,ch.cz,140)*3.2);
@@ -675,6 +681,7 @@
       const bed=worldH(hx,hz);if(bed>-1.2||bed<-9)continue; // shallows and reefs, not the abyss
       const type=['kelp','kelp','sealily','pearlweed'][Math.floor(hash01(ch.cx,ch.cz,143+i)*4)];const def=HERB_DEF[type];
       const {g,gl}=mkHerbMesh(hx,hz,def,sc);if(gl&&gl.parent)gl.parent.remove(gl);g.position.y=bed;
+      seaHerbLift(g,bed);
       const h={id:ch.cx+','+ch.cz+':seabed:'+i,x:hx,z:hz,type,def,g,gl,harvested:false,respawnT:0,ph:Math.random()*Math.PI*2,bed:true}; // S514 — its id
       ZONES.world.herbs.push(h);ch.herbs.push(h);
     }

@@ -253,7 +253,9 @@ const PLANT_KIND={
   silverleaf:'herb',luibhuisce:'waterleaf',duilleogghorm:'broadleaf',veilwort:'wisp',heartroot:'root',
   muirfhear:'tussock',goldenrod:'goldenrod',wolfsbane:'flowerspike',ferrousweed:'thistle',
   mistfern:'fern',briarweed:'bramble',ashwort:'shrub',thornberry:'bush',caordubh:'lowbush',caorthann:'sapling',
-  fearnog:'bracket',shadowcap:'mushrooms'
+  fearnog:'bracket',shadowcap:'mushrooms',
+  // S1589 (backlog L8, OG-039) — the sea's three herbs, which drew as the old clump: their kinds from the concept artist's herbs.js
+  kelp:'kelp',sealily:'sealily',pearlweed:'pearl'
 };
 const PLANT_STAYS=new Set(['bush','lowbush','sapling','shrub','bramble','bracket']);
 // the kinds tall enough to throw a shadow worth drawing (half a unit and more)
@@ -275,6 +277,11 @@ function plantLeaf(len,wid,thick,droop){const f=-wid*.18,v=[[0,0,0],[-wid*.4,f,l
   const ix=[0,1,2,0,2,3,2,1,4,2,4,5,2,5,6,2,6,3,5,4,7,5,7,6],pos=[];for(const i of ix){const p=v[i];pos.push(p[0],p[1]-(droop||0)*(p[2]/len)*(p[2]/len),p[2]);}
   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));return g;}
 function plantStalk(h,r0,r1,seg){const g=SK.cyl(r1,r0,h,seg||5,3);g.translate(0,h/2,0);return g;}
+// a long strap or ribbon (kelp's fronds): n segments, waving side to side by `wave`, narrowing to the tip (S1589, herbs.js's)
+function plantStrap(len,wid,n,wave,droop){const pos=[];let prev=null;
+  for(let k=0;k<=n;k++){const t=k/n,w=wid*(1-t*.85)*.5,x=Math.sin(t*9)*wave*t,y=-(droop||0)*t*t,z=len*t,row=[[x-w,y,z],[x+w,y,z]];
+    if(prev)pos.push(...prev[0],...prev[1],...row[1],...prev[0],...row[1],...row[0]);prev=row;}
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));return g;}
 function plantBlade(h,w,bend){const g=SK.cone(w,h,3,4);g.translate(0,h/2,0);const p=g.attributes.position;for(let i=0;i<p.count;i++){const y=p.getY(i)/h;p.setZ(i,p.getZ(i)+bend*y*y);}return g;}
 Plant.prototype.bake=function(){
   let n=0,lit=false;const flat=this.parts.map(([g,m,c,gw])=>{const gg=(g.index?g.toNonIndexed():g.clone());g.dispose();gg.applyMatrix4(m);n+=gg.attributes.position.count;if(gw)lit=true;return [gg,c,gw];});
@@ -375,9 +382,18 @@ const PLANT_BUILD={
   // a cluster of mushrooms: stalks and domed caps, one tall, several small
   mushrooms(P,R,col,stem){for(let i=0;i<6;i++){const a=R()*6.283,r=i?.06+R()*.1:0,s=i?.5+R()*.4:1.1,h=.12*s,cr=.06*s;
       P.add(SK.lathe([[.012*s,0],[.014*s,h*.5],[.011*s,h]],6),[Math.sin(a)*r,0,Math.cos(a)*r],[0,0,(R()-.5)*.3],0,0xcfc4d0);
-      P.add(SK.lathe([[.001,-.004],[cr*.9,0],[cr,.012*s],[cr*.7,.04*s],[.001,.05*s]],9),[Math.sin(a)*r,h,Math.cos(a)*r],0,0,plantShade(col,.9+R()*.3));}}
+      P.add(SK.lathe([[.001,-.004],[cr*.9,0],[cr,.012*s],[cr*.7,.04*s],[.001,.05*s]],9),[Math.sin(a)*r,h,Math.cos(a)*r],0,0,plantShade(col,.9+R()*.3));}},
+  // S1589 — the sea bed's (herbs.js's, as drawn): kelp's long olive ribbons from a holdfast, waving
+  kelp(P,R,col,stem){P.add(SK.bumpy(SK.ball(1,7,5),.25,7,1),[0,.01,0],0,[.05,.03,.05],stem);
+    for(let i=0;i<9;i++){const a=R()*6.283,L=.7+R()*.5;P.add(plantStrap(L,.06,10,.05,-.1),[0,.02,0],[-1.2-R()*.3,a,0],0,plantShade(col,.85+R()*.3));}},
+  // a sea lily: a pale stalk and an open cup of feathered arms
+  sealily(P,R,col,stem){const t=.3+R()*.08;P.add(plantStalk(t,.01,.007,6),[0,0,0],[.05,0,0],0,stem);P.add(SK.ball(.02,7,5),[0,t,0],0,0,col);
+    for(let k=0;k<10;k++){const a=k/10*6.283;for(let j=0;j<4;j++)P.add(plantLeaf(.04,.02,.005,-.01),[Math.sin(a)*j*.022,t+.01+j*.02,Math.cos(a)*j*.022],[-.9+j*.15,a,0],0,plantShade(col,.9+j*.04));}},
+  // pearlweed: fine strands strung with pale beads that shine a little in the dark (the beads glow by nature)
+  pearl(P,R,col,stem){for(let i=0;i<9;i++){const a=R()*6.283,lean=.2+R()*.4,L=.2+R()*.14;P.add(plantBlade(L,.004,.03),[0,0,0],[lean,a,0],0,stem);
+      P.glow=true;for(let k=2;k<8;k++){const y=L*k/8;P.add(SK.ball(.01+R()*.005,5,4),[Math.sin(a)*Math.sin(lean)*y,Math.cos(lean)*y,Math.cos(a)*Math.sin(lean)*y],0,0,plantShade(col,.9+R()*.2));}P.glow=false;}}
 };
-// the baked geometry of a herb (by its HERB_DEF key), whole or picked; null for anything without a kind (the sea's herbs)
+// the baked geometry of a herb (by its HERB_DEF key), whole or picked; null for anything without a kind
 function plantGeo(key,picked){const kind=PLANT_KIND[key],def=typeof HERB_DEF!=='undefined'&&HERB_DEF[key];if(!kind||!def)return null;
   if(picked&&!PLANT_STAYS.has(kind)){const k2=key+'|stub';let g2=PLANT_GEO.get(k2);if(!g2){g2=plantStubGeo(key,plantGeo(key,false));PLANT_GEO.set(k2,g2);}return g2;}
   const k=key+(picked?'|picked':'');let g=PLANT_GEO.get(k);if(g)return g;
