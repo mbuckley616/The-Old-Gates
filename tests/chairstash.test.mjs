@@ -26,8 +26,10 @@ const found = await page.evaluate(() => { let h = null;
   for (const t of c) { const S = WORLD.settlements.get(t.id) || WORLD.genSettlement(t); h = S && S.houses.find(x => x.type === 'barber'); if (h) break; }
   if (!h) return null; window._S = h; forceTime(12); px = h.exitX; pz = h.exitZ; goToInterior(h); return h.name; });
 check('a barber\'s shop is found and entered', !!found, found);
+// indoors the game's loop never runs WORLD.tick (it is behind lid==='overworld'), and g.spin does: its tickCells reads the
+// room's coordinates as the world's and unloads the town around you (S1553). So in a room the loop's own frames settle it.
 for (let k = 0; k < 40 && !(await page.evaluate(() => isInterior() && !!INT_CHAIR)); k++) await page.waitForTimeout(250);
-await g.spin(null, 6); await g.hide();
+await g.frames(4); await g.hide();
 const C = await page.evaluate(() => ({ x: INT_CHAIR.x, z: INT_CHAIR.z, k: intNPCPos && { x: intNPCPos.x, z: intNPCPos.z } }));
 const cs = await spot(C.x, C.z, .9, C.k);
 const chair = cs && await probe(cs, { x: C.x, y: .6, z: C.z });
@@ -41,7 +43,7 @@ check('beside the barber with the crosshair on him, the chair does not take E', 
 // the safehouse's stash chest (the legacy room)
 await page.evaluate(() => { window._SF = { id: 'ih7', type: 'safehouse', name: 'Safehouse', keeper: null, doorX: 23, doorZ: 42 }; goToInterior(window._SF); });
 for (let k = 0; k < 40 && !(await page.evaluate(() => isInterior() && currentHouse === window._SF && !!intStashPos)); k++) await page.waitForTimeout(250);
-await g.spin(null, 6); await g.hide();
+await g.frames(4); await g.hide();
 const S = await page.evaluate(() => intStashPos && { x: intStashPos.x, z: intStashPos.z });
 const ss = S && { x: S.x + .2, z: S.z + 1.0 };
 const stash = ss && await probe(ss, { x: S.x, y: .4, z: S.z });

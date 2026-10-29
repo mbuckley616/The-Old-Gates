@@ -238,3 +238,15 @@ Frame rate is not measured here: software GL is not a target machine. It is Mich
 | a medium gate (ruins, seed 11), from its entrance | Middle (indoors) | 261 | 422k | 0 | 0 | 43 | 0 | 0 | 217 |  |
 
 *s1000, QA Session 1532 (`budget` and `budgetport` 763 s and 385 s, run beside `autumn` and `scaleratio` on 4 cores; one pass each): every view under its draw calls and its triangles at every level, 18/18 and 9/9, so `budget` leaves `tests/skip.json`. Against s979: Dunmore's street at noon, Middle, 751 → 752 calls and 2.02 M → 1.86 M triangles (Low 1.29 M → 1.10 M: Session 1515's far trees); at midnight 832 → 833; the field west at dawn 827 → 833; Portclare's square 566 → 560; the inn's hall 38 → 38; the medium gate 241 → 261 (+8%, all in the other column, 197 → 217). No spot rose by more than 10%.*
+
+### s1017 — 2026-10-29 01:18 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Portclare square, noon | Low | 392 | 678k | 0 | 0 | 31 | 67 | 208 | 86 | Mesh 36, Group 34, oldGate 14, impostors 1, LOD 1 |
+| Portclare square, noon | Middle | 559 | 1.43 M | 141 | 6 | 32 | 67 | 227 | 86 | Mesh 36, Group 34, oldGate 14, impostors 1, LOD 1 |
+| Portclare square, noon | High | 607 | 1.83 M | 176 | 6 | 32 | 67 | 240 | 86 | Mesh 36, Group 34, oldGate 14, impostors 1, LOD 1 |
+| The Bramble Hearth (Dunmore's inn), the hall from the door, 20h | Middle (indoors) | 38 | 26k | 0 | 0 | 1 | 0 | 0 | 37 |  |
+| a medium gate (ruins, seed 11), from its entrance | Middle (indoors) | 243 | 422k | 0 | 0 | 45 | 0 | 0 | 197 |  |
+
+*s1017, QA Session 1553 (`budgetport` 9/9, run beside `budget`; `budget` hit the 900 s cap with five browsers on four cores, its table owed): Portclare's square at noon, Middle, 560 → 559 calls and 1.42 M → 1.43 M triangles; the inn's hall 38 → 38; the medium gate 261 → 243 (the other column 217 → 197). No spot rose by more than 10%.*
