@@ -32,16 +32,16 @@ check(`both kinds of cast happen: wild (${A.replace(/\./g, '').length}) and clea
 const E1 = await run({ spell, min: M, n: 10, pin: .3, reset: true }), E2 = await run({ spell, min: M, n: 10, pin: .7 });
 check(`ten casts then ten more in the same minute are the same twenty (${E1}${E2})`, E1 + E2 === A, { E1, E2, A });
 
-// 4. the rate holds: over 400 casts in 40 minutes about 40% go wild, the patterns spread over the spell's list
+// 4. the rate holds: over 1,000 casts in 100 minutes 30% go wild, ±3 (magic B's `wordtier`, Session 1571; it was 40% over 400), the patterns spread over the spell's list
 const R = await page.evaluate((spell) => { const sp = SPELLS.find(s => s.id === spell); const ks = knownSpells, as = activeSpellId, sm = showMsg, m0 = worldState.gameTimeAbsMinutes; const c = {};
   knownSpells = { [sp.id]: 1 }; activeSpellId = sp.id; let said = ''; showMsg = (t) => { said += ' ' + t; };
-  try { for (let m = 0; m < 40; m++) { worldState.gameTimeAbsMinutes = 9000 + m; for (let i = 0; i < 10; i++) { castT = 0; spCd = 0; mana = effMaxMana(); said = ''; castSpell();
+  try { for (let m = 0; m < 100; m++) { worldState.gameTimeAbsMinutes = 9000 + m; for (let i = 0; i < 10; i++) { castT = 0; spCd = 0; mana = effMaxMana(); said = ''; castSpell();
         const k = /fizzles/.test(said) ? 'fizzle' : /wavers/.test(said) ? 'scatter' : /bites back/.test(said) ? 'backlash' : 'clean'; c[k] = (c[k] || 0) + 1; } } }
   finally { showMsg = sm; knownSpells = ks; activeSpellId = as; worldState.gameTimeAbsMinutes = m0; castT = 0; }
   return { c, wild: sp.wild }; }, spell);
-const wild = 400 - (R.c.clean || 0);
+const wild = 1000 - (R.c.clean || 0);
 console.log('rate', JSON.stringify(R));
-check(`400 casts: ${wild} wild (${(wild / 4).toFixed(1)}%, IMPRESSION_WILD_CHANCE .40), each of ${R.wild.join('/')} drawn`, wild > 130 && wild < 190 && R.wild.every(k => (R.c[k] || 0) > 15), R);
+check(`1,000 casts: ${wild} wild (${(wild / 10).toFixed(1)}%, IMPRESSION_WILD_CHANCE .30 ±3), each of ${R.wild.join('/')} drawn`, wild >= 270 && wild <= 330 && R.wild.every(k => (R.c[k] || 0) > 40), R);
 
 // 3. a load starts the count afresh: casts after a load roll as they did after the save
 const L = await page.evaluate(() => { _castMin = 'x'; _castN = 7; _applyLoadData(JSON.parse(ssStringify(_buildSavePayload()))); return _castMin; });

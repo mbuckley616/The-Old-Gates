@@ -347,9 +347,12 @@ function castSpell(){
   if(isCasting()){return;}
 
   const actualCost=Math.round(spellCost(sp,tier)*_buffMult('spellCost',1)*(SKILL_DEF[sp.school]?1.4-.8*skillLv(sp.school)/100:1)); /* S941 — the school's skill sets the cost */
-  if(mana<actualCost){showMsg(`Not enough mana! (need ${actualCost})`,'#6688cc');return;}
+  const short=Math.max(0,actualCost-Math.floor(mana)),blood=short*OVERCAST_HP; /* S1571 — the overcast */
+  if(short&&PHP-blood<1){showMsg(`Not enough mana! (need ${actualCost})`,'#6688cc');return;}
   if(spCd>0){showMsg('Cooling down...','#6688cc');return;}
-  mana-=actualCost;_offenceS=playClockS; /* S408 */
+  const paid=actualCost-short;mana=Math.max(0,mana-actualCost);_offenceS=playClockS; /* S408 */
+  if(short){PHP-=blood;PPOST.stagUntil=Math.max(PPOST.stagUntil,performance.now()/1000+OVERCAST_STAGGER_S);blocking=false;powerCharging=false;powerCharge=0;
+    lvAct.damageTaken+=blood;updateHUD();showMsg(`Not enough mana: the word takes ${blood} health.`,'#d48a8a');}
   if(sp.role==='buff'&&SKILL_DEF[sp.school])skillUse(sp.school,1,'cast'); /* S941 — a cast that does something */
   spCd=spellCooldown(sp,tier);
 
@@ -367,7 +370,7 @@ function castSpell(){
     wildPattern=sp.wild[Math.floor(wr()*sp.wild.length)];
     if(wildPattern==='fizzle'){
       // Half-refund mana, nothing else happens. Brief hand-raise with no orb release.
-      mana=Math.min(effMaxMana(),mana+Math.round(actualCost*0.5));
+      mana=Math.min(effMaxMana(),mana+Math.round(paid*0.5)); /* S1571 — half of the mana paid; health spent stays spent */
       showMsg(`${sp.ico} ${sp.nameIr} fizzles — the shape will not hold.`,'#8a8ac8');
       // Still show the hand animation to hint at the failed cast — but mark type so no projectile spawns
       startCastAnim(sp, 'fizzle');

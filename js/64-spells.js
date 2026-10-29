@@ -59,7 +59,10 @@ const TIER_MULT={
 };
 const TIER_LABEL=['Impression','Comprehension','Mastery'];
 const TIER_STARS=['★☆☆','★★☆','★★★'];
-const IMPRESSION_WILD_CHANCE=0.40;
+const IMPRESSION_WILD_CHANCE=0.30; /* S1571 — magic B: 30%, the figure Scáth's Steady voice (school 25, session 5) halves */
+// S1571 — overcasting (magic-build.md): short of mana, the rest is paid in health, 2 a point of mana, with a 0.5 s stagger; a cast
+// that would leave you under 1 health is refused.
+const OVERCAST_HP=2,OVERCAST_STAGGER_S=.5;
 
 // School display metadata
 const SCHOOL_DEF={
