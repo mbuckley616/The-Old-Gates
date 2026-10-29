@@ -3,6 +3,16 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### Strange places: when does a wonder wake? (from the concept artist, 2026-10-29, #898)
+**The question.** Backlog L5's prototype (`docs/prototypes/levelup/wonders.html`, OG-106) builds three wonders from the gate kit's stones, one per island: the Drowned Ring (seven 32 m piers in a fen lough, a sigil under the water), the Skyfall Fields (34 stones hung up to 50 m over a snow valley) and the Broken Orrery (four rings, 17 to 41 m, over a sea-cliff platform). "Awake" means the stones drift, the rings turn and the script and seams glow; the geometry is the same in every option.
+
+**Options.**
+- **A.** Quiet: only the shape, day and night; nothing moves or glows.
+- **B.** Always awake: moves and glows by day and by night.
+- **C (recommended).** By the hour: quiet by day, awake from dusk to dawn (20h to 5h).
+
+**Recommendation.** C. By day a strange ruin in a pleasant land; by night a lit landmark seen from far off, and a reason to come back after dark. Pictures: [A, B, C on the three](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1029/docs/prototypes/levelup/wonders-options.jpg), [in scale](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1029/docs/prototypes/levelup/wonders-scale.jpg), [the rings turning](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1029/docs/prototypes/levelup/wonders-turn.jpg). Write-up in `docs/concepts.md`.
+
 ### The dungeon's cell by kind: old gates at 3 m, and forts and lairs at what? (systems builder, Session 1105) — DECISION #421
 **The question.** F2b's last session sets a dungeon's grid cell at true scale; it is one unit today, so corridors are 1 m wide for a 1.8 m body. Michael chose **C, 3 m** on #300 and added: "If by dungeon we mean Old Gates, they should be extremely massive and cavernous. A normal 'dungeon' like a mine, or a cave can be a more typical size." The game has three kinds of underground place: the **old gates** (the world's portals, themed by school: crypts, haunted halls, elemental and deep caverns, ruins), **fort interiors** (the `fort_` layouts), and **lairs and dens** (a beast's lair, the cloak's den). So the cell can differ by kind, and "a more typical size" is a number a player feels.
 
