@@ -418,6 +418,34 @@ const giver=`${lord.title} ${lord.name}`;
   function poiName(kind,r,reg){const n=genName(r,reg);return kind==='glade'?`${n} Glade`:kind==='shrine'?`Shrine of ${n}`:kind==='lair'?`${n}'s Lair`:kind==='tower'?`${n} Spire`:`${n} Camp`;}
   // ── finding sigils: rubbings, rumours, the Weaver's Eye ──
   function sigilDoors(){const out=[];for(const c of CELLS.values()){if(!c.doors)continue;c.doors.forEach(e=>{if(!e.wet&&(e.sigil||e.kind==='fort_door'))out.push(e);});}return out;}
+  // S1586 — magic B, the carvings (magic-build.md, "Where the words are"): every sigil door and every fort carries one carving on its
+  // last floor, its word drawn by its seed from its own school, from the pool of its place's tier (tier 1 the words whose Impression
+  // needs Intelligence 1 to 3, tier 2 6 to 10, tier 3 and up 12 and more; a school with none there draws from the tier below). A gate's
+  // school is §9a's *Was* column; the build has no Gaoth gate yet, so one gate in six by its seed is Gaoth's, and an occupied gate is
+  // the school gateOf gives it. Then each island is made to hold every word: a word drawn nowhere on it takes the first door (by its
+  // seed's hash) of its school whose own word is drawn twice there, in its pool if one is, else any such door. The table is made once,
+  // over every cell (getCell makes them all) after the rivers are routed (a wet door is never entered), so it never reads what has loaded.
+  // The home cell's doors are the legacy dungeons, carved by SIGIL_PLACEMENTS; their words count for the Gatelands.
+  const GATE_SCHOOL={elemental:'tine',deep:'uisce',ruins:'cloch',haunted:'scath',undead:'solas'};
+  const CARVE_POOL=[[1,3],[6,10],[12,99]];
+  let _carvings=null;
+  function gateSchool(e){if(!e)return null;if(seededRng('gaoth',e.seed)()<1/6)return 'gaoth';return GATE_SCHOOL[gateOf(e).theme]||'cloch';}
+  function carvingPool(school,tier){const ws=WORDS.filter(w=>w.school===school);
+    for(let t=Math.max(1,Math.min(3,tier));t>=1;t--){const [a,b]=CARVE_POOL[t-1];const p=ws.filter(w=>w.intReqs[0]>=a&&w.intReqs[0]<=b);if(p.length)return p;}return ws;}
+  function carvingTable(){if(_carvings)return _carvings;if(!RV.ready)routeWorld();
+    const T={},isles={};
+    for(let j=0;j<GRID;j++)for(let i=0;i<GRID;i++){if(!isLandCell(i,j))continue;const c=getCell(i,j);if(!c||!c.doors)continue;const nat=nationKeyOf(i,j);const I=isles[nat]||(isles[nat]={doors:[],count:{}});
+      if(c.home){for(const e of c.doors){const w=SIGIL_PLACEMENTS[e.seed];if(w)I.count[w]=(I.count[w]||0)+1;}continue;}
+      for(const e of c.doors){if(e.wet||e.lairDoor||e.root||!(e.sigil||e.kind==='fort_door')||T[e.seed])continue;
+        const school=gateSchool(e),tier=worldTierAt(e.x,e.z),pool=carvingPool(school,tier),r=seededRng('carve',e.seed);
+        const D={seed:e.seed,school,tier,pool:pool.map(w=>w.id),word:pool[Math.floor(r()*pool.length)].id,h:r()};T[e.seed]=D;I.doors.push(D);I.count[D.word]=(I.count[D.word]||0)+1;}}
+    for(const nat in isles){const I=isles[nat];I.doors.sort((a,b)=>a.h-b.h||a.seed-b.seed);
+      for(const w of WORDS){if(I.count[w.id])continue;
+        const spare=I.doors.filter(D=>D.school===w.school&&I.count[D.word]>1);const D=spare.find(D=>D.pool.includes(w.id))||spare[0];if(!D)continue;
+        I.count[D.word]--;D.word=w.id;D.moved=true;I.count[w.id]=1;}}
+    _carvings={bySeed:T,isles};return _carvings;}
+  // the word carved behind a door (its seed), or null; a legacy dungeon's is SIGIL_PLACEMENTS'
+  function gateCarving(seed){if(SIGIL_PLACEMENTS[seed])return SIGIL_PLACEMENTS[seed];const D=carvingTable().bySeed[seed];return D?D.word:null;}
   function nearestSigilDoor(){let best=null,bd=1e9;const read=worldState.sigilsRead||{};for(const e of sigilDoors()){if(read[e.seed])continue;const p=dungeonWorldPos[e.seed]||{x:e.x,z:e.z};const d=Math.hypot(p.x-px,p.z-pz);if(d<bd){bd=d;best={x:p.x,z:p.z,name:e.canonicalName||'an old gate',seed:e.seed};}}return best;}
   function onMasteryTouch(spellId){const seed=(typeof activePortal!=='undefined'&&activePortal&&activePortal.seed)||(typeof curPortal!=='undefined'&&curPortal&&curPortal.seed)||(typeof currentPortal!=='undefined'&&currentPortal&&currentPortal.seed)||null;if(seed!=null)(worldState.sigilsRead||(worldState.sigilsRead={}))[seed]=spellId;worldState.masteries=(worldState.masteries||0)+1;}
   function rubbingTopics(site){const d=nearestSigilDoorFrom(site);if(!d)return [];const price=60;return [{label:`Buy a rubbing of a warm stone (${price} gold)`,quest:true,fn:()=>{if(gold<price)return `A rubbing is ${price} gold. We have to send someone to take it.`;gold-=price;updateHUD();if(typeof bagAdd==='function')bagAdd({name:`Rubbing: ${d.name}`,ico:'📜',type:'rubbing',seed:d.seed,gate:d.name,weight:.2,sellMult:.3,buyPrice:price,qty:1});return `Taken from ${d.name}, ${compassWord(d.x-site.x,d.z-site.z)} of here. Read it and your map will remember where.`;}}];}
