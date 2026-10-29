@@ -3859,7 +3859,7 @@ function mkCog(o = {}) {
 // oiled above, blue and gilt; the fore square with the sun-star on its course and the spritsail kept, the main and the mizzen lateens on
 // masts raked 4° forward, shrouds to port only).
 //   PKIT.ships.galleon(o) -> as PKIT.ships.cog, with hatches (both), ports ([[side, z, y]]), masts ([[x, z]]: main, fore, mizzen) and rigs
-//   [square, square, gaff] or [lateen, square, lateen] (the main first). o.dress as the sloop's.
+//   [square, square, gaff] or [lateen, square, lateen] (the main first). o.dress as the sloop's. o.cabin (Session 1581) the great cabin furnished.
 //   Differences from the prototype: 48 sections and 14 strakes (its 60 and 16 put her past 40k triangles); each rig in its own frame (the
 //   squares' yards and sails about their masts, the gaff about the mizzen, each lateen about its sling, slung to starboard), which the
 //   game trims; the braces, the gaff's sheet, the lateens' tacks and sheets are left off, as the other hulls'; the spritsail stays in
@@ -3963,6 +3963,55 @@ function mkGalleon(o = {}) {
   const wz = ZA - 1.0, wy = CY + 1.15;
   { const ry0 = keelAt(zs) - .05; put(new THREE.BoxGeometry(.14, sheerAt(ZT) - ry0, .9), 'oak', 0, (ry0 + sheerAt(ZT)) / 2, ZT - .5); rod([0, sheerAt(ZT) - .2, ZT - .2], [0, CY + .3, ZT - .2], .09, .09, 'oak');
     put(new THREE.BoxGeometry(.18, wy - CY, .18), 'oak', 0, (wy + CY) / 2 - .05, wz - .3); put(new THREE.CylinderGeometry(.07, .07, .3, 8).rotateX(Math.PI / 2), 'iron', 0, wy, wz - .12); }
+  // o.cabin (Session 1581, shipbase.js's galleonBase, Session 1150): the great cabin under the quarterdeck furnished, on the main deck behind
+  // the bulkhead's doorway, in her yard's dress: the locker seat under her five stern windows (their panes inside too) and the captain's table before it with two
+  // stools; the box bed to port forward of the mizzen (her berth: rest and save), the sea chest at its foot; the chart table and its globe to
+  // starboard, a stool; the sideboard against the bulkhead to starboard of the doorway, bottles and two cups on it; two lanterns from the
+  // quarterdeck's beams; the island's rug (the Mark's a hide). The mizzen already stands through it. Its pieces are in cabinItems
+  // ([{ name, box }]; the bed is named 'bunk', the game's berth).
+  const cabinItems = [];
+  if (o.cabin) { const D = SHIP_BASE_DRESS[MARK ? 'mark' : AURD ? 'aurenne' : 'gatelands'], std = (c, r = 1, m = 0) => new THREE.MeshStandardMaterial({ color: c, roughness: r, metalness: m });
+    // the cloth, the paper, the glass and the brass share the hull's own materials where one is near enough (a material is a draw)
+    if (!M.gcabA) { M.galLamp = new THREE.MeshStandardMaterial({ color: 0x4d3319, emissive: 0xffb861, emissiveIntensity: 2.0 });
+      if (MARK) Object.assign(M, { gcabA: M.rope, gcabB: M.deck, gpaper: M.deck, gbrass: M.gilt, gglass: M.tar, gfur: std(0x8a7a66) });
+      else if (AURD) { M.madder = M.madder || std(D.cloth[0]); Object.assign(M, { gcabA: M.madder, grug0: M.madder, gcabB: M.blue, grug1: M.tallow, gpaper: M.tallow, gbrass: M.gilt, gglass: M.blue }); }
+      else Object.assign(M, { gcabA: M.green, gcabB: M.cream, grug0: std(D.rug[0]), grug1: M.cream, gpaper: M.cream, gbrass: M.iron, gglass: M.green }); }
+    const hbC = (z, y) => { let lo = 0, hi = 1; for (let k = 0; k < 30; k++) { const m = (lo + hi) / 2; if (sect(z, m)[1] < y) lo = m; else hi = m; } return sect(z, lo)[0] - TH - .03; };
+    const cin = (z, y) => Math.min(hbC(z, y), cw(z) - .11), bx = (key, w, h, d, x, y, z, ry = 0) => put(new THREE.BoxGeometry(w, h, d), key, x, y, z, 0, ry, 0);
+    const cy = (key, r0, r1, h, x, y, z, n = 10) => put(new THREE.CylinderGeometry(r0, r1, h, n), key, x, y, z);
+    const it = (name, x0, y0, z0, x1, y1, z1) => cabinItems.push({ name, box: [x0, y0, z0, x1, y1, z1].map(v => +v.toFixed(3)) }), cceil = CY - .12;
+    const lantern = (x, z, hang) => { cy('gbrass', .1, .12, .26, x, cceil - hang, z, 8); put(new THREE.SphereGeometry(.06, 8, 6), 'galLamp', x, cceil - hang - .01, z); bx('iron', .01, hang - .13, .01, x, cceil - (hang - .13) / 2, z); };
+    { // the locker seat under the stern windows, its cushion in the island's cloth
+      const z0 = ZT + .1, d = .5, z1 = z0 + d, hw = Math.min(cin(z0, DECK + .02), cin(z1, DECK + .02), cin(z0, DECK + .5), cin(z1, DECK + .5)) - .04; bx('oak', 2 * hw, .45, d, 0, DECK + .225, (z0 + z1) / 2); bx('gcabA', 2 * hw - .1, .08, d - .06, 0, DECK + .49, (z0 + z1) / 2);
+      it('locker seat', -hw, DECK, z0, hw, DECK + .53, z1);
+      /* the five stern windows from inside, pale with the day, over the seat (the transom's own panes are on its outside) */
+      for (let k = -2; k <= 2; k++) { bx('gpaper', .46, .56, .015, k * .72, DECK + 1.25, ZT + .012); bx('spar', .04, .56, .03, k * .72, DECK + 1.25, ZT + .02); } }
+    { // the captain's table before it, with two stools
+      const z = ZT + 1.35, w = 1.8, d = .8, ht = .76; bx('oak', w, .06, d, 0, DECK + ht, z); for (const dx of [-w / 2 + .1, w / 2 - .1]) bx('spar', .08, ht - .03, d - .2, dx, DECK + (ht - .03) / 2, z);
+      bx('gpaper', .5, .004, .36, -.4, DECK + ht + .033, z, .2); cy('gbrass', .05, .06, .2, .45, DECK + ht + .13, z, 8); cy('gglass', .04, .04, .14, .2, DECK + ht + .1, z - .2, 8);
+      it('captain\'s table', -w / 2, DECK, z - d / 2, w / 2, DECK + ht + .25, z + d / 2);
+      for (const dx of [-.5, .5]) { cy('spar', .17, .16, .45, dx, DECK + .225, z + .7, 10); it('stool', dx - .17, DECK, z + .53, dx + .17, DECK + .45, z + .87); } }
+    { // the box bed to port forward of the mizzen, its curtain rail; the sea chest at its foot
+      const z0 = -7.7, z1 = -5.8, w = .9, xo = -Math.min(cin(z0, DECK + .1), cin(z1, DECK + .1)) + .02, x = xo + w / 2, y0 = DECK;
+      bx('oak', w, .3, z1 - z0, x, y0 + .25, (z0 + z1) / 2); bx('gcabB', w - .1, .14, z1 - z0 - .1, x, y0 + .47, (z0 + z1) / 2); bx(MARK ? 'gfur' : 'gcabA', w - .06, .05, (z1 - z0) * .64, x, y0 + .57, z1 - (z1 - z0) * .34);
+      bx('gcabB', .55, .1, .3, x, y0 + .58, z0 + .25); for (const zz of [z0, z1]) bx('oak', w + .04, 1.4, .06, x, y0 + .7, zz); bx('oak', .06, .32, z1 - z0, x + w / 2, y0 + .4, (z0 + z1) / 2);
+      bx('spar', .04, .04, z1 - z0, x + w / 2 - .02, y0 + 1.4, (z0 + z1) / 2); it('bunk', x - w / 2, y0, z0 - .03, x + w / 2 + .03, y0 + 1.4, z1 + .03);
+      const cz = -5.45, cw2 = .8, cd = .5, cx = xo + cw2 / 2 + .02; bx('oak', cw2, .55, cd, cx, DECK + .275, cz); bx('green', cw2 + .02, .06, cd + .02, cx, DECK + .52, cz); for (const dx of [-.25, .25]) bx('iron', .05, .57, cd + .02, cx + dx, DECK + .275, cz);
+      it('sea chest', cx - cw2 / 2, DECK, cz - cd / 2, cx + cw2 / 2, DECK + .55, cz + cd / 2); }
+    { // the chart table and its globe to starboard, a stool
+      const z = -7.0, w = .85, d = 1.2, ht = .8, x = Math.min(cin(z - d / 2, DECK + .1), cin(z + d / 2, DECK + .1)) - w / 2 - .02; bx('oak', w, .06, d, x, DECK + ht, z);
+      for (const dx of [-w / 2 + .07, w / 2 - .07]) for (const dz of [-d / 2 + .07, d / 2 - .07]) bx('spar', .06, ht - .03, .06, x + dx, DECK + (ht - .03) / 2, z + dz);
+      bx('gpaper', .55, .004, .75, x, DECK + ht + .033, z + .1, .1); put(new THREE.CylinderGeometry(.006, .006, .2, 4), 'gbrass', x + .05, DECK + ht + .04, z + .2, 1.2, 0, 0);
+      cy('gbrass', .07, .09, .06, x, DECK + ht + .06, z - .4, 10); put(new THREE.SphereGeometry(.17, 16, 12), 'gpaper', x, DECK + ht + .27, z - .4); put(new THREE.TorusGeometry(.19, .012, 4, 24), 'gbrass', x, DECK + ht + .27, z - .4, 0, Math.PI / 2, 0);
+      cy('spar', .17, .16, .45, x - w / 2 - .22, DECK + .225, z + .2, 10);
+      it('chart table', x - w / 2, DECK, z - d / 2, x + w / 2, DECK + ht + .46, z + d / 2); it('stool', x - w / 2 - .39, DECK, z + .03, x - w / 2 - .05, DECK + .45, z + .37); }
+    { // the sideboard against the bulkhead to starboard of the doorway, bottles and two cups on it
+      const z = ZA - .27, w = 1.0, d = .42, x = 1.25, ht = .9; bx('oak', w, ht, d, x, DECK + ht / 2, z); bx('spar', w - .1, .5, .02, x, DECK + .4, z - d / 2 - .005);
+      for (let k = 0; k < 4; k++) cy('gglass', .04, .045, .24, x - .35 + k * .14, DECK + ht + .12, z, 8); for (const dx of [.25, .38]) cy('gbrass', .035, .03, .08, x + dx, DECK + ht + .04, z, 8);
+      it('sideboard', x - w / 2, DECK, z - d / 2, x + w / 2, DECK + ht + .25, z + d / 2); }
+    lantern(.6, -9.0, .45); lantern(-.6, -6.2, .45);
+    if (MARK) put(new THREE.CircleGeometry(.8, 9).scale(1.2, 1, 1).rotateX(-Math.PI / 2), 'gfur', 0, DECK + .006, -6.6); else { bx('grug0', 1.4, .01, 1.8, 0, DECK + .006, -6.6); bx('grug1', 1.1, .012, 1.5, 0, DECK + .008, -6.6); }
+  }
   const hull = bake(M), rigs = [];
   // a square rig in its mast's frame: the course and the topsail on their yards, bellied forward, the course's foot 2.2 m over the deck
   const square = (mz, mh, cy, cw2, tw, mark) => { rod([-cw2 / 2, cy, .2], [cw2 / 2, cy, .2], .1, .08, 'spar'); rod([-tw / 2, DECK + mh - .5, .16], [tw / 2, DECK + mh - .5, .16], .07, .06, 'spar');
@@ -3985,7 +4034,7 @@ function mkGalleon(o = {}) {
   const wb = bake(M), wheel = new THREE.Group(); wheel.name = 'wheel'; wheel.position.set(0, wy, wz); { const wm = new THREE.Mesh(wb.geo, wb.mats); wm.castShadow = true; wheel.add(wm); }
   const at = z => ({ b: sect(z, 1)[0], g: sheerAt(z), k: keelAt(z), sect: u => sect(z, u) });
   return { hull, rig: rigs[0], rigs, wheel, L, W, zs, zb, mast: masts[0], masts, hatch: hatches[0], hatches, ports, deckAt, at, sheerAt, transom: ZT, sailFoot: DECK + 2.2, dress: MARK ? 'mark' : AURD ? 'aurenne' : 'gatelands', head: false, shields: [],
-    castle: { z0: ZT, z1: ZA, y: CY, cw, door, ladders, lad: LAD }, fore: { z0: ZF, z1: zb - .3, y: CY, cw, ladders: [fladder], lad: LAD, posts }, helm: { y: wy, z: wz - 1.1, wheelZ: wz },
+    cabinItems, castle: { z0: ZT, z1: ZA, y: CY, cw, door, ladders, lad: LAD }, fore: { z0: ZF, z1: zb - .3, y: CY, cw, ladders: [fladder], lad: LAD, posts }, helm: { y: wy, z: wz - 1.1, wheelZ: wz },
     tris: Math.round(hull.tris + rigs.reduce((a, q) => a + q.tris, 0) + wb.tris), draws: hull.mats.length + rigs.reduce((a, q) => a + q.mats.length, 0) + wb.mats.length };
 }
   return { stream, hashKey, mergeByMaterial, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, trunk: felledTrunk }, ships: { sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
