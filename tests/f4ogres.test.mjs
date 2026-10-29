@@ -65,9 +65,13 @@ await page.screenshot({ path: path.join(OUT, 'f4-ogres-side.jpg') });
 
 const dead = await page.evaluate(() => { const f = _F[0], rig = f.rig, before = []; rig.hb.root.traverse(o => { if (o.isMesh) before.push([o, o.material]); });
   f.e.hp = 0; killZoneEnemy(f.e, WORLD.scene, '');
-  for (let i = 0; i < 90; i++) tickPeople(1 / 60, 7e5 + i * 16.7);
+  // Session 1558: until the fall has come to rest (the head still to 1 mm over 10 ticks), not a fixed 90 ticks. The ragdoll's push is
+  // random (cosmetic, ragdollStart), and 2 of 12 falls were still on their way down at 90 (the head 1.14 and 0.70 up; CI's 0.70), all
+  // twelve at rest by 240 at 0.46–0.55
+  const headY = () => { rig.root.parent.updateMatrixWorld(true); return rig.hb.map.find(([j]) => j === 'head')[1].getWorldPosition(new THREE.Vector3()).y; };
+  let i = 0, y0 = headY(); for (; i < 600; i++) { tickPeople(1 / 60, 7e5 + i * 16.7); if (i % 10 === 9) { const y = headY(); if (i >= 59 && Math.abs(y - y0) < 1e-3) break; y0 = y; } }
   rig.root.parent.updateMatrixWorld(true); const hb = rig.hb.map.find(([j]) => j === 'head')[1].getWorldPosition(new THREE.Vector3()), hd = rig.B.head.getWorldPosition(new THREE.Vector3());
-  return { n: before.length, darker: before.filter(([o, m]) => o.material !== m && o.material.color && o.material.color.r <= m.color.r * .36 + 1e-6).length, head: +(hb.y - WORLD.worldH(hb.x, hb.z)).toFixed(2), gap: +hb.distanceTo(hd).toFixed(2) }; });
+  return { n: before.length, darker: before.filter(([o, m]) => o.material !== m && o.material.color && o.material.color.r <= m.color.r * .36 + 1e-6).length, head: +(hb.y - WORLD.worldH(hb.x, hb.z)).toFixed(2), gap: +hb.distanceTo(hd).toFixed(2), ticks: i + 1 }; });
 check('killed, its body is darkened and falls with its driver', dead.darker === dead.n && dead.head < .7 && dead.gap < .45, dead);
 // Session 1548 — under a cavern's roof the club tips forward (foeUnderRoof; QA's s1008: a lair's Ogre master, 3.45 m, held the
 // greatclub's head 3.63–3.67 m up in a 3.6 m cavern). In the open it stands upright from the fist, as before.
