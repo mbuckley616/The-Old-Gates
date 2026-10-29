@@ -379,7 +379,7 @@ function loop(now){
     const tdx = (dx + _lbx) * _ak;
     const tdz = (dz + _lbz) * _ak;
     if(lid==='overworld'){const _rl=typeof shipRailHolds==='function'; /* S1588 — the ship's rail (#882 A) */
-      if(!currentZoneSolid(px+tdx,pz)&&!(_rl&&shipRailHolds(px,pz,px+tdx,pz)))px+=tdx;if(!currentZoneSolid(px,pz+tdz)&&!(_rl&&shipRailHolds(px,pz,px,pz+tdz)))pz+=tdz;}
+      if(!currentZoneSolid(px+tdx,pz)&&!(_rl&&shipRailHolds(px,pz,px+tdx,pz))&&!laidBlocks(px+tdx,pz,jumpY))px+=tdx;if(!currentZoneSolid(px,pz+tdz)&&!(_rl&&shipRailHolds(px,pz,px,pz+tdz))&&!laidBlocks(px,pz+tdz,jumpY))pz+=tdz;} /* S1590 — a laid pillar, floe or bridge (64-spells.js) */
     else if(isInterior()){
       const R=0.3,idx=dx*_ak,idz=dz*_ak,nx2=px+idx,nz2=pz+idz;
       const _intW={weapon:11,armor:11,potion:9,misc:10,inn:13,church:10,castle:18};
@@ -388,10 +388,10 @@ function loop(now){
       const iD=(currentHouse&&currentHouse._roomD)||_intDd[currentHouse&&currentHouse.type||'misc']||9;
       const _gen=currentHouse&&currentHouse.id&&String(currentHouse.id).startsWith('g_');
       const behindCounter=_gen?(intSolidAt(nx2,nz2,R)):(nz2<2.5&&nx2>2.6&&nx2<iW-2.6); // v80 — generated rooms use their own furniture solids
-      if(nx2>R&&nx2<iW-R&&!behindCounter)px+=idx;
-      if(nz2>R&&nz2<iD-R&&!behindCounter)pz+=idz;
+      if(nx2>R&&nx2<iW-R&&!behindCounter&&!laidBlocks(nx2,pz,jumpY))px+=idx; /* S1590 — a laid thing */
+      if(nz2>R&&nz2<iD-R&&!behindCounter&&!laidBlocks(px,nz2,jumpY))pz+=idz;
     }
-    else{const[nx,nz]=dSlideP(px,pz,tdx,tdz);px=nx;pz=nz;}} /* S1327 — a gate's chasm is open air to you (dSlideP) */
+    else{let[nx,nz]=dSlideP(px,pz,tdx,tdz);if(laidBlocks(nx,nz,jumpY)){if(!laidBlocks(nx,pz,jumpY))nz=pz;else if(!laidBlocks(px,nz,jumpY))nx=px;else{nx=px;nz=pz;}}px=nx;pz=nz;}} /* S1590 — a laid thing */ /* S1327 — a gate's chasm is open air to you (dSlideP) */
   try{pushFromBodies();}catch(err){} /* S623 — foes and townsfolk are solid to you */
 
   // Jump physics
@@ -400,13 +400,13 @@ function loop(now){
   const inDungeon=lid&&lid.startsWith('dyn_');
   const inOverworld=!inDungeon&&!isInterior();
   const floorBaseY0=(inDungeon&&DUNGEON_STAIRWELL)?Math.min(0,FLOOR2_Y):((inDungeon&&currentFloor===2)?FLOOR2_Y:0); // v80 — with a stairwell the base is the lower floor; the upper floor is a foothold with the shaft as its hole
-  const floorBaseY=(inDungeon||isInterior())?footholdY(px,pz,jumpY,inDungeon?dPitBase(px,pz,floorBaseY0):floorBaseY0):floorBaseY0; /* S1327 — over a chasm's air the ground is its pit's floor */ // v80 — footholds (stairs, galleries)
+  const floorBaseY=(inDungeon||isInterior())?laidGround(px,pz,jumpY,footholdY(px,pz,jumpY,inDungeon?dPitBase(px,pz,floorBaseY0):floorBaseY0)):floorBaseY0; /* S1590 — a laid top */ /* S1327 — over a chasm's air the ground is its pit's floor */ // v80 — footholds (stairs, galleries)
   if(typeof tickSheath==='function')tickSheath(); /* S1080 — the sheath: on its own after 5 s at peace */
   if(!mantleTick(K)) /* S1385 — the mantle (10-player.js): while it pulls you up, nothing else moves your flight */
   airStepTick(K); /* S1009 — Second step, the double jump (10-player.js); before the ground's jump, so a landing always resets it first */
   if(onGround&&K['Space']){
-    if(inOverworld) jumpY=activeTerrainH(px,pz);
-    velY=JUMP_VEL;onGround=false;sndJump();_jumpFrom=jumpY;
+    if(inOverworld) jumpY=laidGround(px,pz,jumpY,activeTerrainH(px,pz)); /* S1590 — from a laid top */
+    velY=laidUpdraft(px,pz)?Math.max(JUMP_VEL,laidUpdraftV()):JUMP_VEL;onGround=false;sndJump();_jumpFrom=jumpY; /* S1590 — Séideán's updraft */
   }
   if(!onGround&&(airDashing()||mantling()))velY=0; /* S1011 — the dash holds you level; the fall starts again from rest after it */
   else if(!onGround){
@@ -427,6 +427,7 @@ function loop(now){
   let terrainY=0;
   if(inOverworld){
     terrainY=activeTerrainH(px,pz);
+    {const _lg=laidGround(px,pz,jumpY,terrainY);if(_lg>terrainY){terrainY=_lg;_onLaid=true;}else if(_onLaid){_onLaid=false;if(onGround&&jumpY-terrainY>.25){onGround=false;velY=0;}}} /* S1590 — a laid top; stepped off it, you fall */
     if(typeof spellLevitating==='function'&&spellLevitating()){velY=0;onGround=false;const up=(K['Space']?3.2:0)-(K['KeyC']?3.2:0);jumpY=Math.max(terrainY,jumpY+up*dt);if(up===0&&jumpY<terrainY+.3)jumpY=terrainY;} // v80 — Levitate
     else if(activeZoneId==='world'&&typeof WORLD!=='undefined'){const dy=WORLD.diveTick(dt,terrainY);if(dy!=null){terrainY=dy;if(jumpY<=dy+.05){onGround=true;velY=0;}else{onGround=false;}}} // v80 D — diving; falling into water is a fall
     if(onGround){
