@@ -3,6 +3,7 @@
 // keyed by its foe id (`slime:<id>`); the old blob's length, centred on it, on the floor; three levels by distance; the old quiver copied
 // onto it about the floor; the tell's glow on its hide; a dead one never dressed; killed, darkened with its shaders kept; the split's
 // two Small Slimes dressed too. Picture: docs/prototypes/f4/f4-slimes.jpg (the kit's and the old, side by side).
+// Session 1588: the Fire Elemental in the same gate wears the kit's `fireelemental`, fitted by its height; f4-elemental.jpg.
 import { boot, check, ROOT } from './lib/game.mjs';
 import { enterDungeon } from './lib/dungeonshot.mjs';
 import fs from 'fs'; import path from 'path';
@@ -78,5 +79,32 @@ const small = await page.evaluate(() => { const L = ENEMIES.filter(e => e.name =
   while (!(rig() && rig().hc) && k++ < 300) { CAM.position.set(S.mesh.position.x - 3, S.mesh.position.y + 1.6, S.mesh.position.z); CAM.updateMatrixWorld(true); tickCreatures(1 / 60, 5e5 + k * (HBODY.gap + 1)); }
   const R = rig(); return { n: L.length, k, plan: R && R.hc && R.hc.C.g.plan, seed: R && R.hc && R.hc.C.g.seed, want: HC.hashKey('slime:' + S.id), f: R && R.hc && +R.hc.f.toFixed(3), big: _R.hc.f }; });
 check(`the split's ${small.n} Small Slimes wear the kit's slime too, keyed by their own ids, smaller (×${small.f} against ×${(+small.big).toFixed(3)})`, small.n === 2 && small.plan === 'slime' && small.seed === small.want && small.f < small.big, small);
+// Session 1588: the Fire Elemental wears the kit's `fireelemental`, standing: fitted by its height, hovering on the plan's bob
+const el = await page.evaluate(() => { const F = ENEMIES.find(x => !x.dead && x.floor === currentFloor && x.limbs && x.limbs.flames); if (!F) return { none: true }; window._F = F;
+  const rig = () => [...HC_RIGS].find(r => r.e === F); let k = 0; HBODY.last = -1e9;
+  while (!(rig() && rig().hc) && k++ < 400) { CAM.position.set(F.mesh.position.x - 3, F.mesh.position.y + 1.6, F.mesh.position.z); CAM.updateMatrixWorld(true); tickCreatures(1 / 60, 9e5 + k * (HBODY.gap + 1)); }
+  const R = rig(); window._RF = R; if (!R || !R.hc) return { k, rig: !!R, fail: R && R.hcFail };
+  const m = F.mesh; m.updateMatrixWorld(true); const inv = new THREE.Matrix4().copy(m.matrixWorld).invert(), box = (root, skin) => { const b = new THREE.Box3(), v = new THREE.Vector3();
+    root.traverse(o => { if (!o.isMesh || !o.geometry.attributes.position) return; const p = o.geometry.attributes.position; for (let i = 0; i < p.count; i += 5) { v.fromBufferAttribute(p, i); if (skin && o.isSkinnedMesh) o.applyBoneTransform(i, v); else v.applyMatrix4(o.matrixWorld); v.applyMatrix4(inv); b.expandByPoint(v); } }); return b; };
+  R.hc.C.skel.update(); const kb = box(R.hc.W, true), ob = box(R.mesh, false);
+  const lit = () => R.hc.hide.filter(o => o.material.emissive && o.material.emissive.getHex() !== 0).length;
+  hcFishPose(R); const idle = lit(); telegraphPulse(F, 1); hcFishPose(R); const on = lit(); telegraphReset(F); F.limbs.body.material.emissive.setHex(0xaa3300); hcFishPose(R); const easing = lit();
+  F.limbs.body.material.emissive.copy(F.limbs.coreEm);
+  const p0 = R.ph, a = Array.from(R.hc.C.skel.boneMatrices); for (let i = 0; i < 8; i++) { R.t = performance.now() / 1000 - 1 / 30; hcFishPose(R); } R.hc.C.skel.update(); const b = Array.from(R.hc.C.skel.boneMatrices);
+  let mv = 0; for (let i = 0; i < a.length; i++) mv = Math.max(mv, Math.abs(a[i] - b[i]));
+  return { k, plan: R.hc.C.g.plan, seed: R.hc.C.g.seed, want: HC.hashKey('fireelemental:' + F.id), bones: R.hc.C.bones.length, tris: R.hc.C.stats.tris, f: +R.hc.f.toFixed(3),
+    kit: [kb.min.y, kb.max.y].map(v => +v.toFixed(3)), old: [ob.min.y, ob.max.y].map(v => +v.toFixed(3)), idle, on, easing, all: R.hc.hide.length, mv: +mv.toFixed(3) }; });
+console.log('  elemental:', JSON.stringify(el));
+check(`the Fire Elemental wears the kit's fire elemental (${el.bones} bones, ${el.tris} tris), keyed by its foe id`, el.plan === 'fireelemental' && el.seed === el.want, el);
+check(`it stands the old figure's height (${el.kit && el.kit[1]} against ${el.old && el.old[1]}), off the floor`, el.kit && Math.abs(el.kit[1] - el.old[1]) < .08 * el.old[1] && el.kit[0] > -.02, el);
+check('its crust is lit by the wind-up only, not by the core\'s own glow or its ease back to it; its flames lick (the bones move)', el.idle === 0 && el.on === el.all && el.on > 0 && el.easing === 0 && el.mv > 1e-3, el);
+const shotF = await page.evaluate(() => { const F = _F, R = _RF, m = F.mesh; R.hc.C.skel.update();
+  const x = m.position.x, y = m.position.y, z = m.position.z, s = Math.max(m.scale.x, .5), L = new THREE.PointLight(0xffb070, 1.0, 12); L.position.set(x + 1.6 * s, y + 1.6 * s, z + 1.4 * s); dScene.add(L);
+  ENEMIES.forEach(e => { if (e.mesh && e !== F) e.mesh.visible = false; });
+  const twin = R.mesh.clone(); twin.visible = true; twin.position.set(x + 1.1 * s, y, z); twin.scale.copy(m.scale); twin.rotation.copy(m.rotation); dScene.add(twin);
+  const cv = REN.domElement, cam = new THREE.PerspectiveCamera(45, cv.width / cv.height, .05, 60); cam.position.set(x + .55 * s, y + .9 * s, z + 2.6 * s); cam.lookAt(x + .55 * s, y + .55 * s, z);
+  dScene.updateMatrixWorld(true); REN.render(dScene, cam); dScene.remove(L); dScene.remove(twin); ENEMIES.forEach(e => { if (e.mesh && !e.dead) e.mesh.visible = true; });
+  const o = document.createElement('canvas'); o.width = cv.width; o.height = cv.height; o.getContext('2d').drawImage(cv, 0, 0); return o.toDataURL('image/jpeg', .85); });
+fs.writeFileSync(path.join(OUT, 'f4-elemental.jpg'), Buffer.from(shotF.split(',')[1], 'base64'));
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
