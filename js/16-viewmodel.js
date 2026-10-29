@@ -257,6 +257,24 @@ function vmMantle(){if(!vmSword||typeof MANTLE==='undefined'||MANTLE.t0==null)re
       fL.rotation.set(mix(fL.rotation.x,P[3]),mix(fL.rotation.y,-P[4]),mix(fL.rotation.z,-P[5]));}
     return;}
   vmSword.position.x+=-.06*w;vmSword.position.y+=-.42*w;vmSword.position.z+=-.1*w;vmSword.rotation.x+=-1.1*w;vmSword.rotation.z+=.35*w;}
+// S1593 — the double jump's tuck and the air dash's lean (double-jump-and-dash-build.md, "Bodies"), read off AIRSTEP and AIRDASH
+// (10-player.js) and the clock; a look only, both views. The step is seen as AIRSTEP.used coming on (set the frame it fires, cleared on
+// landing): the tuck comes up in 0.1 s, holds to 0.3 and lets go by 0.6, near the step's top. The dash leans while AIRDASH.t0 is set,
+// in over 0.06 s and out over AIR_POSE.out after it. f and s are the dash's line along your facing and to your right, read each frame,
+// since you may turn while it carries you. Both are 0 on the ground.
+const AIR_POSE={seen:false,stepAt:-9,t0:null,endAt:-9,dx:0,dz:0,out:.18};
+function airPose(t){const A=AIR_POSE,sm=x=>{x=Math.max(0,Math.min(1,x));return x*x*(3-2*x);};
+  if(typeof AIRSTEP==='undefined'||typeof AIRDASH==='undefined')return {tuck:0,lean:0,f:0,s:0};
+  if(AIRSTEP.used&&!A.seen)A.stepAt=t;A.seen=AIRSTEP.used;
+  if(AIRDASH.t0!=null){if(A.t0!==AIRDASH.t0){A.t0=AIRDASH.t0;A.dx=AIRDASH.dx;A.dz=AIRDASH.dz;}}else if(A.t0!=null){A.t0=null;A.endAt=t;}
+  if(onGround)return {tuck:0,lean:0,f:0,s:0};
+  const d=t-A.stepAt,tuck=sm(d/.1)*(1-sm((d-.3)/.3)),lean=A.t0!=null?sm((t-A.t0)/.06):1-sm((t-A.endAt)/A.out);
+  return {tuck,lean,f:A.dx*fwdX+A.dz*fwdZ,s:A.dx*rgtX+A.dz*rgtZ};}
+// first person: the hands dip with the tuck, and through the dash drop a little, come back toward you and roll against its line
+const FP_AIR={dip:.07,drop:.04,back:.05,roll:.25};
+function vmAirDip(){if(!vmSword)return;const P=airPose(performance.now()/1000),ln=P.lean,tk=P.tuck*(1-ln);if(tk<=0&&ln<=0)return;
+  const dy=-FP_AIR.dip*tk-FP_AIR.drop*ln,dz=FP_AIR.back*ln,fL=vmSword.userData.fistL;
+  vmSword.position.y+=dy;vmSword.position.z+=dz;vmSword.rotation.z+=FP_AIR.roll*P.s*ln;if(fL){fL.position.y+=dy;fL.position.z+=dz;}}
 const FP_LEVEL={spear:1.15,crossbow:1.5};
 // S1476 — the crossbow's 2.0 s span drawn (XBOW, #745 2 A): the prod tipped up toward you and the bow drawn in (0–0.35 s), so the
 // string is in view as it is hauled back to the nut (0.35–1.45), the bolt laid in the groove (1.55), the bow let back down level

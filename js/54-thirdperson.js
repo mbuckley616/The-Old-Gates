@@ -367,6 +367,11 @@ function tpPose(R,dt,st){
   let thL=Math.sin(ph)*-amp,thR=Math.sin(ph+Math.PI)*-amp,knL=Math.max(0,Math.sin(ph-1.2))*amp*1.4,knR=Math.max(0,Math.sin(ph+Math.PI-1.2))*amp*1.4;
   if(sneak){thL-=.55;thR-=.55;knL+=.9;knR+=.9;}
   if(air){thL=-.7;thR=-.25;knL=1.1;knR=.6;}
+  // S1593 — the double jump's tuck: the knees drawn up to the chest; the air dash's lean: one leg trailing, the other drawn under
+  // (a dash back, both reaching ahead). Weights from airPose (16-viewmodel.js); the roll, the water and the fall take none
+  const AP=airPose(now),ln=st.roll||dead||TP.swim?0:AP.lean,tk=st.roll||dead||TP.swim?0:AP.tuck*(1-ln),bk=AP.f<-.3;
+  if(tk>0){thL+=(-1.6-thL)*tk;thR+=(-1.35-thR)*tk;knL+=(2.1-knL)*tk;knR+=(1.9-knR)*tk;}
+  if(ln>0){thL+=((bk?-.75:.25)-thL)*ln;thR+=((bk?-.55:-.15)-thR)*ln;knL+=((bk?.35:.95)-knL)*ln;knR+=((bk?.3:.45)-knR)*ln;}
   if(blocking&&!st.moving){thL=-.25;knL=.3;thR=.2;knR=.25;}
   // the gait (S154): on the new rig, walking legs are placed by the planted-foot stride, driven by ground covered
   let anL=0,anR=0,hipsY=(R.hipsY0||.38)+(st.moving&&!air?Math.abs(Math.sin(ph))*(st.sprinting?.035:.02):Math.sin(now*1.6)*.004);
@@ -401,6 +406,13 @@ function tpPose(R,dt,st){
   // and the punch, the block and the cast take over from it as before
   if(R.unarmed&&!air&&!st.sprinting){const sw=st.moving?Math.sin(ph)*.06:Math.sin(now*1.6)*.015;
     aR={x:-1.1+sw,y:.3,z:0};eR=-1.75;aL={x:-1.25-sw,y:-.32,z:0};eL=-1.85;wR=0;}
+  // S1593 — in the tuck the arms come forward and out round the knees, the body curled over them; in the dash they sweep back behind
+  // you (forward against a dash back), the body itself leant into it about its middle (tpAirLean). A swing, a block, the bow and a cast
+  // below take the arms over as in any jump
+  if(tk>0){aL={x:aL.x+(-1-aL.x)*tk,y:aL.y*(1-tk),z:aL.z+(.55-aL.z)*tk};aR={x:aR.x+(-1-aR.x)*tk,y:aR.y*(1-tk),z:aR.z+(-.55-aR.z)*tk};
+    eL+=(-1.1-eL)*tk;eR+=(-1.1-eR)*tk;tx+=.3*tk;}
+  if(ln>0){const ax=bk?-.95:.6;aL={x:aL.x+(ax-aL.x)*ln,y:aL.y*(1-ln),z:aL.z+(.3-aL.z)*ln};aR={x:aR.x+(ax-aR.x)*ln,y:aR.y*(1-ln),z:aR.z+(-.3-aR.z)*ln};
+    eL+=(-.3-eL)*ln;eR+=(-.3-eR)*ln;}
   // swing — read the viewmodel's own record of the current swing
   const vu=(typeof vmSword!=='undefined'&&vmSword)?vmSword.userData:{};
   // S244: the viewmodel picks a swing's variant and power later in the frame than this runs (and clears them when a
@@ -510,7 +522,16 @@ function tpPose(R,dt,st){
   if(R.weapon&&R.weapon.userData.xbow)tpXbowSpanBody(R,dt,st);
   // death: down on the back
   R.root.rotation.x=-TP.deadT*Math.PI/2;R.root.position.y-=TP.deadT*.1;
+  tpAirLean(R,ln*AP.f*TP_AIR.pitch,ln*AP.s*TP_AIR.roll);
 }
+// S1593 — the dash's lean on the whole body, about its middle (TP_AIR.mid of its stature up from the feet), so the head goes into the dash
+// and the feet trail: pitched forward as much as the dash runs along your facing (back for a dash back), rolled toward your right as much
+// as it runs to it. The root's roll is set every frame here (nothing else sets it); its pitch is the death fall's, added to
+const TP_AIR={pitch:.5,roll:.4,mid:.55},_taV=new THREE.Vector3();
+function tpAirLean(R,rx,rz){R.root.rotation.z=0;if(!rx&&!rz)return;
+  const h=TP_AIR.mid*(R.rig.hb?R.rig.hb.st:SCALE.PERSON_MODEL*(R.root.scale.y||1));
+  R.root.rotation.x+=rx;R.root.rotation.z=rz;_taV.set(0,h,0).applyEuler(R.root.rotation);
+  R.root.position.x-=_taV.x;R.root.position.y+=h-_taV.y;R.root.position.z-=_taV.z;}
 // S246: the left arm reaches the two-handed grip as a two-bone reach: the elbow (a hinge, bent one way as the pose
 // bends it) is bent until shoulder to wrist is shoulder to grip, found by halving on the bones themselves, then the
 // shoulder turns the wrist onto the grip. Out of reach, the arm straightens towards it.
