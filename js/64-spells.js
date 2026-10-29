@@ -771,26 +771,39 @@ function tickSpellFx(dt){
   if(_spellLight&&!fxOn('light')&&_spellLight.intensity>0)_spellLight.intensity=Math.max(0,_spellLight.intensity-dt*2);
 }
 // spellbooks: read to learn
-function spellbookItem(spellId,tier){const sp=SPELLS.find(s=>s.id===spellId);return {name:`Spellbook: ${sp.nameEn}`,ico:'📕',type:'spellbook',spellId,tier:tier||1,weight:.8,sellMult:.5,buyPrice:sp.price?sp.price[(tier||1)-1]:300,qty:1};}
+function spellbookItem(spellId,tier){const sp=spellOrWord(spellId);return {name:`Spellbook: ${sp.nameEn}`,ico:'📕',type:'spellbook',spellId,tier:tier||1,weight:.8,sellMult:.5,buyPrice:sp.price?sp.price[(tier||1)-1]:300,qty:1};}
+// S1583 — a book is an institutional copy (canon §7, magic-build.md): it deepens its word to Comprehension if you hold the word, and does
+// nothing if you don't. It never teaches a word, and it is kept until it gives something.
 function readSpellbook(i){
-  const it=BAG[i];const sp=SPELLS.find(s=>s.id===it.spellId);if(!sp)return;
-  const need=sp.intReqs[(it.tier||1)-1];if(ATTRS.intelligence<need){showMsg(`The pages swim before your eyes. (INT ${need} needed)`,'#c8a84a');return;}
-  const r=learnSpell(sp.id,it.tier||1);if(r==='noop'){showMsg('You already understand this book.','#aaa');return;}
+  const it=BAG[i];const sp=spellOrWord(it.spellId);if(!sp)return;
+  const cur=knownWords[sp.id]||0;
+  if(!cur){showMsg(`A copy of ${sp.nameIr}. Without the word from its stone, the pages are only ink.`,'#c8a84a');return;}
+  if(cur>=WORD_JOIN_TIER){showMsg('You already understand this book.','#aaa');return;}
+  const r=deepenWord(sp.id,'book');if(r==='int'){showMsg(`The pages swim before your eyes. (Intelligence ${sp.intReqs[1]} needed)`,'#c8a84a');return;}
+  if(r==='noop')return;
   it.qty=(it.qty||1)-1;if(it.qty<=0)BAG.splice(i,1);if(typeof renderInv==='function')renderInv();
 }
 // guild vendors: what a Mages' Guild can teach you right now
+// S1583 — magic B's guild (magic-build.md, "Where the words are"): the Mages' Guild teaches the five forms by rank and never a word.
+// Sent and Worn are a Novice's (anyone's), Touched an Adept's, Laid an Evoker's, Held a Warlock's; forms are free at rank, so gold
+// never buys ahead, and a form a migrated character already used is kept (`formsGranted`). Spell sales end. At Adept and above the
+// tutor deepens a word you hold at Impression to Comprehension in two hours on the clock, free, if your Intelligence meets the word's
+// Comprehension need; never past it (Mastery is the stone's alone, canon §7).
+const TUTOR_MIN=120;
+function mageRank(){const G=worldState.guild,m=G&&G.guild_m;return Math.min(4,Math.floor(((m&&m.done)||0)/3));}
+function formHeld(f,rankIdx){const F=FORMS[f];if(!F)return false;return F.rank<=(rankIdx!=null?rankIdx:mageRank())||formsGranted.includes(f);}
+function formsHeld(rankIdx){return FORM_ORDER.filter(f=>formHeld(f,rankIdx));}
+// the named action (co-op rules): a word you hold deepened, by the tutor or a book, to Comprehension at most
+function deepenWord(id,source){const w=spellOrWord(id),cur=knownWords[id]||0;if(!w||!cur||cur>=WORD_JOIN_TIER)return 'noop';
+  if(ATTRS.intelligence<w.intReqs[1])return 'int';if(source==='tutor')advanceClock(TUTOR_MIN);return learnSpell(id,WORD_JOIN_TIER);}
 function spellShopTopics(rankIdx){
-  const out=[];
-  for(const sp of SPELLS){
-    if(sp.rare&&!(rankIdx>=3))continue;
-    const cur=(knownWords[sp.id]||0);if(cur>=2)continue;const tier=cur+1; // the institutional register stops at Comprehension; Mastery is the sigils' alone
-    const needRank=(sp.rank||0)+(tier-1);if(rankIdx<needRank)continue;
-    const price=(sp.price||[120,320,700])[tier-1];
-    out.push({label:`${cur?'Deepen':'Learn'} ${sp.nameEn}${cur?' → '+TIER_LABEL[tier-1]:''} (${price}g)`,quest:true,fn:()=>{
-      if(gold<price)return `${sp.nameEn} is ${price} gold at that depth.`;
-      const need=sp.intReqs[tier-1];if(ATTRS.intelligence<need)return `You'd not hold it yet. Intelligence ${need}, then come back.`;
-      gold-=price;updateHUD();learnSpell(sp.id,tier);return `${sp.nameEn}. Say it slowly the first few times.`;}});
-  }
+  const out=[],held=formsHeld(rankIdx).map(f=>FORMS[f].name),next=FORM_ORDER.find(f=>!formHeld(f,rankIdx));
+  out.push({label:'What forms will you teach me?',response:`At your rank: ${held.join(', ')}.`+(next?` ${FORMS[next].name} comes at ${['Novice','Adept','Evoker','Warlock'][FORMS[next].rank]}.`:'')});
+  if(rankIdx<1)return out;
+  for(const id of Object.keys(knownWords)){if(knownWords[id]!==1)continue;const w=spellOrWord(id);if(!w)continue;
+    out.push({label:`Study ${w.nameIr} with the tutor (two hours)`,quest:true,fn:()=>{const r=deepenWord(id,'tutor');
+      if(r==='int')return `You'd not hold it yet. Intelligence ${w.intReqs[1]}, then come back.`;
+      return r==='noop'?'There is nothing more the tutor can give you there.':`${w.nameIr}, ${w.nameEn}. Say it slowly the first few times.`;}});}
   return out;
 }
 
