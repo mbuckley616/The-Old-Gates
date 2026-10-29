@@ -1560,7 +1560,7 @@ function loop(now){
     else if(typeof shuttleNear==='function'&&shuttleNear()){iprEl.textContent="Press 'E' to take up the shuttle";iprEl.style.opacity='1';iprEl.style.display='block';} /* S797 */
     else if(typeof cloakDenNear==='function'&&cloakDenNear()){iprEl.textContent="Press 'E' to take the grey cloak from under it";iprEl.style.opacity='1';iprEl.style.display='block';} /* S992 */
     else if(nearSigilPrompt){
-      const sp2=SPELLS.find(s=>s.id===nearSigilPrompt.spellId);
+      const sp2=spellOrWord(nearSigilPrompt.spellId); /* S1586 */
       iprEl.textContent=`Press 'E' — Touch the sigil of ${sp2?sp2.nameIr:'?'}`;
       iprEl.style.opacity='1';iprEl.style.display='block';
     }

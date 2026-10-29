@@ -77,11 +77,13 @@ const SCHOOL_DEF={
 // Display the spell's name at the appropriate tier.
 function spellDisplayName(sp, tier){
   if(!sp)return 'None';
-  if(tier>=3)return `${sp.nameIr} — ${sp.nameMa}`;
+  if(tier>=3)return `${sp.nameIr} — ${sp.nameMa||sp.nameEn}`;
   if(tier>=2)return `${sp.nameIr} — ${sp.nameEn}`;
   return sp.nameIr;
 }
 // Fetch the current tier (1–3) for a spell id, or 0 if not known.
+// S1586 — a carving may hold one of magic B's eight new words, which the old SPELLS table lacks: the sigil's paths read the word then
+function spellOrWord(id){return SPELLS.find(s=>s.id===id)||(typeof WORD_BY!=='undefined'?WORD_BY[id]:null)||null;}
 function getSpellTier(id){return knownWords[id]||0;}
 // S1346 — the tier a cast reads (great-gates-build.md, Michael's A on #292): the tier learned, one deeper while the school's great gate is
 // torn and one shallower while it is bound, from Impression to Mastery; a spell not known stays 0. Casting, its name, cost, cooldown and
@@ -229,7 +231,7 @@ let _nearSigil=null;
 // Mesh is placed flat against a wall, oriented via yaw. Mesh group includes a soft PointLight that
 // brightens with proximity (handled in the render loop).
 function buildSigilMesh(spellId){
-  const sp=SPELLS.find(s=>s.id===spellId);
+  const sp=spellOrWord(spellId);
   if(!sp)return null;
   const schoolCol=parseInt(SCHOOL_DEF[sp.school].col.slice(1),16);
 
@@ -342,7 +344,7 @@ function buildSigilMesh(spellId){
 // Determine the highest tier the player currently qualifies for on this sigil's spell.
 // Returns 0 if INT too low for even Impression.
 function sigilEligibleTier(spellId){
-  const sp=SPELLS.find(s=>s.id===spellId);
+  const sp=spellOrWord(spellId);
   if(!sp)return 0;
   const I=ATTRS.intelligence;
   if(I>=sp.intReqs[2])return 3;
@@ -353,10 +355,14 @@ function sigilEligibleTier(spellId){
 
 // Handle the player interacting with a sigil. Grants the highest tier their INT qualifies for,
 // upgrading from any current tier. First visit fires different flavor than re-touches.
+// the carving's door, read: worldState.sigilsRead[seed] = its word, for a world gate's carving only (a legacy dungeon's seed is SIGIL_PLACEMENTS')
+function sigilRead(sigil){const P=typeof currentPortal!=='undefined'?currentPortal:null;if(!P||!(P.zone==='world'||P.zone==='gen')||SIGIL_PLACEMENTS[P.seed])return;
+  (worldState.sigilsRead||(worldState.sigilsRead={}))[P.seed]=sigil.spellId;}
 function touchSigil(sigil){
   if(typeof knifeAtSigil==='function')knifeAtSigil(sigil); /* S1353 — the knife does nothing here, once a sigil */
-  const sp=SPELLS.find(s=>s.id===sigil.spellId);
+  const sp=spellOrWord(sigil.spellId);
   if(!sp)return;
+  sigilRead(sigil); /* S1586 — a world gate's carving is read once touched (the Register counts them, Súil passes them by) */
   // v80 — the deep register: a sigil teaches by touch. Guilds stop at Comprehension; only a sigil resolves Mastery.
   // The quest hook and first-visit bookkeeping fire on every path out of this block (Session 96 had returned before them).
   {const firstVisit=!touchedSigils.has(sigil.uuid);touchedSigils.add(sigil.uuid);
@@ -765,38 +771,51 @@ function tickSpellFx(dt){
   if(_spellLight&&!fxOn('light')&&_spellLight.intensity>0)_spellLight.intensity=Math.max(0,_spellLight.intensity-dt*2);
 }
 // spellbooks: read to learn
-function spellbookItem(spellId,tier){const sp=SPELLS.find(s=>s.id===spellId);return {name:`Spellbook: ${sp.nameEn}`,ico:'📕',type:'spellbook',spellId,tier:tier||1,weight:.8,sellMult:.5,buyPrice:sp.price?sp.price[(tier||1)-1]:300,qty:1};}
+function spellbookItem(spellId,tier){const sp=spellOrWord(spellId);return {name:`Spellbook: ${sp.nameEn}`,ico:'📕',type:'spellbook',spellId,tier:tier||1,weight:.8,sellMult:.5,buyPrice:sp.price?sp.price[(tier||1)-1]:300,qty:1};}
+// S1587 — a book is an institutional copy (canon §7, magic-build.md): it deepens its word to Comprehension if you hold the word, and does
+// nothing if you don't. It never teaches a word, and it is kept until it gives something.
 function readSpellbook(i){
-  const it=BAG[i];const sp=SPELLS.find(s=>s.id===it.spellId);if(!sp)return;
-  const need=sp.intReqs[(it.tier||1)-1];if(ATTRS.intelligence<need){showMsg(`The pages swim before your eyes. (INT ${need} needed)`,'#c8a84a');return;}
-  const r=learnSpell(sp.id,it.tier||1);if(r==='noop'){showMsg('You already understand this book.','#aaa');return;}
+  const it=BAG[i];const sp=spellOrWord(it.spellId);if(!sp)return;
+  const cur=knownWords[sp.id]||0;
+  if(!cur){showMsg(`A copy of ${sp.nameIr}. Without the word from its stone, the pages are only ink.`,'#c8a84a');return;}
+  if(cur>=WORD_JOIN_TIER){showMsg('You already understand this book.','#aaa');return;}
+  const r=deepenWord(sp.id,'book');if(r==='int'){showMsg(`The pages swim before your eyes. (Intelligence ${sp.intReqs[1]} needed)`,'#c8a84a');return;}
+  if(r==='noop')return;
   it.qty=(it.qty||1)-1;if(it.qty<=0)BAG.splice(i,1);if(typeof renderInv==='function')renderInv();
 }
 // guild vendors: what a Mages' Guild can teach you right now
+// S1587 — magic B's guild (magic-build.md, "Where the words are"): the Mages' Guild teaches the five forms by rank and never a word.
+// Sent and Worn are a Novice's (anyone's), Touched an Adept's, Laid an Evoker's, Held a Warlock's; forms are free at rank, so gold
+// never buys ahead, and a form a migrated character already used is kept (`formsGranted`). Spell sales end. At Adept and above the
+// tutor deepens a word you hold at Impression to Comprehension in two hours on the clock, free, if your Intelligence meets the word's
+// Comprehension need; never past it (Mastery is the stone's alone, canon §7).
+const TUTOR_MIN=120;
+function mageRank(){const G=worldState.guild,m=G&&G.guild_m;return Math.min(4,Math.floor(((m&&m.done)||0)/3));}
+function formHeld(f,rankIdx){const F=FORMS[f];if(!F)return false;return F.rank<=(rankIdx!=null?rankIdx:mageRank())||formsGranted.includes(f);}
+function formsHeld(rankIdx){return FORM_ORDER.filter(f=>formHeld(f,rankIdx));}
+// the named action (co-op rules): a word you hold deepened, by the tutor or a book, to Comprehension at most
+function deepenWord(id,source){const w=spellOrWord(id),cur=knownWords[id]||0;if(!w||!cur||cur>=WORD_JOIN_TIER)return 'noop';
+  if(ATTRS.intelligence<w.intReqs[1])return 'int';if(source==='tutor')advanceClock(TUTOR_MIN);return learnSpell(id,WORD_JOIN_TIER);}
 function spellShopTopics(rankIdx){
-  const out=[];
-  for(const sp of SPELLS){
-    if(sp.rare&&!(rankIdx>=3))continue;
-    const cur=(knownWords[sp.id]||0);if(cur>=2)continue;const tier=cur+1; // the institutional register stops at Comprehension; Mastery is the sigils' alone
-    const needRank=(sp.rank||0)+(tier-1);if(rankIdx<needRank)continue;
-    const price=(sp.price||[120,320,700])[tier-1];
-    out.push({label:`${cur?'Deepen':'Learn'} ${sp.nameEn}${cur?' → '+TIER_LABEL[tier-1]:''} (${price}g)`,quest:true,fn:()=>{
-      if(gold<price)return `${sp.nameEn} is ${price} gold at that depth.`;
-      const need=sp.intReqs[tier-1];if(ATTRS.intelligence<need)return `You'd not hold it yet. Intelligence ${need}, then come back.`;
-      gold-=price;updateHUD();learnSpell(sp.id,tier);return `${sp.nameEn}. Say it slowly the first few times.`;}});
-  }
+  const out=[],held=formsHeld(rankIdx).map(f=>FORMS[f].name),next=FORM_ORDER.find(f=>!formHeld(f,rankIdx));
+  out.push({label:'What forms will you teach me?',response:`At your rank: ${held.join(', ')}.`+(next?` ${FORMS[next].name} comes at ${['Novice','Adept','Evoker','Warlock'][FORMS[next].rank]}.`:'')});
+  if(rankIdx<1)return out;
+  for(const id of Object.keys(knownWords)){if(knownWords[id]!==1)continue;const w=spellOrWord(id);if(!w)continue;
+    out.push({label:`Study ${w.nameIr} with the tutor (two hours)`,quest:true,fn:()=>{const r=deepenWord(id,'tutor');
+      if(r==='int')return `You'd not hold it yet. Intelligence ${w.intReqs[1]}, then come back.`;
+      return r==='noop'?'There is nothing more the tutor can give you there.':`${w.nameIr}, ${w.nameEn}. Say it slowly the first few times.`;}});}
   return out;
 }
 
 function learnSpell(spellId, targetTier=1){
-  const sp=SPELLS.find(s=>s.id===spellId);
+  const sp=spellOrWord(spellId);
   if(!sp)return 'noop';
   const prevTier=knownWords[spellId]||0;
   if(targetTier<=prevTier)return 'noop';
   knownWords[spellId]=targetTier;
   partialSpells=partialSpells.filter(p=>p!==spellId);
   // First spell learned → auto-equip as active
-  if(!activeSpellId)activeSpellId=spellId;
+  if(!activeSpellId&&SPELLS.some(s=>s.id===spellId))activeSpellId=spellId; /* S1586 — only a word the cast can speak yet */
   if(prevTier===0)bookAdd(spellId); /* S1574 — a new word goes into the book in its first Novice form */
   const name=spellDisplayName(sp,targetTier);
   const verb=prevTier===0?'Learned':'Deepened understanding of';
