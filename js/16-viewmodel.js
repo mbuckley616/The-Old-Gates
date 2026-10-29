@@ -759,7 +759,9 @@ function buildViewmodel(){
   if(w.name!=="The Forge-Man's Hammer"&&typeof buildWeapon==='function'){
     const keep=new Set();[handMain,g.userData.handLow,g.userData.bowStringTopGroup,g.userData.bowStringBotGroup,g.userData.bowNockArrow].forEach(o=>o&&o.traverse(c=>keep.add(c)));
     g.children.forEach(c=>{if(keep.has(c)||c.isLight||c.userData.orbitPhase!==undefined)return;c.traverse(o=>{if(o.isMesh&&!keep.has(o))o.visible=false;});});
-    let k;if(_isBow){k=new THREE.Group();const b=buildWeapon('bowbare',{tint:{wood:tpHex(w.matCol,0x6a4428)}});const S=.40/.34;b.scale.setScalar(S);b.position.set(.012,0,-.025*S);k.add(b);k.userData.kit='bow';}
+    let k;if(_isBow){k=new THREE.Group();const bl=bowLenOf(w),b=buildWeapon((bl>1?w.bowKind:'bow')+'bare',{tint:{wood:tpHex(w.matCol,0x6a4428)}});const S=.40/.34;b.scale.setScalar(S);b.position.set(.012,0,-.025*S);k.add(b);k.userData.kit='bow';
+      // S1550 — a longbow's or a war bow's tips are further out (BOW_LEN): the view model's string is hung from them
+      if(bl>1){const T=.40*bl,U=g.userData;U.bowTipY=T;for(const [G,sd] of [[U.bowStringTopGroup,1],[U.bowStringBotGroup,-1]])if(G){G.position.y=sd*T;const m=G.children[0];if(m){m.scale.y=bl;m.position.y=-sd*.21*bl;}}}}
     else{k=tpWeapon(w);k.position.y=handMain.position.y;}
     k.traverse(o=>{if(o.isMesh&&o.material.metalness>.3){o.material=o.material.clone();o.material.metalness=.25;o.material.roughness=.4;}});
     k.userData.fpKit=true;g.add(k);g.userData.kit=k;

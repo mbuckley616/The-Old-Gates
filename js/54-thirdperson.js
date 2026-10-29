@@ -46,10 +46,11 @@ function tpWeapon(it){const g=new THREE.Group();if(!it)return g;
   // S227 — the weapon kit (Michael's A on Session 220), tinted by the item's own metal, guard and glow; the bow's wood is its
   // material colour, and it turns to put the string on your side of the grip, as the box bow had it
   const kind={scimitar:'cutlass',flail:'flail',greatclub:'greatclub',greataxe:'greataxe',claymore:'claymore'}[sh]||(WPN_KINDS.includes(sh)?sh:'sword');
-  const w=buildWeapon(kind==='crossbow'?'crossbowbare':kind,{tint:{metal:blade,guard,glow:tpHex(it.matGlow,0x88c0ff),wood:sh==='bow'?tpHex(it.matCol,0x6a4428):null}});g.add(w);
-  if(kind==='bow'){w.rotation.y=Math.PI;g.userData.bow=true;}if(kind==='crossbow'){w.rotation.x=Math.PI;g.userData.xbow=xbowRig(w);}g.userData.kit=kind; /* S1476 — its string and bolt drawn by the span */
+  const w=buildWeapon(kind==='crossbow'?'crossbowbare':kind==='bow'&&BOW_LEN[it.bowKind]?it.bowKind:kind,{tint:{metal:blade,guard,glow:tpHex(it.matGlow,0x88c0ff),wood:sh==='bow'?tpHex(it.matCol,0x6a4428):null}});g.add(w);
+  if(kind==='bow'){w.rotation.y=Math.PI;g.userData.bow=true;g.userData.bowLen=bowLenOf(it);} /* S1550 — a longbow or a war bow is the kit's own, longer */if(kind==='crossbow'){w.rotation.x=Math.PI;g.userData.xbow=xbowRig(w);}g.userData.kit=kind; /* S1476 — its string and bolt drawn by the span */
   return g;}
 const TP_LINEN=0xa89c80;
+const TP_BOW_TIP=.5; /* S1550 — a long bow carried at rest, tipped forward: the war bow (1.7) .35 rad */
 // ── F10 (Session 1246): the player's own body from the builder's genome, in the new look ──
 // worldState.look.hb is the saved genome (HB.toSaved: the sliders, the face, the palette, the hair and beard; a few hundred bytes),
 // in the character row (look is in SS_CHAR_WS). The creator and the barber write it through tpBuild (TP.rig.hbSaved, copied back
@@ -480,7 +481,10 @@ function tpPose(R,dt,st){
   tpSet(R.torso,tx,ty,tz,ka);tpSet(R.shL,aL.x,aL.y,aL.z,ka);tpSet(R.shR,aR.x,aR.y,aR.z,ka);tpSet(R.elL,eL,0,0,ka);tpSet(R.elR,eR,0,0,ka);
   // weapon grip follows the forearm; the bow stays vertical in the fist
   tpSet(R.handR,wR,0,0,ka);if(R.shield)tpSet(R.shield,0,shY,shZ,kf);
-  if(R.weaponL){R.weaponL.rotation.x=-(R.shL.rotation.x+R.elL.rotation.x);}
+  // S1550 — a longbow or a war bow carried at rest is tipped forward about the fist (TP_BOW_TIP radians for each whole length past the plain
+  // bow's), so its upper limb clears the face; drawn or held at the ready it stands upright again
+  if(R.weaponL){const bl=R.weaponL.userData.bowLen||1,tip=R.bow&&bl>1&&!drawing&&!blocking?TP_BOW_TIP*(bl-1):0;R.bowTip=(R.bowTip||0)+(tip-(R.bowTip||0))*ka;
+    R.weaponL.rotation.x=-(R.shL.rotation.x+R.elL.rotation.x)+R.bowTip;}
   // S246: a two-handed weapon is held in both hands through every pose: the left wrist is put on the grip
   if(R.gripL&&R.weapon&&TP.deadT<.01&&!TP.swim&&!(typeof castT!=='undefined'&&castT>0))tpGripL(R);
   // the head looks where you look
