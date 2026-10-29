@@ -93,10 +93,15 @@ const cv = await page.evaluate(() => { const out = {};
   put(0, m.userData.helm.z, D, true); pitch = .5; _drive(() => false, 3); out.promptDown = shipPrompt();
   put(0, m.userData.helm.z, D + 2.15, true); pitch = -.25; _drive(() => false, 3); out.promptUp = shipPrompt();
   out.take = shipInteract(); out.sailing = SHIP.sailing; _drive(() => false, 20); out.atHelm = loc(); shipInteract();
+  /* S1565: the cabin furnished; beside the bunk *Your berth — press 'E' to rest*, and E opens the rest slip; the bunk is a solid you walk into */
+  const Bt = m.userData.berth; out.berth = Bt; out.cabinItems = (shipBake('caravel', 'player').kit.cabinItems || []).map(q => q.name).join();
+  if (Bt) { put(Bt.x, Bt.z, D, false); yaw = ry + Math.PI / 2; _drive(() => false, 3); out.berthPrompt = shipPrompt(); out.rest = shipInteract(); out.slip = sleepOpen; closeSleepUI();
+    put(Bt.x + .4, Bt.z, D, false); yaw = ry + Math.PI / 2; out.intoBunk = walk(60); put(0, Bt.z, D + 2.15, false); _drive(() => false, 3); out.berthUp = shipPrompt(); }
   sc.remove(SHIP.mesh); SHIP.mesh = null; worldState.ship = was; return out; });
 console.log(JSON.stringify(cv));
 if (cv.bake.kit) {
   check('your caravel is the kit\'s Aurenne caravel: three lateens, under 36,000 triangles and 20 draws, her castle 2.15 m over the deck', cv.bake.dress === 'aurenne' && cv.key === 'caravel|player|aurenne' && cv.bake.rigs === 'lateen,lateen,lateen' && cv.bake.tris < 36000 && cv.bake.draws <= 20 && Math.abs(cv.bake.castleY - 3.15) < .01, cv.bake);
+  check(`her cabin under the castle is furnished (${cv.cabinItems}); beside the bunk "${cv.berthPrompt}", and E opens the rest slip; the bunk stops you; not from the castle over it`, /bunk/.test(cv.cabinItems) && /chart table/.test(cv.cabinItems) && /rest/.test(cv.berthPrompt || '') && cv.rest && cv.slip && cv.intoBunk.end[0] > cv.berth.x - .45 && cv.intoBunk.top === 0 && !/rest/.test(cv.berthUp || ''), [cv.berth, cv.berthPrompt, cv.rest, cv.slip, cv.intoBunk, cv.berthUp]);
   check('her hold\'s stowage keeps forward of the castle and its ladders, enough for her base hold three high', cv.slots * 3 >= 55, cv.slots);
   check('up the ladder to stand on the castle, and down it again to the deck', cv.up.end[2] === 2.15 && cv.up.end[1] < cv.z1 && !cv.up.swim && cv.down.end[2] === 0 && cv.down.end[1] > cv.z1 + cv.lad && !cv.down.swim, [cv.up, cv.down]);
   check('through the doorway into the cabin under the castle, on the main deck', cv.cabin.end[1] < cv.z1 - 2 && cv.cabin.top === 0, cv.cabin);
@@ -196,7 +201,7 @@ const ct = await page.evaluate(() => { const h = currentHouse, B = h._base; if (
   _drive(() => false, 20); o.cam = +CAM.position.y.toFixed(2);
   px = h._arriveX; pz = h._arriveZ - 3; o.exitFar = intExitZ(h, pz, h._roomD || h.intD); px = h._bench.x + .9; pz = h._bench.z; o.bench = benchNear();
   const b = INT_BEDS[0]; px = h._arriveX - .1; pz = b.z; yaw = -Math.PI / 2; pitch = -.4; CAM.position.set(px, 1.5, pz); CAM.rotation.set(pitch, yaw, 0, 'YXZ'); CAM.updateMatrixWorld(true); o.bed = !!intBedTarget(); o.bedExit = intExitZ(h, pz, h._roomD || h.intD);
-  px = h._arriveX; pz = h._arriveZ; o.out = (interact(), 0); return o; });
+  px = h._arriveX; pz = h._arriveZ; updateHUD(); o.hud = document.getElementById('ob').textContent; o.out = (interact(), 0); return o; });
 for (let k = 0; k < 40 && (await page.evaluate(() => isInterior())); k++) await page.waitForTimeout(250);
 ct.left = await page.evaluate(() => !isInterior());
 console.log(JSON.stringify(ct));
@@ -204,5 +209,31 @@ check(`below deck on your cutter is her hold in her own lines: ${ct.W} by ${ct.D
 check(`her hatch is aft of the mast at z -1.05, and the eye stands at ${ct.eye} (under the beams, over the sloop's 1.38)`, ct.hatch && Math.abs((ct.hatch.z0 + ct.hatch.z1) / 2 + 1.05) < .01 && ct.eye > 1.45 && ct.eye <= 1.65 && ct.cam > 1.45, [ct.hatch, ct.eye, ct.cam]);
 check('from the ladder\'s foot mid-hold you walk forward to the stores and aft to the bulkhead; the planking stops you either side', ct.fwd[1] < ct.arrive[1] - 3 && ct.aft[1] > ct.arrive[1] + 1.5 && ct.aft[1] < 7.8 && ct.port[0] > 2 && ct.port[0] < 3.2 && ct.stbd[0] < 2 && ct.stbd[0] > .8, [ct.arrive, ct.fwd, ct.aft, ct.port, ct.stbd]);
 check('the berth rests, the chest is the stash, the workbench is the bench (E at it), and E at the ladder\'s foot (only there) takes you on deck', ct.beds === 1 && ct.bed && !ct.bedExit && ct.stash && ct.bench && !ct.exitFar && ct.left, ct);
+/* Session 1564 (backlog L6; #418 A): and below deck on your caravel is her hold (PKIT.ships.caravelBase): under the main deck from the
+   cabin's bulkhead to the stem's, the ladder's foot mid-hold by the main mast; the workbench and the alchemist's table aft past the two
+   chests, the barrels forward. Her berth is in the cabin under the castle, not here */
+await page.evaluate(() => { if (SHIP.mesh) { sc.remove(SHIP.mesh); SHIP.mesh = null; } worldState.ship = { cls: 'caravel', name: 'Test Swift', sails: 0, cargo: 0 }; WORLD.spawnShip(px + 1, pz + 1, .7); SHIP.sailing = false; cabinUpdate(); goToInterior(CABIN.house); });
+for (let k = 0; k < 40 && !(await page.evaluate(() => isInterior() && !!currentHouse._base)); k++) await page.waitForTimeout(250);
+const cvh = await page.evaluate(() => { const h = currentHouse, B = h._base; if (!B || B.kind !== 'caravel') return { base: !!B };
+  const walk = (x, z, yw, n) => { px = x; pz = z; yaw = yw; pitch = 0; jumpY = 0; velY = 0; onGround = true; _drive(() => { K['KeyW'] = true; }, n); return [+px.toFixed(2), +pz.toFixed(2)]; };
+  /* a walk by waypoints, each leg along one axis: round the main mast to port, between the chests, to the bench past the alchemist's table */
+  const route = pts => { px = pts[0][0]; pz = pts[0][1]; jumpY = 0; velY = 0; onGround = true; let i = 1;
+    _drive(() => { const [tx, tz] = pts[i], dx = tx - px, dz = tz - pz; if (Math.hypot(dx, dz) < .12) return ++i >= pts.length; yaw = Math.atan2(-dx, -dz); pitch = 0; K['KeyW'] = true; return false; }, 900); return { legs: i - 1, at: [+px.toFixed(2), +pz.toFixed(2)] }; };
+  const o = { base: true, tris: B.tris, draws: B.draws, W: h.intW, D: h.intD, roomH: h._roomH, eye: h._eyeMax, beds: INT_BEDS.length, stash: !!intStashPos, hatch: B.hatch, arrive: [px, pz], exitZ: h._exitZ };
+  o.fwd = walk(h._arriveX, h._arriveZ, 0, 250); o.port = walk(h._arriveX, 3, -Math.PI / 2, 80); o.stbd = walk(h._arriveX, 3, Math.PI / 2, 80);
+  o.route = route([[h._arriveX, h._arriveZ], [h._arriveX + .6, h._arriveZ], [h._arriveX + .6, 6.15], [2.2, 6.15], [2.2, 7.75], [2.5, 7.75], [2.5, 8.7]]);
+  _drive(() => false, 20); o.cam = +CAM.position.y.toFixed(2); o.bench = benchNear(); o.benchExit = intExitZ(h, pz, h._roomD || h.intD);
+  px = h._arriveX; pz = h._arriveZ; o.out = (interact(), 0); return o; });
+for (let k = 0; k < 40 && (await page.evaluate(() => isInterior())); k++) await page.waitForTimeout(250);
+cvh.left = await page.evaluate(() => !isInterior());
+console.log(JSON.stringify(cvh));
+check(`below deck on your caravel is her hold in her own lines: ${cvh.W} by ${cvh.D} m, ${cvh.roomH} m to the deck, ${cvh.tris} triangles in ${cvh.draws} draws`, cvh.base && cvh.W === 5 && cvh.D === 9.8 && cvh.roomH > 1.8 && cvh.tris < 38000 && cvh.draws <= 26, cvh);
+check(`her hatch is between the main mast and the fore at z 2.8, and the eye stands at ${cvh.eye}`, cvh.hatch && Math.abs((cvh.hatch.z0 + cvh.hatch.z1) / 2 - 2.8) < .01 && cvh.eye > 1.45 && cvh.eye <= 1.65 && cvh.cam > 1.45, [cvh.hatch, cvh.eye, cvh.cam]);
+check('from the ladder\'s foot you walk forward to the barrels, and round the main mast and between the chests aft to the bench; the planking stops you either side', cvh.fwd[1] < cvh.arrive[1] - 1.5 && cvh.route.legs === 6 && cvh.route.at[1] > 8.5 && cvh.port[0] > 2.5 && cvh.port[0] < 3.6 && cvh.stbd[0] < 2.5 && cvh.stbd[0] > 1.4, [cvh.arrive, cvh.fwd, cvh.route, cvh.port, cvh.stbd]);
+check('the starboard chest is the stash, the workbench is the bench (E at it, clear of the way out), no berth below, and E at the ladder\'s foot takes you on deck', cvh.beds === 0 && cvh.stash && cvh.bench && !cvh.benchExit && cvh.left, cvh);
+/* Session 1566 (the critic's s1030 lines): below deck the HUD names the ladder, not *Walk south to exit*; at a tiller the prompt says tiller */
+check(`below deck on the cutter the HUD reads "${ct.hud}"`, /ladder/.test(ct.hud || '') && !/south/.test(ct.hud || ''), ct.hud);
+const tl = await page.evaluate(() => { const o = {}; for (const cls of ['sloop', 'caravel']) { if (SHIP.mesh) { sc.remove(SHIP.mesh); SHIP.mesh = null; } worldState.ship = { cls, name: 'Test Helm', sails: 0, cargo: 0 }; WORLD.spawnShip(px + 1, pz + 1, .7); SHIP.sailing = true; o[cls] = shipPrompt(); SHIP.sailing = false; } return o; });
+check(`at the helm: the sloop "${tl.sloop}", the caravel "${tl.caravel}"`, /tiller/.test(tl.sloop) && /wheel/.test(tl.caravel), tl);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
