@@ -233,6 +233,25 @@ check(`below deck on your caravel is her hold in her own lines: ${cvh.W} by ${cv
 check(`her hatch is between the main mast and the fore at z 2.8, and the eye stands at ${cvh.eye}`, cvh.hatch && Math.abs((cvh.hatch.z0 + cvh.hatch.z1) / 2 - 2.8) < .01 && cvh.eye > 1.45 && cvh.eye <= 1.65 && cvh.cam > 1.45, [cvh.hatch, cvh.eye, cvh.cam]);
 check('from the ladder\'s foot you walk forward to the barrels, and round the main mast and between the chests aft to the bench; the planking stops you either side', cvh.fwd[1] < cvh.arrive[1] - 1.5 && cvh.route.legs === 6 && cvh.route.at[1] > 8.5 && cvh.port[0] > 2.5 && cvh.port[0] < 3.6 && cvh.stbd[0] < 2.5 && cvh.stbd[0] > 1.4, [cvh.arrive, cvh.fwd, cvh.route, cvh.port, cvh.stbd]);
 check('the starboard chest is the stash, the workbench is the bench (E at it, clear of the way out), no berth below, and E at the ladder\'s foot takes you on deck', cvh.beds === 0 && cvh.stash && cvh.bench && !cvh.benchExit && cvh.left, cvh);
+/* Session 1578 (backlog L6; #418 A): and below deck on your cog is her hold (PKIT.ships.cogBase, shipbase.js's shipBase) in her yard's
+   dress: from under the aftcastle's bulkhead to under the forecastle's edge, the ladder's foot at the hatch's after end, the mast through
+   it; round the mast to port and on to the bench and the chests forward; the alchemist's table aft. Her berth will be in the cabin */
+await page.evaluate(() => { if (SHIP.mesh) { sc.remove(SHIP.mesh); SHIP.mesh = null; } worldState.ship = { cls: 'cog', name: 'Test Cog', sails: 0, cargo: 0, dress: 'mark' }; WORLD.spawnShip(px + 1, pz + 1, .7); SHIP.sailing = false; cabinUpdate(); goToInterior(CABIN.house); });
+for (let k = 0; k < 40 && !(await page.evaluate(() => isInterior() && !!currentHouse._base)); k++) await page.waitForTimeout(250);
+const cgh = await page.evaluate(() => { const h = currentHouse, B = h._base; if (!B || B.kind !== 'cog') return { base: !!B };
+  const route = pts => { px = pts[0][0]; pz = pts[0][1]; jumpY = 0; velY = 0; onGround = true; let i = 1;
+    _drive(() => { const [tx, tz] = pts[i], dx = tx - px, dz = tz - pz; if (Math.hypot(dx, dz) < .12) return ++i >= pts.length; yaw = Math.atan2(-dx, -dz); pitch = 0; K['KeyW'] = true; return false; }, 900); return { legs: i - 1, at: [+px.toFixed(2), +pz.toFixed(2)] }; };
+  const a = [h._arriveX, h._arriveZ], o = { base: true, dress: B.dress, tris: B.tris, draws: B.draws, W: h.intW, D: h.intD, roomH: h._roomH, eye: h._eyeMax, beds: INT_BEDS.length, hatch: B.hatch, arrive: a };
+  o.bench = route([a, [3.42, a[1] - .4], [3.42, 4.4], [3.1, 4.3], [3.1, 2.9]]); o.benchNear = benchNear();
+  o.chests = route([a, [3.42, a[1] - .4], [3.42, 4.4], [2.8, 4.3], [2.8, 1.2]]); o.stash = +Math.hypot(px - intStashPos.x, pz - intStashPos.z).toFixed(2);
+  o.alch = route([a, [2.0, a[1]], [2.0, 8.0], [1.6, 8.6]]); o.side = route([a, [4.6, a[1]]]);
+  px = a[0]; pz = a[1]; o.out = (interact(), 0); return o; });
+for (let k = 0; k < 40 && (await page.evaluate(() => isInterior())); k++) await page.waitForTimeout(250);
+cgh.left = await page.evaluate(() => !isInterior());
+console.log(JSON.stringify(cgh));
+check(`below deck on your cog is her hold in her own lines (the Mark's): ${cgh.W} by ${cgh.D} m, ${cgh.roomH} m to the deck, the eye at ${cgh.eye}, ${cgh.tris} triangles in ${cgh.draws} draws`, cgh.base && cgh.dress === 'mark' && cgh.W === 5.6 && cgh.D === 11 && cgh.roomH > 1.8 && cgh.eye > 1.4 && cgh.tris < 36000 && cgh.draws <= 24 && cgh.hatch && Math.abs((cgh.hatch.z0 + cgh.hatch.z1) / 2 + 2.1) < .01, cgh);
+check('in the cog\'s hold you walk round the mast to the bench (E at it) and on to the chests (the stash), and aft to the alchemist\'s table; the barrels stop you to port; E at the ladder takes you on deck',
+  cgh.bench.legs === 4 && cgh.benchNear && cgh.chests.legs === 4 && cgh.stash < 1.3 && cgh.alch.legs === 3 && cgh.side.at[0] < 3.5 && cgh.beds === 0 && cgh.left, cgh);
 /* Session 1566 (the critic's s1030 lines): below deck the HUD names the ladder, not *Walk south to exit*; at a tiller the prompt says tiller */
 check(`in third person below deck on the cutter the camera stands ${ct.tp && ct.tp[1]} m behind you at ${ct.tp && ct.tp[0]} m, under the beams' ${ct.beamUnder}`, ct.tp && ct.tp[0] < ct.beamUnder - .05 && ct.tp[0] > 1.3 && ct.tp[1] > 1, [ct.tp, ct.beamUnder]);
 check(`below deck on the cutter the HUD reads "${ct.hud}"`, /ladder/.test(ct.hud || '') && !/south/.test(ct.hud || ''), ct.hud);

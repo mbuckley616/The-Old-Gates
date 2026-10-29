@@ -742,9 +742,13 @@
   // S1564 — and the caravel's hold (PKIT.ships.caravelBase, shipbase.js's Session 1149): 5.0 by 9.8 m, under the main deck from the cabin's
   // bulkhead to the stem's, the main and fore masts through it; the workbench (house._bench) and the alchemist's table aft, two chests (the
   // stash the starboard one by the ladder's foot), four barrels forward. No berth: hers is in the cabin under the castle, on the main deck.
-  function shipBaseOk(house){return !!(house&&house.type==='cabin'&&window.OG_LOOK==='new'&&SHIP.mesh&&SHIP.mesh.userData.kit&&['sloop','cutter','caravel'].includes(SHIP.mesh.userData.kind)&&typeof PKIT!=='undefined'&&PKIT.ships&&PKIT.ships.caravelBase);}
+  // S1578 — and the cog's hold (PKIT.ships.cogBase, shipbase.js's shipBase, Session 1099) in her yard's dress: 5.6 by 11 m, from under the
+  // aftcastle's bulkhead to under the forecastle's edge, the mast through it; barrels to port aft and the alchemist's table across, the
+  // workbench (house._bench) to port forward and crates and sacks across, two chests by the fore bulkhead (the stash the starboard one).
+  // Her berth will be in the cabin under the aftcastle, as the caravel's; until it is, she has none aboard.
+  function shipBaseOk(house){return !!(house&&house.type==='cabin'&&window.OG_LOOK==='new'&&SHIP.mesh&&SHIP.mesh.userData.kit&&['sloop','cutter','caravel','cog'].includes(SHIP.mesh.userData.kind)&&typeof PKIT!=='undefined'&&PKIT.ships&&PKIT.ships.caravelBase);}
   function buildShipBase(house){
-    const kd=SHIP.mesh.userData.kind,B=kd==='caravel'?PKIT.ships.caravelBase():kd==='cutter'?PKIT.ships.cutterBase():PKIT.ships.sloopBase({dress:SHIP.mesh.userData.kit}),F0=B.floor,z0=B.hold.z0,z1=B.hold.z1,X=kd==='caravel'?2.5:kd==='cutter'?2.0:2.2,W=2*X,D=z1-z0;
+    const kd=SHIP.mesh.userData.kind,B=kd==='cog'?PKIT.ships.cogBase({dress:SHIP.mesh.userData.kit}):kd==='caravel'?PKIT.ships.caravelBase():kd==='cutter'?PKIT.ships.cutterBase():PKIT.ships.sloopBase({dress:SHIP.mesh.userData.kit}),F0=B.floor,z0=B.hold.z0,z1=B.hold.z1,X=kd==='cog'?2.8:kd==='caravel'?2.5:kd==='cutter'?2.0:2.2,W=2*X,D=z1-z0;
     const rx=x=>X-x,rz=z=>z1-z,ry=y=>y-F0,fr=b=>({x0:rx(b[3]),x1:rx(b[0]),z0:rz(b[5]),z1:rz(b[2]),y0:Math.max(0,ry(b[1])),y1:ry(b[4])});
     house._counterFront=null;house._bench=null;house.intW=W;house.intD=D;house._roomH=+(B.deckUnder-F0).toFixed(3);house._eyeMax=+(B.beamBottom-F0-.2).toFixed(3);
     const fz=+rz(B.ladder.foot[2]).toFixed(3),aft=D-fz>1;house._exitD=aft?.3:.8;house._exitZ=aft?fz:null;house._exitW=.5;house._exitX=X;house._exitText="Press 'E' to go on deck";house._arriveX=X;house._arriveZ=aft?+(fz-.1).toFixed(3):+(D-.35).toFixed(3); /* S1558 — the cutter's ladder foot is mid-hold, the berth aft of it */house._arriveYaw=0;house._base=B;
@@ -759,7 +763,7 @@
     const it=n=>B.items.find(q=>q.name===n),all=n=>B.items.filter(q=>q.name===n);
     if(it('bunk')){const a=it('bunk').box,f=it('bunk front').box;SOL.push(fr([a[0],F0,a[2],Math.max(a[3],f[3]),a[4],a[5]]));
       INT_BEDS.push({x:+rx((a[0]+a[3])/2).toFixed(3),z:+rz((a[2]+a[5])/2).toFixed(3),y:+ry(a[1]).toFixed(3),owner:'free',room:null,cz:+rz((a[2]+a[5])/2).toFixed(3)});intBedPos={x:INT_BEDS[0].x,z:INT_BEDS[0].z};}
-    for(const n of ['sea chest','chest','water cask','mast','barrel','stool'])for(const q of all(n))SOL.push(fr(q.box)); /* S1564 — the caravel's two masts, two chests and four barrels */
+    for(const n of ['sea chest','chest','water cask','mast','barrel','stool','crate','sack'])for(const q of all(n))SOL.push(fr(q.box)); /* S1564 — the caravel's two masts, two chests and four barrels; S1578 the cog's crates and sacks */
     for(const n of ['chart table','workbench','alchemy table'])if(it(n)){const a=it(n).box;SOL.push(fr([a[0],F0,a[2],a[3],a[4],a[5]]));}
     if(it('workbench')){const a=it('workbench').box;house._bench={x:+rx((a[0]+a[3])/2).toFixed(3),z:+rz((a[2]+a[5])/2).toFixed(3)};} /* S1558 — E at it (benchNear) */
     {const c=it('sea chest').box;intStashPos={x:+rx((c[0]+c[3])/2).toFixed(3),z:+rz((c[2]+c[5])/2).toFixed(3)};}
