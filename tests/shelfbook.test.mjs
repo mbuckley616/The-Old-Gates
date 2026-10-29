@@ -20,7 +20,7 @@ const otherNone = await page.evaluate(() => { if (window._O) return WORLD.shelfB
   const r = SHELF_BOOKS[0], was = r.people; r.people = 'markman'; const n = WORLD.shelfBookFor(_G); r.people = was; return n === null && !!WORLD.shelfBookFor(_G); });
 check('a Mages\' Guild of another people offers no book (the rule names the Gatelands)', otherNone, found && found.other);
 // indoors the game's loop never runs WORLD.tick (it is behind lid==='overworld'), and g.spin does: its tickCells reads the
-// room's coordinates as the world's and unloads the town around you (S1552). So in a room the loop's own frames settle it.
+// room's coordinates as the world's and unloads the town around you (S1553). So in a room the loop's own frames settle it.
 const enter = async () => { await page.evaluate(() => { forceTime(12); px = _G.exitX; pz = _G.exitZ; goToInterior(_G); });
   for (let k = 0; k < 40 && !(await page.evaluate(() => isInterior() && !!INT_SHELF && INT_SHELF.id === _G.id)); k++) await page.waitForTimeout(250);
   await g.frames(4); };

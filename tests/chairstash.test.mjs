@@ -27,7 +27,7 @@ const found = await page.evaluate(() => { let h = null;
   if (!h) return null; window._S = h; forceTime(12); px = h.exitX; pz = h.exitZ; goToInterior(h); return h.name; });
 check('a barber\'s shop is found and entered', !!found, found);
 // indoors the game's loop never runs WORLD.tick (it is behind lid==='overworld'), and g.spin does: its tickCells reads the
-// room's coordinates as the world's and unloads the town around you (S1552). So in a room the loop's own frames settle it.
+// room's coordinates as the world's and unloads the town around you (S1553). So in a room the loop's own frames settle it.
 for (let k = 0; k < 40 && !(await page.evaluate(() => isInterior() && !!INT_CHAIR)); k++) await page.waitForTimeout(250);
 await g.frames(4); await g.hide();
 const C = await page.evaluate(() => ({ x: INT_CHAIR.x, z: INT_CHAIR.z, k: intNPCPos && { x: intNPCPos.x, z: intNPCPos.z } }));

@@ -249,4 +249,4 @@ Frame rate is not measured here: software GL is not a target machine. It is Mich
 | The Bramble Hearth (Dunmore's inn), the hall from the door, 20h | Middle (indoors) | 38 | 26k | 0 | 0 | 1 | 0 | 0 | 37 |  |
 | a medium gate (ruins, seed 11), from its entrance | Middle (indoors) | 243 | 422k | 0 | 0 | 45 | 0 | 0 | 197 |  |
 
-*s1017, QA Session 1552 (`budgetport` 9/9, run beside `budget`; `budget` hit the 900 s cap with five browsers on four cores, its table owed): Portclare's square at noon, Middle, 560 → 559 calls and 1.42 M → 1.43 M triangles; the inn's hall 38 → 38; the medium gate 261 → 243 (the other column 217 → 197). No spot rose by more than 10%.*
+*s1017, QA Session 1553 (`budgetport` 9/9, run beside `budget`; `budget` hit the 900 s cap with five browsers on four cores, its table owed): Portclare's square at noon, Middle, 560 → 559 calls and 1.42 M → 1.43 M triangles; the inn's hall 38 → 38; the medium gate 261 → 243 (the other column 217 → 197). No spot rose by more than 10%.*
