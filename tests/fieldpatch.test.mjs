@@ -39,7 +39,7 @@ const r = await page.evaluate(() => {
   out.atSea = shipAtSea(); worldState.ship.rig = 40; bagAdd(benchItem('spar', 3));
   J(24); out.sea24 = shipWorkStart('splice').why;
   J(25); out.s1 = work('splice'); out.rig1 = shipBars().rig;
-  // ── S1559: a heartwood spar's splice: +40 rig, past the field cap to full; its row shown only with a heartwood spar or the perk ──
+  // ── S1561: a heartwood spar's splice: +40 rig, past the field cap to full; its row shown only with a heartwood spar or the perk ──
   { const rowsOf = () => { openBenchPage(); const k = [...document.querySelectorAll('#bn-list [data-k]')].map(d => d.dataset.k); closeBenchPage(); return k; };
     worldState.ship.rig = 70; out.capRig = fieldCap(100); out.plainAtCap = shipWorkStart('splice').why; worldState.ship.rig = 60; bagAdd(survItem('pitch', 2)); out.noHeart = shipWorkWhy('heartsplice');
     out.rowNo = rowsOf().includes('heartsplice'); bagAdd(benchItem('heartspar', 1)); out.rowYes = rowsOf().includes('heartsplice');

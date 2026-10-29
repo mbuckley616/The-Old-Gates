@@ -777,7 +777,7 @@ const VEIN_TABLE={1:[['copper',.375],['tin',.375],['iron',.25]],2:[['iron',2/3],
 // copper or tin at 1, iron at 2, mithril in the highlands (3), and the wastes' three at 4
 const SUPPLY_ORE={1:['copper','tin'],2:['iron'],3:['mithril'],4:['mithril','adamant','obsidian']};
 function supplyOre(x,z,r){const L=SUPPLY_ORE[veinTier(x,z)]||SUPPLY_ORE[1];return L[Math.floor(r()*L.length)%L.length];}
-// S1561 — timber (Michael's A on #864): where a Fighters' hall's country is wooded, one Supply in three asks for 4 + 2 × the
+// S1563 — timber (Michael's A on #864): where a Fighters' hall's country is wooded, one Supply in three asks for 4 + 2 × the
 // rank's tier logs, pine in the Mark and the highlands (the vein table's tier 3), plain logs elsewhere. Only logs from trees you
 // fell after taking the task count (`onFell`, as a Mages' Gather counts herbs picked); bought logs never do. Wooded: the region
 // weighing most at the hall, among its cell's and the eight round it (read by place, never from REGIONS), is at least 0.4 dense
@@ -796,7 +796,7 @@ function hasPick(){return BAG.some(b=>b&&b.tool==='pick');}
 function veinTier(x,z){let t=typeof worldTierAt==='function'?worldTierAt(x,z):1;
   try{const r=dominantRegion(x,z).r;if(r&&(r.id==='wastes'||r.biome==='wastes'||r.biome==='wasteland'))t=4;}catch(e){}
   return Math.max(1,Math.min(4,t|0||1));}
-// S1560 — Lodestone (Mining 75, Michael's A on #860): at 75, one ore in ten struck from a vein in the Mark's highlands (the vein
+// S1562 — Lodestone (Mining 75, Michael's A on #860): at 75, one ore in ten struck from a vein in the Mark's highlands (the vein
 // table's tier 3, in a cell of the Mark) comes with a lodestone (weight 0.5), on the strike's own third roll. Carried, it takes
 // Prospector's veins to 120 m (past the minimap's 58 m edge they sit on its rim), and the compass points to the nearest vein
 // with ore left (`lodestoneVein`, a glyph among the compass's places).
@@ -869,11 +869,11 @@ function strikeVein(v){
   r={...r,s:r.s+1};const got=roll<.35+.005*skillLv('mining');
   /* S1495 — Mining 50: one ore in four comes double, on the strike's own second roll */
   let two=false,lode=false;if(got){two=perk('mining',50)&&seededRng('ore2',v.id+':'+(r.e||0)+':'+(r.s-1))()<.25;if(two)it.qty=2;r.n++;r.d=Math.floor(gameMinNow()/1440);bagAdd(it);skillUse('mining',4);if(typeof WORLD!=='undefined'&&WORLD.guild&&WORLD.guild.onOre)WORLD.guild.onOre(v.ore);
-    lode=perk('mining',75)&&lodestoneGround(v)&&seededRng('lode',v.id+':'+(r.e||0)+':'+(r.s-1))()<LODE_P;if(lode)bagAdd({...LODESTONE_ITEM});}else skillUse('mining',1); /* S1560 */
+    lode=perk('mining',75)&&lodestoneGround(v)&&seededRng('lode',v.id+':'+(r.e||0)+':'+(r.s-1))()<LODE_P;if(lode)bagAdd({...LODESTONE_ITEM});}else skillUse('mining',1); /* S1562 */
   (worldState.veins||(worldState.veins={}))[v.id]=r;veinShow(v);
   return {ore:got?(two?'2 '+it.name:it.name)+(lode?', and a lodestone':''):null,left:Math.max(0,veinCap()-r.n),lode};}
 // S1495 — Prospector (Mining 25): the veins within 40 m on the minimap (drawLocalMap's frame: north up, 58 m to the edge);
-// S1560 — 120 m with a lodestone carried, a vein past the edge drawn on the rim in its bearing
+// S1562 — 120 m with a lodestone carried, a vein past the edge drawn on the rim in its bearing
 function prospectorDots(ctx,size,radius){if(!perk('mining',25)||activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior()))return 0;
   const s=size/(radius*2),R=prospectR(),rim=radius-4;let n=0;
   for(const v of VEINS){const d=Math.hypot(v.x-px,v.z-pz);if(!veinLive(v)||d>R)continue;const k=d>rim?rim/d:1,x=size/2+(v.x-px)*k*s,y=size/2+(v.z-pz)*k*s;
@@ -953,7 +953,7 @@ function treeNear(){if(activeZoneId!=='world'||(typeof isInterior==='function'&&
 // the named action: the tree is down from today (the world's), and out of its chunk
 function fellTree(ch,t){(worldState.felled||(worldState.felled={}))[t.id]=Math.floor(gameMinNow()/1440);treeTakeOut(ch,t);}
 // the logs a tree gives, on its stream: keyed by the tree and the day it last fell (none: 'n'), so the same fall gives the same logs
-// S1559 — a great tree (Heartwood, Woodcutting 75; Michael's A on #860): one oak or pine in ten, by its id's stream. At 75 its
+// S1561 — a great tree (Heartwood, Woodcutting 75; Michael's A on #860): one oak or pine in ten, by its id's stream. At 75 its
 // fall gives a heartwood log beside its logs; below 75 it falls as any tree. A chunk's scatter holds no new model for it.
 const GREAT_SP=['oak','pine'],GREAT_P=.1;
 function greatTree(t){return !!t&&GREAT_SP.includes(t.sp)&&seededRng('great',t.id)()<GREAT_P;}
@@ -968,7 +968,7 @@ function strikeTree(ch,t,n){
   n++;const need=fellStrikes();
   if(n<need){skillUse('woodcutting',1);return {n,need};}
   const k=treeLogs(t),hw=heartwoodHere(t);fellTree(ch,t);it.qty=k;bagAdd(it);if(hw)bagAdd(benchItem('heartlog',1));skillUse('woodcutting',4);if(perk('woodcutting',25))layTrunk(ch,t,yaw);
-  if(typeof WORLD!=='undefined'&&WORLD.guild&&WORLD.guild.onFell)WORLD.guild.onFell(it.log,k); /* S1561 — a timber Supply counts the fall */
+  if(typeof WORLD!=='undefined'&&WORLD.guild&&WORLD.guild.onFell)WORLD.guild.onFell(it.log,k); /* S1563 — a timber Supply counts the fall */
   return {n,need,logs:k,item:it,heart:hw};}
 // working a tree: E starts it, E again, walking off, or the fall stops it
 let CHOP=null;
@@ -1181,7 +1181,7 @@ const BENCH_ITEMS={
   plank:{name:'Plank',ico:'🪵',type:'misc',weight:2,buyPrice:3,sellMult:.3,plank:true},
   spar:{name:'Spar',ico:'🪵',type:'misc',weight:3,buyPrice:7,sellMult:.3,spar:true},
   feathers:{name:'Feathers',ico:'🪶',type:'misc',weight:.01,qty:FLETCH_FEATHERS,bundle:FLETCH_FEATHERS,buyPrice:1,sellMult:.4,feather:true},
-  heartlog:{name:'Heartwood Log',ico:'🪵',type:'misc',weight:3,buyPrice:20,sellMult:.3,heartwood:'log'}, /* S1559 — Heartwood (#860 A) */
+  heartlog:{name:'Heartwood Log',ico:'🪵',type:'misc',weight:3,buyPrice:20,sellMult:.3,heartwood:'log'}, /* S1561 — Heartwood (#860 A) */
   heartspar:{name:'Heartwood Spar',ico:'🪵',type:'misc',weight:3,buyPrice:30,sellMult:.3,heartwood:'spar'}};
 function benchItem(k,qty){return {...BENCH_ITEMS[k],qty:qty||1};}
 function hasJoinerKit(){return BAG.some(b=>b&&b.tool==='joiner');}
@@ -1194,7 +1194,7 @@ function benchMetals(){return INGOT_DEF.map(d=>d.tier);}
 const BENCH_RECIPES=[
   {id:'plank',name:'Planks',need:'1 Log',has:()=>bagCount(b=>b.log==='log')>=1},
   {id:'spar',name:'Spar',need:'1 Pine Log',has:()=>bagCount(b=>b.log==='pine')>=1},
-  {id:'heartspar',name:'Heartwood Spar',need:'1 Heartwood Log',heart:true,has:()=>bagCount(b=>b.heartwood==='log')>=1}, /* S1559 */
+  {id:'heartspar',name:'Heartwood Spar',need:'1 Heartwood Log',heart:true,has:()=>bagCount(b=>b.heartwood==='log')>=1}, /* S1561 */
   {id:'bow',name:'Bow',need:'2 planks and an ingot',has:()=>plankCount()>=2&&benchMetals().some(t=>ingotCount(t)>=1)},
   {id:'longbow',name:'Longbow',need:'3 planks and an ingot',bowyer:true,has:()=>perk('joinery',75)&&plankCount()>=3&&benchMetals().some(t=>ingotCount(t)>=1)},
   {id:'warbow',name:'War Bow',need:'3 planks and an ingot',bowyer:true,has:()=>perk('joinery',75)&&plankCount()>=3&&benchMetals().some(t=>ingotCount(t)>=1)},
@@ -1203,7 +1203,7 @@ const BENCH_RECIPES=[
   {id:'patch',name:'Patch the hull',need:'a plank and a pitch',ship:true,has:()=>!shipWorkWhy('patch')}, /* S1519 — shown only at your ship */
   {id:'splice',name:'Splice the rig',need:'a spar and a pitch',ship:true,has:()=>!shipWorkWhy('splice')},
   {id:'heartsplice',name:'Splice with heartwood',need:'a heartwood spar and a pitch',ship:true,heart:true,has:()=>!shipWorkWhy('heartsplice')}];
-// S1559 — the heartwood rows are shown to a hand with Heartwood (Woodcutting 75), or one who holds a heartwood log or spar
+// S1561 — the heartwood rows are shown to a hand with Heartwood (Woodcutting 75), or one who holds a heartwood log or spar
 function benchRows(){const hw=perk('woodcutting',75)||bagCount(b=>!!b.heartwood)>0;return BENCH_RECIPES.filter(r=>(!r.ship||shipWorkHere())&&(!r.heart||hw));}
 let _benchN=0;
 // a made bow or shield: never enchanted, `made`, a fifth back, the forge's half-hour
@@ -1249,7 +1249,7 @@ function useBenchThing(i){if(benchHere())openBenchPage();else showMsg('Work it a
 // is a spar and a pitch: +20 rig, after the same work; at sea (no land within 25 m of her) only with Field splice (25). Field work
 // reaches 60% + 0.4% a Joinery point of the bar (100% at 100); past that, the yard. Each is a Joinery use of 6. The work is timed
 // by the frame's dt, and walking off or setting sail stops it with nothing spent.
-// S1559 — Heartwood (Woodcutting 75, Michael's A on #860): a heartwood spar's splice is +40 rig, past the field cap to full, the
+// S1561 — Heartwood (Woodcutting 75, Michael's A on #860): a heartwood spar's splice is +40 rig, past the field cap to full, the
 // one way to mend a mast fully at sea; at sea it still asks Field splice, as any splice does.
 const PATCH_BASE=8,SPLICE_RIG=20,PATCH_S=8,SHIP_WORK_R=10,AT_SEA_R=25,HEART_RIG=40;
 function cabinBench(){return typeof isInterior==='function'&&isInterior()&&typeof currentHouse!=='undefined'&&!!currentHouse&&currentHouse.type==='cabin';}
@@ -1322,7 +1322,7 @@ function benchDraw(){const ov=document.getElementById('benchui');if(!ov)return;
   const have=n=>` <i style="font-size:12px;color:#8a7050">(you have ${n})</i>`;let t=`<div style="font-variant:small-caps;color:#7a1f10">${R.name}</div>`;
   if(R.id==='plank')t+=pad('1 Log'+have(bagCount(b=>b.log==='log')))+note('two planks, for a grip, a bow, a shield or a ship’s patch');
   else if(R.id==='spar')t+=pad('1 Pine Log'+have(bagCount(b=>b.log==='pine')))+note('for a ship’s splice');
-  else if(R.id==='heartspar')t+=pad('1 Heartwood Log'+have(bagCount(b=>b.heartwood==='log')))+note('a mast’s spar: its splice mends the rig past field work'); /* S1559 */
+  else if(R.id==='heartspar')t+=pad('1 Heartwood Log'+have(bagCount(b=>b.heartwood==='log')))+note('a mast’s spar: its splice mends the rig past field work'); /* S1561 */
   else if(R.id==='heartsplice'){const b=shipBars(),why=shipWorkWhy('heartsplice');
     t+=pad('1 Heartwood Spar'+have(bagCount(x=>x.heartwood==='spar')))+pad('1 Pitch'+have(pitchCount()))+pad(`rig +${HEART_RIG}, ${patchSecs()} s of work`)+
       note(`rig ${b.rig} of ${b.rigMax}; heartwood mends it to full`)+(why?note(why):'');}

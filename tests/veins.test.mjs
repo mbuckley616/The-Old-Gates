@@ -69,7 +69,7 @@ const r = await page.evaluate(() => {
   const cv = document.createElement('canvas'); cv.width = cv.height = 104; const ctx = cv.getContext('2d');
   px = v.x + 1; pz = v.z; SKILLS.mining = { lv: 24, p: 0 }; out.dots24 = prospectorDots(ctx, 104, 58);
   SKILLS.mining = { lv: 25, p: 0 }; out.dots25 = prospectorDots(ctx, 104, 58); out.within40 = VEINS.filter(u => veinLive(u) && Math.hypot(u.x - px, u.z - pz) <= 40).length;
-  // ── S1560: Lodestone (Mining 75, #860 A): one ore in ten from a vein in the Mark's highlands brings a lodestone; carried, Prospector
+  // ── S1562: Lodestone (Mining 75, #860 A): one ore in ten from a vein in the Mark's highlands brings a lodestone; carried, Prospector
   // reaches 120 m and the compass points to the nearest vein ──
   { let mk = null; for (let i = 0; i < 60 && !mk; i++) for (let j = 0; j < 60 && !mk; j++) if (nationKeyOf(i, j) === 'mark') mk = [i, j];
     const S = WORLD.SIZE, at = (c, tier, id) => ({ id, ore: 'iron', tier, x: (c[0] + .5) * S, z: (c[1] + .5) * S, g: null });
@@ -92,7 +92,7 @@ const r = await page.evaluate(() => {
   // ── S1533: the Fighters' Guild's Supply (#814 A): one task in five; the hall's country's ore; dug, carried, and taken at turn-in ──
   { const site = siteAnywhere('dunmore'), G = gstate(), keep = JSON.stringify(G.guild_f), kinds = {}; let sup = null;
     G.guild_f = { done: 3, active: null };
-    for (let i = 0; i < 400; i++) { const t = genTask('guild_f', site); kinds[t.kind] = (kinds[t.kind] || 0) + 1; if (t.kind === 'supply' && t.ore && !sup) sup = t; /* S1561: a timber Supply (#864) has no ore */ }
+    for (let i = 0; i < 400; i++) { const t = genTask('guild_f', site); kinds[t.kind] = (kinds[t.kind] || 0) + 1; if (t.kind === 'supply' && t.ore && !sup) sup = t; /* S1563: a timber Supply (#864) has no ore */ }
     const want = SUPPLY_ORE[veinTier(site.x, site.z)];
     out.supply = { kinds, tier: veinTier(site.x, site.z), want, ore: sup && sup.ore, need: sup && sup.need, short: sup && sup.short };
     if (sup) { G.guild_f.active = sup; BAG.length = 0; bagAdd({ ...PICK_ITEM }); SKILLS.mining = { lv: 100, p: 0 };

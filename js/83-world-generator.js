@@ -3077,7 +3077,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     if(g==='guild_f'){
       const kind=['clear','hunt','beast','raid','supply'][Math.floor(r()*5)]; /* S1533 — Supply, a fifth kind (Michael's A on #814) */
       if(kind==='supply'&&typeof supplyOre==='function'){const ore=supplyOre(site.x,site.z,r),n=3+tier,nm=ORE_DEF[ore].name;
-        /* S1561 — timber, one Supply in three where the hall's country is wooded (Michael's A on #864) */
+        /* S1563 — timber, one Supply in three where the hall's country is wooded (Michael's A on #864) */
         const wood=typeof supplyWood==='function'?supplyWood(site.x,site.z):null;if(wood&&r()<TIMBER_P){const k=4+2*tier,ln=SURV_ITEMS[wood].name;
           return {id:tid,g,kind,wood,need:k,have:0,gold,desc:`The yard is short of timber. Fell trees in this country for ${k} ${ln}s; the yard's carters will haul them. You'll want a hatchet.`,short:`Supply ${k} ${ln}s`};}
         return {id:tid,g,kind,ore,need:n,gold,desc:`The armoury is short of ${nm}. Dig ${n} from the veins of this country and bring them here. You'll want a pick.`,short:`Supply ${n} ${nm}`};}
@@ -3127,7 +3127,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   }
   function onHarvest(h){const G=gstate();for(const g in G){const t=G[g].active;if(t&&t.kind==='gather'&&h.type===t.herb){t.have++;gStamp(t);if(taskDone(t)&&!t._told){t._told=true;showMsg("Mages' Guild: that's enough — report back.",'#e8d8a0');}}}}
   // S1533 — Supply counts the ore of its metal in your bag (no shop sells ore, so ore carried is ore dug); the guild takes it at turn-in
-  function supplyHave(t){if(t.wood)return t.have||0;return typeof oreCount==='function'?oreCount(t.ore):0;} /* S1561 — timber is counted at the fall */
+  function supplyHave(t){if(t.wood)return t.have||0;return typeof oreCount==='function'?oreCount(t.ore):0;} /* S1563 — timber is counted at the fall */
   function onFell(kind,n){const G=gstate();for(const g in G){const t=G[g].active;if(t&&t.kind==='supply'&&t.wood&&t.wood===kind){t.have=(t.have||0)+n;gStamp(t);if(taskDone(t)&&!t._told){t._told=true;showMsg(`${GUILD_DEF[g].name}: that's the timber. Come back.`,'#e8d8a0');}}}}
   function onOre(k){const G=gstate();for(const g in G){const t=G[g].active;if(t&&t.kind==='supply'&&t.ore===k){gStamp(t);if(taskDone(t)&&!t._told){t._told=true;showMsg(`${GUILD_DEF[g].name}: that's the ore. Bring it in.`,'#e8d8a0');}}}}
   function onTalk(def){if(def&&def.name==='Varek'){varekTalked();return false;}if(qOnTalk(def))return true;const G=gstate();const t=G.guild_m.active;if(!t||t.kind!=='deliver'||t.done)return false;

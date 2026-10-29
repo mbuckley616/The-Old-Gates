@@ -89,7 +89,7 @@ const r = await page.evaluate(() => {
       worldState.gameTimeAbsMinutes += 1; tickTrunks(); out.trunk.at600 = { held: TRUNKS.includes(T), plat: ZONES.world.platforms.includes(T.plat), mesh: !!(T.mesh && T.mesh.parent), ground: +(activeTerrainH(mx, mz) - worldH(mx, mz)).toFixed(3) };
       worldState.gameTimeAbsMinutes -= 600; }
     yaw = 0; }
-  // ── S1559: Heartwood (Woodcutting 75, #860 A): one oak or pine in ten is a great tree; at 75 its fall gives a heartwood log ──
+  // ── S1561: Heartwood (Woodcutting 75, #860 A): one oak or pine in ten is a great tree; at 75 its fall gives a heartwood log ──
   { const share = sp => { let n = 0; for (let i = 0; i < 2000; i++) if (greatTree({ sp, id: 'gt:' + i })) n++; return n / 2000; };
     out.great = { oak: share('oak'), pine: share('pine'), birch: share('birch'), live: PERK_LIVE.has('woodcutting:75') };
     const g0 = greatTree; greatTree = () => true;
@@ -101,7 +101,7 @@ const r = await page.evaluate(() => {
     bagAdd({ ...JOINER_ITEM }); openBenchPage(); out.heartRow = [...document.querySelectorAll('#bn-list [data-k]')].some(d => d.dataset.k === 'heartspar'); closeBenchPage();
     out.heartSpar = benchMake('heartspar'); out.heartLeft = { log: bagCount(b => b.heartwood === 'log'), spar: bagCount(b => b.heartwood === 'spar'), plainSpar: bagCount(b => b.spar) };
     const d = JSON.parse(ssStringify(_buildSavePayload())); out.heartSaved = JSON.stringify(d).includes('"heartwood":"spar"'); }
-  // ── S1561: timber in the Fighters' Supply (#864 A): one Supply in three where the hall's country is wooded; counted at the fall ──
+  // ── S1563: timber in the Fighters' Supply (#864 A): one Supply in three where the hall's country is wooded; counted at the fall ──
   { const wooded = SITES.find(t => t.name && supplyWood(t.x, t.z)), bare = SITES.find(t => t.name && !supplyWood(t.x, t.z)), G = gstate(), keep = JSON.stringify(G.guild_f);
     const roll = site => { G.guild_f = { done: 3, active: null }; let sup = 0, wood = 0, first = null; for (let i = 0; i < 600; i++) { const t = genTask('guild_f', site); if (t.kind === 'supply') { sup++; if (t.wood) { wood++; first = first || t; } } } return { sup, wood, first }; };
     out.timber = { wooded: wooded && wooded.name, kind: wooded && supplyWood(wooded.x, wooded.z), bare: bare && bare.name };
