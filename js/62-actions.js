@@ -341,6 +341,7 @@ function castRecovering(){return performance.now()/1000<_castFreeAt;}
 function castSpell(){
   // Empty-knownWords hint — one of the two signals (along with HUD dimming) that there are carvings to find.
   if(!activeSpellId||Object.keys(knownWords).length===0){
+    if(Object.keys(knownWords).length){showMsg('The words you hold are not yet spells you can cast.','#a8a8d4');return;} /* S1582 — a new word from a carving, before its forms are built */
     showMsg('You know no magic. Sigils are carved into the walls of dungeon lower floors.','#a8a8d4');
     return;
   }

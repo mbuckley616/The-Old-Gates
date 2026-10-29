@@ -77,11 +77,13 @@ const SCHOOL_DEF={
 // Display the spell's name at the appropriate tier.
 function spellDisplayName(sp, tier){
   if(!sp)return 'None';
-  if(tier>=3)return `${sp.nameIr} — ${sp.nameMa}`;
+  if(tier>=3)return `${sp.nameIr} — ${sp.nameMa||sp.nameEn}`;
   if(tier>=2)return `${sp.nameIr} — ${sp.nameEn}`;
   return sp.nameIr;
 }
 // Fetch the current tier (1–3) for a spell id, or 0 if not known.
+// S1582 — a carving may hold one of magic B's eight new words, which the old SPELLS table lacks: the sigil's paths read the word then
+function spellOrWord(id){return SPELLS.find(s=>s.id===id)||(typeof WORD_BY!=='undefined'?WORD_BY[id]:null)||null;}
 function getSpellTier(id){return knownWords[id]||0;}
 // S1346 — the tier a cast reads (great-gates-build.md, Michael's A on #292): the tier learned, one deeper while the school's great gate is
 // torn and one shallower while it is bound, from Impression to Mastery; a spell not known stays 0. Casting, its name, cost, cooldown and
@@ -229,7 +231,7 @@ let _nearSigil=null;
 // Mesh is placed flat against a wall, oriented via yaw. Mesh group includes a soft PointLight that
 // brightens with proximity (handled in the render loop).
 function buildSigilMesh(spellId){
-  const sp=SPELLS.find(s=>s.id===spellId);
+  const sp=spellOrWord(spellId);
   if(!sp)return null;
   const schoolCol=parseInt(SCHOOL_DEF[sp.school].col.slice(1),16);
 
@@ -342,7 +344,7 @@ function buildSigilMesh(spellId){
 // Determine the highest tier the player currently qualifies for on this sigil's spell.
 // Returns 0 if INT too low for even Impression.
 function sigilEligibleTier(spellId){
-  const sp=SPELLS.find(s=>s.id===spellId);
+  const sp=spellOrWord(spellId);
   if(!sp)return 0;
   const I=ATTRS.intelligence;
   if(I>=sp.intReqs[2])return 3;
@@ -353,10 +355,14 @@ function sigilEligibleTier(spellId){
 
 // Handle the player interacting with a sigil. Grants the highest tier their INT qualifies for,
 // upgrading from any current tier. First visit fires different flavor than re-touches.
+// the carving's door, read: worldState.sigilsRead[seed] = its word, for a world gate's carving only (a legacy dungeon's seed is SIGIL_PLACEMENTS')
+function sigilRead(sigil){const P=typeof currentPortal!=='undefined'?currentPortal:null;if(!P||!(P.zone==='world'||P.zone==='gen')||SIGIL_PLACEMENTS[P.seed])return;
+  (worldState.sigilsRead||(worldState.sigilsRead={}))[P.seed]=sigil.spellId;}
 function touchSigil(sigil){
   if(typeof knifeAtSigil==='function')knifeAtSigil(sigil); /* S1353 — the knife does nothing here, once a sigil */
-  const sp=SPELLS.find(s=>s.id===sigil.spellId);
+  const sp=spellOrWord(sigil.spellId);
   if(!sp)return;
+  sigilRead(sigil); /* S1582 — a world gate's carving is read once touched (the Register counts them, Súil passes them by) */
   // v80 — the deep register: a sigil teaches by touch. Guilds stop at Comprehension; only a sigil resolves Mastery.
   // The quest hook and first-visit bookkeeping fire on every path out of this block (Session 96 had returned before them).
   {const firstVisit=!touchedSigils.has(sigil.uuid);touchedSigils.add(sigil.uuid);
@@ -789,14 +795,14 @@ function spellShopTopics(rankIdx){
 }
 
 function learnSpell(spellId, targetTier=1){
-  const sp=SPELLS.find(s=>s.id===spellId);
+  const sp=spellOrWord(spellId);
   if(!sp)return 'noop';
   const prevTier=knownWords[spellId]||0;
   if(targetTier<=prevTier)return 'noop';
   knownWords[spellId]=targetTier;
   partialSpells=partialSpells.filter(p=>p!==spellId);
   // First spell learned → auto-equip as active
-  if(!activeSpellId)activeSpellId=spellId;
+  if(!activeSpellId&&SPELLS.some(s=>s.id===spellId))activeSpellId=spellId; /* S1582 — only a word the cast can speak yet */
   if(prevTier===0)bookAdd(spellId); /* S1574 — a new word goes into the book in its first Novice form */
   const name=spellDisplayName(sp,targetTier);
   const verb=prevTier===0?'Learned':'Deepened understanding of';

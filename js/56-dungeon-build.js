@@ -3425,9 +3425,9 @@ function buildDungeon(portal){
   // so re-entering the dungeon and touching the sigil again correctly hits the same touched-set entry.
   SIGILS.length=0;
   _nearSigil=null;
-  const sigilSpellId=SIGIL_PLACEMENTS[portal.seed];
+  const sigilSpellId=SIGIL_PLACEMENTS[portal.seed]||((portal.zone==='world'||portal.zone==='gen')&&typeof gateCarving==='function'?gateCarving(portal.seed):null); /* S1582 — a world gate's carving, drawn by its seed (magic B) */
   // S1293 — in a gate laid as spaces the sigil is on the ring chamber's wall, floor one (the sheet: a lesser gate's sigil)
-  const sigRing=gen.gate?gen.spaces[gen.ring]:null,sigFloor=sigRing?(sigRing.floor||1):2,sigMap=sigFloor===2?dMap2:dMap,sigY=sigFloor===2?FLOOR2_Y:0; /* S1298 — a massive gate's ring is on floor two */
+  const sigRing=gen.gate?gen.spaces[gen.ring]:null,sigFloor=sigRing?(sigRing.floor||1):(dMap2?2:1),sigMap=sigFloor===2?dMap2:dMap,sigY=sigFloor===2?FLOOR2_Y:0; /* S1298 — a massive gate's ring is on floor two */
   if(sigilSpellId && sigMap){
     // Collect floor-2 floor cells that have at least one wall neighbor, excluding the stair cell.
     const candidates=[];
