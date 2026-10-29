@@ -91,7 +91,7 @@ const slope = await page.evaluate(() => { const f = _W[1], e = f.e, rig = f.rig,
 check(`on a slope of ${slope.slope} the bear's toes meet the ground under each (${slope.on.join(', ')} m; ${slope.off.join(', ')} without the ground pass)`,
   slope.stand > .9 && slope.worstOn < .05 && (slope.slope < .15 || slope.worstOn < slope.worstOff * .5), slope);
 
-// Session 1553: a beast that moves sideways or backs off while it faces you (a pack's flank, an archer's retreat) sweeps its paws the
+// Session 1556: a beast that moves sideways or backs off while it faces you (a pack's flank, an archer's retreat) sweeps its paws the
 // way its hips go over the ground (WG_U), not straight back under it. The bear walked 1.2 m/s ahead, to its left and back, facing one
 // way; a planted paw (the lowest 30% of its frames) should stand still on the ground. The driver's paws are where the sweep is made
 // (before, sideways they slid as fast as the body went); the kit's, which stray up to 0.3 m from the driver's, no worse than ahead

@@ -39,7 +39,7 @@ const WOLF_LEGS={
 function wolfLegs(k){if(k._legs)return k._legs;if(k.legs)return k._legs=k.legs;const K=k.legK||1;if(K===1)return k._legs=WOLF_LEGS;const sc=L=>({root:L.root,a:L.a.map(v=>v*K),b:L.b.map(v=>v*K),c:L.c.map(v=>v*K)});return k._legs={fore:sc(WOLF_LEGS.fore),hind:sc(WOLF_LEGS.hind)};}
 const wolfHipY=k=>k.hipY||.40+.37*((k.legK||1)-1);
 let WG_L=WOLF_LEGS,WG_LK=1;
-// Session 1553 (B5's turning: "the sweep follows the velocity in the body's frame"): null, every paw sweeps straight back under the
+// Session 1556 (B5's turning: "the sweep follows the velocity in the body's frame"): null, every paw sweeps straight back under the
 // body; else four [x, z] in the body's frame (+z ahead, +x its left), fore L and R then hind L and R, each a hip's way over the ground
 // over the pace the phase runs at (1 long for a straight walk ahead)
 let WG_U=null;
@@ -319,7 +319,7 @@ function wgStride(G,ph,t,gallop){const p=wgZero();const a=Math.PI*2*ph;
     return {dz:-h+S*e,dy:G.LIFT[fore?0:1]*WG_LK*Math.sin(Math.PI*s),fold:(fore?1.1:-.4)*Math.sin(Math.PI*Math.min(1,s*1.2))};};
   ['L','R'].forEach(s=>{const o=G.off[s];const f=one(ph+o[0],true),h=one(ph+o[1],false);
     if(!WG_U){wgSetLeg(p,s,true,wgLeg(WG_L.fore,f.dz,f.dy+p.drop,f.fold));wgSetLeg(p,s,false,wgLeg(WG_L.hind,h.dz,h.dy+p.drop,h.fold));return;}
-    // Session 1553: each paw sweeps along its own hip's way over the ground (WG_U, set by tickCreatures): the share ahead runs through
+    // Session 1556: each paw sweeps along its own hip's way over the ground (WG_U, set by tickCreatures): the share ahead runs through
     // the leg's plane as before, the share to the side turns the shoulder or the hip out about the body's long axis
     const uf=WG_U[s==='L'?0:1],uh=WG_U[s==='L'?2:3];
     wgSetLeg(p,s,true,wgLeg(WG_L.fore,f.dz*uf[1],f.dy+p.drop,f.fold));p['sh'+s][2]=Math.atan2(f.dz*uf[0],wgLegH(WG_L.fore));
@@ -477,7 +477,7 @@ function tickCreatures(dt,now){
     rig.px=x;rig.pz=z;
     const spd=dt>0?d/dt:0,kv=1-Math.exp(-dt/.15);
     rig.v+=(spd-rig.v)*kv;
-    // Session 1553: the way it moves in its own frame, and its turn, smoothed as the pace is. A pack wolf closing on its flank point
+    // Session 1556: the way it moves in its own frame, and its turn, smoothed as the pace is. A pack wolf closing on its flank point
     // goes sideways while it faces you, an archer backs off, and a body that turns on the spot treads round: before, every paw swept
     // straight back under the body whatever the way. Each hip's way over the ground is the body's way plus the turn's at that hip
     if(!rig.vl)rig.vl=[0,0,0];if(dt>0){const iv=1/dt;rig.vl[0]+=(lx*iv-rig.vl[0])*kv;rig.vl[1]+=(lz*iv-rig.vl[1])*kv;rig.vl[2]+=(om*iv-rig.vl[2])*kv;}
