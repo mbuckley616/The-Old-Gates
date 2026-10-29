@@ -876,7 +876,7 @@ function renderHubMagic(){
   const grid=document.getElementById('spell-grid');grid.innerHTML='';
   const activeBar=document.getElementById('spell-active-bar');
   const nameEl=document.getElementById('spell-active-name');
-  const nKnown=Object.keys(knownSpells).length;
+  const nKnown=Object.keys(knownWords).length;
 
   if(nKnown===0){
     // Empty state: different copy + dimmed styling

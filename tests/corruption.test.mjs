@@ -55,7 +55,7 @@ check('the sixth to match fixes the fate: six torn, level 6', s.lastTorn === tru
 check('once fate is fixed nothing undoes it', s.after[0] === false && s.after[1] === 6 && s.after[2] === 'torn', s);
 // the knot (Session 1346): a fresh state, a Tine spell at Comprehension
 const k = await page.evaluate(() => {
-  worldState.greatGates = { gates: {}, fate: null, fatedAt: null }; knownSpells.caor = 2; knownSpells.sioc = 1; delete knownSpells.smol;
+  worldState.greatGates = { gates: {}, fate: null, fatedAt: null }; knownWords.caor = 2; knownWords.sioc = 1; delete knownWords.smol;
   const m = () => worldState.masteries || 0, m0 = m(), out = {};
   out.cut = cutKnot('tine').ok; out.torn = [effTier('caor'), getSpellTier('caor'), m() - m0];
   out.cutTwice = cutKnot('tine').ok;

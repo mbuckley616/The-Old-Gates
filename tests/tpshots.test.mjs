@@ -30,7 +30,7 @@ check('third person: the arrow leaves the bow hand, not the eye', arrowTP && arr
 check('third person: the arrow flies at the crosshair’s point', arrowTP && arrowTP.miss < .01, arrowTP);
 
 // a projectile spell: known, mana to spare, no wild roll; the release comes after the cast's windup
-await shot(); await page.evaluate(() => { const sp = SPELLS.find(s => s.speed > 0 && s.role !== 'buff' && s.role !== 'heal'); knownSpells[sp.id] = 2; activeSpellId = sp.id;
+await shot(); await page.evaluate(() => { const sp = SPELLS.find(s => s.speed > 0 && s.role !== 'buff' && s.role !== 'heal'); knownWords[sp.id] = 2; activeSpellId = sp.id;
   mana = 999; spCd = 0; window._rnd = Math.random; Math.random = () => .99; castSpell(); });
 await page.waitForFunction(() => _cap(), null, { timeout: 30000 }).catch(() => {});
 const spellTP = await page.evaluate(() => { const c = _cap(); _restore(); Math.random = window._rnd; return c; });

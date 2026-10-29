@@ -2,7 +2,7 @@
 // `WORLD.guild.onCast()` before it checked for a known spell, mana or the cooldown, so F by the hearth with no magic lit it
 // while the screen said *You know no magic.*, and any spell counted). The task says *any flame you can cast will do*: now
 // only a Fireball (school `tine`) that leaves the hand lights it — not a press with no spells, not another school, not
-// a Fireball short of mana or cooling down, not one that fizzles. The task's house also keeps the cast button indoors.
+// a Fireball short of mana (since Session 1571's overcast: and of the health to pay for it) or cooling down, not one that fizzles. The task's house also keeps the cast button indoors.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld(); await g.settle('dunmore');
@@ -12,11 +12,11 @@ await page.evaluate(() => { const S = WORLD.settle.get('dunmore'), h = S.houses.
 await page.waitForTimeout(5000); await g.hide();
 const r = await page.evaluate(() => { const t = gstate().guild_m.active, h = currentHouse, W = h._roomW || 10, D = h._roomD || 10;
   const out = { bound: t.house === _H.id, fbtn: document.getElementById('fbtn').style.display }, lit = () => !!t.done;
-  const at = () => { px = W - .4 - 1; pz = D * .4; castT = 0; spCd = 0; };
+  const at = () => { px = W - .4 - 1; pz = D * .4; castT = 0; _castFreeAt = 0; spCd = 0; };
   const rnd = Math.random, cr = casterRand; Math.random = () => .99; casterRand = () => () => .99; /* S685: the wild roll is the caster's stream */
-  at(); knownSpells = {}; activeSpellId = null; castSpell(); out.none = lit();
-  at(); knownSpells = { sioc: 1 }; activeSpellId = 'sioc'; mana = effMaxMana(); const m0 = mana; castSpell(); out.frost = [lit(), m0 - mana];
-  at(); knownSpells = { caor: 1 }; activeSpellId = 'caor'; mana = 0; castSpell(); out.noMana = lit();
+  at(); knownWords = {}; activeSpellId = null; castSpell(); out.none = lit();
+  at(); knownWords = { sioc: 1 }; activeSpellId = 'sioc'; mana = effMaxMana(); const m0 = mana; castSpell(); out.frost = [lit(), m0 - mana];
+  at(); knownWords = { caor: 1 }; activeSpellId = 'caor'; const hp0 = PHP; mana = 0; PHP = 2; castSpell(); out.noMana = lit(); PHP = hp0; /* S1571: short of mana a cast takes health; at 2 health it is refused */
   at(); mana = effMaxMana(); spCd = 5; castSpell(); out.cooling = lit();
   at(); { let k = 0; casterRand = () => () => (k++ === 0 ? 0 : .4); } mana = effMaxMana(); castSpell(); out.fizzle = lit();
   casterRand = () => () => .99;

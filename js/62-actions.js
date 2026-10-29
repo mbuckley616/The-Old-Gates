@@ -332,9 +332,15 @@ function casterRand(spId){
   if(_castMin!==here+':'+m){_castMin=here+':'+m;_castN=0;}
   return seededRng('wild',_castMin+':'+(_castN++)+':'+spId);
 }
+// S1575 — the Cast row's clock, on performance.now() (a dropped frame never moves it): the wind-up runs until the release, and
+// another cast waits the row's recovery after it. A buff or a fizzle has no wind-up of its own and leaves both clear.
+let _castReleaseAt=0,_castFreeAt=0;
+function castMark(tellS){const t=performance.now()/1000;_castReleaseAt=t+tellS;_castFreeAt=_castReleaseAt+WEAPON_ATTACKS.Cast.recovery;}
+function castWinding(){return performance.now()/1000<_castReleaseAt;}
+function castRecovering(){return performance.now()/1000<_castFreeAt;}
 function castSpell(){
-  // Empty-knownSpells hint — one of the two signals (along with HUD dimming) that there are carvings to find.
-  if(!activeSpellId||Object.keys(knownSpells).length===0){
+  // Empty-knownWords hint — one of the two signals (along with HUD dimming) that there are carvings to find.
+  if(!activeSpellId||Object.keys(knownWords).length===0){
     showMsg('You know no magic. Sigils are carved into the walls of dungeon lower floors.','#a8a8d4');
     return;
   }
@@ -344,12 +350,17 @@ function castSpell(){
   if(!tier){showMsg('Spell not learned!','#6688cc');return;}
 
   // Block re-cast while hand animation is in flight — prevents double-spawns and tangled state
-  if(isCasting()){return;}
-
-  const actualCost=Math.round(spellCost(sp,tier)*_buffMult('spellCost',1)*(SKILL_DEF[sp.school]?1.4-.8*skillLv(sp.school)/100:1)); /* S941 — the school's skill sets the cost */
-  if(mana<actualCost){showMsg(`Not enough mana! (need ${actualCost})`,'#6688cc');return;}
+  if(isCasting()||castRecovering()){return;} /* S1575 — and the Cast row's 0.30 s after the release */
+  // S1575 — the spell F casts is the book's entry for it (magic B): its form, its word, its rider, and wordCost's mana. Until the
+  // composing page, the book holds only Novice forms, Sent for the bolts and Worn for the rest, as the spells always cast.
+  const bk=spellBook[bookSync()]||{form:bookFormFor(sp.id)||'sent',word:sp.id,rider:null};
+  const actualCost=wordCost(bk.word,bk.form,bk.rider,{tier}); /* S941 — the school's skill sets the cost, inside wordCost since S1575 */
+  const short=Math.max(0,actualCost-Math.floor(mana)),blood=short*OVERCAST_HP; /* S1571 — the overcast */
+  if(short&&PHP-blood<1){showMsg(`Not enough mana! (need ${actualCost})`,'#6688cc');return;}
   if(spCd>0){showMsg('Cooling down...','#6688cc');return;}
-  mana-=actualCost;_offenceS=playClockS; /* S408 */
+  const paid=actualCost-short;mana=Math.max(0,mana-actualCost);_offenceS=playClockS; /* S408 */
+  if(short){PHP-=blood;PPOST.stagUntil=Math.max(PPOST.stagUntil,performance.now()/1000+OVERCAST_STAGGER_S);blocking=false;powerCharging=false;powerCharge=0;
+    lvAct.damageTaken+=blood;updateHUD();showMsg(`Not enough mana: the word takes ${blood} health.`,'#d48a8a');}
   if(sp.role==='buff'&&SKILL_DEF[sp.school])skillUse(sp.school,1,'cast'); /* S941 — a cast that does something */
   spCd=spellCooldown(sp,tier);
 
@@ -367,7 +378,7 @@ function castSpell(){
     wildPattern=sp.wild[Math.floor(wr()*sp.wild.length)];
     if(wildPattern==='fizzle'){
       // Half-refund mana, nothing else happens. Brief hand-raise with no orb release.
-      mana=Math.min(effMaxMana(),mana+Math.round(actualCost*0.5));
+      mana=Math.min(effMaxMana(),mana+Math.round(paid*0.5)); /* S1571 — half of the mana paid; health spent stays spent */
       showMsg(`${sp.ico} ${sp.nameIr} fizzles — the shape will not hold.`,'#8a8ac8');
       // Still show the hand animation to hint at the failed cast — but mark type so no projectile spawns
       startCastAnim(sp, 'fizzle');
@@ -397,7 +408,8 @@ function castSpell(){
 
   // Delay the actual projectile/heal resolution to the release frame of the animation (60% through).
   // This creates the classic telegraph-then-release rhythm players expect from spellcasting.
-  const releaseDelayMs = Math.floor(CAST_ANIM_DURATION * 1000 * 0.6);
+  const releaseDelayMs = Math.round(WEAPON_ATTACKS.Cast.tell*1000); /* S1575 — the Cast row's wind-up (was 60% of the hand's 0.55 s) */
+  castMark(releaseDelayMs/1000);
   // Snapshot aim state at the moment of release so the spell follows where you WERE looking when you pressed F,
   // NOT wherever you've moved the camera during the 330ms animation. This prevents late-frame yaw changes from
   // making wild-looking misfires feel like bugs. Right vector snapped too so weapon-tip spawn position is stable.
@@ -521,7 +533,7 @@ function startCastAnim(sp, animType){
 function updateSpellButton(){
   const btn=document.getElementById('fbtn');
   if(!btn)return;
-  const nKnown=Object.keys(knownSpells).length;
+  const nKnown=Object.keys(knownWords).length;
   if(!nKnown||!activeSpellId){
     btn.textContent='◯ No magic (F)';
     btn.style.opacity='.55';
