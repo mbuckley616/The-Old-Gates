@@ -11,12 +11,12 @@ fs.mkdirSync('tests/out', { recursive: true });
 const rigs = await page.evaluate(() => { const out = {};
   for (const [k, L, W] of [['sloop', 13, 4.4], ['cog', 17, 5.6], ['galleon', 22, 7.0]]) { const m = WORLD.buildShipMesh(L, W, 'player');
     const tri = gm => (gm.index ? gm.index.count : gm.attributes.position.count) / 3;
-    out[k] = { kind: m.userData.kind, types: m.userData.rigs.map(q => q.type).join(','), hull: tri(m.geometry), rigs: m.userData.rigs.reduce((a, q) => a + tri(q.m.geometry), 0), children: m.children.length, kit: !!(m.userData.tiller || m.userData.castle) /* S1548: the kit's cog steers by a wheel on her castle */ }; }
+    out[k] = { kind: m.userData.kind, types: m.userData.rigs.map(q => q.type).join(','), hull: tri(m.geometry), rigs: m.userData.rigs.reduce((a, q) => a + tri(q.m.geometry), 0), children: m.children.length, kit: !!(m.userData.tiller || m.userData.castle) /* S1551: the kit's cog steers by a wheel on her castle */ }; }
   return out; });
 // S1531: on the new look your sloop is the kit's Gatelands sloop (card F11; #306's square sail), about 24k triangles in its clinker
 check('the sloop has a gaff and a jib (the kit\'s sloop one square sail), the cog one square rig, the galleon two square masts and a gaff mizzen',
   rigs.sloop.types === (rigs.sloop.kit ? 'square' : 'gaff,jib') && rigs.cog.types === 'square' && rigs.galleon.types === 'square,square,gaff', rigs);
-check('a ship is still 4.3–7k triangles all told (the kit\'s sloop under 30k) (the prototype\'s 4.6–6.0k, Session 165), the rigs 100–1,000 of them', ['sloop', 'cog', 'galleon'].every(k => { const t = rigs[k].hull + rigs[k].rigs; return t > 4300 && t < (rigs[k].kit ? 30000 : 7000) && rigs[k].rigs > 100 && rigs[k].rigs < 1000; }), rigs);
+check('a ship is still 4.3–7k triangles all told (the kit\'s under 30k, its galleon under 40k with her three rigs under 3,000, Session 1552) (the prototype\'s 4.6–6.0k, Session 165), the rigs 100–1,000 of them', ['sloop', 'cog', 'galleon'].every(k => { const t = rigs[k].hull + rigs[k].rigs, big = rigs[k].kit && k === 'galleon'; return t > 4300 && t < (big ? 40000 : rigs[k].kit ? 30000 : 7000) && rigs[k].rigs > 100 && rigs[k].rigs < (big ? 3000 : 1000); }), rigs);
 
 // two ships at sea, one wind: after two seconds each rig sits where the rule puts it for the wind against its own heading
 const sea = await page.evaluate(() => {

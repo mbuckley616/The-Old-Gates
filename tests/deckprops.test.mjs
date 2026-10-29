@@ -28,7 +28,7 @@ const props = await page.evaluate(() => { const out = [];
   const run = (label, m) => { m.updateMatrixWorld(true); const P = m.userData.props || []; const row = { label, n: P.length, centre: 0, edge: 0, clear: 0, clearTried: 0 };
     const jy = jumpY; row.miss = []; row.kit = !!(m.userData.tiller || m.userData.castle);
     for (const p of P) { const rad = p.r != null ? p.r : Math.max(p.hx, p.hz);
-      jumpY = DECK_Y + (p.lv === 'hi' ? 2.15 : 0); /* S1548: a prop with a level (a kit castle's) is tested where it stands */
+      jumpY = DECK_Y + (p.lv === 'hi' ? 2.15 : 0); /* S1551: a prop with a level (a kit castle's) is tested where it stands */
       const [cx, cz] = toWorld(m, p.x, p.z); if (WORLD.solidAt(cx, cz)) row.centre++; else row.miss.push([p.x, p.z, p.lv || '']);
       // the edge, along the deck's breadth toward the middle line (or outward for a mast)
       const dir = p.x > .01 ? -1 : 1, ex = p.x + dir * (p.r != null ? p.r + .2 : p.hx * Math.abs(Math.cos(p.ry || 0)) + .2);
@@ -49,12 +49,12 @@ const props = await page.evaluate(() => { const out = [];
 for (const r of props) console.log(JSON.stringify(r));
 check('every ship records her props: barrels, crates, masts and the wheel\'s post (a sloop 6, a cog 6, a galleon 8; the kit\'s sloop her mast, bucket and hatch)', props.every(r => r.n >= (r.kit ? 3 : 6)) && props.find(r => r.label === 'yours, galleon').n >= 8, props.map(r => [r.label, r.n]));
 check('every prop is solid at its centre and at its edge, on every ship', props.every(r => r.centre === r.n && r.edge === r.n), props);
-check('a step clear of each prop is open, and the deck\'s middle line between them is open', props.every(r => r.clear === r.clearTried && r.clearTried >= 3 && r.open === r.openTried && r.openTried >= 6), props);
+check('a step clear of each prop is open, and the deck\'s middle line between them is open', props.every(r => r.clear === r.clearTried && r.clearTried >= 3 && r.open === r.openTried && r.openTried >= (r.label === 'yours, galleon' && r.kit ? 5 : 6) /* S1552 — the galleon's three masts, two hatches and the castles' wide end stops, each taken here as a circle, leave five points on her line */), props);
 
 // a walk: on your sloop, aimed at her starboard barrel from 2.5 units, W held two seconds through the game's own loop
 const walk = await page.evaluate(() => { const S = WORLD.ship; window._deckBarrel = m => m.userData.props.find(p => p.r === .26) || m.userData.props.find(p => p.r === .3 && p.x < 0 && p.z < 0); for (const o of [...WORLD.others]) WORLD.despawnOtherShip(o);
   worldState.ship = { cls: 'sloop', name: 'Test Gull', sails: 0, cargo: 0, hold: {} }; if (S.mesh) { if (S.mesh.parent) S.mesh.parent.remove(S.mesh); S.mesh = null; } WORLD.spawnShip(_sea.x, _sea.z, 0); S.sailing = false; S.speed = 0;
-  /* S1548: the kit's sloop carries no barrel; then a kit cog's port barrel abreast the hatch, come at from aft, clear of her crates */
+  /* S1551: the kit's sloop carries no barrel; then a kit cog's port barrel abreast the hatch, come at from aft, clear of her crates */
   let b = S.mesh.userData.props.find(p => p.r === .26), aft = 1;
   if (!b) { S.mesh.parent.remove(S.mesh); S.mesh = null; worldState.ship = { cls: 'cog', name: 'Test Gull', sails: 0, cargo: 0, hold: {} }; WORLD.spawnShip(_sea.x, _sea.z, 0); S.sailing = false; S.speed = 0; b = window._deckBarrel(S.mesh); aft = -1; }
   const m = S.mesh; m.updateMatrixWorld(true); const ry = m.rotation.y, c = Math.cos(ry), s = Math.sin(ry);

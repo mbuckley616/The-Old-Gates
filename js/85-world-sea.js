@@ -146,7 +146,7 @@
   };
   const SHIP_GEO=new Map();
   // kind 'sloop' | 'cog' | 'galleon' | 'cutter' | 'caravel'; look 'player' | 'pirate' | 'merchant'. One bake per kind and look, shared.
-  function shipBake(kind,look,dress){const kit=(kind==='sloop'||kind==='cutter'||kind==='caravel'||kind==='cog')&&look==='player'&&window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.ships;
+  function shipBake(kind,look,dress){const kit=(kind==='sloop'||kind==='cutter'||kind==='caravel'||kind==='cog'||kind==='galleon')&&look==='player'&&window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.ships;
     if(kit)dress=kind==='cutter'?'mark':kind==='caravel'?'aurenne':shipDress(dress); /* S1539 — the cutter is sold only at the Mark's yards; S1544 — the caravel only at Aurenne's */
     const key=kind+'|'+look+(kit?'|'+dress:'');let r=SHIP_GEO.get(key);if(r)return r;
     if(kit){r=shipBakeKit(kind,dress);SHIP_GEO.set(key,r);return r;}
@@ -259,19 +259,19 @@
   // fore mast stands where L/2-3.2 would put it. A prop with lv 'lo' stands on the main deck only (the bulkhead either side of the
   // cabin's doorway) and one with 'hi' on the castle only (its forward rail, the wheel's post); the masts stand through both. Behind
   // each ladder the bulkhead is 'deck', there only at the deck's own height, so a climber goes up past it and nobody walks in under the ladder.
-  // S1548 — and the cog (PKIT.ships.cog, ships.js's gatelandsCog, markCog and aurenneCog) in the yard's dress: her aftcastle as the caravel's,
+  // S1551 — and the cog (PKIT.ships.cog, ships.js's gatelandsCog, markCog and aurenneCog) in the yard's dress: her aftcastle as the caravel's,
   // and a forecastle (fore) over her first 3 m, open beneath on two posts (lo) with its ladder up the middle running aft from its edge; the
   // forecastle's rail and its forward end are 'hi' (as the aftcastle's after end now is), and under the ladder's upper half a 'deck' box, so nobody at the deck's height walks in under its treads. Her
   // hatch is her own, aft of the mast, since L/2-3.2 falls at the forecastle's ladder; her lashed cargo stands on deck as props.
-  function shipBakeKit(kind,dress){const S=kind==='cutter'?PKIT.ships.cutter({hatchZ:14/2-3.2}):kind==='caravel'?PKIT.ships.caravel():kind==='cog'?PKIT.ships.cog({dress}):PKIT.ships.sloop({hatchZ:13/2-3.2,dress}),P=[];
+  function shipBakeKit(kind,dress){const S=kind==='cutter'?PKIT.ships.cutter({hatchZ:14/2-3.2}):kind==='caravel'?PKIT.ships.caravel():kind==='cog'?PKIT.ships.cog({dress}):kind==='galleon'?PKIT.ships.galleon({dress}):PKIT.ships.sloop({hatchZ:13/2-3.2,dress}),P=[];
     const zz=[];for(let z=S.zs;z<=S.zb;z+=.05)if(S.deckAt(z)>.45)zz.push(z);const z0=zz[0],z1=zz[zz.length-1];
-    if(S.masts)for(const [x,z] of S.masts)P.push({x,z,r:.19});else P.push({x:0,z:S.mast[1],r:.17});P.push({x:-.45,z:S.mast[1]-.7,r:.17});const h=S.hatch;P.push({x:0,z:(h.z0+h.z1)/2,hx:(h.x1-h.x0)/2,hz:(h.z1-h.z0)/2,ry:0});
+    if(S.masts)for(const [x,z] of S.masts)P.push({x,z,r:.19});else P.push({x:0,z:S.mast[1],r:.17});P.push({x:-.45,z:S.mast[1]-.7,r:.17});const h=S.hatch;for(const q of S.hatches||[h])P.push({x:0,z:(q.z0+q.z1)/2,hx:(q.x1-q.x0)/2,hz:(q.z1-q.z0)/2,ry:0}); /* S1552 — the galleon's two */
     const C=S.castle;if(C){const w=Math.min(C.cw(C.z1),S.deckAt(C.z1)+.05),a=C.cw(C.z1)-.04,g=C.ladders.map(lx=>[lx-.36,lx+.36]),seg=(x0,x1,lv)=>{if(x1>x0)P.push({x:(x0+x1)/2,z:C.z1,hx:(x1-x0)/2,hz:.05,ry:0,lv});};
       for(const e of [1,-1]){const [g0,g1]=e>0?g[1]:[-g[0][1],-g[0][0]];seg(e>0?C.door.x1:-g0,e>0?g0:-C.door.x1,'lo');seg(e>0?g1:-w,e>0?w:-g1,'lo');seg(e>0?g0:-g1,e>0?g1:-g0,'deck');}for(const [x0,x1] of [[-a,g[0][0]],[g[0][1],g[1][0]],[g[1][1],a]])P.push({x:(x0+x1)/2,z:C.z1-.05,hx:(x1-x0)/2,hz:.05,ry:0,lv:'hi'});
-      P.push({x:0,z:S.helm.wheelZ-.3,hx:.09,hz:.09,ry:0,lv:'hi'});P.push({x:0,z:C.z0+.1,hx:C.cw(C.z0+.4)+.1,hz:.1,ry:0,lv:'hi'}); /* S1548 — and its after end, so nobody walks off the stern up there */}
+      P.push({x:0,z:S.helm.wheelZ-.3,hx:.09,hz:.09,ry:0,lv:'hi'});P.push({x:0,z:C.z0+.1,hx:C.cw(C.z0+.4)+.1,hz:.1,ry:0,lv:'hi'}); /* S1551 — and its after end, so nobody walks off the stern up there */}
     const F=S.fore;if(F){for(const x of F.posts)P.push({x,z:F.z0+.1,hx:.08,hz:.08,ry:0,lv:'lo'});const a=F.cw(F.z0)-.04,lx=F.ladders[0];
       for(const [x0,x1] of [[-a,lx-.36],[lx+.36,a]])P.push({x:(x0+x1)/2,z:F.z0+.05,hx:(x1-x0)/2,hz:.05,ry:0,lv:'hi'});P.push({x:lx,z:F.z0-.25,hx:.28,hz:.2,ry:0,lv:'deck'});P.push({x:0,z:F.z1-.1,hx:F.cw(F.z1-.4)+.1,hz:.1,ry:0,lv:'hi'});}
-    for(const K of [C,F])if(K)for(let z=K.z0+.2;z<K.z1;z+=.35){const w=K.cw(z);if(w>.4)for(const e of [1,-1])P.push({x:e*(w-.04),z,hx:.05,hz:.2,ry:0,lv:'hi'});} /* S1548 — a castle's side rails, solid up there (her ends draw in) */
+    for(const K of [C,F])if(K)for(let z=K.z0+.2;z<K.z1;z+=.35){const w=K.cw(z);if(w>.4)for(const e of [1,-1])P.push({x:e*(w-.04),z,hx:.05,hz:.2,ry:0,lv:'hi'});} /* S1551 — a castle's side rails, solid up there (her ends draw in) */
     if(S.cargo)for(const [x,z,r] of S.cargo)P.push({x,z,r});
     return {geo:S.hull.geo,mats:S.hull.mats,deck:{z0,z1,at:z=>z<z0||z>z1?0:S.deckAt(z)-.06},L:S.L,W:S.W,zs:S.zs,zb:S.zb,
       rigs:S.rigs.map(q=>({geo:q.geo,mats:q.mats,z:q.z,type:q.type})),props:P,at:S.at,tiller:S.tiller,wheel:S.wheel,castle:C||null,fore:F||null,helm:S.helm||null,hatchZ:(h.z0+h.z1)/2,hatchOut:Math.max(1.2,(h.z1-h.z0)/2+.7),kit:S,dress};}
@@ -362,7 +362,7 @@
     const zA=Math.max(-L/2+4.2,r.castle?r.castle.z1+.3:-1e9),zB=L/2-4.2,zM=(zA+zB)/2,slots=[]; /* S1544 — not under a castle */
     for(let z=zA+STOW_U/2;z<=zB-STOW_U/2+1e-6;z+=STOW_U)for(let i=0;i<n;i++){const x=(i-(n-1)/2)*STOW_U;
       if(Math.abs(x)+.28>r.deck.at(z)-.9)continue;
-      if([r.castle,r.fore].some(C=>C&&C.ladders.some(lx=>Math.abs(x-lx)<.34+.28&&(C===r.fore?z>C.z0-C.lad-.28&&z<C.z0:z>C.z1&&z<C.z1+C.lad+.28))))continue; /* S1548 — nor under a ladder */
+      if([r.castle,r.fore].some(C=>C&&C.ladders.some(lx=>Math.abs(x-lx)<.34+.28&&(C===r.fore?z>C.z0-C.lad-.28&&z<C.z0:z>C.z1&&z<C.z1+C.lad+.28))))continue; /* S1551 — nor under a ladder */
       if(P.some(p=>p.r!=null?Math.hypot(x-p.x,z-p.z)<p.r+.34:Math.abs(x-p.x)<p.hx+.32&&Math.abs(z-p.z)<p.hz+.32))continue;
       slots.push({x,z});}
     slots.sort((a,b)=>Math.hypot(a.x*1.5,a.z-zM)-Math.hypot(b.x*1.5,b.z-zM));
@@ -456,7 +456,7 @@
   // y straight after (activeTerrainH). One platform, kept for your own ship; it answers only while she is the one it was made for.
   function shipLocal(mesh,wx,wz){const ry=mesh.rotation.y,c=Math.cos(ry),s=Math.sin(ry),dx=wx-mesh.position.x,dz=wz-mesh.position.z;return [dx*c-dz*s,dx*s+dz*c];}
   function shipUpper(mesh){const C=mesh&&mesh.userData.castle;return !!C&&typeof jumpY==='number'&&jumpY-DECK_Y>1.6;}
-  // S1548 — and a forecastle (fore) the same way about its after edge, its ladder running aft from z0
+  // S1551 — and a forecastle (fore) the same way about its after edge, its ladder running aft from z0
   function shipCastleAt(mesh,wx,wz){const C=mesh.userData.castle;if(!C)return null;const [lx,lz]=shipLocal(mesh,wx,wz),rise=C.y-SHIP_DECK;
     if(lz>C.z0+.1&&lz<=C.z1&&Math.abs(lx)<C.cw(lz)-.15)return jumpY-DECK_Y>1.6?DECK_Y+rise:null;
     for(const x of C.ladders)if(Math.abs(lx-x)<.34&&lz>C.z1&&lz<C.z1+C.lad){const y=DECK_Y+rise*(1-(lz-C.z1)/C.lad);if(jumpY>=y-.9)return y;}
@@ -714,7 +714,7 @@
     const fwd=[-Math.sin(SHIP.yaw),-Math.cos(SHIP.yaw)];
     const hz=SHIP.mesh.userData.hatchZ!=null?SHIP.mesh.userData.hatchZ:SHIP.L/2-3.2; /* S1544 — a kit hull's own hatch */
     h.doorX=SHIP.x+fwd[0]*hz;h.doorZ=SHIP.z+fwd[1]*hz; // forward hatch, clear of the wheel
-    const ho=SHIP.mesh.userData.hatchOut||1.2; /* S1548 — clear of the cog's longer coaming */
+    const ho=SHIP.mesh.userData.hatchOut||1.2; /* S1551 — clear of the cog's longer coaming */
     h.exitX=SHIP.x+fwd[0]*(hz-ho);h.exitZ=SHIP.z+fwd[1]*(hz-ho);h.exitYaw=SHIP.yaw+Math.PI;
     if(!ZONES.world.houses.includes(h))ZONES.world.houses.push(h);
   }
