@@ -1256,7 +1256,7 @@
   }
   function herbCandidates(biome,ctx){const out=[];for(const k in HERB_PLACE){const p=HERB_PLACE[k];if(!HERB_DEF[k])continue;if(!p.biomes.includes(biome))continue;const w=p.ctx.indexOf(ctx);if(w<0)continue;out.push([k,w===0?3:1]);}return out;}
   const HERB_GEO={};
-  // S1570 (backlog L8, Michael's C on #855: lifted) — on the new look a herb stands at its true size (the kit's old unit ×1.444, SCALE.ROOM_K)
+  // S1573 (backlog L8, Michael's C on #855: lifted) — on the new look a herb stands at its true size (the kit's old unit ×1.444, SCALE.ROOM_K)
   // and 1.15 over it, its colour a little stronger (saturation ×1.18, lightness ×1.1 + 0.02, as herbs.js's bake), the grass short in a 0.35 m
   // ring about it (landGrassChunk) and a small glint at its top within 6 m (tickHerbGlints); no lights. The old look keeps its herbs as they were.
   function herbLift(){return window.OG_LOOK==='new'?1.444*1.15:1;}
@@ -1281,7 +1281,7 @@
   }
   // one InstancedMesh per kind, and for a plant that stays when picked (a bush, a sapling) a second of its picked
   // copy: each herb shows in one of the two, the other holding it at a thousandth of its size (syncHerbInstance)
-  function herbIM(type,geo,list,group,yOf){const kind=PLANT_KIND[type];const pg=plantGeo(type,true),K=herbLift(); /* S1570 — the picked copy at the same size, its colour left as cut */
+  function herbIM(type,geo,list,group,yOf){const kind=PLANT_KIND[type];const pg=plantGeo(type,true),K=herbLift(); /* S1573 — the picked copy at the same size, its colour left as cut */
     const mk=(g,picked)=>{const im=new THREE.InstancedMesh(g,HERB_MAT,list.length);im.castShadow=false;im.receiveShadow=true;im.userData.noBake=true;
       list.forEach((h,i)=>{if(picked)h.instP=im;else{h.inst=im;h.idx=i;}const show=picked?h.harvested:!h.harvested;_hp.set(h.x,yOf(h),h.z);_hq.setFromAxisAngle(_hy,h.ph);_hs.setScalar(show?K:.001);_hm.compose(_hp,_hq,_hs);im.setMatrixAt(i,_hm);});
       im.instanceMatrix.needsUpdate=true;group.add(im);return im;};

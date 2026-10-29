@@ -281,7 +281,7 @@ function landGrassChunk(ch){
   for(let j=0;j<V;j++)for(let i=0;i<V;i++){const vi=j*V+i,x=ox+i*G,z=oz+j*G,h=P.getY(vi),cr=col.getX(vi),cg=col.getY(vi),cb=col.getZ(vi);
     if(h<SEA_Y+.35||NR.getY(vi)<.82||cg<=Math.max(cr,cb)*.95||cr+cg+cb>1.9)continue;
     const ri=roadInfo(x,z);if(ri&&ri.d<ROAD_HALF+.6)continue;if(stampAt(x,z)||solidAt(x,z))continue;ok[vi]=1;}
-  // S1570 (Michael's C on #855) — the chunk's herbs, lifted: no blade inside a herb's own spread, and short in a 0.35 m ring round it
+  // S1573 (Michael's C on #855) — the chunk's herbs, lifted: no blade inside a herb's own spread, and short in a 0.35 m ring round it
   const HB=(ch.herbs||[]).filter(h=>!h.bed&&h.spread).map(h=>[h.x-ox,h.z-oz,h.spread*.5]);
   let n=0,f=0,tries=0;
   while(n<N&&tries<N*3){tries++;

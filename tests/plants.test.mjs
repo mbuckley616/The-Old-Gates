@@ -51,7 +51,7 @@ const regrown = await scaleAt();
 const HK = await page.evaluate(() => +herbLift().toFixed(3));
 check('picking it leaves the bare plant standing (and the herb in the bag); when it grows back the whole plant returns',
   before.whole === HK && before.picked < .01 && after.whole < .01 && after.picked === HK && bag && regrown.whole === HK && regrown.picked < .01, { HK, before, after, bag, regrown });
-/* S1570 (backlog L8, Michael's C on #855): on the new look the herbs are lifted: true size and 1.15 over it, the colour a little stronger,
+/* S1573 (backlog L8, Michael's C on #855): on the new look the herbs are lifted: true size and 1.15 over it, the colour a little stronger,
    the grass short in a 0.35 m ring round each, a glint over the nearest within 6 m, and no lights */
 const lift = await page.evaluate(() => { const h = _H, a = plantGeo(h.type, false).attributes.color, b = h.inst.geometry.attributes.color, c0 = new THREE.Color(), c1 = new THREE.Color(), s0 = {}, s1 = {};
   let sat0 = 0, sat1 = 0; for (let i = 0; i < a.count; i += 7) { c0.fromBufferAttribute(a, i).getHSL(s0); c1.fromBufferAttribute(b, i).getHSL(s1); sat0 += s0.s; sat1 += s1.s; }

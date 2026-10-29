@@ -199,7 +199,7 @@ const ct = await page.evaluate(() => { const h = currentHouse, B = h._base; if (
   const o = { base: true, tris: B.tris, draws: B.draws, W: h.intW, D: h.intD, roomH: h._roomH, eye: h._eyeMax, beds: INT_BEDS.length, stash: !!intStashPos, hatch: B.hatch, arrive: [px, pz], exitZ: h._exitZ, sols: INT_SOL.length };
   o.fwd = walk(h._arriveX - .2, h._arriveZ, 0, 200); o.aft = walk(h._arriveX - .3, h._arriveZ, Math.PI, 200); /* the gangway: 0.2 m to starboard of the keel between the chest and the bench, 0.3 past the berth's front */ o.port = walk(h._arriveX, 4, -Math.PI / 2, 80); o.stbd = walk(h._arriveX, 4, Math.PI / 2, 80);
   _drive(() => false, 20); o.cam = +CAM.position.y.toFixed(2);
-  /* S1569 (the critic's s1030): in third person the camera keeps under the beams and stands behind you, not in the timber */
+  /* S1572 (the critic's s1030): in third person the camera keeps under the beams and stands behind you, not in the timber */
   thirdPerson = true; TP.want = 1.94; TP.cur = 0; px = h._arriveX; pz = h._arriveZ - 1; yaw = 0; pitch = -.15; _drive(() => false, 60); o.tp = [+CAM.position.y.toFixed(2), +TP.near.toFixed(2)]; o.beamUnder = +(B.beamBottom - B.floor).toFixed(2); thirdPerson = false;
   px = h._arriveX; pz = h._arriveZ - 3; o.exitFar = intExitZ(h, pz, h._roomD || h.intD); px = h._bench.x + .9; pz = h._bench.z; o.bench = benchNear();
   const b = INT_BEDS[0]; px = h._arriveX - .1; pz = b.z; yaw = -Math.PI / 2; pitch = -.4; CAM.position.set(px, 1.5, pz); CAM.rotation.set(pitch, yaw, 0, 'YXZ'); CAM.updateMatrixWorld(true); o.bed = !!intBedTarget(); o.bedExit = intExitZ(h, pz, h._roomD || h.intD);

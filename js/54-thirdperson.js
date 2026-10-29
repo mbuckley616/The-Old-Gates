@@ -267,7 +267,7 @@ function tpBlocked(x,z){
   if(activeZoneId==='world'&&typeof WORLD!=='undefined'&&WORLD.camSolid)return WORLD.camSolid(x,z);
   return currentZoneSolid(x,z);}
 function tpCeil(){if(isInterior()){const c=tpInteriorBox().C-.22,e=currentHouse&&currentHouse._eyeMax;return e?Math.min(c,e+.12):c;}if(lid&&lid.startsWith('dyn_'))return (currentFloor===2?FLOOR2_Y:0)+dCeil(px,pz)-.25;return 1e9;} /* S1293 — the roof over you (a gate's spaces) */
-/* S1569 — below deck (a room with house._eyeMax, the ship bases) the camera keeps under the beams' undersides, 8 cm clear (the eye
+/* S1572 — below deck (a room with house._eyeMax, the ship bases) the camera keeps under the beams' undersides, 8 cm clear (the eye
    stoops to 0.2 under them, the pivot is 0.12 over the eye), and the hull's planking and the masts stop it as the room's walls do */
 function tpFloorAt(x,z,fallback){if(isInterior())return .15;if(lid&&lid.startsWith('dyn_'))return fallback+.15;let y=fallback;try{y=activeTerrainH(x,z);}catch(e){}if(activeZoneId==='world'&&typeof WORLD!=='undefined')y=Math.max(y,WORLD.SEA_Y);return y+.22;}
 function tpCamera(dt,camY){

@@ -23,7 +23,7 @@ if (found) {
   fs.writeFileSync('tests/out/herbstub.png', Buffer.from(shot.split(',')[1], 'base64'));
   await page.evaluate(() => { _H.harvested = false; _H.g.visible = true; }); await g.spin(null, 45); const back = await st();
   console.log(JSON.stringify({ now, after, back }));
-  const HK = await page.evaluate(() => +herbLift().toFixed(3)); /* S1570: lifted on the new look (#855 C) */
+  const HK = await page.evaluate(() => +herbLift().toFixed(3)); /* S1573: lifted on the new look (#855 C) */
   check('picking it (at the herbs\' next half-second sync, as the bushes) shows the stub where the plant stood and hides the plant', after.whole < .01 && after.stub === HK && after.shown, { now, after });
   check('when it grows back the whole plant returns and the stub goes', back.whole === HK && back.stub < .01, back);
 }
