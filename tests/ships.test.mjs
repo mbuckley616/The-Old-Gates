@@ -50,7 +50,7 @@ const cls = await page.evaluate(() => { const out = {};
   return out; });
 // S1531: on the new look your sloop is the kit's (card F11), its mast as tall as the cog's and its clinker strakes about 24k triangles
 check(`sloop, cog and galleon: longer, taller and broader in turn, 4–8k triangles each (the kit's sloop ${cls.sloop.tris}, under 30k), one bake shared by every ship of a class`,
-  cls.sloop.len < cls.cog.len && cls.cog.len < cls.galleon.len && (cls.sloop.kit ? cls.sloop.top <= cls.cog.top : cls.sloop.top < cls.cog.top) && cls.cog.top < cls.galleon.top && ['sloop', 'cog', 'galleon'].every(k => cls[k].tris > 3500 && cls[k].tris < (cls[k].kit ? 30000 : 9000)) && cls.shared, cls);
+  cls.sloop.len < cls.cog.len && cls.cog.len < cls.galleon.len && (cls.sloop.kit ? cls.sloop.top <= cls.cog.top : cls.sloop.top < cls.cog.top) && cls.cog.top < cls.galleon.top && ['sloop', 'cog', 'galleon'].every(k => cls[k].tris > 3500 && cls[k].tris < (cls[k].kit ? (k === 'galleon' ? 40000 : 30000) /* S1552 — the kit's galleon, 22 m and two decks of castle */ : 9000)) && cls.shared, cls);
 check('the harbour boats are four paints of an open boat, 1–2.5k triangles, baked once each', cls.boats.every(t => t > 1000 && t < 2500) && cls.boatShared, { boats: cls.boats });
 
 // the photograph: the classes with the player's look side on; below, the merchantman (a cog) and the black sail from the bow
