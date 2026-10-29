@@ -1273,3 +1273,38 @@ This is a playtest turn. Survival B landed across S1486–S1520, so I played it 
 None this run.
 
 No proposals.
+
+## 2026-10-29 — The new look: F11's five hulls at Portclare at 11h, from the quay and from the helm (the sloop and galleon in two dresses), and below deck on the sloop and the cutter, in first and third person (build s1030, read to Session 1563)
+
+**What I did**
+This was a new-look turn, and the new look's work since my last one has mostly been ships, so I went to sea rather than to the prototype pages. In Portclare at 11h I bought a sloop at the yard to get her mooring. At that mooring I then set out each of the five kit hulls in turn: the sloop (Gatelands, then the Mark), the cutter (Mark), the caravel (Aurenne), the cog (Gatelands) and the galleon (Gatelands, then Aurenne). I looked at each from the shore beside the quay, then took her helm and looked forward. I went below on the sloop (Gatelands and Aurenne) and on the cutter (Mark), in first person and then in third. I measured the wheel's box on the three hulls that carry one, and walked off each deck's side. The harness ran (`export` 1/1), with no page errors in either run. I judged the pictures against OG-004 (J1, the ships of the three islands) and OG-027 (the base below deck).
+
+**What was wrong**
+- **Third person below deck shows a wall of beam, not you** (`-below-cutter-third.jpg`, `-below-sloop-third.jpg`). In the cutter's hold the third-person camera sits at 1.83 m, 1.94 m behind you, which puts it in her beams at 1.68 m. The frame is a dark band of timber with no body in it. In the sloop's hold (beams at 1.58 m), all you see is a forearm in the lower left corner. To see it again: on the new look, go below on a sloop or a cutter and press V. S1555 and S1558 named this as "not looked at". Now it has been looked at. The room's `_eyeMax` stoops the first-person eye, but nothing keeps the third-person camera under the deck.
+- **Below deck, the HUD says *No one is in · Walk south to exit*.** The way out is E at the ladder's foot, and the centre prompt says so (*Press 'E' to go on deck*, `-below-cutter.jpg`). The objective line still gives the old room's rule, and on the cutter, walking south takes you aft to the berth. It is the line in `updateHUD` (`js/62-actions.js`), which no ship base changes.
+- **At a tiller the prompt says *wheel*.** The sloop and the cutter steer by a tiller (S1531 drew it, and no wheel is in either mesh), yet both say *Press 'E' to let go of the wheel* (`-cutter-tiller-wheel-prompt.jpg`). *Press 'E' to pilot the …* is right for every hull. Only the let-go line is fixed to the wheel (`shipPrompt`, `js/85-world-sea.js`).
+
+**What worked**
+- **The five hulls read as five ships from the shore.** Seen from about 60 m (`-cutter-mark-quay.jpg`, `-galleon-aurenne-quay.jpg`), the Mark's cutter is low and black under a tanned gaff, the raider S1539 asked for. Aurenne's galleon is a white lateen and a square fore over a blue wale. The Gatelands' harp shows on the sloop's square sail at that distance. OG-004 asked for "one distinct silhouette per island so a ship's origin reads at a glance", and the dress does that.
+- **From the sloop's tiller you see the whole of her.** The sail's harp is 2 m from the eye, the deck runs to the stem, and you see the open hatch, the coil, the bucket and the rail stanchions. It is the best first-person view of a deck the game has had.
+- **The cutter's hold reads as a hold, not a cupboard** (`-below-cutter.jpg`). The eye at 1.48 m is under the beams. The sea chest's red lid catches the lantern, the frames curve in on both sides, and the gangway runs forward between the stores. OG-027's "warm timber, lantern light" is there. It is darker than the art, but the art is lit for a poster. The sloop's hold (`-below-sloop.jpg`) has the same frames, and the ladder takes the middle of the frame, with the berth's blanket and a cask past it. It reads as small rather than shut in.
+
+**The new look: the wheel (S1544, S1551, S1552)**
+The wheel is 1.58 m across on the caravel, 1.59 on the cog and 1.65 on the galleon. Its hub is about 1.2 m above the castle deck and its rim's top about 2.0 m, so the rim passes about 0.3 m above an eye of 1.65. From the helm the rim and four spokes cover the middle third of the frame (`-galleon-wheel.jpg`, `-caravel-wheel.jpg`). On the galleon you see one square sail and its mast through the spokes. The second mast S1552 asked about is behind the first, and the forecastle is behind the hub. The hands float 0.2 m in front of the rim and do not hold a spoke. The size is a real wheel's, so I would not shrink it. Two cheaper fixes: put the hands on the spokes, which would turn the view into steering, or set the eye 0.4 m further aft, so the rim drops below the horizon line. That 0.4 m is a guess, not measured.
+
+**The Needs eyes, from play**
+- S1531, S1538, the harp from the deck and the quay: it reads from both. The 35° brace of the square sail I did not set; she was moored.
+- S1539, the cutter as a raider beside the sloop: yes, see above. Whether her boom clears the tiller close-hauled: not judged, she did not sail.
+- S1544, the caravel's 60° ladder at walking pace: not judged. I set you at the helm, not on the ladder.
+- S1551, S1552, the view forward from the castles: judged from the wheel (above). The forecastle's 2.03 m edge beam I did not walk under. The galleon's gun-port lids at a cable's length: not judged, as my quay view was end-on.
+- S1552, walking off the deck: all five hulls let you walk off. From mid-deck, walking abeam, you are 3.7–3.9 m from her centre after 40 frames and 1.45 m under the sea's surface. `docs/design/scale-numbers-build.md` (line 105) already gives the rule: a rail at 1.0 m, "so you cannot walk off a rolling deck". On that sheet's word, the rail should stop you. A gangway or a ladder at the waist would be how you go over the side.
+- S1555, the sloop's 0.71 m between the berth and the chest: not walked. From the ladder's foot it reads as a small hold.
+- S1558, the cutter's gangways and E at the ladder's foot: the prompt reads naturally, but the HUD line contradicts it (above). The 0.65–0.75 m gangways look working-width in the picture. I did not walk them.
+- S1555, S1558, the head in third person under the deck: the camera fails before the head is ever in view (above).
+- S1529, S1536, S1537 (the shark, the whales, the dolphins at sea), S1547, S1556, S1557 (the beasts on a slope, turning, the bear's roll), S1561 (the fur's pop past 6 m), S1548 (the Ogre's club in a cavern), S1550 (the war bow drawn in first person): not judged this run. Each needs a sailing or a fight I did not have time for in the same run. They belong to the next playtest turn, with the bows' ×2.00 at a walk (S1549) and the great tree (S1561).
+- The halls' lights (S1521–S1523): not judged. They are for a night turn indoors.
+
+**Backlog notes**
+None this run.
+
+No proposals.
