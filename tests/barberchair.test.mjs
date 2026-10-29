@@ -11,13 +11,15 @@ const found = await page.evaluate(() => { let h = null;
   for (const t of c) { const S = WORLD.settlements.get(t.id) || WORLD.genSettlement(t); h = S && S.houses.find(x => x.type === 'barber'); if (h) break; }
   if (!h) return null; window._S = h; forceTime(12); px = h.exitX; pz = h.exitZ; goToInterior(h); return h.name; });
 check('a barber\'s shop is found and entered', !!found, found);
+// indoors the game's loop never runs WORLD.tick (it is behind lid==='overworld'), and g.spin does: its tickCells reads the
+// room's coordinates as the world's and unloads the town around you (S1552). So in a room the loop's own frames settle it.
 for (let k = 0; k < 40 && !(await page.evaluate(() => isInterior() && !!INT_CHAIR)); k++) await page.waitForTimeout(250);
-await g.spin(null, 10);
+await g.frames(4);
 // the stand-in fee: 10 gold, put over the systems builder's barberPay (the inn room's price, which varies by town; `barberfee` tests that)
 await page.evaluate(() => { window._pays = []; { window.barberPay = (h, c) => { _pays.push(c); if (!c) return 'free'; if (gold < 10) return 'poor'; gold -= 10; return 'paid'; }; window.barberFee = () => 10; window._stood = true; }
   EQ.back = { slot: 'back', cloak: 'wool', name: 'Traveller’s Cloak' }; });
 const near = await page.evaluate(() => { const C = INT_CHAIR; px = C.x; pz = C.z + 1.0; jumpY = 0; lookAtPt(C.x, .6, C.z); /* S656: the chair answers to the crosshair */ return { chair: !!C, house: C && C.house === _S }; });
-await g.spin(null, 4); await g.frames(3);
+await g.frames(3);
 const prompt = await page.evaluate(() => document.getElementById('ob').textContent);
 const byKeeper = await page.evaluate(() => { const x = px, z = pz; px = intNPCPos.x - .3; pz = intNPCPos.z + .9; lookAtPt(intNPCPos.x, 1.1, intNPCPos.z); const n = nearBarberChair(); px = x; pz = z; lookAtPt(INT_CHAIR.x, .6, INT_CHAIR.z); return n; });
 check('beside the barber with the crosshair on him, E is his (the chair does not take it)', byKeeper === false, byKeeper);
