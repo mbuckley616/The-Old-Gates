@@ -90,6 +90,19 @@ const lod = await page.evaluate(() => { const e = _W['Ash Hound'], rig = e.limbs
   CAM.position.set(e.x + 12, CAM.position.y, e.z); tickCreatures(1 / 60, 4e5); r.back12 = rig.lod;
   CAM.position.copy(c0); return r; });
 check('the distant copy swaps in past 17 units and back under 15, with no flicker between', lod.near10 === 0 && lod.far20 === 1 && lod.loGeo && lod.gap16 === 1 && lod.back12 === 0, lod);
+// Session 1559: on the new look the Wolf, the Snow and Dire Wolf, the Ash Hound and the Boar wear the creature kit's body (HC, Session 1202
+// on), built one a time after the loading; close by the eye draws the kit's body and the shadow pass the driver's distant copy (hcTick's
+// shadow swap, 34-creatures.js). The checks below read the old look's truth (the eye drew the driver) and passed only while no body had been
+// built yet, so they went red as the builds came sooner. Every test wolf's body is built first, by hcTick's own steps, as f4wolves does
+const kit = await page.evaluate(() => { const R = Object.values(_W).map(e => e.limbs && e.limbs.wolf).filter(r => r && hcOk(r));
+  R.forEach(r => { if (!r.e) r.e = Object.values(_W).find(e => e.limbs.wolf === r); });
+  const want = () => R.filter(r => !r.hc && !r.hcFail).length; let k = 0; HBODY.last = -1e9;
+  // a body is built only within HC_BODY.build of the eye, and the second Wolf stands 44 m off: the eye goes among them while they build
+  const c0 = CAM.position.clone(), M = R.map(r => r.root.parent.position); CAM.position.set(M.reduce((a, p) => a + p.x, 0) / M.length, c0.y, M.reduce((a, p) => a + p.z, 0) / M.length);
+  while (want() && k++ < 200) tickCreatures(1 / 60, 4.2e5 + k * (HBODY.gap + 1));
+  CAM.position.copy(c0);
+  return { rigs: R.length, ticks: k, left: want(), built: R.filter(r => r.hc).length }; });
+console.log('  kit bodies:', JSON.stringify(kit));
 // put the wolf beside the player, close enough to draw at full detail, and watch what it draws with in each pass. On a
 // loaded machine a frame's shadow pass has now and then drawn nothing at all (Sessions 166–170, the lod suite too; cause
 // not found), so it renders across up to twelve real frames until the shadow pass has drawn the wolf, then reads that frame
@@ -99,12 +112,13 @@ for (let k = 0; k < 12; k++) {
   shadow = await page.evaluate(() => { const e = _W.Wolf, rig = e.limbs.wolf, G = e.mesh; const keep = G.position.clone();
     G.position.set(px + 2, WORLD.worldH(px + 2, pz), pz); CAM.position.set(px, G.position.y + 1.6, pz + 4); tickCreatures(1 / 60, 4.5e5);
     const seen = { eye: [], shadow: [] }; const rbd = REN.renderBufferDirect;
-    REN.renderBufferDirect = function (cam, sc, geo, mat, obj, grp) { if (obj === rig.mesh) (mat.isMeshDepthMaterial || mat.isMeshDistanceMaterial ? seen.shadow : seen.eye).push(geo === rig.geoLo ? 'lo' : geo === rig.geoHi ? 'hi' : '?'); return rbd.apply(this, arguments); };
+    const kitOf = new Set(); if (rig.hc) rig.hc.W.traverse(o => { if (o.isMesh) kitOf.add(o); });
+    REN.renderBufferDirect = function (cam, sc, geo, mat, obj, grp) { const sh = mat.isMeshDepthMaterial || mat.isMeshDistanceMaterial; if (obj === rig.mesh) (sh ? seen.shadow : seen.eye).push(geo === rig.geoLo ? 'lo' : geo === rig.geoHi ? 'hi' : '?'); else if (kitOf.has(obj)) (sh ? seen.shadow : seen.eye).push('kit'); return rbd.apply(this, arguments); };
     try { REN.render(scene, CAM); } finally { REN.renderBufferDirect = rbd; }
-    const r = { lod: rig.lod, eye: [...new Set(seen.eye)], shadow: [...new Set(seen.shadow)], after: rig.mesh.geometry === rig.geoHi }; G.position.copy(keep); return r; });
+    const r = { lod: rig.lod, kitL: rig.hc ? rig.hc.L : null, eye: [...new Set(seen.eye)], shadow: [...new Set(seen.shadow)], after: rig.mesh.geometry === rig.geoHi && !rig.mesh.visible }; G.position.copy(keep); return r; });
   shadow.tries = k + 1; if (shadow.shadow.length) break;
 }
-check('close up, the eye draws the full wolf and the shadow pass its distant copy, and the full one is put back', shadow.lod === 0 && shadow.eye.join() === 'hi' && shadow.shadow.join() === 'lo' && shadow.after, shadow);
+check('close up, the eye draws the kit\'s body (not the driver) and the shadow pass the driver\'s distant copy, and the driver is put back, full and hidden', kit.left === 0 && shadow.lod === 0 && shadow.kitL === 0 && shadow.eye.join() === 'kit' && shadow.shadow.join() === 'lo' && shadow.after, shadow);
 
 // what a pack costs: the whole frame rendered with the test's wolves and boar beside the player, and without them
 const cost = await page.evaluate(() => { const E = Object.values(_W).filter(e => e.limbs && e.limbs.wolf); const keep = E.map(e => e.mesh.position.clone());
@@ -113,8 +127,12 @@ const cost = await page.evaluate(() => { const E = Object.values(_W).filter(e =>
   const time = n => { REN.render(scene, CAM); const t = performance.now(); for (let i = 0; i < n; i++) REN.render(scene, CAM); return (performance.now() - t) / n; };
   const tri = () => { REN.render(scene, CAM); return REN.info.render.triangles; };
   const lods = E.map(e => e.limbs.wolf.lod).join(''); const withT = tri(), withMs = time(6); E.forEach(e => e.mesh.visible = false); const noT = tri(), noMs = time(6); E.forEach((e, i) => { e.mesh.visible = true; e.mesh.position.copy(keep[i]); });
-  return { wolves: E.length, lods, trisWith: withT, trisWithout: noT, perWolf: Math.round((withT - noT) / E.length), msWith: +withMs.toFixed(1), msWithout: +noMs.toFixed(1) }; });
-check('the test\'s wolves (and the boar) close by draw at full detail and cost about a full wolf for the eye and a distant copy for the shadow', /^0+$/.test(cost.lods) && cost.perWolf > 5000 && cost.perWolf < 10000, cost);
+  // what each should cost: the kit's meshes the eye draws at its level (hide, fur, bits) and the driver's distant copy in the shadow pass
+  const shown = o => { for (let p = o; p; p = p.parent) if (!p.visible) return false; return true; };
+  const tr = gg => (gg.index ? gg.index.count : gg.attributes.position.count) / 3;
+  let want = 0; const kitL = E.map(e => { const r = e.limbs.wolf; if (!r.hc) { want += r.tris + r.trisLo; return '-'; } r.hc.W.traverse(o => { if (o.isMesh && shown(o)) want += tr(o.geometry); }); want += r.trisLo; return r.hc.L; }).join('');
+  return { wolves: E.length, lods, kitL, trisWith: withT, trisWithout: noT, perWolf: Math.round((withT - noT) / E.length), want: Math.round(want / E.length), msWith: +withMs.toFixed(1), msWithout: +noMs.toFixed(1) }; });
+check('the test\'s wolves (and the boar) close by draw the kit\'s body at full detail and cost about that for the eye and the driver\'s distant copy for the shadow', /^0+$/.test(cost.lods) && /^0+$/.test(cost.kitL) && cost.perWolf > cost.want * .85 && cost.perWolf < cost.want * 1.15, cost);
 
 // a dead wolf lies still: it takes the slack pose once and stops being ticked
 const dead = await page.evaluate(() => { const e = _W['Dire Wolf'], rig = e.limbs.wolf; e.dead = true; tickCreatures(1 / 60, 5e5); const a = rig.B.neck.rotation.x; e.x += 1; tickCreatures(1 / 60, 5e5 + 17); return { posed: rig.deadPosed, neck: +a.toFixed(2), still: rig.B.neck.rotation.x === a }; });
