@@ -139,11 +139,16 @@ const shipWalk = ([cls, Ln, Wd, wdr, alx]) => { const out = {}, was = worldState
   cabinUpdate(); { const h = CABIN.house; out.exit = shipLocal(m, h.exitX, h.exitZ).map(v => +v.toFixed(2)); out.exitFree = !shipPropSolid(h.exitX, h.exitZ); }
   put(0, m.userData.helm.z, D + 2.15, true); pitch = -.25; _drive(() => false, 3); out.promptUp = shipPrompt();
   out.take = shipInteract(); out.sailing = SHIP.sailing; _drive(() => false, 20); out.atHelm = loc(); shipInteract();
+  /* S1579: the cog's cabin furnished, her berth beside the bunk as the caravel's */
+  const Bt = m.userData.berth; out.berth = Bt; out.cabinItems = (shipBake(cls, 'player').kit.cabinItems || []).map(q => q.name).join();
+  if (Bt) { put(Bt.x, Bt.z, D, false); yaw = ry + Math.PI / 2; _drive(() => false, 3); out.berthPrompt = shipPrompt(); out.rest = shipInteract(); out.slip = sleepOpen; closeSleepUI();
+    put(Bt.x + .4, Bt.z, D, false); yaw = ry + Math.PI / 2; out.intoBunk = walk(60); put(0, Bt.z, D + 2.15, false); _drive(() => false, 3); out.berthUp = shipPrompt(); }
   sc.remove(SHIP.mesh); SHIP.mesh = null; worldState.ship = was; return out; };
 const cg = await page.evaluate(shipWalk, ['cog', 17, 5.6, 'mark', 1.6]);
 console.log(JSON.stringify(cg));
 const gl = cg.gatelands.kit ? await page.evaluate(shipWalk, ['galleon', 22, 7, 'aurenne', 2.0]) : null; console.log(JSON.stringify(gl));
 if (cg.gatelands.kit) {
+  check(`her cabin under the aftcastle is furnished (${cg.cabinItems}); beside the bunk "${cg.berthPrompt}", and E opens the rest slip; the bunk stops you; not from the castle over it`, /bunk/.test(cg.cabinItems) && /chart table/.test(cg.cabinItems) && /rest/.test(cg.berthPrompt || '') && cg.rest && cg.slip && cg.intoBunk.end[0] > cg.berth.x - .45 && cg.intoBunk.top === 0 && !/rest/.test(cg.berthUp || ''), [cg.berth, cg.berthPrompt, cg.rest, cg.slip, cg.intoBunk, cg.berthUp]);
   check('your cog bakes in the yard\'s three dresses, each under 36,000 triangles and 16 draws, both castles 2.15 m over the deck', ['gatelands', 'mark', 'aurenne'].every(k => cg[k].dress === k && cg[k].key === 'cog|player|' + k && cg[k].tris < 36000 && cg[k].draws <= 16 && Math.abs(cg[k].fore - 3.15) < .01), ['gatelands', 'mark', 'aurenne'].map(k => [k, cg[k].tris, cg[k].draws, cg[k].fore]));
   check('each island its rig on the cog: the square sail, the gaff, the lateen; the gaff and the lateen swing to leeward and over', cg.gatelands.rigs === 'square' && cg.mark.rigs === 'gaff' && cg.aurenne.rigs === 'lateen' && cg.mark.a[0] < -.2 && cg.mark.c[0] > .2 && cg.aurenne.a[0] < -.1 && cg.aurenne.c[0] > .1, [cg.mark.a, cg.mark.c, cg.aurenne.a, cg.aurenne.c]);
   check('her hold\'s stowage stands between the castles, off the ladders, enough for her 60 three high, the same in every dress', ['gatelands', 'mark', 'aurenne'].every(k => cg[k].stow === cg.gatelands.stow) && cg.gatelands.stow * 3 >= 60, ['gatelands', 'mark', 'aurenne'].map(k => cg[k].stow));
@@ -159,6 +164,7 @@ if (cg.gatelands.kit) {
 // mizzen, the same in the Mark's tanned cloths, Aurenne's square fore between two lateens; her quarterdeck and forecastle walked as the cog's
 // (in Aurenne's dress, whose main and mizzen are raked)
 if (gl && gl.gatelands.kit) {
+  check(`her great cabin under the quarterdeck is furnished (${gl.cabinItems}); beside the bed "${gl.berthPrompt}", and E opens the rest slip; the bed stops you; not from the quarterdeck over it`, /bunk/.test(gl.cabinItems) && /captain's table/.test(gl.cabinItems) && /chart table/.test(gl.cabinItems) && /rest/.test(gl.berthPrompt || '') && gl.rest && gl.slip && gl.intoBunk.end[0] > gl.berth.x - .45 && gl.intoBunk.top === 0 && !/rest/.test(gl.berthUp || ''), [gl.berth, gl.berthPrompt, gl.rest, gl.slip, gl.intoBunk, gl.berthUp]);
   check('your galleon bakes in the yard\'s three dresses, each under 40,000 triangles and 20 draws, both castles 2.15 m over the deck', ['gatelands', 'mark', 'aurenne'].every(k => gl[k].dress === k && gl[k].key === 'galleon|player|' + k && gl[k].tris < 40000 && gl[k].draws <= 20 && Math.abs(gl[k].fore - 3.15) < .01), ['gatelands', 'mark', 'aurenne'].map(k => [k, gl[k].tris, gl[k].draws, gl[k].fore]));
   check('each island its rig on the galleon: two squares and the gaff mizzen, the same in the Mark\'s, Aurenne\'s square fore between lateens; all trim to leeward and over', gl.gatelands.rigs === 'square,square,gaff' && gl.mark.rigs === 'square,square,gaff' && gl.aurenne.rigs === 'lateen,square,lateen' && gl.mark.a[2] < -.2 && gl.mark.c[2] > .2 && gl.aurenne.a[0] < -.1 && gl.aurenne.c[2] > .1 && gl.gatelands.a[0] > .3 && gl.gatelands.c[0] < -.3, [gl.gatelands.a, gl.gatelands.c, gl.aurenne.a, gl.aurenne.c]);
   check('her hold\'s stowage stands between the castles, off the ladders and both hatches, enough for her 90 three high', ['gatelands', 'mark', 'aurenne'].every(k => gl[k].stow * 3 >= 90), ['gatelands', 'mark', 'aurenne'].map(k => gl[k].stow));
@@ -233,6 +239,25 @@ check(`below deck on your caravel is her hold in her own lines: ${cvh.W} by ${cv
 check(`her hatch is between the main mast and the fore at z 2.8, and the eye stands at ${cvh.eye}`, cvh.hatch && Math.abs((cvh.hatch.z0 + cvh.hatch.z1) / 2 - 2.8) < .01 && cvh.eye > 1.45 && cvh.eye <= 1.65 && cvh.cam > 1.45, [cvh.hatch, cvh.eye, cvh.cam]);
 check('from the ladder\'s foot you walk forward to the barrels, and round the main mast and between the chests aft to the bench; the planking stops you either side', cvh.fwd[1] < cvh.arrive[1] - 1.5 && cvh.route.legs === 6 && cvh.route.at[1] > 8.5 && cvh.port[0] > 2.5 && cvh.port[0] < 3.6 && cvh.stbd[0] < 2.5 && cvh.stbd[0] > 1.4, [cvh.arrive, cvh.fwd, cvh.route, cvh.port, cvh.stbd]);
 check('the starboard chest is the stash, the workbench is the bench (E at it, clear of the way out), no berth below, and E at the ladder\'s foot takes you on deck', cvh.beds === 0 && cvh.stash && cvh.bench && !cvh.benchExit && cvh.left, cvh);
+/* Session 1578 (backlog L6; #418 A): and below deck on your cog is her hold (PKIT.ships.cogBase, shipbase.js's shipBase) in her yard's
+   dress: from under the aftcastle's bulkhead to under the forecastle's edge, the ladder's foot at the hatch's after end, the mast through
+   it; round the mast to port and on to the bench and the chests forward; the alchemist's table aft. Her berth will be in the cabin */
+await page.evaluate(() => { if (SHIP.mesh) { sc.remove(SHIP.mesh); SHIP.mesh = null; } worldState.ship = { cls: 'cog', name: 'Test Cog', sails: 0, cargo: 0, dress: 'mark' }; WORLD.spawnShip(px + 1, pz + 1, .7); SHIP.sailing = false; cabinUpdate(); goToInterior(CABIN.house); });
+for (let k = 0; k < 40 && !(await page.evaluate(() => isInterior() && !!currentHouse._base)); k++) await page.waitForTimeout(250);
+const cgh = await page.evaluate(() => { const h = currentHouse, B = h._base; if (!B || B.kind !== 'cog') return { base: !!B };
+  const route = pts => { px = pts[0][0]; pz = pts[0][1]; jumpY = 0; velY = 0; onGround = true; let i = 1;
+    _drive(() => { const [tx, tz] = pts[i], dx = tx - px, dz = tz - pz; if (Math.hypot(dx, dz) < .12) return ++i >= pts.length; yaw = Math.atan2(-dx, -dz); pitch = 0; K['KeyW'] = true; return false; }, 900); return { legs: i - 1, at: [+px.toFixed(2), +pz.toFixed(2)] }; };
+  const a = [h._arriveX, h._arriveZ], o = { base: true, dress: B.dress, tris: B.tris, draws: B.draws, W: h.intW, D: h.intD, roomH: h._roomH, eye: h._eyeMax, beds: INT_BEDS.length, hatch: B.hatch, arrive: a };
+  o.bench = route([a, [3.42, a[1] - .4], [3.42, 4.4], [3.1, 4.3], [3.1, 2.9]]); o.benchNear = benchNear();
+  o.chests = route([a, [3.42, a[1] - .4], [3.42, 4.4], [2.8, 4.3], [2.8, 1.2]]); o.stash = +Math.hypot(px - intStashPos.x, pz - intStashPos.z).toFixed(2);
+  o.alch = route([a, [2.0, a[1]], [2.0, 8.0], [1.6, 8.6]]); o.side = route([a, [4.6, a[1]]]);
+  px = a[0]; pz = a[1]; o.out = (interact(), 0); return o; });
+for (let k = 0; k < 40 && (await page.evaluate(() => isInterior())); k++) await page.waitForTimeout(250);
+cgh.left = await page.evaluate(() => !isInterior());
+console.log(JSON.stringify(cgh));
+check(`below deck on your cog is her hold in her own lines (the Mark's): ${cgh.W} by ${cgh.D} m, ${cgh.roomH} m to the deck, the eye at ${cgh.eye}, ${cgh.tris} triangles in ${cgh.draws} draws`, cgh.base && cgh.dress === 'mark' && cgh.W === 5.6 && cgh.D === 11 && cgh.roomH > 1.8 && cgh.eye > 1.4 && cgh.tris < 36000 && cgh.draws <= 24 && cgh.hatch && Math.abs((cgh.hatch.z0 + cgh.hatch.z1) / 2 + 2.1) < .01, cgh);
+check('in the cog\'s hold you walk round the mast to the bench (E at it) and on to the chests (the stash), and aft to the alchemist\'s table; the barrels stop you to port; E at the ladder takes you on deck',
+  cgh.bench.legs === 4 && cgh.benchNear && cgh.chests.legs === 4 && cgh.stash < 1.3 && cgh.alch.legs === 3 && cgh.side.at[0] < 3.5 && cgh.beds === 0 && cgh.left, cgh);
 /* Session 1566 (the critic's s1030 lines): below deck the HUD names the ladder, not *Walk south to exit*; at a tiller the prompt says tiller */
 check(`in third person below deck on the cutter the camera stands ${ct.tp && ct.tp[1]} m behind you at ${ct.tp && ct.tp[0]} m, under the beams' ${ct.beamUnder}`, ct.tp && ct.tp[0] < ct.beamUnder - .05 && ct.tp[0] > 1.3 && ct.tp[1] > 1, [ct.tp, ct.beamUnder]);
 check(`below deck on the cutter the HUD reads "${ct.hud}"`, /ladder/.test(ct.hud || '') && !/south/.test(ct.hud || ''), ct.hud);

@@ -21,6 +21,12 @@
 // ═══════════════════════════════════════════════════════════════════════
   const VC_MAT=new THREE.MeshLambertMaterial({vertexColors:true}); // one shared material for every vertex-coloured (non-instanced) mesh
   const HERB_MAT=new THREE.MeshLambertMaterial({vertexColors:true,side:THREE.DoubleSide}); // instanced without instance colour: its own program; both sides, for the plants' flat leaves (S167)
+  // S1577 (backlog L8, OG-039) — the herbs that glow by nature: HERB_MAT, and the parts the bake marks `glow` give out their own colour at
+  // .55 of it (herbs.js's GLOW_MAT). Only the kinds with such parts take it, one InstancedMesh a kind as before, so no draw is added.
+  const HERB_GLOW_MAT=new THREE.MeshLambertMaterial({vertexColors:true,side:THREE.DoubleSide,emissive:0xffffff,emissiveIntensity:.55});
+  HERB_GLOW_MAT.onBeforeCompile=s=>{s.vertexShader='attribute float glow;\nvarying float vGlow;\n'+s.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n vGlow=glow;');
+    s.fragmentShader='varying float vGlow;\n'+s.fragmentShader.replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\n totalEmissiveRadiance*=diffuseColor.rgb*vGlow;');};
+  HERB_GLOW_MAT.customProgramCacheKey=()=>'herbglow';
   const SIZE=2400;        // world side length
   const CHUNK=64;         // chunk side length
   const SEGS=16;          // terrain segments per chunk (4u per vertex)
