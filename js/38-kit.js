@@ -3061,7 +3061,10 @@ function glSloop(o = {}) {
   // the deck: fore-and-aft planks, each cut to the half-breadth at the deck's height; the covering board out to the planking
   const deckAt = z => { let lo = 0, hi = 1; for (let k = 0; k < 30; k++) { const m = (lo + hi) / 2; if (sect(z, m)[1] < DECK) lo = m; else hi = m; } return sect(z, lo)[0] - TH * .6; };
   { const PW = .16; for (let x = -W / 2 + PW / 2; x < W / 2; x += PW) { const zz = []; for (let i = 0; i <= NS; i++) { const z = zAt(i); if (deckAt(z) >= Math.abs(x) + PW / 2) zz.push(z); } if (zz.length < 2) continue;
-      put(new THREE.BoxGeometry(PW, .05, zz[zz.length - 1] - zz[0]), 'deck', x, DECK - .025, (zz[0] + zz[zz.length - 1]) / 2, 0, 0, 0, .35); }
+      /* o.open (Session 1555, shipbase.js's): the hatch open to the hold below, the planks cut at the coaming's inside (the base below deck) */
+      const z0 = zz[0], z1 = zz[zz.length - 1], HZo = o.hatchZ ?? -2.0;
+      if (o.open && Math.abs(x) - PW / 2 < .6) { for (const [a2, b2] of [[z0, HZo - .6], [HZo + .6, z1]]) if (b2 - a2 > .02) put(new THREE.BoxGeometry(PW, .05, b2 - a2), 'deck', x, DECK - .025, (a2 + b2) / 2, 0, 0, 0, .35); continue; }
+      put(new THREE.BoxGeometry(PW, .05, z1 - z0), 'deck', x, DECK - .025, (z0 + z1) / 2, 0, 0, 0, .35); }
     for (const e of [1, -1]) { const rows = []; for (let i = 0; i <= NS; i++) { const z = zAt(i), d = deckAt(z); rows.push([[e * Math.max(0, d - .3), DECK + .002, z], [e * (d + TH * .5), DECK + .002, z]]); } put(shipRibbon(rows, e < 0), 'oak', 0, 0, 0, 0, 0, 0, null); } }
   // stanchions every 0.9 m, the cap rail 1.0 m over the deck (or 0.12 over the sheer), the cream wale on the sheer strake
   { const n = Math.round(L / .9), top = z => Math.max(DECK + 1.0, sheerAt(z) + .12), inset = z => sect(z, 1)[0] - .06;
@@ -3071,7 +3074,7 @@ function glSloop(o = {}) {
   // the hatch: a coaming 0.3 m high round a dark plate
   const MZ = 1.0, HZ = o.hatchZ ?? -2.0, hatch = { x0: -.66, x1: .66, z0: HZ - .66, z1: HZ + .66 };
   for (const e of [-1, 1]) { put(new THREE.BoxGeometry(1.32, .3, .08), 'oak', 0, DECK + .15, HZ + e * .62); put(new THREE.BoxGeometry(.08, .3, 1.24), 'oak', e * .62, DECK + .15, HZ); }
-  put(new THREE.BoxGeometry(1.16, .02, 1.16), 'dark', 0, DECK + .02, HZ);
+  if (!o.open) put(new THREE.BoxGeometry(1.16, .02, 1.16), 'dark', 0, DECK + .02, HZ);
   // the mast and its standing rigging, by the yard's island (#306: one rig names each island). The Gatelands': three shrouds a side to the
   // chainplates, the forestay to the stem head, the backstay to the stern. The Mark's: a topmast and a bowsprit, the forestay and the
   // jibstay, backstays to the quarters. Aurenne's: the mast raked 4° forward, shrouds to windward of the slung yard, the forestay.
@@ -3127,6 +3130,76 @@ function glSloop(o = {}) {
   const at = z => ({ b: sect(z, 1)[0], g: sheerAt(z), k: keelAt(z), sect: u => sect(z, u) });
   return { hull, rig, rigs, tiller, L, W, zs, zb, mast: [0, MZ], hatch, deckAt, at, sheerAt, sailFoot: MARK ? BY : SF, yard: YY, tip: TT, dress: MARK ? 'mark' : AURD ? 'aurenne' : 'gatelands', head, shields,
     tris: Math.round(hull.tris + rigs.reduce((a, q) => a + q.tris, 0) + tb.tris), draws: hull.mats.length + rigs.reduce((a, q) => a + q.mats.length, 0) + tb.mats.length };
+}
+// ── the base below deck (backlog L6, OG-027, OG-072; Michael's A on #418: the base in the hull's own lines; Session 1555): the sloop's
+// hold of docs/prototypes/levelup/shipbase.js (sloopBase, Session 1129), inside the kit's sloop built with her hatch open (o.open). One
+// low hold from a bulkhead aft of the ladder (z -4.0) to one forward of the mast (2.0), its floor of ceiling planks where the hull is
+// 1.5 m across amidships, the frames every 0.75 m, the deck beams but none over the hatch; a ladder from the floor aft up through the
+// hatch; a box bunk raised against the port side (rest and save), the sea chest across from it (the stash), a water cask by the mast, a
+// lantern from a beam, the island's rug (the Mark's hide). Sitting headroom, as a sloop's was: a person stoops everywhere below.
+//   PKIT.ships.sloopBase(o) -> { group (the ship's hull and the base, in the ship's frame: y = 0 the sea, +z the bow), tris, draws, items
+//   ([{ name, place, box: [x0, y0, z0, x1, y1, z1] }]), hb(z, y) (the inside of the planking's half-breadth), floor, beams, beamY,
+//   beamBottom, deckUnder, hold { z0, z1 }, hatch, ladder { foot, head }, lights ([{ x, y, z }]), dress }. o.dress as the sloop's.
+//   Differences from the prototype: the ship's rig and tiller are left out (nothing of them shows below); the materials are the kit's.
+const SBM = {};
+function shipBaseMats(dress) { if (SBM[dress]) return SBM[dress];
+  const D = SHIP_BASE_DRESS[dress], std = (c, r = .8, m = 0) => new THREE.MeshStandardMaterial({ color: c, roughness: r, metalness: m }), M = {};
+  M.wood = mat('wood', { ns: .8, color: D.wood }); M.dark = mat('wood', { ns: .8, color: D.dark }); M.plank = mat('wood', { ns: .9, color: new THREE.Color(D.wood).multiplyScalar(.8).getHex() });
+  M.cloth0 = std(D.cloth[0], 1); M.cloth1 = std(D.cloth[1], 1); M.rug0 = std(D.rug[0], 1); M.rug1 = std(D.rug[1], 1); M.trim = std(D.trim, .7);
+  M.metal = std(D.metal, .4, .7); M.iron = std(0x1d1c1b, .5, .6); M.fur = std(0x8a7a66, 1);
+  M.lamp = new THREE.MeshStandardMaterial({ color: 0x4d3319, emissive: 0xffb861, emissiveIntensity: 2.0 });
+  return SBM[dress] = M; }
+const SHIP_BASE_DRESS = {
+  gatelands: { wood: 0xb08a62, dark: 0x6e5238, cloth: [0x3f6a46, 0xe6dcc0], rug: [0x5c3a2a, 0xc9b48a], metal: 0x2a2826, trim: 0x3f6a46 },
+  mark: { wood: 0x7a6650, dark: 0x3a3029, cloth: [0x6d6458, 0x8f8578], rug: [0x7a5e44, 0x5a4634], metal: 0x1e1c1b, trim: 0x8a2a1e, fur: true },
+  aurenne: { wood: 0xc29a6a, dark: 0x8a6440, cloth: [0x9c2f2a, 0x2f3f74], rug: [0x9c2f2a, 0xd8b06a], metal: 0xb08a3a, trim: 0x2f5f9c },
+};
+function sloopBase(o = {}) {
+  const dress = SHIP_BASE_DRESS[o.dress] ? o.dress : 'gatelands', D = SHIP_BASE_DRESS[dress], M = shipBaseMats(dress);
+  const S = glSloop({ open: true, dress }), DECK = 1.0, TH = .035, by = {}, items = [], lights = [];
+  const sect = (z, u) => S.at(z).sect(u);
+  const hb = (z, y) => { let lo = 0, hi = 1; for (let k = 0; k < 30; k++) { const m = (lo + hi) / 2; if (sect(z, m)[1] < y) lo = m; else hi = m; } return sect(z, lo)[0] - TH - .03; };
+  const add = (key, g) => { const x = g.index ? g.toNonIndexed() : g; for (const k of Object.keys(x.attributes)) if (!['position', 'normal', 'uv'].includes(k)) x.deleteAttribute(k);
+    if (!x.attributes.uv) worldUV(x, .8); (by[key] || (by[key] = [])).push(x); return x; };
+  const box = (key, w, h, d, x, y, z, ry = 0) => { const g = new THREE.BoxGeometry(w, h, d); worldUV(g, .8); if (ry) g.rotateY(ry); g.translate(x, y, z); return add(key, g); };
+  const cyl = (key, r0, r1, h, x, y, z, n = 12) => { const g = new THREE.CylinderGeometry(r0, r1, h, n); worldUV(g, .8); g.translate(x, y, z); return add(key, g); };
+  const item = (name, place, x0, y0, z0, x1, y1, z1) => { items.push({ name, place, box: [x0, y0, z0, x1, y1, z1].map(v => +v.toFixed(3)) }); };
+  const hz0 = -4.0, hz1 = 2.0, mid = -1.0; let FLOOR = -1; for (let y = -.9; y < .2; y += .01) if (hb(mid, y) >= .75) { FLOOR = +y.toFixed(2); break; }
+  const BEAM = DECK - .15, BH = .14, beamY = BEAM - BH / 2;
+  { const PW = .2; for (let x = -1.6 + PW / 2; x < 1.6; x += PW) { const zz = []; for (let z = hz0; z <= hz1 + 1e-6; z += .1) if (hb(z, FLOOR) - .02 >= Math.abs(x) + PW / 2) zz.push(z); if (zz.length < 2) continue;
+      box('plank', PW - .01, .05, zz[zz.length - 1] - zz[0], x, FLOOR - .025, (zz[0] + zz[zz.length - 1]) / 2); } }
+  for (let z = hz0 + .25; z <= hz1 - .24; z += .75) for (const e of [1, -1]) { const n = 5; for (let k = 0; k < n; k++) { const ya = FLOOR + (DECK - FLOOR - .05) * k / n, yb = FLOOR + (DECK - FLOOR - .05) * (k + 1) / n, xa = hb(z, ya) - .07, xb = hb(z, yb) - .07;
+      const L = Math.hypot(xb - xa, yb - ya), g = new THREE.BoxGeometry(.12, L + .02, .14); worldUV(g, .8); g.rotateZ(-e * Math.atan2(xb - xa, yb - ya)); g.translate(e * (xa + xb) / 2, (ya + yb) / 2, z); add('dark', g); } }
+  const beams = [-3.5, -2.75, -1.25, -.25, .5, 1.5];
+  for (const z of beams) { const w = 2 * (hb(z, BEAM) - .02); box('dark', w, BH, .16, 0, BEAM, z); for (const e of [1, -1]) box('dark', .12, .36, .12, e * (hb(z, BEAM - .25) - .08), BEAM - .22, z); }
+  for (const e of [1, -1]) box('dark', .12, .12, 1.5, e * .66, BEAM + .01, -2.0);
+  for (const zb of [hz0, hz1]) { const sh = new THREE.Shape(), ys = []; for (let k = 0; k <= 10; k++) ys.push(FLOOR - .05 + (DECK - FLOOR) * k / 10);
+    sh.moveTo(-hb(zb, ys[0]), ys[0]); for (const y of ys) sh.lineTo(-hb(zb, y), y); for (const y of [...ys].reverse()) sh.lineTo(hb(zb, y), y); sh.lineTo(-hb(zb, ys[0]), ys[0]);
+    const g = new THREE.ExtrudeGeometry(sh, { depth: .05, bevelEnabled: false }); g.translate(0, 0, zb - (zb < 0 ? .05 : 0)); worldUV(g, .8); add('wood', g);
+    for (let x = -1.8; x <= 1.8; x += .3) if (hb(zb, (FLOOR + DECK) / 2) > Math.abs(x) + .05 && hb(zb, FLOOR) > Math.abs(x) + .05) box('dark', .03, DECK - FLOOR - .05, .02, x, (FLOOR + DECK) / 2, zb + (zb < 0 ? .01 : -.01)); }
+  const head = [0, DECK + .3, -2.55], rise = head[1] - FLOOR, foot = [0, FLOOR, +(head[2] - rise * .45).toFixed(2)];
+  { const d = new THREE.Vector3(0, head[1] - foot[1], head[2] - foot[2]), L = d.length(), a = Math.atan2(d.z, d.y);
+    for (const e of [-.24, .24]) { const g = new THREE.BoxGeometry(.06, L, .1); worldUV(g, .8); g.rotateX(a); g.translate(e, (foot[1] + head[1]) / 2, (foot[2] + head[2]) / 2); add('wood', g); }
+    for (let k = 1; k * .28 < rise - .1; k++) { const f = k * .28 / rise; box('wood', .46, .04, .12, 0, foot[1] + rise * f, foot[2] + (head[2] - foot[2]) * f); }
+    item('ladder', 'hatch', -.27, FLOOR, foot[2], .27, DECK + .3, head[2]); }
+  { const mz = S.mast[1]; cyl('dark', .16, .16, DECK - FLOOR, 0, (FLOOR + DECK) / 2, mz, 12); box('dark', .26, .2, 1.1, 0, FLOOR + .1, mz); item('mast', 'hold', -.16, FLOOR, mz - .55, .16, DECK, mz + .55); }
+  const onFloor = (z, half) => hb(z, FLOOR) - .04 - half, inAt = (z0, z1, y) => Math.min(hb(z0, y), hb(z1, y));
+  { const z0 = -1.15, z1 = .75, w = .72, y0 = FLOOR + .32, top = y0 + .62, xo = -(inAt(z0, z1, y0) - .02), x = xo + w / 2, xi = xo + w;
+    box('wood', w, .14, z1 - z0, x, y0 + .07, (z0 + z1) / 2); box('cloth1', w - .1, .12, z1 - z0 - .1, x, y0 + .2, (z0 + z1) / 2); box(D.fur ? 'fur' : 'cloth0', w - .06, .05, (z1 - z0) * .64, x, y0 + .29, z1 - (z1 - z0) * .34);
+    box('cloth1', .46, .1, .28, x, y0 + .3, z0 + .24); for (const zz of [z0, z1]) box('wood', w - .04, top - y0, .06, x + .02, y0 + (top - y0) / 2, zz); box('wood', .06, .22, z1 - z0, xi - .03, y0 + .2, (z0 + z1) / 2);
+    box('wood', .05, y0 - FLOOR, z1 - z0, xi - .025, (FLOOR + y0) / 2, (z0 + z1) / 2); box('dark', .02, .22, .5, xi + .005, FLOOR + .16, -.2); box('iron', .02, .05, .05, xi + .015, FLOOR + .16, .02);
+    item('bunk', 'hold', xo, y0, z0 - .03, xi, top, z1 + .03); item('bunk front', 'hold', xi - .05, FLOOR, z0, xi, y0, z1); }
+  { const z = -.2, w = .5, d = .85, hgt = .5, x = Math.min(onFloor(z - d / 2, w / 2), onFloor(z + d / 2, w / 2)) - .02; box('wood', w, hgt, d, x, FLOOR + hgt / 2, z); box('trim', w + .02, .06, d + .02, x, FLOOR + hgt - .03, z);
+    for (const dz of [-.28, .28]) box('iron', w + .02, hgt + .02, .05, x, FLOOR + hgt / 2, z + dz); item('sea chest', 'hold', x - w / 2, FLOOR, z - d / 2, x + w / 2, FLOOR + hgt, z + d / 2); }
+  { const z = 1.45, R = .26, x = Math.min(onFloor(z - R, R), onFloor(z + R, R)) - .02; cyl('wood', R * .9, R * .82, .7, x, FLOOR + .35, z, 14); for (const y of [.1, .6]) cyl('iron', R * .86 + .01, R * .86 + .01, .04, x, FLOOR + y, z, 14);
+    item('water cask', 'hold', x - R, FLOOR, z - R, x + R, FLOOR + .7, z + R); }
+  { const z = -.25, x = .05; cyl('metal', .09, .1, .22, x, beamY - .26, z, 8); { const g = new THREE.SphereGeometry(.05, 8, 6); g.translate(x, beamY - .27, z); add('lamp', g); } box('iron', .01, .14, .01, x, beamY - .08, z); lights.push({ x, y: beamY - .27, z });
+    if (D.fur) { const g = new THREE.CircleGeometry(.55, 9); g.scale(1, 1.4, 1); g.rotateX(-Math.PI / 2); g.translate(.05, FLOOR + .006, -.2); add('fur', g); }
+    else { box('rug0', .7, .01, 1.5, .05, FLOOR + .006, -.2); box('rug1', .5, .012, 1.2, .05, FLOOR + .008, -.2); } }
+  const G = new THREE.Group(), hull = new THREE.Mesh(S.hull.geo, S.hull.mats); hull.name = 'base:hull'; G.add(hull); let tris = S.hull.tris, draws = S.hull.mats.length;
+  for (const k in by) { const geo = mergeGeometries(by[k]), m = new THREE.Mesh(geo, M[k]); m.name = 'base:' + k; G.add(m); tris += geo.attributes.position.count / 3; draws++; }
+  return { group: G, kind: 'sloop', tris: Math.round(tris), draws, items, hb, floor: FLOOR, beams, beamY, beamBottom: BEAM - BH / 2, deckUnder: DECK - .05,
+    hold: { z0: hz0, z1: hz1 }, hatch: S.hatch, ladder: { foot, head }, lights, dress };
 }
 // ── the Mark's cutter (Session 1539; ships.js's markCutter, Session 871, Michael's A on #202 and #306): the game's cutter (L 14, W 4.0,
 // draft 1.45), carvel-planked flush, tarred black above a red-brown bottom with a gilt line along the sheer strake; a plumb stem with the
@@ -3573,7 +3646,7 @@ function mkGalleon(o = {}) {
     castle: { z0: ZT, z1: ZA, y: CY, cw, door, ladders, lad: LAD }, fore: { z0: ZF, z1: zb - .3, y: CY, cw, ladders: [fladder], lad: LAD, posts }, helm: { y: wy, z: wz - 1.1, wheelZ: wz },
     tris: Math.round(hull.tris + rigs.reduce((a, q) => a + q.tris, 0) + wb.tris), draws: hull.mats.length + rigs.reduce((a, q) => a + q.mats.length, 0) + wb.mats.length };
 }
-  return { stream, hashKey, mergeByMaterial, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, trunk: felledTrunk }, ships: { sloop: glSloop, cutter: mkCutter, caravel: mkCaravel, cog: mkCog, galleon: mkGalleon }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
+  return { stream, hashKey, mergeByMaterial, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, trunk: felledTrunk }, ships: { sloop: glSloop, sloopBase, cutter: mkCutter, caravel: mkCaravel, cog: mkCog, galleon: mkGalleon }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
     mk: { hall: markHall, lot: markLot, alehall: markAlehall, longhouse: markLonghouse, mats: markMats },
     au: { house: aurenneHouse, lot: aurenneLot, courtyard: aurenneCourtyard, church: aurenneChurch, churchBox: aurenneChurchBox, churchHall: aurenneChurchHall, courtyardHouse: aurenneCourtyardHouse, tavern: aurenneTavern, mats: aurMats, roomMats: homeMats, AUR },
     gl: { PLANS, FIN, PS, PAINTS, TOWN: GL_TOWN, building, church, keep, farmstead, coachInn, coachInnPlan, coachRoom, townhouse: townhouseRoom, farmhouse: farmhouseRoom, byre: byreRoom, barn: barnRoom, row: shrineRow, ROW_GODS, inn: gatelandsInn, cottage: gatelandsCottage, churchLen: n => +((n === 2 ? 2 : 3) * 4.8 + 1.6 + 5.6 - .5 + 7.2 - .9 - .02).toFixed(2), lot: gatelandsLot, mats: glMats, BAYS, bayPlan, bayWidth, baysFor } };

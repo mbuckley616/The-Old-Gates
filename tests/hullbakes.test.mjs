@@ -162,5 +162,28 @@ if (gl && gl.gatelands.kit) {
   for (const k of ['gatelands', 'mark', 'aurenne']) { await page.evaluate(([dr, sk]) => { if (!INSPECTOR.open) openInspector(); worldState.ship = Object.assign(worldState.ship || {}, { dress: dr }); INSPECTOR.select('ships/sloop/player'); const e = INSPECTOR.entries.find(x => x.key === sk); INSPECTOR.built.delete(e.id); }, [k, key('galleon/player')]);
     await inspShots(g, [[key('galleon/player'), `shipdress-galleon-${k}.png`, 'INSPECTOR.orbit.theta=Math.PI/2+.6;INSPECTOR.orbit.phi=1.3;INSPECTOR.orbit.dist*=.8;']]); }
 }
+/* Session 1555 (backlog L6; Michael's A on #418: the base in the hull's own lines): below deck on your kit sloop is her hold, built
+   inside her own planking (PKIT.ships.sloopBase), the ladder's foot its door; the berth rests, the sea chest is the stash */
+const hd = {};
+for (const dr of ['gatelands', 'mark', 'aurenne']) {
+  await page.evaluate((d) => { if (typeof INSPECTOR !== 'undefined' && INSPECTOR.open) closeInspector(); /* the inspector holds the loop's frame */ if (SHIP.mesh) { sc.remove(SHIP.mesh); SHIP.mesh = null; } for (const o of [...WORLD.others]) WORLD.despawnOtherShip(o);
+    worldState.ship = { cls: 'sloop', dress: d, name: 'Test Gull', sails: 0, cargo: 0 }; WORLD.spawnShip(px + 1, pz + 1, .7); SHIP.sailing = false; cabinUpdate(); goToInterior(CABIN.house); }, dr);
+  for (let k = 0; k < 40 && !(await page.evaluate(() => isInterior() && !!currentHouse._base)); k++) await page.waitForTimeout(250);
+  hd[dr] = await page.evaluate(() => { const h = currentHouse, B = h._base; if (!B) return { base: false };
+    const walk = (x, z, yw, n) => { px = x; pz = z; yaw = yw; pitch = 0; jumpY = 0; velY = 0; onGround = true; _drive(() => { K['KeyW'] = true; }, n); return [+px.toFixed(2), +pz.toFixed(2)]; };
+    const o = { base: true, tris: B.tris, draws: B.draws, W: h.intW, D: h.intD, roomH: h._roomH, eye: h._eyeMax, beds: INT_BEDS.length, stash: !!intStashPos, hatch: B.hatch, arrive: [px, pz] };
+    o.fwd = walk(h._arriveX, h._arriveZ, 0, 150); o.port = walk(h._arriveX, 3.5, -Math.PI / 2, 80); o.stbd = walk(h._arriveX, 3.5, Math.PI / 2, 80);
+    _drive(() => false, 20); o.cam = +CAM.position.y.toFixed(2);
+    const b = INT_BEDS[0]; px = h._arriveX - .1; pz = b.z; yaw = -Math.PI / 2; pitch = -.4; CAM.position.set(px, 1.3, pz); CAM.rotation.set(pitch, yaw, 0, 'YXZ'); CAM.updateMatrixWorld(true); o.bed = !!intBedTarget();
+    px = h._arriveX; pz = h._arriveZ; o.exitText = h._exitText; o.out = (interact(), 0); return o; });
+  for (let k = 0; k < 40 && (await page.evaluate(() => isInterior())); k++) await page.waitForTimeout(250);
+  hd[dr].left = await page.evaluate(() => !isInterior());
+}
+console.log(JSON.stringify(hd));
+check('below deck on your sloop is her hold in her own lines, in all three dresses: 4.4 by 6 m, 1.75 m to the deck, under 32,000 triangles and 24 draws', ['gatelands', 'mark', 'aurenne'].every(k => hd[k].base && hd[k].D === 6 && hd[k].roomH === 1.75 && hd[k].tris < 32000 && hd[k].draws <= 24), hd);
+check('her hatch is aft of the mast, where the hold\'s ladder comes up', ['gatelands', 'mark', 'aurenne'].every(k => hd[k].hatch && Math.abs((hd[k].hatch.z0 + hd[k].hatch.z1) / 2 + 2) < .01), hd.gatelands.hatch);
+check('you come down at the ladder\'s foot and walk forward to the berth and the chest, stooped under the beams (the eye at 1.38)', ['gatelands', 'mark', 'aurenne'].every(k => hd[k].fwd[1] < hd[k].arrive[1] - 2 && hd[k].fwd[1] > 2 && hd[k].eye < 1.45 && hd[k].cam < 1.45), ['gatelands', 'mark', 'aurenne'].map(k => [hd[k].fwd, hd[k].cam]));
+check('the planking stops you on either side, inside the hull', ['gatelands', 'mark', 'aurenne'].every(k => hd[k].port[0] > 2.2 && hd[k].port[0] < 3.2 && hd[k].stbd[0] < 2.2 && hd[k].stbd[0] > 1.2), ['gatelands', 'mark', 'aurenne'].map(k => [hd[k].port, hd[k].stbd]));
+check('the berth rests (and saves), the chest is the stash, and E at the ladder\'s foot takes you on deck', ['gatelands', 'mark', 'aurenne'].every(k => hd[k].beds === 1 && hd[k].bed && hd[k].stash && /on deck/.test(hd[k].exitText) && hd[k].left), hd);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
