@@ -139,11 +139,16 @@ const shipWalk = ([cls, Ln, Wd, wdr, alx]) => { const out = {}, was = worldState
   cabinUpdate(); { const h = CABIN.house; out.exit = shipLocal(m, h.exitX, h.exitZ).map(v => +v.toFixed(2)); out.exitFree = !shipPropSolid(h.exitX, h.exitZ); }
   put(0, m.userData.helm.z, D + 2.15, true); pitch = -.25; _drive(() => false, 3); out.promptUp = shipPrompt();
   out.take = shipInteract(); out.sailing = SHIP.sailing; _drive(() => false, 20); out.atHelm = loc(); shipInteract();
+  /* S1579: the cog's cabin furnished, her berth beside the bunk as the caravel's */
+  const Bt = m.userData.berth; out.berth = Bt; out.cabinItems = (shipBake(cls, 'player').kit.cabinItems || []).map(q => q.name).join();
+  if (Bt) { put(Bt.x, Bt.z, D, false); yaw = ry + Math.PI / 2; _drive(() => false, 3); out.berthPrompt = shipPrompt(); out.rest = shipInteract(); out.slip = sleepOpen; closeSleepUI();
+    put(Bt.x + .4, Bt.z, D, false); yaw = ry + Math.PI / 2; out.intoBunk = walk(60); put(0, Bt.z, D + 2.15, false); _drive(() => false, 3); out.berthUp = shipPrompt(); }
   sc.remove(SHIP.mesh); SHIP.mesh = null; worldState.ship = was; return out; };
 const cg = await page.evaluate(shipWalk, ['cog', 17, 5.6, 'mark', 1.6]);
 console.log(JSON.stringify(cg));
 const gl = cg.gatelands.kit ? await page.evaluate(shipWalk, ['galleon', 22, 7, 'aurenne', 2.0]) : null; console.log(JSON.stringify(gl));
 if (cg.gatelands.kit) {
+  check(`her cabin under the aftcastle is furnished (${cg.cabinItems}); beside the bunk "${cg.berthPrompt}", and E opens the rest slip; the bunk stops you; not from the castle over it`, /bunk/.test(cg.cabinItems) && /chart table/.test(cg.cabinItems) && /rest/.test(cg.berthPrompt || '') && cg.rest && cg.slip && cg.intoBunk.end[0] > cg.berth.x - .45 && cg.intoBunk.top === 0 && !/rest/.test(cg.berthUp || ''), [cg.berth, cg.berthPrompt, cg.rest, cg.slip, cg.intoBunk, cg.berthUp]);
   check('your cog bakes in the yard\'s three dresses, each under 36,000 triangles and 16 draws, both castles 2.15 m over the deck', ['gatelands', 'mark', 'aurenne'].every(k => cg[k].dress === k && cg[k].key === 'cog|player|' + k && cg[k].tris < 36000 && cg[k].draws <= 16 && Math.abs(cg[k].fore - 3.15) < .01), ['gatelands', 'mark', 'aurenne'].map(k => [k, cg[k].tris, cg[k].draws, cg[k].fore]));
   check('each island its rig on the cog: the square sail, the gaff, the lateen; the gaff and the lateen swing to leeward and over', cg.gatelands.rigs === 'square' && cg.mark.rigs === 'gaff' && cg.aurenne.rigs === 'lateen' && cg.mark.a[0] < -.2 && cg.mark.c[0] > .2 && cg.aurenne.a[0] < -.1 && cg.aurenne.c[0] > .1, [cg.mark.a, cg.mark.c, cg.aurenne.a, cg.aurenne.c]);
   check('her hold\'s stowage stands between the castles, off the ladders, enough for her 60 three high, the same in every dress', ['gatelands', 'mark', 'aurenne'].every(k => cg[k].stow === cg.gatelands.stow) && cg.gatelands.stow * 3 >= 60, ['gatelands', 'mark', 'aurenne'].map(k => cg[k].stow));
