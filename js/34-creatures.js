@@ -763,7 +763,10 @@ function tickSpider(rig,g,e,dt,now){
 // Session 1342: the Faolchú (the boss and its lesser kin) wears the kit's own Faolchú, with both pairs of arms from its seam, over the
 // Dire Wolf's rig it is driven by. buildFaolchuMesh names it (rig.hcKind; a boss is otherwise never dressed) and hands over its sigil
 // material (rig.sigil), whose colour the phases set: the kit's seam takes it, at the plan's own brightness (hcPose).
-const HC_BODY={on:true,near:12,mid:40,build:44,small:.03,ms:0,n:0,slice:8,job:null,worst:0,frames:0};
+// Session 1561: within the near level the fur is thinned past HC_BODY.furAll (QA, S1558: a kit wolf near was ~250k triangles, nine shells
+// over a 23–27k hide, and six close by took a frame from 0.89 M to 2.43 M). Past 6 m a 3 cm coat is four pixels deep, so three shells
+// draw it: the first (the densest, at the skin), the middle and the last (the tips' outline), as hcThin keeps them.
+const HC_BODY={on:true,near:12,mid:40,build:44,furAll:6,small:.03,ms:0,n:0,slice:8,job:null,worst:0,frames:0};
 const HC_RIGS=new Set();
 // the game's kinds and the kit's plans: a kind's own colours over the plan's (the kit's palettes are sRGB triples)
 // Session 1364: the goblin's (OG-041's crouched frame, Michael's folklore goblin of 27 Sep: green). The kit's spine, neck and head already
@@ -1040,7 +1043,11 @@ function hcLevel(rig,L){const H=rig.hc;if(H.L===L)return;H.L=L;H.W.visible=L<2;r
   for(const o of [rig.weapon,rig.eyeGlow,...(rig.runes||[]),...(rig.hollow||[])])if(o)o.visible=L===2; /* a person's (Session 1356): the driver's weapon and lit eyes go with its body (a golem's runes too, Session 1371); the kit's own show */
   if(H.merge&&L===1&&!H.mid)hcBake(rig);
   if(H.mid){const one=L===1;H.mid.visible=one;for(const m of H.hide)m.visible=!one;for(const o of H.bits)o.visible=!one;}
-  for(const m of H.fur)m.visible=L===0;for(const m of H.small)m.visible=L===0;}
+  for(const m of H.fur)m.visible=L===0&&!(H.thin&&m.userData.thinOff);for(const m of H.small)m.visible=L===0;}
+// Session 1561: the near level's fur thinned to three shells (HC_BODY.furAll); the shells kept are the first, the middle and the last
+function hcThin(rig,thin){const H=rig.hc;if(!H||H.thin===thin)return;H.thin=thin;const n=H.fur.length;
+  if(!H.thinSet){H.thinSet=true;const keep=new Set([0,Math.round((n-1)/2),n-1]);H.fur.forEach((m,i)=>{m.userData.thinOff=!keep.has(i);});}
+  if(H.L===0)for(const m of H.fur)m.visible=!(thin&&m.userData.thinOff);}
 // Session 1324: the middle level's one mesh (HC_KINDS' merge): the hide and every bit not small, by hbMerge, under the kit's rig as the
 // hide is, skinned by the same skeleton (the kit's bind is the identity, as people's is); its own copy of the people's middle material
 function hcBake(rig){const H=rig.hc,C=H.C,t=performance.now();let mid;
@@ -1124,11 +1131,11 @@ function hcTick(now){let best=null,bd=HC_BODY.build;
     if(g.parent!==scene||!g.visible)continue;
     const d=Math.hypot(CAM.position.x-g.position.x,CAM.position.z-g.position.z)/(rig.reach||1); /* S1536 — a whale's levels by its size */
     if(!rig.hc){if(!busy&&!HC_BODY.job&&!rig.hcFail&&!(rig.fish&&rig.e.dead)&&d<bd){bd=d;best=rig;}continue;} /* S1529 — a shark killed before its body was built keeps the old one */
-    const L=rig.hc.L,a=HC_BODY.near+(L>0?-1:1),b=HC_BODY.mid+(L>1?-1:1);hcLevel(rig,d<a?0:d<b?1:2);
+    const L=rig.hc.L,a=HC_BODY.near+(L>0?-1:1),b=HC_BODY.mid+(L>1?-1:1);hcLevel(rig,d<a?0:d<b?1:2);hcThin(rig,d>HC_BODY.furAll+(rig.hc.thin?-.5:.5));
     if(rig.hc.L<2)(rig.fish?hcFishPose:hcPose)(rig);}
   if(best&&HC.buildIter){try{HC_BODY.job={rig:best,it:HC.buildIter(hcGenome(best)),ms:0,steps:0};}catch(e){best.hcFail=true;console.warn('F4: the kit could not build',best.name,e);}best=null;}
   if(!best&&HC_BODY.job&&!busy)best=hcBuildStep();
-  if(best){const C=best.hcC;best.hcC=null;(best.fish?hcFishAttach:hcAttach)(best,C);HBODY.last=now;if(best.hc){const g=best.root.parent,d=Math.hypot(CAM.position.x-g.position.x,CAM.position.z-g.position.z)/(best.reach||1);hcLevel(best,d<HC_BODY.near?0:d<HC_BODY.mid?1:2);if(best.hc.L<2)(best.fish?hcFishPose:hcPose)(best);}}}
+  if(best){const C=best.hcC;best.hcC=null;(best.fish?hcFishAttach:hcAttach)(best,C);HBODY.last=now;if(best.hc){const g=best.root.parent,d=Math.hypot(CAM.position.x-g.position.x,CAM.position.z-g.position.z)/(best.reach||1);hcLevel(best,d<HC_BODY.near?0:d<HC_BODY.mid?1:2);hcThin(best,d>HC_BODY.furAll);if(best.hc.L<2)(best.fish?hcFishPose:hcPose)(best);}}}
 // Session 1421: a foe's blow (attackPose, 42-zone-enemies.js) turns its driver's arm after hcTick has copied the frame's pose, so the kit's
 // body of a person-plan kind (the Goblin, the Skeleton, the trolls) never wound up: the copy again, as hbRepose does for the people's
 function hcRepose(rig){if(rig&&rig.hc&&rig.hc.L<2)hcPose(rig);}
