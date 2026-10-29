@@ -281,6 +281,8 @@ function landGrassChunk(ch){
   for(let j=0;j<V;j++)for(let i=0;i<V;i++){const vi=j*V+i,x=ox+i*G,z=oz+j*G,h=P.getY(vi),cr=col.getX(vi),cg=col.getY(vi),cb=col.getZ(vi);
     if(h<SEA_Y+.35||NR.getY(vi)<.82||cg<=Math.max(cr,cb)*.95||cr+cg+cb>1.9)continue;
     const ri=roadInfo(x,z);if(ri&&ri.d<ROAD_HALF+.6)continue;if(stampAt(x,z)||solidAt(x,z))continue;ok[vi]=1;}
+  // S1570 (Michael's C on #855) — the chunk's herbs, lifted: no blade inside a herb's own spread, and short in a 0.35 m ring round it
+  const HB=(ch.herbs||[]).filter(h=>!h.bed&&h.spread).map(h=>[h.x-ox,h.z-oz,h.spread*.5]);
   let n=0,f=0,tries=0;
   while(n<N&&tries<N*3){tries++;
     const lx=r()*CHUNK,lz=r()*CHUNK,x=ox+lx,z=oz+lz,i0=Math.min(SEGS-1,Math.floor(lx/G)),j0=Math.min(SEGS-1,Math.floor(lz/G)),u=lx/G-i0,v=lz/G-j0;
@@ -290,7 +292,8 @@ function landGrassChunk(ch){
     const h00=P.getY(a00),h10=P.getY(a10),h01=P.getY(a01),h11=P.getY(a11); // the quad's two triangles, split as PlaneGeometry splits it
     const h=u+v<1?h00+u*(h10-h00)+v*(h01-h00):h11+(1-u)*(h01-h11)+(1-v)*(h10-h11);
     const clump=.55+.9*Math.max(0,_smoothNoise(x,z,SEED+71,6)-.2);if(r()>clump*.9)continue;
-    p.set(lx,h-.02,lz);q.setFromAxisAngle(up,r()*Math.PI);const hh=(.16+r()*.3)*clump;sc.set(1+r()*.6,hh,1);
+    let near=9;for(let k=0;k<HB.length;k++){const b=HB[k],dx=lx-b[0],dz=lz-b[1];if(Math.abs(dx)<1&&Math.abs(dz)<1)near=Math.min(near,Math.hypot(dx,dz)-b[2]);}if(near<0)continue;
+    p.set(lx,h-.02,lz);q.setFromAxisAngle(up,r()*Math.PI);const hh=(.16+r()*.3)*clump*(near<.35?.25+near:1);sc.set(1+r()*.6,hh,1);
     M.compose(p,q,sc);gm.setMatrixAt(n,M);
     const dry=sstep(.3,.8,_smoothNoise(x,z,SEED+72,18));c.setRGB(1-.1*r(),1-.12*dry,1-.45*dry-.1*r());gm.setColorAt(n,c);n++;
     if(fl&&f<F&&_smoothNoise(x,z,SEED+73,11)>.55&&r()<.5){const kr=r(),kind=kr<.38?0:kr<.5?1:kr<.74?2:kr<.95?3:4;

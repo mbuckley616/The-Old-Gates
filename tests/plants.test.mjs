@@ -37,7 +37,7 @@ const found = await page.evaluate(async () => { const want = h => h.inst && h.in
   if (!h) return { none: true, types: [...new Set(ZONES.world.herbs.map(h => h.type))] };
   window._H = h; px = h.x + 1.2; pz = h.z; for (let i = 0; i < 30; i++) WORLD.tick(1 / 60, performance.now());
   const inst = ZONES.world.herbs.filter(x => x.inst); const kinds = new Set(inst.map(x => x.type));
-  return { type: h.type, tries, loaded: inst.length, kinds: kinds.size, geoIsPlant: h.inst.geometry === plantGeo(h.type, false), pickedGeo: h.instP.geometry === plantGeo(h.type, true), shadowTall: h.inst.castShadow, meshes: WORLD.herbLod.list.length };
+  return { type: h.type, tries, loaded: inst.length, kinds: kinds.size, geoIsPlant: h.inst.geometry === herbLiftGeo(plantGeo(h.type, false)), pickedGeo: h.instP.geometry === plantGeo(h.type, true), shadowTall: h.inst.castShadow, meshes: WORLD.herbLod.list.length };
 });
 check('the world instances the plants\' own bakes; a picked copy sits beside each bush or sapling', !found.none && found.geoIsPlant && found.pickedGeo, found);
 
@@ -48,8 +48,27 @@ await page.evaluate(() => { harvestHerb(_H); }); await g.spin(null, 45);
 const after = await scaleAt(); const bag = await page.evaluate(() => BAG.some(it => it._typeKey === _H.type));
 await page.evaluate(() => { _H.harvested = false; _H.g.visible = true; }); await g.spin(null, 45);
 const regrown = await scaleAt();
+const HK = await page.evaluate(() => +herbLift().toFixed(3));
 check('picking it leaves the bare plant standing (and the herb in the bag); when it grows back the whole plant returns',
-  before.whole === 1 && before.picked < .01 && after.whole < .01 && after.picked === 1 && bag && regrown.whole === 1 && regrown.picked < .01, { before, after, bag, regrown });
+  before.whole === HK && before.picked < .01 && after.whole < .01 && after.picked === HK && bag && regrown.whole === HK && regrown.picked < .01, { HK, before, after, bag, regrown });
+/* S1570 (backlog L8, Michael's C on #855): on the new look the herbs are lifted: true size and 1.15 over it, the colour a little stronger,
+   the grass short in a 0.35 m ring round each, a glint over the nearest within 6 m, and no lights */
+const lift = await page.evaluate(() => { const h = _H, a = plantGeo(h.type, false).attributes.color, b = h.inst.geometry.attributes.color, c0 = new THREE.Color(), c1 = new THREE.Color(), s0 = {}, s1 = {};
+  let sat0 = 0, sat1 = 0; for (let i = 0; i < a.count; i += 7) { c0.fromBufferAttribute(a, i).getHSL(s0); c1.fromBufferAttribute(b, i).getHSL(s1); sat0 += s0.s; sat1 += s1.s; }
+  px = h.x + 1.5; pz = h.z; _herbSyncT = 0; tickHerbSync(1 / 60); const gl = HERB_GLINT.pool.filter(s => s.visible && s.parent);
+  const top = gl.length ? Math.min(...gl.map(s => Math.hypot(s.position.x - h.x, s.position.z - h.z))) : null;
+  let lights = 0; sc.traverse(o => { if (o.isPointLight && o.parent && o.parent.userData && o.parent.userData.whole) lights++; });
+  // the grass of the chunks with grass: blades inside a herb's spread none, in its ring short
+  let inside = 0, ring = [], open = [], seen = 0; const m = new THREE.Matrix4(), p = new THREE.Vector3(), q = new THREE.Quaternion(), s = new THREE.Vector3();
+  sc.traverse(o => { if (!o.isInstancedMesh || !o.userData.landGrass) return; for (let i = 0; i < o.count; i++) { o.getMatrixAt(i, m); m.decompose(p, q, s); const x = p.x + o.position.x, z = p.z + o.position.z;
+    for (const hb of ZONES.world.herbs) { if (!hb.spread || Math.abs(hb.x - x) > 1 || Math.abs(hb.z - z) > 1) continue; const d = Math.hypot(hb.x - x, hb.z - z) - hb.spread * .5; seen++;
+      if (d < 0) inside++; else if (d < .3) ring.push(s.y); else if (d < 1) open.push(s.y); } } });
+  const mean = v => v.length ? +(v.reduce((x, y) => x + y, 0) / v.length).toFixed(3) : null;
+  return { look: window.OG_LOOK, K: +herbLift().toFixed(3), sat: [+(sat0).toFixed(1), +(sat1).toFixed(1)], glints: gl.length, glintOff: top && +top.toFixed(2), lights, seen, inside, ring: mean(ring), open: mean(open), nRing: ring.length }; });
+console.log(JSON.stringify(lift));
+check(`the herbs are lifted on the new look: ${lift.K} of the kit's size, the colour stronger (saturation ${lift.sat[0]} to ${lift.sat[1]}), no lights`, lift.look === 'new' && Math.abs(lift.K - 1.661) < .002 && lift.sat[1] > lift.sat[0] * 1.05 && lift.lights === 0, lift);
+check(`a glint over the herb 1.5 m off (${lift.glints} shown, ${lift.glintOff} m from its foot)`, lift.glints >= 1 && lift.glintOff != null && lift.glintOff < .5, lift);
+check(`the grass about a herb: none inside its spread (${lift.inside}), short in the ring (${lift.ring} against ${lift.open} m beyond, ${lift.nRing} blades)`, lift.seen > 0 && lift.inside === 0 && (lift.nRing === 0 || lift.ring < lift.open * .7), lift);
 
 // what the herbs cost: every loaded chunk's herb meshes, against those drawn near the player; the tall kinds'
 // shadows only close by, the low kinds' never. The frame's triangles with the herbs on and off.
