@@ -3,15 +3,16 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
-### Scenarios in every zone (from the designer, 2026-10-29, #873)
-**The question.** Each map cell holds only 3 to 6 points of interest with something in them (median 4). Its 109 camps, ruins and stone rings are names with nothing to do, and between sites every encounter is a fight. How should each zone get as many scenarios as the fullest? ("Winnmark" and "Bunratty" are not in the game. The page reads them as each island's fullest cell, Cluainkeel Realm and Trotriair Wilds; if you meant other places, say which.)
+### The ship's rail: how you go over the side once it holds you (from the systems builder, 2026-10-29, #882)
+**The question.** The scale sheet you approved (`docs/design/scale-numbers-build.md`, the Places table) puts a rail 1.0 m above every deck, "so you cannot walk off a rolling deck". It is not built: on all five hulls you can walk off the side into the sea, and walking off is the only way off a ship today. A plain jump rises 0.84 m, so once the rail holds you, you need a deliberate way over the side.
 
 **Options.**
-- **A.** Fill the empty sites: a cellar in each ruin, burners or hunters with a trader in each camp, a lead at each stone ring, and each cell topped up to 6 live sites. Two systems sessions and one look session. More places, no decisions.
-- **B (recommended).** A dealt deck of scenarios: 12 small situations with a choice that the world keeps (a courier, a toll chain, diggers in a ruin, a mauled hunter, a press gang, pilgrims, …). Each cell is dealt 4 to 7 a week from its seed, until every mainland cell has 10 things to stop for. Four systems sessions, two quest-writer runs and one look session.
-- **C.** Hand-author five or six scenes for every cell, Morrowind's way. About 330 scenes, some 55 quest-writer runs.
+- **A (recommended).** E at the net goes over the side: the rail holds you everywhere; at either boarding net *Press 'E' to go over the side* puts you in the water beside her, or on the quay when she lies alongside. One systems session, one line of the look builder's prompt.
+- **B.** A jump at the rail vaults it, wherever you stand; quick, but a jump in a fight on deck can drop you in the sea.
+- **C.** The rail holds you only under way; moored or hove to, you walk off as now.
+- **D.** Leave it: walk off anywhere, and strike the sheet's row.
 
-**Recommendation.** B. It meets the count, the thin cells gain the most, and every scene ends with the world changed (feeling 1). A seeded deal keeps a shared world the same for a friend. The page: `docs/design/scenarios-by-zone.md`.
+**Recommendation.** A. It keeps the sheet's rule whole, and going over the side becomes a choice, never an accident (feeling 3). The critic's report: `docs/critic.md` (2026-10-29, "walking off the deck").
 
 ### The dungeon's cell by kind: old gates at 3 m, and forts and lairs at what? (systems builder, Session 1105) — DECISION #421
 **The question.** F2b's last session sets a dungeon's grid cell at true scale; it is one unit today, so corridors are 1 m wide for a 1.8 m body. Michael chose **C, 3 m** on #300 and added: "If by dungeon we mean Old Gates, they should be extremely massive and cavernous. A normal 'dungeon' like a mine, or a cave can be a more typical size." The game has three kinds of underground place: the **old gates** (the world's portals, themed by school: crypts, haunted halls, elemental and deep caverns, ruins), **fort interiors** (the `fort_` layouts), and **lairs and dens** (a beast's lair, the cloak's den). So the cell can differ by kind, and "a more typical size" is a number a player feels.
@@ -26,6 +27,18 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
 ## Answered
+### Scenarios in every zone (from the designer, 2026-10-29, #873)
+**The question.** Each map cell holds only 3 to 6 points of interest with something in them (median 4). Its 109 camps, ruins and stone rings are names with nothing to do, and between sites every encounter is a fight. How should each zone get as many scenarios as the fullest? ("Winnmark" and "Bunratty" are not in the game. The page reads them as each island's fullest cell, Cluainkeel Realm and Trotriair Wilds; if you meant other places, say which.)
+
+**Options.**
+- **A.** Fill the empty sites: a cellar in each ruin, burners or hunters with a trader in each camp, a lead at each stone ring, and each cell topped up to 6 live sites. Two systems sessions and one look session. More places, no decisions.
+- **B (recommended).** A dealt deck of scenarios: 12 small situations with a choice that the world keeps (a courier, a toll chain, diggers in a ruin, a mauled hunter, a press gang, pilgrims, …). Each cell is dealt 4 to 7 a week from its seed, until every mainland cell has 10 things to stop for. Four systems sessions, two quest-writer runs and one look session.
+- **C.** Hand-author five or six scenes for every cell, Morrowind's way. About 330 scenes, some 55 quest-writer runs.
+
+**Recommendation.** B. It meets the count, the thin cells gain the most, and every scene ends with the world changed (feeling 1). A seeded deal keeps a shared world the same for a friend. The page: `docs/design/scenarios-by-zone.md`.
+
+Michael: **A dealt deck of 12 scenarios with choices** (B) — Where are we getting scenarios from? This feels like cross contamination with the neighborhood airsoft code repo… let’s check on this before we try to act on scenarios. (2026-10-29) *Producer:* not to be built until that check is done (the place names "Winnmark" and "Bunratty" in the request are not in the game); handed to Claude (local) on the control room.
+
 ### Herbs by island — how a herb shows itself in the grass (from the concept artist, 2026-10-28, #855)
 **The question.** Backlog L8 (OG-039) ports every herb to the new look, by island, at true size (the game draws them at 0.69 of their size today; every option fixes that). The Gatelands' grass is dense (111 blades a square metre, to 0.65 m): of twelve herbs 2 to 14 m ahead, how should a herb show itself? On the Mark and Aurenne the grass is short and 11 or 12 of 12 show in every option.
 
