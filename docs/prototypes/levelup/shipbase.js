@@ -425,7 +425,7 @@ export function caravelBase(o = {}) {
 //     bed's foot; a sideboard with bottles against the bulkhead; two lanterns; the mizzen through it. The door's metre is kept clear.
 //   - the hold under the main deck (z -4.9 to 6.8), entered down the after hatch, the forward one a cargo hatch, its middle clear: aft, the
 //     workbench (crafting) and the alchemist's table (alchemy) either side of the ladder; two chests (the stash) against the
-//     sides aft of the main mast; between the main mast and the forward hatch, where she is widest, barrels either side; forward, the crew's quarters, four hammocks slung
+//     sides aft of the main mast; under the forward hatch, where she is widest, barrels either side; forward, the crew's quarters, four hammocks slung
 //     fore and aft between two beams, and against the forward bulkhead the arms rack (OG-027's armoury: spears, a rack of shields).
 //   - the galley under the forecastle (z 7.5 to 10.7), open beneath on its posts, as the cog's: the firebox on its sand, a crane and pot,
 //     a water cask.
@@ -487,13 +487,15 @@ export function galleonBase(o = {}) {
     { const g = new THREE.SphereGeometry(.09, 10, 8); g.translate(x - .12, t.ty + .12, z + .25); add('glass', g); } cyl('glass', .02, .025, .22, x - .12, t.ty + .27, z + .25, 6);
     box('wood', .14, .1, .6, t.xo - .1, t.ty + .08, z + .3); for (let k = 0; k < 5; k++) cyl('glass', .02, .02, .12, t.xo - .1, t.ty + .16, z + .08 + k * .11, 6);
     sideItem('alchemy table', 1, t, z0, z1, .62); }
-  if (D.fur) { const g = new THREE.CircleGeometry(.6, 9); g.scale(1, 1.4, 1); g.rotateX(-Math.PI / 2); g.translate(0, FLOOR + .006, -1.0); add('fur', g); }
-  else { box('rug0', .9, .01, 1.5, 0, FLOOR + .006, -1.0); box('rug1', .7, .012, 1.2, 0, FLOOR + .008, -1.0); }
-  // the two chests (the stash) against the sides aft of the main mast, end-on to the side (the floor is 2 m across)
-  for (const e of [1, -1]) { const z = -1.0, w = .55, d = .9, hgt = .5, x = e * (Math.min(onFloor(z - d / 2, w / 2), onFloor(z + d / 2, w / 2)) - .02); box('wood', w, hgt, d, x, FLOOR + hgt / 2, z); box('trim', w + .02, .06, d + .02, x, FLOOR + hgt - .03, z);
+  if (D.fur) { const g = new THREE.CircleGeometry(.6, 9); g.scale(1, 1.4, 1); g.rotateX(-Math.PI / 2); g.translate(0, FLOOR + .006, -1.9); add('fur', g); }
+  else { box('rug0', .9, .01, 1.5, 0, FLOOR + .006, -1.9); box('rug1', .7, .012, 1.2, 0, FLOOR + .008, -1.9); }
+  // the two chests (the stash) against the sides aft of the main mast, end-on to the side (the floor is 2 m across); at z -1.9 since
+  // Session 1584 (at -1.0 they left 0.13 m either side of the mast and closed the hold)
+  for (const e of [1, -1]) { const z = -1.9, w = .55, d = .9, hgt = .5, x = e * (Math.min(onFloor(z - d / 2, w / 2), onFloor(z + d / 2, w / 2)) - .02); box('wood', w, hgt, d, x, FLOOR + hgt / 2, z); box('trim', w + .02, .06, d + .02, x, FLOOR + hgt - .03, z);
     for (const dz of [-.3, .3]) box('iron', w + .02, hgt + .02, .05, x, FLOOR + hgt / 2, z + dz); item('chest', 'hold', x - w / 2, FLOOR, z - d / 2, x + w / 2, FLOOR + hgt, z + d / 2); }
-  // the stores either side between the main mast and the forward hatch, where she is widest: barrels in chocks
-  for (const e of [1, -1]) for (const z of [.3, .86]) { const R = .26, x = e * Math.min(1.3, Math.min(onFloor(z - R, R), onFloor(z + R, R)) - .02);
+  // the stores either side under the forward hatch, where she is widest: barrels in chocks (at z 0.3, before Session 1584, they left 0.2 m
+  // to the main mast)
+  for (const e of [1, -1]) for (const z of [1.0, 1.56]) { const R = .26, x = e * Math.min(1.3, Math.min(onFloor(z - R, R), onFloor(z + R, R)) - .02);
     cyl('wood', R * .9, R * .82, .74, x, FLOOR + .37, z, 14); for (const y of [.1, .64]) cyl('iron', R * .86 + .01, R * .86 + .01, .04, x, FLOOR + y, z, 14); item('barrel', 'hold', x - R, FLOOR, z - R, x + R, FLOOR + .74, z + R); }
   { // the crew's quarters forward: four hammocks slung fore and aft between the beams at 3.0 and 4.8, their foot ropes to the beams
     const za = 3.0, zf = 4.8, hy = beamY - .05; for (const xc of [-1.95, -.95, .95, 1.95]) { const n = 8, P = [];
@@ -550,8 +552,9 @@ export function galleonBase(o = {}) {
     { const g = new THREE.SphereGeometry(.16, 10, 8); g.scale(1.3, .6, 1); g.translate(x, DECK + (D.fire === 'iron' ? .4 : .06 + ht + .02), z); add('flame', g); } lights.push({ x, y: DECK + .9, z, warm: 2 });
     const cx = x - w / 2 - .05; box('iron', .05, 1.3, .05, cx, DECK + .7, z); box('iron', .7, .04, .04, cx + .35, DECK + 1.32, z); box('iron', .01, .3, .01, x, DECK + 1.15, z);
     { const g = new THREE.SphereGeometry(.2, 12, 8, 0, Math.PI * 2, Math.PI * .35, Math.PI * .65); g.translate(x, DECK + 1.05, z); add('iron', g); }
-    cyl('wood', .28, .24, .7, 1.0, DECK + .35, 8.5, 12); for (const y of [.1, .6]) cyl('iron', .29, .29, .04, 1.0, DECK + y, 8.5, 12);
-    item('firebox', 'galley', x - w / 2 - .1, DECK, z - d / 2 - .1, x + w / 2 + .1, DECK + 1.35, z + d / 2 + .1); item('water cask', 'galley', .72, DECK, 8.22, 1.28, DECK + .7, 8.78); }
+    /* the cask at x 1.7 since Session 1585 (at 1.0 it stood on a way to the bow beside the forecastle's ladder) */
+    cyl('wood', .28, .24, .7, 1.7, DECK + .35, 8.5, 12); for (const y of [.1, .6]) cyl('iron', .29, .29, .04, 1.7, DECK + y, 8.5, 12);
+    item('firebox', 'galley', x - w / 2 - .1, DECK, z - d / 2 - .1, x + w / 2 + .1, DECK + 1.35, z + d / 2 + .1); item('water cask', 'galley', 1.42, DECK, 8.22, 1.98, DECK + .7, 8.78); }
 
   const G = new THREE.Group(); G.add(S.group); let tris = 0, draws = 0;
   for (const k in by) { const geo = mergeGeometries(by[k]), m = new THREE.Mesh(geo, M[k]); m.name = 'base:' + k; m.castShadow = !['flame', 'lamp'].includes(k); m.receiveShadow = true; G.add(m); tris += geo.attributes.position.count / 3; draws++; }
