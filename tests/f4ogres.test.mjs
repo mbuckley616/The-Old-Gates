@@ -65,7 +65,7 @@ await page.screenshot({ path: path.join(OUT, 'f4-ogres-side.jpg') });
 
 const dead = await page.evaluate(() => { const f = _F[0], rig = f.rig, before = []; rig.hb.root.traverse(o => { if (o.isMesh) before.push([o, o.material]); });
   f.e.hp = 0; killZoneEnemy(f.e, WORLD.scene, '');
-  // Session 1558: until the fall has come to rest (the head still to 1 mm over 10 ticks), not a fixed 90 ticks. The ragdoll's push is
+  // Session 1560: until the fall has come to rest (the head still to 1 mm over 10 ticks), not a fixed 90 ticks. The ragdoll's push is
   // random (cosmetic, ragdollStart), and 2 of 12 falls were still on their way down at 90 (the head 1.14 and 0.70 up; CI's 0.70), all
   // twelve at rest by 240 at 0.46–0.55
   const headY = () => { rig.root.parent.updateMatrixWorld(true); return rig.hb.map.find(([j]) => j === 'head')[1].getWorldPosition(new THREE.Vector3()).y; };

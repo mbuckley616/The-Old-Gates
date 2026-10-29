@@ -185,5 +185,24 @@ check('her hatch is aft of the mast, where the hold\'s ladder comes up', ['gatel
 check('you come down at the ladder\'s foot and walk forward to the berth and the chest, stooped under the beams (the eye at 1.38)', ['gatelands', 'mark', 'aurenne'].every(k => hd[k].fwd[1] < hd[k].arrive[1] - 2 && hd[k].fwd[1] > 2 && hd[k].eye < 1.45 && hd[k].cam < 1.45), ['gatelands', 'mark', 'aurenne'].map(k => [hd[k].fwd, hd[k].cam]));
 check('the planking stops you on either side, inside the hull', ['gatelands', 'mark', 'aurenne'].every(k => hd[k].port[0] > 2.2 && hd[k].port[0] < 3.2 && hd[k].stbd[0] < 2.2 && hd[k].stbd[0] > 1.2), ['gatelands', 'mark', 'aurenne'].map(k => [hd[k].port, hd[k].stbd]));
 check('the berth rests (and saves), the chest is the stash, and E at the ladder\'s foot takes you on deck', ['gatelands', 'mark', 'aurenne'].every(k => hd[k].beds === 1 && hd[k].bed && hd[k].stash && /on deck/.test(hd[k].exitText) && hd[k].left), hd);
+/* Session 1558 (backlog L6; #418 A): and below deck on your kit cutter is hers (PKIT.ships.cutterBase): 0.4 m deeper, so you stand up
+   between the beams; the ladder's foot is mid-hold, the berth and the chart table aft of it, the chest and the workbench forward */
+await page.evaluate(() => { if (SHIP.mesh) { sc.remove(SHIP.mesh); SHIP.mesh = null; } worldState.ship = { cls: 'cutter', name: 'Test Tern', sails: 0, cargo: 0 }; WORLD.spawnShip(px + 1, pz + 1, .7); SHIP.sailing = false; cabinUpdate(); goToInterior(CABIN.house); });
+for (let k = 0; k < 40 && !(await page.evaluate(() => isInterior() && !!currentHouse._base)); k++) await page.waitForTimeout(250);
+const ct = await page.evaluate(() => { const h = currentHouse, B = h._base; if (!B || B.kind !== 'cutter') return { base: !!B };
+  const walk = (x, z, yw, n) => { px = x; pz = z; yaw = yw; pitch = 0; jumpY = 0; velY = 0; onGround = true; _drive(() => { K['KeyW'] = true; }, n); return [+px.toFixed(2), +pz.toFixed(2)]; };
+  const o = { base: true, tris: B.tris, draws: B.draws, W: h.intW, D: h.intD, roomH: h._roomH, eye: h._eyeMax, beds: INT_BEDS.length, stash: !!intStashPos, hatch: B.hatch, arrive: [px, pz], exitZ: h._exitZ, sols: INT_SOL.length };
+  o.fwd = walk(h._arriveX - .2, h._arriveZ, 0, 200); o.aft = walk(h._arriveX - .3, h._arriveZ, Math.PI, 200); /* the gangway: 0.2 m to starboard of the keel between the chest and the bench, 0.3 past the berth's front */ o.port = walk(h._arriveX, 4, -Math.PI / 2, 80); o.stbd = walk(h._arriveX, 4, Math.PI / 2, 80);
+  _drive(() => false, 20); o.cam = +CAM.position.y.toFixed(2);
+  px = h._arriveX; pz = h._arriveZ - 3; o.exitFar = intExitZ(h, pz, h._roomD || h.intD); px = h._bench.x + .9; pz = h._bench.z; o.bench = benchNear();
+  const b = INT_BEDS[0]; px = h._arriveX - .1; pz = b.z; yaw = -Math.PI / 2; pitch = -.4; CAM.position.set(px, 1.5, pz); CAM.rotation.set(pitch, yaw, 0, 'YXZ'); CAM.updateMatrixWorld(true); o.bed = !!intBedTarget(); o.bedExit = intExitZ(h, pz, h._roomD || h.intD);
+  px = h._arriveX; pz = h._arriveZ; o.out = (interact(), 0); return o; });
+for (let k = 0; k < 40 && (await page.evaluate(() => isInterior())); k++) await page.waitForTimeout(250);
+ct.left = await page.evaluate(() => !isInterior());
+console.log(JSON.stringify(ct));
+check(`below deck on your cutter is her hold in her own lines: ${ct.W} by ${ct.D} m, ${ct.roomH} m to the deck, ${ct.tris} triangles in ${ct.draws} draws`, ct.base && ct.W === 4 && ct.D === 7.8 && ct.roomH > 1.8 && ct.tris < 36000 && ct.draws <= 26, ct);
+check(`her hatch is aft of the mast at z -1.05, and the eye stands at ${ct.eye} (under the beams, over the sloop's 1.38)`, ct.hatch && Math.abs((ct.hatch.z0 + ct.hatch.z1) / 2 + 1.05) < .01 && ct.eye > 1.45 && ct.eye <= 1.65 && ct.cam > 1.45, [ct.hatch, ct.eye, ct.cam]);
+check('from the ladder\'s foot mid-hold you walk forward to the stores and aft to the bulkhead; the planking stops you either side', ct.fwd[1] < ct.arrive[1] - 3 && ct.aft[1] > ct.arrive[1] + 1.5 && ct.aft[1] < 7.8 && ct.port[0] > 2 && ct.port[0] < 3.2 && ct.stbd[0] < 2 && ct.stbd[0] > .8, [ct.arrive, ct.fwd, ct.aft, ct.port, ct.stbd]);
+check('the berth rests, the chest is the stash, the workbench is the bench (E at it), and E at the ladder\'s foot (only there) takes you on deck', ct.beds === 1 && ct.bed && !ct.bedExit && ct.stash && ct.bench && !ct.exitFar && ct.left, ct);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

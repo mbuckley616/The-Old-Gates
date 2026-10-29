@@ -90,7 +90,7 @@ const lod = await page.evaluate(() => { const e = _W['Ash Hound'], rig = e.limbs
   CAM.position.set(e.x + 12, CAM.position.y, e.z); tickCreatures(1 / 60, 4e5); r.back12 = rig.lod;
   CAM.position.copy(c0); return r; });
 check('the distant copy swaps in past 17 units and back under 15, with no flicker between', lod.near10 === 0 && lod.far20 === 1 && lod.loGeo && lod.gap16 === 1 && lod.back12 === 0, lod);
-// Session 1558: on the new look the Wolf, the Snow and Dire Wolf, the Ash Hound and the Boar wear the creature kit's body (HC, Session 1202
+// Session 1559: on the new look the Wolf, the Snow and Dire Wolf, the Ash Hound and the Boar wear the creature kit's body (HC, Session 1202
 // on), built one a time after the loading; close by the eye draws the kit's body and the shadow pass the driver's distant copy (hcTick's
 // shadow swap, 34-creatures.js). The checks below read the old look's truth (the eye drew the driver) and passed only while no body had been
 // built yet, so they went red as the builds came sooner. Every test wolf's body is built first, by hcTick's own steps, as f4wolves does
