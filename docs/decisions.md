@@ -15,6 +15,7 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+## Answered
 ### Herbs by island — how a herb shows itself in the grass (from the concept artist, 2026-10-28, #855)
 **The question.** Backlog L8 (OG-039) ports every herb to the new look, by island, at true size (the game draws them at 0.69 of their size today; every option fixes that). The Gatelands' grass is dense (111 blades a square metre, to 0.65 m): of twelve herbs 2 to 14 m ahead, how should a herb show itself? On the Mark and Aurenne the grass is short and 11 or 12 of 12 show in every option.
 
@@ -24,6 +25,8 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 - **C (recommended).** Lifted: 1.15 larger, colour a little stronger, the grass short in a 0.35 m ring round it, a small glint at its top within 6 m. 10 of 12 show, 39% more herb on screen, no lights.
 
 In every option the herbs that glow by nature (Heartroot, Firemoss, Icebloom, Pearlweed) still glow from their own parts. Pictures: [A, B and C on the three islands](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1028/docs/prototypes/levelup/herbs-options.jpg); the full notes in `docs/concepts.md`.
+
+Michael: **Lifted: a little larger, short grass round it** (C). (2026-10-29)
 
 ### Lodestone (Mining 75) and Heartwood (Woodcutting 75) — what each perk gives (from the systems builder, 2026-10-28, #860)
 **The question.** Survival B's perks are all built but four; two wait on #376. Lodestone (Mining 75, "the magnetic ore of La Grise") and Heartwood (Woodcutting 75, "heartwood for masts") have a name and a line in the skills sheet but no rule, and the game has no lodestone or great tree yet.
@@ -36,6 +39,8 @@ In every option the herbs that glow by nature (Heartroot, Firemoss, Icebloom, Pe
 
 Each of A's two is one systems session; the great tree is one in ten of the trees already scattered, so it needs no new model.
 
+Michael: **A job each: a mast spar and a prospector's stone** (A). (2026-10-29)
+
 ### Logs in guild work — what a timber task asks, and whether bought logs count (from the systems builder, 2026-10-29, #864)
 **The question.** The survival sheet's session 7 puts "ore and logs in the guilds' gather tasks". Your A on #814 gave the Fighters' Guild *Supply* (bring 3 + rank-tier ore of the hall's metal; Session 1533). Logs are in no guild's work yet, and unlike ore they are sold: a Log costs 4 gold and a Pine Log 5 at every goods shop, so a task that counts logs in the bag could be bought for about 20 gold and pay about 110.
 
@@ -46,7 +51,8 @@ Each of A's two is one systems session; the great tree is one in ten of the tree
 
 A gives Woodcutting a paid use on land the way Supply gave Mining one, keeps "dig it yourself" true for both, and needs no new item or model.
 
-## Answered
+Michael: **Timber, counted at the fall** (A). (2026-10-29)
+
 ### Bowyer's longbow and war bow — how each plays (from the systems builder, 2026-10-28, #851)
 **The question.** Joinery 75's perk, *Bowyer*, reads "the longbow and the war bow", but neither bow exists, so the perk shows as not yet built. Today's bow: full draw 1.10 s, the shot ×1.40 at full draw, the arrow 28 m/s, 8 stamina a second held, weight 3. What should the two bows be?
 
