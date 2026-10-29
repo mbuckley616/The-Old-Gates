@@ -4,7 +4,10 @@ let vmSword=null,vmGlow=null,vmEnchantLight=null;
 // raise overhead for self-buffs. A glowing orb appears at the weapon's tip, charging up
 // then fading as the projectile releases. See startCastAnim() + the vmSword animation tick.
 let castT=0;               // seconds remaining in cast animation
-const CAST_ANIM_DURATION=0.55;
+/* S1583: the Cast row's two figures (WEAPON_ATTACKS.Cast in 74-strikes.js, a 0.35 s wind-up and 0.30 s after it; S1575): the hand's
+   animation runs the row's 0.65 s, and the blade's thrust and the orb's release peak at the row's release, 0.35 s in (was 60% of 0.55 s) */
+const CAST_ANIM_DURATION=0.65;
+const CAST_RELEASE_P=0.35/CAST_ANIM_DURATION;
 let castAnimType='projectile';
 let castSpellSchoolCol=0xffffff;
 function isCasting(){return castT>0;}
