@@ -201,7 +201,7 @@ const ct = await page.evaluate(() => { const h = currentHouse, B = h._base; if (
   _drive(() => false, 20); o.cam = +CAM.position.y.toFixed(2);
   px = h._arriveX; pz = h._arriveZ - 3; o.exitFar = intExitZ(h, pz, h._roomD || h.intD); px = h._bench.x + .9; pz = h._bench.z; o.bench = benchNear();
   const b = INT_BEDS[0]; px = h._arriveX - .1; pz = b.z; yaw = -Math.PI / 2; pitch = -.4; CAM.position.set(px, 1.5, pz); CAM.rotation.set(pitch, yaw, 0, 'YXZ'); CAM.updateMatrixWorld(true); o.bed = !!intBedTarget(); o.bedExit = intExitZ(h, pz, h._roomD || h.intD);
-  px = h._arriveX; pz = h._arriveZ; o.out = (interact(), 0); return o; });
+  px = h._arriveX; pz = h._arriveZ; updateHUD(); o.hud = document.getElementById('ob').textContent; o.out = (interact(), 0); return o; });
 for (let k = 0; k < 40 && (await page.evaluate(() => isInterior())); k++) await page.waitForTimeout(250);
 ct.left = await page.evaluate(() => !isInterior());
 console.log(JSON.stringify(ct));
@@ -231,5 +231,9 @@ check(`below deck on your caravel is her hold in her own lines: ${cvh.W} by ${cv
 check(`her hatch is between the main mast and the fore at z 2.8, and the eye stands at ${cvh.eye}`, cvh.hatch && Math.abs((cvh.hatch.z0 + cvh.hatch.z1) / 2 - 2.8) < .01 && cvh.eye > 1.45 && cvh.eye <= 1.65 && cvh.cam > 1.45, [cvh.hatch, cvh.eye, cvh.cam]);
 check('from the ladder\'s foot you walk forward to the barrels, and round the main mast and between the chests aft to the bench; the planking stops you either side', cvh.fwd[1] < cvh.arrive[1] - 1.5 && cvh.route.legs === 6 && cvh.route.at[1] > 8.5 && cvh.port[0] > 2.5 && cvh.port[0] < 3.6 && cvh.stbd[0] < 2.5 && cvh.stbd[0] > 1.4, [cvh.arrive, cvh.fwd, cvh.route, cvh.port, cvh.stbd]);
 check('the starboard chest is the stash, the workbench is the bench (E at it, clear of the way out), no berth below, and E at the ladder\'s foot takes you on deck', cvh.beds === 0 && cvh.stash && cvh.bench && !cvh.benchExit && cvh.left, cvh);
+/* Session 1566 (the critic's s1030 lines): below deck the HUD names the ladder, not *Walk south to exit*; at a tiller the prompt says tiller */
+check(`below deck on the cutter the HUD reads "${ct.hud}"`, /ladder/.test(ct.hud || '') && !/south/.test(ct.hud || ''), ct.hud);
+const tl = await page.evaluate(() => { const o = {}; for (const cls of ['sloop', 'caravel']) { if (SHIP.mesh) { sc.remove(SHIP.mesh); SHIP.mesh = null; } worldState.ship = { cls, name: 'Test Helm', sails: 0, cargo: 0 }; WORLD.spawnShip(px + 1, pz + 1, .7); SHIP.sailing = true; o[cls] = shipPrompt(); SHIP.sailing = false; } return o; });
+check(`at the helm: the sloop "${tl.sloop}", the caravel "${tl.caravel}"`, /tiller/.test(tl.sloop) && /wheel/.test(tl.caravel), tl);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
