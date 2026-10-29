@@ -411,3 +411,15 @@ Written by the producer once a day, after 12:00 UTC. Newest last.
 **Blocked.** Nothing new. The weekly run's reds sit in backlog I.
 
 **Roadmap.** 283 of 343 stories done (274 yesterday). The new look is 6 of 17. No deep-work card is queued: F14 comes last.
+
+## 29 Oct 2026
+
+**Waiting on you.** One decision: the ship's rail, how you go over the side once it holds you (#882; recommended A, E at the boarding net). Scenarios (#873, your B) wait until Claude (local) has checked where they came from. No PR is held.
+
+**Landed on main since yesterday.** Card F11's five hulls in the kit: the sloop, cutter, caravel, cog and galleon in their yard's dress, their castles decks you walk, the holds below deck of the sloop, cutter and caravel, and the caravel's cabin (Look 1531–1566). Survival B's last perks and tasks: Felling, the Fighters' Supply in ore and then timber counted at the fall, Heartwood's mast spar, Lodestone's prospector's stone, an arrow of each metal, the keeper who hears a snapped pick, Bowyer's longbow and war bow (Systems 1533–1563; #824 C, #829 A, #851 A, #860 A, #864 A). Bodies: whales and dolphins in the kit, beasts standing on a slope with paws that turn, the long bows at their length, fur thinned past 6 m (a near wolf 260k to 105k triangles), loose hair framing the face (1536–1568). QA: the skip list is empty (1532–1560). Quests: The Unanswered Letter (1554). Answered: #855 C, #860 A, #864 A, #873 B. Build s1034.
+
+**Under way.** No PR is open.
+
+**Blocked.** Nothing.
+
+**Roadmap.** 288 of 350 stories done (283 yesterday). The new look is 6 of 17. No deep-work card is queued: F14 comes last.
