@@ -39,6 +39,11 @@ const WOLF_LEGS={
 function wolfLegs(k){if(k._legs)return k._legs;if(k.legs)return k._legs=k.legs;const K=k.legK||1;if(K===1)return k._legs=WOLF_LEGS;const sc=L=>({root:L.root,a:L.a.map(v=>v*K),b:L.b.map(v=>v*K),c:L.c.map(v=>v*K)});return k._legs={fore:sc(WOLF_LEGS.fore),hind:sc(WOLF_LEGS.hind)};}
 const wolfHipY=k=>k.hipY||.40+.37*((k.legK||1)-1);
 let WG_L=WOLF_LEGS,WG_LK=1;
+// Session 1556 (B5's turning: "the sweep follows the velocity in the body's frame"): null, every paw sweeps straight back under the
+// body; else four [x, z] in the body's frame (+z ahead, +x its left), fore L and R then hind L and R, each a hip's way over the ground
+// over the pace the phase runs at (1 long for a straight walk ahead)
+let WG_U=null;
+const wgLegH=L=>-(L.a[0]+L.b[0]+L.c[0]);
 // the skeleton alone, the same bones in the same order every time, so one baked geometry skins to any wolf's
 function wolfSkeleton(k){
   const bones=[],B={};const bw=k.bulk||1;
@@ -313,7 +318,12 @@ function wgStride(G,ph,t,gallop){const p=wgZero();const a=Math.PI*2*ph;
   const one=(u,fore)=>{u=((u%1)+1)%1;const h=S/2;if(u<G.D)return {dz:h-S*u/G.D,dy:0,fold:0};const s=(u-G.D)/(1-G.D),e=s*s*(3-2*s);
     return {dz:-h+S*e,dy:G.LIFT[fore?0:1]*WG_LK*Math.sin(Math.PI*s),fold:(fore?1.1:-.4)*Math.sin(Math.PI*Math.min(1,s*1.2))};};
   ['L','R'].forEach(s=>{const o=G.off[s];const f=one(ph+o[0],true),h=one(ph+o[1],false);
-    wgSetLeg(p,s,true,wgLeg(WG_L.fore,f.dz,f.dy+p.drop,f.fold));wgSetLeg(p,s,false,wgLeg(WG_L.hind,h.dz,h.dy+p.drop,h.fold));});
+    if(!WG_U){wgSetLeg(p,s,true,wgLeg(WG_L.fore,f.dz,f.dy+p.drop,f.fold));wgSetLeg(p,s,false,wgLeg(WG_L.hind,h.dz,h.dy+p.drop,h.fold));return;}
+    // Session 1556: each paw sweeps along its own hip's way over the ground (WG_U, set by tickCreatures): the share ahead runs through
+    // the leg's plane as before, the share to the side turns the shoulder or the hip out about the body's long axis
+    const uf=WG_U[s==='L'?0:1],uh=WG_U[s==='L'?2:3];
+    wgSetLeg(p,s,true,wgLeg(WG_L.fore,f.dz*uf[1],f.dy+p.drop,f.fold));p['sh'+s][2]=Math.atan2(f.dz*uf[0],wgLegH(WG_L.fore));
+    wgSetLeg(p,s,false,wgLeg(WG_L.hind,h.dz*uh[1],h.dy+p.drop,h.fold));p['th'+s][2]=Math.atan2(h.dz*uh[0],wgLegH(WG_L.hind));});
   if(gallop){p.neck=[.1+.1*Math.sin(a*2+1.2),0,0];p.head=[-.06-.06*Math.sin(a*2+1.2),0,0];p.tail1=[.25,.05*Math.sin(a),0];p.tail2=[-.05,0,0];p.jaw=[.12,0,0];}
   else{p.neck=[.12,0,0];p.head=[-.04,0,0];p.tail1=[.05+.05*Math.sin(a*2),.14*Math.sin(a),0];p.tail2=[-.08,.06*Math.sin(a-.6),0];}
   return p;}
@@ -461,9 +471,18 @@ function tickCreatures(dt,now){
     const s=rig.root.scale.x*(g.scale.x||1);
     // S213 — turning on the spot steps round: the heading's change counts as ground covered by the paws, a quarter of a
     // body-length out from the middle, so a wolf that swings to face you treads round instead of pivoting on planted feet
-    {const q=g.quaternion,yw=Math.atan2(2*(q.x*q.z+q.w*q.y),1-2*(q.x*q.x+q.y*q.y));if(rig.lyaw!=null){let dy=yw-rig.lyaw;dy=Math.atan2(Math.sin(dy),Math.cos(dy));if(Math.abs(dy)<1.2)d+=Math.abs(dy)*.25*s;}rig.lyaw=yw;}
-    const spd=dt>0?d/dt:0;
-    rig.v+=(spd-rig.v)*(1-Math.exp(-dt/.15));
+    const d0=d;let om=0,lx=0,lz=0;
+    {const q=g.quaternion,yw=Math.atan2(2*(q.x*q.z+q.w*q.y),1-2*(q.x*q.x+q.y*q.y));if(rig.lyaw!=null){let dy=yw-rig.lyaw;dy=Math.atan2(Math.sin(dy),Math.cos(dy));if(Math.abs(dy)<1.2){d+=Math.abs(dy)*.25*s;om=dy;}}
+      if(d0>0&&rig.px!=null){const mx=x-rig.px,mz=z-rig.pz,c=Math.cos(yw),n=Math.sin(yw);lx=mx*c-mz*n;lz=mx*n+mz*c;}rig.lyaw=yw;}
+    rig.px=x;rig.pz=z;
+    const spd=dt>0?d/dt:0,kv=1-Math.exp(-dt/.15);
+    rig.v+=(spd-rig.v)*kv;
+    // Session 1556: the way it moves in its own frame, and its turn, smoothed as the pace is. A pack wolf closing on its flank point
+    // goes sideways while it faces you, an archer backs off, and a body that turns on the spot treads round: before, every paw swept
+    // straight back under the body whatever the way. Each hip's way over the ground is the body's way plus the turn's at that hip
+    if(!rig.vl)rig.vl=[0,0,0];if(dt>0){const iv=1/dt;rig.vl[0]+=(lx*iv-rig.vl[0])*kv;rig.vl[1]+=(lz*iv-rig.vl[1])*kv;rig.vl[2]+=(om*iv-rig.vl[2])*kv;}
+    WG_U=null;if(rig.v>.02){const [vx,vz,w]=rig.vl,U=rig.U||(rig.U=[[0,1],[0,1],[0,1],[0,1]]),hx=(rig.k.bulk||1)*.076*s,fz=.17*s,bz=-.22*s;
+      [[hx,fz],[-hx,fz],[hx,bz],[-hx,bz]].forEach(([hx2,hz],i)=>{let ux=(vx+w*hz)/rig.v,uz=(vz-w*hx2)/rig.v;const m=Math.hypot(ux,uz);if(m>1.3){ux*=1.3/m;uz*=1.3/m;}U[i][0]=ux;U[i][1]=uz;});WG_U=U;}
     WG_LK=rig.k.legK||1;WG_L=wolfLegs(rig.k); // S262 — this kind's legs for the poses below (reset after the loop)
     // S905 (F2a) — a beast drawn larger (rig.drawK, SCALE.BEAST) breaks into a gallop at the pace it did at its tuned size, so a
     // Dire Wolf still gallops at its chase; its paws stay planted (the phase below reads the size it is drawn at)
@@ -480,7 +499,7 @@ function tickCreatures(dt,now){
     if(rig.B.wingL){const roused=e&&(e.alert||e._agg)?1:0;rig.wing=(rig.wing||0)+(roused-(rig.wing||0))*(1-Math.exp(-dt/.5));rig.flap=((rig.flap||0)+dt*6.5)%(Math.PI*2);}
     wgApply(rig,out);
   }
-  WG_L=WOLF_LEGS;WG_LK=1;
+  WG_L=WOLF_LEGS;WG_LK=1;WG_U=null;
   if(hcOn())hcTick(now); // S1202 (F4) — the wolves' kit bodies follow their drivers
 }
 
@@ -766,7 +785,7 @@ const HC_GOB_COAT={coat:0x6a8a42,saddle:0x4e6a30,belly:0x86a058,skin:0x72924a};
 const HC_WRAITH_REST={spine:[.42,0,0],neck:[.22,0,0],head:[-.42,0,0],shL:[-1.8,0,.08],shR:[-1.74,0,-.08],elL:[-.3,0,.04],elR:[-.3,0,-.04],wrL:[.28,0,0],wrR:[.28,0,0]};
 const HC_TROLL_COAT={cave:{coat:0x6e7a5c,saddle:0x5a664c,belly:0x7e8a6c,skin:0x646e54},forest:{coat:0x5a6e40,saddle:0x4a5a34,belly:0x6a7e50,skin:0x52643a,moss:0x34501a},
   frost:{coat:0xaebac2,saddle:0x96a4ae,belly:0xc0cad0,skin:0xa2aeb6,moss:0xe0e4e8}};
-const HC_KINDS={'Wolf':{plan:'wolf'},'Snow Wolf':{plan:'wolf',own:true},'Dire Wolf':{plan:'ironwolf',own:true},'Boar':{plan:'boar'},'Cave Bear':{plan:'bear',own:true},'Ash Hound':{plan:'ashhound'},'Horse':{plan:'horse',own:true,ik:true},'Grey Horse':{plan:'horse',own:true,ik:true},
+const HC_KINDS={'Wolf':{plan:'wolf'},'Snow Wolf':{plan:'wolf',own:true},'Dire Wolf':{plan:'ironwolf',own:true},'Boar':{plan:'boar'},'Cave Bear':{plan:'bear',own:true,ik:true},'Ash Hound':{plan:'ashhound'},'Horse':{plan:'horse',own:true,ik:true},'Grey Horse':{plan:'horse',own:true,ik:true},
   'Spider':{plan:'spider',own:true,spider:true,cell:.028,merge:true},'Sand Scorpion':{plan:'dunescorpion',own:true,spider:true,cell:.02,merge:true},
   'Bog Crawler':{plan:'bogcrawler',own:true,spider:true,cell:.018,merge:true},'Faolchú':{plan:'faolchu',own:true,cell:.03,unhunch:true,arms:true},
   'Dragon':{plan:'dragon',own:true,cell:.11,wings:true,sway:true},
@@ -902,6 +921,10 @@ function hcPose(rig){const H=rig.hc,B=rig.B,map=H.map,uh=H.unhunch&&rig.hunch,rs
     if(b.parent&&b.parent.isBone){hbRel(b.parent,H.W,_hbq2).invert();b.quaternion.copy(_hbq2.multiply(_hbq));}else b.quaternion.copy(_hbq);};
   for(let i=0;i<map.length;i++)cp(i);
   H.C.byName.spine0.position.copy(_hbv.copy(H.hb.position).sub(H.hip0).multiplyScalar(H.k)).add(H.pos0);
+  // Session 1557: last frame's drop on a slope (hcGround) is put back before the bend, which otherwise held the paws to the driver's
+  // under a body still lowered, so they stood that much high once it rose again (the Cave Bear's toes 5 cm up on a 0.2 slope). With it
+  // the Cave Bear takes the bend (HC_KINDS' ik): its legs are longer than the driver's, and its planted paws slid 0.95 m/s walking ahead
+  if(H.drop){H.W.position.y+=H.drop;H.drop=0;}
   if(H.ik)hcLegIK(rig);
   // a ghost's (Session 1429): tickPeople floats the driver's root 0.35 m up for the old body's long robe; the kit's robe already clears
   // the ground, so it is set back down by that much and keeps only the bob

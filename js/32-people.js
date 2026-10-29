@@ -797,6 +797,9 @@ const WPN_GEO=new Map();
 // too big: the knife 0.49 m, the spear 2.97, the crossbow 1.40. These are carried at their own size, whatever the stature (wpnTrue)
 const WPN_TRUE=new Set(['dagger','spear','crossbow','pick','hatchet']);
 function wpnTrue(kind,w,holder){if(WPN_TRUE.has(kind)&&holder&&holder.scale.x>0)w.scale.setScalar(1/holder.scale.x);return w;}
+// S1550 — the length of Bowyer's two bows to the plain bow's (#851 A: the longbow 1.5×, the war bow 1.7×), by the item's bowKind
+const BOW_LEN={longbow:1.5,warbow:1.7};
+function bowLenOf(w){return (w&&BOW_LEN[w.bowKind])||1;}
 const WPN_KINDS=['dagger','sword','cutlass','longsword','claymore','axe','greataxe','mace','flail','warhammer','greatclub','staff','bow','spear','crossbow','pick','hatchet','round','kite','tower'];
 // tint (S227, the player's weapons): {metal, guard, wood, glow} colours in place of steel, brass, the bow's wood and the crystal
 function wpnBuild(kind,rust,tint){tint=tint||{};
@@ -808,6 +811,10 @@ function wpnBuild(kind,rust,tint){tint=tint||{};
   const blade=(len,w,tip,curve)=>{const sh=new THREE.Shape();const cv=curve||0;sh.moveTo(-w/2,0);sh.lineTo(-w/2*.92+cv*.3,len*.8);sh.quadraticCurveTo(-w/2*.7+cv,len*.93,cv,len*(1+tip));sh.quadraticCurveTo(w/2*.7+cv,len*.93,w/2*.92+cv*.3,len*.8);sh.lineTo(w/2,0);sh.lineTo(-w/2,0);
     const g=new THREE.ExtrudeGeometry(sh,{depth:.004,bevelEnabled:true,bevelThickness:.006,bevelSize:.006,bevelSegments:2,curveSegments:6});g.translate(0,0,-.002);return g;};
   const grip=(len,r,y0)=>{add(SK.cyl(r,r,len,10),'matte',LEATH,[0,y0+len/2,0]);for(let i=0;i<6;i++)add(SK.torus(r*1.02,r*.18,4,10),'matte',DWOOD,[0,y0+len*(i+.5)/6,0],[Math.PI/2,0,0]);};
+  // the bow along +y, its belly toward −z: a stave of half-length .34·len bowed back at the grip and reflexed at the tips, the
+  // leather grip, and the string across the tips unless bare (first person draws its own)
+  const bowParts=(len,r,bare)=>{const h=.34*len,pts=[];for(let i=0;i<=20;i++){const t=i/20*2-1;pts.push(new THREE.Vector3(0,t*h,-.05*(1-t*t)+.025*Math.pow(Math.abs(t),6)));}
+    add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),30,r,6),'matte',WOOD);add(SK.cyl(.016,.016,.09,8),'matte',LEATH,[0,0,-.05]);if(bare!==true)add(SK.cyl(.0025,.0025,2*h,4),'matte',0xe8e0c8,[0,0,.025]);};
   const K={
     sword:()=>{grip(.1,.014,-.05);add(SK.ball(.022,10,8),'metal',BRASS,[0,-.06,0]);add(SK.rbox(.15,.022,.03,.008,2),'metal',BRASS,[0,.06,0]);add(SK.ball(.012,6,5),'metal',BRASS,[.075,.06,0]);add(SK.ball(.012,6,5),'metal',BRASS,[-.075,.06,0]);add(blade(.46,.042,.08),'metal',STEEL,[0,.07,0]);},
     cutlass:()=>{grip(.1,.014,-.05);add(SK.ball(.02,10,8),'metal',BRASS,[0,-.06,0]);add(SK.torus(.045,.007,5,14,Math.PI),'metal',BRASS,[.0,.0,.0],[0,Math.PI/2,Math.PI/2]);add(SK.rbox(.1,.02,.03,.007,2),'metal',BRASS,[0,.06,0]);add(blade(.42,.05,.06,.05),'metal',STEEL,[0,.07,0]);},
@@ -838,8 +845,14 @@ function wpnBuild(kind,rust,tint){tint=tint||{};
       add(SK.ball(.045,12,9),'metal',DSTEEL,[0,.44,0]);for(let i=0;i<8;i++){const a=i/8*Math.PI*2,b=i%2?.5:-.5;add(SK.cone(.012,.04,5),'metal',STEEL,[Math.cos(a)*.045*Math.cos(b),.44+Math.sin(b)*.045,Math.sin(a)*.045*Math.cos(b)],[0,-a,-Math.PI/2+b]);}},
     greatclub:()=>{add(SK.bumpy(SK.cyl(.055,.024,.8,9,6),.006,19,4),'matte',WOOD,[0,.28,0]);grip(.12,.026,-.1);for(const y of [.46,.6])add(SK.torus(.047,.009,5,14),'metal',DSTEEL,[0,y,0],[Math.PI/2,0,0]);
       for(let i=0;i<6;i++){const a=i*1.05;add(SK.cone(.012,.035,5),'metal',DSTEEL,[Math.cos(a)*.052,.53+(i%2)*.05,Math.sin(a)*.052],[0,-a,-Math.PI/2]);}},
-    bow:()=>{const pts=[];for(let i=0;i<=20;i++){const t=i/20*2-1;pts.push(new THREE.Vector3(0,t*.34,-.05*(1-t*t)+.025*Math.pow(Math.abs(t),6)));}
-      add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),30,.011,6),'matte',WOOD);add(SK.cyl(.016,.016,.09,8),'matte',LEATH,[0,0,-.05]);add(SK.cyl(.0025,.0025,.68,4),'matte',0xe8e0c8,[0,0,.025]);},
+    bow:bare=>bowParts(1,.011,bare),
+    // S1550 — Bowyer's two bows (#851 A, S1549's BOW_KINDS): the plain bow's limbs drawn out to BOW_LEN of its length, the grip
+    // the same leather in the same fist. The longbow is one stave, slender and its curve shallow; the war bow is thicker in the
+    // limb, with a horn nock at each tip and a second wrap above the grip where the arrow rides
+    longbow:bare=>bowParts(BOW_LEN.longbow,.0125,bare),
+    warbow:bare=>{bowParts(BOW_LEN.warbow,.0155,bare);const h=.34*BOW_LEN.warbow;
+      for(const sd of [-1,1])add(SK.cone(.012,.05,6),'matte',0xd8ccb0,[0,sd*(h-.012),.004],[sd<0?Math.PI:0,0,0]);
+      add(SK.cyl(.0175,.0175,.035,8),'matte',LEATH,[0,.075,-.05]);},
     // S1458 — your spear (#745 1 A, a one-handed thrust): the builder's Gatelands spear (people.js, buildSpear: an ash shaft 2.6 cm
     // thick, an iron shoe, a socket bound with two bronze rings, a leaf head 18 cm long with a midrib) at 2.2 m, gripped at its
     // balance 0.85 m up from the butt, the leaf's flat across x as a sword's blade is
@@ -870,8 +883,7 @@ function wpnBuild(kind,rust,tint){tint=tint||{};
     xbowbolt:()=>{add(SK.cyl(.0045,.0045,.35,6),'matte',0x8a6a44,[0,.175,0]);add(SK.cone(.0065,.045,6),'metal',DSTEEL,[0,.3725,0]);
       for(const sd of [-1,1])add(SK.rbox(.0016,.065,.02,.0006,1),'matte',0x5a3a22,[0,.045,sd*.011]);},
     // S266 — the bow without its string, for first person, where the view model's own string draws back
-    bowbare:()=>{const pts=[];for(let i=0;i<=20;i++){const t=i/20*2-1;pts.push(new THREE.Vector3(0,t*.34,-.05*(1-t*t)+.025*Math.pow(Math.abs(t),6)));}
-      add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),30,.011,6),'matte',WOOD);add(SK.cyl(.016,.016,.09,8),'matte',LEATH,[0,0,-.05]);},
+    bowbare:()=>K.bow(true),longbowbare:()=>K.longbow(true),warbowbare:()=>K.warbow(true),
     round:()=>{const R=.19;for(let i=0;i<5;i++){const w=R*2/5,x=-R+w*(i+.5),h=2*Math.sqrt(Math.max(0,R*R-x*x));add(SK.rbox(.02,h*.98,w*.96,.004,1),'matte',tint.face!=null?new THREE.Color(tint.face).multiplyScalar([1,.88,1.08][i%3]).getHex():[0x7a5230,0x6a4628,0x82583a][i%3],[0,0,x]);}
       add(SK.torus(R,.012,6,28),'metal',DSTEEL,[0,0,0],[0,Math.PI/2,0]);add(SK.ball(.05,12,8,0,Math.PI*2,0,Math.PI/2),'metal',DSTEEL,[.012,0,0],[0,0,-Math.PI/2]);},
     // S231 — a tower shield: four planks bowed round the bearer (the edges swept back), iron bands at the edges and across,
