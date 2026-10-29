@@ -62,7 +62,7 @@ const WEAPON_ATTACKS={
   Claymore: {tell:.402,strike:.085,recovery:.244,reach:2.2,arc:126.5,dmg:1,posture:14,cleave:3,blockable:true,parryable:false,heavy:null,third:null},
   GreatAxe: {tell:.424,strike:.090,recovery:.257,reach:2.2,arc:126.5,dmg:1,posture:14,cleave:2,blockable:true,parryable:false,heavy:null,third:null},
   WarHammer:{tell:.424,strike:.090,recovery:.257,reach:1.9,arc:126.5,dmg:1,posture:18,cleave:1,blockable:true,parryable:false,heavy:null,third:null},
-  // S1573 — a sent cast (magic-build.md, the Sent form): 0.35 s wind-up at ×0.35 walk, released at its end, 0.30 s before the next;
+  // S1575 — a sent cast (magic-build.md, the Sent form): 0.35 s wind-up at ×0.35 walk, released at its end, 0.30 s before the next;
   // a spell is neither blocked nor parried. Reach is the bolt's 30 m; its damage and posture are the word's, not the row's.
   Cast:     {tell:.35,strike:0,recovery:.30,reach:30,arc:null,dmg:1,posture:0,cleave:1,blockable:false,parryable:false,heavy:null,third:null,walk:.35},
 };

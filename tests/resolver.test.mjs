@@ -27,7 +27,7 @@ const tbl = await page.evaluate(() => {
 console.log(JSON.stringify(tbl));
 check('every weapon row keeps today\'s swing: its length, its impact at 0.55, its last third the recovery', tbl.out.every(r => Math.abs(r.total - r.today) < .002 && Math.abs(r.impact - .55) < .005 && Math.abs(r.rec - 1 / 3) < .005), tbl.out);
 check('every row\'s posture and cleave are today\'s (8 × the weapon\'s postureMult; its cleave)', tbl.out.every(r => r.post === r.want && r.cleave === r.wantC), tbl.out);
-check('every row has the table\'s columns, the heavy and third left for the move sets; a sent cast is the Cast row, 0.35 s and 0.30 s (magic B, Session 1573)', tbl.allCols && tbl.cast, tbl);
+check('every row has the table\'s columns, the heavy and third left for the move sets; a sent cast is the Cast row, 0.35 s and 0.30 s (magic B, Session 1575)', tbl.allCols && tbl.cast, tbl);
 check('the families: a troll sweeps, a wolf is a beast, a skeleton a humanoid, a wraith a wraith, a boss its own; 15 tells by kind', tbl.fam.troll === 'troll' && tbl.fam.wolf === 'beast' && tbl.fam.skel === 'humanoid' && tbl.fam.wraith === 'wraith' && tbl.fam.boss === 'boss' && tbl.tells === 15, tbl);
 
 // ── one resolver, two places: the same Bandit, the same swing, the same outcomes in the dungeon and the open world

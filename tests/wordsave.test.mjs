@@ -1,4 +1,4 @@
-// Magic B's save (Session 1572; magic-build.md, "The save", the sheet's `wordsave` with its `wordmigrate` folded in). `knownWords`
+// Magic B's save (Session 1574; magic-build.md, "The save", the sheet's `wordsave` with its `wordmigrate` folded in). `knownWords`
 // replaced `knownSpells`; the book holds up to eight made spells {form, word, rider}, `activeSpell` its index, `formsGranted` the forms
 // a migrated character already used; `worldState.register` is the character's. 1: an old save (the F13 fixture, `knownSpells`) with
 // the seven spells and the nine buffs comes back with the same sixteen words at the same tiers, the book's eight (F's spell first, then the

@@ -379,7 +379,7 @@ function _buildSavePayload(){
     knownWords:{...knownWords},
     touchedSigils:[...touchedSigils],
     activeSpellId,
-    spellBook:spellBook.map(b=>({...b})),activeSpell:bookSync(),formsGranted:[...formsGranted], /* S1572 — magic B's book */
+    spellBook:spellBook.map(b=>({...b})),activeSpell:bookSync(),formsGranted:[...formsGranted], /* S1574 — magic B's book */
     QS:JSON.parse(JSON.stringify(QS)),
     uQ:[...untrackedQuests],
     HERB_CONSUME_COUNTS:{...HERB_CONSUME_COUNTS},
@@ -635,7 +635,7 @@ function _applyLoadData(d,w){
   // remapping old ids (fireball→caor, iceshard→sioc, heallight→leigheas) to their Irish equivalents.
   // Unknown legacy ids are dropped silently.
   const LEGACY_ID_MAP={fireball:'caor', iceshard:'sioc', heallight:'leigheas'};
-  // S1572 — magic B: the words. `knownWords` replaced `knownSpells` (the same {id: tier}, one id each); a save from before reads the old key.
+  // S1574 — magic B: the words. `knownWords` replaced `knownSpells` (the same {id: tier}, one id each); a save from before reads the old key.
   for(const k of Object.keys(knownWords))delete knownWords[k];
   const _kw=d.knownWords||d.knownSpells;
   if(_kw){
@@ -661,7 +661,7 @@ function _applyLoadData(d,w){
     const first=Object.keys(knownWords)[0];
     if(first)activeSpellId=first;
   }
-  spellBookLoad(d); /* S1572 — the book, or its migration from the spells known */
+  spellBookLoad(d); /* S1574 — the book, or its migration from the spells known */
   qsInit(); /* S474 — the quests start fresh before the saved ones are laid over them: qsInit ran only at page load, so a load from the in-game menu kept the running game's QS where the save had none (a character row alone) or lacked a quest */
   if(d.QS)Object.assign(QS,d.QS);
   // v61af: quest-shape migration. When a quest gets new objectives added in a

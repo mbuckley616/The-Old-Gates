@@ -1,7 +1,7 @@
 // Overcasting (Session 1571; magic-build.md, magic B's first session): short of mana, the rest is paid in health at 2 a point of
 // mana, with a 0.5 s stagger, and a cast that would leave you under 1 health is refused. The sheet's case: mana 10, Caor at 30
 // (Comprehension, Tine at 50), health 100 → health 60, mana 0; at health 40 it is refused and nothing is spent. A fizzle gives back
-// half the mana paid, never the health. Session 1573: the Cast row, its wind-up at ×0.35 walk and its 0.30 s recovery.
+// half the mana paid, never the health. Session 1575: the Cast row, its wind-up at ×0.35 walk and its 0.30 s recovery.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();

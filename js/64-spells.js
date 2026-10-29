@@ -797,7 +797,7 @@ function learnSpell(spellId, targetTier=1){
   partialSpells=partialSpells.filter(p=>p!==spellId);
   // First spell learned → auto-equip as active
   if(!activeSpellId)activeSpellId=spellId;
-  if(prevTier===0)bookAdd(spellId); /* S1572 — a new word goes into the book in its first Novice form */
+  if(prevTier===0)bookAdd(spellId); /* S1574 — a new word goes into the book in its first Novice form */
   const name=spellDisplayName(sp,targetTier);
   const verb=prevTier===0?'Learned':'Deepened understanding of';
   showMsg(`✨ ${verb} ${name}!`,'#88ffcc');
@@ -829,7 +829,7 @@ function checkPartialSpells(){
 
 // S1570 — magic B's tables (magic-build.md, Michael's B of 29 Sep; the deep-work card's first slice): the 24 words, the five forms
 // and the six riders, and what a spell costs. A spell is one form of one word, and at most one rider from a second word. Nothing casts
-// from these yet: SPELLS and BUFF_SPELLS still run the cast until it reads the book (the sheet's session 1). Since S1572 what you know is `knownWords`.
+// from these yet: SPELLS and BUFF_SPELLS still run the cast until it reads the book (the sheet's session 1). Since S1574 what you know is `knownWords`.
 // The sixteen spells keep their ids, Intelligence needs and costs; three take their head word's name (Uisce, Oíche, Súil); eight are new.
 // A word's `forms` holds its live cells (42 of 120): the sheet's numbers, metres and seconds, and `say`, the sheet's words for the cell.
 const WORDS=[
@@ -924,7 +924,7 @@ function wordCost(id,form,rider,o){o=o||{};const w=WORD_BY[id];if(!w||!FORMS[for
   m*=FORMS[form].mana*(1.4-.8*s/100)*(o.buff!=null?o.buff:(typeof _buffMult==='function'?_buffMult('spellCost',1):1));
   return Math.round(m+1e-9);}
 
-// S1572 — magic B's book (magic-build.md, "The save"): up to eight made spells {form, word, rider}; `activeSpell` is the index of the one F
+// S1574 — magic B's book (magic-build.md, "The save"): up to eight made spells {form, word, rider}; `activeSpell` is the index of the one F
 // casts, kept in step with `activeSpellId` until the cast reads the book; `formsGranted` holds the forms a migrated character already
 // used, whatever the guild's rank. All three are top-level fields of the character row, as `knownWords` is.
 const SPELL_BOOK_MAX=8;
