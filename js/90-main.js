@@ -378,7 +378,8 @@ function loop(now){
     const _ak = (_roll||_dash) ? 1 : airCapK(dx + _lbx, dz + _lbz, dt); /* S1027 — the air-speed cap (10-player.js) */
     const tdx = (dx + _lbx) * _ak;
     const tdz = (dz + _lbz) * _ak;
-    if(lid==='overworld'){if(!currentZoneSolid(px+tdx,pz))px+=tdx;if(!currentZoneSolid(px,pz+tdz))pz+=tdz;}
+    if(lid==='overworld'){const _rl=typeof shipRailHolds==='function'; /* S1588 — the ship's rail (#882 A) */
+      if(!currentZoneSolid(px+tdx,pz)&&!(_rl&&shipRailHolds(px,pz,px+tdx,pz)))px+=tdx;if(!currentZoneSolid(px,pz+tdz)&&!(_rl&&shipRailHolds(px,pz,px,pz+tdz)))pz+=tdz;}
     else if(isInterior()){
       const R=0.3,idx=dx*_ak,idz=dz*_ak,nx2=px+idx,nz2=pz+idz;
       const _intW={weapon:11,armor:11,potion:9,misc:10,inn:13,church:10,castle:18};

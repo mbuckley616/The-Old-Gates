@@ -1055,6 +1055,30 @@
   function startClimb(mesh,W,side,other){mesh.updateMatrixWorld(true);_netInv.copy(mesh.matrixWorld).invert();const lz=_netO.set(px,0,pz).applyMatrix4(_netInv).z;
     CLIMB={t:0,mesh,W,side,other:other||null,x0:px,z0:pz,y0:jumpY,lz:Math.max(-NET_HALF+.3,Math.min(NET_HALF-.3,lz))};return true;}
   function climbing(){return !!CLIMB;}
+  // S1588 — Michael's A on #882: the rail. Every deck has a rail 1.0 m high (scale-numbers-build.md, Places) and a plain jump
+  // rises 0.84 m, so no step and no jump takes you over it: a step that crosses a deck's outline while your feet are under the
+  // rail's top is refused, off a deck (yours, a black sail's, a merchantman's) and onto one from a quay or a deck alongside.
+  // Her side holds a swimmer too (the deck's height would otherwise lift one straight aboard): a net is the way up, as before.
+  // Over the side is a choice: E at either net, from her deck (overSide).
+  const RAIL_H=1.0;
+  function inDeck(p,x,z){return !!p&&x>p.x0&&x<p.x1&&z>p.z0&&z<p.z1&&(!p.inside||p.inside(x,z));}
+  function deckShips(){const a=[];if(SHIP.mesh&&SHIP.plat)a.push({mesh:SHIP.mesh,W:SHIP.W,plat:SHIP.plat,other:null});
+    for(const o of OTHER)if(!o.dead&&o.mesh&&o.plat)a.push({mesh:o.mesh,W:o.W,plat:o.plat,other:o});return a;}
+  function shipRailHolds(x0,z0,x1,z1){if(activeZoneId!=='world'||climbing())return false;
+    for(const s of deckShips()){const a=inDeck(s.plat,x0,z0),b=inDeck(s.plat,x1,z1);if(a===b)continue;
+      const lv=a&&s.mesh.userData.castle&&shipUpper(s.mesh)?s.mesh.userData.castle.y-SHIP_DECK+DECK_Y:DECK_Y;if(jumpY<lv+RAIL_H)return true;}
+    return false;}
+  // the ship whose deck you stand on with her net under the crosshair, within 2.5 m of the rail above it; null for none
+  function overSideAt(){if(climbing()||SHIP.sailing||Math.abs(jumpY-DECK_Y)>.6)return null;
+    for(const s of deckShips()){if(!inDeck(s.plat,px,pz)||(s.other&&!s.other.boarded))continue;const sd=shipNetSide(s.mesh,s.W);if(!sd)continue;
+      const r=netRail(s.mesh,s.W,sd);if(Math.hypot(px-r.x,pz-r.z)<2.5)return {...s,side:sd};}return null;}
+  function overSidePrompt(){return overSideAt()?"Press 'E' to go over the side":null;}
+  // over the rail at the net and down her side: you are set a metre outboard of the net, level with the rail, and fall to
+  // what is there, the sea beside her or the quay she lies alongside
+  function overSide(){const s=overSideAt();if(!s)return false;s.mesh.updateMatrixWorld(true);_netInv.copy(s.mesh.matrixWorld).invert();
+    const lz=Math.max(-NET_HALF+.3,Math.min(NET_HALF-.3,_netO.set(px,0,pz).applyMatrix4(_netInv).z));
+    const v=new THREE.Vector3(s.side*(s.W/2+1.0),SHIP_DECK,lz).applyMatrix4(s.mesh.matrixWorld);
+    px=v.x;pz=v.z;jumpY=DECK_Y+.2;velY=0;onGround=false;showMsg('You go over the side.','#c8b880');return true;}
   // S743 — Michael's A on #237: the body is held on the net, .35 off the planking, where it took hold (the first .15 of the
   // climb carries it there from the water or the quay), rising evenly to the deck's height by four-fifths of the climb; the
   // last fifth swings it in over the rail (an arc of .5 over the deck) to the rail's walk. `climbPose()` gives the third

@@ -56,6 +56,35 @@ const on = await page.evaluate(() => ({ deck: WORLD.onDeck ? WORLD.onDeck() : on
 console.log(JSON.stringify({ p, pr, on }));
 check(`from the middle of Portclare's quay end, ${p.d} from her net, looking at it: "${pr.p}"`, /^Press 'E' to climb aboard the /.test(pr.p || ''), pr);
 check('E climbs her net and stands you on her deck', on.deck, on);
+
+// S1588 (Michael's A on #882): the rail. A 1.0 m rail holds you on her deck: a walk at either side and a jump at it leave you
+// aboard, as does a walk at her from the quay (1.1 m, a step down to her 1.0 m deck before). E at a net, from her deck, goes
+// over the side: into the sea on her seaward side, onto the quay on the other. Driven by the game's own loop (as hullbakes).
+const rail = await page.evaluate(() => { const out = {};
+  const drive = (step, max) => { const raf = window.requestAnimationFrame, rr = REN.render; window.requestAnimationFrame = () => 0; REN.render = () => {};
+    let t = performance.now(), n = 0; prevT = t; try { for (; n < max; n++) { if (step(n)) break; t += 1000 / 60; loop(t); } } finally { window.requestAnimationFrame = raf; REN.render = rr; prevT = 0; for (const k in K) K[k] = false; } return n; };
+  const m = WORLD.ship.mesh, W = WORLD.ship.W, tp = thirdPerson; thirdPerson = false;
+  const pt = (lx, lz) => { m.updateMatrixWorld(true); return new THREE.Vector3(lx, 1, lz).applyMatrix4(m.matrixWorld); };
+  const face = v => { yaw = Math.atan2(-(v.x - px), -(v.z - pz)); pitch = 0; };
+  const put = (v, y) => { px = v.x; pz = v.z; jumpY = y; velY = 0; onGround = true; };
+  const st = () => ({ deck: onDeck(), y: +jumpY.toFixed(2), swim: isSwimming(), p: shipPrompt(), out: +Math.abs(shipLocal(m, px, pz)[0]).toFixed(2) });
+  for (const sd of [1, -1]) { const q = pt(sd * (W / 2 + 1.5), .3), k = activeTerrainH(q.x, q.z) > 0 ? 'quay' : 'sea'; out[k + 'Side'] = sd;
+    put(pt(sd * (W / 2 - 1.0), .3), DECK_Y); face(pt(sd * (W / 2 + 4), .3)); drive(() => { PHP = maxHP; stamina = maxStamina; K['KeyW'] = true; }, 120); out[k + 'Walk'] = st();
+    put(pt(sd * (W / 2 - 1.0), .3), DECK_Y); face(pt(sd * (W / 2 + 4), .3)); let top = 0; drive(n => { PHP = maxHP; stamina = maxStamina; K['KeyW'] = true; K['Space'] = n % 40 < 2; top = Math.max(top, jumpY - DECK_Y); }, 160); out[k + 'Jump'] = { ...st(), top: +top.toFixed(2) };
+    put(pt(sd * (W / 2 - 1.0), .3), DECK_Y); const t = pt(sd * (W / 2 + .05), .3); t.y = .6; face(t); pitch = Math.atan2(t.y - (jumpY + 1.65), Math.hypot(t.x - px, t.z - pz));
+    drive(() => false, 3); out[k + 'Aim'] = st(); out[k + 'E'] = shipInteract(); drive(() => false, 120); out[k + 'Over'] = st(); }
+  { const sd = out.seaSide || -1, keep = window.shipRailHolds; window.shipRailHolds = () => false; /* the control: the same walk with no rail goes off her side */
+    try { put(pt(sd * (W / 2 - 1.0), .3), DECK_Y); face(pt(sd * (W / 2 + 4), .3)); drive(() => { PHP = maxHP; K['KeyW'] = true; }, 120); out.noRail = st(); } finally { window.shipRailHolds = keep; } }
+  const q = pt((out.quaySide || 1) * (W / 2 + 1.5), .3); put(q, activeTerrainH(q.x, q.z)); face(pt(0, .3)); drive(() => { K['KeyW'] = true; }, 120); out.fromQuay = st();
+  thirdPerson = tp; return out; });
+console.log(JSON.stringify(rail));
+check('with no rail the same walk goes off her side (the control)', rail.noRail && !rail.noRail.deck, rail.noRail);
+check(`the rail holds you: a walk at either side leaves you on her deck, ${rail.seaWalk && rail.seaWalk.out} m from her middle`, rail.quayWalk && rail.quayWalk.deck && rail.seaWalk && rail.seaWalk.deck && rail.seaWalk.out > 1.5, rail);
+check('a jump at either rail leaves you on her deck (a jump rises 0.84 m, the rail is 1.0)', rail.quayJump && rail.quayJump.deck && rail.seaJump && rail.seaJump.deck, rail);
+check(`at either net from her deck: "${rail.seaAim && rail.seaAim.p}"`, rail.quayAim && rail.quayAim.p === "Press 'E' to go over the side" && rail.seaAim.p === "Press 'E' to go over the side", rail);
+check('E over the seaward side puts you in the sea beside her', rail.seaOver && !rail.seaOver.deck && rail.seaOver.swim, rail.seaOver);
+check('E over the quay side stands you on the quay (1.1)', rail.quayOver && !rail.quayOver.deck && !rail.quayOver.swim && Math.abs(rail.quayOver.y - 1.1) < .05, rail.quayOver);
+check(`a walk at her from the quay stops at her side (on the quay or in the gap, at ${rail.fromQuay && rail.fromQuay.y} m)`, rail.fromQuay && !rail.fromQuay.deck && rail.fromQuay.out > 1.8, rail.fromQuay);
 stop();
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
