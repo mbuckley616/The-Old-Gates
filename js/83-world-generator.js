@@ -3076,7 +3076,11 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     const pickDoor=()=>doors[Math.floor(r()*Math.min(doors.length,6))];
     if(g==='guild_f'){
       const kind=['clear','hunt','beast','raid','supply'][Math.floor(r()*5)]; /* S1533 — Supply, a fifth kind (Michael's A on #814) */
-      if(kind==='supply'&&typeof supplyOre==='function'){const ore=supplyOre(site.x,site.z,r),n=3+tier,nm=ORE_DEF[ore].name;return {id:tid,g,kind,ore,need:n,gold,desc:`The armoury is short of ${nm}. Dig ${n} from the veins of this country and bring them here. You'll want a pick.`,short:`Supply ${n} ${nm}`};}
+      if(kind==='supply'&&typeof supplyOre==='function'){const ore=supplyOre(site.x,site.z,r),n=3+tier,nm=ORE_DEF[ore].name;
+        /* S1563 — timber, one Supply in three where the hall's country is wooded (Michael's A on #864) */
+        const wood=typeof supplyWood==='function'?supplyWood(site.x,site.z):null;if(wood&&r()<TIMBER_P){const k=4+2*tier,ln=SURV_ITEMS[wood].name;
+          return {id:tid,g,kind,wood,need:k,have:0,gold,desc:`The yard is short of timber. Fell trees in this country for ${k} ${ln}s; the yard's carters will haul them. You'll want a hatchet.`,short:`Supply ${k} ${ln}s`};}
+        return {id:tid,g,kind,ore,need:n,gold,desc:`The armoury is short of ${nm}. Dig ${n} from the veins of this country and bring them here. You'll want a pick.`,short:`Supply ${n} ${nm}`};}
       if(kind==='clear'&&doors.length){const e=pickDoor();const p=dungeonWorldPos[e.seed];const name=e.canonicalName||(typeof dungeonName==='function'?dungeonName(e.seed,e.theme):'an old gate');return {id:tid,g,kind,portal:'dyn_'+e.seed,need:5+tier*2,have:0,gold,desc:`${name} — ${dirWord(site.x,site.z,p.x,p.z)} of here. Clear it: put down ${5+tier*2} of whatever's inside.`,short:`Clear ${name}`};}
       if(kind==='hunt'){const t=HUNT[Math.floor(r()*HUNT.length)];const n=4+tier*2;const where=huntGround(site,t);return {id:tid,g,kind,target:t,need:n,have:0,gold,x:where?where.x:null,z:where?where.z:null,ground:where?where.name:null,desc:`${t}s have been at the roads. Kill ${n} of them in the open country${where?` — ${where.name}, ${compassWord(where.x-site.x,where.z-site.z)} of here, is their ground`:''} — and come back.`,short:`Hunt ${n} ${t}s${where?` (${where.name})`:''}`};}
       if(kind==='beast'&&sites.length){const t=sites[Math.floor(r()*Math.min(3,sites.length))];const beast=['Cave Bear','Ogre','Forest Troll'][Math.min(2,tier)];const ang=r()*Math.PI*2;const sx=t.x+Math.cos(ang)*(t.pad+70),sz=t.z+Math.sin(ang)*(t.pad+70);return {id:tid,g,kind,siteId:t.id,beast,sx,sz,spawned:false,done:false,gold:gold+40,desc:`A ${beast.toLowerCase()} is taking sheep at ${t.name}, ${dirWord(site.x,site.z,t.x,t.z)} of here. It was last seen ${compassWord(sx-t.x,sz-t.z)} of the village. Kill it.`,short:`The beast at ${t.name}`};}
@@ -3123,7 +3127,8 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   }
   function onHarvest(h){const G=gstate();for(const g in G){const t=G[g].active;if(t&&t.kind==='gather'&&h.type===t.herb){t.have++;gStamp(t);if(taskDone(t)&&!t._told){t._told=true;showMsg("Mages' Guild: that's enough — report back.",'#e8d8a0');}}}}
   // S1533 — Supply counts the ore of its metal in your bag (no shop sells ore, so ore carried is ore dug); the guild takes it at turn-in
-  function supplyHave(t){return typeof oreCount==='function'?oreCount(t.ore):0;}
+  function supplyHave(t){if(t.wood)return t.have||0;return typeof oreCount==='function'?oreCount(t.ore):0;} /* S1563 — timber is counted at the fall */
+  function onFell(kind,n){const G=gstate();for(const g in G){const t=G[g].active;if(t&&t.kind==='supply'&&t.wood&&t.wood===kind){t.have=(t.have||0)+n;gStamp(t);if(taskDone(t)&&!t._told){t._told=true;showMsg(`${GUILD_DEF[g].name}: that's the timber. Come back.`,'#e8d8a0');}}}}
   function onOre(k){const G=gstate();for(const g in G){const t=G[g].active;if(t&&t.kind==='supply'&&t.ore===k){gStamp(t);if(taskDone(t)&&!t._told){t._told=true;showMsg(`${GUILD_DEF[g].name}: that's the ore. Bring it in.`,'#e8d8a0');}}}}
   function onTalk(def){if(def&&def.name==='Varek'){varekTalked();return false;}if(qOnTalk(def))return true;const G=gstate();const t=G.guild_m.active;if(!t||t.kind!=='deliver'||t.done)return false;
     const S=SETTLE.get(t.siteId);if(!S||!S.houses.some(h=>h.keeper===def.name))return false;
@@ -3147,7 +3152,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   }
   function tickPickups(){qPickupTick();for(let i=pickups.length-1;i>=0;i--){const p=pickups[i];if(p.quest)continue;if(Math.hypot(px-p.x,pz-p.z)<1.4){p.task.got=true;gStamp(p.task);sc.remove(p.task._obj.m);unregLight(p.task._obj.l);pickups.splice(i,1);showMsg('You take the binding-stone. Report back.','#e8d8a0');if(typeof addLog==='function')addLog('🔷','Took a binding-stone.');}}}
   function turnIn(g){gLapse();const st=gstate()[g];const t=st.active;if(!t)return "You've no task from us.";if(!taskDone(t))return `Not yet. ${progressLine(t)}.`;
-    if(t.kind==='supply'){gStamp(t);bagTake(b=>b.ore===t.ore,t.need);if(typeof renderHubInv==='function')renderHubInv();}
+    if(t.kind==='supply'&&!t.wood){gStamp(t);bagTake(b=>b.ore===t.ore,t.need);if(typeof renderHubInv==='function')renderHubInv();}
     st.active=null;st.done++;const paid=questGold(gDatedPay(t));gold+=paid;xp+=Math.round(t.gold*.8);chkLvl();updateHUD();if(typeof addLog==='function')addLog('🏅',`${GUILD_DEF[g].name}: ${t.short} — ${paid} gold.`);qJournal(t,'complete',`Turned in to the ${GUILD_DEF[g].name}: ${paid} gold.`);
     const rk=rankOf(g);return `Good work. ${paid} gold. ${st.done%3===0?`You're ${aOrAn(rk)} ${rk} of the ${GUILD_DEF[g].name} now.`:`Rank: ${rk}.`}`;}
   // S682 — Michael's A on DECISION #217: a task you cannot finish is handed back, with no pay and no mark against your standing,

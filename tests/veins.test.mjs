@@ -69,13 +69,30 @@ const r = await page.evaluate(() => {
   const cv = document.createElement('canvas'); cv.width = cv.height = 104; const ctx = cv.getContext('2d');
   px = v.x + 1; pz = v.z; SKILLS.mining = { lv: 24, p: 0 }; out.dots24 = prospectorDots(ctx, 104, 58);
   SKILLS.mining = { lv: 25, p: 0 }; out.dots25 = prospectorDots(ctx, 104, 58); out.within40 = VEINS.filter(u => veinLive(u) && Math.hypot(u.x - px, u.z - pz) <= 40).length;
+  // ── S1562: Lodestone (Mining 75, #860 A): one ore in ten from a vein in the Mark's highlands brings a lodestone; carried, Prospector
+  // reaches 120 m and the compass points to the nearest vein ──
+  { let mk = null; for (let i = 0; i < 60 && !mk; i++) for (let j = 0; j < 60 && !mk; j++) if (nationKeyOf(i, j) === 'mark') mk = [i, j];
+    const S = WORLD.SIZE, at = (c, tier, id) => ({ id, ore: 'iron', tier, x: (c[0] + .5) * S, z: (c[1] + .5) * S, g: null });
+    out.lode = { live: PERK_LIVE.has('mining:75'), mark: !!mk, ground3: !!mk && lodestoneGround(at(mk, 3, 'lg:a')), ground2: !!mk && lodestoneGround(at(mk, 2, 'lg:b')), home3: lodestoneGround({ ...v, tier: 3 }) };
+    const lodes = lv => { SKILLS.mining = { lv, p: 0 }; let got = 0, n = 0; const said = []; for (let i = 0; i < 1500; i++) { const t = at(mk, 3, 'lode:' + lv + ':' + i); delete worldState.veins[t.id];
+      BAG.length = 0; bagAdd({ ...PICK_ITEM }); const q = strikeVein(t); if (q.ore) { got++; if (bagCount(b => b.lodestone)) { n++; if (said.length < 1) said.push(q.ore); } } } return { got, n, said }; };
+    if (mk) { out.lode.at74 = lodes(74); out.lode.at75 = lodes(75); }
+    BAG.length = 0; px = v.x + 1; pz = v.z; SKILLS.mining = { lv: 25, p: 0 };
+    out.lode.compass0 = WORLD.compassPlaces().filter(q => q.lode).length; out.lode.dots40 = prospectorDots(ctx, 104, 58);
+    bagAdd({ ...LODESTONE_ITEM }); out.lode.dots120 = prospectorDots(ctx, 104, 58);
+    out.lode.within120 = VEINS.filter(u => veinLive(u) && Math.hypot(u.x - px, u.z - pz) <= 120).length;
+    out.lode.past58 = VEINS.filter(u => veinLive(u) && Math.hypot(u.x - px, u.z - pz) > 58 && Math.hypot(u.x - px, u.z - pz) <= 120).length;
+    px = v.x + 30; pz = v.z + 30; const near = VEINS.filter(u => veinLive(u) && veinLeft(u) > 0).sort((a, b) => Math.hypot(a.x - px, a.z - pz) - Math.hypot(b.x - px, b.z - pz))[0];
+    const lv = lodestoneVein(), cp = WORLD.compassPlaces().filter(q => q.lode);
+    out.lode.compass = { nearest: !!lv && !!near && lv.x === near.x && lv.z === near.z, places: cp.length, glyph: cp[0] && cp[0].glyph, d: cp[0] && Math.round(cp[0].d) };
+    const d = JSON.parse(ssStringify(_buildSavePayload())); out.lode.saved = JSON.stringify(d).includes('"lodestone":true'); BAG.length = 0; }
   // ── the shops ──
   out.pickAt = { weapon: minersPickFor({ type: 'weapon' }).length, misc: minersPickFor({ type: 'misc' }).length, potion: minersPickFor({ type: 'potion' }).length };
   out.oreW = oreItem('iron').weight; out.pickW = PICK_ITEM.weight; out.pickPrice = PICK_ITEM.buyPrice;
   // ── S1533: the Fighters' Guild's Supply (#814 A): one task in five; the hall's country's ore; dug, carried, and taken at turn-in ──
   { const site = siteAnywhere('dunmore'), G = gstate(), keep = JSON.stringify(G.guild_f), kinds = {}; let sup = null;
     G.guild_f = { done: 3, active: null };
-    for (let i = 0; i < 400; i++) { const t = genTask('guild_f', site); kinds[t.kind] = (kinds[t.kind] || 0) + 1; if (t.kind === 'supply' && !sup) sup = t; }
+    for (let i = 0; i < 400; i++) { const t = genTask('guild_f', site); kinds[t.kind] = (kinds[t.kind] || 0) + 1; if (t.kind === 'supply' && t.ore && !sup) sup = t; /* S1563: a timber Supply (#864) has no ore */ }
     const want = SUPPLY_ORE[veinTier(site.x, site.z)];
     out.supply = { kinds, tier: veinTier(site.x, site.z), want, ore: sup && sup.ore, need: sup && sup.need, short: sup && sup.short };
     if (sup) { G.guild_f.active = sup; BAG.length = 0; bagAdd({ ...PICK_ITEM }); SKILLS.mining = { lv: 100, p: 0 };
@@ -91,6 +108,10 @@ console.log(JSON.stringify(r));
 check('Seam (100): a vein holds 5 (3 at 99)', r.seam.cap99 === 3 && r.seam.ores === 5 && /worked out/.test(r.seam.spent), r.seam);
 check('Mining 50: about one ore in four comes double; none at 49', r.dbl49.two === 0 && Math.abs(r.dbl50.two / r.dbl50.got - .25) < .07, [r.dbl49, r.dbl50]);
 check('Prospector (25): the veins within 40 m on the minimap; none at 24', r.dots24 === 0 && r.dots25 === r.within40 && r.dots25 >= 1, [r.dots24, r.dots25, r.within40]);
+check('Lodestone (75) is live; the ground is a tier-3 vein in a cell of the Mark, not tier 2 there, not at home', r.lode.live && r.lode.mark && r.lode.ground3 && !r.lode.ground2 && !r.lode.home3, r.lode);
+check('at 75 about one ore in ten from the Mark\'s highlands brings a lodestone, said with the ore; none at 74', r.lode.at74 && r.lode.at74.n === 0 && r.lode.at75 && Math.abs(r.lode.at75.n / r.lode.at75.got - .1) < .04 && /and a lodestone/.test(r.lode.at75.said[0] || ''), [r.lode.at74, r.lode.at75]);
+check('carried, a lodestone takes Prospector from 40 m to 120 m (past the minimap\'s 58 m on its rim)', r.lode.dots40 === r.dots25 && r.lode.dots120 === r.lode.within120 && r.lode.dots120 > r.lode.dots40, [r.lode.dots40, r.lode.dots120, r.lode.within120, r.lode.past58]);
+check('and the compass points to the nearest vein with ore left; none without a lodestone; the save keeps it', r.lode.compass0 === 0 && r.lode.compass.nearest && r.lode.compass.places === 1 && r.lode.compass.glyph === '◆' && r.lode.saved, r.lode.compass);
 check('veins lie about the home province', r.n >= 2, r.n);
 check('2 to 5 a chunk', r.perMin >= 2 && r.perMax <= 5, [r.perMin, r.perMax]);
 check('each keyed <cx,cz>:<i>', r.ids);
