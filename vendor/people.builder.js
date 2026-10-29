@@ -1054,6 +1054,8 @@ function buildHair(P, G, heads, scalpTris, headB, rnd, checks = true) {
   // the strands over the head
   const area = [], A = new THREE.Vector3(), B = new THREE.Vector3(), C = new THREE.Vector3(); let tot = 0;
   for (let t = 0; t < scalpTris.length; t += 3) { A.fromArray(P, scalpTris[t] * 3); B.fromArray(P, scalpTris[t + 1] * 3); C.fromArray(P, scalpTris[t + 2] * 3); tot += B.clone().sub(A).cross(C.clone().sub(A)).length() / 2; area.push(tot); }
+  // the ears' reach either side of the head (Session 1568): a loose lock passes outside it, as a curtain, not round the ear
+  const earW = [0, 0]; if (style === 'loose') for (const i of bodyV()) { const x = P[i * 3] - hc.x, y = P[i * 3 + 1], z = P[i * 3 + 2]; if (Math.abs(z - hc.z) < .045 && y < hc.y && y > hc.y - .08) { const k = x < 0 ? 0 : 1; earW[k] = Math.max(earW[k], Math.abs(x)); } }
   let crownMiss = 0, edgeN = 0, edgeW = 0, backN = 0, backW = 0, tN = 0, tW = 0, tbN = 0, tbW = 0; const strands = [], short = style === 'short', free = style === 'loose', L = short ? .05 + .1 * len : free ? .12 + .5 * len : .5, nS = short ? 1400 : free ? 2200 : style === 'crown' ? 3000 : style === 'shaved' ? 4200 : 1700, step = .009, thick = short ? .009 : free ? .02 : .011;
   for (let k = 0; k < nS; k++) {
     let r = rnd() * tot, lo = 0, hi = area.length - 1; while (lo < hi) { const m = (lo + hi) >> 1; if (area[m] < r) lo = m + 1; else hi = m; } const t = lo * 3;
@@ -1074,6 +1076,10 @@ function buildHair(P, G, heads, scalpTris, headB, rnd, checks = true) {
     const eF = Math.min(r0.z > .04 ? Math.max(0, Math.min(1, (r0.y - (.796 - .03 * (r0.x / .075) ** 2)) / .015)) : 1, 1 - wS * (1 - Math.min(1, eD / .015))), fine = .35 + .65 * eF * eF * (3 - 2 * eF);
     // stubble thins out over the last 2 cm to the scalp's border, so the shorn side has no edge of its own at the temple or over the ear
     if (shv && rnd() > Math.min(1, eD / .02)) continue;
+    // loose hair's face-framing locks (Session 1568, Michael's note on #272): a root at the side, forward of the crown, sweeps down past the
+    // temple and over the ear instead of back over the skull, leaves the head at the side and falls in front of the shoulder
+    // it runs back and out over the skull first, so no strand lies on the brow or the temple, and hangs once it is past the face's width
+    const lock = free && Math.abs(sx) > .3 && p.z > hc.z - .025, hang = q => q.y < hc.y + .01 && (q.z < hc.z || Math.abs(q.x - hc.x) > .072);
     const pts = [q.clone()], ns = [n.clone()], dir = new THREE.Vector3(), myL = shv ? .003 + .004 * rnd() : L * (free ? (.7 + .45 * rnd()) * (1 - .22 * sx * sx) : .75 + .4 * rnd()), relY = free ? hc.y - .03 - .035 * rnd() : 0; let fell = -1, under = false, nRel = null;
     // the root sits on the skin and the strand rises into its layer over its first 5 cm (Session 877), so the hairline is not
     // a row of strands standing off the forehead and the crown has some lift; loose and short hair stand higher than pulled-back styles
@@ -1081,19 +1087,20 @@ function buildHair(P, G, heads, scalpTris, headB, rnd, checks = true) {
     for (let l = 0; l < (crown ? .3 : myL + (g ? 1 : 0)); l += step) {
       let want;
       if (g) { want = g.p.clone().sub(q).normalize(); const front = Math.max(0, Math.min(1, (q.z - hc.z + .01) / .05)); if (!crown) want.z -= 1.4 * front; }
-      else { const back = Math.max(0, Math.min(1, (faceZ + .02 - q.z) / .1)); want = new THREE.Vector3(sideW, -(.25 + .75 * back), -(1 - .55 * back));
+      else { const back = Math.max(0, Math.min(1, (faceZ + .02 - q.z) / .1)); want = lock ? (hang(q) ? new THREE.Vector3(side * .12, -1, -.08) : new THREE.Vector3(side * .6, -(.25 + .75 * back), -(1 - .75 * back))) : new THREE.Vector3(sideW, -(.25 + .75 * back), -(1 - .55 * back));
         // loose hair leaves the skull where the skull turns under (its surface faces down), so it parts from it on a tangent and
         // with no ledge; then it falls straight down with a little spread to the side, and never back in toward the head's axis,
         // so it hangs as wide as the head and is not pinched in to the nape
-        if (free && q.z < hc.z && q.y < hc.y - .02 && (under || n.y < -.08 || q.y < relY - .05)) { under = true; if (fell < 0) { fell = pts.length - 1; nRel = n.clone(); } const ax = new THREE.Vector3(q.x - hc.x, 0, q.z - hc.z).normalize(); want.set(sx * .08, -1, 0);
+        if (free && (lock || q.z < hc.z) && q.y < hc.y - .02 && (under || n.y < -.08 || q.y < relY - .05)) { under = true; if (fell < 0) { fell = pts.length - 1; nRel = n.clone(); } const ax = new THREE.Vector3(q.x - hc.x, 0, q.z - hc.z).normalize(); want.set(sx * .08, -1, lock ? .12 : 0);
           const din = dir.x * ax.x + dir.z * ax.z; if (din < 0) { dir.x -= din * ax.x; dir.z -= din * ax.z; } } }
-      const stick = g || short || (free ? !under : onHead(q)), hit = stick ? heightOver(S, q) : null;
+      const stick = g || short || (free ? !under && !(lock && hang(q)) : onHead(q)), hit = stick ? heightOver(S, q) : null;
       if (stick && hit) want.addScaledVector(hit.e.n, -want.dot(hit.e.n));
       want.normalize(); dir.lerp(want, l === 0 ? 1 : .5).normalize();
       const q2 = q.clone().addScaledVector(dir, step), h2 = heightOver(S, q2);
       if (h2) { const o2 = offAt(l + step), c = stick || onHead(q2) ? o2 : clearAt(q2) + o2; if (stick || h2.h < c) q2.addScaledVector(h2.e.n, c - h2.h); n.copy(h2.e.n); }
       if (!stick) { n.set(q2.x, 0, q2.z - heads['neck01'].z).normalize(); if (nRel) n.lerp(nRel, Math.max(0, 1 - (pts.length - fell) / 8)).normalize(); }
-      if (!onHead(q2) && q2.z > backZ && Math.abs(q2.x) < .12) q2.z = backZ;
+      if (lock) { const cur = side * (q2.x - hc.x), w = earW[side < 0 ? 0 : 1] + .006, k = Math.max(0, Math.min(1, (hc.y + .02 - q2.y) / .03)); if (cur < w) q2.x = hc.x + side * (cur + (w - cur) * k); }
+      if (!onHead(q2) && q2.z > backZ && Math.abs(q2.x) < (lock ? .065 : .12)) q2.z = backZ;
       pts.push(q2); ns.push(n.clone()); q = q2;
       if (g && q.distanceTo(g.p) < (crown ? off + .008 : .012)) break;
       // under the fur mantle loose hair is worn inside the collar (Session 874): the fur's eleven shells stand 10 cm off the neck,
@@ -1110,7 +1117,7 @@ function buildHair(P, G, heads, scalpTris, headB, rnd, checks = true) {
     // the texture; run 0 up, as the braids' are, its 2 to 10 cm took only the texture's faded foot, under the alpha test, so the hair round
     // the ring was all but bare skin and the braid stood on it as a hoop. A root by the hairline, finer, starts lower in the fade, so the
     // short strands there thin out onto the brow and do not stop on one hard line)
-    strands.push({ pts, ns, w: (shv ? .004 : short ? .008 : free ? .008 : crown ? .015 : .011) * (.8 + .4 * rnd()) * fine, tip: free ? .85 : .5, ...crown ? { v0: Math.max(0, Math.min(1 - pts.length * step / .35, .2 + .65 * (fine - .35) / .65)), v1: 1 } : { v0: 0, v1: Math.min(1, pts.length * step / (g ? .35 : myL)) } });
+    strands.push({ pts, ns, w: (shv ? .004 : short ? .008 : free ? (lock ? .012 : .008) : crown ? .015 : .011) * (.8 + .4 * rnd()) * fine, tip: free ? .85 : .5, ...crown ? { v0: Math.max(0, Math.min(1 - pts.length * step / .35, .2 + .65 * (fine - .35) / .65)), v1: 1 } : { v0: 0, v1: Math.min(1, pts.length * step / (g ? .35 : myL)) } });
   }
   // the checks' numbers: strand points under the skin, and strand points lying on the face (by the rest place of the skin under them)
   // and Session 877's: how high the roots sit on the skin, and how high the hair stands over the crown
