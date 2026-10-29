@@ -2175,7 +2175,7 @@ function interact(){
     // v61d4 — added safehouse:8.
     const _intDx={weapon:10,armor:10,potion:9,misc:9,inn:11,church:16,castle:22,safehouse:8};
     const _roomD=currentHouse?(currentHouse._roomD||_intDx[currentHouse.type||'misc']||9):9; // v80 S10 — generated rooms carry their depth
-    if(pz>_roomD-((currentHouse&&currentHouse._exitD)||1.6)&&Math.abs(px-intDoorX(currentHouse))<((currentHouse&&currentHouse._exitW)||1.6)&&jumpY<.6&&!personAimedIn()){exitInterior();return;} // v80 S13 — the door, not the whole back wall
+    if(intExitZ(currentHouse,pz,_roomD)&&Math.abs(px-intDoorX(currentHouse))<((currentHouse&&currentHouse._exitW)||1.6)&&jumpY<.6&&!personAimedIn()){exitInterior();return;} // v80 S13 — the door, not the whole back wall
     if(typeof WORLD!=='undefined'&&WORLD.interiorTalk())return; // v80 S12 — guild members
     { // v80 S10 — any bed: rest (and take a banked level)
       if(typeof WORLD!=='undefined'&&WORLD.hatchInteract())return; // v80 — cellar hatch

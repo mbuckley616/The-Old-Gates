@@ -255,6 +255,7 @@
   // (worldState.ship.dress, 'gatelands' | 'mark' | 'aurenne'; a ship from before it is the Gatelands', as she was built)
   function shipDress(d){if(d==null)d=worldState.ship&&worldState.ship.dress;return d==='mark'||d==='aurenne'?d:'gatelands';}
   // S1539 — and the Mark's cutter (PKIT.ships.cutter, ships.js's markCutter): the same contracts, the hatch at her own L/2-3.2 as the old cutter's
+  // S1558 — the cutter's hatch is the prototype's, aft of the mast at z -1.05, where her hold's ladder comes up (PKIT.ships.cutterBase).
   // S1544 — and Aurenne's caravel (PKIT.ships.caravel, ships.js's aurenneCaravel): her sterncastle is a second deck 2.15 m up (castle,
   // walked by shipCastlePlat), her wheel stands on it (helm), and her hatch is her own, between the main and the fore (hatchZ), since the
   // fore mast stands where L/2-3.2 would put it. A prop with lv 'lo' stands on the main deck only (the bulkhead either side of the
@@ -264,7 +265,7 @@
   // and a forecastle (fore) over her first 3 m, open beneath on two posts (lo) with its ladder up the middle running aft from its edge; the
   // forecastle's rail and its forward end are 'hi' (as the aftcastle's after end now is), and under the ladder's upper half a 'deck' box, so nobody at the deck's height walks in under its treads. Her
   // hatch is her own, aft of the mast, since L/2-3.2 falls at the forecastle's ladder; her lashed cargo stands on deck as props.
-  function shipBakeKit(kind,dress){const S=kind==='cutter'?PKIT.ships.cutter({hatchZ:14/2-3.2}):kind==='caravel'?PKIT.ships.caravel():kind==='cog'?PKIT.ships.cog({dress}):kind==='galleon'?PKIT.ships.galleon({dress}):PKIT.ships.sloop({dress}),P=[];
+  function shipBakeKit(kind,dress){const S=kind==='cutter'?PKIT.ships.cutter({hatchZ:-1.05}):kind==='caravel'?PKIT.ships.caravel():kind==='cog'?PKIT.ships.cog({dress}):kind==='galleon'?PKIT.ships.galleon({dress}):PKIT.ships.sloop({dress}),P=[];
     const zz=[];for(let z=S.zs;z<=S.zb;z+=.05)if(S.deckAt(z)>.45)zz.push(z);const z0=zz[0],z1=zz[zz.length-1];
     if(S.masts)for(const [x,z] of S.masts)P.push({x,z,r:.19});else P.push({x:0,z:S.mast[1],r:.17});P.push({x:-.45,z:S.mast[1]-.7,r:.17});const h=S.hatch;for(const q of S.hatches||[h])P.push({x:0,z:(q.z0+q.z1)/2,hx:(q.x1-q.x0)/2,hz:(q.z1-q.z0)/2,ry:0}); /* S1552 — the galleon's two */
     const C=S.castle;if(C){const w=Math.min(C.cw(C.z1),S.deckAt(C.z1)+.05),a=C.cw(C.z1)-.04,g=C.ladders.map(lx=>[lx-.36,lx+.36]),seg=(x0,x1,lv)=>{if(x1>x0)P.push({x:(x0+x1)/2,z:C.z1,hx:(x1-x0)/2,hz:.05,ry:0,lv});};
@@ -360,7 +361,7 @@
   const STOW_COL={grain:0xb39a66,salt:0xd2c9b4,wool:0xd6c9aa,furs:0x6a4a30,hides:0x986a44,beef:0x7a5228,fish:0x5e4424,iron:0x6e5638,silver:0x4a3222,dyes:0x8a6a40,glass:0xa8865a,timber:0xa27a4a};
   function shipStowSlots(key){const r=SHIP_GEO.get(key);if(!r||!r.deck)return null;if(r.stow)return r.stow;
     const L=r.L,W=r.W,P=r.props||[],kind=key.split('|')[0],lim=W/2-.8-.35-.27;const n=Math.max(1,Math.floor(2*Math.max(0,lim)/STOW_U)+1);
-    const zA=Math.max(-L/2+4.2,r.castle?r.castle.z1+.3:-1e9),zB=L/2-(kind==='sloop'&&r.kit?3.2:4.2),zM=(zA+zB)/2,slots=[]; /* S1544 — not under a castle */ /* S1555 — the kit sloop's hatch is aft of her mast now: the deck forward of it, where it stood, is stowage */
+    const zA=Math.max(-L/2+4.2,r.castle?r.castle.z1+.3:-1e9),zB=L/2-((kind==='sloop'||kind==='cutter')&&r.kit?3.2:4.2),zM=(zA+zB)/2,slots=[]; /* S1544 — not under a castle */ /* S1555 — the kit sloop's hatch is aft of her mast now: the deck forward of it, where it stood, is stowage (S1558: and the kit cutter's) */
     for(let z=zA+STOW_U/2;z<=zB-STOW_U/2+1e-6;z+=STOW_U)for(let i=0;i<n;i++){const x=(i-(n-1)/2)*STOW_U;
       if(Math.abs(x)+.28>r.deck.at(z)-.9)continue;
       if([r.castle,r.fore].some(C=>C&&C.ladders.some(lx=>Math.abs(x-lx)<.34+.28&&(C===r.fore?z>C.z0-C.lad-.28&&z<C.z0:z>C.z1&&z<C.z1+C.lad+.28))))continue; /* S1551 — nor under a ladder */
@@ -727,12 +728,14 @@
   // frame and turned so the ladder's foot is the room's door (x = the keel, z = D, the bow towards z = 0, the floor at 0); nothing is scaled.
   // The planking's inside is a run of solids a quarter metre long at shin height. Headroom is a sloop's: 1.58 m under the beams, so the
   // eye stoops (house._eyeMax). The other classes keep the old cabin until their bases come in.
-  function shipBaseOk(house){return !!(house&&house.type==='cabin'&&window.OG_LOOK==='new'&&SHIP.mesh&&SHIP.mesh.userData.kit&&SHIP.mesh.userData.kind==='sloop'&&typeof PKIT!=='undefined'&&PKIT.ships&&PKIT.ships.sloopBase);}
+  // S1558 — and the cutter's (PKIT.ships.cutterBase, shipbase.js's Session 1148): 4.0 by 7.8 m, 0.4 m deeper, so she stands you up between
+  // the beams; the chart table, its stool, the barrel and the workbench are solids too, and the workbench is the cabin's bench (house._bench, E at it).
+  function shipBaseOk(house){return !!(house&&house.type==='cabin'&&window.OG_LOOK==='new'&&SHIP.mesh&&SHIP.mesh.userData.kit&&(SHIP.mesh.userData.kind==='sloop'||SHIP.mesh.userData.kind==='cutter')&&typeof PKIT!=='undefined'&&PKIT.ships&&PKIT.ships.cutterBase);}
   function buildShipBase(house){
-    const B=PKIT.ships.sloopBase({dress:SHIP.mesh.userData.kit}),F0=B.floor,z0=B.hold.z0,z1=B.hold.z1,X=2.2,W=2*X,D=z1-z0;
+    const cut=SHIP.mesh.userData.kind==='cutter',B=cut?PKIT.ships.cutterBase():PKIT.ships.sloopBase({dress:SHIP.mesh.userData.kit}),F0=B.floor,z0=B.hold.z0,z1=B.hold.z1,X=cut?2.0:2.2,W=2*X,D=z1-z0;
     const rx=x=>X-x,rz=z=>z1-z,ry=y=>y-F0,fr=b=>({x0:rx(b[3]),x1:rx(b[0]),z0:rz(b[5]),z1:rz(b[2]),y0:Math.max(0,ry(b[1])),y1:ry(b[4])});
-    house._counterFront=null;house.intW=W;house.intD=D;house._roomH=+(B.deckUnder-F0).toFixed(3);house._eyeMax=+(B.beamBottom-F0-.2).toFixed(3);
-    house._exitD=.8;house._exitW=.5;house._exitX=X;house._exitText="Press 'E' to go on deck";house._arriveX=X;house._arriveZ=+(D-.35).toFixed(3);house._arriveYaw=0;house._base=B;
+    house._counterFront=null;house._bench=null;house.intW=W;house.intD=D;house._roomH=+(B.deckUnder-F0).toFixed(3);house._eyeMax=+(B.beamBottom-F0-.2).toFixed(3);
+    const fz=+rz(B.ladder.foot[2]).toFixed(3),aft=D-fz>1;house._exitD=aft?.3:.8;house._exitZ=aft?fz:null;house._exitW=.5;house._exitX=X;house._exitText="Press 'E' to go on deck";house._arriveX=X;house._arriveZ=aft?+(fz-.1).toFixed(3):+(D-.35).toFixed(3); /* S1558 — the cutter's ladder foot is mid-hold, the berth aft of it */house._arriveYaw=0;house._base=B;
     const sc_=new THREE.Scene();interiorScene=sc_;landRoomPost(sc_);sc_.background=new THREE.Color(0x0c0806);sc_.fog=new THREE.Fog(0x0c0806,6,14);
     intNPCMesh=null;intNPCPos={x:-99,z:-99};intBedPos=null;intStashPos=null;
     const SOL=[];INT_SOL=SOL;FOOTHOLDS=[];INT_BEDS=[];INT_DOORS=[];INT_DOORS.house=house.id;INT_CHAIR=null;INT_NPCS=[];HATCH.active=false;HATCH.roof=false;INT_LOOT=null;INT_BOX=null;INT_SHELF=null;
@@ -744,7 +747,9 @@
     const it=n=>B.items.find(q=>q.name===n);
     {const a=it('bunk').box,f=it('bunk front').box;SOL.push(fr([a[0],F0,a[2],Math.max(a[3],f[3]),a[4],a[5]]));
       INT_BEDS.push({x:+rx((a[0]+a[3])/2).toFixed(3),z:+rz((a[2]+a[5])/2).toFixed(3),y:+ry(a[1]).toFixed(3),owner:'free',room:null,cz:+rz((a[2]+a[5])/2).toFixed(3)});intBedPos={x:INT_BEDS[0].x,z:INT_BEDS[0].z};}
-    for(const n of ['sea chest','water cask','mast'])SOL.push(fr(it(n).box));
+    for(const n of ['sea chest','water cask','mast','barrel','stool'])if(it(n))SOL.push(fr(it(n).box));
+    for(const n of ['chart table','workbench'])if(it(n)){const a=it(n).box;SOL.push(fr([a[0],F0,a[2],a[3],a[4],a[5]]));}
+    if(it('workbench')){const a=it('workbench').box;house._bench={x:+rx((a[0]+a[3])/2).toFixed(3),z:+rz((a[2]+a[5])/2).toFixed(3)};} /* S1558 — E at it (benchNear) */
     {const c=it('sea chest').box;intStashPos={x:+rx((c[0]+c[3])/2).toFixed(3),z:+rz((c[2]+c[5])/2).toFixed(3)};}
     // the sky over the open hatch, by the hour, and the day down through it; the lantern under the beam and the hold's air
     const hr=typeof gameHour==='function'?gameHour():12,dayK=hr>=7&&hr<18?1:hr>=5&&hr<20?.4:0,hc=B.hatch,hx=rx((hc.x0+hc.x1)/2),hz=rz((hc.z0+hc.z1)/2),hy=ry(1.4);
