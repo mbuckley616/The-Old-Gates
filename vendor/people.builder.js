@@ -351,6 +351,10 @@ function loadPack() {
     // where hair roots: the old scalp plus the sides down to above the ears and the back down to the nape (Session 804),
     // so a style that lifts the hair up and back (a bun, a braid) does not bare the temples
     scalpRoots: sel(G['body'], (x, y, z) => { const hl = .796 - .03 * (x / .075) ** 2; return y > .66 && Math.abs(x) < .11 && (z > .05 ? y > hl : z > .022 ? y > (Math.abs(x) > .05 ? .755 : .7) : y > .695); }),
+    // the short crop's roots (Session 1574, Michael's note on #272): the region above, and at the sides the hair down to 0.7 cm over the ear
+    // (its top is at y .735, z .034 to .055) and a sideburn in front of it, to the ear's middle at its back edge and rising 1.6 cm a cm forward.
+    // Only the crop: a style combed up and back would drag these roots across the ear, so the others keep the region above
+    cropRoots: sel(G['body'], (x, y, z) => { const hl = .796 - .03 * (x / .075) ** 2, ax = Math.abs(x); return y > .66 && ax < .11 && (z > .062 && z < .095 && ax > .062 ? y > Math.min(hl, .708 + 1.6 * (z - .062)) : z > .05 ? y > hl : z > .022 ? y > (ax > .05 ? .742 : .7) : y > .695); }),
     // the wardrobe's first pieces (Session 805): a waist apron off the skirt shell, its bib off the tights, a hood over the head with the face open
     apron: sel(G['helper-skirt'], (x, y, z) => z > .015 && Math.abs(x) < .2 && y > -.6),
     apronBib: sel(tri, (x, y, z) => z > .03 && Math.abs(x) < .14 && y > .08 && y < .5),
@@ -372,14 +376,15 @@ function loadPack() {
   // how far each vertex of the hair's root region lies from that region's border, on the rest body (Session 879): the edges
   // that only one of its triangles uses are the border, and a vertex's number is its distance to the nearest of them, so the
   // temples and the sides above the ears can thin out as the forehead does, where the region stops on a mesh edge
-  { const R = PACK.R.scalpRoots, cnt = new Map(), key = (a, b) => a < b ? a * 65536 + b : b * 65536 + a, edge = new Float32Array(N).fill(-1), segs = [];
+  // (Session 1574: worked out for the crop's region too, PACK.cropEdge)
+  for (const [R, nm] of [[PACK.R.scalpRoots, 'scalp'], [PACK.R.cropRoots, 'crop']]) { const cnt = new Map(), key = (a, b) => a < b ? a * 65536 + b : b * 65536 + a, edge = new Float32Array(N).fill(-1), segs = [];
     for (let t = 0; t < R.length; t += 3) for (let k = 0; k < 3; k++) { const e = key(R[t + k], R[t + (k + 1) % 3]); cnt.set(e, (cnt.get(e) || 0) + 1); }
     for (const [e, c] of cnt) if (c === 1) segs.push([Math.floor(e / 65536), e % 65536]);
     const d2 = (i, a, b) => { const ax = P[a * 3], ay = P[a * 3 + 1], az = P[a * 3 + 2], bx = P[b * 3] - ax, by = P[b * 3 + 1] - ay, bz = P[b * 3 + 2] - az, px = P[i * 3] - ax, py = P[i * 3 + 1] - ay, pz = P[i * 3 + 2] - az;
       const s = Math.max(0, Math.min(1, (px * bx + py * by + pz * bz) / (bx * bx + by * by + bz * bz || 1))); return (px - s * bx) ** 2 + (py - s * by) ** 2 + (pz - s * bz) ** 2; };
     for (const i of R) if (edge[i] < 0) { let m = 1e9; for (const [a, b] of segs) m = Math.min(m, d2(i, a, b)); edge[i] = Math.sqrt(m); }
     for (let i = 0; i < N; i++) if (edge[i] < 0) edge[i] = 0;
-    PACK.scalpEdge = edge; PACK.scalpBorder = segs.length; }
+    PACK[nm + 'Edge'] = edge; PACK[nm + 'Border'] = segs.length; }
   return PACK;
 }
 
@@ -1053,7 +1058,9 @@ function buildHair(P, G, heads, scalpTris, headB, rnd, checks = true) {
     return { line, n, under: q => foot.some(f => f.distanceTo(q) < crownW * .6), near: q => { const a = Math.atan2(q.x - hc.x, q.z - hc.z); let bd = 1e9, bp = null; for (let i = 0; i < n; i++) { const d = Math.abs(((az[i] - a) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI); if (d < bd) { bd = d; bp = foot[i]; } } return { p: bp }; } }; })();
   // the strands over the head
   const area = [], A = new THREE.Vector3(), B = new THREE.Vector3(), C = new THREE.Vector3(); let tot = 0;
-  for (let t = 0; t < scalpTris.length; t += 3) { A.fromArray(P, scalpTris[t] * 3); B.fromArray(P, scalpTris[t + 1] * 3); C.fromArray(P, scalpTris[t + 2] * 3); tot += B.clone().sub(A).cross(C.clone().sub(A)).length() / 2; area.push(tot); }
+  // (Session 1574: a crop's sideburn, a strip in front of the ear, takes its roots 2.5 times as densely, so it reads as hair and not as a few strands)
+  const burnTri = t => { let x = 0, y = 0, z = 0; for (let k = 0; k < 3; k++) { const v = scalpTris[t + k] * 3; x += R0[v] / 3; y += R0[v + 1] / 3; z += R0[v + 2] / 3; } return style === 'short' && z > .058 && y < .745 && Math.abs(x) > .045; };
+  for (let t = 0; t < scalpTris.length; t += 3) { A.fromArray(P, scalpTris[t] * 3); B.fromArray(P, scalpTris[t + 1] * 3); C.fromArray(P, scalpTris[t + 2] * 3); tot += B.clone().sub(A).cross(C.clone().sub(A)).length() / 2 * (burnTri(t) ? 2.5 : 1); area.push(tot); }
   // the ears' reach either side of the head (Session 1568): a loose lock passes outside it, as a curtain, not round the ear
   const earW = [0, 0]; if (style === 'loose') for (const i of bodyV()) { const x = P[i * 3] - hc.x, y = P[i * 3 + 1], z = P[i * 3 + 2]; if (Math.abs(z - hc.z) < .045 && y < hc.y && y > hc.y - .08) { const k = x < 0 ? 0 : 1; earW[k] = Math.max(earW[k], Math.abs(x)); } }
   let crownMiss = 0, edgeN = 0, edgeW = 0, backN = 0, backW = 0, tN = 0, tW = 0, tbN = 0, tbW = 0; const strands = [], short = style === 'short', free = style === 'loose', L = short ? .05 + .1 * len : free ? .12 + .5 * len : .5, nS = short ? 1400 : free ? 2200 : style === 'crown' ? 3000 : style === 'shaved' ? 4200 : 1700, step = .009, thick = short ? .009 : free ? .02 : .011;
@@ -1072,15 +1079,23 @@ function buildHair(P, G, heads, scalpTris, headB, rnd, checks = true) {
     const r0 = new THREE.Vector3().fromArray(R0, scalpTris[t] * 3).multiplyScalar(1 - u - v).addScaledVector(new THREE.Vector3().fromArray(R0, scalpTris[t + 1] * 3), u).addScaledVector(new THREE.Vector3().fromArray(R0, scalpTris[t + 2] * 3), v);
     // and at the temples and over the ears (Session 879) by the root's distance to the region's border, so the side of the brow
     // is not a step of full-width strands where the region's triangles stop
-    const E = PACK.scalpEdge, eD = E[scalpTris[t]] * (1 - u - v) + E[scalpTris[t + 1]] * u + E[scalpTris[t + 2]] * v, wS = Math.max(0, Math.min(1, (r0.z + .04) / .03)) * (1 - Math.max(0, Math.min(1, (r0.z - .04) / .02)));
-    const eF = Math.min(r0.z > .04 ? Math.max(0, Math.min(1, (r0.y - (.796 - .03 * (r0.x / .075) ** 2)) / .015)) : 1, 1 - wS * (1 - Math.min(1, eD / .015))), fine = .35 + .65 * eF * eF * (3 - 2 * eF);
+    const E = scalpTris === PACK.R.cropRoots ? PACK.cropEdge : PACK.scalpEdge, eD = E[scalpTris[t]] * (1 - u - v) + E[scalpTris[t + 1]] * u + E[scalpTris[t + 2]] * v, wS = Math.max(0, Math.min(1, (r0.z + .04) / .03)) * (1 - Math.max(0, Math.min(1, (r0.z - .04) / .02)));
+    const eF = Math.min(r0.z > .04 ? Math.max(0, Math.min(1, (r0.y - (.796 - .03 * (r0.x / .075) ** 2)) / .015)) : 1, 1 - wS * (1 - Math.min(1, eD / .015))), fine0 = .35 + .65 * eF * eF * (3 - 2 * eF);
     // stubble thins out over the last 2 cm to the scalp's border, so the shorn side has no edge of its own at the temple or over the ear
     if (shv && rnd() > Math.min(1, eD / .02)) continue;
     // loose hair's face-framing locks (Session 1568, Michael's note on #272): a root at the side, forward of the crown, sweeps down past the
     // temple and over the ear instead of back over the skull, leaves the head at the side and falls in front of the shoulder
     // it runs back and out over the skull first, so no strand lies on the brow or the temple, and hangs once it is past the face's width
     const lock = free && Math.abs(sx) > .3 && p.z > hc.z - .025, hang = q => q.y < hc.y + .01 && (q.z < hc.z || Math.abs(q.x - hc.x) > .072);
-    const pts = [q.clone()], ns = [n.clone()], dir = new THREE.Vector3(), myL = shv ? .003 + .004 * rnd() : L * (free ? (.7 + .45 * rnd()) * (1 - .22 * sx * sx) : .75 + .4 * rnd()), relY = free ? hc.y - .03 - .035 * rnd() : 0; let fell = -1, under = false, nRel = null;
+    // the crop is short at the back and sides (Session 1574): a root within 5 cm over the ear's top (rest y .742) is shorter, down to 0.3 of
+    // the length by the ear and at the nape; at the side it is combed back along the head and not down across the ear; the sideburn's, in front of the ear, 1.2 to 2.2 cm
+    // whatever the crop's length, fall straight down
+    const cropK = short ? Math.max(0, Math.min(1, (r0.y - .742) / .05)) : 1, cropS = cropK < 1 && Math.abs(r0.x) > .045 && r0.z > -.03, burn = cropS && r0.z > .058 && r0.y < .745, cropW = cropS ? (burn ? new THREE.Vector3(0, -1, -.1) : new THREE.Vector3(0, -.4, -1)) : null;
+    // the sideburn lies under the front hairline's height, which reads it all as the hairline's edge: it keeps 0.75 of a strand's width
+    const fine = burn ? Math.max(.75, fine0) : fine0;
+    // a woman's (by the genome's sex, G.g) thins out over its lower 2.8 cm and does not end on a line at the ear's middle
+    if (burn && r0.y < .708 + .028 * (1 - (G.g ?? .5)) * rnd()) continue;
+    const pts = [q.clone()], ns = [n.clone()], dir = new THREE.Vector3(), myL = shv ? .003 + .004 * rnd() : burn ? .012 + .01 * rnd() : L * (free ? (.7 + .45 * rnd()) * (1 - .22 * sx * sx) : .75 + .4 * rnd()) * (.3 + .7 * cropK), relY = free ? hc.y - .03 - .035 * rnd() : 0; let fell = -1, under = false, nRel = null;
     // the root sits on the skin and the strand rises into its layer over its first 5 cm (Session 877), so the hairline is not
     // a row of strands standing off the forehead and the crown has some lift; loose and short hair stand higher than pulled-back styles
     const offAt = l => { const k = Math.min(1, l / .05); return .003 + (off - .003) * k * k * (3 - 2 * k); };
@@ -1093,6 +1108,7 @@ function buildHair(P, G, heads, scalpTris, headB, rnd, checks = true) {
         // so it hangs as wide as the head and is not pinched in to the nape
         if (free && (lock || q.z < hc.z) && q.y < hc.y - .02 && (under || n.y < -.08 || q.y < relY - .05)) { under = true; if (fell < 0) { fell = pts.length - 1; nRel = n.clone(); } const ax = new THREE.Vector3(q.x - hc.x, 0, q.z - hc.z).normalize(); want.set(sx * .08, -1, lock ? .12 : 0);
           const din = dir.x * ax.x + dir.z * ax.z; if (din < 0) { dir.x -= din * ax.x; dir.z -= din * ax.z; } } }
+      if (cropW) want.lerp(cropW, 1 - cropK);
       const stick = g || short || (free ? !under && !(lock && hang(q)) : onHead(q)), hit = stick ? heightOver(S, q) : null;
       if (stick && hit) want.addScaledVector(hit.e.n, -want.dot(hit.e.n));
       want.normalize(); dir.lerp(want, l === 0 ? 1 : .5).normalize();
@@ -1110,14 +1126,17 @@ function buildHair(P, G, heads, scalpTris, headB, rnd, checks = true) {
     if (fell > 0) { for (let it = 0; it < 8; it++) for (let i = fell + 1; i < pts.length - 1; i++) pts[i].lerp(pts[i - 1].clone().add(pts[i + 1]).multiplyScalar(.5), .5);
       for (const q3 of pts.slice(fell + 1)) { const h3 = heightOver(S, q3), c = (onHead(q3) ? 0 : clearAt(q3)) + off; if (h3 && h3.h < c) q3.addScaledVector(h3.e.n, c - h3.h); } }
     if (rollFloor) for (const q3 of pts) if (!onHead(q3)) rollFloor(q3);
-    if (r0.z > .04) { if (eF < .5) { edgeN++; edgeW += fine; } else if (eF >= 1) { backN++; backW += fine; } }
+    if (r0.z > .04 && !burn) { if (eF < .5) { edgeN++; edgeW += fine; } else if (eF >= 1) { backN++; backW += fine; } }
     if (r0.z > -.01 && r0.z < .04 && Math.abs(r0.x) > .05) { if (eD < .0075) { tN++; tW += fine; } else if (eD >= .015) { tbN++; tbW += fine; } }
     if (crown && q.distanceTo(g.p) > off + .008) crownMiss++;
     // (Session 1496: a crown's strand ends at the ring at the strand texture's opaque end, v 1, and runs back from there at a braid's .35 m to
     // the texture; run 0 up, as the braids' are, its 2 to 10 cm took only the texture's faded foot, under the alpha test, so the hair round
     // the ring was all but bare skin and the braid stood on it as a hoop. A root by the hairline, finer, starts lower in the fade, so the
     // short strands there thin out onto the brow and do not stop on one hard line)
-    strands.push({ pts, ns, w: (shv ? .004 : short ? .008 : free ? (lock ? .012 : .008) : crown ? .015 : .011) * (.8 + .4 * rnd()) * fine, tip: free ? .85 : .5, ...crown ? { v0: Math.max(0, Math.min(1 - pts.length * step / .35, .2 + .65 * (fine - .35) / .65)), v1: 1 } : { v0: 0, v1: Math.min(1, pts.length * step / (g ? .35 : myL)) } });
+    // (Session 1574, Michael's note on #272: the short crop's strands ran 0 up too. A 5 to 15 cm strand combed back left its first third
+    // under the alpha test, so the crop began 4 cm behind its hairline and the temples and the band over the ear were bare skin. It ends
+    // at the opaque end now, as the crown's do, and its roots by the hairline start lower in the fade)
+    strands.push({ pts, ns, w: (shv ? .004 : short ? .008 : free ? (lock ? .012 : .008) : crown ? .015 : .011) * (.8 + .4 * rnd()) * fine, tip: free ? .85 : .5, ...crown || short ? { v0: Math.max(0, Math.min(1 - pts.length * step / .35, .2 + .65 * (fine - .35) / .65)), v1: 1 } : { v0: 0, v1: Math.min(1, pts.length * step / (g ? .35 : myL)) } });
   }
   // the checks' numbers: strand points under the skin, and strand points lying on the face (by the rest place of the skin under them)
   // and Session 877's: how high the roots sit on the skin, and how high the hair stands over the crown
@@ -2110,7 +2129,7 @@ function buildEyepatch(P, G, heads, byName, meshes) {
   const Q = new THREE.Vector3(hc.x - sx * .08, c.y + .052, hc.z + .004), n = Aout.clone().sub(Ain).cross(Q.clone().sub(Ain)).normalize();
   const O = hc.clone().addScaledVector(n, -hc.clone().sub(Ain).dot(n)), u = Ain.clone().add(Aout).multiplyScalar(.5).sub(O); u.addScaledVector(n, -u.dot(n)).normalize(); const w = n.clone().cross(u);
   const cloud = []; for (const i of hv) cloud.push(V(P, i)); for (let k = 0; k < pos.length; k += 3) cloud.push(new THREE.Vector3(pos[k], pos[k + 1], pos[k + 2]));
-  const card = new Uint8Array(1 << 20); for (const m of meshes) if (/^(scalp|hair|brows)/.test(m.name)) { const a = m.geometry.attributes.position.array, ix = m.name === 'scalp' ? [...new Set(PACK.R.scalpRoots)] : null;
+  const card = new Uint8Array(1 << 20); for (const m of meshes) if (/^(scalp|hair|brows)/.test(m.name)) { const a = m.geometry.attributes.position.array, ix = m.name === 'scalp' ? [...new Set(m.geometry.index.array)] : null;
     if (ix) for (const i of ix) cloud.push(V(a, i)); else for (let k = 0; k < a.length; k += 3) { if (/^hair/.test(m.name)) card[cloud.length] = 1; cloud.push(new THREE.Vector3(a[k], a[k + 1], a[k + 2])); } }
   // keep only what lies within 6 mm of the plane, as radius and angle round O in it
   const NP = 144, RHO = .0045, CR = man ? .0016 : .0014, rad = new Float32Array(NP).fill(-1), TAU = Math.PI * 2, near = [];
@@ -3624,14 +3643,16 @@ function* makePersonSteps(G, o = {}) {
   // hair: cards rooted on the hair shell (off the face), a layer of shell underneath so no scalp shows; brows; beard and moustache as short cards
   yield;
   if (G.hairCol) { const scalp = PACK.R.scalpRoots;
-    const sm = push('scalp', scalp, shellMat(sRGB(...G.hairCol).multiplyScalar(.55), 0, 3, { solid: true, hairline: true, edge: true, skin: sRGB(...G.skin) }), (x, y, z, i) => { const w = Math.max(0, Math.min(1, (z + .04) / .03)) * (1 - Math.max(0, Math.min(1, (z - .03) / .02))), k = 1 - w * (1 - Math.min(1, PACK.scalpEdge[i] / .012)); return .0008 + .0017 * k * k * (3 - 2 * k); });
+    // the short crop roots on its own region, over the ears and down the sideburns (Session 1574); hair tucked under a hood, a helm or a wrap keeps the old one
+    const crop = !(hoodUpOn(D) || D.helm || D.wrap) && (G.hair?.style ?? ((G.hairLen ?? .3) < .45 ? 'short' : 'loose')) === 'short', roots = crop ? PACK.R.cropRoots : scalp, rootEdge = crop ? PACK.cropEdge : PACK.scalpEdge;
+    const sm = push('scalp', roots, shellMat(sRGB(...G.hairCol).multiplyScalar(.55), 0, 3, { solid: true, hairline: true, edge: true, skin: sRGB(...G.skin) }), (x, y, z, i) => { const w = Math.max(0, Math.min(1, (z + .04) / .03)) * (1 - Math.max(0, Math.min(1, (z - .03) / .02))), k = 1 - w * (1 - Math.min(1, rootEdge[i] / .012)); return .0008 + .0017 * k * k * (3 - 2 * k); });
     // the temples' fade (Session 879): the shell reads its distance to the root region's border, worked out once on the rest body,
     // and at the sides comes down onto the skin toward that border (0.8 mm, from 2.5), so its faded edge is not a ledge seen side-on by the ear
-    sm.geometry.setAttribute('aEdge', new THREE.BufferAttribute(PACK.scalpEdge, 1));
+    sm.geometry.setAttribute('aEdge', new THREE.BufferAttribute(rootEdge, 1));
     const headB = ix.bones.findIndex(b => b.name === 'head'), bb = new THREE.Box3(); for (const v of scalp) bb.expandByPoint(new THREE.Vector3(P[v * 3], P[v * 3 + 1], P[v * 3 + 2])); const hc = bb.getCenter(new THREE.Vector3()), hr = bb.getSize(new THREE.Vector3()).multiplyScalar(.5).addScalar(.004); hc.y -= .02; hr.y += .02;
     const tuck = hoodUpOn(D) || D.helm || D.wrap ? { ...G, hair: { style: 'short', len: Math.min(G.hair?.len ?? .3, .3) } } : G;
     // under a hood the hair is tucked in: only the scalp's shell, which shows at the hairline
-    const H = buildHair(P, tuck, heads, PACK.R.scalpRoots, headB, RND, o.hairStats !== false); meshes.push(...H.meshes.filter(m => tuck === G || (D.helm || D.wrap) && !hoodUpOn(D) || m.name !== 'hair')); hairStats = H.stats;
+    const H = buildHair(P, tuck, heads, roots, headB, RND, o.hairStats !== false); meshes.push(...H.meshes.filter(m => tuck === G || (D.helm || D.wrap) && !hoodUpOn(D) || m.name !== 'hair')); hairStats = H.stats;
     // the plait over the shoulder (Session 1448), and every braid and tail down the back (Session 1449): what lies below the neck rides the chest, not
     // the head, so a turn of the head no longer swings it across the breast or the back. Its locks, ties, brush and a tail's strands pass from the head's
     // bone to the chest's (the necklace's) between 2 cm over the neck's base and 8 cm under it
