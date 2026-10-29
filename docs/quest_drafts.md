@@ -2,7 +2,7 @@
 
 These are the quest writer's drafts. None of them is canon until Michael promotes it into `quest_writing.md`, and none is a spec until it is approved. Each draft gives the quest's shape, every line verbatim with its speaker and people, and a note on what in the code would carry it.
 
-Calls read to: 2026-10-16T17:51:09.360Z (run 30, 28 Oct: no new calls on the page)
+Calls read to: 2026-10-16T17:51:09.360Z (run 31, 29 Oct: no new calls on the page)
 
 ---
 
@@ -2079,7 +2079,7 @@ The three ending rows and his answers to them are as built (*Break it. Let the w
 
 ## Asked in Passing — six townsfolk's errands
 
-*Approved by Michael, 14 Oct 2026.* *Building: the frame and errand 3, A Fever, Session 1510 (PR #817), word for word but for two plain fixes: only a giver with children asks for a fever (the offer says* My youngest*), and the giver answers* I’ll do it. *with the people's line added to the shared table below.* The first piece of Michael's control-room note of 5 Oct (backlog A, *Questing, a big effort pass*): *"we also need to add probably 50–100 somewhat unique quests. We can probably generalize these and make it so that these can be recycled in different areas, but I want quests to be something far more likely to stumble upon / something that will incentivize players to talk to NPCs."* Today every town job comes from the lord (`townQuestFor`, `87-world-quests.js`: cull, retrieve, deliver, find, road) and every guild task from a guild head. The people in the street give nothing. This draft gives them six errands, each a template that recycles across every town, trade and people, each with a choice or a clock that the world remembers. Six templates × the twelve trades that can give them × four peoples × the towns they point at is the variety the note asks for; a second run can add six more on the same frame.
+*Approved by Michael, 14 Oct 2026.* *Building: the frame and errand 3, A Fever, Session 1510 (PR #817, on main 28 Oct), word for word but for two plain fixes: only a giver with children asks for a fever (the offer says* My youngest*), and the giver answers* I’ll do it. *with the people's line added to the shared table below. Errand 1, The Unanswered Letter, Session 1554 (PR #868), word for word; the resident on* there *has no line, so the topic is left off there and the addressee is marked at their door, and the hand-off to errand 4 on* dead *waits for errand 4.* The first piece of Michael's control-room note of 5 Oct (backlog A, *Questing, a big effort pass*): *"we also need to add probably 50–100 somewhat unique quests. We can probably generalize these and make it so that these can be recycled in different areas, but I want quests to be something far more likely to stumble upon / something that will incentivize players to talk to NPCs."* Today every town job comes from the lord (`townQuestFor`, `87-world-quests.js`: cull, retrieve, deliver, find, road) and every guild task from a guild head. The people in the street give nothing. This draft gives them six errands, each a template that recycles across every town, trade and people, each with a choice or a clock that the world remembers. Six templates × the twelve trades that can give them × four peoples × the towns they point at is the variety the note asks for; a second run can add six more on the same frame.
 
 ### What the canon fixes, and where it is silent
 
@@ -5493,3 +5493,164 @@ He stands at the door of the gate with a warm stone nearest the town the player 
 - Elidan: proverbs (*a thing kept is a thing remembered*), no bare yes or no (*I'd sooner keep them*), *the Weaver keep you*. Her *never leave a wounded man* is the Gatelands' pride (§1.1).
 - Cuimín: *the gate-makers* for the Weavers, *the words* for the sigils, *the door*; never more than three sentences.
 - Slurs: none. The Church's *sacrilege* is the canon's quarrel over salvage (§1.3), contradicted by Markos and by the Prior who buys Zahra's charts.
+
+## Rivals — a guide, a patron, a knight, a seeker and a scout
+
+*Unapproved.* *Drafted 29 Oct 2026. Backlog L2, *Rival adventurers* (OG-083, sheet E9, *rival adventurers and guilds*): "gate-clearers who race you for a find or hire out as guides. Rename the scout called Varek; the villain's name is reserved." Five named people who work the gates for a living, as the player does: each camps at the door of one gate a game-week, rolled on the person's own stream (`seededRng('rival', key+':'+week)`, the co-op rule), each with one service on machinery that exists and one thread the world remembers. Two of the threads are one race, seen from both sides. One **Rule read** for the systems builder; no line depends on which way it goes.*
+
+### What the canon fixes, and where it is silent
+
+- *The gates: a salvage economy of adventurers, rubbings and relics that the Crown licenses and taxes* (§1.1). *The adventurers' economy is the Clearing continued by people who don't know it* (§3.1). These five are that economy, and none of them knows it. They are not the awake.
+- *Varek ran his operation without paying much attention to individual adventurers; they are instruments, interchangeable* (Part I, *His relationship to the player*). So the rivals are ordinary: they go in, they come out, they get hurt, they get paid. Nothing about them is strange, and nobody remarks on the player's returns (that is Varek's discovery, §6, and nobody else's).
+- *Caer Uaigneach is a localized anchor failure from a gate network over-cleared by ordinary adventurers over centuries* (Part I), and *a cleared gate keeps the province clean; a backlog means undead* (§12a). Both stand: a gate wants clearing, and a failing gate wants rest. The seeker says the second, sparingly, and does not explain it.
+- *A gate's condition: steady, failing, catastrophic* (§9a; `gateCondRoll(seed)` in the build). The seeker reads it at the door, with the older words.
+- *The Mark exports men; a quarrel finished by noon; contempt for anyone who hires a guard instead of being one* (§1.2). The guide is Markish and hires himself out, which the Mark finds a little funny and he does not.
+- *The Crown: Knight of the Gates is the top of its rank* (§8.4). *The Gatelands' pride: never leaving a wounded man* (§1.1). The fallen knight is a Knight of the Gates the Crown unmade for leaving one.
+- *Companions: none for the player; the wolves are their owners'* (Michael's 12 A, the art's first batch). The scout's wolf is his, and never follows the player.
+- *Names* (§2; *The Aurennais Register*, approved 14 Oct). The sheet's **Koran Stonehand** is labelled Markman and drawn dark and short-haired; the Mark's register is Anglo and its people pale and ash-blond, so he is **Cynric**, and *Stonehand* is his nickname, as the Mark gives them. **Lyn Étrël** has the dropped Norman ring; she is **Lysandra Per-Akhet**, *Per-* the register's Egyptian form for a house and *Akhet* the horizon, which suits an explorer and names no god. **Sir Alaric Drake** wears the Crown's crimson and a gold lion; the Crown's nobility keep their Norman names (§1.1, Michael 12 Oct), so he is **Alard de Drac**, and nobody is sure whether to call him *Sir*. **Zurik the Seventh** is drawn with cracked stone skin and white hair, which the canon does not give the Old Blood (grey-pale, black-haired, human); he is **Ailill**, an older form, with no byname, and *the Seventh* is dropped because the seventh is the Guest (§4.1) and a name should not say so by accident. **The scout** is named *Varek* on the sheet; that name is the villain's alone. He is **Tadhg Ó Faoláin**, *the little wolf's* grandson, which the strait would call a joke and the Gatelands call a family.
+- *Silent:* whether rival adventurers race each other, and whether anyone wins a gate. The plainer thing: a gate's foes are put down by whoever goes in, and a rival who goes in first takes what the player would have found there, in the talk if not in the loot. Nobody dies. Somebody gets hurt once.
+
+### The five
+
+| | People | Where, by the game-week | What they do |
+|---|---|---|---|
+| **Cynric Stonehand** | Markman | the door of a gate in the Mark within 900 of a town, or the Gatelands' ranges | for 10 gold, names a gate's school and what lives in it, and points the way |
+| **Lysandra Per-Akhet** | Aurennais | the quay of an Aurennais port, by day; her expedition's gate after | funds an expedition: a gate to put down before a date, against Alard |
+| **Alard de Drac** | Gatelander (Crown-born) | the door of the gate Lysandra names that week | races the player for it; remembers who won |
+| **Ailill** | Old Blood | the door of the gate nearest the player's last town whose condition is *failing* | reads a gate's condition at its door; asks that a failing one be left a week |
+| **Tadhg Ó Faoláin** | Gatelander | the inn door of the Gatelands town nearest any of the other four | knows who is below, and where; asks once that a wounded man not be left |
+
+Faces for the bodies builder (the sheet's, corrected): Cynric big, bearded, ash-blond, in fur and heavy leather, a pick over the shoulder and a pennant on a pole; Lysandra dark-skinned, long locs, a cream and blue coat, rolled maps and a small orrery in a case; Alard blond, a crimson cloak over a surcoat whose gold lion has been unpicked and left as a paler shape, a great helm carried, not worn; Ailill slight and grey-pale, black hair going grey, a black robe, a brass armillary, the marks at his wrists and no further; Tadhg wiry and red-haired in a hooded green cloak, a short bow, a big grey wolf at heel.
+
+### 1. Cynric Stonehand (Markman; short sentences, *aye*, nicknames, oaths on iron and blood, no honorifics)
+
+**Greeting, first:** "Going in? Aye. Thought so. You've the look."
+**Greeting, again:** "You again. Still breathing. Good."
+**Greeting, to a Markman player, first:** "Mark-born. Good. Don't need telling which end of a pick to hold."
+
+**Topics**
+- *Who are you?* — "Cynric. Stonehand, on the strait. I go in first and come out first. Some pay me to go in with them. Most pay me to tell them not to."
+- *Why Stonehand?* — "Broke a door with it once. The door was locked. Seemed quicker."
+- *Guide me.* (his service) — "Ten. Iron's iron." Paid: "{Gate}. {Dir}, {far}. {School-word}. {Foes}. Watch the floor where it's new." (the way is set to the gate, as a townsperson's directions set it; `{School-word}` and `{Foes}` from the gate's school, below)
+  - Tine: "Fire. Things that burn, a troll if you're unlucky."
+  - Uisce: "Water. Cold, wet, things in the wet. Slime."
+  - Cloch: "Stone. Old. Half of it's fallen and the other half's thinking about it."
+  - Scáth: "Dark. Things that hide. Keep a torch and don't trust corners."
+  - Solas: "Light. The dead get up in that one. Bring something heavy."
+  - Gaoth: "Wind. Shafts. Mind your feet."
+- *Isn't guiding beneath a Markman?* — "My father said so. He hired a guard once, to guard his cart. Paid him in ale. The guard drank it and the cart went. Now I'm the guard. Ha."
+- *Seen the knight?* — "De Drac. Aye. Brave. Goes in like he owes the place money."
+
+**His thread: *Stonehand's Pick*.** Once, after the player has paid for a guide twice: *You've no pick.* — "No. Left it. {Gate}, {dir}. At the door, I think. I came out quick." A pause. "Ran. Aye. Ran. Something in there was bigger than the door. Fetch it, and I'll not charge you again."
+- *I'll fetch it.* — "Good. Don't go in. Just the door."
+- The pick lies by that gate's door (the town quests' *retrieve*: a pickup a few paces off the door). Brought back, *Your pick.* — "That's her. Aye. Iron and blood, I owe you. No charge, from now. Don't tell the strait I ran." (His guiding is free from then: `worldState.rivals.cynric='owed'`.)
+
+### 2. Lysandra Per-Akhet (Aurennais; formal, *Master*, qualifiers, contracts, never an oath)
+
+**Greeting, first:** "Master. You have the boots of someone who has been underground recently. I do business with such boots."
+**Greeting, again:** "Master. A pleasure, and I hope a profitable one."
+**Greeting, to a Gatelander player, first:** "A Gatelander, Master, which in my line is a recommendation. Your people find things. Mine pay for them. It is an old arrangement and nobody has improved on it."
+
+**Topics**
+- *Who are you?* — "Lysandra, of the house Per-Akhet. I fund expeditions into the old gates and broker what they bring back. The Church disapproves of the second and invests quietly in the first. I keep the accounts separate for its sake."
+- *What's the orrery for?* — "It shows the heavens as the academy believes them to be. I carry it because people trust a broker with an instrument. I have never once used it to find anything."
+- *What do you broker?* — "Antiquities, Master. A lamp from a door, a tile with the script on it, a ring. I do not ask where. I ask how deep, because depth is the price."
+- *Who is the knight?* — "Alard de Drac. He was a Knight of the Gates until the Crown decided otherwise. He goes in for me, sometimes, and for his name, always. He is very good, and he would like you to know it."
+
+**Her thread: *The Per-Akhet Expedition*.** Offered at her quay once a game-week, while no expedition of hers is open: *Have you work?* — "An expedition, Master. {Gate}, {dir} of {town}, in {school}. The house will pay sixty for it cleared: put down {n} of what is inside before {date}. I should say that I have made the same offer to the knight. The first to report has the fee. I find competition improves the quality of the work."
+- *I'll take it.* — "Then we are agreed, Master, on the same terms as the knight. I wish you both well, and one of you better."
+- *Not now.* — "Of course, Master. The knight will be delighted."
+- Turned in, the player first (*It's cleared.*): "Before the knight. He will be insufferable about it, which I shall enjoy. Sixty, as agreed, and the house's note that you were first." (60 gold; `worldState.rivals.races` gains a *won*.)
+- The knight first (the player reports after his day has passed): "I am sorry, Master. The knight reported on the {day}. The fee is his. The terms were the terms. There will be another gate; there always is." (Nothing paid; a *lost*.)
+
+**The race's clock.** Alard goes in on the day the player takes the expedition, and *reports* three game-days later, at the hour rolled on the expedition's id. The player who has put down the count by then and reports before him wins. The count is the Fighters' Guild's *clear* rule (foes put down inside that gate, counted by its portal). If the player never takes it, Alard wins it in the week's talk and nobody minds.
+
+### 3. Alard de Drac (Gatelander, Crown-born; proverbs, indirection, no bare yes or no, oaths on the Weaver)
+
+He camps at the door of the week's expedition gate, his helm on a stone beside him.
+
+**Greeting, first:** "Another for the same door. Well. The gate's wide enough for two, and the glory's not, so we'll see."
+**Greeting, again:** "Yourself. I'd hoped it would be you, and I'd hoped it wouldn't."
+**Greeting, to a player who has beaten him in a race:** "The one who reported first. The Weaver keep you. I mean it about half."
+
+**Topics**
+- *Who are you?* — "Alard de Drac, that was Sir Alard. You can say *Sir* if you like. The Crown took it back, and it was the Crown's to take, but it can't stop you saying it."
+- *Why did the Crown take it?* — "I came up out of a gate in the hills with the thing we went for and without the boy I went with. He was hurt, and slow, and I was quick. A road known by its stones, and a man known by who he carries. I carried the wrong thing." (Once only; asked again: "I've said it once. Once is what it costs.")
+- *Why race me?* — "Because a knight with no Crown is a man with a sword, and a man with a sword is the cheapest thing in the Gatelands. If my name's said in the right inns enough times, the Crown may hear it. Yours is in the way of mine. Nothing personal in it."
+- *What do you think of Lysandra?* — "She'd pay the gate itself if it reported first. I'd not have her any other way. You know where you stand with a ledger."
+
+**His thread: the race, and who won it.** Read from `worldState.rivals.races`, at his next meeting after each:
+- The player won: "You were first. Well. A slow horse still gets home. I'll be first another day."
+- He won: "First, and by a day. I'll not crow. My father crowed, and the Weaver took his voice for it, the old ones say. Next time."
+- The player has won three: "Three times. I've started hearing your name in the inns where I wanted mine. I don't hate it as much as I meant to."
+- He has won three: "Three. They're saying *de Drac* again on the north road. If the Crown asks, I'll tell them some of it was luck. Not which part."
+
+### 4. Ailill (Old Blood; sparing, exact, the older word for the thing)
+
+He stands at the door of the nearest gate, to the player's last town, whose condition is *failing* (`gateCondRoll(seed)`), by day, with the armillary on the ground in front of him, turning. Where none is failing within the island, he is not there that week.
+
+**Greeting, first:** "Not this door."
+**Greeting, again:** "You came back to a door that asked you not to."
+**Greeting, to an Old Blood player, first:** "You feel it. Thin. Do not lean on it."
+
+**Topics**
+- *Who are you?* — "Ailill. I listen at doors."
+- *What do you hear?* — "How a door is. Some are whole. Some are wearing. One or two are worn through."
+- *How is this one?* (his service; at any gate's door where he stands, and once a game-week of any gate the player names by standing at it) — by `gateCondRoll(seed)`:
+  - steady: "Whole. Go in. It wants going into."
+  - failing: "Wearing. It has been opened too often. Leave it a while."
+  - catastrophic: "Worn through. What comes out of it is not what went in. Do not go for the gold."
+- *Opened too often?* — "Every clearing wears the door. A door unopened rots. A door opened every day wears through. Both are true. I did not make it so."
+- *Are you one of the cold-eyes?* — "Yes. The word is older than yours. I do not mind it."
+
+**His thread: *Leave It a Week*.** At a failing gate, once: *What would you have me do?* — "Do not clear it. Seven days. Then it will hold another year."
+- *I'll leave it.* — "Good."
+- If no foe is put down inside that gate for seven game-days after (the *clear* count again, read the other way): next meeting, at any door, "It held. You can go in now. Gently." (Nothing paid. The town nearest that gate gains a point of prosperity the next game-week, as a cleared road gives one; **Rule read**.)
+- If the player clears it inside the week anyway: next meeting, "You went in." Nothing else; from then his first greeting at any door is "Not this door either." and he does not ask again.
+- If the player asked and never answered, nothing changes.
+
+**Rule read (systems):** *a failing gate left a week.* The game has no rule that a rested gate does anything. The plain reading: a failing gate left unentered for seven game-days after Ailill's ask lifts the nearest town's prosperity by one, once, like a cleared road's weekly point (§12a's drivers). No line depends on it; without the rule, *It held* is the whole reward.
+
+### 5. Tadhg Ó Faoláin (Gatelander; proverbs, indirection, no bare yes or no, oaths on the Weaver)
+
+He sits on the inn's step with the wolf across his feet.
+
+**Greeting, first:** "Easy past her. She's no harm in her, but she's no manners either, and she's mine, not the town's."
+**Greeting, again:** "Yourself. She knows your step now. That's more than she gives the priest."
+**Greeting, to a Markman player, first:** "A Mark face. She'll like you. She likes the cold ones best, and I've never asked her why."
+
+**Topics**
+- *Who are you?* — "Tadhg Ó Faoláin. A scout, for whoever's going in and wants to know who went in before them. The name's my grandfather's, and the wolf's my own doing."
+- *The wolf?* — "Found her in a snare as a pup, and she's never let me forget I let her out. She won't go with you. Don't take it hard. She won't go with anyone."
+- *Who's below?* (his service; free) — he says where each of the others is this game-week, and sets the way to the one the player picks:
+  - "Stonehand's at {gate}, {dir}, taking money off people for telling them it's dark inside."
+  - "The Per-Akhet woman's on the quay at {port}, with a gate for whoever's quickest."
+  - "De Drac's at {gate}, {dir}, polishing a helm nobody gave him."
+  - "The cold-eyed man's at {gate}, {dir}, telling people not to go in. Some listen."
+  - None there that week: "Nobody I'd send you to. A quiet week. They happen."
+- *Do you ever go in?* — "I did. Once is plenty, if you come out. I watch the doors now. A man at a door sees who comes out, and that's worth more than what they bring."
+
+**His thread: *A Wounded Man*.** Once, after the player has won a race against Alard (the knight comes out hurt, from pushing to beat them next time): *Something wrong?* — "De Drac. He went in after a gate he'd no hope of beating you to, and came out of it on one leg. He's at the door of {gate}, and too proud to send to the town for a healer. The old saying is you don't leave a wounded man, and he knows it better than any of us. Bring him something for it, would you? I'd go, but she'd follow, and he hates dogs."
+- *I'll go.* — "Go on, so. The Weaver keep the both of you."
+- At Alard's door, with any healing potion in the bag, *Tadhg sent this.* (the potion is taken): "Tadhg. Of course. …No. Not Tadhg. You." He drinks it. "A man known by who he carries. I told you that, and here's you carrying me. Weaver keep you. I'll not race you this month." (No race offered that game-month; at Tadhg's next meeting: "He's walking. He says he isn't grateful. He's grateful.")
+- With no potion: *Not yet* in Alard's words: "Then I'll sit. The door's not going anywhere and neither am I."
+- If the player never goes: after seven game-days Tadhg says "He came down on his own. Took him two days. He'll not say your name now, and I'll not blame him." and Alard's greeting is "Yourself." from then.
+
+### What in the code would carry it
+
+- **`87-world-quests.js`**: a `RIVALS` table beside the travellers', each a `makeDef` with `authored:true`, `keepName:true` and the people given, placed by `rivalAt(key,week)` from `seededRng('rival', key+':'+week)` among the places the table names (`CELL_DOORS` with `dungeonWorldPos` for the gates, the island's ports for Lysandra, the inn's door for Tadhg), and spawned when the player is within a cell of the place (as the lost person is, `spawnNPC` with `sched:{type:'lost'}`). Tadhg's wolf is a `Wolf` rig from `34-creatures.js` with no foe tag, at his heel.
+- **School words**: the gate's theme through §9a's *Was* column (`SCHOOLS`, `87-world-quests.js`) into the six lines of Cynric's guide; the way set as `WAY` is (`83-world-generator.js`).
+- **Cynric's pick**: the town quests' *retrieve* pickup (`qPickupTick`), a quest record `kind:'retrieve'`, id `rv:cynric:pick`.
+- **The race**: a quest record (`kind:'race'`, id `rv:race:<week>`) with the gate's portal, the count and `datedWork`'s date; Alard's report time `seededRng('rival-race', id)`; the count by `qOnKill(e,'dungeon')` against `currentPortal`, as the guild's *clear* is. Outcomes kept in `worldState.rivals={races:{won,lost},cynric,ailill,alard}` (a world key: `_applyLoadData`'s S242 list; not in `SS_CHAR_WS`, since the rivals belong to the world).
+- **Ailill**: `gateCondRoll(seed)` for the three lines; his ask a record (`kind:'rest'`, id `rv:rest:<seed>`) with the day asked, read against kills in that portal.
+- **Tadhg's wounded man**: a record (`kind:'wounded'`, id `rv:alard:<race id>`), the potion taken by `bagTake` on any item with `heal`.
+- **Journal titles:** *Stonehand's Pick* · *The Per-Akhet Expedition* · *Leave It a Week* · *A Wounded Man*.
+
+### The register, checked
+
+- Cynric: *aye*, *iron and blood*, sentences of two to six words, a nickname; no honorific; *Ha* once.
+- Lysandra: *Master*, terms, fees, *the house's note*; no oath. Her *I keep the accounts separate for its sake* is the Compact's paper over oaths.
+- Alard and Tadhg: proverbs (*a slow horse still gets home*, *a man known by who he carries*, *a road known by its stones*, the Gatelands' pride, §1.1), no bare yes or no, *the Weaver keep you*. Alard's *Sir* is the Crown's and he says so.
+- Ailill: three sentences at most, *door* for the gate, *wearing* and *worn through* for failing and catastrophic, *clearing* in its plain sense. He never says *Clearing* as the canon's word for the burning of the dead, and nothing he says explains it.
+- Slurs: *cold-eyes* is said to Ailill by the player's label and he takes it, which is the canon's *said with a shudder* answered by the one it is said of; Tadhg's *the cold-eyed man* is fond. Nothing about bodies.
+- No prophecy, no description of the player, no remark on the player's returns.
