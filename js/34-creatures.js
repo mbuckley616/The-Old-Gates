@@ -1095,12 +1095,12 @@ function hcSeaRig(w,name,key,o){const old=w.m,g=new THREE.Group();g.name=name.to
   return {name,fish:true,e:{mesh:g},w,root,mesh:old,hcKey:key,ph:(w.ph||0)%1,t:0,...o};}
 function hcWhaleRig(w){return hcSeaRig(w,'Whale','whale:'+(HC_WHALE_N++),{rate:[1.6,1.6],axis:0,reach:5});}
 function hcDolphinRig(d,k){return hcSeaRig(d,'Dolphin','dolphin:'+k,{rate:[9,9],axis:0,reach:1});}
-// Session 1587: the dungeon's Slime and Small Slime (56-dungeon-build.js' buildEnemy, S222's glassy blob) wear the kit's `slime` (Session
+// Session 1591: the dungeon's Slime and Small Slime (56-dungeon-build.js' buildEnemy, S222's glassy blob) wear the kit's `slime` (Session
 // 928, OG-041: arched like a wave, holes through it, bones and rubble inside) by the same path, since the old blob has no skeleton either.
 // Its parts but the health bar's planes go into one group, the far level; the lights stay. The kit's body is the old blob's length,
 // centred on it, on the floor (the group's origin), crawling; the old quiver (90-main.js' squash of limbs.body) is copied onto it
 // about the floor, and the wind-up's glow is read off limbs.body (enemyBodyMesh's). Keyed by the foe's id, `slime:<id>`
-// Session 1588: the Fire Elemental (S222's figure of additive flame over a molten core) wears the kit's `fireelemental` (Session 1185,
+// Session 1592: the Fire Elemental (S222's figure of additive flame over a molten core) wears the kit's `fireelemental` (Session 1185,
 // OG-018: a crust of slag cracked and lit, tongues of flame grown out of it, arms of flame, a crown) the same way, standing: fitted by
 // its height (the old crown's top), hovering on the plan's own bob, its tongues licking on the plan's flicker. The old core's own orange
 // (limbs.coreEm) is its glow, not a flash, so only a wind-up's or a parry's colour on it is carried to the kit's crust
@@ -1132,16 +1132,16 @@ function hcFishAttach(rig,C){const tA=performance.now();
   HC_BODY.ms+=performance.now()-tA;HC_BODY.n++;}
 function hcFishPose(rig){const H=rig.hc,e=rig.e,now=performance.now()/1000,dt=rig.t?Math.min(.1,now-rig.t):0;rig.t=now;
   if(e.dead)return;rig.ph+=dt*rig.rate[e.alert?1:0]/(Math.PI*2);HC.pose(H.C,rig.ph);
-  if(rig.crawl&&rig.em0){const q=rig.em0.scale,f=H.f;H.W.scale.set(f*q.x,f*q.y,f*q.z);H.W.position.y=H.y0*q.y;} /* S1587 — the slime's quiver, about the floor */
+  if(rig.crawl&&rig.em0){const q=rig.em0.scale,f=H.f;H.W.scale.set(f*q.x,f*q.y,f*q.z);H.W.position.y=H.y0*q.y;} /* S1591 — the slime's quiver, about the floor */
   // the wind-up's red and the parry's gold, lit on the old body's torso (enemyBodyMesh), on the kit's hide
-  const src=rig.em0||e.limbs&&e.limbs.torso,m=src&&src.material;let em=m&&m.emissive?m.emissive.getHex():0;if(rig.emOwn!=null&&!(e._wind>0||e._parryFlash))em=0; /* S1588 — the elemental's core: its own glow and its ease back to it are not a flash */
+  const src=rig.em0||e.limbs&&e.limbs.torso,m=src&&src.material;let em=m&&m.emissive?m.emissive.getHex():0;if(rig.emOwn!=null&&!(e._wind>0||e._parryFlash))em=0; /* S1592 — the elemental's core: its own glow and its ease back to it are not a flash */
   if(em!==H.em){H.em=em;for(const o of H.hide)for(const x of Array.isArray(o.material)?o.material:[o.material])if(x.emissive)x.emissive.setHex(em);}}
 const _hcM=new THREE.Matrix4();
 function hcTick(now){let best=null,bd=HC_BODY.build;
-  const busy=now-HBODY.last<HBODY.gap||(typeof JOBS!=='undefined'&&JOBS.length&&activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior())); /* S1586 — as the people's (hbTick): the world's queue only where the world runs it, or no kit body is built in a gate entered with town jobs queued */
+  const busy=now-HBODY.last<HBODY.gap||(typeof JOBS!=='undefined'&&JOBS.length&&activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior())); /* S1590 — as the people's (hbTick): the world's queue only where the world runs it, or no kit body is built in a gate entered with town jobs queued */
   for(const rig of WOLF_RIGS){if(!rig.hc&&(rig.hcFail||!hcOk(rig)))continue;HC_RIGS.add(rig);}
   if(activeZoneId==='world')for(const e of ZONES.world.enemies)if(e.name==='Shark'&&!e.dead&&!e._hcRig&&e.mesh&&e.mesh._sharkTail)HC_RIGS.add(hcFishRig(e));
-  if(typeof dScene!=='undefined'&&dScene&&scene===dScene)for(const e of ENEMIES)if(e.limbs&&e.limbs.body&&(e.limbs.slime||e.limbs.flames)&&!e.dead&&!e._hcRig&&e.mesh)HC_RIGS.add(e.limbs.slime?hcSlimeRig(e):hcElemRig(e)); /* S1587 — the dungeon's slimes; S1588 — its fire elementals */
+  if(typeof dScene!=='undefined'&&dScene&&scene===dScene)for(const e of ENEMIES)if(e.limbs&&e.limbs.body&&(e.limbs.slime||e.limbs.flames)&&!e.dead&&!e._hcRig&&e.mesh)HC_RIGS.add(e.limbs.slime?hcSlimeRig(e):hcElemRig(e)); /* S1591 — the dungeon's slimes; S1592 — its fire elementals */
   if(activeZoneId==='world'&&typeof WHALES!=='undefined')for(const w of WHALES)if(!w._hcRig&&w.m&&w.m.parent)HC_RIGS.add(hcWhaleRig(w));
   if(activeZoneId==='world'&&typeof LIFE!=='undefined')LIFE.dolphins.forEach((d,k)=>{if(!d._hcRig&&d.m&&d.m.parent)HC_RIGS.add(hcDolphinRig(d,k));});
   for(const rig of HC_RIGS){const g=rig.root.parent;
