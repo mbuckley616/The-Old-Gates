@@ -39,6 +39,13 @@ const r = await page.evaluate(() => {
   out.atSea = shipAtSea(); worldState.ship.rig = 40; bagAdd(benchItem('spar', 3));
   J(24); out.sea24 = shipWorkStart('splice').why;
   J(25); out.s1 = work('splice'); out.rig1 = shipBars().rig;
+  // ── S1559: a heartwood spar's splice: +40 rig, past the field cap to full; its row shown only with a heartwood spar or the perk ──
+  { const rowsOf = () => { openBenchPage(); const k = [...document.querySelectorAll('#bn-list [data-k]')].map(d => d.dataset.k); closeBenchPage(); return k; };
+    worldState.ship.rig = 70; out.capRig = fieldCap(100); out.plainAtCap = shipWorkStart('splice').why; worldState.ship.rig = 60; bagAdd(survItem('pitch', 2)); out.noHeart = shipWorkWhy('heartsplice');
+    out.rowNo = rowsOf().includes('heartsplice'); bagAdd(benchItem('heartspar', 1)); out.rowYes = rowsOf().includes('heartsplice');
+    const sp0 = bagCount(x => x.spar); J(24); out.heart24 = shipWorkStart('heartsplice').why; J(25);
+    out.hw1 = work('heartsplice'); out.hwRig = shipBars().rig; out.hwLeft = { heart: bagCount(x => x.heartwood === 'spar'), spar: bagCount(x => x.spar) === sp0 };
+    worldState.ship.rig = 85; bagAdd(benchItem('heartspar', 1)); work('heartsplice'); out.hwFull = shipBars().rig; bagAdd(benchItem('heartspar', 1)); out.hwSound = shipWorkWhy('heartsplice'); BAG.splice(0, BAG.length, ...BAG.filter(x => !x.heartwood)); }
   // ── Tight seams (50) and Shipwright's hand (100) ──
   worldState.ship.hull = 20; J(50); out.patch50 = patchAmt(); work('patch'); out.h50 = shipBars().hull;
   J(100); out.secs100 = patchSecs(); out.patch100 = patchAmt(); out.cap100 = fieldCap(100);
@@ -59,6 +66,8 @@ check('walking off stops the work with nothing spent', r.walked.work === null &&
 check('under sail there is no work', /hove to/.test(r.sailingWhy), r.sailingWhy);
 check('the bench\'s page shows the patch and the splice at her side, not away', r.rowsShip - r.rowsAway === 2 && r.rowsAway >= 5 /* S1555: Bowyer's two bows (S1549) are rows of their own: 9 and 7 */, { ship: r.rowsShip, away: r.rowsAway });
 check('a splice at sea asks Field splice (25); at 25 the rig +20', (!r.atSea || /At sea/.test(r.sea24)) && r.rig1 === 60, { atSea: r.atSea, why: r.sea24, rig: r.rig1 });
+check('Heartwood: a heartwood spar splices past the field cap (70 at 25): 60 → 100, a plain spar refused at 70; 85 → 100, then the rig is sound', r.capRig === 70 && /yard/.test(r.plainAtCap) && /heartwood spar/.test(r.noHeart) && (!r.atSea || /At sea/.test(r.heart24)) && r.hw1 === 'working' && r.hwRig === 100 && r.hwLeft.heart === 0 && r.hwLeft.spar && r.hwFull === 100 && /sound/.test(r.hwSound), r);
+check('the heartwood splice\'s row is on the bench\'s page only with a heartwood spar in the bag (or the perk)', !r.rowNo && r.rowYes, [r.rowNo, r.rowYes]);
 check('Tight seams: a patch at 50 is (8 + 10) × 1.5 = 27', r.patch50 === 27 && r.h50 === 47, r);
 check('Shipwright\'s hand: 4 s at 100; field work to full', r.secs100 === 4 && r.patch100 === 42 && r.cap100 === 100, r);
 check('her cabin is a bench, kit or none: a patch there', r.cabin && r.cabinHull === 53, r);

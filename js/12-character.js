@@ -157,11 +157,11 @@ const PERK_DEF={
   alchemy:[['Tell','a herb’s hidden effect after 5 eats (was 15)'],['Third hand','a third herb in the mortar'],['Stoppered','tinctures don’t turn'],['Double measure','two tinctures from one grinding']], /* S1499 */
   cooking:[['Two portions','a meal cooked makes two'],['Shared pot','everyone at the fire is fed'],['Full belly','fed lasts through sleep'],['Seasoned','a herb in the pot adds its known effect at a third']], /* S1500 */
   mining:[['Prospector','veins on the minimap within 40 m'],['Rich vein','one ore in four comes double'],['Lodestone','the magnetic ore of La Grise'],['Seam','a vein holds 5 (was 3)']],
-  woodcutting:[['Felling','the trunk falls where you face, a bridge for 10 minutes'],['Fletcher','fifteen arrows from a log'],['Heartwood','heartwood for masts'],['One more','one more log a tree']], /* S1517 */
+  woodcutting:[['Felling','the trunk falls where you face, a bridge for 10 minutes'],['Fletcher','fifteen arrows from a log'],['Heartwood','one great oak or pine in ten gives heartwood: a spar that splices the rig to full'],['One more','one more log a tree']], /* S1517 */
   joinery:[['Field splice','splice the rig at sea'],['Tight seams','patches mend +50%'],['Bowyer','the longbow and the war bow'],['Shipwright’s hand','a patch takes 4 s (was 8)']], /* S1517 */
   speech:[['Haggle','5% better prices both ways'],['Talk it down','a guard’s fine halved, once in each town'],['Hearing','a person at favour −1 still talks'],['Word given','once a day a guard takes your word for a trespass']]};
 const PERK_LIVE=new Set(['alchemy:25','alchemy:50','alchemy:75','alchemy:100', /* S1499 — Alchemy's four (survival B, session 7's second part) */
-  'woodcutting:25','woodcutting:50','woodcutting:100', /* S1534 — Felling's trunk */ /* S1517 — Fletcher at the bench; One more since S1511 (fellLogs reads the level) */
+  'woodcutting:25','woodcutting:50','woodcutting:75','woodcutting:100', /* S1559 — Heartwood's great trees (#860 A) */ /* S1534 — Felling's trunk */ /* S1517 — Fletcher at the bench; One more since S1511 (fellLogs reads the level) */
   'joinery:25','joinery:50','joinery:75','joinery:100', /* S1519 — Field splice, Tight seams and Shipwright's hand, with the ship's patch and splice; S1549 — Bowyer, its two bows */
   'cooking:25','cooking:75','cooking:100', /* S1503 — Seasoned; S1500 — Two portions and Full belly; Shared pot waits on someone else at the fire */
   'smithing:25','smithing:50','smithing:75','smithing:100','mining:25','mining:50','mining:100', /* S1495 — the forge's and the vein's (survival B, session 7's first part) */

@@ -40,7 +40,7 @@ function isStackable(it){
   if(it.type==='misc'&&it.name==='Gold Coins')return true;
   if(it.type==='misc'&&it.name==='Lockpick')return true; // v80 S170 — picks stack, so the count on the lock is the whole bag's
   // S1525 — survival's goods stack by kind (the critic's s995: four fellings were four rows of logs); its tools never do
-  if(it.type==='misc'&&!it.tool&&(it.log||it.ore||it.ingot||it.plank||it.spar||it.feather||it.food||it.name==='Charcoal'||it.name==='Pitch'))return true;
+  if(it.type==='misc'&&!it.tool&&(it.log||it.ore||it.ingot||it.plank||it.spar||it.heartwood||it.feather||it.food||it.name==='Charcoal'||it.name==='Pitch'))return true;
   return false;
 }
 // S732 — a stack is one name and one mark: stolen goods stack only with stolen goods (the cells take BAG[i].stolen whole).

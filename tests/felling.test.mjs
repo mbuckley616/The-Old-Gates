@@ -89,6 +89,18 @@ const r = await page.evaluate(() => {
       worldState.gameTimeAbsMinutes += 1; tickTrunks(); out.trunk.at600 = { held: TRUNKS.includes(T), plat: ZONES.world.platforms.includes(T.plat), mesh: !!(T.mesh && T.mesh.parent), ground: +(activeTerrainH(mx, mz) - worldH(mx, mz)).toFixed(3) };
       worldState.gameTimeAbsMinutes -= 600; }
     yaw = 0; }
+  // ── S1559: Heartwood (Woodcutting 75, #860 A): one oak or pine in ten is a great tree; at 75 its fall gives a heartwood log ──
+  { const share = sp => { let n = 0; for (let i = 0; i < 2000; i++) if (greatTree({ sp, id: 'gt:' + i })) n++; return n / 2000; };
+    out.great = { oak: share('oak'), pine: share('pine'), birch: share('birch'), live: PERK_LIVE.has('woodcutting:75') };
+    const g0 = greatTree; greatTree = () => true;
+    const fellGreat = lv => { const u = all.find(x => chunks.get(chunkKey(x.ch.cx, x.ch.cz)) === x.ch && !x.t.out && !treeDown(x.t.id)); if (!u) return null;
+      px = u.t.x + u.t.r + .6; pz = u.t.z; BAG.length = 0; bagAdd({ ...HATCHET_ITEM }); SKILLS.woodcutting = { lv, p: 0 };
+      const said = []; const sm = showMsg; showMsg = m => said.push(m); chopTree(u.ch, u.t); tick(.9 * 6 + .2); showMsg = sm;
+      return { down: !!u.t.out, heart: bagCount(b => b.heartwood === 'log'), logs: bagCount(b => !!b.log), said }; };
+    out.great74 = fellGreat(74); out.great75 = fellGreat(75); greatTree = g0;
+    bagAdd({ ...JOINER_ITEM }); openBenchPage(); out.heartRow = [...document.querySelectorAll('#bn-list [data-k]')].some(d => d.dataset.k === 'heartspar'); closeBenchPage();
+    out.heartSpar = benchMake('heartspar'); out.heartLeft = { log: bagCount(b => b.heartwood === 'log'), spar: bagCount(b => b.heartwood === 'spar'), plainSpar: bagCount(b => b.spar) };
+    const d = JSON.parse(ssStringify(_buildSavePayload())); out.heartSaved = JSON.stringify(d).includes('"heartwood":"spar"'); }
   // ── the shops ──
   out.at = { weapon: hatchetFor({ type: 'weapon' }).length, misc: hatchetFor({ type: 'misc' }).length, potion: hatchetFor({ type: 'potion' }).length };
   out.price = HATCHET_ITEM.buyPrice; out.w = HATCHET_ITEM.weight; out.logW = SURV_ITEMS.log.weight;
@@ -121,5 +133,8 @@ check('the stump stays after a reload', r.reloadStump.down && r.reloadStump.stum
 check('a reload fells it for the same logs at the same strike', r.reloadLogs.down && r.reloadLogs.a === r.reloadLogs.b && r.reloadLogs.a >= 2, r.reloadLogs);
 check('a dropped frame strikes once', r.dropped === 1, r.dropped);
 check('a war axe in hand works at half pace', r.axeTool === 'axe' && Math.abs(r.axeStep - 1.8) < 1e-9, [r.axeTool, r.axeStep]);
+check('Heartwood (75) is live; a great tree is one oak or pine in ten, never a birch', r.great.live && r.great.oak > .07 && r.great.oak < .13 && r.great.pine > .07 && r.great.pine < .13 && r.great.birch === 0, r.great);
+check('a great tree felled at Woodcutting 74 gives its logs only; at 75 a Heartwood Log too, said at the start and the fall', r.great74 && r.great74.down && r.great74.heart === 0 && r.great75 && r.great75.down && r.great75.heart === 1 && r.great75.logs >= 2 && r.great75.said.some(m => /heartwood in it/.test(m)) && r.great75.said.some(m => /and a Heartwood Log/.test(m)), [r.great74, r.great75]);
+check('the bench shows the Heartwood Spar row and makes one from the log; it is no plain spar, and the save keeps it', r.heartRow && r.heartSpar.made && r.heartLeft.log === 0 && r.heartLeft.spar === 1 && r.heartLeft.plainSpar === 0 && r.heartSaved, [r.heartSpar.why, r.heartLeft, r.heartSaved]);
 check('the hatchet at the smith and the goods shop, 30 gold, weight 3; a log weighs 3', r.at.weapon === 1 && r.at.misc === 1 && r.at.potion === 0 && r.price === 30 && r.w === 3 && r.logW === 3, r.at);
 await g.close();

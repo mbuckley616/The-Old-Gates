@@ -925,6 +925,11 @@ function treeNear(){if(activeZoneId!=='world'||(typeof isInterior==='function'&&
 // the named action: the tree is down from today (the world's), and out of its chunk
 function fellTree(ch,t){(worldState.felled||(worldState.felled={}))[t.id]=Math.floor(gameMinNow()/1440);treeTakeOut(ch,t);}
 // the logs a tree gives, on its stream: keyed by the tree and the day it last fell (none: 'n'), so the same fall gives the same logs
+// S1559 — a great tree (Heartwood, Woodcutting 75; Michael's A on #860): one oak or pine in ten, by its id's stream. At 75 its
+// fall gives a heartwood log beside its logs; below 75 it falls as any tree. A chunk's scatter holds no new model for it.
+const GREAT_SP=['oak','pine'],GREAT_P=.1;
+function greatTree(t){return !!t&&GREAT_SP.includes(t.sp)&&seededRng('great',t.id)()<GREAT_P;}
+function heartwoodHere(t){return perk('woodcutting',75)&&greatTree(t);}
 function treeLogs(t){const prev=(worldState.felled||{})[t.id],r=seededRng('log',t.id+':'+(prev!=null?prev:'n'))();
   return 2+Math.floor(r*3)+(skillLv('woodcutting')>=100?1:0);}
 // one strike at a tree. Returns {n strikes so far, need, logs on the fall} or {why}
@@ -934,20 +939,20 @@ function strikeTree(ch,t,n){
   const it=survItem(t.sp==='pine'?'pine':'log');if(!canCarry(it))return {why:'Too heavy to carry!'};
   n++;const need=fellStrikes();
   if(n<need){skillUse('woodcutting',1);return {n,need};}
-  const k=treeLogs(t);fellTree(ch,t);it.qty=k;bagAdd(it);skillUse('woodcutting',4);if(perk('woodcutting',25))layTrunk(ch,t,yaw);
-  return {n,need,logs:k,item:it};}
+  const k=treeLogs(t),hw=heartwoodHere(t);fellTree(ch,t);it.qty=k;bagAdd(it);if(hw)bagAdd(benchItem('heartlog',1));skillUse('woodcutting',4);if(perk('woodcutting',25))layTrunk(ch,t,yaw);
+  return {n,need,logs:k,item:it,heart:hw};}
 // working a tree: E starts it, E again, walking off, or the fall stops it
 let CHOP=null;
 function chopTree(ch,t){if(CHOP&&CHOP.t===t){CHOP=null;showMsg('You stop.','#c8b890');return;}
   const tool=chopTool();if(!tool){showMsg('You need a hatchet.','#cc8844');return;}
-  const step=FELL_STRIKE*(tool==='axe'?2:1);CHOP={ch,t,n:0,step,tm:step};showMsg(tool==='axe'?'You set to the tree with the axe. It is slow work.':'You set to the tree.','#c8b890');}
+  const step=FELL_STRIKE*(tool==='axe'?2:1);CHOP={ch,t,n:0,step,tm:step};showMsg((tool==='axe'?'You set to the tree with the axe. It is slow work.':'You set to the tree.')+(heartwoodHere(t)?' It is a great tree, with heartwood in it.':''),'#c8b890');}
 function tickFelling(dt){
   if(CHOP){const {ch,t}=CHOP;
     if(!chunkLive(ch)||t.out||activeZoneId!=='world'||Math.hypot(px-t.x,pz-t.z)-t.r>TOUCH+.8||(typeof dead!=='undefined'&&dead))CHOP=null;
     else{CHOP.tm-=dt;if(CHOP.tm<=0){CHOP.tm+=CHOP.step;
       const r=strikeTree(ch,t,CHOP.n);if(typeof uiNoise==='function')uiNoise(.08,.1,900);
       if(r.why){showMsg(r.why,'#cc8844');CHOP=null;}
-      else if(r.logs){showMsg(`The tree falls. ${r.logs} ${r.item.name}${r.logs>1?'s':''}.`,'#d8c8a0');CHOP=null;if(typeof renderHubInv==='function')renderHubInv();}
+      else if(r.logs){showMsg(`The tree falls. ${r.logs} ${r.item.name}${r.logs>1?'s':''}${r.heart?' and a Heartwood Log':''}.`,'#d8c8a0');CHOP=null;if(typeof renderHubInv==='function')renderHubInv();}
       else CHOP.n=r.n;}}}
   // the stumps of loaded chunks: back to a tree once its 10 days are up
   for(let i=STUMPS.length-1;i>=0;i--){const s=STUMPS[i];if(!chunkLive(s.ch)||!s.t.out){STUMPS.splice(i,1);continue;}
@@ -1146,7 +1151,9 @@ const JOINER_ITEM={name:JOINER_NAME,ico:'🧰',type:'misc',weight:4,buyPrice:25,
 const BENCH_ITEMS={
   plank:{name:'Plank',ico:'🪵',type:'misc',weight:2,buyPrice:3,sellMult:.3,plank:true},
   spar:{name:'Spar',ico:'🪵',type:'misc',weight:3,buyPrice:7,sellMult:.3,spar:true},
-  feathers:{name:'Feathers',ico:'🪶',type:'misc',weight:.01,qty:FLETCH_FEATHERS,bundle:FLETCH_FEATHERS,buyPrice:1,sellMult:.4,feather:true}};
+  feathers:{name:'Feathers',ico:'🪶',type:'misc',weight:.01,qty:FLETCH_FEATHERS,bundle:FLETCH_FEATHERS,buyPrice:1,sellMult:.4,feather:true},
+  heartlog:{name:'Heartwood Log',ico:'🪵',type:'misc',weight:3,buyPrice:20,sellMult:.3,heartwood:'log'}, /* S1559 — Heartwood (#860 A) */
+  heartspar:{name:'Heartwood Spar',ico:'🪵',type:'misc',weight:3,buyPrice:30,sellMult:.3,heartwood:'spar'}};
 function benchItem(k,qty){return {...BENCH_ITEMS[k],qty:qty||1};}
 function hasJoinerKit(){return BAG.some(b=>b&&b.tool==='joiner');}
 function benchHere(){return hasJoinerKit()||cabinBench();}
@@ -1158,14 +1165,17 @@ function benchMetals(){return INGOT_DEF.map(d=>d.tier);}
 const BENCH_RECIPES=[
   {id:'plank',name:'Planks',need:'1 Log',has:()=>bagCount(b=>b.log==='log')>=1},
   {id:'spar',name:'Spar',need:'1 Pine Log',has:()=>bagCount(b=>b.log==='pine')>=1},
+  {id:'heartspar',name:'Heartwood Spar',need:'1 Heartwood Log',heart:true,has:()=>bagCount(b=>b.heartwood==='log')>=1}, /* S1559 */
   {id:'bow',name:'Bow',need:'2 planks and an ingot',has:()=>plankCount()>=2&&benchMetals().some(t=>ingotCount(t)>=1)},
   {id:'longbow',name:'Longbow',need:'3 planks and an ingot',bowyer:true,has:()=>perk('joinery',75)&&plankCount()>=3&&benchMetals().some(t=>ingotCount(t)>=1)},
   {id:'warbow',name:'War Bow',need:'3 planks and an ingot',bowyer:true,has:()=>perk('joinery',75)&&plankCount()>=3&&benchMetals().some(t=>ingotCount(t)>=1)},
   {id:'shield',name:'Wooden Buckler',need:'3 planks',has:()=>plankCount()>=3},
   {id:'arrows',name:'Arrows',need:'1 log, 10 feathers and an ingot',has:()=>bagCount(b=>!!b.log)>=1&&bagCount(b=>b.feather)>=FLETCH_FEATHERS&&benchMetals().some(t=>ingotCount(t)>=1)},
   {id:'patch',name:'Patch the hull',need:'a plank and a pitch',ship:true,has:()=>!shipWorkWhy('patch')}, /* S1519 — shown only at your ship */
-  {id:'splice',name:'Splice the rig',need:'a spar and a pitch',ship:true,has:()=>!shipWorkWhy('splice')}];
-function benchRows(){return BENCH_RECIPES.filter(r=>!r.ship||shipWorkHere());}
+  {id:'splice',name:'Splice the rig',need:'a spar and a pitch',ship:true,has:()=>!shipWorkWhy('splice')},
+  {id:'heartsplice',name:'Splice with heartwood',need:'a heartwood spar and a pitch',ship:true,heart:true,has:()=>!shipWorkWhy('heartsplice')}];
+// S1559 — the heartwood rows are shown to a hand with Heartwood (Woodcutting 75), or one who holds a heartwood log or spar
+function benchRows(){const hw=perk('woodcutting',75)||bagCount(b=>!!b.heartwood)>0;return BENCH_RECIPES.filter(r=>(!r.ship||shipWorkHere())&&(!r.heart||hw));}
 let _benchN=0;
 // a made bow or shield: never enchanted, `made`, a fifth back, the forge's half-hour
 function benchPiece(tier,T,arm){const it=makeItem(tier,T,null,arm);it.made=true;it.sellMult=MADE_SELL;return it;}
@@ -1176,6 +1186,9 @@ function benchMake(id,tier){
   if(id==='plank'||id==='spar'){const pine=id==='spar';if(!bagCount(b=>b.log===(pine?'pine':'log')))return {made:false,why:`You need ${pine?'a pine log':'a log'}.`};
     bagTake(b=>b.log===(pine?'pine':'log'),1);const it=benchItem(id,pine?1:2);bagAdd(it);skillUse('joinery',2,'b'+(_benchN++));
     return {made:true,item:BAG.find(b=>sameStack(b,it))||it,n:it.qty};}
+  if(id==='heartspar'){if(!bagCount(b=>b.heartwood==='log'))return {made:false,why:'You need a heartwood log.'};
+    bagTake(b=>b.heartwood==='log',1);const it=benchItem('heartspar',1);bagAdd(it);skillUse('joinery',2,'b'+(_benchN++));
+    return {made:true,item:BAG.find(b=>sameStack(b,it))||it,n:1};}
   if(id==='bow'||R.bowyer){const t=tier||benchMetals().find(m=>ingotCount(m)>=1)||3;if(!benchMetals().includes(t))return {made:false,why:''};
     const K=BOW_KINDS[id];if(R.bowyer&&!perk('joinery',75))return {made:false,why:`A ${K.name.toLowerCase()} asks Bowyer (Joinery 75).`};
     const gate=SKILL_GATE[t]||0;if(skillLv('joinery')<gate)return {made:false,why:`${MATERIALS[t-1].name} asks Joinery ${gate} (you have ${skillLv('joinery')}).`};
@@ -1207,7 +1220,9 @@ function useBenchThing(i){if(benchHere())openBenchPage();else showMsg('Work it a
 // is a spar and a pitch: +20 rig, after the same work; at sea (no land within 25 m of her) only with Field splice (25). Field work
 // reaches 60% + 0.4% a Joinery point of the bar (100% at 100); past that, the yard. Each is a Joinery use of 6. The work is timed
 // by the frame's dt, and walking off or setting sail stops it with nothing spent.
-const PATCH_BASE=8,SPLICE_RIG=20,PATCH_S=8,SHIP_WORK_R=10,AT_SEA_R=25;
+// S1559 — Heartwood (Woodcutting 75, Michael's A on #860): a heartwood spar's splice is +40 rig, past the field cap to full, the
+// one way to mend a mast fully at sea; at sea it still asks Field splice, as any splice does.
+const PATCH_BASE=8,SPLICE_RIG=20,PATCH_S=8,SHIP_WORK_R=10,AT_SEA_R=25,HEART_RIG=40;
 function cabinBench(){return typeof isInterior==='function'&&isInterior()&&typeof currentHouse!=='undefined'&&!!currentHouse&&currentHouse.type==='cabin';}
 // S1527 — the cabin's bench prop (the look builder's S1524, `house._bench`, in the room's metres): E within 1.6 m of it, as at a fort's forge
 function benchNear(){const b=cabinBench()&&currentHouse._bench;return !!b&&Math.hypot(px-b.x,pz-b.z)<=1.6;}
@@ -1222,20 +1237,23 @@ function shipAtSea(){if(typeof worldH!=='function')return false;for(let a=0;a<8;
   for(let r=0;r<=AT_SEA_R;r+=5)if(worldH(SHIP.x+c*r,SHIP.z+s*r)>WORLD.SEA_Y)return false;}return true;}
 // why a patch or a splice cannot start now, or null
 function shipWorkWhy(kind){if(!shipWorkHere())return 'She must be hove to, and you at her side or in her cabin.';
-  const b=shipBars(),pl=kind==='patch';
-  if(pl?plankCount()<1:bagCount(b=>b.spar)<1)return pl?'A patch needs a plank.':'A splice needs a spar.';
+  const b=shipBars(),pl=kind==='patch',hw=kind==='heartsplice';
+  if(hw){if(bagCount(x=>x.heartwood==='spar')<1)return 'It needs a heartwood spar.';}
+  else if(pl?plankCount()<1:bagCount(b=>b.spar)<1)return pl?'A patch needs a plank.':'A splice needs a spar.';
   if(pitchCount()<1)return 'It needs a pitch.';
   if(!pl&&shipAtSea()&&!perk('joinery',25))return 'At sea the rig will not take a splice: bring her in to the shore.';
+  if(hw)return b.rig>=b.rigMax?'Her rig is sound.':null;
   const cap=fieldCap(pl?b.hullMax:b.rigMax),now=pl?b.hull:b.rig;
   if(now>=cap)return `Her ${pl?'hull':'rig'} is as sound as field work makes it (${now} of ${pl?b.hullMax:b.rigMax}). The rest is the yard’s.`;
   return null;}
 let SHIPWORK=null;
 // begin a patch or a splice. Returns {started, why}
 function shipWorkStart(kind){const why=shipWorkWhy(kind);if(why)return {started:false,why};
-  SHIPWORK={kind,t:patchSecs(),x:px,z:pz};showMsg(kind==='patch'?'You set to the patch.':'You set to the splice.','#c8b890');return {started:true};}
+  SHIPWORK={kind,t:patchSecs(),x:px,z:pz};showMsg(kind==='patch'?'You set to the patch.':kind==='heartsplice'?'You set the heartwood to the mast.':'You set to the splice.','#c8b890');return {started:true};}
 // the work done: the plank or spar and the pitch go, the bar rises to the field cap. Returns {hull} or {rig}, or {why}
 function shipWorkFinish(kind){const why=shipWorkWhy(kind);if(why)return {why};const st=shipCfg(),b=shipBars();
-  bagTake(kind==='patch'?(x=>x.plank):(x=>x.spar),1);bagTake(x=>x.name===SURV_ITEMS.pitch.name,1);skillUse('joinery',6,'w'+(_benchN++));
+  bagTake(kind==='patch'?(x=>x.plank):kind==='heartsplice'?(x=>x.heartwood==='spar'):(x=>x.spar),1);bagTake(x=>x.name===SURV_ITEMS.pitch.name,1);skillUse('joinery',6,'w'+(_benchN++));
+  if(kind==='heartsplice'){const to=Math.min(b.rigMax,b.rig+HEART_RIG);st.rig=to;if(typeof shipBarsUI==='function')shipBarsUI();return {rig:to-b.rig};}
   if(kind==='patch'){const to=Math.min(fieldCap(b.hullMax),b.hull+patchAmt());st.hull=to;if(typeof shipBarsUI==='function')shipBarsUI();return {hull:to-b.hull};}
   const to=Math.min(fieldCap(b.rigMax),b.rig+SPLICE_RIG);st.rig=to;if(typeof shipBarsUI==='function')shipBarsUI();return {rig:to-b.rig};}
 // each frame, from tickSurvival
@@ -1275,6 +1293,10 @@ function benchDraw(){const ov=document.getElementById('benchui');if(!ov)return;
   const have=n=>` <i style="font-size:12px;color:#8a7050">(you have ${n})</i>`;let t=`<div style="font-variant:small-caps;color:#7a1f10">${R.name}</div>`;
   if(R.id==='plank')t+=pad('1 Log'+have(bagCount(b=>b.log==='log')))+note('two planks, for a grip, a bow, a shield or a ship’s patch');
   else if(R.id==='spar')t+=pad('1 Pine Log'+have(bagCount(b=>b.log==='pine')))+note('for a ship’s splice');
+  else if(R.id==='heartspar')t+=pad('1 Heartwood Log'+have(bagCount(b=>b.heartwood==='log')))+note('a mast’s spar: its splice mends the rig past field work'); /* S1559 */
+  else if(R.id==='heartsplice'){const b=shipBars(),why=shipWorkWhy('heartsplice');
+    t+=pad('1 Heartwood Spar'+have(bagCount(x=>x.heartwood==='spar')))+pad('1 Pitch'+have(pitchCount()))+pad(`rig +${HEART_RIG}, ${patchSecs()} s of work`)+
+      note(`rig ${b.rig} of ${b.rigMax}; heartwood mends it to full`)+(why?note(why):'');}
   else if(R.id==='bow'||R.bowyer){if(benchTier==null||!benchMetals().includes(benchTier))benchTier=benchMetals().find(m=>ingotCount(m)>=1)||3;const K=BOW_KINDS[R.id];
     t=`<div style="font-variant:small-caps;color:#7a1f10">${MATERIALS[benchTier-1].name} ${K.name}</div>`+pad(`${K.planks} Planks`+have(plankCount()))+pad(`1 ingot and ${FORGE_MIN} minutes`)+
       '<div style="padding-left:12px;display:flex;flex-wrap:wrap;gap:4px;margin:4px 0">'+benchMetals().map(m=>{const g=SKILL_GATE[m]||0,ok=ingotCount(m)>=1&&skillLv('joinery')>=g;
