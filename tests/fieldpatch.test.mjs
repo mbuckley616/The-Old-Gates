@@ -76,7 +76,8 @@ check('Field splice, Tight seams, Bowyer and Shipwright\'s hand live', r.perks, 
 // in one mesh a material, its solid the bench's own footprint, clear of the bunk, the chart table, the chest and the sacks
 /* S1555: the kit sloop's hold (her base below deck, #418 A) has no bench, as shipbase.js drew it; the bench below is a cutter's, whose cabin is still the old room */
 /* S1558: the cutter's hold is hers now (her workbench is the bench, hullbakes); the old room's bench is checked on a caravel, whose base is still owed */
-await page.evaluate(() => { const S = WORLD.ship, x = S.x, z = S.z, y = S.yaw; sc.remove(S.mesh); SHIP.mesh = null; worldState.ship.cls = 'caravel'; WORLD.spawnShip(x, z, y); cabinUpdate(); goToInterior(CABIN.house); });
+/* S1564: the caravel's hold is hers too (her workbench is the bench, hullbakes); the old room's bench is checked on a cog */
+await page.evaluate(() => { const S = WORLD.ship, x = S.x, z = S.z, y = S.yaw; sc.remove(S.mesh); SHIP.mesh = null; worldState.ship.cls = 'cog'; WORLD.spawnShip(x, z, y); cabinUpdate(); goToInterior(CABIN.house); });
 for (let k = 0; k < 40 && !(await page.evaluate(() => isInterior())); k++) await page.waitForTimeout(250);
 const cb = await page.evaluate(() => { if (!isInterior() || currentHouse.type !== 'cabin') return null;
   const B = currentHouse._bench; let g = null; interiorScene.traverse(o => { if (o.name === 'joiner bench') g = o; }); if (!B || !g) return { B, g: !!g };

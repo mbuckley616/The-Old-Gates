@@ -204,5 +204,27 @@ check(`below deck on your cutter is her hold in her own lines: ${ct.W} by ${ct.D
 check(`her hatch is aft of the mast at z -1.05, and the eye stands at ${ct.eye} (under the beams, over the sloop's 1.38)`, ct.hatch && Math.abs((ct.hatch.z0 + ct.hatch.z1) / 2 + 1.05) < .01 && ct.eye > 1.45 && ct.eye <= 1.65 && ct.cam > 1.45, [ct.hatch, ct.eye, ct.cam]);
 check('from the ladder\'s foot mid-hold you walk forward to the stores and aft to the bulkhead; the planking stops you either side', ct.fwd[1] < ct.arrive[1] - 3 && ct.aft[1] > ct.arrive[1] + 1.5 && ct.aft[1] < 7.8 && ct.port[0] > 2 && ct.port[0] < 3.2 && ct.stbd[0] < 2 && ct.stbd[0] > .8, [ct.arrive, ct.fwd, ct.aft, ct.port, ct.stbd]);
 check('the berth rests, the chest is the stash, the workbench is the bench (E at it), and E at the ladder\'s foot (only there) takes you on deck', ct.beds === 1 && ct.bed && !ct.bedExit && ct.stash && ct.bench && !ct.exitFar && ct.left, ct);
+/* Session 1564 (backlog L6; #418 A): and below deck on your caravel is her hold (PKIT.ships.caravelBase): under the main deck from the
+   cabin's bulkhead to the stem's, the ladder's foot mid-hold by the main mast; the workbench and the alchemist's table aft past the two
+   chests, the barrels forward. Her berth is in the cabin under the castle, not here */
+await page.evaluate(() => { if (SHIP.mesh) { sc.remove(SHIP.mesh); SHIP.mesh = null; } worldState.ship = { cls: 'caravel', name: 'Test Swift', sails: 0, cargo: 0 }; WORLD.spawnShip(px + 1, pz + 1, .7); SHIP.sailing = false; cabinUpdate(); goToInterior(CABIN.house); });
+for (let k = 0; k < 40 && !(await page.evaluate(() => isInterior() && !!currentHouse._base)); k++) await page.waitForTimeout(250);
+const cvh = await page.evaluate(() => { const h = currentHouse, B = h._base; if (!B || B.kind !== 'caravel') return { base: !!B };
+  const walk = (x, z, yw, n) => { px = x; pz = z; yaw = yw; pitch = 0; jumpY = 0; velY = 0; onGround = true; _drive(() => { K['KeyW'] = true; }, n); return [+px.toFixed(2), +pz.toFixed(2)]; };
+  /* a walk by waypoints, each leg along one axis: round the main mast to port, between the chests, to the bench past the alchemist's table */
+  const route = pts => { px = pts[0][0]; pz = pts[0][1]; jumpY = 0; velY = 0; onGround = true; let i = 1;
+    _drive(() => { const [tx, tz] = pts[i], dx = tx - px, dz = tz - pz; if (Math.hypot(dx, dz) < .12) return ++i >= pts.length; yaw = Math.atan2(-dx, -dz); pitch = 0; K['KeyW'] = true; return false; }, 900); return { legs: i - 1, at: [+px.toFixed(2), +pz.toFixed(2)] }; };
+  const o = { base: true, tris: B.tris, draws: B.draws, W: h.intW, D: h.intD, roomH: h._roomH, eye: h._eyeMax, beds: INT_BEDS.length, stash: !!intStashPos, hatch: B.hatch, arrive: [px, pz], exitZ: h._exitZ };
+  o.fwd = walk(h._arriveX, h._arriveZ, 0, 250); o.port = walk(h._arriveX, 3, -Math.PI / 2, 80); o.stbd = walk(h._arriveX, 3, Math.PI / 2, 80);
+  o.route = route([[h._arriveX, h._arriveZ], [h._arriveX + .6, h._arriveZ], [h._arriveX + .6, 6.15], [2.2, 6.15], [2.2, 7.75], [2.5, 7.75], [2.5, 8.7]]);
+  _drive(() => false, 20); o.cam = +CAM.position.y.toFixed(2); o.bench = benchNear(); o.benchExit = intExitZ(h, pz, h._roomD || h.intD);
+  px = h._arriveX; pz = h._arriveZ; o.out = (interact(), 0); return o; });
+for (let k = 0; k < 40 && (await page.evaluate(() => isInterior())); k++) await page.waitForTimeout(250);
+cvh.left = await page.evaluate(() => !isInterior());
+console.log(JSON.stringify(cvh));
+check(`below deck on your caravel is her hold in her own lines: ${cvh.W} by ${cvh.D} m, ${cvh.roomH} m to the deck, ${cvh.tris} triangles in ${cvh.draws} draws`, cvh.base && cvh.W === 5 && cvh.D === 9.8 && cvh.roomH > 1.8 && cvh.tris < 38000 && cvh.draws <= 26, cvh);
+check(`her hatch is between the main mast and the fore at z 2.8, and the eye stands at ${cvh.eye}`, cvh.hatch && Math.abs((cvh.hatch.z0 + cvh.hatch.z1) / 2 - 2.8) < .01 && cvh.eye > 1.45 && cvh.eye <= 1.65 && cvh.cam > 1.45, [cvh.hatch, cvh.eye, cvh.cam]);
+check('from the ladder\'s foot you walk forward to the barrels, and round the main mast and between the chests aft to the bench; the planking stops you either side', cvh.fwd[1] < cvh.arrive[1] - 1.5 && cvh.route.legs === 6 && cvh.route.at[1] > 8.5 && cvh.port[0] > 2.5 && cvh.port[0] < 3.6 && cvh.stbd[0] < 2.5 && cvh.stbd[0] > 1.4, [cvh.arrive, cvh.fwd, cvh.route, cvh.port, cvh.stbd]);
+check('the starboard chest is the stash, the workbench is the bench (E at it, clear of the way out), no berth below, and E at the ladder\'s foot takes you on deck', cvh.beds === 0 && cvh.stash && cvh.bench && !cvh.benchExit && cvh.left, cvh);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
