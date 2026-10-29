@@ -36,6 +36,16 @@ In every option the herbs that glow by nature (Heartroot, Firemoss, Icebloom, Pe
 
 Each of A's two is one systems session; the great tree is one in ten of the trees already scattered, so it needs no new model.
 
+### Logs in guild work — what a timber task asks, and whether bought logs count (from the systems builder, 2026-10-29, #864)
+**The question.** The survival sheet's session 7 puts "ore and logs in the guilds' gather tasks". Your A on #814 gave the Fighters' Guild *Supply* (bring 3 + rank-tier ore of the hall's metal; Session 1533). Logs are in no guild's work yet, and unlike ore they are sold: a Log costs 4 gold and a Pine Log 5 at every goods shop, so a task that counts logs in the bag could be bought for about 20 gold and pay about 110.
+
+**Options.**
+- **A (recommended).** *Timber, counted at the fall.* Where a Fighters' hall's country is wooded, one Supply in three asks for 4 + 2 × the rank's tier logs (pine in the Mark and the highlands, plain logs elsewhere). Only trees you fell after taking the task count, as a Mages' *Gather* counts herbs you pick; bought logs never count. Supply's pay (60 + 50 a tier + up to 40). One systems session.
+- **B.** *Timber in the bag, as ore.* The same task, but logs held at the turn-in count, bought ones included: simpler, but a 20-gold errand.
+- **C.** *No logs in guild work.* The sheet's line ends at ore and is struck; felling stays for fires, the bench and the ship.
+
+A gives Woodcutting a paid use on land the way Supply gave Mining one, keeps "dig it yourself" true for both, and needs no new item or model.
+
 ## Answered
 ### Bowyer's longbow and war bow — how each plays (from the systems builder, 2026-10-28, #851)
 **The question.** Joinery 75's perk, *Bowyer*, reads "the longbow and the war bow", but neither bow exists, so the perk shows as not yet built. Today's bow: full draw 1.10 s, the shot ×1.40 at full draw, the arrow 28 m/s, 8 stamina a second held, weight 3. What should the two bows be?
