@@ -73,6 +73,7 @@ function _intBarrel(sc,x,z){
 // S896 (F2a) — where a room stands you as you come in, on the line down its middle: 1.75 to 2.2 in from the door (z = the room's
 // depth), and in a shallow shop at least half a metre in front of the counter (buildInteriorFor keeps its front edge, true metres)
 function intDoorX(house){return house&&house._exitX!=null?house._exitX:((house&&house._roomW)||10)/2;} /* S1276 — the room's door along its front wall: the middle, unless the room says otherwise (_exitX: a two-bay inn's door in its west bay) */
+function intExitZ(house,z,D){const d=(house&&house._exitD)||1.6;return house&&house._exitZ!=null?Math.abs(z-house._exitZ)<d:z>D-d;} /* S1558 — the way out across the back wall's last _exitD, or a band either side of _exitZ (a cutter's ladder stands mid-hold) */
 function intArriveX(house){return house&&house._arriveX!=null?house._arriveX:intDoorX(house);} /* S1392 — where you stand on coming in, along the front: the door, unless the room says otherwise */
 function intArrivalZ(house){if(house._arriveZ!=null)return house._arriveZ; /* S1392 — a room that says where you stand (the cottage's lobby) */const D=house._roomD||house.intD||6;let z=D-Math.min(2.2,Math.max(1.75,D*.3));if(house._counterFront!=null)z=Math.max(z,Math.min(D-1.2,house._counterFront+.55));return z;}
 function _intCrate(sc,x,y,z,s=.38){

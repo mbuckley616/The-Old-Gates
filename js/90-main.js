@@ -1054,7 +1054,7 @@ function loop(now){
     // v61d4 — added safehouse:8 to room-depth lookup so the exit threshold
     // resolves correctly indoors. Same fix applies in the interact handler.
     const _rd=(currentHouse&&(currentHouse._roomD||{weapon:10,armor:10,potion:9,misc:9,inn:11,church:16,castle:22,safehouse:8}[currentHouse.type||'misc']))||9,_rw=(currentHouse&&currentHouse._roomW)||10;
-    const nearExit=pz>_rd-((currentHouse&&currentHouse._exitD)||1.6)&&Math.abs(px-intDoorX(currentHouse))<((currentHouse&&currentHouse._exitW)||1.6)&&jumpY<.6&&!personAimedIn(); /* S1392 — the door's reach as E reads it (50-travel.js): a kit room's own */ /* S905 — a person aimed at wins, as E's own rule */ // v80 S13 — at the door, on the ground floor
+    const nearExit=intExitZ(currentHouse,pz,_rd)&&Math.abs(px-intDoorX(currentHouse))<((currentHouse&&currentHouse._exitW)||1.6)&&jumpY<.6&&!personAimedIn(); /* S1392 — the door's reach as E reads it (50-travel.js): a kit room's own */ /* S905 — a person aimed at wins, as E's own rule */ // v80 S13 — at the door, on the ground floor
     // v61d4 — Stash + bed proximity prompts. Both check the live globals
     // set by buildInterior's safehouse branch; null in any other interior.
     const nearStash=stashAimed(); /* S656 — the prompt asks what E does */
