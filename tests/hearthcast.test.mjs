@@ -12,7 +12,7 @@ await page.evaluate(() => { const S = WORLD.settle.get('dunmore'), h = S.houses.
 await page.waitForTimeout(5000); await g.hide();
 const r = await page.evaluate(() => { const t = gstate().guild_m.active, h = currentHouse, W = h._roomW || 10, D = h._roomD || 10;
   const out = { bound: t.house === _H.id, fbtn: document.getElementById('fbtn').style.display }, lit = () => !!t.done;
-  const at = () => { px = W - .4 - 1; pz = D * .4; castT = 0; spCd = 0; };
+  const at = () => { px = W - .4 - 1; pz = D * .4; castT = 0; _castFreeAt = 0; spCd = 0; };
   const rnd = Math.random, cr = casterRand; Math.random = () => .99; casterRand = () => () => .99; /* S685: the wild roll is the caster's stream */
   at(); knownWords = {}; activeSpellId = null; castSpell(); out.none = lit();
   at(); knownWords = { sioc: 1 }; activeSpellId = 'sioc'; mana = effMaxMana(); const m0 = mana; castSpell(); out.frost = [lit(), m0 - mana];

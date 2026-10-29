@@ -12,9 +12,9 @@ const run = (o) => page.evaluate((o) => {
   knownWords = { [sp.id]: 1 }; activeSpellId = sp.id; worldState.gameTimeAbsMinutes = o.min; px += o.dx || 0;
   if (o.reset) _castMin = null; Math.random = () => o.pin;
   let said = ''; showMsg = (t) => { said += ' ' + t; };
-  try { for (let i = 0; i < o.n; i++) { castT = 0; spCd = 0; mana = effMaxMana(); said = ''; castSpell();
+  try { for (let i = 0; i < o.n; i++) { castT = 0; _castFreeAt = 0; spCd = 0; mana = effMaxMana(); said = ''; castSpell();
       out.push(/fizzles/.test(said) ? 'F' : /wavers/.test(said) ? 'S' : /bites back/.test(said) ? 'B' : /stings/.test(said) ? 'R' : '.'); } }
-  finally { Math.random = mr; showMsg = sm; knownWords = ks; activeSpellId = as; worldState.gameTimeAbsMinutes = m0; px = x0; pz = z0; castT = 0; }
+  finally { Math.random = mr; showMsg = sm; knownWords = ks; activeSpellId = as; worldState.gameTimeAbsMinutes = m0; px = x0; pz = z0; castT = 0; _castFreeAt = 0; }
   return out.join(''); }, o);
 
 const spell = await page.evaluate(() => (SPELLS.find(s => s.wild && s.wild.includes('scatter') && s.wild.includes('backlash')) || SPELLS.find(s => s.wild)).id);
@@ -35,9 +35,9 @@ check(`ten casts then ten more in the same minute are the same twenty (${E1}${E2
 // 4. the rate holds: over 1,000 casts in 100 minutes 30% go wild, ±3 (magic B's `wordtier`, Session 1571; it was 40% over 400), the patterns spread over the spell's list
 const R = await page.evaluate((spell) => { const sp = SPELLS.find(s => s.id === spell); const ks = knownWords, as = activeSpellId, sm = showMsg, m0 = worldState.gameTimeAbsMinutes; const c = {};
   knownWords = { [sp.id]: 1 }; activeSpellId = sp.id; let said = ''; showMsg = (t) => { said += ' ' + t; };
-  try { for (let m = 0; m < 100; m++) { worldState.gameTimeAbsMinutes = 9000 + m; for (let i = 0; i < 10; i++) { castT = 0; spCd = 0; mana = effMaxMana(); said = ''; castSpell();
+  try { for (let m = 0; m < 100; m++) { worldState.gameTimeAbsMinutes = 9000 + m; for (let i = 0; i < 10; i++) { castT = 0; _castFreeAt = 0; spCd = 0; mana = effMaxMana(); said = ''; castSpell();
         const k = /fizzles/.test(said) ? 'fizzle' : /wavers/.test(said) ? 'scatter' : /bites back/.test(said) ? 'backlash' : 'clean'; c[k] = (c[k] || 0) + 1; } } }
-  finally { showMsg = sm; knownWords = ks; activeSpellId = as; worldState.gameTimeAbsMinutes = m0; castT = 0; }
+  finally { showMsg = sm; knownWords = ks; activeSpellId = as; worldState.gameTimeAbsMinutes = m0; castT = 0; _castFreeAt = 0; }
   return { c, wild: sp.wild }; }, spell);
 const wild = 1000 - (R.c.clean || 0);
 console.log('rate', JSON.stringify(R));
