@@ -14,9 +14,9 @@ const r = await page.evaluate(() => { const t = gstate().guild_m.active, h = cur
   const out = { bound: t.house === _H.id, fbtn: document.getElementById('fbtn').style.display }, lit = () => !!t.done;
   const at = () => { px = W - .4 - 1; pz = D * .4; castT = 0; spCd = 0; };
   const rnd = Math.random, cr = casterRand; Math.random = () => .99; casterRand = () => () => .99; /* S685: the wild roll is the caster's stream */
-  at(); knownSpells = {}; activeSpellId = null; castSpell(); out.none = lit();
-  at(); knownSpells = { sioc: 1 }; activeSpellId = 'sioc'; mana = effMaxMana(); const m0 = mana; castSpell(); out.frost = [lit(), m0 - mana];
-  at(); knownSpells = { caor: 1 }; activeSpellId = 'caor'; const hp0 = PHP; mana = 0; PHP = 2; castSpell(); out.noMana = lit(); PHP = hp0; /* S1571: short of mana a cast takes health; at 2 health it is refused */
+  at(); knownWords = {}; activeSpellId = null; castSpell(); out.none = lit();
+  at(); knownWords = { sioc: 1 }; activeSpellId = 'sioc'; mana = effMaxMana(); const m0 = mana; castSpell(); out.frost = [lit(), m0 - mana];
+  at(); knownWords = { caor: 1 }; activeSpellId = 'caor'; const hp0 = PHP; mana = 0; PHP = 2; castSpell(); out.noMana = lit(); PHP = hp0; /* S1571: short of mana a cast takes health; at 2 health it is refused */
   at(); mana = effMaxMana(); spCd = 5; castSpell(); out.cooling = lit();
   at(); { let k = 0; casterRand = () => () => (k++ === 0 ? 0 : .4); } mana = effMaxMana(); castSpell(); out.fizzle = lit();
   casterRand = () => () => .99;

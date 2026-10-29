@@ -156,7 +156,7 @@ function ssMetaFrom(d,kind,slot){return {key:`${d.charId||'legacy'}_${kind}_${sl
 // host's world row (_applyLoadData(c,w)). The index keeps one entry per slot at the character row's key;
 // the world row sits beside it at ssWorldKey(key). Loading joins the two (ssJoinPayload), so a key read from
 // either row still lands: moving a key between the lists is a change to what the next save writes, nothing more.
-const SS_CHAR_WS={charId:1,gatesWalked:1,shuttleCarry:1,look:1,people:1,stats:1,tut:1,met:1,quests:1,guild:1,cold:1,knowing:1,unbound:1,masteries:1,varek:1,chapelAt:1,roadsWalked:1,wdisc:1,rubbings:1,sigilsRead:1,favor:1,factions:1,crime:1,crimes:1,church:1,refuse:1,rented:1,coachSeat:1,tutorialDone:1,journal:1,told:1,mapNotes:1,feastMeals:1,artifactTries:1,herbsKnown:1,fed:1,masterworks:1}; /* S1495 — the metals you have made a Masterwork of */
+const SS_CHAR_WS={register:1,charId:1,gatesWalked:1,shuttleCarry:1,look:1,people:1,stats:1,tut:1,met:1,quests:1,guild:1,cold:1,knowing:1,unbound:1,masteries:1,varek:1,chapelAt:1,roadsWalked:1,wdisc:1,rubbings:1,sigilsRead:1,favor:1,factions:1,crime:1,crimes:1,church:1,refuse:1,rented:1,coachSeat:1,tutorialDone:1,journal:1,told:1,mapNotes:1,feastMeals:1,artifactTries:1,herbsKnown:1,fed:1,masterworks:1}; /* S1495 — the metals you have made a Masterwork of */
 const SS_WORLD_TOP={QS:1,merchantStock:1}; /* top-level fields of the one-row payload that are the world's; wS is divided by SS_CHAR_WS */
 function ssWorldKey(key){return key+'~w';}
 function ssSplitPayload(d){const c={},w={v:d.v,ts:d.ts,charId:d.charId};
@@ -376,9 +376,10 @@ function _buildSavePayload(){
     // item; migration-safe → {} on load. buyPrice + _boughtBack survive via the
     // _serItem whitelist additions.
     merchantStock:Object.fromEntries(Object.entries(merchantStock).map(([k,arr])=>[k,(arr||[]).map(_serItem)])),
-    knownSpells:{...knownSpells},
+    knownWords:{...knownWords},
     touchedSigils:[...touchedSigils],
     activeSpellId,
+    spellBook:spellBook.map(b=>({...b})),activeSpell:bookSync(),formsGranted:[...formsGranted], /* S1572 — magic B's book */
     QS:JSON.parse(JSON.stringify(QS)),
     uQ:[...untrackedQuests],
     HERB_CONSUME_COUNTS:{...HERB_CONSUME_COUNTS},
@@ -629,21 +630,23 @@ function _applyLoadData(d,w){
   if(typeof buildShieldViewmodel==='function' && _eqUnequipped.length)buildShieldViewmodel();
   invalidateArmorCache();
   PHP=Math.min(PHP,effMaxHP());mana=Math.min(mana,effMaxMana());stamina=Math.min(stamina,effMaxStamina());
-  // knownSpells migration: legacy saves stored an array of spell ids (e.g. ['fireball','iceshard']).
+  // knownWords migration: legacy saves stored an array of spell ids (e.g. ['fireball','iceshard']).
   // New format is an object map {spellId: tier}. Legacy array → migrate each entry to tier 1,
   // remapping old ids (fireball→caor, iceshard→sioc, heallight→leigheas) to their Irish equivalents.
   // Unknown legacy ids are dropped silently.
   const LEGACY_ID_MAP={fireball:'caor', iceshard:'sioc', heallight:'leigheas'};
-  for(const k of Object.keys(knownSpells))delete knownSpells[k];
-  if(d.knownSpells){
-    if(Array.isArray(d.knownSpells)){
-      d.knownSpells.forEach(id=>{
+  // S1572 — magic B: the words. `knownWords` replaced `knownSpells` (the same {id: tier}, one id each); a save from before reads the old key.
+  for(const k of Object.keys(knownWords))delete knownWords[k];
+  const _kw=d.knownWords||d.knownSpells;
+  if(_kw){
+    if(Array.isArray(_kw)){
+      _kw.forEach(id=>{
         const mapped=LEGACY_ID_MAP[id]||id;
-        if(SPELLS.find(s=>s.id===mapped))knownSpells[mapped]=1;
+        if(WORD_BY[mapped])knownWords[mapped]=1;
       });
-    } else if(typeof d.knownSpells==='object'){
-      Object.entries(d.knownSpells).forEach(([id,tier])=>{
-        if(SPELLS.find(s=>s.id===id))knownSpells[id]=Math.max(1,Math.min(3,tier|0));
+    } else if(typeof _kw==='object'){
+      Object.entries(_kw).forEach(([id,tier])=>{
+        if(WORD_BY[id])knownWords[id]=Math.max(1,Math.min(3,tier|0));
       });
     }
   }
@@ -651,13 +654,14 @@ function _applyLoadData(d,w){
   if(Array.isArray(d.touchedSigils))d.touchedSigils.forEach(u=>touchedSigils.add(u));
   activeSpellId=d.activeSpellId||null;
   // If loaded save had an activeSpellId that's no longer known, fall back to first known or null
-  if(activeSpellId&&!knownSpells[activeSpellId]){
-    const first=Object.keys(knownSpells)[0];
+  if(activeSpellId&&!knownWords[activeSpellId]){
+    const first=Object.keys(knownWords)[0];
     activeSpellId=first||null;
   } else if(!activeSpellId){
-    const first=Object.keys(knownSpells)[0];
+    const first=Object.keys(knownWords)[0];
     if(first)activeSpellId=first;
   }
+  spellBookLoad(d); /* S1572 — the book, or its migration from the spells known */
   qsInit(); /* S474 — the quests start fresh before the saved ones are laid over them: qsInit ran only at page load, so a load from the in-game menu kept the running game's QS where the save had none (a character row alone) or lacked a quest */
   if(d.QS)Object.assign(QS,d.QS);
   // v61af: quest-shape migration. When a quest gets new objectives added in a
@@ -758,7 +762,7 @@ function _applyLoadData(d,w){
   // v80 S242 — keys the save always carried (wS is the whole worldState) but the load never read back: the day count,
   // the crime record, the Church's notes, the war, the Reader. Absent from the save, they are cleared, so one
   // character's record never carries into another's.
-  ['gameTimeAbsMinutes','_rentWk','crime','crimes','boxes','picked','refuse','church','war','wars','lairDays','shrines','towerLoot','towerPicked','shelfTaken','masteries','varek','roadsWalked','chapelAt','knowing','unbound','cargoMkt','told','mapNotes','feastMeals','challenge','artifacts','artifactTries','shrineVerse','gatesWalked','shuttleCarry','greatGates','herbsKnown','fed','veins','felled','masterworks'].forEach(k=>{const v=d.wS?d.wS[k]:undefined;if(v===undefined||v===null)delete worldState[k];else worldState[k]=v;});
+  ['register','gameTimeAbsMinutes','_rentWk','crime','crimes','boxes','picked','refuse','church','war','wars','lairDays','shrines','towerLoot','towerPicked','shelfTaken','masteries','varek','roadsWalked','chapelAt','knowing','unbound','cargoMkt','told','mapNotes','feastMeals','challenge','artifacts','artifactTries','shrineVerse','gatesWalked','shuttleCarry','greatGates','herbsKnown','fed','veins','felled','masterworks'].forEach(k=>{const v=d.wS?d.wS[k]:undefined;if(v===undefined||v===null)delete worldState[k];else worldState[k]=v;});
   journalLoad(d.wS&&d.wS.journal); // S486 — the journal is the character's; a save without one (older than S486) starts it empty
   try{ssSanitizeLoaded();}catch(e){console.warn('sanitize',e);}  // v80 S137
   // v61aw: tutorialDone migration. Saves predating v61aw never had this

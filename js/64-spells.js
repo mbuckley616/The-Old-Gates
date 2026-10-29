@@ -1,7 +1,7 @@
 
 // ── SPELL SYSTEM ─────────────────────────────────────────────
 // Each spell has three tiers: Impression (1), Comprehension (2), Mastery (3).
-// Tier is stored per-spell in `knownSpells[id] = 1|2|3`. Higher Intelligence unlocks higher tiers at sigil touch.
+// Tier is stored per-spell in `knownWords[id] = 1|2|3`. Higher Intelligence unlocks higher tiers at sigil touch.
 // Tier 1: Irish name only, 60% magnitude, wild effects can fire (see WILD_EFFECTS).
 // Tier 2: Irish — English, 100% magnitude, reliable.
 // Tier 3: Irish — True name, 130% magnitude, 70% cost, 80% cooldown.
@@ -82,7 +82,7 @@ function spellDisplayName(sp, tier){
   return sp.nameIr;
 }
 // Fetch the current tier (1–3) for a spell id, or 0 if not known.
-function getSpellTier(id){return knownSpells[id]||0;}
+function getSpellTier(id){return knownWords[id]||0;}
 // S1346 — the tier a cast reads (great-gates-build.md, Michael's A on #292): the tier learned, one deeper while the school's great gate is
 // torn and one shallower while it is bound, from Impression to Mastery; a spell not known stays 0. Casting, its name, cost, cooldown and
 // the wild roll read this; learning (a sigil, a guild's Deepen, Intelligence's requirements) reads getSpellTier.
@@ -95,8 +95,8 @@ function spellCost(sp,tier){return Math.round(sp.cost*TIER_MULT.cost[tier-1]);}
 function spellCooldown(sp,tier){return (1.0+sp.cost*.012)*TIER_MULT.cooldown[tier-1];}
 function spellAtTier(id){const sp=SPELLS.find(s=>s.id===id);const t=getSpellTier(id);return sp&&t?{sp,tier:t}:null;}
 
-// knownSpells: {spellId: tier} — empty on new game. Touch a sigil to learn at your INT-qualified tier.
-let knownSpells={};
+// knownWords: {spellId: tier} — empty on new game. Touch a sigil to learn at your INT-qualified tier.
+let knownWords={};
 // touchedSigils: set of sigil UUIDs the player has already visited (for re-touch upgrade flow)
 let touchedSigils=new Set();
 
@@ -361,8 +361,8 @@ function touchSigil(sigil){
   // The quest hook and first-visit bookkeeping fire on every path out of this block (Session 96 had returned before them).
   {const firstVisit=!touchedSigils.has(sigil.uuid);touchedSigils.add(sigil.uuid);
    const _q=(tier)=>{try{checkQuestProgress('touch_sigil',{spellId:sigil.spellId,floor:sigil.floor,eligibleTier:tier,firstVisit});}catch(e){}
-     try{const known=knownSpells[sp.id]||0;QUEST_DEFS.forEach(q=>{if(q.questline!=='sigil_lore'||q.sigilSpellId!==sigil.spellId)return;const n=parseInt(String(q.id).split('_').pop(),10);const qs=QS[q.id];if(!qs)return;if(n<=known){if(qs.state!=='complete'){qs.state='complete';}}else if(n===known+1){if(qs.state==='locked'||qs.state==='available'){qs.state='active';if(typeof showQuestUpdatePopup==='function')showQuestUpdatePopup('accept',q);}}});}catch(e){}};
-   const cur=knownSpells[sp.id]||0;const ob=(typeof WORLD!=='undefined'&&WORLD.playerPeople()==='oldblood');let tier=cur>=3?3:Math.max(cur+1,ob&&cur===0?2:1);
+     try{const known=knownWords[sp.id]||0;QUEST_DEFS.forEach(q=>{if(q.questline!=='sigil_lore'||q.sigilSpellId!==sigil.spellId)return;const n=parseInt(String(q.id).split('_').pop(),10);const qs=QS[q.id];if(!qs)return;if(n<=known){if(qs.state!=='complete'){qs.state='complete';}}else if(n===known+1){if(qs.state==='locked'||qs.state==='available'){qs.state='active';if(typeof showQuestUpdatePopup==='function')showQuestUpdatePopup('accept',q);}}});}catch(e){}};
+   const cur=knownWords[sp.id]||0;const ob=(typeof WORLD!=='undefined'&&WORLD.playerPeople()==='oldblood');let tier=cur>=3?3:Math.max(cur+1,ob&&cur===0?2:1);
    const need=sp.intReqs[tier-1];if(ATTRS.intelligence<need){showMsg(`The stone is warm under your hand and gives nothing. (Intelligence ${need})`,'#c8a84a');_q(cur);return;}
    if(cur>=3){mana=Math.min(effMaxMana(),mana+15);updateHUD();showMsg('The sigil has nothing more for you. It warms your hand.','#8a8ac8');_q(cur);return;}
    learnSpell(sp.id,tier);
@@ -725,7 +725,7 @@ function buildSpellOrbTemplates(){
   );
 }
 let partialSpells=[];
-// activeSpellId: the spell the F button casts. null when knownSpells is empty.
+// activeSpellId: the spell the F button casts. null when knownWords is empty.
 // Set automatically on first spell learn; changed when player clicks a spell in the magic tab.
 let activeSpellId=null;
 
@@ -777,7 +777,7 @@ function spellShopTopics(rankIdx){
   const out=[];
   for(const sp of SPELLS){
     if(sp.rare&&!(rankIdx>=3))continue;
-    const cur=(knownSpells[sp.id]||0);if(cur>=2)continue;const tier=cur+1; // the institutional register stops at Comprehension; Mastery is the sigils' alone
+    const cur=(knownWords[sp.id]||0);if(cur>=2)continue;const tier=cur+1; // the institutional register stops at Comprehension; Mastery is the sigils' alone
     const needRank=(sp.rank||0)+(tier-1);if(rankIdx<needRank)continue;
     const price=(sp.price||[120,320,700])[tier-1];
     out.push({label:`${cur?'Deepen':'Learn'} ${sp.nameEn}${cur?' → '+TIER_LABEL[tier-1]:''} (${price}g)`,quest:true,fn:()=>{
@@ -791,12 +791,13 @@ function spellShopTopics(rankIdx){
 function learnSpell(spellId, targetTier=1){
   const sp=SPELLS.find(s=>s.id===spellId);
   if(!sp)return 'noop';
-  const prevTier=knownSpells[spellId]||0;
+  const prevTier=knownWords[spellId]||0;
   if(targetTier<=prevTier)return 'noop';
-  knownSpells[spellId]=targetTier;
+  knownWords[spellId]=targetTier;
   partialSpells=partialSpells.filter(p=>p!==spellId);
   // First spell learned → auto-equip as active
   if(!activeSpellId)activeSpellId=spellId;
+  if(prevTier===0)bookAdd(spellId); /* S1572 — a new word goes into the book in its first Novice form */
   const name=spellDisplayName(sp,targetTier);
   const verb=prevTier===0?'Learned':'Deepened understanding of';
   showMsg(`✨ ${verb} ${name}!`,'#88ffcc');
@@ -807,7 +808,7 @@ function learnSpell(spellId, targetTier=1){
 // Mystic Scrolls teach Impression-tier of a random unknown spell, gated by that spell's Impression INT threshold.
 // If already known at any tier, scroll crumbles to dust.
 function readScroll(){
-  const unknown=SPELLS.filter(s=>!knownSpells[s.id]);
+  const unknown=SPELLS.filter(s=>!knownWords[s.id]);
   if(!unknown.length){showMsg('The scroll crumbles — you know all spells.','#aaa');return;}
   const sp=unknown[Math.floor(Math.random()*unknown.length)];
   const impReq=sp.intReqs[0];
@@ -828,7 +829,7 @@ function checkPartialSpells(){
 
 // S1570 — magic B's tables (magic-build.md, Michael's B of 29 Sep; the deep-work card's first slice): the 24 words, the five forms
 // and the six riders, and what a spell costs. A spell is one form of one word, and at most one rider from a second word. Nothing casts
-// from these yet: SPELLS, BUFF_SPELLS and knownSpells still run the game until the cast and the migration land (the sheet's session 1).
+// from these yet: SPELLS and BUFF_SPELLS still run the cast until it reads the book (the sheet's session 1). Since S1572 what you know is `knownWords`.
 // The sixteen spells keep their ids, Intelligence needs and costs; three take their head word's name (Uisce, Oíche, Súil); eight are new.
 // A word's `forms` holds its live cells (42 of 120): the sheet's numbers, metres and seconds, and `say`, the sheet's words for the cell.
 const WORDS=[
@@ -910,8 +911,8 @@ function wordJoin(id,form,rider,tierW,tierR){
   if(!RIDERS[rider]||rider===id||form==='worn')return {ok:false,why:'rider',say:'The words won’t join.'};
   if((tierW||0)<WORD_JOIN_TIER||(tierR||0)<WORD_JOIN_TIER)return {ok:false,why:'tier',say:'The words won’t join.'};
   return {ok:true};}
-// the tier a word is held at: knownSpells until the migration renames it knownWords
-function wordTierOf(id){return typeof effTier==='function'?effTier(id):(knownSpells[id]||0);}
+// the tier a word is held at, the great gates' loan included
+function wordTierOf(id){return typeof effTier==='function'?effTier(id):(knownWords[id]||0);}
 // the mana a spell takes: (word + rider) at their tiers, ×1.25 when joined, × the form, × the first word's school (×1.4 − 0.8 s),
 // rounded once at the end. Held is a second's worth. Worked (school 50): Caor sent 30, Cloch laid 42, Caor held 15 a second,
 // Sioc with Tonn laid 98, 59 at Uisce 100, 41 with both at Mastery.
@@ -922,3 +923,27 @@ function wordCost(id,form,rider,o){o=o||{};const w=WORD_BY[id];if(!w||!FORMS[for
   const s=o.skill!=null?o.skill:skillLv(w.school);
   m*=FORMS[form].mana*(1.4-.8*s/100)*(o.buff!=null?o.buff:(typeof _buffMult==='function'?_buffMult('spellCost',1):1));
   return Math.round(m+1e-9);}
+
+// S1572 — magic B's book (magic-build.md, "The save"): up to eight made spells {form, word, rider}; `activeSpell` is the index of the one F
+// casts, kept in step with `activeSpellId` until the cast reads the book; `formsGranted` holds the forms a migrated character already
+// used, whatever the guild's rank. All three are top-level fields of the character row, as `knownWords` is.
+const SPELL_BOOK_MAX=8;
+let spellBook=[],activeSpell=-1,formsGranted=[];
+// a lone word's first Novice form: Sent where it has one (the bolts), else Worn (the buffs, and Leigheas's heal)
+function bookFormFor(id){const w=WORD_BY[id];return !w?null:w.forms.sent?'sent':w.forms.worn?'worn':null;}
+function bookAdd(id){const f=bookFormFor(id);if(!f)return -1;let i=spellBook.findIndex(b=>b.word===id&&b.form===f&&!b.rider);
+  if(i<0){if(spellBook.length>=SPELL_BOOK_MAX)return -1;spellBook.push({form:f,word:id,rider:null});i=spellBook.length-1;}return i;}
+function bookSync(){activeSpell=activeSpellId?spellBook.findIndex(b=>b.word===activeSpellId&&!b.rider):-1;return activeSpell;}
+function spellBookLoad(d){spellBook.length=0;formsGranted.length=0;
+  if(Array.isArray(d.spellBook)){
+    for(const b of d.spellBook){if(spellBook.length>=SPELL_BOOK_MAX)break;if(!b||!knownWords[b.word]||!wordLive(b.word,b.form))continue;
+      spellBook.push({form:b.form,word:b.word,rider:RIDERS[b.rider]&&knownWords[b.rider]?b.rider:null});}
+    if(Array.isArray(d.formsGranted))for(const f of d.formsGranted)if(FORMS[f]&&!formsGranted.includes(f))formsGranted.push(f);
+  }else{
+    // once, a save from before the words: every spell known goes in as its word, the bolts Sent and the rest Worn, the one F cast
+    // first, then the table's order, bolts before the rest, to the book's eight; Sent and Worn are granted whatever the rank
+    const ids=Object.keys(knownWords);if(ids.length)formsGranted.push('sent','worn');
+    const order=[activeSpellId,...WORDS.filter(w=>w.forms.sent).map(w=>w.id),...WORDS.filter(w=>!w.forms.sent).map(w=>w.id)];
+    for(const id of order)if(id&&knownWords[id])bookAdd(id);
+  }
+  bookSync();}

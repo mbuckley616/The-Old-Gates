@@ -6,13 +6,13 @@ import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
 const r = await page.evaluate(() => {
-  const ks = knownSpells, as = activeSpellId, sk = SKILLS.tine, out = {};
-  knownSpells = { caor: 2 }; activeSpellId = 'caor'; SKILLS.tine = { lv: 50, p: 0 };
+  const ks = knownWords, as = activeSpellId, sk = SKILLS.tine, out = {};
+  knownWords = { caor: 2 }; activeSpellId = 'caor'; SKILLS.tine = { lv: 50, p: 0 };
   const cast = (m, hp) => { castT = 0; spCd = 0; mana = m; PHP = hp; PPOST.stagUntil = 0; let said = ''; const sm = showMsg; showMsg = t => { said += ' ' + t; };
     try { castSpell(); } finally { showMsg = sm; } const now = performance.now() / 1000;
     return { hp: PHP, mana: Math.round(mana), stag: +(PPOST.stagUntil - now).toFixed(2), said: said.trim() }; };
   out.full = cast(100, 100); out.short = cast(10, 100); out.refused = cast(10, 40); out.edge = cast(10, 41);
-  knownSpells = ks; activeSpellId = as; SKILLS.tine = sk; castT = 0; spCd = 0; PPOST.stagUntil = 0; PHP = maxHP; mana = effMaxMana();
+  knownWords = ks; activeSpellId = as; SKILLS.tine = sk; castT = 0; spCd = 0; PPOST.stagUntil = 0; PHP = maxHP; mana = effMaxMana();
   return out; });
 console.log(JSON.stringify(r));
 check(`with the mana, Caor costs 30 and no health (${r.full.mana} mana left, health ${r.full.hp})`, r.full.mana === 70 && r.full.hp === 100 && r.full.stag <= 0, r.full);

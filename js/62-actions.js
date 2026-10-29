@@ -333,8 +333,8 @@ function casterRand(spId){
   return seededRng('wild',_castMin+':'+(_castN++)+':'+spId);
 }
 function castSpell(){
-  // Empty-knownSpells hint — one of the two signals (along with HUD dimming) that there are carvings to find.
-  if(!activeSpellId||Object.keys(knownSpells).length===0){
+  // Empty-knownWords hint — one of the two signals (along with HUD dimming) that there are carvings to find.
+  if(!activeSpellId||Object.keys(knownWords).length===0){
     showMsg('You know no magic. Sigils are carved into the walls of dungeon lower floors.','#a8a8d4');
     return;
   }
@@ -524,7 +524,7 @@ function startCastAnim(sp, animType){
 function updateSpellButton(){
   const btn=document.getElementById('fbtn');
   if(!btn)return;
-  const nKnown=Object.keys(knownSpells).length;
+  const nKnown=Object.keys(knownWords).length;
   if(!nKnown||!activeSpellId){
     btn.textContent='◯ No magic (F)';
     btn.style.opacity='.55';
