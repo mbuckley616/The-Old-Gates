@@ -48,5 +48,14 @@ const th = await page.evaluate(() => { thirdPerson = false; let t = performance.
 console.log('  thrust:', JSON.stringify(th));
 check(`your spear thrusts: its head ${th.sp.out} m out along the shaft and ${th.sp.back} m back in the draw, the shaft turned at most ${th.sp.turn}° (a sword's swing turns its blade ${th.sw.turn}°) (S1465)`,
   th.sp.out > .25 && th.sp.back > .05 && th.sp.turn < 8 && th.sw.turn > 20, th);
+// S1550 — Bowyer's longbow and war bow are the kit's own, 1.5× and 1.7× the plain bow, in third person and first, and a long bow at rest is tipped clear of the face
+const bl = await page.evaluate(() => { const out = {}, len = o => { o.updateMatrixWorld(true); const s = new THREE.Box3().setFromObject(o).getSize(new THREE.Vector3()); return Math.max(s.x, s.y, s.z); };
+  for (const k of ['bow', 'longbow', 'warbow']) { const it = { name: 'Bow', slot: 'weapon', weaponShape: 'bow', matCol: '#6a4a2a', bowKind: k === 'bow' ? undefined : k };
+    const w = tpWeapon(it); EQ.weapon = it; buildViewmodel(); out[k] = { kit: w.children[0].name, tp: +len(w).toFixed(3), fp: +len(vmSword.userData.kit).toFixed(3), tip: vmSword.userData.bowTipY }; }
+  EQ.weapon = null; buildViewmodel(); return out; });
+console.log('  bows:', JSON.stringify(bl));
+check(`the longbow and the war bow are ${(bl.longbow.tp / bl.bow.tp).toFixed(2)}× and ${(bl.warbow.tp / bl.bow.tp).toFixed(2)}× the bow in the hand, ${(bl.longbow.fp / bl.bow.fp).toFixed(2)}× and ${(bl.warbow.fp / bl.bow.fp).toFixed(2)}× in first person, the string hung from tips ${bl.longbow.tip} and ${bl.warbow.tip} (S1550)`,
+  bl.longbow.kit === 'weapon:longbow' && bl.warbow.kit === 'weapon:warbow' && Math.abs(bl.longbow.tp / bl.bow.tp - 1.5) < .08 && Math.abs(bl.warbow.tp / bl.bow.tp - 1.7) < .08 &&
+  Math.abs(bl.longbow.fp / bl.bow.fp - 1.5) < .08 && Math.abs(bl.warbow.fp / bl.bow.fp - 1.7) < .08 && Math.abs(bl.warbow.tip - .68) < 1e-6, bl);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
