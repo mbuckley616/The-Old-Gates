@@ -309,7 +309,7 @@ Started 15 Oct 2026 (QA run of 18:51 UTC, main 0773903 plus Sessions 946–949).
 | `witnessrange` | 1/14 | pass | pass | 68 |  |
 | `wokennight` | 8/14 | pass | pass | 93 |  |
 | `wolfcloak` | 6/14 | pass | pass | 69 |  |
-| `wolves` | 9/14 | pass | pass | 63 |  |
+| `wolves` | 9/14 | pass | pass | 63 | Red on main by 29 Oct (d58449b): its two shadow-LOD checks read the old look (the eye drew the driver) and passed only while no kit body had been built yet. Re-measured to the new look's truth (the eye draws the kit's body, the shadow the driver's distant copy), test's, Session 1559; 2/2 |
 | `woodenkit` | 8/14 | pass | pass | 19 |  |
 | `worldjournal` | 3/14 | pass | pass | 48 |  |
 | `worldloot` | 3/14 | pass | pass | 40 |  |
