@@ -3,6 +3,16 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### Scenarios in every zone (from the designer, 2026-10-29, #873)
+**The question.** Each map cell holds only 3 to 6 points of interest with something in them (median 4). Its 109 camps, ruins and stone rings are names with nothing to do, and between sites every encounter is a fight. How should each zone get as many scenarios as the fullest? ("Winnmark" and "Bunratty" are not in the game. The page reads them as each island's fullest cell, Cluainkeel Realm and Trotriair Wilds; if you meant other places, say which.)
+
+**Options.**
+- **A.** Fill the empty sites: a cellar in each ruin, burners or hunters with a trader in each camp, a lead at each stone ring, and each cell topped up to 6 live sites. Two systems sessions and one look session. More places, no decisions.
+- **B (recommended).** A dealt deck of scenarios: 12 small situations with a choice that the world keeps (a courier, a toll chain, diggers in a ruin, a mauled hunter, a press gang, pilgrims, …). Each cell is dealt 4 to 7 a week from its seed, until every mainland cell has 10 things to stop for. Four systems sessions, two quest-writer runs and one look session.
+- **C.** Hand-author five or six scenes for every cell, Morrowind's way. About 330 scenes, some 55 quest-writer runs.
+
+**Recommendation.** B. It meets the count, the thin cells gain the most, and every scene ends with the world changed (feeling 1). A seeded deal keeps a shared world the same for a friend. The page: `docs/design/scenarios-by-zone.md`.
+
 ### The dungeon's cell by kind: old gates at 3 m, and forts and lairs at what? (systems builder, Session 1105) — DECISION #421
 **The question.** F2b's last session sets a dungeon's grid cell at true scale; it is one unit today, so corridors are 1 m wide for a 1.8 m body. Michael chose **C, 3 m** on #300 and added: "If by dungeon we mean Old Gates, they should be extremely massive and cavernous. A normal 'dungeon' like a mine, or a cave can be a more typical size." The game has three kinds of underground place: the **old gates** (the world's portals, themed by school: crypts, haunted halls, elemental and deep caverns, ruins), **fort interiors** (the `fort_` layouts), and **lairs and dens** (a beast's lair, the cloak's den). So the cell can differ by kind, and "a more typical size" is a number a player feels.
 
