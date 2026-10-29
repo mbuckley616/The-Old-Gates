@@ -62,8 +62,9 @@ const WEAPON_ATTACKS={
   Claymore: {tell:.402,strike:.085,recovery:.244,reach:2.2,arc:126.5,dmg:1,posture:14,cleave:3,blockable:true,parryable:false,heavy:null,third:null},
   GreatAxe: {tell:.424,strike:.090,recovery:.257,reach:2.2,arc:126.5,dmg:1,posture:14,cleave:2,blockable:true,parryable:false,heavy:null,third:null},
   WarHammer:{tell:.424,strike:.090,recovery:.257,reach:1.9,arc:126.5,dmg:1,posture:18,cleave:1,blockable:true,parryable:false,heavy:null,third:null},
-  // a sent cast, one more row when magic's resolver comes (magic.md: words of the deep tongue); nothing reads it yet
-  Cast:     {placeholder:true,tell:null,strike:null,recovery:null,reach:null,arc:null,dmg:null,posture:null,cleave:null,blockable:false,parryable:false,heavy:null,third:null},
+  // S1575 — a sent cast (magic-build.md, the Sent form): 0.35 s wind-up at ×0.35 walk, released at its end, 0.30 s before the next;
+  // a spell is neither blocked nor parried. Reach is the bolt's 30 m; its damage and posture are the word's, not the row's.
+  Cast:     {tell:.35,strike:0,recovery:.30,reach:30,arc:null,dmg:1,posture:0,cleave:1,blockable:false,parryable:false,heavy:null,third:null,walk:.35},
 };
 // S1035 — F2b, session 1 (docs/design/scale-numbers-build.md, *Reach*): the reach column is hull to hull, so a blow lands when
 // the foe's centre is inside your hull + the weapon's reach + its hull. Against a townsperson a sword lands at 2.2 centre to
@@ -392,7 +393,7 @@ function raiseGuard(){
   blocking=true;lastBlockAttemptT=performance.now()/1000;lastBlockAttemptG=playClockS;
   return true;
 }
-function commitMoveMult(){return swingCommitted()?COMMIT.move:(DRINK||xbowSpanning()||warBowDrawn())?COMMIT.drinkMove:1;} /* S1549 — and a war bow drawn */ /* S1457 — a crossbow is spanned at a potion's walk */
+function commitMoveMult(){return swingCommitted()?COMMIT.move:castWinding()?WEAPON_ATTACKS.Cast.walk:(DRINK||xbowSpanning()||warBowDrawn())?COMMIT.drinkMove:1;} /* S1549 — and a war bow drawn */ /* S1457 — a crossbow is spanned at a potion's walk */
 // the turn this frame, held to 90° a second while committed: the view's yaw is pulled back toward last frame's
 let _commitYaw=null;
 function commitTurn(dt){

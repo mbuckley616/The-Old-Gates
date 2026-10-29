@@ -8,7 +8,7 @@ const g = await boot(); const { page } = g;
 await g.intoWorld();
 await page.evaluate(async () => { await saveToSlot(0); });
 await page.evaluate(() => {
-  knownSpells = { caor: 1 }; activeSpellId = 'caor'; mana = maxMana; spCd = 0;
+  knownWords = { caor: 1 }; activeSpellId = 'caor'; mana = maxMana; spCd = 0;
   window._ix = 0; const _i = interact; window.interact = function () { window._ix++; return _i.apply(this, arguments); };
   const ip = document.getElementById('ipr'); ip.textContent = "Press 'E' to catch a fish"; ip.style.opacity = '1'; ip.style.display = 'block';
   document.getElementById('ob').textContent = "Press 'E' to catch a fish";
@@ -35,7 +35,7 @@ check('I and Tab while dead open no book', !keys.KeyI.hub && !keys.Tab.hub, keys
 await page.click('#died-load');
 await page.waitForFunction(() => !dead && document.getElementById('died').style.display === 'none', null, { timeout: 15000 });
 await page.waitForTimeout(1500); await g.frames(4);
-await page.evaluate(() => { knownSpells = { caor: 1 }; activeSpellId = 'caor'; mana = maxMana; spCd = 0; });
+await page.evaluate(() => { knownWords = { caor: 1 }; activeSpellId = 'caor'; mana = maxMana; spCd = 0; });
 const m0 = await page.evaluate(() => mana);
 await page.keyboard.press('KeyF'); await page.waitForTimeout(800); await g.frames(2);
 await page.keyboard.press('KeyI'); await page.waitForTimeout(300);
