@@ -319,6 +319,8 @@ const giver=`${lord.title} ${lord.name}`;
   function compassPlaces(){const out=[];if(activeZoneId!=='world')return out;const R=200;
     for(const t of SITES){if(!t.name||t.kind==='portal')continue;const d=Math.hypot(t.x-px,t.z-pz);if(d>R||d<6)continue;out.push({x:t.x,z:t.z,glyph:POI_GLYPH[t.kind]||'✧',label:t.name,found:!!discovered(t.id),d,place:true});}
     for(const e of CELL_DOORS){const p=dungeonWorldPos[e.seed]||e;const d=Math.hypot(p.x-px,p.z-pz);if(d>R||d<6)continue;out.push({x:p.x,z:p.z,glyph:e.kind==='fort_door'?'⛫':'◠',label:e.canonicalName||'an old gate',found:!!discovered('door_'+e.seed),d,place:true});}
+    /* S1560 — a lodestone carried: the nearest vein, at any range the loaded chunks hold */
+    {const v=typeof lodestoneVein==='function'?lodestoneVein():null;if(v&&v.d>=2)out.push({x:v.x,z:v.z,glyph:'◆',label:'a vein',found:true,d:v.d,place:true,lode:true});}
     return out;}
   function compassMarkers(){if(activeZoneId!=='world')return [];return liveMarkers();}
   let _liveMk=null; /* S587 — the map asks once a draw, not once a cell */

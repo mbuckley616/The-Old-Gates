@@ -784,6 +784,20 @@ function hasPick(){return BAG.some(b=>b&&b.tool==='pick');}
 function veinTier(x,z){let t=typeof worldTierAt==='function'?worldTierAt(x,z):1;
   try{const r=dominantRegion(x,z).r;if(r&&(r.id==='wastes'||r.biome==='wastes'||r.biome==='wasteland'))t=4;}catch(e){}
   return Math.max(1,Math.min(4,t|0||1));}
+// S1560 — Lodestone (Mining 75, Michael's A on #860): at 75, one ore in ten struck from a vein in the Mark's highlands (the vein
+// table's tier 3, in a cell of the Mark) comes with a lodestone (weight 0.5), on the strike's own third roll. Carried, it takes
+// Prospector's veins to 120 m (past the minimap's 58 m edge they sit on its rim), and the compass points to the nearest vein
+// with ore left (`lodestoneVein`, a glyph among the compass's places).
+const LODE_P=.1,LODE_R=120;
+const LODESTONE_ITEM={name:'Lodestone',ico:'🧭',type:'misc',weight:.5,buyPrice:20,sellMult:.3,lodestone:true};
+function hasLodestone(){return BAG.some(b=>b&&b.lodestone);}
+function lodestoneGround(v){if(!v||v.tier!==3||typeof nationKeyOf!=='function'||typeof cellOf!=='function')return false;
+  try{const c=cellOf(v.x,v.z);return nationKeyOf(c[0],c[1])==='mark';}catch(e){return false;}}
+function prospectR(){return hasLodestone()?LODE_R:40;}
+// the nearest vein with ore left, while a lodestone is carried in the open world: {x,z,d} or null
+function lodestoneVein(){if(!hasLodestone()||activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior()))return null;let best=null,bd=1e9;
+  for(const v of VEINS){if(!veinLive(v)||veinLeft(v)<=0)continue;const d=Math.hypot(v.x-px,v.z-pz);if(d<bd){bd=d;best=v;}}
+  return best?{x:best.x,z:best.z,d:bd,ore:best.ore}:null;}
 function veinOre(id,tier){const T=VEIN_TABLE[tier]||VEIN_TABLE[1];let r=seededRng('vein',id)();for(const [k,w] of T){r-=w;if(r<=0)return k;}return T[T.length-1][0];}
 const VEINS=[];
 // S1498 (look) — a vein is one mesh: the rock and its three seams merged, coloured by vertex, on one shared material, so a chunk's
@@ -842,13 +856,15 @@ function strikeVein(v){
   const roll=seededRng('ore',v.id+':'+(r.e||0)+':'+r.s)();
   r={...r,s:r.s+1};const got=roll<.35+.005*skillLv('mining');
   /* S1495 — Mining 50: one ore in four comes double, on the strike's own second roll */
-  let two=false;if(got){two=perk('mining',50)&&seededRng('ore2',v.id+':'+(r.e||0)+':'+(r.s-1))()<.25;if(two)it.qty=2;r.n++;r.d=Math.floor(gameMinNow()/1440);bagAdd(it);skillUse('mining',4);if(typeof WORLD!=='undefined'&&WORLD.guild&&WORLD.guild.onOre)WORLD.guild.onOre(v.ore);}else skillUse('mining',1);
+  let two=false,lode=false;if(got){two=perk('mining',50)&&seededRng('ore2',v.id+':'+(r.e||0)+':'+(r.s-1))()<.25;if(two)it.qty=2;r.n++;r.d=Math.floor(gameMinNow()/1440);bagAdd(it);skillUse('mining',4);if(typeof WORLD!=='undefined'&&WORLD.guild&&WORLD.guild.onOre)WORLD.guild.onOre(v.ore);
+    lode=perk('mining',75)&&lodestoneGround(v)&&seededRng('lode',v.id+':'+(r.e||0)+':'+(r.s-1))()<LODE_P;if(lode)bagAdd({...LODESTONE_ITEM});}else skillUse('mining',1); /* S1560 */
   (worldState.veins||(worldState.veins={}))[v.id]=r;veinShow(v);
-  return {ore:got?(two?'2 '+it.name:it.name):null,left:Math.max(0,veinCap()-r.n)};}
-// S1495 — Prospector (Mining 25): the veins within 40 m on the minimap (drawLocalMap's frame: north up, 58 m to the edge)
+  return {ore:got?(two?'2 '+it.name:it.name)+(lode?', and a lodestone':''):null,left:Math.max(0,veinCap()-r.n),lode};}
+// S1495 — Prospector (Mining 25): the veins within 40 m on the minimap (drawLocalMap's frame: north up, 58 m to the edge);
+// S1560 — 120 m with a lodestone carried, a vein past the edge drawn on the rim in its bearing
 function prospectorDots(ctx,size,radius){if(!perk('mining',25)||activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior()))return 0;
-  const s=size/(radius*2);let n=0;
-  for(const v of VEINS){if(!veinLive(v)||Math.hypot(v.x-px,v.z-pz)>40)continue;const x=size/2+(v.x-px)*s,y=size/2+(v.z-pz)*s;
+  const s=size/(radius*2),R=prospectR(),rim=radius-4;let n=0;
+  for(const v of VEINS){const d=Math.hypot(v.x-px,v.z-pz);if(!veinLive(v)||d>R)continue;const k=d>rim?rim/d:1,x=size/2+(v.x-px)*k*s,y=size/2+(v.z-pz)*k*s;
     ctx.fillStyle=veinLeft(v)>0?'#'+ORE_DEF[v.ore].col.toString(16).padStart(6,'0'):'#5a5a5a';ctx.strokeStyle='#111';ctx.lineWidth=1;
     ctx.beginPath();ctx.moveTo(x,y-3);ctx.lineTo(x+3,y);ctx.lineTo(x,y+3);ctx.lineTo(x-3,y);ctx.closePath();ctx.fill();ctx.stroke();n++;}
   return n;}
