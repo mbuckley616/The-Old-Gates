@@ -802,7 +802,7 @@ const HC_KINDS={'Wolf':{plan:'wolf'},'Snow Wolf':{plan:'wolf',own:true},'Dire Wo
   'Golem':{plan:'golem',own:true,person:true,merge:true,ik:true,tall:true,glow:[.42,.69,1],glowR:.02},
   'Gargoyle':{plan:'gargoyle',own:true,person:true,merge:true,ik:true,glow:[1,.31,.13],glowR:.032,glowAt:{f:.8,up:.55,out:.5},garg:true},
   'Wraith':{plan:'wraith',own:true,person:true,legless:true,rest:HC_WRAITH_REST},'Phantom':{plan:'phantom',own:true,person:true,legless:true,rest:HC_WRAITH_REST},
-  'Shark':{plan:'reefshark',fish:true},'Whale':{plan:'stormwhale',fish:true},'Dolphin':{plan:'stormswift',fish:true}};
+  'Shark':{plan:'reefshark',fish:true},'Whale':{plan:'stormwhale',fish:true},'Dolphin':{plan:'stormswift',fish:true},'Slime':{plan:'slime',fish:true}};
 // the driver's joints and the kit's bones they move, parents first (the kit's front legs hang on spine3, the hind on spine0)
 const HC_MAP=[['hips','spine0'],['spine','spine1'],['neck','neck0'],['head','head'],['jaw','jaw'],['tail1','tail0'],['tail2','tail1'],['tail3','tail2'],
   ['shL','leg0L_0'],['elL','leg0L_1'],['wrL','leg0L_2'],['pfL','leg0L_3'],['shR','leg0R_0'],['elR','leg0R_1'],['wrR','leg0R_2'],['pfR','leg0R_3'],
@@ -1095,15 +1095,24 @@ function hcSeaRig(w,name,key,o){const old=w.m,g=new THREE.Group();g.name=name.to
   return {name,fish:true,e:{mesh:g},w,root,mesh:old,hcKey:key,ph:(w.ph||0)%1,t:0,...o};}
 function hcWhaleRig(w){return hcSeaRig(w,'Whale','whale:'+(HC_WHALE_N++),{rate:[1.6,1.6],axis:0,reach:5});}
 function hcDolphinRig(d,k){return hcSeaRig(d,'Dolphin','dolphin:'+k,{rate:[9,9],axis:0,reach:1});}
+// Session 1586: the dungeon's Slime and Small Slime (56-dungeon-build.js' buildEnemy, S222's glassy blob) wear the kit's `slime` (Session
+// 928, OG-041: arched like a wave, holes through it, bones and rubble inside) by the same path, since the old blob has no skeleton either.
+// Its parts but the health bar's planes go into one group, the far level; the lights stay. The kit's body is the old blob's length,
+// centred on it, on the floor (the group's origin), crawling; the old quiver (90-main.js' squash of limbs.body) is copied onto it
+// about the floor, and the wind-up's glow is read off limbs.body (enemyBodyMesh's). Keyed by the foe's id, `slime:<id>`
+function hcSlimeRig(e){const g=e.mesh,old=new THREE.Group();old.name='slimeold';
+  for(const o of [...g.children])if(o.isGroup||o.isMesh&&!(o.geometry&&o.geometry.type==='PlaneGeometry'))old.add(o);
+  g.add(old);const root=new THREE.Group();root.name='kitroot';g.add(root);e._hcRig=true;
+  return {name:'Slime',fish:true,crawl:true,gait:'crawl',e,root,mesh:old,hcKey:'slime:'+(e.id!=null?e.id:'0'),ph:(e.ph||0)/(Math.PI*2)%1,t:0,rate:[3,7],axis:0,reach:1,em0:e.limbs.body};}
 function hcFishAttach(rig,C){const tA=performance.now();
   if(!C)try{C=HC.build(hcGenome(rig));}catch(e){rig.hcFail=true;console.warn('F4: the kit could not build',rig.name,e);return;}
-  const g=rig.e.mesh,W=new THREE.Group();W.name='kit';C.gait='swim';HC.pose(C,0);C.root.updateMatrixWorld(true);
+  const g=rig.e.mesh,W=new THREE.Group();W.name='kit';C.gait=rig.gait||'swim';HC.pose(C,0);C.root.updateMatrixWorld(true);
   // the two bodies' extents along the axis (the kit's rest pose is its bind), and the kit's spine root's height
   const kb=new THREE.Box3();for(const m of C.meshes){m.geometry.computeBoundingBox();kb.union(m.geometry.boundingBox.clone().applyMatrix4(m.matrixWorld));}
   const ob=new THREE.Box3(),inv=new THREE.Matrix4();g.updateMatrixWorld(true);inv.copy(g.matrixWorld).invert();
   rig.mesh.traverse(o=>{if(!o.isMesh)return;o.geometry.computeBoundingBox();ob.union(o.geometry.boundingBox.clone().applyMatrix4(_hcM.multiplyMatrices(inv,o.matrixWorld)));});
   const f=(ob.max.z-ob.min.z)/(kb.max.z-kb.min.z),ky=C.byName.spine0.getWorldPosition(new THREE.Vector3()).y;
-  W.scale.setScalar(f);W.position.set(0,rig.axis-ky*f,ob.max.z-kb.max.z*f);W.add(C.root);rig.root.add(W);HB_ATTACH_N++;
+  W.scale.setScalar(f);if(rig.crawl)W.position.set(0,-kb.min.y*f,(ob.max.z+ob.min.z-(kb.max.z+kb.min.z)*f)/2);else W.position.set(0,rig.axis-ky*f,ob.max.z-kb.max.z*f);W.add(C.root);rig.root.add(W);HB_ATTACH_N++;
   const meshes=C.meshes,bind=meshes[0].bindMatrix.clone();
   {const inv2=new THREE.Matrix4(),off=new THREE.Matrix4(),sk=C.skel;
     sk.update=function(){inv2.copy(C.rig.matrixWorld).invert();const bs=this.bones;
@@ -1112,18 +1121,20 @@ function hcFishAttach(rig,C){const tA=performance.now();
   const small=[];for(const {obj} of C.B.bits)obj.traverse(o=>{if(!o.isMesh)return;o.geometry.computeBoundingSphere();if(o.geometry.boundingSphere.radius*Math.max(o.scale.x,o.scale.y,o.scale.z)*f<HC_BODY.small)small.push(o);});
   for(const m of meshes){m.bindMode='detached';m.bindMatrix.identity();m.bindMatrixInverse.identity();m.castShadow=false;m.receiveShadow=true;}
   C.root.traverse(o=>{if(o.isMesh||o.isPoints)o.castShadow=false;if(o.isMesh)for(const m of Array.isArray(o.material)?o.material:[o.material])if(m.onBeforeCompile!==THREE.Material.prototype.onBeforeCompile)m.clone=hbClone;});
-  rig.hc={W,C,f,fur:[],small,mid:null,merge:false,bits:C.B.bits.map(b=>b.obj),hide:meshes,L:-1,em:0};
+  rig.hc={W,C,f,fur:[],small,mid:null,merge:false,bits:C.B.bits.map(b=>b.obj),hide:meshes,L:-1,em:0,y0:W.position.y};
   HC_BODY.ms+=performance.now()-tA;HC_BODY.n++;}
 function hcFishPose(rig){const H=rig.hc,e=rig.e,now=performance.now()/1000,dt=rig.t?Math.min(.1,now-rig.t):0;rig.t=now;
   if(e.dead)return;rig.ph+=dt*rig.rate[e.alert?1:0]/(Math.PI*2);HC.pose(H.C,rig.ph);
+  if(rig.crawl&&rig.em0){const q=rig.em0.scale,f=H.f;H.W.scale.set(f*q.x,f*q.y,f*q.z);H.W.position.y=H.y0*q.y;} /* S1586 — the slime's quiver, about the floor */
   // the wind-up's red and the parry's gold, lit on the old body's torso (enemyBodyMesh), on the kit's hide
-  const m=e.limbs&&e.limbs.torso&&e.limbs.torso.material,em=m&&m.emissive?m.emissive.getHex():0;
+  const src=rig.em0||e.limbs&&e.limbs.torso,m=src&&src.material,em=m&&m.emissive?m.emissive.getHex():0;
   if(em!==H.em){H.em=em;for(const o of H.hide)for(const x of Array.isArray(o.material)?o.material:[o.material])if(x.emissive)x.emissive.setHex(em);}}
 const _hcM=new THREE.Matrix4();
 function hcTick(now){let best=null,bd=HC_BODY.build;
   const busy=now-HBODY.last<HBODY.gap||(typeof JOBS!=='undefined'&&JOBS.length&&activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior())); /* S1586 — as the people's (hbTick): the world's queue only where the world runs it, or no kit body is built in a gate entered with town jobs queued */
   for(const rig of WOLF_RIGS){if(!rig.hc&&(rig.hcFail||!hcOk(rig)))continue;HC_RIGS.add(rig);}
   if(activeZoneId==='world')for(const e of ZONES.world.enemies)if(e.name==='Shark'&&!e.dead&&!e._hcRig&&e.mesh&&e.mesh._sharkTail)HC_RIGS.add(hcFishRig(e));
+  if(typeof dScene!=='undefined'&&dScene&&scene===dScene)for(const e of ENEMIES)if(e.limbs&&e.limbs.slime&&!e.dead&&!e._hcRig&&e.mesh&&e.limbs.body)HC_RIGS.add(hcSlimeRig(e)); /* S1586 — the dungeon's slimes */
   if(activeZoneId==='world'&&typeof WHALES!=='undefined')for(const w of WHALES)if(!w._hcRig&&w.m&&w.m.parent)HC_RIGS.add(hcWhaleRig(w));
   if(activeZoneId==='world'&&typeof LIFE!=='undefined')LIFE.dolphins.forEach((d,k)=>{if(!d._hcRig&&d.m&&d.m.parent)HC_RIGS.add(hcDolphinRig(d,k));});
   for(const rig of HC_RIGS){const g=rig.root.parent;
