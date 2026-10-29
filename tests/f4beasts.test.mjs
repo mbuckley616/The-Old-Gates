@@ -62,17 +62,21 @@ check(`three levels: near the hide and fur (${lv.near.kit} meshes), at 25 m the 
 
 // a run: the bear moved along the ground, its kit bones turn, and its paws stay by the driver's
 const trot = await page.evaluate(() => { const f = _W[1], e = f.e, rig = f.rig, by = rig.hc.C.byName, mats = () => Array.from(rig.hc.C.skel.boneMatrices);
-  const dx = Math.sin(e.mesh.rotation.y), dz = Math.cos(e.mesh.rotation.y), a = mats(); let worst = 0, dy = 0, gait = '';
+  const dx = Math.sin(e.mesh.rotation.y), dz = Math.cos(e.mesh.rotation.y), a = mats(); let worst = 0, dy = 0, bend = 0, gait = '';
   rig.root.parent.updateMatrixWorld(true); rig.hc.C.skel.update();
   // against the ground the driver was set on (e.mesh's own height): on CI's runner that sat ~0.6 m off worldH at this spot (S1251)
   const toes = ['leg0L_3', 'leg0R_3', 'leg1L_3', 'leg1R_3'].map(n => +(by[n].getWorldPosition(new THREE.Vector3()).y - e.mesh.position.y).toFixed(3));
   for (let i = 0; i < 40; i++) { e.x += dx * .05; e.z += dz * .05; e.mesh.position.set(e.x, WORLD.worldH(e.x, e.z), e.z); tickCreatures(1 / 60, 4e5 + i * 16.7); rig.hc.C.skel.update();
-    if (i > 20) { rig.root.parent.updateMatrixWorld(true); for (const [d, k] of [['pfL', 'leg0L_2'], ['phR', 'leg1R_2']]) { const p = rig.B[d].getWorldPosition(new THREE.Vector3()), q = by[k].getWorldPosition(new THREE.Vector3()); worst = Math.max(worst, p.distanceTo(q)); dy = Math.max(dy, Math.abs(p.y - q.y)); } } }
+    if (i > 20) { rig.root.parent.updateMatrixWorld(true); for (const [d, k] of [['pfL', 'leg0L_2'], ['phR', 'leg1R_2']]) { const p = rig.B[d].getWorldPosition(new THREE.Vector3()), q = by[k].getWorldPosition(new THREE.Vector3()); worst = Math.max(worst, p.distanceTo(q)); dy = Math.max(dy, Math.abs(p.y - q.y)); }
+      for (const L of rig.hc.ik || []) bend = Math.max(bend, Math.abs(L.end.getWorldPosition(new THREE.Vector3()).y - rig.B[L.d].getWorldPosition(new THREE.Vector3()).y - L.oy)); } }
   const b = mats(); let moved = 0; for (let i = 0; i < a.length; i++) moved = Math.max(moved, Math.abs(a[i] - b[i]));
-  return { moved: +moved.toFixed(3), worst: +worst.toFixed(3), dy: +dy.toFixed(3), toes, hip: +wolfHipY(rig.k).toFixed(2), scale: +rig.root.scale.x.toFixed(2), w: Object.fromEntries(Object.entries(rig.w).map(([k, v]) => [k, +v.toFixed(2)])) }; });
+  return { moved: +moved.toFixed(3), worst: +worst.toFixed(3), dy: +dy.toFixed(3), bend: +bend.toFixed(3), ik: !!rig.hc.ik, toes, hip: +wolfHipY(rig.k).toFixed(2), scale: +rig.root.scale.x.toFixed(2), w: Object.fromEntries(Object.entries(rig.w).map(([k, v]) => [k, +v.toFixed(2)])) }; });
 check(`the bear standing puts its four toes on the ground (${trot.toes.join(', ')} m)`, trot.toes.every(y => Math.abs(y) < .05), trot.toes);
 // the kit's bear carries its shoulders about 0.19 m ahead of the wolf rig's, so its fore paw lands that far forward of the driver's
-check(`the bear's run turns the kit's bones (by ${trot.moved}); its paws rise and fall within ${trot.dy} m of the driver's and keep within ${trot.worst} m`, trot.moved > .02 && trot.dy < .08 && trot.worst < .35, trot);
+// Session 1557: the bear's legs are bent onto the driver's paws (hcLegIK, as the horse's): its toes hold the driver's paw's height and
+// its own rest offset, so its paw joint above them rides with the heel's lift (0.081 m off the driver's paw, 0.057 without the bend)
+check(`the bear's run turns the kit's bones (by ${trot.moved}); its toes keep within ${trot.bend} m of the driver's paws' height (its paws within ${trot.dy} m) and within ${trot.worst} m`,
+  trot.moved > .02 && trot.ik && trot.bend < .03 && trot.dy < .1 && trot.worst < .35, trot);
 
 // Session 1547: on a slope each toe meets the ground under it (hcGround). The bear set on the steepest clear spot near the start,
 // facing down the fall line, left to come to a stand (the jump there reads as a gallop); its four toes against activeTerrainH under
@@ -105,8 +109,9 @@ const sweep = await page.evaluate(() => { const f = _W[1], e = f.e, rig = f.rig,
     return { slip: sl(rec.slice(4)), kit: sl(rec.slice(0, 4)), gallop: rig.gallop }; };
   const out = { ahead: run(0, 1), side: run(1, 0), back: run(0, -1) };
   e.x = was[0]; e.z = was[1]; gg.position.set(e.x, was[2], e.z); gg.rotation.y = e.combatYaw = was[3]; rig.lx = rig.px = rig.lyaw = null; tickCreatures(1 / 60, t += 17); return out; });
+// Session 1557: and the kit's own paws, bent onto the driver's, planted ahead too (0.95 m/s before the bend)
 check(`the bear walked sideways and backwards plants its paws (${sweep.side.slip} and ${sweep.back.slip} m/s against ${sweep.ahead.slip} ahead; the kit's ${sweep.side.kit} and ${sweep.back.kit} against ${sweep.ahead.kit})`,
-  !sweep.side.gallop && sweep.side.slip < .35 && sweep.back.slip < .35 && sweep.side.kit < sweep.ahead.kit + .2 && sweep.back.kit < sweep.ahead.kit + .2, sweep);
+  !sweep.side.gallop && sweep.side.slip < .35 && sweep.back.slip < .35 && sweep.ahead.kit < .35 && sweep.side.kit < sweep.ahead.kit + .2 && sweep.back.kit < sweep.ahead.kit + .2, sweep);
 
 // the tell's glow reaches the kit's hide, and goes out with it
 const glow = await page.evaluate(() => { const f = _W[0], rig = f.rig, mats = () => [...rig.hc.hide, ...rig.hc.fur].map(o => o.material);

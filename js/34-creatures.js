@@ -785,7 +785,7 @@ const HC_GOB_COAT={coat:0x6a8a42,saddle:0x4e6a30,belly:0x86a058,skin:0x72924a};
 const HC_WRAITH_REST={spine:[.42,0,0],neck:[.22,0,0],head:[-.42,0,0],shL:[-1.8,0,.08],shR:[-1.74,0,-.08],elL:[-.3,0,.04],elR:[-.3,0,-.04],wrL:[.28,0,0],wrR:[.28,0,0]};
 const HC_TROLL_COAT={cave:{coat:0x6e7a5c,saddle:0x5a664c,belly:0x7e8a6c,skin:0x646e54},forest:{coat:0x5a6e40,saddle:0x4a5a34,belly:0x6a7e50,skin:0x52643a,moss:0x34501a},
   frost:{coat:0xaebac2,saddle:0x96a4ae,belly:0xc0cad0,skin:0xa2aeb6,moss:0xe0e4e8}};
-const HC_KINDS={'Wolf':{plan:'wolf'},'Snow Wolf':{plan:'wolf',own:true},'Dire Wolf':{plan:'ironwolf',own:true},'Boar':{plan:'boar'},'Cave Bear':{plan:'bear',own:true},'Ash Hound':{plan:'ashhound'},'Horse':{plan:'horse',own:true,ik:true},'Grey Horse':{plan:'horse',own:true,ik:true},
+const HC_KINDS={'Wolf':{plan:'wolf'},'Snow Wolf':{plan:'wolf',own:true},'Dire Wolf':{plan:'ironwolf',own:true},'Boar':{plan:'boar'},'Cave Bear':{plan:'bear',own:true,ik:true},'Ash Hound':{plan:'ashhound'},'Horse':{plan:'horse',own:true,ik:true},'Grey Horse':{plan:'horse',own:true,ik:true},
   'Spider':{plan:'spider',own:true,spider:true,cell:.028,merge:true},'Sand Scorpion':{plan:'dunescorpion',own:true,spider:true,cell:.02,merge:true},
   'Bog Crawler':{plan:'bogcrawler',own:true,spider:true,cell:.018,merge:true},'Faolchú':{plan:'faolchu',own:true,cell:.03,unhunch:true,arms:true},
   'Dragon':{plan:'dragon',own:true,cell:.11,wings:true,sway:true},
@@ -921,6 +921,10 @@ function hcPose(rig){const H=rig.hc,B=rig.B,map=H.map,uh=H.unhunch&&rig.hunch,rs
     if(b.parent&&b.parent.isBone){hbRel(b.parent,H.W,_hbq2).invert();b.quaternion.copy(_hbq2.multiply(_hbq));}else b.quaternion.copy(_hbq);};
   for(let i=0;i<map.length;i++)cp(i);
   H.C.byName.spine0.position.copy(_hbv.copy(H.hb.position).sub(H.hip0).multiplyScalar(H.k)).add(H.pos0);
+  // Session 1557: last frame's drop on a slope (hcGround) is put back before the bend, which otherwise held the paws to the driver's
+  // under a body still lowered, so they stood that much high once it rose again (the Cave Bear's toes 5 cm up on a 0.2 slope). With it
+  // the Cave Bear takes the bend (HC_KINDS' ik): its legs are longer than the driver's, and its planted paws slid 0.95 m/s walking ahead
+  if(H.drop){H.W.position.y+=H.drop;H.drop=0;}
   if(H.ik)hcLegIK(rig);
   // a ghost's (Session 1429): tickPeople floats the driver's root 0.35 m up for the old body's long robe; the kit's robe already clears
   // the ground, so it is set back down by that much and keeps only the bob
