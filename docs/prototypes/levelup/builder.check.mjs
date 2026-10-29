@@ -694,7 +694,9 @@ if (!process.argv.includes('--shots-only')) { const page = await browser.newPage
     // Session 875: the strands rooted at the front hairline are finer than those behind it, so the hair thins onto the brow
     check(`${k}: the hairline thins (${s.hairline.edge} strands within 0.75 cm of it at ${s.hairline.ratio} of the width behind)`, s.hairline.edge > 20 && s.hairline.ratio < .7, s.hairline);
     // Session 879: and at the temples, where the root region stops on a mesh edge, by the root's distance to that edge
-    check(`${k}: the temples thin (${s.temples?.edge} strands within 0.75 cm of the region's edge at ${s.temples?.ratio} of the width 1.5 cm in)`, !!s.temples && s.temples.edge > 10 && s.temples.ratio < .7, s.temples);
+    // (Session 1582: shaved sides have no strands at the temples, their stubble is the scalp's shell)
+    if (k.split('+')[0] === 'shaved') check(`${k}: no strand at the temples, the stubble is the shell's (${s.temples?.edge ?? 0} strands within 0.75 cm of the region's edge)`, !s.temples?.edge, s.temples);
+    else check(`${k}: the temples thin (${s.temples?.edge} strands within 0.75 cm of the region's edge at ${s.temples?.ratio} of the width 1.5 cm in)`, !!s.temples && s.temples.edge > 10 && s.temples.ratio < .7, s.temples);
     // Session 877: every root on the skin (3 mm, where Session 804's started up to 14 mm off it)
     check(`${k}: every strand roots on the skin (the highest ${(s.rootH * 1000).toFixed(1)} mm off it), the hair ${(s.crown * 1000).toFixed(1)} mm deep over the crown`, s.rootH < .0045, s.rootH);
     // Session 874: no seam of bare scalp down the back of the head (two braids part there, as they should)
@@ -869,9 +871,10 @@ if (!process.argv.includes('--shots-only')) { const page = await browser.newPage
     return out; });
   { const F = Object.values(c.fits), bad = Object.entries(c.fits).filter(([, f]) => !f || f.through > 0).map(([k]) => k), r = k => [Math.min(...F.map(f => f[k])), Math.max(...F.map(f => f[k]))];
     check(`the circlet over every hair style (${F.length} heads): no point of the head or the hair inside the band (${F.reduce((a, f) => a + (f?.hairPts || 0), 0)} hair points read)`, F.length >= 15 && bad.length === 0, bad);
-    // (Session 1443: over a crown braid the band rides on the braid at the sides, 20.5–21.2 cm across, where loose hair makes it 20)
+    // (Session 1443: over a crown braid the band rides on the braid at the sides, 20.5–21.2 cm across, where loose hair makes it 20;
+    // Session 1582: over shaved sides it lies on the stubble, 14.6 cm across, with no strands under it there)
     check(`the circlet sits ${r('overBrow').map(v => (v * 100).toFixed(1)).join('–')} cm over the brows, ${r('overEar').map(v => (v * 1000).toFixed(0)).join('–')} mm over the ears' tops, ${r('gapFront').map(v => (v * 1000).toFixed(1)).join('–')} mm off the forehead, ${r('width').map(v => (v * 100).toFixed(1)).join('–')} cm across; ${F[0].tris} triangles in ${F[0].draws} draws`,
-      Object.entries(c.fits).every(([k, f]) => f.overBrow > .02 && f.overEar >= .007 && f.gapFront > .001 && f.gapFront < .008 && f.width > .15 && f.width < (k.startsWith('crown:') ? .22 : .21) && f.underTop > .03), { overBrow: r('overBrow'), overEar: r('overEar'), gapFront: r('gapFront'), width: r('width'), underTop: r('underTop') }); }
+      Object.entries(c.fits).every(([k, f]) => f.overBrow > .02 && f.overEar >= .007 && f.gapFront > .001 && f.gapFront < .008 && f.width > (k.startsWith('shaved:') ? .14 : .15) && f.width < (k.startsWith('crown:') ? .22 : .21) && f.underTop > .03), { overBrow: r('overBrow'), overEar: r('overEar'), gapFront: r('gapFront'), width: r('width'), underTop: r('underTop') }); }
   check(`the circlet rides the head bone: its middle moved ${(c.moved * 100).toFixed(1)} cm with the head nodded .6 rad`, c.parent === 'head' && c.moved > .01, { parent: c.parent, moved: c.moved });
   check(`no circlet under a head-wrap, a helm or a raised hood; one with no stone has none; saved and loaded the same`, c.none.every(Boolean) && c.noStone && c.saved, { none: c.none, noStone: c.noStone, saved: c.saved });
   { const r = c.roll; check(`the Aurennais women's circlets: ${r.worn} of ${r.open} bare-headed women (of ${r.women}), ${r.stones} set with a stone, ${r.onCovered} on a covered head; in the hoops' or coins' metal; ${r.men} men and ${r.others} of 180 other peoples; every other roll the same`,
