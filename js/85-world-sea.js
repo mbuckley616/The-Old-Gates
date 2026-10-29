@@ -265,7 +265,7 @@
   // and a forecastle (fore) over her first 3 m, open beneath on two posts (lo) with its ladder up the middle running aft from its edge; the
   // forecastle's rail and its forward end are 'hi' (as the aftcastle's after end now is), and under the ladder's upper half a 'deck' box, so nobody at the deck's height walks in under its treads. Her
   // hatch is her own, aft of the mast, since L/2-3.2 falls at the forecastle's ladder; her lashed cargo stands on deck as props.
-  function shipBakeKit(kind,dress){const S=kind==='cutter'?PKIT.ships.cutter({hatchZ:-1.05}):kind==='caravel'?PKIT.ships.caravel():kind==='cog'?PKIT.ships.cog({dress}):kind==='galleon'?PKIT.ships.galleon({dress}):PKIT.ships.sloop({dress}),P=[];
+  function shipBakeKit(kind,dress){const S=kind==='cutter'?PKIT.ships.cutter({hatchZ:-1.05}):kind==='caravel'?PKIT.ships.caravel({cabin:true}):kind==='cog'?PKIT.ships.cog({dress}):kind==='galleon'?PKIT.ships.galleon({dress}):PKIT.ships.sloop({dress}),P=[];
     const zz=[];for(let z=S.zs;z<=S.zb;z+=.05)if(S.deckAt(z)>.45)zz.push(z);const z0=zz[0],z1=zz[zz.length-1];
     if(S.masts)for(const [x,z] of S.masts)P.push({x,z,r:.19});else P.push({x:0,z:S.mast[1],r:.17});P.push({x:-.45,z:S.mast[1]-.7,r:.17});const h=S.hatch;for(const q of S.hatches||[h])P.push({x:0,z:(q.z0+q.z1)/2,hx:(q.x1-q.x0)/2,hz:(q.z1-q.z0)/2,ry:0}); /* S1552 — the galleon's two */
     const C=S.castle;if(C){const w=Math.min(C.cw(C.z1),S.deckAt(C.z1)+.05),a=C.cw(C.z1)-.04,g=C.ladders.map(lx=>[lx-.36,lx+.36]),seg=(x0,x1,lv)=>{if(x1>x0)P.push({x:(x0+x1)/2,z:C.z1,hx:(x1-x0)/2,hz:.05,ry:0,lv});};
@@ -275,8 +275,10 @@
       for(const [x0,x1] of [[-a,lx-.36],[lx+.36,a]])P.push({x:(x0+x1)/2,z:F.z0+.05,hx:(x1-x0)/2,hz:.05,ry:0,lv:'hi'});P.push({x:lx,z:F.z0-.25,hx:.28,hz:.2,ry:0,lv:'deck'});P.push({x:0,z:F.z1-.1,hx:F.cw(F.z1-.4)+.1,hz:.1,ry:0,lv:'hi'});}
     for(const K of [C,F])if(K)for(let z=K.z0+.2;z<K.z1;z+=.35){const w=K.cw(z);if(w>.4)for(const e of [1,-1])P.push({x:e*(w-.04),z,hx:.05,hz:.2,ry:0,lv:'hi'});} /* S1551 — a castle's side rails, solid up there (her ends draw in) */
     if(S.cargo)for(const [x,z,r] of S.cargo)P.push({x,z,r});
+    for(const q of S.cabinItems||[])if(q.name!=='shelf'){const b=q.box;P.push({x:(b[0]+b[3])/2,z:(b[2]+b[5])/2,hx:(b[3]-b[0])/2,hz:(b[5]-b[2])/2,ry:0,lv:'lo'});} /* S1565 — the caravel's cabin, on the main deck */
+    const bk=(S.cabinItems||[]).find(q=>q.name==='bunk'),berth=bk?{x:bk.box[3]+.35,z:(bk.box[2]+bk.box[5])/2,hz:(bk.box[5]-bk.box[2])/2}:null;
     return {geo:S.hull.geo,mats:S.hull.mats,deck:{z0,z1,at:z=>z<z0||z>z1?0:S.deckAt(z)-.06},L:S.L,W:S.W,zs:S.zs,zb:S.zb,
-      rigs:S.rigs.map(q=>({geo:q.geo,mats:q.mats,z:q.z,type:q.type})),props:P,at:S.at,tiller:S.tiller,wheel:S.wheel,castle:C||null,fore:F||null,helm:S.helm||null,hatchZ:(h.z0+h.z1)/2,hatchOut:Math.max(1.2,(h.z1-h.z0)/2+.7),kit:S,dress};}
+      rigs:S.rigs.map(q=>({geo:q.geo,mats:q.mats,z:q.z,type:q.type})),props:P,at:S.at,tiller:S.tiller,wheel:S.wheel,castle:C||null,fore:F||null,helm:S.helm||null,hatchZ:(h.z0+h.z1)/2,hatchOut:Math.max(1.2,(h.z1-h.z0)/2+.7),kit:S,dress,berth};}
   // a harbour boat: an open clinker boat with thwarts, oars shipped, a stubby mast with the sail furled; four paints
   function boatBake(v){const key='boat|'+v;let r=SHIP_GEO.get(key);if(r)return r;
     const R=(()=>{let s=(v*2654435761+12345)>>>0;return ()=>{s=(s*1664525+1013904223)>>>0;return s/4294967296;};})();const B=new ShipBake();const paint=[0x5a6a4a,0x6a3a2a,0x3a4a6a,0x7a6a4a][v%4];
@@ -432,7 +434,7 @@
     const mesh=new THREE.Mesh(r.geo,r.mats||SHIP_MAT);mesh.castShadow=true;mesh.receiveShadow=true;
     const wheel=r.tiller?r.tiller.clone():r.wheel?r.wheel.clone():shipWheelMesh();if(!r.tiller&&!r.wheel)wheel.position.set(0,SHIP_DECK+.95,-r.L/2+2.8);mesh.add(wheel);mesh.userData.tiller=!!r.tiller; /* S1531 — the kit's sloop steers by a tiller */
     mesh.add(r.at?shipNetsMesh(r):shipNetMesh(SHIP_W||r.W||4.4)); /* S723 — the boarding nets laid on the hull (S638's stand-in where a bake has no section) */
-    mesh.userData.wheel=wheel;mesh.userData.deck=r.deck;mesh.userData.kind=kind;mesh.userData.props=r.props||[];mesh.userData.bakeKey=bk;mesh.userData.castle=r.castle||null;mesh.userData.fore=r.fore||null;mesh.userData.helm=r.helm||null;mesh.userData.hatchZ=r.hatchZ;mesh.userData.hatchOut=r.hatchOut;mesh.userData.kit=r.kit?r.kit.dress||'gatelands':null; /* S1555 — a kit hull, and her dress (the base below deck) */
+    mesh.userData.wheel=wheel;mesh.userData.deck=r.deck;mesh.userData.kind=kind;mesh.userData.props=r.props||[];mesh.userData.bakeKey=bk;mesh.userData.castle=r.castle||null;mesh.userData.fore=r.fore||null;mesh.userData.helm=r.helm||null;mesh.userData.hatchZ=r.hatchZ;mesh.userData.hatchOut=r.hatchOut;mesh.userData.berth=r.berth||null;mesh.userData.kit=r.kit?r.kit.dress||'gatelands':null; /* S1555 — a kit hull, and her dress (the base below deck) */
     mesh.userData.rigs=(r.rigs||[]).map(q=>{const m=new THREE.Mesh(q.geo,q.mats||SHIP_MAT);m.castShadow=true;m.position.z=q.z;mesh.add(m);if(q.extra){const e=new THREE.Mesh(q.extra,SHIP_MAT);e.castShadow=true;m.add(e);}return {m,type:q.type,a:0};});
     mesh.userData.trimSnap=true;
     return mesh;
@@ -554,6 +556,10 @@
     const tpb=(typeof thirdPerson!=='undefined'&&thirdPerson&&typeof TP!=='undefined')?TP.dist:0;return !!_eyeR.intersectBox(box,_eyeP)&&CAM.position.distanceTo(_eyeP)<=reach+tpb;}
   function wheelAimed(){const w=SHIP.mesh&&SHIP.mesh.userData.wheel;if(!w)return false;w.updateMatrixWorld(true);_eyeB.setFromObject(w).expandByScalar(.15);return eyeOnBox(_eyeB,3.2);}
   function nearWheel(){return onDeck()&&Math.hypot(px-SHIP.wheel.x,pz-SHIP.wheel.z)<TOUCH&&(!SHIP.mesh.userData.castle||shipUpper(SHIP.mesh))&&wheelAimed();} /* S1544 — a castle's wheel from the castle, not the cabin under it */
+  // S1565 (L6, #418 A) — the caravel's berth in the cabin under her castle (PKIT.ships.caravel's o.cabin): E beside it rests and saves, as a
+  // bed indoors does; at the main deck's height, in the cabin, and only while she is not under sail (the old cabin's rule for going below)
+  function berthNear(){const b=SHIP.mesh&&SHIP.mesh.userData.berth;if(!b||SHIP.sailing||!onDeck()||shipUpper(SHIP.mesh))return false;const [lx,lz]=shipLocal(SHIP.mesh,px,pz);
+    return Math.abs(lx-b.x)<.45&&Math.abs(lz-b.z)<b.hz;}
   function shipInteract(){
     if(climbing())return true;
     if(roofInteract())return true;
@@ -563,6 +569,7 @@
     if(otherInteract())return true;
     if(!SHIP.mesh)return false;
     if(!SHIP.sailing&&cabinPrompt()){goToInterior(CABIN.house);return true;}
+    if(berthNear()){openSleepUI();return true;} /* S1565 */
     if(SHIP.sailing){SHIP.sailing=false;SHIP.speed=0;Object.assign(worldState.ship,{x:SHIP.x,z:SHIP.z,yaw:SHIP.yaw,name:SHIP.name});showMsg('You let go of the wheel.','#c8b880');return true;}
     if(nearWheel()){px=SHIP.helm.x;pz=SHIP.helm.z;jumpY=SHIP.helm.y;yaw=SHIP.yaw;SHIP.sailing=true;showMsg(`You take the wheel of the ${SHIP.name}. W/S sail, A/D turn, E to let go.`,'#c8b880');return true;}
     if(nearShip())return startClimb(SHIP.mesh,SHIP.W,shipNetSide(SHIP.mesh,SHIP.W),null);
@@ -571,7 +578,7 @@
   function nearNpcName(){let best=null,bd=3.2;for(const n of npcs){if(n._retreated||!n.g.visible)continue;const d=Math.hypot(n.g.position.x-px,n.g.position.z-pz);if(d<bd){bd=d;best=n;}}return best?`${best.def.name}${best.def.role&&best.def.role!=='Villager'?' — '+best.def.role:''}`:null;}
   function roofPrompt(){for(const S of SETTLE.values()){if(!S.roof)continue;if(Math.abs(jumpY-S.roof.y)<1.2&&Math.hypot(px-S.roof.hatch.x,pz-S.roof.hatch.z)<TOUCH)return "Press 'E' to climb back down";}return null;}
   function roofInteract(){for(const S of SETTLE.values()){if(!S.roof)continue;if(Math.abs(jumpY-S.roof.y)<1.2&&Math.hypot(px-S.roof.hatch.x,pz-S.roof.hatch.z)<TOUCH){const hs=ZONES.world.houses.find(x=>x.type==='tower'&&x.siteId===S.site.id);if(!hs)return false;window._pendingPos={x:4.5,z:4.5-2.2+1.0,yaw:0,jumpY:30};goToInterior(hs);return true;}}return false;}
-  function shipPrompt(){const rp=roofPrompt();if(rp)return rp;const cop=coachPrompt();if(cop)return cop;const sp=shrinePrompt();if(sp)return sp;const fp=fishPrompt();if(fp)return fp;const op=otherPrompt();if(op)return op;if(!SHIP.mesh)return null;if(SHIP.sailing)return "Press 'E' to let go of the wheel";const cp=cabinPrompt();if(cp)return cp;if(nearWheel())return `Press 'E' to pilot the ${SHIP.name}`;if(nearShip())return `Press 'E' to climb aboard the ${SHIP.name}`;return null;}
+  function shipPrompt(){const rp=roofPrompt();if(rp)return rp;const cop=coachPrompt();if(cop)return cop;const sp=shrinePrompt();if(sp)return sp;const fp=fishPrompt();if(fp)return fp;const op=otherPrompt();if(op)return op;if(!SHIP.mesh)return null;if(SHIP.sailing)return "Press 'E' to let go of the wheel";const cp=cabinPrompt();if(cp)return cp;if(berthNear())return "Your berth \u2014 press 'E' to rest";if(nearWheel())return `Press 'E' to pilot the ${SHIP.name}`;if(nearShip())return `Press 'E' to climb aboard the ${SHIP.name}`;return null;}
   // ── sea sounds (use the engine's AX / sfxGain) ──
   const SND={wind:null,windG:null,creakT:0,splashT:0,wasSwim:false};
   function ensureWind(){if(SND.wind||typeof AX==='undefined'||!AX)return;const buf=AX.createBuffer(1,AX.sampleRate*2,AX.sampleRate);const d=buf.getChannelData(0);let l=0;for(let i=0;i<d.length;i++){l=l*.97+(Math.random()*2-1)*.03;d[i]=l*4;}const src=AX.createBufferSource();src.buffer=buf;src.loop=true;const f=AX.createBiquadFilter();f.type='lowpass';f.frequency.value=380;const g=AX.createGain();g.gain.value=0;src.connect(f);f.connect(g);g.connect(sfxGain);src.start();SND.wind=src;SND.windG=g;}

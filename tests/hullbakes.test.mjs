@@ -93,10 +93,15 @@ const cv = await page.evaluate(() => { const out = {};
   put(0, m.userData.helm.z, D, true); pitch = .5; _drive(() => false, 3); out.promptDown = shipPrompt();
   put(0, m.userData.helm.z, D + 2.15, true); pitch = -.25; _drive(() => false, 3); out.promptUp = shipPrompt();
   out.take = shipInteract(); out.sailing = SHIP.sailing; _drive(() => false, 20); out.atHelm = loc(); shipInteract();
+  /* S1565: the cabin furnished; beside the bunk *Your berth — press 'E' to rest*, and E opens the rest slip; the bunk is a solid you walk into */
+  const Bt = m.userData.berth; out.berth = Bt; out.cabinItems = (shipBake('caravel', 'player').kit.cabinItems || []).map(q => q.name).join();
+  if (Bt) { put(Bt.x, Bt.z, D, false); yaw = ry + Math.PI / 2; _drive(() => false, 3); out.berthPrompt = shipPrompt(); out.rest = shipInteract(); out.slip = sleepOpen; closeSleepUI();
+    put(Bt.x + .4, Bt.z, D, false); yaw = ry + Math.PI / 2; out.intoBunk = walk(60); put(0, Bt.z, D + 2.15, false); _drive(() => false, 3); out.berthUp = shipPrompt(); }
   sc.remove(SHIP.mesh); SHIP.mesh = null; worldState.ship = was; return out; });
 console.log(JSON.stringify(cv));
 if (cv.bake.kit) {
   check('your caravel is the kit\'s Aurenne caravel: three lateens, under 36,000 triangles and 20 draws, her castle 2.15 m over the deck', cv.bake.dress === 'aurenne' && cv.key === 'caravel|player|aurenne' && cv.bake.rigs === 'lateen,lateen,lateen' && cv.bake.tris < 36000 && cv.bake.draws <= 20 && Math.abs(cv.bake.castleY - 3.15) < .01, cv.bake);
+  check(`her cabin under the castle is furnished (${cv.cabinItems}); beside the bunk "${cv.berthPrompt}", and E opens the rest slip; the bunk stops you; not from the castle over it`, /bunk/.test(cv.cabinItems) && /chart table/.test(cv.cabinItems) && /rest/.test(cv.berthPrompt || '') && cv.rest && cv.slip && cv.intoBunk.end[0] > cv.berth.x - .45 && cv.intoBunk.top === 0 && !/rest/.test(cv.berthUp || ''), [cv.berth, cv.berthPrompt, cv.rest, cv.slip, cv.intoBunk, cv.berthUp]);
   check('her hold\'s stowage keeps forward of the castle and its ladders, enough for her base hold three high', cv.slots * 3 >= 55, cv.slots);
   check('up the ladder to stand on the castle, and down it again to the deck', cv.up.end[2] === 2.15 && cv.up.end[1] < cv.z1 && !cv.up.swim && cv.down.end[2] === 0 && cv.down.end[1] > cv.z1 + cv.lad && !cv.down.swim, [cv.up, cv.down]);
   check('through the doorway into the cabin under the castle, on the main deck', cv.cabin.end[1] < cv.z1 - 2 && cv.cabin.top === 0, cv.cabin);
