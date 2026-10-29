@@ -1282,7 +1282,7 @@
   // one InstancedMesh per kind, and for a plant that stays when picked (a bush, a sapling) a second of its picked
   // copy: each herb shows in one of the two, the other holding it at a thousandth of its size (syncHerbInstance)
   function herbIM(type,geo,list,group,yOf){const kind=PLANT_KIND[type];const pg=plantGeo(type,true),K=herbLift(); /* S1573 — the picked copy at the same size, its colour left as cut */
-    const mk=(g,picked)=>{const im=new THREE.InstancedMesh(g,HERB_MAT,list.length);im.castShadow=false;im.receiveShadow=true;im.userData.noBake=true;
+    const mk=(g,picked)=>{const im=new THREE.InstancedMesh(g,window.OG_LOOK==='new'&&g.attributes.glow?HERB_GLOW_MAT:HERB_MAT,list.length); /* S1577 — a kind that glows by nature lights its own parts */im.castShadow=false;im.receiveShadow=true;im.userData.noBake=true;
       list.forEach((h,i)=>{if(picked)h.instP=im;else{h.inst=im;h.idx=i;}const show=picked?h.harvested:!h.harvested;_hp.set(h.x,yOf(h),h.z);_hq.setFromAxisAngle(_hy,h.ph);_hs.setScalar(show?K:.001);_hm.compose(_hp,_hq,_hs);im.setMatrixAt(i,_hm);});
       im.instanceMatrix.needsUpdate=true;group.add(im);return im;};
     const a=mk(geo,false),b=pg?mk(pg,true):null;let cx=0,cz=0;list.forEach(h=>{cx+=h.x;cz+=h.z;});cx/=list.length;cz/=list.length;

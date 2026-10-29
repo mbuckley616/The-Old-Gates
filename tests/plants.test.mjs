@@ -70,6 +70,22 @@ check(`the herbs are lifted on the new look: ${lift.K} of the kit's size, the co
 check(`a glint over the herb 1.5 m off (${lift.glints} shown, ${lift.glintOff} m from its foot)`, lift.glints >= 1 && lift.glintOff != null && lift.glintOff < .5, lift);
 check(`the grass about a herb: none inside its spread (${lift.inside}), short in the ring (${lift.ring} against ${lift.open} m beyond, ${lift.nRing} blades)`, lift.seen > 0 && lift.inside === 0 && (lift.nRing === 0 || lift.ring < lift.open * .7), lift);
 
+/* S1577 (backlog L8, OG-039): the herbs that glow by nature (Firemoss's embers, Heartroot's root) light their own parts on the new look,
+   in the one InstancedMesh a kind they already had; every other kind bakes without a glow */
+const glow = await page.evaluate(() => { const n = k => { const a = plantGeo(k, false).attributes.glow; let c = 0; if (a) for (let i = 0; i < a.count; i++) c += a.getX(i); return c; };
+  const lit = Object.keys(PLANT_KIND).filter(k => n(k) > 0), grp = new THREE.Group(); sc.add(grp);
+  herbIM('heartroot', herbGeoFor('heartroot', HERB_DEF.heartroot), [{ x: px, z: pz, ph: 0, harvested: false, g: { visible: true } }], grp, () => 0);
+  const im = grp.children[0], rec = HERB_IMS.pop(); void rec;
+  /* the root at midnight, glowing and not: the mean of its pixels */
+  forceTime(0); const cam = new THREE.PerspectiveCamera(30, 1, .05, 50), s2 = new THREE.Scene(), cv = REN.domElement; s2.add(new THREE.AmbientLight(0x223344, .3));
+  const geo = herbGeoFor('heartroot'), m = new THREE.Mesh(geo, HERB_MAT); s2.add(m); cam.position.set(0, .45, .55); cam.lookAt(0, .08, 0);
+  const shot = mat => { m.material = mat; REN.setRenderTarget(null); REN.render(s2, cam); const c = document.createElement('canvas'); c.width = 128; c.height = 128; const x = c.getContext('2d'); x.drawImage(cv, 0, 0, 128, 128);
+    const d = x.getImageData(0, 0, 128, 128).data; let t = 0; for (let i = 0; i < d.length; i += 4) t += d[i] + d[i + 1] + d[i + 2]; return +(t / (d.length / 4) / 3).toFixed(1); };
+  const dark = shot(HERB_MAT), bright = shot(HERB_GLOW_MAT); sc.remove(grp); forceTime(12);
+  return { lit, embers: n('firemoss'), root: n('heartroot'), mat: im.material === HERB_GLOW_MAT, ims: grp.children.length, dark, bright }; });
+check(`Firemoss and Heartroot glow from their own parts (${glow.embers} and ${glow.root} vertices), in their one InstancedMesh; nothing else glows; the root at midnight ${glow.dark} → ${glow.bright}`,
+  glow.lit.sort().join() === 'firemoss,heartroot' && glow.mat && glow.ims <= 2 && glow.bright > glow.dark * 1.5, glow);
+
 // what the herbs cost: every loaded chunk's herb meshes, against those drawn near the player; the tall kinds'
 // shadows only close by, the low kinds' never. The frame's triangles with the herbs on and off.
 await g.spin(null, 40);

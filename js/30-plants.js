@@ -263,11 +263,13 @@ const PLANT_GEO=new Map();
 function plantRng(s){let h=2166136261;for(const c of String(s))h=Math.imul(h^c.charCodeAt(0),16777619);return()=>{h^=h<<13;h^=h>>>17;h^=h<<5;return((h>>>0)%100000)/100000;};}
 // parts as [geometry, matrix, colour]; while `take` is set (what a picker takes) a picked plant leaves the part out.
 // The dice is rolled either way, so everything after it comes out the same in both copies.
-function Plant(picked){this.parts=[];this.picked=!!picked;this.take=false;}
+// S1577 — while `glow` is set a part is one that glows by nature (Firemoss's embers, Heartroot's root): the bake writes it to a `glow`
+// attribute, which the new look's open-world herbs light from their own colour (HERB_GLOW_MAT, 80); the old look ignores it.
+function Plant(picked){this.parts=[];this.picked=!!picked;this.take=false;this.glow=false;}
 {const _q=new THREE.Quaternion(),_e=new THREE.Euler(0,0,0,'YXZ');
   Plant.prototype.add=function(geo,p,r,s,col){if(this.take&&this.picked){geo.dispose();return this;}_e.set(r?r[0]:0,r?r[1]:0,r?r[2]:0,'YXZ');_q.setFromEuler(_e);
     const m=new THREE.Matrix4().compose(new THREE.Vector3(p[0],p[1],p[2]),_q,new THREE.Vector3(s?s[0]:1,s?s[1]:1,s?s[2]:1));
-    this.parts.push([geo,m,new THREE.Color(col)]);return this;};}
+    this.parts.push([geo,m,new THREE.Color(col),this.glow]);return this;};}
 // a leaf: base at the point, reaching out along its yaw at an elevation, drooping at the tip (8 triangles, both sides lit)
 function plantLeaf(len,wid,thick,droop){const f=-wid*.18,v=[[0,0,0],[-wid*.4,f,len*.3],[0,0,len*.3],[wid*.4,f,len*.3],[-wid*.34,f,len*.66],[0,0,len*.66],[wid*.34,f,len*.66],[0,0,len]];
   const ix=[0,1,2,0,2,3,2,1,4,2,4,5,2,5,6,2,6,3,5,4,7,5,7,6],pos=[];for(const i of ix){const p=v[i];pos.push(p[0],p[1]-(droop||0)*(p[2]/len)*(p[2]/len),p[2]);}
@@ -275,14 +277,15 @@ function plantLeaf(len,wid,thick,droop){const f=-wid*.18,v=[[0,0,0],[-wid*.4,f,l
 function plantStalk(h,r0,r1,seg){const g=SK.cyl(r1,r0,h,seg||5,3);g.translate(0,h/2,0);return g;}
 function plantBlade(h,w,bend){const g=SK.cone(w,h,3,4);g.translate(0,h/2,0);const p=g.attributes.position;for(let i=0;i<p.count;i++){const y=p.getY(i)/h;p.setZ(i,p.getZ(i)+bend*y*y);}return g;}
 Plant.prototype.bake=function(){
-  let n=0;const flat=this.parts.map(([g,m,c])=>{const gg=(g.index?g.toNonIndexed():g.clone());g.dispose();gg.applyMatrix4(m);n+=gg.attributes.position.count;return [gg,c];});
+  let n=0,lit=false;const flat=this.parts.map(([g,m,c,gw])=>{const gg=(g.index?g.toNonIndexed():g.clone());g.dispose();gg.applyMatrix4(m);n+=gg.attributes.position.count;if(gw)lit=true;return [gg,c,gw];});
   let top=.001;flat.forEach(([g])=>{const p=g.attributes.position;for(let i=0;i<p.count;i++)top=Math.max(top,p.getY(i));});
   if(this.top)top=this.top; // a picked copy shades by its whole plant's height, so the two match
-  const pos=new Float32Array(n*3),nor=new Float32Array(n*3),col=new Float32Array(n*3);let o=0;
-  flat.forEach(([g,c])=>{g.computeVertexNormals();const p=g.attributes.position,nn=g.attributes.normal;
+  const pos=new Float32Array(n*3),nor=new Float32Array(n*3),col=new Float32Array(n*3),glw=lit?new Float32Array(n):null;let o=0;
+  flat.forEach(([g,c,gw])=>{g.computeVertexNormals();const p=g.attributes.position,nn=g.attributes.normal;
     for(let i=0;i<p.count;i++,o++){pos[o*3]=p.getX(i);pos[o*3+1]=p.getY(i);pos[o*3+2]=p.getZ(i);const ny=nn.getY(i);nor[o*3]=nn.getX(i);nor[o*3+1]=ny;nor[o*3+2]=nn.getZ(i);
-      const k=(.62+.38*Math.min(1,p.getY(i)/top*1.4))*(.84+.16*ny);col[o*3]=c.r*k;col[o*3+1]=c.g*k;col[o*3+2]=c.b*k;}g.dispose();});
+      const k=(.62+.38*Math.min(1,p.getY(i)/top*1.4))*(.84+.16*ny);col[o*3]=c.r*k;col[o*3+1]=c.g*k;col[o*3+2]=c.b*k;if(gw)glw[o]=1;}g.dispose();});
   const out=new THREE.BufferGeometry();out.setAttribute('position',new THREE.BufferAttribute(pos,3));out.setAttribute('normal',new THREE.BufferAttribute(nor,3));out.setAttribute('color',new THREE.BufferAttribute(col,3));
+  if(glw)out.setAttribute('glow',new THREE.BufferAttribute(glw,1));
   out.computeBoundingBox();out.computeBoundingSphere();out.userData.top=top;return out;};
 const plantShade=(c,k)=>{const x=new THREE.Color(c);x.multiplyScalar(k);return x;};
 const plantMix=(a,b,t)=>new THREE.Color(a).lerp(new THREE.Color(b),t);
@@ -290,7 +293,7 @@ const PLANT_BUILD={
   // a low cushion patch, wide rather than tall: moss on stone or the forest floor
   moss(P,R,col,stem,key){const n=5+Math.floor(R()*3);for(let i=0;i<n;i++){const a=i/n*6.283+R(),r=i?.12+R()*.16:0,s=.11+R()*.08;
       P.add(SK.bumpy(SK.ball(1,10,6,0,6.283,0,1.7),.18,9,R()*9),[Math.sin(a)*r,-.01,Math.cos(a)*r],[0,R()*6,0],[s,s*.42,s],plantMix(col,stem,R()*.35));}
-    if(key==='firemoss')for(let i=0;i<14;i++){const a=R()*6.283,r=R()*.3;P.add(SK.ball(.012,4,3),[Math.sin(a)*r,.045,Math.cos(a)*r],0,0,0xffaa44);}},
+    if(key==='firemoss'){P.glow=true;for(let i=0;i<14;i++){const a=R()*6.283,r=R()*.3;P.add(SK.ball(.012,4,3),[Math.sin(a)*r,.045,Math.cos(a)*r],0,0,0xffaa44);}P.glow=false;}},
   // a lumpy wet red mound on the bank
   clay(P,R,col,stem){for(let i=0;i<4;i++){const a=i*1.7+R(),r=i?.08+R()*.06:0,s=.07+R()*.05;P.add(SK.bumpy(SK.ball(1,8,5),.2,6,R()*5),[Math.sin(a)*r,s*.25,Math.cos(a)*r],0,[s*1.3,s*.8,s*1.1],plantMix(col,stem,R()*.4));}
     for(let i=0;i<5;i++){const a=R()*6.283;P.add(plantBlade(.1+R()*.06,.008,.03),[Math.sin(a)*.14,.02,Math.cos(a)*.14],[.2,a,0],0,0x4a5a2a);}},
@@ -314,8 +317,8 @@ const PLANT_BUILD={
       P.add(SK.cone(.02,.035,6,1,true),[Math.sin(a)*.04,t-.02,Math.cos(a)*.04],[Math.PI,a,0],0,col);}
     for(let i=0;i<6;i++){const a=i/6*6.283;P.add(plantLeaf(.07,.025,.008,.02),[0,.01,0],[-.35,a,0],0,plantShade(col,.8));}},
   // leaves up top, the amber root crown showing at the ground: the thing you dig for
-  root(P,R,col,stem){P.add(SK.lathe([[.001,-.02],[.07,0],[.085,.05],[.06,.09],[.001,.1]],9),[0,0,0],0,0,col);
-    for(let i=0;i<3;i++){const a=i*2.1+R();P.add(SK.limb(.14,.03,.012),[Math.sin(a)*.06,.02,Math.cos(a)*.06],[1.25,a,0],0,plantShade(col,.8));}
+  root(P,R,col,stem){P.glow=true;P.add(SK.lathe([[.001,-.02],[.07,0],[.085,.05],[.06,.09],[.001,.1]],9),[0,0,0],0,0,col);
+    for(let i=0;i<3;i++){const a=i*2.1+R();P.add(SK.limb(.14,.03,.012),[Math.sin(a)*.06,.02,Math.cos(a)*.06],[1.25,a,0],0,plantShade(col,.8));}P.glow=false;
     for(let i=0;i<7;i++){const a=i/7*6.283,t=.12+R()*.12;P.add(plantStalk(t,.008,.006,4),[0,.08,0],[.3,a,0],0,stem);P.add(plantLeaf(.13,.06,.012,.04),[Math.sin(a)*t*.3,.08+t,Math.cos(a)*t*.3],[-.2,a,0],0,0x4a8a28);}},
   // moor grass: a dense tussock of fine blades, knee-high, the tops bending out
   tussock(P,R,col,stem){P.add(SK.bumpy(SK.ball(1,8,5,0,6.283,0,1.7),.15,7,R()*4),[0,-.02,0],0,[.14,.1,.14],stem);
