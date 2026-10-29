@@ -552,8 +552,9 @@ export function galleonBase(o = {}) {
     { const g = new THREE.SphereGeometry(.16, 10, 8); g.scale(1.3, .6, 1); g.translate(x, DECK + (D.fire === 'iron' ? .4 : .06 + ht + .02), z); add('flame', g); } lights.push({ x, y: DECK + .9, z, warm: 2 });
     const cx = x - w / 2 - .05; box('iron', .05, 1.3, .05, cx, DECK + .7, z); box('iron', .7, .04, .04, cx + .35, DECK + 1.32, z); box('iron', .01, .3, .01, x, DECK + 1.15, z);
     { const g = new THREE.SphereGeometry(.2, 12, 8, 0, Math.PI * 2, Math.PI * .35, Math.PI * .65); g.translate(x, DECK + 1.05, z); add('iron', g); }
-    cyl('wood', .28, .24, .7, 1.0, DECK + .35, 8.5, 12); for (const y of [.1, .6]) cyl('iron', .29, .29, .04, 1.0, DECK + y, 8.5, 12);
-    item('firebox', 'galley', x - w / 2 - .1, DECK, z - d / 2 - .1, x + w / 2 + .1, DECK + 1.35, z + d / 2 + .1); item('water cask', 'galley', .72, DECK, 8.22, 1.28, DECK + .7, 8.78); }
+    /* the cask at x 1.7 since Session 1585 (at 1.0 it stood on a way to the bow beside the forecastle's ladder) */
+    cyl('wood', .28, .24, .7, 1.7, DECK + .35, 8.5, 12); for (const y of [.1, .6]) cyl('iron', .29, .29, .04, 1.7, DECK + y, 8.5, 12);
+    item('firebox', 'galley', x - w / 2 - .1, DECK, z - d / 2 - .1, x + w / 2 + .1, DECK + 1.35, z + d / 2 + .1); item('water cask', 'galley', 1.42, DECK, 8.22, 1.98, DECK + .7, 8.78); }
 
   const G = new THREE.Group(); G.add(S.group); let tris = 0, draws = 0;
   for (const k in by) { const geo = mergeGeometries(by[k]), m = new THREE.Mesh(geo, M[k]); m.name = 'base:' + k; m.castShadow = !['flame', 'lamp'].includes(k); m.receiveShadow = true; G.add(m); tris += geo.attributes.position.count / 3; draws++; }

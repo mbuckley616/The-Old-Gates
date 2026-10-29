@@ -4073,7 +4073,7 @@ function mkGalleon(o = {}) {
   // stools; the box bed to port forward of the mizzen (her berth: rest and save), the sea chest at its foot; the chart table and its globe to
   // starboard, a stool; the sideboard against the bulkhead to starboard of the doorway, bottles and two cups on it; two lanterns from the
   // quarterdeck's beams; the island's rug (the Mark's a hide). The mizzen already stands through it. Its pieces are in cabinItems
-  // ([{ name, box }]; the bed is named 'bunk', the game's berth).
+  // ([{ name, box }]; the bed is named 'bunk', the game's berth), with the galley's under the forecastle (Session 1585).
   const cabinItems = [];
   if (o.cabin) { const D = SHIP_BASE_DRESS[MARK ? 'mark' : AURD ? 'aurenne' : 'gatelands'], std = (c, r = 1, m = 0) => new THREE.MeshStandardMaterial({ color: c, roughness: r, metalness: m });
     // the cloth, the paper, the glass and the brass share the hull's own materials where one is near enough (a material is a draw)
@@ -4116,6 +4116,19 @@ function mkGalleon(o = {}) {
       it('sideboard', x - w / 2, DECK, z - d / 2, x + w / 2, DECK + ht + .25, z + d / 2); }
     lantern(.6, -9.0, .45); lantern(-.6, -6.2, .45);
     if (MARK) put(new THREE.CircleGeometry(.8, 9).scale(1.2, 1, 1).rotateX(-Math.PI / 2), 'gfur', 0, DECK + .006, -6.6); else { bx('grug0', 1.4, .01, 1.8, 0, DECK + .006, -6.6); bx('grug1', 1.1, .012, 1.5, 0, DECK + .008, -6.6); }
+    { // Session 1585 — the galley under the forecastle, open beneath on its posts, as the cog's (Session 1580): a firebox on a tray of sand (the
+      // Gatelands' brick, the Mark's iron firepan on stones, Aurenne's faced in blue tile) with an iron pot on a crane, a water cask; the fire
+      // glows, and lights nothing. The way from the forecastle's ladder to the bow runs between them
+      if (!M.brick) M.brick = MARK || AURD ? M.iron : mat('stone', { ns: .8, color: 0xb0604a });
+      const x = -1.0, z = 8.7, w = 1.1, d = .9, ht = .55; bx('deck', w + .2, .06, d + .2, x, DECK + .03, z);
+      if (MARK) { for (let k = 0; k < 7; k++) { const a = k / 7 * Math.PI * 2; put(new THREE.DodecahedronGeometry(.13), 'dark', x + Math.cos(a) * .38, DECK + .14, z + Math.sin(a) * .32); } cy('iron', .36, .3, .12, x, DECK + .3, z, 14); }
+      else { bx(AURD ? 'blue' : 'brick', w, ht, d, x, DECK + .06 + ht / 2, z); bx('dark', w - .3, .08, d - .3, x, DECK + .06 + ht - .02, z); }
+      put(new THREE.SphereGeometry(.16, 10, 8).scale(1.3, .6, 1), 'galLamp', x, DECK + (MARK ? .4 : .06 + ht + .02), z);
+      const kx = x - w / 2 - .05; bx('iron', .05, 1.3, .05, kx, DECK + .7, z); bx('iron', .7, .04, .04, kx + .35, DECK + 1.32, z); bx('iron', .01, .3, .01, x, DECK + 1.15, z);
+      put(new THREE.SphereGeometry(.2, 12, 8, 0, Math.PI * 2, Math.PI * .35, Math.PI * .65), 'iron', x, DECK + 1.05, z);
+      it('firebox', x - w / 2 - .1, DECK, z - d / 2 - .1, x + w / 2 + .1, DECK + 1.35, z + d / 2 + .1);
+      /* the cask at x 1.7, not the prototype's 1.0, so the way forward under the forecastle stays open beside it as well as between */
+      const cx = 1.7, czk = 8.5; cy('oak', .28, .24, .7, cx, DECK + .35, czk, 12); for (const y of [.1, .6]) cy('iron', .29, .29, .04, cx, DECK + y, czk, 12); it('water cask', cx - .28, DECK, czk - .28, cx + .28, DECK + .7, czk + .28); }
   }
   const hull = bake(M), rigs = [];
   // a square rig in its mast's frame: the course and the topsail on their yards, bellied forward, the course's foot 2.2 m over the deck
