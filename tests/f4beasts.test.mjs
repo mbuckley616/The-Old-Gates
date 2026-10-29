@@ -56,7 +56,7 @@ check('each kit body stands at its driver\'s size: its hips within 3 cm of the d
 const lv = await page.evaluate(() => { const out = {}, f = _W[0], g0 = f.e.mesh, fx = -Math.sin(yaw), fz = -Math.cos(yaw);
   const at = (dd, k) => { CAM.position.set(g0.position.x - fx * dd, g0.position.y + 1.65, g0.position.z - fz * dd); CAM.updateMatrixWorld(true); for (let i = 0; i < 3; i++) tickCreatures(1 / 60, 3e5 + k * 100 + i * 17);
     const H = f.rig.hc; let n = 0; if (H.W.visible) H.W.traverse(o => { if (o.isMesh && o.visible) n++; }); return { L: H.L, kit: n, driver: f.rig.mesh.visible }; };
-  out.near = at(6, 1); out.mid = at(25, 2); out.far = at(60, 3); out.back = at(6, 4); return out; });
+  out.near = at(4, 1); out.mid = at(25, 2); out.far = at(60, 3); out.back = at(4, 4); /* S1561 — 4 m: past 6 m the near level draws three of the fur shells */ return out; });
 check(`three levels: near the hide and fur (${lv.near.kit} meshes), at 25 m the hide and its ears and tusks without the fur's nine shells (${lv.mid.kit}), at 60 m the driver's own body`,
   lv.near.L === 0 && lv.near.kit >= 10 && !lv.near.driver && lv.mid.L === 1 && lv.mid.kit <= lv.near.kit - 9 && !lv.mid.driver && lv.far.L === 2 && lv.far.driver && lv.back.L === 0, lv);
 
