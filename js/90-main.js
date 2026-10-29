@@ -752,8 +752,8 @@ function loop(now){
     }
     // Casting animation — applied ON TOP of the base sword pose.
     // Two curves:
-    //   projectile: sword rises + tip thrusts forward at ~60% progress, then retracts
-    //   self:       sword raises vertically overhead (tip pointed up), peaks at ~60%, lowers
+    //   projectile: sword rises + tip thrusts forward at the release (CAST_RELEASE_P, 54%), then retracts
+    //   self:       sword raises vertically overhead (tip pointed up), peaks at the middle, lowers
     //   fizzle:     brief flutter, orb barely blooms
     if(castT>0){
       castT=Math.max(0, castT-dt);
@@ -763,7 +763,7 @@ function loop(now){
       if(castAnimType==='projectile'){
         // Ease-out thrust: sword drives forward, tip pitches down to "aim"
         const thrust = arc;                        // 0→1→0
-        const extend = p<0.6 ? p/0.6 : 1 - (p-0.6)/0.4 * 0.6;
+        const R=CAST_RELEASE_P, extend = p<R ? p/R : 1 - (p-R)/(1-R) * 0.6;
         castDx = -extend*0.06;                     // shift slightly toward center
         castDy = extend*0.08;                      // rise a bit
         castDz = -thrust*0.12;                     // push forward
@@ -794,9 +794,9 @@ function loop(now){
       vmSword.rotation.z += castRz;
 
       // Orb at the blade tip: charges from 0→0.6 progress, fades from 0.6→1.0
-      const chargeP = Math.min(1, p/0.6);
-      const releaseP = p>0.6 ? (p-0.6)/0.4 : 0;
-      const orbOpacity = p<0.6 ? chargeP*0.95 : (1-releaseP)*0.95;
+      const chargeP = Math.min(1, p/CAST_RELEASE_P);
+      const releaseP = p>CAST_RELEASE_P ? (p-CAST_RELEASE_P)/(1-CAST_RELEASE_P) : 0;
+      const orbOpacity = p<CAST_RELEASE_P ? chargeP*0.95 : (1-releaseP)*0.95;
       const fizzMult = castAnimType==='fizzle' ? 0.3 : 1;
       const orb = vmSword.userData.castOrb;
       const halo = vmSword.userData.castOrbHalo;
@@ -810,7 +810,7 @@ function loop(now){
         halo.material.opacity = orbOpacity * fizzMult * 0.55;
       }
       if(lightTip){
-        lightTip.intensity = (p<0.6 ? chargeP*1.8 : (1-releaseP)*1.8) * fizzMult;
+        lightTip.intensity = (p<CAST_RELEASE_P ? chargeP*1.8 : (1-releaseP)*1.8) * fizzMult;
       }
       // Animation done — zero out the orb so the base pose returns clean
       if(castT<=0){
