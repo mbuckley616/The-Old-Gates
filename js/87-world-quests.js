@@ -291,6 +291,7 @@ const giver=`${lord.title} ${lord.name}`;
     }
   }
   function qOnTalk(def){
+    if(def&&def._erLetter&&erLetterTalk(def))return true; /* S1554 — the letter's addressee: one line, then nothing */
     for(const q of qActive()){if(q.done)continue;
       if(q.kind==='deliver'&&def.name===q.data.who){q.data.done=true;qComplete(q);showMsg(`${def.name} takes the letter.`,'#e8d8a0');return true;}
       if(q.kind==='find'&&def.name===q.data.who&&def._lost){q.data.found=true;qComplete(q);if(q.rival)return false; /* S457 — Rowe is found in her own words (her topic), so her dialogue opens */ showMsg(`${def.name}: "Home? Yes. Yes, all right."`,'#e8d8a0');return true;}
@@ -299,6 +300,7 @@ const giver=`${lord.title} ${lord.name}`;
   }
   function qTick(){
     for(const q of qActive()){if(q.done)continue;
+      if(q.kind==='errand'&&q.sub==='letter'){erLetterTick(q);continue;} /* S1554 */
       if(q.kind==='retrieve'&&q.data.fixed&&!q.data.got&&dungeonWorldPos[q.data.seed]){const w=dungeonWorldPos[q.data.seed];q.data.fixed=false;q.data.x=w.x+7;q.data.z=w.z+5; /* S985 — the job was given before its gate was placed: the thing lies by the real door */
         if(q._obj){const y=worldH(q.data.x,q.data.z)+.2;q._obj.m.position.set(q.data.x,y,q.data.z);q._obj.l.position.copy(q._obj.m.position);const pk=pickups.find(o=>o.id===q.id+':pickup');if(pk){pk.x=q.data.x;pk.z=q.data.z;}}}
       if(q.kind==='retrieve'&&!q.data.got&&!q._obj){const m=new THREE.Mesh(new THREE.BoxGeometry(.5,.4,.5),new THREE.MeshLambertMaterial({color:0xc8a040}));m.position.set(q.data.x,worldH(q.data.x,q.data.z)+.2,q.data.z);sc.add(m);const l=regLight(0xffd080,.8,5,'quest');l.position.copy(m.position);q._obj={m,l};pickups.push({id:q.id+':pickup',x:q.data.x,z:q.data.z,quest:q});} /* S518 — a quest's pickup is <quest id>:pickup (co-op rules) */
@@ -331,6 +333,7 @@ const giver=`${lord.title} ${lord.name}`;
       if(q.kind==='retrieve'&&!d.got)push(d.x,d.z,GREEN,d.item||'the heirloom','\u25c6');
       else if(q.kind==='find'){if(q._npc&&q._npc.g)push(q._npc.g.position.x,q._npc.g.position.z,GREEN,d.who,'\ud83d\udc64');else push(d.x,d.z,GREEN,d.who,'\ud83d\udc64');}
       else if(q.kind==='deliver'){const t=siteAnywhere(d.siteId);if(t)push(t.x,t.z,GREEN,d.who);}
+      else if(q.kind==='errand'&&q.sub==='letter'){if(d.learned){const g=siteAnywhere(q.erSite);if(g)push(g.x,g.z,GREEN,`report to ${q.giver}`);}else if(q._npc&&q._npc.g)push(q._npc.g.position.x,q._npc.g.position.z,GREEN,d.who,'\u2709');else push(d.x,d.z,GREEN,d.who,'\u2709');} /* S1554 */
       else if(q.kind==='road'||q.kind==='cull')push(d.x,d.z,GREEN,q.kind==='road'?'the camp':plural(2,q.data.target),q.kind==='road'?'\u26fa':'\u2620');
       else if(q.kind==='duel'&&d.state!=='lost')push(d.x,d.z,GREEN,'the yard','\u2694');}
     // guild tasks
@@ -754,6 +757,32 @@ const giver=`${lord.title} ${lord.name}`;
     lapse:{gatelander:"It broke on its own, the third night. Keep them. They'll keep longer than a promise does.",markman:"Fever broke. No thanks to you. Keep them.",
       aurennais:"The fever broke without them, Master. Keep the herbs. The contract lapsed on the date; I would rather not discuss it further.",oldblood:"It broke. Keep them."},
     cold:{gatelander:"Yourself. Well.",markman:"You.",aurennais:"Master.",oldblood:"…"}};
+  // S1554 — errand 1, *The Unanswered Letter*: o is the errand (who, rel, town, dir) with its pronouns (she, her, his, him, he)
+  const ER_LETTER={
+    hint:{gatelander:"No post on the road today, I suppose.",markman:"Carter come through? No. Didn't think so.",
+      aurennais:"You have not, by chance, passed a courier on the road, Master?",oldblood:"Nothing came today."},
+    offer:{gatelander:o=>`My ${o.rel} is in ${o.town}, ${o.dir} of here. Three letters I've sent, and the silence back is heavier than any of them. A letter in the hand gets read where one in the post gets lost. Would you carry it, and look at ${o.her} while ${o.she} reads it?`,
+      markman:o=>`${erCap(o.rel)}. In ${o.town}, ${o.dir}. Wrote ${o.him} twice. Nothing. Take this to ${o.him}. Put it in ${o.his} hand and see what ${o.his} face does.`,
+      aurennais:o=>`My ${o.rel} is at ${o.town}, Master, ${o.dir} of here. I have written three times, and I would rather be told no than told nothing. If you would put this into ${o.his} hands, I will pay as for a courier, and a little over for the distance.`,
+      oldblood:o=>`${o.who}. At ${o.town}. ${erCap(o.dir)}. This is for them. I want to know they read it.`},
+    there:{gatelander:"Leave it on the sill. I'll read it when I'm able, and I'm not able.",markman:"Aye. I know what it says. Tell them I'm well. That's all they're getting.",
+      aurennais:"Thank you. I will read it, Master. I cannot promise an answer, and I would rather not promise what I cannot keep.",oldblood:"I know the hand. Thank you. No answer."},
+    gone:{gatelander:o=>`${o.who}? Gone a month, on a boat out of the harbour. Where to, the sea knows, and the sea's not saying.`,markman:()=>"Gone. Signed on with a captain for the iron in the ranges. Won't be back before the thaw.",
+      aurennais:o=>`${o.who} left us in the spring, Master, on a contract with one of the houses. A ship to the south, I believe. The house may have an address; I do not.`,oldblood:()=>"Gone. To the water."},
+    dead:{gatelander:o=>`Ah, the creature. We buried ${o.who} at the turn of the season. A fever, and quick. Nobody knew who to write to. The Weaver forgive us, we should have asked.`,
+      markman:o=>`Dead. Fever, spring. We burned the bed and put ${o.him} in the ground. Nobody knew there was anyone to tell.`,
+      aurennais:o=>`I am sorry to be the one, Master. ${o.who} died this spring, of a fever. The Prior saw to it, and ${o.his} name was taken to the gate. We did not know there was family to write to.`,
+      oldblood:()=>"Dead. The spring. They took the name to the door."},
+    told:{there:o=>`${o.who} read it.`,gone:o=>`${o.who}’s gone to sea.`,dead:o=>`${o.who} died this spring.`,lie:o=>`${o.who} sends love. A letter’s coming.`},
+    truth:{gatelander:{there:()=>"Read it, and kept the answer. Well. A door shut is still a door; it can be knocked on.",gone:()=>"The sea owns them twice a day, and some days it keeps them. I'll write to the harbour, so.",dead:()=>"…Ah. Ah, Weaver. I'd a feeling. You don't get a feeling for nothing. Thank you for not dressing it."},
+      markman:{there:o=>`Read it and said nothing. That's ${o.him}. Aye. That's ${o.him}.`,gone:o=>`The iron. Should have guessed. ${erCap(o.he)}'ll write when ${o.he}'s drunk enough.`,dead:()=>"Dead. Right. …Right. You told it straight. Good."},
+      aurennais:{there:()=>"Then it was delivered, Master, and the rest is not your account. Thank you.",gone:()=>"Then I will write to the house that holds the contract. They keep addresses. They keep everything.",dead:()=>"Then I was writing to no one. Forgive me, Master. Thank you for the plain words. They are the only kind I could take."},
+      oldblood:{there:()=>"Read it. Good.",gone:()=>"The water has them, then.",dead:()=>"Dead. I knew. I wanted it said."}},
+    lie:{gatelander:"A letter coming! There, now. Didn't I say a hand-carried letter gets read? Weaver keep you.",markman:"Ha. About time. Good.",
+      aurennais:"Then I have worried for nothing, Master, and I am glad to have paid for the news.",oldblood:"…Good."},
+    wait:{gatelander:()=>"Nothing yet. The roads are slow this time of year.",markman:o=>`Nothing yet. ${erCap(o.he)}'ll write.`,aurennais:()=>"No letter yet, Master. I expect the courier is delayed.",oldblood:()=>"Nothing yet."},
+    knew:{gatelander:"You knew. You knew the last time.",markman:"You knew. Last time. You knew.",aurennais:"You knew, Master, when you were last here.",oldblood:"You knew."}};
+  function erPro(o){const f=!!o.fem;return Object.assign({},o,{she:f?'she':'he',he:f?'she':'he',her:f?'her':'him',him:f?'her':'him',his:f?'her':'his'});}
   function erCap(s){return s.charAt(0).toUpperCase()+s.slice(1);}
   function erPeople(def){return ER_SHARED[def.people]?def.people:'gatelander';}
   function erTag(def){return def.name+(def._twin?' '+def._twin:'');}
@@ -764,34 +793,83 @@ const giver=`${lord.title} ${lord.name}`;
   function erHerb(site,r){const b=lairBiome(site);const k=b==='tundra'||b==='moor'?'coldmoss':b==='wastes'||b==='wasteland'||b==='dunes'?'ashwort':b==='forest'||b==='autumn'||b==='plains'?'silverleaf':'goldenrod';
     const rd=roadOutFixed(site),o=rd&&siteAnywhere(rd.a===site.id?rd.b:rd.a);const dir=o?compassWord(o.x-site.x,o.z-site.z):['north','north-east','east','south-east','south','south-west','west','north-west'][Math.floor(r()*8)];
     return {key:k,herb:HERB_DEF[k].name,place:ER_HERB[k],dir};}
-  // the week's roll: null, or the errand on offer (which, how many, how long). Only the fever is built, so only a giver with children has one.
+  // the week's roll: null, or the errand on offer (which, how many, how long). Built: the fever (only a giver with children) and the letter.
   function errandFor(def,site){
-    if(!erGiver(def,site)||!(def.bio.kids>0))return null;const wk=erWeek(),R=erRecs(def,site);
+    if(!erGiver(def,site))return null;const wk=erWeek(),R=erRecs(def,site);
     if(R.some(q=>!q.turnedIn||q.week===wk))return null;
+    {const L=erLetterAgain(R,wk);if(L)return L;}
     const r=seededRng('errand',site.id+':'+erTag(def)+':'+wk);if(r()>=.2)return null;
+    {const s=seededRng('errand-sub',site.id+':'+erTag(def)+':'+wk),kids=def.bio.kids>0,pref=def.bio.wish==='to hear from my daughter'||def.bio.worry==='my brother went for a soldier and never wrote'; /* S1554 — the sub on its own stream, so a fever's herb, count and date roll as before */
+      if(pref||!kids||s()<.5){const L=erLetter(def,site,s,wk,R.length);if(L||!kids)return L;}}
     const n=2+Math.floor(r()*3),days=3+Math.floor(r()*3),H=erHerb(site,r),day=Math.floor((worldState.gameTimeAbsMinutes||0)/1440);
     return Object.assign(H,{sub:'fever',n,nw:ER_NUM[n],due:(day+days)*1440,date:calDateLine((day+days)*1440),week:wk,idx:R.length});}
+  // S1554 — the letter: a town of 45 pad or more within 900, as the lord's letter picks; whom it is for, by the giver's bio where it says; what is true there, on the errand's own id
+  function erLetter(def,site,s,wk,idx){const others=sitesNearFixed(site,900).filter(t=>t.pad>=45&&t.kind!=='portal'&&t.id!==site.id);if(!others.length)return null;
+    const t=others[Math.floor(s()*Math.min(4,others.length))];
+    const rel=def.bio.wish==='to hear from my daughter'?'daughter':def.bio.worry==='my brother went for a soldier and never wrote'?'brother':s()<.5?'sister':'old friend';
+    const fem=rel==='daughter'||rel==='sister'||(rel==='old friend'&&s()<.5);const bank=NAMES[(PEOPLES[erPeople(def)]||{}).names]||NAMES.irish;
+    let who=pick(s,fem?bank.f:bank.m);if(who===def.name)who=pick(s,fem?bank.f:bank.m);
+    const tr=seededRng('errand-letter',erPre(def,site)+idx)();
+    return {sub:'letter',who,rel,fem,town:t.name,siteId:t.id,tx:t.x,tz:t.z,dir:compassWord(t.x-site.x,t.z-site.z),truth:tr<1/3?'there':tr<2/3?'gone':'dead',week:wk,idx};}
+  // a letter lied about: four game-weeks on, the giver writes again to the same one, and what is true there has not changed
+  function erLetterAgain(R,wk){const q=R.filter(x=>x.sub==='letter').pop();if(!q||!q.turnedIn||q.data.told!=='lie'||wk<(q.data.toldWeek||0)+4)return null;
+    const d=q.data;return {sub:'letter',who:d.who,rel:d.rel,fem:d.fem,town:d.town,siteId:d.siteId,tx:d.x,tz:d.z,dir:d.dir,truth:d.truth,again:true,week:wk,idx:R.length};}
   function erLapse(q){if(!q||q.kind!=='errand'||q.turnedIn||!q.erDue||(worldState.gameTimeAbsMinutes||0)<q.erDue)return false;
     q.turnedIn=true;q.lapsed=true;q.erUnsaid=true;qJournal(q,'lapsed',`The date passed, and the fever in ${q.giver}'s house broke without the ${q.data.herb}.`);return true;}
   function errandAccept(def,site,E){const p=erPeople(def),tier=Math.max(1,worldTierAt(site.x,site.z)||1),base=Math.min(40,15+5*(tier-1));
+    if(E.sub==='letter'){const q={id:erPre(def,site)+E.idx,kind:'errand',sub:'letter',giver:def.name,erSite:site.id,week:E.week,erPeople:p,
+        title:`A letter for ${E.who}`,desc:`${def.name} of ${site.name} has written to ${E.who} at ${E.town} and had no answer. Carry the letter there and ask after ${erPro(E).her}.`,
+        objective:`Carry ${def.name}'s letter to ${E.who} at ${E.town}, ${E.dir} of ${site.name}`,reward:base,
+        data:{x:E.tx,z:E.tz,siteId:E.siteId,town:E.town,dir:E.dir,who:E.who,rel:E.rel,fem:E.fem,truth:E.truth,again:!!E.again,learned:false,told:null}};
+      qAdd(q);bagAdd({name:`Letter for ${E.who}`,ico:'✉️',type:'misc',weight:0,qty:1,unique:true,desc:`Sealed, in ${def.name}'s hand.`});return ER_SHARED[p].yes;}
     const q={id:erPre(def,site)+E.idx,kind:'errand',sub:E.sub,giver:def.name,erSite:site.id,week:E.week,erDue:E.due,erPeople:p,
       title:`${E.herb} for a fever`,desc:`${def.name} of ${site.name} wants ${E.nw} ${E.herb} for a fever in the house, before ${E.date}.`,
       objective:`Bring ${E.nw} ${E.herb} to ${def.name} at ${site.name} before ${E.date}`,reward:Math.round(base*1.25),data:{x:site.x,z:site.z,herb:E.herb,n:E.n}};
     qAdd(q);return ER_SHARED[p].yes;}
   function errandTurnIn(q,site){const p=q.erPeople||'gatelander';
+    if(q.sub==='letter')return ER_SHARED[p].notYet;
     if(q.lapsed||erLapse(q)){q.erUnsaid=false;return ER_FEVER.lapse[p];}
     const isH=b=>b.type==='herb'&&b.name===q.data.herb;if(bagCount(isH)<q.data.n)return ER_SHARED[p].notYet;
     bagTake(isH,q.data.n);qTurnIn(q);addFavor(site,1);return ER_FEVER.done[p];}
+  // S1554 — the letter: what you learned at the other town, and what you tell the giver. The letter stays in your bag unless it was read (the draft).
+  function erIsLetter(q){return b=>b&&b.type==='misc'&&b.name===`Letter for ${q.data.who}`;}
+  function erLearn(q,said){q.data.learned=true;qJournal(q,'ready',said);return said;}
+  function erTell(q,site,lie){const p=q.erPeople||'gatelander',o=erPro(q.data),T=q.data.truth;
+    q.data.told=lie?'lie':'truth';q.data.toldWeek=erWeek();qTurnIn(q);addFavor(site,1);
+    if(q._npc){duelRemoveNpc(q._npc);q._npc=null;}
+    if(lie)return ER_LETTER.lie[p];const say=ER_LETTER.truth[p][T](o);return q.data.again&&T==='dead'?ER_LETTER.knew[p]+' '+say:say;}
+  function erLetterTopics(def,site){const out=[];
+    for(const q of qActive()){if(q.kind!=='errand'||q.sub!=='letter')continue;const d=q.data,o=erPro(d);
+      if(!d.learned&&d.truth!=='there'&&site.id===d.siteId&&def.bio&&!def.authored&&!def._lost&&def.name!==d.who){const p=erPeople(def);
+        out.push({label:`I’ve a letter for ${d.who}.`,quest:true,fn:()=>q.data.learned?ER_LETTER[d.truth][p](o):erLearn(q,ER_LETTER[d.truth][p](o))});}
+      if(d.learned&&site.id===q.erSite&&def.name===q.giver&&erRecs(def,site).includes(q))
+        out.push({label:ER_LETTER.told[d.truth](o),quest:true,fn:()=>erTell(q,site,false)},{label:ER_LETTER.told.lie(o),quest:true,fn:()=>erTell(q,site,true)});}
+    return out;}
+  // the addressee who will not write: at a resident's door of that town once you come near it, one line, then nothing
+  function erLetterTick(q){const d=q.data;if(q._npc||d.truth!=='there'||d.learned)return;if(Math.hypot(px-d.x,pz-d.z)>160)return;
+    const S=SETTLE.get(d.siteId),site=siteAnywhere(d.siteId);if(!S||!site)return;const doors=(S.residents||[]).filter(R=>R.door);if(!doors.length)return;
+    const R=doors[Math.floor(seededRng('errand-door',q.id)()*doors.length)],x=R.door.x+.8,z=R.door.z+.8;
+    const def=makeDef(site,site.reg||'irish',Math.random,'Villager',d.who,{x,z,keepName:true,topics:[]});def._lost=true;def._erLetter=q.id;def.people=q.erPeople||def.people;
+    const n=spawnNPC(def,R.ry||0,true);n.sched={type:'lost'};n.g.position.set(x,worldH(x,z),z);q._npc=n;}
+  function erLetterTalk(def){const q=qActive().find(q=>q.kind==='errand'&&q.sub==='letter'&&def._erLetter===q.id);if(!q)return false;
+    const line=ER_LETTER.there[q.erPeople||'gatelander'];showMsg(`${def.name}: "${line}"`,'#e8d8a0');
+    if(!q.data.learned){bagTake(erIsLetter(q),1);erLearn(q,`${q.data.who} took the letter: "${line}"`);}return true;}
   // the ask, in *About you*, while an errand is on offer
   function errandAsk(def,site){const E=errandFor(def,site);if(!E)return null;const p=erPeople(def);
-    return {cat:'you',label:'Who’s sick?',response:ER_FEVER.offer[p](E),follow:[{label:'I’ll do it.',fn:()=>errandFor(def,site)?errandAccept(def,site,E):ER_SHARED[p].no},{label:'Not now.',response:ER_SHARED[p].no}]};}
-  // the top level: *About that errand.* while one is open, or once more to hear how a lapsed one ended
-  function errandTopics(def,site){if(!erGiver(def,site))return [];const q=erRecs(def,site).find(q=>!q.turnedIn||(q.lapsed&&q.erUnsaid));if(!q)return [];
-    return [{label:'About that errand.',quest:true,fn:()=>errandTurnIn(q,site)}];}
-  // the greeting: the hint after First Words while an errand is on offer (from the second meeting), or for a week after a lapse the colder line
+    const L=E.sub==='letter',label=L?'You’re waiting on word from someone?':'Who’s sick?',said=L?ER_LETTER.offer[p](erPro(E)):ER_FEVER.offer[p](E);
+    return {cat:'you',label,response:said,follow:[{label:'I’ll do it.',fn:()=>errandFor(def,site)?errandAccept(def,site,E):ER_SHARED[p].no},{label:'Not now.',response:ER_SHARED[p].no}]};}
+  // the top level: *About that errand.* while one is open, or once more to hear how a lapsed one ended; the letter's own lines
+  function errandTopics(def,site){const L=erLetterTopics(def,site);if(!erGiver(def,site))return L;const q=erRecs(def,site).find(q=>!q.turnedIn||(q.lapsed&&q.erUnsaid));
+    if(!q||(q.sub==='letter'&&q.data.learned))return L;
+    return [{label:'About that errand.',quest:true,fn:()=>errandTurnIn(q,site)},...L];}
+  // the greeting: the hint after First Words while an errand is on offer (from the second meeting), or for a week after a lapse the colder line;
+  // after a letter lied about, from the next game-week, one week in two the waiting line, until the giver writes again
   function errandGreet(def,site){if(!erGiver(def,site))return null;const met=metCount(metKey(def,site));const line=firstWords(def,site);
-    const now=worldState.gameTimeAbsMinutes||0,cold=met>0&&erRecs(def,site).some(q=>q.lapsed&&now<q.erDue+1440*7);if(cold)return ER_FEVER.cold[erPeople(def)];
-    const E=met>0&&errandFor(def,site);return E?line+' '+ER_FEVER.hint[erPeople(def)]:line;}
+    const now=worldState.gameTimeAbsMinutes||0,R=erRecs(def,site),cold=met>0&&R.some(q=>q.lapsed&&now<q.erDue+1440*7);if(cold)return ER_FEVER.cold[erPeople(def)];
+    const E=met>0&&errandFor(def,site);if(E)return line+' '+(E.sub==='letter'?ER_LETTER.hint:ER_FEVER.hint)[erPeople(def)];
+    const lq=R.filter(q=>q.sub==='letter').pop(),wk=erWeek();
+    if(met>0&&lq&&lq.turnedIn&&lq.data.told==='lie'&&wk>lq.data.toldWeek&&seededRng('errand-wait',erPre(def,site)+wk)()<.5)return ER_LETTER.wait[erPeople(def)](erPro(lq.data));
+    return line;}
 
   function nationSubtitle(cell){const nat=nationOf(cell.i,cell.j);return `${nat.name} · ${(CULTURES[cell.reg]||{}).name||cell.reg} · ${cell.climate||nat.climate}`;}
 
