@@ -91,6 +91,23 @@ const slope = await page.evaluate(() => { const f = _W[1], e = f.e, rig = f.rig,
 check(`on a slope of ${slope.slope} the bear's toes meet the ground under each (${slope.on.join(', ')} m; ${slope.off.join(', ')} without the ground pass)`,
   slope.stand > .9 && slope.worstOn < .05 && (slope.slope < .15 || slope.worstOn < slope.worstOff * .5), slope);
 
+// Session 1553: a beast that moves sideways or backs off while it faces you (a pack's flank, an archer's retreat) sweeps its paws the
+// way its hips go over the ground (WG_U), not straight back under it. The bear walked 1.2 m/s ahead, to its left and back, facing one
+// way; a planted paw (the lowest 30% of its frames) should stand still on the ground. The driver's paws are where the sweep is made
+// (before, sideways they slid as fast as the body went); the kit's, which stray up to 0.3 m from the driver's, no worse than ahead
+const sweep = await page.evaluate(() => { const f = _W[1], e = f.e, rig = f.rig, gg = rig.root.parent, by = rig.hc.C.byName, was = [e.x, e.z, gg.position.y, gg.rotation.y], V = o => o.getWorldPosition(new THREE.Vector3());
+  const paws = [...['leg0L', 'leg0R', 'leg1L', 'leg1R'].map(l => { let n = 0; while (by[l + '_' + (n + 1)]) n++; return by[l + '_' + n]; }), ...['pfL', 'pfR', 'phL', 'phR'].map(j => rig.B[j])];
+  let t = 8e5; const run = (dx, dz) => { let x = was[0], z = was[1]; e.x = x; e.z = z; gg.position.set(x, activeTerrainH(x, z), z); gg.rotation.y = 0; rig.lx = rig.px = rig.lyaw = null;
+    for (let i = 0; i < 40; i++) tickCreatures(1 / 60, t += 17); const rec = paws.map(() => []), prev = [];
+    for (let i = 0; i < 200; i++) { x += dx * 1.2 / 60; z += dz * 1.2 / 60; e.x = x; e.z = z; gg.position.set(x, activeTerrainH(x, z), z); tickCreatures(1 / 60, t += 17); gg.updateMatrixWorld(true);
+      paws.forEach((o, j) => { const w = V(o); if (prev[j] && i > 30) rec[j].push([w.y - activeTerrainH(w.x, w.z), Math.hypot(w.x - prev[j].x, w.z - prev[j].z) * 60]); prev[j] = w; }); }
+    const sl = rs => { let s = 0, n = 0; for (const r of rs) { const a = r.sort((u, v) => u[0] - v[0]).slice(0, Math.floor(r.length * .3)); for (const u of a) { s += u[1]; n++; } } return +(s / n).toFixed(2); };
+    return { slip: sl(rec.slice(4)), kit: sl(rec.slice(0, 4)), gallop: rig.gallop }; };
+  const out = { ahead: run(0, 1), side: run(1, 0), back: run(0, -1) };
+  e.x = was[0]; e.z = was[1]; gg.position.set(e.x, was[2], e.z); gg.rotation.y = e.combatYaw = was[3]; rig.lx = rig.px = rig.lyaw = null; tickCreatures(1 / 60, t += 17); return out; });
+check(`the bear walked sideways and backwards plants its paws (${sweep.side.slip} and ${sweep.back.slip} m/s against ${sweep.ahead.slip} ahead; the kit's ${sweep.side.kit} and ${sweep.back.kit} against ${sweep.ahead.kit})`,
+  !sweep.side.gallop && sweep.side.slip < .35 && sweep.back.slip < .35 && sweep.side.kit < sweep.ahead.kit + .2 && sweep.back.kit < sweep.ahead.kit + .2, sweep);
+
 // the tell's glow reaches the kit's hide, and goes out with it
 const glow = await page.evaluate(() => { const f = _W[0], rig = f.rig, mats = () => [...rig.hc.hide, ...rig.hc.fur].map(o => o.material);
   const lit = () => mats().filter(m => m.emissive && m.emissive.getHex() !== 0).length;
