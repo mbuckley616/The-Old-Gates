@@ -1256,9 +1256,18 @@
   }
   function herbCandidates(biome,ctx){const out=[];for(const k in HERB_PLACE){const p=HERB_PLACE[k];if(!HERB_DEF[k])continue;if(!p.biomes.includes(biome))continue;const w=p.ctx.indexOf(ctx);if(w<0)continue;out.push([k,w===0?3:1]);}return out;}
   const HERB_GEO={};
+  // S1573 (backlog L8, Michael's C on #855: lifted) — on the new look a herb stands at its true size (the kit's old unit ×1.444, SCALE.ROOM_K)
+  // and 1.15 over it, its colour a little stronger (saturation ×1.18, lightness ×1.1 + 0.02, as herbs.js's bake), the grass short in a 0.35 m
+  // ring about it (landGrassChunk) and a small glint at its top within 6 m (tickHerbGlints); no lights. The old look keeps its herbs as they were.
+  function herbLift(){return window.OG_LOOK==='new'?1.444*1.15:1;}
+  function herbLiftGeo(g){if(!g||window.OG_LOOK!=='new')return g;if(g.userData.lifted)return g;if(g.userData.liftedCopy)return g.userData.liftedCopy;
+    const L=g.clone(),c=L.attributes.color,col=new THREE.Color(),hsl={};if(c){L.setAttribute('color',c.clone());const a=L.attributes.color;
+      for(let i=0;i<a.count;i++){col.setRGB(a.getX(i),a.getY(i),a.getZ(i));col.getHSL(hsl);col.setHSL(hsl.h,Math.min(1,hsl.s*1.18),Math.min(.92,hsl.l*1.1+.02));a.setXYZ(i,col.r,col.g,col.b);}}
+    L.userData=Object.assign({},g.userData,{lifted:true});L.computeBoundingBox();const bb=L.boundingBox;L.userData.spread=Math.max(bb.max.x-bb.min.x,bb.max.z-bb.min.z);
+    g.userData.liftedCopy=L;return L;}
   function herbGeoFor(type,def){
     if(HERB_GEO[type])return HERB_GEO[type];
-    {const pg=plantGeo(type,false);if(pg)return (HERB_GEO[type]=pg);} // v80 S167 — the plant's own bake
+    {const pg=herbLiftGeo(plantGeo(type,false));if(pg)return (HERB_GEO[type]=pg);} // v80 S167 — the plant's own bake
     const {g,gl}=mkHerbMesh(0,0,def,sc);if(gl&&gl.parent)gl.parent.remove(gl);sc.remove(g);g.updateMatrixWorld(true);
     const list=[];g.traverse(o=>{if(!o.isMesh)return;const mat=o.material;if(!mat||mat.isMeshBasicMaterial||mat.map)return;const geo=o.geometry;if(!geo||!geo.attributes.position)return;const src=geo.index?geo.toNonIndexed():geo;list.push([src,o.matrixWorld.clone(),(mat.vertexColors?new THREE.Color(1,1,1):mat.color)||new THREE.Color(1,1,1)]);});
     HERB_GEO[type]=list.length?mergeGeos(list):null;return HERB_GEO[type];
@@ -1272,27 +1281,40 @@
   }
   // one InstancedMesh per kind, and for a plant that stays when picked (a bush, a sapling) a second of its picked
   // copy: each herb shows in one of the two, the other holding it at a thousandth of its size (syncHerbInstance)
-  function herbIM(type,geo,list,group,yOf){const kind=PLANT_KIND[type];const pg=plantGeo(type,true);
+  function herbIM(type,geo,list,group,yOf){const kind=PLANT_KIND[type];const pg=plantGeo(type,true),K=herbLift(); /* S1573 — the picked copy at the same size, its colour left as cut */
     const mk=(g,picked)=>{const im=new THREE.InstancedMesh(g,HERB_MAT,list.length);im.castShadow=false;im.receiveShadow=true;im.userData.noBake=true;
-      list.forEach((h,i)=>{if(picked)h.instP=im;else{h.inst=im;h.idx=i;}const show=picked?h.harvested:!h.harvested;_hp.set(h.x,yOf(h),h.z);_hq.setFromAxisAngle(_hy,h.ph);_hs.setScalar(show?1:.001);_hm.compose(_hp,_hq,_hs);im.setMatrixAt(i,_hm);});
+      list.forEach((h,i)=>{if(picked)h.instP=im;else{h.inst=im;h.idx=i;}const show=picked?h.harvested:!h.harvested;_hp.set(h.x,yOf(h),h.z);_hq.setFromAxisAngle(_hy,h.ph);_hs.setScalar(show?K:.001);_hm.compose(_hp,_hq,_hs);im.setMatrixAt(i,_hm);});
       im.instanceMatrix.needsUpdate=true;group.add(im);return im;};
     const a=mk(geo,false),b=pg?mk(pg,true):null;let cx=0,cz=0;list.forEach(h=>{cx+=h.x;cz+=h.z;});cx/=list.length;cz/=list.length;
-    const rec={ims:b?[a,b]:[a],x:cx,z:cz,shadow:!!kind&&PLANT_SHADOW.has(kind),list,picked:list.some(h=>h.harvested)};list.forEach(h=>{h._imr=rec;});HERB_IMS.push(rec);} // S263 — the picked copy is drawn only while one is picked (every kind has one now)
+    list.forEach(h=>{h.top=(geo.userData.top||.3)*K;h.spread=(geo.userData.spread||.3)*K;});const rec={ims:b?[a,b]:[a],x:cx,z:cz,shadow:!!kind&&PLANT_SHADOW.has(kind),list,picked:list.some(h=>h.harvested)};list.forEach(h=>{h._imr=rec;});HERB_IMS.push(rec);} // S263 — the picked copy is drawn only while one is picked (every kind has one now)
   // A plant a third of a unit tall is under a pixel past about seventy units, and a chunk's herbs are one mesh per kind,
   // so each chunk's herb meshes are drawn only within HERB_LOD.far of the player, and the tall kinds cast shadows only
   // within HERB_LOD.shadow (S167: all 81 loaded chunks' herbs were 1.8M triangles, and their shadows another .9M)
   const HERB_IMS=[],HERB_LOD={far:100,shadow:45};
   function tickHerbLod(){for(let i=HERB_IMS.length-1;i>=0;i--){const r=HERB_IMS[i],im=r.ims[0];if(!im.parent||!im.parent.parent){HERB_IMS.splice(i,1);continue;}
       const d=Math.hypot(px-r.x,pz-r.z),vis=d<HERB_LOD.far,cast=r.shadow&&d<HERB_LOD.shadow;for(let k=0;k<r.ims.length;k++){const m=r.ims[k];m.visible=vis&&(k===0||r.picked);m.castShadow=cast;}}}
-  function syncHerbInstance(h){if(!h.inst)return;const hidden=h.harvested||!h.g.visible;_hp.set(h.x,propH(h.x,h.z),h.z);_hq.setFromAxisAngle(_hy,h.ph);_hs.set(hidden?.001:1,hidden?.001:1,hidden?.001:1);_hm.compose(_hp,_hq,_hs);h.inst.setMatrixAt(h.idx,_hm);h.inst.instanceMatrix.needsUpdate=true;
-    if(h.instP){_hs.setScalar(h.harvested?1:.001);_hm.compose(_hp,_hq,_hs);h.instP.setMatrixAt(h.idx,_hm);h.instP.instanceMatrix.needsUpdate=true;}
+  function syncHerbInstance(h){if(!h.inst)return;const hidden=h.harvested||!h.g.visible;_hp.set(h.x,propH(h.x,h.z),h.z);_hq.setFromAxisAngle(_hy,h.ph);const K=herbLift();_hs.setScalar(hidden?.001:K);_hm.compose(_hp,_hq,_hs);h.inst.setMatrixAt(h.idx,_hm);h.inst.instanceMatrix.needsUpdate=true;
+    if(h.instP){_hs.setScalar(h.harvested?K:.001);_hm.compose(_hp,_hq,_hs);h.instP.setMatrixAt(h.idx,_hm);h.instP.instanceMatrix.needsUpdate=true;}
     if(h._imr){h._imr.picked=h._imr.list.some(q=>q.harvested);if(h._imr.picked&&h.instP)h.instP.visible=h.inst.visible;}} // the picked bush stands where the whole one did
   const _hy=new THREE.Vector3(0,1,0);
   let _herbSyncT=0;
   // v80 S132 — re-seat a herb when the ground under it changes (a pad stamped after it was placed). S1289 — only herbs within HERB_LOD.far
   // (a square of it about you) have their ground read: propH reads the height five times, and every loaded herb's (845 about Dunmore)
   // cost 16–56 ms each half second (systems, Session 1278), for herbs too far off to be drawn. A far herb is re-seated as you come near.
-  function tickHerbSync(dt){_herbSyncT-=dt;if(_herbSyncT>0)return;_herbSyncT=.5;tickHerbLod();const F=HERB_LOD.far;
+  // the glints: a pool of eight sprites over the nearest herbs standing within 6 m, read each half second with the herbs' sync
+  const HERB_GLINT={n:8,r:6,pool:[],tex:null};
+  function herbGlintTex(){if(HERB_GLINT.tex)return HERB_GLINT.tex;const c=document.createElement('canvas');c.width=c.height=64;const x=c.getContext('2d'),g=x.createRadialGradient(32,32,0,32,32,10);
+    g.addColorStop(0,'rgba(255,255,255,1)');g.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=g;x.fillRect(0,0,64,64);x.globalCompositeOperation='lighter';
+    for(const [w,h] of [[30,1.6],[1.6,30]]){const l=x.createLinearGradient(32-w,32-h,32+w,32+h);l.addColorStop(0,'rgba(255,255,255,0)');l.addColorStop(.5,'rgba(255,255,255,.95)');l.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=l;x.fillRect(32-w,32-h,w*2,h*2);}
+    return (HERB_GLINT.tex=new THREE.CanvasTexture(c));}
+  function tickHerbGlints(){const P=HERB_GLINT.pool;if(window.OG_LOOK!=='new'){return;}
+    if(!P.length)for(let i=0;i<HERB_GLINT.n;i++){const s=new THREE.Sprite(new THREE.SpriteMaterial({map:herbGlintTex(),transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,opacity:.9}));s.scale.setScalar(.32);s.visible=false;s.name='herbGlint';P.push(s);}
+    const R=HERB_GLINT.r,near=[];for(const h of ZONES.world.herbs){if(!h.inst||h.harvested||!h.g.visible||Math.abs(h.x-px)>R||Math.abs(h.z-pz)>R)continue;const d=Math.hypot(h.x-px,h.z-pz);if(d<R)near.push([d,h]);}
+    near.sort((a,b)=>a[0]-b[0]);
+    for(let i=0;i<P.length;i++){const s=P[i],q=near[i];if(s.parent!==sc)sc.add(s);if(!q){s.visible=false;continue;}const h=q[1],o=(h.spread||.3)*.15;
+      s.position.set(h.x+Math.cos(h.ph)*o,propH(h.x,h.z)+(h.top||.3)*.85+.03,h.z-Math.sin(h.ph)*o);s.material.color.set(h.def.glowCol||0xffffff).lerp(_hw,.6);s.visible=true;}}
+  const _hw=new THREE.Color(1,1,1);
+  function tickHerbSync(dt){_herbSyncT-=dt;if(_herbSyncT>0)return;_herbSyncT=.5;tickHerbLod();try{tickHerbGlints();}catch(e){}const F=HERB_LOD.far;
     for(const h of ZONES.world.herbs){if(!h.inst)continue;const hidden=h.harvested||!h.g.visible;if(hidden!==h._shownHidden){h._shownHidden=hidden;h._y=propH(h.x,h.z);syncHerbInstance(h);continue;}
       if(Math.abs(h.x-px)>F||Math.abs(h.z-pz)>F)continue;const y=propH(h.x,h.z);if(Math.abs((h._y==null?-1e9:h._y)-y)>.05){h._y=y;syncHerbInstance(h);}}}
   function spawnChunkHerbs(ch){

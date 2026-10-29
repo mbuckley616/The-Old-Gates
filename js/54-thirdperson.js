@@ -262,11 +262,13 @@ function tpSet(g,x,y,z,k){g.rotation.x=_tpL(g.rotation.x,x,k);g.rotation.y=_tpL(
 // ── camera collision ──
 function tpInteriorBox(){const _intW={weapon:11,armor:11,potion:9,misc:10,inn:13,church:10,castle:18},_intD={weapon:10,armor:10,potion:9,misc:9,inn:11,church:16,castle:22},_ceil={weapon:2.4,armor:2.4,potion:2.2,misc:2.3,inn:2.5,church:3.8,castle:5.2};const t=currentHouse&&currentHouse.type||'misc';return {W:(currentHouse&&currentHouse._roomW)||_intW[t]||10,D:(currentHouse&&currentHouse._roomD)||_intD[t]||9,C:(currentHouse&&currentHouse._ceilH)||_ceil[t]||2.3};}
 function tpBlocked(x,z){
-  if(isInterior()){const b=tpInteriorBox();return x<.18||z<.18||x>b.W-.18||z>b.D-.18;}
+  if(isInterior()){const b=tpInteriorBox();return x<.18||z<.18||x>b.W-.18||z>b.D-.18||!!(currentHouse&&currentHouse._base&&currentHouse._eyeMax&&intSolidAt(x,z,.1,currentHouse._eyeMax-.2));}
   if(lid&&lid.startsWith('dyn_')){const r=.14;return dSolid(x-r,z-r)||dSolid(x+r,z-r)||dSolid(x-r,z+r)||dSolid(x+r,z+r);}
   if(activeZoneId==='world'&&typeof WORLD!=='undefined'&&WORLD.camSolid)return WORLD.camSolid(x,z);
   return currentZoneSolid(x,z);}
-function tpCeil(){if(isInterior())return tpInteriorBox().C-.22;if(lid&&lid.startsWith('dyn_'))return (currentFloor===2?FLOOR2_Y:0)+dCeil(px,pz)-.25;return 1e9;} /* S1293 — the roof over you (a gate's spaces) */
+function tpCeil(){if(isInterior()){const c=tpInteriorBox().C-.22,e=currentHouse&&currentHouse._eyeMax;return e?Math.min(c,e+.12):c;}if(lid&&lid.startsWith('dyn_'))return (currentFloor===2?FLOOR2_Y:0)+dCeil(px,pz)-.25;return 1e9;} /* S1293 — the roof over you (a gate's spaces) */
+/* S1572 — below deck (a room with house._eyeMax, the ship bases) the camera keeps under the beams' undersides, 8 cm clear (the eye
+   stoops to 0.2 under them, the pivot is 0.12 over the eye), and the hull's planking and the masts stop it as the room's walls do */
 function tpFloorAt(x,z,fallback){if(isInterior())return .15;if(lid&&lid.startsWith('dyn_'))return fallback+.15;let y=fallback;try{y=activeTerrainH(x,z);}catch(e){}if(activeZoneId==='world'&&typeof WORLD!=='undefined')y=Math.max(y,WORLD.SEA_Y);return y+.22;}
 function tpCamera(dt,camY){
   const fx=-Math.sin(yaw),fz=-Math.cos(yaw),rx=Math.cos(yaw),rz=-Math.sin(yaw);const cp=Math.cos(pitch),sp=Math.sin(pitch);
