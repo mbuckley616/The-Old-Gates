@@ -2566,7 +2566,8 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     const reg=house.reg||'irish',type=house.type||'misc',st=house.style||'irish';
     INT_BED_NATION=nationAt(house.doorX,house.doorZ); // S288 — the beds' wood
     furnFree();
-    house._exitX=null;house._arriveX=null;house._arriveZ=null; /* S1276 (S1392: and where you arrive) — the door in the middle unless the room built now says otherwise */
+    house._exitX=null;house._arriveX=null;house._arriveZ=null;house._eyeMax=null;house._exitText=null; /* S1276 (S1392: and where you arrive) — the door in the middle unless the room built now says otherwise */
+    if(shipBaseOk(house))return buildShipBase(house); /* S1555 — your kit sloop's hold, in her own lines (85-world-sea.js) */
     if(kitTaproom(house))return buildKitTaproom(house); /* S1161 — the kit's taproom, at its true size */
     if(kitAlehall(house))return buildKitAlehall(house); /* S1288 — the Mark's alehall, at its true size */
     if(kitTavern(house))return buildKitTavern(house); /* S1320 — Aurenne's tavern on the quay, at its true size */

@@ -18,7 +18,7 @@ const look = (where) => page.evaluate((where) => {
   if (!WORLD.ship.mesh) { worldState.ship = { cls: 'sloop', name: 'Test Gull', sails: 0, cargo: 0, hold: {} }; WORLD.spawnShip(_sea.x, _sea.z, 0.7); }
   const S = WORLD.ship; S.sailing = false; S.speed = 0; WORLD.tick(1 / 60, performance.now());
   const fx = -Math.sin(S.yaw), fz = -Math.cos(S.yaw), wheel = S.mesh.userData.wheel.getWorldPosition(new THREE.Vector3());
-  const hatch = { x: S.x + fx * (S.L / 2 - 3.2), z: S.z + fz * (S.L / 2 - 3.2) };
+  const hz = S.mesh.userData.hatchZ != null ? S.mesh.userData.hatchZ : S.L / 2 - 3.2, hatch = { x: S.x + fx * hz, z: S.z + fz * hz }; /* S1555: a kit hull's own hatch (the sloop's aft of her mast) */
   const at = where.at === 'helm' ? S.helm : where.at === 'hatch' ? hatch : where.at === 'nearHatch' ? { x: hatch.x - fx * 1.6, z: hatch.z - fz * 1.6 } : { x: S.helm.x - fx * where.back, z: S.helm.z - fz * where.back };
   px = at.x; pz = at.z; jumpY = 1.0; onGround = true;
   const eye = new THREE.Vector3(px, jumpY + 1.6, pz); CAM.position.copy(eye);

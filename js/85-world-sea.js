@@ -250,6 +250,7 @@
   // Michael's A on #306): one geometry a group a material, the square yard and sail a rig of their own about the mast, and a tiller
   // for the wheel. The game's contracts are kept: the deck's outline (at, inside the stanchions), what stands on her deck as props, the
   // hull's section for the nets, and the hatch forward at L/2-3.2 where the cabin's door is (cabinUpdate).
+  // S1555 — the sloop's hatch is the prototype's again, aft of the mast at z -2.0, where her hold's ladder comes up (PKIT.ships.sloopBase).
   // S1538 (Michael's A on #839) — she wears the dress of the island whose yard sold or last refitted her, kept on the ship
   // (worldState.ship.dress, 'gatelands' | 'mark' | 'aurenne'; a ship from before it is the Gatelands', as she was built)
   function shipDress(d){if(d==null)d=worldState.ship&&worldState.ship.dress;return d==='mark'||d==='aurenne'?d:'gatelands';}
@@ -263,7 +264,7 @@
   // and a forecastle (fore) over her first 3 m, open beneath on two posts (lo) with its ladder up the middle running aft from its edge; the
   // forecastle's rail and its forward end are 'hi' (as the aftcastle's after end now is), and under the ladder's upper half a 'deck' box, so nobody at the deck's height walks in under its treads. Her
   // hatch is her own, aft of the mast, since L/2-3.2 falls at the forecastle's ladder; her lashed cargo stands on deck as props.
-  function shipBakeKit(kind,dress){const S=kind==='cutter'?PKIT.ships.cutter({hatchZ:14/2-3.2}):kind==='caravel'?PKIT.ships.caravel():kind==='cog'?PKIT.ships.cog({dress}):kind==='galleon'?PKIT.ships.galleon({dress}):PKIT.ships.sloop({hatchZ:13/2-3.2,dress}),P=[];
+  function shipBakeKit(kind,dress){const S=kind==='cutter'?PKIT.ships.cutter({hatchZ:14/2-3.2}):kind==='caravel'?PKIT.ships.caravel():kind==='cog'?PKIT.ships.cog({dress}):kind==='galleon'?PKIT.ships.galleon({dress}):PKIT.ships.sloop({dress}),P=[];
     const zz=[];for(let z=S.zs;z<=S.zb;z+=.05)if(S.deckAt(z)>.45)zz.push(z);const z0=zz[0],z1=zz[zz.length-1];
     if(S.masts)for(const [x,z] of S.masts)P.push({x,z,r:.19});else P.push({x:0,z:S.mast[1],r:.17});P.push({x:-.45,z:S.mast[1]-.7,r:.17});const h=S.hatch;for(const q of S.hatches||[h])P.push({x:0,z:(q.z0+q.z1)/2,hx:(q.x1-q.x0)/2,hz:(q.z1-q.z0)/2,ry:0}); /* S1552 — the galleon's two */
     const C=S.castle;if(C){const w=Math.min(C.cw(C.z1),S.deckAt(C.z1)+.05),a=C.cw(C.z1)-.04,g=C.ladders.map(lx=>[lx-.36,lx+.36]),seg=(x0,x1,lv)=>{if(x1>x0)P.push({x:(x0+x1)/2,z:C.z1,hx:(x1-x0)/2,hz:.05,ry:0,lv});};
@@ -359,7 +360,7 @@
   const STOW_COL={grain:0xb39a66,salt:0xd2c9b4,wool:0xd6c9aa,furs:0x6a4a30,hides:0x986a44,beef:0x7a5228,fish:0x5e4424,iron:0x6e5638,silver:0x4a3222,dyes:0x8a6a40,glass:0xa8865a,timber:0xa27a4a};
   function shipStowSlots(key){const r=SHIP_GEO.get(key);if(!r||!r.deck)return null;if(r.stow)return r.stow;
     const L=r.L,W=r.W,P=r.props||[],kind=key.split('|')[0],lim=W/2-.8-.35-.27;const n=Math.max(1,Math.floor(2*Math.max(0,lim)/STOW_U)+1);
-    const zA=Math.max(-L/2+4.2,r.castle?r.castle.z1+.3:-1e9),zB=L/2-4.2,zM=(zA+zB)/2,slots=[]; /* S1544 — not under a castle */
+    const zA=Math.max(-L/2+4.2,r.castle?r.castle.z1+.3:-1e9),zB=L/2-(kind==='sloop'&&r.kit?3.2:4.2),zM=(zA+zB)/2,slots=[]; /* S1544 — not under a castle */ /* S1555 — the kit sloop's hatch is aft of her mast now: the deck forward of it, where it stood, is stowage */
     for(let z=zA+STOW_U/2;z<=zB-STOW_U/2+1e-6;z+=STOW_U)for(let i=0;i<n;i++){const x=(i-(n-1)/2)*STOW_U;
       if(Math.abs(x)+.28>r.deck.at(z)-.9)continue;
       if([r.castle,r.fore].some(C=>C&&C.ladders.some(lx=>Math.abs(x-lx)<.34+.28&&(C===r.fore?z>C.z0-C.lad-.28&&z<C.z0:z>C.z1&&z<C.z1+C.lad+.28))))continue; /* S1551 — nor under a ladder */
@@ -430,7 +431,7 @@
     const mesh=new THREE.Mesh(r.geo,r.mats||SHIP_MAT);mesh.castShadow=true;mesh.receiveShadow=true;
     const wheel=r.tiller?r.tiller.clone():r.wheel?r.wheel.clone():shipWheelMesh();if(!r.tiller&&!r.wheel)wheel.position.set(0,SHIP_DECK+.95,-r.L/2+2.8);mesh.add(wheel);mesh.userData.tiller=!!r.tiller; /* S1531 — the kit's sloop steers by a tiller */
     mesh.add(r.at?shipNetsMesh(r):shipNetMesh(SHIP_W||r.W||4.4)); /* S723 — the boarding nets laid on the hull (S638's stand-in where a bake has no section) */
-    mesh.userData.wheel=wheel;mesh.userData.deck=r.deck;mesh.userData.kind=kind;mesh.userData.props=r.props||[];mesh.userData.bakeKey=bk;mesh.userData.castle=r.castle||null;mesh.userData.fore=r.fore||null;mesh.userData.helm=r.helm||null;mesh.userData.hatchZ=r.hatchZ;mesh.userData.hatchOut=r.hatchOut;
+    mesh.userData.wheel=wheel;mesh.userData.deck=r.deck;mesh.userData.kind=kind;mesh.userData.props=r.props||[];mesh.userData.bakeKey=bk;mesh.userData.castle=r.castle||null;mesh.userData.fore=r.fore||null;mesh.userData.helm=r.helm||null;mesh.userData.hatchZ=r.hatchZ;mesh.userData.hatchOut=r.hatchOut;mesh.userData.kit=r.kit?r.kit.dress||'gatelands':null; /* S1555 — a kit hull, and her dress (the base below deck) */
     mesh.userData.rigs=(r.rigs||[]).map(q=>{const m=new THREE.Mesh(q.geo,q.mats||SHIP_MAT);m.castShadow=true;m.position.z=q.z;mesh.add(m);if(q.extra){const e=new THREE.Mesh(q.extra,SHIP_MAT);e.castShadow=true;m.add(e);}return {m,type:q.type,a:0};});
     mesh.userData.trimSnap=true;
     return mesh;
@@ -720,6 +721,39 @@
   }
   function hatchAimed(){const h=CABIN.house;_eyeB.min.set(h.doorX-.6,DECK_Y-.1,h.doorZ-.6);_eyeB.max.set(h.doorX+.6,DECK_Y+.25,h.doorZ+.6);return eyeOnBox(_eyeB,3.2);}
   function cabinPrompt(){if(!SHIP.mesh||SHIP.sailing)return null;const h=CABIN.house;return (Math.hypot(px-h.doorX,pz-h.doorZ)<2.2&&Math.abs(jumpY-DECK_Y)<1&&hatchAimed())?"Press 'E' to go below":null;}
+  // S1555 (backlog L6, OG-027, OG-072; Michael's A on #418: the base in the hull's own lines) — on the new look, going below on your own
+  // kit sloop is her hold (PKIT.ships.sloopBase, shipbase.js's Session 1129), not the old 7 by 8 m cabin: the hull seen from inside, the
+  // ladder up through the open hatch, the berth (rest and save), the sea chest (the stash), a cask, a lantern. Drawn in metres in the ship's
+  // frame and turned so the ladder's foot is the room's door (x = the keel, z = D, the bow towards z = 0, the floor at 0); nothing is scaled.
+  // The planking's inside is a run of solids a quarter metre long at shin height. Headroom is a sloop's: 1.58 m under the beams, so the
+  // eye stoops (house._eyeMax). The other classes keep the old cabin until their bases come in.
+  function shipBaseOk(house){return !!(house&&house.type==='cabin'&&window.OG_LOOK==='new'&&SHIP.mesh&&SHIP.mesh.userData.kit&&SHIP.mesh.userData.kind==='sloop'&&typeof PKIT!=='undefined'&&PKIT.ships&&PKIT.ships.sloopBase);}
+  function buildShipBase(house){
+    const B=PKIT.ships.sloopBase({dress:SHIP.mesh.userData.kit}),F0=B.floor,z0=B.hold.z0,z1=B.hold.z1,X=2.2,W=2*X,D=z1-z0;
+    const rx=x=>X-x,rz=z=>z1-z,ry=y=>y-F0,fr=b=>({x0:rx(b[3]),x1:rx(b[0]),z0:rz(b[5]),z1:rz(b[2]),y0:Math.max(0,ry(b[1])),y1:ry(b[4])});
+    house._counterFront=null;house.intW=W;house.intD=D;house._roomH=+(B.deckUnder-F0).toFixed(3);house._eyeMax=+(B.beamBottom-F0-.2).toFixed(3);
+    house._exitD=.8;house._exitW=.5;house._exitX=X;house._exitText="Press 'E' to go on deck";house._arriveX=X;house._arriveZ=+(D-.35).toFixed(3);house._arriveYaw=0;house._base=B;
+    const sc_=new THREE.Scene();interiorScene=sc_;landRoomPost(sc_);sc_.background=new THREE.Color(0x0c0806);sc_.fog=new THREE.Fog(0x0c0806,6,14);
+    intNPCMesh=null;intNPCPos={x:-99,z:-99};intBedPos=null;intStashPos=null;
+    const SOL=[];INT_SOL=SOL;FOOTHOLDS=[];INT_BEDS=[];INT_DOORS=[];INT_DOORS.house=house.id;INT_CHAIR=null;INT_NPCS=[];HATCH.active=false;HATCH.roof=false;INT_LOOT=null;INT_BOX=null;INT_SHELF=null;
+    B.group.rotation.y=Math.PI;B.group.position.set(X,-F0,z1);B.group.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false;}});sc_.add(B.group);
+    // the planking's inside, at 0.25 m over the floor, a slice a quarter metre long (the narrower of its two ends) on either side
+    for(let z=z0;z<z1-1e-6;z+=.25){const h=Math.min(B.hb(z,F0+.25),B.hb(Math.min(z1,z+.25),F0+.25));
+      SOL.push({x0:0,x1:X-h,z0:rz(z+.25),z1:rz(z),y0:-.5,y1:3},{x0:X+h,x1:W,z0:rz(z+.25),z1:rz(z),y0:-.5,y1:3});}
+    // the berth and its board front one solid from the floor; the chest, the cask and the mast; the ladder is climbed, not walked into
+    const it=n=>B.items.find(q=>q.name===n);
+    {const a=it('bunk').box,f=it('bunk front').box;SOL.push(fr([a[0],F0,a[2],Math.max(a[3],f[3]),a[4],a[5]]));
+      INT_BEDS.push({x:+rx((a[0]+a[3])/2).toFixed(3),z:+rz((a[2]+a[5])/2).toFixed(3),y:+ry(a[1]).toFixed(3),owner:'free',room:null,cz:+rz((a[2]+a[5])/2).toFixed(3)});intBedPos={x:INT_BEDS[0].x,z:INT_BEDS[0].z};}
+    for(const n of ['sea chest','water cask','mast'])SOL.push(fr(it(n).box));
+    {const c=it('sea chest').box;intStashPos={x:+rx((c[0]+c[3])/2).toFixed(3),z:+rz((c[2]+c[5])/2).toFixed(3)};}
+    // the sky over the open hatch, by the hour, and the day down through it; the lantern under the beam and the hold's air
+    const hr=typeof gameHour==='function'?gameHour():12,dayK=hr>=7&&hr<18?1:hr>=5&&hr<20?.4:0,hc=B.hatch,hx=rx((hc.x0+hc.x1)/2),hz=rz((hc.z0+hc.z1)/2),hy=ry(1.4);
+    {const m=new THREE.Mesh(new THREE.PlaneGeometry(hc.x1-hc.x0+.2,hc.z1-hc.z0+.2),new THREE.MeshBasicMaterial({color:dayK>=1?0xc4d0dc:dayK>0?0x8a7a7a:0x0e1420}));m.rotation.x=Math.PI/2;m.position.set(hx,hy,hz);m.userData.daylight=true;sc_.add(m);}
+    if(dayK){const s=new THREE.SpotLight(0xd4dcea,Math.min(6,2*dayK*(hc.x1-hc.x0)*(hc.z1-hc.z0)),6,1.0,1,1);s.position.set(hx,hy-.2,hz);s.target.position.set(hx,0,hz-.6);s.userData.daylight=true;sc_.add(s,s.target);}
+    const KA=kitRoomAir(sc_,.35);
+    for(const p of B.lights){const l=new THREE.PointLight(0xffaa44,1.1*KA.lamp,6);l.position.set(rx(p.x),ry(p.y),rz(p.z));sc_.add(l);}
+    return sc_;
+  }
 
   // ── whitecaps: foam by crest height + streak noise (used by the water material) ──
   function waterShader(sh){

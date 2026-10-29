@@ -46,7 +46,7 @@ const r = await page.evaluate(() => {
   BAG.length = 0; J(25); const lid0 = lid, h0 = currentHouse; lid = 'int_test'; currentHouse = { type: 'cabin', name: 'The Test Gull — cabin' };
   out.cabin = benchHere() && shipWorkHere(); bagAdd(benchItem('plank', 1)); bagAdd(survItem('pitch', 1)); worldState.ship.hull = 40;
   out.cabinWork = work('patch'); out.cabinHull = shipBars().hull; lid = lid0; currentHouse = h0;
-  out.perks = ['joinery:25', 'joinery:50', 'joinery:100'].every(k => PERK_LIVE.has(k)) && !PERK_LIVE.has('joinery:75');
+  out.perks = ['joinery:25', 'joinery:50', 'joinery:75', 'joinery:100'].every(k => PERK_LIVE.has(k)); /* S1555: Bowyer is live since S1549 (#851 A) */
   return out;
 });
 console.log(JSON.stringify(r));
@@ -57,15 +57,16 @@ check('two patches at Joinery 25: 40 + 13 + 13 = 66, each after 8 s, Joinery +6'
 check('the field cap at 25 is 70 of 100: the third patch stops there, the fourth is refused', r.cap === 70 && r.h3 === 70 && /yard/.test(r.capWhy) && r.left.planks === 2 && r.left.pitch === 3, r);
 check('walking off stops the work with nothing spent', r.walked.work === null && r.walked.hull === 40 && r.walked.planks, r.walked);
 check('under sail there is no work', /hove to/.test(r.sailingWhy), r.sailingWhy);
-check('the bench\'s page shows the patch and the splice at her side, not away', r.rowsShip === 7 && r.rowsAway === 5, { ship: r.rowsShip, away: r.rowsAway });
+check('the bench\'s page shows the patch and the splice at her side, not away', r.rowsShip - r.rowsAway === 2 && r.rowsAway >= 5 /* S1555: Bowyer's two bows (S1549) are rows of their own: 9 and 7 */, { ship: r.rowsShip, away: r.rowsAway });
 check('a splice at sea asks Field splice (25); at 25 the rig +20', (!r.atSea || /At sea/.test(r.sea24)) && r.rig1 === 60, { atSea: r.atSea, why: r.sea24, rig: r.rig1 });
 check('Tight seams: a patch at 50 is (8 + 10) × 1.5 = 27', r.patch50 === 27 && r.h50 === 47, r);
 check('Shipwright\'s hand: 4 s at 100; field work to full', r.secs100 === 4 && r.patch100 === 42 && r.cap100 === 100, r);
 check('her cabin is a bench, kit or none: a patch there', r.cabin && r.cabinHull === 53, r);
-check('Field splice, Tight seams and Shipwright\'s hand live; Bowyer not yet', r.perks, r.perks);
+check('Field splice, Tight seams, Bowyer and Shipwright\'s hand live', r.perks, r.perks);
 // Session 1524 — the cabin's bench drawn: below deck the kit's joiner's bench stands against the west wall at its true height (0.85 m),
 // in one mesh a material, its solid the bench's own footprint, clear of the bunk, the chart table, the chest and the sacks
-await page.evaluate(() => { cabinUpdate(); goToInterior(CABIN.house); });
+/* S1555: the kit sloop's hold (her base below deck, #418 A) has no bench, as shipbase.js drew it; the bench below is a cutter's, whose cabin is still the old room */
+await page.evaluate(() => { const S = WORLD.ship, x = S.x, z = S.z, y = S.yaw; sc.remove(S.mesh); SHIP.mesh = null; worldState.ship.cls = 'cutter'; WORLD.spawnShip(x, z, y); cabinUpdate(); goToInterior(CABIN.house); });
 for (let k = 0; k < 40 && !(await page.evaluate(() => isInterior())); k++) await page.waitForTimeout(250);
 const cb = await page.evaluate(() => { if (!isInterior() || currentHouse.type !== 'cabin') return null;
   const B = currentHouse._bench; let g = null; interiorScene.traverse(o => { if (o.name === 'joiner bench') g = o; }); if (!B || !g) return { B, g: !!g };

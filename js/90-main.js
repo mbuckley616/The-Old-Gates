@@ -449,7 +449,7 @@ function loop(now){
   // visual without needing a separate skeletal crouch animation.
   // S880 (F2a) — a swimmer's eye stays where the old eye put it over the water (SCALE.EYE_SWIM), not 1.65 above the swim floor
   const _swimEye = activeZoneId==='world' && typeof WORLD!=='undefined' && WORLD.isSwimming();
-  const _eyeTarget = _swimEye ? SCALE.EYE_SWIM : _sneaking ? EYE_CROUCH : EYE_STAND;
+  const _eyeTarget = Math.min(_swimEye ? SCALE.EYE_SWIM : _sneaking ? EYE_CROUCH : EYE_STAND, (isInterior() && currentHouse && currentHouse._eyeMax) || 9); /* S1555 — a room may stoop you: the sloop's hold, 1.58 m under her beams */
   _eyeHeightCur += (_eyeTarget - _eyeHeightCur) * Math.min(1, dt * CROUCH_LERP_RATE);
   const _bobMult = _sneaking ? SNEAK_BOB_MULT : 1.0;
   const bob=moving?(lid==='overworld'?Math.sin(swT*4)*.008*_bobMult:Math.sin(swT*3.8)*.012*_bobMult):0;
@@ -1061,7 +1061,7 @@ function loop(now){
     const _nbd=INT_BEDS.length?intBedTarget():null;const nearBed=INT_BEDS.length?(!!_nbd&&!!(typeof WORLD!=='undefined'&&WORLD.bedPrompt(_nbd))):(intBedPos && Math.hypot(px-intBedPos.x,pz-intBedPos.z)<TOUCH && bedAimed(intBedPos)); /* S645 — the prompt asks what E does: under the crosshair, and intBedPos only where E reads it */ // v80 — any usable bed
     const iprInt=document.getElementById('ipr');
     const _dpr=(typeof WORLD!=='undefined'&&WORLD.intDoorPrompt)?WORLD.intDoorPrompt():null; // v80 S143
-    if(nearExit){iprInt.textContent="Press 'E' to leave";iprInt.style.opacity='1';iprInt.style.display='block';}
+    if(nearExit){iprInt.textContent=(currentHouse&&currentHouse._exitText)||"Press 'E' to leave";iprInt.style.opacity='1';iprInt.style.display='block';}
     else if(_dpr&&!(_nbd&&nearBed)){iprInt.textContent=_dpr;iprInt.style.opacity='1';iprInt.style.display='block';}
     else if(nearStash){iprInt.textContent="Press 'E' to access stash";iprInt.style.opacity='1';iprInt.style.display='block';}
     else if(typeof benchNear==='function'&&benchNear()&&!benchOpen){iprInt.textContent="Press 'E' to work at the bench";iprInt.style.opacity='1';iprInt.style.display='block';} /* S1527 — the cabin's bench */
