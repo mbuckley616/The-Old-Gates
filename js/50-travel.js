@@ -777,6 +777,18 @@ const VEIN_TABLE={1:[['copper',.375],['tin',.375],['iron',.25]],2:[['iron',2/3],
 // copper or tin at 1, iron at 2, mithril in the highlands (3), and the wastes' three at 4
 const SUPPLY_ORE={1:['copper','tin'],2:['iron'],3:['mithril'],4:['mithril','adamant','obsidian']};
 function supplyOre(x,z,r){const L=SUPPLY_ORE[veinTier(x,z)]||SUPPLY_ORE[1];return L[Math.floor(r()*L.length)%L.length];}
+// S1561 — timber (Michael's A on #864): where a Fighters' hall's country is wooded, one Supply in three asks for 4 + 2 × the
+// rank's tier logs, pine in the Mark and the highlands (the vein table's tier 3), plain logs elsewhere. Only logs from trees you
+// fell after taking the task count (`onFell`, as a Mages' Gather counts herbs picked); bought logs never do. Wooded: the region
+// weighing most at the hall, among its cell's and the eight round it (read by place, never from REGIONS), is at least 0.4 dense
+// in trees that are not scrub or dead. Returns 'pine', 'log', or null where the country is not wooded.
+const TIMBER_P=1/3,TIMBER_DENSE=.4;
+function supplyWood(x,z){if(typeof getCell!=='function'||typeof cellOf!=='function')return null;const [ci,cj]=cellOf(x,z);let best=null,bw=-1e9;
+  for(let i=ci-1;i<=ci+1;i++)for(let j=cj-1;j<=cj+1;j++){const c=getCell(i,j);if(!c||!c.regions)continue;
+    for(const rg of c.regions){const w=1-Math.hypot(x-rg.x,z-rg.z)/rg.r;if(w>bw){bw=w;best=rg;}}}
+  if(!best||!(best.density>=TIMBER_DENSE)||FELL_NOT.includes(best.trees)||best.trees==='dead')return null;
+  let mark=false;try{mark=nationKeyOf(ci,cj)==='mark';}catch(e){}
+  return mark||veinTier(x,z)===3?'pine':'log';}
 const PICK_ITEM={name:PICK_NAME,ico:'⛏',type:'misc',weight:4,buyPrice:40,sellMult:.4,tool:'pick'};
 function oreItem(k,qty){const o=ORE_DEF[k];return {name:o.name,ico:'🪨',type:'misc',weight:2,buyPrice:o.price,sellMult:.3,ore:k,qty:qty||1};}
 function hasPick(){return BAG.some(b=>b&&b.tool==='pick');}
@@ -956,6 +968,7 @@ function strikeTree(ch,t,n){
   n++;const need=fellStrikes();
   if(n<need){skillUse('woodcutting',1);return {n,need};}
   const k=treeLogs(t),hw=heartwoodHere(t);fellTree(ch,t);it.qty=k;bagAdd(it);if(hw)bagAdd(benchItem('heartlog',1));skillUse('woodcutting',4);if(perk('woodcutting',25))layTrunk(ch,t,yaw);
+  if(typeof WORLD!=='undefined'&&WORLD.guild&&WORLD.guild.onFell)WORLD.guild.onFell(it.log,k); /* S1561 — a timber Supply counts the fall */
   return {n,need,logs:k,item:it,heart:hw};}
 // working a tree: E starts it, E again, walking off, or the fall stops it
 let CHOP=null;

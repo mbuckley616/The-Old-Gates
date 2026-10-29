@@ -92,7 +92,7 @@ const r = await page.evaluate(() => {
   // ── S1533: the Fighters' Guild's Supply (#814 A): one task in five; the hall's country's ore; dug, carried, and taken at turn-in ──
   { const site = siteAnywhere('dunmore'), G = gstate(), keep = JSON.stringify(G.guild_f), kinds = {}; let sup = null;
     G.guild_f = { done: 3, active: null };
-    for (let i = 0; i < 400; i++) { const t = genTask('guild_f', site); kinds[t.kind] = (kinds[t.kind] || 0) + 1; if (t.kind === 'supply' && !sup) sup = t; }
+    for (let i = 0; i < 400; i++) { const t = genTask('guild_f', site); kinds[t.kind] = (kinds[t.kind] || 0) + 1; if (t.kind === 'supply' && t.ore && !sup) sup = t; /* S1561: a timber Supply (#864) has no ore */ }
     const want = SUPPLY_ORE[veinTier(site.x, site.z)];
     out.supply = { kinds, tier: veinTier(site.x, site.z), want, ore: sup && sup.ore, need: sup && sup.need, short: sup && sup.short };
     if (sup) { G.guild_f.active = sup; BAG.length = 0; bagAdd({ ...PICK_ITEM }); SKILLS.mining = { lv: 100, p: 0 };

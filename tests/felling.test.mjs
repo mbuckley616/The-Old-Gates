@@ -101,6 +101,22 @@ const r = await page.evaluate(() => {
     bagAdd({ ...JOINER_ITEM }); openBenchPage(); out.heartRow = [...document.querySelectorAll('#bn-list [data-k]')].some(d => d.dataset.k === 'heartspar'); closeBenchPage();
     out.heartSpar = benchMake('heartspar'); out.heartLeft = { log: bagCount(b => b.heartwood === 'log'), spar: bagCount(b => b.heartwood === 'spar'), plainSpar: bagCount(b => b.spar) };
     const d = JSON.parse(ssStringify(_buildSavePayload())); out.heartSaved = JSON.stringify(d).includes('"heartwood":"spar"'); }
+  // ── S1561: timber in the Fighters' Supply (#864 A): one Supply in three where the hall's country is wooded; counted at the fall ──
+  { const wooded = SITES.find(t => t.name && supplyWood(t.x, t.z)), bare = SITES.find(t => t.name && !supplyWood(t.x, t.z)), G = gstate(), keep = JSON.stringify(G.guild_f);
+    const roll = site => { G.guild_f = { done: 3, active: null }; let sup = 0, wood = 0, first = null; for (let i = 0; i < 600; i++) { const t = genTask('guild_f', site); if (t.kind === 'supply') { sup++; if (t.wood) { wood++; first = first || t; } } } return { sup, wood, first }; };
+    out.timber = { wooded: wooded && wooded.name, kind: wooded && supplyWood(wooded.x, wooded.z), bare: bare && bare.name };
+    if (wooded) { const w = roll(wooded); out.timber.w = { sup: w.sup, wood: w.wood, need: w.first && w.first.need, short: w.first && w.first.short, desc: w.first && w.first.desc };
+      if (bare) { const b = roll(bare); out.timber.b = { sup: b.sup, wood: b.wood }; }
+      const T = w.first; if (T) { const u = all.find(x => chunks.get(chunkKey(x.ch.cx, x.ch.cz)) === x.ch && !x.t.out && !treeDown(x.t.id));
+        G.guild_f = { done: 3, active: T }; T.wood = u && u.t.sp === 'pine' ? 'pine' : 'log'; BAG.length = 0; bagAdd({ ...HATCHET_ITEM }); bagAdd(survItem(T.wood, 12));
+        out.timber.bought = turnIn('guild_f'); WORLD.guild.onFell(T.wood === 'pine' ? 'log' : 'pine', 9); out.timber.wrongKind = T.have;
+        SKILLS.woodcutting = { lv: 100, p: 0 }; let n = 0;
+        for (const x of all) { if (T.have >= T.need || n > 12) break; if (chunks.get(chunkKey(x.ch.cx, x.ch.cz)) !== x.ch || x.t.out || treeDown(x.t.id) || (x.t.sp === 'pine') !== (T.wood === 'pine')) continue;
+          px = x.t.x + x.t.r + .6; pz = x.t.z; strikeTree(x.ch, x.t, 9); n++; }
+        out.timber.felled = n; out.timber.have = T.have; out.timber.done = !!T.doneAt || T.doneAt === 0; const held = bagCount(b => b.log === T.wood), g0 = gold;
+        out.timber.said = turnIn('guild_f'); out.timber.paid = gold - g0; out.timber.kept = bagCount(b => b.log === T.wood) === held; out.timber.active = G.guild_f.active;
+        out.timber.saved = JSON.stringify(JSON.parse(ssStringify(_buildSavePayload())).wS.guild || {}).length > 0; } }
+    G.guild_f = JSON.parse(keep); }
   // ── the shops ──
   out.at = { weapon: hatchetFor({ type: 'weapon' }).length, misc: hatchetFor({ type: 'misc' }).length, potion: hatchetFor({ type: 'potion' }).length };
   out.price = HATCHET_ITEM.buyPrice; out.w = HATCHET_ITEM.weight; out.logW = SURV_ITEMS.log.weight;
@@ -136,5 +152,7 @@ check('a war axe in hand works at half pace', r.axeTool === 'axe' && Math.abs(r.
 check('Heartwood (75) is live; a great tree is one oak or pine in ten, never a birch', r.great.live && r.great.oak > .07 && r.great.oak < .13 && r.great.pine > .07 && r.great.pine < .13 && r.great.birch === 0, r.great);
 check('a great tree felled at Woodcutting 74 gives its logs only; at 75 a Heartwood Log too, said at the start and the fall', r.great74 && r.great74.down && r.great74.heart === 0 && r.great75 && r.great75.down && r.great75.heart === 1 && r.great75.logs >= 2 && r.great75.said.some(m => /heartwood in it/.test(m)) && r.great75.said.some(m => /and a Heartwood Log/.test(m)), [r.great74, r.great75]);
 check('the bench shows the Heartwood Spar row and makes one from the log; it is no plain spar, and the save keeps it', r.heartRow && r.heartSpar.made && r.heartLeft.log === 0 && r.heartLeft.spar === 1 && r.heartLeft.plainSpar === 0 && r.heartSaved, [r.heartSpar.why, r.heartLeft, r.heartSaved]);
+check('timber: one Supply in three where the hall\'s country is wooded, none where it is not; 4 + 2 × tier logs (6 at tier 1)', r.timber.w && Math.abs(r.timber.w.wood / r.timber.w.sup - 1 / 3) < .1 && (!r.timber.b || r.timber.b.wood === 0) && r.timber.w.need === 6 && /^Supply 6 (Pine )?Logs$/.test(r.timber.w.short) && /hatchet/.test(r.timber.w.desc), r.timber);
+check('bought logs and the other kind never count; logs felled after taking it do, and the guild pays and leaves the bag alone', /^Not yet\. 0\/6\./.test(r.timber.bought || '') && r.timber.wrongKind === 0 && r.timber.have >= 6 && r.timber.done && /^Good work\. \d+ gold/.test(r.timber.said || '') && r.timber.paid >= 110 && r.timber.kept && r.timber.active === null, r.timber);
 check('the hatchet at the smith and the goods shop, 30 gold, weight 3; a log weighs 3', r.at.weapon === 1 && r.at.misc === 1 && r.at.potion === 0 && r.price === 30 && r.w === 3 && r.logW === 3, r.at);
 await g.close();
