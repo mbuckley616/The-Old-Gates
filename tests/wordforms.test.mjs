@@ -9,6 +9,7 @@
 // your facing takes ×1.5 the word (Caor 30, Tintreach 36) for ×0.6 its mana; Tintreach staggers, Reo holds 2 s.
 // Session 1604: the riders on a laid thing: a hot pillar (3 a second to a foe touching it), Fréamh's root (the first foe across, 1 s,
 // once), Leigheas's mend (2 a second while you stand at it), Séideán's throw (a pillar under you sends you up at Éan's 8.4 m/s), Solas's light.
+// Session 1609: the cone dressed (the look builder's heldDress): three draws, under 1,500 triangles, and it answers no ray.
 // Session 1606: Tintreach sent, a bolt of 24 that leaps to the nearest other foe within 5 m of the one struck, for half.
 import { boot, check } from './lib/game.mjs';
 import { enterDungeon } from './lib/dungeonshot.mjs';
@@ -43,6 +44,8 @@ const r = await page.evaluate(() => {
     e.def = 8; out.boltArm = applySpellDamage(e, SPELLS.find(s => s.id === 'caor'), 2).dmg; out.tickArm = applySpellDamage(e, SPELLS.find(s => s.id === 'caor'), 2, { power: FORMS.held.power }).dmg; e.def = 0;
     // a second held at 4 m hull to hull, dead ahead: four ticks, 15 mana, the walk halved
     put(R - .05, 0); mana = 1000; const hp0 = e.hp; out.said = start(); out.on = heldOn(); out.walk = commitMoveMult();
+    { const m = HELD && HELD.mesh; let draws = 0, tris = 0; if (m) m.traverse(o => { if (o.isMesh || o.isPoints) draws++; if (o.isMesh) tris += o.geometry.index.count / 3; });
+      out.dress = m && { name: m.name, inScene: m.parent === scene, draws, tris, rayless: m.children.every(o => { const hits = []; o.raycast(new THREE.Raycaster(), hits); return !hits.length; }) }; }
     run(1); out.sec = { ticks: HELD && HELD.ticks, mana: +(1000 - mana).toFixed(2), dealt: hp0 - e.hp };
     K['KeyF'] = false; heldTick(0); out.up = { on: heldOn(), cd: +spCd.toFixed(2), rec: castRecovering() }; _castFreeAt = 0; out.walkAfter = commitMoveMult();
     // the cone's edges: 0.1 m past the reach, and 29° and 31° off the facing
@@ -61,6 +64,7 @@ check(`the Held form is not a Novice's ("${r.unheld}"); granted, Cloch Ghéar ha
 check(`a tick is ×0.25 of a bolt (${r.tick} of ${r.bolt}), the armour taken ×0.25 too (${r.tickArm} of ${r.boltArm})`, Math.abs(r.tick * 4 - r.bolt) <= 2 && Math.abs(r.tickArm * 4 - r.boltArm) <= 2, r);
 check(`F held pours it (${r.said}): four ticks in a second (${r.sec && r.sec.ticks}), ${r.sec && r.sec.dealt} dealt`, r.on && r.sec.ticks === 4 && r.sec.dealt === r.tick * 4, r);
 check(`a second of Caor held at Tine 50 takes 15 mana (${r.sec && r.sec.mana}), the sheet's ×0.5 a second`, r.sec && r.sec.mana === 15, r);
+check(`the cone is dressed: ${r.dress && r.dress.draws} draws, ${r.dress && r.dress.tris} triangles, and it answers no ray`, r.dress && r.dress.name === 'held-caor' && r.dress.inScene && r.dress.draws === 3 && r.dress.tris < 1500 && r.dress.rayless, r.dress);
 check(`you walk at ×${r.walk} while it is held, ×${r.walkAfter} after`, r.walk === .5 && r.walkAfter === 1, r);
 check(`F up ends it, with the word's cooldown (${r.up && r.up.cd} s) and the Cast row's recovery`, r.up && !r.up.on && r.up.cd > 1 && r.up.rec, r);
 check(`the cone reaches ${r.R} m centre to centre (4 m from your edge) and not 0.1 m past; 29° off your facing and not 31°, nor behind`, r.edge.in && !r.edge.out && r.edge.a29 && !r.edge.a31 && !r.edge.behind, r.edge);

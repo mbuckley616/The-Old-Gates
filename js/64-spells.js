@@ -1115,6 +1115,8 @@ function laidRiderTick(){const L=laidLive();if(!L||!L.rideR)return;const R=RIDER
       if(e.hp<=0){if(dun)killE(e,' (burned)');else killZoneEnemy(e,scene,' (burned)');}}
     if(R.hps&&laidInside(L,px,pz,.3)&&jumpY<=L.top+STEP_UP){PHP=Math.min(effMaxHP(),PHP+R.hps);}}}
 function laidMesh(L){if(typeof THREE==='undefined'||typeof scene==='undefined'||!scene)return null;
+  const d=typeof laidDress==='function'?laidDress(L):null; /* S1600 — the look builder's dress (82-world-structures.js), built from its base */
+  if(d){if(L.r!=null)d.position.set(L.x,L.base,L.z);else{d.position.set(L.x+L.ux*L.hl,L.base,L.z+L.uz*L.hl);d.rotation.y=Math.atan2(L.ux,L.uz);}scene.add(d);return d;}
   let geo,col,op=1;
   if(L.kind==='pillar'){geo=new THREE.CylinderGeometry(L.r*.92,L.r,L.top-L.base,10);col=0x8a8378;}
   else if(L.kind==='updraft'){geo=new THREE.CylinderGeometry(L.r,L.r*.8,3,12,1,true);col=0xcfe8ee;op=.18;}
@@ -1320,6 +1322,8 @@ function riderMixedWild(word,rider){const a=WORD_BY[word],b=WORD_BY[rider];retur
 // the cone drawn: open, faint, the word's colour, its point at your chest (the look builder's to dress)
 function heldMesh(H){if(typeof THREE==='undefined'||typeof scene==='undefined'||!scene)return null;
   const R=FORMS.held.reach+HULL_YOU,rad=R*Math.tan(FORMS.held.cone/2*Math.PI/180);
+  const d=typeof heldDress==='function'?heldDress(H,R,rad):null; /* S1609 — the look builder's dress (82-world-structures.js), its point at the origin, its mouth along −z */
+  if(d){scene.add(d);return d;}
   const geo=new THREE.ConeGeometry(rad,R,16,1,true);geo.translate(0,-R/2,0);geo.rotateX(Math.PI/2);
   const m=new THREE.Mesh(geo,new THREE.MeshBasicMaterial({color:H.sp.glowCol||0xffffff,transparent:true,opacity:.16,depthWrite:false,side:THREE.DoubleSide}));
   const g=new THREE.Group();g.name='held-'+H.word;g.add(m);scene.add(g);return g;}

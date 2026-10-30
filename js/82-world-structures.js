@@ -2153,4 +2153,112 @@
     if(!WAYLAMP_PROP||WAYLAMP_PROP.key!==key||WAYLAMP_PROP.group.parent!==sc){waylampPropDrop();const t=performance.now();if(t<_wlTry&&key===_wlKey)return;const sp=waylampSpot(h);if(!sp){_wlTry=t+5000;_wlKey=key;return;} /* no spot yet: the house not drawn, or no clear wall; try again in 5 s */
       const W=waylampProp(want.lit);W.group.position.set(sp.x,sp.y,sp.z);W.group.rotation.y=sp.ry;sc.add(W.group);WAYLAMP_PROP=Object.assign(W,{key,house:h.id,spot:sp});}
     if(WAYLAMP_PROP.halo)WAYLAMP_PROP.halo.material.opacity=typeof isNight==='function'&&isNight()?.6:.15;}
+  // S1600 — magic B's laid things dressed (the systems builder's S1590 left them plain cylinders and a slab). laidDress(L) builds the
+  // thing at the origin, y 0 its base, and laidMesh (64-spells.js) places it: the walkable top, its reach and its solid are the rule's
+  // and untouched (the pillar's top is L.top, the floe's and the bridge's tops flat at L.top). Each is what the sheet's words say:
+  // Cloch's pillar is gate stone, three rough drums of eight sides with a lichened foot and rubble thrown up round it, a cut sigil on
+  // the top drum lit amber (a gate's ring and its point, never a cross: the Weaver's sign is not the church's); Sioc's floe a broken ice plate, eleven sides within 0.96–1.06 of its round, a white top cracked, deep blue
+  // sides and shards beside it; the frozen wave a deck of blue-green ice with its crest standing frozen along both edges, foam-white,
+  // and icicles under it; Séideán's updraft three helical ribbons of wind turning up a 3 m column, a ring of stirred air on the ground
+  // and motes carried up (cosmetic, by performance.now(), so a dropped frame changes nothing). One VC_MAT draw each, plus the sigil's
+  // or the wind's own; the updraft never answers a ray.
+  let _ldSigil=null,_ldWind=null,_ldMote=null;
+  function laidDress(L){if(typeof THREE==='undefined'||typeof mergeParts!=='function')return null;
+    const g=new THREE.Group(),P=[],C=h=>new THREE.Color(h);let seed=Math.abs(Math.round(L.x*7.3+L.z*3.1))%997+1;const rn=()=>(seed=(seed*16807)%2147483647)/2147483647;
+    g.name='laid-'+L.kind;
+    if(L.kind==='pillar'){const h=L.top-L.base,r=L.r,dh=h/3;
+      for(let k=0;k<3;k++){const rb=r*(1-k*.04),rt=r*(.97-k*.04);
+        P.push({geo:new THREE.CylinderGeometry(rt,rb,dh-.012,8),color:C(k===1?0x625c53:0x6d665b),y:k*dh+dh/2-.006+(k===2?.012:0),ry:k*.31+rn()*.2,rx:(rn()-.5)*.04,rz:(rn()-.5)*.04});
+        if(k<2)P.push({geo:new THREE.CylinderGeometry(rt*.94,rt*.94,.024,8),color:C(0x3e3a35),y:(k+1)*dh,ry:k*.31});}
+      P.push({geo:new THREE.CylinderGeometry(r*1.04,r*1.08,.14,8),color:C(0x4f5a3c),y:.07,ry:.2});
+      for(let k=0;k<7;k++){const a=k/7*Math.PI*2+rn()*.5,d=r+.12+rn()*.18,s=.07+rn()*.08;
+        P.push({geo:new THREE.DodecahedronGeometry(s,0),color:C(k%2?0x4e4a43:0x5c574e),x:Math.cos(a)*d,y:s*.35,z:Math.sin(a)*d,rx:rn()*3,ry:rn()*3,sy:.7});}
+      const m=new THREE.Mesh(mergeParts(P),VC_MAT);m.castShadow=m.receiveShadow=true;g.add(m);
+      if(!_ldSigil)_ldSigil=new THREE.MeshBasicMaterial({color:0xffb040});
+      const S=[],rr=r*.89+.006,yy=2.5*dh;
+      for(let k=0;k<4;k++){const a=k/4*Math.PI*2+.62+Math.PI/8;
+        S.push({geo:new THREE.TorusGeometry(.075,.011,4,14),x:Math.sin(a)*rr,y:yy,z:Math.cos(a)*rr,ry:a});
+        S.push({geo:new THREE.CircleGeometry(.022,6),x:Math.sin(a)*(rr+.004),y:yy,z:Math.cos(a)*(rr+.004),ry:a});}
+      S.forEach(s=>s.color=C(0xffffff));const sg=new THREE.Mesh(mergeParts(S),_ldSigil);sg.name='laid-sigil';g.add(sg);}
+    else if(L.kind==='floe'){const h=L.top-L.base,r=L.r,sh=new THREE.Shape(),N=11;
+      for(let k=0;k<N;k++){const a=k/N*Math.PI*2+rn()*.25,d=r*(.96+rn()*.1);k?sh.lineTo(Math.cos(a)*d,Math.sin(a)*d):sh.moveTo(Math.cos(a)*d,Math.sin(a)*d);}
+      const side=new THREE.ExtrudeGeometry(sh,{depth:h,bevelEnabled:false});side.rotateX(-Math.PI/2);
+      const top=new THREE.ShapeGeometry(sh);top.rotateX(-Math.PI/2);
+      P.push({geo:side,color:C(0x4f86a0)},{geo:top,color:C(0xb4cfdb),y:h+.003});
+      for(let k=0;k<4;k++){const a=rn()*Math.PI*2,l=r*(.5+rn()*.4);P.push({geo:new THREE.BoxGeometry(l,.004,.025),color:C(0x6f9cb0),x:Math.cos(a)*l*.45,y:h+.006,z:-Math.sin(a)*l*.45,ry:a});}
+      for(let k=0;k<4;k++){const a=rn()*Math.PI*2,d=r+.2+rn()*.5,s=.1+rn()*.12;P.push({geo:new THREE.DodecahedronGeometry(s,0),color:C(0x9fc0ce),x:Math.cos(a)*d,y:h-.12,z:Math.sin(a)*d,sy:.45,ry:rn()*3});}
+      const m=new THREE.Mesh(mergeParts(P),VC_MAT);m.receiveShadow=true;g.add(m);}
+    else if(L.kind==='bridge'){const h=L.top-L.base,w=L.hw*2,l=L.hl*2,n=Math.max(4,Math.round(l/.5));
+      P.push({geo:new THREE.BoxGeometry(w,h,l),color:C(0x4a8aa2),y:h/2});
+      P.push({geo:new THREE.BoxGeometry(w-.06,.006,l-.06),color:C(0x9cc6d4),y:h+.003});
+      for(const sd of [-1,1])for(let k=0;k<n;k++){const zz=-l/2+(k+.3+rn()*.4)*l/n,cr=.08+rn()*.3,wd=.12+rn()*.1;
+        P.push({geo:new THREE.CylinderGeometry(wd*.4,wd,cr+.12,5),color:C(0x6aa6bc),x:sd*(L.hw+.04),y:h+cr/2-.06,z:zz,rz:-sd*(.35+rn()*.4),ry:rn()*3,sz:1.6+rn()});
+        P.push({geo:new THREE.DodecahedronGeometry(.05+cr*.25,0),color:C(0xc6dde6),x:sd*(L.hw+.08+cr*.35),y:h+cr*.9,z:zz,sy:.6,ry:rn()*3});
+        if(rn()<.7)P.push({geo:new THREE.ConeGeometry(.035+rn()*.03,.18+rn()*.3,5),color:C(0x86b8ca),x:sd*(L.hw-.1-rn()*.5),y:-.12,z:zz+rn()*.3,rx:Math.PI});}
+      const m=new THREE.Mesh(mergeParts(P),VC_MAT);m.castShadow=m.receiveShadow=true;g.add(m);}
+    else if(L.kind==='updraft'){const r=L.r,H=3,seg=40;
+      if(!_ldWind)_ldWind=new THREE.MeshBasicMaterial({color:0xd8f0f6,transparent:true,opacity:.32,depthWrite:false,side:THREE.DoubleSide,blending:THREE.AdditiveBlending});
+      const pos=[],idx=[];let b=0;
+      for(let s=0;s<3;s++){for(let i=0;i<=seg;i++){const t=i/seg,a=s/3*Math.PI*2+t*Math.PI*3,rad=r*(.92-.32*t),y=t*H,hw=.05+.05*Math.sin(t*Math.PI);
+          pos.push(Math.cos(a)*rad,y-hw,Math.sin(a)*rad,Math.cos(a)*rad,y+hw,Math.sin(a)*rad);
+          if(i<seg)idx.push(b+i*2,b+i*2+1,b+i*2+2,b+i*2+1,b+i*2+3,b+i*2+2);}b+=(seg+1)*2;}
+      const rg=new THREE.BufferGeometry();rg.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));rg.setIndex(idx);
+      const rib=new THREE.Mesh(rg,_ldWind);rib.name='laid-wind';
+      const ring=new THREE.Mesh(new THREE.RingGeometry(r*.55,r,24,1),_ldWind);ring.rotation.x=-Math.PI/2;ring.position.y=.03;
+      if(!_ldMote)_ldMote=new THREE.PointsMaterial({color:0xeef8fa,size:.05,transparent:true,opacity:.7,depthWrite:false});
+      const M=24,mp=new Float32Array(M*3),ph=[];for(let i=0;i<M;i++)ph.push([rn()*Math.PI*2,rn(),.3+rn()*.6]);
+      const mg=new THREE.BufferGeometry();mg.setAttribute('position',new THREE.BufferAttribute(mp,3));const pts=new THREE.Points(mg,_ldMote);pts.frustumCulled=false;
+      rib.onBeforeRender=()=>{const t=performance.now()/1000;rib.rotation.y=-t*1.6;ring.rotation.z=t*.9;
+        for(let i=0;i<M;i++){const p=ph[i],u=(p[1]+t*.45)%1,a=p[0]+t*2.2+u*4;mp[i*3]=Math.cos(a)*r*p[2];mp[i*3+1]=u*H;mp[i*3+2]=Math.sin(a)*r*p[2];}
+        mg.attributes.position.needsUpdate=true;};
+      [rib,ring,pts].forEach(o=>{o.raycast=()=>{};g.add(o);});}
+    else return null;
+    return g;}
+  // S1609 — magic B's held cone dressed (the systems builder's S1601 drew it as one open cone at 0.16, the word's glow colour).
+  // heldDress(H,R,rad) builds it with its point at the origin and its mouth R along −z, rad across, and heldMesh (64-spells.js)
+  // carries it at your chest each frame; the reach, the 60° and every tick are the rule's and untouched. What pours is the word's
+  // own: Caor a stream of flame, gold at the hand going to red and out at the mouth; Sioc a breath of frost, pale blue, slower, with
+  // flakes turning in it; Séideán a gale, near-white streaks running out along the cone. Each is two shells (an outer sheath and a
+  // narrower core) under additive blending, faded by vertex colour (dark at the point and at the mouth, so the cone has no rim) and streaked round its circle into tongues (five for flame, three for frost, seven for the gale), by
+  // its face's turn from the eye (so the shells' edges, where the layers stack, do not burn white) and by its distance from the eye
+  // under 2.2 m (the point sits 0.55 m under your eye, and first person would be washed out); plus 48 motes (embers, flakes, grit) carried out along it. All cosmetic, by performance.now(),
+  // so a dropped frame changes nothing. Three draws; it never answers a ray and casts no shadow.
+  const HELD_LOOK={
+    caor:{near:[1,.82,.38],mid:[1,.46,.1],far:[.55,.08,.02],core:[1,.95,.7],mote:[1,.7,.25],spin:2.4,flow:1.25,flick:.18,motes:'ember',tongues:5},
+    sioc:{near:[.75,.9,1],mid:[.45,.68,.9],far:[.16,.26,.4],core:[.92,.97,1],mote:[.95,.98,1],spin:.7,flow:.55,flick:.06,motes:'flake',tongues:3},
+    sideen:{near:[.85,.92,.9],mid:[.6,.7,.7],far:[.2,.24,.24],core:[.95,1,.98],mote:[.85,.9,.85],spin:4,flow:1.9,flick:.1,motes:'grit',tongues:7}};
+  let _hdMat=null,_hdPts=null;
+  function heldShell(R,rad,tw,ang,look,core){const seg=core?10:14,ring=18,pos=[],col=[],idx=[];
+    for(let i=0;i<=ring;i++){const t=i/ring,z=-t*R;
+      const ramp=Math.min(1,t/.16)*Math.pow(1-t,.7)*(core?1.15:1),c=core?look.core:(t<.45?look.near.map((v,k)=>v+(look.mid[k]-v)*t/.45):look.mid.map((v,k)=>v+(look.far[k]-v)*(t-.45)/.55));
+      for(let j=0;j<=seg;j++){const a=j/seg*Math.PI*2+t*tw,w=1+Math.sin(a*3+t*7)*.06,r=t*rad*w*(core?.45:1);
+        pos.push(Math.cos(a)*r,Math.sin(a)*r,z);const st=Math.max(0,Math.sin(a*look.tongues+t*9)*.6+Math.sin(a*(look.tongues+3)-t*5)*.4),k=ramp*(core?.38:.55)*(.25+.75*st);col.push(c[0]*k,c[1]*k,c[2]*k);
+        if(i<ring&&j<seg){const p=i*(seg+1)+j;idx.push(p,p+seg+1,p+1,p+1,p+seg+1,p+seg+2);}}}
+    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
+    g.setAttribute('color',new THREE.Float32BufferAttribute(col,3));g.setIndex(idx);g.computeVertexNormals();g.rotateZ(ang);return g;}
+  function heldDress(H,R,rad){if(typeof THREE==='undefined')return null;
+    const look=HELD_LOOK[H.word]||HELD_LOOK.sideen,g=new THREE.Group();g.name='held-'+H.word;
+    if(!_hdMat)_hdMat=new THREE.ShaderMaterial({transparent:true,depthWrite:false,side:THREE.DoubleSide,blending:THREE.AdditiveBlending,fog:false,
+      vertexShader:'attribute vec3 color;varying vec3 vC;varying vec3 vN;varying vec3 vP;void main(){vC=color;vN=normalMatrix*normal;vec4 mv=modelViewMatrix*vec4(position,1.);vP=mv.xyz;gl_Position=projectionMatrix*mv;}',
+      fragmentShader:'varying vec3 vC;varying vec3 vN;varying vec3 vP;void main(){float d=length(vP),k=abs(dot(normalize(vN),vP/d));k=smoothstep(0.,.55,k)*smoothstep(.7,2.2,d);gl_FragColor=vec4(vC*k,1.);}'});
+    if(!_hdPts){const cv=document.createElement('canvas');cv.width=cv.height=32;const cx=cv.getContext('2d'),gr=cx.createRadialGradient(16,16,0,16,16,16);
+      gr.addColorStop(0,'rgba(255,255,255,1)');gr.addColorStop(.35,'rgba(255,255,255,.6)');gr.addColorStop(1,'rgba(255,255,255,0)');cx.fillStyle=gr;cx.fillRect(0,0,32,32);
+      _hdPts=new THREE.PointsMaterial({vertexColors:true,size:.07,map:new THREE.CanvasTexture(cv),transparent:true,depthWrite:false,blending:THREE.AdditiveBlending});}
+    const sheath=new THREE.Mesh(heldShell(R,rad,look.spin*.9,0,look,false),_hdMat),core=new THREE.Mesh(heldShell(R*.7,rad,-look.spin*1.3,1,look,true),_hdMat);
+    sheath.name='held-sheath';core.name='held-core';sheath.frustumCulled=false;
+    const M=48,mp=new Float32Array(M*3),mc=new Float32Array(M*3),ph=[];let seed=7;const rn=()=>(seed=(seed*16807)%2147483647)/2147483647;
+    for(let i=0;i<M;i++)ph.push([rn()*Math.PI*2,rn(),.25+rn()*.75,.7+rn()*.6]);
+    const mg=new THREE.BufferGeometry();mg.setAttribute('position',new THREE.BufferAttribute(mp,3));mg.setAttribute('color',new THREE.BufferAttribute(mc,3));
+    const pts=new THREE.Points(mg,_hdPts);pts.name='held-motes';pts.frustumCulled=false;
+    const t0=performance.now()/1000;
+    sheath.onBeforeRender=()=>{const t=performance.now()/1000-t0,on=Math.min(1,t/.2);
+      sheath.rotation.z=t*look.spin;core.rotation.z=-t*look.spin*1.4;
+      const f=1+Math.sin(t*23)*look.flick*.5+Math.sin(t*37)*look.flick*.3;sheath.scale.set(f*on,f*on,on);core.scale.set(on/f,on/f,on);
+      for(let i=0;i<M;i++){const p=ph[i],u=(p[1]+t*look.flow*p[3]/R*3)%1,a=p[0]+t*look.spin*(look.motes==='flake'?.4:1)+u*2,r=u*rad*p[2]*.9*on,
+          k=Math.min(1,u/.12)*(1-u)*(look.motes==='ember'&&u>.6?(1-u)*2.5:1);
+        mp[i*3]=Math.cos(a)*r;mp[i*3+1]=Math.sin(a)*r+(look.motes==='ember'?u*u*.5:look.motes==='flake'?-u*u*.3:0);mp[i*3+2]=-u*R*on;
+        mc[i*3]=look.mote[0]*k;mc[i*3+1]=look.mote[1]*k;mc[i*3+2]=look.mote[2]*k;}
+      mg.attributes.position.needsUpdate=true;mg.attributes.color.needsUpdate=true;};
+    [sheath,core,pts].forEach(o=>{o.raycast=()=>{};o.castShadow=false;g.add(o);});
+    return g;}
   const SETTLE_MAT=VC_MAT;
