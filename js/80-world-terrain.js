@@ -700,7 +700,7 @@
   function dropChunk(key){
     const ch=chunks.get(key);if(!ch)return;
     despawnChunkEncounters(ch);
-    if(ch.fish){const i=LIFE.fish.indexOf(ch.fish);if(i>=0)LIFE.fish.splice(i,1);}
+    if(ch.fish){const i=LIFE.fish.indexOf(ch.fish);if(i>=0)LIFE.fish.splice(i,1);hcSchoolDrop(ch.fish);} /* S1599 — the kit's herring is shared by every school: the school's own cone goes back before the dispose below */
     ch.herbs.forEach(h=>{if(h.g&&h.g.parent)h.g.parent.remove(h.g);const i=ZONES.world.herbs.indexOf(h);if(i>=0)ZONES.world.herbs.splice(i,1);});ch.herbs.length=0;
     if(ch.loot&&typeof ZONE_CORPSES!=='undefined')ch.loot.forEach(c=>{const i=ZONE_CORPSES.indexOf(c);if(i>=0)ZONE_CORPSES.splice(i,1);});
     landGrassDrop(ch); // S1181 (F3): the grass's blade and flower are shared by every chunk; only its instances go

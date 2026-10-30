@@ -5,6 +5,7 @@
 // hunting; the tell's glow on its hide; and killed, a corpse darkened with its shaders kept and its wave stilled.
 // Pictures: docs/prototypes/f4/f4-shark.jpg (from 13 m) and f4-shark-near.jpg.
 // Session 1536: the whales too (the kit's Storm Whale), below the shark's checks; f4-whale.jpg. Session 1537: the bow-wave dolphins (the Stormswift); f4-dolphin.jpg.
+// Session 1599: the shallows' fish schools, the kit's herring baked and instanced; f4-herring.jpg.
 import { boot, check, ROOT } from './lib/game.mjs';
 import fs from 'fs'; import path from 'path';
 const OUT = path.join(ROOT, 'docs', 'prototypes', 'f4'); fs.mkdirSync(OUT, { recursive: true });
@@ -151,6 +152,33 @@ check(`a port's four gulls wear the kit's gull (${gul.bones} bones, ${gul.tris} 
 const gh = await page.evaluate(() => { const r = _RG[0], S = _GS; S.group.visible = false; const p0 = r.ph; r.t = performance.now() / 1000 - .1; tickCreatures(1 / 60, 3e7); const still = r.ph === p0; S.group.visible = true; r.t = performance.now() / 1000 - .1; tickCreatures(1 / 60, 3e7 + 17);
   const on = r.ph !== p0; WORLD.scene.remove(S.group); tickCreatures(1 / 60, 3e7 + 34); return { still, on, dropped: _RG.every(x => !x.hc && ![...HC_RIGS].includes(x)) }; });
 check('the port hidden its gulls are not posed, shown they fly again, and the port unloaded their bodies are dropped', gh.still && gh.on && gh.dropped, gh);
+
+// Session 1599: the shallows' fish schools (spawnFishSchool's InstancedMesh of cones, made here as it makes one, in the air ahead of you)
+// draw the kit's herring baked into one geometry, instanced, within HC_SCHOOL.near of the eye, its head to −x so tickFish's turn points it
+// along its circle; past it, and once its chunk drops it, the old cone again
+const fish = await page.evaluate(() => { const sc = WORLD.scene, x = px + 8, z = pz + 3, n = 12, geo = new THREE.ConeGeometry(.08, .42, 4); geo.rotateX(Math.PI / 2);
+  const im = new THREE.InstancedMesh(geo, new THREE.MeshLambertMaterial({ color: 0x9ab8c0 }), n); sc.add(im);
+  const S = { im, cx: x, cz: z, y: worldH(x, z) + 2.4, r: 1.4, ph: 0, n, chunk: 'test' }; LIFE.fish.push(S); window._FS = S;
+  CAM.position.set(px, worldH(px, pz) + 1.65, pz); CAM.updateMatrixWorld(true); HBODY.last = -1e9; let k = 0;
+  while (im.geometry === geo && k++ < 400) tickCreatures(1 / 60, 4e7 + k * (HBODY.gap + 1));
+  const G = im.geometry; if (G === geo) return { k, kit: false };
+  G.computeBoundingBox(); const b = G.boundingBox, c = G.attributes.color, p = G.attributes.position; let ex = 0, en = 0;
+  for (let i = 0; i < c.count; i++) if (c.getX(i) + c.getY(i) + c.getZ(i) < .3) { ex += p.getX(i); en++; } /* the eye's dark */
+  WORLD.tick(1 / 60); REN.compile(sc, CAM); const prog = (REN.info.programs || []).some(q => /hcschool/.test(q.cacheKey));
+  const shared = G === HC_SCHOOL.geo && im.material === HC_SCHOOL.mat;
+  CAM.position.set(x + 60, CAM.position.y, z); tickCreatures(1 / 60, 4.1e7); const far = im.geometry === geo;
+  CAM.position.set(px, CAM.position.y, pz); tickCreatures(1 / 60, 4.2e7); const back = im.geometry === G;
+  return { k, kit: true, shared, tris: HC_SCHOOL.tris, ms: +HC_SCHOOL.ms.toFixed(0), len: +(b.max.x - b.min.x).toFixed(3), deep: +(b.max.y - b.min.y).toFixed(3), wide: +(b.max.z - b.min.z).toFixed(3), eye: en ? +(ex / en).toFixed(3) : null, prog, far, back }; });
+console.log('  fish:', JSON.stringify(fish));
+check(`a fish school near the eye draws the kit's herring (${fish.tris} tris a fish, baked in ${fish.ms} ms) instanced, ${fish.len} m long as the old cone, deeper than wide, its eye to −x, its swim compiled`,
+  fish.kit && fish.shared && fish.tris > 300 && fish.tris < 2500 && Math.abs(fish.len - .42) < .005 && fish.deep > fish.wide && fish.eye < -.1 && fish.prog, fish);
+check(`past 35 m the school draws the old cones again, and near the herring`, fish.far && fish.back, fish);
+{ const shot = await page.evaluate(() => { const sc = WORLD.scene, S = _FS, w = new THREE.Vector3(S.cx, S.y, S.cz); for (let i = 0; i < 3; i++) WORLD.tick(1 / 60); sc.updateMatrixWorld(true);
+    const cv = REN.domElement, cam = new THREE.PerspectiveCamera(40, cv.width / cv.height, .05, 200); cam.position.set(w.x + 2.2, w.y + 2.0, w.z + 2.6); cam.lookAt(w);
+    const f = sc.fog; sc.fog = null; REN.render(sc, cam); sc.fog = f; const o = document.createElement('canvas'); o.width = cv.width; o.height = cv.height; o.getContext('2d').drawImage(cv, 0, 0); return o.toDataURL('image/jpeg', .85); });
+  fs.writeFileSync(path.join(OUT, 'f4-herring.jpg'), Buffer.from(shot.split(',')[1], 'base64')); }
+check('its chunk dropped, the school has its own cone back (the shared herring is never disposed with it)', await page.evaluate(() => { const S = _FS, G = S.im.geometry; hcSchoolDrop(S); LIFE.fish.splice(LIFE.fish.indexOf(S), 1); WORLD.scene.remove(S.im);
+  return G === HC_SCHOOL.geo && S.im.geometry !== HC_SCHOOL.geo && S.im.geometry.type === 'ConeGeometry'; }));
 
 await page.evaluate(() => { for (const e of [_S, _O]) { ZONES.world.enemies.splice(ZONES.world.enemies.indexOf(e), 1); WORLD.scene.remove(e.mesh); } tickCreatures(1 / 60, 9e5); REN.render(scene, CAM); });
 check('removed, the kit body is dropped', await page.evaluate(() => !_R.hc && ![...HC_RIGS].includes(_R)));
