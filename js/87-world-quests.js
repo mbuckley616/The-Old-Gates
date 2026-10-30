@@ -1695,7 +1695,7 @@ const giver=`${lord.title} ${lord.name}`;
     c.bounty+=Math.max(0,Math.round(fee||0));S.outUntil=(worldState.gameTimeAbsMinutes||0)+LAMP_OUT;if(S.trial){S.count=0;S.towns={};}
     if(typeof addLog==='function')addLog('🏮','The Waylamp goes out in your hand. The bounty on you is doubled.');artifactSay('The Waylamp goes out in your hand. The bounty on you is doubled.');return true;}
   // once a second from the loop: lit again after seven days; the first sight of it over its inn's door
-  let _wlampT=0;function tickWaylamp(force){const t=performance.now();if(!force&&t-_wlampT<1000)return;_wlampT=t;const S=lampState(),now=worldState.gameTimeAbsMinutes||0;
+  let _wlampT=0;function tickWaylamp(force){const t=performance.now();if(!force&&t-_wlampT<1000)return;_wlampT=t;if(typeof waylampPropTick==='function')waylampPropTick(); /* S1598 — the lamp drawn on its wall (82-world-structures.js) */ const S=lampState(),now=worldState.gameTimeAbsMinutes||0;
     if(S&&S.outUntil&&now>=S.outUntil){delete S.outUntil;if(typeof addLog==='function')addLog('🏮','The Waylamp is lit again. Nobody lit it.');}
     if(!S&&activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior())){const st=worldState.stats||(worldState.stats={});if(st.lampSeen)return;const H=lampHome();const h=H&&lampFirstInn(H.site);
       if(h&&Math.hypot(px-h.doorX,pz-h.doorZ)<20&&lampDaySight()){st.lampSeen=1;showMsgLong('A lamp burns over the inn’s door in broad day.'+(lampInRain()?' The rain does not seem to reach it.':''),'#e8c890');}}}

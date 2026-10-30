@@ -38,6 +38,13 @@ const inn = await page.evaluate((site) => { const h = lampFirstInn(site); const 
   return { id: h.id, name: h.name, second: second && second.id, said, again }; }, P.site);
 console.log(JSON.stringify(inn));
 check(`near ${inn.name}'s door, once: *${inn.said}*`, inn.said === 'A lamp burns over the inn’s door in broad day. The rain does not seem to reach it.' && inn.again === null, inn);
+// S1598 — the lamp is drawn: beside its inn's street door on the wall, lit, a few hundred triangles
+const drawn = () => page.evaluate(async (id) => { const h = lampFirstInn(artifactPlaces().waylamp.site); px = h.exitX; pz = h.exitZ; waylampPropTick();
+  for (let n = 0; n < 60 && !(WAYLAMP_PROP && WAYLAMP_PROP.house === id); n++) { for (let i = 0; i < 10; i++) WORLD.tick(1 / 60, performance.now()); waylampPropTick(); await new Promise(r => setTimeout(r, 200)); }
+  const W = WAYLAMP_PROP; if (!W) return { none: true }; let tris = 0; W.group.traverse(o => { if (o.isMesh) tris += (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3; });
+  return { house: W.house, lit: !!W.halo, horn: !!W.group.getObjectByName('waylampHorn'), tris, off: +Math.hypot(W.spot.x - h.doorX, W.spot.z - h.doorZ).toFixed(2), up: +(W.spot.y - WORLD.worldH(h.doorX, h.doorZ)).toFixed(2), inScene: W.group.parent === WORLD.scene }; }, inn.id);
+const lamp0 = await drawn(); console.log(JSON.stringify(lamp0));
+check(`the Waylamp is drawn on ${inn.name}'s wall beside the door (${lamp0.off} m off it, its arm ${lamp0.up} m up), lit, ${lamp0.tris} triangles`, lamp0.house === inn.id && lamp0.lit && lamp0.horn && lamp0.inScene && lamp0.off > .7 && lamp0.off < 1.8 && lamp0.up >= 2.85 && lamp0.up <= 3.55 && lamp0.tris < 1000, lamp0);
 const over = await talk(inn.id, 'The lamp over the door?');
 const other = inn.second ? await talk(inn.second, 'The lamp over the door?') : { none: true };
 check(`its innkeeper (${over.people}) answers *The lamp over the door?*; the town's other inn does not offer it`, !over.none && /five/i.test(over.say) && other.none, { over, other });
@@ -45,6 +52,8 @@ const took = await talk(inn.id, 'The lamp over the door?', 'I’ll carry it.');
 const st0 = await page.evaluate(() => ({ S: JSON.parse(JSON.stringify(worldState.artifacts.waylamp)), item: (BAG.find(i => i.artifact === 'waylamp') || {}).name }));
 console.log(JSON.stringify(took), JSON.stringify(st0));
 check(`*I’ll carry it.*: *${took.say}*; the lamp is in the bag, the count at nothing, its own town not to count`, took.say && took.say !== over.say && st0.item === 'The Waylamp' && st0.S.trial && st0.S.count === 0 && st0.S.towns[P.site] === 1, { took, st0 });
+const lamp1 = await drawn(); console.log(JSON.stringify(lamp1));
+check('carried, its bracket stays on the wall empty', lamp1.house === inn.id && !lamp1.lit && !lamp1.horn && lamp1.inScene, lamp1);
 const own = await talk(inn.id, 'The lamp.');
 const gone = await talk(inn.id, 'The lamp over the door?');
 check(`back at its own inn, *The lamp.* answers *${own.say}*; the offer is gone`, gone.none && own.say && !/\d/.test(own.say), { own, gone });
