@@ -2261,4 +2261,62 @@
       mg.attributes.position.needsUpdate=true;mg.attributes.color.needsUpdate=true;};
     [sheath,core,pts].forEach(o=>{o.raycast=()=>{};o.castShadow=false;g.add(o);});
     return g;}
+  // ═══ WONDERS (Session 1614; backlog L5, "Strange places", OG-106; Michael's C on #898: quiet by day, awake 20h to 5h) ═══
+  // The Mark's wonder, the Skyfall Fields (the kit's PKIT.wonders.skyfall, from the concept artist's wonders.js), on the new look only.
+  // Its place is one snow valley in the Mark, the same for every load of a seed: on a 100 m grid over the Mark's land cells (getCell,
+  // all of them, never what is loaded), a point 22 m over the snow line (where the snow lies whole) and one of four headings, whose field (300 m along it, 130 across)
+  // falls no more than 30 m from its highest point to its lowest, kept 260 m clear of every site's pad, 250 m of every door and 180 m of
+  // every road's line, with no river or lake in it. The flattest wins, with a little credit for sides that rise 160 m out (the Mark has
+  // no flat-floored dale that size: on seed 1 the flattest one with walls falls 46 m, so the field may lie on a high shelf).
+  // Stones are cosmetic; the place is the seed's.
+  // When it stands (within 1.6 km, in the open world) every stone has a stamp that only clears the scatter under it (noFlat: the
+  // ground is not flattened), the walls' standing courses are solids, and from 20h to 5h the stones drift and the seams burn.
+  const WONDERS={skyfall:{site:undefined,W:null,stamps:null,sol:[]},near:1600,_t:0};
+  function wonderSkyfallSite(){const S=WONDERS.skyfall;if(S.site!==undefined)return S.site;S.site=null;
+    if(typeof nationKeyOf!=='function')return null;landmassOf(0,0);for(let j=0;j<GRID;j++)for(let i=0;i<GRID;i++)getCell(i,j);
+    const all=[...CELLS.values()],mark=all.filter(c=>c.type!=='sea'&&nationKeyOf(c.i,c.j)==='mark');if(!mark.length)return null;
+    const sites=all.flatMap(c=>c.sites),byId={};sites.forEach(t=>{byId[t.id]=t;});const doors=mark.flatMap(c=>c.doors||[]).filter(d=>d.x!=null);
+    const roads=all.flatMap(c=>c.roadDefs||[]).map(d=>[byId[d.a],byId[d.b]]).filter(([a,b])=>a&&b);
+    const segD=(a,b,x,z)=>{const dx=b.x-a.x,dz=b.z-a.z,L=dx*dx+dz*dz||1,t=Math.max(0,Math.min(1,((x-a.x)*dx+(z-a.z)*dz)/L));return Math.hypot(a.x+dx*t-x,a.z+dz*t-z);};
+    // the heights as they are with every cell loaded: landH reads the live REGIONS and PEAKS (and rawH the INLETS), the loaded cells'
+    // only, so for the search they hold the Mark's cells and their neighbours', and are given back after
+    const keep=[REGIONS.slice(),PEAKS.slice(),INLETS.slice()],mk=new Set(mark.map(c=>c.i+','+c.j)),ring=all.filter(c=>{for(let dj=-1;dj<=1;dj++)for(let di=-1;di<=1;di++)if(mk.has((c.i+di)+','+(c.j+dj)))return true;return false;});
+    REGIONS.length=0;PEAKS.length=0;INLETS.length=0;ring.forEach(c=>{c.regions.forEach(q=>REGIONS.push(q));c.peaks.forEach(q=>PEAKS.push(q));(c.inlets||[]).forEach(q=>INLETS.push(q));});
+    const wet=(x,z)=>rawH(x,z)<landH(x,z)-1.5||rawH(x,z)<SEA_Y+2;let best=null;
+    try{
+    for(const c of mark)for(let a=50;a<SIZE;a+=100)for(let b=50;b<SIZE;b+=100){const x=c.i*SIZE+a,z=c.j*SIZE+b,h=rawH(x,z);if(h<snowLineAt(x,z)+22||wet(x,z))continue; /* the snow lies whole 20 m over the line (groundColor) */
+      if(sites.some(s=>Math.hypot(s.x-x,s.z-z)<260+(s.pad||0))||doors.some(d=>Math.hypot(d.x-x,d.z-z)<250)||roads.some(([p,q])=>segD(p,q,x,z)<180))continue;
+      for(let k=0;k<4;k++){const t=k*Math.PI/4,ux=Math.sin(t),uz=Math.cos(t),vx=uz,vz=-ux;let lo=1e9,hi=-1e9,ok=true;
+        for(let s_=-150;s_<=150&&ok;s_+=50)for(const q of [-65,0,65]){const X=x+ux*s_+vx*q,Z=z+uz*s_+vz*q;if(wet(X,Z)){ok=false;break;}const y=rawH(X,Z);lo=Math.min(lo,y);hi=Math.max(hi,y);}
+        if(!ok||hi-lo>30)continue;
+        let side=1e9;for(const sd of [-1,1])for(let s_=-100;s_<=100;s_+=50)side=Math.min(side,rawH(x+ux*s_+vx*160*sd,z+uz*s_+vz*160*sd)-rawH(x+ux*s_,z+uz*s_));
+        const score=-(hi-lo)+.3*Math.max(-20,Math.min(30,side));if(!best||score>best.score)best={x,z,ry:t,h:+h.toFixed(1),fall:+(hi-lo).toFixed(1),side:+side.toFixed(1),score:+score.toFixed(1),cell:cellKey(c.i,c.j)};}}
+    }finally{REGIONS.length=0;PEAKS.length=0;INLETS.length=0;keep[0].forEach(q=>REGIONS.push(q));keep[1].forEach(q=>PEAKS.push(q));keep[2].forEach(q=>INLETS.push(q));}
+    return (S.site=best);}
+  // which of the nine cells round the site stand loaded: the ground under the field is the loaded cells' (regions, peaks), so the
+  // stones are hung again whenever this changes
+  function wonderCellSig(st){const [ci,cj]=cellOf(st.x,st.z);let sg='';for(let j=cj-1;j<=cj+1;j++)for(let i=ci-1;i<=ci+1;i++){const L=LOADED.get(cellKey(i,j));sg+=L&&!L.pending?'1':'0';}return sg;}
+  // the wonder's frame to the world's: x across the valley, z along it (rotation.y = ry)
+  function wonderToWorld(st,lx,lz){const c=Math.cos(st.ry),s=Math.sin(st.ry);return [st.x+lx*c+lz*s,st.z-lx*s+lz*c];}
+  function wonderAwake(){const h=hourNow();return h>=20||h<5;}
+  function wonderSkyfallBuild(){const S=WONDERS.skyfall,st=wonderSkyfallSite();if(!st||typeof PKIT==='undefined'||!PKIT.wonders)return null;
+    const hAt=(lx,lz)=>{const [x,z]=wonderToWorld(st,lx,lz);return meshH(x,z);};const W=PKIT.wonders.skyfall(hAt,{awake:wonderAwake()});
+    W.sig=wonderCellSig(st);    W.group.position.set(st.x,0,st.z);W.group.rotation.y=st.ry;W.group.userData.noBake=true;W.group.updateMatrixWorld(true);sc.add(W.group);S.W=W;
+    if(!S.stamps){S.stamps=[];W.stones.forEach((t,k)=>{const [x,z]=wonderToWorld(st,t.x,t.z);S.stamps.push(addStamp({id:'wonder_skyfall_'+k,kind:'wonder',noFlat:true,x,z,r:t.rad*1.05+.5,blend:1,y:0}));});
+      W.walls.forEach((w,k)=>{const [x,z]=wonderToWorld(st,w.x,w.z);S.stamps.push(addStamp({id:'wonder_skyfall_w'+k,kind:'wonder',noFlat:true,x,z,r:w.len/2+3,blend:1,y:0}));});
+      try{clearScatterUnder(S.stamps);}catch(e){console.warn('wonder scatter',e);}}
+    // the walls' standing courses: a box a 2.8 m length of wall, along its line (the solids are boxes on the world's axes)
+    S.sol=[];W.walls.forEach(w=>{const n=Math.ceil(w.len/2.8),a=w.ry+st.ry,ux=Math.cos(a),uz=-Math.sin(a);for(let k=0;k<n;k++){const u=-w.len/2+(k+.5)*w.len/n,[x,z]=wonderToWorld(st,w.x,w.z);
+      const s={cx:x+ux*u,cz:z+uz*u,rx:(Math.abs(ux)*w.len/n+Math.abs(uz)*w.d)/2,rz:(Math.abs(uz)*w.len/n+Math.abs(ux)*w.d)/2,cell:'wonder:skyfall',h:w.standH,wonder:true};STATIC_SOL.push(s);S.sol.push(s);}});
+    return W;}
+  function wonderSkyfallDrop(){const S=WONDERS.skyfall;if(S.W){if(S.W.group.parent)S.W.group.parent.remove(S.W.group);S.W=null;}
+    for(let i=STATIC_SOL.length-1;i>=0;i--)if(STATIC_SOL[i].cell==='wonder:skyfall')STATIC_SOL.splice(i,1);S.sol=[];}
+  // from WORLD.tick, every frame in the open world: built within 1.6 km (checked once a second), animated while it stands
+  function tickWonders(){if(typeof LAND==='undefined'||!LAND.on)return;const S=WONDERS.skyfall,t=performance.now();
+    if(S.W&&S.W.group.parent!==sc)wonderSkyfallDrop(); /* the world's scene was built again */
+    if(t-WONDERS._t>1000||!S.W&&WONDERS._t===0){WONDERS._t=t;if(S.site===undefined&&nationKeyOf(...cellOf(px,pz))!=='mark')return; /* the search (0.6 s on software GL) waits until you are on the Mark's land */
+      const st=wonderSkyfallSite();if(!st)return;const near=Math.hypot(px-st.x,pz-st.z)<WONDERS.near;
+      if(near&&S.W&&S.W.sig!==wonderCellSig(st))wonderSkyfallDrop(); /* a cell under it came or went: hang it over the ground as it is now */
+      if(near&&!S.W)wonderSkyfallBuild();else if(!near&&S.W)wonderSkyfallDrop();}
+    if(S.W)S.W.tick(t/1000,wonderAwake());}
   const SETTLE_MAT=VC_MAT;
