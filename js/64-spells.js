@@ -1366,8 +1366,17 @@ function touchTick(){const T=TOUCH_PEND;if(!T)return;
   if(dead||T.key!==laidKey()){TOUCH_PEND=null;return;}
   if(performance.now()/1000<T.at)return;
   TOUCH_PEND=null;touchLand(T);}
+// S1620 — a touch on a thing (magic-build.md's Touched column): Uisce's "douses a fire". A campfire burning outdoors whose centre is within
+// the touch's 1.6 m of your edge and its 60° cone goes out, before any foe is looked for. One use of Uisce. The other things a touch names
+// (a brazier, a web, a pool, a lock's works, dry brush) have nothing in the world to touch yet. Named action: douseFire.
+function touchFire(){if(typeof CAMPFIRES==='undefined'||activeZoneId!=='world'||isInterior())return null;const t=gameMinNow(),c=Math.cos(FORMS.touched.cone/2*Math.PI/180);
+  let best=null,bd=1e9;for(const f of CAMPFIRES){if(!(f.until>t))continue;const dx=f.x-px,dz=f.z-pz,d=Math.hypot(dx,dz);
+    if(d>FORMS.touched.reach+STEP_BODY+1e-9)continue;if(d>1e-3&&(-dx*Math.sin(yaw)-dz*Math.cos(yaw))/d<c-1e-9)continue;if(d<bd){bd=d;best=f;}}
+  return best;}
+function douseFire(f){const i=CAMPFIRES.indexOf(f);if(i<0)return false;dropFire(f);CAMPFIRES.splice(i,1);if(SKILL_DEF.uisce)skillUse('uisce',1,'douse');return true;}
 function touchLand(T){const F=WORD_BY[T.word].forms.touched,e=touchTarget(),dun=lid&&lid.startsWith('dyn_');
   if(typeof sndSpell==='function')sndSpell(T.word,T.tier);
+  if(T.word==='siul_uisce'){const f=touchFire();if(f){douseFire(f);showMsg('The fire hisses out.','#a8c8e8');return {hit:null,doused:true};}}
   if(!e){showMsg('Nothing within reach.','#a8a8d4');return {hit:null};}
   let dealt=0,info=null;
   if(F.dmg){info=applySpellDamage(e,T.sp,T.tier,{power:FORMS.touched.power});dealt=info.dmg;e.hp=Math.max(0,e.hp-dealt);

@@ -114,5 +114,25 @@ check(`the inn's Hot Stew is ${r.shop.stew} and Mulled Cider ${r.shop.cider}; th
   r.shop.stew === 'hearty' && r.shop.cider === 'clear' && r.shop.misc.includes('Tinderbox') && r.shop.misc.includes('Root Vegetables') && r.shop.weapon === 0, r.shop);
 check('a meal, a log and a food keep their kinds through the save; fed is the character\'s', r.ser && r.charKey);
 check(`E at a lit fire opens its page; logs keep one row (${r.logRows})`, r.eFire && r.logRows === 1, { eFire: r.eFire, logRows: r.logRows });
+// S1620 — Uisce touched douses a fire: one 1.5 m ahead goes out; one 2.5 m ahead, or behind you, does not
+const ds = await page.evaluate(() => {
+  for (const f of CAMPFIRES.slice()) { dropFire(f); } CAMPFIRES.length = 0;
+  bagAdd(survItem('tinderbox')); bagAdd(survItem('log', 3));
+  const put = d => { const f = lightFire(); if (!f) return null; f.x = px - Math.sin(yaw) * d; f.z = pz - Math.cos(yaw) * d; return f; };
+  const said = []; const sm = showMsg; showMsg = m => said.push(m);
+  const out = {};
+  try {
+    const far = put(2.5); out.far = touchLand({ word: 'siul_uisce', tier: 2, sp: null }).doused || false; out.farLeft = CAMPFIRES.includes(far);
+    yaw += Math.PI; out.behind = touchLand({ word: 'siul_uisce', tier: 2, sp: null }).doused || false; yaw -= Math.PI;
+    far.x = px - Math.sin(yaw) * 1.5; far.z = pz - Math.cos(yaw) * 1.5;
+    const p0 = skillsReady().uisce.p; SKILL_LAST.delete('uisce');
+    out.near = touchLand({ word: 'siul_uisce', tier: 2, sp: null }).doused || false; out.gone = !CAMPFIRES.includes(far) && !(far.mesh && far.mesh.parent);
+    out.use = skillsReady().uisce.p > p0; out.said = said.filter(m => /fire/.test(m)).pop();
+  } finally { showMsg = sm; }
+  return out;
+});
+console.log(JSON.stringify(ds));
+check(`Uisce touched douses the fire 1.5 m ahead (${ds.near}, gone ${ds.gone}: "${ds.said}"), not one 2.5 m ahead (${ds.far}) or behind you (${ds.behind}); a use of Uisce (${ds.use})`,
+  ds.near && ds.gone && !ds.far && ds.farLeft && !ds.behind && ds.use && ds.said === 'The fire hisses out.', ds);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
