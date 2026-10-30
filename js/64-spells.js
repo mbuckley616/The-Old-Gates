@@ -743,7 +743,7 @@ let activeSpellId=null;
 // are bought at Mages' Guilds (basics at any guild; higher tiers by rank),
 // or read from spellbooks found in chests. Cave sigils are retired.
 // ═══════════════════════════════════════════════════════════════════════
-const SPELL_FX={levitate:0,haste:0,waterwalk:0,waterbreath:0,feather:0,light:0,nighteye:0,shield:0};
+const SPELL_FX={levitate:0,haste:0,waterwalk:0,waterbreath:0,feather:0,light:0,nighteye:0,shield:0,leap:0};
 let _spellLight=null;
 setTimeout(()=>{try{if(!_spellLight&&typeof CAM!=='undefined'){_spellLight=new THREE.PointLight(0xfff0c0,0,18);CAM.add(_spellLight);_spellLight.position.set(0,.4,-.6);}}catch(e){}},0);
 function fxOn(k){return SPELL_FX[k]>performance.now();}
@@ -758,11 +758,19 @@ const BUFF_SPELLS=[
  {id:'suil_oiche',school:'scath',role:'buff',nameIr:'Súil Oíche',nameEn:'Night Eye',    nameMa:'The Owl\'s Gift', ico:'🦉',desc:'See in the dark.',intReqs:[10,18,32],cost:18,speed:0,dmgBase:0,dmgLvl:0,col:0xa0a0ff,glowCol:0xc0c0ff,buff:{key:'nighteye',dur:[120,240,480]},price:[500,900,1400],rank:2,rare:true},
  {id:'suil_fiodora',school:'scath',role:'buff',nameIr:'Súil an Fhíodóra',nameEn:"Weaver's Eye",nameMa:'The Loom Seen',ico:'🧵',desc:'The compass turns toward the nearest warm stone.',intReqs:[8,16,30],cost:14,speed:0,dmgBase:0,dmgLvl:0,col:0xa0c8ff,glowCol:0xc0e0ff,buff:{key:'seamsight',dur:[60,120,240]},price:[180,400,800],rank:1},
  {id:'eitilt',   school:'gaoth',role:'buff',nameIr:'Eitilt',   nameEn:'Levitate',       nameMa:'The Unbound Foot',ico:'🕊',desc:'Rise into the air. Space to climb, C to sink.',intReqs:[12,20,34],cost:34,speed:0,dmgBase:0,dmgLvl:0,col:0xf0e0ff,glowCol:0xffffff,buff:{key:'levitate',dur:[25,50,100]},price:[800,1400,2200],rank:3,rare:true},
+ {id:'ean',      school:'gaoth',role:'buff',nameIr:'Éan',      nameEn:'Leap',           nameMa:'Wingless',        ico:'🦅',desc:'Jump higher, for a while.',intReqs:[8,18,32],cost:26,speed:0,dmgBase:0,dmgLvl:0,col:0xd8f0ff,glowCol:0xe8f8ff,buff:{key:'leap',dur:[20,40,80]},price:[250,500,900],rank:1}, /* S1605 — magic B's Éan, worn */
 ];
 BUFF_SPELLS.forEach(s=>{if(!SPELLS.find(x=>x.id===s.id))SPELLS.push(s);});
+// S1605 — Éan worn (magic-build.md, "Movement against the step table"): a jump leaves the ground at 8.4 m/s, not the legs' 5.5–6.6, so
+// it tops out 1.96 m up and crosses 4.4 m at the 4.7 m/s air cap: the step table's 4.0–4.8 band. Its shape is the same at every tier;
+// the tier sets only its time (20/40/80 s). At Mastery it is Wingless, the canon's: no fall hurts while it is worn.
+let _eanTier=0;
+function eanRise(){return fxOn('leap')?WORD_BY.ean.forms.worn.rise:0;}
+function eanWingless(){return fxOn('leap')&&_eanTier>=3;}
 const ELEMENTAL_PRICE=[[120,320,700],[120,320,700]]; // tier prices for the seven originals
 function applySpellBuff(sp,tier){
   const b=sp.buff;const dur=b.dur[Math.max(0,tier-1)]*_buffMult('spellDuration',1);SPELL_FX[b.key]=performance.now()+dur*1000;
+  if(b.key==='leap')_eanTier=tier; /* S1605 — Éan's Wingless at Mastery */
   if(b.key==='shield'){if(typeof _applyBuff==='function')_applyBuff({type:'warding',mult:tier>=3?.5:tier===2?.6:.7,duration:dur,label:'Shield',col:'#c0b090'});}
   if(b.key==='light'){if(!_spellLight){_spellLight=new THREE.PointLight(0xfff0c0,0,18);CAM.add(_spellLight);_spellLight.position.set(0,.4,-.6);}_spellLight.intensity=1.4+tier*.3;}
   showMsg(`${sp.ico} ${sp.nameEn} — ${Math.round(dur)}s`,'#c0e0ff');

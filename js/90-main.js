@@ -406,7 +406,7 @@ function loop(now){
   airStepTick(K); /* S1009 — Second step, the double jump (10-player.js); before the ground's jump, so a landing always resets it first */
   if(onGround&&K['Space']){
     if(inOverworld) jumpY=laidGround(px,pz,jumpY,activeTerrainH(px,pz)); /* S1590 — from a laid top */
-    velY=laidUpdraft(px,pz)?Math.max(JUMP_VEL,laidUpdraftV()):JUMP_VEL;onGround=false;sndJump();_jumpFrom=jumpY; /* S1590 — Séideán's updraft */
+    velY=Math.max(laidUpdraft(px,pz)?Math.max(JUMP_VEL,laidUpdraftV()):JUMP_VEL,eanRise());onGround=false;sndJump();_jumpFrom=jumpY; /* S1590 — Séideán's updraft; S1605 — Éan's rise */
   }
   if(!onGround&&(airDashing()||mantling()))velY=0; /* S1011 — the dash holds you level; the fall starts again from rest after it */
   else if(!onGround){
