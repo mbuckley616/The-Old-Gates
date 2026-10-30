@@ -812,6 +812,27 @@ function tonnWave(sp,tier,rider,x,z,ux,uz,floor){const F=WORD_BY.tonn.forms.sent
     out.hit.push({foe:e,dealt,broke});
     if(e.hp<=0){if(dun)killE(e,dmgTag(info,e));else killZoneEnemy(e,scene,dmgTag(info,e));}}
   return out;}
+// S1618 — Dul Thart sent (magic-build.md's table: "the step: arrive where it lands, 12 m"; "Movement against the step table": "12 m,
+// stops at the first solid", the 10 m band). No bolt flies: at the Cast row's release you are moved along your snapped aim, level, 12 m
+// or to the first wall, your body's 0.3 kept clear of it. A rise of more than a step indoors (a foothold, a dais) is a wall to it; the
+// land outdoors is not, and you arrive on it. Where it ends over lower ground (a chasm's air, a ravine) you arrive in the air and
+// fall from there, as the fall rule counts it. Its length is the same at every tier and skill level (places are built to steps); only
+// Impression's wild roll moves it: fizzle, scatter (±20° of aim) or overshoot (×1.5, 18 m). A step of 1 m or more is a use of Scáth.
+// Its Mastery has no canon entry. The Scáth perks (18 m at 75, unseen 3 s after a step at 100) wait for the schools' perks.
+SPELLS.push({id:'dul_thart',school:'scath',role:'basic',nameIr:'Dul Thart',nameEn:'Phase',nameMa:null,ico:'👣',desc:'A step that passes beyond: you arrive where it lands.',
+  intReqs:[14,28,48],cost:40,speed:0,dmgBase:0,dmgLvl:0,col:0x40305a,glowCol:0x7a60a8,wild:['fizzle','scatter','overshoot'],step:true});
+const STEP_OVERSHOOT=1.5,STEP_BODY=.3;
+// stepWord: the named action. Moves you from x,z along (ux,uz) up to len, level with your feet. Returns {len, x, z, wall}.
+function stepWord(x,z,ux,uz,len){const y0=jumpY,ow=isOverworldZone()&&!isInterior()&&!(lid&&lid.startsWith('dyn_'));
+  const pad=ow?0:STEP_BODY; /* outdoors the walk's solid test carries the body's 0.3 already */
+  let d=0,wall=false;
+  for(let s=.1;s<=len+1e-9;s+=.1){const X=x+ux*(s+pad),Z=z+uz*(s+pad);
+    if(laidSolidPt(X,Z,y0+.5)||laidBlocks(x+ux*s,z+uz*s,y0)||(!ow&&laidSurf(X,Z,y0+STEP_UP+.05)>y0+STEP_UP)){wall=true;break;}
+    d=s;}
+  if(d<1e-6)return {len:0,x,z,wall};
+  const X=x+ux*d,Z=z+uz*d;px=X;pz=Z;
+  if(ow){const g=laidGround(X,Z,jumpY,activeTerrainH(X,Z));if(g>jumpY){jumpY=g;velY=0;onGround=true;}else if(jumpY-g>.25){onGround=false;velY=0;}}
+  return {len:+d.toFixed(2),x:X,z:Z,wall};}
 // S1605 — Éan worn (magic-build.md, "Movement against the step table"): a jump leaves the ground at 8.4 m/s, not the legs' 5.5–6.6, so
 // it tops out 1.96 m up and crosses 4.4 m at the 4.7 m/s air cap: the step table's 4.0–4.8 band. Its shape is the same at every tier;
 // the tier sets only its time (20/40/80 s). At Mastery it is Wingless, the canon's: no fall hurts while it is worn.

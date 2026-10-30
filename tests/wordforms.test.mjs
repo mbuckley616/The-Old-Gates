@@ -15,6 +15,7 @@
 // Session 1611: Tonn sent, a wave 8 m down your aim (to the first wall), 1.6 m wide: 14 and 20 posture to each foe in it.
 // Session 1616: Reo laid, a burst 4 m round that holds every foe within it 2 s (1.2 at Impression), once; its frost stands the hold's time.
 // Session 1617: Loscadh laid, a ground fire 4 m across that burns each foe in it 6 a second (4 at Impression), past the armour, 10 s.
+// Session 1618: Dul Thart sent, the step: you arrive 12 m down your aim, level, or short of the first wall by your body's 0.3.
 // Session 1610: Fréamh sent, a bolt that deals nothing and roots the foe it strikes 2 s (1.2 at Impression, 2.6 at Mastery).
 import { boot, check } from './lib/game.mjs';
 import { enterDungeon } from './lib/dungeonshot.mjs';
@@ -355,5 +356,34 @@ console.log(JSON.stringify(fi));
 check(`Loscadh's fire (${fi.kind}, ${fi.R} m round, solid ${fi.solid}) burns the foe in it ${fi.a} in 3 s through armour 50, not the one past its edge (${fi.b}) nor the foe stepped out (${fi.left}); you unburned (${fi.php} → ${fi.php2}); a use of Tine (${fi.use})`,
   fi.ok && fi.kind === 'fire' && fi.R === 2 && fi.solid === false && fi.a === 18 && fi.b === 0 && fi.left === 0 && fi.php === fi.php2 && fi.use, fi);
 check(`the fire stands 10 s (at 9.9 ${fi.at99}, at 10.1 ${fi.at101}); at Impression it burns ${fi.imp} a second`, fi.at99 === true && fi.at101 === false && fi.imp === 4, fi);
+// S1618 — Dul Thart's step: of 16 headings the longest and the shortest; the wall kept clear; the overshoot; then by F
+const st = await page.evaluate(() => {
+  for (const o of ENEMIES) o.dead = true; LAID && laidEnd(); spellBook.length = 0; knownWords = { dul_thart: 2 }; SKILLS.scath = { lv: 50, p: 0 }; SKILL_LAST.delete('scath');
+  const x0 = px, z0 = pz, y0 = jumpY, back = () => { px = x0; pz = z0; jumpY = y0; velY = 0; onGround = true; };
+  const L = []; for (let i = 0; i < 16; i++) { const t = i * Math.PI / 8; back(); const r = stepWord(x0, z0, Math.sin(t), Math.cos(t), 12);
+    L.push({ t, len: r.len, wall: r.wall, moved: +Math.hypot(px - x0, pz - z0).toFixed(2) }); }
+  back(); const lo = L.filter(l => l.wall).sort((a, b) => a.len - b.len)[0], hi = L.slice().sort((a, b) => b.len - a.len)[0];
+  const out = { hi: hi.len, hiMoved: hi.moved, lo: lo && lo.len, walls: L.filter(l => l.wall).length };
+  // at the shortest wall: clear by the body's 0.3 at the arrival, a solid within 0.5 past it
+  if (lo) { const ux = Math.sin(lo.t), uz = Math.cos(lo.t), ax = x0 + ux * lo.len, az = z0 + uz * lo.len;
+    out.clear = !laidSolidPt(ax + ux * .3, az + uz * .3, y0 + .5) && !laidSolidPt(ax, az, y0 + .5);
+    let hit = false; for (let s2 = .3; s2 <= .55; s2 += .05) hit = hit || laidSolidPt(ax + ux * s2, az + uz * s2, y0 + .5) || laidSurf(ax + ux * s2, az + uz * s2, y0 + STEP_UP + .05) > y0 + STEP_UP; out.wallNear = hit; }
+  // the overshoot down the longest heading
+  out.over = stepWord(x0, z0, Math.sin(hi.t), Math.cos(hi.t), 12 * STEP_OVERSHOOT).len; back();
+  // by F, the book's Sent Dul Thart down the longest heading
+  const mk = bookMake('sent', 'dul_thart'); bookSelect(mk.i); yaw = Math.atan2(-Math.sin(hi.t), -Math.cos(hi.t));
+  for (const k2 in K) K[k2] = false; castT = 0; _castFreeAt = 0; _castReleaseAt = 0; spCd = 0; mana = 1000;
+  const fr = casterRand; casterRand = () => () => .99; /* no wild roll */
+  window._st = { x0, z0, p0: skillsReady().scath.p, fr }; out.made = mk.i != null; out.active = activeSpellId;
+  const sm = showMsg; showMsg = () => {}; try { castSpell(); } finally { showMsg = sm; }
+  out.mana = 1000 - mana; return out;
+});
+await page.waitForFunction(() => window._st && Math.hypot(px - window._st.x0, pz - window._st.z0) > .5, null, { timeout: 15000, polling: 100 }).catch(() => {});
+Object.assign(st, await page.evaluate(() => { casterRand = window._st.fr; return { f: +Math.hypot(px - window._st.x0, pz - window._st.z0).toFixed(2), use: skillsReady().scath.p > window._st.p0 }; }));
+console.log(JSON.stringify(st));
+check(`Dul Thart steps ${st.hi} m down the open heading (moved ${st.hiMoved}; 12 or to a wall), ${st.over} m overshot (×1.5, or to a wall)`,
+  st.hi > 3 && st.hi <= 12 && Math.abs(st.hiMoved - st.hi) < .02 && st.over >= st.hi && st.over <= 18, st);
+check(`at the nearest of ${st.walls} walls it stops at ${st.lo} m, the body's 0.3 clear (${st.clear}) and the wall within 0.55 (${st.wallNear})`, st.walls > 0 && st.clear && st.wallNear, st);
+check(`cast by F (${st.active}, ${st.mana} mana) it carries you ${st.f} m down your aim; a use of Scáth (${st.use})`, st.made && Math.abs(st.f - st.hi) < .5 && st.mana > 0 && st.use, st);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

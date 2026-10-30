@@ -419,6 +419,7 @@ function castSpell(){
   const snapFwdX=fwdX, snapFwdZ=fwdZ, snapRgtX=rgtX, snapRgtZ=rgtZ;
   const snapPitch=pitch, snapPx=px, snapPz=pz;
   const snapIsOW=isOverworldZone(), snapScene=snapIsOW?scene:dScene, snapFloor=currentFloor;
+  const snapKey=laidKey(); /* S1618 — the place the cast began in */
   const snapAim=thirdPerson?tpAimPoint():null; // S175 — the crosshair's point at the click, as the rest is snapped
 
   setTimeout(()=>{
@@ -511,6 +512,14 @@ function castSpell(){
       if(!wildPattern)showMsg(`${sp.ico} ${dispName}!`,'#88ccff');
     }
 
+    // ── Dul Thart's step (S1618): no bolt, you are moved along the snapped aim at the release ──
+    else if(sp.step&&isOverworldZone()===snapIsOW&&laidKey()===snapKey&&!dead){
+      const cj=Math.cos(aimJitter),sj=Math.sin(aimJitter),ux=snapFwdX*cj-snapFwdZ*sj,uz=snapFwdX*sj+snapFwdZ*cj,n=Math.hypot(ux,uz)||1;
+      const st=stepWord(px,pz,ux/n,uz/n,WORD_BY.dul_thart.forms.sent.step*(wildPattern==='overshoot'?STEP_OVERSHOOT:1));
+      if(st.len>=1&&SKILL_DEF[sp.school])skillUse(sp.school,1,'step');
+      if(wildPattern==='overshoot')showMsg(`${sp.ico} ${sp.nameIr} overshoots — the step runs past its shape.`,'#a8a8d4');
+      else if(!wildPattern)showMsg(`${sp.ico} ${dispName}!`,'#88ccff');
+    }
     // Backlash resolves AFTER the cast body so the player sees the spell go off, then feels the rebound
     if(selfDmgOnResolve>0){
       const selfDmg=Math.max(1,Math.round(spellMag(sp,tier)*selfDmgOnResolve));
