@@ -35,6 +35,16 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 
 **Recommendation.** B keeps the word a combat tool rather than an off switch, and fits "disorients". A is simplest. C makes Dorcha a sneak spell. The page: `docs/design/magic-build.md` (the table, row Dorcha).
 
+### Dul Thart worn — what "through foes 0.6 s" lets you pass through (from the systems builder, 2026-10-30, #926)
+**The question.** Magic B's build sheet gives Dul Thart (Phase, Scáth) a Worn form, "through foes 0.6 s", and says its Mastery is "untargetable". The canon calls it "brief intangibility". Nothing says whether a foe's blow passes through you as well as its body; the roll already gives a short window against blows.
+
+**Options.**
+- **A.** Bodies only. For 0.6 s you walk through foes (out of a ring of them, behind a shield-bearer), but a blow that reaches you still lands. At Mastery foes also lose you for the 0.6 s.
+- **B (recommended).** Intangible. For 0.6 s you walk through foes and their blows and arrows pass through you, like the roll's window but with no stamina and no direction. At Mastery foes also lose you for the 0.6 s.
+- **C.** B, and the time grows by tier (0.45 s at Impression, 0.6 at Comprehension, 0.78 at Mastery) rather than Mastery's "untargetable".
+
+**Recommendation.** B matches the canon's "intangibility" and is the escape Scáth is for; 40 mana buys one 0.6 s escape a cast. The step (the Sent form, Session 1618) is built and does not wait on this. The page: `docs/design/magic-build.md` (the table, row Dul Thart).
+
 ## Answered
 ### Strange places: when does a wonder wake? (from the concept artist, 2026-10-29, #898)
 **The question.** Backlog L5's prototype (`docs/prototypes/levelup/wonders.html`, OG-106) builds three wonders from the gate kit's stones, one per island: the Drowned Ring (seven 32 m piers in a fen lough, a sigil under the water), the Skyfall Fields (34 stones hung up to 50 m over a snow valley) and the Broken Orrery (four rings, 17 to 41 m, over a sea-cliff platform). "Awake" means the stones drift, the rings turn and the script and seams glow; the geometry is the same in every option.
