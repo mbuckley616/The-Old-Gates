@@ -7,6 +7,11 @@ const g = await boot(); const { page } = g;
 await page.evaluate(() => { try { localStorage.removeItem('og.settings'); } catch (e) {} });
 await g.intoWorld(); await g.settle('dunmore');
 await page.evaluate(() => { _questPopupOpen = false; document.getElementById('g').focus(); });
+// Session 1596: a pointer lock held in headless Chromium on software GL, at seconds a frame, takes the browser and the page from
+// 0.9 GB to over 7 GB in under a minute and the container kills it (the suite's *Target crashed*, docs/qa/flaky.md); with the lock
+// stood in for, the same resume stays at 1.9 GB. So the canvas's lock is a stand-in that counts the asks, and the resume is checked
+// to ask for the pointer back.
+await page.evaluate(() => { window._lockAsks = 0; CV.requestPointerLock = () => { _lockAsks++; return Promise.resolve(); }; });
 await g.frames(2);
 const key = async (k, n = 1) => { for (let i = 0; i < n; i++) await page.keyboard.press(k); await g.frames(1); };
 const sheet = () => page.evaluate(() => { const P = document.querySelector('#pause-paper'); return { view: pauseLeaf.view, set: pauseLeaf.set,
@@ -39,7 +44,10 @@ await page.screenshot({ path: 'docs/prototypes/settingsheet-ingame.png', timeout
 await key('Escape');
 const back = await page.evaluate(() => ({ view: pauseLeaf.view, open: pauseOpen }));
 check('Esc on the sheet goes back to the leaf', back.view === 'leaf' && back.open, back);
+const asks0 = await page.evaluate(() => _lockAsks);
 await key('Escape');
+const asks1 = await page.evaluate(() => ({ asks: _lockAsks, open: pauseOpen }));
+check('Esc on the leaf resumes play and asks for the pointer back', !asks1.open && asks1.asks === asks0 + 1, { asks0, ...asks1 });
 // the camera eases in the main loop (not the world's tick), so wait for real frames
 let fov = 0; for (let k = 0; k < 60 && Math.abs(fov - 90) >= .6; k++) { await g.frames(3); fov = await page.evaluate(() => +CAM.fov.toFixed(1)); }
 check('in play at rest the camera\'s field of view is 90', Math.abs(fov - 90) < .6, fov);
