@@ -1308,3 +1308,43 @@ The wheel is 1.58 m across on the caravel, 1.59 on the cog and 1.65 on the galle
 None this run.
 
 No proposals.
+
+## 2026-10-30 — Magic B from a new scholar: the first word (Lampa in the Grey Grave), the Mages' Guild at Dunmore at 11h (Sorcha, the forms, the tutor), and a Skeleton fought with Caor sent, held and touched, Tonn, Fréamh, an overcast, Éan's leap and Cloch's pillar (build s1061, read to Session 1613)
+
+This is a playtest turn. Magic B landed across S1570–S1612, so I played it as a mage would meet it. I made a Scholar from the creator's preset: Intelligence 3, 130 mana, Tine, Solas and Scáth at 25. She came out of the crypt knowing no word, with an empty book. At Dunmore I went into the Mages' Guild at 11h and talked to its head. Then I went to the nearest gate whose carving she could read and touched it. For the fight I raised her to Intelligence 20 and gave her the words and forms a few weeks' play would give: Caor at Comprehension, Fréamh, Tonn and Éan at Impression, Cloch Ghéar at Comprehension, and Touched, Held and Laid granted. Then I fought one Skeleton (61 health, defence 2) in the Grey Grave with each form. The forms beyond Worn were put in the book from the console (`bookMake`), because the game has no other way yet (below). No page errors in any of six runs.
+
+A note on method, since it cost me two runs. On software GL the loop runs at about one frame a second, and `loop` caps a frame at 0.05 s, so a bolt flies about 0.3 m per real second. My first fights waited on the clock and every Caor "missed". Driven at fixed 1/60 ticks after the cast's real-time release, they hit. Nothing in this entry rests on the timed runs.
+
+**What was wrong**
+- **F with no word says the carvings are on *lower floors*.** Pressed before the first touch, F says *You know no magic. Sigils are carved into the walls of dungeon lower floors.* Since S1586 a carving hangs on a gate's last floor, which is floor 1 when there is no second. The Grey Grave has one floor, and its Lampa is on it (`-carving.jpg`). A new mage who believes the line goes looking for stairs. Filed for the systems builder.
+- **What the guild teaches cannot be used.** Sorcha, the Archmage, answers *What forms will you teach me?* with *At your rank: Sent, Worn. Touched comes at Adept.* At three tasks it says *Sent, Worn, Touched. Laid comes at Evoker.* That is right by S1587. But nothing in the game puts a Touched, Laid or Held entry in the book. `bookMake` has no caller outside the tests, and the composing page is the sheet's session 6. For now a player who reaches Adept is told a form is theirs and has no way to cast it. Every word learned today goes into the book in its first Novice form, which is all F can cast. This is a gap in the build order, not a bug, so it is not filed. It does make the composing page the next thing magic B needs before any more words. It is not a line in the backlog (see *Backlog notes*).
+
+**What worked**
+- **The first word.** The carving reads well (`-carving.jpg`), with *Press 'E' — Touch the sigil of Lampa* on its face. The touch gave *✨ Learned Lampa!*, and the spell chip turned from *No magic (F)* to *Lampa (F)* (`-carving-touched.jpg`). The book holds `{worn, lampa}`. A second touch at Intelligence 3 gave *The stone is warm under your hand and gives nothing. (Intelligence 8)*, which tells you what to do.
+- **Where the first words are.** The seven legacy gates with the tier-1 words (Caor, Sioc, Séideán, Cloch Ghéar, Smól, Leigheas, Solas-Gheal) are all within 1.3 km of the home province's start, the nearest 290 m away. In the generated world, 18 of the 391 carved doors can be read at Intelligence 3. The nearest to Dunmore, Lampa in the Grey Grave, is 5.9 km off; the twelve nearest Dunmore (1.7–3.2 km) all need 6 to 10. So a mage starts by the legacy gates or levels Intelligence first, which is a fair shape.
+- **The guild** (`-guild-head.jpg`). Sorcha's list is in order and every line is honest: no price, no *Learn*. At Adept, *Study Sioc with the tutor (two hours)* took Sioc from 1 to 2 and said *Sioc, Frost Bolt. Say it slowly the first few times.* The topic then dropped off, leaving only Lampa's.
+- **Caor sent.** On a still Skeleton 8 m off, three bolts dealt 18, 26 and 25 (one more bolt was in flight from the cast before and dealt nothing). Three kill it. Each costs 36 at Tine 25, so 130 mana is about 3.6 bolts: one Skeleton per full pool.
+- **The overcast.** At 5 mana the same Caor went off. It took 62 health (31 short ×2), left mana at 0, staggered 0.50 s and said *Not enough mana: the word takes 62 health.* The bolt dealt 18.
+- **Held Caor** (`-held-caor.jpg`). At 3 m for 2 s of play clock it dealt 53 for 30.9 mana. The cone reads as fire round the target, and the *6* over the foe is a tick's number.
+- **Touched Caor**, at 1.9 m centre to centre: 39 for 20.6 mana. Tonn sent dealt 12 (its 14 less the Skeleton's defence 2). Fréamh sent at Impression fizzled (*the shape will not hold*), within its 30%. I did not cast it again, so I did not see its root.
+- **Éan worn**: *🦅 Leap — 20s*, and the jump rose 1.96 m, S1605's figure.
+- **Cloch's pillar laid** at pitch −0.5 stood 3 m ahead (`-laid-pillar.jpg`). The crosshair's point moves out from 1.6 m at −0.8 to 8.2 m at −0.2, and level reads *Too far to lay it*, which is honest. In the Grey Grave's red torchlight the S1608 drums read as a lit orange stone with glowing rings. Next to Caor's held flame it could be taken for a *hot* pillar (Caor's rider) when it is a bare one. That is a look question, for the look builder's eye, not filed.
+
+**The Needs eyes, from play**
+- S1571, 2 health a point of mana: for a new mage it bites harder than the devlog's example. Caor costs 36 at Tine 25, not 30, so a dry cast costs 62–72 health, two thirds of a starting pool, for one bolt of about 20. As a last-ditch finisher that is a real choice. As a habit it kills you. I would keep it.
+- S1571, the 0.5 s stagger: it shows on the posture bar. Whether it reads as the cost is for a hand on the keys.
+- S1575, the ×0.35 walk through the wind-up: not judged. Feel needs a hand on the keys.
+- S1586, a Séideán carving in a forge-hot hall: not seen. My gate was undead with Lampa, which fits.
+- S1587, whether the guild needs a use for gold: it still sells robes, a 60-gold rubbing and a 40-gold book. Nothing else costs gold there now, and that seems enough.
+- S1601, whether 15 mana a second empties a Warlock too fast: from the figures, Held is the best value of the forms. It gave 1.7 damage per mana against Sent's 0.6 and Touched's 1.9. At ~15 a second, a 130 pool holds about 8 s of it. That is generous for a Warlock-rank form, and I would leave it.
+- S1602, S1604, S1612, the riders and the root ring: not played. No rider can be joined in play until the composing page.
+- S1603, the touch at 2.5 m: it landed at 1.9 m. Whether it feels close is for real play.
+- S1604, the thrown pillar to a 3.8 m ledge: not tried. It needs Séideán's rider on the pillar.
+- S1605, 1.96 m for a 20 s buff: it lifts you over a man's head. That is plenty at Impression.
+- S1606, S1610, S1611, the looks of Tintreach, Fréamh and Tonn: the Tonn wave drew nothing I could see in a frame. S1611 says the same.
+- S1588 (the rail), S1600 (*Say the Name at the Door*), the hair sessions (S1568, S1576, S1582, S1603, S1607, S1613), the holds and galleys (S1578–S1585) and the beasts (S1592–S1599): not judged. They belong to the next new-look turn and a turn at sea.
+
+**Backlog notes**
+- The composing page (magic-build.md's session 6, the look builder's) is not a line in the backlog, and the guild already promises the forms it would make. Without it, Touched, Laid, Held and every rider are reachable only from the console.
+
+No proposals.
