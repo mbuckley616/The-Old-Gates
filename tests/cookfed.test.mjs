@@ -114,7 +114,7 @@ check(`the inn's Hot Stew is ${r.shop.stew} and Mulled Cider ${r.shop.cider}; th
   r.shop.stew === 'hearty' && r.shop.cider === 'clear' && r.shop.misc.includes('Tinderbox') && r.shop.misc.includes('Root Vegetables') && r.shop.weapon === 0, r.shop);
 check('a meal, a log and a food keep their kinds through the save; fed is the character\'s', r.ser && r.charKey);
 check(`E at a lit fire opens its page; logs keep one row (${r.logRows})`, r.eFire && r.logRows === 1, { eFire: r.eFire, logRows: r.logRows });
-// S1620 — Uisce touched douses a fire: one 1.5 m ahead goes out; one 2.5 m ahead, or behind you, does not
+// S1624 — Uisce touched douses a fire: one 1.5 m ahead goes out; one 2.5 m ahead, or behind you, does not
 const ds = await page.evaluate(() => {
   for (const f of CAMPFIRES.slice()) { dropFire(f); } CAMPFIRES.length = 0;
   bagAdd(survItem('tinderbox')); bagAdd(survItem('log', 3));

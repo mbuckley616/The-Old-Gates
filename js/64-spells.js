@@ -60,15 +60,15 @@ const TIER_MULT={
 const TIER_LABEL=['Impression','Comprehension','Mastery'];
 const TIER_STARS=['★☆☆','★★☆','★★★'];
 const IMPRESSION_WILD_CHANCE=0.30; /* S1571 — magic B: 30%, the figure Scáth's Steady voice (school 25, session 5) halves */
-// S1619 — the schools' first two perks (magic-build.md's session 5; skills-and-perks-build.md, "Each school"): Steady voice at 25 halves
+// S1623 — the schools' first two perks (magic-build.md's session 5; skills-and-perks-build.md, "Each school"): Steady voice at 25 halves
 // an Impression word's wild chance, 30% to 15%, for that word's school; Thrift at 50 takes 15% off the mana of any word of the school.
 const STEADY_VOICE_WILD=.15,THRIFT_MULT=.85;
-// S1621 — each school's own perk at 75 (skills-and-perks-build.md, "Each school"): Tine's burns last twice as long (the rider's 4 s to 8);
+// S1625 — each school's own perk at 75 (skills-and-perks-build.md, "Each school"): Tine's burns last twice as long (the rider's 4 s to 8);
 // Uisce's Sioc slows ×1.5 (the rider's 30% to 45%; Sioc's own bolt freezes, it does not slow); Cloch's laid stone stands twice as long
 // (the pillar's 20 s to 40); Scáth's step reaches 18 m (was 12); Solas's heals are +25% (Leigheas cast, laid and ridden); Gaoth's
 // updraft lifts 1.5 m more (2.2 m to 3.7). Each is read where its number is used, from the caster's school.
 const SCHOOL75={burnMult:2,slowMult:1.5,stoneMult:2,step:18,healMult:1.25,updraftUp:1.5};
-// S1622 — three of the schools' own perks at 100: Cloch's worn ward turns arrows (while Sciath is worn, a foe's arrow does nothing,
+// S1626 — three of the schools' own perks at 100: Cloch's worn ward turns arrows (while Sciath is worn, a foe's arrow does nothing,
 // from any side, as Guard's Deflect does from the front); Scáth's step leaves you unseen 3 s (the `vanish` veil, which foes already
 // read: an alert one forgets you); a sent Gaoth knocks the foe it strikes down (Throw's 1.5 s on the ground, its finisher open from any
 // side). Tine's leap, Uisce's shatter and Solas's undead wait: each reads two ways, or needs a list the game lacks.
@@ -1044,7 +1044,7 @@ function wordCost(id,form,rider,o){o=o||{};const w=WORD_BY[id];if(!w||!FORMS[for
   if(rider&&WORD_BY[rider])m=(m+WORD_BY[rider].cost*TIER_MULT.cost[tr-1])*WORD_JOIN_MULT;
   const s=o.skill!=null?o.skill:skillLv(w.school);
   m*=FORMS[form].mana*(1.4-.8*s/100)*(o.buff!=null?o.buff:(typeof _buffMult==='function'?_buffMult('spellCost',1):1));
-  if(o.thrift!=null?o.thrift:perk(w.school,50))m*=THRIFT_MULT; /* S1619 — Thrift, the school at 50 */
+  if(o.thrift!=null?o.thrift:perk(w.school,50))m*=THRIFT_MULT; /* S1623 — Thrift, the school at 50 */
   return Math.round(m+1e-9);}
 
 // S1574 — magic B's book (magic-build.md, "The save"): up to eight made spells {form, word, rider}; `activeSpell` is the index of the one F
@@ -1159,7 +1159,7 @@ function layWord(word,rider,x,z,o){o=o||{};
     if(why)return {say:why==='body'?'There is no room to lay it there.':'Too near the wall to lay it.',why};
     if(ow&&worldH(x,z)<SEA_Y-.35)return {say:'It will not stand in water.',why:'wet'};
     const h=kind==='pillar'?F.pillar*(o.overshoot?LAID_OVERSHOOT:1):0;
-    Object.assign(L,{r,base:y,top:y+h,solid:kind==='pillar',dur:F.dur*(kind==='pillar'&&perk('cloch',75)?SCHOOL75.stoneMult:1)});} /* S1621 — Cloch 75 */
+    Object.assign(L,{r,base:y,top:y+h,solid:kind==='pillar',dur:F.dur*(kind==='pillar'&&perk('cloch',75)?SCHOOL75.stoneMult:1)});} /* S1625 — Cloch 75 */
   else if(kind==='snare'){ /* S1612 — Fréamh's: a ring on the ground, never a solid */
     if(ow&&worldH(x,z)<SEA_Y-.35)return {say:'It will not take root in water.',why:'wet'};
     const tier=wordTierOf(word)||1;
@@ -1203,7 +1203,7 @@ function laidRiderTick(){const L=laidLive();if(!L||!L.rideR)return;const R=RIDER
       const d=challengeDealt(R.hot);e.hp=Math.max(0,e.hp-d);e.alert=true;
       if(e.hpFg&&e.maxHp){e.hpFg.scale.x=e.hp/e.maxHp;e.hpFg.position.x=(e.hp/e.maxHp-1)*.275;}dmgNum(e,d,{});
       if(e.hp<=0){if(dun)killE(e,' (burned)');else killZoneEnemy(e,scene,' (burned)');}}
-    if(R.hps&&laidInside(L,px,pz,.3)&&jumpY<=L.top+STEP_UP){PHP=Math.min(effMaxHP(),PHP+R.hps*(perk('solas',75)?SCHOOL75.healMult:1));}}} /* S1621 — Solas 75 */
+    if(R.hps&&laidInside(L,px,pz,.3)&&jumpY<=L.top+STEP_UP){PHP=Math.min(effMaxHP(),PHP+R.hps*(perk('solas',75)?SCHOOL75.healMult:1));}}} /* S1625 — Solas 75 */
 // S1612 — Fréamh laid (magic-build.md's table: "roots once within 3 m, 10 s"): a ring 3 m round the point, on the ground, never a solid.
 // The first foe whose centre comes within it (its hull counted) is rooted 2 s at Comprehension, the tier's magnitude as the bolt's (1.2 s,
 // 2.6 s), and the ring has done its work: it roots once, and stands out its 10 s. A foe already inside when it is laid is the first. It
@@ -1379,7 +1379,7 @@ function touchTick(){const T=TOUCH_PEND;if(!T)return;
   if(dead||T.key!==laidKey()){TOUCH_PEND=null;return;}
   if(performance.now()/1000<T.at)return;
   TOUCH_PEND=null;touchLand(T);}
-// S1620 — a touch on a thing (magic-build.md's Touched column): Uisce's "douses a fire". A campfire burning outdoors whose centre is within
+// S1624 — a touch on a thing (magic-build.md's Touched column): Uisce's "douses a fire". A campfire burning outdoors whose centre is within
 // the touch's 1.6 m of your edge and its 60° cone goes out, before any foe is looked for. One use of Uisce. The other things a touch names
 // (a brazier, a web, a pool, a lock's works, dry brush) have nothing in the world to touch yet. Named action: douseFire.
 function touchFire(){if(typeof CAMPFIRES==='undefined'||activeZoneId!=='world'||isInterior())return null;const t=gameMinNow(),c=Math.cos(FORMS.touched.cone/2*Math.PI/180);

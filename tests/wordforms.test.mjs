@@ -16,17 +16,17 @@
 // Session 1616: Reo laid, a burst 4 m round that holds every foe within it 2 s (1.2 at Impression), once; its frost stands the hold's time.
 // Session 1617: Loscadh laid, a ground fire 4 m across that burns each foe in it 6 a second (4 at Impression), past the armour, 10 s.
 // Session 1618: Dul Thart sent, the step: you arrive 12 m down your aim, level, or short of the first wall by your body's 0.3.
-// Session 1619: the schools' Steady voice (25: an Impression word goes wild 15%, was 30%) and Thrift (50: its words cost 15% less).
-// Session 1621: each school's 75: Tine's burn 8 s, Uisce's rider slow 45%, Cloch's pillar 40 s, Scáth's step 18 m, Solas's mend +25%,
+// Session 1623: the schools' Steady voice (25: an Impression word goes wild 15%, was 30%) and Thrift (50: its words cost 15% less).
+// Session 1625: each school's 75: Tine's burn 8 s, Uisce's rider slow 45%, Cloch's pillar 40 s, Scáth's step 18 m, Solas's mend +25%,
 // Gaoth's updraft 3.7 m.
-// Session 1622: three schools at 100: Cloch's worn ward turns an arrow, Scáth's step leaves you unseen 3 s, a sent Gaoth knocks down.
+// Session 1626: three schools at 100: Cloch's worn ward turns an arrow, Scáth's step leaves you unseen 3 s, a sent Gaoth knocks down.
 // Session 1610: Fréamh sent, a bolt that deals nothing and roots the foe it strikes 2 s (1.2 at Impression, 2.6 at Mastery).
 import { boot, check } from './lib/game.mjs';
 import { enterDungeon } from './lib/dungeonshot.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
 await enterDungeon(page, { theme: 'ruins', size: 'small', seed: 7 });
-// the sheet's worked costs are before the schools' perks: Thrift (school 50) is held out until its own check below (Session 1619)
+// the sheet's worked costs are before the schools' perks: Thrift (school 50) is held out until its own check below (Session 1623)
 await page.evaluate(() => { for (const sc of ['tine', 'uisce', 'cloch', 'scath', 'solas', 'gaoth']) PERK_LIVE.delete(sc + ':50'); });
 
 const r = await page.evaluate(() => {
@@ -391,7 +391,7 @@ check(`Dul Thart steps ${st.hi} m down the open heading (moved ${st.hiMoved}; 12
   st.hi > 3 && st.hi <= 12 && Math.abs(st.hiMoved - st.hi) < .02 && st.over >= st.hi && st.over <= 18, st);
 check(`at the nearest of ${st.walls} walls it stops at ${st.lo} m, the body's 0.3 clear (${st.clear}) and the wall within 0.55 (${st.wallNear})`, st.walls > 0 && st.clear && st.wallNear, st);
 check(`cast by F (${st.active}, ${st.mana} mana) it carries you ${st.f} m down your aim; a use of Scáth (${st.use})`, st.made && Math.abs(st.f - st.hi) < .5 && st.mana > 0 && st.use, st);
-// S1619 — Steady voice and Thrift: the wild chance and the cost at school 24, 25, 49 and 50; then 1,000 seeded Impression rolls
+// S1623 — Steady voice and Thrift: the wild chance and the cost at school 24, 25, 49 and 50; then 1,000 seeded Impression rolls
 const pk = await page.evaluate(() => {
   for (const sc of ['tine', 'uisce', 'cloch', 'scath', 'solas', 'gaoth']) PERK_LIVE.add(sc + ':50');
   const at = lv => { SKILLS.tine = { lv, p: 0 }; return { wild: wordWildChance('caor'), cost: wordCost('caor', 'sent', null, { tier: 2, buff: 1 }), held: wordCost('caor', 'held', null, { tier: 2, buff: 1 }),
@@ -407,7 +407,7 @@ check(`Steady voice: Caor goes wild ${pk.a24.wild} at Tine 24 and ${pk.a25.wild}
   pk.a24.wild === .3 && pk.a25.wild === .15 && pk.a25.other === .3 && Math.abs(pk.r24 - .3) < .04 && Math.abs(pk.r25 - .15) < .04, pk);
 check(`Thrift: a sent Caor costs ${pk.a49.cost} at Tine 49 and ${pk.a50.cost} at 50 (30 ×0.85, rounded), a held second ${pk.a50.held}`,
   pk.a49.cost === 30 && pk.a50.cost === 26 && pk.a50.held === 13, pk);
-// S1621 — the six 75s, each at its school 74 and then 75
+// S1625 — the six 75s, each at its school 74 and then 75
 const p75 = await page.evaluate(() => {
   const e = ENEMIES.find(x => x.floor === 1 && x.mesh); e.dead = false; e.hp = e.maxHp = 1e5; LAID && laidEnd();
   const S = ['tine', 'uisce', 'cloch', 'scath', 'solas', 'gaoth'], lv = n => { for (const k of S) SKILLS[k] = { lv: n, p: 0 }; };
@@ -425,7 +425,7 @@ console.log(JSON.stringify(p75));
 check(`at 74 → 75: burn ${p75.lo.burn} → ${p75.hi.burn} s, the rider's slow ×${p75.lo.slow} → ×${p75.hi.slow}, a pillar ${p75.lo.pillar} → ${p75.hi.pillar} s, the step ${p75.lo.step} → ${p75.hi.step} m, a mend of 40's blow ${p75.lo.mend} → ${p75.hi.mend}, the updraft ${p75.lo.up} → ${p75.hi.up} m`,
   p75.lo.burn === 4 && p75.hi.burn === 8 && p75.lo.slow === .7 && p75.hi.slow === .55 && p75.lo.pillar === 20 && p75.hi.pillar === 40 &&
   p75.lo.step === 12 && p75.hi.step === 18 && p75.lo.mend === 10 && p75.hi.mend === 12 && p75.lo.up === 2.2 && p75.hi.up === 3.7, p75);
-// S1622 — Cloch, Scáth and Gaoth at 99 and then 100
+// S1626 — Cloch, Scáth and Gaoth at 99 and then 100
 const p100 = await page.evaluate(() => {
   const e = ENEMIES.find(x => x.floor === 1 && x.mesh); e.dead = false; e.hp = e.maxHp = 1e5; e.dmg = 20; staggered.length = 0; e._downUntil = 0;
   const S = ['cloch', 'scath', 'gaoth'], lv = n => { for (const k of S) SKILLS[k] = { lv: n, p: 0 }; };
