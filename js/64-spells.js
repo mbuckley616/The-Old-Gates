@@ -831,6 +831,7 @@ function tickSpellFx(dt){
   if(RIDDEN.size)riderTick(); /* S1602 — the riders' burns and glows */
   if(TOUCH_PEND)touchTick(); /* S1603 — the touched form's landing */
   if(LAID&&LAID.rideR)laidRiderTick(); /* S1604 — a rider on a laid thing */
+  if(LAID&&LAID.snare&&!LAID.rooted)laidSnareTick(); /* S1612 — Fréamh laid */
   if(_spellLight&&!fxOn('light')&&_spellLight.intensity>0)_spellLight.intensity=Math.max(0,_spellLight.intensity-dt*2);
 }
 // spellbooks: read to learn
@@ -1103,7 +1104,7 @@ function bookSelect(i){const b=spellBook[i];if(!b)return false;activeSpell=i;act
 // the shape a laid entry makes, or null where it makes none yet (the sheet's session 4)
 function laidShape(word,rider){
   if(word==='cloch_ghear')return 'pillar';if(word==='sideen')return 'updraft';
-  if(word==='sioc')return 'floe';if(word==='tonn'&&rider==='sioc')return 'bridge';return null;}
+  if(word==='sioc')return 'floe';if(word==='tonn'&&rider==='sioc')return 'bridge';if(word==='freamh')return 'snare';return null;}
 // layWord: the named action. Lays word (with rider) at x,z (its ground found there), facing yaw for a bridge; o.overshoot ×1.5 a
 // pillar's height. Returns {ok} or {say}; nothing is paid here (the cast pays).
 function layWord(word,rider,x,z,o){o=o||{};
@@ -1119,6 +1120,10 @@ function layWord(word,rider,x,z,o){o=o||{};
     if(ow&&worldH(x,z)<SEA_Y-.35)return {say:'It will not stand in water.',why:'wet'};
     const h=kind==='pillar'?F.pillar*(o.overshoot?LAID_OVERSHOOT:1):0;
     Object.assign(L,{r,base:y,top:y+h,solid:kind==='pillar',dur:F.dur});}
+  else if(kind==='snare'){ /* S1612 — Fréamh's: a ring on the ground, never a solid */
+    if(ow&&worldH(x,z)<SEA_Y-.35)return {say:'It will not take root in water.',why:'wet'};
+    const tier=wordTierOf(word)||1;
+    Object.assign(L,{r:F.radius,base:y,top:y,solid:false,dur:F.dur,snare:+(F.root*TIER_MULT.magnitude[tier-1]).toFixed(2)});}
   else if(kind==='floe'){
     if(!wet)return {say:'Sioc lays a floe only on open water.',why:'dry'};
     Object.assign(L,{r:F.floe/2,base:SEA_Y-.4,top:SEA_Y+.1,solid:true,dur:F.dur});}
@@ -1151,6 +1156,14 @@ function laidRiderTick(){const L=laidLive();if(!L||!L.rideR)return;const R=RIDER
       if(e.hpFg&&e.maxHp){e.hpFg.scale.x=e.hp/e.maxHp;e.hpFg.position.x=(e.hp/e.maxHp-1)*.275;}dmgNum(e,d,{});
       if(e.hp<=0){if(dun)killE(e,' (burned)');else killZoneEnemy(e,scene,' (burned)');}}
     if(R.hps&&laidInside(L,px,pz,.3)&&jumpY<=L.top+STEP_UP){PHP=Math.min(effMaxHP(),PHP+R.hps);}}}
+// S1612 — Fréamh laid (magic-build.md's table: "roots once within 3 m, 10 s"): a ring 3 m round the point, on the ground, never a solid.
+// The first foe whose centre comes within it (its hull counted) is rooted 2 s at Comprehension, the tier's magnitude as the bolt's (1.2 s,
+// 2.6 s), and the ring has done its work: it roots once, and stands out its 10 s. A foe already inside when it is laid is the first. It
+// lives as every laid thing does (one a caster, ends when you leave the place) and takes a rider as they do (a hot ring, a mending one).
+function laidSnareTick(){const L=laidLive();if(!L||!L.snare||L.rooted)return;const dun=!!(lid&&lid.startsWith('dyn_'));
+  for(const e of heldTargets()){if(e.dead||e.hp<=0||(dun&&e.floor!==currentFloor)||!laidInside(L,e.x,e.z,hullOf(e)))continue;
+    e._rootUntil=Math.max(e._rootUntil||0,playClockS+L.snare);L.rooted=e;e.alert=true;
+    if(SKILL_DEF[WORD_BY[L.word].school])skillUse(WORD_BY[L.word].school,1,e);break;}}
 function laidMesh(L){if(typeof THREE==='undefined'||typeof scene==='undefined'||!scene)return null;
   const d=typeof laidDress==='function'?laidDress(L):null; /* S1600 — the look builder's dress (82-world-structures.js), built from its base */
   if(d){if(L.r!=null)d.position.set(L.x,L.base,L.z);else{d.position.set(L.x+L.ux*L.hl,L.base,L.z+L.uz*L.hl);d.rotation.y=Math.atan2(L.ux,L.uz);}scene.add(d);return d;}
@@ -1158,10 +1171,11 @@ function laidMesh(L){if(typeof THREE==='undefined'||typeof scene==='undefined'||
   if(L.kind==='pillar'){geo=new THREE.CylinderGeometry(L.r*.92,L.r,L.top-L.base,10);col=0x8a8378;}
   else if(L.kind==='updraft'){geo=new THREE.CylinderGeometry(L.r,L.r*.8,3,12,1,true);col=0xcfe8ee;op=.18;}
   else if(L.kind==='floe'){geo=new THREE.CylinderGeometry(L.r,L.r*.9,L.top-L.base,12);col=0xdcecf4;}
+  else if(L.kind==='snare'){geo=new THREE.RingGeometry(L.r*.92,L.r,32);geo.rotateX(-Math.PI/2);col=0x6a8a3a;op=.6;}
   else{geo=new THREE.BoxGeometry(L.hw*2,L.top-L.base,L.hl*2);col=0xbcdcec;}
   const m=new THREE.Mesh(geo,new THREE.MeshLambertMaterial({color:col,transparent:op<1,opacity:op,depthWrite:op>=1,side:op<1?THREE.DoubleSide:THREE.FrontSide}));
   m.name='laid-'+L.kind;
-  if(L.r!=null)m.position.set(L.x,L.kind==='updraft'?L.base+1.5:(L.base+L.top)/2,L.z);
+  if(L.r!=null)m.position.set(L.x,L.kind==='updraft'?L.base+1.5:L.kind==='snare'?L.base+.03:(L.base+L.top)/2,L.z);
   else{m.position.set(L.x+L.ux*L.hl,(L.base+L.top)/2,L.z+L.uz*L.hl);m.rotation.y=Math.atan2(L.ux,L.uz);}
   scene.add(m);return m;}
 // the cast of a laid entry from the book (castSpell hands it here): the form held, the cost and the overcast, Impression's wild roll

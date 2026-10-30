@@ -11,6 +11,7 @@
 // once), Leigheas's mend (2 a second while you stand at it), Séideán's throw (a pillar under you sends you up at Éan's 8.4 m/s), Solas's light.
 // Session 1609: the cone dressed (the look builder's heldDress): three draws, under 1,500 triangles, and it answers no ray.
 // Session 1606: Tintreach sent, a bolt of 24 that leaps to the nearest other foe within 5 m of the one struck, for half.
+// Session 1612: Fréamh laid, a ring 3 m round on the ground that roots the first foe within it 2 s, once, and stands 10 s.
 // Session 1611: Tonn sent, a wave 8 m down your aim (to the first wall), 1.6 m wide: 14 and 20 posture to each foe in it.
 // Session 1610: Fréamh sent, a bolt that deals nothing and roots the foe it strikes 2 s (1.2 at Impression, 2.6 at Mastery).
 import { boot, check } from './lib/game.mjs';
@@ -290,5 +291,23 @@ console.log(JSON.stringify(tw));
 check(`Tonn's wave runs ${tw.len} m (8 or to the wall) and strikes the foe in its line for ${tw.a} and ${tw.post} posture, not the one 2.5 m aside (${tw.b}) or past its end (${tw.c})`,
   tw.len > 3 && tw.len <= 8 && tw.n === 1 && tw.a === 14 && tw.post === 20 && tw.b === 0 && tw.c === 0, tw);
 check(`cast by F, the wave lands ${tw.f} on the foe down your aim`, tw.f === 14, tw);
+
+// S1612 — Fréamh's ring: a foe outside it, then inside it, then a second foe after the first
+const sn = await page.evaluate(() => {
+  const fs = ENEMIES.filter(x => x.floor === 1 && x.mesh).slice(0, 2); for (const o of ENEMIES) if (!fs.includes(o)) o.dead = true;
+  if (fs.length < 2) return { few: fs.length };
+  knownWords = { freamh: 2 }; LAID && laidEnd();
+  const [A, B] = fs; for (const e of fs) { e.dead = false; e.hp = e.maxHp = 1e5; e._rootUntil = 0; e.x = px + 20; e.z = pz + 20; }
+  const cx = px, cz = pz - 1, r = layWord('freamh', null, cx, cz), out = { ok: !!r.ok, kind: r.kind, solid: LAID && LAID.solid, R: LAID && LAID.r };
+  A.x = cx + 3.2 + hullOf(A); A.z = cz; laidSnareTick(); out.out = foeRooted(A);
+  A.x = cx + 2.5; laidSnareTick(); out.in = foeRooted(A); out.left = +(A._rootUntil - playClockS).toFixed(2);
+  B.x = cx - 1; B.z = cz; laidSnareTick(); out.second = foeRooted(B);
+  playClockS += 9.9; out.at99 = !!laidLive(); playClockS += .2; out.at101 = !!laidLive();
+  return out;
+});
+console.log(JSON.stringify(sn));
+check(`Fréamh's ring (${sn.kind}, ${sn.R} m, solid ${sn.solid}): no root outside it (${sn.out}), the foe inside rooted ${sn.left} s, and a second foe after it not (${sn.second})`,
+  sn.ok && sn.kind === 'snare' && sn.solid === false && sn.R === 3 && sn.out === false && sn.in === true && sn.left === 2 && sn.second === false, sn);
+check(`the ring stands 10 s (at 9.9 ${sn.at99}, at 10.1 ${sn.at101})`, sn.at99 === true && sn.at101 === false, sn);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
