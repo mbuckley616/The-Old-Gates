@@ -161,12 +161,13 @@ const PERK_DEF={
   joinery:[['Field splice','splice the rig at sea'],['Tight seams','patches mend +50%'],['Bowyer','the longbow and the war bow'],['Shipwright’s hand','a patch takes 4 s (was 8)']], /* S1517 */
   tine:[['Steady voice','its Impression words go wild 15% (was 30%)'],['Thrift','its words cost 15% less mana'],['Long burn','burns last twice as long']], /* S1619 — the schools' 25 and 50; S1621 — their 75 (names for the quest writer's review); their 100 to come */
   uisce:[['Steady voice','its Impression words go wild 15% (was 30%)'],['Thrift','its words cost 15% less mana'],['Deep cold','Sioc slows ×1.5']],
-  cloch:[['Steady voice','its Impression words go wild 15% (was 30%)'],['Thrift','its words cost 15% less mana'],['Standing stone','laid stone stands twice as long']],
-  scath:[['Steady voice','its Impression words go wild 15% (was 30%)'],['Thrift','its words cost 15% less mana'],['Long step','the step reaches 18 m (was 12)']],
+  cloch:[['Steady voice','its Impression words go wild 15% (was 30%)'],['Thrift','its words cost 15% less mana'],['Standing stone','laid stone stands twice as long'],['Arrow ward','a worn ward turns arrows']],
+  scath:[['Steady voice','its Impression words go wild 15% (was 30%)'],['Thrift','its words cost 15% less mana'],['Long step','the step reaches 18 m (was 12)'],['Unseen','you are unseen 3 s after a step']],
   solas:[['Steady voice','its Impression words go wild 15% (was 30%)'],['Thrift','its words cost 15% less mana'],['Warm hand','heals +25%']],
-  gaoth:[['Steady voice','its Impression words go wild 15% (was 30%)'],['Thrift','its words cost 15% less mana'],['High wind','the updraft lifts 1.5 m more']],
+  gaoth:[['Steady voice','its Impression words go wild 15% (was 30%)'],['Thrift','its words cost 15% less mana'],['High wind','the updraft lifts 1.5 m more'],['Downwind','a sent Gaoth knocks a foe down']],
   speech:[['Haggle','5% better prices both ways'],['Talk it down','a guard’s fine halved, once in each town'],['Hearing','a person at favour −1 still talks'],['Word given','once a day a guard takes your word for a trespass']]};
-const PERK_LIVE=new Set(['tine:75','uisce:75','cloch:75','scath:75','solas:75','gaoth:75', /* S1621 — each school's own at 75 */
+const PERK_LIVE=new Set(['cloch:100','scath:100','gaoth:100', /* S1622 */
+  'tine:75','uisce:75','cloch:75','scath:75','solas:75','gaoth:75', /* S1621 — each school's own at 75 */
   'tine:25','tine:50','uisce:25','uisce:50','cloch:25','cloch:50','scath:25','scath:50','solas:25','solas:50','gaoth:25','gaoth:50', /* S1619 — Steady voice and Thrift */
   'alchemy:25','alchemy:50','alchemy:75','alchemy:100', /* S1499 — Alchemy's four (survival B, session 7's second part) */
   'woodcutting:25','woodcutting:50','woodcutting:75','woodcutting:100', /* S1561 — Heartwood's great trees (#860 A) */ /* S1534 — Felling's trunk */ /* S1517 — Fletcher at the bench; One more since S1511 (fellLogs reads the level) */

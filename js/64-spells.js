@@ -68,6 +68,14 @@ const STEADY_VOICE_WILD=.15,THRIFT_MULT=.85;
 // (the pillar's 20 s to 40); Scáth's step reaches 18 m (was 12); Solas's heals are +25% (Leigheas cast, laid and ridden); Gaoth's
 // updraft lifts 1.5 m more (2.2 m to 3.7). Each is read where its number is used, from the caster's school.
 const SCHOOL75={burnMult:2,slowMult:1.5,stoneMult:2,step:18,healMult:1.25,updraftUp:1.5};
+// S1622 — three of the schools' own perks at 100: Cloch's worn ward turns arrows (while Sciath is worn, a foe's arrow does nothing,
+// from any side, as Guard's Deflect does from the front); Scáth's step leaves you unseen 3 s (the `vanish` veil, which foes already
+// read: an alert one forgets you); a sent Gaoth knocks the foe it strikes down (Throw's 1.5 s on the ground, its finisher open from any
+// side). Tine's leap, Uisce's shatter and Solas's undead wait: each reads two ways, or needs a list the game lacks.
+const SCATH_UNSEEN_S=3;
+function wardTurnsArrows(){return perk('cloch',100)&&fxOn('shield');}
+function gaothKnock(e){if(!e||e.dead||e.hp<=0||!perk('gaoth',100))return false;const now=performance.now()/1000,q=staggered.find(s=>s.e===e);
+  if(!q)staggered.push({e,t:THROW_S});return throwFoe(e,now);}
 function wordWildChance(word){const w=WORD_BY[word]||SPELLS.find(s=>s.id===word);return w&&perk(w.school,25)?STEADY_VOICE_WILD:IMPRESSION_WILD_CHANCE;}
 // S1571 — overcasting (magic-build.md): short of mana, the rest is paid in health, 2 a point of mana, with a 0.5 s stagger; a cast
 // that would leave you under 1 health is refused.

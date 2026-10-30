@@ -517,6 +517,7 @@ function castSpell(){
       const cj=Math.cos(aimJitter),sj=Math.sin(aimJitter),ux=snapFwdX*cj-snapFwdZ*sj,uz=snapFwdX*sj+snapFwdZ*cj,n=Math.hypot(ux,uz)||1;
       const st=stepWord(px,pz,ux/n,uz/n,(perk('scath',75)?SCHOOL75.step:WORD_BY.dul_thart.forms.sent.step)*(wildPattern==='overshoot'?STEP_OVERSHOOT:1));
       if(st.len>=1&&SKILL_DEF[sp.school])skillUse(sp.school,1,'step');
+      if(st.len>=1&&perk('scath',100))_applyBuff({type:'vanish',duration:SCATH_UNSEEN_S,label:'Unseen',col:'#7a60a8'}); /* S1622 — Scáth 100 */
       if(wildPattern==='overshoot')showMsg(`${sp.ico} ${sp.nameIr} overshoots — the step runs past its shape.`,'#a8a8d4');
       else if(!wildPattern)showMsg(`${sp.ico} ${dispName}!`,'#88ccff');
     }

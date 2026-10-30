@@ -19,6 +19,7 @@
 // Session 1619: the schools' Steady voice (25: an Impression word goes wild 15%, was 30%) and Thrift (50: its words cost 15% less).
 // Session 1621: each school's 75: Tine's burn 8 s, Uisce's rider slow 45%, Cloch's pillar 40 s, Scáth's step 18 m, Solas's mend +25%,
 // Gaoth's updraft 3.7 m.
+// Session 1622: three schools at 100: Cloch's worn ward turns an arrow, Scáth's step leaves you unseen 3 s, a sent Gaoth knocks down.
 // Session 1610: Fréamh sent, a bolt that deals nothing and roots the foe it strikes 2 s (1.2 at Impression, 2.6 at Mastery).
 import { boot, check } from './lib/game.mjs';
 import { enterDungeon } from './lib/dungeonshot.mjs';
@@ -424,5 +425,33 @@ console.log(JSON.stringify(p75));
 check(`at 74 → 75: burn ${p75.lo.burn} → ${p75.hi.burn} s, the rider's slow ×${p75.lo.slow} → ×${p75.hi.slow}, a pillar ${p75.lo.pillar} → ${p75.hi.pillar} s, the step ${p75.lo.step} → ${p75.hi.step} m, a mend of 40's blow ${p75.lo.mend} → ${p75.hi.mend}, the updraft ${p75.lo.up} → ${p75.hi.up} m`,
   p75.lo.burn === 4 && p75.hi.burn === 8 && p75.lo.slow === .7 && p75.hi.slow === .55 && p75.lo.pillar === 20 && p75.hi.pillar === 40 &&
   p75.lo.step === 12 && p75.hi.step === 18 && p75.lo.mend === 10 && p75.hi.mend === 12 && p75.lo.up === 2.2 && p75.hi.up === 3.7, p75);
+// S1622 — Cloch, Scáth and Gaoth at 99 and then 100
+const p100 = await page.evaluate(() => {
+  const e = ENEMIES.find(x => x.floor === 1 && x.mesh); e.dead = false; e.hp = e.maxHp = 1e5; e.dmg = 20; staggered.length = 0; e._downUntil = 0;
+  const S = ['cloch', 'scath', 'gaoth'], lv = n => { for (const k of S) SKILLS[k] = { lv: n, p: 0 }; };
+  const sm = showMsg; showMsg = () => {};
+  const read = () => { const out = {};
+    // an arrow from behind you, with Sciath worn
+    SPELL_FX.shield = performance.now() + 60000; PHP = 100; blocking = false;
+    const m = new THREE.Mesh(new THREE.BoxGeometry(.05, .05, .7)); dScene.add(m);
+    e.x = px; e.z = pz + 6; ZARROWS.push({ m, x: px, z: pz + .3, y: 1, vx: 0, vz: -1, life: 1, dmg: 20, from: e, sc: dScene });
+    tickZoneArrows(1 / 60, performance.now()); out.arrow = 100 - PHP; SPELL_FX.shield = 0;
+    // a sent Gaoth's knock
+    staggered.length = 0; e._downUntil = 0; out.knock = gaothKnock(e); out.down = e._downUntil > performance.now() / 1000;
+    return out; };
+  lv(99); const lo = read(); lv(100); const hi = read(); lv(50); showMsg = sm; PHP = maxHP; staggered.length = 0; e._downUntil = 0;
+  return { lo, hi };
+});
+// Scáth's veil: cast by F down the open heading, at 99 then 100
+const veil = async (n) => { await page.evaluate((n) => { SKILLS.scath = { lv: n, p: 0 }; for (const o of ENEMIES) o.dead = true; LAID && laidEnd(); knownWords = { dul_thart: 2 };
+    for (let i = ACTIVE_BUFFS.length - 1; i >= 0; i--) if (ACTIVE_BUFFS[i].type === 'vanish') ACTIVE_BUFFS.splice(i, 1);
+    const mk = bookMake('sent', 'dul_thart'); bookSelect(mk.i); for (const k2 in K) K[k2] = false; castT = 0; _castFreeAt = 0; _castReleaseAt = 0; spCd = 0; mana = 1000;
+    window._vx = { x0: px, z0: pz, fr: casterRand }; casterRand = () => () => .99; const sm = showMsg; showMsg = () => {}; try { castSpell(); } finally { showMsg = sm; } }, n);
+  await page.waitForFunction(() => Math.hypot(px - window._vx.x0, pz - window._vx.z0) > .5, null, { timeout: 15000, polling: 100 }).catch(() => {});
+  return page.evaluate(() => { casterRand = window._vx.fr; const v = _hasBuff('vanish'); px = window._vx.x0; pz = window._vx.z0; return v; }); };
+p100.lo.unseen = await veil(99); p100.hi.unseen = await veil(100);
+console.log(JSON.stringify(p100));
+check(`at 99 → 100: an arrow from behind through Sciath takes ${p100.lo.arrow} → ${p100.hi.arrow}; a step leaves you unseen ${p100.lo.unseen} → ${p100.hi.unseen}; a sent Gaoth knocks down ${p100.lo.down} → ${p100.hi.down}`,
+  p100.lo.arrow > 0 && p100.hi.arrow === 0 && p100.lo.unseen === false && p100.hi.unseen === true && p100.lo.down === false && p100.hi.down === true, p100);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
