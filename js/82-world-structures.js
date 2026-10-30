@@ -2096,4 +2096,60 @@
     // the ring, gold, lying in its hollow
     const ring=new THREE.Mesh(new THREE.TorusGeometry(.054,.012,6,20),new THREE.MeshLambertMaterial({color:0xe8c050,emissive:0x3a2a08}));ring.rotation.x=Math.PI/2;ring.position.y=1.268;ring.name='ringBand';g.add(ring);
     return {group:g,ring};}
+  // S1596 — the Waylamp (the Makers' trials, the Hearth's row: "An inn lamp of old brass with a horn window. It burns without oil and no
+  // weather puts it out"), hung beside its inn's door; until now the sight line spoke of a lamp no one could see. waylampProp(lit): an iron
+  // wall bracket, its arm 0.6 m out with a brace under it and a scroll, and from its end on a hook and ring the lantern: a six-sided body of
+  // old brass posts round horn panes, a cap and a band above, a base and a drop finial below, 0.7 m from the arm to the finial. The panes
+  // are lit horn, unlit by the scene's light, so it burns by day as by night, and a soft halo hangs round it, stronger after dark. Built at
+  // the origin, +z out from the wall and y 0 the arm; lit false is the bracket alone, empty, where the lamp was taken down. About 600
+  // triangles in 2 draws (3 with the halo).
+  let _wlPane=null,_wlHalo=null;
+  function waylampProp(lit){const g=new THREE.Group(),P=[],iron=new THREE.Color(0x2c2a27),brass=new THREE.Color(0x8c6c34),dark=new THREE.Color(0x5e4823),ox=.6,lz=ox-.04;
+    g.name='waylamp';
+    P.push({geo:new THREE.BoxGeometry(.07,.36,.025),color:iron,x:0,y:-.12,z:.0125});
+    P.push({geo:new THREE.BoxGeometry(.028,.028,ox),color:iron,x:0,y:0,z:ox/2});
+    {const L=Math.hypot(.28,.4);P.push({geo:new THREE.BoxGeometry(.02,.02,L),color:iron,x:0,y:-.14,z:.22,rx:-Math.atan2(.28,.4)});}
+    P.push({geo:new THREE.TorusGeometry(.055,.009,5,12,Math.PI*1.5),color:iron,x:0,y:-.06,z:.4,ry:Math.PI/2});
+    P.push({geo:new THREE.SphereGeometry(.022,6,4),color:iron,x:0,y:0,z:ox});
+    let halo=null;
+    if(lit){
+      P.push({geo:new THREE.CylinderGeometry(.006,.006,.1,5),color:iron,x:0,y:-.05,z:lz});
+      P.push({geo:new THREE.TorusGeometry(.028,.006,5,10),color:dark,x:0,y:-.125,z:lz});
+      P.push({geo:new THREE.ConeGeometry(.15,.13,6),color:brass,x:0,y:-.215,z:lz});
+      P.push({geo:new THREE.CylinderGeometry(.16,.16,.025,6),color:dark,x:0,y:-.29,z:lz});
+      for(let k=0;k<6;k++){const a=k/6*Math.PI*2;P.push({geo:new THREE.CylinderGeometry(.009,.009,.3,4),color:brass,x:Math.sin(a)*.148,y:-.455,z:lz+Math.cos(a)*.148});}
+      P.push({geo:new THREE.CylinderGeometry(.16,.15,.035,6),color:dark,x:0,y:-.62,z:lz});
+      P.push({geo:new THREE.ConeGeometry(.05,.08,6),color:brass,x:0,y:-.675,z:lz,rx:Math.PI});
+      if(!_wlPane)_wlPane=new THREE.MeshBasicMaterial({color:0xffcf78,side:THREE.DoubleSide});
+      const pane=new THREE.Mesh(new THREE.CylinderGeometry(.142,.142,.29,6,1,true),_wlPane);pane.position.set(0,-.455,lz);pane.name='waylampHorn';g.add(pane);
+      if(!_wlHalo){const cv=document.createElement('canvas');cv.width=cv.height=64;const x=cv.getContext('2d'),gr=x.createRadialGradient(32,32,0,32,32,32);
+        gr.addColorStop(0,'rgba(255,214,140,1)');gr.addColorStop(.35,'rgba(255,190,100,.35)');gr.addColorStop(1,'rgba(255,170,80,0)');x.fillStyle=gr;x.fillRect(0,0,64,64);
+        _wlHalo=new THREE.SpriteMaterial({map:new THREE.CanvasTexture(cv),color:0xffffff,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,opacity:.15});}
+      halo=new THREE.Sprite(_wlHalo);halo.scale.set(1.1,1.1,1);halo.position.set(0,-.455,lz);halo.raycast=()=>{};halo.name='waylampHalo';g.add(halo);}
+    const m=new THREE.Mesh(mergeParts(P),VC_MAT);m.castShadow=true;m.name='waylampIron';g.add(m);
+    return {group:g,halo};}
+  // where the bracket goes: beside the inn's street door, where the wall is flat over the plate's height (no window, no string course
+  // behind the plate) and nothing stands out 0.3 m under the arm, nor crosses the lantern's room 0.8 m wide (a porch, a sign on its own
+  // bracket), found by rays from the street and along the wall at the house as drawn; null until the house is built
+  function waylampSpot(h){if(!sc)return null;const nx=-Math.sin(h.exitYaw),nz=-Math.cos(h.exitYaw),tx=nz,tz=-nx,y0=worldH(h.doorX,h.doorZ);
+    const objs=[];sc.traverse(o=>{if(o.isMesh&&!o.isSkinnedMesh&&o.visible&&!(o.parent&&o.parent.name==='waylamp'))objs.push(o);});
+    const rc=new THREE.Raycaster(),dir=new THREE.Vector3(-nx,0,-nz),o=new THREE.Vector3();rc.far=4.5;
+    const hit=(lat,hh)=>{o.set(h.doorX+nx*3+tx*lat,y0+hh,h.doorZ+nz*3+tz*lat);rc.set(o,dir);const H=rc.intersectObjects(objs,false)[0];return H?H.distance-3:null;};
+    const flat=[],clear=[-.45,-.7];for(let y=-.32;y<=.081;y+=.08)flat.push(y);
+    const along=new THREE.Vector3(tx,0,tz),side=(lat,a,H)=>{for(const out of [.25,.56,.85])for(const y of [-.05,-.3,-.55,-.75]){o.set(h.doorX+nx*(a+out)+tx*(lat-.4),y0+H+y,h.doorZ+nz*(a+out)+tz*(lat-.4));rc.set(o,along);rc.far=.8;if(rc.intersectObjects(objs,false).length){rc.far=4.5;return false;}}rc.far=4.5;return true;};
+    for(const H of [3.2,3.05,3.35,2.9,3.5])for(const lat of [1.05,-1.05,1.3,-1.3,.85,-.85,1.6,-1.6]){const a=hit(lat,H);if(a==null||Math.abs(a)>.6)continue;
+      if(flat.every(y=>{const b=hit(lat,H+y);return b!=null&&Math.abs(b-a)<.03;})&&clear.every(y=>{const b=hit(lat,H+y);return b==null||b>a-.3;})&&side(lat,a,H))return {x:h.doorX+nx*a+tx*lat,y:y0+H,z:h.doorZ+nz*a+tz*lat,ry:Math.atan2(nx,nz),lat,h:H};}
+    return null;}
+  // the lamp on the wall (waylampPropTick, from tickWaylamp each second): while it hangs, at lampHome's inn; while it is carried, the
+  // bracket stays empty at the first inn of its town; dropped as you leave the town
+  let WAYLAMP_PROP=null;
+  function waylampPropDrop(){const W=WAYLAMP_PROP;WAYLAMP_PROP=null;if(!W)return;if(W.group.parent)W.group.parent.remove(W.group);W.group.traverse(o=>{if(o.geometry)o.geometry.dispose();});}
+  function waylampPropTick(){if(typeof lampHome!=='function'||typeof artifactPlaces!=='function')return;
+    let want=null;{const H=lampHome(),P=artifactPlaces().waylamp;if(H&&H.inn)want={site:H.site,inn:H.inn,lit:true};else if(P){const f=lampFirstInn(P.site);if(f)want={site:P.site,inn:f.id,lit:false};}}
+    const st=want&&SETTLE.get(want.site),h=st&&st.houses&&st.houses.find(x=>x.id===want.inn);
+    if(!h||activeZoneId!=='world'||Math.hypot(px-h.doorX,pz-h.doorZ)>220){waylampPropDrop();return;}
+    const key=want.site+'|'+want.inn+'|'+want.lit;
+    if(!WAYLAMP_PROP||WAYLAMP_PROP.key!==key||WAYLAMP_PROP.group.parent!==sc){waylampPropDrop();const sp=waylampSpot(h);if(!sp)return;
+      const W=waylampProp(want.lit);W.group.position.set(sp.x,sp.y,sp.z);W.group.rotation.y=sp.ry;sc.add(W.group);WAYLAMP_PROP=Object.assign(W,{key,house:h.id,spot:sp});}
+    if(WAYLAMP_PROP.halo)WAYLAMP_PROP.halo.material.opacity=typeof isNight==='function'&&isNight()?.6:.15;}
   const SETTLE_MAT=VC_MAT;
