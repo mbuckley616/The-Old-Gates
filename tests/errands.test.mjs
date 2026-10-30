@@ -95,5 +95,45 @@ for (const k of ['gone', 'dead', 'there']) { const x = r.L[k]; if (!x) { check(`
 if (r.again) { check('the lie remembered: the waiting line in some of the three weeks after', r.again.waits.some(Boolean), r.again.waits);
   check('four game-weeks on, the giver writes again to the same one, and on the truth says they knew', r.again.E2 && r.again.E2.again && r.again.E2.who === r.again.who && r.again.E2.truth === 'dead' && /:1$/.test(r.again.id) && r.again.said === r.again.want, r.again); }
 check('the letters are plain data in worldState.quests, no live handle', r.lsaved.length >= 3 && r.lsaved.every(x => !x.npc), r.lsaved);
+// S1600 — errand 4, Say the Name at the Door: the offer, the door's prompt and press, the pay by people; the Old Blood's one line;
+// a Markman with a spouse never asks; on the truth of a death (errand 1) the name is offered at once
+const n4 = await page.evaluate(() => {
+  const site = siteAnywhere('dunmore'); worldState.quests = []; worldState.met = {}; worldState.gameTimeAbsMinutes = 60 * 1440 + 300;
+  const mk = (i, pp) => { const d = makeDef(site, site.reg || 'irish', seededRng('ertest4', i), 'Villager', 'Seán', {}); d._twin = 'N' + i; if (pp) d.people = pp; return d; };
+  const gate = erGate(site); const out = { gate: gate && gate.gate };
+  if (!gate) return out;
+  const find = (pp, ok) => { for (let i = 0; i < 4000; i++) { const d = mk(pp + i, pp); const e = errandFor(d, site); if (e && e.sub === 'name' && (!ok || ok(d))) return d; } return null; };
+  const by = {};
+  for (const pp of ['gatelander', 'aurennais', 'markman']) { const A = find(pp); if (!A) continue; const E = errandFor(A, site), o = erPro(E);
+    A.greeting[0]; const greet = A.greeting[0]; const ask = A.topics.find(t => /^About you/.test(t.label)).follow.find(t => t.label === 'Can I do anything for you?');
+    const g0 = gold, f0 = favor(site), b0 = bagCount(b => b.name === 'Loaf of Bread'); const yes = ask.follow[0].fn(); const q = qActive().find(x => x.giver === A.name && x.sub === 'name');
+    const notYet = A.topics.find(t => t.label === 'About that errand.').fn(); const P = { seed: q.data.seed };
+    const prompt = erNamePrompt(P), other = erNamePrompt({ seed: -1 }); const said = erNameSay(P); const log = GAME_LOG[GAME_LOG.length - 1].text;
+    const after = { prompt: erNamePrompt(P), again: erNameSay(P) }; const top = A.topics.find(t => t.label === 'I said the name.');
+    const done = top && top.fn();
+    by[pp] = { greet, hint: ER_NAME.hint[pp](o), offer: ask.response, want: ER_NAME.offer[pp](o), yes, ys: ER_SHARED[pp].yes, title: q.title, wtitle: `A name at ${E.gate}`, notYet, ny: ER_SHARED[pp].notYet,
+      prompt, other, said, log, wlog: `You say the name at the door of ${E.gate}: ${E.who}.`, after, done, wdone: ER_NAME.done[pp](o), paid: gold - g0, wpaid: questGold(q.reward), fav: favor(site) - f0,
+      bread: bagCount(b => b.name === 'Loaf of Bread') - b0, turned: q.turnedIn, spouse: A.bio.spouse }; }
+  const OB = find('oldblood'); let ob = null; if (OB) { const ask = OB.topics.find(t => /^About you/.test(t.label)).follow.find(t => t.label === 'Can I do anything for you?'); OB.greeting[0];
+    ob = { said: ask && ask.response, follow: !!(ask && ask.follow), greet: OB.greeting[0], first: firstWords(OB, site) }; }
+  let mkSpouse = 0; for (let i = 0; i < 1500; i++) { const d = mk('ms' + i, 'markman'); const e = d.bio.spouse && errandFor(d, site); if (e && e.sub === 'name') mkSpouse++; }
+  // the hand-off: a letter whose addressee is dead, told truly
+  let hand = null; for (let i = 0; i < 6000; i++) { const C = mk('L' + i); const e = errandFor(C, site); if (!e || e.sub !== 'letter' || e.truth !== 'dead' || erPeople(C) === 'oldblood') continue;
+    C.topics.find(t => /^About you/.test(t.label)).follow.find(t => t.label === 'You’re waiting on word from someone?').follow[0].fn();
+    const q = qActive().find(x => x.giver === C.name && x.sub === 'letter'); q.data.learned = true; const c = C.topics.find(t => t.label === ER_LETTER.told.dead(erPro(e)));
+    const said = c.fn(c); const ask = c.follow && c.follow[0]; const yes = ask && ask.follow[0].fn(); const n = qActive().find(x => x.giver === C.name && x.sub === 'name');
+    hand = { said, want: ER_LETTER.truth[erPeople(C)].dead(erPro(e)), label: ask && ask.label, offer: ask && ask.response, who: e.who, nwho: n && n.data.who, nid: n && n.id, after: n && n.data.after }; break; }
+  return Object.assign(out, { by, ob, mkSpouse, hand, OBL: ER_NAME.oldblood, saved: JSON.parse(JSON.stringify(worldState.quests)).filter(x => x.sub === 'name').length });
+});
+console.log(JSON.stringify(n4).slice(0, 2500));
+check('name: an old gate near the town to send the name to', !!n4.gate, n4.gate);
+for (const pp of ['gatelander', 'aurennais', 'markman']) { const x = n4.by && n4.by[pp]; if (!x) { check(`name (${pp}): a giver asks`, false); continue; }
+  check(`name (${pp}): the hint after First Words, the offer word for word with the gate`, x.greet.endsWith(' ' + x.hint) && x.offer === x.want && x.offer.includes(n4.gate), { greet: x.greet, offer: x.offer });
+  check(`name (${pp}): taken, the journal titles it, About that errand. says not yet`, x.yes === x.ys && x.title === x.wtitle && x.notYet === x.ny, { title: x.title });
+  check(`name (${pp}): the door's prompt only at that gate; E says the name into the log, once`, x.prompt === "Press 'E' to say the name" && x.other === null && x.said === true && x.log === x.wlog && x.after.prompt === null && x.after.again === false, { prompt: x.prompt, log: x.log });
+  check(`name (${pp}): I said the name. is answered in their words and paid as the draft has it`, x.done === x.wdone && x.turned && x.paid === x.wpaid && x.fav === 1 && x.bread === (pp === 'gatelander' ? 1 : 0) && (pp !== 'markman' || (x.paid === 0 && !x.spouse)), { done: x.done, paid: x.paid, bread: x.bread }); }
+check('name: an Old Blood giver has the one line to the ask, no errand and no hint', n4.ob && n4.ob.said === n4.OBL && !n4.ob.follow && n4.ob.greet === n4.ob.first, n4.ob);
+check('name: a Markman with a spouse never asks it', n4.mkSpouse === 0, n4.mkSpouse);
+check('name: on the truth of a death the giver offers the name at once, for the one who died', n4.hand && n4.hand.said === n4.hand.want && n4.hand.label === 'Can I do anything for you?' && n4.hand.offer.includes(n4.hand.who) && n4.hand.nwho === n4.hand.who && n4.hand.after === true, n4.hand);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

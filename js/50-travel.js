@@ -2064,6 +2064,7 @@ function interact(){
     }
     // Dungeon portals — any zone
     const nearPortal=PORTALS.find(p=>Math.hypot(px-p.x,pz-p.z)<2.0);
+    if(nearPortal&&typeof erNameSay==='function'&&erNameSay(nearPortal))return; /* S1600 — a name owed at this door is said first, then the door is a door again */
     if(nearPortal){if(typeof greatRingBack==='function'&&greatRingBack(nearPortal)){greatDoorChoice(nearPortal);return;} /* S1354 — the way back to a great gate's ring */goToDungeon(nearPortal);return;}
     // House doors — Ashenmoor, Hearthwick, or Ironhaven
     if(activeZoneId==='overworld'){
