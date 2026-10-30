@@ -7,6 +7,8 @@
 // Leigheas mends 25% of the blow; two schools add 10% wild until both reach 25.
 // Session 1603: the Touched form on a foe: a 0.25 s wind-up, then the nearest foe within 1.6 m of your edge (hull to hull) and 30° of
 // your facing takes ×1.5 the word (Caor 30, Tintreach 36) for ×0.6 its mana; Tintreach staggers, Reo holds 2 s.
+// Session 1604: the riders on a laid thing: a hot pillar (3 a second to a foe touching it), Fréamh's root (the first foe across, 1 s,
+// once), Leigheas's mend (2 a second while you stand at it), Séideán's throw (a pillar under you sends you up at Éan's 8.4 m/s), Solas's light.
 import { boot, check } from './lib/game.mjs';
 import { enterDungeon } from './lib/dungeonshot.mjs';
 const g = await boot(); const { page } = g;
@@ -105,13 +107,16 @@ const q = await page.evaluate(() => {
   SKILLS.tine.lv = 20; out.mixed = [riderMixedWild('caor', 'sioc')]; SKILLS.tine.lv = 25; SKILLS.uisce.lv = 25; out.mixed.push(riderMixedWild('caor', 'sioc'), riderMixedWild('caor', null));
   // a Sent Caor with Séideán's rider: its bolt carries the rider
   knownWords.sideen = 2; const ms = bookMake('sent', 'caor', 'sideen'); bookSelect(ms.i); out.sentMade = ms.i;
+  // the bolt is stilled the moment it is pushed into BALLS, so a slow frame cannot fly it into a wall before the test sees it
+  const _push = BALLS.push; BALLS.push = function (...a) { for (const f of a) if (f.userData && f.userData.rider === 'sideen') {
+    f.userData.vx = f.userData.vy = f.userData.vz = 0; f.userData.life = 30; f.position.set(px - Math.sin(yaw) * 2, 1, pz - Math.cos(yaw) * 2);
+    for (const o of ENEMIES) if (!o.dead && o.floor === 1 && o.mesh) { o.x = f.position.x + 3; o.z = f.position.z + 3; } BALLS.push = _push; }
+    return _push.apply(this, a); };
   for (const k2 in K) K[k2] = false; castT = 0; _castFreeAt = 0; _castReleaseAt = 0; spCd = 0; mana = 1000; castSpell();
   return out;
 });
 // the bolt is released at the Cast row's 0.35 s: find it, still it on the foe, and let the loop's own hit land it
-const b = await page.waitForFunction(() => { const f = BALLS.find(x => x.userData && x.userData.rider === 'sideen'); if (!f) return false;
-  f.userData.vx = f.userData.vy = f.userData.vz = 0; f.userData.life = 30; f.position.set(px - Math.sin(yaw) * 2, 1, pz - Math.cos(yaw) * 2);
-  for (const e of ENEMIES) if (!e.dead && e.floor === 1 && e.mesh) { e.x = f.position.x + 3; e.z = f.position.z + 3; } return true; }, null, { timeout: 15000, polling: 'raf' }).then(() => true).catch(() => false);
+const b = await page.waitForFunction(() => BALLS.some(x => x.userData && x.userData.rider === 'sideen'), null, { timeout: 15000, polling: 100 }).then(() => true).catch(() => false);
 const bolt = b ? await page.evaluate(async () => {
   const fb = BALLS.find(f => f.userData.rider === 'sideen'), e = ENEMIES.find(x => x.floor === 1 && x.mesh && !x.dead);
   fb.userData.vx = fb.userData.vy = fb.userData.vz = 0; fb.userData.life = 30; fb.position.y = 1;
@@ -166,5 +171,40 @@ check(`a touched Caor waits its wind-up (${tCaor.ms} ms), then lands ${tCaor.dea
 check(`armour 8 is met ×1.5 too: ${tArm.dealt} against a bolt's ${tBoltArm}`, Math.abs(tArm.dealt - Math.round(tBolt * 1.5 - 12)) <= 1 && tBoltArm === tBolt - 8, { tArm, tBoltArm });
 check(`it reaches ${tR} m centre to centre (1.6 m from your edge) and not 0.1 m past, nor 35° off your facing ("${tOut.said}")`, tIn.dealt > 0 && tOut.dealt === 0 && tWide.dealt === 0 && /Nothing within reach/.test(tOut.said), { tIn, tOut, tWide });
 check(`Tintreach touched lands ${tTin.dealt} and staggers (${tTin.stag} s); Reo holds it ${tReo.stag} s with no blow`, tTin.dealt > 0 && tTin.stag >= 1.5 && tReo.stag === 2 && tReo.dealt === 0, { tTin, tReo });
-check(`a rider rides the touch: Caor with Sioc slows it (×${tRide.slow})`, tRide.dealt > 0 && tRide.slow === .7, tRide);check('no page errors', g.errs.length === 0, g.errs);
+check(`a rider rides the touch: Caor with Sioc slows it (×${tRide.slow})`, tRide.dealt > 0 && tRide.slow === .7, tRide);
+// S1604 — the riders on a laid Cloch pillar, by the play clock
+const lr = await page.evaluate(() => {
+  const out = {}; knownWords = { cloch_ghear: 2, caor: 2, freamh: 2, leigheas: 2, sideen: 2, solas_gheal: 2 };
+  const e = ENEMIES.find(x => x.floor === 1 && x.mesh); for (const o of ENEMIES) if (o !== e) o.dead = true;
+  e.dead = false; e.hp = e.maxHp = 1e5; e.def = 50; e.resist = null; e.alert = true; e._rootUntil = 0; e.spd = 0; jumpY = 0; velY = 0; onGround = true;
+  // a way with open floor from where you stand
+  let ux = 0, uz = -1, ok = false;
+  for (let a = 0; a < 16 && !ok; a++) { const t = a * Math.PI / 8; ux = -Math.sin(t); uz = -Math.cos(t); ok = true;
+    for (let s2 = .2; s2 <= 4.2; s2 += .1) if (riderFoeSolid(px + ux * s2, pz + uz * s2, true)) { ok = false; break; } if (ok) yaw = t; }
+  const cx = px + ux * 2.5, cz = pz + uz * 2.5, far = () => { e.x = px - ux * 6; e.z = pz - uz * 6; };
+  const run = (sec) => { for (let n = 0; n < Math.round(sec * 60); n++) { playClockS += 1 / 60; laidRiderTick(); } };
+  const lay = (rider, x, z) => { far(); laidEnd(); const r = layWord('cloch_ghear', rider, x == null ? cx : x, z == null ? cz : z, { cap: 1 }); return r; };
+  const touchIt = () => { const d = LAID.r + hullOf(e) - .05; e.x = cx + ux * d; e.z = cz + uz * d; };
+  out.open = ok;
+  // hot: three seconds touching it, in armour 50
+  let r = lay('caor'); out.hotLaid = r.ok || r.say; touchIt(); let h0 = e.hp; run(3.05); out.hot = h0 - e.hp; far(); h0 = e.hp; run(2); out.hotFar = h0 - e.hp;
+  // the root: the first foe across, 1 s, and not again
+  r = lay('freamh'); touchIt(); run(.05); out.root = [foeSlowMult(e)]; run(1.05); out.root.push(foeSlowMult(e)); run(.5); out.root.push(foeSlowMult(e));
+  // the mend: 2 a second while you stand against it
+  r = lay('leigheas'); PHP = 50; const ox = px, oz = pz; px = cx - ux * (LAID.r + .2); pz = cz - uz * (LAID.r + .2); run(3.05); out.mend = PHP; px = ox; pz = oz; PHP = 50; run(2); out.mendAway = PHP;
+  // the light
+  r = lay('solas_gheal'); const L8 = laidLight(); out.light = L8 && L8.r;
+  // the throw: laid where you stand, it rises under you and sends you up at Éan's rise; without the rider it is refused there
+  laidEnd(); const bare = layWord('cloch_ghear', null, px, pz, { cap: 1 }); out.bare = bare.why || 'laid';
+  laidEnd(); far(); const th = layWord('cloch_ghear', 'sideen', px, pz, { cap: 1 }); out.thrown = { ok: th.ok, thrown: th.thrown, velY, jumpY: +jumpY.toFixed(2), top: LAID && +(LAID.top).toFixed(2), onGround };
+  laidEnd(); jumpY = 0; velY = 0; onGround = true;
+  return out;
+});
+console.log(JSON.stringify(lr));
+check(`a hot pillar (${lr.hotLaid}): ${lr.hot} to a foe touching it in 3 s through armour 50, ${lr.hotFar} once it stands off`, lr.open && lr.hot === 9 && lr.hotFar === 0, lr);
+check(`Fréamh's pillar roots the first foe across it 1 s (×${lr.root}) and not again`, lr.root && lr.root.join() === '0,1,1', lr.root);
+check(`Leigheas's pillar mends you 2 a second at its side (50 → ${lr.mend}), nothing away (${lr.mendAway})`, lr.mend === 56 && lr.mendAway === 50, lr);
+check(`Solas's pillar holds a light ${lr.light} m round`, lr.light === 8, lr);
+check(`a bare pillar is refused on you (${lr.bare}); Séideán's rises under you and throws you at ${lr.thrown.velY} m/s from its top (${lr.thrown.jumpY} of ${lr.thrown.top})`, lr.bare === 'body' && lr.thrown.ok && lr.thrown.thrown && lr.thrown.velY === 8.4 && lr.thrown.jumpY === lr.thrown.top && !lr.thrown.onGround, lr.thrown);
+check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

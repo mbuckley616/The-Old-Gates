@@ -771,6 +771,7 @@ function tickSpellFx(dt){
   if(HELD)heldTick(dt); /* S1601 — the held form */
   if(RIDDEN.size)riderTick(); /* S1602 — the riders' burns and glows */
   if(TOUCH_PEND)touchTick(); /* S1603 — the touched form's landing */
+  if(LAID&&LAID.rideR)laidRiderTick(); /* S1604 — a rider on a laid thing */
   if(_spellLight&&!fxOn('light')&&_spellLight.intensity>0)_spellLight.intensity=Math.max(0,_spellLight.intensity-dt*2);
 }
 // spellbooks: read to learn
@@ -1014,10 +1015,10 @@ function laidDoorNear(x,z,r){
     for(let a=0;a<16;a++)for(const rr of [0,r*.5,r]){const c=dCellOf(x+Math.cos(a*Math.PI/8)*rr),w=dCellOf(z+Math.sin(a*Math.PI/8)*rr);const v=m[w]&&m[w][c];if(v===4||v===5)return true;}}
   return false;}
 // room for a pillar or an updraft r round at x,z, feet at y: no solid or door within LAID_CLEAR of its edge, no body on it
-function laidClear(x,z,r,y){const R=r+LAID_CLEAR,ow=!isInterior()&&!(lid&&lid.startsWith('dyn_')),rr=ow?Math.max(0,R-.3):R;
+function laidClear(x,z,r,y,o){o=o||{};const R=r+LAID_CLEAR,ow=!isInterior()&&!(lid&&lid.startsWith('dyn_')),rr=ow?Math.max(0,R-.3):R;
   for(let a=0;a<24;a++)for(const f of [0,.35,.7,1]){const d=rr*f;if(!d&&a)continue;if(laidSolidPt(x+Math.cos(a*Math.PI/12)*d,z+Math.sin(a*Math.PI/12)*d,y))return 'solid';}
   if(laidDoorNear(x,z,R))return 'door';
-  if(Math.hypot(px-x,pz-z)<r+.3)return 'body';
+  if(!o.self&&Math.hypot(px-x,pz-z)<r+.3)return 'body'; /* S1604 — a throwing pillar may rise under you */
   for(const e of (typeof ENEMIES!=='undefined'?ENEMIES:[]))if(!e.dead&&e.mesh&&Math.hypot(e.mesh.position.x-x,e.mesh.position.z-z)<r+.4)return 'body';
   return null;}
 // the point under the crosshair: the camera's ray marched to the first walkable top, or null at a wall or past the reach
@@ -1051,7 +1052,7 @@ function layWord(word,rider,x,z,o){o=o||{};
   const wet=ow&&typeof worldH==='function'&&worldH(x,z)<(typeof SEA_Y!=='undefined'?SEA_Y-.35:-1e9)&&activeTerrainH(x,z)<SEA_Y; /* open water: no quay or deck over it */
   let L={kind,word,rider:rider||null,x,z,key:laidKey()};
   if(kind==='pillar'||kind==='updraft'){
-    const r=kind==='pillar'?F.across/2:F.updraft/2,why=laidClear(x,z,r,y);
+    const r=kind==='pillar'?F.across/2:F.updraft/2,throws=kind==='pillar'&&rider==='sideen',why=laidClear(x,z,r,y,{self:throws});
     if(why)return {say:why==='body'?'There is no room to lay it there.':'Too near the wall to lay it.',why};
     if(ow&&worldH(x,z)<SEA_Y-.35)return {say:'It will not stand in water.',why:'wet'};
     const h=kind==='pillar'?F.pillar*(o.overshoot?LAID_OVERSHOOT:1):0;
@@ -1066,7 +1067,28 @@ function layWord(word,rider,x,z,o){o=o||{};
     Object.assign(L,{hw:B.wide/2,hl:len/2,ux,uz,base:y-.35,top:y,solid:true,dur:B.dur});}
   laidEnd();
   L.until=playClockS+Math.min(LAID_MAX_S,L.dur);L.mesh=laidMesh(L);LAID=L;
-  return {ok:true,kind};}
+  if(rider&&RIDERS[rider])laidRiderStart(L,rider);
+  return {ok:true,kind,thrown:!!L.thrown};}
+// S1604 — magic B's session 4, part 4 (magic-build.md, "Joining and riders", the laid column): a rider on a laid thing. Caor makes it
+// hot (3 a second, past the armour, to a foe touching it: its centre within its own hull of the thing); Séideán makes a Cloch pillar
+// throw you as Éan does (it may rise under you, and you leave its top at Éan's 8.4 m/s, 1.96 m over it); Fréamh roots the first foe
+// across it 1 s, once; Leigheas heals you 2 a second while you stand in it or on it; Solas gives it a light 8 m round for its time
+// (`laidLight`, for the look builder to draw: no lamp is lit). Sioc's freeze is the bridge (S1590); a floe is Sioc itself, so the rider
+// can never double one. Each second is the play clock's; it ends with the thing. Read each frame by laidRiderTick.
+const LAID_THROW_RISE=8.4; /* Éan's worn rise (WORD_BY.ean.forms.worn.rise) */
+function laidRiderStart(L,rider){const R=RIDERS[rider].laid;L.rideR=rider;L.next=playClockS+1;
+  if(R.light)L.light=R.light;
+  if(R.throws&&L.kind==='pillar'&&laidInside(L,px,pz,.3)){jumpY=Math.max(jumpY,L.top);velY=LAID_THROW_RISE;onGround=false;_jumpFrom=L.base;L.thrown=true;}}
+function laidLight(){const L=laidLive();return L&&L.light?{x:L.x,z:L.z,r:L.light}:null;}
+function laidRiderTick(){const L=laidLive();if(!L||!L.rideR)return;const R=RIDERS[L.rideR].laid,dun=!!(lid&&lid.startsWith('dyn_'));
+  if(R.root&&!L.rooted)for(const e of heldTargets()){if(e.dead||(dun&&e.floor!==currentFloor)||!laidInside(L,e.x,e.z,hullOf(e)))continue;
+    e._rootUntil=Math.max(e._rootUntil||0,playClockS+R.root);L.rooted=true;e.alert=true;break;}
+  for(let n=0;n<8&&playClockS>=L.next-1e-9&&LAID===L;n++){L.next+=1;
+    if(R.hot)for(const e of heldTargets()){if(e.dead||(dun&&e.floor!==currentFloor)||!laidInside(L,e.x,e.z,hullOf(e)))continue;
+      const d=challengeDealt(R.hot);e.hp=Math.max(0,e.hp-d);e.alert=true;
+      if(e.hpFg&&e.maxHp){e.hpFg.scale.x=e.hp/e.maxHp;e.hpFg.position.x=(e.hp/e.maxHp-1)*.275;}dmgNum(e,d,{});
+      if(e.hp<=0){if(dun)killE(e,' (burned)');else killZoneEnemy(e,scene,' (burned)');}}
+    if(R.hps&&laidInside(L,px,pz,.3)&&jumpY<=L.top+STEP_UP){PHP=Math.min(effMaxHP(),PHP+R.hps);}}}
 function laidMesh(L){if(typeof THREE==='undefined'||typeof scene==='undefined'||!scene)return null;
   let geo,col,op=1;
   if(L.kind==='pillar'){geo=new THREE.CylinderGeometry(L.r*.92,L.r,L.top-L.base,10);col=0x8a8378;}
