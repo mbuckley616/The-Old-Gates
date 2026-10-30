@@ -2096,7 +2096,7 @@
     // the ring, gold, lying in its hollow
     const ring=new THREE.Mesh(new THREE.TorusGeometry(.054,.012,6,20),new THREE.MeshLambertMaterial({color:0xe8c050,emissive:0x3a2a08}));ring.rotation.x=Math.PI/2;ring.position.y=1.268;ring.name='ringBand';g.add(ring);
     return {group:g,ring};}
-  // S1596 — the Waylamp (the Makers' trials, the Hearth's row: "An inn lamp of old brass with a horn window. It burns without oil and no
+  // S1598 — the Waylamp (the Makers' trials, the Hearth's row: "An inn lamp of old brass with a horn window. It burns without oil and no
   // weather puts it out"), hung beside its inn's door; until now the sight line spoke of a lamp no one could see. waylampProp(lit): an iron
   // wall bracket, its arm 0.6 m out with a brace under it and a scroll, and from its end on a hook and ring the lantern: a six-sided body of
   // old brass posts round horn panes, a cap and a band above, a base and a drop finial below, 0.7 m from the arm to the finial. The panes

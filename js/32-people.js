@@ -1812,7 +1812,7 @@ function hbBuildStep(now){const J=HBODY.job,rig=J.rig,top=rig.foe?rig.root.paren
   if(!r.done)return null;
   HBODY.job=null;rig.hbP=r.value;return rig;}
 function hbTick(now){let best=null,bd=HBODY.build;
-  const busy=now-HBODY.last<HBODY.gap||(typeof JOBS!=='undefined'&&JOBS.length&&!(typeof isInterior==='function'&&isInterior()));
+  const busy=now-HBODY.last<HBODY.gap||(typeof JOBS!=='undefined'&&JOBS.length&&activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior())); /* S1591 — the world's queue holds a body back only where the world runs it (WORLD.tick: the open world, not a room); in a gate its town jobs wait, and every body there waited with them */
   for(const rig of HB_RIGS){const root=rig.root,top=rig.foe?root.parent:root; // a foe's body hangs in its enemy's group (tickPeople)
     if(!root.parent||!top.parent){hbDrop(rig);HB_RIGS.delete(rig);continue;}
     if(top.parent!==scene||!top.visible||!root.visible)continue;

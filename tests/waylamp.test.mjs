@@ -38,7 +38,7 @@ const inn = await page.evaluate((site) => { const h = lampFirstInn(site); const 
   return { id: h.id, name: h.name, second: second && second.id, said, again }; }, P.site);
 console.log(JSON.stringify(inn));
 check(`near ${inn.name}'s door, once: *${inn.said}*`, inn.said === 'A lamp burns over the inn’s door in broad day. The rain does not seem to reach it.' && inn.again === null, inn);
-// S1596 — the lamp is drawn: beside its inn's street door on the wall, lit, a few hundred triangles
+// S1598 — the lamp is drawn: beside its inn's street door on the wall, lit, a few hundred triangles
 const drawn = () => page.evaluate(async (id) => { const h = lampFirstInn(artifactPlaces().waylamp.site); px = h.exitX; pz = h.exitZ; waylampPropTick();
   for (let n = 0; n < 60 && !(WAYLAMP_PROP && WAYLAMP_PROP.house === id); n++) { for (let i = 0; i < 10; i++) WORLD.tick(1 / 60, performance.now()); waylampPropTick(); await new Promise(r => setTimeout(r, 200)); }
   const W = WAYLAMP_PROP; if (!W) return { none: true }; let tris = 0; W.group.traverse(o => { if (o.isMesh) tris += (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3; });
