@@ -345,7 +345,7 @@ function castSpell(){
     showMsg('You know no magic. Sigils are carved into the walls of dungeon lower floors.','#a8a8d4');
     return;
   }
-  {const lb=spellBook[bookSync()];if(lb&&lb.form==='laid'){castLaid(lb);return;}} /* S1590 — a laid entry (64-spells.js) */
+  {const lb=spellBook[bookSync()];if(lb&&lb.form==='laid'){castLaid(lb);return;}if(lb&&lb.form==='held'){castHeld(lb);return;}} /* S1590 — a laid entry (64-spells.js); S1601 — a held one */
   const sp=SPELLS.find(s=>s.id===activeSpellId);
   if(!sp){showMsg('Spell not learned!','#6688cc');return;}
   const tier=effTier(sp.id); /* S1346 — a great gate torn or bound moves the tier cast */
