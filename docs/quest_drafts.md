@@ -2,7 +2,7 @@
 
 These are the quest writer's drafts. None of them is canon until Michael promotes it into `quest_writing.md`, and none is a spec until it is approved. Each draft gives the quest's shape, every line verbatim with its speaker and people, and a note on what in the code would carry it.
 
-Calls read to: 2026-10-16T17:51:09.360Z (run 31, 29 Oct: no new calls on the page)
+Calls read to: 2026-10-16T17:51:09.360Z (run 32, 30 Oct: no new calls on the page)
 
 ---
 
@@ -2079,7 +2079,7 @@ The three ending rows and his answers to them are as built (*Break it. Let the w
 
 ## Asked in Passing — six townsfolk's errands
 
-*Approved by Michael, 14 Oct 2026.* *Building: the frame and errand 3, A Fever, Session 1510 (PR #817, on main 28 Oct), word for word but for two plain fixes: only a giver with children asks for a fever (the offer says* My youngest*), and the giver answers* I’ll do it. *with the people's line added to the shared table below. Errand 1, The Unanswered Letter, Session 1554 (PR #868), word for word; the resident on* there *has no line, so the topic is left off there and the addressee is marked at their door, and the hand-off to errand 4 on* dead *waits for errand 4.* The first piece of Michael's control-room note of 5 Oct (backlog A, *Questing, a big effort pass*): *"we also need to add probably 50–100 somewhat unique quests. We can probably generalize these and make it so that these can be recycled in different areas, but I want quests to be something far more likely to stumble upon / something that will incentivize players to talk to NPCs."* Today every town job comes from the lord (`townQuestFor`, `87-world-quests.js`: cull, retrieve, deliver, find, road) and every guild task from a guild head. The people in the street give nothing. This draft gives them six errands, each a template that recycles across every town, trade and people, each with a choice or a clock that the world remembers. Six templates × the twelve trades that can give them × four peoples × the towns they point at is the variety the note asks for; a second run can add six more on the same frame.
+*Approved by Michael, 14 Oct 2026.* *Building: the frame and errand 3, A Fever, Session 1510 (PR #817, on main 28 Oct), word for word but for two plain fixes: only a giver with children asks for a fever (the offer says* My youngest*), and the giver answers* I’ll do it. *with the people's line added to the shared table below. Errand 1, The Unanswered Letter, Session 1554 (PR #868), word for word; the resident on* there *has no line, so the topic is left off there and the addressee is marked at their door, and the hand-off to errand 4 on* dead *waits for errand 4.* *Errand 4, Say the Name at the Door, Session 1600, word for word, with the hand-off from errand 1. One plain fix: a Markman asks only with no spouse in their bio, since a townsperson with one answers* Married to {spouse} *in the same conversation.* The first piece of Michael's control-room note of 5 Oct (backlog A, *Questing, a big effort pass*): *"we also need to add probably 50–100 somewhat unique quests. We can probably generalize these and make it so that these can be recycled in different areas, but I want quests to be something far more likely to stumble upon / something that will incentivize players to talk to NPCs."* Today every town job comes from the lord (`townQuestFor`, `87-world-quests.js`: cull, retrieve, deliver, find, road) and every guild task from a guild head. The people in the street give nothing. This draft gives them six errands, each a template that recycles across every town, trade and people, each with a choice or a clock that the world remembers. Six templates × the twelve trades that can give them × four peoples × the towns they point at is the variety the note asks for; a second run can add six more on the same frame.
 
 ### What the canon fixes, and where it is silent
 
@@ -5654,3 +5654,118 @@ He sits on the inn's step with the wolf across his feet.
 - Ailill: three sentences at most, *door* for the gate, *wearing* and *worn through* for failing and catastrophic, *clearing* in its plain sense. He never says *Clearing* as the canon's word for the burning of the dead, and nothing he says explains it.
 - Slurs: *cold-eyes* is said to Ailill by the player's label and he takes it, which is the canon's *said with a shudder* answered by the one it is said of; Tadhg's *the cold-eyed man* is fond. Nothing about bodies.
 - No prophecy, no description of the player, no remark on the player's returns.
+
+---
+
+## Strange Places, I — the Drowned Ring, the Hangstones and the Falak
+
+*Unapproved.* *Drafted 30 Oct 2026. Backlog L5, *Strange places* (OG-106): the concept artist built three wonders from the gate kit's stones, one an island (`docs/prototypes/levelup/wonders.js`, 29 Oct), and Michael answered DECISION #898 the same day: **quiet by day, awake dusk to dawn (20h–5h)**. The concept's notes leave "what a wonder does to you when you walk into it" to the systems builder and the quest writer. This draft gives the three their names, what you see and read on the first sight by day and by night, what the people near them say, one thing each does to a person who stands in it after dark, and the line the Old Blood have for each. The rules in §4 are small and are proposals: an approval of this draft is the systems builder's go-ahead to build them, and each can be left out without breaking the words.*
+
+### What the canon fixes, and where it is silent
+
+- *OG-106's wonders read as what a failing gate does to a place* (backlog L5, from Part I's *the central mystery*: a strained gate shapes what is near it). Each of the three is built from a gate's own stone and lit in one school's colour: the Ring Uisce's blue, the Hangstones Gaoth's pale blue, the Falak Solas's gold (`docs/concepts.md`). So each is a gate that failed long ago, quietly, in a way that lifted its stone instead of making foes. **Nobody says so.** The Old Blood come nearest, in one line each, and do not explain it.
+- *The surface is high fantasy … locals treat the strange as ordinary* (§10a; §10's *written dry*). The three are landmarks people picnic near, charge tolls at and tell children not to swim to. Nobody is frightened of them by day. By night they are beautiful, and that is what people say about them.
+- *Speech follows the speaker* (§1.5), *names by people* (§2): the Ring is in the Gatelands and has an Irish name; the Hangstones are in the Mark and have an Anglo one; the Falak is on Aurenne's coast and its name is the register's Arabic root (*falak*, the turning sphere of the sky). The Old Blood call each by an older word (§2: *answer questions with the older name for the thing*).
+- *§3.3: the Old Blood feel warm stones at a distance.* An Old Blood player feels the wonders the same way: one line, the first time.
+- *No chosen-one prophecies* (Part I, §4.2). Nothing at a wonder is about the player. The Falak points at something; it would point at it for anyone.
+- *Silent:* whether a wonder can be cleared, sealed or harmed; whether it is a gate. The plainer thing: it is not a gate (no door, no sigil to touch, no foes), and nothing the player does changes it. It is a place to stand.
+
+### 1. The names
+
+| | Map name | What the people near it call it | The Old Blood's word |
+|---|---|---|---|
+| **The Gatelands' Drowned Ring** | **Loch an Fháinne** | *the Ring*; *the Drowned Ring* in the towns | *an Doras Báite*, the drowned door |
+| **The Mark's Skyfall Fields** | **Hangstone Dale** | *the Hangstones* | *na Clocha nach dTiteann*, the stones that do not fall |
+| **Aurenne's Broken Orrery** | **Ras Falak** (the headland) | *the Falak*; *the Orrery* among the academy's people | *an Seol*, the loom |
+
+*An Seol* is the Irish word for both a loom and a sail. The Old Blood mean the first. Nobody in the game says that they mean the first.
+
+The map's hover card, under the name (`townCard`'s line for a point of interest, the same shape as a ruin's):
+- Loch an Fháinne: *A lough in the fen. Seven stones stand in it.*
+- Hangstone Dale: *A valley under snow. The stones are above it.*
+- Ras Falak: *A headland over the sea. Something turns on it.*
+
+### 2. The first sight
+
+A `showMsg` and an `addLog`, once a character for each wonder by day and once by night (`worldState.wonders[<id>] = {day, night}`, keyed by the wonder's id). It fires when the wonder is within 260 m and in front of you, or within 60 m whichever way you face. Day is 5h to 20h by the clock, night 20h to 5h, the same hours the wonder wakes by.
+
+**Loch an Fháinne**
+- *By day* (`#c8d0d8`): *Seven stones stand in the lough, each as tall as a church. An eighth lies across them. The water around them is very still.*
+- *By night* (`#9ec8f0`): *Light is moving under the lough, inside the ring of stones. It rises to the surface and goes down again, slowly, like breathing.*
+
+**Hangstone Dale**
+- *By day* (`#d8dce0`): *The stones of the valley are in the air. The largest is the size of a house. Under each one is the hole it came out of, and snow does not lie in the holes.*
+- *By night* (`#b8d8f0`): *The stones are turning, very slowly, high over the valley. Light moves in the cracks under them, the colour of the sky before snow.*
+
+**Ras Falak**
+- *By day* (`#e8dcc0`): *Four rings of stone stand one inside another on the headland, each wider than a ship is long, with a stone sun at the heart. Script is cut round every face. They are not moving.*
+- *By night* (`#f0d890`): *The rings are turning. The outermost is slow and the innermost quick, and the script on them is lit gold. They make no sound at all.*
+
+**For an Old Blood player, the first time any of the three is within 400 m** (once a character, before the sight line; a `showMsg` only, `#a8b8c8`): *There is a warm stone ahead. A large one. It is not a door.*
+
+### 3. What the people near them say
+
+**A topic**, for a generated townsperson (`makeDef`) of any site within 700 m of a wonder, in the top level while the wonder has been seen (either sight line): the label is the player's, by wonder.
+
+*Loch an Fháinne — label:* **The stones in the lough?**
+- Gatelander: "The Ring. It was there before the lough was, my grandmother said, and the lough came to keep it company. Don't swim out. Not because of anything. It's cold, and further than it looks."
+- Markman: "The Ring. Big stones in water. Lights at night. Pretty. Don't swim to it."
+- Aurennais: "The Ring, Master. The Church holds that it is a work of the old culture and forbids nothing about it, which is unusual. I would observe it from the boardwalk, all the same. The terms of the water are not known."
+- Old Blood: "An Doras Báite. It is a door. Under water. It is open a little."
+
+*Hangstone Dale — label:* **The stones in the air?**
+- Gatelander: "The Hangstones. I've heard of them and I'd as soon hear of them as see them. A stone's meant to know which way is down. Still, they say it's lovely under the lights."
+- Markman: "The Hangstones. Been up since before the League. Won't come down. We tried ropes once. The ropes went up." (Said flat. He is not joking.)
+- Aurennais: "The Hangstones, Master. The academy sent a survey to them in my father's time. The survey's conclusion was that they are there. I have read it. It is very thorough."
+- Old Blood: "Na Clocha nach dTiteann. They were under the ground once. Something let go of them."
+
+*Ras Falak — label:* **The rings on the headland?**
+- Gatelander: "The Falak, they call it over there. Turns at night like a mill with no water. They'll charge you to look at it, I'd wager, and charge you again to stop."
+- Markman: "The Falak. Rings that turn. No one turns them. Aurennais sit under it and write things down."
+- Aurennais: "The Falak, Master. It is the oldest instrument on the coast, and the academy has spent three hundred years agreeing what it measures. The present consensus is the sky. I hold, privately, that it is measuring something on the ground."
+- Old Blood: "An Seol. It still works. That is all I will say about it."
+
+**Rumours**, in towns within 900 m (`liveRumours`, the pool's one voice, by the speaker's people, while the wonder is unseen; they stop once you have seen it):
+- Gatelands: "There's a ring of stones in a lough in the fen, and the light under it at night would make you forget your own name. Not in a bad way. Mostly not."
+- The Mark: "Hangstone Dale. Stones in the sky. Go at night. Wrap up."
+- Aurenne: "On the headland of Ras Falak there is an orrery that turns without hands, Master. By night it is lit. People travel from the other islands to see it, and the inn at the foot of the road has raised its prices accordingly."
+
+### 4. One thing each does after dark (the rules, for the systems builder)
+
+Each fires only between 20h and 5h, while the wonder is awake, and only once a night (keyed by the wonder's id and the night's day number: `<id>:<day>`, the co-op rules, read from the clock, never the frame count).
+
+**Loch an Fháinne: lost time.** Stand inside the ring of piers (within 26 m of its centre, on the water or swimming), and the clock moves on by one hour. Nothing else changes: no health, no foes, the weather goes on. A `showMsg` (`#9ec8f0`) and the log:
+- *The light under the water rises and goes down. When you look up, the moon has moved.*
+
+**Hangstone Dale: the needle.** Within 60 m of any of the stones at night, the compass's needle turns round slowly and points nowhere (the compass strip's places are hidden; the markers on the map stay). A Lodestone in the bag (Mining 75, Session 1562) turns in the bag. One line, the first time a night:
+- *The compass turns and will not settle.*
+- with a Lodestone carried: *The compass turns and will not settle. The lodestone in your pack is turning too.*
+
+**Ras Falak: what it points at.** Stand on the platform (within 23 m of the sun) at night and wait (`Wait` one hour, or sixty seconds of play clock standing there), and the outer ring stops with the cut in its rim lined on the nearest old gate you have not found. The gate is marked on the map as found by direction (`discover('door_'+seed)`, its glyph without its name until you reach it), and the way is set (`WAY`). A `showMsg` (`#f0d890`) and the log:
+- *The outer ring slows, and stops. The cut in its rim is pointing {direction}, over the water, at something. Then it turns again.*
+- If every gate on the island is found: *The outer ring slows, and stops, and points at nothing you have not already seen. Then it turns again.*
+
+### 5. The journal
+
+The log carries the sight lines (§2) and the night lines (§4) under the wonder's map name. The Journal's *Places* gets an entry the first time each is seen: the hover card's line (§1) and the day's sight line, dated.
+
+### What in the code would carry it
+
+- **The wonders as points of interest** are the look builder's (the chunk scatter, once per island by a seeded stream keyed by the island; `docs/concepts.md`). Their ids are `wonder:lough`, `wonder:skyfall`, `wonder:orrery`, and the names in §1 are their `name`s on the map (`drawLocalMap`, the continent map, the hover card).
+- **The first sights**, `wonderTick` in `88-world-ticks.js` beside `tickWaylamp`. It reads the clock (`worldState.gameTimeMinutes`) for day or night and the wonder's position, and records `worldState.wonders[id] = {day: true, night: true}`. What a character has seen is the character's, so `wonders` goes in `SS_CHAR_WS` as well as in `_applyLoadData`'s S242 list.
+- **The topic**, in `makeDef`'s topics (`83-world-generator.js`), the top level, while `worldState.wonders[id]` is set for a wonder within 700 m of the speaker's site. The responses are by `def.people`. The rumours go in `liveRumours` (`88-world-ticks.js`) while it is unset.
+- **The rules in §4** are the systems builder's: the lost hour through `advanceClock` (the co-op rules' named action), keyed `<id>:<day>`; the needle in the compass strip (`compassPlaces`, `87-world-quests.js`); the Falak's pointing through `discover` and `WAY`. Every line in §4 is final as written.
+- **The Old Blood's warm stone**, a `showMsg` in the same tick, once a character, `worldState.wonders.felt`.
+
+### The register, checked
+
+- Gatelanders: *my grandmother said*; *I'd as soon hear of them as see them*; *a stone's meant to know which way is down*; *I'd wager*. No bare yes or no, and no oath needed.
+- Markmen: two to five words a sentence; *we tried ropes once*; no honorific; a joke that is not one, said flat.
+- Aurennais: *Master*; *the terms of the water are not known*; *the survey's conclusion was that they are there*; *the present consensus*; *I hold, privately*. No oath.
+- Old Blood: the older word first, then at most two short sentences. *It is open a little*, *something let go of them* and *it still works* are the nearest anyone comes to §3.1, and none of them explains it.
+- Nobody describes a body. Nobody is afraid of the wonders by day. Nothing is a prophecy, and nothing is about the player.
+
+### Owed, and not drafted here
+
+- OG-106's other wonders (the Hollow Wood, the Weaver's Grave, the Bleeding Glacier, the Singing Chasm, the Frozen Library, the Mirrored Oasis, the Glass Desert, the reef where ships vanish, the wandering island), as the look builder makes them: a second part on this frame.
+- A sound at night for each (`72-audio.js`): the Ring's water, the Hangstones' wind and the Falak's silence. The draft says the rings *make no sound at all*, and the build should keep them silent.
