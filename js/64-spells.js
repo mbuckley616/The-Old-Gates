@@ -1043,7 +1043,7 @@ function spellBookLoad(d){spellBook.length=0;formsGranted.length=0;
 // frozen as a bridge (6.2 × 1.6 m, 20 s) from the point along your facing. One laid thing a caster: a second ends the first. It
 // lives by the play clock, at most 60 s, ends when you leave the place, and is never saved. A pillar or an updraft is refused under
 // 0.5 m from a solid or a door, or on a body. The loop reads LAID through laidGround (what you stand on) and laidBlocks (what you
-// walk into); the mantle (10-player.js) takes a laid top as a ledge outdoors too. The other laid words (Loscadh's fire, Reo, Fréamh,
+// walk into); the mantle (10-player.js) takes a laid top as a ledge outdoors too. The other laid words (Loscadh's fire, Reo (S1616), Fréamh (S1612),
 // Dorcha, Solas, Tonn alone) are the sheet's session 4. Named actions (the co-op rules): bookMake, layWord, laidEnd.
 const LAID_REACH=12,LAID_CLEAR=.5,LAID_MAX_S=60,LAID_UPDRAFT_APEX=2.2,LAID_OVERSHOOT=1.5,LAID_WILD=['fizzle','overshoot'];
 let LAID=null,_onLaid=false; /* the one laid thing: {kind,word,rider,x,z,r|hw,hl,ux,uz,base,top,solid,until,key,mesh} */
@@ -1104,7 +1104,7 @@ function bookSelect(i){const b=spellBook[i];if(!b)return false;activeSpell=i;act
 // the shape a laid entry makes, or null where it makes none yet (the sheet's session 4)
 function laidShape(word,rider){
   if(word==='cloch_ghear')return 'pillar';if(word==='sideen')return 'updraft';
-  if(word==='sioc')return 'floe';if(word==='tonn'&&rider==='sioc')return 'bridge';if(word==='freamh')return 'snare';return null;}
+  if(word==='sioc')return 'floe';if(word==='tonn'&&rider==='sioc')return 'bridge';if(word==='freamh')return 'snare';if(word==='reo')return 'nova';return null;}
 // layWord: the named action. Lays word (with rider) at x,z (its ground found there), facing yaw for a bridge; o.overshoot ×1.5 a
 // pillar's height. Returns {ok} or {say}; nothing is paid here (the cast pays).
 function layWord(word,rider,x,z,o){o=o||{};
@@ -1124,6 +1124,9 @@ function layWord(word,rider,x,z,o){o=o||{};
     if(ow&&worldH(x,z)<SEA_Y-.35)return {say:'It will not take root in water.',why:'wet'};
     const tier=wordTierOf(word)||1;
     Object.assign(L,{r:F.radius,base:y,top:y,solid:false,dur:F.dur,snare:+(F.root*TIER_MULT.magnitude[tier-1]).toFixed(2)});}
+  else if(kind==='nova'){ /* S1616 — Reo's: a burst 4 m round on the ground, never a solid; its frost stands while the foes are held */
+    const tier=wordTierOf(word)||1,hold=+(F.hold*TIER_MULT.magnitude[tier-1]).toFixed(2);
+    Object.assign(L,{r:F.radius,base:y,top:y,solid:false,dur:hold,nova:hold});}
   else if(kind==='floe'){
     if(!wet)return {say:'Sioc lays a floe only on open water.',why:'dry'};
     Object.assign(L,{r:F.floe/2,base:SEA_Y-.4,top:SEA_Y+.1,solid:true,dur:F.dur});}
@@ -1135,7 +1138,8 @@ function layWord(word,rider,x,z,o){o=o||{};
   laidEnd();
   L.until=playClockS+Math.min(LAID_MAX_S,L.dur);L.mesh=laidMesh(L);LAID=L;
   if(rider&&RIDERS[rider])laidRiderStart(L,rider);
-  return {ok:true,kind,thrown:!!L.thrown};}
+  if(L.nova)L.held=laidNovaBurst(L);
+  return {ok:true,kind,thrown:!!L.thrown,held:L.held||0};}
 // S1604 — magic B's session 4, part 4 (magic-build.md, "Joining and riders", the laid column): a rider on a laid thing. Caor makes it
 // hot (3 a second, past the armour, to a foe touching it: its centre within its own hull of the thing); Séideán makes a Cloch pillar
 // throw you as Éan does (it may rise under you, and you leave its top at Éan's 8.4 m/s, 1.96 m over it); Fréamh roots the first foe
@@ -1164,6 +1168,17 @@ function laidSnareTick(){const L=laidLive();if(!L||!L.snare||L.rooted)return;con
   for(const e of heldTargets()){if(e.dead||e.hp<=0||(dun&&e.floor!==currentFloor)||!laidInside(L,e.x,e.z,hullOf(e)))continue;
     e._rootUntil=Math.max(e._rootUntil||0,playClockS+L.snare);L.rooted=e;e.alert=true;
     if(SKILL_DEF[WORD_BY[L.word].school])skillUse(WORD_BY[L.word].school,1,e);break;}}
+// S1616 — Reo laid (magic-build.md's table: "foes within 4 m held 2 s"): at the moment it is laid, every foe whose centre is within 4 m
+// of the point, its hull counted, is held as a touched Reo holds (frozen in the stagger list: no step, no blow), 2 s at Comprehension
+// by the tier's magnitude (1.2 s at Impression, 2.6 s at Mastery). The burst is once: a foe that walks in after is not held. Its frost
+// stands on the ground as a laid thing for the hold's time, so it ends your other laid thing as any second one does. One use of Uisce
+// if it held anyone. Returns how many it held.
+function laidNovaBurst(L){const dun=!!(lid&&lid.startsWith('dyn_'));let n=0,first=null;
+  for(const e of heldTargets()){if(e.dead||e.hp<=0||(dun&&e.floor!==currentFloor)||!laidInside(L,e.x,e.z,hullOf(e)))continue;
+    const q=staggered.find(s=>s.e===e);if(q)q.t=Math.max(q.t,L.nova);else staggered.push({e,t:L.nova});
+    staggerFlash(e);e.alert=true;n++;if(!first)first=e;}
+  const sc=WORD_BY[L.word].school;if(first&&SKILL_DEF[sc])skillUse(sc,1,first);
+  return n;}
 function laidMesh(L){if(typeof THREE==='undefined'||typeof scene==='undefined'||!scene)return null;
   const d=typeof laidDress==='function'?laidDress(L):null; /* S1600 — the look builder's dress (82-world-structures.js), built from its base */
   if(d){if(L.r!=null)d.position.set(L.x,L.base,L.z);else{d.position.set(L.x+L.ux*L.hl,L.base,L.z+L.uz*L.hl);d.rotation.y=Math.atan2(L.ux,L.uz);}scene.add(d);return d;}
@@ -1172,10 +1187,11 @@ function laidMesh(L){if(typeof THREE==='undefined'||typeof scene==='undefined'||
   else if(L.kind==='updraft'){geo=new THREE.CylinderGeometry(L.r,L.r*.8,3,12,1,true);col=0xcfe8ee;op=.18;}
   else if(L.kind==='floe'){geo=new THREE.CylinderGeometry(L.r,L.r*.9,L.top-L.base,12);col=0xdcecf4;}
   else if(L.kind==='snare'){geo=new THREE.RingGeometry(L.r*.92,L.r,32);geo.rotateX(-Math.PI/2);col=0x6a8a3a;op=.6;}
+  else if(L.kind==='nova'){geo=new THREE.CircleGeometry(L.r,32);geo.rotateX(-Math.PI/2);col=0xdcecf4;op=.45;}
   else{geo=new THREE.BoxGeometry(L.hw*2,L.top-L.base,L.hl*2);col=0xbcdcec;}
   const m=new THREE.Mesh(geo,new THREE.MeshLambertMaterial({color:col,transparent:op<1,opacity:op,depthWrite:op>=1,side:op<1?THREE.DoubleSide:THREE.FrontSide}));
   m.name='laid-'+L.kind;
-  if(L.r!=null)m.position.set(L.x,L.kind==='updraft'?L.base+1.5:L.kind==='snare'?L.base+.03:(L.base+L.top)/2,L.z);
+  if(L.r!=null)m.position.set(L.x,L.kind==='updraft'?L.base+1.5:L.kind==='snare'||L.kind==='nova'?L.base+.03:(L.base+L.top)/2,L.z);
   else{m.position.set(L.x+L.ux*L.hl,(L.base+L.top)/2,L.z+L.uz*L.hl);m.rotation.y=Math.atan2(L.ux,L.uz);}
   scene.add(m);return m;}
 // the cast of a laid entry from the book (castSpell hands it here): the form held, the cost and the overcast, Impression's wild roll

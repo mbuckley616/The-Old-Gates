@@ -13,6 +13,7 @@
 // Session 1606: Tintreach sent, a bolt of 24 that leaps to the nearest other foe within 5 m of the one struck, for half.
 // Session 1612: Fréamh laid, a ring 3 m round on the ground that roots the first foe within it 2 s, once, and stands 10 s.
 // Session 1611: Tonn sent, a wave 8 m down your aim (to the first wall), 1.6 m wide: 14 and 20 posture to each foe in it.
+// Session 1616: Reo laid, a burst 4 m round that holds every foe within it 2 s (1.2 at Impression), once; its frost stands the hold's time.
 // Session 1610: Fréamh sent, a bolt that deals nothing and roots the foe it strikes 2 s (1.2 at Impression, 2.6 at Mastery).
 import { boot, check } from './lib/game.mjs';
 import { enterDungeon } from './lib/dungeonshot.mjs';
@@ -309,5 +310,29 @@ console.log(JSON.stringify(sn));
 check(`Fréamh's ring (${sn.kind}, ${sn.R} m, solid ${sn.solid}): no root outside it (${sn.out}), the foe inside rooted ${sn.left} s, and a second foe after it not (${sn.second})`,
   sn.ok && sn.kind === 'snare' && sn.solid === false && sn.R === 3 && sn.out === false && sn.in === true && sn.left === 2 && sn.second === false, sn);
 check(`the ring stands 10 s (at 9.9 ${sn.at99}, at 10.1 ${sn.at101})`, sn.at99 === true && sn.at101 === false, sn);
+
+// S1616 — Reo's burst: two foes inside 4 m (one at its edge, hull counted), one just outside; then one walked in after; then Impression
+const nv = await page.evaluate(() => {
+  const fs = ENEMIES.filter(x => x.floor === 1 && x.mesh).slice(0, 3); for (const o of ENEMIES) if (!fs.includes(o)) o.dead = true;
+  if (fs.length < 3) return { few: fs.length };
+  knownWords = { reo: 2, freamh: 2 }; SKILLS.uisce = { lv: 50, p: 0 }; SKILL_LAST.delete('uisce'); LAID && laidEnd(); staggered.length = 0;
+  const [A, B, C] = fs; for (const e of fs) { e.dead = false; e.hp = e.maxHp = 1e5; e.x = px + 20; e.z = pz + 20; }
+  const cx = px, cz = pz - 1, held = e => +((staggered.find(s => s.e === e) || {}).t || 0).toFixed(2);
+  A.x = cx + 1; A.z = cz; B.x = cx - 3.9 - hullOf(B); B.z = cz; C.x = cx; C.z = cz + 4.1 + hullOf(C);
+  const p0 = skillsReady().uisce.p, r = layWord('reo', null, cx, cz), out = { ok: !!r.ok, kind: r.kind, n: r.held, solid: LAID && LAID.solid, R: LAID && LAID.r,
+    a: held(A), b: held(B), c: held(C), use: skillsReady().uisce.p > p0, hp: A.hp };
+  C.z = cz; laidSnareTick(); laidRiderTick(); out.after = held(C);
+  out.at19 = (playClockS += 1.9, !!laidLive()); out.at21 = (playClockS += .2, !!laidLive());
+  knownWords.reo = 1; staggered.length = 0; layWord('reo', null, cx, cz); out.imp = held(A);
+  // a second laid thing ends the first: Fréamh's ring, then Reo
+  laidEnd(); staggered.length = 0; for (const e of fs) e.x = px + 20; layWord('freamh', null, cx, cz); out.pillar = LAID && LAID.kind; layWord('reo', null, cx, cz); out.then = LAID && LAID.kind;
+  laidEnd(); staggered.length = 0;
+  return out;
+});
+console.log(JSON.stringify(nv));
+check(`Reo's burst (${nv.kind}, ${nv.R} m, solid ${nv.solid}) holds the ${nv.n} foes within it ${nv.a} and ${nv.b} s with no blow, not the one past its edge (${nv.c}), nor one walked in after (${nv.after}); a use of Uisce (${nv.use})`,
+  nv.ok && nv.kind === 'nova' && nv.R === 4 && nv.solid === false && nv.n === 2 && nv.a === 2 && nv.b === 2 && nv.c === 0 && nv.after === 0 && nv.use && nv.hp === 1e5, nv);
+check(`its frost stands the hold (at 1.9 ${nv.at19}, at 2.1 ${nv.at21}); at Impression it holds ${nv.imp} s; laid after a ${nv.pillar} it ends it (${nv.then})`,
+  nv.at19 === true && nv.at21 === false && nv.imp === 1.2 && nv.pillar === 'snare' && nv.then === 'nova', nv);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
