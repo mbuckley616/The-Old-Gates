@@ -60,6 +60,23 @@ const TIER_MULT={
 const TIER_LABEL=['Impression','Comprehension','Mastery'];
 const TIER_STARS=['★☆☆','★★☆','★★★'];
 const IMPRESSION_WILD_CHANCE=0.30; /* S1571 — magic B: 30%, the figure Scáth's Steady voice (school 25, session 5) halves */
+// S1623 — the schools' first two perks (magic-build.md's session 5; skills-and-perks-build.md, "Each school"): Steady voice at 25 halves
+// an Impression word's wild chance, 30% to 15%, for that word's school; Thrift at 50 takes 15% off the mana of any word of the school.
+const STEADY_VOICE_WILD=.15,THRIFT_MULT=.85;
+// S1625 — each school's own perk at 75 (skills-and-perks-build.md, "Each school"): Tine's burns last twice as long (the rider's 4 s to 8);
+// Uisce's Sioc slows ×1.5 (the rider's 30% to 45%; Sioc's own bolt freezes, it does not slow); Cloch's laid stone stands twice as long
+// (the pillar's 20 s to 40); Scáth's step reaches 18 m (was 12); Solas's heals are +25% (Leigheas cast, laid and ridden); Gaoth's
+// updraft lifts 1.5 m more (2.2 m to 3.7). Each is read where its number is used, from the caster's school.
+const SCHOOL75={burnMult:2,slowMult:1.5,stoneMult:2,step:18,healMult:1.25,updraftUp:1.5};
+// S1626 — three of the schools' own perks at 100: Cloch's worn ward turns arrows (while Sciath is worn, a foe's arrow does nothing,
+// from any side, as Guard's Deflect does from the front); Scáth's step leaves you unseen 3 s (the `vanish` veil, which foes already
+// read: an alert one forgets you); a sent Gaoth knocks the foe it strikes down (Throw's 1.5 s on the ground, its finisher open from any
+// side). Tine's leap, Uisce's shatter and Solas's undead wait: each reads two ways, or needs a list the game lacks.
+const SCATH_UNSEEN_S=3;
+function wardTurnsArrows(){return perk('cloch',100)&&fxOn('shield');}
+function gaothKnock(e){if(!e||e.dead||e.hp<=0||!perk('gaoth',100))return false;const now=performance.now()/1000,q=staggered.find(s=>s.e===e);
+  if(!q)staggered.push({e,t:THROW_S});return throwFoe(e,now);}
+function wordWildChance(word){const w=WORD_BY[word]||SPELLS.find(s=>s.id===word);return w&&perk(w.school,25)?STEADY_VOICE_WILD:IMPRESSION_WILD_CHANCE;}
 // S1571 — overcasting (magic-build.md): short of mana, the rest is paid in health, 2 a point of mana, with a 0.5 s stagger; a cast
 // that would leave you under 1 health is refused.
 const OVERCAST_HP=2,OVERCAST_STAGGER_S=.5;
@@ -812,6 +829,27 @@ function tonnWave(sp,tier,rider,x,z,ux,uz,floor){const F=WORD_BY.tonn.forms.sent
     out.hit.push({foe:e,dealt,broke});
     if(e.hp<=0){if(dun)killE(e,dmgTag(info,e));else killZoneEnemy(e,scene,dmgTag(info,e));}}
   return out;}
+// S1618 — Dul Thart sent (magic-build.md's table: "the step: arrive where it lands, 12 m"; "Movement against the step table": "12 m,
+// stops at the first solid", the 10 m band). No bolt flies: at the Cast row's release you are moved along your snapped aim, level, 12 m
+// or to the first wall, your body's 0.3 kept clear of it. A rise of more than a step indoors (a foothold, a dais) is a wall to it; the
+// land outdoors is not, and you arrive on it. Where it ends over lower ground (a chasm's air, a ravine) you arrive in the air and
+// fall from there, as the fall rule counts it. Its length is the same at every tier and skill level (places are built to steps); only
+// Impression's wild roll moves it: fizzle, scatter (±20° of aim) or overshoot (×1.5, 18 m). A step of 1 m or more is a use of Scáth.
+// Its Mastery has no canon entry. The Scáth perks (18 m at 75, unseen 3 s after a step at 100) wait for the schools' perks.
+SPELLS.push({id:'dul_thart',school:'scath',role:'basic',nameIr:'Dul Thart',nameEn:'Phase',nameMa:null,ico:'👣',desc:'A step that passes beyond: you arrive where it lands.',
+  intReqs:[14,28,48],cost:40,speed:0,dmgBase:0,dmgLvl:0,col:0x40305a,glowCol:0x7a60a8,wild:['fizzle','scatter','overshoot'],step:true});
+const STEP_OVERSHOOT=1.5,STEP_BODY=.3;
+// stepWord: the named action. Moves you from x,z along (ux,uz) up to len, level with your feet. Returns {len, x, z, wall}.
+function stepWord(x,z,ux,uz,len){const y0=jumpY,ow=isOverworldZone()&&!isInterior()&&!(lid&&lid.startsWith('dyn_'));
+  const pad=ow?0:STEP_BODY; /* outdoors the walk's solid test carries the body's 0.3 already */
+  let d=0,wall=false;
+  for(let s=.1;s<=len+1e-9;s+=.1){const X=x+ux*(s+pad),Z=z+uz*(s+pad);
+    if(laidSolidPt(X,Z,y0+.5)||laidBlocks(x+ux*s,z+uz*s,y0)||(!ow&&laidSurf(X,Z,y0+STEP_UP+.05)>y0+STEP_UP)){wall=true;break;}
+    d=s;}
+  if(d<1e-6)return {len:0,x,z,wall};
+  const X=x+ux*d,Z=z+uz*d;px=X;pz=Z;
+  if(ow){const g=laidGround(X,Z,jumpY,activeTerrainH(X,Z));if(g>jumpY){jumpY=g;velY=0;onGround=true;}else if(jumpY-g>.25){onGround=false;velY=0;}}
+  return {len:+d.toFixed(2),x:X,z:Z,wall};}
 // S1605 — Éan worn (magic-build.md, "Movement against the step table"): a jump leaves the ground at 8.4 m/s, not the legs' 5.5–6.6, so
 // it tops out 1.96 m up and crosses 4.4 m at the 4.7 m/s air cap: the step table's 4.0–4.8 band. Its shape is the same at every tier;
 // the tier sets only its time (20/40/80 s). At Mastery it is Wingless, the canon's: no fall hurts while it is worn.
@@ -832,6 +870,7 @@ function tickSpellFx(dt){
   if(TOUCH_PEND)touchTick(); /* S1603 — the touched form's landing */
   if(LAID&&LAID.rideR)laidRiderTick(); /* S1604 — a rider on a laid thing */
   if(LAID&&LAID.snare&&!LAID.rooted)laidSnareTick(); /* S1612 — Fréamh laid */
+  if(LAID&&LAID.fire)laidFireTick(); /* S1617 — Loscadh laid */
   if(_spellLight&&!fxOn('light')&&_spellLight.intensity>0)_spellLight.intensity=Math.max(0,_spellLight.intensity-dt*2);
 }
 // spellbooks: read to learn
@@ -1005,6 +1044,7 @@ function wordCost(id,form,rider,o){o=o||{};const w=WORD_BY[id];if(!w||!FORMS[for
   if(rider&&WORD_BY[rider])m=(m+WORD_BY[rider].cost*TIER_MULT.cost[tr-1])*WORD_JOIN_MULT;
   const s=o.skill!=null?o.skill:skillLv(w.school);
   m*=FORMS[form].mana*(1.4-.8*s/100)*(o.buff!=null?o.buff:(typeof _buffMult==='function'?_buffMult('spellCost',1):1));
+  if(o.thrift!=null?o.thrift:perk(w.school,50))m*=THRIFT_MULT; /* S1623 — Thrift, the school at 50 */
   return Math.round(m+1e-9);}
 
 // S1574 — magic B's book (magic-build.md, "The save"): up to eight made spells {form, word, rider}; `activeSpell` is the index of the one F
@@ -1043,7 +1083,7 @@ function spellBookLoad(d){spellBook.length=0;formsGranted.length=0;
 // frozen as a bridge (6.2 × 1.6 m, 20 s) from the point along your facing. One laid thing a caster: a second ends the first. It
 // lives by the play clock, at most 60 s, ends when you leave the place, and is never saved. A pillar or an updraft is refused under
 // 0.5 m from a solid or a door, or on a body. The loop reads LAID through laidGround (what you stand on) and laidBlocks (what you
-// walk into); the mantle (10-player.js) takes a laid top as a ledge outdoors too. The other laid words (Loscadh's fire, Reo, Fréamh,
+// walk into); the mantle (10-player.js) takes a laid top as a ledge outdoors too. The other laid words (Loscadh's fire (S1617), Reo (S1616), Fréamh (S1612),
 // Dorcha, Solas, Tonn alone) are the sheet's session 4. Named actions (the co-op rules): bookMake, layWord, laidEnd.
 const LAID_REACH=12,LAID_CLEAR=.5,LAID_MAX_S=60,LAID_UPDRAFT_APEX=2.2,LAID_OVERSHOOT=1.5,LAID_WILD=['fizzle','overshoot'];
 let LAID=null,_onLaid=false; /* the one laid thing: {kind,word,rider,x,z,r|hw,hl,ux,uz,base,top,solid,until,key,mesh} */
@@ -1059,7 +1099,7 @@ function laidGround(x,z,py,base){const L=laidLive();if(!L||!L.solid||!laidInside
 function laidBlocks(x,z,y){const L=laidLive();if(!L||!L.solid)return false;if(y>L.top-STEP_UP||y+HEAD_H<=L.base)return false;return laidInside(L,x,z,.3);}
 // in an updraft's column: a jump from inside it rises to LAID_UPDRAFT_APEX over the ground it left
 function laidUpdraft(x,z){const L=laidLive();return !!(L&&L.kind==='updraft'&&laidInside(L,x,z));}
-function laidUpdraftV(){return Math.sqrt(2*18*LAID_UPDRAFT_APEX);} /* the loop's GRAVITY, 18 */
+function laidUpdraftV(){return Math.sqrt(2*18*(LAID_UPDRAFT_APEX+(perk('gaoth',75)?SCHOOL75.updraftUp:0)));} /* the loop's GRAVITY, 18 */
 function laidEnd(){if(!LAID)return;const m=LAID.mesh;if(m&&m.parent)m.parent.remove(m);if(m)m.traverse(o=>{if(o.geometry)o.geometry.dispose();});LAID=null;}
 // the walkable top at x,z no higher than cap, as the loop reads the ground: outdoors the terrain or a platform (and the sea's face for
 // laying on water); in a gate or a room the floor or a foothold
@@ -1104,7 +1144,7 @@ function bookSelect(i){const b=spellBook[i];if(!b)return false;activeSpell=i;act
 // the shape a laid entry makes, or null where it makes none yet (the sheet's session 4)
 function laidShape(word,rider){
   if(word==='cloch_ghear')return 'pillar';if(word==='sideen')return 'updraft';
-  if(word==='sioc')return 'floe';if(word==='tonn'&&rider==='sioc')return 'bridge';if(word==='freamh')return 'snare';return null;}
+  if(word==='sioc')return 'floe';if(word==='tonn'&&rider==='sioc')return 'bridge';if(word==='freamh')return 'snare';if(word==='reo')return 'nova';if(word==='loscadh')return 'fire';return null;}
 // layWord: the named action. Lays word (with rider) at x,z (its ground found there), facing yaw for a bridge; o.overshoot ×1.5 a
 // pillar's height. Returns {ok} or {say}; nothing is paid here (the cast pays).
 function layWord(word,rider,x,z,o){o=o||{};
@@ -1119,11 +1159,18 @@ function layWord(word,rider,x,z,o){o=o||{};
     if(why)return {say:why==='body'?'There is no room to lay it there.':'Too near the wall to lay it.',why};
     if(ow&&worldH(x,z)<SEA_Y-.35)return {say:'It will not stand in water.',why:'wet'};
     const h=kind==='pillar'?F.pillar*(o.overshoot?LAID_OVERSHOOT:1):0;
-    Object.assign(L,{r,base:y,top:y+h,solid:kind==='pillar',dur:F.dur});}
+    Object.assign(L,{r,base:y,top:y+h,solid:kind==='pillar',dur:F.dur*(kind==='pillar'&&perk('cloch',75)?SCHOOL75.stoneMult:1)});} /* S1625 — Cloch 75 */
   else if(kind==='snare'){ /* S1612 — Fréamh's: a ring on the ground, never a solid */
     if(ow&&worldH(x,z)<SEA_Y-.35)return {say:'It will not take root in water.',why:'wet'};
     const tier=wordTierOf(word)||1;
     Object.assign(L,{r:F.radius,base:y,top:y,solid:false,dur:F.dur,snare:+(F.root*TIER_MULT.magnitude[tier-1]).toFixed(2)});}
+  else if(kind==='nova'){ /* S1616 — Reo's: a burst 4 m round on the ground, never a solid; its frost stands while the foes are held */
+    const tier=wordTierOf(word)||1,hold=+(F.hold*TIER_MULT.magnitude[tier-1]).toFixed(2);
+    Object.assign(L,{r:F.radius,base:y,top:y,solid:false,dur:hold,nova:hold});}
+  else if(kind==='fire'){ /* S1617 — Loscadh's: ground fire 4 m across, never a solid, burning each foe in it every second */
+    if(ow&&worldH(x,z)<SEA_Y-.35)return {say:'Fire will not take on water.',why:'wet'};
+    const tier=wordTierOf(word)||1;
+    Object.assign(L,{r:F.fire/2,base:y,top:y,solid:false,dur:F.dur,fire:Math.round(F.dps*TIER_MULT.magnitude[tier-1]),fireNext:playClockS+1});}
   else if(kind==='floe'){
     if(!wet)return {say:'Sioc lays a floe only on open water.',why:'dry'};
     Object.assign(L,{r:F.floe/2,base:SEA_Y-.4,top:SEA_Y+.1,solid:true,dur:F.dur});}
@@ -1135,7 +1182,8 @@ function layWord(word,rider,x,z,o){o=o||{};
   laidEnd();
   L.until=playClockS+Math.min(LAID_MAX_S,L.dur);L.mesh=laidMesh(L);LAID=L;
   if(rider&&RIDERS[rider])laidRiderStart(L,rider);
-  return {ok:true,kind,thrown:!!L.thrown};}
+  if(L.nova)L.held=laidNovaBurst(L);
+  return {ok:true,kind,thrown:!!L.thrown,held:L.held||0};}
 // S1604 — magic B's session 4, part 4 (magic-build.md, "Joining and riders", the laid column): a rider on a laid thing. Caor makes it
 // hot (3 a second, past the armour, to a foe touching it: its centre within its own hull of the thing); Séideán makes a Cloch pillar
 // throw you as Éan does (it may rise under you, and you leave its top at Éan's 8.4 m/s, 1.96 m over it); Fréamh roots the first foe
@@ -1155,7 +1203,7 @@ function laidRiderTick(){const L=laidLive();if(!L||!L.rideR)return;const R=RIDER
       const d=challengeDealt(R.hot);e.hp=Math.max(0,e.hp-d);e.alert=true;
       if(e.hpFg&&e.maxHp){e.hpFg.scale.x=e.hp/e.maxHp;e.hpFg.position.x=(e.hp/e.maxHp-1)*.275;}dmgNum(e,d,{});
       if(e.hp<=0){if(dun)killE(e,' (burned)');else killZoneEnemy(e,scene,' (burned)');}}
-    if(R.hps&&laidInside(L,px,pz,.3)&&jumpY<=L.top+STEP_UP){PHP=Math.min(effMaxHP(),PHP+R.hps);}}}
+    if(R.hps&&laidInside(L,px,pz,.3)&&jumpY<=L.top+STEP_UP){PHP=Math.min(effMaxHP(),PHP+R.hps*(perk('solas',75)?SCHOOL75.healMult:1));}}} /* S1625 — Solas 75 */
 // S1612 — Fréamh laid (magic-build.md's table: "roots once within 3 m, 10 s"): a ring 3 m round the point, on the ground, never a solid.
 // The first foe whose centre comes within it (its hull counted) is rooted 2 s at Comprehension, the tier's magnitude as the bolt's (1.2 s,
 // 2.6 s), and the ring has done its work: it roots once, and stands out its 10 s. A foe already inside when it is laid is the first. It
@@ -1164,6 +1212,28 @@ function laidSnareTick(){const L=laidLive();if(!L||!L.snare||L.rooted)return;con
   for(const e of heldTargets()){if(e.dead||e.hp<=0||(dun&&e.floor!==currentFloor)||!laidInside(L,e.x,e.z,hullOf(e)))continue;
     e._rootUntil=Math.max(e._rootUntil||0,playClockS+L.snare);L.rooted=e;e.alert=true;
     if(SKILL_DEF[WORD_BY[L.word].school])skillUse(WORD_BY[L.word].school,1,e);break;}}
+// S1616 — Reo laid (magic-build.md's table: "foes within 4 m held 2 s"): at the moment it is laid, every foe whose centre is within 4 m
+// of the point, its hull counted, is held as a touched Reo holds (frozen in the stagger list: no step, no blow), 2 s at Comprehension
+// by the tier's magnitude (1.2 s at Impression, 2.6 s at Mastery). The burst is once: a foe that walks in after is not held. Its frost
+// stands on the ground as a laid thing for the hold's time, so it ends your other laid thing as any second one does. One use of Uisce
+// if it held anyone. Returns how many it held.
+function laidNovaBurst(L){const dun=!!(lid&&lid.startsWith('dyn_'));let n=0,first=null;
+  for(const e of heldTargets()){if(e.dead||e.hp<=0||(dun&&e.floor!==currentFloor)||!laidInside(L,e.x,e.z,hullOf(e)))continue;
+    const q=staggered.find(s=>s.e===e);if(q)q.t=Math.max(q.t,L.nova);else staggered.push({e,t:L.nova});
+    staggerFlash(e);e.alert=true;n++;if(!first)first=e;}
+  const sc=WORD_BY[L.word].school;if(first&&SKILL_DEF[sc])skillUse(sc,1,first);
+  return n;}
+// S1617 — Loscadh laid (magic-build.md's table: "ground fire 4 m, 6 a second, 10 s"; the word's `fire:4` is across, as a floe's 3 is):
+// a fire 4 m across on the ground, never a solid, that stands 10 s. Each second of the play clock it burns every foe whose centre is
+// within it, its hull counted, for 6 at Comprehension by the tier's magnitude (4 at Impression, 8 at Mastery), past the armour as a
+// hot pillar burns, the challenge's step applied. It does not burn you. The first foe it burns is one use of Tine.
+function laidFireTick(){const L=laidLive();if(!L||!L.fire)return;const dun=!!(lid&&lid.startsWith('dyn_'));
+  for(let n=0;n<12&&playClockS>=L.fireNext-1e-9&&LAID===L;n++){L.fireNext+=1;
+    for(const e of heldTargets()){if(e.dead||e.hp<=0||(dun&&e.floor!==currentFloor)||!laidInside(L,e.x,e.z,hullOf(e)))continue;
+      const d=challengeDealt(L.fire);e.hp=Math.max(0,e.hp-d);e.alert=true;
+      if(e.hpFg&&e.maxHp){e.hpFg.scale.x=e.hp/e.maxHp;e.hpFg.position.x=(e.hp/e.maxHp-1)*.275;}dmgNum(e,d,{});
+      if(!L.used){const sc=WORD_BY[L.word].school;if(SKILL_DEF[sc])skillUse(sc,1,e);L.used=true;}
+      if(e.hp<=0){if(dun)killE(e,' (burned)');else killZoneEnemy(e,scene,' (burned)');}}}}
 function laidMesh(L){if(typeof THREE==='undefined'||typeof scene==='undefined'||!scene)return null;
   const d=typeof laidDress==='function'?laidDress(L):null; /* S1600 — the look builder's dress (82-world-structures.js), built from its base */
   if(d){if(L.r!=null)d.position.set(L.x,L.base,L.z);else{d.position.set(L.x+L.ux*L.hl,L.base,L.z+L.uz*L.hl);d.rotation.y=Math.atan2(L.ux,L.uz);}scene.add(d);return d;}
@@ -1172,10 +1242,12 @@ function laidMesh(L){if(typeof THREE==='undefined'||typeof scene==='undefined'||
   else if(L.kind==='updraft'){geo=new THREE.CylinderGeometry(L.r,L.r*.8,3,12,1,true);col=0xcfe8ee;op=.18;}
   else if(L.kind==='floe'){geo=new THREE.CylinderGeometry(L.r,L.r*.9,L.top-L.base,12);col=0xdcecf4;}
   else if(L.kind==='snare'){geo=new THREE.RingGeometry(L.r*.92,L.r,32);geo.rotateX(-Math.PI/2);col=0x6a8a3a;op=.6;}
+  else if(L.kind==='fire'){geo=new THREE.CircleGeometry(L.r,24);geo.rotateX(-Math.PI/2);col=0xd2601e;op=.5;}
+  else if(L.kind==='nova'){geo=new THREE.CircleGeometry(L.r,32);geo.rotateX(-Math.PI/2);col=0xdcecf4;op=.45;}
   else{geo=new THREE.BoxGeometry(L.hw*2,L.top-L.base,L.hl*2);col=0xbcdcec;}
   const m=new THREE.Mesh(geo,new THREE.MeshLambertMaterial({color:col,transparent:op<1,opacity:op,depthWrite:op>=1,side:op<1?THREE.DoubleSide:THREE.FrontSide}));
   m.name='laid-'+L.kind;
-  if(L.r!=null)m.position.set(L.x,L.kind==='updraft'?L.base+1.5:L.kind==='snare'?L.base+.03:(L.base+L.top)/2,L.z);
+  if(L.r!=null)m.position.set(L.x,L.kind==='updraft'?L.base+1.5:L.kind==='snare'||L.kind==='nova'||L.kind==='fire'?L.base+.03:(L.base+L.top)/2,L.z);
   else{m.position.set(L.x+L.ux*L.hl,(L.base+L.top)/2,L.z+L.uz*L.hl);m.rotation.y=Math.atan2(L.ux,L.uz);}
   scene.add(m);return m;}
 // the cast of a laid entry from the book (castSpell hands it here): the form held, the cost and the overcast, Impression's wild roll
@@ -1191,7 +1263,7 @@ function castLaid(bk){
   const cost=wordCost(bk.word,'laid',bk.rider,{tier}),short=Math.max(0,cost-Math.floor(mana)),blood=short*OVERCAST_HP;
   if(short&&PHP-blood<1){showMsg(`Not enough mana! (need ${cost})`,'#6688cc');return false;}
   let wild=null;const wr=tier===1?casterRand(bk.word+':laid'):null;
-  if(wr&&wr()<IMPRESSION_WILD_CHANCE){const pool=laidShape(bk.word,bk.rider)==='pillar'?LAID_WILD:['fizzle'];wild=pool[Math.floor(wr()*pool.length)];}
+  if(wr&&wr()<wordWildChance(bk.word)){const pool=laidShape(bk.word,bk.rider)==='pillar'?LAID_WILD:['fizzle'];wild=pool[Math.floor(wr()*pool.length)];}
   const r=wild==='fizzle'?{ok:true}:layWord(bk.word,bk.rider,at.x,at.z,{cap:at.y+.05,overshoot:wild==='overshoot'});
   if(!r.ok){showMsg(r.say,'#a8a8d4');return false;}
   const paid=cost-short;mana=Math.max(0,mana-cost);_offenceS=playClockS;
@@ -1236,7 +1308,7 @@ function holdWord(bk){
   if(mana<tick)return {say:`Not enough mana! (need ${Math.ceil(tick)})`};
   const mixed=!!(bk.rider&&riderMixedWild(bk.word,bk.rider)); /* S1602 — two schools: 10% at any tier until both reach 25 */
   const wr=tier===1||mixed?casterRand(bk.word+':held'):null;
-  if(wr&&wr()<(tier===1?IMPRESSION_WILD_CHANCE:0)+(mixed?WORD_MIXED_WILD:0)){mana-=tick*.5;spCd=spellCooldown(H.sp,tier);startCastAnim(H.sp,'fizzle');
+  if(wr&&wr()<(tier===1?wordWildChance(H.word):0)+(mixed?WORD_MIXED_WILD:0)){mana-=tick*.5;spCd=spellCooldown(H.sp,tier);startCastAnim(H.sp,'fizzle');
     return {ok:true,wild:'fizzle',say:`${w.ico} ${w.nameIr} fizzles — the shape will not hold.`};}
   _offenceS=playClockS;HELD=H;H.mesh=heldMesh(H);startCastAnim(H.sp,'projectile');
   if(typeof sndSpellCharge==='function')sndSpellCharge(w.school);
@@ -1294,7 +1366,7 @@ function touchWord(bk){
   const sp=heldSpell(bk.word);spCd=spellCooldown(sp,tier);
   const mixed=!!(bk.rider&&riderMixedWild(bk.word,bk.rider));
   const wr=tier===1||mixed?casterRand(bk.word+':touched'):null;
-  if(wr&&wr()<(tier===1?IMPRESSION_WILD_CHANCE:0)+(mixed?WORD_MIXED_WILD:0)){mana=Math.min(effMaxMana(),mana+Math.round((cost-short)*.5));startCastAnim(sp,'fizzle');
+  if(wr&&wr()<(tier===1?wordWildChance(bk.word):0)+(mixed?WORD_MIXED_WILD:0)){mana=Math.min(effMaxMana(),mana+Math.round((cost-short)*.5));startCastAnim(sp,'fizzle');
     return {ok:true,wild:'fizzle',say:`${w.ico} ${w.nameIr} fizzles — the shape will not hold.`};}
   castMark(FORMS.touched.windup);startCastAnim(sp,'projectile');
   if(typeof sndSpellCharge==='function')sndSpellCharge(w.school);
@@ -1307,8 +1379,17 @@ function touchTick(){const T=TOUCH_PEND;if(!T)return;
   if(dead||T.key!==laidKey()){TOUCH_PEND=null;return;}
   if(performance.now()/1000<T.at)return;
   TOUCH_PEND=null;touchLand(T);}
+// S1624 — a touch on a thing (magic-build.md's Touched column): Uisce's "douses a fire". A campfire burning outdoors whose centre is within
+// the touch's 1.6 m of your edge and its 60° cone goes out, before any foe is looked for. One use of Uisce. The other things a touch names
+// (a brazier, a web, a pool, a lock's works, dry brush) have nothing in the world to touch yet. Named action: douseFire.
+function touchFire(){if(typeof CAMPFIRES==='undefined'||activeZoneId!=='world'||isInterior())return null;const t=gameMinNow(),c=Math.cos(FORMS.touched.cone/2*Math.PI/180);
+  let best=null,bd=1e9;for(const f of CAMPFIRES){if(!(f.until>t))continue;const dx=f.x-px,dz=f.z-pz,d=Math.hypot(dx,dz);
+    if(d>FORMS.touched.reach+STEP_BODY+1e-9)continue;if(d>1e-3&&(-dx*Math.sin(yaw)-dz*Math.cos(yaw))/d<c-1e-9)continue;if(d<bd){bd=d;best=f;}}
+  return best;}
+function douseFire(f){const i=CAMPFIRES.indexOf(f);if(i<0)return false;dropFire(f);CAMPFIRES.splice(i,1);if(SKILL_DEF.uisce)skillUse('uisce',1,'douse');return true;}
 function touchLand(T){const F=WORD_BY[T.word].forms.touched,e=touchTarget(),dun=lid&&lid.startsWith('dyn_');
   if(typeof sndSpell==='function')sndSpell(T.word,T.tier);
+  if(T.word==='siul_uisce'){const f=touchFire();if(f){douseFire(f);showMsg('The fire hisses out.','#a8c8e8');return {hit:null,doused:true};}}
   if(!e){showMsg('Nothing within reach.','#a8a8d4');return {hit:null};}
   let dealt=0,info=null;
   if(F.dmg){info=applySpellDamage(e,T.sp,T.tier,{power:FORMS.touched.power});dealt=info.dmg;e.hp=Math.max(0,e.hp-dealt);
@@ -1334,10 +1415,10 @@ function riderFoeSolid(x,z,dun){return dun?dSolid(x,z):(typeof currentZoneSolid=
 // riderHit: the named action. e was struck for `dealt` by a spell carrying `rider`; o.power is the form's (1 a bolt, 0.25 a tick)
 function riderHit(e,rider,dealt,o){o=o||{};const R=RIDERS[rider];if(!e||!R)return null;const h=R.hit,pw=o.power!=null?o.power:1;
   const now=playClockS,dun=!!(lid&&lid.startsWith('dyn_'));
-  if(h.lifesteal){const m=(dealt||0)*h.lifesteal+(_mendCarry||0),n=Math.floor(m+1e-9);_mendCarry=m-n;if(n>0)PHP=Math.min(effMaxHP(),PHP+n);return {mend:n};}
+  if(h.lifesteal){const m=(dealt||0)*h.lifesteal*(perk('solas',75)?SCHOOL75.healMult:1)+(_mendCarry||0),n=Math.floor(m+1e-9);_mendCarry=m-n;if(n>0)PHP=Math.min(effMaxHP(),PHP+n);return {mend:n};}
   if(e.dead||e.hp<=0)return null;
-  if(h.dps){e._burn={dps:h.dps,until:now+h.dur,next:Math.max(now+1,e._burn&&e._burn.until>now?e._burn.next:0),dun,key:laidKey()};RIDDEN.add(e);return {burn:h.dur};}
-  if(h.slow){e._riderSlowUntil=Math.max(e._riderSlowUntil||0,now+h.dur);return {slow:h.dur};}
+  if(h.dps){const bd=h.dur*(perk('tine',75)?SCHOOL75.burnMult:1);e._burn={dps:h.dps,until:now+bd,next:Math.max(now+1,e._burn&&e._burn.until>now?e._burn.next:0),dun,key:laidKey()};RIDDEN.add(e);return {burn:bd};}
+  if(h.slow){e._riderSlowUntil=Math.max(e._riderSlowUntil||0,now+h.dur);e._riderSlow=1-h.slow*(perk('uisce',75)?SCHOOL75.slowMult:1);return {slow:h.dur,mult:+e._riderSlow.toFixed(2)};}
   if(h.root){e._rootUntil=Math.max(e._rootUntil||0,now+h.root);return {root:h.root};}
   if(h.glow){e._litUntil=now+h.glow;e._litKey=laidKey();RIDDEN.add(e);riderGlow(e,true);return {glow:h.glow};}
   if(h.knock){let dx=e.x-px,dz=e.z-pz,d=Math.hypot(dx,dz);if(d<1e-3){dx=-Math.sin(yaw);dz=-Math.cos(yaw);d=1;}dx/=d;dz/=d;

@@ -13,12 +13,21 @@
 // Session 1606: Tintreach sent, a bolt of 24 that leaps to the nearest other foe within 5 m of the one struck, for half.
 // Session 1612: Fréamh laid, a ring 3 m round on the ground that roots the first foe within it 2 s, once, and stands 10 s.
 // Session 1611: Tonn sent, a wave 8 m down your aim (to the first wall), 1.6 m wide: 14 and 20 posture to each foe in it.
+// Session 1616: Reo laid, a burst 4 m round that holds every foe within it 2 s (1.2 at Impression), once; its frost stands the hold's time.
+// Session 1617: Loscadh laid, a ground fire 4 m across that burns each foe in it 6 a second (4 at Impression), past the armour, 10 s.
+// Session 1618: Dul Thart sent, the step: you arrive 12 m down your aim, level, or short of the first wall by your body's 0.3.
+// Session 1623: the schools' Steady voice (25: an Impression word goes wild 15%, was 30%) and Thrift (50: its words cost 15% less).
+// Session 1625: each school's 75: Tine's burn 8 s, Uisce's rider slow 45%, Cloch's pillar 40 s, Scáth's step 18 m, Solas's mend +25%,
+// Gaoth's updraft 3.7 m.
+// Session 1626: three schools at 100: Cloch's worn ward turns an arrow, Scáth's step leaves you unseen 3 s, a sent Gaoth knocks down.
 // Session 1610: Fréamh sent, a bolt that deals nothing and roots the foe it strikes 2 s (1.2 at Impression, 2.6 at Mastery).
 import { boot, check } from './lib/game.mjs';
 import { enterDungeon } from './lib/dungeonshot.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
 await enterDungeon(page, { theme: 'ruins', size: 'small', seed: 7 });
+// the sheet's worked costs are before the schools' perks: Thrift (school 50) is held out until its own check below (Session 1623)
+await page.evaluate(() => { for (const sc of ['tine', 'uisce', 'cloch', 'scath', 'solas', 'gaoth']) PERK_LIVE.delete(sc + ':50'); });
 
 const r = await page.evaluate(() => {
   const out = {}, fr = foeRand;
@@ -309,5 +318,140 @@ console.log(JSON.stringify(sn));
 check(`Fréamh's ring (${sn.kind}, ${sn.R} m, solid ${sn.solid}): no root outside it (${sn.out}), the foe inside rooted ${sn.left} s, and a second foe after it not (${sn.second})`,
   sn.ok && sn.kind === 'snare' && sn.solid === false && sn.R === 3 && sn.out === false && sn.in === true && sn.left === 2 && sn.second === false, sn);
 check(`the ring stands 10 s (at 9.9 ${sn.at99}, at 10.1 ${sn.at101})`, sn.at99 === true && sn.at101 === false, sn);
+
+// S1616 — Reo's burst: two foes inside 4 m (one at its edge, hull counted), one just outside; then one walked in after; then Impression
+const nv = await page.evaluate(() => {
+  const fs = ENEMIES.filter(x => x.floor === 1 && x.mesh).slice(0, 3); for (const o of ENEMIES) if (!fs.includes(o)) o.dead = true;
+  if (fs.length < 3) return { few: fs.length };
+  knownWords = { reo: 2, freamh: 2 }; SKILLS.uisce = { lv: 50, p: 0 }; SKILL_LAST.delete('uisce'); LAID && laidEnd(); staggered.length = 0;
+  const [A, B, C] = fs; for (const e of fs) { e.dead = false; e.hp = e.maxHp = 1e5; e.x = px + 20; e.z = pz + 20; }
+  const cx = px, cz = pz - 1, held = e => +((staggered.find(s => s.e === e) || {}).t || 0).toFixed(2);
+  A.x = cx + 1; A.z = cz; B.x = cx - 3.9 - hullOf(B); B.z = cz; C.x = cx; C.z = cz + 4.1 + hullOf(C);
+  const p0 = skillsReady().uisce.p, r = layWord('reo', null, cx, cz), out = { ok: !!r.ok, kind: r.kind, n: r.held, solid: LAID && LAID.solid, R: LAID && LAID.r,
+    a: held(A), b: held(B), c: held(C), use: skillsReady().uisce.p > p0, hp: A.hp };
+  C.z = cz; laidSnareTick(); laidRiderTick(); out.after = held(C);
+  out.at19 = (playClockS += 1.9, !!laidLive()); out.at21 = (playClockS += .2, !!laidLive());
+  knownWords.reo = 1; staggered.length = 0; layWord('reo', null, cx, cz); out.imp = held(A);
+  // a second laid thing ends the first: Fréamh's ring, then Reo
+  laidEnd(); staggered.length = 0; for (const e of fs) e.x = px + 20; layWord('freamh', null, cx, cz); out.pillar = LAID && LAID.kind; layWord('reo', null, cx, cz); out.then = LAID && LAID.kind;
+  laidEnd(); staggered.length = 0;
+  return out;
+});
+console.log(JSON.stringify(nv));
+check(`Reo's burst (${nv.kind}, ${nv.R} m, solid ${nv.solid}) holds the ${nv.n} foes within it ${nv.a} and ${nv.b} s with no blow, not the one past its edge (${nv.c}), nor one walked in after (${nv.after}); a use of Uisce (${nv.use})`,
+  nv.ok && nv.kind === 'nova' && nv.R === 4 && nv.solid === false && nv.n === 2 && nv.a === 2 && nv.b === 2 && nv.c === 0 && nv.after === 0 && nv.use && nv.hp === 1e5, nv);
+check(`its frost stands the hold (at 1.9 ${nv.at19}, at 2.1 ${nv.at21}); at Impression it holds ${nv.imp} s; laid after a ${nv.pillar} it ends it (${nv.then})`,
+  nv.at19 === true && nv.at21 === false && nv.imp === 1.2 && nv.pillar === 'snare' && nv.then === 'nova', nv);
+
+// S1617 — Loscadh's fire: a foe inside (armour 50), one just outside; three seconds, then out of it; the fire's 10 s; Impression
+const fi = await page.evaluate(() => {
+  const fs = ENEMIES.filter(x => x.floor === 1 && x.mesh).slice(0, 2); for (const o of ENEMIES) if (!fs.includes(o)) o.dead = true;
+  if (fs.length < 2) return { few: fs.length };
+  knownWords = { loscadh: 2 }; SKILLS.tine = { lv: 50, p: 0 }; SKILL_LAST.delete('tine'); LAID && laidEnd();
+  const [A, B] = fs; for (const e of fs) { e.dead = false; e.hp = e.maxHp = 1e5; e.def = 50; e.resist = null; e.x = px + 20; e.z = pz + 20; }
+  const cx = px, cz = pz - 1; A.x = cx + 1.9 + hullOf(A) - .05; A.z = cz; B.x = cx - 2.1 - hullOf(B); B.z = cz;
+  const run = (sec) => { for (let n = 0; n < Math.round(sec * 60); n++) { playClockS += 1 / 60; laidFireTick(); } };
+  const p0 = skillsReady().tine.p, r = layWord('loscadh', null, cx, cz), out = { ok: !!r.ok, kind: r.kind, solid: LAID && LAID.solid, R: LAID && LAID.r, php: PHP };
+  run(3.05); out.a = 1e5 - A.hp; out.b = 1e5 - B.hp; out.use = skillsReady().tine.p > p0; out.php2 = PHP;
+  A.x = px + 20; let h = A.hp; run(2); out.left = h - A.hp;
+  out.at99 = (run(4.8), !!laidLive()); out.at101 = (run(.2), !!laidLive());
+  knownWords.loscadh = 1; A.x = cx; A.z = cz; h = A.hp; layWord('loscadh', null, cx, cz); run(1.02); out.imp = h - A.hp; laidEnd();
+  return out;
+});
+console.log(JSON.stringify(fi));
+check(`Loscadh's fire (${fi.kind}, ${fi.R} m round, solid ${fi.solid}) burns the foe in it ${fi.a} in 3 s through armour 50, not the one past its edge (${fi.b}) nor the foe stepped out (${fi.left}); you unburned (${fi.php} → ${fi.php2}); a use of Tine (${fi.use})`,
+  fi.ok && fi.kind === 'fire' && fi.R === 2 && fi.solid === false && fi.a === 18 && fi.b === 0 && fi.left === 0 && fi.php === fi.php2 && fi.use, fi);
+check(`the fire stands 10 s (at 9.9 ${fi.at99}, at 10.1 ${fi.at101}); at Impression it burns ${fi.imp} a second`, fi.at99 === true && fi.at101 === false && fi.imp === 4, fi);
+// S1618 — Dul Thart's step: of 16 headings the longest and the shortest; the wall kept clear; the overshoot; then by F
+const st = await page.evaluate(() => {
+  for (const o of ENEMIES) o.dead = true; LAID && laidEnd(); spellBook.length = 0; knownWords = { dul_thart: 2 }; SKILLS.scath = { lv: 50, p: 0 }; SKILL_LAST.delete('scath');
+  const x0 = px, z0 = pz, y0 = jumpY, back = () => { px = x0; pz = z0; jumpY = y0; velY = 0; onGround = true; };
+  const L = []; for (let i = 0; i < 16; i++) { const t = i * Math.PI / 8; back(); const r = stepWord(x0, z0, Math.sin(t), Math.cos(t), 12);
+    L.push({ t, len: r.len, wall: r.wall, moved: +Math.hypot(px - x0, pz - z0).toFixed(2) }); }
+  back(); const lo = L.filter(l => l.wall).sort((a, b) => a.len - b.len)[0], hi = L.slice().sort((a, b) => b.len - a.len)[0];
+  const out = { hi: hi.len, hiMoved: hi.moved, lo: lo && lo.len, walls: L.filter(l => l.wall).length };
+  // at the shortest wall: clear by the body's 0.3 at the arrival, a solid within 0.5 past it
+  if (lo) { const ux = Math.sin(lo.t), uz = Math.cos(lo.t), ax = x0 + ux * lo.len, az = z0 + uz * lo.len;
+    out.clear = !laidSolidPt(ax + ux * .3, az + uz * .3, y0 + .5) && !laidSolidPt(ax, az, y0 + .5);
+    let hit = false; for (let s2 = .3; s2 <= .55; s2 += .05) hit = hit || laidSolidPt(ax + ux * s2, az + uz * s2, y0 + .5) || laidSurf(ax + ux * s2, az + uz * s2, y0 + STEP_UP + .05) > y0 + STEP_UP; out.wallNear = hit; }
+  // the overshoot down the longest heading
+  out.over = stepWord(x0, z0, Math.sin(hi.t), Math.cos(hi.t), 12 * STEP_OVERSHOOT).len; back();
+  // by F, the book's Sent Dul Thart down the longest heading
+  const mk = bookMake('sent', 'dul_thart'); bookSelect(mk.i); yaw = Math.atan2(-Math.sin(hi.t), -Math.cos(hi.t));
+  for (const k2 in K) K[k2] = false; castT = 0; _castFreeAt = 0; _castReleaseAt = 0; spCd = 0; mana = 1000;
+  const fr = casterRand; casterRand = () => () => .99; /* no wild roll */
+  window._st = { x0, z0, p0: skillsReady().scath.p, fr }; out.made = mk.i != null; out.active = activeSpellId;
+  const sm = showMsg; showMsg = () => {}; try { castSpell(); } finally { showMsg = sm; }
+  out.mana = 1000 - mana; return out;
+});
+await page.waitForFunction(() => window._st && Math.hypot(px - window._st.x0, pz - window._st.z0) > .5, null, { timeout: 15000, polling: 100 }).catch(() => {});
+Object.assign(st, await page.evaluate(() => { casterRand = window._st.fr; return { f: +Math.hypot(px - window._st.x0, pz - window._st.z0).toFixed(2), use: skillsReady().scath.p > window._st.p0 }; }));
+console.log(JSON.stringify(st));
+check(`Dul Thart steps ${st.hi} m down the open heading (moved ${st.hiMoved}; 12 or to a wall), ${st.over} m overshot (×1.5, or to a wall)`,
+  st.hi > 3 && st.hi <= 12 && Math.abs(st.hiMoved - st.hi) < .02 && st.over >= st.hi && st.over <= 18, st);
+check(`at the nearest of ${st.walls} walls it stops at ${st.lo} m, the body's 0.3 clear (${st.clear}) and the wall within 0.55 (${st.wallNear})`, st.walls > 0 && st.clear && st.wallNear, st);
+check(`cast by F (${st.active}, ${st.mana} mana) it carries you ${st.f} m down your aim; a use of Scáth (${st.use})`, st.made && Math.abs(st.f - st.hi) < .5 && st.mana > 0 && st.use, st);
+// S1623 — Steady voice and Thrift: the wild chance and the cost at school 24, 25, 49 and 50; then 1,000 seeded Impression rolls
+const pk = await page.evaluate(() => {
+  for (const sc of ['tine', 'uisce', 'cloch', 'scath', 'solas', 'gaoth']) PERK_LIVE.add(sc + ':50');
+  const at = lv => { SKILLS.tine = { lv, p: 0 }; return { wild: wordWildChance('caor'), cost: wordCost('caor', 'sent', null, { tier: 2, buff: 1 }), held: wordCost('caor', 'held', null, { tier: 2, buff: 1 }),
+    other: (SKILLS.uisce = { lv: 10, p: 0 }, wordWildChance('sioc')) }; };
+  const out = { a24: at(24), a25: at(25), a49: at(49), a50: at(50) };
+  // the roll itself, as castSpell rolls it: 1,000 casters' first Impression casts of Caor at school 24, then 25
+  const rate = lv => { SKILLS.tine = { lv, p: 0 }; let n = 0; for (let i = 0; i < 1000; i++) { let h = (i * 2654435761 + 97) >>> 0; h = Math.imul(h ^ (h >>> 15), 2246822507) >>> 0; h = Math.imul(h ^ (h >>> 13), 3266489909) >>> 0; if (((h ^ (h >>> 16)) >>> 0) / 4294967296 < wordWildChance('caor')) n++; } return n / 1000; };
+  out.r24 = rate(24); out.r25 = rate(25);
+  return out;
+});
+console.log(JSON.stringify(pk));
+check(`Steady voice: Caor goes wild ${pk.a24.wild} at Tine 24 and ${pk.a25.wild} at 25 (rolled ${pk.r24} and ${pk.r25} of 1,000); Sioc at Uisce 10 stays ${pk.a25.other}`,
+  pk.a24.wild === .3 && pk.a25.wild === .15 && pk.a25.other === .3 && Math.abs(pk.r24 - .3) < .04 && Math.abs(pk.r25 - .15) < .04, pk);
+check(`Thrift: a sent Caor costs ${pk.a49.cost} at Tine 49 and ${pk.a50.cost} at 50 (30 ×0.85, rounded), a held second ${pk.a50.held}`,
+  pk.a49.cost === 30 && pk.a50.cost === 26 && pk.a50.held === 13, pk);
+// S1625 — the six 75s, each at its school 74 and then 75
+const p75 = await page.evaluate(() => {
+  const e = ENEMIES.find(x => x.floor === 1 && x.mesh); e.dead = false; e.hp = e.maxHp = 1e5; LAID && laidEnd();
+  const S = ['tine', 'uisce', 'cloch', 'scath', 'solas', 'gaoth'], lv = n => { for (const k of S) SKILLS[k] = { lv: n, p: 0 }; };
+  const read = () => { e._burn = null; e._riderSlowUntil = 0; e._riderSlow = null; e._rootUntil = 0;
+    const burn = riderHit(e, 'caor', 10).burn, slow = (riderHit(e, 'sioc', 10), +foeSlowMult(e).toFixed(2));
+    _mendCarry = 0; PHP = 10; riderHit(e, 'leigheas', 40); const mend = PHP - 10;
+    knownWords = { cloch_ghear: 2 }; let pillar = null;
+    for (let a = 0; a < 16 && !pillar; a++) { const x = px + Math.sin(a * Math.PI / 8) * 3, z = pz + Math.cos(a * Math.PI / 8) * 3; const r = layWord('cloch_ghear', null, x, z, { cap: jumpY + 1 }); if (r.ok) pillar = +(LAID.until - playClockS).toFixed(1); }
+    LAID && laidEnd();
+    return { burn, slow, mend, pillar, up: +(laidUpdraftV() ** 2 / 36).toFixed(2), step: perk('scath', 75) ? SCHOOL75.step : WORD_BY.dul_thart.forms.sent.step }; };
+  lv(74); const lo = read(); lv(75); const hi = read(); lv(50); PHP = maxHP;
+  return { lo, hi };
+});
+console.log(JSON.stringify(p75));
+check(`at 74 → 75: burn ${p75.lo.burn} → ${p75.hi.burn} s, the rider's slow ×${p75.lo.slow} → ×${p75.hi.slow}, a pillar ${p75.lo.pillar} → ${p75.hi.pillar} s, the step ${p75.lo.step} → ${p75.hi.step} m, a mend of 40's blow ${p75.lo.mend} → ${p75.hi.mend}, the updraft ${p75.lo.up} → ${p75.hi.up} m`,
+  p75.lo.burn === 4 && p75.hi.burn === 8 && p75.lo.slow === .7 && p75.hi.slow === .55 && p75.lo.pillar === 20 && p75.hi.pillar === 40 &&
+  p75.lo.step === 12 && p75.hi.step === 18 && p75.lo.mend === 10 && p75.hi.mend === 12 && p75.lo.up === 2.2 && p75.hi.up === 3.7, p75);
+// S1626 — Cloch, Scáth and Gaoth at 99 and then 100
+const p100 = await page.evaluate(() => {
+  const e = ENEMIES.find(x => x.floor === 1 && x.mesh); e.dead = false; e.hp = e.maxHp = 1e5; e.dmg = 20; staggered.length = 0; e._downUntil = 0;
+  const S = ['cloch', 'scath', 'gaoth'], lv = n => { for (const k of S) SKILLS[k] = { lv: n, p: 0 }; };
+  const sm = showMsg; showMsg = () => {};
+  const read = () => { const out = {};
+    // an arrow from behind you, with Sciath worn
+    SPELL_FX.shield = performance.now() + 60000; PHP = 100; blocking = false;
+    const m = new THREE.Mesh(new THREE.BoxGeometry(.05, .05, .7)); dScene.add(m);
+    e.x = px; e.z = pz + 6; ZARROWS.push({ m, x: px, z: pz + .3, y: 1, vx: 0, vz: -1, life: 1, dmg: 20, from: e, sc: dScene });
+    tickZoneArrows(1 / 60, performance.now()); out.arrow = 100 - PHP; SPELL_FX.shield = 0;
+    // a sent Gaoth's knock
+    staggered.length = 0; e._downUntil = 0; out.knock = gaothKnock(e); out.down = e._downUntil > performance.now() / 1000;
+    return out; };
+  lv(99); const lo = read(); lv(100); const hi = read(); lv(50); showMsg = sm; PHP = maxHP; staggered.length = 0; e._downUntil = 0;
+  return { lo, hi };
+});
+// Scáth's veil: cast by F down the open heading, at 99 then 100
+const veil = async (n) => { await page.evaluate((n) => { SKILLS.scath = { lv: n, p: 0 }; for (const o of ENEMIES) o.dead = true; LAID && laidEnd(); knownWords = { dul_thart: 2 };
+    for (let i = ACTIVE_BUFFS.length - 1; i >= 0; i--) if (ACTIVE_BUFFS[i].type === 'vanish') ACTIVE_BUFFS.splice(i, 1);
+    const mk = bookMake('sent', 'dul_thart'); bookSelect(mk.i); for (const k2 in K) K[k2] = false; castT = 0; _castFreeAt = 0; _castReleaseAt = 0; spCd = 0; mana = 1000;
+    window._vx = { x0: px, z0: pz, fr: casterRand }; casterRand = () => () => .99; const sm = showMsg; showMsg = () => {}; try { castSpell(); } finally { showMsg = sm; } }, n);
+  await page.waitForFunction(() => Math.hypot(px - window._vx.x0, pz - window._vx.z0) > .5, null, { timeout: 15000, polling: 100 }).catch(() => {});
+  return page.evaluate(() => { casterRand = window._vx.fr; const v = _hasBuff('vanish'); px = window._vx.x0; pz = window._vx.z0; return v; }); };
+p100.lo.unseen = await veil(99); p100.hi.unseen = await veil(100);
+console.log(JSON.stringify(p100));
+check(`at 99 → 100: an arrow from behind through Sciath takes ${p100.lo.arrow} → ${p100.hi.arrow}; a step leaves you unseen ${p100.lo.unseen} → ${p100.hi.unseen}; a sent Gaoth knocks down ${p100.lo.down} → ${p100.hi.down}`,
+  p100.lo.arrow > 0 && p100.hi.arrow === 0 && p100.lo.unseen === false && p100.hi.unseen === true && p100.lo.down === false && p100.hi.down === true, p100);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

@@ -342,7 +342,7 @@ function castSpell(){
   // Empty-knownWords hint — one of the two signals (along with HUD dimming) that there are carvings to find.
   if(!activeSpellId||Object.keys(knownWords).length===0){
     if(Object.keys(knownWords).length){showMsg('The words you hold are not yet spells you can cast.','#a8a8d4');return;} /* S1586 — a new word from a carving, before its forms are built */
-    showMsg('You know no magic. Sigils are carved into the walls of dungeon lower floors.','#a8a8d4');
+    showMsg('You know no magic. Words are carved into the walls deep in the gates.','#a8a8d4');
     return;
   }
   {const lb=spellBook[bookSync()];if(lb&&lb.form==='laid'){castLaid(lb);return;}if(lb&&lb.form==='held'){castHeld(lb);return;}if(lb&&lb.form==='touched'){castTouched(lb);return;}} /* S1590 — a laid entry (64-spells.js); S1601 — a held one; S1603 — a touched one */
@@ -377,7 +377,7 @@ function castSpell(){
   let aimJitter=0; // radians added to yaw for scatter
   const mixed=bk.rider&&riderMixedWild(bk.word,bk.rider); /* S1602 — two schools: 10% wild at any tier until both reach 25 */
   const wr=((tier===1||mixed) && sp.wild && sp.wild.length)?casterRand(sp.id):null;
-  if(wr && wr()<(tier===1?IMPRESSION_WILD_CHANCE:0)+(mixed?WORD_MIXED_WILD:0)){
+  if(wr && wr()<(tier===1?wordWildChance(sp.id):0)+(mixed?WORD_MIXED_WILD:0)){ /* S1623 — Steady voice */
     wildPattern=sp.wild[Math.floor(wr()*sp.wild.length)];
     if(wildPattern==='fizzle'){
       // Half-refund mana, nothing else happens. Brief hand-raise with no orb release.
@@ -419,6 +419,7 @@ function castSpell(){
   const snapFwdX=fwdX, snapFwdZ=fwdZ, snapRgtX=rgtX, snapRgtZ=rgtZ;
   const snapPitch=pitch, snapPx=px, snapPz=pz;
   const snapIsOW=isOverworldZone(), snapScene=snapIsOW?scene:dScene, snapFloor=currentFloor;
+  const snapKey=laidKey(); /* S1618 — the place the cast began in */
   const snapAim=thirdPerson?tpAimPoint():null; // S175 — the crosshair's point at the click, as the rest is snapped
 
   setTimeout(()=>{
@@ -485,7 +486,7 @@ function castSpell(){
     }
     // ── Heal spells (Leigheas) ───────────────────────────────────
     else if(sp.role==='heal'){
-      const heal=Math.round(spellHealMag(sp,tier)*(SKILL_DEF[sp.school]?skillMult(sp.school):1)); /* S941 — the school's skill, not the level */
+      const heal=Math.round(spellHealMag(sp,tier)*(SKILL_DEF[sp.school]?skillMult(sp.school):1)*(perk(sp.school,75)&&sp.school==='solas'?SCHOOL75.healMult:1)); /* S1625 — Solas 75 */ /* S941 — the school's skill, not the level */
       if(PHP<effMaxHP())skillUse(sp.school,1,'heal');
       PHP=Math.min(effMaxHP(),PHP+heal);
       const TIER_LIGHT=[2.5, 3.8, 5.5][tier-1];
@@ -511,6 +512,15 @@ function castSpell(){
       if(!wildPattern)showMsg(`${sp.ico} ${dispName}!`,'#88ccff');
     }
 
+    // ── Dul Thart's step (S1618): no bolt, you are moved along the snapped aim at the release ──
+    else if(sp.step&&isOverworldZone()===snapIsOW&&laidKey()===snapKey&&!dead){
+      const cj=Math.cos(aimJitter),sj=Math.sin(aimJitter),ux=snapFwdX*cj-snapFwdZ*sj,uz=snapFwdX*sj+snapFwdZ*cj,n=Math.hypot(ux,uz)||1;
+      const st=stepWord(px,pz,ux/n,uz/n,(perk('scath',75)?SCHOOL75.step:WORD_BY.dul_thart.forms.sent.step)*(wildPattern==='overshoot'?STEP_OVERSHOOT:1));
+      if(st.len>=1&&SKILL_DEF[sp.school])skillUse(sp.school,1,'step');
+      if(st.len>=1&&perk('scath',100))_applyBuff({type:'vanish',duration:SCATH_UNSEEN_S,label:'Unseen',col:'#7a60a8'}); /* S1626 — Scáth 100 */
+      if(wildPattern==='overshoot')showMsg(`${sp.ico} ${sp.nameIr} overshoots — the step runs past its shape.`,'#a8a8d4');
+      else if(!wildPattern)showMsg(`${sp.ico} ${dispName}!`,'#88ccff');
+    }
     // Backlash resolves AFTER the cast body so the player sees the spell go off, then feels the rebound
     if(selfDmgOnResolve>0){
       const selfDmg=Math.max(1,Math.round(spellMag(sp,tier)*selfDmgOnResolve));

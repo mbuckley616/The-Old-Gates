@@ -1218,6 +1218,7 @@ function loop(now){
         const info=applySpellDamage(e, sp, tier);const dmg=info.dmg;e.hp=Math.max(0,e.hp-dmg);e.hpFg.scale.x=e.hp/e.maxHp;e.hpFg.position.x=(e.hp/e.maxHp-1)*.275;e.alert=true;
         if(fb.userData.rider)riderHit(e,fb.userData.rider,dmg); /* S1602 — the joined word's rider */
         if(sp.id==='tintreach')tintreachLeap(e,sp,tier); /* S1606 — the leap */
+        if(sp.school==='gaoth')gaothKnock(e); /* S1626 — Gaoth 100 */
         // Sioc — freeze on hit. Mastery (Still-Winter's Touch) stacks the duration on repeat hits up to a 4.5s ceiling;
         // lower tiers just refresh to 1.5s. Also fixes a pre-v35 leak where every hit pushed a new entry (only the first was read).
         if(sp.id==='sioc'){

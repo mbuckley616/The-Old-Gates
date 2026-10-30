@@ -947,7 +947,8 @@ function tickZoneArrows(dt,now){for(let i=ZARROWS.length-1;i>=0;i--){const a=ZAR
     const dh=Math.hypot(px-a.x,pz-a.z);const hit=dh<.75&&!rollUntouchable(performance.now()/1000);const ground=activeTerrainH(a.x,a.z)>a.y;
     if(hit&&!dead){const raw=foeBlow(a.from,a.dmg+Math.floor(foeRand(a.from)*4)); /* S940 — armour as a share, as of every blow */
       const fx=-Math.sin(yaw),fz=-Math.cos(yaw);const toA=(a.from.x-px),toZ=(a.from.z-pz),tl=Math.hypot(toA,toZ)||1;const facing=(fx*toA+fz*toZ)/tl>.4;
-      if(facing&&deflectsArrows()){skillUse('guard',1,a);stamina=Math.max(0,stamina-6);try{sndBlock();}catch(err){}blockFlashT=.3;blockFlashCol='#ffd700';showMsg('🛡 The arrow glances off your shield.','#ffd700');} /* S1048 — Deflect (Guard 25) */
+      if(wardTurnsArrows()){try{sndBlock();}catch(err){}blockFlashT=.3;blockFlashCol='#c0b090';showMsg('🛡 The arrow turns on your ward.','#c0b090');} /* S1626 — Cloch 100 */
+      else if(facing&&deflectsArrows()){skillUse('guard',1,a);stamina=Math.max(0,stamina-6);try{sndBlock();}catch(err){}blockFlashT=.3;blockFlashCol='#ffd700';showMsg('🛡 The arrow glances off your shield.','#ffd700');} /* S1048 — Deflect (Guard 25) */
       else if(blocking&&facing){const red=_warded(Math.max(1,Math.round(raw*(1-_blockBoost(.65)))));PHP=Math.max(0,PHP-red);lvAct.damageTaken+=red;armourUse();skillUse('guard',1,a); /* S941 fix — the arrow, not a foe: there is no e here */hurtT=.25;stamina=Math.max(0,stamina-6);try{sndBlock();}catch(err){}blockFlashT=.3;blockFlashCol='#4488ff';showMsg(`🛡 Arrow blocked — ${red}`,'#88aaff');}
       else{const hitD=_warded(raw);PHP=Math.max(0,PHP-hitD);lvAct.damageTaken+=hitD;armourUse();hurtT=.4;} /* S762 — the line went with #198 A: the bar's tail says it */
       if(PHP<=0&&!dead)playerDead();}
@@ -1556,6 +1557,7 @@ function tickZoneBalls(dt,sc){
         e.hp=Math.max(0,e.hp-dmg);e.alert=true;
         if(fb.userData.rider)riderHit(e,fb.userData.rider,dmg); /* S1602 — the joined word's rider */
         if(sp.id==='tintreach')tintreachLeap(e,sp,tier); /* S1606 — the leap */
+        if(sp.school==='gaoth')gaothKnock(e); /* S1626 — Gaoth 100 */
         // Sioc — freeze on hit. Mastery stacks up to 4.5s, lower tiers refresh to 1.5s.
         // Brings zone parity with dungeon hit handler (pre-v35 Sioc stagger worked in dungeons only).
         if(sp.id==='sioc'){

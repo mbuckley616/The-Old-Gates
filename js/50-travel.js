@@ -543,7 +543,7 @@ function bladePoisonHit(e){const P=BLADE_POISON;if(!P||!e||e.hp<=0)return 0;let 
   return d;}
 // S1602 — and magic B's riders: Fréamh's root holds it where it stands, Sioc's slow takes 30% (the slower of the two slows wins)
 function foeSlowMult(e){if(!e)return 1;if(e._rootUntil>playClockS)return 0;let m=e._slowUntil>playClockS?FOE_SLOW:1;
-  if(e._riderSlowUntil>playClockS&&typeof RIDER_SLOW_MULT!=='undefined')m=Math.min(m,RIDER_SLOW_MULT);return m;}
+  if(e._riderSlowUntil>playClockS&&typeof RIDER_SLOW_MULT!=='undefined')m=Math.min(m,e._riderSlow!=null?e._riderSlow:RIDER_SLOW_MULT);return m;} /* S1625 — Uisce 75's deeper slow */
 // the brewing page's text for a tincture in the bag
 function brewLines(it){const b=it.brew;if(!b)return '';const t=brewTurned(it),s=brewStrength(it);
   return b.fx.map(f=>`<div class="bt-row" style="color:${ALCH_FX[f].col}">${ALCH_FX[f].label}</div>`).join('')+
