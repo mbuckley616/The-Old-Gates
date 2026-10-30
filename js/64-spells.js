@@ -769,6 +769,7 @@ function applySpellBuff(sp,tier){
 }
 function tickSpellFx(dt){
   if(HELD)heldTick(dt); /* S1601 — the held form */
+  if(RIDDEN.size)riderTick(); /* S1602 — the riders' burns and glows */
   if(_spellLight&&!fxOn('light')&&_spellLight.intensity>0)_spellLight.intensity=Math.max(0,_spellLight.intensity-dt*2);
 }
 // spellbooks: read to learn
@@ -953,8 +954,8 @@ let spellBook=[],activeSpell=-1,formsGranted=[];
 function bookFormFor(id){const w=WORD_BY[id];return !w?null:w.forms.sent?'sent':w.forms.worn?'worn':null;}
 function bookAdd(id){const f=bookFormFor(id);if(!f)return -1;let i=spellBook.findIndex(b=>b.word===id&&b.form===f&&!b.rider);
   if(i<0){if(spellBook.length>=SPELL_BOOK_MAX)return -1;spellBook.push({form:f,word:id,rider:null});i=spellBook.length-1;}return i;}
-// S1590 — an entry chosen by bookSelect (a laid one) stays chosen while F's word is still its word
-function bookSync(){const c=spellBook[activeSpell];if(c&&activeSpellId&&c.word===activeSpellId&&c.form!==bookFormFor(c.word))return activeSpell;
+// S1590 — an entry chosen by bookSelect (a laid one) stays chosen while F's word is still its word; S1602 — and a joined one
+function bookSync(){const c=spellBook[activeSpell];if(c&&activeSpellId&&c.word===activeSpellId&&(c.form!==bookFormFor(c.word)||c.rider))return activeSpell;
   activeSpell=activeSpellId?spellBook.findIndex(b=>b.word===activeSpellId&&!b.rider):-1;return activeSpell;}
 function spellBookLoad(d){spellBook.length=0;formsGranted.length=0;
   if(Array.isArray(d.spellBook)){
@@ -1132,8 +1133,9 @@ function holdWord(bk){
   const H={word:bk.word,rider:bk.rider||null,tier,sp:heldSpell(bk.word),next:playClockS,key:laidKey(),ticks:0,hits:0,dealt:0,mesh:null};
   const tick=heldTickCost(H);
   if(mana<tick)return {say:`Not enough mana! (need ${Math.ceil(tick)})`};
-  const wr=tier===1?casterRand(bk.word+':held'):null;
-  if(wr&&wr()<IMPRESSION_WILD_CHANCE){mana-=tick*.5;spCd=spellCooldown(H.sp,tier);startCastAnim(H.sp,'fizzle');
+  const mixed=!!(bk.rider&&riderMixedWild(bk.word,bk.rider)); /* S1602 — two schools: 10% at any tier until both reach 25 */
+  const wr=tier===1||mixed?casterRand(bk.word+':held'):null;
+  if(wr&&wr()<(tier===1?IMPRESSION_WILD_CHANCE:0)+(mixed?WORD_MIXED_WILD:0)){mana-=tick*.5;spCd=spellCooldown(H.sp,tier);startCastAnim(H.sp,'fizzle');
     return {ok:true,wild:'fizzle',say:`${w.ico} ${w.nameIr} fizzles — the shape will not hold.`};}
   _offenceS=playClockS;HELD=H;H.mesh=heldMesh(H);startCastAnim(H.sp,'projectile');
   if(typeof sndSpellCharge==='function')sndSpellCharge(w.school);
@@ -1159,9 +1161,61 @@ function heldTick(dt){const H=HELD;if(!H)return;
       const info=applySpellDamage(e,H.sp,H.tier,{power:FORMS.held.power});
       e.hp=Math.max(0,e.hp-info.dmg);e.alert=true;H.hits++;H.dealt+=info.dmg;
       if(e.hpFg&&e.maxHp){e.hpFg.scale.x=e.hp/e.maxHp;e.hpFg.position.x=(e.hp/e.maxHp-1)*.275;}
+      if(H.rider)riderHit(e,H.rider,info.dmg,{power:FORMS.held.power}); /* S1602 — the rider */
       dmgNum(e,info.dmg,info);
       if(e.hp<=0){if(dun)killE(e,dmgTag(info,e));else killZoneEnemy(e,scene,dmgTag(info,e));}}}
   if(H.mesh&&HELD){H.mesh.position.set(px,jumpY+1.1,pz);H.mesh.rotation.set(0,yaw,0);}}
+// S1602 — magic B's session 4, part 2 (magic-build.md, "Joining and riders"): a joined word's rider on what a Sent bolt or a Held tick
+// strikes. Caor burns (3 a second for 4 s, past the armour), Sioc slows (−30% speed for 3 s), Séideán pushes (1.5 m straight back
+// from you, stopped by a wall, and 10 posture), Fréamh holds (rooted 0.8 s: it turns and strikes but takes no step), Solas lights (the
+// foe glows for 10 s; `foeLit` is what any hiding reads) and Leigheas mends (you heal 25% of the damage the blow dealt). `power` is
+// the form's: a held tick's ×0.25 takes the push's distance and posture with it (a second of ticks is one bolt's push), while the
+// burn, the slow, the root and the glow are refreshed, never stacked. Durations run on the play clock; all of it ends when you leave
+// the place. Named action: riderHit.
+const RIDER_SLOW_MULT=1-RIDERS.sioc.hit.slow;
+const RIDDEN=new Set(); /* foes with a burn or a glow running */
+function foeLit(e){return !!(e&&e._litUntil>playClockS);}
+function foeRooted(e){return !!(e&&e._rootUntil>playClockS);}
+function riderFoeSolid(x,z,dun){return dun?dSolid(x,z):(typeof currentZoneSolid==='function'&&currentZoneSolid(x,z));}
+// riderHit: the named action. e was struck for `dealt` by a spell carrying `rider`; o.power is the form's (1 a bolt, 0.25 a tick)
+function riderHit(e,rider,dealt,o){o=o||{};const R=RIDERS[rider];if(!e||!R)return null;const h=R.hit,pw=o.power!=null?o.power:1;
+  const now=playClockS,dun=!!(lid&&lid.startsWith('dyn_'));
+  if(h.lifesteal){const m=(dealt||0)*h.lifesteal+(_mendCarry||0),n=Math.floor(m+1e-9);_mendCarry=m-n;if(n>0)PHP=Math.min(effMaxHP(),PHP+n);return {mend:n};}
+  if(e.dead||e.hp<=0)return null;
+  if(h.dps){e._burn={dps:h.dps,until:now+h.dur,next:Math.max(now+1,e._burn&&e._burn.until>now?e._burn.next:0),dun,key:laidKey()};RIDDEN.add(e);return {burn:h.dur};}
+  if(h.slow){e._riderSlowUntil=Math.max(e._riderSlowUntil||0,now+h.dur);return {slow:h.dur};}
+  if(h.root){e._rootUntil=Math.max(e._rootUntil||0,now+h.root);return {root:h.root};}
+  if(h.glow){e._litUntil=now+h.glow;e._litKey=laidKey();RIDDEN.add(e);riderGlow(e,true);return {glow:h.glow};}
+  if(h.knock){let dx=e.x-px,dz=e.z-pz,d=Math.hypot(dx,dz);if(d<1e-3){dx=-Math.sin(yaw);dz=-Math.cos(yaw);d=1;}dx/=d;dz/=d;
+    const want=h.knock*pw;let moved=0;
+    for(;moved<want-1e-9;){const st=Math.min(.1,want-moved),nx=e.x+dx*st,nz=e.z+dz*st;if(riderFoeSolid(nx,nz,dun))break;e.x=nx;e.z=nz;moved+=st;}
+    if(e.mesh&&e.mesh.position){e.mesh.position.x=e.x;e.mesh.position.z=e.z;}
+    if(typeof e.posture!=='number'&&typeof initPosture==='function')initPosture(e);
+    let broke=false;if(typeof e.posture==='number'&&applyPostureDamage(e,h.posture*pw,performance.now()/1000)){broke=true;staggered.push({e,t:dazeS(POSTURE_BREAK_STUN)});staggerFlash(e);}
+    e.alert=true;return {knock:+moved.toFixed(3),broke};}
+  return null;}
+let _mendCarry=0;
+// each frame: a burn's seconds land as they pass on the play clock; a glow goes out at its time. Both end when you leave the place.
+function riderTick(){const now=playClockS,key=laidKey();
+  for(const e of RIDDEN){
+    const B=e._burn;
+    if(B&&(e.dead||B.key!==key)){e._burn=null;}
+    else if(B){for(let n=0;n<8&&now>=B.next-1e-9&&B.next<=B.until+1e-9;n++){B.next+=1;
+        const d=challengeDealt(B.dps);e.hp=Math.max(0,e.hp-d);e.alert=true;
+        if(e.hpFg&&e.maxHp){e.hpFg.scale.x=e.hp/e.maxHp;e.hpFg.position.x=(e.hp/e.maxHp-1)*.275;}
+        if(typeof dmgNum==='function')dmgNum(e,d,{});
+        if(e.hp<=0){e._burn=null;if(B.dun)killE(e,' (burned)');else killZoneEnemy(e,scene,' (burned)');break;}}
+      if(e._burn&&e._burn.next>e._burn.until+1e-9)e._burn=null;}
+    if(e._litUntil&&(e.dead||now>=e._litUntil||e._litKey!==key)){e._litUntil=0;riderGlow(e,false);}
+    if(!e._burn&&!(e._litUntil>now))RIDDEN.delete(e);}}
+// a lit foe's glow: a faint shell of the light's colour on its mesh (the look builder's to dress)
+function riderGlow(e,on){const m=e&&e.mesh;if(!m||typeof THREE==='undefined')return;
+  if(!on){const g=e._litMesh;if(g){if(g.parent)g.parent.remove(g);g.geometry.dispose();g.material.dispose();}e._litMesh=null;return;}
+  if(e._litMesh)return;const r=Math.max(.4,hullOf(e)+.15);
+  const g=new THREE.Mesh(new THREE.SphereGeometry(r,12,8),new THREE.MeshBasicMaterial({color:0xfff2b0,transparent:true,opacity:.18,depthWrite:false,blending:THREE.AdditiveBlending}));
+  g.name='rider-lit';g.position.y=r*1.6;g.scale.y=2;m.add(g);e._litMesh=g;}
+// S1602 — two words of two schools add 10% wild at any tier until both schools reach 25: true when this joined cast should roll it
+function riderMixedWild(word,rider){const a=WORD_BY[word],b=WORD_BY[rider];return !!(a&&b&&a.school!==b.school&&(skillLv(a.school)<WORD_MIXED_SKILL||skillLv(b.school)<WORD_MIXED_SKILL));}
 // the cone drawn: open, faint, the word's colour, its point at your chest (the look builder's to dress)
 function heldMesh(H){if(typeof THREE==='undefined'||typeof scene==='undefined'||!scene)return null;
   const R=FORMS.held.reach+HULL_YOU,rad=R*Math.tan(FORMS.held.cone/2*Math.PI/180);

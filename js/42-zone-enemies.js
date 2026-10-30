@@ -1553,6 +1553,7 @@ function tickZoneBalls(dt,sc){
         const info=applySpellDamage(e, sp, tier);
         const dmg=info.dmg;
         e.hp=Math.max(0,e.hp-dmg);e.alert=true;
+        if(fb.userData.rider)riderHit(e,fb.userData.rider,dmg); /* S1602 — the joined word's rider */
         // Sioc — freeze on hit. Mastery stacks up to 4.5s, lower tiers refresh to 1.5s.
         // Brings zone parity with dungeon hit handler (pre-v35 Sioc stagger worked in dungeons only).
         if(sp.id==='sioc'){
