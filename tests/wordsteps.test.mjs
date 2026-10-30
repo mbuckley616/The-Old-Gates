@@ -116,8 +116,12 @@ const D = await page.evaluate(() => {
   // walk off the pillar's top: you fall to the floor
   _reset(spot.x + 2, spot.z, 1.2, E); out.off = _go(60);
   // the updraft: a second laid thing ends the pillar; a jump inside it tops out 2.2 m up, with no push
+  // S1600 — the look builder's dress: the pillar and the updraft each a group of a few draws, the pillar's top at its rule's top, in the gate's scene
+  const cost = m => { let t = 0, d = 0; m.traverse(o => { if (o.isMesh || o.isPoints) { d++; const gg = o.geometry; t += (gg.index ? gg.index.count : gg.attributes.position.count) / (o.isPoints ? 1 : 3); } }); return { tris: Math.round(t), draws: d }; };
+  { const m = LAID.mesh, bb = new THREE.Box3().setFromObject(m); out.dressP = { name: m.name, group: m.isGroup, inScene: m.parent === dScene, top: +(bb.max.y - LAID.base).toFixed(2), ...cost(m) }; }
   const pm = LAID.mesh; _reset(spot.x, spot.z, 0, E);
   out.up = layWord('sideen', null, spot.x + 1.5, spot.z); out.pillarGone = !pm.parent && LAID.kind === 'updraft';
+  out.dressU = { name: LAID.mesh.name, ...cost(LAID.mesh) };
   _reset(spot.x + 1.5, spot.z, 0, E); let top = 0; _drive(i => { K['Space'] = i === 0; top = Math.max(top, jumpY); return i > 3 && onGround; }, 200); for (const k in K) K[k] = false;
   out.draft = { top: +top.toFixed(3), x: +(px - spot.x - 1.5).toFixed(3) };
   _reset(spot.x + 4, spot.z, 0, E); top = 0; _drive(i => { K['Space'] = i === 0; top = Math.max(top, jumpY); return i > 3 && onGround; }, 200);
@@ -136,6 +140,7 @@ check(`a jump forward lands on its top (${D.jump && D.jump.y} m)`, D.jump && D.j
 check(`from the pillar's top a 3.6 m ledge is mantled (${D.l36.y} m); 3.9 m is not (${D.l39.y} m)`, D.l36.pulled && D.l36.y === 3.6 && !D.l39.pulled && D.l39.y < 3.6, D);
 check(`walked off its top you fall to the floor (${D.off.y} m)`, D.off.y === 0 && D.off.on, D.off);
 check(`a second laid thing ends the first: the updraft took the pillar's place`, D.up && D.up.ok && D.pillarGone, D);
+check(`the laid things are dressed: the pillar a group of ${D.dressP.draws} draws, ${D.dressP.tris} triangles, its stone's top at ${D.dressP.top} m; the updraft ${D.dressU.draws} draws, ${D.dressU.tris} triangles`, D.dressP.name === 'laid-pillar' && D.dressP.group && D.dressP.inScene && D.dressP.draws <= 3 && D.dressP.tris < 2000 && Math.abs(D.dressP.top - 1.2) < .03 && D.dressU.name === 'laid-updraft' && D.dressU.draws <= 3 && D.dressU.tris < 1000, D);
 check(`a jump in Séideán's updraft tops out ${D.draft.top} m up (2.2), with no push (${D.draft.x} m); out of it ${D.plain} m`, Math.abs(D.draft.top - 2.2) < .05 && Math.abs(D.draft.x) < .01 && D.plain < .9, D);
 check(`the updraft ends by the play clock (15 s)`, D.clockGone, D);
 
