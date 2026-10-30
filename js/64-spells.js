@@ -63,6 +63,11 @@ const IMPRESSION_WILD_CHANCE=0.30; /* S1571 — magic B: 30%, the figure Scáth'
 // S1619 — the schools' first two perks (magic-build.md's session 5; skills-and-perks-build.md, "Each school"): Steady voice at 25 halves
 // an Impression word's wild chance, 30% to 15%, for that word's school; Thrift at 50 takes 15% off the mana of any word of the school.
 const STEADY_VOICE_WILD=.15,THRIFT_MULT=.85;
+// S1621 — each school's own perk at 75 (skills-and-perks-build.md, "Each school"): Tine's burns last twice as long (the rider's 4 s to 8);
+// Uisce's Sioc slows ×1.5 (the rider's 30% to 45%; Sioc's own bolt freezes, it does not slow); Cloch's laid stone stands twice as long
+// (the pillar's 20 s to 40); Scáth's step reaches 18 m (was 12); Solas's heals are +25% (Leigheas cast, laid and ridden); Gaoth's
+// updraft lifts 1.5 m more (2.2 m to 3.7). Each is read where its number is used, from the caster's school.
+const SCHOOL75={burnMult:2,slowMult:1.5,stoneMult:2,step:18,healMult:1.25,updraftUp:1.5};
 function wordWildChance(word){const w=WORD_BY[word]||SPELLS.find(s=>s.id===word);return w&&perk(w.school,25)?STEADY_VOICE_WILD:IMPRESSION_WILD_CHANCE;}
 // S1571 — overcasting (magic-build.md): short of mana, the rest is paid in health, 2 a point of mana, with a 0.5 s stagger; a cast
 // that would leave you under 1 health is refused.
@@ -1086,7 +1091,7 @@ function laidGround(x,z,py,base){const L=laidLive();if(!L||!L.solid||!laidInside
 function laidBlocks(x,z,y){const L=laidLive();if(!L||!L.solid)return false;if(y>L.top-STEP_UP||y+HEAD_H<=L.base)return false;return laidInside(L,x,z,.3);}
 // in an updraft's column: a jump from inside it rises to LAID_UPDRAFT_APEX over the ground it left
 function laidUpdraft(x,z){const L=laidLive();return !!(L&&L.kind==='updraft'&&laidInside(L,x,z));}
-function laidUpdraftV(){return Math.sqrt(2*18*LAID_UPDRAFT_APEX);} /* the loop's GRAVITY, 18 */
+function laidUpdraftV(){return Math.sqrt(2*18*(LAID_UPDRAFT_APEX+(perk('gaoth',75)?SCHOOL75.updraftUp:0)));} /* the loop's GRAVITY, 18 */
 function laidEnd(){if(!LAID)return;const m=LAID.mesh;if(m&&m.parent)m.parent.remove(m);if(m)m.traverse(o=>{if(o.geometry)o.geometry.dispose();});LAID=null;}
 // the walkable top at x,z no higher than cap, as the loop reads the ground: outdoors the terrain or a platform (and the sea's face for
 // laying on water); in a gate or a room the floor or a foothold
@@ -1146,7 +1151,7 @@ function layWord(word,rider,x,z,o){o=o||{};
     if(why)return {say:why==='body'?'There is no room to lay it there.':'Too near the wall to lay it.',why};
     if(ow&&worldH(x,z)<SEA_Y-.35)return {say:'It will not stand in water.',why:'wet'};
     const h=kind==='pillar'?F.pillar*(o.overshoot?LAID_OVERSHOOT:1):0;
-    Object.assign(L,{r,base:y,top:y+h,solid:kind==='pillar',dur:F.dur});}
+    Object.assign(L,{r,base:y,top:y+h,solid:kind==='pillar',dur:F.dur*(kind==='pillar'&&perk('cloch',75)?SCHOOL75.stoneMult:1)});} /* S1621 — Cloch 75 */
   else if(kind==='snare'){ /* S1612 — Fréamh's: a ring on the ground, never a solid */
     if(ow&&worldH(x,z)<SEA_Y-.35)return {say:'It will not take root in water.',why:'wet'};
     const tier=wordTierOf(word)||1;
@@ -1190,7 +1195,7 @@ function laidRiderTick(){const L=laidLive();if(!L||!L.rideR)return;const R=RIDER
       const d=challengeDealt(R.hot);e.hp=Math.max(0,e.hp-d);e.alert=true;
       if(e.hpFg&&e.maxHp){e.hpFg.scale.x=e.hp/e.maxHp;e.hpFg.position.x=(e.hp/e.maxHp-1)*.275;}dmgNum(e,d,{});
       if(e.hp<=0){if(dun)killE(e,' (burned)');else killZoneEnemy(e,scene,' (burned)');}}
-    if(R.hps&&laidInside(L,px,pz,.3)&&jumpY<=L.top+STEP_UP){PHP=Math.min(effMaxHP(),PHP+R.hps);}}}
+    if(R.hps&&laidInside(L,px,pz,.3)&&jumpY<=L.top+STEP_UP){PHP=Math.min(effMaxHP(),PHP+R.hps*(perk('solas',75)?SCHOOL75.healMult:1));}}} /* S1621 — Solas 75 */
 // S1612 — Fréamh laid (magic-build.md's table: "roots once within 3 m, 10 s"): a ring 3 m round the point, on the ground, never a solid.
 // The first foe whose centre comes within it (its hull counted) is rooted 2 s at Comprehension, the tier's magnitude as the bolt's (1.2 s,
 // 2.6 s), and the ring has done its work: it roots once, and stands out its 10 s. A foe already inside when it is laid is the first. It
@@ -1402,10 +1407,10 @@ function riderFoeSolid(x,z,dun){return dun?dSolid(x,z):(typeof currentZoneSolid=
 // riderHit: the named action. e was struck for `dealt` by a spell carrying `rider`; o.power is the form's (1 a bolt, 0.25 a tick)
 function riderHit(e,rider,dealt,o){o=o||{};const R=RIDERS[rider];if(!e||!R)return null;const h=R.hit,pw=o.power!=null?o.power:1;
   const now=playClockS,dun=!!(lid&&lid.startsWith('dyn_'));
-  if(h.lifesteal){const m=(dealt||0)*h.lifesteal+(_mendCarry||0),n=Math.floor(m+1e-9);_mendCarry=m-n;if(n>0)PHP=Math.min(effMaxHP(),PHP+n);return {mend:n};}
+  if(h.lifesteal){const m=(dealt||0)*h.lifesteal*(perk('solas',75)?SCHOOL75.healMult:1)+(_mendCarry||0),n=Math.floor(m+1e-9);_mendCarry=m-n;if(n>0)PHP=Math.min(effMaxHP(),PHP+n);return {mend:n};}
   if(e.dead||e.hp<=0)return null;
-  if(h.dps){e._burn={dps:h.dps,until:now+h.dur,next:Math.max(now+1,e._burn&&e._burn.until>now?e._burn.next:0),dun,key:laidKey()};RIDDEN.add(e);return {burn:h.dur};}
-  if(h.slow){e._riderSlowUntil=Math.max(e._riderSlowUntil||0,now+h.dur);return {slow:h.dur};}
+  if(h.dps){const bd=h.dur*(perk('tine',75)?SCHOOL75.burnMult:1);e._burn={dps:h.dps,until:now+bd,next:Math.max(now+1,e._burn&&e._burn.until>now?e._burn.next:0),dun,key:laidKey()};RIDDEN.add(e);return {burn:bd};}
+  if(h.slow){e._riderSlowUntil=Math.max(e._riderSlowUntil||0,now+h.dur);e._riderSlow=1-h.slow*(perk('uisce',75)?SCHOOL75.slowMult:1);return {slow:h.dur,mult:+e._riderSlow.toFixed(2)};}
   if(h.root){e._rootUntil=Math.max(e._rootUntil||0,now+h.root);return {root:h.root};}
   if(h.glow){e._litUntil=now+h.glow;e._litKey=laidKey();RIDDEN.add(e);riderGlow(e,true);return {glow:h.glow};}
   if(h.knock){let dx=e.x-px,dz=e.z-pz,d=Math.hypot(dx,dz);if(d<1e-3){dx=-Math.sin(yaw);dz=-Math.cos(yaw);d=1;}dx/=d;dz/=d;

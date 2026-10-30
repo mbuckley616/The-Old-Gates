@@ -17,6 +17,8 @@
 // Session 1617: Loscadh laid, a ground fire 4 m across that burns each foe in it 6 a second (4 at Impression), past the armour, 10 s.
 // Session 1618: Dul Thart sent, the step: you arrive 12 m down your aim, level, or short of the first wall by your body's 0.3.
 // Session 1619: the schools' Steady voice (25: an Impression word goes wild 15%, was 30%) and Thrift (50: its words cost 15% less).
+// Session 1621: each school's 75: Tine's burn 8 s, Uisce's rider slow 45%, Cloch's pillar 40 s, Scáth's step 18 m, Solas's mend +25%,
+// Gaoth's updraft 3.7 m.
 // Session 1610: Fréamh sent, a bolt that deals nothing and roots the foe it strikes 2 s (1.2 at Impression, 2.6 at Mastery).
 import { boot, check } from './lib/game.mjs';
 import { enterDungeon } from './lib/dungeonshot.mjs';
@@ -404,5 +406,23 @@ check(`Steady voice: Caor goes wild ${pk.a24.wild} at Tine 24 and ${pk.a25.wild}
   pk.a24.wild === .3 && pk.a25.wild === .15 && pk.a25.other === .3 && Math.abs(pk.r24 - .3) < .04 && Math.abs(pk.r25 - .15) < .04, pk);
 check(`Thrift: a sent Caor costs ${pk.a49.cost} at Tine 49 and ${pk.a50.cost} at 50 (30 ×0.85, rounded), a held second ${pk.a50.held}`,
   pk.a49.cost === 30 && pk.a50.cost === 26 && pk.a50.held === 13, pk);
+// S1621 — the six 75s, each at its school 74 and then 75
+const p75 = await page.evaluate(() => {
+  const e = ENEMIES.find(x => x.floor === 1 && x.mesh); e.dead = false; e.hp = e.maxHp = 1e5; LAID && laidEnd();
+  const S = ['tine', 'uisce', 'cloch', 'scath', 'solas', 'gaoth'], lv = n => { for (const k of S) SKILLS[k] = { lv: n, p: 0 }; };
+  const read = () => { e._burn = null; e._riderSlowUntil = 0; e._riderSlow = null; e._rootUntil = 0;
+    const burn = riderHit(e, 'caor', 10).burn, slow = (riderHit(e, 'sioc', 10), +foeSlowMult(e).toFixed(2));
+    _mendCarry = 0; PHP = 10; riderHit(e, 'leigheas', 40); const mend = PHP - 10;
+    knownWords = { cloch_ghear: 2 }; let pillar = null;
+    for (let a = 0; a < 16 && !pillar; a++) { const x = px + Math.sin(a * Math.PI / 8) * 3, z = pz + Math.cos(a * Math.PI / 8) * 3; const r = layWord('cloch_ghear', null, x, z, { cap: jumpY + 1 }); if (r.ok) pillar = +(LAID.until - playClockS).toFixed(1); }
+    LAID && laidEnd();
+    return { burn, slow, mend, pillar, up: +(laidUpdraftV() ** 2 / 36).toFixed(2), step: perk('scath', 75) ? SCHOOL75.step : WORD_BY.dul_thart.forms.sent.step }; };
+  lv(74); const lo = read(); lv(75); const hi = read(); lv(50); PHP = maxHP;
+  return { lo, hi };
+});
+console.log(JSON.stringify(p75));
+check(`at 74 → 75: burn ${p75.lo.burn} → ${p75.hi.burn} s, the rider's slow ×${p75.lo.slow} → ×${p75.hi.slow}, a pillar ${p75.lo.pillar} → ${p75.hi.pillar} s, the step ${p75.lo.step} → ${p75.hi.step} m, a mend of 40's blow ${p75.lo.mend} → ${p75.hi.mend}, the updraft ${p75.lo.up} → ${p75.hi.up} m`,
+  p75.lo.burn === 4 && p75.hi.burn === 8 && p75.lo.slow === .7 && p75.hi.slow === .55 && p75.lo.pillar === 20 && p75.hi.pillar === 40 &&
+  p75.lo.step === 12 && p75.hi.step === 18 && p75.lo.mend === 10 && p75.hi.mend === 12 && p75.lo.up === 2.2 && p75.hi.up === 3.7, p75);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

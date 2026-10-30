@@ -486,7 +486,7 @@ function castSpell(){
     }
     // ── Heal spells (Leigheas) ───────────────────────────────────
     else if(sp.role==='heal'){
-      const heal=Math.round(spellHealMag(sp,tier)*(SKILL_DEF[sp.school]?skillMult(sp.school):1)); /* S941 — the school's skill, not the level */
+      const heal=Math.round(spellHealMag(sp,tier)*(SKILL_DEF[sp.school]?skillMult(sp.school):1)*(perk(sp.school,75)&&sp.school==='solas'?SCHOOL75.healMult:1)); /* S1621 — Solas 75 */ /* S941 — the school's skill, not the level */
       if(PHP<effMaxHP())skillUse(sp.school,1,'heal');
       PHP=Math.min(effMaxHP(),PHP+heal);
       const TIER_LIGHT=[2.5, 3.8, 5.5][tier-1];
@@ -515,7 +515,7 @@ function castSpell(){
     // ── Dul Thart's step (S1618): no bolt, you are moved along the snapped aim at the release ──
     else if(sp.step&&isOverworldZone()===snapIsOW&&laidKey()===snapKey&&!dead){
       const cj=Math.cos(aimJitter),sj=Math.sin(aimJitter),ux=snapFwdX*cj-snapFwdZ*sj,uz=snapFwdX*sj+snapFwdZ*cj,n=Math.hypot(ux,uz)||1;
-      const st=stepWord(px,pz,ux/n,uz/n,WORD_BY.dul_thart.forms.sent.step*(wildPattern==='overshoot'?STEP_OVERSHOOT:1));
+      const st=stepWord(px,pz,ux/n,uz/n,(perk('scath',75)?SCHOOL75.step:WORD_BY.dul_thart.forms.sent.step)*(wildPattern==='overshoot'?STEP_OVERSHOOT:1));
       if(st.len>=1&&SKILL_DEF[sp.school])skillUse(sp.school,1,'step');
       if(wildPattern==='overshoot')showMsg(`${sp.ico} ${sp.nameIr} overshoots — the step runs past its shape.`,'#a8a8d4');
       else if(!wildPattern)showMsg(`${sp.ico} ${dispName}!`,'#88ccff');
