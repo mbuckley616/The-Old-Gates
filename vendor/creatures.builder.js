@@ -2177,7 +2177,9 @@ function* dressFlesh(geo, B, pal, plan) {
     for (let t = 0; t < tones.length; t++) if (tw[t] > 0) { const w = tw[t] / ts; D.copy(pal[tones[t]]); C.r += D.r * w; C.g += D.g * w; C.b += D.b * w; if (FURRY.has(tones[t])) furry += w * (tones[t] === 'mane' ? plan.fur?.maneK ?? 1 : 1); }
     // counter-shading: the saddle darkens what faces the sky, the belly lightens what faces the ground (the game's wolves do this)
     const ny = nrm.getY(v), coatW = (tw[toneI.coat] || 0) / (ts || 1);
-    if (pal.saddle && coatW > 0) C.lerp(pal.saddle, coatW * sstep(.15, .85, ny) * .85);
+    // `saddleUp` (Session 1599) sets where the saddle starts and is full, by the normal's height: a deep, narrow fish's flanks face
+    // sideways, so the default left a herring's blue-green back a line on its ridge
+    if (pal.saddle && coatW > 0) C.lerp(pal.saddle, coatW * sstep(plan.saddleUp?.[0] ?? .15, plan.saddleUp?.[1] ?? .85, ny) * .85);
     if (pal.belly && coatW > 0) C.lerp(pal.belly, coatW * sstep(-.1, -.75, ny));
     if (pat?.kind === 'bands') { const b = Math.sin(z * Math.PI * 2 / pat.period + PN.noise(x * 6, y * 6, z * 2) * 1.2); if (b > .35) C.lerp(pal[pat.tone], .85 * coatW); }
     if (pat?.kind === 'stripes') { const b = Math.sin(z * Math.PI * 2 / pat.period + PN.noise(x * 3, y * 3, z) * 2.5); if (b > .55 && ny > -.2) C.lerp(pal[pat.tone], .7 * coatW); }
@@ -3297,11 +3299,18 @@ Object.assign(PLANS, {
   // and pink legs; long narrow wings for soaring
   gull: re(PLANS.skyraven, { name: 'Gull', src: 'the ports’ gulls (spawnGulls); OG-144 (surf, gulls and a market)', scale: 1.05, gaits: ['soar', 'walk', 'stand'], flyH: 1.4,
     palette: { coat: [.94, .94, .93], saddle: [.64, .67, .71], belly: [.96, .96, .95], dark: [.05, .05, .05], horn: [.93, .78, .22], skin: [.86, .62, .56], feather: [.68, .71, .75], featherTip: [.06, .06, .07], secTip: [.94, .94, .93], covert: [.7, .73, .77] }, fur: null,
-    parts: flier({ eye: [.92, .86, .5], beak: .065, hook: .3, primary: 1.25 }) })
+    parts: flier({ eye: [.92, .86, .5], beak: .065, hook: .3, primary: 1.25 }) }),
+  // Session 1599: the shallows' schools (85-world-sea.js' spawnFishSchool, ten to seventeen 0.42 m cones) as a herring: the salmon's
+  // body slimmer and deeper than wide, no hooked jaw, a big dark eye, silver flanks under a blue-green back, small fins, a forked tail
+  herring: re(PLANS.riverjaw, { name: 'Herring', src: 'the shallows’ fish schools (spawnFishSchool); OG-016 (coastal: fish in schools)', scale: .4, mottle: .12, saddleUp: [-.05, .4],
+    palette: { coat: [.8, .84, .86], saddle: [.16, .3, .36], belly: [.95, .95, .95], dark: [.04, .04, .05], fin: [.6, .64, .66] },
+    parts: PLANS.riverjaw.parts.map(([k, o]) => k === 'spine' ? [k, { ...o, r: [.055, .075, .068], s: [.42, 1.2] }]
+      : k === 'head' ? [k, { ...o, pitch: 0, muzzle: { ...o.muzzle, taper: .5 }, jaw: { ...o.jaw, drop: .3 }, eyes: [{ f: .32, up: .2, out: .85, r: .017, color: [.06, .06, .07] }] }]
+      : k === 'fins' ? [k, { list: o.list.map(f => f.role === 'caudal' ? { ...f, len: .13, h: .13 } : { ...f, len: f.len * .8, h: f.h * .8 }) }] : [k, o]) })
 });
 const SEA = ['tidecrab', 'reefmoray', 'starweedray', 'lanternjelly', 'coastaltuna', 'skyskimmer', 'stormwhale', 'stormswift', 'sailfinray', 'driftersquid', 'reefshark', 'octopus', 'seal', 'blackcurrenteel', 'gateeel', 'shatterback', 'gateleviathan'];
-// the shore's own birds (Session 1595), apart from the sea sheets' twenty-four
-const SHORE = ['gull'];
+// the shore's own birds and fish (Sessions 1595, 1599), apart from the sea sheets' twenty-four
+const SHORE = ['gull', 'herring'];
 // ── Session 855: beasts of burden (OG-046's roads; OG-077's post hare, built in Session 773; backlog L3). The horse is
 // its own plan and the mule and the donkey are the horse; the ox and the yak are the cow, the reindeer the stag, the
 // giant goat the goat with a saddle. OG-046's llama is the Frostmane (Session 853) and its cow is the livestock's ──

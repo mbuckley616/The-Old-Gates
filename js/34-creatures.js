@@ -1102,6 +1102,31 @@ function hcDolphinRig(d,k){return hcSeaRig(d,'Dolphin','dolphin:'+k,{rate:[9,9],
 let HC_GULL_N=0;
 function hcGullRig(m){const par=m.parent,i=par.children.indexOf(m),w={m},rig=hcSeaRig(w,'Gull','gull:'+(HC_GULL_N++),{rate:[10,10],axis:0,reach:1,gait:'soar',nest:true});
   par.children.splice(par.children.indexOf(w.m),1);par.children.splice(i,0,w.m);rig.root.rotation.y=Math.PI;return rig;}
+// Session 1599: the shallows' fish schools (85-world-sea.js' spawnFishSchool: one InstancedMesh of ten to seventeen 0.42 m cones, its
+// head at +z, which tickFish turns to face out from the circle it swims, not along it) wear the kit's `herring`. Seventeen skinned
+// bodies a school would be seventeen draws, so the kit's fish is built once at a coarse cell, baked at rest (hbMerge) into one plain
+// geometry the old cone's length, its head turned to −x (so tickFish's turn points it along its circle), and every school near the eye
+// draws it instanced, its tail swung in the vertex shader by the instance's own phase: one draw a school, as before. A school past
+// HC_SCHOOL.near keeps the old cone (8 triangles a fish), so the shallows of a loaded coast stay cheap. A fish decides nothing: no key
+const HC_SCHOOL={near:35,cell:.036,geo:null,mat:null,tris:0,ms:0,u:{value:0}};
+function hcSchoolKit(){if(HC_SCHOOL.geo!==null)return HC_SCHOOL.geo;const t=performance.now();HC_SCHOOL.geo=false;
+  try{const id='game:Herring';if(!HC.PLANS[id])HC.PLANS[id]=Object.assign({},HC.PLANS.herring,{name:'Herring',cell:HC_SCHOOL.cell});
+    const C=HC.build(HC.genome(id,'school:herring')),m=hbMerge({skeleton:C.skel,byName:{root:C.bones[0]},root:C.root},new Set()),src=m.geometry,G=new THREE.BufferGeometry();
+    for(const k of ['position','normal','color'])G.setAttribute(k,src.attributes[k]);G.setIndex(src.index);G.rotateY(-Math.PI/2);G.computeBoundingBox();
+    const b=G.boundingBox,f=.42/(b.max.x-b.min.x);G.translate(-(b.max.x+b.min.x)/2,-(b.max.y+b.min.y)/2,-(b.max.z+b.min.z)/2);G.scale(f,f,f);G.computeBoundingSphere();
+    C.root.traverse(o=>{if(o.isMesh&&o.geometry)o.geometry.dispose();});src.dispose();
+    const mat=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.42,metalness:.25});
+    mat.onBeforeCompile=sh=>{sh.uniforms.uSwim=HC_SCHOOL.u;sh.vertexShader='uniform float uSwim;\n'+sh.vertexShader.replace('#include <begin_vertex>',
+      '#include <begin_vertex>\n float hcW=smoothstep(-0.05,0.21,transformed.x);\n transformed.z+=sin(uSwim*11.0+float(gl_InstanceID)*2.3-transformed.x*14.0)*0.035*hcW*hcW;');};
+    mat.customProgramCacheKey=()=>'hcschool';
+    HC_SCHOOL.geo=G;HC_SCHOOL.mat=mat;HC_SCHOOL.tris=G.index.count/3;}catch(e){console.warn('F4: the kit could not build the herring',e);}
+  HC_SCHOOL.ms=performance.now()-t;return HC_SCHOOL.geo;}
+function hcSchools(now,busy){HC_SCHOOL.u.value=now/1000;
+  for(const s of LIFE.fish){const im=s.im;if(!im.parent)continue;if(!s.hcOld)s.hcOld={geo:im.geometry,mat:im.material};
+    const near=Math.hypot(CAM.position.x-s.cx,CAM.position.z-s.cz)<HC_SCHOOL.near+(s.hcNear?1:-1);if(near===!!s.hcNear)continue;
+    if(near&&HC_SCHOOL.geo===null&&busy)continue;const G=near?hcSchoolKit():null;if(near&&!G)continue;
+    s.hcNear=near;im.geometry=near?G:s.hcOld.geo;im.material=near?HC_SCHOOL.mat:s.hcOld.mat;}}
+function hcSchoolDrop(s){if(s&&s.hcOld){s.im.geometry=s.hcOld.geo;s.im.material=s.hcOld.mat;s.hcNear=false;}}
 // Session 1592: the dungeon's Slime and Small Slime (56-dungeon-build.js' buildEnemy, S222's glassy blob) wear the kit's `slime` (Session
 // 928, OG-041: arched like a wave, holes through it, bones and rubble inside) by the same path, since the old blob has no skeleton either.
 // Its parts but the health bar's planes go into one group, the far level; the lights stay. The kit's body is the old blob's length,
@@ -1157,6 +1182,7 @@ function hcTick(now){let best=null,bd=HC_BODY.build;
   if(typeof dScene!=='undefined'&&dScene&&scene===dScene)for(const e of ENEMIES)if(e.limbs&&e.limbs.body&&(e.limbs.slime||e.limbs.flames)&&!e.dead&&!e._hcRig&&e.mesh)HC_RIGS.add(e.limbs.slime?hcSlimeRig(e):hcElemRig(e)); /* S1592 — the dungeon's slimes; S1593 — its fire elementals */
   if(activeZoneId==='world'&&typeof WHALES!=='undefined')for(const w of WHALES)if(!w._hcRig&&w.m&&w.m.parent)HC_RIGS.add(hcWhaleRig(w));
   if(activeZoneId==='world'&&typeof LIFE!=='undefined')LIFE.dolphins.forEach((d,k)=>{if(!d._hcRig&&d.m&&d.m.parent)HC_RIGS.add(hcDolphinRig(d,k));});
+  if(activeZoneId==='world'&&typeof LIFE!=='undefined')hcSchools(now,busy); /* S1599 — the shallows' schools */
   if(activeZoneId==='world'&&typeof LIFE!=='undefined')for(const gl of LIFE.gulls)if(gl.g.parent)for(const m of [...gl.g.children])if(m.isMesh&&!m.userData.hcGull){m.userData.hcGull=true;HC_RIGS.add(hcGullRig(m));} /* S1595 — the ports' gulls */
   for(const rig of HC_RIGS){const g=rig.root.parent;
     if(!g||!g.parent||rig.nest&&!hcTop(g).isScene){hcDrop(rig);HC_RIGS.delete(rig);continue;}
