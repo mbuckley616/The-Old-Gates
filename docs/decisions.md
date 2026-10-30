@@ -3,16 +3,6 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
-### Strange places: when does a wonder wake? (from the concept artist, 2026-10-29, #898)
-**The question.** Backlog L5's prototype (`docs/prototypes/levelup/wonders.html`, OG-106) builds three wonders from the gate kit's stones, one per island: the Drowned Ring (seven 32 m piers in a fen lough, a sigil under the water), the Skyfall Fields (34 stones hung up to 50 m over a snow valley) and the Broken Orrery (four rings, 17 to 41 m, over a sea-cliff platform). "Awake" means the stones drift, the rings turn and the script and seams glow; the geometry is the same in every option.
-
-**Options.**
-- **A.** Quiet: only the shape, day and night; nothing moves or glows.
-- **B.** Always awake: moves and glows by day and by night.
-- **C (recommended).** By the hour: quiet by day, awake from dusk to dawn (20h to 5h).
-
-**Recommendation.** C. By day a strange ruin in a pleasant land; by night a lit landmark seen from far off, and a reason to come back after dark. Pictures: [A, B, C on the three](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1029/docs/prototypes/levelup/wonders-options.jpg), [in scale](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1029/docs/prototypes/levelup/wonders-scale.jpg), [the rings turning](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1029/docs/prototypes/levelup/wonders-turn.jpg). Write-up in `docs/concepts.md`.
-
 ### The dungeon's cell by kind: old gates at 3 m, and forts and lairs at what? (systems builder, Session 1105) — DECISION #421
 **The question.** F2b's last session sets a dungeon's grid cell at true scale; it is one unit today, so corridors are 1 m wide for a 1.8 m body. Michael chose **C, 3 m** on #300 and added: "If by dungeon we mean Old Gates, they should be extremely massive and cavernous. A normal 'dungeon' like a mine, or a cave can be a more typical size." The game has three kinds of underground place: the **old gates** (the world's portals, themed by school: crypts, haunted halls, elemental and deep caverns, ruins), **fort interiors** (the `fort_` layouts), and **lairs and dens** (a beast's lair, the cloak's den). So the cell can differ by kind, and "a more typical size" is a number a player feels.
 
@@ -26,6 +16,18 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
 ## Answered
+### Strange places: when does a wonder wake? (from the concept artist, 2026-10-29, #898)
+**The question.** Backlog L5's prototype (`docs/prototypes/levelup/wonders.html`, OG-106) builds three wonders from the gate kit's stones, one per island: the Drowned Ring (seven 32 m piers in a fen lough, a sigil under the water), the Skyfall Fields (34 stones hung up to 50 m over a snow valley) and the Broken Orrery (four rings, 17 to 41 m, over a sea-cliff platform). "Awake" means the stones drift, the rings turn and the script and seams glow; the geometry is the same in every option.
+
+**Options.**
+- **A.** Quiet: only the shape, day and night; nothing moves or glows.
+- **B.** Always awake: moves and glows by day and by night.
+- **C (recommended).** By the hour: quiet by day, awake from dusk to dawn (20h to 5h).
+
+**Recommendation.** C. By day a strange ruin in a pleasant land; by night a lit landmark seen from far off, and a reason to come back after dark. Pictures: [A, B, C on the three](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1029/docs/prototypes/levelup/wonders-options.jpg), [in scale](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1029/docs/prototypes/levelup/wonders-scale.jpg), [the rings turning](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1029/docs/prototypes/levelup/wonders-turn.jpg). Write-up in `docs/concepts.md`.
+
+Michael: **Quiet by day, awake dusk to dawn (20h–5h)**. (2026-10-29)
+
 ### The ship's rail: how you go over the side once it holds you (from the systems builder, 2026-10-29, #882)
 **The question.** The scale sheet you approved (`docs/design/scale-numbers-build.md`, the Places table) puts a rail 1.0 m above every deck, "so you cannot walk off a rolling deck". It is not built: on all five hulls you can walk off the side into the sea, and walking off is the only way off a ship today. A plain jump rises 0.84 m, so once the rail holds you, you need a deliberate way over the side.
 
