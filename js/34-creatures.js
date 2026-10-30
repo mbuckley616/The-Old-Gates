@@ -1095,19 +1095,19 @@ function hcSeaRig(w,name,key,o){const old=w.m,g=new THREE.Group();g.name=name.to
   return {name,fish:true,e:{mesh:g},w,root,mesh:old,hcKey:key,ph:(w.ph||0)%1,t:0,...o};}
 function hcWhaleRig(w){return hcSeaRig(w,'Whale','whale:'+(HC_WHALE_N++),{rate:[1.6,1.6],axis:0,reach:5});}
 function hcDolphinRig(d,k){return hcSeaRig(d,'Dolphin','dolphin:'+k,{rate:[9,9],axis:0,reach:1});}
-// Session 1594: the gulls over a port's quay (85-world-sea.js' spawnGulls: four of a cone and a card, LIFE.gulls) wear the kit's `gull`
+// Session 1595: the gulls over a port's quay (85-world-sea.js' spawnGulls: four of a cone and a card, LIFE.gulls) wear the kit's `gull`
 // (the raven's flier, white with a grey mantle and black wingtips) the same way, at the old body's length (0.5 m), soaring with a slow
 // beat. tickGulls moves each by its place among the group's children, so the new group takes the old mesh's index. The old cone's
 // point is its tail, so the kit's head (its +z) is turned to the old mesh's −z. Keyed by count, `gull:<n>`: a gull decides nothing
 let HC_GULL_N=0;
 function hcGullRig(m){const par=m.parent,i=par.children.indexOf(m),w={m},rig=hcSeaRig(w,'Gull','gull:'+(HC_GULL_N++),{rate:[10,10],axis:0,reach:1,gait:'soar',nest:true});
   par.children.splice(par.children.indexOf(w.m),1);par.children.splice(i,0,w.m);rig.root.rotation.y=Math.PI;return rig;}
-// Session 1591: the dungeon's Slime and Small Slime (56-dungeon-build.js' buildEnemy, S222's glassy blob) wear the kit's `slime` (Session
+// Session 1592: the dungeon's Slime and Small Slime (56-dungeon-build.js' buildEnemy, S222's glassy blob) wear the kit's `slime` (Session
 // 928, OG-041: arched like a wave, holes through it, bones and rubble inside) by the same path, since the old blob has no skeleton either.
 // Its parts but the health bar's planes go into one group, the far level; the lights stay. The kit's body is the old blob's length,
 // centred on it, on the floor (the group's origin), crawling; the old quiver (90-main.js' squash of limbs.body) is copied onto it
 // about the floor, and the wind-up's glow is read off limbs.body (enemyBodyMesh's). Keyed by the foe's id, `slime:<id>`
-// Session 1592: the Fire Elemental (S222's figure of additive flame over a molten core) wears the kit's `fireelemental` (Session 1185,
+// Session 1593: the Fire Elemental (S222's figure of additive flame over a molten core) wears the kit's `fireelemental` (Session 1185,
 // OG-018: a crust of slag cracked and lit, tongues of flame grown out of it, arms of flame, a crown) the same way, standing: fitted by
 // its height (the old crown's top), hovering on the plan's own bob, its tongues licking on the plan's flicker. The old core's own orange
 // (limbs.coreEm) is its glow, not a flash, so only a wind-up's or a parry's colour on it is carried to the kit's crust
@@ -1139,25 +1139,25 @@ function hcFishAttach(rig,C){const tA=performance.now();
   HC_BODY.ms+=performance.now()-tA;HC_BODY.n++;}
 function hcFishPose(rig){const H=rig.hc,e=rig.e,now=performance.now()/1000,dt=rig.t?Math.min(.1,now-rig.t):0;rig.t=now;
   if(e.dead)return;rig.ph+=dt*rig.rate[e.alert?1:0]/(Math.PI*2);HC.pose(H.C,rig.ph);
-  if(rig.crawl&&rig.em0){const q=rig.em0.scale,f=H.f;H.W.scale.set(f*q.x,f*q.y,f*q.z);H.W.position.y=H.y0*q.y;} /* S1591 — the slime's quiver, about the floor */
+  if(rig.crawl&&rig.em0){const q=rig.em0.scale,f=H.f;H.W.scale.set(f*q.x,f*q.y,f*q.z);H.W.position.y=H.y0*q.y;} /* S1592 — the slime's quiver, about the floor */
   // the wind-up's red and the parry's gold, lit on the old body's torso (enemyBodyMesh), on the kit's hide
-  const src=rig.em0||e.limbs&&e.limbs.torso,m=src&&src.material;let em=m&&m.emissive?m.emissive.getHex():0;if(rig.emOwn!=null&&!(e._wind>0||e._parryFlash))em=0; /* S1592 — the elemental's core: its own glow and its ease back to it are not a flash */
+  const src=rig.em0||e.limbs&&e.limbs.torso,m=src&&src.material;let em=m&&m.emissive?m.emissive.getHex():0;if(rig.emOwn!=null&&!(e._wind>0||e._parryFlash))em=0; /* S1593 — the elemental's core: its own glow and its ease back to it are not a flash */
   if(em!==H.em){H.em=em;for(const o of H.hide)for(const x of Array.isArray(o.material)?o.material:[o.material])if(x.emissive)x.emissive.setHex(em);}}
 const _hcM=new THREE.Matrix4();
-// S1594 — a rig nested in a group of its own place (a port's gulls, rig.nest) is read through its ancestors: shown while every one is
+// S1595 — a rig nested in a group of its own place (a port's gulls, rig.nest) is read through its ancestors: shown while every one is
 // visible and the top is this scene, dropped once the top is no scene at all (the town unloaded), its distance from its place in the world
 const _hcW=new THREE.Vector3();
 function hcTop(o){while(o.parent)o=o.parent;return o;}
 function hcShown(o){for(;o;o=o.parent)if(!o.visible)return false;return true;}
 function hcAt(rig,g){return rig.nest?g.getWorldPosition(_hcW):g.position;}
 function hcTick(now){let best=null,bd=HC_BODY.build;
-  const busy=now-HBODY.last<HBODY.gap||(typeof JOBS!=='undefined'&&JOBS.length&&activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior())); /* S1590 — as the people's (hbTick): the world's queue only where the world runs it, or no kit body is built in a gate entered with town jobs queued */
+  const busy=now-HBODY.last<HBODY.gap||(typeof JOBS!=='undefined'&&JOBS.length&&activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior())); /* S1591 — as the people's (hbTick): the world's queue only where the world runs it, or no kit body is built in a gate entered with town jobs queued */
   for(const rig of WOLF_RIGS){if(!rig.hc&&(rig.hcFail||!hcOk(rig)))continue;HC_RIGS.add(rig);}
   if(activeZoneId==='world')for(const e of ZONES.world.enemies)if(e.name==='Shark'&&!e.dead&&!e._hcRig&&e.mesh&&e.mesh._sharkTail)HC_RIGS.add(hcFishRig(e));
-  if(typeof dScene!=='undefined'&&dScene&&scene===dScene)for(const e of ENEMIES)if(e.limbs&&e.limbs.body&&(e.limbs.slime||e.limbs.flames)&&!e.dead&&!e._hcRig&&e.mesh)HC_RIGS.add(e.limbs.slime?hcSlimeRig(e):hcElemRig(e)); /* S1591 — the dungeon's slimes; S1592 — its fire elementals */
+  if(typeof dScene!=='undefined'&&dScene&&scene===dScene)for(const e of ENEMIES)if(e.limbs&&e.limbs.body&&(e.limbs.slime||e.limbs.flames)&&!e.dead&&!e._hcRig&&e.mesh)HC_RIGS.add(e.limbs.slime?hcSlimeRig(e):hcElemRig(e)); /* S1592 — the dungeon's slimes; S1593 — its fire elementals */
   if(activeZoneId==='world'&&typeof WHALES!=='undefined')for(const w of WHALES)if(!w._hcRig&&w.m&&w.m.parent)HC_RIGS.add(hcWhaleRig(w));
   if(activeZoneId==='world'&&typeof LIFE!=='undefined')LIFE.dolphins.forEach((d,k)=>{if(!d._hcRig&&d.m&&d.m.parent)HC_RIGS.add(hcDolphinRig(d,k));});
-  if(activeZoneId==='world'&&typeof LIFE!=='undefined')for(const gl of LIFE.gulls)if(gl.g.parent)for(const m of [...gl.g.children])if(m.isMesh&&!m.userData.hcGull){m.userData.hcGull=true;HC_RIGS.add(hcGullRig(m));} /* S1594 — the ports' gulls */
+  if(activeZoneId==='world'&&typeof LIFE!=='undefined')for(const gl of LIFE.gulls)if(gl.g.parent)for(const m of [...gl.g.children])if(m.isMesh&&!m.userData.hcGull){m.userData.hcGull=true;HC_RIGS.add(hcGullRig(m));} /* S1595 — the ports' gulls */
   for(const rig of HC_RIGS){const g=rig.root.parent;
     if(!g||!g.parent||rig.nest&&!hcTop(g).isScene){hcDrop(rig);HC_RIGS.delete(rig);continue;}
     if(rig.nest?hcTop(g)!==scene||!hcShown(g):g.parent!==scene||!g.visible)continue;

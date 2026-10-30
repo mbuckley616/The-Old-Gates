@@ -278,7 +278,7 @@ function feather(B, root, dir, across, len, w, bone, tone, tip) {
 P.wings = (B, o) => {
   const sp = B.spineAt(o.at), span = o.span;
   // a bird's wing: humerus, forearm and hand, with the flight feathers fanned off the hand and laid back along the forearm
-  // (Session 1594: a palette's `secTip` tips the forearm's feathers apart from the hand's `featherTip`, a gull's white trailing edge under black ends)
+  // (Session 1595: a palette's `secTip` tips the forearm's feathers apart from the hand's `featherTip`, a gull's white trailing edge under black ends)
   if (o.feathers) { const F = o.feathers; for (const side of [1, -1]) {
     const root = sp.p.clone().add(V(side * o.out, o.up || 0, 0)), elbow = root.clone().add(V(side * span * .26, 0, -span * .04)), wrist = elbow.clone().add(V(side * span * .3, 0, span * .03)), tip = wrist.clone().add(V(side * span * .26, 0, -span * .04));
     const tag = 'wing' + (side > 0 ? 'L' : 'R'), arm = B.chain(tag, sp.bone, [root, elbow, wrist, tip]);
@@ -1862,7 +1862,7 @@ Object.assign(PLANS, {
     palette: { coat: [.14, .16, .2], saddle: [.07, .08, .1], belly: [.36, .36, .38], dark: [.03, .03, .04], fin: [.12, .14, .18], horn: [.5, .62, .78] },
     glow: { color: [3, 1.5, .4], freq: .35, w: .025, all: .55 },
     parts: PLANS.stormwhale.parts.map(([k, o]) => k === 'head' ? [k, { ...o, crystals: { n: 6, len: 3.2, r: .35, f: .15, up: 1, out: .5 } }] : [k, o]) }),
-  // Session 1594: the gull the game's ports already fly (85-world-sea.js's spawnGulls; OG-144's surf and gulls), the raven's flier at a
+  // Session 1595: the gull the game's ports already fly (85-world-sea.js's spawnGulls; OG-144's surf and gulls), the raven's flier at a
   // herring gull's size: white, a grey mantle and wings, black ends to the primaries over a white trailing edge, a yellow hooked bill
   // and pink legs; long narrow wings for soaring
   gull: re(PLANS.skyraven, { name: 'Gull', src: 'the ports’ gulls (spawnGulls); OG-144 (surf, gulls and a market)', scale: 1.05, gaits: ['soar', 'walk', 'stand'], flyH: 1.4,
@@ -1870,7 +1870,7 @@ Object.assign(PLANS, {
     parts: flier({ eye: [.92, .86, .5], beak: .065, hook: .3, primary: 1.25 }) })
 });
 export const SEA = ['tidecrab', 'reefmoray', 'starweedray', 'lanternjelly', 'coastaltuna', 'skyskimmer', 'stormwhale', 'stormswift', 'sailfinray', 'driftersquid', 'reefshark', 'octopus', 'seal', 'blackcurrenteel', 'gateeel', 'shatterback', 'gateleviathan'];
-// the shore's own birds (Session 1594), apart from the sea sheets' twenty-four
+// the shore's own birds (Session 1595), apart from the sea sheets' twenty-four
 export const SHORE = ['gull'];
 // ── Session 855: beasts of burden (OG-046's roads; OG-077's post hare, built in Session 773; backlog L3). The horse is
 // its own plan and the mule and the donkey are the horse; the ox and the yak are the cow, the reindeer the stag, the

@@ -125,7 +125,7 @@ const dh = await page.evaluate(() => { _D.m.visible = false; const p0 = _RD.ph; 
   const on = _RD.ph !== p0; WORLD.scene.remove(_D.m); LIFE.dolphins.splice(LIFE.dolphins.indexOf(_D), 1); tickCreatures(1 / 60, 8e6 + 34); return { still, on, dropped: !_RD.hc && ![...HC_RIGS].includes(_RD) }; });
 check('hidden (the ship slowed) a dolphin is not posed, shown it swims again, and removed its body is dropped', dh.still && dh.on && dh.dropped, dh);
 
-// Session 1594: a port's four gulls (spawnGulls, made here over a group of our own as a port's is) wear the kit's `gull`, each in its own
+// Session 1595: a port's four gulls (spawnGulls, made here over a group of our own as a port's is) wear the kit's `gull`, each in its own
 // place among the group's children (tickGulls moves them by it), its head where the old cone's broad end was (the old mesh's −z)
 const gul = await page.evaluate(() => { const sc = WORLD.scene, holder = new THREE.Group(); sc.add(holder); const S = { group: holder };
   spawnGulls(S, { x: px + 6, z: pz - 6 }); holder.position.y = worldH(px + 6, pz - 6); window._GS = S; const gl = S.gulls, olds = [...gl.g.children];

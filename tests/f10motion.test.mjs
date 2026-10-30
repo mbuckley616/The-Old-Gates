@@ -41,7 +41,7 @@ const r = await page.evaluate(() => { const keep = { w: EQ.weapon, o: EQ.offhand
     { reset(); vmSword.userData.swingMax = .5; vmSword.userData.swingVariant = 0; swingT = .5; for (let i = 0; i < 14; i++) { swingT = Math.max(0, .5 - i / 60); tick(1, {}); } out.swing = measure(); reset(); }
     run('cast', () => { castT = CAST_ANIM_DURATION * .5; }, {}, 6);
     run('jump', () => { onGround = false; velY = 3; }, {}, 20);
-    // S1593 — the double jump's tuck (12 ticks after the step, 0.2 s) and the air dash's lean (8 ticks into it), read off AIRSTEP and AIRDASH
+    // S1594 — the double jump's tuck (12 ticks after the step, 0.2 s) and the air dash's lean (8 ticks into it), read off AIRSTEP and AIRDASH
     { const R = TP.rig, B = R.rig.B, by = R.rig.hb.P.byName, sd = s => HBODY.swap ? (s === 'L' ? 'R' : 'L') : s;
       const knee = () => { R.root.updateMatrixWorld(true); return { knee: +(W(by['lowerleg01.' + sd('L')]).y - W(by['upperleg01.' + sd('L')]).y).toFixed(3), kneeD: +(W(B.knL).y - W(B.thL).y).toFixed(3) }; };
       const ahead = () => { R.root.updateMatrixWorld(true); const f = W(by['foot.L']).add(W(by['foot.R'])).multiplyScalar(.5), h = W(by.head).sub(f);
@@ -109,7 +109,7 @@ check('at rest each limb of the builder\'s body lies along the driver\'s within 
 check('in every state the copy holds as it does at rest (no limb more than 12° further off): walk, sprint, sneak, block, swing, cast, jump, bow, death', moving.every(([, v]) => v.deg < rest + 12), Object.fromEntries(moving.map(([k, v]) => [k, [v.worst, v.deg]])));
 const hs = Object.entries(r).filter(([, v]) => v.heldN > 0);
 check('what is held keeps its angle to the builder\'s forearm as to the driver\'s (within 1°), and the shield its distance from it (within 5 mm), in every state', hs.length >= 8 && hs.every(([, v]) => v.held < 1 && v.off < .005), Object.fromEntries(hs.map(([k, v]) => [k, [v.heldN, v.held, v.off]])));
-check('the double jump tucks the knees up toward the chest (Session 1593): the builder\'s left knee within 15 cm of its hip\'s height, where it hangs 40 cm under it at rest', r.step.knee > -.15 && r.rest.knee < -.3, { step: [r.step.knee, r.step.kneeD], rest: [r.rest.knee, r.rest.kneeD] });
+check('the double jump tucks the knees up toward the chest (Session 1594): the builder\'s left knee within 15 cm of its hip\'s height, where it hangs 40 cm under it at rest', r.step.knee > -.15 && r.rest.knee < -.3, { step: [r.step.knee, r.step.kneeD], rest: [r.rest.knee, r.rest.kneeD] });
 check('the air dash leans the body into it about its middle: the head 40 cm or more ahead of the feet, the hips within 15 cm of their height at rest; 0.33 s after it the body is upright again', r.dash.ahead > .4 && Math.abs(r.dash.hip - r.rest.hip) < .15 && r.dash.after.rx === 0 && r.dash.after.rz === 0, { dash: { ahead: r.dash.ahead, rx: r.dash.rx, hip: r.dash.hip, restHip: r.rest.hip }, after: r.dash.after });
 check('the death fall lays the builder\'s body down: its head under 0.6 m above the root', r.dead.head < .6, r.dead);
 console.log('swim', JSON.stringify({ crown: r.swim.crown, eye: r.swim.eye, st: r.swim.st }));

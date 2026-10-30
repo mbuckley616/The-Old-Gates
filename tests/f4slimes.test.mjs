@@ -1,9 +1,9 @@
-// Card F4 (Session 1590): on the new look the dungeon's Slime and Small Slime wear the creature kit's `slime` (Session 928, OG-041: arched
+// Card F4 (Session 1591): on the new look the dungeon's Slime and Small Slime wear the creature kit's `slime` (Session 928, OG-041: arched
 // like a wave, holes through it, bones and rubble inside), by the shark's path (Session 1529), since the old blob has no skeleton either:
 // keyed by its foe id (`slime:<id>`); the old blob's length, centred on it, on the floor; three levels by distance; the old quiver copied
 // onto it about the floor; the tell's glow on its hide; a dead one never dressed; killed, darkened with its shaders kept; the split's
 // two Small Slimes dressed too. Picture: docs/prototypes/f4/f4-slimes.jpg (the kit's and the old, side by side).
-// Session 1592: the Fire Elemental in the same gate wears the kit's `fireelemental`, fitted by its height; f4-elemental.jpg.
+// Session 1593: the Fire Elemental in the same gate wears the kit's `fireelemental`, fitted by its height; f4-elemental.jpg.
 import { boot, check, ROOT } from './lib/game.mjs';
 import { enterDungeon } from './lib/dungeonshot.mjs';
 import fs from 'fs'; import path from 'path';
@@ -19,7 +19,7 @@ check('an elemental gate holds two slimes', !!found, found);
 // one slime ahead of you, one killed before its body was built (never dressed)
 const made = await page.evaluate(() => { const L = ENEMIES.filter(x => !x.dead && x.floor === currentFloor && x.limbs && x.limbs.slime && x.variant !== 'small');
   const S = L[0], O = L[1]; window._S = S; window._O = O; O.dead = true;
-  const J = { fn: () => false, name: 'f4slimes' }; JOBS.push(J); /* S1590 — a town job still queued, as when you come in from a town: only the open world runs the queue */
+  const J = { fn: () => false, name: 'f4slimes' }; JOBS.push(J); /* S1591 — a town job still queued, as when you come in from a town: only the open world runs the queue */
   const rig = () => [...HC_RIGS].find(r => r.e === S); let k = 0; HBODY.last = -1e9; const n0 = HC_BODY.n;
   const at = () => { CAM.position.set(S.mesh.position.x - 3, S.mesh.position.y + 1.6, S.mesh.position.z); CAM.updateMatrixWorld(true); };
   while (!(rig() && rig().hc) && k++ < 300) { at(); tickCreatures(1 / 60, 2e5 + k * (HBODY.gap + 1)); }
@@ -79,7 +79,7 @@ const small = await page.evaluate(() => { const L = ENEMIES.filter(e => e.name =
   while (!(rig() && rig().hc) && k++ < 300) { CAM.position.set(S.mesh.position.x - 3, S.mesh.position.y + 1.6, S.mesh.position.z); CAM.updateMatrixWorld(true); tickCreatures(1 / 60, 5e5 + k * (HBODY.gap + 1)); }
   const R = rig(); return { n: L.length, k, plan: R && R.hc && R.hc.C.g.plan, seed: R && R.hc && R.hc.C.g.seed, want: HC.hashKey('slime:' + S.id), f: R && R.hc && +R.hc.f.toFixed(3), big: _R.hc.f }; });
 check(`the split's ${small.n} Small Slimes wear the kit's slime too, keyed by their own ids, smaller (×${small.f} against ×${(+small.big).toFixed(3)})`, small.n === 2 && small.plan === 'slime' && small.seed === small.want && small.f < small.big, small);
-// Session 1592: the Fire Elemental wears the kit's `fireelemental`, standing: fitted by its height, hovering on the plan's bob
+// Session 1593: the Fire Elemental wears the kit's `fireelemental`, standing: fitted by its height, hovering on the plan's bob
 const el = await page.evaluate(() => { const F = ENEMIES.find(x => !x.dead && x.floor === currentFloor && x.limbs && x.limbs.flames); if (!F) return { none: true }; window._F = F;
   const rig = () => [...HC_RIGS].find(r => r.e === F); let k = 0; HBODY.last = -1e9;
   while (!(rig() && rig().hc) && k++ < 400) { CAM.position.set(F.mesh.position.x - 3, F.mesh.position.y + 1.6, F.mesh.position.z); CAM.updateMatrixWorld(true); tickCreatures(1 / 60, 9e5 + k * (HBODY.gap + 1)); }

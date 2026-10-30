@@ -257,7 +257,7 @@ function vmMantle(){if(!vmSword||typeof MANTLE==='undefined'||MANTLE.t0==null)re
       fL.rotation.set(mix(fL.rotation.x,P[3]),mix(fL.rotation.y,-P[4]),mix(fL.rotation.z,-P[5]));}
     return;}
   vmSword.position.x+=-.06*w;vmSword.position.y+=-.42*w;vmSword.position.z+=-.1*w;vmSword.rotation.x+=-1.1*w;vmSword.rotation.z+=.35*w;}
-// S1593 — the double jump's tuck and the air dash's lean (double-jump-and-dash-build.md, "Bodies"), read off AIRSTEP and AIRDASH
+// S1594 — the double jump's tuck and the air dash's lean (double-jump-and-dash-build.md, "Bodies"), read off AIRSTEP and AIRDASH
 // (10-player.js) and the clock; a look only, both views. The step is seen as AIRSTEP.used coming on (set the frame it fires, cleared on
 // landing): the tuck comes up in 0.1 s, holds to 0.3 and lets go by 0.6, near the step's top. The dash leans while AIRDASH.t0 is set,
 // in over 0.06 s and out over AIR_POSE.out after it. f and s are the dash's line along your facing and to your right, read each frame,

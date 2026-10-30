@@ -741,7 +741,7 @@ function loop(now){
     if(vmSword.userData.fists)vmFistPose(gb,pb,walkSway,totalBob+jumpDisp*.04);
     vmMantle(); /* S1401 — the mantle's pull in first person (16-viewmodel.js) */
     vmXbowSpan(); /* S1476 — the crossbow's span drawn (16-viewmodel.js) */
-    vmAirDip(); /* S1593 — the double jump's and the air dash's hands (16-viewmodel.js) */
+    vmAirDip(); /* S1594 — the double jump's and the air dash's hands (16-viewmodel.js) */
     // Animate enchant sparks (orbitPhase children)
     if(EQ.weapon&&EQ.weapon.enchant){
       vmSword.children.forEach(c=>{
