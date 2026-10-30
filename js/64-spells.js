@@ -952,7 +952,9 @@ let spellBook=[],activeSpell=-1,formsGranted=[];
 function bookFormFor(id){const w=WORD_BY[id];return !w?null:w.forms.sent?'sent':w.forms.worn?'worn':null;}
 function bookAdd(id){const f=bookFormFor(id);if(!f)return -1;let i=spellBook.findIndex(b=>b.word===id&&b.form===f&&!b.rider);
   if(i<0){if(spellBook.length>=SPELL_BOOK_MAX)return -1;spellBook.push({form:f,word:id,rider:null});i=spellBook.length-1;}return i;}
-function bookSync(){activeSpell=activeSpellId?spellBook.findIndex(b=>b.word===activeSpellId&&!b.rider):-1;return activeSpell;}
+// S1590 — an entry chosen by bookSelect (a laid one) stays chosen while F's word is still its word
+function bookSync(){const c=spellBook[activeSpell];if(c&&activeSpellId&&c.word===activeSpellId&&c.form!==bookFormFor(c.word))return activeSpell;
+  activeSpell=activeSpellId?spellBook.findIndex(b=>b.word===activeSpellId&&!b.rider):-1;return activeSpell;}
 function spellBookLoad(d){spellBook.length=0;formsGranted.length=0;
   if(Array.isArray(d.spellBook)){
     for(const b of d.spellBook){if(spellBook.length>=SPELL_BOOK_MAX)break;if(!b||!knownWords[b.word]||!wordLive(b.word,b.form))continue;
@@ -966,3 +968,135 @@ function spellBookLoad(d){spellBook.length=0;formsGranted.length=0;
     for(const id of order)if(id&&knownWords[id])bookAdd(id);
   }
   bookSync();}
+
+// S1590 — magic B's session 3 (magic-build.md, "The five forms" and "Movement against the step table"): the Laid form's things as
+// solids, in the world, the gates and the rooms. A laid spell puts one thing at a walkable point under the crosshair within 12 m:
+// Cloch Ghéar's pillar (1.2 m high, 1.0 across, 20 s, mantled onto), Séideán's updraft (1.5 m wide, 15 s: a jump in it tops out
+// 2.2 m over where you stood, no forward push), Sioc's floe (3 m across on open water, 30 s) and, with Sioc's rider, Tonn's wave
+// frozen as a bridge (6.2 × 1.6 m, 20 s) from the point along your facing. One laid thing a caster: a second ends the first. It
+// lives by the play clock, at most 60 s, ends when you leave the place, and is never saved. A pillar or an updraft is refused under
+// 0.5 m from a solid or a door, or on a body. The loop reads LAID through laidGround (what you stand on) and laidBlocks (what you
+// walk into); the mantle (10-player.js) takes a laid top as a ledge outdoors too. The other laid words (Loscadh's fire, Reo, Fréamh,
+// Dorcha, Solas, Tonn alone) are the sheet's session 4. Named actions (the co-op rules): bookMake, layWord, laidEnd.
+const LAID_REACH=12,LAID_CLEAR=.5,LAID_MAX_S=60,LAID_UPDRAFT_APEX=2.2,LAID_OVERSHOOT=1.5,LAID_WILD=['fizzle','overshoot'];
+let LAID=null,_onLaid=false; /* the one laid thing: {kind,word,rider,x,z,r|hw,hl,ux,uz,base,top,solid,until,key,mesh} */
+// the place a laid thing belongs to: leaving it ends the thing (the fall's own key: the zone, the dungeon, the room)
+function laidKey(){return typeof fallKey==='function'?fallKey():String(activeZoneId);}
+function laidInside(L,x,z,pad){pad=pad||0;
+  if(L.r!=null)return Math.hypot(x-L.x,z-L.z)<L.r+pad;
+  const dx=x-L.x,dz=z-L.z,a=dx*L.ux+dz*L.uz,b=-dx*L.uz+dz*L.ux;return a>-pad&&a<L.hl*2+pad&&Math.abs(b)<L.hw+pad;}
+function laidLive(){if(LAID&&(playClockS>=LAID.until||LAID.key!==laidKey()))laidEnd();return LAID;}
+// the ground at x,z for feet at py: base, or a laid top within a step of the feet
+function laidGround(x,z,py,base){const L=laidLive();if(!L||!L.solid||!laidInside(L,x,z))return base;return L.top<=py+STEP_UP&&L.top>base?L.top:base;}
+// a body 0.3 round at x,z with its feet at y runs into the laid thing's side: under its top by more than a step, the head over its foot
+function laidBlocks(x,z,y){const L=laidLive();if(!L||!L.solid)return false;if(y>L.top-STEP_UP||y+HEAD_H<=L.base)return false;return laidInside(L,x,z,.3);}
+// in an updraft's column: a jump from inside it rises to LAID_UPDRAFT_APEX over the ground it left
+function laidUpdraft(x,z){const L=laidLive();return !!(L&&L.kind==='updraft'&&laidInside(L,x,z));}
+function laidUpdraftV(){return Math.sqrt(2*18*LAID_UPDRAFT_APEX);} /* the loop's GRAVITY, 18 */
+function laidEnd(){if(!LAID)return;const m=LAID.mesh;if(m&&m.parent)m.parent.remove(m);if(m)m.traverse(o=>{if(o.geometry)o.geometry.dispose();});LAID=null;}
+// the walkable top at x,z no higher than cap, as the loop reads the ground: outdoors the terrain or a platform (and the sea's face for
+// laying on water); in a gate or a room the floor or a foothold
+function laidSurf(x,z,cap){
+  if(isOverworldZone()&&!isInterior()){let h=activeTerrainH(x,z);
+    if(activeZoneId==='world'&&typeof worldH==='function'&&typeof SEA_Y!=='undefined'&&worldH(x,z)<SEA_Y)h=Math.max(h,SEA_Y);return h;}
+  return mantleSurf(x,z,cap);}
+// a solid at a point, as the walk meets it (outdoors solidAt's own 0.3 is in it)
+function laidSolidPt(x,z,y){
+  if(isInterior()){const h=currentHouse;if(h&&h._roomW&&(x<0||x>h._roomW||z<0||z>(h._roomD||1e9)))return true;return intSolidAt(x,z,0,y);}
+  if(lid&&lid.startsWith('dyn_'))return !dAirAt(x,z)&&dSolid(x,z);
+  return currentZoneSolid(x,z);}
+function laidDoorNear(x,z,r){
+  if(isInterior())return (INT_DOORS||[]).some(d=>Math.hypot(d.x-x,d.z-z)<r+(d.w||1)/2);
+  if(lid&&lid.startsWith('dyn_')){const m=activeMap();if(!m)return false;
+    for(let a=0;a<16;a++)for(const rr of [0,r*.5,r]){const c=dCellOf(x+Math.cos(a*Math.PI/8)*rr),w=dCellOf(z+Math.sin(a*Math.PI/8)*rr);const v=m[w]&&m[w][c];if(v===4||v===5)return true;}}
+  return false;}
+// room for a pillar or an updraft r round at x,z, feet at y: no solid or door within LAID_CLEAR of its edge, no body on it
+function laidClear(x,z,r,y){const R=r+LAID_CLEAR,ow=!isInterior()&&!(lid&&lid.startsWith('dyn_')),rr=ow?Math.max(0,R-.3):R;
+  for(let a=0;a<24;a++)for(const f of [0,.35,.7,1]){const d=rr*f;if(!d&&a)continue;if(laidSolidPt(x+Math.cos(a*Math.PI/12)*d,z+Math.sin(a*Math.PI/12)*d,y))return 'solid';}
+  if(laidDoorNear(x,z,R))return 'door';
+  if(Math.hypot(px-x,pz-z)<r+.3)return 'body';
+  for(const e of (typeof ENEMIES!=='undefined'?ENEMIES:[]))if(!e.dead&&e.mesh&&Math.hypot(e.mesh.position.x-x,e.mesh.position.z-z)<r+.4)return 'body';
+  return null;}
+// the point under the crosshair: the camera's ray marched to the first walkable top, or null at a wall or past the reach
+function laidAimPoint(){
+  if(typeof CAM==='undefined'||!CAM)return null;const o=CAM.position,d=CAM.getWorldDirection(new THREE.Vector3());
+  for(let s=.1;s<=LAID_REACH*1.6;s+=.05){const x=o.x+d.x*s,y=o.y+d.y*s,z=o.z+d.z*s;
+    if(Math.hypot(x-px,z-pz)>LAID_REACH+.5)return {x,z,y,far:true};
+    const g=laidSurf(x,z,y);if(y<=g+.01)return {x,z,y:g};
+    if(laidSolidPt(x,z,y))return null;}
+  return null;}
+// the made spells the book may hold: a word you hold, a form the guild has given you, a rider that joins it. Returns its index.
+function bookMake(form,word,rider){rider=rider||null;
+  if(!knownWords[word]||!wordLive(word,form))return {say:'You cannot shape that word so.'};
+  if(!formHeld(form))return {say:`The ${FORMS[form].name} form is not yet yours.`};
+  const j=wordJoin(word,form,rider,wordTierOf(word),rider?wordTierOf(rider):0);if(!j.ok)return {say:j.say||'You cannot shape that word so.'};
+  let i=spellBook.findIndex(b=>b.form===form&&b.word===word&&(b.rider||null)===rider);
+  if(i<0){if(spellBook.length>=SPELL_BOOK_MAX)return {say:'Your book holds eight.'};spellBook.push({form,word,rider});i=spellBook.length-1;}
+  return {i};}
+function bookSelect(i){const b=spellBook[i];if(!b)return false;activeSpell=i;activeSpellId=b.word;return true;}
+// the shape a laid entry makes, or null where it makes none yet (the sheet's session 4)
+function laidShape(word,rider){
+  if(word==='cloch_ghear')return 'pillar';if(word==='sideen')return 'updraft';
+  if(word==='sioc')return 'floe';if(word==='tonn'&&rider==='sioc')return 'bridge';return null;}
+// layWord: the named action. Lays word (with rider) at x,z (its ground found there), facing yaw for a bridge; o.overshoot ×1.5 a
+// pillar's height. Returns {ok} or {say}; nothing is paid here (the cast pays).
+function layWord(word,rider,x,z,o){o=o||{};
+  const kind=laidShape(word,rider);if(!kind)return {say:'That word lays nothing yet.'};
+  if(Math.hypot(x-px,z-pz)>LAID_REACH+1e-6)return {say:'Too far to lay it.',why:'far'};
+  const cap=o.cap!=null?o.cap:jumpY+1,y=laidSurf(x,z,cap),w=WORD_BY[word],F=w.forms.laid;
+  const ow=activeZoneId==='world'&&!isInterior()&&!(lid&&lid.startsWith('dyn_'));
+  const wet=ow&&typeof worldH==='function'&&worldH(x,z)<(typeof SEA_Y!=='undefined'?SEA_Y-.35:-1e9)&&activeTerrainH(x,z)<SEA_Y; /* open water: no quay or deck over it */
+  let L={kind,word,rider:rider||null,x,z,key:laidKey()};
+  if(kind==='pillar'||kind==='updraft'){
+    const r=kind==='pillar'?F.across/2:F.updraft/2,why=laidClear(x,z,r,y);
+    if(why)return {say:why==='body'?'There is no room to lay it there.':'Too near the wall to lay it.',why};
+    if(ow&&worldH(x,z)<SEA_Y-.35)return {say:'It will not stand in water.',why:'wet'};
+    const h=kind==='pillar'?F.pillar*(o.overshoot?LAID_OVERSHOOT:1):0;
+    Object.assign(L,{r,base:y,top:y+h,solid:kind==='pillar',dur:F.dur});}
+  else if(kind==='floe'){
+    if(!wet)return {say:'Sioc lays a floe only on open water.',why:'dry'};
+    Object.assign(L,{r:F.floe/2,base:SEA_Y-.4,top:SEA_Y+.1,solid:true,dur:F.dur});}
+  else{ /* the bridge: from the point along your facing, level with it, as far as its length or the first wall */
+    const B=RIDERS.sioc.laid.bridge,yw=o.yaw!=null?o.yaw:yaw,ux=-Math.sin(yw),uz=-Math.cos(yw);let len=B.len;
+    for(let s=.1;s<=B.len;s+=.1)if(laidSolidPt(x+ux*s,z+uz*s,y+.2)){len=s-.1;break;}
+    if(len<1)return {say:'Too near the wall to lay it.',why:'solid'};
+    Object.assign(L,{hw:B.wide/2,hl:len/2,ux,uz,base:y-.35,top:y,solid:true,dur:B.dur});}
+  laidEnd();
+  L.until=playClockS+Math.min(LAID_MAX_S,L.dur);L.mesh=laidMesh(L);LAID=L;
+  return {ok:true,kind};}
+function laidMesh(L){if(typeof THREE==='undefined'||typeof scene==='undefined'||!scene)return null;
+  let geo,col,op=1;
+  if(L.kind==='pillar'){geo=new THREE.CylinderGeometry(L.r*.92,L.r,L.top-L.base,10);col=0x8a8378;}
+  else if(L.kind==='updraft'){geo=new THREE.CylinderGeometry(L.r,L.r*.8,3,12,1,true);col=0xcfe8ee;op=.18;}
+  else if(L.kind==='floe'){geo=new THREE.CylinderGeometry(L.r,L.r*.9,L.top-L.base,12);col=0xdcecf4;}
+  else{geo=new THREE.BoxGeometry(L.hw*2,L.top-L.base,L.hl*2);col=0xbcdcec;}
+  const m=new THREE.Mesh(geo,new THREE.MeshLambertMaterial({color:col,transparent:op<1,opacity:op,depthWrite:op>=1,side:op<1?THREE.DoubleSide:THREE.FrontSide}));
+  m.name='laid-'+L.kind;
+  if(L.r!=null)m.position.set(L.x,L.kind==='updraft'?L.base+1.5:(L.base+L.top)/2,L.z);
+  else{m.position.set(L.x+L.ux*L.hl,(L.base+L.top)/2,L.z+L.uz*L.hl);m.rotation.y=Math.atan2(L.ux,L.uz);}
+  scene.add(m);return m;}
+// the cast of a laid entry from the book (castSpell hands it here): the form held, the cost and the overcast, Impression's wild roll
+// (a fizzle, or a pillar overshot ×1.5), the crosshair's point, the Cast row's wind-up
+function castLaid(bk){
+  const w=WORD_BY[bk.word],tier=wordTierOf(bk.word);if(!w||!tier){showMsg('Spell not learned!','#6688cc');return false;}
+  if(!formHeld('laid')){showMsg('The Laid form is not yet yours.','#a8a8d4');return false;}
+  if(isCasting()||castRecovering())return false;
+  if(spCd>0){showMsg('Cooling down...','#6688cc');return false;}
+  const at=laidAimPoint();
+  if(!at){showMsg('There is nowhere there to lay it.','#a8a8d4');return false;}
+  if(at.far){showMsg('Too far to lay it.','#a8a8d4');return false;}
+  const cost=wordCost(bk.word,'laid',bk.rider,{tier}),short=Math.max(0,cost-Math.floor(mana)),blood=short*OVERCAST_HP;
+  if(short&&PHP-blood<1){showMsg(`Not enough mana! (need ${cost})`,'#6688cc');return false;}
+  let wild=null;const wr=tier===1?casterRand(bk.word+':laid'):null;
+  if(wr&&wr()<IMPRESSION_WILD_CHANCE){const pool=laidShape(bk.word,bk.rider)==='pillar'?LAID_WILD:['fizzle'];wild=pool[Math.floor(wr()*pool.length)];}
+  const r=wild==='fizzle'?{ok:true}:layWord(bk.word,bk.rider,at.x,at.z,{cap:at.y+.05,overshoot:wild==='overshoot'});
+  if(!r.ok){showMsg(r.say,'#a8a8d4');return false;}
+  const paid=cost-short;mana=Math.max(0,mana-cost);_offenceS=playClockS;
+  if(short){PHP-=blood;PPOST.stagUntil=Math.max(PPOST.stagUntil,performance.now()/1000+OVERCAST_STAGGER_S);blocking=false;powerCharging=false;powerCharge=0;
+    lvAct.damageTaken+=blood;updateHUD();showMsg(`Not enough mana: the word takes ${blood} health.`,'#d48a8a');}
+  const sp=spellOrWord(bk.word);spCd=spellCooldown(sp,tier);
+  if(wild==='fizzle'){mana=Math.min(effMaxMana(),mana+Math.round(paid*.5));showMsg(`${w.ico} ${w.nameIr} fizzles — the shape will not hold.`,'#8a8ac8');startCastAnim(sp,'fizzle');return true;}
+  if(wild==='overshoot')showMsg(`${w.ico} ${w.nameIr} overshoots — the stone climbs past the shape.`,'#a8a8d4');
+  if(SKILL_DEF[w.school])skillUse(w.school,1,'cast');
+  startCastAnim(sp,'self');castMark(WEAPON_ATTACKS.Cast.tell);
+  return true;}
