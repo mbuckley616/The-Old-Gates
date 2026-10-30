@@ -768,6 +768,7 @@ function applySpellBuff(sp,tier){
   showMsg(`${sp.ico} ${sp.nameEn} — ${Math.round(dur)}s`,'#c0e0ff');
 }
 function tickSpellFx(dt){
+  if(HELD)heldTick(dt); /* S1598 — the held form */
   if(_spellLight&&!fxOn('light')&&_spellLight.intensity>0)_spellLight.intensity=Math.max(0,_spellLight.intensity-dt*2);
 }
 // spellbooks: read to learn
@@ -1100,3 +1101,70 @@ function castLaid(bk){
   if(SKILL_DEF[w.school])skillUse(w.school,1,'cast');
   startCastAnim(sp,'self');castMark(WEAPON_ATTACKS.Cast.tell);
   return true;}
+
+// S1598 — magic B's session 4, part 1 (magic-build.md, "The five forms"): the Held form. F on a held entry pours the word out while F is
+// down: a cone 4 m from your body (hull to hull, F2b's reach) and 60° about your facing, ×0.25 of the word's power every 0.25 s of the
+// play clock (a second of it is one bolt, armour taken ×0.25 a tick too), for the word's cost ×0.5 a second, paid a tick at a time
+// (Caor at school 50: 15 a second). You walk at half pace while it runs. It ends when F comes up, the mana for a tick is not there,
+// you are staggered, roll or die, a panel opens (its keyup may never reach the game), or you leave the place; then the word's
+// cooldown and the Cast row's recovery. No overcast while held. At Impression the 30% wild roll is one fizzle at the start (half the
+// first tick back). Its three words are Caor (flame), Sioc (frost) and Séideán (a gale); what each does past the damage, and the
+// riders, are the sheet's session 4's next part. Named action: holdWord.
+const HELD_TICK=FORMS.held.tick;
+let HELD=null; /* {word,rider,tier,sp,next,key,ticks,hits,dealt,mesh} */
+function heldOn(){return !!HELD;}
+// the word as a spell the damage reads: its SPELLS row where it has one, else its Sent bolt's figure
+function heldSpell(word){const s=SPELLS.find(x=>x.id===word);if(s)return s;const w=WORD_BY[word];
+  return {id:word,school:w.school,nameIr:w.nameIr,nameEn:w.nameEn,ico:w.ico,cost:w.cost,dmgBase:(w.forms.sent&&w.forms.sent.bolt)||0,col:0xddeeff,glowCol:0xaaccee};}
+function heldTargets(){return (lid&&lid.startsWith('dyn_'))?ENEMIES:ZE;}
+function heldTickCost(H){return wordCost(H.word,'held',H.rider,{tier:H.tier})*HELD_TICK;}
+// is e in the cone: its centre within 4 m of your edge plus its own hull, and within 30° of your facing (-sin yaw, -cos yaw)
+function heldInCone(e){const dx=e.x-px,dz=e.z-pz,d=Math.hypot(dx,dz);if(d>reachTo(e,FORMS.held.reach))return false;if(d<1e-3)return true;
+  return (-dx*Math.sin(yaw)-dz*Math.cos(yaw))/d>=Math.cos(FORMS.held.cone/2*Math.PI/180)-1e-9;}
+// holdWord: the named action. Starts the held word (bk {word,rider}) if it can; the first tick lands at once.
+function holdWord(bk){
+  if(HELD)return {ok:true};
+  const w=WORD_BY[bk.word],tier=wordTierOf(bk.word);if(!w||!tier)return {say:'Spell not learned!'};
+  if(!formHeld('held'))return {say:'The Held form is not yet yours.'};
+  if(!wordLive(bk.word,'held'))return {say:'You cannot shape that word so.'};
+  if(isCasting()||castRecovering())return {why:'busy'};
+  if(spCd>0)return {say:'Cooling down...'};
+  const H={word:bk.word,rider:bk.rider||null,tier,sp:heldSpell(bk.word),next:playClockS,key:laidKey(),ticks:0,hits:0,dealt:0,mesh:null};
+  const tick=heldTickCost(H);
+  if(mana<tick)return {say:`Not enough mana! (need ${Math.ceil(tick)})`};
+  const wr=tier===1?casterRand(bk.word+':held'):null;
+  if(wr&&wr()<IMPRESSION_WILD_CHANCE){mana-=tick*.5;spCd=spellCooldown(H.sp,tier);startCastAnim(H.sp,'fizzle');
+    return {ok:true,wild:'fizzle',say:`${w.ico} ${w.nameIr} fizzles — the shape will not hold.`};}
+  _offenceS=playClockS;HELD=H;H.mesh=heldMesh(H);startCastAnim(H.sp,'projectile');
+  if(typeof sndSpellCharge==='function')sndSpellCharge(w.school);
+  heldTick(0);
+  return {ok:true};}
+// the cast of a held entry from the book (castSpell hands it here)
+function castHeld(bk){if(HELD)return true;const r=holdWord(bk);if(r.say)showMsg(r.say,r.ok?'#8a8ac8':'#a8a8d4');
+  else if(r.ok&&HELD)showMsg(`${WORD_BY[bk.word].ico} ${WORD_BY[bk.word].nameIr}, held`,'#88ccff');return !!r.ok;}
+function heldEnd(why){const H=HELD;if(!H)return;HELD=null;
+  const m=H.mesh;if(m&&m.parent)m.parent.remove(m);if(m)m.traverse(o=>{if(o.geometry)o.geometry.dispose();});
+  spCd=spellCooldown(H.sp,H.tier);castMark(0);
+  if(why==='mana')showMsg('Your mana is spent.','#6688cc');}
+// each frame, from tickSpellFx: the ticks the play clock has passed, each paid and landed
+function heldTick(dt){const H=HELD;if(!H)return;
+  const nowS=performance.now()/1000;
+  if(!K['KeyF']||dead||(typeof hubOpen!=='undefined'&&hubOpen)||H.key!==laidKey()||playerStaggered(nowS)||(typeof ROLL!=='undefined'&&ROLL)){heldEnd('up');return;}
+  for(let n=0;HELD&&playClockS>=H.next-1e-9&&n<64;n++){
+    const c=heldTickCost(H);if(mana<c){heldEnd('mana');return;}
+    mana-=c;H.next+=HELD_TICK;H.ticks++;
+    const dun=lid&&lid.startsWith('dyn_');
+    for(const e of heldTargets()){
+      if(e.dead||e.locked||e.disguised||(dun&&e.floor!==currentFloor)||!heldInCone(e))continue;
+      const info=applySpellDamage(e,H.sp,H.tier,{power:FORMS.held.power});
+      e.hp=Math.max(0,e.hp-info.dmg);e.alert=true;H.hits++;H.dealt+=info.dmg;
+      if(e.hpFg&&e.maxHp){e.hpFg.scale.x=e.hp/e.maxHp;e.hpFg.position.x=(e.hp/e.maxHp-1)*.275;}
+      dmgNum(e,info.dmg,info);
+      if(e.hp<=0){if(dun)killE(e,dmgTag(info,e));else killZoneEnemy(e,scene,dmgTag(info,e));}}}
+  if(H.mesh&&HELD){H.mesh.position.set(px,jumpY+1.1,pz);H.mesh.rotation.set(0,yaw,0);}}
+// the cone drawn: open, faint, the word's colour, its point at your chest (the look builder's to dress)
+function heldMesh(H){if(typeof THREE==='undefined'||typeof scene==='undefined'||!scene)return null;
+  const R=FORMS.held.reach+HULL_YOU,rad=R*Math.tan(FORMS.held.cone/2*Math.PI/180);
+  const geo=new THREE.ConeGeometry(rad,R,16,1,true);geo.translate(0,-R/2,0);geo.rotateX(Math.PI/2);
+  const m=new THREE.Mesh(geo,new THREE.MeshBasicMaterial({color:H.sp.glowCol||0xffffff,transparent:true,opacity:.16,depthWrite:false,side:THREE.DoubleSide}));
+  const g=new THREE.Group();g.name='held-'+H.word;g.add(m);scene.add(g);return g;}
