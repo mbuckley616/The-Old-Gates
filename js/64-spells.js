@@ -1322,6 +1322,8 @@ function riderMixedWild(word,rider){const a=WORD_BY[word],b=WORD_BY[rider];retur
 // the cone drawn: open, faint, the word's colour, its point at your chest (the look builder's to dress)
 function heldMesh(H){if(typeof THREE==='undefined'||typeof scene==='undefined'||!scene)return null;
   const R=FORMS.held.reach+HULL_YOU,rad=R*Math.tan(FORMS.held.cone/2*Math.PI/180);
+  const d=typeof heldDress==='function'?heldDress(H,R,rad):null; /* S1609 — the look builder's dress (82-world-structures.js), its point at the origin, its mouth along −z */
+  if(d){scene.add(d);return d;}
   const geo=new THREE.ConeGeometry(rad,R,16,1,true);geo.translate(0,-R/2,0);geo.rotateX(Math.PI/2);
   const m=new THREE.Mesh(geo,new THREE.MeshBasicMaterial({color:H.sp.glowCol||0xffffff,transparent:true,opacity:.16,depthWrite:false,side:THREE.DoubleSide}));
   const g=new THREE.Group();g.name='held-'+H.word;g.add(m);scene.add(g);return g;}

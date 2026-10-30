@@ -2214,4 +2214,51 @@
       [rib,ring,pts].forEach(o=>{o.raycast=()=>{};g.add(o);});}
     else return null;
     return g;}
+  // S1609 — magic B's held cone dressed (the systems builder's S1601 drew it as one open cone at 0.16, the word's glow colour).
+  // heldDress(H,R,rad) builds it with its point at the origin and its mouth R along −z, rad across, and heldMesh (64-spells.js)
+  // carries it at your chest each frame; the reach, the 60° and every tick are the rule's and untouched. What pours is the word's
+  // own: Caor a stream of flame, gold at the hand going to red and out at the mouth; Sioc a breath of frost, pale blue, slower, with
+  // flakes turning in it; Séideán a gale, near-white streaks running out along the cone. Each is two shells (an outer sheath and a
+  // narrower core) under additive blending, faded by vertex colour (dark at the point and at the mouth, so the cone has no rim) and streaked round its circle into tongues (five for flame, three for frost, seven for the gale), by
+  // its face's turn from the eye (so the shells' edges, where the layers stack, do not burn white) and by its distance from the eye
+  // under 2.2 m (the point sits 0.55 m under your eye, and first person would be washed out); plus 48 motes (embers, flakes, grit) carried out along it. All cosmetic, by performance.now(),
+  // so a dropped frame changes nothing. Three draws; it never answers a ray and casts no shadow.
+  const HELD_LOOK={
+    caor:{near:[1,.82,.38],mid:[1,.46,.1],far:[.55,.08,.02],core:[1,.95,.7],mote:[1,.7,.25],spin:2.4,flow:1.25,flick:.18,motes:'ember',tongues:5},
+    sioc:{near:[.75,.9,1],mid:[.45,.68,.9],far:[.16,.26,.4],core:[.92,.97,1],mote:[.95,.98,1],spin:.7,flow:.55,flick:.06,motes:'flake',tongues:3},
+    sideen:{near:[.85,.92,.9],mid:[.6,.7,.7],far:[.2,.24,.24],core:[.95,1,.98],mote:[.85,.9,.85],spin:4,flow:1.9,flick:.1,motes:'grit',tongues:7}};
+  let _hdMat=null,_hdPts=null;
+  function heldShell(R,rad,tw,ang,look,core){const seg=core?10:14,ring=18,pos=[],col=[],idx=[];
+    for(let i=0;i<=ring;i++){const t=i/ring,z=-t*R;
+      const ramp=Math.min(1,t/.16)*Math.pow(1-t,.7)*(core?1.15:1),c=core?look.core:(t<.45?look.near.map((v,k)=>v+(look.mid[k]-v)*t/.45):look.mid.map((v,k)=>v+(look.far[k]-v)*(t-.45)/.55));
+      for(let j=0;j<=seg;j++){const a=j/seg*Math.PI*2+t*tw,w=1+Math.sin(a*3+t*7)*.06,r=t*rad*w*(core?.45:1);
+        pos.push(Math.cos(a)*r,Math.sin(a)*r,z);const st=Math.max(0,Math.sin(a*look.tongues+t*9)*.6+Math.sin(a*(look.tongues+3)-t*5)*.4),k=ramp*(core?.38:.55)*(.25+.75*st);col.push(c[0]*k,c[1]*k,c[2]*k);
+        if(i<ring&&j<seg){const p=i*(seg+1)+j;idx.push(p,p+seg+1,p+1,p+1,p+seg+1,p+seg+2);}}}
+    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
+    g.setAttribute('color',new THREE.Float32BufferAttribute(col,3));g.setIndex(idx);g.computeVertexNormals();g.rotateZ(ang);return g;}
+  function heldDress(H,R,rad){if(typeof THREE==='undefined')return null;
+    const look=HELD_LOOK[H.word]||HELD_LOOK.sideen,g=new THREE.Group();g.name='held-'+H.word;
+    if(!_hdMat)_hdMat=new THREE.ShaderMaterial({transparent:true,depthWrite:false,side:THREE.DoubleSide,blending:THREE.AdditiveBlending,fog:false,
+      vertexShader:'attribute vec3 color;varying vec3 vC;varying vec3 vN;varying vec3 vP;void main(){vC=color;vN=normalMatrix*normal;vec4 mv=modelViewMatrix*vec4(position,1.);vP=mv.xyz;gl_Position=projectionMatrix*mv;}',
+      fragmentShader:'varying vec3 vC;varying vec3 vN;varying vec3 vP;void main(){float d=length(vP),k=abs(dot(normalize(vN),vP/d));k=smoothstep(0.,.55,k)*smoothstep(.7,2.2,d);gl_FragColor=vec4(vC*k,1.);}'});
+    if(!_hdPts){const cv=document.createElement('canvas');cv.width=cv.height=32;const cx=cv.getContext('2d'),gr=cx.createRadialGradient(16,16,0,16,16,16);
+      gr.addColorStop(0,'rgba(255,255,255,1)');gr.addColorStop(.35,'rgba(255,255,255,.6)');gr.addColorStop(1,'rgba(255,255,255,0)');cx.fillStyle=gr;cx.fillRect(0,0,32,32);
+      _hdPts=new THREE.PointsMaterial({vertexColors:true,size:.07,map:new THREE.CanvasTexture(cv),transparent:true,depthWrite:false,blending:THREE.AdditiveBlending});}
+    const sheath=new THREE.Mesh(heldShell(R,rad,look.spin*.9,0,look,false),_hdMat),core=new THREE.Mesh(heldShell(R*.7,rad,-look.spin*1.3,1,look,true),_hdMat);
+    sheath.name='held-sheath';core.name='held-core';sheath.frustumCulled=false;
+    const M=48,mp=new Float32Array(M*3),mc=new Float32Array(M*3),ph=[];let seed=7;const rn=()=>(seed=(seed*16807)%2147483647)/2147483647;
+    for(let i=0;i<M;i++)ph.push([rn()*Math.PI*2,rn(),.25+rn()*.75,.7+rn()*.6]);
+    const mg=new THREE.BufferGeometry();mg.setAttribute('position',new THREE.BufferAttribute(mp,3));mg.setAttribute('color',new THREE.BufferAttribute(mc,3));
+    const pts=new THREE.Points(mg,_hdPts);pts.name='held-motes';pts.frustumCulled=false;
+    const t0=performance.now()/1000;
+    sheath.onBeforeRender=()=>{const t=performance.now()/1000-t0,on=Math.min(1,t/.2);
+      sheath.rotation.z=t*look.spin;core.rotation.z=-t*look.spin*1.4;
+      const f=1+Math.sin(t*23)*look.flick*.5+Math.sin(t*37)*look.flick*.3;sheath.scale.set(f*on,f*on,on);core.scale.set(on/f,on/f,on);
+      for(let i=0;i<M;i++){const p=ph[i],u=(p[1]+t*look.flow*p[3]/R*3)%1,a=p[0]+t*look.spin*(look.motes==='flake'?.4:1)+u*2,r=u*rad*p[2]*.9*on,
+          k=Math.min(1,u/.12)*(1-u)*(look.motes==='ember'&&u>.6?(1-u)*2.5:1);
+        mp[i*3]=Math.cos(a)*r;mp[i*3+1]=Math.sin(a)*r+(look.motes==='ember'?u*u*.5:look.motes==='flake'?-u*u*.3:0);mp[i*3+2]=-u*R*on;
+        mc[i*3]=look.mote[0]*k;mc[i*3+1]=look.mote[1]*k;mc[i*3+2]=look.mote[2]*k;}
+      mg.attributes.position.needsUpdate=true;mg.attributes.color.needsUpdate=true;};
+    [sheath,core,pts].forEach(o=>{o.raycast=()=>{};o.castShadow=false;g.add(o);});
+    return g;}
   const SETTLE_MAT=VC_MAT;
