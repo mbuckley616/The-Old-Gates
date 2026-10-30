@@ -345,7 +345,7 @@ function castSpell(){
     showMsg('You know no magic. Sigils are carved into the walls of dungeon lower floors.','#a8a8d4');
     return;
   }
-  {const lb=spellBook[bookSync()];if(lb&&lb.form==='laid'){castLaid(lb);return;}} /* S1590 — a laid entry (64-spells.js) */
+  {const lb=spellBook[bookSync()];if(lb&&lb.form==='laid'){castLaid(lb);return;}if(lb&&lb.form==='held'){castHeld(lb);return;}if(lb&&lb.form==='touched'){castTouched(lb);return;}} /* S1590 — a laid entry (64-spells.js); S1601 — a held one; S1603 — a touched one */
   const sp=SPELLS.find(s=>s.id===activeSpellId);
   if(!sp){showMsg('Spell not learned!','#6688cc');return;}
   const tier=effTier(sp.id); /* S1346 — a great gate torn or bound moves the tier cast */
@@ -375,8 +375,9 @@ function castSpell(){
   let wildPattern=null;
   let selfDmgOnResolve=0;
   let aimJitter=0; // radians added to yaw for scatter
-  const wr=(tier===1 && sp.wild && sp.wild.length)?casterRand(sp.id):null;
-  if(wr && wr()<IMPRESSION_WILD_CHANCE){
+  const mixed=bk.rider&&riderMixedWild(bk.word,bk.rider); /* S1602 — two schools: 10% wild at any tier until both reach 25 */
+  const wr=((tier===1||mixed) && sp.wild && sp.wild.length)?casterRand(sp.id):null;
+  if(wr && wr()<(tier===1?IMPRESSION_WILD_CHANCE:0)+(mixed?WORD_MIXED_WILD:0)){
     wildPattern=sp.wild[Math.floor(wr()*sp.wild.length)];
     if(wildPattern==='fizzle'){
       // Half-refund mana, nothing else happens. Brief hand-raise with no orb release.
@@ -463,7 +464,7 @@ function castSpell(){
       const vx=aimFwdX*sp.speed*cosPitch;
       const vz=aimFwdZ*sp.speed*cosPitch;
       const vy=_tpShot?_tpShot.dir.y*sp.speed:Math.sin(snapPitch)*sp.speed;
-      fb.userData={vx,vy,vz,life:3,spell:sp,tier,_halo:fb.userData._halo};
+      fb.userData={vx,vy,vz,life:3,spell:sp,tier,rider:bk.rider||null,_halo:fb.userData._halo}; /* S1602 — the joined word's rider rides the bolt */
       snapScene.add(fb);
       if(snapIsOW)ZB.push(fb); else BALLS.push(fb);
 

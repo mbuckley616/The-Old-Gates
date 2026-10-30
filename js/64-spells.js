@@ -743,7 +743,7 @@ let activeSpellId=null;
 // are bought at Mages' Guilds (basics at any guild; higher tiers by rank),
 // or read from spellbooks found in chests. Cave sigils are retired.
 // ═══════════════════════════════════════════════════════════════════════
-const SPELL_FX={levitate:0,haste:0,waterwalk:0,waterbreath:0,feather:0,light:0,nighteye:0,shield:0};
+const SPELL_FX={levitate:0,haste:0,waterwalk:0,waterbreath:0,feather:0,light:0,nighteye:0,shield:0,leap:0};
 let _spellLight=null;
 setTimeout(()=>{try{if(!_spellLight&&typeof CAM!=='undefined'){_spellLight=new THREE.PointLight(0xfff0c0,0,18);CAM.add(_spellLight);_spellLight.position.set(0,.4,-.6);}}catch(e){}},0);
 function fxOn(k){return SPELL_FX[k]>performance.now();}
@@ -758,16 +758,42 @@ const BUFF_SPELLS=[
  {id:'suil_oiche',school:'scath',role:'buff',nameIr:'Súil Oíche',nameEn:'Night Eye',    nameMa:'The Owl\'s Gift', ico:'🦉',desc:'See in the dark.',intReqs:[10,18,32],cost:18,speed:0,dmgBase:0,dmgLvl:0,col:0xa0a0ff,glowCol:0xc0c0ff,buff:{key:'nighteye',dur:[120,240,480]},price:[500,900,1400],rank:2,rare:true},
  {id:'suil_fiodora',school:'scath',role:'buff',nameIr:'Súil an Fhíodóra',nameEn:"Weaver's Eye",nameMa:'The Loom Seen',ico:'🧵',desc:'The compass turns toward the nearest warm stone.',intReqs:[8,16,30],cost:14,speed:0,dmgBase:0,dmgLvl:0,col:0xa0c8ff,glowCol:0xc0e0ff,buff:{key:'seamsight',dur:[60,120,240]},price:[180,400,800],rank:1},
  {id:'eitilt',   school:'gaoth',role:'buff',nameIr:'Eitilt',   nameEn:'Levitate',       nameMa:'The Unbound Foot',ico:'🕊',desc:'Rise into the air. Space to climb, C to sink.',intReqs:[12,20,34],cost:34,speed:0,dmgBase:0,dmgLvl:0,col:0xf0e0ff,glowCol:0xffffff,buff:{key:'levitate',dur:[25,50,100]},price:[800,1400,2200],rank:3,rare:true},
+ {id:'ean',      school:'gaoth',role:'buff',nameIr:'Éan',      nameEn:'Leap',           nameMa:'Wingless',        ico:'🦅',desc:'Jump higher, for a while.',intReqs:[8,18,32],cost:26,speed:0,dmgBase:0,dmgLvl:0,col:0xd8f0ff,glowCol:0xe8f8ff,buff:{key:'leap',dur:[20,40,80]},price:[250,500,900],rank:1}, /* S1605 — magic B's Éan, worn */
 ];
 BUFF_SPELLS.forEach(s=>{if(!SPELLS.find(x=>x.id===s.id))SPELLS.push(s);});
+// S1606 — Tintreach sent (magic-build.md's table: "bolt 24, leaps 5 m at half"): a bolt of 24 at Séideán's speed, the fastest the
+// build has (14 m/s), and on a hit it leaps to the nearest other foe within 5 m of the one struck for half the blow, once. The leap takes
+// no rider and starts no burn. Its Mastery has no canon entry (nameMa null), so it is the plain word at ×1.3 as the sheet says.
+SPELLS.push({id:'tintreach',school:'tine',role:'basic',nameIr:'Tintreach',nameEn:'Chain Lightning',nameMa:null,ico:'⚡',desc:'A bolt that leaps to a second foe.',
+  intReqs:[12,25,45],cost:36,speed:14,dmgBase:24,dmgLvl:3,col:0xb8d4ff,glowCol:0xd8e8ff,wild:['scatter','fizzle','backlash']});
+// the leap from struck foe e: the nearest other live foe within 5 m of it takes ×0.5 of the bolt's blow. Returns it, or null.
+function tintreachLeap(e,sp,tier){const L=WORD_BY.tintreach.forms.sent,dun=!!(lid&&lid.startsWith('dyn_'));let best=null,bd=L.leap+1e-9;
+  for(const o of heldTargets()){if(o===e||o.dead||o.locked||o.disguised||(dun&&o.floor!==currentFloor))continue;const d=Math.hypot(o.x-e.x,o.z-e.z);if(d<=bd){bd=d;best=o;}}
+  if(!best)return null;
+  const info=applySpellDamage(best,sp,tier,{power:L.leapMult});best.hp=Math.max(0,best.hp-info.dmg);best.alert=true;
+  if(best.hpFg&&best.maxHp){best.hpFg.scale.x=best.hp/best.maxHp;best.hpFg.position.x=(best.hp/best.maxHp-1)*.275;}
+  dmgNum(best,info.dmg,info);
+  if(best.hp<=0){if(dun)killE(best,dmgTag(info,best));else killZoneEnemy(best,scene,dmgTag(info,best));}
+  return {foe:best,dealt:info.dmg,d:+bd.toFixed(2)};}
+// S1605 — Éan worn (magic-build.md, "Movement against the step table"): a jump leaves the ground at 8.4 m/s, not the legs' 5.5–6.6, so
+// it tops out 1.96 m up and crosses 4.4 m at the 4.7 m/s air cap: the step table's 4.0–4.8 band. Its shape is the same at every tier;
+// the tier sets only its time (20/40/80 s). At Mastery it is Wingless, the canon's: no fall hurts while it is worn.
+let _eanTier=0;
+function eanRise(){return fxOn('leap')?WORD_BY.ean.forms.worn.rise:0;}
+function eanWingless(){return fxOn('leap')&&_eanTier>=3;}
 const ELEMENTAL_PRICE=[[120,320,700],[120,320,700]]; // tier prices for the seven originals
 function applySpellBuff(sp,tier){
   const b=sp.buff;const dur=b.dur[Math.max(0,tier-1)]*_buffMult('spellDuration',1);SPELL_FX[b.key]=performance.now()+dur*1000;
+  if(b.key==='leap')_eanTier=tier; /* S1605 — Éan's Wingless at Mastery */
   if(b.key==='shield'){if(typeof _applyBuff==='function')_applyBuff({type:'warding',mult:tier>=3?.5:tier===2?.6:.7,duration:dur,label:'Shield',col:'#c0b090'});}
   if(b.key==='light'){if(!_spellLight){_spellLight=new THREE.PointLight(0xfff0c0,0,18);CAM.add(_spellLight);_spellLight.position.set(0,.4,-.6);}_spellLight.intensity=1.4+tier*.3;}
   showMsg(`${sp.ico} ${sp.nameEn} — ${Math.round(dur)}s`,'#c0e0ff');
 }
 function tickSpellFx(dt){
+  if(HELD)heldTick(dt); /* S1601 — the held form */
+  if(RIDDEN.size)riderTick(); /* S1602 — the riders' burns and glows */
+  if(TOUCH_PEND)touchTick(); /* S1603 — the touched form's landing */
+  if(LAID&&LAID.rideR)laidRiderTick(); /* S1604 — a rider on a laid thing */
   if(_spellLight&&!fxOn('light')&&_spellLight.intensity>0)_spellLight.intensity=Math.max(0,_spellLight.intensity-dt*2);
 }
 // spellbooks: read to learn
@@ -952,9 +978,12 @@ let spellBook=[],activeSpell=-1,formsGranted=[];
 function bookFormFor(id){const w=WORD_BY[id];return !w?null:w.forms.sent?'sent':w.forms.worn?'worn':null;}
 function bookAdd(id){const f=bookFormFor(id);if(!f)return -1;let i=spellBook.findIndex(b=>b.word===id&&b.form===f&&!b.rider);
   if(i<0){if(spellBook.length>=SPELL_BOOK_MAX)return -1;spellBook.push({form:f,word:id,rider:null});i=spellBook.length-1;}return i;}
-// S1590 — an entry chosen by bookSelect (a laid one) stays chosen while F's word is still its word
-function bookSync(){const c=spellBook[activeSpell];if(c&&activeSpellId&&c.word===activeSpellId&&c.form!==bookFormFor(c.word))return activeSpell;
-  activeSpell=activeSpellId?spellBook.findIndex(b=>b.word===activeSpellId&&!b.rider):-1;return activeSpell;}
+// S1590 — an entry chosen by bookSelect (a laid one) stays chosen while F's word is still its word; S1602 — and a joined one
+function bookSync(){const c=spellBook[activeSpell];if(c&&activeSpellId&&c.word===activeSpellId&&(c.form!==bookFormFor(c.word)||c.rider))return activeSpell;
+  /* S1606 — the word's own first form before any other bare entry of it (a touched Tintreach made first no longer takes its Sent's F) */
+  if(!activeSpellId){activeSpell=-1;return activeSpell;}
+  const f0=bookFormFor(activeSpellId),i0=spellBook.findIndex(b=>b.word===activeSpellId&&!b.rider&&b.form===f0);
+  activeSpell=i0>=0?i0:spellBook.findIndex(b=>b.word===activeSpellId&&!b.rider);return activeSpell;}
 function spellBookLoad(d){spellBook.length=0;formsGranted.length=0;
   if(Array.isArray(d.spellBook)){
     for(const b of d.spellBook){if(spellBook.length>=SPELL_BOOK_MAX)break;if(!b||!knownWords[b.word]||!wordLive(b.word,b.form))continue;
@@ -1011,10 +1040,10 @@ function laidDoorNear(x,z,r){
     for(let a=0;a<16;a++)for(const rr of [0,r*.5,r]){const c=dCellOf(x+Math.cos(a*Math.PI/8)*rr),w=dCellOf(z+Math.sin(a*Math.PI/8)*rr);const v=m[w]&&m[w][c];if(v===4||v===5)return true;}}
   return false;}
 // room for a pillar or an updraft r round at x,z, feet at y: no solid or door within LAID_CLEAR of its edge, no body on it
-function laidClear(x,z,r,y){const R=r+LAID_CLEAR,ow=!isInterior()&&!(lid&&lid.startsWith('dyn_')),rr=ow?Math.max(0,R-.3):R;
+function laidClear(x,z,r,y,o){o=o||{};const R=r+LAID_CLEAR,ow=!isInterior()&&!(lid&&lid.startsWith('dyn_')),rr=ow?Math.max(0,R-.3):R;
   for(let a=0;a<24;a++)for(const f of [0,.35,.7,1]){const d=rr*f;if(!d&&a)continue;if(laidSolidPt(x+Math.cos(a*Math.PI/12)*d,z+Math.sin(a*Math.PI/12)*d,y))return 'solid';}
   if(laidDoorNear(x,z,R))return 'door';
-  if(Math.hypot(px-x,pz-z)<r+.3)return 'body';
+  if(!o.self&&Math.hypot(px-x,pz-z)<r+.3)return 'body'; /* S1604 — a throwing pillar may rise under you */
   for(const e of (typeof ENEMIES!=='undefined'?ENEMIES:[]))if(!e.dead&&e.mesh&&Math.hypot(e.mesh.position.x-x,e.mesh.position.z-z)<r+.4)return 'body';
   return null;}
 // the point under the crosshair: the camera's ray marched to the first walkable top, or null at a wall or past the reach
@@ -1048,7 +1077,7 @@ function layWord(word,rider,x,z,o){o=o||{};
   const wet=ow&&typeof worldH==='function'&&worldH(x,z)<(typeof SEA_Y!=='undefined'?SEA_Y-.35:-1e9)&&activeTerrainH(x,z)<SEA_Y; /* open water: no quay or deck over it */
   let L={kind,word,rider:rider||null,x,z,key:laidKey()};
   if(kind==='pillar'||kind==='updraft'){
-    const r=kind==='pillar'?F.across/2:F.updraft/2,why=laidClear(x,z,r,y);
+    const r=kind==='pillar'?F.across/2:F.updraft/2,throws=kind==='pillar'&&rider==='sideen',why=laidClear(x,z,r,y,{self:throws});
     if(why)return {say:why==='body'?'There is no room to lay it there.':'Too near the wall to lay it.',why};
     if(ow&&worldH(x,z)<SEA_Y-.35)return {say:'It will not stand in water.',why:'wet'};
     const h=kind==='pillar'?F.pillar*(o.overshoot?LAID_OVERSHOOT:1):0;
@@ -1063,7 +1092,28 @@ function layWord(word,rider,x,z,o){o=o||{};
     Object.assign(L,{hw:B.wide/2,hl:len/2,ux,uz,base:y-.35,top:y,solid:true,dur:B.dur});}
   laidEnd();
   L.until=playClockS+Math.min(LAID_MAX_S,L.dur);L.mesh=laidMesh(L);LAID=L;
-  return {ok:true,kind};}
+  if(rider&&RIDERS[rider])laidRiderStart(L,rider);
+  return {ok:true,kind,thrown:!!L.thrown};}
+// S1604 — magic B's session 4, part 4 (magic-build.md, "Joining and riders", the laid column): a rider on a laid thing. Caor makes it
+// hot (3 a second, past the armour, to a foe touching it: its centre within its own hull of the thing); Séideán makes a Cloch pillar
+// throw you as Éan does (it may rise under you, and you leave its top at Éan's 8.4 m/s, 1.96 m over it); Fréamh roots the first foe
+// across it 1 s, once; Leigheas heals you 2 a second while you stand in it or on it; Solas gives it a light 8 m round for its time
+// (`laidLight`, for the look builder to draw: no lamp is lit). Sioc's freeze is the bridge (S1590); a floe is Sioc itself, so the rider
+// can never double one. Each second is the play clock's; it ends with the thing. Read each frame by laidRiderTick.
+const LAID_THROW_RISE=8.4; /* Éan's worn rise (WORD_BY.ean.forms.worn.rise) */
+function laidRiderStart(L,rider){const R=RIDERS[rider].laid;L.rideR=rider;L.next=playClockS+1;
+  if(R.light)L.light=R.light;
+  if(R.throws&&L.kind==='pillar'&&laidInside(L,px,pz,.3)){jumpY=Math.max(jumpY,L.top);velY=LAID_THROW_RISE;onGround=false;_jumpFrom=L.base;L.thrown=true;}}
+function laidLight(){const L=laidLive();return L&&L.light?{x:L.x,z:L.z,r:L.light}:null;}
+function laidRiderTick(){const L=laidLive();if(!L||!L.rideR)return;const R=RIDERS[L.rideR].laid,dun=!!(lid&&lid.startsWith('dyn_'));
+  if(R.root&&!L.rooted)for(const e of heldTargets()){if(e.dead||(dun&&e.floor!==currentFloor)||!laidInside(L,e.x,e.z,hullOf(e)))continue;
+    e._rootUntil=Math.max(e._rootUntil||0,playClockS+R.root);L.rooted=true;e.alert=true;break;}
+  for(let n=0;n<8&&playClockS>=L.next-1e-9&&LAID===L;n++){L.next+=1;
+    if(R.hot)for(const e of heldTargets()){if(e.dead||(dun&&e.floor!==currentFloor)||!laidInside(L,e.x,e.z,hullOf(e)))continue;
+      const d=challengeDealt(R.hot);e.hp=Math.max(0,e.hp-d);e.alert=true;
+      if(e.hpFg&&e.maxHp){e.hpFg.scale.x=e.hp/e.maxHp;e.hpFg.position.x=(e.hp/e.maxHp-1)*.275;}dmgNum(e,d,{});
+      if(e.hp<=0){if(dun)killE(e,' (burned)');else killZoneEnemy(e,scene,' (burned)');}}
+    if(R.hps&&laidInside(L,px,pz,.3)&&jumpY<=L.top+STEP_UP){PHP=Math.min(effMaxHP(),PHP+R.hps);}}}
 function laidMesh(L){if(typeof THREE==='undefined'||typeof scene==='undefined'||!scene)return null;
   let geo,col,op=1;
   if(L.kind==='pillar'){geo=new THREE.CylinderGeometry(L.r*.92,L.r,L.top-L.base,10);col=0x8a8378;}
@@ -1100,3 +1150,176 @@ function castLaid(bk){
   if(SKILL_DEF[w.school])skillUse(w.school,1,'cast');
   startCastAnim(sp,'self');castMark(WEAPON_ATTACKS.Cast.tell);
   return true;}
+
+// S1601 — magic B's session 4, part 1 (magic-build.md, "The five forms"): the Held form. F on a held entry pours the word out while F is
+// down: a cone 4 m from your body (hull to hull, F2b's reach) and 60° about your facing, ×0.25 of the word's power every 0.25 s of the
+// play clock (a second of it is one bolt, armour taken ×0.25 a tick too), for the word's cost ×0.5 a second, paid a tick at a time
+// (Caor at school 50: 15 a second). You walk at half pace while it runs. It ends when F comes up, the mana for a tick is not there,
+// you are staggered, roll or die, a panel opens (its keyup may never reach the game), or you leave the place; then the word's
+// cooldown and the Cast row's recovery. No overcast while held. At Impression the 30% wild roll is one fizzle at the start (half the
+// first tick back). Its three words are Caor (flame), Sioc (frost) and Séideán (a gale); what each does past the damage, and the
+// riders, are the sheet's session 4's next part. Named action: holdWord.
+const HELD_TICK=FORMS.held.tick;
+let HELD=null; /* {word,rider,tier,sp,next,key,ticks,hits,dealt,mesh} */
+function heldOn(){return !!HELD;}
+// the word as a spell the damage reads: its SPELLS row where it has one, else its Sent bolt's figure
+function heldSpell(word){const s=SPELLS.find(x=>x.id===word);if(s)return s;const w=WORD_BY[word];
+  return {id:word,school:w.school,nameIr:w.nameIr,nameEn:w.nameEn,ico:w.ico,cost:w.cost,dmgBase:(w.forms.sent&&w.forms.sent.bolt)||0,col:0xddeeff,glowCol:0xaaccee};}
+function heldTargets(){return (lid&&lid.startsWith('dyn_'))?ENEMIES:ZE;}
+function heldTickCost(H){return wordCost(H.word,'held',H.rider,{tier:H.tier})*HELD_TICK;}
+// is e in the cone: its centre within 4 m of your edge plus its own hull, and within 30° of your facing (-sin yaw, -cos yaw)
+function heldInCone(e){const dx=e.x-px,dz=e.z-pz,d=Math.hypot(dx,dz);if(d>reachTo(e,FORMS.held.reach))return false;if(d<1e-3)return true;
+  return (-dx*Math.sin(yaw)-dz*Math.cos(yaw))/d>=Math.cos(FORMS.held.cone/2*Math.PI/180)-1e-9;}
+// holdWord: the named action. Starts the held word (bk {word,rider}) if it can; the first tick lands at once.
+function holdWord(bk){
+  if(HELD)return {ok:true};
+  const w=WORD_BY[bk.word],tier=wordTierOf(bk.word);if(!w||!tier)return {say:'Spell not learned!'};
+  if(!formHeld('held'))return {say:'The Held form is not yet yours.'};
+  if(!wordLive(bk.word,'held'))return {say:'You cannot shape that word so.'};
+  if(isCasting()||castRecovering())return {why:'busy'};
+  if(spCd>0)return {say:'Cooling down...'};
+  const H={word:bk.word,rider:bk.rider||null,tier,sp:heldSpell(bk.word),next:playClockS,key:laidKey(),ticks:0,hits:0,dealt:0,mesh:null};
+  const tick=heldTickCost(H);
+  if(mana<tick)return {say:`Not enough mana! (need ${Math.ceil(tick)})`};
+  const mixed=!!(bk.rider&&riderMixedWild(bk.word,bk.rider)); /* S1602 — two schools: 10% at any tier until both reach 25 */
+  const wr=tier===1||mixed?casterRand(bk.word+':held'):null;
+  if(wr&&wr()<(tier===1?IMPRESSION_WILD_CHANCE:0)+(mixed?WORD_MIXED_WILD:0)){mana-=tick*.5;spCd=spellCooldown(H.sp,tier);startCastAnim(H.sp,'fizzle');
+    return {ok:true,wild:'fizzle',say:`${w.ico} ${w.nameIr} fizzles — the shape will not hold.`};}
+  _offenceS=playClockS;HELD=H;H.mesh=heldMesh(H);startCastAnim(H.sp,'projectile');
+  if(typeof sndSpellCharge==='function')sndSpellCharge(w.school);
+  heldTick(0);
+  return {ok:true};}
+// the cast of a held entry from the book (castSpell hands it here)
+function castHeld(bk){if(HELD)return true;const r=holdWord(bk);if(r.say)showMsg(r.say,r.ok?'#8a8ac8':'#a8a8d4');
+  else if(r.ok&&HELD)showMsg(`${WORD_BY[bk.word].ico} ${WORD_BY[bk.word].nameIr}, held`,'#88ccff');return !!r.ok;}
+function heldEnd(why){const H=HELD;if(!H)return;HELD=null;
+  const m=H.mesh;if(m&&m.parent)m.parent.remove(m);if(m)m.traverse(o=>{if(o.geometry)o.geometry.dispose();});
+  spCd=spellCooldown(H.sp,H.tier);castMark(0);
+  if(why==='mana')showMsg('Your mana is spent.','#6688cc');}
+// each frame, from tickSpellFx: the ticks the play clock has passed, each paid and landed
+function heldTick(dt){const H=HELD;if(!H)return;
+  const nowS=performance.now()/1000;
+  if(!K['KeyF']||dead||(typeof hubOpen!=='undefined'&&hubOpen)||H.key!==laidKey()||playerStaggered(nowS)||(typeof ROLL!=='undefined'&&ROLL)){heldEnd('up');return;}
+  for(let n=0;HELD&&playClockS>=H.next-1e-9&&n<64;n++){
+    const c=heldTickCost(H);if(mana<c){heldEnd('mana');return;}
+    mana-=c;H.next+=HELD_TICK;H.ticks++;
+    const dun=lid&&lid.startsWith('dyn_');
+    for(const e of heldTargets()){
+      if(e.dead||e.locked||e.disguised||(dun&&e.floor!==currentFloor)||!heldInCone(e))continue;
+      const info=applySpellDamage(e,H.sp,H.tier,{power:FORMS.held.power});
+      e.hp=Math.max(0,e.hp-info.dmg);e.alert=true;H.hits++;H.dealt+=info.dmg;
+      if(e.hpFg&&e.maxHp){e.hpFg.scale.x=e.hp/e.maxHp;e.hpFg.position.x=(e.hp/e.maxHp-1)*.275;}
+      if(H.rider)riderHit(e,H.rider,info.dmg,{power:FORMS.held.power}); /* S1602 — the rider */
+      dmgNum(e,info.dmg,info);
+      if(e.hp<=0){if(dun)killE(e,dmgTag(info,e));else killZoneEnemy(e,scene,dmgTag(info,e));}}}
+  if(H.mesh&&HELD){H.mesh.position.set(px,jumpY+1.1,pz);H.mesh.rotation.set(0,yaw,0);}}
+// S1603 — magic B's session 4, part 3 (magic-build.md, "The five forms"): the Touched form on a foe. F on a touched entry winds up
+// 0.25 s (the Cast row's walk while it does), then lands on the nearest foe whose centre is within 1.6 m of your edge plus its own
+// hull (F2b's TOUCH) and 30° of your facing, at ×1.5 the word's power for ×0.6 its mana: Caor 30 and Tintreach 36 to a Sent bolt's
+// 20 and 24, the armour met at ×1.5 as well. Tintreach staggers it (the posture break's 1.5 s) and Reo holds it 2 s (frozen, as
+// Sioc's bolt holds). A rider rides the touch at the form's ×1.5. With no foe in reach the mana is still spent and the touch lands on
+// air ("Nothing within reach."). The release is read on performance.now(), so a dropped frame never moves it; the overcast applies as
+// to a Sent cast. What a touch does to a thing (a brazier, a web, a pool, a lock, a fire, dry brush) is not built. Named action: touchWord.
+let TOUCH_PEND=null; /* {word,rider,tier,sp,at,key} */
+function touchInCone(e){const dx=e.x-px,dz=e.z-pz,d=Math.hypot(dx,dz);if(d>reachTo(e,FORMS.touched.reach))return false;if(d<1e-3)return true;
+  return (-dx*Math.sin(yaw)-dz*Math.cos(yaw))/d>=Math.cos(FORMS.touched.cone/2*Math.PI/180)-1e-9;}
+function touchTarget(){const dun=lid&&lid.startsWith('dyn_');let best=null,bd=1e9;
+  for(const e of heldTargets()){if(e.dead||e.locked||e.disguised||(dun&&e.floor!==currentFloor)||!touchInCone(e))continue;const d=Math.hypot(e.x-px,e.z-pz)-hullOf(e);if(d<bd){bd=d;best=e;}}
+  return best;}
+// touchWord: the named action. Pays for and winds up a touch of bk {word,rider}; the touch lands at the wind-up's end (touchTick)
+function touchWord(bk){
+  const w=WORD_BY[bk.word],tier=wordTierOf(bk.word);if(!w||!tier)return {say:'Spell not learned!'};
+  if(!formHeld('touched'))return {say:'The Touched form is not yet yours.'};
+  if(!wordLive(bk.word,'touched'))return {say:'You cannot shape that word so.'};
+  if(TOUCH_PEND||HELD||isCasting()||castRecovering())return {why:'busy'};
+  if(spCd>0)return {say:'Cooling down...'};
+  const cost=wordCost(bk.word,'touched',bk.rider,{tier}),short=Math.max(0,cost-Math.floor(mana)),blood=short*OVERCAST_HP;
+  if(short&&PHP-blood<1)return {say:`Not enough mana! (need ${cost})`};
+  mana=Math.max(0,mana-cost);_offenceS=playClockS;
+  if(short){PHP-=blood;PPOST.stagUntil=Math.max(PPOST.stagUntil,performance.now()/1000+OVERCAST_STAGGER_S);blocking=false;powerCharging=false;powerCharge=0;
+    lvAct.damageTaken+=blood;updateHUD();}
+  const sp=heldSpell(bk.word);spCd=spellCooldown(sp,tier);
+  const mixed=!!(bk.rider&&riderMixedWild(bk.word,bk.rider));
+  const wr=tier===1||mixed?casterRand(bk.word+':touched'):null;
+  if(wr&&wr()<(tier===1?IMPRESSION_WILD_CHANCE:0)+(mixed?WORD_MIXED_WILD:0)){mana=Math.min(effMaxMana(),mana+Math.round((cost-short)*.5));startCastAnim(sp,'fizzle');
+    return {ok:true,wild:'fizzle',say:`${w.ico} ${w.nameIr} fizzles — the shape will not hold.`};}
+  castMark(FORMS.touched.windup);startCastAnim(sp,'projectile');
+  if(typeof sndSpellCharge==='function')sndSpellCharge(w.school);
+  TOUCH_PEND={word:bk.word,rider:bk.rider||null,tier,sp,at:performance.now()/1000+FORMS.touched.windup,key:laidKey()};
+  return {ok:true,blood:short?blood:0};}
+function castTouched(bk){const r=touchWord(bk);if(r.say)showMsg(r.say,r.ok?'#8a8ac8':'#a8a8d4');
+  else if(r.blood)showMsg(`Not enough mana: the word takes ${r.blood} health.`,'#d48a8a');return !!r.ok;}
+// each frame, from tickSpellFx: the touch lands when its wind-up is done, on the nearest foe in reach then
+function touchTick(){const T=TOUCH_PEND;if(!T)return;
+  if(dead||T.key!==laidKey()){TOUCH_PEND=null;return;}
+  if(performance.now()/1000<T.at)return;
+  TOUCH_PEND=null;touchLand(T);}
+function touchLand(T){const F=WORD_BY[T.word].forms.touched,e=touchTarget(),dun=lid&&lid.startsWith('dyn_');
+  if(typeof sndSpell==='function')sndSpell(T.word,T.tier);
+  if(!e){showMsg('Nothing within reach.','#a8a8d4');return {hit:null};}
+  let dealt=0,info=null;
+  if(F.dmg){info=applySpellDamage(e,T.sp,T.tier,{power:FORMS.touched.power});dealt=info.dmg;e.hp=Math.max(0,e.hp-dealt);
+    if(e.hpFg&&e.maxHp){e.hpFg.scale.x=e.hp/e.maxHp;e.hpFg.position.x=(e.hp/e.maxHp-1)*.275;}dmgNum(e,dealt,info);}
+  e.alert=true;
+  if(e.hp>0&&(F.stagger||F.hold)){const t=F.hold||dazeS(POSTURE_BREAK_STUN),q=staggered.find(s=>s.e===e);
+    if(q)q.t=Math.max(q.t,t);else staggered.push({e,t});staggerFlash(e);}
+  if(T.rider)riderHit(e,T.rider,dealt,{power:FORMS.touched.power});
+  if(e.hp<=0){const tag=info?dmgTag(info,e):'';if(dun)killE(e,tag);else killZoneEnemy(e,scene,tag);}
+  return {hit:e,dealt};}
+// S1602 — magic B's session 4, part 2 (magic-build.md, "Joining and riders"): a joined word's rider on what a Sent bolt or a Held tick
+// strikes. Caor burns (3 a second for 4 s, past the armour), Sioc slows (−30% speed for 3 s), Séideán pushes (1.5 m straight back
+// from you, stopped by a wall, and 10 posture), Fréamh holds (rooted 0.8 s: it turns and strikes but takes no step), Solas lights (the
+// foe glows for 10 s; `foeLit` is what any hiding reads) and Leigheas mends (you heal 25% of the damage the blow dealt). `power` is
+// the form's: a held tick's ×0.25 takes the push's distance and posture with it (a second of ticks is one bolt's push), while the
+// burn, the slow, the root and the glow are refreshed, never stacked. Durations run on the play clock; all of it ends when you leave
+// the place. Named action: riderHit.
+const RIDER_SLOW_MULT=1-RIDERS.sioc.hit.slow;
+const RIDDEN=new Set(); /* foes with a burn or a glow running */
+function foeLit(e){return !!(e&&e._litUntil>playClockS);}
+function foeRooted(e){return !!(e&&e._rootUntil>playClockS);}
+function riderFoeSolid(x,z,dun){return dun?dSolid(x,z):(typeof currentZoneSolid==='function'&&currentZoneSolid(x,z));}
+// riderHit: the named action. e was struck for `dealt` by a spell carrying `rider`; o.power is the form's (1 a bolt, 0.25 a tick)
+function riderHit(e,rider,dealt,o){o=o||{};const R=RIDERS[rider];if(!e||!R)return null;const h=R.hit,pw=o.power!=null?o.power:1;
+  const now=playClockS,dun=!!(lid&&lid.startsWith('dyn_'));
+  if(h.lifesteal){const m=(dealt||0)*h.lifesteal+(_mendCarry||0),n=Math.floor(m+1e-9);_mendCarry=m-n;if(n>0)PHP=Math.min(effMaxHP(),PHP+n);return {mend:n};}
+  if(e.dead||e.hp<=0)return null;
+  if(h.dps){e._burn={dps:h.dps,until:now+h.dur,next:Math.max(now+1,e._burn&&e._burn.until>now?e._burn.next:0),dun,key:laidKey()};RIDDEN.add(e);return {burn:h.dur};}
+  if(h.slow){e._riderSlowUntil=Math.max(e._riderSlowUntil||0,now+h.dur);return {slow:h.dur};}
+  if(h.root){e._rootUntil=Math.max(e._rootUntil||0,now+h.root);return {root:h.root};}
+  if(h.glow){e._litUntil=now+h.glow;e._litKey=laidKey();RIDDEN.add(e);riderGlow(e,true);return {glow:h.glow};}
+  if(h.knock){let dx=e.x-px,dz=e.z-pz,d=Math.hypot(dx,dz);if(d<1e-3){dx=-Math.sin(yaw);dz=-Math.cos(yaw);d=1;}dx/=d;dz/=d;
+    const want=h.knock*pw;let moved=0;
+    for(;moved<want-1e-9;){const st=Math.min(.1,want-moved),nx=e.x+dx*st,nz=e.z+dz*st;if(riderFoeSolid(nx,nz,dun))break;e.x=nx;e.z=nz;moved+=st;}
+    if(e.mesh&&e.mesh.position){e.mesh.position.x=e.x;e.mesh.position.z=e.z;}
+    if(typeof e.posture!=='number'&&typeof initPosture==='function')initPosture(e);
+    let broke=false;if(typeof e.posture==='number'&&applyPostureDamage(e,h.posture*pw,performance.now()/1000)){broke=true;staggered.push({e,t:dazeS(POSTURE_BREAK_STUN)});staggerFlash(e);}
+    e.alert=true;return {knock:+moved.toFixed(3),broke};}
+  return null;}
+let _mendCarry=0;
+// each frame: a burn's seconds land as they pass on the play clock; a glow goes out at its time. Both end when you leave the place.
+function riderTick(){const now=playClockS,key=laidKey();
+  for(const e of RIDDEN){
+    const B=e._burn;
+    if(B&&(e.dead||B.key!==key)){e._burn=null;}
+    else if(B){for(let n=0;n<8&&now>=B.next-1e-9&&B.next<=B.until+1e-9;n++){B.next+=1;
+        const d=challengeDealt(B.dps);e.hp=Math.max(0,e.hp-d);e.alert=true;
+        if(e.hpFg&&e.maxHp){e.hpFg.scale.x=e.hp/e.maxHp;e.hpFg.position.x=(e.hp/e.maxHp-1)*.275;}
+        if(typeof dmgNum==='function')dmgNum(e,d,{});
+        if(e.hp<=0){e._burn=null;if(B.dun)killE(e,' (burned)');else killZoneEnemy(e,scene,' (burned)');break;}}
+      if(e._burn&&e._burn.next>e._burn.until+1e-9)e._burn=null;}
+    if(e._litUntil&&(e.dead||now>=e._litUntil||e._litKey!==key)){e._litUntil=0;riderGlow(e,false);}
+    if(!e._burn&&!(e._litUntil>now))RIDDEN.delete(e);}}
+// a lit foe's glow: a faint shell of the light's colour on its mesh (the look builder's to dress)
+function riderGlow(e,on){const m=e&&e.mesh;if(!m||typeof THREE==='undefined')return;
+  if(!on){const g=e._litMesh;if(g){if(g.parent)g.parent.remove(g);g.geometry.dispose();g.material.dispose();}e._litMesh=null;return;}
+  if(e._litMesh)return;const r=Math.max(.4,hullOf(e)+.15);
+  const g=new THREE.Mesh(new THREE.SphereGeometry(r,12,8),new THREE.MeshBasicMaterial({color:0xfff2b0,transparent:true,opacity:.18,depthWrite:false,blending:THREE.AdditiveBlending}));
+  g.name='rider-lit';g.position.y=r*1.6;g.scale.y=2;m.add(g);e._litMesh=g;}
+// S1602 — two words of two schools add 10% wild at any tier until both schools reach 25: true when this joined cast should roll it
+function riderMixedWild(word,rider){const a=WORD_BY[word],b=WORD_BY[rider];return !!(a&&b&&a.school!==b.school&&(skillLv(a.school)<WORD_MIXED_SKILL||skillLv(b.school)<WORD_MIXED_SKILL));}
+// the cone drawn: open, faint, the word's colour, its point at your chest (the look builder's to dress)
+function heldMesh(H){if(typeof THREE==='undefined'||typeof scene==='undefined'||!scene)return null;
+  const R=FORMS.held.reach+HULL_YOU,rad=R*Math.tan(FORMS.held.cone/2*Math.PI/180);
+  const geo=new THREE.ConeGeometry(rad,R,16,1,true);geo.translate(0,-R/2,0);geo.rotateX(Math.PI/2);
+  const m=new THREE.Mesh(geo,new THREE.MeshBasicMaterial({color:H.sp.glowCol||0xffffff,transparent:true,opacity:.16,depthWrite:false,side:THREE.DoubleSide}));
+  const g=new THREE.Group();g.name='held-'+H.word;g.add(m);scene.add(g);return g;}

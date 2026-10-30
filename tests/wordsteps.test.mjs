@@ -83,7 +83,7 @@ const seed = await page.evaluate(() => { for (let s = 1; s < 5000; s++) if (gate
 await enterDungeon(page, { theme: 'ruins', size: 'small', seed });
 await page.evaluate(helpers);
 
-// ── a gate: the pillar, the ledge from it, the updraft, the bridge over a chasm, one at a time, the clock
+// ── a gate: the pillar, the ledge from it, the updraft, Éan worn (S1605), the bridge over a chasm, one at a time, the clock
 const D = await page.evaluate(() => {
   for (const e of ENEMIES) { e.hp = 0; e.dead = true; }
   currentFloor = 1; knownWords.cloch_ghear = 2; knownWords.sideen = 2; knownWords.sioc = 2; knownWords.tonn = 2;
@@ -122,6 +122,17 @@ const D = await page.evaluate(() => {
   out.draft = { top: +top.toFixed(3), x: +(px - spot.x - 1.5).toFixed(3) };
   _reset(spot.x + 4, spot.z, 0, E); top = 0; _drive(i => { K['Space'] = i === 0; top = Math.max(top, jumpY); return i > 3 && onGround; }, 200);
   out.plain = +top.toFixed(3);
+  // S1605 — Éan worn: a sprinting jump leaves at 8.4 m/s, tops out 1.96 m up and crosses 4.4 m at the air cap; at Mastery no fall hurts
+  laidEnd(); SPELL_FX.leap = performance.now() + 6e5; _eanTier = 2;
+  _reset(spot.x - 2, spot.z, 0, E); top = 0; let x0 = px, z0 = pz, up = null;
+  _drive(i => { K['KeyW'] = true; K['ShiftLeft'] = true; K['Space'] = i === 0; if (i === 1) up = +(velY + 18 / 60).toFixed(6); top = Math.max(top, jumpY); return i > 3 && onGround; }, 300); for (const k in K) K[k] = false;
+  out.ean = { up, top: +top.toFixed(3), gap: +Math.hypot(px - x0, pz - z0).toFixed(2) };
+  const fall = (tier) => { _eanTier = tier; _reset(spot.x, spot.z, 9, E); onGround = false; const h0 = PHP; _drive(i => i > 3 && onGround && !FALL.pend, 400); return { hurt: h0 - PHP, y: jumpY }; };
+  out.wingless = { t2: fall(2), t3: fall(3) };
+  SPELL_FX.leap = 0; _eanTier = 0;
+  _reset(spot.x - 2, spot.z, 0, E); top = 0; x0 = px;
+  _drive(i => { K['KeyW'] = true; K['ShiftLeft'] = true; K['Space'] = i === 0; top = Math.max(top, jumpY); return i > 3 && onGround; }, 300); for (const k in K) K[k] = false;
+  out.eanOff = { top: +top.toFixed(3), gap: +Math.abs(px - x0).toFixed(2) };
   // the clock: 15 s of play and the updraft is gone
   playClockS += 15.1; out.clockGone = laidLive() === null;
   return out;
@@ -138,6 +149,9 @@ check(`walked off its top you fall to the floor (${D.off.y} m)`, D.off.y === 0 &
 check(`a second laid thing ends the first: the updraft took the pillar's place`, D.up && D.up.ok && D.pillarGone, D);
 check(`a jump in Séideán's updraft tops out ${D.draft.top} m up (2.2), with no push (${D.draft.x} m); out of it ${D.plain} m`, Math.abs(D.draft.top - 2.2) < .05 && Math.abs(D.draft.x) < .01 && D.plain < .9, D);
 check(`the updraft ends by the play clock (15 s)`, D.clockGone, D);
+check(`Éan worn: a sprinting jump leaves at ${D.ean && D.ean.up} m/s (its first frame's speed + one frame of gravity), tops out ${D.ean && D.ean.top} m (1.97) and crosses ${D.ean && D.ean.gap} m (4.4, ±0.1); without it ${D.eanOff && D.eanOff.top} m and ${D.eanOff && D.eanOff.gap} m`,
+  D.ean && Math.abs(D.ean.up - 8.4) < 1e-6 && Math.abs(D.ean.top - 1.97) < .1 && Math.abs(D.ean.gap - 4.4) <= .1 && D.eanOff.top < 1.3, D);
+check(`a 9 m fall hurts under Éan at Comprehension (${D.wingless && D.wingless.t2.hurt}) and not at Mastery, Wingless (${D.wingless && D.wingless.t3.hurt})`, D.wingless && D.wingless.t2.hurt > 0 && D.wingless.t3.hurt === 0, D.wingless);
 
 // the bridge across the chasm's air: Tonn laid with Sioc's rider holds you 6.2 m out, then you fall
 const B = await page.evaluate(() => {

@@ -541,7 +541,9 @@ function bladePoisonHit(e){const P=BLADE_POISON;if(!P||!e||e.hp<=0)return 0;let 
   P.fx.forEach(f=>{d+=ALCH_FX[f].harm(e,P.s)||0;});e.alert=true;
   if(--P.blows<=0){BLADE_POISON=null;showMsg('The poison is spent.','#888888');}
   return d;}
-function foeSlowMult(e){return e&&e._slowUntil>playClockS?FOE_SLOW:1;}
+// S1602 — and magic B's riders: Fréamh's root holds it where it stands, Sioc's slow takes 30% (the slower of the two slows wins)
+function foeSlowMult(e){if(!e)return 1;if(e._rootUntil>playClockS)return 0;let m=e._slowUntil>playClockS?FOE_SLOW:1;
+  if(e._riderSlowUntil>playClockS&&typeof RIDER_SLOW_MULT!=='undefined')m=Math.min(m,RIDER_SLOW_MULT);return m;}
 // the brewing page's text for a tincture in the bag
 function brewLines(it){const b=it.brew;if(!b)return '';const t=brewTurned(it),s=brewStrength(it);
   return b.fx.map(f=>`<div class="bt-row" style="color:${ALCH_FX[f].col}">${ALCH_FX[f].label}</div>`).join('')+
