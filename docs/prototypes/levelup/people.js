@@ -880,10 +880,19 @@ function buildHair(P, G, heads, scalpTris, headB, rnd, checks = true) {
     out.push(...braidLocks(line, i => { const q = line[i], hit = S.near(q); return hit ? q.clone().sub(hit.p).normalize() : q.clone().sub(hc).normalize(); }, w, per, true, () => 1, col, headB, lm));
     { let lo = 1; for (const q of line) { const hit = heightOver(S, q); if (hit) lo = Math.min(lo, hit.h); } drapeMin = lo; } }
   for (const g of gather) {
-    if (style === 'bun') { // a coil of one lock, two and a half turns, domed out from the head
-      const X = new THREE.Vector3(1, 0, 0), Y = g.n.clone().cross(X).normalize(), line = [], rad = [];
-      for (let i = 0; i <= 90; i++) { const a = i / 90 * Math.PI * 5, rr = .008 + .03 * i / 90, lift = .03 * (1 - (i / 90) ** 2) + .006; line.push(g.p.clone().addScaledVector(X, Math.cos(a) * rr).addScaledVector(Y, Math.sin(a) * rr).addScaledVector(g.n, lift)); rad.push(.011 + .003 * Math.sin(i / 90 * Math.PI)); }
-      const m = new THREE.SkinnedMesh(skinTo(turnOut(tubeGeom(line, rad, 8, 30)), headB), lm); m.name = 'bun'; m.userData.axis = { line, sides: 8 }; out.push(m); continue; }
+    // the bun (Session 1613): one dome wound round with hair. It was a round 8-sided tube coiled two and a half turns, which read as a
+    // spring or a pastry: deep dark grooves between its rings, a thin tip in the middle and a blunt end. Now it is a half-ellipsoid
+    // 4.5 cm across and 3.6 cm out, flattened a little towards a cushion (powers .8 and .75), its base ring sunk into the scalp, the strand texture laid along a 2.5-turn spiral (u steps one
+    // tile a turn, so it meets itself without a seam), and the coil kept only as a groove 3.5 mm deep and narrow
+    if (style === 'bun') { const Y = g.n.clone().cross(new THREE.Vector3(1, 0, 0)).normalize(), X = Y.clone().cross(g.n).normalize(), R = .045, H = .036, C = g.p.clone().addScaledVector(g.n, .008), turns = 2.5, rows = 26, sides = 48, f0 = -.6;
+      const pos = [], uv = [], idx = [];
+      for (let s = 0; s <= rows; s++) { const t = s / rows, f = f0 + (Math.PI / 2 - f0) * t, rr = R * Math.pow(Math.cos(f), .8), hh = H * Math.sign(f) * Math.pow(Math.abs(Math.sin(f)), .75);
+        for (let k = 0; k <= sides; k++) { const a = k / sides * Math.PI * 2, u = t * turns - a / (Math.PI * 2), d = .0035 * (Math.pow(Math.abs(Math.sin(Math.PI * u)), .35) - 1) * Math.min(1, (f - f0) / .5);
+          const nr = new THREE.Vector3().addScaledVector(X, Math.cos(a) * Math.cos(f) / R).addScaledVector(Y, Math.sin(a) * Math.cos(f) / R).addScaledVector(g.n, Math.sin(f) / H).normalize();
+          const p = C.clone().addScaledVector(X, Math.cos(a) * rr).addScaledVector(Y, Math.sin(a) * rr).addScaledVector(g.n, hh).addScaledVector(nr, d); pos.push(p.x, p.y, p.z); uv.push(u, k / sides * 6); }
+        if (s < rows) for (let k = 0; k < sides; k++) { const a = s * (sides + 1) + k, b = a + sides + 1; idx.push(a, a + 1, b, a + 1, b + 1, b); } }
+      const bg = new THREE.BufferGeometry(); bg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); bg.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); bg.setIndex(idx); bg.computeVertexNormals();
+      const m = new THREE.SkinnedMesh(skinTo(bg, headB), lm); m.name = 'bun'; m.userData.axis = { line: new Array(rows + 1).fill(C), sides }; out.push(m); continue; }
     const BL = .16 + .42 * len, start = g.p.clone().addScaledVector(g.n, .006), d0 = new THREE.Vector3((g.p.x - hc.x) * .5, -1.6, -.3);
     // the plait is drawn forward round the side of the neck to the front of its shoulder, then falls down the breast
     const shF = plaitS ? heads[plaitS > 0 ? 'shoulder01.L' : 'shoulder01.R'].clone().lerp(nk, .45).add(new THREE.Vector3(0, .05, .07)) : null;
