@@ -4155,7 +4155,149 @@ function mkGalleon(o = {}) {
     cabinItems, castle: { z0: ZT, z1: ZA, y: CY, cw, door, ladders, lad: LAD }, fore: { z0: ZF, z1: zb - .3, y: CY, cw, ladders: [fladder], lad: LAD, posts }, helm: { y: wy, z: wz - 1.1, wheelZ: wz },
     tris: Math.round(hull.tris + rigs.reduce((a, q) => a + q.tris, 0) + wb.tris), draws: hull.mats.length + rigs.reduce((a, q) => a + q.mats.length, 0) + wb.mats.length };
 }
-  return { stream, hashKey, mergeByMaterial, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, trunk: felledTrunk }, ships: { sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
+// ── The gate kit's wall and the Skyfall Fields (Session 1614; backlog L5, "Strange places", OG-106; Michael's C on #898) ──
+// gatekit.js's 'wall' in its three conditions, and wonders.js's markSkyfall, copied for the world. The prototypes stay the drawing
+// board. Differences: only the wall of the twelve pieces comes in (the one the Skyfall Fields stands); the valley, its pines and the
+// prototype's own ground are the world's (the land, its trees), so the wonder is built over a height function it is handed; the 34
+// stones are four shapes instanced (4 draws, not 34), each shape the prototype's boulder at a unit radius and scaled; the pits are
+// laid on the drawn ground vertex by vertex. Asleep, every glowing face takes the dead stone (the prototype's DEAD), as in wonders.js.
+//   PKIT.wonders.skyfall(hAt, o) -> { group, tris, draws, stones: [{x, z, y, rad, lift}], walls: [{x, z, ry, len, d}], tick(t, awake) }
+//     in the wonder's frame (x across the valley, z along it, -150 to 150 m; y absolute from hAt(x, z)).
+//   PKIT.wonders.gatePiece(kind, o) -> the gate kit's piece ('wall'), gatekit.js's userData.
+const PN_P = [151, 160, 137, 91, 90, 15, 131, 13, 201, 95, 96, 53, 194, 233, 7, 225, 140, 36, 103, 30, 69, 142, 8, 99, 37, 240, 21, 10, 23, 190, 6, 148, 247, 120, 234, 75, 0, 26, 197, 62, 94, 252, 219, 203, 117, 35, 11, 32, 57, 177, 33, 88, 237, 149, 56, 87,
+  174, 20, 125, 136, 171, 168, 68, 175, 74, 165, 71, 134, 139, 48, 27, 166, 77, 146, 158, 231, 83, 111, 229, 122, 60, 211, 133, 230, 220, 105, 92, 41, 55, 46, 245, 40, 244, 102, 143, 54, 65, 25, 63, 161, 1, 216, 80, 73, 209, 76, 132, 187, 208,
+  89, 18, 169, 200, 196, 135, 130, 116, 188, 159, 86, 164, 100, 109, 198, 173, 186, 3, 64, 52, 217, 226, 250, 124, 123, 5, 202, 38, 147, 118, 126, 255, 82, 85, 212, 207, 206, 59, 227, 47, 16, 58, 17, 182, 189, 28, 42, 223, 183, 170, 213, 119,
+  248, 152, 2, 44, 154, 163, 70, 221, 153, 101, 155, 167, 43, 172, 9, 129, 22, 39, 253, 19, 98, 108, 110, 79, 113, 224, 232, 178, 185, 112, 104, 218, 246, 97, 228, 251, 34, 242, 193, 238, 210, 144, 12, 191, 179, 162, 241, 81, 51, 145, 235, 249,
+  14, 239, 107, 49, 192, 214, 31, 181, 199, 106, 157, 184, 84, 204, 176, 115, 121, 50, 45, 127, 4, 150, 254, 138, 236, 205, 93, 222, 114, 67, 29, 24, 72, 243, 141, 128, 195, 78, 66, 215, 61, 156, 180];
+for (let i = 0; i < 256; i++) PN_P[256 + i] = PN_P[i];
+// three.js's ImprovedNoise (Perlin's), which common.js's fbm reads at z .37
+function pnoise(x, y, z) { const P = PN_P, fx = Math.floor(x), fy = Math.floor(y), fz = Math.floor(z), X = fx & 255, Y = fy & 255, Z = fz & 255; x -= fx; y -= fy; z -= fz;
+  const fade = t => t * t * t * (t * (t * 6 - 15) + 10), lp = (t, a, b) => a + t * (b - a), gr = (h, x, y, z) => { h &= 15; const u = h < 8 ? x : y, v = h < 4 ? y : h == 12 || h == 14 ? x : z; return ((h & 1) == 0 ? u : -u) + ((h & 2) == 0 ? v : -v); };
+  const u = fade(x), v = fade(y), w = fade(z), A = P[X] + Y, AA = P[A] + Z, AB = P[A + 1] + Z, B = P[X + 1] + Y, BA = P[B] + Z, BB = P[B + 1] + Z, x1 = x - 1, y1 = y - 1, z1 = z - 1;
+  return lp(w, lp(v, lp(u, gr(P[AA], x, y, z), gr(P[BA], x1, y, z)), lp(u, gr(P[AB], x, y1, z), gr(P[BB], x1, y1, z))), lp(v, lp(u, gr(P[AA + 1], x, y, z1), gr(P[BA + 1], x1, y, z1)), lp(u, gr(P[AB + 1], x, y1, z1), gr(P[BB + 1], x1, y1, z1)))); }
+const pfbm = (x, z, o = 5) => { let a = 0, f = 1, m = 1, s = 0; for (let i = 0; i < o; i++) { a += m * pnoise(x * f, z * f, .37); s += m; f *= 2.03; m *= .5; } return a / s; };
+const GK_SCHOOLS = { tine: { stone: [.30, .28, .28], glow: [1.0, .34, .10] }, uisce: { stone: [.58, .64, .66], glow: [.30, .72, 1.0] }, cloch: { stone: [.70, .66, .60], glow: [1.0, .66, .30] },
+  scath: { stone: [.40, .38, .44], glow: [.70, .34, 1.0] }, solas: { stone: [1.0, .84, .56], glow: [1.0, .86, .52] }, gaoth: { stone: [.84, .86, .88], glow: [.66, .92, 1.0] } };
+const GK_VIOLET = [.62, .30, 1.0], GK_GLOWS = ['script', 'ring', 'seam'];
+let _gkGlyph = null, _gkMats = {}, _gkDead = null;
+function gkGlyphTex() { if (_gkGlyph) return _gkGlyph; const L = 2048, S = 64, c = document.createElement('canvas'); c.width = S; c.height = L; const x = c.getContext('2d'), r = stream('gatekit:glyphs');
+  x.fillStyle = '#000'; x.fillRect(0, 0, S, L); x.strokeStyle = '#fff'; x.lineCap = 'round'; x.lineWidth = 4;
+  for (let i = 0; i < 40; i++) { const k = Math.floor(r() * 7); x.save(); x.translate(32, 25 + i * 51); x.beginPath();
+    if (k === 0) { x.arc(0, 0, 12, 0, 7); x.moveTo(0, -18); x.lineTo(0, 18); } else if (k === 1) { x.moveTo(-12, 18); x.lineTo(0, -18); x.lineTo(12, 18); x.moveTo(-7, 4); x.lineTo(7, 4); }
+    else if (k === 2) { x.arc(0, 0, 13, .6, 5.7); x.moveTo(2, 0); x.arc(0, 0, 2, 0, 7); } else if (k === 3) { x.moveTo(-12, -14); x.lineTo(12, -14); x.moveTo(0, -14); x.lineTo(0, 18); x.moveTo(-8, 2); x.lineTo(8, 10); }
+    else if (k === 4) { x.moveTo(-12, 0); x.lineTo(0, -16); x.lineTo(12, 0); x.lineTo(0, 16); x.closePath(); } else if (k === 5) { x.moveTo(-10, -16); x.lineTo(-10, 16); x.moveTo(10, -16); x.lineTo(10, 16); x.moveTo(-10, 0); x.lineTo(10, 0); }
+    else { x.moveTo(0, -18); x.lineTo(0, 18); x.moveTo(-10, -8); x.lineTo(0, -2); x.lineTo(10, -8); } x.stroke(); x.restore(); }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8; return (_gkGlyph = t); }
+function gkDead() { return _gkDead || (_gkDead = new THREE.MeshStandardMaterial({ color: new THREE.Color(.06, .055, .05), roughness: .9, map: gkGlyphTex() })); }
+function gkMats(school, cond) { const k = school + '|' + cond; if (_gkMats[k]) return _gkMats[k]; const S = GK_SCHOOLS[school] || GK_SCHOOLS.cloch, col = new THREE.Color(...S.stone), M = {};
+  M.stone = mat('ashlar', { ns: 1.0, color: col }); M.dress = mat('ashlar', { ns: .7, color: col.clone().multiplyScalar(.82) });
+  const glow = cond === 'broken' ? GK_VIOLET : S.glow, gk = cond === 'whole' ? 2.2 : cond === 'cracked' ? .9 : 1.1;
+  M.script = new THREE.MeshStandardMaterial({ color: new THREE.Color(.05, .045, .04), emissive: new THREE.Color(...glow), emissiveIntensity: gk, emissiveMap: gkGlyphTex(), roughness: .6 }); M.dead = gkDead();
+  M.crack = new THREE.MeshStandardMaterial({ color: new THREE.Color(.012, .01, .01), roughness: 1 });
+  M.seam = new THREE.MeshStandardMaterial({ color: new THREE.Color(.1, .04, .2), emissive: new THREE.Color(...GK_VIOLET), emissiveIntensity: 1.1, roughness: .4 });
+  return (_gkMats[k] = M); }
+const gkStone = (w, h, d, x, y, z, s = .25, joint = .03) => { const g = new THREE.BoxGeometry(Math.max(.02, w - joint), Math.max(.02, h - joint), Math.max(.02, d - joint)); g.translate(x, y, z); return worldUV(g, s); };
+function gkScriptQuad(w, h, x, y, z, n, rep = 1) { const g = new THREE.PlaneGeometry(w, h), uv = g.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i), uv.getY(i) * rep);
+  g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), n.clone().normalize())); g.translate(x, y, z); return g; }
+function gkB(parts, o = {}) { const box = new THREE.Box3(); for (const p of parts) { p.geo.computeBoundingBox(); box.union(p.geo.boundingBox); } return { parts, c: box.getCenter(new THREE.Vector3()), lo: box.min.y, hi: box.max.y, box, ...o }; }
+const GK_BUILD = {
+  wall() { const bl = [], L = 14, H = 12, T = 2, ch = 1.25, r = stream('gatekit:wall:courses');
+    for (let k = 0, y = 0; y < H - .01; k++, y += ch) { let x = -L / 2 + (k % 2 ? -1.1 : 0); while (x < L / 2 - .01) { const len = 2.2 + r() * .8, x0 = Math.max(-L / 2, x), x1 = Math.min(L / 2, x + len); if (x1 - x0 > .3) bl.push(gkB([{ key: 'stone', geo: gkStone(x1 - x0, ch, T, (x0 + x1) / 2, y + ch / 2, 0) }])); x += len; } }
+    bl.push(gkB([{ key: 'dress', geo: gkStone(L + .3, .45, T + .4, 0, H + .22, 0) }]));
+    for (const u of [-3.5, 3.5]) { const blk = bl.find(b => Math.abs(b.c.x - u) < 1.6 && b.lo > 4.9 && b.lo < 5.1) || bl[0]; blk.parts.push({ key: 'script', geo: gkScriptQuad(.7, 1.0, u, 5.62, T / 2 + .02, new THREE.Vector3(0, 0, 1), .5) }); }
+    return { bl, axis: 'y', size: { w: L, h: H + .45, d: T } }; } };
+function gkCrack(r, b) { const bb = b.box, w = bb.max.x - bb.min.x, d = bb.max.z - bb.min.z, front = w >= d, out = [], n = 4;
+  let u = (r() - .5) * (front ? w : d) * .5, v = bb.min.y + .1; const seg = (bb.max.y - bb.min.y - .2) / n;
+  for (let i = 0; i < n; i++) { const u1 = u + (r() - .5) * .7, v1 = v + seg, g = new THREE.PlaneGeometry(.045, Math.hypot(u1 - u, seg)); g.rotateZ(Math.atan2(-(u1 - u), seg));
+    if (front) g.translate(bb.min.x + w / 2 + (u + u1) / 2, (v + v1) / 2, bb.max.z + .012); else { g.rotateY(Math.PI / 2); g.translate(bb.max.x + .012, (v + v1) / 2, bb.min.z + d / 2 + (u + u1) / 2); }
+    out.push(g); u = u1; v = v1; } return out; }
+// gatekit.js's condition(), unchanged: a condition is a rule over the stones (the lean, the slipped stones, the break line, what floats and what falls)
+function gkCondition(P, cond, key) {
+  const r = stream(`${key}:${cond}`), { bl, axis, size } = P, out = [], st = { moved: 0, floating: 0, fallen: 0, seams: 0, cracks: 0, lean: 0 }, M4 = () => new THREE.Matrix4();
+  const at = b => axis === 'z' ? b.c.z : b.c.x, lo = Math.min(...bl.map(b => axis === 'y' ? b.lo : at(b))), hi = Math.max(...bl.map(b => axis === 'y' ? b.hi : at(b))), M = M4();
+  const lean = cond === 'whole' || axis !== 'y' || P.still ? 0 : (1.5 + r() * 1.5) * (r() < .5 ? -1 : 1) * Math.PI / 180, L = M4().makeRotationX(lean); st.lean = +(lean * 180 / Math.PI).toFixed(2);
+  const cut = cond === 'broken' ? (axis === 'y' ? .42 + r() * .12 : .5 + r() * .1) : 2, rag = b => Math.sin((axis === 'x' ? b.c.z : b.c.x) * 1.7 + 3 * r()) * .08;
+  for (const b of bl) { M.identity(); let seat = null, kind = 'in';
+    const f = axis === 'y' ? (b.lo - lo) / Math.max(.01, hi - lo) : (at(b) - lo) / Math.max(.01, hi - lo);
+    if (cond === 'cracked' && r() < .25) { const t = M4().makeTranslation(b.c.x, b.c.y, b.c.z).multiply(M4().makeRotationFromEuler(new THREE.Euler((r() - .5) * .03, (r() - .5) * .03, (r() - .5) * .03))).multiply(M4().makeTranslation(-b.c.x, -b.c.y, -b.c.z));
+      M.premultiply(t).premultiply(M4().makeTranslation((r() - .5) * .06, -r() * .08, (r() - .5) * .06)); kind = 'slipped'; st.moved++; }
+    if (cond === 'broken' && !b.fixed && f + rag(b) > cut) { const t = (f - cut) / Math.max(.05, 1 - cut);
+      if (!P.ruin && r() < .72) { const lift = .5 + t * 2.6 + r() * .6, rot = new THREE.Euler((r() - .5) * .5 * (.4 + t), (r() - .5) * .4, (r() - .5) * .5 * (.4 + t));
+        M.premultiply(M4().makeTranslation(-b.c.x, -b.c.y, -b.c.z)).premultiply(M4().makeRotationFromEuler(rot)).premultiply(M4().makeTranslation(b.c.x + (r() - .5) * .8, b.c.y + lift, b.c.z + (r() - .5) * 1.2));
+        kind = 'floating'; st.floating++; seat = true; }
+      else { const ang = (r() < .5 ? 1 : -1) * Math.PI / 2 * (.6 + r() * .4), out2 = 2 + r() * 3, sz = r() < .5 ? 1 : -1, rot = new THREE.Euler(b.flat ? 0 : ang, r() * Math.PI, 0), dy = b.flat ? -(b.hi + 3 + r() * 4) : 0;
+        M.premultiply(M4().makeTranslation(-b.c.x, -b.c.y, -b.c.z)).premultiply(M4().makeRotationFromEuler(rot));
+        const tmp = b.box.clone().applyMatrix4(M); M.premultiply(M4().makeTranslation(b.c.x + (r() - .5) * 2, b.flat ? dy : -tmp.min.y + (P.ground || 0) + .02, b.flat ? b.c.z : b.c.z + sz * (size.d / 2 + out2 * (.5 + .5 * t))));
+        kind = 'fallen'; st.fallen++; seat = true; }
+      st.moved++; }
+    const ML = kind === 'fallen' ? M : M.clone().premultiply(L);
+    for (const p of b.parts) out.push({ key: (p.key === 'script' || p.key === 'ring') && (kind === 'fallen' || P.ruin) ? 'dead' : p.key === 'script' && cond === 'cracked' && r() < .33 ? 'dead' : p.key, geo: p.geo.clone().applyMatrix4(ML), kind });
+    if (cond === 'cracked' && b.parts[0].key !== 'dress' && r() < .3) for (const g of gkCrack(r, b)) { out.push({ key: 'crack', geo: g.applyMatrix4(ML) }); st.cracks++; }
+    if (seat && !P.ruin) { const bb = b.box, w = bb.max.x - bb.min.x - .08, d = bb.max.z - bb.min.z - .08, g = new THREE.BoxGeometry(Math.max(.05, w), .05, Math.max(.05, d)); g.translate(b.c.x, bb.min.y + .03, b.c.z); out.push({ key: 'seam', geo: g.applyMatrix4(L) }); st.seams++;
+      if (kind === 'floating') { const u = new THREE.BoxGeometry(Math.max(.05, w), .05, Math.max(.05, d)); u.translate(b.c.x, bb.min.y - .03, b.c.z); out.push({ key: 'seam', geo: u.applyMatrix4(M) }); st.seams++; } } }
+  return { parts: out, st }; }
+// the piece's parts by material key, each geometry non-indexed with position, normal and uv (for merging into a wonder), and its stats;
+// `standing` is the box of what still stands on its foot (the piece's frame), for the solids
+function gkParts(kind, o = {}) { const cond = ['whole', 'cracked', 'broken'].includes(o.cond) ? o.cond : 'whole', school = GK_SCHOOLS[o.school] ? o.school : 'cloch', key = o.key || `gatekit:${kind}`;
+  const P = GK_BUILD[kind](o); P.ruin = !!o.ruin; const { parts, st } = gkCondition(P, cond, key), by = {}, standing = new THREE.Box3();
+  for (const p of parts) { const g = p.geo.index ? p.geo.toNonIndexed() : p.geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal', 'uv'].includes(a)) g.deleteAttribute(a);
+    if (!g.attributes.normal) g.computeVertexNormals(); if (!g.attributes.uv) g.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(g.attributes.position.count * 2), 2)); (by[p.key] ||= []).push(g);
+    if (p.kind === 'in' && p.key === 'stone') { g.computeBoundingBox(); standing.union(g.boundingBox); } }
+  return { by, M: gkMats(school, cond), st, size: P.size, standing, cond, school, key }; }
+function gatePiece(kind, o = {}) { const R = gkParts(kind, o), G = new THREE.Group(); let tris = 0, calls = 0;
+  for (const k in R.by) { const geo = mergeGeometries(R.by[k]), m = new THREE.Mesh(geo, R.M[k]); m.castShadow = o.shadow !== false && !['script', 'ring', 'seam', 'crack', 'dead'].includes(k); m.receiveShadow = true; m.userData.key = k; G.add(m); tris += geo.attributes.position.count / 3; calls++; }
+  G.userData = { kind, cond: R.cond, school: R.school, key: R.key, tris: Math.round(tris), calls, ...R.st, size: R.size, standing: R.standing }; return G; }
+// the prototype's boulder at a unit radius (it scales linearly: the noise is read on the unit sphere), its UVs at the scale a stone of 4 m had
+function wonderBoulder(seed, flat = .75) { const g = new THREE.IcosahedronGeometry(1, 3), p = g.attributes.position, v = new THREE.Vector3();
+  for (let i = 0; i < p.count; i++) { v.fromBufferAttribute(p, i); const n = pfbm(v.x * 1.3 + seed, v.z * 1.3 - seed * .7 + v.y, 4); v.multiplyScalar(1 + n * .55); if (v.y < 0) v.y *= flat; p.setXYZ(i, v.x, v.y * .8, v.z); }
+  const q = g.toNonIndexed(); g.dispose(); q.computeVertexNormals(); return worldUV(q, 1.4); }
+// a flat disc or ring laid on the ground: every vertex at hAt + lift
+function onGround(g, x, z, hAt, lift) { g.rotateX(-Math.PI / 2); const P = g.attributes.position; for (let i = 0; i < P.count; i++) { const vx = P.getX(i) + x, vz = P.getZ(i) + z; P.setXYZ(i, vx, hAt(vx, vz) + lift, vz); }
+  const q = g.index ? g.toNonIndexed() : g; q.computeVertexNormals(); if (!q.attributes.uv) worldUV(q, .3); return q; }
+// the Mark's wonder: wonders.js's markSkyfall over the world's valley. 34 stones of 1.5 to 13 m hang 4 to 58 m over the floor, each over
+// the pit it came out of (a hollow ringed with thrown earth), a Gaoth seam glowing under every stone over 5 m; two of the gate kit's walls
+// (1.4 times, 19.6 m long) stand broken on the floor with their stones lifted. The same stream ('wonders:skyfall') and the same draws in
+// the same order as the prototype, so the stones are its stones; only the valley's length is centred on the wonder's middle.
+function markSkyfall(hAt, o = {}) {
+  const key = 'wonders:skyfall', r = stream(key), group = new THREE.Group(), B = new Map(), put = (k, g) => (B.get(k) || B.set(k, []).get(k)).push(g), S = GK_SCHOOLS.gaoth, NS = 4;
+  group.name = 'wonder:skyfall'; const stones = [];
+  for (let k = 0; k < 34; k++) { const x = (r() - .5) * 130, z = 150 - r() * 300, big = Math.pow(r(), 2.2), rad = 1.5 + big * 11.5, lift = 4 + big * 32 + r() * 22;
+    let g0 = hAt(x, z); for (let k2 = 0; k2 < 8; k2++) g0 = Math.max(g0, hAt(x + Math.sin(k2 * Math.PI / 4) * rad * 1.2, z + Math.cos(k2 * Math.PI / 4) * rad * 1.2)); /* the world's ground is not the prototype's floor: over the highest of it under the stone */
+    const y = g0 + rad + lift;
+    const rot = [r() * .6, r() * 6.3, r() * .6]; stones.push({ x, y, z, rad, lift, rot, ph: r() * 6.3, sp: .06 + r() * .1, shape: k % NS });
+    put('pit', onGround(new THREE.RingGeometry(rad * .55, rad * 1.05, 24), x, z, hAt, .08)); put('hole', onGround(new THREE.CircleGeometry(rad * .56, 24), x, z, hAt, .1));
+    if (rad > 5) { const sg = wonderBoulder(k * 3.1 + 9, .2); sg.scale(rad * .5, rad * .5 * .12, rad * .5); sg.translate(x, y - rad * .62, z); put('seam', sg); } }
+  // the walls: the kit's broken wall at 1.4 times, set on the lowest ground under its foot
+  const walls = [], M = {};
+  for (const [i, x, z, a] of [[0, -18, 70, .3], [1, 22, -15, -.5]]) { const W = gkParts('wall', { cond: 'broken', school: 'gaoth', key: `${key}:wall:${i}` }), s = 1.4, c = Math.cos(a), sn = Math.sin(a);
+    let lo = 1e9; for (const u of [-1, -.5, 0, .5, 1]) for (const v of [-1, 1]) { const lx = u * W.size.w / 2 * s, lz = v * W.size.d / 2 * s; lo = Math.min(lo, hAt(x + lx * c + lz * sn, z - lx * sn + lz * c)); }
+    const T = new THREE.Matrix4().makeTranslation(x, lo - .4, z).multiply(new THREE.Matrix4().makeRotationY(a)).multiply(new THREE.Matrix4().makeScale(s, s, s));
+    for (const k in W.by) { const mk = 'w:' + k; M[mk] = W.M[k]; for (const g of W.by[k]) put(mk, g.applyMatrix4(T)); }
+    walls.push({ x, z, ry: a, y: lo - .4, len: W.size.w * s, d: W.size.d * s, standH: (W.standing.max.y - W.standing.min.y) * s, floating: W.st.floating, fallen: W.st.fallen }); }
+  const glowCol = new THREE.Color(...S.glow);
+  Object.assign(M, { pit: new THREE.MeshStandardMaterial({ color: new THREE.Color(.28, .25, .22), roughness: 1 }), hole: new THREE.MeshStandardMaterial({ color: new THREE.Color(.06, .05, .05), roughness: 1 }),
+    seam: new THREE.MeshStandardMaterial({ color: new THREE.Color(.1, .12, .14), emissive: glowCol, emissiveIntensity: 1.6, roughness: .5 }) });
+  let tris = 0, draws = 0; const glows = [];
+  for (const [k, gs] of B) { const g = mergeGeometries(gs); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.userData.key = k.replace(/^w:/, '');
+    m.castShadow = !['pit', 'hole', 'seam', 'w:seam', 'w:script', 'w:dead', 'w:crack'].includes(k); m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; draws++;
+    if (GK_GLOWS.includes(m.userData.key)) { m.userData.on = m.material; glows.push(m); } }
+  // the stones: four shapes, each one InstancedMesh, the prototype's rock
+  const rock = mat('rock', { ns: 1.3, color: 0x8a8a92, rough: .95 }), shapes = [], m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), sv = new THREE.Vector3(), pv = new THREE.Vector3();
+  for (let s = 0; s < NS; s++) { const mine = stones.filter(t => t.shape === s); if (!mine.length) continue; const geo = wonderBoulder(s * 3.1), im = new THREE.InstancedMesh(geo, rock, mine.length);
+    im.name = 'stones:' + s; im.castShadow = im.receiveShadow = true; im.userData.list = mine; group.add(im); shapes.push(im); tris += geo.attributes.position.count / 3 * mine.length; draws++; }
+  const place = (t, awake, sec) => { pv.set(t.x, t.y + (awake ? Math.sin(sec * t.sp * 2 + t.ph) * (.4 + t.rad * .08) : 0), t.z); e.set(t.rot[0], t.rot[1] + (awake ? sec * t.sp * .2 : 0), t.rot[2]); q.setFromEuler(e); sv.setScalar(t.rad); return m4.compose(pv, q, sv); };
+  let was = null;
+  // alive: each stone rises and settles over 8 to 16 s and turns slowly, the seams breathe over 7 s; asleep, all still and every seam dead stone
+  function tick(sec, awake) { awake = !!awake;
+    if (awake || was !== false) { for (const im of shapes) { im.userData.list.forEach((t, i) => im.setMatrixAt(i, place(t, awake, sec))); im.instanceMatrix.needsUpdate = true; im.computeBoundingSphere(); } }
+    if (was !== awake) for (const m of glows) m.material = awake ? m.userData.on : gkDead();
+    if (awake) { const p = .5 + .5 * Math.sin(sec * 2 * Math.PI / 7); for (const m of glows) m.material.emissiveIntensity = m.userData.key === 'seam' && m.name === 'seam' ? .5 + .9 * p : .7 + 1.0 * p; }
+    was = awake; }
+  tick(0, !!o.awake);
+  return { group, tris: Math.round(tris), draws, stones: stones.map(t => ({ x: t.x, z: t.z, y: t.y, rad: t.rad, lift: t.lift })), walls, tick,
+    size: { stones: stones.length, biggest: +Math.max(...stones.map(t => t.rad * 2)).toFixed(1), highest: +Math.max(...stones.map(t => t.lift)).toFixed(1) } };
+}
+  return { stream, hashKey, mergeByMaterial, wonders: { skyfall: markSkyfall, gatePiece }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, trunk: felledTrunk }, ships: { sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
     mk: { hall: markHall, lot: markLot, alehall: markAlehall, longhouse: markLonghouse, mats: markMats },
     au: { house: aurenneHouse, lot: aurenneLot, courtyard: aurenneCourtyard, church: aurenneChurch, churchBox: aurenneChurchBox, churchHall: aurenneChurchHall, courtyardHouse: aurenneCourtyardHouse, tavern: aurenneTavern, mats: aurMats, roomMats: homeMats, AUR },
     gl: { PLANS, FIN, PS, PAINTS, TOWN: GL_TOWN, building, church, keep, farmstead, coachInn, coachInnPlan, coachRoom, townhouse: townhouseRoom, farmhouse: farmhouseRoom, byre: byreRoom, barn: barnRoom, row: shrineRow, ROW_GODS, inn: gatelandsInn, cottage: gatelandsCottage, churchLen: n => +((n === 2 ? 2 : 3) * 4.8 + 1.6 + 5.6 - .5 + 7.2 - .9 - .02).toFixed(2), lot: gatelandsLot, mats: glMats, BAYS, bayPlan, bayWidth, baysFor } };

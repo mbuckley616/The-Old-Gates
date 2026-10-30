@@ -269,6 +269,7 @@
     stream(px,pz,false);
     houseLod();
     landTick(dt); // S1181 (F3): the new look's grass, a chunk a frame, and its wind
+    try{tickWonders();}catch(e){console.warn('wonders',e);} /* S1614 — the Skyfall Fields (82-world-structures.js) */
     qualityProbeTick(); /* S1352 — the first-run probe's frame times */
     atmosphere(dt);
     tickSettlements(dt,false);
