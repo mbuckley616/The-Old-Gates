@@ -434,8 +434,8 @@ function airDashStart(K){
 function airDashing(){return AIRDASH.t0!=null;}
 // the ground under you, as the loop's landing reads it
 function dashGroundY(){const dun=lid&&lid.startsWith('dyn_');
-  if(dun||isInterior()){const b=(dun&&DUNGEON_STAIRWELL)?Math.min(0,FLOOR2_Y):((dun&&currentFloor===2)?FLOOR2_Y:0);return footholdY(px,pz,jumpY,dun?dPitBase(px,pz,b):b);} /* S1327 — a chasm's pit */
-  return activeTerrainH(px,pz);}
+  if(dun||isInterior()){const b=(dun&&DUNGEON_STAIRWELL)?Math.min(0,FLOOR2_Y):((dun&&currentFloor===2)?FLOOR2_Y:0);return laidGround(px,pz,jumpY,footholdY(px,pz,jumpY,dun?dPitBase(px,pz,b):b));} /* S1327 — a chasm's pit; S1590 — a laid top */
+  return laidGround(px,pz,jumpY,activeTerrainH(px,pz));}
 // S1385 — the mantle, everyone's (platforming B; the numbers are F2b's, scale-numbers-build.md's Movement table): in the
 // air, pressed forward into a ledge the flight's own top cannot step onto (higher than its apex plus STEP_UP) and no more than
 // 1.6 m over your feet, you pull up onto it in 0.5 s, for no stamina. Anyone does it on the way up and at the top; Catch
@@ -448,13 +448,16 @@ const MANTLE={t0:null,x0:0,z0:0,y0:0,x1:0,z1:0,y1:0,key:''},MANTLE_HI=1.6,MANTLE
 function mantling(){return MANTLE.t0!=null;}
 // the highest top at x,z no higher than cap, as the loop's ground reads it
 function mantleSurf(x,z,cap){const dun=lid&&lid.startsWith('dyn_');
+  if(!dun&&!isInterior())return laidGround(x,z,cap-STEP_UP,-1e9); /* S1590 — outdoors only a laid top is a ledge (the terrain is none) */
   const b=(dun&&DUNGEON_STAIRWELL)?Math.min(0,FLOOR2_Y):((dun&&currentFloor===2)?FLOOR2_Y:0);
-  return footholdY(x,z,cap-STEP_UP,dun?dPitBase(x,z,b):b);}
+  return laidGround(x,z,cap-STEP_UP,footholdY(x,z,cap-STEP_UP,dun?dPitBase(x,z,b):b));}
 // room to stand at x,z with your feet at y
 function mantleClear(x,z,y){const R=.3;
   if(isInterior()){if(intSolidAt(x,z,R,y))return false;const h=currentHouse;
     if(h&&h._roomW&&(x<R||x>h._roomW-R||z<R||z>(h._roomD||1e9)-R))return false;}
+  else if(!(lid&&lid.startsWith('dyn_'))){if(currentZoneSolid(x,z))return false;} /* S1590 — outdoors, onto a laid top */
   else for(const[a,b]of[[-R,-R],[R,-R],[-R,R],[R,R]])if(!dAirAt(x+a,z+b)&&dSolid(x+a,z+b))return false;
+  if(laidBlocks(x,z,y))return false;
   if(mantleSurf(x,z,y+HEAD_H)>y+STEP_UP)return false; /* a foothold within your height over the ledge (headCeil reads only what is over the head) */
   if(isInterior()&&(INT_SOL||[]).some(s=>s.y0!=null&&s.y0>y+STEP_UP&&s.y0<y+HEAD_H&&x>s.x0-R&&x<s.x1+R&&z>s.z0-R&&z<s.z1+R))return false;
   return headCeil(x,z,y)-y>=HEAD_H;}
@@ -470,7 +473,7 @@ function mantleTick(K){
   }
   if(onGround||dead||!started||airDashing())return false;
   if(!(K&&(K['KeyW']||K['ArrowUp'])))return false;
-  const dun=lid&&lid.startsWith('dyn_');if(!dun&&!isInterior())return false;
+  const dun=lid&&lid.startsWith('dyn_');if(!dun&&!isInterior()&&!laidLive())return false; /* S1590 — outdoors, a laid top */
   if(encumbranceState()==='immobile')return false;
   const caught=perk('acrobatics',25);if(velY<MANTLE_FALL_V&&!caught)return false;
   const cap=jumpY+(caught?MANTLE_CATCH:MANTLE_HI),v=Math.max(0,velY),apex=jumpY+v*v/(2*MANTLE_G);

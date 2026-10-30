@@ -345,6 +345,7 @@ function castSpell(){
     showMsg('You know no magic. Sigils are carved into the walls of dungeon lower floors.','#a8a8d4');
     return;
   }
+  {const lb=spellBook[bookSync()];if(lb&&lb.form==='laid'){castLaid(lb);return;}} /* S1590 — a laid entry (64-spells.js) */
   const sp=SPELLS.find(s=>s.id===activeSpellId);
   if(!sp){showMsg('Spell not learned!','#6688cc');return;}
   const tier=effTier(sp.id); /* S1346 — a great gate torn or bound moves the tier cast */
@@ -541,6 +542,7 @@ function updateSpellButton(){
     btn.style.fontStyle='italic';
     return;
   }
+  {const lb=spellBook[bookSync()],lw=lb&&lb.form==='laid'&&WORD_BY[lb.word];if(lw){btn.textContent=`${lw.ico} ${lw.nameIr}${lb.rider&&WORD_BY[lb.rider]?' and '+WORD_BY[lb.rider].nameIr:''}, laid (F)`;btn.style.opacity='1';btn.style.fontStyle='normal';return;}} /* S1590 */
   const sp=SPELLS.find(s=>s.id===activeSpellId);
   if(!sp){btn.textContent='◯ No magic (F)';return;}
   const tier=effTier(sp.id);
