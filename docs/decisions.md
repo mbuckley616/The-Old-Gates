@@ -15,6 +15,16 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+### Arenas in the Mark — the yard, the ring's ladder, or the sellsword's hall (from the designer, 2026-10-30, #914)
+**The question.** Your 13 A gave the Mark training grounds and arenas, but nothing says yet what you do there. Today the only bout in the game is Rowe's yard at Caer Slige: she yields at a quarter of her health, the ring holds you at 1, and a blow after the yield is murder. What should the Mark's rings be?
+
+**Options.**
+- **A.** The training yard: in every Markish town, spar with staves while the trainer calls your parries (*Early.*, *Late.*, *Good.*), plus evening brawls for 50 gold a side. Two sessions.
+- **B (recommended).** A, plus the ring's ladder: twelve bouts across the Mark's cities in four tiers (purses from 50 to 1,000), one bout a game day, not levelled, no potions inside the rope. Wager on yourself (up to 4 to 1 above your level), spare or murder a fighter who yields (a murdered fighter's name stays cut in the post), take or report a fixer's bribe, and win the title at Caer Slige. Four sessions, plus the look builder's ring.
+- **C.** B, plus the sellsword's hall: your rank in the ring lets League captains hire you for contracts that move the war's lines. Three more sessions; waits for the war's sieges on the new look.
+
+**Recommendation.** B: combat against people with move sets, a visible progression test, and two choices that change what you see; A is its first session either way. C overlaps the Fighters' Guild's tasks. The page: `docs/design/arenas.md`.
+
 ## Answered
 ### Strange places: when does a wonder wake? (from the concept artist, 2026-10-29, #898)
 **The question.** Backlog L5's prototype (`docs/prototypes/levelup/wonders.html`, OG-106) builds three wonders from the gate kit's stones, one per island: the Drowned Ring (seven 32 m piers in a fen lough, a sigil under the water), the Skyfall Fields (34 stones hung up to 50 m over a snow valley) and the Broken Orrery (four rings, 17 to 41 m, over a sea-cliff platform). "Awake" means the stones drift, the rings turn and the script and seams glow; the geometry is the same in every option.
