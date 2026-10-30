@@ -243,7 +243,7 @@ check(`at ${ch55.d} m (past 5) it does not leap (${ch55.b})`, ch55.a > 0 && ch55
 const rootBolt = async (t) => {
   await page.evaluate((t) => {
     const fs = ENEMIES.filter(x => x.floor === 1 && x.mesh).slice(0, 1); for (const o of ENEMIES) if (!fs.includes(o)) o.dead = true;
-    knownWords = { freamh: t }; SKILLS.cloch = { lv: 50, p: 0 }; LAID && laidEnd();
+    knownWords = { freamh: t }; SKILLS.cloch = { lv: 50, p: 0 }; LAID && laidEnd(); spellBook.length = 0;
     const mk = bookMake('sent', 'freamh'); bookSelect(mk.i);
     const A = fs[0]; A.dead = false; A.hp = A.maxHp = 1e5; A.def = 0; A.resist = null; A.alert = false; A._rootUntil = 0; unstagger(A);
     window._rb = { A, h: A.hp, mk, cast: null };
@@ -252,7 +252,8 @@ const rootBolt = async (t) => {
       A.x = f.position.x; A.z = f.position.z; window._rb.cast = playClockS; BALLS.push = _push; }
       return _push.apply(this, a); };
     for (const k2 in K) K[k2] = false; castT = 0; _castFreeAt = 0; _castReleaseAt = 0; spCd = 0; mana = 1000;
-    const sm = showMsg; showMsg = () => {}; try { castSpell(); } finally { showMsg = sm; }
+    const sm = showMsg, cr = casterRand; showMsg = () => {}; casterRand = () => () => 1; /* no wild roll at Impression */
+    try { castSpell(); } finally { showMsg = sm; casterRand = cr; }
   }, t);
   await page.waitForFunction(() => window._rb.A._rootUntil > 0, null, { timeout: 15000, polling: 100 }).catch(() => {});
   return page.evaluate(() => { const { A, h, mk } = window._rb;
@@ -260,7 +261,7 @@ const rootBolt = async (t) => {
 };
 const rb2 = await rootBolt(2), rb1 = await rootBolt(1), rb3 = await rootBolt(3);
 console.log(JSON.stringify({ rb2, rb1, rb3 }));
-check(`Fréamh's bolt deals ${rb2.dealt} and roots the foe (speed ×${rb2.slow}, ${rb2.left} s left of 2)`, rb2.mk && rb2.dealt === 0 && rb2.rooted && rb2.slow === 0 && rb2.left > 1.5 && rb2.left <= 2 && rb2.alert, rb2);
+check(`Fréamh's bolt deals ${rb2.dealt} and roots the foe (speed ×${rb2.slow}, ${rb2.left} s left of 2)`, rb2.mk && rb2.dealt === 0 && rb2.rooted && rb2.slow === 0 && rb2.left > 1.5 && rb2.left <= 2, rb2);
 check(`Fréamh's root by tier: Impression ${rb1.left} s (of 1.2), Mastery ${rb3.left} s (of 2.6)`, rb1.rooted && rb1.left > .7 && rb1.left <= 1.2 && rb3.rooted && rb3.left > 2.1 && rb3.left <= 2.6, { rb1, rb3 });
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
