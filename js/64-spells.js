@@ -788,6 +788,30 @@ function statusBolt(e,sp,tier,rider){if(!e||e.dead||e.hp<=0)return null;const F=
   if(F.root){const t=F.root*TIER_MULT.magnitude[Math.max(1,tier)-1];e._rootUntil=Math.max(e._rootUntil||0,playClockS+t);out.root=+t.toFixed(2);}
   e.alert=true;if(rider)out.rider=riderHit(e,rider,0);
   return out;}
+// S1611 — Tonn sent (magic-build.md's table: "a wave 8 m down the line, 14, posture 20"): no bolt flies. At the Cast row's release a
+// wave runs from you along your aim, 8 m or to the first wall, and every foe in its path takes the word's 14 (the tier's magnitude, the
+// school's power) and 20 from its posture, a break staggering it as a blow's does. The path is 1.6 m wide, Tonn's laid width (the bridge,
+// RIDERS.sioc.laid.bridge): the sheet gives the sent wave no width of its own. It strikes at once, not as a travelling crest. A rider rides
+// each foe it strikes. Its Mastery has no canon entry, so it is the plain word at ×1.3.
+SPELLS.push({id:'tonn',school:'uisce',role:'basic',nameIr:'Tonn',nameEn:'Force Wave',nameMa:null,ico:'〰️',desc:'A wave that throws down what stands in its line.',
+  intReqs:[10,22,40],cost:32,speed:0,dmgBase:14,dmgLvl:2,col:0x5a9ad8,glowCol:0x8ac0f0,wild:['scatter','fizzle'],wave:true});
+// tonnWave: the named action. The wave from x,z along (ux,uz) on `floor` (a gate's). Returns {len, hit:[{foe,dealt,broke}]}.
+function tonnWave(sp,tier,rider,x,z,ux,uz,floor){const F=WORD_BY.tonn.forms.sent,hw=RIDERS.sioc.laid.bridge.wide/2,dun=!!(lid&&lid.startsWith('dyn_'));
+  let len=F.wave;for(let s=.1;s<=F.wave+1e-9;s+=.1)if(riderFoeSolid(x+ux*s,z+uz*s,dun)){len=s-.1;break;}
+  const out={len:+len.toFixed(2),hit:[]},now=performance.now()/1000;
+  for(const e of heldTargets()){if(e.dead||e.locked||e.disguised||e.hp<=0||(dun&&e.floor!==floor))continue;
+    const dx=e.x-x,dz=e.z-z,a=dx*ux+dz*uz,b=Math.abs(-dx*uz+dz*ux),h=hullOf(e);
+    if(a<-h||a>len+h||b>hw+h)continue;
+    const info=applySpellDamage(e,sp,tier),dealt=info.dmg;e.hp=Math.max(0,e.hp-dealt);e.alert=true;
+    if(e.hpFg&&e.maxHp){e.hpFg.scale.x=e.hp/e.maxHp;e.hpFg.position.x=(e.hp/e.maxHp-1)*.275;}
+    dmgNum(e,dealt,info);
+    let broke=false;
+    if(e.hp>0){if(typeof e.posture!=='number'&&typeof initPosture==='function')initPosture(e);
+      if(typeof e.posture==='number'&&applyPostureDamage(e,F.posture,now)){broke=true;staggered.push({e,t:dazeS(POSTURE_BREAK_STUN)});staggerFlash(e);}}
+    if(rider)riderHit(e,rider,dealt);
+    out.hit.push({foe:e,dealt,broke});
+    if(e.hp<=0){if(dun)killE(e,dmgTag(info,e));else killZoneEnemy(e,scene,dmgTag(info,e));}}
+  return out;}
 // S1605 — Éan worn (magic-build.md, "Movement against the step table"): a jump leaves the ground at 8.4 m/s, not the legs' 5.5–6.6, so
 // it tops out 1.96 m up and crosses 4.4 m at the 4.7 m/s air cap: the step table's 4.0–4.8 band. Its shape is the same at every tier;
 // the tier sets only its time (20/40/80 s). At Mastery it is Wingless, the canon's: no fall hurts while it is worn.

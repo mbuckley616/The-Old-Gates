@@ -11,6 +11,7 @@
 // once), Leigheas's mend (2 a second while you stand at it), Séideán's throw (a pillar under you sends you up at Éan's 8.4 m/s), Solas's light.
 // Session 1609: the cone dressed (the look builder's heldDress): three draws, under 1,500 triangles, and it answers no ray.
 // Session 1606: Tintreach sent, a bolt of 24 that leaps to the nearest other foe within 5 m of the one struck, for half.
+// Session 1611: Tonn sent, a wave 8 m down your aim (to the first wall), 1.6 m wide: 14 and 20 posture to each foe in it.
 // Session 1610: Fréamh sent, a bolt that deals nothing and roots the foe it strikes 2 s (1.2 at Impression, 2.6 at Mastery).
 import { boot, check } from './lib/game.mjs';
 import { enterDungeon } from './lib/dungeonshot.mjs';
@@ -263,5 +264,31 @@ const rb2 = await rootBolt(2), rb1 = await rootBolt(1), rb3 = await rootBolt(3);
 console.log(JSON.stringify({ rb2, rb1, rb3 }));
 check(`Fréamh's bolt deals ${rb2.dealt} and roots the foe (speed ×${rb2.slow}, ${rb2.left} s left of 2)`, rb2.mk && rb2.dealt === 0 && rb2.rooted && rb2.slow === 0 && rb2.left > 1.5 && rb2.left <= 2, rb2);
 check(`Fréamh's root by tier: Impression ${rb1.left} s (of 1.2), Mastery ${rb3.left} s (of 2.6)`, rb1.rooted && rb1.left > .7 && rb1.left <= 1.2 && rb3.rooted && rb3.left > 2.1 && rb3.left <= 2.6, { rb1, rb3 });
+
+// S1611 — Tonn's wave: three foes, one in the line at 2.5 m, one 2.5 m to its side, one past the wave's end
+const tw = await page.evaluate(() => {
+  const fs = ENEMIES.filter(x => x.floor === 1 && x.mesh).slice(0, 3); for (const o of ENEMIES) if (!fs.includes(o)) o.dead = true;
+  if (fs.length < 3) return { few: fs.length };
+  knownWords = { tonn: 2, sioc: 2 }; SKILLS.uisce = { lv: 50, p: 0 }; LAID && laidEnd(); spellBook.length = 0;
+  for (const e of fs) { e.dead = false; e.hp = e.maxHp = 1e5; e.def = 0; e.resist = null; e.spd = 0; unstagger(e); initPosture(e); }
+  const fr = foeRand; foeRand = () => 0; const sp = SPELLS.find(s => s.id === 'tonn');
+  // the longest clear line from you, of 16 headings
+  let best = null; for (let i = 0; i < 16; i++) { const t = i * Math.PI / 8, w = tonnWave(sp, 2, null, px, pz, Math.sin(t), Math.cos(t), currentFloor); if (!best || w.len > best.len) best = { len: w.len, t }; }
+  const ux = Math.sin(best.t), uz = Math.cos(best.t), [A, B, C] = fs, h0 = fs.map(e => e.hp);
+  A.x = px + ux * 2.5; A.z = pz + uz * 2.5; B.x = A.x - uz * 2.5; B.z = A.z + ux * 2.5; C.x = px + ux * (best.len + 2); C.z = pz + uz * (best.len + 2);
+  const p0 = A.posture, w = tonnWave(sp, 2, null, px, pz, ux, uz, currentFloor);
+  const out = { len: w.len, n: w.hit.length, a: h0[0] - A.hp, b: h0[1] - B.hp, c: h0[2] - C.hp, post: +(p0 - A.posture).toFixed(1) };
+  // by F: the book's Sent Tonn, aimed down the same line
+  A.hp = 1e5; const mk = bookMake('sent', 'tonn'); bookSelect(mk.i); yaw = Math.atan2(-ux, -uz);
+  for (const k2 in K) K[k2] = false; castT = 0; _castFreeAt = 0; _castReleaseAt = 0; spCd = 0; mana = 1000;
+  const sm = showMsg; showMsg = () => {}; try { castSpell(); } finally { showMsg = sm; }
+  window._tw = { A, fr }; return out;
+});
+await page.waitForFunction(() => window._tw && window._tw.A.hp < 1e5, null, { timeout: 15000, polling: 100 }).catch(() => {});
+tw.f = await page.evaluate(() => { foeRand = window._tw.fr; return 1e5 - window._tw.A.hp; });
+console.log(JSON.stringify(tw));
+check(`Tonn's wave runs ${tw.len} m (8 or to the wall) and strikes the foe in its line for ${tw.a} and ${tw.post} posture, not the one 2.5 m aside (${tw.b}) or past its end (${tw.c})`,
+  tw.len > 3 && tw.len <= 8 && tw.n === 1 && tw.a === 14 && tw.post === 20 && tw.b === 0 && tw.c === 0, tw);
+check(`cast by F, the wave lands ${tw.f} on the foe down your aim`, tw.f === 14, tw);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

@@ -504,6 +504,12 @@ function castSpell(){
       requestAnimationFrame(flashTick);
       showMsg(`${sp.ico} ${dispName} — restored ${heal} HP`,'#aaffaa');
     }
+    // ── Tonn's wave (S1611): no bolt, a line struck at the release along the snapped aim ──
+    else if(sp.wave&&isOverworldZone()===snapIsOW){
+      const cj=Math.cos(aimJitter),sj=Math.sin(aimJitter),ux=snapFwdX*cj-snapFwdZ*sj,uz=snapFwdX*sj+snapFwdZ*cj,n=Math.hypot(ux,uz)||1;
+      tonnWave(sp,tier,bk.rider||null,snapPx,snapPz,ux/n,uz/n,snapFloor);
+      if(!wildPattern)showMsg(`${sp.ico} ${dispName}!`,'#88ccff');
+    }
 
     // Backlash resolves AFTER the cast body so the player sees the spell go off, then feels the rebound
     if(selfDmgOnResolve>0){
