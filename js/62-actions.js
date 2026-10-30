@@ -342,7 +342,7 @@ function castSpell(){
   // Empty-knownWords hint — one of the two signals (along with HUD dimming) that there are carvings to find.
   if(!activeSpellId||Object.keys(knownWords).length===0){
     if(Object.keys(knownWords).length){showMsg('The words you hold are not yet spells you can cast.','#a8a8d4');return;} /* S1586 — a new word from a carving, before its forms are built */
-    showMsg('You know no magic. Sigils are carved into the walls of dungeon lower floors.','#a8a8d4');
+    showMsg('You know no magic. Words are carved into the walls deep in the gates.','#a8a8d4');
     return;
   }
   {const lb=spellBook[bookSync()];if(lb&&lb.form==='laid'){castLaid(lb);return;}if(lb&&lb.form==='held'){castHeld(lb);return;}if(lb&&lb.form==='touched'){castTouched(lb);return;}} /* S1590 — a laid entry (64-spells.js); S1601 — a held one; S1603 — a touched one */
