@@ -125,6 +125,33 @@ const dh = await page.evaluate(() => { _D.m.visible = false; const p0 = _RD.ph; 
   const on = _RD.ph !== p0; WORLD.scene.remove(_D.m); LIFE.dolphins.splice(LIFE.dolphins.indexOf(_D), 1); tickCreatures(1 / 60, 8e6 + 34); return { still, on, dropped: !_RD.hc && ![...HC_RIGS].includes(_RD) }; });
 check('hidden (the ship slowed) a dolphin is not posed, shown it swims again, and removed its body is dropped', dh.still && dh.on && dh.dropped, dh);
 
+// Session 1594: a port's four gulls (spawnGulls, made here over a group of our own as a port's is) wear the kit's `gull`, each in its own
+// place among the group's children (tickGulls moves them by it), its head where the old cone's broad end was (the old mesh's −z)
+const gul = await page.evaluate(() => { const sc = WORLD.scene, holder = new THREE.Group(); sc.add(holder); const S = { group: holder };
+  spawnGulls(S, { x: px + 6, z: pz - 6 }); holder.position.y = worldH(px + 6, pz - 6); window._GS = S; const gl = S.gulls, olds = [...gl.g.children];
+  CAM.position.set(px, worldH(px, pz) + 1.65, pz); CAM.updateMatrixWorld(true); HBODY.last = -1e9;
+  const rigs = () => [...HC_RIGS].filter(r => r.name === 'Gull' && r.w && olds.includes(r.mesh)); let k = 0;
+  while (!(rigs().length === 4 && rigs().every(r => r.hc)) && k++ < 1200) tickCreatures(1 / 60, 1e7 + k * (HBODY.gap + 1));
+  const R = rigs(); window._RG = R; if (R.length < 4 || !R.every(r => r.hc)) return { k, n: R.length, built: R.filter(r => r.hc).length, fail: R.some(r => r.hcFail) };
+  const order = gl.g.children.every((c, i) => c.children[0] === olds[i]);
+  const r0 = R.find(r => r.mesh === olds[0]), g = r0.mesh.parent; g.updateMatrixWorld(true); const inv = new THREE.Matrix4().copy(g.matrixWorld).invert(), v = new THREE.Vector3();
+  const box = (root, skin) => { const b = new THREE.Box3(); root.traverse(o => { if (!o.isMesh) return; const p = o.geometry.attributes.position; for (let i = 0; i < p.count; i += 5) { v.fromBufferAttribute(p, i); if (skin && o.isSkinnedMesh) o.applyBoneTransform(i, v); else v.applyMatrix4(o.matrixWorld); v.applyMatrix4(inv); b.expandByPoint(v); } }); return b; };
+  HC.pose(r0.hc.C, 0); r0.hc.C.root.updateMatrixWorld(true); r0.hc.C.skel.update(); const kb = box(r0.hc.W, true), ob = box(r0.mesh, false);
+  const head = r0.hc.C.byName.head.getWorldPosition(new THREE.Vector3()).applyMatrix4(inv);
+  const a = Array.from(r0.hc.C.skel.boneMatrices); for (let i = 0; i < 8; i++) { r0.t = performance.now() / 1000 - 1 / 30; tickCreatures(1 / 60, 2e7 + i * 17); r0.hc.C.skel.update(); }
+  const b = Array.from(r0.hc.C.skel.boneMatrices); let mv = 0; for (let i = 0; i < a.length; i++) mv = Math.max(mv, Math.abs(a[i] - b[i]));
+  return { k, order, plan: r0.hc.C.g.plan, bones: r0.hc.C.bones.length, tris: r0.hc.C.stats.tris, keys: R.map(r => r.hcKey), kit: [kb.min.z, kb.max.z].map(x => +x.toFixed(2)), old: [ob.min.z, ob.max.z].map(x => +x.toFixed(2)), head: +head.z.toFixed(2), mv: +mv.toFixed(3), L: r0.hc.L }; });
+console.log('  gulls:', JSON.stringify(gul));
+check(`a port's four gulls wear the kit's gull (${gul.bones} bones, ${gul.tris} tris), ${gul.kit && (gul.kit[1] - gul.kit[0]).toFixed(2)} m against the old ${gul.old && (gul.old[1] - gul.old[0]).toFixed(2)}, each in its own place among the group's children, the head forward of the old cone's point, the wings beating`,
+  /gull$/i.test(gul.plan) && gul.order && gul.keys.every(k => /^gull:\d+$/.test(k)) && new Set(gul.keys).size === 4 && (gul.kit[1] - gul.kit[0]) / (gul.old[1] - gul.old[0]) > .8 && gul.head < -.1 && gul.mv > .01, gul);
+{ const shot = await page.evaluate(() => { const sc = WORLD.scene, r = _RG[0], g = r.mesh.parent, w = g.getWorldPosition(new THREE.Vector3()); r.ph = .3; HC.pose(r.hc.C, .3); sc.updateMatrixWorld(true);
+    const cv = REN.domElement, cam = new THREE.PerspectiveCamera(40, cv.width / cv.height, .05, 200); cam.position.set(w.x + 1.3, w.y + 1.1, w.z + 1.5); cam.lookAt(w);
+    const f = sc.fog; sc.fog = null; REN.render(sc, cam); sc.fog = f; const o = document.createElement('canvas'); o.width = cv.width; o.height = cv.height; o.getContext('2d').drawImage(cv, 0, 0); return o.toDataURL('image/jpeg', .85); });
+  fs.writeFileSync(path.join(OUT, 'f4-gull.jpg'), Buffer.from(shot.split(',')[1], 'base64')); }
+const gh = await page.evaluate(() => { const r = _RG[0], S = _GS; S.group.visible = false; const p0 = r.ph; r.t = performance.now() / 1000 - .1; tickCreatures(1 / 60, 3e7); const still = r.ph === p0; S.group.visible = true; r.t = performance.now() / 1000 - .1; tickCreatures(1 / 60, 3e7 + 17);
+  const on = r.ph !== p0; WORLD.scene.remove(S.group); tickCreatures(1 / 60, 3e7 + 34); return { still, on, dropped: _RG.every(x => !x.hc && ![...HC_RIGS].includes(x)) }; });
+check('the port hidden its gulls are not posed, shown they fly again, and the port unloaded their bodies are dropped', gh.still && gh.on && gh.dropped, gh);
+
 await page.evaluate(() => { for (const e of [_S, _O]) { ZONES.world.enemies.splice(ZONES.world.enemies.indexOf(e), 1); WORLD.scene.remove(e.mesh); } tickCreatures(1 / 60, 9e5); REN.render(scene, CAM); });
 check('removed, the kit body is dropped', await page.evaluate(() => !_R.hc && ![...HC_RIGS].includes(_R)));
 check('no page errors', g.errs.length === 0, g.errs.slice(0, 3));

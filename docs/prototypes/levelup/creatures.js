@@ -278,6 +278,7 @@ function feather(B, root, dir, across, len, w, bone, tone, tip) {
 P.wings = (B, o) => {
   const sp = B.spineAt(o.at), span = o.span;
   // a bird's wing: humerus, forearm and hand, with the flight feathers fanned off the hand and laid back along the forearm
+  // (Session 1594: a palette's `secTip` tips the forearm's feathers apart from the hand's `featherTip`, a gull's white trailing edge under black ends)
   if (o.feathers) { const F = o.feathers; for (const side of [1, -1]) {
     const root = sp.p.clone().add(V(side * o.out, o.up || 0, 0)), elbow = root.clone().add(V(side * span * .26, 0, -span * .04)), wrist = elbow.clone().add(V(side * span * .3, 0, span * .03)), tip = wrist.clone().add(V(side * span * .26, 0, -span * .04));
     const tag = 'wing' + (side > 0 ? 'L' : 'R'), arm = B.chain(tag, sp.bone, [root, elbow, wrist, tip]);
@@ -286,7 +287,7 @@ P.wings = (B, o) => {
     // each flight feather hangs on a bone of its own at its root (Session 974), so a folded wing can turn it back along the body,
     // as a bird's ligaments do; its covert rides on the same bone. `kind` is the row: c on the humerus, s the forearm, p the hand
     const quills = [], quill = (par, p, d, kind, t, ac) => { const n = tag + 'q' + quills.length; B.bone(n, par, p); quills.push({ name: n, d: d.clone(), n: d.clone().cross(ac).normalize(), kind, t }); return n; };
-    for (let i = 0; i < F.ns; i++) { const t = i / (F.ns - 1), p = elbow.clone().lerp(wrist, t), d = back.clone().add(V(side * .15 * t, 0, 0)).normalize(), q = quill(arm[1], p, d, 's', t, V(side, 0, 0)); feather(B, p, d, V(side, 0, 0), span * F.len * (.62 + .08 * t), span * .07, q, 'feather', 'featherTip');
+    for (let i = 0; i < F.ns; i++) { const t = i / (F.ns - 1), p = elbow.clone().lerp(wrist, t), d = back.clone().add(V(side * .15 * t, 0, 0)).normalize(), q = quill(arm[1], p, d, 's', t, V(side, 0, 0)); feather(B, p, d, V(side, 0, 0), span * F.len * (.62 + .08 * t), span * .07, q, 'feather', B.plan.palette.secTip ? 'secTip' : 'featherTip');
       feather(B, p.clone().add(V(0, .004 * span, .01 * span)), d, V(side, 0, 0), span * F.len * .34, span * .065, q, 'covert', 'feather'); }
     for (let i = 0; i < 3; i++) { const p = root.clone().lerp(elbow, .3 + .3 * i); feather(B, p, back, V(side, 0, 0), span * F.len * .5, span * .07, quill(arm[0], p, back, 'c', i / 2, V(side, 0, 0)), 'covert', 'feather'); }
     for (let i = 0; i < F.np; i++) { const t = i / (F.np - 1), p = wrist.clone().lerp(tip, t * .92), d = V(side * (.25 + .9 * t), 0, -(1 - .85 * t)).normalize(), ac = V(-d.z * side, 0, d.x * side).normalize(), q = quill(arm[2], p, d, 'p', t, ac);
@@ -1860,9 +1861,17 @@ Object.assign(PLANS, {
   gateleviathan: re(PLANS.stormwhale, { name: 'The Gate Leviathan', src: 'OG-016 (said to move between the islands as the gates change), a sea gate’s antibody', scale: 1.8, bl: .15, mottle: 1.8,
     palette: { coat: [.14, .16, .2], saddle: [.07, .08, .1], belly: [.36, .36, .38], dark: [.03, .03, .04], fin: [.12, .14, .18], horn: [.5, .62, .78] },
     glow: { color: [3, 1.5, .4], freq: .35, w: .025, all: .55 },
-    parts: PLANS.stormwhale.parts.map(([k, o]) => k === 'head' ? [k, { ...o, crystals: { n: 6, len: 3.2, r: .35, f: .15, up: 1, out: .5 } }] : [k, o]) })
+    parts: PLANS.stormwhale.parts.map(([k, o]) => k === 'head' ? [k, { ...o, crystals: { n: 6, len: 3.2, r: .35, f: .15, up: 1, out: .5 } }] : [k, o]) }),
+  // Session 1594: the gull the game's ports already fly (85-world-sea.js's spawnGulls; OG-144's surf and gulls), the raven's flier at a
+  // herring gull's size: white, a grey mantle and wings, black ends to the primaries over a white trailing edge, a yellow hooked bill
+  // and pink legs; long narrow wings for soaring
+  gull: re(PLANS.skyraven, { name: 'Gull', src: 'the ports’ gulls (spawnGulls); OG-144 (surf, gulls and a market)', scale: 1.05, gaits: ['soar', 'walk', 'stand'], flyH: 1.4,
+    palette: { coat: [.94, .94, .93], saddle: [.64, .67, .71], belly: [.96, .96, .95], dark: [.05, .05, .05], horn: [.93, .78, .22], skin: [.86, .62, .56], feather: [.68, .71, .75], featherTip: [.06, .06, .07], secTip: [.94, .94, .93], covert: [.7, .73, .77] }, fur: null,
+    parts: flier({ eye: [.92, .86, .5], beak: .065, hook: .3, primary: 1.25 }) })
 });
 export const SEA = ['tidecrab', 'reefmoray', 'starweedray', 'lanternjelly', 'coastaltuna', 'skyskimmer', 'stormwhale', 'stormswift', 'sailfinray', 'driftersquid', 'reefshark', 'octopus', 'seal', 'blackcurrenteel', 'gateeel', 'shatterback', 'gateleviathan'];
+// the shore's own birds (Session 1594), apart from the sea sheets' twenty-four
+export const SHORE = ['gull'];
 // ── Session 855: beasts of burden (OG-046's roads; OG-077's post hare, built in Session 773; backlog L3). The horse is
 // its own plan and the mule and the donkey are the horse; the ox and the yak are the cow, the reindeer the stag, the
 // giant goat the goat with a saddle. OG-046's llama is the Frostmane (Session 853) and its cow is the livestock's ──
