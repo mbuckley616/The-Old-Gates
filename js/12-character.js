@@ -191,7 +191,8 @@ function inTheDarkMult(){return _sneaking&&perk('stealth',50)&&outOfLight()?.75:
 // Light foot (Stealth 75): a spike plate does not trigger while you sneak or sprint (`_sprintNow`, set by the loop)
 let _sprintNow=false;
 // S977 — Cat's fall (Acrobatics 50): a fall is free to 8 m, not FALL_FREE's 4 (10-player.js)
-function fallFree(){return perk('acrobatics',50)||(typeof _hasBuff==='function'&&_hasBuff('featherfall'))?8:FALL_FREE;} /* S1483 — a tincture's Featherfall, as Cat's fall */
+function fallFree(){if(typeof eanWingless==='function'&&eanWingless())return Infinity; /* S1605 — Éan's Wingless */
+  return perk('acrobatics',50)||(typeof _hasBuff==='function'&&_hasBuff('featherfall'))?8:FALL_FREE;} /* S1483 — a tincture's Featherfall, as Cat's fall */
 // S982 — the Bow's perks. Quick nock (Bow 50): the draw fills 30% faster, BOW_DRAW_MAX in 0.7 of the time (10-player.js)
 function bowDrawRate(){return (perk('bow',50)?1/.7:1)*BOW_DRAW_MAX/bowNow().draw;} /* S1549 — a longbow's or a war bow's draw is longer */
 // Long eye (Bow 75): an arrow that has flown 50 m on the level falls at half the gravity from there (tickArrowMotion)

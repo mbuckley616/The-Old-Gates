@@ -406,7 +406,7 @@ function loop(now){
   airStepTick(K); /* S1009 — Second step, the double jump (10-player.js); before the ground's jump, so a landing always resets it first */
   if(onGround&&K['Space']){
     if(inOverworld) jumpY=laidGround(px,pz,jumpY,activeTerrainH(px,pz)); /* S1590 — from a laid top */
-    velY=laidUpdraft(px,pz)?Math.max(JUMP_VEL,laidUpdraftV()):JUMP_VEL;onGround=false;sndJump();_jumpFrom=jumpY; /* S1590 — Séideán's updraft */
+    velY=Math.max(laidUpdraft(px,pz)?Math.max(JUMP_VEL,laidUpdraftV()):JUMP_VEL,eanRise());onGround=false;sndJump();_jumpFrom=jumpY; /* S1590 — Séideán's updraft; S1605 — Éan's rise */
   }
   if(!onGround&&(airDashing()||mantling()))velY=0; /* S1011 — the dash holds you level; the fall starts again from rest after it */
   else if(!onGround){
@@ -1214,6 +1214,8 @@ function loop(now){
         }
       }
       ENEMIES.forEach(e=>{if(e.dead||e.floor!==currentFloor||e.disguised)return;if(Math.hypot(fb.position.x-e.x,fb.position.z-e.z)<.6){const sp=fb.userData.spell||SPELLS[0];const tier=fb.userData.tier||1;const info=applySpellDamage(e, sp, tier);const dmg=info.dmg;e.hp=Math.max(0,e.hp-dmg);e.hpFg.scale.x=e.hp/e.maxHp;e.hpFg.position.x=(e.hp/e.maxHp-1)*.275;e.alert=true;
+        if(fb.userData.rider)riderHit(e,fb.userData.rider,dmg); /* S1602 — the joined word's rider */
+        if(sp.id==='tintreach')tintreachLeap(e,sp,tier); /* S1606 — the leap */
         // Sioc — freeze on hit. Mastery (Still-Winter's Touch) stacks the duration on repeat hits up to a 4.5s ceiling;
         // lower tiers just refresh to 1.5s. Also fixes a pre-v35 leak where every hit pushed a new entry (only the first was read).
         if(sp.id==='sioc'){

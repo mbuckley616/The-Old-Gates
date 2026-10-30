@@ -8,8 +8,11 @@
 // Smól Mastery (The Quiet-Sent-Out) bypasses def but respects resist. Other Mastery traits are unaffected by this pipeline.
 // Melee hits use applyMeleeDamage — simpler: buff mults → flat def → floor at 1, no resist (no elemental school).
 
-function applySpellDamage(e, sp, tier){
-  const baseDmg = (spellMag(sp,tier) + Math.floor(foeRand(e)*10)) * (SKILL_DEF[sp.school]?skillMult(sp.school):1); // S480 — the spread on the struck foe's stream
+// S1601 — o.power scales the blow and the armour it meets alike (the held form's ×0.25 a tick: a second of it is one bolt; skillUse's
+// own second a foe keeps its four ticks one use)
+function applySpellDamage(e, sp, tier, o){
+  o=o||{};const pw=o.power!=null?o.power:1;
+  const baseDmg = (spellMag(sp,tier) + Math.floor(foeRand(e)*10)) * (SKILL_DEF[sp.school]?skillMult(sp.school):1) * pw; // S480 — the spread on the struck foe's stream
   /* S941 — the school's skill sets the power; the flat level term is gone (skills and perks A). A hit on an alert foe is a use. */
   if(e.alert&&SKILL_DEF[sp.school])skillUse(sp.school,tier===3?2:1,e);
   const resistMult = (e.resist && e.resist[sp.school] !== undefined) ? e.resist[sp.school] : 1.0;
@@ -24,8 +27,8 @@ function applySpellDamage(e, sp, tier){
   const afterMults = baseDmg * resistMult * dormantMult * intMult * weaponSpellMult * _buffMult('spellDmg',1) * _buffMult('magicDmg',1);
   // Smól Mastery — The Quiet-Sent-Out: ignores armor entirely. Resist still applies.
   const defPierced = (sp.id==='smol' && tier===3);
-  const effDef = defPierced ? 0 : (e.def || 0);
-  const dmg = challengeDealt(Math.max(1, Math.round(afterMults) - effDef)); /* S684 — the challenge */
+  const effDef = defPierced ? 0 : (e.def || 0) * pw;
+  const dmg = challengeDealt(Math.max(1, Math.round(afterMults - effDef))); /* S684 — the challenge */
   return {dmg, resistMult, defPierced};
 }
 
@@ -393,7 +396,7 @@ function raiseGuard(){
   blocking=true;lastBlockAttemptT=performance.now()/1000;lastBlockAttemptG=playClockS;
   return true;
 }
-function commitMoveMult(){return swingCommitted()?COMMIT.move:castWinding()?WEAPON_ATTACKS.Cast.walk:(DRINK||xbowSpanning()||warBowDrawn())?COMMIT.drinkMove:1;} /* S1549 — and a war bow drawn */ /* S1457 — a crossbow is spanned at a potion's walk */
+function commitMoveMult(){return swingCommitted()?COMMIT.move:castWinding()?WEAPON_ATTACKS.Cast.walk:heldOn()?FORMS.held.walk:(DRINK||xbowSpanning()||warBowDrawn())?COMMIT.drinkMove:1;} /* S1549 — and a war bow drawn */ /* S1457 — a crossbow is spanned at a potion's walk */
 // the turn this frame, held to 90° a second while committed: the view's yaw is pulled back toward last frame's
 let _commitYaw=null;
 function commitTurn(dt){

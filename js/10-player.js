@@ -333,7 +333,7 @@ function tickRoll(nowS){
 // the time in the air to where you land. The blow waits FALL_ROLL_WIN after landing: a roll begun in that window (or
 // pressed in the air that long before) halves it. The clock is the loop's dt, so a dropped frame changes nothing.
 // A change of place (a door, a zone, a dungeon) or a jump of more than 3 units in a frame (travel) starts the count again.
-// Water and Levitate are not landings. Acrobatics' Cat's fall is fallFree() (S977); Éan's Wingless waits for magic B.
+// Water and Levitate are not landings. Acrobatics' Cat's fall is fallFree() (S977); Éan's Wingless is fallFree() too (S1605).
 const FALL_FREE=4,FALL_PER=.06,FALL_ROLL_WIN=.2;
 const FALL={top:null,key:'',x:0,z:0,clock:0,qAt:-9,pend:null,last:null};
 function fallKey(){return lid+'|'+activeZoneId+'|'+(isInterior()&&currentHouse?currentHouse.id:'');}

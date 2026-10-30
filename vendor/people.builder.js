@@ -355,7 +355,7 @@ function loadPack() {
     // (its top is at y .735, z .034 to .055) and a sideburn in front of it, to the ear's middle at its back edge and rising 1.6 cm a cm forward.
     // Only the crop: a style combed up and back would drag these roots across the ear, so the others keep the region above
     cropRoots: sel(G['body'], (x, y, z) => { const hl = .796 - .03 * (x / .075) ** 2, ax = Math.abs(x); return y > .66 && ax < .11 && (z > .062 && z < .095 && ax > .062 ? y > Math.min(hl, .708 + 1.6 * (z - .062)) : z > .05 ? y > hl : z > .022 ? y > (ax > .05 ? .742 : .7) : y > .695); }),
-    // the tied styles' roots (Session 1603, Michael's note on #272): the region above, and at the sides down to 0.7 cm over the ear (as the crop's)
+    // the tied styles' roots (Session 1607, Michael's note on #272): the region above, and at the sides down to 0.7 cm over the ear (as the crop's)
     // and the temple in front of it to the same line as far as 2.5 cm before the ear, then rising 3 cm a cm to the hairline; the old region left a band of bare skin 3 cm
     // deep from the temple back over the ear under every style combed back to a tie (a tail, a bun, the braids). No sideburn: it is combed up
     tiedRoots: sel(G['body'], (x, y, z) => { const hl = .796 - .03 * (x / .075) ** 2, ax = Math.abs(x); return y > .66 && ax < .11 && (z > .05 && z < .09 && ax > .062 ? y > Math.min(hl, .742 + 3 * Math.max(0, z - .08)) : z > .05 ? y > hl : z > .022 ? y > (ax > .05 ? .742 : .7) : y > .695); }),
@@ -383,7 +383,7 @@ function loadPack() {
   // how far each vertex of the hair's root region lies from that region's border, on the rest body (Session 879): the edges
   // that only one of its triangles uses are the border, and a vertex's number is its distance to the nearest of them, so the
   // temples and the sides above the ears can thin out as the forehead does, where the region stops on a mesh edge
-  // (Session 1576: worked out for the crop's region too, PACK.cropEdge; Session 1582, for shaved sides', PACK.shaveEdge); Session 1603, the tied styles', PACK.tiedEdge)
+  // (Session 1576: worked out for the crop's region too, PACK.cropEdge; Session 1582, for shaved sides', PACK.shaveEdge); Session 1607, the tied styles', PACK.tiedEdge)
   for (const [R, nm] of [[PACK.R.scalpRoots, 'scalp'], [PACK.R.cropRoots, 'crop'], [PACK.R.shaveRoots, 'shave'], [PACK.R.tiedRoots, 'tied']]) { const cnt = new Map(), key = (a, b) => a < b ? a * 65536 + b : b * 65536 + a, edge = new Float32Array(N).fill(-1), segs = [];
     for (let t = 0; t < R.length; t += 3) for (let k = 0; k < 3; k++) { const e = key(R[t + k], R[t + (k + 1) % 3]); cnt.set(e, (cnt.get(e) || 0) + 1); }
     for (const [e, c] of cnt) if (c === 1) segs.push([Math.floor(e / 65536), e % 65536]);
@@ -725,7 +725,7 @@ function shellMat(color, layer, layers, o = {}) {
         float keep = ${o.solid ? '1.' : 'step(L * .85 + .1, strand)'};${o.fringe ? FRINGE(o.fringe, o.solid) : ''}
         vec4 diffuseColor = vec4(diffuse * (.42 + .75 * L) * (.85 + .3 * strand), keep);${o.skin ? `\n        diffuseColor.rgb = mix(skinC, diffuseColor.rgb, ${o.stub ? 'mix(hl, .42 + .3 * nz(vB * 620.) + .12 * nz(vB * 90.), sk)); diffuseColor.a = mix(diffuseColor.a, step(nz(vB * 620. + 7.) * .9 + .05, hl), sk);' : 'hl);'}` : ''}`);
     // the hairline's fade (Session 875): from the skin's own colour at the edge to the shell's over 1.4 cm, so the roots read as a shadow
-    // (Session 1603: o.temple, the tied styles', takes the hairline down the temple to the line over the ear, as their root region does)
+    // (Session 1607: o.temple, the tied styles', takes the hairline down the temple to the line over the ear, as their root region does)
     if (o.skin) { s.uniforms.skinC = { value: o.skin }; s.fragmentShader = 'uniform vec3 skinC;\n' + s.fragmentShader; } };
   m.customProgramCacheKey = () => 'shell' + layer + '/' + layers + JSON.stringify({ ...o, skin: !!o.skin });
   return m;
@@ -1031,7 +1031,7 @@ const HAIR_STYLES = ['short', 'loose', 'braid', 'braids', 'tail', 'bun', 'crown'
 function buildHair(P, G, heads, scalpTris, headB, rnd, checks = true) {
   const out = [], style = G.hair?.style ?? ((G.hairLen ?? .3) < .45 ? 'short' : 'loose'), len = G.hair?.len ?? G.hairLen ?? .3, col = sRGB(...G.hairCol);
   const R0 = PACK.rest, neckY0 = .6, S = surfGrid(P, PACK.G['body'], (x, y, z) => (y > neckY0 - .02) || (y > .25 && Math.abs(x) < .2));
-  // (Session 1603: the tied styles' region reaches lower at the sides; the head's centre and reach stay the old region's, so the tie does not move)
+  // (Session 1607: the tied styles' region reaches lower at the sides; the head's centre and reach stay the old region's, so the tie does not move)
   const bb = new THREE.Box3(); for (const v of scalpTris === PACK.R.tiedRoots ? PACK.R.scalpRoots : scalpTris) bb.expandByPoint(new THREE.Vector3(P[v * 3], P[v * 3 + 1], P[v * 3 + 2])); const hc = bb.getCenter(new THREE.Vector3()), hr = bb.getSize(new THREE.Vector3()).multiplyScalar(.5); hc.y -= .02;
   // clear of the clothes: the tunic's layers, and the fur mantle's eleven shells over the shoulders; a coat's collar, its fur, and its hood
     const D = G.dress || {}, neckY = heads['neck01'].y, nk = heads['neck01'], coatC = coatOn(D) ? (D.coatFur ? .085 : .06) : 0, clearAt = q => { const k = Math.max(0, Math.min(1, (neckY - .01 - q.y) / .02)); return .02 + k * k * (3 - 2 * k) * ((D.mantle && q.y > neckY - .3 ? .1 : coatC && q.y > neckY - .3 ? coatC : D.tunic ? .045 : .02) - .02); };
@@ -1068,7 +1068,7 @@ function buildHair(P, G, heads, scalpTris, headB, rnd, checks = true) {
   // the strands over the head
   const area = [], A = new THREE.Vector3(), B = new THREE.Vector3(), C = new THREE.Vector3(); let tot = 0;
   // (Session 1576: a crop's sideburn, a strip in front of the ear, takes its roots 2.5 times as densely, so it reads as hair and not as a few strands)
-  // the tied styles' band (Session 1603): the sides from 0.7 cm over the ear to 2.3 cm above it and the temple in front, which the old region left bare
+  // the tied styles' band (Session 1607): the sides from 0.7 cm over the ear to 2.3 cm above it and the temple in front, which the old region left bare
   const sideBand = (x, y, z) => Math.abs(x) > .055 && z > .015 && z < .09 && y < .765 && y > .735, tiedR = scalpTris === PACK.R.tiedRoots;
   const burnTri = t => { let x = 0, y = 0, z = 0; for (let k = 0; k < 3; k++) { const v = scalpTris[t + k] * 3; x += R0[v] / 3; y += R0[v + 1] / 3; z += R0[v + 2] / 3; } return style === 'short' && z > .058 && y < .745 && Math.abs(x) > .045; };
   for (let t = 0; t < scalpTris.length; t += 3) { A.fromArray(P, scalpTris[t] * 3); B.fromArray(P, scalpTris[t + 1] * 3); C.fromArray(P, scalpTris[t + 2] * 3); tot += B.clone().sub(A).cross(C.clone().sub(A)).length() / 2 * (burnTri(t) ? 2.5 : 1); area.push(tot); }
@@ -1164,7 +1164,7 @@ function buildHair(P, G, heads, scalpTris, headB, rnd, checks = true) {
   for (let t = 0; t < scalpTris.length; t += 3) { A.fromArray(P, scalpTris[t] * 3); B.fromArray(P, scalpTris[t + 1] * 3); C.fromArray(P, scalpTris[t + 2] * 3);
     const tn = B.clone().sub(A).cross(C.clone().sub(A)).normalize(); if (tn.dot(A.clone().sub(hc)) < 0) tn.negate();
     for (const q of [A.clone().add(B).add(C).multiplyScalar(1 / 3), A.clone().add(B).multiplyScalar(.5), B.clone().add(C).multiplyScalar(.5), C.clone().add(A).multiplyScalar(.5)]) if (q.z < hc.z - .03 && Math.abs(q.x - hc.x) < .015 && q.y > hc.y - .02) { seamN++; if (nearStrand(q, tn) > .004 && !(crown && crown.under(q))) seamBare++; } }
-  // and the band's: points of the region over the ear and the temple with no strand over them within 4 mm (Session 1603)
+  // and the band's: points of the region over the ear and the temple with no strand over them within 4 mm (Session 1607)
   // (over the tied styles' region whatever the style, so a style on the old region counts the band it leaves bare)
   const BT = PACK.R.tiedRoots; for (let t = 0; t < BT.length; t += 3) { let x = 0, y = 0, z = 0; for (let k = 0; k < 3; k++) { const v = BT[t + k] * 3; x += R0[v] / 3; y += R0[v + 1] / 3; z += R0[v + 2] / 3; } if (!sideBand(x, y, z)) continue;
     A.fromArray(P, BT[t] * 3); B.fromArray(P, BT[t + 1] * 3); C.fromArray(P, BT[t + 2] * 3); const tn = B.clone().sub(A).cross(C.clone().sub(A)).normalize(); if (tn.dot(A.clone().sub(hc)) < 0) tn.negate();
@@ -3662,7 +3662,7 @@ function* makePersonSteps(G, o = {}) {
   if (G.hairCol) { const scalp = PACK.R.scalpRoots;
     // the short crop roots on its own region, over the ears and down the sideburns (Session 1576); hair tucked under a hood, a helm or a wrap keeps the old one
     // and so do shaved sides (Session 1582), whose stubble is the shell's own, out to that region's border
-    // the styles combed back to a tie, a bun or a braid root on theirs, down over the ears and the temples (Session 1603)
+    // the styles combed back to a tie, a bun or a braid root on theirs, down over the ears and the temples (Session 1607)
     const sty = !(hoodUpOn(D) || D.helm || D.wrap) && (G.hair?.style ?? ((G.hairLen ?? .3) < .45 ? 'short' : 'loose')), crop = sty === 'short' || sty === 'shaved', tied = sty && !crop && sty !== 'loose', roots = crop ? PACK.R.cropRoots : tied ? PACK.R.tiedRoots : scalp, rootEdge = sty === 'shaved' ? PACK.shaveEdge : crop ? PACK.cropEdge : tied ? PACK.tiedEdge : PACK.scalpEdge;
     const sm = push('scalp', sty === 'shaved' ? PACK.R.shaveRoots : roots, shellMat(sRGB(...G.hairCol).multiplyScalar(.55), 0, 3, { solid: true, hairline: true, edge: true, skin: sRGB(...G.skin), ...sty === 'shaved' ? { stub: .04 } : {}, ...tied ? { temple: true } : {} }), (x, y, z, i) => { if (sty === 'shaved' && Math.abs(x) > .03) return .0015; const w = Math.max(0, Math.min(1, (z + .04) / .03)) * (1 - Math.max(0, Math.min(1, (z - .03) / .02))), k = 1 - w * (1 - Math.min(1, rootEdge[i] / .012)); return .0008 + .0017 * k * k * (3 - 2 * k); });
     // the temples' fade (Session 879): the shell reads its distance to the root region's border, worked out once on the rest body,
