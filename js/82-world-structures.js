@@ -2132,7 +2132,8 @@
   // behind the plate) and nothing stands out 0.3 m under the arm, nor crosses the lantern's room 0.8 m wide (a porch, a sign on its own
   // bracket), found by rays from the street and along the wall at the house as drawn; null until the house is built
   function waylampSpot(h){if(!sc)return null;const nx=-Math.sin(h.exitYaw),nz=-Math.cos(h.exitYaw),tx=nz,tz=-nx,y0=worldH(h.doorX,h.doorZ);
-    const objs=[];sc.traverse(o=>{if(o.isMesh&&!o.isSkinnedMesh&&o.visible&&!(o.parent&&o.parent.name==='waylamp'))objs.push(o);});
+    const objs=[],c=new THREE.Vector3();sc.traverse(o=>{if(!o.isMesh||o.isSkinnedMesh||!o.visible||(o.parent&&o.parent.name==='waylamp'))return;const bs=o.geometry&&o.geometry.boundingSphere;
+      if(bs){c.copy(bs.center).applyMatrix4(o.matrixWorld);if(Math.hypot(c.x-h.doorX,c.z-h.doorZ)>bs.radius*o.matrixWorld.getMaxScaleOnAxis()+6)return;}objs.push(o);}); /* only what stands near the door */
     const rc=new THREE.Raycaster(),dir=new THREE.Vector3(-nx,0,-nz),o=new THREE.Vector3();rc.far=4.5;
     const hit=(lat,hh)=>{o.set(h.doorX+nx*3+tx*lat,y0+hh,h.doorZ+nz*3+tz*lat);rc.set(o,dir);const H=rc.intersectObjects(objs,false)[0];return H?H.distance-3:null;};
     const flat=[],clear=[-.45,-.7];for(let y=-.32;y<=.081;y+=.08)flat.push(y);
@@ -2142,14 +2143,14 @@
     return null;}
   // the lamp on the wall (waylampPropTick, from tickWaylamp each second): while it hangs, at lampHome's inn; while it is carried, the
   // bracket stays empty at the first inn of its town; dropped as you leave the town
-  let WAYLAMP_PROP=null;
+  let WAYLAMP_PROP=null,_wlTry=0,_wlKey='';
   function waylampPropDrop(){const W=WAYLAMP_PROP;WAYLAMP_PROP=null;if(!W)return;if(W.group.parent)W.group.parent.remove(W.group);W.group.traverse(o=>{if(o.geometry)o.geometry.dispose();});}
   function waylampPropTick(){if(typeof lampHome!=='function'||typeof artifactPlaces!=='function')return;
     let want=null;{const H=lampHome(),P=artifactPlaces().waylamp;if(H&&H.inn)want={site:H.site,inn:H.inn,lit:true};else if(P){const f=lampFirstInn(P.site);if(f)want={site:P.site,inn:f.id,lit:false};}}
     const st=want&&SETTLE.get(want.site),h=st&&st.houses&&st.houses.find(x=>x.id===want.inn);
     if(!h||activeZoneId!=='world'||Math.hypot(px-h.doorX,pz-h.doorZ)>220){waylampPropDrop();return;}
     const key=want.site+'|'+want.inn+'|'+want.lit;
-    if(!WAYLAMP_PROP||WAYLAMP_PROP.key!==key||WAYLAMP_PROP.group.parent!==sc){waylampPropDrop();const sp=waylampSpot(h);if(!sp)return;
+    if(!WAYLAMP_PROP||WAYLAMP_PROP.key!==key||WAYLAMP_PROP.group.parent!==sc){waylampPropDrop();const t=performance.now();if(t<_wlTry&&key===_wlKey)return;const sp=waylampSpot(h);if(!sp){_wlTry=t+5000;_wlKey=key;return;} /* no spot yet: the house not drawn, or no clear wall; try again in 5 s */
       const W=waylampProp(want.lit);W.group.position.set(sp.x,sp.y,sp.z);W.group.rotation.y=sp.ry;sc.add(W.group);WAYLAMP_PROP=Object.assign(W,{key,house:h.id,spot:sp});}
     if(WAYLAMP_PROP.halo)WAYLAMP_PROP.halo.material.opacity=typeof isNight==='function'&&isNight()?.6:.15;}
   const SETTLE_MAT=VC_MAT;
