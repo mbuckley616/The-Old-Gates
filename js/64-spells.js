@@ -770,6 +770,7 @@ function applySpellBuff(sp,tier){
 function tickSpellFx(dt){
   if(HELD)heldTick(dt); /* S1601 — the held form */
   if(RIDDEN.size)riderTick(); /* S1602 — the riders' burns and glows */
+  if(TOUCH_PEND)touchTick(); /* S1603 — the touched form's landing */
   if(_spellLight&&!fxOn('light')&&_spellLight.intensity>0)_spellLight.intensity=Math.max(0,_spellLight.intensity-dt*2);
 }
 // spellbooks: read to learn
@@ -1165,6 +1166,59 @@ function heldTick(dt){const H=HELD;if(!H)return;
       dmgNum(e,info.dmg,info);
       if(e.hp<=0){if(dun)killE(e,dmgTag(info,e));else killZoneEnemy(e,scene,dmgTag(info,e));}}}
   if(H.mesh&&HELD){H.mesh.position.set(px,jumpY+1.1,pz);H.mesh.rotation.set(0,yaw,0);}}
+// S1603 — magic B's session 4, part 3 (magic-build.md, "The five forms"): the Touched form on a foe. F on a touched entry winds up
+// 0.25 s (the Cast row's walk while it does), then lands on the nearest foe whose centre is within 1.6 m of your edge plus its own
+// hull (F2b's TOUCH) and 30° of your facing, at ×1.5 the word's power for ×0.6 its mana: Caor 30 and Tintreach 36 to a Sent bolt's
+// 20 and 24, the armour met at ×1.5 as well. Tintreach staggers it (the posture break's 1.5 s) and Reo holds it 2 s (frozen, as
+// Sioc's bolt holds). A rider rides the touch at the form's ×1.5. With no foe in reach the mana is still spent and the touch lands on
+// air ("Nothing within reach."). The release is read on performance.now(), so a dropped frame never moves it; the overcast applies as
+// to a Sent cast. What a touch does to a thing (a brazier, a web, a pool, a lock, a fire, dry brush) is not built. Named action: touchWord.
+let TOUCH_PEND=null; /* {word,rider,tier,sp,at,key} */
+function touchInCone(e){const dx=e.x-px,dz=e.z-pz,d=Math.hypot(dx,dz);if(d>reachTo(e,FORMS.touched.reach))return false;if(d<1e-3)return true;
+  return (-dx*Math.sin(yaw)-dz*Math.cos(yaw))/d>=Math.cos(FORMS.touched.cone/2*Math.PI/180)-1e-9;}
+function touchTarget(){const dun=lid&&lid.startsWith('dyn_');let best=null,bd=1e9;
+  for(const e of heldTargets()){if(e.dead||e.locked||e.disguised||(dun&&e.floor!==currentFloor)||!touchInCone(e))continue;const d=Math.hypot(e.x-px,e.z-pz)-hullOf(e);if(d<bd){bd=d;best=e;}}
+  return best;}
+// touchWord: the named action. Pays for and winds up a touch of bk {word,rider}; the touch lands at the wind-up's end (touchTick)
+function touchWord(bk){
+  const w=WORD_BY[bk.word],tier=wordTierOf(bk.word);if(!w||!tier)return {say:'Spell not learned!'};
+  if(!formHeld('touched'))return {say:'The Touched form is not yet yours.'};
+  if(!wordLive(bk.word,'touched'))return {say:'You cannot shape that word so.'};
+  if(TOUCH_PEND||HELD||isCasting()||castRecovering())return {why:'busy'};
+  if(spCd>0)return {say:'Cooling down...'};
+  const cost=wordCost(bk.word,'touched',bk.rider,{tier}),short=Math.max(0,cost-Math.floor(mana)),blood=short*OVERCAST_HP;
+  if(short&&PHP-blood<1)return {say:`Not enough mana! (need ${cost})`};
+  mana=Math.max(0,mana-cost);_offenceS=playClockS;
+  if(short){PHP-=blood;PPOST.stagUntil=Math.max(PPOST.stagUntil,performance.now()/1000+OVERCAST_STAGGER_S);blocking=false;powerCharging=false;powerCharge=0;
+    lvAct.damageTaken+=blood;updateHUD();}
+  const sp=heldSpell(bk.word);spCd=spellCooldown(sp,tier);
+  const mixed=!!(bk.rider&&riderMixedWild(bk.word,bk.rider));
+  const wr=tier===1||mixed?casterRand(bk.word+':touched'):null;
+  if(wr&&wr()<(tier===1?IMPRESSION_WILD_CHANCE:0)+(mixed?WORD_MIXED_WILD:0)){mana=Math.min(effMaxMana(),mana+Math.round((cost-short)*.5));startCastAnim(sp,'fizzle');
+    return {ok:true,wild:'fizzle',say:`${w.ico} ${w.nameIr} fizzles — the shape will not hold.`};}
+  castMark(FORMS.touched.windup);startCastAnim(sp,'projectile');
+  if(typeof sndSpellCharge==='function')sndSpellCharge(w.school);
+  TOUCH_PEND={word:bk.word,rider:bk.rider||null,tier,sp,at:performance.now()/1000+FORMS.touched.windup,key:laidKey()};
+  return {ok:true,blood:short?blood:0};}
+function castTouched(bk){const r=touchWord(bk);if(r.say)showMsg(r.say,r.ok?'#8a8ac8':'#a8a8d4');
+  else if(r.blood)showMsg(`Not enough mana: the word takes ${r.blood} health.`,'#d48a8a');return !!r.ok;}
+// each frame, from tickSpellFx: the touch lands when its wind-up is done, on the nearest foe in reach then
+function touchTick(){const T=TOUCH_PEND;if(!T)return;
+  if(dead||T.key!==laidKey()){TOUCH_PEND=null;return;}
+  if(performance.now()/1000<T.at)return;
+  TOUCH_PEND=null;touchLand(T);}
+function touchLand(T){const F=WORD_BY[T.word].forms.touched,e=touchTarget(),dun=lid&&lid.startsWith('dyn_');
+  if(typeof sndSpell==='function')sndSpell(T.word,T.tier);
+  if(!e){showMsg('Nothing within reach.','#a8a8d4');return {hit:null};}
+  let dealt=0,info=null;
+  if(F.dmg){info=applySpellDamage(e,T.sp,T.tier,{power:FORMS.touched.power});dealt=info.dmg;e.hp=Math.max(0,e.hp-dealt);
+    if(e.hpFg&&e.maxHp){e.hpFg.scale.x=e.hp/e.maxHp;e.hpFg.position.x=(e.hp/e.maxHp-1)*.275;}dmgNum(e,dealt,info);}
+  e.alert=true;
+  if(e.hp>0&&(F.stagger||F.hold)){const t=F.hold||dazeS(POSTURE_BREAK_STUN),q=staggered.find(s=>s.e===e);
+    if(q)q.t=Math.max(q.t,t);else staggered.push({e,t});staggerFlash(e);}
+  if(T.rider)riderHit(e,T.rider,dealt,{power:FORMS.touched.power});
+  if(e.hp<=0){const tag=info?dmgTag(info,e):'';if(dun)killE(e,tag);else killZoneEnemy(e,scene,tag);}
+  return {hit:e,dealt};}
 // S1602 — magic B's session 4, part 2 (magic-build.md, "Joining and riders"): a joined word's rider on what a Sent bolt or a Held tick
 // strikes. Caor burns (3 a second for 4 s, past the armour), Sioc slows (−30% speed for 3 s), Séideán pushes (1.5 m straight back
 // from you, stopped by a wall, and 10 posture), Fréamh holds (rooted 0.8 s: it turns and strikes but takes no step), Solas lights (the

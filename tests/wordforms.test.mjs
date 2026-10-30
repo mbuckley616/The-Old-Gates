@@ -5,6 +5,8 @@
 // Session 1602: the riders on what a bolt or a tick strikes (magic-build.md, "Joining and riders"): Caor burns 3 a second for 4 s,
 // Sioc slows 30% for 3 s, Séideán pushes 1.5 m and 10 posture (a held tick ×0.25 of both), Fréamh roots 0.8 s, Solas lights 10 s,
 // Leigheas mends 25% of the blow; two schools add 10% wild until both reach 25.
+// Session 1603: the Touched form on a foe: a 0.25 s wind-up, then the nearest foe within 1.6 m of your edge (hull to hull) and 30° of
+// your facing takes ×1.5 the word (Caor 30, Tintreach 36) for ×0.6 its mana; Tintreach staggers, Reo holds 2 s.
 import { boot, check } from './lib/game.mjs';
 import { enterDungeon } from './lib/dungeonshot.mjs';
 const g = await boot(); const { page } = g;
@@ -129,5 +131,40 @@ check(`Leigheas mends 25% of the blow: 50 → ${q.mend && q.mend[0]}, two blows 
 check(`a held Caor with Sioc's rider costs ${q.cost} a second and slows what it pours on (×${q.heldSlow}, ${q.heldTicks} ticks)`, q.cost === 31 && q.heldSlow === .7 && q.heldTicks === 4, q);
 check(`two schools under 25 roll the 10% wild (${q.mixed}); at 25 not; a lone word never`, q.mixed && q.mixed.join() === 'true,false,false', q.mixed);
 check(`a Sent bolt carries Séideán's rider and its hit pushes (${bolt && bolt.pushed} m, ${bolt && bolt.post} posture)`, bolt && bolt.gone && bolt.hit > 0 && bolt.pushed > 1.4 && bolt.post === 10, bolt);
-check('no page errors', g.errs.length === 0, g.errs);
+
+// S1603 — the Touched form: each touch cast by castSpell and landed by the loop's own tickSpellFx after its wind-up
+const touch = async (word, rider, d, a, def) => {
+  await page.evaluate(([word, rider, d, a, def]) => {
+    const e = ENEMIES.find(x => x.floor === 1 && x.mesh && !x.dead) || ENEMIES.find(x => x.floor === 1 && x.mesh);
+    for (const o of ENEMIES) if (o !== e) o.dead = true;
+    e.dead = false; e.hp = e.maxHp = 1e5; e.def = def || 0; e.resist = null; e.alert = true; e.posture = e.maxPosture = 1000; unstagger(e);
+    e._riderSlowUntil = 0; e.spd = 0; const t = a * Math.PI / 180; e.x = px - Math.sin(yaw + t) * d; e.z = pz - Math.cos(yaw + t) * d; if (e.mesh) { e.mesh.position.x = e.x; e.mesh.position.z = e.z; }
+    window._tq = { e, h0: e.hp, said: '' };
+    for (const k2 in K) K[k2] = false; castT = 0; _castFreeAt = 0; _castReleaseAt = 0; spCd = 0; PPOST.stagUntil = 0; ROLL = null; mana = 1000; TOUCH_PEND = null;
+    if (!formsGranted.includes('touched')) formsGranted.push('touched');
+    const mk = bookMake('touched', word, rider); window._tq.made = mk.say || mk.i; if (mk.i != null) bookSelect(mk.i);
+    window._fr = foeRand; foeRand = () => 0; window._sm = showMsg; showMsg = (t2) => { window._tq.said += ' ' + t2; };
+    castSpell();
+    window._tq.paid = 1000 - mana; window._tq.pend = !!TOUCH_PEND; window._tq.t0 = performance.now();
+  }, [word, rider, d, a, def]);
+  await page.waitForFunction(() => !TOUCH_PEND, null, { timeout: 15000, polling: 100 }).catch(() => {});
+  return page.evaluate(() => { const q = window._tq, e = q.e; foeRand = window._fr; showMsg = window._sm;
+    return { made: q.made, paid: q.paid, pend: q.pend, ms: Math.round(performance.now() - q.t0), dealt: q.h0 - e.hp, stag: (staggered.find(s => s.e === e) || {}).t || 0,
+      slow: foeSlowMult(e), said: q.said.trim(), left: !!TOUCH_PEND }; });
+};
+await page.evaluate(() => { knownWords = { caor: 2, tintreach: 2, reo: 2, sioc: 2, cloch_ghear: 2 }; SKILLS.tine = { lv: 50, p: 0 }; SKILLS.uisce = { lv: 50, p: 0 };
+  formsGranted.length = 0; window._tu = bookMake('touched', 'caor').say; window._tc = bookMake('touched', 'cloch_ghear').say; });
+const tUn = await page.evaluate(() => [window._tu, window._tc]);
+const tCaor = await touch('caor', null, 1.0, 0), tBolt = await page.evaluate(() => { const f = foeRand; foeRand = () => 0; try { return applySpellDamage(window._tq.e, SPELLS.find(s => s.id === 'caor'), 2).dmg; } finally { foeRand = f; } });
+const tR = await page.evaluate(() => +(HULL_YOU + FORMS.touched.reach + hullOf(window._tq.e)).toFixed(3));
+const tIn = await touch('caor', null, tR - .05, 0), tOut = await touch('caor', null, tR + .1, 0), tWide = await touch('caor', null, 1.2, 35);
+const tTin = await touch('tintreach', null, 1.0, 0), tReo = await touch('reo', null, 1.0, 0), tRide = await touch('caor', 'sioc', 1.0, 0);
+const tArm = await touch('caor', null, 1.0, 0, 8), tBoltArm = await page.evaluate(() => { const f = foeRand; foeRand = () => 0; try { return applySpellDamage(window._tq.e, SPELLS.find(s => s.id === 'caor'), 2).dmg; } finally { foeRand = f; } });
+console.log(JSON.stringify({ tUn, tCaor, tBolt, tR, tIn, tOut, tWide, tTin, tReo, tRide, tArm, tBoltArm }));
+check(`the Touched form is an Adept's ("${tUn[0]}"); Cloch Ghéar has no touch ("${tUn[1]}")`, /not yet yours/.test(tUn[0]) && /cannot shape/.test(tUn[1]), tUn);
+check(`a touched Caor waits its wind-up (${tCaor.ms} ms), then lands ${tCaor.dealt}, ×1.5 a bolt's ${tBolt}, for ${tCaor.paid} mana (×0.6 of 30)`, tCaor.pend && tCaor.ms >= 240 && tCaor.dealt === Math.round(tBolt * 1.5) && tCaor.paid === 18 && !tCaor.left, tCaor);
+check(`armour 8 is met ×1.5 too: ${tArm.dealt} against a bolt's ${tBoltArm}`, Math.abs(tArm.dealt - Math.round(tBolt * 1.5 - 12)) <= 1 && tBoltArm === tBolt - 8, { tArm, tBoltArm });
+check(`it reaches ${tR} m centre to centre (1.6 m from your edge) and not 0.1 m past, nor 35° off your facing ("${tOut.said}")`, tIn.dealt > 0 && tOut.dealt === 0 && tWide.dealt === 0 && /Nothing within reach/.test(tOut.said), { tIn, tOut, tWide });
+check(`Tintreach touched lands ${tTin.dealt} and staggers (${tTin.stag} s); Reo holds it ${tReo.stag} s with no blow`, tTin.dealt > 0 && tTin.stag >= 1.5 && tReo.stag === 2 && tReo.dealt === 0, { tTin, tReo });
+check(`a rider rides the touch: Caor with Sioc slows it (×${tRide.slow})`, tRide.dealt > 0 && tRide.slow === .7, tRide);check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
