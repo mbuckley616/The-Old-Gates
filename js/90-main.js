@@ -1213,7 +1213,9 @@ function loop(now){
           dScene.remove(fb);BALLS.splice(i,1);continue;
         }
       }
-      ENEMIES.forEach(e=>{if(e.dead||e.floor!==currentFloor||e.disguised)return;if(Math.hypot(fb.position.x-e.x,fb.position.z-e.z)<.6){const sp=fb.userData.spell||SPELLS[0];const tier=fb.userData.tier||1;const info=applySpellDamage(e, sp, tier);const dmg=info.dmg;e.hp=Math.max(0,e.hp-dmg);e.hpFg.scale.x=e.hp/e.maxHp;e.hpFg.position.x=(e.hp/e.maxHp-1)*.275;e.alert=true;
+      ENEMIES.forEach(e=>{if(e.dead||e.floor!==currentFloor||e.disguised)return;if(Math.hypot(fb.position.x-e.x,fb.position.z-e.z)<.6){const sp=fb.userData.spell||SPELLS[0];const tier=fb.userData.tier||1;
+        if(sp.status){statusBolt(e,sp,tier,fb.userData.rider);dScene.remove(fb);BALLS.splice(i,1);return;} /* S1610 — a status bolt (Fréamh) deals nothing */
+        const info=applySpellDamage(e, sp, tier);const dmg=info.dmg;e.hp=Math.max(0,e.hp-dmg);e.hpFg.scale.x=e.hp/e.maxHp;e.hpFg.position.x=(e.hp/e.maxHp-1)*.275;e.alert=true;
         if(fb.userData.rider)riderHit(e,fb.userData.rider,dmg); /* S1602 — the joined word's rider */
         if(sp.id==='tintreach')tintreachLeap(e,sp,tier); /* S1606 — the leap */
         // Sioc — freeze on hit. Mastery (Still-Winter's Touch) stacks the duration on repeat hits up to a 4.5s ceiling;

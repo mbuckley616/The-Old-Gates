@@ -11,6 +11,7 @@
 // once), Leigheas's mend (2 a second while you stand at it), Séideán's throw (a pillar under you sends you up at Éan's 8.4 m/s), Solas's light.
 // Session 1609: the cone dressed (the look builder's heldDress): three draws, under 1,500 triangles, and it answers no ray.
 // Session 1606: Tintreach sent, a bolt of 24 that leaps to the nearest other foe within 5 m of the one struck, for half.
+// Session 1610: Fréamh sent, a bolt that deals nothing and roots the foe it strikes 2 s (1.2 at Impression, 2.6 at Mastery).
 import { boot, check } from './lib/game.mjs';
 import { enterDungeon } from './lib/dungeonshot.mjs';
 const g = await boot(); const { page } = g;
@@ -237,5 +238,29 @@ const ch3 = await chain(3), ch55 = await chain(5.5);
 console.log(JSON.stringify({ ch3, ch55 }));
 check(`Tintreach's bolt lands ${ch3.a} on the first foe and leaps ${ch3.d} m for ${ch3.b}, half`, ch3.two && ch3.a >= 24 && Math.abs(ch3.b - ch3.a / 2) <= 1, ch3);
 check(`at ${ch55.d} m (past 5) it does not leap (${ch55.b})`, ch55.a > 0 && ch55.b === 0, ch55);
+
+// S1610 — Fréamh's bolt, landed by the loop on a foe 2 m ahead, at tier t
+const rootBolt = async (t) => {
+  await page.evaluate((t) => {
+    const fs = ENEMIES.filter(x => x.floor === 1 && x.mesh).slice(0, 1); for (const o of ENEMIES) if (!fs.includes(o)) o.dead = true;
+    knownWords = { freamh: t }; SKILLS.cloch = { lv: 50, p: 0 }; LAID && laidEnd();
+    const mk = bookMake('sent', 'freamh'); bookSelect(mk.i);
+    const A = fs[0]; A.dead = false; A.hp = A.maxHp = 1e5; A.def = 0; A.resist = null; A.alert = false; A._rootUntil = 0; unstagger(A);
+    window._rb = { A, h: A.hp, mk, cast: null };
+    const _push = BALLS.push; BALLS.push = function (...a) { for (const f of a) if (f.userData && f.userData.spell && f.userData.spell.id === 'freamh') {
+      f.userData.vx = f.userData.vy = f.userData.vz = 0; f.userData.life = 30; f.position.set(px - Math.sin(yaw) * 2, 1, pz - Math.cos(yaw) * 2);
+      A.x = f.position.x; A.z = f.position.z; window._rb.cast = playClockS; BALLS.push = _push; }
+      return _push.apply(this, a); };
+    for (const k2 in K) K[k2] = false; castT = 0; _castFreeAt = 0; _castReleaseAt = 0; spCd = 0; mana = 1000;
+    const sm = showMsg; showMsg = () => {}; try { castSpell(); } finally { showMsg = sm; }
+  }, t);
+  await page.waitForFunction(() => window._rb.A._rootUntil > 0, null, { timeout: 15000, polling: 100 }).catch(() => {});
+  return page.evaluate(() => { const { A, h, mk } = window._rb;
+    return { mk: mk.i != null, dealt: h - A.hp, rooted: foeRooted(A), slow: foeSlowMult(A), left: +(A._rootUntil - playClockS).toFixed(2), alert: A.alert }; });
+};
+const rb2 = await rootBolt(2), rb1 = await rootBolt(1), rb3 = await rootBolt(3);
+console.log(JSON.stringify({ rb2, rb1, rb3 }));
+check(`Fréamh's bolt deals ${rb2.dealt} and roots the foe (speed ×${rb2.slow}, ${rb2.left} s left of 2)`, rb2.mk && rb2.dealt === 0 && rb2.rooted && rb2.slow === 0 && rb2.left > 1.5 && rb2.left <= 2 && rb2.alert, rb2);
+check(`Fréamh's root by tier: Impression ${rb1.left} s (of 1.2), Mastery ${rb3.left} s (of 2.6)`, rb1.rooted && rb1.left > .7 && rb1.left <= 1.2 && rb3.rooted && rb3.left > 2.1 && rb3.left <= 2.6, { rb1, rb3 });
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

@@ -775,6 +775,19 @@ function tintreachLeap(e,sp,tier){const L=WORD_BY.tintreach.forms.sent,dun=!!(li
   dmgNum(best,info.dmg,info);
   if(best.hp<=0){if(dun)killE(best,dmgTag(info,best));else killZoneEnemy(best,scene,dmgTag(info,best));}
   return {foe:best,dealt:info.dmg,d:+bd.toFixed(2)};}
+// S1610 — Fréamh sent (magic-build.md's table: "a foe rooted 2 s"): a bolt that deals nothing and roots the foe it strikes, 2 s at
+// Comprehension, the tier's magnitude (1.2 s at Impression, 2.6 at Mastery: no canon entry, so ×1.3). A rooted foe turns and strikes but
+// takes no step (foeRooted, S1602's root). It flies at Cloch Ghéar's 8 m/s. A rider still rides it, on a blow of 0. `status` marks a
+// bolt that the two hit loops hand to statusBolt in place of the damage.
+SPELLS.push({id:'freamh',school:'cloch',role:'basic',nameIr:'Fréamh',nameEn:'Root',nameMa:null,ico:'🌿',desc:'Roots a foe where it stands.',
+  intReqs:[10,22,40],cost:30,speed:8,dmgBase:0,dmgLvl:0,col:0x6a8a3a,glowCol:0x8aaa50,wild:['scatter','fizzle'],status:'root'});
+// statusBolt: what a status bolt does to foe e it struck. A struck alert foe is a use of the school, as a blow is. Returns what it did.
+function statusBolt(e,sp,tier,rider){if(!e||e.dead||e.hp<=0)return null;const F=WORD_BY[sp.id]&&WORD_BY[sp.id].forms.sent;if(!F)return null;
+  if(e.alert&&SKILL_DEF[sp.school])skillUse(sp.school,tier===3?2:1,e);
+  const out={};
+  if(F.root){const t=F.root*TIER_MULT.magnitude[Math.max(1,tier)-1];e._rootUntil=Math.max(e._rootUntil||0,playClockS+t);out.root=+t.toFixed(2);}
+  e.alert=true;if(rider)out.rider=riderHit(e,rider,0);
+  return out;}
 // S1605 — Éan worn (magic-build.md, "Movement against the step table"): a jump leaves the ground at 8.4 m/s, not the legs' 5.5–6.6, so
 // it tops out 1.96 m up and crosses 4.4 m at the 4.7 m/s air cap: the step table's 4.0–4.8 band. Its shape is the same at every tier;
 // the tier sets only its time (20/40/80 s). At Mastery it is Wingless, the canon's: no fall hurts while it is worn.
