@@ -9,6 +9,7 @@
 // your facing takes ×1.5 the word (Caor 30, Tintreach 36) for ×0.6 its mana; Tintreach staggers, Reo holds 2 s.
 // Session 1604: the riders on a laid thing: a hot pillar (3 a second to a foe touching it), Fréamh's root (the first foe across, 1 s,
 // once), Leigheas's mend (2 a second while you stand at it), Séideán's throw (a pillar under you sends you up at Éan's 8.4 m/s), Solas's light.
+// Session 1606: Tintreach sent, a bolt of 24 that leaps to the nearest other foe within 5 m of the one struck, for half.
 import { boot, check } from './lib/game.mjs';
 import { enterDungeon } from './lib/dungeonshot.mjs';
 const g = await boot(); const { page } = g;
@@ -206,5 +207,31 @@ check(`Fréamh's pillar roots the first foe across it 1 s (×${lr.root}) and not
 check(`Leigheas's pillar mends you 2 a second at its side (50 → ${lr.mend}), nothing away (${lr.mendAway})`, lr.mend === 56 && lr.mendAway === 50, lr);
 check(`Solas's pillar holds a light ${lr.light} m round`, lr.light === 8, lr);
 check(`a bare pillar is refused on you (${lr.bare}); Séideán's rises under you and throws you at ${lr.thrown.velY} m/s from its top (${lr.thrown.jumpY} of ${lr.thrown.top})`, lr.bare === 'body' && lr.thrown.ok && lr.thrown.thrown && lr.thrown.velY === 8.4 && lr.thrown.jumpY === lr.thrown.top && !lr.thrown.onGround, lr.thrown);
+
+// S1606 — Tintreach's bolt, landed by the loop on foe A, with foe B `gap` metres beyond it
+const chain = async (gap) => {
+  await page.evaluate((gap) => {
+    const fs = ENEMIES.filter(x => x.floor === 1 && x.mesh).slice(0, 2); for (const o of ENEMIES) if (!fs.includes(o)) o.dead = true;
+    knownWords = { tintreach: 2 }; SKILLS.tine = { lv: 50, p: 0 }; LAID && laidEnd();
+    const mk = bookMake('sent', 'tintreach'); bookSelect(mk.i);
+    for (const e of fs) { e.dead = false; e.hp = e.maxHp = 1e5; e.def = 0; e.resist = null; e.alert = false; e.spd = 0; unstagger(e); }
+    window._ch = { fs, h: fs.map(e => e.hp) };
+    window._fr = foeRand; foeRand = () => 0;
+    const _push = BALLS.push; BALLS.push = function (...a) { for (const f of a) if (f.userData && f.userData.spell && f.userData.spell.id === 'tintreach') {
+      f.userData.vx = f.userData.vy = f.userData.vz = 0; f.userData.life = 30; f.position.set(px - Math.sin(yaw) * 2, 1, pz - Math.cos(yaw) * 2);
+      const [A, B] = fs; A.x = f.position.x; A.z = f.position.z; B.x = A.x - Math.cos(yaw) * gap; B.z = A.z + Math.sin(yaw) * gap; BALLS.push = _push; }
+      return _push.apply(this, a); };
+    for (const k2 in K) K[k2] = false; castT = 0; _castFreeAt = 0; _castReleaseAt = 0; spCd = 0; mana = 1000;
+    const sm = showMsg; window._ch.said = ''; showMsg = t => { window._ch.said += ' ' + t; }; try { castSpell(); } finally { showMsg = sm; }
+    window._ch.mk = mk; window._ch.act = activeSpellId;
+  }, gap);
+  await page.waitForFunction(() => window._ch.fs[0].hp < window._ch.h[0], null, { timeout: 15000, polling: 100 }).catch(() => {});
+  return page.evaluate(() => { foeRand = window._fr; const { fs, h } = window._ch;
+    return { said: window._ch.said, mk: window._ch.mk, act: window._ch.act, a: h[0] - fs[0].hp, b: h[1] - fs[1].hp, d: +Math.hypot(fs[0].x - fs[1].x, fs[0].z - fs[1].z).toFixed(2), two: fs.length === 2 }; });
+};
+const ch3 = await chain(3), ch55 = await chain(5.5);
+console.log(JSON.stringify({ ch3, ch55 }));
+check(`Tintreach's bolt lands ${ch3.a} on the first foe and leaps ${ch3.d} m for ${ch3.b}, half`, ch3.two && ch3.a >= 24 && Math.abs(ch3.b - ch3.a / 2) <= 1, ch3);
+check(`at ${ch55.d} m (past 5) it does not leap (${ch55.b})`, ch55.a > 0 && ch55.b === 0, ch55);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

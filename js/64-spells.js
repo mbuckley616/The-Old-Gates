@@ -761,6 +761,20 @@ const BUFF_SPELLS=[
  {id:'ean',      school:'gaoth',role:'buff',nameIr:'Éan',      nameEn:'Leap',           nameMa:'Wingless',        ico:'🦅',desc:'Jump higher, for a while.',intReqs:[8,18,32],cost:26,speed:0,dmgBase:0,dmgLvl:0,col:0xd8f0ff,glowCol:0xe8f8ff,buff:{key:'leap',dur:[20,40,80]},price:[250,500,900],rank:1}, /* S1605 — magic B's Éan, worn */
 ];
 BUFF_SPELLS.forEach(s=>{if(!SPELLS.find(x=>x.id===s.id))SPELLS.push(s);});
+// S1606 — Tintreach sent (magic-build.md's table: "bolt 24, leaps 5 m at half"): a bolt of 24 at Séideán's speed, the fastest the
+// build has (14 m/s), and on a hit it leaps to the nearest other foe within 5 m of the one struck for half the blow, once. The leap takes
+// no rider and starts no burn. Its Mastery has no canon entry (nameMa null), so it is the plain word at ×1.3 as the sheet says.
+SPELLS.push({id:'tintreach',school:'tine',role:'basic',nameIr:'Tintreach',nameEn:'Chain Lightning',nameMa:null,ico:'⚡',desc:'A bolt that leaps to a second foe.',
+  intReqs:[12,25,45],cost:36,speed:14,dmgBase:24,dmgLvl:3,col:0xb8d4ff,glowCol:0xd8e8ff,wild:['scatter','fizzle','backlash']});
+// the leap from struck foe e: the nearest other live foe within 5 m of it takes ×0.5 of the bolt's blow. Returns it, or null.
+function tintreachLeap(e,sp,tier){const L=WORD_BY.tintreach.forms.sent,dun=!!(lid&&lid.startsWith('dyn_'));let best=null,bd=L.leap+1e-9;
+  for(const o of heldTargets()){if(o===e||o.dead||o.locked||o.disguised||(dun&&o.floor!==currentFloor))continue;const d=Math.hypot(o.x-e.x,o.z-e.z);if(d<=bd){bd=d;best=o;}}
+  if(!best)return null;
+  const info=applySpellDamage(best,sp,tier,{power:L.leapMult});best.hp=Math.max(0,best.hp-info.dmg);best.alert=true;
+  if(best.hpFg&&best.maxHp){best.hpFg.scale.x=best.hp/best.maxHp;best.hpFg.position.x=(best.hp/best.maxHp-1)*.275;}
+  dmgNum(best,info.dmg,info);
+  if(best.hp<=0){if(dun)killE(best,dmgTag(info,best));else killZoneEnemy(best,scene,dmgTag(info,best));}
+  return {foe:best,dealt:info.dmg,d:+bd.toFixed(2)};}
 // S1605 — Éan worn (magic-build.md, "Movement against the step table"): a jump leaves the ground at 8.4 m/s, not the legs' 5.5–6.6, so
 // it tops out 1.96 m up and crosses 4.4 m at the 4.7 m/s air cap: the step table's 4.0–4.8 band. Its shape is the same at every tier;
 // the tier sets only its time (20/40/80 s). At Mastery it is Wingless, the canon's: no fall hurts while it is worn.
@@ -966,7 +980,10 @@ function bookAdd(id){const f=bookFormFor(id);if(!f)return -1;let i=spellBook.fin
   if(i<0){if(spellBook.length>=SPELL_BOOK_MAX)return -1;spellBook.push({form:f,word:id,rider:null});i=spellBook.length-1;}return i;}
 // S1590 — an entry chosen by bookSelect (a laid one) stays chosen while F's word is still its word; S1602 — and a joined one
 function bookSync(){const c=spellBook[activeSpell];if(c&&activeSpellId&&c.word===activeSpellId&&(c.form!==bookFormFor(c.word)||c.rider))return activeSpell;
-  activeSpell=activeSpellId?spellBook.findIndex(b=>b.word===activeSpellId&&!b.rider):-1;return activeSpell;}
+  /* S1606 — the word's own first form before any other bare entry of it (a touched Tintreach made first no longer takes its Sent's F) */
+  if(!activeSpellId){activeSpell=-1;return activeSpell;}
+  const f0=bookFormFor(activeSpellId),i0=spellBook.findIndex(b=>b.word===activeSpellId&&!b.rider&&b.form===f0);
+  activeSpell=i0>=0?i0:spellBook.findIndex(b=>b.word===activeSpellId&&!b.rider);return activeSpell;}
 function spellBookLoad(d){spellBook.length=0;formsGranted.length=0;
   if(Array.isArray(d.spellBook)){
     for(const b of d.spellBook){if(spellBook.length>=SPELL_BOOK_MAX)break;if(!b||!knownWords[b.word]||!wordLive(b.word,b.form))continue;
