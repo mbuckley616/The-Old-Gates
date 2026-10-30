@@ -832,6 +832,7 @@ function tickSpellFx(dt){
   if(TOUCH_PEND)touchTick(); /* S1603 — the touched form's landing */
   if(LAID&&LAID.rideR)laidRiderTick(); /* S1604 — a rider on a laid thing */
   if(LAID&&LAID.snare&&!LAID.rooted)laidSnareTick(); /* S1612 — Fréamh laid */
+  if(LAID&&LAID.fire)laidFireTick(); /* S1617 — Loscadh laid */
   if(_spellLight&&!fxOn('light')&&_spellLight.intensity>0)_spellLight.intensity=Math.max(0,_spellLight.intensity-dt*2);
 }
 // spellbooks: read to learn
@@ -1043,7 +1044,7 @@ function spellBookLoad(d){spellBook.length=0;formsGranted.length=0;
 // frozen as a bridge (6.2 × 1.6 m, 20 s) from the point along your facing. One laid thing a caster: a second ends the first. It
 // lives by the play clock, at most 60 s, ends when you leave the place, and is never saved. A pillar or an updraft is refused under
 // 0.5 m from a solid or a door, or on a body. The loop reads LAID through laidGround (what you stand on) and laidBlocks (what you
-// walk into); the mantle (10-player.js) takes a laid top as a ledge outdoors too. The other laid words (Loscadh's fire, Reo (S1616), Fréamh (S1612),
+// walk into); the mantle (10-player.js) takes a laid top as a ledge outdoors too. The other laid words (Loscadh's fire (S1617), Reo (S1616), Fréamh (S1612),
 // Dorcha, Solas, Tonn alone) are the sheet's session 4. Named actions (the co-op rules): bookMake, layWord, laidEnd.
 const LAID_REACH=12,LAID_CLEAR=.5,LAID_MAX_S=60,LAID_UPDRAFT_APEX=2.2,LAID_OVERSHOOT=1.5,LAID_WILD=['fizzle','overshoot'];
 let LAID=null,_onLaid=false; /* the one laid thing: {kind,word,rider,x,z,r|hw,hl,ux,uz,base,top,solid,until,key,mesh} */
@@ -1104,7 +1105,7 @@ function bookSelect(i){const b=spellBook[i];if(!b)return false;activeSpell=i;act
 // the shape a laid entry makes, or null where it makes none yet (the sheet's session 4)
 function laidShape(word,rider){
   if(word==='cloch_ghear')return 'pillar';if(word==='sideen')return 'updraft';
-  if(word==='sioc')return 'floe';if(word==='tonn'&&rider==='sioc')return 'bridge';if(word==='freamh')return 'snare';if(word==='reo')return 'nova';return null;}
+  if(word==='sioc')return 'floe';if(word==='tonn'&&rider==='sioc')return 'bridge';if(word==='freamh')return 'snare';if(word==='reo')return 'nova';if(word==='loscadh')return 'fire';return null;}
 // layWord: the named action. Lays word (with rider) at x,z (its ground found there), facing yaw for a bridge; o.overshoot ×1.5 a
 // pillar's height. Returns {ok} or {say}; nothing is paid here (the cast pays).
 function layWord(word,rider,x,z,o){o=o||{};
@@ -1127,6 +1128,10 @@ function layWord(word,rider,x,z,o){o=o||{};
   else if(kind==='nova'){ /* S1616 — Reo's: a burst 4 m round on the ground, never a solid; its frost stands while the foes are held */
     const tier=wordTierOf(word)||1,hold=+(F.hold*TIER_MULT.magnitude[tier-1]).toFixed(2);
     Object.assign(L,{r:F.radius,base:y,top:y,solid:false,dur:hold,nova:hold});}
+  else if(kind==='fire'){ /* S1617 — Loscadh's: ground fire 4 m across, never a solid, burning each foe in it every second */
+    if(ow&&worldH(x,z)<SEA_Y-.35)return {say:'Fire will not take on water.',why:'wet'};
+    const tier=wordTierOf(word)||1;
+    Object.assign(L,{r:F.fire/2,base:y,top:y,solid:false,dur:F.dur,fire:Math.round(F.dps*TIER_MULT.magnitude[tier-1]),fireNext:playClockS+1});}
   else if(kind==='floe'){
     if(!wet)return {say:'Sioc lays a floe only on open water.',why:'dry'};
     Object.assign(L,{r:F.floe/2,base:SEA_Y-.4,top:SEA_Y+.1,solid:true,dur:F.dur});}
@@ -1179,6 +1184,17 @@ function laidNovaBurst(L){const dun=!!(lid&&lid.startsWith('dyn_'));let n=0,firs
     staggerFlash(e);e.alert=true;n++;if(!first)first=e;}
   const sc=WORD_BY[L.word].school;if(first&&SKILL_DEF[sc])skillUse(sc,1,first);
   return n;}
+// S1617 — Loscadh laid (magic-build.md's table: "ground fire 4 m, 6 a second, 10 s"; the word's `fire:4` is across, as a floe's 3 is):
+// a fire 4 m across on the ground, never a solid, that stands 10 s. Each second of the play clock it burns every foe whose centre is
+// within it, its hull counted, for 6 at Comprehension by the tier's magnitude (4 at Impression, 8 at Mastery), past the armour as a
+// hot pillar burns, the challenge's step applied. It does not burn you. The first foe it burns is one use of Tine.
+function laidFireTick(){const L=laidLive();if(!L||!L.fire)return;const dun=!!(lid&&lid.startsWith('dyn_'));
+  for(let n=0;n<12&&playClockS>=L.fireNext-1e-9&&LAID===L;n++){L.fireNext+=1;
+    for(const e of heldTargets()){if(e.dead||e.hp<=0||(dun&&e.floor!==currentFloor)||!laidInside(L,e.x,e.z,hullOf(e)))continue;
+      const d=challengeDealt(L.fire);e.hp=Math.max(0,e.hp-d);e.alert=true;
+      if(e.hpFg&&e.maxHp){e.hpFg.scale.x=e.hp/e.maxHp;e.hpFg.position.x=(e.hp/e.maxHp-1)*.275;}dmgNum(e,d,{});
+      if(!L.used){const sc=WORD_BY[L.word].school;if(SKILL_DEF[sc])skillUse(sc,1,e);L.used=true;}
+      if(e.hp<=0){if(dun)killE(e,' (burned)');else killZoneEnemy(e,scene,' (burned)');}}}}
 function laidMesh(L){if(typeof THREE==='undefined'||typeof scene==='undefined'||!scene)return null;
   const d=typeof laidDress==='function'?laidDress(L):null; /* S1600 — the look builder's dress (82-world-structures.js), built from its base */
   if(d){if(L.r!=null)d.position.set(L.x,L.base,L.z);else{d.position.set(L.x+L.ux*L.hl,L.base,L.z+L.uz*L.hl);d.rotation.y=Math.atan2(L.ux,L.uz);}scene.add(d);return d;}
@@ -1187,11 +1203,12 @@ function laidMesh(L){if(typeof THREE==='undefined'||typeof scene==='undefined'||
   else if(L.kind==='updraft'){geo=new THREE.CylinderGeometry(L.r,L.r*.8,3,12,1,true);col=0xcfe8ee;op=.18;}
   else if(L.kind==='floe'){geo=new THREE.CylinderGeometry(L.r,L.r*.9,L.top-L.base,12);col=0xdcecf4;}
   else if(L.kind==='snare'){geo=new THREE.RingGeometry(L.r*.92,L.r,32);geo.rotateX(-Math.PI/2);col=0x6a8a3a;op=.6;}
+  else if(L.kind==='fire'){geo=new THREE.CircleGeometry(L.r,24);geo.rotateX(-Math.PI/2);col=0xd2601e;op=.5;}
   else if(L.kind==='nova'){geo=new THREE.CircleGeometry(L.r,32);geo.rotateX(-Math.PI/2);col=0xdcecf4;op=.45;}
   else{geo=new THREE.BoxGeometry(L.hw*2,L.top-L.base,L.hl*2);col=0xbcdcec;}
   const m=new THREE.Mesh(geo,new THREE.MeshLambertMaterial({color:col,transparent:op<1,opacity:op,depthWrite:op>=1,side:op<1?THREE.DoubleSide:THREE.FrontSide}));
   m.name='laid-'+L.kind;
-  if(L.r!=null)m.position.set(L.x,L.kind==='updraft'?L.base+1.5:L.kind==='snare'||L.kind==='nova'?L.base+.03:(L.base+L.top)/2,L.z);
+  if(L.r!=null)m.position.set(L.x,L.kind==='updraft'?L.base+1.5:L.kind==='snare'||L.kind==='nova'||L.kind==='fire'?L.base+.03:(L.base+L.top)/2,L.z);
   else{m.position.set(L.x+L.ux*L.hl,(L.base+L.top)/2,L.z+L.uz*L.hl);m.rotation.y=Math.atan2(L.ux,L.uz);}
   scene.add(m);return m;}
 // the cast of a laid entry from the book (castSpell hands it here): the form held, the cost and the overcast, Impression's wild roll

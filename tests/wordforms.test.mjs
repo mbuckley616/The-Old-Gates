@@ -14,6 +14,7 @@
 // Session 1612: Fréamh laid, a ring 3 m round on the ground that roots the first foe within it 2 s, once, and stands 10 s.
 // Session 1611: Tonn sent, a wave 8 m down your aim (to the first wall), 1.6 m wide: 14 and 20 posture to each foe in it.
 // Session 1616: Reo laid, a burst 4 m round that holds every foe within it 2 s (1.2 at Impression), once; its frost stands the hold's time.
+// Session 1617: Loscadh laid, a ground fire 4 m across that burns each foe in it 6 a second (4 at Impression), past the armour, 10 s.
 // Session 1610: Fréamh sent, a bolt that deals nothing and roots the foe it strikes 2 s (1.2 at Impression, 2.6 at Mastery).
 import { boot, check } from './lib/game.mjs';
 import { enterDungeon } from './lib/dungeonshot.mjs';
@@ -334,5 +335,25 @@ check(`Reo's burst (${nv.kind}, ${nv.R} m, solid ${nv.solid}) holds the ${nv.n} 
   nv.ok && nv.kind === 'nova' && nv.R === 4 && nv.solid === false && nv.n === 2 && nv.a === 2 && nv.b === 2 && nv.c === 0 && nv.after === 0 && nv.use && nv.hp === 1e5, nv);
 check(`its frost stands the hold (at 1.9 ${nv.at19}, at 2.1 ${nv.at21}); at Impression it holds ${nv.imp} s; laid after a ${nv.pillar} it ends it (${nv.then})`,
   nv.at19 === true && nv.at21 === false && nv.imp === 1.2 && nv.pillar === 'snare' && nv.then === 'nova', nv);
+
+// S1617 — Loscadh's fire: a foe inside (armour 50), one just outside; three seconds, then out of it; the fire's 10 s; Impression
+const fi = await page.evaluate(() => {
+  const fs = ENEMIES.filter(x => x.floor === 1 && x.mesh).slice(0, 2); for (const o of ENEMIES) if (!fs.includes(o)) o.dead = true;
+  if (fs.length < 2) return { few: fs.length };
+  knownWords = { loscadh: 2 }; SKILLS.tine = { lv: 50, p: 0 }; SKILL_LAST.delete('tine'); LAID && laidEnd();
+  const [A, B] = fs; for (const e of fs) { e.dead = false; e.hp = e.maxHp = 1e5; e.def = 50; e.resist = null; e.x = px + 20; e.z = pz + 20; }
+  const cx = px, cz = pz - 1; A.x = cx + 1.9 + hullOf(A) - .05; A.z = cz; B.x = cx - 2.1 - hullOf(B); B.z = cz;
+  const run = (sec) => { for (let n = 0; n < Math.round(sec * 60); n++) { playClockS += 1 / 60; laidFireTick(); } };
+  const p0 = skillsReady().tine.p, r = layWord('loscadh', null, cx, cz), out = { ok: !!r.ok, kind: r.kind, solid: LAID && LAID.solid, R: LAID && LAID.r, php: PHP };
+  run(3.05); out.a = 1e5 - A.hp; out.b = 1e5 - B.hp; out.use = skillsReady().tine.p > p0; out.php2 = PHP;
+  A.x = px + 20; let h = A.hp; run(2); out.left = h - A.hp;
+  out.at99 = (run(4.8), !!laidLive()); out.at101 = (run(.2), !!laidLive());
+  knownWords.loscadh = 1; A.x = cx; A.z = cz; h = A.hp; layWord('loscadh', null, cx, cz); run(1.02); out.imp = h - A.hp; laidEnd();
+  return out;
+});
+console.log(JSON.stringify(fi));
+check(`Loscadh's fire (${fi.kind}, ${fi.R} m round, solid ${fi.solid}) burns the foe in it ${fi.a} in 3 s through armour 50, not the one past its edge (${fi.b}) nor the foe stepped out (${fi.left}); you unburned (${fi.php} → ${fi.php2}); a use of Tine (${fi.use})`,
+  fi.ok && fi.kind === 'fire' && fi.R === 2 && fi.solid === false && fi.a === 18 && fi.b === 0 && fi.left === 0 && fi.php === fi.php2 && fi.use, fi);
+check(`the fire stands 10 s (at 9.9 ${fi.at99}, at 10.1 ${fi.at101}); at Impression it burns ${fi.imp} a second`, fi.at99 === true && fi.at101 === false && fi.imp === 4, fi);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
