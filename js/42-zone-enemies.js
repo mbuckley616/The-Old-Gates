@@ -1550,6 +1550,7 @@ function tickZoneBalls(dt,sc){
       if(Math.hypot(fb.position.x-e.x,fb.position.z-e.z)<.7){
         const sp=fb.userData.spell||SPELLS[0];
         const tier=fb.userData.tier||1;
+        if(sp.status){statusBolt(e,sp,tier,fb.userData.rider);sc.remove(fb);ZB.splice(i,1);return;} /* S1610 — a status bolt (Fréamh) deals nothing */
         const info=applySpellDamage(e, sp, tier);
         const dmg=info.dmg;
         e.hp=Math.max(0,e.hp-dmg);e.alert=true;

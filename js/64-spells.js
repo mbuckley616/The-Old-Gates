@@ -775,6 +775,43 @@ function tintreachLeap(e,sp,tier){const L=WORD_BY.tintreach.forms.sent,dun=!!(li
   dmgNum(best,info.dmg,info);
   if(best.hp<=0){if(dun)killE(best,dmgTag(info,best));else killZoneEnemy(best,scene,dmgTag(info,best));}
   return {foe:best,dealt:info.dmg,d:+bd.toFixed(2)};}
+// S1610 — Fréamh sent (magic-build.md's table: "a foe rooted 2 s"): a bolt that deals nothing and roots the foe it strikes, 2 s at
+// Comprehension, the tier's magnitude (1.2 s at Impression, 2.6 at Mastery: no canon entry, so ×1.3). A rooted foe turns and strikes but
+// takes no step (foeRooted, S1602's root). It flies at Cloch Ghéar's 8 m/s. A rider still rides it, on a blow of 0. `status` marks a
+// bolt that the two hit loops hand to statusBolt in place of the damage.
+SPELLS.push({id:'freamh',school:'cloch',role:'basic',nameIr:'Fréamh',nameEn:'Root',nameMa:null,ico:'🌿',desc:'Roots a foe where it stands.',
+  intReqs:[10,22,40],cost:30,speed:8,dmgBase:0,dmgLvl:0,col:0x6a8a3a,glowCol:0x8aaa50,wild:['scatter','fizzle'],status:'root'});
+// statusBolt: what a status bolt does to foe e it struck. A struck alert foe is a use of the school, as a blow is. Returns what it did.
+function statusBolt(e,sp,tier,rider){if(!e||e.dead||e.hp<=0)return null;const F=WORD_BY[sp.id]&&WORD_BY[sp.id].forms.sent;if(!F)return null;
+  if(e.alert&&SKILL_DEF[sp.school])skillUse(sp.school,tier===3?2:1,e);
+  const out={};
+  if(F.root){const t=F.root*TIER_MULT.magnitude[Math.max(1,tier)-1];e._rootUntil=Math.max(e._rootUntil||0,playClockS+t);out.root=+t.toFixed(2);}
+  e.alert=true;if(rider)out.rider=riderHit(e,rider,0);
+  return out;}
+// S1611 — Tonn sent (magic-build.md's table: "a wave 8 m down the line, 14, posture 20"): no bolt flies. At the Cast row's release a
+// wave runs from you along your aim, 8 m or to the first wall, and every foe in its path takes the word's 14 (the tier's magnitude, the
+// school's power) and 20 from its posture, a break staggering it as a blow's does. The path is 1.6 m wide, Tonn's laid width (the bridge,
+// RIDERS.sioc.laid.bridge): the sheet gives the sent wave no width of its own. It strikes at once, not as a travelling crest. A rider rides
+// each foe it strikes. Its Mastery has no canon entry, so it is the plain word at ×1.3.
+SPELLS.push({id:'tonn',school:'uisce',role:'basic',nameIr:'Tonn',nameEn:'Force Wave',nameMa:null,ico:'〰️',desc:'A wave that throws down what stands in its line.',
+  intReqs:[10,22,40],cost:32,speed:0,dmgBase:14,dmgLvl:2,col:0x5a9ad8,glowCol:0x8ac0f0,wild:['scatter','fizzle'],wave:true});
+// tonnWave: the named action. The wave from x,z along (ux,uz) on `floor` (a gate's). Returns {len, hit:[{foe,dealt,broke}]}.
+function tonnWave(sp,tier,rider,x,z,ux,uz,floor){const F=WORD_BY.tonn.forms.sent,hw=RIDERS.sioc.laid.bridge.wide/2,dun=!!(lid&&lid.startsWith('dyn_'));
+  let len=F.wave;for(let s=.1;s<=F.wave+1e-9;s+=.1)if(riderFoeSolid(x+ux*s,z+uz*s,dun)){len=s-.1;break;}
+  const out={len:+len.toFixed(2),hit:[]},now=performance.now()/1000;
+  for(const e of heldTargets()){if(e.dead||e.locked||e.disguised||e.hp<=0||(dun&&e.floor!==floor))continue;
+    const dx=e.x-x,dz=e.z-z,a=dx*ux+dz*uz,b=Math.abs(-dx*uz+dz*ux),h=hullOf(e);
+    if(a<-h||a>len+h||b>hw+h)continue;
+    const info=applySpellDamage(e,sp,tier),dealt=info.dmg;e.hp=Math.max(0,e.hp-dealt);e.alert=true;
+    if(e.hpFg&&e.maxHp){e.hpFg.scale.x=e.hp/e.maxHp;e.hpFg.position.x=(e.hp/e.maxHp-1)*.275;}
+    dmgNum(e,dealt,info);
+    let broke=false;
+    if(e.hp>0){if(typeof e.posture!=='number'&&typeof initPosture==='function')initPosture(e);
+      if(typeof e.posture==='number'&&applyPostureDamage(e,F.posture,now)){broke=true;staggered.push({e,t:dazeS(POSTURE_BREAK_STUN)});staggerFlash(e);}}
+    if(rider)riderHit(e,rider,dealt);
+    out.hit.push({foe:e,dealt,broke});
+    if(e.hp<=0){if(dun)killE(e,dmgTag(info,e));else killZoneEnemy(e,scene,dmgTag(info,e));}}
+  return out;}
 // S1605 — Éan worn (magic-build.md, "Movement against the step table"): a jump leaves the ground at 8.4 m/s, not the legs' 5.5–6.6, so
 // it tops out 1.96 m up and crosses 4.4 m at the 4.7 m/s air cap: the step table's 4.0–4.8 band. Its shape is the same at every tier;
 // the tier sets only its time (20/40/80 s). At Mastery it is Wingless, the canon's: no fall hurts while it is worn.
@@ -794,6 +831,7 @@ function tickSpellFx(dt){
   if(RIDDEN.size)riderTick(); /* S1602 — the riders' burns and glows */
   if(TOUCH_PEND)touchTick(); /* S1603 — the touched form's landing */
   if(LAID&&LAID.rideR)laidRiderTick(); /* S1604 — a rider on a laid thing */
+  if(LAID&&LAID.snare&&!LAID.rooted)laidSnareTick(); /* S1612 — Fréamh laid */
   if(_spellLight&&!fxOn('light')&&_spellLight.intensity>0)_spellLight.intensity=Math.max(0,_spellLight.intensity-dt*2);
 }
 // spellbooks: read to learn
@@ -1066,7 +1104,7 @@ function bookSelect(i){const b=spellBook[i];if(!b)return false;activeSpell=i;act
 // the shape a laid entry makes, or null where it makes none yet (the sheet's session 4)
 function laidShape(word,rider){
   if(word==='cloch_ghear')return 'pillar';if(word==='sideen')return 'updraft';
-  if(word==='sioc')return 'floe';if(word==='tonn'&&rider==='sioc')return 'bridge';return null;}
+  if(word==='sioc')return 'floe';if(word==='tonn'&&rider==='sioc')return 'bridge';if(word==='freamh')return 'snare';return null;}
 // layWord: the named action. Lays word (with rider) at x,z (its ground found there), facing yaw for a bridge; o.overshoot ×1.5 a
 // pillar's height. Returns {ok} or {say}; nothing is paid here (the cast pays).
 function layWord(word,rider,x,z,o){o=o||{};
@@ -1082,6 +1120,10 @@ function layWord(word,rider,x,z,o){o=o||{};
     if(ow&&worldH(x,z)<SEA_Y-.35)return {say:'It will not stand in water.',why:'wet'};
     const h=kind==='pillar'?F.pillar*(o.overshoot?LAID_OVERSHOOT:1):0;
     Object.assign(L,{r,base:y,top:y+h,solid:kind==='pillar',dur:F.dur});}
+  else if(kind==='snare'){ /* S1612 — Fréamh's: a ring on the ground, never a solid */
+    if(ow&&worldH(x,z)<SEA_Y-.35)return {say:'It will not take root in water.',why:'wet'};
+    const tier=wordTierOf(word)||1;
+    Object.assign(L,{r:F.radius,base:y,top:y,solid:false,dur:F.dur,snare:+(F.root*TIER_MULT.magnitude[tier-1]).toFixed(2)});}
   else if(kind==='floe'){
     if(!wet)return {say:'Sioc lays a floe only on open water.',why:'dry'};
     Object.assign(L,{r:F.floe/2,base:SEA_Y-.4,top:SEA_Y+.1,solid:true,dur:F.dur});}
@@ -1114,6 +1156,14 @@ function laidRiderTick(){const L=laidLive();if(!L||!L.rideR)return;const R=RIDER
       if(e.hpFg&&e.maxHp){e.hpFg.scale.x=e.hp/e.maxHp;e.hpFg.position.x=(e.hp/e.maxHp-1)*.275;}dmgNum(e,d,{});
       if(e.hp<=0){if(dun)killE(e,' (burned)');else killZoneEnemy(e,scene,' (burned)');}}
     if(R.hps&&laidInside(L,px,pz,.3)&&jumpY<=L.top+STEP_UP){PHP=Math.min(effMaxHP(),PHP+R.hps);}}}
+// S1612 — Fréamh laid (magic-build.md's table: "roots once within 3 m, 10 s"): a ring 3 m round the point, on the ground, never a solid.
+// The first foe whose centre comes within it (its hull counted) is rooted 2 s at Comprehension, the tier's magnitude as the bolt's (1.2 s,
+// 2.6 s), and the ring has done its work: it roots once, and stands out its 10 s. A foe already inside when it is laid is the first. It
+// lives as every laid thing does (one a caster, ends when you leave the place) and takes a rider as they do (a hot ring, a mending one).
+function laidSnareTick(){const L=laidLive();if(!L||!L.snare||L.rooted)return;const dun=!!(lid&&lid.startsWith('dyn_'));
+  for(const e of heldTargets()){if(e.dead||e.hp<=0||(dun&&e.floor!==currentFloor)||!laidInside(L,e.x,e.z,hullOf(e)))continue;
+    e._rootUntil=Math.max(e._rootUntil||0,playClockS+L.snare);L.rooted=e;e.alert=true;
+    if(SKILL_DEF[WORD_BY[L.word].school])skillUse(WORD_BY[L.word].school,1,e);break;}}
 function laidMesh(L){if(typeof THREE==='undefined'||typeof scene==='undefined'||!scene)return null;
   const d=typeof laidDress==='function'?laidDress(L):null; /* S1600 — the look builder's dress (82-world-structures.js), built from its base */
   if(d){if(L.r!=null)d.position.set(L.x,L.base,L.z);else{d.position.set(L.x+L.ux*L.hl,L.base,L.z+L.uz*L.hl);d.rotation.y=Math.atan2(L.ux,L.uz);}scene.add(d);return d;}
@@ -1121,10 +1171,11 @@ function laidMesh(L){if(typeof THREE==='undefined'||typeof scene==='undefined'||
   if(L.kind==='pillar'){geo=new THREE.CylinderGeometry(L.r*.92,L.r,L.top-L.base,10);col=0x8a8378;}
   else if(L.kind==='updraft'){geo=new THREE.CylinderGeometry(L.r,L.r*.8,3,12,1,true);col=0xcfe8ee;op=.18;}
   else if(L.kind==='floe'){geo=new THREE.CylinderGeometry(L.r,L.r*.9,L.top-L.base,12);col=0xdcecf4;}
+  else if(L.kind==='snare'){geo=new THREE.RingGeometry(L.r*.92,L.r,32);geo.rotateX(-Math.PI/2);col=0x6a8a3a;op=.6;}
   else{geo=new THREE.BoxGeometry(L.hw*2,L.top-L.base,L.hl*2);col=0xbcdcec;}
   const m=new THREE.Mesh(geo,new THREE.MeshLambertMaterial({color:col,transparent:op<1,opacity:op,depthWrite:op>=1,side:op<1?THREE.DoubleSide:THREE.FrontSide}));
   m.name='laid-'+L.kind;
-  if(L.r!=null)m.position.set(L.x,L.kind==='updraft'?L.base+1.5:(L.base+L.top)/2,L.z);
+  if(L.r!=null)m.position.set(L.x,L.kind==='updraft'?L.base+1.5:L.kind==='snare'?L.base+.03:(L.base+L.top)/2,L.z);
   else{m.position.set(L.x+L.ux*L.hl,(L.base+L.top)/2,L.z+L.uz*L.hl);m.rotation.y=Math.atan2(L.ux,L.uz);}
   scene.add(m);return m;}
 // the cast of a laid entry from the book (castSpell hands it here): the form held, the cost and the overcast, Impression's wild roll
