@@ -60,6 +60,10 @@ const TIER_MULT={
 const TIER_LABEL=['Impression','Comprehension','Mastery'];
 const TIER_STARS=['★☆☆','★★☆','★★★'];
 const IMPRESSION_WILD_CHANCE=0.30; /* S1571 — magic B: 30%, the figure Scáth's Steady voice (school 25, session 5) halves */
+// S1619 — the schools' first two perks (magic-build.md's session 5; skills-and-perks-build.md, "Each school"): Steady voice at 25 halves
+// an Impression word's wild chance, 30% to 15%, for that word's school; Thrift at 50 takes 15% off the mana of any word of the school.
+const STEADY_VOICE_WILD=.15,THRIFT_MULT=.85;
+function wordWildChance(word){const w=WORD_BY[word]||SPELLS.find(s=>s.id===word);return w&&perk(w.school,25)?STEADY_VOICE_WILD:IMPRESSION_WILD_CHANCE;}
 // S1571 — overcasting (magic-build.md): short of mana, the rest is paid in health, 2 a point of mana, with a 0.5 s stagger; a cast
 // that would leave you under 1 health is refused.
 const OVERCAST_HP=2,OVERCAST_STAGGER_S=.5;
@@ -1027,6 +1031,7 @@ function wordCost(id,form,rider,o){o=o||{};const w=WORD_BY[id];if(!w||!FORMS[for
   if(rider&&WORD_BY[rider])m=(m+WORD_BY[rider].cost*TIER_MULT.cost[tr-1])*WORD_JOIN_MULT;
   const s=o.skill!=null?o.skill:skillLv(w.school);
   m*=FORMS[form].mana*(1.4-.8*s/100)*(o.buff!=null?o.buff:(typeof _buffMult==='function'?_buffMult('spellCost',1):1));
+  if(o.thrift!=null?o.thrift:perk(w.school,50))m*=THRIFT_MULT; /* S1619 — Thrift, the school at 50 */
   return Math.round(m+1e-9);}
 
 // S1574 — magic B's book (magic-build.md, "The save"): up to eight made spells {form, word, rider}; `activeSpell` is the index of the one F
@@ -1245,7 +1250,7 @@ function castLaid(bk){
   const cost=wordCost(bk.word,'laid',bk.rider,{tier}),short=Math.max(0,cost-Math.floor(mana)),blood=short*OVERCAST_HP;
   if(short&&PHP-blood<1){showMsg(`Not enough mana! (need ${cost})`,'#6688cc');return false;}
   let wild=null;const wr=tier===1?casterRand(bk.word+':laid'):null;
-  if(wr&&wr()<IMPRESSION_WILD_CHANCE){const pool=laidShape(bk.word,bk.rider)==='pillar'?LAID_WILD:['fizzle'];wild=pool[Math.floor(wr()*pool.length)];}
+  if(wr&&wr()<wordWildChance(bk.word)){const pool=laidShape(bk.word,bk.rider)==='pillar'?LAID_WILD:['fizzle'];wild=pool[Math.floor(wr()*pool.length)];}
   const r=wild==='fizzle'?{ok:true}:layWord(bk.word,bk.rider,at.x,at.z,{cap:at.y+.05,overshoot:wild==='overshoot'});
   if(!r.ok){showMsg(r.say,'#a8a8d4');return false;}
   const paid=cost-short;mana=Math.max(0,mana-cost);_offenceS=playClockS;
@@ -1290,7 +1295,7 @@ function holdWord(bk){
   if(mana<tick)return {say:`Not enough mana! (need ${Math.ceil(tick)})`};
   const mixed=!!(bk.rider&&riderMixedWild(bk.word,bk.rider)); /* S1602 — two schools: 10% at any tier until both reach 25 */
   const wr=tier===1||mixed?casterRand(bk.word+':held'):null;
-  if(wr&&wr()<(tier===1?IMPRESSION_WILD_CHANCE:0)+(mixed?WORD_MIXED_WILD:0)){mana-=tick*.5;spCd=spellCooldown(H.sp,tier);startCastAnim(H.sp,'fizzle');
+  if(wr&&wr()<(tier===1?wordWildChance(H.word):0)+(mixed?WORD_MIXED_WILD:0)){mana-=tick*.5;spCd=spellCooldown(H.sp,tier);startCastAnim(H.sp,'fizzle');
     return {ok:true,wild:'fizzle',say:`${w.ico} ${w.nameIr} fizzles — the shape will not hold.`};}
   _offenceS=playClockS;HELD=H;H.mesh=heldMesh(H);startCastAnim(H.sp,'projectile');
   if(typeof sndSpellCharge==='function')sndSpellCharge(w.school);
@@ -1348,7 +1353,7 @@ function touchWord(bk){
   const sp=heldSpell(bk.word);spCd=spellCooldown(sp,tier);
   const mixed=!!(bk.rider&&riderMixedWild(bk.word,bk.rider));
   const wr=tier===1||mixed?casterRand(bk.word+':touched'):null;
-  if(wr&&wr()<(tier===1?IMPRESSION_WILD_CHANCE:0)+(mixed?WORD_MIXED_WILD:0)){mana=Math.min(effMaxMana(),mana+Math.round((cost-short)*.5));startCastAnim(sp,'fizzle');
+  if(wr&&wr()<(tier===1?wordWildChance(bk.word):0)+(mixed?WORD_MIXED_WILD:0)){mana=Math.min(effMaxMana(),mana+Math.round((cost-short)*.5));startCastAnim(sp,'fizzle');
     return {ok:true,wild:'fizzle',say:`${w.ico} ${w.nameIr} fizzles — the shape will not hold.`};}
   castMark(FORMS.touched.windup);startCastAnim(sp,'projectile');
   if(typeof sndSpellCharge==='function')sndSpellCharge(w.school);

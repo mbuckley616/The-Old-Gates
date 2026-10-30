@@ -5,6 +5,8 @@
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
+// the sheet's worked costs are before the schools' perks: Thrift (school 50, Session 1619) is held out here, and wordforms measures it
+await page.evaluate(() => { for (const sc of ['tine', 'uisce', 'cloch', 'scath', 'solas', 'gaoth']) PERK_LIVE.delete(sc + ':50'); });
 const r = await page.evaluate(() => {
   const ks = knownWords, as = activeSpellId, sk = SKILLS.tine, out = {};
   knownWords = { caor: 2 }; activeSpellId = 'caor'; SKILLS.tine = { lv: 50, p: 0 };

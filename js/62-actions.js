@@ -377,7 +377,7 @@ function castSpell(){
   let aimJitter=0; // radians added to yaw for scatter
   const mixed=bk.rider&&riderMixedWild(bk.word,bk.rider); /* S1602 — two schools: 10% wild at any tier until both reach 25 */
   const wr=((tier===1||mixed) && sp.wild && sp.wild.length)?casterRand(sp.id):null;
-  if(wr && wr()<(tier===1?IMPRESSION_WILD_CHANCE:0)+(mixed?WORD_MIXED_WILD:0)){
+  if(wr && wr()<(tier===1?wordWildChance(sp.id):0)+(mixed?WORD_MIXED_WILD:0)){ /* S1619 — Steady voice */
     wildPattern=sp.wild[Math.floor(wr()*sp.wild.length)];
     if(wildPattern==='fizzle'){
       // Half-refund mana, nothing else happens. Brief hand-raise with no orb release.
