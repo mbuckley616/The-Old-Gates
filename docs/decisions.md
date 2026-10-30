@@ -25,6 +25,16 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 
 **Recommendation.** B: combat against people with move sets, a visible progression test, and two choices that change what you see; A is its first session either way. C overlaps the Fighters' Guild's tasks. The page: `docs/design/arenas.md`.
 
+### Dorcha's blind — what a blinded foe does for its 4 s (from the systems builder, 2026-10-30, #919)
+**The question.** Magic B's build sheet gives Dorcha (Blind, Scáth) a Sent form, "blinds 4 s", and a Laid form, "a dark 6 m across, 15 s". The canon says only "blinds + disorients". Nothing says what a blinded foe does, and a player will feel the difference.
+
+**Options.**
+- **A.** It loses you. It stops chasing and striking, stands or wanders where it is, and picks you up again when the 4 s end. If you strike it, it turns on you at once. The cleanest escape or reposition.
+- **B (recommended).** It fights blind. It keeps striking where you were when it was blinded, its blows land at ×0.5 chance (a miss is a swing at air), and it moves at ×0.5 toward your last known place. Still a threat, but you can step aside and punish it. The Laid dark does the same to any foe inside it.
+- **C.** A plus sneak. A blinded foe also cannot see you for sneak or detection, so you can slip past it or take a sneak attack's bonus in the 4 s.
+
+**Recommendation.** B keeps the word a combat tool rather than an off switch, and fits "disorients". A is simplest. C makes Dorcha a sneak spell. The page: `docs/design/magic-build.md` (the table, row Dorcha).
+
 ## Answered
 ### Strange places: when does a wonder wake? (from the concept artist, 2026-10-29, #898)
 **The question.** Backlog L5's prototype (`docs/prototypes/levelup/wonders.html`, OG-106) builds three wonders from the gate kit's stones, one per island: the Drowned Ring (seven 32 m piers in a fen lough, a sigil under the water), the Skyfall Fields (34 stones hung up to 50 m over a snow valley) and the Broken Orrery (four rings, 17 to 41 m, over a sea-cliff platform). "Awake" means the stones drift, the rings turn and the script and seams glow; the geometry is the same in every option.
