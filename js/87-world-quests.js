@@ -445,7 +445,7 @@ const giver=`${lord.title} ${lord.name}`;
         const spare=I.doors.filter(D=>D.school===w.school&&I.count[D.word]>1);const D=spare.find(D=>D.pool.includes(w.id))||spare[0];if(!D)continue;
         I.count[D.word]--;D.word=w.id;D.moved=true;I.count[w.id]=1;}}
     _carvings={bySeed:T,isles,places};return _carvings;}
-  // S1630 — the carvings by place (words-and-the-mouth-build.md, "Súil by choice" and "The hermits"): every carved door from the table,
+  // S1632 — the carvings by place (words-and-the-mouth-build.md, "Súil by choice" and "The hermits"): every carved door from the table,
   // read through getCell and the seed, never the loaded CELLS (the S533 rule). The carvings of a word (or of any of a set of words)
   // within `max` metres of x,z, nearest first: {seed,word,x,z,name,d}.
   function carvingsNear(x,z,max,words){const out=[];for(const {D,e} of carvingTable().places){if(words&&!words.includes(D.word))continue;
@@ -470,7 +470,7 @@ const giver=`${lord.title} ${lord.name}`;
     return `${w.nameIr}. ${w.nameEn}, in your tongue. It is cut in ${g.name}, ${compassWord(g.x-site.x,g.z-site.z)} of here.${h.again?'':' Your map has it now.'}`;}}];}
   // the word carved behind a door (its seed), or null; a legacy dungeon's is SIGIL_PLACEMENTS'
   function gateCarving(seed){if(SIGIL_PLACEMENTS[seed])return SIGIL_PLACEMENTS[seed];const D=carvingTable().bySeed[seed];return D?D.word:null;}
-  // S1631 — the Weaver's Eye's search (words-and-the-mouth-build.md, "Súil by choice": "the cells within 2,600 m, read through getCell and
+  // S1633 — the Weaver's Eye's search (words-and-the-mouth-build.md, "Súil by choice": "the cells within 2,600 m, read through getCell and
   // the door's seed, never sigilDoors() over loaded CELLS"): the nearest unread carving within the rubbing's reach, from the carvings by
   // place, so the compass can't turn with what has loaded. Súil's search runs once a cast and keeps its answer for the cast (_suilCast,
   // keyed by the cast's end); the Weaver's shuttle, carried, looks again each frame. Was: the nearest unread sigil or fort door among the
@@ -480,7 +480,7 @@ const giver=`${lord.title} ${lord.name}`;
   function nearestSigilDoor(){if(typeof fxOn==='function'&&fxOn('seamsight')){const u=SPELL_FX.seamsight;if(!_suilCast||_suilCast.until!==u)_suilCast={until:u,d:nearestUnreadCarving(px,pz)};return _suilCast.d;}
     return nearestUnreadCarving(px,pz);}
   function onMasteryTouch(spellId){const seed=(typeof activePortal!=='undefined'&&activePortal&&activePortal.seed)||(typeof curPortal!=='undefined'&&curPortal&&curPortal.seed)||(typeof currentPortal!=='undefined'&&currentPortal&&currentPortal.seed)||null;if(seed!=null)(worldState.sigilsRead||(worldState.sigilsRead={}))[seed]=spellId;worldState.masteries=(worldState.masteries||0)+1;}
-  function rubbingTopics(site){const d=nearestSigilDoorFrom(site);if(!d)return [];const price=60;return [{label:`Buy a rubbing of a warm stone (${price} gold)`,quest:true,fn:()=>{if(gold<price)return `A rubbing is ${price} gold. We have to send someone to take it.`;gold-=price;updateHUD();const cw=WORD_BY[gateCarving(d.seed)];if(typeof bagAdd==='function')bagAdd({name:`Rubbing: ${d.name}${cw?' — '+cw.nameIr:''}`, /* S1630 — the gate and its word */ico:'📜',type:'rubbing',seed:d.seed,gate:d.name,weight:.2,sellMult:.3,buyPrice:price,qty:1});return `Taken from ${d.name}, ${compassWord(d.x-site.x,d.z-site.z)} of here. Read it and your map will remember where.`;}}];}
+  function rubbingTopics(site){const d=nearestSigilDoorFrom(site);if(!d)return [];const price=60;return [{label:`Buy a rubbing of a warm stone (${price} gold)`,quest:true,fn:()=>{if(gold<price)return `A rubbing is ${price} gold. We have to send someone to take it.`;gold-=price;updateHUD();const cw=WORD_BY[gateCarving(d.seed)];if(typeof bagAdd==='function')bagAdd({name:`Rubbing: ${d.name}${cw?' — '+cw.nameIr:''}`, /* S1632 — the gate and its word */ico:'📜',type:'rubbing',seed:d.seed,gate:d.name,weight:.2,sellMult:.3,buyPrice:price,qty:1});return `Taken from ${d.name}, ${compassWord(d.x-site.x,d.z-site.z)} of here. Read it and your map will remember where.`;}}];}
   function nearestSigilDoorFrom(site){let best=null,bd=1e9;const read=worldState.sigilsRead||{},rub=worldState.rubbings||{};for(const e of sigilDoors()){if(read[e.seed]||rub[e.seed])continue;const p=dungeonWorldPos[e.seed]||{x:e.x,z:e.z};const d=Math.hypot(p.x-site.x,p.z-site.z);if(d<bd&&d<2600){bd=d;best={x:p.x,z:p.z,name:e.canonicalName||(typeof dungeonName==='function'?dungeonName(e.seed,e.theme):'an old gate'),seed:e.seed};}}return best;}
   // canonical names for generated gates, in the cell's own tongue
   const GATE_WORDS={ruins:['Barrow','Hollow','Tomb','Crypt','Vault'],goblin:['Warren','Den','Burrow','Hole','Nest'],haunted:['Crypt','Sepulchre','Mound','Silence','Deep'],cave:['Cave','Hollow','Mouth','Cleft','Undercroft'],fort:['Hold','Keep','Bastion','Watch','Gate'],elemental:['Furnace','Well','Cistern','Forge','Kiln'],undead:['Ossuary','Charnel','Grave','Barrow','Catacomb'],forest:['Root','Hollow','Bower','Warren','Nest'],deep:['Wound','Scar','Pit','Silence','Seam']};
