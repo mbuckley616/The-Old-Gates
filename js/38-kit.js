@@ -4254,15 +4254,31 @@ function wonderBoulder(seed, flat = .75) { const g = new THREE.IcosahedronGeomet
 // a flat disc or ring laid on the ground: every vertex at hAt + lift
 function onGround(g, x, z, hAt, lift) { g.rotateX(-Math.PI / 2); const P = g.attributes.position; for (let i = 0; i < P.count; i++) { const vx = P.getX(i) + x, vz = P.getZ(i) + z; P.setXYZ(i, vx, hAt(vx, vz) + lift, vz); }
   const q = g.index ? g.toNonIndexed() : g; q.computeVertexNormals(); if (!q.attributes.uv) worldUV(q, .3); return q; }
-// the Mark's wonder: wonders.js's markSkyfall over the world's valley. 34 stones of 1.5 to 13 m hang 4 to 58 m over the floor, each over
-// the pit it came out of (a hollow ringed with thrown earth), a Gaoth seam glowing under every stone over 5 m; two of the gate kit's walls
-// (1.4 times, 19.6 m long) stand broken on the floor with their stones lifted. The same stream ('wonders:skyfall') and the same draws in
-// the same order as the prototype, so the stones are its stones; only the valley's length is centred on the wonder's middle.
+// places.js's auroraCurtains (Session 1243), as plain script for the game: the same three curtains and the same shader, with its two
+// colours encoded as the prototype's page shows them (the game's output is linear, see skyfallSeamMat), and a slow drift along the rays
+// by t (the page's is still). Additive, no depth write, no fog: it is light in the sky, not a thing in the air.
+function skyfallAurora(r, base) {
+  const mat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false, uniforms: { t: { value: 0 } },
+    vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+    fragmentShader: 'varying vec2 vUv; uniform float t; void main(){ float h = vUv.y, x = vUv.x + t * .0004; float rays = .55 + .45 * sin(x * 260.0 + sin(x * 31.0 + t * .05) * 4.0) * sin(x * 97.0 + 1.3);' +
+      ' float foot = smoothstep(0.0, .08, h) * (1.0 - smoothstep(.35, 1.0, h)); float ends = smoothstep(0.0, .12, vUv.x) * (1.0 - smoothstep(.88, 1.0, vUv.x));' +
+      ' vec3 c = mix(vec3(.54, 1.0, .77), vec3(.77, .58, .95), smoothstep(.25, .9, h)); gl_FragColor = vec4(c * foot * ends * (.35 + .65 * rays) * .55, 1.0); }' });
+  const pos = [], uv = [], idx = [];
+  for (let k = 0; k < 3; k++) { const N = 160, z0 = -340 - k * 180 - r() * 60, x0 = -700 + r() * 200, L = 1300 + r() * 300, lo = base + 90 + r() * 30 + k * 10, hi = lo + 120 + r() * 50, a = r() * 9, b = r() * 9, v0 = pos.length / 3;
+    for (let i = 0; i <= N; i++) { const u = i / N, x = x0 + u * L, z = z0 + Math.sin(u * 7 + a) * 90 + Math.sin(u * 19 + b) * 25; for (const v of [0, 1]) { pos.push(x, v ? hi : lo, z + (v ? 20 : 0)); uv.push(u, v); } }
+    for (let i = 0; i < N; i++) { const p = v0 + 2 * i; idx.push(p, p + 2, p + 1, p + 1, p + 2, p + 3); } }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx);
+  const mesh = new THREE.Mesh(g, mat); mesh.name = 'aurora'; mesh.frustumCulled = false; mesh.castShadow = mesh.receiveShadow = false; mesh.visible = false;
+  return { mesh, mat, tris: idx.length / 3 }; }
 // The walls' seams (Session 1644; the critic, 31 Oct): the kit's violet (.62, .30, 1.0) is pale lilac on the prototype's page, which writes
 // sRGB, but the game runs with colour management off and a linear output (05-compat.js), so there the same numbers are a raw magenta, and
 // on the broad seats the lifted courses bare it read as blotches, not light through cracks. The Fields' walls take the colour the page
 // shows (the violet encoded, about .81, .58, 1.0) on a copy of the kit's material; the gates' own walls are F5's and keep theirs.
 function skyfallSeamMat(m) { const c = m.clone(); c.emissive.copy(m.emissive).convertLinearToSRGB(); c.color.copy(m.color).convertLinearToSRGB(); return c; }
+// the Mark's wonder: wonders.js's markSkyfall over the world's valley. 34 stones of 1.5 to 13 m hang 4 to 58 m over the floor, each over
+// the pit it came out of (a hollow ringed with thrown earth), a Gaoth seam glowing under every stone over 5 m; two of the gate kit's walls
+// (1.4 times, 19.6 m long) stand broken on the floor with their stones lifted. The same stream ('wonders:skyfall') and the same draws in
+// the same order as the prototype, so the stones are its stones; only the valley's length is centred on the wonder's middle.
 function markSkyfall(hAt, o = {}) {
   const key = 'wonders:skyfall', r = stream(key), group = new THREE.Group(), B = new Map(), put = (k, g) => (B.get(k) || B.set(k, []).get(k)).push(g), S = GK_SCHOOLS.gaoth, NS = 4;
   group.name = 'wonder:skyfall'; const stones = [];
@@ -4291,9 +4307,12 @@ function markSkyfall(hAt, o = {}) {
   for (let s = 0; s < NS; s++) { const mine = stones.filter(t => t.shape === s); if (!mine.length) continue; const geo = wonderBoulder(s * 3.1), im = new THREE.InstancedMesh(geo, rock, mine.length);
     im.name = 'stones:' + s; im.castShadow = im.receiveShadow = true; im.userData.list = mine; group.add(im); shapes.push(im); tris += geo.attributes.position.count / 3 * mine.length; draws++; }
   const place = (t, awake, sec) => { pv.set(t.x, t.y + (awake ? Math.sin(sec * t.sp * 2 + t.ph) * (.4 + t.rad * .08) : 0), t.z); e.set(t.rot[0], t.rot[1] + (awake ? sec * t.sp * .2 : 0), t.rot[2]); q.setFromEuler(e); sv.setScalar(t.rad); return m4.compose(pv, q, sv); };
+  // the aurora over the Fields (Session 1645; OG-106, the critic of 31 Oct): places.js's auroraCurtains, three curtains 1.3 to 1.6 km
+  // long, 90 to 290 m over the field, 340 to 760 m off on its -z side, merged into one mesh (one draw); seen only while the Fields wake
+  const aurora = skyfallAurora(stream(key + ':aurora'), hAt(0, 0)); group.add(aurora.mesh); tris += aurora.tris; draws++;
   let was = null;
   // alive: each stone rises and settles over 8 to 16 s and turns slowly, the seams breathe over 7 s; asleep, all still and every seam dead stone
-  function tick(sec, awake) { awake = !!awake;
+  function tick(sec, awake) { awake = !!awake; aurora.mesh.visible = awake; aurora.mat.uniforms.t.value = sec;
     if (awake || was !== false) { for (const im of shapes) { im.userData.list.forEach((t, i) => im.setMatrixAt(i, place(t, awake, sec))); im.instanceMatrix.needsUpdate = true; im.computeBoundingSphere(); } }
     if (was !== awake) for (const m of glows) m.material = awake ? m.userData.on : gkDead();
     if (awake) { const p = .5 + .5 * Math.sin(sec * 2 * Math.PI / 7); for (const m of glows) m.material.emissiveIntensity = m.userData.key === 'seam' && m.name === 'seam' ? .5 + .9 * p : .7 + 1.0 * p; }
