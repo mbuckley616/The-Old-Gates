@@ -21,6 +21,8 @@
 // Gaoth's updraft 3.7 m.
 // Session 1626: three schools at 100: Cloch's worn ward turns an arrow, Scáth's step leaves you unseen 3 s, a sent Gaoth knocks down.
 // Session 1610: Fréamh sent, a bolt that deals nothing and roots the foe it strikes 2 s (1.2 at Impression, 2.6 at Mastery).
+// Session 1628: Dul Thart worn, 0.6 s in which a foe's blow, arrow or bolt passes through you (rollUntouchable).
+// Session 1627: Dorcha sent, a bolt that deals nothing and blinds the foe it strikes 4 s (2.4, 5.2): it loses you until the blind ends.
 import { boot, check } from './lib/game.mjs';
 import { enterDungeon } from './lib/dungeonshot.mjs';
 const g = await boot(); const { page } = g;
@@ -274,6 +276,57 @@ const rb2 = await rootBolt(2), rb1 = await rootBolt(1), rb3 = await rootBolt(3);
 console.log(JSON.stringify({ rb2, rb1, rb3 }));
 check(`Fréamh's bolt deals ${rb2.dealt} and roots the foe (speed ×${rb2.slow}, ${rb2.left} s left of 2)`, rb2.mk && rb2.dealt === 0 && rb2.rooted && rb2.slow === 0 && rb2.left > 1.5 && rb2.left <= 2, rb2);
 check(`Fréamh's root by tier: Impression ${rb1.left} s (of 1.2), Mastery ${rb3.left} s (of 2.6)`, rb1.rooted && rb1.left > .7 && rb1.left <= 1.2 && rb3.rooted && rb3.left > 2.1 && rb3.left <= 2.6, { rb1, rb3 });
+
+// S1627 — Dorcha's bolt, landed by the loop on an alert foe 1.2 m ahead, at tier t: it loses you while blind, and finds you
+// again by itself once the blind ends (turned to face you, the play clock put past it: the loop's own sight)
+const blindBolt = async (t) => {
+  await page.evaluate((t) => {
+    const fs = ENEMIES.filter(x => x.floor === 1 && x.mesh).slice(0, 1); for (const o of ENEMIES) if (!fs.includes(o)) o.dead = true;
+    knownWords = { dorcha: t }; SKILLS.scath = { lv: 50, p: 0 }; LAID && laidEnd(); spellBook.length = 0; _sneaking = false;
+    const mk = bookMake('sent', 'dorcha'); bookSelect(mk.i);
+    const A = fs[0]; A.dead = false; A.hp = A.maxHp = 1e5; A.def = 0; A.resist = null; A.alert = true; A.dormant = false; A._blindUntil = 0; A.spd = 0; A.pocket = null; A._homing = false; unstagger(A); /* carried to you, out of its pocket: no leash */
+    window._bb = { A, h: A.hp, mk };
+    const _push = BALLS.push; BALLS.push = function (...a) { for (const f of a) if (f.userData && f.userData.spell && f.userData.spell.id === 'dorcha') {
+      f.userData.vx = f.userData.vy = f.userData.vz = 0; f.userData.life = 30; f.position.set(px - Math.sin(yaw) * 1.2, 1, pz - Math.cos(yaw) * 1.2);
+      A.x = f.position.x; A.z = f.position.z; BALLS.push = _push; }
+      return _push.apply(this, a); };
+    for (const k2 in K) K[k2] = false; castT = 0; _castFreeAt = 0; _castReleaseAt = 0; spCd = 0; mana = 1000;
+    const sm = showMsg, cr = casterRand; showMsg = () => {}; casterRand = () => () => 1;
+    try { castSpell(); } finally { showMsg = sm; casterRand = cr; }
+  }, t);
+  await page.waitForFunction(() => window._bb.A._blindUntil > 0, null, { timeout: 15000, polling: 100 }).catch(() => {});
+  await g.frames(4);
+  const o = await page.evaluate(() => { const { A, h, mk } = window._bb; A.x = px - Math.sin(yaw) * 1.2; A.z = pz - Math.cos(yaw) * 1.2;
+    return { mk: mk.i != null, dealt: h - A.hp, blind: foeBlind(A), alert: A.alert, left: +(A._blindUntil - playClockS).toFixed(2) }; });
+  if (t !== 2) return o;
+  await page.evaluate(() => { const A = window._bb.A; A.combatYaw = Math.atan2(px - A.x, pz - A.z); playClockS = A._blindUntil + .05; });
+  await g.frames(6);
+  Object.assign(o, await page.evaluate(() => { const A = window._bb.A; return { after: foeBlind(A), found: A.alert }; }));
+  return o;
+};
+const bb2 = await blindBolt(2), bb1 = await blindBolt(1), bb3 = await blindBolt(3);
+console.log(JSON.stringify({ bb2, bb1, bb3 }));
+check(`Dorcha's bolt deals ${bb2.dealt} and blinds an alert foe 1.2 m away: it loses you (alert ${bb2.alert}, ${bb2.left} s left of 4)`, bb2.mk && bb2.dealt === 0 && bb2.blind && bb2.alert === false && bb2.left > 3.5 && bb2.left <= 4, bb2);
+check(`when the blind ends it finds you again (blind ${bb2.after}, alert ${bb2.found})`, bb2.after === false && bb2.found === true, bb2);
+check(`Dorcha's blind by tier: Impression ${bb1.left} s (of 2.4), Mastery ${bb3.left} s (of 5.2)`, bb1.blind && !bb1.alert && bb1.left > 1.9 && bb1.left <= 2.4 && bb3.blind && !bb3.alert && bb3.left > 4.7 && bb3.left <= 5.2, { bb1, bb3 });
+
+// S1628 — Dul Thart worn, cast by F from the book: 0.6 s in which a foe's blow passes through you (executeStrike at the clock given)
+const ph = await page.evaluate(() => {
+  const e = ENEMIES.find(x => x.floor === 1 && x.mesh); if (!e) return { none: true };
+  e.dead = false; e.dormant = false; unstagger(e);
+  knownWords = { dul_thart: 2 }; SKILLS.scath = { lv: 50, p: 0 }; LAID && laidEnd(); spellBook.length = 0; PHASE_UNTIL = 0;
+  const mk = bookMake('worn', 'dul_thart'); bookSelect(mk.i);
+  for (const k2 in K) K[k2] = false; castT = 0; _castFreeAt = 0; _castReleaseAt = 0; spCd = 0; mana = 1000; blocking = false;
+  const x0 = px, z0 = pz, sm = showMsg, cr = casterRand; let said = ''; showMsg = (m) => { said = m; }; casterRand = () => () => 1;
+  try { castSpell(); } finally { showMsg = sm; casterRand = cr; }
+  const t = performance.now(), out = { mk: mk.i != null, paid: 1000 - mana, said, moved: +Math.hypot(px - x0, pz - z0).toFixed(2), left: +(PHASE_UNTIL - t / 1000).toFixed(2) };
+  const hp = () => { PHP = 1000; return PHP; }, blow = (ms) => { const h = hp(); e.x = px; e.z = pz - .8; e.combatYaw = 0; executeStrike(e, 30, t + ms); return h - PHP; };
+  out.at = [blow(300), blow(590), blow(700)]; PHP = maxHP; PHASE_UNTIL = 0;
+  return out;
+});
+console.log(JSON.stringify(ph));
+check(`Dul Thart worn costs ${ph.paid}, moves you ${ph.moved} m and leaves you phased ${ph.left} s ("${ph.said}")`, ph.mk && ph.paid === 40 && ph.moved === 0 && ph.left > .55 && ph.left <= .6, ph);
+check(`a foe's blow passes through at 0.3 s and 0.59 s (${ph.at && ph.at[0]}, ${ph.at && ph.at[1]}) and lands at 0.7 s (${ph.at && ph.at[2]})`, ph.at && ph.at[0] === 0 && ph.at[1] === 0 && ph.at[2] > 0, ph);
 
 // S1611 — Tonn's wave: three foes, one in the line at 2.5 m, one 2.5 m to its side, one past the wave's end
 const tw = await page.evaluate(() => {

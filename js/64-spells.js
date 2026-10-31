@@ -798,12 +798,26 @@ function tintreachLeap(e,sp,tier){const L=WORD_BY.tintreach.forms.sent,dun=!!(li
 // bolt that the two hit loops hand to statusBolt in place of the damage.
 SPELLS.push({id:'freamh',school:'cloch',role:'basic',nameIr:'Fréamh',nameEn:'Root',nameMa:null,ico:'🌿',desc:'Roots a foe where it stands.',
   intReqs:[10,22,40],cost:30,speed:8,dmgBase:0,dmgLvl:0,col:0x6a8a3a,glowCol:0x8aaa50,wild:['scatter','fizzle'],status:'root'});
+// S1627 — Dorcha sent (magic-build.md's table: "blinds 4 s"; Michael's A on #919: "it loses you until the 4 s end"): a bolt that deals
+// nothing and blinds the foe it strikes, 4 s at Comprehension, the tier's magnitude (2.4 s at Impression, 5.2 at Mastery: no canon entry,
+// so ×1.3). A blind foe is not alert and sees nothing, as under Shadowcap's veil, but for that foe alone (foeBlind). The bolt's strike
+// wakes it as any strike does, but not until the blind ends: then it turns on you again, unless you are past its forget range by then
+// (blindTick, from both foe ticks). Smól's 10 m/s.
+SPELLS.push({id:'dorcha',school:'scath',role:'basic',nameIr:'Dorcha',nameEn:'Blind',nameMa:null,ico:'🌘',desc:'Blinds a foe: it loses you.',
+  intReqs:[10,22,40],cost:28,speed:10,dmgBase:0,dmgLvl:0,col:0x2a1a3a,glowCol:0x553377,wild:['scatter','fizzle'],status:'blind'});
+// S1628 — Dul Thart worn (magic-build.md's table: "through foes 0.6 s"; Michael's B on #926: bodies, blows and arrows pass through):
+// cast from the book's Worn entry, at the press, it makes you intangible 0.6 s at every tier (PHASE_UNTIL, which rollUntouchable reads).
+// Its Mastery is the canon's "untargetable", which this already is, so the tier changes nothing. A use of Scáth, as a worn word's cast is.
+function phaseWord(){const t=WORD_BY.dul_thart.forms.worn.phase;PHASE_UNTIL=Math.max(PHASE_UNTIL,performance.now()/1000+t);return t;}
+function foeBlind(e){return !!(e&&e._blindUntil>playClockS);}
+function blindTick(e){if(foeBlind(e)){e.alert=false;e._agg=false;return true;}if(e._blindWake){e._blindWake=false;e.alert=true;}return false;}
 // statusBolt: what a status bolt does to foe e it struck. A struck alert foe is a use of the school, as a blow is. Returns what it did.
 function statusBolt(e,sp,tier,rider){if(!e||e.dead||e.hp<=0)return null;const F=WORD_BY[sp.id]&&WORD_BY[sp.id].forms.sent;if(!F)return null;
   if(e.alert&&SKILL_DEF[sp.school])skillUse(sp.school,tier===3?2:1,e);
   const out={};
   if(F.root){const t=F.root*TIER_MULT.magnitude[Math.max(1,tier)-1];e._rootUntil=Math.max(e._rootUntil||0,playClockS+t);out.root=+t.toFixed(2);}
-  e.alert=true;if(rider)out.rider=riderHit(e,rider,0);
+  if(F.blind){const t=F.blind*TIER_MULT.magnitude[Math.max(1,tier)-1];e._blindUntil=Math.max(e._blindUntil||0,playClockS+t);out.blind=+t.toFixed(2);}
+  e.alert=!F.blind;if(F.blind){e._agg=false;e.hasCried=false;e._blindWake=true;}if(rider)out.rider=riderHit(e,rider,0);
   return out;}
 // S1611 — Tonn sent (magic-build.md's table: "a wave 8 m down the line, 14, posture 20"): no bolt flies. At the Cast row's release a
 // wave runs from you along your aim, 8 m or to the first wall, and every foe in its path takes the word's 14 (the tier's magnitude, the
@@ -893,7 +907,25 @@ function readSpellbook(i){
 // tutor deepens a word you hold at Impression to Comprehension in two hours on the clock, free, if your Intelligence meets the word's
 // Comprehension need; never past it (Mastery is the stone's alone, canon §7).
 const TUTOR_MIN=120;
-function mageRank(){const G=worldState.guild,m=G&&G.guild_m;return Math.min(4,Math.floor(((m&&m.done)||0)/3));}
+function mageRank(){const G=worldState.guild,m=G&&G.guild_m;return Math.min(4,Math.max(Math.floor(((m&&m.done)||0)/3),registerRankIdx()));} /* S1629 — the higher of the count and the Register's beats */
+// S1629 — the readings (words-and-the-mouth-build.md, "The readings"; Michael's 1 A on #695: two doors). Each Mages' Guild task handed
+// in earns one reading (worldState.register.readings, the character's), none once all 24 words are held, banked without a cap. At a hall
+// a reading takes a word you lack from a shelf your rank opens, at Impression, in four clock hours, if your Intelligence meets its
+// Impression need (refused with the reading kept). The three shelves are the words' Impression needs: 1–3 at Adept (8 words), 6–10 at
+// Evoker (12), 12 and up at Warlock (4). A read word goes no further than the tutor takes it; Mastery is still the stone's.
+// The guild's rank is the higher of its count and the Register's beats (beat 3 Adept, 4 Evoker, 6 Warlock), read here before the
+// Register itself is built, so a beat is 0 until then.
+const READ_MIN=240,SHELF_RANK=[1,2,3];
+function shelfOf(id){const n=WORD_BY[id].intReqs[0];return n<=3?0:n<=10?1:2;}
+function registerOf(){return worldState.register||(worldState.register={});}
+function readingsHeld(){return (worldState.register&&worldState.register.readings)||0;}
+function registerRankIdx(){const b=(worldState.register&&worldState.register.beat)||0;return b>=6?3:b>=4?2:b>=3?1:0;}
+function shelfWords(rankIdx){return WORDS.filter(w=>!knownWords[w.id]&&rankIdx>=SHELF_RANK[shelfOf(w.id)]).map(w=>w.id);}
+// the named actions (co-op rules): a reading earned at a turn-in, and a word read from the shelf
+function earnReading(){if(WORDS.every(w=>knownWords[w.id]))return false;const R=registerOf();R.readings=(R.readings||0)+1;return true;}
+function readWord(id,rankIdx){const w=WORD_BY[id];if(!w||knownWords[id])return 'noop';if(readingsHeld()<1)return 'none';
+  if(!shelfWords(rankIdx!=null?rankIdx:mageRank()).includes(id))return 'shelf';if(ATTRS.intelligence<w.intReqs[0])return 'int';
+  registerOf().readings--;advanceClock(READ_MIN);return learnSpell(id,1);}
 function formHeld(f,rankIdx){const F=FORMS[f];if(!F)return false;return F.rank<=(rankIdx!=null?rankIdx:mageRank())||formsGranted.includes(f);}
 function formsHeld(rankIdx){return FORM_ORDER.filter(f=>formHeld(f,rankIdx));}
 // the named action (co-op rules): a word you hold deepened, by the tutor or a book, to Comprehension at most
@@ -907,6 +939,11 @@ function spellShopTopics(rankIdx){
     out.push({label:`Study ${w.nameIr} with the tutor (two hours)`,quest:true,fn:()=>{const r=deepenWord(id,'tutor');
       if(r==='int')return `You'd not hold it yet. Intelligence ${w.intReqs[1]}, then come back.`;
       return r==='noop'?'There is nothing more the tutor can give you there.':`${w.nameIr}, ${w.nameEn}. Say it slowly the first few times.`;}});}
+  {const n=readingsHeld(),ids=shelfWords(rankIdx); /* S1629 — the readings */
+    out.push({label:'Read from the shelves',folder:true,response:!n?'You have no reading owed. Each task for the hall earns one.':!ids.length?'There is nothing on your shelves you do not hold.':`${n} reading${n===1?'':'s'} owed. Four hours with the copy, and the word is yours, faintly.`,
+      follow:n?ids.map(id=>{const w=WORD_BY[id];return {label:`${w.nameIr}, ${w.nameEn} (four hours)`,quest:true,fn:()=>{const r=readWord(id,rankIdx);
+        if(r==='int')return `You can't hold it yet. Intelligence ${w.intReqs[0]}.`;
+        return r==='learned'?`${w.nameIr}, ${w.nameEn}. It is a copy, and it will want the stone.`:'Not now.';}};}):[]});}
   return out;
 }
 

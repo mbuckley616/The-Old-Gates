@@ -402,6 +402,7 @@ function castSpell(){
 
   if(typeof WORLD!=='undefined'&&isInterior())WORLD.guild.onCast(sp); /* S672 — the hearth task: a spell that went off, not a press of F */
   // Animation type: projectile spells use the forward-thrust curve; heal/self uses the raise-up curve
+  if(bk.form==='worn'&&bk.word==='dul_thart'){if(SKILL_DEF[sp.school])skillUse(sp.school,1,'cast');startCastAnim(sp,'self');showMsg(`${sp.ico} ${sp.nameEn} — ${phaseWord()}s`,'#c0e0ff');return;} /* S1628 — Dul Thart worn: the phase */
   if(sp.role==='buff'){startCastAnim(sp,'self');applySpellBuff(sp,tier);return;} // v80 — self spells
   const animType = sp.role==='heal' ? 'self' : 'projectile';
   startCastAnim(sp, animType);
