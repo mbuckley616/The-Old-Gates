@@ -3,6 +3,8 @@
 // keyed by its foe id (`slime:<id>`); the old blob's length, centred on it, on the floor; three levels by distance; the old quiver copied
 // onto it about the floor; the tell's glow on its hide; a dead one never dressed; killed, darkened with its shaders kept; the split's
 // two Small Slimes dressed too. Picture: docs/prototypes/f4/f4-slimes.jpg (the kit's and the old, side by side).
+// Session 1630: killed, it slumps where it lay as a jelly, upright, squashed and spread; f4-slime-dead.jpg.
+// Session 1631: killed, the Fire Elemental gutters out, upright, sunk, its flames dark; f4-elemental-dead.jpg.
 // Session 1593: the Fire Elemental in the same gate wears the kit's `fireelemental`, fitted by its height; f4-elemental.jpg.
 import { boot, check, ROOT } from './lib/game.mjs';
 import { enterDungeon } from './lib/dungeonshot.mjs';
@@ -74,6 +76,24 @@ const dead = await page.evaluate(() => { const R = _R, before = []; R.hc.W.trave
   return { n: before.length, cloned: before.filter(([o, m]) => o.material !== m).length, shaded: shaded.length, kept: shaded.filter(([o, m]) => o.material.onBeforeCompile === m.onBeforeCompile).length,
     darker: before.filter(([o, m]) => o.material !== m && o.material.color && o.material.color.r <= m.color.r * .36 + 1e-6).length, still: +mv.toFixed(4), hc: !!R.hc, smalls: ENEMIES.slice(n0).filter(e => e.name === 'Small Slime').map(e => e.id) }; });
 check('killed, the kit\'s body is darkened with its shaders kept, and it stops', dead.hc && dead.n > 0 && dead.cloned === dead.n && dead.darker === dead.n && dead.kept === dead.shaded && dead.still < 1e-3, dead);
+// Session 1630: killed, it slumps where it lay as a jelly, not tipped on its side: upright, on the floor, squashed and spread over 0.45 s by the
+// clock, the old blob (the far level) with it
+const pud = await page.evaluate(() => { const R = _R, S = _S, m = S.mesh, f = R.hc.f, half = (() => { R.dead0 = performance.now() / 1000 - .1; hcFishPose(R); return +(R.hc.W.scale.y / f).toFixed(3); })();
+  R.dead0 = performance.now() / 1000 - 1; hcFishPose(R); m.updateMatrixWorld(true); R.hc.C.skel.update();
+  const inv = new THREE.Matrix4().copy(m.matrixWorld).invert(), b = new THREE.Box3(), v = new THREE.Vector3();
+  R.hc.W.traverse(o => { if (!o.isMesh || !o.geometry.attributes.position) return; const p = o.geometry.attributes.position; for (let i = 0; i < p.count; i += 5) { v.fromBufferAttribute(p, i); if (o.isSkinnedMesh) o.applyBoneTransform(i, v); else v.applyMatrix4(o.matrixWorld); v.applyMatrix4(inv); b.expandByPoint(v); } });
+  R.mesh.scale.copy(R.oldS); CAM.position.set(m.position.x - 45, m.position.y + 1.6, m.position.z); CAM.updateMatrixWorld(true); for (let i = 0; i < 3; i++) tickCreatures(1 / 60, 7e5 + i * 17);
+  const far = +(R.mesh.scale.y / R.oldS.y).toFixed(3), farL = R.hc.L; CAM.position.set(m.position.x - 3, m.position.y + 1.6, m.position.z); CAM.updateMatrixWorld(true); for (let i = 0; i < 3; i++) tickCreatures(1 / 60, 7.1e5 + i * 17);
+  return { rotZ: m.rotation.z, y: +m.position.y.toFixed(3), baseY: S.baseY, half, sy: +(R.hc.W.scale.y / f).toFixed(3), sx: +(R.hc.W.scale.x / f).toFixed(3), foot: +b.min.y.toFixed(4), top: +b.max.y.toFixed(3), far, farL }; });
+console.log('  puddle:', JSON.stringify(pud));
+check(`killed, it slumps upright on the floor (squashed to ${pud.sy}, spread to ${pud.sx}, ${pud.half} at 0.1 s), not on its side; the old blob with it`,
+  pud.rotZ === 0 && Math.abs(pud.y - pud.baseY) < 1e-3 && pud.sy === .28 && pud.sx === 1.3 && pud.half < 1 && pud.half > .28 && Math.abs(pud.foot) < .03 && pud.far === .28 && pud.farL === 2, pud);
+const shotP = await page.evaluate(() => { const S = _S, m = S.mesh; const x = m.position.x, y = m.position.y, z = m.position.z, L = new THREE.PointLight(0xffb070, 1.4, 12); L.position.set(x + 1.6, y + 1.6, z + .6); dScene.add(L);
+  const hid = ENEMIES.filter(e => e.mesh && e !== S && e.mesh.visible); hid.forEach(e => e.mesh.visible = false);
+  const cv = REN.domElement, cam = new THREE.PerspectiveCamera(45, cv.width / cv.height, .05, 60); cam.position.set(x + 1.9 * m.scale.x, y + 1.0 * m.scale.x, z + .9 * m.scale.x); cam.lookAt(x, y + .1 * m.scale.x, z);
+  dScene.updateMatrixWorld(true); REN.render(dScene, cam); dScene.remove(L); hid.forEach(e => e.mesh.visible = true);
+  const o = document.createElement('canvas'); o.width = cv.width; o.height = cv.height; o.getContext('2d').drawImage(cv, 0, 0); return o.toDataURL('image/jpeg', .85); });
+fs.writeFileSync(path.join(OUT, 'f4-slime-dead.jpg'), Buffer.from(shotP.split(',')[1], 'base64'));
 const small = await page.evaluate(() => { const L = ENEMIES.filter(e => e.name === 'Small Slime' && !e.dead); const S = L[0]; if (!S) return { n: 0 };
   const rig = () => [...HC_RIGS].find(r => r.e === S); let k = 0;
   while (!(rig() && rig().hc) && k++ < 300) { CAM.position.set(S.mesh.position.x - 3, S.mesh.position.y + 1.6, S.mesh.position.z); CAM.updateMatrixWorld(true); tickCreatures(1 / 60, 5e5 + k * (HBODY.gap + 1)); }
@@ -106,5 +126,23 @@ const shotF = await page.evaluate(() => { const F = _F, R = _RF, m = F.mesh; R.h
   dScene.updateMatrixWorld(true); REN.render(dScene, cam); dScene.remove(L); dScene.remove(twin); ENEMIES.forEach(e => { if (e.mesh && !e.dead) e.mesh.visible = true; });
   const o = document.createElement('canvas'); o.width = cv.width; o.height = cv.height; o.getContext('2d').drawImage(cv, 0, 0); return o.toDataURL('image/jpeg', .85); });
 fs.writeFileSync(path.join(OUT, 'f4-elemental.jpg'), Buffer.from(shotF.split(',')[1], 'base64'));
+// Session 1631: killed, it gutters out where it hung: upright, sunk to a heap of its crust, its flames shrunk and dark, its cracks dimmed
+const gut = await page.evaluate(() => { const F = _F, R = _RF, m = F.mesh, f = R.hc.f, g0 = R.hc.glow.map(u => u.value.r + u.value.g + u.value.b);
+  F.hp = 0; killE(F, ''); R.dead0 = performance.now() / 1000 - .3; hcFishPose(R); const half = +(R.hc.W.scale.y / f).toFixed(3);
+  R.dead0 = performance.now() / 1000 - 2; hcFishPose(R); m.updateMatrixWorld(true); R.hc.C.skel.update();
+  const inv = new THREE.Matrix4().copy(m.matrixWorld).invert(), b = new THREE.Box3(), v = new THREE.Vector3();
+  R.hc.W.traverse(o => { if (!o.isMesh || !o.visible || !o.geometry.attributes.position) return; const p = o.geometry.attributes.position; for (let i = 0; i < p.count; i += 5) { v.fromBufferAttribute(p, i); if (o.isSkinnedMesh) o.applyBoneTransform(i, v); else v.applyMatrix4(o.matrixWorld); v.applyMatrix4(inv); b.expandByPoint(v); } });
+  let lit = 0; for (const Fl of R.hc.flames) for (const [q] of Fl.m) if (q.emissiveIntensity > 0) lit++;
+  const g1 = R.hc.glow.map(u => u.value.r + u.value.g + u.value.b);
+  return { rotZ: m.rotation.z, y: +m.position.y.toFixed(3), baseY: F.baseY, half, sy: +(R.hc.W.scale.y / f).toFixed(3), flames: R.hc.flames.length, lit, glow: g1.map((x, i) => +(x / g0[i]).toFixed(3)), foot: +b.min.y.toFixed(3), top: +b.max.y.toFixed(3) }; });
+console.log('  gutter:', JSON.stringify(gut));
+check(`killed, the Fire Elemental gutters out upright: sunk to ${gut.sy} (${gut.half} at 0.3 s), its top at ${gut.top} m, ${gut.flames} flame pieces dark, its cracks at ${gut.glow}`,
+  gut.rotZ === 0 && Math.abs(gut.y - gut.baseY) < 1e-3 && gut.sy === .35 && gut.half > .35 && gut.half < 1 && gut.flames > 0 && gut.lit === 0 && gut.glow.length > 0 && gut.glow.every(x => Math.abs(x - .12) < .01) && gut.top < .5 && gut.foot > -.03, gut);
+const shotG = await page.evaluate(() => { const F = _F, m = F.mesh, x = m.position.x, y = m.position.y, z = m.position.z, s = Math.max(m.scale.x, .5), L = new THREE.PointLight(0xffb070, 1.0, 12); L.position.set(x + 1.6 * s, y + 1.6 * s, z + 1.4 * s); dScene.add(L);
+  const hid = ENEMIES.filter(e => e.mesh && e !== F && e.mesh.visible); hid.forEach(e => e.mesh.visible = false);
+  const cv = REN.domElement, cam = new THREE.PerspectiveCamera(45, cv.width / cv.height, .05, 60); cam.position.set(x + 1.2 * s, y + 1.0 * s, z + 2.2 * s); cam.lookAt(x, y + .3 * s, z);
+  dScene.updateMatrixWorld(true); REN.render(dScene, cam); dScene.remove(L); hid.forEach(e => e.mesh.visible = true);
+  const o = document.createElement('canvas'); o.width = cv.width; o.height = cv.height; o.getContext('2d').drawImage(cv, 0, 0); return o.toDataURL('image/jpeg', .85); });
+fs.writeFileSync(path.join(OUT, 'f4-elemental-dead.jpg'), Buffer.from(shotG.split(',')[1], 'base64'));
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
