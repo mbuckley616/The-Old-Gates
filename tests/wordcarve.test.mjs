@@ -3,6 +3,7 @@
 // all 24 words; the table reads no level and nothing that has loaded, so it is the same at level 1 and 30 and after a reload. Then a
 // gate whose carving is one of the eight new words (none in the old SPELLS table) is entered: the carving hangs on its last floor,
 // and a touch teaches the word a tier a touch and marks the door read.
+// Session 1631: Súil's search from the carvings by place, kept for the cast.
 // Session 1630: the carvings by place (carvingsNear, nearestCarvingOf), the hermits' *Do you know the old words?*, the rubbing's label.
 import { boot, check } from './lib/game.mjs';
 const table = () => { const T = carvingTable(), out = { isles: {}, sig: [] };
@@ -69,5 +70,14 @@ check(`asked again it repeats ${h.w2} ("${h.say2}"); asked afresh, the camp's id
 check(`holding every word, a hermit knows none ("${h.none}") and nothing is spent`, /None you lack/.test(h.none) && !h.noneSaved, h);
 check(`a rubbing names its gate and its word, or the gate alone where none is carved ("${h.rub && h.rub.name}")`, h.rub && (h.rub.word ? h.rub.name.endsWith(' — ' + h.rub.word) : !/ — /.test(h.rub.name)) && /^Rubbing: /.test(h.rub.name), h.rub);
 check(`a carved gate's rubbing reads "${h.rub2 && h.rub2.name}"`, h.rub2 && h.rub2.name === 'Rubbing: The Test Gate — ' + h.rub2.word, h.rub2);
+// S1631 — Súil's search: the nearest unread carving within 2,600 m, from the carvings by place; kept for the cast
+const su = await page.evaluate(() => { worldState.sigilsRead = {}; const out = {};
+  SPELL_FX.seamsight = performance.now() + 60000; const d = nearestSigilDoor(); if (!d) return { none: true };
+  out.d = Math.round(Math.hypot(d.x - px, d.z - pz)); out.carved = !!gateCarving(d.seed); out.first = d.seed === carvingsNear(px, pz, 2600)[0].seed;
+  worldState.sigilsRead[d.seed] = gateCarving(d.seed); out.kept = nearestSigilDoor().seed === d.seed;
+  SPELL_FX.seamsight = performance.now() + 60001; const d2 = nearestSigilDoor(); out.next = d2 && d2.seed !== d.seed && !worldState.sigilsRead[d2.seed];
+  SPELL_FX.seamsight = 0; worldState.sigilsRead = {}; return out; });
+console.log(JSON.stringify(su));
+check(`Súil points at the nearest carving, ${su.d} m off and carved (${su.carved}); read during the cast it is kept (${su.kept}); the next cast points at the next unread (${su.next})`, !su.none && su.d <= 2600 && su.carved && su.first && su.kept && su.next, su);
 check('no page errors on the fresh page', g.errs.length === 0, g.errs);
 await g.close();

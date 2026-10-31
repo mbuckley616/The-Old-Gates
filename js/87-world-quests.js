@@ -457,10 +457,10 @@ const giver=`${lord.title} ${lord.name}`;
   // 2,600 m of the camp, drawn by the camp's site id, and the nearest gate that carries it, marked on the map as a rubbing marks it
   // (worldState.rubbings). Saved as register.hermits[siteId]; asked again, the hermit repeats it. With none near, the topic says so and
   // nothing is spent. Free: a stranger's gift.
-  const HERMIT_REACH=2600;
+  const CARVE_REACH=2600; /* the rubbing's reach: the hermits' and Súil's searches */
   function hermitWord(site){const R=worldState.register||(worldState.register={}),H=R.hermits||(R.hermits={});
-    if(H[site.id]){const g=nearestCarvingOf(H[site.id],site.x,site.z,HERMIT_REACH);return {word:H[site.id],gate:g,again:true};}
-    const lack=WORDS.filter(w=>!knownWords[w.id]).map(w=>w.id),near=carvingsNear(site.x,site.z,HERMIT_REACH,lack);
+    if(H[site.id]){const g=nearestCarvingOf(H[site.id],site.x,site.z,CARVE_REACH);return {word:H[site.id],gate:g,again:true};}
+    const lack=WORDS.filter(w=>!knownWords[w.id]).map(w=>w.id),near=carvingsNear(site.x,site.z,CARVE_REACH,lack);
     const ws=[...new Set(near.map(c=>c.word))].sort();if(!ws.length)return null;
     const word=ws[Math.floor(seededRng('hermit',site.id)()*ws.length)],gate=near.find(c=>c.word===word);
     H[site.id]=word;(worldState.rubbings||(worldState.rubbings={}))[gate.seed]=gate.name;return {word,gate};}
@@ -470,7 +470,15 @@ const giver=`${lord.title} ${lord.name}`;
     return `${w.nameIr}. ${w.nameEn}, in your tongue. It is cut in ${g.name}, ${compassWord(g.x-site.x,g.z-site.z)} of here.${h.again?'':' Your map has it now.'}`;}}];}
   // the word carved behind a door (its seed), or null; a legacy dungeon's is SIGIL_PLACEMENTS'
   function gateCarving(seed){if(SIGIL_PLACEMENTS[seed])return SIGIL_PLACEMENTS[seed];const D=carvingTable().bySeed[seed];return D?D.word:null;}
-  function nearestSigilDoor(){let best=null,bd=1e9;const read=worldState.sigilsRead||{};for(const e of sigilDoors()){if(read[e.seed])continue;const p=dungeonWorldPos[e.seed]||{x:e.x,z:e.z};const d=Math.hypot(p.x-px,p.z-pz);if(d<bd){bd=d;best={x:p.x,z:p.z,name:e.canonicalName||'an old gate',seed:e.seed};}}return best;}
+  // S1631 — the Weaver's Eye's search (words-and-the-mouth-build.md, "Súil by choice": "the cells within 2,600 m, read through getCell and
+  // the door's seed, never sigilDoors() over loaded CELLS"): the nearest unread carving within the rubbing's reach, from the carvings by
+  // place, so the compass can't turn with what has loaded. Súil's search runs once a cast and keeps its answer for the cast (_suilCast,
+  // keyed by the cast's end); the Weaver's shuttle, carried, looks again each frame. Was: the nearest unread sigil or fort door among the
+  // loaded cells, carved or not.
+  let _suilCast=null;
+  function nearestUnreadCarving(x,z){const read=worldState.sigilsRead||{},c=carvingsNear(x,z,CARVE_REACH).find(c=>!read[c.seed]);return c?{x:c.x,z:c.z,name:c.name,seed:c.seed}:null;}
+  function nearestSigilDoor(){if(typeof fxOn==='function'&&fxOn('seamsight')){const u=SPELL_FX.seamsight;if(!_suilCast||_suilCast.until!==u)_suilCast={until:u,d:nearestUnreadCarving(px,pz)};return _suilCast.d;}
+    return nearestUnreadCarving(px,pz);}
   function onMasteryTouch(spellId){const seed=(typeof activePortal!=='undefined'&&activePortal&&activePortal.seed)||(typeof curPortal!=='undefined'&&curPortal&&curPortal.seed)||(typeof currentPortal!=='undefined'&&currentPortal&&currentPortal.seed)||null;if(seed!=null)(worldState.sigilsRead||(worldState.sigilsRead={}))[seed]=spellId;worldState.masteries=(worldState.masteries||0)+1;}
   function rubbingTopics(site){const d=nearestSigilDoorFrom(site);if(!d)return [];const price=60;return [{label:`Buy a rubbing of a warm stone (${price} gold)`,quest:true,fn:()=>{if(gold<price)return `A rubbing is ${price} gold. We have to send someone to take it.`;gold-=price;updateHUD();const cw=WORD_BY[gateCarving(d.seed)];if(typeof bagAdd==='function')bagAdd({name:`Rubbing: ${d.name}${cw?' — '+cw.nameIr:''}`, /* S1630 — the gate and its word */ico:'📜',type:'rubbing',seed:d.seed,gate:d.name,weight:.2,sellMult:.3,buyPrice:price,qty:1});return `Taken from ${d.name}, ${compassWord(d.x-site.x,d.z-site.z)} of here. Read it and your map will remember where.`;}}];}
   function nearestSigilDoorFrom(site){let best=null,bd=1e9;const read=worldState.sigilsRead||{},rub=worldState.rubbings||{};for(const e of sigilDoors()){if(read[e.seed]||rub[e.seed])continue;const p=dungeonWorldPos[e.seed]||{x:e.x,z:e.z};const d=Math.hypot(p.x-site.x,p.z-site.z);if(d<bd&&d<2600){bd=d;best={x:p.x,z:p.z,name:e.canonicalName||(typeof dungeonName==='function'?dungeonName(e.seed,e.theme):'an old gate'),seed:e.seed};}}return best;}
