@@ -524,18 +524,23 @@ if (!process.argv.includes('--shots-only')) { const page = await browser.newPage
       let top = -1, mtop = -1; const cy = (T, t) => (R[T[t] * 3 + 1] + R[T[t + 1] * 3 + 1] + R[T[t + 2] * 3 + 1]) / 3, cx = (T, t) => Math.abs(R[T[t] * 3] + R[T[t + 1] * 3] + R[T[t + 2] * 3]) / 3;
       for (let t = 0; t < PK.R.beard.length; t += 3) if (cx(PK.R.beard, t) < eyeX[1] + .01) top = Math.max(top, cy(PK.R.beard, t));
       for (let t = 0; t < PK.R.moust.length; t += 3) mtop = Math.max(mtop, cy(PK.R.moust, t));
-      // and none on the ear (Session 1656): the lobe stands out of the head past |x| .0755 above y .672, in front of z .055
-      let onEar = 0; for (const T of [PK.R.beard, PK.R.beardBase]) for (let t = 0; t < T.length; t += 3) { const z = (R[T[t] * 3 + 2] + R[T[t + 1] * 3 + 2] + R[T[t + 2] * 3 + 2]) / 3; if (cx(T, t) > .0755 && cy(T, t) > .672 && z < .055) onEar++; }
+      // and none on the ear (Session 1656): the lobe stands out of the head past |x| .0755 above y .672, in front of z .055; and (Session 1661)
+      // the front of its base, past |x| .07 above y .68 to z .06
+      let onEar = 0; for (const T of [PK.R.beard, PK.R.beardBase]) for (let t = 0; t < T.length; t += 3) { const z = (R[T[t] * 3 + 2] + R[T[t + 1] * 3 + 2] + R[T[t + 2] * 3 + 2]) / 3; if (cy(T, t) > .672 && ((cx(T, t) > .0755 && z < .055) || (cx(T, t) > .07 && cy(T, t) > .68 && z < .06))) onEar++; }
       out.beard = { lid: +lid.toFixed(4), top: +top.toFixed(4), gap: +(lid - top).toFixed(4), moustTop: +mtop.toFixed(4), baseTris: PK.R.beardBase.length / 3, tris: PK.R.beard.length / 3, onEar }; }
     // the beard over a tunic (Session 878): no card on the chest under the collar's front (the tunic's shader cuts it at rest y .612), where the throat's hairs came out through the cloth
     { const G0 = K.rollGenome('b7', { g: 1 }), g = { ...G0, beard: .8, dress: { ...G0.dress, tunic: G0.dress.tunic || [.3, .35, .25], mantle: null, cloak: null } }, p = K.makePerson(g);
       const tu = p.meshes.find(m => m.name === 'tunic'), bd = p.meshes.find(m => m.name === 'beard'), T = tu.geometry.attributes.position.array, Bp = bd.geometry.attributes.position.array; let collar = -1, below = 0;
       const AB = tu.geometry.attributes.aBase.array; for (let i = 0; i < T.length; i += 3) if (Math.abs(T[i]) < .03 && T[i + 2] > 0 && AB[i + 1] < .612) collar = Math.max(collar, T[i + 1]);
       for (let i = 0; i < Bp.length; i += 3) if (Bp[i + 1] < collar - .04 && Math.abs(Bp[i]) < .12 && Bp[i + 2] > 0) below++;
-      out.beardTunic = { collar: +collar.toFixed(4), below, verts: Bp.length / 3, roots: bd.userData.roots }; }
+      // and beside the ear, no card rooted on skin turned back or in (Session 1661): the cards' normal is their root's, outward from the head;
+      // in front of z .03, since behind it, under the jaw's angle, the neck's side faces back and its cards hang straight down
+      const BN = bd.geometry.attributes.normal.array; let turned = 0; for (let i = 0; i < Bp.length; i += 30) if (Math.abs(Bp[i]) > .06 && Bp[i + 2] > .03 && (BN[i + 2] < -.3 || BN[i] * Math.sign(Bp[i]) < .1)) turned++;
+      out.beardTunic = { collar: +collar.toFixed(4), below, verts: Bp.length / 3, roots: bd.userData.roots, cut: bd.userData.turned, turned }; }
     return out; });
   check(`the beard stops under a cheek line: within the eyes' width ${(r.beard.gap * 100).toFixed(1)} cm under the lower lid, the moustache up to the nose (y ${r.beard.moustTop}), the dark base inside the hairs (${r.beard.baseTris} of ${r.beard.tris} triangles), none of it on the ear (${r.beard.onEar})`, r.beard.gap > .015 && r.beard.moustTop > .678 && r.beard.baseTris < r.beard.tris && r.beard.onEar === 0, r.beard);
   check(`a beard over a tunic stops at its collar: no card on the chest, 4 cm under the collar's front (${r.beardTunic.below} of ${r.beardTunic.verts} points)`, r.beardTunic.below === 0 && r.beardTunic.verts > 1000, r.beardTunic);
+  check(`no beard card roots beside the ear on skin that turns back or in toward the neck, where it lay flat along the jaw as a pale tuft (${r.beardTunic.turned} cards; ${r.beardTunic.cut} root triangles left out on this body)`, r.beardTunic.turned === 0 && r.beardTunic.cut > 0 && r.beardTunic.roots > 800, r.beardTunic);
   for (const [k, c] of Object.entries(r.scarves)) { const w = c.wrap, t = c.tail;
     check(`${k}: nothing of the head or the tucked hair through the scarf (${w.hairOut} of ${w.hairPts} hair points, ${(w.gap * 1000).toFixed(1)} mm over the head), its fold ${(w.front * 100).toFixed(1)} cm over the brows, one folded edge, saved and loaded back`, w.scarf && w.hairOut === 0 && w.overBrow === 0 && w.gap > .006 && w.front > .015 && w.front < .05 && w.turns === 1 && c.saved, w);
     check(`${k}: the point down the middle of the back, ${t.len * 100} cm, nothing it lies over through it (${t.through} of ${t.tested}), ${(t.toWrap * 1000).toFixed(1)} mm from the scarf; the knot at the nape, its ends ${(t.knot.endGap * 1000).toFixed(1)} mm over the point`, t.point && t.side === 'C' && t.through === 0 && t.tested > 1000 && t.toWrap < .02 && t.knot && t.knot.endGap >= .006 && t.hemWidth < .02, t); }
