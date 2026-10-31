@@ -1163,11 +1163,20 @@ function hcFishAttach(rig,C){const tA=performance.now();
   rig.hc={W,C,f,fur:[],small,mid:null,merge:false,bits:C.B.bits.map(b=>b.obj),hide:meshes,L:-1,em:0,y0:W.position.y};
   HC_BODY.ms+=performance.now()-tA;HC_BODY.n++;}
 function hcFishPose(rig){const H=rig.hc,e=rig.e,now=performance.now()/1000,dt=rig.t?Math.min(.1,now-rig.t):0;rig.t=now;
-  if(e.dead)return;rig.ph+=dt*rig.rate[e.alert?1:0]/(Math.PI*2);HC.pose(H.C,rig.ph);
+  if(e.dead){if(rig.crawl)hcPuddle(rig);return;}rig.ph+=dt*rig.rate[e.alert?1:0]/(Math.PI*2);HC.pose(H.C,rig.ph);
   if(rig.crawl&&rig.em0){const q=rig.em0.scale,f=H.f;H.W.scale.set(f*q.x,f*q.y,f*q.z);H.W.position.y=H.y0*q.y;} /* S1592 — the slime's quiver, about the floor */
   // the wind-up's red and the parry's gold, lit on the old body's torso (enemyBodyMesh), on the kit's hide
   const src=rig.em0||e.limbs&&e.limbs.torso,m=src&&src.material;let em=m&&m.emissive?m.emissive.getHex():0;if(rig.emOwn!=null&&!(e._wind>0||e._parryFlash))em=0; /* S1593 — the elemental's core: its own glow and its ease back to it are not a flash */
   if(em!==H.em){H.em=em;for(const o of H.hide)for(const x of Array.isArray(o.material)?o.material:[o.material])if(x.emissive)x.emissive.setHex(em);}}
+// Session 1630: a slime killed slumps where it died, as a jelly does, not tipped on its side as killE lays every unragdolled foe: its
+// foe group stood up again on the floor, and the kit's body (and the old blob, the far level) squashed to .28 and spread to 1.3 about
+// the floor over 0.45 s, read on the clock (a dropped frame lands it in the same place). A look only: the corpse, its loot and its box
+// are killE's, untouched
+const HC_PUDDLE={t:.45,sy:.28,sxz:1.3};
+function hcPuddle(rig){const H=rig.hc,e=rig.e,now=performance.now()/1000;
+  if(rig.dead0==null){rig.dead0=now;e.mesh.rotation.z=0;e.mesh.position.y=typeof e.baseY==='number'?e.baseY:(e.floor===2?FLOOR2_Y:0);rig.oldS=rig.mesh.scale.clone();}
+  const u=Math.min(1,(now-rig.dead0)/HC_PUDDLE.t),k=1-(1-u)*(1-u)*(1-u),sy=1+(HC_PUDDLE.sy-1)*k,sx=1+(HC_PUDDLE.sxz-1)*k,f=H.f;
+  H.W.scale.set(f*sx,f*sy,f*sx);H.W.position.y=H.y0*sy;rig.mesh.scale.set(rig.oldS.x*sx,rig.oldS.y*sy,rig.oldS.z*sx);rig.puddle=k;}
 const _hcM=new THREE.Matrix4();
 // S1595 — a rig nested in a group of its own place (a port's gulls, rig.nest) is read through its ancestors: shown while every one is
 // visible and the top is this scene, dropped once the top is no scene at all (the town unloaded), its distance from its place in the world
@@ -1190,7 +1199,7 @@ function hcTick(now){let best=null,bd=HC_BODY.build;
     const gp=hcAt(rig,g),d=Math.hypot(CAM.position.x-gp.x,CAM.position.z-gp.z)/(rig.reach||1); /* S1536 — a whale's levels by its size */
     if(!rig.hc){if(!busy&&!HC_BODY.job&&!rig.hcFail&&!(rig.fish&&rig.e.dead)&&d<bd){bd=d;best=rig;}continue;} /* S1529 — a shark killed before its body was built keeps the old one */
     const L=rig.hc.L,a=HC_BODY.near+(L>0?-1:1),b=HC_BODY.mid+(L>1?-1:1);hcLevel(rig,d<a?0:d<b?1:2);hcThin(rig,d>HC_BODY.furAll+(rig.hc.thin?-.5:.5));
-    if(rig.hc.L<2)(rig.fish?hcFishPose:hcPose)(rig);}
+    if(rig.hc.L<2)(rig.fish?hcFishPose:hcPose)(rig);else if(rig.crawl&&rig.e.dead)hcPuddle(rig);}
   if(best&&HC.buildIter){try{HC_BODY.job={rig:best,it:HC.buildIter(hcGenome(best)),ms:0,steps:0};}catch(e){best.hcFail=true;console.warn('F4: the kit could not build',best.name,e);}best=null;}
   if(!best&&HC_BODY.job&&!busy)best=hcBuildStep();
   if(best){const C=best.hcC;best.hcC=null;(best.fish?hcFishAttach:hcAttach)(best,C);HBODY.last=now;if(best.hc){const g=best.root.parent,gp=hcAt(best,g),d=Math.hypot(CAM.position.x-gp.x,CAM.position.z-gp.z)/(best.reach||1);hcLevel(best,d<HC_BODY.near?0:d<HC_BODY.mid?1:2);hcThin(best,d>HC_BODY.furAll);if(best.hc.L<2)(best.fish?hcFishPose:hcPose)(best);}}}
