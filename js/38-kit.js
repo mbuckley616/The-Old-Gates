@@ -2999,10 +2999,30 @@ function markRing(hAt = () => 0, o = {}) {
   bx('oak', .32, 3.1, .32, px, py + 1.45, pz); bx('beam', .46, .1, .46, px, py + 3.03, pz); bx('beam', .2, .16, .2, px, py + 3.16, pz);
   for (let k = 0; k < 6; k++) bx('carve', .26, .13, .03, px, py + 2.6 - k * .27, pz + .17);
   const group = new THREE.Group(); group.name = 'mark ring'; let tris = 0;
+  // the names (Session 1662): a face over each board, 4 mm proud of it, in one mesh with the ring's own canvas, row k of it on board k
+  const names = ringNames(); { const P = [], U = [], I = []; for (let k = 0; k < 6; k++) { const y = py + 2.6 - k * .27, z = pz + .189, v0 = 1 - (k + 1) / 6, v1 = 1 - k / 6, o = k * 4;
+      P.push(px - .125, y - .06, z, px + .125, y - .06, z, px + .125, y + .06, z, px - .125, y + .06, z); U.push(0, v0, 1, v0, 1, v1, 0, v1); I.push(o, o + 1, o + 2, o, o + 2, o + 3); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(U, 2)); g.setIndex(I); g.computeVertexNormals();
+    const m = new THREE.Mesh(g, names.mat); m.name = 'ring:names'; m.receiveShadow = true; group.add(m); tris += 12; }
   for (const [k, gs] of B) { const clean = gs.map(g => { for (const a of Object.keys(g.attributes)) if (!['position', 'normal', 'uv'].includes(a)) g.deleteAttribute(a); if (!g.attributes.normal) g.computeVertexNormals(); if (!g.attributes.uv) g.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(g.attributes.position.count * 2), 2)); return g; });
     const g = mergeGeometries(clean); clean.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = 'ring:' + k; m.castShadow = k !== 'earth'; m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
-  return { group, tris: Math.round(tris), draws: group.children.length, R, gate: { x: 0, z: R + .6 }, post: { x: px, z: pz, w: .36, d: .36 }, stands };
+  return { group, tris: Math.round(tris), draws: group.children.length, R, gate: { x: 0, z: R + .6 }, post: { x: px, z: pz, w: .36, d: .36 }, stands, paint: names.paint };
 }
+// the post's six boards as one canvas, a row of 256 by 128 to a board (the board's 0.26 by 0.13 m): paint(list) cuts list[k] into board k
+// in capitals, cut (the fresh wood pale in the groove, its upper edge in shadow), one line or two to fit; a board with no name is left bare (the
+// face is cut out by alphaTest, so the board's own wood shows). Each ring has its own, since each post has its own dead.
+function ringNames() { const W = 256, H = 128, c = document.createElement('canvas'); c.width = W; c.height = H * 6; const x = c.getContext('2d'), t = finishTex(c);
+  t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; t.generateMipmaps = false; t.minFilter = THREE.LinearFilter;
+  const mat = new THREE.MeshStandardMaterial({ map: t, alphaTest: .5, roughness: .9, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 });
+  let sig = null;
+  const paint = (list = []) => { const L = Array.from({ length: 6 }, (_, k) => String(list[k] || '').toUpperCase().replace(/\s+/g, ' ').trim().slice(0, 40)), key = L.join('|'); if (key === sig) return false; sig = key;
+    x.clearRect(0, 0, W, H * 6); x.textAlign = 'center'; x.textBaseline = 'middle';
+    for (let k = 0; k < 6; k++) { const n = L[k]; if (!n) continue; const fit = (str, max) => { x.font = `700 100px Georgia, serif`; return Math.min(max, 100 * (W - 24) / Math.max(1, x.measureText(str).width)); };
+      let lines = [n], s = fit(n, 62); if (s < 28 && n.includes(' ')) { const w = n.split(' '); let best = null; for (let i = 1; i < w.length; i++) { const a = w.slice(0, i).join(' '), b = w.slice(i).join(' '), q = Math.min(fit(a, 50), fit(b, 50)); if (!best || q > best.q) best = { q, a, b }; } lines = [best.a, best.b]; s = best.q; }
+      x.font = `700 ${Math.max(12, Math.floor(s))}px Georgia, serif`; const lh = s * 1.02, y0 = k * H + H / 2 - (lines.length - 1) * lh / 2;
+      lines.forEach((ln, i) => { const y = y0 + i * lh; x.fillStyle = '#0c0704'; x.fillText(ln, W / 2 - 2, y - 2); x.fillStyle = '#9a7a52'; x.fillText(ln, W / 2, y); }); }
+    t.needsUpdate = true; return true; };
+  paint([]); return { mat, paint }; }
 // ── a felled trunk (Session 1540, for survival B's Felling, Session 1534: "the trunk falls where you face"; the systems builder's ask):
 // a log lying along +z from its butt at 0 to its top at L, its axis R over the ground (y = 0 the axis, the underside at −R), tapering
 // to 0.8 R, a little crooked; bark of the kit's own (furrowed plates); the butt chopped round to a blunt point (pale, its rings drawn),

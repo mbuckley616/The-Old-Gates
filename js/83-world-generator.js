@@ -1063,7 +1063,8 @@
           S.ringLod={hi:G.group,lo,x:at.x,z:at.z,r:YR*2};
           const sols=[];for(const P of [...G.stands,{...G.post,ry:0,h:3.1}]){const [x,z]=W_(P.x,P.z),r_=ry+(P.ry||0),q={cx:x,cz:z,rx:P.w/2,rz:P.d/2,c:Math.cos(r_),s:Math.sin(r_),h:P.h,ring:true};sol.push(q);sols.push(q);}
           const [gx,gz]=W_(G.gate.x,G.gate.z+.6),[qx,qz]=W_(G.post.x,G.post.z+.6);
-          S.ring={id:`${site.id}:ring`,site:site.id,x:at.x,z:at.z,y:y0,ry,r:G.R,gate:{x:gx,z:gz},post:{x:qx,z:qz},tris:G.tris,draws:G.draws,sols};}}
+          S.ring={id:`${site.id}:ring`,site:site.id,x:at.x,z:at.z,y:y0,ry,r:G.R,gate:{x:gx,z:gz},post:{x:qx,z:qz},tris:G.tris,draws:G.draws,sols,paint:G.paint};
+          try{G.paint(ringPostNames(site.id));}catch(e){}}} /* S1662 — the names cut on the post's boards; houseLod repaints them when they change */
     }catch(e){console.warn('ring',e);}
     S.reach=t_reach(sol,site);
     /* S1216 — a door that faces the next building across a lane of 2.5 m had its step-out point (2.4 out) in that building's
@@ -1108,6 +1109,7 @@
   // houses' reach: near the town the kit's houses, from outside it their far copy
   function houseLod(){const cp=CAM.position;for(const S of SETTLE.values()){
     for(const K of [S.kitLod,S.farmLod,S.ringLod])if(K){const d=Math.max(0,Math.hypot(K.x-cp.x,K.z-cp.z)-K.r*.5),near=d<HOUSE_LOD.near?true:d>HOUSE_LOD.far?false:K.hi.visible;K.hi.visible=near;K.lo.visible=!near;} /* S1455 — and a village's farm */
+    if(S.ring&&S.ring.paint&&S.ringLod&&S.ringLod.hi.visible)try{S.ring.paint(ringPostNames(S.ring.site));}catch(e){} /* S1662 — the post's names, cut again when the champion or the dead change (paint keeps its own key) */
     const L=S.lodMeshes;if(!L)continue;
     for(const m of L){if(m.userData.lod!=='hi')continue;const b=m.geometry.boundingSphere;const d=Math.max(0,Math.hypot(b.center.x-cp.x,b.center.z-cp.z)-b.radius*.5);
       const twin=m.userData.twin||(m.userData.twin=L.find(o=>o.userData.lod==='lo'&&o.userData.ckey===m.userData.ckey));
@@ -1130,6 +1132,11 @@
     const champ=A.title?'you':(R.champion||by.champion||null);out.push(champ?`Champion of the Mark: ${champ==='you'?'your own name, fresh in the wood':champ}.`:'The champion\'s board is bare.');
     const dead=(by.dead||[]).map(d=>typeof d==='string'?d:(d&&d.name)).filter(Boolean);if(dead.length)out.push('Cut below, for the ones killed after they yielded: '+dead.join(', ')+'.');
     return out;}
+  // S1662 — what the post's six boards carry: the champion's name on the top board (yours, by your name, while you hold the title),
+  // then the last five killed after they yielded, newest first; a board with nobody is bare
+  function ringPostNames(siteId){const R=worldState.rings||{},by=(R.by||{})[siteId]||{},A=worldState.arena||{};
+    const champ=A.title?(typeof playerName==='string'&&playerName?playerName:'Traveller'):(R.champion||by.champion||'');
+    const dead=(by.dead||[]).map(d=>typeof d==='string'?d:(d&&d.name)).filter(Boolean).slice(-5).reverse();return [champ||'',...dead];}
   function ringPrompt(){return ringGateNear()?"Press 'E' to ask for a bout":ringPostNear()?"Press 'E' to read the post":null;}
   function ringUse(){const G=ringGateNear();if(G){const R=ladderCall({site:G.site,x:G.x,z:G.z});if(R&&R.say)showMsg(R.say,'#e8d8a0');return true;}
     const P=ringPostNear();if(P){showMsg(ringPostLines(P.site).join(' '),'#e8d8a0');return true;}return false;}
