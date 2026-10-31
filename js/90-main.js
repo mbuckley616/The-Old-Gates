@@ -1033,6 +1033,7 @@ function loop(now){
     else if(typeof bladeStonePrompt==='function'&&bladeStonePrompt()){iprOW.textContent=bladeStonePrompt();iprOW.style.opacity='1';iprOW.style.display='block';} /* S802 — the Gate-Blade's stone */
     else if(typeof bellWreckPrompt==='function'&&bellWreckPrompt()){iprOW.textContent=bellWreckPrompt();iprOW.style.opacity='1';iprOW.style.display='block';} /* S801 — the Drowned Bell's wreck */
     else if(typeof ringCairnPrompt==='function'&&ringCairnPrompt()){iprOW.textContent=ringCairnPrompt();iprOW.style.opacity='1';iprOW.style.display='block';} /* S800 — the Noon Ring's cairn */
+    else if(typeof yardRackPrompt==='function'&&yardRackPrompt()){iprOW.textContent=yardRackPrompt();iprOW.style.opacity='1';iprOW.style.display='block';} /* S1649 — a Markish yard's staff rack */
     else if(activeZoneId==='world'&&typeof WORLD!=='undefined'&&WORLD.shipPrompt()){iprOW.textContent=WORLD.shipPrompt();iprOW.style.opacity='1';iprOW.style.display='block';} // v80 C
     else if(nearNPC){const _nd=nearNPC.def||{},_nm=(activeZoneId==='world'&&_nd.name)?`${_nd.name}${_nd.role&&_nd.role!=='Villager'?' — '+_nd.role:''}`:null;iprOW.textContent=_nm?`${_nm} — Press 'E' to talk`:"Press 'E' to talk";iprOW.style.opacity='1';iprOW.style.display='block';}
     else{iprOW.style.opacity='0';setTimeout(()=>{if(iprOW.style.opacity==='0')iprOW.style.display='none';},260);}

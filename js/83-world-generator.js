@@ -1002,6 +1002,40 @@
             houses.push({id:`g_${site.id}_${FARM_N+n}`,doorX:D_.x,doorZ:D_.z,doorFace:cardinalFace(D_.nx,D_.nz),exitX:bx_,exitZ:bz_,exitYaw:Math.atan2(-D_.nx,-D_.nz),name:hh.ownedByPlayer?`Your ${word}`:`${rdef.name}'s ${word}`,keeper:'',type:kind,tagline:'',
               w:U.parts[kind].w,d:U.parts[kind].d,two:kind==='barn',reg,style:hh.style,siteKind:site.kind,siteId:site.id,kit:{kind,farm:F.id,door:k}});}}}
     }catch(e){console.warn('farm',e);}}
+    /* S1649 (arenas-build.md session 2, Michael's B on #914) — the Mark's training yard behind each Fighters' Guild hall of a Markish
+       town or city, on the new look: PKIT.mk.yard, its ring 5 m round (YARD_R). Its place is searched once the town's lots, plots and
+       solids all stand: behind the hall first (back from its front by 0.8 m to 12 m past its own depth, slid along it up to 6 m each
+       way), then off either end, the first that is inside the walls, clear of every road and street by 1.5 m, of every lot, plot and
+       solid by 0.6 m over the yard's 6.9 m reach (the rope, the rack and the bench), and on ground that falls under 1.6 m across it. The
+       yard's centre, its rope and the rack's front are S.yards (yardAt reads them); the rack and the bench are solids. A town with no
+       such room has no yard. */
+    if(kitG&&window.OG_LOOK==='new'&&PKIT.mk&&PKIT.mk.yard&&nationOf(ni,nj).people==='markman'&&(site.kind==='town'||site.kind==='city'))try{
+      S.yards=[];const YR=6.2,lots=use.filter(l=>l&&l.w),rc=(P,x,z)=>{const c=Math.cos(P.ry||0),s_=Math.sin(P.ry||0),ex=x-P.x,ez=z-P.z,u=ex*c-ez*s_,v=ex*s_+ez*c;return Math.hypot(Math.max(0,Math.abs(u)-P.w/2),Math.max(0,Math.abs(v)-P.d/2));};
+      const no=()=>false;const clearAt=(x,z,out)=>{const dc=Math.hypot(x-cx,z-cz);if(out?dc-YR<inner+3:dc+YR>inner-1)return no('wall');
+        if(!out)for(const L of streetLines)if(Math.abs((x-L.px)*(-L.dz)+(z-L.pz)*L.dx)<YR+1.6)return no('street');
+        for(let k=0;k<16;k++){const a=k/16*Math.PI*2,qx=x+Math.cos(a)*YR,qz=z+Math.sin(a)*YR,ri=roadInfo(qx,qz);if(ri&&ri.d<ROAD_HALF+1.5)return no('road');}
+        {const ri=roadInfo(x,z);if(ri&&ri.d<ROAD_HALF+1.5+YR)return no('road0');}
+        for(const l of lots)if(rc(l,x,z)<YR+.6)return no('lot');for(const P of PLOTS)if(rc(P,x,z)<YR+.6)return no('plot');
+        for(const q of sol){const P=q.c!==undefined?{x:q.cx,z:q.cz,w:2*q.rx,d:2*q.rz,ry:Math.atan2(q.s,q.c)}:{x:q.cx,z:q.cz,w:2*q.rx,d:2*q.rz,ry:0};if(rc(P,x,z)<YR+.6)return no('sol');}
+        let lo=worldH(x,z),hi=lo;for(let k=0;k<12;k++){const a=k/12*Math.PI*2;for(const f of [.5,1]){const y=worldH(x+Math.cos(a)*YR*f,z+Math.sin(a)*YR*f);lo=Math.min(lo,y);hi=Math.max(hi,y);}}return hi-lo<1.6||no('slope');};
+      for(const h of houses){if(h.type!=='guild_f')continue;const lot=use.find(l=>l.id===h.id);if(!lot)continue;
+        const tx=lot.tx,tz=lot.tz,sx=tz,sz=-tx;let at=null;
+        for(const [ux,uz,half,vx,vz,wide] of [[-tx,-tz,lot.d/2,sx,sz,lot.w],[sx,sz,lot.w/2,-tx,-tz,lot.d],[-sx,-sz,lot.w/2,-tx,-tz,lot.d]]){
+          for(let dd=.8;dd<=12&&!at;dd+=1)for(const sl of [0,2,-2,4,-4,6,-6]){const x=lot.x+ux*(half+YR+dd)+vx*sl,z=lot.z+uz*(half+YR+dd)+vz*sl;if(clearAt(x,z,false)){at={x,z};break;}}
+          if(at)break;}
+        if(!at){const b0=Math.atan2(lot.x-cx,lot.z-cz); /* no room in the blocks behind it: outside the walls on the hall's side, as Rowe's ring is */
+          for(const da of [0,.2,-.2,.4,-.4,.6,-.6,.8,-.8,1.05,-1.05,1.3,-1.3]){for(let dd=4;dd<=20&&!at;dd+=2){const rr=inner+YR+dd,x=cx+Math.sin(b0+da)*rr,z=cz+Math.cos(b0+da)*rr;if(clearAt(x,z,true))at={x,z,out:true};}if(at)break;}}
+        if(!at)continue;
+        if(at.out&&!STAMPS.some(q=>q.id==='yard_'+site.id)){const st=addStamp({id:'yard_'+site.id,kind:'yard',noFlat:true,x:at.x,z:at.z,r:YR+.5,blend:1,y:0});try{clearScatterUnder([st]);}catch(e){}} /* the scatter cleared off it, the ground as it lies */
+        const ry=Math.atan2(lot.x-at.x,lot.z-at.z),c=Math.cos(ry),s_=Math.sin(ry),y0=worldH(at.x,at.z),W_=(lx,lz)=>[at.x+lx*c+lz*s_,at.z-lx*s_+lz*c];
+        const Y=PKIT.mk.yard((lx,lz)=>{const [x,z]=W_(lx,lz);return worldH(x,z)-y0;});
+        Y.group.position.set(at.x-cx,y0,at.z-cz);Y.group.rotation.y=ry;kitG.add(Y.group);
+        {const P=[],I=[],n=16,er=Y.R+.6;P.push(0,worldH(at.x,at.z)-y0+.04,0);for(let k=0;k<n;k++){const a_=k/n*Math.PI*2,lx=Math.cos(a_)*er,lz=Math.sin(a_)*er,[wx,wz]=W_(lx,lz);P.push(lx,worldH(wx,wz)-y0+.04,lz);I.push(0,1+(k+1)%n,1+k);} /* its far copy: the earth, a disc of 16 */
+          const e=new THREE.BufferGeometry();e.setAttribute('position',new THREE.Float32BufferAttribute(P,3));e.setIndex(I);const eg=e.toNonIndexed();e.dispose();eg.computeVertexNormals();kitLo.push([eg,new THREE.Matrix4().makeRotationY(ry).setPosition(at.x,y0,at.z),new THREE.Color(.36,.29,.21)]);}
+        const sols=[];for(const [P,hh] of [[Y.rack,1.7],[Y.bench,.5]]){const [x,z]=W_(P.x,P.z),q={cx:x,cz:z,rx:P.w/2,rz:P.d/2,c,s:s_,h:hh,yard:true};sol.push(q);sols.push(q);}
+        const [rkx,rkz]=W_(0,Y.rack.z-.9);
+        S.yards.push({id:`${site.id}:yard`,site:site.id,house:h.id,x:at.x,z:at.z,out:!!at.out,y:y0,ry,r:Y.R,rack:{x:rkx,z:rkz},tris:Y.tris,draws:Y.draws,sols});}
+    }catch(e){console.warn('yard',e);}
     S.reach=t_reach(sol,site);
     /* S1216 — a door that faces the next building across a lane of 2.5 m had its step-out point (2.4 out) in that building's
        footprint (14 of Dunmore's 58 on the new look): it is pulled back along the same line, a quarter metre short of the first
@@ -1049,6 +1083,13 @@
     for(const m of L){if(m.userData.lod!=='hi')continue;const b=m.geometry.boundingSphere;const d=Math.max(0,Math.hypot(b.center.x-cp.x,b.center.z-cp.z)-b.radius*.5);
       const twin=m.userData.twin||(m.userData.twin=L.find(o=>o.userData.lod==='lo'&&o.userData.ckey===m.userData.ckey));
       const near=d<HOUSE_LOD.near?true:d>HOUSE_LOD.far?false:m.visible;m.visible=near;if(twin)twin.visible=!near;}}}
+  // S1649 — the Mark's yards (genSettlement's S.yards): the yard whose rope is within 2.5 m of x,z, and the rack you stand at (1.6 m
+  // from its front). The rack hands you a staff: sparStart (87-world-quests.js) when it exists, by the yard's hours (8h–18h).
+  function yardAt(x,z){for(const S of SETTLE.values())for(const Y of S.yards||[])if(Math.hypot(x-Y.x,z-Y.z)<Y.r+2.5)return Y;return null;}
+  function yardRackNear(){if(activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior())||typeof sparStart!=='function')return null;
+    for(const S of SETTLE.values())for(const Y of S.yards||[])if(Math.hypot(px-Y.rack.x,pz-Y.rack.z)<1.6)return Y;return null;}
+  function yardRackPrompt(){return yardRackNear()?"Press 'E' to take a staff from the rack":null;}
+  function yardRackUse(){const Y=yardRackNear();if(!Y)return false;const R=sparStart({x:Y.x,z:Y.z,site:Y.site});if(R&&R.say)showMsg(R.say,'#e8d8a0');return true;}
   function bakeSettlement(S){return bakeMeshes(S.group.children.slice(),S.group,new Set(S.boats||[]),S);}
   // bake any list of meshes: merged clusters go into addTo; originals are removed from their parents
   function bakeMeshes(meshes,addTo,keep,S){
