@@ -15,6 +15,7 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+## Answered
 ### Dorcha laid — who the dark blinds (from the systems builder, 2026-10-31, #931)
 **The question.** Magic B's build sheet gives Dorcha (Blind, Scáth) a Laid form: "a dark 6 m across, 15 s". The sent bolt is built on Michael's A of #919 (Session 1627): a struck foe loses you for 4 s and turns on you again when it ends. The sheet doesn't say whom the laid dark works on, and a player will feel the difference.
 
@@ -25,7 +26,8 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 
 **Recommendation.** A: the word is *Blind* and the canon's entry is "blinds + disorients"; the laid form is the blind laid on a place, the sent bolt's group version. B overlaps Shadowcap's veil and Scáth 100's *Unseen*. C makes a 28-mana spell a 15 s off switch for any fight. The page: `docs/design/magic-build.md` (the table, row Dorcha). From Session 1628 (PR #930).
 
-## Answered
+Michael: **Foes in the dark are blind** (A). (2026-10-31, on the control room)
+
 ### Arenas in the Mark — the yard, the ring's ladder, or the sellsword's hall (from the designer, 2026-10-30, #914)
 **The question.** Your 13 A gave the Mark training grounds and arenas, but nothing says yet what you do there. Today the only bout in the game is Rowe's yard at Caer Slige: she yields at a quarter of her health, the ring holds you at 1, and a blow after the yield is murder. What should the Mark's rings be?
 
