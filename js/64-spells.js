@@ -809,8 +809,18 @@ SPELLS.push({id:'dorcha',school:'scath',role:'basic',nameIr:'Dorcha',nameEn:'Bli
 // cast from the book's Worn entry, at the press, it makes you intangible 0.6 s at every tier (PHASE_UNTIL, which rollUntouchable reads).
 // Its Mastery is the canon's "untargetable", which this already is, so the tier changes nothing. A use of Scáth, as a worn word's cast is.
 function phaseWord(){const t=WORD_BY.dul_thart.forms.worn.phase;PHASE_UNTIL=Math.max(PHASE_UNTIL,performance.now()/1000+t);return t;}
-function foeBlind(e){return !!(e&&e._blindUntil>playClockS);}
-function blindTick(e){if(foeBlind(e)){e.alert=false;e._agg=false;return true;}if(e._blindWake){e._blindWake=false;e.alert=true;}return false;}
+function foeBlind(e){return !!(e&&(e._blindUntil>playClockS||foeInDark(e)));}
+// S1636 — Dorcha laid (magic-build.md's table: "a dark 6 m across, 15 s"; Michael's A on #931: "foes in the dark are blind"): a foe whose
+// centre stands in the dark loses you, as a struck foe does, and finds you again when it steps out or the dark ends, unless you are past
+// its forget range by then. Only a foe that had you when the dark took it finds you again; one that wanders in unaware leaves unaware.
+// Foes outside it see as ever, you in it or not. Read from the dark itself each call, so no frame decides it. The first alert foe it
+// takes is one use of Scáth.
+function foeInDark(e){if(!e||e.dead||typeof LAID==='undefined'||!LAID||!LAID.dark)return false;const L=laidLive();if(!L||!L.dark)return false;
+  if(lid&&lid.startsWith('dyn_')&&e.floor!=null&&e.floor!==currentFloor)return false;return laidInside(L,e.x,e.z);}
+function blindTick(e){if(foeBlind(e)){
+    if((e.alert||e._agg)&&foeInDark(e)){e._blindWake=true;e.hasCried=false;const L=LAID;if(!L.used){L.used=true;const sc=WORD_BY[L.word].school;if(SKILL_DEF[sc])skillUse(sc,1,e);}}
+    e.alert=false;e._agg=false;return true;}
+  if(e._blindWake){e._blindWake=false;e.alert=true;}return false;}
 // statusBolt: what a status bolt does to foe e it struck. A struck alert foe is a use of the school, as a blow is. Returns what it did.
 function statusBolt(e,sp,tier,rider){if(!e||e.dead||e.hp<=0)return null;const F=WORD_BY[sp.id]&&WORD_BY[sp.id].forms.sent;if(!F)return null;
   if(e.alert&&SKILL_DEF[sp.school])skillUse(sp.school,tier===3?2:1,e);
@@ -1121,7 +1131,7 @@ function spellBookLoad(d){spellBook.length=0;formsGranted.length=0;
 // lives by the play clock, at most 60 s, ends when you leave the place, and is never saved. A pillar or an updraft is refused under
 // 0.5 m from a solid or a door, or on a body. The loop reads LAID through laidGround (what you stand on) and laidBlocks (what you
 // walk into); the mantle (10-player.js) takes a laid top as a ledge outdoors too. The other laid words (Loscadh's fire (S1617), Reo (S1616), Fréamh (S1612),
-// Dorcha, Solas, Tonn alone) are the sheet's session 4. Named actions (the co-op rules): bookMake, layWord, laidEnd.
+// Dorcha (S1636), Solas, Tonn alone) are the sheet's session 4. Named actions (the co-op rules): bookMake, layWord, laidEnd.
 const LAID_REACH=12,LAID_CLEAR=.5,LAID_MAX_S=60,LAID_UPDRAFT_APEX=2.2,LAID_OVERSHOOT=1.5,LAID_WILD=['fizzle','overshoot'];
 let LAID=null,_onLaid=false; /* the one laid thing: {kind,word,rider,x,z,r|hw,hl,ux,uz,base,top,solid,until,key,mesh} */
 // the place a laid thing belongs to: leaving it ends the thing (the fall's own key: the zone, the dungeon, the room)
@@ -1181,7 +1191,7 @@ function bookSelect(i){const b=spellBook[i];if(!b)return false;activeSpell=i;act
 // the shape a laid entry makes, or null where it makes none yet (the sheet's session 4)
 function laidShape(word,rider){
   if(word==='cloch_ghear')return 'pillar';if(word==='sideen')return 'updraft';
-  if(word==='sioc')return 'floe';if(word==='tonn'&&rider==='sioc')return 'bridge';if(word==='freamh')return 'snare';if(word==='reo')return 'nova';if(word==='loscadh')return 'fire';return null;}
+  if(word==='sioc')return 'floe';if(word==='tonn'&&rider==='sioc')return 'bridge';if(word==='freamh')return 'snare';if(word==='reo')return 'nova';if(word==='loscadh')return 'fire';if(word==='dorcha')return 'dark';return null;}
 // layWord: the named action. Lays word (with rider) at x,z (its ground found there), facing yaw for a bridge; o.overshoot ×1.5 a
 // pillar's height. Returns {ok} or {say}; nothing is paid here (the cast pays).
 function layWord(word,rider,x,z,o){o=o||{};
@@ -1208,6 +1218,8 @@ function layWord(word,rider,x,z,o){o=o||{};
     if(ow&&worldH(x,z)<SEA_Y-.35)return {say:'Fire will not take on water.',why:'wet'};
     const tier=wordTierOf(word)||1;
     Object.assign(L,{r:F.fire/2,base:y,top:y,solid:false,dur:F.dur,fire:Math.round(F.dps*TIER_MULT.magnitude[tier-1]),fireNext:playClockS+1});}
+  else if(kind==='dark'){ /* S1636 — Dorcha's: a dark 6 m across on the ground, never a solid; foes in it are blind (foeInDark) */
+    Object.assign(L,{r:F.dark/2,base:y,top:y,solid:false,dur:F.dur,dark:true});}
   else if(kind==='floe'){
     if(!wet)return {say:'Sioc lays a floe only on open water.',why:'dry'};
     Object.assign(L,{r:F.floe/2,base:SEA_Y-.4,top:SEA_Y+.1,solid:true,dur:F.dur});}
@@ -1281,10 +1293,11 @@ function laidMesh(L){if(typeof THREE==='undefined'||typeof scene==='undefined'||
   else if(L.kind==='snare'){geo=new THREE.RingGeometry(L.r*.92,L.r,32);geo.rotateX(-Math.PI/2);col=0x6a8a3a;op=.6;}
   else if(L.kind==='fire'){geo=new THREE.CircleGeometry(L.r,24);geo.rotateX(-Math.PI/2);col=0xd2601e;op=.5;}
   else if(L.kind==='nova'){geo=new THREE.CircleGeometry(L.r,32);geo.rotateX(-Math.PI/2);col=0xdcecf4;op=.45;}
+  else if(L.kind==='dark'){geo=new THREE.CircleGeometry(L.r,32);geo.rotateX(-Math.PI/2);col=0x140c1c;op=.7;}
   else{geo=new THREE.BoxGeometry(L.hw*2,L.top-L.base,L.hl*2);col=0xbcdcec;}
   const m=new THREE.Mesh(geo,new THREE.MeshLambertMaterial({color:col,transparent:op<1,opacity:op,depthWrite:op>=1,side:op<1?THREE.DoubleSide:THREE.FrontSide}));
   m.name='laid-'+L.kind;
-  if(L.r!=null)m.position.set(L.x,L.kind==='updraft'?L.base+1.5:L.kind==='snare'||L.kind==='nova'||L.kind==='fire'?L.base+.03:(L.base+L.top)/2,L.z);
+  if(L.r!=null)m.position.set(L.x,L.kind==='updraft'?L.base+1.5:L.kind==='snare'||L.kind==='nova'||L.kind==='fire'||L.kind==='dark'?L.base+.03:(L.base+L.top)/2,L.z);
   else{m.position.set(L.x+L.ux*L.hl,(L.base+L.top)/2,L.z+L.uz*L.hl);m.rotation.y=Math.atan2(L.ux,L.uz);}
   scene.add(m);return m;}
 // the cast of a laid entry from the book (castSpell hands it here): the form held, the cost and the overcast, Impression's wild roll

@@ -22,6 +22,12 @@ function closeShop(){
   G.focus();
 }
 
+// S1644 — the ring's gold (arenas-build.md, "Purse, stake, bribe": each one named action, so a host can apply and send it on). A stake
+// is taken from your purse into the open stake (worldState.arena.stake, the character's) and settled once: back ×mult on a win (a brawl's
+// 2, your stake and theirs), kept on a loss. A purse is paid straight.
+function placeStake(n,what){n=Math.round(n);if(!(n>0)||gold<n)return false;gold-=n;arenaState().stake={n,what:what||null,day:dayNow()};if(typeof updateHUD==='function')updateHUD();return true;}
+function settleStake(won,mult){const A=arenaState(),S=A.stake;if(!S)return 0;A.stake=null;const back=won?Math.round(S.n*(mult||1)):0;gold+=back;if(typeof updateHUD==='function')updateHUD();return back;}
+function payPurse(n){n=Math.max(0,Math.round(n));gold+=n;if(typeof updateHUD==='function')updateHUD();return n;}
 // ── LOOT PANEL ──────────────────────────────────────────────
 // Opens when player presses E near a container (chest/barrel/corpse). Items are pre-rolled at spawn
 // and stored on the container; panel iterates the items array and each click/take-all splices from it.

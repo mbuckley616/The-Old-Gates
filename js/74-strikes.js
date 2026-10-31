@@ -146,16 +146,16 @@ function foeFamily(e){
 }
 function foeAttack(e){return FOE_ATTACKS[foeFamily(e)];}
 // S1136 — the heavy blow's row for this foe (a boss keeps its own phases), its roll at a wind-up, and the tell that wind-up runs
-function foeHeavyRow(e){if(!e||e.isBoss)return null;const r=foeAttack(e);return r&&r.heavy||null;}
+function foeHeavyRow(e){if(!e||e.isBoss||e._noHeavy)return null; /* S1639 — a ring fighter's moves by bout */const r=foeAttack(e);return r&&r.heavy||null;}
 function foeHeavyRoll(e){
+  const n=e._blowN=(e._blowN||0)+1; /* S1639 — counted before the row, so a foe with the heavy off still feints on a fresh roll each blow */
   const H=foeHeavyRow(e);if(!H)return false;
-  const n=e._blowN=(e._blowN||0)+1;
   if(e._heavyLast){e._heavyLast=false;return false;}
   const u=seededRng('heavy',(e.id||e.baseType||e.baseName||e.name||'foe')+':'+n)(); /* a foe with no id yet rolls on its kind's name, still seeded */
   return e._heavyLast=u<H.share/(1-H.share); /* a third after a light blow: never twice running, still one in four in all */
 }
 // S1140 — the feint's row (humanoids only, so far) and its roll, made only on a wind-up the heavy roll has left light
-function foeFeintRow(e){if(!e||e.isBoss)return null;const r=foeAttack(e);return r&&r.feint||null;}
+function foeFeintRow(e){if(!e||e.isBoss||e._noFeint)return null;const r=foeAttack(e);return r&&r.feint||null;}
 function foeFeintRoll(e){
   const F=foeFeintRow(e);if(!F)return false;
   if(e._feintLast){e._feintLast=false;return false;}
@@ -194,7 +194,7 @@ function foeWindUp(e){
 // Only its reach and arc are the row's; its tell, damage, heavy blow and feint stay the humanoid's. It starts its tell as much
 // farther out as its reach is past the sword's (2.0 m, hull to hull), so a spearman thrusts from its own distance.
 const FOE_WPN_ROW={dagger:'Dagger',sword:'Sword',axe:'Mace',mace:'Mace',cutlass:'Scimitar',spear:'Spear',fists:'Fists'};
-function foeWeaponKind(e){if(e&&e._disarmed)return 'fists';const P=e&&e.limbs&&e.limbs.person,G=P&&P.g;return G?(G.gear==='spear'?'spear':G.wpn||null):null;}
+function foeWeaponKind(e){if(e&&e._disarmed)return 'fists';if(e&&e._ringWpn)return e._ringWpn; /* S1639 — a ring fighter's weapon, rolled on its id */const P=e&&e.limbs&&e.limbs.person,G=P&&P.g;return G?(G.gear==='spear'?'spear':G.wpn||null):null;}
 function foeWeaponRow(e){return WEAPON_ATTACKS[FOE_WPN_ROW[foeWeaponKind(e)]||'Sword'];}
 function foeWeaponReach(e){return foeWeaponRow(e).reach;}
 function foeWeaponArc(e,deg){const k=foeWeaponKind(e);return k==='spear'?WEAPON_ATTACKS.Spear.arc:deg;}
@@ -292,6 +292,7 @@ function resolvePlayerStrike(_isPow){
       sndPowerHit();
       showMsg(`💥 ${e.name}'s guard breaks!`,'#ffcc66');
       out.push({e,guardBroke:true});
+      if(e._spar&&typeof sparPoint==='function')sparPoint('you'); /* S1638 — a posture break is a clean hit */
       continue;
     }
     // v71 — a Shieldbearer's front takes SHIELDBEARER_FRONT_BLOCK of the blow (shieldFrontMult is 1 for the rest)
@@ -301,20 +302,22 @@ function resolvePlayerStrike(_isPow){
     const info=applyMeleeDamage(e,rawDmg);
     const dmg=info.dmg;
     {const ws=weaponSkill(EQ.weapon);if(_wasAlert&&ws)skillUse(ws,(info.riposte||info.finisher)?3:1,e);else if(info.backstab)skillUse('stealth',3,e);}
-    e.hp=Math.max(0,e.hp-(e._stun>0?dmg*2:dmg)); // a dazed beast (S634) takes double
+    if(!e._spar)e.hp=Math.max(0,e.hp-(e._stun>0?dmg*2:dmg)); // a dazed beast (S634) takes double; S1638 — a yard staff takes no health
     if(e.hpFg){e.hpFg.scale.x=e.hp/e.maxHp;e.hpFg.position.x=(e.hp/e.maxHp-1)*.275;}
     e.alert=true;if(inW)alertPack(e,16);
     if(_isPow)sndPowerHit();else sndHitEnemy(info.wType,info.resistMult<.8);
     // v61gj — posture: the row's drain (8, ×postureMult on the two-handers), a power blow's POSTURE_DRAIN_POWER × the
     // weapon's postureMult, the chain's third ×1.5; skipped on a kill or a foe already staggered
+    let _sb=false;
     if(e.hp>0&&typeof e.posture==='number'&&!isStaggered(e)){
       const pm=(EQ.weapon&&EQ.weapon.postureMult)||1;
       const drain=(_isPow&&!_spent?POSTURE_DRAIN_POWER*pm:row.posture)*chainPost*armsPostureMult()*(SWING&&SWING.drawCut&&armsPerk('blade',25)?DRAW_CUT_POSTURE:1); // S485 — a spent power blow on a guard drains as the guarded hit it is; S1051 — Weight (Blunt 25), Hard knuckles (Hand-to-hand 25)
       if(applyPostureDamage(e,drain,performance.now()/1000)){
-        staggered.push({e,t:dazeS(POSTURE_BREAK_STUN)});staggerFlash(e);
+        staggered.push({e,t:dazeS(POSTURE_BREAK_STUN)});staggerFlash(e);_sb=true;
         showMsg(`💥 ${e.name} staggered!`,'#ffcc66');
       }
     }
+    if(e._spar){if((shMult>=1||_sb)&&typeof sparPoint==='function')sparPoint('you');out.push({e,dmg:0,info,third,spar:true});continue;} /* S1638 — the yard: a blow it did not guard is clean, and a guarded one that broke its posture */
     const _guardTag=(shMult<1.0)?' (GUARDED)':'';
     const _killTag=`${_isPow?' (POWER)':''}${info.backstab?' (BACKSTAB)':''}${info.finisher?' (FINISHER)':info.riposte?' (RIPOSTE)':info.crit?' (CRIT)':''}${_guardTag}${dmgTag(info,e)}`;
     dmgNum(e,dmg,info,{guarded:shMult<1.0,power:_isPow}); /* S761 — the blow's number at its head (#198 A) */
@@ -394,6 +397,7 @@ function raiseGuard(){
   if(swingCommitted())return false;
   swingCancel();
   blocking=true;lastBlockAttemptT=performance.now()/1000;lastBlockAttemptG=playClockS;
+  if(typeof sparGuard==='function')sparGuard(); /* S1638 — the yard calls a late guard */
   return true;
 }
 function commitMoveMult(){return swingCommitted()?COMMIT.move:castWinding()?WEAPON_ATTACKS.Cast.walk:heldOn()?FORMS.held.walk:(DRINK||xbowSpanning()||warBowDrawn())?COMMIT.drinkMove:1;} /* S1549 — and a war bow drawn */ /* S1457 — a crossbow is spanned at a potion's walk */
@@ -487,7 +491,7 @@ function parryFlashEnd(e){const P=e&&e._parryFlash;if(!P)return;e._parryFlash=nu
 function executeStrike(e, rawDmg, now){
   const _hv = e._heavy ? foeHeavyRow(e) : null; e._heavy = false; // S1136 — this blow's heavy row, spent with it
   // S275 — mid-roll you are not there to be hit
-  if(rollUntouchable(now/1000)){sndSwing();e._lunge=.3;showMsg(`${e.name} strikes empty air.`,'#c8b880');return;}
+  if(rollUntouchable(now/1000)){sndSwing();e._lunge=.3;showMsg(`${e.name} strikes empty air.`,'#c8b880');if(e._spar&&typeof sparBlow==='function')sparBlow(e,'roll');return;}
   const sh = EQ.offhand;
   const hasShield = sh && sh.shieldType==='shield';
   // v65 — Block reduction tier (canon order):
@@ -555,7 +559,7 @@ function executeStrike(e, rawDmg, now){
     }
     sndParry();
     showMsg(`⚡ Perfect Parry! ${e.name} staggered — riposte!`, '#ffd700');
-    lvAct.parries++;skillUse('guard',3,e);_lastParryG=playClockS;
+    lvAct.parries++;skillUse('guard',3,e);_lastParryG=playClockS;if(e._spar&&typeof sparBlow==='function')sparBlow(e,'parry'); /* S1638 — the yard's call */
     // v61gj-a2 — Shield/sword recoil. Forward kick — you deflected the strike outward.
     shieldImpact('parry', rawDmg, e.x, e.z);
     // v61c7 — Parry stamina cost rebalanced. WAS rawDmg (100% — meaning a
@@ -583,7 +587,7 @@ function executeStrike(e, rawDmg, now){
     const reduction = _blockBoost(shieldBlock);
     const blockedDmg = Math.max(1, Math.round(rawDmg*(1-reduction)));
     const absorbed = rawDmg - blockedDmg;
-    const finalDmg = guardBlowCap(e, _warded(blockedDmg, e));skillUse('guard',1,e); /* S1173 — a drawn guard's blow stops at the yield's line until it is offered (#456 A) */
+    const finalDmg = e._spar ? 0 : guardBlowCap(e, _warded(blockedDmg, e));skillUse('guard',1,e); /* S1638 — a yard staff takes posture only */ /* S1173 — a drawn guard's blow stops at the yield's line until it is offered (#456 A) */
     PHP = Math.max(0, PHP-finalDmg); hurtT = .3; lvAct.damageTaken += finalDmg;armourUse();
     // v61c7 — Held block stamina also scales with Resolve (was raw `absorbed`).
     // Held block stays MORE expensive than parry (because 0.65 absorbed beats
@@ -595,19 +599,22 @@ function executeStrike(e, rawDmg, now){
     if(stamina===0){ staminaCD = 2; lvAct.staminaDepleted++; }
     sndBlock(); blockFlashT = 0.4; blockFlashCol = '#4488ff';
     // S762 — the line (*🛡 Blocked! … hits for N (reduced)*, with the shield hint) is gone: the bar's pale tail says it (#198 A)
-    if(_hv && _hv.breaks && !perk('guard',75)) playerPostureHit(PPOST.maxPosture*4, now/1000, true, true); // S1136 — a heavy blow breaks the guard, unless Iron wall (Guard 75)
-    else playerPostureHit(rawDmg*(_hv?_hv.posture:1), now/1000, true, !!_hv); // S281 — after the toast, so a guard that breaks says so
+    let _gBroke;
+    if(_hv && _hv.breaks && !perk('guard',75)) _gBroke=playerPostureHit(PPOST.maxPosture*4, now/1000, true, true); // S1136 — a heavy blow breaks the guard, unless Iron wall (Guard 75)
+    else _gBroke=playerPostureHit(rawDmg*(_hv?_hv.posture:1), now/1000, true, !!_hv); // S281 — after the toast, so a guard that breaks says so
+    if(e._spar&&typeof sparBlow==='function')sparBlow(e,'block',!!_gBroke);
     // v61gj-a2 — Shield/sword recoil. Backward push — you absorbed the blow.
     shieldImpact('block', rawDmg, e.x, e.z);
     if(PHP<=0 && !dead) playerDead();
   } else {
     // Unblocked hit — apply damage reduction buffs
-    const finalDmg = guardBlowCap(e, _warded(rawDmg, e)); /* S1173 — #456 A */
+    const finalDmg = e._spar ? 0 : guardBlowCap(e, _warded(rawDmg, e)); /* S1173 — #456 A; S1638 — a yard staff, posture only */
     PHP = Math.max(0, PHP-finalDmg); hurtT = .5;
     sndPlayerHurt(); lvAct.damageTaken += finalDmg;armourUse();
     lastHitT = now/1000;
     playerPostureHit(rawDmg*_row.posture*(_hv?_hv.posture:1), now/1000, false, !!_hv); // S281; S940 — the row's multiple (1.5 for every family today); S1136 — twice for a heavy
     e._lunge=.3; // v80 — every strike moves the body
+    if(e._spar&&typeof sparBlow==='function')sparBlow(e,'hit');
     if(PHP<=0 && !dead) playerDead();
   }
 }
