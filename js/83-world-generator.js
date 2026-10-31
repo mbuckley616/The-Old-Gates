@@ -1002,6 +1002,69 @@
             houses.push({id:`g_${site.id}_${FARM_N+n}`,doorX:D_.x,doorZ:D_.z,doorFace:cardinalFace(D_.nx,D_.nz),exitX:bx_,exitZ:bz_,exitYaw:Math.atan2(-D_.nx,-D_.nz),name:hh.ownedByPlayer?`Your ${word}`:`${rdef.name}'s ${word}`,keeper:'',type:kind,tagline:'',
               w:U.parts[kind].w,d:U.parts[kind].d,two:kind==='barn',reg,style:hh.style,siteKind:site.kind,siteId:site.id,kit:{kind,farm:F.id,door:k}});}}}
     }catch(e){console.warn('farm',e);}}
+    /* S1657 (arenas-build.md session 2, Michael's B on #914) — the Mark's training yard behind each Fighters' Guild hall of a Markish
+       town or city, on the new look: PKIT.mk.yard, its ring 5 m round (YARD_R). Its place is searched once the town's lots, plots and
+       solids all stand: behind the hall first (back from its front by 0.8 m to 12 m past its own depth, slid along it up to 6 m each
+       way), then off either end, the first that is inside the walls, clear of every road and street by 1.5 m, of every lot, plot and
+       solid by 0.6 m over the yard's 6.9 m reach (the rope, the rack and the bench), and on ground that falls under 1.6 m across it. The
+       yard's centre, its rope and the rack's front are S.yards (yardAt reads them); the rack and the bench are solids. A town with no
+       such room has no yard. */
+    /* S1658 — a clear place for a round piece of the Mark (a yard, a ring) of reach YR at x,z: inside the walls (out false) clear of every
+       street, or outside them (out true); either way clear of every road by 1.5 m, of every lot, plot and solid by 0.6 m, on ground that
+       falls under 1.6 m across it (S1657's test, shared) */
+    const kitLots=()=>use.filter(l=>l&&l.w),kitRc=(P,x,z)=>{const c=Math.cos(P.ry||0),s_=Math.sin(P.ry||0),ex=x-P.x,ez=z-P.z,u=ex*c-ez*s_,v=ex*s_+ez*c;return Math.hypot(Math.max(0,Math.abs(u)-P.w/2),Math.max(0,Math.abs(v)-P.d/2));};
+    const kitClearAt=(x,z,out,YR)=>{const no=()=>false,lots=kitLots(),rc=kitRc,dc=Math.hypot(x-cx,z-cz);if(out?dc-YR<inner+3:dc+YR>inner-1)return no('wall');
+        if(!out)for(const L of streetLines)if(Math.abs((x-L.px)*(-L.dz)+(z-L.pz)*L.dx)<YR+1.6)return no('street');
+        for(let k=0;k<16;k++){const a=k/16*Math.PI*2,qx=x+Math.cos(a)*YR,qz=z+Math.sin(a)*YR,ri=roadInfo(qx,qz);if(ri&&ri.d<ROAD_HALF+1.5)return no('road');}
+        {const ri=roadInfo(x,z);if(ri&&ri.d<ROAD_HALF+1.5+YR)return no('road0');}
+        for(const l of lots)if(rc(l,x,z)<YR+.6)return no('lot');for(const P of PLOTS)if(rc(P,x,z)<YR+.6)return no('plot');
+        for(const q of sol){const P=q.c!==undefined?{x:q.cx,z:q.cz,w:2*q.rx,d:2*q.rz,ry:Math.atan2(q.s,q.c)}:{x:q.cx,z:q.cz,w:2*q.rx,d:2*q.rz,ry:0};if(rc(P,x,z)<YR+.6)return no('sol');}
+        let lo=worldH(x,z),hi=lo;for(let k=0;k<12;k++){const a=k/12*Math.PI*2;for(const f of [.5,1]){const y=worldH(x+Math.cos(a)*YR*f,z+Math.sin(a)*YR*f);lo=Math.min(lo,y);hi=Math.max(hi,y);}}return hi-lo<1.6||no('slope');};
+    if(kitG&&window.OG_LOOK==='new'&&PKIT.mk&&PKIT.mk.yard&&nationOf(ni,nj).people==='markman'&&(site.kind==='town'||site.kind==='city'))try{
+      S.yards=[];const YR=6.2,clearAt=(x,z,out)=>kitClearAt(x,z,out,YR);
+      for(const h of houses){if(h.type!=='guild_f')continue;const lot=use.find(l=>l.id===h.id);if(!lot)continue;
+        const tx=lot.tx,tz=lot.tz,sx=tz,sz=-tx;let at=null;
+        for(const [ux,uz,half,vx,vz,wide] of [[-tx,-tz,lot.d/2,sx,sz,lot.w],[sx,sz,lot.w/2,-tx,-tz,lot.d],[-sx,-sz,lot.w/2,-tx,-tz,lot.d]]){
+          for(let dd=.8;dd<=12&&!at;dd+=1)for(const sl of [0,2,-2,4,-4,6,-6]){const x=lot.x+ux*(half+YR+dd)+vx*sl,z=lot.z+uz*(half+YR+dd)+vz*sl;if(clearAt(x,z,false)){at={x,z};break;}}
+          if(at)break;}
+        if(!at){const b0=Math.atan2(lot.x-cx,lot.z-cz); /* no room in the blocks behind it: outside the walls on the hall's side, as Rowe's ring is */
+          for(const da of [0,.2,-.2,.4,-.4,.6,-.6,.8,-.8,1.05,-1.05,1.3,-1.3]){for(let dd=4;dd<=20&&!at;dd+=2){const rr=inner+YR+dd,x=cx+Math.sin(b0+da)*rr,z=cz+Math.cos(b0+da)*rr;if(clearAt(x,z,true))at={x,z,out:true};}if(at)break;}}
+        if(!at)continue;
+        if(at.out&&!STAMPS.some(q=>q.id==='yard_'+site.id)){const st=addStamp({id:'yard_'+site.id,kind:'yard',noFlat:true,x:at.x,z:at.z,r:YR+.5,blend:1,y:0});try{clearScatterUnder([st]);}catch(e){}} /* the scatter cleared off it, the ground as it lies */
+        const ry=Math.atan2(lot.x-at.x,lot.z-at.z),c=Math.cos(ry),s_=Math.sin(ry),y0=worldH(at.x,at.z),W_=(lx,lz)=>[at.x+lx*c+lz*s_,at.z-lx*s_+lz*c];
+        const Y=PKIT.mk.yard((lx,lz)=>{const [x,z]=W_(lx,lz);return worldH(x,z)-y0;});
+        Y.group.position.set(at.x-cx,y0,at.z-cz);Y.group.rotation.y=ry;kitG.add(Y.group);
+        {const P=[],I=[],n=16,er=Y.R+.6;P.push(0,worldH(at.x,at.z)-y0+.04,0);for(let k=0;k<n;k++){const a_=k/n*Math.PI*2,lx=Math.cos(a_)*er,lz=Math.sin(a_)*er,[wx,wz]=W_(lx,lz);P.push(lx,worldH(wx,wz)-y0+.04,lz);I.push(0,1+(k+1)%n,1+k);} /* its far copy: the earth, a disc of 16 */
+          const e=new THREE.BufferGeometry();e.setAttribute('position',new THREE.Float32BufferAttribute(P,3));e.setIndex(I);const eg=e.toNonIndexed();e.dispose();eg.computeVertexNormals();kitLo.push([eg,new THREE.Matrix4().makeRotationY(ry).setPosition(at.x,y0,at.z),new THREE.Color(.36,.29,.21)]);}
+        const sols=[];for(const [P,hh] of [[Y.rack,1.7],[Y.bench,.5]]){const [x,z]=W_(P.x,P.z),q={cx:x,cz:z,rx:P.w/2,rz:P.d/2,c,s:s_,h:hh,yard:true};sol.push(q);sols.push(q);}
+        const [rkx,rkz]=W_(0,Y.rack.z-.9);
+        S.yards.push({id:`${site.id}:yard`,site:site.id,house:h.id,x:at.x,z:at.z,out:!!at.out,y:y0,ry,r:Y.R,rack:{x:rkx,z:rkz},tris:Y.tris,draws:Y.draws,sols});}
+    }catch(e){console.warn('yard',e);}
+    /* S1658 (arenas-build.md session 2, Michael's B on #914) — the ladder's ring at each of its sites (ladderSites: Caer Slige, the Mark's
+       cities, padded with its largest towns to four), on the new look: PKIT.mk.ring, 8 m round (LADDER_R) with its stands and post, 12.4 m
+       reach in all. No block has that room, so it stands outside the walls, as Rowe's ring does: searched round the town from the side
+       away from the main road (2 m steps out to 24 m, 0.2 rad round), clear as the yard is (kitClearAt) and of the yard's own ring and of
+       Rowe's (east of Caer Slige's walls, the duel's) by 3 m. Its gate faces the town. A noFlat stamp clears the scatter under it; each
+       stand's arc segment and the post are solids. S.ring holds its centre, the gate (where the ring master takes your call: ladderCall)
+       and the post (its names: ringPostLines). A town with no clear place has none. */
+    if(kitG&&window.OG_LOOK==='new'&&PKIT.mk&&PKIT.mk.ring&&typeof ladderSites==='function')try{
+      if(ladderSites().some(q=>q.id===site.id)){const YR=12.4,avoid=(S.yards||[]).map(Y=>({x:Y.x,z:Y.z,r:Y.r+1.9}));
+        if(site.anchor==='caer_slige')avoid.push({x:site.x+(site.pad||30)+14,z:site.z,r:7});
+        const b0=Math.atan2(-ax,-az);let at=null;
+        for(let k=0;k<32&&!at;k++){const da=(k&1?-1:1)*Math.ceil(k/2)*.2;for(let dd=4;dd<=24&&!at;dd+=2){const rr=inner+YR+dd,x=cx+Math.sin(b0+da)*rr,z=cz+Math.cos(b0+da)*rr;
+          if(avoid.some(A=>Math.hypot(x-A.x,z-A.z)<YR+A.r+3))continue;if(kitClearAt(x,z,true,YR))at={x,z};}}
+        if(at){const st=addStamp({id:'ring_'+site.id,kind:'ring',noFlat:true,x:at.x,z:at.z,r:YR+.5,blend:1,y:0});try{clearScatterUnder([st]);}catch(e){}
+          const ry=Math.atan2(cx-at.x,cz-at.z),c=Math.cos(ry),s_=Math.sin(ry),y0=worldH(at.x,at.z),W_=(lx,lz)=>[at.x+lx*c+lz*s_,at.z-lx*s_+lz*c];
+          const G=PKIT.mk.ring((lx,lz)=>{const [x,z]=W_(lx,lz);return worldH(x,z)-y0;});
+          G.group.position.set(at.x,y0,at.z);G.group.rotation.y=ry;G.group.userData.noBake=true;group.add(G.group); /* its own near and far (S.ringLod), measured from the ring: the town's is from its centre, and 20 m past the walls it would only ever show the far copy */
+          let lo=null;{const P=[],I=[],n=20,er=G.R+1;P.push(0,.04,0);for(let k=0;k<n;k++){const a_=k/n*Math.PI*2,lx=Math.cos(a_)*er,lz=Math.sin(a_)*er,[wx,wz]=W_(lx,lz);P.push(lx,worldH(wx,wz)-y0+.04,lz);I.push(0,1+(k+1)%n,1+k);} /* its far copy: the earth, a disc of 20 */
+            const e=new THREE.BufferGeometry();e.setAttribute('position',new THREE.Float32BufferAttribute(P,3));e.setIndex(I);const eg=e.toNonIndexed();e.dispose();eg.computeVertexNormals();
+            lo=new THREE.Mesh(mergeGeos([[eg,new THREE.Matrix4().makeRotationY(ry).setPosition(at.x,y0,at.z),new THREE.Color(.36,.29,.21)]]),VC_MAT);eg.dispose();lo.name='ring far';lo.userData.noBake=true;lo.receiveShadow=true;lo.visible=false;group.add(lo);}
+          S.ringLod={hi:G.group,lo,x:at.x,z:at.z,r:YR*2};
+          const sols=[];for(const P of [...G.stands,{...G.post,ry:0,h:3.1}]){const [x,z]=W_(P.x,P.z),r_=ry+(P.ry||0),q={cx:x,cz:z,rx:P.w/2,rz:P.d/2,c:Math.cos(r_),s:Math.sin(r_),h:P.h,ring:true};sol.push(q);sols.push(q);}
+          const [gx,gz]=W_(G.gate.x,G.gate.z+.6),[qx,qz]=W_(G.post.x,G.post.z+.6);
+          S.ring={id:`${site.id}:ring`,site:site.id,x:at.x,z:at.z,y:y0,ry,r:G.R,gate:{x:gx,z:gz},post:{x:qx,z:qz},tris:G.tris,draws:G.draws,sols};}}
+    }catch(e){console.warn('ring',e);}
     S.reach=t_reach(sol,site);
     /* S1216 — a door that faces the next building across a lane of 2.5 m had its step-out point (2.4 out) in that building's
        footprint (14 of Dunmore's 58 on the new look): it is pulled back along the same line, a quarter metre short of the first
@@ -1015,7 +1078,7 @@
         h.exitX=nx;h.exitZ=nz;}}
     if(kitG){S.kitTris=PKIT.mergeByMaterial(kitG);S.kitCalls=kitG.children.length; // S1072 — the kit's houses, one mesh per material
       const lo=new THREE.Mesh(mergeGeos(kitLo),VC_MAT);lo.name='kit houses far';lo.userData.noBake=true;lo.castShadow=true;lo.receiveShadow=true;lo.visible=false;group.add(lo);kitLo.forEach(([g])=>g.dispose()); /* S1073 — and their far copy */
-      let r=0;for(const l of use)if(l.kit)r=Math.max(r,Math.hypot(l.x-cx,l.z-cz)+(l.kit.r||Math.max(l.w,l.d)/2)); /* S1143 — the keep's reach is its bawn's */S.kitLod={hi:kitG,lo,x:cx,z:cz,r,tris:lo.geometry.attributes.position.count/3};}
+      let r=0;for(const l of use)if(l.kit)r=Math.max(r,Math.hypot(l.x-cx,l.z-cz)+(l.kit.r||Math.max(l.w,l.d)/2)); /* S1143 — the keep's reach is its bawn's */for(const Y of S.yards||[])r=Math.max(r,Math.hypot(Y.x-cx,Y.z-cz)+Y.r+2); /* S1658 — and a yard outside the walls */S.kitLod={hi:kitG,lo,x:cx,z:cz,r,tris:lo.geometry.attributes.position.count/3};}
     bakeSettlement(S);
     if(S.chimneys.length)try{smokeFor(S);}catch(e){console.warn('smoke',e);}
     sc.add(group);
@@ -1044,11 +1107,32 @@
   // S1073 — a kit town's houses (one group for the town, S.kitLod) by the same rule, measured from the town's centre less half its
   // houses' reach: near the town the kit's houses, from outside it their far copy
   function houseLod(){const cp=CAM.position;for(const S of SETTLE.values()){
-    for(const K of [S.kitLod,S.farmLod])if(K){const d=Math.max(0,Math.hypot(K.x-cp.x,K.z-cp.z)-K.r*.5),near=d<HOUSE_LOD.near?true:d>HOUSE_LOD.far?false:K.hi.visible;K.hi.visible=near;K.lo.visible=!near;} /* S1455 — and a village's farm */
+    for(const K of [S.kitLod,S.farmLod,S.ringLod])if(K){const d=Math.max(0,Math.hypot(K.x-cp.x,K.z-cp.z)-K.r*.5),near=d<HOUSE_LOD.near?true:d>HOUSE_LOD.far?false:K.hi.visible;K.hi.visible=near;K.lo.visible=!near;} /* S1455 — and a village's farm */
     const L=S.lodMeshes;if(!L)continue;
     for(const m of L){if(m.userData.lod!=='hi')continue;const b=m.geometry.boundingSphere;const d=Math.max(0,Math.hypot(b.center.x-cp.x,b.center.z-cp.z)-b.radius*.5);
       const twin=m.userData.twin||(m.userData.twin=L.find(o=>o.userData.lod==='lo'&&o.userData.ckey===m.userData.ckey));
       const near=d<HOUSE_LOD.near?true:d>HOUSE_LOD.far?false:m.visible;m.visible=near;if(twin)twin.visible=!near;}}}
+  // S1657 — the Mark's yards (genSettlement's S.yards): the yard whose rope is within 2.5 m of x,z, and the rack you stand at (1.6 m
+  // from its front). The rack hands you a staff: sparStart (87-world-quests.js) when it exists, by the yard's hours (8h–18h).
+  function yardAt(x,z){for(const S of SETTLE.values())for(const Y of S.yards||[])if(Math.hypot(x-Y.x,z-Y.z)<Y.r+2.5)return Y;return null;}
+  function yardRackNear(){if(activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior())||typeof sparStart!=='function')return null;
+    for(const S of SETTLE.values())for(const Y of S.yards||[])if(Math.hypot(px-Y.rack.x,pz-Y.rack.z)<1.6)return Y;return null;}
+  function yardRackPrompt(){return yardRackNear()?"Press 'E' to take a staff from the rack":null;}
+  function yardRackUse(){const Y=yardRackNear();if(!Y)return false;const R=sparStart({x:Y.x,z:Y.z,site:Y.site});if(R&&R.say)showMsg(R.say,'#e8d8a0');return true;}
+  // S1658 — the ladder's rings (genSettlement's S.ring): the ring's gate, where the ring master takes your call (ladderCall, 8h–17h, by
+  // 87-world-quests.js; until the quest writer's master stands there the gate takes it), and its post, where the names are cut: the
+  // champion's (rings.champion; yours when you hold the title) and the fighters killed after they yielded (rings.by[site].dead).
+  function ringPlaceNear(k,reach){if(activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior()))return null;
+    for(const S of SETTLE.values()){const G=S.ring;if(G&&Math.hypot(px-G[k].x,pz-G[k].z)<reach)return G;}return null;}
+  function ringGateNear(){return typeof ladderCall==='function'?ringPlaceNear('gate',1.5):null;}
+  function ringPostNear(){return ringPlaceNear('post',1.4);}
+  function ringPostLines(siteId){const R=worldState.rings||{},by=(R.by||{})[siteId]||{},A=worldState.arena||{},out=[];
+    const champ=A.title?'you':(R.champion||by.champion||null);out.push(champ?`Champion of the Mark: ${champ==='you'?'your own name, fresh in the wood':champ}.`:'The champion\'s board is bare.');
+    const dead=(by.dead||[]).map(d=>typeof d==='string'?d:(d&&d.name)).filter(Boolean);if(dead.length)out.push('Cut below, for the ones killed after they yielded: '+dead.join(', ')+'.');
+    return out;}
+  function ringPrompt(){return ringGateNear()?"Press 'E' to ask for a bout":ringPostNear()?"Press 'E' to read the post":null;}
+  function ringUse(){const G=ringGateNear();if(G){const R=ladderCall({site:G.site,x:G.x,z:G.z});if(R&&R.say)showMsg(R.say,'#e8d8a0');return true;}
+    const P=ringPostNear();if(P){showMsg(ringPostLines(P.site).join(' '),'#e8d8a0');return true;}return false;}
   function bakeSettlement(S){return bakeMeshes(S.group.children.slice(),S.group,new Set(S.boats||[]),S);}
   // bake any list of meshes: merged clusters go into addTo; originals are removed from their parents
   function bakeMeshes(meshes,addTo,keep,S){
