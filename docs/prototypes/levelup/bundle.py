@@ -73,6 +73,7 @@ def build(name, title, note, srcfile, use_common, query=''):
     src = open(os.path.join(here, srcfile), encoding='utf-8').read()
     if use_common:
         s = scene(src)
+        if "from './legendary.js'" in s: s = kits(s, ['legendary'])
         if "from './herbs.js'" in s: s = kits(s, ['herbs'])
         if "from './wonders.js'" in s: s = kits(s, ['gatekit', 'wonders'])
         if "from './halls.js'" in s: s = kits(s, ['pieces', 'ships', 'places', 'rooms', 'light', 'halls'])
@@ -186,4 +187,5 @@ build('light-rooms.html', 'Light indoors', 'Light indoors (L12, OG-141; F2 and F
 build('light-halls.html', 'Lighting the halls', 'Lighting the halls (L12, OG-141; F2 and F3): the fixtures a hall carries by night, under the lights and the eye half open (C on #765). ?hall=guild|alehall|tavern|inn, &fix=own|torches|island (A the room’s own, B torches on every wall, C each island’s own: Gatelands candle sconces, the Mark’s torches, Aurenne’s lamp stands and wall lamps), &hour=night|golden|noon, &view=hall|scale|crowd. Drag to look.', 'halls-view.js', True, '?hall=guild&fix=island')
 build('herbs-field.html', 'Herbs by island', 'Every herb’s look, by island (L8, OG-039): the game’s herbs and OG-039’s new ones at their true size on their island’s ground. ?view=atlas|field|scale|close, &island=gatelands|mark|aurenne, &mode=true|glow|lifted (A the plant alone, B today’s light and halo on every herb, C the plant 1.15 larger, its colour lifted, the grass short about it and a glint within 6 m), &herb=<key>. Drag to look.', 'herbs-view.js', True, '?view=field&island=gatelands&mode=lifted')
 build('wonders-places.html', 'Strange places', 'Strange places (L5, OG-106): a wonder an island, each the mark a failing gate left on a place. ?kind=lough|skyfall|orrery (the Drowned Ring, the Skyfall Fields, the Broken Orrery), &mode=quiet|alive|hour (A the shape alone, B always awake, C awake from dusk to dawn), &hour=day|night, &cam=wide|near. Drag to look.', 'wonders-view.js', True, '?kind=lough&mode=hour&hour=night')
+build('legendary-arms.html', 'Legendary weapons', 'Legendary weapons by island (L7, OG-075): five an island, each its own shape, material and effect, beside a person of the island. ?view=rack|all|atlas|close|scale, &island=gatelands|mark|aurenne, &mode=still|always|rest (A the shapes alone, B the effect always at full, C a fifth of it at rest and full in the hand), &piece=<key>. Drag to look.', 'legendary-view.js', True, '?view=rack&island=gatelands&mode=rest')
 print('ok')
