@@ -699,7 +699,8 @@ if (!process.argv.includes('--shots-only')) { const page = await browser.newPage
     else check(`${k}: the temples thin (${s.temples?.edge} strands within 0.75 cm of the region's edge at ${s.temples?.ratio} of the width 1.5 cm in)`, !!s.temples && s.temples.edge > 10 && s.temples.ratio < .7, s.temples);
     // Session 1607 (Michael's note on #272): a style combed back to a tie has hair down to the line over the ear and the temple in front of it
     // (the old region left 30 to 80% of that band with no strand within 4 mm)
-    if (!['short', 'shaved', 'loose'].includes(k.split('+')[0]) && s.sides) check(`${k}: hair over the ears and the temples (${s.sides.roots} roots in the band, ${Math.round(s.sides.bare * 100)}% of it bare)`, s.sides.roots > 40 && s.sides.bare < .2, s.sides);
+    // (Session 1649: and loose hair, which falls from the same region now; on the old one 49% of the band was bare)
+    if (!['short', 'shaved'].includes(k.split('+')[0]) && s.sides) check(`${k}: hair over the ears and the temples (${s.sides.roots} roots in the band, ${Math.round(s.sides.bare * 100)}% of it bare)`, s.sides.roots > 40 && s.sides.bare < .2, s.sides);
     // Session 877: every root on the skin (3 mm, where Session 804's started up to 14 mm off it)
     check(`${k}: every strand roots on the skin (the highest ${(s.rootH * 1000).toFixed(1)} mm off it), the hair ${(s.crown * 1000).toFixed(1)} mm deep over the crown`, s.rootH < .0045, s.rootH);
     // Session 874: no seam of bare scalp down the back of the head (two braids part there, as they should)
