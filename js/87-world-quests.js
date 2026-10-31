@@ -2129,6 +2129,47 @@ const giver=`${lord.title} ${lord.name}`;
     return true;}
   // a guard raised just after the trainer's blow landed
   function sparGuard(){const S=SPAR;if(S&&playClockS-S.hitAt<=SPAR_BAND){S.hitAt=-1e9;sparCall('Late.');}}
+  // S1639 — arenas-build.md session 3, the ladder's ground: its twelve bouts, the rings it is fought in, its fighters and their moves
+  // by bout, and the two saves. One table, the sheet's "The ladder (B)": bouts 1–3 at tier 1 throw light blows only (heavy and feint
+  // off), 4–6 at tier 2 add the feint, 7–9 at tier 3 the heavy, 10–11 at tier 4 the same with a shield on one of the two, and the
+  // twelfth, the champion, at tier 4 with the named quarry's ×1.6 health (×3 × 1.6 = ×4.8) and a shield. Purses are the sheet's.
+  // The rings: Caer Slige and every Markish city, padded with the largest Markish towns (by their pad) to four; the twelfth only at
+  // Caer Slige (ladderSites, read by place once, every cell made). A bout's fighter is one person across the Mark (any ring gives you
+  // your next bout), keyed `ring:<bout>:<n>`, the body's genome `foe:ring:<bout>:<n>` (F4's key); n counts the replacements after a
+  // murder (worldState.rings.next). Its weapon is rolled on that id from sword, axe, mace, spear and dagger, never the weapon of the
+  // bout before (ladderWeapon); the shield of 10–11 falls on one of the two by the world seed. The bout's call, the purse, the forfeit
+  // and the wager are the sheet's session 3's rest and session 4.
+  const LADDER=[{tier:1,purse:50},{tier:1,purse:60},{tier:1,purse:70},
+    {tier:2,purse:120,feint:true},{tier:2,purse:140,feint:true},{tier:2,purse:160,feint:true},
+    {tier:3,purse:250,feint:true,heavy:true},{tier:3,purse:280,feint:true,heavy:true},{tier:3,purse:310,feint:true,heavy:true},
+    {tier:4,purse:450,feint:true,heavy:true,shieldOne:true},{tier:4,purse:500,feint:true,heavy:true,shieldOne:true},
+    {tier:4,purse:1000,feint:true,heavy:true,shield:true,champion:true,hpMult:1.6}];
+  const LADDER_R=8,LADDER_RINGS=4,LADDER_WEAPONS=['sword','axe','mace','spear','dagger'];
+  // the character's: rank (bouts won), the day of the last bout, the ban's end, the open stake, the title, refusals, last brawl by town
+  function arenaState(){const A=worldState.arena||(worldState.arena={});if(A.rank==null)Object.assign(A,{rank:0,lastDay:-1,banUntil:0,stake:null,title:false,refusals:0,brawl:{}});return A;}
+  // the world's: per ring the dead fighters' names, the reported fixer, the champion if not you; `next` the replacements by bout
+  function ringsState(){const R=worldState.rings||(worldState.rings={});if(!R.by)R.by={};if(!R.next)R.next={};return R;}
+  function ringOf(id){const R=ringsState();return R.by[id]||(R.by[id]={dead:[],fixer:null,champion:null});}
+  let _ladderSites=null;
+  function ladderSites(){if(_ladderSites)return _ladderSites;anchoredPlaces();
+    const mark=[...CELLS.values()].filter(c=>c.type!=='sea'&&nationKeyOf(c.i,c.j)==='mark').flatMap(c=>c.sites);
+    const seat=mark.find(s=>s.anchor==='caer_slige')||null,out=seat?[seat]:[];
+    for(const s of mark.filter(s=>s.kind==='city').sort((a,b)=>String(a.id).localeCompare(String(b.id))))if(!out.includes(s))out.push(s);
+    for(const s of mark.filter(s=>s.kind==='town').sort((a,b)=>(b.pad||0)-(a.pad||0)||String(a.id).localeCompare(String(b.id)))){if(out.length>=LADDER_RINGS)break;if(!out.includes(s))out.push(s);}
+    return _ladderSites=out;}
+  function ladderRow(bout){return LADDER[Math.max(1,Math.min(12,bout|0))-1];}
+  function ladderFighterId(bout){return `ring:${bout}:${ringsState().next[bout]||0}`;}
+  function ladderWeapon(bout){let prev=null,w=null;
+    for(let b=1;b<=bout;b++){const L=LADDER_WEAPONS,u=seededRng('ringwpn',ladderFighterId(b))();let k=Math.floor(u*L.length);if(L[k]===prev)k=(k+1)%L.length;w=L[k];prev=w;}
+    return w;}
+  function ladderShieldBout(){return seededRng('ringshield',String(typeof SEED!=='undefined'?SEED:0))()<.5?10:11;}
+  function ladderShield(bout){const r=ladderRow(bout);return !!(r.shield||(r.shieldOne&&bout===ladderShieldBout()));}
+  // the bout's fighter, built at x,z: its tier's, its moves by bout (the rows off, still seeded when on), its weapon's row, its shield
+  function ladderFighter(bout,x,z){const r=ladderRow(bout),id=ladderFighterId(bout),sh=ladderShield(bout);
+    const e=keyFoe(unlockFoe(buildZoneEnemy(sc,STATIC_SOL,x,z,sh?'Bandit Captain':'Bandit',null,{tier:r.tier})),id);
+    e._ring=bout;e._noFeint=!r.feint;e._noHeavy=!r.heavy;e._ringWpn=ladderWeapon(bout);
+    if(r.hpMult){e.maxHp=Math.round(e.maxHp*r.hpMult);e.hp=e.maxHp;}
+    return e;}
   function tickSpar(){if(!SPAR){if(EQ.weapon&&EQ.weapon.yard){EQ.weapon=null;sparKitRefresh();}return;}const S=SPAR,e=S.foe;
     if(!e||e.dead){sparEnd('left');return;}e.hp=e.maxHp;e.alert=true;
     if(Math.hypot(px-S.x,pz-S.z)>SPAR_LEAVE||!sparOpen()&&!S.force)sparEnd('left');}

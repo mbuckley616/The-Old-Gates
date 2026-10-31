@@ -146,16 +146,16 @@ function foeFamily(e){
 }
 function foeAttack(e){return FOE_ATTACKS[foeFamily(e)];}
 // S1136 — the heavy blow's row for this foe (a boss keeps its own phases), its roll at a wind-up, and the tell that wind-up runs
-function foeHeavyRow(e){if(!e||e.isBoss)return null;const r=foeAttack(e);return r&&r.heavy||null;}
+function foeHeavyRow(e){if(!e||e.isBoss||e._noHeavy)return null; /* S1639 — a ring fighter's moves by bout */const r=foeAttack(e);return r&&r.heavy||null;}
 function foeHeavyRoll(e){
+  const n=e._blowN=(e._blowN||0)+1; /* S1639 — counted before the row, so a foe with the heavy off still feints on a fresh roll each blow */
   const H=foeHeavyRow(e);if(!H)return false;
-  const n=e._blowN=(e._blowN||0)+1;
   if(e._heavyLast){e._heavyLast=false;return false;}
   const u=seededRng('heavy',(e.id||e.baseType||e.baseName||e.name||'foe')+':'+n)(); /* a foe with no id yet rolls on its kind's name, still seeded */
   return e._heavyLast=u<H.share/(1-H.share); /* a third after a light blow: never twice running, still one in four in all */
 }
 // S1140 — the feint's row (humanoids only, so far) and its roll, made only on a wind-up the heavy roll has left light
-function foeFeintRow(e){if(!e||e.isBoss)return null;const r=foeAttack(e);return r&&r.feint||null;}
+function foeFeintRow(e){if(!e||e.isBoss||e._noFeint)return null;const r=foeAttack(e);return r&&r.feint||null;}
 function foeFeintRoll(e){
   const F=foeFeintRow(e);if(!F)return false;
   if(e._feintLast){e._feintLast=false;return false;}
@@ -194,7 +194,7 @@ function foeWindUp(e){
 // Only its reach and arc are the row's; its tell, damage, heavy blow and feint stay the humanoid's. It starts its tell as much
 // farther out as its reach is past the sword's (2.0 m, hull to hull), so a spearman thrusts from its own distance.
 const FOE_WPN_ROW={dagger:'Dagger',sword:'Sword',axe:'Mace',mace:'Mace',cutlass:'Scimitar',spear:'Spear',fists:'Fists'};
-function foeWeaponKind(e){if(e&&e._disarmed)return 'fists';const P=e&&e.limbs&&e.limbs.person,G=P&&P.g;return G?(G.gear==='spear'?'spear':G.wpn||null):null;}
+function foeWeaponKind(e){if(e&&e._disarmed)return 'fists';if(e&&e._ringWpn)return e._ringWpn; /* S1639 — a ring fighter's weapon, rolled on its id */const P=e&&e.limbs&&e.limbs.person,G=P&&P.g;return G?(G.gear==='spear'?'spear':G.wpn||null):null;}
 function foeWeaponRow(e){return WEAPON_ATTACKS[FOE_WPN_ROW[foeWeaponKind(e)]||'Sword'];}
 function foeWeaponReach(e){return foeWeaponRow(e).reach;}
 function foeWeaponArc(e,deg){const k=foeWeaponKind(e);return k==='spear'?WEAPON_ATTACKS.Spear.arc:deg;}
