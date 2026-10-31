@@ -2909,6 +2909,100 @@ function joinerBench() {
   for (const [k, gs] of B) { const g = mergeGeometries(gs); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, BM[k]); m.name = 'bench:' + k; group.add(m); tris += g.attributes.position.count / 3; }
   return { group, tris: Math.round(tris), draws: group.children.length, foot: { x0: -L / 2, x1: L / 2, z0: 0, z1: D + .26 }, top: H };
 }
+// ── the Mark's training yard (Session 1657; arenas-build.md session 2, Michael's B on #914: "a staff rack, a 5 m rope ring"): the
+// yard behind a Markish Fighters' Guild hall where the spar (sparStart) and the evening brawl (brawlStart) are fought. A ring of
+// trodden earth 5.7 m round, fourteen ash stakes 1 m high at 5 m with one rope at 0.9 m sagging 9 cm a span (the bout's rope: over
+// it by 1 m is a loss, so it is stepped over, not gated), the staff rack outside it toward the hall (two uprights, a top rail and a
+// slotted foot rail, five yard staves leaning in six slots: the sixth is the one in your hand), and a plank bench on two stumps
+// across the ring for whoever watches. In the hall's materials (markMats' beam and planks), so in a town it costs two draws more
+// (the rope and the earth) once the kit's houses are merged.
+//   PKIT.mk.yard(hAt, o) -> { group, tris, draws, R, rack: {x, z, w, d}, bench: {x, z, w, d} } in the yard's frame: the ring's centre at
+//   0, +z toward the hall, y = 0 the ground at the centre; hAt(x, z) is the ground's height in that frame (each stake and the earth
+//   follow it). One mesh a material, five in all.
+let YM = null;
+function markYard(hAt = () => 0, o = {}) {
+  const Mt = markMats();
+  if (!YM) YM = { rope: new THREE.MeshStandardMaterial({ color: 0x8c7656, roughness: .95 }), earth: mat('rock', { ns: .35, color: 0x8a7458, rough: 1 }) };
+  const M = { beam: Mt.beam, staff: Mt.carve, plank: Mt.wall[1], stump: Mt.wall[2], rope: YM.rope, earth: YM.earth };
+  const R = o.r || 5, N = 14, B = new Map(), put = (k, g) => { const x = g.index ? g.toNonIndexed() : g; if (!B.has(k)) B.set(k, []); B.get(k).push(x); };
+  const bx = (k, w, h, d, x, y, z, ry = 0, rx = 0) => { const g = worldUV(new THREE.BoxGeometry(w, h, d).toNonIndexed(), .5); if (rx) g.rotateX(rx); if (ry) g.rotateY(ry); g.translate(x, y, z); put(k, g); };
+  // the earth: a disc of six rings over the ground, 3.5 cm up, ragged at its edge
+  { const rings = 6, seg = 40, ER = R + .7, P = [], U = [], idx = [];
+    for (let k = 0; k <= rings; k++) for (let s = 0; s < (k ? seg : 1); s++) { const a = s / seg * Math.PI * 2, rr = k / rings * ER * (k === rings ? .93 + .1 * tn(s / seg, .5, 8, 3) : 1), x = Math.cos(a) * rr, z = Math.sin(a) * rr; P.push(x, hAt(x, z) + .035, z); U.push(x * .35, z * .35); }
+    const at = (k, s) => k ? 1 + (k - 1) * seg + (s % seg) : 0;
+    for (let s = 0; s < seg; s++) idx.push(0, at(1, s + 1), at(1, s));
+    for (let k = 1; k < rings; k++) for (let s = 0; s < seg; s++) { const a = at(k, s), b = at(k, s + 1), c = at(k + 1, s), d = at(k + 1, s + 1); idx.push(a, b, d, a, d, c); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(U, 2)); g.setIndex(idx); g.computeVertexNormals(); put('earth', g); }
+  // the stakes and the rope
+  const tops = [];
+  for (let i = 0; i < N; i++) { const a = (i + .5) / N * Math.PI * 2, x = Math.cos(a) * R, z = Math.sin(a) * R, y = hAt(x, z), g = new THREE.CylinderGeometry(.05, .07, 1.2, 6);
+    g.rotateY(a); g.translate(x, y + .45, z); put('beam', g); tops.push(new THREE.Vector3(x, y + .9, z)); }
+  for (let i = 0; i < N; i++) { const p = tops[i], q = tops[(i + 1) % N], pts = [];
+    for (let k = 0; k <= 6; k++) { const t = k / 6, v = p.clone().lerp(q, t); v.y -= .09 * 4 * t * (1 - t); pts.push(v); }
+    put('rope', new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 6, .016, 4, false)); }
+  // the rack, 1.4 m out toward the hall, its face to the ring
+  const rz = R + 1.0, ry0 = hAt(0, rz), W = 2.0;
+  for (const sx of [-1, 1]) { bx('beam', .1, 1.7, .1, sx * W / 2, ry0 + .8, rz); bx('beam', .1, .08, .7, sx * W / 2, ry0 + .04, rz); }
+  bx('beam', W + .2, .09, .09, 0, ry0 + 1.58, rz + .08); bx('beam', W, .07, .24, 0, ry0 + .32, rz - .06);
+  for (let k = 0; k < 6; k++) { if (k === 4) continue; const x = -.75 + k * .3, g = new THREE.CylinderGeometry(.022, .026, 1.86, 5), lean = Math.atan2(.18, 1.5);
+    g.rotateX(-lean); g.translate(x, ry0 + .3 + .93 * Math.cos(lean), rz - .1 + .93 * Math.sin(lean)); put('staff', g); }
+  // the bench across the ring
+  const bz = -(R + 1.0), by0 = hAt(0, bz);
+  bx('plank', 2.2, .07, .34, 0, by0 + .46, bz);
+  for (const sx of [-1, 1]) { const g = new THREE.CylinderGeometry(.15, .17, .44, 7); g.translate(sx * .75, by0 + .21, bz); put('stump', g); }
+  const group = new THREE.Group(); group.name = 'mark yard'; let tris = 0;
+  for (const [k, gs] of B) { const clean = gs.map(g => { for (const a of Object.keys(g.attributes)) if (!['position', 'normal', 'uv'].includes(a)) g.deleteAttribute(a); if (!g.attributes.normal) g.computeVertexNormals(); return g; });
+    const g = mergeGeometries(clean); clean.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = 'yard:' + k; m.castShadow = k !== 'earth'; m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
+  return { group, tris: Math.round(tris), draws: group.children.length, R, rack: { x: 0, z: rz, w: W + .2, d: .8 }, bench: { x: 0, z: bz, w: 2.2, d: .4 } };
+}
+// ── the ladder's ring (Session 1658; arenas-build.md session 2, Michael's B on #914: "stands round an 8 m ring, the post with its
+// names"): where the ladder's bouts are fought, at Caer Slige and the Mark's cities (ladderSites). Trodden earth 9 m round; twenty
+// ash stakes at 8 m with the yard's rope at 0.9 m, broken at the gate (two taller posts 1.6 m apart toward the town, +z) where the
+// ring master takes your call; three tiers of plank stands in three arcs across the ring from the gate, an aisle between each arc,
+// the seats at 0.45, 0.9 and 1.35 m and level along an arc whatever the ground does under them (their legs follow it); and the post
+// beside the gate, a squared oak 3 m high with a cap and six boards down its face, where the names are cut (the champion's, and
+// the fighters killed after they yielded). In the yard's materials and the hall's wood, so it adds no material the yard has not.
+//   PKIT.mk.ring(hAt, o) -> { group, tris, draws, R, gate: {x, z}, post: {x, z, w, d}, stands: [{x, z, w, d, ry, h}] } in the ring's
+//   frame: its centre at 0, +z toward the town, y = 0 the ground at the centre; hAt(x, z) the ground's height in that frame.
+function markRing(hAt = () => 0, o = {}) {
+  markYard(); const Mt = markMats();
+  const M = { beam: Mt.beam, carve: Mt.carve, plank: Mt.wall[1], oak: Mt.wall[2], rope: YM.rope, earth: YM.earth };
+  const R = o.r || 8, B = new Map(), put = (k, g) => { const x = g.index ? g.toNonIndexed() : g; if (!B.has(k)) B.set(k, []); B.get(k).push(x); };
+  const bx = (k, w, h, d, x, y, z, ry = 0) => { const g = worldUV(new THREE.BoxGeometry(w, h, d).toNonIndexed(), .5); if (ry) g.rotateY(ry); g.translate(x, y, z); put(k, g); };
+  const P = (a, r) => [Math.cos(a) * r, Math.sin(a) * r];
+  // the earth, as the yard's: rings over the ground, 3.5 cm up, ragged at its edge
+  { const rings = 8, seg = 48, ER = R + 1, Pt = [], U = [], idx = [];
+    for (let k = 0; k <= rings; k++) for (let s = 0; s < (k ? seg : 1); s++) { const a = s / seg * Math.PI * 2, rr = k / rings * ER * (k === rings ? .94 + .09 * tn(s / seg, .5, 8, 5) : 1), x = Math.cos(a) * rr, z = Math.sin(a) * rr; Pt.push(x, hAt(x, z) + .035, z); U.push(x * .35, z * .35); }
+    const at = (k, s) => k ? 1 + (k - 1) * seg + (s % seg) : 0;
+    for (let s = 0; s < seg; s++) idx.push(0, at(1, s + 1), at(1, s));
+    for (let k = 1; k < rings; k++) for (let s = 0; s < seg; s++) { const a = at(k, s), b = at(k, s + 1), c = at(k + 1, s), d = at(k + 1, s + 1); idx.push(a, b, d, a, d, c); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(Pt, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(U, 2)); g.setIndex(idx); g.computeVertexNormals(); put('earth', g); }
+  // the stakes, from one gatepost round to the other, and the rope between them; the gate's span has none
+  const N = 20, gate = Math.PI / 2, gh = .8 / R, tops = [];
+  for (let i = 0; i <= N; i++) { const a = gate + gh + i / N * (Math.PI * 2 - 2 * gh), [x, z] = P(a, R), y = hAt(x, z), end = i === 0 || i === N;
+    const g = new THREE.CylinderGeometry(end ? .08 : .05, end ? .1 : .07, end ? 1.75 : 1.2, end ? 8 : 6); g.translate(x, y + (end ? .7 : .45), z); put('beam', g); tops.push(new THREE.Vector3(x, y + .9, z)); }
+  for (let i = 0; i < N; i++) { const p = tops[i], q = tops[i + 1], pts = [];
+    for (let k = 0; k <= 6; k++) { const t = k / 6, v = p.clone().lerp(q, t); v.y -= .1 * 4 * t * (1 - t); pts.push(v); }
+    put('rope', new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 6, .016, 4, false)); }
+  // the stands: three arcs across the ring from the gate, each 0.95 rad, an aisle of 0.3 rad between them; three tiers 0.75 m deep
+  const stands = [], r0 = R + 1.7, TD = .75, SEG = 6, arcW = .95;
+  for (const ac of [-Math.PI / 2 - (arcW + .3), -Math.PI / 2, -Math.PI / 2 + (arcW + .3)]) for (let s = 0; s < SEG; s++) {
+    const a0 = ac - arcW / 2 + s / SEG * arcW, a1 = a0 + arcW / SEG, am = (a0 + a1) / 2, ry = -am + Math.PI / 2;
+    let base = -1e9; for (const a of [a0, a1]) for (let k = 0; k < 3; k++) { const [x, z] = P(a, r0 + k * TD); base = Math.max(base, hAt(x, z)); }
+    for (let k = 0; k < 3; k++) { const rr = r0 + k * TD + TD / 2, len = 2 * rr * Math.sin((a1 - a0) / 2) + .02, [x, z] = P(am, rr), sy = base + .45 * (k + 1);
+      bx('plank', len, .06, .34, x, sy, z, ry);
+      if (k) { const [fx, fz] = P(am, rr - .3); bx('plank', len, .05, .22, fx, sy - .45 + .02, fz, ry); }
+      for (const a of [a0 + .012, a1 - .012]) { const [lx, lz] = P(a, rr), gy = hAt(lx, lz) - .1, h = sy - .03 - gy; bx('beam', .09, h, .09, lx, gy + h / 2, lz, ry); } }
+    const [cx, cz] = P(am, r0 + 1.5 * TD); stands.push({ x: cx, z: cz, w: 2 * (r0 + 3 * TD) * Math.sin((a1 - a0) / 2), d: 3 * TD, ry, h: base + 1.4 }); }
+  // the post, beside the gate on the town's side: squared oak, a cap, six boards for the names
+  const px = 2.2, pz = R + 1.3, py = hAt(px, pz);
+  bx('oak', .32, 3.1, .32, px, py + 1.45, pz); bx('beam', .46, .1, .46, px, py + 3.03, pz); bx('beam', .2, .16, .2, px, py + 3.16, pz);
+  for (let k = 0; k < 6; k++) bx('carve', .26, .13, .03, px, py + 2.6 - k * .27, pz + .17);
+  const group = new THREE.Group(); group.name = 'mark ring'; let tris = 0;
+  for (const [k, gs] of B) { const clean = gs.map(g => { for (const a of Object.keys(g.attributes)) if (!['position', 'normal', 'uv'].includes(a)) g.deleteAttribute(a); if (!g.attributes.normal) g.computeVertexNormals(); if (!g.attributes.uv) g.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(g.attributes.position.count * 2), 2)); return g; });
+    const g = mergeGeometries(clean); clean.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = 'ring:' + k; m.castShadow = k !== 'earth'; m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
+  return { group, tris: Math.round(tris), draws: group.children.length, R, gate: { x: 0, z: R + .6 }, post: { x: px, z: pz, w: .36, d: .36 }, stands };
+}
 // ── a felled trunk (Session 1540, for survival B's Felling, Session 1534: "the trunk falls where you face"; the systems builder's ask):
 // a log lying along +z from its butt at 0 to its top at L, its axis R over the ground (y = 0 the axis, the underside at −R), tapering
 // to 0.8 R, a little crooked; bark of the kit's own (furrowed plates); the butt chopped round to a blunt point (pale, its rings drawn),
@@ -4406,7 +4500,7 @@ function aurenneOrrery(hAt, o = {}) {
     size: { across: R * 2, rings: radii.map(v => v * 2), hubOver: +(hub.y - py).toFixed(1), standing: cols.filter(c => c.stand).length, top: +(hub.y + 20.5 - py).toFixed(1) } };
 }
   return { stream, hashKey, mergeByMaterial, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, gatePiece }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, trunk: felledTrunk }, ships: { sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
-    mk: { hall: markHall, lot: markLot, alehall: markAlehall, longhouse: markLonghouse, mats: markMats },
+    mk: { hall: markHall, lot: markLot, alehall: markAlehall, longhouse: markLonghouse, mats: markMats, yard: markYard, ring: markRing },
     au: { house: aurenneHouse, lot: aurenneLot, courtyard: aurenneCourtyard, church: aurenneChurch, churchBox: aurenneChurchBox, churchHall: aurenneChurchHall, courtyardHouse: aurenneCourtyardHouse, tavern: aurenneTavern, mats: aurMats, roomMats: homeMats, AUR },
     gl: { PLANS, FIN, PS, PAINTS, TOWN: GL_TOWN, building, church, keep, farmstead, coachInn, coachInnPlan, coachRoom, townhouse: townhouseRoom, farmhouse: farmhouseRoom, byre: byreRoom, barn: barnRoom, row: shrineRow, ROW_GODS, inn: gatelandsInn, cottage: gatelandsCottage, churchLen: n => +((n === 2 ? 2 : 3) * 4.8 + 1.6 + 5.6 - .5 + 7.2 - .9 - .02).toFixed(2), lot: gatelandsLot, mats: glMats, BAYS, bayPlan, bayWidth, baysFor } };
 })();
