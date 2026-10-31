@@ -2240,7 +2240,8 @@ const giver=`${lord.title} ${lord.name}`;
     if(!o.force&&(h<LADDER_OPEN||h>LADDER_CLOSE))return {say:`The bouts are called from ${LADDER_OPEN}h to ${LADDER_CLOSE}h.`};
     const s=k.site,x=o.x!=null?o.x:s.x,z=o.z!=null?o.z:s.z;
     A.call={bout:k.bout,site:s.id,x,z,day:dayNow(),hour:h,at:(Math.floor(absMin()/60)+1)*60};
-    showMsg(`Bout ${k.bout} of 12 is called at ${h}h. ${ladderRow(k.bout).purse} gold to the winner.`,'#e8d8a0');return {ok:true,bout:k.bout,hour:h};}
+    A.call.fixer=ladderFixed(k.bout,A.call.day,s.id);
+    showMsg(`Bout ${k.bout} of 12 is called at ${h}h. ${ladderRow(k.bout).purse} gold to the winner.${A.call.fixer?' A man at the gate wants a word.':''}`,'#e8d8a0');return {ok:true,bout:k.bout,hour:h,fixer:A.call.fixer};}
   // S1646 — arenas-build.md session 4, the wager. Before the call's hour you may stake up to the purse on yourself (one stake, by
   // placeStake). The odds are 1 + (the fighter's tier level − your level) ÷ 5, clamped from evens (1) to 4 to 1, and fixed when the stake
   // is placed. Read as a bookmaker's odds, "2.4 to 1": a win returns the stake and 2.4 times it; a loss, a forfeit, murder or a missed
@@ -2253,12 +2254,39 @@ const giver=`${lord.title} ${lord.name}`;
     const odds=ladderOdds(C.bout);if(!placeStake(n,'ladder:'+C.bout))return {say:`You have not got ${n} gold.`};
     C.odds=odds;A.stake.odds=odds;showMsg(`${n} gold on yourself at ${Math.round(odds*10)/10} to 1.`,'#e8d8a0');return {ok:true,n,odds};}
   function ladderSettle(won){const A=arenaState();if(!A.stake||!/^ladder:/.test(A.stake.what||''))return 0;return settleStake(won,1+(A.stake.odds||1));}
+  // S1647 — arenas-build.md session 4, the fixer. From bout 4, one bout in three (seededRng('fix', boutId), the id the bout and the day)
+  // has a bookmaker's man at the ring's gate, unless that ring's fixer has been reported (rings.by[site].fixer). He offers 3 × the
+  // purse to go down (takeBribe, paid at once). Take it and lose: the bribe and your rank are kept; one fix in four is found out at the
+  // bout's end (seededRng('fixout', boutId)): a fine of 2 × the bribe (from your purse, the rest as that town's bounty) and the rings
+  // shut 28 days. Take it and win anyway: the purse is yours, the bribe stays yours, and two roughs at the ring's tier wait at the
+  // ring's gate that dusk (18h, when you are within 60 m). Report him (reportFixer): that ring has no fixer again, and your next purse
+  // pays ×1.5. The man's words are placeholders for the quest writer; League standing −1 waits on a standing the League does not keep
+  // yet. Named actions: takeBribe, reportFixer.
+  const FIX_FROM=4,FIX_ODDS=1/3,FIX_BRIBE=3,FIXOUT_ODDS=.25,FIX_FINE=2,REPORT_MULT=1.5,ROUGHS_HOUR=18,ROUGHS_NEAR=60;
+  function ladderBoutId(bout,day){return `${bout}:${day}`;}
+  function ladderFixed(bout,day,site){if(bout<FIX_FROM||ringOf(site).fixer==='reported')return false;return seededRng('fix',ladderBoutId(bout,day))()<FIX_ODDS;}
+  function takeBribe(){const A=arenaState(),C=A.call;if(!C||LBOUT||!C.fixer)return {say:'No one is offering.'};if(C.bribe)return {say:'You have taken his money already.'};
+    const n=FIX_BRIBE*ladderRow(C.bout).purse;C.bribe=payPurse(n);showMsg(`${n} gold to go down in bout ${C.bout}.`,'#c8a878');return {ok:true,n};}
+  function reportFixer(){const A=arenaState(),C=A.call;if(!C||LBOUT||!C.fixer)return {say:'There is no one to report.'};if(C.bribe)return {say:'You have taken his money.'};
+    ringOf(C.site).fixer='reported';C.fixer=false;A.purseUp=REPORT_MULT;showMsg('The ring master has the bookmaker\'s man thrown out. Your next purse is half again.','#e8d8a0');return {ok:true};}
+  function ladderFixEnd(L,how){const A=arenaState(),b=L.bribe;if(!b)return null;
+    if(how==='won'){A.roughs={site:L.site,x:L.x,z:L.z,day:dayNow(),tier:ladderRow(L.bout).tier};return 'crossed';}
+    if(how==='lost'&&seededRng('fixout',ladderBoutId(L.bout,L.day))()<FIXOUT_ODDS){const fine=FIX_FINE*b,pay=Math.min(gold,fine);gold-=pay;
+      if(fine>pay){const Cr=worldState.crime||(worldState.crime={}),c=Cr[L.site]||(Cr[L.site]={bounty:0,debt:0,last:0});c.bounty+=fine-pay;c.last=dayNow();}
+      A.banUntil=Math.max(A.banUntil||0,dayNow()+RING_BAN_DAYS);if(typeof updateHUD==='function')updateHUD();
+      showMsg(`The fix is found out. A fine of ${fine} gold, and the rings of the Mark are shut to you.`,'#ff6060');return 'found';}
+    return 'kept';}
+  function tickRoughs(){const A=worldState.arena,R=A&&A.roughs;if(!R)return;if(dayNow()>R.day){A.roughs=null;return;}
+    if(hourNow()<ROUGHS_HOUR||Math.hypot(px-R.x,pz-R.z)>ROUGHS_NEAR)return;A.roughs=null;
+    for(let k=0;k<2;k++){const a=k*Math.PI,e=keyFoe(buildZoneEnemy(sc,STATIC_SOL,R.x+Math.cos(a)*(LADDER_R+3),R.z+Math.sin(a)*(LADDER_R+3),'Bandit',null,{tier:R.tier}),`rough:${R.site}:${R.day}:${k}`);
+      e.name=e.displayName='A rough';e.alert=true;if(e.mesh&&!e.mesh.parent)sc.add(e.mesh);ZONES.world.enemies.push(e);}
+    showMsg('Two men are waiting at the ring\'s gate. The bookmaker wants his money back.','#ff6060');}
   function ladderBegin(){const A=arenaState(),C=A.call;A.call=null;
     if(Math.hypot(px-C.x,pz-C.z)>LADDER_R+LADDER_NEAR){A.lastDay=C.day;ladderSettle(false);showMsg('Your bout was called and you were not at the ring. The day is lost.','#e8d8a0');return null;}
     const dx=px-C.x,dz=pz-C.z,d=Math.hypot(dx,dz)||1,fx=C.x-dx/d*3,fz=C.z-dz/d*3;
     const e=ladderFighter(C.bout,fx,fz);e.name=e.displayName=`The fighter of bout ${C.bout}`;e._questTag='ring';e.homeX=C.x;e.homeZ=C.z;
     if(e.mesh&&!e.mesh.parent)sc.add(e.mesh);ZONES.world.enemies.push(e);
-    LBOUT={foe:e,bout:C.bout,site:C.site,x:C.x,z:C.z,end:null,paid:0};
+    LBOUT={foe:e,bout:C.bout,site:C.site,x:C.x,z:C.z,day:C.day,bribe:C.bribe||0,end:null,paid:0};
     boutStart({foe:e,x:C.x,z:C.z,r:LADDER_R,on:{
       yield:()=>showMsg(`${e.name} goes down on one knee.`,'#e8d8a0'),
       won:()=>ladderEnd('won'),lost:(b,how)=>ladderEnd('lost',how),murder:()=>ladderEnd('murder')}});
@@ -2268,9 +2296,9 @@ const giver=`${lord.title} ${lord.name}`;
       ringOf(L.site).dead.push(e.name);const R=ringsState();R.next[L.bout]=(R.next[L.bout]||0)+1;}
     else{if(e&&!e.dead){if(e.mesh&&e.mesh.parent)e.mesh.parent.remove(e.mesh);const i=ZONES.world.enemies.indexOf(e);if(i>=0)ZONES.world.enemies.splice(i,1);}
       const k=staggered.findIndex(q=>q.e===e);if(k>=0)staggered.splice(k,1);}
-    if(how==='won'){A.rank=Math.max(A.rank,L.bout);L.paid=payPurse(ladderRow(L.bout).purse);addFavor(L.site,1);L.won=ladderSettle(true);}
+    if(how==='won'){A.rank=Math.max(A.rank,L.bout);L.paid=payPurse(ladderRow(L.bout).purse*(A.purseUp||1));A.purseUp=0;addFavor(L.site,1);L.won=ladderSettle(true);}
     else{ladderSettle(false);if(how==='lost'){PHP=Math.max(PHP,1);if(typeof updateHUD==='function')updateHUD();}}
-    L.end=how;L.why=why||null;
+    L.end=how;L.why=why||null;L.fix=ladderFixEnd(L,how);
     showMsg(how==='won'?`${e.name} salutes you. The purse is yours: ${L.paid} gold.${L.won>0?` The book pays ${L.won}.`:''}`:how==='murder'?`${e.name} is dead. The crowd goes quiet, and the rings of the Mark are shut to you.`:why==='forfeit'?'You drank inside the rope. The bout is forfeit.':why==='rope'?'You step over the rope. The bout is lost.':'The bout is lost. Come back tomorrow.','#e8d8a0');
     return L;}
   // what the rope forbids: anything drunk, eaten or read from the pack
@@ -2278,7 +2306,7 @@ const giver=`${lord.title} ${lord.name}`;
     if(!(it.type==='potion'||it.type==='herb'||it.type==='scroll'||it.brew||it.meal||it.food||it.name==='Mystic Scroll'))return false;
     if(Math.hypot(px-LBOUT.x,pz-LBOUT.z)>LADDER_R+BOUT_ROPE)return false;boutOver('lost','forfeit');return true;}
   function tickLadder(dt){const A=worldState.arena;
-    if(!LBOUT&&A&&A.call&&absMin()>=A.call.at&&!BOUT&&!SPAR&&!BRAWL)ladderBegin(); /* at the hour; not at the ring, the day is lost */
+    if(A&&A.roughs)tickRoughs();if(!LBOUT&&A&&A.call&&absMin()>=A.call.at&&!BOUT&&!SPAR&&!BRAWL)ladderBegin(); /* at the hour; not at the ring, the day is lost */
     const L=LBOUT;if(!L)return;if(!BOUT||BOUT.foe!==L.foe){ladderEnd('lost','left');return;}boutTick(dt);}
   function tickSpar(){if(!SPAR){if(EQ.weapon&&EQ.weapon.yard){EQ.weapon=null;sparKitRefresh();}return;}const S=SPAR,e=S.foe;
     if(!e||e.dead){sparEnd('left');return;}e.hp=e.maxHp;e.alert=true;

@@ -121,6 +121,24 @@ const L = await page.evaluate(() => {
   level = 9; Lb = hit(); const e7 = Lb.foe; e7.hp = Math.floor(e7.maxHp * .25); run(2); run(200); out.wagerWon = { end: Lb.end, back: gold - g0, book: Lb.won };
   level = 4; at(12, 9.5); call(); WORLD.ladderWager(50); const g1 = gold; Lb = hit(); const zq = pz; pz = zq - 2 - 9.1; run(1); pz = zq; out.wagerLost = { end: Lb.end, back: gold - g1, stake: arenaState().stake };
   level = 1; out.clampHi = ladderOdds(10); level = 20; out.clampLo = ladderOdds(10); level = lv0;
+  // S1647 — the fixer: from bout 4, one in three by the bout and the day; 3 × the purse; found out one in four on a loss; roughs at dusk
+  // on a win; reported, the ring has none again and the next purse is ×1.5
+  const days = []; for (let d = 20; d < 400; d++) if (ladderFixed(4, d, cid)) days.push(d);
+  out.share = days.length / 380; out.none3 = [20, 21, 22, 23].every(d => !ladderFixed(3, d, cid)) && !Array.from({ length: 60 }, (_, i) => ladderFixed(3, 20 + i, cid)).some(Boolean);
+  const fo = (d) => seededRng('fixout', ladderBoutId(4, d))() < .25;
+  const dKept = days.find(d => !fo(d)), dFound = days.find(d => fo(d)), rest = days.filter(d => d !== dKept && d !== dFound);
+  const fresh = () => Object.assign(arenaState(), { rank: 3, banUntil: 0, lastDay: -1, call: null, stake: null, purseUp: 0 });
+  const lose = () => { Lb = hit(); const z = pz; pz = z - 2 - 9.1; run(1); pz = z; return Lb; };
+  fresh(); at(dKept, 9.5); r = call(); let ga = gold; const tb = WORLD.takeBribe(); out.kept = { fixer: r.fixer, bribe: tb.n, gold: gold - ga, rep: WORLD.reportFixer().say };
+  Lb = lose(); out.kept.fix = Lb.fix; out.kept.ban = arenaState().banUntil; out.kept.rank = arenaState().rank;
+  fresh(); at(dFound, 9.5); call(); WORLD.takeBribe(); ga = gold; Lb = lose(); out.found = { fix: Lb.fix, fine: ga - gold, ban: arenaState().banUntil - dayNow() };
+  fresh(); const dW = rest[0]; at(dW, 9.5); call(); WORLD.takeBribe(); Lb = hit(); const eW = Lb.foe; eW.hp = Math.floor(eW.maxHp * .25); run(2); run(200);
+  const n0 = ZONES.world.enemies.length; at(dW, 17.5); run(1); const n1 = ZONES.world.enemies.length; at(dW, 18.5); run(1);
+  const roughs = ZONES.world.enemies.filter(e => /^rough:/.test(e.id || ''));
+  out.crossed = { end: Lb.end, fix: Lb.fix, rank: arenaState().rank, before: n1 - n0, roughs: roughs.length, alert: roughs.every(e => e.alert), tier: roughs.map(e => e.tier) };
+  for (const e of roughs) { if (e.mesh && e.mesh.parent) e.mesh.parent.remove(e.mesh); ZONES.world.enemies.splice(ZONES.world.enemies.indexOf(e), 1); }
+  fresh(); const dR = rest[1]; at(dR, 9.5); call(); const rp = WORLD.reportFixer(); ga = gold; Lb = hit(); const eR = Lb.foe; eR.hp = Math.floor(eR.maxHp * .25); run(2); run(200);
+  out.report = { ok: !!rp.ok, paid: Lb.paid, gold: gold - ga, gone: days.every(d => !ladderFixed(4, d, cid)), bribe: (fresh(), at(rest[2] || dR + 1, 9.5), call(), WORLD.takeBribe().say) };
   return out; });
 console.log('ladder', JSON.stringify(L));
 check(`the call: refused at 7h30 (*${L.early}*); at 10h30 bout ${L.call.bout} is called at ${L.call.hour}h (*${L.call.again}*), and nothing starts before`,
@@ -143,6 +161,14 @@ check(`won with the odds fixed when placed (level 9 by the bout): the book pays 
   L.wagerWon.end === 'won' && L.wagerWon.book === 340 && L.wagerWon.back === 250 + 240, L.wagerWon);
 check(`lost over the rope: the stake kept (gold ${L.wagerLost.back}); the odds clamped, 4 to 1 at level 1 against bout 10 (${L.clampHi}), evens at level 20 (${L.clampLo})`,
   L.wagerLost.end === 'lost' && L.wagerLost.back === 0 && !L.wagerLost.stake && L.clampHi === 4 && L.clampLo === 1, L);
+check(`the fixer at bout 4 on ${Math.round(L.share * 100)}% of days (a third), never before bout 4 (${L.none3}); the bribe ${L.kept.bribe} (3 × 120), paid at once`,
+  L.share > .25 && L.share < .42 && L.none3 && L.kept.fixer === true && L.kept.bribe === 360 && L.kept.gold === 360 && /taken his money/.test(L.kept.rep), L);
+check(`taken and lost: kept (${L.kept.fix}), no ban, rank ${L.kept.rank}; found out on its day: a fine of ${L.found.fine}, the rings shut ${L.found.ban} days`,
+  L.kept.fix === 'kept' && !L.kept.ban && L.kept.rank === 3 && L.found.fix === 'found' && L.found.fine === 720 && L.found.ban === 28, L);
+check(`taken and won anyway: rank ${L.crossed.rank}, none before dusk (${L.crossed.before}), ${L.crossed.roughs} roughs at the gate at 18h30, alert, tier ${L.crossed.tier}`,
+  L.crossed.end === 'won' && L.crossed.fix === 'crossed' && L.crossed.rank === 4 && L.crossed.before === 0 && L.crossed.roughs === 2 && L.crossed.alert && L.crossed.tier.every(t => t === 2), L.crossed);
+check(`reported: the next purse ${L.report.paid} (×1.5 of 120), that ring has no fixer again (${L.report.gone}; *${L.report.bribe}*)`,
+  L.report.ok && L.report.paid === 180 && L.report.gold === 180 && L.report.gone && /No one is offering/.test(L.report.bribe), L.report);
 
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
