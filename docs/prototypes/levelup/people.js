@@ -9,7 +9,7 @@ let PACK = null;
 // the body's vertices, each once (Session 1294: a Set of its 80,268 indices was made afresh in every loop over them, 2.5 ms each, 56 times a raised hood)
 const bodyV = () => PACK.body0 || (PACK.body0 = [...new Set(PACK.G['body'])]);
 const beardLine = x => { const t = Math.max(0, Math.min(1, (Math.abs(x) - .032) / .038)); return .675 + .037 * t ** 1.3; };
-// the tied styles' temple line in front of the ear (Session 1638, Michael's note on #272): from the line over the ear (y .742) at the ear's front,
+// the tied styles' temple line in front of the ear (Session 1640, Michael's note on #272): from the line over the ear (y .742) at the ear's front,
 // rising on one easing to the hairline 5 cm forward. Session 1607's flat line to z .08 and then 3 cm a cm drew a square step from the front
 const TEMPLE_Y = z => { const k = Math.max(0, Math.min(1, (z - TEMPLE_Z[0]) / (TEMPLE_Z[1] - TEMPLE_Z[0]))); return .742 + .036 * k * k * (3 - 2 * k); }, TEMPLE_Z = [.06, .104];
 export async function loadPack(base = 'mh/') {
