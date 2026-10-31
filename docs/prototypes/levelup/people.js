@@ -741,6 +741,8 @@ function drape(S, start, dir0, L, clearAt, o = {}) {
   for (const q of line.slice(1)) { const c = clearAt(q), hit = heightOver(S, q); if (hit && hit.h < c) q.addScaledVector(hit.e.n, c - hit.h); }
   return line;
 }
+// how far out of its clearance the plait lies down the breast (Session 1665): its own half-thickness, so the locks sit on the cloth
+const PLAIT_LIE = .012;
 const HAIR_STYLES = ['short', 'loose', 'braid', 'braids', 'tail', 'bun', 'crown', 'plait', 'shaved'];
 export { HAIR_STYLES };
 // the sleeve's place along the forearm (Session 1228), for the checks
@@ -889,7 +891,7 @@ function buildHair(P, G, heads, scalpTris, headB, rnd, checks = true) {
   const cards = strandCards(strands, col, headB); cards.name = 'hair'; out.push(cards);
   // what the gathering makes
   const tie = new THREE.MeshStandardMaterial({ color: sRGB(.25, .17, .11), roughness: .7 }), lm = lockMat(col.clone().multiplyScalar(.95));
-  let drapeMin = 1;
+  let drapeMin = 1, plaitLift = 0;
   const bodyOnly = surfGrid(P, PACK.G['body'], (x, y, z) => y > .25 && Math.abs(x) < .2);
   // the crown's three locks round the closed ring, a whole number of crossings so they meet where they began (no tie: its ends are tucked)
   if (crown) { const { line, n } = crown, per = n / Math.max(1, Math.round(n / 4.5)), w = crownW;
@@ -912,10 +914,21 @@ function buildHair(P, G, heads, scalpTris, headB, rnd, checks = true) {
     const BL = .16 + .42 * len, start = g.p.clone().addScaledVector(g.n, .006), d0 = new THREE.Vector3((g.p.x - hc.x) * .5, -1.6, -.3);
     // the plait is drawn forward round the side of the neck to the front of its shoulder, then falls down the breast
     const shF = plaitS ? heads[plaitS > 0 ? 'shoulder01.L' : 'shoulder01.R'].clone().lerp(nk, .45).add(new THREE.Vector3(0, .05, .07)) : null;
-    const line = drape(bodyOnly, start, plaitS ? new THREE.Vector3(.4 * plaitS, -.5, 1) : d0, plaitS ? BL + .08 : BL, q => clearAt(q) + (style === 'tail' ? .006 : 0), plaitS ? { grav: .12, pull: q => q.z < shF.z ? shF.clone().sub(q).normalize().multiplyScalar(.5) : null } : { keepX: style === 'braids' ? .03 : .06 });
+    // (Session 1665: past the shoulder it kept the way it came, forward, and gravity at .12 only bent it down slowly, so from the side it
+    // stood off the breast like a stiff rope, its tie 10 cm out in the air. Once it has come round, it is drawn back each step to the
+    // front of the body under it, at its clearance, and falls harder: it lies down the breast. The front is the body's nearest-forward
+    // point within 1.5 cm across and 1.2 cm up of the plait; the pull never takes it into the body, which the drape still pushes out)
+    const frontZ = (x, y) => { let z = -1e9; for (const e of bodyOnly.pts) if (Math.abs(e.p.y - y) < .012 && Math.abs(e.p.x - x) < .015 && e.p.z > z) z = e.p.z; return z > -1e9 ? z : null; };
+    let round = false;
+    const plaitPull = q => { if (!round && q.z < shF.z) return shF.clone().sub(q).normalize().multiplyScalar(.5); round = true; const f = frontZ(q.x, q.y); if (f == null) return new THREE.Vector3(0, -.2, 0);
+      return new THREE.Vector3(0, -.2, Math.max(-.5, Math.min(.2, (f + clearAt(q) + PLAIT_LIE - q.z) * 10))); };
+    const line = drape(bodyOnly, start, plaitS ? new THREE.Vector3(.4 * plaitS, -.5, 1) : d0, plaitS ? BL + .08 : BL, q => clearAt(q) + (style === 'tail' ? .006 : 0), plaitS ? { grav: .12, pull: plaitPull } : { keepX: style === 'braids' ? .03 : .06 });
     // set out over the roll, then smoothed and set out again, so it bends over the roll in a curve and not a step
     if (rollFloor) for (let it = 0; it < 6; it++) { for (const q of line.slice(1)) rollFloor(q); if (it < 5) for (let i = 1; i < line.length - 1; i++) line[i].lerp(line[i - 1].clone().add(line[i + 1]).multiplyScalar(.5), .5); }
     for (const q of line.slice(3)) { const hit = heightOver(bodyOnly, q); if (hit) drapeMin = Math.min(drapeMin, hit.h); }
+    // how far the plait stands off the front of the body below its shoulder, past where it lies (Session 1665, for the checks): measured
+    // from the furthest-forward the body comes above it, so its end hanging clear under the bust, as a rope does, does not count
+    if (plaitS) { let hang = -1e9; for (const q of line) { if (q.y > shF.y - .04) continue; const f = frontZ(q.x, q.y); if (f != null) hang = Math.max(hang, f + clearAt(q) + PLAIT_LIE); if (hang > -1e9) plaitLift = Math.max(plaitLift, q.z - hang); } }
     // the tie, a short band where the gathering starts
     // (turned out, Session 1154: it was drawn inside out, its far wall seen through the tail's see-through root)
     { const band = [line[0], line[1], line[2]], m = new THREE.SkinnedMesh(skinTo(turnOut(tubeGeom(band, band.map(() => style === 'tail' ? .022 : .017), 10)), headB), tie); m.name = 'tie'; out.push(m); }
@@ -936,7 +949,7 @@ function buildHair(P, G, heads, scalpTris, headB, rnd, checks = true) {
         brush.push({ pts, ns, w: .007, v0: .5, v1: 1 }); }
       const bm = strandCards(brush, col, headB); bm.name = 'brush'; out.push(bm); }
   }
-  return { meshes: out, stats: { style, strands: strands.length, gather: gather.length, ...crown ? { ring: crown.n, ringMiss: crownMiss } : {}, ...checks ? { points: pts, inside, onFace, seam: seamN ? +(seamBare / seamN).toFixed(3) : 0, seamN, rootH: +rootH.toFixed(4), crown: +(crownH / Math.max(1, crownN)).toFixed(4) } : {}, drapeMin: +drapeMin.toFixed(4), hairline: { edge: edgeN, ratio: +((edgeW / Math.max(1, edgeN)) / (backW / Math.max(1, backN))).toFixed(3) }, temples: { edge: tN, inner: tbN, ratio: +((tW / Math.max(1, tN)) / (tbW / Math.max(1, tbN))).toFixed(3) }, sides: { roots: sideN, n: bandN, bare: bandN ? +(bandBare / bandN).toFixed(3) : 0 } } };
+  return { meshes: out, stats: { style, strands: strands.length, gather: gather.length, ...crown ? { ring: crown.n, ringMiss: crownMiss } : {}, ...checks ? { points: pts, inside, onFace, seam: seamN ? +(seamBare / seamN).toFixed(3) : 0, seamN, rootH: +rootH.toFixed(4), crown: +(crownH / Math.max(1, crownN)).toFixed(4) } : {}, drapeMin: +drapeMin.toFixed(4), ...plaitS ? { plaitLift: +plaitLift.toFixed(4) } : {}, hairline: { edge: edgeN, ratio: +((edgeW / Math.max(1, edgeN)) / (backW / Math.max(1, backN))).toFixed(3) }, temples: { edge: tN, inner: tbN, ratio: +((tW / Math.max(1, tN)) / (tbW / Math.max(1, tbN))).toFixed(3) }, sides: { roots: sideN, n: bandN, bare: bandN ? +(bandBare / bandN).toFixed(3) : 0 } } };
 }
 
 // ── the cloak (Session 805, B2): cloth hung from the shoulders ──
