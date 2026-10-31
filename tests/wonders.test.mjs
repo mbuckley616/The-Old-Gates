@@ -68,6 +68,12 @@ check(`the platform stands level: the ground round its rim within ${q.rim} m of 
 check(`you walk up its three steps (${q.steps.join(' → ')} m) to the top at ${q.top}`, q.steps[0] < q.plats[0].y - .3 && q.steps[1] === q.plats[0].y && q.steps[2] === q.plats[1].y && q.steps[3] === q.plats[2].y, q);
 check(`its ${q.sol} solids: a standing column and the pier are solid, the floor between open`, q.sol === 17 && q.colSolid && q.pier && q.floorOpen, q);
 check('at 13h it sleeps: the script and the sun are dead stone', q.script === 0 && q.sun === 0, q);
+// Session 1642 (the critic, 31 Oct): by day the dead strip is a bronze inlay, not a black hollow, and a glyph is drawn at one scale
+// both ways (the prototype's 3.2 m a repeat made it 19 times wider in texels than tall per metre, a hatch that buzzed at night)
+const strip = await page.evaluate(() => { const W = WONDERS.orrery.W, sm = W.group.getObjectByName('script:0'), P = sm.geometry.attributes.position, U = sm.geometry.attributes.uv, v = i => new THREE.Vector3().fromBufferAttribute(P, i), img = W.script.map && W.script.map.image;
+  const c = W.script.color, lum = .2126 * c.r + .7152 * c.g + .0722 * c.b, across = v(0).distanceTo(v(1)), along = v(1).distanceTo(v(2)), du = Math.abs(U.getX(2) - U.getX(1));
+  return { lum: +lum.toFixed(3), cut: !!img, aspect: img ? +((du * img.width / along) / (img.height / across)).toFixed(2) : null }; });
+check(`by day the strip is a bronze inlay with its script cut in (lum ${strip.lum}), its glyphs square on the ring (texels ${strip.aspect}:1)`, strip.lum >= .2 && strip.cut && strip.aspect > .5 && strip.aspect < 2, strip);
 const on = await page.evaluate(() => { const W = WONDERS.orrery.W, ring = W.group.getObjectByName('armillary').children[0]; forceTime(22); tickWonders(); const a = ring.rotation.y; W.tick(performance.now() / 1000 + 20, wonderAwake()); const b = ring.rotation.y;
   return { awake: wonderAwake(), script: W.script.emissiveIntensity, sun: W.sunMat.emissiveIntensity, turned: +Math.abs(b - a).toFixed(3) }; });
 console.log(JSON.stringify(on));
