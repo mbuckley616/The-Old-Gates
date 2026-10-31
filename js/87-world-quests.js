@@ -1983,13 +1983,14 @@ const giver=`${lord.title} ${lord.name}`;
     if(e.hpFg){e.hpFg.scale.x=e.hp/e.maxHp;e.hpFg.position.x=(e.hp/e.maxHp-1)*.275;}showMsg('You check the blow.','#e8d8a0');return true;}
   // the bout's frame: 'yielded', 'fight' or null when it ended (or there is none)
   function boutTick(dt){const b=BOUT;if(!b)return null;const e=b.foe;
-    if(b.state==='yielded'){if(!e.dead&&e.hp<b.hp0&&boutCheck(e))return 'yielded';if(!e.dead&&e.hp<b.hp0){e.hp=0;if(typeof killZoneEnemy==='function')killZoneEnemy(e,sc,'');else boutOver('murder');return BOUT?'yielded':null;}
+    if(b.state==='yielded'){if(!e.dead&&e.hp<b.hp0&&boutCheck(e))return 'yielded';if(!e.dead&&e.hp<b.hp0&&b.on.struck){b.on.struck(b);if(BOUT!==b)return null;b.hp0=e.hp;b.spare=BOUT_SPARE;b.yieldS=-1e9;return 'yielded';} /* S1640 — a brawl's blow after the yield is assault, and the fighter stays down */
+      if(!e.dead&&e.hp<b.hp0){e.hp=0;if(typeof killZoneEnemy==='function')killZoneEnemy(e,sc,'');else boutOver('murder');return BOUT?'yielded':null;}
       b.spare-=dt;if(b.spare<=0){boutOver('won');return null;}return 'yielded';}
     const talking=(typeof dlgOpen!=='undefined')&&dlgOpen;e._duelHold=talking;if(!talking)e.alert=true;
     const far=Math.hypot(px-b.x,pz-b.z);
     if(far<=b.r)b.inside=true;else if(b.inside&&far>b.r+BOUT_ROPE){boutOver('lost','rope');return null;}
     if(e.hp<=e.maxHp*BOUT_YIELD){boutYield();return BOUT?'yielded':null;}
-    if(!b.offered&&!talking&&PHP<maxHP*BOUT_OFFER){b.offered=true;e._duelHold=true;e.telegraphT=0;if(b.on.offer)b.on.offer(b);return 'offer';}
+    if(!b.offered&&!talking&&PHP<maxHP*BOUT_OFFER&&b.on.offer){b.offered=true;e._duelHold=true;e.telegraphT=0;if(b.on.offer)b.on.offer(b);return 'offer';}
     return 'fight';}
   // the kill path asks first: before the yield no blow takes it below a quarter (it yields instead); after it, a kill is murder
   function boutKill(e){const b=BOUT;if(!b||b.foe!==e)return false;
@@ -2099,13 +2100,16 @@ const giver=`${lord.title} ${lord.name}`;
   function sparOpen(){const h=hourNow();return h>=SPAR_OPEN&&h<SPAR_CLOSE;}
   function sparStaff(){const t=STARTER_WEAPONS.staff,o=Object.assign({},t,{name:'Yard Staff',yard:true,buyPrice:0,sellMult:0,desc:'The yard’s staff. It goes back on the rack.'});delete o.spellPower;return o;}
   function sparKitRefresh(){if(typeof invalidateArmorCache==='function')invalidateArmorCache();try{if(typeof buildViewmodel==='function')buildViewmodel();if(typeof buildShieldViewmodel==='function')buildShieldViewmodel();}catch(err){}}
+  // the rack holds your weapon and shield: into your pack for the bout (a save mid-bout loses nothing), back into your hands after
+  function kitHold(){const held={weapon:null,offhand:null};for(const k of ['weapon','offhand']){const it=EQ[k];if(!it||it.yard)continue;bagAdd(eqBagCopy(it,k));held[k]=BAG[BAG.length-1];EQ[k]=null;}
+    if(typeof SHEATHED!=='undefined'&&SHEATHED)drawWeapon();sparKitRefresh();return held;}
+  function kitReturn(held){for(const k of ['weapon','offhand']){const it=held[k],i=it?BAG.indexOf(it):-1;if(i<0||EQ[k])continue;BAG.splice(i,1);EQ[k]=it;}sparKitRefresh();}
   function sparStart(o){o=o||{};if(SPAR||BOUT)return {say:'You are already in the ring.'};if(!o.force&&!sparOpen())return {say:'The yard is shut until morning.'};
     const x=o.x,z=o.z,tier=o.tier!=null?o.tier:worldTierAt(x,z);
     const e=keyFoe(unlockFoe(buildZoneEnemy(sc,STATIC_SOL,x,z,o.kind||'Bandit',null,{tier})),'yard:'+(o.site||'yard')+':'+dayNow());
     e.name=e.displayName=o.name||'The trainer';e._spar=true;e._duel=true;e._questTag='yard';e.homeX=x;e.homeZ=z;e.alert=true;
     if(e.mesh&&!e.mesh.parent)sc.add(e.mesh);ZONES.world.enemies.push(e);
-    const held={weapon:null,offhand:null};
-    for(const k of ['weapon','offhand']){const it=EQ[k];if(!it||it.yard)continue;bagAdd(eqBagCopy(it,k));held[k]=BAG[BAG.length-1];EQ[k]=null;}
+    const held=kitHold();
     EQ.weapon=sparStaff();if(typeof SHEATHED!=='undefined'&&SHEATHED)drawWeapon();sparKitRefresh();
     SPAR={foe:e,x,z,site:o.site||null,tier,force:!!o.force,you:0,them:0,held,hitAt:-1e9,call:null,end:null};SKILL_W_MULT=SPAR_SKILL;
     showMsg('You take a staff from the rack. First to three clean hits.','#e8d8a0');return {ok:true,tier};}
@@ -2113,8 +2117,7 @@ const giver=`${lord.title} ${lord.name}`;
     const e=S.foe;if(e){if(e.mesh&&e.mesh.parent)e.mesh.parent.remove(e.mesh);const i=ZONES.world.enemies.indexOf(e);if(i>=0)ZONES.world.enemies.splice(i,1);
       const k=staggered.findIndex(q=>q.e===e);if(k>=0)staggered.splice(k,1);}
     if(EQ.weapon&&EQ.weapon.yard)EQ.weapon=null;
-    for(const k of ['weapon','offhand']){const it=S.held[k],i=it?BAG.indexOf(it):-1;if(i<0||EQ[k])continue;BAG.splice(i,1);EQ[k]=it;}
-    sparKitRefresh();S.end=how;
+    kitReturn(S.held);S.end=how;
     showMsg(how==='won'?`Three clean. ${S.foe.name} nods: you have it.`:how==='lost'?`Three clean on you. ${S.foe.name} racks the staff.`:'You leave the yard. The staff goes back on the rack.','#e8d8a0');
     return S;}
   function sparCall(t){if(!SPAR)return;SPAR.call=t;showMsg(t,'#e8d8a0');}
@@ -2170,6 +2173,46 @@ const giver=`${lord.title} ${lord.name}`;
     e._ring=bout;e._noFeint=!r.feint;e._noHeavy=!r.heavy;e._ringWpn=ladderWeapon(bout);
     if(r.hpMult){e.maxHp=Math.round(e.maxHp*r.hpMult);e.hp=e.maxHp;}
     return e;}
+  // S1640 — arenas-build.md session 3, the yard's brawl (Michael's B on #914). 18h–22h, fists only (your weapon and shield to the rack,
+  // as the spar's), against a townsperson at the town's tier with the humanoid row and its fists, in a 5 m ring under the bout's rules
+  // (the rope, the yield at a quarter, held at 1, the 0.4 s held blow, spared after 3 s). The stake is 50 gold a side at tier 1 and +50 a
+  // tier (100, 150, 200), taken when the brawl is called (placeStake) and paid back doubled on a win (settleStake); a loss keeps it. One
+  // brawl a night in each town (worldState.arena.brawl, the character's). A blow after the brawler yields is assault (3 points, as
+  // CRIME_PTS), each blow, and the brawler stays down; a blow that kills is the ladder's murder (5 points, the rings shut 28 days). The
+  // yard, its ring and the barker who calls it are the look builder's and the quest writer's: brawlStart is what they call. The brawler's
+  // name is a placeholder. Named actions: brawlStart, brawlEnd, ringCrime.
+  const BRAWL_OPEN=18,BRAWL_CLOSE=22,BRAWL_STAKE=50,BRAWL_STAKE_TIER=50,BRAWL_R=5,RING_BAN_DAYS=28,MURDER_PTS=5;
+  let BRAWL=null; /* {foe,site,x,z,tier,stake,held,end,assaults} */
+  function brawlOpen(){const h=hourNow();return h>=BRAWL_OPEN&&h<BRAWL_CLOSE;}
+  function brawlStake(tier){return BRAWL_STAKE+BRAWL_STAKE_TIER*(Math.max(1,tier)-1);}
+  // a crime in the ring, seen by all who watch it: the town's favour, its bounty (25 a point) and the record, as a struck townsman's
+  function ringCrime(siteId,kind,pts){if(siteId)addFavor(siteId,-pts);const C=worldState.crime||(worldState.crime={});
+    if(siteId){const c=C[siteId]||(C[siteId]={bounty:0,debt:0,last:0});c.bounty+=25*pts;c.debt+=pts;c.last=dayNow();}
+    (worldState.crimes||(worldState.crimes=[])).push({kind,site:siteId||null,house:null,day:dayNow(),min:absMin()});}
+  function brawlStart(o){o=o||{};if(BOUT||SPAR||BRAWL)return {say:'You are already in the ring.'};if(!o.force&&!brawlOpen())return {say:'The brawls are after dark.'};
+    const site=o.site||'yard',A=arenaState();if(A.brawl[site]===dayNow())return {say:'One brawl a night here.'};
+    const x=o.x,z=o.z,tier=o.tier!=null?o.tier:worldTierAt(x,z),stake=brawlStake(tier);
+    if(gold<stake)return {say:`The stake is ${stake} gold.`};
+    if(!placeStake(stake,'brawl:'+site))return {say:`The stake is ${stake} gold.`};
+    const e=keyFoe(unlockFoe(buildZoneEnemy(sc,STATIC_SOL,x,z,'Bandit',null,{tier})),'brawl:'+site+':'+dayNow());
+    e.name=e.displayName=o.name||'The brawler';e._disarmed=true;e._questTag='yard';e.homeX=x;e.homeZ=z;
+    if(e.mesh&&!e.mesh.parent)sc.add(e.mesh);ZONES.world.enemies.push(e);
+    const held=kitHold();A.brawl[site]=dayNow();
+    BRAWL={foe:e,site,x,z,tier,stake,held,end:null,assaults:0};
+    boutStart({foe:e,x,z,r:BRAWL_R,on:{
+      yield:()=>showMsg(`${e.name} goes down on one knee.`,'#e8d8a0'),
+      struck:()=>{BRAWL.assaults++;ringCrime(site,'assault',CRIME_PTS.assault);showMsg(`You struck ${e.name} after the yield. That is assault.`,'#ff6060');},
+      won:()=>brawlEnd('won'),lost:(b,how)=>brawlEnd('lost',how),murder:()=>brawlEnd('murder')}});
+    showMsg(`The ring closes. ${stake} gold a side. Fists.`,'#e8d8a0');return {ok:true,tier,stake};}
+  function brawlEnd(how,why){const B=BRAWL;if(!B)return null;BRAWL=null;boutEnd(B.foe);const e=B.foe;
+    if(how==='murder'){ringCrime(B.site,'murder',MURDER_PTS);arenaState().banUntil=Math.max(arenaState().banUntil||0,dayNow()+RING_BAN_DAYS);settleStake(false);}
+    else{if(e&&!e.dead){if(e.mesh&&e.mesh.parent)e.mesh.parent.remove(e.mesh);const i=ZONES.world.enemies.indexOf(e);if(i>=0)ZONES.world.enemies.splice(i,1);}
+      const k=staggered.findIndex(q=>q.e===e);if(k>=0)staggered.splice(k,1);}
+    let paid=0;if(how==='won')paid=settleStake(true,2);else if(how==='lost'){settleStake(false);PHP=Math.max(PHP,1);if(typeof updateHUD==='function')updateHUD();}else if(how!=='murder')settleStake(true,1); /* called off: the stake comes back */
+    kitReturn(B.held);B.end=how;B.paid=paid;
+    showMsg(how==='won'?`${e.name} is spared. The stakes are yours: ${paid} gold.`:how==='lost'?(why==='rope'?'You step over the rope. The stakes go to the other side.':'You go down. The stakes go to the other side.'):how==='murder'?`${e.name} is dead. The yard goes quiet, and the rings of the Mark are shut to you.`:'The brawl is called off. Your stake comes back.','#e8d8a0');
+    return B;}
+  function tickBrawl(dt){const B=BRAWL;if(!B)return;if(!BOUT||BOUT.foe!==B.foe){brawlEnd('left');return;}boutTick(dt);}
   function tickSpar(){if(!SPAR){if(EQ.weapon&&EQ.weapon.yard){EQ.weapon=null;sparKitRefresh();}return;}const S=SPAR,e=S.foe;
     if(!e||e.dead){sparEnd('left');return;}e.hp=e.maxHp;e.alert=true;
     if(Math.hypot(px-S.x,pz-S.z)>SPAR_LEAVE||!sparOpen()&&!S.force)sparEnd('left');}
