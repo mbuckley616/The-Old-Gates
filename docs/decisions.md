@@ -3,6 +3,19 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### The dungeon's cell by kind: old gates at 3 m, and forts and lairs at what? (systems builder, Session 1105) — DECISION #421
+**The question.** F2b's last session sets a dungeon's grid cell at true scale; it is one unit today, so corridors are 1 m wide for a 1.8 m body. Michael chose **C, 3 m** on #300 and added: "If by dungeon we mean Old Gates, they should be extremely massive and cavernous. A normal 'dungeon' like a mine, or a cave can be a more typical size." The game has three kinds of underground place: the **old gates** (the world's portals, themed by school: crypts, haunted halls, elemental and deep caverns, ruins), **fort interiors** (the `fort_` layouts), and **lairs and dens** (a beast's lair, the cloak's den). So the cell can differ by kind, and "a more typical size" is a number a player feels.
+
+**Options.**
+- **A (recommended).** Old gates at **3 m** (corridors 3 m, rooms 9 to 36 m) with a gate's ceiling at 6 m (cavernous; `DUN_FLOOR_H` 3.2 today, the sheet's 3.6 is for the typical size); forts' interiors, lairs and dens at **2.5 m** (the designer's B: rooms 7.5 to 30 m, ceiling 3.6). One grid, two cells, read from the portal's kind.
+- **B.** **3 m everywhere**, ceiling 3.6, as #300's C reads alone. Simplest; a fort's cellar is as roomy as a gate.
+- **C.** Old gates at 3 m (ceiling 6 m), forts and lairs at **2 m**: a squeeze, the third-person camera tight in their corridors.
+
+**The build.** Whichever is chosen, the dungeon is laid out in 1-unit cells throughout `52-dungeon-gen.js`, `56-dungeon-build.js` and `68-dungeon-misc.js` (the look builder's files and the systems builder's), so the plan is F2a's: build in cells and scale the dungeon whole at the end, with every record of it (solids, footholds, foes, traps, doors, stairs). It touches shared files, so it may want a deep-work card or a FREEZE; the producer's call.
+
+Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
+
+## Answered
 ### Magic B — three school perks at 100 that read two ways: Tine, Uisce, Solas (from the systems builder, 2026-10-31, #942)
 Session 1626 built three of the six school perks at 100 (Cloch's arrow ward, Scáth's Unseen, Gaoth's Downwind). The other three, from `docs/design/magic-build.md`, each read two ways, and all three are needed before magic B's session 5 is done.
 
@@ -21,6 +34,8 @@ Session 1626 built three of the six school perks at 100 (Cloch's arrow ward, Sc�
 
 Recommendation: **1A, 2A, 3A.** (On the board: A = all three recommended; B = Uisce's execute; C = Solas's lit-for-3-s; D = Tine's leaping bolt; any other mix by reply.)
 
+Michael: **All three as recommended (1A, 2A, 3A)**. (2026-10-31, on the control room)
+
 ### Arenas — what "League standing ±1" means, when the League keeps no standing (from the systems builder, 2026-10-31, #945)
 `docs/design/arenas-build.md` gives the Captains' League standing **−1** when a fixed bout is found out and **+1** for taking the title. The League keeps no standing number: it has a rank (Sworn, Reeve, Captain), a count of services done, and every Markish town's favour. The rest of the ladder is built (Sessions 1645–1648, PR #943).
 
@@ -31,19 +46,8 @@ Recommendation: **1A, 2A, 3A.** (On the board: A = all three recommended; B = Ui
 
 Recommendation: **A.**
 
-### The dungeon's cell by kind: old gates at 3 m, and forts and lairs at what? (systems builder, Session 1105) — DECISION #421
-**The question.** F2b's last session sets a dungeon's grid cell at true scale; it is one unit today, so corridors are 1 m wide for a 1.8 m body. Michael chose **C, 3 m** on #300 and added: "If by dungeon we mean Old Gates, they should be extremely massive and cavernous. A normal 'dungeon' like a mine, or a cave can be a more typical size." The game has three kinds of underground place: the **old gates** (the world's portals, themed by school: crypts, haunted halls, elemental and deep caverns, ruins), **fort interiors** (the `fort_` layouts), and **lairs and dens** (a beast's lair, the cloak's den). So the cell can differ by kind, and "a more typical size" is a number a player feels.
+Michael: **±1 favour at Caer Slige** (A). (2026-10-31, on the control room)
 
-**Options.**
-- **A (recommended).** Old gates at **3 m** (corridors 3 m, rooms 9 to 36 m) with a gate's ceiling at 6 m (cavernous; `DUN_FLOOR_H` 3.2 today, the sheet's 3.6 is for the typical size); forts' interiors, lairs and dens at **2.5 m** (the designer's B: rooms 7.5 to 30 m, ceiling 3.6). One grid, two cells, read from the portal's kind.
-- **B.** **3 m everywhere**, ceiling 3.6, as #300's C reads alone. Simplest; a fort's cellar is as roomy as a gate.
-- **C.** Old gates at 3 m (ceiling 6 m), forts and lairs at **2 m**: a squeeze, the third-person camera tight in their corridors.
-
-**The build.** Whichever is chosen, the dungeon is laid out in 1-unit cells throughout `52-dungeon-gen.js`, `56-dungeon-build.js` and `68-dungeon-misc.js` (the look builder's files and the systems builder's), so the plan is F2a's: build in cells and scale the dungeon whole at the end, with every record of it (solids, footholds, foes, traps, doors, stairs). It touches shared files, so it may want a deep-work card or a FREEZE; the producer's call.
-
-Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
-
-## Answered
 ### Dorcha laid — who the dark blinds (from the systems builder, 2026-10-31, #931)
 **The question.** Magic B's build sheet gives Dorcha (Blind, Scáth) a Laid form: "a dark 6 m across, 15 s". The sent bolt is built on Michael's A of #919 (Session 1627): a struck foe loses you for 4 s and turns on you again when it ends. The sheet doesn't say whom the laid dark works on, and a player will feel the difference.
 
