@@ -2188,7 +2188,8 @@ const giver=`${lord.title} ${lord.name}`;
   // a crime in the ring, seen by all who watch it: the town's favour, its bounty (25 a point) and the record, as a struck townsman's
   function ringCrime(siteId,kind,pts){if(siteId)addFavor(siteId,-pts);const C=worldState.crime||(worldState.crime={});
     if(siteId){const c=C[siteId]||(C[siteId]={bounty:0,debt:0,last:0});c.bounty+=25*pts;c.debt+=pts;c.last=dayNow();}
-    (worldState.crimes||(worldState.crimes=[])).push({kind,site:siteId||null,house:null,day:dayNow(),min:absMin()});}
+    (worldState.crimes||(worldState.crimes=[])).push({kind,site:siteId||null,house:null,day:dayNow(),min:absMin()});
+    if(kind==='murder'&&siteId)sendGuardAfter(siteId);} /* S1663 — the guard comes: the town's nearest on duty runs you down */
   function brawlStart(o){o=o||{};if(BOUT||SPAR||BRAWL)return {say:'You are already in the ring.'};if(!o.force&&!brawlOpen())return {say:'The brawls are after dark.'};
     const site=o.site||'yard',A=arenaState();if(A.brawl[site]===dayNow())return {say:'One brawl a night here.'};
     const x=o.x,z=o.z,tier=o.tier!=null?o.tier:worldTierAt(x,z),stake=brawlStake(tier);
