@@ -4258,6 +4258,11 @@ function onGround(g, x, z, hAt, lift) { g.rotateX(-Math.PI / 2); const P = g.att
 // the pit it came out of (a hollow ringed with thrown earth), a Gaoth seam glowing under every stone over 5 m; two of the gate kit's walls
 // (1.4 times, 19.6 m long) stand broken on the floor with their stones lifted. The same stream ('wonders:skyfall') and the same draws in
 // the same order as the prototype, so the stones are its stones; only the valley's length is centred on the wonder's middle.
+// The walls' seams (Session 1644; the critic, 31 Oct): the kit's violet (.62, .30, 1.0) is pale lilac on the prototype's page, which writes
+// sRGB, but the game runs with colour management off and a linear output (05-compat.js), so there the same numbers are a raw magenta, and
+// on the broad seats the lifted courses bare it read as blotches, not light through cracks. The Fields' walls take the colour the page
+// shows (the violet encoded, about .81, .58, 1.0) on a copy of the kit's material; the gates' own walls are F5's and keep theirs.
+function skyfallSeamMat(m) { const c = m.clone(); c.emissive.copy(m.emissive).convertLinearToSRGB(); c.color.copy(m.color).convertLinearToSRGB(); return c; }
 function markSkyfall(hAt, o = {}) {
   const key = 'wonders:skyfall', r = stream(key), group = new THREE.Group(), B = new Map(), put = (k, g) => (B.get(k) || B.set(k, []).get(k)).push(g), S = GK_SCHOOLS.gaoth, NS = 4;
   group.name = 'wonder:skyfall'; const stones = [];
@@ -4272,7 +4277,7 @@ function markSkyfall(hAt, o = {}) {
   for (const [i, x, z, a] of [[0, -18, 70, .3], [1, 22, -15, -.5]]) { const W = gkParts('wall', { cond: 'broken', school: 'gaoth', key: `${key}:wall:${i}` }), s = 1.4, c = Math.cos(a), sn = Math.sin(a);
     let lo = 1e9; for (const u of [-1, -.5, 0, .5, 1]) for (const v of [-1, 1]) { const lx = u * W.size.w / 2 * s, lz = v * W.size.d / 2 * s; lo = Math.min(lo, hAt(x + lx * c + lz * sn, z - lx * sn + lz * c)); }
     const T = new THREE.Matrix4().makeTranslation(x, lo - .4, z).multiply(new THREE.Matrix4().makeRotationY(a)).multiply(new THREE.Matrix4().makeScale(s, s, s));
-    for (const k in W.by) { const mk = 'w:' + k; M[mk] = W.M[k]; for (const g of W.by[k]) put(mk, g.applyMatrix4(T)); }
+    for (const k in W.by) { const mk = 'w:' + k; M[mk] = M[mk] || (k === 'seam' ? skyfallSeamMat(W.M[k]) : W.M[k]); for (const g of W.by[k]) put(mk, g.applyMatrix4(T)); }
     walls.push({ x, z, ry: a, y: lo - .4, len: W.size.w * s, d: W.size.d * s, standH: (W.standing.max.y - W.standing.min.y) * s, floating: W.st.floating, fallen: W.st.fallen }); }
   const glowCol = new THREE.Color(...S.glow);
   Object.assign(M, { pit: new THREE.MeshStandardMaterial({ color: new THREE.Color(.28, .25, .22), roughness: 1 }), hole: new THREE.MeshStandardMaterial({ color: new THREE.Color(.06, .05, .05), roughness: 1 }),
