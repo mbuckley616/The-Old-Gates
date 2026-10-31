@@ -2241,8 +2241,20 @@ const giver=`${lord.title} ${lord.name}`;
     const s=k.site,x=o.x!=null?o.x:s.x,z=o.z!=null?o.z:s.z;
     A.call={bout:k.bout,site:s.id,x,z,day:dayNow(),hour:h,at:(Math.floor(absMin()/60)+1)*60};
     showMsg(`Bout ${k.bout} of 12 is called at ${h}h. ${ladderRow(k.bout).purse} gold to the winner.`,'#e8d8a0');return {ok:true,bout:k.bout,hour:h};}
+  // S1646 — arenas-build.md session 4, the wager. Before the call's hour you may stake up to the purse on yourself (one stake, by
+  // placeStake). The odds are 1 + (the fighter's tier level − your level) ÷ 5, clamped from evens (1) to 4 to 1, and fixed when the stake
+  // is placed. Read as a bookmaker's odds, "2.4 to 1": a win returns the stake and 2.4 times it; a loss, a forfeit, murder or a missed
+  // call keeps it. Gold only, never an item. Named action: ladderWager.
+  const WAGER_MIN=1,WAGER_MAX=4;
+  function ladderOdds(bout){return Math.max(WAGER_MIN,Math.min(WAGER_MAX,1+(tierLevel(ladderRow(bout).tier)-level)/5));}
+  function ladderWager(n){const A=arenaState(),C=A.call;n=Math.round(n);
+    if(!C||LBOUT)return {say:'There is no bout called to stake on.'};if(A.stake)return {say:'Your stake is already down.'};
+    const cap=ladderRow(C.bout).purse;if(!(n>0))return {say:'How much?'};if(n>cap)return {say:`The book takes up to ${cap} on this bout.`};
+    const odds=ladderOdds(C.bout);if(!placeStake(n,'ladder:'+C.bout))return {say:`You have not got ${n} gold.`};
+    C.odds=odds;A.stake.odds=odds;showMsg(`${n} gold on yourself at ${Math.round(odds*10)/10} to 1.`,'#e8d8a0');return {ok:true,n,odds};}
+  function ladderSettle(won){const A=arenaState();if(!A.stake||!/^ladder:/.test(A.stake.what||''))return 0;return settleStake(won,1+(A.stake.odds||1));}
   function ladderBegin(){const A=arenaState(),C=A.call;A.call=null;
-    if(Math.hypot(px-C.x,pz-C.z)>LADDER_R+LADDER_NEAR){A.lastDay=C.day;showMsg('Your bout was called and you were not at the ring. The day is lost.','#e8d8a0');return null;}
+    if(Math.hypot(px-C.x,pz-C.z)>LADDER_R+LADDER_NEAR){A.lastDay=C.day;ladderSettle(false);showMsg('Your bout was called and you were not at the ring. The day is lost.','#e8d8a0');return null;}
     const dx=px-C.x,dz=pz-C.z,d=Math.hypot(dx,dz)||1,fx=C.x-dx/d*3,fz=C.z-dz/d*3;
     const e=ladderFighter(C.bout,fx,fz);e.name=e.displayName=`The fighter of bout ${C.bout}`;e._questTag='ring';e.homeX=C.x;e.homeZ=C.z;
     if(e.mesh&&!e.mesh.parent)sc.add(e.mesh);ZONES.world.enemies.push(e);
@@ -2256,10 +2268,10 @@ const giver=`${lord.title} ${lord.name}`;
       ringOf(L.site).dead.push(e.name);const R=ringsState();R.next[L.bout]=(R.next[L.bout]||0)+1;}
     else{if(e&&!e.dead){if(e.mesh&&e.mesh.parent)e.mesh.parent.remove(e.mesh);const i=ZONES.world.enemies.indexOf(e);if(i>=0)ZONES.world.enemies.splice(i,1);}
       const k=staggered.findIndex(q=>q.e===e);if(k>=0)staggered.splice(k,1);}
-    if(how==='won'){A.rank=Math.max(A.rank,L.bout);L.paid=payPurse(ladderRow(L.bout).purse);addFavor(L.site,1);}
-    else if(how==='lost'){PHP=Math.max(PHP,1);if(typeof updateHUD==='function')updateHUD();}
+    if(how==='won'){A.rank=Math.max(A.rank,L.bout);L.paid=payPurse(ladderRow(L.bout).purse);addFavor(L.site,1);L.won=ladderSettle(true);}
+    else{ladderSettle(false);if(how==='lost'){PHP=Math.max(PHP,1);if(typeof updateHUD==='function')updateHUD();}}
     L.end=how;L.why=why||null;
-    showMsg(how==='won'?`${e.name} salutes you. The purse is yours: ${L.paid} gold.`:how==='murder'?`${e.name} is dead. The crowd goes quiet, and the rings of the Mark are shut to you.`:why==='forfeit'?'You drank inside the rope. The bout is forfeit.':why==='rope'?'You step over the rope. The bout is lost.':'The bout is lost. Come back tomorrow.','#e8d8a0');
+    showMsg(how==='won'?`${e.name} salutes you. The purse is yours: ${L.paid} gold.${L.won>0?` The book pays ${L.won}.`:''}`:how==='murder'?`${e.name} is dead. The crowd goes quiet, and the rings of the Mark are shut to you.`:why==='forfeit'?'You drank inside the rope. The bout is forfeit.':why==='rope'?'You step over the rope. The bout is lost.':'The bout is lost. Come back tomorrow.','#e8d8a0');
     return L;}
   // what the rope forbids: anything drunk, eaten or read from the pack
   function ringForfeit(it){if(!LBOUT||!BOUT||BOUT.foe!==LBOUT.foe||!it||(typeof DRINK!=='undefined'&&DRINK))return false;

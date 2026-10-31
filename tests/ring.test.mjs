@@ -115,6 +115,12 @@ const L = await page.evaluate(() => {
   out.murder = { end: Lb.end, ban: arenaState().banUntil - dayNow(), bounty: c9 && c9.bounty, post: ringOf(cid).dead.slice(), id: ladderFighterId(4), shut: (at(10, 10), call().say) };
   // the title is fought at Caer Slige only
   Object.assign(arenaState(), { rank: 11, banUntil: 0, lastDay: -1 }); out.title = call().say;
+  // S1646 — the wager: odds 1 + (tier level − yours) ÷ 5, clamped evens to 4 to 1, fixed when placed; a win returns the stake and the odds
+  const lv0 = level; level = 4; Object.assign(arenaState(), { rank: 6 }); at(11, 10.5); out.noCall = WORLD.ladderWager(10).say; call();
+  out.over = WORLD.ladderWager(300).say; const g0 = gold; r = WORLD.ladderWager(100); out.wager = { ok: !!r.ok, odds: r.odds, took: g0 - gold, again: WORLD.ladderWager(5).say };
+  level = 9; Lb = hit(); const e7 = Lb.foe; e7.hp = Math.floor(e7.maxHp * .25); run(2); run(200); out.wagerWon = { end: Lb.end, back: gold - g0, book: Lb.won };
+  level = 4; at(12, 9.5); call(); WORLD.ladderWager(50); const g1 = gold; Lb = hit(); const zq = pz; pz = zq - 2 - 9.1; run(1); pz = zq; out.wagerLost = { end: Lb.end, back: gold - g1, stake: arenaState().stake };
+  level = 1; out.clampHi = ladderOdds(10); level = 20; out.clampLo = ladderOdds(10); level = lv0;
   return out; });
 console.log('ladder', JSON.stringify(L));
 check(`the call: refused at 7h30 (*${L.early}*); at 10h30 bout ${L.call.bout} is called at ${L.call.hour}h (*${L.call.again}*), and nothing starts before`,
@@ -131,6 +137,12 @@ check(`7.5 m in is inside the ring (${L.inside}); 1 m past the 8 m rope is lost 
 check(`murder at bout 4 (the feint on: ${!L.f4.feint}): bounty ${L.murder.bounty}, the rings shut ${L.murder.ban} days (*${L.murder.shut}*), ${L.murder.post.join()} on the post, the bout's next fighter ${L.murder.id}`,
   L.f4.feint === false && L.murder.end === 'murder' && L.murder.bounty === 125 && L.murder.ban === 28 && /shut to you/.test(L.murder.shut) && L.murder.post.join() === 'The fighter of bout 4' && L.murder.id === 'ring:4:1', L.murder);
 check(`bout 12 is refused away from Caer Slige (*${L.title}*)`, /fought at Caer Slige/.test(L.title), L.title);
+check(`the wager on bout 7 at level 4: none before a call (*${L.noCall}*), the purse its cap (*${L.over}*), 100 taken at ${L.wager.odds} to 1, one stake (*${L.wager.again}*)`,
+  /no bout called/.test(L.noCall) && /up to 250/.test(L.over) && L.wager.ok && Math.abs(L.wager.odds - 2.4) < 1e-9 && L.wager.took === 100 && /already down/.test(L.wager.again), L.wager);
+check(`won with the odds fixed when placed (level 9 by the bout): the book pays ${L.wagerWon.book}, gold +${L.wagerWon.back} with the 250 purse`,
+  L.wagerWon.end === 'won' && L.wagerWon.book === 340 && L.wagerWon.back === 250 + 240, L.wagerWon);
+check(`lost over the rope: the stake kept (gold ${L.wagerLost.back}); the odds clamped, 4 to 1 at level 1 against bout 10 (${L.clampHi}), evens at level 20 (${L.clampLo})`,
+  L.wagerLost.end === 'lost' && L.wagerLost.back === 0 && !L.wagerLost.stake && L.clampHi === 4 && L.clampLo === 1, L);
 
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
