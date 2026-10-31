@@ -533,5 +533,39 @@ p100.lo.unseen = await veil(99); p100.hi.unseen = await veil(100);
 console.log(JSON.stringify(p100));
 check(`at 99 → 100: an arrow from behind through Sciath takes ${p100.lo.arrow} → ${p100.hi.arrow}; a step leaves you unseen ${p100.lo.unseen} → ${p100.hi.unseen}; a sent Gaoth knocks down ${p100.lo.down} → ${p100.hi.down}`,
   p100.lo.arrow > 0 && p100.hi.arrow === 0 && p100.lo.unseen === false && p100.hi.unseen === true && p100.lo.down === false && p100.hi.down === true, p100);
+// S1659 — Tine, Uisce and Solas at 99 and then 100 (Michael's A on #942)
+const q100 = await page.evaluate(() => {
+  const F = ENEMIES.filter(x => x.floor === 1 && x.mesh).slice(0, 4), was = ENEMIES.map(o => o.dead); for (const o of ENEMIES) o.dead = true;
+  const [a, b, c, d] = F; for (const o of F) { o.dead = false; o.hp = o.maxHp = 1e5; o.def = 0; o.resist = {}; o._burn = null; o._chillUntil = 0; o._riderSlowUntil = 0; }
+  const S = ['tine', 'uisce', 'solas'], lv = n => { for (const k of S) SKILLS[k] = { lv: n, p: 0 }; };
+  const sm = showMsg; showMsg = () => {}; const f0 = ATTRS.fortune; ATTRS.fortune = 0;
+  const read = () => { const out = {}; staggered.length = 0;
+    // Tine: a burns, b 2 m off and c 2.5 m off, d 2 m past b (beyond 3 m of a)
+    a.x = px + 10; a.z = pz; b.x = a.x + 2; b.z = a.z; c.x = a.x; c.z = a.z + 2.5; d.x = b.x + 2; d.z = b.z;
+    for (const o of F) { o._burn = null; RIDDEN.delete(o); }
+    riderHit(a, 'caor', 10); riderTick(); riderTick();
+    out.caught = F.filter(o => o !== a && o._burn).map(o => F.indexOf(o)); out.time = b._burn ? +(b._burn.until - playClockS).toFixed(2) : 0;
+    for (const o of F) { o._burn = null; RIDDEN.delete(o); }
+    // Uisce: a finisher on a thrown foe, then on the same foe slowed by Sioc's rider, then held by Reo
+    const fin = (prep) => { const now = performance.now() / 1000; a._chillUntil = 0; a._riderSlowUntil = 0; prep();
+      staggered.length = 0; staggered.push({ e: a, t: 5 }); a._finUntil = now + 5; a._downUntil = now + 5; a._ripUntil = -1e9; return applyMeleeDamage(a, 100).dmg; };
+    out.fin = fin(() => {}); out.finSlow = fin(() => riderHit(a, 'sioc', 0)); out.finHeld = fin(() => uisceChill(a, 2));
+    a._chillUntil = 0; a._riderSlowUntil = 0; a._finUntil = 0; a._downUntil = 0; staggered.length = 0;
+    // Solas: Solas's rider on a Skeleton, then on a foe not undead
+    const kind = o => o.baseType || o.baseName || o.name; const und = F.find(o => foeUndead(o)), live = F.find(o => !foeUndead(o));
+    out.kinds = F.map(kind);
+    if (und) { riderHit(und, 'solas_gheal', 0); const q = staggered.find(s => s.e === und); out.undead = q ? q.t : 0; }
+    staggered.length = 0; if (live) { riderHit(live, 'solas_gheal', 0); out.living = staggered.some(s => s.e === live); }
+    staggered.length = 0; for (const o of F) { o._litUntil = 0; riderGlow(o, false); RIDDEN.delete(o); }
+    return out; };
+  lv(99); const lo = read(); lv(100); const hi = read(); lv(50); showMsg = sm; ATTRS.fortune = f0; staggered.length = 0;
+  ENEMIES.forEach((o, i) => { o.dead = was[i]; });
+  return { lo, hi, skel: F.some(o => foeUndead(o)) };
+});
+console.log(JSON.stringify(q100));
+check(`at 99 → 100: a Caor burn catches ${JSON.stringify(q100.lo.caught)} → ${JSON.stringify(q100.hi.caught)} (the nearest within 3 m, once) for ${q100.hi.time} s; a finisher deals ${q100.lo.finSlow} → ${q100.hi.fin} unslowed, ${q100.hi.finSlow} slowed by Sioc, ${q100.hi.finHeld} held by Reo; Solas's light staggers a ${q100.hi.kinds.find(k => /Skeleton|Phantom|Wraith/.test(k))} ${q100.lo.undead || 0} → ${q100.hi.undead} s, the living ${q100.hi.living}`,
+  q100.lo.caught.length === 0 && JSON.stringify(q100.hi.caught) === '[1]' && q100.hi.time === 8 &&
+  q100.lo.finSlow === q100.lo.fin && q100.hi.finSlow === Math.round(q100.hi.fin * 1.5) && q100.hi.finHeld === q100.hi.finSlow &&
+  q100.skel && !q100.lo.undead && q100.hi.undead === 1.5 && q100.hi.living === false, q100);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

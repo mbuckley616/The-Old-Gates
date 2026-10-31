@@ -1219,6 +1219,7 @@ function loop(now){
         if(fb.userData.rider)riderHit(e,fb.userData.rider,dmg); /* S1602 — the joined word's rider */
         if(sp.id==='tintreach')tintreachLeap(e,sp,tier); /* S1606 — the leap */
         if(sp.school==='gaoth')gaothKnock(e); /* S1626 — Gaoth 100 */
+        if(sp.school==='solas')solasStagger(e); /* S1659 — Solas 100 */
         // Sioc — freeze on hit. Mastery (Still-Winter's Touch) stacks the duration on repeat hits up to a 4.5s ceiling;
         // lower tiers just refresh to 1.5s. Also fixes a pre-v35 leak where every hit pushed a new entry (only the first was read).
         if(sp.id==='sioc'){
@@ -1229,6 +1230,7 @@ function loop(now){
           } else {
             staggered.push({e,t:1.5});
           }
+          uisceChill(e,(staggered.find(s=>s.e===e)||{t:1.5}).t); /* S1659 — the freeze, for Uisce 100 */
         }
         // Solas-Gheal — Morning's-First-Word (Mastery): heals caster on kill. Fires BEFORE killE so the message ordering reads naturally.
         if(e.hp<=0 && sp.id==='solas_gheal' && tier===3){
