@@ -21,6 +21,16 @@ Session 1626 built three of the six school perks at 100 (Cloch's arrow ward, Sc�
 
 Recommendation: **1A, 2A, 3A.** (On the board: A = all three recommended; B = Uisce's execute; C = Solas's lit-for-3-s; D = Tine's leaping bolt; any other mix by reply.)
 
+### Arenas — what "League standing ±1" means, when the League keeps no standing (from the systems builder, 2026-10-31, #945)
+`docs/design/arenas-build.md` gives the Captains' League standing **−1** when a fixed bout is found out and **+1** for taking the title. The League keeps no standing number: it has a rank (Sworn, Reeve, Captain), a count of services done, and every Markish town's favour. The rest of the ladder is built (Sessions 1645–1648, PR #943).
+
+- **A (recommended).** ±1 favour at Caer Slige, the League's seat. Favour already shows in the journal (*Friend of* from 3), so it is visible, and no rank moves.
+- **B.** ±1 on the League's count of services done: a nudge toward (or away from) the next rank, never taking a rank away.
+- **C.** A found-out fix drops you one League rank, and the title raises you one (capped at Captain); a rank change also changes which League topics you get.
+- **D.** Leave it out: the ban and the fine are punishment enough, and the title is reward enough.
+
+Recommendation: **A.**
+
 ### The dungeon's cell by kind: old gates at 3 m, and forts and lairs at what? (systems builder, Session 1105) — DECISION #421
 **The question.** F2b's last session sets a dungeon's grid cell at true scale; it is one unit today, so corridors are 1 m wide for a 1.8 m body. Michael chose **C, 3 m** on #300 and added: "If by dungeon we mean Old Gates, they should be extremely massive and cavernous. A normal 'dungeon' like a mine, or a cave can be a more typical size." The game has three kinds of underground place: the **old gates** (the world's portals, themed by school: crypts, haunted halls, elemental and deep caverns, ruins), **fort interiors** (the `fort_` layouts), and **lairs and dens** (a beast's lair, the cloak's den). So the cell can differ by kind, and "a more typical size" is a number a player feels.
 
