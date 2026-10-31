@@ -1961,8 +1961,44 @@ const giver=`${lord.title} ${lord.name}`;
   // health she kneels and yields (no blow takes her below it before then); three seconds unstruck and she is spared, a
   // blow after the yield is murder and the League closes. The ring holds you at 1 health: down, yielded or over the
   // rope, the yard acclaims Rowe, and the ring is laid again in seven days.
+  // S1637 — arenas-build.md, session 1: one bout for Rowe, the yard and the ladder. The ring's rules, lifted out of the duel: a ring
+  // (centre, radius) and a fighter. Over the rope by BOUT_ROPE once you have been inside is a loss; at BOUT_YIELD of its health the
+  // fighter yields and kneels; unstruck BOUT_SPARE s after, it is spared and you have won; a blow after the yield is murder, unless
+  // begun within BOUT_CHECK s of the kneel (Michael's B on #96, S408), which is held. Its kill path never takes it under the quarter
+  // before the yield (boutKill, from killZoneEnemy); a fall in the ring holds you at 1 health and is a loss (boutDown, from playerDead).
+  // Below BOUT_OFFER of your health it offers you the yield once (taking it is a loss: boutYieldMe). The caller's own words and endings
+  // ride in `on` (yield, won, murder, lost(b,how), offer); the bout keeps no quest's state. One bout at a time; named actions: boutStart,
+  // boutYield, boutYieldMe, boutOver, boutEnd.
+  const BOUT_R=5,BOUT_ROPE=1,BOUT_YIELD=.25,BOUT_SPARE=3,BOUT_OFFER=.3,BOUT_CHECK=.4;
+  let BOUT=null; /* {foe,x,z,r,state:'fight'|'yielded',inside,offered,hp0,spare,yieldS,on} */
+  function boutStart(o){const e=o.foe;e._duel=true;e._duelHold=false;e.alert=true;
+    BOUT={foe:e,x:o.x,z:o.z,r:o.r||BOUT_R,state:'fight',inside:Math.hypot(px-o.x,pz-o.z)<=(o.r||BOUT_R),offered:false,hp0:0,spare:0,yieldS:0,on:o.on||{}};return BOUT;}
+  function boutEnd(e){if(BOUT&&(e==null||BOUT.foe===e))BOUT=null;}
+  function boutYield(){const b=BOUT,e=b.foe;b.state='yielded';e._duelHold=true;e.alert=false;e.telegraphT=0;b.hp0=e.hp;b.spare=BOUT_SPARE;b.yieldS=playClockS;if(e.mesh)e.mesh.position.y-=.45;
+    if(b.on.yield)b.on.yield(b);}
+  function boutOver(how,why){const b=BOUT;if(!b)return;BOUT=null;const f=b.on[how];if(f)f(b,why);}
+  function boutYieldMe(){if(BOUT&&BOUT.state==='fight')boutOver('lost','yield');}
+  // a blow begun within BOUT_CHECK s of the kneel is held: it lands on nothing. A blow begun later is murder
+  function boutCheck(e){const b=BOUT;if(!b||!(_offenceS<(b.yieldS||0)+BOUT_CHECK))return false;e.hp=b.hp0;e.dead=false;
+    if(e.hpFg){e.hpFg.scale.x=e.hp/e.maxHp;e.hpFg.position.x=(e.hp/e.maxHp-1)*.275;}showMsg('You check the blow.','#e8d8a0');return true;}
+  // the bout's frame: 'yielded', 'fight' or null when it ended (or there is none)
+  function boutTick(dt){const b=BOUT;if(!b)return null;const e=b.foe;
+    if(b.state==='yielded'){if(!e.dead&&e.hp<b.hp0&&boutCheck(e))return 'yielded';if(!e.dead&&e.hp<b.hp0){e.hp=0;if(typeof killZoneEnemy==='function')killZoneEnemy(e,sc,'');else boutOver('murder');return BOUT?'yielded':null;}
+      b.spare-=dt;if(b.spare<=0){boutOver('won');return null;}return 'yielded';}
+    const talking=(typeof dlgOpen!=='undefined')&&dlgOpen;e._duelHold=talking;if(!talking)e.alert=true;
+    const far=Math.hypot(px-b.x,pz-b.z);
+    if(far<=b.r)b.inside=true;else if(b.inside&&far>b.r+BOUT_ROPE){boutOver('lost','rope');return null;}
+    if(e.hp<=e.maxHp*BOUT_YIELD){boutYield();return BOUT?'yielded':null;}
+    if(!b.offered&&!talking&&PHP<maxHP*BOUT_OFFER){b.offered=true;e._duelHold=true;e.telegraphT=0;if(b.on.offer)b.on.offer(b);return 'offer';}
+    return 'fight';}
+  // the kill path asks first: before the yield no blow takes it below a quarter (it yields instead); after it, a kill is murder
+  function boutKill(e){const b=BOUT;if(!b||b.foe!==e)return false;
+    if(b.state==='fight'){e.hp=Math.max(1,Math.floor(e.maxHp*BOUT_YIELD));boutYield();return true;}
+    if(b.state==='yielded'){if(boutCheck(e))return true;boutOver('murder');}return false;}
+  // the ring holds you at 1 health: a fall within 2 m of the rope is a loss, not a death
+  function boutDown(){const b=BOUT;if(!b||b.state!=='fight'||Math.hypot(px-b.x,pz-b.z)>b.r+2)return false;boutOver('lost','down');return true;}
   const DUEL={q:null,open:false,parts:[],sgt:null,watchers:[],rowe:null,npc:null,bark:0,last:'',spare:0,hp0:0,yieldS:0,inside:false,offered:false,rb:null,rbT:0,stag:false,pstag:false};
-  const DUEL_R=5,DUEL_OPEN=6,DUEL_CLOSE=12,DUEL_CHECK=.4;
+  const DUEL_R=BOUT_R,DUEL_OPEN=6,DUEL_CLOSE=12;
   const DUEL_BARKS=["Feet, Rowe! Feet!","Get your guard up, {nick}!","That's blood. Keep at it.","Iron and blood!","Watch her left, {nick}.","Don't dance. Fight.","Hesket! Hesket!","Up, {nick}! Up!","Finish it by noon, the pair of you!"];
   function duelQuest(){return qActive().find(q=>q.kind==='duel')||null;}
   function duelRingHours(){const h=hourNow();return h>=DUEL_OPEN&&h<DUEL_CLOSE;}
@@ -1970,7 +2006,7 @@ const giver=`${lord.title} ${lord.name}`;
     return /bow/.test(sh)?'Bowstring':/staff/.test(sh)?'Stick':/axe/.test(sh)?'Hatchet':/mace|club|hammer|flail/.test(sh)?'Hammer':/dagger|knife/.test(sh)?'Pin':'Blade';}
   function duelLeague(){return fstate().league;}
   function duelRemoveNpc(n){if(!n)return;sc.remove(n.g);if(n.dot)sc.remove(n.dot);const k=npcs.indexOf(n);if(k>=0)npcs.splice(k,1);}
-  function duelRemoveRowe(){const e=DUEL.rowe;if(!e)return;if(!e.dead){if(e.mesh&&e.mesh.parent)e.mesh.parent.remove(e.mesh);const i=ZONES.world.enemies.indexOf(e);if(i>=0)ZONES.world.enemies.splice(i,1);}DUEL.rowe=null;DUEL.rb=null;}
+  function duelRemoveRowe(){const e=DUEL.rowe;if(!e)return;boutEnd(e);if(!e.dead){if(e.mesh&&e.mesh.parent)e.mesh.parent.remove(e.mesh);const i=ZONES.world.enemies.indexOf(e);if(i>=0)ZONES.world.enemies.splice(i,1);}DUEL.rowe=null;DUEL.rb=null;}
   function duelRingDown(){DUEL.parts.forEach(m=>{sc.remove(m);if(m.geometry)m.geometry.dispose();});DUEL.parts=[];}
   function duelTeardown(){duelRingDown();duelRemoveNpc(DUEL.sgt);DUEL.watchers.forEach(duelRemoveNpc);duelRemoveNpc(DUEL.npc);duelRemoveRowe();
     Object.assign(DUEL,{q:null,sgt:null,watchers:[],npc:null,inside:false,offered:false,stag:false,pstag:false});}
@@ -2005,13 +2041,14 @@ const giver=`${lord.title} ${lord.name}`;
       const w=duelPerson({name:nm(),role:'',ico:'⚔',authored:true,people:'markman',bCol:[0x3a3a40,0x4a4038,0x2e3238][i%3],sCol:0xe8d4bc,greeting:['Iron and blood!'],topics:[{label:'Farewell.',bye:true}]},x,z,Math.atan2(cx-x,cz-z));w._duelWatch=true;DUEL.watchers.push(w);}
     DUEL.npc=duelPerson(roweDef(cx,cz+1.5),cx,cz+1.5,Math.PI);}
   function duelStart(q){if(q.data.state!=='wait'||!DUEL.npc)return;const d=q.data;const p=DUEL.npc.g.position;const x=p.x,z=p.z;duelRemoveNpc(DUEL.npc);DUEL.npc=null;
-    const e=keyFoe(unlockFoe(buildZoneEnemy(sc,STATIC_SOL,x,z,q.enemy||'Bandit Captain',null)),q.id+':rival:'+dayNow());e._questTag=q.id;e._duel=true;e.name=e.displayName=RIVAL.name;e.homeX=d.x;e.homeZ=d.z;e.alert=true;e._duelHold=false;if(e.mesh&&!e.mesh.parent)sc.add(e.mesh);ZONES.world.enemies.push(e);DUEL.rowe=e;
-    d.state='fight';DUEL.inside=Math.hypot(px-d.x,pz-d.z)<=DUEL_R;DUEL.offered=false;DUEL.bark=3;
+    const e=keyFoe(unlockFoe(buildZoneEnemy(sc,STATIC_SOL,x,z,q.enemy||'Bandit Captain',null)),q.id+':rival:'+dayNow());e._questTag=q.id;e.name=e.displayName=RIVAL.name;e.homeX=d.x;e.homeZ=d.z;if(e.mesh&&!e.mesh.parent)sc.add(e.mesh);ZONES.world.enemies.push(e);DUEL.rowe=e;
+    d.state='fight';DUEL.bark=3;
+    boutStart({foe:e,x:d.x,z:d.z,r:DUEL_R,on:{yield:b=>duelYield(q,b),won:()=>duelWon(q),murder:()=>duelMurder(q),lost:(b,how)=>duelLost(q,how),offer:()=>duelOffer(q)}});
     // S482: the timer closes the sergeant's dialogue, never Rowe's yield offer, which a fast fall opens inside the 1.4 s
     setTimeout(()=>{try{if(dlgOpen&&!(dlgNPC&&dlgNPC.name===RIVAL.name))closeDialog();}catch(err){}},1400);
     showMsg('The rope is up. Hesket Rowe lifts her blade.','#e8d8a0');if(typeof addLog==='function')addLog('⚔','The duel at Caer Slige: Hesket Rowe.');}
   function duelBark(line){const W=DUEL.watchers.filter(w=>w.g.visible);if(!W.length)return;sayBubble(W[Math.floor(Math.random()*W.length)],line.split('{nick}').join(duelNick()));}
-  function duelYield(q){const e=DUEL.rowe;q.data.state='yielded';e._duelHold=true;e.alert=false;e.telegraphT=0;DUEL.hp0=e.hp;DUEL.spare=3;DUEL.yieldS=playClockS;if(e.mesh)e.mesh.position.y-=.45;
+  function duelYield(q,b){q.data.state='yielded';DUEL.hp0=b.hp0;DUEL.yieldS=b.yieldS; /* S1637 — the bout knelt her; DUEL keeps the two for anyone reading the duel */
     try{if(dlgOpen&&dlgNPC&&dlgNPC.name===RIVAL.name)closeDialog();}catch(err){}
     showMsg('Hesket Rowe goes down on one knee and lays her blade on the ground.','#e8d8a0');roweSay("Enough. I yield. It's yours.");}
   function duelWon(q){const e=DUEL.rowe;q.data.state='won';duelLeague().rowe='alive';const x=e.x,z=e.z;duelRemoveRowe();duelRingDown();
@@ -2025,9 +2062,9 @@ const giver=`${lord.title} ${lord.name}`;
   function duelLost(q,how){const d=q.data;d.state='lost';d.retryDay=dayNow()+7;d.told=false;duelLeague().rowe='captain';PHP=Math.max(PHP,1);if(typeof updateHUD==='function')updateHUD();
     duelRemoveRowe();duelRingDown();try{if(dlgOpen)closeDialog();}catch(err){}
     showMsg(how==='rope'?'You step over the rope. That is a yield. The yard acclaims Hesket Rowe Captain.':how==='yield'?'You yield. The yard acclaims Hesket Rowe Captain.':'You go down, and stay down. The yard acclaims Hesket Rowe Captain.','#c8b880');}
-  function duelOffer(q){const e=DUEL.rowe;if(e){e._duelHold=true;e.telegraphT=0;}
+  function duelOffer(q){ /* S1637 — the bout holds her while you answer */
     openDialog({name:RIVAL.name,role:'',ico:'⚔',greeting:["You're done. Say it, and it's done."],topics:[
-      {label:'I yield.',quest:true,fn:()=>{setTimeout(()=>{if(q.data.state==='fight')duelLost(q,'yield');},1200);return "Heard. Up you get. You'll want that arm again.";}},
+      {label:'I yield.',quest:true,fn:()=>{setTimeout(()=>{if(q.data.state==='fight')boutYieldMe();},1200);return "Heard. Up you get. You'll want that arm again.";}},
       {label:'Not yet.',quest:true,fn:()=>{setTimeout(()=>{try{if(dlgOpen)closeDialog();}catch(err){}},1200);return "Your blood, then.";}}]});}
   function tickDuel(dt){
     const q=duelQuest();if(DUEL.q&&DUEL.q!==q)duelTeardown();if(!q)return;const d=q.data;const far=Math.hypot(px-d.x,pz-d.z);
@@ -2039,25 +2076,14 @@ const giver=`${lord.title} ${lord.name}`;
     const ended=d.state==='won'||d.state==='murder'||d.state==='lost';
     if(ended){if(far>60||(d.state==='lost'&&dayNow()>=(d.retryDay||0)))duelTeardown();return;}
     if(d.state==='wait'){if(far>240){duelTeardown();return;}if(DUEL.open!==duelRingHours()){duelTeardown();return;}return;}
-    const e=DUEL.rowe;if(!e){duelTeardown();return;}
-    if(d.state==='yielded'){if(!e.dead&&e.hp<DUEL.hp0&&duelCheck(e))return;if(!e.dead&&e.hp<DUEL.hp0){e.hp=0;if(typeof killZoneEnemy==='function')killZoneEnemy(e,sc,'');else duelMurder(q);return;}
-      DUEL.spare-=dt;if(DUEL.spare<=0)duelWon(q);return;}
-    // the fight
-    const talking=(typeof dlgOpen!=='undefined')&&dlgOpen;e._duelHold=talking;if(!talking)e.alert=true;
-    if(far<=DUEL_R)DUEL.inside=true;else if(DUEL.inside&&far>DUEL_R+1){duelLost(q,'rope');return;}
-    if(e.hp<=e.maxHp*.25){duelYield(q);return;}
-    if(!DUEL.offered&&!talking&&PHP<maxHP*.3){DUEL.offered=true;duelOffer(q);return;}
+    const e=DUEL.rowe;if(!e||!BOUT||BOUT.foe!==e){duelTeardown();return;}
+    const bt=boutTick(dt);if(bt!=='fight')return; /* S1637 — the ring's rules are the bout's */
     const st=typeof isStaggered==='function'&&isStaggered(e);if(st&&!DUEL.stag){duelBark("She's open!");DUEL.bark=Math.max(DUEL.bark,3);}DUEL.stag=st;
     const ps=PPOST.stagUntil>performance.now()/1000;if(ps&&!DUEL.pstag){duelBark("Rowe's got you, {nick}.");DUEL.bark=Math.max(DUEL.bark,3);}DUEL.pstag=ps;
     DUEL.bark-=dt;if(DUEL.bark<=0){DUEL.bark=6+Math.random()*3;let line;do{line=DUEL_BARKS[Math.floor(Math.random()*DUEL_BARKS.length)];}while(line===DUEL.last);DUEL.last=line;duelBark(line);}
   }
-  // the kill path asks first: before the yield no blow takes her below a quarter (she yields instead); after it, a kill is murder
-  function duelKill(e){const q=DUEL.q;if(!q||DUEL.rowe!==e)return false;const s=q.data.state;
-    if(s==='fight'||s==='wait'){if(s==='wait')q.data.state='fight';e.hp=Math.max(1,Math.floor(e.maxHp*.25));duelYield(q);return true;}
-    if(s==='yielded'){if(duelCheck(e))return true;duelMurder(q);}return false;}
-  // S408 (Michael's B on #96) — a blow begun within DUEL_CHECK s of her kneeling is held: it lands on nothing. A blow begun later is murder
-  function duelCheck(e){if(!(_offenceS<(DUEL.yieldS||0)+DUEL_CHECK))return false;e.hp=DUEL.hp0;e.dead=false;
-    if(e.hpFg){e.hpFg.scale.x=e.hp/e.maxHp;e.hpFg.position.x=(e.hp/e.maxHp-1)*.275;}showMsg('You check the blow.','#e8d8a0');return true;}
+  // the kill path and the fall ask the bout (S1637): WORLD.duelKill and WORLD.duelDown keep their names for 42 and 68
+  function duelKill(e){return boutKill(e);}
   // S1112 — the night watch on the Spire of Caer Slige (the approved draft *The Spire Held*, docs/quest_drafts.md, Michael 14 Oct;
   // backlog A). The quest is the League's, outside the nine services: spireGive(seat) gives it (the writer's *The spire?* topic
   // calls it). With it in 'wait', the first time you stand on the spire's roof between 20h and 1h the watch begins. Three waves of
@@ -2179,7 +2205,7 @@ const giver=`${lord.title} ${lord.name}`;
     if(d.wave===3&&alive===0&&now>=d.end&&spireOnRoof())spireHeld(q);
   }
   // the ring holds you at 1 health: going down in it is a yield, not a death
-  function duelDown(){const q=DUEL.q;if(!q||q.data.state!=='fight'||Math.hypot(px-q.data.x,pz-q.data.z)>DUEL_R+2)return false;duelLost(q,'down');return true;}
+  function duelDown(){return boutDown();}
   // v80 S133 — a guild hunt's ground on the compass until the tally is met
   function guildMarkers(push){try{const G=gstate();for(const k in G){const t=G[k]&&G[k].active;if(t&&t.kind==='hunt'&&!t.done&&t.x!=null&&t.have<t.need)push(t.x,t.z,GREEN,`${t.target}s — ${t.ground||'their ground'}`);}}catch(e){}}
   function factionMarkers(push){const F=FACTIONS;for(const k in F){const st=fstate()[k];if(!st.active||st.active.done){if(st.active&&st.active.done&&F[k].seat){const s=siteAnywhere(F[k].seat);if(s)push(s.x,s.z,GREEN,F[k].name);}continue;}}}
