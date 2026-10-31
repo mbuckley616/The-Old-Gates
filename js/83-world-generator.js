@@ -850,7 +850,7 @@
     if(plan.tents){for(let i=0;i<plan.tents;i++){const ang=i/plan.tents*Math.PI*2+r();const x=cx+Math.cos(ang)*6,z=cz+Math.sin(ang)*6;addMesh(tentGeo(r),x,z,r()*Math.PI,1.8);}
       const fx=cx+1.5,fz=cz+2.5;const fl=regLight(0xff8a30,1.2,10,site.id);fl.position.set(fx,worldH(fx,fz)+.9,fz);
       const ember=new THREE.Mesh(new THREE.SphereGeometry(.25,6,6),new THREE.MeshBasicMaterial({color:0xff7a22}));ember.position.set(fx,worldH(fx,fz)+.2,fz);group.add(ember);
-      const def=makeDef(site,reg,r,'Hermit',site.id==='hermit_camp'?'The Hermit':newName(),{x:cx+3.5,z:cz+4.5,bCol:0x4a4038,sCol:0xb09878,role:'old hermit',people:'oldblood'});def.role='Hermit';def._extraFn=()=>(typeof hermitMakersTopics==='function'?hermitMakersTopics(site):[]); /* S792 — Old Blood (§3.3), and the makers' six */
+      const def=makeDef(site,reg,r,'Hermit',site.id==='hermit_camp'?'The Hermit':newName(),{x:cx+3.5,z:cz+4.5,bCol:0x4a4038,sCol:0xb09878,role:'old hermit',people:'oldblood'});def.role='Hermit';def._extraFn=()=>[...(typeof hermitMakersTopics==='function'?hermitMakersTopics(site):[]),...(typeof hermitWordsTopics==='function'?hermitWordsTopics(site):[])]; /* S792 — Old Blood (§3.3), and the makers' six; S1630 — the old words */
       snpcs.push(spawnNPC(def,Math.PI,true));}
     if(plan.ruins){for(let i=0;i<plan.ruins;i++){const ang=r()*Math.PI*2,rad0=8+r()*(pad-16);addMesh(ruinGeo(r),cx+Math.cos(ang)*rad0,cz+Math.sin(ang)*rad0,r()*Math.PI,2.2);}}
     if(plan.stones){for(let i=0;i<plan.stones;i++){const ang=i/plan.stones*Math.PI*2;addMesh(standingStoneGeo(r),cx+Math.cos(ang)*11,cz+Math.sin(ang)*11,ang,.6);}}
