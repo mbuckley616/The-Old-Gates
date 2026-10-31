@@ -805,6 +805,10 @@ SPELLS.push({id:'freamh',school:'cloch',role:'basic',nameIr:'Fréamh',nameEn:'Ro
 // (blindTick, from both foe ticks). Smól's 10 m/s.
 SPELLS.push({id:'dorcha',school:'scath',role:'basic',nameIr:'Dorcha',nameEn:'Blind',nameMa:null,ico:'🌘',desc:'Blinds a foe: it loses you.',
   intReqs:[10,22,40],cost:28,speed:10,dmgBase:0,dmgLvl:0,col:0x2a1a3a,glowCol:0x553377,wild:['scatter','fizzle'],status:'blind'});
+// S1628 — Dul Thart worn (magic-build.md's table: "through foes 0.6 s"; Michael's B on #926: bodies, blows and arrows pass through):
+// cast from the book's Worn entry, at the press, it makes you intangible 0.6 s at every tier (PHASE_UNTIL, which rollUntouchable reads).
+// Its Mastery is the canon's "untargetable", which this already is, so the tier changes nothing. A use of Scáth, as a worn word's cast is.
+function phaseWord(){const t=WORD_BY.dul_thart.forms.worn.phase;PHASE_UNTIL=Math.max(PHASE_UNTIL,performance.now()/1000+t);return t;}
 function foeBlind(e){return !!(e&&e._blindUntil>playClockS);}
 function blindTick(e){if(foeBlind(e)){e.alert=false;e._agg=false;return true;}if(e._blindWake){e._blindWake=false;e.alert=true;}return false;}
 // statusBolt: what a status bolt does to foe e it struck. A struck alert foe is a use of the school, as a blow is. Returns what it did.

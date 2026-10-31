@@ -294,7 +294,7 @@ let _offenceS=-1e9;
 // dropped frame changes neither.
 const ROLL_LIGHT={dur:.45,dist:2.6,i0:.08,i1:.30},ROLL_HEAVY={dur:.6,dist:1.8,i0:.08,i1:.24},ROLL_STAM=18,ROLL_HEAVY_AT=.7;
 let ROLL=null;
-function rollUntouchable(nowS){if(nowS<FINISHER_SAFE_UNTIL)return true;if(!ROLL)return false;const t=nowS-ROLL.t0;return t>=ROLL.i0&&t<=ROLL.i1;}
+function rollUntouchable(nowS){if(nowS<FINISHER_SAFE_UNTIL||nowS<PHASE_UNTIL)return true;if(!ROLL)return false;const t=nowS-ROLL.t0;return t>=ROLL.i0&&t<=ROLL.i1;}
 function startRoll(nowS,keys){
   const K=keys||{};
   if(!ROLL&&!onGround&&airDashStart(K))return true; /* S1011 — Swallow's turn: Q in the air is the air dash while it is unspent */
@@ -752,6 +752,9 @@ const POSTURE_CRIT_MULT = 1.5;      // damage multiplier when striking a stagger
 // ×3 and leaves you untouchable for 1.2 s (rollUntouchable reads it). Other blows on a staggered foe keep today's ×1.5.
 const RIPOSTE_S=.8,RIPOSTE_MULT=2.5,RIPOSTE_POSTURE=.4,FINISHER_MULT=3,FINISHER_SAFE_S=1.2;
 let _swingStartS=-1e9,FINISHER_SAFE_UNTIL=0;
+// S1628 — Dul Thart worn's phase (64-spells.js, phaseWord): until this clock (performance.now() in s) every blow, arrow
+// and bolt passes through you, as the roll's window does (Michael's B on #926). Foes' bodies never stopped your walk.
+let PHASE_UNTIL=0;
 function riposteOpen(e){return !!e&&typeof e._ripUntil==='number'&&_swingStartS>=e._ripAt&&_swingStartS<=e._ripUntil;}
 function finisherOpen(e,nowS){
   if(!e||!(e._finUntil>nowS)||!isStaggered(e))return false;

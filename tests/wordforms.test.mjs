@@ -21,6 +21,7 @@
 // Gaoth's updraft 3.7 m.
 // Session 1626: three schools at 100: Cloch's worn ward turns an arrow, Scáth's step leaves you unseen 3 s, a sent Gaoth knocks down.
 // Session 1610: Fréamh sent, a bolt that deals nothing and roots the foe it strikes 2 s (1.2 at Impression, 2.6 at Mastery).
+// Session 1628: Dul Thart worn, 0.6 s in which a foe's blow, arrow or bolt passes through you (rollUntouchable).
 // Session 1627: Dorcha sent, a bolt that deals nothing and blinds the foe it strikes 4 s (2.4, 5.2): it loses you until the blind ends.
 import { boot, check } from './lib/game.mjs';
 import { enterDungeon } from './lib/dungeonshot.mjs';
@@ -308,6 +309,24 @@ console.log(JSON.stringify({ bb2, bb1, bb3 }));
 check(`Dorcha's bolt deals ${bb2.dealt} and blinds an alert foe 1.2 m away: it loses you (alert ${bb2.alert}, ${bb2.left} s left of 4)`, bb2.mk && bb2.dealt === 0 && bb2.blind && bb2.alert === false && bb2.left > 3.5 && bb2.left <= 4, bb2);
 check(`when the blind ends it finds you again (blind ${bb2.after}, alert ${bb2.found})`, bb2.after === false && bb2.found === true, bb2);
 check(`Dorcha's blind by tier: Impression ${bb1.left} s (of 2.4), Mastery ${bb3.left} s (of 5.2)`, bb1.blind && !bb1.alert && bb1.left > 1.9 && bb1.left <= 2.4 && bb3.blind && !bb3.alert && bb3.left > 4.7 && bb3.left <= 5.2, { bb1, bb3 });
+
+// S1628 — Dul Thart worn, cast by F from the book: 0.6 s in which a foe's blow passes through you (executeStrike at the clock given)
+const ph = await page.evaluate(() => {
+  const e = ENEMIES.find(x => x.floor === 1 && x.mesh); if (!e) return { none: true };
+  e.dead = false; e.dormant = false; unstagger(e);
+  knownWords = { dul_thart: 2 }; SKILLS.scath = { lv: 50, p: 0 }; LAID && laidEnd(); spellBook.length = 0; PHASE_UNTIL = 0;
+  const mk = bookMake('worn', 'dul_thart'); bookSelect(mk.i);
+  for (const k2 in K) K[k2] = false; castT = 0; _castFreeAt = 0; _castReleaseAt = 0; spCd = 0; mana = 1000; blocking = false;
+  const x0 = px, z0 = pz, sm = showMsg, cr = casterRand; let said = ''; showMsg = (m) => { said = m; }; casterRand = () => () => 1;
+  try { castSpell(); } finally { showMsg = sm; casterRand = cr; }
+  const t = performance.now(), out = { mk: mk.i != null, paid: 1000 - mana, said, moved: +Math.hypot(px - x0, pz - z0).toFixed(2), left: +(PHASE_UNTIL - t / 1000).toFixed(2) };
+  const hp = () => { PHP = 1000; return PHP; }, blow = (ms) => { const h = hp(); e.x = px; e.z = pz - .8; e.combatYaw = 0; executeStrike(e, 30, t + ms); return h - PHP; };
+  out.at = [blow(300), blow(590), blow(700)]; PHP = maxHP; PHASE_UNTIL = 0;
+  return out;
+});
+console.log(JSON.stringify(ph));
+check(`Dul Thart worn costs ${ph.paid}, moves you ${ph.moved} m and leaves you phased ${ph.left} s ("${ph.said}")`, ph.mk && ph.paid === 40 && ph.moved === 0 && ph.left > .55 && ph.left <= .6, ph);
+check(`a foe's blow passes through at 0.3 s and 0.59 s (${ph.at && ph.at[0]}, ${ph.at && ph.at[1]}) and lands at 0.7 s (${ph.at && ph.at[2]})`, ph.at && ph.at[0] === 0 && ph.at[1] === 0 && ph.at[2] > 0, ph);
 
 // S1611 — Tonn's wave: three foes, one in the line at 2.5 m, one 2.5 m to its side, one past the wave's end
 const tw = await page.evaluate(() => {
