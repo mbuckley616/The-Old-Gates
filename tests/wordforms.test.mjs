@@ -11,6 +11,7 @@
 // once), Leigheas's mend (2 a second while you stand at it), Séideán's throw (a pillar under you sends you up at Éan's 8.4 m/s), Solas's light.
 // Session 1609: the cone dressed (the look builder's heldDress): three draws, under 1,500 triangles, and it answers no ray.
 // Session 1606: Tintreach sent, a bolt of 24 that leaps to the nearest other foe within 5 m of the one struck, for half.
+// Session 1636: Dorcha laid, a dark 6 m across, 15 s: an alert foe in it loses you until it steps out (Michael's A on #931).
 // Session 1612: Fréamh laid, a ring 3 m round on the ground that roots the first foe within it 2 s, once, and stands 10 s.
 // Session 1611: Tonn sent, a wave 8 m down your aim (to the first wall), 1.6 m wide: 14 and 20 posture to each foe in it.
 // Session 1616: Reo laid, a burst 4 m round that holds every foe within it 2 s (1.2 at Impression), once; its frost stands the hold's time.
@@ -374,6 +375,29 @@ console.log(JSON.stringify(sn));
 check(`Fréamh's ring (${sn.kind}, ${sn.R} m, solid ${sn.solid}): no root outside it (${sn.out}), the foe inside rooted ${sn.left} s, and a second foe after it not (${sn.second})`,
   sn.ok && sn.kind === 'snare' && sn.solid === false && sn.R === 3 && sn.out === false && sn.in === true && sn.left === 2 && sn.second === false, sn);
 check(`the ring stands 10 s (at 9.9 ${sn.at99}, at 10.1 ${sn.at101})`, sn.at99 === true && sn.at101 === false, sn);
+
+// S1636 — Dorcha's dark (Michael's A on #931): an alert foe in it loses you and finds you on stepping out; an alert foe outside keeps
+// you though you stand in it; an unaware foe passing through stays unaware; the dark stands 15 s
+const dk = await page.evaluate(() => {
+  const fs = ENEMIES.filter(x => x.floor === 1 && x.mesh).slice(0, 2); if (fs.length < 2) return { few: fs.length };
+  knownWords = { dorcha: 2 }; LAID && laidEnd();
+  const [A, B] = fs; for (const e of fs) { e.dead = false; e.hp = e.maxHp = 1e5; e._blindUntil = 0; e._blindWake = false; e.x = px + 20; e.z = pz + 20; }
+  const cx = px, cz = pz - 1, r = layWord('dorcha', null, cx, cz), out = { ok: !!r.ok, kind: r.kind, solid: LAID && LAID.solid, R: LAID && LAID.r };
+  const s0 = SKILLS.scath ? SKILLS.scath.p + SKILLS.scath.lv * 1e4 : 0;
+  A.x = cx + 2.5; A.z = cz; A.alert = true; out.inBlind = blindTick(A); out.inAlert = A.alert;
+  B.x = cx + 3.4; B.z = cz; B.alert = true; out.outBlind = blindTick(B); out.outAlert = B.alert;
+  out.skill = (SKILLS.scath ? SKILLS.scath.p + SKILLS.scath.lv * 1e4 : 0) !== s0;
+  A.x = cx + 3.4; out.stepBlind = blindTick(A); out.found = A.alert;
+  B.alert = false; B._agg = false; B.x = cx; blindTick(B); B.x = cx + 3.4; out.passBlind = blindTick(B); out.passAlert = B.alert;
+  playClockS += 14.9; out.at149 = !!laidLive(); playClockS += .2; out.at151 = !!laidLive();
+  A.x = cx; A.alert = true; out.after = blindTick(A);
+  return out;
+});
+console.log(JSON.stringify(dk));
+check(`Dorcha's dark (${dk.kind}, ${dk.R} m, solid ${dk.solid}): the alert foe in it is blind (alert ${dk.inAlert}), the one outside keeps you (alert ${dk.outAlert}), a use of Scáth ${dk.skill}`,
+  dk.ok && dk.kind === 'dark' && dk.solid === false && dk.R === 3 && dk.inBlind === true && dk.inAlert === false && dk.outBlind === false && dk.outAlert === true && dk.skill === true, dk);
+check(`stepping out it finds you (${dk.found}); an unaware foe passing through stays unaware (${dk.passAlert})`, dk.stepBlind === false && dk.found === true && dk.passBlind === false && dk.passAlert === false, dk);
+check(`the dark stands 15 s (at 14.9 ${dk.at149}, at 15.1 ${dk.at151}) and blinds no one after (${dk.after})`, dk.at149 === true && dk.at151 === false && dk.after === false, dk);
 
 // S1616 — Reo's burst: two foes inside 4 m (one at its edge, hull counted), one just outside; then one walked in after; then Impression
 const nv = await page.evaluate(() => {

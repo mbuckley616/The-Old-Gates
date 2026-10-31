@@ -144,5 +144,42 @@ if (ended === 'lost') {
   ended = f2.end;
 }
 if (ended === 'won') await won();
+
+// S1638 — the yard's spar (arenas-build.md session 1): a staff from the rack, posture only on both sides, the calls on the play clock,
+// half-weight skill use, first to three clean hits, the kit handed back. Started by its named action, as the rack will call it.
+const sp = await page.evaluate(() => {
+  try { if (dlgOpen) closeDialog(); } catch (e) {}
+  const out = {}; staggered.length = 0; PPOST.stagUntil = 0;
+  const sword = EQ.weapon; out.sword = sword && sword.name;
+  const r = WORLD.sparStart({ x: px, z: pz - 1.4, site: 'test', force: true }); out.ok = !!r.ok; out.tier = r.tier;
+  const S = WORLD.spar, e = S.foe; out.staff = EQ.weapon && EQ.weapon.name; out.inBag = BAG.some(b => b === S.held.weapon);
+  const fresh = () => { PPOST.posture = PPOST.maxPosture = playerMaxPosture(); PPOST.stagUntil = 0; ROLL = null; FINISHER_SAFE_UNTIL = 0; PHASE_UNTIL = 0; };
+  // an unblocked blow: posture, no health, a point to the trainer
+  fresh(); blocking = false; let hp = PHP, po = PPOST.posture; executeStrike(e, 20, performance.now());
+  out.hit = { hp: PHP - hp, posture: +(po - PPOST.posture).toFixed(1), them: S.them };
+  // raised 0.1 s too early: Early., posture lost, health unchanged, no point
+  fresh(); S.call = null; blocking = true; lastBlockAttemptG = playClockS - parryWindowS() - .1; hp = PHP; po = PPOST.posture; executeStrike(e, 20, performance.now());
+  out.early = { call: S.call, hp: PHP - hp, posture: +(po - PPOST.posture).toFixed(1), them: S.them };
+  // raised in the window: Good.
+  fresh(); S.call = null; staggered.length = 0; blocking = true; lastBlockAttemptG = playClockS; executeStrike(e, 20, performance.now()); out.good = S.call;
+  // struck, then the guard raised 0.1 s after: Late.
+  fresh(); S.call = null; staggered.length = 0; e.atkCd = 0; blocking = false; executeStrike(e, 20, performance.now()); playClockS += .1; raiseGuard(); blocking = false; out.late = { call: S.call, them: S.them };
+  // half weight: one use of Blade
+  const B = SKILLS.blade, p0 = B.p, l0 = B.lv; SKILL_LAST.clear(); skillUse('blade', 1, 'spar-test'); out.half = +(B.lv === l0 ? B.p - p0 : NaN).toFixed(3);
+  // your blows: the trainer's health unchanged, a point each; the third ends it
+  const fh = e.hp; out.you = [];
+  for (let k = 0; k < 3; k++) { staggered.length = 0; e.posture = e.maxPosture; e.shieldUp = false; e.x = px - Math.sin(yaw) * 1.2; e.z = pz - Math.cos(yaw) * 1.2; fwdX = -Math.sin(yaw); fwdZ = -Math.cos(yaw);
+    SWING = null; resolvePlayerStrike(false); out.you.push(S.you); }
+  out.foeHp = e.hp - fh; out.end = S.end; out.after = WORLD.spar; out.back = EQ.weapon && EQ.weapon.name; out.staffGone = !BAG.some(b => b.yard) && !(EQ.weapon && EQ.weapon.yard);
+  out.mult = SKILL_W_MULT; out.foeGone = !ZONES.world.enemies.includes(e);
+  return out; });
+console.log('spar', JSON.stringify(sp));
+check(`the spar: a ${sp.staff} from the rack, your ${sp.sword} held in your pack, the trainer at tier ${sp.tier}`, sp.ok && sp.staff === 'Yard Staff' && sp.inBag, sp);
+check(`an unblocked staff blow takes ${sp.hit.posture} posture and ${sp.hit.hp} health, a clean hit to the trainer (${sp.hit.them})`, sp.hit.hp === 0 && sp.hit.posture > 0 && sp.hit.them === 1, sp.hit);
+check(`a guard raised 0.1 s before the window: *${sp.early.call}* called, ${sp.early.posture} posture lost, health ${sp.early.hp}, no point`, sp.early.call === 'Early.' && sp.early.posture > 0 && sp.early.hp === 0 && sp.early.them === 1, sp.early);
+check(`a parry in the window is *${sp.good}*; a guard 0.1 s after a blow landed is *${sp.late.call}*`, sp.good === 'Good.' && sp.late.call === 'Late.' && sp.late.them === 2, sp);
+check(`skill use in the spar is half weight (${sp.half} of 1)`, Math.abs(sp.half - .5) < 1e-6, sp);
+check(`three clean hits of yours (${sp.you.join(', ')}) take none of the trainer's health (${sp.foeHp}) and win the spar (${sp.end}); the ${sp.back} is back, the staff racked, the weight whole (${sp.mult})`,
+  sp.you.join() === '1,2,3' && sp.foeHp === 0 && sp.end === 'won' && sp.after === null && sp.back === sp.sword && sp.staffGone && sp.mult === 1 && sp.foeGone, sp);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

@@ -261,11 +261,12 @@ function secondParryOpen(){return blocking&&perk('guard',100)&&playClockS-_lastP
 // the sheet's Blade is swords, daggers, axes and spears, Blunt maces, clubs, staves and hammers; bare fists are Hand-to-hand,
 // the 23rd skill (Michael's C on #357, Session 950): the fists' roll on its multiplier, a punch on an alert foe a use
 function weaponSkill(w){if(!w)return 'hand';if(w.weaponShape==='bow'||w.weaponShape==='crossbow'||w.grantsAmmo==='arrow')return 'bow';return w.wType==='blunt'?'blunt':'blade';}
+let SKILL_W_MULT=1; /* S1638 — the yard's spar teaches at half weight (arenas-build.md) */
 function skillUse(id,w,target){const S=skillsReady(),s=S[id];if(!s||s.lv>=100)return false;
   const now=performance.now(),key=target==null?'':target;let m=SKILL_LAST.get(id);if(!m)SKILL_LAST.set(id,m=new Map());
   const t=m.get(key);if(t!=null&&now-t<1000)return false;
   if(m.size>64)for(const [k,v] of m)if(now-v>=1000)m.delete(k);
-  m.set(key,now);s.p+=(w||1)*(typeof _buffMult==='function'?_buffMult('xpBoost',1):1);let up=0;
+  m.set(key,now);s.p+=(w||1)*SKILL_W_MULT*(typeof _buffMult==='function'?_buffMult('xpBoost',1):1);let up=0;
   while(s.lv<100&&s.p>=skillCost(s.lv)){s.p-=skillCost(s.lv);s.lv++;up++;}
   if(s.lv>=100)s.p=0;
   if(up){skillMark(id,up);if(typeof showMsg==='function')showMsg(`${SKILL_DEF[id].label} rises to ${s.lv}.`,'#c8b8e8');}
