@@ -907,7 +907,25 @@ function readSpellbook(i){
 // tutor deepens a word you hold at Impression to Comprehension in two hours on the clock, free, if your Intelligence meets the word's
 // Comprehension need; never past it (Mastery is the stone's alone, canon §7).
 const TUTOR_MIN=120;
-function mageRank(){const G=worldState.guild,m=G&&G.guild_m;return Math.min(4,Math.floor(((m&&m.done)||0)/3));}
+function mageRank(){const G=worldState.guild,m=G&&G.guild_m;return Math.min(4,Math.max(Math.floor(((m&&m.done)||0)/3),registerRankIdx()));} /* S1629 — the higher of the count and the Register's beats */
+// S1629 — the readings (words-and-the-mouth-build.md, "The readings"; Michael's 1 A on #695: two doors). Each Mages' Guild task handed
+// in earns one reading (worldState.register.readings, the character's), none once all 24 words are held, banked without a cap. At a hall
+// a reading takes a word you lack from a shelf your rank opens, at Impression, in four clock hours, if your Intelligence meets its
+// Impression need (refused with the reading kept). The three shelves are the words' Impression needs: 1–3 at Adept (8 words), 6–10 at
+// Evoker (12), 12 and up at Warlock (4). A read word goes no further than the tutor takes it; Mastery is still the stone's.
+// The guild's rank is the higher of its count and the Register's beats (beat 3 Adept, 4 Evoker, 6 Warlock), read here before the
+// Register itself is built, so a beat is 0 until then.
+const READ_MIN=240,SHELF_RANK=[1,2,3];
+function shelfOf(id){const n=WORD_BY[id].intReqs[0];return n<=3?0:n<=10?1:2;}
+function registerOf(){return worldState.register||(worldState.register={});}
+function readingsHeld(){return (worldState.register&&worldState.register.readings)||0;}
+function registerRankIdx(){const b=(worldState.register&&worldState.register.beat)||0;return b>=6?3:b>=4?2:b>=3?1:0;}
+function shelfWords(rankIdx){return WORDS.filter(w=>!knownWords[w.id]&&rankIdx>=SHELF_RANK[shelfOf(w.id)]).map(w=>w.id);}
+// the named actions (co-op rules): a reading earned at a turn-in, and a word read from the shelf
+function earnReading(){if(WORDS.every(w=>knownWords[w.id]))return false;const R=registerOf();R.readings=(R.readings||0)+1;return true;}
+function readWord(id,rankIdx){const w=WORD_BY[id];if(!w||knownWords[id])return 'noop';if(readingsHeld()<1)return 'none';
+  if(!shelfWords(rankIdx!=null?rankIdx:mageRank()).includes(id))return 'shelf';if(ATTRS.intelligence<w.intReqs[0])return 'int';
+  registerOf().readings--;advanceClock(READ_MIN);return learnSpell(id,1);}
 function formHeld(f,rankIdx){const F=FORMS[f];if(!F)return false;return F.rank<=(rankIdx!=null?rankIdx:mageRank())||formsGranted.includes(f);}
 function formsHeld(rankIdx){return FORM_ORDER.filter(f=>formHeld(f,rankIdx));}
 // the named action (co-op rules): a word you hold deepened, by the tutor or a book, to Comprehension at most
@@ -921,6 +939,11 @@ function spellShopTopics(rankIdx){
     out.push({label:`Study ${w.nameIr} with the tutor (two hours)`,quest:true,fn:()=>{const r=deepenWord(id,'tutor');
       if(r==='int')return `You'd not hold it yet. Intelligence ${w.intReqs[1]}, then come back.`;
       return r==='noop'?'There is nothing more the tutor can give you there.':`${w.nameIr}, ${w.nameEn}. Say it slowly the first few times.`;}});}
+  {const n=readingsHeld(),ids=shelfWords(rankIdx); /* S1629 — the readings */
+    out.push({label:'Read from the shelves',folder:true,response:!n?'You have no reading owed. Each task for the hall earns one.':!ids.length?'There is nothing on your shelves you do not hold.':`${n} reading${n===1?'':'s'} owed. Four hours with the copy, and the word is yours, faintly.`,
+      follow:n?ids.map(id=>{const w=WORD_BY[id];return {label:`${w.nameIr}, ${w.nameEn} (four hours)`,quest:true,fn:()=>{const r=readWord(id,rankIdx);
+        if(r==='int')return `You can't hold it yet. Intelligence ${w.intReqs[0]}.`;
+        return r==='learned'?`${w.nameIr}, ${w.nameEn}. It is a copy, and it will want the stone.`:'Not now.';}};}):[]});}
   return out;
 }
 
