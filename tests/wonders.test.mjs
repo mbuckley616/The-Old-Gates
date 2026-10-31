@@ -47,6 +47,8 @@ const o = await page.evaluate(() => { const a = wonderOrrerySite(); WONDERS.orre
 console.log(JSON.stringify(o));
 check(`the Broken Orrery's place is on Aurenne's coast, ${o.h} m over the sea with it on ${o.seaN} of 16 headings, the same asked twice (${o.ms} ms)`, o.nation === 'aurenne' && o.h >= 8 && o.seaN >= 3 && o.same && o.seaAhead, o);
 check(`its ground falls ${o.fall} m round it, and it stands ${o.near} m past the nearest site's pad`, o.fall <= 10 && o.near >= 200, o);
+// Session 1643 (the critic, 31 Oct): a headland, not a brow cut into a slope; no ground within 100 m stands more than 3 m over it
+check(`nothing within 100 m stands more than 3 m over it (${o.above} m): a headland, not a brow under a hill`, o.above <= 3, o);
 const oat = await page.evaluate((o) => { const [x, z] = wonderToWorld(o, 4, 60); return { x, z }; }, o);
 await page.evaluate(({ x, z }) => goToZone('world', x, z, 0, 'x'), oat);
 await page.waitForFunction(([x, z]) => document.getElementById('fd').style.opacity === '0' && activeZoneId === 'world' && Math.hypot(px - x, pz - z) < 50, [oat.x, oat.z], { timeout: 60000 });

@@ -2320,6 +2320,9 @@
   // is a brow 41.9 m up, 115 m from the water. The rings face the sea: the wonder's -z is the heading to the nearest water.
   // Its platform stands on a stamp that levels the ground 30 m round (one stamp, unlike the Fields' clearing ones); its steps are three
   // round platforms you walk up, its sixteen columns and the pier are solids.
+  // Session 1643 (the critic, 31 Oct): S1634's brow stood 6–8 m under the land behind it, cut into the seaward slope, and the nearest
+  // town 250 m inland could not see it. The score now loses WONDER_ABOVE_K for each metre of ground within 100 m that stands over it.
+  const WONDER_ABOVE_K=1.5;
   function wonderOrrerySite(){const S=WONDERS.orrery;if(S.site!==undefined)return S.site;S.site=null;
     if(typeof nationKeyOf!=='function')return null;landmassOf(0,0);for(let j=0;j<GRID;j++)for(let i=0;i<GRID;i++)getCell(i,j);
     const all=[...CELLS.values()],au=all.filter(c=>c.type!=='sea'&&nationKeyOf(c.i,c.j)==='aurenne');if(!au.length)return null;
@@ -2340,8 +2343,9 @@
       if(hi-lo>10)continue;
       let seaN=0,dmin=1e9,hd=0;for(let k=0;k<16;k++){const t=k*Math.PI/8;for(let d=40;d<=160;d+=40)if(sea(x+Math.sin(t)*d,z+Math.cos(t)*d)){seaN++;if(d<dmin){dmin=d;hd=t;}break;}}
       if(!seaN)continue;
-      const score=Math.min(h,40)+seaN*1.5-(hi-lo)-dmin/15;if(best&&score<=best.score)continue;
-      best={x,z,hd,h:+h.toFixed(1),fall:+(hi-lo).toFixed(1),seaN,dmin,score:+score.toFixed(1),cell:cellKey(c.i,c.j)};}}
+      let above=0;for(let k=0;k<16;k++){const t=k*Math.PI/8;for(const d of [45,70,100])above=Math.max(above,rawH(x+Math.sin(t)*d,z+Math.cos(t)*d)-r0);} /* the land behind it (Session 1643): a brow under a hill is not a headland */
+      const score=Math.min(h,40)+seaN*1.5-(hi-lo)-dmin/15-above*WONDER_ABOVE_K;if(best&&score<=best.score)continue;
+      best={x,z,hd,h:+h.toFixed(1),fall:+(hi-lo).toFixed(1),seaN,dmin,above:+above.toFixed(1),score:+score.toFixed(1),cell:cellKey(c.i,c.j)};}}
     if(best){let dm=1e9;for(let k=0;k<64;k++){const t=k*Math.PI/32;for(let d=20;d<=200;d+=5)if(sea(best.x+Math.sin(t)*d,best.z+Math.cos(t)*d)){if(d<dm){dm=d;best.hd=t;}break;}} /* the heading to the water, finer */
       best.dmin=dm;best.ry=best.hd+Math.PI;best.y=+rawH(best.x,best.z).toFixed(2);delete best.hd;}
     }finally{REGIONS.length=0;PEAKS.length=0;INLETS.length=0;keep[0].forEach(q=>REGIONS.push(q));keep[1].forEach(q=>PEAKS.push(q));keep[2].forEach(q=>INLETS.push(q));}
