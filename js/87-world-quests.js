@@ -2082,8 +2082,56 @@ const giver=`${lord.title} ${lord.name}`;
     const ps=PPOST.stagUntil>performance.now()/1000;if(ps&&!DUEL.pstag){duelBark("Rowe's got you, {nick}.");DUEL.bark=Math.max(DUEL.bark,3);}DUEL.pstag=ps;
     DUEL.bark-=dt;if(DUEL.bark<=0){DUEL.bark=6+Math.random()*3;let line;do{line=DUEL_BARKS[Math.floor(Math.random()*DUEL_BARKS.length)];}while(line===DUEL.last);DUEL.last=line;duelBark(line);}
   }
-  // the kill path and the fall ask the bout (S1637): WORLD.duelKill and WORLD.duelDown keep their names for 42 and 68
-  function duelKill(e){return boutKill(e);}
+  // the kill path and the fall ask the bout (S1637): WORLD.duelKill and WORLD.duelDown keep their names for 42 and 68; a sparring
+  // trainer never falls (S1638)
+  function duelKill(e){if(e&&e._spar){e.hp=e.maxHp;e.dead=false;return true;}return boutKill(e);}
+  // S1638 — arenas-build.md session 1, the yard's spar (Michael's B on #914). First to SPAR_HITS clean hits, both sides with a yard
+  // staff; your weapon and shield go into your pack for it (the rack holds them) and come back after. A staff takes posture only, on
+  // both sides: no health is lost. A clean hit is a blow that lands unblocked and unparried; a posture break counts as one (one, not
+  // two). The trainer is a humanoid at the town's tier (worldTierAt), so a tier-3 town's trainer feints and swings heavy. The calls are
+  // the one place the game names its timing, read on the play clock: a parry inside parryWindowS() is *Good.*; a guard raised up to
+  // SPAR_BAND (0.15 s, the co-op floor) before the window is *Early.*; raised up to SPAR_BAND after a blow landed, *Late.*; a roll
+  // through a blow, *Good roll.* Skill use in the spar is half weight (SKILL_W_MULT). It pays nothing. It ends at three, when you walk
+  // SPAR_LEAVE m from the ring, or at the yard's close (18h). The yard and its rack are the look builder's (the sheet's session 2):
+  // sparStart is what the rack calls. The trainer's name is a placeholder for the quest writer. Named actions: sparStart, sparEnd.
+  const SPAR_HITS=3,SPAR_BAND=.15,SPAR_SKILL=.5,SPAR_R=5,SPAR_LEAVE=8,SPAR_OPEN=8,SPAR_CLOSE=18;
+  let SPAR=null; /* {foe,x,z,site,you,them,held:{weapon,offhand},hitAt,call,end} */
+  function sparOpen(){const h=hourNow();return h>=SPAR_OPEN&&h<SPAR_CLOSE;}
+  function sparStaff(){const t=STARTER_WEAPONS.staff,o=Object.assign({},t,{name:'Yard Staff',yard:true,buyPrice:0,sellMult:0,desc:'The yard’s staff. It goes back on the rack.'});delete o.spellPower;return o;}
+  function sparKitRefresh(){if(typeof invalidateArmorCache==='function')invalidateArmorCache();try{if(typeof buildViewmodel==='function')buildViewmodel();if(typeof buildShieldViewmodel==='function')buildShieldViewmodel();}catch(err){}}
+  function sparStart(o){o=o||{};if(SPAR||BOUT)return {say:'You are already in the ring.'};if(!o.force&&!sparOpen())return {say:'The yard is shut until morning.'};
+    const x=o.x,z=o.z,tier=o.tier!=null?o.tier:worldTierAt(x,z);
+    const e=keyFoe(unlockFoe(buildZoneEnemy(sc,STATIC_SOL,x,z,o.kind||'Bandit',null,{tier})),'yard:'+(o.site||'yard')+':'+dayNow());
+    e.name=e.displayName=o.name||'The trainer';e._spar=true;e._duel=true;e._questTag='yard';e.homeX=x;e.homeZ=z;e.alert=true;
+    if(e.mesh&&!e.mesh.parent)sc.add(e.mesh);ZONES.world.enemies.push(e);
+    const held={weapon:null,offhand:null};
+    for(const k of ['weapon','offhand']){const it=EQ[k];if(!it||it.yard)continue;bagAdd(eqBagCopy(it,k));held[k]=BAG[BAG.length-1];EQ[k]=null;}
+    EQ.weapon=sparStaff();if(typeof SHEATHED!=='undefined'&&SHEATHED)drawWeapon();sparKitRefresh();
+    SPAR={foe:e,x,z,site:o.site||null,tier,force:!!o.force,you:0,them:0,held,hitAt:-1e9,call:null,end:null};SKILL_W_MULT=SPAR_SKILL;
+    showMsg('You take a staff from the rack. First to three clean hits.','#e8d8a0');return {ok:true,tier};}
+  function sparEnd(how){const S=SPAR;if(!S)return null;SPAR=null;SKILL_W_MULT=1;
+    const e=S.foe;if(e){if(e.mesh&&e.mesh.parent)e.mesh.parent.remove(e.mesh);const i=ZONES.world.enemies.indexOf(e);if(i>=0)ZONES.world.enemies.splice(i,1);
+      const k=staggered.findIndex(q=>q.e===e);if(k>=0)staggered.splice(k,1);}
+    if(EQ.weapon&&EQ.weapon.yard)EQ.weapon=null;
+    for(const k of ['weapon','offhand']){const it=S.held[k],i=it?BAG.indexOf(it):-1;if(i<0||EQ[k])continue;BAG.splice(i,1);EQ[k]=it;}
+    sparKitRefresh();S.end=how;
+    showMsg(how==='won'?`Three clean. ${S.foe.name} nods: you have it.`:how==='lost'?`Three clean on you. ${S.foe.name} racks the staff.`:'You leave the yard. The staff goes back on the rack.','#e8d8a0');
+    return S;}
+  function sparCall(t){if(!SPAR)return;SPAR.call=t;showMsg(t,'#e8d8a0');}
+  // a clean hit landed: by you on the trainer ('you') or by the trainer on you ('them')
+  function sparPoint(side){const S=SPAR;if(!S)return;S[side]++;if(S.you>=SPAR_HITS)sparEnd('won');else if(S.them>=SPAR_HITS)sparEnd('lost');}
+  // the trainer's blow, as executeStrike resolved it: 'roll', 'parry', 'block' (posture broken or not) or 'hit'. No health is lost.
+  function sparBlow(e,kind,broke){const S=SPAR;if(!S||S.foe!==e)return false;
+    if(kind==='roll')sparCall('Good roll.');
+    else if(kind==='parry')sparCall('Good.');
+    else if(kind==='block'){const age=playClockS-lastBlockAttemptG,win=parryWindowS();if(age>=win&&age<=win+SPAR_BAND)sparCall('Early.');if(broke)sparPoint('them');}
+    else{S.hitAt=playClockS;sparPoint('them');}
+    return true;}
+  // a guard raised just after the trainer's blow landed
+  function sparGuard(){const S=SPAR;if(S&&playClockS-S.hitAt<=SPAR_BAND){S.hitAt=-1e9;sparCall('Late.');}}
+  function tickSpar(){if(!SPAR){if(EQ.weapon&&EQ.weapon.yard){EQ.weapon=null;sparKitRefresh();}return;}const S=SPAR,e=S.foe;
+    if(!e||e.dead){sparEnd('left');return;}e.hp=e.maxHp;e.alert=true;
+    if(Math.hypot(px-S.x,pz-S.z)>SPAR_LEAVE||!sparOpen()&&!S.force)sparEnd('left');}
   // S1112 — the night watch on the Spire of Caer Slige (the approved draft *The Spire Held*, docs/quest_drafts.md, Michael 14 Oct;
   // backlog A). The quest is the League's, outside the nine services: spireGive(seat) gives it (the writer's *The spire?* topic
   // calls it). With it in 'wait', the first time you stand on the spire's roof between 20h and 1h the watch begins. Three waves of
