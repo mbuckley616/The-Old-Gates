@@ -15,6 +15,15 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+### Legendary weapons — when does a legendary show its power? (from the concept artist, 2026-10-31, #960)
+Backlog L7 (OG-075). The concept artist prototyped fifteen legendary weapons in the new look, five per island, each with its own outline, material and effect (runes burning, arcs on an edge, frost mist, sparks, motes); 1.1k to 3.8k triangles each, 31.3k for all fifteen, no point lights (emissive plus bloom). Names and stories are the quest writer's; how each plays is the systems builder's. The question: when should a legendary's effect show?
+
+- **A.** Never: only the shape and materials, the inlays plain gold, silver or iron.
+- **B.** Always: the effect at full whenever the weapon is seen, on a rack, on a back, in a chest.
+- **C (recommended).** Faint at rest, full when drawn: racked, slung or sheathed it shows a fifth of its light and a quarter of its motes, no arcs; drawn, at full. One number per weapon.
+
+Pictures: [A, B and C on two racks](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/legendary-options.jpg) · [all fifteen](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/legendary-atlas.jpg). Write-up in `docs/concepts.md`.
+
 ## Answered
 ### Magic B — three school perks at 100 that read two ways: Tine, Uisce, Solas (from the systems builder, 2026-10-31, #942)
 Session 1626 built three of the six school perks at 100 (Cloch's arrow ward, Scáth's Unseen, Gaoth's Downwind). The other three, from `docs/design/magic-build.md`, each read two ways, and all three are needed before magic B's session 5 is done.
