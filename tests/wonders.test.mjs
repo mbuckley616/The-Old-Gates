@@ -2,7 +2,7 @@
 // Its place is the seed's (a snowy field in the Mark, clear of every site, door and road), the same when asked again; it stands within
 // 1.6 km in 11 draws, its stones hung over their pits with the scatter cleared under them, its two broken walls solid where they stand;
 // from 20h to 5h it wakes (the stones drift, the seams burn), by day it is dead stone; and it goes when you leave. Session 1634: the
-// same for Aurenne's Broken Orrery on its headland.
+// same for Aurenne's Broken Orrery on its headland. Session 1666: the Gatelands' Drowned Ring in its lough.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
@@ -91,5 +91,35 @@ console.log(JSON.stringify(on));
 check(`at 22h it wakes: the script burns (${on.script.toFixed(2)}), the sun (${on.sun.toFixed(2)}), the outer ring turns (${on.turned} rad in 20 s)`, on.awake && on.script > .9 && on.sun > 1.5 && on.turned > .5, on);
 const od = await page.evaluate(() => { const S = WONDERS.orrery; px = S.site.x + 2500; pz = S.site.z; WONDERS._t = 0; tickWonders(); return { gone: !S.W, sol: STATIC_SOL.filter(q => q.cell === 'wonder:orrery').length, plats: ZONES.world.platforms.filter(p => p.wonder === 'orrery').length }; });
 check('2.5 km off it is dropped, its solids and steps with it', od.gone && od.sol === 0 && od.plats === 0, od);
+// Session 1666: the Gatelands' Drowned Ring in a routed lake. The place is the seed's (a lake of the Gatelands whose heart is open water,
+// clear of every site, door and road); a stamp sinks its bed to 9 m under the ring; the seven standing piers are solid, the heart open;
+// the boardwalk from the nearest shore is a deck you walk; the script and the sigil burn from 20h to 5h; it goes when you leave.
+const l = await page.evaluate(() => { const a = wonderLoughSite(); WONDERS.lough.site = undefined; const t0 = performance.now(), b = wonderLoughSite(), ms = Math.round(performance.now() - t0);
+  if (!b) return { none: true }; const sites = [...CELLS.values()].flatMap(c => c.sites), near = sites.reduce((m, t) => Math.min(m, Math.hypot(t.x - b.x, t.z - b.z) - (t.pad || 0)), 1e9);
+  const [i, j] = cellOf(b.x, b.z), lk = RV.lakes.find(q => q.id === b.lake); return { ...b, ms, same: JSON.stringify(a) === JSON.stringify(b), nation: nationKeyOf(i, j), near: Math.round(near), routed: !!(lk && lk.routed), heart: +rawH(b.x, b.z).toFixed(2) }; });
+console.log(JSON.stringify(l));
+check(`the Drowned Ring's lough is ${l.name}, a routed lake of the Gatelands about ${l.r * 2} m across, the same asked twice (${l.ms} ms)`, !l.none && l.nation === 'gatelands' && l.routed && l.same && l.heart < -3, l);
+check(`it stands ${l.near} m past the nearest site's pad, its boardwalk ${l.shore} m from the heart to the shore`, l.near >= 150 && l.shore <= 320, l);
+const lat = await page.evaluate((s) => { const [x, z] = wonderToWorld(s, 0, s.shore + 10); return { x, z }; }, l);
+await page.evaluate(({ x, z }) => goToZone('world', x, z, 0, 'x'), lat);
+await page.waitForFunction(([x, z]) => document.getElementById('fd').style.opacity === '0' && activeZoneId === 'world' && Math.hypot(px - x, pz - z) < 50, [lat.x, lat.z], { timeout: 60000 });
+await g.cells(); await g.hide();
+const lw = await page.evaluate(() => { forceTime(13); WONDERS._t = 0; tickWonders(); const S = WONDERS.lough, W = S.W, st = S.site; if (!W) return { none: true };
+  let meshes = 0; W.group.traverse(o => { if (o.isMesh) meshes++; });
+  const p0 = W.piers.find(p => !p.fallen), [qx, qz] = wonderToWorld(st, p0.x, p0.z), mid = (W.walk.z0 + W.walk.z1) / 2, [wx, wz] = wonderToWorld(st, 0, mid), [ox, oz] = wonderToWorld(st, 4, mid);
+  const glow = W.group.getObjectByName('script'), sigil = W.group.getObjectByName('sigil');
+  return { tris: W.tris, draws: W.draws, meshes, size: W.size, standing: W.piers.filter(p => !p.fallen).length, bed: +meshH(st.x, st.z).toFixed(2), sol: S.sol.length, pier: solidAt(qx, qz), heartOpen: !solidAt(st.x, st.z),
+    deck: +activeTerrainH(wx, wz).toFixed(2), beside: +activeTerrainH(ox, oz).toFixed(2), walkY: W.walk.y, dead: glow.material !== glow.userData.on, sigilOff: !sigil.visible, inScene: W.group.parent === sc }; });
+console.log(JSON.stringify(lw));
+check(`within 1.6 km it stands: ${lw.standing} piers ${lw.size && lw.size.high} m over the water and one fallen, ${lw.tris} triangles in ${lw.draws} draws`, !lw.none && lw.inScene && lw.standing === 7 && lw.draws === lw.meshes && lw.draws <= 11 && lw.tris < 20000, lw);
+check(`its bed lies ${lw.bed} m under the heart (a 9 m lough), the dais's top 2.4 m under the water`, lw.bed <= -8.5 && lw.size.under === 2.4, lw);
+check(`its ${lw.sol} solids: a standing pier is solid, the heart open`, lw.sol === 7 && lw.pier && lw.heartOpen, lw);
+check(`the boardwalk is a deck at ${lw.deck} m over the water, the lough 4 m beside it ${lw.beside} m`, Math.abs(lw.deck - lw.walkY) < .01 && lw.beside < 0, lw);
+check('at 13h it sleeps: the script is dead stone, the sigil only the dais', lw.dead && lw.sigilOff, lw);
+const ln = await page.evaluate(() => { const W = WONDERS.lough.W; forceTime(22); tickWonders(); W.tick(performance.now() / 1000, wonderAwake()); const glow = W.group.getObjectByName('script'), sigil = W.group.getObjectByName('sigil');
+  return { awake: wonderAwake(), lit: glow.material === glow.userData.on && glow.material.emissiveIntensity > .5, sigil: sigil.visible && sigil.material.emissiveIntensity > 1, blue: +sigil.material.emissive.g.toFixed(2) }; });
+check(`at 22h it wakes: the script and the sigil under the water burn Uisce's blue (green ${ln.blue})`, ln.awake && ln.lit && ln.sigil && ln.blue > .8, ln);
+const ld = await page.evaluate(() => { const S = WONDERS.lough; px = S.site.x + 2500; pz = S.site.z; WONDERS._t = 0; tickWonders(); return { gone: !S.W, sol: STATIC_SOL.filter(q => q.cell === 'wonder:lough').length, plats: ZONES.world.platforms.filter(p => p.wonder === 'lough').length }; });
+check('2.5 km off it is dropped, its solids and its boardwalk with it', ld.gone && ld.sol === 0 && ld.plats === 0, ld);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
