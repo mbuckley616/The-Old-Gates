@@ -2116,6 +2116,7 @@ function interact(){
       }
     }
     if(typeof ringCairnNear==='function'&&ringCairnNear()){ringCairnUse();return;} /* S800 — the Noon Ring's cairn */
+    if(typeof yardRackNear==='function'&&yardRackNear()){yardRackUse();return;} /* S1657 — a Markish yard's staff rack (the spar) */
     if(typeof bellWreckNear==='function'&&bellWreckNear()){bellWreckUse();return;} /* S801 — the Drowned Bell's wreck */
     if(typeof flagstonePrompt==='function'&&flagstonePrompt()){flagstoneUse();return;} /* S1353 — the Ashfeld's flagstone */
     if(typeof spireStonePrompt==='function'&&spireStonePrompt()){spireStoneUse();return;} /* S1387 — the spire's stone */
