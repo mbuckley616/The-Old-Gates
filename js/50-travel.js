@@ -2024,8 +2024,8 @@ function checkZoneRespawn(zoneId){
 // S624 — the fort cot E reaches: within 1.3, and nearer you than the way out (the cot stands one cell from the door, and the door's cell said *leave* while E opened the cot).
 function fortCotNear(){
   if(typeof D_BEDS==='undefined')return null;
-  const bd=D_BEDS.find(b=>b.floor===currentFloor&&Math.hypot(px-b.x,pz-b.z)<1.3);if(!bd)return null;
-  if(currentFloor===1){const de=Math.hypot(px-dAt(dEntranceX),pz-dAt(dEntranceZ));if(de<1.4&&de<=Math.hypot(px-bd.x,pz-bd.z))return null;}
+  const bd=D_BEDS.find(b=>b.floor===currentFloor&&Math.hypot(px-b.x,pz-b.z)<TOUCH);if(!bd)return null;
+  if(currentFloor===1){const de=Math.hypot(px-dAt(dEntranceX),pz-dAt(dEntranceZ));if(de<TOUCH&&de<=Math.hypot(px-bd.x,pz-bd.z))return null;}
   return bd;
 }
 // S798 — the room's keeper or resident answers E wherever the prompt says so (within 3.2 with the crosshair on them, 90-main.js's
@@ -2286,7 +2286,7 @@ function interact(){
   if(typeof shuttleNear==='function'&&shuttleNear()){shuttleTake();return;} /* S797 — the Shuttle, in its gate's deepest room */
   if(typeof cloakDenNear==='function'&&cloakDenNear()){cloakDenTake();return;} /* S992 — the cloak, from under its sleeping master */
   // Sigil touch — floor 2 only, closer range than most interactables
-  const nearSig=SIGILS.find(s=>s.floor===currentFloor && Math.hypot(px-s.x,pz-s.z)<1.5);
+  const nearSig=SIGILS.find(s=>s.floor===currentFloor && Math.hypot(px-s.x,pz-s.z)<TOUCH); /* S1668 — F2b's touch, 1.6 m, for every E in a dungeon (was 1.1 to 1.5 by thing) */
   if(nearSig){touchSigil(nearSig);return;}
   // corpse loot — opens panel. .looted remains for the 60s age-out despawn, independent of item state.
   const nearCorpse=CORPSES.find(c=>!c.looted&&c.items&&c.items.length&&lookingAt(c)); // v80 — look-at
@@ -2298,7 +2298,7 @@ function interact(){
   // of the disguised entity. revealMimic flips e.disguised = false,
   // shows teeth/eyes, plays the cry, and starts the burst telegraph.
   // The actual burst hit lands when the telegraph resolves — block-able.
-  const mim=ENEMIES.find(en=>!en.dead&&en.disguised&&en.floor===currentFloor&&Math.hypot(px-en.x,pz-en.z)<1.1);
+  const mim=ENEMIES.find(en=>!en.dead&&en.disguised&&en.floor===currentFloor&&Math.hypot(px-en.x,pz-en.z)<TOUCH);
   if(mim){ revealMimic(mim); return; }
   // chest — opens panel. Finds any chest on this floor in range whose items aren't exhausted OR hasn't been opened yet
   // (empty-on-spawn chests still show panel once so the "oh, empty" reveal happens).
@@ -2311,9 +2311,9 @@ function interact(){
   const br=BARRELS.find(b=>b.floor===currentFloor&&lookingAt(b,2.6)&&(!b.opened||b.items.length>0)); // v80 — look-at
   if(br){ openLoot(br); return; }
   // exit via entrance cell (floor 1 only)
-  if(currentFloor===1&&Math.hypot(px-dAt(dEntranceX),pz-dAt(dEntranceZ))<1.4){goToOW();return;}
+  if(currentFloor===1&&Math.hypot(px-dAt(dEntranceX),pz-dAt(dEntranceZ))<TOUCH){goToOW();return;}
   // staircase interaction
-  if(dStairC!==null&&!DUNGEON_STAIRWELL&&Math.hypot(px-dAt(dStairC),pz-dAt(dStairR))<1.3){ // v80 S8 — legacy teleport only without a stairwell
+  if(dStairC!==null&&!DUNGEON_STAIRWELL&&Math.hypot(px-dAt(dStairC),pz-dAt(dStairR))<TOUCH){ // v80 S8 — legacy teleport only without a stairwell
     if(currentFloor===1&&dMap2)goToFloor2();
     else if(currentFloor===2)goToFloor1();
     return;
@@ -2323,7 +2323,7 @@ function interact(){
   //   - Unlocked doors (forts + cave corridors): toggle open/close on E. Closing
   //     refused if an enemy or the player stands in the door cell. Mesh kept in
   //     scene; visibility toggled. Plays sndDoorOpen / sndDoorClose.
-  const nearDoorObj=DOORS.find(d=>d.floor===currentFloor&&Math.hypot(px-d.x,pz-d.z)<1.4);
+  const nearDoorObj=DOORS.find(d=>d.floor===currentFloor&&Math.hypot(px-d.x,pz-d.z)<TOUCH);
   if(nearDoorObj){
     if(nearDoorObj.locked){
       // Locked door — existing key-check behavior, preserved verbatim for caves.

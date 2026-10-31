@@ -1369,7 +1369,7 @@ const giver=`${lord.title} ${lord.name}`;
     const l=new THREE.PointLight(0xdfe8ff,.55,2.6);l.position.set(0,.4,0);g.add(l);
     g.position.set(sp.x,(fl===2?FLOOR2_Y:0)+.05,sp.z);}g.rotation.y=(portal.seed%628)/100;dScene.add(g);
     SHUTTLE_LIE={x:sp.x,z:sp.z,floor:fl,mesh:g,seed:portal.seed,name:P.name,walk:sp.d};return SHUTTLE_LIE;}catch(e){console.warn('shuttleLay',e);return null;}}
-  function shuttleNear(){const L=SHUTTLE_LIE;return !!(L&&L.mesh&&activeZoneId==='dungeon'&&currentFloor===L.floor&&Math.hypot(px-L.x,pz-L.z)<1.4);}
+  function shuttleNear(){const L=SHUTTLE_LIE;return !!(L&&L.mesh&&activeZoneId==='dungeon'&&currentFloor===L.floor&&Math.hypot(px-L.x,pz-L.z)<TOUCH);}
   // the first sight of it, once (called from the dungeon's frame)
   function shuttleTick(){const L=SHUTTLE_LIE;if(!L||!L.mesh||activeZoneId!=='dungeon'||currentFloor!==L.floor)return false;const st=worldState.stats||(worldState.stats={});
     if(st.shuttleSeen||Math.hypot(px-L.x,pz-L.z)>4)return false;st.shuttleSeen=1;showMsg(SHUTTLE_SAY.seen,'#c8d0e0');return true;}
@@ -1821,7 +1821,7 @@ const giver=`${lord.title} ${lord.name}`;
       const L=CLOAK_DEN,rec=L&&(worldState.masters||{})[L.seed];if(rec&&typeof rec==='object')rec.woke=true;return false;}
     e.alert=false;if(e.mesh)e.mesh.position.set(e.x,e.baseY,e.z);if(e.el)e.el.position.set(e.x,.8,e.z);return true;}
   function cloakHandsStill(){return !(swingT>0||_bowDrawing||powerCharging||powerSwingDelayT>0);}
-  function cloakDenNear(){const L=CLOAK_DEN;return !!(L&&L.mesh&&L.e&&!L.e.dead&&L.e.cloakSleep&&activeZoneId==='dungeon'&&currentFloor===L.floor&&Math.hypot(px-L.hx,pz-L.hz)<1.5&&cloakHandsStill());}
+  function cloakDenNear(){const L=CLOAK_DEN;return !!(L&&L.mesh&&L.e&&!L.e.dead&&L.e.cloakSleep&&activeZoneId==='dungeon'&&currentFloor===L.floor&&Math.hypot(px-L.hx,pz-L.hz)<TOUCH&&cloakHandsStill());}
   // the first sight of it, once (called from the dungeon's frame)
   function cloakDenTick(){const L=CLOAK_DEN;if(L&&L.mesh&&L.e&&L.e.dead){if(L.mesh.parent)L.mesh.parent.remove(L.mesh);L.mesh=null;return false;} /* killed asleep: the cloak goes to the hoard (S781) */
     if(!L||!L.mesh||!L.e||L.e.dead||!L.e.cloakSleep||activeZoneId!=='dungeon'||currentFloor!==L.floor)return false;const st=worldState.stats||(worldState.stats={});

@@ -1546,7 +1546,7 @@ function loop(now){
     if(typeof knotTick==='function')knotTick(); /* S1346 — a great gate's ring, seen the first time */
     if(typeof shuttleTick==='function')shuttleTick(); /* S797 — the Shuttle's room, seen the first time */
     if(typeof cloakDenTick==='function')cloakDenTick(); /* S992 — the cloak's den, seen the first time */
-    const nearSigilPrompt=SIGILS.find(s=>s.floor===currentFloor&&Math.hypot(px-s.x,pz-s.z)<1.5);
+    const nearSigilPrompt=SIGILS.find(s=>s.floor===currentFloor&&Math.hypot(px-s.x,pz-s.z)<TOUCH); /* S1668 — the prompt asks what E asks: TOUCH */
     // interact prompt
     const nearCorpsePrompt=CORPSES.find(c=>c.items&&c.items.length>0&&lookingAt(c)); // v80 — look-at
     const nearChest=CHESTS.find(ch=>ch._near&&ch.floor===currentFloor);
@@ -1555,13 +1555,13 @@ function loop(now){
     // affordances now have to live with the fact that some of them aren't.
     // Detected separately from nearChest so the prompt fallthrough can
     // give it a unique label only if we ever want one (currently doesn't —
-    // a tell would defeat the bait). Same 1.1u radius as the chest find.
-    const nearMimic=ENEMIES.find(en=>!en.dead&&en.disguised&&en.floor===currentFloor&&Math.hypot(px-en.x,pz-en.z)<1.1);
+    // a tell would defeat the bait). TOUCH, as interact() asks (S1668).
+    const nearMimic=ENEMIES.find(en=>!en.dead&&en.disguised&&en.floor===currentFloor&&Math.hypot(px-en.x,pz-en.z)<TOUCH);
     const nearBarrelPrompt=BARRELS.find(b=>b.floor===currentFloor&&lookingAt(b,2.6)&&(!b.opened||b.items.length>0)); // v80 — look-at
     const nearCot=fortCotNear(); // S624 — the cot's prompt, when it is nearer than the way out
-    const nearEntrance=!nearCot&&currentFloor===1&&Math.hypot(px-dAt(dEntranceX),pz-dAt(dEntranceZ))<1.4;
-    const nearStair=dStairC!==null&&Math.hypot(px-dAt(dStairC),pz-dAt(dStairR))<1.3;
-    const nearDoorObj2=DOORS.find(d=>d.floor===currentFloor&&Math.hypot(px-d.x,pz-d.z)<1.4);
+    const nearEntrance=!nearCot&&currentFloor===1&&Math.hypot(px-dAt(dEntranceX),pz-dAt(dEntranceZ))<TOUCH;
+    const nearStair=dStairC!==null&&Math.hypot(px-dAt(dStairC),pz-dAt(dStairR))<TOUCH;
+    const nearDoorObj2=DOORS.find(d=>d.floor===currentFloor&&Math.hypot(px-d.x,pz-d.z)<TOUCH);
     const iprEl=document.getElementById('ipr');
     if(nearEntrance){iprEl.textContent="Press 'E' to leave dungeon";iprEl.style.opacity='1';iprEl.style.display='block';}
     else if(nearCot){iprEl.textContent="Press 'E' to rest";iprEl.style.opacity='1';iprEl.style.display='block';}
