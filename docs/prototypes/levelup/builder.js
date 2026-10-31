@@ -85,7 +85,7 @@ function frame() {
   scene.updateMatrixWorld(true);
   const h = new THREE.Vector3(); person.byName['head'].getWorldPosition(h);
   cam.clearViewOffset(); if (view === 'face') { cam.fov = 18; cam.position.set(h.x + .22, h.y + .1, h.z + 1.25 / zoom); cam.lookAt(h.x, h.y + .05, h.z); }
-  else if (view === 'head') { cam.fov = 22; cam.position.set(h.x + .5 / zoom, h.y + .2, h.z + .9 / zoom); cam.lookAt(h.x, h.y - .05 + (person.wrap?.turban ? .04 : 0), h.z); }
+  else if (view === 'head') { cam.fov = 22; cam.position.set(h.x + .5 / zoom, h.y + .2, h.z + .9 / zoom); cam.lookAt(h.x, h.y - .05 + (person.wrap?.turban ? .04 : 0) + +(Q.get('ly') || 0), h.z); }
   // the throat and the upper chest (Session 1003): what is worn at the neck's base, a necklace
   else if (view === 'neck') { cam.fov = 22; cam.position.set(h.x + .3 / zoom, h.y - .1, h.z + .95 / zoom); cam.lookAt(h.x, h.y - .2, h.z); }
   // the left hand and wrist (Session 1052): the Old Blood's marks, seen from outside the arm and a little in front
