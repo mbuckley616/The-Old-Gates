@@ -4270,7 +4270,7 @@ function skyfallAurora(r, base) {
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx);
   const mesh = new THREE.Mesh(g, mat); mesh.name = 'aurora'; mesh.frustumCulled = false; mesh.castShadow = mesh.receiveShadow = false; mesh.visible = false;
   return { mesh, mat, tris: idx.length / 3 }; }
-// The walls' seams (Session 1644; the critic, 31 Oct): the kit's violet (.62, .30, 1.0) is pale lilac on the prototype's page, which writes
+// The walls' seams (Session 1646; the critic, 31 Oct): the kit's violet (.62, .30, 1.0) is pale lilac on the prototype's page, which writes
 // sRGB, but the game runs with colour management off and a linear output (05-compat.js), so there the same numbers are a raw magenta, and
 // on the broad seats the lifted courses bare it read as blotches, not light through cracks. The Fields' walls take the colour the page
 // shows (the violet encoded, about .81, .58, 1.0) on a copy of the kit's material; the gates' own walls are F5's and keep theirs.
@@ -4307,7 +4307,7 @@ function markSkyfall(hAt, o = {}) {
   for (let s = 0; s < NS; s++) { const mine = stones.filter(t => t.shape === s); if (!mine.length) continue; const geo = wonderBoulder(s * 3.1), im = new THREE.InstancedMesh(geo, rock, mine.length);
     im.name = 'stones:' + s; im.castShadow = im.receiveShadow = true; im.userData.list = mine; group.add(im); shapes.push(im); tris += geo.attributes.position.count / 3 * mine.length; draws++; }
   const place = (t, awake, sec) => { pv.set(t.x, t.y + (awake ? Math.sin(sec * t.sp * 2 + t.ph) * (.4 + t.rad * .08) : 0), t.z); e.set(t.rot[0], t.rot[1] + (awake ? sec * t.sp * .2 : 0), t.rot[2]); q.setFromEuler(e); sv.setScalar(t.rad); return m4.compose(pv, q, sv); };
-  // the aurora over the Fields (Session 1645; OG-106, the critic of 31 Oct): places.js's auroraCurtains, three curtains 1.3 to 1.6 km
+  // the aurora over the Fields (Session 1647; OG-106, the critic of 31 Oct): places.js's auroraCurtains, three curtains 1.3 to 1.6 km
   // long, 90 to 290 m over the field, 340 to 760 m off on its -z side, merged into one mesh (one draw); seen only while the Fields wake
   const aurora = skyfallAurora(stream(key + ':aurora'), hAt(0, 0)); group.add(aurora.mesh); tris += aurora.tris; draws++;
   let was = null;

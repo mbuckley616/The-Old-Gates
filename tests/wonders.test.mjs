@@ -36,11 +36,11 @@ const n = await page.evaluate(() => { const W = WONDERS.skyfall.W, im = W.group.
   forceTime(4.5); out.dawn = wonderAwake(); forceTime(5.5); out.morning = wonderAwake(); return out; });
 console.log(JSON.stringify(n));
 check(`at 22h it wakes: the seams burn and the stones drift (${n.moved} m in three seconds); awake at 4:30, asleep at 5:30`, n.awake && n.lit && n.moved > 0 && n.dawn && !n.morning, n);
-// Session 1644 (the critic, 31 Oct): the walls' seams are the pale lilac the prototype's page shows, not the raw magenta of its numbers
+// Session 1646 (the critic, 31 Oct): the walls' seams are the pale lilac the prototype's page shows, not the raw magenta of its numbers
 // read through the game's linear output (green over .5, where the kit's violet is .30)
 const ws = await page.evaluate(() => { const m = WONDERS.skyfall.W.group.getObjectByName('w:seam'), e = m && m.userData.on && m.userData.on.emissive; return e ? { r: +e.r.toFixed(2), g: +e.g.toFixed(2), b: +e.b.toFixed(2) } : null; }).catch(() => null);
 check(`the walls' seams burn pale lilac (${ws && [ws.r, ws.g, ws.b].join(', ')}), not magenta`, ws && ws.g > .5 && ws.b > .9, ws);
-// Session 1645 (OG-106; the critic, 31 Oct): the aurora over the Fields, one mesh, seen only while they wake
+// Session 1647 (OG-106; the critic, 31 Oct): the aurora over the Fields, one mesh, seen only while they wake
 const au = await page.evaluate(() => { const W = WONDERS.skyfall.W, m = W && W.group.getObjectByName('aurora'); if (!m) return null; const s = performance.now() / 1000;
   W.tick(s, true); const night = m.visible; W.tick(s, false); const day = m.visible; W.tick(s, wonderAwake()); m.geometry.computeBoundingBox(); const bb = m.geometry.boundingBox;
   return { night, day, low: Math.round(bb.min.y - W.group.position.y), high: Math.round(bb.max.y), tris: m.geometry.index.count / 3 }; });
