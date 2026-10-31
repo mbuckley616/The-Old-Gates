@@ -423,3 +423,15 @@ Written by the producer once a day, after 12:00 UTC. Newest last.
 **Blocked.** Nothing.
 
 **Roadmap.** 288 of 350 stories done (283 yesterday). The new look is 6 of 17. No deep-work card is queued: F14 comes last.
+
+## 31 Oct 2026
+
+**Waiting on you.** Two decisions: magic B's three school perks at 100, Tine, Uisce and Solas (#942; recommended A, all three as the sheet reads), and what the arenas' "League standing ±1" moves (#945; recommended A, favour at Caer Slige). No PR waits for your tap: QA's harness fix (#921) is back with QA to renumber its devlog first.
+
+**Landed on main since 29 Oct.** The Broken Orrery stands on Aurenne's coast on a true headland, its script a bronze inlay by day and glyphs by night; the Skyfall Fields' seams burn lilac and the aurora shows from 20h to 5h (Look 1598, 1608–1609, 1614, 1634, 1642–1647). Magic B: Dorcha sent, Dul Thart worn, the readings, the hermits' old words and Súil's search (Systems 1601–1633). Bodies: tied hair's temple and ear line made clean, a slain slime slumps into a puddle and a fire elemental gutters out (1599–1641). Quests: Asked in Passing (1600) and Strange Places drafted. The arenas proposal and its build sheet. Answered: #914 B, #919 A, #926 B, #931 A. Build s1078.
+
+**Under way.** Systems' arenas, the bout to the title (1636–1648, #943); QA's budgets (#936); bodies (#946).
+
+**Blocked.** Nothing on main.
+
+**Roadmap.** 289 of 351 stories done (288 on 29 Oct): the ship's rail. The new look is 6 of 17. No deep-work card is queued: F14 comes last.
