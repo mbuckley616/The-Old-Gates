@@ -2271,7 +2271,7 @@
   // Stones are cosmetic; the place is the seed's.
   // When it stands (within 1.6 km, in the open world) every stone has a stamp that only clears the scatter under it (noFlat: the
   // ground is not flattened), the walls' standing courses are solids, and from 20h to 5h the stones drift and the seams burn.
-  const WONDERS={skyfall:{site:undefined,W:null,stamps:null,sol:[]},near:1600,_t:0};
+  const WONDERS={skyfall:{site:undefined,W:null,stamps:null,sol:[]},orrery:{site:undefined,W:null,stamps:null,sol:[],plats:[]},near:1600,_t:0};
   function wonderSkyfallSite(){const S=WONDERS.skyfall;if(S.site!==undefined)return S.site;S.site=null;
     if(typeof nationKeyOf!=='function')return null;landmassOf(0,0);for(let j=0;j<GRID;j++)for(let i=0;i<GRID;i++)getCell(i,j);
     const all=[...CELLS.values()],mark=all.filter(c=>c.type!=='sea'&&nationKeyOf(c.i,c.j)==='mark');if(!mark.length)return null;
@@ -2311,12 +2311,61 @@
     return W;}
   function wonderSkyfallDrop(){const S=WONDERS.skyfall;if(S.W){if(S.W.group.parent)S.W.group.parent.remove(S.W.group);S.W=null;}
     for(let i=STATIC_SOL.length-1;i>=0;i--)if(STATIC_SOL[i].cell==='wonder:skyfall')STATIC_SOL.splice(i,1);S.sol=[];}
-  // from WORLD.tick, every frame in the open world: built within 1.6 km (checked once a second), animated while it stands
-  function tickWonders(){if(typeof LAND==='undefined'||!LAND.on)return;const S=WONDERS.skyfall,t=performance.now();
-    if(S.W&&S.W.group.parent!==sc)wonderSkyfallDrop(); /* the world's scene was built again */
-    if(t-WONDERS._t>1000||!S.W&&WONDERS._t===0){WONDERS._t=t;if(S.site===undefined&&nationKeyOf(...cellOf(px,pz))!=='mark')return; /* the search (0.6 s on software GL) waits until you are on the Mark's land */
-      const st=wonderSkyfallSite();if(!st)return;const near=Math.hypot(px-st.x,pz-st.z)<WONDERS.near;
-      if(near&&S.W&&S.W.sig!==wonderCellSig(st))wonderSkyfallDrop(); /* a cell under it came or went: hang it over the ground as it is now */
-      if(near&&!S.W)wonderSkyfallBuild();else if(!near&&S.W)wonderSkyfallDrop();}
-    if(S.W)S.W.tick(t/1000,wonderAwake());}
+  // Aurenne's wonder, the Broken Orrery (Session 1634; the kit's PKIT.wonders.orrery, from wonders.js), on the new look only. Its place
+  // is one headland of Aurenne's coast, the same for every load of a seed: on a 50 m grid over Aurenne's land cells (getCell, all of
+  // them), a point at least 8 m over the sea and dry, kept 200 m clear of every site's pad and every door and 120 m of every road's line,
+  // whose ground 27 m round falls no more than 10 m, with the sea within 160 m. Its score is its height (counted to 40 m, the prototype's
+  // cliff) and the sea round it (of sixteen headings, how many reach the sea within 160 m: a headland, not a bay's shore), less its fall
+  // and its distance to the water. Most of Aurenne's shore is low and its high shores steep, so few points pass; on seed 1 the winner
+  // is a brow 41.9 m up, 115 m from the water. The rings face the sea: the wonder's -z is the heading to the nearest water.
+  // Its platform stands on a stamp that levels the ground 30 m round (one stamp, unlike the Fields' clearing ones); its steps are three
+  // round platforms you walk up, its sixteen columns and the pier are solids.
+  function wonderOrrerySite(){const S=WONDERS.orrery;if(S.site!==undefined)return S.site;S.site=null;
+    if(typeof nationKeyOf!=='function')return null;landmassOf(0,0);for(let j=0;j<GRID;j++)for(let i=0;i<GRID;i++)getCell(i,j);
+    const all=[...CELLS.values()],au=all.filter(c=>c.type!=='sea'&&nationKeyOf(c.i,c.j)==='aurenne');if(!au.length)return null;
+    const sites=all.flatMap(c=>c.sites),byId={};sites.forEach(t=>{byId[t.id]=t;});const doors=all.flatMap(c=>c.doors||[]).filter(d=>d.x!=null);
+    const roads=all.flatMap(c=>c.roadDefs||[]).map(d=>[byId[d.a],byId[d.b]]).filter(([a,b])=>a&&b);
+    const segD=(a,b,x,z)=>{const dx=b.x-a.x,dz=b.z-a.z,L=dx*dx+dz*dz||1,t=Math.max(0,Math.min(1,((x-a.x)*dx+(z-a.z)*dz)/L));return Math.hypot(a.x+dx*t-x,a.z+dz*t-z);};
+    const keep=[REGIONS.slice(),PEAKS.slice(),INLETS.slice()],ak=new Set(au.map(c=>c.i+','+c.j)),ring=all.filter(c=>{for(let dj=-1;dj<=1;dj++)for(let di=-1;di<=1;di++)if(ak.has((c.i+di)+','+(c.j+dj)))return true;return false;});
+    REGIONS.length=0;PEAKS.length=0;INLETS.length=0;ring.forEach(c=>{c.regions.forEach(q=>REGIONS.push(q));c.peaks.forEach(q=>PEAKS.push(q));(c.inlets||[]).forEach(q=>INLETS.push(q));});
+    const sea=(x,z)=>rawH(x,z)<SEA_Y-.5;let best=null;
+    try{
+    for(const c of au){const x0=c.i*SIZE-300,x1=(c.i+1)*SIZE+300,z0=c.j*SIZE-300,z1=(c.j+1)*SIZE+300,inB=(x,z)=>x>x0&&x<x1&&z>z0&&z<z1; /* only what is near this cell */
+      const cs=sites.filter(s=>inB(s.x,s.z)||(s.pad||0)>100),cd=doors.filter(d=>inB(d.x,d.z)),cr=roads.filter(([p,q])=>!(Math.max(p.x,q.x)<x0||Math.min(p.x,q.x)>x1||Math.max(p.z,q.z)<z0||Math.min(p.z,q.z)>z1));
+    for(let a=25;a<SIZE;a+=50)for(let b=25;b<SIZE;b+=50){const x=c.i*SIZE+a,z=c.j*SIZE+b,r0=rawH(x,z),h=r0-SEA_Y;if(h<8||r0<landH(x,z)-1.5)continue;
+      if(cs.some(s=>Math.hypot(s.x-x,s.z-z)<200+(s.pad||0))||cd.some(d=>Math.hypot(d.x-x,d.z-z)<200)||cr.some(([p,q])=>segD(p,q,x,z)<120))continue;
+      let near=false;for(let k=0;k<8&&!near;k++)for(const d of [80,160])if(sea(x+Math.sin(k*Math.PI/4)*d,z+Math.cos(k*Math.PI/4)*d)){near=true;break;} /* a coarse look for the sea first: most of the land is far from it */
+      if(!near)continue;
+      let lo=1e9,hi=-1e9;for(let k=0;k<12&&hi-lo<=10;k++)for(const rr of [14,27]){const y=rawH(x+Math.sin(k*Math.PI/6)*rr,z+Math.cos(k*Math.PI/6)*rr);lo=Math.min(lo,y);hi=Math.max(hi,y);}
+      if(hi-lo>10)continue;
+      let seaN=0,dmin=1e9,hd=0;for(let k=0;k<16;k++){const t=k*Math.PI/8;for(let d=40;d<=160;d+=40)if(sea(x+Math.sin(t)*d,z+Math.cos(t)*d)){seaN++;if(d<dmin){dmin=d;hd=t;}break;}}
+      if(!seaN)continue;
+      const score=Math.min(h,40)+seaN*1.5-(hi-lo)-dmin/15;if(best&&score<=best.score)continue;
+      best={x,z,hd,h:+h.toFixed(1),fall:+(hi-lo).toFixed(1),seaN,dmin,score:+score.toFixed(1),cell:cellKey(c.i,c.j)};}}
+    if(best){let dm=1e9;for(let k=0;k<64;k++){const t=k*Math.PI/32;for(let d=20;d<=200;d+=5)if(sea(best.x+Math.sin(t)*d,best.z+Math.cos(t)*d)){if(d<dm){dm=d;best.hd=t;}break;}} /* the heading to the water, finer */
+      best.dmin=dm;best.ry=best.hd+Math.PI;best.y=+rawH(best.x,best.z).toFixed(2);delete best.hd;}
+    }finally{REGIONS.length=0;PEAKS.length=0;INLETS.length=0;keep[0].forEach(q=>REGIONS.push(q));keep[1].forEach(q=>PEAKS.push(q));keep[2].forEach(q=>INLETS.push(q));}
+    return (S.site=best);}
+  function wonderOrreryBuild(){const S=WONDERS.orrery,st=wonderOrrerySite();if(!st||typeof PKIT==='undefined'||!PKIT.wonders||!PKIT.wonders.orrery)return null;
+    if(!S.stamps){S.stamps=[addStamp({id:'wonder_orrery',kind:'wonder',x:st.x,z:st.z,r:30,blend:14,y:st.y})];try{clearScatterUnder(S.stamps);}catch(e){console.warn('wonder scatter',e);}}
+    const hAt=(lx,lz)=>{const [x,z]=wonderToWorld(st,lx,lz);return meshH(x,z);};const W=PKIT.wonders.orrery(hAt,{awake:wonderAwake()});
+    W.sig=wonderCellSig(st);W.group.position.set(st.x,0,st.z);W.group.rotation.y=st.ry;W.group.userData.noBake=true;W.group.updateMatrixWorld(true);sc.add(W.group);S.W=W;
+    S.plats=W.plats.map(p=>({x0:st.x-p.r,x1:st.x+p.r,z0:st.z-p.r,z1:st.z+p.r,y:p.y,wonder:'orrery',inside:(wx,wz)=>Math.hypot(wx-st.x,wz-st.z)<p.r}));S.plats.forEach(p=>ZONES.world.platforms.push(p));
+    S.sol=[];W.cols.forEach(c=>{const [x,z]=wonderToWorld(st,c.x,c.z);S.sol.push({cx:x,cz:z,rx:.7,rz:.7,cell:'wonder:orrery',h:c.h,wonder:true});});
+    S.sol.push({cx:st.x,cz:st.z,rx:2.7,rz:2.7,cell:'wonder:orrery',h:3,wonder:true});S.sol.forEach(q=>STATIC_SOL.push(q));
+    return W;}
+  function wonderOrreryDrop(){const S=WONDERS.orrery;if(S.W){if(S.W.group.parent)S.W.group.parent.remove(S.W.group);S.W=null;}
+    for(let i=STATIC_SOL.length-1;i>=0;i--)if(STATIC_SOL[i].cell==='wonder:orrery')STATIC_SOL.splice(i,1);S.sol=[];
+    const P=ZONES.world.platforms;for(let i=P.length-1;i>=0;i--)if(P[i].wonder==='orrery')P.splice(i,1);S.plats=[];}
+  // from WORLD.tick, every frame in the open world: each wonder built within 1.6 km (checked once a second), animated while it stands.
+  // A wonder's site is searched only once you stand on its island's land (the Fields' takes 0.6 s on software GL)
+  const WONDER_KINDS=[{k:'skyfall',nation:'mark',site:wonderSkyfallSite,build:wonderSkyfallBuild,drop:wonderSkyfallDrop},{k:'orrery',nation:'aurenne',site:wonderOrrerySite,build:wonderOrreryBuild,drop:wonderOrreryDrop}];
+  function tickWonders(){if(typeof LAND==='undefined'||!LAND.on)return;const t=performance.now(),due=t-WONDERS._t>1000||WONDERS._t===0&&WONDER_KINDS.some(K=>!WONDERS[K.k].W);if(due)WONDERS._t=t;
+    let nk=null;for(const K of WONDER_KINDS){const S=WONDERS[K.k];
+      if(S.W&&S.W.group.parent!==sc)K.drop(); /* the world's scene was built again */
+      if(due){if(S.site===undefined){if(nk===null)nk=nationKeyOf(...cellOf(px,pz));if(nk!==K.nation)continue;}
+        const st=K.site();if(!st)continue;const near=Math.hypot(px-st.x,pz-st.z)<WONDERS.near;
+        if(near&&S.W&&S.W.sig!==wonderCellSig(st))K.drop(); /* a cell under it came or went: build it over the ground as it is now */
+        if(near&&!S.W)K.build();else if(!near&&S.W)K.drop();}
+      if(S.W)S.W.tick(t/1000,wonderAwake());}}
   const SETTLE_MAT=VC_MAT;

@@ -1,7 +1,8 @@
 // The wonders (Session 1614; backlog L5, "Strange places", OG-106; Michael's C on #898): the Mark's Skyfall Fields on the new look.
 // Its place is the seed's (a snowy field in the Mark, clear of every site, door and road), the same when asked again; it stands within
 // 1.6 km in 11 draws, its stones hung over their pits with the scatter cleared under them, its two broken walls solid where they stand;
-// from 20h to 5h it wakes (the stones drift, the seams burn), by day it is dead stone; and it goes when you leave.
+// from 20h to 5h it wakes (the stones drift, the seams burn), by day it is dead stone; and it goes when you leave. Session 1634: the
+// same for Aurenne's Broken Orrery on its headland.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
@@ -37,5 +38,41 @@ console.log(JSON.stringify(n));
 check(`at 22h it wakes: the seams burn and the stones drift (${n.moved} m in three seconds); awake at 4:30, asleep at 5:30`, n.awake && n.lit && n.moved > 0 && n.dawn && !n.morning, n);
 const d = await page.evaluate(() => { const S = WONDERS.skyfall; px = S.site.x + 2500; pz = S.site.z; WONDERS._t = 0; tickWonders(); return { gone: !S.W, sol: STATIC_SOL.filter(q => q.cell === 'wonder:skyfall').length }; });
 check('2.5 km off it is dropped, and its solids with it', d.gone && d.sol === 0, d);
+// Session 1634: Aurenne's Broken Orrery on its headland. The place is the seed's; the platform stands level on a stamp, its steps walked,
+// its columns and pier solid; the rings turn and the script burns from 20h to 5h; it goes when you leave.
+const o = await page.evaluate(() => { const a = wonderOrrerySite(); WONDERS.orrery.site = undefined; const t0 = performance.now(), b = wonderOrrerySite(), ms = Math.round(performance.now() - t0);
+  const sites = [...CELLS.values()].flatMap(c => c.sites), near = sites.reduce((m, t) => Math.min(m, Math.hypot(t.x - b.x, t.z - b.z) - (t.pad || 0)), 1e9);
+  const [i, j] = cellOf(b.x, b.z), [sx, sz] = [b.x - Math.sin(b.ry) * b.dmin, b.z - Math.cos(b.ry) * b.dmin];
+  return { ...b, ms, same: JSON.stringify(a) === JSON.stringify(b), nation: nationKeyOf(i, j), near: Math.round(near), seaAhead: rawH(sx, sz) < 0 }; });
+console.log(JSON.stringify(o));
+check(`the Broken Orrery's place is on Aurenne's coast, ${o.h} m over the sea with it on ${o.seaN} of 16 headings, the same asked twice (${o.ms} ms)`, o.nation === 'aurenne' && o.h >= 8 && o.seaN >= 3 && o.same && o.seaAhead, o);
+check(`its ground falls ${o.fall} m round it, and it stands ${o.near} m past the nearest site's pad`, o.fall <= 10 && o.near >= 200, o);
+const oat = await page.evaluate((o) => { const [x, z] = wonderToWorld(o, 4, 60); return { x, z }; }, o);
+await page.evaluate(({ x, z }) => goToZone('world', x, z, 0, 'x'), oat);
+await page.waitForFunction(([x, z]) => document.getElementById('fd').style.opacity === '0' && activeZoneId === 'world' && Math.hypot(px - x, pz - z) < 50, [oat.x, oat.z], { timeout: 60000 });
+await g.cells(); await g.hide();
+const q = await page.evaluate(() => { forceTime(13); WONDERS._t = 0; tickWonders(); const S = WONDERS.orrery, W = S.W, st = S.site; if (!W) return { none: true };
+  let meshes = 0; W.group.traverse(o => { if (o.isMesh) meshes++; });
+  const m = new THREE.Matrix4(), v = new THREE.Vector3(); let under = 0; const q0 = S.stamps[0];
+  for (const ch of chunks.values()) for (const o of ch.group.children) { if (!o.isInstancedMesh || !o.userData.scatter) continue; for (let i = 0; i < o.count; i++) { o.getMatrixAt(i, m); v.setFromMatrixPosition(m); if (Math.hypot(v.x - q0.x, v.z - q0.z) < q0.r) under++; } }
+  // the ground round the platform's rim, against the stamp's level; and what you stand on, from the rim in to the pier
+  let rim = 0; for (let k = 0; k < 12; k++) rim = Math.max(rim, Math.abs(meshH(st.x + Math.sin(k * .52) * 24, st.z + Math.cos(k * .52) * 24) - q0.y));
+  const at = d => { const [x, z] = wonderToWorld(st, 0, d); return +activeTerrainH(x, z).toFixed(2); }, steps = [at(30), at(22), at(19.5), at(10)];
+  const c = W.cols.find(c => c.stand), [cx, cz] = wonderToWorld(st, c.x, c.z), [ox, oz] = wonderToWorld(st, c.x * .8, c.z * .8);
+  const script = W.script.emissiveIntensity, ring = W.group.getObjectByName('armillary').children[0];
+  return { tris: W.tris, draws: W.draws, meshes, rim: +rim.toFixed(2), steps, top: W.top, base: W.base, plats: W.plats, under, sol: S.sol.length, colSolid: solidAt(cx, cz), floorOpen: !solidAt(ox, oz), pier: solidAt(st.x, st.z),
+    script, sun: W.sunMat.emissiveIntensity, hub: W.hub, size: W.size, inScene: W.group.parent === sc, rot: ring.rotation.y }; });
+console.log(JSON.stringify(q));
+check(`within 1.6 km it stands: ${q.size.standing} of 16 columns, rings of ${q.size.rings.join(', ')} m, ${q.size.top} m to the top, ${q.tris} triangles in ${q.draws} draws`, !q.none && q.inScene && q.draws === q.meshes && q.draws <= 14 && q.tris < 40000 && q.size.standing === 4, q);
+check(`the platform stands level: the ground round its rim within ${q.rim} m of its stamp, and no tree, bush or rock on it`, q.rim < 1 && q.under === 0, q);
+check(`you walk up its three steps (${q.steps.join(' → ')} m) to the top at ${q.top}`, q.steps[0] < q.plats[0].y - .3 && q.steps[1] === q.plats[0].y && q.steps[2] === q.plats[1].y && q.steps[3] === q.plats[2].y, q);
+check(`its ${q.sol} solids: a standing column and the pier are solid, the floor between open`, q.sol === 17 && q.colSolid && q.pier && q.floorOpen, q);
+check('at 13h it sleeps: the script and the sun are dead stone', q.script === 0 && q.sun === 0, q);
+const on = await page.evaluate(() => { const W = WONDERS.orrery.W, ring = W.group.getObjectByName('armillary').children[0]; forceTime(22); tickWonders(); const a = ring.rotation.y; W.tick(performance.now() / 1000 + 20, wonderAwake()); const b = ring.rotation.y;
+  return { awake: wonderAwake(), script: W.script.emissiveIntensity, sun: W.sunMat.emissiveIntensity, turned: +Math.abs(b - a).toFixed(3) }; });
+console.log(JSON.stringify(on));
+check(`at 22h it wakes: the script burns (${on.script.toFixed(2)}), the sun (${on.sun.toFixed(2)}), the outer ring turns (${on.turned} rad in 20 s)`, on.awake && on.script > .9 && on.sun > 1.5 && on.turned > .5, on);
+const od = await page.evaluate(() => { const S = WONDERS.orrery; px = S.site.x + 2500; pz = S.site.z; WONDERS._t = 0; tickWonders(); return { gone: !S.W, sol: STATIC_SOL.filter(q => q.cell === 'wonder:orrery').length, plats: ZONES.world.platforms.filter(p => p.wonder === 'orrery').length }; });
+check('2.5 km off it is dropped, its solids and steps with it', od.gone && od.sol === 0 && od.plats === 0, od);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

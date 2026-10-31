@@ -4297,7 +4297,82 @@ function markSkyfall(hAt, o = {}) {
   return { group, tris: Math.round(tris), draws, stones: stones.map(t => ({ x: t.x, z: t.z, y: t.y, rad: t.rad, lift: t.lift })), walls, tick,
     size: { stones: stones.length, biggest: +Math.max(...stones.map(t => t.rad * 2)).toFixed(1), highest: +Math.max(...stones.map(t => t.lift)).toFixed(1) } };
 }
-  return { stream, hashKey, mergeByMaterial, wonders: { skyfall: markSkyfall, gatePiece }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, trunk: felledTrunk }, ships: { sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
+// ── Aurenne's wonder, the Broken Orrery (Session 1634; backlog L5, "Strange places", OG-106; Michael's C on #898) ──
+// wonders.js's aurenneOrrery, copied for the world. The prototype's own land, cliff and sea are the world's (a headland of Aurenne's
+// coast), so it is built over a height function it is handed, the sea towards -z. The platform's lowest step goes down to the lowest
+// ground under it, so it stands level on ground that is not; the columns' fallen drums lie on the step or the ground they fell on.
+// The same stream ('wonders:orrery') drawn in the same order as the prototype, so the columns and the rings' set are its own. The
+// static stone is merged by material (4 draws); each ring turns on its own, so it is a mesh and its script a second (8), and the sun
+// one. The prototype's point light is left out: a light added and taken away recompiles every material in the world, and the sun and
+// the script burn by their own emission (the bloom carries them at Middle and High).
+//   PKIT.wonders.orrery(hAt, o) -> { group, tris, draws, top, base, plats: [{r, y}], cols: [{x, z, stand, h, r}], pier: {r, y}, tick(t, awake), size }
+let _wBand = null;
+function wonderBandTex() { if (_wBand) return _wBand; const L = 4096, S = 64, c = document.createElement('canvas'); c.width = L; c.height = S; const x = c.getContext('2d'), r = stream('wonders:band'); x.fillStyle = '#000'; x.fillRect(0, 0, L, S); x.strokeStyle = '#fff'; x.lineCap = 'round'; x.lineWidth = 4;
+  for (let i = 0; i < 80; i++) { const k = Math.floor(r() * 7); x.save(); x.translate(26 + i * 51, 32); x.beginPath();
+    if (k === 0) { x.arc(0, 0, 12, 0, 7); x.moveTo(0, -18); x.lineTo(0, 18); } else if (k === 1) { x.moveTo(-12, 18); x.lineTo(0, -18); x.lineTo(12, 18); x.moveTo(-7, 4); x.lineTo(7, 4); }
+    else if (k === 2) { x.arc(0, 0, 13, .6, 5.7); x.moveTo(2, 0); x.arc(0, 0, 2, 0, 7); } else if (k === 3) { x.moveTo(-12, -14); x.lineTo(12, -14); x.moveTo(0, -14); x.lineTo(0, 18); x.moveTo(-8, 2); x.lineTo(8, 10); }
+    else if (k === 4) { x.moveTo(-12, 0); x.lineTo(0, -16); x.lineTo(12, 0); x.lineTo(0, 16); x.closePath(); } else if (k === 5) { x.moveTo(-10, -16); x.lineTo(-10, 16); x.moveTo(10, -16); x.lineTo(10, 16); x.moveTo(-10, 0); x.lineTo(10, 0); }
+    else { x.moveTo(0, -18); x.lineTo(0, 18); x.moveTo(-10, -8); x.lineTo(0, -2); x.lineTo(10, -8); } x.stroke(); x.restore(); }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8; return (_wBand = t); }
+// a band of stone round a circle in the xy plane (the ring stands upright), from a0 to a1, radius r0 to r1, th thick; its glyph strip
+// on both faces as a second geometry (u along the band). wonders.js's band(), unchanged.
+function wonderBand(r0, r1, th, a0 = 0, a1 = Math.PI * 2, n = 96) { const pos = [], uv = [], gl = [], gu = [], seg = Math.max(8, Math.round(n * (a1 - a0) / (Math.PI * 2)));
+  const P = (rr, a, z) => [rr * Math.cos(a), rr * Math.sin(a), z], quad = (A, Bq, C, D, U) => { pos.push(...A, ...Bq, ...C, ...A, ...C, ...D); uv.push(...U); };
+  for (let i = 0; i < seg; i++) { const a = a0 + (a1 - a0) * i / seg, b = a0 + (a1 - a0) * (i + 1) / seg, u0 = a * r1 * .25, u1 = b * r1 * .25;
+    for (const z of [th / 2, -th / 2]) { const s = z > 0 ? 1 : -1, A = P(r0, a, z), Bq = P(r1, a, z), C = P(r1, b, z), D = P(r0, b, z); if (s > 0) quad(A, Bq, C, D, [u0, 0, u0, 1, u1, 1, u0, 0, u1, 1, u1, 0]); else quad(A, D, C, Bq, [u0, 0, u1, 0, u1, 1, u0, 0, u1, 1, u0, 1]);
+      const g0 = r0 + (r1 - r0) * .2, g1 = r0 + (r1 - r0) * .8, zz = z + s * .02, ga = P(g0, a, zz), gb = P(g1, a, zz), gc = P(g1, b, zz), gd = P(g0, b, zz), U0 = a * g1 / 3.2, U1 = b * g1 / 3.2;
+      if (s > 0) { gl.push(...ga, ...gb, ...gc, ...ga, ...gc, ...gd); gu.push(U0, 0, U0, 1, U1, 1, U0, 0, U1, 1, U1, 0); } else { gl.push(...ga, ...gd, ...gc, ...ga, ...gc, ...gb); gu.push(U0, 0, U1, 0, U1, 1, U0, 0, U1, 1, U0, 1); } }
+    for (const rr of [r1, r0]) { const A = P(rr, a, th / 2), Bq = P(rr, a, -th / 2), C = P(rr, b, -th / 2), D = P(rr, b, th / 2); if (rr === r1) quad(A, Bq, C, D, [u0, 0, u0, th * .25, u1, th * .25, u0, 0, u1, th * .25, u1, 0]); else quad(A, D, C, Bq, [u0, 0, u1, 0, u1, th * .25, u0, 0, u1, th * .25, u0, th * .25]); } }
+  if (a1 - a0 < Math.PI * 2 - 1e-3) for (const a of [a0, a1]) { const s = a === a0 ? 1 : -1, A = P(r0, a, th / 2), Bq = P(r1, a, th / 2), C = P(r1, a, -th / 2), D = P(r0, a, -th / 2); if (s > 0) quad(A, D, C, Bq, [0, 0, 0, .3, .3, .3, 0, 0, .3, .3, .3, 0]); else quad(A, Bq, C, D, [0, 0, 0, .3, .3, .3, 0, 0, .3, .3, .3, 0]); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.computeVertexNormals();
+  const s = new THREE.BufferGeometry(); s.setAttribute('position', new THREE.Float32BufferAttribute(gl, 3)); s.setAttribute('uv', new THREE.Float32BufferAttribute(gu, 2)); s.computeVertexNormals(); return { g, s }; }
+// the platform 46 m across (three steps), sixteen columns broken to four, and at its heart a pier carrying an armillary of four rings of
+// the kit's stone, 41, 33, 25 and 17 m across, nested on pivots, the script cut round each, a stone sun 4 m across at the heart; the third
+// ring broken, its quarter fallen on the platform. Solas's gold.
+function aurenneOrrery(hAt, o = {}) {
+  const key = 'wonders:orrery', r = stream(key), group = new THREE.Group(), B = new Map(), put = (k, g) => (B.get(k) || B.set(k, []).get(k)).push(g), S = GK_SCHOOLS.solas, R = 23;
+  group.name = 'wonder:orrery';
+  // the ground under the platform: its foot goes down to the lowest, its first step stands over the highest
+  let lo = 1e9, hi = -1e9; for (let k = 0; k < 24; k++) for (const rr of [0, R * .5, R * .85, R + .3]) { const y = hAt(Math.sin(k * Math.PI / 12) * rr, Math.cos(k * Math.PI / 12) * rr); lo = Math.min(lo, y); hi = Math.max(hi, y); }
+  const base = Math.max(hAt(0, 0) - .2, hi - .65), plats = [];
+  let py = base; for (const [k, rad] of [[0, R], [1, R - 2.5], [2, R - 5]]) { const foot = k ? py : lo - .6, h = py + .8 - foot, g = new THREE.CylinderGeometry(rad, rad + .1, h, 96, 1); g.translate(0, foot + h / 2, 0); put(k === 2 ? 'floor' : 'stone', g); py += .8; plats.push({ r: rad, y: +py.toFixed(3) }); }
+  const stepAt = (x, z) => { const d = Math.hypot(x, z); let y = null; for (const p of plats) if (d < p.r) y = p.y; return y ?? hAt(x, z); };
+  // the colonnade: sixteen columns on the top step's edge, 1.3 m across and 11 m high with a capital; four stand, the rest broken low, their drums fallen
+  const CR = R - 3.6, colH = 11, cols = []; for (let i = 0; i < 16; i++) { const a = i * Math.PI / 8 + .1, x = CR * Math.sin(a), z = CR * Math.cos(a), stand = [1, 6, 7, 12].includes(i), h = stand ? colH : 1 + r() * 4.5;
+    const g = new THREE.CylinderGeometry(.62, .68, h, 16, 1); g.translate(x, py + h / 2, z); put('stone', g); const b = new THREE.BoxGeometry(1.8, .5, 1.8); b.translate(x, py + .25, z); put('stone', b);
+    if (stand) { const c = new THREE.BoxGeometry(1.9, .7, 1.9); c.translate(x, py + h + .35, z); put('stone', c); }
+    else for (let d = 0; d < 2; d++) { const dl = 1.4 + r(), dg = new THREE.CylinderGeometry(.62, .62, dl, 14, 1); dg.rotateZ(Math.PI / 2); dg.rotateY(r() * 6.3); const fa = a + (r() - .5) * .4, fd = CR + 2 + r() * 6, fx = fd * Math.sin(fa), fz = fd * Math.cos(fa);
+      dg.translate(fx, stepAt(fx, fz) + .58, fz); put('stone', dg); }
+    cols.push({ i, x: +x.toFixed(2), z: +z.toFixed(2), stand, h: +h.toFixed(1), r: .68 }); }
+  // the pivot pier at the heart; the outer ring's foot rides its top
+  { const g = new THREE.CylinderGeometry(2.2, 3.2, 3, 8, 1); g.translate(0, py + 1.5, 0); put('stone', g); }
+  const hub = new THREE.Vector3(0, py + 3 + 20.5, 0), stoneCol = new THREE.Color(...S.stone);
+  const ringM = mat('ashlar', { ns: .9, color: stoneCol.clone().multiplyScalar(.95) }), scriptM = new THREE.MeshStandardMaterial({ color: new THREE.Color(.05, .045, .04), emissive: new THREE.Color(...S.glow), emissiveIntensity: 2.0, emissiveMap: wonderBandTex(), roughness: .6 });
+  const sunM = new THREE.MeshStandardMaterial({ color: new THREE.Color(.5, .38, .2), emissive: new THREE.Color(...S.glow), emissiveIntensity: 0, roughness: .45, metalness: .3 });
+  const rings = [], radii = [20.5, 16.5, 12.5, 8.5]; let parent = new THREE.Group(), tris = 0, draws = 0; parent.position.copy(hub); parent.name = 'armillary'; group.add(parent);
+  radii.forEach((rad, i) => { const pivot = new THREE.Group(), broken = i === 2, { g, s } = wonderBand(rad - 1.6, rad, 1.1, broken ? .5 : 0, broken ? Math.PI * 2 - 1.0 : Math.PI * 2);
+    // the pivots: a stud each side where this ring rides the one outside it, merged into the ring
+    const studs = [-1, 1].map(sx => { const p = new THREE.CylinderGeometry(.5, .5, 2.4, 10).toNonIndexed(); p.rotateZ(Math.PI / 2); p.translate(sx * (rad + .9), 0, 0); p.deleteAttribute('uv'); p.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(p.attributes.position.count * 2), 2)); return p; });
+    const rg = mergeGeometries([g, ...studs]); g.dispose(); studs.forEach(x => x.dispose());
+    const m = new THREE.Mesh(rg, ringM), sm = new THREE.Mesh(s, scriptM); m.name = 'ring:' + i; sm.name = 'script:' + i; sm.userData.key = 'script'; m.castShadow = m.receiveShadow = true; sm.castShadow = false; pivot.add(m, sm);
+    pivot.rotation.set(i === 0 ? 0 : .5 + r() * .7, i * .8 + r(), r() * .4); parent.add(pivot); rings.push({ pivot, rad, axis: i % 2 ? 'x' : 'y', sp: [.035, -.05, .07, -.09][i], base: pivot.rotation.clone() }); parent = pivot;
+    tris += rg.attributes.position.count / 3 + s.attributes.position.count / 3; draws += 2; });
+  const sunG = new THREE.IcosahedronGeometry(2.0, 4), sun = new THREE.Mesh(sunG, sunM); sun.name = 'sun'; sun.castShadow = true; parent.add(sun); tris += sunG.index ? sunG.index.count / 3 : sunG.attributes.position.count / 3; draws++;
+  // the broken quarter of the third ring, fallen on the platform, leaning on a drum
+  { const { g, s } = wonderBand(12.5 - 1.6, 12.5, 1.1, 0, 1.46), mx = 11.7 * Math.cos(.73), my = 11.7 * Math.sin(.73), T = new THREE.Matrix4().makeTranslation(-8, py + 1.4, 9).multiply(new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(-Math.PI / 2 + .12, 0, 2.1))).multiply(new THREE.Matrix4().makeTranslation(-mx, -my, 0));
+    put('ring', g.applyMatrix4(T)); put('dead', s.applyMatrix4(T)); }
+  const M = { stone: mat('ashlar', { ns: .9, color: 0xf0e4cc, rough: .85 }), floor: mat('flag', { ns: .7, color: 0xe2d4b8, rough: .7 }), ring: ringM, dead: new THREE.MeshStandardMaterial({ color: new THREE.Color(.06, .055, .05), roughness: .9 }) };
+  for (const [k, gs] of B) { const clean = gs.map(g => { const x = g.index ? g.toNonIndexed() : g; for (const a of Object.keys(x.attributes)) if (!['position', 'normal', 'uv'].includes(a)) x.deleteAttribute(a); if (!x.attributes.normal) x.computeVertexNormals(); if (!x.attributes.uv) worldUV(x, .25); return x; });
+    const g = mergeGeometries(clean); clean.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.userData.key = k; m.castShadow = k !== 'dead'; m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; draws++; }
+  // awake: each ring turns on its pivot (the outer once in three minutes, the inner faster), the sun burns and the script pulses over 6 s;
+  // asleep the rings stand where they stopped and the script and the sun are dead stone
+  function tick(sec, awake) { for (const g of rings) { g.pivot.rotation.copy(g.base); if (awake) g.pivot.rotation[g.axis] += sec * g.sp; }
+    const p = .5 + .5 * Math.sin(sec * 2 * Math.PI / 6); scriptM.emissiveIntensity = awake ? 1.0 + 1.4 * p : 0; sunM.emissiveIntensity = awake ? 1.6 + .8 * p : 0; }
+  tick(0, !!o.awake);
+  return { group, tris: Math.round(tris), draws, top: +py.toFixed(3), base: +base.toFixed(3), foot: +(lo - .6).toFixed(3), plats, cols, pier: { r: 3.2, y: +(py + 3).toFixed(3) }, hub: +hub.y.toFixed(3), tick, script: scriptM, sunMat: sunM,
+    size: { across: R * 2, rings: radii.map(v => v * 2), hubOver: +(hub.y - py).toFixed(1), standing: cols.filter(c => c.stand).length, top: +(hub.y + 20.5 - py).toFixed(1) } };
+}
+  return { stream, hashKey, mergeByMaterial, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, gatePiece }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, trunk: felledTrunk }, ships: { sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
     mk: { hall: markHall, lot: markLot, alehall: markAlehall, longhouse: markLonghouse, mats: markMats },
     au: { house: aurenneHouse, lot: aurenneLot, courtyard: aurenneCourtyard, church: aurenneChurch, churchBox: aurenneChurchBox, churchHall: aurenneChurchHall, courtyardHouse: aurenneCourtyardHouse, tavern: aurenneTavern, mats: aurMats, roomMats: homeMats, AUR },
     gl: { PLANS, FIN, PS, PAINTS, TOWN: GL_TOWN, building, church, keep, farmstead, coachInn, coachInnPlan, coachRoom, townhouse: townhouseRoom, farmhouse: farmhouseRoom, byre: byreRoom, barn: barnRoom, row: shrineRow, ROW_GODS, inn: gatelandsInn, cottage: gatelandsCottage, churchLen: n => +((n === 2 ? 2 : 3) * 4.8 + 1.6 + 5.6 - .5 + 7.2 - .9 - .02).toFixed(2), lot: gatelandsLot, mats: glMats, BAYS, bayPlan, bayWidth, baysFor } };
