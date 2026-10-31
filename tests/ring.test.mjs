@@ -131,7 +131,8 @@ const L = await page.evaluate(() => {
   const lose = () => { Lb = hit(); const z = pz; pz = z - 2 - 9.1; run(1); pz = z; return Lb; };
   fresh(); at(dKept, 9.5); r = call(); let ga = gold; const tb = WORLD.takeBribe(); out.kept = { fixer: r.fixer, bribe: tb.n, gold: gold - ga, rep: WORLD.reportFixer().say };
   Lb = lose(); out.kept.fix = Lb.fix; out.kept.ban = arenaState().banUntil; out.kept.rank = arenaState().rank;
-  fresh(); at(dFound, 9.5); call(); WORLD.takeBribe(); ga = gold; Lb = lose(); out.found = { fix: Lb.fix, fine: ga - gold, ban: arenaState().banUntil - dayNow() };
+  const csId = anchoredPlaces().caer_slige.id, fav = () => (worldState.favor || {})[csId] || 0; let f0 = fav();
+  fresh(); at(dFound, 9.5); call(); WORLD.takeBribe(); ga = gold; Lb = lose(); out.found = { fix: Lb.fix, fine: ga - gold, ban: arenaState().banUntil - dayNow(), seat: fav() - f0 };
   fresh(); const dW = rest[0]; at(dW, 9.5); call(); WORLD.takeBribe(); Lb = hit(); const eW = Lb.foe; eW.hp = Math.floor(eW.maxHp * .25); run(2); run(200);
   const n0 = ZONES.world.enemies.length; at(dW, 17.5); run(1); const n1 = ZONES.world.enemies.length; at(dW, 18.5); run(1);
   const roughs = ZONES.world.enemies.filter(e => /^rough:/.test(e.id || ''));
@@ -141,8 +142,8 @@ const L = await page.evaluate(() => {
   const repLb = Lb, repGold = gold - ga;
   // S1654 — the title: bout 12 won at Caer Slige; the challenger every 28 days; three refusals or one loss and it passes
   const seat = S[0], callAt = (s) => WORLD.ladderCall({ site: s.id, x: px, z: pz - 2 }), win = () => { Lb = hit(); const e = Lb.foe; e.hp = Math.floor(e.maxHp * .25); run(2); run(200); return Lb; };
-  fresh(); arenaState().rank = 11; at(500, 9.5); callAt(seat); ga = gold; win();
-  out.title = { end: Lb.end, title: arenaState().title, rank: arenaState().rank, champ: ringsState().champion, purse: gold - ga, next: arenaState().nextChallenge };
+  fresh(); arenaState().rank = 11; at(500, 9.5); callAt(seat); ga = gold; f0 = fav(); win();
+  out.title = { end: Lb.end, title: arenaState().title, rank: arenaState().rank, champ: ringsState().champion, purse: gold - ga, next: arenaState().nextChallenge, seat: fav() - f0, isSeat: seat.id === csId };
   at(501, 9.5); run(1); out.title.after = callAt(seat).say; renderHubAttrs(); out.title.journal = (document.getElementById('standing-body').textContent.match(/The Mark's rings\s*([^A-Z]*Champion)/) || [])[1] || document.getElementById('standing-body').textContent.slice(0, 400);
   at(528, 9.5); run(1); out.def = { city: callAt(city).say, seat: !!callAt(seat).ok }; Lb = win(); out.def.id = Lb.foe.id; out.def.end = Lb.end; out.def.hp = Lb.foe.maxHp;
   at(529, 9); run(1); out.def.next = arenaState().nextChallenge; out.def.title = arenaState().title;
@@ -177,6 +178,8 @@ check(`the fixer at bout 4 on ${Math.round(L.share * 100)}% of days (a third), n
   L.share > .25 && L.share < .42 && L.none3 && L.kept.fixer === true && L.kept.bribe === 360 && L.kept.gold === 360 && /taken his money/.test(L.kept.rep), L);
 check(`taken and lost: kept (${L.kept.fix}), no ban, rank ${L.kept.rank}; found out on its day: a fine of ${L.found.fine}, the rings shut ${L.found.ban} days`,
   L.kept.fix === 'kept' && !L.kept.ban && L.kept.rank === 3 && L.found.fix === 'found' && L.found.fine === 720 && L.found.ban === 28, L);
+check(`League standing (#945 A): a fix found out is ${L.found.seat} favour at Caer Slige; the title +1 on the bout's own +1 there (${L.title.seat})`,
+  L.found.seat === -1 && L.title.isSeat && L.title.seat === 2, { found: L.found, title: L.title });
 check(`taken and won anyway: rank ${L.crossed.rank}, none before dusk (${L.crossed.before}), ${L.crossed.roughs} roughs at the gate at 18h30, alert, tier ${L.crossed.tier}`,
   L.crossed.end === 'won' && L.crossed.fix === 'crossed' && L.crossed.rank === 4 && L.crossed.before === 0 && L.crossed.roughs === 2 && L.crossed.alert && L.crossed.tier.every(t => t === 2), L.crossed);
 check(`reported: the next purse ${L.report.paid} (×1.5 of 120), that ring has no fixer again (${L.report.gone}; *${L.report.bribe}*)`,
