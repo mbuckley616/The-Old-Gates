@@ -798,12 +798,22 @@ function tintreachLeap(e,sp,tier){const L=WORD_BY.tintreach.forms.sent,dun=!!(li
 // bolt that the two hit loops hand to statusBolt in place of the damage.
 SPELLS.push({id:'freamh',school:'cloch',role:'basic',nameIr:'Fréamh',nameEn:'Root',nameMa:null,ico:'🌿',desc:'Roots a foe where it stands.',
   intReqs:[10,22,40],cost:30,speed:8,dmgBase:0,dmgLvl:0,col:0x6a8a3a,glowCol:0x8aaa50,wild:['scatter','fizzle'],status:'root'});
+// S1627 — Dorcha sent (magic-build.md's table: "blinds 4 s"; Michael's A on #919: "it loses you until the 4 s end"): a bolt that deals
+// nothing and blinds the foe it strikes, 4 s at Comprehension, the tier's magnitude (2.4 s at Impression, 5.2 at Mastery: no canon entry,
+// so ×1.3). A blind foe is not alert and sees nothing, as under Shadowcap's veil, but for that foe alone (foeBlind). The bolt's strike
+// wakes it as any strike does, but not until the blind ends: then it turns on you again, unless you are past its forget range by then
+// (blindTick, from both foe ticks). Smól's 10 m/s.
+SPELLS.push({id:'dorcha',school:'scath',role:'basic',nameIr:'Dorcha',nameEn:'Blind',nameMa:null,ico:'🌘',desc:'Blinds a foe: it loses you.',
+  intReqs:[10,22,40],cost:28,speed:10,dmgBase:0,dmgLvl:0,col:0x2a1a3a,glowCol:0x553377,wild:['scatter','fizzle'],status:'blind'});
+function foeBlind(e){return !!(e&&e._blindUntil>playClockS);}
+function blindTick(e){if(foeBlind(e)){e.alert=false;e._agg=false;return true;}if(e._blindWake){e._blindWake=false;e.alert=true;}return false;}
 // statusBolt: what a status bolt does to foe e it struck. A struck alert foe is a use of the school, as a blow is. Returns what it did.
 function statusBolt(e,sp,tier,rider){if(!e||e.dead||e.hp<=0)return null;const F=WORD_BY[sp.id]&&WORD_BY[sp.id].forms.sent;if(!F)return null;
   if(e.alert&&SKILL_DEF[sp.school])skillUse(sp.school,tier===3?2:1,e);
   const out={};
   if(F.root){const t=F.root*TIER_MULT.magnitude[Math.max(1,tier)-1];e._rootUntil=Math.max(e._rootUntil||0,playClockS+t);out.root=+t.toFixed(2);}
-  e.alert=true;if(rider)out.rider=riderHit(e,rider,0);
+  if(F.blind){const t=F.blind*TIER_MULT.magnitude[Math.max(1,tier)-1];e._blindUntil=Math.max(e._blindUntil||0,playClockS+t);out.blind=+t.toFixed(2);}
+  e.alert=!F.blind;if(F.blind){e._agg=false;e.hasCried=false;e._blindWake=true;}if(rider)out.rider=riderHit(e,rider,0);
   return out;}
 // S1611 — Tonn sent (magic-build.md's table: "a wave 8 m down the line, 14, posture 20"): no bolt flies. At the Cast row's release a
 // wave runs from you along your aim, 8 m or to the first wall, and every foe in its path takes the word's 14 (the tier's magnitude, the

@@ -1256,7 +1256,8 @@ function loop(now){
       const _ward=typeof solasWards==='function'&&solasWards(e); /* S1349 — Solas's gift: the undead leave you be until one is struck */
       const _calm=_ward||(typeof beastAtPeace==='function'&&beastAtPeace(e));if(_calm)e.alert=false;if(_calm&&!_ward&&typeof cloakTurnAway==='function')cloakTurnAway(e,()=>canSeePlayer(e,dist,8)); /* S777 — the Wolf-Mother's Cloak, underground as in the open */
       const _sight=e.pocket&&e.ranged?GATE_ARCHER_SIGHT:8;
-      if(!e.alert && !_calm && !e._homing && canSeePlayer(e, dist, _sight)){ /* S635 — 3.5 → 8 (Michael's A on #190); S1323 — an archer in a gate's pocket sees 20 m, and a foe walking home sees nothing until it is home */
+      const _blind=typeof blindTick==='function'&&blindTick(e); /* S1627 — Dorcha: a blind foe loses you until it ends */
+      if(!e.alert && !_calm && !_blind && !e._homing && canSeePlayer(e, dist, _sight)){ /* S635 — 3.5 → 8 (Michael's A on #190); S1323 — an archer in a gate's pocket sees 20 m, and a foe walking home sees nothing until it is home */
         // Quick LOS: cast ~8 steps between enemy and player, check for walls
         let los=true;
         for(let t=0.15;t<0.9;t+=0.15){
@@ -1272,8 +1273,8 @@ function loop(now){
       if(e.pocket){const P=e.pocket;
         if(e.alert&&!e._pkAwake){if(e._homing){e.path=[];e.pathT=0;}e._homing=false;e._pkAwake=true;for(const o of ENEMIES)if(o!==e&&!o.dead&&o.floor===e.floor&&o.pocket&&o.pocket.id===P.id&&!o.alert&&!o.dormant&&!o.disguised&&!o.cloakSleep){o.alert=true;o._homing=false;o._pkAwake=true;}}
         if(e.alert&&Math.hypot(e.x-P.x,e.z-P.z)>P.r+GATE_LEASH)e.alert=false;
-        if(!e.alert&&e._pkAwake){e._homing=true;e.hasCried=false;e.path=[];e.pathT=0;}
-        e._pkAwake=e.alert;}
+        if(!e.alert&&e._pkAwake&&!_blind){e._homing=true;e.hasCried=false;e.path=[];e.pathT=0;}
+        e._pkAwake=e.alert||(_blind&&e._pkAwake);} /* S1627 — a blind foe is not sent home: it finds you again when the 4 s end */
       // Vanish buff — enemies lose the player
       if(_hasBuff('vanish')&&e.alert){e.alert=false;e.hasCried=false;}
       // v63 — Unaware patrol behavior. Dungeon enemies previously stood
