@@ -309,7 +309,10 @@ return { fitHead, helm, hoodDress };
 let PACK = null;
 // the body's vertices, each once (Session 1294: a Set of its 80,268 indices was made afresh in every loop over them, 2.5 ms each, 56 times a raised hood)
 const bodyV = () => PACK.body0 || (PACK.body0 = [...new Set(PACK.G['body'])]);
-const earLobe = (x, y, z) => y > .672 && Math.abs(x) > .05 && (z < .047 || (z < .055 && Math.abs(x) > .0755));
+const earLobe = (x, y, z) => y > .672 && Math.abs(x) > .05 && (z < .047 || (z < .055 && Math.abs(x) > .0755) || (z < .06 && Math.abs(x) > .07 && y > .68));
+// the beard's roots beside the ear (Session 1661): past |x| .05 and above y .64 (rest), no card roots on skin facing back (n.z under -.3),
+// down and back (n.y under -.5) or in (n.x toward the middle, under .1), on the built body
+const BEARD_TURN = { x: .05, y: .64, back: -.3, down: -.5, side: .1 };
 const beardLine = x => { const t = Math.max(0, Math.min(1, (Math.abs(x) - .032) / .038)); return .675 + .037 * t ** 1.3; };
 // the tied styles' temple line in front of the ear (Session 1640, Michael's note on #272): from the line over the ear (y .742) at the ear's front,
 // rising on one easing to the hairline 5 cm forward. Session 1607's flat line to z .08 and then 3 cm a cm drew a square step from the front
@@ -351,7 +354,8 @@ function loadPack() {
     // the beard under a cheek line (Session 840): from the sideburn by the ear (y .712) down to the corner of the mouth
     // (y .675), 2 to 3 cm under the eye (its lower lid is at y .715); Session 770's flat top at y .705 reached the lid.
     // Not the ear (Session 1656, Michael's note on #272): the lobe and the skin behind it (above y .672, z under .047, and to z .055 where
-    // the lobe's front stands out of the cheek past |x| .0755) took the dark shell and a fan of cards standing off the lobe
+    // the lobe's front stands out of the cheek past |x| .0755) took the dark shell and a fan of cards standing off the lobe; and (Session 1661) the front of
+    // its base and the tragus's folds, past |x| .07 above y .68 to z .06, which a big man's ear stands out to |x| .097 and lit as a pale fan
     beard: sel(G['body'], (x, y, z) => y > .6 && !earLobe(x, y, z) && y < beardLine(x) && z > .02 && (Math.hypot(x / 1.1, y - .655) > .022 || y < .64) && !(y > .66 && y < .705 && Math.abs(x) < .018 && z > .15)),
     beardBase: sel(G['body'], (x, y, z) => y > .6 && !earLobe(x, y, z) && y < beardLine(x) - .008 && z > .02 && (Math.hypot(x / 1.1, y - .655) > .022 || y < .64) && !(y > .66 && y < .705 && Math.abs(x) < .018 && z > .15)),
     // the moustache over the whole upper lip, up to the nose's base (y .684) in the middle and lower toward the nostril's
@@ -3708,7 +3712,16 @@ function* makePersonSteps(G, o = {}) {
       push('beardBase', PACK.R.beardBase, shellMat(sRGB(...G.hairCol).multiplyScalar(.6), 0, 3, { solid: true }), .0015);
       // under a tunic the throat below its collar (rest y .63) grows no beard: those hairs came out through the cloth (Session 878)
       const beardTris = D0.tunic ? (PACK.R.beardTunic || (PACK.R.beardTunic = (() => { const R = PACK.rest, B = PACK.R.beard, o = []; for (let t = 0; t < B.length; t += 3) if (Math.min(R[B[t] * 3 + 1], R[B[t + 1] * 3 + 1], R[B[t + 2] * 3 + 1]) > .638) o.push(B[t], B[t + 1], B[t + 2]); return o; })())) : PACK.R.beard;
-      const bc = hairCards(P, beardTris, { n: 520, len: .02 + .05 * G.beard, seg: 4, width: .011, lift: .15, comb: -.1, fall: 1, grav: .2, rootOff: .002, bone: jawB, color: sRGB(...G.hairCol).multiplyScalar(.92), outward: hc, hug: true, surfs: [surfaceOf(P, PACK.R.beard, hc)] }); bc.userData.roots = beardTris.length / 3;
+      // no card roots beside the ear where the built body's skin faces back, down and back, or in toward the neck (Session 1661, the tuft
+      // owed by Session 1656): the crease under the lobe, the tragus's folds and the jaw's turn below them. A card rooted there had no
+      // downhill to fall along, so it lay flat along the jaw and caught the light, a pale tuft under the ear. Read on this body's own
+      // normals (outward from the head), since a bigger ear turns more of that skin away; the dark shell (beardBase) still covers it
+      const R0 = PACK.rest, bRoots = []; { const A = new THREE.Vector3(), B = new THREE.Vector3(), C = new THREE.Vector3(), c = new THREE.Vector3();
+        for (let t = 0; t < beardTris.length; t += 3) { const a = beardTris[t], b = beardTris[t + 1], d = beardTris[t + 2], rx = (R0[a * 3] + R0[b * 3] + R0[d * 3]) / 3, ry = (R0[a * 3 + 1] + R0[b * 3 + 1] + R0[d * 3 + 1]) / 3;
+          if (Math.abs(rx) > BEARD_TURN.x && ry > BEARD_TURN.y) { A.fromArray(P, a * 3); B.fromArray(P, b * 3); C.fromArray(P, d * 3); c.copy(A).add(B).add(C).divideScalar(3); const n = B.sub(A).cross(C.sub(A)).normalize(); if (n.dot(c.sub(hc)) < 0) n.negate();
+            if (n.z < BEARD_TURN.back || (n.y < BEARD_TURN.down && n.z < 0) || n.x * Math.sign(rx) < BEARD_TURN.side) continue; }
+          bRoots.push(a, b, d); } }
+      const bc = hairCards(P, bRoots, { n: 520, len: .02 + .05 * G.beard, seg: 4, width: .011, lift: .15, comb: -.1, fall: 1, grav: .2, rootOff: .002, bone: jawB, color: sRGB(...G.hairCol).multiplyScalar(.92), outward: hc, hug: true, surfs: [surfaceOf(P, PACK.R.beard, hc)] }); bc.userData.roots = bRoots.length / 3; bc.userData.turned = (beardTris.length - bRoots.length) / 3;
       bc.name = 'beard'; meshes.push(bc);
       const mc = hairCards(P, PACK.R.moust, { n: 110, len: .028, seg: 3, width: .009, lift: .2, comb: -.1, fall: 1, grav: .2, rootOff: .002, bone: headB, color: sRGB(...G.hairCol).multiplyScalar(.92), outward: hc });
       mc.name = 'moust'; meshes.push(mc); } }
