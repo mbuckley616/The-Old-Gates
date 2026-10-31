@@ -140,7 +140,10 @@ const bolt = b ? await page.evaluate(async () => {
   const fb = BALLS.find(f => f.userData.rider === 'sideen'), e = ENEMIES.find(x => x.floor === 1 && x.mesh && !x.dead);
   fb.userData.vx = fb.userData.vy = fb.userData.vz = 0; fb.userData.life = 30; fb.position.y = 1;
   fb.position.x = px - Math.sin(yaw) * 2; fb.position.z = pz - Math.cos(yaw) * 2; e.x = fb.position.x; e.z = fb.position.z; e.posture = e.maxPosture = 1000; unstagger(e); const z0 = Math.hypot(e.x - px, e.z - pz), h0 = e.hp;
-  for (let i = 0; i < 100 && BALLS.includes(fb); i++) await new Promise(r => setTimeout(r, 100));
+  // the foe's posture refills 1.5 s after a blow; one software-GL frame can outlast that between the hit and this read (9.75, S1633),
+  // so its refill is held for the wait and the read is what the hit took
+  const _regen = tickPostureRegen; tickPostureRegen = function (t, ...a) { if (t !== e) return _regen.call(this, t, ...a); };
+  try { for (let i = 0; i < 100 && BALLS.includes(fb); i++) await new Promise(r => setTimeout(r, 100)); } finally { tickPostureRegen = _regen; }
   return { gone: !BALLS.includes(fb), hit: h0 - e.hp, pushed: +(Math.hypot(e.x - px, e.z - pz) - z0).toFixed(2), post: 1000 - e.posture };
 }) : null;
 console.log(JSON.stringify({ q, bolt }));
