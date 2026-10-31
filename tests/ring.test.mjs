@@ -138,7 +138,19 @@ const L = await page.evaluate(() => {
   out.crossed = { end: Lb.end, fix: Lb.fix, rank: arenaState().rank, before: n1 - n0, roughs: roughs.length, alert: roughs.every(e => e.alert), tier: roughs.map(e => e.tier) };
   for (const e of roughs) { if (e.mesh && e.mesh.parent) e.mesh.parent.remove(e.mesh); ZONES.world.enemies.splice(ZONES.world.enemies.indexOf(e), 1); }
   fresh(); const dR = rest[1]; at(dR, 9.5); call(); const rp = WORLD.reportFixer(); ga = gold; Lb = hit(); const eR = Lb.foe; eR.hp = Math.floor(eR.maxHp * .25); run(2); run(200);
-  out.report = { ok: !!rp.ok, paid: Lb.paid, gold: gold - ga, gone: days.every(d => !ladderFixed(4, d, cid)), bribe: (fresh(), at(rest[2] || dR + 1, 9.5), call(), WORLD.takeBribe().say) };
+  const repLb = Lb, repGold = gold - ga;
+  // S1648 — the title: bout 12 won at Caer Slige; the challenger every 28 days; three refusals or one loss and it passes
+  const seat = S[0], callAt = (s) => WORLD.ladderCall({ site: s.id, x: px, z: pz - 2 }), win = () => { Lb = hit(); const e = Lb.foe; e.hp = Math.floor(e.maxHp * .25); run(2); run(200); return Lb; };
+  fresh(); arenaState().rank = 11; at(500, 9.5); callAt(seat); ga = gold; win();
+  out.title = { end: Lb.end, title: arenaState().title, rank: arenaState().rank, champ: ringsState().champion, purse: gold - ga, next: arenaState().nextChallenge };
+  at(501, 9.5); run(1); out.title.after = callAt(seat).say; renderHubAttrs(); out.title.journal = (document.getElementById('standing-body').textContent.match(/The Mark's rings\s*([^A-Z]*Champion)/) || [])[1] || document.getElementById('standing-body').textContent.slice(0, 400);
+  at(528, 9.5); run(1); out.def = { city: callAt(city).say, seat: !!callAt(seat).ok }; Lb = win(); out.def.id = Lb.foe.id; out.def.end = Lb.end; out.def.hp = Lb.foe.maxHp;
+  at(529, 9); run(1); out.def.next = arenaState().nextChallenge; out.def.title = arenaState().title;
+  const refs = []; for (const d of [557, 585, 613]) { at(d, 9); run(1); refs.push([arenaState().refusals, arenaState().title]); }
+  out.refs = refs; out.passed = { champ: ringsState().champion, rank: arenaState().rank, again: (fresh(), arenaState().rank = 11, at(620, 9.5), !!callAt(seat).ok) };
+  arenaState().call = null; titleWon(); const dL = arenaState().nextChallenge; at(dL, 9.5); callAt(seat); Lb = hit(); { const z = pz; pz = z - 2 - 9.1; run(1); pz = z; }
+  out.lostDef = { end: Lb.end, title: arenaState().title, rank: arenaState().rank, champ: ringsState().champion };
+  out.report = { ok: !!rp.ok, paid: repLb.paid, gold: repGold, gone: days.every(d => !ladderFixed(4, d, cid)), bribe: (fresh(), at(rest[2] || dR + 1, 9.5), call(), WORLD.takeBribe().say) };
   return out; });
 console.log('ladder', JSON.stringify(L));
 check(`the call: refused at 7h30 (*${L.early}*); at 10h30 bout ${L.call.bout} is called at ${L.call.hour}h (*${L.call.again}*), and nothing starts before`,
@@ -169,6 +181,14 @@ check(`taken and won anyway: rank ${L.crossed.rank}, none before dusk (${L.cross
   L.crossed.end === 'won' && L.crossed.fix === 'crossed' && L.crossed.rank === 4 && L.crossed.before === 0 && L.crossed.roughs === 2 && L.crossed.alert && L.crossed.tier.every(t => t === 2), L.crossed);
 check(`reported: the next purse ${L.report.paid} (×1.5 of 120), that ring has no fixer again (${L.report.gone}; *${L.report.bribe}*)`,
   L.report.ok && L.report.paid === 180 && L.report.gold === 180 && L.report.gone && /No one is offering/.test(L.report.bribe), L.report);
+check(`bout 12 won at Caer Slige: the title (${L.title.title}), rank ${L.title.rank}, the purse ${L.title.purse}, the posts' champion yours (${L.title.champ}), the challenger due day ${L.title.next}; *${L.title.after}*; the journal: ${L.title.journal}`,
+  L.title.end === 'won' && L.title.title && L.title.rank === 12 && L.title.purse === 1000 && L.title.next === 528 && /hold the title/.test(L.title.after) && /Champion/.test(L.title.journal), L.title);
+check(`on day 528 the challenge (*${L.def.city}* away from the seat), ${L.def.id} at ${L.def.hp} health, defended; the next due ${L.def.next}`,
+  /fought at Caer Slige/.test(L.def.city) && L.def.seat && L.def.id === 'ring:challenger:528' && L.def.end === 'won' && L.def.next === 556 && L.def.title, L.def);
+check(`three challenges let go by: refusals ${L.refs.map(r => r[0] + (r[1] ? '' : ' (passed)')).join(', ')}; the posts' champion ${L.passed.champ}, rank ${L.passed.rank}, bout 12 open again (${L.passed.again})`,
+  L.refs[0][0] === 1 && L.refs[0][1] && L.refs[1][0] === 2 && !L.refs[2][1] && L.passed.champ === 'The challenger' && L.passed.rank === 11 && L.passed.again, L);
+check(`a defence lost over the rope: the title passes (${L.lostDef.title}), rank ${L.lostDef.rank}, ${L.lostDef.champ} on the posts`,
+  L.lostDef.end === 'lost' && !L.lostDef.title && L.lostDef.rank === 11 && L.lostDef.champ === 'The challenger', L.lostDef);
 
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

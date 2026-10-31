@@ -2168,7 +2168,7 @@ const giver=`${lord.title} ${lord.name}`;
   function ladderShieldBout(){return seededRng('ringshield',String(typeof SEED!=='undefined'?SEED:0))()<.5?10:11;}
   function ladderShield(bout){const r=ladderRow(bout);return !!(r.shield||(r.shieldOne&&bout===ladderShieldBout()));}
   // the bout's fighter, built at x,z: its tier's, its moves by bout (the rows off, still seeded when on), its weapon's row, its shield
-  function ladderFighter(bout,x,z){const r=ladderRow(bout),id=ladderFighterId(bout),sh=ladderShield(bout);
+  function ladderFighter(bout,x,z,key){const r=ladderRow(bout),id=key||ladderFighterId(bout),sh=ladderShield(bout);
     const e=keyFoe(unlockFoe(buildZoneEnemy(sc,STATIC_SOL,x,z,sh?'Bandit Captain':'Bandit',null,{tier:r.tier})),id);
     e._ring=bout;e._noFeint=!r.feint;e._noHeavy=!r.heavy;e._ringWpn=ladderWeapon(bout);
     if(r.hpMult){e.maxHp=Math.round(e.maxHp*r.hpMult);e.hp=e.maxHp;}
@@ -2230,7 +2230,8 @@ const giver=`${lord.title} ${lord.name}`;
     if(!s)return {say:'There is no ring here.'};
     if(TS(s).flags.occupied!=null)return {say:'The ring is shut while the town is held.'};
     if(dayNow()<(A.banUntil||0))return {say:'The rings of the Mark are shut to you.'};
-    if(A.rank>=12)return {say:'You hold the title.'};
+    if(A.title){const ch=titleChallengeToday();if(!ch||s.anchor!=='caer_slige')return {say:ch?'The challenge is fought at Caer Slige.':'You hold the title.'};
+      if(A.lastDay===dayNow())return {say:'One bout a day. Come back tomorrow.'};return {ok:true,site:s,bout:12,challenge:true};}
     if(A.lastDay===dayNow())return {say:'One bout a day. Come back tomorrow.'};
     if(A.rank+1===12&&s.anchor!=='caer_slige')return {say:'The title is fought at Caer Slige.'};
     return {ok:true,site:s,bout:A.rank+1};}
@@ -2239,8 +2240,8 @@ const giver=`${lord.title} ${lord.name}`;
     const k=ladderOpenFor(o.site);if(!k.ok)return k;const h=Math.floor(hourNow())+1;
     if(!o.force&&(h<LADDER_OPEN||h>LADDER_CLOSE))return {say:`The bouts are called from ${LADDER_OPEN}h to ${LADDER_CLOSE}h.`};
     const s=k.site,x=o.x!=null?o.x:s.x,z=o.z!=null?o.z:s.z;
-    A.call={bout:k.bout,site:s.id,x,z,day:dayNow(),hour:h,at:(Math.floor(absMin()/60)+1)*60};
-    A.call.fixer=ladderFixed(k.bout,A.call.day,s.id);
+    A.call={bout:k.bout,site:s.id,x,z,day:dayNow(),hour:h,at:(Math.floor(absMin()/60)+1)*60,challenge:!!k.challenge};
+    A.call.fixer=!k.challenge&&ladderFixed(k.bout,A.call.day,s.id);
     showMsg(`Bout ${k.bout} of 12 is called at ${h}h. ${ladderRow(k.bout).purse} gold to the winner.${A.call.fixer?' A man at the gate wants a word.':''}`,'#e8d8a0');return {ok:true,bout:k.bout,hour:h,fixer:A.call.fixer};}
   // S1646 — arenas-build.md session 4, the wager. Before the call's hour you may stake up to the purse on yourself (one stake, by
   // placeStake). The odds are 1 + (the fighter's tier level − your level) ÷ 5, clamped from evens (1) to 4 to 1, and fixed when the stake
@@ -2281,12 +2282,33 @@ const giver=`${lord.title} ${lord.name}`;
     for(let k=0;k<2;k++){const a=k*Math.PI,e=keyFoe(buildZoneEnemy(sc,STATIC_SOL,R.x+Math.cos(a)*(LADDER_R+3),R.z+Math.sin(a)*(LADDER_R+3),'Bandit',null,{tier:R.tier}),`rough:${R.site}:${R.day}:${k}`);
       e.name=e.displayName='A rough';e.alert=true;if(e.mesh&&!e.mesh.parent)sc.add(e.mesh);ZONES.world.enemies.push(e);}
     showMsg('Two men are waiting at the ring\'s gate. The bookmaker wants his money back.','#ff6060');}
+  // S1648 — arenas-build.md session 5, the title. Win bout 12 and the champion's name on every ring's post is yours (rings.champion,
+  // the world's: your character's id, or null for "you" solo); the arena's `title` and the day it was won are the character's. Every
+  // 28 game days from that day a challenger, a fresh tier-4 fighter at ×4.8 keyed `ring:challenger:<day>`, is called at Caer Slige:
+  // that day, the master calls the bout as he calls any other (ladderCall, 9h–17h). Win and the refusals go back to 0 and Caer Slige
+  // +1 favour (no purse: the sheet's "no discount and no gear"); lose, and the title passes to the challenger. A challenge day that
+  // ends unfought is a refusal (or titleRefuse, the master's *Not today*); three in a row and the title passes. When it passes, the
+  // champion's name on the posts is the challenger's, and your rank drops to 11, so bout 12 is yours to fight again. Markish greetings
+  // at every yard and League standing +1 are the quest writer's lines and a standing the League does not keep yet. Named actions:
+  // titleWon, titleRefuse, titlePass.
+  const TITLE_DAYS=28,TITLE_REFUSALS=3;
+  function titleWon(){const A=arenaState();A.title=true;A.titleDay=dayNow();A.refusals=0;A.nextChallenge=dayNow()+TITLE_DAYS;
+    ringsState().champion=worldState.charId||null;showMsg('The champion of the Mark. Your name goes on every post.','#ffd700');}
+  function titleChallengeToday(){const A=arenaState();return !!(A.title&&dayNow()===A.nextChallenge);}
+  function titlePass(name){const A=arenaState();A.title=false;A.rank=Math.min(A.rank,11);A.refusals=0;A.nextChallenge=null;
+    ringsState().champion=name||'The challenger';showMsg(`The title passes to ${name||'the challenger'}.`,'#e8d8a0');}
+  function titleRefuse(){const A=arenaState();if(!A.title||A.nextChallenge==null)return null;A.refusals=(A.refusals||0)+1;A.nextChallenge+=TITLE_DAYS;
+    if(A.call&&A.call.challenge)A.call=null;if(A.refusals>=TITLE_REFUSALS){titlePass('The challenger');return 'passed';}
+    showMsg(`You let the challenge go by. ${A.refusals} of ${TITLE_REFUSALS}.`,'#e8d8a0');return 'refused';}
+  function tickTitle(){const A=worldState.arena;if(!A||!A.title||A.nextChallenge==null||LBOUT)return;
+    if(A.defended===A.nextChallenge&&dayNow()>A.nextChallenge){A.nextChallenge+=TITLE_DAYS;return;} /* fought and won that day */
+    if(dayNow()>A.nextChallenge&&!(A.call&&A.call.challenge))titleRefuse();}
   function ladderBegin(){const A=arenaState(),C=A.call;A.call=null;
     if(Math.hypot(px-C.x,pz-C.z)>LADDER_R+LADDER_NEAR){A.lastDay=C.day;ladderSettle(false);showMsg('Your bout was called and you were not at the ring. The day is lost.','#e8d8a0');return null;}
     const dx=px-C.x,dz=pz-C.z,d=Math.hypot(dx,dz)||1,fx=C.x-dx/d*3,fz=C.z-dz/d*3;
-    const e=ladderFighter(C.bout,fx,fz);e.name=e.displayName=`The fighter of bout ${C.bout}`;e._questTag='ring';e.homeX=C.x;e.homeZ=C.z;
+    const e=ladderFighter(C.bout,fx,fz,C.challenge?`ring:challenger:${C.day}`:null);e.name=e.displayName=C.challenge?'The challenger':`The fighter of bout ${C.bout}`;e._questTag='ring';e.homeX=C.x;e.homeZ=C.z;
     if(e.mesh&&!e.mesh.parent)sc.add(e.mesh);ZONES.world.enemies.push(e);
-    LBOUT={foe:e,bout:C.bout,site:C.site,x:C.x,z:C.z,day:C.day,bribe:C.bribe||0,end:null,paid:0};
+    LBOUT={foe:e,bout:C.bout,challenge:!!C.challenge,site:C.site,x:C.x,z:C.z,day:C.day,bribe:C.bribe||0,end:null,paid:0};
     boutStart({foe:e,x:C.x,z:C.z,r:LADDER_R,on:{
       yield:()=>showMsg(`${e.name} goes down on one knee.`,'#e8d8a0'),
       won:()=>ladderEnd('won'),lost:(b,how)=>ladderEnd('lost',how),murder:()=>ladderEnd('murder')}});
@@ -2296,7 +2318,8 @@ const giver=`${lord.title} ${lord.name}`;
       ringOf(L.site).dead.push(e.name);const R=ringsState();R.next[L.bout]=(R.next[L.bout]||0)+1;}
     else{if(e&&!e.dead){if(e.mesh&&e.mesh.parent)e.mesh.parent.remove(e.mesh);const i=ZONES.world.enemies.indexOf(e);if(i>=0)ZONES.world.enemies.splice(i,1);}
       const k=staggered.findIndex(q=>q.e===e);if(k>=0)staggered.splice(k,1);}
-    if(how==='won'){A.rank=Math.max(A.rank,L.bout);L.paid=payPurse(ladderRow(L.bout).purse*(A.purseUp||1));A.purseUp=0;addFavor(L.site,1);L.won=ladderSettle(true);}
+    if(L.challenge){if(how==='won'){A.refusals=0;A.defended=L.day;addFavor(L.site,1);}else titlePass(e.name);}
+    else if(how==='won'){A.rank=Math.max(A.rank,L.bout);if(L.bout===12)titleWon();L.paid=payPurse(ladderRow(L.bout).purse*(A.purseUp||1));A.purseUp=0;addFavor(L.site,1);L.won=ladderSettle(true);}
     else{ladderSettle(false);if(how==='lost'){PHP=Math.max(PHP,1);if(typeof updateHUD==='function')updateHUD();}}
     L.end=how;L.why=why||null;L.fix=ladderFixEnd(L,how);
     showMsg(how==='won'?`${e.name} salutes you. The purse is yours: ${L.paid} gold.${L.won>0?` The book pays ${L.won}.`:''}`:how==='murder'?`${e.name} is dead. The crowd goes quiet, and the rings of the Mark are shut to you.`:why==='forfeit'?'You drank inside the rope. The bout is forfeit.':why==='rope'?'You step over the rope. The bout is lost.':'The bout is lost. Come back tomorrow.','#e8d8a0');
@@ -2306,7 +2329,7 @@ const giver=`${lord.title} ${lord.name}`;
     if(!(it.type==='potion'||it.type==='herb'||it.type==='scroll'||it.brew||it.meal||it.food||it.name==='Mystic Scroll'))return false;
     if(Math.hypot(px-LBOUT.x,pz-LBOUT.z)>LADDER_R+BOUT_ROPE)return false;boutOver('lost','forfeit');return true;}
   function tickLadder(dt){const A=worldState.arena;
-    if(A&&A.roughs)tickRoughs();if(!LBOUT&&A&&A.call&&absMin()>=A.call.at&&!BOUT&&!SPAR&&!BRAWL)ladderBegin(); /* at the hour; not at the ring, the day is lost */
+    if(A&&A.roughs)tickRoughs();if(A&&A.title)tickTitle();if(!LBOUT&&A&&A.call&&absMin()>=A.call.at&&!BOUT&&!SPAR&&!BRAWL)ladderBegin(); /* at the hour; not at the ring, the day is lost */
     const L=LBOUT;if(!L)return;if(!BOUT||BOUT.foe!==L.foe){ladderEnd('lost','left');return;}boutTick(dt);}
   function tickSpar(){if(!SPAR){if(EQ.weapon&&EQ.weapon.yard){EQ.weapon=null;sparKitRefresh();}return;}const S=SPAR,e=S.foe;
     if(!e||e.dead){sparEnd('left');return;}e.hp=e.maxHp;e.alert=true;
