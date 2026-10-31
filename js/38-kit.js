@@ -3009,7 +3009,7 @@ function markRing(hAt = () => 0, o = {}) {
   return { group, tris: Math.round(tris), draws: group.children.length, R, gate: { x: 0, z: R + .6 }, post: { x: px, z: pz, w: .36, d: .36 }, stands, paint: names.paint };
 }
 // the post's six boards as one canvas, a row of 256 by 128 to a board (the board's 0.26 by 0.13 m): paint(list) cuts list[k] into board k
-// in capitals, incised (a dark groove, its lower lip caught by the light), one line or two to fit; a board with no name is left bare (the
+// in capitals, cut (the fresh wood pale in the groove, its upper edge in shadow), one line or two to fit; a board with no name is left bare (the
 // face is cut out by alphaTest, so the board's own wood shows). Each ring has its own, since each post has its own dead.
 function ringNames() { const W = 256, H = 128, c = document.createElement('canvas'); c.width = W; c.height = H * 6; const x = c.getContext('2d'), t = finishTex(c);
   t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; t.generateMipmaps = false; t.minFilter = THREE.LinearFilter;
@@ -3018,9 +3018,9 @@ function ringNames() { const W = 256, H = 128, c = document.createElement('canva
   const paint = (list = []) => { const L = Array.from({ length: 6 }, (_, k) => String(list[k] || '').toUpperCase().replace(/\s+/g, ' ').trim().slice(0, 40)), key = L.join('|'); if (key === sig) return false; sig = key;
     x.clearRect(0, 0, W, H * 6); x.textAlign = 'center'; x.textBaseline = 'middle';
     for (let k = 0; k < 6; k++) { const n = L[k]; if (!n) continue; const fit = (str, max) => { x.font = `700 100px Georgia, serif`; return Math.min(max, 100 * (W - 24) / Math.max(1, x.measureText(str).width)); };
-      let lines = [n], s = fit(n, 62); if (s < 36 && n.includes(' ')) { const w = n.split(' '); let best = null; for (let i = 1; i < w.length; i++) { const a = w.slice(0, i).join(' '), b = w.slice(i).join(' '), q = Math.min(fit(a, 50), fit(b, 50)); if (!best || q > best.q) best = { q, a, b }; } lines = [best.a, best.b]; s = best.q; }
+      let lines = [n], s = fit(n, 62); if (s < 28 && n.includes(' ')) { const w = n.split(' '); let best = null; for (let i = 1; i < w.length; i++) { const a = w.slice(0, i).join(' '), b = w.slice(i).join(' '), q = Math.min(fit(a, 50), fit(b, 50)); if (!best || q > best.q) best = { q, a, b }; } lines = [best.a, best.b]; s = best.q; }
       x.font = `700 ${Math.max(12, Math.floor(s))}px Georgia, serif`; const lh = s * 1.02, y0 = k * H + H / 2 - (lines.length - 1) * lh / 2;
-      lines.forEach((ln, i) => { const y = y0 + i * lh; x.fillStyle = '#b8935e'; x.fillText(ln, W / 2 + 2, y + 3); x.fillStyle = '#1e130a'; x.fillText(ln, W / 2, y); }); }
+      lines.forEach((ln, i) => { const y = y0 + i * lh; x.fillStyle = '#0c0704'; x.fillText(ln, W / 2 - 2, y - 2); x.fillStyle = '#9a7a52'; x.fillText(ln, W / 2, y); }); }
     t.needsUpdate = true; return true; };
   paint([]); return { mat, paint }; }
 // ── a felled trunk (Session 1540, for survival B's Felling, Session 1534: "the trunk falls where you face"; the systems builder's ask):

@@ -47,8 +47,8 @@ for (const s of sites) { if (!await g.settle(s.id)) { rings.push({ id: s.id, set
       px = G.gate.x; pz = G.gate.z; const p1 = ringPrompt(); ringUse(); const call = A.call ? { at: Math.hypot(A.call.x - G.x, A.call.z - G.z), site: A.call.site } : null; A.call = null;
       ringOf(id).dead.push('Testfighter'); px = G.post.x; pz = G.post.z; const p2 = ringPrompt(), lines = ringPostLines(id).join(' '); ringOf(id).dead.pop();
       CAM.position.set(G.gate.x, G.y + 1.6, G.gate.z); houseLod(); const near = WORLD.settle.get(id).ringLod.hi.visible; CAM.position.set(G.x + 300, G.y + 1.6, G.z); houseLod(); const far = !WORLD.settle.get(id).ringLod.hi.visible && WORLD.settle.get(id).ringLod.lo.visible;
-      /* S1662 — the names cut on the boards: the ring's own canvas, a row a board; ink counted as dark opaque pixels in a row */
-      const nm = WORLD.settle.get(id).ring.paint && S_names(id), ink = k => { const c = nm.image, d = c.getContext('2d').getImageData(0, k * 128, 256, 128).data; let n = 0; for (let i = 0; i < d.length; i += 4) if (d[i + 3] > 128 && d[i] < 80) n++; return n; };
+      /* S1662 — the names cut on the boards: the ring's own canvas, a row a board; ink counted as the opaque pixels in a row (the rest is cut away) */
+      const nm = WORLD.settle.get(id).ring.paint && S_names(id), ink = k => { const c = nm.image, d = c.getContext('2d').getImageData(0, k * 128, 256, 128).data; let n = 0; for (let i = 0; i < d.length; i += 4) if (d[i + 3] > 128) n++; return n; };
       function S_names(id) { const m = WORLD.settle.get(id).ringLod.hi.children.find(c => c.name === 'ring:names'); return m && m.material.map; }
       const R0 = worldState.rings || (worldState.rings = {}); const was = R0.champion; R0.champion = 'Ragnall Ironmere'; ringOf(id).dead.push('Testfighter'); CAM.position.set(G.gate.x, G.y + 1.6, G.gate.z); houseLod();
       const cut = nm ? [ink(0), ink(1), ink(2)] : null; R0.champion = was; ringOf(id).dead.pop(); houseLod(); const bare = nm ? [ink(0), ink(1)] : null;
