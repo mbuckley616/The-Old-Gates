@@ -83,5 +83,54 @@ check(`over the rope: lost, the stake kept (${b.rope.gold}), your kit back`, b.r
 check(`a blow that kills after the yield is murder: bounty ${b.murder.bounty}, favour ${b.murder.favour}, the rings shut ${b.murder.ban} days`,
   b.murder.dead && b.murder.bounty === 125 && b.murder.favour === -5 && b.murder.ban === 28 && b.murder.end && b.murder.kit, b.murder);
 
+// S1645 — the ladder's call on the hour, the bout in the 8 m ring, the purse, the day used up, the potion forfeit, a call missed, the
+// rope, murder and the title's ring. Driven by the ladder's own tick (no foe swings back), the ring 2 m from the player.
+const L = await page.evaluate(() => {
+  const out = {}; gold = 1000; staggered.length = 0; delete worldState.arena; delete worldState.rings; delete worldState.crime; delete worldState.favor;
+  const S = ladderSites(), city = S.find(s => s.anchor !== 'caer_slige'), cid = city.id;
+  const at = (day, h) => { worldState.gameTimeAbsMinutes = day * 1440 + Math.round(h * 60); worldState.gameTimeMinutes = Math.round(h * 60) % 1440; };
+  const run = (n) => { for (let i = 0; i < n; i++) tickLadder(1 / 60); };
+  const call = () => WORLD.ladderCall({ site: cid, x: px, z: pz - 2 });
+  const hit = () => { const c = arenaState().call; at(c.day, c.hour); run(1); return WORLD.ladder; };
+  at(5, 7.5); out.early = call().say;
+  at(5, 10.5); let r = call(); out.call = { ok: !!r.ok, bout: r.bout, hour: r.hour, again: call().say };
+  at(5, 10.9); run(5); out.before = !!WORLD.ladder;
+  let Lb = hit(); const e = Lb && Lb.foe; out.begin = { on: !!Lb, r: WORLD.bout && WORLD.bout.r, d: e && Math.round(Math.hypot(e.x - px, e.z - (pz - 2)) * 10) / 10, feint: e && e._noFeint, heavy: e && e._noHeavy };
+  e.hp = Math.floor(e.maxHp * .25); run(2); out.yielded = WORLD.bout && WORLD.bout.state; run(200);
+  out.won = { end: Lb.end, gold: gold - 1000, rank: arenaState().rank, favour: (worldState.favor || {})[cid], alive: !e.dead };
+  out.sameDay = call().say;
+  // day 6: bout 2, a draught drunk inside the rope
+  at(6, 9.2); call(); Lb = hit(); bagAdd({ name: 'Test Draught', type: 'potion', heal: 10, qty: 1 }); DRINK = null;
+  useItem(BAG.findIndex(it => it.name === 'Test Draught')); out.forfeit = { end: Lb.end, why: Lb.why, rank: arenaState().rank, next: call().say };
+  // day 7: called and away from the ring at the hour
+  at(7, 12.4); call(); const x0 = px; px = x0 + 40; const c7 = arenaState().call; at(7, c7.hour); run(1); px = x0;
+  out.away = { on: !!WORLD.ladder, call: arenaState().call, day: arenaState().lastDay };
+  // day 8: over the 8 m rope
+  at(8, 13.5); call(); Lb = hit(); px = x0 + 7.5; run(1); out.inside = !WORLD.ladder || WORLD.ladder === Lb; px = x0; const zr = pz; pz = zr - 2 - 9.1; run(1); pz = zr;
+  out.rope = { end: Lb.end, why: Lb.why, rank: arenaState().rank };
+  // day 9: bout 4 (rank 3), murder after the held 0.4 s
+  arenaState().rank = 3; at(9, 9.5); call(); Lb = hit(); const e4 = Lb.foe; out.f4 = { feint: e4._noFeint, id: e4.id };
+  e4.hp = Math.floor(e4.maxHp * .25); run(2); playClockS += 1; _offenceS = playClockS; e4.hp = 0; killZoneEnemy(e4, scene, '');
+  const c9 = (worldState.crime || {})[cid];
+  out.murder = { end: Lb.end, ban: arenaState().banUntil - dayNow(), bounty: c9 && c9.bounty, post: ringOf(cid).dead.slice(), id: ladderFighterId(4), shut: (at(10, 10), call().say) };
+  // the title is fought at Caer Slige only
+  Object.assign(arenaState(), { rank: 11, banUntil: 0, lastDay: -1 }); out.title = call().say;
+  return out; });
+console.log('ladder', JSON.stringify(L));
+check(`the call: refused at 7h30 (*${L.early}*); at 10h30 bout ${L.call.bout} is called at ${L.call.hour}h (*${L.call.again}*), and nothing starts before`,
+  /from 9h to 17h/.test(L.early) && L.call.ok && L.call.bout === 1 && L.call.hour === 11 && /called at 11h/.test(L.call.again) && !L.before, L.call);
+check(`at the hour the bout begins in an ${L.begin.r} m ring, the fighter ${L.begin.d} m off, light blows only (feint off ${L.begin.feint}, heavy off ${L.begin.heavy})`,
+  L.begin.on && L.begin.r === 8 && L.begin.feint === true && L.begin.heavy === true, L.begin);
+check(`yielded at a quarter (${L.yielded}) and spared: the purse ${L.won.gold}, rank ${L.won.rank}, the town's favour ${L.won.favour}; one bout a day (*${L.sameDay}*)`,
+  L.yielded === 'yielded' && L.won.end === 'won' && L.won.gold === 50 && L.won.rank === 1 && L.won.favour === 1 && L.won.alive && /One bout a day/.test(L.sameDay), L.won);
+check(`a draught drunk inside the rope forfeits the bout (${L.forfeit.end}, ${L.forfeit.why}), rank still ${L.forfeit.rank}, the day used (*${L.forfeit.next}*)`,
+  L.forfeit.end === 'lost' && L.forfeit.why === 'forfeit' && L.forfeit.rank === 1 && /One bout a day/.test(L.forfeit.next), L.forfeit);
+check(`not at the ring at the hour: no bout (${L.away.on}), the day lost (${L.away.day})`, !L.away.on && !L.away.call && L.away.day === 7, L.away);
+check(`7.5 m in is inside the ring (${L.inside}); 1 m past the 8 m rope is lost (${L.rope.end}, ${L.rope.why}), rank ${L.rope.rank}`,
+  L.inside && L.rope.end === 'lost' && L.rope.why === 'rope' && L.rope.rank === 1, L.rope);
+check(`murder at bout 4 (the feint on: ${!L.f4.feint}): bounty ${L.murder.bounty}, the rings shut ${L.murder.ban} days (*${L.murder.shut}*), ${L.murder.post.join()} on the post, the bout's next fighter ${L.murder.id}`,
+  L.f4.feint === false && L.murder.end === 'murder' && L.murder.bounty === 125 && L.murder.ban === 28 && /shut to you/.test(L.murder.shut) && L.murder.post.join() === 'The fighter of bout 4' && L.murder.id === 'ring:4:1', L.murder);
+check(`bout 12 is refused away from Caer Slige (*${L.title}*)`, /fought at Caer Slige/.test(L.title), L.title);
+
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

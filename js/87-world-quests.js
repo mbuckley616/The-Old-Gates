@@ -2213,6 +2213,61 @@ const giver=`${lord.title} ${lord.name}`;
     showMsg(how==='won'?`${e.name} is spared. The stakes are yours: ${paid} gold.`:how==='lost'?(why==='rope'?'You step over the rope. The stakes go to the other side.':'You go down. The stakes go to the other side.'):how==='murder'?`${e.name} is dead. The yard goes quiet, and the rings of the Mark are shut to you.`:'The brawl is called off. Your stake comes back.','#e8d8a0');
     return B;}
   function tickBrawl(dt){const B=BRAWL;if(!B)return;if(!BOUT||BOUT.foe!==B.foe){brawlEnd('left');return;}boutTick(dt);}
+  // S1645 — arenas-build.md session 3's rest: the ladder's call, its bout, the purse and the potion forfeit (Michael's B on #914). You
+  // speak to a ring's master (the look builder's and the quest writer's: ladderCall is what the master calls) and your next bout
+  // (rank + 1) is called at the next hour, from 9h to 17h: so the master takes a call from 8h until 16h59. One bout a game day: a win,
+  // a loss, a forfeit and a call you were not at the ring for all use the day (worldState.arena.lastDay). The twelfth is fought only
+  // at Caer Slige. Shut to you while the ban runs (murder, 28 days), and no ring stands in an occupied town (canon §12a). The bout is
+  // the shared one in an 8 m ring (LADDER_R): the rope, the yield at a quarter, held at 1, the 0.4 s held blow, spared after 3 s. A
+  // win pays the purse (payPurse) and raises the rank, and the spared fighter salutes: the ring's town +1 favour. Inside the rope a
+  // potion, a tincture, a herb, a meal or a scroll forfeits the bout (ringForfeit, from useItem); a buff already running stays on, and
+  // words and bows are allowed. Murder (a blow after the held 0.4 s that kills) is 5 points, the rings shut 28 days, the fighter's name
+  // cut into that ring's post and a new fighter for the bout (rings.next). The wager and the fixer are session 4's, the title session 5's.
+  // Named actions: ladderCall, ladderEnd, ringForfeit.
+  const LADDER_OPEN=9,LADDER_CLOSE=17,LADDER_NEAR=4;
+  let LBOUT=null; /* {foe,bout,site,x,z,end,paid} — the bout being fought */
+  function ladderOpenFor(site){const A=arenaState(),S=ladderSites(),s=S.find(q=>q.id===(site&&site.id||site));
+    if(!s)return {say:'There is no ring here.'};
+    if(TS(s).flags.occupied!=null)return {say:'The ring is shut while the town is held.'};
+    if(dayNow()<(A.banUntil||0))return {say:'The rings of the Mark are shut to you.'};
+    if(A.rank>=12)return {say:'You hold the title.'};
+    if(A.lastDay===dayNow())return {say:'One bout a day. Come back tomorrow.'};
+    if(A.rank+1===12&&s.anchor!=='caer_slige')return {say:'The title is fought at Caer Slige.'};
+    return {ok:true,site:s,bout:A.rank+1};}
+  function ladderCall(o){o=o||{};if(BOUT||SPAR||BRAWL||LBOUT)return {say:'You are already in the ring.'};
+    const A=arenaState();if(A.call&&A.call.day===dayNow())return {say:`Your bout is called at ${A.call.hour}h.`};
+    const k=ladderOpenFor(o.site);if(!k.ok)return k;const h=Math.floor(hourNow())+1;
+    if(!o.force&&(h<LADDER_OPEN||h>LADDER_CLOSE))return {say:`The bouts are called from ${LADDER_OPEN}h to ${LADDER_CLOSE}h.`};
+    const s=k.site,x=o.x!=null?o.x:s.x,z=o.z!=null?o.z:s.z;
+    A.call={bout:k.bout,site:s.id,x,z,day:dayNow(),hour:h,at:(Math.floor(absMin()/60)+1)*60};
+    showMsg(`Bout ${k.bout} of 12 is called at ${h}h. ${ladderRow(k.bout).purse} gold to the winner.`,'#e8d8a0');return {ok:true,bout:k.bout,hour:h};}
+  function ladderBegin(){const A=arenaState(),C=A.call;A.call=null;
+    if(Math.hypot(px-C.x,pz-C.z)>LADDER_R+LADDER_NEAR){A.lastDay=C.day;showMsg('Your bout was called and you were not at the ring. The day is lost.','#e8d8a0');return null;}
+    const dx=px-C.x,dz=pz-C.z,d=Math.hypot(dx,dz)||1,fx=C.x-dx/d*3,fz=C.z-dz/d*3;
+    const e=ladderFighter(C.bout,fx,fz);e.name=e.displayName=`The fighter of bout ${C.bout}`;e._questTag='ring';e.homeX=C.x;e.homeZ=C.z;
+    if(e.mesh&&!e.mesh.parent)sc.add(e.mesh);ZONES.world.enemies.push(e);
+    LBOUT={foe:e,bout:C.bout,site:C.site,x:C.x,z:C.z,end:null,paid:0};
+    boutStart({foe:e,x:C.x,z:C.z,r:LADDER_R,on:{
+      yield:()=>showMsg(`${e.name} goes down on one knee.`,'#e8d8a0'),
+      won:()=>ladderEnd('won'),lost:(b,how)=>ladderEnd('lost',how),murder:()=>ladderEnd('murder')}});
+    showMsg(`Bout ${C.bout}. The ring closes.`,'#e8d8a0');return LBOUT;}
+  function ladderEnd(how,why){const L=LBOUT;if(!L)return null;LBOUT=null;boutEnd(L.foe);const e=L.foe,A=arenaState();A.lastDay=dayNow();
+    if(how==='murder'){ringCrime(L.site,'murder',MURDER_PTS);A.banUntil=Math.max(A.banUntil||0,dayNow()+RING_BAN_DAYS);
+      ringOf(L.site).dead.push(e.name);const R=ringsState();R.next[L.bout]=(R.next[L.bout]||0)+1;}
+    else{if(e&&!e.dead){if(e.mesh&&e.mesh.parent)e.mesh.parent.remove(e.mesh);const i=ZONES.world.enemies.indexOf(e);if(i>=0)ZONES.world.enemies.splice(i,1);}
+      const k=staggered.findIndex(q=>q.e===e);if(k>=0)staggered.splice(k,1);}
+    if(how==='won'){A.rank=Math.max(A.rank,L.bout);L.paid=payPurse(ladderRow(L.bout).purse);addFavor(L.site,1);}
+    else if(how==='lost'){PHP=Math.max(PHP,1);if(typeof updateHUD==='function')updateHUD();}
+    L.end=how;L.why=why||null;
+    showMsg(how==='won'?`${e.name} salutes you. The purse is yours: ${L.paid} gold.`:how==='murder'?`${e.name} is dead. The crowd goes quiet, and the rings of the Mark are shut to you.`:why==='forfeit'?'You drank inside the rope. The bout is forfeit.':why==='rope'?'You step over the rope. The bout is lost.':'The bout is lost. Come back tomorrow.','#e8d8a0');
+    return L;}
+  // what the rope forbids: anything drunk, eaten or read from the pack
+  function ringForfeit(it){if(!LBOUT||!BOUT||BOUT.foe!==LBOUT.foe||!it||(typeof DRINK!=='undefined'&&DRINK))return false;
+    if(!(it.type==='potion'||it.type==='herb'||it.type==='scroll'||it.brew||it.meal||it.food||it.name==='Mystic Scroll'))return false;
+    if(Math.hypot(px-LBOUT.x,pz-LBOUT.z)>LADDER_R+BOUT_ROPE)return false;boutOver('lost','forfeit');return true;}
+  function tickLadder(dt){const A=worldState.arena;
+    if(!LBOUT&&A&&A.call&&absMin()>=A.call.at&&!BOUT&&!SPAR&&!BRAWL)ladderBegin(); /* at the hour; not at the ring, the day is lost */
+    const L=LBOUT;if(!L)return;if(!BOUT||BOUT.foe!==L.foe){ladderEnd('lost','left');return;}boutTick(dt);}
   function tickSpar(){if(!SPAR){if(EQ.weapon&&EQ.weapon.yard){EQ.weapon=null;sparKitRefresh();}return;}const S=SPAR,e=S.foe;
     if(!e||e.dead){sparEnd('left');return;}e.hp=e.maxHp;e.alert=true;
     if(Math.hypot(px-S.x,pz-S.z)>SPAR_LEAVE||!sparOpen()&&!S.force)sparEnd('left');}
