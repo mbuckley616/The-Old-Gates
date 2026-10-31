@@ -39,7 +39,7 @@ for (const s of sites) { if (!await g.settle(s.id)) { rings.push({ id: s.id, set
     let trees = 0; const m = new THREE.Matrix4(), v = new THREE.Vector3();
     for (const ch of chunks.values()) for (const o of ch.group.children) { if (!o.isInstancedMesh || !o.userData.scatter) continue; for (let i = 0; i < o.count; i++) { o.getMatrixAt(i, m); v.setFromMatrixPosition(m); if (Math.hypot(v.x - G.x, v.z - G.z) < 12) trees++; } }
     const T = PKIT.mk.ring(), Y = PKIT.mk.yard(), M = PKIT.mk.mats(), own = new Set([M.beam, M.carve, ...M.wall]); Y.group.children.forEach(c => own.add(c.material));
-    const newMats = T.group.children.filter(c => !own.has(c.material)).length, dc = Math.hypot(G.x - S.site.x, G.z - S.site.z);
+    const newMats = T.group.children.filter(c => c.name !== 'ring:names' && !own.has(c.material)).length, dc = Math.hypot(G.x - S.site.x, G.z - S.site.z);
     return { id: s.id, kind: s.kind, r: G.r, tris: G.tris, draws: G.draws, fall: +(hi - lo).toFixed(2), road: +road.toFixed(1), open, stands, sols: G.sols.length, trees, newMats, out: +(dc - S.site.pad).toFixed(1) };
   }, s));
   if (!rings[rings.length - 1].none) { const r = rings[rings.length - 1];
@@ -47,15 +47,21 @@ for (const s of sites) { if (!await g.settle(s.id)) { rings.push({ id: s.id, set
       px = G.gate.x; pz = G.gate.z; const p1 = ringPrompt(); ringUse(); const call = A.call ? { at: Math.hypot(A.call.x - G.x, A.call.z - G.z), site: A.call.site } : null; A.call = null;
       ringOf(id).dead.push('Testfighter'); px = G.post.x; pz = G.post.z; const p2 = ringPrompt(), lines = ringPostLines(id).join(' '); ringOf(id).dead.pop();
       CAM.position.set(G.gate.x, G.y + 1.6, G.gate.z); houseLod(); const near = WORLD.settle.get(id).ringLod.hi.visible; CAM.position.set(G.x + 300, G.y + 1.6, G.z); houseLod(); const far = !WORLD.settle.get(id).ringLod.hi.visible && WORLD.settle.get(id).ringLod.lo.visible;
-      return { p1, p2, call, lines, near, far }; }, s.id)); }
+      /* S1662 — the names cut on the boards: the ring's own canvas, a row a board; ink counted as dark opaque pixels in a row */
+      const nm = WORLD.settle.get(id).ring.paint && S_names(id), ink = k => { const c = nm.image, d = c.getContext('2d').getImageData(0, k * 128, 256, 128).data; let n = 0; for (let i = 0; i < d.length; i += 4) if (d[i + 3] > 128 && d[i] < 80) n++; return n; };
+      function S_names(id) { const m = WORLD.settle.get(id).ringLod.hi.children.find(c => c.name === 'ring:names'); return m && m.material.map; }
+      const R0 = worldState.rings || (worldState.rings = {}); const was = R0.champion; R0.champion = 'Ragnall Ironmere'; ringOf(id).dead.push('Testfighter'); CAM.position.set(G.gate.x, G.y + 1.6, G.gate.z); houseLod();
+      const cut = nm ? [ink(0), ink(1), ink(2)] : null; R0.champion = was; ringOf(id).dead.pop(); houseLod(); const bare = nm ? [ink(0), ink(1)] : null;
+      return { p1, p2, call, lines, near, far, cut, bare }; }, s.id)); }
 }
 console.log(JSON.stringify(rings));
 const got = rings.filter(r => !r.none && r.settled !== false);
 check(`the ladder's ${sites.length} sites (${sites.map(s => s.name + ' ' + s.kind).join(', ')}) each have a ring (${got.length})`, sites.length >= 4 && got.length === sites.length, rings);
-check(`each ring is 8 m, ${got.map(r => r.tris).join('/')} triangles in ${got.map(r => r.draws).join('/')} draws, in no new material`, got.length && got.every(r => r.r === 8 && r.tris < 8000 && r.draws <= 6 && r.newMats === 0), got);
+check(`each ring is 8 m, ${got.map(r => r.tris).join('/')} triangles in ${got.map(r => r.draws).join('/')} draws, in no new material`, got.length && got.every(r => r.r === 8 && r.tris < 8000 && r.draws <= 7 && r.newMats === 0), got);
 check(`outside the walls (${got.map(r => r.out).join('/')} m past the pad), its ground falls ${got.map(r => r.fall).join('/')} m, no road or tree in it`, got.length && got.every(r => r.fall < 1.6 && r.road >= 1.4 && r.trees === 0), got);
 check('the ring is open, the stands and the post are solid', got.length && got.every(r => r.open && r.stands === r.sols), got);
 check('at its gate the ring itself is drawn, from 300 m its earth alone', got.length && got.every(r => r.near && r.far), got);
 check('its gate takes the call at the ring, its post reads the names', got.length && got.every(r => r.p1 && /bout/.test(r.p1) && r.call && r.call.at < .01 && /post/.test(r.p2) && /Testfighter/.test(r.lines)), got);
+check('the post\'s boards carry the names: the champion on the top board, the dead under it, bare again when they go', got.length && got.every(r => r.cut && r.cut[0] > 300 && r.cut[1] > 300 && r.cut[2] === 0 && r.bare && r.bare[1] === 0 && (r.bare[0] === 0 || r.bare[0] > 300)), got.map(r => ({ id: r.id, cut: r.cut, bare: r.bare })));
 check('no errors', g.errs.length === 0, g.errs);
 await g.close();
