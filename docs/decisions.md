@@ -3,6 +3,24 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### Magic B — three school perks at 100 that read two ways: Tine, Uisce, Solas (from the systems builder, 2026-10-31, #942)
+Session 1626 built three of the six school perks at 100 (Cloch's arrow ward, Scáth's Unseen, Gaoth's Downwind). The other three, from `docs/design/magic-build.md`, each read two ways, and all three are needed before magic B's session 5 is done.
+
+**1. Tine at 100: "fire leaps to a second foe within 3 m."**
+- **A (recommended).** A Caor burn on a foe catches the nearest other foe within 3 m once, for its full 4 s (8 s with Long burn). Fire spreads; Tintreach keeps its own leaping bolt.
+- **B.** Every Tine bolt that hits leaps to a second foe within 3 m for half damage, as Tintreach does.
+
+**2. Uisce at 100: "a frozen foe shatters at a finisher."**
+- **A (recommended).** A foe slowed by Sioc (or held by Reo) takes ×1.5 from your finisher.
+- **B.** A finisher on a frozen foe kills it outright at any health, bosses and the champion excepted.
+
+**3. Solas at 100: "light staggers the undead."**
+- **A (recommended).** The undead are the kinds on the `undead` theme's roster (skeletons, wraiths, the phantom); Solas's bolt or pillar staggers them 1.5 s.
+- **B.** Any foe inside a gate whose theme is `undead`.
+- **C.** No undead: stagger any foe Solas's light has lit for 3 s.
+
+Recommendation: **1A, 2A, 3A.** (On the board: A = all three recommended; B = Uisce's execute; C = Solas's lit-for-3-s; D = Tine's leaping bolt; any other mix by reply.)
+
 ### The dungeon's cell by kind: old gates at 3 m, and forts and lairs at what? (systems builder, Session 1105) — DECISION #421
 **The question.** F2b's last session sets a dungeon's grid cell at true scale; it is one unit today, so corridors are 1 m wide for a 1.8 m body. Michael chose **C, 3 m** on #300 and added: "If by dungeon we mean Old Gates, they should be extremely massive and cavernous. A normal 'dungeon' like a mine, or a cave can be a more typical size." The game has three kinds of underground place: the **old gates** (the world's portals, themed by school: crypts, haunted halls, elemental and deep caverns, ruins), **fort interiors** (the `fort_` layouts), and **lairs and dens** (a beast's lair, the cloak's den). So the cell can differ by kind, and "a more typical size" is a number a player feels.
 
