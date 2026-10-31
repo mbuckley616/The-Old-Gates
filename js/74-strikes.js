@@ -440,7 +440,7 @@ function applyMeleeDamage(e, rawDmg){
   // promising since v61c6. Posture-break triggers the same staggered[] entry, so
   // posture-break also unlocks the crit bonus — both routes feel rewarding.
   const _nowS = performance.now()/1000, _fin = finisherOpen(e,_nowS), _rip = !_fin && riposteOpen(e);
-  const staggerMult = _fin ? FINISHER_MULT : _rip ? RIPOSTE_MULT : isStaggered(e) ? POSTURE_CRIT_MULT : 1.0;
+  const staggerMult = _fin ? FINISHER_MULT * shatterMult(e) /* S1659 — Uisce 100 */ : _rip ? RIPOSTE_MULT : isStaggered(e) ? POSTURE_CRIT_MULT : 1.0;
   if(_fin){ e._finUntil = 0; e._ripUntil = -1e9; FINISHER_SAFE_UNTIL = _nowS + FINISHER_SAFE_S; }
   if(_rip) e._ripUntil = -1e9;
   if(!_fin && !_rip && isStaggered(e) && armsPerk('hand',50) && !(e._downUntil > _nowS)) throwFoe(e, _nowS); // S1078 — Throw (Hand-to-hand 50)

@@ -2188,7 +2188,8 @@ const giver=`${lord.title} ${lord.name}`;
   // a crime in the ring, seen by all who watch it: the town's favour, its bounty (25 a point) and the record, as a struck townsman's
   function ringCrime(siteId,kind,pts){if(siteId)addFavor(siteId,-pts);const C=worldState.crime||(worldState.crime={});
     if(siteId){const c=C[siteId]||(C[siteId]={bounty:0,debt:0,last:0});c.bounty+=25*pts;c.debt+=pts;c.last=dayNow();}
-    (worldState.crimes||(worldState.crimes=[])).push({kind,site:siteId||null,house:null,day:dayNow(),min:absMin()});}
+    (worldState.crimes||(worldState.crimes=[])).push({kind,site:siteId||null,house:null,day:dayNow(),min:absMin()});
+    if(kind==='murder'&&siteId)sendGuardAfter(siteId);} /* S1663 — the guard comes: the town's nearest on duty runs you down */
   function brawlStart(o){o=o||{};if(BOUT||SPAR||BRAWL)return {say:'You are already in the ring.'};if(!o.force&&!brawlOpen())return {say:'The brawls are after dark.'};
     const site=o.site||'yard',A=arenaState();if(A.brawl[site]===dayNow())return {say:'One brawl a night here.'};
     const x=o.x,z=o.z,tier=o.tier!=null?o.tier:worldTierAt(x,z),stake=brawlStake(tier);
@@ -2261,9 +2262,12 @@ const giver=`${lord.title} ${lord.name}`;
   // bout's end (seededRng('fixout', boutId)): a fine of 2 × the bribe (from your purse, the rest as that town's bounty) and the rings
   // shut 28 days. Take it and win anyway: the purse is yours, the bribe stays yours, and two roughs at the ring's tier wait at the
   // ring's gate that dusk (18h, when you are within 60 m). Report him (reportFixer): that ring has no fixer again, and your next purse
-  // pays ×1.5. The man's words are placeholders for the quest writer; League standing −1 waits on a standing the League does not keep
-  // yet. Named actions: takeBribe, reportFixer.
+  // pays ×1.5. The man's words are placeholders for the quest writer; League standing −1 is −1 favour at Caer Slige (S1659).
+  // Named actions: takeBribe, reportFixer.
   const FIX_FROM=4,FIX_ODDS=1/3,FIX_BRIBE=3,FIXOUT_ODDS=.25,FIX_FINE=2,REPORT_MULT=1.5,ROUGHS_HOUR=18,ROUGHS_NEAR=60;
+  // S1659 — the League's standing ±1 (Michael's A on #945): favour at the League's seat, Caer Slige (anchoredPlaces().caer_slige): −1 when a
+  // fix is found out, +1 for the title (on top of the bout's own +1 at the ring that seats it). No rank moves.
+  function leagueSeatFavor(n){const cs=anchoredPlaces().caer_slige;return cs?addFavor(cs.id,n):null;}
   function ladderBoutId(bout,day){return `${bout}:${day}`;}
   function ladderFixed(bout,day,site){if(bout<FIX_FROM||ringOf(site).fixer==='reported')return false;return seededRng('fix',ladderBoutId(bout,day))()<FIX_ODDS;}
   function takeBribe(){const A=arenaState(),C=A.call;if(!C||LBOUT||!C.fixer)return {say:'No one is offering.'};if(C.bribe)return {say:'You have taken his money already.'};
@@ -2274,7 +2278,7 @@ const giver=`${lord.title} ${lord.name}`;
     if(how==='won'){A.roughs={site:L.site,x:L.x,z:L.z,day:dayNow(),tier:ladderRow(L.bout).tier};return 'crossed';}
     if(how==='lost'&&seededRng('fixout',ladderBoutId(L.bout,L.day))()<FIXOUT_ODDS){const fine=FIX_FINE*b,pay=Math.min(gold,fine);gold-=pay;
       if(fine>pay){const Cr=worldState.crime||(worldState.crime={}),c=Cr[L.site]||(Cr[L.site]={bounty:0,debt:0,last:0});c.bounty+=fine-pay;c.last=dayNow();}
-      A.banUntil=Math.max(A.banUntil||0,dayNow()+RING_BAN_DAYS);if(typeof updateHUD==='function')updateHUD();
+      A.banUntil=Math.max(A.banUntil||0,dayNow()+RING_BAN_DAYS);leagueSeatFavor(-1);if(typeof updateHUD==='function')updateHUD();
       showMsg(`The fix is found out. A fine of ${fine} gold, and the rings of the Mark are shut to you.`,'#ff6060');return 'found';}
     return 'kept';}
   function tickRoughs(){const A=worldState.arena,R=A&&A.roughs;if(!R)return;if(dayNow()>R.day){A.roughs=null;return;}
@@ -2289,11 +2293,11 @@ const giver=`${lord.title} ${lord.name}`;
   // +1 favour (no purse: the sheet's "no discount and no gear"); lose, and the title passes to the challenger. A challenge day that
   // ends unfought is a refusal (or titleRefuse, the master's *Not today*); three in a row and the title passes. When it passes, the
   // champion's name on the posts is the challenger's, and your rank drops to 11, so bout 12 is yours to fight again. Markish greetings
-  // at every yard and League standing +1 are the quest writer's lines and a standing the League does not keep yet. Named actions:
+  // at every yard are the quest writer's lines; League standing +1 is +1 favour at Caer Slige (S1659). Named actions:
   // titleWon, titleRefuse, titlePass.
   const TITLE_DAYS=28,TITLE_REFUSALS=3;
   function titleWon(){const A=arenaState();A.title=true;A.titleDay=dayNow();A.refusals=0;A.nextChallenge=dayNow()+TITLE_DAYS;
-    ringsState().champion=worldState.charId||null;showMsg('The champion of the Mark. Your name goes on every post.','#ffd700');}
+    ringsState().champion=worldState.charId||null;leagueSeatFavor(1);showMsg('The champion of the Mark. Your name goes on every post.','#ffd700');}
   function titleChallengeToday(){const A=arenaState();return !!(A.title&&dayNow()===A.nextChallenge);}
   function titlePass(name){const A=arenaState();A.title=false;A.rank=Math.min(A.rank,11);A.refusals=0;A.nextChallenge=null;
     ringsState().champion=name||'The challenger';showMsg(`The title passes to ${name||'the challenger'}.`,'#e8d8a0');}
