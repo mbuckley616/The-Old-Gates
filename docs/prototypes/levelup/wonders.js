@@ -55,7 +55,7 @@ function ringTex() { if (_ring) return _ring; const c = document.createElement('
   const t = new THREE.CanvasTexture(c); t.anisotropy = 8; return (_ring = t); }
 // glyphs round a band: the gate slice's seven shapes on a long strip (u along the band), white on black
 let _band = null;
-function bandTex() { if (_band) return _band; const L = 4096, S = 64, c = document.createElement('canvas'); c.width = L; c.height = S; const x = c.getContext('2d'), r = stream('wonders:band'); x.fillStyle = '#000'; x.fillRect(0, 0, L, S); x.strokeStyle = '#fff'; x.lineCap = 'round'; x.lineWidth = 4;
+function bandTex() { if (_band) return _band; const L = 4096, S = 64, c = document.createElement('canvas'); c.width = L; c.height = S; const x = c.getContext('2d'), r = stream('wonders:band'); x.fillStyle = '#000'; x.fillRect(0, 0, L, S); x.strokeStyle = '#fff'; x.lineCap = 'round'; x.lineWidth = 5;
   for (let i = 0; i < 80; i++) { const k = Math.floor(r() * 7); x.save(); x.translate(26 + i * 51, 32); x.beginPath();
     if (k === 0) { x.arc(0, 0, 12, 0, 7); x.moveTo(0, -18); x.lineTo(0, 18); } else if (k === 1) { x.moveTo(-12, 18); x.lineTo(0, -18); x.lineTo(12, 18); x.moveTo(-7, 4); x.lineTo(7, 4); }
     else if (k === 2) { x.arc(0, 0, 13, .6, 5.7); x.moveTo(2, 0); x.arc(0, 0, 2, 0, 7); } else if (k === 3) { x.moveTo(-12, -14); x.lineTo(12, -14); x.moveTo(0, -14); x.lineTo(0, 18); x.moveTo(-8, 2); x.lineTo(8, 10); }
@@ -159,7 +159,7 @@ function band(r0, r1, th, a0 = 0, a1 = Math.PI * 2, n = 96) { const pos = [], uv
   for (let i = 0; i < seg; i++) { const a = a0 + (a1 - a0) * i / seg, b = a0 + (a1 - a0) * (i + 1) / seg, u0 = a * r1 * .25, u1 = b * r1 * .25;
     for (const z of [th / 2, -th / 2]) { const s = z > 0 ? 1 : -1, A = P(r0, a, z), Bq = P(r1, a, z), C = P(r1, b, z), D = P(r0, b, z); if (s > 0) quad(A, Bq, C, D, [u0, 0, u0, 1, u1, 1, u0, 0, u1, 1, u1, 0]); else quad(A, D, C, Bq, [u0, 0, u1, 0, u1, 1, u0, 0, u1, 1, u0, 1]);
       // the glyph strip, 0.6 of the band's width, just proud of the face
-      const g0 = r0 + (r1 - r0) * .2, g1 = r0 + (r1 - r0) * .8, zz = z + s * .02, ga = P(g0, a, zz), gb = P(g1, a, zz), gc = P(g1, b, zz), gd = P(g0, b, zz), U0 = a * g1 / 3.2, U1 = b * g1 / 3.2;
+      const g0 = r0 + (r1 - r0) * .2, g1 = r0 + (r1 - r0) * .8, zz = z + s * .02, ga = P(g0, a, zz), gb = P(g1, a, zz), gc = P(g1, b, zz), gd = P(g0, b, zz), U0 = a * g1 / 61, U1 = b * g1 / 61;
       if (s > 0) { gl.push(...ga, ...gb, ...gc, ...ga, ...gc, ...gd); gu.push(U0, 0, U0, 1, U1, 1, U0, 0, U1, 1, U1, 0); } else { gl.push(...ga, ...gd, ...gc, ...ga, ...gc, ...gb); gu.push(U0, 0, U1, 0, U1, 1, U0, 0, U1, 1, U0, 1); } }
     for (const rr of [r1, r0]) { const A = P(rr, a, th / 2), Bq = P(rr, a, -th / 2), C = P(rr, b, -th / 2), D = P(rr, b, th / 2); if (rr === r1) quad(A, Bq, C, D, [u0, 0, u0, th * .25, u1, th * .25, u0, 0, u1, th * .25, u1, 0]); else quad(A, D, C, Bq, [u0, 0, u1, 0, u1, th * .25, u0, 0, u1, th * .25, u0, th * .25]); } }
   if (a1 - a0 < Math.PI * 2 - 1e-3) for (const a of [a0, a1]) { const s = a === a0 ? 1 : -1, A = P(r0, a, th / 2), Bq = P(r1, a, th / 2), C = P(r1, a, -th / 2), D = P(r0, a, -th / 2); if (s > 0) quad(A, D, C, Bq, [0, 0, 0, .3, .3, .3, 0, 0, .3, .3, .3, 0]); else quad(A, Bq, C, D, [0, 0, 0, .3, .3, .3, 0, 0, .3, .3, .3, 0]); }

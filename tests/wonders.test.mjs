@@ -36,6 +36,15 @@ const n = await page.evaluate(() => { const W = WONDERS.skyfall.W, im = W.group.
   forceTime(4.5); out.dawn = wonderAwake(); forceTime(5.5); out.morning = wonderAwake(); return out; });
 console.log(JSON.stringify(n));
 check(`at 22h it wakes: the seams burn and the stones drift (${n.moved} m in three seconds); awake at 4:30, asleep at 5:30`, n.awake && n.lit && n.moved > 0 && n.dawn && !n.morning, n);
+// Session 1646 (the critic, 31 Oct): the walls' seams are the pale lilac the prototype's page shows, not the raw magenta of its numbers
+// read through the game's linear output (green over .5, where the kit's violet is .30)
+const ws = await page.evaluate(() => { const m = WONDERS.skyfall.W.group.getObjectByName('w:seam'), e = m && m.userData.on && m.userData.on.emissive; return e ? { r: +e.r.toFixed(2), g: +e.g.toFixed(2), b: +e.b.toFixed(2) } : null; }).catch(() => null);
+check(`the walls' seams burn pale lilac (${ws && [ws.r, ws.g, ws.b].join(', ')}), not magenta`, ws && ws.g > .5 && ws.b > .9, ws);
+// Session 1647 (OG-106; the critic, 31 Oct): the aurora over the Fields, one mesh, seen only while they wake
+const au = await page.evaluate(() => { const W = WONDERS.skyfall.W, m = W && W.group.getObjectByName('aurora'); if (!m) return null; const s = performance.now() / 1000;
+  W.tick(s, true); const night = m.visible; W.tick(s, false); const day = m.visible; W.tick(s, wonderAwake()); m.geometry.computeBoundingBox(); const bb = m.geometry.boundingBox;
+  return { night, day, low: Math.round(bb.min.y - W.group.position.y), high: Math.round(bb.max.y), tris: m.geometry.index.count / 3 }; });
+check(`the aurora hangs over the Fields by night (${au && au.tris} triangles, ${au && au.low} to ${au && au.high} m) and is gone by day`, au && au.night && !au.day && au.tris < 1500, au);
 const d = await page.evaluate(() => { const S = WONDERS.skyfall; px = S.site.x + 2500; pz = S.site.z; WONDERS._t = 0; tickWonders(); return { gone: !S.W, sol: STATIC_SOL.filter(q => q.cell === 'wonder:skyfall').length }; });
 check('2.5 km off it is dropped, and its solids with it', d.gone && d.sol === 0, d);
 // Session 1634: Aurenne's Broken Orrery on its headland. The place is the seed's; the platform stands level on a stamp, its steps walked,
@@ -47,6 +56,8 @@ const o = await page.evaluate(() => { const a = wonderOrrerySite(); WONDERS.orre
 console.log(JSON.stringify(o));
 check(`the Broken Orrery's place is on Aurenne's coast, ${o.h} m over the sea with it on ${o.seaN} of 16 headings, the same asked twice (${o.ms} ms)`, o.nation === 'aurenne' && o.h >= 8 && o.seaN >= 3 && o.same && o.seaAhead, o);
 check(`its ground falls ${o.fall} m round it, and it stands ${o.near} m past the nearest site's pad`, o.fall <= 10 && o.near >= 200, o);
+// Session 1643 (the critic, 31 Oct): a headland, not a brow cut into a slope; no ground within 100 m stands more than 3 m over it
+check(`nothing within 100 m stands more than 3 m over it (${o.above} m): a headland, not a brow under a hill`, o.above <= 3, o);
 const oat = await page.evaluate((o) => { const [x, z] = wonderToWorld(o, 4, 60); return { x, z }; }, o);
 await page.evaluate(({ x, z }) => goToZone('world', x, z, 0, 'x'), oat);
 await page.waitForFunction(([x, z]) => document.getElementById('fd').style.opacity === '0' && activeZoneId === 'world' && Math.hypot(px - x, pz - z) < 50, [oat.x, oat.z], { timeout: 60000 });
@@ -68,6 +79,12 @@ check(`the platform stands level: the ground round its rim within ${q.rim} m of 
 check(`you walk up its three steps (${q.steps.join(' → ')} m) to the top at ${q.top}`, q.steps[0] < q.plats[0].y - .3 && q.steps[1] === q.plats[0].y && q.steps[2] === q.plats[1].y && q.steps[3] === q.plats[2].y, q);
 check(`its ${q.sol} solids: a standing column and the pier are solid, the floor between open`, q.sol === 17 && q.colSolid && q.pier && q.floorOpen, q);
 check('at 13h it sleeps: the script and the sun are dead stone', q.script === 0 && q.sun === 0, q);
+// Session 1642 (the critic, 31 Oct): by day the dead strip is a bronze inlay, not a black hollow, and a glyph is drawn at one scale
+// both ways (the prototype's 3.2 m a repeat made it 19 times wider in texels than tall per metre, a hatch that buzzed at night)
+const strip = await page.evaluate(() => { const W = WONDERS.orrery.W, sm = W.group.getObjectByName('script:0'), P = sm.geometry.attributes.position, U = sm.geometry.attributes.uv, v = i => new THREE.Vector3().fromBufferAttribute(P, i), img = W.script.map && W.script.map.image;
+  const c = W.script.color, lum = .2126 * c.r + .7152 * c.g + .0722 * c.b, across = v(0).distanceTo(v(1)), along = v(1).distanceTo(v(2)), du = Math.abs(U.getX(2) - U.getX(1));
+  return { lum: +lum.toFixed(3), cut: !!img, aspect: img ? +((du * img.width / along) / (img.height / across)).toFixed(2) : null }; });
+check(`by day the strip is a bronze inlay with its script cut in (lum ${strip.lum}), its glyphs square on the ring (texels ${strip.aspect}:1)`, strip.lum >= .2 && strip.cut && strip.aspect > .5 && strip.aspect < 2, strip);
 const on = await page.evaluate(() => { const W = WONDERS.orrery.W, ring = W.group.getObjectByName('armillary').children[0]; forceTime(22); tickWonders(); const a = ring.rotation.y; W.tick(performance.now() / 1000 + 20, wonderAwake()); const b = ring.rotation.y;
   return { awake: wonderAwake(), script: W.script.emissiveIntensity, sun: W.sunMat.emissiveIntensity, turned: +Math.abs(b - a).toFixed(3) }; });
 console.log(JSON.stringify(on));

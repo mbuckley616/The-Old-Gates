@@ -4254,6 +4254,27 @@ function wonderBoulder(seed, flat = .75) { const g = new THREE.IcosahedronGeomet
 // a flat disc or ring laid on the ground: every vertex at hAt + lift
 function onGround(g, x, z, hAt, lift) { g.rotateX(-Math.PI / 2); const P = g.attributes.position; for (let i = 0; i < P.count; i++) { const vx = P.getX(i) + x, vz = P.getZ(i) + z; P.setXYZ(i, vx, hAt(vx, vz) + lift, vz); }
   const q = g.index ? g.toNonIndexed() : g; q.computeVertexNormals(); if (!q.attributes.uv) worldUV(q, .3); return q; }
+// places.js's auroraCurtains (Session 1243), as plain script for the game: the same three curtains and the same shader, with its two
+// colours encoded as the prototype's page shows them (the game's output is linear, see skyfallSeamMat), and a slow drift along the rays
+// by t (the page's is still). Additive, no depth write, no fog: it is light in the sky, not a thing in the air.
+function skyfallAurora(r, base) {
+  const mat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false, uniforms: { t: { value: 0 } },
+    vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+    fragmentShader: 'varying vec2 vUv; uniform float t; void main(){ float h = vUv.y, x = vUv.x + t * .0004; float rays = .55 + .45 * sin(x * 260.0 + sin(x * 31.0 + t * .05) * 4.0) * sin(x * 97.0 + 1.3);' +
+      ' float foot = smoothstep(0.0, .08, h) * (1.0 - smoothstep(.35, 1.0, h)); float ends = smoothstep(0.0, .12, vUv.x) * (1.0 - smoothstep(.88, 1.0, vUv.x));' +
+      ' vec3 c = mix(vec3(.54, 1.0, .77), vec3(.77, .58, .95), smoothstep(.25, .9, h)); gl_FragColor = vec4(c * foot * ends * (.35 + .65 * rays) * .55, 1.0); }' });
+  const pos = [], uv = [], idx = [];
+  for (let k = 0; k < 3; k++) { const N = 160, z0 = -340 - k * 180 - r() * 60, x0 = -700 + r() * 200, L = 1300 + r() * 300, lo = base + 90 + r() * 30 + k * 10, hi = lo + 120 + r() * 50, a = r() * 9, b = r() * 9, v0 = pos.length / 3;
+    for (let i = 0; i <= N; i++) { const u = i / N, x = x0 + u * L, z = z0 + Math.sin(u * 7 + a) * 90 + Math.sin(u * 19 + b) * 25; for (const v of [0, 1]) { pos.push(x, v ? hi : lo, z + (v ? 20 : 0)); uv.push(u, v); } }
+    for (let i = 0; i < N; i++) { const p = v0 + 2 * i; idx.push(p, p + 2, p + 1, p + 1, p + 2, p + 3); } }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx);
+  const mesh = new THREE.Mesh(g, mat); mesh.name = 'aurora'; mesh.frustumCulled = false; mesh.castShadow = mesh.receiveShadow = false; mesh.visible = false;
+  return { mesh, mat, tris: idx.length / 3 }; }
+// The walls' seams (Session 1646; the critic, 31 Oct): the kit's violet (.62, .30, 1.0) is pale lilac on the prototype's page, which writes
+// sRGB, but the game runs with colour management off and a linear output (05-compat.js), so there the same numbers are a raw magenta, and
+// on the broad seats the lifted courses bare it read as blotches, not light through cracks. The Fields' walls take the colour the page
+// shows (the violet encoded, about .81, .58, 1.0) on a copy of the kit's material; the gates' own walls are F5's and keep theirs.
+function skyfallSeamMat(m) { const c = m.clone(); c.emissive.copy(m.emissive).convertLinearToSRGB(); c.color.copy(m.color).convertLinearToSRGB(); return c; }
 // the Mark's wonder: wonders.js's markSkyfall over the world's valley. 34 stones of 1.5 to 13 m hang 4 to 58 m over the floor, each over
 // the pit it came out of (a hollow ringed with thrown earth), a Gaoth seam glowing under every stone over 5 m; two of the gate kit's walls
 // (1.4 times, 19.6 m long) stand broken on the floor with their stones lifted. The same stream ('wonders:skyfall') and the same draws in
@@ -4272,7 +4293,7 @@ function markSkyfall(hAt, o = {}) {
   for (const [i, x, z, a] of [[0, -18, 70, .3], [1, 22, -15, -.5]]) { const W = gkParts('wall', { cond: 'broken', school: 'gaoth', key: `${key}:wall:${i}` }), s = 1.4, c = Math.cos(a), sn = Math.sin(a);
     let lo = 1e9; for (const u of [-1, -.5, 0, .5, 1]) for (const v of [-1, 1]) { const lx = u * W.size.w / 2 * s, lz = v * W.size.d / 2 * s; lo = Math.min(lo, hAt(x + lx * c + lz * sn, z - lx * sn + lz * c)); }
     const T = new THREE.Matrix4().makeTranslation(x, lo - .4, z).multiply(new THREE.Matrix4().makeRotationY(a)).multiply(new THREE.Matrix4().makeScale(s, s, s));
-    for (const k in W.by) { const mk = 'w:' + k; M[mk] = W.M[k]; for (const g of W.by[k]) put(mk, g.applyMatrix4(T)); }
+    for (const k in W.by) { const mk = 'w:' + k; M[mk] = M[mk] || (k === 'seam' ? skyfallSeamMat(W.M[k]) : W.M[k]); for (const g of W.by[k]) put(mk, g.applyMatrix4(T)); }
     walls.push({ x, z, ry: a, y: lo - .4, len: W.size.w * s, d: W.size.d * s, standH: (W.standing.max.y - W.standing.min.y) * s, floating: W.st.floating, fallen: W.st.fallen }); }
   const glowCol = new THREE.Color(...S.glow);
   Object.assign(M, { pit: new THREE.MeshStandardMaterial({ color: new THREE.Color(.28, .25, .22), roughness: 1 }), hole: new THREE.MeshStandardMaterial({ color: new THREE.Color(.06, .05, .05), roughness: 1 }),
@@ -4286,9 +4307,12 @@ function markSkyfall(hAt, o = {}) {
   for (let s = 0; s < NS; s++) { const mine = stones.filter(t => t.shape === s); if (!mine.length) continue; const geo = wonderBoulder(s * 3.1), im = new THREE.InstancedMesh(geo, rock, mine.length);
     im.name = 'stones:' + s; im.castShadow = im.receiveShadow = true; im.userData.list = mine; group.add(im); shapes.push(im); tris += geo.attributes.position.count / 3 * mine.length; draws++; }
   const place = (t, awake, sec) => { pv.set(t.x, t.y + (awake ? Math.sin(sec * t.sp * 2 + t.ph) * (.4 + t.rad * .08) : 0), t.z); e.set(t.rot[0], t.rot[1] + (awake ? sec * t.sp * .2 : 0), t.rot[2]); q.setFromEuler(e); sv.setScalar(t.rad); return m4.compose(pv, q, sv); };
+  // the aurora over the Fields (Session 1647; OG-106, the critic of 31 Oct): places.js's auroraCurtains, three curtains 1.3 to 1.6 km
+  // long, 90 to 290 m over the field, 340 to 760 m off on its -z side, merged into one mesh (one draw); seen only while the Fields wake
+  const aurora = skyfallAurora(stream(key + ':aurora'), hAt(0, 0)); group.add(aurora.mesh); tris += aurora.tris; draws++;
   let was = null;
   // alive: each stone rises and settles over 8 to 16 s and turns slowly, the seams breathe over 7 s; asleep, all still and every seam dead stone
-  function tick(sec, awake) { awake = !!awake;
+  function tick(sec, awake) { awake = !!awake; aurora.mesh.visible = awake; aurora.mat.uniforms.t.value = sec;
     if (awake || was !== false) { for (const im of shapes) { im.userData.list.forEach((t, i) => im.setMatrixAt(i, place(t, awake, sec))); im.instanceMatrix.needsUpdate = true; im.computeBoundingSphere(); } }
     if (was !== awake) for (const m of glows) m.material = awake ? m.userData.on : gkDead();
     if (awake) { const p = .5 + .5 * Math.sin(sec * 2 * Math.PI / 7); for (const m of glows) m.material.emissiveIntensity = m.userData.key === 'seam' && m.name === 'seam' ? .5 + .9 * p : .7 + 1.0 * p; }
@@ -4306,21 +4330,30 @@ function markSkyfall(hAt, o = {}) {
 // one. The prototype's point light is left out: a light added and taken away recompiles every material in the world, and the sun and
 // the script burn by their own emission (the bloom carries them at Middle and High).
 //   PKIT.wonders.orrery(hAt, o) -> { group, tris, draws, top, base, plats: [{r, y}], cols: [{x, z, stand, h, r}], pier: {r, y}, tick(t, awake), size }
-let _wBand = null;
-function wonderBandTex() { if (_wBand) return _wBand; const L = 4096, S = 64, c = document.createElement('canvas'); c.width = L; c.height = S; const x = c.getContext('2d'), r = stream('wonders:band'); x.fillStyle = '#000'; x.fillRect(0, 0, L, S); x.strokeStyle = '#fff'; x.lineCap = 'round'; x.lineWidth = 4;
+// Two textures from the one glyph stream (Session 1642): the glow (white strokes on black, the emissive map) and the cut (grey
+// strokes on white, the colour map), so by day the strip is a bronze inlay with its script cut in, and by night that script burns.
+// The strokes are 5 px (6 cm on the strip) so they hold a pixel at 40 m.
+let _wBand = null, _wBandCut = null;
+function wonderBandTex(cut) { if (cut ? _wBandCut : _wBand) return cut ? _wBandCut : _wBand; const L = 4096, S = 64, c = document.createElement('canvas'); c.width = L; c.height = S; const x = c.getContext('2d'), r = stream('wonders:band'); x.fillStyle = cut ? '#fff' : '#000'; x.fillRect(0, 0, L, S); x.strokeStyle = cut ? '#6e6e6e' : '#fff'; x.lineCap = 'round'; x.lineWidth = 5;
   for (let i = 0; i < 80; i++) { const k = Math.floor(r() * 7); x.save(); x.translate(26 + i * 51, 32); x.beginPath();
     if (k === 0) { x.arc(0, 0, 12, 0, 7); x.moveTo(0, -18); x.lineTo(0, 18); } else if (k === 1) { x.moveTo(-12, 18); x.lineTo(0, -18); x.lineTo(12, 18); x.moveTo(-7, 4); x.lineTo(7, 4); }
     else if (k === 2) { x.arc(0, 0, 13, .6, 5.7); x.moveTo(2, 0); x.arc(0, 0, 2, 0, 7); } else if (k === 3) { x.moveTo(-12, -14); x.lineTo(12, -14); x.moveTo(0, -14); x.lineTo(0, 18); x.moveTo(-8, 2); x.lineTo(8, 10); }
     else if (k === 4) { x.moveTo(-12, 0); x.lineTo(0, -16); x.lineTo(12, 0); x.lineTo(0, 16); x.closePath(); } else if (k === 5) { x.moveTo(-10, -16); x.lineTo(-10, 16); x.moveTo(10, -16); x.lineTo(10, 16); x.moveTo(-10, 0); x.lineTo(10, 0); }
     else { x.moveTo(0, -18); x.lineTo(0, 18); x.moveTo(-10, -8); x.lineTo(0, -2); x.lineTo(10, -8); } x.stroke(); x.restore(); }
-  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8; return (_wBand = t); }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8; return cut ? (_wBandCut = t) : (_wBand = t); }
 // a band of stone round a circle in the xy plane (the ring stands upright), from a0 to a1, radius r0 to r1, th thick; its glyph strip
-// on both faces as a second geometry (u along the band). wonders.js's band(), unchanged.
+// on both faces as a second geometry (u along the band). wonders.js's band(), but for the strip's u: the prototype's 3.2 m a repeat
+// squeezed each glyph to 4 cm wide and 54 cm tall, which read as a buzzing hatch (the critic, 31 Oct); WBAND_U, 61 m a repeat, gives
+// the strip's 64 px the same scale both ways, so a glyph is about 0.5 m square (Session 1642).
+const WBAND_U = 61;
+// the dead inlay's colour: a weathered bronze about the tone of the columns' shade, not the near-black of the prototype's quiet mode,
+// which read by day as a hollow cut round each ring (the critic, 31 Oct; Session 1642)
+const WBAND_BRONZE = [.34, .25, .15];
 function wonderBand(r0, r1, th, a0 = 0, a1 = Math.PI * 2, n = 96) { const pos = [], uv = [], gl = [], gu = [], seg = Math.max(8, Math.round(n * (a1 - a0) / (Math.PI * 2)));
   const P = (rr, a, z) => [rr * Math.cos(a), rr * Math.sin(a), z], quad = (A, Bq, C, D, U) => { pos.push(...A, ...Bq, ...C, ...A, ...C, ...D); uv.push(...U); };
   for (let i = 0; i < seg; i++) { const a = a0 + (a1 - a0) * i / seg, b = a0 + (a1 - a0) * (i + 1) / seg, u0 = a * r1 * .25, u1 = b * r1 * .25;
     for (const z of [th / 2, -th / 2]) { const s = z > 0 ? 1 : -1, A = P(r0, a, z), Bq = P(r1, a, z), C = P(r1, b, z), D = P(r0, b, z); if (s > 0) quad(A, Bq, C, D, [u0, 0, u0, 1, u1, 1, u0, 0, u1, 1, u1, 0]); else quad(A, D, C, Bq, [u0, 0, u1, 0, u1, 1, u0, 0, u1, 1, u0, 1]);
-      const g0 = r0 + (r1 - r0) * .2, g1 = r0 + (r1 - r0) * .8, zz = z + s * .02, ga = P(g0, a, zz), gb = P(g1, a, zz), gc = P(g1, b, zz), gd = P(g0, b, zz), U0 = a * g1 / 3.2, U1 = b * g1 / 3.2;
+      const g0 = r0 + (r1 - r0) * .2, g1 = r0 + (r1 - r0) * .8, zz = z + s * .02, ga = P(g0, a, zz), gb = P(g1, a, zz), gc = P(g1, b, zz), gd = P(g0, b, zz), U0 = a * g1 / WBAND_U, U1 = b * g1 / WBAND_U;
       if (s > 0) { gl.push(...ga, ...gb, ...gc, ...ga, ...gc, ...gd); gu.push(U0, 0, U0, 1, U1, 1, U0, 0, U1, 1, U1, 0); } else { gl.push(...ga, ...gd, ...gc, ...ga, ...gc, ...gb); gu.push(U0, 0, U1, 0, U1, 1, U0, 0, U1, 1, U0, 1); } }
     for (const rr of [r1, r0]) { const A = P(rr, a, th / 2), Bq = P(rr, a, -th / 2), C = P(rr, b, -th / 2), D = P(rr, b, th / 2); if (rr === r1) quad(A, Bq, C, D, [u0, 0, u0, th * .25, u1, th * .25, u0, 0, u1, th * .25, u1, 0]); else quad(A, D, C, Bq, [u0, 0, u1, 0, u1, th * .25, u0, 0, u1, th * .25, u0, th * .25]); } }
   if (a1 - a0 < Math.PI * 2 - 1e-3) for (const a of [a0, a1]) { const s = a === a0 ? 1 : -1, A = P(r0, a, th / 2), Bq = P(r1, a, th / 2), C = P(r1, a, -th / 2), D = P(r0, a, -th / 2); if (s > 0) quad(A, D, C, Bq, [0, 0, 0, .3, .3, .3, 0, 0, .3, .3, .3, 0]); else quad(A, Bq, C, D, [0, 0, 0, .3, .3, .3, 0, 0, .3, .3, .3, 0]); }
@@ -4347,7 +4380,7 @@ function aurenneOrrery(hAt, o = {}) {
   // the pivot pier at the heart; the outer ring's foot rides its top
   { const g = new THREE.CylinderGeometry(2.2, 3.2, 3, 8, 1); g.translate(0, py + 1.5, 0); put('stone', g); }
   const hub = new THREE.Vector3(0, py + 3 + 20.5, 0), stoneCol = new THREE.Color(...S.stone);
-  const ringM = mat('ashlar', { ns: .9, color: stoneCol.clone().multiplyScalar(.95) }), scriptM = new THREE.MeshStandardMaterial({ color: new THREE.Color(.05, .045, .04), emissive: new THREE.Color(...S.glow), emissiveIntensity: 2.0, emissiveMap: wonderBandTex(), roughness: .6 });
+  const ringM = mat('ashlar', { ns: .9, color: stoneCol.clone().multiplyScalar(.95) }), scriptM = new THREE.MeshStandardMaterial({ color: new THREE.Color(...WBAND_BRONZE), map: wonderBandTex(true), emissive: new THREE.Color(...S.glow), emissiveIntensity: 2.0, emissiveMap: wonderBandTex(), roughness: .55, metalness: .25 });
   const sunM = new THREE.MeshStandardMaterial({ color: new THREE.Color(.5, .38, .2), emissive: new THREE.Color(...S.glow), emissiveIntensity: 0, roughness: .45, metalness: .3 });
   const rings = [], radii = [20.5, 16.5, 12.5, 8.5]; let parent = new THREE.Group(), tris = 0, draws = 0; parent.position.copy(hub); parent.name = 'armillary'; group.add(parent);
   radii.forEach((rad, i) => { const pivot = new THREE.Group(), broken = i === 2, { g, s } = wonderBand(rad - 1.6, rad, 1.1, broken ? .5 : 0, broken ? Math.PI * 2 - 1.0 : Math.PI * 2);
@@ -4361,7 +4394,7 @@ function aurenneOrrery(hAt, o = {}) {
   // the broken quarter of the third ring, fallen on the platform, leaning on a drum
   { const { g, s } = wonderBand(12.5 - 1.6, 12.5, 1.1, 0, 1.46), mx = 11.7 * Math.cos(.73), my = 11.7 * Math.sin(.73), T = new THREE.Matrix4().makeTranslation(-8, py + 1.4, 9).multiply(new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(-Math.PI / 2 + .12, 0, 2.1))).multiply(new THREE.Matrix4().makeTranslation(-mx, -my, 0));
     put('ring', g.applyMatrix4(T)); put('dead', s.applyMatrix4(T)); }
-  const M = { stone: mat('ashlar', { ns: .9, color: 0xf0e4cc, rough: .85 }), floor: mat('flag', { ns: .7, color: 0xe2d4b8, rough: .7 }), ring: ringM, dead: new THREE.MeshStandardMaterial({ color: new THREE.Color(.06, .055, .05), roughness: .9 }) };
+  const M = { stone: mat('ashlar', { ns: .9, color: 0xf0e4cc, rough: .85 }), floor: mat('flag', { ns: .7, color: 0xe2d4b8, rough: .7 }), ring: ringM, dead: new THREE.MeshStandardMaterial({ color: new THREE.Color(...WBAND_BRONZE).multiplyScalar(.8), map: wonderBandTex(true), roughness: .8, metalness: .15 }) };
   for (const [k, gs] of B) { const clean = gs.map(g => { const x = g.index ? g.toNonIndexed() : g; for (const a of Object.keys(x.attributes)) if (!['position', 'normal', 'uv'].includes(a)) x.deleteAttribute(a); if (!x.attributes.normal) x.computeVertexNormals(); if (!x.attributes.uv) worldUV(x, .25); return x; });
     const g = mergeGeometries(clean); clean.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.userData.key = k; m.castShadow = k !== 'dead'; m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; draws++; }
   // awake: each ring turns on its pivot (the outer once in three minutes, the inner faster), the sun burns and the script pulses over 6 s;
