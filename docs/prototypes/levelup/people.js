@@ -8,6 +8,7 @@ import { fitHead, helm as tierHelm, hoodDress } from './helms.js';
 let PACK = null;
 // the body's vertices, each once (Session 1294: a Set of its 80,268 indices was made afresh in every loop over them, 2.5 ms each, 56 times a raised hood)
 const bodyV = () => PACK.body0 || (PACK.body0 = [...new Set(PACK.G['body'])]);
+const earLobe = (x, y, z) => y > .672 && Math.abs(x) > .05 && (z < .047 || (z < .055 && Math.abs(x) > .0755));
 const beardLine = x => { const t = Math.max(0, Math.min(1, (Math.abs(x) - .032) / .038)); return .675 + .037 * t ** 1.3; };
 // the tied styles' temple line in front of the ear (Session 1640, Michael's note on #272): from the line over the ear (y .742) at the ear's front,
 // rising on one easing to the hairline 5 cm forward. Session 1607's flat line to z .08 and then 3 cm a cm drew a square step from the front
@@ -47,9 +48,11 @@ export async function loadPack(base = 'mh/') {
     skirtShort: sel(G['helper-skirt'], (x, y) => y > -.24),
     skirtLong: sel(G['helper-skirt'], () => true),
     // the beard under a cheek line (Session 840): from the sideburn by the ear (y .712) down to the corner of the mouth
-    // (y .675), 2 to 3 cm under the eye (its lower lid is at y .715); Session 770's flat top at y .705 reached the lid
-    beard: sel(G['body'], (x, y, z) => y > .6 && y < beardLine(x) && z > .02 && (Math.hypot(x / 1.1, y - .655) > .022 || y < .64) && !(y > .66 && y < .705 && Math.abs(x) < .018 && z > .15)),
-    beardBase: sel(G['body'], (x, y, z) => y > .6 && y < beardLine(x) - .008 && z > .02 && (Math.hypot(x / 1.1, y - .655) > .022 || y < .64) && !(y > .66 && y < .705 && Math.abs(x) < .018 && z > .15)),
+    // (y .675), 2 to 3 cm under the eye (its lower lid is at y .715); Session 770's flat top at y .705 reached the lid.
+    // Not the ear (Session 1656, Michael's note on #272): the lobe and the skin behind it (above y .672, z under .047, and to z .055 where
+    // the lobe's front stands out of the cheek past |x| .0755) took the dark shell and a fan of cards standing off the lobe
+    beard: sel(G['body'], (x, y, z) => y > .6 && !earLobe(x, y, z) && y < beardLine(x) && z > .02 && (Math.hypot(x / 1.1, y - .655) > .022 || y < .64) && !(y > .66 && y < .705 && Math.abs(x) < .018 && z > .15)),
+    beardBase: sel(G['body'], (x, y, z) => y > .6 && !earLobe(x, y, z) && y < beardLine(x) - .008 && z > .02 && (Math.hypot(x / 1.1, y - .655) > .022 || y < .64) && !(y > .66 && y < .705 && Math.abs(x) < .018 && z > .15)),
     // the moustache over the whole upper lip, up to the nose's base (y .684) in the middle and lower toward the nostril's
     // wing, where a card stood out by the nose
     moust: sel(G['body'], (x, y, z) => y > .662 && y < .684 - .4 * Math.max(0, Math.abs(x) - .01) && z > .1 && Math.abs(x) < .033),
