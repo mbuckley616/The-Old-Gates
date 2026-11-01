@@ -1,5 +1,7 @@
 // The guild halls on the shape kit (Session 292, H.5 props, Michael's A on #46): the Fighters' and the Mages' halls each one
 // bake with the notice board and the dormitories' chests beside it; the old solids where they were.
+// S1701: a hall standing as the kit's own guild hall opens on the kit's room (kitguild); this room is the one a hall gets when the
+// kit's hall does not fit its lot (none of the 30 nearest towns has one), so the suite enters a copy of the hall without its kit.
 import { boot, check } from './lib/game.mjs';
 import fs from 'fs';
 const g = await boot(); const { page } = g;
@@ -8,7 +10,7 @@ const enter = async type => { await page.evaluate(() => { try { if (interiorScen
   const ok = await page.evaluate(type => { let h = null; for (const S of WORLD.settle.values()) { h = S.houses.find(x => x.type === type); if (h) break; }
     if (!h) { const c = WORLD.SITES.filter(t => t.pad && ['city', 'town'].includes(t.kind)).sort((a, b) => Math.hypot(a.x - px, a.z - pz) - Math.hypot(b.x - px, b.z - pz));
       for (const t of c.slice(0, 30)) { const S = WORLD.settlements.get(t.id) || WORLD.genSettlement(t); h = S && S.houses.find(x => x.type === type); if (h) break; } }
-    if (!h) return false; window._S = h; px = h.exitX; pz = h.exitZ; goToInterior(h); return true; }, type);
+    if (!h) return false; if (h.kit && h.kit.kind === 'guildhall') h = Object.assign({}, h, { kit: null }); window._S = h; px = h.exitX; pz = h.exitZ; goToInterior(h); return true; }, type);
   if (ok) { await page.waitForFunction(() => interiorScene && currentHouse === _S && scene === interiorScene, null, { polling: 100, timeout: 60000 }); await g.frames(5); await g.hide(); } return ok; };
 const look = () => page.evaluate(() => { const sc = interiorScene, W = _S.intW, D = _S.intD, furn = sc.children.filter(o => o.userData.furn); let meshes = 0, cyl = 0; sc.traverse(o => { if (o.isMesh) { meshes++; if (o.geometry.type === 'CylinderGeometry') cyl++; } });
   const fh = (x, z, lo, hi) => FOOTHOLDS.some(f => f.y > lo && f.y < hi && x > f.x0 && x < f.x1 && z > f.z0 && z < f.z1);

@@ -837,7 +837,7 @@
   function shelfPrompt(){if(!INT_SHELF||!currentHouse||INT_SHELF.id!==currentHouse.id)return null;if(worldState.shelfTaken&&worldState.shelfTaken[INT_SHELF.id])return null;
     const def=shelfBookFor(currentHouse);if(!def)return null;
     if(Math.hypot(px-INT_SHELF.x,pz-INT_SHELF.z)>TOUCH||Math.abs(jumpY-INT_SHELF.y)>.9)return null;
-    if(!aimBox(INT_SHELF.x,INT_SHELF.z,INT_SHELF.y+.5,.25,.9,1.3))return null;
+    if(!aimBox(INT_SHELF.x,INT_SHELF.z,INT_SHELF.y+.5,INT_SHELF.hx||.25,INT_SHELF.hz||.9,1.3))return null; /* S1701 — a shelf on a back wall (the kit hall's press) gives its own half-widths */
     return `Press 'E' to take ${def.name} from the shelf`;}
   // the named action (co-op): the book into the bag, the room's copy gone for good
   function takeShelfBook(house){const def=shelfBookFor(house);if(!def)return false;const T=worldState.shelfTaken||(worldState.shelfTaken={});if(T[house.id])return false;

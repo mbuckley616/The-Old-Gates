@@ -25,10 +25,11 @@ const enter = async () => { await page.evaluate(() => { forceTime(12); px = _G.e
   for (let k = 0; k < 40 && !(await page.evaluate(() => isInterior() && !!INT_SHELF && INT_SHELF.id === _G.id)); k++) await page.waitForTimeout(250);
   await g.frames(4); };
 await enter();
-const room = await page.evaluate(() => ({ shelf: { x: +INT_SHELF.x.toFixed(2), z: +INT_SHELF.z.toFixed(2) }, w: +_G.intW.toFixed(2), d: +_G.intD.toFixed(2) }));
+const room = await page.evaluate(() => ({ shelf: { x: +INT_SHELF.x.toFixed(2), z: +INT_SHELF.z.toFixed(2), y: INT_SHELF.y || 0, nx: INT_SHELF.nx ?? -1, nz: INT_SHELF.nz ?? 0 }, w: +_G.intW.toFixed(2), d: +_G.intD.toFixed(2), kit: !!_G._guildHall }));
 console.log(JSON.stringify(room));
-check('the shelf stands on the east wall inside the room', room.shelf.x > room.w - .5 && room.shelf.x < room.w && room.shelf.z > 0 && room.shelf.z < room.d, room);
-const prompt = async (dx, look) => { await page.evaluate(([dx, look]) => { const S = INT_SHELF; px = S.x - dx; pz = S.z; jumpY = 0; if (look) lookAtPt(S.x, 1.1, S.z); else lookAtPt(S.x - dx - 3, 1.1, S.z); }, [dx, look]);
+// S1701: in the kit's guild hall (the new look) the shelf is the gallery's middle press, on the back wall 3.15 m up; in the old room the east wall's bookcase
+check(room.kit ? 'the shelf is the gallery\'s press on the back wall, up on the gallery' : 'the shelf stands on the east wall inside the room', room.kit ? (room.shelf.z < .5 && room.shelf.y > 3 && room.shelf.x > 0 && room.shelf.x < room.w) : (room.shelf.x > room.w - .5 && room.shelf.x < room.w && room.shelf.z > 0 && room.shelf.z < room.d), room);
+const prompt = async (dx, look) => { await page.evaluate(([dx, look]) => { const S = INT_SHELF, nx = S.nx ?? -1, nz = S.nz ?? 0, y = S.y || 0; px = S.x + nx * dx; pz = S.z + nz * dx; jumpY = y; if (look) lookAtPt(S.x, y + 1.1, S.z); else lookAtPt(S.x + nx * (dx + 3), y + 1.1, S.z + nz * (dx + 3)); }, [dx, look]);
   await g.frames(3); return page.evaluate(() => ({ ob: document.getElementById('ob').textContent, p: WORLD.shelfPrompt() })); };
 const near = await prompt(1.0, true);
 check('1 m from the shelf with the crosshair on it, E offers the book by name', /take The Words on the Stones from the shelf/.test(near.ob), near);
@@ -55,7 +56,7 @@ check('back in the room, still nothing on the shelf', back.p === null, back);
 await prompt(1.0, true);
 const save = await page.evaluate(() => { const d = JSON.parse(ssStringify(_buildSavePayload())); const rows = ssSplitPayload(d);
   const inW = !!(rows.w.wS && rows.w.wS.shelfTaken && rows.w.wS.shelfTaken[_G.id]), inC = !!(rows.c.wS && rows.c.wS.shelfTaken);
-  const d0 = +Math.hypot(px - INT_SHELF.x, pz - INT_SHELF.z).toFixed(2); px = INT_SHELF.x - 1; pz = INT_SHELF.z; delete worldState.shelfTaken; const lost = WORLD.shelfPrompt() !== null;
+  const d0 = +Math.hypot(px - INT_SHELF.x, pz - INT_SHELF.z).toFixed(2); px = INT_SHELF.x + (INT_SHELF.nx ?? -1); pz = INT_SHELF.z + (INT_SHELF.nz ?? 0); jumpY = INT_SHELF.y || 0; delete worldState.shelfTaken; const lost = WORLD.shelfPrompt() !== null;
   _applyLoadData(JSON.parse(JSON.stringify(ssJoinPayload(rows.c, rows.w))));
   return { d0, inW, inC, lost, after: worldState.shelfTaken && worldState.shelfTaken[_G.id], p: WORLD.shelfPrompt() }; });
 console.log(JSON.stringify(save));
