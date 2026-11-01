@@ -21,6 +21,15 @@ const WOLF_KINDS={
   // their own (k.horse), a bay and a grey; legK scales the gait's stride to the longer legs
   'Horse':     {coat:0x6a4428,saddle:0x24160c,belly:0x8a6444,eye:0x140c08,horse:true,legK:1.8,legs:{fore:{root:[-.03,.03],a:[-.22,-.04],b:[-.22,.02],c:[-.23,.01]},hind:{root:[-.02,-.02],a:[-.2,.08],b:[-.2,-.1],c:[-.26,.01]}},hipY:.70,bulk:1.05,eyePos:[.052,.02,.03]},
   'Grey Horse':{coat:0xb4aea4,saddle:0x5a5650,belly:0xd4cec4,eye:0x140c08,horse:true,legK:1.8,legs:{fore:{root:[-.03,.03],a:[-.22,-.04],b:[-.22,.02],c:[-.23,.01]},hind:{root:[-.02,-.02],a:[-.2,.08],b:[-.2,-.1],c:[-.26,.01]}},hipY:.70,bulk:1.05,eyePos:[.052,.02,.03]},
+  // Session 1704 — the common land animals (L3, OG-084; Michael's A on #984: present and huntable), peaceful, on the wolf's bones and gait.
+  // Their bodies are the creature kit's (HC_KINDS); the driver's own is seen only past the kit's last level. world: the root's scale that
+  // stands the kit's body at its own size in metres (its hips at hipY·world: the deer's 0.87 m, the fox's 0.35, the hare's 0.29, the
+  // badger's 0.21, the otter's 0.13), read by buildAnimal and the inspector. The deer stands on the horse's legs and body
+  'Deer':      {coat:0x94613a,saddle:0x6b4526,belly:0xe6d6b8,eye:0x140c08,horse:true,legK:1.8,legs:{fore:{root:[-.03,.03],a:[-.22,-.04],b:[-.22,.02],c:[-.23,.01]},hind:{root:[-.02,-.02],a:[-.2,.08],b:[-.2,-.1],c:[-.26,.01]}},hipY:.70,bulk:.8,eyePos:[.046,.02,.03],world:1.24,wild:true},
+  'Red Fox':   {coat:0xb8571f,saddle:0x8c3d14,belly:0xf2ebdb,eye:0x2a1a08,ruff:.8,ears:1.2,muzzle:1.1,lean:.8,bulk:.9,neck:.1,world:.87,wild:true},
+  'Brown Hare':{coat:0x8f6b47,saddle:0x664a2e,belly:0xe6dbc7,eye:0x2a1a08,ruff:.6,ears:1.4,muzzle:.8,lean:.85,bulk:.95,neck:.05,world:.71,wild:true},
+  'Badger':    {coat:0x85807a,saddle:0x615e5c,belly:0x1f1c1c,eye:0x0f0a08,ruff:.7,ears:.7,muzzle:.9,bulk:1.2,neck:.2,world:.535,wild:true},
+  'Otter':     {coat:0x523824,saddle:0x3d291a,belly:0x9e8566,eye:0x0f0a08,ruff:.6,ears:.6,muzzle:.85,lean:.8,bulk:.9,neck:.05,world:.335,wild:true},
   // the world's dragon (S177): the wolf's legs and gait under a long neck, a long tail, horns and two wings of its own
   'Dragon':    {coat:0x5a2a1a,saddle:0x3a160c,belly:0xa87a48,eye:0xff8020,dragon:true,bulk:1.28,neck:-.15,eyePos:[.05,.04,.104],world:4.5} // S524 — world: the scale every dragon is built at in play, and the inspector shows it so; S546 — 4.5, about twice a man's height (Michael's B on #153, was 2.88)
 };
@@ -284,6 +293,13 @@ function buildWolf(name,scale){
   root.userData.rig=rig;WOLF_RIGS.add(rig);
   return rig;
 }
+// Session 1704: one of the common animals (WOLF_KINDS' wild) at its own size, its kit body keyed by `key` (the spawner's id: a chunk's
+// `cx,cz` and its index, so a chunk rolls the same deer each time it loads). Its group is the caller's to place and add to the scene; a
+// rig moved by its group walks and gallops by the ground it covers, as the coach's horses do
+// Session 1706: a deer is a hind one time in two by its key (its kit body the deer's without antlers, HC_KINDS' Hind), and a tenth smaller
+function animalHash(str){let h=2166136261;for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
+function buildAnimal(name,key){const k=WOLF_KINDS[name];if(!k||!k.wild)return null;const hind=name==='Deer'&&key!=null&&(animalHash(String(key))&1)===1;
+  const rig=buildWolf(name,k.world*(hind?.9:1));if(key!=null)rig.hcKey='wild:'+key;if(hind)rig.hcKind='Hind';return rig;}
 // ── the wolf's motion: every joint an [x,y,z] rotation; `drop` lowers the hips ──
 const WG={
   JOINTS:['hips','spine','neck','head','jaw','tail1','tail2','tail3','shL','elL','wrL','pfL','shR','elR','wrR','pfR','thL','knL','hkL','phL','thR','knR','hkR','phR'],
@@ -802,6 +818,7 @@ const HC_KINDS={'Wolf':{plan:'wolf'},'Snow Wolf':{plan:'wolf',own:true},'Dire Wo
   'Golem':{plan:'golem',own:true,person:true,merge:true,ik:true,tall:true,glow:[.42,.69,1],glowR:.02},
   'Gargoyle':{plan:'gargoyle',own:true,person:true,merge:true,ik:true,glow:[1,.31,.13],glowR:.032,glowAt:{f:.8,up:.55,out:.5},garg:true},
   'Wraith':{plan:'wraith',own:true,person:true,legless:true,rest:HC_WRAITH_REST},'Phantom':{plan:'phantom',own:true,person:true,legless:true,rest:HC_WRAITH_REST},
+  'Deer':{plan:'deer',ik:true},'Hind':{plan:'deer',own:true,ik:true,bare:true},'Red Fox':{plan:'redfox'},'Brown Hare':{plan:'brownhare'},'Badger':{plan:'badger'},'Otter':{plan:'otter'},
   'Shark':{plan:'reefshark',fish:true},'Whale':{plan:'stormwhale',fish:true},'Dolphin':{plan:'stormswift',fish:true},'Gull':{plan:'gull',fish:true,own:true,cell:.014},'Slime':{plan:'slime',fish:true},'Fire Elemental':{plan:'fireelemental',fish:true}};
 // the driver's joints and the kit's bones they move, parents first (the kit's front legs hang on spine3, the hind on spine0)
 const HC_MAP=[['hips','spine0'],['spine','spine1'],['neck','neck0'],['head','head'],['jaw','jaw'],['tail1','tail0'],['tail2','tail1'],['tail3','tail2'],
@@ -809,11 +826,11 @@ const HC_MAP=[['hips','spine0'],['spine','spine1'],['neck','neck0'],['head','hea
   ['thL','leg1L_0'],['knL','leg1L_1'],['hkL','leg1L_2'],['phL','leg1L_3'],['thR','leg1R_0'],['knR','leg1R_1'],['hkR','leg1R_2'],['phR','leg1R_3']];
 // the driver's joints and the bones of this kit body they move. A kit leg has a bone at each joint and one at the toe's tip: five on a
 // wolf's or a boar's (paw …_3), four on a plantigrade's (no …_4), whose paw (…_2) takes the driver's paw, so the driver's wrist or hock
-// moves nothing of it; a tail joint the kit's tail lacks is left out; any other bone missing is a failure
+// moves nothing of it; a tail joint the kit's tail lacks is left out, and a jaw (the hare's, S1704); any other bone missing is a failure
 function hcMap(by){const out=[];
   for(const [j,n] of HC_MAP){let b=by[n];const m=/^(leg\d[LR])_(\d)$/.exec(n);
     if(m&&!by[m[1]+'_4']){if(m[2]==='2')continue;if(m[2]==='3')b=by[m[1]+'_2'];}
-    if(!b){if(/^tail/.test(j))continue;return n;}out.push([j,b]);}
+    if(!b){if(/^tail/.test(j)||j==='jaw')continue;return n;}out.push([j,b]);}
   return out;}
 // a spider's (Session 1319): its body and abdomen; the legs are set by their feet (hcSpFeet)
 function hcSpMap(by,sc){const out=[];for(const [j,n] of sc?[['body','spine0']]:[['body','spine0'],['abd','tail0']]){if(!by[n])return n;out.push([j,by[n]]);}
@@ -835,7 +852,8 @@ function hcPlan(name){const K=HC_KINDS[name];if(!K.own)return K.plan;const id='g
     HC.PLANS[id]=Object.assign({},P,K.cell?{name,cell:K.cell}:{name},pal?{palette:Object.assign({},P.palette,pal)}:{},{parts:P.parts.map(([k,o])=>k==='gear'&&K.gear!=='plan'?[k,{list:K.gear?[K.gear]:[]}]
     :k==='head'&&K.glow?[k,Object.assign({},o,{eyes:o.eyes.map(e=>Object.assign({},e,{r:K.glowR||.017,glow:1.6,color:K.glow},K.glowAt||{}))})]
     :k==='head'&&K.eye!=null?[k,Object.assign({},o,{eyes:o.eyes.map(e=>Object.assign({},e,{color:c(K.eye)}))})]:[k,o])});}
-  if(!HC.PLANS[id]&&(K.spider||!WOLF_KINDS[name]))HC.PLANS[id]=Object.assign({},HC.PLANS[K.plan],{name,cell:K.cell});
+  // a hind (Session 1706, K.bare): the deer's plan without its antlers
+  if(!HC.PLANS[id]&&(K.spider||!WOLF_KINDS[name]))HC.PLANS[id]=Object.assign({},HC.PLANS[K.plan],{name,cell:K.cell},K.bare?{parts:HC.PLANS[K.plan].parts.map(([k,o])=>k==='head'?[k,Object.assign({},o,{antlers:null})]:[k,o])}:{});
   if(!HC.PLANS[id]){const k=WOLF_KINDS[name],c=h=>[(h>>16&255)/255,(h>>8&255)/255,(h&255)/255];
     HC.PLANS[id]=Object.assign({},HC.PLANS[K.plan],K.cell?{cell:K.cell}:{},{name,palette:Object.assign({},HC.PLANS[K.plan].palette,{coat:c(k.coat),saddle:c(k.saddle),belly:c(k.belly)},HC.PLANS[K.plan].palette.mane?{mane:c(k.saddle)}:{})});}
   return id;}
