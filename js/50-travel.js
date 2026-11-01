@@ -707,9 +707,12 @@ function useFireThing(i){const it=BAG[i];if(!it)return;
   if(it.food){showMsg('Cook it at a fire.','#cc8844');return;}
   if(lightFire())openCookPage();}
 // meat off a bear, a boar or a wolf: 1 to 3, seeded by the corpse's key (as bodyPicks)
-const MEAT_BODIES=/(^|\s)(Wolf|Bear|Boar)$/;
+// S1707 — and off the hunted (Michael's A on #984): a deer 2 to 4, a hare 1; the fox, the badger and the otter give none
+const MEAT_BODIES=/(^|\s)(Wolf|Bear|Boar|Deer|Hare)$/;
+const MEAT_N={Deer:[2,4],Hare:[1,1]};
 function bodyMeat(e,items,key){if(!e||!MEAT_BODIES.test(e.name||''))return items;
-  const r=key!=null?seededRng('meat',key):lootRand;items.push(survItem('meat',1+Math.floor(r()*3)));return items;}
+  const N=MEAT_N[(e.name||'').split(' ').pop()]||[1,3];
+  const r=key!=null?seededRng('meat',key):lootRand;items.push(survItem('meat',N[0]+Math.floor(r()*(N[1]-N[0]+1))));return items;}
 // the goods shop and the inn: the tinderbox and produce; fish in a port
 function survivalFor(h){if(!h||!(h.type==='misc'||h.type==='inn'))return [];const out=[{...SURV_ITEMS.tinderbox},{...SURV_ITEMS.produce}];
   const st=h.siteId&&typeof SITE!=='undefined'?SITE[h.siteId]:null;if(st&&st.kind==='port')out.push({...SURV_ITEMS.fish});return out;}
@@ -1800,7 +1803,7 @@ function _canWait(){
   // S1112 — on watch on the spire (the draft's §4 line); asked before the enemies, which stand on the roof with you
   if(typeof WORLD!=='undefined'&&WORLD.onWatch&&WORLD.onWatch()) return {ok:false, reason:'Not on watch.'};
   // Block during combat — any non-dead enemy aggroed within 20m.
-  const inCombat = ZE && ZE.some(e=>e && !e.dead && !e.locked && Math.hypot(px-e.x,pz-e.z)<20);
+  const inCombat = ZE && ZE.some(e=>e && !e.dead && !e.locked && !e.wild && Math.hypot(px-e.x,pz-e.z)<20); /* S1707 — a grazing deer is no foe */
   if(inCombat) return {ok:false, reason:'You cannot pass time while enemies are near.'};
   // Block while a UI modal is open (dialog, shop, inventory etc).
   if(typeof dlg!=='undefined' && dlg && dlg.style && dlg.style.display==='flex') return {ok:false, reason:''};

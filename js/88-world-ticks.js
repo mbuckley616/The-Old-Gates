@@ -262,11 +262,65 @@
     };
     if(typeof doFade==='function')doFade(go);else go();
   }
+  // ═══ S1707 — the peaceful animals in the open country (Michael's A on #984) ═══
+  // Each loaded chunk within 150 m of you rolls, once, by its id, one group or none: deer (2 to 4) in woods and fields, a hare or a fox in
+  // grass and heath, a badger at night, an otter by a river; never on a town's or a farm's pad nor on a road. Its animals are keyed
+  // `cx,cz:i`, so the chunk rolls the same group each time it loads. Not saved: one taken today stays gone only until the page reloads.
+  // A chunk past 200 m (or unloaded) takes its living animals away. The ravens and crows wait on a bird's body (the bodies builder's)
+  const WILD_R=150,WILD_DROP=200,WILD_P=.25,WILD_CH=new Set(),WILD_TAKEN=new Map();let _wildT=0;
+  const WILD_TABLE={
+    forest:[{name:'Deer',w:4,n:[2,4]},{name:'Red Fox',w:1,n:[1,1]},{name:'Badger',w:2,n:[1,1],night:true}],
+    autumn:[{name:'Deer',w:4,n:[2,4]},{name:'Red Fox',w:2,n:[1,1]},{name:'Brown Hare',w:1,n:[1,1]},{name:'Badger',w:2,n:[1,1],night:true}],
+    plains:[{name:'Deer',w:3,n:[2,4]},{name:'Brown Hare',w:3,n:[1,1]},{name:'Red Fox',w:2,n:[1,1]},{name:'Badger',w:2,n:[1,1],night:true}],
+    moor:  [{name:'Brown Hare',w:3,n:[1,1]},{name:'Red Fox',w:2,n:[1,1]},{name:'Badger',w:1,n:[1,1],night:true}],
+    coast: [{name:'Brown Hare',w:2,n:[1,1]},{name:'Red Fox',w:1,n:[1,1]}],
+  };
+  function wildTaken(e){if(!e||!e._wildKey)return;WILD_TAKEN.set(e._wildKey,lootDay());
+    for(const o of ZONES.world.enemies)if(o!==e&&o.wild&&!o.dead&&Math.hypot(o.x-e.x,o.z-e.z)<WILD_HERD){wildFlee(o,targetOf(o));break;}} /* the rest of the group bolts (wildFlee takes the herd) */
+  function wildRiverNear(x,z,r){const bk=RVG.get(sgKey(Math.floor(x/RVSG),Math.floor(z/RVSG)));if(!bk)return false;const o=[0,0];
+    for(const b of bk){if(!b.rv)continue;riverSample(b.rv,b.i0,b.i1,x,z,o);if(o[0]-o[1]<r)return true;}return false;}
+  function wildPadNear(x,z,m){const [ci,cj]=cellOf(x,z);
+    for(let j=cj-1;j<=cj+1;j++)for(let i=ci-1;i<=ci+1;i++){if(i<0||j<0||i>=GRID||j>=GRID)continue;const c=getCell(i,j);if(!c)continue;
+      if(c.sites)for(const t of c.sites)if(t.pad>0&&Math.hypot(x-t.x,z-t.z)<t.pad+m)return true;
+      for(const F of loneFarms(c))if(Math.hypot(x-F.cx,z-F.cz)<FARM_R+m)return true;}
+    return false;}
+  function wildGround(x,z){if(worldH(x,z)<.5||slopeNormalY(x,z)<.7||solidAt(x,z))return false;const st=stampAt(x,z);if(st&&st.kind==='site')return false;
+    const ri=roadInfo(x,z);return !(ri&&ri.d<8);}
+  function wildSpawnChunk(ch){const key=chunkKey(ch.cx,ch.cz);ch.wild=[];WILD_CH.add(ch);
+    const cxw=ch.cx*CHUNK+CHUNK/2,czw=ch.cz*CHUNK+CHUNK/2;if(worldH(cxw,czw)<-3)return;
+    const r=seededRng('wild',key);if(r()>WILD_P)return;
+    if(wildPadNear(cxw,czw,40))return;
+    const biome=lairBiome({x:cxw,z:czw}),night=isNight();
+    let table=(WILD_TABLE[biome]||[]).filter(g=>!g.night||night);
+    const river=wildRiverNear(cxw,czw,30);if(river)table=table.concat([{name:'Otter',w:3,n:[1,1]}]);
+    if(!table.length)return;
+    let tw=0;for(const g of table)tw+=g.w;let pick=r()*tw,grp=table[0];for(const g of table){pick-=g.w;if(pick<=0){grp=g;break;}}
+    const count=grp.n[0]+Math.floor(r()*(grp.n[1]-grp.n[0]+1));
+    let ax=0,az=0,ok=false;
+    for(let k=0;k<10&&!ok;k++){ax=ch.cx*CHUNK+8+r()*(CHUNK-16);az=ch.cz*CHUNK+8+r()*(CHUNK-16);ok=wildGround(ax,az)&&(grp.name!=='Otter'||wildRiverNear(ax,az,14));}
+    if(!ok)return;
+    for(let i=0;i<count;i++){const id=key+':'+i;if(WILD_TAKEN.get(id)===lootDay())continue;
+      const pr=seededRng('wildspot',id);let ex=ax,ez=az,good=i===0;
+      for(let k=0;k<8&&!good;k++){ex=ax+(pr()-.5)*10;ez=az+(pr()-.5)*10;good=wildGround(ex,ez);}
+      if(!good)continue;
+      const e=keyFoe(buildZoneEnemy(sc,STATIC_SOL,ex,ez,grp.name,null,{tier:1,key:id}),'wild:'+id);
+      e._wildKey=id;e._chunk=key;e.homeX=ex;e.homeZ=ez;e.combatYaw=pr()*Math.PI*2;
+      ZONES.world.enemies.push(e);ch.wild.push(e);}
+  }
+  function wildDrop(ch){for(const e of ch.wild||[]){if(e.dead)continue;
+      if(e.mesh&&e.mesh.parent)e.mesh.parent.remove(e.mesh);if(e.el&&e.el.parent)e.el.parent.remove(e.el);
+      const i=ZONES.world.enemies.indexOf(e);if(i>=0)ZONES.world.enemies.splice(i,1);}
+    ch.wild=null;WILD_CH.delete(ch);}
+  function tickWildSpawn(dt){_wildT-=dt;if(_wildT>0)return;_wildT=.5;
+    for(const ch of [...WILD_CH]){const d=Math.hypot(ch.cx*CHUNK+CHUNK/2-px,ch.cz*CHUNK+CHUNK/2-pz);if(chunks.get(chunkKey(ch.cx,ch.cz))!==ch||d>WILD_DROP)wildDrop(ch);}
+    for(const ch of chunks.values()){if(ch.wild)continue;if(Math.hypot(ch.cx*CHUNK+CHUNK/2-px,ch.cz*CHUNK+CHUNK/2-pz)<WILD_R)try{wildSpawnChunk(ch);}catch(err){console.warn('wild',err);}}
+  }
   function tick(dt,now){
     if(activeZoneId!=='world'||!sc)return;
     tickCells(dt,false);runJobs();
     tickLightPool(dt);tickWeather(dt);tickSmoke(dt);tickShip(dt);tickSailTrim(dt);tickBehaviours(dt);cabinUpdate();tickSchoolCool(dt);tickWhales(dt,now||performance.now());tickBoarding(dt);tickHullCollisions(dt);tickOtherShips(dt,now||performance.now());tickCrew();tickSharks();tickFish(dt,now||performance.now());tickGulls(dt,now||performance.now());tickDolphins(dt,now||performance.now());
     stream(px,pz,false);
+    tickWildSpawn(dt); /* S1707 — the peaceful animals */
     houseLod();
     landTick(dt); // S1181 (F3): the new look's grass, a chunk a frame, and its wind
     try{tickWonders();}catch(e){console.warn('wonders',e);} /* S1614 — the Skyfall Fields (82-world-structures.js) */
