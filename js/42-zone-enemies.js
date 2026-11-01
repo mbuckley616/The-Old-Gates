@@ -759,23 +759,34 @@ const ZONE_FOE_DEF={
     'Brown Hare':   {minLevel:1, col:0x8f6b47,eyeCol:0x2a1a08,hp:1,  maxHp:1,  spd:1.0,dmg:0, atk:9,   xpVal:0,  scale:.71, shape:'wolf',    def:0, resist:{}, wild:true},
     'Badger':       {minLevel:1, col:0x85807a,eyeCol:0x0f0a08,hp:1,  maxHp:1,  spd:1.0,dmg:0, atk:9,   xpVal:0,  scale:.535,shape:'wolf',    def:0, resist:{}, wild:true},
     'Otter':        {minLevel:1, col:0x523824,eyeCol:0x0f0a08,hp:1,  maxHp:1,  spd:1.0,dmg:0, atk:9,   xpVal:0,  scale:.335,shape:'wolf',    def:0, resist:{}, wild:true},
+    // S1711 — the raven and the crow (#984 A: "ravens or crows on open ground … the birds take off"), on the bodies builder's bird (buildBird, S1710)
+    'Raven':        {minLevel:1, col:0x141416,eyeCol:0x0a0a0c,hp:1,  maxHp:1,  spd:1.0,dmg:0, atk:9,   xpVal:0,  scale:1,   shape:'bird',    def:0, resist:{}, wild:true},
+    'Crow':         {minLevel:1, col:0x19191c,eyeCol:0x0a0a0c,hp:1,  maxHp:1,  spd:1.0,dmg:0, atk:9,   xpVal:0,  scale:1,   shape:'bird',    def:0, resist:{}, wild:true},
   };
 // S1707 — the peaceful animals (Michael's A on #984): they graze and wander near where they stand, and on seeing or hearing you (a foe's
 // own senses, canSeePlayer: its cone, your sneaking, the weather) or on a blow they run 40 m from you, turning off walls, water and
 // steep ground; a startled one startles the rest of its group within 12 m. They never fight and never stay alert, so they hold no fight
 // open (passing time, the music). Pace in metres a second, walking and running
-const WILD_PACE={Deer:{walk:1.1,run:9},'Red Fox':{walk:1,run:7},'Brown Hare':{walk:.6,run:9},Badger:{walk:.6,run:4},Otter:{walk:.5,run:4}};
+const WILD_PACE={Deer:{walk:1.1,run:9},'Red Fox':{walk:1,run:7},'Brown Hare':{walk:.6,run:9},Badger:{walk:.6,run:4},Otter:{walk:.5,run:4},
+  Raven:{walk:.35,run:11,fly:true},Crow:{walk:.4,run:10,fly:true}};
+// S1711 — a bird startled takes off: it climbs at 3 m/s to its own cruise of 8 to 14 m, flies 60 m from you, then glides down at 2 m/s and
+// lands on the first open ground (wildOpen) past that, flying on up to 150 m if there is none. Over 1.5 m up it is aloft: out of a blade's
+// reach (strikeCandidate, the bash), and an arrow must pass within 0.6 m of its height to strike it (wildArrowMisses)
+const WILD_FLY={far:60,max:150,climb:3,glide:2,lo:8,hi:14,aloft:1.5};
+function wildArrowMisses(e,y){return !!(e&&e.aloft&&e.mesh&&Math.abs(y-(e.mesh.position.y+.15))>.6);}
 const WILD_FLEE=40,WILD_HERD=12,WILD_HOME=10;
 function wildOpen(x,z){if(activeZoneId!=='world')return true;if(typeof worldH==='function'&&worldH(x,z)<.5)return false;
   if(typeof slopeNormalY==='function'&&slopeNormalY(x,z)<.6)return false;return !(typeof solidAt==='function'&&solidAt(x,z));}
-function wildFlee(e,T){const W=e._w||(e._w={});if(W.mode==='flee')return;
+function wildFlee(e,T){const W=e._w||(e._w={});if(W.mode==='flee'||W.mode==='fly')return;
   W.mode='flee';W.left=WILD_FLEE;W.yaw=Math.atan2(e.x-T.x,e.z-T.z)+(e.rng()-.5)*.6;
+  if((WILD_PACE[e.baseName]||{}).fly){W.mode='fly';W.gone=0;W.cruise=WILD_FLY.lo+e.rng()*(WILD_FLY.hi-WILD_FLY.lo);W.fy=W.fy||0;}
   for(const o of ZE)if(o!==e&&o.wild&&!o.dead&&Math.hypot(o.x-e.x,o.z-e.z)<WILD_HERD)wildFlee(o,T);}
 function tickWildOne(e,dt){if(!(dt>0))return;
   const P=WILD_PACE[e.baseName]||WILD_PACE.Deer,W=e._w||(e._w={mode:'graze',t:2+e.rng()*6});
   const T=targetOf(e),dist=Math.hypot(T.x-e.x,T.z-e.z);
   if(e.alert){e.alert=false;wildFlee(e,T);} /* a blow that did not kill, or a pack's cry */
-  else if(W.mode!=='flee'&&!_hasBuff('vanish')&&canSeePlayer(e,dist,20))wildFlee(e,T);
+  else if(W.mode!=='flee'&&W.mode!=='fly'&&!_hasBuff('vanish')&&canSeePlayer(e,dist,20))wildFlee(e,T);
+  if(W.mode==='fly'){wildFlyStep(e,W,P,T,dt);return;}
   let sp=0;
   if(W.mode==='flee'){sp=P.run;
     /* keep running from you as it goes: the way off is mostly away, bent round what blocks it */
@@ -791,6 +802,18 @@ function tickWildOne(e,dt){if(!(dt>0))return;
       let dy=yaw-e.combatYaw;dy=Math.atan2(Math.sin(dy),Math.cos(dy));e.combatYaw+=dy*Math.min(1,dt*(W.mode==='flee'?14:5));}}
   if(e.mesh){const y=typeof activeTerrainH==='function'?activeTerrainH(e.x,e.z):e.mesh.position.y;e.mesh.position.set(e.x,y,e.z);e.mesh.rotation.set(0,e.combatYaw,0);}
 }
+// S1711 — a bird's flight from you: straight off, bent a little to keep away, over walls, water and slopes alike; down only onto open ground
+function wildFlyStep(e,W,P,T,dt){const F=WILD_FLY;
+  const away=Math.atan2(e.x-T.x,e.z-T.z);let dy=away-W.yaw;dy=Math.atan2(Math.sin(dy),Math.cos(dy));if(W.gone<F.far)W.yaw+=dy*Math.min(1,dt*.8);
+  const st=P.run*dt;e.x+=Math.sin(W.yaw)*st;e.z+=Math.cos(W.yaw)*st;W.gone+=st;
+  if(W.gone<F.far)W.fy=Math.min(W.cruise,W.fy+F.climb*dt);
+  else{const open=wildOpen(e.x,e.z);
+    if(W.gone>F.max&&!open){W.fy=Math.max(1,W.fy-F.glide*dt);}
+    else W.fy=Math.max(open?0:1,W.fy-F.glide*dt);
+    if(W.fy<=0&&open){W.fy=0;W.mode='graze';W.t=3+e.rng()*5;e.homeX=e.x;e.homeZ=e.z;}}
+  e.aloft=W.fy>F.aloft;
+  let dr=W.yaw-e.combatYaw;dr=Math.atan2(Math.sin(dr),Math.cos(dr));e.combatYaw+=dr*Math.min(1,dt*8);
+  if(e.mesh){const g=typeof activeTerrainH==='function'?activeTerrainH(e.x,e.z):0;e.mesh.position.set(e.x,g+W.fy,e.z);e.mesh.rotation.set(0,e.combatYaw,0);}}
 // S1701 — a person-bodied foe's weapon changed after it is built: the old one and any shield taken away, the kit's `kind` put in the
 // driver's fist as buildFoe puts it (a quarter turn about the shaft, the gear bone), and the genome's weapon set, so foeWeaponKind reads it.
 // On the new look the builder's body carries what the driver holds (hbHold); if that body is already attached, its held list is changed
@@ -825,7 +848,7 @@ function buildZoneEnemy(sc,sol,x,z,type,variantKey,zOpts){
   if(type==='Dragon'&&WOLF_KINDS.Dragon){ // v80 S177 — the dragon on the shape kit: the wolf's bones and gait, its own neck, tail and wings
     wolfRig=buildWolf(type,sc2/1.8*WOLF_KINDS.Dragon.world);g.add(wolfRig.root);limbs.torso=wolfRig.mesh;limbs.wolf=wolfRig;
   }
-  else if(d.wild&&WOLF_KINDS[type]&&WOLF_KINDS[type].wild){ /* S1707 — a peaceful animal at its own size, its kit body keyed by the spawner's id (a hind by it, S1706) */
+  else if(d.wild&&((WOLF_KINDS[type]&&WOLF_KINDS[type].wild)||(typeof BIRD!=='undefined'&&BIRD[type]))){ /* S1711 — or a bird (buildBird) */ /* S1707 — a peaceful animal at its own size, its kit body keyed by the spawner's id (a hind by it, S1706) */
     wolfRig=buildAnimal(type,zOpts&&zOpts.key!=null?zOpts.key:null);g.add(wolfRig.root);limbs.torso=wolfRig.mesh;limbs.wolf=wolfRig;
   }
   else if(zShapeExtra(type,d,g,mat,sc2,limbs)){}
@@ -1529,7 +1552,7 @@ function tickZoneBalls(dt,sc){
       let arrowHit = false;
       ZE.forEach(e=>{
         if(arrowHit || e.dead || e.locked || fb.userData.passed===e) return;
-        if(Math.hypot(fb.position.x-e.x, fb.position.z-e.z) < ARROW_HIT_RADIUS){
+        if(Math.hypot(fb.position.x-e.x, fb.position.z-e.z) < ARROW_HIT_RADIUS && !wildArrowMisses(e, fb.position.y)){ /* S1711 — a bird aloft is struck only at its height */
           arrowHit = true;
           const _thru = arrowPasses(fb.userData, e); /* S982 — Through: the arrow flies on past this one */
           // Reach into the arrow's pre-rolled rawDmg and route through the

@@ -31,7 +31,7 @@ function doBash(){
   const list = isOverworldZone() ? ZE : ENEMIES;
   let landed = false, anyGuard = false;
   for(const e of list){
-    if(!e || e.dead || e.locked) continue;
+    if(!e || e.dead || e.locked || e.aloft) continue; /* S1711 — nor a bird in the air */
     if(!isOverworldZone() && (e.floor !== currentFloor || e.disguised)) continue;
     const ex = e.x - px, ez = e.z - pz;
     const dist = Math.hypot(ex, ez);
