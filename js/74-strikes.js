@@ -238,7 +238,7 @@ function foeBlow(e,raw,arm){const r=foeAttack(e);return Math.max(1,Math.round(ar
 // the kill. The third light swing of a chain lands ×1.3 and drains ×1.5 posture (COMMIT, the light chain).
 function strikeFoes(){return isOverworldZone()?ZE:ENEMIES;}
 function strikeCandidate(e){
-  if(!e||e.dead||e.locked)return false;
+  if(!e||e.dead||e.locked||e.aloft)return false; /* S1711 — a bird in the air is out of a blade's reach */
   if(!isOverworldZone()&&(e.floor!==currentFloor||e.disguised))return false;
   return true;
 }
