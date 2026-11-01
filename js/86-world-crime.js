@@ -604,6 +604,16 @@
     if(!best)return;if(CR.sent)endSent();
     CR.sent={site:site.id,house:house.id,npc:best,t:0,ct:0,from:{x:best.g.position.x,z:best.g.position.z},door:{x:house.exitX,z:house.exitZ},out:{x:house.exitX-house.doorX,z:house.exitZ-house.doorZ},walk:bd/CHASE_SPD,phase:'coming',mesh:null};
     best._follow=false;}
+  // S1663 — sent after you in the open (arenas-build.md: a ring's murder, "the guard comes, as built"). The yards and the rings stand
+  // outside the walls, past any guard's five metres, and dispatchGuard wants a house's door. Here the nearest guard on duty in the
+  // site's town is sent straight into S239's chase: he runs you down at CHASE_SPD by the streets, halts you for the fine when he is
+  // within five metres with a clear line (tickCrime's confront), follows you into a house within 20 m, and gives up off the town's
+  // pad and its 40 m or after CHASE_MAX. A guard already sent is called off for him. Named action: sendGuardAfter(siteId).
+  function sendGuardAfter(siteId){const S=SETTLE.get(siteId);if(!S||!S.site)return null;const h=hourNow();let best=null,bd=1e9;
+    for(const n of guardsOf(S)){if(n._drawn||!n.g||scheduleFor(n,h).hide)continue;const d=Math.hypot(n.g.position.x-px,n.g.position.z-pz);if(d<bd){bd=d;best=n;}}
+    if(!best)return null;if(CR.sent)endSent();
+    CR.sent={site:siteId,house:null,npc:best,t:0,ct:0,from:{x:best.g.position.x,z:best.g.position.z},door:null,out:null,walk:0,phase:'chase',mesh:null};
+    best._chase=true;best._follow=false;CR.cool=0;return best;}
   function endSent(){const s=CR.sent;if(!s)return;if(s.mesh&&s.mesh.parent)s.mesh.parent.remove(s.mesh);if(s.enemy){const i=ZONES.world.enemies.indexOf(s.enemy);if(i>=0)ZONES.world.enemies.splice(i,1);}if(s.npc)s.npc._chase=false;CR.sent=null;}
   function tickSent(dt,indoor){const s=CR.sent;if(!s)return;const C=worldState.crime;const c=C&&C[s.site];if(!c||c.bounty<=0){endSent();return;}
     const S=SETTLE.get(s.site);const n=s.npc;if(!S||!n||(n._drawn&&s.phase!=='fight')){endSent();return;}

@@ -60,5 +60,25 @@ const wheel = await page.evaluate(() => {
   return r; });
 check('the ship’s wheel: taken to 1.6 and no further (2.4 before)', wheel && wheel.best >= 1.55 && !wheel.beyond, wheel);
 
+// 5. a gate's way out and its doors (S1670): the dungeon's E asked 1.1 to 1.5 by thing; it asks TOUCH now, and so does its prompt
+for (let k = 0; k < 24 && !(await page.evaluate(() => PORTALS.some(p => p && p.seed != null && p.zone === 'world'))); k++) { await page.evaluate(() => { for (let i = 0; i < 30; i++) WORLD.tick(1 / 60, performance.now()); }); await page.waitForTimeout(2500); }
+await page.evaluate(() => { const p = PORTALS.find(p => p && p.seed != null && p.zone === 'world'); if (p) { px = p.x; pz = p.z + 3; goToDungeon(p); } });
+await page.waitForFunction(() => activeZoneId === 'dungeon', null, { timeout: 60000 }).catch(() => {}); await page.waitForTimeout(3000); await g.hide();
+const dun = await page.evaluate(() => { if (activeZoneId !== 'dungeon') return null;
+  const keep = { goToOW, openLoot, tryLockpick, openSleepUI, sndDoorOpen, sndDoorClose }; let got = null;
+  window.goToOW = goToOW = () => { got = 'out'; }; window.openLoot = openLoot = () => { got = 'loot'; }; window.tryLockpick = tryLockpick = () => { got = 'pick'; }; window.openSleepUI = openSleepUI = () => { got = 'cot'; };
+  window.sndDoorOpen = sndDoorOpen = () => {}; window.sndDoorClose = sndDoorClose = () => {};
+  const angles = []; for (let a = 0; a < 6.28; a += .39) angles.push(a); currentFloor = 1;
+  const ex = dAt(dEntranceX), ez = dAt(dEntranceZ);
+  const exit = _reach((d, a) => { const x = ex + Math.cos(a) * d, z = ez + Math.sin(a) * d; if (dSolid(x, z)) return 'skip'; px = x; pz = z; got = null; interact(); return got === 'out'; }, angles);
+  const doors = DOORS.filter(d => d.floor === 1 && !d.locked && !DOORS.some(o => o !== d && Math.hypot(o.x - d.x, o.z - d.z) < 4) && Math.hypot(d.x - ex, d.z - ez) > 5).slice(0, 3).map(D => {
+    const r = _reach((d, a) => { const x = D.x + Math.cos(a) * d, z = D.z + Math.sin(a) * d; if (dSolid(x, z)) return 'skip'; px = x; pz = z; D.open = false; got = null; interact(); const o = D.open && !got; D.open = false; if (D.hinge) D.hinge.rotation.y = 0; return o; }, angles);
+    return { c: D.c, r: D.r, ...r }; });
+  for (const k in keep) window[k] = keep[k]; goToOW = keep.goToOW; openLoot = keep.openLoot; tryLockpick = keep.tryLockpick; openSleepUI = keep.openSleepUI; sndDoorOpen = keep.sndDoorOpen; sndDoorClose = keep.sndDoorClose;
+  return { exit, doors }; });
+console.log('dungeon', JSON.stringify(dun));
+check('a gate’s way out: E leaves it to 1.6 and no further (1.4 before)', dun && dun.exit.best >= 1.55 && !dun.exit.beyond, dun && dun.exit);
+check('a gate’s door: opened to 1.6 and no further (1.4 before)', dun && dun.doors.length > 0 && dun.doors.some(r => r.best >= 1.55) && dun.doors.every(r => !r.beyond), dun && dun.doors);
+
 check('no page errors', g.errs.length === 0, g.errs);
 stop(); await g.close();

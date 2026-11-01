@@ -1559,6 +1559,7 @@ function tickZoneBalls(dt,sc){
         if(fb.userData.rider)riderHit(e,fb.userData.rider,dmg); /* S1602 — the joined word's rider */
         if(sp.id==='tintreach')tintreachLeap(e,sp,tier); /* S1606 — the leap */
         if(sp.school==='gaoth')gaothKnock(e); /* S1626 — Gaoth 100 */
+        if(sp.school==='solas')solasStagger(e); /* S1659 — Solas 100 */
         // Sioc — freeze on hit. Mastery stacks up to 4.5s, lower tiers refresh to 1.5s.
         // Brings zone parity with dungeon hit handler (pre-v35 Sioc stagger worked in dungeons only).
         if(sp.id==='sioc'){
@@ -1569,6 +1570,7 @@ function tickZoneBalls(dt,sc){
           } else {
             staggered.push({e,t:1.5});
           }
+          uisceChill(e,(staggered.find(s=>s.e===e)||{t:1.5}).t); /* S1659 — the freeze, for Uisce 100 */
         }
         // Solas-Gheal — Morning's-First-Word (Mastery): heals caster on kill.
         if(e.hp<=0 && sp.id==='solas_gheal' && tier===3){

@@ -1221,6 +1221,7 @@ function loop(now){
         if(fb.userData.rider)riderHit(e,fb.userData.rider,dmg); /* S1602 — the joined word's rider */
         if(sp.id==='tintreach')tintreachLeap(e,sp,tier); /* S1606 — the leap */
         if(sp.school==='gaoth')gaothKnock(e); /* S1626 — Gaoth 100 */
+        if(sp.school==='solas')solasStagger(e); /* S1659 — Solas 100 */
         // Sioc — freeze on hit. Mastery (Still-Winter's Touch) stacks the duration on repeat hits up to a 4.5s ceiling;
         // lower tiers just refresh to 1.5s. Also fixes a pre-v35 leak where every hit pushed a new entry (only the first was read).
         if(sp.id==='sioc'){
@@ -1231,6 +1232,7 @@ function loop(now){
           } else {
             staggered.push({e,t:1.5});
           }
+          uisceChill(e,(staggered.find(s=>s.e===e)||{t:1.5}).t); /* S1659 — the freeze, for Uisce 100 */
         }
         // Solas-Gheal — Morning's-First-Word (Mastery): heals caster on kill. Fires BEFORE killE so the message ordering reads naturally.
         if(e.hp<=0 && sp.id==='solas_gheal' && tier===3){
@@ -1544,31 +1546,25 @@ function loop(now){
     if(typeof knotTick==='function')knotTick(); /* S1346 — a great gate's ring, seen the first time */
     if(typeof shuttleTick==='function')shuttleTick(); /* S797 — the Shuttle's room, seen the first time */
     if(typeof cloakDenTick==='function')cloakDenTick(); /* S992 — the cloak's den, seen the first time */
-    const nearSigilPrompt=SIGILS.find(s=>s.floor===currentFloor&&Math.hypot(px-s.x,pz-s.z)<1.5);
+    const nearSigilPrompt=SIGILS.find(s=>s.floor===currentFloor&&Math.hypot(px-s.x,pz-s.z)<TOUCH); /* S1670 — the prompt asks what E asks: TOUCH */
     // interact prompt
-    const nearCorpsePrompt=CORPSES.find(c=>c.items&&c.items.length>0&&lookingAt(c)); // v80 — look-at
+    const nearCorpsePrompt=CORPSES.find(c=>!c.looted&&c.items&&c.items.length>0&&lookingAt(c)); // v80 — look-at
     const nearChest=CHESTS.find(ch=>ch._near&&ch.floor===currentFloor);
     // v61d5 — Disguised mimic shows the same prompt as a real chest. The
     // bait IS the prompt — players who learn to recognize chests as safe
     // affordances now have to live with the fact that some of them aren't.
     // Detected separately from nearChest so the prompt fallthrough can
     // give it a unique label only if we ever want one (currently doesn't —
-    // a tell would defeat the bait). Same 1.1u radius as the chest find.
-    const nearMimic=ENEMIES.find(en=>!en.dead&&en.disguised&&en.floor===currentFloor&&Math.hypot(px-en.x,pz-en.z)<1.1);
+    // a tell would defeat the bait). TOUCH, as interact() asks (S1670).
+    const nearMimic=ENEMIES.find(en=>!en.dead&&en.disguised&&en.floor===currentFloor&&Math.hypot(px-en.x,pz-en.z)<TOUCH);
     const nearBarrelPrompt=BARRELS.find(b=>b.floor===currentFloor&&lookingAt(b,2.6)&&(!b.opened||b.items.length>0)); // v80 — look-at
     const nearCot=fortCotNear(); // S624 — the cot's prompt, when it is nearer than the way out
-    const nearEntrance=!nearCot&&currentFloor===1&&Math.hypot(px-dAt(dEntranceX),pz-dAt(dEntranceZ))<1.4;
-    const nearStair=dStairC!==null&&Math.hypot(px-dAt(dStairC),pz-dAt(dStairR))<1.3;
-    const nearDoorObj2=DOORS.find(d=>d.floor===currentFloor&&Math.hypot(px-d.x,pz-d.z)<1.4);
+    const nearEntrance=!nearCot&&currentFloor===1&&Math.hypot(px-dAt(dEntranceX),pz-dAt(dEntranceZ))<TOUCH;
+    const nearStair=dStairC!==null&&!DUNGEON_STAIRWELL&&Math.hypot(px-dAt(dStairC),pz-dAt(dStairR))<TOUCH;
+    const nearDoorObj2=DOORS.find(d=>d.floor===currentFloor&&Math.hypot(px-d.x,pz-d.z)<TOUCH);
     const iprEl=document.getElementById('ipr');
-    if(nearEntrance){iprEl.textContent="Press 'E' to leave dungeon";iprEl.style.opacity='1';iprEl.style.display='block';}
-    else if(nearCot){iprEl.textContent="Press 'E' to rest";iprEl.style.opacity='1';iprEl.style.display='block';}
-    else if(typeof dunForgeNear==='function'&&dunForgeNear()){iprEl.textContent="Press 'E' to work the forge";iprEl.style.opacity='1';iprEl.style.display='block';} /* S1514 */
-    else if(nearStair){
-      const stairLabel=DUNGEON_STAIRWELL?'':currentFloor===1&&dMap2?"Press 'E' to descend to Floor 2":"Press 'E' to ascend to Floor 1"; // v80 S8 — physical stairs need no prompt
-      if(stairLabel){iprEl.textContent=stairLabel;iprEl.style.opacity='1';iprEl.style.display='block';}
-    }
-    else if(typeof knotNear==='function'&&knotNear()){iprEl.textContent=knotPrompt();iprEl.style.opacity='1';iprEl.style.display='block';} /* S1346 */
+    /* S1671 — the prompt names what E does: interact()'s order, the knot first and the way out after a chest, a cot, the forge and a barrel */
+    if(typeof knotNear==='function'&&knotNear()){iprEl.textContent=knotPrompt();iprEl.style.opacity='1';iprEl.style.display='block';} /* S1346 */
     else if(typeof shuttleNear==='function'&&shuttleNear()){iprEl.textContent="Press 'E' to take up the shuttle";iprEl.style.opacity='1';iprEl.style.display='block';} /* S797 */
     else if(typeof cloakDenNear==='function'&&cloakDenNear()){iprEl.textContent="Press 'E' to take the grey cloak from under it";iprEl.style.opacity='1';iprEl.style.display='block';} /* S992 */
     else if(nearSigilPrompt){
@@ -1577,10 +1573,17 @@ function loop(now){
       iprEl.style.opacity='1';iprEl.style.display='block';
     }
     else if(nearCorpsePrompt){iprEl.textContent=`Press 'E' to loot ${nearCorpsePrompt.name}`;iprEl.style.opacity='1';iprEl.style.display='block';}
-    else if(nearChest){iprEl.textContent=nearChest.locked?(nearChest.treasure?"Press 'E' to pick the treasure chest's lock":"Press 'E' to pick the chest's lock"):nearChest.treasure?(nearChest.opened?"Press 'E' — treasure chest":"Press 'E' to open treasure"):(nearChest.opened?"Press 'E' — chest":"Press 'E' to open chest");iprEl.style.opacity='1';iprEl.style.display='block';}
     else if(nearMimic){ // S150 — a mimic wears the same lock a chest there would
       iprEl.textContent=chestLockedAt(nearMimic.x,nearMimic.z,nearMimic.floor)?"Press 'E' to pick the chest's lock":"Press 'E' to open chest";iprEl.style.opacity='1';iprEl.style.display='block';}
+    else if(nearChest){iprEl.textContent=nearChest.locked?(nearChest.treasure?"Press 'E' to pick the treasure chest's lock":"Press 'E' to pick the chest's lock"):nearChest.treasure?(nearChest.opened?"Press 'E' — treasure chest":"Press 'E' to open treasure"):(nearChest.opened?"Press 'E' — chest":"Press 'E' to open chest");iprEl.style.opacity='1';iprEl.style.display='block';}
+    else if(nearCot){iprEl.textContent="Press 'E' to rest";iprEl.style.opacity='1';iprEl.style.display='block';}
+    else if(typeof dunForgeNear==='function'&&dunForgeNear()){iprEl.textContent="Press 'E' to work the forge";iprEl.style.opacity='1';iprEl.style.display='block';} /* S1514 */
     else if(nearBarrelPrompt){iprEl.textContent="Press 'E' to open "+(nearBarrelPrompt.displayName||'Barrel').toLowerCase();iprEl.style.opacity='1';iprEl.style.display='block';}
+    else if(nearEntrance){iprEl.textContent="Press 'E' to leave dungeon";iprEl.style.opacity='1';iprEl.style.display='block';}
+    else if(nearStair){
+      const stairLabel=DUNGEON_STAIRWELL?'':currentFloor===1&&dMap2?"Press 'E' to descend to Floor 2":"Press 'E' to ascend to Floor 1"; // v80 S8 — physical stairs need no prompt
+      if(stairLabel){iprEl.textContent=stairLabel;iprEl.style.opacity='1';iprEl.style.display='block';}
+    }
     else if(nearDoorObj2){
       // v61g6: distinct prompt by lock state and open state.
       let promptText;

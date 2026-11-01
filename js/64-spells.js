@@ -71,11 +71,28 @@ const SCHOOL75={burnMult:2,slowMult:1.5,stoneMult:2,step:18,healMult:1.25,updraf
 // S1626 — three of the schools' own perks at 100: Cloch's worn ward turns arrows (while Sciath is worn, a foe's arrow does nothing,
 // from any side, as Guard's Deflect does from the front); Scáth's step leaves you unseen 3 s (the `vanish` veil, which foes already
 // read: an alert one forgets you); a sent Gaoth knocks the foe it strikes down (Throw's 1.5 s on the ground, its finisher open from any
-// side). Tine's leap, Uisce's shatter and Solas's undead wait: each reads two ways, or needs a list the game lacks.
+// side). Tine's leap, Uisce's shatter and Solas's undead are Session 1659's (Michael's A on #942), below.
 const SCATH_UNSEEN_S=3;
 function wardTurnsArrows(){return perk('cloch',100)&&fxOn('shield');}
 function gaothKnock(e){if(!e||e.dead||e.hp<=0||!perk('gaoth',100))return false;const now=performance.now()/1000,q=staggered.find(s=>s.e===e);
   if(!q)staggered.push({e,t:THROW_S});return throwFoe(e,now);}
+// S1659 — the other three schools' perks at 100 (Michael's 1A, 2A, 3A on #942). Tine's *Catching*: a Caor burn on a foe catches the
+// nearest other live foe within 3 m once, for the burn's full time (4 s, 8 with Long burn); the caught burn catches no further, and
+// Tintreach keeps its own leap. Uisce's *Shatter*: a foe slowed by Sioc (its rider's slow, or its bolt's freeze) or held by Reo takes
+// ×1.5 from your finisher (×3 to ×4.5). Solas's *Dawn*: the undead are the `undead` theme's roster (the Skeleton, the Phantom, the
+// Wraith); a Solas bolt, Solas's rider on any blow, or a laid thing's Solas light (once a foe, each thing laid) staggers them 1.5 s.
+const TINE_CATCH_R=3,UISCE_SHATTER_MULT=1.5,SOLAS_UNDEAD_S=1.5;
+function foeUndead(e){const k=e&&(e.baseType||e.baseName||e.name);return !!k&&typeof THEME_DEF!=='undefined'&&THEME_DEF.undead.enemies.includes(k);}
+function uisceChill(e,s){if(e&&s>0)e._chillUntil=Math.max(e._chillUntil||0,playClockS+s);}
+function foeChilled(e){return !!(e&&(e._chillUntil>playClockS||e._riderSlowUntil>playClockS));}
+function shatterMult(e){return perk('uisce',100)&&foeChilled(e)?UISCE_SHATTER_MULT:1;}
+function solasStagger(e){if(!e||e.dead||e.hp<=0||!perk('solas',100)||!foeUndead(e))return false;
+  const q=staggered.find(s=>s.e===e);if(q)q.t=Math.max(q.t,SOLAS_UNDEAD_S);else staggered.push({e,t:SOLAS_UNDEAD_S});
+  if(typeof staggerFlash==='function')staggerFlash(e);e.alert=true;return true;}
+function tineCatch(e){const B=e&&e._burn;if(!B||!B.leap)return null;const dun=!!(lid&&lid.startsWith('dyn_'));let best=null,bd=TINE_CATCH_R+1e-9;
+  for(const o of heldTargets()){if(o===e||o.dead||o.hp<=0||o.locked||o.disguised||(dun&&o.floor!==currentFloor)||(o._burn&&o._burn.until>playClockS))continue;
+    const d=Math.hypot(o.x-e.x,o.z-e.z);if(d<=bd){bd=d;best=o;}}
+  if(!best)return null;B.leap=false;riderHit(best,'caor',0,{caught:true});best.alert=true;return best;}
 function wordWildChance(word){const w=WORD_BY[word]||SPELLS.find(s=>s.id===word);return w&&perk(w.school,25)?STEADY_VOICE_WILD:IMPRESSION_WILD_CHANCE;}
 // S1571 — overcasting (magic-build.md): short of mana, the rest is paid in health, 2 a point of mana, with a 0.5 s stagger; a cast
 // that would leave you under 1 health is refused.
@@ -1242,9 +1259,12 @@ function layWord(word,rider,x,z,o){o=o||{};
 const LAID_THROW_RISE=8.4; /* Éan's worn rise (WORD_BY.ean.forms.worn.rise) */
 function laidRiderStart(L,rider){const R=RIDERS[rider].laid;L.rideR=rider;L.next=playClockS+1;
   if(R.light)L.light=R.light;
+  if(R.light)L.dawn=new Set(); /* S1659 — Solas 100: the undead its light has staggered */
   if(R.throws&&L.kind==='pillar'&&laidInside(L,px,pz,.3)){jumpY=Math.max(jumpY,L.top);velY=LAID_THROW_RISE;onGround=false;_jumpFrom=L.base;L.thrown=true;}}
 function laidLight(){const L=laidLive();return L&&L.light?{x:L.x,z:L.z,r:L.light}:null;}
 function laidRiderTick(){const L=laidLive();if(!L||!L.rideR)return;const R=RIDERS[L.rideR].laid,dun=!!(lid&&lid.startsWith('dyn_'));
+  if(L.light&&L.dawn&&perk('solas',100))for(const e of heldTargets()){if(e.dead||L.dawn.has(e)||(dun&&e.floor!==currentFloor)||Math.hypot(e.x-L.x,e.z-L.z)>L.light+hullOf(e))continue;
+    if(solasStagger(e))L.dawn.add(e);}
   if(R.root&&!L.rooted)for(const e of heldTargets()){if(e.dead||(dun&&e.floor!==currentFloor)||!laidInside(L,e.x,e.z,hullOf(e)))continue;
     e._rootUntil=Math.max(e._rootUntil||0,playClockS+R.root);L.rooted=true;e.alert=true;break;}
   for(let n=0;n<8&&playClockS>=L.next-1e-9&&LAID===L;n++){L.next+=1;
@@ -1268,7 +1288,7 @@ function laidSnareTick(){const L=laidLive();if(!L||!L.snare||L.rooted)return;con
 // if it held anyone. Returns how many it held.
 function laidNovaBurst(L){const dun=!!(lid&&lid.startsWith('dyn_'));let n=0,first=null;
   for(const e of heldTargets()){if(e.dead||e.hp<=0||(dun&&e.floor!==currentFloor)||!laidInside(L,e.x,e.z,hullOf(e)))continue;
-    const q=staggered.find(s=>s.e===e);if(q)q.t=Math.max(q.t,L.nova);else staggered.push({e,t:L.nova});
+    const q=staggered.find(s=>s.e===e);if(q)q.t=Math.max(q.t,L.nova);else staggered.push({e,t:L.nova});uisceChill(e,L.nova); /* S1659 */
     staggerFlash(e);e.alert=true;n++;if(!first)first=e;}
   const sc=WORD_BY[L.word].school;if(first&&SKILL_DEF[sc])skillUse(sc,1,first);
   return n;}
@@ -1446,7 +1466,7 @@ function touchLand(T){const F=WORD_BY[T.word].forms.touched,e=touchTarget(),dun=
     if(e.hpFg&&e.maxHp){e.hpFg.scale.x=e.hp/e.maxHp;e.hpFg.position.x=(e.hp/e.maxHp-1)*.275;}dmgNum(e,dealt,info);}
   e.alert=true;
   if(e.hp>0&&(F.stagger||F.hold)){const t=F.hold||dazeS(POSTURE_BREAK_STUN),q=staggered.find(s=>s.e===e);
-    if(q)q.t=Math.max(q.t,t);else staggered.push({e,t});staggerFlash(e);}
+    if(q)q.t=Math.max(q.t,t);else staggered.push({e,t});staggerFlash(e);if(F.hold)uisceChill(e,t);} /* S1659 — Reo's hold, for Uisce 100 */
   if(T.rider)riderHit(e,T.rider,dealt,{power:FORMS.touched.power});
   if(e.hp<=0){const tag=info?dmgTag(info,e):'';if(dun)killE(e,tag);else killZoneEnemy(e,scene,tag);}
   return {hit:e,dealt};}
@@ -1467,7 +1487,8 @@ function riderHit(e,rider,dealt,o){o=o||{};const R=RIDERS[rider];if(!e||!R)retur
   const now=playClockS,dun=!!(lid&&lid.startsWith('dyn_'));
   if(h.lifesteal){const m=(dealt||0)*h.lifesteal*(perk('solas',75)?SCHOOL75.healMult:1)+(_mendCarry||0),n=Math.floor(m+1e-9);_mendCarry=m-n;if(n>0)PHP=Math.min(effMaxHP(),PHP+n);return {mend:n};}
   if(e.dead||e.hp<=0)return null;
-  if(h.dps){const bd=h.dur*(perk('tine',75)?SCHOOL75.burnMult:1);e._burn={dps:h.dps,until:now+bd,next:Math.max(now+1,e._burn&&e._burn.until>now?e._burn.next:0),dun,key:laidKey()};RIDDEN.add(e);return {burn:bd};}
+  if(h.dps){const bd=h.dur*(perk('tine',75)?SCHOOL75.burnMult:1);e._burn={dps:h.dps,until:now+bd,next:Math.max(now+1,e._burn&&e._burn.until>now?e._burn.next:0),dun,key:laidKey(),leap:!o.caught&&perk('tine',100)};RIDDEN.add(e);return {burn:bd};} /* S1659 — Tine 100's catch (tineCatch) */
+  if(h.glow)solasStagger(e); /* S1659 — Solas 100 */
   if(h.slow){e._riderSlowUntil=Math.max(e._riderSlowUntil||0,now+h.dur);e._riderSlow=1-h.slow*(perk('uisce',75)?SCHOOL75.slowMult:1);return {slow:h.dur,mult:+e._riderSlow.toFixed(2)};}
   if(h.root){e._rootUntil=Math.max(e._rootUntil||0,now+h.root);return {root:h.root};}
   if(h.glow){e._litUntil=now+h.glow;e._litKey=laidKey();RIDDEN.add(e);riderGlow(e,true);return {glow:h.glow};}
@@ -1485,7 +1506,8 @@ function riderTick(){const now=playClockS,key=laidKey();
   for(const e of RIDDEN){
     const B=e._burn;
     if(B&&(e.dead||B.key!==key)){e._burn=null;}
-    else if(B){for(let n=0;n<8&&now>=B.next-1e-9&&B.next<=B.until+1e-9;n++){B.next+=1;
+    else if(B){if(B.leap&&now<B.until)tineCatch(e); /* S1659 — Tine 100 */
+      for(let n=0;n<8&&now>=B.next-1e-9&&B.next<=B.until+1e-9;n++){B.next+=1;
         const d=challengeDealt(B.dps);e.hp=Math.max(0,e.hp-d);e.alert=true;
         if(e.hpFg&&e.maxHp){e.hpFg.scale.x=e.hp/e.maxHp;e.hpFg.position.x=(e.hp/e.maxHp-1)*.275;}
         if(typeof dmgNum==='function')dmgNum(e,d,{});
