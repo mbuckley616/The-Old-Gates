@@ -833,7 +833,7 @@ function buildHair(P, G, heads, scalpTris, headB, rnd, checks = true) {
     // (Session 1676) it falls a little back from the ear to 12 cm over the neck's joint, then forward (0.7 to 1 down) until the joint's height, so it
     // comes onto the shoulder in front of its top and goes on down the breast (0.14 to 1); it fell back all the way before, met the shoulder's top
     // behind its crown and ran 10 to 13 cm forward along it almost level, a shelf of hair that pointed at the arm from behind
-    const lock = free && Math.abs(sx) > .3 && p.z > hc.z - .025, tuck = free && D.mantle && !lock, tuckY = tuck ? neckY - .05 - .06 * rnd() : 0, clr = q => tuck ? .02 : clearAt(q), lockZ = q => { const a = Math.max(0, Math.min(1, (neckY + .12 - q.y) / .03)), b = Math.max(0, Math.min(1, (neckY - q.y) / .03)); return -.08 + .78 * a * (1 - b) + .14 * b; }, hang = q => q.y < hc.y + .01 && (q.z < hc.z || Math.abs(q.x - hc.x) > .072);
+    const lock = free && Math.abs(sx) > .3 && p.z > hc.z - .025, lockUp = Math.max(0, 1 - (Math.abs(sx) - .3) / .25), tuck = free && D.mantle && !lock, tuckY = tuck ? neckY - .05 - .06 * rnd() : 0, clr = q => tuck ? .02 : clearAt(q), lockZ = q => { const a = Math.max(0, Math.min(1, (neckY + .12 - q.y) / .03)), b = Math.max(0, Math.min(1, (neckY - q.y) / .03)); return -.08 + .78 * a * (1 - b) + .14 * b; }, hang = q => q.y < hc.y + .01 && (q.z < hc.z || Math.abs(q.x - hc.x) > .072);
     // the crop is short at the back and sides (Session 1576): a root within 5 cm over the ear's top (rest y .742) is shorter, down to 0.3 of
     // the length by the ear and at the nape; at the side it is combed back along the head and not down across the ear; the sideburn's, in front of the ear, 1.2 to 2.2 cm
     // whatever the crop's length, fall straight down
@@ -863,7 +863,10 @@ function buildHair(P, G, heads, scalpTris, headB, rnd, checks = true) {
       // projection below left only the side pull, so a strand rooted on the forehead ran sideways along the hairline and the two sides
       // parted from the midline, leaving a bare triangle over the brow; on skin facing forward the wanted way also climbs, as hair combed
       // back goes up over the brow before it goes back over the skull
-      if (!g && !lock && !(free && under)) want.y += 1.1 * Math.max(0, Math.min(1, (n.z - .25) / .45));
+      // (Session 1700, Michael's note on #272) a face-framing lock climbs too, by lockUp: all of it at the lock's inner edge (|sx| .3), none
+      // 0.25 further out. It used to leave sideways from its root while the strand beside it climbed, so loose hair's front was a square
+      // recess between the locks, with a step 1.5 cm deep where one met the other and the notch at the parting between them
+      if (!g && !(lock && hang(q)) && !(free && under)) want.y += 1.1 * Math.max(0, Math.min(1, (n.z - .25) / .45)) * (lock ? lockUp : 1);
       if (cropW) want.lerp(cropW, 1 - cropK);
       const stick = g || short || (free ? !under && !(lock && hang(q)) : onHead(q)), hit = stick ? heightOver(S, q) : null;
       if (stick && hit) want.addScaledVector(hit.e.n, -want.dot(hit.e.n));

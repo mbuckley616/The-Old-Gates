@@ -2,16 +2,18 @@
 // helm, the Bandit Captain in looted Wooden lamellar and vambraces under an Iron helm, the Shieldbearer in Steel plate over
 // Iron mail sleeves and greaves, the Ash Wight in Iron mail rusted nearly black. The bowl helm is gone; the boots are the
 // foe's own; every other foe is as it was.
+// Since S1487 a foe is built with its far copy alone and bakes its near one when its driver is first seen near (`personHi`), so the
+// suite bakes it before it counts the near triangles (Session 1699; the weekly run of 1 Nov read the far count as the near).
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
 
 const r = await page.evaluate(() => {
   const out = {};
-  const one = (type, eye) => { const rig = buildFoe(type, 4100, 7300, null, eye); scene.add(rig.root); rig.root.visible = false; const A = rig.g.eq && rig.g.eq.armour;
+  const one = (type, eye) => { const rig = buildFoe(type, 4100, 7300, null, eye); scene.add(rig.root); rig.root.visible = false; const far = rig.trisLo, lazy = !rig.geoHi && rig.tris === far; personHi(rig); const A = rig.g.eq && rig.g.eq.armour;
     const fam = k => A && A[k] ? A[k].fam + A[k].tier : null; const o = { hat: rig.g.hat, head: fam('head'), chest: fam('chest'), hands: fam('hands'), legs: fam('legs'), feet: A ? A.feet : 'none',
-      metal: A && A.chest ? A.chest.metal : null, tris: rig.tris, lo: rig.trisLo, bones: rig.mesh.skeleton.bones.length, weapon: !!(rig.weapon || rig.g.gear) };
-    scene.remove(rig.root); PEOPLE_RIGS.delete(rig); rig.mesh.geometry.dispose(); if (rig.geoLo) rig.geoLo.dispose(); return o; };
+      metal: A && A.chest ? A.chest.metal : null, tris: rig.tris, lo: rig.trisLo, far, lazy, near: !!rig.geoHi, bones: rig.mesh.skeleton.bones.length, weapon: !!(rig.weapon || rig.g.gear) };
+    scene.remove(rig.root); PEOPLE_RIGS.delete(rig); if (rig.geoHi) rig.geoHi.dispose(); rig.mesh.geometry.dispose(); if (rig.geoLo) rig.geoLo.dispose(); return o; };
   for (const t of ['Deserter', 'Bandit Captain', 'Shieldbearer', 'Ash Wight', 'Bandit', 'Highwayman', 'Skeleton', 'Ghoul']) out[t] = one(t, t === 'Ash Wight' ? 0xff6020 : null);
   out.ironBlade = MATERIALS[2].blade;
   // the zone's own path: a Deserter on the road, built as the world builds one
@@ -27,6 +29,7 @@ check('the Ash Wight wears Iron mail rusted nearly black, not the Iron of a livi
 check('the kit\'s helm takes the bowl helm\'s place, and each keeps his own boots and his weapon', [D, C, S, W].every(o => o.hat === 'none' && o.feet === null) && D.weapon && C.weapon && S.weapon && W.weapon, [D, C, S, W].map(o => [o.hat, o.feet, o.weapon]));
 check('every other foe is as it was: no kit (a Bandit, a Highwayman, a Skeleton, a Ghoul)', ['Bandit', 'Highwayman', 'Skeleton', 'Ghoul'].every(t => !r[t].chest), ['Bandit', 'Highwayman', 'Skeleton', 'Ghoul'].map(t => r[t].chest));
 check('each armoured foe is 7,500–12,000 triangles and under 6,000 at a distance, on the people\'s bones (the prototype: 8,822–10,568)', [D, C, S, W].every(o => o.tris >= 7500 && o.tris <= 12000 && o.lo < 6000 && o.bones >= 16), [D, C, S, W].map(o => [o.tris, o.lo]));
+check('each is built with its far copy only, and its near copy is baked when asked (S1487)', [D, C, S, W].every(o => o.lazy && o.near && o.tris > o.far), [D, C, S, W].map(o => [o.lazy, o.near]));
 check('a Deserter built on the road by the zone wears the kit', r.zone.chest === 'mail', r.zone);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
