@@ -7,7 +7,7 @@ import { enterDungeon } from './lib/dungeonshot.mjs';
 import { budgetKit, budgetEnd, LEVELS } from './budgetkit.mjs';
 const g = await boot({ look: 'new' }); const { page } = g;
 await g.intoWorld();
-const { measure, stand, setLevel } = budgetKit(g);
+const { measure, stand, setLevel, count } = budgetKit(g);
 const rows = [];
 check('Portclare stands on the new look', await g.settle('portclare'));
 const P = await page.evaluate(() => { const S = WORLD.settle.get('portclare'); return { x: S.site.x, z: S.site.z }; });
@@ -22,8 +22,12 @@ const inside = !!inn && await page.evaluate(() => isInterior());
 if (inside) { await g.frames(4); rows.push(await measure(`${inn} (Dunmore's inn), the hall from the door, 20h`, 'Middle (indoors)'));
   await page.evaluate(() => exitInterior()); await page.waitForFunction(() => currentHouse == null, null, { timeout: 60000 }); await g.frames(2); await g.hide(); }
 const dg = await enterDungeon(page, { theme: 'ruins', seed: 11, size: 'medium' });
-await g.frames(4); rows.push(await measure('a medium gate (ruins, seed 11), from its entrance', 'Middle (indoors)'));
-check('the inn and the gate were counted, and drew', inside && rows.length === 5 && rows.slice(3).every(r => r.calls > 0), { inn, inside, gate: dg, calls: rows.slice(3).map(r => r.calls) });
+// S1684 — the gate's count climbs for its first frames (268, then 277 ten frames on, Session 1684's probe): wait until two counts
+// ten frames apart agree, so the ledger reads the floor as built, not a frame of it half-built (s1093's two boots read 280 and 242)
+let gc = -1, steady = false; for (let k = 0; k < 12 && !steady; k++) { await g.frames(10); const c = (await count()).calls; steady = c === gc; gc = c; }
+console.log(`  the gate's count steady: ${steady} at ${gc}`);
+rows.push(await measure('a medium gate (ruins, seed 11), from its entrance', 'Middle (indoors)'));
+check('the inn and the gate were counted, and drew', inside && rows.length === 5 && rows.slice(3).every(r => r.calls > 0), { inn, inside, gate: dg, steady, calls: rows.slice(3).map(r => r.calls) });
 check('no page errors', g.errs.length === 0, g.errs);
 await budgetEnd(g, rows, 1);
 await g.close();
