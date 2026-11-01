@@ -193,5 +193,24 @@ check(`three challenges let go by: refusals ${L.refs.map(r => r[0] + (r[1] ? '' 
 check(`a defence lost over the rope: the title passes (${L.lostDef.title}), rank ${L.lostDef.rank}, ${L.lostDef.champ} on the posts`,
   L.lostDef.end === 'lost' && !L.lostDef.title && L.lostDef.rank === 11 && L.lostDef.champ === 'The challenger', L.lostDef);
 
+// S1691 — the yard's rack by the hour (yardRackPrompt, yardRackUse in 83-world-generator.js): a staff by day (the spar), and from 18h to 22h
+// the evening's brawl in the yard's own ring, its stake by the place's tier taken when it is called; nothing offered in a ring or from 22h to
+// 8h. A yard record set at your feet on a loaded place for the one call (markyard checks the yard itself), taken away after.
+const yb = await page.evaluate(() => {
+  if (typeof BRAWL !== 'undefined' && BRAWL) brawlEnd('off'); delete worldState.arena; gold = 1000;
+  const Y = { site: 'yardtest', x: px, z: pz - 5.1, r: 5, rack: { x: px, z: pz } }, S = [...SETTLE.values()][0], had = S.yards; S.yards = (had || []).concat([Y]);
+  try {
+    forceTime(10); const day = yardRackPrompt(); forceTime(20); const eve = yardRackPrompt(), g0 = gold; yardRackUse(); const inRing = yardRackPrompt();
+    const B = BRAWL ? { at: +Math.hypot(BRAWL.x - Y.x, BRAWL.z - Y.z).toFixed(3), site: BRAWL.site, stake: BRAWL.stake, paid: g0 - gold, inBout: !!BOUT, spar: !!SPAR } : null;
+    if (BRAWL) brawlEnd('off'); const back = gold; yardRackUse(); const again = !BRAWL;
+    forceTime(23); const late = yardRackPrompt(); yardRackUse(); const shut = !BRAWL && !SPAR; forceTime(10);
+    return { day, eve, inRing, B, back, again, late, shut, tier: worldTierAt(Y.x, Y.z) };
+  } finally { if (had) S.yards = had; else delete S.yards; }
+});
+console.log('yard brawl', JSON.stringify(yb));
+check(`the yard's rack offers a staff by day (*${yb.day}*) and the brawl at 20h (*${yb.eve}*)`, /staff/.test(yb.day) && /brawl/.test(yb.eve) && !!yb.B && new RegExp(String(yb.B.stake)).test(yb.eve), yb);
+check(`E at 20h calls the brawl in the yard's own ring (${yb.B && yb.B.at} m from its centre), ${yb.B && yb.B.paid} gold staked at tier ${yb.tier}; called off, it comes back (${yb.back}); one a night (${yb.again}); in the ring the rack offers nothing (${yb.inRing}); at 23h nothing (${yb.late}), and nothing starts (${yb.shut})`,
+  !!yb.B && yb.B.at < .01 && yb.B.site === 'yardtest' && yb.B.inBout && !yb.B.spar && yb.B.paid === yb.B.stake && yb.B.stake === 50 + 50 * (Math.max(1, yb.tier) - 1) && yb.back === 1000 && yb.again && yb.inRing === null && yb.late === null && yb.shut, yb);
+
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
