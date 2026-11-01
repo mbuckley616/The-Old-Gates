@@ -313,6 +313,9 @@ const earLobe = (x, y, z) => y > .672 && Math.abs(x) > .05 && (z < .047 || (z < 
 // the beard's roots beside the ear (Session 1661): past |x| .05 and above y .64 (rest), no card roots on skin facing back (n.z under -.3),
 // down and back (n.y under -.5) or in (n.x toward the middle, under .1), on the built body
 const BEARD_TURN = { x: .05, y: .64, back: -.3, down: -.5, side: .1 };
+// the chin's front (Session 1693): the cut at the tunic's collar (Session 878, rest y .638) took the whole chin with the throat, since the chin
+// is at rest y .61 to .635; skin in front of rest z .1 (the chin, at z .135 to .15 on the midline; the throat is at .06 to .075) keeps its roots
+const BEARD_CHIN_Z = .125;
 const beardLine = x => { const t = Math.max(0, Math.min(1, (Math.abs(x) - .032) / .038)); return .675 + .037 * t ** 1.3; };
 // the tied styles' temple line in front of the ear (Session 1640, Michael's note on #272): from the line over the ear (y .742) at the ear's front,
 // rising on one easing to the hairline 5 cm forward. Session 1607's flat line to z .08 and then 3 cm a cm drew a square step from the front
@@ -3758,7 +3761,7 @@ function* makePersonSteps(G, o = {}) {
     if (G.beard) { const jawB = ix.bones.findIndex(b => b.name === 'jaw');
       push('beardBase', PACK.R.beardBase, shellMat(sRGB(...G.hairCol).multiplyScalar(.6), 0, 3, { solid: true }), .0015);
       // under a tunic the throat below its collar (rest y .63) grows no beard: those hairs came out through the cloth (Session 878)
-      const beardTris = D0.tunic ? (PACK.R.beardTunic || (PACK.R.beardTunic = (() => { const R = PACK.rest, B = PACK.R.beard, o = []; for (let t = 0; t < B.length; t += 3) if (Math.min(R[B[t] * 3 + 1], R[B[t + 1] * 3 + 1], R[B[t + 2] * 3 + 1]) > .638) o.push(B[t], B[t + 1], B[t + 2]); return o; })())) : PACK.R.beard;
+      const beardTris = D0.tunic ? (PACK.R.beardTunic || (PACK.R.beardTunic = (() => { const R = PACK.rest, B = PACK.R.beard, o = []; for (let t = 0; t < B.length; t += 3) if (Math.min(R[B[t] * 3 + 1], R[B[t + 1] * 3 + 1], R[B[t + 2] * 3 + 1]) > .638 || R[B[t] * 3 + 2] + R[B[t + 1] * 3 + 2] + R[B[t + 2] * 3 + 2] > 3 * BEARD_CHIN_Z) o.push(B[t], B[t + 1], B[t + 2]); return o; })())) : PACK.R.beard;
       // no card roots beside the ear where the built body's skin faces back, down and back, or in toward the neck (Session 1661, the tuft
       // owed by Session 1656): the crease under the lobe, the tragus's folds and the jaw's turn below them. A card rooted there had no
       // downhill to fall along, so it lay flat along the jaw and caught the light, a pale tuft under the ear. Read on this body's own
