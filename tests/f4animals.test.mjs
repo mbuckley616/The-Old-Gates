@@ -57,6 +57,22 @@ console.log('  walk:', JSON.stringify(walk));
 check(`walked 1 m/s along the ground (the deer and the fox trot, the small ones bound at a gallop) each one's bones move and its lowest toe stays by the ground (${walk.map(w => w.nm + ' ' + w.low).join(', ')} m)`,
   walk.every(w => w.moved > .01 && w.stand < .2 && Math.abs(w.low) < .06), walk);
 
+// Session 1705: a deer is a hind one time in two by its key (f4animals:0 a stag, f4animals:5 a hind): the kit's deer without antlers,
+// a tenth smaller; over a field of keys about half are hinds
+const hind = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.cos(yaw), x = px + fx * 12, z = pz + fz * 12;
+  const rig = buildAnimal('Deer', 'f4animals:5'), G = new THREE.Group(); G.add(rig.root); G.position.set(x, WORLD.worldH(x, z), z); WORLD.scene.add(G);
+  let k = 0; HBODY.last = -1e9; while (!rig.hc && !rig.hcFail && k++ < 200) tickCreatures(1 / 60, 3e5 + k * (HBODY.gap + 1));
+  const H = rig.hc; if (!H) { G.parent.remove(G); return { none: true, fail: !!rig.hcFail }; } G.updateMatrixWorld(true);
+  const a = H.C.byName.spine0.getWorldPosition(new THREE.Vector3()), b = rig.B.hips.getWorldPosition(new THREE.Vector3());
+  const head = P => P.parts.find(p => p[0] === 'head')[1];
+  let n = 0, hinds = 0; for (let cx = 0; cx < 20; cx++) for (let cz = 0; cz < 20; cz++) { const r = buildAnimal('Deer', cx + ',' + cz + ':0'); WOLF_RIGS.delete(r); n++; if (r.hcKind === 'Hind') hinds++; }
+  const out = { kind: rig.hcKind, plan: H.C.g.plan, antlers: !!head(H.C.plan).antlers, stag: !!head(HC.PLANS.deer).antlers, stagKind: _A[0].rig.hcKind || null,
+    hipY: +(a.y - G.position.y).toFixed(3), gap: +a.distanceTo(b).toFixed(3), tris: H.C.stats.tris, share: +(hinds / n).toFixed(2) };
+  G.parent.remove(G); tickCreatures(1 / 60, 3.5e5); return out; });
+console.log('  hind:', JSON.stringify(hind));
+check(`a deer keyed f4animals:5 is a hind: the kit's deer without its antlers (${hind.tris} triangles), its hips at ${hind.hipY} m (the stag's ${who[0].hipY}); ${hind.share} of 400 keys are hinds`,
+  hind.kind === 'Hind' && hind.plan === 'game:Hind' && !hind.antlers && hind.stag && hind.stagKind === null && hind.gap < .03 && Math.abs(hind.hipY - who[0].hipY * .9) < .03 && hind.share > .4 && hind.share < .6, hind);
+
 // the levels: near the hide and its fur, at 25 m without the fur, at 60 m the driver; and the driver's own copy swaps by distance
 const lv = await page.evaluate(() => { const f = _A[0], G = f.G, fx = -Math.sin(yaw), fz = -Math.cos(yaw);
   const at = (dd, k) => { CAM.position.set(G.position.x - fx * dd, G.position.y + 1.65, G.position.z - fz * dd); CAM.updateMatrixWorld(true); for (let i = 0; i < 3; i++) tickCreatures(1 / 60, 5e5 + k * 100 + i * 17);
