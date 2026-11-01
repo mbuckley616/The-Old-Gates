@@ -296,7 +296,7 @@ function buildWolf(name,scale){
 // Session 1704: one of the common animals (WOLF_KINDS' wild) at its own size, its kit body keyed by `key` (the spawner's id: a chunk's
 // `cx,cz` and its index, so a chunk rolls the same deer each time it loads). Its group is the caller's to place and add to the scene; a
 // rig moved by its group walks and gallops by the ground it covers, as the coach's horses do
-// Session 1705: a deer is a hind one time in two by its key (its kit body the deer's without antlers, HC_KINDS' Hind), and a tenth smaller
+// Session 1706: a deer is a hind one time in two by its key (its kit body the deer's without antlers, HC_KINDS' Hind), and a tenth smaller
 function animalHash(str){let h=2166136261;for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
 function buildAnimal(name,key){const k=WOLF_KINDS[name];if(!k||!k.wild)return null;const hind=name==='Deer'&&key!=null&&(animalHash(String(key))&1)===1;
   const rig=buildWolf(name,k.world*(hind?.9:1));if(key!=null)rig.hcKey='wild:'+key;if(hind)rig.hcKind='Hind';return rig;}
@@ -852,7 +852,7 @@ function hcPlan(name){const K=HC_KINDS[name];if(!K.own)return K.plan;const id='g
     HC.PLANS[id]=Object.assign({},P,K.cell?{name,cell:K.cell}:{name},pal?{palette:Object.assign({},P.palette,pal)}:{},{parts:P.parts.map(([k,o])=>k==='gear'&&K.gear!=='plan'?[k,{list:K.gear?[K.gear]:[]}]
     :k==='head'&&K.glow?[k,Object.assign({},o,{eyes:o.eyes.map(e=>Object.assign({},e,{r:K.glowR||.017,glow:1.6,color:K.glow},K.glowAt||{}))})]
     :k==='head'&&K.eye!=null?[k,Object.assign({},o,{eyes:o.eyes.map(e=>Object.assign({},e,{color:c(K.eye)}))})]:[k,o])});}
-  // a hind (Session 1705, K.bare): the deer's plan without its antlers
+  // a hind (Session 1706, K.bare): the deer's plan without its antlers
   if(!HC.PLANS[id]&&(K.spider||!WOLF_KINDS[name]))HC.PLANS[id]=Object.assign({},HC.PLANS[K.plan],{name,cell:K.cell},K.bare?{parts:HC.PLANS[K.plan].parts.map(([k,o])=>k==='head'?[k,Object.assign({},o,{antlers:null})]:[k,o])}:{});
   if(!HC.PLANS[id]){const k=WOLF_KINDS[name],c=h=>[(h>>16&255)/255,(h>>8&255)/255,(h&255)/255];
     HC.PLANS[id]=Object.assign({},HC.PLANS[K.plan],K.cell?{cell:K.cell}:{},{name,palette:Object.assign({},HC.PLANS[K.plan].palette,{coat:c(k.coat),saddle:c(k.saddle),belly:c(k.belly)},HC.PLANS[K.plan].palette.mane?{mane:c(k.saddle)}:{})});}

@@ -57,7 +57,7 @@ console.log('  walk:', JSON.stringify(walk));
 check(`walked 1 m/s along the ground (the deer and the fox trot, the small ones bound at a gallop) each one's bones move and its lowest toe stays by the ground (${walk.map(w => w.nm + ' ' + w.low).join(', ')} m)`,
   walk.every(w => w.moved > .01 && w.stand < .2 && Math.abs(w.low) < .06), walk);
 
-// Session 1705: a deer is a hind one time in two by its key (f4animals:0 a stag, f4animals:5 a hind): the kit's deer without antlers,
+// Session 1706: a deer is a hind one time in two by its key (f4animals:0 a stag, f4animals:5 a hind): the kit's deer without antlers,
 // a tenth smaller; over a field of keys about half are hinds
 const hind = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.cos(yaw), x = px + fx * 12, z = pz + fz * 12;
   const rig = buildAnimal('Deer', 'f4animals:5'), G = new THREE.Group(); G.add(rig.root); G.position.set(x, WORLD.worldH(x, z), z); WORLD.scene.add(G);
