@@ -34,6 +34,16 @@ Magic B's build sheet (`docs/design/magic-build.md`) says Loscadh touched "fires
 
 Each is one look-builder session (the prop, `fireBrush(t)`, a finder) and one call from `touchLand` for the systems builder. Devlog `docs/devlog/1678.md`.
 
+### Magic B — what Sioc's touch does to a lock (from the systems builder, 2026-11-01, #976)
+Magic B's build sheet (`docs/design/magic-build.md`, the Touched column) gives Sioc's touch "freezes a pool, a lock's works". The pool is built (Session 1680); the lock has no rule. The lock today is a pin per tumbler, set at the shear while it dwells 150–300 ms by Finesse; a mistimed press snaps a pick.
+
+- **A (recommended).** The works stiffen: for 30 s by the play clock a touched lock holds each pin at the top twice as long (300–600 ms), and a mistimed press drops the pin without snapping the pick. Still a pick, still the lock game, still a crime in town by the same rule. One use of Uisce.
+- **B.** Frozen and struck: the lock shatters open with no pick, broken for good, and in a town the crack is heard at twice a witness's range.
+- **C.** A pin a tier: Sioc sets one pin at Impression, two at Comprehension, every pin at Mastery; the rest are picked as now.
+- **D.** Leave it out: Sioc's touch freezes pools only.
+
+Recommendation A: the spell buys time, the hand still opens it, so a mage-thief is a real build and picks and Finesse keep their worth. Devlog `docs/devlog/1680.md`, PR #975.
+
 ## Answered
 ### Magic B — three school perks at 100 that read two ways: Tine, Uisce, Solas (from the systems builder, 2026-10-31, #942)
 Session 1626 built three of the six school perks at 100 (Cloch's arrow ward, Scáth's Unseen, Gaoth's Downwind). The other three, from `docs/design/magic-build.md`, each read two ways, and all three are needed before magic B's session 5 is done.
