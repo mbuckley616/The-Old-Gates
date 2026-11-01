@@ -40,7 +40,10 @@ check(`three weeks more at once (a long sleep) count three (${cold.three})`, col
 
 // the loop counts it by itself, and the hub shows the Cold for anyone, not only an Old Blood reader
 const loop = await page.evaluate(() => { const c0 = worldState.cold; worldState.gameTimeAbsMinutes += 7 * 1440; return { c0, people: WORLD.playerPeople() }; });
-await page.waitForTimeout(2500);
+// wait for the loop's own count (it calls tickShuttle once a second of real time), not a fixed pause: on a slow runner 2.5 s held
+// too few frames (Session 1672); the check still asks for exactly one week counted
+const t0 = Date.now();
+loop.waited = await page.waitForFunction((c0) => worldState.cold !== c0, loop.c0, { timeout: 60000, polling: 100 }).then(() => Date.now() - t0, () => -1);
 const after = await page.evaluate(() => { renderHubAttrs(); const sb = document.getElementById('standing-body'); const hub = sb ? sb.textContent : '';
   const S = ssSplitPayload(JSON.parse(ssStringify(_buildSavePayload())));
   const r = { cold: worldState.cold, hub: (hub.match(/the Cold \d+/) || [''])[0], charRow: !!(S.c.wS && S.c.wS.shuttleCarry), worldRow: !!(S.w.wS && S.w.wS.shuttleCarry) };
