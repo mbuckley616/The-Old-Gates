@@ -39,7 +39,10 @@ const fw = await page.evaluate(() => {
   const defs = []; for (const id of ['dunmore', 'portclare']) { const S = WORLD.settle.get(id); if (!S) continue;
     for (const d of S.npcs.map(n => n.def).concat((S.houses || []).map(h => h.dlg).filter(Boolean))) if (d && d.bio) defs.push(d); }
   const OF = Object.values(PEOPLES).flatMap(P => Object.values(P.of || {}).flat());
-  const out = { first: [], again: [], bad: [], ofHits: [], peoples: {} };
+  const out = { first: [], again: [], bad: [], ofHits: [], peoples: {}, hinted: 0 };
+  const esc = t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const HINTS = [ER_DEBT.hint.markman, ER_LETTER.hint.markman, ER_FEVER.hint.markman].map(t => new RegExp(' ' + esc(t) + '$'))
+    .concat([new RegExp(' ' + esc(ER_NAME.hint.markman({ who: '\u0001' })).replace('\u0001', '.+') + '$')]);
   const save = worldState.people;
   for (const pp of ['markman', 'gatelander', 'aurennais', 'oldblood']) { worldState.people = pp;
     for (const d of defs) { out.peoples[d.people] = (out.peoples[d.people] || 0) + 1;
@@ -47,12 +50,16 @@ const fw = await page.evaluate(() => {
         if (OF.some(o => a.includes(o) || b.includes(o))) out.ofHits.push(a + ' / ' + b);
         if (pp === 'markman' && d.people === 'markman' && i === 0) { out.first.push(a); out.again.push(b);
           const okA = GREET_FIRST.markman.markman.includes(a) || (d._roleGreet || []).includes(a);
-          const okB = GREET_AGAIN.markman.includes(b) || (TEMPERS[d.temper] || { greet: [] }).greet.includes(b);
+          // an errand's giver says its hint after the Again line while the errand is on offer (S1554, S1600, S1677; errandGreet). Whether
+          // one is on offer turns with the game's week, so the hint is read off the end first: one of the markman hints, the name's with
+          // any name (its own words are the errands suite's)
+          let b0 = b; for (const h of HINTS) { const m = b0.match(h); if (m) { b0 = b0.slice(0, m.index); out.hinted++; break; } }
+          const okB = GREET_AGAIN.markman.includes(b0) || (TEMPERS[d.temper] || { greet: [] }).greet.includes(b0);
           if (!okA || !okB) out.bad.push(d.name + ' (' + d.role + '): ' + a + ' / ' + b); } } } }
   worldState.people = save; worldState.met = {};
   return out;
 });
-console.log(' first words:', JSON.stringify({ first: fw.first.slice(0, 6), again: fw.again.slice(0, 6), peoples: fw.peoples }));
+console.log(' first words:', JSON.stringify({ first: fw.first.slice(0, 6), again: fw.again.slice(0, 6), peoples: fw.peoples, hinted: fw.hinted }));
 check('a Markman greets a Markman from First words (or his trade\'s line), then from Again (or his temper)', fw.first.length > 0 && fw.bad.length === 0, fw.bad.slice(0, 6));
 check('no greeting, first or later, to any of the four peoples carries an opinion of the listener\'s people', fw.ofHits.length === 0, fw.ofHits.slice(0, 4));
 check('no page errors', g.errs.length === 0, g.errs);

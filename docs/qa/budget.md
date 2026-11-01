@@ -407,3 +407,29 @@ every space in the frustum, about 2.2× what the game draws, on whatever rubble 
 | Portclare square, noon | High | 580 | 1.83 M | 176 | 6 | 31 | 67 | 240 | 60 | Mesh 36, oldGate 14, Group 8, impostors 1, LOD 1 |
 | The Bramble Hearth (Dunmore's inn), the hall from the door, 20h | Middle (indoors) | 38 | 26k | 0 | 0 | 1 | 0 | 0 | 37 |  |
 | a medium gate (ruins, seed 11), from its entrance | Middle (indoors) | 100 | 394k | 0 | 0 | 33 | 0 | 0 | 66 |  |
+
+### s1113 — 2026-11-01 13:09 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Dunmore street, noon | Low | 592 | 1.10 M | 0 | 0 | 110 | 135 | 268 | 79 | Mesh 52, oldGate 24, LOD 2, impostors 1 |
+| Dunmore street, noon | Middle | 750 | 1.86 M | 136 | 6 | 113 | 135 | 281 | 79 | Mesh 52, oldGate 24, LOD 2, impostors 1 |
+| Dunmore street, noon | High | 801 | 2.35 M | 168 | 6 | 113 | 135 | 300 | 79 | Mesh 52, oldGate 24, LOD 2, impostors 1 |
+| Dunmore street, midnight | Low | 656 | 1.06 M | 0 | 0 | 107 | 201 | 268 | 80 | Mesh 52, oldGate 24, LOD 2, impostors 1, Points 1 |
+| Dunmore street, midnight | Middle | 832 | 1.77 M | 157 | 6 | 107 | 201 | 281 | 80 | Mesh 52, oldGate 24, LOD 2, impostors 1, Points 1 |
+| Dunmore street, midnight | High | 893 | 2.33 M | 199 | 6 | 107 | 201 | 300 | 80 | Mesh 52, oldGate 24, LOD 2, impostors 1, Points 1 |
+| the field west of Dunmore, noon | Low | 557 | 646k | 0 | 0 | 105 | 107 | 302 | 43 | Mesh 28, oldGate 8, Group 4, quaywall 2, impostors 1 |
+| the field west of Dunmore, noon | Middle | 664 | 1.06 M | 81 | 6 | 105 | 107 | 322 | 43 | Mesh 28, oldGate 8, Group 4, quaywall 2, impostors 1 |
+| the field west of Dunmore, noon | High | 712 | 1.55 M | 119 | 6 | 105 | 107 | 332 | 43 | Mesh 28, oldGate 8, Group 4, quaywall 2, impostors 1 |
+| the field west of Dunmore, dawn | Low | 640 | 636k | 0 | 0 | 108 | 186 | 302 | 44 | Mesh 28, oldGate 8, Group 4, quaywall 2, impostors 1 |
+| the field west of Dunmore, dawn | Middle | 808 | 1.12 M | 142 | 6 | 108 | 186 | 322 | 44 | Mesh 28, oldGate 8, Group 4, quaywall 2, impostors 1 |
+| the field west of Dunmore, dawn | High | 861 | 1.65 M | 185 | 6 | 108 | 186 | 332 | 44 | Mesh 28, oldGate 8, Group 4, quaywall 2, impostors 1 |
+| Portclare square, noon | Low | 365 | 678k | 0 | 0 | 30 | 67 | 208 | 60 | Mesh 36, oldGate 14, Group 8, impostors 1, LOD 1 |
+| Portclare square, noon | Middle | 533 | 1.43 M | 141 | 6 | 32 | 67 | 227 | 60 | Mesh 36, oldGate 14, Group 8, impostors 1, LOD 1 |
+| Portclare square, noon | High | 581 | 1.84 M | 176 | 6 | 32 | 67 | 240 | 60 | Mesh 36, oldGate 14, Group 8, impostors 1, LOD 1 |
+| The Bramble Hearth (Dunmore's inn), the hall from the door, 20h | Middle (indoors) | 38 | 26k | 0 | 0 | 1 | 0 | 0 | 37 |  |
+| a medium gate (ruins, seed 11), from its entrance | Middle (indoors) | 102 | 394k | 0 | 0 | 33 | 0 | 0 | 68 |  |
+
+*s1113, QA Session 1694 (`budget` 678 s and `budgetport` 339 s, each green on its first try, alone on four cores). Every spot is within 2 calls
+of the last table that held it (Dunmore s1093, Portclare, the inn and the gate s1106): nothing rose, nothing near the 10% line. The closest
+to a ceiling is still Dunmore's street at midnight on Low, 656 of 700.*

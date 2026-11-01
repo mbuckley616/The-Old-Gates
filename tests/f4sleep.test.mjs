@@ -51,13 +51,14 @@ for (const k of [0, 2, 4]) {
     const s2 = await read();
     check('three seconds of the loop: still asleep under the quilt, the builder\'s body still all in the bed, its head where it was but for the breath (4 cm)', s2.sleep && s2.cover && s2.out === 0 && Math.hypot(s2.head[0] - s.head[0], s2.head[1] - s.head[1], s2.head[2] - s.head[2]) < .04, { s2: { out: s2.out, head: s2.head }, head: s.head });
     // the picture: from the room's side of the bed, beyond the two units that would wake them
-    await page.evaluate(() => { const b = INT_BEDS.find(b => b.owner === 'home'), cz = b.cz != null ? b.cz : b.z; px = b.x + 2.4; pz = cz - .2; lookAtPt(b.x, .7, cz - .55); });
+    await page.evaluate(() => { const b = INT_BEDS.find(b => b.owner === 'home'), cz = b.cz != null ? b.cz : b.z; px = b.x + 2.4; pz = cz - .2; jumpY = b.y || 0; lookAtPt(b.x, .7, cz - .55); });
     await g.frames(4);
     const still = await page.evaluate(() => !!intNPCMesh.userData.asleep);
     await page.screenshot({ path: path.join(OUT, 'f4-sleeper.jpg') });
     check('seen from 2.4 m they sleep on', still, still);
-    // 2. woken: up, the quilt gone, the eyes open again
-    const up = await page.evaluate(() => { const b = INT_BEDS.find(b => b.owner === 'home'); px = b.x + 1.2; pz = b.z + 1.2; WORLD.tickInterior(1 / 60, performance.now());
+    // 2. woken: up, the quilt gone, the eyes open again. You stand on the bed's floor (jumpY): a sleeper hears within two units and on
+    // their own storey (sleeperNear), and a home's bed can be upstairs (Dunmore's home 0 at 5.87 m, s1113)
+    const up = await page.evaluate(() => { const b = INT_BEDS.find(b => b.owner === 'home'); px = b.x + 1.2; pz = b.z + 1.2; jumpY = b.y || 0; WORLD.tickInterior(1 / 60, performance.now());
       const m = intNPCMesh, rig = m.userData.rig, H = rig.hb; return { asleep: !!m.userData.asleep, sleep: !!rig.sleep, cover: !!m.userData.cover, open: H.eyes.filter(e => e.o.material === e.m).length, rx: m.rotation.x }; });
     check('woken, they stand: the quilt gone, both eyes open', !up.asleep && !up.sleep && !up.cover && up.open === 2 && up.rx === 0, up);
   }
