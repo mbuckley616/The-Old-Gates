@@ -1043,8 +1043,44 @@ function gateThingsBuild(gen,portal){GATE_THINGS=[];if(!gen||!gen.gate||!gen.thi
       const whole=gtWebTex(t.id,false),mat=new THREE.MeshLambertMaterial({map:whole,alphaTest:.3,side:THREE.DoubleSide,color:0xdedcd4,emissive:0x262624});
       const m=new THREE.Mesh(new THREE.PlaneGeometry(DCELL+.8,h),mat);m.position.set(x,y+h/2,z);m.rotation.y=t.dc?Math.PI/2:0;m.name='gateWeb';dScene.add(m);
       const solid=t.dc?{x0:x-.35,x1:x+.35,z0:z-H,z1:z+H,floor:t.floor,web:t.id}:{x0:x-H,x1:x+H,z0:z-.35,z1:z+.35,floor:t.floor,web:t.id};DUNGEON_PROPS.push(solid);
-      GATE_THINGS.push({id:t.id,kind:'web',floor:t.floor,x,y,z,burnt:false,mesh:m,solid,group:m});}}
+      GATE_THINGS.push({id:t.id,kind:'web',floor:t.floor,x,y,z,burnt:false,mesh:m,solid,group:m});}
+    else if(t.kind==='pool'){const busy=(x,z,R)=>clutter.concat(held,D_BEDS||[],SIGILS||[],ENEMIES||[]).some(q=>q&&(q.floor||1)===t.floor&&q.x!=null&&Math.hypot(q.x-x,q.z-z)<R+.7); /* never over a chest, a key, a cot, a carving or a foe */
+      const tries=[[dAt(t.at[0]),dAt(t.at[1]),t.rad]].concat((t.cells||[]).map(([c,r])=>[dAt(c),dAt(r),GT_POOL.R]));
+      const at=tries.find(([x,z,R])=>!busy(x,z,R));if(!at)continue;const [x,z,R]=at;
+      const grp=gatePoolProp(t.id,R);grp.position.set(x,y,z);dScene.add(grp);const col={x,z,r:R,floor:t.floor,pool:t.id};DUNGEON_COLUMNS.push(col);
+      GATE_THINGS.push({id:t.id,kind:'pool',floor:t.floor,x,y,z,R,frozen:false,group:grp,col,ice:null});}}
   return GATE_THINGS;}
+// S1678 — a gate's pool, for Sioc's touch ("freezes a pool", magic-build.md). A round cistern 2.4 to 5.2 m across (R, by its room):
+// a kerb of dressed stones 0.36 m high and 0.24 m thick (eight, or twelve past 1.8 m) round black water 0.24 m up, which reads as deep (the floor under it is never seen). Solid while it is water (a body
+// cannot wade it); frozen (freezePool), the water is a sheet of grey-white ice with its cracks and a rim of frost, drawn from the
+// pool's id, and the ice is a foothold at the kerb's height that you can walk across. Two draws either way.
+const GT_POOL={R:1.2,KERB_W:.24,KERB:.36,WATER:.24,ICE:.32};
+function gatePoolProp(id,R){R=R||GT_POOL.R;const g=new THREE.Group();g.name='gatePool';const r=seededRng('gatepool',id),P=GT_POOL,IN=R-P.KERB_W,parts=[],n=R>1.8?12:8,seg=R>1.8?4:3;
+  g.userData.IN=IN;
+  const prof=[[IN,0],[R-.03,0],[R,.04],[R,P.KERB-.05],[R-.04,P.KERB],[IN+.04,P.KERB],[IN,P.KERB-.04],[IN,0]].map(([a,b])=>new THREE.Vector2(a,b));
+  for(let k=0;k<n;k++){const tone=.82+r()*.3,c=new THREE.Color(0x58504a).multiplyScalar(tone),gap=.012/R*1.2,a0=k/n*Math.PI*2+gap;
+    parts.push([new THREE.LatheGeometry(prof,seg,a0,Math.PI*2/n-gap*2),c,new THREE.Matrix4().makeTranslation(0,(r()-.5)*.012,0)]);}
+  parts.push([new THREE.CircleGeometry(IN+.01,20).rotateX(-Math.PI/2),new THREE.Color(0x15130f),new THREE.Matrix4().makeTranslation(0,.02,0)]);
+  const km=dunMerge(parts,'poolKerb');delete km.userData.dunShell;km.castShadow=false;km.receiveShadow=true;km.name='poolKerb';g.add(km);
+  if(!_gtMat)gtMats();if(!_gtMat.water)_gtMat.water=new THREE.MeshPhongMaterial({color:0x0b1d22,specular:0x4a6670,shininess:70,transparent:true,opacity:.94,depthWrite:false});
+  const w=new THREE.Mesh(new THREE.CircleGeometry(IN,32).rotateX(-Math.PI/2),_gtMat.water);w.position.y=P.WATER;w.name='poolWater';w.renderOrder=1;g.add(w);
+  g.userData.water=w;return g;}
+// the ice's canvas: a grey-white sheet, paler to its edge, frost round the rim, and cracks from a few points of strain; drawn from the id
+function gtIceTex(id){const N=256,c=document.createElement('canvas');c.width=c.height=N;const x=c.getContext('2d'),r=seededRng('gateice',id),h=N/2;
+  const gr=x.createRadialGradient(h,h,8,h,h,h);gr.addColorStop(0,'#7d97a0');gr.addColorStop(.7,'#a9bec4');gr.addColorStop(.93,'#dfe8ea');gr.addColorStop(1,'#f4f8f8');
+  x.fillStyle=gr;x.fillRect(0,0,N,N);
+  for(let k=0;k<260;k++){const a=r()*6.283,d=h*(.55+r()*.45),s=1+r()*3;x.fillStyle='rgba(245,250,252,'+(.25+r()*.4).toFixed(2)+')';x.beginPath();x.arc(h+Math.cos(a)*d,h+Math.sin(a)*d,s,0,6.283);x.fill();}
+  x.lineCap='round';for(let k=0;k<4;k++){let px=h+(r()-.5)*N*.5,py=h+(r()-.5)*N*.5;const n=4+Math.floor(r()*4);
+    for(let j=0;j<n;j++){let a=r()*6.283,qx=px,qy=py;x.strokeStyle='rgba(238,246,248,.8)';x.lineWidth=1.1+r();x.beginPath();x.moveTo(qx,qy);
+      for(let s=0;s<6;s++){a+=(r()-.5)*.8;qx+=Math.cos(a)*(8+r()*14);qy+=Math.sin(a)*(8+r()*14);x.lineTo(qx,qy);}x.stroke();}}
+  const t=new THREE.CanvasTexture(c);t.anisotropy=4;return t;}
+// freezePool: the named action. A pool's water in this gate turns to ice you can walk on; false if it was frozen already or is not one
+function freezePool(t){if(!t||t.kind!=='pool'||t.frozen||GATE_THINGS.indexOf(t)<0)return false;t.frozen=true;const P=GT_POOL,g=t.group;
+  const mat=new THREE.MeshPhongMaterial({map:gtIceTex(t.id),color:0xffffff,specular:0x9fb4ba,shininess:90,emissive:0x141a1c});
+  const ice=new THREE.Mesh(new THREE.CircleGeometry(g.userData.IN,32).rotateX(-Math.PI/2),mat);ice.position.y=P.ICE;ice.name='poolIce';g.add(ice);
+  g.userData.water.visible=false;t.ice=ice;
+  const i=DUNGEON_COLUMNS.indexOf(t.col);if(i>=0)DUNGEON_COLUMNS.splice(i,1);
+  const e=t.R*.7;t.hold={x0:t.x-e,x1:t.x+e,z0:t.z-e,z1:t.z+e,y:t.y+P.ICE,gate:'ice',pool:t.id};FOOTHOLDS.push(t.hold);return true;}
 function gtBrazierShow(t,on){t.lit=on;const f=t.group.userData.fire;if(f)f.visible=on;
   if(on&&!t.light){const l=new THREE.PointLight(0xff9a50,1.6,12);l.position.set(t.x,t.y+1.9,t.z);dScene.add(l);t.light=l;TORCHES.push({l,fl:null,ph:(t.x*3.1+t.z)%6.28});}}
 // lightBrazier: the named action. A cold brazier in this gate catches; false if it was burning already or is not one
@@ -1053,10 +1089,10 @@ function lightBrazier(t){if(!t||t.kind!=='brazier'||t.lit||GATE_THINGS.indexOf(t
 function burnWeb(t){if(!t||t.kind!=='web'||t.burnt||GATE_THINGS.indexOf(t)<0)return false;t.burnt=true;
   const i=DUNGEON_PROPS.indexOf(t.solid);if(i>=0)DUNGEON_PROPS.splice(i,1);
   const m=t.mesh.material;if(m.map)m.map.dispose();m.map=gtWebTex(t.id,true);m.color.setHex(0xb8b2a8);m.emissive.setHex(0x120c08);m.needsUpdate=true;return true;}
-// the nearest thing of a kind on your floor within r of (x, z) that a word could still change (a cold brazier, a standing web)
+// the nearest thing of a kind on your floor within r of (x, z) that a word could still change (a cold brazier, a standing web, a pool not frozen)
 function gateThingNear(kind,x,z,r){let best=null,bd=r==null?1e9:r;
-  for(const t of GATE_THINGS){if(t.kind!==kind||t.floor!==currentFloor||(kind==='brazier'?t.lit:t.burnt))continue;
-    const d=kind==='web'?gtWebDist(t,x,z):Math.hypot(t.x-x,t.z-z);if(d<=bd){bd=d;best=t;}}
+  for(const t of GATE_THINGS){if(t.kind!==kind||t.floor!==currentFloor||(kind==='brazier'?t.lit:kind==='pool'?t.frozen:t.burnt))continue;
+    const d=kind==='web'?gtWebDist(t,x,z):kind==='pool'?Math.max(0,Math.hypot(t.x-x,t.z-z)-t.R):Math.hypot(t.x-x,t.z-z);if(d<=bd){bd=d;best=t;}} /* a pool by the distance to its rim */
   return best;}
 // a web is a plane across its passage: the distance to it is to the nearest point of its span
 function gtWebDist(t,x,z){const s=t.solid,qx=Math.max(s.x0,Math.min(s.x1,x)),qz=Math.max(s.z0,Math.min(s.z1,z));return Math.hypot(x-qx,z-qz);}
@@ -1148,7 +1184,7 @@ function buildDungeon(portal){
   let gen=interiorKey==='cave'&&!dunKeepKind(portal)?makeGate(portal.size,portal.seed,(WORLD_DUNGEONS.find(e=>e.seed===portal.seed)||{}).floors,(WORLD_DUNGEONS.find(e=>e.seed===portal.seed)||{}).cond):interiorFn(portal.size,portal.seed);
   if(interiorKey!=='cave'&&!gen.map2&&portal.size!=='small')gen=addUpperFloor(gen,portal.seed); // v80 — forts get an upper floor
   if(gen.gate&&clochBlockDue(portal))gateBlock(gen,portal.seed); /* S1376 — Cloch's toll: a fallen block on each floor of the Mark's lesser gates (52-dungeon-gen.js) */
-  if(gen.gate)gateThings(gen,portal.seed); /* S1675 — the braziers and webs a touched word acts on (52-dungeon-gen.js) */
+  if(gen.gate)gateThings(gen,portal.seed); /* S1675 — the braziers and webs a touched word acts on (52-dungeon-gen.js); S1678 the pools */
   if(gen.hall)FLOOR2_Y=-gen.hall.D; /* S1298 — a massive gate's floor two lies its stair hall's flights down (2 or 3 of 4.2 m) */
   dMap=gen.map;dMap2=gen.map2||null;dR=gen.H;dC=gen.W;
   mmRevealed=Array.from({length:dR},()=>new Uint8Array(dC));

@@ -666,6 +666,21 @@ function gateThings(gen,seed){
     const roll=r();if(mouths.length!==1||mouths[0][2]!==1||roll>=1/3)continue;
     const [x,y]=mouths[0],dc=x<rm.x?1:x>=rm.x+rm.w?-1:0,dr=dc?0:(y<rm.y?1:-1);
     put({kind:'web',floor:fl,c:x,r:y,dc,dr,room:{x:rm.x,y:rm.y,w:rm.w,h:rm.h}});}
+  // S1678 — pools, for Sioc's touch ("freezes a pool"): a kerbed cistern in a side room no web closes, one room in four, the room two
+  // cells or more each way so the way round it stays open. It stands at the room's middle (at, in cells), its radius by the room's
+  // narrower side (rad, metres: 1.2 for two cells to 2.6 for five and over); if something stands there, the build tries the floor cells
+  // farthest from every mouth (cells) at 1.2. Laid after the webs, so no web's roll or id moves.
+  const webbed=new Set(T.filter(t=>t.kind==='web').map(t=>t.floor+':'+t.room.x+','+t.room.y));
+  for(const rm of gen.side||[]){const fl=rm.floor||1,M=mapOf(fl);if(!M)continue;const roll=r();
+    if(roll>=1/4||rm.w<2||rm.h<2||webbed.has(fl+':'+rm.x+','+rm.y))continue;const mouths=[],cells=[];
+    for(let y=rm.y-1;y<=rm.y+rm.h;y++)for(let x=rm.x-1;x<=rm.x+rm.w;x++){if(x>=rm.x&&x<rm.x+rm.w&&y>=rm.y&&y<rm.y+rm.h)continue;
+      if(y<0||x<0||y>=gen.H||x>=gen.W)continue;if(M[y][x]>0)mouths.push([x,y]);}
+    if(!mouths.length)continue;
+    for(let y=rm.y;y<rm.y+rm.h;y++)for(let x=rm.x;x<rm.x+rm.w;x++){const v=M[y][x];if(v!==1&&v!==6)continue;
+      const d=Math.min(...mouths.map(([a,b])=>Math.abs(a-x)+Math.abs(b-y)));if(d>=2)cells.push([x,y,d]);}
+    if(!cells.length)continue;cells.sort((a,b)=>b[2]-a[2]||a[1]-b[1]||a[0]-b[0]);
+    const at=[rm.x+(rm.w-1)/2,rm.y+(rm.h-1)/2],rad=Math.max(1.2,Math.min(2.6,Math.min(rm.w,rm.h)*GATE_CELL*.2));
+    put({kind:'pool',floor:fl,c:Math.round(at[0]),r:Math.round(at[1]),at,rad,cells:cells.slice(0,4).map(q=>[q[0],q[1]]),room:{x:rm.x,y:rm.y,w:rm.w,h:rm.h}});}
   return T;}
 // S1323 (card F5, the build sheet's session 3, "Pockets and the leash") — where a gate's fights stand. Each space of a floor
 // (the stair hall aside) holds pockets along its way, evenly: 25 to 42 m apart (one alone in a short space), so two
