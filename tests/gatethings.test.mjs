@@ -58,7 +58,11 @@ for (const [size, seed] of [['large', 909], ['medium', 2055], ['large', 1078]]) 
       o.pool = { R: p.R, tris: Math.round(tr), draws: dr, wet: [dBlk(p.x, p.z), dBlk(p.x + p.R * .6, p.z)], out: !dBlk(p.x + p.R + .9, p.z) || !dBlk(p.x - p.R - .9, p.z) || !dBlk(p.x, p.z + p.R + .9) || !dBlk(p.x, p.z - p.R - .9) };
       o.pool.found = gateThingNear('pool', p.x + p.R + 1, p.z, 3) === p; o.pool.f1 = freezePool(p); o.pool.f2 = freezePool(p);
       let d2 = 0; p.group.traverse(q => { if (q.isMesh && q.visible) d2++; }); o.pool.drawsIce = d2;
-      o.pool.dry = !dBlk(p.x, p.z); o.pool.iceY = +(footholdY(p.x, p.z, p.y + .1, p.y) - p.y).toFixed(2); o.pool.gone = gateThingNear('pool', p.x, p.z, 3) == null; }
+      o.pool.dry = !dBlk(p.x, p.z); o.pool.iceY = +(footholdY(p.x, p.z, p.y + .1, p.y) - p.y).toFixed(2); o.pool.gone = gateThingNear('pool', p.x, p.z, 3) == null;
+      // S1682 — a foe reads no footholds in a gate: the ice stays a wall to its step (dSlide), and walked at the middle it stops off the ice
+      o.pool.foeWall = dBlkF(p.x, p.z) && dBlkF(p.x + p.R * .6, p.z); let st = null;
+      for (let a = 0; a < 16 && !st; a++) { const dx = Math.sin(a / 16 * 6.283), dz = Math.cos(a / 16 * 6.283); if (!dBlkF(p.x + dx * (p.R + 1.4), p.z + dz * (p.R + 1.4))) st = [p.x + dx * (p.R + 1.4), p.z + dz * (p.R + 1.4)]; }
+      if (st) { let [x, z] = st; for (let n = 0; n < 200; n++) { const d = Math.hypot(p.x - x, p.z - z); if (d < .05) break; [x, z] = dSlide(x, z, (p.x - x) / d * .05, (p.z - z) / d * .05); } o.pool.foeD = +Math.hypot(p.x - x, p.z - z).toFixed(2); } }
     return o; })));
 }
 console.log(JSON.stringify(R));
@@ -69,7 +73,8 @@ check('a burning brazier shows its flames and has its light, a cold one neither;
 check('a web is a wall across its passage until burnWeb; then the way through is open and nothing is left to burn', R.filter(r => r.webs).every(r => r.webWall[0] && r.webWall[1] && r.found && r.burn1 && !r.burn2 && r.webOpen && r.gone), R);
 { const P = R.filter(r => r.pool).map(r => Object.assign({ gate: r.size + ' ' + r.seed }, r.pool));
   check(`a pool built (${P.map(p => `${p.gate}: ${p.R} m round, ${p.tris} tris in ${p.draws} draws`).join('; ')})`, P.length > 0 && P.every(p => p.tris < 1600 && p.draws === 2 && p.drawsIce === 2), P);
-  check('a pool is solid as water, with a way round it; freezePool freezes it once, and its ice is a foothold 0.32 m up with nothing left to freeze', P.length > 0 && P.every(p => p.wet[0] && p.wet[1] && p.out && p.found && p.f1 && !p.f2 && p.dry && p.iceY === .32 && p.gone), P); }
+  check('a pool is solid as water, with a way round it; freezePool freezes it once, and its ice is a foothold 0.32 m up with nothing left to freeze', P.length > 0 && P.every(p => p.wet[0] && p.wet[1] && p.out && p.found && p.f1 && !p.f2 && p.dry && p.iceY === .32 && p.gone), P);
+  check('a frozen pool is still a wall to a foe\'s step: walked at its middle, a foe stops off the ice, its rim or more away', P.every(p => p.foeWall && p.foeD >= p.R), P.map(p => [p.R, p.foeD])); }
 await enterDungeon(page, { theme: 'ruins', size: 'large', seed: 909 });
 const again = await page.evaluate(() => GATE_THINGS.map(t => t.id + (t.lit ? '*' : '')).join(','));
 check('the same gate entered again is laid the same', again === R[0].ids, [again, R[0].ids]);

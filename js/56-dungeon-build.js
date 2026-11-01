@@ -11,7 +11,11 @@ function dPropHit(x, z){
   return false;
 }
 function dBlk(x,z){const R=0.3; /* S1283 — your body 0.3 round, as in the world and the rooms (F2b) */ return dSolid(x-R,z-R)||dSolid(x+R,z-R)||dSolid(x-R,z+R)||dSolid(x+R,z+R);}
-function dSlide(x,z,dx,dz){if(!dBlk(x+dx,z+dz))return[x+dx,z+dz];if(!dBlk(x+dx,z))return[x+dx,z];if(!dBlk(x,z+dz))return[x,z+dz];return[x,z];}
+// S1682 — a foe's step: a frozen pool is still a wall to it (freezePool's ice is a foothold, and a foe in a gate reads none, so it walked
+// across sunk 0.32 m into the ice). It goes round the ice as it went round the water; to you the ice is open (dBlk, dSlideP).
+function dIceHit(x,z){for(let i=0;i<GATE_THINGS.length;i++){const t=GATE_THINGS[i];if(t.kind!=='pool'||!t.frozen||(t.floor&&t.floor!==currentFloor))continue;const r=t.R+.3;if((x-t.x)*(x-t.x)+(z-t.z)*(z-t.z)<r*r)return true;}return false;}
+function dBlkF(x,z){return dBlk(x,z)||dIceHit(x,z);}
+function dSlide(x,z,dx,dz){if(!dBlkF(x+dx,z+dz))return[x+dx,z+dz];if(!dBlkF(x+dx,z))return[x+dx,z];if(!dBlkF(x,z+dz))return[x,z+dz];return[x,z];}
 // S1327 (card F5, condition) — your own step in a gate: a chasm's open air (8) is no wall to you, as it is to a foe. Over it with no
 // stone under you the ground is the pit's floor, GATE_PIT down (dPitBase), so you fall, and 25 m kills (FALL_PER). Once you are
 // below the floor over the air, the pit's sides are walls: you cannot climb out through the rock.
