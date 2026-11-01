@@ -638,6 +638,35 @@ function gateBlock(gen,seed){
         if(!ok)continue;
         M[y][x]=0;for(const [c,yy] of way)M[yy][c]=1;gen.blocks.push({floor:fl,c:x,r:y,ew,side:s,way});done=true;break;}}}
   return gen.blocks;}
+// S1675 — the things a touched word acts on, in a gate (magic-build.md's Touched column: Caor "lights a brazier, burns a web"; magic.md:
+// "a web across a door"). Braziers: a pair flanking each threshold on both of its sides, in the space's edge row a cell to either side
+// of the opening, and four at the corners of the ring chamber's dais (at:[x,z], the corner in cells, and out, the way out from it); each pair (and the ring's four) burning or cold, one in two. Webs:
+// across the one mouth of a side room whose only way in is a bare corridor (no door), one room in three. Pure, from the gate's seed
+// on its own stream, so a gate is dressed the same every visit; each thing's id is <seed>:<floor>:<index>. In cells: gen.things holds
+// {id,kind:'brazier'|'web',floor,c,r,dc,dr,lit} — a brazier's (dc,dr) points at the wall it stands against, a web's from its mouth
+// cell into its room. gateThingsBuild (56-dungeon-build.js) draws them in metres after the scaling pass.
+function gateThings(gen,seed){
+  gen.things=[];if(!gen||!gen.gate)return gen.things;
+  const r=dunLcg((hashSeed(((seed|0)+0x7c4a)>>>0)>>>0)||1),n={1:0,2:0},T=gen.things;
+  const put=(o)=>{o.id=(seed|0)+':'+o.floor+':'+(n[o.floor]++);T.push(o);};
+  const mapOf=fl=>fl===2?gen.map2:gen.map,csOf=fl=>fl===2?gen.cellSpace2:gen.cellSpace;
+  const thr=gen.thresholds||[],near=(fl,c,y,d)=>thr.some(t=>(t.floor||1)===fl&&Math.abs(t.c-c)+Math.abs(t.r-y)<d);
+  const okCell=(fl,c,y,spId)=>{const M=mapOf(fl),CS=csOf(fl);if(!M||y<0||c<0||y>=gen.H||c>=gen.W)return false;
+    if(M[y][c]!==1||!CS||CS[y][c]!==spId)return false;const sp=gen.spaces[spId];return sp&&sp.type!=='stair'&&sp.type!=='flooded'&&sp.type!=='chasm'&&!(fl===1&&c===gen.entC&&y===gen.entR);};
+  for(const t of thr){const fl=t.floor||1,pc=t.dr?1:0,pr=t.dc?1:0;
+    for(const [s,spId] of [[-1,t.a],[1,t.b]]){const c0=t.c+s*t.dc,r0=t.r+s*t.dr,lit=r()<.5,pair=[];
+      for(const k of [-1,1]){const c=c0+k*pc,y=r0+k*pr;if(okCell(fl,c,y,spId)&&!near(fl,c,y,1))pair.push({kind:'brazier',floor:fl,c,r:y,dc:-s*t.dc,dr:-s*t.dr,lit});}
+      if(pair.length===2)pair.forEach(put);}}
+  {const sp=gen.spaces[gen.ring],d=sp&&sp.dais;if(d){const fl=sp.floor||1,lit=r()<.5,cx=(d.x0+d.x1)/2,cz=(d.z0+d.z1)/2;
+    for(const [sx,sz] of [[-1,-1],[1,-1],[-1,1],[1,1]]){const fx=cx+sx*(d.x1-d.x0)/2,fz=cz+sz*(d.z1-d.z0)/2,c=Math.round(fx+sx*.3),y=Math.round(fz+sz*.3);
+      if(okCell(fl,c,y,sp.id))put({kind:'brazier',floor:fl,c,r:y,dc:0,dr:0,lit,ring:true,at:[fx,fz],out:[sx,sz]});}}}
+  for(const rm of gen.side||[]){const fl=rm.floor||1,M=mapOf(fl);if(!M)continue;const mouths=[];
+    for(let y=rm.y-1;y<=rm.y+rm.h;y++)for(let x=rm.x-1;x<=rm.x+rm.w;x++){if(x>=rm.x&&x<rm.x+rm.w&&y>=rm.y&&y<rm.y+rm.h)continue;
+      if(!((x>=rm.x&&x<rm.x+rm.w)||(y>=rm.y&&y<rm.y+rm.h)))continue;if(y<0||x<0||y>=gen.H||x>=gen.W)continue;if(M[y][x]>0)mouths.push([x,y,M[y][x]]);}
+    const roll=r();if(mouths.length!==1||mouths[0][2]!==1||roll>=1/3)continue;
+    const [x,y]=mouths[0],dc=x<rm.x?1:x>=rm.x+rm.w?-1:0,dr=dc?0:(y<rm.y?1:-1);
+    put({kind:'web',floor:fl,c:x,r:y,dc,dr,room:{x:rm.x,y:rm.y,w:rm.w,h:rm.h}});}
+  return T;}
 // S1323 (card F5, the build sheet's session 3, "Pockets and the leash") — where a gate's fights stand. Each space of a floor
 // (the stair hall aside) holds pockets along its way, evenly: 25 to 42 m apart (one alone in a short space), so two
 // pockets never wake as one, and each end is within 25 m of one, so no stretch of the way runs 50 m without a fight. A pocket's radius is 0.4 of its spacing,
