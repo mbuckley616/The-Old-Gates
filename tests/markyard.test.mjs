@@ -32,7 +32,7 @@ const yb = await page.evaluate(id => {
   forceTime(10); const day = yardRackPrompt(); forceTime(20); const eve = yardRackPrompt(), g0 = gold; yardRackUse(); const inRing = yardRackPrompt();
   const B = BRAWL ? { at: +Math.hypot(BRAWL.x - Y.x, BRAWL.z - Y.z).toFixed(3), site: BRAWL.site, stake: BRAWL.stake, paid: g0 - gold, inBout: !!BOUT, spar: !!SPAR } : null;
   if (BRAWL) brawlEnd('off'); const back = gold; yardRackUse(); const again = !BRAWL;
-  forceTime(23); const late = yardRackPrompt(); yardRackUse(); const shut = !BRAWL && !SPAR;
+  forceTime(23); const late = yardRackPrompt(); yardRackUse(); const shut = !BRAWL && !SPAR; forceTime(10); /* back to day: the rings below load as before */
   return { day, eve, inRing, B, back, again, late, shut, site: Y.site, tier: worldTierAt(Y.x, Y.z) };
 }, id);
 console.log('yard brawl', JSON.stringify(yb));
