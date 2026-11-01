@@ -2,7 +2,7 @@
 
 These are the quest writer's drafts. None of them is canon until Michael promotes it into `quest_writing.md`, and none is a spec until it is approved. Each draft gives the quest's shape, every line verbatim with its speaker and people, and a note on what in the code would carry it.
 
-Calls read to: 2026-10-16T17:51:09.360Z (run 32, 30 Oct: no new calls on the page)
+Calls read to: 2026-10-16T17:51:09.360Z (run 33, 1 Nov: no new calls on the page)
 
 ---
 
@@ -2079,7 +2079,7 @@ The three ending rows and his answers to them are as built (*Break it. Let the w
 
 ## Asked in Passing — six townsfolk's errands
 
-*Approved by Michael, 14 Oct 2026.* *Building: the frame and errand 3, A Fever, Session 1510 (PR #817, on main 28 Oct), word for word but for two plain fixes: only a giver with children asks for a fever (the offer says* My youngest*), and the giver answers* I’ll do it. *with the people's line added to the shared table below. Errand 1, The Unanswered Letter, Session 1554 (PR #868), word for word; the resident on* there *has no line, so the topic is left off there and the addressee is marked at their door, and the hand-off to errand 4 on* dead *waits for errand 4.* *Errand 4, Say the Name at the Door, Session 1600, word for word, with the hand-off from errand 1. One plain fix: a Markman asks only with no spouse in their bio, since a townsperson with one answers* Married to {spouse} *in the same conversation.* The first piece of Michael's control-room note of 5 Oct (backlog A, *Questing, a big effort pass*): *"we also need to add probably 50–100 somewhat unique quests. We can probably generalize these and make it so that these can be recycled in different areas, but I want quests to be something far more likely to stumble upon / something that will incentivize players to talk to NPCs."* Today every town job comes from the lord (`townQuestFor`, `87-world-quests.js`: cull, retrieve, deliver, find, road) and every guild task from a guild head. The people in the street give nothing. This draft gives them six errands, each a template that recycles across every town, trade and people, each with a choice or a clock that the world remembers. Six templates × the twelve trades that can give them × four peoples × the towns they point at is the variety the note asks for; a second run can add six more on the same frame.
+*Approved by Michael, 14 Oct 2026.* *Building: the frame and errand 3, A Fever, Session 1510 (PR #817, on main 28 Oct), word for word but for two plain fixes: only a giver with children asks for a fever (the offer says* My youngest*), and the giver answers* I’ll do it. *with the people's line added to the shared table below. Errand 1, The Unanswered Letter, Session 1554 (PR #868), word for word; the resident on* there *has no line, so the topic is left off there and the addressee is marked at their door, and the hand-off to errand 4 on* dead *waits for errand 4.* *Errand 5, The Debt, Session 1677 (PR #970), word for word, with the debtor's answer to* Keep it *added (the draft had none): Gatelander "Tell them I'll pay at the harvest, so, and it'll be true." · Markman "Aye. Owe you one, then." · Aurennais "Then I owe you a discretion, Master. It is the dearer debt." · Old Blood "Good."* *Errand 4, Say the Name at the Door, Session 1600, word for word, with the hand-off from errand 1. One plain fix: a Markman asks only with no spouse in their bio, since a townsperson with one answers* Married to {spouse} *in the same conversation.* The first piece of Michael's control-room note of 5 Oct (backlog A, *Questing, a big effort pass*): *"we also need to add probably 50–100 somewhat unique quests. We can probably generalize these and make it so that these can be recycled in different areas, but I want quests to be something far more likely to stumble upon / something that will incentivize players to talk to NPCs."* Today every town job comes from the lord (`townQuestFor`, `87-world-quests.js`: cull, retrieve, deliver, find, road) and every guild task from a guild head. The people in the street give nothing. This draft gives them six errands, each a template that recycles across every town, trade and people, each with a choice or a clock that the world remembers. Six templates × the twelve trades that can give them × four peoples × the towns they point at is the variety the note asks for; a second run can add six more on the same frame.
 
 ### What the canon fixes, and where it is silent
 
@@ -5769,3 +5769,141 @@ The log carries the sight lines (§2) and the night lines (§4) under the wonder
 
 - OG-106's other wonders (the Hollow Wood, the Weaver's Grave, the Bleeding Glacier, the Singing Chasm, the Frozen Library, the Mirrored Oasis, the Glass Desert, the reef where ships vanish, the wandering island), as the look builder makes them: a second part on this frame.
 - A sound at night for each (`72-audio.js`): the Ring's water, the Hangstones' wind and the Falak's silence. The draft says the rings *make no sound at all*, and the build should keep them silent.
+
+---
+
+## The Mark's Rings — Jora, the ring masters, the fixer, the fighters' names and Red Finn
+
+*Unapproved.* *Drafted 1 Nov 2026. Owed by the arenas build sheet (`docs/design/arenas-build.md`, its last row: "Jora, Red Finn's legend, the ring masters' and fixers' lines, the watchers' barks. Placeholders until then.") on Michael's B on #914 (30 Oct). The systems builder's sessions 1–5 are on main (Sessions 1637–1659): the yard's spar and brawl, the ladder's twelve bouts, the wager, the fixer, the post and the title. Every line a person says there today is a placeholder or the narrator's. This draft gives the rings their people.*
+
+### What the canon fixes, and where it is silent
+
+- §1.2: the Captains' League settles disputes by duel; the Mark exports soldiers and is "known for steel and mercenaries"; it scorns priests, ledgers and soft hands. So the ring is work and law before it is sport, and the crowd knows a blow.
+- §2: Markmen speak in short sentences, *aye*, nicknames, oaths on iron and blood, no honorifics. Every ring master, fighter, fixer and watcher here is a Markman unless named otherwise. A bout's fighter is called by a byname, because that is what the Mark does with names.
+- §2's body row: Markmen are ash-blond. The art gives Red Finn red hair (OG-079) and Jora a dark skin and braids (OG-089). Both are kept without breaking the row: Finn is *Red* for what he did, not for his hair; Jora is port-born, her mother an Aurennais factor's cook, which §1.5's mixed crowd at a port allows. She is a Markman in speech and in law.
+- *Silent:* whether Red Finn lives, and where. The plainer choice: nobody in this draft knows, and every teller says something different. Whether he is ever met is backlog L2's *The strange and the legendary*, not this.
+- *Silent:* the massacre on "the Blackshore isle" (OG-079's note). No Blackshore is in the canon, so no teller names the place: they say *the islands*, *a raid*, *the business on the coast*, and none agree.
+
+### 1. The fighters' names (the ladder and the brawl)
+
+A fighter is `{name} {byname}`: the name from the Markish bank (`NAMES.anglo`, by the fighter's sex), the byname from this list, both rolled on the fighter's id (`ring:<bout>:<n>`, `seededRng('ringname', id)`), no byname twice on the ladder at once. It is the name above the health bar, in the messages and, after a murder, on the post.
+
+*Bynames:* Ashfist · Halfhand · the Ox · Longreach · Quickstep · Saltjaw · Ironbrow · Coldwater · the Mule · Two-Knives · Stonefoot · the Heron · Grey Wolf · Hammerhand · Lastword · the Hook · Bitterroot · Oarsman · Whitetooth · Nine-Toes · Crowfoot · the Bell · Fenhound · Tallow
+
+The challenger at Caer Slige is named the same way and keeps the byname if the title passes: *The title passes to Edwy Longreach.*
+
+The brawler at a yard is named the same way, from a stream on the yard and the night (`seededRng('brawlname', site+':'+day)`).
+
+### 2. The ring master (one at each ring's gate)
+
+A Markman or a Markwoman, named from the bank on the ring's site, standing at the gate from 8h to 18h. Talk opens *Ask for a bout.* and the master's refusals in their own voice; today's `say` lines become theirs. The narrator's lines (*Bout {n}. The ring closes.*) stay.
+
+**Greeting** (one, by how far up the ladder you are):
+- rank 0: "New. Name and weight. No, keep the weight."
+- rank 1–5: "You again. Good. The crowd remembers a face."
+- rank 6–11: "There's money on you now. Don't waste it."
+- the title: "Champion. Iron keep you. Mind the challengers."
+- banned: "No. You know why. The post knows too."
+
+**Ask for a bout.** — the call (replaces *Bout {k} of 12 is called at {h}h. {purse} gold to the winner.*):
+- "Bout {k}. {h} o'clock. {purse} to the winner. Be at the rope."
+- with the fixer about: the same, and "Man at the gate wants a word with you. Not my business."
+
+**The refusals** (each replaces the placeholder in brackets):
+- [*One bout a day. Come back tomorrow.*] "You've fought today. Blood's for tomorrow."
+- [*The bouts are called from {open}h to {close}h.*] "Bouts are called {open} to {close}. Come in daylight."
+- [*Your bout is called at {h}h.*] "You're called at {h}. Stand by the rope."
+- [*The title is fought at Caer Slige.*] "Twelfth bout's at Caer Slige. Always has been."
+- [*The challenge is fought at Caer Slige.*] "Your challenger's at Caer Slige. Go and meet them."
+- [*You hold the title.*] "You hold it. Nothing left here but holding it."
+- [*The rings of the Mark are shut to you.*] "Shut. Every ring from here to the strait. Your name's known."
+- [*The ring is shut while the town is held.*] "No bouts while they hold the town. We don't fight for their entertainment."
+- [*You are already in the ring.*] the narrator's line stays.
+
+**The wager** (the master keeps the book; replaces *How much?*, *The book takes up to {cap} on this bout.*, *Your stake is already down.*, *You have not got {n} gold.*):
+- "How much on yourself?"
+- "Book takes {cap} on this bout. No more."
+- "Your money's down. Leave it."
+- "You haven't got {n}. Come back when you have."
+- placed (*{n} gold on yourself at {odds} to 1.*): "{n} on you at {odds} to one. Win it."
+
+**The fixer reported** (replaces *The ring master has the bookmaker's man thrown out. Your next purse is half again.*): "Thrown out. By the collar. He won't be back at this gate." Then the narrator: *Your next purse is half again.*
+
+**The post** (*Press 'E' to read the post*) is the narrator's and stays. Asked *Whose names are those?*, the master: "The top board's the champion's. The ones under are men and women who yielded and got hit anyway. We don't cut the man who did it. We cut the dead. You remember them, and you know."
+
+**After a murder** (the master, to anyone who asks within the 28 days): "Iron and blood. We said the yield was the yield. Nobody fights here who'll forget it."
+
+### 3. The bookmaker's man (the fixer)
+
+At the ring's gate on a fixer's day, a Markman with a byname of his own (*Lark*, *Spinner*, *Old Coin*, rolled on the bout's id). One topic: *You wanted a word.*
+
+- The offer: "Bout {k}. You go down in the second minute. {n} gold, now, in your hand. Nobody's hurt. Well. Nobody's hurt much."
+- **Take it.** (replaces *{n} gold to go down in bout {k}.*): "Good. Second minute. Look tired first. They like that."
+- **No.**: "Your loss. Literally."
+- **I'll tell the ring master.** He says nothing; the master's line above follows.
+- Found out (replaces *The fix is found out. A fine of {fine} gold, and the rings of the Mark are shut to you.*): the master, "You sold a bout. {fine} gold, and you're done here. Every ring. Get out." Then the narrator: *The rings of the Mark are shut to you.*
+- Took the money and won (replaces *Two men are waiting at the ring's gate. The bookmaker wants his money back.*): the narrator keeps *Two men are waiting at the ring's gate.* and the first of them says "The book wants its money back. All of it. Now or later, and later's worse."
+
+### 4. The yard's trainer, and Jora
+
+Every yard has a trainer, a Markman or Markwoman named from the bank on the yard's site, except one: **Jora**, at the yard of the Markish port nearest Caer Slige (the first by `sitesNearFixed` from the seat whose kind is `port` and which has a yard; one place in every game).
+
+**The spar** (the narrator's *You take a staff from the rack. First to three clean hits.* stays; the trainer adds, at the start): "Three clean. I'll tell you what you did wrong. You'll hate it."
+- The calls stay: *Early.* · *Late.* · *Good.* · *Good roll.*
+- won (after *Three clean. {name} nods: you have it.*): "Again tomorrow. You'll be worse. Then better."
+- lost: "Three on you. Your guard comes up like it's asking permission."
+- closed [*The yard is shut until morning.*]: "Yard's shut. Go and drink something."
+
+**The brawl** (18h–22h; the narrator's lines stay; the trainer, or Jora, holds the stakes):
+- the call, before *The ring closes. {stake} gold a side. Fists.*: "Fists. {stake} a side. Yield's a knee. Hit a knee and I'll hit you."
+- [*One brawl a night here.*] "One a night. The floor needs to dry."
+- [*The brawls are after dark.*] "Brawls are after dark. Daylight's for learning."
+
+**Jora's own topics** (the yard, from the second meeting):
+- *Who are you?* — "Jora. My mother cooked for a factor at the quay. My father had a boat and a temper. I got the temper and kept the boat till it sank. This yard's mine now."
+- *You don't look Markish.* — "Neither does half this port. I was born on the wharf, I swear on iron, I pay the Reeve. Ask the yard what I am. It'll tell you with a staff."
+- *Who's the best you've seen?* — "In the yard? A girl from the hills who couldn't lift the staff the first month. In the rings? Finn. Everyone says Finn. They're right, and they don't know why."
+- *Red Finn?* — see §5, Jora's telling.
+- *Should I fight the ladder?* (rank 0 only) — "Fight the yard first. Twelve bouts and the last one's a wall. Men walk into it with their chins."
+- holding the title — greeting: "Champion. Don't let it go to your feet."
+
+### 5. Red Finn's legend
+
+Never beaten in the rings of the Mark, and gone from them. Every teller has it differently. Nobody says where he is.
+
+- **Jora** (*Red Finn?*): "Twelve bouts in a season, twice. Never down. Then he went on a raid with a free captain, to the islands, and came back on his own. Walked into Caer Slige, put the greatsword on the champion's board, and left. Didn't fight again. They call him Red. His hair's as pale as any Markman's. It's not for the hair."
+- **A ring master at Caer Slige** (*The champion's board?*, while the title is not yours): "Finn's board, it was. Twenty-four bouts, nobody put him down. He left it, so it went to the next. Ask the old men about the raid. Don't ask them sober."
+- **A Markish innkeeper** (the rumour pool, any Markish town with a ring): "Red Finn drank here. Paid in silver and broke a table. Paid for the table. That's all I'll say."
+- **A Gatelander** (the rumour pool, a Gatelands port): "There's a Markman they call Red Finn that never lost a fight, and they say the one he couldn't win was with himself. That's a Markish way of losing. They do it alone."
+- **An Aurennais** (a Compact port): "The Markish champion? I am told he was undefeated, and then unemployed, which in the Mark is the more remarkable. There was an incident, Master. The free captains' accounts do not include it."
+- **Old Blood** (asked by an Old Blood player only, *Red Finn?*): "He came back with blood on him that was not his. He washed it. It stayed. The old word for that is *fuil fhada*, the long blood. You know it."
+- When you take the title, the master at Caer Slige: "Your name, on Finn's board. Iron keep it there."
+
+### 6. The watchers' barks
+
+Cosmetic, from the stands while a ladder bout or a brawl runs (`Math.random` is allowed: they change nothing), one at a time, one in five events at most, shown as the narrator shows a passer's line: *A voice from the stands: "{bark}"*
+
+- the bout opens: "Get in there!" · "Go on, then!" · "Two silver on the big one!"
+- a clean hit by you: "That's it!" · "Again!" · "Felt that from here."
+- a clean hit on you: "Get up!" · "Guard, you mule!" · "Ah, he's done."
+- a parry: "Iron on iron!" · "Did you see that?"
+- the yield: "Knee! Knee!" · "Let him up!"
+- the spare: "Good." · "That's the Mark." · "Up he gets."
+- after the yield, struck (the murder): no bark. *The stands go quiet.* (the narrator's line on main already says it).
+- your win: "That's the one!" · "Pay up, Wystan." · "Iron and blood!"
+- your loss: "Next time." · "Told you." · "Pay up."
+- the title: "Champion!" · "Iron and blood!"
+
+### What in the code would carry it
+
+- **`87-world-quests.js`**, the arena block (`ladderCall`, `ladderStake`, `takeBribe`, `reportFixer`, `titlePass`, `sparStart`, `sparEnd`, `brawlStart`, `brawlEnd`): a `RING_TALK` table with the lines above, read where each `say` and `showMsg` is now; the fighter's name through one function, `ringFighterName(id)` (the bank and `RING_BYNAMES`), used by `ladderFighter`, the challenger and `brawlStart`. The post's dead are cut by that name, so a save made before this lands keeps its *The fighter of bout {n}* until the next murder.
+- **The ring master and the trainer as people.** Today the gate and the rack take the call (`ringUse`, `yardRackUse`, `83-world-generator.js`, the comment there waits on "the quest writer's master"). The master and the trainer are `makeDef` people spawned at the ring's gate and the yard's rack (`S.ring.gate`, `Y.rack`), keyed `<site>:ringmaster` and `<site>:trainer` (co-op rules), with their topics; the gate's and the rack's E stay as they are for a player who would rather not talk. That spawn is the systems builder's (or the look builder's, for where they stand); the words are mine, built once it lands.
+- **Jora's yard**: one function, `joraSite()`, from `sitesNearFixed` on Caer Slige's site; her def `keepName`, `people:'markman'`, the topics in §4.
+- **The rumours** (§5) go in `liveRumours`' pool by the town's people and the ring's presence, as *Under Another Flag*'s rumours do.
+- **The barks** (§6) are a tick on the bout's events, cosmetic, never saved.
+- Nothing new in `worldState`: names roll on ids; `worldState.rings` already holds the dead.
+
+### Owed, and not drafted here
+
+- Whether Red Finn is ever met, and what the raid was, is *The strange and the legendary* (backlog L2). This draft leaves room: nobody knows.
+- The occupied League town's lost duels (§12) are *Under Another Flag*'s; the master's line there is the only one this draft adds.
