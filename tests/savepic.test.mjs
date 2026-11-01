@@ -26,6 +26,10 @@ const r = await page.evaluate(async () => {
   const oldRow = [...document.querySelectorAll('#sl-slots .sl-slot')].find(d => d.dataset.key === old.key); out.oldThumb = oldRow ? !!oldRow.querySelector('.sl-thumb') : 'no row';
   closeSLMenu(); SS.idx = SS.idx.filter(e => e !== old); ssSaveIndex();
   // export carries it; import brings it back as a second character
+  // every save of the character, its kind and whether it has a picture: a save the game wrote without one (ssShot gave none; "a picture
+  // lost is never a save lost") is named here, and the export is held to the pictures there are (weekly run 41305372499: 3 of 4 had one)
+  out.saves = ((ssChars().find(c => c.id === m.charId) || { saves: [] }).saves).map(e => ({ kind: e.kind, slot: e.slot, pic: e.pic || 0, ago: Math.round((Date.now() - e.ts) / 1000) }));
+  out.withPic = out.saves.filter(e => e.pic).length;
   let file = null; const D0 = ssDownload; ssDownload = (str) => { file = str; }; try { await ssExportChar(m.charId, false); } finally { ssDownload = D0; }
   const doc = JSON.parse(file); out.exported = doc.saves.filter(s => /^data:image\/jpeg/.test(s.pic || '')).length; out.exportedOf = doc.saves.length;
   const metas = await ssImportFiles([new File([file], 'x.json', { type: 'application/json' })]);
@@ -42,7 +46,7 @@ check('an autosave keeps one too', r.auto.pic === 1 && r.auto.has, r.auto);
 check('the save still loads', r.loads);
 check('the menu shows the picture on each row that has one', r.thumbs >= 2 && r.thumbsLoaded === r.thumbs, { thumbs: r.thumbs, loaded: r.thumbsLoaded });
 check('a save from before this build shows no picture', r.oldPic === null && r.oldThumb === false, { pic: r.oldPic, thumb: r.oldThumb });
-check('the character file carries each picture, and an import brings them back', r.exported === r.exportedOf && r.exported >= 2 && r.imported === r.exportedOf && r.importedPics === r.imported, { exported: r.exported, of: r.exportedOf, imported: r.imported, pics: r.importedPics });
+check(`the character file carries each picture (${r.withPic} of ${r.exportedOf} saves have one), and an import brings them back`, r.exported === r.withPic && r.exported >= 2 && r.imported === r.exportedOf && r.importedPics === r.exported, { exported: r.exported, of: r.exportedOf, withPic: r.withPic, imported: r.imported, pics: r.importedPics, saves: r.saves });
 check('deleting a save deletes its picture', r.afterDelete === null, r.afterDelete && r.afterDelete.slice(0, 30));
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
