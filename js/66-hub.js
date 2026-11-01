@@ -899,7 +899,7 @@ function renderHubMagic(){
   const ids=WORDS.filter(w=>knownWords[w.id]).map(w=>w.id),rank=Math.min(3,mageRank());
   const tierPips=t=>`<span class="mp-tier" title="${TIER_LABEL[t-1]||''}">${[1,2,3].map(k=>`<i class="${k<=t?(t>=3?'m':'f'):''}"></i>`).join('')}</span>`;
   if(!ids.length){
-    if(bar){bar.style.opacity='.55';bar.innerHTML=`<span style="font-style:italic">◯ No magic known — seek carved sigils in the deep places.</span>`;}
+    if(bar){bar.style.opacity='.55';bar.innerHTML=`<span style="font-style:italic">◯ No words known — they are carved in the walls of the old gates.</span>`;}
     grid.className='';grid.innerHTML='';return;}
   const cur=spellBook[bookSync()];
   if(bar){bar.style.opacity='1';bar.innerHTML=`Readied: <b id="spell-active-name">${cur?bookLineName(cur):'None'}</b> &nbsp;·&nbsp; <b style="color:#c8e88a">F</b> casts it &nbsp;·&nbsp; <b style="color:#c8e88a">1–8</b> readies a line of the book &nbsp;·&nbsp; ${MAGIC_RANKS[rank]} of the guild`;}
