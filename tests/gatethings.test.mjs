@@ -74,6 +74,14 @@ check('a web is a wall across its passage until burnWeb; then the way through is
 { const P = R.filter(r => r.pool).map(r => Object.assign({ gate: r.size + ' ' + r.seed }, r.pool));
   check(`a pool built (${P.map(p => `${p.gate}: ${p.R} m round, ${p.tris} tris in ${p.draws} draws`).join('; ')})`, P.length > 0 && P.every(p => p.tris < 1600 && p.draws === 2 && p.drawsIce === 2), P);
   check('a pool is solid as water, with a way round it; freezePool freezes it once, and its ice is a foothold 0.32 m up with nothing left to freeze', P.length > 0 && P.every(p => p.wet[0] && p.wet[1] && p.out && p.found && p.f1 && !p.f2 && p.dry && p.iceY === .32 && p.gone), P);
+  // S1682 — the kerb by the gate's condition: steady whole, failing two stones settled and leaning, catastrophic four and one split with a chip
+  const wear = await page.evaluate(() => { const p = GATE_THINGS.find(t => t.kind === 'pool'), v = new THREE.Vector3(), o = {};
+    for (const c of ['steady', 'failing', 'catastrophic']) { const g = gatePoolProp(p.id, p.R, c); let top = 0, tr = 0, dr = 0;
+      g.traverse(q => { if (!q.isMesh) return; dr++; const a = q.geometry.attributes.position; tr += (q.geometry.index ? q.geometry.index.count : a.count) / 3;
+        if (q.name === 'poolKerb') for (let k = 0; k < a.count; k++) { v.fromBufferAttribute(a, k); if (v.y > .2) top = Math.max(top, Math.hypot(v.x, v.z)); } });
+      o[c] = { wear: g.userData.wear, over: +(top - p.R).toFixed(3), tris: Math.round(tr), draws: dr }; }
+    o.same = JSON.stringify(gatePoolProp(p.id, p.R, 'catastrophic').children[0].geometry.attributes.position.array.slice(0, 60)) === JSON.stringify(gatePoolProp(p.id, p.R, 'catastrophic').children[0].geometry.attributes.position.array.slice(0, 60)); return o; });
+  check('a pool\'s kerb by its gate\'s condition: whole when steady, two stones leaning when failing, four and a split one when catastrophic, every top within 0.1 m of the rim, 2 draws', wear.steady.wear === 0 && wear.failing.wear === 2 && wear.catastrophic.wear === 4 && wear.same && ['steady', 'failing', 'catastrophic'].every(c => wear[c].over <= .1 && wear[c].draws === 2 && wear[c].tris < 1600), wear);
   check('a frozen pool is still a wall to a foe\'s step: walked at its middle, a foe stops off the ice, its rim or more away', P.every(p => p.foeWall && p.foeD >= p.R), P.map(p => [p.R, p.foeD])); }
 await enterDungeon(page, { theme: 'ruins', size: 'large', seed: 909 });
 const again = await page.evaluate(() => GATE_THINGS.map(t => t.id + (t.lit ? '*' : '')).join(','));
