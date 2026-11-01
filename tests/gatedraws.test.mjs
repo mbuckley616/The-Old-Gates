@@ -35,8 +35,9 @@ for (const [size, seed] of GATES) {
         const R0 = REN.render; REN.render = function (s, c) { hid = vis0.filter(o => !o.visible); return R0.call(this, s, c); }; try { dRender(dScene, CAM); } finally { REN.render = R0; }
         const b = grab(), d0 = diff(a, b); px0 = Math.max(px0, d0);
         // S1450: a view that differs names the piece: each piece the cull hid is hidden alone in the whole render, and the ones that
-        // change it were in view (CI's one miss, 0.001% at the large gate's threshold on 25 Oct, did not reproduce; the next one says who)
-        if (d0 > 0) for (const o of hid.slice(0, 80)) { o.visible = false; REN.render(dScene, CAM); const d1 = diff(a, grab()); o.visible = true; if (d1 > 0) { let skin = false; o.traverse(q => { if (q.isSkinnedMesh) skin = true; });
+        // change it were in view (CI's one miss, 0.001% at the large gate's threshold on 25 Oct, did not reproduce; the next one says who).
+        // S1689: every hidden piece, not the first 80: the web that was S1685's miss stood past 80 of 147
+        if (d0 > 0) for (const o of hid) { o.visible = false; REN.render(dScene, CAM); const d1 = diff(a, grab()); o.visible = true; if (d1 > 0) { let skin = false; o.traverse(q => { if (q.isSkinnedMesh) skin = true; });
           culprits.push({ where, h, px: +(d1 * 100).toFixed(4), type: o.type, name: o.name, kids: o.children.length, skin, at: [o.position.x, o.position.y, o.position.z].map(v => +v.toFixed(2)), zone: dZoneOf(o), dz: o._dz && [o._dz.ox, o._dz.oz, o._dz.rad].map(v => +v.toFixed(2)).concat(o._dz.multi), shown: [...(dZoneShown() || [])], cam: [+px.toFixed(2), +pz.toFixed(2)] }); } }
         // and the check can see: with every piece but the shell hidden, the same view changes
         const pcs = dScene.children.filter(o => o.visible && !o.isLight && !(o.userData && o.userData.dunShell)); pcs.forEach(o => o.visible = false); REN.render(dScene, CAM); propsSeen = Math.max(propsSeen, diff(a, grab())); pcs.forEach(o => o.visible = true);
