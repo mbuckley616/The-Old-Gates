@@ -5,6 +5,10 @@
 // than two draws (the rope and the earth; the stakes, rack and bench are the halls' own wood).
 import { boot, check } from './lib/game.mjs';
 const g = await boot({ look: 'new' }); const { page } = g; await g.intoWorld();
+// S1696 — the suite settles seven Markish towns, and on software GL each town's frames are its cost (the first at c3_1_s7 took 38 s at
+// 1280×720, then 1.8 s a frame): on a slow runner it ran past run.mjs's 900 s twice. Nothing here reads the game's pixels (the post's
+// names are read from their own 2D canvas), so the game draws into a quarter of the buffer: 15 s, then 0.85 s a frame.
+await page.evaluate(() => REN.setSize(320, 180, false));
 const id = await page.evaluate(() => { anchoredPlaces(); const S = [...CELLS.values()].filter(c => c.type !== 'sea' && nationKeyOf(c.i, c.j) === 'mark').flatMap(c => c.sites); return (S.find(s => s.kind === 'town') || {}).id; });
 check(`a Markish town (${id}) stands`, !!id && await g.settle(id));
 const r = await page.evaluate(id => {
