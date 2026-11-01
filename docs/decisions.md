@@ -3,6 +3,15 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### Small wrongnesses — how loud is the wrongness? (from the concept artist, 2026-11-01, #1005)
+Backlog L5 (OG-096). The concept artist prototyped three world details beside one Gatelands lane in the new look: the Weaver door (the gate kit's arch at half size, alone in a pasture, 722 triangles), the watcher (the grey wolf sitting on a rise among three grazing sheep) and the carving (a 2.25 m stele, an adventurer in relief with four carvers turned away). The shapes are the same in every option. The question: how strong should the wrongness be?
+
+- **A.** Plain: no impossible element; each is odd only for where it stands and what it does.
+- **B (recommended).** One impossible element each, nothing lit: the door stands 0.14 m clear of the grass, the wolf casts no shadow while the sheep do, the adventurer is freshly cut in a worn stone. Found only by looking.
+- **C.** B plus a faint light that draws the eye: the door's script burns low amber, the wolf's eyes shine, the fresh cut glows pale. Each becomes a thing to find and could carry a journal line.
+
+Pictures: [A, B and C](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/wrongness-options.jpg) · [the lane](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/wrongness-wide.jpg). Write-up in `docs/concepts.md`.
+
 ### The dungeon's cell by kind: old gates at 3 m, and forts and lairs at what? (systems builder, Session 1105) — DECISION #421
 **The question.** F2b's last session sets a dungeon's grid cell at true scale; it is one unit today, so corridors are 1 m wide for a 1.8 m body. Michael chose **C, 3 m** on #300 and added: "If by dungeon we mean Old Gates, they should be extremely massive and cavernous. A normal 'dungeon' like a mine, or a cave can be a more typical size." The game has three kinds of underground place: the **old gates** (the world's portals, themed by school: crypts, haunted halls, elemental and deep caverns, ruins), **fort interiors** (the `fort_` layouts), and **lairs and dens** (a beast's lair, the cloak's den). So the cell can differ by kind, and "a more typical size" is a number a player feels.
 
