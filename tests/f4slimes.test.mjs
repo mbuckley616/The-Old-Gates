@@ -4,7 +4,7 @@
 // onto it about the floor; the tell's glow on its hide; a dead one never dressed; killed, darkened with its shaders kept; the split's
 // two Small Slimes dressed too. Picture: docs/prototypes/f4/f4-slimes.jpg (the kit's and the old, side by side).
 // Session 1630: killed, it slumps where it lay as a jelly, upright, squashed and spread; f4-slime-dead.jpg.
-// Session 1684: the split's two Small Slimes fall either side of it, clear of the puddle, never in a wall.
+// Session 1686: the split's two Small Slimes fall either side of it, clear of the puddle, never in a wall.
 // Session 1631: killed, the Fire Elemental gutters out, upright, sunk, its flames dark; f4-elemental-dead.jpg.
 // Session 1593: the Fire Elemental in the same gate wears the kit's `fireelemental`, fitted by its height; f4-elemental.jpg.
 import { boot, check, ROOT } from './lib/game.mjs';
@@ -89,7 +89,7 @@ const pud = await page.evaluate(() => { const R = _R, S = _S, m = S.mesh, f = R.
 console.log('  puddle:', JSON.stringify(pud));
 check(`killed, it slumps upright on the floor (squashed to ${pud.sy}, spread to ${pud.sx}, ${pud.half} at 0.1 s), not on its side; the old blob with it`,
   pud.rotZ === 0 && Math.abs(pud.y - pud.baseY) < 1e-3 && pud.sy === .28 && pud.sx === 1.3 && pud.half < 1 && pud.half > .28 && Math.abs(pud.foot) < .03 && pud.far === .28 && pud.farL === 2, pud);
-// Session 1684: the split's two fall either side of the slime, clear of its puddle (0.65 × its size + 0.3), one bearing from its roll, never in
+// Session 1686: the split's two fall either side of the slime, clear of its puddle (0.65 × its size + 0.3), one bearing from its roll, never in
 // a wall: they fell within 0.6 m of it in each axis and one sat on the puddle (the critic, 31 Oct). Beside a wall the bearing turns; the same roll, the same spots.
 const split = await page.evaluate(() => { const S = _S, kids = ENEMIES.filter(e => e.name === 'Small Slime' && e.id && e.id.startsWith(S.id + ':s'));
   const d = kids.map(k => +Math.hypot(k.x - S.x, k.z - S.z).toFixed(3)), sep = kids.length === 2 ? +Math.hypot(kids[0].x - kids[1].x, kids[0].z - kids[1].z).toFixed(3) : 0;

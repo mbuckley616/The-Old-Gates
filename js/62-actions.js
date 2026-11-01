@@ -305,7 +305,7 @@ function killE(e,tag=''){
     showMsg(`The Slime splits!`, '#88ff88');
   }
 }
-// S1684 — the split's two fall either side of the slain slime, clear of its puddle (S1630: 1.3 its width, so 0.65 × its size
+// S1686 — the split's two fall either side of the slain slime, clear of its puddle (S1630: 1.3 its width, so 0.65 × its size
 // from its middle), with a Small Slime's 0.21 and a hand's breadth more: 0.755 m at the Slime's 0.7. They fell within 0.6 m in
 // each axis on the corpse, so one sat on the puddle and hid the slump (the critic, 31 Oct). One bearing from the slime's own roll
 // (co-op rules); a side in a wall, a pool or a chasm's air turns the bearing by 45° until both stand clear, then comes in to
