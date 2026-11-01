@@ -24,21 +24,21 @@ check(`${id}'s Fighters' Guild has its yard: a ${r.r} m ring, ${r.tris} triangle
 check(`its ground falls ${r.fall} m across it, ${r.road > 1e8 ? 'no road near it' : 'the nearest road ' + r.road + ' m off its edge'}, no tree in it (${r.trees})`, r.fall < 1.6 && r.road >= 1.4 && r.trees === 0, r);
 check('the rack is solid and the ring is open', r.rackSolid && r.ringOpen, r);
 check(`it adds at most two materials to the town's kit (${r.newMats}: the rope and the earth)`, r.inKit && r.newMats <= 2, r);
-// S1690 — the yard's rack by the hour: a staff by day (the spar), and from 18h to 22h the evening's brawl in the same ring, its stake by
+// S1691 — the yard's rack by the hour: a staff by day (the spar), and from 18h to 22h the evening's brawl in the same ring, its stake by
 // the town's tier taken when it is called (brawlStart, S1644).
 const yb = await page.evaluate(id => {
   const Y = WORLD.settle.get(id).yards[0]; const A = arenaState(); A.brawl = {}; A.banUntil = 0; gold = 1000;
   px = Y.rack.x + (Y.rack.x - Y.x) / 5.1 * 1.1; pz = Y.rack.z + (Y.rack.z - Y.z) / 5.1 * 1.1;
-  forceTime(10); const day = yardRackPrompt(); forceTime(20); const eve = yardRackPrompt(), g0 = gold; yardRackUse();
+  forceTime(10); const day = yardRackPrompt(); forceTime(20); const eve = yardRackPrompt(), g0 = gold; yardRackUse(); const inRing = yardRackPrompt();
   const B = BRAWL ? { at: +Math.hypot(BRAWL.x - Y.x, BRAWL.z - Y.z).toFixed(3), site: BRAWL.site, stake: BRAWL.stake, paid: g0 - gold, inBout: !!BOUT, spar: !!SPAR } : null;
   if (BRAWL) brawlEnd('off'); const back = gold; yardRackUse(); const again = !BRAWL;
   forceTime(23); const late = yardRackPrompt(); yardRackUse(); const shut = !BRAWL && !SPAR;
-  return { day, eve, B, back, again, late, shut, site: Y.site, tier: worldTierAt(Y.x, Y.z) };
+  return { day, eve, inRing, B, back, again, late, shut, site: Y.site, tier: worldTierAt(Y.x, Y.z) };
 }, id);
 console.log('yard brawl', JSON.stringify(yb));
 check(`the rack offers a staff by day (*${yb.day}*) and the brawl at 20h (*${yb.eve}*)`, /staff/.test(yb.day) && /brawl/.test(yb.eve) && new RegExp(String(yb.B && yb.B.stake)).test(yb.eve), yb);
-check(`E at 20h calls the brawl in the yard's own ring (${yb.B && yb.B.at} m from its centre), ${yb.B && yb.B.paid} gold staked at tier ${yb.tier}; called off, it comes back (${yb.back}); one a night (${yb.again}); at 23h nothing starts (${yb.shut})`,
-  !!yb.B && yb.B.at < .01 && yb.B.site === yb.site && yb.B.inBout && !yb.B.spar && yb.B.paid === yb.B.stake && yb.B.stake === 50 + 50 * (Math.max(1, yb.tier) - 1) && yb.back === 1000 && yb.again && /staff/.test(yb.late) && yb.shut, yb);
+check(`E at 20h calls the brawl in the yard's own ring (${yb.B && yb.B.at} m from its centre), ${yb.B && yb.B.paid} gold staked at tier ${yb.tier}; called off, it comes back (${yb.back}); one a night (${yb.again}); in the ring the rack offers nothing (${yb.inRing}); at 23h it offers nothing (${yb.late}) and nothing starts (${yb.shut})`,
+  !!yb.B && yb.B.at < .01 && yb.B.site === yb.site && yb.B.inBout && !yb.B.spar && yb.B.paid === yb.B.stake && yb.B.stake === 50 + 50 * (Math.max(1, yb.tier) - 1) && yb.back === 1000 && yb.again && yb.inRing === null && yb.late === null && yb.shut, yb);
 // S1658 — the ladder's ring (arenas-build.md session 2): at every ladder site (Caer Slige, the Mark's cities, its largest towns to four), an
 // 8 m rope ring with stands and the post, outside the walls on ground that falls under 1.6 m, no road or tree in it, the ring open and
 // the stands and post solid, in no material the yard and the halls lack; its gate takes the ring master's call and its post reads the names.

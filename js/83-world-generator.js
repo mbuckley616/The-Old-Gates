@@ -1119,10 +1119,13 @@
   function yardAt(x,z){for(const S of SETTLE.values())for(const Y of S.yards||[])if(Math.hypot(x-Y.x,z-Y.z)<Y.r+2.5)return Y;return null;}
   function yardRackNear(){if(activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior())||typeof sparStart!=='function')return null;
     for(const S of SETTLE.values())for(const Y of S.yards||[])if(Math.hypot(px-Y.rack.x,pz-Y.rack.z)<1.6)return Y;return null;}
-  // S1690 — from 18h to 22h the same spot calls the evening's brawl (brawlStart, S1644: fists, the stake by the town's tier, one a
-  // night), in the same 5 m ring; until the quest writer's barker stands there, the rack takes the call, as the ring's gate does.
+  // S1691 — from 18h to 22h the same spot calls the evening's brawl (brawlStart, S1644: fists, the stake by the town's tier, one a
+  // night), in the same 5 m ring; until the quest writer's barker stands there, the rack takes the call, as the ring's gate does. The prompt
+  // shows only when E can give what it says: not in a ring, and not from 22h to 8h.
   function yardBrawlHour(){return typeof brawlStart==='function'&&typeof brawlOpen==='function'&&brawlOpen();}
   function yardRackPrompt(){const Y=yardRackNear();if(!Y)return null;
+    if((typeof SPAR!=='undefined'&&SPAR)||(typeof BOUT!=='undefined'&&BOUT)||(typeof BRAWL!=='undefined'&&BRAWL))return null; /* in the ring already: nothing to offer (the critic, 1 Nov) */
+    if(!yardBrawlHour()&&typeof sparOpen==='function'&&!sparOpen())return null; /* 22h to 8h: E still answers that the yard is shut */
     return yardBrawlHour()?`Press 'E' to call a brawl: ${brawlStake(worldTierAt(Y.x,Y.z))} gold a side, fists`:"Press 'E' to take a staff from the rack";}
   function yardRackUse(){const Y=yardRackNear();if(!Y)return false;const o={x:Y.x,z:Y.z,site:Y.site};const R=yardBrawlHour()?brawlStart(o):sparStart(o);if(R&&R.say)showMsg(R.say,'#e8d8a0');return true;}
   // S1658 — the ladder's rings (genSettlement's S.ring): the ring's gate, where the ring master takes your call (ladderCall, 8h–17h, by
@@ -2619,9 +2622,9 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   // ceiling, open in an oculus into the drum and the painted dome; the bier of the dead under it, the benches by the door, the altar on
   // the sanctuary under the gilt shuttle. The shell is the street's church (one stream, by the town), drawn in metres and moved into the
   // room's frame as the tavern is (nothing scaled). The priest keeps his vigil between the sanctuary's step and the bier's head.
-  function kitChurchHall(house){return !!(house&&house.type==='church'&&house.kit&&house.kit.kind==='aurchurch'&&window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.au&&PKIT.au.churchHall);}
+  function kitChurchHall(house){return !!(house&&house.type==='church'&&house.kit&&(house.kit.kind==='aurchurch'||house.kit.kind==='aurchapel')&&window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.au&&PKIT.au.churchHall);}
   function buildKitChurchHall(house){
-    const T=PKIT.au.churchHall({shell:`${house.siteId}:church`},PKIT.stream(house.id+':churchhall')),I=T.inner,X=I.x1,Z=I.z1,F0=T.floor,W=2*X,D=2*Z,Ci=PKIT.au.churchBox({rank:'town',w:14,tower:1}).inner;
+    const O=(house.kit.kind==='aurchapel'&&house.kit.o)||{rank:'town',w:14,tower:1},T=PKIT.au.churchHall(Object.assign({shell:`${house.siteId}:church`},O),PKIT.stream(house.id+':churchhall')),I=T.inner,X=I.x1,Z=I.z1,F0=T.floor,W=2*X,D=2*Z,Ci=PKIT.au.churchBox(O).inner; /* S1690 — a village's chapel (AU_VCH, S1485) is the same room at its own 12 m */
     const rx=x=>x+X,rz=z=>z+Z,ry=y=>y-F0;
     house._counterFront=null;house.intW=W;house.intD=D;house._roomH=+(T.ceil-F0).toFixed(3);house._exitD=.8;house._exitW=1.3;house._exitX=+rx(T.door.x).toFixed(3);house._churchHall=T;
     const sc_=new THREE.Scene();interiorScene=sc_;landRoomPost(sc_);sc_.background=new THREE.Color(0x0e0c0a);sc_.fog=new THREE.Fog(0x0e0c0a,Math.max(W,D)*1.2*SCALE.ROOM_K,Math.max(W,D)*3*SCALE.ROOM_K);
