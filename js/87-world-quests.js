@@ -301,6 +301,7 @@ const giver=`${lord.title} ${lord.name}`;
   function qTick(){
     for(const q of qActive()){if(q.done)continue;
       if(q.kind==='errand'&&q.sub==='letter'){erLetterTick(q);continue;} /* S1554 */
+      if(q.kind==='errand'&&q.sub==='debt'){erDebtTick(q);continue;} /* S1677 */
       if(q.kind==='retrieve'&&q.data.fixed&&!q.data.got&&dungeonWorldPos[q.data.seed]){const w=dungeonWorldPos[q.data.seed];q.data.fixed=false;q.data.x=w.x+7;q.data.z=w.z+5; /* S985 — the job was given before its gate was placed: the thing lies by the real door */
         if(q._obj){const y=worldH(q.data.x,q.data.z)+.2;q._obj.m.position.set(q.data.x,y,q.data.z);q._obj.l.position.copy(q._obj.m.position);const pk=pickups.find(o=>o.id===q.id+':pickup');if(pk){pk.x=q.data.x;pk.z=q.data.z;}}}
       if(q.kind==='retrieve'&&!q.data.got&&!q._obj){const m=new THREE.Mesh(new THREE.BoxGeometry(.5,.4,.5),new THREE.MeshLambertMaterial({color:0xc8a040}));m.position.set(q.data.x,worldH(q.data.x,q.data.z)+.2,q.data.z);sc.add(m);const l=regLight(0xffd080,.8,5,'quest');l.position.copy(m.position);q._obj={m,l};pickups.push({id:q.id+':pickup',x:q.data.x,z:q.data.z,quest:q});} /* S518 — a quest's pickup is <quest id>:pickup (co-op rules) */
@@ -805,6 +806,8 @@ const giver=`${lord.title} ${lord.name}`;
     markman:{no:"Aye. Someone else, then.",notYet:"Not done, then. Off you go.",yes:"Good. Go."},
     aurennais:{no:"Of course, Master. The offer stands until it is taken up elsewhere.",notYet:"When it is done, Master, and not before. The terms are as they were.",yes:"Then we are agreed, Master."},
     oldblood:{no:"Then not.",notYet:"Not yet.",yes:"Go."}};
+  const ER_DONE={gatelander:"Weaver keep you. That's off my mind, and here's for your trouble.",markman:"Good. Here. We're square.",
+    aurennais:"Done as agreed, Master. Your fee, and my thanks besides.",oldblood:"Good. Take this."}; /* S1677 — the frame's *Done, paid* */
   const ER_NUM=['','one','two','three','four'];
   const ER_HERB={silverleaf:'trees',coldmoss:'rocks',ashwort:'rocks',goldenrod:'roadside'};
   const ER_FEVER={
@@ -855,6 +858,27 @@ const giver=`${lord.title} ${lord.name}`;
     done:{gatelander:o=>`Then ${o.who}'s in the stone, and the stone's holding. Weaver keep ${o.him}. Here, take the bread at least, and this.`,
       markman:()=>"Good. Done, then. I owe you a drink. Collect it.",aurennais:()=>"Then it is properly done, Master, by the Church and by the family both. Your fee."},
     oldblood:"We bury ours in the ground. Not at the doors. My grandmother would not say why. I do not either."};
+  // S1677 — errand 5, *The Debt*: o is the errand (who, town, dir, n, goods). The debtor speaks in the debtor's own people's words.
+  const ER_DEBT_TRADES=new Set(['innkeeper','trader','smith','cooper','carter']);
+  const ER_DEBT_GOODS={innkeeper:'a winter’s drink and board',trader:'salt and cloth',smith:'a plough-iron and the shoeing',cooper:'a dozen barrels',carter:'the carriage of a harvest'};
+  const ER_DEBT={
+    hint:{gatelander:"There's money owed me that'll never walk here on its own.",markman:"Someone owes me. Annoys me more than the money.",
+      aurennais:"There is an account outstanding, Master, that I would like to close.",oldblood:"I am owed."},
+    offer:{gatelander:o=>`${o.who}, in ${o.town}. ${o.n} gold, for ${o.goods}, since the spring. A debt's like a stone in the shoe: no weight at all, and you feel it every step. Get it from them and a fifth of it's yours.`,
+      markman:o=>`${o.who}. ${o.town}, ${o.dir}. Owes me ${o.n}. Get it. You keep a fifth.`,
+      aurennais:o=>`${o.who}, of ${o.town}, owes this house ${o.n} gold, Master, against ${o.goods}. The note is here, witnessed. Collect it and a fifth is your commission; it is the standard rate.`,
+      oldblood:o=>`${o.who}. ${o.town}. ${o.n} gold. A fifth is yours.`},
+    debtor:{gatelander:o=>`I know. I know it. The barley came up black this year and the ${o.n} is the seed for next. If I give it you, there's no next. But it's theirs, and I'll not say it's not.`,
+      markman:()=>"Aye. I owe it. Boat went down in the strait. Got this much left. Take it if you're taking it.",
+      aurennais:()=>"I acknowledge the debt, Master, and the note. My father is ill and the physician's account came first. I can pay it; I cannot pay it and him.",
+      oldblood:()=>"I owe it. I have it. I need it."},
+    pay:{gatelander:"There. And may it do them more good than it'd have done me.",markman:"There. Go.",aurennais:"Paid, Master. Witnessed, if they want it witnessed.",oldblood:"There."},
+    paid:{gatelander:"Why would you — no, don't tell me, I'd only argue. Weaver keep you, stranger.",markman:"Why? …Never mind. Aye. Thanks.",
+      aurennais:"I am in your debt now, Master, and I do not know the terms. I will find them out.",oldblood:"I will remember the face.",oldbloodToOld:"I will try to remember the face."},
+    spared:{gatelander:"Tell them I'll pay at the harvest, so, and it'll be true.",markman:"Aye. Owe you one, then.",
+      aurennais:"Then I owe you a discretion, Master. It is the dearer debt.",oldblood:"Good."}, /* S1677 — the debtor's answer to *Keep it*, which the draft left unwritten */
+    keep:{gatelander:"Haven't, or won't? No, don't answer that. I'll write it off, and I'll not be lending there again.",markman:"Then I'll go myself.",
+      aurennais:"Then the note stands, Master, and I will put it in the hands of someone less sentimental.",oldblood:"Then they have not."}};
   function erPro(o){const f=!!o.fem;return Object.assign({},o,{she:f?'she':'he',he:f?'she':'he',her:f?'her':'him',him:f?'her':'him',his:f?'her':'his'});}
   function erCap(s){return s.charAt(0).toUpperCase()+s.slice(1);}
   function erPeople(def){return ER_SHARED[def.people]?def.people:'gatelander';}
@@ -873,6 +897,7 @@ const giver=`${lord.title} ${lord.name}`;
     {const L=erLetterAgain(R,wk);if(L)return L;}
     const r=seededRng('errand',site.id+':'+erTag(def)+':'+wk);if(r()>=.2)return null;
     {const N=erNameRoll(def,site,wk,R.length);if(N)return N;}
+    {const D=erDebtRoll(def,site,wk,R.length);if(D)return D;} /* S1677 — the debt, on its own stream */
     {const s=seededRng('errand-sub',site.id+':'+erTag(def)+':'+wk),kids=def.bio.kids>0,pref=def.bio.wish==='to hear from my daughter'||def.bio.worry==='my brother went for a soldier and never wrote'; /* S1554 — the sub on its own stream, so a fever's herb, count and date roll as before */
       if(pref||!kids||s()<.5){const L=erLetter(def,site,s,wk,R.length);if(L||!kids)return L;}}
     const n=2+Math.floor(r()*3),days=3+Math.floor(r()*3),H=erHerb(site,r),day=Math.floor((worldState.gameTimeAbsMinutes||0)/1440);
@@ -909,6 +934,36 @@ const giver=`${lord.title} ${lord.name}`;
     addLog('🕯',line);qJournal(q,'ready',line);const S=worldState.story,V=worldState.varek;
     showMsg(line,'#e8d8a0');d.felt=playerPeople()==='oldblood'||!!(S&&S.choice)||!!(V&&V.done&&Object.keys(V.done).length);
     if(d.felt)setTimeout(()=>showMsg('The stone is warm under your hand. Then it is not.','#a8b8c8'),2400);return true;}
+  // S1677 — the debt: a giver of the trades that give credit (innkeeper, trader, smith, cooper, carter), or any Aurennais giver,
+  // one errand in three of the week's on its own stream (a letter the giver's bio asks for comes first); a town of 45 pad or more
+  // within 700; the debtor named from that town's people's bank and spawned at a resident's door, as the letter's addressee is.
+  function erDebtRoll(def,site,wk,idx){const p=erPeople(def);if(!ER_DEBT_TRADES.has(def.bio.trade)&&p!=='aurennais')return null;
+    if(def.bio.wish==='to hear from my daughter'||def.bio.worry==='my brother went for a soldier and never wrote')return null;
+    const s=seededRng('errand-debt',site.id+':'+erTag(def)+':'+wk);if(s()>=1/3)return null;
+    const others=sitesNearFixed(site,700).filter(t=>t.pad>=45&&t.kind!=='portal'&&t.id!==site.id);if(!others.length)return null;
+    const t=others[Math.floor(s()*Math.min(4,others.length))],dp=peopleOfNpc(t,s),fem=s()<.5,bank=NAMES[(PEOPLES[dp]||{}).names]||NAMES.irish;
+    let who=pick(s,fem?bank.f:bank.m);if(who===def.name)who=pick(s,fem?bank.f:bank.m);
+    const tier=Math.max(1,worldTierAt(site.x,site.z)||1),n=Math.min(80,30+12*(tier-1)+Math.floor(s()*10));
+    return {sub:'debt',who,fem,dp,n,goods:ER_DEBT_GOODS[def.bio.trade]||'goods supplied',town:t.name,siteId:t.id,tx:t.x,tz:t.z,dir:compassWord(t.x-site.x,t.z-site.z),week:wk,idx};}
+  // the debtor's door: once you come near the town, at a resident's door, with the one topic and its three answers
+  function erDebtTick(q){const d=q.data;if(q._npc||d.choice)return;if(Math.hypot(px-d.x,pz-d.z)>160)return;
+    const S=SETTLE.get(d.siteId),site=siteAnywhere(d.siteId);if(!S||!site)return;const doors=(S.residents||[]).filter(R=>R.door);if(!doors.length)return;
+    const R=doors[Math.floor(seededRng('errand-door',q.id)()*doors.length)],x=R.door.x+.8,z=R.door.z+.8;
+    const def=makeDef(site,site.reg||'irish',seededRng('errand-debtor',q.id),'Villager',d.who,{x,z,keepName:true,people:d.dp,topics:[erDebtTopic(q.id)]});def._erDebt=q.id;
+    const n=spawnNPC(def,R.ry||0,true);n.sched={type:'lost'};n.g.position.set(x,worldH(x,z),z);q._npc=n;}
+  function erDebtTopic(id){const live=()=>qActive().find(x=>x.id===id);
+    return {quest:true,avail:()=>{const q=live();return !!q&&!q.data.choice;},get label(){const q=live();return `${q?q.giver:'They'} sent me about the money.`;},
+      get response(){const q=live();return q?ER_DEBT.debtor[q.data.dp](q.data):'';},
+      get follow(){const q=live();if(!q)return [];const dp=q.data.dp,n=q.data.n;return [
+        {label:'Pay it. It’s owed.',fn:()=>erDebtChoose(id,'pay')||ER_DEBT.pay[dp]},
+        {label:'I’ll pay it for you.',fn:()=>gold<n?`You have not got ${n} gold.`:(erDebtChoose(id,'payfor')||(dp==='oldblood'&&playerPeople()==='oldblood'?ER_DEBT.paid.oldbloodToOld:ER_DEBT.paid[dp]))},
+        {label:'Keep it. I’ll tell them something.',fn:()=>erDebtChoose(id,'keep')||ER_DEBT.spared[dp]}];}};}
+  // the choice at the debtor's door: the debtor's town's favour now, the giver's at the turn-in (errandTurnIn)
+  function erDebtChoose(id,choice){const q=qActive().find(x=>x.id===id);if(!q||q.data.choice)return null;const d=q.data;d.choice=choice;
+    if(choice==='payfor'){gold-=d.n;updateHUD();}
+    addFavor(d.siteId,choice==='pay'?-1:choice==='payfor'?2:1);
+    qJournal(q,'ready',choice==='pay'?`${d.who} paid the ${d.n} gold. Carry it back to ${q.giver}.`:choice==='payfor'?`You paid ${d.who}'s ${d.n} gold yourself. ${q.giver} need not know.`:`You left ${d.who} the ${d.n} gold. ${q.giver} will want to hear something.`);
+    return null;}
   function erLapse(q){if(!q||q.kind!=='errand'||q.turnedIn||!q.erDue||(worldState.gameTimeAbsMinutes||0)<q.erDue)return false;
     q.turnedIn=true;q.lapsed=true;q.erUnsaid=true;qJournal(q,'lapsed',`The date passed, and the fever in ${q.giver}'s house broke without the ${q.data.herb}.`);return true;}
   function errandAccept(def,site,E){const p=erPeople(def),tier=Math.max(1,worldTierAt(site.x,site.z)||1),base=Math.min(40,15+5*(tier-1));
@@ -921,6 +976,10 @@ const giver=`${lord.title} ${lord.name}`;
         title:`A name at ${E.gate}`,desc:`${def.name} of ${site.name} buried ${E.who}, and wants the name said at the door of ${E.gate}, the old custom.`,
         objective:`Say ${E.who}'s name at the door of ${E.gate}, ${E.dir} of ${site.name}`,reward:p==='gatelander'?10:p==='aurennais'?base:0,
         data:{x:E.gx,z:E.gz,seed:E.seed,gate:E.gate,dir:E.dir,who:E.who,fem:E.fem,after:!!E.after,said:false}});return ER_SHARED[p].yes;} /* S1600 — the pay is the draft's: a Gatelander's bread and 10 gold, an Aurennais the fee, a Markman a drink owed */
+    if(E.sub==='debt'){qAdd({id:erPre(def,site)+E.idx,kind:'errand',sub:'debt',giver:def.name,erSite:site.id,week:E.week,erPeople:p,
+        title:`${E.who}'s debt`,desc:`${E.who} of ${E.town} owes ${def.name} of ${site.name} ${E.n} gold, for ${E.goods}. Collect it, and a fifth is yours.`,
+        objective:`Collect ${E.n} gold from ${E.who} at ${E.town}, ${E.dir} of ${site.name}`,reward:Math.round(E.n/5),
+        data:{x:E.tx,z:E.tz,siteId:E.siteId,town:E.town,dir:E.dir,who:E.who,fem:E.fem,dp:E.dp,n:E.n,goods:E.goods,choice:null}});return ER_SHARED[p].yes;} /* S1677 */
     const q={id:erPre(def,site)+E.idx,kind:'errand',sub:E.sub,giver:def.name,erSite:site.id,week:E.week,erDue:E.due,erPeople:p,
       title:`${E.herb} for a fever`,desc:`${def.name} of ${site.name} wants ${E.nw} ${E.herb} for a fever in the house, before ${E.date}.`,
       objective:`Bring ${E.nw} ${E.herb} to ${def.name} at ${site.name} before ${E.date}`,reward:Math.round(base*1.25),data:{x:site.x,z:site.z,herb:E.herb,n:E.n}};
@@ -929,6 +988,8 @@ const giver=`${lord.title} ${lord.name}`;
     if(q.sub==='letter')return ER_SHARED[p].notYet;
     if(q.sub==='name'){if(!q.data.said)return ER_SHARED[p].notYet;qTurnIn(q);addFavor(site,1);if(p==='gatelander')bagAdd({name:'Loaf of Bread',ico:'🍞',type:'misc',weight:.4,buyPrice:2,sellMult:.3,qty:1});
       return ER_NAME.done[p](erPro(q.data));} /* S1600 */
+    if(q.sub==='debt'){const c=q.data.choice;if(!c)return ER_SHARED[p].notYet;if(q._npc){duelRemoveNpc(q._npc);q._npc=null;}
+      if(c==='keep'){q.reward=0;qTurnIn(q);addFavor(site,-1);return ER_DEBT.keep[p];}qTurnIn(q);addFavor(site,1);return ER_DONE[p];} /* S1677 — the debt: a fifth, paid as if collected either way */
     if(q.lapsed||erLapse(q)){q.erUnsaid=false;return ER_FEVER.lapse[p];}
     const isH=b=>b.type==='herb'&&b.name===q.data.herb;if(bagCount(isH)<q.data.n)return ER_SHARED[p].notYet;
     bagTake(isH,q.data.n);qTurnIn(q);addFavor(site,1);return ER_FEVER.done[p];}
@@ -960,17 +1021,17 @@ const giver=`${lord.title} ${lord.name}`;
   function erNameAsk(def,site,E){const p=erPeople(def),label='Can I do anything for you?';if(E.oldblood)return {cat:'you',label,response:ER_NAME.oldblood};
     return {cat:'you',label,response:ER_NAME.offer[p](erPro(E)),follow:[{label:'I’ll do it.',fn:()=>erRecs(def,site).some(q=>!q.turnedIn)?ER_SHARED[p].notYet:errandAccept(def,site,E)},{label:'Not now.',response:ER_SHARED[p].no}]};}
   function errandAsk(def,site){const E=errandFor(def,site);if(!E)return null;const p=erPeople(def);if(E.sub==='name')return erNameAsk(def,site,E); /* S1600 */
-    const L=E.sub==='letter',label=L?'You’re waiting on word from someone?':'Who’s sick?',said=L?ER_LETTER.offer[p](erPro(E)):ER_FEVER.offer[p](E);
+    const L=E.sub==='letter',D=E.sub==='debt',label=D?'Who owes you?':L?'You’re waiting on word from someone?':'Who’s sick?',said=D?ER_DEBT.offer[p](E):L?ER_LETTER.offer[p](erPro(E)):ER_FEVER.offer[p](E);
     return {cat:'you',label,response:said,follow:[{label:'I’ll do it.',fn:()=>errandFor(def,site)?errandAccept(def,site,E):ER_SHARED[p].no},{label:'Not now.',response:ER_SHARED[p].no}]};}
   // the top level: *About that errand.* while one is open, or once more to hear how a lapsed one ended; the letter's own lines
   function errandTopics(def,site){const L=erLetterTopics(def,site);if(!erGiver(def,site))return L;const q=erRecs(def,site).find(q=>!q.turnedIn||(q.lapsed&&q.erUnsaid));
     if(!q||(q.sub==='letter'&&q.data.learned))return L;
-    return [{label:q.sub==='name'&&q.data.said?'I said the name.':'About that errand.',quest:true,fn:()=>errandTurnIn(q,site)},...L];}
+    return [{label:q.sub==='name'&&q.data.said?'I said the name.':q.sub==='debt'&&q.data.choice==='keep'?'They haven’t got it.':'About that errand.',quest:true,fn:()=>errandTurnIn(q,site)},...L];}
   // the greeting: the hint after First Words while an errand is on offer (from the second meeting), or for a week after a lapse the colder line;
   // after a letter lied about, from the next game-week, one week in two the waiting line, until the giver writes again
   function errandGreet(def,site){if(!erGiver(def,site))return null;const met=metCount(metKey(def,site));const line=firstWords(def,site);
     const now=worldState.gameTimeAbsMinutes||0,R=erRecs(def,site),cold=met>0&&R.some(q=>q.lapsed&&now<q.erDue+1440*7);if(cold)return ER_FEVER.cold[erPeople(def)];
-    const E=met>0&&errandFor(def,site);if(E){if(E.sub==='name')return E.oldblood?line:line+' '+ER_NAME.hint[erPeople(def)](erPro(E));return line+' '+(E.sub==='letter'?ER_LETTER.hint:ER_FEVER.hint)[erPeople(def)];} /* S1600 — the name's hint; none for the Old Blood */
+    const E=met>0&&errandFor(def,site);if(E){if(E.sub==='name')return E.oldblood?line:line+' '+ER_NAME.hint[erPeople(def)](erPro(E));return line+' '+(E.sub==='debt'?ER_DEBT.hint:E.sub==='letter'?ER_LETTER.hint:ER_FEVER.hint)[erPeople(def)];} /* S1600 — the name's hint; none for the Old Blood */
     const lq=R.filter(q=>q.sub==='letter').pop(),wk=erWeek();
     if(met>0&&lq&&lq.turnedIn&&lq.data.told==='lie'&&wk>lq.data.toldWeek&&seededRng('errand-wait',erPre(def,site)+wk)()<.5)return ER_LETTER.wait[erPeople(def)](erPro(lq.data));
     return line;}

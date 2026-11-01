@@ -132,8 +132,44 @@ for (const pp of ['gatelander', 'aurennais', 'markman']) { const x = n4.by && n4
   check(`name (${pp}): taken, the journal titles it, About that errand. says not yet`, x.yes === x.ys && x.title === x.wtitle && x.notYet === x.ny, { title: x.title });
   check(`name (${pp}): the door's prompt only at that gate; E says the name into the log, once`, x.prompt === "Press 'E' to say the name" && x.other === null && x.said === true && x.log === x.wlog && x.after.prompt === null && x.after.again === false, { prompt: x.prompt, log: x.log });
   check(`name (${pp}): I said the name. is answered in their words and paid as the draft has it`, x.done === x.wdone && x.turned && x.paid === x.wpaid && x.fav === 1 && x.bread === (pp === 'gatelander' ? 1 : 0) && (pp !== 'markman' || (x.paid === 0 && !x.spouse)), { done: x.done, paid: x.paid, bread: x.bread }); }
-check('name: an Old Blood giver has the one line to the ask, no errand and no hint', n4.ob && n4.ob.said === n4.OBL && !n4.ob.follow && n4.ob.greet === n4.ob.first, n4.ob);
+check('name: an Old Blood giver has the one line to the ask, no errand and no hint', n4.ob && n4.ob.said === n4.OBL && !n4.ob.follow && !/buried|bury/i.test(n4.ob.greet), n4.ob);
 check('name: a Markman with a spouse never asks it', n4.mkSpouse === 0, n4.mkSpouse);
 check('name: on the truth of a death the giver offers the name at once, for the one who died', n4.hand && n4.hand.said === n4.hand.want && n4.hand.label === 'Can I do anything for you?' && n4.hand.offer.includes(n4.hand.who) && n4.hand.nwho === n4.hand.who && n4.hand.after === true, n4.hand);
+// S1677 — errand 5, The Debt: the offer by the giver's people, the debtor's line by the debtor's people, the three answers at the door,
+// each paid and favoured as the draft has it
+const d5 = await page.evaluate(() => {
+  const site = siteAnywhere('dunmore'); worldState.quests = []; worldState.met = {}; worldState.gameTimeAbsMinutes = 70 * 1440 + 300;
+  const mk = (i, pp) => { const d = makeDef(site, site.reg || 'irish', seededRng('ertest5', i), 'Villager', 'Seán', {}); d._twin = 'D' + i; if (pp) d.people = pp; return d; };
+  const find = pp => { for (let i = 0; i < 6000; i++) { const d = mk(pp + i, pp); const e = errandFor(d, site); if (e && e.sub === 'debt') return d; } return null; };
+  let wrong = 0; for (let i = 0; i < 1500; i++) { const d = mk('w' + i, 'gatelander'); const e = errandFor(d, site); if (e && e.sub === 'debt' && !['cooper', 'carter'].includes(d.bio.trade)) wrong++; }
+  const by = {}, choices = { gatelander: 'pay', markman: 'payfor', aurennais: 'keep', oldblood: 'pay' };
+  for (const pp of Object.keys(choices)) { const A = find(pp); if (!A) continue; const E = errandFor(A, site);
+    A.greeting[0]; const greet = A.greeting[0]; const ask = A.topics.find(t => /^About you/.test(t.label)).follow.find(t => t.label === 'Who owes you?');
+    const yes = ask.follow[0].fn(); const q = qActive().find(x => x.giver === A.name && x.sub === 'debt');
+    const notYet = A.topics.find(t => t.label === 'About that errand.').fn();
+    const T = erDebtTopic(q.id); const label = T.label, said = T.response, labels = T.follow.map(f => f.label);
+    const ch = choices[pp], k = ch === 'pay' ? 0 : ch === 'payfor' ? 1 : 2; if (ch === 'payfor') gold += q.data.n;
+    const g0 = gold, fd0 = favor(q.data.siteId); const reply = T.follow[k].fn(); const spent = g0 - gold, fd = favor(q.data.siteId) - fd0, gone = !T.avail();
+    const top = A.topics.find(t => t.label === (ch === 'keep' ? 'They haven’t got it.' : 'About that errand.')); const g1 = gold, f1 = favor(site); const done = top && top.fn();
+    by[pp] = { greet, hint: ER_DEBT.hint[pp], offer: ask.response, want: ER_DEBT.offer[pp](E), yes, ys: ER_SHARED[pp].yes, title: q.title, wtitle: `${E.who}'s debt`, notYet, ny: ER_SHARED[pp].notYet,
+      label, wlabel: `${A.name} sent me about the money.`, said, wsaid: ER_DEBT.debtor[q.data.dp](q.data), labels, ch, reply, spent, n: q.data.n, fd, gone,
+      done, wdone: ch === 'keep' ? ER_DEBT.keep[pp] : ER_DONE[pp], paid: gold - g1, fav: favor(site) - f1, fifth: questGold(Math.round(q.data.n / 5)), turned: q.turnedIn, dp: q.data.dp,
+      wreply: ch === 'pay' ? ER_DEBT.pay[q.data.dp] : ch === 'payfor' ? (q.data.dp === 'oldblood' && playerPeople() === 'oldblood' ? ER_DEBT.paid.oldbloodToOld : ER_DEBT.paid[q.data.dp]) : ER_DEBT.spared[q.data.dp] }; }
+  // the debtor at a resident's door, once you come near the town, when that town is built
+  let door = null; { let A = null; for (let i = 0; i < 20000 && !A; i++) { const d = mk('door' + i); const e = errandFor(d, site); if (e && e.sub === 'debt' && SETTLE.get(e.siteId)) A = d; } if (!A) A = find('gatelander'); if (A) { A.topics.find(t => /^About you/.test(t.label)).follow.find(t => t.label === 'Who owes you?').follow[0].fn();
+    const q = qActive().find(x => x.giver === A.name && x.sub === 'debt'); if (!SETTLE.get(q.data.siteId)) { const H = [...SETTLE.keys()].find(k => k !== 'dunmore' && (SETTLE.get(k).residents || []).some(R => R.door)) || 'dunmore', T = siteAnywhere(H); Object.assign(q.data, { siteId: H, x: T.x, z: T.z }); } const S = SETTLE.get(q.data.siteId);
+    if (S) { const ox = px, oz = pz; px = q.data.x; pz = q.data.z; erDebtTick(q); px = ox; pz = oz; const n = q._npc; door = { spawned: !!n, name: n && n.def && n.def.name, who: q.data.who, people: n && n.def && n.def.people, dp: q.data.dp,
+      topic: !!(n && n.def && n.def.topics.find(t => t.label === `${A.name} sent me about the money.`)) }; } else door = { unbuilt: q.data.town, n: SETTLE.size, sid: q.data.siteId, keys: [...SETTLE.keys()].slice(-6) }; } }
+  return { by, wrong, door, saved: JSON.parse(ssStringify(worldState.quests)).filter(x => x.sub === 'debt' && !('_npc' in x)).length };
+});
+console.log(JSON.stringify(d5).slice(0, 3000));
+check('debt: only the trades that give credit ask it among Villagers (cooper, carter)', d5.wrong === 0, d5.wrong);
+for (const pp of ['gatelander', 'markman', 'aurennais', 'oldblood']) { const x = d5.by[pp]; if (!x) { check(`debt (${pp}): a giver asks`, false); continue; }
+  check(`debt (${pp}): the hint after First Words, the offer word for word, taken and titled, not yet`, x.greet.endsWith(' ' + x.hint) && x.offer === x.want && x.yes === x.ys && x.title === x.wtitle && x.notYet === x.ny, { greet: x.greet, offer: x.offer, title: x.title });
+  check(`debt (${pp}): the debtor's topic and line in the debtor's people's words, the three answers`, x.label === x.wlabel && x.said === x.wsaid && x.labels.length === 3 && x.labels[1] === 'I’ll pay it for you.', { said: x.said, dp: x.dp });
+  check(`debt (${pp}): ${x.ch} — the debtor's answer, the gold and the debtor's town's favour as drafted`, x.reply === x.wreply && x.gone && x.spent === (x.ch === 'payfor' ? x.n : 0) && x.fd === (x.ch === 'pay' ? -1 : x.ch === 'payfor' ? 2 : 1), { reply: x.reply, spent: x.spent, fd: x.fd });
+  check(`debt (${pp}): turned in at home in the giver's words, a fifth or nothing, the favour`, x.turned && x.done === x.wdone && x.paid === (x.ch === 'keep' ? 0 : x.fifth) && x.fav === (x.ch === 'keep' ? -1 : 1), { done: x.done, paid: x.paid, fav: x.fav }); }
+check('debt: the debtor stands at a door of the town, named, in their own people, with the topic', d5.door && (d5.door.unbuilt || (d5.door.spawned && d5.door.name === d5.door.who && d5.door.people === d5.door.dp && d5.door.topic)), d5.door);
+check('debt: the records are saved', d5.saved >= 4, d5.saved);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
