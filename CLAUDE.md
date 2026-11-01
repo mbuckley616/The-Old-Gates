@@ -125,7 +125,8 @@ Session 368 built the tooling and Session 379 cut the file (1 Oct 2026); Session
     (keyed `<site>:<name>`), `hbAttach`, `hbPose` (the 163-bone skeleton copies the 17-bone driver's joints, `HB_MAP`), `hbLevel` (three
     levels by distance; the middle one baked into one mesh by `hbMerge`; the player's only when asked, `hbMid`, Session 1256), `hbTick` (one body built at a time, after the loading); a sleeper laid in bed by the builder's own shape, eyes shut (`hbSkinPts`, `hbEyes`, Session 1224); the human foes too (Session 1201: `hbFoeOk`, `HB_FOE_DRESS`, `hbFoeGenome` keyed `foe:<id>`, rolled when `keyFoe` names it and the driver tinted from it by `hbFoeKeyed`, Session 1221, `hbHold` carries the kit's weapon and shield in the builder's group, `hbGlow`). `34-creatures.js` wolves, spiders, bears, `tickCreatures`; on the new look the Wolf, the Snow Wolf and the
     Dire Wolf wear the creature kit's body over their old rig (`HC`, `vendor/creatures.builder.js` made by `scripts/creatures_bundle.py`;
-    `hcAttach`, `hcPose`, `hcTick`, three levels by `HC_BODY`; Session 1202).
+    `hcAttach`, `hcPose`, `hcTick`, three levels by `HC_BODY`; Session 1202); the common animals by `buildAnimal(name, key)` (S1704), the raven and
+    the crow with no driver, a stand-in and the kit's bird posed by its group's motion (`buildBird`, `hcBirdPose`, S1710).
   - `40-legacy-zones.js` gates, Ashenmoor, Hearthwick, Bealach. `42-zone-enemies.js` `BOSSES`, `buildZoneEnemy`,
     `tickZoneEnemies`, `killZoneEnemy`. `44-legacy-towns.js` `PROP_BUILDERS`, wilderness, forest, `buildTown`, Ironhaven,
     `ZONE_BUILDERS`, `registerPlaceholderZone`.

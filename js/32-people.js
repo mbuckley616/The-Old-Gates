@@ -954,7 +954,10 @@ const FOE_DRESS={
   // sometimes bearded, in a leather kilt, carrying a knotted tree-limb club
   'Ogre':          {ogre:true,cloth:0x6a5034,gear:'club',wpn:'greatclub'} /* S1386 — the weapon kit's greatclub, held by the builder's fist on the new look */
 };
-function buildFoe(type,x,z,genome,eyeCol){
+// S1709 — `arm` ({wpn, shield}), when a caller passes it, is the weapon in the foe's fist instead of its dress's roll, and the shield
+// is the caller's too (none unless named). A spear is the gear kit's, built with the body: the driver's shaft, the thrust (FOE_THRUST)
+// and on the new look the builder's spear (hbFoeGenome), so foeRearm, which swaps a kit weapon after the build, cannot give one.
+function buildFoe(type,x,z,genome,eyeCol,arm){
   let g=genome;
   if(!g){const dr=FOE_DRESS[type]||FOE_DRESS.Bandit;const def={name:type+' '+Math.round(x)+','+Math.round(z),role:'villager',bCol:dr.cloth||0x3a3a3a};
     g=personGenome(def,{key:'foe'});g.hat=dr.hat||'none';g.gear=dr.gear;g.cloak=false;g.dress=false;g.apron=null;g.extras=[];
@@ -990,9 +993,10 @@ function buildFoe(type,x,z,genome,eyeCol){
       g.armK=1.25;g.hollow=!dr.phantom;} // S555 — arms a quarter longer for the claws' reach; the wraith's hood is hollow, the phantom keeps its face
     if(dr.phantom){g.phantom=true;g.style='straight';g.hair.set(0x9aa4c4);}
     // S226 — a weapon from the kit by what the foe is (a spear stays the gear kit's); a skeleton's club becomes a rusted sword
-    if(dr.wpn){const r=pRng(g.seed+23);const w=Array.isArray(dr.wpn)?dr.wpn[Math.floor(r()*dr.wpn.length)]:dr.wpn;
-      if(w==='spear')g.gear='spear';else{g.wpn=w;g.gear=w==='bow'?null:'kit';}
-      if(dr.shield&&r()<(dr.shieldP==null?1:dr.shieldP))g.shieldKit=dr.shield;}
+    if(dr.wpn||(arm&&arm.wpn)){const r=pRng(g.seed+23);let w=dr.wpn?(Array.isArray(dr.wpn)?dr.wpn[Math.floor(r()*dr.wpn.length)]:dr.wpn):null;
+      if(arm&&arm.wpn)w=arm.wpn;
+      if(w==='spear'){g.gear='spear';g.wpn=null;}else{g.wpn=w;g.gear=w==='bow'?null:'kit';}
+      if(arm&&arm.wpn)g.shieldKit=arm.shield||null;else if(dr.shield&&r()<(dr.shieldP==null?1:dr.shieldP))g.shieldKit=dr.shield;}
     if(g.skel&&g.gear==='stick'){g.gear='kit';g.wpn='sword';}}
   const rig=buildPerson(g,{lazyHi:true});rig.foe=true;rig.mesh.material=PEOPLE_MAT.clone();
   // S226 — the kit's weapon in the fist (the bow in the left hand), a shield on the left forearm; the dead's are rusted

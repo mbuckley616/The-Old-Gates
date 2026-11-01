@@ -835,7 +835,7 @@ function buildZoneEnemy(sc,sol,x,z,type,variantKey,zOpts){
     limbs.wolf=wolfRig;
   }
   else if((d.shape==='humanoid'&&(FOE_DRESS[type]||(zOpts&&zOpts.genome)))||(d.shape==='brute'&&FOE_DRESS[type])){ // v80 S171 — a human foe is a person (S208: and a troll)
-    const pr=buildFoe(type,x,z,zOpts&&zOpts.genome,d.eyeCol);pr.root.scale.multiplyScalar(sc2);g.add(pr.root);limbs.torso=pr.mesh;limbs.armR=pr.B.shR;limbs.person=pr;personRig=pr;if(/Captain/.test(type))limbs.armL=pr.B.shL;
+    const pr=buildFoe(type,x,z,zOpts&&zOpts.genome,d.eyeCol,zOpts&&zOpts.arm);pr.root.scale.multiplyScalar(sc2);g.add(pr.root);limbs.torso=pr.mesh;limbs.armR=pr.B.shR;limbs.person=pr;personRig=pr;if(/Captain/.test(type))limbs.armL=pr.B.shL;
   }
   else if(d.shape==='spider'&&SPIDER_KINDS[type]){ // v80 S169 — the spider on the shape kit: eight IK legs on alternating tetrapods
     wolfRig=buildSpider(type,sc2);g.add(wolfRig.root);limbs.torso=wolfRig.mesh;limbs.wolf=wolfRig;

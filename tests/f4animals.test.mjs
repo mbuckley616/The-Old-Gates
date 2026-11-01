@@ -88,6 +88,46 @@ await page.screenshot({ path: path.join(OUT, 'f4-animals.jpg'), type: 'jpeg', qu
 
 const gone = await page.evaluate(() => { for (const { G } of _A) G.parent.remove(G); tickCreatures(1 / 60, 9e5); return _A.every(f => !WOLF_RIGS.has(f.rig)); });
 check('taken from the scene, each is dropped', gone);
+
+// Session 1710: the raven and the crow. No wolf's driver: buildAnimal gives a rig holding a plain stand-in (the far level), and near the
+// kit's bird, fitted to the stand-in's length; hcTick finds it among the world's foes once `rig.e` is set. Its gait is read from its
+// group: standing, walking, hopping by the ground covered a second, soaring when the group is lifted off the ground
+const birds = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.cos(yaw), sx = -fz, sz = fx;
+  window._B = ['Raven', 'Crow'].map((nm, i) => { const x = px + fx * 4 + sx * (i - .5) * 1.2, z = pz + fz * 4 + sz * (i - .5) * 1.2;
+    const rig = buildAnimal(nm, 'f4birds:' + i), G = new THREE.Group(); G.add(rig.root); G.position.set(x, WORLD.worldH(x, z), z); G.rotation.y = yaw + Math.PI / 2; WORLD.scene.add(G);
+    const e = { name: nm, x, z, mesh: G, limbs: { wolf: rig, torso: rig.mesh }, dead: false }; rig.e = e; return { nm, rig, G, e }; });
+  CAM.position.set(px, worldH(px, pz) + 1.65, pz); CAM.updateMatrixWorld(true);
+  const ZE = ZONES.world.enemies; for (const b of _B) ZE.push(b.e);
+  let k = 0; HBODY.last = -1e9; while (_B.some(b => !b.rig.hc && !b.rig.hcFail) && k++ < 300) hcTick(6e5 + k * (HBODY.gap + 1));
+  for (const b of _B) ZE.splice(ZE.indexOf(b.e), 1);
+  return _B.map(({ nm, rig, G }) => { const H = rig.hc; if (!H) return { nm, fail: !!rig.hcFail };
+    const r0 = G.rotation.y; G.rotation.y = 0; G.updateMatrixWorld(true); const bx = new THREE.Box3(); for (const m of H.C.meshes) bx.union(new THREE.Box3().setFromObject(m));
+    const sp = H.C.byName.spine0.getWorldPosition(new THREE.Vector3()).y - G.position.y; G.rotation.y = r0; G.updateMatrixWorld(true);
+    return { nm, plan: H.C.g.plan, seed: H.C.g.seed, want: HC.hashKey(rig.hcKey), bones: H.C.bones.length, tris: H.C.stats.tris, stand: rig.mesh.geometry.attributes.position.count / 3,
+      len: +(bx.max.z - bx.min.z).toFixed(3), low: +(bx.min.y - G.position.y).toFixed(3), spine: +sp.toFixed(3), wolf: WOLF_RIGS.has(rig) }; }); });
+console.log('  birds:', JSON.stringify(birds));
+check(`the raven and the crow wear the kit's (${birds.map(b => b.nm + ' ' + b.plan + ', ' + b.bones + ' bones, ' + b.tris + ' triangles, ' + b.len + ' m beak to tail').join('; ')}), keyed by the spawner's key, over a ${birds[0].stand}-triangle stand-in, no wolf's driver`,
+  birds.every(b => !b.fail && /^game:(Raven|Crow)$/.test(b.plan) && b.seed === b.want && b.bones > 16 && b.tris < 8000 && !b.wolf && Math.abs(b.low) < .01) &&
+  Math.abs(birds[0].len - .58) < .03 && Math.abs(birds[1].len - .45) < .03, birds);
+const fly = await page.evaluate(() => _B.map(({ nm, rig, G }) => { const H = rig.hc, sk = H.C.skel, seen = {}, t0 = performance.now; let i0 = 0;
+  const run = (n, sp, lift) => { for (let i = 0; i < n; i++) { G.position.x += Math.sin(G.rotation.y) * sp / 60; G.position.z += Math.cos(G.rotation.y) * sp / 60;
+      G.position.y = WORLD.worldH(G.position.x, G.position.z) + lift; i0++; performance.now = () => 7e5 + i0 * 1000 / 60; try { hcBirdPose(rig); } finally { performance.now = t0; } }
+    sk.update(); return Array.from(sk.boneMatrices); };
+  const mv = (p, q) => { let m = 0; for (let i = 0; i < p.length; i++) m = Math.max(m, Math.abs(p[i] - q[i])); return +m.toFixed(3); };
+  const a = run(30, 0, 0); seen.still = rig.gaitNow; const b = run(60, .4, 0); seen.slow = rig.gaitNow; const c = run(60, 1.6, 0); seen.fast = rig.gaitNow;
+  const d = run(60, 6, 4); seen.up = rig.gaitNow; G.updateMatrixWorld(true); const sp = H.C.byName.spine0.getWorldPosition(new THREE.Vector3()).y - G.position.y;
+  run(30, 0, 0); return { nm, seen, moved: [mv(a, b), mv(b, c), mv(c, d)], soarSpine: +sp.toFixed(3) }; }));
+console.log('  fly:', JSON.stringify(fly));
+check(`each bird's gait is its group's: still ${fly.map(f => f.seen.still).join('/')}, 0.4 m/s ${fly.map(f => f.seen.slow).join('/')}, 1.6 m/s ${fly.map(f => f.seen.fast).join('/')}, 4 m up ${fly.map(f => f.seen.up).join('/')}; aloft its spine ${fly.map(f => f.soarSpine).join(', ')} m over the group (standing ${birds.map(b => b.spine).join(', ')})`,
+  fly.every((f, i) => f.seen.still === 'stand' && f.seen.slow === 'walk' && f.seen.fast === 'hop' && f.seen.up === 'soar' && f.moved.every(m => m > .01) && Math.abs(f.soarSpine - birds[i].spine) < .08), fly);
+await page.evaluate(() => { const a = _B[0].G, b = _B[1].G, mx = (a.position.x + b.position.x) / 2, mz = (a.position.z + b.position.z) / 2, fx = -Math.sin(yaw), fz = -Math.cos(yaw);
+  for (const { G } of _B) G.position.y = WORLD.worldH(G.position.x, G.position.z); px = mx - fx * 1.8; pz = mz - fz * 1.8; pitch = -.42; });
+for (let i = 0; i < 8; i++) await g.frames(1);
+await page.screenshot({ path: path.join(OUT, 'f4-birds.jpg'), type: 'jpeg', quality: 80 });
+const blv = await page.evaluate(() => { const { rig, G } = _B[0], fx = -Math.sin(yaw), fz = -Math.cos(yaw);
+  CAM.position.set(G.position.x - fx * 60, G.position.y + 1.65, G.position.z - fz * 60); CAM.updateMatrixWorld(true); hcTick(8e5);
+  const far = { L: rig.hc.L, stand: rig.mesh.visible }; for (const { G } of _B) G.parent.remove(G); hcTick(8.1e5); return { far, dropped: _B.every(b => !b.rig.hc && !HC_RIGS.has(b.rig)) }; });
+check(`at 60 m the raven is its stand-in (L${blv.far.L}); taken from the scene, both birds are dropped (${blv.dropped})`, blv.far.L === 2 && blv.far.stand && blv.dropped, blv);
 await page.evaluate(() => { REN.render(scene, CAM); });
 check('no page errors', g.errs.length === 0, g.errs.slice(0, 3));
 await g.close();
