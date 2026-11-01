@@ -2168,7 +2168,7 @@ const giver=`${lord.title} ${lord.name}`;
   function sparStart(o){o=o||{};if(SPAR||BOUT)return {say:'You are already in the ring.'};if(!o.force&&!sparOpen())return {say:'The yard is shut until morning.'};
     const x=o.x,z=o.z,tier=o.tier!=null?o.tier:worldTierAt(x,z);
     const e=keyFoe(unlockFoe(buildZoneEnemy(sc,STATIC_SOL,x,z,o.kind||'Bandit',null,{tier})),'yard:'+(o.site||'yard')+':'+dayNow());
-    e.name=e.displayName=o.name||'The trainer';e._spar=true;e._duel=true;e._questTag='yard';e.homeX=x;e.homeZ=z;e.alert=true;
+    foeRearm(e,'staff');e.name=e.displayName=o.name||'The trainer';e._spar=true;e._duel=true;e._questTag='yard';e.homeX=x;e.homeZ=z;e.alert=true;
     if(e.mesh&&!e.mesh.parent)sc.add(e.mesh);ZONES.world.enemies.push(e);
     const held=kitHold();
     EQ.weapon=sparStaff();if(typeof SHEATHED!=='undefined'&&SHEATHED)drawWeapon();sparKitRefresh();
@@ -2232,6 +2232,7 @@ const giver=`${lord.title} ${lord.name}`;
   function ladderFighter(bout,x,z,key){const r=ladderRow(bout),id=key||ladderFighterId(bout),sh=ladderShield(bout);
     const e=keyFoe(unlockFoe(buildZoneEnemy(sc,STATIC_SOL,x,z,sh?'Bandit Captain':'Bandit',null,{tier:r.tier})),id);
     e._ring=bout;e._noFeint=!r.feint;e._noHeavy=!r.heavy;e._ringWpn=ladderWeapon(bout);
+    if(e._ringWpn!=='spear')foeRearm(e,e._ringWpn); /* S1702 — the rolled weapon in its hand, not the Bandit's own; a spear is the gear kit's, built with the body (owed) */
     if(r.hpMult){e.maxHp=Math.round(e.maxHp*r.hpMult);e.hp=e.maxHp;}
     return e;}
   // S1644 — arenas-build.md session 3, the yard's brawl (Michael's B on #914). 18h–22h, fists only (your weapon and shield to the rack,
