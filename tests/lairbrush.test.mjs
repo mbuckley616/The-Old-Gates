@@ -28,6 +28,19 @@ await page.evaluate((seed) => { window._lairBoss = null; delete (worldState.mast
   goToDungeon(Object.assign({}, PORTALS[0], { theme: 'deep', seed, size: 'medium', interior: 'cave', zone: 'world', tutorial: false, diff: 'hard', diffScale: DIFF_SCALE.hard, lair: { place: 'Testmoor', boss: 'Cave Bear' } })); }, seed);
 for (let i = 0; i < 90; i++) { await page.waitForTimeout(400); if (await page.evaluate(() => activeZoneId === 'dungeon' && typeof dScene !== 'undefined' && scene === dScene && GATE_THINGS.some(q => q.kind === 'brush'))) break; }
 await g.spin(null, 10);
+// S1711 (card F8): the cavern itself is living rock on the new look, no dressed courses and no timbers; its walls move further than a
+// gate's or a fort's, but never more than 0.55 m into an open cell below 2 m, so you do not walk into rock you cannot see
+const S = await page.evaluate(() => { const sh = {}; dScene.children.forEach(q => { const k = q.userData && q.userData.dunShell; if (k) (sh[k] = sh[k] || []).push(q); });
+  const W = sh.walls || [], o = { walls: W.length, rock: W.length > 0 && W.every(q => q.userData.rock), beams: (sh.beams || []).length, tris: 0, inset: 0, look: window.OG_LOOK };
+  for (const w of W) { const P = w.geometry.attributes.position; o.tris += w.geometry.index.count / 3; w.updateMatrixWorld(); const v = new THREE.Vector3();
+    for (let i = 0; i < P.count; i++) { v.fromBufferAttribute(P, i).applyMatrix4(w.matrixWorld); const y = v.y - (Math.abs(v.y - FLOOR2_Y) < Math.abs(v.y) ? FLOOR2_Y : 0); if (y < 0 || y > 2) continue;
+      const M = Math.abs(v.y - FLOOR2_Y) < Math.abs(v.y) && dMap2 ? dMap2 : dMap, c = dCellOf(v.x), r = dCellOf(v.z); if (!(M[r] && M[r][c] > 0)) continue;
+      const fx = v.x / DCELL - c + .5, fz = v.z / DCELL - r + .5; let d = 9; /* how far into the open cell, from each side that meets rock */
+      if (!(M[r][c - 1] > 0)) d = Math.min(d, fx); if (!(M[r][c + 1] > 0)) d = Math.min(d, 1 - fx); if (!(M[r - 1] && M[r - 1][c] > 0)) d = Math.min(d, fz); if (!(M[r + 1] && M[r + 1][c] > 0)) d = Math.min(d, 1 - fz);
+      if (d < 9) o.inset = Math.max(o.inset, +(d * DCELL).toFixed(2)); } }
+  return o; });
+console.log(JSON.stringify(S));
+check(`the cavern is living rock (${S.tris} wall triangles), no timbers, its rock at most ${S.inset} m into an open cell below 2 m`, S.look !== 'new' || (S.rock && S.beams === 0 && S.inset > .15 && S.inset <= .55), S);
 const R = await page.evaluate(() => { const t = GATE_THINGS.find(q => q.kind === 'brush'); if (!t) return { none: true, things: GATE_THINGS.length };
   currentFloor = 1; let tris = 0, draws = 0; t.group.traverse(q => { if (q.isMesh && q.visible) { draws++; tris += q.geometry.index.count / 3; } });
   const T = window._lastGen.things.find(q => q.id === t.id), m = window._lairBoss;
