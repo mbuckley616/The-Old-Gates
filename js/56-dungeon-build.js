@@ -981,6 +981,85 @@ function gateFallBuild(gen){const out=[];
         put(SK.rbox(sz*1.4,sz,sz*1.1,sz*.25,1),b.col.clone().multiplyScalar(.75+Math.random()*.35),fx+nx*d+ax*a,sz*.4,fz+nz*d+az*a,Math.random()*Math.PI,(Math.random()-.5)*.6,(Math.random()-.5)*.6);}}
     const m=dunMerge(parts,'fall');m.position.set(cx,b.y||0,cz);m.castShadow=m.receiveShadow=true;m.userData.fall=b;dScene.add(m);b.mesh=m;out.push(m);}
   return out;}
+// S1672 — the things a touched word acts on, drawn in metres after the scaling pass (gateThings, 52-dungeon-gen.js, lays them in cells).
+// A gate's brazier: an iron bowl 0.9 m across on a stem and three splayed feet, its rim 1.26 m up, a bed of coals in it; burning, a
+// second mesh of embers and five tongues of flame (shown or hidden) and a light the pool may take. Cold, the coals are grey ash. About
+// 620 triangles in 2 draws. A web: one plane across a side room's mouth, the passage's width and 0.4 m into each wall, its 6 m height, a canvas of spokes, a
+// spiral and the threads that moor it to the walls, cut by alphaTest; solid while it stands (a prop 0.7 m deep across the passage: your body's corners are 0.3 out).
+// Burnt, the plane shows the moorings' singed stubs and the solid goes. GATE_THINGS holds {id,kind,floor,x,y,z,lit|burnt,group,...}.
+// The named actions are lightBrazier(t) and burnWeb(t); gateThingNear(kind,x,z,r) finds the nearest a word could still change.
+let GATE_THINGS=[];
+let _gtMat=null;
+function gtMats(){if(_gtMat)return _gtMat;
+  _gtMat={fire:new THREE.MeshBasicMaterial({vertexColors:true,transparent:true,opacity:.92,depthWrite:false})};return _gtMat;}
+function gateBrazierProp(){const g=new THREE.Group();g.name='gateBrazier';
+  const iron=new THREE.Color(0x2e2b29),ironHi=new THREE.Color(0x45403b),ash=new THREE.Color(0x3e3a36),M=(x,y,z,rx,rz)=>new THREE.Matrix4().compose(new THREE.Vector3(x,y,z),new THREE.Quaternion().setFromEuler(new THREE.Euler(rx||0,0,rz||0)),new THREE.Vector3(1,1,1));
+  const body=[],lathe=(pts,seg)=>new THREE.LatheGeometry(pts.map(([a,b])=>new THREE.Vector2(a,b)),seg);
+  for(let k=0;k<3;k++){const a=k/3*Math.PI*2,fx=Math.sin(a)*.34,fz=Math.cos(a)*.34,len=Math.hypot(.3,.42),tilt=Math.atan2(.3,.42);
+    const q=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(Math.cos(a),0,-Math.sin(a)),-tilt);
+    body.push([new THREE.CylinderGeometry(.022,.03,len,6),iron,new THREE.Matrix4().compose(new THREE.Vector3(fx*.56,.24,fz*.56),q,new THREE.Vector3(1,1,1))]);
+    body.push([new THREE.SphereGeometry(.045,6,4),iron,M(fx,.03,fz)]);}
+  body.push([new THREE.CylinderGeometry(.04,.055,.62,8),iron,M(0,.72,0)]);
+  body.push([new THREE.TorusGeometry(.065,.02,5,10),ironHi,M(0,.44,0,Math.PI/2)]);
+  body.push([new THREE.TorusGeometry(.06,.02,5,10),ironHi,M(0,1.01,0,Math.PI/2)]);
+  body.push([lathe([[.001,1.0],[.13,1.0],[.33,1.09],[.44,1.2],[.47,1.26],[.44,1.27],[.41,1.22],[.31,1.13],[.001,1.09]],16),iron,M(0,0,0)]);
+  body.push([new THREE.TorusGeometry(.455,.018,4,24),ironHi,M(0,1.262,0,Math.PI/2)]);
+  {const cg=new THREE.SphereGeometry(.38,12,4,0,Math.PI*2,0,Math.PI/2);body.push([cg,ash,new THREE.Matrix4().compose(new THREE.Vector3(0,1.12,0),new THREE.Quaternion(),new THREE.Vector3(1,.28,1))]);}
+  const bm=dunMerge(body,'brazier');delete bm.userData.dunShell;bm.castShadow=false;bm.receiveShadow=true;bm.name='brazierBody';g.add(bm);
+  const fp=[];
+  {const eg=new THREE.SphereGeometry(.36,12,4,0,Math.PI*2,0,Math.PI/2);fp.push([eg,new THREE.Color(1,.42,.12),new THREE.Matrix4().compose(new THREE.Vector3(0,1.13,0),new THREE.Quaternion(),new THREE.Vector3(1,.3,1))]);}
+  for(const [x,z,h,c] of [[0,0,.62,0xffa030],[-.15,.08,.42,0xff7a20],[.16,-.07,.46,0xff8a28],[.04,.17,.34,0xffb040],[-.06,-.17,.3,0xff9030]])
+    fp.push([new THREE.ConeGeometry(.12,h,6),new THREE.Color(c),M(x,1.2+h/2,z)]);
+  const fm=dunMerge(fp,'brazierFire');delete fm.userData.dunShell;fm.material.dispose();fm.material=gtMats().fire;fm.name='brazierFire';g.add(fm);
+  g.userData.fire=fm;return g;}
+// the web's canvas (256 by 512, for a passage 3 m wide and 6 m high); whole, or burnt to its moorings' stubs. Drawn from the thing's id.
+function gtWebTex(id,burnt){const c=document.createElement('canvas');c.width=256;c.height=512;const x=c.getContext('2d'),r=seededRng('gateweb',id);
+  const hub=[118+r()*20,200+r()*50],anchors=[];
+  for(let k=0;k<5;k++)anchors.push([4,40+k*(380/4)+r()*20]);for(let k=0;k<5;k++)anchors.push([252,40+k*(380/4)+r()*20]);
+  for(let k=0;k<4;k++)anchors.push([30+k*65+r()*16,4]);anchors.push([60+r()*30,508]);anchors.push([170+r()*30,508]);
+  anchors.sort((a,b)=>Math.atan2(a[1]-hub[1],a[0]-hub[0])-Math.atan2(b[1]-hub[1],b[0]-hub[0]));
+  x.lineCap='round';
+  if(!burnt){x.strokeStyle='rgba(235,235,228,.95)';x.lineWidth=2.2;
+    for(const a of anchors){x.beginPath();x.moveTo(hub[0],hub[1]);x.lineTo(a[0],a[1]);x.stroke();}
+    x.lineWidth=1.5;for(let t=.06;t<.97;t+=.045+r()*.012){x.beginPath();anchors.forEach((a,i)=>{const s=t*(.92+r()*.08),px2=hub[0]+(a[0]-hub[0])*s,py2=hub[1]+(a[1]-hub[1])*s;i?x.lineTo(px2,py2):x.moveTo(px2,py2);});x.closePath();x.stroke();}
+    x.lineWidth=3;for(let k=0;k<3;k++){const a=anchors[Math.floor(r()*anchors.length)],b=anchors[Math.floor(r()*anchors.length)];x.beginPath();x.moveTo(a[0],a[1]);x.quadraticCurveTo(128,256,b[0],b[1]);x.stroke();}}
+  else{for(const a of anchors){const s=.08+r()*.18;x.strokeStyle='rgba(200,196,188,.9)';x.lineWidth=2;x.beginPath();x.moveTo(a[0],a[1]);const ex=a[0]+(hub[0]-a[0])*s,ey=a[1]+(hub[1]-a[1])*s+r()*24;x.lineTo(ex,ey);x.stroke();
+      x.strokeStyle='rgba(40,30,24,.95)';x.lineWidth=3;x.beginPath();x.arc(ex,ey,1.6,0,6.3);x.stroke();}}
+  const t=new THREE.CanvasTexture(c);t.anisotropy=4;return t;}
+function gateThingsBuild(gen,portal){GATE_THINGS=[];if(!gen||!gen.gate||!gen.things)return GATE_THINGS;
+  const H=DCELL/2,keys=(typeof KEYS!=='undefined'?KEYS:[]),lie=(typeof SHUTTLE_LIE!=='undefined'&&SHUTTLE_LIE)?[SHUTTLE_LIE]:[],held=keys.concat(lie);
+  const clutter=(CHESTS||[]).concat(BARRELS||[]);
+  for(const t of gen.things){const y=t.floor===2?FLOOR2_Y:0,cx=dAt(t.c),cz=dAt(t.r);
+    if(t.kind==='brazier'){const x=t.at?dAt(t.at[0])+t.out[0]*.7:cx+t.dc*(H-.55),z=t.at?dAt(t.at[1])+t.out[1]*.7:cz+t.dr*(H-.55); /* the ring's four 0.7 m out from the dais's corners, clear of every cell's middle */
+      if(clutter.some(q=>(q.floor||1)===t.floor&&q.x!=null&&Math.hypot(q.x-x,q.z-z)<1.2))continue;
+      {const M=t.floor===2?gen.map2:gen.map,c0=dCellOf(x),r0=dCellOf(z);let clear=true;for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){const c=c0+dc,r=r0+dr;if(M[r]&&M[r][c]>0&&Math.hypot(dAt(c)-x,dAt(r)-z)<.85)clear=false;}if(!clear)continue;} /* never in the way of a walk between cells' middles */
+      const grp=gateBrazierProp();grp.position.set(x,y,z);grp.rotation.y=(t.c*7+t.r*13)%6;dScene.add(grp);
+      const rec={id:t.id,kind:'brazier',floor:t.floor,x,y,z,lit:false,group:grp,light:null};
+      DUNGEON_COLUMNS.push({x,z,r:.55,floor:t.floor,brazier:t.id});GATE_THINGS.push(rec);gtBrazierShow(rec,!!t.lit);}
+    else if(t.kind==='web'){if(portal&&portal.tutorial)continue;
+      const R=t.room,x0=dAt(R.x-.5),x1=dAt(R.x+R.w-.5),z0=dAt(R.y-.5),z1=dAt(R.y+R.h-.5);
+      if(held.some(q=>q&&(q.floor||1)===t.floor&&q.x>=x0&&q.x<=x1&&q.z>=z0&&q.z<=z1))continue;
+      const x=cx+t.dc*(H-.25),z=cz+t.dr*(H-.25),h=Math.min(FLOOR_HEIGHT,6);
+      const whole=gtWebTex(t.id,false),mat=new THREE.MeshLambertMaterial({map:whole,alphaTest:.3,side:THREE.DoubleSide,color:0xdedcd4,emissive:0x262624});
+      const m=new THREE.Mesh(new THREE.PlaneGeometry(DCELL+.8,h),mat);m.position.set(x,y+h/2,z);m.rotation.y=t.dc?Math.PI/2:0;m.name='gateWeb';dScene.add(m);
+      const solid=t.dc?{x0:x-.35,x1:x+.35,z0:z-H,z1:z+H,floor:t.floor,web:t.id}:{x0:x-H,x1:x+H,z0:z-.35,z1:z+.35,floor:t.floor,web:t.id};DUNGEON_PROPS.push(solid);
+      GATE_THINGS.push({id:t.id,kind:'web',floor:t.floor,x,y,z,burnt:false,mesh:m,solid,group:m});}}
+  return GATE_THINGS;}
+function gtBrazierShow(t,on){t.lit=on;const f=t.group.userData.fire;if(f)f.visible=on;
+  if(on&&!t.light){const l=new THREE.PointLight(0xff9a50,1.6,12);l.position.set(t.x,t.y+1.9,t.z);dScene.add(l);t.light=l;TORCHES.push({l,fl:null,ph:(t.x*3.1+t.z)%6.28});}}
+// lightBrazier: the named action. A cold brazier in this gate catches; false if it was burning already or is not one
+function lightBrazier(t){if(!t||t.kind!=='brazier'||t.lit||GATE_THINGS.indexOf(t)<0)return false;gtBrazierShow(t,true);return true;}
+// burnWeb: the named action. A standing web burns to its moorings and the way through it opens
+function burnWeb(t){if(!t||t.kind!=='web'||t.burnt||GATE_THINGS.indexOf(t)<0)return false;t.burnt=true;
+  const i=DUNGEON_PROPS.indexOf(t.solid);if(i>=0)DUNGEON_PROPS.splice(i,1);
+  const m=t.mesh.material;if(m.map)m.map.dispose();m.map=gtWebTex(t.id,true);m.color.setHex(0xb8b2a8);m.emissive.setHex(0x120c08);m.needsUpdate=true;return true;}
+// the nearest thing of a kind on your floor within r of (x, z) that a word could still change (a cold brazier, a standing web)
+function gateThingNear(kind,x,z,r){let best=null,bd=r==null?1e9:r;
+  for(const t of GATE_THINGS){if(t.kind!==kind||t.floor!==currentFloor||(kind==='brazier'?t.lit:t.burnt))continue;
+    const d=kind==='web'?gtWebDist(t,x,z):Math.hypot(t.x-x,t.z-z);if(d<=bd){bd=d;best=t;}}
+  return best;}
+// a web is a plane across its passage: the distance to it is to the nearest point of its span
+function gtWebDist(t,x,z){const s=t.solid,qx=Math.max(s.x0,Math.min(s.x1,x)),qz=Math.max(s.z0,Math.min(s.z1,z));return Math.hypot(x-qx,z-qz);}
 // S1400 — a great gate's ring and its knot (#680, Michael's A: the knot within reach, 2.1 m over the dais), ported from the prototype's
 // greatKnot (docs/prototypes/levelup/props.js, Session 1376) for the new look; knotLay (87-world-quests.js) places it and keeps its torus
 // knot on the old look and as the fallback. In the prop's frame y 0 is the dais's top, +z faces the way in, and the ring stands free
@@ -1069,6 +1148,7 @@ function buildDungeon(portal){
   let gen=interiorKey==='cave'&&!dunKeepKind(portal)?makeGate(portal.size,portal.seed,(WORLD_DUNGEONS.find(e=>e.seed===portal.seed)||{}).floors,(WORLD_DUNGEONS.find(e=>e.seed===portal.seed)||{}).cond):interiorFn(portal.size,portal.seed);
   if(interiorKey!=='cave'&&!gen.map2&&portal.size!=='small')gen=addUpperFloor(gen,portal.seed); // v80 — forts get an upper floor
   if(gen.gate&&clochBlockDue(portal))gateBlock(gen,portal.seed); /* S1376 — Cloch's toll: a fallen block on each floor of the Mark's lesser gates (52-dungeon-gen.js) */
+  if(gen.gate)gateThings(gen,portal.seed); /* S1672 — the braziers and webs a touched word acts on (52-dungeon-gen.js) */
   if(gen.hall)FLOOR2_Y=-gen.hall.D; /* S1298 — a massive gate's floor two lies its stair hall's flights down (2 or 3 of 4.2 m) */
   dMap=gen.map;dMap2=gen.map2||null;dR=gen.H;dC=gen.W;
   mmRevealed=Array.from({length:dR},()=>new Uint8Array(dC));
@@ -3543,6 +3623,7 @@ function buildDungeon(portal){
   try{lairFinish(portal);}catch(e){}try{shuttleLay(portal);}catch(e){}try{cloakDenLay(portal,window._lairBoss);}catch(e){}
   dunScaleWhole(dunCellFor(portal),thWallMat);
   try{gateFallBuild(gen);}catch(e){console.warn('gateFallBuild',e);} /* S1376 — Cloch's fallen blocks, in metres */
+  try{gateThingsBuild(gen,portal);}catch(e){GATE_THINGS=[];console.warn('gateThingsBuild',e);} /* S1672 — the braziers and webs, in metres */
   try{knotLay(portal,gen);}catch(e){console.warn('knotLay',e);} /* S1346 — a great gate's knot over the ring's dais, in metres (87-world-quests.js) */
   /* S1302 — a gate draws by space (dZoneBuild, dRender) and lights 8 at a time; its pool is made now, so the compile below has its lights */
   DZONE=gen.gate?dZoneBuild(gen):null;if(gen.gate){dScene.userData.lightPool=8;try{_sweepScenePool(dScene);}catch(e){}}
