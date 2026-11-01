@@ -2232,6 +2232,7 @@ const giver=`${lord.title} ${lord.name}`;
   function ladderFighter(bout,x,z,key){const r=ladderRow(bout),id=key||ladderFighterId(bout),sh=ladderShield(bout);
     const e=keyFoe(unlockFoe(buildZoneEnemy(sc,STATIC_SOL,x,z,sh?'Bandit Captain':'Bandit',null,{tier:r.tier})),id);
     e._ring=bout;e._noFeint=!r.feint;e._noHeavy=!r.heavy;e._ringWpn=ladderWeapon(bout);
+    if(e._ringWpn!=='spear')foeRearm(e,e._ringWpn); /* S1702 — the rolled weapon in its hand, not the Bandit's own; a spear is the gear kit's, built with the body (owed) */
     if(r.hpMult){e.maxHp=Math.round(e.maxHp*r.hpMult);e.hp=e.maxHp;}
     return e;}
   // S1644 — arenas-build.md session 3, the yard's brawl (Michael's B on #914). 18h–22h, fists only (your weapon and shield to the rack,
