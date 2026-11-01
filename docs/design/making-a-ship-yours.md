@@ -1,12 +1,12 @@
 # Making a ship yours: fittings, colours, figureheads and the crew
 
-*The designer, 1 Nov 2026. A proposal: nothing here is a spec until `docs/decisions.md` carries a `Michael:` line under it. Backlog L6, the systems item after the base below deck.*
+*The designer, 1 Nov 2026. A proposal; backlog L6.*
 
 ## The problem in Michael's words
 Backlog L, *Making a ship yours* (systems; OG-072): "figurehead, paint, sails and banners, interior dress, upgrades (larger hold, crew quarters, stations). Cannons optional, on the top hulls only." Its neighbour, *Crew as upgrades* (OG-093, OG-027), carries Michael's 4 C of 12 Oct: "a carpenter mends at sea, a cook feeds you, a navigator shows the coast. No morale." His A on #418 put the base below deck "in the hull's own lines", so a bigger ship is a bigger home, and his A on #839 keeps the dress of the island whose yard sold or last refitted her. The brief's *Not this* applies with force here: "systems that reduce to *buy more/better*".
 
 ## Today
-You buy a sloop at a shipwright (`buyShip`, 400 gold), and she is kept in `worldState.ship`: her class (`cls`), name, dress, hull and rig bars, hold and tiers. The yard panel (`yardOffers`, `86-world-crime.js`) sells refits between the five hulls by worth (`SHIP_CLASSES`, `refitCost`: sloop 400, cog 1,300, cutter 2,000, caravel 3,200, galleon 3,500), four sail tiers at +12% of bare speed each (`SAIL_TIERS`, 250 to 1,100 gold) and two hold tiers at +25 each (`CARGO_TIERS`, 200 and 400, on `CARGO_HOLD` 25 to 90). `upgradeTopics` raises, fetches and mends her. The look builder is putting each hull's base in her own lines (the caravel's berth rests and saves, `berthNear`, Session 1565; the cabin's bench makes planks and spars and the patch and splice, `cabinBench`, Sessions 1519–1527). Nothing on her is chosen by you except the hull and the two kinds of tier: her name is rolled from `SHIP_NAMES`, her paint and sails are the yard's, there is no figurehead and no one aboard but you. Note for co-op: `ship` is a world key (not in `SS_CHAR_WS`), so the ship belongs to the host's world, as a house does.
+You buy a sloop at a shipwright (`buyShip`, 400 gold), and she is kept in `worldState.ship`: her class (`cls`), name, dress, hull and rig bars, hold and tiers. The yard panel (`yardOffers`, `86-world-crime.js`) sells refits between the five hulls by worth (`SHIP_CLASSES`, `refitCost`: sloop 400, cog 1,300, cutter 2,000, caravel 3,200, galleon 3,500), four sail tiers at +12% of bare speed each (`SAIL_TIERS`, 250 to 1,100 gold) and two hold tiers at +25 each (`CARGO_TIERS`, 200 and 400, on `CARGO_HOLD` 25 to 90). `upgradeTopics` raises, fetches and mends her. The look builder is putting each hull's base in her own lines (the caravel's berth, `berthNear`, Session 1565; the cabin's bench, `cabinBench`, Sessions 1519–1527). Nothing on her is chosen by you except the hull and the two kinds of tier: her name is rolled from `SHIP_NAMES`, her paint and sails are the yard's, there is no figurehead and no one aboard but you. Note for co-op: `ship` is a world key (not in `SS_CHAR_WS`), so the ship belongs to the host's world, as a house does.
 
 ## Directions
 
@@ -15,7 +15,7 @@ You buy a sloop at a shipwright (`buyShip`, 400 gold), and she is kept in `world
 
 **The rules.** Each hull has fitting places by her drawn rooms (#418 A): sloop 2, cutter 2, cog 3, caravel 3, galleon 5. The berth, one sea chest and the bench are every ship's and take none. Fittings: *Stowage* (+25 hold, replaces `CARGO_TIERS`; a save's tiers become fitted stowage, free), *Still* (alchemy at sea), *Galley* (cooking at sea), *Chart table*, *Crew bunks* (two crew). Prices 300 to 600 each. Crew: a carpenter (600), a cook (300), a navigator (800), a one-time fee and no wage (4 C: no morale, and you chose survival B over upkeep on #85). Paint, cloth and banner 50 each, a figurehead 150, renaming free.
 
-**Touches.** `yardOffers` and the yard panel, `worldState.ship` (new keys `fit`, `crew`, `paint`, `cloth`, `banner`, `figure`, all world's, all on the S242 list), `buildShipMesh` for paint and figurehead, the base below deck's props per fitting, `tickShip` for the crew.
+**Touches.** `yardOffers`, `worldState.ship` (new keys `fit`, `crew`, `paint`, `cloth`, `banner`, `figure`: the world's, on the S242 list), `buildShipMesh`, `tickShip`.
 
 **Conflicts.** It is the brief's *buy more/better* in its plainest form: every row is a price.
 
@@ -35,7 +35,7 @@ You buy a sloop at a shipwright (`buyShip`, 400 gold), and she is kept in `world
 | Crew bunks | 10 | two crew sleep aboard | 250 | Joinery 25: 8 planks |
 | Arms rack | 5 | three weapons stored; the boarders' fight starts with you armed from it | 200 | Joinery 50 + 1 iron ingot |
 
-A sloop (40) with a galley and bunks carries 20; a galleon (90) with stowage, still, galley, chart table and bunks carries 80. Weights are a quarter of a sloop's hold so two fittings halve her as a trader, which is the trade the player should feel. The bench path is the progression (feeling 2): Joinery already mends her (`patchAmt`, `fieldCap`), and building her rooms yourself costs about a third of the yard's gold in timber you cut. Refitting to another hull keeps every fitting that fits her places; the rest go into the yard's store, refitted free later.
+A sloop (40) with a galley and bunks carries 20; a galleon (90) with stowage, still, galley, chart table and bunks carries 80. Two fittings halve a sloop as a trader: that is the trade to feel. The bench path is the progression (feeling 2): Joinery already mends her (`patchAmt`, `fieldCap`), and building her rooms yourself costs about a third of the yard's gold in timber you cut. Refitting to another hull keeps every fitting that fits her places; the rest go into the yard's store, refitted free later.
 
 **Figureheads are found** (Michael's capes rule, #148: minimal unless rare). The yard carves its island's (a harp, a dragon prow, a sun) for 150, no virtue. Five more are only found, one each from a place you went:
 
@@ -49,7 +49,7 @@ A sloop (40) with a galley and bunks carries 20; a galleon (90) with stowage, st
 
 One figurehead at a time; the others wait in the yard, swapped for free at any shipwright.
 
-**Crew are met, not bought** (4 C, no morale, no wage). Each is a person with one small errand in the quest writer's hand: a carpenter pressed aboard a pirate (beat the boarders and free him), a cook out of work at a coaching inn, a navigator at a Navigators' hall or found in a wreck's boat (OG-093's ports). Each needs crew bunks and their station, and lives below at it, not on deck (one skinned body in a small room, no shadow pass cost on the deck, nothing to sync for a guest but its place).
+**Crew are met, not bought** (4 C, no morale, no wage). Each is a person with one small errand in the quest writer's hand: a carpenter pressed aboard a pirate (beat the boarders and free him), a cook out of work at a coaching inn, a navigator at a Navigators' hall or found in a wreck's boat (OG-093's ports). Each needs bunks and a station and lives below at it, not on deck: one body in a small room, nothing in the deck's shadow pass, nothing for a guest to sync but its place.
 
 | Crew | Station | What they do at sea |
 |---|---|---|
@@ -59,7 +59,7 @@ One figurehead at a time; the others wait in the yard, swapped for free at any s
 
 None replaces a skill: each works at a fixed 50, below where a player who trained it stands, so they help the sailor who has not and leave the craftsman his edge.
 
-**Touches.** As A, plus `bagTake` from the sea chest for the carpenter, `seaHint` for the navigator, the bench's recipes (`openBenchPage`) for the fittings, `holdCap` (`84-world-interiors.js`) for the weight, wreck and lair chests for the figureheads, `BOARDERS` for the pressed carpenter.
+**Touches.** As A, plus `holdCap`, `openBenchPage`'s recipes, `seaHint`, `bagTake` from the sea chest, wreck and lair chests, `BOARDERS`.
 
 **Conflicts.** None decided: the hull ladder (3 A), the dress (#839 A) and the Drowned Bell stand. `CARGO_TIERS` becomes Stowage; old saves keep what they bought.
 
@@ -69,8 +69,6 @@ None replaces a skill: each works at a fixed 50, below where a player who traine
 **The loop.** As B, and the banner is not a look: you fly the Crown's, the League's, the Compact's, your own house's, or none, and the sea answers it.
 
 **The rules.** Under a nation's colours its ports waive the harbour fetch and its patrol ships let your hold be; the other two nations' ports search you at 1 in 4 landings and take the tithe (`CARGO_TITHE`, 10%) on anything stolen; pirates take a nation's flag as worth robbing (+25% boardings) and your own as nobody's. Changing colours costs a game day in port. Flying a nation's flag with favour ≤ −2 there is a crime at its quays.
-
-**Touches.** As B, plus `tickOtherShips`, the cargo landing in `84-world-interiors.js`, the crime system at quays.
 
 **Conflicts.** It leans on naval combat's patrols and harbour defences (L6, *Naval combat, more of it*), which are not designed, and on the war's lines.
 
