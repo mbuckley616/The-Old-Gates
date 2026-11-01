@@ -85,7 +85,10 @@ let _dungeonBuildEnemy=null; // S253 — set by buildDungeon: the Slime's split 
 // of the world position (so neighbouring faces meet with no crack), bevelled at every outside corner and filled at
 // every inside one, and shaded smooth across the corners. Vertex colours carry the shade: darker where the wall meets
 // the floor and the ceiling, in inside corners, and a damp band at the foot; the floor darkens towards the walls.
-const DUN_SHELL={U:4,V:8,AMP:.07,BEVEL:.16,FILL:.1,TEXU:1.6,COVE:.34,COVE0:.7};
+const DUN_SHELL={U:4,V:8,AMP:.07,BEVEL:.16,FILL:.1,TEXU:1.6,COVE:.34,COVE0:.7,BIG:0};
+// S1711 (card F8) — a lair's cavern on the new look: living rock, its walls moved further by two sizes of noise and curving into the roof
+// lower and further, no timbers across it (buildDunShell's opts.rock); in cells, as the shell is (a cell is 2.5 m in a lair)
+const DUN_ROCK={U:4,V:8,AMP:.08,BIG:.12,BEVEL:.26,FILL:.12,COVE:.5,COVE0:.5,TEXU:1.3};
 // S190 — damp and moss by theme: the colour the foot of a wall (and the floor along it) goes where it is wet, in patches
 const DUN_DAMP={goblin:[.6,.95,.42],ruins:[.72,.9,.52],deep:[.58,.74,.98],undead:[.76,.72,.88],haunted:[.84,.86,.94],elemental:[.5,.42,.38]};
 function dunNoise(seed){const h=(i,j,k)=>{let n=(i*374761393+j*668265263+k*2147483647+seed*1274126177)|0;n=(n^(n>>>13))*1274126177|0;return ((n^(n>>>16))>>>0)/4294967296;};
@@ -94,6 +97,7 @@ function dunNoise(seed){const h=(i,j,k)=>{let n=(i*374761393+j*668265263+k*21474
     for(let a=0;a<2;a++)for(let b=0;b<2;b++)for(let c=0;c<2;c++)v+=h(i+a,j+b,k+c)*(a?fx:1-fx)*(b?fy:1-fy)*(c?fz:1-fz);return v*2-1;};}
 function dunStoneTex(col,seed,kind){const rnd=pRng(seed);const C=new THREE.Color(col);
   const hex=(c,k)=>'#'+c.clone().multiplyScalar(k).getHexString();
+  if(kind==='rock'||kind==='rockfloor'||kind==='rockroof')return dunRockTex(C,rnd,kind==='rockfloor',hex,kind==='rockroof');
   return mkTex((x,w,h)=>{x.fillStyle=hex(C,.45);x.fillRect(0,0,w,h);
     if(kind==='floor'){ // flagstones: rows of irregular slabs
       let y=0;while(y<h){const rh=Math.min(h-y,22+Math.floor(rnd()*20));let xx=-Math.floor(rnd()*30);while(xx<w){const bw=24+Math.floor(rnd()*30);const t=.8+rnd()*.45;
@@ -110,8 +114,26 @@ function dunStoneTex(col,seed,kind){const rnd=pRng(seed);const C=new THREE.Color
         if(rnd()<.3){x.fillStyle=hex(C,.45);x.fillRect(xx+ox+(rnd()<.5?1:bw-5),cy+(rnd()<.5?1:ch-5),4,4);}};
       draw(0);if(xx+bw>w)draw(-w);xx+=bw;}}
   },128,128);}
+// S1711 (card F8) — a lair's cavern in living rock, not dressed courses: mottled stone in soft blots, beds that wave across it, joints
+// and cracks (the roof the same without the beds, which read as wood grain overhead); the floor rough ground with grit and flat stones. Every blot is drawn at its wrapped places too, so the tile repeats unseen.
+function dunRockTex(C,rnd,floor,hex,roof){return mkTex((x,w,h)=>{x.fillStyle=hex(C,.62);x.fillRect(0,0,w,h);
+  const wrap=(f)=>{for(const ox of [-w,0,w])for(const oy of [-h,0,h])f(ox,oy);};
+  for(let i=0;i<(floor?70:55);i++){const cx=rnd()*w,cy=rnd()*h,rx=6+rnd()*(floor?14:22),ry=rx*(floor?.6+rnd()*.6:.35+rnd()*.3),t=.5+rnd()*.5,a=floor?rnd()*3:rnd()*.5-.25;
+    wrap((ox,oy)=>{x.fillStyle=hex(C,t);x.globalAlpha=.55;x.beginPath();x.ellipse(cx+ox,cy+oy,rx,ry,a,0,6.283);x.fill();});}
+  x.globalAlpha=1;
+  if(!floor&&!roof)for(let b=0;b<5;b++){const y0=rnd()*h,amp=2+rnd()*5,ph=rnd()*6.283,k=(1+Math.floor(rnd()*2))*6.283/w,dk=.18+rnd()*.14,lw=1+rnd()*1.6; /* the beds: a whole number of waves across, so they meet at the tile's edge */
+    for(const oy of [-h,0,h]){x.strokeStyle=`rgba(0,0,0,${dk})`;x.lineWidth=lw;x.beginPath();for(let xx=0;xx<=w;xx+=4){const yy=y0+oy+amp*Math.sin(xx*k+ph);xx?x.lineTo(xx,yy):x.moveTo(xx,yy);}x.stroke();
+      x.strokeStyle='rgba(255,240,220,.07)';x.lineWidth=1;x.beginPath();for(let xx=0;xx<=w;xx+=4){const yy=y0+oy-2+amp*Math.sin(xx*k+ph);xx?x.lineTo(xx,yy):x.moveTo(xx,yy);}x.stroke();}}
+  for(let j=0;j<(floor?5:roof?3:6);j++){let qx=rnd()*w,qy=rnd()*h;const dir=floor?rnd()*6.283:Math.PI/2+(rnd()-.5)*.8,n=3+Math.floor(rnd()*4),pts=[[qx,qy]]; /* joints and cracks */
+    for(let k=0;k<n;k++){qx+=Math.cos(dir+(rnd()-.5)*.9)*(5+rnd()*8);qy+=Math.sin(dir+(rnd()-.5)*.9)*(5+rnd()*8);pts.push([qx,qy]);}const lw=1+rnd();
+    wrap((ox,oy)=>{x.strokeStyle='rgba(0,0,0,.24)';x.lineWidth=lw;x.beginPath();pts.forEach(([a,b],i)=>i?x.lineTo(a+ox,b+oy):x.moveTo(a+ox,b+oy));x.stroke();});}
+  for(let i=0;i<(floor?260:140);i++){const t=rnd();x.fillStyle=t<.5?`rgba(0,0,0,${.12+rnd()*.2})`:`rgba(255,244,226,${.05+rnd()*.08})`;x.fillRect(rnd()*w,rnd()*h,1+rnd()*(floor?2.5:2),1+rnd()*2);}
+  if(floor)for(let i=0;i<14;i++){const cx=rnd()*w,cy=rnd()*h,r=3+rnd()*6,t=.8+rnd()*.4; /* flat stones bedded in the ground */
+    wrap((ox,oy)=>{x.fillStyle='rgba(0,0,0,.3)';x.beginPath();x.ellipse(cx+ox+1,cy+oy+1.5,r,r*.7,0,0,6.283);x.fill();x.fillStyle=hex(C,t);x.beginPath();x.ellipse(cx+ox,cy+oy,r,r*.7,0,0,6.283);x.fill();});}
+},128,128);}
+function dunRockCave(portal,gen){return !!(portal&&portal.lair&&!portal.tutorial&&!(gen&&gen.gate)&&window.OG_LOOK==='new');} /* S1711 — a lair's cavern is living rock on the new look */
 function buildDunShell(map,baseY,wallCol,floorCol,opts){
-  const H=FLOOR_HEIGHT,R=map.length,Cn=map[0].length,S=Object.assign({},DUN_SHELL,opts&&opts.amp!=null?{AMP:opts.amp}:{},opts&&opts.cove===false?{COVE:0}:{}),seed=(opts&&opts.seed)||1;const N1=dunNoise(seed),N2=dunNoise(seed+7),N3=dunNoise(seed+13);
+  const H=FLOOR_HEIGHT,R=map.length,Cn=map[0].length,S=Object.assign({},DUN_SHELL,opts&&opts.amp!=null?{AMP:opts.amp}:{},opts&&opts.cove===false?{COVE:0}:{},opts&&opts.rock?DUN_ROCK:{}),seed=(opts&&opts.seed)||1,rock=!!(opts&&opts.rock);const N1=dunNoise(seed),N2=dunNoise(seed+7),N3=dunNoise(seed+13);
   const wall=(c,r)=>r<0||r>=R||c<0||c>=Cn||map[r][c]===0;
   const skip=opts&&opts.skip||(()=>false); // cells whose floor and ceiling someone else draws (stairs, treasure)
   const noCeil=opts&&opts.noCeil||(()=>false); // S601 — cells open to the floor above (the ring's sunken yard)
@@ -126,6 +148,7 @@ function buildDunShell(map,baseY,wallCol,floorCol,opts){
   // where a point of the wall moves: the noise, then a bevel at an outside corner or a fill at an inside one
   const corner=(X,Z)=>{const c0=Math.floor(X),r0=Math.floor(Z);let w=0;for(const [c,r] of [[c0,r0],[c0+1,r0],[c0,r0+1],[c0+1,r0+1]])if(wall(c,r))w++;return w;};
   const warp=(X,Y,Z)=>{let x=X+S.AMP*N1(X*1.3,Y*.9,Z*1.3)+.02*N2(X*5,Y*5,Z*5),z=Z+S.AMP*N3(X*1.3,Y*.9,Z*1.3)+.02*N1(Z*5,Y*5,X*5);
+    if(S.BIG){x+=S.BIG*N2(X*.45,Y*.3,Z*.45);z+=S.BIG*N3(Z*.45,Y*.3,X*.45);} /* S1711 — a cavern's rock: a broad lobe under the small noise */
     const fx=X-Math.floor(X),fz=Z-Math.floor(Z);
     if(Math.abs(fx-.5)<1e-4&&Math.abs(fz-.5)<1e-4){const c0=Math.floor(X),r0=Math.floor(Z);const q=[[c0,r0],[c0+1,r0],[c0,r0+1],[c0+1,r0+1]].filter(([c,r])=>wall(c,r));
       if(q.length===1){x+=(q[0][0]-X)*2*S.BEVEL;z+=(q[0][1]-Z)*2*S.BEVEL;}
@@ -167,8 +190,8 @@ function buildDunShell(map,baseY,wallCol,floorCol,opts){
         quadGrid(S.U,4,(u,v)=>{const t=u-.5,X=ox+ax*t+dc*1e-3,Z=oz+az*t+dr*1e-3,Y=baseY-GATE_PIT+v*(GATE_PIT-SLAB);return {p:[X,Y,Z],uv:[(ax?X:Z)/S.TEXU,Y/S.TEXU],k:shade(Y,H)};});}}
   const wg=new THREE.BufferGeometry();wg.setAttribute('position',new THREE.Float32BufferAttribute(P,3));wg.setAttribute('uv',new THREE.Float32BufferAttribute(UV,2));
   wg.setAttribute('color',new THREE.Float32BufferAttribute(CO,3));wg.setIndex(IX);dunSmoothNormals(wg);
-  const wm=new THREE.MeshLambertMaterial({map:dunStoneTex(wallCol,seed,'wall'),vertexColors:true});
-  const walls=new THREE.Mesh(wg,wm);walls.userData.dunShell='walls';
+  const wm=new THREE.MeshLambertMaterial({map:dunStoneTex(wallCol,seed,rock?'rock':'wall'),vertexColors:true});
+  const walls=new THREE.Mesh(wg,wm);walls.userData.dunShell='walls';if(rock)walls.userData.rock=true;
   // floor and ceiling: a grid over every cell but the ones drawn elsewhere, darker towards the walls, the floor a
   // little uneven between its edges (never at a cell's rim, so it meets the stair and treasure planes)
   const plane=(y,down,col,kind)=>{const P2=[],U2=[],C2=[],I2=[];const n=down&&ceilF?4:2;
@@ -179,7 +202,7 @@ function buildDunShell(map,baseY,wallCol,floorCol,opts){
         P2.push(X,yy+dy,Z);U2.push(X/S.TEXU,Z/S.TEXU);const k=ao(X,Z);const w=down?[1,1,1]:wet(X,Z,1-(1-k)*4);C2.push(k*w[0],k*w[1],k*w[2]);}
       for(let j=0;j<n;j++)for(let i=0;i<n;i++){const a=b+j*(n+1)+i,bb=a+1,cc=a+n+1,d=cc+1;if(down)I2.push(a,bb,cc,bb,d,cc);else I2.push(a,cc,bb,bb,cc,d);}}
     const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(P2,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(U2,2));g.setAttribute('color',new THREE.Float32BufferAttribute(C2,3));g.setIndex(I2);g.computeVertexNormals();
-    const m=new THREE.Mesh(g,new THREE.MeshLambertMaterial({map:dunStoneTex(col,seed+(down?3:1),kind),vertexColors:true}));m.userData.dunShell=down?'ceiling':'floor';return m;};
+    const m=new THREE.Mesh(g,new THREE.MeshLambertMaterial({map:dunStoneTex(col,seed+(down?3:1),rock?(down?'rockroof':'rockfloor'):kind),vertexColors:true}));m.userData.dunShell=down?'ceiling':'floor';return m;};
   const floor=plane(baseY,false,floorCol,'floor');
   const ceil=plane(baseY+H,true,new THREE.Color(wallCol).multiplyScalar(.6),'floor');
   // beams (S190): in every room at least three cells across, timbers across its shorter span every two cells, just
@@ -193,7 +216,7 @@ function buildDunShell(map,baseY,wallCol,floorCol,opts){
   // S601 — any number of holes (opts.holes: the ring's two flights and its yard), each cut from the runs in turn
   const holes=(opts&&opts.holes)||(opts&&opts.hole?[opts.hole]:[]);const runs1=(segs,across,h0,h1,c0,c1)=>across+.09<c0||across-.09>c1?segs:segs.flatMap(([a,b])=>[[a,Math.min(b,h0-.04)],[Math.max(a,h1+.04),b]]).filter(([p,q])=>q-p>.2);
   const runs=(a,b,across,axis)=>holes.reduce((segs,h)=>axis==='x'?runs1(segs,across,h.x0,h.x1,h.z0,h.z1):runs1(segs,across,h.z0,h.z1,h.x0,h.x1),[[a,b]]);
-  for(const rm of rooms){if(Math.min(rm.w,rm.h)<3)continue;const alongX=rm.w<=rm.h;const n=alongX?rm.h:rm.w;
+  for(const rm of rock?[]:rooms){if(Math.min(rm.w,rm.h)<3)continue;const alongX=rm.w<=rm.h;const n=alongX?rm.h:rm.w;
     for(let k=1;k<n-.5;k+=2){const y=baseY+H-.16;
       if(alongX){const z=rm.y+k-.5+.5,x0=rm.x-.5,x1=rm.x+rm.w-.5;for(const [a,b] of runs(x0-.25,x1+.25,z,'x'))box((a+b)/2,y,z,b-a,.2,.18,wood);}
       else{const x=rm.x+k-.5+.5,z0=rm.y-.5,z1=rm.y+rm.h-.5;for(const [a,b] of runs(z0-.25,z1+.25,x,'z'))box(x,y,(a+b)/2,.18,.2,b-a,wood);}}}
@@ -1628,7 +1651,7 @@ function buildDungeon(portal){
     // S197 — a fort's first floor too: its walls dressed flatter (no cove: its halls carry banners and sconces high on
     // the walls), in the fort's cool grey; its own floors and ceilings stay, so the shell lays ground only under walls
     const shellOn=true,fortF1=isFort&&floorIdx===1;
-    if(shellOn){const sh=buildDunShell(map,baseY,fortF1?0x6c6c72:floorIdx===1?th.wallCol:f2WallCol,floorIdx===1?th.floorCol:f2FloorCol,{seed:(portal.seed|0)*3+floorIdx,skip:fortF1?((c,r)=>map[r][c]!==0):((c,r)=>map[r][c]===3||map[r][c]===6||map[r][c]===8),amp:fortF1?.025:null,cove:!fortF1&&!gen.gate,
+    if(shellOn){const sh=buildDunShell(map,baseY,fortF1?0x6c6c72:floorIdx===1?th.wallCol:f2WallCol,floorIdx===1?th.floorCol:f2FloorCol,{seed:(portal.seed|0)*3+floorIdx,skip:fortF1?((c,r)=>map[r][c]!==0):((c,r)=>map[r][c]===3||map[r][c]===6||map[r][c]===8),amp:fortF1?.025:null,cove:!fortF1&&!gen.gate,rock:dunRockCave(portal,gen),
         ceil:gen.gate?(floorIdx===1?((c,r,X,Z)=>gen.ceilAt(c,r,X,Z,FLOOR_HEIGHT)):gen.ceilAt2?((c,r,X,Z)=>gen.ceilAt2(c,r,X,Z,FLOOR_HEIGHT)):null):null,pit:gen.gate?((c,r)=>map[r][c]===8):null,slab:gen.gate?(floorIdx===1?gen.slab:gen.slab2):null,
         noWall:gen.hallAt&&floorIdx===1?gen.hallAt:null,ceilToo:gen.hallAt&&floorIdx===2?gen.hallAt:null,faceTop:gen.hallAt&&floorIdx===2?((c,r,dc,dr)=>!gen.hallAt(c+dc,r+dr)&&(gen.map[r+dr]?.[c+dc]|0)>0?-FLOOR2_Y:null):null, /* S1298 — the stair hall, both floors */
         damp:DUN_DAMP[portal.theme]||DUN_DAMP.ruins,rooms:(floorIdx===2?(gen.rooms2||[]):(gen.rooms||[])).filter(rm=>rm.kind!=='space'),holes:floorIdx===2&&gen.stairC!=null?(gen.stairHoles||[{x0:gen.stairC-.5,x1:gen.stairC+1.5,z0:gen.stairR-.5,z1:gen.stairR+1.5}]):null,
