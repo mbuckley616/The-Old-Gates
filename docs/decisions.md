@@ -24,6 +24,16 @@ Backlog L7 (OG-075). The concept artist prototyped fifteen legendary weapons in 
 
 Pictures: [A, B and C on two racks](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/legendary-options.jpg) · [all fifteen](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/legendary-atlas.jpg). Write-up in `docs/concepts.md`.
 
+### Where Loscadh's dry brush grows — the thing its touch fires (from the look builder, 2026-11-01, #973)
+Magic B's build sheet (`docs/design/magic-build.md`) says Loscadh touched "fires dry brush" and stops there. Caor's brazier and web are in the gates (Session 1675) and Sioc's pool is coming (Session 1678, PR #972); nothing says where dry brush grows. A web across a side room's mouth already does "burn it and the way opens" inside a gate.
+
+- **A (recommended).** Lairs and dens: a side passage choked by a thicket of dead brush and bracken (bedding), 2 to 3 m deep, a wall until fired; it burns through in 3 to 4 s and leaves ash. One cavern in three, never where the way on needs it. A web is the gates', brush is the lairs'.
+- **B.** The open world: patches of dry gorse and heather on heath and scrub, near roads and caves; burns out over about 10 s, grows back in a few days. Mostly a sight.
+- **C.** Failing and broken gates: brush grown in through a breach, closing a side room where no web hangs.
+- **D.** A and B.
+
+Each is one look-builder session (the prop, `fireBrush(t)`, a finder) and one call from `touchLand` for the systems builder. Devlog `docs/devlog/1678.md`.
+
 ## Answered
 ### Magic B — three school perks at 100 that read two ways: Tine, Uisce, Solas (from the systems builder, 2026-10-31, #942)
 Session 1626 built three of the six school perks at 100 (Cloch's arrow ward, Scáth's Unseen, Gaoth's Downwind). The other three, from `docs/design/magic-build.md`, each read two ways, and all three are needed before magic B's session 5 is done.
