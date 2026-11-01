@@ -435,3 +435,15 @@ Written by the producer once a day, after 12:00 UTC. Newest last.
 **Blocked.** Nothing on main.
 
 **Roadmap.** 289 of 351 stories done (288 on 29 Oct): the ship's rail. The new look is 6 of 17. No deep-work card is queued: F14 comes last.
+
+## 1 Nov 2026
+
+**Waiting on you.** Five decisions: when a legendary shows its power (#960; C, faint at rest, full when drawn), where Loscadh's dry brush grows (#973; A, lairs and dens), Sioc's touch on a lock (#976; A, the works stiffen), making a ship yours (#979; B, fittings in the hold, figureheads and crew found), and the peaceful animals (#984; A, present and huntable). No PR waits for your tap: QA's harness fix (#956) is back with QA to renumber its devlog.
+
+**Landed on main since 31 Oct.** Magic B in the gates: Caor's touch lights braziers and burns webs, Sioc's freezes pools, the composing page, and your answers on the perks at 100 and League standing (Systems 1659–1680). The ladder's ring at every ladder site, the Drowned Ring in a Gatelands lough, gate braziers, webs and pools, an Aurennais chapel's own room (Look 1658–1690). Hair and beards: the plait, the fur collar, the short crop, the bearded chin (Bodies 1661–1693). The Debt built; The Mark's Rings drafted; legendary weapons prototyped; the ship page. Build s1114.
+
+**Under way.** Systems 1691–1692 (#990, its gate red on the first run); QA's budget ledger (#992).
+
+**Blocked.** QA's #956 conflicts with main since 31 Oct; QA's own next run.
+
+**Roadmap.** 290 of 358 stories done (289 of 351 on 31 Oct). The new look is 6 of 17; no deep-work card is queued.
