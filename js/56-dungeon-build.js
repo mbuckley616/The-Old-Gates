@@ -981,7 +981,7 @@ function gateFallBuild(gen){const out=[];
         put(SK.rbox(sz*1.4,sz,sz*1.1,sz*.25,1),b.col.clone().multiplyScalar(.75+Math.random()*.35),fx+nx*d+ax*a,sz*.4,fz+nz*d+az*a,Math.random()*Math.PI,(Math.random()-.5)*.6,(Math.random()-.5)*.6);}}
     const m=dunMerge(parts,'fall');m.position.set(cx,b.y||0,cz);m.castShadow=m.receiveShadow=true;m.userData.fall=b;dScene.add(m);b.mesh=m;out.push(m);}
   return out;}
-// S1672 — the things a touched word acts on, drawn in metres after the scaling pass (gateThings, 52-dungeon-gen.js, lays them in cells).
+// S1675 — the things a touched word acts on, drawn in metres after the scaling pass (gateThings, 52-dungeon-gen.js, lays them in cells).
 // A gate's brazier: an iron bowl 0.9 m across on a stem and three splayed feet, its rim 1.26 m up, a bed of coals in it; burning, a
 // second mesh of embers and five tongues of flame (shown or hidden) and a light the pool may take. Cold, the coals are grey ash. About
 // 620 triangles in 2 draws. A web: one plane across a side room's mouth, the passage's width and 0.4 m into each wall, its 6 m height, a canvas of spokes, a
@@ -1148,7 +1148,7 @@ function buildDungeon(portal){
   let gen=interiorKey==='cave'&&!dunKeepKind(portal)?makeGate(portal.size,portal.seed,(WORLD_DUNGEONS.find(e=>e.seed===portal.seed)||{}).floors,(WORLD_DUNGEONS.find(e=>e.seed===portal.seed)||{}).cond):interiorFn(portal.size,portal.seed);
   if(interiorKey!=='cave'&&!gen.map2&&portal.size!=='small')gen=addUpperFloor(gen,portal.seed); // v80 — forts get an upper floor
   if(gen.gate&&clochBlockDue(portal))gateBlock(gen,portal.seed); /* S1376 — Cloch's toll: a fallen block on each floor of the Mark's lesser gates (52-dungeon-gen.js) */
-  if(gen.gate)gateThings(gen,portal.seed); /* S1672 — the braziers and webs a touched word acts on (52-dungeon-gen.js) */
+  if(gen.gate)gateThings(gen,portal.seed); /* S1675 — the braziers and webs a touched word acts on (52-dungeon-gen.js) */
   if(gen.hall)FLOOR2_Y=-gen.hall.D; /* S1298 — a massive gate's floor two lies its stair hall's flights down (2 or 3 of 4.2 m) */
   dMap=gen.map;dMap2=gen.map2||null;dR=gen.H;dC=gen.W;
   mmRevealed=Array.from({length:dR},()=>new Uint8Array(dC));
@@ -3623,7 +3623,7 @@ function buildDungeon(portal){
   try{lairFinish(portal);}catch(e){}try{shuttleLay(portal);}catch(e){}try{cloakDenLay(portal,window._lairBoss);}catch(e){}
   dunScaleWhole(dunCellFor(portal),thWallMat);
   try{gateFallBuild(gen);}catch(e){console.warn('gateFallBuild',e);} /* S1376 — Cloch's fallen blocks, in metres */
-  try{gateThingsBuild(gen,portal);}catch(e){GATE_THINGS=[];console.warn('gateThingsBuild',e);} /* S1672 — the braziers and webs, in metres */
+  try{gateThingsBuild(gen,portal);}catch(e){GATE_THINGS=[];console.warn('gateThingsBuild',e);} /* S1675 — the braziers and webs, in metres */
   try{knotLay(portal,gen);}catch(e){console.warn('knotLay',e);} /* S1346 — a great gate's knot over the ring's dais, in metres (87-world-quests.js) */
   /* S1302 — a gate draws by space (dZoneBuild, dRender) and lights 8 at a time; its pool is made now, so the compile below has its lights */
   DZONE=gen.gate?dZoneBuild(gen):null;if(gen.gate){dScene.userData.lightPool=8;try{_sweepScenePool(dScene);}catch(e){}}

@@ -638,7 +638,7 @@ function gateBlock(gen,seed){
         if(!ok)continue;
         M[y][x]=0;for(const [c,yy] of way)M[yy][c]=1;gen.blocks.push({floor:fl,c:x,r:y,ew,side:s,way});done=true;break;}}}
   return gen.blocks;}
-// S1672 — the things a touched word acts on, in a gate (magic-build.md's Touched column: Caor "lights a brazier, burns a web"; magic.md:
+// S1675 — the things a touched word acts on, in a gate (magic-build.md's Touched column: Caor "lights a brazier, burns a web"; magic.md:
 // "a web across a door"). Braziers: a pair flanking each threshold on both of its sides, in the space's edge row a cell to either side
 // of the opening, and four at the corners of the ring chamber's dais (at:[x,z], the corner in cells, and out, the way out from it); each pair (and the ring's four) burning or cold, one in two. Webs:
 // across the one mouth of a side room whose only way in is a bare corridor (no door), one room in three. Pure, from the gate's seed

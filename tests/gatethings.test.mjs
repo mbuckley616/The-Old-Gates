@@ -1,4 +1,4 @@
-// The things a touched word acts on, in a gate (Session 1672; magic-build.md's Touched column, Caor "lights a brazier, burns a web";
+// The things a touched word acts on, in a gate (Session 1675; magic-build.md's Touched column, Caor "lights a brazier, burns a web";
 // magic.md, "a web across a door"). gateThings lays them from the gate's seed: a pair of braziers flanking each threshold on both sides
 // and four at the ring's dais, burning or cold; a web across the one bare mouth of a side room, one room in three. A hundred gates
 // through the generator alone, then two built: the braziers stand clear of the way and are solid, a web is a wall until burnWeb, and
