@@ -2296,7 +2296,7 @@ function aurenneChurchBox(o) {
   const out = { x0: b.min.x, x1: b.max.x, z0: b.min.z, z1: b.max.z, y1: b.max.y, front: C.front, domeTop: C.domeTop, towerTop: C.towerTop, inner: C.inner };
   AU_CH_BOX.set(key, out); return out;
 }
-// ── the guild hall's room (Session 1701, card F9; rooms.js's gatelandsGuildHall of Sessions 939, 965 and 966, inside PLANS.guildhall,
+// ── the guild hall's room (Session 1703, card F9; rooms.js's gatelandsGuildHall of Sessions 939, 965 and 966, inside PLANS.guildhall,
 // Michael's C on #352), with the inn's renames (mats() → roomMats(), GL_PLANS → PLANS, gatelandsBuilding → building) and two of its
 // own: forgeMats() → guildForgeMats() (the three the room takes: steel, leather, the grindstone's grit) and libSpines() → guildSpines()
 // (its texture carries no colour space, as every texture of the kit). The shell's stream is o.shell. The prototype's comment follows.

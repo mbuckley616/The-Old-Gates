@@ -1,6 +1,6 @@
 // The guild halls on the shape kit (Session 292, H.5 props, Michael's A on #46): the Fighters' and the Mages' halls each one
 // bake with the notice board and the dormitories' chests beside it; the old solids where they were.
-// S1701: a hall standing as the kit's own guild hall opens on the kit's room (kitguild); this room is the one a hall gets when the
+// S1703: a hall standing as the kit's own guild hall opens on the kit's room (kitguild); this room is the one a hall gets when the
 // kit's hall does not fit its lot (none of the 30 nearest towns has one), so the suite enters a copy of the hall without its kit.
 import { boot, check } from './lib/game.mjs';
 import fs from 'fs';

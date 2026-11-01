@@ -21,6 +21,8 @@ const r = await page.evaluate(() => {
   out.shield = Object.fromEntries([10, 11, 12].map(b => [b, !!F[b].shieldUp]));
   const plain4 = buildZoneEnemy(scene, [], x0, z0 + 9, 'Bandit Captain', null, { tier: 4 }); out.champ = { hp: F[12].maxHp, base: plain4.maxHp };
   if (plain4.mesh && plain4.mesh.parent) plain4.mesh.parent.remove(plain4.mesh);
+  // S1702 — what each fighter's body holds: its rolled weapon (a spear is still the Bandit's, owed), no Bandit's round shield
+  out.hand = Object.fromEntries(Object.entries(F).map(([b, e]) => { const P = e.limbs && e.limbs.person; return [b, { roll: e._ringWpn, held: P && P.g.wpn, kit: !!(P && P.weapon && P.weapon.parent), shieldKit: !!(P && P.shieldKit) }]; }));
   for (const e of Object.values(F)) if (e.mesh && e.mesh.parent) e.mesh.parent.remove(e.mesh);
   out.w = []; for (let b = 1; b <= 12; b++) out.w.push(ladderWeapon(b));
   out.kind = foeWeaponKind(F[4]) === ladderWeapon(4) && foeWeaponKind(F[1]) === ladderWeapon(1);
@@ -43,6 +45,8 @@ check(`a shield on one of bouts 10 and 11 (${r.shield[10]}, ${r.shield[11]}) and
 check(`the champion's health ×1.6 over a tier-4 fighter: ${r.champ.hp} against ${r.champ.base}`, r.champ.hp === Math.round(r.champ.base * 1.6), r.champ);
 check(`weapons by bout, never the bout before's: ${r.w.join(', ')}; the fighter holds its own (${r.kind})`,
   r.w.every((w, i) => ['sword', 'axe', 'mace', 'spear', 'dagger'].includes(w) && (i === 0 || w !== r.w[i - 1])) && r.kind, r.w);
+check(`each fighter holds its rolled weapon in its fist: ${Object.entries(r.hand).map(([b, h]) => b + ' ' + h.roll + '/' + h.held).join(', ')}`,
+  Object.values(r.hand).every(h => h.roll === 'spear' || (h.held === h.roll && h.kit && !h.shieldKit)), r.hand);
 check(`fighters keyed by bout and replacement: ${r.ids.join(', ')}`, r.ids[0] === 'ring:1:0' && r.ids[1] === 'ring:12:0', r.ids);
 check(`the save: the arena in the character row (${r.inC}), the rings in the world row (${r.inW}); back after a load: rank ${r.back.rank}, ban ${r.back.ban} days, the post's ${r.back.dead.join()}, bout 5's fighter ${r.back.id5}`,
   r.inC && r.inW && r.back.rank === 5 && r.back.ban === 28 && r.back.dead.join() === 'Test Fighter' && r.back.id5 === 'ring:5:1', r);

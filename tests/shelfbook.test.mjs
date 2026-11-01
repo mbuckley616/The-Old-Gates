@@ -27,7 +27,7 @@ const enter = async () => { await page.evaluate(() => { forceTime(12); px = _G.e
 await enter();
 const room = await page.evaluate(() => ({ shelf: { x: +INT_SHELF.x.toFixed(2), z: +INT_SHELF.z.toFixed(2), y: INT_SHELF.y || 0, nx: INT_SHELF.nx ?? -1, nz: INT_SHELF.nz ?? 0 }, w: +_G.intW.toFixed(2), d: +_G.intD.toFixed(2), kit: !!_G._guildHall }));
 console.log(JSON.stringify(room));
-// S1701: in the kit's guild hall (the new look) the shelf is the gallery's middle press, on the back wall 3.15 m up; in the old room the east wall's bookcase
+// S1703: in the kit's guild hall (the new look) the shelf is the gallery's middle press, on the back wall 3.15 m up; in the old room the east wall's bookcase
 check(room.kit ? 'the shelf is the gallery\'s press on the back wall, up on the gallery' : 'the shelf stands on the east wall inside the room', room.kit ? (room.shelf.z < .5 && room.shelf.y > 3 && room.shelf.x > 0 && room.shelf.x < room.w) : (room.shelf.x > room.w - .5 && room.shelf.x < room.w && room.shelf.z > 0 && room.shelf.z < room.d), room);
 const prompt = async (dx, look) => { await page.evaluate(([dx, look]) => { const S = INT_SHELF, nx = S.nx ?? -1, nz = S.nz ?? 0, y = S.y || 0; px = S.x + nx * dx; pz = S.z + nz * dx; jumpY = y; if (look) lookAtPt(S.x, y + 1.1, S.z); else lookAtPt(S.x + nx * (dx + 3), y + 1.1, S.z + nz * (dx + 3)); }, [dx, look]);
   await g.frames(3); return page.evaluate(() => ({ ob: document.getElementById('ob').textContent, p: WORLD.shelfPrompt() })); };

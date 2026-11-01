@@ -1,4 +1,4 @@
-// A town's guild hall inside, on the new look (Session 1701; card F9, Michael's C on #352; rooms.js's gatelandsGuildHall of Sessions
+// A town's guild hall inside, on the new look (Session 1703; card F9, Michael's C on #352; rooms.js's gatelandsGuildHall of Sessions
 // 939, 965 and 966; OG-043). On ?look=new a guild hall standing as the kit's own hall (lot.kit.kind 'guildhall', S1083) opens on that
 // hall inside, at its true size: PKIT.gl.guildHall, the hall open to its trusses, the gallery along the back wall at 3.2 m and its stair,
 // the dormitory of six beds over the steward's room. Both guilds (Dunmore has one of each): walled all round below the windows but the

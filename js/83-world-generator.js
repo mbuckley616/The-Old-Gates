@@ -2660,7 +2660,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     else{intNPCMesh=null;intNPCPos={x:-99,z:-99};}
     return sc_;
   }
-  // S1701 (card F9, Michael's C on #352; rooms.js's gatelandsGuildHall, Sessions 939, 965 and 966; OG-043) — on the new look a town's guild
+  // S1703 (card F9, Michael's C on #352; rooms.js's gatelandsGuildHall, Sessions 939, 965 and 966; OG-043) — on the new look a town's guild
   // hall standing as the kit's own hall (PKIT.gl.PLANS.guildhall, lot.kit.kind 'guildhall', S1083) is that hall inside: the hall open to its
   // three arch-braced trusses, the hearth in the west gable, the long table, the steward's desk facing the great door with the notice board
   // behind it, the rack (or the Mages' potion shelves), the stands (or the still), the pell (or the lectern), the gallery along the back wall
@@ -2726,7 +2726,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     else{intNPCMesh=null;intNPCPos={x:-99,z:-99};}
     return sc_;
   }
-  // S1701 — a guild hall's three members, stood at spots [[x, z] ×3] of the room's ground floor (the old room's and the kit hall's)
+  // S1703 — a guild hall's three members, stood at spots [[x, z] ×3] of the room's ground floor (the old room's and the kit hall's)
   function guildMembers(sc_,house,F_,reg,spots,box){
     const memberRoles=F_?['Blade','Warden','Recruit']:['Adept','Novice','Evoker'];
     const names=NAMES[reg]||NAMES.irish;
@@ -2752,7 +2752,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     if(kitCourtHouse(house))return buildKitCourtHouse(house); /* S1425 — Aurenne's courtyard house inside, at its true size */
     if(kitLonghouse(house))return buildKitLonghouse(house); /* S1453 — a Markish home: the longhouse inside, at its true size */
     if(kitChurchHall(house))return buildKitChurchHall(house); /* S1326 — the Church of the Weaver inside, at its true size */
-    if(kitGuildHall(house))return buildKitGuildHall(house); /* S1701 — a town's guild hall inside, at its true size */
+    if(kitGuildHall(house))return buildKitGuildHall(house); /* S1703 — a town's guild hall inside, at its true size */
     const two=!!house.two;
     // S896 (F2a) — the room's true size in metres (07-scale.js; visual-foundation.md §1: a cottage room 4 to 6 across, an inn's hall
     // 10 to 14, a church's nave 8 to 12 wide), then laid out in the old unit (÷ SCALE.ROOM_K) and scaled back up at the end
