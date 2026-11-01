@@ -1046,6 +1046,7 @@ function gateThingsBuild(gen,portal){GATE_THINGS=[];if(!gen||!gen.gate||!gen.thi
       const x=cx+t.dc*(H-.25),z=cz+t.dr*(H-.25),h=Math.min(FLOOR_HEIGHT,6);
       const whole=gtWebTex(t.id,false),mat=new THREE.MeshLambertMaterial({map:whole,alphaTest:.3,side:THREE.DoubleSide,color:0xdedcd4,emissive:0x262624});
       const m=new THREE.Mesh(new THREE.PlaneGeometry(DCELL+.8,h),mat);m.position.set(x,y+h/2,z);m.rotation.y=t.dc?Math.PI/2:0;m.name='gateWeb';dScene.add(m);
+      m._dz={ox:0,oy:0,oz:0,rad:Math.hypot(DCELL+.8,h)/2,low:-h/2,multi:true}; /* S1689 — hung in a mouth, it is seen from both sides of it: dRender's zones read it as in two (gatedraws) */
       const solid=t.dc?{x0:x-.35,x1:x+.35,z0:z-H,z1:z+H,floor:t.floor,web:t.id}:{x0:x-H,x1:x+H,z0:z-.35,z1:z+.35,floor:t.floor,web:t.id};DUNGEON_PROPS.push(solid);
       GATE_THINGS.push({id:t.id,kind:'web',floor:t.floor,x,y,z,burnt:false,mesh:m,solid,group:m});}
     else if(t.kind==='pool'){const busy=(x,z,R)=>clutter.concat(held,D_BEDS||[],SIGILS||[],ENEMIES||[]).some(q=>q&&(q.floor||1)===t.floor&&q.x!=null&&Math.hypot(q.x-x,q.z-z)<R+.7); /* never over a chest, a key, a cot, a carving or a foe */
