@@ -714,6 +714,9 @@ if (!process.argv.includes('--shots-only')) { const page = await browser.newPage
     if (k.split('+')[0] !== 'braids') check(`${k}: no bare seam down the back of the head (${Math.round(s.seam * s.seamN)} of ${s.seamN} midline points with no strand over them)`, s.seamN > 40 && s.seam <= .02, s.seam);
     if (s.gather && k.split('+')[0] !== 'bun') check(`${k}: the braid or tail clears the body by its clothes (${(s.drapeMin * 100).toFixed(1)} cm)`, s.drapeMin > .015, s.drapeMin);
     // Session 1665 (Michael's note on #272): past the shoulder the plait lies down the breast; over a fur mantle it stood off like a stiff rope, 7 to 8 cm
+    // Session 1668 (Michael's note on #272): under the fur mantle loose hair goes in at the nape and down inside the collar; it ended level 1 cm under
+    // the neck's joint, a blunt hem over the fur from behind and the side
+    if (k === 'loose+mantle') check(`${k}: the hair goes down inside the collar (${s.tuck?.n} strands tucked, the highest end ${((s.tuck?.top ?? 0) * -100).toFixed(1)} cm under the neck's joint)`, s.tuck?.n > 300 && s.tuck.top < -.045, s.tuck);
     if (k.split('+')[0] === 'plait') check(`${k}: the plait lies down the breast below the shoulder (at most ${(s.plaitLift * 100).toFixed(1)} cm out from the clothes' clearance)`, s.plaitLift != null && s.plaitLift < .03, s.plaitLift); }
   check(`loose hair stands higher over the crown than a braid pulled back (${(r.styles.loose.crown * 1000).toFixed(1)} mm against ${(r.styles.braid.crown * 1000).toFixed(1)} mm)`, r.styles.loose.crown > r.styles.braid.crown + .002);
   for (const [k, c] of Object.entries(r.cloaks)) { console.log(k, JSON.stringify(c));
