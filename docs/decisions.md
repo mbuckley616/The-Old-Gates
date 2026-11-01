@@ -15,6 +15,7 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+## Answered
 ### Legendary weapons — when does a legendary show its power? (from the concept artist, 2026-10-31, #960)
 Backlog L7 (OG-075). The concept artist prototyped fifteen legendary weapons in the new look, five per island, each with its own outline, material and effect (runes burning, arcs on an edge, frost mist, sparks, motes); 1.1k to 3.8k triangles each, 31.3k for all fifteen, no point lights (emissive plus bloom). Names and stories are the quest writer's; how each plays is the systems builder's. The question: when should a legendary's effect show?
 
@@ -23,6 +24,8 @@ Backlog L7 (OG-075). The concept artist prototyped fifteen legendary weapons in 
 - **C (recommended).** Faint at rest, full when drawn: racked, slung or sheathed it shows a fifth of its light and a quarter of its motes, no arcs; drawn, at full. One number per weapon.
 
 Pictures: [A, B and C on two racks](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/legendary-options.jpg) · [all fifteen](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/legendary-atlas.jpg). Write-up in `docs/concepts.md`.
+
+Michael: **Faint at rest, full when drawn** (C). (2026-11-01, on the control room)
 
 ### Where Loscadh's dry brush grows — the thing its touch fires (from the look builder, 2026-11-01, #973)
 Magic B's build sheet (`docs/design/magic-build.md`) says Loscadh touched "fires dry brush" and stops there. Caor's brazier and web are in the gates (Session 1675) and Sioc's pool is coming (Session 1678, PR #972); nothing says where dry brush grows. A web across a side room's mouth already does "burn it and the way opens" inside a gate.
@@ -34,6 +37,8 @@ Magic B's build sheet (`docs/design/magic-build.md`) says Loscadh touched "fires
 
 Each is one look-builder session (the prop, `fireBrush(t)`, a finder) and one call from `touchLand` for the systems builder. Devlog `docs/devlog/1678.md`.
 
+Michael: **Lairs and dens** (A). (2026-11-01, on the control room)
+
 ### Magic B — what Sioc's touch does to a lock (from the systems builder, 2026-11-01, #976)
 Magic B's build sheet (`docs/design/magic-build.md`, the Touched column) gives Sioc's touch "freezes a pool, a lock's works". The pool is built (Session 1680); the lock has no rule. The lock today is a pin per tumbler, set at the shear while it dwells 150–300 ms by Finesse; a mistimed press snaps a pick.
 
@@ -44,6 +49,8 @@ Magic B's build sheet (`docs/design/magic-build.md`, the Touched column) gives S
 
 Recommendation A: the spell buys time, the hand still opens it, so a mage-thief is a real build and picks and Finesse keep their worth. Devlog `docs/devlog/1680.md`, PR #975.
 
+Michael: **The works stiffen for 30 s** (A). (2026-11-01, on the control room)
+
 ### Making a ship yours (from the designer, 2026-11-01, #979)
 Backlog L6 asks for figurehead, paint, sails and banners, interior dress and upgrades (hold, crew quarters, stations), and Michael's 4 C gave the crew as upgrades with no morale. Today the only choices on your ship are her hull and the sail and hold tiers; how should she become yours?
 
@@ -52,6 +59,8 @@ Backlog L6 asks for figurehead, paint, sails and banners, interior dress and upg
 - **C.** B, and the banner has consequences: a nation's colours waive its fees and draw the others' searches and more pirates. Two more sessions, after the naval combat proposal.
 
 Recommendation B: room for fittings is a real trade between hold and home, the bench path makes Joinery the progression, and found figureheads and met crew put places and people on your deck. A is a price list (the brief's *Not this*); C belongs with naval combat's patrols. The page: `docs/design/making-a-ship-yours.md`.
+
+Michael: **Fittings take hold space; figureheads and crew found** (B). (2026-11-01, on the control room)
 
 ### The peaceful animals — where they spawn, what they do, and whether you can hunt them (from the systems builder, 2026-11-01, #984)
 The creature kit has the common animals built (deer, hare, fox, badger, otter, raven, crow) and the bodies builder can dress them in the game, but nothing puts them in the world. What should they do?
@@ -62,7 +71,8 @@ The creature kit has the common animals built (deer, hare, fox, badger, otter, r
 
 Recommendation A: the brief wants a world that feels lived in on the road, and survival B already makes meat a reason to hunt. A uses only rules the game has; B reads as scenery; C costs a round before anything walks in the fields. From Session 1687 (branch `auto/systems-1684`).
 
-## Answered
+Michael: **Present and huntable** (A). (2026-11-01, on the control room)
+
 ### Magic B — three school perks at 100 that read two ways: Tine, Uisce, Solas (from the systems builder, 2026-10-31, #942)
 Session 1626 built three of the six school perks at 100 (Cloch's arrow ward, Scáth's Unseen, Gaoth's Downwind). The other three, from `docs/design/magic-build.md`, each read two ways, and all three are needed before magic B's session 5 is done.
 
