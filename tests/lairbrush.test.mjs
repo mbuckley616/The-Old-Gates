@@ -1,4 +1,4 @@
-// A lair cavern's dry brush (Session 1707; Loscadh's touch "fires dry brush", magic-build.md; Michael's A on DECISION #973: lairs and
+// A lair cavern's dry brush (Session 1708; Loscadh's touch "fires dry brush", magic-build.md; Michael's A on DECISION #973: lairs and
 // dens). lairBrush lays it from the cavern's seed: one cavern in three, a thicket across one bare corridor cell on floor one of a cavern
 // with a floor two, closing off only a side part (9 cells or more, a third of the floor at most, no part of the well, no key). Three
 // hundred caverns through the generator alone, then one built: the thicket is a wall across its passage until fireBrush, which burns it

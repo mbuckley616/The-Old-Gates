@@ -1035,7 +1035,7 @@ function gtWebTex(id,burnt){const c=document.createElement('canvas');c.width=256
   else{for(const a of anchors){const s=.08+r()*.18;x.strokeStyle='rgba(200,196,188,.9)';x.lineWidth=2;x.beginPath();x.moveTo(a[0],a[1]);const ex=a[0]+(hub[0]-a[0])*s,ey=a[1]+(hub[1]-a[1])*s+r()*24;x.lineTo(ex,ey);x.stroke();
       x.strokeStyle='rgba(40,30,24,.95)';x.lineWidth=3;x.beginPath();x.arc(ex,ey,1.6,0,6.3);x.stroke();}}
   const t=new THREE.CanvasTexture(c);t.anisotropy=4;return t;}
-function gateThingsBuild(gen,portal){GATE_THINGS=[];if(!gen||!gen.things)return GATE_THINGS; /* a gate's things, and since S1707 a lair's brush */
+function gateThingsBuild(gen,portal){GATE_THINGS=[];if(!gen||!gen.things)return GATE_THINGS; /* a gate's things, and since S1708 a lair's brush */
   const H=DCELL/2,keys=(typeof KEYS!=='undefined'?KEYS:[]),lie=(typeof SHUTTLE_LIE!=='undefined'&&SHUTTLE_LIE)?[SHUTTLE_LIE]:[],held=keys.concat(lie);
   const clutter=(CHESTS||[]).concat(BARRELS||[]);
   for(const t of gen.things){const y=t.floor===2?FLOOR2_Y:0,cx=dAt(t.c),cz=dAt(t.r);
@@ -1123,7 +1123,7 @@ function gateThingNear(kind,x,z,r){let best=null,bd=r==null?1e9:r;
   return best;}
 // a web is a plane across its passage: the distance to it is to the nearest point of its span
 function gtWebDist(t,x,z){const s=t.solid,qx=Math.max(s.x0,Math.min(s.x1,x)),qz=Math.max(s.z0,Math.min(s.z1,z));return Math.hypot(x-qx,z-qz);}
-// S1707 — a lair's dry brush (lairBrush, 52-dungeon-gen.js; Loscadh's "fires dry brush", Michael's A on #973). A thicket of dead brush and
+// S1708 — a lair's dry brush (lairBrush, 52-dungeon-gen.js; Loscadh's "fires dry brush", Michael's A on #973). A thicket of dead brush and
 // bracken, the cavern's old bedding, packed across one corridor cell: a dark core of matted litter, a hundred and fifty dead stems and their twigs
 // standing out of it, forty fronds of dead bracken curled over, a skirt of straw on the floor; 2.3 m deep, the passage's width, about
 // 1.8 m high, one draw (about 3,440 triangles), and solid while it stands (a prop the cell's width across and 2.3 m along the passage).
@@ -1283,7 +1283,7 @@ function buildDungeon(portal){
   if(interiorKey!=='cave'&&!gen.map2&&portal.size!=='small')gen=addUpperFloor(gen,portal.seed); // v80 — forts get an upper floor
   if(gen.gate&&clochBlockDue(portal))gateBlock(gen,portal.seed); /* S1376 — Cloch's toll: a fallen block on each floor of the Mark's lesser gates (52-dungeon-gen.js) */
   if(gen.gate)gateThings(gen,portal.seed); /* S1675 — the braziers and webs a touched word acts on (52-dungeon-gen.js); S1678 the pools */
-  if(portal.lair&&!portal.tutorial&&!gen.gate)lairBrush(gen,portal.seed); /* S1707 — a lair cavern's dry brush, for Loscadh's touch (#973 A) */
+  if(portal.lair&&!portal.tutorial&&!gen.gate)lairBrush(gen,portal.seed); /* S1708 — a lair cavern's dry brush, for Loscadh's touch (#973 A) */
   if(gen.hall)FLOOR2_Y=-gen.hall.D; /* S1298 — a massive gate's floor two lies its stair hall's flights down (2 or 3 of 4.2 m) */
   dMap=gen.map;dMap2=gen.map2||null;dR=gen.H;dC=gen.W;
   mmRevealed=Array.from({length:dR},()=>new Uint8Array(dC));

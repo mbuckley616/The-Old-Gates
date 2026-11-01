@@ -3204,7 +3204,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       if(ins){const pr=5+1.5*Math.sin(performance.now()/260);ctx.beginPath();ctx.arc(sx,sz,pr+3,0,Math.PI*2);ctx.stroke();}
       else{const a=Math.atan2(sz-cz,sx-cx),ex=cx+Math.cos(a)*(size/2-9),ez=cz+Math.sin(a)*(size/2-9);ctx.fillStyle='#f6d860';ctx.translate(ex,ez);ctx.rotate(a);ctx.beginPath();ctx.moveTo(6,0);ctx.lineTo(-4,4);ctx.lineTo(-4,-4);ctx.closePath();ctx.fill();}
       ctx.restore();}
-    for(const e of ZONES.world.enemies){if(e.dead||!e.mesh||!e.mesh.visible)continue;const [sx,sz]=toS(e.x,e.z);if(sx<0||sz<0||sx>size||sz>size)continue;ctx.fillStyle='#ff4040';ctx.beginPath();ctx.arc(sx,sz,Math.max(1.8,1.4*s),0,Math.PI*2);ctx.fill();}
+    for(const e of ZONES.world.enemies){if(e.dead||e.wild||!e.mesh||!e.mesh.visible)continue;const [sx,sz]=toS(e.x,e.z); /* S1707 — the map's red marks foes, not deer */if(sx<0||sz<0||sx>size||sz>size)continue;ctx.fillStyle='#ff4040';ctx.beginPath();ctx.arc(sx,sz,Math.max(1.8,1.4*s),0,Math.PI*2);ctx.fill();}
     // player arrow
     ctx.save();ctx.translate(cx,cz);ctx.rotate(-yaw);ctx.fillStyle='#ffe060';ctx.strokeStyle='#2a1c10';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,-7);ctx.lineTo(5,6);ctx.lineTo(0,3);ctx.lineTo(-5,6);ctx.closePath();ctx.fill();ctx.stroke();ctx.restore();
     ctx.fillStyle='rgba(240,228,200,.8)';ctx.font='bold 10px Georgia';ctx.textAlign='center';ctx.fillText('N',cx,10);

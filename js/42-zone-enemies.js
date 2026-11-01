@@ -752,7 +752,45 @@ const ZONE_FOE_DEF={
     'Marsh Hag':    {minLevel:5, col:0x4a6a3a,eyeCol:0xffff80,hp:44, maxHp:44, spd:1.3,dmg:11,atk:1.5, xpVal:60, scale:1.0,shape:'humanoid',def:2, resist:{scath:0.7, tine:1.2}},
     'Ash Wight':    {minLevel:7, col:0x3a3634,eyeCol:0xff6020,hp:70, maxHp:70, spd:1.2,dmg:15,atk:1.5, xpVal:110,scale:1.1,shape:'humanoid',def:4, resist:{tine:0.4, cloch:1.4}},
     'Pirate':       {minLevel:1, col:0x3a2a2a,eyeCol:0xffd080,hp:32, maxHp:32, spd:1.3,dmg:9, atk:1.3, xpVal:34, scale:1.0,shape:'humanoid',def:2, resist:{}},
+    // S1707 — the peaceful animals (Michael's A on #984): never hostile, one blow or one arrow kills (1 health at any tier), no reward but
+    // their meat (bodyMeat). Built by buildAnimal at their own size; driven by tickWildOne, not the foes' chase. wild: never alert, never in a fight
+    'Deer':         {minLevel:1, col:0x94613a,eyeCol:0x140c08,hp:1,  maxHp:1,  spd:1.0,dmg:0, atk:9,   xpVal:0,  scale:1.24,shape:'wolf',    def:0, resist:{}, wild:true},
+    'Red Fox':      {minLevel:1, col:0xb8571f,eyeCol:0x2a1a08,hp:1,  maxHp:1,  spd:1.0,dmg:0, atk:9,   xpVal:0,  scale:.87, shape:'wolf',    def:0, resist:{}, wild:true},
+    'Brown Hare':   {minLevel:1, col:0x8f6b47,eyeCol:0x2a1a08,hp:1,  maxHp:1,  spd:1.0,dmg:0, atk:9,   xpVal:0,  scale:.71, shape:'wolf',    def:0, resist:{}, wild:true},
+    'Badger':       {minLevel:1, col:0x85807a,eyeCol:0x0f0a08,hp:1,  maxHp:1,  spd:1.0,dmg:0, atk:9,   xpVal:0,  scale:.535,shape:'wolf',    def:0, resist:{}, wild:true},
+    'Otter':        {minLevel:1, col:0x523824,eyeCol:0x0f0a08,hp:1,  maxHp:1,  spd:1.0,dmg:0, atk:9,   xpVal:0,  scale:.335,shape:'wolf',    def:0, resist:{}, wild:true},
   };
+// S1707 — the peaceful animals (Michael's A on #984): they graze and wander near where they stand, and on seeing or hearing you (a foe's
+// own senses, canSeePlayer: its cone, your sneaking, the weather) or on a blow they run 40 m from you, turning off walls, water and
+// steep ground; a startled one startles the rest of its group within 12 m. They never fight and never stay alert, so they hold no fight
+// open (passing time, the music). Pace in metres a second, walking and running
+const WILD_PACE={Deer:{walk:1.1,run:9},'Red Fox':{walk:1,run:7},'Brown Hare':{walk:.6,run:9},Badger:{walk:.6,run:4},Otter:{walk:.5,run:4}};
+const WILD_FLEE=40,WILD_HERD=12,WILD_HOME=10;
+function wildOpen(x,z){if(activeZoneId!=='world')return true;if(typeof worldH==='function'&&worldH(x,z)<.5)return false;
+  if(typeof slopeNormalY==='function'&&slopeNormalY(x,z)<.6)return false;return !(typeof solidAt==='function'&&solidAt(x,z));}
+function wildFlee(e,T){const W=e._w||(e._w={});if(W.mode==='flee')return;
+  W.mode='flee';W.left=WILD_FLEE;W.yaw=Math.atan2(e.x-T.x,e.z-T.z)+(e.rng()-.5)*.6;
+  for(const o of ZE)if(o!==e&&o.wild&&!o.dead&&Math.hypot(o.x-e.x,o.z-e.z)<WILD_HERD)wildFlee(o,T);}
+function tickWildOne(e,dt){if(!(dt>0))return;
+  const P=WILD_PACE[e.baseName]||WILD_PACE.Deer,W=e._w||(e._w={mode:'graze',t:2+e.rng()*6});
+  const T=targetOf(e),dist=Math.hypot(T.x-e.x,T.z-e.z);
+  if(e.alert){e.alert=false;wildFlee(e,T);} /* a blow that did not kill, or a pack's cry */
+  else if(W.mode!=='flee'&&!_hasBuff('vanish')&&canSeePlayer(e,dist,20))wildFlee(e,T);
+  let sp=0;
+  if(W.mode==='flee'){sp=P.run;
+    /* keep running from you as it goes: the way off is mostly away, bent round what blocks it */
+    const away=Math.atan2(e.x-T.x,e.z-T.z);let dy=away-W.yaw;dy=Math.atan2(Math.sin(dy),Math.cos(dy));W.yaw+=dy*Math.min(1,dt*1.5);
+    if(W.left<=0){W.mode='graze';W.t=3+e.rng()*5;e.homeX=e.x;e.homeZ=e.z;sp=0;}}
+  else if(W.mode==='walk'){sp=P.walk;if(Math.hypot(W.tx-e.x,W.tz-e.z)<.6){W.mode='graze';W.t=4+e.rng()*8;sp=0;}else W.yaw=Math.atan2(W.tx-e.x,W.tz-e.z);}
+  else{W.t-=dt;if(W.t<=0){const a=e.rng()*Math.PI*2,r=2+e.rng()*(WILD_HOME-2);W.tx=(e.homeX!=null?e.homeX:e.x)+Math.sin(a)*r;W.tz=(e.homeZ!=null?e.homeZ:e.z)+Math.cos(a)*r;
+    if(wildOpen(W.tx,W.tz))W.mode='walk';else W.t=1+e.rng()*2;}}
+  if(sp>0){let yaw=W.yaw,ok=false,nx=e.x,nz=e.z;const st=sp*dt;
+    for(const off of [0,.8,-.8,1.6,-1.6,2.4,-2.4]){const y=W.yaw+off;nx=e.x+Math.sin(y)*st;nz=e.z+Math.cos(y)*st;if(wildOpen(nx,nz)){yaw=y;ok=true;break;}}
+    if(!ok){if(W.mode==='flee')W.left=0;else{W.mode='graze';W.t=1+e.rng()*3;}}
+    else{W.yaw=yaw;e.x=nx;e.z=nz;if(W.mode==='flee')W.left-=st;
+      let dy=yaw-e.combatYaw;dy=Math.atan2(Math.sin(dy),Math.cos(dy));e.combatYaw+=dy*Math.min(1,dt*(W.mode==='flee'?14:5));}}
+  if(e.mesh){const y=typeof activeTerrainH==='function'?activeTerrainH(e.x,e.z):e.mesh.position.y;e.mesh.position.set(e.x,y,e.z);e.mesh.rotation.set(0,e.combatYaw,0);}
+}
 // S1701 — a person-bodied foe's weapon changed after it is built: the old one and any shield taken away, the kit's `kind` put in the
 // driver's fist as buildFoe puts it (a quarter turn about the shaft, the gear bone), and the genome's weapon set, so foeWeaponKind reads it.
 // On the new look the builder's body carries what the driver holds (hbHold); if that body is already attached, its held list is changed
@@ -775,8 +813,8 @@ function buildZoneEnemy(sc,sol,x,z,type,variantKey,zOpts){
   const _tier=(zOpts&&zOpts.tier!=null)?zOpts.tier:foeTier(sc,x,z);
   const _hpLvl=enemyHpScale(_tier);
   const _dmgLvl=enemyDmgScale(_tier);
-  if(d.hp){d.hp=Math.max(1,Math.round(d.hp*_hpLvl));}
-  if(d.maxHp){d.maxHp=Math.max(1,Math.round(d.maxHp*_hpLvl));}
+  if(d.hp&&!d.wild){d.hp=Math.max(1,Math.round(d.hp*_hpLvl));} /* S1707 — a wild animal is one blow at any tier */
+  if(d.maxHp&&!d.wild){d.maxHp=Math.max(1,Math.round(d.maxHp*_hpLvl));}
   if(d.dmg){d.dmg=Math.max(1,Math.round(d.dmg*_dmgLvl));}
   const displayName=vr.displayName;
   const g=new THREE.Group();
@@ -786,6 +824,9 @@ function buildZoneEnemy(sc,sol,x,z,type,variantKey,zOpts){
   let wolfRig=null,personRig=null;
   if(type==='Dragon'&&WOLF_KINDS.Dragon){ // v80 S177 — the dragon on the shape kit: the wolf's bones and gait, its own neck, tail and wings
     wolfRig=buildWolf(type,sc2/1.8*WOLF_KINDS.Dragon.world);g.add(wolfRig.root);limbs.torso=wolfRig.mesh;limbs.wolf=wolfRig;
+  }
+  else if(d.wild&&WOLF_KINDS[type]&&WOLF_KINDS[type].wild){ /* S1707 — a peaceful animal at its own size, its kit body keyed by the spawner's id (a hind by it, S1706) */
+    wolfRig=buildAnimal(type,zOpts&&zOpts.key!=null?zOpts.key:null);g.add(wolfRig.root);limbs.torso=wolfRig.mesh;limbs.wolf=wolfRig;
   }
   else if(zShapeExtra(type,d,g,mat,sc2,limbs)){}
   else if((d.shape==='wolf'||type==='Cave Bear')&&WOLF_KINDS[type]){ // v80 S166 (S223: and the Cave Bear, still a brute) — the wolf family on the shape kit: one skinned mesh, planted paws
@@ -880,6 +921,7 @@ function buildZoneEnemy(sc,sol,x,z,type,variantKey,zOpts){
   // brute/humanoid — distinct from dungeon buildFn vocabulary).
   const zoneE = {size:sc2,limbs,hpBg,x,z,hp:d.hp,maxHp:d.maxHp,mesh:g,hpFg,el,name:displayName,baseName:type,spd:d.spd,dmg:d.dmg,atkSpd:d.atk,dead:false,alert:false,atkCd:0,ph:Math.random()*Math.PI*2,homeX:x,homeZ:z,xpVal:d.xpVal,walkT:Math.random()*Math.PI*2,def:d.def||0,resist:d.resist||{},variant:vr.variant,xpMult:vr.xpMult,telegraphT:0,telegraphMax:0,minLevel,locked:isLocked,_origCol:d.col,shape:d.shape,beast:BEAST_TYPES.has(type),combatYaw:Math.random()*Math.PI*2};
   zoneE.tier=_tier;
+  if(d.wild){zoneE.wild=true;el.intensity=0;if(wolfRig&&wolfRig.hcKind==='Hind')zoneE.hind=true;} /* S1707 — no foe's eye-glow on a deer */
   initPosture(zoneE);
   if(wolfRig)wolfRig.e=zoneE;
   if(personRig){personRig.e=zoneE;hpBg.position.y=hpFg.position.y=1.3*SCALE.ROOM_K*sc2;} // the bar over a person's head (S905: at the taller man's, F2a)
@@ -985,6 +1027,7 @@ function tickZoneEnemies(dt,now,sc){
   ZE.forEach(e=>{
     if(e.dead||e.locked)return;
     if(e._duelHold)return; /* S373 — Rowe holds: talking, or on one knee */
+    if(e.wild){tickWildOne(e,dt);return;} /* S1707 — a peaceful animal grazes, wanders and runs; it never fights */
     // v61gj — Defensive lazy init for pre-ship saves (enemies in ZONES[id].enemies
     // that predate v61gj). Idempotent — no-op if already stamped. Then regen tick.
     if(typeof e.posture!=='number') initPosture(e);
@@ -1658,7 +1701,8 @@ function killZoneEnemy(e,sc,tag=''){
   lootSpark.position.set(e.x, lootY, e.z);
   sc.add(lootSpark);
   // Roll loot via shared pipeline — corpse drop chance + bonus roll, zone-appropriate theme
-  const items = rollContainerLoot('corpse', null, null, lootDropChance(e), e.id?`${e.id}:corpse:${lootDay()}`:undefined, e.tier); // S478 — a keyed foe's corpse rolls on its id
+  const items = e.wild?[]:rollContainerLoot('corpse', null, null, lootDropChance(e), e.id?`${e.id}:corpse:${lootDay()}`:undefined, e.tier); // S478 — a keyed foe's corpse rolls on its id; S1707 — an animal carries only its meat
+  if(e.wild&&typeof wildTaken==='function')wildTaken(e);
   bodyMeat(e,items,e.id?`${e.id}:corpse:${lootDay()}`:undefined); /* S1486 — meat off a bear, a boar or a wolf */
   bodyPicks(e,items,e.id?`${e.id}:corpse:${lootDay()}`:undefined); // S633 — a bandit's, kobold's, skeleton's or goblin's body may hold picks (#191 A)
   // v61c2 — Boss death hooks. The Faolchú gets:

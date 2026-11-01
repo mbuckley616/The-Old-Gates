@@ -682,7 +682,7 @@ function gateThings(gen,seed){
     const at=[rm.x+(rm.w-1)/2,rm.y+(rm.h-1)/2],rad=Math.max(1.2,Math.min(2.6,Math.min(rm.w,rm.h)*GATE_CELL*.2));
     put({kind:'pool',floor:fl,c:Math.round(at[0]),r:Math.round(at[1]),at,rad,cells:cells.slice(0,4).map(q=>[q[0],q[1]]),room:{x:rm.x,y:rm.y,w:rm.w,h:rm.h}});}
   return T;}
-// S1707 — dry brush, for Loscadh's touch ("fires dry brush", magic-build.md; Michael's A on #973: lairs and dens, a web is the gates'
+// S1708 — dry brush, for Loscadh's touch ("fires dry brush", magic-build.md; Michael's A on #973: lairs and dens, a web is the gates'
 // and brush is the lairs'). One lair cavern in three has a side passage choked by a thicket of dead brush and bracken, the cavern's
 // old bedding: one corridor cell (2.5 m deep once scaled), a wall until it is fired. Never where the way on needs it: the cell is a
 // bare corridor cell (two opposite neighbours open, the other two rock) on floor one of a cavern with a floor two (the master and its

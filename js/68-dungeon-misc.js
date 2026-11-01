@@ -290,7 +290,7 @@ function sndMonster(e,kind){try{const v=_voiceOf(e);const d=Math.hypot(e.x-px,e.
   else if(v==='shout'){sfxNoise(.16,0,0,.16*vol,900);sfxTone(220,140,.22,.14*vol,'sawtooth');if(kind==='alert')setTimeout(()=>{sfxNoise(.12,0,0,.14*vol,1100);sfxTone(260,160,.18,.12*vol,'sawtooth');},260);}
 }catch(e){}}
 function tickMonsterSounds(dt){const E=activeZoneId==='world'?(ZONES.world&&ZONES.world.enemies||[]):(typeof ENEMIES!=='undefined'?ENEMIES:[]);const now=performance.now();
-  for(const e of E){if(e.dead||!e.name)continue;const d=Math.hypot(e.x-px,e.z-pz);
+  for(const e of E){if(e.dead||!e.name||e.wild)continue;const d=Math.hypot(e.x-px,e.z-pz); /* S1707 — no growl from a deer */
     if((e.alert||e._agg)&&!e._alertSnd){e._alertSnd=true;if(d<26)sndMonster(e,'alert');}
     if(!e.alert&&!e._agg)e._alertSnd=false;
     if(d<14){e._idleT=(e._idleT==null?1+Math.random()*3:e._idleT)-dt;if(e._idleT<=0){e._idleT=2.5+Math.random()*4;sndMonster(e,'idle');}}}
