@@ -1119,8 +1119,15 @@
   function yardAt(x,z){for(const S of SETTLE.values())for(const Y of S.yards||[])if(Math.hypot(x-Y.x,z-Y.z)<Y.r+2.5)return Y;return null;}
   function yardRackNear(){if(activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior())||typeof sparStart!=='function')return null;
     for(const S of SETTLE.values())for(const Y of S.yards||[])if(Math.hypot(px-Y.rack.x,pz-Y.rack.z)<1.6)return Y;return null;}
-  function yardRackPrompt(){return yardRackNear()?"Press 'E' to take a staff from the rack":null;}
-  function yardRackUse(){const Y=yardRackNear();if(!Y)return false;const R=sparStart({x:Y.x,z:Y.z,site:Y.site});if(R&&R.say)showMsg(R.say,'#e8d8a0');return true;}
+  // S1691 — from 18h to 22h the same spot calls the evening's brawl (brawlStart, S1644: fists, the stake by the town's tier, one a
+  // night), in the same 5 m ring; until the quest writer's barker stands there, the rack takes the call, as the ring's gate does. The prompt
+  // shows only when E can give what it says: not in a ring, and not from 22h to 8h.
+  function yardBrawlHour(){return typeof brawlStart==='function'&&typeof brawlOpen==='function'&&brawlOpen();}
+  function yardRackPrompt(){const Y=yardRackNear();if(!Y)return null;
+    if((typeof SPAR!=='undefined'&&SPAR)||(typeof BOUT!=='undefined'&&BOUT)||(typeof BRAWL!=='undefined'&&BRAWL))return null; /* in the ring already: nothing to offer (the critic, 1 Nov) */
+    if(!yardBrawlHour()&&typeof sparOpen==='function'&&!sparOpen())return null; /* 22h to 8h: E still answers that the yard is shut */
+    return yardBrawlHour()?`Press 'E' to call a brawl: ${brawlStake(worldTierAt(Y.x,Y.z))} gold a side, fists`:"Press 'E' to take a staff from the rack";}
+  function yardRackUse(){const Y=yardRackNear();if(!Y)return false;const o={x:Y.x,z:Y.z,site:Y.site};const R=yardBrawlHour()?brawlStart(o):sparStart(o);if(R&&R.say)showMsg(R.say,'#e8d8a0');return true;}
   // S1658 — the ladder's rings (genSettlement's S.ring): the ring's gate, where the ring master takes your call (ladderCall, 8h–17h, by
   // 87-world-quests.js; until the quest writer's master stands there the gate takes it), and its post, where the names are cut: the
   // champion's (rings.champion; yours when you hold the title) and the fighters killed after they yielded (rings.by[site].dead).
