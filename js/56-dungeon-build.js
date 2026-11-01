@@ -11,7 +11,11 @@ function dPropHit(x, z){
   return false;
 }
 function dBlk(x,z){const R=0.3; /* S1283 — your body 0.3 round, as in the world and the rooms (F2b) */ return dSolid(x-R,z-R)||dSolid(x+R,z-R)||dSolid(x-R,z+R)||dSolid(x+R,z+R);}
-function dSlide(x,z,dx,dz){if(!dBlk(x+dx,z+dz))return[x+dx,z+dz];if(!dBlk(x+dx,z))return[x+dx,z];if(!dBlk(x,z+dz))return[x,z+dz];return[x,z];}
+// S1682 — a foe's step: a frozen pool is still a wall to it (freezePool's ice is a foothold, and a foe in a gate reads none, so it walked
+// across sunk 0.32 m into the ice). It goes round the ice as it went round the water; to you the ice is open (dBlk, dSlideP).
+function dIceHit(x,z){for(let i=0;i<GATE_THINGS.length;i++){const t=GATE_THINGS[i];if(t.kind!=='pool'||!t.frozen||(t.floor&&t.floor!==currentFloor))continue;const r=t.R+.3;if((x-t.x)*(x-t.x)+(z-t.z)*(z-t.z)<r*r)return true;}return false;}
+function dBlkF(x,z){return dBlk(x,z)||dIceHit(x,z);}
+function dSlide(x,z,dx,dz){if(!dBlkF(x+dx,z+dz))return[x+dx,z+dz];if(!dBlkF(x+dx,z))return[x+dx,z];if(!dBlkF(x,z+dz))return[x,z+dz];return[x,z];}
 // S1327 (card F5, condition) — your own step in a gate: a chasm's open air (8) is no wall to you, as it is to a foe. Over it with no
 // stone under you the ground is the pit's floor, GATE_PIT down (dPitBase), so you fall, and 25 m kills (FALL_PER). Once you are
 // below the floor over the air, the pit's sides are walls: you cannot climb out through the rock.
@@ -1047,7 +1051,7 @@ function gateThingsBuild(gen,portal){GATE_THINGS=[];if(!gen||!gen.gate||!gen.thi
     else if(t.kind==='pool'){const busy=(x,z,R)=>clutter.concat(held,D_BEDS||[],SIGILS||[],ENEMIES||[]).some(q=>q&&(q.floor||1)===t.floor&&q.x!=null&&Math.hypot(q.x-x,q.z-z)<R+.7); /* never over a chest, a key, a cot, a carving or a foe */
       const tries=[[dAt(t.at[0]),dAt(t.at[1]),t.rad]].concat((t.cells||[]).map(([c,r])=>[dAt(c),dAt(r),GT_POOL.R]));
       const at=tries.find(([x,z,R])=>!busy(x,z,R));if(!at)continue;const [x,z,R]=at;
-      const grp=gatePoolProp(t.id,R);grp.position.set(x,y,z);dScene.add(grp);const col={x,z,r:R,floor:t.floor,pool:t.id};DUNGEON_COLUMNS.push(col);
+      const grp=gatePoolProp(t.id,R,gen.cond);grp.position.set(x,y,z);dScene.add(grp);const col={x,z,r:R,floor:t.floor,pool:t.id};DUNGEON_COLUMNS.push(col);
       GATE_THINGS.push({id:t.id,kind:'pool',floor:t.floor,x,y,z,R,frozen:false,group:grp,col,ice:null});}}
   return GATE_THINGS;}
 // S1678 — a gate's pool, for Sioc's touch ("freezes a pool", magic-build.md). A round cistern 2.4 to 5.2 m across (R, by its room):
@@ -1055,11 +1059,27 @@ function gateThingsBuild(gen,portal){GATE_THINGS=[];if(!gen||!gen.gate||!gen.thi
 // cannot wade it); frozen (freezePool), the water is a sheet of grey-white ice with its cracks and a rim of frost, drawn from the
 // pool's id, and the ice is a foothold at the kerb's height that you can walk across. Two draws either way.
 const GT_POOL={R:1.2,KERB_W:.24,KERB:.36,WATER:.24,ICE:.32};
-function gatePoolProp(id,R){R=R||GT_POOL.R;const g=new THREE.Group();g.name='gatePool';const r=seededRng('gatepool',id),P=GT_POOL,IN=R-P.KERB_W,parts=[],n=R>1.8?12:8,seg=R>1.8?4:3;
+// S1682 — the kerb by the gate's condition (OG-120: failing is the same hall with blocks out of place; catastrophic, broken): in a failing
+// gate two stones have settled, dropped 3-6 cm and leaning 6-10 degrees out; in a catastrophic one four, leaning 10-16, one of them split
+// into two with a crack between, and a chip of it on the floor beside the kerb. A leaning stone's top stays within 10 cm of the rim (the
+// solid's radius, and a body stops 0.3 m out), and the chip, 0.14 m high, is under a step and no solid. Their own stream, so the steady kerb's shades never move.
+function gtKerbWear(id,n,cond){const w=new Map();if(cond!=='failing'&&cond!=='catastrophic')return w;const r=seededRng('gatepoolwear',id),cat=cond==='catastrophic',k0=Math.floor(r()*n);
+  for(let j=0;j<(cat?4:2);j++){const k=(k0+Math.floor(j*n/(cat?4:2))+(j&&r()<.5?1:0))%n;w.set(k,{drop:.03+r()*.03,tilt:(cat?10+r()*6:6+r()*4)*Math.PI/180,split:cat&&j===0});}w.first=k0;return w;}
+function gatePoolProp(id,R,cond){R=R||GT_POOL.R;const g=new THREE.Group();g.name='gatePool';const r=seededRng('gatepool',id),P=GT_POOL,IN=R-P.KERB_W,parts=[],n=R>1.8?12:8,seg=R>1.8?4:3;
   g.userData.IN=IN;
   const prof=[[IN,0],[R-.03,0],[R,.04],[R,P.KERB-.05],[R-.04,P.KERB],[IN+.04,P.KERB],[IN,P.KERB-.04],[IN,0]].map(([a,b])=>new THREE.Vector2(a,b));
-  for(let k=0;k<n;k++){const tone=.82+r()*.3,c=new THREE.Color(0x58504a).multiplyScalar(tone),gap=.012/R*1.2,a0=k/n*Math.PI*2+gap;
-    parts.push([new THREE.LatheGeometry(prof,seg,a0,Math.PI*2/n-gap*2),c,new THREE.Matrix4().makeTranslation(0,(r()-.5)*.012,0)]);}
+  const wear=gtKerbWear(id,n,cond);
+  for(let k=0;k<n;k++){const tone=.82+r()*.3,c=new THREE.Color(0x58504a).multiplyScalar(tone),gap=.012/R*1.2,a0=k/n*Math.PI*2+gap,da=Math.PI*2/n-gap*2,dy=(r()-.5)*.012,W=wear.get(k);
+    if(!W){parts.push([new THREE.LatheGeometry(prof,seg,a0,da),c,new THREE.Matrix4().makeTranslation(0,dy,0)]);continue;}
+    const lean=(b0,db,t)=>{const am=b0+db/2,ux=Math.sin(am),uz=Math.cos(am),px=ux*R,pz=uz*R; /* three's lathe: x = r sin, z = r cos; the stone leans out about its foot's outer edge */
+      return new THREE.Matrix4().makeTranslation(px,dy-W.drop,pz).multiply(new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(Math.cos(am),0,-Math.sin(am)),t)).multiply(new THREE.Matrix4().makeTranslation(-px,0,-pz));};
+    if(!W.split){parts.push([new THREE.LatheGeometry(prof,seg,a0,da),c.clone().multiplyScalar(.9),lean(a0,da,W.tilt)]);continue;}
+    const cr=.06/R,h=(da-cr)/2;
+    parts.push([new THREE.LatheGeometry(prof,2,a0,h),c.clone().multiplyScalar(.88),lean(a0,h,W.tilt)]);
+    parts.push([new THREE.LatheGeometry(prof,2,a0+h+cr,h),c.clone().multiplyScalar(.84),lean(a0+h+cr,h,W.tilt*.4)]);
+    const am=a0+da/2,cd=R+.22,chip=new THREE.BoxGeometry(.16,.14,.12);
+    parts.push([chip,c.clone().multiplyScalar(.8),new THREE.Matrix4().makeTranslation(Math.sin(am+.12)*cd,.06,Math.cos(am+.12)*cd).multiply(new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(.35,am+.6,.2)))]);}
+  g.userData.wear=wear.size;g.userData.wearAt=wear.size?(wear.first+.5)/n*Math.PI*2:0;
   parts.push([new THREE.CircleGeometry(IN+.01,20).rotateX(-Math.PI/2),new THREE.Color(0x15130f),new THREE.Matrix4().makeTranslation(0,.02,0)]);
   const km=dunMerge(parts,'poolKerb');delete km.userData.dunShell;km.castShadow=false;km.receiveShadow=true;km.name='poolKerb';g.add(km);
   if(!_gtMat)gtMats();if(!_gtMat.water)_gtMat.water=new THREE.MeshPhongMaterial({color:0x0b1d22,specular:0x4a6670,shininess:70,transparent:true,opacity:.94,depthWrite:false});
