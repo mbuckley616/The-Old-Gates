@@ -1035,7 +1035,7 @@ function gtWebTex(id,burnt){const c=document.createElement('canvas');c.width=256
   else{for(const a of anchors){const s=.08+r()*.18;x.strokeStyle='rgba(200,196,188,.9)';x.lineWidth=2;x.beginPath();x.moveTo(a[0],a[1]);const ex=a[0]+(hub[0]-a[0])*s,ey=a[1]+(hub[1]-a[1])*s+r()*24;x.lineTo(ex,ey);x.stroke();
       x.strokeStyle='rgba(40,30,24,.95)';x.lineWidth=3;x.beginPath();x.arc(ex,ey,1.6,0,6.3);x.stroke();}}
   const t=new THREE.CanvasTexture(c);t.anisotropy=4;return t;}
-function gateThingsBuild(gen,portal){GATE_THINGS=[];if(!gen||!gen.gate||!gen.things)return GATE_THINGS;
+function gateThingsBuild(gen,portal){GATE_THINGS=[];if(!gen||!gen.things)return GATE_THINGS; /* a gate's things, and since S1707 a lair's brush */
   const H=DCELL/2,keys=(typeof KEYS!=='undefined'?KEYS:[]),lie=(typeof SHUTTLE_LIE!=='undefined'&&SHUTTLE_LIE)?[SHUTTLE_LIE]:[],held=keys.concat(lie);
   const clutter=(CHESTS||[]).concat(BARRELS||[]);
   for(const t of gen.things){const y=t.floor===2?FLOOR2_Y:0,cx=dAt(t.c),cz=dAt(t.r);
@@ -1058,7 +1058,8 @@ function gateThingsBuild(gen,portal){GATE_THINGS=[];if(!gen||!gen.gate||!gen.thi
       const tries=[[dAt(t.at[0]),dAt(t.at[1]),t.rad]].concat((t.cells||[]).map(([c,r])=>[dAt(c),dAt(r),GT_POOL.R]));
       const at=tries.find(([x,z,R])=>!busy(x,z,R));if(!at)continue;const [x,z,R]=at;
       const grp=gatePoolProp(t.id,R,gen.cond);grp.position.set(x,y,z);dScene.add(grp);const col={x,z,r:R,floor:t.floor,pool:t.id};DUNGEON_COLUMNS.push(col);
-      GATE_THINGS.push({id:t.id,kind:'pool',floor:t.floor,x,y,z,R,frozen:false,group:grp,col,ice:null});}}
+      GATE_THINGS.push({id:t.id,kind:'pool',floor:t.floor,x,y,z,R,frozen:false,group:grp,col,ice:null});}
+    else if(t.kind==='brush'){const rec=gtBrushLay(t,gen);if(rec)GATE_THINGS.push(rec);}}
   return GATE_THINGS;}
 // S1678 — a gate's pool, for Sioc's touch ("freezes a pool", magic-build.md). A round cistern 2.4 to 5.2 m across (R, by its room):
 // a kerb of dressed stones 0.36 m high and 0.24 m thick (eight, or twelve past 1.8 m) round black water 0.24 m up, which reads as deep (the floor under it is never seen). Solid while it is water (a body
@@ -1117,11 +1118,82 @@ function burnWeb(t){if(!t||t.kind!=='web'||t.burnt||GATE_THINGS.indexOf(t)<0)ret
   const m=t.mesh.material;if(m.map)m.map.dispose();m.map=gtWebTex(t.id,true);m.color.setHex(0xb8b2a8);m.emissive.setHex(0x120c08);m.needsUpdate=true;return true;}
 // the nearest thing of a kind on your floor within r of (x, z) that a word could still change (a cold brazier, a standing web, a pool not frozen)
 function gateThingNear(kind,x,z,r){let best=null,bd=r==null?1e9:r;
-  for(const t of GATE_THINGS){if(t.kind!==kind||t.floor!==currentFloor||(kind==='brazier'?t.lit:kind==='pool'?t.frozen:t.burnt))continue;
-    const d=kind==='web'?gtWebDist(t,x,z):kind==='pool'?Math.max(0,Math.hypot(t.x-x,t.z-z)-t.R):Math.hypot(t.x-x,t.z-z);if(d<=bd){bd=d;best=t;}} /* a pool by the distance to its rim */
+  for(const t of GATE_THINGS){if(t.kind!==kind||t.floor!==currentFloor||(kind==='brazier'?t.lit:kind==='pool'?t.frozen:t.burnt||t.burning))continue;
+    const d=kind==='web'||kind==='brush'?gtWebDist(t,x,z):kind==='pool'?Math.max(0,Math.hypot(t.x-x,t.z-z)-t.R):Math.hypot(t.x-x,t.z-z);if(d<=bd){bd=d;best=t;}} /* a pool by the distance to its rim */
   return best;}
 // a web is a plane across its passage: the distance to it is to the nearest point of its span
 function gtWebDist(t,x,z){const s=t.solid,qx=Math.max(s.x0,Math.min(s.x1,x)),qz=Math.max(s.z0,Math.min(s.z1,z));return Math.hypot(x-qx,z-qz);}
+// S1707 — a lair's dry brush (lairBrush, 52-dungeon-gen.js; Loscadh's "fires dry brush", Michael's A on #973). A thicket of dead brush and
+// bracken, the cavern's old bedding, packed across one corridor cell: a dark core of matted litter, a hundred and fifty dead stems and their twigs
+// standing out of it, forty fronds of dead bracken curled over, a skirt of straw on the floor; 2.3 m deep, the passage's width, about
+// 1.8 m high, one draw (about 3,440 triangles), and solid while it stands (a prop the cell's width across and 2.3 m along the passage).
+// fireBrush(t), the named action, sets it burning: for 3.5 s by the clock (performance.now(), so a dropped frame never moves it) the
+// flames rise and fall through it while it chars and sinks, and then it is a low bed of ash and charred stubs and the way is open.
+// A thing behind it (a key, the master, the Shuttle, the cloak's den) keeps it from being laid; a foe standing in its cell is moved
+// one cell on, into the part it closes; a chest or barrel in the cell keeps it from being laid.
+const GT_BRUSH={DEEP:2.3,BURN_MS:3500};
+function gtBrushProp(id,D){const g=new THREE.Group();g.name='lairBrush';const r=seededRng('lairbrush',id),P=[],half=D/2-.04,dep=GT_BRUSH.DEEP/2;
+  const C=h=>new THREE.Color(h),shade=(h,k)=>C(h).multiplyScalar(k);
+  const M=(x,y,z,q,sx,sy,sz)=>new THREE.Matrix4().compose(new THREE.Vector3(x,y,z),q||new THREE.Quaternion(),new THREE.Vector3(sx||1,sy||1,sz||1));
+  const lumpy=(det,amp)=>{const geo=new THREE.IcosahedronGeometry(1,det),p=geo.attributes.position,seen=new Map(); /* one push per corner, so the faces stay joined, and smooth */
+    for(let i=0;i<p.count;i++){const key=Math.round(p.getX(i)*1e3)+','+Math.round(p.getY(i)*1e3)+','+Math.round(p.getZ(i)*1e3);let k=seen.get(key);if(k==null){k=1+(r()-.5)*amp;seen.set(key,k);}p.setXYZ(i,p.getX(i)*k,p.getY(i)*k,p.getZ(i)*k);}dunSmoothNormals(geo);return geo;};
+  const envH=(x,z)=>Math.max(.25,2.05*(1-Math.pow(Math.abs(x)/(half+.15),3))*(1-Math.pow(Math.abs(z)/(dep+.2),2)*.55)); /* the thicket's height over (x, z): a packed mound, its top near 2 m */
+  // the skirt of straw and litter over the floor, past the mass on both faces
+  P.push([lumpy(1,.35),shade(0x8a7550,.8+r()*.15),M(0,.04,0,null,half,.1,dep+.35)]);
+  // the core: matted dead stuff, dark, so nothing shows through
+  for(let k=0;k<8;k++){const x=(k%4-1.5)/1.5*(half-.45),z=(k<4?-1:1)*dep*.35+(r()-.5)*.25,h=envH(x,z);
+    P.push([lumpy(1,.4),shade([0x2e241a,0x352a1e,0x2a2018][k%3],.85+r()*.3),M(x,h*.36,z,new THREE.Quaternion().setFromEuler(new THREE.Euler(r(),r()*6,r())),.5+r()*.15,h*.4,.5+r()*.15)]);}
+  // dead stems out of the mass, each with a twig: grey-brown, bleached at the tips of a few
+  const up=new THREE.Vector3(0,1,0);
+  const stem=(x0,y0,z0,dx,dy,dz,len,rad,col)=>{const dir=new THREE.Vector3(dx,dy,dz).normalize(),q=new THREE.Quaternion().setFromUnitVectors(up,dir),
+      geo=new THREE.CylinderGeometry(rad*.35,rad,len,4,1,true);P.push([geo,col,M(x0+dir.x*len/2,y0+dir.y*len/2,z0+dir.z*len/2,q)]);return [x0+dir.x*len,y0+dir.y*len,z0+dir.z*len,dir];};
+  for(let k=0;k<150;k++){const x=(r()*2-1)*(half-.2),z=(r()*2-1)*dep*.7,h=envH(x,z),y=h*(.12+r()*.62);
+    const dx=x/half*.8+(r()-.5)*1.1,dz=(z>=0?1:-1)*(.4+r()*.9),dy=.25+r()*1.0,len=.55+r()*.6,col=shade([0x5e4f3d,0x4e4234,0x6f604c,0x7f725f][k%4],.75+r()*.3);
+    const [ex,ey,ez,d]=stem(x,y,z,dx,dy,dz,len,.03+r()*.02,col);
+    stem(x+d.x*len*.55,y+d.y*len*.55,z+d.z*len*.55,d.x+(r()-.5)*1.4,d.y+.2,d.z+(r()-.5)*1.4,len*(.35+r()*.3),.012,col);}
+  // dead bracken: a tapered frond on a curved midrib, curled over and down
+  for(let k=0;k<40;k++){const L=.5+r()*.45,geo=new THREE.PlaneGeometry(.2,L,1,4),p=geo.attributes.position;
+    for(let i=0;i<p.count;i++){const v=(p.getY(i)+L/2)/L;p.setX(i,p.getX(i)*(1-v*.85)*(.6+Math.sin(v*Math.PI)*.6));p.setZ(i,-v*v*L*.55);p.setY(i,p.getY(i)+L/2);}geo.computeVertexNormals();
+    const x=(r()*2-1)*(half-.1),z=(r()*2-1)*dep*.9,h=envH(x,z),a=Math.atan2(x,z)+(r()-.5)*1.2;
+    P.push([geo,shade([0x7a5230,0x86603a,0x6a4428,0x8e7a56][k%4],.75+r()*.3),M(x,h*(.55+r()*.35),z,new THREE.Quaternion().setFromEuler(new THREE.Euler(-.5-r()*.6,a,(r()-.5)*.6,'YXZ')))]);}
+  const m=dunMerge(P,'lairBrush');delete m.userData.dunShell;m.material.side=THREE.DoubleSide;m.castShadow=false;m.receiveShadow=true;m.name='brushBody';g.add(m);
+  // the flames, hidden until it is fired: tongues through the thicket and a glow at its heart
+  const F=[];F.push([new THREE.IcosahedronGeometry(1,1),new THREE.Color(1,.42,.12),M(0,.5,0,null,half*.85,.45,dep*.8)]);
+  for(let k=0;k<22;k++){const x=(r()*2-1)*(half-.25),z=(r()*2-1)*dep*.7,h=.35+r()*.5;F.push([new THREE.ConeGeometry(.14+r()*.1,h,6),C([0xffa030,0xff7a20,0xff8a28,0xffb040][k%4]),M(x,envH(x,z)*.55+h/2,z,new THREE.Quaternion().setFromEuler(new THREE.Euler((r()-.5)*.5,0,(r()-.5)*.5)))]);}
+  const fm=dunMerge(F,'brushFire');delete fm.userData.dunShell;fm.material.dispose();fm.material=gtMats().fire;fm.name='brushFire';fm.visible=false;g.add(fm);
+  g.userData.body=m;g.userData.fire=fm;return g;}
+// what is left: a low bed of grey ash over the floor and a few charred stubs
+function gtBrushAsh(id,D){const r=seededRng('lairbrushash',id),P=[],half=D/2-.1,dep=GT_BRUSH.DEEP/2,up=new THREE.Vector3(0,1,0);
+  const lump=()=>{const geo=new THREE.IcosahedronGeometry(1,1),p=geo.attributes.position,seen=new Map();
+    for(let i=0;i<p.count;i++){const key=Math.round(p.getX(i)*1e3)+','+Math.round(p.getY(i)*1e3)+','+Math.round(p.getZ(i)*1e3);let k=seen.get(key);if(k==null){k=1+(r()-.5)*.4;seen.set(key,k);}p.setXYZ(i,p.getX(i)*k,p.getY(i)*k,p.getZ(i)*k);}dunSmoothNormals(geo);return geo;};
+  P.push([lump(),new THREE.Color(0x4a4642),new THREE.Matrix4().compose(new THREE.Vector3(0,0,0),new THREE.Quaternion(),new THREE.Vector3(half,.09,dep))]);
+  for(let k=0;k<4;k++)P.push([lump(),new THREE.Color(0x2a2522).multiplyScalar(.8+r()*.4),new THREE.Matrix4().compose(new THREE.Vector3((r()*2-1)*half*.6,.02,(r()*2-1)*dep*.6),new THREE.Quaternion(),new THREE.Vector3(.3+r()*.3,.1,.3+r()*.3))]);
+  for(let k=0;k<16;k++){const len=.12+r()*.34,dir=new THREE.Vector3((r()-.5)*1.4,1,(r()-.5)*1.4).normalize(),x=(r()*2-1)*half*.85,z=(r()*2-1)*dep*.8;
+    P.push([new THREE.CylinderGeometry(.008,.02,len,4,1,true),new THREE.Color(0x171310),new THREE.Matrix4().compose(new THREE.Vector3(x+dir.x*len/2,.04+dir.y*len/2,z+dir.z*len/2),new THREE.Quaternion().setFromUnitVectors(up,dir),new THREE.Vector3(1,1,1))]);}
+  const m=dunMerge(P,'lairBrushAsh');delete m.userData.dunShell;m.material.side=THREE.DoubleSide;m.castShadow=false;m.receiveShadow=true;m.name='brushAsh';return m;}
+// lay a brush thing in metres: the prop across its cell, its solid; null if something it must not close off or stand on is there
+function gtBrushLay(t,gen){const fl=t.floor||1,y=fl===2?FLOOR2_Y:0,cx=dAt(t.c),cz=dAt(t.r),D=DCELL,W=gen.W,behind=new Set(t.behind||[]),cellOf=q=>dCellOf(q.x)+dCellOf(q.z)*W,me=t.c+t.r*W;
+  const keep=[].concat(typeof KEYS!=='undefined'?KEYS:[],(typeof SHUTTLE_LIE!=='undefined'&&SHUTTLE_LIE)?[SHUTTLE_LIE]:[],(typeof CLOAK_DEN!=='undefined'&&CLOAK_DEN)?[CLOAK_DEN,CLOAK_DEN.e]:[],(ENEMIES||[]).filter(e=>e.boss||e.master));
+  if(keep.some(q=>q&&q.x!=null&&(q.floor||1)===fl&&(behind.has(cellOf(q))||cellOf(q)===me)))return null;
+  const inCell=q=>q&&q.x!=null&&(q.floor||1)===fl&&Math.abs(q.x-cx)<D/2+.3&&Math.abs(q.z-cz)<D/2+.3;
+  if((CHESTS||[]).concat(BARRELS||[]).some(inCell))return null;
+  for(const e of ENEMIES||[])if(!e.dead&&inCell(e)){e.x=dAt(t.c+t.dc);e.z=dAt(t.r+t.dr);if(e.mesh)e.mesh.position.set(e.x,e.mesh.position.y,e.z);}
+  const grp=gtBrushProp(t.id,D);grp.position.set(cx,y,cz);grp.rotation.y=t.dc?Math.PI/2:0;dScene.add(grp);
+  const a=GT_BRUSH.DEEP/2,solid=t.dc?{x0:cx-a,x1:cx+a,z0:cz-D/2,z1:cz+D/2,floor:fl,brush:t.id}:{x0:cx-D/2,x1:cx+D/2,z0:cz-a,z1:cz+a,floor:fl,brush:t.id};DUNGEON_PROPS.push(solid);
+  const rec={id:t.id,kind:'brush',floor:fl,x:cx,y,z:cz,burnt:false,burning:false,burnAt:0,solid,group:grp,light:null,ash:null,D};
+  grp.userData.body.onBeforeRender=()=>gtBrushStep(rec);return rec;}
+// fireBrush: the named action. The brush in this cavern catches and burns through in 3.5 s; false if it is burning or burnt already, or not one
+function fireBrush(t){if(!t||t.kind!=='brush'||t.burnt||t.burning||GATE_THINGS.indexOf(t)<0)return false;t.burning=true;t.burnAt=performance.now();
+  const l=new THREE.PointLight(0xff8a3a,0,10);l.position.set(t.x,t.y+1.6,t.z);dScene.add(l);t.light=l;t.group.userData.fire.visible=true;
+  t.group.userData.fire.onBeforeRender=()=>gtBrushStep(t);setTimeout(()=>gtBrushStep(t),GT_BRUSH.BURN_MS+60);gtBrushStep(t);return true;}
+// the burn read off the clock: the thicket chars and sinks while the flames rise and fall; at the end, ash, and the way open
+function gtBrushStep(t){if(!t||!t.burning)return;const now=performance.now(),p=Math.min(1,(now-t.burnAt)/GT_BRUSH.BURN_MS),U=t.group.userData;
+  if(p<1){const k=Math.max(.12,1-p*1.15);U.body.material.color.setRGB(k,k*.92,k*.85);U.body.scale.set(1-.18*p,1-.72*p*p,1-.18*p);
+    const f=Math.pow(Math.sin(Math.PI*Math.min(1,p*1.25)),.6),fl=.85+.15*Math.sin(now*.025+t.x);U.fire.scale.set(.6+.4*f,Math.max(.05,f*fl*1.1),.6+.4*f);
+    if(t.light)t.light.intensity=2.4*f*fl;return;}
+  t.burning=false;t.burnt=true;const i=DUNGEON_PROPS.indexOf(t.solid);if(i>=0)DUNGEON_PROPS.splice(i,1);
+  U.body.visible=false;U.fire.visible=false;if(t.light){dScene.remove(t.light);t.light.dispose&&t.light.dispose();t.light=null;}
+  if(!t.ash){t.ash=gtBrushAsh(t.id,t.D);t.group.add(t.ash);}}
 // S1400 — a great gate's ring and its knot (#680, Michael's A: the knot within reach, 2.1 m over the dais), ported from the prototype's
 // greatKnot (docs/prototypes/levelup/props.js, Session 1376) for the new look; knotLay (87-world-quests.js) places it and keeps its torus
 // knot on the old look and as the fallback. In the prop's frame y 0 is the dais's top, +z faces the way in, and the ring stands free
@@ -1211,6 +1283,7 @@ function buildDungeon(portal){
   if(interiorKey!=='cave'&&!gen.map2&&portal.size!=='small')gen=addUpperFloor(gen,portal.seed); // v80 — forts get an upper floor
   if(gen.gate&&clochBlockDue(portal))gateBlock(gen,portal.seed); /* S1376 — Cloch's toll: a fallen block on each floor of the Mark's lesser gates (52-dungeon-gen.js) */
   if(gen.gate)gateThings(gen,portal.seed); /* S1675 — the braziers and webs a touched word acts on (52-dungeon-gen.js); S1678 the pools */
+  if(portal.lair&&!portal.tutorial&&!gen.gate)lairBrush(gen,portal.seed); /* S1707 — a lair cavern's dry brush, for Loscadh's touch (#973 A) */
   if(gen.hall)FLOOR2_Y=-gen.hall.D; /* S1298 — a massive gate's floor two lies its stair hall's flights down (2 or 3 of 4.2 m) */
   dMap=gen.map;dMap2=gen.map2||null;dR=gen.H;dC=gen.W;
   mmRevealed=Array.from({length:dR},()=>new Uint8Array(dC));

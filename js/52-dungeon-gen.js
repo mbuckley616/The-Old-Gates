@@ -682,6 +682,38 @@ function gateThings(gen,seed){
     const at=[rm.x+(rm.w-1)/2,rm.y+(rm.h-1)/2],rad=Math.max(1.2,Math.min(2.6,Math.min(rm.w,rm.h)*GATE_CELL*.2));
     put({kind:'pool',floor:fl,c:Math.round(at[0]),r:Math.round(at[1]),at,rad,cells:cells.slice(0,4).map(q=>[q[0],q[1]]),room:{x:rm.x,y:rm.y,w:rm.w,h:rm.h}});}
   return T;}
+// S1707 — dry brush, for Loscadh's touch ("fires dry brush", magic-build.md; Michael's A on #973: lairs and dens, a web is the gates'
+// and brush is the lairs'). One lair cavern in three has a side passage choked by a thicket of dead brush and bracken, the cavern's
+// old bedding: one corridor cell (2.5 m deep once scaled), a wall until it is fired. Never where the way on needs it: the cell is a
+// bare corridor cell (two opposite neighbours open, the other two rock) on floor one of a cavern with a floor two (the master and its
+// hoard are on the lowest floor), and closing it cuts off from the entrance only a side part of the cavern: 9 cells or more, no more
+// than a third of the floor, holding no part of the well and no key's place. Each such cell is a choice, one picked on the stream. Pure, from the cavern's seed on its own stream, so a cavern is the same every visit; the id is <seed>:1:<index> after any
+// thing laid before. gen.things gets {id,kind:'brush',floor:1,c,r,dc,dr,behind} — (dc,dr) from the cell into the part it closes,
+// behind that part's cells as c+r*W. gateThingsBuild draws it in metres (56-dungeon-build.js). The stream is rolled first, so a
+// cavern with no such cell simply has none.
+const LAIR_BRUSH_P=.5; /* a half rolled, and about two caverns in three have such a cell: one cavern in three has its brush */
+function lairBrush(gen,seed){
+  if(!gen.things)gen.things=[];const T=gen.things;
+  const r=dunLcg((hashSeed(((seed|0)+0x51b3)>>>0)>>>0)||1);if(r()>=LAIR_BRUSH_P||!gen.map2||gen.gate)return T;
+  const M=gen.map,H=gen.H,W=gen.W,open=(c,y)=>y>=0&&c>=0&&y<H&&c<W&&M[y][c]>0&&M[y][c]!==8&&M[y][c]!==9;
+  let total=0;for(let y=0;y<H;y++)for(let c=0;c<W;c++)if(open(c,y))total++;
+  const keys=new Set((gen.keyLocations||[]).map(k=>k.x+k.y*W)),seen=new Map(),parts=[];
+  const reach=(bc,br)=>{const got=new Uint8Array(W*H),q=[gen.entC+gen.entR*W];got[q[0]]=1;
+    for(let i=0;i<q.length;i++){const c=q[i]%W,y=(q[i]-c)/W;for(const [a,b] of [[1,0],[-1,0],[0,1],[0,-1]]){const nc=c+a,ny=y+b;
+      if(!open(nc,ny)||(nc===bc&&ny===br))continue;const k=nc+ny*W;if(!got[k]){got[k]=1;q.push(k);}}}return got;};
+  for(let y=1;y<H-1;y++)for(let c=1;c<W-1;c++){if(M[y][c]!==1)continue;
+    const N=open(c,y-1),S=open(c,y+1),E=open(c+1,y),Wt=open(c-1,y);if(!((N&&S&&!E&&!Wt)||(E&&Wt&&!N&&!S)))continue;
+    if(Math.abs(c-gen.entC)+Math.abs(y-gen.entR)<3)continue;
+    const got=reach(c,y),cut=[];for(let yy=0;yy<H;yy++)for(let cc=0;cc<W;cc++){const k=cc+yy*W;if(!got[k]&&open(cc,yy)&&!(cc===c&&yy===y))cut.push(k);}
+    if(cut.length<9||cut.length>total/3)continue;
+    if(cut.some(k=>keys.has(k)||M[(k-k%W)/W][k%W]===3))continue;
+    const cs=new Set(cut);let dc=0,dr=0;for(const [a,b] of [[1,0],[-1,0],[0,1],[0,-1]])if(cs.has(c+a+(y+b)*W)){dc=a;dr=b;}
+    if(!dc&&!dr)continue;
+    const sig=cut[0]+':'+cut.length;if(seen.has(sig))continue;seen.set(sig,1);parts.push({c,r:y,dc,dr,behind:cut});}
+  if(!parts.length)return T;
+  const p=parts[Math.floor(r()*parts.length)],n=T.filter(t=>t.floor===1).length;
+  T.push({id:(seed|0)+':1:'+n,kind:'brush',floor:1,c:p.c,r:p.r,dc:p.dc,dr:p.dr,behind:p.behind});
+  return T;}
 // S1323 (card F5, the build sheet's session 3, "Pockets and the leash") — where a gate's fights stand. Each space of a floor
 // (the stair hall aside) holds pockets along its way, evenly: 25 to 42 m apart (one alone in a short space), so two
 // pockets never wake as one, and each end is within 25 m of one, so no stretch of the way runs 50 m without a fight. A pocket's radius is 0.4 of its spacing,
