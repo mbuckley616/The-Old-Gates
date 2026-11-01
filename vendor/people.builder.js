@@ -1092,7 +1092,7 @@ function buildHair(P, G, heads, scalpTris, headB, rnd, checks = true) {
   for (let t = 0; t < scalpTris.length; t += 3) { A.fromArray(P, scalpTris[t] * 3); B.fromArray(P, scalpTris[t + 1] * 3); C.fromArray(P, scalpTris[t + 2] * 3); tot += B.clone().sub(A).cross(C.clone().sub(A)).length() / 2 * (burnTri(t) ? 2.5 : 1); area.push(tot); }
   // the ears' reach either side of the head (Session 1568): a loose lock passes outside it, as a curtain, not round the ear
   const earW = [0, 0]; if (style === 'loose') for (const i of bodyV()) { const x = P[i * 3] - hc.x, y = P[i * 3 + 1], z = P[i * 3 + 2]; if (Math.abs(z - hc.z) < .045 && y < hc.y && y > hc.y - .08) { const k = x < 0 ? 0 : 1; earW[k] = Math.max(earW[k], Math.abs(x)); } }
-  let tuckN = 0, tuckTop = -1, sideN = 0, crownMiss = 0, edgeN = 0, edgeW = 0, backN = 0, backW = 0, tN = 0, tW = 0, tbN = 0, tbW = 0; const strands = [], short = style === 'short', free = style === 'loose', L = short ? .05 + .1 * len : free ? .12 + .5 * len : .5, nS = short ? 1400 : free ? 2200 : style === 'crown' ? 3000 : style === 'shaved' ? 4200 : 1700, step = .009, thick = short ? .009 : free ? .02 : .011;
+  let lockN = 0, lockFlat = 0, lockRun = 0, tuckN = 0, tuckTop = -1, sideN = 0, crownMiss = 0, edgeN = 0, edgeW = 0, backN = 0, backW = 0, tN = 0, tW = 0, tbN = 0, tbW = 0; const strands = [], short = style === 'short', free = style === 'loose', L = short ? .05 + .1 * len : free ? .12 + .5 * len : .5, nS = short ? 1400 : free ? 2200 : style === 'crown' ? 3000 : style === 'shaved' ? 4200 : 1700, step = .009, thick = short ? .009 : free ? .02 : .011;
   for (let k = 0; k < nS; k++) {
     let r = rnd() * tot, lo = 0, hi = area.length - 1; while (lo < hi) { const m = (lo + hi) >> 1; if (area[m] < r) lo = m + 1; else hi = m; } const t = lo * 3;
     A.fromArray(P, scalpTris[t] * 3); B.fromArray(P, scalpTris[t + 1] * 3); C.fromArray(P, scalpTris[t + 2] * 3); let u = rnd(), v = rnd(); if (u + v > 1) { u = 1 - u; v = 1 - v; }
@@ -1114,7 +1114,10 @@ function buildHair(P, G, heads, scalpTris, headB, rnd, checks = true) {
     // loose hair's face-framing locks (Session 1568, Michael's note on #272): a root at the side, forward of the crown, sweeps down past the
     // temple and over the ear instead of back over the skull, leaves the head at the side and falls in front of the shoulder
     // it runs back and out over the skull first, so no strand lies on the brow or the temple, and hangs once it is past the face's width
-    const lock = free && Math.abs(sx) > .3 && p.z > hc.z - .025, tuck = free && D.mantle && !lock, tuckY = tuck ? neckY - .05 - .06 * rnd() : 0, clr = q => tuck ? .02 : clearAt(q), hang = q => q.y < hc.y + .01 && (q.z < hc.z || Math.abs(q.x - hc.x) > .072);
+    // (Session 1676) it falls a little back from the ear to 12 cm over the neck's joint, then forward (0.7 to 1 down) until the joint's height, so it
+    // comes onto the shoulder in front of its top and goes on down the breast (0.14 to 1); it fell back all the way before, met the shoulder's top
+    // behind its crown and ran 10 to 13 cm forward along it almost level, a shelf of hair that pointed at the arm from behind
+    const lock = free && Math.abs(sx) > .3 && p.z > hc.z - .025, tuck = free && D.mantle && !lock, tuckY = tuck ? neckY - .05 - .06 * rnd() : 0, clr = q => tuck ? .02 : clearAt(q), lockZ = q => { const a = Math.max(0, Math.min(1, (neckY + .12 - q.y) / .03)), b = Math.max(0, Math.min(1, (neckY - q.y) / .03)); return -.08 + .78 * a * (1 - b) + .14 * b; }, hang = q => q.y < hc.y + .01 && (q.z < hc.z || Math.abs(q.x - hc.x) > .072);
     // the crop is short at the back and sides (Session 1576): a root within 5 cm over the ear's top (rest y .742) is shorter, down to 0.3 of
     // the length by the ear and at the nape; at the side it is combed back along the head and not down across the ear; the sideburn's, in front of the ear, 1.2 to 2.2 cm
     // whatever the crop's length, fall straight down
@@ -1131,11 +1134,11 @@ function buildHair(P, G, heads, scalpTris, headB, rnd, checks = true) {
     for (let l = 0; l < (crown ? .3 : myL + (g ? 1 : 0)); l += step) {
       let want;
       if (g) { want = g.p.clone().sub(q).normalize(); const front = Math.max(0, Math.min(1, (q.z - hc.z + .01) / .05)); if (!crown) want.z -= 1.4 * front; }
-      else { const back = Math.max(0, Math.min(1, (faceZ + .02 - q.z) / .1)); want = lock ? (hang(q) ? new THREE.Vector3(side * .12, -1, -.08) : new THREE.Vector3(side * .6, -(.25 + .75 * back), -(1 - .75 * back))) : new THREE.Vector3(sideW, -(.25 + .75 * back), -(1 - .55 * back));
+      else { const back = Math.max(0, Math.min(1, (faceZ + .02 - q.z) / .1)); want = lock ? (hang(q) ? new THREE.Vector3(side * .12, -1, lockZ(q)) : new THREE.Vector3(side * .6, -(.25 + .75 * back), -(1 - .75 * back))) : new THREE.Vector3(sideW, -(.25 + .75 * back), -(1 - .55 * back));
         // loose hair leaves the skull where the skull turns under (its surface faces down), so it parts from it on a tangent and
         // with no ledge; then it falls straight down with a little spread to the side, and never back in toward the head's axis,
         // so it hangs as wide as the head and is not pinched in to the nape
-        if (free && (lock || q.z < hc.z) && q.y < hc.y - .02 && (under || n.y < -.08 || q.y < relY - .05)) { under = true; if (fell < 0) { fell = pts.length - 1; nRel = n.clone(); } const ax = new THREE.Vector3(q.x - hc.x, 0, q.z - hc.z).normalize(); want.set(sx * .08, -1, lock ? .12 : 0);
+        if (free && (lock || q.z < hc.z) && q.y < hc.y - .02 && (under || n.y < -.08 || q.y < relY - .05)) { under = true; if (fell < 0) { fell = pts.length - 1; nRel = n.clone(); } const ax = new THREE.Vector3(q.x - hc.x, 0, q.z - hc.z).normalize(); want.set(sx * .08, -1, lock ? lockZ(q) : 0);
           const din = dir.x * ax.x + dir.z * ax.z; if (din < 0 && !(tuck && q.y < neckY + .06)) { dir.x -= din * ax.x; dir.z -= din * ax.z; } }
         // under the fur mantle (Session 1668, Michael's note on #272) the hair is worn inside the collar and goes in toward the nape over
         // its last 8 cm, so its foot rounds in under the fur's edge and is not a flat slab standing off the neck with a level, blunt hem
@@ -1159,6 +1162,8 @@ function buildHair(P, G, heads, scalpTris, headB, rnd, checks = true) {
     if (fell > 0) { for (let it = 0; it < 8; it++) for (let i = fell + 1; i < pts.length - 1; i++) pts[i].lerp(pts[i - 1].clone().add(pts[i + 1]).multiplyScalar(.5), .5);
       for (const q3 of pts.slice(fell + 1)) { const h3 = heightOver(S, q3), c = (onHead(q3) ? 0 : clr(q3)) + off; if (h3 && h3.h < c) q3.addScaledVector(h3.e.n, c - h3.h); } }
     if (rollFloor) for (const q3 of pts) if (!onHead(q3)) rollFloor(q3);
+    // a face-framing lock's longest run below the jaw that is flatter than 25 degrees under the level (Session 1676): a shelf along the shoulder
+    if (lock) { lockN++; let run = 0, best = 0; for (let i = 1; i < pts.length; i++) { const d = pts[i].clone().sub(pts[i - 1]), dl = d.length(); if (pts[i].y < hc.y - .08 && dl > 0 && d.y / dl > -.42) { run += dl; best = Math.max(best, run); } else run = 0; } if (best > .03) lockFlat++; lockRun = Math.max(lockRun, best); }
     if (r0.z > .04 && !burn) { if (eF < .5) { edgeN++; edgeW += fine; } else if (eF >= 1) { backN++; backW += fine; } }
     if (sideBand(r0.x, r0.y, r0.z)) sideN++;
     if (r0.z > -.01 && r0.z < .04 && Math.abs(r0.x) > .05) { if (eD < .0075) { tN++; tW += fine; } else if (eD >= .015) { tbN++; tbW += fine; } }
@@ -1252,7 +1257,7 @@ function buildHair(P, G, heads, scalpTris, headB, rnd, checks = true) {
         brush.push({ pts, ns, w: .007, v0: .5, v1: 1 }); }
       const bm = strandCards(brush, col, headB); bm.name = 'brush'; out.push(bm); }
   }
-  return { meshes: out, stats: { style, strands: strands.length, gather: gather.length, ...crown ? { ring: crown.n, ringMiss: crownMiss } : {}, ...checks ? { points: pts, inside, onFace, seam: seamN ? +(seamBare / seamN).toFixed(3) : 0, seamN, rootH: +rootH.toFixed(4), crown: +(crownH / Math.max(1, crownN)).toFixed(4) } : {}, drapeMin: +drapeMin.toFixed(4), ...plaitS ? { plaitLift: +plaitLift.toFixed(4) } : {}, ...tuckN ? { tuck: { n: tuckN, top: +tuckTop.toFixed(4) } } : {}, hairline: { edge: edgeN, ratio: +((edgeW / Math.max(1, edgeN)) / (backW / Math.max(1, backN))).toFixed(3) }, temples: { edge: tN, inner: tbN, ratio: +((tW / Math.max(1, tN)) / (tbW / Math.max(1, tbN))).toFixed(3) }, sides: { roots: sideN, n: bandN, bare: bandN ? +(bandBare / bandN).toFixed(3) : 0 } } };
+  return { meshes: out, stats: { style, strands: strands.length, gather: gather.length, ...crown ? { ring: crown.n, ringMiss: crownMiss } : {}, ...checks ? { points: pts, inside, onFace, seam: seamN ? +(seamBare / seamN).toFixed(3) : 0, seamN, rootH: +rootH.toFixed(4), crown: +(crownH / Math.max(1, crownN)).toFixed(4) } : {}, drapeMin: +drapeMin.toFixed(4), ...plaitS ? { plaitLift: +plaitLift.toFixed(4) } : {}, ...tuckN ? { tuck: { n: tuckN, top: +tuckTop.toFixed(4) } } : {}, ...lockN ? { locks: { n: lockN, flat: lockFlat, run: +lockRun.toFixed(4) } } : {}, hairline: { edge: edgeN, ratio: +((edgeW / Math.max(1, edgeN)) / (backW / Math.max(1, backN))).toFixed(3) }, temples: { edge: tN, inner: tbN, ratio: +((tW / Math.max(1, tN)) / (tbW / Math.max(1, tbN))).toFixed(3) }, sides: { roots: sideN, n: bandN, bare: bandN ? +(bandBare / bandN).toFixed(3) : 0 } } };
 }
 
 // ── the cloak (Session 805, B2): cloth hung from the shoulders ──

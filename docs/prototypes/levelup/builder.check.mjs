@@ -717,6 +717,9 @@ if (!process.argv.includes('--shots-only')) { const page = await browser.newPage
     // Session 1668 (Michael's note on #272): under the fur mantle loose hair goes in at the nape and down inside the collar; it ended level 1 cm under
     // the neck's joint, a blunt hem over the fur from behind and the side
     if (k === 'loose+mantle') check(`${k}: the hair goes down inside the collar (${s.tuck?.n} strands tucked, the highest end ${((s.tuck?.top ?? 0) * -100).toFixed(1)} cm under the neck's joint)`, s.tuck?.n > 300 && s.tuck.top < -.045, s.tuck);
+    // Session 1676 (Michael's note on #272): loose hair's face-framing locks come onto the shoulder in front of its top and go on down the breast; they
+    // met it behind its top and ran 10 cm forward along it almost level, a shelf of hair pointing at the arm from behind (356 of 877 locks over 3 cm)
+    if (k.split('+')[0] === 'loose') check(`${k}: the face-framing locks fall over the shoulder, not along it (${s.locks?.flat} of ${s.locks?.n} with a run flatter than 25 degrees over 3 cm under the jaw, the longest ${((s.locks?.run ?? 1) * 100).toFixed(1)} cm)`, s.locks?.n > 300 && s.locks.flat <= s.locks.n * .08 && s.locks.run < .065, s.locks);
     if (k.split('+')[0] === 'plait') check(`${k}: the plait lies down the breast below the shoulder (at most ${(s.plaitLift * 100).toFixed(1)} cm out from the clothes' clearance)`, s.plaitLift != null && s.plaitLift < .03, s.plaitLift); }
   check(`loose hair stands higher over the crown than a braid pulled back (${(r.styles.loose.crown * 1000).toFixed(1)} mm against ${(r.styles.braid.crown * 1000).toFixed(1)} mm)`, r.styles.loose.crown > r.styles.braid.crown + .002);
   for (const [k, c] of Object.entries(r.cloaks)) { console.log(k, JSON.stringify(c));
