@@ -972,6 +972,9 @@ function cardMat(color) {
   const m = new THREE.MeshStandardMaterial({ map: strandTex(), color, alphaTest: .42, side: THREE.DoubleSide, roughness: .78 });
   m.onBeforeCompile = sh => { sh.fragmentShader = sh.fragmentShader.replace('#include <normal_fragment_begin>', '#include <normal_fragment_begin>\n normal = normalize(vNormal); if (dot(normal, vViewPosition) < 0.) normal = -normal;'); }; return m;
 }
+// a strand's texture v at its point i of n: from v0 at the root to v1 at the tip, or with vR (Session 1688) from v0 to v1 over its first vR
+// points and v1 from there on, so the texture's thin foot is only the root's first few cm and not the first third of a long strand
+const strandV = (S, i, n) => S.vR ? S.v0 + (S.v1 - S.v0) * Math.min(1, i / S.vR) : S.v0 + (S.v1 - S.v0) * i / Math.max(1, n - 1);
 // cards along strands: each strand is {pts, ns, w}; the card lies flat on the surface under it (its width along strand x normal)
 function strandCards(strands, color, bone) {
   // (Session 1315: into arrays of their size, through two vectors kept for the walk, not three new ones a point; the same numbers)
@@ -980,7 +983,7 @@ function strandCards(strands, color, bone) {
   for (const S of strands) { const n = S.pts.length; if (n < 2) continue; const base = vp;
     for (let s = 0; s < n; s++) { if (s < n - 1) d.subVectors(S.pts[s + 1], S.pts[s]); else d.subVectors(S.pts[s], S.pts[s - 1]); d.normalize(); const nn = S.ns[s]; side.crossVectors(d, nn); if (side.lengthSq() < 1e-6) side.set(1, 0, 0); side.normalize();
       const w = S.w * (1 - (S.tip ?? .5) * (s / (n - 1)) ** 2), p = S.pts[s], o = vp * 3; pos[o] = p.x - side.x * w; pos[o + 1] = p.y - side.y * w; pos[o + 2] = p.z - side.z * w; pos[o + 3] = p.x + side.x * w; pos[o + 4] = p.y + side.y * w; pos[o + 5] = p.z + side.z * w;
-      nor[o] = nor[o + 3] = nn.x; nor[o + 1] = nor[o + 4] = nn.y; nor[o + 2] = nor[o + 5] = nn.z; const v = S.v0 + (S.v1 - S.v0) * s / (n - 1); uv[vp * 2] = 0; uv[vp * 2 + 1] = v; uv[vp * 2 + 2] = 1; uv[vp * 2 + 3] = v; vp += 2;
+      nor[o] = nor[o + 3] = nn.x; nor[o + 1] = nor[o + 4] = nn.y; nor[o + 2] = nor[o + 5] = nn.z; const v = strandV(S, s, n); uv[vp * 2] = 0; uv[vp * 2 + 1] = v; uv[vp * 2 + 2] = 1; uv[vp * 2 + 3] = v; vp += 2;
       if (s < n - 1) { const a = base + s * 2; idx[ip++] = a; idx[ip++] = a + 1; idx[ip++] = a + 2; idx[ip++] = a + 1; idx[ip++] = a + 3; idx[ip++] = a + 2; } } }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.BufferAttribute(nor, 3)); g.setAttribute('uv', new THREE.BufferAttribute(uv, 2)); g.setIndex(new THREE.BufferAttribute(idx, 1));
   const m = new THREE.SkinnedMesh(skinTo(g, bone), cardMat(color)); m.noCast = true; m.customDepthMaterial = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking, map: strandTex(), alphaTest: .42 }); return m;
@@ -1044,6 +1047,8 @@ function drape(S, start, dir0, L, clearAt, o = {}) {
 }
 // how far out of its clearance the plait lies down the breast (Session 1665): its own half-thickness, so the locks sit on the cloth
 const PLAIT_LIE = .012;
+// loose hair's strands reach the strand texture's opaque end this far from the root (Session 1688)
+const LOOSE_VR = .04;
 const HAIR_STYLES = ['short', 'loose', 'braid', 'braids', 'tail', 'bun', 'crown', 'plait', 'shaved'];
 // the sleeve's place along the forearm (Session 1228), for the checks
 function buildHair(P, G, heads, scalpTris, headB, rnd, checks = true) {
@@ -1187,12 +1192,15 @@ function buildHair(P, G, heads, scalpTris, headB, rnd, checks = true) {
     // (Session 1576, Michael's note on #272: the short crop's strands ran 0 up too. A 5 to 15 cm strand combed back left its first third
     // under the alpha test, so the crop began 4 cm behind its hairline and the temples and the band over the ear were bare skin. It ends
     // at the opaque end now, as the crown's do, and its roots by the hairline start lower in the fade)
-    strands.push({ r0x: r0.x, pts, ns, w: (short ? .008 : free ? (lock ? .012 : .008) : crown ? .015 : .011) * (.8 + .4 * rnd()) * fine, tip: free ? .85 : .5, ...crown || short ? { v0: Math.max(0, Math.min(1 - pts.length * step / .35, .2 + .65 * (fine - .35) / .65)), v1: 1 } : { v0: 0, v1: Math.min(1, pts.length * step / (g ? .35 : myL)) } });
+    // (Session 1688, Michael's note on #272: loose hair ran 0 up its whole length, so a 30 cm strand's first 12 cm were the texture's thin foot,
+    // under the alpha test; nothing covered the front of the head but the scalp's painted shell, and the strands seemed to start at the crown.
+    // Its strands now come up to the opaque end over their first 4 cm and stay there; by the hairline they start lower in the fade, as the crop's do)
+    strands.push({ r0x: r0.x, pts, ns, w: (short ? .008 : free ? (lock ? .012 : .008) : crown ? .015 : .011) * (.8 + .4 * rnd()) * fine, tip: free ? .85 : .5, ...crown || short ? { v0: Math.max(0, Math.min(1 - pts.length * step / .35, .2 + .65 * (fine - .35) / .65)), v1: 1 } : free && !g ? { v0: Math.max(0, .2 + .65 * (fine - .35) / .65), v1: 1, vR: LOOSE_VR / step } : { v0: 0, v1: Math.min(1, pts.length * step / (g ? .35 : myL)) } });
   }
   // the brow's cover (Session 1681): over the midline, 4 cm either side of it, the widest stretch no strand's opaque part (its card's v over .55)
   // covers, in three 5 mm bands from 2 to 3.5 cm over the lowest front root; front strands that ran sideways left 1.5 cm bare at the parting
   let partGap = 0; if (checks) { let hy = Infinity; for (const s of strands) if (Math.abs(s.r0x) < .015 && s.pts[0].z > hc.z + .05) hy = Math.min(hy, s.pts[0].y);
-    if (hy < Infinity) for (let b = 0; b < 3; b++) { const y0 = hy + .02 + b * .005, iv = [], X = .04; for (const s of strands) s.pts.forEach((q, i) => { if (s.v0 + (s.v1 - s.v0) * i / Math.max(1, s.pts.length - 1) > .55 && q.z > hc.z && q.y > y0 && q.y < y0 + .005 && Math.abs(q.x - hc.x) < X + .01) iv.push([q.x - hc.x - s.w / 2, q.x - hc.x + s.w / 2]); });
+    if (hy < Infinity) for (let b = 0; b < 3; b++) { const y0 = hy + .02 + b * .005, iv = [], X = .04; for (const s of strands) s.pts.forEach((q, i) => { if (strandV(s, i, s.pts.length) > .55 && q.z > hc.z && q.y > y0 && q.y < y0 + .005 && Math.abs(q.x - hc.x) < X + .01) iv.push([q.x - hc.x - s.w / 2, q.x - hc.x + s.w / 2]); });
       iv.sort((a, b) => a[0] - b[0]); let at = -X; for (const [a, c] of iv) { if (a > at) partGap = Math.max(partGap, Math.min(a, X) - at); at = Math.max(at, c); if (at >= X) break; } partGap = Math.max(partGap, X - Math.min(at, X)); } }
   // the checks' numbers: strand points under the skin, and strand points lying on the face (by the rest place of the skin under them)
   // and Session 877's: how high the roots sit on the skin, and how high the hair stands over the crown
