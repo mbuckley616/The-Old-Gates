@@ -2660,6 +2660,80 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     else{intNPCMesh=null;intNPCPos={x:-99,z:-99};}
     return sc_;
   }
+  // S1703 (card F9, Michael's C on #352; rooms.js's gatelandsGuildHall, Sessions 939, 965 and 966; OG-043) — on the new look a town's guild
+  // hall standing as the kit's own hall (PKIT.gl.PLANS.guildhall, lot.kit.kind 'guildhall', S1083) is that hall inside: the hall open to its
+  // three arch-braced trusses, the hearth in the west gable, the long table, the steward's desk facing the great door with the notice board
+  // behind it, the rack (or the Mages' potion shelves), the stands (or the still), the pell (or the lectern), the gallery along the back wall
+  // at 3.2 m, the stair up to it along the partition, the dormitory of six beds over the steward's room, and the steward's room through the
+  // partition's door. Drawn in metres and moved into the room's frame as the taproom is (nothing scaled). The beds are the guild's; the three
+  // members stand in the hall; the Mages' shelf book is on the gallery's middle press; the cellar's hatch is in the steward's room.
+  function kitGuildHall(house){return !!(house&&(house.type==='guild_f'||house.type==='guild_m')&&house.kit&&house.kit.kind==='guildhall'&&window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.gl&&PKIT.gl.guildHall);}
+  function buildKitGuildHall(house){
+    const F_=house.type==='guild_f',T=PKIT.gl.guildHall({guild:F_?'fighters':'mages',shell:house.id+':guildshell'},PKIT.stream(house.id+':guildhall')),I=T.inner,X=I.x1,Z=I.z1,F0=T.floors[0],F1=T.floors[1]-F0,W=2*X,D=2*Z;
+    const rx=x=>x+X,rz=z=>z+Z,ry=y=>y-F0,reg=house.reg||'irish';
+    house._counterFront=null;house.intW=W;house.intD=D;house._roomH=+(T.roofY(0)-T.lining-F0).toFixed(3);house._exitD=.8;house._exitW=1.3;house._exitX=+rx(T.door.x).toFixed(3);house._guildHall=T;
+    const sc_=new THREE.Scene();interiorScene=sc_;landRoomPost(sc_);sc_.background=new THREE.Color(0x100c08);sc_.fog=new THREE.Fog(0x100c08,Math.max(W,D)*1.2*SCALE.ROOM_K,Math.max(W,D)*3*SCALE.ROOM_K);
+    intNPCMesh=null;intBedPos=null;intStashPos=null;
+    const SOL=[];INT_SOL=SOL;FOOTHOLDS=[];INT_BEDS=[];INT_DOORS=[];INT_DOORS.house=house.id;INT_CHAIR=null;INT_NPCS=[];HATCH.active=false;HATCH.roof=false;INT_LOOT=null;INT_BOX=null;INT_SHELF=null;
+    T.group.position.set(X,-F0,Z);T.group.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false;}});sc_.add(T.group);
+    // the solids are the prototype's boxes (the furniture, the hearth's jambs, the gallery's posts and rail, the stair's treads, the beds and
+    // chests, the leaves); a bench, the stool and the chair stand from the floor; a box's top is a foothold, except a leaf's, a rail's, a
+    // post's, the stands', the lectern's and the grindstone's
+    for(const q of T.boxes){if(q.tag==='hearthstone')continue;const b={x0:rx(q.x0),x1:rx(q.x1),z0:rz(q.z0),z1:rz(q.z1),y0:ry(q.y0),y1:ry(q.y1)};if(['bench','gbench','stool','chair'].includes(q.tag))b.y0=q.fl?F1:0;SOL.push(b);
+      if(!['leaf','rail','post','stand','lectern','grind','breast'].includes(q.tag))FOOTHOLDS.push({x0:b.x0,x1:b.x1,z0:b.z0,z1:b.z1,y:b.y1});}
+    // the hearth's breast whole (its jambs are boxes; the firebox between them is not walked into), and the partition, a wall from the floor
+    // to the lining but for its two doors: the steward's room's on the ground floor, the dormitory's off the gallery
+    {const H=T.hearth[0];SOL.push({x0:0,x1:rx(H),z0:rz(-1.2),z1:rz(1.2),y0:0,y1:F1+.6});}
+    {const P=T.part,x0=rx(P.x0),x1=rx(P.x1),top=house._roomH,dS=T.doors.steward,dD=T.doors.dorm;
+      SOL.push({x0,x1,z0:0,z1:rz(dS.z0),y0:0,y1:F1},{x0,x1,z0:rz(dS.z1),z1:D,y0:0,y1:F1});
+      SOL.push({x0,x1,z0:0,z1:rz(dD.z0),y0:F1,y1:top},{x0,x1,z0:rz(dD.z1),z1:D,y0:F1,y1:top});}
+    // upstairs: the gallery along the back wall (and through the partition's doorway) and the dormitory's floor over the steward's room
+    FOOTHOLDS.push({x0:0,x1:rx(T.part.x1),z0:0,z1:rz(T.gallery.z1),y:F1},{x0:rx(T.part.x1),x1:W,z0:0,z1:D,y:F1}); /* the gallery's floor runs through the dormitory's doorway */
+    // the dormitory's six beds, the guild's, each recorded by its foot half (0.5 m in from the foot): the chest at its foot (0.45 m, over a
+    // step) keeps you in the aisle, 1.77 m from a bed's middle and past the 1.6 m reach (intreach); from the foot half it is 1.3, and the
+    // aim's box (0.5 m either way, bedAimed) is still all bed
+    T.beds.forEach((b,k)=>{INT_BEDS.push({x:rx(b.x0+.5),z:rz((b.z0+b.z1)/2),y:+F1.toFixed(3),owner:'guild',room:null,cz:rz((b.z0+b.z1)/2)});});
+    intBedPos={x:INT_BEDS[0].x,z:INT_BEDS[0].z};
+    // the Mages' copy of the guild's book, on the gallery's middle press (shelfPrompt, 86: the press's front at its floor)
+    if(!F_&&T.presses&&T.presses.length){const [a,b]=T.presses[Math.floor(T.presses.length/2)];INT_SHELF={x:rx((a+b)/2),z:rz(-Z+.2),y:+F1.toFixed(3),hx:+((b-a)/2).toFixed(3),hz:.2,nx:0,nz:1,id:house.id,house};}
+    // the cellar's hatch in the flags of the steward's room, between the chair and the front wall
+    if(hasCellar(house)){const hx=rx(X-1.0),hz=rz(Z-1.6);const lid=new THREE.Mesh(new THREE.BoxGeometry(.8,.04,.8),new THREE.MeshLambertMaterial({color:0x3a2612}));lid.position.set(hx,.02,hz);sc_.add(lid);
+      const ring=new THREE.Mesh(new THREE.TorusGeometry(.07,.015,5,10),new THREE.MeshLambertMaterial({color:0x2a2622}));ring.position.set(hx+.25,.05,hz);ring.rotation.x=Math.PI/2;sc_.add(ring);house._hatch={x:hx,z:hz};HATCH.x=hx;HATCH.z=hz;HATCH.y=0;HATCH.active=true;}
+    // the day beyond the great door and the windows on all four faces: one mesh of planes outside them, by the hour
+    {const hr=typeof gameHour==='function'?gameHour():12,day=hr>=7&&hr<18?0xc4d0dc:hr>=5&&hr<20?0x8a7a7a:0x0e1420,M=new THREE.MeshBasicMaterial({color:day}),P=[];
+      const RY={front:Math.PI,back:0,left:Math.PI/2,right:-Math.PI/2},NO={front:[0,1],back:[0,-1],left:[-1,0],right:[1,0]};
+      const out=(f,x,y,z,w,h)=>{const g=new THREE.PlaneGeometry(w+.2,h+.2).toNonIndexed();g.rotateY(RY[f]);const n=NO[f];g.translate(rx(x+n[0]*.08),ry(y+h/2),rz(z+n[1]*.08));P.push(g.attributes.position.array);g.dispose();};
+      for(const q of T.windows)out(q.face,q.x,q.y,q.z,q.w,q.h);out('front',T.door.x,F0,T.door.z,T.door.w,T.door.h);
+      const A=new Float32Array(P.reduce((n,a)=>n+a.length,0));let o=0;for(const a of P){A.set(a,o);o+=a.length;}
+      const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(A,3));const m=new THREE.Mesh(g,M);m.userData.daylight=true;sc_.add(m);}
+    // and the day in through the great door and the hall's ground-floor lights (S1490's kitDaylight, at the barn's 0.4)
+    kitDaylight(sc_,[...T.windows.filter(q=>(q.face==='front'||q.face==='back')&&ry(q.y)<F1-.3&&q.x<T.part.x0).map(q=>({x:rx(q.x),y:ry(q.y+q.h*.7),z:q.face==='front'?D:0,nx:0,nz:q.face==='front'?-1:1,w:q.w,h:q.h})),
+      {x:rx(T.door.x),y:T.door.h*.7,z:D,nx:0,nz:-1,w:T.door.w,h:T.door.h}],.4);
+    // the light: the hearth's fire, the wheel of candles, the dormitory's lamp, a lamp in the steward's room, and the Mages' still
+    const KA=kitRoomAir(sc_,.42);
+    const L=(x,y,z,c,i,d)=>{const l=new THREE.PointLight(c,i*(c===0xff6a20?KA.fire:KA.lamp),d);l.position.set(x,y,z);sc_.add(l);return l;};
+    L(rx(T.fire[0]+.6),ry(T.fire[1]+.3),rz(T.fire[2]),0xff6a20,1.6,8);L(rx(T.lamp[0]),ry(T.lamp[1]),rz(T.lamp[2]),0xffaa44,1.7,11);L(rx(T.dormLamp[0]+.3),ry(T.dormLamp[1]),rz(T.dormLamp[2]),0xffaa44,.7,6);
+    L(rx((T.stTable.x0+T.stTable.x1)/2),ry(F0+2.2),rz(T.stTable.z1),0xffb070,.6,5);
+    if(T.still&&T.still.glow)L(rx(T.still.glow[0]),ry(T.still.glow[1]+.3),rz(T.still.glow[2]-.4),0x60ff80,.8,4);
+    // the members, off the arrival and the walks: one behind the long table's far bench, one by the practice floor, one by the hearth
+    // under the gallery's west end
+    guildMembers(sc_,house,F_,reg,[[rx(-3.9),rz(T.table.z0-1.15)],[rx(T.pell.x+.9),rz(T.pell.z+.7)],[rx(-5.4),rz(T.gallery.z1+.75)]],{x0:rx(-X+1),x1:rx(T.part.x0-.6),z0:rz(T.gallery.z1+.4),z1:D-1});
+    // the steward behind the desk, beside the stool, facing the great door
+    const npc={x:rx(T.desk.x1-.3),z:rz(T.desk.z0-.32)};
+    if(npcInsideNow(house)){const g=buildNPCMesh({role:F_?'guard':'scholar',name:house.keeper,_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
+      g.rotation.y=0;g.position.set(npc.x,0,npc.z);sc_.add(g);intNPCMesh=g;intNPCPos={x:npc.x,z:npc.z};
+      intNPCMesh.userData.amble={wa:0,wt:1,minZ:npc.z,maxZ:npc.z,minX:npc.x,maxX:npc.x,speed:.25,paused:true};}
+    else{intNPCMesh=null;intNPCPos={x:-99,z:-99};}
+    return sc_;
+  }
+  // S1703 — a guild hall's three members, stood at spots [[x, z] ×3] of the room's ground floor (the old room's and the kit hall's)
+  function guildMembers(sc_,house,F_,reg,spots,box){
+    const memberRoles=F_?['Blade','Warden','Recruit']:['Adept','Novice','Evoker'];
+    const names=NAMES[reg]||NAMES.irish;
+    for(let k=0;k<3;k++){const nm=pick(Math.random,Math.random()<.5?names.m:names.f);const def={name:nm,role:memberRoles[k]+' of the '+(F_?'Fighters':'Mages'),ico:F_?'⚔':'✨',greeting:F_?["Steward's at the desk.","New? Don't touch the racks.","Come to spar sometime."]:["Mind the cauldron.","Have you read the board?","The Archmage sees everyone eventually."],topics:[{label:'What is it like here?',response:F_?'Beds, bread, and the odd broken nose. Better than the road.':'Quiet, mostly. Until something on a shelf goes off.'},{label:'Any advice?',response:F_?'Take the small jobs first. Beasts don\'t care about your rank.':'Never carry a relic in your bare hands longer than you must.'},{label:'Farewell.',bye:true}]};
+      const g=buildNPCMesh({role:F_?'guard':'scholar',name:nm,bCol:F_?0x5a2020:0x203a6a,sCol:0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});const [x,z]=spots[k];g.position.set(x,0,z);g.rotation.y=Math.random()*Math.PI*2;sc_.add(g);
+      INT_NPCS.push({g,def,wa:0,wt:1,walk:false,box});}
+  }
   function buildInteriorFor(house){
     const reg=house.reg||'irish',type=house.type||'misc',st=house.style||'irish';
     INT_BED_NATION=nationAt(house.doorX,house.doorZ); // S288 — the beds' wood
@@ -2678,6 +2752,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     if(kitCourtHouse(house))return buildKitCourtHouse(house); /* S1425 — Aurenne's courtyard house inside, at its true size */
     if(kitLonghouse(house))return buildKitLonghouse(house); /* S1453 — a Markish home: the longhouse inside, at its true size */
     if(kitChurchHall(house))return buildKitChurchHall(house); /* S1326 — the Church of the Weaver inside, at its true size */
+    if(kitGuildHall(house))return buildKitGuildHall(house); /* S1703 — a town's guild hall inside, at its true size */
     const two=!!house.two;
     // S896 (F2a) — the room's true size in metres (07-scale.js; visual-foundation.md §1: a cottage room 4 to 6 across, an inn's hall
     // 10 to 14, a church's nave 8 to 12 wide), then laid out in the old unit (÷ SCALE.ROOM_K) and scaled back up at the end
@@ -2912,11 +2987,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       // move the desk/board into the hall's south side facing the cross-wall door
       
       // members
-      const memberRoles=F_?['Blade','Warden','Recruit']:['Adept','Novice','Evoker'];
-      const names=NAMES[reg]||NAMES.irish;
-      for(let k=0;k<3;k++){const nm=pick(Math.random,Math.random()<.5?names.m:names.f);const def={name:nm,role:memberRoles[k]+' of the '+(F_?'Fighters':'Mages'),ico:F_?'⚔':'✨',greeting:F_?["Steward's at the desk.","New? Don't touch the racks.","Come to spar sometime."]:["Mind the cauldron.","Have you read the board?","The Archmage sees everyone eventually."],topics:[{label:'What is it like here?',response:F_?'Beds, bread, and the odd broken nose. Better than the road.':'Quiet, mostly. Until something on a shelf goes off.'},{label:'Any advice?',response:F_?'Take the small jobs first. Beasts don\'t care about your rank.':'Never carry a relic in your bare hands longer than you must.'},{label:'Farewell.',bye:true}]};
-        const g=buildNPCMesh({role:F_?'guard':'scholar',name:nm,bCol:F_?0x5a2020:0x203a6a,sCol:0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});const x=4+k*(W-8)/2,z=D*.4+(k%2)*2;g.position.set(x,0,z);g.rotation.y=Math.random()*Math.PI*2;sc_.add(g);
-        INT_NPCS.push({g,def,wa:0,wt:1,walk:false,box:{x0:2,x1:W-2,z0:5,z1:D-4}});}
+      guildMembers(sc_,house,F_,reg,[0,1,2].map(k=>[4+k*(W-8)/2,D*.4+(k%2)*2]),{x0:2,x1:W-2,z0:5,z1:D-4});
       npc={x:W/2,z:2.2,maxZ:2.6,paused:false};
     } else if(type==='barber'){
       // S512 — the barber and dyer (Michael's B on #144): the chair facing the mirror on the back wall, the washstand, a stool,
