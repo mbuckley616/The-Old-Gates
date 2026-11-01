@@ -2286,7 +2286,7 @@ function interact(){
   if(typeof shuttleNear==='function'&&shuttleNear()){shuttleTake();return;} /* S797 — the Shuttle, in its gate's deepest room */
   if(typeof cloakDenNear==='function'&&cloakDenNear()){cloakDenTake();return;} /* S992 — the cloak, from under its sleeping master */
   // Sigil touch — floor 2 only, closer range than most interactables
-  const nearSig=SIGILS.find(s=>s.floor===currentFloor && Math.hypot(px-s.x,pz-s.z)<TOUCH); /* S1668 — F2b's touch, 1.6 m, for every E in a dungeon (was 1.1 to 1.5 by thing) */
+  const nearSig=SIGILS.find(s=>s.floor===currentFloor && Math.hypot(px-s.x,pz-s.z)<TOUCH); /* S1670 — F2b's touch, 1.6 m, for every E in a dungeon (was 1.1 to 1.5 by thing) */
   if(nearSig){touchSigil(nearSig);return;}
   // corpse loot — opens panel. .looted remains for the 60s age-out despawn, independent of item state.
   const nearCorpse=CORPSES.find(c=>!c.looted&&c.items&&c.items.length&&lookingAt(c)); // v80 — look-at

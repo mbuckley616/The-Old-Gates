@@ -60,7 +60,7 @@ const wheel = await page.evaluate(() => {
   return r; });
 check('the ship’s wheel: taken to 1.6 and no further (2.4 before)', wheel && wheel.best >= 1.55 && !wheel.beyond, wheel);
 
-// 5. a gate's way out and its doors (S1668): the dungeon's E asked 1.1 to 1.5 by thing; it asks TOUCH now, and so does its prompt
+// 5. a gate's way out and its doors (S1670): the dungeon's E asked 1.1 to 1.5 by thing; it asks TOUCH now, and so does its prompt
 for (let k = 0; k < 24 && !(await page.evaluate(() => PORTALS.some(p => p && p.seed != null && p.zone === 'world'))); k++) { await page.evaluate(() => { for (let i = 0; i < 30; i++) WORLD.tick(1 / 60, performance.now()); }); await page.waitForTimeout(2500); }
 await page.evaluate(() => { const p = PORTALS.find(p => p && p.seed != null && p.zone === 'world'); if (p) { px = p.x; pz = p.z + 3; goToDungeon(p); } });
 await page.waitForFunction(() => activeZoneId === 'dungeon', null, { timeout: 60000 }).catch(() => {}); await page.waitForTimeout(3000); await g.hide();

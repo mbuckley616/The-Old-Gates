@@ -1546,7 +1546,7 @@ function loop(now){
     if(typeof knotTick==='function')knotTick(); /* S1346 — a great gate's ring, seen the first time */
     if(typeof shuttleTick==='function')shuttleTick(); /* S797 — the Shuttle's room, seen the first time */
     if(typeof cloakDenTick==='function')cloakDenTick(); /* S992 — the cloak's den, seen the first time */
-    const nearSigilPrompt=SIGILS.find(s=>s.floor===currentFloor&&Math.hypot(px-s.x,pz-s.z)<TOUCH); /* S1668 — the prompt asks what E asks: TOUCH */
+    const nearSigilPrompt=SIGILS.find(s=>s.floor===currentFloor&&Math.hypot(px-s.x,pz-s.z)<TOUCH); /* S1670 — the prompt asks what E asks: TOUCH */
     // interact prompt
     const nearCorpsePrompt=CORPSES.find(c=>!c.looted&&c.items&&c.items.length>0&&lookingAt(c)); // v80 — look-at
     const nearChest=CHESTS.find(ch=>ch._near&&ch.floor===currentFloor);
@@ -1555,7 +1555,7 @@ function loop(now){
     // affordances now have to live with the fact that some of them aren't.
     // Detected separately from nearChest so the prompt fallthrough can
     // give it a unique label only if we ever want one (currently doesn't —
-    // a tell would defeat the bait). TOUCH, as interact() asks (S1668).
+    // a tell would defeat the bait). TOUCH, as interact() asks (S1670).
     const nearMimic=ENEMIES.find(en=>!en.dead&&en.disguised&&en.floor===currentFloor&&Math.hypot(px-en.x,pz-en.z)<TOUCH);
     const nearBarrelPrompt=BARRELS.find(b=>b.floor===currentFloor&&lookingAt(b,2.6)&&(!b.opened||b.items.length>0)); // v80 — look-at
     const nearCot=fortCotNear(); // S624 — the cot's prompt, when it is nearer than the way out
@@ -1563,7 +1563,7 @@ function loop(now){
     const nearStair=dStairC!==null&&!DUNGEON_STAIRWELL&&Math.hypot(px-dAt(dStairC),pz-dAt(dStairR))<TOUCH;
     const nearDoorObj2=DOORS.find(d=>d.floor===currentFloor&&Math.hypot(px-d.x,pz-d.z)<TOUCH);
     const iprEl=document.getElementById('ipr');
-    /* S1668 — the prompt names what E does: interact()'s order, the knot first and the way out after a chest, a cot, the forge and a barrel */
+    /* S1671 — the prompt names what E does: interact()'s order, the knot first and the way out after a chest, a cot, the forge and a barrel */
     if(typeof knotNear==='function'&&knotNear()){iprEl.textContent=knotPrompt();iprEl.style.opacity='1';iprEl.style.display='block';} /* S1346 */
     else if(typeof shuttleNear==='function'&&shuttleNear()){iprEl.textContent="Press 'E' to take up the shuttle";iprEl.style.opacity='1';iprEl.style.display='block';} /* S797 */
     else if(typeof cloakDenNear==='function'&&cloakDenNear()){iprEl.textContent="Press 'E' to take the grey cloak from under it";iprEl.style.opacity='1';iprEl.style.display='block';} /* S992 */
