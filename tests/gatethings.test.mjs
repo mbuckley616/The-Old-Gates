@@ -4,6 +4,7 @@
 // through the generator alone, then two built: the braziers stand clear of the way and are solid, a web is a wall until burnWeb, and
 // lightBrazier lights a cold one. The same gate entered again is laid the same. Session 1678: a pool (Sioc's "freezes a pool") in one
 // side room in four that no web closes, two cells from every mouth; solid as water, walked on once freezePool has frozen it.
+// Session 1680: the touches themselves, cast through castSpell: Caor lights a brazier and burns a web, Sioc freezes a pool.
 import { boot, check } from './lib/game.mjs';
 import { enterDungeon } from './lib/dungeonshot.mjs';
 const g = await boot(); const { page } = g;
@@ -84,6 +85,38 @@ const walk = await page.evaluate(() => {
   const wet = go(); freezePool(p); const ice = go(); return { R: p.R, wet, ice }; });
 console.log(JSON.stringify(walk));
 check('walking at a pool you stop at its kerb; frozen, you walk up onto the ice, 0.32 m, to its middle', walk && walk.wet.d >= walk.R && walk.wet.y === 0 && walk.ice.d < walk.R && walk.ice.y === .32, walk);
+await enterDungeon(page, { theme: 'ruins', size: 'large', seed: 909 });
+// S1680 — the touches that act on them, cast through castSpell and landed by the loop after the wind-up: Caor lights a cold brazier and
+// burns a web, Sioc freezes a pool; a touch 0.1 m past reach changes nothing; a foe in reach takes Caor's touch and the brazier stays cold
+await page.evaluate(() => { knownWords = Object.assign({}, knownWords, { caor: 2, sioc: 2 }); SKILLS.tine = { lv: 50, p: 0 }; SKILLS.uisce = { lv: 50, p: 0 };
+  if (!formsGranted.includes('touched')) formsGranted.push('touched'); for (const e of ENEMIES) e.dead = true; });
+const tt = async (word, kind, gap, foe) => {
+  await page.evaluate(([word, kind, gap, foe]) => {
+    const t = GATE_THINGS.find(q => q.kind === kind && !(q.lit || q.burnt || q.frozen)); window._tt = { t, said: '' }; if (!t) return; currentFloor = t.floor;
+    const rad = kind === 'pool' ? t.R : kind === 'brazier' ? .55 : 0, T = kind === 'web' ? GATE_THINGS.indexOf(t) : 0;
+    let at = null; const dirs = [];
+    if (kind === 'web') { const G = window._lastGen, q = G.things.find(z => z.id === t.id); dirs.push([-q.dc, -q.dr]); } else for (let a = 0; a < 16; a++) dirs.push([Math.sin(a / 16 * 6.283), Math.cos(a / 16 * 6.283)]);
+    for (const [dx, dz] of dirs) { const d = rad + HULL_YOU + gap, x = t.x + dx * d, z = t.z + dz * d; if (!dBlk(x, z)) { at = [x, z, dx, dz]; break; } }
+    window._tt.at = at; if (!at) return; px = at[0]; pz = at[1]; yaw = Math.atan2(at[2], at[3]);
+    for (const e of ENEMIES) e.dead = true;
+    if (foe) { const e = ENEMIES.find(x => x.mesh) ; e.dead = false; e.floor = t.floor; e.hp = e.maxHp = 1e5; e.def = 0; e.resist = null; e.spd = 0; e.x = px - Math.sin(yaw) * .9; e.z = pz - Math.cos(yaw) * .9; if (e.mesh) { e.mesh.position.x = e.x; e.mesh.position.z = e.z; } window._tt.e = e; window._tt.h0 = e.hp; }
+    for (const k2 in K) K[k2] = false; castT = 0; _castFreeAt = 0; _castReleaseAt = 0; spCd = 0; PPOST.stagUntil = 0; ROLL = null; mana = 1000; TOUCH_PEND = null;
+    const mk = bookMake('touched', word, null); if (mk.i != null) bookSelect(mk.i);
+    window._sm = showMsg; showMsg = (s) => { window._tt.said += ' ' + s; }; window._sk = SKILLS[WORD_BY[word].school].p + SKILLS[WORD_BY[word].school].lv * 1e4;
+    castSpell(); window._tt.pend = !!TOUCH_PEND;
+  }, [word, kind, gap, foe]);
+  await page.waitForFunction(() => !TOUCH_PEND, null, { timeout: 15000, polling: 100 }).catch(() => {});
+  return page.evaluate((word) => { const q = window._tt; showMsg = window._sm; const t = q.t; if (!t || !q.at) return { none: true };
+    const S = SKILLS[WORD_BY[word].school]; const r = { id: t.id, pend: q.pend, done: !!(t.lit || t.burnt || t.frozen), said: q.said.trim(), skill: S.p + S.lv * 1e4 > window._sk };
+    if (q.e) { r.dealt = q.h0 - q.e.hp; q.e.dead = true; } return r; }, word);
+};
+const out = { brOut: await tt('caor', 'brazier', 1.7), brFoe: await tt('caor', 'brazier', 1.2, true), brSioc: await tt('sioc', 'brazier', 1.2), br: await tt('caor', 'brazier', 1.5),
+  web: await tt('caor', 'web', 1.2), poolOut: await tt('sioc', 'pool', 1.7), pool: await tt('sioc', 'pool', 1.2) };
+console.log(JSON.stringify(out));
+check(`Caor touched lights a cold brazier from 1.5 m off its bowl ("${out.br.said}"), and not from 1.7`, out.br.pend && out.br.done && /brazier catches/.test(out.br.said) && out.br.skill && !out.brOut.done, out);
+check(`a foe in reach takes Caor's touch (${out.brFoe.dealt}) and the brazier stays cold; Sioc's touch leaves it cold`, out.brFoe.dealt > 0 && !out.brFoe.done && !out.brSioc.done, out);
+check(`Caor touched burns a web ("${out.web.said}")`, out.web.done && /web burns/.test(out.web.said), out.web);
+check(`Sioc touched freezes a pool from 1.2 m off its kerb ("${out.pool.said}"), and not from 1.7`, out.pool.done && /pool freezes/.test(out.pool.said) && !out.poolOut.done, out);
 await g.frames(10);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
