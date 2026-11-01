@@ -2168,7 +2168,7 @@ const giver=`${lord.title} ${lord.name}`;
   function sparStart(o){o=o||{};if(SPAR||BOUT)return {say:'You are already in the ring.'};if(!o.force&&!sparOpen())return {say:'The yard is shut until morning.'};
     const x=o.x,z=o.z,tier=o.tier!=null?o.tier:worldTierAt(x,z);
     const e=keyFoe(unlockFoe(buildZoneEnemy(sc,STATIC_SOL,x,z,o.kind||'Bandit',null,{tier})),'yard:'+(o.site||'yard')+':'+dayNow());
-    e.name=e.displayName=o.name||'The trainer';e._spar=true;e._duel=true;e._questTag='yard';e.homeX=x;e.homeZ=z;e.alert=true;
+    foeRearm(e,'staff');e.name=e.displayName=o.name||'The trainer';e._spar=true;e._duel=true;e._questTag='yard';e.homeX=x;e.homeZ=z;e.alert=true;
     if(e.mesh&&!e.mesh.parent)sc.add(e.mesh);ZONES.world.enemies.push(e);
     const held=kitHold();
     EQ.weapon=sparStaff();if(typeof SHEATHED!=='undefined'&&SHEATHED)drawWeapon();sparKitRefresh();

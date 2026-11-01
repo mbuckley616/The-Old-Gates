@@ -153,6 +153,8 @@ const sp = await page.evaluate(() => {
   const sword = EQ.weapon; out.sword = sword && sword.name;
   const r = WORLD.sparStart({ x: px, z: pz - 1.4, site: 'test', force: true }); out.ok = !!r.ok; out.tier = r.tier;
   const S = WORLD.spar, e = S.foe; out.staff = EQ.weapon && EQ.weapon.name; out.inBag = BAG.some(b => b === S.held.weapon);
+  // S1701 — the trainer fights with a staff too (the sheet: both sides): the kit's staff in its fist, its own blade and any shield gone
+  { const P = e.limbs && e.limbs.person; out.arm = { kind: foeWeaponKind(e), wpn: P && P.g.wpn, onGear: !!(P && P.weapon && P.weapon.parent === P.B.gear), shield: !!(P && P.shieldKit), gearKids: P ? P.B.gear.children.length : -1 }; }
   const fresh = () => { PPOST.posture = PPOST.maxPosture = playerMaxPosture(); PPOST.stagUntil = 0; ROLL = null; FINISHER_SAFE_UNTIL = 0; PHASE_UNTIL = 0; };
   // an unblocked blow: posture, no health, a point to the trainer
   fresh(); blocking = false; let hp = PHP, po = PPOST.posture; executeStrike(e, 20, performance.now());
@@ -175,11 +177,24 @@ const sp = await page.evaluate(() => {
   return out; });
 console.log('spar', JSON.stringify(sp));
 check(`the spar: a ${sp.staff} from the rack, your ${sp.sword} held in your pack, the trainer at tier ${sp.tier}`, sp.ok && sp.staff === 'Yard Staff' && sp.inBag, sp);
+check(`the trainer holds the yard's staff too (${sp.arm.kind}, ${sp.arm.gearKids} thing in its fist, shield ${sp.arm.shield})`, sp.arm.kind === 'staff' && sp.arm.wpn === 'staff' && sp.arm.onGear && sp.arm.gearKids === 1 && !sp.arm.shield, sp.arm);
 check(`an unblocked staff blow takes ${sp.hit.posture} posture and ${sp.hit.hp} health, a clean hit to the trainer (${sp.hit.them})`, sp.hit.hp === 0 && sp.hit.posture > 0 && sp.hit.them === 1, sp.hit);
 check(`a guard raised 0.1 s before the window: *${sp.early.call}* called, ${sp.early.posture} posture lost, health ${sp.early.hp}, no point`, sp.early.call === 'Early.' && sp.early.posture > 0 && sp.early.hp === 0 && sp.early.them === 1, sp.early);
 check(`a parry in the window is *${sp.good}*; a guard 0.1 s after a blow landed is *${sp.late.call}*`, sp.good === 'Good.' && sp.late.call === 'Late.' && sp.late.them === 2, sp);
 check(`skill use in the spar is half weight (${sp.half} of 1)`, Math.abs(sp.half - .5) < 1e-6, sp);
 check(`three clean hits of yours (${sp.you.join(', ')}) take none of the trainer's health (${sp.foeHp}) and win the spar (${sp.end}); the ${sp.back} is back, the staff racked, the weight whole (${sp.mult})`,
   sp.you.join() === '1,2,3' && sp.foeHp === 0 && sp.end === 'won' && sp.after === null && sp.back === sp.sword && sp.staffGone && sp.mult === 1 && sp.foeGone, sp);
+// S1701 — rearmed after the new look's builder body is on: the body's held list carries the new weapon, not the old one
+const hb = await page.evaluate(async () => {
+  const e = buildZoneEnemy(sc, STATIC_SOL, px + 2, pz - 2, 'Bandit', null, { tier: 1 }); if (e.mesh && !e.mesh.parent) sc.add(e.mesh);
+  const P = e.limbs && e.limbs.person; if (!P) return { none: true };
+  for (let i = 0; i < 400 && !P.hb && !P.hbFail; i++) { if (typeof hbTick === 'function') hbTick(performance.now()); if (!P.hb) await new Promise(r => setTimeout(r, 25)); }
+  if (!P.hb) return { look: window.OG_LOOK, noBody: true, fail: !!P.hbFail };
+  const old = P.weapon, ok = foeRearm(e, 'staff');
+  const out = { look: window.OG_LOOK, ok, held: P.hb.held.length, hasNew: P.hb.held.some(h => h.o === P.weapon), hasOld: P.hb.held.some(h => h.o === old), oldGone: !old || !old.parent, kind: foeWeaponKind(e) };
+  try { hbHold(P); out.follows = P.weapon.parent === P.hb.root; } catch (err) { out.err = String(err); }
+  if (e.mesh && e.mesh.parent) e.mesh.parent.remove(e.mesh); return out; });
+console.log('rearm', JSON.stringify(hb));
+check(`a foe rearmed after its builder body is on carries the new weapon in the body (${hb.held} held, the old gone)`, hb.ok && hb.hasNew && !hb.hasOld && hb.oldGone && hb.kind === 'staff' && hb.follows && !hb.err, hb);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

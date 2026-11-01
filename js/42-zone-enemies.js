@@ -753,6 +753,18 @@ const ZONE_FOE_DEF={
     'Ash Wight':    {minLevel:7, col:0x3a3634,eyeCol:0xff6020,hp:70, maxHp:70, spd:1.2,dmg:15,atk:1.5, xpVal:110,scale:1.1,shape:'humanoid',def:4, resist:{tine:0.4, cloch:1.4}},
     'Pirate':       {minLevel:1, col:0x3a2a2a,eyeCol:0xffd080,hp:32, maxHp:32, spd:1.3,dmg:9, atk:1.3, xpVal:34, scale:1.0,shape:'humanoid',def:2, resist:{}},
   };
+// S1701 — a person-bodied foe's weapon changed after it is built: the old one and any shield taken away, the kit's `kind` put in the
+// driver's fist as buildFoe puts it (a quarter turn about the shaft, the gear bone), and the genome's weapon set, so foeWeaponKind reads it.
+// On the new look the builder's body carries what the driver holds (hbHold); if that body is already attached, its held list is changed
+// with it and the new weapon follows the same fingers. The yard's trainer takes a staff from the rack (arenas-build.md: both sides).
+function foeRearm(e,kind){const P=e&&e.limbs&&e.limbs.person;if(!P||!P.B||!P.B.gear||typeof buildWeapon!=='function')return false;
+  const H=P.hb,old=P.weapon,sh=P.shieldKit;
+  for(const o of [old,sh])if(o&&o.parent)o.parent.remove(o);
+  const w=buildWeapon(kind);w.rotation.y=Math.PI/2;P.B.gear.add(w);if(typeof wpnTrue==='function')wpnTrue(kind,w,P.root);w.updateMatrix();
+  P.weapon=w;P.shieldKit=null;P.g.wpn=kind;P.g.gear='kit';P.g.shieldKit=null;
+  if(H&&H.held){const h=H.held.find(q=>q.o===old);H.held=H.held.filter(q=>q.o!==old&&q.o!==sh);
+    H.held.push({o:w,par:P.B.gear,m0:w.matrix.clone(),f:h?h.f:null,sd:'R'});}
+  return true;}
 function buildZoneEnemy(sc,sol,x,z,type,variantKey,zOpts){
   const ZDEF=ZONE_FOE_DEF;
   const baseDef=ZDEF[type]||ZDEF.Wolf;
