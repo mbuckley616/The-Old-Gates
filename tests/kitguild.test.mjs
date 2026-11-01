@@ -45,7 +45,7 @@ for (const type of ['guild_f', 'guild_m']) {
     const dorm = walk([[sx, S.z1 + Z + .45], [sx, dd], [T.part.x1 + X + .45, dd], [T.part.x1 + X + .45, D - .5]]);
     /* through the steward's door on the ground floor, from the hall to the strongbox */
     const steward = walk([[T.part.x0 + X - .45, sd], [T.part.x1 + X + .45, sd], [T.part.x1 + X + .45, Z]]);
-    const beds = INT_BEDS.map(b => ({ y: b.y, owner: b.owner, reach: Math.abs(b.y - F1) < .01 && !intSolidAt(b.x - 1.9, b.z, .2, F1) && Math.abs(footholdY(b.x - 1.9, b.z, F1, 0) - F1) < .01 })); /* from the aisle beyond the chest at its foot */
+    const beds = INT_BEDS.map(b => ({ y: b.y, owner: b.owner, reach: Math.abs(b.y - F1) < .01 && !intSolidAt(T.part.x1 + X + .35, b.z, .3, F1) && Math.abs(footholdY(T.part.x1 + X + .35, b.z, F1, 0) - F1) < .01 && Math.hypot(b.x - (T.part.x1 + X + .35), 0) < 1.6 })); /* from the aisle beyond the chest at its foot, within the 1.6 m touch */
     const P = intNPCMesh ? { x: +intNPCPos.x.toFixed(2), z: +intNPCPos.z.toFixed(2) } : null;
     /* the steward: stood clear behind the desk, and from before the desk (0.35 m off its front) in reach to talk */
     let talk = null; if (P) { const ox = px, oz = pz; px = P.x - .2; pz = T.desk.z1 + Z + .35; jumpY = 0; talk = { reach: keeperInReach(), d: +Math.hypot(px - P.x, pz - P.z).toFixed(2), behind: P.z < T.desk.z0 + Z, clear: !intSolidAt(P.x, P.z, .2, 0) }; px = ox; pz = oz; }
@@ -64,7 +64,7 @@ for (const type of ['guild_f', 'guild_m']) {
   check(`${tag}: up the stair onto the gallery (${r.stair.y} m, steps of ${r.stair.maxStep} m) and along it to the west gable`, r.stair.blocked === 0 && Math.abs(r.stair.y - 3.15) < .02 && r.stair.maxStep <= .25, r.stair);
   check(`${tag}: from the stair's head in at the dormitory's door and down its aisle, on the floor at ${r.dorm.y} m`, r.dorm.blocked === 0 && Math.abs(r.dorm.y - 3.15) < .02, r.dorm);
   check(`${tag}: through the partition's door into the steward's room`, r.steward.blocked === 0 && Math.abs(r.steward.y) < .01, r.steward);
-  check(`${tag}: six beds upstairs, the guild's, each with clear floor beside it`, r.beds.length === 6 && r.beds.every(b => b.owner === 'guild' && b.reach), r.beds);
+  check(`${tag}: six beds upstairs, the guild's, each in reach (1.6 m) from the dormitory's aisle`, r.beds.length === 6 && r.beds.every(b => b.owner === 'guild' && b.reach), r.beds);
   check(`${tag}: the steward stands clear behind the desk, in reach to talk from before it (${r.talk && r.talk.d} m)`, !!r.talk && r.talk.reach && r.talk.behind && r.talk.clear, { P: r.P, talk: r.talk });
   check(`${tag}: three members, each on clear floor and apart from the steward`, r.members.length === 3 && r.members.every(m => m.clear && m.apart), r.members);
   check(`${tag}: the cellar's hatch in the steward's room, on clear flags, with room to come back up beside it`, !!r.hatch && r.hatch.clear && r.hatch.back && r.hatch.inSteward, r.hatch);

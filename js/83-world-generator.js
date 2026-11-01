@@ -2689,8 +2689,10 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       SOL.push({x0,x1,z0:0,z1:rz(dD.z0),y0:F1,y1:top},{x0,x1,z0:rz(dD.z1),z1:D,y0:F1,y1:top});}
     // upstairs: the gallery along the back wall (and through the partition's doorway) and the dormitory's floor over the steward's room
     FOOTHOLDS.push({x0:0,x1:rx(T.part.x1),z0:0,z1:rz(T.gallery.z1),y:F1},{x0:rx(T.part.x1),x1:W,z0:0,z1:D,y:F1}); /* the gallery's floor runs through the dormitory's doorway */
-    // the dormitory's six beds, the guild's; their chests at their feet are footholds above
-    T.beds.forEach((b,k)=>{INT_BEDS.push({x:rx((b.x0+b.x1)/2),z:rz((b.z0+b.z1)/2),y:+F1.toFixed(3),owner:'guild',room:null,cz:rz((b.z0+b.z1)/2)});});
+    // the dormitory's six beds, the guild's, each recorded by its foot half (0.5 m in from the foot): the chest at its foot (0.45 m, over a
+    // step) keeps you in the aisle, 1.77 m from a bed's middle and past the 1.6 m reach (intreach); from the foot half it is 1.3, and the
+    // aim's box (0.5 m either way, bedAimed) is still all bed
+    T.beds.forEach((b,k)=>{INT_BEDS.push({x:rx(b.x0+.5),z:rz((b.z0+b.z1)/2),y:+F1.toFixed(3),owner:'guild',room:null,cz:rz((b.z0+b.z1)/2)});});
     intBedPos={x:INT_BEDS[0].x,z:INT_BEDS[0].z};
     // the Mages' copy of the guild's book, on the gallery's middle press (shelfPrompt, 86: the press's front at its floor)
     if(!F_&&T.presses&&T.presses.length){const [a,b]=T.presses[Math.floor(T.presses.length/2)];INT_SHELF={x:rx((a+b)/2),z:rz(-Z+.2),y:+F1.toFixed(3),hx:+((b-a)/2).toFixed(3),hz:.2,nx:0,nz:1,id:house.id,house};}
