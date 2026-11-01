@@ -44,6 +44,15 @@ Magic B's build sheet (`docs/design/magic-build.md`, the Touched column) gives S
 
 Recommendation A: the spell buys time, the hand still opens it, so a mage-thief is a real build and picks and Finesse keep their worth. Devlog `docs/devlog/1680.md`, PR #975.
 
+### Making a ship yours (from the designer, 2026-11-01, #979)
+Backlog L6 asks for figurehead, paint, sails and banners, interior dress and upgrades (hold, crew quarters, stations), and Michael's 4 C gave the crew as upgrades with no morale. Today the only choices on your ship are her hull and the sail and hold tiers; how should she become yours?
+
+- **A.** The yard's catalogue: name, paint, sail cloth, banner and a figurehead at any shipwright, fittings for her rooms (2 to 5 places by hull), and a carpenter, cook and navigator hired for a one-time fee. All of it is gold. Three sessions.
+- **B (recommended).** Each fitting (still, galley, chart table, crew bunks, arms rack) also takes 5 to 10 hold weight, so a ship is a trader or a home. Fittings bought at the yard or built at her bench with Joinery for about a third of the gold. The yard sells paint, cloth, banner and its island's carved figurehead; five figureheads with small virtues are found (a wreck, a lair's beast, a gate vault, a shrine task, the main quest). The three crew are people you meet on small errands, each working at a fixed skill of 50 from their station below. Five systems sessions, two quest-writer runs, the look builder's props.
+- **C.** B, and the banner has consequences: a nation's colours waive its fees and draw the others' searches and more pirates. Two more sessions, after the naval combat proposal.
+
+Recommendation B: room for fittings is a real trade between hold and home, the bench path makes Joinery the progression, and found figureheads and met crew put places and people on your deck. A is a price list (the brief's *Not this*); C belongs with naval combat's patrols. The page: `docs/design/making-a-ship-yours.md`.
+
 ## Answered
 ### Magic B — three school perks at 100 that read two ways: Tine, Uisce, Solas (from the systems builder, 2026-10-31, #942)
 Session 1626 built three of the six school perks at 100 (Cloch's arrow ward, Scáth's Unseen, Gaoth's Downwind). The other three, from `docs/design/magic-build.md`, each read two ways, and all three are needed before magic B's session 5 is done.
