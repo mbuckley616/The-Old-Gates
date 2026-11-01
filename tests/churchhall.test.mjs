@@ -4,11 +4,14 @@
 // prototype's walks (to the bier, round it either side to the sanctuary's step, along the benches) are walked on foot with the game's
 // ground and solids; the priest stands before the sanctuary, in reach from the floor beside him; the oculus opens into the drum; the
 // room is lit and within its draws; you leave by the door. Pictures down the nave and up into the dome.
+// S1690: and a village's chapel (the kit's 12 m church, S1485, lot.kit.kind 'aurchapel') opens on the same room at its own size, 10.4 m
+// square inside and three rows of benches; every check above walked again in it, and a picture down its nave.
 import { boot, check } from './lib/game.mjs';
 import fs from 'fs'; import path from 'path'; import { fileURLToPath } from 'url';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const towns = () => { anchoredPlaces(); return [...CELLS.values()].filter(c => c.type !== 'sea' && nationKeyOf(c.i, c.j) === 'aurenne').flatMap(c => c.sites).filter(s => s.kind === 'town' || s.kind === 'port').slice(0, 4).map(s => s.id); };
-const pick = `const S = WORLD.settle.get(id), h = S && S.houses.find(h => h.siteId === id && h.type === 'church' && h.kit && h.kit.kind === 'aurchurch');`;
+const pickOf = kind => `const S = WORLD.settle.get(id), h = S && S.houses.find(h => h.siteId === id && h.type === 'church' && h.kit && h.kit.kind === '${kind}');`;
+const pick = pickOf('aurchurch');
 
 const g = await boot({ look: 'new' }); const { page } = g; await g.intoWorld();
 let sid = null, name = null;
@@ -16,6 +19,7 @@ for (const id of await page.evaluate(towns)) { if (!(await g.settle(id))) contin
 check(`an Aurennais town's church is the Church of the Weaver (${sid}: ${name})`, !!sid);
 if (!sid) { await g.close(); process.exit(); }
 
+async function walkRoom(sid, pick, W0, tag) {
 await page.evaluate(new Function('id', `${pick} forceTime(12); px = h.exitX; pz = h.exitZ; goToInterior(h);`), sid);
 for (let k = 0; k < 40 && !(await page.evaluate(() => isInterior())); k++) await page.waitForTimeout(250);
 await g.frames(2);
@@ -39,20 +43,24 @@ const r = await page.evaluate(() => {
     return { blocked: blocked.length, at: blocked.slice(0, 3), maxStep: +maxStep.toFixed(3), y: +y.toFixed(3) }; };
   const walks = T.paths.map(P => walk(P.map(([x, z]) => [x + X, z + Z])));
   /* the sanctuary: up its step and onto it beside the altar, 0.32 m over the nave */
-  const sanct = walk([[X - 2.0, Z - 2.05], [X - 2.0, Z + T.sanctuary.z1 + .2], [X - 2.0, Z - 4.2]]);
+  const sanct = walk([[X - 2.0, Z + Math.max(-2.05, T.sanctuary.z1 + .65)], [X - 2.0, Z + T.sanctuary.z1 + .2], [X - 2.0, Z - 4.2]]);
   const P = intNPCMesh ? { x: +intNPCPos.x.toFixed(2), z: +intNPCPos.z.toFixed(2) } : null, beside = P && [-1, 1].map(s => ({ x: P.x + s * 1.3, z: P.z })).filter(q => !intSolidAt(q.x, q.z, .3, 0)).length;
   const before = P && { step: +(P.z - (T.sanctuary.z1 + .34 + Z)).toFixed(2), bier: +((T.bier.z0 + Z - .45) - P.z).toFixed(2), clear: !intSolidAt(P.x, P.z, .25, 0) };
-  return { W: +W.toFixed(2), D: +D.toFixed(2), H: h._roomH, open, door, upY, ceil: +(T.ceil - F0).toFixed(2), arrive, walks, sanct, priest: P, beside, before, lights, draws, kDraws, tris: Math.round(tris), scaledBy: T.group.scale.x, sols: INT_SOL.length };
+  return { rows: T.benches.length / 2, W: +W.toFixed(2), D: +D.toFixed(2), H: h._roomH, open, door, upY, ceil: +(T.ceil - F0).toFixed(2), arrive, walks, sanct, priest: P, beside, before, lights, draws, kDraws, tris: Math.round(tris), scaledBy: T.group.scale.x, sols: INT_SOL.length };
 });
-check(`the room is the Church of the Weaver inside, ${r.W} by ${r.D} m and ${r.H} m to the ceiling, at its true size (scale ${r.scaledBy})`, !r.none && Math.abs(r.W - 12.4) < .05 && Math.abs(r.D - 12.4) < .05 && r.H > 9.5 && r.scaledBy === 1, r);
-if (r.none) { await g.close(); process.exit(); }
-check(`walled all round below the windows: no opening at 0.6 or 2.2 m but the great door (${r.open.length}); through the door, the day`, r.open.length === 0 && r.door, { open: r.open.slice(0, 8), door: r.door });
-check(`the oculus opens over the bier: straight up from the floor a ray meets the dome at ${r.upY} m, over the ${r.ceil} m ceiling`, r.upY != null && r.upY > r.ceil + 2, r.upY);
-check(`you arrive clear in the aisle at ${r.arrive.x}, ${r.arrive.z} m`, r.arrive.clear && !r.arrive.exits, r.arrive);
-check(`the prototype's ${r.walks.length} walks (to the bier, round it either side to the sanctuary, along the benches) on foot, nothing in the way`, r.walks.length >= 4 && r.walks.every(w => w.blocked === 0 && w.maxStep <= .4), r.walks);
-check(`up the sanctuary's step beside the altar, ${r.sanct.y} m over the nave in steps of ${r.sanct.maxStep} m`, r.sanct.blocked === 0 && Math.abs(r.sanct.y - .32) < .02 && r.sanct.maxStep <= .4, r.sanct);
-check(`the priest stands before the sanctuary at ${r.priest && [r.priest.x, r.priest.z].join(', ')}, ${r.before && r.before.step} m off its step and ${r.before && r.before.bier} m short of the bier's candles; clear ground beside him (${r.beside} sides)`, !!r.priest && r.before.clear && r.before.step > .3 && r.before.bier > .3 && r.beside === 2, { priest: r.priest, before: r.before });
-check(`the room is lit (${r.lights} lights) and draws ${r.draws} meshes (40 or fewer), ${r.tris.toLocaleString()} triangles; the priest ${r.kDraws}`, r.lights >= 3 && r.draws <= 40 && r.kDraws >= 1, r);
+check(`${tag}: the room is the Church of the Weaver inside, ${r.W} by ${r.D} m and ${r.H} m to the ceiling, at its true size (scale ${r.scaledBy})`, !r.none && Math.abs(r.W - W0) < .05 && Math.abs(r.D - W0) < .05 && r.H > W0 * .75 && r.scaledBy === 1, r);
+if (r.none) return r;
+check(`${tag}: walled all round below the windows: no opening at 0.6 or 2.2 m but the great door (${r.open.length}); through the door, the day`, r.open.length === 0 && r.door, { open: r.open.slice(0, 8), door: r.door });
+check(`${tag}: the oculus opens over the bier: straight up from the floor a ray meets the dome at ${r.upY} m, over the ${r.ceil} m ceiling`, r.upY != null && r.upY > r.ceil + 2, r.upY);
+check(`${tag}: you arrive clear in the aisle at ${r.arrive.x}, ${r.arrive.z} m`, r.arrive.clear && !r.arrive.exits, r.arrive);
+check(`${tag}: the prototype's ${r.walks.length} walks (to the bier, round it either side to the sanctuary, along the benches) on foot, nothing in the way`, r.walks.length >= 4 && r.walks.every(w => w.blocked === 0 && w.maxStep <= .4), r.walks);
+check(`${tag}: up the sanctuary's step beside the altar, ${r.sanct.y} m over the nave in steps of ${r.sanct.maxStep} m`, r.sanct.blocked === 0 && Math.abs(r.sanct.y - .32) < .02 && r.sanct.maxStep <= .4, r.sanct);
+check(`${tag}: the priest stands before the sanctuary at ${r.priest && [r.priest.x, r.priest.z].join(', ')}, ${r.before && r.before.step} m off its step and ${r.before && r.before.bier} m short of the bier's candles; clear ground beside him (${r.beside} sides)`, !!r.priest && r.before.clear && r.before.step > .3 && r.before.bier > .3 && r.beside === 2, { priest: r.priest, before: r.before });
+check(`${tag}: the room is lit (${r.lights} lights) and draws ${r.draws} meshes (40 or fewer), ${r.tris.toLocaleString()} triangles; the priest ${r.kDraws}`, r.lights >= 3 && r.draws <= 40 && r.kDraws >= 1, r);
+
+  return r;
+}
+await walkRoom(sid, pick, 12.4, 'the town');
 
 fs.mkdirSync(path.join(here, '../docs/prototypes'), { recursive: true });
 await page.evaluate(() => { const h = currentHouse; VM_SCENE.visible = false; px = intDoorX(h); pz = h._roomD - 1.0; jumpY = 0; yaw = 0; pitch = .05; });
@@ -65,5 +73,18 @@ await page.screenshot({ path: path.join(here, '../docs/prototypes/churchhall-dom
 await page.evaluate(() => { const h = currentHouse; px = intDoorX(h); pz = h._roomD - .4; jumpY = 0; yaw = Math.PI; pitch = 0; interact(); });
 for (let k = 0; k < 40 && (await page.evaluate(() => isInterior())); k++) await page.waitForTimeout(250);
 check('at the door E takes you out', !(await page.evaluate(() => isInterior())));
+
+// S1690 — a village's chapel: the Aurennais village nearest the first town whose church stands on its plot as the kit's 12 m church
+const vid = await page.evaluate(() => { const A = allSites(), nat = t => nationKeyOf(...cellOf(t.x, t.z)), c = A.find(t => nat(t) === 'aurenne' && t.kind === 'town') || A.find(t => nat(t) === 'aurenne');
+  const V = A.filter(t => nat(t) === 'aurenne' && t.kind === 'village' && t.pad > 0).sort((a, b) => Math.hypot(a.x - c.x, a.z - c.z) - Math.hypot(b.x - c.x, b.z - c.z));
+  for (const t of V.slice(0, 25)) { if (!WORLD.settle.get(t.id)) genSettlement(t); if (WORLD.settle.get(t.id).houses.some(h => h.siteId === t.id && h.type === 'church' && h.kit && h.kit.kind === 'aurchapel')) return t.id; } return null; });
+check(`an Aurennais village's church is the village's Church of the Weaver (${vid})`, !!vid);
+if (vid) { await g.settle(vid); const pv = pickOf('aurchapel'), rv = await walkRoom(vid, pv, 10.4, 'the village');
+  if (!rv.none) { await page.evaluate(() => { const h = currentHouse; px = intDoorX(h); pz = h._roomD - 1.0; jumpY = 0; yaw = 0; pitch = .05; });
+    await g.frames(6); await page.screenshot({ path: path.join(here, '../docs/prototypes/chapelhall-nave-ingame.png') }); console.log('  (picture: docs/prototypes/chapelhall-nave-ingame.png)');
+    check(`the village: three rows of benches to the town's four (${rv.rows})`, rv.rows === 3, rv.rows);
+    await page.evaluate(() => { const h = currentHouse; px = intDoorX(h); pz = h._roomD - .4; jumpY = 0; yaw = Math.PI; pitch = 0; interact(); });
+    for (let k = 0; k < 40 && (await page.evaluate(() => isInterior())); k++) await page.waitForTimeout(250);
+    check('the village: at the door E takes you out', !(await page.evaluate(() => isInterior()))); } }
 check('no errors on the new look', g.errs.length === 0, g.errs);
 await g.close();
