@@ -872,76 +872,87 @@ function clickEqSlot(key){
 // dollSelectedSlot declared above in hubOpen line
 function selectDollSlot(){}
 function unequipSlot(){}
+// S1674 — the composing page (Michael's A on #67, magic-build.md's session 6; the concept artist's layout A in
+// docs/prototypes/spellmaking): the words you hold by school on the left; in the middle the spell being made, its five forms with what
+// the word does in each and its mana, a second word's rider as chips, and the cost; on the right the book of eight, keys 1–8, F casts
+// the readied line. Writing a line is bookMake's rule (a word you hold, a form the guild has given you, a rider that joins it); unmaking
+// one is free (bookUnmake). The page only reads and calls those; it decides nothing.
+const MAGIC_PAGE={word:null,form:null,rider:null};
+const MAGIC_RANKS=['Novice','Adept','Evoker','Warlock'];
+function magicPageWord(){const k=Object.keys(knownWords);if(MAGIC_PAGE.word&&knownWords[MAGIC_PAGE.word]&&WORD_BY[MAGIC_PAGE.word])return MAGIC_PAGE.word;
+  const b=spellBook[bookSync()];MAGIC_PAGE.word=b?b.word:(WORDS.find(w=>knownWords[w.id])||{}).id||null;MAGIC_PAGE.form=b?b.form:null;MAGIC_PAGE.rider=b?b.rider:null;
+  return MAGIC_PAGE.word;}
+function magicPageForm(id){const f=MAGIC_PAGE.form;if(f&&wordLive(id,f))return f;MAGIC_PAGE.form=FORM_ORDER.find(x=>wordLive(id,x)&&formHeld(x))||FORM_ORDER.find(x=>wordLive(id,x));return MAGIC_PAGE.form;}
+function magicPick(id){if(!knownWords[id])return;MAGIC_PAGE.word=id;MAGIC_PAGE.form=null;if(MAGIC_PAGE.rider===id)MAGIC_PAGE.rider=null;renderHubMagic();}
+function magicPickForm(f){MAGIC_PAGE.form=f;if(f==='worn')MAGIC_PAGE.rider=null;renderHubMagic();}
+function magicPickRider(id){MAGIC_PAGE.rider=MAGIC_PAGE.rider===id?null:id;renderHubMagic();}
+function magicClear(){MAGIC_PAGE.rider=null;MAGIC_PAGE.form=null;renderHubMagic();}
+function magicWrite(){const id=magicPageWord();if(!id)return;const f=magicPageForm(id),r=bookMake(f,id,MAGIC_PAGE.rider);
+  if(r.say){showMsg(r.say,'#a8a8d4');return;}bookSelect(r.i);updateSpellButton();showMsg('Written: '+bookLineName(spellBook[r.i]),'#88ccff');renderHubMagic();}
+function magicReady(i){if(!bookSelect(i))return false;const b=spellBook[i];MAGIC_PAGE.word=b.word;MAGIC_PAGE.form=b.form;MAGIC_PAGE.rider=b.rider;
+  updateSpellButton();if(hubOpen&&hubLastTab==='magic')renderHubMagic();showMsg('Readied: '+bookLineName(b),'#88ccff');return true;}
+function magicUnmake(i){if(!bookUnmake(i))return;updateSpellButton();renderHubMagic();}
+function magicCost(id,f,rider){return wordCost(id,f,rider);}
 function renderHubMagic(){
-  const grid=document.getElementById('spell-grid');grid.innerHTML='';
-  const activeBar=document.getElementById('spell-active-bar');
-  const nameEl=document.getElementById('spell-active-name');
-  const nKnown=Object.keys(knownWords).length;
-
-  if(nKnown===0){
-    // Empty state: different copy + dimmed styling
-    if(activeBar){
-      activeBar.style.opacity='.55';
-      activeBar.innerHTML=`<span style="font-style:italic">◯ No magic known — seek carved sigils in the deep places.</span>`;
-    }
-  } else {
-    if(activeBar){activeBar.style.opacity='1';}
-    const sp=SPELLS.find(s=>s.id===activeSpellId);
-    const tier=sp?effTier(sp.id):0; /* S1346 — the tier cast */
-    const disp=sp&&tier?`<b id="spell-active-name">${spellDisplayName(sp,tier)}</b> <span style="color:#7a6030">${TIER_STARS[tier-1]}</span>`:'<b id="spell-active-name">None</b>';
-    if(activeBar){activeBar.innerHTML=`Active spell: ${disp} &nbsp;·&nbsp; Press <b style="color:#c8e88a">F</b> to cast &nbsp;·&nbsp; Click a spell below to select it`;}
-  }
-
-  SPELLS.forEach(s=>{
-    const tier=getSpellTier(s.id);
-    const known=tier>0;
-    const partial=partialSpells.includes(s.id);
-    const locked=!known&&!partial;
-    const school=SCHOOL_DEF[s.school];
-    const card=document.createElement('div');
-    card.className='spell-card'+(s.id===activeSpellId?' active-spell':locked?' locked':partial?' partial':'');
-
-    // Name shown depends on tier: Impression hides the translation to preserve reveal
-    const et=effTier(s.id); /* S1346 — the name and cost cast follow the great gate; the tier row stays the tier learned */
-    const nameShown=known?spellDisplayName(s,et):s.nameIr;
-    const displayCost=known?spellCost(s,et):s.cost;
-
-    // Tier row: stars + current tier label, or INT gate if locked
-    let tierRow='';
-    if(known){
-      tierRow=`<div class="spell-req"><span style="color:${school.col};letter-spacing:.2em">${TIER_STARS[tier-1]}</span> ${TIER_LABEL[tier-1]}`;
-      if(tier<3){
-        const nextReq=s.intReqs[tier];
-        const nextLabel=TIER_LABEL[tier];
-        tierRow+=` &nbsp;·&nbsp; <span style="color:#7a6030">${nextLabel} at INT ${nextReq}</span>`;
-      } else {
-        tierRow+=` &nbsp;·&nbsp; <span style="color:#c8a84a">fully understood</span>`;
-      }
-      tierRow+=`</div>`;
-    } else if(partial){
-      tierRow=`<div class="spell-req">🕯 Partially understood · Need INT ${s.intReqs[0]}</div>`;
-    } else {
-      // Locked: reveal school and impression requirement — the fiction is "you've heard of these"
-      tierRow=`<div class="spell-req">🔒 ${school.name} (${school.en}) · Touch a sigil to learn &nbsp;·&nbsp; <span style="color:#7a6030">Impression at INT ${s.intReqs[0]}</span></div>`;
-    }
-
-    card.innerHTML=
-      `<div class="spell-top">`
-      +`<span class="spell-ico">${s.ico}</span>`
-      +`<span class="spell-name" style="color:${known?school.col:'#7a7060'}">${nameShown}</span>`
-      +`<span class="spell-cost">${displayCost} mana</span>`
-      +`</div>`
-      +`<div class="spell-desc">${s.desc}</div>`
-      +tierRow;
-
-    if(known)card.onclick=()=>{
-      activeSpellId=s.id;
-      renderHubMagic();updateSpellButton();
-      showMsg('Active: '+spellDisplayName(s,tier),'#88ccff');
-    };
-    grid.appendChild(card);
-  });
+  const grid=document.getElementById('spell-grid');if(!grid)return;
+  const bar=document.getElementById('spell-active-bar');
+  const ids=WORDS.filter(w=>knownWords[w.id]).map(w=>w.id),rank=Math.min(3,mageRank());
+  const tierPips=t=>`<span class="mp-tier" title="${TIER_LABEL[t-1]||''}">${[1,2,3].map(k=>`<i class="${k<=t?(t>=3?'m':'f'):''}"></i>`).join('')}</span>`;
+  if(!ids.length){
+    if(bar){bar.style.opacity='.55';bar.innerHTML=`<span style="font-style:italic">◯ No magic known — seek carved sigils in the deep places.</span>`;}
+    grid.className='';grid.innerHTML='';return;}
+  const cur=spellBook[bookSync()];
+  if(bar){bar.style.opacity='1';bar.innerHTML=`Readied: <b id="spell-active-name">${cur?bookLineName(cur):'None'}</b> &nbsp;·&nbsp; <b style="color:#c8e88a">F</b> casts it &nbsp;·&nbsp; <b style="color:#c8e88a">1–8</b> readies a line of the book &nbsp;·&nbsp; ${MAGIC_RANKS[rank]} of the guild`;}
+  const id=magicPageWord(),w=WORD_BY[id],f=magicPageForm(id),tw=wordTierOf(id)||1;
+  if(MAGIC_PAGE.rider&&!knownWords[MAGIC_PAGE.rider])MAGIC_PAGE.rider=null;
+  const rider=MAGIC_PAGE.rider,join=wordJoin(id,f,rider,tw,rider?wordTierOf(rider):0);
+  // the words, by school
+  let lex=`<div class="mp-h">Words · ${ids.length} of ${WORDS.length}</div>`;
+  for(const sc of Object.keys(SCHOOL_DEF)){const S=SCHOOL_DEF[sc],ws=WORDS.filter(x=>x.school===sc&&knownWords[x.id]),part=WORDS.filter(x=>x.school===sc&&!knownWords[x.id]&&partialSpells.includes(x.id));
+    lex+=`<div class="mp-school" style="color:${S.col}">${S.name.toUpperCase()} <span>${skillLv(sc)}</span></div>`;
+    if(!ws.length&&!part.length)lex+=`<div class="mp-word unk">no word yet</div>`;
+    for(const x of ws){const t=wordTierOf(x.id)||1;
+      lex+=`<div class="mp-word${x.id===id?' sel':''}${x.id===rider?' two':''}" data-word="${x.id}" onclick="magicPick('${x.id}')"><span class="nm">${x.nameIr}${t>=2?`<span class="gl">${t>=3?(x.nameMa||x.nameEn):x.nameEn}</span>`:''}</span>${tierPips(t)}<span class="c">${x.cost}</span></div>`;}
+    for(const x of part)lex+=`<div class="mp-word unk">${x.nameIr} · partly understood, Intelligence ${x.intReqs[0]}</div>`;}
+  // the spell being made
+  const nm=bookLineName({word:id,form:f,rider:join.ok?rider:null}),dur=wordCellDur(id,f);
+  let say=wordCellSay(id,f)+(dur?`, ${dur} s`:'');if(rider&&join.ok)say+=`; and it ${RIDERS[rider].verb}`;
+  let mid=`<div class="mp-h">The spell</div><div class="mp-title">${nm}</div>`+(tw<2?`<div class="mp-meta">the English comes when ${w.nameIr} does</div>`:'')+`<div class="mp-say">${say?say.charAt(0).toUpperCase()+say.slice(1)+'.':''}</div>`;
+  mid+=`<div class="mp-h">Form <span class="mp-meta">the guild teaches forms by rank</span></div><div class="mp-forms">`;
+  for(const x of FORM_ORDER){const F=FORMS[x],live=wordLive(id,x),held=formHeld(x);
+    const cls=!live?'no':!held?'lock':x===f?'on':'',c=live?magicCost(id,x,x==='worn'||!join.ok?null:rider):0;
+    const d=!live?'the word won’t take that shape':!held?`taught at ${MAGIC_RANKS[F.rank]}`:(wordCellSay(id,x)+(wordCellDur(id,x)?`, ${wordCellDur(id,x)} s`:''));
+    mid+=`<div class="mp-form ${cls}" data-form="${x}"${live&&held?` onclick="magicPickForm('${x}')"`:''}><div class="fh">${F.name}</div><div class="fd">${d}</div><div class="fc">${live&&held?c+(F.perSec?' a second':''):''}</div></div>`;}
+  mid+=`</div><div class="mp-h">A second word <span class="mp-meta">adds only its rider · both words at Comprehension</span></div><div class="mp-chips">`;
+  const rid=Object.keys(RIDERS).filter(r=>knownWords[r]&&r!==id);
+  if(!rid.length)mid+=`<span class="mp-meta">no word you hold rides another yet</span>`;
+  for(const r of rid){const ok=wordJoin(id,f,r,tw,wordTierOf(r)).ok;mid+=`<span class="mp-chip${r===rider?' on':''}${ok?'':' off'}" data-rider="${r}" onclick="magicPickRider('${r}')"><b>${WORD_BY[r].nameIr}</b> ${RIDERS[r].verb}</span>`;}
+  mid+=`</div>`;
+  if(rider&&!join.ok)mid+=`<div class="mp-warn">${f==='worn'?'A worn word takes no second word.':`${(tw<WORD_JOIN_TIER?w:WORD_BY[rider]).nameIr} is only at Impression, so the words will not join yet.`}</div>`;
+  const cost=magicCost(id,f,join.ok?rider:null),per=FORMS[f].perSec?' a second':'',over=cost-maxMana;
+  mid+=`<div class="mp-dv"><span>Mana</span><span>${cost}${per}${over>0&&!per?` · ${over} past your pool of ${maxMana}`:''}</span></div>`;
+  if(FORMS[f].reach)mid+=`<div class="mp-dv"><span>Reach</span><span>${FORMS[f].reach} m</span></div>`;
+  if(join.ok&&rider&&riderMixedWild(id,rider))mid+=`<div class="mp-dv"><span>Wild</span><span class="mp-warn">+${Math.round(WORD_MIXED_WILD*100)}% while either school is under ${WORD_MIXED_SKILL}</span></div>`;
+  mid+=`<div class="mp-btns"><span class="mp-btn hot" onclick="magicWrite()">Write it into the book · ${spellBook.length}/${SPELL_BOOK_MAX}</span><span class="mp-btn" onclick="magicClear()">Clear</span><span class="mp-meta">Enter writes it · 1–8 readies a line</span></div>`;
+  // the book
+  let bk=`<div class="mp-h">The book · keys 1–8</div>`;
+  for(let i=0;i<SPELL_BOOK_MAX;i++){const b=spellBook[i];
+    if(!b){bk+=`<div class="mp-bk empty"><span class="k">${i+1}</span><span class="t">empty</span><span></span><span></span></div>`;continue;}
+    const g=bookLineGloss(b);
+    bk+=`<div class="mp-bk${i===activeSpell?' on':''}" data-line="${i}" onclick="magicReady(${i})"><span class="k">${i+1}</span><span class="t">${WORD_BY[b.word].ico} ${bookLineName(b)}${g?`<span class="s">${g}</span>`:''}</span><span class="c">${wordCost(b.word,b.form,b.rider)}</span><span class="x" title="Unmake" onclick="event.stopPropagation();magicUnmake(${i})">✕</span></div>`;}
+  bk+=`<div class="mp-meta" style="margin-top:12px">F casts the readied line. A made spell costs nothing to unmake; the words stay yours.</div>`;
+  grid.className='mp-page';grid.innerHTML=`<div class="mp-lex">${lex}</div><div class="mp-mid">${mid}</div><div class="mp-book">${bk}</div>`;
 }
+// the page's keys, from this file's own listener (the play keys' handler is 92-creator.js's): in the Magic tab, 1–8 ready a line and
+// Enter writes the spell; in play with no panel open, 1–8 ready a line. Read from the loop's own list of what pauses play.
+function playKeysFree(){return started&&!dead&&!won&&!invOpen&&!shopOpen&&!lootOpen&&!stashOpen&&!luOpen&&!hubOpen&&!dlgOpen&&!nbOpen&&!isBookOpen()
+  &&!(typeof lockOpen!=='undefined'&&lockOpen)&&!(typeof sleepOpen!=='undefined'&&sleepOpen)&&!(typeof barberOpen!=='undefined'&&barberOpen)
+  &&!(typeof cargoOpen!=='undefined'&&cargoOpen)&&!(typeof brewOpen!=='undefined'&&brewOpen)&&!(typeof cookOpen!=='undefined'&&cookOpen)
+  &&!(typeof yardOpen!=='undefined'&&yardOpen)&&!(typeof pauseOpen!=='undefined'&&pauseOpen)&&!(typeof forgeOpen!=='undefined'&&forgeOpen)
+  &&!(typeof benchOpen!=='undefined'&&benchOpen);}
+window.addEventListener('keydown',e=>{const m=/^Digit([1-8])$/.exec(e.code),t=e.target;if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'))return;
+  if(hubOpen){if(hubLastTab!=='magic')return;if(m&&!e.repeat){e.preventDefault();magicReady(+m[1]-1);}else if(e.code==='Enter'&&!e.repeat){e.preventDefault();magicWrite();}return;}
+  if(m&&!e.repeat&&playKeysFree()&&spellBook[+m[1]-1])magicReady(+m[1]-1);});
 function renderHubAttrs(){
   // v61at: character sheet header — name + archetype label.
   const nameEl=document.getElementById('hub-charsheet-name');

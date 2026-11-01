@@ -1205,6 +1205,37 @@ function bookMake(form,word,rider){rider=rider||null;
   if(i<0){if(spellBook.length>=SPELL_BOOK_MAX)return {say:'Your book holds eight.'};spellBook.push({form,word,rider});i=spellBook.length-1;}
   return {i};}
 function bookSelect(i){const b=spellBook[i];if(!b)return false;activeSpell=i;activeSpellId=b.word;return true;}
+// S1674 — the composing page (#67 A, magic-build.md's session 6): unmaking a line of the book is free and the words stay yours. The
+// readied line moves with the book; unmaking it readies the first line left, or nothing. Named action: bookUnmake.
+function bookUnmake(i){if(!spellBook[i])return false;const was=activeSpell===i;spellBook.splice(i,1);
+  if(was){activeSpell=-1;activeSpellId=null;if(spellBook.length)bookSelect(0);}else if(activeSpell>i)activeSpell--;return true;}
+// a line's name: the word, the rider after "and", then the form; each word by its own tier (Irish, then English, then the true name)
+function bookLineName(b){const w=WORD_BY[b.word],r=b.rider&&WORD_BY[b.rider];if(!w)return '';
+  return `${w.nameIr}${r?' and '+r.nameIr:''}, ${FORMS[b.form].name.toLowerCase()}`;}
+function bookLineGloss(b){const w=WORD_BY[b.word],r=b.rider&&WORD_BY[b.rider];if(!w)return '';
+  const t=Math.min(wordTierOf(b.word)||1,r?wordTierOf(b.rider)||1:3),nm=x=>t>=3?(x.nameMa||x.nameEn):x.nameEn;
+  return t<2?'':`${nm(w)}${r?' and '+nm(r):''}`;}
+// what a word does in a form, in the sheet's words (magic-build.md's table of the 24); "today's" there is the old spell's own line
+const WORD_CELL_SAY={
+  'caor:sent':'a bolt, 20','caor:touched':'lights a brazier, burns a web; 30','caor:held':'flame',
+  'loscadh:touched':'fires dry brush','loscadh:laid':'ground fire 4 m, 6 a second, 10 s',
+  'tintreach:sent':'a bolt, 24, that leaps 5 m at half','tintreach:touched':'36, and a stagger',
+  'sioc:sent':'a bolt, 12, slows 30% 3 s','sioc:touched':'freezes a pool, a lock’s works','sioc:laid':'a floe 3 m across on water, 30 s','sioc:held':'frost',
+  'siul_uisce:worn':'walk on water','siul_uisce:touched':'douses a fire','anail:worn':'breathe under water',
+  'tonn:sent':'a wave 8 m down the line, 14, posture 20','tonn:laid':'a wave 6.2 m long from the point, 2 s',
+  'reo:touched':'a foe held 2 s','reo:laid':'foes within 4 m held 2 s',
+  'sideen:sent':'a bolt, 14, knock 1.5 m','sideen:laid':'an updraft 1.5 m wide, 15 s','sideen:held':'a gale',
+  'luas:worn':'×1.5 on the ground','eitilt:worn':'levitate','ean:worn':'the jump’s rise 8.4 m/s',
+  'cloch_ghear:sent':'a spike, 22','cloch_ghear:laid':'a pillar 1.2 m high, 20 s',
+  'freamh:sent':'a foe rooted 2 s','freamh:laid':'roots once within 3 m, 10 s',
+  'smol:sent':'a bolt, 16, alerts no one','dorcha:sent':'blinds 4 s','dorcha:laid':'a dark 6 m across, 15 s',
+  'dul_thart:sent':'the step: arrive where it lands, 12 m','dul_thart:worn':'through foes 0.6 s',
+  'solas_gheal:sent':'a bolt, 18','solas_gheal:laid':'a light 8 m, 60 s',
+  'leigheas:worn':'heals 35','leigheas:touched':'heals another','suil_fiodora:worn':'the compass to the nearest unread carving'};
+function wordCellSay(id,form){const s=WORD_CELL_SAY[id+':'+form];if(s)return s;const w=WORD_BY[id],c=w&&w.forms[form];if(!c)return '';
+  if(c.say)return c.say;const sp=SPELLS.find(x=>x.id===id);return sp&&sp.desc?sp.desc.replace(/\.$/,'').toLowerCase():'';}
+// a Worn word's time at its tier, for the page's line ("60 s")
+function wordCellDur(id,form){const c=WORD_BY[id]&&WORD_BY[id].forms[form];if(!c||!Array.isArray(c.dur))return 0;return c.dur[Math.max(0,(wordTierOf(id)||1)-1)];}
 // the shape a laid entry makes, or null where it makes none yet (the sheet's session 4)
 function laidShape(word,rider){
   if(word==='cloch_ghear')return 'pillar';if(word==='sideen')return 'updraft';
