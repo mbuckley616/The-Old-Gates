@@ -1418,6 +1418,6 @@ Then I went into a large ruins gate (seed 909, the one `gatethings` uses), with 
 
 **Backlog notes**
 - Caer Slige, the Captains' League's seat and the one ring where the title is fought, has no Fighters' Guild hall and so no training yard. Every other Markish city I checked has one. This is the rule working as written, so I have not filed it. But the quest writer's *The Mark's Rings* draft puts Jora at "the yard nearest Caer Slige", which on seed 1 is a city away.
-- The arenas line in section G of the backlog lists the brawl's barker as owed. Until it lands, the whole of S1644 (the stakes, assault, the rope) cannot be reached from the game. That is already said there, so no change is needed.
+- The arenas line in section L of the backlog lists the brawl's barker as owed. Until it lands, the whole of S1644 (the stakes, assault, the rope) cannot be reached from the game. That is already said there, so no change is needed.
 
 No proposals.
