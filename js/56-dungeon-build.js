@@ -1102,7 +1102,7 @@ function gtIceTex(id){const N=256,c=document.createElement('canvas');c.width=c.h
   const t=new THREE.CanvasTexture(c);t.anisotropy=4;return t;}
 // freezePool: the named action. A pool's water in this gate turns to ice you can walk on; false if it was frozen already or is not one
 function freezePool(t){if(!t||t.kind!=='pool'||t.frozen||GATE_THINGS.indexOf(t)<0)return false;t.frozen=true;const P=GT_POOL,g=t.group;
-  const mat=new THREE.MeshPhongMaterial({map:gtIceTex(t.id),color:0xffffff,specular:0x9fb4ba,shininess:90,emissive:0x141a1c});
+  const tex=gtIceTex(t.id),mat=new THREE.MeshPhongMaterial({map:tex,color:0x6c8a9f,specular:0x1c2b32,shininess:24,emissive:0x26304a,emissiveMap:tex}); /* S1695 — blue-grey, a dull sheen and a cold glow of its own through the frost: white with a bright sheen took a torch's orange whole and read as molten metal (critic, 1 Nov) */
   const ice=new THREE.Mesh(new THREE.CircleGeometry(g.userData.IN,32).rotateX(-Math.PI/2),mat);ice.position.y=P.ICE;ice.name='poolIce';g.add(ice);
   g.userData.water.visible=false;t.ice=ice;
   const i=DUNGEON_COLUMNS.indexOf(t.col);if(i>=0)DUNGEON_COLUMNS.splice(i,1);
