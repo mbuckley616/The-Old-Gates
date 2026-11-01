@@ -13,7 +13,11 @@ const T0 = Date.now(), el = () => Math.round((Date.now() - T0) / 1000);
 const count = () => g.page.evaluate(() => {
   CAM.updateMatrixWorld(true); scene.updateMatrixWorld(true);
   const sm = REN.shadowMap, au = sm.autoUpdate, I = REN.info, Q = landQ(), bl = Q.bloom;
-  const one = (sh, bloom) => { sm.autoUpdate = sh; sm.needsUpdate = sh; Q.bloom = bloom; REN.render(scene, CAM); return { calls: I.render.calls, tris: I.render.triangles }; };
+  // S1684 — in a gate the game draws through dRender, which hides the spaces you cannot see from where you stand (Session 1302's
+  // zones); REN.render alone drew all of them, so the ledger's gate read 277 calls where the game draws 126. Count what the game draws.
+  const gate = typeof dRender === 'function' && typeof dScene !== 'undefined' && scene === dScene;
+  const draw = () => gate ? dRender(scene, CAM) : REN.render(scene, CAM);
+  const one = (sh, bloom) => { sm.autoUpdate = sh; sm.needsUpdate = sh; Q.bloom = bloom; draw(); return { calls: I.render.calls, tris: I.render.triangles }; };
   let all, eye, bare; try { all = one(true, bl); eye = one(false, bl); bare = one(false, false); } finally { sm.autoUpdate = au; Q.bloom = bl; }
   const fr = new THREE.Frustum().setFromProjectionMatrix(new THREE.Matrix4().multiplyMatrices(CAM.projectionMatrix, CAM.matrixWorldInverse));
   // a body is anything under a skinned mesh's rig or a builder body; houses are what a settlement's group holds; land is what a
@@ -27,11 +31,13 @@ const count = () => g.page.evaluate(() => {
       if (!k && roots.has(p)) k = roots.get(p); }
     return k || (isInterior() ? 'room' : activeZoneId === 'dungeon' ? 'gate' : 'other'); };
   const by = { bodies: 0, houses: 0, land: 0, other: 0 }, otherBy = {};
-  scene.traverseVisible(o => { if (!(o.isMesh || o.isLine || o.isPoints || o.isSprite)) return; if (o.layers && !o.layers.test(CAM.layers)) return;
+  // in a gate, walk the scene while dRender has the unseen spaces hidden: it hides them, calls REN.render, and shows them again
+  const walk = f => { if (!gate) return f(); const R0 = REN.render; REN.render = function () { f(); }; try { dRender(scene, CAM); } finally { REN.render = R0; } };
+  walk(() => scene.traverseVisible(o => { if (!(o.isMesh || o.isLine || o.isPoints || o.isSprite)) return; if (o.layers && !o.layers.test(CAM.layers)) return;
     if (o.frustumCulled !== false && !(o.isSprite ? fr.containsPoint(o.getWorldPosition(new THREE.Vector3())) : (o.geometry && (o.geometry.boundingSphere || o.geometry.computeBoundingSphere(), o.geometry.boundingSphere) && fr.intersectsObject(o)))) return;
     if (o.isInstancedMesh && o.count === 0) return;
     const m = o.material, n = Array.isArray(m) ? Math.max(1, (o.geometry.groups || []).length) : 1, kd = kindOf(o); by[kd] = (by[kd] || 0) + n;
-    if (kd === 'other') { const t = top(o), nm = t.name || (t.isMesh ? (t.material && t.material.name) || t.type : t.type); otherBy[nm] = (otherBy[nm] || 0) + n; } });
+    if (kd === 'other') { const t = top(o), nm = t.name || (t.isMesh ? (t.material && t.material.name) || t.type : t.type); otherBy[nm] = (otherBy[nm] || 0) + n; } }));
   const others = Object.entries(otherBy).sort((a, b) => b[1] - a[1]).slice(0, 5);
   return { calls: all.calls, tris: all.tris, shadow: all.calls - eye.calls, post: eye.calls - bare.calls, eye: bare.calls, by, others, shadowTris: all.tris - eye.tris };
 });
