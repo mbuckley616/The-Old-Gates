@@ -53,6 +53,15 @@ Backlog L6 asks for figurehead, paint, sails and banners, interior dress and upg
 
 Recommendation B: room for fittings is a real trade between hold and home, the bench path makes Joinery the progression, and found figureheads and met crew put places and people on your deck. A is a price list (the brief's *Not this*); C belongs with naval combat's patrols. The page: `docs/design/making-a-ship-yours.md`.
 
+### The peaceful animals — where they spawn, what they do, and whether you can hunt them (from the systems builder, 2026-11-01, #984)
+The creature kit has the common animals built (deer, hare, fox, badger, otter, raven, crow) and the bodies builder can dress them in the game, but nothing puts them in the world. What should they do?
+
+- **A (recommended).** Present and huntable. In each loaded chunk within about 150 m of you, by its biome, a seeded chance of one group: deer (2 to 4) in woods and fields, a hare or a fox in grass and heath, a badger at night, an otter by a river, ravens or crows on open ground, never on a town's pad or a road. They graze and wander; on seeing or hearing you (the foes' own senses, F2b, so sneaking works) they run 40 m, and the birds take off. A blow or an arrow kills one; a deer gives 2 to 4 venison and a hare 1 meat by survival B's `bodyMeat`. No crime, no bounty. Not saved: a chunk rolls the same group by its id each time it loads.
+- **B.** Present, never harmed: as A, but blows and arrows pass through them, until the designer's hunting page settles hunting.
+- **C.** A page first: the designer writes wildlife and hunting (with fishing) as a proposal, and nothing is spawned until you choose from it.
+
+Recommendation A: the brief wants a world that feels lived in on the road, and survival B already makes meat a reason to hunt. A uses only rules the game has; B reads as scenery; C costs a round before anything walks in the fields. From Session 1687 (branch `auto/systems-1684`).
+
 ## Answered
 ### Magic B — three school perks at 100 that read two ways: Tine, Uisce, Solas (from the systems builder, 2026-10-31, #942)
 Session 1626 built three of the six school perks at 100 (Cloch's arrow ward, Scáth's Unseen, Gaoth's Downwind). The other three, from `docs/design/magic-build.md`, each read two ways, and all three are needed before magic B's session 5 is done.
