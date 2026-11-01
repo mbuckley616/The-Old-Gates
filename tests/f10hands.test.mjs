@@ -69,7 +69,9 @@ if (process.env.F10_SHOTS) {
 }
 // S1306 — the hands take the lights of the place they are in (backlog I, s827): drawn over the world at noon, then over a black room
 // lit by one dim ambient and a lamp at 3 m, the view model's light follows; the old fixed 0.8 ambient and 1.2 sun lit both alike
-const lit = await page.evaluate(() => { forceTime(12); applyDayNightLighting(performance.now() / 1000 + 9); const sum = () => { let s = 0; const m = c => (c.r + c.g + c.b) / 3; VM_SCENE.children.forEach(o => { if (o.isLight) s += o.intensity * (o.isHemisphereLight ? (m(o.color) + m(o.groundColor)) / 2 : m(o.color)); }); return +s.toFixed(3); };
+// S1705: the world's sun, ambient and sky light are written by atmosphere() on WORLD.tick, so one tick after forceTime(12) puts noon's
+// light in the scene before it is read (without it `day` was the hour before: 0.986 on the weekly run of 1 Nov, booted near dusk)
+const lit = await page.evaluate(() => { forceTime(12); applyDayNightLighting(performance.now() / 1000 + 9); WORLD.tick(1 / 60, performance.now()); const sum = () => { let s = 0; const m = c => (c.r + c.g + c.b) / 3; VM_SCENE.children.forEach(o => { if (o.isLight) s += o.intensity * (o.isHemisphereLight ? (m(o.color) + m(o.groundColor)) / 2 : m(o.color)); }); return +s.toFixed(3); };
   vmLight(scene, 9); const day = sum(); const dark = new THREE.Scene(); dark.add(new THREE.AmbientLight(0x404050, .2)); vmLight(dark, 0); const vault = sum();
   const lamp = new THREE.PointLight(0xffa050, 2, 10); lamp.position.set(CAM.position.x + 3, CAM.position.y, CAM.position.z); dark.add(lamp); vmLight(dark, 1 / 60); const eased = sum(); vmLight(dark, 9); const lamped = sum();
   vmLight(scene, 9); return { day, vault, eased, lamped, back: sum() }; });
