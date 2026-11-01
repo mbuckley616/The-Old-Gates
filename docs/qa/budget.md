@@ -354,3 +354,42 @@ Frame rate is not measured here: software GL is not a target machine. It is Mich
 | a medium gate (ruins, seed 11), from its entrance | Middle (indoors) | 247 | 429k | 0 | 0 | 44 | 0 | 0 | 202 |  |
 
 *s1072, QA Session 1650, numbered 1634 when written (`budget` and `budgetport` passed every check, alone on 4 cores: about 480 s and 343 s). Against s1049, 23 builds and every merge of 30–31 Oct (magic B's held, laid and sent forms, the Skyfall Fields, the herring, the slime and the elemental's deaths), at Middle: Dunmore's street at noon 750 → 750 calls, 1.85 M → 1.85 M triangles; at midnight 832 → 831; the field west at noon 664 → 664 and at dawn 808 → 808; Portclare's square 532 → 532, 1.43 M → 1.43 M (High 580 → 581, a body more); the inn's hall 38 → 38; the medium gate 262 → 247 calls (−5.7%: the gate's own 217 → 202, bodies 44 → 44), 422k → 429k triangles (+1.7%). No spot rose by more than 10%. The herring's quay schools (S1599) do not reach Portclare's square from where it stands.*
+
+### s1093 — 2026-11-01 01:24 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Dunmore street, noon | Low | 592 | 1.10 M | 0 | 0 | 110 | 135 | 268 | 79 | Mesh 52, oldGate 24, LOD 2, impostors 1 |
+| Dunmore street, noon | Middle | 750 | 1.86 M | 136 | 6 | 113 | 135 | 281 | 79 | Mesh 52, oldGate 24, LOD 2, impostors 1 |
+| Dunmore street, noon | High | 801 | 2.35 M | 168 | 6 | 113 | 135 | 300 | 79 | Mesh 52, oldGate 24, LOD 2, impostors 1 |
+| Dunmore street, midnight | Low | 656 | 1.06 M | 0 | 0 | 107 | 201 | 268 | 80 | Mesh 52, oldGate 24, LOD 2, impostors 1, Points 1 |
+| Dunmore street, midnight | Middle | 832 | 1.77 M | 157 | 6 | 107 | 201 | 281 | 80 | Mesh 52, oldGate 24, LOD 2, impostors 1, Points 1 |
+| Dunmore street, midnight | High | 893 | 2.33 M | 199 | 6 | 107 | 201 | 300 | 80 | Mesh 52, oldGate 24, LOD 2, impostors 1, Points 1 |
+| the field west of Dunmore, noon | Low | 557 | 646k | 0 | 0 | 105 | 107 | 302 | 43 | Mesh 28, oldGate 8, Group 4, quaywall 2, impostors 1 |
+| the field west of Dunmore, noon | Middle | 664 | 1.06 M | 81 | 6 | 105 | 107 | 322 | 43 | Mesh 28, oldGate 8, Group 4, quaywall 2, impostors 1 |
+| the field west of Dunmore, noon | High | 712 | 1.55 M | 119 | 6 | 105 | 107 | 332 | 43 | Mesh 28, oldGate 8, Group 4, quaywall 2, impostors 1 |
+| the field west of Dunmore, dawn | Low | 640 | 636k | 0 | 0 | 108 | 186 | 302 | 44 | Mesh 28, oldGate 8, Group 4, quaywall 2, impostors 1 |
+| the field west of Dunmore, dawn | Middle | 808 | 1.12 M | 142 | 6 | 108 | 186 | 322 | 44 | Mesh 28, oldGate 8, Group 4, quaywall 2, impostors 1 |
+| the field west of Dunmore, dawn | High | 861 | 1.65 M | 185 | 6 | 108 | 186 | 332 | 44 | Mesh 28, oldGate 8, Group 4, quaywall 2, impostors 1 |
+
+### s1093 — 2026-11-01 01:30 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Portclare square, noon | Low | 365 | 678k | 0 | 0 | 30 | 67 | 208 | 60 | Mesh 36, oldGate 14, Group 8, impostors 1, LOD 1 |
+| Portclare square, noon | Middle | 532 | 1.43 M | 141 | 6 | 31 | 67 | 227 | 60 | Mesh 36, oldGate 14, Group 8, impostors 1, LOD 1 |
+| Portclare square, noon | High | 580 | 1.83 M | 176 | 6 | 31 | 67 | 240 | 60 | Mesh 36, oldGate 14, Group 8, impostors 1, LOD 1 |
+| The Bramble Hearth (Dunmore's inn), the hall from the door, 20h | Middle (indoors) | 38 | 26k | 0 | 0 | 1 | 0 | 0 | 37 |  |
+| a medium gate (ruins, seed 11), from its entrance | Middle (indoors) | 280 | 425k | 0 | 0 | 44 | 0 | 0 | 235 |  |
+
+### s1093 — 2026-11-01 01:36 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Portclare square, noon | Low | 365 | 670k | 0 | 0 | 30 | 67 | 208 | 60 | Mesh 36, oldGate 14, Group 8, impostors 1, LOD 1 |
+| Portclare square, noon | Middle | 532 | 1.43 M | 141 | 6 | 31 | 67 | 227 | 60 | Mesh 36, oldGate 14, Group 8, impostors 1, LOD 1 |
+| Portclare square, noon | High | 580 | 1.83 M | 176 | 6 | 31 | 67 | 240 | 60 | Mesh 36, oldGate 14, Group 8, impostors 1, LOD 1 |
+| The Bramble Hearth (Dunmore's inn), the hall from the door, 20h | Middle (indoors) | 38 | 26k | 0 | 0 | 1 | 0 | 0 | 37 |  |
+| a medium gate (ruins, seed 11), from its entrance | Middle (indoors) | 242 | 427k | 0 | 0 | 44 | 0 | 0 | 197 |  |
+
+*s1093, QA Session 1673 (`budget` 18/18 on its retry: the first try was killed at the 900 s cap with three `shuttle` boots of this session's on the same four cores, about 480 s alone before; `budgetport` 9/9 twice, about 349 s each, because `run.mjs budget` also names it by prefix). Against s1072, 21 builds and every merge of 31 Oct–1 Nov (the ring and its post, TOUCH in dungeons, the fur mantle's hair), at Middle: Dunmore's street at noon 750 → 750 calls, 1.85 M → 1.86 M triangles; at midnight 831 → 832; the field west at noon 664 → 664 and at dawn 808 → 808; Portclare's square 532 → 532, 1.43 M → 1.43 M; the inn's hall 38 → 38. The medium gate read 280 calls in the first boot and 242 in the second, on the same build (the gate's own 235 and 197; bodies 44 both; 425k and 427k triangles): against s1072's 247 that is +13% and −2%. Not a rise between builds but a spread between boots, so what the gate draws from its entrance is not fixed by the seed; QA's to narrow next (the gate's zones shown, `dZoneShown`, against when the count is taken). No spot rose by more than 10% between builds.*
