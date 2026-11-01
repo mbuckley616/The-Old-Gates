@@ -700,6 +700,9 @@ if (!process.argv.includes('--shots-only')) { const page = await browser.newPage
     check(`${k}: no strand on the face (${s.onFace} points)`, s.onFace <= s.points * .002, s.onFace);
     // Session 875: the strands rooted at the front hairline are finer than those behind it, so the hair thins onto the brow
     check(`${k}: the hairline thins (${s.hairline.edge} strands within 0.75 cm of it at ${s.hairline.ratio} of the width behind)`, s.hairline.edge > 20 && s.hairline.ratio < .7, s.hairline);
+    // Session 1681 (Michael's note on #272): the crop climbs the brow; its front strands ran sideways along the hairline and left the parting bare
+    // (1.3 to 2.1 cm with no strand over the midline, 2 to 3.5 cm over the hairline, on eight genomes; 0 to 0.8 after)
+    if (k.split('+')[0] === 'short' && s.part != null) check(`${k}: the crop covers the brow over the parting (${(s.part * 100).toFixed(1)} cm bare at most)`, s.part < .012, s.part);
     // Session 879: and at the temples, where the root region stops on a mesh edge, by the root's distance to that edge
     // (Session 1582: shaved sides have no strands at the temples, their stubble is the scalp's shell)
     if (k.split('+')[0] === 'shaved') check(`${k}: no strand at the temples, the stubble is the shell's (${s.temples?.edge ?? 0} strands within 0.75 cm of the region's edge)`, !s.temples?.edge, s.temples);
