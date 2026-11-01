@@ -282,11 +282,10 @@ function killE(e,tag=''){
   if(e.baseType === 'Slime' && e.variant !== 'small'){
     // Skip if this is already a Small Slime that got here somehow
     const smallDef = {col:0x5fd85f,hp:10,spd:0.75,scale:0.42,buildFn:'slime',dmgMult:1.2,ranged:false,eyeCol:0xffdd44,light:0x44ff44,def:0,resist:{cloch:1.35,tine:1.5,uisce:0.7}};
+    const splitAt=slimeSplitSpots(e);
     for(let s=0; s<2&&_dungeonBuildEnemy; s++){
       // S481 — where the two fall is the slain slime's own roll, and each is keyed by it: <slime's id>:s<k> (co-op rules)
-      const offX = (foeRand(e)-0.5) * 1.2;
-      const offZ = (foeRand(e)-0.5) * 1.2;
-      const sx = e.x + offX, sz = e.z + offZ;
+      const sx = splitAt[s][0], sz = splitAt[s][1];
       const nb = _dungeonBuildEnemy(smallDef);
       const byE = (0)+floorGroundY; // slimes sit on floor
       nb.g.position.set(sx, byE, sz);
@@ -305,6 +304,17 @@ function killE(e,tag=''){
     }
     showMsg(`The Slime splits!`, '#88ff88');
   }
+}
+// S1684 — the split's two fall either side of the slain slime, clear of its puddle (S1630: 1.3 its width, so 0.65 × its size
+// from its middle), with a Small Slime's 0.21 and a hand's breadth more: 0.755 m at the Slime's 0.7. They fell within 0.6 m in
+// each axis on the corpse, so one sat on the puddle and hid the slump (the critic, 31 Oct). One bearing from the slime's own roll
+// (co-op rules); a side in a wall, a pool or a chasm's air turns the bearing by 45° until both stand clear, then comes in to
+// half the reach, then onto the corpse as before.
+function slimeSplitSpots(e){
+  const d=0.65*(e.size||0.7)+0.3, a0=foeRand(e)*Math.PI*2, blk=typeof dBlkF==='function'?dBlkF:(typeof dBlk==='function'?dBlk:()=>false);
+  for(const k of [1,0.5]){for(let i=0;i<8;i++){const a=a0+i*Math.PI/4,cx=Math.sin(a)*d*k,cz=Math.cos(a)*d*k;
+    const A=[e.x+cx,e.z+cz],B=[e.x-cx,e.z-cz];if(!blk(A[0],A[1])&&!blk(B[0],B[1]))return [A,B];}}
+  return [[e.x,e.z],[e.x,e.z]];
 }
 // v80 S9 — experience banks; the level is taken when you sleep (inn, home, camp bedroll, fort cot).
 let _lvlReadyShown=false;
