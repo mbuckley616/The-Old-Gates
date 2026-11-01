@@ -56,13 +56,14 @@ for (const [size, seed] of [['large', 909], ['medium', 2055], ['large', 1078]]) 
     const P = GATE_THINGS.filter(t => t.kind === 'pool'); o.pools = P.length; const p = P[0];
     if (p) { currentFloor = p.floor; let tr = 0, dr = 0; p.group.traverse(q => { if (q.isMesh && q.visible) { dr++; tr += (q.geometry.index ? q.geometry.index.count : q.geometry.attributes.position.count) / 3; } });
       o.pool = { R: p.R, tris: Math.round(tr), draws: dr, wet: [dBlk(p.x, p.z), dBlk(p.x + p.R * .6, p.z)], out: !dBlk(p.x + p.R + .9, p.z) || !dBlk(p.x - p.R - .9, p.z) || !dBlk(p.x, p.z + p.R + .9) || !dBlk(p.x, p.z - p.R - .9) };
+      // S1692 — a foe's step (dSlide) walked from outside at the pool's middle: water stops it at the kerb; frozen, it crosses to the middle
+      const foeWalk = () => { let st = null; for (let a = 0; a < 16 && !st; a++) { const dx = Math.sin(a / 16 * 6.283), dz = Math.cos(a / 16 * 6.283); if (!dBlk(p.x + dx * (p.R + 1.4), p.z + dz * (p.R + 1.4))) st = [p.x + dx * (p.R + 1.4), p.z + dz * (p.R + 1.4)]; }
+        if (!st) return null; let [x, z] = st; for (let n = 0; n < 200; n++) { const d = Math.hypot(p.x - x, p.z - z); if (d < .05) break; [x, z] = dSlide(x, z, (p.x - x) / d * .05, (p.z - z) / d * .05); } return +Math.hypot(p.x - x, p.z - z).toFixed(2); };
+      o.pool.foeWet = foeWalk();
       o.pool.found = gateThingNear('pool', p.x + p.R + 1, p.z, 3) === p; o.pool.f1 = freezePool(p); o.pool.f2 = freezePool(p);
       let d2 = 0; p.group.traverse(q => { if (q.isMesh && q.visible) d2++; }); o.pool.drawsIce = d2;
       o.pool.dry = !dBlk(p.x, p.z); o.pool.iceY = +(footholdY(p.x, p.z, p.y + .1, p.y) - p.y).toFixed(2); o.pool.gone = gateThingNear('pool', p.x, p.z, 3) == null;
-      // S1682 — a foe reads no footholds in a gate: the ice stays a wall to its step (dSlide), and walked at the middle it stops off the ice
-      o.pool.foeWall = dBlkF(p.x, p.z) && dBlkF(p.x + p.R * .6, p.z); let st = null;
-      for (let a = 0; a < 16 && !st; a++) { const dx = Math.sin(a / 16 * 6.283), dz = Math.cos(a / 16 * 6.283); if (!dBlkF(p.x + dx * (p.R + 1.4), p.z + dz * (p.R + 1.4))) st = [p.x + dx * (p.R + 1.4), p.z + dz * (p.R + 1.4)]; }
-      if (st) { let [x, z] = st; for (let n = 0; n < 200; n++) { const d = Math.hypot(p.x - x, p.z - z); if (d < .05) break; [x, z] = dSlide(x, z, (p.x - x) / d * .05, (p.z - z) / d * .05); } o.pool.foeD = +Math.hypot(p.x - x, p.z - z).toFixed(2); } }
+      o.pool.foeIce = foeWalk(); o.pool.lift = dIceLift(p.x, p.z); o.pool.liftOut = dIceLift(p.x + p.R + .5, p.z); }
     return o; })));
 }
 console.log(JSON.stringify(R));
@@ -82,7 +83,7 @@ check('a web is a wall across its passage until burnWeb; then the way through is
       o[c] = { wear: g.userData.wear, over: +(top - p.R).toFixed(3), tris: Math.round(tr), draws: dr }; }
     o.same = JSON.stringify(gatePoolProp(p.id, p.R, 'catastrophic').children[0].geometry.attributes.position.array.slice(0, 60)) === JSON.stringify(gatePoolProp(p.id, p.R, 'catastrophic').children[0].geometry.attributes.position.array.slice(0, 60)); return o; });
   check('a pool\'s kerb by its gate\'s condition: whole when steady, two stones leaning when failing, four and a split one when catastrophic, every top within 0.1 m of the rim, 2 draws', wear.steady.wear === 0 && wear.failing.wear === 2 && wear.catastrophic.wear === 4 && wear.same && ['steady', 'failing', 'catastrophic'].every(c => wear[c].over <= .1 && wear[c].draws === 2 && wear[c].tris < 1600), wear);
-  check('a frozen pool is still a wall to a foe\'s step: walked at its middle, a foe stops off the ice, its rim or more away', P.every(p => p.foeWall && p.foeD >= p.R), P.map(p => [p.R, p.foeD])); }
+  check(`a foe's step stops at a pool's water (${P.map(p => p.foeWet).join('/')} m from its middle), and crosses its ice to the middle (${P.map(p => p.foeIce).join('/')}), standing 0.32 m up on it and on the floor past its rim`, P.every(p => p.foeWet >= p.R && p.foeIce < .1 && p.lift === .32 && p.liftOut === 0), P.map(p => [p.R, p.foeWet, p.foeIce, p.lift, p.liftOut])); }
 await enterDungeon(page, { theme: 'ruins', size: 'large', seed: 909 });
 const again = await page.evaluate(() => GATE_THINGS.map(t => t.id + (t.lit ? '*' : '')).join(','));
 check('the same gate entered again is laid the same', again === R[0].ids, [again, R[0].ids]);
@@ -95,9 +96,20 @@ const walk = await page.evaluate(() => {
   const go = () => { for (const k in K) K[k] = false; px = from[0]; pz = from[1]; jumpY = p.y; velY = 0; onGround = true; stamina = maxStamina; ROLL = null;
     yaw = Math.atan2(from[2], from[3]); pitch = 0; drive(i => { K['KeyW'] = i < 150 && Math.hypot(px - p.x, pz - p.z) > .3; return i > 20 && !K['KeyW'] && onGround; }, 200); for (const k in K) K[k] = false;
     return { d: +Math.hypot(px - p.x, pz - p.z).toFixed(2), y: +(jumpY - p.y).toFixed(2) }; };
-  const wet = go(); freezePool(p); const ice = go(); return { R: p.R, wet, ice }; });
+  const wet = go(); freezePool(p); const ice = go();
+  /* S1692 — the critic's case (1 Nov): you in the ice's middle, an alerted melee foe set 3 m off the rim; ten seconds of the game's loop */
+  const melee = q => q.mesh && !q.ranged && !q.dormant && !q.isSlime && !q.isWraith, e = ENEMIES.find(q => melee(q) && /Skeleton/.test(q.name)) || ENEMIES.find(melee); let fight = null;
+  if (e) { for (const q of ENEMIES) if (q !== e) q.dead = true; px = p.x; pz = p.z; jumpY = p.y + .32; onGround = true;
+    let b = null; for (let a = 0; a < 32 && !b; a++) { const dx = Math.sin(a / 32 * 6.283), dz = Math.cos(a / 32 * 6.283); let ok = true; for (let f = 1.4; f <= 3; f += .2) if (dBlk(p.x + dx * (p.R + f), p.z + dz * (p.R + f))) ok = false; if (ok) b = [dx, dz]; }
+    b = b || [from[2], from[3]]; e.dead = false; e.floor = p.floor; e.x = p.x + b[0] * (p.R + 3); e.z = p.z + b[1] * (p.R + 3); e.alert = true; e.disguised = false; e.hp = e.maxHp = 1e5; e.path = []; e.pathT = 0; e.pocket = null; e._homing = false; e.homeX = e.x; e.homeZ = e.z;
+    if (e.mesh) { e.mesh.position.x = e.x; e.mesh.position.z = e.z; if (!e.mesh.parent) dScene.add(e.mesh); }
+    PHP = effMaxHP(); const hp0 = PHP; let dMin = 1e9, lift = 0;
+    drive(() => { if (PHP < hp0 * .3) PHP = hp0 * .3; px = p.x; pz = p.z; dMin = Math.min(dMin, Math.hypot(e.x - p.x, e.z - p.z)); if (e._floorY != null) lift = Math.max(lift, e.baseY - e._floorY); return PHP < hp0; }, 600);
+    fight = { kind: e.name, dMin: +dMin.toFixed(2), lift: +lift.toFixed(2), struck: PHP < hp0, alert: !!e.alert, at: [+(e.x - p.x).toFixed(2), +(e.z - p.z).toFixed(2)], inD: lid }; e.dead = true; }
+  return { R: p.R, wet, ice, fight }; });
 console.log(JSON.stringify(walk));
 check('walking at a pool you stop at its kerb; frozen, you walk up onto the ice, 0.32 m, to its middle', walk && walk.wet.d >= walk.R && walk.wet.y === 0 && walk.ice.d < walk.R && walk.ice.y === .32, walk);
+check(`no refuge on the ice: with you in its middle, an alerted ${walk && walk.fight && walk.fight.kind} came to ${walk && walk.fight && walk.fight.dMin} m, stood ${walk && walk.fight && walk.fight.lift} m up on it, and struck you (${walk && walk.fight && walk.fight.struck})`, walk && walk.fight && walk.fight.struck && walk.fight.lift === .32, walk && walk.fight);
 await enterDungeon(page, { theme: 'ruins', size: 'large', seed: 909 });
 // S1680 — the touches that act on them, cast through castSpell and landed by the loop after the wind-up: Caor lights a cold brazier and
 // burns a web, Sioc freezes a pool; a touch 0.1 m past reach changes nothing; a foe in reach takes Caor's touch and the brazier stays cold

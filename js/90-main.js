@@ -1243,7 +1243,7 @@ function loop(now){
         dmgNum(e,dmg,info); /* S761 — #198 A: the number, not the line */
         if(e.hp<=0)killE(e,dmgTag(info,e));dScene.remove(fb);BALLS.splice(i,1);}});}
     staggerSweep();
-    ENEMIES.forEach(e=>{if(e.dead||e.floor!==currentFloor)return;const T=targetOf(e);const dist=Math.hypot(T.x-e.x,T.z-e.z);
+    ENEMIES.forEach(e=>{if(e.dead||e.floor!==currentFloor)return;if(typeof dFoeIce==='function')dFoeIce(e); /* S1692 — a foe on a frozen pool stands on its ice */const T=targetOf(e);const dist=Math.hypot(T.x-e.x,T.z-e.z);
       // S222 — a slime quivers, faster as it creeps; a fire elemental's flames flicker and its core eases back to its glow
       if(e.limbs&&e.limbs.slime&&e.limbs.body){const q=Math.sin(swT*(e.alert?7:3)+(e.ph||0))*.05;e.limbs.body.scale.set(1+q,1-q*1.4,1+q);}
       if(e.limbs&&e.limbs.flames){const L=e.limbs.flames;for(let i=0;i<L.length;i++){const m=L[i],f=1+.18*Math.sin(swT*9+i*1.7+(e.ph||0))+.08*Math.sin(swT*23+i);m.scale.set(m.userData.s0.x,m.userData.s0.y*f,m.userData.s0.z);}
