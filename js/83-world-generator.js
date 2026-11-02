@@ -3252,7 +3252,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   function drawMinimap(mm,size){
     if(!LM.cv){LM.cv=document.createElement('canvas');LM.cv.width=size;LM.cv.height=size;}
     const now=performance.now();
-    if(now-LM.t>250){LM.t=now;drawLocalMap(LM.cv.getContext('2d'),size,58,false);}
+    if(now-LM.t>250){LM.t=now;drawLocalMap(LM.cv.getContext('2d'),size,typeof navMapR==='function'?navMapR():58,false); /* S1737 — the navigator's 116 m at sea */}
     mm.drawImage(LM.cv,0,0);
   }
 

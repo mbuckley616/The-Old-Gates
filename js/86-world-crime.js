@@ -967,26 +967,125 @@
   function shipFitWeight(){const st=worldState.ship;if(!st||!Array.isArray(st.fit))return 0;let w=0;for(const k of st.fit)if(SHIP_FITS[k])w+=SHIP_FITS[k].w;return w;}
   function shipFitted(k){const st=worldState.ship;return !!(st&&!st.sunk&&Array.isArray(st.fit)&&st.fit.includes(k));}
   // the named actions (co-op rules): fit one (bought, or from the yard's store), take one out to the store, and fit her to a hull
-  function fitShip(k,fromStore){const st=shipCfg(),f=shipFitList(st);
+  // why a fitting cannot go into her now (places, one of each, the hold's weight), or null; gold is the caller's. S1733 — from her
+  // bench (src 'bench') one the yard keeps for her is refused too, so a fitting is still one of a kind
+  function fitShipWhy(k,src){const st=shipCfg(),f=shipFitList(st);
     if(k==='stowage'){if((st.cargo||0)>=2)return 'She has all the stowage she can take.';}else{if(!SHIP_FITS[k])return 'No such fitting.';if(f.includes(k))return `She has ${SHIP_FITS[k].a} already.`;}
+    if(src==='bench'&&st.stored.includes(k))return `The yard keeps her ${shipFitNames([k])[0]} already; it goes back in there for nothing.`;
     if(shipPlacesUsed(st)>=shipPlaces(st.cls))return `Her rooms are full: ${shipPlaces(st.cls)} places, all taken.`;
     const w=k==='stowage'?0:SHIP_FITS[k].w;if(w&&holdUsed()+w>holdCap())return `The ${SHIP_FITS[k].n} take${k==='bunks'?'':'s'} ${w} of the hold; clear the hold first.`;
+    return null;}
+  // fromStore: true from the yard's store (free), 'bench' built at her bench (free; the materials are the bench's), else bought
+  function fitShip(k,fromStore){const st=shipCfg(),f=shipFitList(st);const why=fitShipWhy(k,fromStore);if(why)return why;
     const p=fromStore?0:k==='stowage'?CARGO_TIERS[(st.cargo||0)+1]:SHIP_FITS[k].price;if(gold<p)return null;
-    if(fromStore){const i=st.stored.indexOf(k);if(i<0)return 'The yard holds no such fitting of hers.';st.stored.splice(i,1);}
+    if(fromStore===true){const i=st.stored.indexOf(k);if(i<0)return 'The yard holds no such fitting of hers.';st.stored.splice(i,1);}
     gold-=p;if(p&&typeof updateHUD==='function')updateHUD();if(k==='stowage')st.cargo=(st.cargo||0)+1;else f.push(k);
     if(typeof addLog==='function')addLog('⛵',`The ${SHIP.name} fitted with ${k==='stowage'?'stowage':SHIP_FITS[k].a}.`);return true;}
   function unfitShip(k){const st=shipCfg(),f=shipFitList(st);
     if(k==='stowage'){if(!(st.cargo>0))return 'She has no stowage fitted.';if(holdUsed()>holdCap()-25)return 'Clear 25 of the hold before the stowage comes out.';st.cargo--;}
-    else{const i=f.indexOf(k);if(i<0)return 'She has no such fitting.';f.splice(i,1);}
+    else{const i=f.indexOf(k);if(i<0)return 'She has no such fitting.';if(k==='bunks'&&Array.isArray(st.crew)&&st.crew.length)return 'Her crew sleep in them: send them ashore first.';f.splice(i,1);} /* S1737 */
     st.stored.push(k);return true;}
   // a refit to a hull with fewer places sends the last fitted to the yard's store first, then the stowage
   function shipFitToHull(){const st=shipCfg(),f=shipFitList(st),n=shipPlaces(st.cls),out=[];
     while(shipPlacesUsed(st)>n){if(f.length)out.push(f.pop());else{st.cargo--;out.push('stowage');}}
-    st.stored.push(...out);return out;}
+    st.stored.push(...out);if(out.includes('bunks')&&Array.isArray(st.crew))for(const r of st.crew.splice(0))(st.ashore||(st.ashore={}))[r]=null; /* S1737 — no bunks, the crew wait at the yard */return out;}
+  // S1733 — the still and the galley are in her hold (the build sheet's session 2): brewing there with a still fitted is ×1.10, and a
+  // galley is a fire. Until the look builder's fittings stand in the hold, anywhere in it is at them; once a room records a spot
+  // (house._fits[k] = {x,z}, the room's metres) it is within 2 m of it, the sheet's reach
+  const SHIP_STILL_K=1.10,SHIP_FIT_REACH=2;
+  function shipFitAtHand(k){if(!shipFitted(k)||typeof cabinBench!=='function'||!cabinBench())return false;
+    const sp=currentHouse._fits&&currentHouse._fits[k];return !sp||Math.hypot(px-sp.x,pz-sp.z)<=SHIP_FIT_REACH;}
+  // S1733 — her arms rack (the build sheet, session 2): three weapons kept aboard, a stash for weapons only, opened from her sea chest
+  // in her hold. Kept in st.rack in the save's item form (_serItem), so it travels with worldState.ship; taken back through
+  // _restoreEnchant. If boarders land while your hands are empty, the first on the rack is drawn for you (rackDraw, tickBoarding)
+  const SHIP_RACK_N=3;
+  function shipRack(){const st=shipCfg();if(!Array.isArray(st.rack))st.rack=[];return st.rack;}
+  function rackHere(){return shipFitted('arms')&&typeof cabinBench==='function'&&cabinBench();}
+  function rackItem(s){const it=_restoreEnchant(JSON.parse(JSON.stringify(s)));delete it.qty;return it;}
+  // the named actions: a weapon from the bag (its index) onto the rack, one off it into the bag. Each returns true or why not
+  function rackPut(i){const it=BAG[i];if(!shipFitted('arms'))return 'She has no arms rack.';if(!it||it.type!=='equip'||it.slot!=='weapon')return 'The rack takes weapons only.';
+    if(it.quest||it.artifact)return `The ${it.name} stays with you.`;const R=shipRack();if(R.length>=SHIP_RACK_N)return `The rack is full: ${SHIP_RACK_N} weapons.`;
+    let one=it;if((it.qty||1)>1){it.qty--;one={...it,qty:1};}else BAG.splice(i,1);R.push(_serItem(one));return true;}
+  function rackTake(j){const R=shipRack(),s=R[j];if(!s)return 'Nothing there.';const it=rackItem(s);if(!canCarry(it))return 'Too heavy to carry!';
+    R.splice(j,1);bagAdd(it);return true;}
+  function rackDraw(){if(!shipFitted('arms')||EQ.weapon||PHP<=0)return null;const R=shipRack();if(!R.length)return null;
+    const it=rackItem(R.shift());EQ.weapon=it;if(typeof SHEATHED!=='undefined'&&SHEATHED&&typeof drawWeapon==='function')drawWeapon();sparKitRefresh();
+    showMsg(`You take the ${it.name} from the rack.`,'#e8d8a0');return it;}
+  // S1734 — her figureheads (the build sheet, session 3). The yard carves its island's (the harp, the dragon prow, the sun) for 150
+  // gold, no virtue. Five more are only found, each as a token in the bag (weight 0, to be fitted at a yard): fitted free at any
+  // shipwright, one at her bow at a time, the rest kept for her (st.heads, the yard's store). Their virtues: the Sea's hull +5% top
+  // speed in rain or storm; the wreck's maiden, a pirate within 300 m holds off 10 s before closing; the beast's skull, merchantmen
+  // give way and keep 30 m off; the gate stone, storm wear ×0.8 (the Drowned Bell's ×0.5 the better, never both); the Weaver's
+  // shuttle points the navigator's line at a wreck (session 4's navigator; nothing without one)
+  const SHIP_HEADS={sea:{n:'the Sea’s Hull'},maiden:{n:'the Wreck’s Maiden'},skull:{n:'the Beast’s Skull'},stone:{n:'the Gate Stone'},shuttle:{n:'the Weaver’s Shuttle'}};
+  const HEAD_CARVE={gatelands:'harp',mark:'dragon prow',aurenne:'sun'};
+  const HEAD_YARD_PRICE=150,HEAD_SEA_K=1.05,HEAD_MAIDEN_R=300,HEAD_MAIDEN_S=10,HEAD_SKULL_R=30,HEAD_STONE_K=.8;
+  function headName(k,st){st=st||worldState.ship||{};return k==='yard'?`the ${HEAD_CARVE[st.yardHead]||'harp'}`:SHIP_HEADS[k]?SHIP_HEADS[k].n:k;}
+  function headItem(k){const N=SHIP_HEADS[k].n;return {name:N[0].toUpperCase()+N.slice(1),ico:'🗿',type:'misc',weight:0,buyPrice:0,sellMult:0,unique:true,figurehead:k,desc:'A figurehead, to be fitted at a yard.'};}
+  function shipHeads(st){st=st||shipCfg();if(!Array.isArray(st.heads))st.heads=[];return st.heads;}
+  function shipHead(){const st=worldState.ship;return st&&!st.sunk&&st.head?st.head:null;}
+  function headFound(k){return BAG.some(b=>b&&b.figurehead===k)||!!(worldState.ship&&Array.isArray(worldState.ship.heads)&&worldState.ship.heads.includes(k));}
+  // the named actions: one found (its token into the bag, once), and one set at her bow at a yard
+  function grantHead(k){if(!SHIP_HEADS[k]||headFound(k))return false;bagAdd(headItem(k));const N=headName(k);
+    showMsg(`${N[0].toUpperCase()+N.slice(1)}: a figurehead, to be fitted at a yard.`,'#e8d8a0');if(typeof renderHubInv==='function')renderHubInv();return true;}
+  function fitHead(k,nation){const st=shipCfg(),H=shipHeads(st);
+    if(k==='yard'){const nat=HEAD_CARVE[nation]?nation:'gatelands';if(st.yardHead!==nat){if(gold<HEAD_YARD_PRICE)return null;gold-=HEAD_YARD_PRICE;if(typeof updateHUD==='function')updateHUD();st.yardHead=nat;}st.head='yard';return true;}
+    if(!SHIP_HEADS[k])return 'No such figurehead.';const i=BAG.findIndex(b=>b&&b.figurehead===k);if(i>=0){BAG.splice(i,1);if(!H.includes(k))H.push(k);}
+    if(!H.includes(k))return 'She has no such figurehead.';st.head=k;if(typeof addLog==='function')addLog('⛵',`The ${SHIP.name} carries ${headName(k)} at her bow.`);return true;}
+  // the maiden: a black sail within 300 m holds off 10 s (from tickOtherShips), once a ship; true while she holds
+  function headHold(o,dP,dt){if(shipHead()!=='maiden'||dP>HEAD_MAIDEN_R)return false;if(o._maidenT==null){o._maidenT=HEAD_MAIDEN_S;showMsg('The black sail sees the maiden at your bow and holds off. Ten seconds, no more.','#ffb060');}
+    if(o._maidenT<=0)return false;o._maidenT-=dt;return true;}
+  // the skull: a merchantman within twice 30 m of her turns away from her, so she keeps 30 m off; where to steer, or null
+  function headGiveWay(o){if(shipHead()!=='skull'||!SHIP.mesh)return null;const dx=o.x-SHIP.x,dz=o.z-SHIP.z,d=Math.hypot(dx,dz);
+    if(d>HEAD_SKULL_R*2||d<1e-3)return null;return {x:o.x+dx/d*100,z:o.z+dz/d*100};}
+  // S1736 — the wreck's maiden: in the sea chest of each island's deepest wreck (by its bed, the lowest of every wreck spawnWreck would
+  // lay, the same hash and the same first bed of 2.5 to 8 m under the sea), keyed by the chunk; worked out once for the whole world at
+  // the first wreck's spawn (the chunks' hashes and worldH, never what has loaded: S533). One maiden in all, so the first of the
+  // three taken is the one; until then each of those chests holds her
+  let MAIDEN_WRECKS=null;
+  function maidenWrecks(){if(MAIDEN_WRECKS)return MAIDEN_WRECKS;const best={},N=Math.ceil(GRID*SIZE/CHUNK);
+    for(let cz=0;cz<N;cz++)for(let cx=0;cx<N;cx++){if(hash01(cx,cz,150)>.06)continue;const t=maskAt(Math.floor(cx*CHUNK/SIZE),Math.floor(cz*CHUNK/SIZE));if(t==='land')continue;
+      for(let k=0;k<9;k++){const tx=cx*CHUNK+8+hash01(cx+k,cz,151)*(CHUNK-16),tz=cz*CHUNK+8+hash01(cz,cx+k,152)*(CHUNK-16),b=worldH(tx,tz);
+        if(b<-2.5&&b>-8){const n=nationAt(tx,tz),B=best[n];if(!B||b<B.bed)best[n]={key:chunkKey(cx,cz),bed:b,x:tx,z:tz};break;}}}
+    return MAIDEN_WRECKS=best;}
+  function maidenWreckHere(cx,cz){if(headFound('maiden'))return false;const k=chunkKey(cx,cz),W=maidenWrecks();for(const n in W)if(W[n].key===k)return true;return false;}
+  // S1737 — her crew (the build sheet, session 4): the carpenter, the cook and the navigator are met, not hired (crewMeet, the errands'
+  // hook, session 5), and two sail with her, in her bunks; the third waits ashore, swapped free at any shipwright. Each works at a skill of
+  // 50 from a station: the carpenter one patch of 18 every 90 s under way to her field cap at Joinery 50 (80%), a plank and a pitch from
+  // the sea chest; the cook (and her galley), at 6h each game day, one fish or else one joint from the chest, cooked at ×1.0, back into
+  // it; the navigator (and her chart table), at sea, the minimap to 116 m and the oilskin's *ahead* line. Sunk, they swim for the nearest port
+  const CREW={carpenter:{n:'the carpenter',needs:['bunks']},cook:{n:'the cook',needs:['bunks','galley']},navigator:{n:'the navigator',needs:['bunks','chart']}};
+  const CREW_N=2,CREW_PATCH_S=90,CREW_PATCH=18,CREW_JOINERY=50,CREW_COOK_H=6,NAV_MAP_R=116,MINIMAP_R=58;
+  function shipCrew(st){st=st||shipCfg();if(!Array.isArray(st.crew))st.crew=[];if(!st.ashore||typeof st.ashore!=='object')st.ashore={};return st.crew;}
+  function crewName(r,up){const n=CREW[r]?CREW[r].n:r;return up?n[0].toUpperCase()+n.slice(1):n;}
+  // aboard and at their station
+  function crewAt(r){const st=worldState.ship;return !!(st&&!st.sunk&&CREW[r]&&Array.isArray(st.crew)&&st.crew.includes(r)&&CREW[r].needs.every(k=>shipFitted(k)));}
+  // the named actions: met (they wait at that port), taken aboard, sent ashore
+  function crewMeet(r,siteId){if(!CREW[r])return false;const st=shipCfg(),C=shipCrew(st);if(C.includes(r)||(r in st.ashore))return false;st.ashore[r]=siteId||null;return true;}
+  function crewAboard(r){const st=shipCfg(),C=shipCrew(st);if(!CREW[r])return 'No such hand.';if(C.includes(r))return `${crewName(r,1)} is aboard already.`;
+    if(!(r in st.ashore))return `You have not met ${crewName(r)}.`;if(!shipFitted('bunks'))return 'She has no bunks for a crew.';
+    if(C.length>=CREW_N)return 'Her bunks sleep two, and both are taken.';delete st.ashore[r];C.push(r);return true;}
+  function crewAshore(r,siteId){const st=shipCfg(),C=shipCrew(st),i=C.indexOf(r);if(i<0)return `${crewName(r,1)} is not aboard.`;C.splice(i,1);st.ashore[r]=siteId||null;return true;}
+  function crewSink(){const st=shipCfg(),C=shipCrew(st);if(!C.length)return '';let port=null,bd=1e9;
+    try{for(const t of allPorts()){const d=Math.hypot(t.x-SHIP.x,t.z-SHIP.z);if(d<bd){bd=d;port=t;}}}catch(e){}
+    const who=C.splice(0);for(const r of who)st.ashore[r]=port?port.id:null;return `${who.map(r=>crewName(r,1)).join(' and ')} swim for ${port?port.name:'the shore'}, and wait there.`;}
+  // the minimap's reach at sea, and the navigator's *ahead* line
+  function navMapR(){return crewAt('navigator')&&(SHIP.sailing||onDeck())?NAV_MAP_R:MINIMAP_R;}
+  function navAboard(){return crewAt('navigator')&&(SHIP.sailing||onDeck());}
+  function stashTakeOne(pred){const i=stashBag.findIndex(b=>b&&pred(b));if(i<0)return null;const b=stashBag[i];const one={...b,qty:1};b.qty=(b.qty||1)-1;if(b.qty<=0)stashBag.splice(i,1);return one;}
+  function tickShipCrew(dt){const st=worldState.ship;if(!st||st.sunk||!Array.isArray(st.crew)||!st.crew.length)return;
+    if(crewAt('carpenter')&&SHIP.sailing&&Math.abs(SHIP.speed)>.5){SHIP._carpT=(SHIP._carpT||0)+dt;if(SHIP._carpT>=CREW_PATCH_S){SHIP._carpT-=CREW_PATCH_S;crewPatch();}}
+    if(crewAt('cook')){const day=Math.floor(gameMinNow()/1440);if(gameHour()>=CREW_COOK_H&&st.cookDay!==day){st.cookDay=day;crewCook();}}}
+  function crewPatch(){const b=shipBars(),cap=Math.round(b.hullMax*Math.min(1,.6+.004*CREW_JOINERY));if(b.hull>=cap)return 0;
+    const pitch=SURV_ITEMS.pitch.name;if(!stashBag.some(x=>x&&x.plank)||!stashBag.some(x=>x&&x.name===pitch)){if(!SHIP._carpSaid){SHIP._carpSaid=true;showMsg('The carpenter has no plank or no pitch in the sea chest. He waits.','#cc8844');}return 0;}
+    SHIP._carpSaid=false;stashTakeOne(x=>x.plank);stashTakeOne(x=>x.name===pitch);const to=Math.min(cap,b.hull+CREW_PATCH);shipCfg().hull=to;shipBarsUI();
+    showMsg(`The carpenter's patch holds: hull ${to} of ${b.hullMax}.`,'#d8c8a0');return to-b.hull;}
+  function crewCook(){const f=stashTakeOne(x=>x.food==='fish')?'fish':stashTakeOne(x=>x.food==='meat')?'meat':null;if(!f)return null;
+    const it=mealItem(f,1);_stashAdd(it);showMsg(`The cook has a ${it.name.toLowerCase()} in the sea chest for you.`,'#d8c8a0');return it;}
   function shipFitNames(arr){return arr.map(k=>k==='stowage'?'stowage':SHIP_FITS[k]?SHIP_FITS[k].n:k);}
   function shipCfg(){return worldState.ship||(worldState.ship={});}
   function shipClass(){return SHIP_CLASSES[(worldState.ship&&worldState.ship.cls)||'sloop'];}
-  function shipTopSpeed(){return shipClass().speed*(1+((worldState.ship&&worldState.ship.sails)||0)*SAIL_STEP)*(gateGift('gaoth')?1.5:1);} /* S1349 — Gaoth's gift, after the sails */
+  function shipTopSpeed(){return shipClass().speed*(1+((worldState.ship&&worldState.ship.sails)||0)*SAIL_STEP)*(gateGift('gaoth')?1.5:1)*(shipHead()==='sea'&&(WX.type==='rain'||WX.type==='storm')?HEAD_SEA_K:1);} /* S1734 — the Sea’s hull */ /* S1349 — Gaoth's gift, after the sails */
   // S411 — Michael's A on #85 (docs/design/sailing.md): a hull by class and a rig of 100, kept in worldState.ship (saved).
   // Under half her hull she ships water (speed ×0.8), under a quarter ×0.6; the rig sets ×(0.5 + 0.5 × rig/100);
   // at 0 hull she is waterlogged and makes 2.5 at most. The shipwright mends 4 gold a hull point, 3 a rig point, an hour a 20.
@@ -1004,7 +1103,7 @@
   // is rolled when first shown (WX.ahead) and the next shift takes it, so the hint never lies; with no hint shown the weather
   // is rolled when it comes, as before
   const AHEAD_WORD={clear:'clearing',overcast:'clouding over',rain:'rain',storm:'a storm',fog:'fog',snow:'snow',blizzard:'a blizzard',heavyrain:'heavy rain'};
-  function seaHint(){if(typeof cloakOn!=='function'||!cloakOn('oilskin')||(WX.type!=='rain'&&WX.type!=='storm'))return '';if(!WX.ahead)WX.ahead=pickWeather();
+  function seaHint(){if(!navAboard()&&(typeof cloakOn!=='function'||!cloakOn('oilskin'))||(WX.type!=='rain'&&WX.type!=='storm'))return '';if(!WX.ahead)WX.ahead=pickWeather();
     return WX.ahead===wxName(WX.type,WX.heavy>.5)?'':` · ${AHEAD_WORD[WX.ahead]||WX.ahead} ahead`;}
   function weatherSea(){const t=(WX.next!==WX.type&&WX.k>=.5)?WX.next:WX.type;return t==='storm'?3:(t==='clear'||t==='fog')?0:1;}
   function openWater(x,z){if(worldH(x,z)>-7.9)return false;for(let k=0;k<12;k++){const a=k/12*Math.PI*2;for(const r of [50,100,150])if(worldH(x+Math.cos(a)*r,z+Math.sin(a)*r)>SEA_Y-1.4)return false;}return true;}
@@ -1015,6 +1114,7 @@
     const st=SHIP.sea||0,v=Math.abs(SHIP.speed);let h=0,r=0;
     if(st>=3&&v>.5){const m=fwd>0?1:.5;h=dt/6*m;r=dt/4*m;}else if(st===2&&v>.5){h=dt/60;r=dt/60;}
     if(typeof bellAboard==='function'&&bellAboard()){h*=.5;r*=.5;if(st>=3&&v>.5&&WX.type==='storm')bellStorm();} /* S778 — the Drowned Bell: half the sea's wear; S794 — its line, the first storm */
+    else if(st>=3&&shipHead()==='stone'){h*=HEAD_STONE_K;r*=HEAD_STONE_K;} /* S1734 — the gate stone: storm wear ×0.8, never with the Bell */
     if(!h&&!r)return;SHIP._wh=(SHIP._wh||0)+h;SHIP._wr=(SHIP._wr||0)+r;const H=Math.floor(SHIP._wh),R=Math.floor(SHIP._wr);
     if(H||R){SHIP._wh-=H;SHIP._wr-=R;shipWear(H,R);}}
   // S413 — foundering: any hull lost while she is waterlogged sinks her. The wreck lies where she went down (on the map); any
@@ -1027,11 +1127,11 @@
   // destroyed*. The hold goes down with her, horse and all, and a raised ship comes up empty (Session 413 kept it).
   function shipSink(){const st=shipCfg();const aboard=SHIP.sailing||onDeck();
     const lost=Object.values(st.hold||{}).reduce((a,n)=>a+(n>0?n:0),0);st.hold={};
-    st.sunk={x:SHIP.x,z:SHIP.z};st.hull=0;Object.assign(st,{x:SHIP.x,z:SHIP.z,yaw:SHIP.yaw});SHIP.sailing=false;SHIP.speed=0;
+    const crewSaid=crewSink(); /* S1737 */st.sunk={x:SHIP.x,z:SHIP.z};st.hull=0;Object.assign(st,{x:SHIP.x,z:SHIP.z,yaw:SHIP.yaw});SHIP.sailing=false;SHIP.speed=0;
     for(const e of BOARDERS){if(e.mesh&&e.mesh.parent)e.mesh.parent.remove(e.mesh);const j=ZONES.world.enemies.indexOf(e);if(j>=0)ZONES.world.enemies.splice(j,1);}BOARDERS.length=0;
     if(SHIP.mesh){sc.remove(SHIP.mesh);SHIP.mesh=null;}if(SHIP.plat){const j=ZONES.world.platforms.indexOf(SHIP.plat);if(j>=0)ZONES.world.platforms.splice(j,1);SHIP.plat=null;}
     if(aboard){jumpY=SWIM_Y;velY=0;onGround=false;}splash(true);
-    showMsg(`The ${SHIP.name} goes down. Any shipwright can raise her.`,'#ff6060');if(typeof addLog==='function')addLog('⛵',lost?`The ${SHIP.name} sank with ${lost} ${lost===1?'crate':'crates'} in her hold.`:`The ${SHIP.name} sank.`);shipBarsUI();}
+    showMsg(`The ${SHIP.name} goes down. Any shipwright can raise her.${crewSaid?' '+crewSaid:''}`,'#ff6060');if(typeof addLog==='function')addLog('⛵',lost?`The ${SHIP.name} sank with ${lost} ${lost===1?'crate':'crates'} in her hold.`:`The ${SHIP.name} sank.`);shipBarsUI();}
   // once a second: a raised ship due at her quay is put there
   function tickShipRaise(){const st=worldState.ship;if(!st||!st.sunk||!st.raise||SHIP.mesh)return;if((worldState.gameTimeAbsMinutes||0)<st.raise.due)return;
     const site=siteAnywhere(st.raise.site);if(!site)return;const sd=shoreDir(site)||{dx:1,dz:0};const q=site.quayStart||{x:site.x+sd.dx*site.pad,z:site.z+sd.dz*site.pad};
@@ -1225,6 +1325,15 @@
     if(free)for(const k in SHIP_FITS){if(st.fit.includes(k)||st.stored.includes(k))continue;const F=SHIP_FITS[k];
       out.push({label:`Fit ${F.a} (${F.price} gold, ${F.w} of the hold)`,cls,quest:true,fn:()=>{const r=fitShip(k);return r===true?`Fitted: ${F.a}. Her hold takes ${holdCap()} now.`:r===null?`${F.a[0].toUpperCase()+F.a.slice(1)}: ${F.price} gold.`:r;}});}
     if(free)for(const k of [...new Set(st.stored)])out.push({label:`Fit her ${shipFitNames([k])[0]} again (kept at the yard)`,cls,quest:true,fn:()=>{const r=fitShip(k,true);return r===true?`Fitted again: ${shipFitNames([k])[0]}. Her hold takes ${holdCap()} now.`:r;}});
+    // S1734 — her figureheads: each found one in the bag fitted free, each kept one set back free, the yard's own island's carved for 150
+    {const H=shipHeads(st),nat=nationAt(site.x,site.z),cap=t=>t[0].toUpperCase()+t.slice(1);
+      for(const k of [...new Set(BAG.filter(b=>b&&SHIP_HEADS[b.figurehead]).map(b=>b.figurehead))])out.push({label:`Fit ${headName(k)} at her bow (free)`,cls,quest:true,fn:()=>{const r=fitHead(k);return r===true?`${cap(headName(k))} rides at her bow now.`:r;}});
+      for(const k of H)if(k!==st.head)out.push({label:`Set ${headName(k)} at her bow again (kept at the yard)`,cls,quest:true,fn:()=>{const r=fitHead(k);return r===true?`${cap(headName(k))} rides at her bow again.`:r;}});
+      if(st.yardHead&&st.head!=='yard')out.push({label:`Set her carved ${HEAD_CARVE[st.yardHead]} at her bow again (kept at the yard)`,cls,quest:true,fn:()=>{const r=fitHead('yard',st.yardHead);return r===true?`The ${HEAD_CARVE[st.yardHead]} rides at her bow again.`:r;}});
+      if(HEAD_CARVE[nat]&&st.yardHead!==nat)out.push({label:`Carve her a figurehead: the ${HEAD_CARVE[nat]} (${HEAD_YARD_PRICE} gold)`,cls,quest:true,fn:()=>{const r=fitHead('yard',nat);return r===true?`Carved: the ${HEAD_CARVE[nat]} rides at her bow.`:r===null?`The ${HEAD_CARVE[nat]}: ${HEAD_YARD_PRICE} gold.`:r;}});}
+    // S1737 — her crew: each one met and waiting taken aboard free while a bunk is free, each aboard sent ashore here
+    {const C=shipCrew(st);for(const r in st.ashore)out.push({label:`Take ${crewName(r)} aboard (free)`,cls,quest:true,fn:()=>{const x=crewAboard(r);return x===true?`${crewName(r,1)} comes aboard and stows a bag in her bunks.`:x;}});
+      for(const r of C.slice())out.push({label:`Send ${crewName(r)} ashore here`,cls,quest:true,fn:()=>{const x=crewAshore(r,site.id);return x===true?`${crewName(r,1)} goes ashore at ${site.name} to wait.`:x;}});}
     for(const k of [...(cargo?['stowage']:[]),...st.fit])out.push({label:`Take out her ${shipFitNames([k])[0]}`,cls,quest:true,fn:()=>{const r=unfitShip(k);return r===true?`The ${shipFitNames([k])[0]} comes out and waits at the yard. Her hold takes ${holdCap()} now.`:r;}});
     return out;
   }

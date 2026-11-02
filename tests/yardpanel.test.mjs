@@ -65,6 +65,84 @@ check('a fitting needs its weight free in the hold, and its gold', /clear the ho
 check('refitted down to a sloop, the last fitted go to the yard first: stowage and the still kept, hold 40 + 25 − 10', fit.after.cargo === 1 && fit.after.fit.join() === 'still' && fit.after.stored.join() === 'bunks,chart,galley' && fit.after.cap === 55, fit.after);
 check('her fittings and the yard’s store come back from a save', fit.loaded.fit.join() === 'still' && fit.loaded.stored.join() === 'bunks,chart,galley' && fit.loaded.cargo === 1, fit.loaded);
 check('an old save’s two hold tiers are two stowage: a sloop full, hold 90, nothing more offered', fit.oldSave.cap === 90 && fit.oldSave.used === 2 && fit.oldSave.rows.length === 0, fit.oldSave);
+// S1734 — her figureheads (the build sheet, session 3): the yard's own carved for 150, the found ones fitted free, one at her bow at a time
+const fh = await page.evaluate((pid) => { const site = WORLD.siteAnywhere(pid), keep = worldState.ship, kg = gold, kb = BAG.slice(), km = SHIP.mesh, kwx = WX.type, kbell = bellAboard, kp = currentPortal, out = {};
+  const rows = () => yardOffers(site).filter(o => /figurehead|at her bow/.test(o.label)); const row = re => rows().find(o => re.test(o.label));
+  worldState.ship = { cls: 'sloop', hold: {}, hull: 100, rig: 100 }; gold = 1000; BAG.length = 0;
+  out.rows0 = rows().map(o => o.label); out.carve = row(/^Carve/).fn(); out.afterCarve = { gold, head: worldState.ship.head, yard: worldState.ship.yardHead, rows: rows().map(o => o.label) };
+  out.grant = grantHead('stone'); out.again = grantHead('stone'); out.token = BAG.filter(b => b.figurehead === 'stone').map(b => ({ n: b.name, w: b.weight }));
+  out.rowsT = rows().map(o => o.label); out.fit = row(/^Fit the Gate Stone/).fn(); out.afterFit = { gold, head: worldState.ship.head, heads: worldState.ship.heads.slice(), bag: BAG.length, rows: rows().map(o => o.label) };
+  // the stone's storm wear, and the Bell's, never both
+  const wear = (head, bell) => { const st = worldState.ship; st.head = head; st.hull = 100; st.rig = 100; SHIP._wh = 0; SHIP._wr = 0; SHIP.sea = 3; SHIP.speed = 5; bellAboard = () => bell; tickSeaWear(60, 1); bellAboard = kbell; return [100 - st.hull, 100 - st.rig]; };
+  out.wear = { none: wear(null, false), stone: wear('stone', false), bell: wear(null, true), both: wear('stone', true) };
+  worldState.ship.head = 'stone'; SHIP.sea = 2; worldState.ship.hull = 100; SHIP._wh = 0; SHIP._wr = 0; tickSeaWear(60, 1); out.rough = 100 - worldState.ship.hull;
+  // the Sea's hull: +5% in rain or storm
+  worldState.ship.head = null; WX.type = 'rain'; const v0 = shipTopSpeed(); worldState.ship.head = 'sea'; out.seaRain = +(shipTopSpeed() / v0).toFixed(3); WX.type = 'clear'; out.seaClear = +(shipTopSpeed() / v0).toFixed(3); WX.type = kwx;
+  // the maiden: within 300 m a black sail holds 10 s, once
+  worldState.ship.head = 'maiden'; const o = {}; out.maidenFar = headHold(o, 400, 1); let n = 0; while (headHold(o, 250, 1) && n < 30) n++; out.maidenS = n; out.maidenAgain = headHold(o, 250, 1);
+  // the skull: a merchantman within 60 m turns away from her
+  worldState.ship.head = 'skull'; if (!SHIP.mesh) SHIP.mesh = {}; const sx = SHIP.x, sz = SHIP.z; const gw = headGiveWay({ x: sx + 25, z: sz }); out.skull = { near: !!gw && gw.x > sx + 25 && Math.abs(gw.z - sz) < 1e-6, far: headGiveWay({ x: sx + 70, z: sz }) };
+  worldState.ship.head = 'stone'; out.skullOff = headGiveWay({ x: sx + 25, z: sz }); SHIP.mesh = km;
+  // where two are found: the first lair master slain, and a failing or catastrophic lesser gate's sigil read
+  out.slay = (slayMaster({ lair: {}, seed: 987654321 }), BAG.some(b => b.figurehead === 'skull'));
+  worldState.ship.heads = []; worldState.ship.head = null; BAG.length = 0; let fs = 1, ss = 1; while (gateCondRoll(fs) === 'steady') fs++; while (gateCondRoll(ss) !== 'steady') ss++;
+  currentPortal = { seed: ss }; out.steadyGate = gateStoneDue(ss); currentPortal = { seed: fs }; out.failGate = gateStoneDue(fs) && BAG.some(b => b.figurehead === 'stone'); currentPortal = kp;
+  delete worldState.masters[987654321];
+  // a save keeps her figureheads and a token in the bag
+  worldState.ship.head = 'yard'; worldState.ship.heads = ['stone', 'maiden']; BAG.length = 0; grantHead('sea');
+  const d = JSON.parse(ssStringify(_buildSavePayload())); worldState.ship = { cls: 'sloop' }; BAG.length = 0; _applyLoadData(d);
+  out.saved = { head: worldState.ship.head, heads: worldState.ship.heads, yard: worldState.ship.yardHead, token: BAG.filter(b => b.figurehead).map(b => b.figurehead) };
+  worldState.ship = keep; gold = kg; BAG.splice(0, BAG.length, ...kb); return out; }, pid);
+console.log(JSON.stringify(fh));
+check('a Mark yard carves its dragon prow for 150 gold, and offers nothing more for it once carved', fh.rows0.includes('Carve her a figurehead: the dragon prow (150 gold)') && fh.afterCarve.gold === 850 && fh.afterCarve.head === 'yard' && fh.afterCarve.yard === 'mark' && fh.afterCarve.rows.length === 0, fh.afterCarve);
+check('a figurehead found is a token in the bag, weight 0, given once', fh.grant === true && fh.again === false && fh.token.length === 1 && fh.token[0].w === 0, fh.token);
+check('the gate stone fitted at her bow for nothing; the carving waits at the yard, set back free', fh.rowsT.includes('Fit the Gate Stone at her bow (free)') && fh.afterFit.gold === 850 && fh.afterFit.head === 'stone' && fh.afterFit.heads.join() === 'stone' && fh.afterFit.bag === 0 && fh.afterFit.rows.includes('Set her carved dragon prow at her bow again (kept at the yard)'), fh.afterFit);
+check('storm wear: 10 hull and 15 rig a minute; the stone ×0.8 (8, 12); the Bell ×0.5 (5, 7 or 8); both, the Bell alone', fh.wear.none.join() === '10,15' && fh.wear.stone.join() === '8,12' && fh.wear.bell[0] === 5 && fh.wear.both.join() === fh.wear.bell.join() && fh.rough === 1, fh.wear);
+check('the Sea’s hull: +5% top speed in rain, nothing in clear weather', fh.seaRain === 1.05 && fh.seaClear === 1, [fh.seaRain, fh.seaClear]);
+check('the maiden: a black sail within 300 m holds off 10 s, once; from 400 m, nothing', fh.maidenFar === false && fh.maidenS === 10 && fh.maidenAgain === false, fh);
+check('the skull: a merchantman at 25 m steers straight away from her; at 70 m, or under another figurehead, nothing', fh.skull.near && fh.skull.far === null && fh.skullOff === null, fh.skull);
+check('found: the beast’s skull off the first lair master slain; the gate stone at a failing or catastrophic gate’s sigil, not a steady one', fh.slay && fh.steadyGate === false && fh.failGate, fh);
+check('a save keeps her figurehead, the yard’s store, her carving and a token in the bag', fh.saved.head === 'yard' && fh.saved.heads.join() === 'stone,maiden' && fh.saved.yard === 'mark' && fh.saved.token.join() === 'sea', fh.saved);
+// S1736 — the wreck's maiden: in each island's deepest wreck, worked out once by the chunks' hashes and the bed, the same on a second count
+const mw = await page.evaluate(() => { const kb = BAG.slice(), ks = worldState.ship, out = {}; worldState.ship = { cls: 'sloop' }; BAG.length = 0;
+  MAIDEN_WRECKS = null; const t0 = performance.now(); const W = maidenWrecks(); out.ms = Math.round(performance.now() - t0); out.W = JSON.parse(JSON.stringify(W)); MAIDEN_WRECKS = null; out.same = JSON.stringify(maidenWrecks()) === JSON.stringify(W);
+  const spawn = key => { const [cx, cz] = key.split(',').map(Number); const ch = { cx, cz, group: new THREE.Group(), sol: [], loot: [] }; spawnWreck(ch); const c = ch.loot[0]; return c ? { at: [Math.round(c.x), Math.round(c.z)], heads: c.items.filter(i => i.figurehead).map(i => i.figurehead) } : null; };
+  const n0 = Object.keys(W)[0]; out.nations = Object.keys(W).sort(); out.deep = spawn(W[n0].key); out.bedOk = Object.values(W).every(w => w.bed < -2.5 && w.bed > -8);
+  out.bed = worldH(W[n0].x, W[n0].z) === W[n0].bed;
+  let other = null; for (let cz = 0; cz < 450 && !other; cz++) for (let cx = 0; cx < 450 && !other; cx++) { const k = cx + ',' + cz; if (hash01(cx, cz, 150) > .06 || Object.values(W).some(w => w.key === k)) continue; const r = spawn(k); if (r) other = r; }
+  out.other = other; grantHead('maiden'); out.after = spawn(W[n0].key);
+  BAG.splice(0, BAG.length, ...kb); worldState.ship = ks; return out; });
+console.log(JSON.stringify(mw));
+check(`the wreck's maiden lies in each island's deepest wreck (${mw.nations.join(', ')}; beds ${Object.values(mw.W).map(w => w.bed.toFixed(3)).join(', ')} m; worked out in ${mw.ms} ms), the same on a second count`, mw.nations.join() === 'aurenne,gatelands,mark' && mw.bedOk && mw.bed && mw.same && mw.deep && mw.deep.heads.join() === 'maiden', mw);
+check('another wreck holds no figurehead, and hers none once the maiden is found', mw.other && mw.other.heads.length === 0 && mw.after && mw.after.heads.length === 0, { other: mw.other, after: mw.after });
+// S1737 — her crew (the build sheet, session 4): two in her bunks, the carpenter's patches and the cook's meal from the sea chest, the navigator's reach
+const cr = await page.evaluate((pid) => { const site = WORLD.siteAnywhere(pid), ks = worldState.ship, kst = stashBag.slice(), ksail = SHIP.sailing, ksp = SHIP.speed, kmin = worldState.gameTimeAbsMinutes, kclk = worldState.gameTimeMinutes, out = {};
+  worldState.ship = { cls: 'sloop', hold: {}, hull: 50, rig: 100, fit: ['galley'] }; stashBag.length = 0;
+  out.notMet = crewAboard('cook'); for (const r of ['carpenter', 'cook', 'navigator']) crewMeet(r, site.id); out.noBunks = crewAboard('cook');
+  worldState.ship.fit.push('bunks'); const row = re => yardOffers(site).find(o => re.test(o.label)); out.rows = yardOffers(site).filter(o => /aboard|ashore/.test(o.label)).map(o => o.label);
+  out.a1 = row(/^Take the carpenter aboard/).fn(); out.a2 = crewAboard('cook'); out.third = crewAboard('navigator'); out.unfit = unfitShip('bunks');
+  _stashAdd(benchItem('plank', 2)); _stashAdd(survItem('pitch', 2)); _stashAdd(survItem('fish', 1));
+  // 200 s under way at 50% hull, in 1/60 s steps of the ship's own tick
+  const day = Math.floor((worldState.gameTimeAbsMinutes || 0) / 1440) + 1; const T = m => { worldState.gameTimeAbsMinutes = m; worldState.gameTimeMinutes = m % 1440; }; T(day * 1440 + 5 * 60); /* before the cook's hour */
+  SHIP.sailing = true; SHIP.speed = 5; SHIP._carpT = 0; const hs = []; for (let t = 0; t < 200 * 60; t++) { const h0 = worldState.ship.hull; tickShipCrew(1 / 60); if (worldState.ship.hull !== h0) hs.push(worldState.ship.hull - h0); }
+  out.patches = hs; out.hull = worldState.ship.hull; out.chest = { planks: stashBag.filter(b => b.plank).length, pitch: stashBag.filter(b => b.name === SURV_ITEMS.pitch.name).length };
+  // the cook at 6h
+  T(day * 1440 + 5 * 60); tickShipCrew(1 / 60); out.before6 = stashBag.filter(b => b.meal).length;
+  T(day * 1440 + 6 * 60 + 5); tickShipCrew(1 / 60); tickShipCrew(1 / 60); out.meals = stashBag.filter(b => b.meal).map(b => ({ n: b.name, q: b.qty || 1, s: b.meal.s })); out.fishLeft = stashBag.filter(b => b.food === 'fish').length;
+  // swap the cook for the navigator at the yard: her chart table wanted for his station
+  out.swap = row(/^Send the cook ashore/).fn(); out.nav = crewAboard('navigator'); out.navNoTable = navMapR(); worldState.ship.fit.push('chart'); out.navR = navMapR(); SHIP.sailing = false; SHIP.sailing = true;
+  WX.type = 'rain'; out.hintOn = navAboard();
+  // a save keeps them
+  const d = JSON.parse(ssStringify(_buildSavePayload())); worldState.ship = { cls: 'sloop' }; _applyLoadData(d); out.saved = { crew: worldState.ship.crew.slice(), ashore: Object.keys(worldState.ship.ashore).sort() };
+  // sunk: they swim for the nearest port
+  worldState.ship.hull = 0; const keepMesh = SHIP.mesh; out.sink = crewSink(); out.afterSink = { crew: worldState.ship.crew.length, ashore: Object.entries(worldState.ship.ashore).filter(([, v]) => v).length };
+  SHIP.sailing = ksail; SHIP.speed = ksp; worldState.gameTimeAbsMinutes = kmin; worldState.gameTimeMinutes = kclk; worldState.ship = ks; stashBag.splice(0, stashBag.length, ...kst); return out; }, pid);
+console.log(JSON.stringify(cr));
+check('the crew: none met, refused; met, none aboard without bunks; with bunks two aboard and the third refused; bunks not taken out under them', /not met/.test(cr.notMet) && /no bunks/.test(cr.noBunks) && cr.rows.includes('Take the carpenter aboard (free)') && /comes aboard/.test(cr.a1) && cr.a2 === true && /both are taken/.test(cr.third) && /send them ashore/.test(cr.unfit), cr);
+check('the carpenter: 200 s under way at hull 50, two patches (+18, then to the cap), the hull stops at 80, the chest\'s 2 planks and 2 pitch spent', cr.patches.join() === '18,12' && cr.hull === 80 && cr.chest.planks === 0 && cr.chest.pitch === 0, cr);
+check('the cook: nothing before 6h; at 6h one baked fish at ×1.0 into the sea chest, once a day', cr.before6 === 0 && cr.meals.length === 1 && cr.meals[0].q === 1 && cr.meals[0].s === 1 && /Fish/.test(cr.meals[0].n) && cr.fishLeft === 0, cr.meals);
+check('swapped free at the yard; the navigator with her chart table draws the minimap to 116 m at sea, 58 without the table; his ahead line without the oilskin', /goes ashore/.test(cr.swap) && cr.nav === true && cr.navNoTable === 58 && cr.navR === 116 && cr.hintOn, cr);
+check('a save keeps who is aboard and who waits; sunk, they swim for the nearest port', cr.saved.crew.join() === 'carpenter,navigator' && cr.saved.ashore.join() === 'cook' && /swim for/.test(cr.sink) && cr.afterSink.crew === 0 && cr.afterSink.ashore === 3, cr);
 await pick('sloop'); const i = await R();
 check('back to a sloop pays: the yard pays 1067', i.acts.join() === 'Refit her as a sloop (the yard pays 1067 gold)', i.acts);
 // the chat keeps no refit, sails or hold rows

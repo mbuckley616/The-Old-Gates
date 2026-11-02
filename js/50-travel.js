@@ -488,7 +488,7 @@ function herbTellCount(){return perk('alchemy',25)?5:HIDDEN_UNLOCK_COUNT;}
 function herbFxKnown(k,i){const n=HERB_CONSUME_COUNTS[k]||0;if(i===0&&n>0)return true;if(i===1&&HERB_KIN.has(k)&&n>=herbTellCount())return true;const f=herbsKnown().fx[k];return !!(f&&f[i]);}
 function learnHerbFx(k,i){const K=herbsKnown();const f=K.fx[k]||(K.fx[k]=[0,0,0,0]);const was=herbFxKnown(k,i);f[i]=1;return !was;}
 function brewPairKey(a,b){return [a,b].sort().join('|');}
-function alchStrength(){return skillMult('alchemy')*(1+.01*attrEff('intelligence'));}
+function alchStrength(){return skillMult('alchemy')*(1+.01*attrEff('intelligence'))*(typeof shipFitAtHand==='function'&&shipFitAtHand('still')?SHIP_STILL_K:1);} /* S1733 — her still, in her hold */
 function gameDayNow(){return Math.floor((worldState.gameTimeAbsMinutes||0)/1440);}
 function brewTurned(it){return !!(it&&it.brew&&gameDayNow()-it.brew.day>=TINCTURE_TURN_DAYS&&!perk('alchemy',75));}
 function brewStrength(it){return it.brew.s*(brewTurned(it)?.5:1);}
@@ -624,7 +624,7 @@ function bagTake(pred,n){for(let i=BAG.length-1;i>=0&&n>0;i--){const b=BAG[i];if
 function gameMinNow(){return worldState.gameTimeAbsMinutes||0;}
 // the fires burning now, outdoors in the world: {x,z,until,mesh}
 const CAMPFIRES=[];
-function hearthHere(){if(typeof isInterior!=='function'||!isInterior()||typeof currentHouse==='undefined'||!currentHouse)return false;return currentHouse.type==='inn'||currentHouse.type==='home';}
+function hearthHere(){if(typeof isInterior!=='function'||!isInterior()||typeof currentHouse==='undefined'||!currentHouse)return false;return currentHouse.type==='inn'||currentHouse.type==='home'||(currentHouse.type==='cabin'&&typeof shipFitAtHand==='function'&&shipFitAtHand('galley'));} /* S1733 — her galley is a fire */
 function campfireNear(){if(activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior()))return null;const t=gameMinNow();
   return CAMPFIRES.find(f=>f.until>t&&Math.hypot(f.x-px,f.z-pz)<=FIRE_REACH)||null;}
 function atFire(){return hearthHere()||!!campfireNear();}
@@ -1207,7 +1207,30 @@ const BENCH_RECIPES=[
   {id:'arrows',name:'Arrows',need:'1 log, 10 feathers and an ingot',has:()=>bagCount(b=>!!b.log)>=1&&bagCount(b=>b.feather)>=FLETCH_FEATHERS&&benchMetals().some(t=>ingotCount(t)>=1)},
   {id:'patch',name:'Patch the hull',need:'a plank and a pitch',ship:true,has:()=>!shipWorkWhy('patch')}, /* S1519 — shown only at your ship */
   {id:'splice',name:'Splice the rig',need:'a spar and a pitch',ship:true,has:()=>!shipWorkWhy('splice')},
-  {id:'heartsplice',name:'Splice with heartwood',need:'a heartwood spar and a pitch',ship:true,heart:true,has:()=>!shipWorkWhy('heartsplice')}];
+  {id:'heartsplice',name:'Splice with heartwood',need:'a heartwood spar and a pitch',ship:true,heart:true,has:()=>!shipWorkWhy('heartsplice')},
+  ...['stowage','still','galley','chart','bunks','arms'].map(k=>({id:'fit_'+k,fit:k,ship:true,get name(){return 'Build '+shipBenchName(k);},get need(){return shipBenchNeed(k);},has:()=>!shipBenchWhy(k)}))];
+// S1733 — her fittings built at her own bench (the build sheet of #979 B, session 2): a third of the yard's gold or so, as the
+// shipwright's own planks, spars and iron; Joinery 25, the chart table and the arms rack 50; a Joinery use of 12, twice a patch,
+// and the forge's half-hour. A fitting is built into her, so it goes straight in, and the bench refuses one she has no place,
+// no weight or no need for (fitShipWhy), before anything is spent
+const SHIP_BENCH={stowage:{j:25,planks:6,spars:2,iron:0},still:{j:25,planks:4,spars:0,iron:2},galley:{j:25,planks:4,spars:0,iron:1},
+  chart:{j:50,planks:4,spars:0,iron:0},bunks:{j:25,planks:8,spars:0,iron:0},arms:{j:50,planks:4,spars:0,iron:1}};
+const SHIP_BENCH_XP=12,SHIP_BENCH_IRON=3;
+function shipBenchName(k){return k==='stowage'?'stowage':typeof SHIP_FITS!=='undefined'&&SHIP_FITS[k]?SHIP_FITS[k].n:k;}
+function shipBenchNeed(k){const B=SHIP_BENCH[k],p=[`${B.planks} planks`];if(B.spars)p.push(`${B.spars} spars`);if(B.iron)p.push(B.iron>1?`${B.iron} iron ingots`:'an iron ingot');
+  return p.length>1?p.slice(0,-1).join(', ')+' and '+p[p.length-1]:p[0];}
+// why her bench cannot build this fitting now, or null
+function shipBenchWhy(k){const B=SHIP_BENCH[k];if(!B)return 'No such fitting.';if(!shipWorkHere())return 'She must be hove to, and you at her side or in her cabin.';
+  const nm=shipBenchName(k),Nm=nm[0].toUpperCase()+nm.slice(1);
+  if(skillLv('joinery')<B.j)return `${Nm} ask${k==='bunks'?'':'s'} Joinery ${B.j} (you have ${skillLv('joinery')}).`;
+  if(plankCount()<B.planks||bagCount(b=>b.spar)<B.spars||ingotCount(SHIP_BENCH_IRON)<B.iron)return `You need ${shipBenchNeed(k)}.`;
+  return typeof fitShipWhy==='function'?fitShipWhy(k,'bench'):null;}
+// the named action: build it and fit it. Returns {made, fit, said} or {made:false, why}
+function shipBenchBuild(k){const why=shipBenchWhy(k);if(why)return {made:false,why};const B=SHIP_BENCH[k];
+  bagTake(b=>b.plank,B.planks);if(B.spars)bagTake(b=>b.spar,B.spars);if(B.iron)bagTake(b=>b.ingot===SHIP_BENCH_IRON,B.iron);
+  const r=fitShip(k,'bench');if(r!==true)return {made:false,why:r||''};
+  skillUse('joinery',SHIP_BENCH_XP,'b'+(_benchN++));if(typeof advanceClock==='function')advanceClock(FORGE_MIN);
+  const nm=shipBenchName(k);return {made:true,fit:k,said:`${nm[0].toUpperCase()+nm.slice(1)}, built and fitted. Her hold takes ${holdCap()} now.`};}
 // S1561 — the heartwood rows are shown to a hand with Heartwood (Woodcutting 75), or one who holds a heartwood log or spar
 function benchRows(){const hw=perk('woodcutting',75)||bagCount(b=>!!b.heartwood)>0;return BENCH_RECIPES.filter(r=>(!r.ship||shipWorkHere())&&(!r.heart||hw));}
 let _benchN=0;
@@ -1237,6 +1260,7 @@ function benchMake(id,tier){
     const it=benchPiece(1,ARMOR_TYPES.find(T=>T.type==='Buckler'),true);if(!canCarry(it))return {made:false,why:'Too heavy to carry!'};
     bagTake(b=>b.plank,3);bagAdd(it);skillUse('joinery',BENCH_PIECE,'b'+(_benchN++));
     if(typeof advanceClock==='function')advanceClock(FORGE_MIN);return {made:true,item:BAG[BAG.length-1],n:1};}
+  if(R.fit)return shipBenchBuild(R.fit);
   if(R.ship){const s=shipWorkStart(id);return s.started?{made:true,work:true}:{made:false,why:s.why};}
   if(id==='arrows'){const t=fletchMetal(tier),m=MATERIALS[t-1].name.toLowerCase();
     if(!bagCount(b=>!!b.log)||bagCount(b=>b.feather)<FLETCH_FEATHERS)return {made:false,why:`You need ${R.need}.`};
@@ -1339,6 +1363,9 @@ function benchDraw(){const ov=document.getElementById('benchui');if(!ov)return;
       (R.bowyer?note(`full draw in ${K.draw.toFixed(2)} s, ×${K.mult.toFixed(2)}, ${K.speed} m/s; ${K.stam} stamina a second held${K.walk?', drawn at a walk':''}`)+(perk('joinery',75)?'':note('asks Bowyer (Joinery 75)')):'')+
       note('made, never enchanted; sold back at a fifth');}
   else if(R.id==='shield')t+=pad('3 Planks'+have(plankCount()))+pad(`${FORGE_MIN} minutes`)+note('a Wooden Buckler; made, sold back at a fifth');
+  else if(R.fit){const B=SHIP_BENCH[R.fit],why=shipBenchWhy(R.fit),F=typeof SHIP_FITS!=='undefined'&&SHIP_FITS[R.fit]; /* S1733 */
+    t+=pad(`${B.planks} Planks`+have(plankCount()))+(B.spars?pad(`${B.spars} Spars`+have(bagCount(x=>x.spar))):'')+(B.iron?pad(`${B.iron} Iron Ingot${B.iron>1?'s':''}`+have(ingotCount(SHIP_BENCH_IRON))):'')+
+      pad(`Joinery ${B.j}, ${FORGE_MIN} minutes`)+note(R.fit==='stowage'?'+25 of the hold, a place of hers':`a place of hers and ${F.w} of the hold; built into her`)+(why?note(why):'');}
   else if(R.ship){const b=shipBars(),pl=R.id==='patch',why=shipWorkWhy(R.id); /* S1519 */
     t+=pad(pl?'1 Plank'+have(plankCount()):'1 Spar'+have(bagCount(x=>x.spar)))+pad('1 Pitch'+have(pitchCount()))+pad(pl?`hull +${patchAmt()}, ${patchSecs()} s of work`:`rig +${SPLICE_RIG}, ${patchSecs()} s of work`)+
       note(`${pl?'hull':'rig'} ${pl?b.hull:b.rig} of ${pl?b.hullMax:b.rigMax}; field work to ${fieldCap(pl?b.hullMax:b.rigMax)}`)+(why?note(why):'');}
@@ -1351,7 +1378,7 @@ function benchDraw(){const ov=document.getElementById('benchui');if(!ov)return;
   ov.querySelector('#bn-said').textContent=benchSaid;}
 function benchGo(){const r=benchMake(benchSel,benchSel==='bow'||benchSel==='arrows'||BOW_KINDS[benchSel]?benchTier:null);
   if(r.work){closeBenchPage();return;} /* S1519 — the patch and the splice are worked with the page shut */
-  benchSaid=r.made?(r.n>1?`${r.n} × ${r.item.name}.`:`${r.item.name}.`):r.why||'';
+  benchSaid=r.said?r.said:r.made?(r.n>1?`${r.n} × ${r.item.name}.`:`${r.item.name}.`):r.why||'';
   if(r.made&&typeof uiTone==='function')uiTone(330,440,.08,.08,'triangle');
   if(typeof renderHubInv==='function')renderHubInv();
   if(!benchHere()){closeBenchPage();return;}benchDraw();}

@@ -536,7 +536,8 @@ function lairHoardSpot(e){const map=(e.floor===2&&dMap2)?dMap2:dMap;const fl=e.f
   cells.sort((a,b)=>a.d-b.d);const best=cells.find(k=>room(k.c,k.r,8))||cells.find(k=>room(k.c,k.r,4))||cells[0];
   return best?{x:best.c,z:best.r}:{x:e.x,z:e.z};}
 function slayMaster(portal){if(!portal||!portal.lair)return;const M=worldState.masters||(worldState.masters={}),r=M[portal.seed];const was=r===true||!!(r&&r.dead);if(r&&typeof r==='object')r.dead=true;else M[portal.seed]=true;
-  if(!was&&typeof cloakMasterSlain==='function')cloakMasterSlain(portal);} /* S781 — the Wolf-Mother's Cloak off its master's corpse */
+  if(!was&&typeof cloakMasterSlain==='function')cloakMasterSlain(portal); /* S781 — the Wolf-Mother's Cloak off its master's corpse */
+  if(!was&&typeof grantHead==='function')grantHead('skull');} /* S1734 — the first lair beast you kill gives the beast's skull, a figurehead (once) */
 function lairFinish(portal){try{if(!portal||!portal.lair||!ENEMIES.length)return;const L=portal.lair;const M=worldState.masters||(worldState.masters={}),rec=M[portal.seed];
   if(rec===true||(rec&&rec.dead)){const h=rec&&rec.hoard;if(h&&h.items&&h.items.length){lairHoardChest(portal,h,!!L.dragon);showMsg('The master of this place is dead. Its hoard is where you left it.','#a89878');}else showMsg('The master of this place is dead. Its hoard is long gone.','#a89878');return;}
   // the deepest room: the enemy farthest from the entrance, on the lowest floor there is

@@ -600,6 +600,7 @@
     tickSeaSounds(dt);
     tickNetClimb(dt);
     SHIP._raiseT=(SHIP._raiseT||0)-dt;if(SHIP._raiseT<=0){SHIP._raiseT=1;tickShipRaise();}
+    tickShipCrew(dt); /* S1737 — her crew at their stations (86-world-crime.js) */
     if(!SHIP.mesh)return;
     if(worldState.ship&&(SHIP.sailing||onDeck())){SHIP._seaT=(SHIP._seaT||0)-dt;if(SHIP._seaT<=0){SHIP._seaT=1;SHIP.sea=seaState();}}else SHIP._seaT=0;
     if(SHIP.sailing){
@@ -719,6 +720,7 @@
     const chest=new THREE.Group();chest.position.set(x+Math.cos(ry)*2.2,worldH(x+Math.cos(ry)*2.2,z+Math.sin(ry)*2.2),z+Math.sin(ry)*2.2);chest.rotation.set(.08,ry+2.2,-.06);const {lid}=buildChestShell(chest,1.8,0x5a3a1c);ch.group.add(chest);
     let items=(typeof rollContainerLoot==='function'?rollContainerLoot('chest',1.4,null,1,'wreck:'+chunkKey(ch.cx,ch.cz)+':'+lootDay(),worldTierAt(x,z)):[])||[];
     if(!items.length)items.push({name:'Sea-worn Coins',ico:'🪙',type:'misc',weight:.4,sellMult:1,buyPrice:60});
+    if(typeof maidenWreckHere==='function'&&maidenWreckHere(ch.cx,ch.cz))items.push(headItem('maiden')); /* S1736 — the wreck's maiden, a figurehead, in each island's deepest wreck (86-world-crime.js) */
     items.forEach(it=>{if(it.qty==null)it.qty=1;});
     const cobj={id:'wreck:'+chunkKey(ch.cx,ch.cz),x:chest.position.x,z:chest.position.z,y:chest.position.y+.3,name:'Sea Chest',displayName:'Sea Chest',items,zone:'world',kind:'chest',g:chest,lid,opened:false,_chunk:chunkKey(ch.cx,ch.cz)};
     if(typeof ZONE_CORPSES!=='undefined')ZONE_CORPSES.push(cobj);ch.loot=ch.loot||[];ch.loot.push(cobj);
@@ -917,7 +919,7 @@
       if(o.boarded){placeOther(o);pirateFled(o);continue;}
       const T=targetOf(o),dP=Math.hypot(T.x-o.x,T.z-o.z); /* S542 — co-op rule: whom a black sail hunts is targetOf's */
       let tx,tz;
-      if(o.kind==='pirate'&&!o.sated&&atSea()&&dP<(typeof bellAboard==='function'&&bellAboard()?600:300)){ // close to ~28u, then hold off and shoot; S778 — from 600 with the Drowned Bell aboard
+      if(o.kind==='pirate'&&!o.sated&&atSea()&&dP<(typeof bellAboard==='function'&&bellAboard()?600:300)&&!(typeof headHold==='function'&&headHold(o,dP,dt))){ /* S1734 — the maiden: she holds off 10 s */ // close to ~28u, then hold off and shoot; S778 — from 600 with the Drowned Bell aboard
         if(typeof bellBlackSail==='function')bellBlackSail(o); /* S794 — the bell rings, the first time one turns for you */
         // S418 — her ram (Michael's B on #100): within 30 units, faster than you and with her ram ready, she steers at your
         // hull; the first touch spends it (tickHullCollisions) and she goes back to her circle; 30 s before the next, 12 s to land it
@@ -930,6 +932,7 @@
       } else {
         if(!o.wp||Math.hypot(o.wp.x-o.x,o.wp.z-o.z)<20){for(let k=0;k<10;k++){const a=Math.random()*Math.PI*2,d=150+Math.random()*250;const x=o.x+Math.cos(a)*d,z=o.z+Math.sin(a)*d;if(worldH(x,z)<-4){o.wp={x,z};break;}}}
         if(o.wp){tx=o.wp.x;tz=o.wp.z;}
+        if(o.kind!=='pirate'&&typeof headGiveWay==='function'){const gw=headGiveWay(o);if(gw){tx=gw.x;tz=gw.z;o.wp=null;}} /* S1734 — the skull: merchantmen give way */
       }
       if(tx!=null){const want=Math.atan2(-(tx-o.x),-(tz-o.z));let d=want-o.yaw;d=Math.atan2(Math.sin(d),Math.cos(d));o.yaw+=Math.max(-.5*dt,Math.min(.5*dt,d));o.speed+=((o.kind==='pirate'?6.5:4.5)-o.speed)*Math.min(1,dt*.6);}
       const fx=-Math.sin(o.yaw),fz=-Math.cos(o.yaw);const bx=o.x+fx*(o.L/2+3),bz=o.z+fz*(o.L/2+3);
