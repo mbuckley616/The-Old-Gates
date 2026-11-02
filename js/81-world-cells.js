@@ -264,7 +264,7 @@
   function seaAt(x,z){
     const [i,j]=cellOf(x,z);const c=getCell(i,j);
     let sea=seaBare(x,z,c.islets);
-    if(sea>0&&!RV.routing){const arr=stampsNear(x,z);for(let k=0;k<arr.length;k++){const st=arr[k];if(st.kind!=='site')continue;const d=Math.hypot(x-st.x,z-st.z);
+    if(sea>0&&!RV.routing&&!PLACE.on){const arr=stampsNear(x,z);for(let k=0;k<arr.length;k++){const st=arr[k];if(st.kind!=='site')continue;const d=Math.hypot(x-st.x,z-st.z);
       if(st.port){const R=st.r*.95;if(d<R)sea*=sstep(st.r*.7,R,d);} // ports: the water line sits at the quay
       else{const R=st.r+st.blend;if(d<R)sea*=sstep(st.r,R,d);}}}
     return sea;
