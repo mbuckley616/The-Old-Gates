@@ -112,7 +112,7 @@ check('taken from the scene, each is dropped', gone);
 // farms' hen on the same path, keyed farm:<key>, running at a trot and never soaring. Session 1723: the Gatelands' Great Heron, Crag Hawk
 // and Capercaillie, fast and aloft by their plans' gaits
 const birds = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.cos(yaw), sx = -fz, sz = fx;
-  window._B = ['Raven', 'Crow', 'Hen', 'Great Heron', 'Crag Hawk', 'Capercaillie', 'Skyraven', 'Stormshrike', 'Tundra Grouse', 'Scarlet Ibis', 'Cypress Stalker', 'Sunbeak Vulture', 'Cliffswift'].map((nm, i) => { const x = px + fx * 4 + sx * (i - 6) * 1.3, z = pz + fz * 4 + sz * (i - 6) * 1.3;
+  window._B = ['Raven', 'Crow', 'Hen', 'Great Heron', 'Crag Hawk', 'Capercaillie', 'Skyraven', 'Stormshrike', 'Tundra Grouse', 'Scarlet Ibis', 'Cypress Stalker', 'Sunbeak Vulture', 'Cliffswift', 'Glasswing Moth'].map((nm, i) => { const x = px + fx * 4 + sx * (i - 6) * 1.3, z = pz + fz * 4 + sz * (i - 6) * 1.3;
     const rig = buildAnimal(nm, 'f4birds:' + i), G = new THREE.Group(); G.add(rig.root); G.position.set(x, WORLD.worldH(x, z), z); G.rotation.y = yaw + Math.PI / 2; WORLD.scene.add(G);
     const e = { name: nm, x, z, mesh: G, limbs: { wolf: rig, torso: rig.mesh }, dead: false }; rig.e = e; return { nm, rig, G, e }; });
   CAM.position.set(px, worldH(px, pz) + 1.65, pz); CAM.updateMatrixWorld(true);
@@ -125,10 +125,10 @@ const birds = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.
     return { nm, plan: H.C.g.plan, seed: H.C.g.seed, want: HC.hashKey(rig.hcKey), bones: H.C.bones.length, tris: H.C.stats.tris, stand: rig.mesh.geometry.attributes.position.count / 3,
       len: +(bx.max.z - bx.min.z).toFixed(3), top: +(bx.max.y - G.position.y).toFixed(3), key: rig.hcKey.split(':')[0], low: +(bx.min.y - G.position.y).toFixed(3), spine: +sp.toFixed(3), wolf: WOLF_RIGS.has(rig) }; }); });
 console.log('  birds:', JSON.stringify(birds));
-check(`the raven, the crow, the hen, the Gatelands' heron, hawk and capercaillie the Mark's Skyraven, Stormshrike and Tundra Grouse and Aurenne's Scarlet Ibis, Cypress Stalker, Sunbeak Vulture and Cliffswift wear the kit's (${birds.map(b => b.nm + ' ' + b.plan + ', ' + b.bones + ' bones, ' + b.tris + ' triangles, ' + b.len + ' m beak to tail').join('; ')}), keyed by the spawner's key, over a ${birds[0].stand}-triangle stand-in, no wolf's driver`,
+check(`the raven, the crow, the hen, the Gatelands' heron, hawk and capercaillie the Mark's Skyraven, Stormshrike and Tundra Grouse and Aurenne's Scarlet Ibis, Cypress Stalker, Sunbeak Vulture, Cliffswift and Glasswing Moth wear the kit's (${birds.map(b => b.nm + ' ' + b.plan + ', ' + b.bones + ' bones, ' + b.tris + ' triangles, ' + b.len + ' m beak to tail').join('; ')}), keyed by the spawner's key, over a ${birds[0].stand}-triangle stand-in, no wolf's driver`,
   birds.every(b => !b.fail && b.plan === 'game:' + b.nm && b.key === (b.nm === 'Hen' ? 'farm' : 'wild') && b.seed === b.want && b.bones > 16 && b.tris < 8000 && !b.wolf && Math.abs(b.low) < .01) &&
   Math.abs(birds[0].len - .58) < .03 && Math.abs(birds[1].len - .45) < .03 && Math.abs(birds[2].len - .40) < .03 && birds[2].top > .3 && birds[2].top < .55 && Math.abs(birds[3].len - .95) < .05 && Math.abs(birds[4].len - .55) < .03 && Math.abs(birds[5].len - .85) < .05 && Math.abs(birds[6].len - .64) < .03 && Math.abs(birds[7].len - .47) < .03 && Math.abs(birds[8].len - .40) < .03 &&
-  Math.abs(birds[9].len - .68) < .04 && Math.abs(birds[10].len - 1.0) < .05 && Math.abs(birds[11].len - .77) < .04 && Math.abs(birds[12].len - .27) < .02, birds);
+  Math.abs(birds[9].len - .68) < .04 && Math.abs(birds[10].len - 1.0) < .05 && Math.abs(birds[11].len - .77) < .04 && Math.abs(birds[12].len - .27) < .02 && Math.abs(birds[13].len - .07) < .01, birds);
 const fly = await page.evaluate(() => _B.map(({ nm, rig, G }) => { const H = rig.hc, sk = H.C.skel, seen = {}, t0 = performance.now; let i0 = 0;
   const run = (n, sp, lift) => { for (let i = 0; i < n; i++) { G.position.x += Math.sin(G.rotation.y) * sp / 60; G.position.z += Math.cos(G.rotation.y) * sp / 60;
       G.position.y = WORLD.worldH(G.position.x, G.position.z) + lift; i0++; performance.now = () => 7e5 + i0 * 1000 / 60; try { hcBirdPose(rig); } finally { performance.now = t0; } }
@@ -138,7 +138,7 @@ const fly = await page.evaluate(() => _B.map(({ nm, rig, G }) => { const H = rig
   const d = run(60, 6, 4); seen.up = rig.gaitNow; G.updateMatrixWorld(true); const sp = H.C.byName.spine0.getWorldPosition(new THREE.Vector3()).y - G.position.y;
   run(30, 0, 0); return { nm, seen, moved: [mv(a, b), mv(b, c), mv(c, d)], soarSpine: +sp.toFixed(3) }; }));
 console.log('  fly:', JSON.stringify(fly));
-const FAST = { Raven: 'hop', Crow: 'hop', Hen: 'trot', 'Great Heron': 'walk', 'Crag Hawk': 'walk', Capercaillie: 'trot', Skyraven: 'hop', Stormshrike: 'walk', 'Tundra Grouse': 'trot', 'Scarlet Ibis': 'walk', 'Cypress Stalker': 'walk', 'Sunbeak Vulture': 'walk', Cliffswift: 'stand' }, UP = { Raven: 'soar', Crow: 'soar', 'Crag Hawk': 'soar', Skyraven: 'soar', Stormshrike: 'soar', 'Sunbeak Vulture': 'soar', Cliffswift: 'soar' }, SLOW = { Cliffswift: 'stand' };
+const FAST = { Raven: 'hop', Crow: 'hop', Hen: 'trot', 'Great Heron': 'walk', 'Crag Hawk': 'walk', Capercaillie: 'trot', Skyraven: 'hop', Stormshrike: 'walk', 'Tundra Grouse': 'trot', 'Scarlet Ibis': 'walk', 'Cypress Stalker': 'walk', 'Sunbeak Vulture': 'walk', Cliffswift: 'stand', 'Glasswing Moth': 'walk' }, UP = { Raven: 'soar', Crow: 'soar', 'Crag Hawk': 'soar', Skyraven: 'soar', Stormshrike: 'soar', 'Sunbeak Vulture': 'soar', Cliffswift: 'soar', 'Glasswing Moth': 'soar' }, SLOW = { Cliffswift: 'stand' };
 check(`each bird's gait is its group's, fast and aloft by its plan's gaits (the hen, the heron, the capercaillie, the ibis and the stalker never soar; the swift never walks): still ${fly.map(f => f.seen.still).join('/')}, 0.4 m/s ${fly.map(f => f.seen.slow).join('/')}, 1.6 m/s ${fly.map(f => f.seen.fast).join('/')}, 4 m up ${fly.map(f => f.seen.up).join('/')}; aloft its spine ${fly.map(f => f.soarSpine).join(', ')} m over the group (standing ${birds.map(b => b.spine).join(', ')})`,
   fly.every((f, i) => f.seen.still === 'stand' && f.seen.slow === (SLOW[f.nm] || 'walk') && f.seen.fast === FAST[f.nm] && f.seen.up === (UP[f.nm] || FAST[f.nm]) && f.moved.every(m => m > .01) && Math.abs(f.soarSpine - birds[i].spine) < .08), fly);
 await page.evaluate(() => { const a = _B[0].G, b = _B[_B.length - 1].G, mx = (a.position.x + b.position.x) / 2, mz = (a.position.z + b.position.z) / 2, fx = -Math.sin(yaw), fz = -Math.cos(yaw);
@@ -227,6 +227,24 @@ const snake = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.
 console.log('  snake:', JSON.stringify(snake));
 check(`the Mire Snake wears the kit's (${snake.plan}, ${snake.bones} bones, ${snake.tris} triangles; stand-in ${snake.standTris}), ${snake.len} m long, lying from ${snake.low} to ${snake.high} m over its ground; at rest it is ${snake.rest}, moving it is ${snake.move} (${snake.cyc} cycles over 0.6 m (the kit's stride, a wave's length), the bones moving ${snake.moved}, and again ${snake.still}); taken away, dropped`,
   !snake.fail && snake.plan === 'game:Mire Snake' && snake.seed === snake.want && snake.tris < 12000 && snake.len > .8 && snake.len < 1.1 && Math.abs(snake.low) < .03 && snake.high < .15 && snake.rest === 'stand' && snake.move === 'slither' && snake.cyc > .9 && snake.cyc < 1.6 && snake.moved > .005 && snake.still > .005 && snake.dropped, snake);
+// Session 1757: Aurenne's Sand Wyrm on the snake's path, 14 m long, lying on its ground and slithering as its group moves; its levels by its
+// size, so at 60 m it is still the kit's body, not the stand-in
+const wyrm = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.cos(yaw), x = px + fx * 14, z = pz + fz * 14;
+  const rig = buildAnimal('Sand Wyrm', 'f4wyrm:0'), G = new THREE.Group(); G.add(rig.root); G.position.set(x, WORLD.worldH(x, z), z); G.rotation.y = yaw + Math.PI / 2; WORLD.scene.add(G);
+  const e = { name: 'Sand Wyrm', x, z, mesh: G, limbs: { wolf: rig, torso: rig.mesh }, dead: false }; rig.e = e;
+  CAM.position.set(px, worldH(px, pz) + 1.65, pz); CAM.updateMatrixWorld(true);
+  const ZE = ZONES.world.enemies; ZE.push(e); let k = 0; HBODY.last = -1e9; while (!rig.hc && !rig.hcFail && k++ < 300) hcTick(9.9993e5 + k * (HBODY.gap + 1));
+  const H = rig.hc; if (!H) { ZE.splice(ZE.indexOf(e), 1); G.parent.remove(G); return { fail: !!rig.hcFail }; }
+  CAM.position.set(x - fx * 60, worldH(px, pz) + 1.65, z - fz * 60); CAM.updateMatrixWorld(true); hcTick(9.9996e5); const far = rig.hc.L; ZE.splice(ZE.indexOf(e), 1);
+  G.rotation.y = 0; G.updateMatrixWorld(true); const bx = new THREE.Box3(); for (const m of H.C.meshes) bx.union(new THREE.Box3().setFromObject(m));
+  const sk = H.C.skel, t0 = performance.now; let i0 = 0; const run = (n, sp) => { for (let i = 0; i < n; i++) { G.position.z += sp / 60; i0++;
+      performance.now = () => 9.9997e5 + i0 * 1000 / 60; try { hcSwimPose(rig); } finally { performance.now = t0; } } sk.update(); return { m: Array.from(sk.boneMatrices), ph: rig.ph, g: rig.gaitNow }; };
+  const a = run(60, 0), b = run(120, 4); let mv = 0; for (let i = 0; i < a.m.length; i++) mv = Math.max(mv, Math.abs(a.m[i] - b.m[i]));
+  const out = { plan: H.C.g.plan, seed: H.C.g.seed, want: HC.hashKey(rig.hcKey), bones: H.C.bones.length, tris: H.C.stats.tris, len: +(bx.max.z - bx.min.z).toFixed(2), low: +(bx.min.y - G.position.y).toFixed(3), high: +(bx.max.y - G.position.y).toFixed(3),
+    standTris: rig.tris, far, rest: a.g, move: b.g, cyc: +(b.ph - a.ph).toFixed(2), moved: +mv.toFixed(3) }; G.parent.remove(G); hcTick(9.9999e5); out.dropped = !rig.hc; return out; });
+console.log('  wyrm:', JSON.stringify(wyrm));
+check(`the Sand Wyrm wears the kit's (${wyrm.plan}, ${wyrm.bones} bones, ${wyrm.tris} triangles; stand-in ${wyrm.standTris}), ${wyrm.len} m long, lying from ${wyrm.low} to ${wyrm.high} m over its ground; at 60 m it is level ${wyrm.far} (its levels by its size); at rest ${wyrm.rest}, moving ${wyrm.move} (${wyrm.cyc} cycles over 8 m, the bones moving ${wyrm.moved}); taken away, dropped`,
+  !wyrm.fail && wyrm.plan === 'game:Sand Wyrm' && wyrm.seed === wyrm.want && wyrm.tris < 16000 && wyrm.len > 12.5 && wyrm.len < 15 && Math.abs(wyrm.low) < .1 && wyrm.high < 2 && wyrm.far < 2 && wyrm.rest === 'stand' && wyrm.move === 'slither' && wyrm.cyc > .6 && wyrm.cyc < 2 && wyrm.moved > .005 && wyrm.dropped, wyrm);
 // Session 1730: the Lantern Beetle on the same path, walking on the kit's own six legs, 6 cm long, its glow the kit's
 const beetle = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.cos(yaw), x = px + fx * 2, z = pz + fz * 2;
   const rig = buildAnimal('Lantern Beetle', 'f4beetle:0'), G = new THREE.Group(); G.add(rig.root); G.position.set(x, WORLD.worldH(x, z), z); G.rotation.y = yaw + Math.PI / 2; WORLD.scene.add(G);
