@@ -954,6 +954,36 @@
   const SAIL_TIERS=[0,250,450,700,1100]; // price to reach tier 1..4; S636: each tier +12% of her bare speed (was +1.2 u/s, three tiers)
   const SAIL_STEP=.12;
   const CARGO_TIERS=[0,200,400];    // +25 carry each while aboard or within 20u of her
+  // S1725 — Michael's B on #979 (docs/design/making-a-ship-yours.md): her rooms hold fittings, a place each, by hull (sloop 2, cutter 2,
+  // cog 3, caravel 3, galleon 5). Stowage is the old hold tier and stays counted in st.cargo (0 to 2, +25 hold each, the 200 and 400
+  // as before), so an old save's tiers are fitted stowage as they stand. The rest live in st.fit, one of each, and take hold weight:
+  // a ship is a trader or a home. A fitting taken out, or one a smaller hull has no place for, waits in st.stored and is fitted
+  // again free at any yard. What each one does at sea (the still, the galley, the crew's stations, the rack) is the page's later sessions.
+  const SHIP_PLACES={sloop:2,cutter:2,cog:3,caravel:3,galleon:5};
+  const SHIP_FITS={still:{n:'still',a:'a still',w:10,price:400},galley:{n:'galley',a:'a galley',w:10,price:300},chart:{n:'chart table',a:'a chart table',w:5,price:300},bunks:{n:'crew bunks',a:'crew bunks',w:10,price:250},arms:{n:'arms rack',a:'an arms rack',w:5,price:200}};
+  function shipFitList(st){st=st||shipCfg();if(!Array.isArray(st.fit))st.fit=[];for(let i=st.fit.length-1;i>=0;i--)if(!SHIP_FITS[st.fit[i]])st.fit.splice(i,1);if(!Array.isArray(st.stored))st.stored=[];return st.fit;}
+  function shipPlaces(cls){return SHIP_PLACES[cls||(worldState.ship&&worldState.ship.cls)||'sloop']||2;}
+  function shipPlacesUsed(st){st=st||shipCfg();return (st.cargo||0)+shipFitList(st).length;}
+  function shipFitWeight(){const st=worldState.ship;if(!st||!Array.isArray(st.fit))return 0;let w=0;for(const k of st.fit)if(SHIP_FITS[k])w+=SHIP_FITS[k].w;return w;}
+  function shipFitted(k){const st=worldState.ship;return !!(st&&!st.sunk&&Array.isArray(st.fit)&&st.fit.includes(k));}
+  // the named actions (co-op rules): fit one (bought, or from the yard's store), take one out to the store, and fit her to a hull
+  function fitShip(k,fromStore){const st=shipCfg(),f=shipFitList(st);
+    if(k==='stowage'){if((st.cargo||0)>=2)return 'She has all the stowage she can take.';}else{if(!SHIP_FITS[k])return 'No such fitting.';if(f.includes(k))return `She has ${SHIP_FITS[k].a} already.`;}
+    if(shipPlacesUsed(st)>=shipPlaces(st.cls))return `Her rooms are full: ${shipPlaces(st.cls)} places, all taken.`;
+    const w=k==='stowage'?0:SHIP_FITS[k].w;if(w&&holdUsed()+w>holdCap())return `The ${SHIP_FITS[k].n} take${k==='bunks'?'':'s'} ${w} of the hold; clear the hold first.`;
+    const p=fromStore?0:k==='stowage'?CARGO_TIERS[(st.cargo||0)+1]:SHIP_FITS[k].price;if(gold<p)return null;
+    if(fromStore){const i=st.stored.indexOf(k);if(i<0)return 'The yard holds no such fitting of hers.';st.stored.splice(i,1);}
+    gold-=p;if(p&&typeof updateHUD==='function')updateHUD();if(k==='stowage')st.cargo=(st.cargo||0)+1;else f.push(k);
+    if(typeof addLog==='function')addLog('⛵',`The ${SHIP.name} fitted with ${k==='stowage'?'stowage':SHIP_FITS[k].a}.`);return true;}
+  function unfitShip(k){const st=shipCfg(),f=shipFitList(st);
+    if(k==='stowage'){if(!(st.cargo>0))return 'She has no stowage fitted.';if(holdUsed()>holdCap()-25)return 'Clear 25 of the hold before the stowage comes out.';st.cargo--;}
+    else{const i=f.indexOf(k);if(i<0)return 'She has no such fitting.';f.splice(i,1);}
+    st.stored.push(k);return true;}
+  // a refit to a hull with fewer places sends the last fitted to the yard's store first, then the stowage
+  function shipFitToHull(){const st=shipCfg(),f=shipFitList(st),n=shipPlaces(st.cls),out=[];
+    while(shipPlacesUsed(st)>n){if(f.length)out.push(f.pop());else{st.cargo--;out.push('stowage');}}
+    st.stored.push(...out);return out;}
+  function shipFitNames(arr){return arr.map(k=>k==='stowage'?'stowage':SHIP_FITS[k]?SHIP_FITS[k].n:k);}
   function shipCfg(){return worldState.ship||(worldState.ship={});}
   function shipClass(){return SHIP_CLASSES[(worldState.ship&&worldState.ship.cls)||'sloop'];}
   function shipTopSpeed(){return shipClass().speed*(1+((worldState.ship&&worldState.ship.sails)||0)*SAIL_STEP)*(gateGift('gaoth')?1.5:1);} /* S1349 — Gaoth's gift, after the sails */
@@ -991,7 +1021,7 @@
   // shipwright raises her, class and tiers, for 30% of what they cost, and she lies at his quay three game days later. The hold
   // came up with her until S639 (it is lost now, below); the stash is the safehouse's, untouched.
   function shipCostAll(){const st=shipCfg();const cls=st.cls||'sloop';let c=(SHIP_CLASSES[cls]||SHIP_CLASSES.sloop).worth;
-    for(let i=1;i<=(st.sails||0);i++)c+=SAIL_TIERS[i];for(let i=1;i<=(st.cargo||0);i++)c+=CARGO_TIERS[i];return c;}
+    for(let i=1;i<=(st.sails||0);i++)c+=SAIL_TIERS[i];for(let i=1;i<=(st.cargo||0);i++)c+=CARGO_TIERS[i];for(const k of (Array.isArray(st.fit)?st.fit:[]))if(SHIP_FITS[k])c+=SHIP_FITS[k].price; /* S1725 — her fittings are raised with her */return c;}
   function shipRaiseCost(){return Math.round(shipCostAll()*.3);}
   // S639 — Michael's 6 Oct note and B on #192 (the page's shared ground): what she carries is *all lost if the ship is
   // destroyed*. The hold goes down with her, horse and all, and a raised ship comes up empty (Session 413 kept it).
@@ -1187,10 +1217,15 @@
     const cls=st.cls||'sloop';
     for(const next of yardHulls(site)){if(next===cls)continue;const c0=refitCost(cls,next);
       out.push({label:c0>=0?`Refit her as a ${next} (${c0} gold)`:`Refit her as a ${next} (the yard pays ${-c0} gold)`,cls:next,quest:true,fn:()=>{const from=st.cls||'sloop',p=refitCost(from,next);if(p>0&&gold<p)return L.refitPoor(next,p);gold-=p;updateHUD();
-        st.cls=next;st.hull=SHIP_CLASSES[next].hull;st.dress=nationAt(site.x,site.z);applyShipClass(); /* S1538 — #839 A: refitted, she takes this yard's dress */if(typeof addLog==='function')addLog('⛵',`The ${SHIP.name} refitted as a ${next}.`);
-        const line=L.refitted(next);return SHIP_CLASSES[next].L>SHIP_CLASSES[from].L?line:line.split(/[.:]/)[0]+'.';}});}
+        st.cls=next;st.hull=SHIP_CLASSES[next].hull;st.dress=nationAt(site.x,site.z);const left=shipFitToHull(); /* S1725 — what her new rooms cannot hold waits in the yard */applyShipClass(); /* S1538 — #839 A: refitted, she takes this yard's dress */if(typeof addLog==='function')addLog('⛵',`The ${SHIP.name} refitted as a ${next}.`);
+        const line=L.refitted(next),said=SHIP_CLASSES[next].L>SHIP_CLASSES[from].L?line:line.split(/[.:]/)[0]+'.';return left.length?`${said} Kept at the yard, no place for them: ${shipFitNames(left).join(', ')}.`:said;}});}
     const sails=st.sails||0;if(sails<SAIL_TIERS.length-1)out.push({label:`Better sails, tier ${sails+1} (${SAIL_TIERS[sails+1]} gold)`,cls,quest:true,fn:()=>{const p=SAIL_TIERS[sails+1];if(gold<p)return L.sailsPoor(p);gold-=p;updateHUD();st.sails=sails+1;return L.sailed(shipTopSpeed().toFixed(1));}});
-    const cargo=st.cargo||0;if(cargo<2)out.push({label:`Bigger hold, tier ${cargo+1} (${CARGO_TIERS[cargo+1]} gold)`,cls,quest:true,fn:()=>{const p=CARGO_TIERS[cargo+1];if(gold<p)return L.holdPoor(p);gold-=p;updateHUD();st.cargo=cargo+1;return L.held(25*(cargo+1));}});
+    const cargo=st.cargo||0,free=shipPlacesUsed(st)<shipPlaces(cls);if(cargo<2&&free&&!st.stored.includes('stowage'))out.push({label:`Bigger hold, tier ${cargo+1} (${CARGO_TIERS[cargo+1]} gold)`,cls,quest:true,fn:()=>{const p=CARGO_TIERS[cargo+1];if(gold<p)return L.holdPoor(p);gold-=p;updateHUD();st.cargo=cargo+1;return L.held(25*(cargo+1));}});
+    // S1725 — the fittings (#979 B): a row for each one she lacks while a place is free, one to fit back each stored one, one to take each out
+    if(free)for(const k in SHIP_FITS){if(st.fit.includes(k)||st.stored.includes(k))continue;const F=SHIP_FITS[k];
+      out.push({label:`Fit ${F.a} (${F.price} gold, ${F.w} of the hold)`,cls,quest:true,fn:()=>{const r=fitShip(k);return r===true?`Fitted: ${F.a}. Her hold takes ${holdCap()} now.`:r===null?`${F.a[0].toUpperCase()+F.a.slice(1)}: ${F.price} gold.`:r;}});}
+    if(free)for(const k of [...new Set(st.stored)])out.push({label:`Fit her ${shipFitNames([k])[0]} again (kept at the yard)`,cls,quest:true,fn:()=>{const r=fitShip(k,true);return r===true?`Fitted again: ${shipFitNames([k])[0]}. Her hold takes ${holdCap()} now.`:r;}});
+    for(const k of [...(cargo?['stowage']:[]),...st.fit])out.push({label:`Take out her ${shipFitNames([k])[0]}`,cls,quest:true,fn:()=>{const r=unfitShip(k);return r===true?`The ${shipFitNames([k])[0]} comes out and waits at the yard. Her hold takes ${holdCap()} now.`:r;}});
     return out;
   }
   // ── fish ──
@@ -1308,7 +1343,7 @@ function yardPanelDraw(){const ov=document.getElementById('yardui');if(!ov||!YAR
   let h=yardDialSVG(bare,full)+`<div id="yard-kn" style="text-align:center;font-size:13px;margin-bottom:6px">${bare.toFixed(1)} kn bare, ${full.toFixed(1)} under full sails</div>`+
     `<table style="width:100%;font-size:14px;line-height:1.6"><tr><td>Hull</td><td style="text-align:right">${C.hull}</td></tr><tr><td>Hold</td><td style="text-align:right">${CARGO_HOLD[cls]}</td></tr><tr><td>Worth</td><td style="text-align:right">${C.worth} gold</td></tr>`;
   if(mine)h+=`<tr><td>Yours, a ${mine}</td><td style="text-align:right">${SHIP_CLASSES[mine].worth} gold</td></tr>`;
-  if(mine===cls)h+=`<tr><td>Sails</td><td style="text-align:right">tier ${st.sails||0} of ${SAIL_TIERS.length-1}</td></tr><tr><td>Hold tier</td><td style="text-align:right">${st.cargo||0} of ${CARGO_TIERS.length-1}</td></tr>`;
+  if(mine===cls)h+=`<tr><td>Sails</td><td style="text-align:right">tier ${st.sails||0} of ${SAIL_TIERS.length-1}</td></tr><tr><td>Her hold now</td><td style="text-align:right">${holdCap()}</td></tr><tr><td>Places</td><td style="text-align:right">${shipPlacesUsed(st)} of ${shipPlaces(cls)}</td></tr><tr><td>Fitted</td><td style="text-align:right">${shipFitNames([...Array(st.cargo||0).fill('stowage'),...shipFitList(st)]).join(', ')||'nothing'}</td></tr>`; /* S1725 — #979 B: her places and fittings */
   h+='</table>';ov.querySelector('#yard-info').innerHTML=h;
   const offers=yardOffers(site).filter(o=>o.cls===cls);let note='';
   if(st&&st.sunk){const n=st.name||SHIP.name;if(st.raise){const d=Math.max(1,Math.ceil((st.raise.due-(worldState.gameTimeAbsMinutes||0))/1440)),y=(siteAnywhere(st.raise.site)||{}).name||'the quay';note=`The ${n} lies on the bottom. The yard at ${y} is raising her: ${d===1?'one day':d+' days'} yet.`;}else note=`The ${n} lies on the bottom. Ask about raising her.`;}
