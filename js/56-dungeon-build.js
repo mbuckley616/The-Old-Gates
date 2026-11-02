@@ -1162,16 +1162,17 @@ function gtBrushProp(id,D){const g=new THREE.Group();g.name='lairBrush';const r=
     for(let i=0;i<p.count;i++){const key=Math.round(p.getX(i)*1e3)+','+Math.round(p.getY(i)*1e3)+','+Math.round(p.getZ(i)*1e3);let k=seen.get(key);if(k==null){k=1+(r()-.5)*amp;seen.set(key,k);}p.setXYZ(i,p.getX(i)*k,p.getY(i)*k,p.getZ(i)*k);}dunSmoothNormals(geo);return geo;};
   const envH=(x,z)=>Math.max(.25,2.05*(1-Math.pow(Math.abs(x)/(half+.15),3))*(1-Math.pow(Math.abs(z)/(dep+.2),2)*.55)); /* the thicket's height over (x, z): a packed mound, its top near 2 m */
   // the skirt of straw and litter over the floor, past the mass on both faces
-  P.push([lumpy(1,.35),shade(0x8a7550,.8+r()*.15),M(0,.04,0,null,half,.1,dep+.35)]);
-  // the core: matted dead stuff, dark, so nothing shows through
-  for(let k=0;k<8;k++){const x=(k%4-1.5)/1.5*(half-.45),z=(k<4?-1:1)*dep*.35+(r()-.5)*.25,h=envH(x,z);
-    P.push([lumpy(1,.4),shade([0x2e241a,0x352a1e,0x2a2018][k%3],.85+r()*.3),M(x,h*.36,z,new THREE.Quaternion().setFromEuler(new THREE.Euler(r(),r()*6,r())),.5+r()*.15,h*.4,.5+r()*.15)]);}
+  P.push([lumpy(1,.6),shade(0x5e5040,.8+r()*.15),M(0,.03,0,null,half,.07,dep+.3)]); /* S1759 — darker and flatter: the torch lit the old 0x8a7550 bed as a flat orange slab (the critic, 2 Nov) */
+  // the core: matted litter at the foot, six low clumps (S1759: eight lumps to 0.8 of the height read as loaves with quills through them;
+  // the critic, 2 Nov, seed 3656). The stems, more of them, now cross through each other and close the view themselves.
+  for(let k=0;k<6;k++){const x=((k%3)-1)*(half-.45)+(r()-.5)*.4,z=(k<3?-1:1)*dep*.3+(r()-.5)*.35,h=envH(x,z);
+    P.push([lumpy(1,.65),shade([0x2e241a,0x352a1e,0x2a2018][k%3],.85+r()*.3),M(x,0,z,new THREE.Quaternion().setFromEuler(new THREE.Euler(0,r()*6,0)),.3+r()*.16,.12+r()*.08,.3+r()*.16)]);}
   // dead stems out of the mass, each with a twig: grey-brown, bleached at the tips of a few
   const up=new THREE.Vector3(0,1,0);
   const stem=(x0,y0,z0,dx,dy,dz,len,rad,col)=>{const dir=new THREE.Vector3(dx,dy,dz).normalize(),q=new THREE.Quaternion().setFromUnitVectors(up,dir),
       geo=new THREE.CylinderGeometry(rad*.35,rad,len,4,1,true);P.push([geo,col,M(x0+dir.x*len/2,y0+dir.y*len/2,z0+dir.z*len/2,q)]);return [x0+dir.x*len,y0+dir.y*len,z0+dir.z*len,dir];};
-  for(let k=0;k<150;k++){const x=(r()*2-1)*(half-.2),z=(r()*2-1)*dep*.7,h=envH(x,z),y=h*(.12+r()*.62);
-    const dx=x/half*.8+(r()-.5)*1.1,dz=(z>=0?1:-1)*(.4+r()*.9),dy=.25+r()*1.0,len=.55+r()*.6,col=shade([0x5e4f3d,0x4e4234,0x6f604c,0x7f725f][k%4],.75+r()*.3);
+  for(let k=0;k<190;k++){const x=(r()*2-1)*(half-.2),z=(r()*2-1)*dep*.7,h=envH(x,z),y=h*(.06+r()*.62);
+    const dx=x/half*.3+(r()-.5)*2.2,dz=(z>=0?1:-1)*(.1+r()*.7)*(r()<.25?-1:1),dy=-.15+r()*1.2,len=.55+r()*.6, /* S1759 — across and through, not out like quills */col=shade([0x5e4f3d,0x4e4234,0x6f604c,0x7f725f][k%4],.75+r()*.3);
     const [ex,ey,ez,d]=stem(x,y,z,dx,dy,dz,len,.03+r()*.02,col);
     stem(x+d.x*len*.55,y+d.y*len*.55,z+d.z*len*.55,d.x+(r()-.5)*1.4,d.y+.2,d.z+(r()-.5)*1.4,len*(.35+r()*.3),.012,col);}
   // dead bracken: a tapered frond on a curved midrib, curled over and down
