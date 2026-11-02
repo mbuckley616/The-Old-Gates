@@ -852,7 +852,20 @@
       const ember=new THREE.Mesh(new THREE.SphereGeometry(.25,6,6),new THREE.MeshBasicMaterial({color:0xff7a22}));ember.position.set(fx,worldH(fx,fz)+.2,fz);group.add(ember);
       const def=makeDef(site,reg,r,'Hermit',site.id==='hermit_camp'?'The Hermit':newName(),{x:cx+3.5,z:cz+4.5,bCol:0x4a4038,sCol:0xb09878,role:'old hermit',people:'oldblood'});def.role='Hermit';def._extraFn=()=>[...(typeof hermitMakersTopics==='function'?hermitMakersTopics(site):[]),...(typeof hermitWordsTopics==='function'?hermitWordsTopics(site):[])]; /* S792 — Old Blood (§3.3), and the makers' six; S1632 — the old words */
       snpcs.push(spawnNPC(def,Math.PI,true));}
-    if(plan.ruins){for(let i=0;i<plan.ruins;i++){const ang=r()*Math.PI*2,rad0=8+r()*(pad-16);addMesh(ruinGeo(r),cx+Math.cos(ang)*rad0,cz+Math.sin(ang)*rad0,r()*Math.PI,2.2);}}
+    // S1715 (card F8; OG-121, Michael's A on #345) — a ruin in the Gatelands on the new look is the island's monastic ruin, the kit's abbey
+    // (places.js's gatelandsAbbey): its cashel 61.6 m across on the site's level pad, its gate turned to the first road out (else by the
+    // site's stream), every wall, the tower, the cross, the cells and the yew a solid; its far copy plain boxes, a cylinder and cone for
+    // the tower and domes for the cells (S.abbeyLod, by houseLod's rule). Anywhere else, and on the old look, the seven heaps as before. Only a generated
+    // ruin: a named one (Caer Uaigneach, the canon's plague village) keeps its own.
+    const abbeyHere=site.kind==='ruin'&&/^c\d+_\d+_s\d+$/.test(site.id)&&window.OG_LOOK==='new'&&window.OG_KIT_TOWNS!==false&&typeof PKIT!=='undefined'&&PKIT.places&&PKIT.places.abbey&&nationOf(ni,nj).people==='gatelander';
+    if(abbeyHere)try{const A=PKIT.places.abbey({key:site.id}),ry=streets.length?Math.atan2(ax,az):r()*Math.PI*2,y=worldH(cx,cz)-.06,c=Math.cos(ry),s_=Math.sin(ry),g=A.group;
+      g.position.set(cx,y,cz);g.rotation.y=ry;g.userData.noBake=true;group.add(g);
+      for(const b of A.sol)sol.push({cx:cx+b.x*c+b.z*s_,cz:cz-b.x*s_+b.z*c,rx:b.w/2,rz:b.d/2,c:Math.cos(ry+b.ry),s:Math.sin(ry+b.ry),h:b.h,bt:'wall',abbey:true});
+      const mx=new THREE.Matrix4().makeRotationY(ry).setPosition(cx,y,cz),lo=A.far.map(([fg,col])=>[fg,mx,new THREE.Color(col)]);
+      const far=new THREE.Mesh(mergeGeos(lo),VC_MAT);far.name='abbey far';far.userData.noBake=true;far.castShadow=true;far.receiveShadow=true;far.visible=false;group.add(far);lo.forEach(([fg])=>fg.dispose());
+      S.abbey={ry,tris:A.tris,draws:A.draws,top:A.top,church:A.church,tower:A.tower,cross:A.cross,cells:A.cells,gatehouse:A.gatehouse};S.abbeyLod={hi:g,lo:far,x:cx,z:cz,r:A.cashel.r1};
+    }catch(e){console.warn('abbey',site.id,e);}
+    if(plan.ruins&&!S.abbey){for(let i=0;i<plan.ruins;i++){const ang=r()*Math.PI*2,rad0=8+r()*(pad-16);addMesh(ruinGeo(r),cx+Math.cos(ang)*rad0,cz+Math.sin(ang)*rad0,r()*Math.PI,2.2);}}
     if(plan.stones){for(let i=0;i<plan.stones;i++){const ang=i/plan.stones*Math.PI*2;addMesh(standingStoneGeo(r),cx+Math.cos(ang)*11,cz+Math.sin(ang)*11,ang,.6);}}
     // Footpaths and streets as flat ribbons on the pad.
     // S193 — footpaths: straight from the door to its street when nothing stands between; otherwise a dog-leg out
@@ -1108,7 +1121,7 @@
   // S1073 — a kit town's houses (one group for the town, S.kitLod) by the same rule, measured from the town's centre less half its
   // houses' reach: near the town the kit's houses, from outside it their far copy
   function houseLod(){const cp=CAM.position;for(const S of SETTLE.values()){
-    for(const K of [S.kitLod,S.farmLod,S.ringLod])if(K){const d=Math.max(0,Math.hypot(K.x-cp.x,K.z-cp.z)-K.r*.5),near=d<HOUSE_LOD.near?true:d>HOUSE_LOD.far?false:K.hi.visible;K.hi.visible=near;K.lo.visible=!near;} /* S1455 — and a village's farm */
+    for(const K of [S.kitLod,S.farmLod,S.ringLod,S.abbeyLod])if(K){const d=Math.max(0,Math.hypot(K.x-cp.x,K.z-cp.z)-K.r*.5),near=d<HOUSE_LOD.near?true:d>HOUSE_LOD.far?false:K.hi.visible;K.hi.visible=near;K.lo.visible=!near;} /* S1455 — and a village's farm */
     if(S.ring&&S.ring.paint&&S.ringLod&&S.ringLod.hi.visible)try{S.ring.paint(ringPostNames(S.ring.site));}catch(e){} /* S1662 — the post's names, cut again when the champion or the dead change (paint keeps its own key) */
     const L=S.lodMeshes;if(!L)continue;
     for(const m of L){if(m.userData.lod!=='hi')continue;const b=m.geometry.boundingSphere;const d=Math.max(0,Math.hypot(b.center.x-cp.x,b.center.z-cp.z)-b.radius*.5);
