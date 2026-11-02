@@ -112,7 +112,12 @@
   function climateOfCell(i,j){return nationOf(i,j).climate;}
   function polityOfCell(i,j){const q=cellHash(i,j,32);return q<.45?'realm':q<.78?'marches':'wilds';}
   // snow line and ground tint by climate (used by groundColor)
-  function snowLineAt(x,z){const [i,j]=cellOf(x,z);const cl=climateOfCell(i,j);return cl==='cold'?18:cl==='warm'?120:38;}
+  // S1751 — the temperate line was 38 m, from before the ranges (S432): 6.2% of the Gatelands' land stands over it, every range and the
+  // sites on them (the abbey c7_9_s5 at 99 m in a plains region, white at noon all year). The canon's Gatelands are fens, moors and low
+  // ranges: 130 m leaves snow on the highest summits only (it begins at 122 with the noise: 0.25% of the land; the highest site, c7_9_s8,
+  // stands at 117.5). Warm goes to 160 so it stays above
+  // temperate (Aurenne's land tops out at 126 m: no lasting snow there). The Mark's 18 is untouched. furWarm reads the same line.
+  function snowLineAt(x,z){const [i,j]=cellOf(x,z);const cl=climateOfCell(i,j);return cl==='cold'?18:cl==='warm'?160:130;}
 
   // ═══ PORTS (Session B) ═══════════════════════════════════════════════
   // A port is a town on the shore: the pad's sea-facing edge gets a stone
