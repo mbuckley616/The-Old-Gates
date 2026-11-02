@@ -373,8 +373,11 @@ SWIMMER['River Pike']={len:.8,col:0x66753d,belly:0xe0dbb3};
 // gait is the kit's slither while its group moves and its stand at rest (no beat on the clock). 1.0 m nose to tail
 // its stride is the kit's for slither, a wave's length (about half the body) since Session 1729 (it was 1728's SWIMMER.wave, 0.5 of its length)
 SWIMMER['Mire Snake']={len:1,col:0x4a5232,belly:0xc7b880,land:true};
-function snakeStandIn(len,col){const geo=new THREE.SphereGeometry(1,10,6).toNonIndexed();geo.applyMatrix4(new THREE.Matrix4().makeScale(.022*len,.016*len,len/2));
-  geo.translate(0,.016*len,0);geo.computeBoundingSphere();const m=new THREE.Mesh(geo,new THREE.MeshLambertMaterial({color:col}));m.castShadow=false;m.name='snake';return m;}
+// Session 1730: the Gatelands' Lantern Beetle (L3, OG-009: glows near old trees and ruins; the kit's lanternbeetle, its glow the kit's own),
+// on the same path: the kit walks it on its own six legs (move, its gait while its group moves; the kit's stride by its legs), 6 cm long
+SWIMMER['Lantern Beetle']={len:.06,col:0x3a3018,land:true,move:'walk',w:.6,h:.3};
+function landStandIn(len,col,w,h){const geo=new THREE.SphereGeometry(1,10,6).toNonIndexed();geo.applyMatrix4(new THREE.Matrix4().makeScale(w/2*len,h/2*len,len/2));
+  geo.translate(0,h/2*len,0);geo.computeBoundingSphere();const m=new THREE.Mesh(geo,new THREE.MeshLambertMaterial({color:col}));m.castShadow=false;m.name='crawler';return m;}
 function fishStandIn(len,col){const k=len/.4,parts=[],M=new THREE.Matrix4(),put=(geo,x,y,z,sx,sy,sz,ry)=>{M.makeRotationY(ry||0);
     const g=geo.index?geo.toNonIndexed():geo;g.applyMatrix4(new THREE.Matrix4().makeScale(sx,sy,sz).premultiply(M).premultiply(new THREE.Matrix4().makeTranslation(x*k,y*k,z*k)));parts.push(g);};
   put(new THREE.SphereGeometry(1,10,6),0,0,.03,.032*k,.045*k,.15*k);
@@ -384,14 +387,14 @@ function fishStandIn(len,col){const k=len/.4,parts=[],M=new THREE.Matrix4(),put=
   for(const g of parts){P.set(g.attributes.position.array,o*3);N.set(g.attributes.normal.array,o*3);o+=g.attributes.position.count;g.dispose();}
   const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(P,3));geo.setAttribute('normal',new THREE.BufferAttribute(N,3));geo.computeBoundingSphere();
   const m=new THREE.Mesh(geo,new THREE.MeshLambertMaterial({color:col}));m.castShadow=false;m.name='fish';return m;}
-function buildSwimmer(name,key){const F=SWIMMER[name];if(!F)return null;const root=new THREE.Group();root.name='kitroot';const mesh=(F.land?snakeStandIn:fishStandIn)(F.len,F.col);root.add(mesh);
+function buildSwimmer(name,key){const F=SWIMMER[name];if(!F)return null;const root=new THREE.Group();root.name='kitroot';const mesh=F.land?landStandIn(F.len,F.col,F.w||.044,F.h||.032):fishStandIn(F.len,F.col);root.add(mesh);
   const rig={name,swimmer:true,fish:true,land:!!F.land,crawl:!!F.land,gait:F.land?'stand':'swim',k:{swimmer:true},root,mesh,e:null,hcKey:'wild:'+(key!=null?key:name),reach:1,axis:0,ph:0,t:0,lx:null,lz:null,v:0,tris:mesh.geometry.attributes.position.count/3};
   root.userData.rig=rig;return rig;}
 // the trout's pose, near: the phase by the water its group covers (3D: a fish climbs and dives), or slowly on the clock holding still
 function hcSwimPose(rig){const H=rig.hc,e=rig.e,g=e&&e.mesh;if(!H||!g||e.dead)return;const now=performance.now()/1000,dt=rig.t?Math.min(.1,now-rig.t):0;rig.t=now;
   const p=g.position;let d=rig.lx==null?0:Math.hypot(p.x-rig.lx,p.y-rig.ly,p.z-rig.lz);rig.lx=p.x;rig.ly=p.y;rig.lz=p.z;if(d>2)d=0;
   rig.v=dt>0?rig.v+(d/dt-rig.v)*Math.min(1,dt*6):rig.v;
-  if(rig.land){const gait=rig.v>.05?'slither':'stand';if(H.C.gait!==gait)H.C.gait=gait;rig.ph+=d/Math.max(1e-3,HC.strideOf(H.C)*H.f);HC.pose(H.C,rig.ph);rig.gaitNow=gait;return;}
+  if(rig.land){const gait=rig.v>.02?SWIMMER[rig.name].move||'slither':'stand';if(H.C.gait!==gait)H.C.gait=gait;rig.ph+=d/Math.max(1e-3,HC.strideOf(H.C)*H.f);HC.pose(H.C,rig.ph);rig.gaitNow=gait;return;}
   rig.ph+=Math.max(dt*SWIMMER.idle,d/Math.max(1e-3,HC.strideOf(H.C)*H.f));HC.pose(H.C,rig.ph);rig.gaitNow=rig.v>.05?'swim':'hold';}
 // ── the wolf's motion: every joint an [x,y,z] rotation; `drop` lowers the hips ──
 const WG={
@@ -912,7 +915,7 @@ const HC_KINDS={'Wolf':{plan:'wolf'},'Snow Wolf':{plan:'wolf',own:true},'Dire Wo
   'Gargoyle':{plan:'gargoyle',own:true,person:true,merge:true,ik:true,glow:[1,.31,.13],glowR:.032,glowAt:{f:.8,up:.55,out:.5},garg:true},
   'Wraith':{plan:'wraith',own:true,person:true,legless:true,rest:HC_WRAITH_REST},'Phantom':{plan:'phantom',own:true,person:true,legless:true,rest:HC_WRAITH_REST},
   'Deer':{plan:'deer',ik:true},'Hind':{plan:'deer',own:true,ik:true,bare:true},'Red Fox':{plan:'redfox'},'Brown Hare':{plan:'brownhare'},'Badger':{plan:'badger'},'Otter':{plan:'otter'},'Cow':{plan:'cow',ik:true},'Sheep':{plan:'sheep',ik:true},'Goat':{plan:'goat',ik:true},'Elderstag':{plan:'stag',ik:true},'Gatefen Boar':{plan:'gatefenboar'},'Redspine Fox':{plan:'redspinefox'},'Hollowcat':{plan:'hollowcat'},'Greenward Stoat':{plan:'stoat'},
-  'Shark':{plan:'reefshark',fish:true},'Whale':{plan:'stormwhale',fish:true},'Dolphin':{plan:'stormswift',fish:true},'Gull':{plan:'gull',fish:true,own:true,cell:.014},'Raven':{plan:'raven',fish:true,own:true,cell:.014},'Crow':{plan:'crow',fish:true,own:true,cell:.012},'Trout':{plan:'trout',fish:true,own:true,cell:.014},'River Pike':{plan:'riverpike',fish:true,own:true,cell:.02},'Mire Snake':{plan:'miresnake',fish:true,own:true,cell:.016},'Hen':{plan:'hen',fish:true,own:true,cell:.012},'Great Heron':{plan:'heron',fish:true,own:true,cell:.016},'Crag Hawk':{plan:'craghawk',fish:true,own:true,cell:.014},'Capercaillie':{plan:'capercaillie',fish:true,own:true,cell:.016},'Slime':{plan:'slime',fish:true},'Fire Elemental':{plan:'fireelemental',fish:true}};
+  'Shark':{plan:'reefshark',fish:true},'Whale':{plan:'stormwhale',fish:true},'Dolphin':{plan:'stormswift',fish:true},'Gull':{plan:'gull',fish:true,own:true,cell:.014},'Raven':{plan:'raven',fish:true,own:true,cell:.014},'Crow':{plan:'crow',fish:true,own:true,cell:.012},'Trout':{plan:'trout',fish:true,own:true,cell:.014},'River Pike':{plan:'riverpike',fish:true,own:true,cell:.02},'Mire Snake':{plan:'miresnake',fish:true,own:true,cell:.016},'Lantern Beetle':{plan:'lanternbeetle',fish:true,own:true,cell:.03},'Hen':{plan:'hen',fish:true,own:true,cell:.012},'Great Heron':{plan:'heron',fish:true,own:true,cell:.016},'Crag Hawk':{plan:'craghawk',fish:true,own:true,cell:.014},'Capercaillie':{plan:'capercaillie',fish:true,own:true,cell:.016},'Slime':{plan:'slime',fish:true},'Fire Elemental':{plan:'fireelemental',fish:true}};
 // the driver's joints and the kit's bones they move, parents first (the kit's front legs hang on spine3, the hind on spine0)
 const HC_MAP=[['hips','spine0'],['spine','spine1'],['neck','neck0'],['head','head'],['jaw','jaw'],['tail1','tail0'],['tail2','tail1'],['tail3','tail2'],
   ['shL','leg0L_0'],['elL','leg0L_1'],['wrL','leg0L_2'],['pfL','leg0L_3'],['shR','leg0R_0'],['elR','leg0R_1'],['wrR','leg0R_2'],['pfR','leg0R_3'],
