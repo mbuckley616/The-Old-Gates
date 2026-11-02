@@ -152,7 +152,7 @@ function takeAllLoot(){
 // merchant side, so the only way for the player to lose a unique is via
 // quest progression (e.g. Edna's Rubbing handed off to Aldwyn) or the
 // existing destroy gate (which already guards uniques).
-// S1732 — in her hold with an arms rack fitted, the sea chest's panel turns to the rack: weapons only, three at most (rackPut/rackTake)
+// S1733 — in her hold with an arms rack fitted, the sea chest's panel turns to the rack: weapons only, three at most (rackPut/rackTake)
 let stashMode='chest';
 function stashRackToggle(){stashMode=stashMode==='rack'?'chest':'rack';renderStash();}
 function renderRack(){const R=shipRack(),bagEl=document.getElementById('sp-bag-list'),rEl=document.getElementById('sp-stash-list');
@@ -178,7 +178,7 @@ function closeStash(){
   G.focus();
 }
 function renderStash(){
-  const rk=typeof rackHere==='function'&&rackHere();if(!rk)stashMode='chest';const rack=stashMode==='rack',el=id=>document.getElementById(id); /* S1732 */
+  const rk=typeof rackHere==='function'&&rackHere();if(!rk)stashMode='chest';const rack=stashMode==='rack',el=id=>document.getElementById(id); /* S1733 */
   if(el('sp-rack')){el('sp-rack').style.display=rk?'':'none';el('sp-rack').textContent=rack?'The sea chest':'The arms rack';}
   if(el('sp-title'))el('sp-title').textContent=rack?'The Arms Rack':'The Stash';if(el('sp-stash-h'))el('sp-stash-h').textContent=rack?'The Rack':'The Stash';
   if(el('sp-sub'))el('sp-sub').textContent=rack?`Click a weapon to move it. ${SHIP_RACK_N} weapons at most; if boarders land while your hands are empty, the first is drawn for you.`:'Click an item to move it. Bag → Stash on the left, Stash → Bag on the right.';

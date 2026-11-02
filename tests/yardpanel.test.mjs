@@ -65,7 +65,7 @@ check('a fitting needs its weight free in the hold, and its gold', /clear the ho
 check('refitted down to a sloop, the last fitted go to the yard first: stowage and the still kept, hold 40 + 25 − 10', fit.after.cargo === 1 && fit.after.fit.join() === 'still' && fit.after.stored.join() === 'bunks,chart,galley' && fit.after.cap === 55, fit.after);
 check('her fittings and the yard’s store come back from a save', fit.loaded.fit.join() === 'still' && fit.loaded.stored.join() === 'bunks,chart,galley' && fit.loaded.cargo === 1, fit.loaded);
 check('an old save’s two hold tiers are two stowage: a sloop full, hold 90, nothing more offered', fit.oldSave.cap === 90 && fit.oldSave.used === 2 && fit.oldSave.rows.length === 0, fit.oldSave);
-// S1733 — her figureheads (the build sheet, session 3): the yard's own carved for 150, the found ones fitted free, one at her bow at a time
+// S1734 — her figureheads (the build sheet, session 3): the yard's own carved for 150, the found ones fitted free, one at her bow at a time
 const fh = await page.evaluate((pid) => { const site = WORLD.siteAnywhere(pid), keep = worldState.ship, kg = gold, kb = BAG.slice(), km = SHIP.mesh, kwx = WX.type, kbell = bellAboard, kp = currentPortal, out = {};
   const rows = () => yardOffers(site).filter(o => /figurehead|at her bow/.test(o.label)); const row = re => rows().find(o => re.test(o.label));
   worldState.ship = { cls: 'sloop', hold: {}, hull: 100, rig: 100 }; gold = 1000; BAG.length = 0;

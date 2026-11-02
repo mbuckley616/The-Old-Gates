@@ -9,7 +9,7 @@
       if(mine&&d<40){o.closeT=(o.closeT||0)+dt;}else o.closeT=0;
       if(mine&&d<16&&o.closeT>12&&!o.sentBoarders){o.sentBoarders=true;let n=0;
         for(const e of o.crew){if(e.dead||n>=2)continue;n++;const fwd=[-Math.sin(SHIP.yaw),-Math.cos(SHIP.yaw)];e.x=SHIP.x+fwd[0]*(-2+n*2);e.z=SHIP.z+fwd[1]*(-2+n*2);e.alert=true;e._ship={plat:SHIP.plat};e._from=o;BOARDERS.push(e);const k=o.crew.indexOf(e);if(k>=0)o.crew.splice(k,1);}
-        if(n){showMsg('Pirates on your deck!','#ff6060');splash(true);rackDraw();}} /* S1732 — her arms rack arms empty hands */
+        if(n){showMsg('Pirates on your deck!','#ff6060');splash(true);rackDraw();}} /* S1733 — her arms rack arms empty hands */
     }
     pirateBoardersHold();
     // keep boarders aboard
@@ -482,7 +482,7 @@ const giver=`${lord.title} ${lord.name}`;
   function nearestSigilDoor(){if(typeof fxOn==='function'&&fxOn('seamsight')){const u=SPELL_FX.seamsight;if(!_suilCast||_suilCast.until!==u)_suilCast={until:u,d:nearestUnreadCarving(px,pz)};return _suilCast.d;}
     return nearestUnreadCarving(px,pz);}
   function onMasteryTouch(spellId){const seed=(typeof activePortal!=='undefined'&&activePortal&&activePortal.seed)||(typeof curPortal!=='undefined'&&curPortal&&curPortal.seed)||(typeof currentPortal!=='undefined'&&currentPortal&&currentPortal.seed)||null;if(seed!=null)(worldState.sigilsRead||(worldState.sigilsRead={}))[seed]=spellId;worldState.masteries=(worldState.masteries||0)+1;gateStoneDue(seed);}
-  // S1733 — the first lesser gate you clear (its sigil read) whose condition is failing or catastrophic gives the gate stone, a figurehead
+  // S1734 — the first lesser gate you clear (its sigil read) whose condition is failing or catastrophic gives the gate stone, a figurehead
   function gateStoneDue(seed){try{const P=(typeof activePortal!=='undefined'&&activePortal)||(typeof curPortal!=='undefined'&&curPortal)||(typeof currentPortal!=='undefined'&&currentPortal)||null;
     if(seed==null||!P||P.tutorial||(typeof greatSchoolOf==='function'&&greatSchoolOf(P)))return false;const W=(typeof WORLD_DUNGEONS!=='undefined'&&WORLD_DUNGEONS.find(e=>e.seed===seed))||{};
     const c=W.cond||(typeof gateCondRoll==='function'?gateCondRoll(seed):'steady');return (c==='failing'||c==='catastrophic')&&grantHead('stone');}catch(e){return false;}}

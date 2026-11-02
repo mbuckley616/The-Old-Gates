@@ -488,7 +488,7 @@ function herbTellCount(){return perk('alchemy',25)?5:HIDDEN_UNLOCK_COUNT;}
 function herbFxKnown(k,i){const n=HERB_CONSUME_COUNTS[k]||0;if(i===0&&n>0)return true;if(i===1&&HERB_KIN.has(k)&&n>=herbTellCount())return true;const f=herbsKnown().fx[k];return !!(f&&f[i]);}
 function learnHerbFx(k,i){const K=herbsKnown();const f=K.fx[k]||(K.fx[k]=[0,0,0,0]);const was=herbFxKnown(k,i);f[i]=1;return !was;}
 function brewPairKey(a,b){return [a,b].sort().join('|');}
-function alchStrength(){return skillMult('alchemy')*(1+.01*attrEff('intelligence'))*(typeof shipFitAtHand==='function'&&shipFitAtHand('still')?SHIP_STILL_K:1);} /* S1732 — her still, in her hold */
+function alchStrength(){return skillMult('alchemy')*(1+.01*attrEff('intelligence'))*(typeof shipFitAtHand==='function'&&shipFitAtHand('still')?SHIP_STILL_K:1);} /* S1733 — her still, in her hold */
 function gameDayNow(){return Math.floor((worldState.gameTimeAbsMinutes||0)/1440);}
 function brewTurned(it){return !!(it&&it.brew&&gameDayNow()-it.brew.day>=TINCTURE_TURN_DAYS&&!perk('alchemy',75));}
 function brewStrength(it){return it.brew.s*(brewTurned(it)?.5:1);}
@@ -624,7 +624,7 @@ function bagTake(pred,n){for(let i=BAG.length-1;i>=0&&n>0;i--){const b=BAG[i];if
 function gameMinNow(){return worldState.gameTimeAbsMinutes||0;}
 // the fires burning now, outdoors in the world: {x,z,until,mesh}
 const CAMPFIRES=[];
-function hearthHere(){if(typeof isInterior!=='function'||!isInterior()||typeof currentHouse==='undefined'||!currentHouse)return false;return currentHouse.type==='inn'||currentHouse.type==='home'||(currentHouse.type==='cabin'&&typeof shipFitAtHand==='function'&&shipFitAtHand('galley'));} /* S1732 — her galley is a fire */
+function hearthHere(){if(typeof isInterior!=='function'||!isInterior()||typeof currentHouse==='undefined'||!currentHouse)return false;return currentHouse.type==='inn'||currentHouse.type==='home'||(currentHouse.type==='cabin'&&typeof shipFitAtHand==='function'&&shipFitAtHand('galley'));} /* S1733 — her galley is a fire */
 function campfireNear(){if(activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior()))return null;const t=gameMinNow();
   return CAMPFIRES.find(f=>f.until>t&&Math.hypot(f.x-px,f.z-pz)<=FIRE_REACH)||null;}
 function atFire(){return hearthHere()||!!campfireNear();}
@@ -1209,7 +1209,7 @@ const BENCH_RECIPES=[
   {id:'splice',name:'Splice the rig',need:'a spar and a pitch',ship:true,has:()=>!shipWorkWhy('splice')},
   {id:'heartsplice',name:'Splice with heartwood',need:'a heartwood spar and a pitch',ship:true,heart:true,has:()=>!shipWorkWhy('heartsplice')},
   ...['stowage','still','galley','chart','bunks','arms'].map(k=>({id:'fit_'+k,fit:k,ship:true,get name(){return 'Build '+shipBenchName(k);},get need(){return shipBenchNeed(k);},has:()=>!shipBenchWhy(k)}))];
-// S1732 — her fittings built at her own bench (the build sheet of #979 B, session 2): a third of the yard's gold or so, as the
+// S1733 — her fittings built at her own bench (the build sheet of #979 B, session 2): a third of the yard's gold or so, as the
 // shipwright's own planks, spars and iron; Joinery 25, the chart table and the arms rack 50; a Joinery use of 12, twice a patch,
 // and the forge's half-hour. A fitting is built into her, so it goes straight in, and the bench refuses one she has no place,
 // no weight or no need for (fitShipWhy), before anything is spent
@@ -1363,7 +1363,7 @@ function benchDraw(){const ov=document.getElementById('benchui');if(!ov)return;
       (R.bowyer?note(`full draw in ${K.draw.toFixed(2)} s, ×${K.mult.toFixed(2)}, ${K.speed} m/s; ${K.stam} stamina a second held${K.walk?', drawn at a walk':''}`)+(perk('joinery',75)?'':note('asks Bowyer (Joinery 75)')):'')+
       note('made, never enchanted; sold back at a fifth');}
   else if(R.id==='shield')t+=pad('3 Planks'+have(plankCount()))+pad(`${FORGE_MIN} minutes`)+note('a Wooden Buckler; made, sold back at a fifth');
-  else if(R.fit){const B=SHIP_BENCH[R.fit],why=shipBenchWhy(R.fit),F=typeof SHIP_FITS!=='undefined'&&SHIP_FITS[R.fit]; /* S1732 */
+  else if(R.fit){const B=SHIP_BENCH[R.fit],why=shipBenchWhy(R.fit),F=typeof SHIP_FITS!=='undefined'&&SHIP_FITS[R.fit]; /* S1733 */
     t+=pad(`${B.planks} Planks`+have(plankCount()))+(B.spars?pad(`${B.spars} Spars`+have(bagCount(x=>x.spar))):'')+(B.iron?pad(`${B.iron} Iron Ingot${B.iron>1?'s':''}`+have(ingotCount(SHIP_BENCH_IRON))):'')+
       pad(`Joinery ${B.j}, ${FORGE_MIN} minutes`)+note(R.fit==='stowage'?'+25 of the hold, a place of hers':`a place of hers and ${F.w} of the hold; built into her`)+(why?note(why):'');}
   else if(R.ship){const b=shipBars(),pl=R.id==='patch',why=shipWorkWhy(R.id); /* S1519 */

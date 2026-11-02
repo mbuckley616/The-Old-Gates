@@ -53,7 +53,7 @@ const r = await page.evaluate(() => {
   BAG.length = 0; J(25); const lid0 = lid, h0 = currentHouse; lid = 'int_test'; currentHouse = { type: 'cabin', name: 'The Test Gull — cabin' };
   out.cabin = benchHere() && shipWorkHere(); bagAdd(benchItem('plank', 1)); bagAdd(survItem('pitch', 1)); worldState.ship.hull = 40;
   out.cabinWork = work('patch'); out.cabinHull = shipBars().hull; lid = lid0; currentHouse = h0;
-  // ── S1732: her fittings built at her bench (the build sheet of #979 B, session 2), and the still and the galley in her hold ──
+  // ── S1733: her fittings built at her bench (the build sheet of #979 B, session 2), and the still and the galley in her hold ──
   { const lid1 = lid, h1 = currentHouse; lid = 'int_test'; currentHouse = { type: 'cabin', name: 'The Test Gull — cabin' };
     Object.assign(worldState.ship, { fit: [], stored: [], cargo: 0, hold: {} }); BAG.length = 0; bagAdd(benchItem('plank', 8));
     J(24); out.f24 = shipBenchWhy('bunks'); out.f24b = benchMake('fit_bunks').made;
@@ -90,7 +90,7 @@ check('two patches at Joinery 25: 40 + 13 + 13 = 66, each after 8 s, Joinery +6'
 check('the field cap at 25 is 70 of 100: the third patch stops there, the fourth is refused', r.cap === 70 && r.h3 === 70 && /yard/.test(r.capWhy) && r.left.planks === 2 && r.left.pitch === 3, r);
 check('walking off stops the work with nothing spent', r.walked.work === null && r.walked.hull === 40 && r.walked.planks, r.walked);
 check('under sail there is no work', /hove to/.test(r.sailingWhy), r.sailingWhy);
-check('the bench\'s page shows the patch and the splice at her side, not away', r.rowsShip - r.rowsAway === 8 && r.rowsAway >= 5 /* S1732: and her six fittings */ /* S1555: Bowyer's two bows (S1549) are rows of their own: 9 and 7 */, { ship: r.rowsShip, away: r.rowsAway });
+check('the bench\'s page shows the patch and the splice at her side, not away', r.rowsShip - r.rowsAway === 8 && r.rowsAway >= 5 /* S1733: and her six fittings */ /* S1555: Bowyer's two bows (S1549) are rows of their own: 9 and 7 */, { ship: r.rowsShip, away: r.rowsAway });
 check('a splice at sea asks Field splice (25); at 25 the rig +20', (!r.atSea || /At sea/.test(r.sea24)) && r.rig1 === 60, { atSea: r.atSea, why: r.sea24, rig: r.rig1 });
 check('Heartwood: a heartwood spar splices past the field cap (70 at 25): 60 → 100, a plain spar refused at 70; 85 → 100, then the rig is sound', r.capRig === 70 && /yard/.test(r.plainAtCap) && /heartwood spar/.test(r.noHeart) && (!r.atSea || /At sea/.test(r.heart24)) && r.hw1 === 'working' && r.hwRig === 100 && r.hwLeft.heart === 0 && r.hwLeft.spar && r.hwFull === 100 && /sound/.test(r.hwSound), r);
 check('the heartwood splice\'s row is on the bench\'s page only with a heartwood spar in the bag (or the perk)', !r.rowNo && r.rowYes, [r.rowNo, r.rowYes]);
@@ -117,7 +117,7 @@ check('Field splice, Tight seams, Bowyer and Shipwright\'s hand live', r.perks, 
 /* S1564: the caravel's hold is hers too (her workbench is the bench, hullbakes); the old room's bench is checked on a cog */
 await page.evaluate(() => { const S = WORLD.ship, x = S.x, z = S.z, y = S.yaw; sc.remove(S.mesh); SHIP.mesh = null; worldState.ship.cls = 'cog'; WORLD.spawnShip(x, z, y); cabinUpdate(); goToInterior(CABIN.house); });
 for (let k = 0; k < 40 && !(await page.evaluate(() => isInterior())); k++) await page.waitForTimeout(250);
-/* S1732: the cog's hold is hers too since S1578 (cogBase), so no hull on the new look keeps the old room: her workbench is the bench, its solid
+/* S1733: the cog's hold is hers too since S1578 (cogBase), so no hull on the new look keeps the old room: her workbench is the bench, its solid
    the kit's own box (`hullbakes` checks the hold); the old room's mesh is checked only where a hull still has it */
 const hold = await page.evaluate(() => { if (!isInterior() || currentHouse.type !== 'cabin' || !currentHouse._base) return null; const B = currentHouse._bench;
   const sol = B && INT_SOL.find(q => q.x0 <= B.x && q.x1 >= B.x && q.z0 <= B.z && q.z1 >= B.z && q.y1 > .5 && q.y1 < 1.3);

@@ -967,7 +967,7 @@
   function shipFitWeight(){const st=worldState.ship;if(!st||!Array.isArray(st.fit))return 0;let w=0;for(const k of st.fit)if(SHIP_FITS[k])w+=SHIP_FITS[k].w;return w;}
   function shipFitted(k){const st=worldState.ship;return !!(st&&!st.sunk&&Array.isArray(st.fit)&&st.fit.includes(k));}
   // the named actions (co-op rules): fit one (bought, or from the yard's store), take one out to the store, and fit her to a hull
-  // why a fitting cannot go into her now (places, one of each, the hold's weight), or null; gold is the caller's. S1732 — from her
+  // why a fitting cannot go into her now (places, one of each, the hold's weight), or null; gold is the caller's. S1733 — from her
   // bench (src 'bench') one the yard keeps for her is refused too, so a fitting is still one of a kind
   function fitShipWhy(k,src){const st=shipCfg(),f=shipFitList(st);
     if(k==='stowage'){if((st.cargo||0)>=2)return 'She has all the stowage she can take.';}else{if(!SHIP_FITS[k])return 'No such fitting.';if(f.includes(k))return `She has ${SHIP_FITS[k].a} already.`;}
@@ -989,13 +989,13 @@
   function shipFitToHull(){const st=shipCfg(),f=shipFitList(st),n=shipPlaces(st.cls),out=[];
     while(shipPlacesUsed(st)>n){if(f.length)out.push(f.pop());else{st.cargo--;out.push('stowage');}}
     st.stored.push(...out);return out;}
-  // S1732 — the still and the galley are in her hold (the build sheet's session 2): brewing there with a still fitted is ×1.10, and a
+  // S1733 — the still and the galley are in her hold (the build sheet's session 2): brewing there with a still fitted is ×1.10, and a
   // galley is a fire. Until the look builder's fittings stand in the hold, anywhere in it is at them; once a room records a spot
   // (house._fits[k] = {x,z}, the room's metres) it is within 2 m of it, the sheet's reach
   const SHIP_STILL_K=1.10,SHIP_FIT_REACH=2;
   function shipFitAtHand(k){if(!shipFitted(k)||typeof cabinBench!=='function'||!cabinBench())return false;
     const sp=currentHouse._fits&&currentHouse._fits[k];return !sp||Math.hypot(px-sp.x,pz-sp.z)<=SHIP_FIT_REACH;}
-  // S1732 — her arms rack (the build sheet, session 2): three weapons kept aboard, a stash for weapons only, opened from her sea chest
+  // S1733 — her arms rack (the build sheet, session 2): three weapons kept aboard, a stash for weapons only, opened from her sea chest
   // in her hold. Kept in st.rack in the save's item form (_serItem), so it travels with worldState.ship; taken back through
   // _restoreEnchant. If boarders land while your hands are empty, the first on the rack is drawn for you (rackDraw, tickBoarding)
   const SHIP_RACK_N=3;
@@ -1011,7 +1011,7 @@
   function rackDraw(){if(!shipFitted('arms')||EQ.weapon||PHP<=0)return null;const R=shipRack();if(!R.length)return null;
     const it=rackItem(R.shift());EQ.weapon=it;if(typeof SHEATHED!=='undefined'&&SHEATHED&&typeof drawWeapon==='function')drawWeapon();sparKitRefresh();
     showMsg(`You take the ${it.name} from the rack.`,'#e8d8a0');return it;}
-  // S1733 — her figureheads (the build sheet, session 3). The yard carves its island's (the harp, the dragon prow, the sun) for 150
+  // S1734 — her figureheads (the build sheet, session 3). The yard carves its island's (the harp, the dragon prow, the sun) for 150
   // gold, no virtue. Five more are only found, each as a token in the bag (weight 0, to be fitted at a yard): fitted free at any
   // shipwright, one at her bow at a time, the rest kept for her (st.heads, the yard's store). Their virtues: the Sea's hull +5% top
   // speed in rain or storm; the wreck's maiden, a pirate within 300 m holds off 10 s before closing; the beast's skull, merchantmen
@@ -1041,7 +1041,7 @@
   function shipFitNames(arr){return arr.map(k=>k==='stowage'?'stowage':SHIP_FITS[k]?SHIP_FITS[k].n:k);}
   function shipCfg(){return worldState.ship||(worldState.ship={});}
   function shipClass(){return SHIP_CLASSES[(worldState.ship&&worldState.ship.cls)||'sloop'];}
-  function shipTopSpeed(){return shipClass().speed*(1+((worldState.ship&&worldState.ship.sails)||0)*SAIL_STEP)*(gateGift('gaoth')?1.5:1)*(shipHead()==='sea'&&(WX.type==='rain'||WX.type==='storm')?HEAD_SEA_K:1);} /* S1733 — the Sea’s hull */ /* S1349 — Gaoth's gift, after the sails */
+  function shipTopSpeed(){return shipClass().speed*(1+((worldState.ship&&worldState.ship.sails)||0)*SAIL_STEP)*(gateGift('gaoth')?1.5:1)*(shipHead()==='sea'&&(WX.type==='rain'||WX.type==='storm')?HEAD_SEA_K:1);} /* S1734 — the Sea’s hull */ /* S1349 — Gaoth's gift, after the sails */
   // S411 — Michael's A on #85 (docs/design/sailing.md): a hull by class and a rig of 100, kept in worldState.ship (saved).
   // Under half her hull she ships water (speed ×0.8), under a quarter ×0.6; the rig sets ×(0.5 + 0.5 × rig/100);
   // at 0 hull she is waterlogged and makes 2.5 at most. The shipwright mends 4 gold a hull point, 3 a rig point, an hour a 20.
@@ -1070,7 +1070,7 @@
     const st=SHIP.sea||0,v=Math.abs(SHIP.speed);let h=0,r=0;
     if(st>=3&&v>.5){const m=fwd>0?1:.5;h=dt/6*m;r=dt/4*m;}else if(st===2&&v>.5){h=dt/60;r=dt/60;}
     if(typeof bellAboard==='function'&&bellAboard()){h*=.5;r*=.5;if(st>=3&&v>.5&&WX.type==='storm')bellStorm();} /* S778 — the Drowned Bell: half the sea's wear; S794 — its line, the first storm */
-    else if(st>=3&&shipHead()==='stone'){h*=HEAD_STONE_K;r*=HEAD_STONE_K;} /* S1733 — the gate stone: storm wear ×0.8, never with the Bell */
+    else if(st>=3&&shipHead()==='stone'){h*=HEAD_STONE_K;r*=HEAD_STONE_K;} /* S1734 — the gate stone: storm wear ×0.8, never with the Bell */
     if(!h&&!r)return;SHIP._wh=(SHIP._wh||0)+h;SHIP._wr=(SHIP._wr||0)+r;const H=Math.floor(SHIP._wh),R=Math.floor(SHIP._wr);
     if(H||R){SHIP._wh-=H;SHIP._wr-=R;shipWear(H,R);}}
   // S413 — foundering: any hull lost while she is waterlogged sinks her. The wreck lies where she went down (on the map); any
@@ -1281,7 +1281,7 @@
     if(free)for(const k in SHIP_FITS){if(st.fit.includes(k)||st.stored.includes(k))continue;const F=SHIP_FITS[k];
       out.push({label:`Fit ${F.a} (${F.price} gold, ${F.w} of the hold)`,cls,quest:true,fn:()=>{const r=fitShip(k);return r===true?`Fitted: ${F.a}. Her hold takes ${holdCap()} now.`:r===null?`${F.a[0].toUpperCase()+F.a.slice(1)}: ${F.price} gold.`:r;}});}
     if(free)for(const k of [...new Set(st.stored)])out.push({label:`Fit her ${shipFitNames([k])[0]} again (kept at the yard)`,cls,quest:true,fn:()=>{const r=fitShip(k,true);return r===true?`Fitted again: ${shipFitNames([k])[0]}. Her hold takes ${holdCap()} now.`:r;}});
-    // S1733 — her figureheads: each found one in the bag fitted free, each kept one set back free, the yard's own island's carved for 150
+    // S1734 — her figureheads: each found one in the bag fitted free, each kept one set back free, the yard's own island's carved for 150
     {const H=shipHeads(st),nat=nationAt(site.x,site.z),cap=t=>t[0].toUpperCase()+t.slice(1);
       for(const k of [...new Set(BAG.filter(b=>b&&SHIP_HEADS[b.figurehead]).map(b=>b.figurehead))])out.push({label:`Fit ${headName(k)} at her bow (free)`,cls,quest:true,fn:()=>{const r=fitHead(k);return r===true?`${cap(headName(k))} rides at her bow now.`:r;}});
       for(const k of H)if(k!==st.head)out.push({label:`Set ${headName(k)} at her bow again (kept at the yard)`,cls,quest:true,fn:()=>{const r=fitHead(k);return r===true?`${cap(headName(k))} rides at her bow again.`:r;}});
