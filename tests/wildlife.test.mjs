@@ -41,7 +41,15 @@ const flee = await page.evaluate(() => { const W = ZONES.world.enemies.filter(e 
   const out = { ran: +Math.hypot(e.x - x0, e.z - z0).toFixed(1), from: +Math.hypot(e.x - px, e.z - pz).toFixed(1), secs: +(i / 60).toFixed(2) };
   const o = W.find(q => q !== e && q.name === 'Deer') || W.find(q => q !== e); for (const q of W) q._duelHold = q !== o; o._w = { mode: 'graze', t: 99 };
   px = o.x - Math.sin(o.combatYaw) * 15; pz = o.z - Math.cos(o.combatYaw) * 15; _sneaking = true;
-  for (let k = 0; k < 120; k++) tickZoneEnemies(1 / 60, 0, WORLD.scene); out.crept = o._w.mode; _sneaking = false; for (const q of W) q._duelHold = false;
+  // S1745 — the creep is about the deer's own senses. A foe that sees you wakes everything within 16 m of it (alertPack), a grazing
+  // animal too, and an animal woken runs: so a wolf or a bandit near the herd, or a wake left from the run above, made this deer bolt
+  // once in three runs (the systems builder, S1711). Every other foe holds still while you creep, and the deer starts unwoken.
+  const F = ZONES.world.enemies.filter(q => !q.wild && !q.dead), held = F.map(q => q._duelHold);
+  out.foes = F.filter(q => Math.hypot(q.x - o.x, q.z - o.z) < 36).map(q => q.name + ' ' + Math.hypot(q.x - o.x, q.z - o.z).toFixed(0) + ' m');
+  out.woken = !!o.alert; o.alert = false; for (const q of F) q._duelHold = true;
+  try { for (let k = 0; k < 120; k++) tickZoneEnemies(1 / 60, 0, WORLD.scene); }
+  finally { F.forEach((q, i) => { q._duelHold = held[i]; }); }
+  out.crept = o._w.mode; _sneaking = false; for (const q of W) q._duelHold = false;
   return out; });
 check(`a deer that sees you at 15 m runs (${flee.ran} m in ${flee.secs} s, ${flee.from} m from you); crept up on from behind, it grazes on (${flee.crept})`,
   flee.ran > 30 && flee.from > 40 && flee.crept !== 'flee', flee);

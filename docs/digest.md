@@ -447,3 +447,15 @@ Written by the producer once a day, after 12:00 UTC. Newest last.
 **Blocked.** QA's #956 conflicts with main since 31 Oct; QA's own next run.
 
 **Roadmap.** 290 of 358 stories done (289 of 351 on 31 Oct). The new look is 6 of 17; no deep-work card is queued.
+
+## 2 Nov 2026
+
+**Waiting on you.** Three decisions: how loud the small wrongnesses are (#1005; B, one impossible thing each, nothing lit), how you take a river trout (#1014; A, by hand while swimming or struck from the bank), and how you get into the places under the land (#1026; A, through a mouth into a place of its own). One pipeline PR to approve: QA: Sessions 1713–1714 (#1011), no open-world ticks indoors and 150 minutes a shard for the weekly run.
+
+**Landed on main since 1 Nov.** Making a ship yours, sessions 1–4: fittings, the bench, figureheads, crew, and the Shuttle's wreck line (#979 B; Systems 1726–1743). The peaceful animals graze and flee, Loscadh fires dry brush, Sioc stiffens locks (1707–1718). Card F8: a lair's cavern in living rock, the monastic ruin, the tower house, the passage cairn (Look 1711–1735). Bodies: the common, farm and island animals of all three islands, birds and fish (1704–1747). Asked in Passing's second errand built. QA: budgets flat at s1147. Build s1150.
+
+**Under way.** Look 1750– (#1034, carrying the ruins' no-houses fix from the closed #1030).
+
+**Blocked.** Nothing on main; last Sunday's weekly reds sit in section I.
+
+**Roadmap.** 294 of 364 stories done (290 of 358 on 1 Nov). The new look is 6 of 17; no deep-work card is queued.
