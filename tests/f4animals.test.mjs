@@ -234,7 +234,8 @@ console.log('  beetle:', JSON.stringify(beetle));
 check(`the Lantern Beetle wears the kit's (${beetle.plan}, ${beetle.bones} bones, ${beetle.legs} legs, ${beetle.tris} triangles; stand-in ${beetle.standTris}), ${beetle.len} m long, from ${beetle.low} to ${beetle.high} m over its ground, glowing ${beetle.glow}; at rest ${beetle.rest}, moving ${beetle.move} (${beetle.cyc} cycles over 0.1 m, the bones moving ${beetle.moved}); taken away, dropped`,
   !beetle.fail && beetle.plan === 'game:Lantern Beetle' && beetle.legs === 6 && beetle.tris < 6000 && beetle.len > .045 && beetle.len < .075 && Math.abs(beetle.low) < .01 && beetle.high < .04 && beetle.glow > 1 && beetle.rest === 'stand' && beetle.move === 'walk' && beetle.cyc > .3 && beetle.moved > 1e-4 && beetle.dropped, beetle);
 // Session 1731: the Stonecrawler and the Marsh Frog on the same path, scurrying at the kit's trot and going by its hop
-for (const [nm, move, L, sp] of [['Stonecrawler', 'trot', .3, .5], ['Marsh Frog', 'hop', .12, .4]]) {
+// Session 1742: the Mark's Frostspine Lizard (the trot) and Icecrab (eight legs, the walk) too
+for (const [nm, move, L, sp, legs] of [['Stonecrawler', 'trot', .3, .5, 4], ['Marsh Frog', 'hop', .12, .4, 4], ['Frostspine Lizard', 'trot', .5, .6, 4], ['Icecrab', 'walk', .8, .3, 8]]) {
   const r = await page.evaluate(([nm, sp, T]) => { const fx = -Math.sin(yaw), fz = -Math.cos(yaw), x = px + fx * 2, z = pz + fz * 2;
     const rig = buildAnimal(nm, 'f4crawl:' + nm), G = new THREE.Group(); G.add(rig.root); G.position.set(x, WORLD.worldH(x, z), z); G.rotation.y = yaw + Math.PI / 2; WORLD.scene.add(G);
     const e = { name: nm, x, z, mesh: G, limbs: { wolf: rig, torso: rig.mesh }, dead: false }; rig.e = e;
@@ -246,10 +247,10 @@ for (const [nm, move, L, sp] of [['Stonecrawler', 'trot', .3, .5], ['Marsh Frog'
         performance.now = () => T + 5e3 + i0 * 1000 / 60; try { hcSwimPose(rig); } finally { performance.now = t0; } } sk.update(); return { m: Array.from(sk.boneMatrices), ph: rig.ph, g: rig.gaitNow }; };
     const a = run(60, 0), b = run(60, sp); let mv = 0; for (let i = 0; i < a.m.length; i++) mv = Math.max(mv, Math.abs(a.m[i] - b.m[i]));
     const out = { plan: H.C.g.plan, seed: H.C.g.seed, want: HC.hashKey(rig.hcKey), legs: H.C.B.legs.length, tris: H.C.stats.tris, len: +(bx.max.z - bx.min.z).toFixed(3), low: +(bx.min.y - G.position.y).toFixed(3),
-      rest: a.g, move: b.g, cyc: +(b.ph - a.ph).toFixed(2), moved: +mv.toFixed(4) }; G.parent.remove(G); hcTick(T + 9e3); out.dropped = !rig.hc; return out; }, [nm, sp, 1.001e6 + (nm === 'Marsh Frog' ? 2e4 : 0)]);
+      rest: a.g, move: b.g, cyc: +(b.ph - a.ph).toFixed(2), moved: +mv.toFixed(4) }; G.parent.remove(G); hcTick(T + 9e3); out.dropped = !rig.hc; return out; }, [nm, sp, 1.001e6 + ['Stonecrawler', 'Marsh Frog', 'Frostspine Lizard', 'Icecrab'].indexOf(nm) * 2e4]);
   console.log('  ' + nm + ':', JSON.stringify(r));
   check(`the ${nm} wears the kit's (${r.plan}, ${r.legs} legs, ${r.tris} triangles), ${r.len} m long, its lowest ${r.low} m off its ground at rest; at rest ${r.rest}, moving ${r.move} (${r.cyc} cycles over ${sp} m, the bones moving ${r.moved}); taken away, dropped`,
-    !r.fail && r.plan === 'game:' + nm && r.seed === r.want && r.legs === 4 && r.tris < 9000 && r.len > L * .8 && r.len < L * 1.15 && Math.abs(r.low) < .01 && r.rest === 'stand' && r.move === move && r.cyc > .3 && r.moved > 1e-3 && r.dropped, r);
+    !r.fail && r.plan === 'game:' + nm && r.seed === r.want && r.legs === legs && r.tris < 9000 && r.len > L * .8 && r.len < L * 1.15 && Math.abs(r.low) < .01 && r.rest === 'stand' && r.move === move && r.cyc > .3 && r.moved > 1e-3 && r.dropped, r);
 }
 // Session 1721: an island given to buildAnimal is the kit's coat for it (HC.COATS): the Mark's black hill cow and grey hen, Aurenne's cream
 // cow and buff hen; the hind (an own plan) takes the deer's. The same key keeps its seed; an unknown island is none
