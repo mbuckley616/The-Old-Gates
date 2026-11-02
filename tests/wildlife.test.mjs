@@ -111,12 +111,13 @@ const trout = await page.evaluate(() => { forceTime(12); for (const ch of [...WI
     fish: T.every(e => e.limbs.wolf && e.limbs.wolf.fish), falls: +(src - end).toFixed(1) };
   T.sort((a, b) => Math.hypot(a.x - px, a.z - pz) - Math.hypot(b.x - px, b.z - pz));
   const e = T.find(o => wildDownstream(o.x, o.z) != null); if (!e) return out;
-  for (const o of ZE) o._duelHold = o !== e; e._w = { mode: 'graze', t: 99 }; for (let i = 0; i < 120; i++) tickZoneEnemies(1 / 60, 0, WORLD.scene);
+  for (const o of ZE) o._duelHold = o !== e; e._w = { mode: 'graze', t: 99 }; e.alert = false; const bx = px, bz = pz; px = e.x + 60; pz = e.z + 60; /* out of its sight and hearing while it holds */
+  for (let i = 0; i < 120; i++) tickZoneEnemies(1 / 60, 0, WORLD.scene);
   const down = wildDownstream(e.x, e.z); out.head = +Math.cos(e.combatYaw - down - Math.PI).toFixed(2);
   px = e.x + Math.sin(e.combatYaw) * 15; pz = e.z + Math.cos(e.combatYaw) * 15; const x0 = e.x, z0 = e.z; let i = 0;
   for (; i < 600; i++) { tickZoneEnemies(1 / 60, 0, WORLD.scene); if (i > 10 && e._w.mode !== 'flee') break; }
   const mv = Math.hypot(e.x - x0, e.z - z0); out.dart = +mv.toFixed(1); out.down = +(((e.x - x0) * Math.sin(down) + (e.z - z0) * Math.cos(down)) / mv).toFixed(2); out.wetAfter = wildWet(e.x, e.z);
-  e._w = { mode: 'graze', t: 99 }; for (let k = 0; k < 120; k++) tickZoneEnemies(1 / 60, 0, WORLD.scene);
+  e._w = { mode: 'graze', t: 99 }; px = e.x + 60; pz = e.z + 60; for (let k = 0; k < 120; k++) tickZoneEnemies(1 / 60, 0, WORLD.scene);
   px = e.x - Math.sin(e.combatYaw) * 1.1; pz = e.z - Math.cos(e.combatYaw) * 1.1; jumpY = -1.45; _pStep = false; for (let k = 0; k < 30; k++) tickZoneEnemies(1 / 60, 0, WORLD.scene);
   const has = () => BAG.filter(b => b && b.name === 'Trout').reduce((a, b) => a + (b.qty || 1), 0), b0 = has();
   out.prompt = fishPrompt(); out.took = catchFish(); out.got = has() - b0; out.gone = !ZONES.world.enemies.includes(e) && WILD_TAKEN.get(e._wildKey) === lootDay();
