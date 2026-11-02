@@ -90,7 +90,10 @@ const lv = await page.evaluate(() => { const f = _A[0], G = f.G, fx = -Math.sin(
 check(`the deer's three levels: near its hide and fur (${lv.near.kit} meshes), at 25 m fewer (${lv.mid.kit}), at 60 m the driver's own body, its low copy`,
   lv.near.L === 0 && !lv.near.driver && !lv.near.lo && lv.mid.L === 1 && lv.mid.kit < lv.near.kit && lv.far.L === 2 && lv.far.driver && lv.far.lo && lv.back.L === 0 && !lv.back.lo, lv);
 
+// Session 1743: the line is 24 animals and 57 m long; only its middle is in the picture, but every furred body in it drew (and cast its
+// shadow), so one frame took over 120 s on CI. The ones the frame cannot hold are hidden for the picture
 await page.evaluate(() => { const a = _A[0].G, b = _A[_A.length - 1].G, mx = (a.position.x + b.position.x) / 2, mz = (a.position.z + b.position.z) / 2, fx = -Math.sin(yaw), fz = -Math.cos(yaw);
+  for (const { G } of _A) G.visible = Math.abs((G.position.x - mx) * -fz + (G.position.z - mz) * fx) < 7;
   px = mx - fx * 9; pz = mz - fz * 9; pitch = -.16; });
 for (let i = 0; i < 8; i++) { await page.evaluate(() => tickCreatures(1 / 60, performance.now())); await g.frames(1); }
 await page.screenshot({ path: path.join(OUT, 'f4-animals.jpg'), type: 'jpeg', quality: 80 });
