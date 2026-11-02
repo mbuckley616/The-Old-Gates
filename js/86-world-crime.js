@@ -995,6 +995,22 @@
   const SHIP_STILL_K=1.10,SHIP_FIT_REACH=2;
   function shipFitAtHand(k){if(!shipFitted(k)||typeof cabinBench!=='function'||!cabinBench())return false;
     const sp=currentHouse._fits&&currentHouse._fits[k];return !sp||Math.hypot(px-sp.x,pz-sp.z)<=SHIP_FIT_REACH;}
+  // S1732 — her arms rack (the build sheet, session 2): three weapons kept aboard, a stash for weapons only, opened from her sea chest
+  // in her hold. Kept in st.rack in the save's item form (_serItem), so it travels with worldState.ship; taken back through
+  // _restoreEnchant. If boarders land while your hands are empty, the first on the rack is drawn for you (rackDraw, tickBoarding)
+  const SHIP_RACK_N=3;
+  function shipRack(){const st=shipCfg();if(!Array.isArray(st.rack))st.rack=[];return st.rack;}
+  function rackHere(){return shipFitted('arms')&&typeof cabinBench==='function'&&cabinBench();}
+  function rackItem(s){const it=_restoreEnchant(JSON.parse(JSON.stringify(s)));delete it.qty;return it;}
+  // the named actions: a weapon from the bag (its index) onto the rack, one off it into the bag. Each returns true or why not
+  function rackPut(i){const it=BAG[i];if(!shipFitted('arms'))return 'She has no arms rack.';if(!it||it.type!=='equip'||it.slot!=='weapon')return 'The rack takes weapons only.';
+    if(it.quest||it.artifact)return `The ${it.name} stays with you.`;const R=shipRack();if(R.length>=SHIP_RACK_N)return `The rack is full: ${SHIP_RACK_N} weapons.`;
+    let one=it;if((it.qty||1)>1){it.qty--;one={...it,qty:1};}else BAG.splice(i,1);R.push(_serItem(one));return true;}
+  function rackTake(j){const R=shipRack(),s=R[j];if(!s)return 'Nothing there.';const it=rackItem(s);if(!canCarry(it))return 'Too heavy to carry!';
+    R.splice(j,1);bagAdd(it);return true;}
+  function rackDraw(){if(!shipFitted('arms')||EQ.weapon||PHP<=0)return null;const R=shipRack();if(!R.length)return null;
+    const it=rackItem(R.shift());EQ.weapon=it;if(typeof SHEATHED!=='undefined'&&SHEATHED&&typeof drawWeapon==='function')drawWeapon();sparKitRefresh();
+    showMsg(`You take the ${it.name} from the rack.`,'#e8d8a0');return it;}
   function shipFitNames(arr){return arr.map(k=>k==='stowage'?'stowage':SHIP_FITS[k]?SHIP_FITS[k].n:k);}
   function shipCfg(){return worldState.ship||(worldState.ship={});}
   function shipClass(){return SHIP_CLASSES[(worldState.ship&&worldState.ship.cls)||'sloop'];}

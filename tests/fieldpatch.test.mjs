@@ -68,7 +68,17 @@ const r = await page.evaluate(() => {
     worldState.ship.fit = ['still']; out.still = +(alchStrength() / base()).toFixed(3); out.stillFire = atFire();
     worldState.ship.fit = ['galley']; out.stillOff = +(alchStrength() / base()).toFixed(3); out.galley = atFire(); bagAdd(survItem('fish', 1)); out.cook = cookAt('fish').made;
     currentHouse._fits = { galley: { x: px + 3, z: pz } }; out.galleyFar = atFire(); currentHouse._fits.galley = { x: px + 1.5, z: pz }; out.galleyNear = atFire();
-    lid = lid1; currentHouse = h1; out.galleyOut = atFire(); worldState.ship.fit = []; }
+    // the arms rack: weapons only, three, kept through a save; drawn for empty hands when boarders land
+    worldState.ship.fit = []; out.rackNone = rackPut(0); worldState.ship.fit = ['arms']; worldState.ship.rack = []; BAG.length = 0;
+    const W = n => { const it = makeItem(2, WEAPON_TYPES.find(T => T.type === 'Sword'), null, false); it.name = n; return it; };
+    bagAdd(benchItem('plank', 1)); out.rackPlank = rackPut(0); for (const n of ['Rack A', 'Rack B', 'Rack C', 'Rack D']) bagAdd(W(n));
+    const put = () => rackPut(BAG.findIndex(b => b.slot === 'weapon')); out.rackPuts = [put(), put(), put(), put()]; out.rackNames = shipRack().map(x => x.name);
+    openStash(); stashRackToggle(); out.rackPanel = { title: document.getElementById('sp-title').textContent, rows: document.querySelectorAll('#sp-stash-list .lp-item').length, bag: document.querySelectorAll('#sp-bag-list .lp-item').length, btn: document.getElementById('sp-rack').style.display }; closeStash();
+    out.rackTake = rackTake(2) === true && BAG.some(b => b.name === 'Rack C') && shipRack().length === 2;
+    const d = JSON.parse(ssStringify(_buildSavePayload())); worldState.ship = { cls: 'sloop' }; _applyLoadData(d); out.rackSaved = shipRack().map(x => x.name);
+    const w0 = EQ.weapon; EQ.weapon = W('Held'); out.drawHeld = rackDraw(); EQ.weapon = null; const dr = rackDraw(); out.drawn = { name: EQ.weapon && EQ.weapon.name, left: shipRack().length, ok: !!dr && typeof EQ.weapon.atk !== 'undefined' };
+    EQ.weapon = w0; worldState.ship.rack = [];
+    lid = lid1; currentHouse = h1; out.galleyOut = atFire(); worldState.ship.fit = []; out.rackAway = rackHere(); }
   out.perks = ['joinery:25', 'joinery:50', 'joinery:75', 'joinery:100'].every(k => PERK_LIVE.has(k)); /* S1555: Bowyer is live since S1549 (#851 A) */
   return out;
 });
@@ -95,6 +105,10 @@ check('one the yard keeps for her, or a hold too full for its weight: refused', 
 check('the bench\'s page shows her six fittings at her side', r.fitRows === 6, r.fitRows);
 check('her still in her hold: brewing ×1.10; it is no fire', r.still === 1.1 && r.stillFire === false && r.stillOff === 1, [r.still, r.stillOff]);
 check('her galley in her hold is a fire: a fish cooks; once it has a spot, within 2 m of it; out of her hold, no fire', r.galley && r.cook && !r.galleyFar && r.galleyNear && !r.galleyOut, r);
+check('the arms rack: none fitted, refused; weapons only; three, the fourth refused', /no arms rack/.test(r.rackNone) && /weapons only/.test(r.rackPlank) && r.rackPuts.slice(0, 3).every(x => x === true) && /full/.test(r.rackPuts[3]) && r.rackNames.join() === 'Rack A,Rack B,Rack C', r);
+check('in her hold the sea chest\'s panel turns to the rack: its three, the bag\'s one weapon; not out of her hold', r.rackPanel.title === 'The Arms Rack' && r.rackPanel.rows === 3 && r.rackPanel.bag === 1 && r.rackPanel.btn === '' && r.rackAway === false, r.rackPanel);
+check('a weapon taken off the rack comes back to the bag; the rack is kept through a save', r.rackTake && r.rackSaved.join() === 'Rack A,Rack B', r.rackSaved);
+check('boarders and empty hands: the first on the rack is drawn; with a weapon held, nothing', r.drawHeld === null && r.drawn.name === 'Rack A' && r.drawn.left === 1 && r.drawn.ok, r.drawn);
 check('Field splice, Tight seams, Bowyer and Shipwright\'s hand live', r.perks, r.perks);
 // Session 1524 — the cabin's bench drawn: below deck the kit's joiner's bench stands against the west wall at its true height (0.85 m),
 // in one mesh a material, its solid the bench's own footprint, clear of the bunk, the chart table, the chest and the sacks

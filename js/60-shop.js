@@ -152,9 +152,21 @@ function takeAllLoot(){
 // merchant side, so the only way for the player to lose a unique is via
 // quest progression (e.g. Edna's Rubbing handed off to Aldwyn) or the
 // existing destroy gate (which already guards uniques).
+// S1732 — in her hold with an arms rack fitted, the sea chest's panel turns to the rack: weapons only, three at most (rackPut/rackTake)
+let stashMode='chest';
+function stashRackToggle(){stashMode=stashMode==='rack'?'chest':'rack';renderStash();}
+function renderRack(){const R=shipRack(),bagEl=document.getElementById('sp-bag-list'),rEl=document.getElementById('sp-stash-list');
+  const row=(it,fn)=>{const div=document.createElement('div');div.className='lp-item';
+    div.innerHTML=`<span class="lp-ico">${iconHTML(it)}</span><div class="lp-info"><div class="lp-name">${it.name}</div><div class="lp-desc">${lootItemDesc(it)}</div></div>`;div.onclick=fn;return div;};
+  const say=r=>{if(r!==true)showMsg(r,'#cc8844');renderStash();};
+  bagEl.innerHTML='';const ws=BAG.map((it,i)=>[it,i]).filter(([it])=>it&&it.type==='equip'&&it.slot==='weapon');
+  if(!ws.length)bagEl.innerHTML='<div class="sp-empty">No weapons in your bag.</div>';else ws.forEach(([it,i])=>bagEl.appendChild(row(it,()=>say(rackPut(i)))));
+  rEl.innerHTML='';if(!R.length)rEl.innerHTML='<div class="sp-empty">The rack is empty.</div>';else R.forEach((s,j)=>rEl.appendChild(row(rackItem(s),()=>say(rackTake(j)))));
+  document.getElementById('sp-bag-meta').textContent=`${ws.length} weapon${ws.length===1?'':'s'} · ${bagWeight().toFixed(1)}/${maxCarry()} kg`;
+  document.getElementById('sp-stash-meta').textContent=`${R.length} of ${SHIP_RACK_N}`;}
 function openStash(){
   _releasePointerLockForMenu();
-  stashOpen=true;
+  stashOpen=true;stashMode='chest';
   document.getElementById('stash-panel').style.display='flex';
   // Reuse the chest-open audio cue — same affordance, same feedback.
   if(typeof sndChestOpen==='function') sndChestOpen();
@@ -166,6 +178,11 @@ function closeStash(){
   G.focus();
 }
 function renderStash(){
+  const rk=typeof rackHere==='function'&&rackHere();if(!rk)stashMode='chest';const rack=stashMode==='rack',el=id=>document.getElementById(id); /* S1732 */
+  if(el('sp-rack')){el('sp-rack').style.display=rk?'':'none';el('sp-rack').textContent=rack?'The sea chest':'The arms rack';}
+  if(el('sp-title'))el('sp-title').textContent=rack?'The Arms Rack':'The Stash';if(el('sp-stash-h'))el('sp-stash-h').textContent=rack?'The Rack':'The Stash';
+  if(el('sp-sub'))el('sp-sub').textContent=rack?`Click a weapon to move it. ${SHIP_RACK_N} weapons at most; if boarders land while your hands are empty, the first is drawn for you.`:'Click an item to move it. Bag → Stash on the left, Stash → Bag on the right.';
+  if(rack){renderRack();return;}
   const bagListEl=document.getElementById('sp-bag-list');
   const stashListEl=document.getElementById('sp-stash-list');
   const bagMetaEl=document.getElementById('sp-bag-meta');

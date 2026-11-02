@@ -9,7 +9,7 @@
       if(mine&&d<40){o.closeT=(o.closeT||0)+dt;}else o.closeT=0;
       if(mine&&d<16&&o.closeT>12&&!o.sentBoarders){o.sentBoarders=true;let n=0;
         for(const e of o.crew){if(e.dead||n>=2)continue;n++;const fwd=[-Math.sin(SHIP.yaw),-Math.cos(SHIP.yaw)];e.x=SHIP.x+fwd[0]*(-2+n*2);e.z=SHIP.z+fwd[1]*(-2+n*2);e.alert=true;e._ship={plat:SHIP.plat};e._from=o;BOARDERS.push(e);const k=o.crew.indexOf(e);if(k>=0)o.crew.splice(k,1);}
-        if(n){showMsg('Pirates on your deck!','#ff6060');splash(true);}}
+        if(n){showMsg('Pirates on your deck!','#ff6060');splash(true);rackDraw();}} /* S1732 — her arms rack arms empty hands */
     }
     pirateBoardersHold();
     // keep boarders aboard
