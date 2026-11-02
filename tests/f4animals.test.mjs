@@ -227,6 +227,24 @@ const snake = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.
 console.log('  snake:', JSON.stringify(snake));
 check(`the Mire Snake wears the kit's (${snake.plan}, ${snake.bones} bones, ${snake.tris} triangles; stand-in ${snake.standTris}), ${snake.len} m long, lying from ${snake.low} to ${snake.high} m over its ground; at rest it is ${snake.rest}, moving it is ${snake.move} (${snake.cyc} cycles over 0.6 m (the kit's stride, a wave's length), the bones moving ${snake.moved}, and again ${snake.still}); taken away, dropped`,
   !snake.fail && snake.plan === 'game:Mire Snake' && snake.seed === snake.want && snake.tris < 12000 && snake.len > .8 && snake.len < 1.1 && Math.abs(snake.low) < .03 && snake.high < .15 && snake.rest === 'stand' && snake.move === 'slither' && snake.cyc > .9 && snake.cyc < 1.6 && snake.moved > .005 && snake.still > .005 && snake.dropped, snake);
+// Session 1757: Aurenne's Sand Wyrm on the snake's path, 14 m long, lying on its ground and slithering as its group moves; its levels by its
+// size, so at 60 m it is still the kit's body, not the stand-in
+const wyrm = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.cos(yaw), x = px + fx * 14, z = pz + fz * 14;
+  const rig = buildAnimal('Sand Wyrm', 'f4wyrm:0'), G = new THREE.Group(); G.add(rig.root); G.position.set(x, WORLD.worldH(x, z), z); G.rotation.y = yaw + Math.PI / 2; WORLD.scene.add(G);
+  const e = { name: 'Sand Wyrm', x, z, mesh: G, limbs: { wolf: rig, torso: rig.mesh }, dead: false }; rig.e = e;
+  CAM.position.set(px, worldH(px, pz) + 1.65, pz); CAM.updateMatrixWorld(true);
+  const ZE = ZONES.world.enemies; ZE.push(e); let k = 0; HBODY.last = -1e9; while (!rig.hc && !rig.hcFail && k++ < 300) hcTick(9.9993e5 + k * (HBODY.gap + 1));
+  const H = rig.hc; if (!H) { ZE.splice(ZE.indexOf(e), 1); G.parent.remove(G); return { fail: !!rig.hcFail }; }
+  CAM.position.set(x - fx * 60, worldH(px, pz) + 1.65, z - fz * 60); CAM.updateMatrixWorld(true); hcTick(9.9996e5); const far = rig.hc.L; ZE.splice(ZE.indexOf(e), 1);
+  G.rotation.y = 0; G.updateMatrixWorld(true); const bx = new THREE.Box3(); for (const m of H.C.meshes) bx.union(new THREE.Box3().setFromObject(m));
+  const sk = H.C.skel, t0 = performance.now; let i0 = 0; const run = (n, sp) => { for (let i = 0; i < n; i++) { G.position.z += sp / 60; i0++;
+      performance.now = () => 9.9997e5 + i0 * 1000 / 60; try { hcSwimPose(rig); } finally { performance.now = t0; } } sk.update(); return { m: Array.from(sk.boneMatrices), ph: rig.ph, g: rig.gaitNow }; };
+  const a = run(60, 0), b = run(120, 4); let mv = 0; for (let i = 0; i < a.m.length; i++) mv = Math.max(mv, Math.abs(a.m[i] - b.m[i]));
+  const out = { plan: H.C.g.plan, seed: H.C.g.seed, want: HC.hashKey(rig.hcKey), bones: H.C.bones.length, tris: H.C.stats.tris, len: +(bx.max.z - bx.min.z).toFixed(2), low: +(bx.min.y - G.position.y).toFixed(3), high: +(bx.max.y - G.position.y).toFixed(3),
+    standTris: rig.tris, far, rest: a.g, move: b.g, cyc: +(b.ph - a.ph).toFixed(2), moved: +mv.toFixed(3) }; G.parent.remove(G); hcTick(9.9999e5); out.dropped = !rig.hc; return out; });
+console.log('  wyrm:', JSON.stringify(wyrm));
+check(`the Sand Wyrm wears the kit's (${wyrm.plan}, ${wyrm.bones} bones, ${wyrm.tris} triangles; stand-in ${wyrm.standTris}), ${wyrm.len} m long, lying from ${wyrm.low} to ${wyrm.high} m over its ground; at 60 m it is level ${wyrm.far} (its levels by its size); at rest ${wyrm.rest}, moving ${wyrm.move} (${wyrm.cyc} cycles over 8 m, the bones moving ${wyrm.moved}); taken away, dropped`,
+  !wyrm.fail && wyrm.plan === 'game:Sand Wyrm' && wyrm.seed === wyrm.want && wyrm.tris < 16000 && wyrm.len > 12.5 && wyrm.len < 15 && Math.abs(wyrm.low) < .1 && wyrm.high < 2 && wyrm.far < 2 && wyrm.rest === 'stand' && wyrm.move === 'slither' && wyrm.cyc > .6 && wyrm.cyc < 2 && wyrm.moved > .005 && wyrm.dropped, wyrm);
 // Session 1730: the Lantern Beetle on the same path, walking on the kit's own six legs, 6 cm long, its glow the kit's
 const beetle = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.cos(yaw), x = px + fx * 2, z = pz + fz * 2;
   const rig = buildAnimal('Lantern Beetle', 'f4beetle:0'), G = new THREE.Group(); G.add(rig.root); G.position.set(x, WORLD.worldH(x, z), z); G.rotation.y = yaw + Math.PI / 2; WORLD.scene.add(G);
