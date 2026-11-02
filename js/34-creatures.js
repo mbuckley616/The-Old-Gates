@@ -371,9 +371,8 @@ SWIMMER['River Pike']={len:.8,col:0x66753d,belly:0xe0dbb3};
 // Session 1728: the Gatelands' Mire Snake (L3, OG-009: a banded water snake; the kit's miresnake), on the trout's path on land: land marks a
 // swimmer that lies on the ground (the kit's belly at the group's origin, as the birds' crawl), whose stand-in is a long low body, and whose
 // gait is the kit's slither while its group moves and its stand at rest (no beat on the clock). 1.0 m nose to tail
-// the kit's stride for slither is a legged gait's (by the legs' height, 0.07 m a cycle here): a snake moves one wave's length a cycle, and
-// the kit's wave (waveLen 9 over the spine's and tail's seventeen bones) is about half the body, so SWIMMER.wave of its length
-SWIMMER['Mire Snake']={len:1,col:0x4a5232,belly:0xc7b880,land:true};SWIMMER.wave=.5;
+// its stride is the kit's for slither, a wave's length (about half the body) since Session 1729 (it was 1728's SWIMMER.wave, 0.5 of its length)
+SWIMMER['Mire Snake']={len:1,col:0x4a5232,belly:0xc7b880,land:true};
 function snakeStandIn(len,col){const geo=new THREE.SphereGeometry(1,10,6).toNonIndexed();geo.applyMatrix4(new THREE.Matrix4().makeScale(.022*len,.016*len,len/2));
   geo.translate(0,.016*len,0);geo.computeBoundingSphere();const m=new THREE.Mesh(geo,new THREE.MeshLambertMaterial({color:col}));m.castShadow=false;m.name='snake';return m;}
 function fishStandIn(len,col){const k=len/.4,parts=[],M=new THREE.Matrix4(),put=(geo,x,y,z,sx,sy,sz,ry)=>{M.makeRotationY(ry||0);
@@ -392,7 +391,7 @@ function buildSwimmer(name,key){const F=SWIMMER[name];if(!F)return null;const ro
 function hcSwimPose(rig){const H=rig.hc,e=rig.e,g=e&&e.mesh;if(!H||!g||e.dead)return;const now=performance.now()/1000,dt=rig.t?Math.min(.1,now-rig.t):0;rig.t=now;
   const p=g.position;let d=rig.lx==null?0:Math.hypot(p.x-rig.lx,p.y-rig.ly,p.z-rig.lz);rig.lx=p.x;rig.ly=p.y;rig.lz=p.z;if(d>2)d=0;
   rig.v=dt>0?rig.v+(d/dt-rig.v)*Math.min(1,dt*6):rig.v;
-  if(rig.land){const gait=rig.v>.05?'slither':'stand';if(H.C.gait!==gait)H.C.gait=gait;rig.ph+=d/(SWIMMER[rig.name].len*SWIMMER.wave);HC.pose(H.C,rig.ph);rig.gaitNow=gait;return;}
+  if(rig.land){const gait=rig.v>.05?'slither':'stand';if(H.C.gait!==gait)H.C.gait=gait;rig.ph+=d/Math.max(1e-3,HC.strideOf(H.C)*H.f);HC.pose(H.C,rig.ph);rig.gaitNow=gait;return;}
   rig.ph+=Math.max(dt*SWIMMER.idle,d/Math.max(1e-3,HC.strideOf(H.C)*H.f));HC.pose(H.C,rig.ph);rig.gaitNow=rig.v>.05?'swim':'hold';}
 // ── the wolf's motion: every joint an [x,y,z] rotation; `drop` lowers the hips ──
 const WG={
