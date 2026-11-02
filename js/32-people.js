@@ -1478,14 +1478,28 @@ function hbTint(g,G){const C=a=>new THREE.Color(a[0],a[1],a[2]),D=G.dress||{};
 const HB_WINTER={gatelander:.5,markman:.85,oldblood:.35,aurennais:.25},HB_WINTER_FUR=[[.45,.38,.3],[.52,.38,.24],[.24,.2,.17],[.55,.5,.44]];
 function hbIndoors(){return (typeof isInterior==='function'&&isInterior())||(typeof currentHouse!=='undefined'&&!!currentHouse);}
 function hbWinter(){return typeof calDay==='function'&&calDay().season==='winter';}
-function hbSeasonDress(g,G){if(!G||!hbWinter()||hbIndoors())return G;const k=g.hbKey+'|winter';let W=HB_GENOMES.get(k);if(W)return W;W=G;
+// S1767 (L1, OG-109's Mark formal column) — the feast dress: on the four feasts (FEASTS, 60-shop.js) the Mark's folk wear their formal
+// dress (S1156): seven in ten of them the tablet-woven bands at the tunic's neck, round the cuffs and up the hem, the ground ochre,
+// undyed or woad and the lozenges madder or woad (never the tunic's own colour), a man's tunic worn to the knee (S1164) and the apron
+// left off; indoors and out, as the feast is kept in both. Not on a guard (mail, a tabard), scale, a robe or the chair. From a stream of
+// its own (`<key>|feast`), the same bands every feast; a winter coat goes over them out of doors (the coat hides them, the kit's rule)
+const HB_FEAST={markman:.7},HB_FEAST_GROUND=[[.62,.47,.22],[.8,.76,.66],[.2,.28,.45]],HB_FEAST_MOTIF=[[.5,.14,.12],[.2,.28,.45]];
+function hbFeast(){return typeof feastOn==='function'&&!!feastOn();}
+function hbFeastDress(g,G){const k=g.hbKey+'|feast';let F=HB_GENOMES.get(k);if(F)return F;F=G;
+  const D=G.dress||{},people=HB.PEOPLES[g.people]?g.people:'gatelander',r=pRng(pHash(k)),pick=a=>a[Math.floor(r()*a.length)%a.length],same=(a,b)=>!!a&&!!b&&a.every((v,i)=>Math.abs(v-b[i])<.02);
+  if(D.tunic&&!D.mail&&!D.scales&&!D.tabard&&!D.robe&&!D.chair&&r()<(HB_FEAST[people]||0)){
+    let gr=pick(HB_FEAST_GROUND);if(same(gr,D.tunic))gr=HB_FEAST_GROUND[(HB_FEAST_GROUND.indexOf(gr)+1)%3];
+    const ms=HB_FEAST_MOTIF.filter(c=>!same(c,gr)&&!same(c,D.tunic)),m=ms.length?pick(ms):[.5,.14,.12];
+    F={...G,dress:{...D,bands:gr,bandsMotif:m,apron:null,apronLeather:false,bib:false,...(D.skirt==='short'?{skirt:'knee'}:{})}};}
+  HB_GENOMES.set(k,F);return F;}
+function hbSeasonDress(g,G){if(G&&hbFeast())G=hbFeastDress(g,G);if(!G||!hbWinter()||hbIndoors())return G;const fe=!!(G.dress&&G.dress.bands),k=g.hbKey+'|winter',kc=k+(fe?'|feast':'');let W=HB_GENOMES.get(kc);if(W)return W;W=G;
   const D=G.dress||{},people=HB.PEOPLES[g.people]?g.people:'gatelander',P=HB.PEOPLES[people],r=pRng(pHash(k)),pick=a=>a[Math.floor(r()*a.length)%a.length];
   if(!D.mail&&!D.scales&&!D.tabard&&!D.chair&&r()<(HB_WINTER[people]||0)){
     if(people==='aurennais'){const R=pick(P.robes||[[[.88,.84,.74],[.36,.24,.15]]]);
       W={...G,dress:{...D,cloak:R[0],burnous:true,burnousStripe:R[1],cape:null,cloakFur:null,cloakHem:null,tartan:null,tartanLine:null,hood:!D.wrap&&r()<.3?'up':'down'}};}
     else if(!D.robe){const fur=people==='markman'||people==='gatelander'&&r()<.5;
       W={...G,dress:{...D,coat:pick(P.wool),coatLen:.75,coatFur:fur?pick(HB_WINTER_FUR):null,coatHood:people==='markman'?(r()<.3?'up':'down'):null}};}}
-  HB_GENOMES.set(k,W);return W;}
+  HB_GENOMES.set(kc,W);return W;}
 function hbPrep(g,key){if(g.hbKey)return;g.hbKey=key;try{hbTint(g,hbGenome(g));}catch(e){console.warn('F4: no genome for',key,e);g.hbKey=null;}}
 // the human foes (S1201): which of FOE_DRESS wear the builder's body (the people, not the dead, the stone or the folk of the hills),
 // and what each wears over the builder's own rolled clothes, from its FOE_DRESS colour (c): the weapon and shield stay the game's
