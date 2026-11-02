@@ -1032,6 +1032,7 @@ function loop(now){
     else if(typeof spireStonePrompt==='function'&&spireStonePrompt()){iprOW.textContent=spireStonePrompt();iprOW.style.opacity='1';iprOW.style.display='block';} /* S1387 — the spire's stone */
     else if(typeof bladeStonePrompt==='function'&&bladeStonePrompt()){iprOW.textContent=bladeStonePrompt();iprOW.style.opacity='1';iprOW.style.display='block';} /* S802 — the Gate-Blade's stone */
     else if(typeof towerCellarPrompt==='function'&&towerCellarPrompt()){iprOW.textContent=towerCellarPrompt();iprOW.style.opacity='1';iprOW.style.display='block';} /* S1765 — a tower house's hatch and pit */
+    else if(typeof limeCavePrompt==='function'&&limeCavePrompt()){iprOW.textContent=limeCavePrompt();iprOW.style.opacity='1';iprOW.style.display='block';} /* S1768 — a limestone cave's mouth */
     else if(typeof bellWreckPrompt==='function'&&bellWreckPrompt()){iprOW.textContent=bellWreckPrompt();iprOW.style.opacity='1';iprOW.style.display='block';} /* S801 — the Drowned Bell's wreck */
     else if(typeof ringCairnPrompt==='function'&&ringCairnPrompt()){iprOW.textContent=ringCairnPrompt();iprOW.style.opacity='1';iprOW.style.display='block';} /* S800 — the Noon Ring's cairn */
     else if(typeof yardRackPrompt==='function'&&yardRackPrompt()){iprOW.textContent=yardRackPrompt();iprOW.style.opacity='1';iprOW.style.display='block';} /* S1657 — a Markish yard's staff rack */

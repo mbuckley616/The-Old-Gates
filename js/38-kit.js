@@ -5252,7 +5252,184 @@ function aurenneOrrery(hAt, o = {}) {
       door: { x0: -HW, x1: HW, z: +ZD.toFixed(2), lintel: LP }, passage: { w: W, len: +(ZD - ZM).toFixed(2), lintel: LP, z0: +ZM.toFixed(2) },
       chamber: { y: FY, vault: +VAULT.toFixed(2), s: S, back: +(-3.4 * S).toFixed(2) }, basins, kerb, carved, entrance: +ES.toFixed(2), r: R };
   }
-  return { stream, hashKey, mergeByMaterial, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, gatePiece }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, trunk: felledTrunk }, ships: { sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
+  // ── the Gatelands' limestone cave with its lake under falls (Session 1768, card F8; Michael's A on #1026, "through a mouth, into a place of
+  // its own"; the prototype is places.js's gatelandsCave, Sessions 872 and 882, #313 A: the day down the shaft, the flowers glow; OG-121's
+  // "natural caverns: stalactites, an underground lake under falls, strange flowers", OG-099's cave of blue pools). Copied as drawn, a metre a
+  // unit, +z the mouth at z 0: the passage winding 22 m in at 4.5 m over the shore, the hall of 64 m lofted ring by ring (30 to 46 m across,
+  // 16 to 26 m to the crown), the ledge, the ramp down the east wall, the shore's rimstone terraces, the lake, the natural bridge to the far
+  // shelf, the falls down the swallow hole under its shaft, the columns, the stalactites and stalagmites, flowstone, fallen blocks and the
+  // glowing flowers. What differs: the fallen blocks are not welded (each vertex moves by where it is, so they stay closed), the shaft ends in
+  // a disc of sky coloured by the hour by whoever shows it, and the place returns its walk as a grid of half-metre cells merged into
+  // rectangles, for a room's footholds and solids (nothing swims in a room: the lake is a wall at the water's edge, the bridge its way over).
+  //   PKIT.places.cave(o) -> { group, sky, tris, draws, path, walkY(x, z), ledge, lake, falls, shaft, mouth, flowers, chamber, bridge,
+  //   columns, bounds { x0, x1, z0, z1 }, low (the lowest walked height), cells ([{ x0, x1, z0, z1, y }]: y the floor's height, null rock or
+  //   water), arrive [x, y, z, yaw] (inside the mouth, facing in) }
+  let VM = null;
+  function caveMats() {
+    if (VM) return VM;
+    VM = { lime: mat('rock', { ns: 1.5, color: 0xb8b4a8, rough: .9 }), limeWet: mat('rock', { ns: 1.6, color: 0x9a988e, rough: .4 }), bed: mat('rock', { ns: 1.2, color: 0x6a7a74, rough: .8 }),
+      drip: mat('rock', { ns: 1.0, color: 0xd8d2c0, rough: .6 }), lake: new THREE.MeshStandardMaterial({ color: 0x1a5a6a, roughness: .16, metalness: .1, transparent: true, opacity: .78, depthWrite: false }),
+      pool: new THREE.MeshStandardMaterial({ color: 0x5ac8d0, emissive: new THREE.Color(.05, .22, .26), roughness: .2, metalness: .1, transparent: true, opacity: .82, depthWrite: false }),
+      fall: new THREE.MeshStandardMaterial({ color: 0xd8eef4, emissive: new THREE.Color(.35, .5, .58), emissiveIntensity: .6, roughness: .2, transparent: true, opacity: .62, side: THREE.DoubleSide, depthWrite: false }),
+      foam: new THREE.MeshStandardMaterial({ color: 0xf0f6f8, roughness: .5, transparent: true, opacity: .8, depthWrite: false }),
+      mist: new THREE.MeshStandardMaterial({ color: 0xe8f2f6, emissive: new THREE.Color(.2, .26, .3), roughness: 1, transparent: true, opacity: .1, depthWrite: false }),
+      petal: new THREE.MeshStandardMaterial({ color: 0xbfe6f0, emissive: new THREE.Color(.45, .8, 1), emissiveIntensity: 1.4, roughness: .5 }), stalk: new THREE.MeshStandardMaterial({ color: 0x4a6a5a, roughness: .8 }),
+      sky: new THREE.MeshBasicMaterial({ color: 0xc4d0dc, fog: false }), dark: new THREE.MeshBasicMaterial({ color: 0x050607 }) };
+    VM.lime.side = VM.limeWet.side = VM.drip.side = THREE.DoubleSide; VM.skin = VM.lime; return VM;
+  }
+  // a tube lofted ring by ring: ring(i, j) gives the point of ring i (0..NS) at step j (0..NA-1); inside winds it to face in; keep drops faces
+  function caveLoft(NS, NA, ring, inside = true, keep = () => true) { const pos = [], idx = [];
+    for (let i = 0; i <= NS; i++) for (let j = 0; j < NA; j++) pos.push(...ring(i, j));
+    const c = new THREE.Vector3(); for (let i = 0; i < NS; i++) for (let j = 0; j < NA; j++) { const a = i * NA + j, b = i * NA + (j + 1) % NA, d = a + NA, e = b + NA;
+      for (const t of [[a, b, d], [b, e, d]]) { c.set(0, 0, 0); for (const k of t) c.x += pos[k * 3] / 3, c.y += pos[k * 3 + 1] / 3, c.z += pos[k * 3 + 2] / 3; if (!keep(c, i, j)) continue; idx.push(...(inside ? t : [t[0], t[2], t[1]])); } }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); return g; }
+  function caveGrowth(r, L, r0, segs = 7, rings = 7, blunt = false) { const pts = [], w = r() * 6; for (let k = 0; k <= rings; k++) { const t = k / rings, base = blunt ? Math.sqrt(Math.max(0, 1 - t ** 2.4)) : Math.pow(1 - t, 1.25), rad = k === rings ? 0 : r0 * base * (1 + .3 * Math.sin(t * 11 + w) * (1 - t)); pts.push(new THREE.Vector2(Math.max(rad, .002), t * L)); }
+    return new THREE.LatheGeometry(pts, segs); }
+  function caveHall(rk, F, ph, P) { const { Z0, L, CY, RLOW, RX, RY, E } = P;
+    const taper = s => s < E ? Math.sqrt(Math.max(0, 1 - ((E - s) / E) ** 2)) : s > 1 - E ? Math.sqrt(Math.max(0, 1 - ((s - 1 + E) / E) ** 2)) : 1;
+    const AL = Array.from({ length: 9 }, (_, k) => ({ s: .1 + .8 * (k + rk() * .8) / 9, th: k % 2 ? .25 + rk() * .7 : Math.PI - .25 - rk() * .7, d: (k % 3 === 2 ? -2.5 : 4 + rk() * 3.5), w: 5 + rk() * 5, a: .32 + rk() * .2 }));
+    const bump = (x, y, z) => { const s = (Z0 - z) / L, th = Math.atan2((y - CY) / (y > CY ? RY(Math.min(1, Math.max(0, s))) : RLOW), x / RX(Math.min(1, Math.max(0, s)))); let b = 0; for (const a of AL) { const dth = Math.atan2(Math.sin(th - a.th), Math.cos(th - a.th)); b += a.d * Math.exp(-(((s - a.s) * L / a.w) ** 2) - (dth / a.a) ** 2); } return b; };
+    const big = (x, y, z) => 4 * (Math.sin(x * .06 + ph[0]) * Math.sin(z * .075 + ph[1]) + .5 * Math.sin(y * .07 + z * .09 + ph[2])) + 1.2 * Math.sin(x * .2 + ph[3]) * Math.sin(z * .18 + ph[4]) * Math.sin(y * .22 + ph[5]) + .6 * Math.sin(x * .45 + ph[6]) * Math.sin(y * .5 + z * .41 + ph[7]) + bump(x, y, z);
+    const amp = y => .1 + .9 * Math.min(1, Math.max(0, (y - 3) / 8)) ** 2;
+    const ringBase = (s, th) => { const t = taper(s), sn = Math.sin(th); return [RX(s) * t * Math.cos(th), CY + (sn > 0 ? RY(s) : RLOW) * t * sn, Z0 - s * L]; };
+    const ringAt = (s, th) => { const [x, y, z] = ringBase(s, th), n = big(x, y, z) * amp(y) * taper(s), [fx, fy, fz] = F(x, y, z), k = amp(y) * .6 + .4; return [x + Math.cos(th) * n + fx * k, y + Math.sin(th) * n + fy * k, z + fz * k]; };
+    const hw = z => RX((Z0 - z) / L) * Math.sqrt(1 - (CY / RLOW) ** 2);
+    const roofY = (x, z) => { const s = Math.min(1 - E, Math.max(E, (Z0 - z) / L)); let th = Math.acos(Math.max(-1, Math.min(1, x / RX(s)))); for (let k = 0; k < 2; k++) { const p = ringBase(s, th), n = big(...p) * amp(p[1]); th = Math.acos(Math.max(-1, Math.min(1, x / (RX(s) + n)))); }
+      return ringAt(s, th)[1]; };
+    const inHall = (x, y, z, m) => { const s = (Z0 - z) / L; if (s <= 0 || s >= 1) return false; const t = taper(s); if (t < .05) return false; const ry = y > CY ? RY(s) : RLOW, q = Math.hypot(x / (RX(s) * t), (y - CY) / (ry * t)); return q < 1 - m / (RX(s) * t); };
+    return { taper, ringBase, ringAt, hw, roofY, inHall, amp, big };
+  }
+  function gatelandsCave(o = {}) {
+    const key = String(o.key || 'cave'), r = stream('cave:' + key), M = caveMats(), B = new Map(), flowersOn = o.flowers !== false;
+    const put = (geo, k, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, uv = .6) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal'].includes(a)) g.deleteAttribute(a);
+      if (!g.attributes.normal) g.computeVertexNormals();
+      g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), new THREE.Vector3(1, 1, 1))); worldUV(g, uv);
+      if (!B.has(k)) B.set(k, []); B.get(k).push(g); };
+    const rk = stream(key + ':rock'), F = cairnField(rk, .35), ph = Array.from({ length: 8 }, () => rk() * 9);
+    const LH = 4.5, PL = 22, Z0 = -PL, L = 64, Z1 = Z0 - L, CY = 7, RLOW = 11, LY = -.9, DEEP = 4, E = 5 / L;
+    const RX = s => 15 + 8 * Math.sin(Math.PI * s), RY = s => 9 + 10 * Math.sin(Math.PI * s);
+    const NS = 128, NA = 112, { ringAt, hw, roofY, inHall } = caveHall(rk, F, ph, { Z0, L, CY, RLOW, RX, RY, E });
+    const SPX = z => z > Z0 ? 2.5 * Math.sin(Math.PI * z / PL) : 0, PRX = 2.4, PCY = LH + 1.6, PUP = 2.0, PLOW = 3.2;
+    const inPassage = (x, y, z, m) => z < 2 && z > Z0 - 6 && Math.hypot((x - SPX(z)) / (PRX - m), (y - PCY) / ((y > PCY ? PUP : PLOW) - m)) < 1;
+    const shaftS = .84, shaftTh = Math.PI * 100 / 180, SP = ringAt(shaftS, shaftTh), SX = SP[0], SZ = SP[2], SR = 2.2, ROOFS = SP[1];
+    const inShaft = (x, z, m) => Math.hypot(x - SX, z - SZ) < SR + .9 - m;
+    put(caveLoft(NS, NA, (i, j) => ringAt(i / NS, j / NA * Math.PI * 2), true, c => !inPassage(c.x, c.y, c.z, .4) && !(c.y > CY + 4 && inShaft(c.x, c.z, .5))), 'lime', 0, 0, 0, 0, 0, 0, .25);
+    put(caveLoft(56, 36, (i, j) => { const z = 0 - i / 56 * (PL + 6), th = j / 36 * Math.PI * 2, sn = Math.sin(th), x = SPX(z) + PRX * Math.cos(th), y = PCY + (sn > 0 ? PUP : PLOW) * sn, [fx, fy, fz] = F(x, y, z); return [x + fx, y + fy * .6, z + fz * (i ? 1 : 0)]; }, true,
+      c => !inHall(c.x, c.y, c.z, .5)), 'lime', 0, 0, 0, 0, 0, 0, .35);
+    { const pos = [], idx = []; for (let i = 0; i <= 44; i++) { const z = -i / 44 * PL; for (const s of [-2.9, -1, 1, 2.9]) pos.push(SPX(z) + s, LH, z); }
+      for (let i = 0; i < 44; i++) for (let j = 0; j < 3; j++) { const a = i * 4 + j; idx.push(a, a + 1, a + 4, a + 1, a + 5, a + 4); }
+      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); put(g, 'lime', 0, 0, 0, 0, 0, 0, .35); }
+    // the mouth's dark: the passage seen from inside ends in the day outside, a plain disc of sky a little beyond its open end
+    { const g = new THREE.CircleGeometry(3.6, 20); const m = new THREE.Mesh(g, M.sky); m.position.set(SPX(.5), PCY, .9); m.rotation.y = Math.PI; m.name = 'mouthsky'; m.userData.daylight = true; B.set('_mouth', m); }
+    const SH0 = Z1 + 17, SH1 = Z1 + 29, wob = z => .6 * Math.sin(z * .45 + ph[0]) + .3 * Math.sin(z * 1.3 + ph[1]), sdOf = (x, z) => Math.max(x - (hw(z) - 11) + wob(z), Math.min(-6 - x + wob(z), z - SH0, SH1 - z));
+    const floorY = (x, z) => { const sd = sdOf(x, z); let y;
+      if (sd >= 0) y = 0; else if (sd > -4.2) y = -.25 * Math.ceil(-sd / 1.4 - 1e-6); else { const t = Math.min(1, (-sd - 4.2) / 4); y = -1.1 - (DEEP - .2 + LY + 1.1) * t * t * (3 - 2 * t); }
+      const zr = Z0 - 7, zf = Z0 - 27; if (x > hw(z) - 7 && z < zr && z > zf - 1) { const ramp = LH * Math.max(0, (z - zf) / (zr - zf)), e = Math.min(1, (x - (hw(z) - 8)) / 1); y = Math.max(y, ramp * Math.min(1, Math.max(0, e))); }
+      else if (x > hw(z) - 8 && x <= hw(z) - 7 && z < zr && z > zf) { const ramp = LH * (z - zf) / (zr - zf); y = Math.max(y, ramp * (x - (hw(z) - 8))); }
+      if (z > zr) y = LH; else if (z > zr - 1.5) { const t = (z - (zr - 1.5)) / 1.5; y = Math.max(y, y + (LH - y) * t * t * (3 - 2 * t)); }
+      return y; };
+    { const X0 = -25, X1 = 25, NX = 100, NZ = 132, pos = [], idx = []; for (let j = 0; j <= NZ; j++) for (let i = 0; i <= NX; i++) { const x = X0 + (X1 - X0) * i / NX, z = Z0 - L * j / NZ, y = floorY(x, z); pos.push(x, y + (y > -.05 ? .012 * Math.sin(x * 3.1) * Math.sin(z * 2.7) : 0), z); }
+      for (let j = 0; j < NZ; j++) for (let i = 0; i < NX; i++) { const a = j * (NX + 1) + i, b = a + 1, c = a + NX + 1, d = c + 1; idx.push(a, b, c, b, d, c); }
+      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); put(g, 'bed', 0, 0, 0, 0, 0, 0, .3);
+      const pos2 = []; for (let j = 0; j < NZ; j++) for (let i = 0; i < NX; i++) { const q = [[i, j], [i + 1, j], [i, j + 1], [i + 1, j], [i + 1, j + 1], [i, j + 1]].map(([a, b]) => b * (NX + 1) + a);
+        if (q.every(k => pos[k * 3 + 1] > LY + .1)) for (const k of q) pos2.push(pos[k * 3], pos[k * 3 + 1] + .006, pos[k * 3 + 2]); }
+      const g2 = new THREE.BufferGeometry(); g2.setAttribute('position', new THREE.Float32BufferAttribute(pos2, 3)); g2.computeVertexNormals(); put(g2, 'skin', 0, 0, 0, 0, 0, 0, .35); }
+    put(new THREE.PlaneGeometry(52, L).rotateX(-Math.PI / 2), 'lake', 0, LY, Z0 - L / 2, 0, 0, 0, .1);
+    { const H2 = 13, g = new THREE.CylinderGeometry(SR, SR + 1.8, H2, 24, 8, true), P = g.attributes.position; for (let i = 0; i < P.count; i++) { const [dx, , dz] = F(P.getX(i) + SX, P.getY(i) + ROOFS + 6, P.getZ(i) + SZ); P.setX(i, P.getX(i) + dx * .3); P.setZ(i, P.getZ(i) + dz * .3); }
+      g.computeVertexNormals(); put(g, 'limeWet', SX, ROOFS - .2 + H2 / 2, SZ, 0, 0, 0, .4); }
+    const shaftTop = ROOFS - .2 + 13;
+    { const m = new THREE.Mesh(new THREE.CircleGeometry(SR + .2, 20).rotateX(Math.PI / 2), M.sky); m.position.set(SX, shaftTop - .3, SZ); m.name = 'sky'; m.userData.daylight = true; B.set('_sky', m); }
+    const ZB = Z1 + 23, path = []; for (let i = 0; i <= 11; i++) { const z = -i * 2; path.push([+SPX(z).toFixed(3), z]); }
+    path.push([0, Z0 - 3], [hw(Z0 - 5) - 4.6, Z0 - 5]); for (let z = Z0 - 8; z > ZB - .1; z -= 4) path.push([+(hw(z) - (z > Z0 - 30 ? 4.6 : 5.5)).toFixed(3), z]);
+    path.push([hw(ZB) - 5.5, ZB], [-9, ZB], [-9.5, SH0 + 1.5]);
+    const nearPath = (x, z) => { let m = 99; for (let s = 0; s + 1 < path.length; s++) { const [x0, z0] = path[s], [x1, z1] = path[s + 1], dx = x1 - x0, dz = z1 - z0, t = Math.max(0, Math.min(1, ((x - x0) * dx + (z - z0) * dz) / (dx * dx + dz * dz || 1))); m = Math.min(m, Math.hypot(x - x0 - dx * t, z - z0 - dz * t)); } return m; };
+    const BX0 = hw(ZB) - 11 + .6, BX1 = -6.6, deck = x => { const t = (BX0 - x) / (BX0 - BX1); return t < 0 || t > 1 ? -.3 : .03 + .77 * Math.sin(Math.PI * t); }, under = x => { const t = Math.min(1, Math.max(0, (BX0 - x) / (BX0 - BX1))); return LY - .9 + (.15 - LY + .9) * Math.sin(Math.PI * t) ** .6; };
+    put(caveLoft(40, 20, (i, j) => { const x = BX0 + 1.6 - i / 40 * (BX0 - BX1 + 3.2), th = j / 20 * Math.PI * 2, c = Math.cos(th), sn = Math.sin(th), tp = deck(Math.min(BX0, Math.max(BX1, x))) - (x > BX0 || x < BX1 ? .5 * Math.min(1.6, Math.abs(x > BX0 ? x - BX0 : BX1 - x)) : 0), bt = under(x), mid = (tp + bt) / 2, hh = (tp - bt) / 2;
+      const zz = 1.45 * Math.sign(c) * Math.abs(c) ** .45, yy = mid + hh * Math.sign(sn) * Math.abs(sn) ** .3, [fx, fy, fz] = F(x, yy, ZB + zz), side = 1 - Math.abs(sn) ** 4; return [x + fx * .4, yy + fy * .5 * side, ZB + zz + fz * side]; }, false), 'lime', 0, 0, 0, 0, 0, 0, .35);
+    const walkY = (x, z) => { const y = floorY(x, z); return Math.abs(z - ZB) < 1.2 && x < BX0 + .2 && x > BX1 - .2 ? Math.max(y, deck(x)) : y; };
+    const falls = { x: SX + .4, z: SZ, top: ROOFS + 1, foot: LY };
+    for (let k = 0; k < 5; k++) { const w = 1.6 + r() * .9, g = new THREE.PlaneGeometry(w, falls.top - LY, 2, 24), P = g.attributes.position; for (let i = 0; i < P.count; i++) { const v = (P.getY(i) + (falls.top - LY) / 2) / (falls.top - LY); P.setZ(i, .25 * Math.sin(P.getY(i) * .7 + k * 2) + .6 * (1 - v) ** 2); P.setX(i, P.getX(i) * (1 + .5 * (1 - v))); }
+      g.computeVertexNormals(); put(g, 'fall', falls.x + (k - 2) * .5, (falls.top + LY) / 2, falls.z + (k - 2) * .3, 0, k * .63, 0, .3); }
+    for (let k = 0; k < 14; k++) { const a = k / 14 * Math.PI * 2, g = new THREE.SphereGeometry(.45 + r() * .3, 8, 5); g.scale(1.4, .25, 1.4); put(g, 'foam', falls.x + Math.cos(a) * 1.3, LY + .03, falls.z + Math.sin(a) * 1.3); }
+    for (let k = 0; k < 9; k++) { const a = r() * Math.PI * 2, d = r() * 2.6, s = 1.6 + r() * 2.2, g = new THREE.SphereGeometry(s, 10, 6); g.scale(1, .55, 1); put(g, 'mist', falls.x + Math.cos(a) * d, LY + .4 + r() * 2.4, falls.z + Math.sin(a) * d, 0, 0, 0, .1); }
+    const columns = [[-8, Z0 - 22, 1.6], [-11, Z0 - 34, 2.2], [hw(Z0 - 34) - 1.6, Z0 - 34, 1.2], [hw(Z0 - 48) - 1.8, Z0 - 48, 1.4], [-15, SH1 - 3, 1.3]];
+    for (const [x, z, rad] of columns) { const fy = floorY(x, z) - .6, ry = roofY(x, z) + .8, h = ry - fy, pts = []; for (let k = 0; k <= 16; k++) { const t = k / 16, waist = .45 + .55 * (Math.abs(t - .55) / .55) ** 1.6; pts.push(new THREE.Vector2(rad * waist * (1 + .14 * Math.sin(t * 23 + x)) * (1 + 1.4 * Math.max(0, .12 - t) + 1.2 * Math.max(0, t - .9)), t * h)); }
+      const g = new THREE.LatheGeometry(pts, 24), P = g.attributes.position; for (let i = 0; i < P.count; i++) { const [dx, , dz] = F(P.getX(i) + x, P.getY(i) + fy, P.getZ(i) + z); const a = Math.atan2(P.getZ(i), P.getX(i)), fl = 1 + .1 * Math.sin(a * 7 + P.getY(i) * .4) + .05 * Math.sin(a * 13 - P.getY(i) * .9); P.setX(i, P.getX(i) * fl + dx * .7); P.setZ(i, P.getZ(i) * fl + dz * .7); } g.computeVertexNormals(); put(g, 'drip', x, fy, z, 0, 0, 0, .35); }
+    const clearOf = (x, z, m) => nearPath(x, z) > m && columns.every(([cx, cz, cr]) => Math.hypot(x - cx, z - cz) > cr + m) && !(Math.abs(z - ZB) < 1.6 + m && x < BX0 + m && x > BX1 - m);
+    const flowers = [], mites = []; for (let c = 0; c < 34; c++) { const cx = (r() * 2 - 1) * 18, cz = Z0 - 4 - r() * (L - 8); for (let k = 0; k < 9; k++) { const x = cx + (r() - .5) * 6, z = cz + (r() - .5) * 6; if (Math.abs(x) > hw(z) + 3 || inShaft(x, z, -1)) continue;
+        const ry = roofY(x, z), Lg = .5 + r() ** 2 * 3.2, fy = walkY(x, z); if (ry - .3 - Lg < fy + 3) continue; const g = caveGrowth(r, Lg + .6, .1 + Lg * .09); g.rotateX(Math.PI); put(g, 'drip', x, ry + .6, z);
+        if (fy > LY + .1 && r() < .38 && clearOf(x, z, 1.1)) mites.push([x, z, fy]); } }
+    for (let k = 0; k < 70; k++) { const x = (r() * 2 - 1) * 16, z = Z0 - 9 - r() * (L - 12), fy = floorY(x, z); if (fy < LY + .1 || Math.abs(x) > hw(z) - 1 || !clearOf(x, z, 1.1)) continue; mites.push([x, z, fy]); if (mites.length > 60) break; }
+    const OB = []; for (const [x, z, fy] of mites) { const Lg = .3 + r() ** 1.5 * 1.8; OB.push([x, z, .5 + Lg * .14, fy + Lg]); const g = caveGrowth(r, Lg + .1, .16 + Lg * .14, 9, 9, true); put(g, 'drip', x, fy - .1, z); }
+    for (let k = 0; k < 16; k++) { const s = .12 + r() * .76, side = k % 2 ? 1 : -1, th = side > 0 ? .5 + r() * .45 : Math.PI - .5 - r() * .45, p = ringAt(s, th), Lc = 3 + r() * 5, Wc = 2 + r() * 3;
+      const g = new THREE.PlaneGeometry(Wc, Lc, 28, 10), P = g.attributes.position; for (let i = 0; i < P.count; i++) { const u = P.getX(i), v = P.getY(i), q = Math.max(0, 1 - Math.abs(2 * u / Wc)), hem = Lc * (.15 + .85 * q ** 1.4) + .3 * Math.sin(u * 5.1 + k) * q, top = Lc / 2, yy = top - (top - v) / Lc * hem;
+        P.setY(i, yy); P.setZ(i, (.3 * Math.sin(u * 4.2 + k) + .1 * Math.sin(u * 11 + k)) * (.4 + (top - yy) / Lc)); }
+      g.computeVertexNormals(); const ix = -Math.sign(p[0]) * .25; put(g, 'drip', p[0] + ix, p[1] - Lc / 2 + .3, p[2], 0, Math.PI / 2, 0, .4); }
+    for (let k = 0, n = 0; k < 120 && n < 22; k++) { const k0 = k * 1.7, x = (r() * 2 - 1) * 17, z = Z0 - 8 - r() * (L - 14), s = .8 + r() ** 2 * 2.6; if (Math.abs(x) > hw(z) - s || !clearOf(x, z, s + 1) || inShaft(x, z, -3)) continue; n++;
+      const g = new THREE.IcosahedronGeometry(s * .6, 2); g.deleteAttribute('normal'); g.deleteAttribute('uv'); const P = g.attributes.position, sx = 1 + r() * .7, sy = .55 + r() * .4;
+      for (let i = 0; i < P.count; i++) { const vx = P.getX(i), vy = P.getY(i), vz = P.getZ(i), [dx, dy, dz] = F(vx * 3 + x, vy * 3, vz * 3 + z), q = Math.sin(vx * 4 + vz * 3 + k0), f = 1 + .18 * Math.sign(q) * Math.min(1, Math.abs(q) * 3); P.setXYZ(i, vx * sx * f + dx * .5, vy * sy * f + dy * .5, vz * f + dz * .5); }
+      g.computeVertexNormals(); const fy = floorY(x, z); OB.push([x, z, s * .7, fy + s * .15 + s * .6 * sy]); put(g, 'lime', x, fy + s * .15, z, r() * .3, r() * 6, r() * .3, .35); }
+    let pools = 0; const GX = 50 / 100, GZ = L / 132, flat = (x, z, y) => { const i = Math.floor((x + 25) / GX), j = Math.floor((Z0 - z) / GZ); return [[0, 0], [1, 0], [0, 1], [1, 1]].every(([a, b]) => Math.abs(floorY(-25 + (i + a) * GX, Z0 - (j + b) * GZ) - y) < .01); };
+    for (let k = 0; k < 260 && pools < 30; k++) { const z = Z0 - 10 - r() * (L - 16), onShelf = r() < .25, tk = Math.floor(r() * 3) + .5, zz = onShelf ? SH0 + r() * (SH1 - SH0) : z, x = onShelf ? -6 + wob(zz) + 1.4 * tk : hw(z) - 11 - wob(z) - 1.4 * tk, fy = floorY(x, zz), rad = .3 + r() * .3;
+      if (fy > -.05 || fy < -.8 || !clearOf(x, zz, rad + .4)) continue; pools++; const g = new THREE.TorusGeometry(rad, .07, 5, 18); g.rotateX(Math.PI / 2); g.scale(1, 1.8, 1); put(g, 'drip', x, fy + .06, zz);
+      put(new THREE.CircleGeometry(rad, 18).rotateX(-Math.PI / 2), 'pool', x, fy + .1, zz, 0, 0, 0, .3);
+      if (flowersOn && r() < .55) for (let f = 0; f < 7; f++) { const a = r() * Math.PI * 2, fx = x + Math.cos(a) * (rad + .15 + r() * .3), fz = zz + Math.sin(a) * (rad + .15 + r() * .3), h = .15 + r() * .25, gy = floorY(fx, fz); if (!flat(fx, fz, fy) || nearPath(fx, fz) < .5 || OB.some(([ox, oz, or]) => Math.hypot(fx - ox, fz - oz) < or)) continue;
+        put(new THREE.CylinderGeometry(.008, .01, h, 4), 'stalk', fx, gy + h / 2, fz); put(new THREE.SphereGeometry(.045, 7, 5).scale(1, .6, 1), 'petal', fx, gy + h + .02, fz); flowers.push([+fx.toFixed(2), +(gy + h + .02).toFixed(2), +fz.toFixed(2), +gy.toFixed(3)]); } }
+    const group = new THREE.Group(); group.name = 'cave'; let tris = 0;
+    for (const [k, gs] of B) { if (k[0] === '_') { group.add(gs); continue; } const g = mergeGeometries(gs); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = false; m.receiveShadow = false; group.add(m); tris += g.attributes.position.count / 3; }
+    // the walk as half-metre cells: the passage's floor (within 1.6 m of its spine, where its tube is 2 m and more either side), the hall's
+    // floor wherever a body 1 m over it is 0.7 m inside the hall's ring, the bridge's deck; null where it is rock, water deeper than the
+    // terraces' last step, a column, a stalagmite or a fallen block. Rows of equal cells merged, then runs of equal rows.
+    const G = .5, NXc = 100, NZc = Math.ceil(-Z1 / G), X0c = -25, cellAt = (x, z) => {
+      if (z > Z0 - 6 && z < .2 && Math.abs(x - SPX(z)) < 1.6) return Math.round(LH / .05) * .05;
+      if (z > Z0) return null; const y = walkY(x, z); if (y < LY + .1) return null; if (!inHall(x, y + 1, z, .7)) return null;
+      if (columns.some(([cx, cz, cr]) => Math.hypot(x - cx, z - cz) < cr * .8) || OB.some(([ox, oz, or]) => Math.hypot(x - ox, z - oz) < or * .6)) return null;
+      return Math.round(y / .05) * .05; };
+    const cells = [], open = new Map();
+    for (let j = 0; j < NZc; j++) { const z = -(j + .5) * G, runs = []; let i0 = 0, v0 = cellAt(X0c + G / 2, z);
+      for (let i = 1; i <= NXc; i++) { const v = i < NXc ? cellAt(X0c + (i + .5) * G, z) : NaN; if (v !== v0) { runs.push([i0, i, v0]); i0 = i; v0 = v; } }
+      const next = new Map(); for (const [a, b, v] of runs) { const k = a + ',' + b + ',' + v, c = open.get(k); if (c) { c.z0 = -(j + 1) * G; next.set(k, c); } else { const n = { x0: X0c + a * G, x1: X0c + b * G, z0: -(j + 1) * G, z1: -j * G, y: v }; cells.push(n); next.set(k, n); } }
+      open.clear(); for (const [k, c] of next) open.set(k, c); }
+    for (const c of cells) if (c.y != null) c.y = +c.y.toFixed(2);
+    const low = Math.min(...cells.filter(c => c.y != null).map(c => c.y)), zm = Z0 - L / 2;
+    return { group, sky: M.sky, tris: Math.round(tris), draws: group.children.length, path, walkY, ledge: LH, lake: { x0: -hw(zm), x1: hw(zm) - 11 - 4.2, z0: Z0 - 9, z1: SH1, y: LY, deep: DEEP },
+      falls, shaft: { x: SX, z: SZ, r: SR, top: shaftTop }, mouth: { x: SPX(0), z: 0, y: LH, w: 2 * PRX, h: PUP + 1.6 }, flowers, chamber: { x0: -RX(.5), x1: RX(.5), z0: Z0, z1: Z1, h: CY + RY(.5) },
+      bridge: { x0: BX0, x1: BX1, z: ZB, deck: .8 }, columns, pools, bounds: { x0: X0c, x1: -X0c, z0: -NZc * G, z1: 0 }, low, cells, arrive: [SPX(-1.6), LH, -1.6, 0] };
+  }
+  // the cave's mouth in the open world (Session 1768): an outcrop of grey limestone half sunk in the slope, 15 m across and 11 deep, its
+  // face toward +z, and in it the mouth, 4.4 m wide and 3.6 m high, a short throat of rock 6 m into the dark. Its own frame: the throat's
+  // floor at the origin (the ground before the mouth), +z out. The world's ground cannot be holed, so the throat has a floor of its own,
+  // and a wall of black at its back is the dark beyond. -> { group, tris, draws, sol ([{x, z, w, d, ry, h}]), mouth { w, h, z }, r }
+  let CMO = null;
+  function gatelandsCaveMouth(o = {}) {
+    const key = String(o.key || 'cave'), r = stream('cavemouth:' + key), F = cairnField(stream('cavemouth:' + key + ':rock'), .45), B = new Map();
+    if (!CMO) CMO = { lime: mat('rock', { ns: 1.5, color: 0xb4b0a4, rough: .92 }), throat: mat('rock', { ns: 1.4, color: 0x6a685f, rough: .95 }), dark: new THREE.MeshBasicMaterial({ color: 0x030304 }), moss: mat('turfMoss', { ns: .8, color: 0x8aa868, rough: 1 }) };
+    const M = CMO, put = (geo, k) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal'].includes(a)) g.deleteAttribute(a); if (!g.attributes.normal) g.computeVertexNormals(); worldUV(g, .3); if (!B.has(k)) B.set(k, []); B.get(k).push(g); };
+    const MW = 2.2, MH = 3.6, TD = 6, RXo = 7.5, RYo = 6.5, RZo = 6, CZ = -4.2, CYo = .6;
+    const inMouth = (x, y, z, m = 0) => z > -TD - .5 && y > -.6 && Math.hypot(x / (MW + m), Math.max(0, y - MH + MW) / (MW + m)) < 1 && y < MH + m;
+    // the outcrop: a sphere lofted and moved by the rock's field, a bluff above the mouth, its faces in the throat dropped
+    const blob = (i, j, NS, NA) => { const v = i / NS * Math.PI, u = j / NA * Math.PI * 2, sx = Math.sin(v) * Math.cos(u), sy = Math.cos(v), sz = Math.sin(v) * Math.sin(u);
+      let x = sx * RXo, y = CYo + sy * RYo, z = CZ + sz * RZo; if (z > CZ) z = CZ + (z - CZ) * (1 - .25 * Math.max(0, sy)); /* the face leans back a little toward its top */
+      const n = 1 + .12 * Math.sin(u * 3 + v * 2 + 1) + .07 * Math.sin(u * 7 - v * 5), [fx, fy, fz] = F(x * 1.6, y * 1.6, z * 1.6); return [x * n + fx * 1.3, y * (y > 0 ? n : 1) + fy, CZ + (z - CZ) * n + fz * 1.3]; };
+    put(caveLoft(40, 64, (i, j) => blob(i, j, 40, 64), false, c => !inMouth(c.x, c.y, c.z, .15)), 'lime');
+    // the throat: a tube of the mouth's arch running in, its rim out past the outcrop's face, its far end closed by the dark
+    put(caveLoft(14, 28, (i, j) => { const z = 1.2 - i / 14 * (TD + 1.2), a = j / 28 * Math.PI * 2, c = Math.cos(a), s = Math.sin(a), w = MW * (1 - .12 * i / 14), x = s >= 0 ? w * c : w * Math.sign(c) * Math.abs(c) ** .12, y = s >= 0 ? MH - MW + w * s : (MH - MW) * (1 + s) + .3 * s, [fx, fy, fz] = F(x * 2, y * 2, z * 2);
+      return [x + fx * .5, y + fy * .3, z + (i ? fz * .4 : 0)]; }, true), 'throat');
+    { const g = new THREE.PlaneGeometry(2 * MW + .4, TD + 1.2, 6, 10).rotateX(-Math.PI / 2), P = g.attributes.position; for (let i = 0; i < P.count; i++) P.setY(i, .02 + .03 * Math.sin(P.getX(i) * 3.1) * Math.sin(P.getZ(i) * 2.3)); g.translate(0, 0, 1.2 - (TD + 1.2) / 2); put(g, 'throat'); }
+    { const g = new THREE.CircleGeometry(MW * 1.2, 20); g.translate(0, MH - MW, -TD + .3); put(g, 'dark'); }
+    // moss over the bluff's top, where the turf has crept onto it
+    for (let k = 0; k < 9; k++) { const a = r() * Math.PI * 2, d = r() * .6, s = 1.2 + r() * 1.4, g = new THREE.SphereGeometry(s, 10, 5, 0, Math.PI * 2, 0, Math.PI / 2); g.scale(1.3, .18, 1); const [x, y, z] = blob(4 + Math.floor(r() * 6), Math.floor(a / (Math.PI * 2) * 64), 40, 64); g.translate(x * (1 - d * .2), y - .15, z); put(g, 'moss'); }
+    const group = new THREE.Group(); group.name = 'cavemouth'; let tris = 0;
+    for (const [k, gs] of B) { const g = mergeGeometries(gs); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = k !== 'dark'; m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
+    // solids: small squares (the world's static solids are read unturned), round the outcrop's foot every 1.2 m and along the throat's
+    // walls and its back, 3 m in from the face; the throat between them open
+    const sol = [], sq = (x, z) => sol.push({ x: +x.toFixed(2), z: +z.toFixed(2), w: 1.3, d: 1.3, ry: 0, h: RYo + CYo });
+    for (let a = 0; a < Math.PI * 2; a += 1.2 / ((RXo + RZo) / 2)) { const x = Math.cos(a) * (RXo - .4), z = CZ + Math.sin(a) * (RZo - .4); if (Math.abs(x) < MW + 1.2 && z > -3) continue; sq(x, z); }
+    for (let z = .8; z > -3.5; z -= 1.1) for (const e of [-1, 1]) sq(e * (MW + .75), z);
+    for (let x = -MW + .5; x <= MW - .4; x += 1.1) sq(x, -3.75);
+    return { group, tris: Math.round(tris), draws: group.children.length, sol, mouth: { w: 2 * MW, h: MH, z: 0, back: -TD }, r: RXo + 1 };
+  }
+  return { stream, hashKey, mergeByMaterial, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, gatePiece }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, trunk: felledTrunk }, ships: { sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
     mk: { hall: markHall, lot: markLot, alehall: markAlehall, longhouse: markLonghouse, mats: markMats, yard: markYard, ring: markRing },
     au: { house: aurenneHouse, lot: aurenneLot, courtyard: aurenneCourtyard, church: aurenneChurch, churchBox: aurenneChurchBox, churchHall: aurenneChurchHall, courtyardHouse: aurenneCourtyardHouse, tavern: aurenneTavern, mats: aurMats, roomMats: homeMats, AUR },
     gl: { PLANS, FIN, PS, PAINTS, guildHall: guildHallRoom, TOWN: GL_TOWN, building, church, keep, farmstead, coachInn, coachInnPlan, coachRoom, townhouse: townhouseRoom, farmhouse: farmhouseRoom, byre: byreRoom, barn: barnRoom, row: shrineRow, ROW_GODS, inn: gatelandsInn, cottage: gatelandsCottage, churchLen: n => +((n === 2 ? 2 : 3) * 4.8 + 1.6 + 5.6 - .5 + 7.2 - .9 - .02).toFixed(2), lot: gatelandsLot, mats: glMats, BAYS, bayPlan, bayWidth, baysFor } };

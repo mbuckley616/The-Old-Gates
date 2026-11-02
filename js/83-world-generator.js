@@ -2472,6 +2472,50 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     if(t.down){const h=t.S.towerHouse.cellar;h._via=t.down;goToInterior(h);return true;}
     const h=currentHouse;if(t.up==='pit'){const S=SETTLE.get(h.siteId),P=S&&S.towerHouse&&S.towerHouse.pit;if(P)window._pendingWorldPos={x:P.out.x,z:P.out.z,yaw:P.out.yaw,jumpY:worldH(P.out.x,P.out.z)};}
     exitInterior();return true;}
+  // S1768 (card F8, Michael's A on #1026) — a limestone cave (PKIT.places.cave, places.js's gatelandsCave, #313 A) is a place of its own
+  // behind its mouth on the hillside (limeCave, 82). The cave is moved into a room's frame: x from its west rock, z from its far end, the
+  // floor 0.25 m under the lowest step of the shore's terraces. Its walk is the place's own grid of half-metre cells: each run you can
+  // stand on is a foothold at its height and a solid up to it (so a rise of more than a step is a wall from below), each run of rock or
+  // deep water a solid to 60 m. Nothing swims in a room: the lake is a wall at the water's edge, and the natural bridge is the way over it
+  // to the far shelf. The light is the day's alone: in at the mouth along the passage, down the shaft onto the falls' pool, and the
+  // flowers' own glow; a low ambient keeps the rock's shape. No one is here.
+  function kitLimeCave(house){return !!(house&&house.type==='limecave'&&typeof PKIT!=='undefined'&&PKIT.places&&PKIT.places.cave);}
+  function buildKitLimeCave(house){
+    const T=PKIT.places.cave({key:house.siteId}),Bd=T.bounds,FY=+(T.low-.25).toFixed(2),W=Bd.x1-Bd.x0,D=Bd.z1-Bd.z0;
+    const rx=x=>x-Bd.x0,rz=z=>z-Bd.z0,ry=y=>y-FY;
+    house._counterFront=null;house.intW=W;house.intD=D;house._roomH=+(T.chamber.h-FY+6).toFixed(2);house._exitD=.01;house._exitW=.01;house._exitX=-99;house._exitZ=-99;house._exitText=true;house._limeCave=T;
+    const A=T.arrive;house._arriveX=+rx(A[0]).toFixed(3);house._arriveZ=+rz(A[2]).toFixed(3);house._arriveYaw=A[3];
+    if(!window._pendingPos)window._pendingPos={x:house._arriveX,z:house._arriveZ,yaw:A[3],jumpY:ry(A[1])}; /* goToInterior stands you at the floor; the passage is 5.5 m over it */
+    const sc_=new THREE.Scene();interiorScene=sc_;landRoomPost(sc_);sc_.background=new THREE.Color(0x05070a);sc_.fog=new THREE.Fog(0x05070a,24,96);
+    intNPCMesh=null;intNPCPos={x:-99,z:-99};intBedPos=null;intStashPos=null;
+    const SOL=[];INT_SOL=SOL;FOOTHOLDS=[];INT_BEDS=[];INT_DOORS=[];INT_DOORS.house=house.id;INT_CHAIR=null;INT_NPCS=[];HATCH.active=false;HATCH.roof=false;INT_LOOT=null;INT_BOX=null;INT_SHELF=null;
+    T.group.position.set(-Bd.x0,-FY,-Bd.z0);sc_.add(T.group);
+    for(const c of T.cells){const q={x0:rx(c.x0),x1:rx(c.x1),z0:rz(c.z0),z1:rz(c.z1)};
+      if(c.y==null){SOL.push({...q,y0:-5,y1:60});continue;}
+      const y=+ry(c.y).toFixed(2);SOL.push({...q,y0:-5,y1:y});FOOTHOLDS.push({...q,y});}
+    const hr=typeof gameHour==='function'?gameHour():12,dayK=hr>=7&&hr<18?1:hr>=5&&hr<20?.45:.08;
+    T.sky.color.setHex(hr>=7&&hr<18?0xc4d0dc:hr>=5&&hr<20?0x8a7a7a:0x0e1420);
+    sc_.add(new THREE.AmbientLight(0xbcc6d0,.32));
+    {const M=T.mouth,l=new THREE.PointLight(0xdfe6f0,3.2*dayK,26,1);l.position.set(rx(M.x),ry(M.y)+2.2,rz(M.z)-1);l.userData.daylight=true;sc_.add(l);}
+    {const S=T.shaft,s=new THREE.SpotLight(0xd8e2ee,9*dayK,60,.5,.6,1);s.position.set(rx(S.x),ry(S.top),rz(S.z));s.target.position.set(rx(T.falls.x),ry(T.falls.foot),rz(T.falls.z));s.userData.daylight=true;sc_.add(s,s.target);
+      const p=new THREE.PointLight(0xb8d4e0,2.2*dayK+.2,30,1);p.position.set(rx(T.falls.x),ry(T.falls.foot)+3,rz(T.falls.z)+2);sc_.add(p);}
+    return sc_;
+  }
+  // the cave's one way, from either side: in the world, stood in the mouth's throat; inside, within the passage's first 3 m from its mouth
+  function limeCaveAt(){
+    if(isInterior()){const h=currentHouse;if(!h||h.type!=='limecave'||!h._limeCave)return null;const T=h._limeCave,Bd=T.bounds,x=px+Bd.x0,z=pz+Bd.z0;
+      return z>T.mouth.z-3&&Math.abs(x-T.mouth.x)<3?{up:true}:null;}
+    if(activeZoneId!=='world'||typeof CELLS==='undefined')return null;const [ci,cj]=cellOf(px,pz);
+    for(let j=cj-1;j<=cj+1;j++)for(let i=ci-1;i<=ci+1;i++){const c=CELLS.get(cellKey(i,j)),C=c&&c._cave;if(!C||!C.house||Math.abs(px-C.x)>12||Math.abs(pz-C.z)>12)continue;
+      const co=Math.cos(C.ry),s_=Math.sin(C.ry),dx=px-C.x,dz=pz-C.z,u=dx*co-dz*s_,v=dx*s_+dz*co;
+      if(Math.abs(u)<C.mouth.w/2+.2&&v<1.8&&v>-3.4&&Math.abs(jumpY-C.y)<1.5)return {down:true,C};}
+    return null;}
+  function limeCavePrompt(){const t=limeCaveAt();return !t?null:t.up?"Press 'E' to go out into the day":"Press 'E' to go into the cave";}
+  function limeCaveUse(){const t=limeCaveAt();if(!t)return false;
+    if(t.down){goToInterior(t.C.house);return true;}
+    const h=currentHouse,[ci,cj]=h&&h.siteId?h.siteId.replace('cave_','').split('_').map(Number):[NaN,NaN],c=CELLS.get(cellKey(ci,cj)),C=c&&c._cave;
+    if(C&&C.out)window._pendingWorldPos={x:C.out.x,z:C.out.z,yaw:C.out.yaw,jumpY:worldH(C.out.x,C.out.z)};
+    exitInterior();return true;}
   // S1288 (card F9, Michael's A on #321 and #588) — on the new look a Markish inn standing as the kit's hall (lot.kit.alehall, S1288's
   // planning) is the Mark's alehall inside (PKIT.mk.alehall, rooms.js's Session 894, as drawn: 10 by 18 m): the long hearth under the
   // louver, the long tables, the counter across the back with the kegs behind it, and the furred wall benches the guests sleep on. It is
@@ -2860,6 +2904,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     if(kitLonghouse(house))return buildKitLonghouse(house); /* S1453 — a Markish home: the longhouse inside, at its true size */
     if(kitChurchHall(house))return buildKitChurchHall(house); /* S1326 — the Church of the Weaver inside, at its true size */
     if(kitGuildHall(house))return buildKitGuildHall(house); /* S1703 — a town's guild hall inside, at its true size */
+    if(kitLimeCave(house))return buildKitLimeCave(house); /* S1768 — a limestone cave behind its mouth */
     if(kitTowerCellar(house))return buildKitTowerCellar(house); /* S1765 — a ruined tower house's cellar, souterrain and pit */
     const two=!!house.two;
     // S896 (F2a) — the room's true size in metres (07-scale.js; visual-foundation.md §1: a cottage room 4 to 6 across, an inn's hall
