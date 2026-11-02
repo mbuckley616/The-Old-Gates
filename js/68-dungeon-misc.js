@@ -383,14 +383,14 @@ function lpPicks(){return BAG.reduce((a,b)=>a+(b.name==='Lockpick'?(b.qty||1):0)
 function lpSpendPick(){const i=BAG.findIndex(b=>b.name==='Lockpick');if(i<0)return 0;const it=BAG[i];it.qty=(it.qty||1)-1;if(it.qty<=0)BAG.splice(i,1);if(typeof renderInv==='function')renderInv();return lpPicks();}
 function openLockpick(door){
   const d=lpDifficulty(door);
-  LP.door=door;LP.cur=0;LP.phase='idle';LP.pushed=0;LP.dwell=d.dwell;LP.fall=d.fall;LP.broke=0;
+  LP.door=door;LP.cur=0;LP.phase='idle';LP.pushed=0;LP.dwell0=d.dwell;LP.dwell=d.dwell*(lpStiff()?2:1);LP.fall=d.fall;LP.broke=0;
   LP.pins=Array.from({length:d.pins},()=>({set:false,y:0}));
   // S327 (Michael's A on #54) — a town lock is picked in a running world: the watch walks and the clock turns, you stand still
   LP.live=!!(door&&door.live);LP.hp=PHP;if(LP.live){const KK=window._K;if(KK)for(const k in KK)KK[k]=false;blocking=false;}
   lockOpen=true;_releasePointerLockForMenu();
   const el=document.getElementById('lockpick');el.style.display='flex';
   document.getElementById('lpk-title').textContent=(door&&door.lockTitle)?(d.pins>=4?door.lockTitle+' — a good lock':door.lockTitle):(d.pins>=4?'A good lock':'A locked door');
-  lpRender();lpStatus('Push a pin. Press again when it holds.');
+  lpRender();lpStatus('Push a pin. Press again when it holds.'+(lpStiff()?' The works are stiff with frost.':''));
   if(!LP.raf)LP.raf=requestAnimationFrame(lpTick);
 }
 function closeLockpick(){
@@ -446,6 +446,7 @@ function lpPress(){
   const p=LP.pins[LP.cur];if(!p||p.set){lpNextPin();return;}
   const ph=lpPhase();
   if(ph==='idle'){ // push it up
+    LP.dwell=(LP.dwell0||LP.dwell)*(lpStiff()?2:1); /* S1718 — read at each push: the frost may wear off mid-lock */
     LP.pushed=performance.now();LP.phase='rise';p.y=0;try{sfxTone(1500+Math.random()*400,1900,.03,.06,'square');}catch(e){}
     lpStatus('Now \u2014 let it go at the top.');lpRender();return;
   }
@@ -459,7 +460,12 @@ function lpPress(){
 }
 function lpNextPin(){const n=LP.pins.length;for(let k=1;k<=n;k++){const i=(LP.cur+k)%n;if(!LP.pins[i].set){LP.cur=i;LP.phase='idle';LP.pushed=0;LP.pins[i].y=0;lpRender();return;}}}
 function lpPickPin(dir){const n=LP.pins.length;for(let k=1;k<=n;k++){const i=((LP.cur+dir*k)%n+n)%n;if(!LP.pins[i].set){LP.cur=i;LP.phase='idle';LP.pushed=0;LP.pins[i].y=0;lpRender();return;}}}
+// S1718 — a lock Sioc's touch stiffened (#976 A, 64-spells.js's lockStiff): for its 30 s of play the pin holds twice as long, and a mistimed
+// press drops the pin and spares the pick (none spent, no snap heard, the pins already set stay)
+function lpStiff(){return typeof lockStiff==='function'&&!!LP.door&&lockStiff(LP.door);}
 function lpBreak(why){
+  if(lpStiff()){const p=LP.pins[LP.cur];if(p)p.y=0;LP.phase='idle';LP.pushed=0;try{sfxTone(900,700,.05,.1,'triangle');}catch(e){}
+    lpRender();lpStatus(why+' The pin drops; the stiff works spare the pick.','#a8c8e8');return;}
   const p=LP.pins[LP.cur];if(p)p.y=0;LP.phase='idle';LP.pushed=0;LP.broke++;
   const left=lpSpendPick();
   try{sfxTone(2600,1400,.06,.16,'square');}catch(e){}

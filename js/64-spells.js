@@ -1507,10 +1507,31 @@ const TOUCH_THING_SAY={brazier:'The brazier catches.',web:'The web burns away to
 // touchThing: the named action. The touch of `word` acts on the gate's thing t (lightBrazier, burnWeb, freezePool are the build's)
 function touchThing(word,t){const ok=t.kind==='brazier'?lightBrazier(t):t.kind==='web'?burnWeb(t):t.kind==='pool'?freezePool(t):t.kind==='brush'?fireBrush(t):false;
   if(ok){const sc=WORD_BY[word]&&WORD_BY[word].school;if(sc&&SKILL_DEF[sc])skillUse(sc,1,'touch');}return ok;}
+// S1718 — Sioc touched on a lock (#976, Michael's A: the works stiffen for 30 s). For 30 s by the play clock a touched lock holds each pin
+// at the top twice as long, and a mistimed press drops the pin without snapping the pick (68-dungeon-misc.js reads lockStiff). Still a pick,
+// still the lock game, still a crime in town by the same rule. The lock is the one E would pick: a dungeon's locked door or chest, a town
+// door locked now, a room's locked chest or strongbox; within the touch's 1.6 m of your edge and in its 60° cone, the nearest. Keyed as
+// lpDifficulty keys a lock (its seed, or its place and floor), so the lock you then open is the one you touched. One use of Uisce.
+const LOCK_STIFF_S=30,LOCK_STIFF={};
+function lockKeyOf(d){return String(d&&(d.seed!=null?d.seed:(d.x+'_'+d.z+'_'+(d.floor||0))));}
+function lockStiff(d){const t=d?LOCK_STIFF[lockKeyOf(d)]:null;return t!=null&&playClockS<t;}
+// stiffenLock: the named action. The lock d's works stiffen for LOCK_STIFF_S of play
+function stiffenLock(d){if(!d)return false;LOCK_STIFF[lockKeyOf(d)]=playClockS+LOCK_STIFF_S;if(SKILL_DEF.uisce)skillUse('uisce',1,'lock');return true;}
+function touchLock(){const C=[],reach=FORMS.touched.reach+HULL_YOU,c=Math.cos(FORMS.touched.cone/2*Math.PI/180);
+  if(activeZoneId==='dungeon'){for(const d of DOORS||[])if(d.floor===currentFloor&&d.locked&&!d.open)C.push({lock:d,x:d.x,z:d.z,r:.3});
+    for(const ch of CHESTS||[])if(ch.floor===currentFloor&&ch.locked)C.push({lock:ch,x:ch.x,z:ch.z,r:.4});}
+  else if(typeof isInterior==='function'&&isInterior()){if(typeof INT_BOX!=='undefined'&&INT_BOX&&Math.abs(jumpY-(INT_BOX.y||0))<=.6&&boxState()==='locked')C.push({lock:{seed:'box_'+INT_BOX.id},x:INT_BOX.x,z:INT_BOX.z,r:.3});}
+  else if(activeZoneId==='world'&&typeof WORLD!=='undefined'&&WORLD.doorLockNow){const H=(ZONES.world&&ZONES.world.houses)||[];
+    for(const h of H){if(h.byAim||Math.abs(h.doorX-px)>4||Math.abs(h.doorZ-pz)>4)continue;if(WORLD.doorLockNow(h)&&!WORLD.doorPicked(h))C.push({lock:{seed:'door_'+h.id},x:h.doorX,z:h.doorZ,r:0});}}
+  let best=null,bd=1e9;
+  for(const q of C){const dx=q.x-px,dz=q.z-pz,h=Math.hypot(dx,dz),d=Math.max(0,h-q.r);if(d>reach+1e-9)continue;
+    if(h>1e-3&&(-dx*Math.sin(yaw)-dz*Math.cos(yaw))/h<c-1e-9)continue;if(d<bd){bd=d;best=q;}}
+  return best;}
 function touchLand(T){const F=WORD_BY[T.word].forms.touched,e=touchTarget(),dun=lid&&lid.startsWith('dyn_');
   if(typeof sndSpell==='function')sndSpell(T.word,T.tier);
   if(T.word==='siul_uisce'){const f=touchFire();if(f){douseFire(f);showMsg('The fire hisses out.','#a8c8e8');return {hit:null,doused:true};}}
   if(TOUCH_THING[T.word]&&(!e||!F.dmg)){const t=touchGateThing(T.word);if(t&&touchThing(T.word,t)){showMsg(TOUCH_THING_SAY[t.kind],T.word==='sioc'?'#a8c8e8':'#e8b888');return {hit:null,thing:t.kind,id:t.id};}}
+  if(T.word==='sioc'){const L=touchLock();if(L&&stiffenLock(L.lock)){showMsg('Frost creeps into the lock\u2019s works.','#a8c8e8');return {hit:null,lock:lockKeyOf(L.lock)};}}
   if(!e){showMsg('Nothing within reach.','#a8a8d4');return {hit:null};}
   let dealt=0,info=null;
   if(F.dmg){info=applySpellDamage(e,T.sp,T.tier,{power:FORMS.touched.power});dealt=info.dmg;e.hp=Math.max(0,e.hp-dealt);

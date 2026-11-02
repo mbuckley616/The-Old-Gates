@@ -59,6 +59,21 @@ for (const [dx, dz] of [[0, 1.3], [0, -1.3], [1.3, 0], [-1.3, 0]]) {
 await page.evaluate(() => { try { closeLockpick(); } catch (e) {} try { closeLoot(); } catch (e) {} });
 check('E at a locked chest brings out the pick, not the loot', keyOut.lockOpen && !keyOut.loot && keyOut.still, keyOut);
 
+// S1718 — Sioc touched on a lock (#976 A): for 30 s of play the pin holds twice as long and a mistimed press drops it without a snapped pick
+const frost = await page.evaluate(() => { const ch = window._t, o = {}, T = { word: 'sioc', tier: 1, sp: null };
+  const sk = () => { const q = skillsReady().uisce; return q ? q.lv * 1e6 + q.p : 0; };
+  const at = d => { for (const [dx, dz] of [[0, 1], [0, -1], [1, 0], [-1, 0]]) { px = ch.x + dx * d; pz = ch.z + dz * d; if (!dBlk(px, pz)) break; } yaw = Math.atan2(-(ch.x - px), -(ch.z - pz)); };
+  BAG.push({ name: 'Lockpick', ico: '🗝', type: 'misc', qty: 3 });
+  at(3); o.far = touchLand(T).lock || null; o.stiffFar = lockStiff(ch);
+  const u0 = sk(); at(1.3); o.near = touchLand(T).lock || null; o.key = lockKeyOf(ch); o.stiff = lockStiff(ch); o.uisce = sk() > u0;
+  tryLockpick(ch); o.dwell0 = LP.dwell0; o.dwell = LP.dwell; o.say = document.getElementById('lp-status').textContent;
+  const p0 = lpPicks(); lpPress(); LP.pushed = performance.now() - 5; lpPress(); o.picksStiff = p0 - lpPicks(); o.sayDrop = document.getElementById('lp-status').textContent; o.open = lockOpen;
+  playClockS += 31; o.after = lockStiff(ch); lpPress(); o.dwellAfter = LP.dwell; LP.pushed = performance.now() - 5; lpPress(); o.picksAfter = p0 - lpPicks();
+  closeLockpick(); return o; });
+check(`Sioc touched stiffens a chest's lock from 1.3 m (${frost.near}), not from 3 m; one use of Uisce`, frost.near === frost.key && frost.stiff && frost.far === null && !frost.stiffFar && frost.uisce, frost);
+check(`a stiffened lock holds each pin ${frost.dwell} ms (twice ${frost.dwell0}), and a press too soon drops the pin with no pick spent`, frost.dwell === frost.dwell0 * 2 && frost.dwell >= 300 && frost.dwell <= 600 && /frost/.test(frost.say) && frost.picksStiff === 0 && /spare/.test(frost.sayDrop) && frost.open, frost);
+check(`30 s of play later the works are the lock's own again (${frost.dwellAfter} ms) and a press too soon snaps a pick`, !frost.after && frost.dwellAfter === frost.dwell0 && frost.picksAfter === 1, frost);
+
 // treasure chests carry one more pin than an ordinary chest in the same place
 const bonus = await page.evaluate(() => { const a = { x: 5, z: 9, floor: 1 }, b = { x: 5, z: 9, floor: 1, lockBonus: 1 };
   return { plain: lpDifficulty(a).pins, treasure: lpDifficulty(b).pins }; });
