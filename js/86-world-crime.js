@@ -1038,6 +1038,17 @@
   // the skull: a merchantman within twice 30 m of her turns away from her, so she keeps 30 m off; where to steer, or null
   function headGiveWay(o){if(shipHead()!=='skull'||!SHIP.mesh)return null;const dx=o.x-SHIP.x,dz=o.z-SHIP.z,d=Math.hypot(dx,dz);
     if(d>HEAD_SKULL_R*2||d<1e-3)return null;return {x:o.x+dx/d*100,z:o.z+dz/d*100};}
+  // S1735 — the wreck's maiden: in the sea chest of each island's deepest wreck (by its bed, the lowest of every wreck spawnWreck would
+  // lay, the same hash and the same first bed of 2.5 to 8 m under the sea), keyed by the chunk; worked out once for the whole world at
+  // the first wreck's spawn (the chunks' hashes and worldH, never what has loaded: S533). One maiden in all, so the first of the
+  // three taken is the one; until then each of those chests holds her
+  let MAIDEN_WRECKS=null;
+  function maidenWrecks(){if(MAIDEN_WRECKS)return MAIDEN_WRECKS;const best={},N=Math.ceil(GRID*SIZE/CHUNK);
+    for(let cz=0;cz<N;cz++)for(let cx=0;cx<N;cx++){if(hash01(cx,cz,150)>.06)continue;const t=maskAt(Math.floor(cx*CHUNK/SIZE),Math.floor(cz*CHUNK/SIZE));if(t==='land')continue;
+      for(let k=0;k<9;k++){const tx=cx*CHUNK+8+hash01(cx+k,cz,151)*(CHUNK-16),tz=cz*CHUNK+8+hash01(cz,cx+k,152)*(CHUNK-16),b=worldH(tx,tz);
+        if(b<-2.5&&b>-8){const n=nationAt(tx,tz),B=best[n];if(!B||b<B.bed)best[n]={key:chunkKey(cx,cz),bed:b,x:tx,z:tz};break;}}}
+    return MAIDEN_WRECKS=best;}
+  function maidenWreckHere(cx,cz){if(headFound('maiden'))return false;const k=chunkKey(cx,cz),W=maidenWrecks();for(const n in W)if(W[n].key===k)return true;return false;}
   function shipFitNames(arr){return arr.map(k=>k==='stowage'?'stowage':SHIP_FITS[k]?SHIP_FITS[k].n:k);}
   function shipCfg(){return worldState.ship||(worldState.ship={});}
   function shipClass(){return SHIP_CLASSES[(worldState.ship&&worldState.ship.cls)||'sloop'];}

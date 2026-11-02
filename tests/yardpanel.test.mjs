@@ -103,6 +103,18 @@ check('the maiden: a black sail within 300 m holds off 10 s, once; from 400 m, n
 check('the skull: a merchantman at 25 m steers straight away from her; at 70 m, or under another figurehead, nothing', fh.skull.near && fh.skull.far === null && fh.skullOff === null, fh.skull);
 check('found: the beast’s skull off the first lair master slain; the gate stone at a failing or catastrophic gate’s sigil, not a steady one', fh.slay && fh.steadyGate === false && fh.failGate, fh);
 check('a save keeps her figurehead, the yard’s store, her carving and a token in the bag', fh.saved.head === 'yard' && fh.saved.heads.join() === 'stone,maiden' && fh.saved.yard === 'mark' && fh.saved.token.join() === 'sea', fh.saved);
+// S1735 — the wreck's maiden: in each island's deepest wreck, worked out once by the chunks' hashes and the bed, the same on a second count
+const mw = await page.evaluate(() => { const kb = BAG.slice(), ks = worldState.ship, out = {}; worldState.ship = { cls: 'sloop' }; BAG.length = 0;
+  MAIDEN_WRECKS = null; const t0 = performance.now(); const W = maidenWrecks(); out.ms = Math.round(performance.now() - t0); out.W = JSON.parse(JSON.stringify(W)); MAIDEN_WRECKS = null; out.same = JSON.stringify(maidenWrecks()) === JSON.stringify(W);
+  const spawn = key => { const [cx, cz] = key.split(',').map(Number); const ch = { cx, cz, group: new THREE.Group(), sol: [], loot: [] }; spawnWreck(ch); const c = ch.loot[0]; return c ? { at: [Math.round(c.x), Math.round(c.z)], heads: c.items.filter(i => i.figurehead).map(i => i.figurehead) } : null; };
+  const n0 = Object.keys(W)[0]; out.nations = Object.keys(W).sort(); out.deep = spawn(W[n0].key); out.bedOk = Object.values(W).every(w => w.bed < -2.5 && w.bed > -8);
+  out.bed = worldH(W[n0].x, W[n0].z) === W[n0].bed;
+  let other = null; for (let cz = 0; cz < 450 && !other; cz++) for (let cx = 0; cx < 450 && !other; cx++) { const k = cx + ',' + cz; if (hash01(cx, cz, 150) > .06 || Object.values(W).some(w => w.key === k)) continue; const r = spawn(k); if (r) other = r; }
+  out.other = other; grantHead('maiden'); out.after = spawn(W[n0].key);
+  BAG.splice(0, BAG.length, ...kb); worldState.ship = ks; return out; });
+console.log(JSON.stringify(mw));
+check(`the wreck's maiden lies in each island's deepest wreck (${mw.nations.join(', ')}; beds ${Object.values(mw.W).map(w => w.bed.toFixed(3)).join(', ')} m; worked out in ${mw.ms} ms), the same on a second count`, mw.nations.join() === 'aurenne,gatelands,mark' && mw.bedOk && mw.bed && mw.same && mw.deep && mw.deep.heads.join() === 'maiden', mw);
+check('another wreck holds no figurehead, and hers none once the maiden is found', mw.other && mw.other.heads.length === 0 && mw.after && mw.after.heads.length === 0, { other: mw.other, after: mw.after });
 await pick('sloop'); const i = await R();
 check('back to a sloop pays: the yard pays 1067', i.acts.join() === 'Refit her as a sloop (the yard pays 1067 gold)', i.acts);
 // the chat keeps no refit, sails or hold rows
