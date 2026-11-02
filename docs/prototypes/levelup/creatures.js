@@ -1581,7 +1581,9 @@ export const LIVESTOCK = ['cow', 'sheep', 'goat', 'hen'];
 // Snake) and two are the common set's (the River Otter, the Woodland Badger); these are the other ten, the Grove Turkey
 // a capercaillie as the catalogue's note has it (a New World bird on an Irish island) ──
 Object.assign(PLANS, {
-  gatefenboar: re(PLANS.boar, { name: 'Gatefen Boar', src: 'OG-009 (roots up old ruins and exposes forgotten paths)', scale: 1.08, spines: 1,
+  // Session 1745 (the critic, 2 Nov): at 1.08 it stood 1.23 m to its back and 2.44 m long, a bison calf; at .79 a big wild boar, 0.9 m at the
+  // shoulder and 1.8 m long
+  gatefenboar: re(PLANS.boar, { name: 'Gatefen Boar', src: 'OG-009 (roots up old ruins and exposes forgotten paths)', scale: .79, spines: 1,
     palette: { coat: [.24, .2, .16], saddle: [.12, .1, .08], belly: [.32, .27, .22], dark: [.05, .04, .03], hoof: [.1, .08, .07], horn: [.9, .86, .76], skin: [.4, .3, .26] }, fur: { len: .06, layers: 10, sx: 90, sy: 24, droop: .3 },
     parts: [...PLANS.boar.parts, ['spines', { n: 10, from: .35, to: 1.05, len: .09, r: .02, tone: 'saddle', taper: .3 }]] }),
   redspinefox: re(PLANS.redfox, { name: 'Redspine Fox', src: 'OG-009 (follows settlements, eats crop scraps)', palette: { coat: [.66, .3, .1], saddle: [.32, .1, .04], belly: [.95, .92, .86], dark: [.07, .05, .04], pale: [.97, .95, .9] }, fur: PLANS.redfox.fur }),
