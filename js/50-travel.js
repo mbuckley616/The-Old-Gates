@@ -2154,7 +2154,8 @@ function interact(){
     if(typeof flagstonePrompt==='function'&&flagstonePrompt()){flagstoneUse();return;} /* S1353 — the Ashfeld's flagstone */
     if(typeof spireStonePrompt==='function'&&spireStonePrompt()){spireStoneUse();return;} /* S1387 — the spire's stone */
     if(typeof bladeStoneNear==='function'&&bladeStoneNear()){bladeStoneUse();return;} /* S802 — the Gate-Blade's stone */
-    if(typeof towerCellarPrompt==='function'&&towerCellarPrompt()){towerCellarUse();return;} /* S1765 — a tower house's hatch and the pit behind its bawn */
+    if(typeof towerCellarPrompt==='function'&&towerCellarPrompt()){towerCellarUse();return;}
+    if(typeof limeCavePrompt==='function'&&limeCavePrompt()){limeCaveUse();return;} /* S1768 — a limestone cave's mouth */ /* S1765 — a tower house's hatch and the pit behind its bawn */
     if(activeZoneId==='world'&&typeof WORLD!=='undefined'&&WORLD.shipInteract())return; // v80 C — the helm
     // v80 S9 — camp bedrolls in the open world
     if(activeZoneId==='world'&&ZONES.world&&ZONES.world.beds){const bd=ZONES.world.beds.find(b=>Math.hypot(px-b.x,pz-b.z)<TOUCH);if(bd){openSleepUI();return;}}
