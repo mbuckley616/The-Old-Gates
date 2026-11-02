@@ -461,7 +461,7 @@ to a ceiling is still Dunmore's street at midnight on Low, 656 of 700.*
 | The Bramble Hearth (Dunmore's inn), the hall from the door, 20h | Middle (indoors) | 38 | 26k | 0 | 0 | 1 | 0 | 0 | 37 |  |
 | a medium gate (ruins, seed 11), from its entrance | Middle (indoors) | 102 | 394k | 0 | 0 | 33 | 0 | 0 | 68 |  |
 
-*s1147, QA Session 1745 (`budget` 8/8 on its retry, about 700 s: the first try was killed at the 900 s cap alone on four cores, its first boot's
+*s1147, QA Session 1748 (`budget` 8/8 on its retry, about 700 s: the first try was killed at the 900 s cap alone on four cores, its first boot's
 Hearthwick wait 130 s and stand 201 s, then 73 s to set Middle at midnight's High; `budgetport` 9/9 in 382 s). Against s1113, 34 builds and every
 merge of 1–2 Nov (F8's abbey, tower house and cairn, the 24 animals and 9 birds, the ship's fittings and figureheads), at Middle: Dunmore's street
 at noon 750 → 754 calls, 1.86 M → 1.85 M triangles; at midnight 832 → 840 (Low 656 → 660 of its 700); the field west at noon 664 → 668 and at dawn
