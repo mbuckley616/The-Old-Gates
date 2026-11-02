@@ -48,17 +48,20 @@ P.spine = (B, o) => {
   B.spineAt = t => { const f = Math.max(0, Math.min(1, t)) * (n - 1), i = Math.min(n - 2, Math.floor(f)); return { bone: names[Math.round(f)], p: pts[i].clone().lerp(pts[i + 1], f - i), r: R(t) }; };
   B.front = chest.clone().add(V(0, -(o.frontDrop || 0) * .5, (o.front || 0) * .6)); B.back = hip.clone().add(V(0, -(o.rumpDrop || 0) * .5, -(o.rump || 0) * .6));
 };
-// the neck: from the chest's front, n bones rising at `rise` degrees and bending by `curve` over its length
+// the neck: from the chest's front, n bones rising at `rise` degrees and bending by `curve` over its length. `bends` (Session 1738, the
+// heron's S at rest) gives each bone its own angle instead, in degrees from forward (90 straight up, more leans back), so a neck can turn
+// back on itself: a curve bends one way only
 P.neck = (B, o) => {
   const len = o.len * B.g.sliders.neck, n = o.n || 2, p0 = B.front.clone().add(V(0, o.up || 0, o.fwd || 0)), pts = [p0];
-  for (let k = 0; k < n; k++) { const a = (o.rise + (o.curve || 0) * (k + .5) / n) * DEG; pts.push(pts[k].clone().add(V(0, Math.sin(a), Math.cos(a)).multiplyScalar(len / n))); }
+  const ang = k => (o.bends ? o.bends[Math.min(k, o.bends.length - 1)] : o.rise + (o.curve || 0) * (k + .5) / n) * DEG;
+  for (let k = 0; k < n; k++) { const a = ang(k); pts.push(pts[k].clone().add(V(0, Math.sin(a), Math.cos(a)).multiplyScalar(len / n))); }
   const names = B.chain('neck', B.spineNames[B.spineNames.length - 1], pts.slice(0, n));
   for (let k = 0; k < n; k++) B.meat(names[k], pts[k], pts[k + 1], along(o.r, k / n), along(o.r, (k + 1) / n), { s: [o.s?.[0] ?? 1, o.s?.[1] ?? 1, 1], group: 'neck', tone: o.tone });
   // a mane (Session 1261, the horse): a ridge along the top of the neck from the withers to the poll, in the mane's tone, grown into
   // the neck's skin as a crest (its own group, so it blends). `r` its half-height, `w` its width against that, `at` how far up the
   // neck's own radius its line runs, `fall` how far it hangs to one side (the off side, as a horse's mane is laid), `tk` how strongly its tone
   // claims the skin over it (a flesh's `tk`, its tone's weight against its neighbours': the neck under it would otherwise colour it)
-  if (o.mane) { const M = o.mane; for (let k = 0; k < n; k++) { const a = (o.rise + (o.curve || 0) * (k + .5) / n) * DEG, up = V((M.fall || 0), Math.cos(a), -Math.sin(a)).normalize(), lift = t => along(o.r, t) * (o.s?.[1] ?? 1) * (M.at ?? .8);
+  if (o.mane) { const M = o.mane; for (let k = 0; k < n; k++) { const a = ang(k), up = V((M.fall || 0), Math.cos(a), -Math.sin(a)).normalize(), lift = t => along(o.r, t) * (o.s?.[1] ?? 1) * (M.at ?? .8);
     B.meat(names[k], pts[k].clone().addScaledVector(up, lift(k / n)), pts[k + 1].clone().addScaledVector(up, lift((k + 1) / n)), along(M.r, k / n), along(M.r, (k + 1) / n), { s: [M.w ?? .45, 1, 1], tone: 'mane', tk: M.tk ?? 8, group: 'mane' }); } }
   B.neckEnd = pts[n]; B.neckBone = names[n - 1]; B.neckPts = pts; B.neckR = t => along(o.r, t); B.neckS = [o.s?.[0] ?? 1, o.s?.[1] ?? 1];
 };
@@ -1587,7 +1590,7 @@ Object.assign(PLANS, {
     fur: { len: .02, layers: 7, sx: 120, sy: 50, droop: .6 },
     parts: [
       ['spine', { hip: [.66, -.1], chest: [.7, .12], n: 3, r: [.075, .09, .07], s: [.8, 1.15], rump: .08, rumpDrop: .02, front: .04 }],
-      ['neck', { len: .48, n: 5, rise: 80, curve: -42, r: [.04, .022], fwd: -.02 }],
+      ['neck', { len: .48, n: 5, rise: 80, curve: -42, bends: [35, 80, 125, 95, 30], r: [.04, .022], fwd: -.02 }],
       ['head', { len: .1, r: .026, pitch: 2, eyes: [{ f: .4, up: .3, out: .7, r: .006, color: [.95, .85, .2] }], beak: { len: .14, r: .011, up: 0, hook: 0 } }],
       ['tail', { len: .14, n: 1, r: [.05, .03], droop: 20 }],
       ['legs', { at: .4, kind: 'bird', out: .04, drop: .04, r: [.04, .014, .01, .008], claws: { r: .003, len: .03 } }]
@@ -1697,7 +1700,7 @@ Object.assign(PLANS, {
     parts: PLANS.snowhare.parts.map(([k, o]) => k === 'head' ? [k, { ...o, ears: { ...o.ears, size: .12 } }] : [k, o]) }),
   scarletibis: re(PLANS.heron, { name: 'Scarlet Ibis', src: 'OG-030 (coastal wetlands; a sign of a healthy marsh)', scale: .72,
     palette: { coat: [.9, .2, .14], saddle: [.78, .14, .1], belly: [.95, .32, .24], dark: [.06, .04, .04], skin: [.86, .3, .22], horn: [.3, .12, .1] },
-    parts: PLANS.heron.parts.map(([k, o]) => k === 'head' ? [k, { ...o, beak: { len: .17, r: .01, up: -.05, hook: .55 } }] : [k, o]) }),
+    parts: PLANS.heron.parts.map(([k, o]) => k === 'head' ? [k, { ...o, beak: { len: .17, r: .01, up: -.05, hook: .55 } }] : k === 'neck' ? [k, { ...o, bends: undefined }] : [k, o]) }),
   miragefox: re(PLANS.redfox, { name: 'Mirage Fox', src: 'OG-030 (fennec-like; scavenges ruins and caravan routes)', scale: .62,
     palette: { coat: [.9, .78, .58], saddle: [.8, .66, .46], belly: [.98, .96, .92], dark: [.08, .06, .05], pale: [.98, .97, .94] }, fur: PLANS.redfox.fur,
     parts: PLANS.redfox.parts.map(([k, o]) => k === 'head' ? [k, { ...o, ears: { ...o.ears, size: .15, out: .6 } }] : [k, o]) }),
@@ -1775,7 +1778,7 @@ Object.assign(PLANS, {
     ] },
   sunfan: re(PLANS.heron, { name: 'Sunfan', src: 'OG-040 (Aurenne: a long-legged bird of plains and oases with a radiant fan it displays)', scale: 1.15,
     palette: { coat: [.86, .72, .44], saddle: [.72, .56, .3], belly: [.94, .88, .72], dark: [.06, .05, .04], skin: [.5, .32, .2], horn: [.4, .3, .18], comb: [.98, .68, .14], feather: [1, .74, .2], featherTip: [.92, .4, .08] },
-    parts: PLANS.heron.parts.map(([k, o]) => k === 'neck' ? [k, { ...o, len: .36 }] : k === 'head' ? [k, { ...o, beak: { len: .07, r: .012, up: -.05, hook: .2 }, ears: { kind: 'leaf', size: .045, f: .2, up: 1, out: .2, back: 35, splay: 8, tone: 'comb' } }] : k === 'tail' ? [k, { ...o, droop: -40, fan: { n: 15, len: .62, spread: 170, raise: 72 } }] : [k, o]) })
+    parts: PLANS.heron.parts.map(([k, o]) => k === 'neck' ? [k, { ...o, len: .36, bends: undefined }] : k === 'head' ? [k, { ...o, beak: { len: .07, r: .012, up: -.05, hook: .2 }, ears: { kind: 'leaf', size: .045, f: .2, up: 1, out: .2, back: 35, splay: 8, tone: 'comb' } }] : k === 'tail' ? [k, { ...o, droop: -40, fan: { n: 15, len: .62, spread: 170, raise: 72 } }] : [k, o]) })
 });
 export const STRANGE = ['crownstag', 'mossback', 'bellthroat', 'lanternfox', 'thornrunner', 'shatterhorn', 'frostmane', 'glasswing', 'stonejaw', 'stormplume', 'redcrest', 'sunfan', 'mineprowler', 'sailshell'];
 // ── Session 854: the sea (OG-016's coastal and open-ocean bands, OG-084; backlog L3). The Tidecrab, the Storm Whale,

@@ -42,6 +42,21 @@ const WOLF_KINDS={
   'Redspine Fox':{coat:0xa84d1a,saddle:0x5c2a10,belly:0xeee4d0,eye:0x2a1a08,ruff:.85,ears:1.2,muzzle:1.1,lean:.8,bulk:.92,neck:.1,world:.9,wild:true},
   'Hollowcat': {coat:0x806b52,saddle:0x4e4030,belly:0xd0c4ac,eye:0x9a8a20,ruff:.6,ears:1.1,muzzle:.6,lean:.85,bulk:.9,neck:.06,world:.81,wild:true},
   'Greenward Stoat':{coat:0x805733,saddle:0x5c3c22,belly:0xece2c8,eye:0x0f0a08,ruff:.5,ears:.6,muzzle:.8,lean:.75,bulk:.85,neck:.05,world:.165,wild:true},
+  // Session 1739 — the Mark's own on four legs (L3, OG-031; the kit's MARK since Session 847), wild: the Icehorn, the Ironpine Elk and the
+  // Craghorn Ram on the deer's long legs, the Stormlynx, the Glacial Marmot and the Snowleap Hare on the wolf's
+  'Icehorn':   {coat:0xdbd6cc,saddle:0xbdb8ad,belly:0xe6e3db,eye:0xbf9933,horse:true,legK:1.8,legs:{fore:{root:[-.03,.03],a:[-.22,-.04],b:[-.22,.02],c:[-.23,.01]},hind:{root:[-.02,-.02],a:[-.2,.08],b:[-.2,-.1],c:[-.26,.01]}},hipY:.70,bulk:.9,eyePos:[.046,.02,.03],world:1.0,wild:true},
+  'Ironpine Elk':{coat:0x4d3826,saddle:0x332417,belly:0x806b52,eye:0x0f0a08,horse:true,legK:1.8,legs:{fore:{root:[-.03,.03],a:[-.22,-.04],b:[-.22,.02],c:[-.23,.01]},hind:{root:[-.02,-.02],a:[-.2,.08],b:[-.2,-.1],c:[-.26,.01]}},hipY:.70,bulk:1.0,eyePos:[.048,.02,.03],world:2.08,wild:true},
+  'Craghorn Ram':{coat:0x857057,saddle:0x66543d,belly:0xd6ccb8,eye:0x997f33,horse:true,legK:1.8,legs:{fore:{root:[-.03,.03],a:[-.22,-.04],b:[-.22,.02],c:[-.23,.01]},hind:{root:[-.02,-.02],a:[-.2,.08],b:[-.2,-.1],c:[-.26,.01]}},hipY:.70,bulk:1.1,eyePos:[.046,.02,.03],world:.855,wild:true},
+  'Stormlynx': {coat:0xa8a399,saddle:0x6b6661,belly:0xe6e0d6,eye:0xbfcc40,ruff:.7,ears:1.3,muzzle:.6,lean:.85,bulk:.95,neck:.06,world:1.0,wild:true},
+  'Glacial Marmot':{coat:0x8f7a61,saddle:0x6b5945,belly:0xccb894,eye:0x0f0a08,ruff:.6,ears:.5,muzzle:.7,bulk:1.25,neck:.05,world:.32,wild:true},
+  'Snowleap Hare':{coat:0xedede8,saddle:0xd6d6d1,belly:0xfafaf7,eye:0x1f120a,ruff:.6,ears:1.4,muzzle:.8,lean:.85,bulk:.95,neck:.05,world:.66,wild:true},
+  // Session 1744 — Aurenne's own on four legs (L3, OG-030; the kit's AURENNE since Session 848), wild: the Duneskimmer and the Terrace Ram on the
+  // deer's long legs, the Sunspire Lynx, the Oasis Hare and the Mirage Fox on the wolf's
+  'Duneskimmer':{coat:0xcc9e66,saddle:0xa87a47,belly:0xf5eddb,eye:0x0f0a08,horse:true,legK:1.8,legs:{fore:{root:[-.03,.03],a:[-.22,-.04],b:[-.22,.02],c:[-.23,.01]},hind:{root:[-.02,-.02],a:[-.2,.08],b:[-.2,-.1],c:[-.26,.01]}},hipY:.70,bulk:.75,eyePos:[.046,.02,.03],world:.995,wild:true},
+  'Terrace Ram':{coat:0xdbc79e,saddle:0xbda37a,belly:0xf0e6d1,eye:0x997f33,horse:true,legK:1.8,legs:{fore:{root:[-.03,.03],a:[-.22,-.04],b:[-.22,.02],c:[-.23,.01]},hind:{root:[-.02,-.02],a:[-.2,.08],b:[-.2,-.1],c:[-.26,.01]}},hipY:.70,bulk:1.1,eyePos:[.046,.02,.03],world:.836,wild:true},
+  'Sunspire Lynx':{coat:0xa88561,saddle:0x8a6645,belly:0xf0e3cc,eye:0xbfcc40,ruff:.6,ears:1.4,muzzle:.6,lean:.85,bulk:.9,neck:.06,world:1.0,wild:true},
+  'Oasis Hare':{coat:0xd1ad80,saddle:0xad8a61,belly:0xf5f0e6,eye:0x1f120a,ruff:.6,ears:1.6,muzzle:.8,lean:.85,bulk:.95,neck:.05,world:.70,wild:true},
+  'Mirage Fox':{coat:0xe6c794,saddle:0xcca875,belly:0xfaf5eb,eye:0xd98c1a,ruff:.7,ears:1.5,muzzle:1.0,lean:.8,bulk:.9,neck:.1,world:.53,wild:true},
   // the world's dragon (S177): the wolf's legs and gait under a long neck, a long tail, horns and two wings of its own
   'Dragon':    {coat:0x5a2a1a,saddle:0x3a160c,belly:0xa87a48,eye:0xff8020,dragon:true,bulk:1.28,neck:-.15,eyePos:[.05,.04,.104],world:4.5} // S524 — world: the scale every dragon is built at in play, and the inspector shows it so; S546 — 4.5, about twice a man's height (Michael's B on #153, was 2.88)
 };
@@ -332,6 +347,9 @@ BIRD.Hen={len:.4,col:0x99602e,hop:.8,run:'trot',farm:true};
 // (hcBirdPose): it hops if it has a hop, else trots, else walks; it soars only if it has a soar. So the Crag Hawk walks and soars, the Great
 // Heron walks (lifted, it keeps walking), the Capercaillie trots as the hen does. Beak to tail 0.95, 0.55 and 0.85 m (the cock)
 BIRD['Great Heron']={len:.95,col:0x9ea3a8,hop:1.2};BIRD['Crag Hawk']={len:.55,col:0x704f33,hop:.9};BIRD.Capercaillie={len:.85,col:0x1f2124,hop:1};
+// Session 1740: the Mark's three (L3, OG-031; the kit's MARK), wild. The Skyraven is the kit's raven at full size (the common raven is it at
+// .9), so it hops and soars; the Stormshrike, the hawk's plan in white, walks and soars; the Tundra Grouse, the hen's, trots and never soars
+BIRD.Skyraven={len:.64,col:0x14141a,hop:1};BIRD.Stormshrike={len:.47,col:0xe0e0e2,hop:.9};BIRD['Tundra Grouse']={len:.40,col:0xd8d4cc,hop:.9};
 function birdStandIn(len,col){const k=len/.535,parts=[],M=new THREE.Matrix4(),put=(geo,x,y,z,sx,sy,sz,rx)=>{M.makeRotationX(rx||0);
     const g=geo.index?geo.toNonIndexed():geo;g.applyMatrix4(new THREE.Matrix4().makeScale(sx,sy,sz).premultiply(M).premultiply(new THREE.Matrix4().makeTranslation(x*k,y*k,z*k)));parts.push(g);};
   put(new THREE.SphereGeometry(1,10,7),0,.17,0,.08*k,.075*k,.17*k);put(new THREE.SphereGeometry(.055*k,8,6),0,.25,.15,1,1,1);
@@ -368,6 +386,9 @@ function hcBirdPose(rig){const H=rig.hc,e=rig.e,g=e&&e.mesh;if(!H||!g||e.dead)re
 const SWIMMER={Trout:{len:.4,col:0x6e6a48,belly:0xd8cfb0},idle:.6};
 // Session 1724: the Gatelands' River Pike (L3, OG-009: deep rivers and lakes; the kit's riverpike), on the trout's path, 0.80 m nose to tail
 SWIMMER['River Pike']={len:.8,col:0x66753d,belly:0xe0dbb3};
+// Session 1741: the Mark's Riverjaw Salmon (L3, OG-031: leaps the falls on its migration; the kit's riverjaw, the pike's parent), on the same
+// path, 0.85 m nose to tail, in its run's red
+SWIMMER['Riverjaw Salmon']={len:.85,col:0xad5c45,belly:0xdbd9cc};
 // Session 1728: the Gatelands' Mire Snake (L3, OG-009: a banded water snake; the kit's miresnake), on the trout's path on land: land marks a
 // swimmer that lies on the ground (the kit's belly at the group's origin, as the birds' crawl), whose stand-in is a long low body, and whose
 // gait is the kit's slither while its group moves and its stand at rest (no beat on the clock). 1.0 m nose to tail
@@ -381,6 +402,11 @@ SWIMMER['Lantern Beetle']={len:.06,col:0x3a3018,land:true,move:'walk',w:.6,h:.3}
 // the kit's bellthroat at 0.8, 0.30 m, a frog's 0.12 here) goes by the kit's hop, a pulse
 SWIMMER['Stonecrawler']={len:.3,col:0x1c2230,land:true,move:'trot',w:.14,h:.1};
 SWIMMER['Marsh Frog']={len:.12,col:0x4a6030,land:true,move:'hop',w:.55,h:.4};
+// Session 1742: the Mark's two on the same path. The Frostspine Lizard (OG-031: rocky slopes, mineral-hardened scales; the kit's Stonecrawler at
+// 1.7 with a crest of pale spines) is 0.50 m here, as the Stonecrawler is the kit's at .6, and scurries at the trot; the Icecrab (northern coasts,
+// armoured, taken for its meat; the kit's Tidecrab at 1.35) goes sideways on its eight legs at the kit's walk, 0.80 m across its legs
+SWIMMER['Frostspine Lizard']={len:.5,col:0x758f9e,land:true,move:'trot',w:.16,h:.11};
+SWIMMER.Icecrab={len:.8,col:0x8fa6b8,land:true,move:'walk',w:1.1,h:.37};
 function landStandIn(len,col,w,h){const geo=new THREE.SphereGeometry(1,10,6).toNonIndexed();geo.applyMatrix4(new THREE.Matrix4().makeScale(w/2*len,h/2*len,len/2));
   geo.translate(0,h/2*len,0);geo.computeBoundingSphere();const m=new THREE.Mesh(geo,new THREE.MeshLambertMaterial({color:col}));m.castShadow=false;m.name='crawler';return m;}
 function fishStandIn(len,col){const k=len/.4,parts=[],M=new THREE.Matrix4(),put=(geo,x,y,z,sx,sy,sz,ry)=>{M.makeRotationY(ry||0);
@@ -919,8 +945,8 @@ const HC_KINDS={'Wolf':{plan:'wolf'},'Snow Wolf':{plan:'wolf',own:true},'Dire Wo
   'Golem':{plan:'golem',own:true,person:true,merge:true,ik:true,tall:true,glow:[.42,.69,1],glowR:.02},
   'Gargoyle':{plan:'gargoyle',own:true,person:true,merge:true,ik:true,glow:[1,.31,.13],glowR:.032,glowAt:{f:.8,up:.55,out:.5},garg:true},
   'Wraith':{plan:'wraith',own:true,person:true,legless:true,rest:HC_WRAITH_REST},'Phantom':{plan:'phantom',own:true,person:true,legless:true,rest:HC_WRAITH_REST},
-  'Deer':{plan:'deer',ik:true},'Hind':{plan:'deer',own:true,ik:true,bare:true},'Red Fox':{plan:'redfox'},'Brown Hare':{plan:'brownhare'},'Badger':{plan:'badger'},'Otter':{plan:'otter'},'Cow':{plan:'cow',ik:true},'Sheep':{plan:'sheep',ik:true},'Goat':{plan:'goat',ik:true},'Elderstag':{plan:'stag',ik:true},'Gatefen Boar':{plan:'gatefenboar'},'Redspine Fox':{plan:'redspinefox'},'Hollowcat':{plan:'hollowcat'},'Greenward Stoat':{plan:'stoat'},
-  'Shark':{plan:'reefshark',fish:true},'Whale':{plan:'stormwhale',fish:true},'Dolphin':{plan:'stormswift',fish:true},'Gull':{plan:'gull',fish:true,own:true,cell:.014},'Raven':{plan:'raven',fish:true,own:true,cell:.014},'Crow':{plan:'crow',fish:true,own:true,cell:.012},'Trout':{plan:'trout',fish:true,own:true,cell:.014},'River Pike':{plan:'riverpike',fish:true,own:true,cell:.02},'Mire Snake':{plan:'miresnake',fish:true,own:true,cell:.016},'Lantern Beetle':{plan:'lanternbeetle',fish:true,own:true,cell:.03},'Stonecrawler':{plan:'stonecrawler',fish:true,own:true,cell:.01},'Marsh Frog':{plan:'marshfrog',fish:true,own:true,cell:.012},'Hen':{plan:'hen',fish:true,own:true,cell:.012},'Great Heron':{plan:'heron',fish:true,own:true,cell:.016},'Crag Hawk':{plan:'craghawk',fish:true,own:true,cell:.014},'Capercaillie':{plan:'capercaillie',fish:true,own:true,cell:.016},'Slime':{plan:'slime',fish:true},'Fire Elemental':{plan:'fireelemental',fish:true}};
+  'Deer':{plan:'deer',ik:true},'Hind':{plan:'deer',own:true,ik:true,bare:true},'Red Fox':{plan:'redfox'},'Brown Hare':{plan:'brownhare'},'Badger':{plan:'badger'},'Otter':{plan:'otter'},'Cow':{plan:'cow',ik:true},'Sheep':{plan:'sheep',ik:true},'Goat':{plan:'goat',ik:true},'Elderstag':{plan:'stag',ik:true},'Gatefen Boar':{plan:'gatefenboar'},'Redspine Fox':{plan:'redspinefox'},'Hollowcat':{plan:'hollowcat'},'Greenward Stoat':{plan:'stoat'},'Icehorn':{plan:'icehorn',ik:true},'Ironpine Elk':{plan:'ironpineelk',ik:true},'Craghorn Ram':{plan:'craghornram',ik:true},'Stormlynx':{plan:'stormlynx'},'Glacial Marmot':{plan:'glacialmarmot'},'Snowleap Hare':{plan:'snowhare'},'Duneskimmer':{plan:'duneskimmer',ik:true},'Terrace Ram':{plan:'terraceram',ik:true},'Sunspire Lynx':{plan:'sunspirelynx'},'Oasis Hare':{plan:'oasishare'},'Mirage Fox':{plan:'miragefox'},
+  'Shark':{plan:'reefshark',fish:true},'Whale':{plan:'stormwhale',fish:true},'Dolphin':{plan:'stormswift',fish:true},'Gull':{plan:'gull',fish:true,own:true,cell:.014},'Raven':{plan:'raven',fish:true,own:true,cell:.014},'Crow':{plan:'crow',fish:true,own:true,cell:.012},'Trout':{plan:'trout',fish:true,own:true,cell:.014},'River Pike':{plan:'riverpike',fish:true,own:true,cell:.02},'Riverjaw Salmon':{plan:'riverjaw',fish:true,own:true,cell:.02},'Mire Snake':{plan:'miresnake',fish:true,own:true,cell:.016},'Lantern Beetle':{plan:'lanternbeetle',fish:true,own:true,cell:.03},'Stonecrawler':{plan:'stonecrawler',fish:true,own:true,cell:.01},'Marsh Frog':{plan:'marshfrog',fish:true,own:true,cell:.012},'Frostspine Lizard':{plan:'frostspinelizard',fish:true,own:true,cell:.01},'Icecrab':{plan:'icecrab',fish:true,own:true,cell:.02},'Hen':{plan:'hen',fish:true,own:true,cell:.012},'Great Heron':{plan:'heron',fish:true,own:true,cell:.016},'Crag Hawk':{plan:'craghawk',fish:true,own:true,cell:.014},'Capercaillie':{plan:'capercaillie',fish:true,own:true,cell:.016},'Skyraven':{plan:'skyraven',fish:true,own:true,cell:.014},'Stormshrike':{plan:'stormshrike',fish:true,own:true,cell:.014},'Tundra Grouse':{plan:'tundragrouse',fish:true,own:true,cell:.012},'Slime':{plan:'slime',fish:true},'Fire Elemental':{plan:'fireelemental',fish:true}};
 // the driver's joints and the kit's bones they move, parents first (the kit's front legs hang on spine3, the hind on spine0)
 const HC_MAP=[['hips','spine0'],['spine','spine1'],['neck','neck0'],['head','head'],['jaw','jaw'],['tail1','tail0'],['tail2','tail1'],['tail3','tail2'],
   ['shL','leg0L_0'],['elL','leg0L_1'],['wrL','leg0L_2'],['pfL','leg0L_3'],['shR','leg0R_0'],['elR','leg0R_1'],['wrR','leg0R_2'],['pfR','leg0R_3'],
