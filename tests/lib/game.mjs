@@ -148,9 +148,16 @@ export async function boot(opts = {}) {
     await page.waitForTimeout(2000); await g.hide();
     return built;
   };
+  // the world ticks only where the game's loop ticks it (90-main.js: lid==='overworld' and activeZoneId==='world');
+  // indoors WORLD.tick read the room's x, z as the world's and unloaded the town (S1544, S1553). Returns the ticks run.
   g.spin = (weather, frames) => page.evaluate(([w, n]) => {
     if (w) { const wx = WORLD.wx; wx.type = w; wx.next = w; wx.k = 1; }
-    for (let i = 0; i < n; i++) WORLD.tick(1 / 60, performance.now());
+    let i = 0;
+    for (; i < n; i++) {
+      if (lid !== 'overworld' || activeZoneId !== 'world') break;
+      WORLD.tick(1 / 60, performance.now());
+    }
+    return i;
   }, [weather, frames]);
   // wait for n real frames of the game's own loop: HUD text (the door prompt) is only written there, and on a slow
   // runner a fixed pause can pass without one (Session 156)
