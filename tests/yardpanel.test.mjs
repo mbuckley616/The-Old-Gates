@@ -109,7 +109,7 @@ const mw = await page.evaluate(() => { const kb = BAG.slice(), ks = worldState.s
   MAIDEN_WRECKS = null; SEA_WRECKS = null; const t0 = performance.now(); const W = maidenWrecks(); out.ms = Math.round(performance.now() - t0); out.n = SEA_WRECKS.length; out.W = JSON.parse(JSON.stringify(W)); MAIDEN_WRECKS = null; SEA_WRECKS = null; out.same = JSON.stringify(maidenWrecks()) === JSON.stringify(W);
   const spawn = key => { const [cx, cz] = key.split(',').map(Number); const ch = { cx, cz, group: new THREE.Group(), sol: [], loot: [] }; spawnWreck(ch); const c = ch.loot[0]; return c ? { at: [Math.round(c.x), Math.round(c.z)], heads: c.items.filter(i => i.figurehead).map(i => i.figurehead) } : null; };
   const n0 = Object.keys(W)[0]; out.nations = Object.keys(W).sort(); out.deep = spawn(W[n0].key); out.bedOk = Object.values(W).every(w => w.bed < -2.5 && w.bed > -8);
-  out.bed = placeH(W[n0].x, W[n0].z) === W[n0].bed; /* S1765 — the bed is the land keyed by place (placeH), not worldH */
+  out.bed = placeH(W[n0].x, W[n0].z) === W[n0].bed; /* S1766 — the bed is the land keyed by place (placeH), not worldH */
   let other = null; for (let cz = 0; cz < 450 && !other; cz++) for (let cx = 0; cx < 450 && !other; cx++) { const k = cx + ',' + cz; if (hash01(cx, cz, 150) > .06 || Object.values(W).some(w => w.key === k)) continue; const r = spawn(k); if (r) other = r; }
   out.other = other; grantHead('maiden'); out.after = spawn(W[n0].key);
   BAG.splice(0, BAG.length, ...kb); worldState.ship = ks; return out; });

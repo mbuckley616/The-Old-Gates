@@ -710,7 +710,7 @@
     add(SK.cyl(.13,.17,7.2,7),0x2e2214,.4,1.0,.6,1.25,0,.28,.08);add(SK.cyl(.1,.13,1.4,6),0x2e2214,-.9,.25,-3.2,.2,.5,1.4,.08);
     for(let k=0;k<5;k++){const a=rr()*Math.PI*2,d=2.4+rr()*1.2;add(new THREE.BoxGeometry(.32,.06,1.2+rr()*1.4),tone(.1),Math.cos(a)*d,.04,Math.sin(a)*d*1.3,rr()*.2,rr()*3,rr()*.2,.1);}
     return mergeParts(P);}
-  // S1765 — where a chunk's wreck lies, if it has one: the first of nine hashed spots whose bed is 2.5 to 8 m under the sea. The bed is
+  // S1766 — where a chunk's wreck lies, if it has one: the first of nine hashed spots whose bed is 2.5 to 8 m under the sea. The bed is
   // read by placeH (the land keyed by place, S1758), never worldH, so the choice no longer hangs on what had loaded (S1752: 18 chunks of
   // the sea chose another spot between two boots). One function for the wreck laid and for seaWrecks' walk (86-world-crime.js), so the
   // maiden's three and the navigator's pointer name the wrecks that are laid. {x,z,bed} or null.
