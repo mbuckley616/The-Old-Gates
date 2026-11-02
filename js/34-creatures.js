@@ -38,7 +38,8 @@ const WOLF_KINDS={
   // Session 1727 (first numbered 1722) — the Gatelands' own (L3, OG-009; the kit's GATELANDS since Session 846), wild as the common set: the Elderstag on the deer's
   // legs, the Gatefen Boar on the boar's body, the Redspine Fox, the Hollowcat and the Greenward Stoat on the wolf's
   'Elderstag': {coat:0x754a2b,saddle:0x4e3019,belly:0xd8c8a8,eye:0x140c08,horse:true,legK:1.8,legs:{fore:{root:[-.03,.03],a:[-.22,-.04],b:[-.22,.02],c:[-.23,.01]},hind:{root:[-.02,-.02],a:[-.2,.08],b:[-.2,-.1],c:[-.26,.01]}},hipY:.70,bulk:.9,eyePos:[.048,.02,.03],world:1.66,wild:true},
-  'Gatefen Boar':{coat:0x3d3329,saddle:0x241e18,belly:0x5e5040,eye:0x2a1a0c,boar:true,neck:.35,bulk:1.1,world:1.76,wild:true},
+  // Session 1745: the kit's plan at .79 (was 1.08), so its hips at 0.50 m, not 0.69
+  'Gatefen Boar':{coat:0x3d3329,saddle:0x241e18,belly:0x5e5040,eye:0x2a1a0c,boar:true,neck:.35,bulk:1.1,world:1.287,wild:true},
   'Redspine Fox':{coat:0xa84d1a,saddle:0x5c2a10,belly:0xeee4d0,eye:0x2a1a08,ruff:.85,ears:1.2,muzzle:1.1,lean:.8,bulk:.92,neck:.1,world:.9,wild:true},
   'Hollowcat': {coat:0x806b52,saddle:0x4e4030,belly:0xd0c4ac,eye:0x9a8a20,ruff:.6,ears:1.1,muzzle:.6,lean:.85,bulk:.9,neck:.06,world:.81,wild:true},
   'Greenward Stoat':{coat:0x805733,saddle:0x5c3c22,belly:0xece2c8,eye:0x0f0a08,ruff:.5,ears:.6,muzzle:.8,lean:.75,bulk:.85,neck:.05,world:.165,wild:true},

@@ -12,12 +12,17 @@ const KINDS = { 'Deer': ['deer', .87], 'Red Fox': ['redfox', .35], 'Brown Hare':
   // Session 1719: the farms' livestock, keyed farm:<key>
   'Cow': ['cow', 1.23], 'Sheep': ['sheep', .65], 'Goat': ['goat', .55],
   // Session 1727 (first numbered 1722): the Gatelands' own
-  'Elderstag': ['stag', 1.15], 'Gatefen Boar': ['gatefenboar', .69], 'Redspine Fox': ['redspinefox', .35], 'Hollowcat': ['hollowcat', .3], 'Greenward Stoat': ['stoat', .065],
+  'Elderstag': ['stag', 1.15], 'Gatefen Boar': ['gatefenboar', .50], 'Redspine Fox': ['redspinefox', .35], 'Hollowcat': ['hollowcat', .3], 'Greenward Stoat': ['stoat', .065],
   // Session 1739: the Mark's own on four legs
   'Icehorn': ['icehorn', .69], 'Ironpine Elk': ['ironpineelk', 1.44], 'Craghorn Ram': ['craghornram', .60], 'Stormlynx': ['stormlynx', .40], 'Glacial Marmot': ['glacialmarmot', .125], 'Snowleap Hare': ['snowhare', .26],
   // Session 1744: Aurenne's own on four legs
   'Duneskimmer': ['duneskimmer', .69], 'Terrace Ram': ['terraceram', .58], 'Sunspire Lynx': ['sunspirelynx', .39], 'Oasis Hare': ['oasishare', .275], 'Mirage Fox': ['miragefox', .21] };
 const g = await boot({ look: 'new' }); const { page } = g;
+// Session 1745: a picture is one frame drawn and read back from the canvas (autumn's way, S1470). Playwright's screenshot waited on the
+// live loop's queue of frames, and with two dozen furred bodies on software GL it ran past 120 s (the line's, here, after S1744's fix)
+const shoot = async (file) => { await page.evaluate(() => { window._ogDraw = REN.render; REN.render = () => {}; }); await g.frames(2);
+  const url = await page.evaluate(() => { REN.render = window._ogDraw; CAM.updateMatrixWorld(true); REN.render(scene, CAM); return REN.domElement.toDataURL('image/jpeg', .8); });
+  fs.writeFileSync(path.join(OUT, file), Buffer.from(url.split(',')[1], 'base64')); };
 await g.intoWorld();
 
 const made = await page.evaluate((names) => { forceTime(12);
@@ -96,7 +101,7 @@ await page.evaluate(() => { const a = _A[0].G, b = _A[_A.length - 1].G, mx = (a.
   for (const { G } of _A) G.visible = Math.abs((G.position.x - mx) * -fz + (G.position.z - mz) * fx) < 7;
   px = mx - fx * 9; pz = mz - fz * 9; pitch = -.16; });
 for (let i = 0; i < 8; i++) { await page.evaluate(() => tickCreatures(1 / 60, performance.now())); await g.frames(1); }
-await page.screenshot({ path: path.join(OUT, 'f4-animals.jpg'), type: 'jpeg', quality: 80 });
+await shoot('f4-animals.jpg');
 
 const gone = await page.evaluate(() => { for (const { G } of _A) G.parent.remove(G); tickCreatures(1 / 60, 9e5); return _A.every(f => !WOLF_RIGS.has(f.rig)); });
 check('taken from the scene, each is dropped', gone);
@@ -138,7 +143,7 @@ check(`each bird's gait is its group's, fast and aloft by its plan's gaits (the 
 await page.evaluate(() => { const a = _B[0].G, b = _B[_B.length - 1].G, mx = (a.position.x + b.position.x) / 2, mz = (a.position.z + b.position.z) / 2, fx = -Math.sin(yaw), fz = -Math.cos(yaw);
   for (const { G } of _B) G.position.y = WORLD.worldH(G.position.x, G.position.z); px = mx - fx * 5; pz = mz - fz * 5; pitch = -.24; });
 for (let i = 0; i < 8; i++) await g.frames(1);
-await page.screenshot({ path: path.join(OUT, 'f4-birds.jpg'), type: 'jpeg', quality: 80 });
+await shoot('f4-birds.jpg');
 const blv = await page.evaluate(() => { const { rig, G } = _B[0], fx = -Math.sin(yaw), fz = -Math.cos(yaw);
   CAM.position.set(G.position.x - fx * 60, G.position.y + 1.65, G.position.z - fz * 60); CAM.updateMatrixWorld(true); hcTick(8e5);
   const far = { L: rig.hc.L, stand: rig.mesh.visible }; for (const { G } of _B) G.parent.remove(G); hcTick(8.1e5); return { far, dropped: _B.every(b => !b.rig.hc && !HC_RIGS.has(b.rig)) }; });
@@ -168,7 +173,7 @@ check(`it swims by its group: holding still ${fish.hold.g}, ${fish.hold.cyc} bea
   fish.hold.g === 'hold' && fish.swim.g === 'swim' && fish.swim.cyc > fish.hold.cyc * 2 && fish.moved.every(m => m > .005), fish);
 await page.evaluate(() => { const { G } = _T, fx = -Math.sin(yaw), fz = -Math.cos(yaw); G.position.y = WORLD.worldH(G.position.x, G.position.z) + .5; px = G.position.x - fx * 1.1; pz = G.position.z - fz * 1.1; pitch = -.78; });
 for (let i = 0; i < 8; i++) await g.frames(1);
-await page.screenshot({ path: path.join(OUT, 'f4-trout.jpg'), type: 'jpeg', quality: 80 });
+await shoot('f4-trout.jpg');
 const tlv = await page.evaluate(() => { const { rig, G } = _T, fx = -Math.sin(yaw), fz = -Math.cos(yaw);
   CAM.position.set(G.position.x - fx * 60, G.position.y + 1.65, G.position.z - fz * 60); CAM.updateMatrixWorld(true); hcTick(9.8e5);
   const far = { L: rig.hc.L, stand: rig.mesh.visible }; G.parent.remove(G); hcTick(9.9e5); return { far, dropped: !rig.hc && !HC_RIGS.has(rig) }; });
