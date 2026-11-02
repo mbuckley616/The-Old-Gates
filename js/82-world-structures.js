@@ -1987,7 +1987,7 @@
     return mergeParts(P);}
   function standingStoneGeoHi(pk){const r0=furnRng(),P=[];const g=SK.bumpy(SK.rbox(pk.w,pk.h,.6,.18,3),.05,6,r0()*9);
     FPART(P,g,0x5a5852,0,1.6,0,0,pk.ry,pk.rz,.1);for(let k=0;k<5;k++){const y=.4+r0()*pk.h*.8;FPART(P,SK.ball(.12+r0()*.1,6,4),r0()<.5?0x8a9a5a:0xb0a878,(r0()-.5)*pk.w*.7,y,.31,0,0,0,.1);}
-    /* S1758 — on the new look no moss collar: a 0.7 m half-ball of flat green read as plasticine at every ring stone (the critic, 2 Nov,
+    /* S1761 — on the new look no moss collar: a 0.7 m half-ball of flat green read as plasticine at every ring stone (the critic, 2 Nov,
        the cairn's ring). Its feet are packing stones half sunk in the turf, and the land's grass grows to it */
     if(typeof LAND!=='undefined'&&LAND.on){for(let k=0;k<4;k++){const a=k/4*Math.PI*2+r0()*.9,d=(k&1?pk.w:.6)*.5+.12+r0()*.1,rad=.15+r0()*.11;
         FPART(P,SK.bumpy(SK.ball(rad,7,5),.035,5,r0()*9),r0()<.5?0x6a665c:0x5c584e,Math.cos(a)*d,rad*.2,Math.sin(a)*d,0,r0()*3,0,.1);}return mergeParts(P);}
