@@ -70,7 +70,8 @@ check(`felling: the hatchet in hand (first person ${wk && wk.fp}, third ${wk && 
   !!wk && wk.fp === 'hatchet' && wk.tp.kit === 'hatchet' && Math.abs(wk.tp.ws - 1) < .01 && wk.gaps.length >= 2 && wk.gaps.every(x => x != null && x >= 0 && x <= 2) && wk.fpAfter === 'sword' && wk.tpAfter === 'sword' && wk.eq, wk);
 // S1466 — your spear's blow in third person is a thrust: through the coil the shaft comes down level, and at the hit it lies along
 // your facing at chest height, its head further out than in the coil; driven by the game's loop at 1/60
-const tt = await page.evaluate(async () => { forceTime(11);
+// S1732 — each loop(t) would ask for a frame and start another copy of the game's loop (fpweapons' 10 min on CI); held off while stepping
+const tt = await page.evaluate(async () => { const raf = window.requestAnimationFrame; window.requestAnimationFrame = () => 0; try { forceTime(11);
   thirdPerson = true; let t = performance.now(); prevT = t; const step = () => { t += 1000 / 60; loop(t); };
   SHEATHED = false; _sheathedItem = null; _lastSwingG = 1e9; EQ.weapon = { name: 'Iron Spear', slot: 'weapon', weaponShape: 'spear', matCol: '#a8b0b8', matGuard: '#787880' }; buildViewmodel();
   for (let i = 0; i < 400; i++) { step(); if (TP.rig && TP.rig.rig && TP.rig.rig.hb && i > 30) break; }
@@ -85,7 +86,7 @@ const tt = await page.evaluate(async () => { forceTime(11);
   const out = { rest: at(), tl: [] }; const S = ANIM_PARAMS.swing, D = S.normalDur; swingT = D; _pendingStrike = { resolveFn: () => {}, isPow: false, fired: false };
   let n = 0; while (swingT > 0 && n++ < 60) { step(); out.tl.push([+(1 - swingT / (vmSword.userData.swingMax || D)).toFixed(2), at()]); }
   const tl = out.tl.map(x => x[1]), hit = tl.reduce((a, b) => b.headOut > a.headOut ? b : a), coil = out.tl.filter(x => x[0] < ANIM_PARAMS.swing.antEnd).map(x => x[1]).pop();
-  thirdPerson = false; EQ.weapon = null; buildViewmodel(); return { rest: out.rest, coil, hit, frames: tl.length }; });
+  thirdPerson = false; EQ.weapon = null; buildViewmodel(); return { rest: out.rest, coil, hit, frames: tl.length }; } finally { window.requestAnimationFrame = raf; } });
 console.log('  thrust:', JSON.stringify(tt));
 check(`your spear thrusts in third person: coiled, the shaft ${(Math.asin(tt.coil.up) * 57.3).toFixed(0)}° off level; at the hit along your facing (${tt.hit.fwd}), ${(Math.asin(tt.hit.up) * 57.3).toFixed(0)}° up, its head ${tt.hit.headY} m high and ${(tt.hit.headOut - tt.coil.headOut).toFixed(2)} m further out (S1466)`,
   Math.abs(tt.coil.up) < .2 && tt.hit.fwd > .96 && Math.abs(tt.hit.up) < .2 && tt.hit.headY > 1 && tt.hit.headY < 1.7 && tt.hit.headOut - tt.coil.headOut > .35, tt);
