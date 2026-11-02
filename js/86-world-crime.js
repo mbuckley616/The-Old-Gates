@@ -1046,8 +1046,7 @@
   // S1743 — every wreck spawnWreck would lay at sea, the same walk the maiden's was (one pass, kept for the session): {key, x, z, bed}
   function seaWrecks(){if(SEA_WRECKS)return SEA_WRECKS;const L=[],N=Math.ceil(GRID*SIZE/CHUNK);
     for(let cz=0;cz<N;cz++)for(let cx=0;cx<N;cx++){if(hash01(cx,cz,150)>.06)continue;const t=maskAt(Math.floor(cx*CHUNK/SIZE),Math.floor(cz*CHUNK/SIZE));if(t==='land')continue;
-      for(let k=0;k<9;k++){const tx=cx*CHUNK+8+hash01(cx+k,cz,151)*(CHUNK-16),tz=cz*CHUNK+8+hash01(cz,cx+k,152)*(CHUNK-16),b=worldH(tx,tz);
-        if(b<-2.5&&b>-8){L.push({key:chunkKey(cx,cz),x:tx,z:tz,bed:b});break;}}}
+      const w=wreckSpot(cx,cz);if(w)L.push({key:chunkKey(cx,cz),x:w.x,z:w.z,bed:w.bed});}  /* S1766 — the spot by placeH, the one spawnWreck lays (85-world-sea.js) */
     return SEA_WRECKS=L;}
   function maidenWrecks(){if(MAIDEN_WRECKS)return MAIDEN_WRECKS;const best={};
     for(const w of seaWrecks()){const n=nationAt(w.x,w.z),B=best[n];if(!B||w.bed<B.bed)best[n]={key:w.key,bed:w.bed,x:w.x,z:w.z};}

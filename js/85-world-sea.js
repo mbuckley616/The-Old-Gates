@@ -710,10 +710,17 @@
     add(SK.cyl(.13,.17,7.2,7),0x2e2214,.4,1.0,.6,1.25,0,.28,.08);add(SK.cyl(.1,.13,1.4,6),0x2e2214,-.9,.25,-3.2,.2,.5,1.4,.08);
     for(let k=0;k<5;k++){const a=rr()*Math.PI*2,d=2.4+rr()*1.2;add(new THREE.BoxGeometry(.32,.06,1.2+rr()*1.4),tone(.1),Math.cos(a)*d,.04,Math.sin(a)*d*1.3,rr()*.2,rr()*3,rr()*.2,.1);}
     return mergeParts(P);}
+  // S1766 — where a chunk's wreck lies, if it has one: the first of nine hashed spots whose bed is 2.5 to 8 m under the sea. The bed is
+  // read by placeH (the land keyed by place, S1758), never worldH, so the choice no longer hangs on what had loaded (S1752: 18 chunks of
+  // the sea chose another spot between two boots). One function for the wreck laid and for seaWrecks' walk (86-world-crime.js), so the
+  // maiden's three and the navigator's pointer name the wrecks that are laid. {x,z,bed} or null.
+  function wreckSpot(cx,cz){
+    if(hash01(cx,cz,150)>.06)return null; // ~1 in 16 candidate chunks
+    for(let k=0;k<9;k++){const tx=cx*CHUNK+8+hash01(cx+k,cz,151)*(CHUNK-16),tz=cz*CHUNK+8+hash01(cz,cx+k,152)*(CHUNK-16),b=placeH(tx,tz);if(b<-2.5&&b>-8)return {x:tx,z:tz,bed:b};}
+    return null;}
   function spawnWreck(ch){
-    if(hash01(ch.cx,ch.cz,150)>.06)return; // ~1 in 16 candidate chunks
-    let x=null,z=null;for(let k=0;k<9&&x===null;k++){const tx=ch.cx*CHUNK+8+hash01(ch.cx+k,ch.cz,151)*(CHUNK-16),tz=ch.cz*CHUNK+8+hash01(ch.cz,ch.cx+k,152)*(CHUNK-16);const b=worldH(tx,tz);if(b<-2.5&&b>-8){x=tx;z=tz;}}
-    if(x===null)return;const y=worldH(x,z),ry=hash01(ch.cx,ch.cz,153)*Math.PI*2;
+    const w=wreckSpot(ch.cx,ch.cz);if(!w)return;
+    const x=w.x,z=w.z,y=worldH(x,z),ry=hash01(ch.cx,ch.cz,153)*Math.PI*2;
     const c=k=>new THREE.Color(k);
     const m=new THREE.Mesh(wreckGeo(pRng(pHash('wreck|'+ch.cx+'|'+ch.cz))),VC_MAT);m.position.set(x,y,z);m.rotation.y=ry;m.castShadow=true;m.receiveShadow=true;ch.group.add(m); // S259 — a broken hull on the kit
     // S259 — the sea chest on the kit (S198's chest, the old box's size), its lid on the hinge
