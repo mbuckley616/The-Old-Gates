@@ -183,6 +183,22 @@
     if(sea<.02&&h<1.6)h=1.6-.6*(1-Math.exp((h-1.6)/1.5));
     return h;
   }
+  // S1758 — the land keyed by place. landH reads the live REGIONS and PEAKS and rawH the INLETS: the loaded cells' only, so a height far
+  // from the player depended on what had loaded (S1752: wreck beds 2.91 m apart between two boots). withPlace(x,z,fn) runs fn with those
+  // three lists holding the 3×3 cells round the point's own cell (getCell), which is exactly what is loaded when the player stands in that
+  // cell: a region reaches at most 540 m past its cell and a peak less, so nothing farther counts, and with no field over the point the
+  // nearest of the nine wins, as it does in play. The lists are given back after. placeH is rawH so (no stamps, no roads: those also
+  // hang on what has loaded), and its sea is the bare sea, as the routing's is: seaAt's pull of a loaded site's pad is left out (PLACE.on). For a walk over the whole world; never while a cell is being made (getCell), never per frame.
+  const PLACE={on:0};
+  function withPlace(x,z,fn){
+    const [ci,cj]=cellOf(x,z),keep=[REGIONS.slice(),PEAKS.slice(),INLETS.slice()];
+    REGIONS.length=0;PEAKS.length=0;INLETS.length=0;PLACE.on++;
+    try{for(let j=cj-1;j<=cj+1;j++)for(let i=ci-1;i<=ci+1;i++){if(i<0||j<0||i>=GRID||j>=GRID)continue;const c=getCell(i,j);if(!c)continue;
+        (c.regions||[]).forEach(q=>REGIONS.push(q));(c.peaks||[]).forEach(q=>PEAKS.push(q));(c.inlets||[]).forEach(q=>INLETS.push(q));}
+      return fn();}
+    finally{PLACE.on--;REGIONS.length=0;PEAKS.length=0;INLETS.length=0;keep[0].forEach(q=>REGIONS.push(q));keep[1].forEach(q=>PEAKS.push(q));keep[2].forEach(q=>INLETS.push(q));}
+  }
+  function placeH(x,z){return withPlace(x,z,()=>rawH(x,z));}
   const STAMPS=[]; // {id,x,z,r,blend,y}
   function addStamp(s){
     if(s.y==null)s.y=landH(s.x,s.z);
