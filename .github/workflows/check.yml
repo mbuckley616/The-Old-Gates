@@ -79,12 +79,16 @@ jobs:
     # 20 Oct 2026 (Session 1226, the new look the default): 90, not 60. A suite takes 1.49 times as long on the new look (296 suites
     # timed on both), and the suites came to about 1,100 minutes on it, 55 a shard at twenty; on #443 at 2ff39f31 nine of twenty
     # shards were cut at 60:00 and 35 suites never started. The retry budget moves with the limit (run.mjs, RETRY_BUDGET_MIN).
+    # 2 Nov 2026 (Session 1714): a full run (the weekly one, a run by hand) has 150, a pull request still 90. The weekly run of
+    # 1 Nov (41305372499) packed its 20 shards to 63 minutes by tests/times.json and they took 70 to 135: 11 were cut at 90:00
+    # and 23 suites never ran. The table is re-measured from that run (83 minutes a shard), and 150 leaves room for a retry
+    # and a slow runner. Twenty stays the most shards: more would only queue (GitHub Free runs twenty jobs at once).
     needs: plan
     if: needs.plan.outputs.mode != 'none'
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: ${{ needs.plan.outputs.mode == 'full' && 150 || 90 }}
     env:
-      RETRY_BUDGET_MIN: 80
+      RETRY_BUDGET_MIN: ${{ needs.plan.outputs.mode == 'full' && 140 || 80 }}
     strategy:
       fail-fast: false
       matrix:
