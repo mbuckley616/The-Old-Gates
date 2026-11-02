@@ -5041,7 +5041,7 @@ function aurenneOrrery(hAt, o = {}) {
       tower: { x0: X0, x1: X1, z0: Z0, z1: Z1, t: T, high: HI, fallen: FALL, door: { x: DX, w: DW, h: DSP + DW / 2 } }, hall: { x0: IX0, x1: IX1, z0: IZ0, z1: IZ1, floor: FL, spring: VS, crown: VS + VR },
       hatch: { x0: WX0, x1: WX1, z0: WZ0, z1: WZ1 }, bawn: { x0: -BX, x1: BX, z0: BZ0, z1: BZ1, t: BT, gate: { x: GX, w: GW }, breach: BRK }, flanker: { x: FCX, z: FCZ, r: FRO }, table: { x: TXp, z: TZp } };
   }
-  // ── the Gatelands' round cairn with its passage (Session 1732, card F8; OG-121's "round cairns"; the prototype is places.js's
+  // ── the Gatelands' round cairn with its passage (Session 1735, card F8; OG-121's "round cairns"; the prototype is places.js's
   // gatelandsCairn, Session 869, rebuilt at 1.35 in Session 884, Michael's 3 A on #305). Copied from the prototype; what differs: the
   // floor is level (the prototype's passage climbs 0.8 m to the chamber; the world's ground under you is the pad's, so the passage and
   // the chamber lie flat, 0.3 m up: a sill at the door, and the drawn ground, which lies a little off the pad's level, stays under the flags), the rounded boulders are a subdivided box roughened (no addons

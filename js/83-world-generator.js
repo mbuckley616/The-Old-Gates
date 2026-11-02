@@ -879,7 +879,7 @@ function genSettlement(site){
       S.abbey={ry,tris:A.tris,draws:A.draws,top:A.top,church:A.church,tower:A.tower,cross:A.cross,cells:A.cells,gatehouse:A.gatehouse};S.abbeyLod={hi:g,lo:far,x:cx,z:cz,r:A.cashel.r1};
     }catch(e){console.warn('abbey',site.id,e);}
     if(plan.ruins&&!S.abbey&&!S.towerHouse){for(let i=0;i<plan.ruins;i++){const ang=r()*Math.PI*2,rad0=8+r()*(pad-16);addMesh(ruinGeo(r),cx+Math.cos(ang)*rad0,cz+Math.sin(ang)*rad0,r()*Math.PI,2.2);}}
-    // S1732 (card F8; OG-121's "round cairns", Michael's 3 A on #305) — a generated stone ring in the Gatelands on the new look keeps a
+    // S1735 (card F8; OG-121's "round cairns", Michael's 3 A on #305) — a generated stone ring in the Gatelands on the new look keeps a
     // passage cairn at its middle (PKIT.places.cairn, places.js's gatelandsCairn): its door turned to the first road out as the ruins' are,
     // the kerb, the facade, the passage's and the chamber's slabs and the entrance stone solids, the passage and the chamber open and dark;
     // its far copy a dome, a ring and a box (S.cairnLod). The ring's stones stand wider round it, twelve at 22 m, none on the door's line.

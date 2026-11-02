@@ -1,4 +1,4 @@
-// The Gatelands' passage cairn (Session 1732, card F8; OG-121's "round cairns"; places.js's gatelandsCairn, Michael's 3 A on #305): on the
+// The Gatelands' passage cairn (Session 1735, card F8; OG-121's "round cairns"; places.js's gatelandsCairn, Michael's 3 A on #305): on the
 // new look a generated Gatelands stone ring (kind poi) keeps the kit's cairn (PKIT.places.cairn) at its middle, its door to the first road
 // out. The suite settles the nearest and checks the walk (before the door, the door, the passage, the chamber, the back recess), the mound
 // solid (its kerb all round, the facade either side of the door, the passage's walls, the entrance stone), its cost, and its far copy.

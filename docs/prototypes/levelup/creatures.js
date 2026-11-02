@@ -955,7 +955,9 @@ export function speedOf(C, gait = C.gait) { const G = GAITS[gait]; if (G.bl) ret
 const strideBody = (C, G) => 1.6 * Math.pow(Math.max(G.fr, .05), .3) * C.legH * (G.strideK || 1);
 // how far a foot sweeps while it is down: the stride's share, but a leaper's stance is short and its flight long
 const sweepOf = (C, G) => Math.min(strideBody(C, G) * G.duty, G.pulse ? .9 * C.legH : 1e9);
-export function strideOf(C, gait = C.gait) { const G = GAITS[gait]; return G.bl ? .7 * C.len : strideBody(C, G) * C.S; }
+// Session 1729: a slither's stride is its wave's length, not a legged gait's (by the legs' height it was 0.07 m a cycle on a 1 m snake, nine
+// waves a second at a walk): the wave runs waveLen bones a cycle down the spine and tail, so the body goes that share of its length a cycle
+export function strideOf(C, gait = C.gait) { const G = GAITS[gait]; if (G.wave) return C.len * (C.plan.waveLen ?? 8) / Math.max(1, C.B.spineNames.length + (C.B.chains.tail || []).length); return G.bl ? .7 * C.len : strideBody(C, G) * C.S; }
 // the distance the body has covered by a phase, in world metres: even for most gaits; a pulse covers the stance's sweep, then flies
 function travel(C, phase) { const G = GAITS[C.gait], k = Math.floor(phase), f = phase - k, L = strideOf(C);
   if (!G.pulse) return phase * L; const sw = sweepOf(C, G) * C.S; return k * L + (f < G.duty ? sw * f / G.duty : sw + (L - sw) * (f - G.duty) / (1 - G.duty)); }
