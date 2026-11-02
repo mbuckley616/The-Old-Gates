@@ -1011,10 +1011,37 @@
   function rackDraw(){if(!shipFitted('arms')||EQ.weapon||PHP<=0)return null;const R=shipRack();if(!R.length)return null;
     const it=rackItem(R.shift());EQ.weapon=it;if(typeof SHEATHED!=='undefined'&&SHEATHED&&typeof drawWeapon==='function')drawWeapon();sparKitRefresh();
     showMsg(`You take the ${it.name} from the rack.`,'#e8d8a0');return it;}
+  // S1733 — her figureheads (the build sheet, session 3). The yard carves its island's (the harp, the dragon prow, the sun) for 150
+  // gold, no virtue. Five more are only found, each as a token in the bag (weight 0, to be fitted at a yard): fitted free at any
+  // shipwright, one at her bow at a time, the rest kept for her (st.heads, the yard's store). Their virtues: the Sea's hull +5% top
+  // speed in rain or storm; the wreck's maiden, a pirate within 300 m holds off 10 s before closing; the beast's skull, merchantmen
+  // give way and keep 30 m off; the gate stone, storm wear ×0.8 (the Drowned Bell's ×0.5 the better, never both); the Weaver's
+  // shuttle points the navigator's line at a wreck (session 4's navigator; nothing without one)
+  const SHIP_HEADS={sea:{n:'the Sea’s Hull'},maiden:{n:'the Wreck’s Maiden'},skull:{n:'the Beast’s Skull'},stone:{n:'the Gate Stone'},shuttle:{n:'the Weaver’s Shuttle'}};
+  const HEAD_CARVE={gatelands:'harp',mark:'dragon prow',aurenne:'sun'};
+  const HEAD_YARD_PRICE=150,HEAD_SEA_K=1.05,HEAD_MAIDEN_R=300,HEAD_MAIDEN_S=10,HEAD_SKULL_R=30,HEAD_STONE_K=.8;
+  function headName(k,st){st=st||worldState.ship||{};return k==='yard'?`the ${HEAD_CARVE[st.yardHead]||'harp'}`:SHIP_HEADS[k]?SHIP_HEADS[k].n:k;}
+  function headItem(k){const N=SHIP_HEADS[k].n;return {name:N[0].toUpperCase()+N.slice(1),ico:'🗿',type:'misc',weight:0,buyPrice:0,sellMult:0,unique:true,figurehead:k,desc:'A figurehead, to be fitted at a yard.'};}
+  function shipHeads(st){st=st||shipCfg();if(!Array.isArray(st.heads))st.heads=[];return st.heads;}
+  function shipHead(){const st=worldState.ship;return st&&!st.sunk&&st.head?st.head:null;}
+  function headFound(k){return BAG.some(b=>b&&b.figurehead===k)||!!(worldState.ship&&Array.isArray(worldState.ship.heads)&&worldState.ship.heads.includes(k));}
+  // the named actions: one found (its token into the bag, once), and one set at her bow at a yard
+  function grantHead(k){if(!SHIP_HEADS[k]||headFound(k))return false;bagAdd(headItem(k));const N=headName(k);
+    showMsg(`${N[0].toUpperCase()+N.slice(1)}: a figurehead, to be fitted at a yard.`,'#e8d8a0');if(typeof renderHubInv==='function')renderHubInv();return true;}
+  function fitHead(k,nation){const st=shipCfg(),H=shipHeads(st);
+    if(k==='yard'){const nat=HEAD_CARVE[nation]?nation:'gatelands';if(st.yardHead!==nat){if(gold<HEAD_YARD_PRICE)return null;gold-=HEAD_YARD_PRICE;if(typeof updateHUD==='function')updateHUD();st.yardHead=nat;}st.head='yard';return true;}
+    if(!SHIP_HEADS[k])return 'No such figurehead.';const i=BAG.findIndex(b=>b&&b.figurehead===k);if(i>=0){BAG.splice(i,1);if(!H.includes(k))H.push(k);}
+    if(!H.includes(k))return 'She has no such figurehead.';st.head=k;if(typeof addLog==='function')addLog('⛵',`The ${SHIP.name} carries ${headName(k)} at her bow.`);return true;}
+  // the maiden: a black sail within 300 m holds off 10 s (from tickOtherShips), once a ship; true while she holds
+  function headHold(o,dP,dt){if(shipHead()!=='maiden'||dP>HEAD_MAIDEN_R)return false;if(o._maidenT==null){o._maidenT=HEAD_MAIDEN_S;showMsg('The black sail sees the maiden at your bow and holds off. Ten seconds, no more.','#ffb060');}
+    if(o._maidenT<=0)return false;o._maidenT-=dt;return true;}
+  // the skull: a merchantman within twice 30 m of her turns away from her, so she keeps 30 m off; where to steer, or null
+  function headGiveWay(o){if(shipHead()!=='skull'||!SHIP.mesh)return null;const dx=o.x-SHIP.x,dz=o.z-SHIP.z,d=Math.hypot(dx,dz);
+    if(d>HEAD_SKULL_R*2||d<1e-3)return null;return {x:o.x+dx/d*100,z:o.z+dz/d*100};}
   function shipFitNames(arr){return arr.map(k=>k==='stowage'?'stowage':SHIP_FITS[k]?SHIP_FITS[k].n:k);}
   function shipCfg(){return worldState.ship||(worldState.ship={});}
   function shipClass(){return SHIP_CLASSES[(worldState.ship&&worldState.ship.cls)||'sloop'];}
-  function shipTopSpeed(){return shipClass().speed*(1+((worldState.ship&&worldState.ship.sails)||0)*SAIL_STEP)*(gateGift('gaoth')?1.5:1);} /* S1349 — Gaoth's gift, after the sails */
+  function shipTopSpeed(){return shipClass().speed*(1+((worldState.ship&&worldState.ship.sails)||0)*SAIL_STEP)*(gateGift('gaoth')?1.5:1)*(shipHead()==='sea'&&(WX.type==='rain'||WX.type==='storm')?HEAD_SEA_K:1);} /* S1733 — the Sea’s hull */ /* S1349 — Gaoth's gift, after the sails */
   // S411 — Michael's A on #85 (docs/design/sailing.md): a hull by class and a rig of 100, kept in worldState.ship (saved).
   // Under half her hull she ships water (speed ×0.8), under a quarter ×0.6; the rig sets ×(0.5 + 0.5 × rig/100);
   // at 0 hull she is waterlogged and makes 2.5 at most. The shipwright mends 4 gold a hull point, 3 a rig point, an hour a 20.
@@ -1043,6 +1070,7 @@
     const st=SHIP.sea||0,v=Math.abs(SHIP.speed);let h=0,r=0;
     if(st>=3&&v>.5){const m=fwd>0?1:.5;h=dt/6*m;r=dt/4*m;}else if(st===2&&v>.5){h=dt/60;r=dt/60;}
     if(typeof bellAboard==='function'&&bellAboard()){h*=.5;r*=.5;if(st>=3&&v>.5&&WX.type==='storm')bellStorm();} /* S778 — the Drowned Bell: half the sea's wear; S794 — its line, the first storm */
+    else if(st>=3&&shipHead()==='stone'){h*=HEAD_STONE_K;r*=HEAD_STONE_K;} /* S1733 — the gate stone: storm wear ×0.8, never with the Bell */
     if(!h&&!r)return;SHIP._wh=(SHIP._wh||0)+h;SHIP._wr=(SHIP._wr||0)+r;const H=Math.floor(SHIP._wh),R=Math.floor(SHIP._wr);
     if(H||R){SHIP._wh-=H;SHIP._wr-=R;shipWear(H,R);}}
   // S413 — foundering: any hull lost while she is waterlogged sinks her. The wreck lies where she went down (on the map); any
@@ -1253,6 +1281,12 @@
     if(free)for(const k in SHIP_FITS){if(st.fit.includes(k)||st.stored.includes(k))continue;const F=SHIP_FITS[k];
       out.push({label:`Fit ${F.a} (${F.price} gold, ${F.w} of the hold)`,cls,quest:true,fn:()=>{const r=fitShip(k);return r===true?`Fitted: ${F.a}. Her hold takes ${holdCap()} now.`:r===null?`${F.a[0].toUpperCase()+F.a.slice(1)}: ${F.price} gold.`:r;}});}
     if(free)for(const k of [...new Set(st.stored)])out.push({label:`Fit her ${shipFitNames([k])[0]} again (kept at the yard)`,cls,quest:true,fn:()=>{const r=fitShip(k,true);return r===true?`Fitted again: ${shipFitNames([k])[0]}. Her hold takes ${holdCap()} now.`:r;}});
+    // S1733 — her figureheads: each found one in the bag fitted free, each kept one set back free, the yard's own island's carved for 150
+    {const H=shipHeads(st),nat=nationAt(site.x,site.z),cap=t=>t[0].toUpperCase()+t.slice(1);
+      for(const k of [...new Set(BAG.filter(b=>b&&SHIP_HEADS[b.figurehead]).map(b=>b.figurehead))])out.push({label:`Fit ${headName(k)} at her bow (free)`,cls,quest:true,fn:()=>{const r=fitHead(k);return r===true?`${cap(headName(k))} rides at her bow now.`:r;}});
+      for(const k of H)if(k!==st.head)out.push({label:`Set ${headName(k)} at her bow again (kept at the yard)`,cls,quest:true,fn:()=>{const r=fitHead(k);return r===true?`${cap(headName(k))} rides at her bow again.`:r;}});
+      if(st.yardHead&&st.head!=='yard')out.push({label:`Set her carved ${HEAD_CARVE[st.yardHead]} at her bow again (kept at the yard)`,cls,quest:true,fn:()=>{const r=fitHead('yard',st.yardHead);return r===true?`The ${HEAD_CARVE[st.yardHead]} rides at her bow again.`:r;}});
+      if(HEAD_CARVE[nat]&&st.yardHead!==nat)out.push({label:`Carve her a figurehead: the ${HEAD_CARVE[nat]} (${HEAD_YARD_PRICE} gold)`,cls,quest:true,fn:()=>{const r=fitHead('yard',nat);return r===true?`Carved: the ${HEAD_CARVE[nat]} rides at her bow.`:r===null?`The ${HEAD_CARVE[nat]}: ${HEAD_YARD_PRICE} gold.`:r;}});}
     for(const k of [...(cargo?['stowage']:[]),...st.fit])out.push({label:`Take out her ${shipFitNames([k])[0]}`,cls,quest:true,fn:()=>{const r=unfitShip(k);return r===true?`The ${shipFitNames([k])[0]} comes out and waits at the yard. Her hold takes ${holdCap()} now.`:r;}});
     return out;
   }

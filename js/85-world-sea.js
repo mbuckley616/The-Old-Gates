@@ -917,7 +917,7 @@
       if(o.boarded){placeOther(o);pirateFled(o);continue;}
       const T=targetOf(o),dP=Math.hypot(T.x-o.x,T.z-o.z); /* S542 — co-op rule: whom a black sail hunts is targetOf's */
       let tx,tz;
-      if(o.kind==='pirate'&&!o.sated&&atSea()&&dP<(typeof bellAboard==='function'&&bellAboard()?600:300)){ // close to ~28u, then hold off and shoot; S778 — from 600 with the Drowned Bell aboard
+      if(o.kind==='pirate'&&!o.sated&&atSea()&&dP<(typeof bellAboard==='function'&&bellAboard()?600:300)&&!(typeof headHold==='function'&&headHold(o,dP,dt))){ /* S1733 — the maiden: she holds off 10 s */ // close to ~28u, then hold off and shoot; S778 — from 600 with the Drowned Bell aboard
         if(typeof bellBlackSail==='function')bellBlackSail(o); /* S794 — the bell rings, the first time one turns for you */
         // S418 — her ram (Michael's B on #100): within 30 units, faster than you and with her ram ready, she steers at your
         // hull; the first touch spends it (tickHullCollisions) and she goes back to her circle; 30 s before the next, 12 s to land it
@@ -930,6 +930,7 @@
       } else {
         if(!o.wp||Math.hypot(o.wp.x-o.x,o.wp.z-o.z)<20){for(let k=0;k<10;k++){const a=Math.random()*Math.PI*2,d=150+Math.random()*250;const x=o.x+Math.cos(a)*d,z=o.z+Math.sin(a)*d;if(worldH(x,z)<-4){o.wp={x,z};break;}}}
         if(o.wp){tx=o.wp.x;tz=o.wp.z;}
+        if(o.kind!=='pirate'&&typeof headGiveWay==='function'){const gw=headGiveWay(o);if(gw){tx=gw.x;tz=gw.z;o.wp=null;}} /* S1733 — the skull: merchantmen give way */
       }
       if(tx!=null){const want=Math.atan2(-(tx-o.x),-(tz-o.z));let d=want-o.yaw;d=Math.atan2(Math.sin(d),Math.cos(d));o.yaw+=Math.max(-.5*dt,Math.min(.5*dt,d));o.speed+=((o.kind==='pirate'?6.5:4.5)-o.speed)*Math.min(1,dt*.6);}
       const fx=-Math.sin(o.yaw),fz=-Math.cos(o.yaw);const bx=o.x+fx*(o.L/2+3),bz=o.z+fz*(o.L/2+3);
