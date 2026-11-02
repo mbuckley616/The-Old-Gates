@@ -115,7 +115,9 @@
   // S1065 — the settlements whose lots take the kit's bays on the new look, and the shops that are merchants' houses
   const KIT_SITE={village:'village',outpost:'village',town:'town',port:'town',city:'town'},KIT_SHOPS=new Set(['weapon','armor','potion','misc','barber']);
   const AU_VCH={rank:'village',w:12,tower:1}; /* S1485 — an Aurennais village's Church of the Weaver (#294 C: limewash by rank) */
-  function genSettlement(site){
+  // S1725 — which of the Gatelands' two ruins a generated ruin is: the monastic ruin (S1715) or the tower house, one in two by its id's hash
+function gatelandsRuinKind(id){let h=2166136261;for(let i=0;i<id.length;i++){h^=id.charCodeAt(i);h=Math.imul(h,16777619);}return (h>>>0)%2?'towerhouse':'abbey';}
+function genSettlement(site){
     if(SETTLE.has(site.id)||site.pad<=0)return;
     let r=rngFor(site.c*31+7,site.r*17+3);_townNames=new Set();_twinUsed=new Map();_roleNames=new Set();const _innNames=new Set();if(!site.lordless)try{const ln_=lordFor(site).name;_townNames.add(ln_);_roleNames.add(ln_);}catch(e){} // S248 — the lord's name is his own; the guild heads drawn before him leave it // S172 — names unique within the town where the bank allows
     const reg=site.reg||REGISTER[dominantRegion(site.x,site.z).r.id]||'irish'; // the cell's culture
@@ -857,7 +859,18 @@
     // site's stream), every wall, the tower, the cross, the cells and the yew a solid; its far copy plain boxes, a cylinder and cone for
     // the tower and domes for the cells (S.abbeyLod, by houseLod's rule). Anywhere else, and on the old look, the seven heaps as before. Only a generated
     // ruin: a named one (Caer Uaigneach, the canon's plague village) keeps its own.
-    const abbeyHere=site.kind==='ruin'&&/^c\d+_\d+_s\d+$/.test(site.id)&&window.OG_LOOK==='new'&&window.OG_KIT_TOWNS!==false&&typeof PKIT!=='undefined'&&PKIT.places&&PKIT.places.abbey&&nationOf(ni,nj).people==='gatelander';
+    // S1725 (card F8; Michael's A on #401) — one generated Gatelands ruin in two, by its id's hash (gatelandsRuinKind), is the ruined tower
+    // house instead (PKIT.places.towerhouse, places.js's gatelandsTowerHouse): its bawn on the pad, its gate to the road as the abbey's, the
+    // hall cold and empty, the cellar's hatch shut (S.towerHouse, S.towerLod)
+    const ruinKit=site.kind==='ruin'&&/^c\d+_\d+_s\d+$/.test(site.id)&&window.OG_LOOK==='new'&&window.OG_KIT_TOWNS!==false&&typeof PKIT!=='undefined'&&PKIT.places&&PKIT.places.abbey&&nationOf(ni,nj).people==='gatelander';
+    const abbeyHere=ruinKit&&gatelandsRuinKind(site.id)==='abbey';
+    if(ruinKit&&!abbeyHere)try{const A=PKIT.places.towerhouse({key:site.id}),ry=streets.length?Math.atan2(ax,az):r()*Math.PI*2,y=worldH(cx,cz)-.06,c=Math.cos(ry),s_=Math.sin(ry),g=A.group;
+      g.position.set(cx,y,cz);g.rotation.y=ry;g.userData.noBake=true;group.add(g);
+      for(const b of A.sol)sol.push({cx:cx+b.x*c+b.z*s_,cz:cz-b.x*s_+b.z*c,rx:b.w/2,rz:b.d/2,c:Math.cos(ry+b.ry),s:Math.sin(ry+b.ry),h:b.h,bt:'wall',towerhouse:true});
+      const mx=new THREE.Matrix4().makeRotationY(ry).setPosition(cx,y,cz),lo=A.far.map(([fg,col])=>[fg,mx,new THREE.Color(col)]);
+      const far=new THREE.Mesh(mergeGeos(lo),VC_MAT);far.name='towerhouse far';far.userData.noBake=true;far.castShadow=true;far.receiveShadow=true;far.visible=false;group.add(far);lo.forEach(([fg])=>fg.dispose());
+      S.towerHouse={ry,tris:A.tris,draws:A.draws,top:A.top,tower:A.tower,hall:A.hall,hatch:A.hatch,bawn:A.bawn,flanker:A.flanker,table:A.table};S.towerLod={hi:g,lo:far,x:cx,z:cz,r:20};
+    }catch(e){console.warn('towerhouse',site.id,e);}
     if(abbeyHere)try{const A=PKIT.places.abbey({key:site.id}),ry=streets.length?Math.atan2(ax,az):r()*Math.PI*2,y=worldH(cx,cz)-.06,c=Math.cos(ry),s_=Math.sin(ry),g=A.group;
       g.position.set(cx,y,cz);g.rotation.y=ry;g.userData.noBake=true;group.add(g);
       for(const b of A.sol)sol.push({cx:cx+b.x*c+b.z*s_,cz:cz-b.x*s_+b.z*c,rx:b.w/2,rz:b.d/2,c:Math.cos(ry+b.ry),s:Math.sin(ry+b.ry),h:b.h,bt:'wall',abbey:true});
@@ -865,7 +878,7 @@
       const far=new THREE.Mesh(mergeGeos(lo),VC_MAT);far.name='abbey far';far.userData.noBake=true;far.castShadow=true;far.receiveShadow=true;far.visible=false;group.add(far);lo.forEach(([fg])=>fg.dispose());
       S.abbey={ry,tris:A.tris,draws:A.draws,top:A.top,church:A.church,tower:A.tower,cross:A.cross,cells:A.cells,gatehouse:A.gatehouse};S.abbeyLod={hi:g,lo:far,x:cx,z:cz,r:A.cashel.r1};
     }catch(e){console.warn('abbey',site.id,e);}
-    if(plan.ruins&&!S.abbey){for(let i=0;i<plan.ruins;i++){const ang=r()*Math.PI*2,rad0=8+r()*(pad-16);addMesh(ruinGeo(r),cx+Math.cos(ang)*rad0,cz+Math.sin(ang)*rad0,r()*Math.PI,2.2);}}
+    if(plan.ruins&&!S.abbey&&!S.towerHouse){for(let i=0;i<plan.ruins;i++){const ang=r()*Math.PI*2,rad0=8+r()*(pad-16);addMesh(ruinGeo(r),cx+Math.cos(ang)*rad0,cz+Math.sin(ang)*rad0,r()*Math.PI,2.2);}}
     if(plan.stones){for(let i=0;i<plan.stones;i++){const ang=i/plan.stones*Math.PI*2;addMesh(standingStoneGeo(r),cx+Math.cos(ang)*11,cz+Math.sin(ang)*11,ang,.6);}}
     // Footpaths and streets as flat ribbons on the pad.
     // S193 — footpaths: straight from the door to its street when nothing stands between; otherwise a dog-leg out
@@ -1121,7 +1134,7 @@
   // S1073 — a kit town's houses (one group for the town, S.kitLod) by the same rule, measured from the town's centre less half its
   // houses' reach: near the town the kit's houses, from outside it their far copy
   function houseLod(){const cp=CAM.position;for(const S of SETTLE.values()){
-    for(const K of [S.kitLod,S.farmLod,S.ringLod,S.abbeyLod])if(K){const d=Math.max(0,Math.hypot(K.x-cp.x,K.z-cp.z)-K.r*.5),near=d<HOUSE_LOD.near?true:d>HOUSE_LOD.far?false:K.hi.visible;K.hi.visible=near;K.lo.visible=!near;} /* S1455 — and a village's farm */
+    for(const K of [S.kitLod,S.farmLod,S.ringLod,S.abbeyLod,S.towerLod])if(K){const d=Math.max(0,Math.hypot(K.x-cp.x,K.z-cp.z)-K.r*.5),near=d<HOUSE_LOD.near?true:d>HOUSE_LOD.far?false:K.hi.visible;K.hi.visible=near;K.lo.visible=!near;} /* S1455 — and a village's farm */
     if(S.ring&&S.ring.paint&&S.ringLod&&S.ringLod.hi.visible)try{S.ring.paint(ringPostNames(S.ring.site));}catch(e){} /* S1662 — the post's names, cut again when the champion or the dead change (paint keeps its own key) */
     const L=S.lodMeshes;if(!L)continue;
     for(const m of L){if(m.userData.lod!=='hi')continue;const b=m.geometry.boundingSphere;const d=Math.max(0,Math.hypot(b.center.x-cp.x,b.center.z-cp.z)-b.radius*.5);
