@@ -11,7 +11,7 @@ const OUT = path.join(ROOT, 'docs', 'prototypes', 'f4'); fs.mkdirSync(OUT, { rec
 const KINDS = { 'Deer': ['deer', .87], 'Red Fox': ['redfox', .35], 'Brown Hare': ['brownhare', .29], 'Badger': ['badger', .21], 'Otter': ['otter', .13],
   // Session 1719: the farms' livestock, keyed farm:<key>
   'Cow': ['cow', 1.23], 'Sheep': ['sheep', .65], 'Goat': ['goat', .55],
-  // Session 1722: the Gatelands' own
+  // Session 1727 (first numbered 1722): the Gatelands' own
   'Elderstag': ['stag', 1.15], 'Gatefen Boar': ['gatefenboar', .69], 'Redspine Fox': ['redspinefox', .35], 'Hollowcat': ['hollowcat', .3], 'Greenward Stoat': ['stoat', .065] };
 const g = await boot({ look: 'new' }); const { page } = g;
 await g.intoWorld();
@@ -182,6 +182,22 @@ const pike = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.c
 console.log('  pike:', JSON.stringify(pike));
 check(`the River Pike wears the kit's (${pike.plan}, ${pike.bones} bones, ${pike.tris} triangles, ${pike.len} m nose to tail, its nose ${pike.nose} m off the stand-in's); it holds and swims by its group (${pike.hold}, ${pike.swim} at ${pike.cyc} beats a second, the bones moving ${pike.moved}); taken away, dropped`,
   !pike.fail && pike.plan === 'game:River Pike' && pike.seed === pike.want && pike.tris < 10000 && pike.len > .68 && pike.len < .84 && Math.abs(pike.nose) < .02 && pike.hold === 'hold' && pike.swim === 'swim' && pike.moved > .005 && pike.dropped, pike);
+// Session 1728: the Mire Snake on the trout's path on land: its belly on the ground, its length the stand-in's, slithering as its group moves
+const snake = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.cos(yaw), x = px + fx * 3, z = pz + fz * 3;
+  const rig = buildAnimal('Mire Snake', 'f4snake:0'), G = new THREE.Group(); G.add(rig.root); G.position.set(x, WORLD.worldH(x, z), z); G.rotation.y = yaw + Math.PI / 2; WORLD.scene.add(G);
+  const e = { name: 'Mire Snake', x, z, mesh: G, limbs: { wolf: rig, torso: rig.mesh }, dead: false }; rig.e = e;
+  CAM.position.set(px, worldH(px, pz) + 1.65, pz); CAM.updateMatrixWorld(true);
+  const ZE = ZONES.world.enemies; ZE.push(e); let k = 0; HBODY.last = -1e9; while (!rig.hc && !rig.hcFail && k++ < 300) hcTick(9.993e5 + k * (HBODY.gap + 1)); ZE.splice(ZE.indexOf(e), 1);
+  const H = rig.hc; if (!H) { G.parent.remove(G); return { fail: !!rig.hcFail }; }
+  G.rotation.y = 0; G.updateMatrixWorld(true); const bx = new THREE.Box3(); for (const m of H.C.meshes) bx.union(new THREE.Box3().setFromObject(m)); const sb = new THREE.Box3().setFromObject(rig.mesh);
+  const sk = H.C.skel, t0 = performance.now; let i0 = 0; const run = (n, sp) => { for (let i = 0; i < n; i++) { G.position.z += sp / 60; i0++;
+      performance.now = () => 9.996e5 + i0 * 1000 / 60; try { hcSwimPose(rig); } finally { performance.now = t0; } } sk.update(); return { m: Array.from(sk.boneMatrices), ph: rig.ph, g: rig.gaitNow }; };
+  const a = run(60, 0), b = run(60, .6), c = run(30, .6); let mv = 0, mv2 = 0; for (let i = 0; i < a.m.length; i++) { mv = Math.max(mv, Math.abs(a.m[i] - b.m[i])); mv2 = Math.max(mv2, Math.abs(c.m[i] - b.m[i])); }
+  const out = { plan: H.C.g.plan, seed: H.C.g.seed, want: HC.hashKey(rig.hcKey), bones: H.C.bones.length, tris: H.C.stats.tris, len: +(bx.max.z - bx.min.z).toFixed(3), low: +(bx.min.y - G.position.y).toFixed(3), high: +(bx.max.y - G.position.y).toFixed(3),
+    standTris: rig.tris, rest: a.g, move: b.g, cyc: +(b.ph - a.ph).toFixed(2), moved: +mv.toFixed(3), still: +mv2.toFixed(3) }; G.parent.remove(G); hcTick(9.999e5); out.dropped = !rig.hc; return out; });
+console.log('  snake:', JSON.stringify(snake));
+check(`the Mire Snake wears the kit's (${snake.plan}, ${snake.bones} bones, ${snake.tris} triangles; stand-in ${snake.standTris}), ${snake.len} m long, lying from ${snake.low} to ${snake.high} m over its ground; at rest it is ${snake.rest}, moving it is ${snake.move} (${snake.cyc} cycles over 0.6 m (a wave's length, 0.5 m, a cycle), the bones moving ${snake.moved}, and again ${snake.still}); taken away, dropped`,
+  !snake.fail && snake.plan === 'game:Mire Snake' && snake.seed === snake.want && snake.tris < 12000 && snake.len > .8 && snake.len < 1.1 && Math.abs(snake.low) < .03 && snake.high < .15 && snake.rest === 'stand' && snake.move === 'slither' && snake.cyc > .9 && snake.cyc < 1.6 && snake.moved > .005 && snake.still > .005 && snake.dropped, snake);
 // Session 1721: an island given to buildAnimal is the kit's coat for it (HC.COATS): the Mark's black hill cow and grey hen, Aurenne's cream
 // cow and buff hen; the hind (an own plan) takes the deer's. The same key keeps its seed; an unknown island is none
 const isles = await page.evaluate(() => { const mean = C => { const a = C.meshes[0].geometry.attributes.color.array; let r = 0, g = 0, b = 0; const n = a.length / 3;
