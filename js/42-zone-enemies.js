@@ -775,7 +775,7 @@ const WILD_PACE={Deer:{walk:1.1,run:9},'Red Fox':{walk:1,run:7},'Brown Hare':{wa
 // Sessions 1723 to 1757), peaceful as the common set (Michael's A on #984): one blow, no reward but their meat, built by buildAnimal and
 // driven by tickWildOne. Pace in metres a second, walking and running; fly, the birds whose plan soars (the rest run on foot). The four the
 // catalogue calls aggressive or hostile (the Gatefen Boar, the Icecrab, the Saltspine Monitor, the Sand Wyrm) are not here: how they
-// fight is asked (DECISION, Session 1768). The fish (the River Pike, the Riverjaw Salmon) wait with them
+// fight is asked (DECISION #1050, Session 1768). The fish (the River Pike, the Riverjaw Salmon) wait with them
 const WILD_ISLE_KINDS={
   'Elderstag':{walk:1.1,run:9},'Redspine Fox':{walk:1,run:7},'Hollowcat':{walk:.7,run:8},'Greenward Stoat':{walk:.5,run:5},
   'Great Heron':{walk:.4,run:5},'Crag Hawk':{walk:.3,run:12,fly:true},'Capercaillie':{walk:.4,run:5},
