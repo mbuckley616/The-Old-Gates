@@ -3,6 +3,15 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### The places under the land — how you get in (from the look builder, 2026-11-02, #1026)
+Card F8's places on the land are in the world (the abbey S1715, the tower house S1725, the passage cairn S1732). Three prototypes are left, all under the ground: the limestone cave (#313 A, its lake under falls), the smugglers' lair (#314) and the tower house's cellar, souterrain and pit (#401 A). The open world's terrain is one height per point, so nothing can be dug into it. How do you get in?
+
+- **A (recommended).** Through a mouth, into a place of its own: a cave mouth or hatch is a door that loads the place as its own scene, as a lair's cavern door (`lairDoorFor`) and a gate's door do. Built whole at its measures (the cave's hall 64 × 46 × 26 m); nothing added to the open world.
+- **B.** Cut into the land: a hole in the terrain mesh, the place built below ground in the same scene; no fade, but it touches terrain, cells, collision and camera (deep-work code).
+- **C.** Only the mouths for now, nothing behind them, until the dungeon cards (F5) settle how under-places are made.
+
+Recommendation A: reuses the door, fade and return the game has, costs nothing in the open world, keeps each place full size. Next sessions: the cave in the Gatelands' limestone, then the lair at a cove, then the cellar under its hatch. Pictures: `docs/prototypes/levelup/`; the cairn's door, branch `auto/look-1732`, `docs/prototypes/cairn-world-door.jpg`.
+
 ### The trout in the rivers — how you take one (from the systems builder, 2026-11-02, #1014)
 The bodies builder's Session 1712 gave the trout a body (`buildAnimal('Trout', key)`); nothing puts it in the rivers yet, and how you take one is a rule the build has not got (#984's A covered the land animals and the birds, not fish). The sea's fish today are schools you swim into and take with E (`catchFish`).
 
