@@ -2,12 +2,17 @@
 // the Otter, built by buildAnimal on the wolf's bones and gait and, on the new look, dressed in the creature kit's own plan for each, at
 // the kit's size in metres. A line of the five ahead of you: each on the kit's skeleton, keyed by the spawner's key; its hips at its
 // driver's and at its own height; the same key the same body; walked along the ground, its bones move and its toes stay by the ground;
-// three levels by distance; the driver's shadow copy swaps by distance. Picture: docs/prototypes/f4/f4-animals.jpg.
+// three levels by distance; the driver's shadow copy swaps by distance. Session 1719: the farms' Cow, Sheep and Goat beside them, on the
+// deer's legs, keyed farm:<key>. Picture: docs/prototypes/f4/f4-animals.jpg.
 import { boot, check, ROOT } from './lib/game.mjs';
 import fs from 'fs'; import path from 'path';
 const OUT = path.join(ROOT, 'docs', 'prototypes', 'f4'); fs.mkdirSync(OUT, { recursive: true });
 
-const KINDS = { 'Deer': ['deer', .87], 'Red Fox': ['redfox', .35], 'Brown Hare': ['brownhare', .29], 'Badger': ['badger', .21], 'Otter': ['otter', .13] };
+const KINDS = { 'Deer': ['deer', .87], 'Red Fox': ['redfox', .35], 'Brown Hare': ['brownhare', .29], 'Badger': ['badger', .21], 'Otter': ['otter', .13],
+  // Session 1719: the farms' livestock, keyed farm:<key>
+  'Cow': ['cow', 1.23], 'Sheep': ['sheep', .65], 'Goat': ['goat', .55],
+  // Session 1727 (first numbered 1722): the Gatelands' own
+  'Elderstag': ['stag', 1.15], 'Gatefen Boar': ['gatefenboar', .69], 'Redspine Fox': ['redspinefox', .35], 'Hollowcat': ['hollowcat', .3], 'Greenward Stoat': ['stoat', .065] };
 const g = await boot({ look: 'new' }); const { page } = g;
 await g.intoWorld();
 
@@ -15,19 +20,19 @@ const made = await page.evaluate((names) => { forceTime(12);
   { const t1 = performance.now(); while (JOBS.length && performance.now() - t1 < 20000) runJobs(); }
   const fx = -Math.sin(yaw), fz = -Math.cos(yaw), sx = -fz, sz = fx, n = names.length;
   const clear = (x, z) => { for (let dx = -2; dx <= 2; dx += .5) for (let dz = -2; dz <= 2; dz += .5) if (WORLD.solidAt(x + dx, z + dz)) return false; return true; };
-  let d = 6; for (; d < 60; d += 2) { let ok = true; for (let i = 0; i < n; i++) if (!clear(px + fx * d + sx * (i - 2) * 2, pz + fz * d + sz * (i - 2) * 2)) { ok = false; break; } if (ok) break; }
-  window._A = names.map((nm, i) => { const x = px + fx * d + sx * (i - 2) * 2, z = pz + fz * d + sz * (i - 2) * 2;
+  let d = 6; for (; d < 60; d += 2) { let ok = true; for (let i = 0; i < n; i++) if (!clear(px + fx * d + sx * (i - (n - 1) / 2) * 2.5, pz + fz * d + sz * (i - (n - 1) / 2) * 2.5)) { ok = false; break; } if (ok) break; }
+  window._A = names.map((nm, i) => { const x = px + fx * d + sx * (i - (n - 1) / 2) * 2.5, z = pz + fz * d + sz * (i - (n - 1) / 2) * 2.5;
     const rig = buildAnimal(nm, 'f4animals:' + i), G = new THREE.Group(); G.add(rig.root); G.position.set(x, WORLD.worldH(x, z), z); G.rotation.y = yaw + Math.PI / 2; WORLD.scene.add(G); return { nm, rig, G }; });
   CAM.position.set(px, worldH(px, pz) + 1.65, pz); CAM.updateMatrixWorld(true);
   const want = () => _A.filter(f => hcOk(f.rig) && !f.rig.hc && !f.rig.hcFail).length;
-  let k = 0; HBODY.last = -1e9; while (want() && k++ < 200) tickCreatures(1 / 60, 2e5 + k * (HBODY.gap + 1));
+  let k = 0; HBODY.last = -1e9; while (want() && k++ < 600) tickCreatures(1 / 60, 2e5 + k * (HBODY.gap + 1));
   return { d, ticks: k, left: want(), fails: _A.filter(f => f.rig.hcFail).map(f => f.nm), nope: buildAnimal('Wolf') === null, each: Math.round(HC_BODY.ms / Math.max(1, HC_BODY.n)) }; }, Object.keys(KINDS));
 console.log('  built:', JSON.stringify(made));
-check('buildAnimal builds the five and only the wild kinds (a Wolf is a foe\'s)', made.nope && made.left === 0 && made.fails.length === 0, made);
+check('buildAnimal builds the thirteen and only the wild and farm kinds (a Wolf is a foe\'s)', made.nope && made.left === 0 && made.fails.length === 0, made);
 
 const who = await page.evaluate(() => _A.map(({ nm, rig, G }) => { const H = rig.hc; if (!H) return { nm, hc: false }; G.updateMatrixWorld(true);
   const a = H.C.byName.spine0.getWorldPosition(new THREE.Vector3()), b = rig.B.hips.getWorldPosition(new THREE.Vector3());
-  return { nm, hc: true, plan: H.C.g.plan, seed: H.C.g.seed, want: HC.hashKey('wild:' + rig.hcKey.slice(5)), bones: H.C.bones.length, map: H.map.length, tris: H.C.stats.tris,
+  return { nm, hc: true, plan: H.C.g.plan, seed: H.C.g.seed, want: HC.hashKey(rig.hcKey), bones: H.C.bones.length, map: H.map.length, tris: H.C.stats.tris,
     hipGap: +a.distanceTo(b).toFixed(3), hipY: +(a.y - G.position.y).toFixed(3), own: +(H.C.byName.spine0.position.y * H.C.S).toFixed(3),
     same: JSON.stringify(HC.toSaved(HC.genome(hcPlan(nm), rig.hcKey))) === JSON.stringify(HC.toSaved(H.C.g)) }; }));
 console.log('  animals:', JSON.stringify(who));
@@ -42,8 +47,8 @@ check('the same key is the same deer, another key another', twin.same && twin.ot
 // against the man: the deer's back near his chest, the hare's at his shin (F2a: people are the measure)
 const man = await page.evaluate(() => { const r = {}; for (const { nm, rig, G } of _A) { G.updateMatrixWorld(true); let top = -1e9; rig.hc.C.meshes[0].geometry.computeBoundingBox();
   const b = new THREE.Box3().setFromObject(rig.hc.C.meshes[0]); r[nm] = +((b.max.y - G.position.y) / SCALE.PEOPLE.gatelander.m).toFixed(2); } return r; });
-check(`against a man's stature (${JSON.stringify(man)}): the deer stands about two thirds of him, the hare and the otter under a fifth`,
-  man['Deer'] > .5 && man['Deer'] < .9 && man['Brown Hare'] < .3 && man['Otter'] < .2 && man['Red Fox'] < man['Deer'], man);
+check(`against a man's stature (${JSON.stringify(man)}): the deer stands about two thirds of him, the hare and the otter under a fifth, the cow's horns about his height, the sheep and the goat half`,
+  man['Cow'] > .8 && man['Cow'] < 1.15 && man['Sheep'] > .35 && man['Sheep'] < .65 && man['Goat'] > .35 && man['Goat'] < .65 && man['Deer'] > .5 && man['Deer'] < .9 && man['Brown Hare'] < .3 && man['Otter'] < .2 && man['Red Fox'] < man['Deer'], man);
 
 // walked along the ground: the bones move, the toes stay near it
 const walk = await page.evaluate(() => _A.map(({ nm, rig, G }) => { const H = rig.hc, by = H.C.byName, sk = H.C.skel; sk.update(); const a = Array.from(sk.boneMatrices);
@@ -81,8 +86,8 @@ const lv = await page.evaluate(() => { const f = _A[0], G = f.G, fx = -Math.sin(
 check(`the deer's three levels: near its hide and fur (${lv.near.kit} meshes), at 25 m fewer (${lv.mid.kit}), at 60 m the driver's own body, its low copy`,
   lv.near.L === 0 && !lv.near.driver && !lv.near.lo && lv.mid.L === 1 && lv.mid.kit < lv.near.kit && lv.far.L === 2 && lv.far.driver && lv.far.lo && lv.back.L === 0 && !lv.back.lo, lv);
 
-await page.evaluate(() => { const a = _A[0].G, b = _A[4].G, mx = (a.position.x + b.position.x) / 2, mz = (a.position.z + b.position.z) / 2, fx = -Math.sin(yaw), fz = -Math.cos(yaw);
-  px = mx - fx * 5; pz = mz - fz * 5; pitch = -.18; });
+await page.evaluate(() => { const a = _A[0].G, b = _A[_A.length - 1].G, mx = (a.position.x + b.position.x) / 2, mz = (a.position.z + b.position.z) / 2, fx = -Math.sin(yaw), fz = -Math.cos(yaw);
+  px = mx - fx * 9; pz = mz - fz * 9; pitch = -.16; });
 for (let i = 0; i < 8; i++) { await page.evaluate(() => tickCreatures(1 / 60, performance.now())); await g.frames(1); }
 await page.screenshot({ path: path.join(OUT, 'f4-animals.jpg'), type: 'jpeg', quality: 80 });
 
@@ -91,9 +96,11 @@ check('taken from the scene, each is dropped', gone);
 
 // Session 1710: the raven and the crow. No wolf's driver: buildAnimal gives a rig holding a plain stand-in (the far level), and near the
 // kit's bird, fitted to the stand-in's length; hcTick finds it among the world's foes once `rig.e` is set. Its gait is read from its
-// group: standing, walking, hopping by the ground covered a second, soaring when the group is lifted off the ground
+// group: standing, walking, hopping by the ground covered a second, soaring when the group is lifted off the ground. Session 1719: the
+// farms' hen on the same path, keyed farm:<key>, running at a trot and never soaring. Session 1723: the Gatelands' Great Heron, Crag Hawk
+// and Capercaillie, fast and aloft by their plans' gaits
 const birds = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.cos(yaw), sx = -fz, sz = fx;
-  window._B = ['Raven', 'Crow'].map((nm, i) => { const x = px + fx * 4 + sx * (i - .5) * 1.2, z = pz + fz * 4 + sz * (i - .5) * 1.2;
+  window._B = ['Raven', 'Crow', 'Hen', 'Great Heron', 'Crag Hawk', 'Capercaillie'].map((nm, i) => { const x = px + fx * 4 + sx * (i - 2.5) * 1.3, z = pz + fz * 4 + sz * (i - 2.5) * 1.3;
     const rig = buildAnimal(nm, 'f4birds:' + i), G = new THREE.Group(); G.add(rig.root); G.position.set(x, WORLD.worldH(x, z), z); G.rotation.y = yaw + Math.PI / 2; WORLD.scene.add(G);
     const e = { name: nm, x, z, mesh: G, limbs: { wolf: rig, torso: rig.mesh }, dead: false }; rig.e = e; return { nm, rig, G, e }; });
   CAM.position.set(px, worldH(px, pz) + 1.65, pz); CAM.updateMatrixWorld(true);
@@ -104,11 +111,11 @@ const birds = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.
     const r0 = G.rotation.y; G.rotation.y = 0; G.updateMatrixWorld(true); const bx = new THREE.Box3(); for (const m of H.C.meshes) bx.union(new THREE.Box3().setFromObject(m));
     const sp = H.C.byName.spine0.getWorldPosition(new THREE.Vector3()).y - G.position.y; G.rotation.y = r0; G.updateMatrixWorld(true);
     return { nm, plan: H.C.g.plan, seed: H.C.g.seed, want: HC.hashKey(rig.hcKey), bones: H.C.bones.length, tris: H.C.stats.tris, stand: rig.mesh.geometry.attributes.position.count / 3,
-      len: +(bx.max.z - bx.min.z).toFixed(3), low: +(bx.min.y - G.position.y).toFixed(3), spine: +sp.toFixed(3), wolf: WOLF_RIGS.has(rig) }; }); });
+      len: +(bx.max.z - bx.min.z).toFixed(3), top: +(bx.max.y - G.position.y).toFixed(3), key: rig.hcKey.split(':')[0], low: +(bx.min.y - G.position.y).toFixed(3), spine: +sp.toFixed(3), wolf: WOLF_RIGS.has(rig) }; }); });
 console.log('  birds:', JSON.stringify(birds));
-check(`the raven and the crow wear the kit's (${birds.map(b => b.nm + ' ' + b.plan + ', ' + b.bones + ' bones, ' + b.tris + ' triangles, ' + b.len + ' m beak to tail').join('; ')}), keyed by the spawner's key, over a ${birds[0].stand}-triangle stand-in, no wolf's driver`,
-  birds.every(b => !b.fail && /^game:(Raven|Crow)$/.test(b.plan) && b.seed === b.want && b.bones > 16 && b.tris < 8000 && !b.wolf && Math.abs(b.low) < .01) &&
-  Math.abs(birds[0].len - .58) < .03 && Math.abs(birds[1].len - .45) < .03, birds);
+check(`the raven, the crow, the hen and the Gatelands' heron, hawk and capercaillie wear the kit's (${birds.map(b => b.nm + ' ' + b.plan + ', ' + b.bones + ' bones, ' + b.tris + ' triangles, ' + b.len + ' m beak to tail').join('; ')}), keyed by the spawner's key, over a ${birds[0].stand}-triangle stand-in, no wolf's driver`,
+  birds.every(b => !b.fail && b.plan === 'game:' + b.nm && b.key === (b.nm === 'Hen' ? 'farm' : 'wild') && b.seed === b.want && b.bones > 16 && b.tris < 8000 && !b.wolf && Math.abs(b.low) < .01) &&
+  Math.abs(birds[0].len - .58) < .03 && Math.abs(birds[1].len - .45) < .03 && Math.abs(birds[2].len - .40) < .03 && birds[2].top > .3 && birds[2].top < .55 && Math.abs(birds[3].len - .95) < .05 && Math.abs(birds[4].len - .55) < .03 && Math.abs(birds[5].len - .85) < .05, birds);
 const fly = await page.evaluate(() => _B.map(({ nm, rig, G }) => { const H = rig.hc, sk = H.C.skel, seen = {}, t0 = performance.now; let i0 = 0;
   const run = (n, sp, lift) => { for (let i = 0; i < n; i++) { G.position.x += Math.sin(G.rotation.y) * sp / 60; G.position.z += Math.cos(G.rotation.y) * sp / 60;
       G.position.y = WORLD.worldH(G.position.x, G.position.z) + lift; i0++; performance.now = () => 7e5 + i0 * 1000 / 60; try { hcBirdPose(rig); } finally { performance.now = t0; } }
@@ -118,10 +125,11 @@ const fly = await page.evaluate(() => _B.map(({ nm, rig, G }) => { const H = rig
   const d = run(60, 6, 4); seen.up = rig.gaitNow; G.updateMatrixWorld(true); const sp = H.C.byName.spine0.getWorldPosition(new THREE.Vector3()).y - G.position.y;
   run(30, 0, 0); return { nm, seen, moved: [mv(a, b), mv(b, c), mv(c, d)], soarSpine: +sp.toFixed(3) }; }));
 console.log('  fly:', JSON.stringify(fly));
-check(`each bird's gait is its group's: still ${fly.map(f => f.seen.still).join('/')}, 0.4 m/s ${fly.map(f => f.seen.slow).join('/')}, 1.6 m/s ${fly.map(f => f.seen.fast).join('/')}, 4 m up ${fly.map(f => f.seen.up).join('/')}; aloft its spine ${fly.map(f => f.soarSpine).join(', ')} m over the group (standing ${birds.map(b => b.spine).join(', ')})`,
-  fly.every((f, i) => f.seen.still === 'stand' && f.seen.slow === 'walk' && f.seen.fast === 'hop' && f.seen.up === 'soar' && f.moved.every(m => m > .01) && Math.abs(f.soarSpine - birds[i].spine) < .08), fly);
-await page.evaluate(() => { const a = _B[0].G, b = _B[1].G, mx = (a.position.x + b.position.x) / 2, mz = (a.position.z + b.position.z) / 2, fx = -Math.sin(yaw), fz = -Math.cos(yaw);
-  for (const { G } of _B) G.position.y = WORLD.worldH(G.position.x, G.position.z); px = mx - fx * 1.8; pz = mz - fz * 1.8; pitch = -.42; });
+const FAST = { Raven: 'hop', Crow: 'hop', Hen: 'trot', 'Great Heron': 'walk', 'Crag Hawk': 'walk', Capercaillie: 'trot' }, UP = { Raven: 'soar', Crow: 'soar', 'Crag Hawk': 'soar' };
+check(`each bird's gait is its group's, fast and aloft by its plan's gaits (the hen, the heron and the capercaillie never soar): still ${fly.map(f => f.seen.still).join('/')}, 0.4 m/s ${fly.map(f => f.seen.slow).join('/')}, 1.6 m/s ${fly.map(f => f.seen.fast).join('/')}, 4 m up ${fly.map(f => f.seen.up).join('/')}; aloft its spine ${fly.map(f => f.soarSpine).join(', ')} m over the group (standing ${birds.map(b => b.spine).join(', ')})`,
+  fly.every((f, i) => f.seen.still === 'stand' && f.seen.slow === 'walk' && f.seen.fast === FAST[f.nm] && f.seen.up === (UP[f.nm] || FAST[f.nm]) && f.moved.every(m => m > .01) && Math.abs(f.soarSpine - birds[i].spine) < .08), fly);
+await page.evaluate(() => { const a = _B[0].G, b = _B[_B.length - 1].G, mx = (a.position.x + b.position.x) / 2, mz = (a.position.z + b.position.z) / 2, fx = -Math.sin(yaw), fz = -Math.cos(yaw);
+  for (const { G } of _B) G.position.y = WORLD.worldH(G.position.x, G.position.z); px = mx - fx * 3.2; pz = mz - fz * 3.2; pitch = -.3; });
 for (let i = 0; i < 8; i++) await g.frames(1);
 await page.screenshot({ path: path.join(OUT, 'f4-birds.jpg'), type: 'jpeg', quality: 80 });
 const blv = await page.evaluate(() => { const { rig, G } = _B[0], fx = -Math.sin(yaw), fz = -Math.cos(yaw);
@@ -158,6 +166,87 @@ const tlv = await page.evaluate(() => { const { rig, G } = _T, fx = -Math.sin(ya
   CAM.position.set(G.position.x - fx * 60, G.position.y + 1.65, G.position.z - fz * 60); CAM.updateMatrixWorld(true); hcTick(9.8e5);
   const far = { L: rig.hc.L, stand: rig.mesh.visible }; G.parent.remove(G); hcTick(9.9e5); return { far, dropped: !rig.hc && !HC_RIGS.has(rig) }; });
 check(`at 60 m the trout is its stand-in (L${tlv.far.L}); taken from the scene, it is dropped (${tlv.dropped})`, tlv.far.L === 2 && tlv.far.stand && tlv.dropped, tlv);
+// Session 1724: the River Pike on the trout's path, twice its length
+const pike = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.cos(yaw), x = px + fx * 3, z = pz + fz * 3;
+  const rig = buildAnimal('River Pike', 'f4pike:0'), G = new THREE.Group(); G.add(rig.root); G.position.set(x, WORLD.worldH(x, z) + .6, z); G.rotation.y = yaw + Math.PI / 2; WORLD.scene.add(G);
+  const e = { name: 'River Pike', x, z, mesh: G, limbs: { wolf: rig, torso: rig.mesh }, dead: false }; rig.e = e;
+  CAM.position.set(px, worldH(px, pz) + 1.65, pz); CAM.updateMatrixWorld(true);
+  const ZE = ZONES.world.enemies; ZE.push(e); let k = 0; HBODY.last = -1e9; while (!rig.hc && !rig.hcFail && k++ < 300) hcTick(9.92e5 + k * (HBODY.gap + 1)); ZE.splice(ZE.indexOf(e), 1);
+  const H = rig.hc; if (!H) { G.parent.remove(G); return { fail: !!rig.hcFail }; }
+  G.rotation.y = 0; G.updateMatrixWorld(true); const bx = new THREE.Box3(); for (const m of H.C.meshes) bx.union(new THREE.Box3().setFromObject(m)); const sb = new THREE.Box3().setFromObject(rig.mesh);
+  const sk = H.C.skel, t0 = performance.now; let i0 = 0; const run = (n, sp) => { for (let i = 0; i < n; i++) { G.position.z += sp / 60; i0++;
+      performance.now = () => 9.95e5 + i0 * 1000 / 60; try { hcSwimPose(rig); } finally { performance.now = t0; } } sk.update(); return { m: Array.from(sk.boneMatrices), ph: rig.ph, g: rig.gaitNow }; };
+  const a = run(60, 0), b = run(60, .8); let mv = 0; for (let i = 0; i < a.m.length; i++) mv = Math.max(mv, Math.abs(a.m[i] - b.m[i]));
+  const out = { plan: H.C.g.plan, seed: H.C.g.seed, want: HC.hashKey(rig.hcKey), bones: H.C.bones.length, tris: H.C.stats.tris, len: +(bx.max.z - bx.min.z).toFixed(3), nose: +(bx.max.z - sb.max.z).toFixed(3),
+    hold: a.g, swim: b.g, cyc: +(b.ph - a.ph).toFixed(2), moved: +mv.toFixed(3) }; G.parent.remove(G); hcTick(9.99e5); out.dropped = !rig.hc; return out; });
+console.log('  pike:', JSON.stringify(pike));
+check(`the River Pike wears the kit's (${pike.plan}, ${pike.bones} bones, ${pike.tris} triangles, ${pike.len} m nose to tail, its nose ${pike.nose} m off the stand-in's); it holds and swims by its group (${pike.hold}, ${pike.swim} at ${pike.cyc} beats a second, the bones moving ${pike.moved}); taken away, dropped`,
+  !pike.fail && pike.plan === 'game:River Pike' && pike.seed === pike.want && pike.tris < 10000 && pike.len > .68 && pike.len < .84 && Math.abs(pike.nose) < .02 && pike.hold === 'hold' && pike.swim === 'swim' && pike.moved > .005 && pike.dropped, pike);
+// Session 1728: the Mire Snake on the trout's path on land: its belly on the ground, its length the stand-in's, slithering as its group moves
+const snake = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.cos(yaw), x = px + fx * 3, z = pz + fz * 3;
+  const rig = buildAnimal('Mire Snake', 'f4snake:0'), G = new THREE.Group(); G.add(rig.root); G.position.set(x, WORLD.worldH(x, z), z); G.rotation.y = yaw + Math.PI / 2; WORLD.scene.add(G);
+  const e = { name: 'Mire Snake', x, z, mesh: G, limbs: { wolf: rig, torso: rig.mesh }, dead: false }; rig.e = e;
+  CAM.position.set(px, worldH(px, pz) + 1.65, pz); CAM.updateMatrixWorld(true);
+  const ZE = ZONES.world.enemies; ZE.push(e); let k = 0; HBODY.last = -1e9; while (!rig.hc && !rig.hcFail && k++ < 300) hcTick(9.993e5 + k * (HBODY.gap + 1)); ZE.splice(ZE.indexOf(e), 1);
+  const H = rig.hc; if (!H) { G.parent.remove(G); return { fail: !!rig.hcFail }; }
+  G.rotation.y = 0; G.updateMatrixWorld(true); const bx = new THREE.Box3(); for (const m of H.C.meshes) bx.union(new THREE.Box3().setFromObject(m)); const sb = new THREE.Box3().setFromObject(rig.mesh);
+  const sk = H.C.skel, t0 = performance.now; let i0 = 0; const run = (n, sp) => { for (let i = 0; i < n; i++) { G.position.z += sp / 60; i0++;
+      performance.now = () => 9.996e5 + i0 * 1000 / 60; try { hcSwimPose(rig); } finally { performance.now = t0; } } sk.update(); return { m: Array.from(sk.boneMatrices), ph: rig.ph, g: rig.gaitNow }; };
+  const a = run(60, 0), b = run(60, .6), c = run(30, .6); let mv = 0, mv2 = 0; for (let i = 0; i < a.m.length; i++) { mv = Math.max(mv, Math.abs(a.m[i] - b.m[i])); mv2 = Math.max(mv2, Math.abs(c.m[i] - b.m[i])); }
+  const out = { plan: H.C.g.plan, seed: H.C.g.seed, want: HC.hashKey(rig.hcKey), bones: H.C.bones.length, tris: H.C.stats.tris, len: +(bx.max.z - bx.min.z).toFixed(3), low: +(bx.min.y - G.position.y).toFixed(3), high: +(bx.max.y - G.position.y).toFixed(3),
+    standTris: rig.tris, rest: a.g, move: b.g, cyc: +(b.ph - a.ph).toFixed(2), moved: +mv.toFixed(3), still: +mv2.toFixed(3) }; G.parent.remove(G); hcTick(9.999e5); out.dropped = !rig.hc; return out; });
+console.log('  snake:', JSON.stringify(snake));
+check(`the Mire Snake wears the kit's (${snake.plan}, ${snake.bones} bones, ${snake.tris} triangles; stand-in ${snake.standTris}), ${snake.len} m long, lying from ${snake.low} to ${snake.high} m over its ground; at rest it is ${snake.rest}, moving it is ${snake.move} (${snake.cyc} cycles over 0.6 m (the kit's stride, a wave's length), the bones moving ${snake.moved}, and again ${snake.still}); taken away, dropped`,
+  !snake.fail && snake.plan === 'game:Mire Snake' && snake.seed === snake.want && snake.tris < 12000 && snake.len > .8 && snake.len < 1.1 && Math.abs(snake.low) < .03 && snake.high < .15 && snake.rest === 'stand' && snake.move === 'slither' && snake.cyc > .9 && snake.cyc < 1.6 && snake.moved > .005 && snake.still > .005 && snake.dropped, snake);
+// Session 1730: the Lantern Beetle on the same path, walking on the kit's own six legs, 6 cm long, its glow the kit's
+const beetle = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.cos(yaw), x = px + fx * 2, z = pz + fz * 2;
+  const rig = buildAnimal('Lantern Beetle', 'f4beetle:0'), G = new THREE.Group(); G.add(rig.root); G.position.set(x, WORLD.worldH(x, z), z); G.rotation.y = yaw + Math.PI / 2; WORLD.scene.add(G);
+  const e = { name: 'Lantern Beetle', x, z, mesh: G, limbs: { wolf: rig, torso: rig.mesh }, dead: false }; rig.e = e;
+  CAM.position.set(px, worldH(px, pz) + 1.65, pz); CAM.updateMatrixWorld(true);
+  const ZE = ZONES.world.enemies; ZE.push(e); let k = 0; HBODY.last = -1e9; while (!rig.hc && !rig.hcFail && k++ < 300) hcTick(1.0003e6 + k * (HBODY.gap + 1)); ZE.splice(ZE.indexOf(e), 1);
+  const H = rig.hc; if (!H) { G.parent.remove(G); return { fail: !!rig.hcFail }; }
+  G.rotation.y = 0; G.updateMatrixWorld(true); const bx = new THREE.Box3(); for (const m of H.C.meshes) bx.union(new THREE.Box3().setFromObject(m));
+  const sk = H.C.skel, t0 = performance.now; let i0 = 0; const run = (n, sp) => { for (let i = 0; i < n; i++) { G.position.z += sp / 60; i0++;
+      performance.now = () => 1.0006e6 + i0 * 1000 / 60; try { hcSwimPose(rig); } finally { performance.now = t0; } } sk.update(); return { m: Array.from(sk.boneMatrices), ph: rig.ph, g: rig.gaitNow }; };
+  const a = run(60, 0), b = run(60, .1); let mv = 0; for (let i = 0; i < a.m.length; i++) mv = Math.max(mv, Math.abs(a.m[i] - b.m[i]));
+  const glow = H.glow.length ? Math.max(...H.glow.map(u => u.value.r + u.value.g + u.value.b)) : 0, legs = H.C.bones.filter(b => /^leg\d[LR]_0$/.test(b.name)).length;
+  const out = { plan: H.C.g.plan, bones: H.C.bones.length, legs, tris: H.C.stats.tris, len: +(bx.max.z - bx.min.z).toFixed(3), low: +(bx.min.y - G.position.y).toFixed(3), high: +(bx.max.y - G.position.y).toFixed(3),
+    standTris: rig.tris, rest: a.g, move: b.g, cyc: +(b.ph - a.ph).toFixed(2), moved: +mv.toFixed(4), glow: +glow.toFixed(2) }; G.parent.remove(G); hcTick(1.0009e6); out.dropped = !rig.hc; return out; });
+console.log('  beetle:', JSON.stringify(beetle));
+check(`the Lantern Beetle wears the kit's (${beetle.plan}, ${beetle.bones} bones, ${beetle.legs} legs, ${beetle.tris} triangles; stand-in ${beetle.standTris}), ${beetle.len} m long, from ${beetle.low} to ${beetle.high} m over its ground, glowing ${beetle.glow}; at rest ${beetle.rest}, moving ${beetle.move} (${beetle.cyc} cycles over 0.1 m, the bones moving ${beetle.moved}); taken away, dropped`,
+  !beetle.fail && beetle.plan === 'game:Lantern Beetle' && beetle.legs === 6 && beetle.tris < 6000 && beetle.len > .045 && beetle.len < .075 && Math.abs(beetle.low) < .01 && beetle.high < .04 && beetle.glow > 1 && beetle.rest === 'stand' && beetle.move === 'walk' && beetle.cyc > .3 && beetle.moved > 1e-4 && beetle.dropped, beetle);
+// Session 1731: the Stonecrawler and the Marsh Frog on the same path, scurrying at the kit's trot and going by its hop
+for (const [nm, move, L, sp] of [['Stonecrawler', 'trot', .3, .5], ['Marsh Frog', 'hop', .12, .4]]) {
+  const r = await page.evaluate(([nm, sp, T]) => { const fx = -Math.sin(yaw), fz = -Math.cos(yaw), x = px + fx * 2, z = pz + fz * 2;
+    const rig = buildAnimal(nm, 'f4crawl:' + nm), G = new THREE.Group(); G.add(rig.root); G.position.set(x, WORLD.worldH(x, z), z); G.rotation.y = yaw + Math.PI / 2; WORLD.scene.add(G);
+    const e = { name: nm, x, z, mesh: G, limbs: { wolf: rig, torso: rig.mesh }, dead: false }; rig.e = e;
+    CAM.position.set(px, worldH(px, pz) + 1.65, pz); CAM.updateMatrixWorld(true);
+    const ZE = ZONES.world.enemies; ZE.push(e); let k = 0; HBODY.last = -1e9; while (!rig.hc && !rig.hcFail && k++ < 300) hcTick(T + k * (HBODY.gap + 1)); ZE.splice(ZE.indexOf(e), 1);
+    const H = rig.hc; if (!H) { G.parent.remove(G); return { fail: !!rig.hcFail }; }
+    G.rotation.y = 0; G.updateMatrixWorld(true); const bx = new THREE.Box3(); for (const m of H.C.meshes) bx.union(new THREE.Box3().setFromObject(m));
+    const sk = H.C.skel, t0 = performance.now; let i0 = 0; const run = (n, v) => { for (let i = 0; i < n; i++) { G.position.z += v / 60; i0++;
+        performance.now = () => T + 5e3 + i0 * 1000 / 60; try { hcSwimPose(rig); } finally { performance.now = t0; } } sk.update(); return { m: Array.from(sk.boneMatrices), ph: rig.ph, g: rig.gaitNow }; };
+    const a = run(60, 0), b = run(60, sp); let mv = 0; for (let i = 0; i < a.m.length; i++) mv = Math.max(mv, Math.abs(a.m[i] - b.m[i]));
+    const out = { plan: H.C.g.plan, seed: H.C.g.seed, want: HC.hashKey(rig.hcKey), legs: H.C.B.legs.length, tris: H.C.stats.tris, len: +(bx.max.z - bx.min.z).toFixed(3), low: +(bx.min.y - G.position.y).toFixed(3),
+      rest: a.g, move: b.g, cyc: +(b.ph - a.ph).toFixed(2), moved: +mv.toFixed(4) }; G.parent.remove(G); hcTick(T + 9e3); out.dropped = !rig.hc; return out; }, [nm, sp, 1.001e6 + (nm === 'Marsh Frog' ? 2e4 : 0)]);
+  console.log('  ' + nm + ':', JSON.stringify(r));
+  check(`the ${nm} wears the kit's (${r.plan}, ${r.legs} legs, ${r.tris} triangles), ${r.len} m long, its lowest ${r.low} m off its ground at rest; at rest ${r.rest}, moving ${r.move} (${r.cyc} cycles over ${sp} m, the bones moving ${r.moved}); taken away, dropped`,
+    !r.fail && r.plan === 'game:' + nm && r.seed === r.want && r.legs === 4 && r.tris < 9000 && r.len > L * .8 && r.len < L * 1.15 && Math.abs(r.low) < .01 && r.rest === 'stand' && r.move === move && r.cyc > .3 && r.moved > 1e-3 && r.dropped, r);
+}
+// Session 1721: an island given to buildAnimal is the kit's coat for it (HC.COATS): the Mark's black hill cow and grey hen, Aurenne's cream
+// cow and buff hen; the hind (an own plan) takes the deer's. The same key keeps its seed; an unknown island is none
+const isles = await page.evaluate(() => { const mean = C => { const a = C.meshes[0].geometry.attributes.color.array; let r = 0, g = 0, b = 0; const n = a.length / 3;
+    for (let i = 0; i < a.length; i += 3) { r += a[i]; g += a[i + 1]; b += a[i + 2]; } return [r / n, g / n, b / n].map(v => +v.toFixed(3)); };
+  const out = {}; for (const [nm, key] of [['Cow', 'f4isles:0'], ['Hen', 'f4isles:1'], ['Deer', 'f4animals:5']]) { out[nm] = {};
+    for (const isle of [undefined, 'mark', 'aurenne']) { const rig = buildAnimal(nm, key, isle); WOLF_RIGS.delete(rig); const g = hcGenome(rig);
+      const C = HC.build(g); out[nm][isle || 'none'] = { island: g.island || null, seed: g.seed, col: mean(C) }; for (const m of C.meshes) m.geometry.dispose(); } }
+  { const r = buildAnimal('Cow', 'f4isles:0', 'atlantis'); WOLF_RIGS.delete(r); out.bad = r.hcIsland === undefined; } return out; });
+console.log('  isles:', JSON.stringify(isles));
+const lum = c => c[0] + c[1] + c[2], differ = (a, b) => Math.max(...a.map((v, i) => Math.abs(v - b[i]))) > .03;
+check(`by island the coat (mean colour, plan / Mark / Aurenne): cow ${['none', 'mark', 'aurenne'].map(k => isles.Cow[k].col.join(' ')).join(' / ')}; hen ${['none', 'mark', 'aurenne'].map(k => isles.Hen[k].col.join(' ')).join(' / ')}; the hind's from the deer's`,
+  ['Cow', 'Hen', 'Deer'].every(nm => isles[nm].none.island === null && isles[nm].mark.island === 'mark' && isles[nm].aurenne.island === 'aurenne' &&
+    isles[nm].mark.seed === isles[nm].none.seed && differ(isles[nm].none.col, isles[nm].mark.col) && differ(isles[nm].none.col, isles[nm].aurenne.col)) &&
+  lum(isles.Cow.mark.col) < lum(isles.Cow.none.col) && lum(isles.Cow.aurenne.col) > lum(isles.Cow.none.col) && isles.bad, isles);
 await page.evaluate(() => { REN.render(scene, CAM); });
 check('no page errors', g.errs.length === 0, g.errs.slice(0, 3));
 await g.close();
