@@ -1317,7 +1317,7 @@
   function tickHerbSync(dt){_herbSyncT-=dt;if(_herbSyncT>0)return;_herbSyncT=.5;tickHerbLod();try{tickHerbGlints();}catch(e){}const F=HERB_LOD.far;
     for(const h of ZONES.world.herbs){if(!h.inst)continue;const hidden=h.harvested||!h.g.visible;if(hidden!==h._shownHidden){h._shownHidden=hidden;h._y=propH(h.x,h.z);syncHerbInstance(h);continue;}
       if(Math.abs(h.x-px)>F||Math.abs(h.z-pz)>F)continue;const y=propH(h.x,h.z);if(Math.abs((h._y==null?-1e9:h._y)-y)>.05){h._y=y;syncHerbInstance(h);}}}
-  // S1753 — a site's pad is stamped when its cell loads (81-world-cells.js), and a chunk of the next cell built before that placed its herbs
+  // S1755 — a site's pad is stamped when its cell loads (81-world-cells.js), and a chunk of the next cell built before that placed its herbs
   // without it: okSpot's rule (no herb within the pad's radius less 6 m) then missed them, and a Shadowcap grew on the cairn's chamber
   // floor (the critic, 2 Nov). Stamping a pad now takes away the scatter's herbs already inside it, so what grows on a pad no longer
   // depends on what loaded first. A herb bed (h.bed) and a site's own herbs (a glade's, ids by the site) are not the scatter's and stay.

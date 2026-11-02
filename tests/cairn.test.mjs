@@ -28,7 +28,7 @@ check('open: before the door and round the entrance stone, the door, the passage
 check('solid: the kerb at the back and both sides, the facade either side of the door, the passage\'s walls, the entrance stone', !r.none && Object.values(r.solid).every(v => v), r);
 check(`the drawn ground lies under the flags of the passage and the chamber (by ${r.unders} m at the least)`, !r.none && r.unders > 0, r);
 check(`from 400 m its far copy (${r.farTris} triangles) stands in for it`, !r.none && r.farOn && r.farTris < 1500, r);
-// S1753: a chunk built before a cell stamped its pads placed herbs on them (a Shadowcap on the chamber's floor); none stands inside any loaded site's pad less 6 m
+// S1755: a chunk built before a cell stamped its pads placed herbs on them (a Shadowcap on the chamber's floor); none stands inside any loaded site's pad less 6 m
 const hp = await page.evaluate(() => { const bad = []; for (const h of ZONES.world.herbs) { if (h.bed || !/^-?\d+,-?\d+:(herb|verge|hot):\d+$/.test(h.id)) continue; const st = stampAt(h.x, h.z);
   if (st && st.kind === 'site' && Math.hypot(h.x - st.x, h.z - st.z) < st.r - 6) bad.push(h.id + '@' + st.id); } return { n: ZONES.world.herbs.length, bad }; });
 check(`no scatter herb grows inside a site's pad (${hp.n} herbs loaded)`, hp.n > 50 && hp.bad.length === 0, hp);

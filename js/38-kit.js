@@ -65,7 +65,7 @@ const idr = id => { let n = (id * 2654435761) >>> 0; n ^= n >>> 15; return (n % 
     const edge = Math.min(rx, 1 - rx, ry, 1 - ry), n = tfbm(x, y, 14, 4, r * 3), gap = edge < .025; const h = gap ? 0 : Math.min(1, edge * 6) * (.8 + .2 * n); const v = .3 + .1 * r + .1 * n; return [h, ...(gap ? [.06, .06, .06] : [v * .95, v * .97, v])]; }, 2.4),
     rock: () => texPair(512, (x, y) => { const n = tfbm(x, y, 4, 6, 21), m = tfbm(x, y, 16, 4, 23), strata = Math.sin((y * 9 + n * 2.2) * Math.PI) * .5 + .5, crack = Math.pow(1 - Math.abs(tfbm(x, y, 6, 4, 29) - .5) * 2, 14);
     const h = n * .55 + strata * .25 + m * .2 - crack * .25; const v = .48 + .14 * n + .05 * strata - .07 * crack; return [h, v * 1.03, v * .98, v * .9]; }, 3.0),
-    // S1752 — the cairn's orthostats (the critic, 2 Nov: `rock`'s cracks drew 2 m veins on the passage's flat slabs, polished marble): a grit
+    // S1754 — the cairn's orthostats (the critic, 2 Nov: `rock`'s cracks drew 2 m veins on the passage's flat slabs, polished marble): a grit
     // of fine pits and grains, broad weathered patches and pale lichen, no strata and no veins
     orth: () => texPair(512, (x, y) => { const n = tfbm(x, y, 5, 5, 41), m = tfbm(x, y, 28, 3, 43), p = tfbm(x, y, 64, 2, 45), li = tfbm(x, y, 14, 4, 47), lk = Math.max(0, Math.min(1, (li - .64) * 12));
     const h = n * .35 + m * .4 + p * .25 + lk * .08; const v = .30 + .26 * n + .16 * m + .10 * p; return [h, mix(v * 1.02, .74, lk * .6), mix(v, .74, lk * .6), mix(v * .92, .64, lk * .6)]; }, 5.0),
