@@ -2,12 +2,12 @@
 // generated ruin in the Gatelands is the kit's abbey (PKIT.places.abbey) on its level pad, its gate to the first road out. The suite
 // settles the nearest one and checks the walk (the green, the gate, the nave, the west door, the chancel arch and a cell open), the walls
 // (the nave's, the gable beside its door, the tower, the cashel, a cell's) solid, its cost (under 30,000 triangles in 10 draws or fewer),
-// its far copy away from it, and that a named ruin (Caer Uaigneach, the canon's plague village) keeps its own heaps.
+// its far copy away from it (one ruin in two is the tower house since Session 1725: the suite takes an abbey's), and that a named ruin (Caer Uaigneach, the canon's plague village) keeps its own heaps.
 import { boot, check } from './lib/game.mjs';
 const g = await boot({ look: 'new' }); const { page } = g; await g.intoWorld();
 await page.evaluate(() => REN.setSize(320, 180, false));
 const id = await page.evaluate(() => { anchoredPlaces(); const S = [...CELLS.values()].filter(c => c.type !== 'sea' && nationKeyOf(c.i, c.j) === 'gatelands').flatMap(c => c.sites);
-  return (S.filter(s => s.kind === 'ruin' && /^c\d+_\d+_s\d+$/.test(s.id)).sort((a, b) => Math.hypot(a.x - px, a.z - pz) - Math.hypot(b.x - px, b.z - pz))[0] || {}).id; });
+  return (S.filter(s => s.kind === 'ruin' && /^c\d+_\d+_s\d+$/.test(s.id) && gatelandsRuinKind(s.id) === 'abbey').sort((a, b) => Math.hypot(a.x - px, a.z - pz) - Math.hypot(b.x - px, b.z - pz))[0] || {}).id; });
 check(`a generated Gatelands ruin (${id}) stands`, !!id && await g.settle(id));
 const r = await page.evaluate(id => { const S = WORLD.settle.get(id), A = S && S.abbey; if (!A) return { none: true };
   const t = S.site, c = Math.cos(A.ry), s = Math.sin(A.ry), W = (u, v) => [t.x + u * c + v * s, t.z - u * s + v * c], at = (u, v) => solidAt(...W(u, v)), ch = A.church;
