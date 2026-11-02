@@ -239,6 +239,7 @@ function foeBlow(e,raw,arm){const r=foeAttack(e);return Math.max(1,Math.round(ar
 function strikeFoes(){return isOverworldZone()?ZE:ENEMIES;}
 function strikeCandidate(e){
   if(!e||e.dead||e.locked||e.aloft)return false; /* S1711 — a bird in the air is out of a blade's reach */
+  if(e.swim&&weaponAttack(EQ.weapon)!==WEAPON_ATTACKS.Spear)return false; /* S1759 — a trout under the water: of the blows only the spear's reaches it (#1014 A) */
   if(!isOverworldZone()&&(e.floor!==currentFloor||e.disguised))return false;
   return true;
 }
