@@ -296,7 +296,11 @@ function genSettlement(site){
       }
       // Ring lots around the plaza if still short.
       const hero0=heroShops(site);
-      const want=Math.max(Math.round((plan.n[0]+Math.floor(r()*(plan.n[1]-plan.n[0]+1)))*(TST?lotFactor(site,P):1)),(hero0?hero0.length:plan.shops.length)+2);
+      // S1743 — the floor of two homes over the shops is a town's: a place planned with none (a ruin, a camp, a stone ring) laid two whole
+      // houses on its pad, two cottages against the tower house's bawn and inside the cashel. On the new look such a place keeps none, but
+      // for a named one's roster (hero0); the stream's draw is made as before
+      const want0=Math.max(Math.round((plan.n[0]+Math.floor(r()*(plan.n[1]-plan.n[0]+1)))*(TST?lotFactor(site,P):1)),(hero0?hero0.length:plan.shops.length)+2);
+      const want=plan.n[1]===0&&!hero0&&window.OG_LOOK==='new'?0:want0;
       for(let k=0;k<40&&lots.length<want;k++){
         const ang=r()*Math.PI*2,rad0=18+r()*Math.max(8,inner-30);
         const lx=cx+Math.cos(ang)*rad0,lz=cz+Math.sin(ang)*rad0;
