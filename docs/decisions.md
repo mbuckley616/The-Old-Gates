@@ -15,6 +15,16 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+### Wagons and carts by island — how far do the islands' vehicles differ? (from the concept artist, 2026-11-02, #1046)
+**The question.** Backlog L3 owes the wagons and carts (OG-046, OG-058). The concept artist built nine in the new look, three per island, on one shared running gear (wheels, axles, bed, shafts, pole, yoke, runners), each team from the creature kit with its harness fitted to the beast. A vehicle alone is 2.7k to 10.8k triangles; a team of two adds about 100k. How far should the islands' vehicles differ?
+
+**Options.**
+- **A.** One kit everywhere: the Gatelands' cart, wagon and coach on every island, painted in the island's colours, pulled by horses. Three bodies.
+- **B (recommended).** Each island its own three on the shared gear, with its own animals: horses in the Gatelands; oxen and a fjord horse in the Mark; a donkey, mules and the camel in Aurenne. Nine bodies.
+- **C.** B, plus runners in the Mark's snow: while `WX.cover` lies, the ox cart and light cart run on runners; the carved wagon keeps its wheels. Two more bodies.
+
+**Recommendation: B.** Each island's vehicles look like that island at no more cost than one kit painted three ways; C can be added later without changing B. Pictures: [A, B and C](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1102/docs/prototypes/levelup/wagons-options.jpg), [in scale](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1102/docs/prototypes/levelup/wagons-scale.jpg), [close up](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1102/docs/prototypes/levelup/wagons-close.jpg), [the Mark in snow](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1102/docs/prototypes/levelup/wagons-road-mark-snow.jpg). The write-up is in `docs/concepts.md`.
+
 ## Answered
 ### The places under the land — how you get in (from the look builder, 2026-11-02, #1026)
 Card F8's places on the land are in the world (the abbey S1715, the tower house S1725, the passage cairn S1732). Three prototypes are left, all under the ground: the limestone cave (#313 A, its lake under falls), the smugglers' lair (#314) and the tower house's cellar, souterrain and pit (#401 A). The open world's terrain is one height per point, so nothing can be dug into it. How do you get in?
