@@ -303,7 +303,11 @@ function buildWolf(name,scale){
 // rig moved by its group walks and gallops by the ground it covers, as the coach's horses do
 // Session 1706: a deer is a hind one time in two by its key (its kit body the deer's without antlers, HC_KINDS' Hind), and a tenth smaller
 function animalHash(str){let h=2166136261;for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
-function buildAnimal(name,key){if(BIRD[name])return buildBird(name,key);if(SWIMMER[name])return buildSwimmer(name,key);const k=WOLF_KINDS[name];if(!k||!(k.wild||k.farm))return null;const hind=name==='Deer'&&key!=null&&(animalHash(String(key))&1)===1;
+// Session 1721: an island (one of the kit's ISLES: 'gatelands', 'mark', 'aurenne'; the spawner's nationAt(x, z)) gives the kit's body that
+// island's coat (HC.COATS, Sessions 865 and 866: the Mark's colder and greyer, Aurenne's sandier); the same bones and flesh, the same key
+function buildAnimal(name,key,island){const rig=buildAnimal0(name,key);if(rig&&ANIMAL_ISLES.includes(island))rig.hcIsland=island;return rig;}
+const ANIMAL_ISLES=['gatelands','mark','aurenne'];
+function buildAnimal0(name,key){if(BIRD[name])return buildBird(name,key);if(SWIMMER[name])return buildSwimmer(name,key);const k=WOLF_KINDS[name];if(!k||!(k.wild||k.farm))return null;const hind=name==='Deer'&&key!=null&&(animalHash(String(key))&1)===1;
   const rig=buildWolf(name,k.world*(hind?.9:1));if(key!=null)rig.hcKey=(k.farm?'farm:':'wild:')+key;if(hind)rig.hcKind='Hind';return rig;}
 // Session 1710: the raven and the crow (L3, for #984's A; the systems builder's note on S1707: "the raven and crow need a bird driver
 // before they can spawn"). A bird has no four legs for the wolf's driver, so it has none: `buildAnimal('Raven'|'Crow', key)` gives a
@@ -923,12 +927,14 @@ function hcPlan(name){const K=HC_KINDS[name];if(!K.own)return K.plan;const id='g
   if(!HC.PLANS[id]&&(K.spider||!WOLF_KINDS[name]))HC.PLANS[id]=Object.assign({},HC.PLANS[K.plan],{name,cell:K.cell},K.bare?{parts:HC.PLANS[K.plan].parts.map(([k,o])=>k==='head'?[k,Object.assign({},o,{antlers:null})]:[k,o])}:{});
   if(!HC.PLANS[id]){const k=WOLF_KINDS[name],c=h=>[(h>>16&255)/255,(h>>8&255)/255,(h&255)/255];
     HC.PLANS[id]=Object.assign({},HC.PLANS[K.plan],K.cell?{cell:K.cell}:{},{name,palette:Object.assign({},HC.PLANS[K.plan].palette,{coat:c(k.coat),saddle:c(k.saddle),belly:c(k.belly)},HC.PLANS[K.plan].palette.mane?{mane:c(k.saddle)}:{})});}
+  // an own plan takes its kit plan's island coats (Session 1721: the hind the deer's, the hen and the crow their own)
+  if(HC.COATS)for(const isle in HC.COATS){const T=HC.COATS[isle];if(T[K.plan]&&!T[id])T[id]=T[K.plan];}
   return id;}
 // a wolf the kit may dress: one of HC_KINDS, on the wolf's own body (not a boss on it, unless its builder names its kind: rig.hcKind)
 function hcKind(rig){return rig.hcKind||rig.name;}
 function hcOk(rig){const K=HC_KINDS[hcKind(rig)];return !!K&&!K.fish&&!rig.spider===!K.spider&&(!!rig.hcKind||!rig.hunch&&!(rig.e&&rig.e.bossId));}
 // its genome, keyed by its foe id (or its name)
-function hcGenome(rig){const key=rig.hcKey||(HC_KINDS[hcKind(rig)].person?'foe:'+(rig.e&&rig.e.id!=null?rig.e.id:rig.g.seed):'wolf:'+(rig.e&&rig.e.id!=null?rig.e.id:rig.name));return HC.genome(hcPlan(hcKind(rig)),key);}
+function hcGenome(rig){const key=rig.hcKey||(HC_KINDS[hcKind(rig)].person?'foe:'+(rig.e&&rig.e.id!=null?rig.e.id:rig.g.seed):'wolf:'+(rig.e&&rig.e.id!=null?rig.e.id:rig.name));return HC.genome(hcPlan(hcKind(rig)),key,rig.hcIsland?{island:rig.hcIsland}:{});}
 // C, the kit's body when hcTick has built it a step at a time; without it (foewarm) the body is built here in one go
 function hcAttach(rig,C){const tA=performance.now();
   if(!C)try{C=HC.build(hcGenome(rig));}catch(e){rig.hcFail=true;console.warn('F4: the kit could not build',rig.name,e);return;}

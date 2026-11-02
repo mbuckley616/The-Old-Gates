@@ -162,6 +162,20 @@ const tlv = await page.evaluate(() => { const { rig, G } = _T, fx = -Math.sin(ya
   CAM.position.set(G.position.x - fx * 60, G.position.y + 1.65, G.position.z - fz * 60); CAM.updateMatrixWorld(true); hcTick(9.8e5);
   const far = { L: rig.hc.L, stand: rig.mesh.visible }; G.parent.remove(G); hcTick(9.9e5); return { far, dropped: !rig.hc && !HC_RIGS.has(rig) }; });
 check(`at 60 m the trout is its stand-in (L${tlv.far.L}); taken from the scene, it is dropped (${tlv.dropped})`, tlv.far.L === 2 && tlv.far.stand && tlv.dropped, tlv);
+// Session 1721: an island given to buildAnimal is the kit's coat for it (HC.COATS): the Mark's black hill cow and grey hen, Aurenne's cream
+// cow and buff hen; the hind (an own plan) takes the deer's. The same key keeps its seed; an unknown island is none
+const isles = await page.evaluate(() => { const mean = C => { const a = C.meshes[0].geometry.attributes.color.array; let r = 0, g = 0, b = 0; const n = a.length / 3;
+    for (let i = 0; i < a.length; i += 3) { r += a[i]; g += a[i + 1]; b += a[i + 2]; } return [r / n, g / n, b / n].map(v => +v.toFixed(3)); };
+  const out = {}; for (const [nm, key] of [['Cow', 'f4isles:0'], ['Hen', 'f4isles:1'], ['Deer', 'f4animals:5']]) { out[nm] = {};
+    for (const isle of [undefined, 'mark', 'aurenne']) { const rig = buildAnimal(nm, key, isle); WOLF_RIGS.delete(rig); const g = hcGenome(rig);
+      const C = HC.build(g); out[nm][isle || 'none'] = { island: g.island || null, seed: g.seed, col: mean(C) }; for (const m of C.meshes) m.geometry.dispose(); } }
+  { const r = buildAnimal('Cow', 'f4isles:0', 'atlantis'); WOLF_RIGS.delete(r); out.bad = r.hcIsland === undefined; } return out; });
+console.log('  isles:', JSON.stringify(isles));
+const lum = c => c[0] + c[1] + c[2], differ = (a, b) => Math.max(...a.map((v, i) => Math.abs(v - b[i]))) > .03;
+check(`by island the coat (mean colour, plan / Mark / Aurenne): cow ${['none', 'mark', 'aurenne'].map(k => isles.Cow[k].col.join(' ')).join(' / ')}; hen ${['none', 'mark', 'aurenne'].map(k => isles.Hen[k].col.join(' ')).join(' / ')}; the hind's from the deer's`,
+  ['Cow', 'Hen', 'Deer'].every(nm => isles[nm].none.island === null && isles[nm].mark.island === 'mark' && isles[nm].aurenne.island === 'aurenne' &&
+    isles[nm].mark.seed === isles[nm].none.seed && differ(isles[nm].none.col, isles[nm].mark.col) && differ(isles[nm].none.col, isles[nm].aurenne.col)) &&
+  lum(isles.Cow.mark.col) < lum(isles.Cow.none.col) && lum(isles.Cow.aurenne.col) > lum(isles.Cow.none.col) && isles.bad, isles);
 await page.evaluate(() => { REN.render(scene, CAM); });
 check('no page errors', g.errs.length === 0, g.errs.slice(0, 3));
 await g.close();
