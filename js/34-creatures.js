@@ -328,6 +328,10 @@ const BIRD={Raven:{len:.58,col:0x141416,hop:.9},Crow:{len:.45,col:0x19191c,hop:.
 // Session 1719: the farms' hen (L3 livestock, OG-023 and OG-035; the kit's plan since Session 844) on the same path, keyed farm:<key>. She
 // does not fly: lifted, she keeps her ground gaits, and fast she runs at the kit's trot (run), not a hop. 0.40 m from beak to tail
 BIRD.Hen={len:.4,col:0x99602e,hop:.8,run:'trot',farm:true};
+// Session 1723: the Gatelands' three (L3, OG-009; the kit's GATELANDS), wild. What a bird does fast and aloft is read from its plan's gaits
+// (hcBirdPose): it hops if it has a hop, else trots, else walks; it soars only if it has a soar. So the Crag Hawk walks and soars, the Great
+// Heron walks (lifted, it keeps walking), the Capercaillie trots as the hen does. Beak to tail 0.95, 0.55 and 0.85 m (the cock)
+BIRD['Great Heron']={len:.95,col:0x9ea3a8,hop:1.2};BIRD['Crag Hawk']={len:.55,col:0x704f33,hop:.9};BIRD.Capercaillie={len:.85,col:0x1f2124,hop:1};
 function birdStandIn(len,col){const k=len/.535,parts=[],M=new THREE.Matrix4(),put=(geo,x,y,z,sx,sy,sz,rx)=>{M.makeRotationX(rx||0);
     const g=geo.index?geo.toNonIndexed():geo;g.applyMatrix4(new THREE.Matrix4().makeScale(sx,sy,sz).premultiply(M).premultiply(new THREE.Matrix4().makeTranslation(x*k,y*k,z*k)));parts.push(g);};
   put(new THREE.SphereGeometry(1,10,7),0,.17,0,.08*k,.075*k,.17*k);put(new THREE.SphereGeometry(.055*k,8,6),0,.25,.15,1,1,1);
@@ -346,7 +350,8 @@ function hcBirdPose(rig){const H=rig.hc,e=rig.e,g=e&&e.mesh;if(!H||!g||e.dead)re
   const x=g.position.x,z=g.position.z;let d=rig.lx==null?0:Math.hypot(x-rig.lx,z-rig.lz);rig.lx=x;rig.lz=z;if(d>2)d=0;
   rig.v=dt>0?rig.v+(d/dt-rig.v)*Math.min(1,dt*6):rig.v;
   const gy=typeof activeTerrainH==='function'?activeTerrainH(x,z):g.position.y,up=g.position.y-gy>BIRD.air,B=BIRD[rig.name]||BIRD.Raven;
-  const gait=up&&!B.run?'soar':rig.v>B.hop?(B.run||'hop'):rig.v>BIRD.walk?'walk':'stand',C=H.C;
+  const C=H.C,PG=C.plan.gaits||['hop','soar'],fast=B.run||(PG.includes('hop')?'hop':PG.includes('trot')?'trot':'walk');
+  const gait=up&&PG.includes('soar')?'soar':rig.v>B.hop?fast:rig.v>BIRD.walk?'walk':'stand';
   C.gait=gait;
   if(gait==='soar'||gait==='stand')rig.ph+=dt*(gait==='soar'?BIRD.beat:.25);else rig.ph+=d/Math.max(1e-3,HC.strideOf(C)*H.f);
   HC.pose(C,rig.ph);
@@ -897,7 +902,7 @@ const HC_KINDS={'Wolf':{plan:'wolf'},'Snow Wolf':{plan:'wolf',own:true},'Dire Wo
   'Gargoyle':{plan:'gargoyle',own:true,person:true,merge:true,ik:true,glow:[1,.31,.13],glowR:.032,glowAt:{f:.8,up:.55,out:.5},garg:true},
   'Wraith':{plan:'wraith',own:true,person:true,legless:true,rest:HC_WRAITH_REST},'Phantom':{plan:'phantom',own:true,person:true,legless:true,rest:HC_WRAITH_REST},
   'Deer':{plan:'deer',ik:true},'Hind':{plan:'deer',own:true,ik:true,bare:true},'Red Fox':{plan:'redfox'},'Brown Hare':{plan:'brownhare'},'Badger':{plan:'badger'},'Otter':{plan:'otter'},'Cow':{plan:'cow',ik:true},'Sheep':{plan:'sheep',ik:true},'Goat':{plan:'goat',ik:true},'Elderstag':{plan:'stag',ik:true},'Gatefen Boar':{plan:'gatefenboar'},'Redspine Fox':{plan:'redspinefox'},'Hollowcat':{plan:'hollowcat'},'Greenward Stoat':{plan:'stoat'},
-  'Shark':{plan:'reefshark',fish:true},'Whale':{plan:'stormwhale',fish:true},'Dolphin':{plan:'stormswift',fish:true},'Gull':{plan:'gull',fish:true,own:true,cell:.014},'Raven':{plan:'raven',fish:true,own:true,cell:.014},'Crow':{plan:'crow',fish:true,own:true,cell:.012},'Trout':{plan:'trout',fish:true,own:true,cell:.014},'Hen':{plan:'hen',fish:true,own:true,cell:.012},'Slime':{plan:'slime',fish:true},'Fire Elemental':{plan:'fireelemental',fish:true}};
+  'Shark':{plan:'reefshark',fish:true},'Whale':{plan:'stormwhale',fish:true},'Dolphin':{plan:'stormswift',fish:true},'Gull':{plan:'gull',fish:true,own:true,cell:.014},'Raven':{plan:'raven',fish:true,own:true,cell:.014},'Crow':{plan:'crow',fish:true,own:true,cell:.012},'Trout':{plan:'trout',fish:true,own:true,cell:.014},'Hen':{plan:'hen',fish:true,own:true,cell:.012},'Great Heron':{plan:'heron',fish:true,own:true,cell:.016},'Crag Hawk':{plan:'craghawk',fish:true,own:true,cell:.014},'Capercaillie':{plan:'capercaillie',fish:true,own:true,cell:.016},'Slime':{plan:'slime',fish:true},'Fire Elemental':{plan:'fireelemental',fish:true}};
 // the driver's joints and the kit's bones they move, parents first (the kit's front legs hang on spine3, the hind on spine0)
 const HC_MAP=[['hips','spine0'],['spine','spine1'],['neck','neck0'],['head','head'],['jaw','jaw'],['tail1','tail0'],['tail2','tail1'],['tail3','tail2'],
   ['shL','leg0L_0'],['elL','leg0L_1'],['wrL','leg0L_2'],['pfL','leg0L_3'],['shR','leg0R_0'],['elR','leg0R_1'],['wrR','leg0R_2'],['pfR','leg0R_3'],

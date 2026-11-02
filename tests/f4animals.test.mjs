@@ -97,9 +97,10 @@ check('taken from the scene, each is dropped', gone);
 // Session 1710: the raven and the crow. No wolf's driver: buildAnimal gives a rig holding a plain stand-in (the far level), and near the
 // kit's bird, fitted to the stand-in's length; hcTick finds it among the world's foes once `rig.e` is set. Its gait is read from its
 // group: standing, walking, hopping by the ground covered a second, soaring when the group is lifted off the ground. Session 1719: the
-// farms' hen on the same path, keyed farm:<key>, running at a trot and never soaring
+// farms' hen on the same path, keyed farm:<key>, running at a trot and never soaring. Session 1723: the Gatelands' Great Heron, Crag Hawk
+// and Capercaillie, fast and aloft by their plans' gaits
 const birds = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.cos(yaw), sx = -fz, sz = fx;
-  window._B = ['Raven', 'Crow', 'Hen'].map((nm, i) => { const x = px + fx * 4 + sx * (i - 1) * 1.2, z = pz + fz * 4 + sz * (i - 1) * 1.2;
+  window._B = ['Raven', 'Crow', 'Hen', 'Great Heron', 'Crag Hawk', 'Capercaillie'].map((nm, i) => { const x = px + fx * 4 + sx * (i - 2.5) * 1.3, z = pz + fz * 4 + sz * (i - 2.5) * 1.3;
     const rig = buildAnimal(nm, 'f4birds:' + i), G = new THREE.Group(); G.add(rig.root); G.position.set(x, WORLD.worldH(x, z), z); G.rotation.y = yaw + Math.PI / 2; WORLD.scene.add(G);
     const e = { name: nm, x, z, mesh: G, limbs: { wolf: rig, torso: rig.mesh }, dead: false }; rig.e = e; return { nm, rig, G, e }; });
   CAM.position.set(px, worldH(px, pz) + 1.65, pz); CAM.updateMatrixWorld(true);
@@ -112,9 +113,9 @@ const birds = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.
     return { nm, plan: H.C.g.plan, seed: H.C.g.seed, want: HC.hashKey(rig.hcKey), bones: H.C.bones.length, tris: H.C.stats.tris, stand: rig.mesh.geometry.attributes.position.count / 3,
       len: +(bx.max.z - bx.min.z).toFixed(3), top: +(bx.max.y - G.position.y).toFixed(3), key: rig.hcKey.split(':')[0], low: +(bx.min.y - G.position.y).toFixed(3), spine: +sp.toFixed(3), wolf: WOLF_RIGS.has(rig) }; }); });
 console.log('  birds:', JSON.stringify(birds));
-check(`the raven, the crow and the hen wear the kit's (${birds.map(b => b.nm + ' ' + b.plan + ', ' + b.bones + ' bones, ' + b.tris + ' triangles, ' + b.len + ' m beak to tail').join('; ')}), keyed by the spawner's key, over a ${birds[0].stand}-triangle stand-in, no wolf's driver`,
-  birds.every(b => !b.fail && /^game:(Raven|Crow|Hen)$/.test(b.plan) && b.key === (b.nm === 'Hen' ? 'farm' : 'wild') && b.seed === b.want && b.bones > 16 && b.tris < 8000 && !b.wolf && Math.abs(b.low) < .01) &&
-  Math.abs(birds[0].len - .58) < .03 && Math.abs(birds[1].len - .45) < .03 && Math.abs(birds[2].len - .40) < .03 && birds[2].top > .3 && birds[2].top < .55, birds);
+check(`the raven, the crow, the hen and the Gatelands' heron, hawk and capercaillie wear the kit's (${birds.map(b => b.nm + ' ' + b.plan + ', ' + b.bones + ' bones, ' + b.tris + ' triangles, ' + b.len + ' m beak to tail').join('; ')}), keyed by the spawner's key, over a ${birds[0].stand}-triangle stand-in, no wolf's driver`,
+  birds.every(b => !b.fail && b.plan === 'game:' + b.nm && b.key === (b.nm === 'Hen' ? 'farm' : 'wild') && b.seed === b.want && b.bones > 16 && b.tris < 8000 && !b.wolf && Math.abs(b.low) < .01) &&
+  Math.abs(birds[0].len - .58) < .03 && Math.abs(birds[1].len - .45) < .03 && Math.abs(birds[2].len - .40) < .03 && birds[2].top > .3 && birds[2].top < .55 && Math.abs(birds[3].len - .95) < .05 && Math.abs(birds[4].len - .55) < .03 && Math.abs(birds[5].len - .85) < .05, birds);
 const fly = await page.evaluate(() => _B.map(({ nm, rig, G }) => { const H = rig.hc, sk = H.C.skel, seen = {}, t0 = performance.now; let i0 = 0;
   const run = (n, sp, lift) => { for (let i = 0; i < n; i++) { G.position.x += Math.sin(G.rotation.y) * sp / 60; G.position.z += Math.cos(G.rotation.y) * sp / 60;
       G.position.y = WORLD.worldH(G.position.x, G.position.z) + lift; i0++; performance.now = () => 7e5 + i0 * 1000 / 60; try { hcBirdPose(rig); } finally { performance.now = t0; } }
@@ -124,10 +125,11 @@ const fly = await page.evaluate(() => _B.map(({ nm, rig, G }) => { const H = rig
   const d = run(60, 6, 4); seen.up = rig.gaitNow; G.updateMatrixWorld(true); const sp = H.C.byName.spine0.getWorldPosition(new THREE.Vector3()).y - G.position.y;
   run(30, 0, 0); return { nm, seen, moved: [mv(a, b), mv(b, c), mv(c, d)], soarSpine: +sp.toFixed(3) }; }));
 console.log('  fly:', JSON.stringify(fly));
-check(`each bird's gait is its group's (the hen, who does not fly, runs at a trot and keeps her ground gaits lifted): still ${fly.map(f => f.seen.still).join('/')}, 0.4 m/s ${fly.map(f => f.seen.slow).join('/')}, 1.6 m/s ${fly.map(f => f.seen.fast).join('/')}, 4 m up ${fly.map(f => f.seen.up).join('/')}; aloft its spine ${fly.map(f => f.soarSpine).join(', ')} m over the group (standing ${birds.map(b => b.spine).join(', ')})`,
-  fly.every((f, i) => f.seen.still === 'stand' && f.seen.slow === 'walk' && f.seen.fast === (f.nm === 'Hen' ? 'trot' : 'hop') && f.seen.up === (f.nm === 'Hen' ? 'trot' : 'soar') && f.moved.every(m => m > .01) && Math.abs(f.soarSpine - birds[i].spine) < .08), fly);
-await page.evaluate(() => { const a = _B[0].G, b = _B[2].G, mx = (a.position.x + b.position.x) / 2, mz = (a.position.z + b.position.z) / 2, fx = -Math.sin(yaw), fz = -Math.cos(yaw);
-  for (const { G } of _B) G.position.y = WORLD.worldH(G.position.x, G.position.z); px = mx - fx * 1.8; pz = mz - fz * 1.8; pitch = -.42; });
+const FAST = { Raven: 'hop', Crow: 'hop', Hen: 'trot', 'Great Heron': 'walk', 'Crag Hawk': 'walk', Capercaillie: 'trot' }, UP = { Raven: 'soar', Crow: 'soar', 'Crag Hawk': 'soar' };
+check(`each bird's gait is its group's, fast and aloft by its plan's gaits (the hen, the heron and the capercaillie never soar): still ${fly.map(f => f.seen.still).join('/')}, 0.4 m/s ${fly.map(f => f.seen.slow).join('/')}, 1.6 m/s ${fly.map(f => f.seen.fast).join('/')}, 4 m up ${fly.map(f => f.seen.up).join('/')}; aloft its spine ${fly.map(f => f.soarSpine).join(', ')} m over the group (standing ${birds.map(b => b.spine).join(', ')})`,
+  fly.every((f, i) => f.seen.still === 'stand' && f.seen.slow === 'walk' && f.seen.fast === FAST[f.nm] && f.seen.up === (UP[f.nm] || FAST[f.nm]) && f.moved.every(m => m > .01) && Math.abs(f.soarSpine - birds[i].spine) < .08), fly);
+await page.evaluate(() => { const a = _B[0].G, b = _B[_B.length - 1].G, mx = (a.position.x + b.position.x) / 2, mz = (a.position.z + b.position.z) / 2, fx = -Math.sin(yaw), fz = -Math.cos(yaw);
+  for (const { G } of _B) G.position.y = WORLD.worldH(G.position.x, G.position.z); px = mx - fx * 3.2; pz = mz - fz * 3.2; pitch = -.3; });
 for (let i = 0; i < 8; i++) await g.frames(1);
 await page.screenshot({ path: path.join(OUT, 'f4-birds.jpg'), type: 'jpeg', quality: 80 });
 const blv = await page.evaluate(() => { const { rig, G } = _B[0], fx = -Math.sin(yaw), fz = -Math.cos(yaw);
