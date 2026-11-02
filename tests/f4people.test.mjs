@@ -52,6 +52,26 @@ const again = await page.evaluate((keys) => keys.every(k => { const r = [...HB_R
   return JSON.stringify(HB.toSaved(HB.rollGenome(k, o))) === JSON.stringify(HB.toSaved(HB.rollGenome(k, o))); }), who.sample);
 check('a genome is the same rolled twice from its key', again);
 
+// S1763 (L1, OG-109's winter column): in winter, out of doors, a share of each people wear the kit's winter coat (the Aurennais the
+// burnous); indoors and out of winter, none. 40 villagers a people under a test key, rolled in winter, indoors and in autumn
+const winter = await page.evaluate(() => { const was = worldState.gameTimeAbsMinutes, peoples = ['gatelander', 'markman', 'oldblood', 'aurennais'];
+  const forget = () => { for (const k of [...HB_GENOMES.keys()]) if (/^wtest/.test(k)) HB_GENOMES.delete(k); for (const k of [...PEOPLE_GENOMES.keys()]) if (/wtest/.test(k)) PEOPLE_GENOMES.delete(k); };
+  const run = () => { const res = {}; for (const pk of peoples) { const o = { n: 0, coat: 0, fur: 0, burnous: 0, tint: 0 };
+    for (let i = 0; i < 40; i++) { const root = buildNPCMesh({ role: 'villager', name: 'W' + pk + i, people: pk }, { key: 'wtest' }); const rig = [...HB_RIGS].find(x => x.root === root);
+      if (!rig) continue; o.n++; const D = rig.hbG.dress; if (D.coat) { o.coat++; if (Math.abs(rig.g.cloth.r - D.coat[0]) < 1e-3) o.tint++; } if (D.coatFur) o.fur++; if (D.burnous) o.burnous++;
+      HB_RIGS.delete(rig); PEOPLE_RIGS.delete(rig); } res[pk] = o; } forget(); return res; };
+  worldState.gameTimeAbsMinutes = 1440 * 28 * 4 + 600; const season = calDay().season, out = run();
+  currentHouse = { id: 'wtest' }; const indoor = run(); currentHouse = null;
+  worldState.gameTimeAbsMinutes = 600; const autumn = run(), season2 = calDay().season; worldState.gameTimeAbsMinutes = was;
+  const sum = (R, f) => Object.values(R).reduce((s, o) => s + f(o), 0);
+  return { season, season2, out, indoorAll: sum(indoor, o => o.coat + o.burnous), autumnAll: sum(autumn, o => o.coat + o.burnous) }; });
+console.log('  winter:', JSON.stringify(winter));
+const W = winter.out;
+check('in winter, out of doors, a share of each people wear the winter coat (the Markmen most, fur-lined; the Aurennais the burnous) and the distant copy takes the coat\'s colour',
+  winter.season === 'winter' && W.markman.coat >= 28 && W.markman.fur === W.markman.coat && W.gatelander.coat >= 10 && W.gatelander.coat <= 30 && W.oldblood.coat >= 5 && W.oldblood.fur === 0 &&
+  W.aurennais.burnous >= 4 && W.aurennais.coat === 0 && Object.values(W).every(o => o.n === 40 && o.tint === o.coat), winter);
+check('indoors and out of winter nobody wears it', winter.season2 !== 'winter' && winter.indoorAll === 0 && winter.autumnAll === 0, winter);
+
 // walking: a walker's builder bones follow the driver's stride
 const walk = await page.evaluate(() => { const rig = [...HB_RIGS].find(r => r.hb && r.root.visible && r.root.parent === WORLD.scene && PEOPLE_RIGS.has(r) && !r.sleep && !r.g.gear && r.hb.L === 0); const root = rig.root, fy = root.rotation.y, sk = rig.hb.P.skeleton;
   const snap = () => { root.updateMatrixWorld(true); sk.update(); return Float32Array.from(sk.boneMatrices); };

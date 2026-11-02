@@ -1039,7 +1039,9 @@ function buildNPCMesh(def,opts){
   let g=def.name&&!def.authored?PEOPLE_GENOMES.get(key):null;
   if(!g){g=personGenome(def,opts);if(def.name)PEOPLE_GENOMES.set(key,g);}
   if(hbOn()&&!opts.noBuilder)hbPrep(g,(opts.key||'')+':'+(def.name||def.role||'?')); /* S1195 (F4) — the builder's genome, keyed by place and name */
-  const rig=buildPerson(g);if(g.hbKey&&hbOn()){rig.hbG=HB_GENOMES.get(g.hbKey);HB_RIGS.add(rig);}
+  let gb=g,G=g.hbKey&&hbOn()?HB_GENOMES.get(g.hbKey):null;
+  if(G){const W=hbSeasonDress(g,G);if(W!==G&&W.dress.coat&&!(G.dress||{}).coat){gb=Object.assign({},g,{cloth:new THREE.Color(...W.dress.coat)});gb.sleeve=gb.cloth.clone().multiplyScalar(.9);}G=W;} /* S1763 — the distant copy in the coat's colour */
+  const rig=buildPerson(gb);if(G){rig.hbG=G;HB_RIGS.add(rig);}
   return rig.root;
 }
 // ── poses: joint -> [x,y,z] rotations, plus the height of the hips ──
@@ -1467,6 +1469,23 @@ function hbTint(g,G){const C=a=>new THREE.Color(a[0],a[1],a[2]),D=G.dress||{};
   if(D.tunic){g.cloth=C(D.tunic);g.sleeve=C(D.tunic).multiplyScalar(.9);}
   const leg=D.trousers||D.skirtColor;if(leg)g.legs=C(leg);if(D.boots)g.boot=C(D.boots);}
 // called by buildNPCMesh before the bake: the key, the genome and the tint, once per cached genome
+// S1763 (L1, OG-109's winter column) — the winter dress: in winter (calDay's season) a share of each people, out of doors, wear the
+// kit's winter coat (S1147) over what they rolled: a Gatelander one in two (fur-trimmed on half), a Markman nearly all (fur-lined,
+// the hood down, up on three in ten, S1152-1153), the Old Blood one in three (plain, in their own dark wool); an Aurennais one in
+// four the burnous (S1236, the hooded cloak for the cold nights, striped in a robe's colours). From a stream of its own keyed by the
+// genome's key and the season, so the same person wears the same coat every winter; a body built indoors, a guard (mail), a robe
+// (the coat's own rule) and the chair wear none. A body keeps what it was built in until it is built again.
+const HB_WINTER={gatelander:.5,markman:.85,oldblood:.35,aurennais:.25},HB_WINTER_FUR=[[.45,.38,.3],[.52,.38,.24],[.24,.2,.17],[.55,.5,.44]];
+function hbIndoors(){return (typeof isInterior==='function'&&isInterior())||(typeof currentHouse!=='undefined'&&!!currentHouse);}
+function hbWinter(){return typeof calDay==='function'&&calDay().season==='winter';}
+function hbSeasonDress(g,G){if(!G||!hbWinter()||hbIndoors())return G;const k=g.hbKey+'|winter';let W=HB_GENOMES.get(k);if(W)return W;W=G;
+  const D=G.dress||{},people=HB.PEOPLES[g.people]?g.people:'gatelander',P=HB.PEOPLES[people],r=pRng(pHash(k)),pick=a=>a[Math.floor(r()*a.length)%a.length];
+  if(!D.mail&&!D.scales&&!D.tabard&&!D.chair&&r()<(HB_WINTER[people]||0)){
+    if(people==='aurennais'){const R=pick(P.robes||[[[.88,.84,.74],[.36,.24,.15]]]);
+      W={...G,dress:{...D,cloak:R[0],burnous:true,burnousStripe:R[1],cape:null,cloakFur:null,cloakHem:null,tartan:null,tartanLine:null,hood:!D.wrap&&r()<.3?'up':'down'}};}
+    else if(!D.robe){const fur=people==='markman'||people==='gatelander'&&r()<.5;
+      W={...G,dress:{...D,coat:pick(P.wool),coatLen:.75,coatFur:fur?pick(HB_WINTER_FUR):null,coatHood:people==='markman'?(r()<.3?'up':'down'):null}};}}
+  HB_GENOMES.set(k,W);return W;}
 function hbPrep(g,key){if(g.hbKey)return;g.hbKey=key;try{hbTint(g,hbGenome(g));}catch(e){console.warn('F4: no genome for',key,e);g.hbKey=null;}}
 // the human foes (S1201): which of FOE_DRESS wear the builder's body (the people, not the dead, the stone or the folk of the hills),
 // and what each wears over the builder's own rolled clothes, from its FOE_DRESS colour (c): the weapon and shield stay the game's
