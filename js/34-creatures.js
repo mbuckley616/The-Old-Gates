@@ -30,6 +30,11 @@ const WOLF_KINDS={
   'Brown Hare':{coat:0x8f6b47,saddle:0x664a2e,belly:0xe6dbc7,eye:0x2a1a08,ruff:.6,ears:1.4,muzzle:.8,lean:.85,bulk:.95,neck:.05,world:.71,wild:true},
   'Badger':    {coat:0x85807a,saddle:0x615e5c,belly:0x1f1c1c,eye:0x0f0a08,ruff:.7,ears:.7,muzzle:.9,bulk:1.2,neck:.2,world:.535,wild:true},
   'Otter':     {coat:0x523824,saddle:0x3d291a,belly:0x9e8566,eye:0x0f0a08,ruff:.6,ears:.6,muzzle:.85,lean:.8,bulk:.9,neck:.05,world:.335,wild:true},
+  // Session 1719 — the farms' livestock (L3, OG-023 and OG-035; the kit's plans since Session 844): the cow, the sheep and the goat, on the
+  // horse's long legs as the deer is (their hips at the kit's: 1.23, 0.65 and 0.55 m); farm marks a kind buildAnimal builds (as wild does), its kit body keyed farm:<key>
+  'Cow':       {coat:0x7a4d2e,saddle:0x5c361f,belly:0xdbd1bd,eye:0x0f0a08,horse:true,legK:1.8,legs:{fore:{root:[-.03,.03],a:[-.22,-.04],b:[-.22,.02],c:[-.23,.01]},hind:{root:[-.02,-.02],a:[-.2,.08],b:[-.2,-.1],c:[-.26,.01]}},hipY:.70,bulk:1.25,eyePos:[.05,.02,.03],world:1.78,farm:true},
+  'Sheep':     {coat:0xdbd1b8,saddle:0xccc2a8,belly:0xc7bda3,eye:0x997f33,horse:true,legK:1.8,legs:{fore:{root:[-.03,.03],a:[-.22,-.04],b:[-.22,.02],c:[-.23,.01]},hind:{root:[-.02,-.02],a:[-.2,.08],b:[-.2,-.1],c:[-.26,.01]}},hipY:.70,bulk:1.1,eyePos:[.046,.02,.03],world:.935,farm:true},
+  'Goat':      {coat:0x998a75,saddle:0x665747,belly:0xd6ccb8,eye:0xbf9933,horse:true,legK:1.8,legs:{fore:{root:[-.03,.03],a:[-.22,-.04],b:[-.22,.02],c:[-.23,.01]},hind:{root:[-.02,-.02],a:[-.2,.08],b:[-.2,-.1],c:[-.26,.01]}},hipY:.70,bulk:.85,eyePos:[.046,.02,.03],world:.80,farm:true},
   // the world's dragon (S177): the wolf's legs and gait under a long neck, a long tail, horns and two wings of its own
   'Dragon':    {coat:0x5a2a1a,saddle:0x3a160c,belly:0xa87a48,eye:0xff8020,dragon:true,bulk:1.28,neck:-.15,eyePos:[.05,.04,.104],world:4.5} // S524 — world: the scale every dragon is built at in play, and the inspector shows it so; S546 — 4.5, about twice a man's height (Michael's B on #153, was 2.88)
 };
@@ -298,8 +303,8 @@ function buildWolf(name,scale){
 // rig moved by its group walks and gallops by the ground it covers, as the coach's horses do
 // Session 1706: a deer is a hind one time in two by its key (its kit body the deer's without antlers, HC_KINDS' Hind), and a tenth smaller
 function animalHash(str){let h=2166136261;for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
-function buildAnimal(name,key){if(BIRD[name])return buildBird(name,key);if(SWIMMER[name])return buildSwimmer(name,key);const k=WOLF_KINDS[name];if(!k||!k.wild)return null;const hind=name==='Deer'&&key!=null&&(animalHash(String(key))&1)===1;
-  const rig=buildWolf(name,k.world*(hind?.9:1));if(key!=null)rig.hcKey='wild:'+key;if(hind)rig.hcKind='Hind';return rig;}
+function buildAnimal(name,key){if(BIRD[name])return buildBird(name,key);if(SWIMMER[name])return buildSwimmer(name,key);const k=WOLF_KINDS[name];if(!k||!(k.wild||k.farm))return null;const hind=name==='Deer'&&key!=null&&(animalHash(String(key))&1)===1;
+  const rig=buildWolf(name,k.world*(hind?.9:1));if(key!=null)rig.hcKey=(k.farm?'farm:':'wild:')+key;if(hind)rig.hcKind='Hind';return rig;}
 // Session 1710: the raven and the crow (L3, for #984's A; the systems builder's note on S1707: "the raven and crow need a bird driver
 // before they can spawn"). A bird has no four legs for the wolf's driver, so it has none: `buildAnimal('Raven'|'Crow', key)` gives a
 // rig whose root holds a plain stand-in (a body, a head, a beak, a tail and two legs, one mesh, the far level and the old look's) and,
@@ -877,7 +882,7 @@ const HC_KINDS={'Wolf':{plan:'wolf'},'Snow Wolf':{plan:'wolf',own:true},'Dire Wo
   'Golem':{plan:'golem',own:true,person:true,merge:true,ik:true,tall:true,glow:[.42,.69,1],glowR:.02},
   'Gargoyle':{plan:'gargoyle',own:true,person:true,merge:true,ik:true,glow:[1,.31,.13],glowR:.032,glowAt:{f:.8,up:.55,out:.5},garg:true},
   'Wraith':{plan:'wraith',own:true,person:true,legless:true,rest:HC_WRAITH_REST},'Phantom':{plan:'phantom',own:true,person:true,legless:true,rest:HC_WRAITH_REST},
-  'Deer':{plan:'deer',ik:true},'Hind':{plan:'deer',own:true,ik:true,bare:true},'Red Fox':{plan:'redfox'},'Brown Hare':{plan:'brownhare'},'Badger':{plan:'badger'},'Otter':{plan:'otter'},
+  'Deer':{plan:'deer',ik:true},'Hind':{plan:'deer',own:true,ik:true,bare:true},'Red Fox':{plan:'redfox'},'Brown Hare':{plan:'brownhare'},'Badger':{plan:'badger'},'Otter':{plan:'otter'},'Cow':{plan:'cow',ik:true},'Sheep':{plan:'sheep',ik:true},'Goat':{plan:'goat',ik:true},
   'Shark':{plan:'reefshark',fish:true},'Whale':{plan:'stormwhale',fish:true},'Dolphin':{plan:'stormswift',fish:true},'Gull':{plan:'gull',fish:true,own:true,cell:.014},'Raven':{plan:'raven',fish:true,own:true,cell:.014},'Crow':{plan:'crow',fish:true,own:true,cell:.012},'Trout':{plan:'trout',fish:true,own:true,cell:.014},'Slime':{plan:'slime',fish:true},'Fire Elemental':{plan:'fireelemental',fish:true}};
 // the driver's joints and the kit's bones they move, parents first (the kit's front legs hang on spine3, the hind on spine0)
 const HC_MAP=[['hips','spine0'],['spine','spine1'],['neck','neck0'],['head','head'],['jaw','jaw'],['tail1','tail0'],['tail2','tail1'],['tail3','tail2'],

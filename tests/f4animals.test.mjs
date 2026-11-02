@@ -2,12 +2,15 @@
 // the Otter, built by buildAnimal on the wolf's bones and gait and, on the new look, dressed in the creature kit's own plan for each, at
 // the kit's size in metres. A line of the five ahead of you: each on the kit's skeleton, keyed by the spawner's key; its hips at its
 // driver's and at its own height; the same key the same body; walked along the ground, its bones move and its toes stay by the ground;
-// three levels by distance; the driver's shadow copy swaps by distance. Picture: docs/prototypes/f4/f4-animals.jpg.
+// three levels by distance; the driver's shadow copy swaps by distance. Session 1719: the farms' Cow, Sheep and Goat beside them, on the
+// deer's legs, keyed farm:<key>. Picture: docs/prototypes/f4/f4-animals.jpg.
 import { boot, check, ROOT } from './lib/game.mjs';
 import fs from 'fs'; import path from 'path';
 const OUT = path.join(ROOT, 'docs', 'prototypes', 'f4'); fs.mkdirSync(OUT, { recursive: true });
 
-const KINDS = { 'Deer': ['deer', .87], 'Red Fox': ['redfox', .35], 'Brown Hare': ['brownhare', .29], 'Badger': ['badger', .21], 'Otter': ['otter', .13] };
+const KINDS = { 'Deer': ['deer', .87], 'Red Fox': ['redfox', .35], 'Brown Hare': ['brownhare', .29], 'Badger': ['badger', .21], 'Otter': ['otter', .13],
+  // Session 1719: the farms' livestock, keyed farm:<key>
+  'Cow': ['cow', 1.23], 'Sheep': ['sheep', .65], 'Goat': ['goat', .55] };
 const g = await boot({ look: 'new' }); const { page } = g;
 await g.intoWorld();
 
@@ -15,19 +18,19 @@ const made = await page.evaluate((names) => { forceTime(12);
   { const t1 = performance.now(); while (JOBS.length && performance.now() - t1 < 20000) runJobs(); }
   const fx = -Math.sin(yaw), fz = -Math.cos(yaw), sx = -fz, sz = fx, n = names.length;
   const clear = (x, z) => { for (let dx = -2; dx <= 2; dx += .5) for (let dz = -2; dz <= 2; dz += .5) if (WORLD.solidAt(x + dx, z + dz)) return false; return true; };
-  let d = 6; for (; d < 60; d += 2) { let ok = true; for (let i = 0; i < n; i++) if (!clear(px + fx * d + sx * (i - 2) * 2, pz + fz * d + sz * (i - 2) * 2)) { ok = false; break; } if (ok) break; }
-  window._A = names.map((nm, i) => { const x = px + fx * d + sx * (i - 2) * 2, z = pz + fz * d + sz * (i - 2) * 2;
+  let d = 6; for (; d < 60; d += 2) { let ok = true; for (let i = 0; i < n; i++) if (!clear(px + fx * d + sx * (i - (n - 1) / 2) * 2, pz + fz * d + sz * (i - (n - 1) / 2) * 2)) { ok = false; break; } if (ok) break; }
+  window._A = names.map((nm, i) => { const x = px + fx * d + sx * (i - (n - 1) / 2) * 2, z = pz + fz * d + sz * (i - (n - 1) / 2) * 2;
     const rig = buildAnimal(nm, 'f4animals:' + i), G = new THREE.Group(); G.add(rig.root); G.position.set(x, WORLD.worldH(x, z), z); G.rotation.y = yaw + Math.PI / 2; WORLD.scene.add(G); return { nm, rig, G }; });
   CAM.position.set(px, worldH(px, pz) + 1.65, pz); CAM.updateMatrixWorld(true);
   const want = () => _A.filter(f => hcOk(f.rig) && !f.rig.hc && !f.rig.hcFail).length;
   let k = 0; HBODY.last = -1e9; while (want() && k++ < 200) tickCreatures(1 / 60, 2e5 + k * (HBODY.gap + 1));
   return { d, ticks: k, left: want(), fails: _A.filter(f => f.rig.hcFail).map(f => f.nm), nope: buildAnimal('Wolf') === null, each: Math.round(HC_BODY.ms / Math.max(1, HC_BODY.n)) }; }, Object.keys(KINDS));
 console.log('  built:', JSON.stringify(made));
-check('buildAnimal builds the five and only the wild kinds (a Wolf is a foe\'s)', made.nope && made.left === 0 && made.fails.length === 0, made);
+check('buildAnimal builds the eight and only the wild and farm kinds (a Wolf is a foe\'s)', made.nope && made.left === 0 && made.fails.length === 0, made);
 
 const who = await page.evaluate(() => _A.map(({ nm, rig, G }) => { const H = rig.hc; if (!H) return { nm, hc: false }; G.updateMatrixWorld(true);
   const a = H.C.byName.spine0.getWorldPosition(new THREE.Vector3()), b = rig.B.hips.getWorldPosition(new THREE.Vector3());
-  return { nm, hc: true, plan: H.C.g.plan, seed: H.C.g.seed, want: HC.hashKey('wild:' + rig.hcKey.slice(5)), bones: H.C.bones.length, map: H.map.length, tris: H.C.stats.tris,
+  return { nm, hc: true, plan: H.C.g.plan, seed: H.C.g.seed, want: HC.hashKey(rig.hcKey), bones: H.C.bones.length, map: H.map.length, tris: H.C.stats.tris,
     hipGap: +a.distanceTo(b).toFixed(3), hipY: +(a.y - G.position.y).toFixed(3), own: +(H.C.byName.spine0.position.y * H.C.S).toFixed(3),
     same: JSON.stringify(HC.toSaved(HC.genome(hcPlan(nm), rig.hcKey))) === JSON.stringify(HC.toSaved(H.C.g)) }; }));
 console.log('  animals:', JSON.stringify(who));
@@ -42,8 +45,8 @@ check('the same key is the same deer, another key another', twin.same && twin.ot
 // against the man: the deer's back near his chest, the hare's at his shin (F2a: people are the measure)
 const man = await page.evaluate(() => { const r = {}; for (const { nm, rig, G } of _A) { G.updateMatrixWorld(true); let top = -1e9; rig.hc.C.meshes[0].geometry.computeBoundingBox();
   const b = new THREE.Box3().setFromObject(rig.hc.C.meshes[0]); r[nm] = +((b.max.y - G.position.y) / SCALE.PEOPLE.gatelander.m).toFixed(2); } return r; });
-check(`against a man's stature (${JSON.stringify(man)}): the deer stands about two thirds of him, the hare and the otter under a fifth`,
-  man['Deer'] > .5 && man['Deer'] < .9 && man['Brown Hare'] < .3 && man['Otter'] < .2 && man['Red Fox'] < man['Deer'], man);
+check(`against a man's stature (${JSON.stringify(man)}): the deer stands about two thirds of him, the hare and the otter under a fifth, the cow's horns about his height, the sheep and the goat half`,
+  man['Cow'] > .8 && man['Cow'] < 1.15 && man['Sheep'] > .35 && man['Sheep'] < .65 && man['Goat'] > .35 && man['Goat'] < .65 && man['Deer'] > .5 && man['Deer'] < .9 && man['Brown Hare'] < .3 && man['Otter'] < .2 && man['Red Fox'] < man['Deer'], man);
 
 // walked along the ground: the bones move, the toes stay near it
 const walk = await page.evaluate(() => _A.map(({ nm, rig, G }) => { const H = rig.hc, by = H.C.byName, sk = H.C.skel; sk.update(); const a = Array.from(sk.boneMatrices);
@@ -81,8 +84,8 @@ const lv = await page.evaluate(() => { const f = _A[0], G = f.G, fx = -Math.sin(
 check(`the deer's three levels: near its hide and fur (${lv.near.kit} meshes), at 25 m fewer (${lv.mid.kit}), at 60 m the driver's own body, its low copy`,
   lv.near.L === 0 && !lv.near.driver && !lv.near.lo && lv.mid.L === 1 && lv.mid.kit < lv.near.kit && lv.far.L === 2 && lv.far.driver && lv.far.lo && lv.back.L === 0 && !lv.back.lo, lv);
 
-await page.evaluate(() => { const a = _A[0].G, b = _A[4].G, mx = (a.position.x + b.position.x) / 2, mz = (a.position.z + b.position.z) / 2, fx = -Math.sin(yaw), fz = -Math.cos(yaw);
-  px = mx - fx * 5; pz = mz - fz * 5; pitch = -.18; });
+await page.evaluate(() => { const a = _A[0].G, b = _A[_A.length - 1].G, mx = (a.position.x + b.position.x) / 2, mz = (a.position.z + b.position.z) / 2, fx = -Math.sin(yaw), fz = -Math.cos(yaw);
+  px = mx - fx * 9; pz = mz - fz * 9; pitch = -.16; });
 for (let i = 0; i < 8; i++) { await page.evaluate(() => tickCreatures(1 / 60, performance.now())); await g.frames(1); }
 await page.screenshot({ path: path.join(OUT, 'f4-animals.jpg'), type: 'jpeg', quality: 80 });
 
