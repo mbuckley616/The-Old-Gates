@@ -298,7 +298,7 @@ function buildWolf(name,scale){
 // rig moved by its group walks and gallops by the ground it covers, as the coach's horses do
 // Session 1706: a deer is a hind one time in two by its key (its kit body the deer's without antlers, HC_KINDS' Hind), and a tenth smaller
 function animalHash(str){let h=2166136261;for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
-function buildAnimal(name,key){if(BIRD[name])return buildBird(name,key);const k=WOLF_KINDS[name];if(!k||!k.wild)return null;const hind=name==='Deer'&&key!=null&&(animalHash(String(key))&1)===1;
+function buildAnimal(name,key){if(BIRD[name])return buildBird(name,key);if(SWIMMER[name])return buildSwimmer(name,key);const k=WOLF_KINDS[name];if(!k||!k.wild)return null;const hind=name==='Deer'&&key!=null&&(animalHash(String(key))&1)===1;
   const rig=buildWolf(name,k.world*(hind?.9:1));if(key!=null)rig.hcKey='wild:'+key;if(hind)rig.hcKind='Hind';return rig;}
 // Session 1710: the raven and the crow (L3, for #984's A; the systems builder's note on S1707: "the raven and crow need a bird driver
 // before they can spawn"). A bird has no four legs for the wolf's driver, so it has none: `buildAnimal('Raven'|'Crow', key)` gives a
@@ -334,6 +334,31 @@ function hcBirdPose(rig){const H=rig.hc,e=rig.e,g=e&&e.mesh;if(!H||!g||e.dead)re
   // aloft the kit lifts its body by the plan's flyH: the group's own height is the flight, so the lift is taken back off
   if(gait==='soar'){if(H.fly==null){C.root.updateMatrixWorld(true);const s0=C.byName.spine0;H.fly=s0?C.root.worldToLocal(s0.getWorldPosition(new THREE.Vector3())).y-H.spineY0:0;}H.W.position.y=H.y0-H.fly*H.f;}
   else H.W.position.y=H.y0;rig.gaitNow=gait;}
+// Session 1712: the trout (L3's last common animal, OG-084: "trout; Rock Trout"). A fish has no legs for the wolf's driver, so it has
+// none, as the birds have none: `buildAnimal('Trout', key)` gives a rig whose root holds a plain stand-in (a body, a tail fan and a back
+// fin, one mesh, its head at +z, centred on the group's origin: the group's height is the depth it swims at), the far level and the old
+// look's; near, the kit's own trout (Session 843, the Riverjaw's body at .48, mottled), fitted nose to nose on the stand-in's axis by
+// hcFishAttach as the shark is. The caller places the group (in the water) and sets `rig.e` as for a bird; hcTick finds it among the
+// world's foes. It swims always: the tail's phase moves by the water its group covers over the kit's own stride (0.7 of its length),
+// and holding still in the current it beats slowly on the clock (SWIMMER.idle, cycles a second). A trout is 0.40 m nose to tail
+const SWIMMER={Trout:{len:.4,col:0x6e6a48,belly:0xd8cfb0},idle:.6};
+function fishStandIn(len,col){const k=len/.4,parts=[],M=new THREE.Matrix4(),put=(geo,x,y,z,sx,sy,sz,ry)=>{M.makeRotationY(ry||0);
+    const g=geo.index?geo.toNonIndexed():geo;g.applyMatrix4(new THREE.Matrix4().makeScale(sx,sy,sz).premultiply(M).premultiply(new THREE.Matrix4().makeTranslation(x*k,y*k,z*k)));parts.push(g);};
+  put(new THREE.SphereGeometry(1,10,6),0,0,.03,.032*k,.045*k,.15*k);
+  const fan=new THREE.ConeGeometry(.045*k,.08*k,4);fan.rotateX(-Math.PI/2);put(fan,0,0,-.155,.25,1,1);
+  put(new THREE.BoxGeometry(.004*k,.03*k,.05*k),0,.05,.02,1,1,1);
+  let n=0;for(const g of parts)n+=g.attributes.position.count;const P=new Float32Array(n*3),N=new Float32Array(n*3);let o=0;
+  for(const g of parts){P.set(g.attributes.position.array,o*3);N.set(g.attributes.normal.array,o*3);o+=g.attributes.position.count;g.dispose();}
+  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(P,3));geo.setAttribute('normal',new THREE.BufferAttribute(N,3));geo.computeBoundingSphere();
+  const m=new THREE.Mesh(geo,new THREE.MeshLambertMaterial({color:col}));m.castShadow=false;m.name='fish';return m;}
+function buildSwimmer(name,key){const F=SWIMMER[name];if(!F)return null;const root=new THREE.Group();root.name='kitroot';const mesh=fishStandIn(F.len,F.col);root.add(mesh);
+  const rig={name,swimmer:true,fish:true,gait:'swim',k:{swimmer:true},root,mesh,e:null,hcKey:'wild:'+(key!=null?key:name),reach:1,axis:0,ph:0,t:0,lx:null,lz:null,v:0,tris:mesh.geometry.attributes.position.count/3};
+  root.userData.rig=rig;return rig;}
+// the trout's pose, near: the phase by the water its group covers (3D: a fish climbs and dives), or slowly on the clock holding still
+function hcSwimPose(rig){const H=rig.hc,e=rig.e,g=e&&e.mesh;if(!H||!g||e.dead)return;const now=performance.now()/1000,dt=rig.t?Math.min(.1,now-rig.t):0;rig.t=now;
+  const p=g.position;let d=rig.lx==null?0:Math.hypot(p.x-rig.lx,p.y-rig.ly,p.z-rig.lz);rig.lx=p.x;rig.ly=p.y;rig.lz=p.z;if(d>2)d=0;
+  rig.v=dt>0?rig.v+(d/dt-rig.v)*Math.min(1,dt*6):rig.v;
+  rig.ph+=Math.max(dt*SWIMMER.idle,d/Math.max(1e-3,HC.strideOf(H.C)*H.f));HC.pose(H.C,rig.ph);rig.gaitNow=rig.v>.05?'swim':'hold';}
 // ── the wolf's motion: every joint an [x,y,z] rotation; `drop` lowers the hips ──
 const WG={
   JOINTS:['hips','spine','neck','head','jaw','tail1','tail2','tail3','shL','elL','wrL','pfL','shR','elR','wrR','pfR','thL','knL','hkL','phL','thR','knR','hkR','phR'],
@@ -853,7 +878,7 @@ const HC_KINDS={'Wolf':{plan:'wolf'},'Snow Wolf':{plan:'wolf',own:true},'Dire Wo
   'Gargoyle':{plan:'gargoyle',own:true,person:true,merge:true,ik:true,glow:[1,.31,.13],glowR:.032,glowAt:{f:.8,up:.55,out:.5},garg:true},
   'Wraith':{plan:'wraith',own:true,person:true,legless:true,rest:HC_WRAITH_REST},'Phantom':{plan:'phantom',own:true,person:true,legless:true,rest:HC_WRAITH_REST},
   'Deer':{plan:'deer',ik:true},'Hind':{plan:'deer',own:true,ik:true,bare:true},'Red Fox':{plan:'redfox'},'Brown Hare':{plan:'brownhare'},'Badger':{plan:'badger'},'Otter':{plan:'otter'},
-  'Shark':{plan:'reefshark',fish:true},'Whale':{plan:'stormwhale',fish:true},'Dolphin':{plan:'stormswift',fish:true},'Gull':{plan:'gull',fish:true,own:true,cell:.014},'Raven':{plan:'raven',fish:true,own:true,cell:.014},'Crow':{plan:'crow',fish:true,own:true,cell:.012},'Slime':{plan:'slime',fish:true},'Fire Elemental':{plan:'fireelemental',fish:true}};
+  'Shark':{plan:'reefshark',fish:true},'Whale':{plan:'stormwhale',fish:true},'Dolphin':{plan:'stormswift',fish:true},'Gull':{plan:'gull',fish:true,own:true,cell:.014},'Raven':{plan:'raven',fish:true,own:true,cell:.014},'Crow':{plan:'crow',fish:true,own:true,cell:.012},'Trout':{plan:'trout',fish:true,own:true,cell:.014},'Slime':{plan:'slime',fish:true},'Fire Elemental':{plan:'fireelemental',fish:true}};
 // the driver's joints and the kit's bones they move, parents first (the kit's front legs hang on spine3, the hind on spine0)
 const HC_MAP=[['hips','spine0'],['spine','spine1'],['neck','neck0'],['head','head'],['jaw','jaw'],['tail1','tail0'],['tail2','tail1'],['tail3','tail2'],
   ['shL','leg0L_0'],['elL','leg0L_1'],['wrL','leg0L_2'],['pfL','leg0L_3'],['shR','leg0R_0'],['elR','leg0R_1'],['wrR','leg0R_2'],['pfR','leg0R_3'],
@@ -1248,7 +1273,7 @@ function hcTick(now){let best=null,bd=HC_BODY.build;
   if(activeZoneId==='world'&&typeof WHALES!=='undefined')for(const w of WHALES)if(!w._hcRig&&w.m&&w.m.parent)HC_RIGS.add(hcWhaleRig(w));
   if(activeZoneId==='world'&&typeof LIFE!=='undefined')LIFE.dolphins.forEach((d,k)=>{if(!d._hcRig&&d.m&&d.m.parent)HC_RIGS.add(hcDolphinRig(d,k));});
   if(activeZoneId==='world'&&typeof LIFE!=='undefined')hcSchools(now,busy); /* S1599 — the shallows' schools */
-  if(activeZoneId==='world')for(const e of ZONES.world.enemies){const r=e.limbs&&e.limbs.wolf;if(r&&r.bird&&!r._hcIn&&r.e&&e.mesh&&e.mesh.parent){r._hcIn=true;HC_RIGS.add(r);}} /* S1710 — the raven and the crow */
+  if(activeZoneId==='world')for(const e of ZONES.world.enemies){const r=e.limbs&&e.limbs.wolf;if(r&&(r.bird||r.swimmer)&&!r._hcIn&&r.e&&e.mesh&&e.mesh.parent){r._hcIn=true;HC_RIGS.add(r);}} /* S1710 — the raven and the crow; S1712 — the trout */
   if(activeZoneId==='world'&&typeof LIFE!=='undefined')for(const gl of LIFE.gulls)if(gl.g.parent)for(const m of [...gl.g.children])if(m.isMesh&&!m.userData.hcGull){m.userData.hcGull=true;HC_RIGS.add(hcGullRig(m));} /* S1595 — the ports' gulls */
   for(const rig of HC_RIGS){const g=rig.root.parent;
     if(!g||!g.parent||rig.nest&&!hcTop(g).isScene){hcDrop(rig);HC_RIGS.delete(rig);continue;}
@@ -1256,10 +1281,10 @@ function hcTick(now){let best=null,bd=HC_BODY.build;
     const gp=hcAt(rig,g),d=Math.hypot(CAM.position.x-gp.x,CAM.position.z-gp.z)/(rig.reach||1); /* S1536 — a whale's levels by its size */
     if(!rig.hc){if(!busy&&!HC_BODY.job&&!rig.hcFail&&!(rig.fish&&rig.e.dead)&&d<bd){bd=d;best=rig;}continue;} /* S1529 — a shark killed before its body was built keeps the old one */
     const L=rig.hc.L,a=HC_BODY.near+(L>0?-1:1),b=HC_BODY.mid+(L>1?-1:1);hcLevel(rig,d<a?0:d<b?1:2);hcThin(rig,d>HC_BODY.furAll+(rig.hc.thin?-.5:.5));
-    if(rig.hc.L<2)(rig.bird?hcBirdPose:rig.fish?hcFishPose:hcPose)(rig);else if(rig.die&&rig.e.dead)hcPuddle(rig);}
+    if(rig.hc.L<2)(rig.bird?hcBirdPose:rig.swimmer?hcSwimPose:rig.fish?hcFishPose:hcPose)(rig);else if(rig.die&&rig.e.dead)hcPuddle(rig);}
   if(best&&HC.buildIter){try{HC_BODY.job={rig:best,it:HC.buildIter(hcGenome(best)),ms:0,steps:0};}catch(e){best.hcFail=true;console.warn('F4: the kit could not build',best.name,e);}best=null;}
   if(!best&&HC_BODY.job&&!busy)best=hcBuildStep();
-  if(best){const C=best.hcC;best.hcC=null;(best.fish?hcFishAttach:hcAttach)(best,C);HBODY.last=now;if(best.hc){const g=best.root.parent,gp=hcAt(best,g),d=Math.hypot(CAM.position.x-gp.x,CAM.position.z-gp.z)/(best.reach||1);hcLevel(best,d<HC_BODY.near?0:d<HC_BODY.mid?1:2);hcThin(best,d>HC_BODY.furAll);if(best.hc.L<2)(best.bird?hcBirdPose:best.fish?hcFishPose:hcPose)(best);}}}
+  if(best){const C=best.hcC;best.hcC=null;(best.fish?hcFishAttach:hcAttach)(best,C);HBODY.last=now;if(best.hc){const g=best.root.parent,gp=hcAt(best,g),d=Math.hypot(CAM.position.x-gp.x,CAM.position.z-gp.z)/(best.reach||1);hcLevel(best,d<HC_BODY.near?0:d<HC_BODY.mid?1:2);hcThin(best,d>HC_BODY.furAll);if(best.hc.L<2)(best.bird?hcBirdPose:best.swimmer?hcSwimPose:best.fish?hcFishPose:hcPose)(best);}}}
 // Session 1421: a foe's blow (attackPose, 42-zone-enemies.js) turns its driver's arm after hcTick has copied the frame's pose, so the kit's
 // body of a person-plan kind (the Goblin, the Skeleton, the trolls) never wound up: the copy again, as hbRepose does for the people's
 function hcRepose(rig){if(rig&&rig.hc&&rig.hc.L<2)hcPose(rig);}
