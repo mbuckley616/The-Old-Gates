@@ -314,6 +314,9 @@ function buildAnimal(name,key){if(BIRD[name])return buildBird(name,key);if(SWIMM
 // fly), else by the ground its group covers a second, standing, walking or hopping, the phase advanced by the ground covered over the
 // kit's own stride (the feet stay put). Killed, it is left as the kill laid it. A raven is 0.58 m from beak to tail, a crow 0.45
 const BIRD={Raven:{len:.58,col:0x141416,hop:.9},Crow:{len:.45,col:0x19191c,hop:.7},air:.3,walk:.05,beat:1.7};
+// Session 1719: the farms' hen (L3 livestock, OG-023 and OG-035; the kit's plan since Session 844) on the same path, keyed farm:<key>. She
+// does not fly: lifted, she keeps her ground gaits, and fast she runs at the kit's trot (run), not a hop. 0.40 m from beak to tail
+BIRD.Hen={len:.4,col:0x99602e,hop:.8,run:'trot',farm:true};
 function birdStandIn(len,col){const k=len/.535,parts=[],M=new THREE.Matrix4(),put=(geo,x,y,z,sx,sy,sz,rx)=>{M.makeRotationX(rx||0);
     const g=geo.index?geo.toNonIndexed():geo;g.applyMatrix4(new THREE.Matrix4().makeScale(sx,sy,sz).premultiply(M).premultiply(new THREE.Matrix4().makeTranslation(x*k,y*k,z*k)));parts.push(g);};
   put(new THREE.SphereGeometry(1,10,7),0,.17,0,.08*k,.075*k,.17*k);put(new THREE.SphereGeometry(.055*k,8,6),0,.25,.15,1,1,1);
@@ -324,7 +327,7 @@ function birdStandIn(len,col){const k=len/.535,parts=[],M=new THREE.Matrix4(),pu
   const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(P,3));geo.setAttribute('normal',new THREE.BufferAttribute(N,3));geo.computeBoundingSphere();
   const m=new THREE.Mesh(geo,new THREE.MeshLambertMaterial({color:col}));m.castShadow=true;m.name='bird';return m;}
 function buildBird(name,key){const B=BIRD[name];if(!B)return null;const root=new THREE.Group();root.name='kitroot';const mesh=birdStandIn(B.len,B.col);root.add(mesh);
-  const rig={name,bird:true,fish:true,crawl:true,gait:'stand',k:{bird:true},root,mesh,e:null,hcKey:'wild:'+(key!=null?key:name),reach:1,ph:0,t:0,lx:null,lz:null,v:0,tris:mesh.geometry.attributes.position.count/3};
+  const rig={name,bird:true,fish:true,crawl:true,gait:'stand',k:{bird:true},root,mesh,e:null,hcKey:(B.farm?'farm:':'wild:')+(key!=null?key:name),reach:1,ph:0,t:0,lx:null,lz:null,v:0,tris:mesh.geometry.attributes.position.count/3};
   root.userData.rig=rig;return rig;}
 // the bird's pose, near: the gait by where its group is, the phase by the ground it covers (or by the clock aloft and standing)
 function hcBirdPose(rig){const H=rig.hc,e=rig.e,g=e&&e.mesh;if(!H||!g||e.dead)return;const now=performance.now()/1000,dt=rig.t?Math.min(.1,now-rig.t):0;rig.t=now;
@@ -332,7 +335,7 @@ function hcBirdPose(rig){const H=rig.hc,e=rig.e,g=e&&e.mesh;if(!H||!g||e.dead)re
   const x=g.position.x,z=g.position.z;let d=rig.lx==null?0:Math.hypot(x-rig.lx,z-rig.lz);rig.lx=x;rig.lz=z;if(d>2)d=0;
   rig.v=dt>0?rig.v+(d/dt-rig.v)*Math.min(1,dt*6):rig.v;
   const gy=typeof activeTerrainH==='function'?activeTerrainH(x,z):g.position.y,up=g.position.y-gy>BIRD.air,B=BIRD[rig.name]||BIRD.Raven;
-  const gait=up?'soar':rig.v>B.hop?'hop':rig.v>BIRD.walk?'walk':'stand',C=H.C;
+  const gait=up&&!B.run?'soar':rig.v>B.hop?(B.run||'hop'):rig.v>BIRD.walk?'walk':'stand',C=H.C;
   C.gait=gait;
   if(gait==='soar'||gait==='stand')rig.ph+=dt*(gait==='soar'?BIRD.beat:.25);else rig.ph+=d/Math.max(1e-3,HC.strideOf(C)*H.f);
   HC.pose(C,rig.ph);
@@ -883,7 +886,7 @@ const HC_KINDS={'Wolf':{plan:'wolf'},'Snow Wolf':{plan:'wolf',own:true},'Dire Wo
   'Gargoyle':{plan:'gargoyle',own:true,person:true,merge:true,ik:true,glow:[1,.31,.13],glowR:.032,glowAt:{f:.8,up:.55,out:.5},garg:true},
   'Wraith':{plan:'wraith',own:true,person:true,legless:true,rest:HC_WRAITH_REST},'Phantom':{plan:'phantom',own:true,person:true,legless:true,rest:HC_WRAITH_REST},
   'Deer':{plan:'deer',ik:true},'Hind':{plan:'deer',own:true,ik:true,bare:true},'Red Fox':{plan:'redfox'},'Brown Hare':{plan:'brownhare'},'Badger':{plan:'badger'},'Otter':{plan:'otter'},'Cow':{plan:'cow',ik:true},'Sheep':{plan:'sheep',ik:true},'Goat':{plan:'goat',ik:true},
-  'Shark':{plan:'reefshark',fish:true},'Whale':{plan:'stormwhale',fish:true},'Dolphin':{plan:'stormswift',fish:true},'Gull':{plan:'gull',fish:true,own:true,cell:.014},'Raven':{plan:'raven',fish:true,own:true,cell:.014},'Crow':{plan:'crow',fish:true,own:true,cell:.012},'Trout':{plan:'trout',fish:true,own:true,cell:.014},'Slime':{plan:'slime',fish:true},'Fire Elemental':{plan:'fireelemental',fish:true}};
+  'Shark':{plan:'reefshark',fish:true},'Whale':{plan:'stormwhale',fish:true},'Dolphin':{plan:'stormswift',fish:true},'Gull':{plan:'gull',fish:true,own:true,cell:.014},'Raven':{plan:'raven',fish:true,own:true,cell:.014},'Crow':{plan:'crow',fish:true,own:true,cell:.012},'Trout':{plan:'trout',fish:true,own:true,cell:.014},'Hen':{plan:'hen',fish:true,own:true,cell:.012},'Slime':{plan:'slime',fish:true},'Fire Elemental':{plan:'fireelemental',fish:true}};
 // the driver's joints and the kit's bones they move, parents first (the kit's front legs hang on spine3, the hind on spine0)
 const HC_MAP=[['hips','spine0'],['spine','spine1'],['neck','neck0'],['head','head'],['jaw','jaw'],['tail1','tail0'],['tail2','tail1'],['tail3','tail2'],
   ['shL','leg0L_0'],['elL','leg0L_1'],['wrL','leg0L_2'],['pfL','leg0L_3'],['shR','leg0R_0'],['elR','leg0R_1'],['wrR','leg0R_2'],['pfR','leg0R_3'],
