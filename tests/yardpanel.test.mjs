@@ -40,7 +40,7 @@ await act('^Refit her as a cutter'); await g.frames(2); const f = await R();
 check('refitted: 1600 taken, a cutter, still chosen and marked yours', f.cls === 'cutter' && f.gold === 3750 && f.sel === 'cutter' && f.list.includes('cutter (yours)') && f.said.length > 0, f);
 await act('^Bigger hold'); const h = await R();
 check('the hold: 200 taken, tier 1', h.cargo === 1 && h.gold === 3550, h);
-// S1725 — Michael's B on #979: a place a fitting by hull, and each fitting but stowage takes hold weight
+// S1726 — Michael's B on #979: a place a fitting by hull, and each fitting but stowage takes hold weight
 check('the cutter with stowage: a galley offered by its price and weight; 1 of 2 places', h.acts.includes('Fit a galley (300 gold, 10 of the hold)') && /Places1 of 2/.test(h.info) && /Her hold now50/.test(h.info), h);
 await act('^Fit a galley'); const h2 = await R();
 check('the galley fitted: 300 taken, her hold 25 + 25 − 10 = 40, both places taken, nothing more to fit', h2.gold === 3250 && /Her hold now40/.test(h2.info) && /Places2 of 2/.test(h2.info) && /Fittedstowage, galley/.test(h2.info) && !h2.acts.some(x => /^Fit |^Bigger hold/.test(x)) && h2.acts.includes('Take out her galley') && /takes 40 now/.test(h2.said), h2);
