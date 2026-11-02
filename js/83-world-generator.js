@@ -874,6 +874,22 @@ function genSettlement(site){
       const mx=new THREE.Matrix4().makeRotationY(ry).setPosition(cx,y,cz),lo=A.far.map(([fg,col])=>[fg,mx,new THREE.Color(col)]);
       const far=new THREE.Mesh(mergeGeos(lo),VC_MAT);far.name='towerhouse far';far.userData.noBake=true;far.castShadow=true;far.receiveShadow=true;far.visible=false;group.add(far);lo.forEach(([fg])=>fg.dispose());
       S.towerHouse={ry,tris:A.tris,draws:A.draws,top:A.top,tower:A.tower,hall:A.hall,hatch:A.hatch,bawn:A.bawn,flanker:A.flanker,table:A.table};S.towerLod={hi:g,lo:far,x:cx,z:cz,r:20};
+      // S1765 (card F8, Michael's A on #1026: through a mouth, into a place of its own) — the cellar, its souterrain and its pit are a scene of
+      // their own (PKIT.places.towercellar, built when entered: buildKitTowerCellar), with two doors: the hall's hatch, and the pit's mouth on
+      // the slope 4.7 m behind the bawn's west wall (PKIT.places.towerpit, stood on the ground's mean under its corners, turned with the tower
+      // house). Its record is in the world's houses for a save made below (byAim: no door finds it by nearness; towerCellarPrompt does), not
+      // in S.houses: a ruin has none (S1750)
+      {const H=S.towerHouse,wx=(u,v)=>cx+u*c+v*s_,wz=(u,v)=>cz-u*s_+v*c;H.y=y;H.cx=cx;H.cz=cz;
+        const P=PKIT.places.towerpit?PKIT.places.towerpit({key:site.id}):null;
+        if(P){let gy=0,top=-1e9;const cs=[[-P.w/2-.6,-P.d/2-.6],[P.w/2+.9,-P.d/2-.6],[-P.w/2-.6,P.d/2+.6],[P.w/2+.9,P.d/2+.6]];for(const [u,v] of cs)gy+=worldH(wx(P.at.x+u,P.at.z+v),wz(P.at.x+u,P.at.z+v))/4;
+          for(let a=0;a<=6;a++)for(let b=0;b<=2;b++){const u=P.at.x+(a/6-.5)*P.w,v=P.at.z+(b/2-.5)*P.d;top=Math.max(top,worldH(wx(u,v),wz(u,v)));} /* the land under the opening: the lid lies just over its highest point */
+          P.group.traverse(m=>{if(m.isMesh)m.geometry.dispose();});Object.assign(P,PKIT.places.towerpit({key:site.id,lid:+(top-gy+.03).toFixed(3)}));
+          const mx=wx(P.at.x,P.at.z),mz=wz(P.at.x,P.at.z);P.group.position.set(mx,gy,mz);P.group.rotation.y=ry;P.group.userData.noBake=true;group.add(P.group);
+          H.pit={x:mx,z:mz,y:gy,u:P.at.x,v:P.at.z,w:P.w,d:P.d,tris:P.tris,draws:P.draws,out:{x:wx(P.at.x-P.w/2-1.6,P.at.z),z:wz(P.at.x-P.w/2-1.6,P.at.z),yaw:Math.atan2(c,-s_)}};}
+        const hu=(H.hatch.x0+H.hatch.x1)/2,hv=(H.hatch.z0+H.hatch.z1)/2;
+        H.cellar={id:`g_${site.id}_towercellar`,type:'towercellar',byAim:true,siteId:site.id,name:`${site.name} — the cellar`,keeper:'',reg,style:'irish',w:12,d:9,two:false,
+          doorX:wx(hu,hv),doorZ:wz(hu,hv),doorFace:'S',exitX:wx(hu,hv+1.3),exitZ:wz(hu,hv+1.3),exitYaw:ry+Math.PI};
+        ZONES.world.houses.push(H.cellar);}
     }catch(e){console.warn('towerhouse',site.id,e);}
     if(abbeyHere)try{const A=PKIT.places.abbey({key:site.id}),ry=streets.length?Math.atan2(ax,az):r()*Math.PI*2,y=worldH(cx,cz)-.06,c=Math.cos(ry),s_=Math.sin(ry),g=A.group;
       g.position.set(cx,y,cz);g.rotation.y=ry;g.userData.noBake=true;group.add(g);
@@ -1233,6 +1249,7 @@ function genSettlement(site){
     S.group.traverse(o=>{if(o.isMesh){o.geometry.dispose();}});if(S.smoke)S.smoke.geometry.dispose();
     S.npcs.forEach(n=>{sc.remove(n.g);sc.remove(n.dot);const i=npcs.indexOf(n);if(i>=0)npcs.splice(i,1);});
     S.houses.forEach(h=>{const i=ZONES.world.houses.indexOf(h);if(i>=0)ZONES.world.houses.splice(i,1);});
+    if(S.towerHouse&&S.towerHouse.cellar){const i=ZONES.world.houses.indexOf(S.towerHouse.cellar);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1765 — the tower house's cellar */
     if(S.loot&&typeof ZONE_CORPSES!=='undefined')S.loot.forEach(c=>{const i=ZONE_CORPSES.indexOf(c);if(i>=0)ZONE_CORPSES.splice(i,1);});
     for(let i=ZONES.world.platforms.length-1;i>=0;i--)if(ZONES.world.platforms[i].site===id)ZONES.world.platforms.splice(i,1);
     unregLights(id);S.npcs.forEach(n=>{if(n._torch&&n._torch.userData.light)unregLight(n._torch.userData.light);});
@@ -2408,6 +2425,53 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     else{intNPCMesh=null;intNPCPos={x:-99,z:-99};}
     return sc_;
   }
+  // S1765 (card F8, Michael's A on #1026) — a ruined tower house's cellar (PKIT.places.towercellar, places.js's gatelandsTowerHouse below
+  // ground): down the stair from the hall's hatch, the cellar under its flags and two beams with the band's store, west through the broken
+  // wall along the souterrain, 16.6 m under lintels, to the pit's stair and up into the day. Drawn in the tower house's frame and moved into
+  // the room's (the cellar's floor at 0; the room runs from the pit's west wall to the tower's east one). The rock round it is solid, the
+  // flags, the hatch's boards and the lintels are the ceiling (headCeil), the treads and the landing are footholds. Two ways out, neither a
+  // door in the front wall: up through the hatch from the stair, and out of the pit from its landing (towerCellarPrompt). No one is here.
+  // The light: the pit's head under the sky by the hour, a weak ambient; the band's two lanterns are cold
+  function kitTowerCellar(house){return !!(house&&house.type==='towercellar'&&typeof PKIT!=='undefined'&&PKIT.places&&PKIT.places.towercellar);}
+  function buildKitTowerCellar(house){
+    const T=PKIT.places.towercellar({key:house.siteId}),Bd=T.bounds,FY=T.floor,W=+(Bd.x1-Bd.x0).toFixed(3),D=+(Bd.z1-Bd.z0).toFixed(3);
+    const rx=x=>x-Bd.x0,rz=z=>z-Bd.z0,ry=y=>y-FY;
+    house._counterFront=null;house.intW=W;house.intD=D;house._roomH=+(ry(T.pit.y)+8).toFixed(3);house._exitD=.01;house._exitW=.01;house._exitX=-99;house._exitZ=-99;house._exitText=true;house._towerCellar=T;
+    const via=house._via||'hatch',A=T.arrive[via]||T.arrive.hatch;house._arriveX=+rx(A[0]).toFixed(3);house._arriveZ=+rz(A[2]).toFixed(3);house._arriveYaw=A[3];
+    if(via==='pit'&&!window._pendingPos)window._pendingPos={x:house._arriveX,z:house._arriveZ,yaw:A[3],jumpY:ry(A[1])}; /* goToInterior stands you at the floor; the landing is 3.1 m up */
+    house._via=null;
+    const sc_=new THREE.Scene();interiorScene=sc_;landRoomPost(sc_);sc_.background=new THREE.Color(0x06080a);sc_.fog=new THREE.Fog(0x06080a,16,48);
+    intNPCMesh=null;intNPCPos={x:-99,z:-99};intBedPos=null;intStashPos=null;
+    const SOL=[];INT_SOL=SOL;FOOTHOLDS=[];INT_BEDS=[];INT_DOORS=[];INT_DOORS.house=house.id;INT_CHAIR=null;INT_NPCS=[];HATCH.active=false;HATCH.roof=false;INT_LOOT=null;INT_BOX=null;INT_SHELF=null;
+    T.group.position.set(-Bd.x0,-FY,-Bd.z0);sc_.add(T.group);
+    for(const b of T.boxes){const q={x0:rx(b.x0),x1:rx(b.x1),z0:rz(b.z0),z1:rz(b.z1),y0:ry(b.y0),y1:ry(b.y1)};SOL.push(q);if(b.foot)FOOTHOLDS.push({x0:q.x0,x1:q.x1,z0:q.z0,z1:q.z1,y:q.y1});}
+    for(const b of T.ceil)SOL.push({x0:rx(b.x0),x1:rx(b.x1),z0:rz(b.z0),z1:rz(b.z1),y0:ry(b.y0),y1:ry(b.y0)+.3});
+    // the day: the sky over the pit's head by the hour (as a room's windows, S1288's colours), and its light down the pit; in the cellar
+    // only what comes 17 m along the souterrain, and a low ambient so the walls keep their shape (0.4 here: under the rooms' tone mapping 0.14 read black)
+    const hr=typeof gameHour==='function'?gameHour():12,dayK=hr>=7&&hr<18?1:hr>=5&&hr<20?.45:.08;
+    T.sky.color.setHex(hr>=7&&hr<18?0xc4d0dc:hr>=5&&hr<20?0x8a7a7a:0x0e1420);
+    sc_.add(new THREE.AmbientLight(0xc8ccd4,.4));
+    {const P=T.pit,M=T.mouth,l=new THREE.PointLight(0xdfe6f0,2.6*dayK,11,1);l.position.set(rx(M.x),ry(P.y)+3.2,rz(M.z));l.userData.daylight=true;sc_.add(l);
+      const s=new THREE.SpotLight(0xd4dcea,3.0*dayK,16,.9,.9,1);s.position.set(rx(M.x),ry(P.y)+4,rz(M.z));s.target.position.set(rx(M.x1)+1.2,0,rz(M.z));s.userData.daylight=true;sc_.add(s,s.target);}
+    return sc_;
+  }
+  // the cellar's two ways, from either side: in the world the hall's hatch (stood on it, in the hall) and the pit's mouth (within its lining
+  // and a stride round it); below, the stair under the hatch (stood on one of its top three treads that you can stand on) and the pit's landing
+  function towerCellarAt(){
+    if(isInterior()){const h=currentHouse;if(!h||h.type!=='towercellar'||!h._towerCellar)return null;const T=h._towerCellar,Bd=T.bounds,x=px+Bd.x0,z=pz+Bd.z0,y=jumpY+T.floor,S=T.stair,P=T.pit;
+      if(x>S.x0-.1&&x<S.x1+.1&&z>S.z0-.3&&z<S.z1+.3&&y>S.head-.5)return {up:'hatch'};
+      if(x<P.x1+.25&&z>P.z0-.3&&z<P.z1+.3&&y>P.y-.4)return {up:'pit'};return null;}
+    if(activeZoneId!=='world'||typeof SETTLE==='undefined')return null;
+    for(const S of SETTLE.values()){const H=S.towerHouse;if(!H||!H.cellar||Math.abs(px-H.cx)>45||Math.abs(pz-H.cz)>45)continue;const c=Math.cos(H.ry),s_=Math.sin(H.ry),dx=px-H.cx,dz=pz-H.cz,u=dx*c-dz*s_,v=dx*s_+dz*c;
+      if(u>H.hatch.x0-.35&&u<H.hatch.x1+.35&&v>H.hatch.z0-.35&&v<H.hatch.z1+.35&&Math.abs(jumpY-(H.y+H.hall.floor))<1.2)return {down:'hatch',S};
+      const P=H.pit;if(P&&Math.abs(u-P.u)<P.w/2+.9&&Math.abs(v-P.v)<P.d/2+.9)return {down:'pit',S};}
+    return null;}
+  function towerCellarPrompt(){const t=towerCellarAt();if(!t)return null;
+    return t.up==='hatch'?"Press 'E' to push up the hatch":t.up==='pit'?"Press 'E' to climb out of the pit":t.down==='hatch'?"Press 'E' to lift the hatch":"Press 'E' to go down into the pit";}
+  function towerCellarUse(){const t=towerCellarAt();if(!t)return false;
+    if(t.down){const h=t.S.towerHouse.cellar;h._via=t.down;goToInterior(h);return true;}
+    const h=currentHouse;if(t.up==='pit'){const S=SETTLE.get(h.siteId),P=S&&S.towerHouse&&S.towerHouse.pit;if(P)window._pendingWorldPos={x:P.out.x,z:P.out.z,yaw:P.out.yaw,jumpY:worldH(P.out.x,P.out.z)};}
+    exitInterior();return true;}
   // S1288 (card F9, Michael's A on #321 and #588) — on the new look a Markish inn standing as the kit's hall (lot.kit.alehall, S1288's
   // planning) is the Mark's alehall inside (PKIT.mk.alehall, rooms.js's Session 894, as drawn: 10 by 18 m): the long hearth under the
   // louver, the long tables, the counter across the back with the kegs behind it, and the furred wall benches the guests sleep on. It is
@@ -2796,6 +2860,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     if(kitLonghouse(house))return buildKitLonghouse(house); /* S1453 — a Markish home: the longhouse inside, at its true size */
     if(kitChurchHall(house))return buildKitChurchHall(house); /* S1326 — the Church of the Weaver inside, at its true size */
     if(kitGuildHall(house))return buildKitGuildHall(house); /* S1703 — a town's guild hall inside, at its true size */
+    if(kitTowerCellar(house))return buildKitTowerCellar(house); /* S1765 — a ruined tower house's cellar, souterrain and pit */
     const two=!!house.two;
     // S896 (F2a) — the room's true size in metres (07-scale.js; visual-foundation.md §1: a cottage room 4 to 6 across, an inn's hall
     // 10 to 14, a church's nave 8 to 12 wide), then laid out in the old unit (÷ SCALE.ROOM_K) and scaled back up at the end
