@@ -967,12 +967,18 @@
   function shipFitWeight(){const st=worldState.ship;if(!st||!Array.isArray(st.fit))return 0;let w=0;for(const k of st.fit)if(SHIP_FITS[k])w+=SHIP_FITS[k].w;return w;}
   function shipFitted(k){const st=worldState.ship;return !!(st&&!st.sunk&&Array.isArray(st.fit)&&st.fit.includes(k));}
   // the named actions (co-op rules): fit one (bought, or from the yard's store), take one out to the store, and fit her to a hull
-  function fitShip(k,fromStore){const st=shipCfg(),f=shipFitList(st);
+  // why a fitting cannot go into her now (places, one of each, the hold's weight), or null; gold is the caller's. S1732 — from her
+  // bench (src 'bench') one the yard keeps for her is refused too, so a fitting is still one of a kind
+  function fitShipWhy(k,src){const st=shipCfg(),f=shipFitList(st);
     if(k==='stowage'){if((st.cargo||0)>=2)return 'She has all the stowage she can take.';}else{if(!SHIP_FITS[k])return 'No such fitting.';if(f.includes(k))return `She has ${SHIP_FITS[k].a} already.`;}
+    if(src==='bench'&&st.stored.includes(k))return `The yard keeps her ${shipFitNames([k])[0]} already; it goes back in there for nothing.`;
     if(shipPlacesUsed(st)>=shipPlaces(st.cls))return `Her rooms are full: ${shipPlaces(st.cls)} places, all taken.`;
     const w=k==='stowage'?0:SHIP_FITS[k].w;if(w&&holdUsed()+w>holdCap())return `The ${SHIP_FITS[k].n} take${k==='bunks'?'':'s'} ${w} of the hold; clear the hold first.`;
+    return null;}
+  // fromStore: true from the yard's store (free), 'bench' built at her bench (free; the materials are the bench's), else bought
+  function fitShip(k,fromStore){const st=shipCfg(),f=shipFitList(st);const why=fitShipWhy(k,fromStore);if(why)return why;
     const p=fromStore?0:k==='stowage'?CARGO_TIERS[(st.cargo||0)+1]:SHIP_FITS[k].price;if(gold<p)return null;
-    if(fromStore){const i=st.stored.indexOf(k);if(i<0)return 'The yard holds no such fitting of hers.';st.stored.splice(i,1);}
+    if(fromStore===true){const i=st.stored.indexOf(k);if(i<0)return 'The yard holds no such fitting of hers.';st.stored.splice(i,1);}
     gold-=p;if(p&&typeof updateHUD==='function')updateHUD();if(k==='stowage')st.cargo=(st.cargo||0)+1;else f.push(k);
     if(typeof addLog==='function')addLog('⛵',`The ${SHIP.name} fitted with ${k==='stowage'?'stowage':SHIP_FITS[k].a}.`);return true;}
   function unfitShip(k){const st=shipCfg(),f=shipFitList(st);
@@ -983,6 +989,12 @@
   function shipFitToHull(){const st=shipCfg(),f=shipFitList(st),n=shipPlaces(st.cls),out=[];
     while(shipPlacesUsed(st)>n){if(f.length)out.push(f.pop());else{st.cargo--;out.push('stowage');}}
     st.stored.push(...out);return out;}
+  // S1732 — the still and the galley are in her hold (the build sheet's session 2): brewing there with a still fitted is ×1.10, and a
+  // galley is a fire. Until the look builder's fittings stand in the hold, anywhere in it is at them; once a room records a spot
+  // (house._fits[k] = {x,z}, the room's metres) it is within 2 m of it, the sheet's reach
+  const SHIP_STILL_K=1.10,SHIP_FIT_REACH=2;
+  function shipFitAtHand(k){if(!shipFitted(k)||typeof cabinBench!=='function'||!cabinBench())return false;
+    const sp=currentHouse._fits&&currentHouse._fits[k];return !sp||Math.hypot(px-sp.x,pz-sp.z)<=SHIP_FIT_REACH;}
   function shipFitNames(arr){return arr.map(k=>k==='stowage'?'stowage':SHIP_FITS[k]?SHIP_FITS[k].n:k);}
   function shipCfg(){return worldState.ship||(worldState.ship={});}
   function shipClass(){return SHIP_CLASSES[(worldState.ship&&worldState.ship.cls)||'sloop'];}
