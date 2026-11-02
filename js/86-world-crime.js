@@ -1355,8 +1355,18 @@
   // ── fish ──
   const FISH_KINDS={shallow:['Herring','Bream','Mackerel'],deep:['Cod','Silverfin','Ling'],cold:['Char','Haddock'],warm:['Grouper','Snapper']};
   function nearSchool(){if(!isSwimming())return null;if(typeof gateToll==='function'&&gateToll('uisce')&&uisceWaters())return null; /* S1359 — Uisce's toll: no fish in the Gatelands' waters */for(const s of LIFE.fish){if(s.cool>0)continue;if(Math.hypot(px-s.cx,pz-s.cz)<s.r+1.4&&Math.abs(jumpY-s.y)<1.6)return s;}return null;}
-  function fishPrompt(){return nearSchool()?"Press 'E' to catch a fish":null;}
-  function catchFish(){const s=nearSchool();if(!s)return false;
+  // S1759 — a trout in a river or a lake (#1014 A): swimming, within reach of one that has not darted off, E takes it by hand, as the sea's
+  // catch (the same reach; Uisce's toll and face hold for it as for the sea's fish in the Gatelands' waters)
+  function nearTrout(){if(!isSwimming())return null;if(typeof gateToll==='function'&&gateToll('uisce')&&uisceWaters())return null;let best=null,bd=1.4;
+    for(const e of ZONES.world.enemies){if(!e.swim||e.dead||!e.mesh)continue;const d=Math.hypot(px-e.x,pz-e.z);if(d<bd&&Math.abs(jumpY-e.mesh.position.y)<1.6){bd=d;best=e;}}return best;}
+  function takeTrout(e){const item=troutItem();
+    if(typeof canCarry==='function'&&!canCarry(item)){showMsg('Too heavy to carry!','#cc8844');return true;}
+    e.dead=true;if(e.mesh&&e.mesh.parent)e.mesh.parent.remove(e.mesh);if(e.el&&e.el.parent)e.el.parent.remove(e.el);
+    const i=ZONES.world.enemies.indexOf(e);if(i>=0)ZONES.world.enemies.splice(i,1);wildTaken(e);
+    bagAdd(item);if(typeof gateGift==='function'&&gateGift('uisce')&&uisceWaters()&&(typeof canCarry!=='function'||canCarry(item)))bagAdd(troutItem());
+    splash(false);showMsg('Caught a Trout.','#88cc88');if(typeof addLog==='function')addLog('🐟','Caught a Trout.');return true;}
+  function fishPrompt(){return nearSchool()||nearTrout()?"Press 'E' to catch a fish":null;}
+  function catchFish(){const s=nearSchool();if(!s){const t=nearTrout();return t?takeTrout(t):false;}
     const [i,j]=cellOf(px,pz);const cl=climateOfCell(i,j);const bed=worldH(px,pz);
     // S605 — the catch rolls on the school's stream, `<chunk>:fish:<minute>` (co-op rules; a school is one a chunk, S508's key by place and minute)
     const R=seededRng('fish',(s.chunk||(Math.round(s.cx)+','+Math.round(s.cz)))+':fish:'+Math.floor(worldState.gameTimeAbsMinutes||0));

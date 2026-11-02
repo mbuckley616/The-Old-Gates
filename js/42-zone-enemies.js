@@ -762,18 +762,41 @@ const ZONE_FOE_DEF={
     // S1711 — the raven and the crow (#984 A: "ravens or crows on open ground … the birds take off"), on the bodies builder's bird (buildBird, S1710)
     'Raven':        {minLevel:1, col:0x141416,eyeCol:0x0a0a0c,hp:1,  maxHp:1,  spd:1.0,dmg:0, atk:9,   xpVal:0,  scale:1,   shape:'bird',    def:0, resist:{}, wild:true},
     'Crow':         {minLevel:1, col:0x19191c,eyeCol:0x0a0a0c,hp:1,  maxHp:1,  spd:1.0,dmg:0, atk:9,   xpVal:0,  scale:1,   shape:'bird',    def:0, resist:{}, wild:true},
+    // S1759 — the trout in the rivers and lakes (#1014 A), on the bodies builder's fish (buildSwimmer, S1712): taken by hand swimming (E), or struck from the bank by an arrow or the spear
+    'Trout':        {minLevel:1, col:0x6e6a48,eyeCol:0x0a0a0c,hp:1,  maxHp:1,  spd:1.0,dmg:0, atk:9,   xpVal:0,  scale:1,   shape:'fish',    def:0, resist:{}, wild:true, swim:true},
   };
 // S1707 — the peaceful animals (Michael's A on #984): they graze and wander near where they stand, and on seeing or hearing you (a foe's
 // own senses, canSeePlayer: its cone, your sneaking, the weather) or on a blow they run 40 m from you, turning off walls, water and
 // steep ground; a startled one startles the rest of its group within 12 m. They never fight and never stay alert, so they hold no fight
 // open (passing time, the music). Pace in metres a second, walking and running
 const WILD_PACE={Deer:{walk:1.1,run:9},'Red Fox':{walk:1,run:7},'Brown Hare':{walk:.6,run:9},Badger:{walk:.6,run:4},Otter:{walk:.5,run:4},
-  Raven:{walk:.35,run:11,fly:true},Crow:{walk:.4,run:10,fly:true}};
+  Raven:{walk:.35,run:11,fly:true},Crow:{walk:.4,run:10,fly:true},Trout:{walk:.3,run:4,swim:true}};
+// S1759 — a trout holds a metre under the surface, head to the current, wandering a little where the water is deep enough to hide it.
+// Seen or heard (the same senses) it darts 10 m downstream (on a lake, away from you) and holds again. Under the water an arrow strikes it
+// only when it passes within 0.6 m of the fish's height (wildArrowMisses), and of the blows only the spear's reaches it (strikeCandidate)
+const WILD_SWIM={under:1,dart:10,wet:1.6,wander:3};
+function wildWet(x,z){return activeZoneId!=='world'||(typeof worldH==='function'&&worldH(x,z)<SEA_Y-WILD_SWIM.wet);}
+function wildDownstream(x,z){const bk=typeof RVG!=='undefined'&&RVG.get(sgKey(Math.floor(x/RVSG),Math.floor(z/RVSG)));let best=null;
+  if(bk)for(const b of bk){if(!b.rv)continue;const n=rvNearest(b.rv,x,z);if(n.d<n.w+2&&(!best||n.d<best.d))best=n;}
+  return best?Math.atan2(best.tx,best.tz):null;}
+function wildSwimStep(e,W,P,T,dt){
+  if(W.mode==='flee'){const down=wildDownstream(e.x,e.z);if(W.yaw==null||W.left===WILD_FLEE)W.yaw=down!=null?down:Math.atan2(e.x-T.x,e.z-T.z);if(W.left>WILD_SWIM.dart)W.left=WILD_SWIM.dart;}
+  let sp=0;
+  if(W.mode==='flee'){sp=P.run;if(W.left<=0){W.mode='graze';W.t=2+e.rng()*4;e.homeX=e.x;e.homeZ=e.z;sp=0;}}
+  else if(W.mode==='walk'){sp=P.walk;if(Math.hypot(W.tx-e.x,W.tz-e.z)<.3){W.mode='graze';W.t=3+e.rng()*6;sp=0;}else W.yaw=Math.atan2(W.tx-e.x,W.tz-e.z);}
+  else{W.t-=dt;if(W.t<=0){const a=e.rng()*Math.PI*2,r=.5+e.rng()*(WILD_SWIM.wander-.5);W.tx=e.homeX+Math.sin(a)*r;W.tz=e.homeZ+Math.cos(a)*r;
+    if(wildWet(W.tx,W.tz))W.mode='walk';else W.t=1+e.rng()*2;}
+    const down=wildDownstream(e.x,e.z);if(down!=null){let dy=down+Math.PI-e.combatYaw;dy=Math.atan2(Math.sin(dy),Math.cos(dy));e.combatYaw+=dy*Math.min(1,dt*2);}} /* holding, head to the current */
+  if(sp>0){let ok=false,nx=e.x,nz=e.z,yaw=W.yaw;const st=sp*dt;
+    for(const off of [0,.6,-.6,1.2,-1.2,2,-2]){const y=W.yaw+off;nx=e.x+Math.sin(y)*st;nz=e.z+Math.cos(y)*st;if(wildWet(nx,nz)){yaw=y;ok=true;break;}}
+    if(!ok){if(W.mode==='flee')W.left=0;else{W.mode='graze';W.t=1+e.rng()*2;}}
+    else{W.yaw=yaw;e.x=nx;e.z=nz;if(W.mode==='flee')W.left-=st;let dy=yaw-e.combatYaw;dy=Math.atan2(Math.sin(dy),Math.cos(dy));e.combatYaw+=dy*Math.min(1,dt*(W.mode==='flee'?14:4));}}
+  if(e.mesh){e.mesh.position.set(e.x,SEA_Y-WILD_SWIM.under,e.z);e.mesh.rotation.set(0,e.combatYaw,0);}}
 // S1711 — a bird startled takes off: it climbs at 3 m/s to its own cruise of 8 to 14 m, flies 60 m from you, then glides down at 2 m/s and
 // lands on the first open ground (wildOpen) past that, flying on up to 150 m if there is none. Over 1.5 m up it is aloft: out of a blade's
 // reach (strikeCandidate, the bash), and an arrow must pass within 0.6 m of its height to strike it (wildArrowMisses)
 const WILD_FLY={far:60,max:150,climb:3,glide:2,lo:8,hi:14,aloft:1.5};
-function wildArrowMisses(e,y){return !!(e&&e.aloft&&e.mesh&&Math.abs(y-(e.mesh.position.y+.15))>.6);}
+function wildArrowMisses(e,y){if(e&&e.swim&&e.mesh)return Math.abs(y-e.mesh.position.y)>.6; /* S1759 — a trout under the water, at its own height */return !!(e&&e.aloft&&e.mesh&&Math.abs(y-(e.mesh.position.y+.15))>.6);}
 const WILD_FLEE=40,WILD_HERD=12,WILD_HOME=10;
 function wildOpen(x,z){if(activeZoneId!=='world')return true;if(typeof worldH==='function'&&worldH(x,z)<.5)return false;
   if(typeof slopeNormalY==='function'&&slopeNormalY(x,z)<.6)return false;return !(typeof solidAt==='function'&&solidAt(x,z));}
@@ -787,6 +810,7 @@ function tickWildOne(e,dt){if(!(dt>0))return;
   if(e.alert){e.alert=false;wildFlee(e,T);} /* a blow that did not kill, or a pack's cry */
   else if(W.mode!=='flee'&&W.mode!=='fly'&&!_hasBuff('vanish')&&canSeePlayer(e,dist,20))wildFlee(e,T);
   if(W.mode==='fly'){wildFlyStep(e,W,P,T,dt);return;}
+  if(P.swim){wildSwimStep(e,W,P,T,dt);return;} /* S1759 — a trout */
   let sp=0;
   if(W.mode==='flee'){sp=P.run;
     /* keep running from you as it goes: the way off is mostly away, bent round what blocks it */
@@ -848,7 +872,7 @@ function buildZoneEnemy(sc,sol,x,z,type,variantKey,zOpts){
   if(type==='Dragon'&&WOLF_KINDS.Dragon){ // v80 S177 — the dragon on the shape kit: the wolf's bones and gait, its own neck, tail and wings
     wolfRig=buildWolf(type,sc2/1.8*WOLF_KINDS.Dragon.world);g.add(wolfRig.root);limbs.torso=wolfRig.mesh;limbs.wolf=wolfRig;
   }
-  else if(d.wild&&((WOLF_KINDS[type]&&WOLF_KINDS[type].wild)||(typeof BIRD!=='undefined'&&BIRD[type]))){ /* S1711 — or a bird (buildBird) */ /* S1707 — a peaceful animal at its own size, its kit body keyed by the spawner's id (a hind by it, S1706) */
+  else if(d.wild&&((WOLF_KINDS[type]&&WOLF_KINDS[type].wild)||(typeof BIRD!=='undefined'&&BIRD[type])||(d.swim&&typeof SWIMMER!=='undefined'&&SWIMMER[type]))){ /* S1759 — or a trout (buildSwimmer) */ /* S1711 — or a bird (buildBird) */ /* S1707 — a peaceful animal at its own size, its kit body keyed by the spawner's id (a hind by it, S1706) */
     wolfRig=buildAnimal(type,zOpts&&zOpts.key!=null?zOpts.key:null);g.add(wolfRig.root);limbs.torso=wolfRig.mesh;limbs.wolf=wolfRig;
   }
   else if(zShapeExtra(type,d,g,mat,sc2,limbs)){}
@@ -944,7 +968,7 @@ function buildZoneEnemy(sc,sol,x,z,type,variantKey,zOpts){
   // brute/humanoid — distinct from dungeon buildFn vocabulary).
   const zoneE = {size:sc2,limbs,hpBg,x,z,hp:d.hp,maxHp:d.maxHp,mesh:g,hpFg,el,name:displayName,baseName:type,spd:d.spd,dmg:d.dmg,atkSpd:d.atk,dead:false,alert:false,atkCd:0,ph:Math.random()*Math.PI*2,homeX:x,homeZ:z,xpVal:d.xpVal,walkT:Math.random()*Math.PI*2,def:d.def||0,resist:d.resist||{},variant:vr.variant,xpMult:vr.xpMult,telegraphT:0,telegraphMax:0,minLevel,locked:isLocked,_origCol:d.col,shape:d.shape,beast:BEAST_TYPES.has(type),combatYaw:Math.random()*Math.PI*2};
   zoneE.tier=_tier;
-  if(d.wild){zoneE.wild=true;el.intensity=0;if(wolfRig&&wolfRig.hcKind==='Hind')zoneE.hind=true;} /* S1707 — no foe's eye-glow on a deer */
+  if(d.wild){zoneE.wild=true;el.intensity=0;if(d.swim)zoneE.swim=true;if(wolfRig&&wolfRig.hcKind==='Hind')zoneE.hind=true;} /* S1707 — no foe's eye-glow on a deer */
   initPosture(zoneE);
   if(wolfRig)wolfRig.e=zoneE;
   if(personRig){personRig.e=zoneE;hpBg.position.y=hpFg.position.y=1.3*SCALE.ROOM_K*sc2;} // the bar over a person's head (S905: at the taller man's, F2a)
@@ -1695,7 +1719,7 @@ function killZoneEnemy(e,sc,tag=''){
   if(firstKill){seenEnemyTypes.add(e.name);addLog('⚔','First blood — slew '+foeLogName(e));}
   // Corpse system — unified with dungeon via the same loot panel. Mesh slumps + tints; glow+spark mark the body.
   const groundH=e._fy!=null&&isInterior()?(x,z)=>footholdY(x,z,e._fy,0):activeTerrainH; /* S1439 — a guard killed upstairs falls on his own floor */
-  const terrainY = typeof activeTerrainH==='function' ? groundH(e.x,e.z) : 0;
+  const terrainY = e.swim&&activeZoneId==='world'?SEA_Y-.15:typeof activeTerrainH==='function' ? groundH(e.x,e.z) : 0; /* S1759 — a struck trout floats up to the surface */
   // S419 — a people-bodied foe falls as a ragdoll on the ground (Michael's C on #102); the rest slump as before
   if(typeof parryFlashEnd==='function')parryFlashEnd(e); /* S564 — a foe killed while parried falls in its own colours */
   if(!(typeof ragdollFoe==='function'&&ragdollFoe(e,tag,groundH,activeZoneId==='world'&&typeof WORLD!=='undefined'?WORLD.solidAt:null))){

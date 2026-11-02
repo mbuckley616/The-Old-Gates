@@ -288,8 +288,23 @@
     return false;}
   function wildGround(x,z){if(worldH(x,z)<.5||slopeNormalY(x,z)<.7||solidAt(x,z))return false;const st=stampAt(x,z);if(st&&st.kind==='site')return false;
     const ri=roadInfo(x,z);return !(ri&&ri.d<8);}
+  // S1759 — the trout (#1014 A): a chunk on a river reach or a lake rolls one to three, by its id (`cx,cz:t<i>`), a metre under the surface
+  // where the water is deep enough to hide them (wildWet), the rest within 6 m of the first, each on the channel or the lake. Not in the Gatelands' waters under Uisce's toll
+  function wildLakeNear(x,z){const bk=RVG.get(sgKey(Math.floor(x/RVSG),Math.floor(z/RVSG)));if(!bk)return false;
+    for(const b of bk)if(b.lk&&Math.hypot(x-b.lk.x,z-b.lk.z)<b.lk.r)return true;return false;}
+  function wildTroutChunk(ch,key){const r=seededRng('trout',key);let ax=0,az=0,ok=false;
+    for(let k=0;k<16&&!ok;k++){ax=ch.cx*CHUNK+4+r()*(CHUNK-8);az=ch.cz*CHUNK+4+r()*(CHUNK-8);ok=wildWet(ax,az)&&(wildRiverNear(ax,az,0)||wildLakeNear(ax,az));}
+    if(!ok)return;if(typeof gateToll==='function'&&gateToll('uisce')&&(()=>{try{const [i,j]=cellOf(ax,az);return nationKeyOf(i,j)==='gatelands';}catch(err){return false;}})())return;
+    const count=1+Math.floor(r()*3);
+    for(let i=0;i<count;i++){const id=key+':t'+i;if(WILD_TAKEN.get(id)===lootDay())continue;
+      const pr=seededRng('wildspot',id);let ex=ax,ez=az,good=i===0;
+      for(let k=0;k<8&&!good;k++){ex=ax+(pr()-.5)*12;ez=az+(pr()-.5)*12;good=wildWet(ex,ez)&&(wildRiverNear(ex,ez,0)||wildLakeNear(ex,ez));}
+      if(!good)continue;
+      const e=keyFoe(buildZoneEnemy(sc,STATIC_SOL,ex,ez,'Trout',null,{tier:1,key:id}),'wild:'+id);
+      e._wildKey=id;e._chunk=key;e.homeX=ex;e.homeZ=ez;e.combatYaw=pr()*Math.PI*2;e.mesh.position.y=SEA_Y-WILD_SWIM.under;
+      ZONES.world.enemies.push(e);ch.wild.push(e);}}
   function wildSpawnChunk(ch){const key=chunkKey(ch.cx,ch.cz);ch.wild=[];WILD_CH.add(ch);
-    const cxw=ch.cx*CHUNK+CHUNK/2,czw=ch.cz*CHUNK+CHUNK/2;if(worldH(cxw,czw)<-3)return;
+    const cxw=ch.cx*CHUNK+CHUNK/2,czw=ch.cz*CHUNK+CHUNK/2;wildTroutChunk(ch,key);if(worldH(cxw,czw)<-3)return;
     const r=seededRng('wild',key);if(r()>WILD_P)return;
     if(wildPadNear(cxw,czw,40))return;
     const biome=lairBiome({x:cxw,z:czw}),night=isNight();

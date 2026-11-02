@@ -710,9 +710,11 @@ function useFireThing(i){const it=BAG[i];if(!it)return;
 // S1707 — and off the hunted (Michael's A on #984): a deer 2 to 4, a hare 1; the fox, the badger and the otter give none
 const MEAT_BODIES=/(^|\s)(Wolf|Bear|Boar|Deer|Hare)$/;
 const MEAT_N={Deer:[2,4],Hare:[1,1]};
-function bodyMeat(e,items,key){if(!e||!MEAT_BODIES.test(e.name||''))return items;
+function bodyMeat(e,items,key){if(e&&e.swim&&e.baseName==='Trout'){items.push(troutItem());return items;}if(!e||!MEAT_BODIES.test(e.name||''))return items;
   const N=MEAT_N[(e.name||'').split(' ').pop()]||[1,3];
   const r=key!=null?seededRng('meat',key):lootRand;items.push(survItem('meat',N[0]+Math.floor(r()*(N[1]-N[0]+1))));return items;}
+// S1759 — a trout (#1014 A): one, a fish like the sea's (0.6 weight, 9 gold), taken by hand or off its body when struck
+function troutItem(){return {name:'Trout',ico:'🐟',type:'misc',weight:.6,sellMult:.7,buyPrice:9,qty:1,_typeKey:'fish'};}
 // the goods shop and the inn: the tinderbox and produce; fish in a port
 function survivalFor(h){if(!h||!(h.type==='misc'||h.type==='inn'))return [];const out=[{...SURV_ITEMS.tinderbox},{...SURV_ITEMS.produce}];
   const st=h.siteId&&typeof SITE!=='undefined'?SITE[h.siteId]:null;if(st&&st.kind==='port')out.push({...SURV_ITEMS.fish});return out;}

@@ -95,4 +95,43 @@ console.log('  bird:', JSON.stringify(bird));
 check(`a crow seen at 15 m takes off to ${bird.top} m, out of a blade's reach aloft, an arrow under it misses and one at its height strikes (${bird.arrowUnder}, ${bird.arrowAt})`,
   bird.body && bird.top >= 8 && bird.top <= 14 && bird.aloftSeen && bird.outOfReach && bird.arrowUnder === true && bird.arrowAt === false, bird);
 check(`it lands ${bird.flew} m off after ${bird.secs} s, on open ground and within reach again`, bird.flew >= 60 && bird.secs > 0 && Math.abs(bird.onGround) < .05 && bird.ground && bird.reach, bird);
+// S1759 — the trout (#1014 A): a chunk on a river or a lake rolls one to three, a metre under the surface, head to the current. Seen at
+// 15 m one darts 10 m downstream; crept up on from behind while swimming, E takes it by hand. From the bank a sword passes over it and
+// the spear reaches it, an arrow a metre over it misses and one at its height strikes; struck, it floats up holding 1 Trout
+const trout = await page.evaluate(() => { forceTime(12); for (const ch of [...WILD_CH]) wildDrop(ch);
+  const R = WORLD.routed, at = [px, pz]; let best = null;
+  for (const rv of R.reaches) for (let i = 0; i < rv.pts.length - 1; i++) { const p = rv.pts[i], q = rv.pts[i + 1], mx = (p[0] + q[0]) / 2, mz = (p[1] + q[1]) / 2;
+    const d = Math.hypot(mx - at[0], mz - at[1]); if (d < 300 || (best && d > best.d)) continue; if (WORLD.worldH(mx, mz) > -2) continue; best = { d, x: mx, z: mz, rv }; }
+  if (!best) return { none: true };
+  const rv = best.rv, n = rvNearest(rv, best.x, best.z); px = best.x + n.tz * (n.w + 6); pz = best.z - n.tx * (n.w + 6);
+  stream(px, pz, true); { const t1 = performance.now(); while (JOBS.length && performance.now() - t1 < 20000) runJobs(); } _wildT = 0; tickWildSpawn(.1);
+  const T = ZONES.world.enemies.filter(e => e.swim && !e.dead), per = {}; for (const e of T) per[e._chunk] = (per[e._chunk] || 0) + 1;
+  const src = landH(rv.pts[0][0], rv.pts[0][1]), end = landH(rv.pts[rv.pts.length - 1][0], rv.pts[rv.pts.length - 1][1]);
+  const out = { n: T.length, per: Object.values(per), wet: T.every(e => wildWet(e.x, e.z) && (wildRiverNear(e.x, e.z, 0) || wildLakeNear(e.x, e.z))), y: [...new Set(T.map(e => e.mesh.position.y))],
+    fish: T.every(e => e.limbs.wolf && e.limbs.wolf.fish), falls: +(src - end).toFixed(1) };
+  T.sort((a, b) => Math.hypot(a.x - px, a.z - pz) - Math.hypot(b.x - px, b.z - pz));
+  const e = T.find(o => wildDownstream(o.x, o.z) != null); if (!e) return out;
+  for (const o of ZE) o._duelHold = o !== e; e._w = { mode: 'graze', t: 99 }; e.alert = false; const bx = px, bz = pz; px = e.x + 60; pz = e.z + 60; /* out of its sight and hearing while it holds */
+  for (let i = 0; i < 120; i++) tickZoneEnemies(1 / 60, 0, WORLD.scene);
+  const down = wildDownstream(e.x, e.z); out.head = +Math.cos(e.combatYaw - down - Math.PI).toFixed(2);
+  px = e.x + Math.sin(e.combatYaw) * 15; pz = e.z + Math.cos(e.combatYaw) * 15; const x0 = e.x, z0 = e.z; let i = 0;
+  for (; i < 600; i++) { tickZoneEnemies(1 / 60, 0, WORLD.scene); if (i > 10 && e._w.mode !== 'flee') break; }
+  const mv = Math.hypot(e.x - x0, e.z - z0); out.dart = +mv.toFixed(1); out.down = +(((e.x - x0) * Math.sin(down) + (e.z - z0) * Math.cos(down)) / mv).toFixed(2); out.wetAfter = wildWet(e.x, e.z);
+  e._w = { mode: 'graze', t: 99 }; px = e.x + 60; pz = e.z + 60; for (let k = 0; k < 120; k++) tickZoneEnemies(1 / 60, 0, WORLD.scene);
+  px = e.x - Math.sin(e.combatYaw) * 1.1; pz = e.z - Math.cos(e.combatYaw) * 1.1; jumpY = -1.45; _pStep = false; for (let k = 0; k < 30; k++) tickZoneEnemies(1 / 60, 0, WORLD.scene);
+  const has = () => BAG.filter(b => b && b.name === 'Trout').reduce((a, b) => a + (b.qty || 1), 0), b0 = has();
+  out.prompt = fishPrompt(); out.took = catchFish(); out.got = has() - b0; out.gone = !ZONES.world.enemies.includes(e) && WILD_TAKEN.get(e._wildKey) === lootDay();
+  for (const o of ZE) o._duelHold = false;
+  const f = ZONES.world.enemies.find(o => o.swim && !o.dead); if (!f) return out; const w0 = EQ.weapon;
+  EQ.weapon = { weaponShape: 'sword', atk: [5, 6] }; out.sword = strikeCandidate(f); EQ.weapon = { weaponShape: 'spear', atk: [5, 6] }; out.spear = strikeCandidate(f); EQ.weapon = w0;
+  out.over = wildArrowMisses(f, f.mesh.position.y + 1); out.at = wildArrowMisses(f, f.mesh.position.y + .2); const c0 = ZONE_CORPSES.length; killZoneEnemy(f, WORLD.scene);
+  const c = ZONE_CORPSES.length > c0 ? ZONE_CORPSES[ZONE_CORPSES.length - 1] : null; out.body = c ? c.items.map(i => i.name + '×' + (i.qty || 1) + ' ' + i.weight + ' ' + i.buyPrice + 'g') : null; out.floats = +f.mesh.position.y.toFixed(2);
+  return out; });
+console.log('  trout:', JSON.stringify(trout));
+check(`trout hold in the river (${trout.n} over ${(trout.per || []).length} chunks, ${JSON.stringify(trout.per)} each), a metre under, head to the current (${trout.head})`,
+  trout.n >= 1 && trout.per.every(k => k >= 1 && k <= 3) && trout.wet && trout.y.length === 1 && trout.y[0] === -1 && trout.fish && trout.head > .9 && trout.falls > 0, trout);
+check(`one seen at 15 m darts ${trout.dart} m downstream (${trout.down}); crept up on swimming, E takes it (${trout.prompt}, +${trout.got})`,
+  Math.abs(trout.dart - 10) < .6 && trout.down > .8 && trout.wetAfter && trout.prompt && trout.took && trout.got === 1 && trout.gone, trout);
+check(`from the bank a sword passes over it, the spear reaches it; an arrow a metre over misses, one at its height strikes; struck, it floats up with ${JSON.stringify(trout.body)}`,
+  trout.sword === false && trout.spear === true && trout.over === true && trout.at === false && JSON.stringify(trout.body) === '["Trout×1 0.6 9g"]' && Math.abs(trout.floats) < .05, trout);
 await g.close();
