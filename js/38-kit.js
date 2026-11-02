@@ -5041,7 +5041,101 @@ function aurenneOrrery(hAt, o = {}) {
       tower: { x0: X0, x1: X1, z0: Z0, z1: Z1, t: T, high: HI, fallen: FALL, door: { x: DX, w: DW, h: DSP + DW / 2 } }, hall: { x0: IX0, x1: IX1, z0: IZ0, z1: IZ1, floor: FL, spring: VS, crown: VS + VR },
       hatch: { x0: WX0, x1: WX1, z0: WZ0, z1: WZ1 }, bawn: { x0: -BX, x1: BX, z0: BZ0, z1: BZ1, t: BT, gate: { x: GX, w: GW }, breach: BRK }, flanker: { x: FCX, z: FCZ, r: FRO }, table: { x: TXp, z: TZp } };
   }
-  return { stream, hashKey, mergeByMaterial, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, gatePiece }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, trunk: felledTrunk }, ships: { sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
+  // ── the Gatelands' round cairn with its passage (Session 1732, card F8; OG-121's "round cairns"; the prototype is places.js's
+  // gatelandsCairn, Session 869, rebuilt at 1.35 in Session 884, Michael's 3 A on #305). Copied from the prototype; what differs: the
+  // floor is level (the prototype's passage climbs 0.8 m to the chamber; the world's ground under you is the pad's, so the passage and
+  // the chamber lie flat, 0.3 m up: a sill at the door, and the drawn ground, which lies a little off the pad's level, stays under the flags), the rounded boulders are a subdivided box roughened (no addons
+  // here), and it returns its solids and a far copy. Dark inside: no lamp burns in a cairn. The basins are empty (the quest writer's).
+  // Local frame: a metre a unit, the pad at y 0, the door on +z, the chamber at the middle.
+  //   PKIT.places.cairn(o) -> { group, tris, draws, top, sol: [{x, z, w, d, ry, h}], far: [[geo, colour]], door { x0, x1, z, lintel },
+  //   passage { w, len, lintel }, chamber { y, vault, back }, basins, kerb (the boulders' count), entrance (the entrance stone's z), r (the kerb's) }
+  let CM = null;
+  function cairnMats() {
+    if (CM) return CM;
+    CM = { turf: mat('turfMoss', { ns: .8, color: 0xb4d090, rough: 1 }), stone: mat('cobble', { ns: 1.4, color: 0xb0aca0, rough: .95 }), slab: mat('rock', { ns: 1.4, color: 0x8c897e, rough: .9 }),
+      boulder: mat('rock', { ns: 1.5, color: 0x9c9a8e, rough: .95 }), pack: mat('rock', { ns: 1.6, color: 0x4c4943, rough: 1 }), floorC: mat('rock', { ns: .8, color: 0x5e584e, rough: 1 }),
+      groove: new THREE.MeshStandardMaterial({ color: 0x3a3832, roughness: 1 }) };
+    return CM;
+  }
+  function cairnField(r, amp) { const ph = Array.from({ length: 9 }, () => r() * 9);
+    return (x, y, z) => { const f = .55, a = (p, q, s) => Math.sin(x * f * p + ph[s]) * Math.sin(y * f * q + ph[s + 1]) * Math.sin(z * f * 1.13 + ph[s + 2]) + .45 * Math.sin(x * 1.9 * p + ph[s + 2]) * Math.sin(z * 1.7 * q + ph[s]);
+      return [a(1, 1.2, 0) * amp, a(1.3, .9, 3) * amp * .6, a(.8, 1.1, 6) * amp]; }; }
+  function cairnSpiral(rad, turns, cw = 1) { const pts = []; for (let k = 0; k <= turns * 24; k++) { const t = k / (turns * 24), a = cw * t * turns * Math.PI * 2; pts.push(new THREE.Vector3(Math.cos(a) * rad * t, Math.sin(a) * rad * t, 0)); }
+    return new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), turns * 24, .014, 4, false); }
+  function gatelandsCairn(o = {}) {
+    const key = String(o.key || 'cairn'), r = stream('cairn:' + key), M = cairnMats(), B = new Map(), carved = o.carved !== false, sol = [], far = [];
+    const put = (geo, k, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, uv = .6) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal', ...(uv === null ? ['uv'] : [])].includes(a)) g.deleteAttribute(a);
+      if (!g.attributes.normal) g.computeVertexNormals();
+      g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), new THREE.Vector3(1, 1, 1))); if (uv !== null) worldUV(g, uv);
+      if (!B.has(k)) B.set(k, []); B.get(k).push(g); };
+    const box = (x, z, w, d, ry, h) => sol.push({ x, z, w, d, ry, h });
+    const boulderGeo = (L, h, d) => abRoughen(new THREE.BoxGeometry(L, h, d, 3, 2, 2), r, Math.min(L, h, d) * .12, 2.2);
+    const S = 1.35, R = 15, HT = 8.2, HK = 1.0, FW = 4.8, ZD = Math.sqrt(R * R - FW * FW), ZM = 1.95 * S, FY = .3, W = 2.0, HW = W / 2, LP = 2.6, LC = 2.8, T = .35;
+    const floorAt = () => FY;
+    const facadeTop = x => { const a = Math.abs(x); return a < 2.8 ? 3.9 : a > FW ? HK : HK + (3.9 - HK) * (1 - (a - 2.8) / (FW - 2.8)) ** 1.5; };
+    // the mound: a grassed dome on a polar grid, its foot 1 m up on the kerb's line; at the door it is held back by the facade
+    { const NR = 34, NS = 112, F = cairnField(stream('cairn:' + key + ':mound'), .22), pos = [], idx = [];
+      for (let i = 0; i <= NR; i++) for (let j = 0; j < NS; j++) { const rr = R * (1 - i / NR), a = j / NS * Math.PI * 2; let x = Math.sin(a) * rr, z = Math.cos(a) * rr, h = HK + (HT - HK) * Math.sqrt(Math.max(0, 1 - (rr / R) ** 2));
+        const [dx, dy, dz] = i ? F(x, h, z) : [0, 0, 0]; x += dx * .5; z += dz * .5; h += dy * (i ? 1 : 0);
+        if (z > ZD - .5 && Math.abs(x) < FW) { z = ZD - .45; h = Math.max(h, facadeTop(x) - .05); }
+        pos.push(x, h, z); }
+      const vi = (i, j) => i * NS + (j % NS);
+      for (let i = 0; i < NR; i++) for (let j = 0; j < NS; j++) { const a = vi(i, j), b = vi(i, j + 1), c = vi(i + 1, j), d = vi(i + 1, j + 1);
+        for (const t of [[a, b, c], [b, d, c]]) { const flat = t.every(k => pos[k * 3 + 2] >= ZD - .46 && Math.abs(pos[k * 3]) < FW), door = flat && t.every(k => Math.abs(pos[k * 3]) < HW + .6 && pos[k * 3 + 1] < LP + .6); if (!door) idx.push(...t); } }
+      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(pos.flatMap((v, k) => k % 3 === 1 ? [] : [v * .25]), 2)); g.setIndex(idx); g.computeVertexNormals(); put(g, 'turf', 0, 0, 0, 0, 0, 0, null); }
+    // the kerb: laid boulders on edge round the foot, a dry-stone wall behind them up to the mound's foot, both broken for the facade;
+    // its solids a box every 1.5 m or less of the ring, as high as the mound a metre inside it
+    let kerb = 0; const A0 = Math.asin(FW / R);
+    { const g = new THREE.CylinderGeometry(R - .25, R - .25, HK + .1, 120, 1, true, A0, Math.PI * 2 - 2 * A0); put(g, 'stone', 0, (HK + .1) / 2 - .05, 0, 0, 0, 0, 1.1);
+      const n = Math.round(44 * R / 13); for (let k = 0; k < n; k++) { const a = (k + .5) / n * Math.PI * 2; if (Math.abs(Math.atan2(Math.sin(a), Math.cos(a))) < A0 + .03) continue; const L = 1.7 + r() * .25, h = .95 + r() * .3;
+        put(boulderGeo(L, h, .7), 'boulder', Math.sin(a) * (R + .08), h / 2 - .08, Math.cos(a) * (R + .08), 0, a + Math.PI / 2, 0, .45); kerb++; }
+      const rm = R - .3, span = Math.PI * 2 - 2 * A0, m = Math.ceil(span * rm / 1.5), da = span / m, hIn = HK + (HT - HK) * Math.sqrt(1 - ((R - 1) / R) ** 2);
+      for (let k = 0; k < m; k++) { const a = A0 + da * (k + .5); box(Math.sin(a) * rm, Math.cos(a) * rm, da * rm + .15, 1.4, a, +hIn.toFixed(2)); } }
+    // the facade: dry stone on the chord, its top falling to the kerb at either end, notched for the door; the lintel over the door
+    { const pts = [[-FW, 0], [-HW, 0], [-HW, LP], [HW, LP], [HW, 0], [FW, 0]]; for (let k = 0; k <= 16; k++) { const x = FW - k / 16 * 2 * FW; pts.push([x, facadeTop(x)]); }
+      const sh = new THREE.Shape(pts.map(([a, b]) => new THREE.Vector2(a, b))), g = new THREE.ExtrudeGeometry(sh, { depth: .7, bevelEnabled: false }); g.translate(0, 0, -.7); put(g, 'stone', 0, 0, ZD, 0, 0, 0, 1.1);
+      put(abRoughen(new THREE.BoxGeometry(W + 1.5, .5, 1.0, 4, 2, 2), r, .04, 2), 'slab', 0, LP + .25, ZD - .4, 0, 0, 0, .5);
+      for (const e of [-1, 1]) box(e * (HW + FW) / 2, ZD - .35, FW - HW, .9, 0, 3.9); }
+    // the passage: slabs on edge either side, their feet below the floor and their heads at the lintels; packing behind, run on 0.7 m past
+    // each end in the chamber so the runs of two walls close their corner; lintels across. Each run of slabs is a solid along its line.
+    const slabsAlong = (x0, z0, x1, z1, top, foot, out, lean, e0 = .15, e1 = .15) => { const L = Math.hypot(x1 - x0, z1 - z0), n = Math.max(1, Math.round(L / 1.05)), ux = (x1 - x0) / L, uz = (z1 - z0) / L, nx = uz * out, nz = -ux * out, ry = Math.atan2(ux, uz);
+      for (let k = 0; k < n; k++) { const t = (k + .5) / n, x = x0 + (x1 - x0) * t, z = z0 + (z1 - z0) * t, y0 = foot(z), y1 = top(z), len = L / n - .03, th = T * (.9 + r() * .2);
+        const g = abRoughen(new THREE.BoxGeometry(th, y1 - y0, len, 2, 3, 3), r, .025, 2.6); put(g, 'slab', x + nx * (th / 2 + .03), (y0 + y1) / 2, z + nz * (th / 2 + .03), 0, ry, lean * (r() * .03), .5); }
+      put(new THREE.BoxGeometry(.45, top((z0 + z1) / 2) - foot((z0 + z1) / 2) + .3, L + e0 + e1), 'pack', (x0 + x1) / 2 + nx * (T + .3) + ux * (e1 - e0) / 2, (top((z0 + z1) / 2) + foot((z0 + z1) / 2)) / 2 + .1, (z0 + z1) / 2 + nz * (T + .3) + uz * (e1 - e0) / 2, 0, ry, 0, .5);
+      box((x0 + x1) / 2 + nx * .45, (z0 + z1) / 2 + nz * .45, .8, L + .3, ry, +(top((z0 + z1) / 2) + .4).toFixed(2)); };
+    for (const e of [-1, 1]) slabsAlong(e * HW, ZD - .7, e * HW, ZM, () => FY + LP + .02, () => FY - .25, -e, e);
+    for (let z = ZD - .7; z > ZM - .1; z -= .82) { const zc = z - .45; put(abRoughen(new THREE.BoxGeometry(W + 2 * T + .7, .4, .95, 3, 2, 2), r, .03, 2), 'slab', 0, FY + LP + .22, zc, 0, 0, 0, .5); }
+    // the floor: beaten earth and flags, the passage and the chamber level
+    put(new THREE.BoxGeometry(W + .2, .5, ZD + .3 - ZM), 'floorC', 0, FY - .25, (ZD + .3 + ZM) / 2, 0, 0, 0, .5);
+    put(new THREE.BoxGeometry(7.4 * S, .5, 6.0 * S), 'floorC', 0, FY - .25, -.75 * S, 0, 0, 0, .5);
+    // the chamber: cruciform, slabs round its outline; the recesses' capstones; the corbelled vault and its capstone
+    const ow = [[HW, ZM], ...[[1.45, 1.55], [1.75, .75], [3.4, .75], [3.4, -.75], [1.75, -.75], [.75, -1.75], [.75, -3.4], [-.75, -3.4], [-.75, -1.75], [-1.75, -.75], [-3.4, -.75], [-3.4, .75], [-1.75, .75], [-1.45, 1.55]].map(([x, z]) => [x * S, z * S]), [-HW, ZM]];
+    for (let k = 0; k + 1 < ow.length; k++) { const [x0, z0] = ow[k], [x1, z1] = ow[k + 1]; slabsAlong(x0, z0, x1, z1, () => FY + LC + .02, () => FY - .25, -1, 1, k ? .7 : .15, k + 2 < ow.length ? .7 : .15); }
+    const recess = [[2.6 * S, 0, Math.PI / 2], [-2.6 * S, 0, Math.PI / 2], [0, -2.6 * S, 0]];
+    for (const [x, z, ry] of recess) put(abRoughen(new THREE.BoxGeometry(2.4 * S, .4, 2.3 * S, 3, 2, 3), r, .03, 2), 'slab', x, FY + LC + .2, z, 0, ry, 0, .5);
+    for (let c = 0; c < 8; c++) { const rin = (1.95 - c * .2) * S, y = FY + LC + c * .36, n = 9; for (let k = 0; k < n; k++) { const a = (k + c * .5) / n * Math.PI * 2, len = 2 * (rin + .45) * Math.tan(Math.PI / n) + .12;
+      put(abRoughen(new THREE.BoxGeometry(len, .36, .95, 3, 1, 2), r, .025, 2.4), 'slab', Math.sin(a) * (rin + .47), y + .18, Math.cos(a) * (rin + .47), 0, a, 0, .5); } }
+    const VAULT = FY + LC + 8 * .36; put(abRoughen(new THREE.CylinderGeometry(.95 * S, 1.0 * S, .4, 10, 1), r, .03, 2), 'slab', 0, VAULT + .2, 0, 0, 0, 0, .5);
+    // the basins: a shallow oval dish of stone in each recess, empty
+    const basins = []; { const prof = [[0, 0], [.5, 0], [.56, .06], [.56, .24], [.5, .26], [.44, .2], [.3, .14], [0, .13]].map(([a, b]) => new THREE.Vector2(a, b));
+      for (const [x, z, ry] of recess) { const bx = x * 1.08, bz = z * 1.08, g = abRoughen(new THREE.LatheGeometry(prof, 16), r, .015, 4); g.scale(1.25, 1, .85); put(g, 'boulder', bx, FY, bz, 0, ry, 0, .6); basins.push([+bx.toFixed(2), +(FY + .26).toFixed(2), +bz.toFixed(2)]); } }
+    // the entrance stone: a long boulder lying before the door, its face to the approach (a solid you walk round)
+    const ES = ZD + 2.4; put(boulderGeo(3.0, 1.2, .9), 'boulder', 0, .55, ES, 0, 0, 0, .45); box(0, ES, 3.0, .9, 0, 1.15);
+    if (carved) { for (const [x, y, rad, cw] of [[-.75, .62, .3, 1], [-.12, .6, .26, -1], [.6, .66, .32, 1]]) put(cairnSpiral(rad, 4, cw), 'groove', x, y, ES + .46);
+      put(new THREE.BoxGeometry(.03, .85, .03), 'groove', .22, .6, ES + .47);
+      for (const [x, y, rad, cw] of [[-.26, 1.35, .22, 1], [.26, 1.35, .22, -1], [0, 1.78, .22, 1]]) put(cairnSpiral(rad, 3, cw), 'groove', x, FY + y - .4, -3.4 * S + .02);
+      for (let k = 0; k < 4; k++) { const d = new THREE.TorusGeometry(.16, .012, 3, 4); d.scale(1, 1.5, 1); put(d, 'groove', HW + .04, 1.0 + k * .38, ZD - 4.1, 0, Math.PI / 2, 0); } }
+    // the far copy: the mound a dome, the kerb a ring, the entrance stone a box
+    { const g = new THREE.SphereGeometry(1, 20, 8, 0, Math.PI * 2, 0, Math.PI / 2).toNonIndexed(); g.scale(R, HT - HK, R); g.translate(0, HK, 0); far.push([g, 0x6c8048]);
+      const k = new THREE.CylinderGeometry(R + .2, R + .3, HK + .1, 32, 1, true).toNonIndexed(); k.translate(0, (HK + .1) / 2 - .05, 0); far.push([k, 0x8a877c]);
+      const e = new THREE.BoxGeometry(3.0, 1.1, .9).toNonIndexed(); e.translate(0, .55, ES); far.push([e, 0x8a877c]); }
+    const group = new THREE.Group(); group.name = 'cairn'; let tris = 0;
+    for (const [k, gs] of B) { const g = mergeGeometries(gs); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = k !== 'groove'; m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
+    return { group, tris: Math.round(tris), draws: group.children.length, top: +new THREE.Box3().setFromObject(group).max.y.toFixed(2), sol, far, floorAt,
+      door: { x0: -HW, x1: HW, z: +ZD.toFixed(2), lintel: LP }, passage: { w: W, len: +(ZD - ZM).toFixed(2), lintel: LP, z0: +ZM.toFixed(2) },
+      chamber: { y: FY, vault: +VAULT.toFixed(2), s: S, back: +(-3.4 * S).toFixed(2) }, basins, kerb, carved, entrance: +ES.toFixed(2), r: R };
+  }
+  return { stream, hashKey, mergeByMaterial, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, cairn: gatelandsCairn }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, gatePiece }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, trunk: felledTrunk }, ships: { sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
     mk: { hall: markHall, lot: markLot, alehall: markAlehall, longhouse: markLonghouse, mats: markMats, yard: markYard, ring: markRing },
     au: { house: aurenneHouse, lot: aurenneLot, courtyard: aurenneCourtyard, church: aurenneChurch, churchBox: aurenneChurchBox, churchHall: aurenneChurchHall, courtyardHouse: aurenneCourtyardHouse, tavern: aurenneTavern, mats: aurMats, roomMats: homeMats, AUR },
     gl: { PLANS, FIN, PS, PAINTS, guildHall: guildHallRoom, TOWN: GL_TOWN, building, church, keep, farmstead, coachInn, coachInnPlan, coachRoom, townhouse: townhouseRoom, farmhouse: farmhouseRoom, byre: byreRoom, barn: barnRoom, row: shrineRow, ROW_GODS, inn: gatelandsInn, cottage: gatelandsCottage, churchLen: n => +((n === 2 ? 2 : 3) * 4.8 + 1.6 + 5.6 - .5 + 7.2 - .9 - .02).toFixed(2), lot: gatelandsLot, mats: glMats, BAYS, bayPlan, bayWidth, baysFor } };
