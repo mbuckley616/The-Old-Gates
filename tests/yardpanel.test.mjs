@@ -105,7 +105,8 @@ check('found: the beast’s skull off the first lair master slain; the gate ston
 check('a save keeps her figurehead, the yard’s store, her carving and a token in the bag', fh.saved.head === 'yard' && fh.saved.heads.join() === 'stone,maiden' && fh.saved.yard === 'mark' && fh.saved.token.join() === 'sea', fh.saved);
 // S1736 — the wreck's maiden: in each island's deepest wreck, worked out once by the chunks' hashes and the bed, the same on a second count
 const mw = await page.evaluate(() => { const kb = BAG.slice(), ks = worldState.ship, out = {}; worldState.ship = { cls: 'sloop' }; BAG.length = 0;
-  MAIDEN_WRECKS = null; const t0 = performance.now(); const W = maidenWrecks(); out.ms = Math.round(performance.now() - t0); out.W = JSON.parse(JSON.stringify(W)); MAIDEN_WRECKS = null; out.same = JSON.stringify(maidenWrecks()) === JSON.stringify(W);
+  const S0 = SEA_WRECKS; out.drift = S0 ? Math.max(0, ...S0.map(w => Math.abs(worldH(w.x, w.z) - w.bed))) : null; out.cachedN = S0 ? S0.length : null;
+  MAIDEN_WRECKS = null; SEA_WRECKS = null; const t0 = performance.now(); const W = maidenWrecks(); out.ms = Math.round(performance.now() - t0); out.n = SEA_WRECKS.length; out.W = JSON.parse(JSON.stringify(W)); MAIDEN_WRECKS = null; SEA_WRECKS = null; out.same = JSON.stringify(maidenWrecks()) === JSON.stringify(W);
   const spawn = key => { const [cx, cz] = key.split(',').map(Number); const ch = { cx, cz, group: new THREE.Group(), sol: [], loot: [] }; spawnWreck(ch); const c = ch.loot[0]; return c ? { at: [Math.round(c.x), Math.round(c.z)], heads: c.items.filter(i => i.figurehead).map(i => i.figurehead) } : null; };
   const n0 = Object.keys(W)[0]; out.nations = Object.keys(W).sort(); out.deep = spawn(W[n0].key); out.bedOk = Object.values(W).every(w => w.bed < -2.5 && w.bed > -8);
   out.bed = worldH(W[n0].x, W[n0].z) === W[n0].bed;
@@ -143,6 +144,28 @@ check('the carpenter: 200 s under way at hull 50, two patches (+18, then to the 
 check('the cook: nothing before 6h; at 6h one baked fish at ×1.0 into the sea chest, once a day', cr.before6 === 0 && cr.meals.length === 1 && cr.meals[0].q === 1 && cr.meals[0].s === 1 && /Fish/.test(cr.meals[0].n) && cr.fishLeft === 0, cr.meals);
 check('swapped free at the yard; the navigator with her chart table draws the minimap to 116 m at sea, 58 without the table; his ahead line without the oilskin', /goes ashore/.test(cr.swap) && cr.nav === true && cr.navNoTable === 58 && cr.navR === 116 && cr.hintOn, cr);
 check('a save keeps who is aboard and who waits; sunk, they swim for the nearest port', cr.saved.crew.join() === 'carpenter,navigator' && cr.saved.ashore.join() === 'cook' && /swim for/.test(cr.sink) && cr.afterSink.crew === 0 && cr.afterSink.ashore === 3, cr);
+// S1743 — the Weaver's shuttle: with the navigator at his station, the sea line also points to the nearest wreck not yet opened
+const sh = await page.evaluate(() => { const ks = worldState.ship, kst = worldState.stats, ksail = SHIP.sailing, kx = SHIP.x, kz = SHIP.z, kwx = WX.type, out = {};
+  worldState.ship = { cls: 'sloop', hold: {}, fit: ['bunks', 'chart'], crew: ['navigator'], ashore: {}, head: 'shuttle', heads: ['shuttle'] }; worldState.stats = {};
+  const L = seaWrecks(); out.n = L.length; const w0 = L[Math.floor(L.length / 2)]; SHIP.x = w0.x + 300; SHIP.z = w0.z; SHIP.sailing = true; WX.type = 'clear';
+  const near = () => { const V = worldState.stats.wrecks || {}; let b = null, bd = Infinity; for (const w of L) { if (V[w.key]) continue; const d = Math.hypot(w.x - SHIP.x, w.z - SHIP.z); if (d < bd) { bd = d; b = w; } } return { w: b, d: bd }; };
+  SHUTTLE_W.t = 0; out.hint = seaHint(); const n0 = near(); out.want = n0.w.key; out.got = shuttleWreck() && shuttleWreck().key; out.d = Math.round(n0.d);
+  out.dir = compassWord(n0.w.x - SHIP.x, n0.w.z - SHIP.z);
+  // its sea chest opened: the line moves on to the next
+  const [cx, cz] = n0.w.key.split(',').map(Number); const ch = { cx, cz, group: new THREE.Group(), sol: [], loot: [] }; spawnWreck(ch); out.chest = !!ch.loot[0];
+  if (ch.loot[0]) { openLoot(ch.loot[0]); closeLoot(); } out.seen = !!(worldState.stats.wrecks && worldState.stats.wrecks[n0.w.key]);
+  out.next = shuttleWreck() && shuttleWreck().key; out.nextWant = near().w.key; out.hint2 = seaHint();
+  // the navigator ashore, or another figurehead: nothing
+  worldState.ship.crew = []; SHUTTLE_W.t = 0; out.noNav = seaHint(); worldState.ship.crew = ['navigator']; worldState.ship.head = 'stone'; SHUTTLE_W.t = 0; out.noHead = seaHint(); worldState.ship.head = 'shuttle';
+  // rain: the weather's ahead line and the wreck's together
+  const kah = WX.ahead; WX.type = 'rain'; WX.ahead = 'storm'; SHUTTLE_W.t = 0; out.rain = seaHint(); WX.ahead = kah;
+  // a save keeps the opened wreck
+  const d = JSON.parse(ssStringify(_buildSavePayload())); worldState.stats = {}; _applyLoadData(d); out.kept = !!(worldState.stats && worldState.stats.wrecks && worldState.stats.wrecks[n0.w.key]);
+  WX.type = kwx; SHIP.sailing = ksail; SHIP.x = kx; SHIP.z = kz; worldState.ship = ks; worldState.stats = kst; SHUTTLE_W.t = 0; return out; });
+console.log(JSON.stringify(sh));
+check(`the Weaver's shuttle and the navigator: the sea line points to the nearest unopened wreck of ${sh.n} (${sh.hint.trim()})`, sh.got === sh.want && new RegExp(`a wreck ${sh.d < 200 ? Math.round(sh.d / 10) * 10 : Math.round(sh.d / 50) * 50} m ${sh.dir}$`).test(sh.hint), sh);
+check('its sea chest opened, the line moves on to the next nearest; a save keeps the opened wreck', sh.chest && sh.seen && sh.next !== sh.want && sh.next === sh.nextWant && sh.hint2 !== sh.hint && sh.kept, sh);
+check('without the navigator, or under another figurehead, no wreck; in rain the weather\'s line and the wreck\'s together', sh.noNav === '' && sh.noHead === '' && / ahead · a wreck \d+ m /.test(sh.rain), sh);
 await pick('sloop'); const i = await R();
 check('back to a sloop pays: the yard pays 1067', i.acts.join() === 'Refit her as a sloop (the yard pays 1067 gold)', i.acts);
 // the chat keeps no refit, sails or hold rows
