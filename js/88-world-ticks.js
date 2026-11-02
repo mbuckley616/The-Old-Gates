@@ -277,6 +277,32 @@
     coast: [{name:'Brown Hare',w:2,n:[1,1]},{name:'Red Fox',w:1,n:[1,1]},{name:'Crow',w:1,n:[1,3]}],
     tundra:[{name:'Raven',w:1,n:[1,2]}],
   };
+  // S1769 — each island's own (L3; WILD_ISLE_KINDS in 42-zone-enemies.js) join its biomes' tables beside the common set, from the
+  // catalogue's habitats (OG-009, OG-031, OG-030) and its rarity: common 3, unmarked 2, uncommon 1, rare .5. A chunk still rolls one group
+  // one time in four (WILD_P), so the country holds as many animals as before, more of them its own. The island is the chunk's middle's
+  // (nationAt), as its biome is; the Gatelands' biomes are forest, plains, autumn, fen, moor and coast, the Mark's forest, tundra, moor,
+  // plains and coast, Aurenne's plains, dunes, swamp, wasteland, wastes and coast
+  const WILD_ISLE={
+    gatelands:{
+      forest:[{name:'Elderstag',w:3,n:[1,3]},{name:'Hollowcat',w:1,n:[1,1]},{name:'Capercaillie',w:1,n:[1,1]},{name:'Crag Hawk',w:1,n:[1,1]},{name:'Lantern Beetle',w:.5,n:[2,4],night:true}],
+      autumn:[{name:'Elderstag',w:3,n:[1,3]},{name:'Hollowcat',w:1,n:[1,1]},{name:'Capercaillie',w:1,n:[1,1]},{name:'Lantern Beetle',w:.5,n:[2,4],night:true}],
+      plains:[{name:'Redspine Fox',w:3,n:[1,1]},{name:'Greenward Stoat',w:2,n:[1,1]},{name:'Stonecrawler',w:1,n:[1,1]}],
+      fen:   [{name:'Great Heron',w:3,n:[1,1]},{name:'Marsh Frog',w:2,n:[1,3]},{name:'Mire Snake',w:1,n:[1,1]}],
+      moor:  [{name:'Crag Hawk',w:2,n:[1,1]},{name:'Stonecrawler',w:1,n:[1,1]},{name:'Greenward Stoat',w:1,n:[1,1]}],
+      coast: [{name:'Great Heron',w:1,n:[1,1]}]},
+    mark:{
+      forest:[{name:'Ironpine Elk',w:3,n:[2,4]},{name:'Snowleap Hare',w:3,n:[1,1]}],
+      plains:[{name:'Ironpine Elk',w:2,n:[2,4]}],
+      tundra:[{name:'Snowleap Hare',w:3,n:[1,1]},{name:'Skyraven',w:3,n:[1,2]},{name:'Glacial Marmot',w:3,n:[1,3]},{name:'Tundra Grouse',w:2,n:[1,3]},{name:'Icehorn',w:1,n:[1,3]},{name:'Stormshrike',w:1,n:[1,1]},{name:'Stormlynx',w:1,n:[1,1]},{name:'Craghorn Ram',w:1,n:[1,3]},{name:'Frostspine Lizard',w:.5,n:[1,1]}],
+      moor:  [{name:'Skyraven',w:2,n:[1,2]},{name:'Glacial Marmot',w:2,n:[1,3]},{name:'Tundra Grouse',w:2,n:[1,3]},{name:'Craghorn Ram',w:1,n:[1,3]},{name:'Stormlynx',w:1,n:[1,1]},{name:'Frostspine Lizard',w:.5,n:[1,1]}],
+      coast: [{name:'Skyraven',w:1,n:[1,2]}]},
+    aurenne:{
+      plains:[{name:'Mirage Fox',w:1,n:[1,1]},{name:'Terrace Ram',w:1,n:[1,3]},{name:'Sunspire Lynx',w:.5,n:[1,1]}],
+      dunes: [{name:'Duneskimmer',w:3,n:[2,4]},{name:'Oasis Hare',w:2,n:[1,1]},{name:'Mirage Fox',w:2,n:[1,1]}],
+      swamp: [{name:'Scarlet Ibis',w:3,n:[2,4]},{name:'Cypress Stalker',w:.5,n:[1,1]},{name:'Glasswing Moth',w:1,n:[1,3],night:true}],
+      wasteland:[{name:'Sunbeak Vulture',w:3,n:[1,2]},{name:'Terrace Ram',w:2,n:[1,3]},{name:'Sunspire Lynx',w:.5,n:[1,1]},{name:'Spined Gekko',w:.5,n:[1,1],night:true}],
+      wastes:[{name:'Sunbeak Vulture',w:3,n:[1,2]},{name:'Duneskimmer',w:2,n:[2,4]},{name:'Oasis Hare',w:2,n:[1,1]},{name:'Mirage Fox',w:2,n:[1,1]},{name:'Glasswing Moth',w:1,n:[1,3],night:true},{name:'Spined Gekko',w:.5,n:[1,1],night:true}],
+      coast: [{name:'Cliffswift',w:3,n:[3,6]},{name:'Amber Shellcrab',w:3,n:[1,2]},{name:'Scarlet Ibis',w:2,n:[2,4]}]}};
   function wildTaken(e){if(!e||!e._wildKey)return;WILD_TAKEN.set(e._wildKey,lootDay());
     for(const o of ZONES.world.enemies)if(o!==e&&o.wild&&!o.dead&&Math.hypot(o.x-e.x,o.z-e.z)<WILD_HERD){wildFlee(o,targetOf(o));break;}} /* the rest of the group bolts (wildFlee takes the herd) */
   function wildRiverNear(x,z,r){const bk=RVG.get(sgKey(Math.floor(x/RVSG),Math.floor(z/RVSG)));if(!bk)return false;const o=[0,0];
@@ -308,7 +334,8 @@
     const r=seededRng('wild',key);if(r()>WILD_P)return;
     if(wildPadNear(cxw,czw,40))return;
     const biome=lairBiome({x:cxw,z:czw}),night=isNight();
-    let table=(WILD_TABLE[biome]||[]).filter(g=>!g.night||night);
+    const isle=nationAt(cxw,czw),own=WILD_ISLE[isle]&&WILD_ISLE[isle][biome]; /* S1769 — the island's own beside the common set */
+    let table=(WILD_TABLE[biome]||[]).concat(own||[]).filter(g=>(!g.night||night)&&ZONE_FOE_DEF[g.name]);
     const river=wildRiverNear(cxw,czw,30);if(river)table=table.concat([{name:'Otter',w:3,n:[1,1]}]);
     if(!table.length)return;
     let tw=0;for(const g of table)tw+=g.w;let pick=r()*tw,grp=table[0];for(const g of table){pick-=g.w;if(pick<=0){grp=g;break;}}
@@ -321,7 +348,7 @@
       const pr=seededRng('wildspot',id);let ex=ax,ez=az,good=i===0;
       for(let k=0;k<8&&!good;k++){ex=ax+(pr()-.5)*spread;ez=az+(pr()-.5)*10;good=wildGround(ex,ez);}
       if(!good)continue;
-      const e=keyFoe(buildZoneEnemy(sc,STATIC_SOL,ex,ez,grp.name,null,{tier:1,key:id}),'wild:'+id);
+      const e=keyFoe(buildZoneEnemy(sc,STATIC_SOL,ex,ez,grp.name,null,{tier:1,key:id,island:isle}),'wild:'+id);
       e._wildKey=id;e._chunk=key;e.homeX=ex;e.homeZ=ez;e.combatYaw=pr()*Math.PI*2;
       ZONES.world.enemies.push(e);ch.wild.push(e);}
   }
