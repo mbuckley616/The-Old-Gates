@@ -277,7 +277,7 @@
     coast: [{name:'Brown Hare',w:2,n:[1,1]},{name:'Red Fox',w:1,n:[1,1]},{name:'Crow',w:1,n:[1,3]}],
     tundra:[{name:'Raven',w:1,n:[1,2]}],
   };
-  // S1768 — each island's own (L3; WILD_ISLE_KINDS in 42-zone-enemies.js) join its biomes' tables beside the common set, from the
+  // S1769 — each island's own (L3; WILD_ISLE_KINDS in 42-zone-enemies.js) join its biomes' tables beside the common set, from the
   // catalogue's habitats (OG-009, OG-031, OG-030) and its rarity: common 3, unmarked 2, uncommon 1, rare .5. A chunk still rolls one group
   // one time in four (WILD_P), so the country holds as many animals as before, more of them its own. The island is the chunk's middle's
   // (nationAt), as its biome is; the Gatelands' biomes are forest, plains, autumn, fen, moor and coast, the Mark's forest, tundra, moor,
@@ -334,7 +334,7 @@
     const r=seededRng('wild',key);if(r()>WILD_P)return;
     if(wildPadNear(cxw,czw,40))return;
     const biome=lairBiome({x:cxw,z:czw}),night=isNight();
-    const isle=nationAt(cxw,czw),own=WILD_ISLE[isle]&&WILD_ISLE[isle][biome]; /* S1768 — the island's own beside the common set */
+    const isle=nationAt(cxw,czw),own=WILD_ISLE[isle]&&WILD_ISLE[isle][biome]; /* S1769 — the island's own beside the common set */
     let table=(WILD_TABLE[biome]||[]).concat(own||[]).filter(g=>(!g.night||night)&&ZONE_FOE_DEF[g.name]);
     const river=wildRiverNear(cxw,czw,30);if(river)table=table.concat([{name:'Otter',w:3,n:[1,1]}]);
     if(!table.length)return;
