@@ -433,3 +433,37 @@ every space in the frustum, about 2.2× what the game draws, on whatever rubble 
 *s1113, QA Session 1694 (`budget` 678 s and `budgetport` 339 s, each green on its first try, alone on four cores). Every spot is within 2 calls
 of the last table that held it (Dunmore s1093, Portclare, the inn and the gate s1106): nothing rose, nothing near the 10% line. The closest
 to a ceiling is still Dunmore's street at midnight on Low, 656 of 700.*
+
+### s1147 — 2026-11-02 13:29 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Dunmore street, noon | Low | 596 | 1.10 M | 0 | 0 | 110 | 135 | 268 | 83 | Mesh 52, oldGate 24, Group 4, LOD 2, impostors 1 |
+| Dunmore street, noon | Middle | 754 | 1.85 M | 136 | 6 | 113 | 135 | 281 | 83 | Mesh 52, oldGate 24, Group 4, LOD 2, impostors 1 |
+| Dunmore street, noon | High | 805 | 2.35 M | 168 | 6 | 113 | 135 | 300 | 83 | Mesh 52, oldGate 24, Group 4, LOD 2, impostors 1 |
+| Dunmore street, midnight | Low | 660 | 1.07 M | 0 | 0 | 107 | 201 | 268 | 84 | Mesh 52, oldGate 24, Group 4, LOD 2, impostors 1 |
+| Dunmore street, midnight | Middle | 840 | 1.77 M | 161 | 6 | 107 | 201 | 281 | 84 | Mesh 52, oldGate 24, Group 4, LOD 2, impostors 1 |
+| Dunmore street, midnight | High | 901 | 2.33 M | 203 | 6 | 107 | 201 | 300 | 84 | Mesh 52, oldGate 24, Group 4, LOD 2, impostors 1 |
+| the field west of Dunmore, noon | Low | 557 | 646k | 0 | 0 | 105 | 107 | 302 | 43 | Mesh 28, oldGate 8, Group 4, quaywall 2, impostors 1 |
+| the field west of Dunmore, noon | Middle | 668 | 1.06 M | 85 | 6 | 105 | 107 | 322 | 43 | Mesh 28, oldGate 8, Group 4, quaywall 2, impostors 1 |
+| the field west of Dunmore, noon | High | 716 | 1.55 M | 123 | 6 | 105 | 107 | 332 | 43 | Mesh 28, oldGate 8, Group 4, quaywall 2, impostors 1 |
+| the field west of Dunmore, dawn | Low | 640 | 636k | 0 | 0 | 108 | 186 | 302 | 44 | Mesh 28, oldGate 8, Group 4, quaywall 2, impostors 1 |
+| the field west of Dunmore, dawn | Middle | 811 | 1.12 M | 145 | 6 | 108 | 186 | 322 | 44 | Mesh 28, oldGate 8, Group 4, quaywall 2, impostors 1 |
+| the field west of Dunmore, dawn | High | 865 | 1.65 M | 189 | 6 | 108 | 186 | 332 | 44 | Mesh 28, oldGate 8, Group 4, quaywall 2, impostors 1 |
+
+### s1147 — 2026-11-02 13:36 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Portclare square, noon | Low | 366 | 678k | 0 | 0 | 30 | 67 | 208 | 61 | Mesh 36, oldGate 14, Group 8, impostors 1, LOD 1 |
+| Portclare square, noon | Middle | 533 | 1.43 M | 141 | 6 | 31 | 67 | 227 | 61 | Mesh 36, oldGate 14, Group 8, impostors 1, LOD 1 |
+| Portclare square, noon | High | 581 | 1.84 M | 176 | 6 | 31 | 67 | 240 | 61 | Mesh 36, oldGate 14, Group 8, impostors 1, LOD 1 |
+| The Bramble Hearth (Dunmore's inn), the hall from the door, 20h | Middle (indoors) | 38 | 26k | 0 | 0 | 1 | 0 | 0 | 37 |  |
+| a medium gate (ruins, seed 11), from its entrance | Middle (indoors) | 102 | 394k | 0 | 0 | 33 | 0 | 0 | 68 |  |
+
+*s1147, QA Session 1748 (`budget` 8/8 on its retry, about 700 s: the first try was killed at the 900 s cap alone on four cores, its first boot's
+Hearthwick wait 130 s and stand 201 s, then 73 s to set Middle at midnight's High; `budgetport` 9/9 in 382 s). Against s1113, 34 builds and every
+merge of 1–2 Nov (F8's abbey, tower house and cairn, the 24 animals and 9 birds, the ship's fittings and figureheads), at Middle: Dunmore's street
+at noon 750 → 754 calls, 1.86 M → 1.85 M triangles; at midnight 832 → 840 (Low 656 → 660 of its 700); the field west at noon 664 → 668 and at dawn
+808 → 811; Portclare's square 533 → 533; the inn's hall 38 → 38; the medium gate 102 → 102. The four calls more in town are "other" (79 → 83: a
+`Group` of 4 meshes now in view), the same four at every level. No spot rose by more than 10%; the largest is +1.0%.*
