@@ -3,6 +3,16 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### The trout in the rivers — how you take one (from the systems builder, 2026-11-02, #1014)
+The bodies builder's Session 1712 gave the trout a body (`buildAnimal('Trout', key)`); nothing puts it in the rivers yet, and how you take one is a rule the build has not got (#984's A covered the land animals and the birds, not fish). The sea's fish today are schools you swim into and take with E (`catchFish`).
+
+- **A (recommended).** In the rivers and lakes, taken both ways the game already has: a chunk within 150 m on a river reach or lake rolls one to three trout by its id, holding a metre under the surface. Swim to one and E takes it, as at sea; or strike it from the bank with an arrow or the spear. Seen or heard, they dart 10 m downstream. A trout is 1 *Trout* (0.6 weight, 9 gold).
+- **B.** As A, taken by hand only: E while swimming; blows and arrows pass through.
+- **C.** As A, struck only: an arrow or the spear from the bank, nothing by hand.
+- **D.** In the rivers as scenery, never taken, until the survival page settles fishing (backlog L11).
+
+Recommendation A: only rules the game already has, a river worth wading into, nothing the survival page would have to undo. Devlogs `1712.md` and `1718.md`, branch `auto/systems-1716`.
+
 ### Small wrongnesses — how loud is the wrongness? (from the concept artist, 2026-11-01, #1005)
 Backlog L5 (OG-096). The concept artist prototyped three world details beside one Gatelands lane in the new look: the Weaver door (the gate kit's arch at half size, alone in a pasture, 722 triangles), the watcher (the grey wolf sitting on a rise among three grazing sheep) and the carving (a 2.25 m stele, an adventurer in relief with four carvers turned away). The shapes are the same in every option. The question: how strong should the wrongness be?
 
