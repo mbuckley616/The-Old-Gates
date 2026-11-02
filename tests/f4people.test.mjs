@@ -72,6 +72,31 @@ check('in winter, out of doors, a share of each people wear the winter coat (the
   W.aurennais.burnous >= 4 && W.aurennais.coat === 0 && Object.values(W).every(o => o.n === 40 && o.tint === o.coat), winter);
 check('indoors and out of winter nobody wears it', winter.season2 !== 'winter' && winter.indoorAll === 0 && winter.autumnAll === 0, winter);
 
+// S1767 (L1, OG-109's Mark formal column): on a feast day seven in ten of the Mark's folk wear the woven bands (a man's tunic to the knee),
+// indoors and out; nobody else, and nobody the day after. The Empty Chair falls in winter: out of doors a coat goes over the bands
+const feast = await page.evaluate(() => { const was = worldState.gameTimeAbsMinutes, peoples = ['gatelander', 'markman', 'oldblood', 'aurennais'];
+  const forget = () => { for (const k of [...HB_GENOMES.keys()]) if (/^ftest/.test(k)) HB_GENOMES.delete(k); for (const k of [...PEOPLE_GENOMES.keys()]) if (/ftest/.test(k)) PEOPLE_GENOMES.delete(k); };
+  const run = () => { const res = {}; let one = null; for (const pk of peoples) { const o = { n: 0, bands: 0, knee: 0, men: 0, apron: 0, coat: 0, same: 0 };
+    for (let i = 0; i < 40; i++) { const root = buildNPCMesh({ role: 'villager', name: 'F' + pk + i, people: pk }, { key: 'ftest' }); const rig = [...HB_RIGS].find(x => x.root === root);
+      if (!rig) continue; o.n++; const D = rig.hbG.dress; if (D.bands) { o.bands++; if (D.skirt === 'knee') o.knee++; if (rig.hbG.g === 1 || rig.hbG.g === undefined && !rig.g.female) o.men++; if (D.apron) o.apron++; if (D.coat) o.coat++;
+        if (D.bands.every((v, j) => Math.abs(v - D.bandsMotif[j]) < .02)) o.same++; if (!one && !D.coat) one = rig.hbG; }
+      HB_RIGS.delete(rig); PEOPLE_RIGS.delete(rig); } res[pk] = o; } forget(); return { res, one }; };
+  const at = n => { worldState.gameTimeAbsMinutes = 1440 * n + 600; return feastOn() ? feastOn().key : null; };
+  const k1 = at(168), kind = run(); const k2 = at(169), after = run(); const k3 = at(111), season3 = calDay().season, chair = run();
+  currentHouse = { id: 'ftest' }; const chairIn = run(); currentHouse = null; worldState.gameTimeAbsMinutes = was;
+  let built = null; if (kind.one) { const keysOf = G => { const p = HB.makePerson(G), k = Object.fromEntries(p.meshes.filter(m => /^(tunic|skirt|cuffs)$/.test(m.name)).map(m => [m.name, m.material.customProgramCacheKey()])); p.root.traverse(o => { if (o.geometry) o.geometry.dispose(); }); return k; };
+    const keys = keysOf(kind.one), plain = keysOf({ ...kind.one, dress: { ...kind.one.dress, bands: null, bandsMotif: null } });
+    built = { loz: Object.keys(keys).filter(k => keys[k] !== plain[k]), knee: kind.one.dress.skirt !== 'knee' || (keys.skirt || '').includes('[-0.345,') }; }
+  const sum = (R, f) => Object.values(R).reduce((s, o) => s + f(o), 0);
+  return { k1, k2, k3, season3, mark: kind.res.markman, others: sum(kind.res, o => o.bands) - kind.res.markman.bands,
+    after: sum(after.res, o => o.bands), chairOut: chair.res.markman, chairIn: chairIn.res.markman, built }; });
+console.log('  feast:', JSON.stringify(feast));
+const FM = feast.mark;
+check('on a feast day seven in ten of the Mark\'s folk wear the woven bands (a man\'s tunic to the knee, the apron off, the lozenges never the ground\'s colour), nobody else, nobody the day after',
+  feast.k1 === 'kindling' && feast.k2 === null && FM.n === 40 && FM.bands >= 20 && FM.bands <= 36 && FM.knee >= 1 && FM.apron === 0 && FM.same === 0 && feast.others === 0 && feast.after === 0, feast);
+check('the bands are woven into the tunic, the skirt and the cuffs as the kit builds them; on the Empty Chair (winter) a coat goes over them out of doors, not by the hearth',
+  !!feast.built && feast.built.loz.includes('tunic') && feast.built.knee && feast.k3 === 'emptychair' && feast.season3 === 'winter' && feast.chairOut.coat >= 15 && feast.chairIn.bands === FM.bands && feast.chairIn.coat === 0, feast);
+
 // walking: a walker's builder bones follow the driver's stride
 const walk = await page.evaluate(() => { const rig = [...HB_RIGS].find(r => r.hb && r.root.visible && r.root.parent === WORLD.scene && PEOPLE_RIGS.has(r) && !r.sleep && !r.g.gear && r.hb.L === 0); const root = rig.root, fy = root.rotation.y, sk = rig.hb.P.skeleton;
   const snap = () => { root.updateMatrixWorld(true); sk.update(); return Float32Array.from(sk.boneMatrices); };
