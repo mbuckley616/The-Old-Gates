@@ -14,7 +14,9 @@ const KINDS = { 'Deer': ['deer', .87], 'Red Fox': ['redfox', .35], 'Brown Hare':
   // Session 1727 (first numbered 1722): the Gatelands' own
   'Elderstag': ['stag', 1.15], 'Gatefen Boar': ['gatefenboar', .69], 'Redspine Fox': ['redspinefox', .35], 'Hollowcat': ['hollowcat', .3], 'Greenward Stoat': ['stoat', .065],
   // Session 1739: the Mark's own on four legs
-  'Icehorn': ['icehorn', .69], 'Ironpine Elk': ['ironpineelk', 1.44], 'Craghorn Ram': ['craghornram', .60], 'Stormlynx': ['stormlynx', .40], 'Glacial Marmot': ['glacialmarmot', .125], 'Snowleap Hare': ['snowhare', .26] };
+  'Icehorn': ['icehorn', .69], 'Ironpine Elk': ['ironpineelk', 1.44], 'Craghorn Ram': ['craghornram', .60], 'Stormlynx': ['stormlynx', .40], 'Glacial Marmot': ['glacialmarmot', .125], 'Snowleap Hare': ['snowhare', .26],
+  // Session 1743: Aurenne's own on four legs
+  'Duneskimmer': ['duneskimmer', .69], 'Terrace Ram': ['terraceram', .58], 'Sunspire Lynx': ['sunspirelynx', .39], 'Oasis Hare': ['oasishare', .275], 'Mirage Fox': ['miragefox', .21] };
 const g = await boot({ look: 'new' }); const { page } = g;
 await g.intoWorld();
 
@@ -30,7 +32,7 @@ const made = await page.evaluate((names) => { forceTime(12);
   let k = 0; HBODY.last = -1e9; while (want() && k++ < 600) tickCreatures(1 / 60, 2e5 + k * (HBODY.gap + 1));
   return { d, ticks: k, left: want(), fails: _A.filter(f => f.rig.hcFail).map(f => f.nm), nope: buildAnimal('Wolf') === null, each: Math.round(HC_BODY.ms / Math.max(1, HC_BODY.n)) }; }, Object.keys(KINDS));
 console.log('  built:', JSON.stringify(made));
-check('buildAnimal builds the nineteen and only the wild and farm kinds (a Wolf is a foe\'s)', made.nope && made.left === 0 && made.fails.length === 0, made);
+check('buildAnimal builds the twenty-four and only the wild and farm kinds (a Wolf is a foe\'s)', made.nope && made.left === 0 && made.fails.length === 0, made);
 
 const who = await page.evaluate(() => _A.map(({ nm, rig, G }) => { const H = rig.hc; if (!H) return { nm, hc: false }; G.updateMatrixWorld(true);
   const a = H.C.byName.spine0.getWorldPosition(new THREE.Vector3()), b = rig.B.hips.getWorldPosition(new THREE.Vector3());
