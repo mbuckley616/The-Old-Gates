@@ -47,10 +47,16 @@ const R = await page.evaluate(() => { const t = GATE_THINGS.find(q => q.kind ===
   const ahead = [t.x - T.dc * 2.2, t.z - T.dr * 2.2];
   const o = { id: t.id, tris, draws, inScene: t.group.parent === dScene, wall: [dBlk(t.x, t.z), dBlk(t.x + T.dr * .9 + T.dc * .9, t.z + T.dc * .9 + T.dr * .9)], before: !dBlk(...ahead),
     found: gateThingNear('brush', ahead[0], ahead[1], 3) === t, master: m ? (m.floor || 1) : null };
-  o.f1 = fireBrush(t); o.f2 = fireBrush(t); o.still = dBlk(t.x, t.z); window._B = t; return o; });
+  /* S1717: Loscadh's touch fires it (#973 A): from 4 m nothing, from 1.4 m turned away nothing, from 1.4 m facing it the brush catches */
+  const T0 = { word: 'loscadh', tier: 1, sp: heldSpell('loscadh') }, at = (d, face) => { px = t.x - T.dc * d; pz = t.z - T.dr * d; yaw = face > 0 ? Math.atan2(-T.dc, -T.dr) : Math.atan2(T.dc, T.dr); };
+  const sx = px, sz = pz, sy = yaw, sk = () => { const q = skillsReady().tine; return q ? q.lv * 1e6 + q.p : 0; }, use0 = sk();
+  at(4, 1); o.far = touchLand(T0).thing || null; at(1.4, -1); o.away = touchLand(T0).thing || null; at(1.4, 1); o.touch = touchLand(T0); o.tine = sk() > use0;
+  px = sx; pz = sz; yaw = sy;
+  o.f1 = o.touch.thing === 'brush' && t.burning; o.f2 = fireBrush(t); o.still = dBlk(t.x, t.z); window._B = t; return o; });
 console.log(JSON.stringify(R));
 check(`a lair's brush built: ${R.tris} triangles in ${R.draws} draw, in the scene`, !R.none && R.inScene && R.draws === 1 && R.tris > 2000 && R.tris < 4200, R);
 check('it is a wall across its passage, open before it; the master is on floor two', R.wall && R.wall[0] && R.wall[1] && R.before && R.found && R.master === 2, R);
+check(`Loscadh touched fires it from 1.4 m facing it (${R.touch && R.touch.thing}), not from 4 m (${R.far}) nor turned away (${R.away}); one use of Tine (${R.tine})`, R.f1 && R.far === null && R.away === null && R.tine, R);
 // the burn is read off performance.now(): set its start back rather than wait, so a slow runner cannot step past the middle
 const mid = await page.evaluate(() => { const t = window._B; t.burnAt = performance.now() - 1700; gtBrushStep(t); return { burning: t.burning, fire: t.group.userData.fire.visible, light: +(t.light ? t.light.intensity : 0).toFixed(2), wall: dBlk(t.x, t.z), sunk: +t.group.userData.body.scale.y.toFixed(2) }; });
 const end = await page.evaluate(() => { const t = window._B; t.burnAt = performance.now() - 3600; gtBrushStep(t); let tris = 0, draws = 0;

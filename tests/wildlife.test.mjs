@@ -65,4 +65,26 @@ const away = await page.evaluate(() => { const n0 = ZONES.world.enemies.filter(e
   const left = [...WILD_CH].filter(ch => ch.wild && ch.wild.some(e => !e.dead && Math.hypot(e.x - px, e.z - pz) > 300)).length;
   return { n0, left, inScene: ZONES.world.enemies.filter(e => e.wild && !e.dead && Math.hypot(e.x - px, e.z - pz) > 300).length }; });
 check(`walked 1.5 km away, the animals behind go (${away.n0} → ${away.inScene})`, away.n0 > 0 && away.inScene === 0 && away.left === 0, away);
+// S1711 — the birds (#984 A: "ravens or crows on open ground … the birds take off"). A crow put down 15 m in front of you takes off: it
+// climbs to 8–14 m, is out of a blade's reach while up there and missed by an arrow that passes under it, and lands again past 60 m
+const bird = await page.evaluate(() => { forceTime(12); stream(px, pz, true);
+  let x = px, z = pz; for (let k = 0; k < 40 && !wildGround(x, z); k++) { x = px + (k % 7 - 3) * 9; z = pz + Math.floor(k / 7) * 9; }
+  const e = keyFoe(buildZoneEnemy(WORLD.scene, STATIC_SOL, x, z, 'Crow', null, { tier: 1, key: 'test:bird' }), 'wild:test:bird');
+  e.homeX = x; e.homeZ = z; e.combatYaw = 0; ZONES.world.enemies.push(e); for (const o of ZE) o._duelHold = o !== e; e._w = { mode: 'graze', t: 99 };
+  px = x + Math.sin(e.combatYaw) * 15; pz = z + Math.cos(e.combatYaw) * 15; const x0 = e.x, z0 = e.z;
+  let top = 0, aloftSeen = false, outOfReach = true, arrowUnder = null, arrowAt = null, landed = -1, gaits = new Set(); const rig = e.limbs.wolf;
+  for (let i = 0; i < 60 * 30; i++) { tickZoneEnemies(1 / 60, 0, WORLD.scene); hcBirdPose && rig.hc && hcBirdPose(rig); if (rig.gaitNow) gaits.add(rig.gaitNow);
+    const fy = (e._w && e._w.fy) || 0; top = Math.max(top, fy);
+    if (e.aloft) { aloftSeen = true; if (strikeCandidate(e)) outOfReach = false;
+      if (arrowUnder == null) { arrowUnder = wildArrowMisses(e, e.mesh.position.y - 3); arrowAt = wildArrowMisses(e, e.mesh.position.y + .2); } }
+    if (i > 60 && e._w.mode === 'graze') { landed = i; break; } }
+  const gy = activeTerrainH(e.x, e.z);
+  const out = { kind: e.name, body: !!rig.bird, top: +top.toFixed(1), aloftSeen, outOfReach, arrowUnder, arrowAt, flew: +Math.hypot(e.x - x0, e.z - z0).toFixed(1),
+    secs: landed > 0 ? +(landed / 60).toFixed(1) : -1, onGround: +(e.mesh.position.y - gy).toFixed(2), ground: wildOpen(e.x, e.z), reach: strikeCandidate(e), gaits: [...gaits] };
+  for (const o of ZE) o._duelHold = false; e.dead = true; if (e.mesh.parent) e.mesh.parent.remove(e.mesh); ZONES.world.enemies.splice(ZONES.world.enemies.indexOf(e), 1);
+  return out; });
+console.log('  bird:', JSON.stringify(bird));
+check(`a crow seen at 15 m takes off to ${bird.top} m, out of a blade's reach aloft, an arrow under it misses and one at its height strikes (${bird.arrowUnder}, ${bird.arrowAt})`,
+  bird.body && bird.top >= 8 && bird.top <= 14 && bird.aloftSeen && bird.outOfReach && bird.arrowUnder === true && bird.arrowAt === false, bird);
+check(`it lands ${bird.flew} m off after ${bird.secs} s, on open ground and within reach again`, bird.flew >= 60 && bird.secs > 0 && Math.abs(bird.onGround) < .05 && bird.ground && bird.reach, bird);
 await g.close();

@@ -266,14 +266,16 @@
   // Each loaded chunk within 150 m of you rolls, once, by its id, one group or none: deer (2 to 4) in woods and fields, a hare or a fox in
   // grass and heath, a badger at night, an otter by a river; never on a town's or a farm's pad nor on a road. Its animals are keyed
   // `cx,cz:i`, so the chunk rolls the same group each time it loads. Not saved: one taken today stays gone only until the page reloads.
-  // A chunk past 200 m (or unloaded) takes its living animals away. The ravens and crows wait on a bird's body (the bodies builder's)
+  // A chunk past 200 m (or unloaded) takes its living animals away. S1711: crows (2 to 4) on fields and shore, ravens (1 or 2) on moor and
+  // tundra, on the bodies builder's bird (S1710); startled, they take off (wildFlyStep)
   const WILD_R=150,WILD_DROP=200,WILD_P=.25,WILD_CH=new Set(),WILD_TAKEN=new Map();let _wildT=0;
   const WILD_TABLE={
     forest:[{name:'Deer',w:4,n:[2,4]},{name:'Red Fox',w:1,n:[1,1]},{name:'Badger',w:2,n:[1,1],night:true}],
-    autumn:[{name:'Deer',w:4,n:[2,4]},{name:'Red Fox',w:2,n:[1,1]},{name:'Brown Hare',w:1,n:[1,1]},{name:'Badger',w:2,n:[1,1],night:true}],
-    plains:[{name:'Deer',w:3,n:[2,4]},{name:'Brown Hare',w:3,n:[1,1]},{name:'Red Fox',w:2,n:[1,1]},{name:'Badger',w:2,n:[1,1],night:true}],
-    moor:  [{name:'Brown Hare',w:3,n:[1,1]},{name:'Red Fox',w:2,n:[1,1]},{name:'Badger',w:1,n:[1,1],night:true}],
-    coast: [{name:'Brown Hare',w:2,n:[1,1]},{name:'Red Fox',w:1,n:[1,1]}],
+    autumn:[{name:'Deer',w:4,n:[2,4]},{name:'Red Fox',w:2,n:[1,1]},{name:'Brown Hare',w:1,n:[1,1]},{name:'Badger',w:2,n:[1,1],night:true},{name:'Crow',w:1,n:[2,4]}],
+    plains:[{name:'Deer',w:3,n:[2,4]},{name:'Brown Hare',w:3,n:[1,1]},{name:'Red Fox',w:2,n:[1,1]},{name:'Badger',w:2,n:[1,1],night:true},{name:'Crow',w:2,n:[2,4]}],
+    moor:  [{name:'Brown Hare',w:3,n:[1,1]},{name:'Red Fox',w:2,n:[1,1]},{name:'Badger',w:1,n:[1,1],night:true},{name:'Raven',w:2,n:[1,2]}],
+    coast: [{name:'Brown Hare',w:2,n:[1,1]},{name:'Red Fox',w:1,n:[1,1]},{name:'Crow',w:1,n:[1,3]}],
+    tundra:[{name:'Raven',w:1,n:[1,2]}],
   };
   function wildTaken(e){if(!e||!e._wildKey)return;WILD_TAKEN.set(e._wildKey,lootDay());
     for(const o of ZONES.world.enemies)if(o!==e&&o.wild&&!o.dead&&Math.hypot(o.x-e.x,o.z-e.z)<WILD_HERD){wildFlee(o,targetOf(o));break;}} /* the rest of the group bolts (wildFlee takes the herd) */
@@ -299,9 +301,10 @@
     let ax=0,az=0,ok=false;
     for(let k=0;k<10&&!ok;k++){ax=ch.cx*CHUNK+8+r()*(CHUNK-16);az=ch.cz*CHUNK+8+r()*(CHUNK-16);ok=wildGround(ax,az)&&(grp.name!=='Otter'||wildRiverNear(ax,az,14));}
     if(!ok)return;
+    const spread=BIRD[grp.name]?4:10; /* S1711 — a flock pecks close */
     for(let i=0;i<count;i++){const id=key+':'+i;if(WILD_TAKEN.get(id)===lootDay())continue;
       const pr=seededRng('wildspot',id);let ex=ax,ez=az,good=i===0;
-      for(let k=0;k<8&&!good;k++){ex=ax+(pr()-.5)*10;ez=az+(pr()-.5)*10;good=wildGround(ex,ez);}
+      for(let k=0;k<8&&!good;k++){ex=ax+(pr()-.5)*spread;ez=az+(pr()-.5)*10;good=wildGround(ex,ez);}
       if(!good)continue;
       const e=keyFoe(buildZoneEnemy(sc,STATIC_SOL,ex,ez,grp.name,null,{tier:1,key:id}),'wild:'+id);
       e._wildKey=id;e._chunk=key;e.homeX=ex;e.homeZ=ez;e.combatYaw=pr()*Math.PI*2;
