@@ -103,7 +103,7 @@ check('the maiden: a black sail within 300 m holds off 10 s, once; from 400 m, n
 check('the skull: a merchantman at 25 m steers straight away from her; at 70 m, or under another figurehead, nothing', fh.skull.near && fh.skull.far === null && fh.skullOff === null, fh.skull);
 check('found: the beast’s skull off the first lair master slain; the gate stone at a failing or catastrophic gate’s sigil, not a steady one', fh.slay && fh.steadyGate === false && fh.failGate, fh);
 check('a save keeps her figurehead, the yard’s store, her carving and a token in the bag', fh.saved.head === 'yard' && fh.saved.heads.join() === 'stone,maiden' && fh.saved.yard === 'mark' && fh.saved.token.join() === 'sea', fh.saved);
-// S1735 — the wreck's maiden: in each island's deepest wreck, worked out once by the chunks' hashes and the bed, the same on a second count
+// S1736 — the wreck's maiden: in each island's deepest wreck, worked out once by the chunks' hashes and the bed, the same on a second count
 const mw = await page.evaluate(() => { const kb = BAG.slice(), ks = worldState.ship, out = {}; worldState.ship = { cls: 'sloop' }; BAG.length = 0;
   MAIDEN_WRECKS = null; const t0 = performance.now(); const W = maidenWrecks(); out.ms = Math.round(performance.now() - t0); out.W = JSON.parse(JSON.stringify(W)); MAIDEN_WRECKS = null; out.same = JSON.stringify(maidenWrecks()) === JSON.stringify(W);
   const spawn = key => { const [cx, cz] = key.split(',').map(Number); const ch = { cx, cz, group: new THREE.Group(), sol: [], loot: [] }; spawnWreck(ch); const c = ch.loot[0]; return c ? { at: [Math.round(c.x), Math.round(c.z)], heads: c.items.filter(i => i.figurehead).map(i => i.figurehead) } : null; };
@@ -115,7 +115,7 @@ const mw = await page.evaluate(() => { const kb = BAG.slice(), ks = worldState.s
 console.log(JSON.stringify(mw));
 check(`the wreck's maiden lies in each island's deepest wreck (${mw.nations.join(', ')}; beds ${Object.values(mw.W).map(w => w.bed.toFixed(3)).join(', ')} m; worked out in ${mw.ms} ms), the same on a second count`, mw.nations.join() === 'aurenne,gatelands,mark' && mw.bedOk && mw.bed && mw.same && mw.deep && mw.deep.heads.join() === 'maiden', mw);
 check('another wreck holds no figurehead, and hers none once the maiden is found', mw.other && mw.other.heads.length === 0 && mw.after && mw.after.heads.length === 0, { other: mw.other, after: mw.after });
-// S1736 — her crew (the build sheet, session 4): two in her bunks, the carpenter's patches and the cook's meal from the sea chest, the navigator's reach
+// S1737 — her crew (the build sheet, session 4): two in her bunks, the carpenter's patches and the cook's meal from the sea chest, the navigator's reach
 const cr = await page.evaluate((pid) => { const site = WORLD.siteAnywhere(pid), ks = worldState.ship, kst = stashBag.slice(), ksail = SHIP.sailing, ksp = SHIP.speed, kmin = worldState.gameTimeAbsMinutes, kclk = worldState.gameTimeMinutes, out = {};
   worldState.ship = { cls: 'sloop', hold: {}, hull: 50, rig: 100, fit: ['galley'] }; stashBag.length = 0;
   out.notMet = crewAboard('cook'); for (const r of ['carpenter', 'cook', 'navigator']) crewMeet(r, site.id); out.noBunks = crewAboard('cook');

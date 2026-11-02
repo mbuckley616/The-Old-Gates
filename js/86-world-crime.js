@@ -983,12 +983,12 @@
     if(typeof addLog==='function')addLog('⛵',`The ${SHIP.name} fitted with ${k==='stowage'?'stowage':SHIP_FITS[k].a}.`);return true;}
   function unfitShip(k){const st=shipCfg(),f=shipFitList(st);
     if(k==='stowage'){if(!(st.cargo>0))return 'She has no stowage fitted.';if(holdUsed()>holdCap()-25)return 'Clear 25 of the hold before the stowage comes out.';st.cargo--;}
-    else{const i=f.indexOf(k);if(i<0)return 'She has no such fitting.';if(k==='bunks'&&Array.isArray(st.crew)&&st.crew.length)return 'Her crew sleep in them: send them ashore first.';f.splice(i,1);} /* S1736 */
+    else{const i=f.indexOf(k);if(i<0)return 'She has no such fitting.';if(k==='bunks'&&Array.isArray(st.crew)&&st.crew.length)return 'Her crew sleep in them: send them ashore first.';f.splice(i,1);} /* S1737 */
     st.stored.push(k);return true;}
   // a refit to a hull with fewer places sends the last fitted to the yard's store first, then the stowage
   function shipFitToHull(){const st=shipCfg(),f=shipFitList(st),n=shipPlaces(st.cls),out=[];
     while(shipPlacesUsed(st)>n){if(f.length)out.push(f.pop());else{st.cargo--;out.push('stowage');}}
-    st.stored.push(...out);if(out.includes('bunks')&&Array.isArray(st.crew))for(const r of st.crew.splice(0))(st.ashore||(st.ashore={}))[r]=null; /* S1736 — no bunks, the crew wait at the yard */return out;}
+    st.stored.push(...out);if(out.includes('bunks')&&Array.isArray(st.crew))for(const r of st.crew.splice(0))(st.ashore||(st.ashore={}))[r]=null; /* S1737 — no bunks, the crew wait at the yard */return out;}
   // S1733 — the still and the galley are in her hold (the build sheet's session 2): brewing there with a still fitted is ×1.10, and a
   // galley is a fire. Until the look builder's fittings stand in the hold, anywhere in it is at them; once a room records a spot
   // (house._fits[k] = {x,z}, the room's metres) it is within 2 m of it, the sheet's reach
@@ -1038,7 +1038,7 @@
   // the skull: a merchantman within twice 30 m of her turns away from her, so she keeps 30 m off; where to steer, or null
   function headGiveWay(o){if(shipHead()!=='skull'||!SHIP.mesh)return null;const dx=o.x-SHIP.x,dz=o.z-SHIP.z,d=Math.hypot(dx,dz);
     if(d>HEAD_SKULL_R*2||d<1e-3)return null;return {x:o.x+dx/d*100,z:o.z+dz/d*100};}
-  // S1735 — the wreck's maiden: in the sea chest of each island's deepest wreck (by its bed, the lowest of every wreck spawnWreck would
+  // S1736 — the wreck's maiden: in the sea chest of each island's deepest wreck (by its bed, the lowest of every wreck spawnWreck would
   // lay, the same hash and the same first bed of 2.5 to 8 m under the sea), keyed by the chunk; worked out once for the whole world at
   // the first wreck's spawn (the chunks' hashes and worldH, never what has loaded: S533). One maiden in all, so the first of the
   // three taken is the one; until then each of those chests holds her
@@ -1049,7 +1049,7 @@
         if(b<-2.5&&b>-8){const n=nationAt(tx,tz),B=best[n];if(!B||b<B.bed)best[n]={key:chunkKey(cx,cz),bed:b,x:tx,z:tz};break;}}}
     return MAIDEN_WRECKS=best;}
   function maidenWreckHere(cx,cz){if(headFound('maiden'))return false;const k=chunkKey(cx,cz),W=maidenWrecks();for(const n in W)if(W[n].key===k)return true;return false;}
-  // S1736 — her crew (the build sheet, session 4): the carpenter, the cook and the navigator are met, not hired (crewMeet, the errands'
+  // S1737 — her crew (the build sheet, session 4): the carpenter, the cook and the navigator are met, not hired (crewMeet, the errands'
   // hook, session 5), and two sail with her, in her bunks; the third waits ashore, swapped free at any shipwright. Each works at a skill of
   // 50 from a station: the carpenter one patch of 18 every 90 s under way to her field cap at Joinery 50 (80%), a plank and a pitch from
   // the sea chest; the cook (and her galley), at 6h each game day, one fish or else one joint from the chest, cooked at ×1.0, back into
@@ -1127,7 +1127,7 @@
   // destroyed*. The hold goes down with her, horse and all, and a raised ship comes up empty (Session 413 kept it).
   function shipSink(){const st=shipCfg();const aboard=SHIP.sailing||onDeck();
     const lost=Object.values(st.hold||{}).reduce((a,n)=>a+(n>0?n:0),0);st.hold={};
-    const crewSaid=crewSink(); /* S1736 */st.sunk={x:SHIP.x,z:SHIP.z};st.hull=0;Object.assign(st,{x:SHIP.x,z:SHIP.z,yaw:SHIP.yaw});SHIP.sailing=false;SHIP.speed=0;
+    const crewSaid=crewSink(); /* S1737 */st.sunk={x:SHIP.x,z:SHIP.z};st.hull=0;Object.assign(st,{x:SHIP.x,z:SHIP.z,yaw:SHIP.yaw});SHIP.sailing=false;SHIP.speed=0;
     for(const e of BOARDERS){if(e.mesh&&e.mesh.parent)e.mesh.parent.remove(e.mesh);const j=ZONES.world.enemies.indexOf(e);if(j>=0)ZONES.world.enemies.splice(j,1);}BOARDERS.length=0;
     if(SHIP.mesh){sc.remove(SHIP.mesh);SHIP.mesh=null;}if(SHIP.plat){const j=ZONES.world.platforms.indexOf(SHIP.plat);if(j>=0)ZONES.world.platforms.splice(j,1);SHIP.plat=null;}
     if(aboard){jumpY=SWIM_Y;velY=0;onGround=false;}splash(true);
@@ -1331,7 +1331,7 @@
       for(const k of H)if(k!==st.head)out.push({label:`Set ${headName(k)} at her bow again (kept at the yard)`,cls,quest:true,fn:()=>{const r=fitHead(k);return r===true?`${cap(headName(k))} rides at her bow again.`:r;}});
       if(st.yardHead&&st.head!=='yard')out.push({label:`Set her carved ${HEAD_CARVE[st.yardHead]} at her bow again (kept at the yard)`,cls,quest:true,fn:()=>{const r=fitHead('yard',st.yardHead);return r===true?`The ${HEAD_CARVE[st.yardHead]} rides at her bow again.`:r;}});
       if(HEAD_CARVE[nat]&&st.yardHead!==nat)out.push({label:`Carve her a figurehead: the ${HEAD_CARVE[nat]} (${HEAD_YARD_PRICE} gold)`,cls,quest:true,fn:()=>{const r=fitHead('yard',nat);return r===true?`Carved: the ${HEAD_CARVE[nat]} rides at her bow.`:r===null?`The ${HEAD_CARVE[nat]}: ${HEAD_YARD_PRICE} gold.`:r;}});}
-    // S1736 — her crew: each one met and waiting taken aboard free while a bunk is free, each aboard sent ashore here
+    // S1737 — her crew: each one met and waiting taken aboard free while a bunk is free, each aboard sent ashore here
     {const C=shipCrew(st);for(const r in st.ashore)out.push({label:`Take ${crewName(r)} aboard (free)`,cls,quest:true,fn:()=>{const x=crewAboard(r);return x===true?`${crewName(r,1)} comes aboard and stows a bag in her bunks.`:x;}});
       for(const r of C.slice())out.push({label:`Send ${crewName(r)} ashore here`,cls,quest:true,fn:()=>{const x=crewAshore(r,site.id);return x===true?`${crewName(r,1)} goes ashore at ${site.name} to wait.`:x;}});}
     for(const k of [...(cargo?['stowage']:[]),...st.fit])out.push({label:`Take out her ${shipFitNames([k])[0]}`,cls,quest:true,fn:()=>{const r=unfitShip(k);return r===true?`The ${shipFitNames([k])[0]} comes out and waits at the yard. Her hold takes ${holdCap()} now.`:r;}});

@@ -600,7 +600,7 @@
     tickSeaSounds(dt);
     tickNetClimb(dt);
     SHIP._raiseT=(SHIP._raiseT||0)-dt;if(SHIP._raiseT<=0){SHIP._raiseT=1;tickShipRaise();}
-    tickShipCrew(dt); /* S1736 — her crew at their stations (86-world-crime.js) */
+    tickShipCrew(dt); /* S1737 — her crew at their stations (86-world-crime.js) */
     if(!SHIP.mesh)return;
     if(worldState.ship&&(SHIP.sailing||onDeck())){SHIP._seaT=(SHIP._seaT||0)-dt;if(SHIP._seaT<=0){SHIP._seaT=1;SHIP.sea=seaState();}}else SHIP._seaT=0;
     if(SHIP.sailing){
@@ -720,7 +720,7 @@
     const chest=new THREE.Group();chest.position.set(x+Math.cos(ry)*2.2,worldH(x+Math.cos(ry)*2.2,z+Math.sin(ry)*2.2),z+Math.sin(ry)*2.2);chest.rotation.set(.08,ry+2.2,-.06);const {lid}=buildChestShell(chest,1.8,0x5a3a1c);ch.group.add(chest);
     let items=(typeof rollContainerLoot==='function'?rollContainerLoot('chest',1.4,null,1,'wreck:'+chunkKey(ch.cx,ch.cz)+':'+lootDay(),worldTierAt(x,z)):[])||[];
     if(!items.length)items.push({name:'Sea-worn Coins',ico:'🪙',type:'misc',weight:.4,sellMult:1,buyPrice:60});
-    if(typeof maidenWreckHere==='function'&&maidenWreckHere(ch.cx,ch.cz))items.push(headItem('maiden')); /* S1735 — the wreck's maiden, a figurehead, in each island's deepest wreck (86-world-crime.js) */
+    if(typeof maidenWreckHere==='function'&&maidenWreckHere(ch.cx,ch.cz))items.push(headItem('maiden')); /* S1736 — the wreck's maiden, a figurehead, in each island's deepest wreck (86-world-crime.js) */
     items.forEach(it=>{if(it.qty==null)it.qty=1;});
     const cobj={id:'wreck:'+chunkKey(ch.cx,ch.cz),x:chest.position.x,z:chest.position.z,y:chest.position.y+.3,name:'Sea Chest',displayName:'Sea Chest',items,zone:'world',kind:'chest',g:chest,lid,opened:false,_chunk:chunkKey(ch.cx,ch.cz)};
     if(typeof ZONE_CORPSES!=='undefined')ZONE_CORPSES.push(cobj);ch.loot=ch.loot||[];ch.loot.push(cobj);
