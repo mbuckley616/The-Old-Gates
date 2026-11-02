@@ -15,7 +15,7 @@ const KINDS = { 'Deer': ['deer', .87], 'Red Fox': ['redfox', .35], 'Brown Hare':
   'Elderstag': ['stag', 1.15], 'Gatefen Boar': ['gatefenboar', .69], 'Redspine Fox': ['redspinefox', .35], 'Hollowcat': ['hollowcat', .3], 'Greenward Stoat': ['stoat', .065],
   // Session 1739: the Mark's own on four legs
   'Icehorn': ['icehorn', .69], 'Ironpine Elk': ['ironpineelk', 1.44], 'Craghorn Ram': ['craghornram', .60], 'Stormlynx': ['stormlynx', .40], 'Glacial Marmot': ['glacialmarmot', .125], 'Snowleap Hare': ['snowhare', .26],
-  // Session 1743: Aurenne's own on four legs
+  // Session 1744: Aurenne's own on four legs
   'Duneskimmer': ['duneskimmer', .69], 'Terrace Ram': ['terraceram', .58], 'Sunspire Lynx': ['sunspirelynx', .39], 'Oasis Hare': ['oasishare', .275], 'Mirage Fox': ['miragefox', .21] };
 const g = await boot({ look: 'new' }); const { page } = g;
 await g.intoWorld();
@@ -90,7 +90,7 @@ const lv = await page.evaluate(() => { const f = _A[0], G = f.G, fx = -Math.sin(
 check(`the deer's three levels: near its hide and fur (${lv.near.kit} meshes), at 25 m fewer (${lv.mid.kit}), at 60 m the driver's own body, its low copy`,
   lv.near.L === 0 && !lv.near.driver && !lv.near.lo && lv.mid.L === 1 && lv.mid.kit < lv.near.kit && lv.far.L === 2 && lv.far.driver && lv.far.lo && lv.back.L === 0 && !lv.back.lo, lv);
 
-// Session 1743: the line is 24 animals and 57 m long; only its middle is in the picture, but every furred body in it drew (and cast its
+// Session 1744: the line is 24 animals and 57 m long; only its middle is in the picture, but every furred body in it drew (and cast its
 // shadow), so one frame took over 120 s on CI. The ones the frame cannot hold are hidden for the picture
 await page.evaluate(() => { const a = _A[0].G, b = _A[_A.length - 1].G, mx = (a.position.x + b.position.x) / 2, mz = (a.position.z + b.position.z) / 2, fx = -Math.sin(yaw), fz = -Math.cos(yaw);
   for (const { G } of _A) G.visible = Math.abs((G.position.x - mx) * -fz + (G.position.z - mz) * fx) < 7;

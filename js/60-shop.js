@@ -38,6 +38,7 @@ function openLoot(container){
   lootOpen=true;
   currentLootContainer=container;
   container.opened=true;
+  if(typeof container.id==='string'&&container.id.startsWith('wreck:')&&typeof wreckVisit==='function')wreckVisit(container.id.slice(6)); /* S1743 — a wreck opened, for the Weaver's shuttle (86-world-crime.js) */
   // Lid animation on chests, top pop on barrels — immediate visual feedback of "opened" regardless of contents.
   // v61gf: barrel/crate `top` gate switched from position-based (`y < 0.4`, which
   // never fired because barrels spawn .top at y=0.575 and crates at y=0.53) to

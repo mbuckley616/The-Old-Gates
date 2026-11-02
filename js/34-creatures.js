@@ -50,7 +50,7 @@ const WOLF_KINDS={
   'Stormlynx': {coat:0xa8a399,saddle:0x6b6661,belly:0xe6e0d6,eye:0xbfcc40,ruff:.7,ears:1.3,muzzle:.6,lean:.85,bulk:.95,neck:.06,world:1.0,wild:true},
   'Glacial Marmot':{coat:0x8f7a61,saddle:0x6b5945,belly:0xccb894,eye:0x0f0a08,ruff:.6,ears:.5,muzzle:.7,bulk:1.25,neck:.05,world:.32,wild:true},
   'Snowleap Hare':{coat:0xedede8,saddle:0xd6d6d1,belly:0xfafaf7,eye:0x1f120a,ruff:.6,ears:1.4,muzzle:.8,lean:.85,bulk:.95,neck:.05,world:.66,wild:true},
-  // Session 1743 — Aurenne's own on four legs (L3, OG-030; the kit's AURENNE since Session 848), wild: the Duneskimmer and the Terrace Ram on the
+  // Session 1744 — Aurenne's own on four legs (L3, OG-030; the kit's AURENNE since Session 848), wild: the Duneskimmer and the Terrace Ram on the
   // deer's long legs, the Sunspire Lynx, the Oasis Hare and the Mirage Fox on the wolf's
   'Duneskimmer':{coat:0xcc9e66,saddle:0xa87a47,belly:0xf5eddb,eye:0x0f0a08,horse:true,legK:1.8,legs:{fore:{root:[-.03,.03],a:[-.22,-.04],b:[-.22,.02],c:[-.23,.01]},hind:{root:[-.02,-.02],a:[-.2,.08],b:[-.2,-.1],c:[-.26,.01]}},hipY:.70,bulk:.75,eyePos:[.046,.02,.03],world:.995,wild:true},
   'Terrace Ram':{coat:0xdbc79e,saddle:0xbda37a,belly:0xf0e6d1,eye:0x997f33,horse:true,legK:1.8,legs:{fore:{root:[-.03,.03],a:[-.22,-.04],b:[-.22,.02],c:[-.23,.01]},hind:{root:[-.02,-.02],a:[-.2,.08],b:[-.2,-.1],c:[-.26,.01]}},hipY:.70,bulk:1.1,eyePos:[.046,.02,.03],world:.836,wild:true},

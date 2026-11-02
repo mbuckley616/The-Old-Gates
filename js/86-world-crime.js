@@ -1016,7 +1016,7 @@
   // shipwright, one at her bow at a time, the rest kept for her (st.heads, the yard's store). Their virtues: the Sea's hull +5% top
   // speed in rain or storm; the wreck's maiden, a pirate within 300 m holds off 10 s before closing; the beast's skull, merchantmen
   // give way and keep 30 m off; the gate stone, storm wear ×0.8 (the Drowned Bell's ×0.5 the better, never both); the Weaver's
-  // shuttle points the navigator's line at a wreck (session 4's navigator; nothing without one)
+  // shuttle points the navigator's line at the nearest wreck not yet opened (S1743, shuttleHint; nothing without him)
   const SHIP_HEADS={sea:{n:'the Sea’s Hull'},maiden:{n:'the Wreck’s Maiden'},skull:{n:'the Beast’s Skull'},stone:{n:'the Gate Stone'},shuttle:{n:'the Weaver’s Shuttle'}};
   const HEAD_CARVE={gatelands:'harp',mark:'dragon prow',aurenne:'sun'};
   const HEAD_YARD_PRICE=150,HEAD_SEA_K=1.05,HEAD_MAIDEN_R=300,HEAD_MAIDEN_S=10,HEAD_SKULL_R=30,HEAD_STONE_K=.8;
@@ -1042,11 +1042,15 @@
   // lay, the same hash and the same first bed of 2.5 to 8 m under the sea), keyed by the chunk; worked out once for the whole world at
   // the first wreck's spawn (the chunks' hashes and worldH, never what has loaded: S533). One maiden in all, so the first of the
   // three taken is the one; until then each of those chests holds her
-  let MAIDEN_WRECKS=null;
-  function maidenWrecks(){if(MAIDEN_WRECKS)return MAIDEN_WRECKS;const best={},N=Math.ceil(GRID*SIZE/CHUNK);
+  let MAIDEN_WRECKS=null,SEA_WRECKS=null;
+  // S1743 — every wreck spawnWreck would lay at sea, the same walk the maiden's was (one pass, kept for the session): {key, x, z, bed}
+  function seaWrecks(){if(SEA_WRECKS)return SEA_WRECKS;const L=[],N=Math.ceil(GRID*SIZE/CHUNK);
     for(let cz=0;cz<N;cz++)for(let cx=0;cx<N;cx++){if(hash01(cx,cz,150)>.06)continue;const t=maskAt(Math.floor(cx*CHUNK/SIZE),Math.floor(cz*CHUNK/SIZE));if(t==='land')continue;
       for(let k=0;k<9;k++){const tx=cx*CHUNK+8+hash01(cx+k,cz,151)*(CHUNK-16),tz=cz*CHUNK+8+hash01(cz,cx+k,152)*(CHUNK-16),b=worldH(tx,tz);
-        if(b<-2.5&&b>-8){const n=nationAt(tx,tz),B=best[n];if(!B||b<B.bed)best[n]={key:chunkKey(cx,cz),bed:b,x:tx,z:tz};break;}}}
+        if(b<-2.5&&b>-8){L.push({key:chunkKey(cx,cz),x:tx,z:tz,bed:b});break;}}}
+    return SEA_WRECKS=L;}
+  function maidenWrecks(){if(MAIDEN_WRECKS)return MAIDEN_WRECKS;const best={};
+    for(const w of seaWrecks()){const n=nationAt(w.x,w.z),B=best[n];if(!B||w.bed<B.bed)best[n]={key:w.key,bed:w.bed,x:w.x,z:w.z};}
     return MAIDEN_WRECKS=best;}
   function maidenWreckHere(cx,cz){if(headFound('maiden'))return false;const k=chunkKey(cx,cz),W=maidenWrecks();for(const n in W)if(W[n].key===k)return true;return false;}
   // S1737 — her crew (the build sheet, session 4): the carpenter, the cook and the navigator are met, not hired (crewMeet, the errands'
@@ -1103,7 +1107,18 @@
   // is rolled when first shown (WX.ahead) and the next shift takes it, so the hint never lies; with no hint shown the weather
   // is rolled when it comes, as before
   const AHEAD_WORD={clear:'clearing',overcast:'clouding over',rain:'rain',storm:'a storm',fog:'fog',snow:'snow',blizzard:'a blizzard',heavyrain:'heavy rain'};
-  function seaHint(){if(!navAboard()&&(typeof cloakOn!=='function'||!cloakOn('oilskin'))||(WX.type!=='rain'&&WX.type!=='storm'))return '';if(!WX.ahead)WX.ahead=pickWeather();
+  // S1743 — the Weaver's shuttle at her bow, with the navigator at his station: the sea line also points to the nearest wreck whose sea
+  // chest you have not opened (worldState.stats.wrecks, the character's, by the wreck's chunk), in any weather. Without him it does nothing
+  const SHUTTLE_W={t:0,w:null};
+  function wreckVisit(key){if(!key)return false;const st=worldState.stats||(worldState.stats={}),W=st.wrecks||(st.wrecks={});if(W[key])return false;W[key]=1;SHUTTLE_W.t=0;return true;}
+  function shuttleWreck(){if(shipHead()!=='shuttle'||!navAboard())return null;const t=performance.now();if(SHUTTLE_W.t&&t-SHUTTLE_W.t<1000)return SHUTTLE_W.w;SHUTTLE_W.t=t;
+    const V=(worldState.stats&&worldState.stats.wrecks)||{};let best=null,bd=Infinity;
+    for(const w of seaWrecks()){if(V[w.key])continue;const d=(w.x-SHIP.x)**2+(w.z-SHIP.z)**2;if(d<bd){bd=d;best=w;}}
+    return SHUTTLE_W.w=best;}
+  function shuttleHint(){const w=shuttleWreck();if(!w)return '';const d=Math.hypot(w.x-SHIP.x,w.z-SHIP.z),r=d<200?Math.round(d/10)*10:Math.round(d/50)*50;
+    return ` · a wreck ${r} m ${compassWord(w.x-SHIP.x,w.z-SHIP.z)}`;}
+  function seaHint(){return seaWxHint()+shuttleHint();}
+  function seaWxHint(){if(!navAboard()&&(typeof cloakOn!=='function'||!cloakOn('oilskin'))||(WX.type!=='rain'&&WX.type!=='storm'))return '';if(!WX.ahead)WX.ahead=pickWeather();
     return WX.ahead===wxName(WX.type,WX.heavy>.5)?'':` · ${AHEAD_WORD[WX.ahead]||WX.ahead} ahead`;}
   function weatherSea(){const t=(WX.next!==WX.type&&WX.k>=.5)?WX.next:WX.type;return t==='storm'?3:(t==='clear'||t==='fog')?0:1;}
   function openWater(x,z){if(worldH(x,z)>-7.9)return false;for(let k=0;k<12;k++){const a=k/12*Math.PI*2;for(const r of [50,100,150])if(worldH(x+Math.cos(a)*r,z+Math.sin(a)*r)>SEA_Y-1.4)return false;}return true;}
