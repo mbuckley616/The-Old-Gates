@@ -176,7 +176,7 @@
   // S413 — in port: within 140 of the town, or within 60 of the quay's head (Portclare's quay runs 174 out, and a ship fetched there lay 196 off)
   function shipHere(site){if(!(worldState.ship&&SHIP.mesh))return false;if(Math.hypot(SHIP.x-site.x,SHIP.z-site.z)<140)return true;const q=site.quayStart;return !!(q&&Math.hypot(SHIP.x-q.x,SHIP.z-q.z)<60);}
   function holdOf(){const st=shipCfg();return st.hold||(st.hold={});}
-  function holdCap(){const st=shipCfg();return (CARGO_HOLD[st.cls||'sloop']||40)+25*(st.cargo||0);}
+  function holdCap(){const st=shipCfg();return Math.max(0,(CARGO_HOLD[st.cls||'sloop']||40)+25*(st.cargo||0)-(typeof shipFitWeight==='function'?shipFitWeight():0));} /* S1726 — her fittings take hold weight (#979 B) */
   function holdUsed(){const h=holdOf();let w=0;for(const k in h)if(CARGO_GOODS[k])w+=h[k]*CARGO_GOODS[k].w;return w;}
   function cargoItem(key){const g=CARGO_GOODS[key];return {name:g.n,ico:'📦',type:'cargo',cargo:key,weight:g.w,qty:1,desc:`Trade goods. A harbour's factor buys them.`};}
   function cargoHave(key){const b=BAG.find(it=>it.type==='cargo'&&it.cargo===key);return {bag:b?(b.qty||1):0,hold:(worldState.ship&&worldState.ship.hold&&worldState.ship.hold[key])||0};}
