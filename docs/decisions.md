@@ -3,34 +3,6 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
-### The places under the land — how you get in (from the look builder, 2026-11-02, #1026)
-Card F8's places on the land are in the world (the abbey S1715, the tower house S1725, the passage cairn S1732). Three prototypes are left, all under the ground: the limestone cave (#313 A, its lake under falls), the smugglers' lair (#314) and the tower house's cellar, souterrain and pit (#401 A). The open world's terrain is one height per point, so nothing can be dug into it. How do you get in?
-
-- **A (recommended).** Through a mouth, into a place of its own: a cave mouth or hatch is a door that loads the place as its own scene, as a lair's cavern door (`lairDoorFor`) and a gate's door do. Built whole at its measures (the cave's hall 64 × 46 × 26 m); nothing added to the open world.
-- **B.** Cut into the land: a hole in the terrain mesh, the place built below ground in the same scene; no fade, but it touches terrain, cells, collision and camera (deep-work code).
-- **C.** Only the mouths for now, nothing behind them, until the dungeon cards (F5) settle how under-places are made.
-
-Recommendation A: reuses the door, fade and return the game has, costs nothing in the open world, keeps each place full size. Next sessions: the cave in the Gatelands' limestone, then the lair at a cove, then the cellar under its hatch. Pictures: `docs/prototypes/levelup/`; the cairn's door, branch `auto/look-1732`, `docs/prototypes/cairn-world-door.jpg`.
-
-### The trout in the rivers — how you take one (from the systems builder, 2026-11-02, #1014)
-The bodies builder's Session 1712 gave the trout a body (`buildAnimal('Trout', key)`); nothing puts it in the rivers yet, and how you take one is a rule the build has not got (#984's A covered the land animals and the birds, not fish). The sea's fish today are schools you swim into and take with E (`catchFish`).
-
-- **A (recommended).** In the rivers and lakes, taken both ways the game already has: a chunk within 150 m on a river reach or lake rolls one to three trout by its id, holding a metre under the surface. Swim to one and E takes it, as at sea; or strike it from the bank with an arrow or the spear. Seen or heard, they dart 10 m downstream. A trout is 1 *Trout* (0.6 weight, 9 gold).
-- **B.** As A, taken by hand only: E while swimming; blows and arrows pass through.
-- **C.** As A, struck only: an arrow or the spear from the bank, nothing by hand.
-- **D.** In the rivers as scenery, never taken, until the survival page settles fishing (backlog L11).
-
-Recommendation A: only rules the game already has, a river worth wading into, nothing the survival page would have to undo. Devlogs `1712.md` and `1718.md`, branch `auto/systems-1716`.
-
-### Small wrongnesses — how loud is the wrongness? (from the concept artist, 2026-11-01, #1005)
-Backlog L5 (OG-096). The concept artist prototyped three world details beside one Gatelands lane in the new look: the Weaver door (the gate kit's arch at half size, alone in a pasture, 722 triangles), the watcher (the grey wolf sitting on a rise among three grazing sheep) and the carving (a 2.25 m stele, an adventurer in relief with four carvers turned away). The shapes are the same in every option. The question: how strong should the wrongness be?
-
-- **A.** Plain: no impossible element; each is odd only for where it stands and what it does.
-- **B (recommended).** One impossible element each, nothing lit: the door stands 0.14 m clear of the grass, the wolf casts no shadow while the sheep do, the adventurer is freshly cut in a worn stone. Found only by looking.
-- **C.** B plus a faint light that draws the eye: the door's script burns low amber, the wolf's eyes shine, the fresh cut glows pale. Each becomes a thing to find and could carry a journal line.
-
-Pictures: [A, B and C](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/wrongness-options.jpg) · [the lane](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/wrongness-wide.jpg). Write-up in `docs/concepts.md`.
-
 ### The dungeon's cell by kind: old gates at 3 m, and forts and lairs at what? (systems builder, Session 1105) — DECISION #421
 **The question.** F2b's last session sets a dungeon's grid cell at true scale; it is one unit today, so corridors are 1 m wide for a 1.8 m body. Michael chose **C, 3 m** on #300 and added: "If by dungeon we mean Old Gates, they should be extremely massive and cavernous. A normal 'dungeon' like a mine, or a cave can be a more typical size." The game has three kinds of underground place: the **old gates** (the world's portals, themed by school: crypts, haunted halls, elemental and deep caverns, ruins), **fort interiors** (the `fort_` layouts), and **lairs and dens** (a beast's lair, the cloak's den). So the cell can differ by kind, and "a more typical size" is a number a player feels.
 
@@ -44,6 +16,40 @@ Pictures: [A, B and C](https://raw.githubusercontent.com/mbuckley616/The-Old-Gat
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
 ## Answered
+### The places under the land — how you get in (from the look builder, 2026-11-02, #1026)
+Card F8's places on the land are in the world (the abbey S1715, the tower house S1725, the passage cairn S1732). Three prototypes are left, all under the ground: the limestone cave (#313 A, its lake under falls), the smugglers' lair (#314) and the tower house's cellar, souterrain and pit (#401 A). The open world's terrain is one height per point, so nothing can be dug into it. How do you get in?
+
+- **A (recommended).** Through a mouth, into a place of its own: a cave mouth or hatch is a door that loads the place as its own scene, as a lair's cavern door (`lairDoorFor`) and a gate's door do. Built whole at its measures (the cave's hall 64 × 46 × 26 m); nothing added to the open world.
+- **B.** Cut into the land: a hole in the terrain mesh, the place built below ground in the same scene; no fade, but it touches terrain, cells, collision and camera (deep-work code).
+- **C.** Only the mouths for now, nothing behind them, until the dungeon cards (F5) settle how under-places are made.
+
+Recommendation A: reuses the door, fade and return the game has, costs nothing in the open world, keeps each place full size. Next sessions: the cave in the Gatelands' limestone, then the lair at a cove, then the cellar under its hatch. Pictures: `docs/prototypes/levelup/`; the cairn's door, branch `auto/look-1732`, `docs/prototypes/cairn-world-door.jpg`.
+
+Michael: **Through a mouth, into a place of its own** (A). (2026-11-02)
+
+### The trout in the rivers — how you take one (from the systems builder, 2026-11-02, #1014)
+The bodies builder's Session 1712 gave the trout a body (`buildAnimal('Trout', key)`); nothing puts it in the rivers yet, and how you take one is a rule the build has not got (#984's A covered the land animals and the birds, not fish). The sea's fish today are schools you swim into and take with E (`catchFish`).
+
+- **A (recommended).** In the rivers and lakes, taken both ways the game already has: a chunk within 150 m on a river reach or lake rolls one to three trout by its id, holding a metre under the surface. Swim to one and E takes it, as at sea; or strike it from the bank with an arrow or the spear. Seen or heard, they dart 10 m downstream. A trout is 1 *Trout* (0.6 weight, 9 gold).
+- **B.** As A, taken by hand only: E while swimming; blows and arrows pass through.
+- **C.** As A, struck only: an arrow or the spear from the bank, nothing by hand.
+- **D.** In the rivers as scenery, never taken, until the survival page settles fishing (backlog L11).
+
+Recommendation A: only rules the game already has, a river worth wading into, nothing the survival page would have to undo. Devlogs `1712.md` and `1718.md`, branch `auto/systems-1716`.
+
+Michael: **Both: E while swimming, or arrow/spear from the bank** (A). (2026-11-02)
+
+### Small wrongnesses — how loud is the wrongness? (from the concept artist, 2026-11-01, #1005)
+Backlog L5 (OG-096). The concept artist prototyped three world details beside one Gatelands lane in the new look: the Weaver door (the gate kit's arch at half size, alone in a pasture, 722 triangles), the watcher (the grey wolf sitting on a rise among three grazing sheep) and the carving (a 2.25 m stele, an adventurer in relief with four carvers turned away). The shapes are the same in every option. The question: how strong should the wrongness be?
+
+- **A.** Plain: no impossible element; each is odd only for where it stands and what it does.
+- **B (recommended).** One impossible element each, nothing lit: the door stands 0.14 m clear of the grass, the wolf casts no shadow while the sheep do, the adventurer is freshly cut in a worn stone. Found only by looking.
+- **C.** B plus a faint light that draws the eye: the door's script burns low amber, the wolf's eyes shine, the fresh cut glows pale. Each becomes a thing to find and could carry a journal line.
+
+Pictures: [A, B and C](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/wrongness-options.jpg) · [the lane](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/wrongness-wide.jpg). Write-up in `docs/concepts.md`.
+
+Michael: **One impossible element each, nothing lit** (B). (2026-11-02)
+
 ### Legendary weapons — when does a legendary show its power? (from the concept artist, 2026-10-31, #960)
 Backlog L7 (OG-075). The concept artist prototyped fifteen legendary weapons in the new look, five per island, each with its own outline, material and effect (runes burning, arcs on an edge, frost mist, sparks, motes); 1.1k to 3.8k triangles each, 31.3k for all fifteen, no point lights (emissive plus bloom). Names and stories are the quest writer's; how each plays is the systems builder's. The question: when should a legendary's effect show?
 
