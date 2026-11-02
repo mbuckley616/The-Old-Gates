@@ -75,6 +75,7 @@ def build(name, title, note, srcfile, use_common, query=''):
         s = scene(src)
         if "from './wrongness.js'" in s: s = kits(s, ['gatekit', 'creatures', 'wrongness'])
         if "from './legendary.js'" in s: s = kits(s, ['legendary'])
+        if "from './wagons.js'" in s: s = kits(s, ['creatures', 'wagons'])
         if "from './herbs.js'" in s: s = kits(s, ['herbs'])
         if "from './wonders.js'" in s: s = kits(s, ['gatekit', 'wonders'])
         if "from './halls.js'" in s: s = kits(s, ['pieces', 'ships', 'places', 'rooms', 'light', 'halls'])
@@ -190,4 +191,5 @@ build('herbs-field.html', 'Herbs by island', 'Every herb’s look, by island (L8
 build('wonders-places.html', 'Strange places', 'Strange places (L5, OG-106): a wonder an island, each the mark a failing gate left on a place. ?kind=lough|skyfall|orrery (the Drowned Ring, the Skyfall Fields, the Broken Orrery), &mode=quiet|alive|hour (A the shape alone, B always awake, C awake from dusk to dawn), &hour=day|night, &cam=wide|near. Drag to look.', 'wonders-view.js', True, '?kind=lough&mode=hour&hour=night')
 build('legendary-arms.html', 'Legendary weapons', 'Legendary weapons by island (L7, OG-075): five an island, each its own shape, material and effect, beside a person of the island. ?view=rack|all|atlas|close|scale, &island=gatelands|mark|aurenne, &mode=still|always|rest (A the shapes alone, B the effect always at full, C a fifth of it at rest and full in the hand), &piece=<key>. Drag to look.', 'legendary-view.js', True, '?view=rack&island=gatelands&mode=rest')
 build('wrongness-lane.html', 'Small wrongnesses', 'Small wrongnesses in a pleasant world (L5, OG-096): a Weaver door, a watcher and a carving beside one Gatelands lane. ?mode=plain|one|marked (A no impossible element, B one each and nothing lit, C the element and a faint light), &cam=wide|door|doorWide|watcher|watcherHigh|carving. Drag to look.', 'wrongness-view.js', True, '?mode=one&cam=wide')
+build('wagons-roads.html', 'Wagons by island', 'Wagons and carts by island (L3, OG-046): three an island on one running gear, with their teams from the creature kit. ?view=road|close|side|front, &island=gatelands|mark|aurenne, &mode=one|own|snow (A one kit painted by island, B each island its own three, C B and the Mark on runners in snow), &piece=<key>. Drag to look.', 'wagons-view.js', True, '?view=road&island=gatelands&mode=own')
 print('ok')
