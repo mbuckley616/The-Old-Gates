@@ -771,6 +771,25 @@ const ZONE_FOE_DEF={
 // open (passing time, the music). Pace in metres a second, walking and running
 const WILD_PACE={Deer:{walk:1.1,run:9},'Red Fox':{walk:1,run:7},'Brown Hare':{walk:.6,run:9},Badger:{walk:.6,run:4},Otter:{walk:.5,run:4},
   Raven:{walk:.35,run:11,fly:true},Crow:{walk:.4,run:10,fly:true},Trout:{walk:.3,run:4,swim:true}};
+// S1768 — the islands' own animals (L3: OG-009 the Gatelands', OG-031 the Mark's, OG-030 Aurenne's; their bodies the bodies builder's,
+// Sessions 1723 to 1757), peaceful as the common set (Michael's A on #984): one blow, no reward but their meat, built by buildAnimal and
+// driven by tickWildOne. Pace in metres a second, walking and running; fly, the birds whose plan soars (the rest run on foot). The four the
+// catalogue calls aggressive or hostile (the Gatefen Boar, the Icecrab, the Saltspine Monitor, the Sand Wyrm) are not here: how they
+// fight is asked (DECISION, Session 1768). The fish (the River Pike, the Riverjaw Salmon) wait with them
+const WILD_ISLE_KINDS={
+  'Elderstag':{walk:1.1,run:9},'Redspine Fox':{walk:1,run:7},'Hollowcat':{walk:.7,run:8},'Greenward Stoat':{walk:.5,run:5},
+  'Great Heron':{walk:.4,run:5},'Crag Hawk':{walk:.3,run:12,fly:true},'Capercaillie':{walk:.4,run:5},
+  'Marsh Frog':{walk:.2,run:1.5},'Stonecrawler':{walk:.3,run:3},'Mire Snake':{walk:.3,run:1.5},'Lantern Beetle':{walk:.05,run:.3},
+  'Icehorn':{walk:.8,run:6},'Ironpine Elk':{walk:1.1,run:8.5},'Craghorn Ram':{walk:.8,run:7},'Stormlynx':{walk:.7,run:8},
+  'Glacial Marmot':{walk:.4,run:3.5},'Snowleap Hare':{walk:.6,run:9},'Skyraven':{walk:.35,run:11,fly:true},
+  'Stormshrike':{walk:.3,run:12,fly:true},'Tundra Grouse':{walk:.4,run:5},'Frostspine Lizard':{walk:.3,run:3},
+  'Duneskimmer':{walk:1.2,run:11},'Terrace Ram':{walk:.8,run:7},'Sunspire Lynx':{walk:.7,run:9},'Oasis Hare':{walk:.6,run:9},
+  'Mirage Fox':{walk:1,run:7},'Scarlet Ibis':{walk:.4,run:5},'Cypress Stalker':{walk:.4,run:5},'Sunbeak Vulture':{walk:.3,run:11,fly:true},
+  'Cliffswift':{walk:.1,run:12,fly:true},'Glasswing Moth':{walk:.05,run:3,fly:true},'Amber Shellcrab':{walk:.2,run:1.5},'Spined Gekko':{walk:.3,run:3}};
+for(const k in WILD_ISLE_KINDS){const P=WILD_ISLE_KINDS[k];WILD_PACE[k]=P;
+  const body=(WOLF_KINDS[k]&&WOLF_KINDS[k].wild)?'wolf':BIRD[k]?'bird':(SWIMMER[k]&&SWIMMER[k].land)?'crawl':null;if(!body)continue;
+  const col=body==='wolf'?WOLF_KINDS[k].coat:body==='bird'?BIRD[k].col:SWIMMER[k].col;
+  ZONE_FOE_DEF[k]={minLevel:1,col,eyeCol:0x0a0a0c,hp:1,maxHp:1,spd:1.0,dmg:0,atk:9,xpVal:0,scale:1,shape:body,def:0,resist:{},wild:true};}
 // S1759 — a trout holds a metre under the surface, head to the current, wandering a little where the water is deep enough to hide it.
 // Seen or heard (the same senses) it darts 10 m downstream (on a lake, away from you) and holds again. Under the water an arrow strikes it
 // only when it passes within 0.6 m of the fish's height (wildArrowMisses), and of the blows only the spear's reaches it (strikeCandidate)
@@ -872,8 +891,8 @@ function buildZoneEnemy(sc,sol,x,z,type,variantKey,zOpts){
   if(type==='Dragon'&&WOLF_KINDS.Dragon){ // v80 S177 — the dragon on the shape kit: the wolf's bones and gait, its own neck, tail and wings
     wolfRig=buildWolf(type,sc2/1.8*WOLF_KINDS.Dragon.world);g.add(wolfRig.root);limbs.torso=wolfRig.mesh;limbs.wolf=wolfRig;
   }
-  else if(d.wild&&((WOLF_KINDS[type]&&WOLF_KINDS[type].wild)||(typeof BIRD!=='undefined'&&BIRD[type])||(d.swim&&typeof SWIMMER!=='undefined'&&SWIMMER[type]))){ /* S1759 — or a trout (buildSwimmer) */ /* S1711 — or a bird (buildBird) */ /* S1707 — a peaceful animal at its own size, its kit body keyed by the spawner's id (a hind by it, S1706) */
-    wolfRig=buildAnimal(type,zOpts&&zOpts.key!=null?zOpts.key:null);g.add(wolfRig.root);limbs.torso=wolfRig.mesh;limbs.wolf=wolfRig;
+  else if(d.wild&&((WOLF_KINDS[type]&&WOLF_KINDS[type].wild)||(typeof BIRD!=='undefined'&&BIRD[type])||(typeof SWIMMER!=='undefined'&&SWIMMER[type]&&(d.swim||SWIMMER[type].land)))){ /* S1768 — or one of the islands' on the land path (a snake, a lizard, a frog, a beetle, a crab) */ /* S1759 — or a trout (buildSwimmer) */ /* S1711 — or a bird (buildBird) */ /* S1707 — a peaceful animal at its own size, its kit body keyed by the spawner's id (a hind by it, S1706) */
+    wolfRig=buildAnimal(type,zOpts&&zOpts.key!=null?zOpts.key:null,zOpts&&zOpts.island); /* S1768 — the island's coat (S1721) */g.add(wolfRig.root);limbs.torso=wolfRig.mesh;limbs.wolf=wolfRig;
   }
   else if(zShapeExtra(type,d,g,mat,sc2,limbs)){}
   else if((d.shape==='wolf'||type==='Cave Bear')&&WOLF_KINDS[type]){ // v80 S166 (S223: and the Cave Bear, still a brute) — the wolf family on the shape kit: one skinned mesh, planted paws
