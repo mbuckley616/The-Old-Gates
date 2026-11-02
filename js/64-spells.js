@@ -1490,21 +1490,22 @@ function touchFire(){if(typeof CAMPFIRES==='undefined'||activeZoneId!=='world'||
 function douseFire(f){const i=CAMPFIRES.indexOf(f);if(i<0)return false;dropFire(f);CAMPFIRES.splice(i,1);if(SKILL_DEF.uisce)skillUse('uisce',1,'douse');return true;}
 // S1680 — a touch on a gate's things (the look builder's S1675 braziers and webs, S1678 pools): Caor "lights a brazier, burns a web",
 // Sioc "freezes a pool". The thing's nearest surface (a brazier's 0.55 m bowl, a web's span, a pool's kerb) within the touch's 1.6 m of
-// your edge and in its 60° cone, on your floor; the nearest wins. Caor's touch is also a blow of 30, so a foe in reach takes it first and
+// your edge and in its 60° cone, on your floor; the nearest wins. S1717: Loscadh's touch fires a lair's dry brush (#973 A, S1708's fireBrush),
+// measured to its span as a web is; its touch deals nothing, so the brush comes first. Caor's touch is also a blow of 30, so a foe in reach takes it first and
 // the thing is touched only when none is; Sioc's does nothing to a foe, so the pool comes first, as Uisce's fire does. One use of the school.
-const TOUCH_THING={caor:['brazier','web'],sioc:['pool']};
+const TOUCH_THING={caor:['brazier','web'],sioc:['pool'],loscadh:['brush']};
 function touchGateThing(word){const kinds=TOUCH_THING[word];if(!kinds||typeof GATE_THINGS==='undefined'||!(lid&&lid.startsWith('dyn_')))return null;
   const reach=FORMS.touched.reach+HULL_YOU,c=Math.cos(FORMS.touched.cone/2*Math.PI/180);let best=null,bd=1e9;
-  for(const t of GATE_THINGS){if(kinds.indexOf(t.kind)<0||t.floor!==currentFloor||(t.kind==='brazier'?t.lit:t.kind==='pool'?t.frozen:t.burnt))continue;
+  for(const t of GATE_THINGS){if(kinds.indexOf(t.kind)<0||t.floor!==currentFloor||(t.kind==='brazier'?t.lit:t.kind==='pool'?t.frozen:(t.burnt||t.burning)))continue;
     let qx=t.x,qz=t.z,d;
-    if(t.kind==='web'){const s=t.solid;qx=Math.max(s.x0,Math.min(s.x1,px));qz=Math.max(s.z0,Math.min(s.z1,pz));d=Math.hypot(px-qx,pz-qz);}
+    if(t.kind==='web'||t.kind==='brush'){const s=t.solid;qx=Math.max(s.x0,Math.min(s.x1,px));qz=Math.max(s.z0,Math.min(s.z1,pz));d=Math.hypot(px-qx,pz-qz);}
     else d=Math.max(0,Math.hypot(t.x-px,t.z-pz)-(t.kind==='pool'?t.R:.55));
     if(d>reach+1e-9)continue;const dx=qx-px,dz=qz-pz,h=Math.hypot(dx,dz);
     if(h>1e-3&&(-dx*Math.sin(yaw)-dz*Math.cos(yaw))/h<c-1e-9)continue;if(d<bd){bd=d;best=t;}}
   return best;}
-const TOUCH_THING_SAY={brazier:'The brazier catches.',web:'The web burns away to its moorings.',pool:'The pool freezes over.'};
+const TOUCH_THING_SAY={brazier:'The brazier catches.',web:'The web burns away to its moorings.',pool:'The pool freezes over.',brush:'The brush catches and burns.'};
 // touchThing: the named action. The touch of `word` acts on the gate's thing t (lightBrazier, burnWeb, freezePool are the build's)
-function touchThing(word,t){const ok=t.kind==='brazier'?lightBrazier(t):t.kind==='web'?burnWeb(t):t.kind==='pool'?freezePool(t):false;
+function touchThing(word,t){const ok=t.kind==='brazier'?lightBrazier(t):t.kind==='web'?burnWeb(t):t.kind==='pool'?freezePool(t):t.kind==='brush'?fireBrush(t):false;
   if(ok){const sc=WORD_BY[word]&&WORD_BY[word].school;if(sc&&SKILL_DEF[sc])skillUse(sc,1,'touch');}return ok;}
 function touchLand(T){const F=WORD_BY[T.word].forms.touched,e=touchTarget(),dun=lid&&lid.startsWith('dyn_');
   if(typeof sndSpell==='function')sndSpell(T.word,T.tier);
