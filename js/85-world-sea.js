@@ -600,6 +600,7 @@
     tickSeaSounds(dt);
     tickNetClimb(dt);
     SHIP._raiseT=(SHIP._raiseT||0)-dt;if(SHIP._raiseT<=0){SHIP._raiseT=1;tickShipRaise();}
+    tickShipCrew(dt); /* S1736 — her crew at their stations (86-world-crime.js) */
     if(!SHIP.mesh)return;
     if(worldState.ship&&(SHIP.sailing||onDeck())){SHIP._seaT=(SHIP._seaT||0)-dt;if(SHIP._seaT<=0){SHIP._seaT=1;SHIP.sea=seaState();}}else SHIP._seaT=0;
     if(SHIP.sailing){

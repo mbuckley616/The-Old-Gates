@@ -115,6 +115,34 @@ const mw = await page.evaluate(() => { const kb = BAG.slice(), ks = worldState.s
 console.log(JSON.stringify(mw));
 check(`the wreck's maiden lies in each island's deepest wreck (${mw.nations.join(', ')}; beds ${Object.values(mw.W).map(w => w.bed.toFixed(3)).join(', ')} m; worked out in ${mw.ms} ms), the same on a second count`, mw.nations.join() === 'aurenne,gatelands,mark' && mw.bedOk && mw.bed && mw.same && mw.deep && mw.deep.heads.join() === 'maiden', mw);
 check('another wreck holds no figurehead, and hers none once the maiden is found', mw.other && mw.other.heads.length === 0 && mw.after && mw.after.heads.length === 0, { other: mw.other, after: mw.after });
+// S1736 — her crew (the build sheet, session 4): two in her bunks, the carpenter's patches and the cook's meal from the sea chest, the navigator's reach
+const cr = await page.evaluate((pid) => { const site = WORLD.siteAnywhere(pid), ks = worldState.ship, kst = stashBag.slice(), ksail = SHIP.sailing, ksp = SHIP.speed, kmin = worldState.gameTimeAbsMinutes, kclk = worldState.gameTimeMinutes, out = {};
+  worldState.ship = { cls: 'sloop', hold: {}, hull: 50, rig: 100, fit: ['galley'] }; stashBag.length = 0;
+  out.notMet = crewAboard('cook'); for (const r of ['carpenter', 'cook', 'navigator']) crewMeet(r, site.id); out.noBunks = crewAboard('cook');
+  worldState.ship.fit.push('bunks'); const row = re => yardOffers(site).find(o => re.test(o.label)); out.rows = yardOffers(site).filter(o => /aboard|ashore/.test(o.label)).map(o => o.label);
+  out.a1 = row(/^Take the carpenter aboard/).fn(); out.a2 = crewAboard('cook'); out.third = crewAboard('navigator'); out.unfit = unfitShip('bunks');
+  _stashAdd(benchItem('plank', 2)); _stashAdd(survItem('pitch', 2)); _stashAdd(survItem('fish', 1));
+  // 200 s under way at 50% hull, in 1/60 s steps of the ship's own tick
+  const day = Math.floor((worldState.gameTimeAbsMinutes || 0) / 1440) + 1; const T = m => { worldState.gameTimeAbsMinutes = m; worldState.gameTimeMinutes = m % 1440; }; T(day * 1440 + 5 * 60); /* before the cook's hour */
+  SHIP.sailing = true; SHIP.speed = 5; SHIP._carpT = 0; const hs = []; for (let t = 0; t < 200 * 60; t++) { const h0 = worldState.ship.hull; tickShipCrew(1 / 60); if (worldState.ship.hull !== h0) hs.push(worldState.ship.hull - h0); }
+  out.patches = hs; out.hull = worldState.ship.hull; out.chest = { planks: stashBag.filter(b => b.plank).length, pitch: stashBag.filter(b => b.name === SURV_ITEMS.pitch.name).length };
+  // the cook at 6h
+  T(day * 1440 + 5 * 60); tickShipCrew(1 / 60); out.before6 = stashBag.filter(b => b.meal).length;
+  T(day * 1440 + 6 * 60 + 5); tickShipCrew(1 / 60); tickShipCrew(1 / 60); out.meals = stashBag.filter(b => b.meal).map(b => ({ n: b.name, q: b.qty || 1, s: b.meal.s })); out.fishLeft = stashBag.filter(b => b.food === 'fish').length;
+  // swap the cook for the navigator at the yard: her chart table wanted for his station
+  out.swap = row(/^Send the cook ashore/).fn(); out.nav = crewAboard('navigator'); out.navNoTable = navMapR(); worldState.ship.fit.push('chart'); out.navR = navMapR(); SHIP.sailing = false; SHIP.sailing = true;
+  WX.type = 'rain'; out.hintOn = navAboard();
+  // a save keeps them
+  const d = JSON.parse(ssStringify(_buildSavePayload())); worldState.ship = { cls: 'sloop' }; _applyLoadData(d); out.saved = { crew: worldState.ship.crew.slice(), ashore: Object.keys(worldState.ship.ashore).sort() };
+  // sunk: they swim for the nearest port
+  worldState.ship.hull = 0; const keepMesh = SHIP.mesh; out.sink = crewSink(); out.afterSink = { crew: worldState.ship.crew.length, ashore: Object.entries(worldState.ship.ashore).filter(([, v]) => v).length };
+  SHIP.sailing = ksail; SHIP.speed = ksp; worldState.gameTimeAbsMinutes = kmin; worldState.gameTimeMinutes = kclk; worldState.ship = ks; stashBag.splice(0, stashBag.length, ...kst); return out; }, pid);
+console.log(JSON.stringify(cr));
+check('the crew: none met, refused; met, none aboard without bunks; with bunks two aboard and the third refused; bunks not taken out under them', /not met/.test(cr.notMet) && /no bunks/.test(cr.noBunks) && cr.rows.includes('Take the carpenter aboard (free)') && /comes aboard/.test(cr.a1) && cr.a2 === true && /both are taken/.test(cr.third) && /send them ashore/.test(cr.unfit), cr);
+check('the carpenter: 200 s under way at hull 50, two patches (+18, then to the cap), the hull stops at 80, the chest\'s 2 planks and 2 pitch spent', cr.patches.join() === '18,12' && cr.hull === 80 && cr.chest.planks === 0 && cr.chest.pitch === 0, cr);
+check('the cook: nothing before 6h; at 6h one baked fish at ×1.0 into the sea chest, once a day', cr.before6 === 0 && cr.meals.length === 1 && cr.meals[0].q === 1 && cr.meals[0].s === 1 && /Fish/.test(cr.meals[0].n) && cr.fishLeft === 0, cr.meals);
+check('swapped free at the yard; the navigator with her chart table draws the minimap to 116 m at sea, 58 without the table; his ahead line without the oilskin', /goes ashore/.test(cr.swap) && cr.nav === true && cr.navNoTable === 58 && cr.navR === 116 && cr.hintOn, cr);
+check('a save keeps who is aboard and who waits; sunk, they swim for the nearest port', cr.saved.crew.join() === 'carpenter,navigator' && cr.saved.ashore.join() === 'cook' && /swim for/.test(cr.sink) && cr.afterSink.crew === 0 && cr.afterSink.ashore === 3, cr);
 await pick('sloop'); const i = await R();
 check('back to a sloop pays: the yard pays 1067', i.acts.join() === 'Refit her as a sloop (the yard pays 1067 gold)', i.acts);
 // the chat keeps no refit, sails or hold rows
