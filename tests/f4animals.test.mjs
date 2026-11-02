@@ -128,6 +128,36 @@ const blv = await page.evaluate(() => { const { rig, G } = _B[0], fx = -Math.sin
   CAM.position.set(G.position.x - fx * 60, G.position.y + 1.65, G.position.z - fz * 60); CAM.updateMatrixWorld(true); hcTick(8e5);
   const far = { L: rig.hc.L, stand: rig.mesh.visible }; for (const { G } of _B) G.parent.remove(G); hcTick(8.1e5); return { far, dropped: _B.every(b => !b.rig.hc && !HC_RIGS.has(b.rig)) }; });
 check(`at 60 m the raven is its stand-in (L${blv.far.L}); taken from the scene, both birds are dropped (${blv.dropped})`, blv.far.L === 2 && blv.far.stand && blv.dropped, blv);
+// Session 1712: the trout. No driver either: a stand-in (the far level), and near the kit's trout fitted nose to nose on its axis; it swims
+// by the water its group covers, and holding still its tail beats slowly on the clock
+const fish = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.cos(yaw), x = px + fx * 2.5, z = pz + fz * 2.5;
+  const rig = buildAnimal('Trout', 'f4trout:0'), G = new THREE.Group(); G.add(rig.root); G.position.set(x, WORLD.worldH(x, z) + .5, z); G.rotation.y = yaw + Math.PI / 2; WORLD.scene.add(G);
+  const e = { name: 'Trout', x, z, mesh: G, limbs: { wolf: rig, torso: rig.mesh }, dead: false }; rig.e = e; window._T = { rig, G, e };
+  CAM.position.set(px, worldH(px, pz) + 1.65, pz); CAM.updateMatrixWorld(true);
+  const ZE = ZONES.world.enemies; ZE.push(e); let k = 0; HBODY.last = -1e9; while (!rig.hc && !rig.hcFail && k++ < 300) hcTick(9e5 + k * (HBODY.gap + 1)); ZE.splice(ZE.indexOf(e), 1);
+  const H = rig.hc; if (!H) return { fail: !!rig.hcFail };
+  const r0 = G.rotation.y; G.rotation.y = 0; G.updateMatrixWorld(true); const bx = new THREE.Box3(); for (const m of H.C.meshes) bx.union(new THREE.Box3().setFromObject(m));
+  const sb = new THREE.Box3().setFromObject(rig.mesh); G.rotation.y = r0; G.updateMatrixWorld(true);
+  const sk = H.C.skel, t0 = performance.now; let i0 = 0;
+  const run = (n, sp) => { for (let i = 0; i < n; i++) { G.position.x += Math.sin(G.rotation.y) * sp / 60; G.position.z += Math.cos(G.rotation.y) * sp / 60; i0++;
+      performance.now = () => 9.5e5 + i0 * 1000 / 60; try { hcSwimPose(rig); } finally { performance.now = t0; } } sk.update(); return { m: Array.from(sk.boneMatrices), ph: rig.ph, g: rig.gaitNow }; };
+  const mv = (p, q) => { let m = 0; for (let i = 0; i < p.length; i++) m = Math.max(m, Math.abs(p[i] - q[i])); return +m.toFixed(3); };
+  const a = run(60, 0), b = run(60, .8), c = run(60, 0);
+  return { plan: H.C.g.plan, seed: H.C.g.seed, want: HC.hashKey(rig.hcKey), bones: H.C.bones.length, tris: H.C.stats.tris, stand: rig.tris, wolf: WOLF_RIGS.has(rig),
+    len: +(bx.max.z - bx.min.z).toFixed(3), nose: +(bx.max.z - sb.max.z).toFixed(3), mid: +((bx.max.y + bx.min.y) / 2 - G.position.y).toFixed(3),
+    hold: { g: a.g, cyc: +(a.ph).toFixed(2) }, swim: { g: b.g, cyc: +(b.ph - a.ph).toFixed(2) }, moved: [mv(a.m, b.m), mv(b.m, c.m)] }; });
+console.log('  trout:', JSON.stringify(fish));
+check(`the trout wears the kit's (${fish.plan}, ${fish.bones} bones, ${fish.tris} triangles, ${fish.len} m nose to tail swimming (the stand-in 0.4 straight), its nose ${fish.nose} m off the stand-in's, its middle ${fish.mid} m off the axis) over a ${fish.stand}-triangle stand-in, no wolf's driver`,
+  !fish.fail && fish.plan === 'game:Trout' && fish.seed === fish.want && fish.bones > 8 && fish.tris < 8000 && !fish.wolf && fish.len > .34 && fish.len < .42 && Math.abs(fish.nose) < .01 && Math.abs(fish.mid) < .06, fish);
+check(`it swims by its group: holding still ${fish.hold.g}, ${fish.hold.cyc} beats a second; at 0.8 m/s ${fish.swim.g}, ${fish.swim.cyc} beats a second; the bones moving (${fish.moved.join(', ')})`,
+  fish.hold.g === 'hold' && fish.swim.g === 'swim' && fish.swim.cyc > fish.hold.cyc * 2 && fish.moved.every(m => m > .005), fish);
+await page.evaluate(() => { const { G } = _T, fx = -Math.sin(yaw), fz = -Math.cos(yaw); G.position.y = WORLD.worldH(G.position.x, G.position.z) + .5; px = G.position.x - fx * 1.1; pz = G.position.z - fz * 1.1; pitch = -.78; });
+for (let i = 0; i < 8; i++) await g.frames(1);
+await page.screenshot({ path: path.join(OUT, 'f4-trout.jpg'), type: 'jpeg', quality: 80 });
+const tlv = await page.evaluate(() => { const { rig, G } = _T, fx = -Math.sin(yaw), fz = -Math.cos(yaw);
+  CAM.position.set(G.position.x - fx * 60, G.position.y + 1.65, G.position.z - fz * 60); CAM.updateMatrixWorld(true); hcTick(9.8e5);
+  const far = { L: rig.hc.L, stand: rig.mesh.visible }; G.parent.remove(G); hcTick(9.9e5); return { far, dropped: !rig.hc && !HC_RIGS.has(rig) }; });
+check(`at 60 m the trout is its stand-in (L${tlv.far.L}); taken from the scene, it is dropped (${tlv.dropped})`, tlv.far.L === 2 && tlv.far.stand && tlv.dropped, tlv);
 await page.evaluate(() => { REN.render(scene, CAM); });
 check('no page errors', g.errs.length === 0, g.errs.slice(0, 3));
 await g.close();
