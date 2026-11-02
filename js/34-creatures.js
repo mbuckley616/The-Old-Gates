@@ -30,6 +30,18 @@ const WOLF_KINDS={
   'Brown Hare':{coat:0x8f6b47,saddle:0x664a2e,belly:0xe6dbc7,eye:0x2a1a08,ruff:.6,ears:1.4,muzzle:.8,lean:.85,bulk:.95,neck:.05,world:.71,wild:true},
   'Badger':    {coat:0x85807a,saddle:0x615e5c,belly:0x1f1c1c,eye:0x0f0a08,ruff:.7,ears:.7,muzzle:.9,bulk:1.2,neck:.2,world:.535,wild:true},
   'Otter':     {coat:0x523824,saddle:0x3d291a,belly:0x9e8566,eye:0x0f0a08,ruff:.6,ears:.6,muzzle:.85,lean:.8,bulk:.9,neck:.05,world:.335,wild:true},
+  // Session 1719 — the farms' livestock (L3, OG-023 and OG-035; the kit's plans since Session 844): the cow, the sheep and the goat, on the
+  // horse's long legs as the deer is (their hips at the kit's: 1.23, 0.65 and 0.55 m); farm marks a kind buildAnimal builds (as wild does), its kit body keyed farm:<key>
+  'Cow':       {coat:0x7a4d2e,saddle:0x5c361f,belly:0xdbd1bd,eye:0x0f0a08,horse:true,legK:1.8,legs:{fore:{root:[-.03,.03],a:[-.22,-.04],b:[-.22,.02],c:[-.23,.01]},hind:{root:[-.02,-.02],a:[-.2,.08],b:[-.2,-.1],c:[-.26,.01]}},hipY:.70,bulk:1.25,eyePos:[.05,.02,.03],world:1.78,farm:true},
+  'Sheep':     {coat:0xdbd1b8,saddle:0xccc2a8,belly:0xc7bda3,eye:0x997f33,horse:true,legK:1.8,legs:{fore:{root:[-.03,.03],a:[-.22,-.04],b:[-.22,.02],c:[-.23,.01]},hind:{root:[-.02,-.02],a:[-.2,.08],b:[-.2,-.1],c:[-.26,.01]}},hipY:.70,bulk:1.1,eyePos:[.046,.02,.03],world:.935,farm:true},
+  'Goat':      {coat:0x998a75,saddle:0x665747,belly:0xd6ccb8,eye:0xbf9933,horse:true,legK:1.8,legs:{fore:{root:[-.03,.03],a:[-.22,-.04],b:[-.22,.02],c:[-.23,.01]},hind:{root:[-.02,-.02],a:[-.2,.08],b:[-.2,-.1],c:[-.26,.01]}},hipY:.70,bulk:.85,eyePos:[.046,.02,.03],world:.80,farm:true},
+  // Session 1722 — the Gatelands' own (L3, OG-009; the kit's GATELANDS since Session 846), wild as the common set: the Elderstag on the deer's
+  // legs, the Gatefen Boar on the boar's body, the Redspine Fox, the Hollowcat and the Greenward Stoat on the wolf's
+  'Elderstag': {coat:0x754a2b,saddle:0x4e3019,belly:0xd8c8a8,eye:0x140c08,horse:true,legK:1.8,legs:{fore:{root:[-.03,.03],a:[-.22,-.04],b:[-.22,.02],c:[-.23,.01]},hind:{root:[-.02,-.02],a:[-.2,.08],b:[-.2,-.1],c:[-.26,.01]}},hipY:.70,bulk:.9,eyePos:[.048,.02,.03],world:1.66,wild:true},
+  'Gatefen Boar':{coat:0x3d3329,saddle:0x241e18,belly:0x5e5040,eye:0x2a1a0c,boar:true,neck:.35,bulk:1.1,world:1.76,wild:true},
+  'Redspine Fox':{coat:0xa84d1a,saddle:0x5c2a10,belly:0xeee4d0,eye:0x2a1a08,ruff:.85,ears:1.2,muzzle:1.1,lean:.8,bulk:.92,neck:.1,world:.9,wild:true},
+  'Hollowcat': {coat:0x806b52,saddle:0x4e4030,belly:0xd0c4ac,eye:0x9a8a20,ruff:.6,ears:1.1,muzzle:.6,lean:.85,bulk:.9,neck:.06,world:.81,wild:true},
+  'Greenward Stoat':{coat:0x805733,saddle:0x5c3c22,belly:0xece2c8,eye:0x0f0a08,ruff:.5,ears:.6,muzzle:.8,lean:.75,bulk:.85,neck:.05,world:.165,wild:true},
   // the world's dragon (S177): the wolf's legs and gait under a long neck, a long tail, horns and two wings of its own
   'Dragon':    {coat:0x5a2a1a,saddle:0x3a160c,belly:0xa87a48,eye:0xff8020,dragon:true,bulk:1.28,neck:-.15,eyePos:[.05,.04,.104],world:4.5} // S524 — world: the scale every dragon is built at in play, and the inspector shows it so; S546 — 4.5, about twice a man's height (Michael's B on #153, was 2.88)
 };
@@ -298,8 +310,12 @@ function buildWolf(name,scale){
 // rig moved by its group walks and gallops by the ground it covers, as the coach's horses do
 // Session 1706: a deer is a hind one time in two by its key (its kit body the deer's without antlers, HC_KINDS' Hind), and a tenth smaller
 function animalHash(str){let h=2166136261;for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
-function buildAnimal(name,key){if(BIRD[name])return buildBird(name,key);if(SWIMMER[name])return buildSwimmer(name,key);const k=WOLF_KINDS[name];if(!k||!k.wild)return null;const hind=name==='Deer'&&key!=null&&(animalHash(String(key))&1)===1;
-  const rig=buildWolf(name,k.world*(hind?.9:1));if(key!=null)rig.hcKey='wild:'+key;if(hind)rig.hcKind='Hind';return rig;}
+// Session 1721: an island (one of the kit's ISLES: 'gatelands', 'mark', 'aurenne'; the spawner's nationAt(x, z)) gives the kit's body that
+// island's coat (HC.COATS, Sessions 865 and 866: the Mark's colder and greyer, Aurenne's sandier); the same bones and flesh, the same key
+function buildAnimal(name,key,island){const rig=buildAnimal0(name,key);if(rig&&ANIMAL_ISLES.includes(island))rig.hcIsland=island;return rig;}
+const ANIMAL_ISLES=['gatelands','mark','aurenne'];
+function buildAnimal0(name,key){if(BIRD[name])return buildBird(name,key);if(SWIMMER[name])return buildSwimmer(name,key);const k=WOLF_KINDS[name];if(!k||!(k.wild||k.farm))return null;const hind=name==='Deer'&&key!=null&&(animalHash(String(key))&1)===1;
+  const rig=buildWolf(name,k.world*(hind?.9:1));if(key!=null)rig.hcKey=(k.farm?'farm:':'wild:')+key;if(hind)rig.hcKind='Hind';return rig;}
 // Session 1710: the raven and the crow (L3, for #984's A; the systems builder's note on S1707: "the raven and crow need a bird driver
 // before they can spawn"). A bird has no four legs for the wolf's driver, so it has none: `buildAnimal('Raven'|'Crow', key)` gives a
 // rig whose root holds a plain stand-in (a body, a head, a beak, a tail and two legs, one mesh, the far level and the old look's) and,
@@ -309,6 +325,13 @@ function buildAnimal(name,key){if(BIRD[name])return buildBird(name,key);if(SWIMM
 // fly), else by the ground its group covers a second, standing, walking or hopping, the phase advanced by the ground covered over the
 // kit's own stride (the feet stay put). Killed, it is left as the kill laid it. A raven is 0.58 m from beak to tail, a crow 0.45
 const BIRD={Raven:{len:.58,col:0x141416,hop:.9},Crow:{len:.45,col:0x19191c,hop:.7},air:.3,walk:.05,beat:1.7};
+// Session 1719: the farms' hen (L3 livestock, OG-023 and OG-035; the kit's plan since Session 844) on the same path, keyed farm:<key>. She
+// does not fly: lifted, she keeps her ground gaits, and fast she runs at the kit's trot (run), not a hop. 0.40 m from beak to tail
+BIRD.Hen={len:.4,col:0x99602e,hop:.8,run:'trot',farm:true};
+// Session 1723: the Gatelands' three (L3, OG-009; the kit's GATELANDS), wild. What a bird does fast and aloft is read from its plan's gaits
+// (hcBirdPose): it hops if it has a hop, else trots, else walks; it soars only if it has a soar. So the Crag Hawk walks and soars, the Great
+// Heron walks (lifted, it keeps walking), the Capercaillie trots as the hen does. Beak to tail 0.95, 0.55 and 0.85 m (the cock)
+BIRD['Great Heron']={len:.95,col:0x9ea3a8,hop:1.2};BIRD['Crag Hawk']={len:.55,col:0x704f33,hop:.9};BIRD.Capercaillie={len:.85,col:0x1f2124,hop:1};
 function birdStandIn(len,col){const k=len/.535,parts=[],M=new THREE.Matrix4(),put=(geo,x,y,z,sx,sy,sz,rx)=>{M.makeRotationX(rx||0);
     const g=geo.index?geo.toNonIndexed():geo;g.applyMatrix4(new THREE.Matrix4().makeScale(sx,sy,sz).premultiply(M).premultiply(new THREE.Matrix4().makeTranslation(x*k,y*k,z*k)));parts.push(g);};
   put(new THREE.SphereGeometry(1,10,7),0,.17,0,.08*k,.075*k,.17*k);put(new THREE.SphereGeometry(.055*k,8,6),0,.25,.15,1,1,1);
@@ -319,7 +342,7 @@ function birdStandIn(len,col){const k=len/.535,parts=[],M=new THREE.Matrix4(),pu
   const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(P,3));geo.setAttribute('normal',new THREE.BufferAttribute(N,3));geo.computeBoundingSphere();
   const m=new THREE.Mesh(geo,new THREE.MeshLambertMaterial({color:col}));m.castShadow=true;m.name='bird';return m;}
 function buildBird(name,key){const B=BIRD[name];if(!B)return null;const root=new THREE.Group();root.name='kitroot';const mesh=birdStandIn(B.len,B.col);root.add(mesh);
-  const rig={name,bird:true,fish:true,crawl:true,gait:'stand',k:{bird:true},root,mesh,e:null,hcKey:'wild:'+(key!=null?key:name),reach:1,ph:0,t:0,lx:null,lz:null,v:0,tris:mesh.geometry.attributes.position.count/3};
+  const rig={name,bird:true,fish:true,crawl:true,gait:'stand',k:{bird:true},root,mesh,e:null,hcKey:(B.farm?'farm:':'wild:')+(key!=null?key:name),reach:1,ph:0,t:0,lx:null,lz:null,v:0,tris:mesh.geometry.attributes.position.count/3};
   root.userData.rig=rig;return rig;}
 // the bird's pose, near: the gait by where its group is, the phase by the ground it covers (or by the clock aloft and standing)
 function hcBirdPose(rig){const H=rig.hc,e=rig.e,g=e&&e.mesh;if(!H||!g||e.dead)return;const now=performance.now()/1000,dt=rig.t?Math.min(.1,now-rig.t):0;rig.t=now;
@@ -327,7 +350,8 @@ function hcBirdPose(rig){const H=rig.hc,e=rig.e,g=e&&e.mesh;if(!H||!g||e.dead)re
   const x=g.position.x,z=g.position.z;let d=rig.lx==null?0:Math.hypot(x-rig.lx,z-rig.lz);rig.lx=x;rig.lz=z;if(d>2)d=0;
   rig.v=dt>0?rig.v+(d/dt-rig.v)*Math.min(1,dt*6):rig.v;
   const gy=typeof activeTerrainH==='function'?activeTerrainH(x,z):g.position.y,up=g.position.y-gy>BIRD.air,B=BIRD[rig.name]||BIRD.Raven;
-  const gait=up?'soar':rig.v>B.hop?'hop':rig.v>BIRD.walk?'walk':'stand',C=H.C;
+  const C=H.C,PG=C.plan.gaits||['hop','soar'],fast=B.run||(PG.includes('hop')?'hop':PG.includes('trot')?'trot':'walk');
+  const gait=up&&PG.includes('soar')?'soar':rig.v>B.hop?fast:rig.v>BIRD.walk?'walk':'stand';
   C.gait=gait;
   if(gait==='soar'||gait==='stand')rig.ph+=dt*(gait==='soar'?BIRD.beat:.25);else rig.ph+=d/Math.max(1e-3,HC.strideOf(C)*H.f);
   HC.pose(C,rig.ph);
@@ -342,6 +366,8 @@ function hcBirdPose(rig){const H=rig.hc,e=rig.e,g=e&&e.mesh;if(!H||!g||e.dead)re
 // world's foes. It swims always: the tail's phase moves by the water its group covers over the kit's own stride (0.7 of its length),
 // and holding still in the current it beats slowly on the clock (SWIMMER.idle, cycles a second). A trout is 0.40 m nose to tail
 const SWIMMER={Trout:{len:.4,col:0x6e6a48,belly:0xd8cfb0},idle:.6};
+// Session 1724: the Gatelands' River Pike (L3, OG-009: deep rivers and lakes; the kit's riverpike), on the trout's path, 0.80 m nose to tail
+SWIMMER['River Pike']={len:.8,col:0x66753d,belly:0xe0dbb3};
 function fishStandIn(len,col){const k=len/.4,parts=[],M=new THREE.Matrix4(),put=(geo,x,y,z,sx,sy,sz,ry)=>{M.makeRotationY(ry||0);
     const g=geo.index?geo.toNonIndexed():geo;g.applyMatrix4(new THREE.Matrix4().makeScale(sx,sy,sz).premultiply(M).premultiply(new THREE.Matrix4().makeTranslation(x*k,y*k,z*k)));parts.push(g);};
   put(new THREE.SphereGeometry(1,10,6),0,0,.03,.032*k,.045*k,.15*k);
@@ -877,8 +903,8 @@ const HC_KINDS={'Wolf':{plan:'wolf'},'Snow Wolf':{plan:'wolf',own:true},'Dire Wo
   'Golem':{plan:'golem',own:true,person:true,merge:true,ik:true,tall:true,glow:[.42,.69,1],glowR:.02},
   'Gargoyle':{plan:'gargoyle',own:true,person:true,merge:true,ik:true,glow:[1,.31,.13],glowR:.032,glowAt:{f:.8,up:.55,out:.5},garg:true},
   'Wraith':{plan:'wraith',own:true,person:true,legless:true,rest:HC_WRAITH_REST},'Phantom':{plan:'phantom',own:true,person:true,legless:true,rest:HC_WRAITH_REST},
-  'Deer':{plan:'deer',ik:true},'Hind':{plan:'deer',own:true,ik:true,bare:true},'Red Fox':{plan:'redfox'},'Brown Hare':{plan:'brownhare'},'Badger':{plan:'badger'},'Otter':{plan:'otter'},
-  'Shark':{plan:'reefshark',fish:true},'Whale':{plan:'stormwhale',fish:true},'Dolphin':{plan:'stormswift',fish:true},'Gull':{plan:'gull',fish:true,own:true,cell:.014},'Raven':{plan:'raven',fish:true,own:true,cell:.014},'Crow':{plan:'crow',fish:true,own:true,cell:.012},'Trout':{plan:'trout',fish:true,own:true,cell:.014},'Slime':{plan:'slime',fish:true},'Fire Elemental':{plan:'fireelemental',fish:true}};
+  'Deer':{plan:'deer',ik:true},'Hind':{plan:'deer',own:true,ik:true,bare:true},'Red Fox':{plan:'redfox'},'Brown Hare':{plan:'brownhare'},'Badger':{plan:'badger'},'Otter':{plan:'otter'},'Cow':{plan:'cow',ik:true},'Sheep':{plan:'sheep',ik:true},'Goat':{plan:'goat',ik:true},'Elderstag':{plan:'stag',ik:true},'Gatefen Boar':{plan:'gatefenboar'},'Redspine Fox':{plan:'redspinefox'},'Hollowcat':{plan:'hollowcat'},'Greenward Stoat':{plan:'stoat'},
+  'Shark':{plan:'reefshark',fish:true},'Whale':{plan:'stormwhale',fish:true},'Dolphin':{plan:'stormswift',fish:true},'Gull':{plan:'gull',fish:true,own:true,cell:.014},'Raven':{plan:'raven',fish:true,own:true,cell:.014},'Crow':{plan:'crow',fish:true,own:true,cell:.012},'Trout':{plan:'trout',fish:true,own:true,cell:.014},'River Pike':{plan:'riverpike',fish:true,own:true,cell:.02},'Hen':{plan:'hen',fish:true,own:true,cell:.012},'Great Heron':{plan:'heron',fish:true,own:true,cell:.016},'Crag Hawk':{plan:'craghawk',fish:true,own:true,cell:.014},'Capercaillie':{plan:'capercaillie',fish:true,own:true,cell:.016},'Slime':{plan:'slime',fish:true},'Fire Elemental':{plan:'fireelemental',fish:true}};
 // the driver's joints and the kit's bones they move, parents first (the kit's front legs hang on spine3, the hind on spine0)
 const HC_MAP=[['hips','spine0'],['spine','spine1'],['neck','neck0'],['head','head'],['jaw','jaw'],['tail1','tail0'],['tail2','tail1'],['tail3','tail2'],
   ['shL','leg0L_0'],['elL','leg0L_1'],['wrL','leg0L_2'],['pfL','leg0L_3'],['shR','leg0R_0'],['elR','leg0R_1'],['wrR','leg0R_2'],['pfR','leg0R_3'],
@@ -915,12 +941,14 @@ function hcPlan(name){const K=HC_KINDS[name];if(!K.own)return K.plan;const id='g
   if(!HC.PLANS[id]&&(K.spider||!WOLF_KINDS[name]))HC.PLANS[id]=Object.assign({},HC.PLANS[K.plan],{name,cell:K.cell},K.bare?{parts:HC.PLANS[K.plan].parts.map(([k,o])=>k==='head'?[k,Object.assign({},o,{antlers:null})]:[k,o])}:{});
   if(!HC.PLANS[id]){const k=WOLF_KINDS[name],c=h=>[(h>>16&255)/255,(h>>8&255)/255,(h&255)/255];
     HC.PLANS[id]=Object.assign({},HC.PLANS[K.plan],K.cell?{cell:K.cell}:{},{name,palette:Object.assign({},HC.PLANS[K.plan].palette,{coat:c(k.coat),saddle:c(k.saddle),belly:c(k.belly)},HC.PLANS[K.plan].palette.mane?{mane:c(k.saddle)}:{})});}
+  // an own plan takes its kit plan's island coats (Session 1721: the hind the deer's, the hen and the crow their own)
+  if(HC.COATS)for(const isle in HC.COATS){const T=HC.COATS[isle];if(T[K.plan]&&!T[id])T[id]=T[K.plan];}
   return id;}
 // a wolf the kit may dress: one of HC_KINDS, on the wolf's own body (not a boss on it, unless its builder names its kind: rig.hcKind)
 function hcKind(rig){return rig.hcKind||rig.name;}
 function hcOk(rig){const K=HC_KINDS[hcKind(rig)];return !!K&&!K.fish&&!rig.spider===!K.spider&&(!!rig.hcKind||!rig.hunch&&!(rig.e&&rig.e.bossId));}
 // its genome, keyed by its foe id (or its name)
-function hcGenome(rig){const key=rig.hcKey||(HC_KINDS[hcKind(rig)].person?'foe:'+(rig.e&&rig.e.id!=null?rig.e.id:rig.g.seed):'wolf:'+(rig.e&&rig.e.id!=null?rig.e.id:rig.name));return HC.genome(hcPlan(hcKind(rig)),key);}
+function hcGenome(rig){const key=rig.hcKey||(HC_KINDS[hcKind(rig)].person?'foe:'+(rig.e&&rig.e.id!=null?rig.e.id:rig.g.seed):'wolf:'+(rig.e&&rig.e.id!=null?rig.e.id:rig.name));return HC.genome(hcPlan(hcKind(rig)),key,rig.hcIsland?{island:rig.hcIsland}:{});}
 // C, the kit's body when hcTick has built it a step at a time; without it (foewarm) the body is built here in one go
 function hcAttach(rig,C){const tA=performance.now();
   if(!C)try{C=HC.build(hcGenome(rig));}catch(e){rig.hcFail=true;console.warn('F4: the kit could not build',rig.name,e);return;}
