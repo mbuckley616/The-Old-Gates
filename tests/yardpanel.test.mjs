@@ -105,11 +105,11 @@ check('found: the beast’s skull off the first lair master slain; the gate ston
 check('a save keeps her figurehead, the yard’s store, her carving and a token in the bag', fh.saved.head === 'yard' && fh.saved.heads.join() === 'stone,maiden' && fh.saved.yard === 'mark' && fh.saved.token.join() === 'sea', fh.saved);
 // S1736 — the wreck's maiden: in each island's deepest wreck, worked out once by the chunks' hashes and the bed, the same on a second count
 const mw = await page.evaluate(() => { const kb = BAG.slice(), ks = worldState.ship, out = {}; worldState.ship = { cls: 'sloop' }; BAG.length = 0;
-  const S0 = SEA_WRECKS; out.drift = S0 ? Math.max(0, ...S0.map(w => Math.abs(worldH(w.x, w.z) - w.bed))) : null; out.cachedN = S0 ? S0.length : null;
+  const S0 = SEA_WRECKS; out.drift = S0 ? Math.max(0, ...S0.map(w => Math.abs(placeH(w.x, w.z) - w.bed))) : null; out.cachedN = S0 ? S0.length : null;
   MAIDEN_WRECKS = null; SEA_WRECKS = null; const t0 = performance.now(); const W = maidenWrecks(); out.ms = Math.round(performance.now() - t0); out.n = SEA_WRECKS.length; out.W = JSON.parse(JSON.stringify(W)); MAIDEN_WRECKS = null; SEA_WRECKS = null; out.same = JSON.stringify(maidenWrecks()) === JSON.stringify(W);
   const spawn = key => { const [cx, cz] = key.split(',').map(Number); const ch = { cx, cz, group: new THREE.Group(), sol: [], loot: [] }; spawnWreck(ch); const c = ch.loot[0]; return c ? { at: [Math.round(c.x), Math.round(c.z)], heads: c.items.filter(i => i.figurehead).map(i => i.figurehead) } : null; };
   const n0 = Object.keys(W)[0]; out.nations = Object.keys(W).sort(); out.deep = spawn(W[n0].key); out.bedOk = Object.values(W).every(w => w.bed < -2.5 && w.bed > -8);
-  out.bed = worldH(W[n0].x, W[n0].z) === W[n0].bed;
+  out.bed = placeH(W[n0].x, W[n0].z) === W[n0].bed; /* S1765 — the bed is the land keyed by place (placeH), not worldH */
   let other = null; for (let cz = 0; cz < 450 && !other; cz++) for (let cx = 0; cx < 450 && !other; cx++) { const k = cx + ',' + cz; if (hash01(cx, cz, 150) > .06 || Object.values(W).some(w => w.key === k)) continue; const r = spawn(k); if (r) other = r; }
   out.other = other; grantHead('maiden'); out.after = spawn(W[n0].key);
   BAG.splice(0, BAG.length, ...kb); worldState.ship = ks; return out; });
