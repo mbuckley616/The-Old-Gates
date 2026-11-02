@@ -2,7 +2,7 @@
 // generated ruin in the Gatelands is the kit's abbey (PKIT.places.abbey) on its level pad, its gate to the first road out. The suite
 // settles the nearest one and checks the walk (the green, the gate, the nave, the west door, the chancel arch and a cell open), the walls
 // (the nave's, the gable beside its door, the tower, the cashel, a cell's) solid, its cost (under 30,000 triangles in 10 draws or fewer),
-// its far copy away from it (one ruin in two is the tower house since Session 1725: the suite takes an abbey's), and that a named ruin (Caer Uaigneach, the canon's plague village) keeps its own heaps.
+// its far copy away from it (one ruin in two is the tower house since Session 1725: the suite takes an abbey's), and that a named ruin (Caer Uaigneach, the canon's plague village) keeps its own heaps. Session 1751: no Gatelands site under snow.
 import { boot, check } from './lib/game.mjs';
 const g = await boot({ look: 'new' }); const { page } = g; await g.intoWorld();
 await page.evaluate(() => REN.setSize(320, 180, false));
@@ -22,6 +22,10 @@ check(`${id} is the abbey: ${r.tris} triangles in ${r.draws} draws, the tower ${
 check('open: the green, the gate, outside it, the nave, the west door, the chancel arch, a cell and its door', !r.none && Object.values(r.open).every(v => !v), r);
 check('solid: the nave\'s wall, the west gable beside its door, the round tower, the cashel, a cell\'s wall', !r.none && Object.values(r.solid).every(v => v), r);
 check(`from 400 m its far copy (${r.farTris} triangles) stands in for it`, !r.none && r.farOn && r.farTris < 3000, r);
+// S1751: the temperate snow line was 38 m and the abbey's ground (c7_9_s5 at 99 m) white all year; no Gatelands site stands within 8 m of it now
+const sn = await page.evaluate(() => { const S = [...CELLS.values()].filter(c => c.type !== 'sea' && nationKeyOf(c.i, c.j) === 'gatelands').flatMap(c => c.sites);
+  const m = S.map(s => ({ id: s.id, d: snowLineAt(s.x, s.z) - rawH(s.x, s.z) })).sort((a, b) => a.d - b.d); return { n: S.length, lowest: m[0], under: m.filter(q => q.d < 8).length }; });
+check(`no Gatelands site stands within 8 m of the snow line (${sn.n} sites; nearest ${sn.lowest.id}, ${sn.lowest.d.toFixed(1)} m under)`, sn.n > 100 && sn.under === 0, sn);
 const named = await page.evaluate(() => { const t = SITE.caer_uaigneach; return t ? { kind: t.kind, gl: nationKeyOf(...cellOf(t.x, t.z)) === 'gatelands' } : null; });
 if (named && named.kind === 'ruin' && await g.settle('caer_uaigneach')) {
   const k = await page.evaluate(() => !WORLD.settle.get('caer_uaigneach').abbey);
