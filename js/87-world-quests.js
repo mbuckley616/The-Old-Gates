@@ -302,6 +302,7 @@ const giver=`${lord.title} ${lord.name}`;
     for(const q of qActive()){if(q.done)continue;
       if(q.kind==='errand'&&q.sub==='letter'){erLetterTick(q);continue;} /* S1554 */
       if(q.kind==='errand'&&q.sub==='debt'){erDebtTick(q);continue;} /* S1677 */
+      if(q.kind==='errand'&&q.sub==='borrowed'){erBorrowTick(q);continue;} /* S1722 */
       if(q.kind==='retrieve'&&q.data.fixed&&!q.data.got&&dungeonWorldPos[q.data.seed]){const w=dungeonWorldPos[q.data.seed];q.data.fixed=false;q.data.x=w.x+7;q.data.z=w.z+5; /* S985 — the job was given before its gate was placed: the thing lies by the real door */
         if(q._obj){const y=worldH(q.data.x,q.data.z)+.2;q._obj.m.position.set(q.data.x,y,q.data.z);q._obj.l.position.copy(q._obj.m.position);const pk=pickups.find(o=>o.id===q.id+':pickup');if(pk){pk.x=q.data.x;pk.z=q.data.z;}}}
       if(q.kind==='retrieve'&&!q.data.got&&!q._obj){const m=new THREE.Mesh(new THREE.BoxGeometry(.5,.4,.5),new THREE.MeshLambertMaterial({color:0xc8a040}));m.position.set(q.data.x,worldH(q.data.x,q.data.z)+.2,q.data.z);sc.add(m);const l=regLight(0xffd080,.8,5,'quest');l.position.copy(m.position);q._obj={m,l};pickups.push({id:q.id+':pickup',x:q.data.x,z:q.data.z,quest:q});} /* S518 — a quest's pickup is <quest id>:pickup (co-op rules) */
@@ -898,6 +899,7 @@ const giver=`${lord.title} ${lord.name}`;
     const r=seededRng('errand',site.id+':'+erTag(def)+':'+wk);if(r()>=.2)return null;
     {const N=erNameRoll(def,site,wk,R.length);if(N)return N;}
     {const D=erDebtRoll(def,site,wk,R.length);if(D)return D;} /* S1677 — the debt, on its own stream */
+    {const B=erBorrowRoll(def,site,wk,R.length);if(B)return B;} /* S1722 — the borrowed thing, on its own stream */
     {const s=seededRng('errand-sub',site.id+':'+erTag(def)+':'+wk),kids=def.bio.kids>0,pref=def.bio.wish==='to hear from my daughter'||def.bio.worry==='my brother went for a soldier and never wrote'; /* S1554 — the sub on its own stream, so a fever's herb, count and date roll as before */
       if(pref||!kids||s()<.5){const L=erLetter(def,site,s,wk,R.length);if(L||!kids)return L;}}
     const n=2+Math.floor(r()*3),days=3+Math.floor(r()*3),H=erHerb(site,r),day=Math.floor((worldState.gameTimeAbsMinutes||0)/1440);
@@ -964,8 +966,85 @@ const giver=`${lord.title} ${lord.name}`;
     addFavor(d.siteId,choice==='pay'?-1:choice==='payfor'?2:1);
     qJournal(q,'ready',choice==='pay'?`${d.who} paid the ${d.n} gold. Carry it back to ${q.giver}.`:choice==='payfor'?`You paid ${d.who}'s ${d.n} gold yourself. ${q.giver} need not know.`:`You left ${d.who} the ${d.n} gold. ${q.giver} will want to hear something.`);
     return null;}
+  // S1722 — errand 2, *The Borrowed Thing* (approved 14 Oct 2026): the giver's thing by trade, lent to someone in a town within 700;
+  // the borrower needs it yet or sold it (rolled on the errand's id), and speaks in their own people's words. {work} in the Gatelander's
+  // line, the borrower's answers to *Keep it a month* and *Keep it, you need it more*, and the giver's answer to the month were left
+  // unwritten by the draft and are added here in its register. The shepherd's *good shears* and the net-mender's *netting needles* are
+  // a *pair of shears* and a *needle-case*, so that every line's *a good {thing} is* and *I sold it* agree.
+  const ER_BORROW_THING={farmer:['plough-iron','ploughing'],weaver:['warping-frame','web'],cooper:['croze','cask'],fisher:['long net','season’s fishing'],
+    shepherd:['pair of shears','shearing'],thatcher:['leggett','roof'],carter:['spare wheel','hauling'],beekeeper:['smoker','taking of the honey'],
+    midwife:['birthing stool','lying-in'],'net-mender':['needle-case','mending'],smith:['swage block','ironwork']};
+  const ER_BORROW={
+    hint:{gatelander:o=>`A good ${o.thing} is missed most when it's lent.`,markman:o=>`Haven't got my ${o.thing}. Annoys me.`,
+      aurennais:o=>`I find myself without my ${o.thing}, Master. A loan, overdue.`,oldblood:o=>`My ${o.thing} is not here.`},
+    offer:{gatelander:o=>`${o.who}, over in ${o.town}, had the lend of my ${o.thing} at the back end of last year. A lend's a lend, but a year is a gift, and I never gave it. Would you put them in mind of it? Kindly, now.`,
+      markman:o=>`${o.who}. ${o.town}. Took my ${o.thing} in the autumn. Said a week. Get it back.`,
+      aurennais:o=>`I lent my ${o.thing} to ${o.who} of ${o.town}, Master, on a handshake, which was my error. There was no term set. I would like it returned, or its value.`,
+      oldblood:o=>`${o.who}. ${o.town}. They have my ${o.thing}. Bring it.`},
+    need:{gatelander:o=>`Ah, now. I'll not say it's not theirs. But the ${o.work} is half done and there's no doing the half without it. Another month, and I'll carry it back myself and a cake with it.`,
+      markman:()=>"Aye, I've got it. Using it. Two weeks more and they'll have it back. Tell them that.",
+      aurennais:()=>"I have it, Master, and I do not dispute the debt. I would ask an extension, a month, on the same terms. The work is contracted and I cannot finish it without.",
+      oldblood:()=>"I have it. I am using it. A month."},
+    sold:{gatelander:o=>`…I sold it. Winter was long and the children were longer. I've ${o.n} gold of what it fetched. Take that, and my shame with it, and tell them I'm sorry.`,
+      markman:o=>`Sold it. Needed the coin. Here's what I got for it. ${o.n} gold. Not all of it, but most.`,
+      aurennais:o=>`I must be candid, Master. It was sold, in a bad month. I can offer ${o.n} gold toward its value now, and the balance by the season's end.`,
+      oldblood:()=>"Sold. Here is the coin."},
+    take:{gatelander:"Take it, so. And may you never need a thing you haven't got.",markman:"Fine. Take it.",aurennais:"As you say, Master. The debt is discharged.",oldblood:"Take it."},
+    month:{gatelander:"A month, then, and not a day over it. You have my word, and the cake's a promise too.",markman:"Aye. Good.",
+      aurennais:"Then the extension is granted, Master, and I will keep its term.",oldblood:"A month."},
+    spared:{gatelander:"That's a kindness I'll be a long while paying back. I'll start with them, so.",markman:"…Aye. Thanks.",
+      aurennais:"That is generous past any term, Master. The balance will reach them in time, by my own hand.",oldblood:"Good."},
+    monthDone:{gatelander:"A month, is it. Well, a promise is a lend too, and I've lent worse. Here's half, for the asking.",markman:"A month. Aye. Half, then. Half a job.",
+      aurennais:"An extension granted on my behalf, Master. I will honour it. Half the fee, as half the matter is settled.",oldblood:"A month. Half."},
+    back:{gatelander:o=>`${o.who} brought back the ${o.thing}, and a cake. A cake!`,markman:o=>`Got my ${o.thing} back. Took ${o.him} long enough.`,
+      aurennais:o=>`The ${o.thing} was returned, Master, on the day. I was mistaken in ${o.who}.`,oldblood:()=>"It came back."},
+    kept:{gatelander:o=>`${o.who} says you had the coin. I'd not have thought it of you.`,markman:()=>"Heard you took the coin. Heard you kept it.",
+      aurennais:()=>"I am told the sum was paid to you, Master. I have not received it.",oldblood:()=>"You had the coin."},
+    forgiven:{gatelander:"Well. A kindness done with another's goods is still a kindness, I suppose. I'll get over it.",markman:o=>`My ${o.thing}. Your charity. Aye. Thanks for nothing.`,
+      aurennais:"That was not yours to forgive, Master. But it is done.",oldblood:"Then it is theirs."}};
+  function erLine(v,o){return typeof v==='function'?v(o):v;}
+  // one errand in four of the week's, on its own stream, after the name and the debt (a letter the giver's bio asks for comes first)
+  function erBorrowRoll(def,site,wk,idx){if(def.bio.wish==='to hear from my daughter'||def.bio.worry==='my brother went for a soldier and never wrote')return null;
+    const s=seededRng('errand-borrowed',site.id+':'+erTag(def)+':'+wk);if(s()>=.25)return null;
+    const others=sitesNearFixed(site,700).filter(t=>t.pad>=45&&t.kind!=='portal'&&t.id!==site.id);if(!others.length)return null;
+    const t=others[Math.floor(s()*Math.min(4,others.length))],dp=peopleOfNpc(t,s),fem=s()<.5,bank=NAMES[(PEOPLES[dp]||{}).names]||NAMES.irish;
+    let who=pick(s,fem?bank.f:bank.m);if(who===def.name)who=pick(s,fem?bank.f:bank.m);
+    const [thing,work]=ER_BORROW_THING[def.bio.trade]||['long ladder','gable'];
+    return {sub:'borrowed',who,fem,dp,thing,work,town:t.name,siteId:t.id,tx:t.x,tz:t.z,dir:compassWord(t.x-site.x,t.z-site.z),week:wk,idx};}
+  // the borrower's door: once you come near the town, at a resident's door, with the one topic; the coin kept past 14 days lapses
+  function erBorrowTick(q){if(erLapse(q))return;const d=q.data;if(q._npc||d.choice)return;if(Math.hypot(px-d.x,pz-d.z)>160)return;
+    const S=SETTLE.get(d.siteId),site=siteAnywhere(d.siteId);if(!S||!site)return;const doors=(S.residents||[]).filter(R=>R.door);if(!doors.length)return;
+    const R=doors[Math.floor(seededRng('errand-door',q.id)()*doors.length)],x=R.door.x+.8,z=R.door.z+.8;
+    const def=makeDef(site,site.reg||'irish',seededRng('errand-borrower',q.id),'Villager',d.who,{x,z,keepName:true,people:d.dp,topics:[erBorrowTopic(q.id)]});def._erBorrow=q.id;
+    const n=spawnNPC(def,R.ry||0,true);n.sched={type:'lost'};n.g.position.set(x,worldH(x,z),z);q._npc=n;}
+  function erBorrowTopic(id){const live=()=>qActive().find(x=>x.id===id);
+    return {quest:true,avail:()=>{const q=live();return !!q&&!q.data.choice;},get label(){const q=live();return q?`${q.giver} wants the ${q.data.thing} back.`:'';},
+      get response(){const q=live();return q?ER_BORROW[q.data.why][q.data.dp](q.data):'';},
+      get follow(){const q=live();if(!q)return [];const dp=q.data.dp;return q.data.why==='need'?[
+        {label:'Hand it over. It’s not yours.',fn:()=>erBorrowChoose(id,'hand')||ER_BORROW.take[dp]},
+        {label:'Keep it a month. I’ll tell them.',fn:()=>erBorrowChoose(id,'month')||ER_BORROW.month[dp]}]:[
+        {label:'I’ll take the coin.',fn:()=>erBorrowChoose(id,'coin')||ER_BORROW.take[dp]},
+        {label:'Keep it. You need it more.',fn:()=>erBorrowChoose(id,'spare')||ER_BORROW.spared[dp]}];}};}
+  // the choice at the borrower's door: the borrower's town's favour now, the giver's at the turn-in (errandTurnIn)
+  function erBorrowChoose(id,choice){const q=qActive().find(x=>x.id===id);if(!q||q.data.choice)return null;const d=q.data,now=worldState.gameTimeAbsMinutes||0;d.choice=choice;d.at=now;
+    addFavor(d.siteId,choice==='hand'?-1:choice==='month'?1:choice==='spare'?2:0);
+    if(choice==='hand')bagAdd({name:`${q.giver}’s ${d.thing}`,ico:'🧰',type:'misc',weight:2,qty:1,unique:true,desc:`Lent to ${d.who} of ${d.town}, and taken back.`});
+    if(choice==='coin'){gold+=d.n;updateHUD();q.erDue=now+14*1440;}
+    qJournal(q,'ready',choice==='hand'?`${d.who} gave up the ${d.thing}. Carry it back to ${q.giver}.`:choice==='month'?`You left ${d.who} the ${d.thing} a month. ${q.giver} will want to hear it.`:
+      choice==='coin'?`${d.who} sold the ${d.thing}. You have the ${d.n} gold it fetched, for ${q.giver}.`:`${d.who} sold the ${d.thing}. You left them the coin. ${q.giver} will want to hear it.`);
+    return null;}
+  function erIsThing(q){return b=>b&&b.type==='misc'&&b.name===`${q.giver}’s ${q.data.thing}`;}
+  // the turn-in at home: the thing back (full pay), the month (half), the coin handed over (full), the coin forgiven (nothing)
+  function erBorrowTurnIn(q,site,p){const d=q.data,c=d.choice,o=erPro(d);if(q.lapsed||erLapse(q)){q.erUnsaid=false;return ER_BORROW.kept[p](o);}
+    if(!c)return ER_SHARED[p].notYet;if(q._npc){duelRemoveNpc(q._npc);q._npc=null;}
+    if(c==='hand'){if(!bagCount(erIsThing(q)))return ER_SHARED[p].notYet;bagTake(erIsThing(q),1);}
+    if(c==='coin'){if(gold<d.n)return `You have not got ${d.n} gold.`;gold-=d.n;updateHUD();q.erDue=0;}
+    if(c==='spare'){q.reward=0;qTurnIn(q);return erLine(ER_BORROW.forgiven[p],o);}
+    if(c==='month'){q.reward=Math.round(q.reward/2);qTurnIn(q);addFavor(site,1);return ER_BORROW.monthDone[p];}
+    qTurnIn(q);addFavor(site,1);return ER_DONE[p];}
   function erLapse(q){if(!q||q.kind!=='errand'||q.turnedIn||!q.erDue||(worldState.gameTimeAbsMinutes||0)<q.erDue)return false;
-    q.turnedIn=true;q.lapsed=true;q.erUnsaid=true;qJournal(q,'lapsed',`The date passed, and the fever in ${q.giver}'s house broke without the ${q.data.herb}.`);return true;}
+    q.turnedIn=true;q.lapsed=true;q.erUnsaid=true;if(q.sub==='borrowed'){addFavor(q.erSite,-1);qJournal(q,'lapsed',`You kept the coin the ${q.data.thing} fetched, and ${q.giver} has heard it.`);return true;} /* S1722 */
+    qJournal(q,'lapsed',`The date passed, and the fever in ${q.giver}'s house broke without the ${q.data.herb}.`);return true;}
   function errandAccept(def,site,E){const p=erPeople(def),tier=Math.max(1,worldTierAt(site.x,site.z)||1),base=Math.min(40,15+5*(tier-1));
     if(E.sub==='letter'){const q={id:erPre(def,site)+E.idx,kind:'errand',sub:'letter',giver:def.name,erSite:site.id,week:E.week,erPeople:p,
         title:`A letter for ${E.who}`,desc:`${def.name} of ${site.name} has written to ${E.who} at ${E.town} and had no answer. Carry the letter there and ask after ${erPro(E).her}.`,
@@ -980,6 +1059,11 @@ const giver=`${lord.title} ${lord.name}`;
         title:`${E.who}'s debt`,desc:`${E.who} of ${E.town} owes ${def.name} of ${site.name} ${E.n} gold, for ${E.goods}. Collect it, and a fifth is yours.`,
         objective:`Collect ${E.n} gold from ${E.who} at ${E.town}, ${E.dir} of ${site.name}`,reward:Math.round(E.n/5),
         data:{x:E.tx,z:E.tz,siteId:E.siteId,town:E.town,dir:E.dir,who:E.who,fem:E.fem,dp:E.dp,n:E.n,goods:E.goods,choice:null}});return ER_SHARED[p].yes;} /* S1677 */
+    if(E.sub==='borrowed'){const id=erPre(def,site)+E.idx,br=seededRng('errand-why',id),why=br()<.5?'need':'sold',n=Math.min(30,8+3*(tier-1)+Math.floor(br()*6)); /* S1722 — why, and what it fetched, on the errand's id */
+      qAdd({id,kind:'errand',sub:'borrowed',giver:def.name,erSite:site.id,week:E.week,erPeople:p,
+        title:`${def.name}’s ${E.thing}`,desc:`${def.name} of ${site.name} lent ${E.who} of ${E.town} the ${E.thing}, and has not had it back. Ask for it.`,
+        objective:`Ask ${E.who} at ${E.town}, ${E.dir} of ${site.name}, for ${def.name}’s ${E.thing}`,reward:base,
+        data:{x:E.tx,z:E.tz,siteId:E.siteId,town:E.town,dir:E.dir,who:E.who,fem:E.fem,dp:E.dp,thing:E.thing,work:E.work,why,n,choice:null}});return ER_SHARED[p].yes;}
     const q={id:erPre(def,site)+E.idx,kind:'errand',sub:E.sub,giver:def.name,erSite:site.id,week:E.week,erDue:E.due,erPeople:p,
       title:`${E.herb} for a fever`,desc:`${def.name} of ${site.name} wants ${E.nw} ${E.herb} for a fever in the house, before ${E.date}.`,
       objective:`Bring ${E.nw} ${E.herb} to ${def.name} at ${site.name} before ${E.date}`,reward:Math.round(base*1.25),data:{x:site.x,z:site.z,herb:E.herb,n:E.n}};
@@ -989,7 +1073,8 @@ const giver=`${lord.title} ${lord.name}`;
     if(q.sub==='name'){if(!q.data.said)return ER_SHARED[p].notYet;qTurnIn(q);addFavor(site,1);if(p==='gatelander')bagAdd({name:'Loaf of Bread',ico:'🍞',type:'misc',weight:.4,buyPrice:2,sellMult:.3,qty:1});
       return ER_NAME.done[p](erPro(q.data));} /* S1600 */
     if(q.sub==='debt'){const c=q.data.choice;if(!c)return ER_SHARED[p].notYet;if(q._npc){duelRemoveNpc(q._npc);q._npc=null;}
-      if(c==='keep'){q.reward=0;qTurnIn(q);addFavor(site,-1);return ER_DEBT.keep[p];}qTurnIn(q);addFavor(site,1);return ER_DONE[p];} /* S1677 — the debt: a fifth, paid as if collected either way */
+      if(c==='keep'){q.reward=0;qTurnIn(q);addFavor(site,-1);return ER_DEBT.keep[p];}qTurnIn(q);addFavor(site,1);return ER_DONE[p];}
+    if(q.sub==='borrowed')return erBorrowTurnIn(q,site,p); /* S1722 */ /* S1677 — the debt: a fifth, paid as if collected either way */
     if(q.lapsed||erLapse(q)){q.erUnsaid=false;return ER_FEVER.lapse[p];}
     const isH=b=>b.type==='herb'&&b.name===q.data.herb;if(bagCount(isH)<q.data.n)return ER_SHARED[p].notYet;
     bagTake(isH,q.data.n);qTurnIn(q);addFavor(site,1);return ER_FEVER.done[p];}
@@ -1021,17 +1106,19 @@ const giver=`${lord.title} ${lord.name}`;
   function erNameAsk(def,site,E){const p=erPeople(def),label='Can I do anything for you?';if(E.oldblood)return {cat:'you',label,response:ER_NAME.oldblood};
     return {cat:'you',label,response:ER_NAME.offer[p](erPro(E)),follow:[{label:'I’ll do it.',fn:()=>erRecs(def,site).some(q=>!q.turnedIn)?ER_SHARED[p].notYet:errandAccept(def,site,E)},{label:'Not now.',response:ER_SHARED[p].no}]};}
   function errandAsk(def,site){const E=errandFor(def,site);if(!E)return null;const p=erPeople(def);if(E.sub==='name')return erNameAsk(def,site,E); /* S1600 */
-    const L=E.sub==='letter',D=E.sub==='debt',label=D?'Who owes you?':L?'You’re waiting on word from someone?':'Who’s sick?',said=D?ER_DEBT.offer[p](E):L?ER_LETTER.offer[p](erPro(E)):ER_FEVER.offer[p](E);
+    const L=E.sub==='letter',D=E.sub==='debt',B=E.sub==='borrowed',label=B?'Something of yours gone missing?':D?'Who owes you?':L?'You’re waiting on word from someone?':'Who’s sick?',said=B?ER_BORROW.offer[p](E):D?ER_DEBT.offer[p](E):L?ER_LETTER.offer[p](erPro(E)):ER_FEVER.offer[p](E);
     return {cat:'you',label,response:said,follow:[{label:'I’ll do it.',fn:()=>errandFor(def,site)?errandAccept(def,site,E):ER_SHARED[p].no},{label:'Not now.',response:ER_SHARED[p].no}]};}
+  function erBorrowLabel(q){const c=q.data.choice;return c==='coin'?'Here’s what it sold for.':c==='month'?'They’ll bring it back in a month.':c==='spare'?'They sold it. I left them the coin.':'About that errand.';} /* S1722 */
   // the top level: *About that errand.* while one is open, or once more to hear how a lapsed one ended; the letter's own lines
   function errandTopics(def,site){const L=erLetterTopics(def,site);if(!erGiver(def,site))return L;const q=erRecs(def,site).find(q=>!q.turnedIn||(q.lapsed&&q.erUnsaid));
     if(!q||(q.sub==='letter'&&q.data.learned))return L;
-    return [{label:q.sub==='name'&&q.data.said?'I said the name.':q.sub==='debt'&&q.data.choice==='keep'?'They haven’t got it.':'About that errand.',quest:true,fn:()=>errandTurnIn(q,site)},...L];}
+    return [{label:q.sub==='name'&&q.data.said?'I said the name.':q.sub==='debt'&&q.data.choice==='keep'?'They haven’t got it.':q.sub==='borrowed'&&!q.lapsed?erBorrowLabel(q):'About that errand.',quest:true,fn:()=>errandTurnIn(q,site)},...L];}
   // the greeting: the hint after First Words while an errand is on offer (from the second meeting), or for a week after a lapse the colder line;
   // after a letter lied about, from the next game-week, one week in two the waiting line, until the giver writes again
   function errandGreet(def,site){if(!erGiver(def,site))return null;const met=metCount(metKey(def,site));const line=firstWords(def,site);
-    const now=worldState.gameTimeAbsMinutes||0,R=erRecs(def,site),cold=met>0&&R.some(q=>q.lapsed&&now<q.erDue+1440*7);if(cold)return ER_FEVER.cold[erPeople(def)];
-    const E=met>0&&errandFor(def,site);if(E){if(E.sub==='name')return E.oldblood?line:line+' '+ER_NAME.hint[erPeople(def)](erPro(E));return line+' '+(E.sub==='debt'?ER_DEBT.hint:E.sub==='letter'?ER_LETTER.hint:ER_FEVER.hint)[erPeople(def)];} /* S1600 — the name's hint; none for the Old Blood */
+    const now=worldState.gameTimeAbsMinutes||0,R=erRecs(def,site),cold=met>0&&R.find(q=>q.lapsed&&now<q.erDue+1440*7);if(cold)return cold.sub==='borrowed'?ER_BORROW.kept[erPeople(def)](erPro(cold.data)):ER_FEVER.cold[erPeople(def)];
+    {const bq=met>0&&R.find(q=>q.sub==='borrowed'&&q.turnedIn&&q.data.choice==='month'&&now>=q.data.at+30*1440&&now<q.data.at+37*1440);if(bq)return line+' '+ER_BORROW.back[erPeople(def)](erPro(bq.data));} /* S1722 — the month out, the thing walked home: a week of the line */
+    const E=met>0&&errandFor(def,site);if(E){if(E.sub==='name')return E.oldblood?line:line+' '+ER_NAME.hint[erPeople(def)](erPro(E));if(E.sub==='borrowed')return line+' '+ER_BORROW.hint[erPeople(def)](E);return line+' '+(E.sub==='debt'?ER_DEBT.hint:E.sub==='letter'?ER_LETTER.hint:ER_FEVER.hint)[erPeople(def)];} /* S1600 — the name's hint; none for the Old Blood */
     const lq=R.filter(q=>q.sub==='letter').pop(),wk=erWeek();
     if(met>0&&lq&&lq.turnedIn&&lq.data.told==='lie'&&wk>lq.data.toldWeek&&seededRng('errand-wait',erPre(def,site)+wk)()<.5)return ER_LETTER.wait[erPeople(def)](erPro(lq.data));
     return line;}
