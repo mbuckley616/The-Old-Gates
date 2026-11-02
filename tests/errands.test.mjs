@@ -171,5 +171,50 @@ for (const pp of ['gatelander', 'markman', 'aurennais', 'oldblood']) { const x =
   check(`debt (${pp}): turned in at home in the giver's words, a fifth or nothing, the favour`, x.turned && x.done === x.wdone && x.paid === (x.ch === 'keep' ? 0 : x.fifth) && x.fav === (x.ch === 'keep' ? -1 : 1), { done: x.done, paid: x.paid, fav: x.fav }); }
 check('debt: the debtor stands at a door of the town, named, in their own people, with the topic', d5.door && (d5.door.unbuilt || (d5.door.spawned && d5.door.name === d5.door.who && d5.door.people === d5.door.dp && d5.door.topic)), d5.door);
 check('debt: the records are saved', d5.saved >= 4, d5.saved);
+
+// S1722 — errand 2, The Borrowed Thing: the thing by trade, the borrower's reason on the errand's id and their line in their own people's
+// words, the four answers at the door, each paid and favoured as the draft has it; the coin kept past 14 days; the month's return line
+const d2 = await page.evaluate(() => {
+  const site = siteAnywhere('dunmore'); worldState.quests = []; worldState.met = {}; worldState.gameTimeAbsMinutes = 90 * 1440 + 300;
+  const mk = (i, pp) => { const d = makeDef(site, site.reg || 'irish', seededRng('ertest2', i), 'Villager', 'Seán', {}); d._twin = 'B' + i; if (pp) d.people = pp; return d; };
+  const find = (pp, why) => { for (let i = 0; i < 8000; i++) { const d = mk(pp + why + i, pp); const e = errandFor(d, site); if (!e || e.sub !== 'borrowed') continue;
+    const id = erPre(d, site) + e.idx; if ((seededRng('errand-why', id)() < .5 ? 'need' : 'sold') === why) return d; } return null; };
+  let things = 0, bad = 0; for (let i = 0; i < 1500; i++) { const d = mk('t' + i, 'gatelander'); const e = errandFor(d, site); if (e && e.sub === 'borrowed') { things++; if (e.thing !== (ER_BORROW_THING[d.bio.trade] || ['long ladder'])[0]) bad++; } }
+  const plan = [['gatelander', 'need', 'hand'], ['markman', 'need', 'month'], ['aurennais', 'sold', 'coin'], ['oldblood', 'sold', 'spare'], ['gatelander', 'sold', 'coin'], ['markman', 'sold', 'spare']];
+  const by = [];
+  for (const [pp, why, ch] of plan) { const A = find(pp, why); if (!A) { by.push({ pp, why, ch, missing: true }); continue; } const E = errandFor(A, site);
+    A.greeting[0]; const greet = A.greeting[0]; const ask = A.topics.find(t => /^About you/.test(t.label)).follow.find(t => t.label === 'Something of yours gone missing?');
+    const yes = ask.follow[0].fn(); const q = qActive().find(x => x.giver === A.name && x.sub === 'borrowed');
+    const notYet = A.topics.find(t => t.label === 'About that errand.').fn();
+    const T = erBorrowTopic(q.id); const label = T.label, said = T.response, labels = T.follow.map(f => f.label), dp = q.data.dp;
+    const k = { hand: 0, month: 1, coin: 0, spare: 1 }[ch]; const g0 = gold, fd0 = favor(q.data.siteId); const reply = T.follow[k].fn(); const got = gold - g0, fd = favor(q.data.siteId) - fd0, gone = !T.avail();
+    const thing = bagCount(erIsThing(q));
+    const top = A.topics.find(t => t.label === erBorrowLabel(q)); const tl = top && top.label;
+    const lapse = pp === 'gatelander' && ch === 'coin';
+    let done, g1, f1;
+    if (lapse) { worldState.gameTimeAbsMinutes += 15 * 1440; f1 = favor(site); qTick(); g1 = gold; const cold = A.greeting[0]; const t2 = A.topics.find(t => t.label === 'About that errand.'); done = t2 && t2.fn();
+      by.push({ pp, why, ch, lapse: true, lapsed: q.lapsed, cold, wcold: ER_BORROW.kept[pp](erPro(q.data)), done, fav: favor(site) - f1, paid: gold - g1, said, wsaid: ER_BORROW.sold[dp](q.data), got, n: q.data.n });
+      worldState.gameTimeAbsMinutes -= 15 * 1440; continue; }
+    g1 = gold; f1 = favor(site); done = top && top.fn();
+    const base = Math.min(40, 15 + 5 * (Math.max(1, worldTierAt(site.x, site.z) || 1) - 1));
+    const wpaid = ch === 'spare' ? 0 : questGold(ch === 'month' ? Math.round(base / 2) : base) - (ch === 'coin' ? q.data.n : 0);
+    let back = null; if (ch === 'month') { const t0 = worldState.gameTimeAbsMinutes; worldState.gameTimeAbsMinutes = q.data.at + 31 * 1440; back = A.greeting[0]; worldState.gameTimeAbsMinutes = t0; }
+    by.push({ pp, why, ch, dp, greet, hint: ER_BORROW.hint[pp](E), offer: ask.response, want: ER_BORROW.offer[pp](E), yes, ys: ER_SHARED[pp].yes, title: q.title, wtitle: `${A.name}’s ${E.thing}`, notYet, ny: ER_SHARED[pp].notYet,
+      label, wlabel: `${A.name} wants the ${q.data.thing} back.`, said, wsaid: ER_BORROW[why][dp](q.data), labels, reply, wreply: ch === 'month' ? ER_BORROW.month[dp] : ch === 'spare' ? ER_BORROW.spared[dp] : ER_BORROW.take[dp],
+      got, wgot: ch === 'coin' ? q.data.n : 0, fd, wfd: { hand: -1, month: 1, coin: 0, spare: 2 }[ch], gone, thing, tl, done, wdone: ch === 'month' ? ER_BORROW.monthDone[pp] : ch === 'spare' ? erLine(ER_BORROW.forgiven[pp], erPro(q.data)) : ER_DONE[pp],
+      paid: gold - g1, wpaid, fav: favor(site) - f1, wfav: ch === 'spare' ? 0 : 1, turned: q.turnedIn, left: bagCount(erIsThing(q)), back, wback: ch === 'month' ? A.greeting[0].replace(/.*/, '') + ER_BORROW.back[pp](erPro(q.data)) : null }); }
+  return { things, bad, by, saved: JSON.parse(ssStringify(worldState.quests)).filter(x => x.sub === 'borrowed' && !('_npc' in x)).length };
+});
+console.log(JSON.stringify(d2).slice(0, 3000));
+check('borrowed: some givers ask it, each for their trade\'s thing', d2.things > 0 && d2.bad === 0, { things: d2.things, bad: d2.bad });
+for (const x of d2.by) { const nm = `borrowed (${x.pp}, ${x.why}, ${x.ch})`; if (x.missing) { check(`${nm}: a giver asks`, false); continue; }
+  if (x.lapse) { check(`${nm}: the coin taken, the borrower's line; kept past 14 days the errand lapses, the colder greeting, the line once, a point of favour lost, nothing paid`, x.got === x.n && x.said === x.wsaid && x.lapsed && x.cold === x.wcold && x.done === x.wcold && x.fav === -1 && x.paid === 0, x); continue; }
+  check(`${nm}: the hint after First Words, the offer word for word, taken and titled, not yet`, x.greet.endsWith(' ' + x.hint) && x.offer === x.want && x.yes === x.ys && x.title === x.wtitle && x.notYet === x.ny, { greet: x.greet, offer: x.offer, title: x.title });
+  check(`${nm}: the borrower's topic and line in the borrower's people's words, the two answers`, x.label === x.wlabel && x.said === x.wsaid && x.labels.length === 2 && !/\{|undefined/.test(x.said), { said: x.said, dp: x.dp, labels: x.labels });
+  check(`${nm}: the borrower's answer, the thing or the coin, the borrower's town's favour`, x.reply === x.wreply && x.gone && x.got === x.wgot && x.fd === x.wfd && x.thing === (x.ch === 'hand' ? 1 : 0), { reply: x.reply, got: x.got, fd: x.fd, thing: x.thing });
+  check(`${nm}: turned in at home (${x.tl}) in the giver's words, paid and favoured as drafted`, x.turned && x.done === x.wdone && x.paid === x.wpaid && x.fav === x.wfav && x.left === 0, { done: x.done, paid: x.paid, wpaid: x.wpaid, fav: x.fav });
+  if (x.ch === 'month') check(`${nm}: a month on, the giver's greeting says it came back`, typeof x.back === 'string' && x.back.endsWith(' ' + x.wback), { back: x.back, want: x.wback }); }
+check('borrowed: the records are saved', d2.saved >= 5, d2.saved);
+
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
