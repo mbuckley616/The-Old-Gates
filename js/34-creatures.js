@@ -38,7 +38,8 @@ const WOLF_KINDS={
   // Session 1727 (first numbered 1722) — the Gatelands' own (L3, OG-009; the kit's GATELANDS since Session 846), wild as the common set: the Elderstag on the deer's
   // legs, the Gatefen Boar on the boar's body, the Redspine Fox, the Hollowcat and the Greenward Stoat on the wolf's
   'Elderstag': {coat:0x754a2b,saddle:0x4e3019,belly:0xd8c8a8,eye:0x140c08,horse:true,legK:1.8,legs:{fore:{root:[-.03,.03],a:[-.22,-.04],b:[-.22,.02],c:[-.23,.01]},hind:{root:[-.02,-.02],a:[-.2,.08],b:[-.2,-.1],c:[-.26,.01]}},hipY:.70,bulk:.9,eyePos:[.048,.02,.03],world:1.66,wild:true},
-  'Gatefen Boar':{coat:0x3d3329,saddle:0x241e18,belly:0x5e5040,eye:0x2a1a0c,boar:true,neck:.35,bulk:1.1,world:1.76,wild:true},
+  // Session 1745: the kit's plan at .79 (was 1.08), so its hips at 0.50 m, not 0.69
+  'Gatefen Boar':{coat:0x3d3329,saddle:0x241e18,belly:0x5e5040,eye:0x2a1a0c,boar:true,neck:.35,bulk:1.1,world:1.287,wild:true},
   'Redspine Fox':{coat:0xa84d1a,saddle:0x5c2a10,belly:0xeee4d0,eye:0x2a1a08,ruff:.85,ears:1.2,muzzle:1.1,lean:.8,bulk:.92,neck:.1,world:.9,wild:true},
   'Hollowcat': {coat:0x806b52,saddle:0x4e4030,belly:0xd0c4ac,eye:0x9a8a20,ruff:.6,ears:1.1,muzzle:.6,lean:.85,bulk:.9,neck:.06,world:.81,wild:true},
   'Greenward Stoat':{coat:0x805733,saddle:0x5c3c22,belly:0xece2c8,eye:0x0f0a08,ruff:.5,ears:.6,muzzle:.8,lean:.75,bulk:.85,neck:.05,world:.165,wild:true},
@@ -350,6 +351,10 @@ BIRD['Great Heron']={len:.95,col:0x9ea3a8,hop:1.2};BIRD['Crag Hawk']={len:.55,co
 // Session 1740: the Mark's three (L3, OG-031; the kit's MARK), wild. The Skyraven is the kit's raven at full size (the common raven is it at
 // .9), so it hops and soars; the Stormshrike, the hawk's plan in white, walks and soars; the Tundra Grouse, the hen's, trots and never soars
 BIRD.Skyraven={len:.64,col:0x14141a,hop:1};BIRD.Stormshrike={len:.47,col:0xe0e0e2,hop:.9};BIRD['Tundra Grouse']={len:.40,col:0xd8d4cc,hop:.9};
+// Session 1746: Aurenne's four (L3, OG-030; the kit's AURENNE), wild. The Scarlet Ibis is the heron's plan at .72 and the Cypress Stalker
+// at 1.05, so both walk and never soar; the Sunbeak Vulture is the Crag Hawk's at 1.4, walking and soaring; the Cliffswift is the Skyraven's
+// at .42 with only a soar and a stand (a swift does not walk), so on the ground it stands however its group moves
+BIRD['Scarlet Ibis']={len:.68,col:0xe6331f,hop:1};BIRD['Cypress Stalker']={len:1.0,col:0x6b4d94,hop:1.2};BIRD['Sunbeak Vulture']={len:.77,col:0x523d2e,hop:1};BIRD.Cliffswift={len:.27,col:0x333033,hop:.6};
 function birdStandIn(len,col){const k=len/.535,parts=[],M=new THREE.Matrix4(),put=(geo,x,y,z,sx,sy,sz,rx)=>{M.makeRotationX(rx||0);
     const g=geo.index?geo.toNonIndexed():geo;g.applyMatrix4(new THREE.Matrix4().makeScale(sx,sy,sz).premultiply(M).premultiply(new THREE.Matrix4().makeTranslation(x*k,y*k,z*k)));parts.push(g);};
   put(new THREE.SphereGeometry(1,10,7),0,.17,0,.08*k,.075*k,.17*k);put(new THREE.SphereGeometry(.055*k,8,6),0,.25,.15,1,1,1);
@@ -369,7 +374,8 @@ function hcBirdPose(rig){const H=rig.hc,e=rig.e,g=e&&e.mesh;if(!H||!g||e.dead)re
   rig.v=dt>0?rig.v+(d/dt-rig.v)*Math.min(1,dt*6):rig.v;
   const gy=typeof activeTerrainH==='function'?activeTerrainH(x,z):g.position.y,up=g.position.y-gy>BIRD.air,B=BIRD[rig.name]||BIRD.Raven;
   const C=H.C,PG=C.plan.gaits||['hop','soar'],fast=B.run||(PG.includes('hop')?'hop':PG.includes('trot')?'trot':'walk');
-  const gait=up&&PG.includes('soar')?'soar':rig.v>B.hop?fast:rig.v>BIRD.walk?'walk':'stand';
+  let gait=up&&PG.includes('soar')?'soar':rig.v>B.hop?fast:rig.v>BIRD.walk?'walk':'stand';
+  if(C.plan.gaits&&!PG.includes(gait))gait='stand'; /* S1746: a gait its plan lacks (the swift's walk) is a stand */
   C.gait=gait;
   if(gait==='soar'||gait==='stand')rig.ph+=dt*(gait==='soar'?BIRD.beat:.25);else rig.ph+=d/Math.max(1e-3,HC.strideOf(C)*H.f);
   HC.pose(C,rig.ph);
@@ -407,6 +413,13 @@ SWIMMER['Marsh Frog']={len:.12,col:0x4a6030,land:true,move:'hop',w:.55,h:.4};
 // armoured, taken for its meat; the kit's Tidecrab at 1.35) goes sideways on its eight legs at the kit's walk, 0.80 m across its legs
 SWIMMER['Frostspine Lizard']={len:.5,col:0x758f9e,land:true,move:'trot',w:.16,h:.11};
 SWIMMER.Icecrab={len:.8,col:0x8fa6b8,land:true,move:'walk',w:1.1,h:.37};
+// Session 1747: Aurenne's three on the same path (L3, OG-030). The Saltspine Monitor (coasts, spines crusted with salt, aggressive; the kit's
+// Frostspine at 4.2, 2.1 m) is 1.8 m here, a big monitor's; the Spined Gekko (ruins, nocturnal; the kit's Frostspine at 1, 0.5 m) is 0.30 m, a
+// gekko's, as the Stonecrawler is the kit's at .6; both scurry at the trot. The Amber Shellcrab (tide pools, its shell prized; the kit's Tidecrab
+// at .8) goes sideways on its eight legs as the Icecrab does, 0.40 m across its legs
+SWIMMER['Saltspine Monitor']={len:1.8,col:0x6b665a,land:true,move:'trot',w:.16,h:.11};
+SWIMMER['Spined Gekko']={len:.3,col:0xa8946b,land:true,move:'trot',w:.16,h:.11};
+SWIMMER['Amber Shellcrab']={len:.4,col:0xdb8529,land:true,move:'walk',w:1.1,h:.37};
 function landStandIn(len,col,w,h){const geo=new THREE.SphereGeometry(1,10,6).toNonIndexed();geo.applyMatrix4(new THREE.Matrix4().makeScale(w/2*len,h/2*len,len/2));
   geo.translate(0,h/2*len,0);geo.computeBoundingSphere();const m=new THREE.Mesh(geo,new THREE.MeshLambertMaterial({color:col}));m.castShadow=false;m.name='crawler';return m;}
 function fishStandIn(len,col){const k=len/.4,parts=[],M=new THREE.Matrix4(),put=(geo,x,y,z,sx,sy,sz,ry)=>{M.makeRotationY(ry||0);
@@ -946,7 +959,7 @@ const HC_KINDS={'Wolf':{plan:'wolf'},'Snow Wolf':{plan:'wolf',own:true},'Dire Wo
   'Gargoyle':{plan:'gargoyle',own:true,person:true,merge:true,ik:true,glow:[1,.31,.13],glowR:.032,glowAt:{f:.8,up:.55,out:.5},garg:true},
   'Wraith':{plan:'wraith',own:true,person:true,legless:true,rest:HC_WRAITH_REST},'Phantom':{plan:'phantom',own:true,person:true,legless:true,rest:HC_WRAITH_REST},
   'Deer':{plan:'deer',ik:true},'Hind':{plan:'deer',own:true,ik:true,bare:true},'Red Fox':{plan:'redfox'},'Brown Hare':{plan:'brownhare'},'Badger':{plan:'badger'},'Otter':{plan:'otter'},'Cow':{plan:'cow',ik:true},'Sheep':{plan:'sheep',ik:true},'Goat':{plan:'goat',ik:true},'Elderstag':{plan:'stag',ik:true},'Gatefen Boar':{plan:'gatefenboar'},'Redspine Fox':{plan:'redspinefox'},'Hollowcat':{plan:'hollowcat'},'Greenward Stoat':{plan:'stoat'},'Icehorn':{plan:'icehorn',ik:true},'Ironpine Elk':{plan:'ironpineelk',ik:true},'Craghorn Ram':{plan:'craghornram',ik:true},'Stormlynx':{plan:'stormlynx'},'Glacial Marmot':{plan:'glacialmarmot'},'Snowleap Hare':{plan:'snowhare'},'Duneskimmer':{plan:'duneskimmer',ik:true},'Terrace Ram':{plan:'terraceram',ik:true},'Sunspire Lynx':{plan:'sunspirelynx'},'Oasis Hare':{plan:'oasishare'},'Mirage Fox':{plan:'miragefox'},
-  'Shark':{plan:'reefshark',fish:true},'Whale':{plan:'stormwhale',fish:true},'Dolphin':{plan:'stormswift',fish:true},'Gull':{plan:'gull',fish:true,own:true,cell:.014},'Raven':{plan:'raven',fish:true,own:true,cell:.014},'Crow':{plan:'crow',fish:true,own:true,cell:.012},'Trout':{plan:'trout',fish:true,own:true,cell:.014},'River Pike':{plan:'riverpike',fish:true,own:true,cell:.02},'Riverjaw Salmon':{plan:'riverjaw',fish:true,own:true,cell:.02},'Mire Snake':{plan:'miresnake',fish:true,own:true,cell:.016},'Lantern Beetle':{plan:'lanternbeetle',fish:true,own:true,cell:.03},'Stonecrawler':{plan:'stonecrawler',fish:true,own:true,cell:.01},'Marsh Frog':{plan:'marshfrog',fish:true,own:true,cell:.012},'Frostspine Lizard':{plan:'frostspinelizard',fish:true,own:true,cell:.01},'Icecrab':{plan:'icecrab',fish:true,own:true,cell:.02},'Hen':{plan:'hen',fish:true,own:true,cell:.012},'Great Heron':{plan:'heron',fish:true,own:true,cell:.016},'Crag Hawk':{plan:'craghawk',fish:true,own:true,cell:.014},'Capercaillie':{plan:'capercaillie',fish:true,own:true,cell:.016},'Skyraven':{plan:'skyraven',fish:true,own:true,cell:.014},'Stormshrike':{plan:'stormshrike',fish:true,own:true,cell:.014},'Tundra Grouse':{plan:'tundragrouse',fish:true,own:true,cell:.012},'Slime':{plan:'slime',fish:true},'Fire Elemental':{plan:'fireelemental',fish:true}};
+  'Shark':{plan:'reefshark',fish:true},'Whale':{plan:'stormwhale',fish:true},'Dolphin':{plan:'stormswift',fish:true},'Gull':{plan:'gull',fish:true,own:true,cell:.014},'Raven':{plan:'raven',fish:true,own:true,cell:.014},'Crow':{plan:'crow',fish:true,own:true,cell:.012},'Trout':{plan:'trout',fish:true,own:true,cell:.014},'River Pike':{plan:'riverpike',fish:true,own:true,cell:.02},'Riverjaw Salmon':{plan:'riverjaw',fish:true,own:true,cell:.02},'Mire Snake':{plan:'miresnake',fish:true,own:true,cell:.016},'Lantern Beetle':{plan:'lanternbeetle',fish:true,own:true,cell:.03},'Stonecrawler':{plan:'stonecrawler',fish:true,own:true,cell:.01},'Marsh Frog':{plan:'marshfrog',fish:true,own:true,cell:.012},'Frostspine Lizard':{plan:'frostspinelizard',fish:true,own:true,cell:.01},'Icecrab':{plan:'icecrab',fish:true,own:true,cell:.02},'Saltspine Monitor':{plan:'saltspinemonitor',fish:true,own:true,cell:.008},'Spined Gekko':{plan:'spinedgekko',fish:true,own:true,cell:.01},'Amber Shellcrab':{plan:'ambershellcrab',fish:true,own:true,cell:.02},'Hen':{plan:'hen',fish:true,own:true,cell:.012},'Great Heron':{plan:'heron',fish:true,own:true,cell:.016},'Crag Hawk':{plan:'craghawk',fish:true,own:true,cell:.014},'Capercaillie':{plan:'capercaillie',fish:true,own:true,cell:.016},'Skyraven':{plan:'skyraven',fish:true,own:true,cell:.014},'Stormshrike':{plan:'stormshrike',fish:true,own:true,cell:.014},'Tundra Grouse':{plan:'tundragrouse',fish:true,own:true,cell:.012},'Scarlet Ibis':{plan:'scarletibis',fish:true,own:true,cell:.016},'Cypress Stalker':{plan:'cypressstalker',fish:true,own:true,cell:.016},'Sunbeak Vulture':{plan:'sunbeakvulture',fish:true,own:true,cell:.016},'Cliffswift':{plan:'cliffswift',fish:true,own:true,cell:.01},'Slime':{plan:'slime',fish:true},'Fire Elemental':{plan:'fireelemental',fish:true}};
 // the driver's joints and the kit's bones they move, parents first (the kit's front legs hang on spine3, the hind on spine0)
 const HC_MAP=[['hips','spine0'],['spine','spine1'],['neck','neck0'],['head','head'],['jaw','jaw'],['tail1','tail0'],['tail2','tail1'],['tail3','tail2'],
   ['shL','leg0L_0'],['elL','leg0L_1'],['wrL','leg0L_2'],['pfL','leg0L_3'],['shR','leg0R_0'],['elR','leg0R_1'],['wrR','leg0R_2'],['pfR','leg0R_3'],
