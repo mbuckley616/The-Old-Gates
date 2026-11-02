@@ -166,6 +166,22 @@ const tlv = await page.evaluate(() => { const { rig, G } = _T, fx = -Math.sin(ya
   CAM.position.set(G.position.x - fx * 60, G.position.y + 1.65, G.position.z - fz * 60); CAM.updateMatrixWorld(true); hcTick(9.8e5);
   const far = { L: rig.hc.L, stand: rig.mesh.visible }; G.parent.remove(G); hcTick(9.9e5); return { far, dropped: !rig.hc && !HC_RIGS.has(rig) }; });
 check(`at 60 m the trout is its stand-in (L${tlv.far.L}); taken from the scene, it is dropped (${tlv.dropped})`, tlv.far.L === 2 && tlv.far.stand && tlv.dropped, tlv);
+// Session 1724: the River Pike on the trout's path, twice its length
+const pike = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.cos(yaw), x = px + fx * 3, z = pz + fz * 3;
+  const rig = buildAnimal('River Pike', 'f4pike:0'), G = new THREE.Group(); G.add(rig.root); G.position.set(x, WORLD.worldH(x, z) + .6, z); G.rotation.y = yaw + Math.PI / 2; WORLD.scene.add(G);
+  const e = { name: 'River Pike', x, z, mesh: G, limbs: { wolf: rig, torso: rig.mesh }, dead: false }; rig.e = e;
+  CAM.position.set(px, worldH(px, pz) + 1.65, pz); CAM.updateMatrixWorld(true);
+  const ZE = ZONES.world.enemies; ZE.push(e); let k = 0; HBODY.last = -1e9; while (!rig.hc && !rig.hcFail && k++ < 300) hcTick(9.92e5 + k * (HBODY.gap + 1)); ZE.splice(ZE.indexOf(e), 1);
+  const H = rig.hc; if (!H) { G.parent.remove(G); return { fail: !!rig.hcFail }; }
+  G.rotation.y = 0; G.updateMatrixWorld(true); const bx = new THREE.Box3(); for (const m of H.C.meshes) bx.union(new THREE.Box3().setFromObject(m)); const sb = new THREE.Box3().setFromObject(rig.mesh);
+  const sk = H.C.skel, t0 = performance.now; let i0 = 0; const run = (n, sp) => { for (let i = 0; i < n; i++) { G.position.z += sp / 60; i0++;
+      performance.now = () => 9.95e5 + i0 * 1000 / 60; try { hcSwimPose(rig); } finally { performance.now = t0; } } sk.update(); return { m: Array.from(sk.boneMatrices), ph: rig.ph, g: rig.gaitNow }; };
+  const a = run(60, 0), b = run(60, .8); let mv = 0; for (let i = 0; i < a.m.length; i++) mv = Math.max(mv, Math.abs(a.m[i] - b.m[i]));
+  const out = { plan: H.C.g.plan, seed: H.C.g.seed, want: HC.hashKey(rig.hcKey), bones: H.C.bones.length, tris: H.C.stats.tris, len: +(bx.max.z - bx.min.z).toFixed(3), nose: +(bx.max.z - sb.max.z).toFixed(3),
+    hold: a.g, swim: b.g, cyc: +(b.ph - a.ph).toFixed(2), moved: +mv.toFixed(3) }; G.parent.remove(G); hcTick(9.99e5); out.dropped = !rig.hc; return out; });
+console.log('  pike:', JSON.stringify(pike));
+check(`the River Pike wears the kit's (${pike.plan}, ${pike.bones} bones, ${pike.tris} triangles, ${pike.len} m nose to tail, its nose ${pike.nose} m off the stand-in's); it holds and swims by its group (${pike.hold}, ${pike.swim} at ${pike.cyc} beats a second, the bones moving ${pike.moved}); taken away, dropped`,
+  !pike.fail && pike.plan === 'game:River Pike' && pike.seed === pike.want && pike.tris < 10000 && pike.len > .68 && pike.len < .84 && Math.abs(pike.nose) < .02 && pike.hold === 'hold' && pike.swim === 'swim' && pike.moved > .005 && pike.dropped, pike);
 // Session 1721: an island given to buildAnimal is the kit's coat for it (HC.COATS): the Mark's black hill cow and grey hen, Aurenne's cream
 // cow and buff hen; the hind (an own plan) takes the deer's. The same key keeps its seed; an unknown island is none
 const isles = await page.evaluate(() => { const mean = C => { const a = C.meshes[0].geometry.attributes.color.array; let r = 0, g = 0, b = 0; const n = a.length / 3;
