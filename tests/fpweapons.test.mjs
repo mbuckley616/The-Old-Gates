@@ -35,7 +35,7 @@ check('the bow faces out: its grip further from the eye than its tips, and its s
 check('the spear and the crossbow are the kit\'s own, pointing ahead of the fist: the head 0.8 m or more out, the prod 0.4 m (S1458)', o['Iron Spear'].kitKind === 'spear' && o['Iron Spear'].ahead > .8 && o['Iron Spear'].up > 0 && o['Iron Crossbow'].kitKind === 'crossbow' && o['Iron Crossbow'].ahead > .4 && o['Iron Crossbow'].up > 0, { spear: o['Iron Spear'], crossbow: o['Iron Crossbow'] });
 // S1465 — your spear's blow is a thrust: through a swing (the loop's own frames) its head goes out along the shaft and back, and the
 // shaft keeps its line, where a sword's swing turns the blade through a wide arc
-// S1731 — the loop's first line asks for the next frame, so each loop(t) here would start another copy of the game's loop that runs
+// S1732 — the loop's first line asks for the next frame, so each loop(t) here would start another copy of the game's loop that runs
 // on after the evaluate (70 copies made the page 70 times slower: the bows' evaluate below waited 10 min on CI); held off while stepping
 const th = await page.evaluate(() => { const raf = window.requestAnimationFrame; window.requestAnimationFrame = () => 0; try {
   thirdPerson = false; let t = performance.now(); prevT = t; const step = () => { t += 1000 / 60; loop(t); };

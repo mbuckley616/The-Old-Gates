@@ -70,7 +70,7 @@ check(`felling: the hatchet in hand (first person ${wk && wk.fp}, third ${wk && 
   !!wk && wk.fp === 'hatchet' && wk.tp.kit === 'hatchet' && Math.abs(wk.tp.ws - 1) < .01 && wk.gaps.length >= 2 && wk.gaps.every(x => x != null && x >= 0 && x <= 2) && wk.fpAfter === 'sword' && wk.tpAfter === 'sword' && wk.eq, wk);
 // S1466 — your spear's blow in third person is a thrust: through the coil the shaft comes down level, and at the hit it lies along
 // your facing at chest height, its head further out than in the coil; driven by the game's loop at 1/60
-// S1731 — each loop(t) would ask for a frame and start another copy of the game's loop (fpweapons' 10 min on CI); held off while stepping
+// S1732 — each loop(t) would ask for a frame and start another copy of the game's loop (fpweapons' 10 min on CI); held off while stepping
 const tt = await page.evaluate(async () => { const raf = window.requestAnimationFrame; window.requestAnimationFrame = () => 0; try { forceTime(11);
   thirdPerson = true; let t = performance.now(); prevT = t; const step = () => { t += 1000 / 60; loop(t); };
   SHEATHED = false; _sheathedItem = null; _lastSwingG = 1e9; EQ.weapon = { name: 'Iron Spear', slot: 'weapon', weaponShape: 'spear', matCol: '#a8b0b8', matGuard: '#787880' }; buildViewmodel();
