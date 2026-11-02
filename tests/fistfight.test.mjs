@@ -28,7 +28,11 @@ const fight = (punch, fists, max, hand = 5, noThrow = false, noHeavy = false) =>
   // how many of them stood within 12 m.
   const held = ZONES.world.enemies.filter(o => !o.dead && !o._duelHold); for (const o of held) o._duelHold = true;
   const e = unlockFoe(buildZoneEnemy(WORLD.scene, [], px, pz - 4, 'Bandit', null)); e.alert = true; ZONES.world.enemies.push(e);
-  const log = { others: held.length, near: held.filter(o => Math.hypot(o.x - px, o.z - pz) < 12).length, weapon: EQ.weapon ? EQ.weapon.name : 'fists', hp0: e.hp, posture: e.maxPosture || e.posture, tells: 0, blows: 0, heavy: 0, landed: 0, swings: 0, hits: 0, stagFrames: 0, frames: 0 };
+  // S1764 — the Bandit's blow rolls on its own seeded stream, one per fight, as `heavyblow` seeds its foe: unkeyed, its damage
+  // (`foeBlowRaw`, `foeRand`) was Math.random's, and the stood-still count of light blows survived came out 3 or 7 one run in five
+  // (backlog K, the systems builder's S1140). The heavy and the feint already roll on seeded streams by the foe's name.
+  const fid = 'fistfight:' + (window._fightN = (window._fightN || 0) + 1); e.rng = seededRng('foe', fid);
+  const log = { fid, others: held.length, near: held.filter(o => Math.hypot(o.x - px, o.z - pz) < 12).length, weapon: EQ.weapon ? EQ.weapon.name : 'fists', hp0: e.hp, posture: e.maxPosture || e.posture, tells: 0, blows: 0, heavy: 0, landed: 0, swings: 0, hits: 0, stagFrames: 0, frames: 0 };
   const _t = sndTelegraph, _x = executeStrike, _r = _resolveZoneStrike;
   sndTelegraph = function () { log.tells++; return _t.apply(this, arguments); };
   executeStrike = function () { log.blows++; log.lastW = arguments[0] && arguments[0]._heavy ? 2 : 1; if (log.lastW === 2) log.heavy++; const h = PHP; const out = _x.apply(this, arguments); if (PHP < h) log.landed++; return out; };
