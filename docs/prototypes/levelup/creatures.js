@@ -798,18 +798,19 @@ function hideMat(o) {
     s.vertexShader = GLOW_HEAD + (o.face ? 'attribute float aAlpha; varying float vAlpha;\n' : '') + s.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vGlow = aGlow; vFur = aFur; vRP = position;' + (o.face ? ' vAlpha = aAlpha;' : ''));
     s.fragmentShader = 'uniform vec3 uGlow; varying float vGlow; varying float vFur; varying vec3 vRP;\n' + (o.face ? 'varying float vAlpha;\n' : '') + s.fragmentShader.replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n totalEmissiveRadiance += uGlow * vGlow;')
       .replace('vec4 diffuseColor = vec4( diffuse, opacity );', o.face ? 'vec4 diffuseColor = vec4( diffuse, opacity * vAlpha );' : 'vec4 diffuseColor = vec4( diffuse, opacity );'); };
-  m.customProgramCacheKey = () => 'hide' + JSON.stringify(o.glow || 0) + (o.opacity < 1 ? 'c' : '') + (o.face ? 'f' : ''); return m;
+  m.customProgramCacheKey = () => 'hide' + (o.opacity < 1 ? 'c' : '') + (o.face ? 'f' : ''); return m;
 }
 function furMat(o, layer, layers) {
   const m = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .9, side: THREE.DoubleSide, alphaTest: .5 });
-  m.onBeforeCompile = s => {
+  const uFL = { value: layer / layers }, uFS = { value: new THREE.Vector3(o.sx || 300, o.sy || o.sx || 300, o.sz || o.sx || 300) };
+  m.onBeforeCompile = s => { s.uniforms.uFL = uFL; s.uniforms.uFS = uFS;
     s.vertexShader = 'attribute vec3 aBase;\n' + GLOW_HEAD + s.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vGlow = aGlow; vFur = aFur; vRP = aBase;');
-    s.fragmentShader = 'varying float vGlow; varying float vFur; varying vec3 vRP;\nfloat hh(vec3 p){ p = fract(p * .3183099 + .1); p *= 17.; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }\nfloat nz(vec3 x){ vec3 i = floor(x), f = fract(x); f = f * f * (3. - 2. * f); return mix(mix(mix(hh(i), hh(i + vec3(1,0,0)), f.x), mix(hh(i + vec3(0,1,0)), hh(i + vec3(1,1,0)), f.x), f.y), mix(mix(hh(i + vec3(0,0,1)), hh(i + vec3(1,0,1)), f.x), mix(hh(i + vec3(0,1,1)), hh(i + vec3(1,1,1)), f.x), f.y), f.z); }\n'
-      + s.fragmentShader.replace('vec4 diffuseColor = vec4( diffuse, opacity );', `float L = ${(layer / layers).toFixed(3)};
-        vec3 q = vRP * vec3(${(o.sx || 300).toFixed(1)}, ${(o.sy || o.sx || 300).toFixed(1)}, ${(o.sz || o.sx || 300).toFixed(1)}); float strand = nz(q) * .7 + nz(q * 2.3) * .3;
+    s.fragmentShader = 'uniform float uFL; uniform vec3 uFS; varying float vGlow; varying float vFur; varying vec3 vRP;\nfloat hh(vec3 p){ p = fract(p * .3183099 + .1); p *= 17.; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }\nfloat nz(vec3 x){ vec3 i = floor(x), f = fract(x); f = f * f * (3. - 2. * f); return mix(mix(mix(hh(i), hh(i + vec3(1,0,0)), f.x), mix(hh(i + vec3(0,1,0)), hh(i + vec3(1,1,0)), f.x), f.y), mix(mix(hh(i + vec3(0,0,1)), hh(i + vec3(1,0,1)), f.x), mix(hh(i + vec3(0,1,1)), hh(i + vec3(1,1,1)), f.x), f.y), f.z); }\n'
+      + s.fragmentShader.replace('vec4 diffuseColor = vec4( diffuse, opacity );', `float L = uFL;
+        vec3 q = vRP * uFS; float strand = nz(q) * .7 + nz(q * 2.3) * .3;
         float keep = step(L * .85 + .1, strand) * step(.5, vFur) * step(vGlow, .25);
         vec4 diffuseColor = vec4(diffuse * (.55 + .6 * L) * (.85 + .3 * strand), keep);`); };
-  m.customProgramCacheKey = () => 'cfur' + layer + '/' + layers + JSON.stringify(o); return m;
+  m.customProgramCacheKey = () => 'cfur'; return m;
 }
 
 // ── the genome: a plan, a seed, the generic sliders and a palette shift; a few hundred bytes ──

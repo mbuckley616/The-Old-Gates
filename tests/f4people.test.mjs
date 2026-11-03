@@ -58,7 +58,7 @@ const winter = await page.evaluate(() => { const was = worldState.gameTimeAbsMin
   const forget = () => { for (const k of [...HB_GENOMES.keys()]) if (/^wtest/.test(k)) HB_GENOMES.delete(k); for (const k of [...PEOPLE_GENOMES.keys()]) if (/wtest/.test(k)) PEOPLE_GENOMES.delete(k); };
   const run = () => { const res = {}; for (const pk of peoples) { const o = { n: 0, coat: 0, fur: 0, burnous: 0, tint: 0 };
     for (let i = 0; i < 40; i++) { const root = buildNPCMesh({ role: 'villager', name: 'W' + pk + i, people: pk }, { key: 'wtest' }); const rig = [...HB_RIGS].find(x => x.root === root);
-      if (!rig) continue; o.n++; const D = rig.hbG.dress; if (D.coat) { o.coat++; if (Math.abs(rig.g.cloth.r - D.coat[0]) < 1e-3) o.tint++; } if (D.coatFur) o.fur++; if (D.burnous) o.burnous++;
+      if (!rig) continue; o.n++; const D = rig.hbG.dress; if (D.coat) { o.coat++; if (Math.abs(rig.g.cloth.r - D.coat[0]) < 1e-3) o.tint++; } if (D.coatFur) o.fur++; if (D.burnous) { o.burnous++; if (D.hood === 'down') { o.down = (o.down || 0) + 1; if (o.point == null) { const p = HB.makePerson(rig.hbG); o.point = !!(p.root.getObjectByName('hoodPoint') && p.root.getObjectByName('tassel')); } } }
       HB_RIGS.delete(rig); PEOPLE_RIGS.delete(rig); } res[pk] = o; } forget(); return res; };
   worldState.gameTimeAbsMinutes = 1440 * 28 * 4 + 600; const season = calDay().season, out = run();
   currentHouse = { id: 'wtest' }; const indoor = run(); currentHouse = null;
@@ -70,6 +70,8 @@ const W = winter.out;
 check('in winter, out of doors, a share of each people wear the winter coat (the Markmen most, fur-lined; the Aurennais the burnous) and the distant copy takes the coat\'s colour',
   winter.season === 'winter' && W.markman.coat >= 28 && W.markman.fur === W.markman.coat && W.gatelander.coat >= 10 && W.gatelander.coat <= 30 && W.oldblood.coat >= 5 && W.oldblood.fur === 0 &&
   W.aurennais.burnous >= 4 && W.aurennais.coat === 0 && Object.values(W).every(o => o.n === 40 && o.tint === o.coat), winter);
+// S1770: a burnous worn with its hood down is built with the hood's point hanging down the back, its tassel at the point
+check(`a burnous with its hood down (${W.aurennais.down || 0} of ${W.aurennais.burnous}) is built with the hood's point and its tassel`, W.aurennais.down > 0 && W.aurennais.point === true, W.aurennais);
 check('indoors and out of winter nobody wears it', winter.season2 !== 'winter' && winter.indoorAll === 0 && winter.autumnAll === 0, winter);
 
 // S1767 (L1, OG-109's Mark formal column): on a feast day seven in ten of the Mark's folk wear the woven bands (a man's tunic to the knee),
@@ -118,17 +120,17 @@ const cloaks = await page.evaluate(() => { const v = new THREE.Vector3();
     for (let k = 0; k < K; k++) { const c = []; for (let r = 0; r < R; r++) { const q = at(cloak, k * R + r); c.push({ th: Math.atan2(q.x - ax, -(q.z - az)), r: Math.hypot(q.x - ax, q.z - az), y: q.y }); } pol.push(c); }
     const col = (k, y) => { const c = pol[k]; let lo = 0; while (lo < R - 2 && c[lo + 1].y > y) lo++; const a = c[lo], b = c[lo + 1], t = Math.max(0, Math.min(1, (a.y - y) / Math.max(1e-6, a.y - b.y))); return { th: a.th + (b.th - a.th) * t, r: a.r + (b.r - a.r) * t }; };
     let yHem = -1e9; for (const c of pol) yHem = Math.max(yHem, c[R - 1].y); const yTop = neck.y - .14, bones = body.skeleton.bones, si = body.geometry.attributes.skinIndex, sw = body.geometry.attributes.skinWeight;
-    if (!rig._arm) { rig._arm = []; for (let i = 0; i < si.count; i += 2) { let b = 0, w = 0; for (let q = 0; q < 4; q++) if (sw.getComponent(i, q) > w) { w = sw.getComponent(i, q); b = si.getComponent(i, q); } if (/upperarm|lowerarm|wrist|finger|metacarpal/.test(bones[b].name)) rig._arm.push(i); } }
-    let tested = 0, out = 0, worst = 0;
-    for (const i of rig._arm) { const p = at(body, i); if (p.y > yTop || p.y < yHem + .01) continue; const th = Math.atan2(p.x - ax, -(p.z - az)), r = Math.hypot(p.x - ax, p.z - az);
+    if (!rig._arm) { rig._arm = []; for (let i = 0; i < si.count; i += 2) { let b = 0, w = 0; for (let q = 0; q < 4; q++) if (sw.getComponent(i, q) > w) { w = sw.getComponent(i, q); b = si.getComponent(i, q); } if (/upperarm|lowerarm|wrist|finger|metacarpal/.test(bones[b].name)) { rig._arm.push(i); (rig._armB = rig._armB || []).push(bones[b].name); } } }
+    let tested = 0, out = 0, worst = 0, at0 = null;
+    for (let ai = 0; ai < rig._arm.length; ai++) { const i = rig._arm[ai]; const p = at(body, i); if (p.y > yTop || p.y < yHem + .01) continue; const th = Math.atan2(p.x - ax, -(p.z - az)), r = Math.hypot(p.x - ax, p.z - az);
       if (th < col(1, p.y).th || th > col(K - 2, p.y).th) continue; let k = 1, A = col(1, p.y), B = col(2, p.y); while (k < K - 3 && B.th < th) { k++; A = B; B = col(k + 1, p.y); }
-      const t = Math.max(0, Math.min(1, (th - A.th) / Math.max(1e-6, B.th - A.th))), cr = A.r + (B.r - A.r) * t; tested++; worst = Math.max(worst, r - cr); if (r > cr + .003) out++; }
-    return { tested, out, worst }; };
+      const t = Math.max(0, Math.min(1, (th - A.th) / Math.max(1e-6, B.th - A.th))), cr = A.r + (B.r - A.r) * t; tested++; if (r - cr > worst) { worst = r - cr; at0 = rig._armB[ai] + '@' + p.y.toFixed(2); } if (r > cr + .003) out++; }
+    return { tested, out, worst, at: at0 }; };
   const rigs = [...HB_RIGS].filter(r => r.hb && r.hb.L < 2 && r.root.parent === WORLD.scene && !r.sleep && r.hb.full.find(m => m.name === 'cloak')).slice(0, 4);
   return rigs.map(rig => { const root = rig.root, fy = root.rotation.y, hold = rig.hb.hold, o = { key: rig.g.hbKey, held: hold ? hold.size : 0, rest: test(rig), tested: 0, out: 0, worst: 0, swing: 0 };
     const wr = rig.hb.P.byName['wrist.R'], free = hold && !hold.has(rig.hb.map.findIndex(([j]) => j === 'wrR')), seen = [];
     for (let i = 1; i <= 60; i++) { root.position.x += Math.sin(fy) * .012; root.position.z += Math.cos(fy) * .012; tickPeople(1 / 60, 6e5 + i * 16.7);
-      if (i > 15 && i % 3 === 0) { const c = test(rig); o.tested += c.tested; o.out += c.out; o.worst = Math.max(o.worst, c.worst); if (free) seen.push(wr.getWorldPosition(new THREE.Vector3()).applyMatrix4(root.matrixWorld.clone().invert())); } }
+      if (i > 15 && i % 3 === 0) { const c = test(rig); o.tested += c.tested; o.out += c.out; if (c.worst > o.worst) { o.worst = c.worst; o.at = c.at + ' tick ' + i + ' walk ' + rig.w.walk.toFixed(2); } if (free) seen.push(wr.getWorldPosition(new THREE.Vector3()).applyMatrix4(root.matrixWorld.clone().invert())); } }
     if (free) o.swing = +Math.max(...seen.map(a => Math.max(...seen.map(b => Math.abs(a.z - b.z))))).toFixed(3); o.free = !!free; o.worst = +o.worst.toFixed(3); o.walk = +rig.w.walk.toFixed(2); return o; }); });
 console.log('  cloaks:', JSON.stringify(cloaks));
 check(`walking, no arm comes out through a cloak (${cloaks.map(c => c.out + ' of ' + c.tested).join(', ')} hand and forearm points under it out by 3 mm or more, at most ${Math.max(...cloaks.map(c => c.worst)) * 1000} mm, ${cloaks.length} cloaked walkers)`,
