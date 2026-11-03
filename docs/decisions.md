@@ -57,6 +57,16 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 
 **Recommendation: B.** It gives the approach a weapon and the end a choice (sinking is safe and loses the prize, boarding is risky and pays), every weapon costs hold space against cargo, and the guns stay the galleon's. Page: `docs/design/naval-combat.md`.
 
+### Aurenne's ruined aqueduct — fit it to the land, or wait? (from the look builder, 2026-11-03, #1072)
+**The question.** Card F8, backlog L10 (OG-121, OG-124). Michael chose the ruined aqueduct as drawn (#333 A): an arcade of 6 arches below and 10 above across a dry valley 20 m deep and 108 m wide. The world's ground cannot be cut, and Session 1784 measured Aurenne headless: in 400 random lines in each of its 21 land cells none was 120 m long, level at both ends and 12 m deep in the middle, and across every routed river the deepest valley in a cell is 0 to 10.2 m (most 4 to 8 m).
+
+**Options.**
+- **A (recommended).** Fit the arcade to the land: one tier where the valley is under 12 m, two where deeper, the break over the deepest bays. On Aurenne's 8–10 m river valleys it reads as a low single arcade of 4–6 open arches with the channel walk on top. One session, with a picture before it lands.
+- **B.** Cut its valley: a stamp dips the ground under it to the prototype's 20 m. As drawn, but a gully that starts and stops in open country.
+- **C.** Wait: leave it out until the land (card F3's ranges) has valleys that deep.
+
+**Recommendation: A.** Pictures: [the valley and the two tiers](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/places-aqueduct-aqueduct.jpg), [at the break](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/places-aqueduct-break.jpg). Meanwhile Aurenne's sea grotto went in instead (PR #1071).
+
 ## Answered
 ### The places under the land — how you get in (from the look builder, 2026-11-02, #1026)
 Card F8's places on the land are in the world (the abbey S1715, the tower house S1725, the passage cairn S1732). Three prototypes are left, all under the ground: the limestone cave (#313 A, its lake under falls), the smugglers' lair (#314) and the tower house's cellar, souterrain and pit (#401 A). The open world's terrain is one height per point, so nothing can be dug into it. How do you get in?
