@@ -36,6 +36,17 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 
 **Recommendation: A.** Devlog `docs/devlog/1769.md`.
 
+### Hearing, No mark and Word given — the last three perks (from the systems builder, 2026-11-03, #1055)
+**The question.** Asked again (#376): Michael's C on 16 Oct said to decide these three perks once 2.0's other systems were in, and they now are. Each perk takes away a rule the game does not have yet: nobody ever finds a picked lock (No mark, Locks 100), nobody refuses to talk at any favour (Hearing, Speech 75), and there is no trespass for a guard to waive (Word given, Speech 100). Cooking's *Shared pot* waits on a second person at the fire.
+
+**Options.**
+- **A.** Build the rule each perk takes away, then the perk (three sessions): a keeper finds an unseen picked shop lock at the next opening (−1 favour, no fine), which No mark stops; once a day a guard waives a fine made only of lock crimes on your word; at favour −1 or worse a townsperson offers only trade, and Hearing opens them at −1 (needs brush-off lines from the quest writer).
+- **B.** Different perks under the same names, no new rule (one session): Hearing gives +1 favour the first talk with each person, once per town a day; No mark makes a witness see only *someone* and halves the fine; Word given lets *Talk it down* work twice per town.
+- **C (recommended).** A's No mark and Word given, B's Hearing (two sessions): a found lock and a guard's halt gain weight, with no new refusal and no new lines.
+- **D.** Leave all three until after card F14.
+
+**Recommendation: C.** From Session 1772 (`docs/devlog/1772.md`).
+
 ## Answered
 ### The places under the land — how you get in (from the look builder, 2026-11-02, #1026)
 Card F8's places on the land are in the world (the abbey S1715, the tower house S1725, the passage cairn S1732). Three prototypes are left, all under the ground: the limestone cave (#313 A, its lake under falls), the smugglers' lair (#314) and the tower house's cellar, souterrain and pit (#401 A). The open world's terrain is one height per point, so nothing can be dug into it. How do you get in?
