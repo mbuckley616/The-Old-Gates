@@ -672,6 +672,48 @@
     for(const [u,v] of [[-.5,-.17],[.5,-.17],[-.5,.17],[.5,.17]])lo=Math.min(lo,meshH(D.x+u*co+v*s_,D.z-u*s_+v*co));
     M.group.position.set(D.x,lo-.25,D.z);M.group.rotation.y=D.ry;M.group.name='carving';sc.add(M.group);STATIC_SOL.push({cx:D.x,cz:D.z,rx:.5,rz:.5,carving:true});
     D.y=lo-.25;D.tris=M.tris;D.draws=M.draws;D.group=M.group;return M.group;}
+  // S1794 (card F8; Michael's A on #333, "broken, as drawn", and his A on #1072, "fit the arcade to the land") — Aurenne's ruined aqueducts
+  // (PKIT.places.aqueduct, places.js's aurenneAqueduct): an arcade across a river's valley, one tier where it is under 12 m deep and two where
+  // deeper. One Aurenne cell in three keeps one, by its own stream (aqueduct:<cell>), so no other draw of the cell moves. Read by place
+  // (withPlace over the cell's middle, the bare land, rawH), from the cell's own routed rivers (never a navigable one or a delta's arm): every
+  // 20 m along each, 150 m inside the cell, the line square to the stream; the channel's walk is at the lower of the two shoulders (the
+  // highest ground 15 to 75 m out each side), and the arcade runs from where the ground comes up to it on one side to the other. Kept:
+  // 36 to 130 m long, 7 m or more deep from the walk to the stream's bed, the walk 3 m or more over the sea, 18 m or more of the line 6 m
+  // under the walk (where an arch opens); its ends and middle 60 m off every pad, 80 m off every door, 40 m off the line of every road, 40 m
+  // off every lake's rim and 150 m off the cell's grotto. A line deep enough for two tiers (12 m) wins, then the one with the most ground low enough for arches, then the deepest. Unnamed, unmarked: found by looking. -> {id, x, z, ry, y, x0, x1, depth, cell} or null, kept on the cell (c._aq)
+  const AQ_ODDS=1/3,AQ_LOW=6,AQ_ARCHES=18; /* the ground an arch opens over (6 m under the walk) and how much of the line must lie that low: two bays and more */
+  function aqueductAt(c){
+    if(c._aq!==undefined)return c._aq;c._aq=null;
+    if(c.type==='sea'||c.home||window.OG_LOOK!=='new'||window.OG_KIT_TOWNS===false||typeof PKIT==='undefined'||!PKIT.places||!PKIT.places.aqueduct)return null;
+    if(nationKeyOf(c.i,c.j)!=='aurenne')return null;
+    const k=cellKey(c.i,c.j),r=PKIT.stream('aqueduct:'+k);if(r()>=AQ_ODDS)return null;
+    const byId={};for(const t of c.sites)byId[t.id]=t;const lakes=[];for(let j=c.j-1;j<=c.j+1;j++)for(let i=c.i-1;i<=c.i+1;i++){const n=getCell(i,j);if(n&&n.lakes)lakes.push(...n.lakes);}
+    const segD=(x,z,a,b)=>{const dx=b.x-a.x,dz=b.z-a.z,t=Math.max(0,Math.min(1,((x-a.x)*dx+(z-a.z)*dz)/(dx*dx+dz*dz||1)));return Math.hypot(x-a.x-dx*t,z-a.z-dz*t);};
+    const grotto=seaGrotto(c);let best=null;
+    withPlace(c.ox+SIZE/2,c.oz+SIZE/2,()=>{for(const rv of c.rivers){if(rv.nav||rv.arm)continue;const P=rv.pts;
+      for(let i=0;i<P.length-1;i++){const a=P[i],b=P[i+1],L=Math.hypot(b[0]-a[0],b[1]-a[1]);if(!L)continue;const tx=(b[0]-a[0])/L,tz=(b[1]-a[1])/L,nx=-tz,nz=tx;
+        for(let s=0;s<L;s+=20){const x=a[0]+tx*s,z=a[1]+tz*s;if(x<c.ox+150||x>c.ox+SIZE-150||z<c.oz+150||z>c.oz+SIZE-150)continue;
+          const pr=[];for(let u=-90;u<=90;u++)pr.push(rawH(x+nx*u,z+nz*u));const at=u=>pr[u+90];let mL=-1e9,mR=-1e9;for(let u=15;u<=75;u++){mL=Math.max(mL,at(-u));mR=Math.max(mR,at(u));}
+          const W=Math.min(mL,mR);let xl=-15,xr=15;while(xl>-90&&at(xl)<W)xl--;while(xr<90&&at(xr)<W)xr++;
+          let lo=1e9,ud=0,low=0;for(let u=xl;u<=xr;u++){if(at(u)<lo){lo=at(u);ud=u;}if(at(u)<=W-AQ_LOW)low++;}const D=W-lo,span=xr-xl;
+          if(span<36||span>130||D<7||W<3||low<AQ_ARCHES)continue;const rank=[D>=12?1:0,low,D];if(best&&(rank[0]<best.rank[0]||(rank[0]===best.rank[0]&&(rank[1]<best.rank[1]||(rank[1]===best.rank[1]&&rank[2]<=best.rank[2])))))continue;
+          const pts=[xl,(xl+xr)/2,xr].map(u=>[x+nx*u,z+nz*u]);
+          if(pts.some(([qx,qz])=>c.sites.some(t=>Math.hypot(t.x-qx,t.z-qz)<(t.pad||0)+60)||c.doors.some(e=>Math.hypot(e.x-qx,e.z-qz)<80)||lakes.some(l=>Math.hypot(l.x-qx,l.z-qz)<(l.r||60)+40)||(grotto&&Math.hypot(grotto.x-qx,grotto.z-qz)<150)))continue;
+          if(c.roadDefs.some(d=>byId[d.a]&&byId[d.b]&&pts.some(([qx,qz])=>segD(qx,qz,byId[d.a],byId[d.b])<40)))continue;
+          best={id:`aq_${k.replace(',','_')}`,x:+x.toFixed(2),z:+z.toFixed(2),ry:+Math.atan2(-nz,nx).toFixed(4),y:+W.toFixed(2),x0:xl,x1:xr,deep:ud,depth:+D.toFixed(2),low,rank,cell:k};}}}});
+    if(best)delete best.rank;c._aq=best;return c._aq;}
+  // the line kept clear of the scatter (the cell's first step, so the chunks are built without trees or rocks in the arcade): stamps that only
+  // clear (noFlat, so the land keeps its own lie) every 8 m along it, 6 m round
+  function aqueductStamps(c,k){const C=aqueductAt(c);if(!C)return [];const co=Math.cos(C.ry),s_=Math.sin(C.ry),out=[];
+    for(let u=C.x0-4;u<=C.x1+4.01;u+=8)out.push(addStamp({id:`${C.id}_clear${out.length}`,kind:'door',noFlat:true,x:C.x+u*co,z:C.z-u*s_,r:6,blend:2,y:0,cell:k}));return out;}
+  // the arcade laid to the drawn ground (meshH): the lowest of it across the arcade's width at each metre, under the walk; its solids
+  function placeAqueduct(c,k){const C=aqueductAt(c);if(!C)return null;const co=Math.cos(C.ry),s_=Math.sin(C.ry),W=(u,v)=>[C.x+u*co+v*s_,C.z-u*s_+v*co];
+    const G=new Map(),ground=u=>{const q=Math.round(u*2)/2;let h=G.get(q);if(h===undefined){h=1e9;for(const v of [-1.5,0,1.5])h=Math.min(h,meshH(...W(q,v)));h-=C.y;G.set(q,h);}return h;},groundAt=(u,v)=>meshH(...W(u,v))-C.y;
+    const M=PKIT.places.aqueduct({key:C.id,x0:C.x0,x1:C.x1,deep:C.deep,ground,groundAt});
+    M.group.position.set(C.x,C.y,C.z);M.group.rotation.y=C.ry;M.group.name='aqueduct';sc.add(M.group);
+    for(const b of M.sol){const [cx,cz]=W(b.x,b.z);STATIC_SOL.push({cx,cz,rx:b.w/2,rz:b.d/2,c:Math.cos(C.ry+b.ry),s:Math.sin(C.ry+b.ry),h:b.h,aqueduct:true});}
+    C.tris=M.tris;C.draws=M.draws;C.two=M.two;C.bays=M.bays;C.piers=M.piers;C.gap=M.gap;C.arch=M.arch;C.sol=M.sol.length;C.group=M.group;
+    return M.group;}
   function rebuildRoadGrid(){
     RSEG.length=0;RGRID.clear();ROAD_DEFS.length=0;
     ROADS.forEach(road=>{ROAD_DEFS.push(road.def);indexRoad(road);});

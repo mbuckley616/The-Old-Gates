@@ -6043,7 +6043,109 @@ function aurenneOrrery(hAt, o = {}) {
       vein: [0, +band(0).toFixed(2), +fz(0, band(0)).toFixed(3)], face: FACE, adit: { w: 2 * PX - POST, cap: CAP, len: AL }, gallery: { x0: GX0, x1: GX1, w: GX1 - GX0 }, landing: { z0: LZ, z1: CZ0 },
       mouth: { x: 0, z: 0, y: 0, w: AW, h: AH }, chamber: { h: CTOP }, bounds: { x0: X0c, x1: -X0c, z0: -NZc * G, z1: 0 }, low: 0, cells, obs, arrive: [0, 0, -1.6, 0] };
   }
-  return { stream, hashKey, mergeByMaterial, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, grotto: aurenneGrotto, mine: markMine }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, trunk: felledTrunk }, ships: { sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
+  // ── Aurenne's ruined aqueduct (Session 1794, card F8; OG-121's Aurenne panel, "aqueduct ruins", and OG-124's "a ruined aqueduct", in
+  // Aurenne's plaster and tile; the prototype is places.js's aurenneAqueduct, Session 907, Michael's A on #333: "broken, as drawn"). His A
+  // on #1072 fits the arcade to the land: the world's valleys are 5 to 16 m deep, not the prototype's 20, and cannot be cut. So the ground
+  // is given (o.ground(x), the lowest of the land across the arcade's width at x, in metres under the channel's walk) and the arcade is
+  // laid to it: piers of 2.2 m on the drawn pitch of 8.2 m, 6 m clear under round arches, slid along the line to open the most arches
+  // (of equals, a bay's centre nearest the valley's deepest point, o.deep, else the lowest ground found, so the stream runs through an arch); ONE tier where the valley is under 12 m deep, its arches
+  // springing 5.4 m under the walk (as high as they go with their rings under the tile band), 5 of them open on a valley of 9; TWO where it is 12 or deeper, the string course half way down and the lower arches springing under it, as drawn. A bay opens
+  // wherever the ground under it lies half a metre or more below its arches' spring; elsewhere the arcade is a wall on the slope. The break (o.broken, default true) is over
+  // the deepest two bays: the tier above them and the channel fallen, the pier between them a stump, the blocks heaped under the gap. What
+  // differs from the prototype: no ground of its own, no stream bed, no rocks or cypresses (the world's land and scatter are under it).
+  // Local frame: a metre a unit, the arcade along x from o.x0 to o.x1 (where the ground comes up to the walk), the walk at y 0.
+  // -> { group, tris, draws, sol: [{x, z, w, d, ry, h}], piers ([x]), bays ([{x0, x1, lower, upper}]), gap ({x0, x1, stump} or null),
+  //      two, depth, deep, arch { pitch, pier, span, r, upSpring, lowSpring, tier, deck }, channel { w, x0, x1, runs }, x0, x1 }
+  let AQM = null;
+  function aqueductMats() {
+    if (AQM) return AQM;
+    AQM = { plaster: mat('plaster', { ns: .7, color: 0xe4d4b2, rough: .95 }), ashlar: mat('ashlar', { ns: .9, color: 0xfff6e2, rough: .9 }), cope: mat('limestone', { ns: 1.0, color: 0xf6ecd8, rough: .85 }),
+      brick: mat('stone', { ns: 1.2, color: 0xb88a6c, rough: .95 }), lining: mat('plaster', { ns: .6, color: 0xb88a76, rough: .9 }), sinter: mat('plaster', { ns: .9, color: 0xf2ead6, rough: .8 }), zellige: mat('zellige', { ns: .6, rough: .3 }) };
+    return AQM;
+  }
+  function aurenneAqueduct(o = {}) {
+    const key = String(o.key || 'aqueduct'), r = stream('aqueduct:' + key), M = aqueductMats(), B = new Map(), V = (x, y) => new THREE.Vector2(x, y), sol = [], broken = o.broken !== false;
+    const put = (geo, k, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, uv = .5) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal'].includes(a)) g.deleteAttribute(a);
+      if (!g.attributes.normal) g.computeVertexNormals();
+      g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), new THREE.Vector3(1, 1, 1))); worldUV(g, uv);
+      if (!B.has(k)) B.set(k, []); B.get(k).push(g); };
+    /* a block knocked about: a subdivided box, each corner of its lattice pushed by the same amount wherever it is shared */
+    const rough = (w, h, d, amp) => { const g = new THREE.BoxGeometry(w, h, d, 2, 2, 2).toNonIndexed(), P = g.attributes.position, J = new Map();
+      for (let i = 0; i < P.count; i++) { const kk = `${P.getX(i).toFixed(3)},${P.getY(i).toFixed(3)},${P.getZ(i).toFixed(3)}`; if (!J.has(kk)) J.set(kk, [(r() - .5) * amp, (r() - .5) * amp, (r() - .5) * amp]); const j = J.get(kk); P.setXYZ(i, P.getX(i) + j[0], P.getY(i) + j[1], P.getZ(i) + j[2]); }
+      g.computeVertexNormals(); return g; };
+    const PITCH = 8.2, PIER = 2.2, SPAN = PITCH - PIER, RAD = SPAN / 2, DECK = -1, SC = .35, DL = 3.0, DU = 2.4, CW = 1.2, WT = .55, WH = .9;
+    const X0 = o.x0 ?? -54, X1 = o.x1 ?? 54, gr = o.ground || (x => { const a = Math.abs(x); return a < 54 ? -20 * (1 - (x / 54) ** 2) : 0; }), gAt = o.groundAt || ((x) => gr(x));
+    let lo = 1e9, xd = 0; for (let x = X0; x <= X1; x += .5) { const h = gr(x); if (h < lo) { lo = h; xd = x; } } if (o.deep != null) xd = o.deep;
+    const D = Math.max(0, -lo), two = D >= 12, foot = x => gr(x) - .6;
+    const TIER = two ? -1 - (D - 1) / 2 : -1e9, US = two ? Math.max(TIER + SC + .5, -6.5) : -5.4, LS = two ? TIER - RAD - .6 : -1e9;
+    // the piers on the pitch from the deepest point outwards, a bay's centre over it; a bay between each two, opened by the ground under it
+    /* the piers slid along the line, half a metre at a time over one pitch, to open the most arches; of equals, the one with a bay's centre nearest the deepest point */
+    const lay = off => { const piers = []; for (let k = Math.floor((X0 - xd) / PITCH) - 2; k <= Math.ceil((X1 - xd) / PITCH) + 2; k++) { const x = xd + (k + .5) * PITCH + off; if (x > X0 + PIER / 2 && x < X1 - PIER / 2) piers.push(x); }
+      const bays = []; for (let k = 0; k + 1 < piers.length; k++) { const x0 = piers[k] + PIER / 2, x1 = piers[k + 1] - PIER / 2; let hi = -99; for (let s = 0; s <= 12; s++) hi = Math.max(hi, gr(x0 + (x1 - x0) * s / 12));
+        bays.push({ x0, x1, lower: two && hi <= LS - .5, upper: hi <= US - .5, hi }); }
+      return { piers, bays, n: bays.filter(b => b.upper).length + bays.filter(b => b.lower).length, off: Math.min(Math.abs(off), PITCH - Math.abs(off)) }; };
+    let L0 = null; for (let off = 0; off < PITCH - .01; off += .5) { const L1 = lay(off > PITCH / 2 ? off - PITCH : off); if (!L0 || L1.n > L0.n || (L1.n === L0.n && L1.off < L0.off)) L0 = L1; }
+    const { piers, bays } = L0;
+    let GAP = null; if (broken) { let bd = 1e9; for (let p = 1; p + 1 < piers.length; p++) { if (!bays[p - 1].upper || !bays[p].upper) continue; const d = Math.abs(piers[p] - xd); if (d < bd) { bd = d; GAP = { p, x0: piers[p - 1] + PIER / 2, x1: piers[p + 1] - PIER / 2, stump: piers[p] }; } } }
+    const inGap = x => GAP && x > GAP.x0 - .01 && x < GAP.x1 + .01;
+    const arc = (path, cx, ys) => { for (let s = 0; s <= 24; s++) { const a = Math.PI - s / 24 * Math.PI; path.push(V(cx + Math.cos(a) * RAD, ys + Math.sin(a) * RAD)); } };
+    const hole = (x0, x1, ys, ft) => { const h = [V(x0, ft(x0)), V(x0, ys)]; arc(h, (x0 + x1) / 2, ys); h.push(V(x1, ft(x1))); for (let s = 11; s >= 1; s--) { const x = x0 + (x1 - x0) * s / 12; h.push(V(x, ft(x))); } return new THREE.Path(h.reverse()); }; /* counter-clockwise, against the clockwise outlines */
+    const extrude = (outline, holes, depth, k) => { const sh = new THREE.Shape(outline); sh.holes.push(...holes); const g = new THREE.ExtrudeGeometry(sh, { depth, bevelEnabled: false, curveSegments: 16 }); g.translate(0, 0, -depth / 2); put(g, k, 0, 0, 0, 0, 0, 0, .42); };
+    const ring = (cx, ys, depth) => { const sh = new THREE.Shape(), T = .55; sh.absarc(0, 0, RAD + T, 0, Math.PI, false); sh.absarc(0, 0, RAD, Math.PI, 0, true); const g = new THREE.ExtrudeGeometry(sh, { depth: depth + .08, bevelEnabled: false, curveSegments: 16 }); g.translate(cx, ys, -(depth + .08) / 2); put(g, 'ashlar');
+      for (const e of [-1, 1]) put(new THREE.BoxGeometry(PIER * .5 + .25, .32, depth + .1), 'ashlar', cx + e * (RAD + PIER * .25 - .12), ys - .16); };
+    // the lower tier (two tiers only): from under the ground to the string course, over the stretch where the ground falls below it
+    let lowA = null, lowB = null;
+    if (two) { for (let x = xd; x > X0 && foot(x) < TIER - .1; x -= .25) lowA = x; for (let x = xd; x < X1 && foot(x) < TIER - .1; x += .25) lowB = x;
+      if (lowA != null && lowB != null && lowB - lowA > 1) { const out = [V(lowA, TIER), V(lowB, TIER)]; for (let s = 1; s < 60; s++) { const x = lowB - (lowB - lowA) * s / 60; out.push(V(x, Math.min(TIER - .05, foot(x)))); }
+        const hs = bays.filter(b => b.lower && b.x0 > lowA && b.x1 < lowB); extrude(out, hs.map(b => hole(b.x0, b.x1, LS, x => gr(x) - .3)), DL, 'plaster'); for (const b of hs) ring((b.x0 + b.x1) / 2, LS, DL);
+        put(new THREE.BoxGeometry(lowB - lowA, SC, DL + .3), 'ashlar', (lowA + lowB) / 2, TIER + SC / 2); } else lowA = lowB = null; }
+    // the upper tier (the only one, where the valley is shallow): from the string course or the ground to the channel's bed; broken, two walls with ragged ends
+    const upFoot = x => Math.min(DECK - .6, two && lowA != null && x > lowA && x < lowB ? Math.max(TIER, foot(x)) : foot(x)), upHole = x => two && lowA != null && x > lowA && x < lowB ? Math.max(TIER + SC, gr(x) - .3) : gr(x) - .3;
+    const upper = (xa, xb, jagW, jagE) => { const out = []; if (jagW) out.push(...jagW); else out.push(V(xa, upFoot(xa)), V(xa, DECK));
+      if (jagE) out.push(...jagE); else out.push(V(xb, DECK), V(xb, upFoot(xb)));
+      const xe = out[out.length - 1].x, xw = out[0].x, n = Math.max(8, Math.ceil((xe - xw) / 1.2)); for (let s = 1; s < n; s++) { const x = xe - (xe - xw) * s / n; out.push(V(x, upFoot(x))); }
+      const hs = bays.filter(b => b.upper && b.x0 > xa && b.x1 < xb); extrude(out, hs.map(b => hole(b.x0, b.x1, US, upHole)), DU, 'plaster'); for (const b of hs) ring((b.x0 + b.x1) / 2, US, DU);
+      put(new THREE.BoxGeometry(xb - xa - (jagE ? 1.6 : 0) - (jagW ? 1.6 : 0), .3, DU + .4), 'ashlar', (xa + xb) / 2 + (jagW ? .8 : 0) - (jagE ? .8 : 0), DECK - .15);
+      for (const e of [-1, 1]) put(new THREE.BoxGeometry(xb - xa - (jagE ? 2.2 : 0) - (jagW ? 2.2 : 0), .42, .05), 'zellige', (xa + xb) / 2 + (jagW ? 1.1 : 0) - (jagE ? 1.1 : 0), DECK - .55, e * (DU / 2 + .02)); };
+    if (!GAP) upper(X0, X1);
+    else { const a = GAP.x0, b = GAP.x1, fa = upFoot(a), fb = upFoot(b);
+      upper(X0, a + 1.7, null, [V(a + 1.7, DECK), V(a + 1.1, DECK - 1.2), V(a + 1.6, DECK - 2.0), V(a + .6, DECK - 3.0), V(a, DECK - 4.0), V(a, fa)]);
+      upper(b - 1.7, X1, [V(b, fb), V(b, DECK - 4.0), V(b - .6, DECK - 3.0), V(b - 1.6, DECK - 2.0), V(b - 1.1, DECK - 1.2), V(b - 1.7, DECK)], null);
+      // the stump of the pier between: 2.5 m over the string course, or over the ground where there is one tier, its top broken
+      const px = GAP.stump, sy = two && lowA != null && px > lowA && px < lowB ? TIER + SC : gr(px) - .3; put(rough(PIER, 2.5, DU, .1), 'plaster', px, sy + 1.25);
+      for (let k = 0; k < 4; k++) put(rough(.7 + r() * .4, .4 + r() * .2, .6 + r() * .3, .08), 'cope', px - .6 + r() * 1.2, sy + 2.6 + r() * .2, -.8 + r() * 1.6, 0, r() * 3, (r() - .5) * .4); }
+    // the brick core where the plaster has fallen: patches on the piers' faces, both sides
+    for (const x of piers) for (const e of [-1, 1]) for (let k = 0; k < 2; k++) { if (inGap(x) || (!two && !k)) continue; const y = (k ? US - 3 : LS + 2) + (r() - .5) * 3, th = (two && y < TIER ? DL : DU) / 2;
+      if (y < gr(x) + .5 || y > DECK - 1) continue; put(new THREE.BoxGeometry(.6 + r() * 1.0, .5 + r() * 1.3, .03), 'brick', x + (r() - .5) * .8, y, e * (th + .015)); }
+    // the channel: its bed on the cornice, two walls coped in slabs (a few gone), the red lining and the pale crust; it runs 4 m on into
+    // the hill at either end, and broken it stops ragged either side of the gap
+    const CX0 = X0 - 4, CX1 = X1 + 4, runs = GAP ? [[CX0, GAP.x0 + 1.5], [GAP.x1 - 1.5, CX1]] : [[CX0, CX1]], WZ = CW / 2 + WT / 2;
+    for (const [x0, x1] of runs) { const L = x1 - x0, mx = (x0 + x1) / 2;
+      put(new THREE.BoxGeometry(L, 1.0, CW + 2 * WT), 'plaster', mx, DECK + .5); put(new THREE.BoxGeometry(L, .02, CW), 'lining', mx, .01);
+      for (const e of [-1, 1]) { const cut = GAP ? (x0 < GAP.x0 ? [0, e < 0 ? .5 : 0] : [e < 0 ? 0 : .4, 0]) : [0, 0], wx0 = x0 + cut[0], wx1 = x1 - cut[1], wl = wx1 - wx0, wm = (wx0 + wx1) / 2;
+        put(new THREE.BoxGeometry(wl, WH, WT), 'plaster', wm, WH / 2, e * WZ); put(new THREE.BoxGeometry(wl, WH - .3, .02), 'lining', wm, .3 + (WH - .3) / 2, e * (CW / 2 - .01));
+        put(new THREE.BoxGeometry(wl, .3, .025), 'sinter', wm, .15, e * (CW / 2 - .0125));
+        for (let x = wx0; x < wx1 - .2; x += 1.2) { if (r() < .14) continue; const l = Math.min(1.18, wx1 - x); put(new THREE.BoxGeometry(l, .15, WT + .12), 'cope', x + l / 2, WH + .075, e * WZ, 0, 0, (r() - .5) * .02); } } }
+    // the fallen: the gap's masonry heaped under it, on the string course where there is one and on the ground either side; coping stones about the piers' feet
+    if (GAP) for (let k = 0; k < 40; k++) { const x = GAP.x0 + r() * (GAP.x1 - GAP.x0), onTier = two && lowA != null && k < 10, z = onTier ? (r() - .5) * (DL - .8) : (r() > .5 ? 1 : -1) * (DU / 2 + .4 + r() * 5), y = onTier ? TIER + SC : gAt(x, z), s = .5 + r() * .7;
+      put(rough(s * 1.4, s * .7, s, s * .12), k % 3 ? 'cope' : 'plaster', x, y + s * .25, z, r() * .4, r() * 3, r() * .4); }
+    for (let k = 0; k < 12; k++) { const px = piers[Math.floor(r() * piers.length)], z = (r() > .5 ? 1 : -1) * (2.2 + r() * 3), x = px + (r() - .5) * 4; if (x < X0 || x > X1) continue; put(rough(1.1, .15, .65, .04), 'cope', x, gAt(x, z) + .05, z, (r() - .5) * .3, r() * 3, 0); }
+    // its solids: the arcade's width where it stands on the ground, open under each arch that reaches the ground, and in the breach. The
+    // world reads a solid as a box square to its axes, whatever its turn (solidAt), so the runs are laid as a chain of squares as wide as the
+    // arcade, a metre apart, each kept inside its run: turned any way, an arch stays open
+    { const open = x => { if (x < X0 || x > X1) return false; const g = gr(x); if (two && lowA != null && x > lowA && x < lowB && g < TIER) return bays.some(b => b.lower && x > b.x0 && x < b.x1);
+        if (!two && GAP && x > GAP.x0 && x < GAP.x1 && Math.abs(x - GAP.stump) > PIER / 2) return true; return bays.some(b => b.upper && x > b.x0 && x < b.x1); };
+      const deep = x => two && lowA != null && x > lowA && x < lowB && gr(x) < TIER, wide = x => x < X0 || x > X1 ? CW + 2 * WT : deep(x) ? DL : DU;
+      const runs = []; let run = null; for (let x = CX0; x <= CX1 + 1e-6; x += .1) { if (open(x)) { run = null; continue; } if (!run) runs.push(run = { a: x, b: x, d: wide(x) }); run.b = x; run.d = Math.max(run.d, wide(x)); }
+      for (const R of runs) { const L = R.b - R.a, h = Math.min(R.d, L) / 2, n = Math.max(1, Math.ceil((L - 2 * h) / 1.0) + 1);
+        for (let q = 0; q < n; q++) { const x = n === 1 ? (R.a + R.b) / 2 : R.a + h + (L - 2 * h) * q / (n - 1); sol.push({ x: +x.toFixed(2), z: 0, w: +(2 * h).toFixed(2), d: +(2 * h).toFixed(2), ry: 0, h: +(WH - Math.min(0, gr(Math.max(X0, Math.min(X1, x))))).toFixed(2) }); } } }
+    const group = new THREE.Group(); group.name = 'aqueduct'; let tris = 0;
+    for (const [k, gs] of B) { const g = mergeGeometries(gs); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = true; m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
+    const f2 = v => +v.toFixed(2);
+    return { group, tris: Math.round(tris), draws: group.children.length, sol, piers: piers.map(f2), bays: bays.map(({ hi, ...b }) => ({ ...b, x0: f2(b.x0), x1: f2(b.x1) })), gap: GAP ? { x0: f2(GAP.x0), x1: f2(GAP.x1), stump: f2(GAP.stump) } : null,
+      two, depth: f2(D), deep: f2(xd), arch: { pitch: PITCH, pier: PIER, span: SPAN, r: RAD, upSpring: f2(US), lowSpring: two ? f2(LS) : null, tier: two ? f2(TIER + SC) : null, deck: DECK }, channel: { w: CW, x0: CX0, x1: CX1, runs }, x0: X0, x1: X1, broken: !!GAP };
+  }
+  return { stream, hashKey, mergeByMaterial, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, grotto: aurenneGrotto, mine: markMine, aqueduct: aurenneAqueduct }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, trunk: felledTrunk }, ships: { sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
     mk: { hall: markHall, lot: markLot, alehall: markAlehall, longhouse: markLonghouse, mats: markMats, yard: markYard, ring: markRing },
     au: { house: aurenneHouse, lot: aurenneLot, courtyard: aurenneCourtyard, church: aurenneChurch, churchBox: aurenneChurchBox, churchHall: aurenneChurchHall, courtyardHouse: aurenneCourtyardHouse, tavern: aurenneTavern, mats: aurMats, roomMats: homeMats, AUR },
     gl: { PLANS, FIN, PS, PAINTS, guildHall: guildHallRoom, TOWN: GL_TOWN, building, church, keep, farmstead, coachInn, coachInnPlan, coachRoom, townhouse: townhouseRoom, farmhouse: farmhouseRoom, byre: byreRoom, barn: barnRoom, row: shrineRow, ROW_GODS, inn: gatelandsInn, cottage: gatelandsCottage, churchLen: n => +((n === 2 ? 2 : 3) * 4.8 + 1.6 + 5.6 - .5 + 7.2 - .9 - .02).toFixed(2), lot: gatelandsLot, mats: glMats, BAYS, bayPlan, bayWidth, baysFor } };
