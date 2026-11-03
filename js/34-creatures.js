@@ -1087,7 +1087,21 @@ function hcAttach(rig,C){const tA=performance.now();
   rig.hc={W,C,map,s0,t0,fur,small,ik,feet,hb,scorp,bug,arms,wings,sway,garg,merge:!!HC_KINDS[hcKind(rig)].merge,unhunch:!!HC_KINDS[hcKind(rig)].unhunch,rest:K.rest?Object.entries(K.rest):null,ank:K.person&&ik?map.map(([j],i)=>/^an/.test(j)?i:-1).filter(i=>i>=0):null,glow:meshes.map(m=>m.material.userData&&m.material.userData.uGlow).filter(u=>u&&u.value&&u.value.isColor),mid:null,bits:C.B.bits.map(b=>b.obj),hide:meshes.filter(m=>!fur.includes(m)),lift:K.legless?.24*SCALE.ROOM_K:0,hip0:sp?B.body.position.clone():K.person?new THREE.Vector3(0,PW.HIPS,0):new THREE.Vector3(B.hips.position.x,wolfHipY(rig.k),B.hips.position.z),pos0:by.spine0.position.clone(),k:1/(f*C.S),L:-1,drv:rig.mesh.material,em:-1};
   rig.hc.gr=hcGroundLegs(rig,by,K,W);
   HC_BODY.ms+=performance.now()-tA;HC_BODY.n++;}
+// Session 1785: the watcher (S1784, 42-zone-enemies.js' watchMake; Michael's B on #1005, as the prototype's wrongness.js has it) sits.
+// The kit's own `sit` gait poses its body, not a copy of the driver's stand: the haunches down on its hocks, the forelegs straight,
+// breathing on a 4.5 s cycle. It turns to keep you in front of it at the rule's 1.2 rad/s; the neck and head lead the turn by up to
+// HC_SIT.lead (its share of what is left of it), so it looks round at you first and the body follows. Killed, it takes the driver's again
+const HC_SIT={rate:.22,lead:.9,share:.75};
+function hcSitPose(rig){const H=rig.hc,C=H.C,e=rig.e;C.gait='sit';H.sat=true;
+  if(H.drop){H.W.position.y+=H.drop;H.drop=0;}
+  if(rig.sitPh==null)rig.sitPh=Math.random(); /* cosmetic: the breath's phase */ rig.sitPh=(rig.sitPh+HC_SIT.rate*Math.min(.1,Math.max(0,(performance.now()-(H.sitT||performance.now()))/1000)))%1;H.sitT=performance.now();
+  HC.pose(C,rig.sitPh);
+  const T=typeof targetOf==='function'?targetOf(e):{x:px,z:pz};let dy=Math.atan2(T.x-e.x,T.z-e.z)-(e.combatYaw||0);dy=Math.atan2(Math.sin(dy),Math.cos(dy));
+  const a=Math.max(-HC_SIT.lead,Math.min(HC_SIT.lead,dy*HC_SIT.share)),N=[...(C.B.chains.neck||[]),'head'].filter(n=>C.byName[n]);
+  for(const n of N)C.byName[n].rotation.y+=a/N.length;H.lead=a;rig.gaitNow='sit';}
 function hcPose(rig){const H=rig.hc,B=rig.B,map=H.map,uh=H.unhunch&&rig.hunch,rs=H.rest;
+  if(rig.e&&rig.e.watch&&!rig.e.dead&&!H.spider&&!H.feet){hcSitPose(rig);return;}
+  if(H.sat){H.sat=false;H.C.gait='stand';HC.pose(H.C,0);} /* S1785 — up from the sit: every bone back at the stand before the copy */
   if(uh){B.spine.rotation.x-=uh[0];B.neck.rotation.x-=uh[1];B.head.rotation.x-=uh[2];}
   if(rs)for(const [j,v] of rs){const r=B[j].rotation;r.x-=v[0];r.y-=v[1];r.z-=v[2];}
   const cp=i=>{const [j,b]=map[i];hbRel(B[j],rig.root,_hbq).multiply(H.s0[i]).multiply(H.t0[i]);
@@ -1358,6 +1372,8 @@ const _hcW=new THREE.Vector3();
 function hcTop(o){while(o.parent)o=o.parent;return o;}
 function hcShown(o){for(;o;o=o.parent)if(!o.visible)return false;return true;}
 function hcAt(rig,g){return rig.nest?g.getWorldPosition(_hcW):g.position;}
+// S1785 — the watcher's driver stands, so it keeps the kit's body (the middle level past HC_BODY.mid) wherever it is seen: one in a cell at most
+function hcSits(rig){return !!(rig.e&&rig.e.watch&&!rig.e.dead);}
 function hcTick(now){let best=null,bd=HC_BODY.build;
   const busy=now-HBODY.last<HBODY.gap||(typeof JOBS!=='undefined'&&JOBS.length&&activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior())); /* S1591 — as the people's (hbTick): the world's queue only where the world runs it, or no kit body is built in a gate entered with town jobs queued */
   for(const rig of WOLF_RIGS){if(!rig.hc&&(rig.hcFail||!hcOk(rig)))continue;HC_RIGS.add(rig);}
@@ -1373,11 +1389,11 @@ function hcTick(now){let best=null,bd=HC_BODY.build;
     if(rig.nest?hcTop(g)!==scene||!hcShown(g):g.parent!==scene||!g.visible)continue;
     const gp=hcAt(rig,g),d=Math.hypot(CAM.position.x-gp.x,CAM.position.z-gp.z)/(rig.reach||1); /* S1536 — a whale's levels by its size */
     if(!rig.hc){if(!busy&&!HC_BODY.job&&!rig.hcFail&&!(rig.fish&&rig.e.dead)&&d<bd){bd=d;best=rig;}continue;} /* S1529 — a shark killed before its body was built keeps the old one */
-    const L=rig.hc.L,a=HC_BODY.near+(L>0?-1:1),b=HC_BODY.mid+(L>1?-1:1);hcLevel(rig,d<a?0:d<b?1:2);hcThin(rig,d>HC_BODY.furAll+(rig.hc.thin?-.5:.5));
+    const L=rig.hc.L,a=HC_BODY.near+(L>0?-1:1),b=HC_BODY.mid+(L>1?-1:1);hcLevel(rig,d<a?0:d<b||hcSits(rig)?1:2);hcThin(rig,d>HC_BODY.furAll+(rig.hc.thin?-.5:.5));
     if(rig.hc.L<2)(rig.bird?hcBirdPose:rig.swimmer?hcSwimPose:rig.fish?hcFishPose:hcPose)(rig);else if(rig.die&&rig.e.dead)hcPuddle(rig);}
   if(best&&HC.buildIter){try{HC_BODY.job={rig:best,it:HC.buildIter(hcGenome(best)),ms:0,steps:0};}catch(e){best.hcFail=true;console.warn('F4: the kit could not build',best.name,e);}best=null;}
   if(!best&&HC_BODY.job&&!busy)best=hcBuildStep();
-  if(best){const C=best.hcC;best.hcC=null;(best.fish?hcFishAttach:hcAttach)(best,C);HBODY.last=now;if(best.hc){const g=best.root.parent,gp=hcAt(best,g),d=Math.hypot(CAM.position.x-gp.x,CAM.position.z-gp.z)/(best.reach||1);hcLevel(best,d<HC_BODY.near?0:d<HC_BODY.mid?1:2);hcThin(best,d>HC_BODY.furAll);if(best.hc.L<2)(best.bird?hcBirdPose:best.swimmer?hcSwimPose:best.fish?hcFishPose:hcPose)(best);}}}
+  if(best){const C=best.hcC;best.hcC=null;(best.fish?hcFishAttach:hcAttach)(best,C);HBODY.last=now;if(best.hc){const g=best.root.parent,gp=hcAt(best,g),d=Math.hypot(CAM.position.x-gp.x,CAM.position.z-gp.z)/(best.reach||1);hcLevel(best,d<HC_BODY.near?0:d<HC_BODY.mid||hcSits(best)?1:2);hcThin(best,d>HC_BODY.furAll);if(best.hc.L<2)(best.bird?hcBirdPose:best.swimmer?hcSwimPose:best.fish?hcFishPose:hcPose)(best);}}}
 // Session 1421: a foe's blow (attackPose, 42-zone-enemies.js) turns its driver's arm after hcTick has copied the frame's pose, so the kit's
 // body of a person-plan kind (the Goblin, the Skeleton, the trolls) never wound up: the copy again, as hbRepose does for the people's
 function hcRepose(rig){if(rig&&rig.hc&&rig.hc.L<2)hcPose(rig);}

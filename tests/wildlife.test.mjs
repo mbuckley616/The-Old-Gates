@@ -5,6 +5,7 @@
 // other loot, and its herd bolts; a grazing animal does not stop you passing time; walked away from, the animals go.
 // Session 1784: the watcher (L5, #1005 B): one Gatelands cell in three keeps a grey wolf on a rise off a road with three sheep round it; it
 // casts no shadow while they do, never runs or hunts, turns to keep you in front of it, and one blow takes it.
+// Session 1785: it sits, in the creature kit's own `sit` (the haunches on the ground, the paws planted), breathing; killed, it leaves the sit.
 import { boot, check } from './lib/game.mjs';
 const g = await boot({ look: 'new' }); const { page } = g;
 await g.intoWorld();
@@ -144,12 +145,16 @@ const wt = await page.evaluate(() => { const G = [...CELLS.values()].filter(c =>
   const e = ZONES.world.enemies.find(o => o._wildKey === D.id && !o.dead), sh = ZONES.world.enemies.filter(o => o._wildKey && o._wildKey.startsWith(D.id + ':s'));
   if (!e) return out; let cast = 0, scast = 0; e.mesh.traverse(o => { if ((o.isMesh || o.isPoints) && o.castShadow) cast++; }); sh.forEach(s => { let k = 0; s.mesh.traverse(o => { if (o.isMesh && o.castShadow) k++; }); if (k) scast++; });
   Object.assign(out, { name: e.name, cast, sheep: sh.length, scast, sd: sh.map(s => +Math.hypot(s.x - e.x, s.z - e.z).toFixed(1)) });
+  { const rig = e.limbs.wolf; out.built = _drive(() => rig.hc && rig.hc.L < 2, 900); const H = rig.hc; /* S1785 — it sits, in the kit's own sit */
+    if (H) { const gy = activeTerrainH(e.x, e.z), w = b => H.C.byName[b].getWorldPosition(new THREE.Vector3()), m0 = Array.from(H.C.skel.boneMatrices);
+      _drive(() => false, 40); H.C.root.updateMatrixWorld(true); H.C.skel.update(); let mv = 0; H.C.skel.boneMatrices.forEach((v, i) => { mv = Math.max(mv, Math.abs(v - m0[i])); });
+      out.sit = { gait: H.C.gait, hips: +(w('spine0').y - gy).toFixed(3), paws: H.C.B.legs.map(L => +(w(L.names[L.names.length - 1]).y - gy).toFixed(3)), breath: +mv.toFixed(4), shadow: (() => { let k = 0; H.W.traverse(o => { if ((o.isMesh || o.isPoints) && o.castShadow) k++; }); return k; })() }; } }
   const a = D.ry + 1.8; px = D.x + Math.sin(a) * 15; pz = D.z + Math.cos(a) * 15; for (let i = 0; i < 240; i++) tickZoneEnemies(1 / 60, 0, WORLD.scene);
   const face = () => { const f = Math.atan2(px - e.x, pz - e.z); return +Math.abs(Math.atan2(Math.sin(f - e.combatYaw), Math.cos(f - e.combatYaw))).toFixed(3); };
   out.face = face(); out.bolted = sh.filter(s => Math.hypot(s.x - s.homeX, s.z - s.homeZ) > 10).length;
   px = e.x + 2.5; pz = e.z; for (let i = 0; i < 180; i++) tickZoneEnemies(1 / 60, 0, WORLD.scene);
   out.close = face(); out.moved = +Math.hypot(e.x - D.x, e.z - D.z).toFixed(3); out.alert = !!e.alert; out.wild = !!e.wild; out.hp = e.hp; out.dmg = e.dmg;
-  killZoneEnemy(e, WORLD.scene); out.dead = !!e.dead; return out; });
+  killZoneEnemy(e, WORLD.scene); out.dead = !!e.dead; if (e.limbs.wolf.hc) { _drive(() => false, 3); out.up = e.limbs.wolf.hc.sat === false; } return out; });
 console.log('  watcher:', JSON.stringify(wt));
 check(`${wt.n} of ${wt.cells} Gatelands cells keep a watcher, the same when asked again; ${wt.id} stands with ${wt.sheep} sheep ${JSON.stringify(wt.sd)} m round it`,
   wt.n > 0 && wt.n < wt.cells && wt.same && wt.sheep === 3 && (wt.sd || []).every(d => d >= 4.5 && d <= 7.6), wt);
@@ -157,4 +162,6 @@ check(`it casts no shadow (${wt.cast} casters) while its sheep do (${wt.scast} o
   wt.cast === 0 && wt.scast === 3 && wt.face < .1 && wt.close < .1, wt);
 check(`the wolf never moves (${wt.moved} m; ${wt.bolted} of its 3 sheep ran) nor hunts (alert ${wt.alert}, ${wt.dmg} damage), and one blow takes it`,
   wt.moved === 0 && !wt.alert && wt.wild && wt.hp === 1 && wt.dmg === 0 && wt.dead, wt);
+check(`it sits in the kit's own sit (${wt.sit && wt.sit.gait}): hips ${wt.sit && wt.sit.hips} m over the ground, paws at ${JSON.stringify(wt.sit && wt.sit.paws)}, breathing (${wt.sit && wt.sit.breath}), no shadow from its kit body; killed, it leaves the sit (${wt.up})`,
+  !!wt.sit && wt.sit.gait === 'sit' && wt.sit.hips < .2 && wt.sit.paws.every(y => Math.abs(y) < .03) && wt.sit.breath > 1e-4 && wt.sit.shadow === 0 && wt.up === true, wt);
 await g.close();
