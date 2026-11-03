@@ -472,7 +472,7 @@
     return out;
   }
 
-  // S1801 (Michael's A on #1083, "swim in a room's deep water by the open sea's rules") — a room's water. A room that has some sets
+  // S1805 (Michael's A on #1083, "swim in a room's deep water by the open sea's rules") — a room's water. A room that has some sets
   // INT_WATER {house, y (the surface in the room's frame), bed(x, z) (the bed under a point, null for rock)}: Aurenne's sea grotto
   // (buildKitGrotto, 83) is the one today. Over it the sea's own numbers hold: you wade where the bed is within SWIM_DEPTH (1.40) of the
   // surface, standing on it; deeper you swim with your feet 1.45 under the surface (the world's SWIM_Y), and dive and rise by DIVE's rule
@@ -502,7 +502,7 @@
     else DIVE.breath=Math.min(1,DIVE.breath+dt/4);
     breathUI();jumpY=DIVE.depth;velY=0;onGround=true;return DIVE.depth;}
 
-  // S1803 (Michael's A on #1083, "a ladder is E at its foot or top and carries you up or down in about 2 s") — a room's ladders. A room
+  // S1807 (Michael's A on #1083, "a ladder is E at its foot or top and carries you up or down in about 2 s") — a room's ladders. A room
   // that has one pushes {house, x, z (where the climber hangs, at its face), foot {x, z, y}, head {x, z, y}} onto INT_LADDERS in its own
   // frame: the smugglers' sea cave's, from the landing to the ledge (buildKitSeaCave, 83), is the one today. E within 1 m of either end, at
   // its height, is climbLadder (the named action): the climb takes LADDER_S whatever the ladder's height, read from the clock (a dropped

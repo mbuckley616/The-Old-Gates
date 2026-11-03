@@ -43,7 +43,7 @@ console.log(JSON.stringify(c));
 check(`the grotto (${c.tris} triangles in ${c.draws} draws): arrived at the stair's head at ${c.y0} m, clear`, c.clear && Math.abs(c.y0 - c.top) < .05 && c.tris < 220000 && c.draws <= 24, c);
 check(`walked down the stair, to the spring and down the quay to the water stairs with no wall in the way (${c.nb} blocked, steps of ${c.maxStep} at most)`, c.nb === 0 && c.maxStep <= .4 && Math.hypot(c.end[0] - c.goal[0], c.end[1] - c.goal[1]) < .1 && Math.abs(c.end[2] - 1.2) < .05, c);
 check('the sea open off the quay (#1083 A: it is swum), the rock beside the stair and the spring\'s basin solid, the quay open', !c.sea && c.rock && c.basin && !c.quay, c);
-// Session 1801 (Michael's A on #1083, "swim in a room's deep water by the open sea's rules"): driven through the game's own loop at fixed
+// Session 1805 (Michael's A on #1083, "swim in a room's deep water by the open sea's rules"): driven through the game's own loop at fixed
 // steps, off the quay into the sea, a dive and its breath, across to the beach and up onto its sand, and back up onto the quay.
 const sw = await page.evaluate(() => {
   const raf = window.requestAnimationFrame, rr = REN.render; window.requestAnimationFrame = () => 0; REN.render = () => {};

@@ -38,7 +38,7 @@ check(`the mine (${m.tris} triangles in ${m.draws} draws), its levels as built (
 check(`lamps only while worked: this one ${m.worked ? 'worked' : 'worked out'}, ${m.lamps} lamps drawn, ${m.lit} lit; a worked-out one, ${m.outLamps} lamps and no flame`, (m.worked ? m.lamps > 4 && m.lit === 5 : m.lamps === 0 && m.lit === 0) && m.outLamps === 0 && !m.outHorn, m);
 check(`walked the adit, the landing, the gallery and the ledge to the face with no wall in the way and no step (${m.nb} blocked)`, m.nb === 0 && m.maxStep <= .01 && Math.hypot(m.end[0] - m.goal[0], m.end[1] - m.goal[1]) < .1, m);
 check('the void over the stope is a wall: past the landing\'s edge, off the gallery\'s rail, in its middle', m.voidWall && m.edgeWall && m.railWall, m);
-// Session 1804 (Michael's A on #1083): the ladder down the east wall to the sump, E at its head on the landing, 2 s on the clock through the
+// Session 1808 (Michael's A on #1083): the ladder down the east wall to the sump, E at its head on the landing, 2 s on the clock through the
 // game's own loop, wading in the sump's 0.6 m at the shaft's bottom with its rock round it a wall, and E at its foot back up.
 const sp = await page.evaluate(() => {
   const raf = window.requestAnimationFrame, rr = REN.render; window.requestAnimationFrame = () => 0; REN.render = () => {};

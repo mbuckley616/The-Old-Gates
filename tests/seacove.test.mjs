@@ -45,7 +45,7 @@ const back = await page.evaluate(() => { const T = currentHouse._limeCave, Bd = 
 const outside = await page.waitForFunction(() => !isInterior(), null, { timeout: 30000 }).then(() => true, () => false); await page.waitForTimeout(1500);
 const o = await page.evaluate(id => { const C = [...CELLS.values()].find(c => c._cove && c._cove.id === id)._cove; return { d: +Math.hypot(px - C.out.x, pz - C.out.z).toFixed(2), dy: +(jumpY - activeTerrainH(px, pz)).toFixed(2), solid: solidAt(px, pz) }; }, k.near.id);
 check(`out at the mouth, on the ground (${o.d} m from the spot)`, /go out of the cave/.test(back) && outside && o.d < .5 && Math.abs(o.dy) < .3 && !o.solid, o);
-// Session 1803 (Michael's A on #1083, "a ladder is E at its foot or top and carries you up or down in about 2 s"; the tunnel from the ledge a
+// Session 1807 (Michael's A on #1083, "a ladder is E at its foot or top and carries you up or down in about 2 s"; the tunnel from the ledge a
 // second way out): back in, E at the ladder's foot climbs it in LADDER_S through the game's own loop, the ledge and the tunnel are walked to
 // its end with its sides walls, E at the head climbs down and up again, and E at the tunnel's end comes out on the land over the cave.
 await page.evaluate(id => { const C = [...CELLS.values()].find(c => c._cove && c._cove.id === id)._cove, co = Math.cos(C.ry), s = Math.sin(C.ry); px = C.x - s * 1; pz = C.z - co * 1; jumpY = activeTerrainH(px, pz); interact(); }, k.near.id);

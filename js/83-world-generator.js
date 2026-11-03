@@ -2476,7 +2476,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   // behind its mouth on the hillside (limeCave, 82). The cave is moved into a room's frame: x from its west rock, z from its far end, the
   // floor 0.25 m under the lowest step of the shore's terraces. Its walk is the place's own grid of half-metre cells: each run you can
   // stand on is a foothold at its height and a solid up to it (so a rise of more than a step is a wall from below), each run of rock or
-  // deep water a solid to 60 m. Nothing swims in a room: the lake is a wall at the water's edge (in ice, since S1801, a floor at its surface), and the natural bridge is the way over it
+  // deep water a solid to 60 m. Nothing swims in a room: the lake is a wall at the water's edge (in ice, since S1805, a floor at its surface), and the natural bridge is the way over it
   // to the far shelf. The light is the day's alone: in at the mouth along the passage, down the shaft onto the falls' pool, and the
   // flowers' own glow; a low ambient keeps the rock's shape. No one is here.
   function kitLimeCave(house){return !!(house&&house.type==='limecave'&&typeof PKIT!=='undefined'&&PKIT.places&&PKIT.places.cave);}
@@ -2520,7 +2520,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     intNPCMesh=null;intNPCPos={x:-99,z:-99};intBedPos=null;intStashPos=null;
     const SOL=[];INT_SOL=SOL;FOOTHOLDS=[];INT_BEDS=[];INT_DOORS=[];INT_DOORS.house=house.id;INT_CHAIR=null;INT_NPCS=[];HATCH.active=false;HATCH.roof=false;INT_LOOT=null;INT_BOX=null;INT_SHELF=null;
     T.group.position.set(-Bd.x0,-FY,-Bd.z0);sc_.add(T.group);
-    /* S1803 (Michael's A on #1083) — the ladder up the east wall to the ledge, and the escape tunnel east from it: the ledge's slab (from just
+    /* S1807 (Michael's A on #1083) — the ladder up the east wall to the ledge, and the escape tunnel east from it: the ledge's slab (from just
        east of the ladder to the tunnel's end, 2.6 m across) a floor at its height, the rock under it cut to it, the tunnel's sides and end walls */
     const Lg=T.ladder&&T.escape?{x0:T.ladder.x+.15,x1:T.escape.xPlane,z0:T.escape.z-1.3,z1:T.escape.z+1.3,y:T.ledge}:null;
     const cut=(q,y1)=>{if(!Lg){SOL.push({...q,y0:-5,y1});return;}const R={x0:rx(Lg.x0),x1:rx(Lg.x1),z0:rz(Lg.z0),z1:rz(Lg.z1)};
@@ -2550,7 +2550,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   // S1790 (card F8; Michael's A on #305 and #1026) — the Mark's silver mine (PKIT.places.mine, places.js's markMine) behind its adit's mouth
   // (mineAt, 82), built as the caves are: moved into a room's frame (the floor 0.25 m under the adit's), its walk the place's own
   // quarter-metre cells (a foothold and a solid up to it where you stand, a solid to 60 m over the void and the rock), the cart, the lamp
-  // posts and the basket boxes 1.5 m up. The ladder to the sump is climbed since S1804. The light (#305's 2 A): the day down the adit from its
+  // posts and the basket boxes 1.5 m up. The ladder to the sump is climbed since S1808. The light (#305's 2 A): the day down the adit from its
   // mouth by the hour; worked, the miners' lamps, warm, on the landing, the gallery, at the face and in the kibble; worked out, nothing
   // else, a low ambient keeping the rock's shape, so the stope is seen by your torch. No one is here: who works it is the systems builder's.
   function kitMine(house){return !!(house&&house.type==='mine'&&typeof PKIT!=='undefined'&&PKIT.places&&PKIT.places.mine);}
@@ -2568,7 +2568,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       if(c.y==null){SOL.push({...q,y0:-5,y1:60});continue;}
       const y=+ry(c.y).toFixed(2);SOL.push({...q,y0:-5,y1:y});FOOTHOLDS.push({...q,y});}
     for(const b of T.obs)SOL.push({x0:rx(b.x0),x1:rx(b.x1),z0:rz(b.z0),z1:rz(b.z1),y0:-5,y1:+ry(1.5).toFixed(2)}); /* the cart, the lamp posts, the basket */
-    /* S1804 (Michael's A on #1083) — the ladder down the east wall to the sump: the shaft's bottom is the sump's bed under 0.6 m of water
+    /* S1808 (Michael's A on #1083) — the ladder down the east wall to the sump: the shaft's bottom is the sump's bed under 0.6 m of water
        (INT_WATER: you wade it), its rock round it walls up to under the deck, the rail along the deck's edges over it; the ladder from the
        landing's rail gap to the bed (INT_LADDERS, roomFloorTick, 88) */
     INT_LADDERS=[];INT_WATER=null;if(T.ladder&&T.void){const V=T.void,vx0=rx(V.x0),vx1=rx(V.x1-.3),vz0=rz(V.z1),vz1=rz(V.z0),L=T.ladder,by=+ry(V.floor).toFixed(2);
@@ -2590,7 +2590,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   // frame on its outcrop (seaGrotto, 82), built as the sea cove is: moved into a room's frame (the floor 0.25 m under the water stairs'
   // lowest dry tread), its walk the place's own half-metre cells (the stair's treads, the landing and the quay), a foothold and a solid up
   // to it where you stand and a solid to 60 m over rock and sea; the spring's basin and benches and the bollards boxes 1.2 m up. Since
-  // S1801 (#1083 A) the sea is swum and the beach walked: only the rock is a wall, and INT_WATER gives the room its water (roomFloorTick, 88). The light: the day off the
+  // S1805 (#1083 A) the sea is swum and the beach walked: only the rock is a wall, and INT_WATER gives the room its water (roomFloorTick, 88). The light: the day off the
   // sea through the arch by the hour, the sea's own glow from under it in two blue lights, and what comes down the stair from its head.
   function QYG(T){return T.quay.y-.05;} /* S1788 — below the quay: the water stairs' treads */
   function buildKitGrotto(house){
@@ -2606,7 +2606,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     intNPCMesh=null;intNPCPos={x:-99,z:-99};intBedPos=null;intStashPos=null;
     const SOL=[];INT_SOL=SOL;FOOTHOLDS=[];INT_BEDS=[];INT_DOORS=[];INT_DOORS.house=house.id;INT_CHAIR=null;INT_NPCS=[];HATCH.active=false;HATCH.roof=false;INT_LOOT=null;INT_BOX=null;INT_SHELF=null;
     T.group.position.set(-Bd.x0,-FY,-Bd.z0);sc_.add(T.group);
-    const wet=typeof T.bedAt==='function'; /* S1801 (#1083 A) — the sea and the beach are swum and walked (roomFloorTick, 88): only the rock is a wall */
+    const wet=typeof T.bedAt==='function'; /* S1805 (#1083 A) — the sea and the beach are swum and walked (roomFloorTick, 88): only the rock is a wall */
     INT_WATER=wet?{house:house.id,y:+ry(T.water).toFixed(2),bed:(x,z)=>{const b=T.bedAt(x+Bd.x0,z+Bd.z0);return b==null?null:b-FY;}}:null;
     for(const c of T.cells){const q={x0:rx(c.x0),x1:rx(c.x1),z0:rz(c.z0),z1:rz(c.z1)};
       if(c.y==null&&wet){for(let z=c.z0;z<c.z1-.01;z+=.5){let a=null;for(let x=c.x0;x<=c.x1+.01;x+=.5){const rock=x<c.x1-.01&&T.bedAt(x+.25,z+.25)==null;
@@ -2627,9 +2627,9 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   function limeCaveAt(){
     if(isInterior()){const h=currentHouse;if(!h||(h.type!=='limecave'&&h.type!=='seacave'&&h.type!=='mine')||!h._limeCave)return null; /* S1790 — and the mine's adit */const T=h._limeCave,Bd=T.bounds,x=px+Bd.x0,z=pz+Bd.z0;
       if(h.grotto&&T.waterStairs){const w=T.waterStairs.filter(t=>t.y>0&&t.y<.7);if(w.some(t=>x>t.x0-.3&&x<t.x1+.3&&z>t.z0-.3&&z<t.z1+.3))return {seaOut:true};} /* S1788 — the water stairs' foot: the sea way out */
-      if(h.grotto&&T.arch&&typeof roomSwimming==='function'&&roomSwimming()&&z<T.arch.z+7&&Math.abs(x)<T.arch.w/2+2)return {seaOut:true}; /* S1801 (#1083 A) — swum to the arch from inside: the same way out */
-      {const ld=typeof ladderNear==='function'?ladderNear():null;if(ld)return {ladder:ld};} /* S1803 (#1083 A) — a ladder's foot or head */
-      if(h._seaCave&&!h.grotto&&T.escape&&x>T.escape.xPlane-1.6&&Math.abs(z-T.escape.z)<1.2&&Math.abs(jumpY-(T.ledge-h._caveFY))<.6)return {escape:true}; /* S1803 — the escape tunnel's end */
+      if(h.grotto&&T.arch&&typeof roomSwimming==='function'&&roomSwimming()&&z<T.arch.z+7&&Math.abs(x)<T.arch.w/2+2)return {seaOut:true}; /* S1805 (#1083 A) — swum to the arch from inside: the same way out */
+      {const ld=typeof ladderNear==='function'?ladderNear():null;if(ld)return {ladder:ld};} /* S1807 (#1083 A) — a ladder's foot or head */
+      if(h._seaCave&&!h.grotto&&T.escape&&x>T.escape.xPlane-1.6&&Math.abs(z-T.escape.z)<1.2&&Math.abs(jumpY-(T.ledge-h._caveFY))<.6)return {escape:true}; /* S1807 — the escape tunnel's end */
       return z>T.mouth.z-3&&Math.abs(x-T.mouth.x)<3?{up:true}:null;}
     if(activeZoneId!=='world'||typeof CELLS==='undefined')return null;const [ci,cj]=cellOf(px,pz);
     for(let j=cj-1;j<=cj+1;j++)for(let i=ci-1;i<=ci+1;i++){const c=CELLS.get(cellKey(i,j));if(!c)continue;for(const C of [c._cave,c._cove,c._grotto,c._mine]){if(!C||!C.house||Math.abs(px-C.x)>12||Math.abs(pz-C.z)>12)continue;
@@ -2639,7 +2639,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
         const sx=-Math.sin(C.ry),sz=-Math.cos(C.ry),dx=px-C.arch.x,dz=pz-C.arch.z,along=dx*sx+dz*sz,across=dx*sz-dz*sx;
         if(Math.abs(across)<C.arch.w/2+.5&&along<3.5&&along>-4.5)return {sea:true,C};}}}
     return null;}
-  // S1803 (#1083 A) — where the escape tunnel comes out: the cave's frame turned into the world's as the mouth is (+z the land, the mouth
+  // S1807 (#1083 A) — where the escape tunnel comes out: the cave's frame turned into the world's as the mouth is (+z the land, the mouth
   // at the origin), 1.5 m past the tunnel's end; if that is sea or solid, the nearest dry open ground along its line out to 20 m either way,
   // else the mouth's own spot. Facing out along the tunnel.
   function caveEscapeOut(C,T){const co=Math.cos(C.ry),s_=Math.sin(C.ry),E=T.escape,W=(fx,fz)=>[C.x+fx*co+fz*s_,C.z-fx*s_+fz*co],yaw=Math.atan2(-co,s_);
@@ -2647,16 +2647,16 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     return {x:C.out.x,z:C.out.z,yaw:C.out.yaw};}
   function limeCavePrompt(){const t=limeCaveAt();if(!t)return null;const gr=t.up?!!(currentHouse&&currentHouse.grotto):!!(t.C&&t.C.house&&t.C.house.grotto); /* S1787 — the grotto's stair */
     if(t.sea)return "Press 'E' to swim in under the arch";if(t.seaOut)return "Press 'E' to swim out under the arch"; /* S1788 */
-    if(t.ladder)return t.ladder.up?"Press 'E' to climb the ladder":"Press 'E' to climb down the ladder";if(t.escape)return "Press 'E' to crawl out of the tunnel"; /* S1803 */
+    if(t.ladder)return t.ladder.up?"Press 'E' to climb the ladder":"Press 'E' to climb down the ladder";if(t.escape)return "Press 'E' to crawl out of the tunnel"; /* S1807 */
     const mn=t.up?!!(currentHouse&&currentHouse.type==='mine'):!!(t.C&&t.C.house&&t.C.house.type==='mine'); /* S1790 — the mine's adit */
     if(mn)return t.up?"Press 'E' to go out of the mine":"Press 'E' to go into the mine";
     return gr?(t.up?"Press 'E' to go up the stair":"Press 'E' to go down the stair"):t.up?"Press 'E' to go out of the cave":"Press 'E' to go into the cave";}
   function limeCaveUse(){const t=limeCaveAt();if(!t)return false;
     if(t.down){goToInterior(t.C.house);return true;}
     if(t.sea){t.C.house._bySea=true;goToInterior(t.C.house);return true;} /* S1788 — in from the sea */
-    if(t.ladder)return climbLadder(t.ladder.L,t.ladder.up); /* S1803 */
+    if(t.ladder)return climbLadder(t.ladder.L,t.ladder.up); /* S1807 */
     const h=currentHouse,[ci,cj]=h&&h.siteId?h.siteId.replace(/^(cave|cove|grotto|mine)_/,'').split('_').map(Number):[NaN,NaN],c=CELLS.get(cellKey(ci,cj)),C=c&&(h.grotto?c._grotto:h.type==='seacave'?c._cove:h.type==='mine'?c._mine:c._cave); /* S1790 — and the mine's */ /* S1787 — and the grotto's */
-    if(t.escape&&C){const o=caveEscapeOut(C,h._limeCave);window._pendingWorldPos={x:o.x,z:o.z,yaw:o.yaw,jumpY:worldH(o.x,o.z)};} /* S1803 — out at the tunnel's end, on the land over it */
+    if(t.escape&&C){const o=caveEscapeOut(C,h._limeCave);window._pendingWorldPos={x:o.x,z:o.z,yaw:o.yaw,jumpY:worldH(o.x,o.z)};} /* S1807 — out at the tunnel's end, on the land over it */
     else if(t.seaOut&&C&&C.arch){const o=C.arch.out;window._pendingWorldPos={x:o.x,z:o.z,yaw:o.yaw,jumpY:SWIM_Y};} /* S1788 — out under the arch, in the water beyond it, facing the sea */
     else if(C&&C.out)window._pendingWorldPos={x:C.out.x,z:C.out.z,yaw:C.out.yaw,jumpY:worldH(C.out.x,C.out.z)};
     exitInterior();return true;}

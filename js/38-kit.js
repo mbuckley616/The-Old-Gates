@@ -5503,7 +5503,7 @@ function aurenneOrrery(hAt, o = {}) {
     // the walk as half-metre cells: the passage's floor (within 1.6 m of its spine, where its tube is 2 m and more either side), the hall's
     // floor wherever a body 1 m over it is 0.7 m inside the hall's ring, the bridge's deck; null where it is rock, water deeper than the
     // terraces' last step, a column, a stalagmite or a fallen block. Rows of equal cells merged, then runs of equal rows.
-    // S1801 (Michael's A on #1083, "walk on any frozen water in a room") — in ice the lake is a sheet you walk on at its surface (LY), all
+    // S1805 (Michael's A on #1083, "walk on any frozen water in a room") — in ice the lake is a sheet you walk on at its surface (LY), all
     // but 2.2 m round the frozen falls' foot, where the ice is heaped; the bridge still crosses it, and its sides are a wall from the ice.
     const G = .5, NXc = 100, NZc = Math.ceil(-Z1 / G), X0c = -25, cellAt = (x, z) => {
       if (z > Z0 - 6 && z < .2 && Math.abs(x - SPX(z)) < 1.6) return Math.round(LH / .05) * .05;
@@ -5908,7 +5908,7 @@ function aurenneOrrery(hAt, o = {}) {
       const next = new Map(); for (const [a, b, v] of runs) { const k = a + ',' + b + ',' + v, c = open.get(k); if (c) { c.z0 = MZ - (j + 1) * G; next.set(k, c); } else { const n = { x0: X0c + a * G, x1: X0c + b * G, z0: MZ - (j + 1) * G, z1: MZ - j * G, y: v }; cells.push(n); next.set(k, n); } }
       open.clear(); for (const [k, c] of next) open.set(k, c); }
     const low = Math.min(...WS.filter(w => w.y > .1).map(w => w.y));
-    // S1801 (Michael's A on #1083, swimming in a room) — the sea's bed (and the beach, where it stands over the water) wherever the hall's
+    // S1805 (Michael's A on #1083, swimming in a room) — the sea's bed (and the beach, where it stands over the water) wherever the hall's
     // ring holds a body 1 m over the water or the sand by 0.3 m, outside the landing and the quay; null for rock. The room swims over it.
     const bedAt = (x, z) => { if (z > PEND || land(x, z) > 0) return null; const y = floorY(x, z); return inHall(x, Math.max(y, 0) + 1, z, .3) ? y : null; };
     return { group, sky, tris: Math.round(tris), draws: group.children.length, path, walkY, bedAt, water: 0, glow, bollards, waterStairs: WS,
@@ -6044,7 +6044,7 @@ function aurenneOrrery(hAt, o = {}) {
       { x0: -2.55, x1: -2.05, z0: FACE + .4, z1: FACE + .9 } /* the basket */];
     // the walk to the face: down the adit, round the cart onto the landing, along the gallery and across the ledge
     const gw = -4.875, path = [[0, -1], [-.6, -17.0], [-.6, -17.9], [-.95, -18.0], [-.95, -18.45], [gw, -19.8], [gw, FZ + .1], [gw, FZ - .2], [-.5, FACE + 1.0]];
-    return { group, sky: M.sky, tris: Math.round(tris), draws: group.children.length, path, sets, lamps, worked, void: { x0: GX1, x1: CW / 2, z0: LZ, z1: FZ, floor: CBOT, water: CBOT + .6 }, rail: GX1 - .05, ladder: { x: 5.45, z: LZ - .32, y0: CBOT, y1: 0 } /* S1804 — for the room's climb */,
+    return { group, sky: M.sky, tris: Math.round(tris), draws: group.children.length, path, sets, lamps, worked, void: { x0: GX1, x1: CW / 2, z0: LZ, z1: FZ, floor: CBOT, water: CBOT + .6 }, rail: GX1 - .05, ladder: { x: 5.45, z: LZ - .32, y0: CBOT, y1: 0 } /* S1808 — for the room's climb */,
       vein: [0, +band(0).toFixed(2), +fz(0, band(0)).toFixed(3)], face: FACE, adit: { w: 2 * PX - POST, cap: CAP, len: AL }, gallery: { x0: GX0, x1: GX1, w: GX1 - GX0 }, landing: { z0: LZ, z1: CZ0 },
       mouth: { x: 0, z: 0, y: 0, w: AW, h: AH }, chamber: { h: CTOP }, bounds: { x0: X0c, x1: -X0c, z0: -NZc * G, z1: 0 }, low: 0, cells, obs, arrive: [0, 0, -1.6, 0] };
   }
