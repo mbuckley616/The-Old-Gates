@@ -421,6 +421,7 @@ function restSlipDraw(){const ov=document.getElementById('sleepui');if(!ov)retur
       row('♥',`${v('Health',PHP,p.hp,p.mh)} &nbsp; ${v('Mana',mana,p.mp,p.mm)} &nbsp; <span style="font-variant:small-caps">Stamina</span> full`,'all, at six hours')+
       (ready?row('✦',`You are ready to advance: you wake at <b>level ${level+1}</b>.`,'','#7a1f10'):'');}
   else out=row('☀',`You rise at ${at}.`)+row('♥','Waiting restores nothing; a bed does.','','#8a7050')+(ready?row('✦','You are ready to advance, but only sleep takes the level.','','#8a7050'):'');
+  {const W=typeof erWatchJumpLoses==='function'?erWatchJumpLoses(min):null;if(W)out+=row('☾',`The night at the ${W.data.fold} will be lost.`,'an hour or more','#7a1f10');} /* S1789 — the watch lapses on a jump of the clock; the slip says so */
   q('#rs-out').innerHTML=out;
 }
 function restSlipStep(d){const h=Math.round(restSlip.min/60)+d;restSlip.min=Math.max(1,Math.min(24,h))*60;restSlipDraw();}
