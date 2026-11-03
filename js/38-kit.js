@@ -5526,11 +5526,14 @@ function aurenneOrrery(hAt, o = {}) {
   let CMO = null;
   function gatelandsCaveMouth(o = {}) {
     const key = String(o.key || 'cave'), r = stream('cavemouth:' + key), F = cairnField(stream('cavemouth:' + key + ':rock'), .45), B = new Map();
-    const dk = o.rock === 'sea' ? 'sea' : o.rock === 'ice' ? 'ice' : o.rock === 'aurenne' ? 'aurenne' : 'lime'; /* S1787 — Aurenne's grotto: the coast's pale rock, the turf dry */ /* S1773 — the sea cave's mouth in the coast's dark grey rock, not the limestone */
+    const dk = o.rock === 'sea' ? 'sea' : o.rock === 'ice' ? 'ice' : o.rock === 'aurenne' ? 'aurenne' : o.rock === 'mark' ? (o.snow ? 'markSnow' : 'mark') : 'lime'; /* S1790 — the Mark's mine: the ranges' grey granite, snow on its top over the snow line */ /* S1787 — Aurenne's grotto: the coast's pale rock, the turf dry */ /* S1773 — the sea cave's mouth in the coast's dark grey rock, not the limestone */
     if (!CMO) CMO = {}; if (!CMO[dk]) CMO[dk] = dk === 'ice' ? /* S1777 — the Mark's ice cave: an outcrop of blue-white ice, its throat deep blue going dark, snow lying on its top */
       { lime: (() => { const m = mat('plaster', { ns: .4, color: 0xc4def0, rough: .3 }); return m; })(), throat: (() => { const m = mat('rock', { ns: .5, color: 0x4a88b4, rough: .2 }); m.emissive = new THREE.Color(0x0a2238); return m; })(), dark: new THREE.MeshBasicMaterial({ color: 0x06121e }), moss: mat('plaster', { ns: .3, color: 0xf2f6fa, rough: .95 }) }
       : dk === 'aurenne' ? { lime: mat('rock', { ns: 1.5, color: 0xcabca0, rough: .92 }), throat: mat('rock', { ns: 1.4, color: 0x7a705e, rough: .95 }), dark: new THREE.MeshBasicMaterial({ color: 0x030304 }), moss: mat('turfDry', { ns: .8, color: 0xd8c890, rough: 1 }),
         plaster: mat('plaster', { ns: .6, color: 0xeee0c4, rough: .95 }), ashlar: mat('ashlar', { ns: .9, color: 0xfff6e2, rough: .9 }), zellige: mat('zellige', { ns: .6, rough: .3 }) }
+      : dk === 'mark' || dk === 'markSnow' ? { lime: mat('rock', { ns: 1.6, color: 0x8a8984, rough: .94 }), throat: mat('rock', { ns: 1.5, color: 0x56544f, rough: .95 }), dark: new THREE.MeshBasicMaterial({ color: 0x030304 }),
+        moss: dk === 'markSnow' ? mat('plaster', { ns: .3, color: 0xf2f6fa, rough: .95 }) : mat('turfMoss', { ns: .8, color: 0x7c8a5e, rough: 1 }), timber: mat('beam', { ns: 1.0, color: 0x8a6c4c, rough: .9 }),
+        iron: new THREE.MeshStandardMaterial({ color: 0x2c2a28, roughness: .5, metalness: .6 }) }
       : { lime: mat('rock', { ns: 1.5, color: dk === 'sea' ? 0x6a6e6c : 0xb4b0a4, rough: .92 }), throat: mat('rock', { ns: 1.4, color: dk === 'sea' ? 0x3e4442 : 0x6a685f, rough: .95 }), dark: new THREE.MeshBasicMaterial({ color: 0x030304 }), moss: mat('turfMoss', { ns: .8, color: 0x8aa868, rough: 1 }) };
     const M = CMO[dk], put = (geo, k) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal'].includes(a)) g.deleteAttribute(a); if (!g.attributes.normal) g.computeVertexNormals(); worldUV(g, .3); if (!B.has(k)) B.set(k, []); B.get(k).push(g); };
     const MW = 2.2, MH = 3.6, TD = 6, RXo = 7.5, RYo = 6.5, RZo = 6, CZ = -4.2, CYo = .6;
@@ -5557,6 +5560,15 @@ function aurenneOrrery(hAt, o = {}) {
       const rg = new THREE.Shape(); rg.absarc(0, 0, W2 + .42, 0, Math.PI, false); rg.absarc(0, 0, W2, Math.PI, 0, true); const rgg = new THREE.ExtrudeGeometry(rg, { depth: .1, bevelEnabled: false, curveSegments: 20 }); rgg.translate(0, SP, FZ); put(rgg, 'ashlar');
       for (const e of [-1, 1]) { put(new THREE.BoxGeometry(.22, SP, .1).translate(e * (W2 + .11), SP / 2, FZ + .05), 'ashlar'); put(new THREE.BoxGeometry(.5, .8, .02).translate(e * 1.75, 2.9, FZ + .01), 'zellige'); }
       put(new THREE.BoxGeometry(4.4, .24, .02).translate(0, 4.0, FZ + .01), 'zellige'); put(new THREE.BoxGeometry(4.8, .22, .4).translate(0, OH + .11, FZ - .15), 'ashlar'); }
+    // S1790 — o.adit (the Mark's silver mine, places.js's markMine): the adit's timber sets in the throat, as the mine's own (two posts and a
+    // cap, 2.07 m clear and the cap at 2.3, every 1.5 m), a heavier set at the face for its portal with lagging over the caps, and the
+    // tramway (0.6 m gauge on sleepers) out of the dark and 4.5 m onto the pad, where the mine's waste was tipped
+    const posts = [];
+    if (o.adit && M.timber) { const tb = (w, h, d, x, y, z) => { const g = new THREE.BoxGeometry(w, h, d); g.translate(x, y, z); put(g, 'timber'); };
+      for (const [z, px, cap, pw] of [[.6, 1.3, 2.6, .3], [-.9, 1.15, 2.3, .22], [-2.4, 1.15, 2.3, .22], [-3.9, 1.15, 2.3, .22]]) { for (const e of [-1, 1]) { tb(pw, cap, pw, e * px, cap / 2, z); posts.push({ x: e * px, z, w: pw }); } tb(2 * px + pw + .3, pw + .04, pw + .06, 0, cap + (pw + .04) / 2, z); }
+      for (let z = .7; z > -4.1; z -= .3) tb(2.7, .04, .26, 0, 2.6 + (z > .2 ? .36 : .02), z - .13);
+      for (let z = -5.2; z < 4.6; z += .7) tb(1.0, .08, .16, 0, .06, z);
+      for (const e of [-.3, .3]) { const g = new THREE.BoxGeometry(.05, .06, 10.0); g.translate(e, .13, -.5); put(g, 'iron'); } }
     const group = new THREE.Group(); group.name = 'cavemouth'; let tris = 0;
     for (const [k, gs] of B) { const g = mergeGeometries(gs); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = k !== 'dark'; m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
     // solids: small squares (the world's static solids are read unturned), round the outcrop's foot every 1.2 m and along the throat's
@@ -5565,6 +5577,7 @@ function aurenneOrrery(hAt, o = {}) {
     for (let a = 0; a < Math.PI * 2; a += 1.2 / ((RXo + RZo) / 2)) { const x = Math.cos(a) * (RXo - .4), z = CZ + Math.sin(a) * (RZo - .4); if (Math.abs(x) < MW + 1.2 && z > -3) continue; sq(x, z); }
     for (let z = .8; z > -3.5; z -= 1.1) for (const e of [-1, 1]) sq(e * (MW + .75), z);
     for (let x = -MW + .5; x <= MW - .4; x += 1.1) sq(x, -3.75);
+    for (const p of posts) sol.push({ x: p.x, z: p.z, w: p.w, d: p.w, ry: 0, h: 2.6 }); /* S1790 — the adit's posts */
     return { group, tris: Math.round(tris), draws: group.children.length, sol, mouth: { w: 2 * MW, h: MH, z: 0, back: -TD }, r: RXo + 1 };
   }
   // ── the smugglers' sea cave on the Gatelands' coast (Session 1773, card F8; Michael's A on #1026: "through a mouth, into a place of its
@@ -5898,7 +5911,139 @@ function aurenneOrrery(hAt, o = {}) {
       arch: { w: 2 * AW, h: AH, z: Z1 }, gate: { w: 2 * GW, d: GD }, chamber: { x0: -RX(.5), x1: RX(.5), z0: Z0, z1: Z1, h: CY + RY(.5) }, spring: { x: bx0 + BD / 2, y: QY + BH, z: SZ }, skiff, beach: { z0: BZ0, z1: BZ1 },
       bounds: { x0: X0c, x1: -X0c, z0: MZ - NZc * G, z1: MZ }, low, cells, obs: OBS, arrive: [0, TOPY, MZ - 1.6, 0] };
   }
-  return { stream, hashKey, mergeByMaterial, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, grotto: aurenneGrotto }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, trunk: felledTrunk }, ships: { sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
+  // ── the Mark's silver mine (Session 1790, card F8; places.js's markMine, Session 857, Michael's A on #305: "the levels as built
+  // (2.07 m), lamps only while worked"; OG-121's "mines and quarries: timber galleries and walkways over a shaft, ore, a working site" and
+  // its Mark panel's "mountain mines"). Copied as drawn, a metre a unit, +z the mouth at z 0, the adit's floor at y 0: the adit of 18 m in
+  // its timber sets with the tramway; the stope of 12 by 16 m and 24 m high, the landing over its void with the cart at its stop-block, the
+  // windlass and its kibble, the ladder to the sump; the gallery 1.4 m wide along the west wall; the ledge and the working face with its vein.
+  // o.worked (default true): the lamps lit, fresh pick marks and the broken ore at the face, the cart half full; false, dark (#305's 2 A).
+  // What differs: the rock's cells are welded by the kit's own grWeld (no addons); a plane of sky by the hour beyond the adit's open end;
+  // and the walk, every cell at the floor's height (0) or null, a quarter-metre grid: the adit between its posts, the landing to 0.35 m
+  // short of its edge, the gallery between the rock and its rail, the ledge to 0.3 m off the face; the void and the rock null. What stands
+  // on the walk (the cart and its stop-block, the lamp posts, the basket) is returned apart as boxes (obs). The ladder waits on climbing.
+  //   PKIT.places.mine(o) -> { group, sky, tris, draws, path, sets, lamps, worked, void, rail, vein, face, adit, gallery, mouth { x, z, y, w, h },
+  //   chamber { h }, bounds { x0, x1, z0, z1 }, low, cells ([{ x0, x1, z0, z1, y }]), obs ([{ x0, x1, z0, z1 }]), arrive [x, y, z, yaw] }
+  let MNM = null;
+  function mineMats() {
+    if (MNM) return MNM;
+    MNM = { rock: mat('rock', { ns: 1.5, color: 0x6e6a64, rough: .95 }), rockWet: mat('rock', { ns: 1.6, color: 0x54524e, rough: .45 }), spoil: mat('rock', { ns: 1.8, color: 0x5a5650, rough: 1 }),
+      timber: mat('beam', { ns: 1.0, color: 0x8a6c4c, rough: .9 }), plank: mat('wood', { ns: .9, color: 0x9a8062, rough: .85 }), dark: new THREE.MeshStandardMaterial({ color: 0x0d0b09, roughness: 1 }),
+      iron: new THREE.MeshStandardMaterial({ color: 0x2c2a28, roughness: .5, metalness: .6 }), ore: new THREE.MeshStandardMaterial({ color: 0x7a7e86, roughness: .3, metalness: .9 }), oreDark: new THREE.MeshStandardMaterial({ color: 0x4a4c50, roughness: .4, metalness: .7 }),
+      rope: new THREE.MeshStandardMaterial({ color: 0x8a7650, roughness: .95 }), basket: mat('thatch', { ns: .8, color: 0x8a7046, rough: 1 }),
+      horn: new THREE.MeshStandardMaterial({ color: 0xd8a860, emissive: new THREE.Color(1, .62, .28), emissiveIntensity: 1.6, roughness: .5 }), flame: new THREE.MeshStandardMaterial({ color: 0xffd090, emissive: new THREE.Color(1, .75, .4), emissiveIntensity: 4 }),
+      water: new THREE.MeshStandardMaterial({ color: 0x0a1214, roughness: .05, metalness: .3 }), sky: new THREE.MeshBasicMaterial({ color: 0xc4d0dc, fog: false }) };
+    MNM.rock.side = MNM.rockWet.side = THREE.DoubleSide; MNM.ledge = MNM.rock;
+    return MNM;
+  }
+  // a box of rock seen from inside (or, inside false, from outside): its faces kept by keep(centroid, outward normal), moved by the field;
+  // flat(y) says which heights keep their y; welded and smoothed, so the rock is not faceted (places.js's rockBox)
+  function mineRockBox(w, h, d, cx, cy, cz, cell, F, keep, flat = () => false, inside = true) { const g = new THREE.BoxGeometry(w, h, d, Math.round(w / cell), Math.round(h / cell), Math.round(d / cell)).toNonIndexed(); g.translate(cx, cy, cz);
+    const P = g.attributes.position.array, out = [], c = new THREE.Vector3(), a = new THREE.Vector3(), b = new THREE.Vector3(), e = new THREE.Vector3(), n = new THREE.Vector3();
+    for (let i = 0; i < P.length; i += 9) { a.fromArray(P, i); b.fromArray(P, i + 3); e.fromArray(P, i + 6); c.copy(a).add(b).add(e).divideScalar(3); n.subVectors(b, a).cross(e.clone().sub(a)).normalize();
+      if (!keep(c, n)) continue; for (const v of inside ? [a, e, b] : [a, b, e]) { const [dx, dy, dz] = F(v.x, v.y, v.z); out.push(v.x + dx, flat(v.y) ? v.y : v.y + dy, v.z + dz); } }
+    g.dispose(); const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(out, 3)); const m = grWeld(geo); m.computeVertexNormals(); return m; }
+  function markMine(o = {}) {
+    const key = String(o.key || 'mine'), r = stream('mine:' + key), M = mineMats(), B = new Map(), worked = o.worked !== false, F = cairnField(stream('mine:' + key + ':rock'), .26);
+    const put = (geo, k, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, uv = .6) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal'].includes(a)) g.deleteAttribute(a);
+      if (!g.attributes.normal) g.computeVertexNormals();
+      g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), new THREE.Vector3(1, 1, 1))); worldUV(g, uv);
+      if (!B.has(k)) B.set(k, []); B.get(k).push(g); };
+    const AL = 18, AW = 3, AH = 3, SET = 1.5, PX = 1.15, POST = .22, CAP = 2.3, CW = 12, CZ0 = -AL, CZ1 = -34, CTOP = 8, CBOT = -16, LZ = -20.6, GX0 = -5.6, GX1 = -4.2, FZ = -30, FACE = -33.6;
+    const sets = [], lamps = [], pathPts = [];
+    // the adit's rock: its walls and roof, open at both ends and below (the floor is a flat bed of its own)
+    put(mineRockBox(AW, AH, AL, 0, AH / 2, -AL / 2, .5, F, (c, n) => Math.abs(n.z) < .5 && n.y > -.5, y => y < .01), 'rock', 0, 0, 0, 0, 0, 0, .35);
+    put(new THREE.BoxGeometry(AW + .2, .3, AL), 'spoil', 0, -.15, -AL / 2, 0, 0, 0, .5);
+    // the stope: the chamber's six faces, the near one cut for the adit's mouth (the same half-metre cells, so the edges meet)
+    put(mineRockBox(CW, CTOP - CBOT, CZ0 - CZ1, 0, (CTOP + CBOT) / 2, (CZ0 + CZ1) / 2, .5, F, (c, n) => !(n.z > .5 && Math.abs(c.x) < AW / 2 && c.y > 0 && c.y < AH), y => Math.abs(y) < .01), 'rock', 0, 0, 0, 0, 0, 0, .35);
+    // the ledge at the far end: rock left standing to the floor's level, its top flat, its side to the void rough
+    put(mineRockBox(CW, -CBOT, FZ - CZ1 + .5, 0, CBOT / 2, (FZ + CZ1 - .5) / 2, .5, F, (c, n) => n.y > .5 || n.z > .5, y => y > -.01, false), 'ledge', 0, 0, 0, 0, 0, 0, .35);
+    // the face: cut square across the ledge's end, wet, rough at a smaller grain than the stope; the vein across it, a band of silver-lead
+    // ore dipping east, in shards set into the face's own surface (FF says where that surface is)
+    const FF = cairnField(stream('mine:' + key + ':face'), .07), fz = (x, y) => FACE + FF(x, y, FACE)[2];
+    put(mineRockBox(7, 3.6, .7, 0, 1.8, FACE - .35, .2, FF, (c, n) => n.z > .5 || n.y > .5 || Math.abs(n.x) > .5, y => y < .01, false), 'rockWet', 0, 0, 0, 0, 0, 0, .5);
+    const dip = (r() - .5) * .25, vy = 1.05 + r() * .2, band = x => vy + Math.sin(x * .9 + dip * 4) * .12 + x * dip * .3;
+    for (let x = -3; x <= 3.01; x += .25) { const y = band(x), g = new THREE.IcosahedronGeometry(.05, 0); g.scale(1.6, .7, .2); put(g, 'ore', x, y, fz(x, y) + .01, 0, 0, r() * .6 - .3); }
+    for (let k = 0; k < 90; k++) { const x = -3.2 + r() * 6.4, y = band(x) + (r() - .5) * .34 * (1 - Math.abs(x) / 5), sz = .025 + r() * .045, g = new THREE.IcosahedronGeometry(sz, 0); g.scale(1.5, .7, .2);
+      put(g, k % 5 ? 'ore' : 'oreDark', x, y, fz(x, y) + .01, r() * .4, 0, r() * 3); }
+    if (worked) for (let k = 0; k < 26; k++) { const x = -2.8 + r() * 5.6, y = band(x) - .4 + r() * .8; put(new THREE.BoxGeometry(.07 + r() * .06, .02, .02), 'dark', x, y, fz(x, y) + .004, 0, 0, (r() - .5) * 1.4); }
+    // broken ore and spoil at the face's foot, a pick against it, a basket and the lamp on its peg
+    if (worked) for (let k = 0; k < 34; k++) { const s = .08 + r() * .14, g = new THREE.IcosahedronGeometry(s, 0); g.scale(1, .7, 1); put(g, k % 4 ? 'spoil' : 'oreDark', -1.6 + r() * 3.2 * (1 - k / 60), s * .5, FACE + .2 + r() * .55 * (1 - k / 60), r() * 3, r() * 3, 0); }
+    { const px = 2.4, pz = FACE + .25; put(new THREE.CylinderGeometry(.022, .026, .9, 8), 'timber', px, .45, pz, -.25, 0, .05); put(new THREE.BoxGeometry(.05, .05, .52), 'iron', px, .88, pz - .1, -.25, 0, 0); }
+    { const g = new THREE.CylinderGeometry(.24, .18, .32, 14, 1, true); put(g, 'basket', -2.3, .16, FACE + .65); put(new THREE.CircleGeometry(.18, 14).rotateX(-Math.PI / 2), 'basket', -2.3, .01, FACE + .65); }
+    // a lamp: lit only while the mine is worked (Michael's 2 A on #305); worked out, its peg or bracket stays bare and the mine is dark
+    const lamp = (x, y, z, peg) => { if (peg) put(new THREE.CylinderGeometry(.015, .015, .25, 6).rotateX(Math.PI / 2), 'iron', x, y + .12, z + peg * .12); if (!worked) return; put(new THREE.BoxGeometry(.12, .16, .12), 'horn', x, y, z); put(new THREE.ConeGeometry(.09, .08, 4).rotateY(Math.PI / 4), 'iron', x, y + .12, z); put(new THREE.TorusGeometry(.03, .006, 4, 10), 'iron', x, y + .18, z); lamps.push([x, y, z].map(v => +v.toFixed(2))); };
+    lamp(-1.4, 1.9, FACE + .19, -1);
+    // the adit's timber sets: two posts and a cap, lagging over the cap; every fourth set carries a lamp on its post
+    for (let k = 0; k * SET <= AL - .6; k++) { const z = -.6 - k * SET; for (const e of [-1, 1]) put(new THREE.BoxGeometry(POST, CAP, POST), 'timber', e * PX, CAP / 2, z, 0, 0, e * -.025);
+      put(new THREE.BoxGeometry(2 * PX + POST + .2, .24, .26), 'timber', 0, CAP + .12, z); sets.push({ x0: +(-PX + POST / 2).toFixed(3), x1: +(PX - POST / 2).toFixed(3), cap: CAP, foot: 0, z: +z.toFixed(2) });
+      if (k % 4 === 1) { lamp(PX - POST / 2 - .12, 1.85, z, 0); put(new THREE.CylinderGeometry(.012, .012, .14, 6).rotateZ(Math.PI / 2), 'iron', PX - POST / 2 - .07, 2.03, z); } }
+    for (let k = 0; k < Math.floor((AL - .6) / .3); k++) put(new THREE.BoxGeometry(2 * PX + .5, .04, .26), 'plank', 0, CAP + .27, -.6 - k * .3 - .15, 0, 0, (r() - .5) * .02, .25);
+    // the tramway: sleepers and two rails of 0.6 m gauge from the mouth to the stop-block on the landing
+    for (let z = -.3; z > -19.4; z -= .7) put(new THREE.BoxGeometry(1.0, .08, .16), 'timber', 0, .04, z, 0, (r() - .5) * .06, 0);
+    for (const e of [-.3, .3]) put(new THREE.BoxGeometry(.05, .06, 19.2), 'iron', e, .11, -9.75);
+    put(new THREE.BoxGeometry(1.0, .3, .3), 'timber', 0, .23, -19.55);
+    // the cart: a timber box on four iron wheels, at its stop-block, half full of ore while the mine is worked and empty after
+    { const cz = -18.9; put(new THREE.BoxGeometry(.9, .55, 1.1), 'timber', 0, .62, cz); if (worked) put(new THREE.BoxGeometry(.8, .1, 1.0), 'ore', 0, .82, cz); for (const ex of [-.3, .3]) for (const ez of [-.36, .36]) put(new THREE.CylinderGeometry(.17, .17, .06, 14).rotateZ(Math.PI / 2), 'iron', ex + Math.sign(ex) * .03, .3, cz + ez); }
+    // the landing: joists into the rock either side, planks across, from the adit's mouth to the shaft's edge
+    for (let x = -5.8; x <= 5.81; x += .9) put(new THREE.BoxGeometry(.2, .26, CZ0 - LZ + .5), 'timber', x, -.13 - .04, (CZ0 + LZ) / 2 + .25);
+    for (let z = CZ0 - .13; z > LZ; z -= .26) put(new THREE.BoxGeometry(CW + .4, .04, .26), 'plank', 0, -.02, z, 0, 0, (r() - .5) * .01, .25);
+    put(new THREE.BoxGeometry(CW + .4, .3, .3), 'timber', 0, -.2, LZ + .15);
+    for (const x of [-5.4, -2.0, 3.6]) put(new THREE.BoxGeometry(.24, -CBOT - .35, .24), 'timber', x, (CBOT - .35) / 2, LZ + .15);
+    // the landing's rail on the void's side, broken for the windlass
+    const railRun = (x0, z0, x1, z1) => { const L = Math.hypot(x1 - x0, z1 - z0), ry = Math.atan2(x1 - x0, z1 - z0), n = Math.max(1, Math.round(L / 1.5));
+      for (let k = 0; k <= n; k++) put(new THREE.BoxGeometry(.12, 1.05, .12), 'timber', x0 + (x1 - x0) * k / n, .525, z0 + (z1 - z0) * k / n);
+      for (const h of [.5, 1.0]) put(new THREE.BoxGeometry(.08, .1, L), 'timber', (x0 + x1) / 2, h, (z0 + z1) / 2, 0, ry, 0); };
+    const WX0 = .4, WX1 = 2.6; railRun(GX1 - .05, LZ + .1, WX0, LZ + .1); railRun(WX1, LZ + .1, 4.9, LZ + .1);
+    // the windlass: two trestles at the edge, the drum between them over the shaft, its crank, the rope and the kibble below
+    { const wz = LZ - .45; for (const x of [WX0 + .1, WX1 - .1]) put(new THREE.BoxGeometry(.24, .24, 1.9), 'timber', x, -.12, LZ - .15) /* the sills, out over the shaft */;
+      for (const x of [WX0 + .1, WX1 - .1]) { for (const s of [-1, 1]) put(new THREE.BoxGeometry(.14, 1.25, .14), 'timber', x, .58, wz + s * .3, s * .42, 0, 0); put(new THREE.BoxGeometry(.18, .12, .9), 'timber', x, .06, wz); }
+      put(new THREE.CylinderGeometry(.16, .16, WX1 - WX0 - .1, 16).rotateZ(Math.PI / 2), 'timber', (WX0 + WX1) / 2, 1.08, wz); put(new THREE.CylinderGeometry(.165, .165, .7, 16).rotateZ(Math.PI / 2), 'rope', (WX0 + WX1) / 2 - .2, 1.08, wz);
+      put(new THREE.CylinderGeometry(.025, .025, .3, 6).rotateZ(Math.PI / 2), 'iron', WX1 + .1, 1.08, wz); put(new THREE.BoxGeometry(.04, .36, .04), 'iron', WX1 + .24, 1.08 - .16, wz); put(new THREE.CylinderGeometry(.03, .03, .22, 6).rotateZ(Math.PI / 2), 'timber', WX1 + .35, 1.08 - .32, wz);
+      const rx = (WX0 + WX1) / 2 - .2, rz = wz - .17, ky = -6.5 - r() * 2; put(new THREE.CylinderGeometry(.018, .018, 1.08 - ky - .55, 6), 'rope', rx, (1.08 + ky + .55) / 2, rz);
+      put(new THREE.CylinderGeometry(.32, .26, .6, 14, 1, true), 'iron', rx, ky + .3, rz); put(new THREE.CircleGeometry(.26, 14).rotateX(-Math.PI / 2), 'iron', rx, ky, rz); put(new THREE.TorusGeometry(.32, .015, 4, 16, Math.PI).rotateY(Math.PI / 2), 'iron', rx, ky + .6, rz);
+      lamp(rx + .12, ky + .68, rz, 0) /* a lamp let down in the kibble, lighting the shaft from below */; }
+    // the ladder down the east wall to the sump from the gap in the rail, its stiles a metre over the deck to take hold of, its feet in the water
+    { const lx = 5.45, lz = LZ - .32; for (const s of [-.24, .24]) put(new THREE.BoxGeometry(.08, 1 - CBOT, .1), 'timber', lx, (1 + CBOT) / 2, lz + s);
+      for (let y = CBOT + .5; y < -.2; y += .3) put(new THREE.CylinderGeometry(.022, .022, .5, 6).rotateX(Math.PI / 2), 'timber', lx, y, lz); }
+    // the gallery: beams let into the west wall every 1.5 m with a strut under each, a deck of planks run half a metre onto the ledge, the rail on its open edge
+    for (let z = LZ - .2; z > FZ - .1; z -= 1.5) { put(new THREE.BoxGeometry(GX1 - GX0 + 1.0, .24, .2), 'timber', (GX0 - 1 + GX1) / 2, -.17, z); put(new THREE.BoxGeometry(.18, 2.5, .18), 'timber', -5.2, -1.25, z, 0, 0, -.7); }
+    for (const x of [GX0 + .15, GX1 - .15]) put(new THREE.BoxGeometry(.2, .2, LZ - FZ + .4), 'timber', x, -.14, (LZ + FZ) / 2);
+    for (let k = 0; k < Math.floor((LZ - FZ + .5) / .26); k++) put(new THREE.BoxGeometry(GX1 - GX0, .04, .26), 'plank', (GX0 + GX1) / 2, -.02, LZ - .13 - k * .26, 0, 0, (r() - .5) * .015, .25);
+    railRun(GX1 - .05, LZ + .1, GX1 - .05, FZ + .05);
+    lamp(GX0 + .05, 1.7, LZ - 4.5, 0); put(new THREE.CylinderGeometry(.015, .015, .4, 6).rotateZ(Math.PI / 2), 'iron', GX0 - .15, 1.88, LZ - 4.5);
+    lamp(-4.98, 1.85, CZ0 - .3, 0); put(new THREE.BoxGeometry(.16, 2.1, .16), 'timber', -5.2, 1.05, CZ0 - .3); put(new THREE.CylinderGeometry(.012, .012, .16, 6).rotateZ(Math.PI / 2), 'iron', -5.06, 2.03, CZ0 - .3);
+    lamp(GX0 + .05, 1.7, FZ + .9, 0); put(new THREE.CylinderGeometry(.015, .015, .4, 6).rotateZ(Math.PI / 2), 'iron', GX0 - .15, 1.88, FZ + .9);
+    lamp(4.38, 1.85, CZ0 - .3, 0); put(new THREE.BoxGeometry(.16, 2.1, .16), 'timber', 4.6, 1.05, CZ0 - .3); put(new THREE.CylinderGeometry(.012, .012, .16, 6).rotateZ(Math.PI / 2), 'iron', 4.46, 2.03, CZ0 - .3);
+    // the sump: water lying in the bottom of the stope
+    put(new THREE.PlaneGeometry(CW, CZ0 - FZ).rotateX(-Math.PI / 2), 'water', 0, CBOT + .6, (CZ0 + FZ) / 2, 0, 0, 0, .1);
+    // the walk: from the mouth down the adit, out across the landing to the gallery's head, along it, and onto the ledge to the face
+    const group = new THREE.Group(); group.name = 'mine'; let tris = 0;
+    for (const [k, gs] of B) { const g = mergeGeometries(gs); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = false; m.receiveShadow = false; group.add(m); tris += g.attributes.position.count / 3; }
+    // the day beyond the adit's open end: a plane of sky by the hour (whoever shows the mine colours it)
+    { const m = new THREE.Mesh(new THREE.PlaneGeometry(4, 4), M.sky); m.position.set(0, 1.5, .8); m.rotation.y = Math.PI; m.name = 'sky'; m.userData.daylight = true; group.add(m); tris += 2; }
+    // the walk: a quarter-metre grid, every cell at the floor's height (0) or null, merged into runs and runs of equal rows
+    const G = .25, X0c = -6.5, NXc = 52, NZc = Math.ceil(-(FACE - .9) / G), PIN = PX - POST / 2 - .04;
+    const cellAt = (x, z) => {
+      if (z > -AL + .6) return Math.abs(x) < PIN ? 0 : null; /* the adit between its posts */
+      if (z > CZ0) return Math.abs(x) < AW / 2 - .1 ? 0 : null; /* its last metres past the last set, to the stope */
+      if (z > LZ + .25) return Math.abs(x) < CW / 2 - .5 ? 0 : null; /* the landing, short of its rail */
+      if (z > FZ + .25) return x > GX0 + .1 && x < GX1 - .05 ? 0 : null; /* the gallery, between the rock and its rail */
+      if (z > FACE + .3) return Math.abs(x) < CW / 2 - .5 ? 0 : null; /* the ledge, to the face */
+      return null; };
+    const cells = [], open = new Map();
+    for (let j = 0; j < NZc; j++) { const z = -(j + .5) * G, runs = []; let i0 = 0, v0 = cellAt(X0c + G / 2, z);
+      for (let i = 1; i <= NXc; i++) { const v = i < NXc ? cellAt(X0c + (i + .5) * G, z) : NaN; if (v !== v0) { runs.push([i0, i, v0]); i0 = i; v0 = v; } }
+      const next = new Map(); for (const [a, b, v] of runs) { const k = a + ',' + b + ',' + v, c = open.get(k); if (c) { c.z0 = -(j + 1) * G; next.set(k, c); } else { const n = { x0: X0c + a * G, x1: X0c + b * G, z0: -(j + 1) * G, z1: -j * G, y: v }; cells.push(n); next.set(k, n); } }
+      open.clear(); for (const [k, c] of next) open.set(k, c); }
+    const obs = [{ x0: -.5, x1: .5, z0: -19.7, z1: -18.35 } /* the cart and its stop-block */, { x0: -5.3, x1: -5.1, z0: CZ0 - .4, z1: CZ0 - .2 }, { x0: 4.5, x1: 4.7, z0: CZ0 - .4, z1: CZ0 - .2 } /* the lamp posts */,
+      { x0: -2.55, x1: -2.05, z0: FACE + .4, z1: FACE + .9 } /* the basket */];
+    // the walk to the face: down the adit, round the cart onto the landing, along the gallery and across the ledge
+    const gw = -4.875, path = [[0, -1], [-.6, -17.0], [-.6, -17.9], [-.95, -18.0], [-.95, -18.45], [gw, -19.8], [gw, FZ + .1], [gw, FZ - .2], [-.5, FACE + 1.0]];
+    return { group, sky: M.sky, tris: Math.round(tris), draws: group.children.length, path, sets, lamps, worked, void: { x0: GX1, x1: CW / 2, z0: LZ, z1: FZ, floor: CBOT, water: CBOT + .6 }, rail: GX1 - .05,
+      vein: [0, +band(0).toFixed(2), +fz(0, band(0)).toFixed(3)], face: FACE, adit: { w: 2 * PX - POST, cap: CAP, len: AL }, gallery: { x0: GX0, x1: GX1, w: GX1 - GX0 }, landing: { z0: LZ, z1: CZ0 },
+      mouth: { x: 0, z: 0, y: 0, w: AW, h: AH }, chamber: { h: CTOP }, bounds: { x0: X0c, x1: -X0c, z0: -NZc * G, z1: 0 }, low: 0, cells, obs, arrive: [0, 0, -1.6, 0] };
+  }
+  return { stream, hashKey, mergeByMaterial, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, grotto: aurenneGrotto, mine: markMine }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, trunk: felledTrunk }, ships: { sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
     mk: { hall: markHall, lot: markLot, alehall: markAlehall, longhouse: markLonghouse, mats: markMats, yard: markYard, ring: markRing },
     au: { house: aurenneHouse, lot: aurenneLot, courtyard: aurenneCourtyard, church: aurenneChurch, churchBox: aurenneChurchBox, churchHall: aurenneChurchHall, courtyardHouse: aurenneCourtyardHouse, tavern: aurenneTavern, mats: aurMats, roomMats: homeMats, AUR },
     gl: { PLANS, FIN, PS, PAINTS, guildHall: guildHallRoom, TOWN: GL_TOWN, building, church, keep, farmstead, coachInn, coachInnPlan, coachRoom, townhouse: townhouseRoom, farmhouse: farmhouseRoom, byre: byreRoom, barn: barnRoom, row: shrineRow, ROW_GODS, inn: gatelandsInn, cottage: gatelandsCottage, churchLen: n => +((n === 2 ? 2 : 3) * 4.8 + 1.6 + 5.6 - .5 + 7.2 - .9 - .02).toFixed(2), lot: gatelandsLot, mats: glMats, BAYS, bayPlan, bayWidth, baysFor } };

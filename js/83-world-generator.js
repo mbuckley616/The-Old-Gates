@@ -2534,6 +2534,35 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     if(T.held){for(const [x,y,z,k] of [[T.fire.x,T.deck+1.2,T.fire.z,3],[-8,T.deck+2.6,(T.gallery.z0+T.gallery.z1)/2,2.4],[0,T.deck+1.6,T.jetty.z,2.4]]){const l=new THREE.PointLight(0xffb060,k,20,1.4);l.position.set(rx(x),ry(y),rz(z));sc_.add(l);}}
     return sc_;
   }
+  // S1790 (card F8; Michael's A on #305 and #1026) — the Mark's silver mine (PKIT.places.mine, places.js's markMine) behind its adit's mouth
+  // (mineAt, 82), built as the caves are: moved into a room's frame (the floor 0.25 m under the adit's), its walk the place's own
+  // quarter-metre cells (a foothold and a solid up to it where you stand, a solid to 60 m over the void and the rock), the cart, the lamp
+  // posts and the basket boxes 1.5 m up. The ladder to the sump waits on climbing. The light (#305's 2 A): the day down the adit from its
+  // mouth by the hour; worked, the miners' lamps, warm, on the landing, the gallery, at the face and in the kibble; worked out, nothing
+  // else, a low ambient keeping the rock's shape, so the stope is seen by your torch. No one is here: who works it is the systems builder's.
+  function kitMine(house){return !!(house&&house.type==='mine'&&typeof PKIT!=='undefined'&&PKIT.places&&PKIT.places.mine);}
+  function buildKitMine(house){
+    const T=PKIT.places.mine({key:house.siteId,worked:house.worked!==false}),Bd=T.bounds,FY=+(T.low-.25).toFixed(2),W=Bd.x1-Bd.x0,D=Bd.z1-Bd.z0;
+    const rx=x=>x-Bd.x0,rz=z=>z-Bd.z0,ry=y=>y-FY;
+    house._counterFront=null;house.intW=W;house.intD=D;house._roomH=+(T.chamber.h-FY+6).toFixed(2);house._exitD=.01;house._exitW=.01;house._exitX=-99;house._exitZ=-99;house._exitText=true;house._limeCave=T;house._mine=true;
+    const A=T.arrive;house._arriveX=+rx(A[0]).toFixed(3);house._arriveZ=+rz(A[2]).toFixed(3);house._arriveYaw=A[3];
+    if(!window._pendingPos)window._pendingPos={x:house._arriveX,z:house._arriveZ,yaw:A[3],jumpY:ry(A[1])};
+    const sc_=new THREE.Scene();interiorScene=sc_;landRoomPost(sc_);sc_.background=new THREE.Color(0x040506);sc_.fog=new THREE.Fog(0x040506,18,70);
+    intNPCMesh=null;intNPCPos={x:-99,z:-99};intBedPos=null;intStashPos=null;
+    const SOL=[];INT_SOL=SOL;FOOTHOLDS=[];INT_BEDS=[];INT_DOORS=[];INT_DOORS.house=house.id;INT_CHAIR=null;INT_NPCS=[];HATCH.active=false;HATCH.roof=false;INT_LOOT=null;INT_BOX=null;INT_SHELF=null;
+    T.group.position.set(-Bd.x0,-FY,-Bd.z0);sc_.add(T.group);
+    for(const c of T.cells){const q={x0:rx(c.x0),x1:rx(c.x1),z0:rz(c.z0),z1:rz(c.z1)};
+      if(c.y==null){SOL.push({...q,y0:-5,y1:60});continue;}
+      const y=+ry(c.y).toFixed(2);SOL.push({...q,y0:-5,y1:y});FOOTHOLDS.push({...q,y});}
+    for(const b of T.obs)SOL.push({x0:rx(b.x0),x1:rx(b.x1),z0:rz(b.z0),z1:rz(b.z1),y0:-5,y1:+ry(1.5).toFixed(2)}); /* the cart, the lamp posts, the basket */
+    const hr=typeof gameHour==='function'?gameHour():12,dayK=hr>=7&&hr<18?1:hr>=5&&hr<20?.45:.08;
+    T.sky.color.setHex(hr>=7&&hr<18?0xc4d0dc:hr>=5&&hr<20?0x8a7a7a:0x0e1420);
+    sc_.add(new THREE.AmbientLight(0xbcc0c8,T.worked?.14:.2));
+    {const l=new THREE.PointLight(0xdfe6f0,2.2*dayK,16,1);l.position.set(rx(0),ry(1.8),rz(-1));l.userData.daylight=true;sc_.add(l);}
+    if(T.worked){for(const [x,y,z,k] of [[0,1.9,-9.6,1.4],[0,2.2,(T.landing.z0+T.landing.z1)/2,2.6],[T.gallery.x0+.4,1.7,(T.void.z0+T.void.z1)/2,2.2],[-1.4,1.9,T.face+.6,2.4],[1.3,-6.5,T.landing.z0-.6,1.6]]){
+      const l=new THREE.PointLight(0xffb060,k,14,1.4);l.position.set(rx(x),ry(y),rz(z));l.userData.mineLamp=true;sc_.add(l);}} /* the adit's lamps, the landing, the gallery, the face, the kibble's in the shaft */
+    return sc_;
+  }
   // S1787 (card F8; Michael's A on #339 and #1026) — Aurenne's sea grotto (PKIT.places.grotto, places.js's aurenneGrotto) behind the stair's
   // frame on its outcrop (seaGrotto, 82), built as the sea cove is: moved into a room's frame (the floor 0.25 m under the water stairs'
   // lowest dry tread), its walk the place's own half-metre cells (the stair's treads, the landing and the quay), a foothold and a solid up
@@ -2569,11 +2598,11 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   // the cave's one way, from either side: in the world, stood in the mouth's throat; inside, within the passage's first 3 m from its mouth
   // (S1773: the sea caves' too, c._cove beside c._cave)
   function limeCaveAt(){
-    if(isInterior()){const h=currentHouse;if(!h||(h.type!=='limecave'&&h.type!=='seacave')||!h._limeCave)return null;const T=h._limeCave,Bd=T.bounds,x=px+Bd.x0,z=pz+Bd.z0;
+    if(isInterior()){const h=currentHouse;if(!h||(h.type!=='limecave'&&h.type!=='seacave'&&h.type!=='mine')||!h._limeCave)return null; /* S1790 — and the mine's adit */const T=h._limeCave,Bd=T.bounds,x=px+Bd.x0,z=pz+Bd.z0;
       if(h.grotto&&T.waterStairs){const w=T.waterStairs.filter(t=>t.y>0&&t.y<.7);if(w.some(t=>x>t.x0-.3&&x<t.x1+.3&&z>t.z0-.3&&z<t.z1+.3))return {seaOut:true};} /* S1788 — the water stairs' foot: the sea way out */
       return z>T.mouth.z-3&&Math.abs(x-T.mouth.x)<3?{up:true}:null;}
     if(activeZoneId!=='world'||typeof CELLS==='undefined')return null;const [ci,cj]=cellOf(px,pz);
-    for(let j=cj-1;j<=cj+1;j++)for(let i=ci-1;i<=ci+1;i++){const c=CELLS.get(cellKey(i,j));if(!c)continue;for(const C of [c._cave,c._cove,c._grotto]){if(!C||!C.house||Math.abs(px-C.x)>12||Math.abs(pz-C.z)>12)continue;
+    for(let j=cj-1;j<=cj+1;j++)for(let i=ci-1;i<=ci+1;i++){const c=CELLS.get(cellKey(i,j));if(!c)continue;for(const C of [c._cave,c._cove,c._grotto,c._mine]){if(!C||!C.house||Math.abs(px-C.x)>12||Math.abs(pz-C.z)>12)continue;
       const co=Math.cos(C.ry),s_=Math.sin(C.ry),dx=px-C.x,dz=pz-C.z,u=dx*co-dz*s_,v=dx*s_+dz*co;
       if(Math.abs(u)<C.mouth.w/2+.2&&v<1.8&&v>-3.4&&Math.abs(jumpY-C.y)<1.5)return {down:true,C};}
       {const C=c._grotto;if(C&&C.house&&C.arch&&Math.abs(px-C.arch.x)<10&&Math.abs(pz-C.arch.z)<10&&typeof isSwimming==='function'&&isSwimming()){ /* S1788 — swimming at the grotto's sea arch */
@@ -2582,11 +2611,13 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     return null;}
   function limeCavePrompt(){const t=limeCaveAt();if(!t)return null;const gr=t.up?!!(currentHouse&&currentHouse.grotto):!!(t.C&&t.C.house&&t.C.house.grotto); /* S1787 — the grotto's stair */
     if(t.sea)return "Press 'E' to swim in under the arch";if(t.seaOut)return "Press 'E' to swim out under the arch"; /* S1788 */
+    const mn=t.up?!!(currentHouse&&currentHouse.type==='mine'):!!(t.C&&t.C.house&&t.C.house.type==='mine'); /* S1790 — the mine's adit */
+    if(mn)return t.up?"Press 'E' to go out of the mine":"Press 'E' to go into the mine";
     return gr?(t.up?"Press 'E' to go up the stair":"Press 'E' to go down the stair"):t.up?"Press 'E' to go out of the cave":"Press 'E' to go into the cave";}
   function limeCaveUse(){const t=limeCaveAt();if(!t)return false;
     if(t.down){goToInterior(t.C.house);return true;}
     if(t.sea){t.C.house._bySea=true;goToInterior(t.C.house);return true;} /* S1788 — in from the sea */
-    const h=currentHouse,[ci,cj]=h&&h.siteId?h.siteId.replace(/^(cave|cove|grotto)_/,'').split('_').map(Number):[NaN,NaN],c=CELLS.get(cellKey(ci,cj)),C=c&&(h.grotto?c._grotto:h.type==='seacave'?c._cove:c._cave); /* S1787 — and the grotto's */
+    const h=currentHouse,[ci,cj]=h&&h.siteId?h.siteId.replace(/^(cave|cove|grotto|mine)_/,'').split('_').map(Number):[NaN,NaN],c=CELLS.get(cellKey(ci,cj)),C=c&&(h.grotto?c._grotto:h.type==='seacave'?c._cove:h.type==='mine'?c._mine:c._cave); /* S1790 — and the mine's */ /* S1787 — and the grotto's */
     if(t.seaOut&&C&&C.arch){const o=C.arch.out;window._pendingWorldPos={x:o.x,z:o.z,yaw:o.yaw,jumpY:SWIM_Y};} /* S1788 — out under the arch, in the water beyond it, facing the sea */
     else if(C&&C.out)window._pendingWorldPos={x:C.out.x,z:C.out.z,yaw:C.out.yaw,jumpY:worldH(C.out.x,C.out.z)};
     exitInterior();return true;}
@@ -2980,6 +3011,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     if(kitGuildHall(house))return buildKitGuildHall(house); /* S1703 — a town's guild hall inside, at its true size */
     if(kitLimeCave(house))return buildKitLimeCave(house); /* S1768 — a limestone cave behind its mouth */
     if(kitSeaCave(house))return buildKitSeaCave(house); /* S1773 — a smugglers' sea cave behind its mouth */
+    if(kitMine(house))return buildKitMine(house); /* S1790 — the Mark's silver mine behind its adit */
     if(kitTowerCellar(house))return buildKitTowerCellar(house); /* S1765 — a ruined tower house's cellar, souterrain and pit */
     const two=!!house.two;
     // S896 (F2a) — the room's true size in metres (07-scale.js; visual-foundation.md §1: a cottage room 4 to 6 across, an inn's hall
