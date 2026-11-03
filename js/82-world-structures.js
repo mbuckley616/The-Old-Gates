@@ -553,6 +553,34 @@
     for(const j of M.jambs){const [cx,cz]=W(j.x,j.z),h=Math.max(j.w,j.d)/2;STATIC_SOL.push({cx,cz,rx:h,rz:h,wdoor:true});}
     D.foot=M.foot;D.spread=M.spread;D.tris=Math.round(M.tris);D.draws=M.draws;D.jambs=M.jambs.map(j=>W(j.x,j.z));D.group=M.group;
     return M.group;}
+  // S1781 (backlog L5, OG-096; Michael's B on #1005) — the carving: a stele at the edge of a Gatelands road, its face to the road, the
+  // adventurer on it freshly cut in a stone worn everywhere else (PKIT.wonders.carving). One Gatelands cell in three keeps one, by its own
+  // stream (carving:<cell>). Laid from the cells alone, as a village's farm is: the road's line from its def (roadCurve), the stele 3.9 m
+  // off it (clear of the road's 2.6 m half), between a fifth and four fifths of the road's length; read by place (withPlace), on bare land
+  // 2 m or more over the sea and no steeper than 1 in 5; 15 m off every pad, 40 m off every door, 30 m off a farm's yard, 12 m off every
+  // other road's line, 60 m off the cell's caves and its Weaver door, 10 m off every lake's rim. Nothing names it or answers E.
+  // -> {id, x, z, ry, cell} or null (c._carving)
+  function roadCarvingAt(c){
+    if(c._carving!==undefined)return c._carving;c._carving=null;
+    if(c.type==='sea'||c.home||window.OG_LOOK!=='new'||window.OG_KIT_TOWNS===false||typeof PKIT==='undefined'||!PKIT.wonders||!PKIT.wonders.carving)return null;
+    if(nationOf(c.i,c.j).people!=='gatelander')return null;
+    const k=cellKey(c.i,c.j),r=PKIT.stream('carving:'+k);if(r()>=1/3)return null;
+    const byId={};for(const t of c.sites)byId[t.id]=t;const lakes=[];for(let j=c.j-1;j<=c.j+1;j++)for(let i=c.i-1;i<=c.i+1;i++){const n=getCell(i,j);if(n&&n.lakes)lakes.push(...n.lakes);}
+    const roads=c.roadDefs.filter(d=>d.via!=='quay'&&d.via!=='spur'&&byId[d.a]&&byId[d.b]).map(d=>({d,pts:roadCurve(d,byId[d.a],byId[d.b])}));if(!roads.length)return null;
+    const others=[limeCave(c),seaCove(c),weaverDoorAt(c)].filter(Boolean),farms=[];try{loneFarms(c).forEach(F=>farms.push(F));c.sites.forEach(t=>{const F=villageFarm(t,c);if(F)farms.push(F);});}catch(e){}
+    const near=(pts,x,z)=>{let b=1e9;for(let i=0;i<pts.length-1;i++){const a=pts[i],q=pts[i+1],dx=q.x-a.x,dz=q.z-a.z,t=Math.max(0,Math.min(1,((x-a.x)*dx+(z-a.z)*dz)/(dx*dx+dz*dz||1)));b=Math.min(b,Math.hypot(a.x+dx*t-x,a.z+dz*t-z));}return b;};
+    withPlace(c.ox+SIZE/2,c.oz+SIZE/2,()=>{for(let t=0;t<60&&!c._carving;t++){const R=roads[Math.floor(r()*roads.length)],P=R.pts,i=Math.min(P.length-2,Math.floor(P.length*(.2+r()*.6))),a=P[i],b=P[i+1],L=Math.hypot(b.x-a.x,b.z-a.z)||1,
+        nx=-(b.z-a.z)/L,nz=(b.x-a.x)/L,sd=r()<.5?-1:1,u=r(),x=a.x+(b.x-a.x)*u+nx*sd*3.9,z=a.z+(b.z-a.z)*u+nz*sd*3.9;
+      if(c.sites.some(s=>Math.hypot(s.x-x,s.z-z)<(s.pad||0)+15)||c.doors.some(e=>Math.hypot(e.x-x,e.z-z)<40)||farms.some(F=>Math.hypot(F.cx-x,F.cz-z)<FARM_R+30))continue;
+      if(others.some(C=>Math.hypot(C.x-x,C.z-z)<60)||lakes.some(l=>Math.hypot(l.x-x,l.z-z)<(l.r||60)+10)||roads.some(o=>o!==R&&near(o.pts,x,z)<12))continue;
+      const h=rawH(x,z);if(h<2||Math.hypot(rawH(x+2,z)-rawH(x-2,z),rawH(x,z+2)-rawH(x,z-2))/4>.2)continue;
+      c._carving={id:`carving_${k.replace(',','_')}`,x:+x.toFixed(2),z:+z.toFixed(2),ry:+Math.atan2(-nx*sd,-nz*sd).toFixed(4),cell:k};}});
+    return c._carving;}
+  // the stele stood 0.25 m into the drawn ground at the lowest of its four corners, its face to the road; one square solid
+  function placeRoadCarving(c,k){const D=roadCarvingAt(c);if(!D)return null;const M=PKIT.wonders.carving(),co=Math.cos(D.ry),s_=Math.sin(D.ry);let lo=1e9;
+    for(const [u,v] of [[-.5,-.17],[.5,-.17],[-.5,.17],[.5,.17]])lo=Math.min(lo,meshH(D.x+u*co+v*s_,D.z-u*s_+v*co));
+    M.group.position.set(D.x,lo-.25,D.z);M.group.rotation.y=D.ry;M.group.name='carving';sc.add(M.group);STATIC_SOL.push({cx:D.x,cz:D.z,rx:.5,rz:.5,carving:true});
+    D.y=lo-.25;D.tris=M.tris;D.draws=M.draws;D.group=M.group;return M.group;}
   function rebuildRoadGrid(){
     RSEG.length=0;RGRID.clear();ROAD_DEFS.length=0;
     ROADS.forEach(road=>{ROAD_DEFS.push(road.def);indexRoad(road);});

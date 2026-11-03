@@ -4615,6 +4615,62 @@ function weaverDoor(hAt, o = {}) { const key = o.key || 'wrongness:door', K = .5
   { const N = gg.attributes.normal; for (let i = 0; i < N.count; i++) N.setXYZ(i, N.getX(i) * .3, 1, N.getZ(i) * .3); N.needsUpdate = true; } /* lit as the ground is, from above, whichever way a blade faces */
   const gm = new THREE.Mesh(gg, _wdMats.grass); gm.name = 'turf'; gm.receiveShadow = true; group.add(gm);
   return { group, tris: P.userData.tris + pos.length / 9, draws: P.userData.calls + 1, foot: +(gmax + LIFT).toFixed(3), spread: +(gmax - gmin).toFixed(3), lift: LIFT, jambs, tufts }; }
+// wrongness.js's carving (the concept artist, 1 Nov; OG-096's "a quiet detail: the carving of an adventurer, the carvers turned away";
+// Michael's B on #1005; Session 1781): a stele 2.25 m high over the ground, 1.0 m wide and 0.34 m thick, its face a relief of 0.9 by 1.8 m:
+// a hooded adventurer with a sword raised and a pack on, four small carvers round them each in profile and turned away, their chisels and
+// mallets dropped at their feet, under a band of chevrons. Its one wrong thing: the adventurer is freshly cut, pale and sharp, in a stone
+// worn and lichened everywhere else; nothing lit. The prototype displaced its face on a 90 by 180 grid (32.4k triangles); here the same
+// height field is baked once into a colour map and a normal map on one quad, as its note asked of a builder. The stele's frame: its face
+// to +z, its foot at y 0 (set it 0.25 m into the ground).
+//   PKIT.wonders.carving() -> { group, tris, draws, size: { w, h, d }, face: { w, h, y } }
+function crvFigures() {
+  // the adventurer, facing out: a hooded head, broad shoulders under a cloak, the left arm down, the right raising a sword across
+  // the body to the upper left, a pack's roll over the right shoulder, two legs and boots
+  const adv = c => { c.save(); c.globalAlpha = .55; c.beginPath(); c.arc(128, 134, 23, Math.PI, 0); c.lineTo(147, 160); c.lineTo(109, 160); c.closePath(); c.fill(); c.restore(); c.beginPath(); c.arc(128, 136, 14, 0, 7); c.fill();
+    c.beginPath(); c.moveTo(119, 146); c.lineTo(137, 146); c.lineTo(139, 158); c.lineTo(117, 158); c.fill();
+    c.beginPath(); c.moveTo(96, 166); c.quadraticCurveTo(128, 154, 160, 166); c.lineTo(166, 262); c.lineTo(156, 262); c.lineTo(152, 300); c.lineTo(104, 300); c.lineTo(100, 262); c.lineTo(90, 262); c.closePath(); c.fill();
+    c.beginPath(); c.moveTo(102, 262); c.lineTo(84, 368); c.lineTo(172, 368); c.lineTo(154, 262); c.closePath(); c.globalAlpha = .7; c.fill(); c.globalAlpha = 1;
+    c.fillRect(110, 300, 15, 92); c.fillRect(131, 300, 15, 92); c.fillRect(104, 388, 23, 10); c.fillRect(129, 388, 23, 10);
+    c.lineWidth = 11; c.beginPath(); c.moveTo(158, 172); c.lineTo(170, 222); c.lineTo(164, 268); c.stroke();
+    c.beginPath(); c.moveTo(98, 172); c.lineTo(84, 214); c.lineTo(78, 236); c.stroke();
+    c.save(); c.translate(78, 236); c.rotate(-.42); c.fillRect(-3.5, -150, 7, 140); c.beginPath(); c.moveTo(-3.5, -150); c.lineTo(0, -162); c.lineTo(3.5, -150); c.fill(); c.fillRect(-15, -12, 30, 6); c.fillRect(-3, -6, 6, 14); c.beginPath(); c.arc(0, 11, 5, 0, 7); c.fill(); c.restore();
+    c.save(); c.globalAlpha = .65; c.beginPath(); c.ellipse(160, 160, 16, 11, -.4, 0, 7); c.fill(); c.restore(); };
+  // a carver in profile, turned away (dir -1 faces the viewer's left): a hooded head with the face to the outside, the back to the
+  // figure, the shoulders bowed, the hands to the face, the chisel and the mallet dropped at the feet on the figure's side
+  const carver = (c, x0, y0, s, dir) => { const X = v => x0 + dir * v * s, Y = v => y0 + v * s;
+    c.beginPath(); c.arc(X(0), Y(0), 10 * s, 0, 7); c.fill(); c.beginPath(); c.moveTo(X(8), Y(-3)); c.lineTo(X(14), Y(2)); c.lineTo(X(8), Y(6)); c.fill();
+    c.beginPath(); c.moveTo(X(-12), Y(0)); c.quadraticCurveTo(X(-6), Y(-17), X(7), Y(-9)); c.lineTo(X(2), Y(3)); c.fill();
+    c.beginPath(); c.moveTo(X(-11), Y(6)); c.quadraticCurveTo(X(-22), Y(28), X(-15), Y(86)); c.lineTo(X(13), Y(86)); c.quadraticCurveTo(X(12), Y(36), X(5), Y(10)); c.closePath(); c.fill();
+    c.lineWidth = 7 * s; c.beginPath(); c.moveTo(X(-4), Y(16)); c.quadraticCurveTo(X(14), Y(22), X(10), Y(6)); c.stroke();
+    c.fillRect(Math.min(X(-11), X(-4)), Y(84), 7 * s, 15 * s); c.fillRect(Math.min(X(3), X(10)), Y(84), 7 * s, 15 * s);
+    c.save(); c.translate(X(-24), Y(98)); c.rotate(dir * .3); c.fillRect(-10 * s, -2 * s, 20 * s, 4 * s); c.restore();
+    c.save(); c.translate(X(-36), Y(97)); c.fillRect(-7 * s, -4 * s, 14 * s, 8 * s); c.fillRect(-1.5 * s, 3 * s, 3 * s, -1 * s); c.rotate(dir * 1.2); c.fillRect(-1.5 * s, 0, 3 * s, 14 * s); c.restore(); };
+  return { adv, carvers: c => { carver(c, 36, 150, 1.0, -1); carver(c, 220, 150, 1.0, 1); carver(c, 34, 312, 1.05, -1); carver(c, 222, 312, 1.05, 1); },
+    frame: c => { c.lineWidth = 10; c.strokeStyle = '#fff'; c.strokeRect(6, 6, 244, 500); c.lineWidth = 4; for (let i = 0; i < 9; i++) { c.beginPath(); c.moveTo(20 + i * 24, 30); c.lineTo(32 + i * 24, 54); c.lineTo(44 + i * 24, 30); c.stroke(); }
+      c.fillRect(12, 458, 232, 6); c.fillRect(12, 72, 232, 5); } };
+}
+const CRV_W = 512, CRV_H = 1024;
+function crvPaint(fn, blur) { const c = document.createElement('canvas'); c.width = CRV_W; c.height = CRV_H; const x = c.getContext('2d'); x.fillStyle = '#000'; x.fillRect(0, 0, CRV_W, CRV_H);
+  x.filter = blur ? `blur(${blur}px)` : 'none'; x.scale(2, 2); x.fillStyle = '#fff'; x.strokeStyle = '#fff'; fn(x); const d = x.getImageData(0, 0, CRV_W, CRV_H).data, h = new Float32Array(CRV_W * CRV_H); for (let i = 0; i < h.length; i++) h[i] = d[i * 4] / 255; return h; }
+let _crv = null;
+function crvMats() { if (_crv) return _crv; const F = crvFigures(), RW = CRV_W, RH = CRV_H;
+  const worn = crvPaint(c => { F.frame(c); F.carvers(c); }, 3.4), fresh = crvPaint(F.adv, 1.2), halo = crvPaint(F.adv, 5), H = new Float32Array(RW * RH);
+  for (let i = 0; i < H.length; i++) H[i] = Math.max(worn[i] * .92, fresh[i]);
+  const col = new Uint8ClampedArray(RW * RH * 4), nor = new Uint8ClampedArray(RW * RH * 4), at = (x, y) => H[Math.min(RH - 1, Math.max(0, y)) * RW + Math.min(RW - 1, Math.max(0, x))];
+  for (let y = 0; y < RH; y++) for (let x = 0; x < RW; x++) { const i = y * RW + x, u = x / RW, v = y / RH, n = pfbm(u * 9, v * 18, 4), lich = Math.max(0, pfbm(u * 5 + 3, v * 10, 4) - .12) * 3.2;
+    let c = [.55, .54, .49].map(k => k * (.62 + .38 * H[i]) * (.9 + .25 * n)); c = c.map((k, j) => k + ([.50, .55, .34][j] - k) * Math.min(.85, lich));
+    const f = Math.min(1, halo[i] * 1.2 + fresh[i] * .5); c = c.map((k, j) => k + ([.80, .76, .66][j] * (.8 + .2 * fresh[i]) - k) * f);
+    col.set([c[0] * 255, c[1] * 255, c[2] * 255, 255], i * 4);
+    const dx = (at(x + 1, y) - at(x - 1, y)) * 5, dy = (at(x, y + 1) - at(x, y - 1)) * 5, l = Math.hypot(dx, dy, 1); nor.set([(-dx / l * .5 + .5) * 255, (dy / l * .5 + .5) * 255, (1 / l * .5 + .5) * 255, 255], i * 4); }
+  const tex = d => { const c = document.createElement('canvas'); c.width = RW; c.height = RH; c.getContext('2d').putImageData(new ImageData(d, RW, RH), 0, 0); const t = new THREE.CanvasTexture(c); t.anisotropy = 8; return t; };
+  _crv = { face: new THREE.MeshStandardMaterial({ map: tex(col), normalMap: tex(nor), roughness: .93, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }), stone: mat('rock', { ns: 1, color: 0xbcb8ae }) };
+  return _crv; }
+function stoneCarving() { const M = crvMats(), W = 1.0, H = 2.0, T = .34, group = new THREE.Group();
+  const top = new THREE.CylinderGeometry(W / 2, W / 2, T, 32, 1, false, Math.PI / 2, Math.PI); top.rotateX(Math.PI / 2); top.translate(0, H, 0);
+  const body = mergeGeometries([worldUV(new THREE.BoxGeometry(W, H, T).translate(0, H / 2, 0).toNonIndexed(), .9), worldUV(top.toNonIndexed(), .9)]);
+  const sm = new THREE.Mesh(body, M.stone); sm.castShadow = sm.receiveShadow = true; sm.name = 'stele'; group.add(sm);
+  const face = new THREE.Mesh(new THREE.PlaneGeometry(.9, 1.8), M.face); face.position.set(0, 1.12, T / 2 + .004); face.receiveShadow = true; face.name = 'relief'; group.add(face);
+  return { group, tris: Math.round(body.attributes.position.count / 3) + 2, draws: 2, size: { w: W, h: H + W / 2, d: T }, face: { w: .9, h: 1.8, y: 1.12 } }; }
 // the prototype's boulder at a unit radius (it scales linearly: the noise is read on the unit sphere), its UVs at the scale a stone of 4 m had
 function wonderBoulder(seed, flat = .75) { const g = new THREE.IcosahedronGeometry(1, 3), p = g.attributes.position, v = new THREE.Vector3();
   for (let i = 0; i < p.count; i++) { v.fromBufferAttribute(p, i); const n = pfbm(v.x * 1.3 + seed, v.z * 1.3 - seed * .7 + v.y, 4); v.multiplyScalar(1 + n * .55); if (v.y < 0) v.y *= flat; p.setXYZ(i, v.x, v.y * .8, v.z); }
@@ -5671,7 +5727,7 @@ function aurenneOrrery(hAt, o = {}) {
       fire: { x: FX, z: FZ }, jetty: { x1: TX + JW, z: JZ, z0: TH0, z1: TH1 }, boat, ship: ship && { x: ship.x, z: ship.z, L: ship.L, W: ship.W },
       bounds: { x0: X0c, x1: -X0c, z0: -NZc * G, z1: 0 }, low: FY, cells, obs: OBS.map(([x0, x1, z0, z1]) => ({ x0, x1, z0, z1 })), arrive: [SPX(-1.6), FY, -1.6, 0] };
   }
-  return { stream, hashKey, mergeByMaterial, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, gatePiece, weaverDoor }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, trunk: felledTrunk }, ships: { sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
+  return { stream, hashKey, mergeByMaterial, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, trunk: felledTrunk }, ships: { sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
     mk: { hall: markHall, lot: markLot, alehall: markAlehall, longhouse: markLonghouse, mats: markMats, yard: markYard, ring: markRing },
     au: { house: aurenneHouse, lot: aurenneLot, courtyard: aurenneCourtyard, church: aurenneChurch, churchBox: aurenneChurchBox, churchHall: aurenneChurchHall, courtyardHouse: aurenneCourtyardHouse, tavern: aurenneTavern, mats: aurMats, roomMats: homeMats, AUR },
     gl: { PLANS, FIN, PS, PAINTS, guildHall: guildHallRoom, TOWN: GL_TOWN, building, church, keep, farmstead, coachInn, coachInnPlan, coachRoom, townhouse: townhouseRoom, farmhouse: farmhouseRoom, byre: byreRoom, barn: barnRoom, row: shrineRow, ROW_GODS, inn: gatelandsInn, cottage: gatelandsCottage, churchLen: n => +((n === 2 ? 2 : 3) * 4.8 + 1.6 + 5.6 - .5 + 7.2 - .9 - .02).toFixed(2), lot: gatelandsLot, mats: glMats, BAYS, bayPlan, bayWidth, baysFor } };
