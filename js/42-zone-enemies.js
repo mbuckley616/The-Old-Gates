@@ -786,6 +786,9 @@ const WILD_ISLE_KINDS={
   'Duneskimmer':{walk:1.2,run:11},'Terrace Ram':{walk:.8,run:7},'Sunspire Lynx':{walk:.7,run:9},'Oasis Hare':{walk:.6,run:9},
   'Mirage Fox':{walk:1,run:7},'Scarlet Ibis':{walk:.4,run:5},'Cypress Stalker':{walk:.4,run:5},'Sunbeak Vulture':{walk:.3,run:11,fly:true},
   'Cliffswift':{walk:.1,run:12,fly:true},'Glasswing Moth':{walk:.05,run:3,fly:true},'Amber Shellcrab':{walk:.2,run:1.5},'Spined Gekko':{walk:.3,run:3}};
+// S1784 — the watcher's three sheep (the farm's Sheep, OG-023's livestock body): peaceful on the wild path, no meat (not in MEAT_BODIES)
+WILD_PACE.Sheep={walk:.5,run:5};
+ZONE_FOE_DEF.Sheep={minLevel:1,col:WOLF_KINDS.Sheep.coat,eyeCol:0x0a0a0c,hp:1,maxHp:1,spd:1.0,dmg:0,atk:9,xpVal:0,scale:1,shape:'wolf',def:0,resist:{},wild:true};
 for(const k in WILD_ISLE_KINDS){const P=WILD_ISLE_KINDS[k];WILD_PACE[k]=P;
   const body=(WOLF_KINDS[k]&&WOLF_KINDS[k].wild)?'wolf':BIRD[k]?'bird':(SWIMMER[k]&&SWIMMER[k].land)?'crawl':null;if(!body)continue;
   const col=body==='wolf'?WOLF_KINDS[k].coat:body==='bird'?BIRD[k].col:SWIMMER[k].col;
@@ -819,11 +822,12 @@ function wildArrowMisses(e,y){if(e&&e.swim&&e.mesh)return Math.abs(y-e.mesh.posi
 const WILD_FLEE=40,WILD_HERD=12,WILD_HOME=10;
 function wildOpen(x,z){if(activeZoneId!=='world')return true;if(typeof worldH==='function'&&worldH(x,z)<.5)return false;
   if(typeof slopeNormalY==='function'&&slopeNormalY(x,z)<.6)return false;return !(typeof solidAt==='function'&&solidAt(x,z));}
-function wildFlee(e,T){const W=e._w||(e._w={});if(W.mode==='flee'||W.mode==='fly')return;
+function wildFlee(e,T){if(e.watch)return; /* S1784 — the watcher never runs */const W=e._w||(e._w={});if(W.mode==='flee'||W.mode==='fly')return;
   W.mode='flee';W.left=WILD_FLEE;W.yaw=Math.atan2(e.x-T.x,e.z-T.z)+(e.rng()-.5)*.6;
   if((WILD_PACE[e.baseName]||{}).fly){W.mode='fly';W.gone=0;W.cruise=WILD_FLY.lo+e.rng()*(WILD_FLY.hi-WILD_FLY.lo);W.fy=W.fy||0;}
   for(const o of ZE)if(o!==e&&o.wild&&!o.dead&&Math.hypot(o.x-e.x,o.z-e.z)<WILD_HERD)wildFlee(o,T);}
 function tickWildOne(e,dt){if(!(dt>0))return;
+  if(e.watch){watchTick(e,dt);return;}
   const P=WILD_PACE[e.baseName]||WILD_PACE.Deer,W=e._w||(e._w={mode:'graze',t:2+e.rng()*6});
   const T=targetOf(e),dist=Math.hypot(T.x-e.x,T.z-e.z);
   if(e.alert){e.alert=false;wildFlee(e,T);} /* a blow that did not kill, or a pack's cry */
@@ -845,6 +849,17 @@ function tickWildOne(e,dt){if(!(dt>0))return;
       let dy=yaw-e.combatYaw;dy=Math.atan2(Math.sin(dy),Math.cos(dy));e.combatYaw+=dy*Math.min(1,dt*(W.mode==='flee'?14:5));}}
   if(e.mesh){const y=typeof activeTerrainH==='function'?activeTerrainH(e.x,e.z):e.mesh.position.y;e.mesh.position.set(e.x,y,e.z);e.mesh.rotation.set(0,e.combatYaw,0);}
 }
+// S1784 — the watcher (L5, OG-096; Michael's B on #1005; placed by watcherAt, 88-world-ticks.js): the hostile Wolf's body, made a peaceful
+// animal (#984 A: one blow, no reward but its meat, never in a fight, no eye-glow) that never hunts and never runs. It stays where it stands
+// and turns, at WATCH_TURN radians a second, to keep you in front of it, wherever you are and whether or not it could see you. B's one
+// impossible element: it casts no shadow (its driver, which the shadow pass draws for the kit's body, casts none). Its sheep (the farm's
+// Sheep on the wild path) graze and bolt as any peaceful animal; the watcher stays
+const WATCH_TURN=1.2;
+function watchMake(e){if(!e)return e;e.wild=true;e.watch=true;e.alert=false;e.hp=e.maxHp=1;e.dmg=0;e.xpVal=0;if(e.el)e.el.intensity=0;
+  if(e.mesh)e.mesh.traverse(o=>{if(o.isMesh||o.isPoints)o.castShadow=false;});return e;}
+function watchTick(e,dt){e.alert=false;const T=targetOf(e);
+  let dy=Math.atan2(T.x-e.x,T.z-e.z)-e.combatYaw;dy=Math.atan2(Math.sin(dy),Math.cos(dy));const st=WATCH_TURN*dt;e.combatYaw+=Math.max(-st,Math.min(st,dy));
+  if(e.mesh){const y=typeof activeTerrainH==='function'?activeTerrainH(e.x,e.z):e.mesh.position.y;e.mesh.position.set(e.x,y,e.z);e.mesh.rotation.set(0,e.combatYaw,0);}}
 // S1711 — a bird's flight from you: straight off, bent a little to keep away, over walls, water and slopes alike; down only onto open ground
 function wildFlyStep(e,W,P,T,dt){const F=WILD_FLY;
   const away=Math.atan2(e.x-T.x,e.z-T.z);let dy=away-W.yaw;dy=Math.atan2(Math.sin(dy),Math.cos(dy));if(W.gone<F.far)W.yaw+=dy*Math.min(1,dt*.8);
@@ -891,7 +906,7 @@ function buildZoneEnemy(sc,sol,x,z,type,variantKey,zOpts){
   if(type==='Dragon'&&WOLF_KINDS.Dragon){ // v80 S177 — the dragon on the shape kit: the wolf's bones and gait, its own neck, tail and wings
     wolfRig=buildWolf(type,sc2/1.8*WOLF_KINDS.Dragon.world);g.add(wolfRig.root);limbs.torso=wolfRig.mesh;limbs.wolf=wolfRig;
   }
-  else if(d.wild&&((WOLF_KINDS[type]&&WOLF_KINDS[type].wild)||(typeof BIRD!=='undefined'&&BIRD[type])||(typeof SWIMMER!=='undefined'&&SWIMMER[type]&&(d.swim||SWIMMER[type].land)))){ /* S1769 — or one of the islands' on the land path (a snake, a lizard, a frog, a beetle, a crab) */ /* S1759 — or a trout (buildSwimmer) */ /* S1711 — or a bird (buildBird) */ /* S1707 — a peaceful animal at its own size, its kit body keyed by the spawner's id (a hind by it, S1706) */
+  else if(d.wild&&((WOLF_KINDS[type]&&(WOLF_KINDS[type].wild||WOLF_KINDS[type].farm))||(typeof BIRD!=='undefined'&&BIRD[type])||(typeof SWIMMER!=='undefined'&&SWIMMER[type]&&(d.swim||SWIMMER[type].land)))){ /* S1769 — or one of the islands' on the land path (a snake, a lizard, a frog, a beetle, a crab) */ /* S1759 — or a trout (buildSwimmer) */ /* S1711 — or a bird (buildBird) */ /* S1707 — a peaceful animal at its own size, its kit body keyed by the spawner's id (a hind by it, S1706) */
     wolfRig=buildAnimal(type,zOpts&&zOpts.key!=null?zOpts.key:null,zOpts&&zOpts.island); /* S1769 — the island's coat (S1721) */g.add(wolfRig.root);limbs.torso=wolfRig.mesh;limbs.wolf=wolfRig;
   }
   else if(zShapeExtra(type,d,g,mat,sc2,limbs)){}

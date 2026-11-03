@@ -329,8 +329,50 @@
       const e=keyFoe(buildZoneEnemy(sc,STATIC_SOL,ex,ez,'Trout',null,{tier:1,key:id}),'wild:'+id);
       e._wildKey=id;e._chunk=key;e.homeX=ex;e.homeZ=ez;e.combatYaw=pr()*Math.PI*2;e.mesh.position.y=SEA_Y-WILD_SWIM.under;
       ZONES.world.enemies.push(e);ch.wild.push(e);}}
+  // S1784 — the watcher (backlog L5, OG-096; Michael's B on #1005, "one impossible element each, nothing lit"): the concept artist's grey
+  // wolf on a rise off a Gatelands road, turned to the passer-by, three sheep grazing round it. One Gatelands cell in three keeps one, by its
+  // own stream (`watcher:<cell>`), as the Weaver door and the carving are kept: 22 to 30 m off the line of one of the cell's roads (the
+  // prototype's 26), on ground at least a metre over the road beside it, in pasture (the door's test of the scatter's odds of a tree,
+  // WATCH_WOOD), clear of pads, farms, doors, lakes, other roads and the cell's other wonders. Its one wrong thing is B's: it casts no
+  // shadow while its sheep do. It never hunts and never runs: it turns to keep you in front of it (watchTick, 42-zone-enemies.js). It is a
+  // peaceful animal for the rest (#984 A): one blow takes it. Its id is `watch:<cell>`, its sheep's `watch:<cell>:s<i>`
+  const WATCH_WOOD=.2,WATCH_OFF=[22,30],WATCH_SHEEP=[4.6,7.5];
+  function watcherAt(c){
+    if(!c||c._watcher!==undefined)return c?c._watcher:null;c._watcher=null;
+    if(c.type==='sea'||c.home||!c.sites||!c.roadDefs)return null;
+    if(nationOf(c.i,c.j).people!=='gatelander')return null;
+    const k=cellKey(c.i,c.j),r=seededRng('watcher',k);if(r()>=1/3)return null;
+    const byId={};for(const t of c.sites)byId[t.id]=t;const lakes=[];for(let j=c.j-1;j<=c.j+1;j++)for(let i=c.i-1;i<=c.i+1;i++){const n=getCell(i,j);if(n&&n.lakes)lakes.push(...n.lakes);}
+    const roads=c.roadDefs.filter(d=>d.via!=='quay'&&d.via!=='spur'&&byId[d.a]&&byId[d.b]).map(d=>({d,pts:roadCurve(d,byId[d.a],byId[d.b])}));if(!roads.length)return null;
+    const others=[];try{for(const f of [limeCave,seaCove,weaverDoorAt,roadCarvingAt]){const o=f(c);if(o)others.push(o);}}catch(e){}
+    const farms=[];try{loneFarms(c).forEach(F=>farms.push(F));c.sites.forEach(t=>{const F=villageFarm(t,c);if(F)farms.push(F);});}catch(e){}
+    const near=(pts,x,z)=>{let b=1e9;for(let i=0;i<pts.length-1;i++){const a=pts[i],q=pts[i+1],dx=q.x-a.x,dz=q.z-a.z,t=Math.max(0,Math.min(1,((x-a.x)*dx+(z-a.z)*dz)/(dx*dx+dz*dz||1)));b=Math.min(b,Math.hypot(a.x+dx*t-x,a.z+dz*t-z));}return b;};
+    withPlace(c.ox+SIZE/2,c.oz+SIZE/2,()=>{for(let t=0;t<80&&!c._watcher;t++){const R=roads[Math.floor(r()*roads.length)],P=R.pts;if(P.length<2)continue;
+        const i=Math.min(P.length-2,Math.floor(P.length*(.15+r()*.7))),a=P[i],b=P[i+1],L=Math.hypot(b.x-a.x,b.z-a.z)||1,
+        nx=-(b.z-a.z)/L,nz=(b.x-a.x)/L,sd=r()<.5?-1:1,u=r(),off=WATCH_OFF[0]+r()*(WATCH_OFF[1]-WATCH_OFF[0]),rx=a.x+(b.x-a.x)*u,rz=a.z+(b.z-a.z)*u,x=rx+nx*sd*off,z=rz+nz*sd*off;
+        if(c.sites.some(s=>Math.hypot(s.x-x,s.z-z)<(s.pad||0)+40)||(c.doors||[]).some(e=>Math.hypot(e.x-x,e.z-z)<40)||farms.some(F=>Math.hypot(F.cx-x,F.cz-z)<FARM_R+30))continue;
+        if(others.some(C=>Math.hypot(C.x-x,C.z-z)<60)||lakes.some(l=>Math.hypot(l.x-x,l.z-z)<(l.r||60)+15)||roads.some(o=>near(o.pts,x,z)<WATCH_OFF[0]-1))continue;
+        const h=rawH(x,z);if(h<2||h<rawH(rx,rz)+1||Math.hypot(rawH(x+2,z)-rawH(x-2,z),rawH(x,z+2)-rawH(x,z-2))/4>.25)continue; /* a rise over the road, not a crag */
+        let wood=0;for(let q=0;q<13;q++){const ang=q*2.4,d=q?6+q*1.6:0,qx=x+Math.cos(ang)*d,qz=z+Math.sin(ang)*d;wood+=regionScalar(qx,qz,'density')*(.5+fbm(qx,qz,60,SEED+21,2)*1.3);}if(wood/13>WATCH_WOOD)continue;
+        c._watcher={id:'watch:'+k,x:+x.toFixed(2),z:+z.toFixed(2),ry:+Math.atan2(rx-x,rz-z).toFixed(4),cell:k};}});
+    return c._watcher;}
+  function wildWatcherChunk(ch,key){const x0=ch.cx*CHUNK,z0=ch.cz*CHUNK,seen=new Set();let W=null;
+    for(const [qx,qz] of [[x0,z0],[x0+CHUNK-.01,z0],[x0,z0+CHUNK-.01],[x0+CHUNK-.01,z0+CHUNK-.01]]){const [i,j]=cellOf(qx,qz),ck=i+','+j;if(seen.has(ck))continue;seen.add(ck);
+      const D=watcherAt(getCell(i,j));if(D&&D.x>=x0&&D.x<x0+CHUNK&&D.z>=z0&&D.z<z0+CHUNK)W=D;}
+    if(!W)return false;
+    if(WILD_TAKEN.get(W.id)!==lootDay()&&wildGround(W.x,W.z)){
+      const e=keyFoe(buildZoneEnemy(sc,STATIC_SOL,W.x,W.z,'Wolf',null,{tier:1,key:W.id,island:'gatelands'}),W.id);watchMake(e);
+      e._wildKey=W.id;e._chunk=key;e.homeX=W.x;e.homeZ=W.z;e.combatYaw=W.ry;
+      ZONES.world.enemies.push(e);ch.wild.push(e);}
+    const pr=seededRng('watchsheep',W.id);
+    for(let i=0;i<3;i++){const id=W.id+':s'+i,a=W.ry+Math.PI*(.35+.65*i)+(pr()-.5)*.5,d=WATCH_SHEEP[0]+pr()*(WATCH_SHEEP[1]-WATCH_SHEEP[0]),sx=W.x+Math.sin(a)*d,sz=W.z+Math.cos(a)*d,yaw=pr()*Math.PI*2;
+      if(WILD_TAKEN.get(id)===lootDay()||!wildGround(sx,sz))continue;
+      const s=keyFoe(buildZoneEnemy(sc,STATIC_SOL,sx,sz,'Sheep',null,{tier:1,key:id,island:'gatelands'}),'wild:'+id);
+      s._wildKey=id;s._chunk=key;s.homeX=sx;s.homeZ=sz;s.combatYaw=yaw;ZONES.world.enemies.push(s);ch.wild.push(s);}
+    return true;}
   function wildSpawnChunk(ch){const key=chunkKey(ch.cx,ch.cz);ch.wild=[];WILD_CH.add(ch);
     const cxw=ch.cx*CHUNK+CHUNK/2,czw=ch.cz*CHUNK+CHUNK/2;wildTroutChunk(ch,key);if(worldH(cxw,czw)<-3)return;
+    if(wildWatcherChunk(ch,key))return; /* S1784 — the watcher's chunk holds it and its sheep, no other group */
     const r=seededRng('wild',key);if(r()>WILD_P)return;
     if(wildPadNear(cxw,czw,40))return;
     const biome=lairBiome({x:cxw,z:czw}),night=isNight();
