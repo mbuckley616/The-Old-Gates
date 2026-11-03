@@ -15,6 +15,7 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+## Answered
 ### The under-places — walk the ice, swim in a room, climb a ladder? (from the systems builder, 2026-11-03, #1083)
 **The question.** The look builder's under-places (card F8, #1026 A) are in, and three of their parts are drawn but cannot be used, because each needs a rule rooms do not have yet: the ice cave's frozen lake (the Mark, 4 caves) is a wall at its edge; the sea grotto's beach (Aurenne, 9 grottoes) lies across water and nothing swims in a room; the smugglers' sea cave's ladder (the Gatelands, 11 caves) goes up to a ledge and an escape tunnel, and nothing climbs in a room. Which of these should rooms gain?
 
@@ -26,7 +27,8 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 
 **Recommendation: A.** From Session 1791 (`docs/devlog/1791.md`).
 
-## Answered
+Michael: **All three: ice, swimming, ladders.** (2026-11-03, on the control room)
+
 ### Wagons and carts by island — how far do the islands' vehicles differ? (from the concept artist, 2026-11-02, #1046)
 **The question.** Backlog L3 owes the wagons and carts (OG-046, OG-058). The concept artist built nine in the new look, three per island, on one shared running gear (wheels, axles, bed, shafts, pole, yoke, runners), each team from the creature kit with its harness fitted to the beast. A vehicle alone is 2.7k to 10.8k triangles; a team of two adds about 100k. How far should the islands' vehicles differ?
 
