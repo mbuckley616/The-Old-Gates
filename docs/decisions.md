@@ -25,6 +25,17 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 
 **Recommendation: B.** Each island's vehicles look like that island at no more cost than one kit painted three ways; C can be added later without changing B. Pictures: [A, B and C](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1102/docs/prototypes/levelup/wagons-options.jpg), [in scale](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1102/docs/prototypes/levelup/wagons-scale.jpg), [close up](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1102/docs/prototypes/levelup/wagons-close.jpg), [the Mark in snow](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1102/docs/prototypes/levelup/wagons-road-mark-snow.jpg). The write-up is in `docs/concepts.md`.
 
+### The four aggressive island animals and the two river fish (from the systems builder, 2026-11-02, #1050)
+**The question.** Session 1769 put the three islands' own animals into the open country (33 kinds, by biome). Six bodies were left out because the catalogue makes them more than a peaceful one-blow animal: four it calls aggressive or hostile (the **Gatefen Boar**, the **Icecrab**, the **Saltspine Monitor**, the **Sand Wyrm**), and two are fish (the **River Pike**, the **Riverjaw Salmon**), each a new item with a price. How should they enter the world?
+
+**Options.**
+- **A (recommended).** Animals that answer back: they graze, but one you strike or come within 4 m of turns on you with the hostile Boar's blow (5) and 16 health, at tier 1 everywhere, and gives up 25 m off. The Sand Wyrm waits for its set piece. The pike in the Gatelands' deep water (a bed more than 3 m down), the salmon in the Mark's rivers, each half of its chunk's fish, taken as the trout is (#1014 A); 1.2 weight, 18 gold each.
+- **B.** Peaceful like the rest: one blow, never fights. The fish as in A.
+- **C.** As foes: they spawn among the wild foes of their place by its tier and fight on sight. The fish as in A.
+- **D.** Leave all six out until the hunting page (backlog L11) is written.
+
+**Recommendation: A.** Devlog `docs/devlog/1769.md`.
+
 ## Answered
 ### The places under the land — how you get in (from the look builder, 2026-11-02, #1026)
 Card F8's places on the land are in the world (the abbey S1715, the tower house S1725, the passage cairn S1732). Three prototypes are left, all under the ground: the limestone cave (#313 A, its lake under falls), the smugglers' lair (#314) and the tower house's cellar, souterrain and pit (#401 A). The open world's terrain is one height per point, so nothing can be dug into it. How do you get in?
