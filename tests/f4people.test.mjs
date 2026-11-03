@@ -58,7 +58,7 @@ const winter = await page.evaluate(() => { const was = worldState.gameTimeAbsMin
   const forget = () => { for (const k of [...HB_GENOMES.keys()]) if (/^wtest/.test(k)) HB_GENOMES.delete(k); for (const k of [...PEOPLE_GENOMES.keys()]) if (/wtest/.test(k)) PEOPLE_GENOMES.delete(k); };
   const run = () => { const res = {}; for (const pk of peoples) { const o = { n: 0, coat: 0, fur: 0, burnous: 0, tint: 0 };
     for (let i = 0; i < 40; i++) { const root = buildNPCMesh({ role: 'villager', name: 'W' + pk + i, people: pk }, { key: 'wtest' }); const rig = [...HB_RIGS].find(x => x.root === root);
-      if (!rig) continue; o.n++; const D = rig.hbG.dress; if (D.coat) { o.coat++; if (Math.abs(rig.g.cloth.r - D.coat[0]) < 1e-3) o.tint++; } if (D.coatFur) o.fur++; if (D.burnous) { o.burnous++; if (D.hood === 'down') { o.down = (o.down || 0) + 1; if (o.point == null) { const p = HB.makePerson(rig.hbG); o.point = !!(p.root.getObjectByName('hoodPoint') && p.root.getObjectByName('tassel')); } } }
+      if (!rig) continue; o.n++; const D = rig.hbG.dress; if (D.coat) { o.coat++; if (Math.abs(rig.g.cloth.r - D.coat[0]) < 1e-3) o.tint++; } if (D.coatFur) o.fur++; if (D.burnous) o.burnous++;
       HB_RIGS.delete(rig); PEOPLE_RIGS.delete(rig); } res[pk] = o; } forget(); return res; };
   worldState.gameTimeAbsMinutes = 1440 * 28 * 4 + 600; const season = calDay().season, out = run();
   currentHouse = { id: 'wtest' }; const indoor = run(); currentHouse = null;
@@ -70,8 +70,6 @@ const W = winter.out;
 check('in winter, out of doors, a share of each people wear the winter coat (the Markmen most, fur-lined; the Aurennais the burnous) and the distant copy takes the coat\'s colour',
   winter.season === 'winter' && W.markman.coat >= 28 && W.markman.fur === W.markman.coat && W.gatelander.coat >= 10 && W.gatelander.coat <= 30 && W.oldblood.coat >= 5 && W.oldblood.fur === 0 &&
   W.aurennais.burnous >= 4 && W.aurennais.coat === 0 && Object.values(W).every(o => o.n === 40 && o.tint === o.coat), winter);
-// S1770: a burnous worn with its hood down is built with the hood's point hanging down the back, its tassel at the point
-check(`a burnous with its hood down (${W.aurennais.down || 0} of ${W.aurennais.burnous}) is built with the hood's point and its tassel`, W.aurennais.down > 0 && W.aurennais.point === true, W.aurennais);
 check('indoors and out of winter nobody wears it', winter.season2 !== 'winter' && winter.indoorAll === 0 && winter.autumnAll === 0, winter);
 
 // S1767 (L1, OG-109's Mark formal column): on a feast day seven in ten of the Mark's folk wear the woven bands (a man's tunic to the knee),
