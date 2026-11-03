@@ -5277,6 +5277,19 @@ function aurenneOrrery(hAt, o = {}) {
       sky: new THREE.MeshBasicMaterial({ color: 0xc4d0dc, fog: false }), dark: new THREE.MeshBasicMaterial({ color: 0x050607 }) };
     VM.lime.side = VM.limeWet.side = VM.drip.side = THREE.DoubleSide; VM.skin = VM.lime; return VM;
   }
+  // the cave's keys in the Mark's ice (Session 1777; places.js's iceMats, Session 903), so the one hall dresses either way: the rock
+  // blue-white glacier ice, glassy where it is wet; the drips icicles; the lake a frozen sheet; the falls frozen in their fall; the foam and
+  // the pools frozen white; the mist a thin ice fog; the dry shore under a dusting of snow, and snow blown in at the mouth
+  let VI = null;
+  function iceMats() {
+    if (VI) return VI; const C = caveMats(), ice = (c, rough, o = {}) => { const m = mat('rock', { ns: o.ns ?? .6, color: c, rough }); m.side = THREE.DoubleSide; return m; };
+    VI = { ...C, lime: ice(0x9ec4d8, .35), limeWet: ice(0x7aa6c4, .15), bed: ice(0x8aa8b8, .5, { ns: .8 }), drip: ice(0xc8e4f2, .12, { ns: .3 }),
+      lake: new THREE.MeshStandardMaterial({ color: 0x9cc6da, roughness: .22, metalness: .05, transparent: true, opacity: .95 }), pool: new THREE.MeshStandardMaterial({ color: 0xd6eaf4, roughness: .3 }),
+      fall: new THREE.MeshStandardMaterial({ color: 0xc4e2f0, emissive: new THREE.Color(.12, .22, .3), roughness: .15, transparent: true, opacity: .88, side: THREE.DoubleSide }),
+      foam: new THREE.MeshStandardMaterial({ color: 0xeef4f8, roughness: .8 }), mist: new THREE.MeshStandardMaterial({ color: 0xe0eef6, emissive: new THREE.Color(.12, .16, .2), roughness: 1, transparent: true, opacity: .05, depthWrite: false }),
+      snow: mat('plaster', { ns: .3, color: 0xf2f6fa, rough: .95 }), sky: new THREE.MeshBasicMaterial({ color: 0xc4d0dc, fog: false }) };
+    VI.skin = VI.snow; return VI;
+  }
   // a tube lofted ring by ring: ring(i, j) gives the point of ring i (0..NS) at step j (0..NA-1); inside winds it to face in; keep drops faces
   function caveLoft(NS, NA, ring, inside = true, keep = () => true) { const pos = [], idx = [];
     for (let i = 0; i <= NS; i++) for (let j = 0; j < NA; j++) pos.push(...ring(i, j));
@@ -5300,7 +5313,7 @@ function aurenneOrrery(hAt, o = {}) {
     return { taper, ringBase, ringAt, hw, roofY, inHall, amp, big };
   }
   function gatelandsCave(o = {}) {
-    const key = String(o.key || 'cave'), r = stream('cave:' + key), M = caveMats(), B = new Map(), flowersOn = o.flowers !== false;
+    const key = String(o.key || 'cave'), r = stream('cave:' + key), M = o.ice ? iceMats() : caveMats(), B = new Map(), flowersOn = !o.ice && o.flowers !== false; /* S1777 — o.ice: the Mark's ice cave, the same hall in ice */
     const put = (geo, k, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, uv = .6) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal'].includes(a)) g.deleteAttribute(a);
       if (!g.attributes.normal) g.computeVertexNormals();
       g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), new THREE.Vector3(1, 1, 1))); worldUV(g, uv);
@@ -5375,7 +5388,12 @@ function aurenneOrrery(hAt, o = {}) {
       put(new THREE.CircleGeometry(rad, 18).rotateX(-Math.PI / 2), 'pool', x, fy + .1, zz, 0, 0, 0, .3);
       if (flowersOn && r() < .55) for (let f = 0; f < 7; f++) { const a = r() * Math.PI * 2, fx = x + Math.cos(a) * (rad + .15 + r() * .3), fz = zz + Math.sin(a) * (rad + .15 + r() * .3), h = .15 + r() * .25, gy = floorY(fx, fz); if (!flat(fx, fz, fy) || nearPath(fx, fz) < .5 || OB.some(([ox, oz, or]) => Math.hypot(fx - ox, fz - oz) < or)) continue;
         put(new THREE.CylinderGeometry(.008, .01, h, 4), 'stalk', fx, gy + h / 2, fz); put(new THREE.SphereGeometry(.045, 7, 5).scale(1, .6, 1), 'petal', fx, gy + h + .02, fz); flowers.push([+fx.toFixed(2), +(gy + h + .02).toFixed(2), +fz.toFixed(2), +gy.toFixed(3)]); } }
-    const group = new THREE.Group(); group.name = 'cave'; let tris = 0;
+    // o.ice (S1777, places.js's Session 903): snow blown in at the mouth, drifts along the passage's floor thinning inward over its first 9 m,
+    // banked against its walls, and a sheet of it over the floor's first 6 m
+    const snow = []; if (o.ice) { const rs = stream(key + ':snow'); for (let k = 0; k < 46; k++) { const z = -Math.pow(rs(), 1.6) * 9, side = rs() < .5 ? -1 : 1, x = SPX(z) + side * (1.2 + rs() * 1.5), d = 1 - (-z / 9), s = .5 + rs() * 1.1 * d;
+        const g = new THREE.SphereGeometry(s, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2); g.scale(1.6, .32 * d + .06, 1.2); put(g, 'snow', x, LH - .02, z, 0, rs() * 6, 0, .4); snow.push([+x.toFixed(2), +z.toFixed(2), +s.toFixed(2)]); }
+      { const g = new THREE.PlaneGeometry(5.6, 6, 8, 10), P = g.attributes.position; for (let i = 0; i < P.count; i++) P.setZ(i, .05 + .1 * Math.max(0, (P.getY(i) + 3) / 6) * (1 - Math.abs(P.getX(i)) / 3)); g.rotateX(-Math.PI / 2); g.computeVertexNormals(); put(g, 'snow', SPX(-3), LH, -3, 0, 0, 0, .4); } }
+    const group = new THREE.Group(); group.name = o.ice ? 'icecave' : 'cave'; let tris = 0;
     for (const [k, gs] of B) { if (k[0] === '_') { group.add(gs); continue; } const g = mergeGeometries(gs); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = false; m.receiveShadow = false; group.add(m); tris += g.attributes.position.count / 3; }
     // the walk as half-metre cells: the passage's floor (within 1.6 m of its spine, where its tube is 2 m and more either side), the hall's
     // floor wherever a body 1 m over it is 0.7 m inside the hall's ring, the bridge's deck; null where it is rock, water deeper than the
@@ -5394,7 +5412,7 @@ function aurenneOrrery(hAt, o = {}) {
     const low = Math.min(...cells.filter(c => c.y != null).map(c => c.y)), zm = Z0 - L / 2;
     return { group, sky: M.sky, tris: Math.round(tris), draws: group.children.length, path, walkY, ledge: LH, lake: { x0: -hw(zm), x1: hw(zm) - 11 - 4.2, z0: Z0 - 9, z1: SH1, y: LY, deep: DEEP },
       falls, shaft: { x: SX, z: SZ, r: SR, top: shaftTop }, mouth: { x: SPX(0), z: 0, y: LH, w: 2 * PRX, h: PUP + 1.6 }, flowers, chamber: { x0: -RX(.5), x1: RX(.5), z0: Z0, z1: Z1, h: CY + RY(.5) },
-      bridge: { x0: BX0, x1: BX1, z: ZB, deck: .8 }, columns, pools, bounds: { x0: X0c, x1: -X0c, z0: -NZc * G, z1: 0 }, low, cells, arrive: [SPX(-1.6), LH, -1.6, 0] };
+      bridge: { x0: BX0, x1: BX1, z: ZB, deck: .8 }, columns, pools, ice: !!o.ice, snow, bounds: { x0: X0c, x1: -X0c, z0: -NZc * G, z1: 0 }, low, cells, arrive: [SPX(-1.6), LH, -1.6, 0] };
   }
   // the cave's mouth in the open world (Session 1768): an outcrop of grey limestone half sunk in the slope, 15 m across and 11 deep, its
   // face toward +z, and in it the mouth, 4.4 m wide and 3.6 m high, a short throat of rock 6 m into the dark. Its own frame: the throat's
@@ -5403,8 +5421,10 @@ function aurenneOrrery(hAt, o = {}) {
   let CMO = null;
   function gatelandsCaveMouth(o = {}) {
     const key = String(o.key || 'cave'), r = stream('cavemouth:' + key), F = cairnField(stream('cavemouth:' + key + ':rock'), .45), B = new Map();
-    const dk = o.rock === 'sea' ? 'sea' : 'lime'; /* S1773 — the sea cave's mouth in the coast's dark grey rock, not the limestone */
-    if (!CMO) CMO = {}; if (!CMO[dk]) CMO[dk] = { lime: mat('rock', { ns: 1.5, color: dk === 'sea' ? 0x6a6e6c : 0xb4b0a4, rough: .92 }), throat: mat('rock', { ns: 1.4, color: dk === 'sea' ? 0x3e4442 : 0x6a685f, rough: .95 }), dark: new THREE.MeshBasicMaterial({ color: 0x030304 }), moss: mat('turfMoss', { ns: .8, color: 0x8aa868, rough: 1 }) };
+    const dk = o.rock === 'sea' ? 'sea' : o.rock === 'ice' ? 'ice' : 'lime'; /* S1773 — the sea cave's mouth in the coast's dark grey rock, not the limestone */
+    if (!CMO) CMO = {}; if (!CMO[dk]) CMO[dk] = dk === 'ice' ? /* S1777 — the Mark's ice cave: an outcrop of blue-white ice, its throat deep blue going dark, snow lying on its top */
+      { lime: (() => { const m = mat('plaster', { ns: .4, color: 0xc4def0, rough: .3 }); return m; })(), throat: (() => { const m = mat('rock', { ns: .5, color: 0x4a88b4, rough: .2 }); m.emissive = new THREE.Color(0x0a2238); return m; })(), dark: new THREE.MeshBasicMaterial({ color: 0x06121e }), moss: mat('plaster', { ns: .3, color: 0xf2f6fa, rough: .95 }) }
+      : { lime: mat('rock', { ns: 1.5, color: dk === 'sea' ? 0x6a6e6c : 0xb4b0a4, rough: .92 }), throat: mat('rock', { ns: 1.4, color: dk === 'sea' ? 0x3e4442 : 0x6a685f, rough: .95 }), dark: new THREE.MeshBasicMaterial({ color: 0x030304 }), moss: mat('turfMoss', { ns: .8, color: 0x8aa868, rough: 1 }) };
     const M = CMO[dk], put = (geo, k) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal'].includes(a)) g.deleteAttribute(a); if (!g.attributes.normal) g.computeVertexNormals(); worldUV(g, .3); if (!B.has(k)) B.set(k, []); B.get(k).push(g); };
     const MW = 2.2, MH = 3.6, TD = 6, RXo = 7.5, RYo = 6.5, RZo = 6, CZ = -4.2, CYo = .6;
     const inMouth = (x, y, z, m = 0) => z > -TD - .5 && y > -.6 && Math.hypot(x / (MW + m), Math.max(0, y - MH + MW) / (MW + m)) < 1 && y < MH + m;
@@ -5419,7 +5439,7 @@ function aurenneOrrery(hAt, o = {}) {
     { const g = new THREE.PlaneGeometry(2 * MW + .4, TD + 1.2, 6, 10).rotateX(-Math.PI / 2), P = g.attributes.position; for (let i = 0; i < P.count; i++) P.setY(i, .02 + .03 * Math.sin(P.getX(i) * 3.1) * Math.sin(P.getZ(i) * 2.3)); g.translate(0, 0, 1.2 - (TD + 1.2) / 2); put(g, 'throat'); }
     { const g = new THREE.CircleGeometry(MW * 1.2, 20); g.translate(0, MH - MW, -TD + .3); put(g, 'dark'); }
     // moss over the bluff's top, where the turf has crept onto it
-    for (let k = 0; k < 9; k++) { const a = r() * Math.PI * 2, d = r() * .6, s = 1.2 + r() * 1.4, g = new THREE.SphereGeometry(s, 10, 5, 0, Math.PI * 2, 0, Math.PI / 2); g.scale(1.3, .18, 1); const [x, y, z] = blob(4 + Math.floor(r() * 6), Math.floor(a / (Math.PI * 2) * 64), 40, 64); g.translate(x * (1 - d * .2), y - .15, z); put(g, 'moss'); }
+    for (let k = 0, nk = dk === 'ice' ? 16 : 9; k < nk; k++) { const a = r() * Math.PI * 2, d = r() * .6, s = 1.2 + r() * 1.4, g = new THREE.SphereGeometry(s, 10, 5, 0, Math.PI * 2, 0, Math.PI / 2); g.scale(1.3, .18, 1); const [x, y, z] = blob(4 + Math.floor(r() * 6), Math.floor(a / (Math.PI * 2) * 64), 40, 64); g.translate(x * (1 - d * .2), y - .15, z); put(g, 'moss'); }
     const group = new THREE.Group(); group.name = 'cavemouth'; let tris = 0;
     for (const [k, gs] of B) { const g = mergeGeometries(gs); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = k !== 'dark'; m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
     // solids: small squares (the world's static solids are read unturned), round the outcrop's foot every 1.2 m and along the throat's
