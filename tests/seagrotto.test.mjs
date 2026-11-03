@@ -42,7 +42,38 @@ const c = await page.evaluate(() => { const T = currentHouse._limeCave, Bd = T.b
 console.log(JSON.stringify(c));
 check(`the grotto (${c.tris} triangles in ${c.draws} draws): arrived at the stair's head at ${c.y0} m, clear`, c.clear && Math.abs(c.y0 - c.top) < .05 && c.tris < 220000 && c.draws <= 24, c);
 check(`walked down the stair, to the spring and down the quay to the water stairs with no wall in the way (${c.nb} blocked, steps of ${c.maxStep} at most)`, c.nb === 0 && c.maxStep <= .4 && Math.hypot(c.end[0] - c.goal[0], c.end[1] - c.goal[1]) < .1 && Math.abs(c.end[2] - 1.2) < .05, c);
-check('the sea a wall off the quay, the rock beside the stair and the spring\'s basin solid, the quay open', c.sea && c.rock && c.basin && !c.quay, c);
+check('the sea open off the quay (#1083 A: it is swum), the rock beside the stair and the spring\'s basin solid, the quay open', !c.sea && c.rock && c.basin && !c.quay, c);
+// Session 1805 (Michael's A on #1083, "swim in a room's deep water by the open sea's rules"): driven through the game's own loop at fixed
+// steps, off the quay into the sea, a dive and its breath, across to the beach and up onto its sand, and back up onto the quay.
+const sw = await page.evaluate(() => {
+  const raf = window.requestAnimationFrame, rr = REN.render; window.requestAnimationFrame = () => 0; REN.render = () => {};
+  const T = currentHouse._limeCave, Bd = T.bounds, FY = T.low - .25, W = roomWater(), sy = W.y - 1.45, Q = T.quay, qz = (Q.z0 + Q.z1) / 2;
+  let t = performance.now(); prevT = t; const run = (n, f) => { for (let i = 0; i < n; i++) { if (f && f(i)) return i; t += 1000 / 60; loop(t); } return n; };
+  const keys = o => { for (const k in K) K[k] = false; Object.assign(K, o || {}); }, at = () => [+(px + Bd.x0).toFixed(2), +(pz + Bd.z0).toFixed(2), +(jumpY + FY).toFixed(2)];
+  const r = { water: W.y + FY };
+  try {
+    PHP = maxHP; px = Q.x(qz) + .8 - Bd.x0; pz = qz - Bd.z0; jumpY = Q.y - FY; onGround = true; velY = 0; yaw = Math.PI / 2; pitch = 0; DIVE.breath = 1; DIVE.depth = null;
+    keys({ KeyW: true }); r.inN = run(240, () => WORLD.isSwimming()); run(30); keys();
+    r.inn = { at: at(), swim: WORLD.isSwimming(), line: +(jumpY - sy).toFixed(2), x0: +(Q.x(qz) - (px + Bd.x0)).toFixed(2) };
+    const x1 = px; keys({ KeyW: true }); run(180); keys(); r.swum = +(x1 - px).toFixed(2); r.stillSwim = WORLD.isSwimming();
+    pitch = -.7; keys({ KeyW: true }); run(90); keys(); r.dive = { depth: +(sy - jumpY).toFixed(2), under: DIVE.under, breath: +DIVE.breath.toFixed(3) };
+    pitch = 0; run(400); r.up = { line: +(jumpY - sy).toFixed(2), under: DIVE.under, breath: +DIVE.breath.toFixed(3) };
+    const bz = (T.beach.z0 + T.beach.z1) / 2; px = -8 - Bd.x0; pz = bz - Bd.z0; jumpY = sy; DIVE.depth = null; yaw = Math.PI / 2; pitch = 0;
+    keys({ KeyW: true }); r.beachN = run(1200, () => !WORLD.isSwimming() && jumpY > W.y + .1); run(30); keys(); run(10);
+    r.beach = { at: at(), swim: WORLD.isSwimming(), over: +(jumpY - W.y).toFixed(2), bed: +(W.bed(px, pz) - W.y).toFixed(2) };
+    px = Q.x(qz) - 2.5 - Bd.x0; pz = qz - Bd.z0; jumpY = sy; DIVE.depth = null; yaw = -Math.PI / 2; pitch = 0; run(5);
+    keys({ KeyW: true }); r.outN = run(600, () => Math.abs(jumpY + FY - Q.y) < .05); keys(); run(5);
+    r.out = { at: at(), swim: WORLD.isSwimming(), onQuay: (px + Bd.x0) > Q.x(qz) && Math.abs(jumpY + FY - Q.y) < .05 };
+    px = 0 - Bd.x0; pz = T.arch.z + 4 - Bd.z0; jumpY = sy; DIVE.depth = null; r.arch = { swim: WORLD.isSwimming(), prompt: limeCavePrompt() }; px = 0 - Bd.x0; pz = T.arch.z + 20 - Bd.z0; r.arch.far = limeCavePrompt();
+  } finally { keys(); window.requestAnimationFrame = raf; REN.render = rr; prevT = 0; }
+  return r; });
+console.log(JSON.stringify(sw));
+check(`off the quay into the sea: swimming on the swimmer's line (${sw.inn.line} m off it), ${sw.inn.x0} m out from the quay's edge`, sw.inn.swim && Math.abs(sw.inn.line) < .05 && sw.inn.x0 > .3, sw);
+check(`swum ${sw.swum} m on in 3 s, still swimming`, sw.stillSwim && sw.swum > 2, sw);
+check(`a dive: ${sw.dive.depth} m under the line in 1.5 s, the breath at ${sw.dive.breath}; let go, back on the line and the breath filling (${sw.up.breath})`, sw.dive.under && sw.dive.depth > 1.5 && sw.dive.breath < 1 && !sw.up.under && Math.abs(sw.up.line) < .05 && sw.up.breath > sw.dive.breath, sw);
+check(`swum to the beach and up onto its sand, ${sw.beach.over} m over the water`, !sw.beach.swim && sw.beach.over > .05 && Math.abs(sw.beach.over - sw.beach.bed) < .05, sw);
+check(`swum to the quay and climbed out onto it (${sw.outN} frames)`, sw.out.onQuay && !sw.out.swim, sw);
+check('swum to the arch from inside, offered the way out under it, and not 20 m short of it', sw.arch.swim && /swim out under the arch/.test(sw.arch.prompt) && !sw.arch.far, sw.arch);
 const back = await page.evaluate(() => { const T = currentHouse._limeCave, Bd = T.bounds; px = T.arrive[0] - Bd.x0; pz = T.arrive[2] - Bd.z0; jumpY = T.stair.top - (T.low - .25); const p = limeCavePrompt(); if (p) interact(); return p; });
 const outside = await page.waitForFunction(() => !isInterior(), null, { timeout: 30000 }).then(() => true, () => false); await page.waitForTimeout(1500);
 const o = await page.evaluate(id => { const C = [...CELLS.values()].find(c => c._grotto && c._grotto.id === id)._grotto; return { d: +Math.hypot(px - C.out.x, pz - C.out.z).toFixed(2), dy: +(jumpY - activeTerrainH(px, pz)).toFixed(2), solid: solidAt(px, pz) }; }, k.near.id);

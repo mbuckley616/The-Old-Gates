@@ -400,7 +400,8 @@ function loop(now){
   const inDungeon=lid&&lid.startsWith('dyn_');
   const inOverworld=!inDungeon&&!isInterior();
   const floorBaseY0=(inDungeon&&DUNGEON_STAIRWELL)?Math.min(0,FLOOR2_Y):((inDungeon&&currentFloor===2)?FLOOR2_Y:0); // v80 — with a stairwell the base is the lower floor; the upper floor is a foothold with the shaft as its hole
-  const floorBaseY=(inDungeon||isInterior())?laidGround(px,pz,jumpY,footholdY(px,pz,jumpY,inDungeon?dPitBase(px,pz,floorBaseY0):floorBaseY0)):floorBaseY0; /* S1590 — a laid top */ /* S1327 — over a chasm's air the ground is its pit's floor */ // v80 — footholds (stairs, galleries)
+  let floorBaseY=(inDungeon||isInterior())?laidGround(px,pz,jumpY,footholdY(px,pz,jumpY,inDungeon?dPitBase(px,pz,floorBaseY0):floorBaseY0)):floorBaseY0; /* S1590 — a laid top */ /* S1327 — over a chasm's air the ground is its pit's floor */ // v80 — footholds (stairs, galleries)
+  if(isInterior()&&typeof roomFloorTick==='function'){const _rw=roomFloorTick(dt,floorBaseY);if(_rw!=null)floorBaseY=_rw;} /* S1805 (#1083 A) — a room's water: the bed, the swimmer's line or the diver's depth; S1807, a ladder's climb (88-world-ticks.js) */
   if(typeof tickSheath==='function')tickSheath(); /* S1080 — the sheath: on its own after 5 s at peace */
   if(!mantleTick(K)) /* S1385 — the mantle (10-player.js): while it pulls you up, nothing else moves your flight */
   airStepTick(K); /* S1009 — Second step, the double jump (10-player.js); before the ground's jump, so a landing always resets it first */

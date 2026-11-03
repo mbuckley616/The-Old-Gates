@@ -32,12 +32,15 @@ const c = await page.evaluate(() => { const T = currentHouse._limeCave, Bd = T.b
   const zm = (T.lake.z0 + T.lake.z1) / 2;
   const lk = T.group.children.find(m => m.name === 'lime');
   return { ice: T.ice, snow: T.snow.length, flowers: T.flowers.length, iceRock: !!(lk && lk.material.color.b > lk.material.color.r), tris: T.tris, draws: T.draws, clear, y0, blocked: blocked.slice(0, 3), nb: blocked.length, maxStep: +maxStep.toFixed(2), end: [+(x + Bd.x0).toFixed(2), +(z + Bd.z0).toFixed(2), +(y + FY).toFixed(2)], goal: T.path[T.path.length - 1],
-    lake: intSolidAt(-6 - Bd.x0, zm - Bd.z0, .3, 0 - FY), head: +(headCeil(T.arrive[0] - Bd.x0, -10 - Bd.z0, T.ledge - FY) + FY).toFixed(2) }; });
+    lake: intSolidAt(-6 - Bd.x0, zm - Bd.z0, .3, 0 - FY), ice: (() => { const X = -4 - Bd.x0, Z = zm - Bd.z0, ly = T.lake.y - FY, on = !intSolidAt(X, Z, .3, ly + .02) ? +(footholdY(X, Z, ly + .02, 0) + FY).toFixed(2) : null;
+      const foot = intSolidAt(T.falls.x - Bd.x0 + .5, T.falls.z - Bd.z0, .3, ly + .02), tz = T.lake.z0 - 1.5 - Bd.z0; let sy = ly, nb = 0, zz = Z;
+      for (; zz < tz; zz += .05) { if (intSolidAt(X, zz, .3, sy)) { nb++; break; } sy = footholdY(X, zz, sy, 0); }
+      return { on, foot, nb, walked: +(zz - Z).toFixed(1), endY: +(sy + FY).toFixed(2) }; })(), head: +(headCeil(T.arrive[0] - Bd.x0, -10 - Bd.z0, T.ledge - FY) + FY).toFixed(2) }; });
 console.log(JSON.stringify(c));
 check(`the hall in ice: blue-white rock, ${c.snow} drifts at the mouth, ${c.flowers} flowers`, c.ice && c.iceRock && c.snow > 20 && c.flowers === 0, c);
 check(`the cave (${c.tris} triangles in ${c.draws} draws): arrived on the passage's floor at ${c.y0} m, clear`, c.clear && Math.abs(c.y0 - 4.5) < .05 && c.tris < 160000 && c.draws <= 16, c);
 check(`walked the passage, the ramp, the shore and the bridge to the far shelf with no wall in the way and no step up over 0.4 m (${c.nb} blocked)`, c.nb === 0 && c.maxStep <= .4 && Math.hypot(c.end[0] - c.goal[0], c.end[1] - c.goal[1]) < .1, c);
-check('the frozen lake is a wall at its edge, as the limestone cave\'s', c.lake, c);
+check(`the frozen lake is walked on (Michael's A on #1083): its surface a floor at ${c.ice.on} m, ${c.ice.walked} m walked across it, heaped ice round the frozen falls' foot`, c.ice.on != null && Math.abs(c.ice.on + .9) < .03 && c.ice.foot && c.ice.nb === 0 && c.ice.walked > 10 && Math.abs(c.ice.endY + .9) < .03, c);
 const back = await page.evaluate(() => { const T = currentHouse._limeCave, Bd = T.bounds; px = T.arrive[0] - Bd.x0; pz = T.arrive[2] - Bd.z0; jumpY = T.ledge - (T.low - .25); const p = limeCavePrompt(); if (p) interact(); return p; });
 const outside = await page.waitForFunction(() => !isInterior(), null, { timeout: 30000 }).then(() => true, () => false); await page.waitForTimeout(1500);
 const o = await page.evaluate(id => { const C = [...CELLS.values()].find(c => c._cave && c._cave.id === id)._cave; return { d: +Math.hypot(px - C.out.x, pz - C.out.z).toFixed(2), dy: +(jumpY - activeTerrainH(px, pz)).toFixed(2), solid: solidAt(px, pz) }; }, k.near.id);

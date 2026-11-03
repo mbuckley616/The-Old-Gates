@@ -626,7 +626,9 @@
   // knee-deep. Water walking still holds you up wherever the water is over 0.35 deep (WALK_WATER), as it did.
   const SWIM_DEPTH=1.40,SWIM_Y=SEA_Y-1.45,WALK_WATER=SEA_Y-.35;
   function groundY(x,z){const h=worldH(x,z);if(h<WALK_WATER&&typeof fxOn==='function'&&fxOn('waterwalk'))return SEA_Y+.06;return h<SWIM_Y?SWIM_Y:h;}
-  function isSwimming(){if(typeof fxOn==='function'&&fxOn('waterwalk'))return false;return activeZoneId==='world'&&!SHIP.sailing&&worldH(px,pz)<SEA_Y-SWIM_DEPTH&&jumpY<SWIM_Y+.3&&!onAnyPlatform();}
+  // S1808 — never in a room: indoors activeZoneId stays 'world' and px, pz are the room's, so worldH there read the sea off the map's corner
+  // and a room's floor under −1.15 m (the mine's sump, 16 m down) counted as swimming. A room's own water is roomSwimming (88).
+  function isSwimming(){if(typeof fxOn==='function'&&fxOn('waterwalk'))return false;return activeZoneId==='world'&&!isInterior()&&!SHIP.sailing&&worldH(px,pz)<SEA_Y-SWIM_DEPTH&&jumpY<SWIM_Y+.3&&!onAnyPlatform();}
   function onAnyPlatform(){for(const p of ZONES.world.platforms){if(px>p.x0&&px<p.x1&&pz>p.z0&&pz<p.z1&&(!p.inside||p.inside(px,pz))&&Math.abs(jumpY-p.y)<1.2)return true;}return false;}
 
   // ═══ UNDER THE WATER (Session D) ═════════════════════════════════════
