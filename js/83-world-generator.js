@@ -2556,10 +2556,10 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     for(const b of T.obs)SOL.push({x0:rx(b.x0),x1:rx(b.x1),z0:rz(b.z0),z1:rz(b.z1),y0:-5,y1:+ry(T.quay.y+1.2).toFixed(2)}); /* the spring's basin and benches, the bollards */
     const hr=typeof gameHour==='function'?gameHour():12,dayK=hr>=7&&hr<18?1:hr>=5&&hr<20?.45:.08;
     T.sky.color.setHex(hr>=7&&hr<18?0xc4d0dc:hr>=5&&hr<20?0x8a7a7a:0x0e1420);
-    sc_.add(new THREE.AmbientLight(0xbcc6d0,.26));
-    {const l=new THREE.PointLight(0xd8e4ec,6*dayK+.2,60,1);l.position.set(rx(0),ry(4),rz(T.arch.z+6));l.userData.daylight=true;sc_.add(l);}
-    for(const k of [1,3]){const [x,y,z]=T.glow[k],l=new THREE.PointLight(0x3a8ee8,3.2*dayK+.4,34,1.2);l.position.set(rx(x),ry(y),rz(z));l.userData.daylight=true;sc_.add(l);} /* the sea's light from under it */
-    {const M=T.mouth,l=new THREE.PointLight(0xdfe6f0,2.4*dayK,16,1);l.position.set(rx(M.x),ry(M.y)+2,rz(M.z-1.5));l.userData.daylight=true;sc_.add(l);}
+    sc_.add(new THREE.AmbientLight(0xc8c0b0,.16)); /* the grotto's rock is pale: half the cove's light reads as bright */
+    {const l=new THREE.PointLight(0xd8e4ec,2.6*dayK+.1,60,1);l.position.set(rx(0),ry(4),rz(T.arch.z+6));l.userData.daylight=true;sc_.add(l);}
+    for(const k of [1,3]){const [x,y,z]=T.glow[k],l=new THREE.PointLight(0x3a8ee8,1.3*dayK+.25,30,1.2);l.position.set(rx(x),ry(y),rz(z));l.userData.daylight=true;sc_.add(l);} /* the sea's light from under it */
+    {const M=T.mouth,l=new THREE.PointLight(0xdfe6f0,1.6*dayK,16,1);l.position.set(rx(M.x),ry(M.y)+2,rz(M.z-1.5));l.userData.daylight=true;sc_.add(l);}
     return sc_;
   }
   // the cave's one way, from either side: in the world, stood in the mouth's throat; inside, within the passage's first 3 m from its mouth
