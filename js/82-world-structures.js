@@ -187,7 +187,7 @@
     const L=LOADED.get(k);if(!L)return;const c=L.cell;
     // settlements in this cell go first
     c.sites.forEach(t=>{if(SETTLE.has(t.id))disposeSettlement(t.id);});
-    if(c._cave&&c._cave.house){const i=ZONES.world.houses.indexOf(c._cave.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1768 — the cave's record */
+    if(c._cave&&c._cave.house){const i=ZONES.world.houses.indexOf(c._cave.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1768 — the cave's record */if(c._cove&&c._cove.house){const i=ZONES.world.houses.indexOf(c._cove.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1773 — the sea cave's */
     (c._lone||[]).forEach(F=>{if(SETTLE.has(F.id))disposeSettlement(F.id);const i=F._site?LONE_FARMS.indexOf(F._site):-1;if(i>=0)LONE_FARMS.splice(i,1);}); /* S1473 — and its lone farms */
     if(L.staticsBuilt||L.staticsPending)dropStatics(L);
     L.statics.forEach(o=>{sc.remove(o);});
@@ -467,6 +467,45 @@
     for(const b of M.sol)STATIC_SOL.push({cx:C.x+b.x*co+b.z*s_,cz:C.z-b.x*s_+b.z*co,rx:b.w/2,rz:b.d/2,c:Math.cos(C.ry+b.ry),s:Math.sin(C.ry+b.ry),h:b.h,cave:true});
     C.y=y;C.tris=M.tris;C.draws=M.draws;C.mouth=M.mouth;C.out={x:C.x+s_*2.2,z:C.z+co*2.2,yaw:C.ry+Math.PI};
     C.house={id:`g_${C.id}`,type:'limecave',byAim:true,siteId:C.id,name:C.name,keeper:'',reg:c.reg,style:'irish',w:50,d:86,two:false,doorX:C.x,doorZ:C.z,doorFace:'S',exitX:C.out.x,exitZ:C.out.z,exitYaw:C.out.yaw};
+    if(ZONES.world&&ZONES.world.houses&&!ZONES.world.houses.some(h=>h.id===C.house.id))ZONES.world.houses.push(C.house);
+    return M.group;}
+  // S1773 (card F8, Michael's A on #1026) — the smugglers' sea caves on the Gatelands' coast (PKIT.places.cove, places.js's smugglersLair,
+  // #314 A). One coastal Gatelands cell in two keeps one, by its own stream (seacove:<cell>), so no other draw of the cell moves. Its mouth
+  // is on the land behind the shore, read by place (withPlace over the cell's middle), and its passage runs seaward under the land to the
+  // cave, whose arch opens on the sea: the ground 4 to 30 m over the sea, the nearest sea in any of 24 ways 30 m off or more, and in the
+  // way the cave runs the sea begins 45 to 85 m out and is still sea 20 m past that, with land over all of the passage; the ground before
+  // the mouth dry and within 3 m of it; 80 m off every pad, 90 m off every door, 70 m off the line of every road, 40 m off every lake's
+  // rim and 200 m off the cell's limestone cave. The candidates are a 60 m lattice over the cell, taken in the stream's order; one lair in
+  // two is held (its lanterns lit, the sloop at the jetty), the rest abandoned. -> {id, x, z, ry, name, cell, held, sea} or null (c._cove)
+  function seaCove(c){
+    if(c._cove!==undefined)return c._cove;c._cove=null;
+    if(c.type==='sea'||c.home||window.OG_LOOK!=='new'||window.OG_KIT_TOWNS===false||typeof PKIT==='undefined'||!PKIT.places||!PKIT.places.cove)return null;
+    if(nationOf(c.i,c.j).people!=='gatelander')return null;
+    const k=cellKey(c.i,c.j),r=PKIT.stream('seacove:'+k);if(r()>=.5)return null;const held=r()<.5;
+    const byId={};for(const t of c.sites)byId[t.id]=t;const lakes=[];for(let j=c.j-1;j<=c.j+1;j++)for(let i=c.i-1;i<=c.i+1;i++){const n=getCell(i,j);if(n&&n.lakes)lakes.push(...n.lakes);}
+    const segD=(x,z,a,b)=>{const dx=b.x-a.x,dz=b.z-a.z,t=Math.max(0,Math.min(1,((x-a.x)*dx+(z-a.z)*dz)/(dx*dx+dz*dz||1)));return Math.hypot(x-a.x-dx*t,z-a.z-dz*t);};
+    const cave=limeCave(c);
+    withPlace(c.ox+SIZE/2,c.oz+SIZE/2,()=>{const cand=[];
+      for(let z=c.oz+60;z<c.oz+SIZE-60;z+=60)for(let x=c.ox+60;x<c.ox+SIZE-60;x+=60){const h=rawH(x,z);if(h<4||h>30)continue;if([[70,0],[-70,0],[0,70],[0,-70]].some(([a,b])=>rawH(x+a,z+b)<0))cand.push([x,z,r()]);}
+      cand.sort((a,b)=>a[2]-b[2]);
+      for(let q=0;q<cand.length&&q<80&&!c._cove;q++){const [x,z]=cand[q],h=rawH(x,z);
+        if(c.sites.some(s=>Math.hypot(s.x-x,s.z-z)<(s.pad||0)+80)||c.doors.some(e=>Math.hypot(e.x-x,e.z-z)<90)||(cave&&Math.hypot(cave.x-x,cave.z-z)<200))continue;
+        if(c.roadDefs.some(d=>byId[d.a]&&byId[d.b]&&segD(x,z,byId[d.a],byId[d.b])<70)||lakes.some(l=>Math.hypot(l.x-x,l.z-z)<(l.r||60)+40))continue;
+        let best=null,near=1e9;for(let a=0;a<24;a++){const dx=Math.sin(a/24*Math.PI*2),dz=Math.cos(a/24*Math.PI*2);let t=10;while(t<=100&&rawH(x+dx*t,z+dz*t)>=-.5)t+=5;near=Math.min(near,t);if(t>100)continue;if(!best||t<best.t)best={t,dx,dz};}
+        if(!best||near<30||best.t<45||best.t>85)continue;const {t,dx,dz}=best;
+        if(rawH(x+dx*(t+20),z+dz*(t+20))>-.5)continue;let land=true;for(let u=5;u<=Math.min(30,t-10);u+=5)if(rawH(x+dx*u,z+dz*u)<1.5){land=false;break;}if(!land)continue;
+        const hb=rawH(x-dx*6,z-dz*6);if(hb<3||Math.abs(hb-h)>3)continue;
+        c._cove={id:`cove_${k.replace(',','_')}`,x:+x.toFixed(2),z:+z.toFixed(2),ry:+Math.atan2(-dx,-dz).toFixed(4),name:`${genName(r,c.reg)} Cove`,cell:k,held,sea:t};}});
+    return c._cove;}
+  // its pad and clearing, as the limestone cave's (the cell's first step); the mouth, in the coast's grey rock, stood on the pad with its
+  // face to the land; the outcrop's solids; the record in the world's houses for a save made inside, taken out when the cell unloads
+  function seaCoveStamps(c,k){const C=seaCove(c);if(!C)return [];const s=Math.sin(C.ry),co=Math.cos(C.ry),y=landH(C.x,C.z);
+    return [addStamp({id:C.id+'_pad',kind:'door',x:C.x-s*2.4,z:C.z-co*2.4,r:4.6,blend:5,y,cell:k}),addStamp({id:C.id+'_clear',kind:'door',noFlat:true,x:C.x-s*4,z:C.z-co*4,r:10,blend:2,y,cell:k})];}
+  function placeSeaCove(c,k){const C=seaCove(c);if(!C)return null;const M=PKIT.places.cavemouth({key:C.id,rock:'sea'}),y=worldH(C.x,C.z),co=Math.cos(C.ry),s_=Math.sin(C.ry);
+    M.group.position.set(C.x,y,C.z);M.group.rotation.y=C.ry;M.group.name='sea cave mouth';sc.add(M.group);
+    for(const b of M.sol)STATIC_SOL.push({cx:C.x+b.x*co+b.z*s_,cz:C.z-b.x*s_+b.z*co,rx:b.w/2,rz:b.d/2,c:Math.cos(C.ry+b.ry),s:Math.sin(C.ry+b.ry),h:b.h,cave:true});
+    C.y=y;C.tris=M.tris;C.draws=M.draws;C.mouth=M.mouth;C.out={x:C.x+s_*2.2,z:C.z+co*2.2,yaw:C.ry+Math.PI};
+    C.house={id:`g_${C.id}`,type:'seacave',byAim:true,siteId:C.id,name:C.name,keeper:'',reg:c.reg,style:'irish',w:44,d:70,two:false,doorX:C.x,doorZ:C.z,doorFace:'S',exitX:C.out.x,exitZ:C.out.z,exitYaw:C.out.yaw,held:C.held};
     if(ZONES.world&&ZONES.world.houses&&!ZONES.world.houses.some(h=>h.id===C.house.id))ZONES.world.houses.push(C.house);
     return M.group;}
   function rebuildRoadGrid(){
