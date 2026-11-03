@@ -44,5 +44,5 @@ check('the sea is a wall off the jetty', c.sea, c);
 const back = await page.evaluate(() => { const T = currentHouse._limeCave, Bd = T.bounds; px = T.arrive[0] - Bd.x0; pz = T.arrive[2] - Bd.z0; jumpY = T.deck - (T.low - .25); const p = limeCavePrompt(); if (p) interact(); return p; });
 const outside = await page.waitForFunction(() => !isInterior(), null, { timeout: 30000 }).then(() => true, () => false); await page.waitForTimeout(1500);
 const o = await page.evaluate(id => { const C = [...CELLS.values()].find(c => c._cove && c._cove.id === id)._cove; return { d: +Math.hypot(px - C.out.x, pz - C.out.z).toFixed(2), dy: +(jumpY - activeTerrainH(px, pz)).toFixed(2), solid: solidAt(px, pz) }; }, k.near.id);
-check(`out at the mouth, on the ground (${o.d} m from the spot)`, /out into the day/.test(back) && outside && o.d < .5 && Math.abs(o.dy) < .3 && !o.solid, o);
+check(`out at the mouth, on the ground (${o.d} m from the spot)`, /go out of the cave/.test(back) && outside && o.d < .5 && Math.abs(o.dy) < .3 && !o.solid, o);
 await g.close();

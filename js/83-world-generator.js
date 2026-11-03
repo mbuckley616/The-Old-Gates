@@ -2543,7 +2543,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       const co=Math.cos(C.ry),s_=Math.sin(C.ry),dx=px-C.x,dz=pz-C.z,u=dx*co-dz*s_,v=dx*s_+dz*co;
       if(Math.abs(u)<C.mouth.w/2+.2&&v<1.8&&v>-3.4&&Math.abs(jumpY-C.y)<1.5)return {down:true,C};}}
     return null;}
-  function limeCavePrompt(){const t=limeCaveAt();return !t?null:t.up?"Press 'E' to go out into the day":"Press 'E' to go into the cave";}
+  function limeCavePrompt(){const t=limeCaveAt();return !t?null:t.up?"Press 'E' to go out of the cave":"Press 'E' to go into the cave";}
   function limeCaveUse(){const t=limeCaveAt();if(!t)return false;
     if(t.down){goToInterior(t.C.house);return true;}
     const h=currentHouse,[ci,cj]=h&&h.siteId?h.siteId.replace(/^(cave|cove)_/,'').split('_').map(Number):[NaN,NaN],c=CELLS.get(cellKey(ci,cj)),C=c&&(h.type==='seacave'?c._cove:c._cave);
