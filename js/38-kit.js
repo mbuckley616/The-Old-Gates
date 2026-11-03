@@ -4519,7 +4519,7 @@ const GK_BUILD = {
       bl.push(gkB(parts)); }
     const top = 1.0 + k * ch; bl.push(gkB([{ key: 'dress', geo: gkStone(P + .9, .6, P + .9, 0, top + .3, 0) }])); bl.push(gkB([{ key: 'dress', geo: gkStone(P + .5, .5, P + .5, 0, top + .85, 0) }]));
     return { bl, axis: 'y', size: { w: P + .9, h: top + 1.1, d: P + .9 } }; },
-  // gatekit.js's arch (Session 1780, for the Weaver door): a pointed arcade arch of 10 m on two jambs of 2.2 by 2.4 m, 18 m to its point,
+  // gatekit.js's arch (Session 1782, for the Weaver door): a pointed arcade arch of 10 m on two jambs of 2.2 by 2.4 m, 18 m to its point,
   // its voussoirs prisms between the two curves, the roll round the opening's face, the keystone's script strip either side of the point
   arch() { const bl = [], S = 10, J = 2.2, ys = 9, hh = 9, T = 2.4, ch = 1.5;
     for (const sx of [-1, 1]) { const x = sx * (S / 2 + J / 2); for (let y = 0; y < ys - .01; y += ch) bl.push(gkB([{ key: 'stone', geo: gkStone(J, ch, T, x, y + ch / 2, 0) }])); }
@@ -4584,7 +4584,7 @@ function gatePiece(kind, o = {}) { const R = gkParts(kind, o), G = new THREE.Gro
   for (const k in R.by) { const geo = mergeGeometries(R.by[k]), m = new THREE.Mesh(geo, R.M[k]); m.castShadow = o.shadow !== false && !['script', 'ring', 'seam', 'crack', 'dead'].includes(k); m.receiveShadow = true; m.userData.key = k; G.add(m); tris += geo.attributes.position.count / 3; calls++; }
   G.userData = { kind, cond: R.cond, school: R.school, key: R.key, tris: Math.round(tris), calls, ...R.st, size: R.size, standing: R.standing }; return G; }
 // wrongness.js's Weaver door (the concept artist, 1 Nov; backlog L5, OG-096's "a Weaver ruin, ancient, purposeful and slightly wrong";
-// Michael's B on #1005, "one impossible element each, nothing lit"; Session 1780): the gate kit's pointed arch, whole, at half its size
+// Michael's B on #1005, "one impossible element each, nothing lit"; Session 1782): the gate kit's pointed arch, whole, at half its size
 // (an opening of 5 by 9 m, 10.1 m to its point, 7.2 m across), its stone pale and clean, the keystone's script dead. Its one wrong thing:
 // it stands a hand (0.14 m) clear of the highest ground under its two jambs, and the turf grows on under it, short, as if nothing had
 // ever been set down there. hAt(lx, lz) is the drawn ground's height in the door's own frame (x across the opening, z through it).
@@ -4616,7 +4616,7 @@ function weaverDoor(hAt, o = {}) { const key = o.key || 'wrongness:door', K = .5
   const gm = new THREE.Mesh(gg, _wdMats.grass); gm.name = 'turf'; gm.receiveShadow = true; group.add(gm);
   return { group, tris: P.userData.tris + pos.length / 9, draws: P.userData.calls + 1, foot: +(gmax + LIFT).toFixed(3), spread: +(gmax - gmin).toFixed(3), lift: LIFT, jambs, tufts }; }
 // wrongness.js's carving (the concept artist, 1 Nov; OG-096's "a quiet detail: the carving of an adventurer, the carvers turned away";
-// Michael's B on #1005; Session 1781): a stele 2.25 m high over the ground, 1.0 m wide and 0.34 m thick, its face a relief of 0.9 by 1.8 m:
+// Michael's B on #1005; Session 1783): a stele 2.25 m high over the ground, 1.0 m wide and 0.34 m thick, its face a relief of 0.9 by 1.8 m:
 // a hooded adventurer with a sword raised and a pack on, four small carvers round them each in profile and turned away, their chisels and
 // mallets dropped at their feet, under a band of chevrons. Its one wrong thing: the adventurer is freshly cut, pale and sharp, in a stone
 // worn and lichened everywhere else; nothing lit. The prototype displaced its face on a 90 by 180 grid (32.4k triangles); here the same

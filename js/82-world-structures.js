@@ -511,7 +511,7 @@
     C.house={id:`g_${C.id}`,type:'seacave',byAim:true,siteId:C.id,name:C.name,keeper:'',reg:c.reg,style:'irish',w:44,d:70,two:false,doorX:C.x,doorZ:C.z,doorFace:'S',exitX:C.out.x,exitZ:C.out.z,exitYaw:C.out.yaw,held:C.held};
     if(ZONES.world&&ZONES.world.houses&&!ZONES.world.houses.some(h=>h.id===C.house.id))ZONES.world.houses.push(C.house);
     return M.group;}
-  // S1780 (backlog L5, OG-096; Michael's B on #1005, "one impossible element each, nothing lit") — the Weaver doors: the gate kit's arch at
+  // S1782 (backlog L5, OG-096; Michael's B on #1005, "one impossible element each, nothing lit") — the Weaver doors: the gate kit's arch at
   // half its size, alone in a Gatelands pasture within sight of a road, standing a hand clear of the grass (PKIT.wonders.weaverDoor). One
   // Gatelands cell in three keeps one, by its own stream (weaverdoor:<cell>), so no other draw of the cell moves. Read by place (withPlace
   // over the cell's middle): the bare land 4 m or more over the sea and nearly level (no more than 0.35 m between the highest and lowest
@@ -553,7 +553,7 @@
     for(const j of M.jambs){const [cx,cz]=W(j.x,j.z),h=Math.max(j.w,j.d)/2;STATIC_SOL.push({cx,cz,rx:h,rz:h,wdoor:true});}
     D.foot=M.foot;D.spread=M.spread;D.tris=Math.round(M.tris);D.draws=M.draws;D.jambs=M.jambs.map(j=>W(j.x,j.z));D.group=M.group;
     return M.group;}
-  // S1781 (backlog L5, OG-096; Michael's B on #1005) — the carving: a stele at the edge of a Gatelands road, its face to the road, the
+  // S1783 (backlog L5, OG-096; Michael's B on #1005) — the carving: a stele at the edge of a Gatelands road, its face to the road, the
   // adventurer on it freshly cut in a stone worn everywhere else (PKIT.wonders.carving). One Gatelands cell in three keeps one, by its own
   // stream (carving:<cell>). Laid from the cells alone, as a village's farm is: the road's line from its def (roadCurve), the stele 3.9 m
   // off it (clear of the road's 2.6 m half), between a fifth and four fifths of the road's length; read by place (withPlace), on bare land

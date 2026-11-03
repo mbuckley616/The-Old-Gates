@@ -1059,6 +1059,8 @@
   // it; the navigator (and her chart table), at sea, the minimap to 116 m and the oilskin's *ahead* line. Sunk, they swim for the nearest port
   const CREW={carpenter:{n:'the carpenter',needs:['bunks']},cook:{n:'the cook',needs:['bunks','galley']},navigator:{n:'the navigator',needs:['bunks','chart']}};
   const CREW_N=2,CREW_PATCH_S=90,CREW_PATCH=18,CREW_JOINERY=50,CREW_COOK_H=6,NAV_MAP_R=116,MINIMAP_R=58;
+  // S1780 — the navigator's shoals: water whose bed is under 2 m, drawn on the minimap (and the Local view) at the world map's own shallows, its water a third of the way to parchment
+  const SHOAL_D=2,SHOAL_COL='#76888e';
   function shipCrew(st){st=st||shipCfg();if(!Array.isArray(st.crew))st.crew=[];if(!st.ashore||typeof st.ashore!=='object')st.ashore={};return st.crew;}
   function crewName(r,up){const n=CREW[r]?CREW[r].n:r;return up?n[0].toUpperCase()+n.slice(1):n;}
   // aboard and at their station

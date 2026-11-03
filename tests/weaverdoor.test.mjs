@@ -1,8 +1,8 @@
-// weaverdoor (Session 1780, backlog L5, OG-096; Michael's B on #1005, "one impossible element each, nothing lit"): on the new look one
+// weaverdoor (Session 1782, backlog L5, OG-096; Michael's B on #1005, "one impossible element each, nothing lit"): on the new look one
 // Gatelands cell in three keeps a Weaver door (weaverDoorAt, 82), the gate kit's arch at half its size alone in a pasture within sight of a
 // road (PKIT.wonders.weaverDoor). The suite counts the doors, finds them the same when asked again, stands at the nearest, and checks its
 // one wrong thing: the jambs a hand (0.14 m) clear of the highest drawn ground under them, short turf under them, the script dead. Its jambs
-// are solid and its opening is not; it faces its road; its cost is in the budget. Session 1781: the carving too (roadCarvingAt, 82;
+// are solid and its opening is not; it faces its road; its cost is in the budget. Session 1783: the carving too (roadCarvingAt, 82;
 // PKIT.wonders.carving), a stele at a road's edge with its face to the road, its relief baked to a colour and a normal map on one quad.
 import { boot, check } from './lib/game.mjs';
 const g = await boot({ look: 'new' }); const { page } = g; await g.intoWorld();

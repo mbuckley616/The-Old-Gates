@@ -3354,9 +3354,10 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     ctx.save();ctx.fillStyle='#1c1a14';ctx.fillRect(0,0,size,size);
     // terrain: coarse cells
     const cell=Math.max(4,radius/14);
+    const shoals=typeof navAboard==='function'&&navAboard(); /* S1780 — the navigator at her chart table draws the shoals, a bed under 2 m (#979 B's sheet) */
     for(let z=pz-radius;z<pz+radius;z+=cell)for(let x=px-radius;x<px+radius;x+=cell){
       const h=worldH(x+cell/2,z+cell/2);const dom=dominantRegion(x,z).r;
-      let col;if(h<0)col='#3a5a78';else{const b=BIOME_PROFILES[dom.biome]||BIOME_PROFILES.plains;const c=new THREE.Color(b.groundBase);const k=.75+Math.min(.6,Math.max(0,h)/40)*.5;
+      let col;if(h<0)col=shoals&&h>-SHOAL_D?SHOAL_COL:'#3a5a78';else{const b=BIOME_PROFILES[dom.biome]||BIOME_PROFILES.plains;const c=new THREE.Color(b.groundBase);const k=.75+Math.min(.6,Math.max(0,h)/40)*.5;
         if(WX.cover>.02)c.lerp(_snowMapC,Math.min(.9,WX.cover*.85)); // v80 S146 — snow lying, on the local map too
         col=`rgb(${(c.r*255*k)|0},${(c.g*255*k)|0},${(c.b*255*k)|0})`;}
       const [sx,sz]=toS(x,z);ctx.fillStyle=col;ctx.fillRect(sx,sz,cell*s+1,cell*s+1);
