@@ -511,6 +511,76 @@
     C.house={id:`g_${C.id}`,type:'seacave',byAim:true,siteId:C.id,name:C.name,keeper:'',reg:c.reg,style:'irish',w:44,d:70,two:false,doorX:C.x,doorZ:C.z,doorFace:'S',exitX:C.out.x,exitZ:C.out.z,exitYaw:C.out.yaw,held:C.held};
     if(ZONES.world&&ZONES.world.houses&&!ZONES.world.houses.some(h=>h.id===C.house.id))ZONES.world.houses.push(C.house);
     return M.group;}
+  // S1782 (backlog L5, OG-096; Michael's B on #1005, "one impossible element each, nothing lit") — the Weaver doors: the gate kit's arch at
+  // half its size, alone in a Gatelands pasture within sight of a road, standing a hand clear of the grass (PKIT.wonders.weaverDoor). One
+  // Gatelands cell in three keeps one, by its own stream (weaverdoor:<cell>), so no other draw of the cell moves. Read by place (withPlace
+  // over the cell's middle): the bare land 4 m or more over the sea and nearly level (no more than 0.35 m between the highest and lowest
+  // ground under the jambs' span), 25 to 60 m off the line of one of the cell's roads and 25 m off every other, 80 m off every pad, 80 m off
+  // every door, 50 m off a farm's yard, 150 m off the cell's cave and sea cave, 40 m off every lake's rim, and where the scatter's odds
+  // of a tree (scatterChunk's density by its clumping) average no more than WDOOR_WOOD over 25 m round: a pasture, not a wood. Its opening faces the road, so a passer-by looks through
+  // it. Nothing names it, marks it or answers E: it is found by looking. -> {id, x, z, ry, cell} or null, kept on the cell (c._wdoor)
+  const WDOOR_WOOD=.2,WDOOR_GLADE=11;
+  function weaverDoorAt(c){
+    if(c._wdoor!==undefined)return c._wdoor;c._wdoor=null;
+    if(c.type==='sea'||c.home||window.OG_LOOK!=='new'||window.OG_KIT_TOWNS===false||typeof PKIT==='undefined'||!PKIT.wonders||!PKIT.wonders.weaverDoor)return null;
+    if(nationOf(c.i,c.j).people!=='gatelander')return null;
+    const k=cellKey(c.i,c.j),r=PKIT.stream('weaverdoor:'+k);if(r()>=1/3)return null;
+    const byId={};for(const t of c.sites)byId[t.id]=t;const lakes=[];for(let j=c.j-1;j<=c.j+1;j++)for(let i=c.i-1;i<=c.i+1;i++){const n=getCell(i,j);if(n&&n.lakes)lakes.push(...n.lakes);}
+    const lines=c.roadDefs.filter(d=>byId[d.a]&&byId[d.b]).map(d=>[byId[d.a],byId[d.b]]);if(!lines.length)return null;
+    const segP=(x,z,a,b)=>{const dx=b.x-a.x,dz=b.z-a.z,t=Math.max(0,Math.min(1,((x-a.x)*dx+(z-a.z)*dz)/(dx*dx+dz*dz||1)));return [a.x+dx*t,a.z+dz*t];};
+    const cave=limeCave(c),cove=seaCove(c),farms=[];try{loneFarms(c).forEach(F=>farms.push(F));c.sites.forEach(t=>{const F=villageFarm(t,c);if(F)farms.push(F);});}catch(e){}
+    withPlace(c.ox+SIZE/2,c.oz+SIZE/2,()=>{for(let t=0;t<160&&!c._wdoor;t++){const L=lines[Math.floor(r()*lines.length)],u=.15+r()*.7,ax=L[0].x+(L[1].x-L[0].x)*u,az=L[0].z+(L[1].z-L[0].z)*u,
+        len=Math.hypot(L[1].x-L[0].x,L[1].z-L[0].z)||1,nx=-(L[1].z-L[0].z)/len,nz=(L[1].x-L[0].x)/len,sd=r()<.5?-1:1,off=25+r()*35,x=ax+nx*sd*off,z=az+nz*sd*off;
+      if(x<c.ox+40||z<c.oz+40||x>c.ox+SIZE-40||z>c.oz+SIZE-40)continue;
+      if(c.sites.some(s=>Math.hypot(s.x-x,s.z-z)<(s.pad||0)+80)||c.doors.some(e=>Math.hypot(e.x-x,e.z-z)<80))continue;
+      if(farms.some(F=>Math.hypot(F.cx-x,F.cz-z)<FARM_R+50)||[cave,cove].some(C=>C&&Math.hypot(C.x-x,C.z-z)<150)||lakes.some(l=>Math.hypot(l.x-x,l.z-z)<(l.r||60)+40))continue;
+      if(lines.some(([a,b])=>{const [qx,qz]=segP(x,z,a,b);return Math.hypot(qx-x,qz-z)<25;}))continue;
+      const ry=Math.atan2(-nx*sd,-nz*sd),co=Math.cos(ry),s_=Math.sin(ry);let hi=-1e9,lo=1e9;
+      for(let i=-4;i<=4;i++)for(const v of [-.6,0,.6]){const lx=i*.9,h=rawH(x+lx*co+v*s_,z-lx*s_+v*co);hi=Math.max(hi,h);lo=Math.min(lo,h);}
+      if(lo<4||hi-lo>.35)continue;
+      let wood=0;for(let q=0;q<13;q++){const a=q*2.4,d=q?6+q*1.6:0,qx=x+Math.cos(a)*d,qz=z+Math.sin(a)*d;wood+=regionScalar(qx,qz,'density')*(.5+fbm(qx,qz,60,SEED+21,2)*1.3);}if(wood/13>WDOOR_WOOD)continue; /* a pasture: the scatter's own odds of a tree (scatterChunk), low over 25 m round */
+      c._wdoor={id:`wdoor_${k.replace(',','_')}`,x:+x.toFixed(2),z:+z.toFixed(2),ry:+ry.toFixed(4),cell:k};}});
+    return c._wdoor;}
+  // its clearing (the cell's first step, so the chunks are built without trees or rocks under it): a stamp that only clears the scatter
+  // (noFlat, so the turf keeps its own lie), 11 m round, so no crown hangs over the arch; the land's grass keeps out of a stamp, so the door
+  // brings its own turf to that radius
+  function weaverDoorStamps(c,k){const D=weaverDoorAt(c);if(!D)return [];return [addStamp({id:D.id+'_clear',kind:'door',noFlat:true,x:D.x,z:D.z,r:WDOOR_GLADE,blend:1,y:0,cell:k})];}
+  // the door built on the drawn ground (meshH) in its own frame, turned to face the road; a solid on each jamb (the solids are square, so
+  // each takes the jamb's larger side round its middle)
+  function placeWeaverDoor(c,k){const D=weaverDoorAt(c);if(!D)return null;const co=Math.cos(D.ry),s_=Math.sin(D.ry),W=(lx,lz)=>[D.x+lx*co+lz*s_,D.z-lx*s_+lz*co];
+    const tc=new THREE.Color();groundColor(D.x,D.z,meshH(D.x,D.z),1,tc);const M=PKIT.wonders.weaverDoor((lx,lz)=>meshH(...W(lx,lz)),{key:D.id,tint:[tc.r*.85,tc.g*.85,tc.b*.85],r:WDOOR_GLADE});
+    M.group.position.set(D.x,0,D.z);M.group.rotation.y=D.ry;M.group.name='weaver door';sc.add(M.group);
+    for(const j of M.jambs){const [cx,cz]=W(j.x,j.z),h=Math.max(j.w,j.d)/2;STATIC_SOL.push({cx,cz,rx:h,rz:h,wdoor:true});}
+    D.foot=M.foot;D.spread=M.spread;D.tris=Math.round(M.tris);D.draws=M.draws;D.jambs=M.jambs.map(j=>W(j.x,j.z));D.group=M.group;
+    return M.group;}
+  // S1783 (backlog L5, OG-096; Michael's B on #1005) — the carving: a stele at the edge of a Gatelands road, its face to the road, the
+  // adventurer on it freshly cut in a stone worn everywhere else (PKIT.wonders.carving). One Gatelands cell in three keeps one, by its own
+  // stream (carving:<cell>). Laid from the cells alone, as a village's farm is: the road's line from its def (roadCurve), the stele 3.9 m
+  // off it (clear of the road's 2.6 m half), between a fifth and four fifths of the road's length; read by place (withPlace), on bare land
+  // 2 m or more over the sea and no steeper than 1 in 5; 15 m off every pad, 40 m off every door, 30 m off a farm's yard, 12 m off every
+  // other road's line, 60 m off the cell's caves and its Weaver door, 10 m off every lake's rim. Nothing names it or answers E.
+  // -> {id, x, z, ry, cell} or null (c._carving)
+  function roadCarvingAt(c){
+    if(c._carving!==undefined)return c._carving;c._carving=null;
+    if(c.type==='sea'||c.home||window.OG_LOOK!=='new'||window.OG_KIT_TOWNS===false||typeof PKIT==='undefined'||!PKIT.wonders||!PKIT.wonders.carving)return null;
+    if(nationOf(c.i,c.j).people!=='gatelander')return null;
+    const k=cellKey(c.i,c.j),r=PKIT.stream('carving:'+k);if(r()>=1/3)return null;
+    const byId={};for(const t of c.sites)byId[t.id]=t;const lakes=[];for(let j=c.j-1;j<=c.j+1;j++)for(let i=c.i-1;i<=c.i+1;i++){const n=getCell(i,j);if(n&&n.lakes)lakes.push(...n.lakes);}
+    const roads=c.roadDefs.filter(d=>d.via!=='quay'&&d.via!=='spur'&&byId[d.a]&&byId[d.b]).map(d=>({d,pts:roadCurve(d,byId[d.a],byId[d.b])}));if(!roads.length)return null;
+    const others=[limeCave(c),seaCove(c),weaverDoorAt(c)].filter(Boolean),farms=[];try{loneFarms(c).forEach(F=>farms.push(F));c.sites.forEach(t=>{const F=villageFarm(t,c);if(F)farms.push(F);});}catch(e){}
+    const near=(pts,x,z)=>{let b=1e9;for(let i=0;i<pts.length-1;i++){const a=pts[i],q=pts[i+1],dx=q.x-a.x,dz=q.z-a.z,t=Math.max(0,Math.min(1,((x-a.x)*dx+(z-a.z)*dz)/(dx*dx+dz*dz||1)));b=Math.min(b,Math.hypot(a.x+dx*t-x,a.z+dz*t-z));}return b;};
+    withPlace(c.ox+SIZE/2,c.oz+SIZE/2,()=>{for(let t=0;t<60&&!c._carving;t++){const R=roads[Math.floor(r()*roads.length)],P=R.pts,i=Math.min(P.length-2,Math.floor(P.length*(.2+r()*.6))),a=P[i],b=P[i+1],L=Math.hypot(b.x-a.x,b.z-a.z)||1,
+        nx=-(b.z-a.z)/L,nz=(b.x-a.x)/L,sd=r()<.5?-1:1,u=r(),x=a.x+(b.x-a.x)*u+nx*sd*3.9,z=a.z+(b.z-a.z)*u+nz*sd*3.9;
+      if(c.sites.some(s=>Math.hypot(s.x-x,s.z-z)<(s.pad||0)+15)||c.doors.some(e=>Math.hypot(e.x-x,e.z-z)<40)||farms.some(F=>Math.hypot(F.cx-x,F.cz-z)<FARM_R+30))continue;
+      if(others.some(C=>Math.hypot(C.x-x,C.z-z)<60)||lakes.some(l=>Math.hypot(l.x-x,l.z-z)<(l.r||60)+10)||roads.some(o=>o!==R&&near(o.pts,x,z)<12))continue;
+      const h=rawH(x,z);if(h<2||Math.hypot(rawH(x+2,z)-rawH(x-2,z),rawH(x,z+2)-rawH(x,z-2))/4>.2)continue;
+      c._carving={id:`carving_${k.replace(',','_')}`,x:+x.toFixed(2),z:+z.toFixed(2),ry:+Math.atan2(-nx*sd,-nz*sd).toFixed(4),cell:k};}});
+    return c._carving;}
+  // the stele stood 0.25 m into the drawn ground at the lowest of its four corners, its face to the road; one square solid
+  function placeRoadCarving(c,k){const D=roadCarvingAt(c);if(!D)return null;const M=PKIT.wonders.carving(),co=Math.cos(D.ry),s_=Math.sin(D.ry);let lo=1e9;
+    for(const [u,v] of [[-.5,-.17],[.5,-.17],[-.5,.17],[.5,.17]])lo=Math.min(lo,meshH(D.x+u*co+v*s_,D.z-u*s_+v*co));
+    M.group.position.set(D.x,lo-.25,D.z);M.group.rotation.y=D.ry;M.group.name='carving';sc.add(M.group);STATIC_SOL.push({cx:D.x,cz:D.z,rx:.5,rz:.5,carving:true});
+    D.y=lo-.25;D.tris=M.tris;D.draws=M.draws;D.group=M.group;return M.group;}
   function rebuildRoadGrid(){
     RSEG.length=0;RGRID.clear();ROAD_DEFS.length=0;
     ROADS.forEach(road=>{ROAD_DEFS.push(road.def);indexRoad(road);});
