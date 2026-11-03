@@ -1099,6 +1099,11 @@ const giver=`${lord.title} ${lord.name}`;
     if(d.settled&&now>=d.start+240&&d.came==null){d.came=seededRng('errand-watch-came',q.id+':'+d.start)()<.5;if(d.came){erWatchSpawn(q);showMsg(ER_WATCH.moves(d),'#ffb060');}}
     if(d.came&&!d.killed){if(!ER_WATCH_FOES[q.id])erWatchSpawn(q);if(ER_WATCH_FOES[q.id].every(e=>e.dead)){d.killed=true;delete ER_WATCH_FOES[q.id];}}
     if(now>=d.end&&d.settled&&(!d.came||d.killed)){d.done=true;showMsg(ER_WATCH.bell,'#e8d8a0');qJournal(q,'ready',`The night at the ${d.fold} is kept. Tell ${q.giver}.`);}}
+  // S1789 — the watch a jump of the clock by min would lose, read as erWatchTick reads it from its last tick; at 60 on the nose, since the slip's hour always lands a moment over (the Wait and Sleep slip warns by it)
+  function erWatchJumpLoses(min){const now=worldState.gameTimeAbsMinutes||0,to=now+min;
+    for(const q of qActive()){if(q.done||q.kind!=='errand'||q.sub!=='watch'||q.lapsed)continue;const d=q.data;if(d.done)continue;
+      if(to>=d.start&&to-Math.max(d.seen==null?now:Math.min(d.seen,now),d.start)>=60)return q;}
+    return null;}
   function erWatchTurnIn(q,site,p){const d=q.data;if(q.lapsed){q.erUnsaid=false;return ER_WATCH.lapse[p](d);}if(!d.done)return ER_SHARED[p].notYet;
     qTurnIn(q);addFavor(site,1);if(p==='gatelander')bagAdd({name:'Loaf of Bread',ico:'🍞',type:'misc',weight:.4,buyPrice:2,sellMult:.3,qty:1});
     return (d.came?ER_WATCH.came:ER_WATCH.none)[p](d);}

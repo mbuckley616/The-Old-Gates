@@ -235,17 +235,19 @@ const d6 = await page.evaluate(() => {
     const notYet = A.topics.find(t => t.label === 'About that errand.').fn(); const at = { x: d.x, z: d.z };
     step(q, start - 30, at); const before = msgs.length;
     let foes = 0, keyed = false;
+    const slip = (mode, min) => { openRestSlip(mode, min); const t = document.getElementById('rs-out').textContent; closeSleepUI(); return t.includes(`The night at the ${d.fold} will be lost.`); };
+    const pre = { wait1: slip('wait', 60), sleep8: slip('sleep', 480) };
     if (how === 'kept') { step(q, start + 250, at); const F = ER_WATCH_FOES[q.id] || []; foes = F.length; keyed = F.every((e, i) => e.id === q.id + ':foe:' + i && e.name === d.foe);
       step(q, start + 430, at); const early = d.done; F.forEach(e => { e.dead = true; }); step(q, start + 450, at);
       const label = d.came ? `I sat the night. ${d.beasts}.` : 'I sat the night. Nothing came.'; const top = A.topics.find(t => t.label === label);
       const g1 = gold, f1 = favor(site), b1 = bagCount(b => b.name === 'Loaf of Bread'); const done = top && top.fn();
       by.push({ pp, how, came: d.came, want: came, greet, hint: ER_WATCH.hint[pp](E), offer: ask.response, wantOffer: ER_WATCH.offer[pp](E), yes, ys: ER_SHARED[pp].yes, title: q.title, notYet, ny: ER_SHARED[pp].notYet,
         msgs: msgs.slice(before), wmsgs: [ER_WATCH.settle(d), ...(d.came ? [ER_WATCH.moves(d)] : []), ER_WATCH.bell], foes, keyed, early, label, done, wdone: (d.came ? ER_WATCH.came : ER_WATCH.none)[pp](d),
-        paid: gold - g1, wpaid: questGold(q.reward), fav: favor(site) - f1, bread: bagCount(b => b.name === 'Loaf of Bread') - b1, turned: q.turnedIn, left: Object.keys(ER_WATCH_FOES).length }); continue; }
+        paid: gold - g1, wpaid: questGold(q.reward), fav: favor(site) - f1, bread: bagCount(b => b.name === 'Loaf of Bread') - b1, turned: q.turnedIn, left: Object.keys(ER_WATCH_FOES).length, pre }); continue; }
     if (how === 'left') { step(q, start + 60, at); px = d.x + 200; pz = d.z; step(q, start + 200, null); }
-    else { step(q, start + 30, at); worldState.gameTimeAbsMinutes = start + 240; qTick(); }
+    else { step(q, start + 30, at); pre.inWait1 = slip('wait', 60); worldState.gameTimeAbsMinutes = start + 240; qTick(); pre.after = slip('wait', 60); }
     const g1 = gold; const top = A.topics.find(t => t.label === 'About that errand.'); const done = top && top.fn(); const again = !!A.topics.find(t => t.label === 'About that errand.');
-    by.push({ pp, how, lapsed: q.lapsed, done, wdone: ER_WATCH.lapse[pp](d), paid: gold - g1, again, cold: A.greeting[0], wcold: ER_FEVER.cold[pp], msgs: msgs.slice(before), wleft: ER_WATCH.left(d), offer: ask.response, wantOffer: ER_WATCH.offer[pp](E) }); } }
+    by.push({ pp, how, lapsed: q.lapsed, done, wdone: ER_WATCH.lapse[pp](d), paid: gold - g1, again, cold: A.greeting[0], wcold: ER_FEVER.cold[pp], msgs: msgs.slice(before), wleft: ER_WATCH.left(d), offer: ask.response, wantOffer: ER_WATCH.offer[pp](E), pre }); } }
   finally { window.showMsg = sm; }
   return { n, bad, by, saved: JSON.parse(ssStringify(worldState.quests)).filter(x => x.sub === 'watch').length };
 });
@@ -257,6 +259,9 @@ for (const x of d6.by) { const nm = `watch (${x.pp}, ${x.how})`; if (x.missing) 
   check(`${nm}: the night's lines in order (${x.came ? 'they came' : 'nothing came'})`, x.came === x.want && JSON.stringify(x.msgs) === JSON.stringify(x.wmsgs), { msgs: x.msgs, want: x.wmsgs });
   if (x.came) check(`${nm}: two beasts at two, keyed by the errand; the bell waits until they are dead`, x.foes === 2 && x.keyed && !x.early, { foes: x.foes, keyed: x.keyed, early: x.early });
   check(`${nm}: turned in (${x.label}) in the giver's words, paid, a point of favour${x.pp === 'gatelander' ? ', breakfast' : ''}`, x.turned && x.done === x.wdone && x.paid === x.wpaid && x.fav === 1 && x.bread === (x.pp === 'gatelander' ? 1 : 0) && x.left === 0, { done: x.done, paid: x.paid, fav: x.fav, bread: x.bread }); }
+// S1789 — the Wait and Sleep slip says the night will be lost when the jump would lapse it (backlog I, s1180), and only then
+{ const k = d6.by.find(x => x.how === 'kept' && x.pre), s = d6.by.find(x => x.how === 'slept' && x.pre);
+  check('watch: the slip warns of a jump that loses the night, not of an hour\'s wait before it', !!k && !!s && !k.pre.wait1 && k.pre.sleep8 && s.pre.inWait1 && !s.pre.after, { kept: k && k.pre, slept: s && s.pre }); }
 check('watch: the records are saved, no live beast in them', d6.saved >= 4, d6.saved);
 
 check('no page errors', g.errs.length === 0, g.errs);
