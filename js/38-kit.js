@@ -4518,7 +4518,24 @@ const GK_BUILD = {
       if (k === 6) parts.push({ key: 'ring', geo: gkScriptQuad(2.6, 2.6, 0, y + ch / 2 + .4, P / 2 + .04, new THREE.Vector3(0, 0, 1)) });
       bl.push(gkB(parts)); }
     const top = 1.0 + k * ch; bl.push(gkB([{ key: 'dress', geo: gkStone(P + .9, .6, P + .9, 0, top + .3, 0) }])); bl.push(gkB([{ key: 'dress', geo: gkStone(P + .5, .5, P + .5, 0, top + .85, 0) }]));
-    return { bl, axis: 'y', size: { w: P + .9, h: top + 1.1, d: P + .9 } }; } };
+    return { bl, axis: 'y', size: { w: P + .9, h: top + 1.1, d: P + .9 } }; },
+  // gatekit.js's arch (Session 1780, for the Weaver door): a pointed arcade arch of 10 m on two jambs of 2.2 by 2.4 m, 18 m to its point,
+  // its voussoirs prisms between the two curves, the roll round the opening's face, the keystone's script strip either side of the point
+  arch() { const bl = [], S = 10, J = 2.2, ys = 9, hh = 9, T = 2.4, ch = 1.5;
+    for (const sx of [-1, 1]) { const x = sx * (S / 2 + J / 2); for (let y = 0; y < ys - .01; y += ch) bl.push(gkB([{ key: 'stone', geo: gkStone(J, ch, T, x, y + ch / 2, 0) }])); }
+    const inner = gkArchCurve(S, ys, hh, 0), outer = gkArchCurve(S, ys, hh, -2.0), roll = gkArchCurve(S, ys, hh, .35), n = inner.length - 1, step = 2;
+    for (let i = 0; i < n; i += step) { const j = Math.min(n, i + step), q = [inner[i], inner[j], outer[j], outer[i]];
+      bl.push(gkB([{ key: 'stone', geo: gkPrism(q, -T / 2 + .02, T / 2 - .02) }, { key: 'dress', geo: gkPrism([roll[i], roll[j], inner[j], inner[i]], T / 2 - .02, T / 2 + .28) }])); }
+    const kb = bl[bl.length - 1 - Math.floor(n / step / 2)]; kb.parts.push({ key: 'script', geo: gkScriptQuad(.6, 1.6, kb.c.x, kb.c.y, T / 2 + .3, new THREE.Vector3(0, 0, 1), .6) });
+    return { bl, axis: 'y', size: { w: S + 2 * J, h: ys + hh + 2, d: T + .3 }, jambs: { x: S / 2 + J / 2, w: J, d: T } }; } };
+// gatekit.js's two-centred arch curve (span S, springing ys, h the point's height over the springing, d inset) and its voussoir prism
+function gkArchCurve(S, ys, h, d, n = 24) { const a = Math.max(0, (h * h - S * S / 4) / S), r = S / 2 + a, rr = r - d, th1 = Math.atan2(Math.sqrt(Math.max(0, rr * rr - a * a)), -a), pts = [];
+  for (let i = 0; i <= n; i++) { const t = Math.PI + (th1 - Math.PI) * i / n; pts.push([a + Math.cos(t) * rr, ys + Math.sin(t) * rr]); }
+  const R = pts.map(([x, y]) => [-x, y]).reverse(); return [...pts, ...R.slice(1)]; }
+function gkPrism(q, z0, z1, s = .25) { const F = q.map(([x, y]) => [x, y, z1]), Bk = q.map(([x, y]) => [x, y, z0]), out = [], tri = (a, b, c) => out.push(...a, ...b, ...c);
+  let ar = 0; for (let i = 0; i < 4; i++) { const j = (i + 1) % 4; ar += q[i][0] * q[j][1] - q[j][0] * q[i][1]; } const P = ar < 0 ? [3, 2, 1, 0] : [0, 1, 2, 3], f = P.map(i => F[i]), b = P.map(i => Bk[i]);
+  tri(f[0], f[1], f[2]); tri(f[0], f[2], f[3]); tri(b[0], b[2], b[1]); tri(b[0], b[3], b[2]); for (let i = 0; i < 4; i++) { const j = (i + 1) % 4; tri(f[i], b[i], b[j]); tri(f[i], b[j], f[j]); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(out, 3)); g.computeVertexNormals(); return worldUV(g, s); }
 // the ring sigil of OG-037, as gatekit.js draws it: two circles, a cross that runs past them, a point at the heart (white on black)
 let _gkRing = null;
 function gkRingTex() { if (_gkRing) return _gkRing; const c = document.createElement('canvas'); c.width = c.height = 512; const x = c.getContext('2d'); x.fillStyle = '#000'; x.fillRect(0, 0, 512, 512); x.strokeStyle = '#fff'; x.fillStyle = '#fff'; x.lineCap = 'round';
@@ -4566,6 +4583,38 @@ function gkParts(kind, o = {}) { const cond = ['whole', 'cracked', 'broken'].inc
 function gatePiece(kind, o = {}) { const R = gkParts(kind, o), G = new THREE.Group(); let tris = 0, calls = 0;
   for (const k in R.by) { const geo = mergeGeometries(R.by[k]), m = new THREE.Mesh(geo, R.M[k]); m.castShadow = o.shadow !== false && !['script', 'ring', 'seam', 'crack', 'dead'].includes(k); m.receiveShadow = true; m.userData.key = k; G.add(m); tris += geo.attributes.position.count / 3; calls++; }
   G.userData = { kind, cond: R.cond, school: R.school, key: R.key, tris: Math.round(tris), calls, ...R.st, size: R.size, standing: R.standing }; return G; }
+// wrongness.js's Weaver door (the concept artist, 1 Nov; backlog L5, OG-096's "a Weaver ruin, ancient, purposeful and slightly wrong";
+// Michael's B on #1005, "one impossible element each, nothing lit"; Session 1780): the gate kit's pointed arch, whole, at half its size
+// (an opening of 5 by 9 m, 10.1 m to its point, 7.2 m across), its stone pale and clean, the keystone's script dead. Its one wrong thing:
+// it stands a hand (0.14 m) clear of the highest ground under its two jambs, and the turf grows on under it, short, as if nothing had
+// ever been set down there. hAt(lx, lz) is the drawn ground's height in the door's own frame (x across the opening, z through it).
+//   PKIT.wonders.weaverDoor(hAt, { key, tint, r }) -> { group, tris, draws, foot, spread, lift, jambs: [{ x, z, w, d }], tufts }
+//   (y absolute: the group stands at the door's middle at y 0; tint is the turf's colour [r, g, b], the land's under the door)
+let _wdMats = null;
+function weaverDoor(hAt, o = {}) { const key = o.key || 'wrongness:door', K = .5, LIFT = .14, P = gatePiece('arch', { cond: 'whole', school: 'cloch', key: key + ':arch' }), J = { x: 6.1, w: 2.2, d: 2.4 }; /* the arch's jambs (GK_BUILD.arch's jambs) */
+  if (!_wdMats) { const M = gkMats('cloch', 'whole'), pale = new THREE.Color(1.55, 1.5, 1.38).convertLinearToSRGB(); /* the prototype's pale stone, as the page shows it (the game's output is linear) */
+    _wdMats = { stone: M.stone.clone(), dress: M.dress.clone(), dead: new THREE.MeshStandardMaterial({ color: new THREE.Color(.09, .085, .08), roughness: .9 }),
+      grass: new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .9, side: THREE.DoubleSide }) }; _wdMats.stone.color.copy(pale); _wdMats.dress.color.copy(pale); }
+  P.scale.setScalar(K); P.traverse(m => { if (!m.isMesh) return; const k = m.userData.key; m.material = k === 'stone' || k === 'dress' ? _wdMats[k] : _wdMats.dead; });
+  // the jambs' feet: the highest and lowest drawn ground under them, on a grid of 5 by 3 points each
+  const jx = J.x * K, jw = J.w * K, jd = J.d * K, jambs = [-1, 1].map(sx => ({ x: sx * jx, z: 0, w: jw, d: jd })); let gmax = -1e9, gmin = 1e9;
+  for (const j of jambs) for (let i = 0; i <= 4; i++) for (let k = 0; k <= 2; k++) { const y = hAt(j.x - jw / 2 + jw * i / 4, -jd / 2 + jd * k / 2); gmax = Math.max(gmax, y); gmin = Math.min(gmin, y); }
+  P.position.y = gmax + LIFT; const group = new THREE.Group(); group.add(P);
+  // the turf: short tufts 6.5 m round, and more under the two jambs; then longer out to o.r (the hand's gap shows grass, never bare earth); a blade is one
+  // triangle, leaning a little, its colour the land's
+  const r = stream(key + ':turf'), tint = o.tint || [.24, .36, .12], pos = [], col = [];
+  const blade = (x, z, h) => { const a = r() * Math.PI * 2, w = .011 + r() * .008, ca = Math.cos(a) * w, sa = Math.sin(a) * w, lx = (r() - .5) * h * .5, lz = (r() - .5) * h * .5, y = hAt(x, z) - .015, t = .82 + r() * .3;
+    pos.push(x - ca, y, z - sa, x + ca, y, z + sa, x + lx, y + h, z + lz); const c0 = tint.map(v => v * t * .8), c1 = tint.map(v => Math.min(1, v * t * 1.15)); col.push(...c0, ...c0, ...c1); };
+  const tuft = (x, z) => { const m = 3 + Math.floor(r() * 4); for (let k = 0; k < m; k++) blade(x + (r() - .5) * .12, z + (r() - .5) * .12, .065 * (.6 + r() * .8)); };
+  let tufts = 0; for (let k = 0; k < 700; k++) { const a = r() * Math.PI * 2, d = Math.sqrt(r()) * 6.5; tuft(Math.cos(a) * d, Math.sin(a) * d); tufts++; }
+  // out to the glade's edge (o.r, 11 m in the world), the turf lengthening to the land's own grass
+  const R = o.r || 6.5; for (let k = 0; k < Math.round(R * R * 8 - 340); k++) { const a = r() * Math.PI * 2, d = Math.sqrt(6.5 * 6.5 + r() * (R * R - 6.5 * 6.5)), x = Math.cos(a) * d, z = Math.sin(a) * d, f = (d - 6.5) / Math.max(.1, R - 6.5), m = 2 + Math.floor(r() * 4);
+    for (let q = 0; q < m; q++) blade(x + (r() - .5) * .14, z + (r() - .5) * .14, (.065 + .2 * f) * (.6 + r() * .8)); tufts++; }
+  for (const j of jambs) for (let k = 0; k < 80; k++) { tuft(j.x + (r() - .5) * (jw + .3), (r() - .5) * (jd + .3)); tufts++; }
+  const gg = new THREE.BufferGeometry(); gg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); gg.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); gg.computeVertexNormals();
+  { const N = gg.attributes.normal; for (let i = 0; i < N.count; i++) N.setXYZ(i, N.getX(i) * .3, 1, N.getZ(i) * .3); N.needsUpdate = true; } /* lit as the ground is, from above, whichever way a blade faces */
+  const gm = new THREE.Mesh(gg, _wdMats.grass); gm.name = 'turf'; gm.receiveShadow = true; group.add(gm);
+  return { group, tris: P.userData.tris + pos.length / 9, draws: P.userData.calls + 1, foot: +(gmax + LIFT).toFixed(3), spread: +(gmax - gmin).toFixed(3), lift: LIFT, jambs, tufts }; }
 // the prototype's boulder at a unit radius (it scales linearly: the noise is read on the unit sphere), its UVs at the scale a stone of 4 m had
 function wonderBoulder(seed, flat = .75) { const g = new THREE.IcosahedronGeometry(1, 3), p = g.attributes.position, v = new THREE.Vector3();
   for (let i = 0; i < p.count; i++) { v.fromBufferAttribute(p, i); const n = pfbm(v.x * 1.3 + seed, v.z * 1.3 - seed * .7 + v.y, 4); v.multiplyScalar(1 + n * .55); if (v.y < 0) v.y *= flat; p.setXYZ(i, v.x, v.y * .8, v.z); }
@@ -5622,7 +5671,7 @@ function aurenneOrrery(hAt, o = {}) {
       fire: { x: FX, z: FZ }, jetty: { x1: TX + JW, z: JZ, z0: TH0, z1: TH1 }, boat, ship: ship && { x: ship.x, z: ship.z, L: ship.L, W: ship.W },
       bounds: { x0: X0c, x1: -X0c, z0: -NZc * G, z1: 0 }, low: FY, cells, obs: OBS.map(([x0, x1, z0, z1]) => ({ x0, x1, z0, z1 })), arrive: [SPX(-1.6), FY, -1.6, 0] };
   }
-  return { stream, hashKey, mergeByMaterial, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, gatePiece }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, trunk: felledTrunk }, ships: { sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
+  return { stream, hashKey, mergeByMaterial, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, gatePiece, weaverDoor }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, trunk: felledTrunk }, ships: { sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
     mk: { hall: markHall, lot: markLot, alehall: markAlehall, longhouse: markLonghouse, mats: markMats, yard: markYard, ring: markRing },
     au: { house: aurenneHouse, lot: aurenneLot, courtyard: aurenneCourtyard, church: aurenneChurch, churchBox: aurenneChurchBox, churchHall: aurenneChurchHall, courtyardHouse: aurenneCourtyardHouse, tavern: aurenneTavern, mats: aurMats, roomMats: homeMats, AUR },
     gl: { PLANS, FIN, PS, PAINTS, guildHall: guildHallRoom, TOWN: GL_TOWN, building, church, keep, farmstead, coachInn, coachInnPlan, coachRoom, townhouse: townhouseRoom, farmhouse: farmhouseRoom, byre: byreRoom, barn: barnRoom, row: shrineRow, ROW_GODS, inn: gatelandsInn, cottage: gatelandsCottage, churchLen: n => +((n === 2 ? 2 : 3) * 4.8 + 1.6 + 5.6 - .5 + 7.2 - .9 - .02).toFixed(2), lot: gatelandsLot, mats: glMats, BAYS, bayPlan, bayWidth, baysFor } };
