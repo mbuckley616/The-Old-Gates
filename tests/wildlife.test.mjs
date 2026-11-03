@@ -3,6 +3,8 @@
 // Walked across the country: groups are found, each off the roads and pads, and the same group stands again when its chunks are rolled
 // again. A deer that sees you runs about 40 m; one you creep up behind grazes on. One blow kills a deer, its body gives 2 to 4 meat and no
 // other loot, and its herd bolts; a grazing animal does not stop you passing time; walked away from, the animals go.
+// Session 1784: the watcher (L5, #1005 B): one Gatelands cell in three keeps a grey wolf on a rise off a road with three sheep round it; it
+// casts no shadow while they do, never runs or hunts, turns to keep you in front of it, and one blow takes it.
 import { boot, check } from './lib/game.mjs';
 const g = await boot({ look: 'new' }); const { page } = g;
 await g.intoWorld();
@@ -134,4 +136,25 @@ check(`one seen at 15 m darts ${trout.dart} m downstream (${trout.down}); crept 
   Math.abs(trout.dart - 10) < .6 && trout.down > .8 && trout.wetAfter && trout.prompt && trout.took && trout.got === 1 && trout.gone, trout);
 check(`from the bank a sword passes over it, the spear reaches it; an arrow a metre over misses, one at its height strikes; struck, it floats up with ${JSON.stringify(trout.body)}`,
   trout.sword === false && trout.spear === true && trout.over === true && trout.at === false && JSON.stringify(trout.body) === '["Trout×1 0.6 9g"]' && Math.abs(trout.floats) < .05, trout);
+const wt = await page.evaluate(() => { const G = [...CELLS.values()].filter(c => c.type !== 'sea' && !c.home && nationKeyOf(c.i, c.j) === 'gatelands'), C = G.map(c => watcherAt(c)).filter(Boolean);
+  const again = G.map(c => { const keep = c._watcher; c._watcher = undefined; const d = watcherAt(c); c._watcher = keep; return d; }).filter(Boolean);
+  const same = again.length === C.length && again.every((d, i) => d.id === C[i].id && d.x === C[i].x && d.z === C[i].z);
+  C.sort((a, b) => Math.hypot(a.x - px, a.z - pz) - Math.hypot(b.x - px, b.z - pz)); const D = C[0], out = { cells: G.length, n: C.length, same, id: D && D.id };
+  if (!D) return out; px = D.x + Math.sin(D.ry) * 20; pz = D.z + Math.cos(D.ry) * 20; stream(px, pz, true); { const t1 = performance.now(); while (JOBS.length && performance.now() - t1 < 20000) runJobs(); } _wildT = 0; tickWildSpawn(.1);
+  const e = ZONES.world.enemies.find(o => o._wildKey === D.id && !o.dead), sh = ZONES.world.enemies.filter(o => o._wildKey && o._wildKey.startsWith(D.id + ':s'));
+  if (!e) return out; let cast = 0, scast = 0; e.mesh.traverse(o => { if ((o.isMesh || o.isPoints) && o.castShadow) cast++; }); sh.forEach(s => { let k = 0; s.mesh.traverse(o => { if (o.isMesh && o.castShadow) k++; }); if (k) scast++; });
+  Object.assign(out, { name: e.name, cast, sheep: sh.length, scast, sd: sh.map(s => +Math.hypot(s.x - e.x, s.z - e.z).toFixed(1)) });
+  const a = D.ry + 1.8; px = D.x + Math.sin(a) * 15; pz = D.z + Math.cos(a) * 15; for (let i = 0; i < 240; i++) tickZoneEnemies(1 / 60, 0, WORLD.scene);
+  const face = () => { const f = Math.atan2(px - e.x, pz - e.z); return +Math.abs(Math.atan2(Math.sin(f - e.combatYaw), Math.cos(f - e.combatYaw))).toFixed(3); };
+  out.face = face(); out.bolted = sh.filter(s => Math.hypot(s.x - s.homeX, s.z - s.homeZ) > 10).length;
+  px = e.x + 2.5; pz = e.z; for (let i = 0; i < 180; i++) tickZoneEnemies(1 / 60, 0, WORLD.scene);
+  out.close = face(); out.moved = +Math.hypot(e.x - D.x, e.z - D.z).toFixed(3); out.alert = !!e.alert; out.wild = !!e.wild; out.hp = e.hp; out.dmg = e.dmg;
+  killZoneEnemy(e, WORLD.scene); out.dead = !!e.dead; return out; });
+console.log('  watcher:', JSON.stringify(wt));
+check(`${wt.n} of ${wt.cells} Gatelands cells keep a watcher, the same when asked again; ${wt.id} stands with ${wt.sheep} sheep ${JSON.stringify(wt.sd)} m round it`,
+  wt.n > 0 && wt.n < wt.cells && wt.same && wt.sheep === 3 && (wt.sd || []).every(d => d >= 4.5 && d <= 7.6), wt);
+check(`it casts no shadow (${wt.cast} casters) while its sheep do (${wt.scast} of 3); it turns to keep you in front (off by ${wt.face} rad at 15 m, ${wt.close} at 2.5 m)`,
+  wt.cast === 0 && wt.scast === 3 && wt.face < .1 && wt.close < .1, wt);
+check(`the wolf never moves (${wt.moved} m; ${wt.bolted} of its 3 sheep ran) nor hunts (alert ${wt.alert}, ${wt.dmg} damage), and one blow takes it`,
+  wt.moved === 0 && !wt.alert && wt.wild && wt.hp === 1 && wt.dmg === 0 && wt.dead, wt);
 await g.close();
