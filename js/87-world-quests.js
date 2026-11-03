@@ -303,6 +303,7 @@ const giver=`${lord.title} ${lord.name}`;
       if(q.kind==='errand'&&q.sub==='letter'){erLetterTick(q);continue;} /* S1554 */
       if(q.kind==='errand'&&q.sub==='debt'){erDebtTick(q);continue;} /* S1677 */
       if(q.kind==='errand'&&q.sub==='borrowed'){erBorrowTick(q);continue;} /* S1722 */
+      if(q.kind==='errand'&&q.sub==='watch'){erWatchTick(q);continue;} /* S1776 */
       if(q.kind==='retrieve'&&q.data.fixed&&!q.data.got&&dungeonWorldPos[q.data.seed]){const w=dungeonWorldPos[q.data.seed];q.data.fixed=false;q.data.x=w.x+7;q.data.z=w.z+5; /* S985 — the job was given before its gate was placed: the thing lies by the real door */
         if(q._obj){const y=worldH(q.data.x,q.data.z)+.2;q._obj.m.position.set(q.data.x,y,q.data.z);q._obj.l.position.copy(q._obj.m.position);const pk=pickups.find(o=>o.id===q.id+':pickup');if(pk){pk.x=q.data.x;pk.z=q.data.z;}}}
       if(q.kind==='retrieve'&&!q.data.got&&!q._obj){const m=new THREE.Mesh(new THREE.BoxGeometry(.5,.4,.5),new THREE.MeshLambertMaterial({color:0xc8a040}));m.position.set(q.data.x,worldH(q.data.x,q.data.z)+.2,q.data.z);sc.add(m);const l=regLight(0xffd080,.8,5,'quest');l.position.copy(m.position);q._obj={m,l};pickups.push({id:q.id+':pickup',x:q.data.x,z:q.data.z,quest:q});} /* S518 — a quest's pickup is <quest id>:pickup (co-op rules) */
@@ -339,6 +340,7 @@ const giver=`${lord.title} ${lord.name}`;
       else if(q.kind==='deliver'){const t=siteAnywhere(d.siteId);if(t)push(t.x,t.z,GREEN,d.who);}
       else if(q.kind==='errand'&&q.sub==='letter'){if(d.learned){const g=siteAnywhere(q.erSite);if(g)push(g.x,g.z,GREEN,`report to ${q.giver}`);}else if(q._npc&&q._npc.g)push(q._npc.g.position.x,q._npc.g.position.z,GREEN,d.who,'\u2709');else push(d.x,d.z,GREEN,d.who,'\u2709');} /* S1554 */
       else if(q.kind==='errand'&&q.sub==='name'){if(d.said){const g=siteAnywhere(q.erSite);if(g)push(g.x,g.z,GREEN,`report to ${q.giver}`);}else push(d.x,d.z,GREEN,d.gate,'\ud83d\udd6f');} /* S1600 */
+      else if(q.kind==='errand'&&q.sub==='watch'){if(d.done){const g=siteAnywhere(q.erSite);if(g)push(g.x,g.z,GREEN,`report to ${q.giver}`);}else push(d.x,d.z,GREEN,`the ${d.fold}`,'\ud83c\udf19');} /* S1776 */
       else if(q.kind==='road'||q.kind==='cull')push(d.x,d.z,GREEN,q.kind==='road'?'the camp':plural(2,q.data.target),q.kind==='road'?'\u26fa':'\u2620');
       else if(q.kind==='duel'&&d.state!=='lost')push(d.x,d.z,GREEN,'the yard','\u2694');}
     // guild tasks
@@ -904,6 +906,7 @@ const giver=`${lord.title} ${lord.name}`;
     {const N=erNameRoll(def,site,wk,R.length);if(N)return N;}
     {const D=erDebtRoll(def,site,wk,R.length);if(D)return D;} /* S1677 — the debt, on its own stream */
     {const B=erBorrowRoll(def,site,wk,R.length);if(B)return B;} /* S1722 — the borrowed thing, on its own stream */
+    {const W=erWatchRoll(def,site,wk,R.length);if(W)return W;} /* S1776 — the watch, on its own stream */
     {const s=seededRng('errand-sub',site.id+':'+erTag(def)+':'+wk),kids=def.bio.kids>0,pref=def.bio.wish==='to hear from my daughter'||def.bio.worry==='my brother went for a soldier and never wrote'; /* S1554 — the sub on its own stream, so a fever's herb, count and date roll as before */
       if(pref||!kids||s()<.5){const L=erLetter(def,site,s,wk,R.length);if(L||!kids)return L;}}
     const n=2+Math.floor(r()*3),days=3+Math.floor(r()*3),H=erHerb(site,r),day=Math.floor((worldState.gameTimeAbsMinutes||0)/1440);
@@ -1049,6 +1052,56 @@ const giver=`${lord.title} ${lord.name}`;
   function erLapse(q){if(!q||q.kind!=='errand'||q.turnedIn||!q.erDue||(worldState.gameTimeAbsMinutes||0)<q.erDue)return false;
     q.turnedIn=true;q.lapsed=true;q.erUnsaid=true;if(q.sub==='borrowed'){addFavor(q.erSite,-1);qJournal(q,'lapsed',`You kept the coin the ${q.data.thing} fetched, and ${q.giver} has heard it.`);return true;} /* S1722 */
     qJournal(q,'lapsed',`The date passed, and the fever in ${q.giver}'s house broke without the ${q.data.herb}.`);return true;}
+  // S1776 — errand 6, *The Watch*: a shepherd, a farmer or a beekeeper, or anyone in a village, camp or outpost, has lost a beast in
+  // the night. Sit the night within 25 of the giver's door from 22:00 to the morning bell at 05:00 (read on the clock, never the frame):
+  // one night in two, on the errand's id and the night, two of the place's cull beast come at 02:00. Out of the circle for more than a
+  // game-hour, or the clock jumping an hour (sleep), lapses it. The beasts are live handles kept here, never saved: a load mid-night lays
+  // them again. o is the errand (beast, fond, fold, beasts, n).
+  const ER_WATCH_AT={shepherd:{beast:'ewe',fond:'ewes',fold:'fold'},beekeeper:{beast:'hive',fond:'honey',fold:'hives'},farmer:{beast:'hen',fond:'hens',fold:'hen-house'}};
+  const ER_WATCH_KINDS=new Set(['village','hermit_camp','outpost']);
+  const ER_WATCH_R=25,ER_WATCH_FOES={};
+  const ER_WATCH={
+    hint:{gatelander:o=>`Lost another ${o.beast} in the night. There'll be none left by the feast at this rate.`,markman:o=>`Something's at the ${o.fold}. Nights. I sleep through it.`,
+      aurennais:()=>"We have had losses at night, Master, and nobody willing to sit up.",oldblood:()=>"Something comes at night."},
+    offer:{gatelander:o=>`If I knew, I'd not need you. Something that's fond of ${o.fond}. Sit up by the ${o.fold} tonight, from the last light to the first bell, and if it comes, see it doesn't go home. I'll have breakfast and ${o.n} gold waiting.`,
+      markman:o=>`Don't know. Want you to find out. Sit up at the ${o.fold}, dark to the bell. Kill it if it comes.`,
+      aurennais:o=>`I could not say, Master. Sit the night at the ${o.fold}, from ten until the morning bell, and whatever comes, deal with it. The fee is for the night; I do not pay by the carcass.`,
+      oldblood:o=>`Sit by the ${o.fold}. Dark to the bell. You will see.`},
+    settle:o=>`You settle in by the ${o.fold}.`,moves:o=>`Something moves past the ${o.fold}.`,bell:'The bell. The night is done.',
+    left:o=>`The night at the ${o.fold} is lost.`,
+    came:{gatelander:o=>`${o.beasts}! I'd have said a fox. That's what comes of saying. Here, and eat.`,markman:()=>"Thought so. Good. Here.",
+      aurennais:()=>"Then the losses are explained, Master, and ended. Your fee.",oldblood:()=>"Yes. Them."},
+    none:{gatelander:()=>"Nothing came, and nothing was lost. A quiet night's a night's work all the same. Here.",markman:()=>"Nothing? Then it knew you were there. That's the job. Here.",
+      aurennais:()=>"Nothing, Master? Then the fee was well spent; the night was kept. Here.",oldblood:()=>"It did not come. It saw you. Good."},
+    lapse:{gatelander:()=>"Lost another, and you abed. Ah well. A watch kept asleep is a fence made of wishes.",markman:()=>"Lost another. You weren't there.",
+      aurennais:()=>"We lost another in the night, Master. The fee was for the night entire.",oldblood:()=>"It came. You were not there."}};
+  function erWatchRoll(def,site,wk,idx){const t=def.bio.trade;if(!ER_WATCH_AT[t]&&!ER_WATCH_KINDS.has(site.kind))return null;
+    if(def.bio.wish==='to hear from my daughter'||def.bio.worry==='my brother went for a soldier and never wrote')return null;
+    const s=seededRng('errand-watch',site.id+':'+erTag(def)+':'+wk);if(s()>=.25)return null;
+    const A=ER_WATCH_AT[t]||ER_WATCH_AT.farmer,foe=CULL_BY_BIOME[lairBiome(site)]||'Wolf',tier=Math.max(1,worldTierAt(site.x,site.z)||1);
+    const home=Number.isFinite(def.x)&&Number.isFinite(def.z)&&Math.hypot(def.x-site.x,def.z-site.z)<200;
+    return Object.assign({sub:'watch',foe,beasts:plural(2,foe),n:Math.min(40,15+5*(tier-1)),x:home?def.x:site.x,z:home?def.z:site.z,week:wk,idx},A);}
+  function erWatchClear(q){const F=ER_WATCH_FOES[q.id];delete ER_WATCH_FOES[q.id];if(!F)return;
+    for(const e of F){if(e.dead)continue;if(e.mesh&&e.mesh.parent)e.mesh.parent.remove(e.mesh);const i=ZONES.world.enemies.indexOf(e);if(i>=0)ZONES.world.enemies.splice(i,1);}}
+  function erWatchSpawn(q){const d=q.data,r=seededRng('errand-watch-foe',q.id+':'+d.start),a0=r()*Math.PI*2,F=[];
+    for(let i=0;i<2;i++){const a=a0+i*.6,x=d.x+Math.cos(a)*16,z=d.z+Math.sin(a)*16;
+      const e=keyFoe(unlockFoe(buildZoneEnemy(sc,STATIC_SOL,x,z,d.foe,null)),q.id+':foe:'+i);if(!e)continue;e.x=x;e.z=z;e._questTag=q.id;e.homeX=d.x;e.homeZ=d.z;e.alert=true;
+      if(e.mesh&&!e.mesh.parent)sc.add(e.mesh);ZONES.world.enemies.push(e);F.push(e);}
+    ER_WATCH_FOES[q.id]=F;}
+  function erWatchLapse(q){const d=q.data;q.turnedIn=true;q.lapsed=true;q.erUnsaid=true;q.erDue=worldState.gameTimeAbsMinutes||0;erWatchClear(q);
+    showMsg(ER_WATCH.left(d),'#cc8844');qJournal(q,'lapsed',`You left the ${d.fold}, and ${q.giver} lost another ${d.beast} in the night.`);}
+  // the night, on the clock: the circle, the hour out, the jump, the beasts at two and the bell at five
+  function erWatchTick(q){const d=q.data;if(d.done)return;const now=worldState.gameTimeAbsMinutes||0;if(now<d.start){d.seen=now;return;}
+    const last=Math.max(d.seen==null?d.start:d.seen,d.start);d.seen=now;if(now-last>60)return erWatchLapse(q);
+    const inC=!(typeof isInterior==='function'&&isInterior())&&Math.hypot(px-d.x,pz-d.z)<=ER_WATCH_R;
+    if(!inC){if(d.outAt==null)d.outAt=last;if(now-d.outAt>60)return erWatchLapse(q);}
+    else{d.outAt=null;if(!d.settled){d.settled=true;showMsg(ER_WATCH.settle(d),'#c8b880');}}
+    if(d.settled&&now>=d.start+240&&d.came==null){d.came=seededRng('errand-watch-came',q.id+':'+d.start)()<.5;if(d.came){erWatchSpawn(q);showMsg(ER_WATCH.moves(d),'#ffb060');}}
+    if(d.came&&!d.killed){if(!ER_WATCH_FOES[q.id])erWatchSpawn(q);if(ER_WATCH_FOES[q.id].every(e=>e.dead)){d.killed=true;delete ER_WATCH_FOES[q.id];}}
+    if(now>=d.end&&d.settled&&(!d.came||d.killed)){d.done=true;showMsg(ER_WATCH.bell,'#e8d8a0');qJournal(q,'ready',`The night at the ${d.fold} is kept. Tell ${q.giver}.`);}}
+  function erWatchTurnIn(q,site,p){const d=q.data;if(q.lapsed){q.erUnsaid=false;return ER_WATCH.lapse[p](d);}if(!d.done)return ER_SHARED[p].notYet;
+    qTurnIn(q);addFavor(site,1);if(p==='gatelander')bagAdd({name:'Loaf of Bread',ico:'🍞',type:'misc',weight:.4,buyPrice:2,sellMult:.3,qty:1});
+    return (d.came?ER_WATCH.came:ER_WATCH.none)[p](d);}
   function errandAccept(def,site,E){const p=erPeople(def),tier=Math.max(1,worldTierAt(site.x,site.z)||1),base=Math.min(40,15+5*(tier-1));
     if(E.sub==='letter'){const q={id:erPre(def,site)+E.idx,kind:'errand',sub:'letter',giver:def.name,erSite:site.id,week:E.week,erPeople:p,
         title:`A letter for ${E.who}`,desc:`${def.name} of ${site.name} has written to ${E.who} at ${E.town} and had no answer. Carry the letter there and ask after ${erPro(E).her}.`,
@@ -1063,6 +1116,11 @@ const giver=`${lord.title} ${lord.name}`;
         title:`${E.who}'s debt`,desc:`${E.who} of ${E.town} owes ${def.name} of ${site.name} ${E.n} gold, for ${E.goods}. Collect it, and a fifth is yours.`,
         objective:`Collect ${E.n} gold from ${E.who} at ${E.town}, ${E.dir} of ${site.name}`,reward:Math.round(E.n/5),
         data:{x:E.tx,z:E.tz,siteId:E.siteId,town:E.town,dir:E.dir,who:E.who,fem:E.fem,dp:E.dp,n:E.n,goods:E.goods,choice:null}});return ER_SHARED[p].yes;} /* S1677 */
+    if(E.sub==='watch'){const now=worldState.gameTimeAbsMinutes||0,day0=Math.floor(now/1440)*1440,start=now<day0+1260?day0+1320:day0+2760; /* S1776 — tonight, or tomorrow night after nine */
+      qAdd({id:erPre(def,site)+E.idx,kind:'errand',sub:'watch',giver:def.name,erSite:site.id,week:E.week,erPeople:p,
+        title:`A night at the ${E.fold}`,desc:`Something comes at night to ${def.name}'s ${E.fold} at ${site.name}. Sit up by it from ten until the morning bell, and kill whatever comes.`,
+        objective:`Keep the night at ${def.name}'s ${E.fold} in ${site.name}, ten until the morning bell, on ${calDateLine(start)}`,reward:E.n,
+        data:{x:E.x,z:E.z,beast:E.beast,fond:E.fond,fold:E.fold,foe:E.foe,beasts:E.beasts,start,end:start+420,seen:null,outAt:null,settled:false,came:null,killed:false,done:false}});return ER_SHARED[p].yes;}
     if(E.sub==='borrowed'){const id=erPre(def,site)+E.idx,br=seededRng('errand-why',id),why=br()<.5?'need':'sold',n=Math.min(30,8+3*(tier-1)+Math.floor(br()*6)); /* S1722 — why, and what it fetched, on the errand's id */
       qAdd({id,kind:'errand',sub:'borrowed',giver:def.name,erSite:site.id,week:E.week,erPeople:p,
         title:`${def.name}’s ${E.thing}`,desc:`${def.name} of ${site.name} lent ${E.who} of ${E.town} the ${E.thing}, and has not had it back. Ask for it.`,
@@ -1078,7 +1136,8 @@ const giver=`${lord.title} ${lord.name}`;
       return ER_NAME.done[p](erPro(q.data));} /* S1600 */
     if(q.sub==='debt'){const c=q.data.choice;if(!c)return ER_SHARED[p].notYet;if(q._npc){duelRemoveNpc(q._npc);q._npc=null;}
       if(c==='keep'){q.reward=0;qTurnIn(q);addFavor(site,-1);return ER_DEBT.keep[p];}qTurnIn(q);addFavor(site,1);return ER_DONE[p];}
-    if(q.sub==='borrowed')return erBorrowTurnIn(q,site,p); /* S1722 */ /* S1677 — the debt: a fifth, paid as if collected either way */
+    if(q.sub==='borrowed')return erBorrowTurnIn(q,site,p); /* S1722 */
+    if(q.sub==='watch')return erWatchTurnIn(q,site,p); /* S1776 */ /* S1677 — the debt: a fifth, paid as if collected either way */
     if(q.lapsed||erLapse(q)){q.erUnsaid=false;return ER_FEVER.lapse[p];}
     const isH=b=>b.type==='herb'&&b.name===q.data.herb;if(bagCount(isH)<q.data.n)return ER_SHARED[p].notYet;
     bagTake(isH,q.data.n);qTurnIn(q);addFavor(site,1);return ER_FEVER.done[p];}
@@ -1110,19 +1169,20 @@ const giver=`${lord.title} ${lord.name}`;
   function erNameAsk(def,site,E){const p=erPeople(def),label='Can I do anything for you?';if(E.oldblood)return {cat:'you',label,response:ER_NAME.oldblood};
     return {cat:'you',label,response:ER_NAME.offer[p](erPro(E)),follow:[{label:'I’ll do it.',fn:()=>erRecs(def,site).some(q=>!q.turnedIn)?ER_SHARED[p].notYet:errandAccept(def,site,E)},{label:'Not now.',response:ER_SHARED[p].no}]};}
   function errandAsk(def,site){const E=errandFor(def,site);if(!E)return null;const p=erPeople(def);if(E.sub==='name')return erNameAsk(def,site,E); /* S1600 */
+    if(E.sub==='watch')return {cat:'you',label:'What’s coming at night?',response:ER_WATCH.offer[p](E),follow:[{label:'I’ll do it.',fn:()=>errandFor(def,site)?errandAccept(def,site,E):ER_SHARED[p].no},{label:'Not now.',response:ER_SHARED[p].no}]}; /* S1776 */
     const L=E.sub==='letter',D=E.sub==='debt',B=E.sub==='borrowed',label=B?'Something of yours gone missing?':D?'Who owes you?':L?'You’re waiting on word from someone?':'Who’s sick?',said=B?ER_BORROW.offer[p](E):D?ER_DEBT.offer[p](E):L?ER_LETTER.offer[p](erPro(E)):ER_FEVER.offer[p](E);
     return {cat:'you',label,response:said,follow:[{label:'I’ll do it.',fn:()=>errandFor(def,site)?errandAccept(def,site,E):ER_SHARED[p].no},{label:'Not now.',response:ER_SHARED[p].no}]};}
   function erBorrowLabel(q){const c=q.data.choice;return c==='coin'?'Here’s what it sold for.':c==='month'?'They’ll bring it back in a month.':c==='spare'?'They sold it. I left them the coin.':'About that errand.';} /* S1722 */
   // the top level: *About that errand.* while one is open, or once more to hear how a lapsed one ended; the letter's own lines
   function errandTopics(def,site){const L=erLetterTopics(def,site);if(!erGiver(def,site))return L;const q=erRecs(def,site).find(q=>!q.turnedIn||(q.lapsed&&q.erUnsaid));
     if(!q||(q.sub==='letter'&&q.data.learned))return L;
-    return [{label:q.sub==='name'&&q.data.said?'I said the name.':q.sub==='debt'&&q.data.choice==='keep'?'They haven’t got it.':q.sub==='borrowed'&&!q.lapsed?erBorrowLabel(q):'About that errand.',quest:true,fn:()=>errandTurnIn(q,site)},...L];}
+    return [{label:q.sub==='name'&&q.data.said?'I said the name.':q.sub==='debt'&&q.data.choice==='keep'?'They haven’t got it.':q.sub==='borrowed'&&!q.lapsed?erBorrowLabel(q):q.sub==='watch'&&!q.lapsed&&q.data.done?(q.data.came?`I sat the night. ${q.data.beasts}.`:'I sat the night. Nothing came.'):'About that errand.',quest:true,fn:()=>errandTurnIn(q,site)},...L];}
   // the greeting: the hint after First Words while an errand is on offer (from the second meeting), or for a week after a lapse the colder line;
   // after a letter lied about, from the next game-week, one week in two the waiting line, until the giver writes again
   function errandGreet(def,site){if(!erGiver(def,site))return null;const met=metCount(metKey(def,site));const line=firstWords(def,site);
     const now=worldState.gameTimeAbsMinutes||0,R=erRecs(def,site),cold=met>0&&R.find(q=>q.lapsed&&now<q.erDue+1440*7);if(cold)return cold.sub==='borrowed'?ER_BORROW.kept[erPeople(def)](erPro(cold.data)):ER_FEVER.cold[erPeople(def)];
     {const bq=met>0&&R.find(q=>q.sub==='borrowed'&&q.turnedIn&&q.data.choice==='month'&&now>=q.data.at+30*1440&&now<q.data.at+37*1440);if(bq)return line+' '+ER_BORROW.back[erPeople(def)](erPro(bq.data));} /* S1722 — the month out, the thing walked home: a week of the line */
-    const E=met>0&&errandFor(def,site);if(E){if(E.sub==='name')return E.oldblood?line:line+' '+ER_NAME.hint[erPeople(def)](erPro(E));if(E.sub==='borrowed')return line+' '+ER_BORROW.hint[erPeople(def)](E);return line+' '+(E.sub==='debt'?ER_DEBT.hint:E.sub==='letter'?ER_LETTER.hint:ER_FEVER.hint)[erPeople(def)];} /* S1600 — the name's hint; none for the Old Blood */
+    const E=met>0&&errandFor(def,site);if(E){if(E.sub==='name')return E.oldblood?line:line+' '+ER_NAME.hint[erPeople(def)](erPro(E));if(E.sub==='borrowed')return line+' '+ER_BORROW.hint[erPeople(def)](E);if(E.sub==='watch')return line+' '+ER_WATCH.hint[erPeople(def)](E);return line+' '+(E.sub==='debt'?ER_DEBT.hint:E.sub==='letter'?ER_LETTER.hint:ER_FEVER.hint)[erPeople(def)];} /* S1600 — the name's hint; none for the Old Blood */
     const lq=R.filter(q=>q.sub==='letter').pop(),wk=erWeek();
     if(met>0&&lq&&lq.turnedIn&&lq.data.told==='lie'&&wk>lq.data.toldWeek&&seededRng('errand-wait',erPre(def,site)+wk)()<.5)return ER_LETTER.wait[erPeople(def)](erPro(lq.data));
     return line;}
