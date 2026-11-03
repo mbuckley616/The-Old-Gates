@@ -74,6 +74,7 @@ def build(name, title, note, srcfile, use_common, query=''):
     if use_common:
         s = scene(src)
         if "from './wrongness.js'" in s: s = kits(s, ['gatekit', 'creatures', 'wrongness'])
+        if "from './vaults.js'" in s: s = kits(s, ['gatekit', 'pieces', 'props', 'vaults'])
         if "from './legendary.js'" in s: s = kits(s, ['legendary'])
         if "from './wagons.js'" in s: s = kits(s, ['creatures', 'wagons'])
         if "from './herbs.js'" in s: s = kits(s, ['herbs'])
@@ -192,4 +193,5 @@ build('wonders-places.html', 'Strange places', 'Strange places (L5, OG-106): a w
 build('legendary-arms.html', 'Legendary weapons', 'Legendary weapons by island (L7, OG-075): five an island, each its own shape, material and effect, beside a person of the island. ?view=rack|all|atlas|close|scale, &island=gatelands|mark|aurenne, &mode=still|always|rest (A the shapes alone, B the effect always at full, C a fifth of it at rest and full in the hand), &piece=<key>. Drag to look.', 'legendary-view.js', True, '?view=rack&island=gatelands&mode=rest')
 build('wrongness-lane.html', 'Small wrongnesses', 'Small wrongnesses in a pleasant world (L5, OG-096): a Weaver door, a watcher and a carving beside one Gatelands lane. ?mode=plain|one|marked (A no impossible element, B one each and nothing lit, C the element and a faint light), &cam=wide|door|doorWide|watcher|watcherHigh|carving. Drag to look.', 'wrongness-view.js', True, '?mode=one&cam=wide')
 build('wagons-roads.html', 'Wagons by island', 'Wagons and carts by island (L3, OG-046): three an island on one running gear, with their teams from the creature kit. ?view=road|close|side|front, &island=gatelands|mark|aurenne, &mode=one|own|snow (A one kit painted by island, B each island its own three, C B and the Mark on runners in snow), &piece=<key>. Drag to look.', 'wagons-view.js', True, '?view=road&island=gatelands&mode=own')
+build('vaults-gate.html', 'What a gate keeps', 'What a gate keeps (L10, OG-123): a great gate’s vault under its turning rings and a lesser gate’s keep under its shaft of light. ?room=great|lesser, &mode=relics|hoard|left (A the gate’s own things, B the hoard as drawn, C the gate’s own and what the delvers left), &cam=door|dais|close|high|scale. Drag to look.', 'vaults-view.js', True, '?room=great&mode=left&cam=door')
 print('ok')
