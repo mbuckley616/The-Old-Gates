@@ -1832,7 +1832,7 @@ function _canWait(){
   // S1112 — on watch on the spire (the draft's §4 line); asked before the enemies, which stand on the roof with you
   if(typeof WORLD!=='undefined'&&WORLD.onWatch&&WORLD.onWatch()) return {ok:false, reason:'Not on watch.'};
   // Block during combat — any non-dead enemy aggroed within 20m.
-  const inCombat = ZE && ZE.some(e=>e && !e.dead && !e.locked && !e.wild && Math.hypot(px-e.x,pz-e.z)<20); /* S1707 — a grazing deer is no foe */
+  const inCombat = ZE && ZE.some(e=>e && !e.dead && !e.locked && (!e.wild||e.angry) && Math.hypot(px-e.x,pz-e.z)<20); /* S1707 — a grazing deer is no foe */
   if(inCombat) return {ok:false, reason:'You cannot pass time while enemies are near.'};
   // Block while a UI modal is open (dialog, shop, inventory etc).
   if(typeof dlg!=='undefined' && dlg && dlg.style && dlg.style.display==='flex') return {ok:false, reason:''};

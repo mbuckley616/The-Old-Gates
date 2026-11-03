@@ -34,8 +34,8 @@ const rules = await page.evaluate(() => { const W = () => ZONES.world.enemies.fi
   const bad = W().filter(e => { const ri = roadInfo(e.x, e.z); return (ri && ri.d < 7.9) || wildPadNear(e.x, e.z, 0); }).map(e => e.name + ' ' + e.id);
   const sig = () => W().map(e => e.id + '|' + e.name + '|' + e.x.toFixed(2) + ',' + e.z.toFixed(2)).sort().join();
   const before = sig(), n = W().length; for (const ch of [...WILD_CH]) wildDrop(ch); const gone = W().length; _wildT = 0; tickWildSpawn(.1);
-  return { n, bad, gone, same: before === sig(), noFoe: W().every(e => !e.alert && e.hp === 1 && e.limbs.wolf) }; });
-check(`none on a road or a pad (${rules.n} animals), the same group again by its chunk's id, each a one-blow animal on its own body`, rules.n > 0 && !rules.bad.length && rules.gone === 0 && rules.same && rules.noFoe, rules);
+  return { n, bad, gone, same: before === sig(), noFoe: W().every(e => !e.alert && e.hp === (e.answer ? 16 : 1) && e.limbs.wolf) /* S1796 — the three that answer back have the Boar's 16 */ }; });
+check(`none on a road or a pad (${rules.n} animals), the same group again by its chunk's id, each a one-blow animal on its own body (one that answers back, 16)`, rules.n > 0 && !rules.bad.length && rules.gone === 0 && rules.same && rules.noFoe, rules);
 
 const flee = await page.evaluate(() => { const W = ZONES.world.enemies.filter(e => e.wild && !e.dead), e = W.find(o => o.name === 'Deer');
   for (const o of W) o._duelHold = o !== e; e._w = { mode: 'graze', t: 99 };
@@ -164,4 +164,18 @@ check(`the wolf never moves (${wt.moved} m; ${wt.bolted} of its 3 sheep ran) nor
   wt.moved === 0 && !wt.alert && wt.wild && wt.hp === 1 && wt.dmg === 0 && wt.dead, wt);
 check(`it sits in the kit's own sit (${wt.sit && wt.sit.gait}): hips ${wt.sit && wt.sit.hips} m over the ground, paws at ${JSON.stringify(wt.sit && wt.sit.paws)}, breathing (${wt.sit && wt.sit.breath}), no shadow from its kit body; killed, it leaves the sit (${wt.up})`,
   !!wt.sit && wt.sit.gait === 'sit' && wt.sit.hips < .2 && wt.sit.paws.every(y => Math.abs(y) < .03) && wt.sit.breath > 1e-4 && wt.sit.shadow === 0 && wt.up === true, wt);
+// S1796 — animals that answer back (#1050 A): a Gatefen Boar grazes with you 10 m off and does not bolt; within 4 m it turns on you with the
+// hostile Boar's blow (5) and 16 health, holds a fight open, and gives up 25 m off; struck from 30 m it comes, and gives up past 34
+const ans = await page.evaluate(() => { forceTime(12); stream(px, pz, true);
+  let x = px, z = pz; for (let k = 0; k < 40 && !wildGround(x, z); k++) { x = px + (k % 7 - 3) * 9; z = pz + Math.floor(k / 7) * 9; }
+  const e = keyFoe(buildZoneEnemy(WORLD.scene, STATIC_SOL, x, z, 'Gatefen Boar', null, { tier: 1, key: 'test:answer' }), 'wild:test:answer');
+  e.homeX = x; e.homeZ = z; e.combatYaw = 0; ZONES.world.enemies.push(e); for (const o of ZE) o._duelHold = o !== e; const T = n => { for (let i = 0; i < n; i++) tickZoneEnemies(1 / 60, 0, WORLD.scene); };
+  const o = { hp: e.hp, dmg: e.dmg, wild: !!e.wild }; px = x + 10; pz = z; T(120); o.at10 = !!e.angry || (e._w && e._w.mode === 'flee');
+  px = e.x + 3; pz = e.z; PHP = PMAXHP = 500; T(60 * 4); o.at3 = !!e.angry; o.lost = 500 - PHP;
+  o.fight = ZE.some(q => q && !q.dead && !q.locked && (!q.wild || q.angry) && Math.hypot(px - q.x, pz - q.z) < 20);
+  px = e.x + 30; T(30); o.at30 = !!e.angry; e.alert = true; T(30); o.struck = !!e.angry; o.quit = e._quit; PHP = PMAXHP;
+  for (const q of ZE) q._duelHold = false; e.dead = true; if (e.mesh.parent) e.mesh.parent.remove(e.mesh); ZONES.world.enemies.splice(ZONES.world.enemies.indexOf(e), 1); return o; });
+console.log('  answer:', JSON.stringify(ans));
+check(`a Gatefen Boar (${ans.hp} health, blow ${ans.dmg}) grazes at 10 m, turns on you at 3 m (${ans.lost} lost) and gives up at 30; struck from 30 m it comes (gives up past ${ans.quit && ans.quit.toFixed(1)} m)`,
+  ans.wild && ans.hp === 16 && ans.dmg === 5 && !ans.at10 && ans.at3 && ans.lost > 0 && ans.fight && !ans.at30 && ans.struck && ans.quit > 30, ans);
 await g.close();
