@@ -187,7 +187,7 @@
     const L=LOADED.get(k);if(!L)return;const c=L.cell;
     // settlements in this cell go first
     c.sites.forEach(t=>{if(SETTLE.has(t.id))disposeSettlement(t.id);});
-    if(c._cave&&c._cave.house){const i=ZONES.world.houses.indexOf(c._cave.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1768 — the cave's record */if(c._cove&&c._cove.house){const i=ZONES.world.houses.indexOf(c._cove.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1773 — the sea cave's */if(c._grotto&&c._grotto.house){const i=ZONES.world.houses.indexOf(c._grotto.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1787 — the grotto's */
+    if(c._cave&&c._cave.house){const i=ZONES.world.houses.indexOf(c._cave.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1768 — the cave's record */if(c._cove&&c._cove.house){const i=ZONES.world.houses.indexOf(c._cove.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1773 — the sea cave's */if(c._grotto&&c._grotto.house){const i=ZONES.world.houses.indexOf(c._grotto.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1787 — the grotto's */if(c._mine&&c._mine.house){const i=ZONES.world.houses.indexOf(c._mine.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1790 — the mine's */
     (c._lone||[]).forEach(F=>{if(SETTLE.has(F.id))disposeSettlement(F.id);const i=F._site?LONE_FARMS.indexOf(F._site):-1;if(i>=0)LONE_FARMS.splice(i,1);}); /* S1473 — and its lone farms */
     if(L.staticsBuilt||L.staticsPending)dropStatics(L);
     L.statics.forEach(o=>{sc.remove(o);});
@@ -470,6 +470,42 @@
     for(const b of M.sol)STATIC_SOL.push({cx:C.x+b.x*co+b.z*s_,cz:C.z-b.x*s_+b.z*co,rx:b.w/2,rz:b.d/2,c:Math.cos(C.ry+b.ry),s:Math.sin(C.ry+b.ry),h:b.h,cave:true});
     C.y=y;C.tris=M.tris;C.draws=M.draws;C.mouth=M.mouth;C.out={x:C.x+s_*2.2,z:C.z+co*2.2,yaw:C.ry+Math.PI};
     C.house={id:`g_${C.id}`,type:'limecave',byAim:true,siteId:C.id,name:C.name,keeper:'',reg:c.reg,style:'irish',w:50,d:86,two:false,doorX:C.x,doorZ:C.z,doorFace:'S',exitX:C.out.x,exitZ:C.out.z,exitYaw:C.out.yaw,ice:!!C.ice};
+    if(ZONES.world&&ZONES.world.houses&&!ZONES.world.houses.some(h=>h.id===C.house.id))ZONES.world.houses.push(C.house);
+    return M.group;}
+  // S1790 (card F8; Michael's A on #305: "the levels as built, lamps only while worked", and his A on #1026: "through a mouth, into a place
+  // of its own") — the Mark's silver mines (PKIT.places.mine, places.js's markMine; the canon's Mark sells "iron and silver from the
+  // ranges"). One cell of the Mark in two keeps one, by its own stream (mine:<cell>), so no other draw of the cell moves; one mine in two
+  // is still worked (its lamps lit), the rest worked out and dark. Its adit is driven into a hillside read by place (withPlace over the
+  // cell's middle), as the limestone cave's mouth is: the ground 8 m or more over the sea, a slope of 1 in 5 to 1 in 1.3, dry before the
+  // mouth, the hill rising behind it over the level's whole length (3 m and more over the mouth at 20 and 34 m in), 80 m off every pad, 90 m
+  // off every door, 70 m off the line of every road, 40 m off every lake's rim and 200 m off the cell's ice cave; the adit faces down the
+  // slope. -> {id, x, z, ry, name, cell, worked, snow} or null, kept on the cell (c._mine)
+  function mineAt(c){
+    if(c._mine!==undefined)return c._mine;c._mine=null;
+    if(c.type==='sea'||c.home||window.OG_LOOK!=='new'||window.OG_KIT_TOWNS===false||typeof PKIT==='undefined'||!PKIT.places||!PKIT.places.mine)return null;
+    if(nationOf(c.i,c.j).people!=='markman')return null;
+    const k=cellKey(c.i,c.j),r=PKIT.stream('mine:'+k);if(r()>=.5)return null;const worked=r()<.5;
+    const byId={};for(const t of c.sites)byId[t.id]=t;const lakes=[];for(let j=c.j-1;j<=c.j+1;j++)for(let i=c.i-1;i<=c.i+1;i++){const n=getCell(i,j);if(n&&n.lakes)lakes.push(...n.lakes);}
+    const segD=(x,z,a,b)=>{const dx=b.x-a.x,dz=b.z-a.z,t=Math.max(0,Math.min(1,((x-a.x)*dx+(z-a.z)*dz)/(dx*dx+dz*dz||1)));return Math.hypot(x-a.x-dx*t,z-a.z-dz*t);};
+    const cave=limeCave(c);
+    withPlace(c.ox+SIZE/2,c.oz+SIZE/2,()=>{for(let t=0;t<80&&!c._mine;t++){const x=c.ox+260+r()*(SIZE-520),z=c.oz+260+r()*(SIZE-520);
+      if(c.sites.some(s=>Math.hypot(s.x-x,s.z-z)<(s.pad||0)+80)||c.doors.some(e=>Math.hypot(e.x-x,e.z-z)<90)||(cave&&Math.hypot(cave.x-x,cave.z-z)<200))continue;
+      if(c.roadDefs.some(d=>byId[d.a]&&byId[d.b]&&segD(x,z,byId[d.a],byId[d.b])<70)||lakes.some(l=>Math.hypot(l.x-x,l.z-z)<(l.r||60)+40))continue;
+      const h=rawH(x,z);if(h<8)continue;const gx=(rawH(x+4,z)-rawH(x-4,z))/8,gz=(rawH(x,z+4)-rawH(x,z-4))/8,g=Math.hypot(gx,gz);if(g<.2||g>.77)continue;
+      const dx=-gx/g,dz=-gz/g;if(rawH(x+dx*6,z+dz*6)<3||rawH(x-dx*8,z-dz*8)<h||rawH(x-dx*20,z-dz*20)<h+3||rawH(x-dx*34,z-dz*34)<h+3)continue;
+      c._mine={id:`mine_${k.replace(',','_')}`,x:+x.toFixed(2),z:+z.toFixed(2),ry:+Math.atan2(dx,dz).toFixed(4),name:`${genName(r,c.reg)} Mine`,cell:k,worked,snow:h>=snowLineAt(x,z)};}});
+    return c._mine;}
+  // its pad and the clearing round its outcrop, as the cave's, and a clearing of the scatter 8 m out before it (the cell's first step, so the chunks are built with them)
+  function mineStamps(c,k){const C=mineAt(c);if(!C)return [];const s=Math.sin(C.ry),co=Math.cos(C.ry),y=landH(C.x,C.z);
+    return [addStamp({id:C.id+'_pad',kind:'door',x:C.x-s*2.4,z:C.z-co*2.4,r:4.6,blend:5,y,cell:k}),addStamp({id:C.id+'_clear',kind:'door',noFlat:true,x:C.x-s*4,z:C.z-co*4,r:10,blend:2,y,cell:k}),
+    addStamp({id:C.id+'_way',kind:'door',noFlat:true,x:C.x+s*8,z:C.z+co*8,r:7,blend:2,y,cell:k})];} /* and the approach, where the tramway ran out to the tip: no tree in front of the adit */
+  // the adit's mouth (PKIT.places.cavemouth, rock 'mark', its timber sets and tramway) stood on its pad, turned down the slope; its solids;
+  // and the mine's record in the world's houses (type 'mine', byAim), taken out when the cell unloads
+  function placeMine(c,k){const C=mineAt(c);if(!C)return null;const M=PKIT.places.cavemouth({key:C.id,rock:'mark',snow:C.snow,adit:true}),y=worldH(C.x,C.z),co=Math.cos(C.ry),s_=Math.sin(C.ry);
+    M.group.position.set(C.x,y,C.z);M.group.rotation.y=C.ry;M.group.name='mine mouth';sc.add(M.group);
+    for(const b of M.sol)STATIC_SOL.push({cx:C.x+b.x*co+b.z*s_,cz:C.z-b.x*s_+b.z*co,rx:b.w/2,rz:b.d/2,c:Math.cos(C.ry+b.ry),s:Math.sin(C.ry+b.ry),h:b.h,cave:true});
+    C.y=y;C.tris=M.tris;C.draws=M.draws;C.mouth=M.mouth;C.out={x:C.x+s_*2.2,z:C.z+co*2.2,yaw:C.ry+Math.PI};
+    C.house={id:`g_${C.id}`,type:'mine',byAim:true,siteId:C.id,name:C.name,keeper:'',reg:c.reg,style:'mark',w:13,d:35,two:false,doorX:C.x,doorZ:C.z,doorFace:'S',exitX:C.out.x,exitZ:C.out.z,exitYaw:C.out.yaw,worked:C.worked};
     if(ZONES.world&&ZONES.world.houses&&!ZONES.world.houses.some(h=>h.id===C.house.id))ZONES.world.houses.push(C.house);
     return M.group;}
   // S1773 (card F8, Michael's A on #1026) — the smugglers' sea caves on the Gatelands' coast (PKIT.places.cove, places.js's smugglersLair,

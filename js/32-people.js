@@ -1475,7 +1475,7 @@ function hbGenome(g){let G=HB_GENOMES.get(g.hbKey);if(G)return G;HB.loadPack();
   if(GUARD_ROLE.test(g.role||''))G.dress=Object.assign({},G.dress,{mail:[.55,.56,.58],helm:[.42,.43,.45],spear:[.46,.33,.2],cloak:null,hood:null,basket:null,staff:null,shield:null,crossbow:null});
   if(/^crew:/.test(g.hbKey||'')){const m=/carpenter|cook|navigator/.exec(g.role||''),C=m&&CREW_BODY[m[0]];if(C)G.dress=Object.assign({},G.dress,CREW_STRIP,C.dress);} /* S1779 — her crew's working dress */
   HB_GENOMES.set(g.hbKey,G);return G;}
-/* S1790 (L2, OG-069) — the cast: a named person of Act I (the builder's CAST: Bram, Edna, Corwin, Niamh, Áine) wears the sheet's body and
+/* S1792 (L2, OG-069) — the cast: a named person of Act I (the builder's CAST: Bram, Edna, Corwin, Niamh, Áine) wears the sheet's body and
    dress wherever they stand, not a roll of their key. Only at their own place (Ashenmoor; Niamh at Inis Rua, Áine at Carraig Mór) or
    when the game authors them (Corwin at the harbours), so a generated town's own Edna is still her own woman */
 const HB_CAST_SITE={Bram:'ashenmoor',Edna:'ashenmoor',Corwin:'ashenmoor',Niamh:'inis_rua',Áine:'carraig_mor'};

@@ -193,7 +193,7 @@ const room = await page.evaluate(() => { const rs = [...HB_RIGS].filter(r => r.r
 if (PICS) await page.screenshot({ path: path.join(OUT, 'f4-inn.jpg'), timeout: SHOT_MS });
 check('in the inn\'s common room the keeper and the drinkers wear the builder\'s bodies too', room.inside && room.people >= 1 && room.built === room.people, { inn, ...room });
 check('no page errors', g.errs.length === 0, g.errs.slice(0, 3));
-// S1790 (L2, OG-069): the cast (last on this boot: the cloak walk above is sensitive to what ran before it, S1770). Bram, Edna and Corwin at Ashenmoor (and Corwin authored at a harbour) wear the builder's CAST genome, not a
+// S1792 (L2, OG-069): the cast (last on this boot: the cloak walk above is sensitive to what ran before it, S1770). Bram, Edna and Corwin at Ashenmoor (and Corwin authored at a harbour) wear the builder's CAST genome, not a
 // roll of their key, and the driver follows it (Edna's town roll had made her a young man of 1.85); an Edna of another town is her own woman
 const cast = await page.evaluate(() => { const forget = () => { for (const m of [HB_GENOMES, PEOPLE_GENOMES]) for (const k of [...m.keys()]) if (/ctest|ashenmoor|Corwin/.test(k)) m.delete(k); };
   const one = (def, key) => { const root = buildNPCMesh(def, { key }), r = [...HB_RIGS].find(x => x.root === root); HB_RIGS.delete(r); PEOPLE_RIGS.delete && PEOPLE_RIGS.delete(r);

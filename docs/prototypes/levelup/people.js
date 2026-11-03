@@ -3900,14 +3900,14 @@ export function peopleGenome(rnd, people, g, o = {}) {
 }
 // a genome rolled from a seed, inside a people's ranges (Markfolk by default, as Session 804 rolled them)
 export function rollGenome(seed, o = {}) { const rnd = seeded(seed), g = o.g ?? (rnd() < .5 ? 0 : 1); if (o.people) return peopleGenome(rnd, o.people, g, { seed: String(seed), child: !!o.child, old: !!o.old && !o.child }); const G = markGenome(rnd, g, { seed: String(seed) }); G.people = 'markman'; return G; }
-// The cast (Session 1790, backlog L2; OG-069 for the bodies and turnarounds, OG-057 for the props): the named people of Act I, each
+// The cast (Session 1792, backlog L2; OG-069 for the bodies and turnarounds, OG-057 for the props): the named people of Act I, each
 // one person wherever they stand, drawn from the sheet over a genome rolled from their name, so the face's sliders, the eyes and the
 // brows stay the builder's own and only what the sheet fixes is set. The canon over the sheet: Bram grey (thirty years at the forge;
 // OG-057 has him grey where OG-069 draws him dark), Niamh and Áine Gatelanders, Corwin's people never said (Michael's 11 C: he keeps
 // the people the game gives him). `dress` replaces the roll's whole wardrobe, so nothing rolled (a tartan, leg wraps) rides over it.
 // What the kit has no piece for yet is owed: Bram's rolled sleeves and hammer, Edna's clay pipe, Corwin's open coat and tankard, Niamh's lantern,
 // and Edna's and Áine's sticks: in the game the staff's grip carries the arm forward and the short cape skinned to it is dragged out
-// level with it and the tunic shows at the shoulder (Session 1790, any caped townsperson with a staff), so they stand without until it is fixed.
+// level with it and the tunic shows at the shoulder (Session 1792, any caped townsperson with a staff), so they stand without until it is fixed.
 export const CAST = {
   // barrel-chested, the beard short and full, grey; the leather apron with its bib over undyed linen; arms that work iron
   Bram: { people: 'gatelander', g: 1, age: .75, muscle: .9, weight: .68, metres: 1.82, hairCol: [.7, .69, .66], hair: { style: 'short', len: .3 }, beard: .45,
