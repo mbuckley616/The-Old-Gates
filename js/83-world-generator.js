@@ -2501,19 +2501,52 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       const p=new THREE.PointLight(0xb8d4e0,2.2*dayK+.2,30,1);p.position.set(rx(T.falls.x),ry(T.falls.foot)+3,rz(T.falls.z)+2);sc_.add(p);}
     return sc_;
   }
+  // S1772 (card F8, Michael's A on #1026) — a smugglers' sea cave (PKIT.places.cove, places.js's smugglersLair, #314 A) behind its mouth on
+  // the land over the shore (seaCove, 82), built as the limestone cave is: moved into a room's frame (the floor 0.25 m under the deck), its
+  // walk the place's own half-metre cells at the deck's height, a foothold and a solid up to it where you stand, a solid to 60 m where it is
+  // rock or sea, and the walls, posts and cargo as exact boxes 3 m up; the stair's seventeen treads and the gallery over the deck footholds of their own, with no solid
+  // under them, so you walk the deck beneath the gallery and climb the stair onto it. The ladder and the ledge's tunnel wait on a rule
+  // for climbing. The light: through the arch the day off the sea, by the hour; held, the lanterns' glow and three warm lights (the fire,
+  // the deck, the T-head); abandoned, the day alone. No one is here: whoever keeps the lair is the systems builder's to put in.
+  function kitSeaCave(house){return !!(house&&house.type==='seacave'&&typeof PKIT!=='undefined'&&PKIT.places&&PKIT.places.cove);}
+  function buildKitSeaCave(house){
+    const T=PKIT.places.cove({key:house.siteId,held:house.held!==false}),Bd=T.bounds,FY=+(T.low-.25).toFixed(2),W=Bd.x1-Bd.x0,D=Bd.z1-Bd.z0;
+    const rx=x=>x-Bd.x0,rz=z=>z-Bd.z0,ry=y=>y-FY;
+    house._counterFront=null;house.intW=W;house.intD=D;house._roomH=+(T.chamber.h-FY+6).toFixed(2);house._exitD=.01;house._exitW=.01;house._exitX=-99;house._exitZ=-99;house._exitText=true;house._limeCave=T;house._seaCave=true;
+    const A=T.arrive;house._arriveX=+rx(A[0]).toFixed(3);house._arriveZ=+rz(A[2]).toFixed(3);house._arriveYaw=A[3];
+    if(!window._pendingPos)window._pendingPos={x:house._arriveX,z:house._arriveZ,yaw:A[3],jumpY:ry(A[1])};
+    const sc_=new THREE.Scene();interiorScene=sc_;landRoomPost(sc_);sc_.background=new THREE.Color(0x05070a);sc_.fog=new THREE.Fog(0x05070a,30,110);
+    intNPCMesh=null;intNPCPos={x:-99,z:-99};intBedPos=null;intStashPos=null;
+    const SOL=[];INT_SOL=SOL;FOOTHOLDS=[];INT_BEDS=[];INT_DOORS=[];INT_DOORS.house=house.id;INT_CHAIR=null;INT_NPCS=[];HATCH.active=false;HATCH.roof=false;INT_LOOT=null;INT_BOX=null;INT_SHELF=null;
+    T.group.position.set(-Bd.x0,-FY,-Bd.z0);sc_.add(T.group);
+    for(const c of T.cells){const q={x0:rx(c.x0),x1:rx(c.x1),z0:rz(c.z0),z1:rz(c.z1)};
+      if(c.y==null){SOL.push({...q,y0:-5,y1:60});continue;}
+      const y=+ry(c.y).toFixed(2);SOL.push({...q,y0:-5,y1:y});FOOTHOLDS.push({...q,y});}
+    for(const b of T.obs)SOL.push({x0:rx(b.x0),x1:rx(b.x1),z0:rz(b.z0),z1:rz(b.z1),y0:-5,y1:+ry(T.deck+3).toFixed(2)}); /* the walls, posts and cargo, exact */
+    for(const t of T.stair.steps)FOOTHOLDS.push({x0:rx(t.x0),x1:rx(t.x1),z0:rz(t.z0),z1:rz(t.z1),y:+ry(t.y).toFixed(2)});
+    {const G=T.gallery;for(let z=G.z1;z<G.z0-.01;z+=.5){const z1=Math.min(G.z0,z+.5),zm=(z+z1)/2;FOOTHOLDS.push({x0:rx(G.x0(zm)),x1:rx(G.x1(zm)),z0:rz(z),z1:rz(z1),y:+ry(G.y).toFixed(2)});}}
+    const hr=typeof gameHour==='function'?gameHour():12,dayK=hr>=7&&hr<18?1:hr>=5&&hr<20?.45:.08;
+    T.sky.color.setHex(hr>=7&&hr<18?0xc4d0dc:hr>=5&&hr<20?0x8a7a7a:0x0e1420);
+    sc_.add(new THREE.AmbientLight(0xbcc6d0,T.held?.22:.28));
+    {const l=new THREE.PointLight(0xd8e4ec,6*dayK+.2,60,1);l.position.set(rx(0),ry(5),rz(T.arch.z+4));l.userData.daylight=true;sc_.add(l);}
+    {const l=new THREE.PointLight(0xdfe6f0,2.4*dayK,18,1);l.position.set(rx(T.mouth.x),ry(T.mouth.y)+2,rz(-1));l.userData.daylight=true;sc_.add(l);}
+    if(T.held){for(const [x,y,z,k] of [[T.fire.x,T.deck+1.2,T.fire.z,3],[-8,T.deck+2.6,(T.gallery.z0+T.gallery.z1)/2,2.4],[0,T.deck+1.6,T.jetty.z,2.4]]){const l=new THREE.PointLight(0xffb060,k,20,1.4);l.position.set(rx(x),ry(y),rz(z));sc_.add(l);}}
+    return sc_;
+  }
   // the cave's one way, from either side: in the world, stood in the mouth's throat; inside, within the passage's first 3 m from its mouth
+  // (S1772: the sea caves' too, c._cove beside c._cave)
   function limeCaveAt(){
-    if(isInterior()){const h=currentHouse;if(!h||h.type!=='limecave'||!h._limeCave)return null;const T=h._limeCave,Bd=T.bounds,x=px+Bd.x0,z=pz+Bd.z0;
+    if(isInterior()){const h=currentHouse;if(!h||(h.type!=='limecave'&&h.type!=='seacave')||!h._limeCave)return null;const T=h._limeCave,Bd=T.bounds,x=px+Bd.x0,z=pz+Bd.z0;
       return z>T.mouth.z-3&&Math.abs(x-T.mouth.x)<3?{up:true}:null;}
     if(activeZoneId!=='world'||typeof CELLS==='undefined')return null;const [ci,cj]=cellOf(px,pz);
-    for(let j=cj-1;j<=cj+1;j++)for(let i=ci-1;i<=ci+1;i++){const c=CELLS.get(cellKey(i,j)),C=c&&c._cave;if(!C||!C.house||Math.abs(px-C.x)>12||Math.abs(pz-C.z)>12)continue;
+    for(let j=cj-1;j<=cj+1;j++)for(let i=ci-1;i<=ci+1;i++){const c=CELLS.get(cellKey(i,j));if(!c)continue;for(const C of [c._cave,c._cove]){if(!C||!C.house||Math.abs(px-C.x)>12||Math.abs(pz-C.z)>12)continue;
       const co=Math.cos(C.ry),s_=Math.sin(C.ry),dx=px-C.x,dz=pz-C.z,u=dx*co-dz*s_,v=dx*s_+dz*co;
-      if(Math.abs(u)<C.mouth.w/2+.2&&v<1.8&&v>-3.4&&Math.abs(jumpY-C.y)<1.5)return {down:true,C};}
+      if(Math.abs(u)<C.mouth.w/2+.2&&v<1.8&&v>-3.4&&Math.abs(jumpY-C.y)<1.5)return {down:true,C};}}
     return null;}
   function limeCavePrompt(){const t=limeCaveAt();return !t?null:t.up?"Press 'E' to go out into the day":"Press 'E' to go into the cave";}
   function limeCaveUse(){const t=limeCaveAt();if(!t)return false;
     if(t.down){goToInterior(t.C.house);return true;}
-    const h=currentHouse,[ci,cj]=h&&h.siteId?h.siteId.replace('cave_','').split('_').map(Number):[NaN,NaN],c=CELLS.get(cellKey(ci,cj)),C=c&&c._cave;
+    const h=currentHouse,[ci,cj]=h&&h.siteId?h.siteId.replace(/^(cave|cove)_/,'').split('_').map(Number):[NaN,NaN],c=CELLS.get(cellKey(ci,cj)),C=c&&(h.type==='seacave'?c._cove:c._cave);
     if(C&&C.out)window._pendingWorldPos={x:C.out.x,z:C.out.z,yaw:C.out.yaw,jumpY:worldH(C.out.x,C.out.z)};
     exitInterior();return true;}
   // S1288 (card F9, Michael's A on #321 and #588) — on the new look a Markish inn standing as the kit's hall (lot.kit.alehall, S1288's
@@ -2905,6 +2938,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     if(kitChurchHall(house))return buildKitChurchHall(house); /* S1326 — the Church of the Weaver inside, at its true size */
     if(kitGuildHall(house))return buildKitGuildHall(house); /* S1703 — a town's guild hall inside, at its true size */
     if(kitLimeCave(house))return buildKitLimeCave(house); /* S1768 — a limestone cave behind its mouth */
+    if(kitSeaCave(house))return buildKitSeaCave(house); /* S1772 — a smugglers' sea cave behind its mouth */
     if(kitTowerCellar(house))return buildKitTowerCellar(house); /* S1765 — a ruined tower house's cellar, souterrain and pit */
     const two=!!house.two;
     // S896 (F2a) — the room's true size in metres (07-scale.js; visual-foundation.md §1: a cottage room 4 to 6 across, an inn's hall
