@@ -133,6 +133,11 @@ const cr = await page.evaluate((pid) => { const site = WORLD.siteAnywhere(pid), 
   // swap the cook for the navigator at the yard: her chart table wanted for his station
   out.swap = row(/^Send the cook ashore/).fn(); out.nav = crewAboard('navigator'); out.navNoTable = navMapR(); worldState.ship.fit.push('chart'); out.navR = navMapR(); SHIP.sailing = false; SHIP.sailing = true;
   WX.type = 'rain'; out.hintOn = navAboard();
+  // S1780 — his shoals: a bed under 2 m drawn on the minimap in the shallows' colour, at sea with him at his station, and not ashore
+  const shoalPx = () => { const cv = document.createElement('canvas'); cv.width = cv.height = 160; const c = cv.getContext('2d'); drawLocalMap(c, 160, navMapR(), false);
+    const d = c.getImageData(0, 0, 160, 160).data; let n = 0; for (let i = 0; i < d.length; i += 4) if (d[i] === 0x76 && d[i + 1] === 0x88 && d[i + 2] === 0x8e) n++; return n; };
+  { const R = navMapR(), cl = Math.max(4, R / 14); let n = 0; for (let z = pz - R; z < pz + R; z += cl) for (let x = px - R; x < px + R; x += cl) { const h = worldH(x + cl / 2, z + cl / 2); if (h < 0 && h > -2) n++; } out.shoalBeds = n; }
+  out.shoalsAtSea = shoalPx(); SHIP.sailing = false; out.shoalsAshore = navAboard() ? -1 : shoalPx(); SHIP.sailing = true;
   // a save keeps them
   const d = JSON.parse(ssStringify(_buildSavePayload())); worldState.ship = { cls: 'sloop' }; _applyLoadData(d); out.saved = { crew: worldState.ship.crew.slice(), ashore: Object.keys(worldState.ship.ashore).sort() };
   // sunk: they swim for the nearest port
@@ -143,6 +148,7 @@ check('the crew: none met, refused; met, none aboard without bunks; with bunks t
 check('the carpenter: 200 s under way at hull 50, two patches (+18, then to the cap), the hull stops at 80, the chest\'s 2 planks and 2 pitch spent', cr.patches.join() === '18,12' && cr.hull === 80 && cr.chest.planks === 0 && cr.chest.pitch === 0, cr);
 check('the cook: nothing before 6h; at 6h one baked fish at ×1.0 into the sea chest, once a day', cr.before6 === 0 && cr.meals.length === 1 && cr.meals[0].q === 1 && cr.meals[0].s === 1 && /Fish/.test(cr.meals[0].n) && cr.fishLeft === 0, cr.meals);
 check('swapped free at the yard; the navigator with her chart table draws the minimap to 116 m at sea, 58 without the table; his ahead line without the oilskin', /goes ashore/.test(cr.swap) && cr.nav === true && cr.navNoTable === 58 && cr.navR === 116 && cr.hintOn, cr);
+check('his shoals: at sea with the navigator at his chart table the minimap draws the beds under 2 m in their own colour; with him ashore, none', cr.shoalBeds > 0 && cr.shoalsAtSea > 0 && cr.shoalsAshore === 0, { beds: cr.shoalBeds, sea: cr.shoalsAtSea, ashore: cr.shoalsAshore });
 check('a save keeps who is aboard and who waits; sunk, they swim for the nearest port', cr.saved.crew.join() === 'carpenter,navigator' && cr.saved.ashore.join() === 'cook' && /swim for/.test(cr.sink) && cr.afterSink.crew === 0 && cr.afterSink.ashore === 3, cr);
 // S1743 — the Weaver's shuttle: with the navigator at his station, the sea line also points to the nearest wreck not yet opened
 const sh = await page.evaluate(() => { const ks = worldState.ship, kst = worldState.stats, ksail = SHIP.sailing, kx = SHIP.x, kz = SHIP.z, kwx = WX.type, out = {};
