@@ -116,6 +116,9 @@ function personGenome(def,opts){
   else if(/lord|lady|regent|king|queen/.test(role)){g.hat='crown';g.extras.push('mantle');g.cloak=false;}
   else if(/priest|sister|brother|prior/.test(role)){g.hat='hood';}
   else if(/innkeeper/.test(role)){g.apron=0xd8d0b8;}
+  else if(/carpenter/.test(role)){g.apron=0x3a2010;g.hat='none';g.cloak=false;} /* S1779 — her crew below deck */
+  else if(/cook/.test(role)){g.apron=0xd8d0b8;g.cloak=false;}
+  else if(/navigator/.test(role)){g.cloak=false;g.hat='none';}
   if(!PEOPLE_CAPPED.has(g.style)&&(g.hat==='coif'||g.hat==='flatcap'||g.hat==='fur'||g.hat==='chaperon'))g.hat='none';
   // S268 — wealth in clothes (Michael's A on Session 246: from the role and the town's prosperity): a base by role, moved by
   // the town's fortune by ±.25 and ±.1 on the person's own seed (drawn last, so no other trait moves). Poor (under .3) is
@@ -1068,7 +1071,14 @@ function pwIdle(t,o){const p=pwZero();const b=Math.sin(t*1.7),w=Math.sin(t*.37),
   p.hipsY=Math.max(pwReach(p.thL[0],p.knL[0]),pwReach(p.thR[0],p.knR[0]))+PW.HIPJ;
   if(o.goblin)pwGoblin(p,b*.05);
   if(o.wraith)pwWraith(p,t);
+  if(o.stoop>0)pwStoop(p,o.stoop);
   if(o.holds)pwHold(p,.02*b,o.gear);return p;}
+// S1779 — stooped under a low deck (her crew in a hold): o.stoop is the share of the body's height to lose at the crown. The back bends
+// forward up to 0.55 rad (the trunk above the hips is about 0.6 of the figure's units, so that alone lowers the crown by up to 0.09),
+// the neck and head tip back to keep the eyes ahead, and the knees bend for the rest (up to 0.15), the feet staying flat
+function pwStoop(p,s){const D=s*1.225/PW.BODY,a=Math.min(.55,Math.acos(Math.max(-1,1-D/.6))),dh=Math.min(.15,Math.max(0,D-.6*(1-Math.cos(a))));
+  p.spine[0]+=a;p.neck[0]-=a*.45;p.head[0]-=a*.35;p.shL[0]-=a*.6;p.shR[0]-=a*.6;
+  if(dh>0){const [th,kn]=pwIK(.03,-(PW.L1+PW.L2-dh));p.thL[0]+=th;p.thR[0]+=th;p.knL[0]+=kn;p.knR[0]+=kn;p.anL[0]-=th+kn;p.anR[0]-=th+kn;p.hipsY-=dh;}}
 // A stride: each foot is planted for DUTY of it, sliding back under the body at a steady speed, then swings
 // forward on an eased arc. The two feet overlap on the ground, so something is always carrying the body.
 // S534 — a ghoul's limp (Michael, the inspector: "Their walk should probably have a limp as well / be more zombie-like"):
@@ -1147,7 +1157,7 @@ function pwWave(t,o){const p=pwIdle(t,o);const w=Math.sin(t*7.5);
   else{p.shR=[-.25,0,-2.35];p.elR=[0,-.2,-.55+.42*w];p.wrR=[0,0,.25*w];p.neck=[0,-.18,0];p.head=[.04,0,-.08];p.spine=[p.spine[0],-.06,.03];}
   return p;}
 // the pose options a rig walks and stands with; a ghoul limps on the leg its seed picks (S534)
-function pwOpts(rig){const g=rig.g;return {holds:rig.holds,gear:g.gear,elder:g.age==='elder',limp:g.ghoul?((g.seed>>>0)%2?1:-1):0,goblin:!!g.goblin,wraith:!!g.wraith};}
+function pwOpts(rig){const g=rig.g;return {holds:rig.holds,gear:g.gear,elder:g.age==='elder',limp:g.ghoul?((g.seed>>>0)%2?1:-1):0,goblin:!!g.goblin,wraith:!!g.wraith,stoop:rig.stoop||0};}
 // blend toward the chosen motion over about a third of a second
 // S210 — a crouch on the haunches, leaning forward with the head up, the hands down by the feet: the gargoyle's statue pose
 function pwCrouch(t,o){const p=pwZero();const h=.2,z=.07;const [th,kn]=pwIK(z,-h);
@@ -1462,6 +1472,7 @@ function hbGenome(g){let G=HB_GENOMES.get(g.hbKey);if(G)return G;HB.loadPack();
   G=HB.rollGenome(g.hbKey,{people,g:g.female?0:1,child:!!g.child,old:g.age==='elder'});
   // a guard is known by his mail, helm and spear (the town's guards keep their old kit's role; the armour tiers are F10's)
   if(GUARD_ROLE.test(g.role||''))G.dress=Object.assign({},G.dress,{mail:[.55,.56,.58],helm:[.42,.43,.45],spear:[.46,.33,.2],cloak:null,hood:null,basket:null,staff:null,shield:null,crossbow:null});
+  if(/^crew:/.test(g.hbKey||'')){const m=/carpenter|cook|navigator/.exec(g.role||''),C=m&&CREW_BODY[m[0]];if(C)G.dress=Object.assign({},G.dress,CREW_STRIP,C.dress);} /* S1779 — her crew's working dress */
   HB_GENOMES.set(g.hbKey,G);return G;}
 // the distant copy in the genome's colours, so the body does not change colour when it comes near
 function hbTint(g,G){const C=a=>new THREE.Color(a[0],a[1],a[2]),D=G.dress||{};
@@ -1500,6 +1511,41 @@ function hbSeasonDress(g,G){if(G&&hbFeast())G=hbFeastDress(g,G);if(!G||!hbWinter
     else if(!D.robe){const fur=people==='markman'||people==='gatelander'&&r()<.5;
       W={...G,dress:{...D,coat:pick(P.wool),coatLen:.75,coatFur:fur?pick(HB_WINTER_FUR):null,coatHood:people==='markman'?(r()<.3?'up':'down'):null}};}}
   HB_GENOMES.set(kc,W);return W;}
+// S1779 (backlog L6, #979 B's session 4: "their bodies below deck ... left to the bodies builder") — her crew in her hold. Each hand
+// aboard (worldState.ship.crew) stands at their station when you go below: the carpenter at the workbench, the cook by the water cask
+// or the barrels (the galley is not drawn in the hold yet), the navigator at the chart table, else at the alchemist's table or a chest;
+// where the hold has none of a hand's own (the sloop's has no bench), by the mast. Each hand's own station is taken before any fallback.
+// A spot is 0.38 m off the item's face (along it, in the gap between two deck beams), the side nearest her centreline first, clear of the solids and each other, and 2.3 m from the
+// ladder's foot where the hold allows (1.2 where it does not), so E there goes on deck; facing the item. Dressed for the work: the carpenter's leather apron and bib, the cook's linen one, the navigator's wool coat to the
+// knee; nothing carried. Their people are drawn from a stream keyed by the role and her name, so a hand looks the same on every visit.
+const CREW_BODY={
+  carpenter:{role:"Ship's carpenter",at:['workbench','mast','sea chest'],dress:{apron:[.36,.25,.16],apronLeather:true,bib:true,coat:null}},
+  cook:{role:"Ship's cook",at:['water cask','barrel','mast','sea chest'],dress:{apron:[.8,.76,.66],apronLeather:false,bib:true,coat:null}},
+  navigator:{role:'Navigator',at:['chart table','alchemy table','chest','sea chest','mast'],dress:{coat:[.18,.22,.32],coatLen:.8,coatHood:null,coatFur:null,apron:null,bib:null}}};
+const CREW_STRIP={cloak:null,hood:null,cape:null,mantle:null,spear:null,staff:null,crossbow:null,basket:null,basketCloth:null,shield:null,chair:null,burnous:null};
+const CREW_PEOPLE=[['gatelander','gatelands'],['markman','mark'],['aurennais','aurenne']];
+function crewHoldSpot(house,B,a,taken,far){const X=house.intW/2,z1=B.hold.z1,x0=X-a[3],x1=X-a[0],z0=z1-a[5],zz1=z1-a[2],cx=(x0+x1)/2,cz=(z0+zz1)/2,o=.38;
+  let gz=cz;if(Array.isArray(B.beams)){const k=z1-cz,bs=B.beams.slice().sort((p,q)=>p-q),i=bs.findIndex(v=>v>k);if(i>0){const m=(bs[i-1]+bs[i])/2;if(Math.abs(m-k)<(zz1-z0)/2)gz=z1-m;}} /* beside the item, between two deck beams: a head stands clear of them */
+  const c=[[x0-o,gz],[x1+o,gz],[cx,z0-o],[cx,zz1+o]].sort((p,q)=>Math.abs(p[0]-X)-Math.abs(q[0]-X));
+  for(const [x,z] of c){if(x<.3||x>house.intW-.3||z<.3||z>house.intD-.3)continue;if(intSolidAt(x,z,.28,0))continue;
+    if(Math.hypot(x-house._arriveX,z-house._arriveZ)<far||taken.some(t=>Math.hypot(t[0]-x,t[1]-z)<.7))continue;return {x,z,ry:Math.atan2(cx-x,cz-z)};}
+  return null;}
+function crewHoldBodies(sc_,house){const st=typeof worldState!=='undefined'&&worldState.ship,B=house&&house._base;const out=[];
+  if(!B||!st||st.sunk||!Array.isArray(st.crew)||typeof INT_NPCS==='undefined')return out;const taken=[],spot={};
+  const find=(r,names)=>{for(const n of names)for(const far of [2.3,1.2])for(const q of B.items.filter(q=>q.name===n)){const sp=crewHoldSpot(house,B,q.box,taken,far);if(sp){taken.push([sp.x,sp.z]);sp.at=n;return sp;}}return null;};
+  for(const r of st.crew)if(CREW_BODY[r])spot[r]=find(r,CREW_BODY[r].at.slice(0,1)); /* each hand's own station first, then the fallbacks */
+  for(const r of st.crew)if(CREW_BODY[r]&&!spot[r])spot[r]=find(r,CREW_BODY[r].at.slice(1));
+  for(const r of st.crew){const C=CREW_BODY[r],sp=spot[r];if(!C||!sp)continue;
+    const P=CREW_PEOPLE[pHash(r+'|'+(st.name||''))%3],nm=typeof crewName==='function'?crewName(r,1):r;
+    const def={name:nm,role:C.role,people:P[0],ico:r==='cook'?'\u{1F372}':r==='navigator'?'\u{1F9ED}':'\u{1F528}',greeting:[crewLine(r)],topics:[{label:'Farewell.',bye:true}]};
+    const g=buildNPCMesh(def,{nation:P[1],key:'crew'});g.position.set(sp.x,0,sp.z);g.rotation.y=sp.ry;sc_.add(g);
+    {const rig=g.userData.rig,G=rig&&rig.g;if(G){const st=G.height*personScale(G)*SCALE.PERSON_MODEL,kz=B.hold.z1-sp.z,clear=Array.isArray(B.beams)&&B.beams.some(v=>Math.abs(v-kz)<.25)?B.beamBottom-B.floor:house._roomH;
+      const need=st+.05-clear;if(need>0)rig.stoop=need/st;}} /* S1779 — stooped to the beams or the deck over them (pwStoop) */
+    INT_NPCS.push({g,def,wa:0,wt:1,walk:false,box:{x0:sp.x,x1:sp.x,z0:sp.z,z1:sp.z},crew:r,station:sp.at});out.push(r);}
+  return out;}
+function crewLine(r){try{if(r==='carpenter'){const b=shipBars();return `She's at ${Math.round(b.hull)} of ${b.hullMax}. Under way I patch her, while the chest has planks and pitch.`;}
+  if(r==='cook')return crewAt('cook')?'At six each morning I cook a fish from the chest, or a joint if there’s no fish, and put it back there.':'No galley, no fire. I can’t cook on good intentions.';
+  if(r==='navigator')return crewAt('navigator')?'With the chart table I see twice as far round her.':'Fit her a chart table and I’ll earn my bunk.';}catch(e){}return '';}
 function hbPrep(g,key){if(g.hbKey)return;g.hbKey=key;try{hbTint(g,hbGenome(g));}catch(e){console.warn('F4: no genome for',key,e);g.hbKey=null;}}
 // the human foes (S1201): which of FOE_DRESS wear the builder's body (the people, not the dead, the stone or the folk of the hills),
 // and what each wears over the builder's own rolled clothes, from its FOE_DRESS colour (c): the weapon and shield stay the game's

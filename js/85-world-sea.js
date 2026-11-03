@@ -795,6 +795,7 @@
     if(dayK){const s=new THREE.SpotLight(0xd4dcea,Math.min(6,2*dayK*(hc.x1-hc.x0)*(hc.z1-hc.z0)),6,1.0,1,1);s.position.set(hx,hy-.2,hz);s.target.position.set(hx,0,hz-.6);s.userData.daylight=true;sc_.add(s,s.target);}}
     const KA=kitRoomAir(sc_,.35);
     for(const p of B.lights){const l=new THREE.PointLight(0xffaa44,1.1*KA.lamp,6);l.position.set(rx(p.x),ry(p.y),rz(p.z));sc_.add(l);}
+    if(typeof crewHoldBodies==='function')crewHoldBodies(sc_,house); /* S1779 — her crew at their stations (32-people.js) */
     return sc_;
   }
 
