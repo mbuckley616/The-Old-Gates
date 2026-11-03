@@ -5503,9 +5503,11 @@ function aurenneOrrery(hAt, o = {}) {
     // the walk as half-metre cells: the passage's floor (within 1.6 m of its spine, where its tube is 2 m and more either side), the hall's
     // floor wherever a body 1 m over it is 0.7 m inside the hall's ring, the bridge's deck; null where it is rock, water deeper than the
     // terraces' last step, a column, a stalagmite or a fallen block. Rows of equal cells merged, then runs of equal rows.
+    // S1801 (Michael's A on #1083, "walk on any frozen water in a room") — in ice the lake is a sheet you walk on at its surface (LY), all
+    // but 2.2 m round the frozen falls' foot, where the ice is heaped; the bridge still crosses it, and its sides are a wall from the ice.
     const G = .5, NXc = 100, NZc = Math.ceil(-Z1 / G), X0c = -25, cellAt = (x, z) => {
       if (z > Z0 - 6 && z < .2 && Math.abs(x - SPX(z)) < 1.6) return Math.round(LH / .05) * .05;
-      if (z > Z0) return null; const y = walkY(x, z); if (y < LY + .1) return null; if (!inHall(x, y + 1, z, .7)) return null;
+      if (z > Z0) return null; let y = walkY(x, z); if (y < LY + .1) { if (!o.ice || Math.hypot(x - falls.x, z - falls.z) < 2.2) return null; y = LY; } if (!inHall(x, y + 1, z, .7)) return null;
       if (columns.some(([cx, cz, cr]) => Math.hypot(x - cx, z - cz) < cr * .8) || OB.some(([ox, oz, or]) => Math.hypot(x - ox, z - oz) < or * .6)) return null;
       return Math.round(y / .05) * .05; };
     const cells = [], open = new Map();

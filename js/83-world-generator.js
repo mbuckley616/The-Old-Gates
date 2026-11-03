@@ -2476,7 +2476,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   // behind its mouth on the hillside (limeCave, 82). The cave is moved into a room's frame: x from its west rock, z from its far end, the
   // floor 0.25 m under the lowest step of the shore's terraces. Its walk is the place's own grid of half-metre cells: each run you can
   // stand on is a foothold at its height and a solid up to it (so a rise of more than a step is a wall from below), each run of rock or
-  // deep water a solid to 60 m. Nothing swims in a room: the lake is a wall at the water's edge, and the natural bridge is the way over it
+  // deep water a solid to 60 m. Nothing swims in a room: the lake is a wall at the water's edge (in ice, since S1801, a floor at its surface), and the natural bridge is the way over it
   // to the far shelf. The light is the day's alone: in at the mouth along the passage, down the shaft onto the falls' pool, and the
   // flowers' own glow; a low ambient keeps the rock's shape. No one is here.
   function kitLimeCave(house){return !!(house&&house.type==='limecave'&&typeof PKIT!=='undefined'&&PKIT.places&&PKIT.places.cave);}
