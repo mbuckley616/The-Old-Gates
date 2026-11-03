@@ -21,7 +21,7 @@ check(`at ${place.coast}, a rumour of the wreck`, rumour, rumour);
 
 // go there; the wreck is built within 400 units. Wait for the port's own discovery too (its cell loaded, tickDiscovery's half-second
 // come round), or its *discovered · +50 XP* toast lands among the mast's lines below (Session 946: FLAKY twice on 15 Oct).
-// Session 1770: arriving on the port's pad autosaves (`tickTownArrival`, 88-world-ticks.js), and the write is async (the picture
+// Session 1771: arriving on the port's pad autosaves (`tickTownArrival`, 88-world-ticks.js), and the write is async (the picture
 // takes seconds on software GL), so its *💾 Autosaved.* toast landed among the mast's lines too (red on main at s1158, S1766).
 // The suite counts the saves in flight and waits until the arrival is counted and no save is still being written. Each poll
 // asks for the port's cells and runs the job queue, as g.cells does: under three boots the port was not discovered after 90 s.
