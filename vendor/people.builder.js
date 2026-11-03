@@ -4199,6 +4199,45 @@ function peopleGenome(rnd, people, g, o = {}) {
 }
 // a genome rolled from a seed, inside a people's ranges (Markfolk by default, as Session 804 rolled them)
 function rollGenome(seed, o = {}) { const rnd = seeded(seed), g = o.g ?? (rnd() < .5 ? 0 : 1); if (o.people) return peopleGenome(rnd, o.people, g, { seed: String(seed), child: !!o.child, old: !!o.old && !o.child }); const G = markGenome(rnd, g, { seed: String(seed) }); G.people = 'markman'; return G; }
+// The cast (Session 1790, backlog L2; OG-069 for the bodies and turnarounds, OG-057 for the props): the named people of Act I, each
+// one person wherever they stand, drawn from the sheet over a genome rolled from their name, so the face's sliders, the eyes and the
+// brows stay the builder's own and only what the sheet fixes is set. The canon over the sheet: Bram grey (thirty years at the forge;
+// OG-057 has him grey where OG-069 draws him dark), Niamh and Áine Gatelanders, Corwin's people never said (Michael's 11 C: he keeps
+// the people the game gives him). `dress` replaces the roll's whole wardrobe, so nothing rolled (a tartan, leg wraps) rides over it.
+// What the kit has no piece for yet is owed: Bram's rolled sleeves and hammer, Edna's clay pipe, Corwin's open coat and tankard, Niamh's lantern,
+// and Edna's and Áine's sticks: in the game the staff's grip carries the arm forward and the short cape skinned to it is dragged out
+// level with it and the tunic shows at the shoulder (Session 1790, any caped townsperson with a staff), so they stand without until it is fixed.
+const CAST = {
+  // barrel-chested, the beard short and full, grey; the leather apron with its bib over undyed linen; arms that work iron
+  Bram: { people: 'gatelander', g: 1, age: .75, muscle: .9, weight: .68, metres: 1.82, hairCol: [.7, .69, .66], hair: { style: 'short', len: .3 }, beard: .45,
+    brow: { thick: .85, arch: .3 },
+    dress: { tunic: [.74, .68, .56], trousers: [.28, .24, .2], boots: [.3, .2, .13], belt: [.36, .25, .16], apron: [.36, .25, .16], apronLeather: true, bib: true } },
+  // white hair in a bun, a dark green shawl (the short cape) over brown and madder layers, the long skirt
+  Edna: { people: 'gatelander', g: 0, age: .85, muscle: .3, weight: .5, metres: 1.6, hairCol: [.88, .87, .85], hair: { style: 'bun', len: .7 }, pose: { stoop: .45 },
+    dress: { tunic: [.42, .3, .2], skirtColor: [.45, .16, .12], boots: [.3, .2, .13], belt: [.36, .25, .16], cuffs: [.3, .36, .22],
+      cloak: [.17, .25, .16], cape: true, cloakLen: 1, brooch: [.62, .47, .22], cloakHem: [.62, .47, .22] } },
+  // lean, dark curls worn long, clean-shaven for the grin; the sheet's red-and-gold as a madder tunic under the ochre-gold waistcoat
+  // (the kit's coat is the closed winter coat, which on him read as a robe: an open coat over the waistcoat is owed), good boots
+  Corwin: { people: 'gatelander', g: 1, age: .6, muscle: .5, weight: .32, metres: 1.8, hairCol: [.16, .11, .08], hair: { style: 'short', len: .6 }, beard: 0,
+    brow: { thick: .6, arch: .55 },
+    dress: { tunic: [.5, .12, .1], trousers: [.2, .18, .16], boots: [.22, .14, .09], belt: [.22, .14, .09], waistcoat: [.62, .47, .22], waistcoatLeather: false } },
+  // dark hair, loose to the shoulders (to the waist it was 215k triangles of hair); the black hooded cloak, hood down, on a round brooch; grey wool under it
+  Niamh: { people: 'gatelander', g: 0, age: .68, muscle: .55, weight: .4, metres: 1.7, hairCol: [.1, .08, .07], hair: { style: 'loose', len: .45 },
+    dress: { tunic: [.42, .42, .4], skirtColor: [.28, .26, .2], boots: [.22, .14, .09], belt: [.22, .14, .09],
+      cloak: [.1, .1, .11], cloakLen: .9, hood: 'down', brooch: [.6, .6, .62] } },
+  // a long white braid over the shoulder, the deep red wrap with its woven border
+  Áine: { people: 'gatelander', g: 0, age: .88, muscle: .25, weight: .42, metres: 1.58, hairCol: [.9, .89, .87], hair: { style: 'plait', len: .85 }, pose: { stoop: .3 },
+    dress: { tunic: [.8, .76, .66], skirtColor: [.3, .26, .22], boots: [.3, .2, .13], belt: [.36, .25, .16],
+      cloak: [.45, .1, .08], cape: true, cloakLen: .9, brooch: [.42, .43, .45], cloakHem: [.2, .28, .45] } } };
+// a cast member's genome: their name's roll, then the sheet. `o.people` keeps a people the caller already knows (Corwin's)
+function castGenome(name, o = {}) {
+  const C = CAST[name]; if (!C) return null; const people = o.people && PEOPLES[o.people] ? o.people : C.people;
+  const G = rollGenome('cast:' + name, { people, g: C.g });
+  for (const k of ['age', 'muscle', 'weight', 'hairCol', 'beard']) if (C[k] != null) G[k] = Array.isArray(C[k]) ? C[k].slice() : C[k];
+  G.hair = { ...C.hair }; if (C.brow) G.brow = { ...C.brow }; G.pose = { ...(G.pose || {}), stoop: 0, ...(C.pose || {}) }; G.scar = null; G.marks = people === 'oldblood' ? G.marks : null;
+  G.dress = { ...Object.fromEntries(GARMENTS.map(k => [k, null])), ...DRESS_FLAGS, skirt: C.g ? 'short' : 'long', ...JSON.parse(JSON.stringify(C.dress)) };
+  G.height = heightFor(G, C.metres); G.cast = name; return G;
+}
 
-return {loadPack,lozHemY,neckBandY,scarLine,seeded,browShape,makePerson,makePersonIter,markGenome,toSaved,fromSaved,statureOf,heightFor,peopleGenome,rollGenome,HAIR_STYLES,slvX,MANTLE_CUT,BODY_SLIDERS,GARMENTS,DRESS_FLAGS,PEOPLES,MH_PACK_SHA256,get PACK(){return PACK;}};
+return {loadPack,lozHemY,neckBandY,scarLine,seeded,browShape,makePerson,makePersonIter,markGenome,toSaved,fromSaved,statureOf,heightFor,peopleGenome,rollGenome,castGenome,HAIR_STYLES,slvX,MANTLE_CUT,BODY_SLIDERS,GARMENTS,DRESS_FLAGS,PEOPLES,CAST,MH_PACK_SHA256,get PACK(){return PACK;}};
 })();

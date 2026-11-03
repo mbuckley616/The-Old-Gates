@@ -52,6 +52,7 @@ const again = await page.evaluate((keys) => keys.every(k => { const r = [...HB_R
   return JSON.stringify(HB.toSaved(HB.rollGenome(k, o))) === JSON.stringify(HB.toSaved(HB.rollGenome(k, o))); }), who.sample);
 check('a genome is the same rolled twice from its key', again);
 
+
 // S1763 (L1, OG-109's winter column): in winter, out of doors, a share of each people wear the kit's winter coat (the Aurennais the
 // burnous); indoors and out of winter, none. 40 villagers a people under a test key, rolled in winter, indoors and in autumn
 const winter = await page.evaluate(() => { const was = worldState.gameTimeAbsMinutes, peoples = ['gatelander', 'markman', 'oldblood', 'aurennais'];
@@ -192,6 +193,18 @@ const room = await page.evaluate(() => { const rs = [...HB_RIGS].filter(r => r.r
 if (PICS) await page.screenshot({ path: path.join(OUT, 'f4-inn.jpg'), timeout: SHOT_MS });
 check('in the inn\'s common room the keeper and the drinkers wear the builder\'s bodies too', room.inside && room.people >= 1 && room.built === room.people, { inn, ...room });
 check('no page errors', g.errs.length === 0, g.errs.slice(0, 3));
+// S1790 (L2, OG-069): the cast (last on this boot: the cloak walk above is sensitive to what ran before it, S1770). Bram, Edna and Corwin at Ashenmoor (and Corwin authored at a harbour) wear the builder's CAST genome, not a
+// roll of their key, and the driver follows it (Edna's town roll had made her a young man of 1.85); an Edna of another town is her own woman
+const cast = await page.evaluate(() => { const forget = () => { for (const m of [HB_GENOMES, PEOPLE_GENOMES]) for (const k of [...m.keys()]) if (/ctest|ashenmoor|Corwin/.test(k)) m.delete(k); };
+  const one = (def, key) => { const root = buildNPCMesh(def, { key }), r = [...HB_RIGS].find(x => x.root === root); HB_RIGS.delete(r); PEOPLE_RIGS.delete && PEOPLE_RIGS.delete(r);
+    return { cast: r.hbG.cast || null, fem: r.g.female, age: r.g.age, st: +(r.g.height * personScale(r.g) * SCALE.PERSON_MODEL).toFixed(2), sheet: r.hbG.g === 0,
+      hair: r.hbG.hair.style, apron: !!r.hbG.dress.apronLeather, tartan: !!r.hbG.dress.tartan, cape: !!r.hbG.dress.cape, waistcoat: !!r.hbG.dress.waistcoat }; };
+  forget(); const out = { bram: one({ name: 'Bram', role: 'Blacksmith' }, 'ashenmoor'), edna: one({ name: 'Edna', role: 'Herbalist' }, 'ashenmoor'),
+    corwin: one({ name: 'Corwin', role: '', authored: true, people: 'gatelander' }, 'ctest_port'), other: one({ name: 'Edna', role: 'Herbalist' }, 'ctest_town') }; forget(); return out; });
+check('the cast: Bram and Edna at Ashenmoor wear the sheet (the leather apron; the green cape and the bun), the driver at the sheet\'s sex, age and stature',
+  cast.bram.cast === 'Bram' && cast.bram.apron && !cast.bram.tartan && cast.bram.st === 1.82 && !cast.bram.fem &&
+  cast.edna.cast === 'Edna' && cast.edna.fem && cast.edna.age === 'elder' && cast.edna.cape && cast.edna.hair === 'bun' && cast.edna.st === 1.6, cast);
+check('Corwin authored at a harbour is the same man in his madder and gold; an Edna of another town keeps her own roll', cast.corwin.cast === 'Corwin' && cast.corwin.waistcoat && cast.other.cast === null, cast);
 await g.close();
 
 // a second boot: the same people, the same bodies
