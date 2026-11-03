@@ -216,5 +216,48 @@ for (const x of d2.by) { const nm = `borrowed (${x.pp}, ${x.why}, ${x.ch})`; if 
   if (x.ch === 'month') check(`${nm}: a month on, the giver's greeting says it came back`, typeof x.back === 'string' && x.back.endsWith(' ' + x.wback), { back: x.back, want: x.wback }); }
 check('borrowed: the records are saved', d2.saved >= 5, d2.saved);
 
+// S1776 — errand 6, The Watch: a night by the giver's fold on the clock, from 22:00 to the bell at 05:00; one night in two two of the
+// place's cull beast come at 02:00 and must be killed; out of the circle an hour, or the clock jumped (sleep), and it lapses
+const d6 = await page.evaluate(() => {
+  const site = siteAnywhere('dunmore'); worldState.quests = []; worldState.met = {}; const T0 = 130 * 1440 + 600; worldState.gameTimeAbsMinutes = T0;
+  const day0 = Math.floor(T0 / 1440) * 1440, start = day0 + 1320;
+  const mk = (i, pp) => { const d = makeDef(site, site.reg || 'irish', seededRng('ertest6', i), 'Villager', 'Seán', {}); d._twin = 'W' + i; if (pp) d.people = pp; return d; };
+  const find = (pp, came) => { for (let i = 0; i < 8000; i++) { const d = mk(pp + i, pp); const e = errandFor(d, site); if (!e || e.sub !== 'watch') continue;
+    if (came == null || (seededRng('errand-watch-came', erPre(d, site) + e.idx + ':' + start)() < .5) === came) return d; } return null; };
+  let n = 0, bad = 0; for (let i = 0; i < 1500; i++) { const d = mk('t' + i, 'gatelander'); const e = errandFor(d, site); if (e && e.sub === 'watch') { n++; if (e.fold !== (ER_WATCH_AT[d.bio.trade] || ER_WATCH_AT.farmer).fold || !ER_WATCH_AT[d.bio.trade] && !ER_WATCH_KINDS.has(site.kind)) bad++; } }
+  const step = (q, to, at) => { while (worldState.gameTimeAbsMinutes < to) { worldState.gameTimeAbsMinutes = Math.min(to, worldState.gameTimeAbsMinutes + 20); if (at) { px = at.x; pz = at.z; } qTick(); } };
+  const msgs = []; const sm = window.showMsg; window.showMsg = (t, c) => { msgs.push(t); };
+  const plan = [['gatelander', true, 'kept'], ['markman', false, 'kept'], ['aurennais', null, 'left'], ['oldblood', null, 'slept']];
+  const by = [];
+  try { for (const [pp, came, how] of plan) { worldState.gameTimeAbsMinutes = T0; msgs.length = 0; const A = find(pp, came); if (!A) { by.push({ pp, how, missing: true }); continue; } const E = errandFor(A, site);
+    A.greeting[0]; const greet = A.greeting[0]; const ask = A.topics.find(t => /^About you/.test(t.label)).follow.find(t => t.label === 'What’s coming at night?');
+    const yes = ask.follow[0].fn(); const q = qActive().find(x => x.giver === A.name && x.sub === 'watch'); const d = q.data;
+    const notYet = A.topics.find(t => t.label === 'About that errand.').fn(); const at = { x: d.x, z: d.z };
+    step(q, start - 30, at); const before = msgs.length;
+    let foes = 0, keyed = false;
+    if (how === 'kept') { step(q, start + 250, at); const F = ER_WATCH_FOES[q.id] || []; foes = F.length; keyed = F.every((e, i) => e.id === q.id + ':foe:' + i && e.name === d.foe);
+      step(q, start + 430, at); const early = d.done; F.forEach(e => { e.dead = true; }); step(q, start + 450, at);
+      const label = d.came ? `I sat the night. ${d.beasts}.` : 'I sat the night. Nothing came.'; const top = A.topics.find(t => t.label === label);
+      const g1 = gold, f1 = favor(site), b1 = bagCount(b => b.name === 'Loaf of Bread'); const done = top && top.fn();
+      by.push({ pp, how, came: d.came, want: came, greet, hint: ER_WATCH.hint[pp](E), offer: ask.response, wantOffer: ER_WATCH.offer[pp](E), yes, ys: ER_SHARED[pp].yes, title: q.title, notYet, ny: ER_SHARED[pp].notYet,
+        msgs: msgs.slice(before), wmsgs: [ER_WATCH.settle(d), ...(d.came ? [ER_WATCH.moves(d)] : []), ER_WATCH.bell], foes, keyed, early, label, done, wdone: (d.came ? ER_WATCH.came : ER_WATCH.none)[pp](d),
+        paid: gold - g1, wpaid: questGold(q.reward), fav: favor(site) - f1, bread: bagCount(b => b.name === 'Loaf of Bread') - b1, turned: q.turnedIn, left: Object.keys(ER_WATCH_FOES).length }); continue; }
+    if (how === 'left') { step(q, start + 60, at); px = d.x + 200; pz = d.z; step(q, start + 200, null); }
+    else { step(q, start + 30, at); worldState.gameTimeAbsMinutes = start + 240; qTick(); }
+    const g1 = gold; const top = A.topics.find(t => t.label === 'About that errand.'); const done = top && top.fn(); const again = !!A.topics.find(t => t.label === 'About that errand.');
+    by.push({ pp, how, lapsed: q.lapsed, done, wdone: ER_WATCH.lapse[pp](d), paid: gold - g1, again, cold: A.greeting[0], wcold: ER_FEVER.cold[pp], msgs: msgs.slice(before), wleft: ER_WATCH.left(d), offer: ask.response, wantOffer: ER_WATCH.offer[pp](E) }); } }
+  finally { window.showMsg = sm; }
+  return { n, bad, by, saved: JSON.parse(ssStringify(worldState.quests)).filter(x => x.sub === 'watch').length };
+});
+console.log(JSON.stringify(d6).slice(0, 3000));
+check('watch: some givers ask it, each by their trade\'s fold', d6.n > 0 && d6.bad === 0, { n: d6.n, bad: d6.bad });
+for (const x of d6.by) { const nm = `watch (${x.pp}, ${x.how})`; if (x.missing) { check(`${nm}: a giver asks`, false); continue; }
+  if (x.how !== 'kept') { check(`${nm}: the offer word for word; lapsed, the line once in the giver's words, nothing paid, the colder greeting`, x.offer === x.wantOffer && x.lapsed && x.done === x.wdone && x.paid === 0 && !x.again && x.cold === x.wcold && x.msgs.includes(x.wleft), x); continue; }
+  check(`${nm}: the hint after First Words, the offer word for word, taken and titled, not yet`, x.greet.endsWith(' ' + x.hint) && x.offer === x.wantOffer && x.yes === x.ys && /^A night at the /.test(x.title) && x.notYet === x.ny, { greet: x.greet, offer: x.offer, title: x.title });
+  check(`${nm}: the night's lines in order (${x.came ? 'they came' : 'nothing came'})`, x.came === x.want && JSON.stringify(x.msgs) === JSON.stringify(x.wmsgs), { msgs: x.msgs, want: x.wmsgs });
+  if (x.came) check(`${nm}: two beasts at two, keyed by the errand; the bell waits until they are dead`, x.foes === 2 && x.keyed && !x.early, { foes: x.foes, keyed: x.keyed, early: x.early });
+  check(`${nm}: turned in (${x.label}) in the giver's words, paid, a point of favour${x.pp === 'gatelander' ? ', breakfast' : ''}`, x.turned && x.done === x.wdone && x.paid === x.wpaid && x.fav === 1 && x.bread === (x.pp === 'gatelander' ? 1 : 0) && x.left === 0, { done: x.done, paid: x.paid, fav: x.fav, bread: x.bread }); }
+check('watch: the records are saved, no live beast in them', d6.saved >= 4, d6.saved);
+
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
