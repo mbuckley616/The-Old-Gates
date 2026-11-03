@@ -1122,8 +1122,12 @@ function buildCloak(G, body, byName, rnd) {
   // an elbow at the side: thrown back to behind the shoulder, the cloak hung from the left alone, a board beside her. It now starts just
   // forward of the right side (−1.9 rad), over the shoulder and the upper arm, so it hangs round her and the hand comes out in front of
   // its edge. A basket still throws it back: hung over the arm, the cloak pushed the arm 0.6 rad out to clear the basket's sides
-  const thrown = !!(D.spear || D.crossbow || D.staff || D.basket) && !cape, low = thrown && !D.spear && !D.crossbow && !D.basket;
-  const th0 = low ? -Math.PI / 2 - .33 : thrown ? -Math.PI / 2 + .35 : -Math.PI + open, th1 = Math.PI - open, cols = [], tops = [];
+  // A shoulder cape over a staff (Session 1798, section I): draped over the grip's forearm, the cape's right side came out level with it
+  // as a flat slab 38 cm in front of the neck. It opens on the right as the full cloak does, but from the side itself (the cloak's start, just
+  // forward of it, caught the forearm in a point at the hem), so the shoulder and upper arm stay under it and the forearm comes out in front
+  const capeStaff = cape && !!D.staff && !D.spear && !D.crossbow;
+  const thrown = !!(D.spear || D.crossbow || D.staff || D.basket) && (!cape || capeStaff), low = thrown && !D.spear && !D.crossbow && !D.basket;
+  const th0 = capeStaff ? -Math.PI / 2 - .15 : low ? -Math.PI / 2 - .33 : thrown ? -Math.PI / 2 + .35 : -Math.PI + open, th1 = Math.PI - open, cols = [], tops = [];
   for (let k = 0; k < K; k++) { const th = th0 + (k / (K - 1)) * (th1 - th0), dir = new THREE.Vector3(Math.sin(th), 0, -Math.cos(th));
     const e = S.extreme(neck, dir.clone().add(new THREE.Vector3(0, -.42, 0)).normalize(), p => p.y > neckY - .16 && p.y < neckY + .03);
     const start = e.p.clone().addScaledVector(e.n, clearAt(e.p) + .006); tops.push({ start, dir, n: e.n });
@@ -3905,9 +3909,9 @@ export function rollGenome(seed, o = {}) { const rnd = seeded(seed), g = o.g ?? 
 // brows stay the builder's own and only what the sheet fixes is set. The canon over the sheet: Bram grey (thirty years at the forge;
 // OG-057 has him grey where OG-069 draws him dark), Niamh and Áine Gatelanders, Corwin's people never said (Michael's 11 C: he keeps
 // the people the game gives him). `dress` replaces the roll's whole wardrobe, so nothing rolled (a tartan, leg wraps) rides over it.
-// What the kit has no piece for yet is owed: Bram's rolled sleeves and hammer, Edna's clay pipe, Corwin's open coat and tankard, Niamh's lantern,
-// and Edna's and Áine's sticks: in the game the staff's grip carries the arm forward and the short cape skinned to it is dragged out
-// level with it and the tunic shows at the shoulder (Session 1792, any caped townsperson with a staff), so they stand without until it is fixed.
+// What the kit has no piece for yet is owed: Bram's rolled sleeves and hammer, Edna's clay pipe, Corwin's open coat and tankard, Niamh's lantern.
+// Edna's and Áine's sticks (OG-069), held back in Session 1792 while a short cape was dragged out over the staff's forearm, are theirs again
+// since Session 1798 (the cape opens on the staff's side): hazel, the Gatelanders' make.
 export const CAST = {
   // barrel-chested, the beard short and full, grey; the leather apron with its bib over undyed linen; arms that work iron
   Bram: { people: 'gatelander', g: 1, age: .75, muscle: .9, weight: .68, metres: 1.82, hairCol: [.7, .69, .66], hair: { style: 'short', len: .3 }, beard: .45,
@@ -3916,7 +3920,7 @@ export const CAST = {
   // white hair in a bun, a dark green shawl (the short cape) over brown and madder layers, the long skirt
   Edna: { people: 'gatelander', g: 0, age: .85, muscle: .3, weight: .5, metres: 1.6, hairCol: [.88, .87, .85], hair: { style: 'bun', len: .7 }, pose: { stoop: .45 },
     dress: { tunic: [.42, .3, .2], skirtColor: [.45, .16, .12], boots: [.3, .2, .13], belt: [.36, .25, .16], cuffs: [.3, .36, .22],
-      cloak: [.17, .25, .16], cape: true, cloakLen: 1, brooch: [.62, .47, .22], cloakHem: [.62, .47, .22] } },
+      cloak: [.17, .25, .16], cape: true, cloakLen: 1, brooch: [.62, .47, .22], cloakHem: [.62, .47, .22], staff: [.36, .26, .16], staffMake: 'hazel' } },
   // lean, dark curls worn long, clean-shaven for the grin; the sheet's red-and-gold as a madder tunic under the ochre-gold waistcoat
   // (the kit's coat is the closed winter coat, which on him read as a robe: an open coat over the waistcoat is owed), good boots
   Corwin: { people: 'gatelander', g: 1, age: .6, muscle: .5, weight: .32, metres: 1.8, hairCol: [.16, .11, .08], hair: { style: 'short', len: .6 }, beard: 0,
@@ -3929,7 +3933,7 @@ export const CAST = {
   // a long white braid over the shoulder, the deep red wrap with its woven border
   Áine: { people: 'gatelander', g: 0, age: .88, muscle: .25, weight: .42, metres: 1.58, hairCol: [.9, .89, .87], hair: { style: 'plait', len: .85 }, pose: { stoop: .3 },
     dress: { tunic: [.8, .76, .66], skirtColor: [.3, .26, .22], boots: [.3, .2, .13], belt: [.36, .25, .16],
-      cloak: [.45, .1, .08], cape: true, cloakLen: .9, brooch: [.42, .43, .45], cloakHem: [.2, .28, .45] } } };
+      cloak: [.45, .1, .08], cape: true, cloakLen: .9, brooch: [.42, .43, .45], cloakHem: [.2, .28, .45], staff: [.45, .33, .2], staffMake: 'hazel' } } };
 // a cast member's genome: their name's roll, then the sheet. `o.people` keeps a people the caller already knows (Corwin's)
 export function castGenome(name, o = {}) {
   const C = CAST[name]; if (!C) return null; const people = o.people && PEOPLES[o.people] ? o.people : C.people;

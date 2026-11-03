@@ -1541,13 +1541,17 @@ function crewHoldSpot(house,B,a,taken,far){const X=house.intW/2,z1=B.hold.z1,x0=
   for(const [x,z] of c){if(x<.3||x>house.intW-.3||z<.3||z>house.intD-.3)continue;if(intSolidAt(x,z,.28,0))continue;
     if(Math.hypot(x-house._arriveX,z-house._arriveZ)<far||taken.some(t=>Math.hypot(t[0]-x,t[1]-z)<.7))continue;return {x,z,ry:Math.atan2(cx-x,cz-z)};}
   return null;}
+// S1798 — a hand's people and nation: the port's where they were met (the systems builder's crewPeople, S1791, from ship.met), else, for a
+// hand from a save made before it, a stream keyed by the role and her name as in S1779
+function crewPeopleOf(r,st){let P=null;try{if(typeof crewPeople==='function')P=crewPeople(r);}catch(e){P=null;}
+  return Array.isArray(P)&&P[0]&&P[1]?P:CREW_PEOPLE[pHash(r+'|'+((st&&st.name)||''))%3];}
 function crewHoldBodies(sc_,house){const st=typeof worldState!=='undefined'&&worldState.ship,B=house&&house._base;const out=[];
   if(!B||!st||st.sunk||!Array.isArray(st.crew)||typeof INT_NPCS==='undefined')return out;const taken=[],spot={};
   const find=(r,names)=>{for(const n of names)for(const far of [2.3,1.2])for(const q of B.items.filter(q=>q.name===n)){const sp=crewHoldSpot(house,B,q.box,taken,far);if(sp){taken.push([sp.x,sp.z]);sp.at=n;return sp;}}return null;};
   for(const r of st.crew)if(CREW_BODY[r])spot[r]=find(r,CREW_BODY[r].at.slice(0,1)); /* each hand's own station first, then the fallbacks */
   for(const r of st.crew)if(CREW_BODY[r]&&!spot[r])spot[r]=find(r,CREW_BODY[r].at.slice(1));
   for(const r of st.crew){const C=CREW_BODY[r],sp=spot[r];if(!C||!sp)continue;
-    const P=CREW_PEOPLE[pHash(r+'|'+(st.name||''))%3],nm=typeof crewName==='function'?crewName(r,1):r;
+    const P=crewPeopleOf(r,st),nm=typeof crewName==='function'?crewName(r,1):r;
     const def={name:nm,role:C.role,people:P[0],ico:r==='cook'?'\u{1F372}':r==='navigator'?'\u{1F9ED}':'\u{1F528}',greeting:[crewLine(r)],topics:[{label:'Farewell.',bye:true}]};
     const g=buildNPCMesh(def,{nation:P[1],key:'crew'});g.position.set(sp.x,0,sp.z);g.rotation.y=sp.ry;sc_.add(g);
     {const rig=g.userData.rig,G=rig&&rig.g;if(G){const st=G.height*personScale(G)*SCALE.PERSON_MODEL,kz=B.hold.z1-sp.z,clear=Array.isArray(B.beams)&&B.beams.some(v=>Math.abs(v-kz)<.25)?B.beamBottom-B.floor:house._roomH;
@@ -1794,7 +1798,7 @@ function hbGive(rig){const H=rig.hb;for(const h of H.held)if(h.o.parent===H.root
 // under one thrown back off the right shoulder (a spear, a crossbow, a staff, a basket). A blow, a ragdoll and a sleeper are left alone
 // (S1435: your own body's arms are held side by side, each by rig.tpHold.L/.R, which tpPose sets while that arm is on the gait's swing)
 const HB_CLOAK_HOLD=1;
-function hbCloakArms(D,map){if(!D||!D.cloak)return null;const thrown=!D.cape&&!!(D.spear||D.crossbow||D.staff||D.basket),sides=thrown?/L$/:/[LR]$/;
+function hbCloakArms(D,map){if(!D||!D.cloak)return null;const thrown=!!(D.spear||D.crossbow||D.staff||D.basket)&&(!D.cape||!!D.staff&&!D.spear&&!D.crossbow),sides=thrown?/L$/:/[LR]$/; /* S1798: a cape over a staff opens on the staff's side, as people.js's buildCloak */
   const i=map.map(([j],k)=>/^(sh|el|wr)[LR]$/.test(j)&&sides.test(j)?k:-1).filter(k=>k>=0);return i.length?new Set(i):null;}
 function hbHoldF(rig){const H=rig.hb,w=rig.w;if(!H.hold||!w||rig.limp||rig.sleep)return 0;if(rig.tpHold)return HB_CLOAK_HOLD;const e=rig.e;
   if(e&&((e._wind||0)>0||(e._lunge!=null&&e._lunge>0)||(e.atkAnim||0)>0))return 0;return HB_CLOAK_HOLD*Math.min(1,(w.walk||0)+(w.run||0));}

@@ -205,6 +205,13 @@ check('the cast: Bram and Edna at Ashenmoor wear the sheet (the leather apron; t
   cast.bram.cast === 'Bram' && cast.bram.apron && !cast.bram.tartan && cast.bram.st === 1.82 && !cast.bram.fem &&
   cast.edna.cast === 'Edna' && cast.edna.fem && cast.edna.age === 'elder' && cast.edna.cape && cast.edna.hair === 'bun' && cast.edna.st === 1.6, cast);
 check('Corwin authored at a harbour is the same man in his madder and gold; an Edna of another town keeps her own roll', cast.corwin.cast === 'Corwin' && cast.corwin.waistcoat && cast.other.cast === null, cast);
+// S1798 (section I): Edna and Áine carry their sticks again, and the short cape opens on the staff's side instead of being draped over its
+// forearm (S1792: it came out level with the arm as a slab 38 cm in front of the neck; without the staff 23 cm)
+const capes = await page.evaluate(() => { const out = {}; for (const nm of ['Edna', 'Áine']) { const G = HB.castGenome(nm, {}), P = HB.makePerson(G, { hoodStats: false });
+    P.root.updateMatrixWorld(true); const cl = P.root.getObjectByName('cloak'), pa = cl.geometry.attributes.position, v = new THREE.Vector3(), n = new THREE.Vector3(); P.byName['neck01'].getWorldPosition(n);
+    let fwd = -1; for (let i = 0; i < pa.count; i++) fwd = Math.max(fwd, v.fromBufferAttribute(pa, i).applyMatrix4(cl.matrixWorld).z - n.z);
+    out[nm] = { staff: !!P.root.getObjectByName('staff'), fwd: +fwd.toFixed(3), out: P.cloak.through.out, under: P.cloak.under }; } return out; });
+check('Edna and Áine carry their sticks, and the cape stays on the shoulder: under 30 cm in front of the neck, nothing through it', Object.values(capes).every(c => c.staff && c.fwd < .3 && c.out === 0 && c.under === 0), capes);
 await g.close();
 
 // a second boot: the same people, the same bodies
