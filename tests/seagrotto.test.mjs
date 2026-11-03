@@ -4,6 +4,8 @@
 // (PKIT.places.grotto, buildKitGrotto), its arch on the sea. The suite counts the grottoes, stands at the nearest mouth (the outcrop solid,
 // its throat open, the prompt), goes in, walks the prototype's path down the stair, over the landing to the spring and down the quay to
 // the water stairs with no wall in the way, finds the sea a wall off the quay and the rock beside the stair, and comes out at the mouth.
+// Session 1788: the way in from the sea. The grotto's sea arch stands in the water down its line, a swimmer at it is offered the way in,
+// comes up on the water stairs' lowest dry tread, and is offered the way out there, back into the water beyond the arch.
 import { boot, check } from './lib/game.mjs';
 const g = await boot({ look: 'new' }); const { page } = g; await g.intoWorld();
 await page.evaluate(() => REN.setSize(320, 180, false));
@@ -45,4 +47,22 @@ const back = await page.evaluate(() => { const T = currentHouse._limeCave, Bd = 
 const outside = await page.waitForFunction(() => !isInterior(), null, { timeout: 30000 }).then(() => true, () => false); await page.waitForTimeout(1500);
 const o = await page.evaluate(id => { const C = [...CELLS.values()].find(c => c._grotto && c._grotto.id === id)._grotto; return { d: +Math.hypot(px - C.out.x, pz - C.out.z).toFixed(2), dy: +(jumpY - activeTerrainH(px, pz)).toFixed(2), solid: solidAt(px, pz) }; }, k.near.id);
 check(`out at the mouth, on the ground (${o.d} m from the spot)`, /up the stair/.test(back) && outside && o.d < .5 && Math.abs(o.dy) < .3 && !o.solid, o);
+const a = await page.evaluate(id => { const C = [...CELLS.values()].find(c => c._grotto && c._grotto.id === id)._grotto, A = C.arch; if (!A) return { none: true };
+  const sx = -Math.sin(C.ry), sz = -Math.cos(C.ry), W = (along, across) => [A.x + sx * along + sz * across, A.z + sz * along - sx * across];
+  let mesh = null; sc.traverse(o => { if (o.name === 'grotto sea arch') mesh = o; });
+  const r = { u: A.u, tris: A.tris, draws: A.draws, mesh: !!mesh, floor: +(worldH(A.x, A.z) - SEA_Y).toFixed(2), throat: solidAt(...W(-1, 0)), sides: [solidAt(...W(-2, -3.6)), solidAt(...W(-2, 3.6))] };
+  [px, pz] = W(9, 0); jumpY = SWIM_Y; r.far = limeCavePrompt(); [px, pz] = W(1.5, 0); jumpY = SWIM_Y; r.swim = isSwimming(); r.at = limeCavePrompt(); if (r.at) interact(); return r; }, k.near.id);
+console.log(JSON.stringify(a));
+check(`the sea arch ${a.u} m down the grotto's line (${a.tris} triangles in ${a.draws} draws), its throat open and its sides solid, offers the way in to a swimmer at it and not 9 m off`, !a.none && a.mesh && a.u >= 50 && a.tris < 12000 && a.floor < -1.6 && !a.throat && a.sides.every(v => v) && a.swim && !a.far && /swim in under the arch/.test(a.at), a);
+check('in from the sea', await inside());
+await page.waitForTimeout(1500);
+const s = await page.evaluate(() => { const T = currentHouse._limeCave, Bd = T.bounds, FY = T.low - .25, x = px + Bd.x0, z = pz + Bd.z0, y = jumpY + FY, w = currentHouse._seaArrive, ws = T.waterStairs;
+  const onWS = ws.some(t => x > t.x0 && x < t.x1 && z > t.z0 - .3 && z < t.z1 + .3);
+  return { at: [+x.toFixed(2), +z.toFixed(2), +y.toFixed(2)], tread: w, on: !!w && onWS && Math.abs(x - w.x) < .05 && Math.abs(y - w.y) < .05 && y > 0 && y < .7, clear: !intSolidAt(px, pz, .3, jumpY), prompt: limeCavePrompt() }; });
+console.log(JSON.stringify(s));
+check(`came up on the water stairs (a tread at ${s.tread && s.tread.y} m), clear, offered the way out`, s.on && s.clear && /swim out under the arch/.test(s.prompt), s);
+await page.evaluate(() => interact());
+const outsea = await page.waitForFunction(() => !isInterior(), null, { timeout: 30000 }).then(() => true, () => false); await page.waitForTimeout(1500);
+const q = await page.evaluate(id => { const C = [...CELLS.values()].find(c => c._grotto && c._grotto.id === id)._grotto; return { d: +Math.hypot(px - C.arch.out.x, pz - C.arch.out.z).toFixed(2), swim: isSwimming(), solid: solidAt(px, pz) }; }, k.near.id);
+check(`out under the arch, swimming in the sea beyond it (${q.d} m from the spot)`, outsea && q.d < .5 && q.swim && !q.solid, q);
 await g.close();

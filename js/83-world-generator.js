@@ -2540,12 +2540,16 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   // to it where you stand and a solid to 60 m over rock and sea; the spring's basin and benches and the bollards boxes 1.2 m up. Nothing
   // swims in a room: the water is a wall at the quay's edge, so the beach and the arch wait on the sea way in. The light: the day off the
   // sea through the arch by the hour, the sea's own glow from under it in two blue lights, and what comes down the stair from its head.
+  function QYG(T){return T.quay.y-.05;} /* S1788 — below the quay: the water stairs' treads */
   function buildKitGrotto(house){
     const T=PKIT.places.grotto({key:house.siteId}),Bd=T.bounds,FY=+(T.low-.25).toFixed(2),W=Bd.x1-Bd.x0,D=Bd.z1-Bd.z0;
     const rx=x=>x-Bd.x0,rz=z=>z-Bd.z0,ry=y=>y-FY;
     house._counterFront=null;house.intW=W;house.intD=D;house._roomH=+(T.chamber.h-FY+6).toFixed(2);house._exitD=.01;house._exitW=.01;house._exitX=-99;house._exitZ=-99;house._exitText=true;house._limeCave=T;house._seaCave=true;
     const A=T.arrive;house._arriveX=+rx(A[0]).toFixed(3);house._arriveZ=+rz(A[2]).toFixed(3);house._arriveYaw=A[3];
     if(!window._pendingPos)window._pendingPos={x:house._arriveX,z:house._arriveZ,yaw:A[3],jumpY:ry(A[1])}; /* goToInterior stands you at the floor; the stair's head is 6 m over it */
+    if(house._bySea){house._bySea=false;const ws=T.waterStairs,wx0=Math.min(...ws.map(t=>t.x0)),wx1=Math.max(...ws.map(t=>t.x1)),wz0=Math.min(...ws.map(t=>t.z0)),wz1=Math.max(...ws.map(t=>t.z1));
+      const rows=T.cells.filter(c=>c.y!=null&&c.y<QYG(T)&&c.x0<wx1&&c.x1>wx0&&c.z0<wz1&&c.z1>wz0).sort((a,b)=>a.y-b.y),w=rows.find(c=>c.y>rows[0].y+.05)||rows[0]; /* the second tread up: the lowest's seaward edge is the sea, a wall a body's breadth off */
+      if(w){house._seaArrive={x:+((Math.max(w.x0,wx0)+Math.min(w.x1,wx1))/2).toFixed(3),z:+((w.z0+w.z1)/2).toFixed(3),y:w.y};window._pendingPos={x:+rx(house._seaArrive.x).toFixed(3),z:+rz(house._seaArrive.z).toFixed(3),yaw:Math.PI,jumpY:+ry(w.y).toFixed(2)};}} /* S1788 — swum in under the arch: up out of the water onto the water stairs, facing up them */
     const sc_=new THREE.Scene();interiorScene=sc_;landRoomPost(sc_);sc_.background=new THREE.Color(0x05080c);sc_.fog=new THREE.Fog(0x05080c,30,110);
     intNPCMesh=null;intNPCPos={x:-99,z:-99};intBedPos=null;intStashPos=null;
     const SOL=[];INT_SOL=SOL;FOOTHOLDS=[];INT_BEDS=[];INT_DOORS=[];INT_DOORS.house=house.id;INT_CHAIR=null;INT_NPCS=[];HATCH.active=false;HATCH.roof=false;INT_LOOT=null;INT_BOX=null;INT_SHELF=null;
@@ -2566,18 +2570,25 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   // (S1773: the sea caves' too, c._cove beside c._cave)
   function limeCaveAt(){
     if(isInterior()){const h=currentHouse;if(!h||(h.type!=='limecave'&&h.type!=='seacave')||!h._limeCave)return null;const T=h._limeCave,Bd=T.bounds,x=px+Bd.x0,z=pz+Bd.z0;
+      if(h.grotto&&T.waterStairs){const w=T.waterStairs.filter(t=>t.y>0&&t.y<.7);if(w.some(t=>x>t.x0-.3&&x<t.x1+.3&&z>t.z0-.3&&z<t.z1+.3))return {seaOut:true};} /* S1788 — the water stairs' foot: the sea way out */
       return z>T.mouth.z-3&&Math.abs(x-T.mouth.x)<3?{up:true}:null;}
     if(activeZoneId!=='world'||typeof CELLS==='undefined')return null;const [ci,cj]=cellOf(px,pz);
     for(let j=cj-1;j<=cj+1;j++)for(let i=ci-1;i<=ci+1;i++){const c=CELLS.get(cellKey(i,j));if(!c)continue;for(const C of [c._cave,c._cove,c._grotto]){if(!C||!C.house||Math.abs(px-C.x)>12||Math.abs(pz-C.z)>12)continue;
       const co=Math.cos(C.ry),s_=Math.sin(C.ry),dx=px-C.x,dz=pz-C.z,u=dx*co-dz*s_,v=dx*s_+dz*co;
-      if(Math.abs(u)<C.mouth.w/2+.2&&v<1.8&&v>-3.4&&Math.abs(jumpY-C.y)<1.5)return {down:true,C};}}
+      if(Math.abs(u)<C.mouth.w/2+.2&&v<1.8&&v>-3.4&&Math.abs(jumpY-C.y)<1.5)return {down:true,C};}
+      {const C=c._grotto;if(C&&C.house&&C.arch&&Math.abs(px-C.arch.x)<10&&Math.abs(pz-C.arch.z)<10&&typeof isSwimming==='function'&&isSwimming()){ /* S1788 — swimming at the grotto's sea arch */
+        const sx=-Math.sin(C.ry),sz=-Math.cos(C.ry),dx=px-C.arch.x,dz=pz-C.arch.z,along=dx*sx+dz*sz,across=dx*sz-dz*sx;
+        if(Math.abs(across)<C.arch.w/2+.5&&along<3.5&&along>-4.5)return {sea:true,C};}}}
     return null;}
   function limeCavePrompt(){const t=limeCaveAt();if(!t)return null;const gr=t.up?!!(currentHouse&&currentHouse.grotto):!!(t.C&&t.C.house&&t.C.house.grotto); /* S1787 — the grotto's stair */
+    if(t.sea)return "Press 'E' to swim in under the arch";if(t.seaOut)return "Press 'E' to swim out under the arch"; /* S1788 */
     return gr?(t.up?"Press 'E' to go up the stair":"Press 'E' to go down the stair"):t.up?"Press 'E' to go out of the cave":"Press 'E' to go into the cave";}
   function limeCaveUse(){const t=limeCaveAt();if(!t)return false;
     if(t.down){goToInterior(t.C.house);return true;}
+    if(t.sea){t.C.house._bySea=true;goToInterior(t.C.house);return true;} /* S1788 — in from the sea */
     const h=currentHouse,[ci,cj]=h&&h.siteId?h.siteId.replace(/^(cave|cove|grotto)_/,'').split('_').map(Number):[NaN,NaN],c=CELLS.get(cellKey(ci,cj)),C=c&&(h.grotto?c._grotto:h.type==='seacave'?c._cove:c._cave); /* S1787 — and the grotto's */
-    if(C&&C.out)window._pendingWorldPos={x:C.out.x,z:C.out.z,yaw:C.out.yaw,jumpY:worldH(C.out.x,C.out.z)};
+    if(t.seaOut&&C&&C.arch){const o=C.arch.out;window._pendingWorldPos={x:o.x,z:o.z,yaw:o.yaw,jumpY:SWIM_Y};} /* S1788 — out under the arch, in the water beyond it, facing the sea */
+    else if(C&&C.out)window._pendingWorldPos={x:C.out.x,z:C.out.z,yaw:C.out.yaw,jumpY:worldH(C.out.x,C.out.z)};
     exitInterior();return true;}
   // S1288 (card F9, Michael's A on #321 and #588) — on the new look a Markish inn standing as the kit's hall (lot.kit.alehall, S1288's
   // planning) is the Mark's alehall inside (PKIT.mk.alehall, rooms.js's Session 894, as drawn: 10 by 18 m): the long hearth under the

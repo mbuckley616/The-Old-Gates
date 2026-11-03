@@ -546,9 +546,26 @@
     M.group.position.set(C.x,y,C.z);M.group.rotation.y=C.ry;M.group.name='grotto mouth';sc.add(M.group);
     for(const b of M.sol)STATIC_SOL.push({cx:C.x+b.x*co+b.z*s_,cz:C.z-b.x*s_+b.z*co,rx:b.w/2,rz:b.d/2,c:Math.cos(C.ry+b.ry),s:Math.sin(C.ry+b.ry),h:b.h,cave:true});
     C.y=y;C.tris=M.tris;C.draws=M.draws;C.mouth=M.mouth;C.out={x:C.x+s_*2.2,z:C.z+co*2.2,yaw:C.ry+Math.PI};
+    try{seaGrottoArch(C,M.group,y);}catch(e){console.warn('grotto arch',e);} /* S1788 — the way in from the sea */
     C.house={id:`g_${C.id}`,type:'seacave',grotto:true,byAim:true,siteId:C.id,name:C.name,keeper:'',reg:c.reg,style:'aurenne',w:48,d:84,two:false,doorX:C.x,doorZ:C.z,doorFace:'S',exitX:C.out.x,exitZ:C.out.z,exitYaw:C.out.yaw};
     if(ZONES.world&&ZONES.world.houses&&!ZONES.world.houses.some(h=>h.id===C.house.id))ZONES.world.houses.push(C.house);
     return M.group;}
+  // S1788 (card F8; Michael's A on #339, "both ways, as drawn") — the grotto's way in from the sea: its sea arch where the grotto's line
+  // meets the sea. Down the line from the stair's head (seaward, the way the grotto runs) the first point 50 to 140 m out where the sea
+  // floor is GROTTO_ARCH_D under the surface: there the cave's outcrop in the same pale rock (PKIT.places.cavemouth, no frame) stands
+  // with its face to the sea, its throat's floor that far down, so the mouth (4.4 m wide, 3.6 high) clears the water by 1.9 m: a
+  // swimmer's way, not a hull's. A child of the mouth's group (it goes when the cell does); its solids beside the mouth's.
+  // -> C.arch {x, z, u, w, out {x, z, yaw}} or none, when the sea floor never falls that far on the line
+  const GROTTO_ARCH_D=1.7;
+  function seaGrottoArch(C,G,y){
+    const sx=-Math.sin(C.ry),sz=-Math.cos(C.ry);let u=0;
+    for(let t=50;t<=140;t+=.5)if(worldH(C.x+sx*t,C.z+sz*t)<SEA_Y-GROTTO_ARCH_D){u=t;break;}
+    if(!u)return;
+    const A=PKIT.places.cavemouth({key:C.id+':arch',rock:'aurenne'}),ay=SEA_Y-GROTTO_ARCH_D;
+    A.group.position.set(0,ay-y,-u);A.group.rotation.y=Math.PI;A.group.name='grotto sea arch';G.add(A.group);
+    const ax=C.x+sx*u,az=C.z+sz*u,ry=C.ry+Math.PI,co=Math.cos(ry),s_=Math.sin(ry);
+    for(const b of A.sol)STATIC_SOL.push({cx:ax+b.x*co+b.z*s_,cz:az-b.x*s_+b.z*co,rx:b.w/2,rz:b.d/2,c:Math.cos(ry+b.ry),s:Math.sin(ry+b.ry),h:b.h,cave:true});
+    C.arch={x:+ax.toFixed(2),z:+az.toFixed(2),u,w:A.mouth.w,tris:A.tris,draws:A.draws,out:{x:+(ax+sx*5).toFixed(2),z:+(az+sz*5).toFixed(2),yaw:C.ry}};}
   // S1782 (backlog L5, OG-096; Michael's B on #1005, "one impossible element each, nothing lit") — the Weaver doors: the gate kit's arch at
   // half its size, alone in a Gatelands pasture within sight of a road, standing a hand clear of the grass (PKIT.wonders.weaverDoor). One
   // Gatelands cell in three keeps one, by its own stream (weaverdoor:<cell>), so no other draw of the cell moves. Read by place (withPlace
