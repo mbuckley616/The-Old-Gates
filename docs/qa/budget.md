@@ -467,3 +467,39 @@ merge of 1–2 Nov (F8's abbey, tower house and cairn, the 24 animals and 9 bird
 at noon 750 → 754 calls, 1.86 M → 1.85 M triangles; at midnight 832 → 840 (Low 656 → 660 of its 700); the field west at noon 664 → 668 and at dawn
 808 → 811; Portclare's square 533 → 533; the inn's hall 38 → 38; the medium gate 102 → 102. The four calls more in town are "other" (79 → 83: a
 `Group` of 4 meshes now in view), the same four at every level. No spot rose by more than 10%; the largest is +1.0%.*
+
+### s1183 — 2026-11-03 13:08 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Dunmore street, noon | Low | 612 | 1.13 M | 0 | 0 | 111 | 135 | 268 | 98 | Mesh 52, oldGate 24, cave mouth 8, sea cave mouth 4, weaver door 4 |
+| Dunmore street, noon | Middle | 769 | 1.87 M | 136 | 6 | 113 | 135 | 281 | 98 | Mesh 52, oldGate 24, cave mouth 8, sea cave mouth 4, weaver door 4 |
+| Dunmore street, noon | High | 820 | 2.37 M | 168 | 6 | 113 | 135 | 300 | 98 | Mesh 52, oldGate 24, cave mouth 8, sea cave mouth 4, weaver door 4 |
+| Dunmore street, midnight | Low | 675 | 1.09 M | 0 | 0 | 107 | 201 | 268 | 99 | Mesh 52, oldGate 24, cave mouth 8, sea cave mouth 4, weaver door 4 |
+| Dunmore street, midnight | Middle | 850 | 1.80 M | 156 | 6 | 107 | 201 | 281 | 99 | Mesh 52, oldGate 24, cave mouth 8, sea cave mouth 4, weaver door 4 |
+| Dunmore street, midnight | High | 912 | 2.36 M | 199 | 6 | 107 | 201 | 300 | 99 | Mesh 52, oldGate 24, cave mouth 8, sea cave mouth 4, weaver door 4 |
+| the field west of Dunmore, noon | Low | 563 | 652k | 0 | 0 | 105 | 107 | 302 | 49 | Mesh 28, oldGate 8, cave mouth 4, Group 4, quaywall 2 |
+| the field west of Dunmore, noon | Middle | 671 | 1.07 M | 82 | 6 | 105 | 107 | 322 | 49 | Mesh 28, oldGate 8, cave mouth 4, Group 4, quaywall 2 |
+| the field west of Dunmore, noon | High | 719 | 1.56 M | 120 | 6 | 105 | 107 | 332 | 49 | Mesh 28, oldGate 8, cave mouth 4, Group 4, quaywall 2 |
+| the field west of Dunmore, dawn | Low | 646 | 643k | 0 | 0 | 108 | 186 | 302 | 50 | Mesh 28, oldGate 8, cave mouth 4, Group 4, quaywall 2 |
+| the field west of Dunmore, dawn | Middle | 815 | 1.13 M | 143 | 6 | 108 | 186 | 322 | 50 | Mesh 28, oldGate 8, cave mouth 4, Group 4, quaywall 2 |
+| the field west of Dunmore, dawn | High | 868 | 1.66 M | 186 | 6 | 108 | 186 | 332 | 50 | Mesh 28, oldGate 8, cave mouth 4, Group 4, quaywall 2 |
+
+
+### s1183 — 2026-11-03 13:15 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Portclare square, noon | Low | 381 | 704k | 0 | 0 | 30 | 65 | 208 | 78 | Mesh 36, oldGate 14, cave mouth 8, Group 8, sea cave mouth 4 |
+| Portclare square, noon | Middle | 548 | 1.46 M | 141 | 6 | 31 | 65 | 227 | 78 | Mesh 36, oldGate 14, cave mouth 8, Group 8, sea cave mouth 4 |
+| Portclare square, noon | High | 596 | 1.86 M | 176 | 6 | 31 | 65 | 240 | 78 | Mesh 36, oldGate 14, cave mouth 8, Group 8, sea cave mouth 4 |
+| The Bramble Hearth (Dunmore's inn), the hall from the door, 20h | Middle (indoors) | 38 | 26k | 0 | 0 | 1 | 0 | 0 | 37 |  |
+| a medium gate (ruins, seed 11), from its entrance | Middle (indoors) | 102 | 394k | 0 | 0 | 33 | 0 | 0 | 68 |  |
+
+*s1183, QA Session 1786 (`budget` 18/18 in 877 s and `budgetport` 9/9 in 431 s, two boots side by side on four cores, one try each). Against s1147, 36 builds and
+every merge of 2–3 Nov (the limestone cave and the smugglers' sea cave, the Weaver doors, the burnous's hood, the islands' own animals), at Middle: Dunmore's street at
+noon 754 → 769 calls (+2.0%), 1.85 M → 1.87 M triangles; at midnight 840 → 850 (+1.2%; Low 660 → 675 of its 700); the field west at noon 668 → 671 and at dawn
+811 → 815; Portclare's square 533 → 548 (+2.8%; Low 366 → 381, +4.1%, the largest), 1.43 M → 1.46 M; the inn's hall 38 → 38; the medium gate 102 → 102. Every
+rise is in the other column (Dunmore 83 → 98, Portclare 61 → 78, the field 43 → 49): the far cave mouths now in view (`cave mouth` 8 and `sea cave mouth` 4 at
+Portclare, Look Sessions 1768 and 1772) and four `weaver door` calls in Dunmore at midnight (Session 1780). No spot rose by more than 10%. `budget` took 877 s
+of `run.mjs`'s 900 s cap with one other boot beside it.*
