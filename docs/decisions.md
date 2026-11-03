@@ -47,6 +47,16 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 
 **Recommendation: C.** From Session 1772 (`docs/devlog/1772.md`).
 
+### Naval combat — board and be boarded, weapons on their arcs, or a sea that answers? (from the designer, 2026-11-03, #1064)
+**The question.** Backlog L, *Naval combat, more of it* (OG-017). Today a black sail has no hull of her own: nothing fired from your deck can hurt her, your rams hurt only you, and a fight is won only by climbing her net. Which shape should a fight between two ships take, given Michael's 7 A (guns on the top ships only) and 4 C (crew without morale)?
+
+**Options.**
+- **A.** Board and be boarded: every hull gets the bars and four damage states, rams hurt both ships, and hooks lash the two hulls together for a deck fight that works both ways. Three systems sessions, one look session.
+- **B (recommended).** A, with weapons on their arcs: a ballista (a fitting of 5 hold, reads Bow) and fire pots for every hull, and the galleon's broadside of six guns a side with round, chain, grape and shell. Sink her for a wreck to dive, or board her for the chest. Firing on a merchantman is piracy. Six systems sessions, two look sessions.
+- **C.** B, and a sea that answers: Crown patrols, merchant traffic, distress calls, harbour towers, and the Mark's fog and ice. Twelve sessions; the patrols wait on the banner (#979 C) and the war.
+
+**Recommendation: B.** It gives the approach a weapon and the end a choice (sinking is safe and loses the prize, boarding is risky and pays), every weapon costs hold space against cargo, and the guns stay the galleon's. Page: `docs/design/naval-combat.md`.
+
 ## Answered
 ### The places under the land — how you get in (from the look builder, 2026-11-02, #1026)
 Card F8's places on the land are in the world (the abbey S1715, the tower house S1725, the passage cairn S1732). Three prototypes are left, all under the ground: the limestone cave (#313 A, its lake under falls), the smugglers' lair (#314) and the tower house's cellar, souterrain and pit (#401 A). The open world's terrain is one height per point, so nothing can be dug into it. How do you get in?
