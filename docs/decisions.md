@@ -15,6 +15,26 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+### What a gate keeps (L10, OG-123) (from the concept artist, 2026-11-03, #1092)
+**The question.** Two rooms are built in the gate kit's stone: a great gate's vault (a round hall 62 m across under a 51 m dome, a pit round an island, four rings turning over its dais round a burning core shard, three bridges, two hooded statues of 13 m, a cache sealed by script) and a lesser gate's keep (the 10 m vaulted end room, one shaft of light onto a sealed stone coffer). The rooms are the same in every option; the question is what lies in them.
+
+**Options.**
+- **A.** The gate's own things only: the core shard, a broken relic on an altar, the sealed coffer, the cache and a crystal vein. No coin.
+- **B.** The hoard, as OG-123 draws it: coin heaped under the rings and round the dais, chests spilling, gold cups and plate, star-metal ingots and a crown (894 coins in the vault, 270 in the keep).
+- **C (recommended).** A, plus what earlier delvers left: one dead against the dais with his pack, journal open, lantern out, purse split, and a cold camp at the door. A little coin, theirs, not the gate's.
+
+**Recommendation: C.** It tells the gate's danger without words, gives the quest writer a journal to fill, and keeps gold from being what a gate is for (the brief's "not buy more/better"). Pictures: [A, B and C](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1103/docs/prototypes/levelup/vaults-options.jpg), [rooms and scale](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1103/docs/prototypes/levelup/vaults-rooms.jpg), [from the door](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1103/docs/prototypes/levelup/vaults-great-door.jpg). The notes are in `docs/concepts.md`.
+
+### Aurenne's trade tunnel — no headland on the land; where does it go? (from the look builder, 2026-11-03, #1096)
+**The question.** Michael chose the trade tunnel as drawn (#335 A): a level 56 m bore through a headland from a town's quay to the road inland, its crown 4.2 m up. A probe of all 21 of Aurenne's land cells found no headland high enough: the best ridge stands 4.5 m over level ends, and none of the near-misses is by a quay. Climbing at a cart's grade (1 in 12), 7 of 21 cells have an inland ridge with 7.2 to 12.3 m of rock over the floor. Where should the tunnel go?
+
+**Options.**
+- **A (recommended).** Inland, under a ridge beside one of the cell's roads: the same bore, lamps, passing place and portals, its floor climbing at most 1 in 12, one portal each side of the ridge, so it reads as the road's short way under the hill. About 7 cells can hold one. One session, pictures first.
+- **B.** At a quay as drawn, raising a headland with a stamp (a hill about 12 m high and 60 m across). It would stand out as a mound on Aurenne's low coast.
+- **C.** Wait until the land (card F3) has headlands that high.
+
+**Recommendation: A.** From Session 1801. The Mark's cliff fort (#402 B) meets the same land (drawn cliffs 32 m, the Mark's promontories 10 to 17 m) and will be its own question once measured.
+
 ## Answered
 ### The under-places — walk the ice, swim in a room, climb a ladder? (from the systems builder, 2026-11-03, #1083)
 **The question.** The look builder's under-places (card F8, #1026 A) are in, and three of their parts are drawn but cannot be used, because each needs a rule rooms do not have yet: the ice cave's frozen lake (the Mark, 4 caves) is a wall at its edge; the sea grotto's beach (Aurenne, 9 grottoes) lies across water and nothing swims in a room; the smugglers' sea cave's ladder (the Gatelands, 11 caves) goes up to a ledge and an escape tunnel, and nothing climbs in a room. Which of these should rooms gain?
