@@ -1060,6 +1060,54 @@ const burnousOn = D => !!(D && D.cloak && D.burnous && !D.cape);
 function burnousOf(D, o, vt = false, n = vt ? 1 : 2) { if (!burnousOn(D) || !D.burnousStripe) return {}; if (!STRIPE_AX) stripeOf({ robe: 1, robeStripe: [0, 0, 0] });
   return { stripe: { k: sRGB(...D.burnousStripe), l: sRGB(...D.burnousStripe), o, s: STRIPE_AX.s, e: STRIPE_AX.e, w: STRIPE_AX.w, arm: false, vt, n } }; }
 const cloakPattern = (D, o, r, vt = false) => burnousOn(D) ? burnousOf(D, o, vt) : tartanOf(D, o, r);
+// the burnous's tassel (Session 1236), hanging down from the origin: a cord 3 cm long, a knot, and 16 threads 6 cm long flaring to 1.4 cm,
+// in the stripe's colour (or the cloak's, darkened); shared by the raised hood's point and, Session 1770, the point of the hood let down
+const tasselColour = D => sRGB(...(D.burnousStripe || D.cloak)).multiplyScalar(D.burnousStripe ? .9 : .7);
+function tasselGeom() { const parts = [], cord = new THREE.CylinderGeometry(.0025, .0025, .03, 6).translate(0, -.015, 0), kn = new THREE.SphereGeometry(.0065, 10, 8).translate(0, -.032, 0); parts.push(cord, kn);
+  for (let t = 0; t < 16; t++) { const a = t / 16 * Math.PI * 2, r0 = .003, r1 = .007 + .0015 * Math.sin(t * 2.3), th = new THREE.CylinderGeometry(.0013, .0013, .06, 4); const pp = th.attributes.position;
+    for (let i = 0; i < pp.count; i++) { const k = .5 - pp.getY(i) / .06, r = r0 + (r1 - r0) * k; pp.setXYZ(i, pp.getX(i) + Math.cos(a) * r, -.036 - .06 * k, pp.getZ(i) + Math.sin(a) * r); } parts.push(th); }
+  return mergeGeoms(parts); }
+// the burnous's hood let down (Session 1770, owed since Session 1236; OG-109's Aurenne winter column): below the roll of its opening the
+// hood hangs down the back as a burnous's does, a pointed bag of two layers of the striped wool, 24 cm across under the roll, narrowing to
+// its point 34 cm down, with the tassel at the point. Each row of it is laid across the cloak's own row (the arc along the sheet from the
+// back's middle column), the inner layer 8 mm off the cloak and the outer as far again as the bag is thick (3.6 cm at the top, 4 mm at
+// the point); the tassel hangs from the point along the cloak’s fall, 8 mm or more off it
+const BPOINT = { L: .34, W: .12, H: .016, clr: .008, M: 16 };
+function buildBurnousPoint(cols, R, kb, neck, rollY, D) {
+  const { L, W, H, clr, M } = BPOINT, K = cols.length, rs = (() => { for (let r = 0; r < R; r++) if (cols[kb][r].y < rollY - .006) return r; return 0; })();
+  const rows = []; let len = 0; for (let r = rs; r < R && len <= L + 1e-6; r++) { if (r > rs) len += cols[kb][r].distanceTo(cols[kb][r - 1]); rows.push({ r, len }); }
+  const at = (r, d) => { const dir = d < 0 ? -1 : 1; let k = kb, rest = Math.abs(d); while (true) { const k2 = k + dir; if (k2 < 0 || k2 >= K) return cols[k][r].clone(); const seg = cols[k2][r].distanceTo(cols[k][r]); if (seg >= rest) return cols[k][r].clone().lerp(cols[k2][r], rest / seg); rest -= seg; k = k2; } };
+  const nrm = (r, d) => { const p = at(r, d), a = at(r, d + .01).sub(at(r, d - .01)), dn = at(Math.min(R - 1, r + 1), d).sub(at(Math.max(0, r - 1), d)), n = a.clone().cross(dn).normalize(), rad = new THREE.Vector3(p.x - neck.x, 0, p.z - neck.z); if (n.dot(rad) < 0) n.negate(); return n; };
+  // the sheet's triangles round the back's middle, to measure against: a fold's ridge between two rows can stand nearer than the row's own points
+  const last = rows[rows.length - 1].r, tris = [], k0 = Math.max(0, kb - 12), k1 = Math.min(K - 1, kb + 12), r0 = Math.max(0, rs - 3), r1 = Math.min(R - 1, last + 10);
+  for (let k = k0; k < k1; k++) for (let r = r0; r < r1; r++) { const a = cols[k][r], b = cols[k + 1][r], c = cols[k][r + 1], d = cols[k + 1][r + 1]; tris.push(new THREE.Triangle(a, b, c), new THREE.Triangle(b, d, c)); }
+  const v = new THREE.Vector3(), cp = new THREE.Vector3(), best = new THREE.Vector3(), sheet = (q, o) => { let n = 1; for (const t of tris) { t.closestPointToPoint(q, cp); const d = cp.distanceTo(q); if (d < n) { n = d; best.copy(cp); } }
+    return o && best.clone().sub(q).dot(o) > 0 ? -n : n; };  // signed when given the outward direction o: behind the sheet is below 0
+  // each row's ring; where any of its points comes nearer the sheet than clr, the whole row is lifted out by the shortfall
+  const pos = [], idx = [], N = rows.length;
+  for (const { r, len: l } of rows) { const s = Math.min(1, l / L), w = Math.max(.0015, W * (1 - Math.pow(s, 1.6))), h = H * Math.pow(1 - s, .7) + .002, ring = [];
+    for (let j = 0; j < M; j++) { const ph = j / M * Math.PI * 2, u = Math.cos(ph); ring.push({ p: at(r, u * w), n: nrm(r, u * w), off: clr + h + h * Math.sin(ph) }); }
+    let lift = 0; for (let it = 0; it < 3; it++) { let short = 0; for (const q of ring) short = Math.max(short, clr - sheet(q.p.clone().addScaledVector(q.n, q.off + lift), q.n)); if (short <= 1e-4) break; lift += short; }
+    for (const q of ring) { const p = q.p.addScaledVector(q.n, q.off + lift); pos.push(p.x, p.y, p.z); } }
+  for (let i = 0; i < N - 1; i++) for (let j = 0; j < M; j++) { const a = i * M + j, b = i * M + (j + 1) % M, c = a + M, d = b + M; idx.push(a, c, b, b, c, d); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); g.setAttribute('aBase', g.attributes.position); g.setAttribute('aTart', g.attributes.position);
+  const m = new THREE.Mesh(g, clothMat(sRGB(...D.cloak).multiplyScalar(.95), 'wool', { scale: 26, ...cloakPattern(D, [neck.x, neck.z], .2) })); m.name = 'hoodPoint';
+  // which way the layers face: the ring is wound so its faces look out of the bag (as turnOut leaves a tube)
+  { const c = new THREE.Vector3(), n = new THREE.Vector3(); g.computeBoundingBox(); g.boundingBox.getCenter(c); const pa = g.attributes.position, na = g.attributes.normal; let out = 0, tot = 0;
+    for (let i = 0; i < pa.count; i += 7) { n.fromBufferAttribute(na, i); const v = new THREE.Vector3().fromBufferAttribute(pa, i).sub(c); out += Math.sign(n.dot(v)); tot++; } if (out < 0) turnOut(g); }
+  // the tassel from the point's middle along the cloak's fall, 1 cm further out, and lifted by any shortfall from 8 mm off the sheet
+  const tipP = new THREE.Vector3(); for (let j = 0; j < M; j++) tipP.add(v.fromArray(pos, ((N - 1) * M + j) * 3)); tipP.multiplyScalar(1 / M);
+  const tn = nrm(last, 0), fall = at(Math.min(R - 1, last + 2), 0).sub(at(Math.max(0, last - 2), 0)).normalize(), tg = tasselGeom();
+  tg.applyMatrix4(new THREE.Matrix4().makeRotationFromQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, -1, 0), fall))); tg.translate(...tipP.clone().addScaledVector(tn, .01).toArray());
+  for (let it = 0; it < 3; it++) { const ta = tg.attributes.position; let short = 0; for (let i = 0; i < ta.count; i++) short = Math.max(short, clr - sheet(v.fromBufferAttribute(ta, i), tn)); if (short <= 1e-4) break; tg.translate(tn.x * short, tn.y * short, tn.z * short); }
+  tg.setAttribute('aBase', tg.attributes.position);
+  const tm = new THREE.Mesh(tg, clothMat(tasselColour(D), 'wool', { scale: 90 })); tm.name = 'tassel';
+  // how near the bag and the tassel come to the cloak's sheet
+  const outOf = q => new THREE.Vector3(q.x - neck.x, 0, q.z - neck.z).normalize();
+  let near = 1, tasNear = 1; for (let i = 0; i < pos.length; i += 3) { v.set(pos[i], pos[i + 1], pos[i + 2]); near = Math.min(near, sheet(v, outOf(v))); }
+  const ta = tg.attributes.position; for (let i = 0; i < ta.count; i++) tasNear = Math.min(tasNear, sheet(v.fromBufferAttribute(ta, i), tn));
+  return { meshes: [m, tm], stats: { rows: N, len: +rows[N - 1].len.toFixed(3), top: +(neck.y - cols[kb][rs].y).toFixed(3), tip: +(neck.y - tipP.y).toFixed(3), tris: idx.length / 3, tasselTris: tg.index.count / 3, near: +near.toFixed(4), tasNear: +tasNear.toFixed(4) } };
+}
 function buildCloak(G, body, byName, rnd) {
   const D = G.dress, out = [], PP = posedBody(body), S = surfGrid(PP, PACK.G['body'], (x, y) => y > -.75);
   const neck = new THREE.Vector3(); byName['neck01'].getWorldPosition(neck); const neckY = neck.y;
@@ -1112,8 +1160,10 @@ function buildCloak(G, body, byName, rnd) {
   // (the rolled hood turned out, Session 1255: tubeGeom winds inward and the cloth is single-sided, so the roll drew its own far wall from inside.
   // The fur collar's shells are left as they are: their shader reads the layer)
   const ring = tops.map(t => t.start.clone().addScaledVector(t.n, .012).add(new THREE.Vector3(0, .012, 0)));
+  let pointStats = null;
   if (D.cloakFur && !burnousOn(D)) for (let s = 0; s < 6; s++) { const m = new THREE.Mesh(tubeGeom(ring, ring.map(() => .026 + s * .004), 8), shellMat(sRGB(...D.cloakFur), s, 6, { sx: 260, sy: 70, solid: s === 0 })); m.geometry.setAttribute('aBase', m.geometry.attributes.position); m.name = 'collar' + s; out.push(m); }
-  else if (D.hood === 'down') { const kb = Math.round(-th0 / (th1 - th0) * (K - 1)), back = hoodLine(ring.slice(Math.max(0, kb - Math.round(K * .2)), kb + Math.round(K * .2)).map(q => q.clone().lerp(new THREE.Vector3(neck.x, q.y + .025, neck.z), .25))), m = new THREE.Mesh(turnOut(tubeGeom(back, back.map((_, i) => .03 + .018 * Math.sin(Math.PI * i / (back.length - 1))), 10)), clothMat(sRGB(...D.cloak).multiplyScalar(.92), 'wool', { scale: 26, ...cloakPattern(D, [neck.x, neck.z], .2) })); m.geometry.setAttribute('aBase', m.geometry.attributes.position); m.geometry.setAttribute('aTart', m.geometry.attributes.position); m.name = 'hood'; m.userData.axis = { line: back, sides: 10 }; out.push(m); }
+  else if (D.hood === 'down') { const kb = Math.round(-th0 / (th1 - th0) * (K - 1)), back = hoodLine(ring.slice(Math.max(0, kb - Math.round(K * .2)), kb + Math.round(K * .2)).map(q => q.clone().lerp(new THREE.Vector3(neck.x, q.y + .025, neck.z), .25))), m = new THREE.Mesh(turnOut(tubeGeom(back, back.map((_, i) => .03 + .018 * Math.sin(Math.PI * i / (back.length - 1))), 10)), clothMat(sRGB(...D.cloak).multiplyScalar(.92), 'wool', { scale: 26, ...cloakPattern(D, [neck.x, neck.z], .2) })); m.geometry.setAttribute('aBase', m.geometry.attributes.position); m.geometry.setAttribute('aTart', m.geometry.attributes.position); m.name = 'hood'; m.userData.axis = { line: back, sides: 10 }; out.push(m);
+    if (burnousOn(D)) { const B = buildBurnousPoint(cols, R, kb, neck, back[Math.floor(back.length / 2)].y, D); out.push(...B.meshes); pointStats = B.stats; } }
   // the brooch at the throat, where the two front columns meet
   const a = thrown ? tops[K - 1] : tops[0], b = tops[K - 1], at = a.start.clone().add(b.start).multiplyScalar(.5), nrm = a.n.clone().add(b.n).normalize();
   // a burnous is sewn shut at the chest and tied at the throat with a knot of its own cord in place of the brooch
@@ -1125,7 +1175,7 @@ function buildCloak(G, body, byName, rnd) {
   boss.position.copy(br.position).addScaledVector(nrm, knot ? -.002 : .005).add(new THREE.Vector3(0, knot ? -.016 : 0, 0)); out.push(boss);
   for (const m of out) { m.castShadow = true; m.receiveShadow = true; m.frustumCulled = false; }
   let minClear = 1, under = 0; for (const c of cols) for (const q of c) { const hit = heightOver(S, q); if (hit) { minClear = Math.min(minClear, hit.h); if (hit.h < .005) under++; } }
-  return { meshes: out, stats: { columns: K, rows: R, tris: idx.length / 3, minClear: +minClear.toFixed(4), under, brooch: +br.position.distanceTo(neck).toFixed(3), cape, hemDrop: +(neck.y - cols.reduce((a, c) => a + c[R - 1].y, 0) / K).toFixed(3), hem: !!D.cloakHem, thrown, ...H.stats, through: armsThrough(cols, R, PP, neck, worn) } };
+  return { meshes: out, stats: { columns: K, rows: R, tris: idx.length / 3, minClear: +minClear.toFixed(4), under, brooch: +br.position.distanceTo(neck).toFixed(3), cape, hemDrop: +(neck.y - cols.reduce((a, c) => a + c[R - 1].y, 0) / K).toFixed(3), hem: !!D.cloakHem, thrown, ...H.stats, through: armsThrough(cols, R, PP, neck, worn), point: pointStats } };
 }
 
 // the body round the neck's axis: for each height (2 cm) and angle (4°) the furthest point of the posed body, so a
@@ -1597,12 +1647,9 @@ function buildHoodUp(P, G, meshes, o = {}) {
   const hemM = new THREE.SkinnedMesh(skin(rim), clothMat(o.fur ? sRGB(...o.fur).multiplyScalar(.8) : col.clone().multiplyScalar(.9), 'wool', { scale: 26 })); hemM.name = 'hoodHem'; hemM.userData.axis = { line: sm, sides: 8 };
   // the burnous's tassel (Session 1236): from the hood's point a cord 3 cm long, a knot, and a tassel of 16 threads 6 cm long flaring to
   // 1.4 cm, in the stripe's colour (or the cloak's, darkened), hanging straight down; skinned with the hood, so it rides the head
-  const tassel = []; let tip = null; if (burnousOn(D)) { tip = dome(Math.PI, Math.PI / 4); const tc = sRGB(...(D.burnousStripe || D.cloak)).multiplyScalar(D.burnousStripe ? .9 : .7), parts = [];
-    const cord = new THREE.CylinderGeometry(.0025, .0025, .03, 6).translate(0, -.015, 0), kn = new THREE.SphereGeometry(.0065, 10, 8).translate(0, -.032, 0); parts.push(cord, kn);
-    for (let t = 0; t < 16; t++) { const a = t / 16 * Math.PI * 2, r0 = .003, r1 = .007 + .0015 * Math.sin(t * 2.3), th = new THREE.CylinderGeometry(.0013, .0013, .06, 4); const pp = th.attributes.position;
-      for (let i = 0; i < pp.count; i++) { const k = .5 - pp.getY(i) / .06, r = r0 + (r1 - r0) * k; pp.setXYZ(i, pp.getX(i) + Math.cos(a) * r, -.036 - .06 * k, pp.getZ(i) + Math.sin(a) * r); } parts.push(th); }
-    const tg = mergeGeoms(parts).translate(tip.x, tip.y, tip.z); tg.setAttribute('aBase', tg.attributes.position);
-    const tm = new THREE.SkinnedMesh(skin(tg), clothMat(tc, 'wool', { scale: 90 })); tm.name = 'tassel'; tassel.push(tm); }
+  const tassel = []; let tip = null; if (burnousOn(D)) { tip = dome(Math.PI, Math.PI / 4);
+    const tg = tasselGeom().translate(tip.x, tip.y, tip.z); tg.setAttribute('aBase', tg.attributes.position);
+    const tm = new THREE.SkinnedMesh(skin(tg), clothMat(tasselColour(D), 'wool', { scale: 90 })); tm.name = 'tassel'; tassel.push(tm); }
   // the fur ruff (Session 1152, OG-109's fur-lined hooded coats): the hood's front, where it is within three tenths of its opening's size again of the
   // face, in seven shells 3.5 mm apart pushed out from the head's middle, cut at the opening's edge as the hood is and on a smooth line outside it, not the triangles' stairs; the hood's own
   // skinning, so the ruff moves with it
