@@ -2550,7 +2550,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   // S1790 (card F8; Michael's A on #305 and #1026) — the Mark's silver mine (PKIT.places.mine, places.js's markMine) behind its adit's mouth
   // (mineAt, 82), built as the caves are: moved into a room's frame (the floor 0.25 m under the adit's), its walk the place's own
   // quarter-metre cells (a foothold and a solid up to it where you stand, a solid to 60 m over the void and the rock), the cart, the lamp
-  // posts and the basket boxes 1.5 m up. The ladder to the sump waits on climbing. The light (#305's 2 A): the day down the adit from its
+  // posts and the basket boxes 1.5 m up. The ladder to the sump is climbed since S1804. The light (#305's 2 A): the day down the adit from its
   // mouth by the hour; worked, the miners' lamps, warm, on the landing, the gallery, at the face and in the kibble; worked out, nothing
   // else, a low ambient keeping the rock's shape, so the stope is seen by your torch. No one is here: who works it is the systems builder's.
   function kitMine(house){return !!(house&&house.type==='mine'&&typeof PKIT!=='undefined'&&PKIT.places&&PKIT.places.mine);}
@@ -2568,6 +2568,16 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       if(c.y==null){SOL.push({...q,y0:-5,y1:60});continue;}
       const y=+ry(c.y).toFixed(2);SOL.push({...q,y0:-5,y1:y});FOOTHOLDS.push({...q,y});}
     for(const b of T.obs)SOL.push({x0:rx(b.x0),x1:rx(b.x1),z0:rz(b.z0),z1:rz(b.z1),y0:-5,y1:+ry(1.5).toFixed(2)}); /* the cart, the lamp posts, the basket */
+    /* S1804 (Michael's A on #1083) — the ladder down the east wall to the sump: the shaft's bottom is the sump's bed under 0.6 m of water
+       (INT_WATER: you wade it), its rock round it walls up to under the deck, the rail along the deck's edges over it; the ladder from the
+       landing's rail gap to the bed (INT_LADDERS, roomFloorTick, 88) */
+    INT_LADDERS=[];INT_WATER=null;if(T.ladder&&T.void){const V=T.void,vx0=rx(V.x0),vx1=rx(V.x1-.3),vz0=rz(V.z1),vz1=rz(V.z0),L=T.ladder,by=+ry(V.floor).toFixed(2);
+      for(let n=SOL.length-1;n>=0;n--){const q=SOL[n];if(q.y1!==60||q.x1<=vx0||q.x0>=vx1||q.z1<=vz0||q.z0>=vz1)continue;SOL.splice(n,1); /* the void's rock cells: cut out of the shaft */
+        if(q.x0<vx0)SOL.push({...q,x1:vx0});if(q.x1>vx1)SOL.push({...q,x0:vx1});const a=Math.max(q.x0,vx0),b=Math.min(q.x1,vx1);if(q.z0<vz0)SOL.push({...q,x0:a,x1:b,z1:vz0});if(q.z1>vz1)SOL.push({...q,x0:a,x1:b,z0:vz1});SOL.push({x0:a,x1:b,z0:Math.max(q.z0,vz0),z1:Math.min(q.z1,vz1),y0:-.3,y1:60}); /* over the shaft at the deck's level a wall still */}
+      SOL.push({x0:vx0-1,x1:vx0,z0:vz0-1,z1:vz1+1,y0:-30,y1:-.3},{x0:vx1,x1:vx1+1,z0:vz0-1,z1:vz1+1,y0:-30,y1:60},{x0:vx0-1,x1:vx1+1,z0:vz0-1,z1:vz0,y0:-30,y1:-.3},{x0:vx0-1,x1:vx1+1,z0:vz1,z1:vz1+1,y0:-30,y1:-.3}); /* round the bottom */
+      SOL.push({x0:vx0-.05,x1:vx0+.05,z0:vz0,z1:vz1,y0:0,y1:+ry(1.1).toFixed(2)},{x0:vx0,x1:vx1,z0:vz0-.05,z1:vz0+.05,y0:0,y1:+ry(1.1).toFixed(2)},{x0:vx0,x1:vx1,z0:vz1-.05,z1:vz1+.05,y0:0,y1:+ry(1.1).toFixed(2)}); /* the rail over it */
+      INT_WATER={house:house.id,y:+ry(V.water).toFixed(2),bed:(x,z)=>x>vx0&&x<vx1&&z>vz0&&z<vz1?by:null};
+      INT_LADDERS.push({house:house.id,x:+rx(L.x-.4).toFixed(3),z:+rz(L.z).toFixed(3),foot:{x:+rx(L.x-.4).toFixed(3),z:+rz(L.z-.75).toFixed(3),y:by},head:{x:+rx(L.x-.4).toFixed(3),z:+rz(V.z0+.7).toFixed(3),y:+ry(L.y1).toFixed(2)}});}
     const hr=typeof gameHour==='function'?gameHour():12,dayK=hr>=7&&hr<18?1:hr>=5&&hr<20?.45:.08;
     T.sky.color.setHex(hr>=7&&hr<18?0xc4d0dc:hr>=5&&hr<20?0x8a7a7a:0x0e1420);
     sc_.add(new THREE.AmbientLight(0xbcc0c8,T.worked?.14:.2));

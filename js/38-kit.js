@@ -6044,7 +6044,7 @@ function aurenneOrrery(hAt, o = {}) {
       { x0: -2.55, x1: -2.05, z0: FACE + .4, z1: FACE + .9 } /* the basket */];
     // the walk to the face: down the adit, round the cart onto the landing, along the gallery and across the ledge
     const gw = -4.875, path = [[0, -1], [-.6, -17.0], [-.6, -17.9], [-.95, -18.0], [-.95, -18.45], [gw, -19.8], [gw, FZ + .1], [gw, FZ - .2], [-.5, FACE + 1.0]];
-    return { group, sky: M.sky, tris: Math.round(tris), draws: group.children.length, path, sets, lamps, worked, void: { x0: GX1, x1: CW / 2, z0: LZ, z1: FZ, floor: CBOT, water: CBOT + .6 }, rail: GX1 - .05,
+    return { group, sky: M.sky, tris: Math.round(tris), draws: group.children.length, path, sets, lamps, worked, void: { x0: GX1, x1: CW / 2, z0: LZ, z1: FZ, floor: CBOT, water: CBOT + .6 }, rail: GX1 - .05, ladder: { x: 5.45, z: LZ - .32, y0: CBOT, y1: 0 } /* S1804 — for the room's climb */,
       vein: [0, +band(0).toFixed(2), +fz(0, band(0)).toFixed(3)], face: FACE, adit: { w: 2 * PX - POST, cap: CAP, len: AL }, gallery: { x0: GX0, x1: GX1, w: GX1 - GX0 }, landing: { z0: LZ, z1: CZ0 },
       mouth: { x: 0, z: 0, y: 0, w: AW, h: AH }, chamber: { h: CTOP }, bounds: { x0: X0c, x1: -X0c, z0: -NZc * G, z1: 0 }, low: 0, cells, obs, arrive: [0, 0, -1.6, 0] };
   }

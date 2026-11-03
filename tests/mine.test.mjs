@@ -38,6 +38,26 @@ check(`the mine (${m.tris} triangles in ${m.draws} draws), its levels as built (
 check(`lamps only while worked: this one ${m.worked ? 'worked' : 'worked out'}, ${m.lamps} lamps drawn, ${m.lit} lit; a worked-out one, ${m.outLamps} lamps and no flame`, (m.worked ? m.lamps > 4 && m.lit === 5 : m.lamps === 0 && m.lit === 0) && m.outLamps === 0 && !m.outHorn, m);
 check(`walked the adit, the landing, the gallery and the ledge to the face with no wall in the way and no step (${m.nb} blocked)`, m.nb === 0 && m.maxStep <= .01 && Math.hypot(m.end[0] - m.goal[0], m.end[1] - m.goal[1]) < .1, m);
 check('the void over the stope is a wall: past the landing\'s edge, off the gallery\'s rail, in its middle', m.voidWall && m.edgeWall && m.railWall, m);
+// Session 1804 (Michael's A on #1083): the ladder down the east wall to the sump, E at its head on the landing, 2 s on the clock through the
+// game's own loop, wading in the sump's 0.6 m at the shaft's bottom with its rock round it a wall, and E at its foot back up.
+const sp = await page.evaluate(() => {
+  const raf = window.requestAnimationFrame, rr = REN.render; window.requestAnimationFrame = () => 0; REN.render = () => {};
+  const T = currentHouse._limeCave, Bd = T.bounds, FY = T.low - .25, V = T.void, L = INT_LADDERS.find(l => l.house === currentHouse.id), W = roomWater();
+  let t = performance.now(); prevT = t; const run = n => { for (let i = 0; i < n; i++) { t += 1000 / 60; loop(t); } };
+  const r = { L: !!L, W: !!W };
+  try {
+    px = L.head.x; pz = L.head.z; jumpY = L.head.y; onGround = true; velY = 0; for (const q in K) K[q] = false;
+    r.head = limeCavePrompt(); interact(); r.started = WORLD.onLadder(); if (!r.started) { r.at = limeCaveAt(); return r; }
+    LCLIMB.t0 = performance.now() - 2100; run(1); run(30);
+    r.bottom = { y: +(jumpY + FY).toFixed(2), on: WORLD.onLadder(), water: +(W.y + FY).toFixed(2), swim: WORLD.isSwimming(), prompt: limeCavePrompt() };
+    const x0 = px; yaw = Math.PI / 2; K['KeyW'] = true; run(150); K['KeyW'] = false; run(2); r.waded = +(x0 - px).toFixed(2); r.stop = +(px + Bd.x0 - V.x0).toFixed(2); r.wy = +(jumpY + FY).toFixed(2);
+    px = L.foot.x; pz = L.foot.z; jumpY = L.foot.y; interact(); r.up = WORLD.onLadder(); LCLIMB.t0 = performance.now() - 2100; run(2); r.top = { y: +(jumpY + FY).toFixed(2), z: +(pz + Bd.z0 - V.z0).toFixed(2) };
+  } finally { for (const q in K) K[q] = false; window.requestAnimationFrame = raf; REN.render = rr; prevT = 0; }
+  return r; });
+console.log(JSON.stringify(sp));
+check(`E at the ladder's head on the landing: down it to the sump's bed at ${sp.bottom && sp.bottom.y} m, wading (the water at ${sp.bottom && sp.bottom.water} m), offered the way up`, sp.started && !sp.bottom.on && Math.abs(sp.bottom.y - (-16)) < .05 && Math.abs(sp.bottom.water - (-15.4)) < .05 && !sp.bottom.swim && /climb the ladder/.test(sp.bottom.prompt), sp);
+check(`waded ${sp.waded} m west across the bottom and stopped by its rock ${sp.stop} m inside the shaft's edge, still on the bed`, sp.waded > 3 && sp.stop > 0 && sp.stop < .6 && Math.abs(sp.wy + 16) < .05, sp);
+check(`E at its foot: back up onto the landing at ${sp.top.y} m`, sp.up && Math.abs(sp.top.y) < .05 && sp.top.z > .25, sp);
 const back = await page.evaluate(() => { const T = currentHouse._limeCave, Bd = T.bounds; px = T.arrive[0] - Bd.x0; pz = T.arrive[2] - Bd.z0; jumpY = T.arrive[1] - (T.low - .25); const p = limeCavePrompt(); if (p) interact(); return p; });
 const outside = await page.waitForFunction(() => !isInterior(), null, { timeout: 30000 }).then(() => true, () => false); await page.waitForTimeout(1500);
 const o = await page.evaluate(id => { const C = [...CELLS.values()].find(c => c._mine && c._mine.id === id)._mine; return { d: +Math.hypot(px - C.out.x, pz - C.out.z).toFixed(2), dy: +(jumpY - activeTerrainH(px, pz)).toFixed(2), solid: solidAt(px, pz) }; }, k.near.id);
