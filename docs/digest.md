@@ -459,3 +459,15 @@ Written by the producer once a day, after 12:00 UTC. Newest last.
 **Blocked.** Nothing on main; last Sunday's weekly reds sit in section I.
 
 **Roadmap.** 294 of 364 stories done (290 of 358 on 1 Nov). The new look is 6 of 17; no deep-work card is queued.
+
+## 3 Nov 2026
+
+**Waiting on you.** Five decisions: wagons and carts by island (#1046; B, each island its own three), the four aggressive island animals and the two river fish (#1050; A, animals that answer back), the last three perks (#1055; C, build No mark and Word given, rename Hearing), naval combat (#1064; B, boarding plus weapons on their arcs), and Aurenne's aqueduct (#1072; A, fit the arcade to the land). No PR waits for your tap: QA's harness fix (#1066) is back with QA to renumber its devlog.
+
+**Landed on main since 2 Nov.** Card F8's places under the land: the tower house's cellar, the limestone cave, the smugglers' sea cave, the Mark's ice caves; ruins clear of houses, the Gatelands' snow line at 130 m (Look 1750–1778). The small wrongnesses (#1005 B): the Weaver doors, the carving, the watcher wolf that sits and turns its head first (Look 1782–1783, Systems 1784, Bodies 1785). The trout taken by hand, the islands' own animals in open country, wrecks keyed by place, the navigator's shoals (Systems 1759–1780). Winter and feast dress, the crew below deck, the creature prewarm 31 s to 11 s (Bodies 1756–1779). The Watch built; the naval combat page; the wagons prototype; today's playtest. Build s1184.
+
+**Under way.** Look 1784 (#1071); QA's budget ledger (#1077, every view under its ceilings).
+
+**Blocked.** Nothing on main; last Sunday's weekly reds sit in section I.
+
+**Roadmap.** 298 of 369 stories done (294 of 364 on 2 Nov). The new look is 6 of 17; no deep-work card is queued.
