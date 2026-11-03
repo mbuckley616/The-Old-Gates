@@ -217,6 +217,32 @@ check(`below deck on your cutter is her hold in her own lines: ${ct.W} by ${ct.D
 check(`her hatch is aft of the mast at z -1.05, and the eye stands at ${ct.eye} (under the beams, over the sloop's 1.38)`, ct.hatch && Math.abs((ct.hatch.z0 + ct.hatch.z1) / 2 + 1.05) < .01 && ct.eye > 1.45 && ct.eye <= 1.65 && ct.cam > 1.45, [ct.hatch, ct.eye, ct.cam]);
 check('from the ladder\'s foot mid-hold you walk forward to the stores and aft to the bulkhead; the planking stops you either side', ct.fwd[1] < ct.arrive[1] - 3 && ct.aft[1] > ct.arrive[1] + 1.5 && ct.aft[1] < 7.8 && ct.port[0] > 2 && ct.port[0] < 3.2 && ct.stbd[0] < 2 && ct.stbd[0] > .8, [ct.arrive, ct.fwd, ct.aft, ct.port, ct.stbd]);
 check('the berth rests, the chest is the stash, the workbench is the bench (E at it), and E at the ladder\'s foot (only there) takes you on deck', ct.beds === 1 && ct.bed && !ct.bedExit && ct.stash && ct.bench && !ct.exitFar && ct.left, ct);
+/* Session 1779 (backlog L6, #979 B's session 4): her crew below deck, each at their station (crewHoldBodies, 32-people.js): on the
+   cutter the carpenter at the workbench and the navigator by the sea chest (her chart table stands at the ladder's foot); on the cog,
+   with no cask, the cook by the barrels. Each is a builder body whose bones move, clear of the solids, stooped under the deck or a beam
+   (pwStoop), and E at the ladder's foot still goes on deck */
+const crew = {};
+for (const [cls, hands] of [['cutter', ['navigator', 'carpenter']], ['cog', ['cook', 'carpenter']]]) {
+  await page.evaluate(([c, hs]) => { if (SHIP.mesh) { sc.remove(SHIP.mesh); SHIP.mesh = null; } worldState.ship = { cls: c, name: 'Test Crew', sails: 0, cargo: 0, crew: hs, ashore: {}, fits: ['bunks'] }; WORLD.spawnShip(px + 1, pz + 1, .7); SHIP.sailing = false; cabinUpdate(); goToInterior(CABIN.house); }, [cls, hands]);
+  for (let k = 0; k < 40 && !(await page.evaluate(() => isInterior() && !!currentHouse._base)); k++) await page.waitForTimeout(250);
+  for (let k = 0; k < 120 && !(await page.evaluate(() => INT_NPCS.filter(n => n.crew).every(n => [...HB_RIGS].some(r => r.root === n.g && r.hb && r.hb.L < 2)))); k++) await page.waitForTimeout(500); /* built, and its shaders warm (hbWarm's cold keeps the distant copy up) */
+  const pose = () => page.evaluate(() => INT_NPCS.filter(n => n.crew).map(n => { const r = [...HB_RIGS].find(r => r.root === n.g); const b = r && r.hb ? r.hb.P.skeleton.bones.find(b => b.name === 'spine05') : null; return b ? b.quaternion.toArray().map(v => +v.toFixed(4)).join() : null; }));
+  const q0 = await pose(); await g.frames(20); const q1 = await pose();
+  crew[cls] = await page.evaluate(() => { const h = currentHouse, B = h._base;
+    const X = h.intW / 2, z1 = B.hold.z1, edge = (p, n) => { let best = null; for (const q of B.items) if (q.name === n) { const dx = Math.max(X - q.box[3] - p.x, 0, p.x - (X - q.box[0])), dz = Math.max(z1 - q.box[5] - p.z, 0, p.z - (z1 - q.box[2])), d = Math.hypot(dx, dz); if (best == null || d < best) best = d; } return best == null ? null : +best.toFixed(2); };
+    return INT_NPCS.filter(n => n.crew).map(n => { const r = [...HB_RIGS].find(r => r.root === n.g), p = n.g.position, a = n.station ? [n.station, edge(p, n.station)] : null;
+      const hd = r && r.hb && r.hb.P.byName.head, v = new THREE.Vector3(); if (hd) { r.hb.root.updateMatrixWorld(true); hd.getWorldPosition(v); }
+      const kz = z1 - p.z, clear = B.beams.some(z => Math.abs(z - kz) < .25) ? B.beamBottom - B.floor : h._roomH;
+      return { r: n.crew, hb: !!(r && r.hb), at: a && a[0], d: a ? a[1] : null, crown: hd ? +(v.y + .15).toFixed(2) : null, clear: +clear.toFixed(2), free: !intSolidAt(p.x, p.z, .2, 0), arrive: +Math.hypot(p.x - h._arriveX, p.z - h._arriveZ).toFixed(2), line: n.def.greeting[0] }; }); });
+  crew[cls].moves = q0.map((q, i) => !!q && q !== q1[i]);
+  if (cls === 'cutter') { await page.evaluate(() => { const h = currentHouse; px = h._arriveX + .2; pz = h._arriveZ - .4; yaw = .12; pitch = -.12; }); await g.frames(8); await page.screenshot({ path: 'docs/prototypes/f4/f4-crew-hold.jpg', type: 'jpeg', quality: 82, clip: { x: 0, y: 0, width: 1280, height: 600 } }); }
+  crew[cls].out = await page.evaluate(() => { const h = currentHouse; px = h._arriveX; pz = h._arriveZ; const L = h._base.items.find(q => q.name === 'ladder').box, lz = h._base.hold.z1 - (L[2] + L[5]) / 2; yaw = lz < pz ? 0 : Math.PI; pitch = 0; interact(); return dlgOpen ? 'talk' : 'ok'; });
+  for (let k = 0; k < 40 && (await page.evaluate(() => isInterior())); k++) await page.waitForTimeout(250);
+  crew[cls].left = await page.evaluate(() => !isInterior());
+}
+console.log(JSON.stringify(crew), JSON.stringify(['cutter', 'cog'].map(c => [crew[c].moves, crew[c].out, crew[c].left])));
+check('below deck her crew stand at their stations, clear of the solids: the carpenter at the workbench; on the cutter the navigator, his chart table at the ladder\'s foot, by the sea chest; on the cog the cook by the barrels', ['cutter', 'cog'].every(c => crew[c].length === 2 && crew[c].every(h => h.d != null && h.d < .5 && h.free)) && crew.cutter.map(h => h.at).join() === 'sea chest,workbench' && crew.cog.map(h => h.at).join() === 'barrel,workbench', crew);
+check('each hand is a builder body whose bones move, stooped under the deck or the beam over him (the head bone + 0.15 under it), and stands off the ladder\'s foot, where E still takes you on deck', ['cutter', 'cog'].every(c => crew[c].every(h => h.hb && h.arrive >= 1.2 && h.crown != null && h.crown < h.clear) && crew[c].moves.every(Boolean) && crew[c].out === 'ok' && crew[c].left), ['cutter', 'cog'].map(c => [crew[c].map(h => [h.arrive, h.crown, h.clear]), crew[c].moves, crew[c].out, crew[c].left]));
 /* Session 1564 (backlog L6; #418 A): and below deck on your caravel is her hold (PKIT.ships.caravelBase): under the main deck from the
    cabin's bulkhead to the stem's, the ladder's foot mid-hold by the main mast; the workbench and the alchemist's table aft past the two
    chests, the barrels forward. Her berth is in the cabin under the castle, not here */
