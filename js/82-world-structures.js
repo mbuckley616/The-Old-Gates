@@ -187,7 +187,7 @@
     const L=LOADED.get(k);if(!L)return;const c=L.cell;
     // settlements in this cell go first
     c.sites.forEach(t=>{if(SETTLE.has(t.id))disposeSettlement(t.id);});
-    if(c._cave&&c._cave.house){const i=ZONES.world.houses.indexOf(c._cave.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1768 — the cave's record */if(c._cove&&c._cove.house){const i=ZONES.world.houses.indexOf(c._cove.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1773 — the sea cave's */
+    if(c._cave&&c._cave.house){const i=ZONES.world.houses.indexOf(c._cave.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1768 — the cave's record */if(c._cove&&c._cove.house){const i=ZONES.world.houses.indexOf(c._cove.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1773 — the sea cave's */if(c._grotto&&c._grotto.house){const i=ZONES.world.houses.indexOf(c._grotto.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1787 — the grotto's */
     (c._lone||[]).forEach(F=>{if(SETTLE.has(F.id))disposeSettlement(F.id);const i=F._site?LONE_FARMS.indexOf(F._site):-1;if(i>=0)LONE_FARMS.splice(i,1);}); /* S1473 — and its lone farms */
     if(L.staticsBuilt||L.staticsPending)dropStatics(L);
     L.statics.forEach(o=>{sc.remove(o);});
@@ -511,6 +511,61 @@
     C.house={id:`g_${C.id}`,type:'seacave',byAim:true,siteId:C.id,name:C.name,keeper:'',reg:c.reg,style:'irish',w:44,d:70,two:false,doorX:C.x,doorZ:C.z,doorFace:'S',exitX:C.out.x,exitZ:C.out.z,exitYaw:C.out.yaw,held:C.held};
     if(ZONES.world&&ZONES.world.houses&&!ZONES.world.houses.some(h=>h.id===C.house.id))ZONES.world.houses.push(C.house);
     return M.group;}
+  // S1787 (card F8; Michael's A on #339, "both ways, as drawn", and his A on #1026) — Aurenne's sea grottoes (PKIT.places.grotto, places.js's
+  // aurenneGrotto): the sea cove's rule on Aurenne's coast, by its own stream (grotto:<cell>), one coastal cell in two. The stair's head
+  // is on the land behind the shore and the grotto runs seaward under it, its arch 83 m out: the ground 4 to 30 m over the sea, the
+  // nearest sea in any of 24 ways 40 m off or more, and in the way the grotto runs the sea begins 75 to 100 m out and is still sea 20 m
+  // past that, with land over the stair and the hall (to 60 m out); the ground before the mouth dry and within 3 m of it; 80 m off every
+  // pad, 90 m off every door, 70 m off the line of every road and 40 m off every lake's rim. The candidates are a 60 m lattice over the
+  // cell, taken in the stream's order. -> {id, x, z, ry, name, cell, sea} or null (c._grotto). The way in from the sea is owed.
+  function seaGrotto(c){
+    if(c._grotto!==undefined)return c._grotto;c._grotto=null;
+    if(c.type==='sea'||c.home||window.OG_LOOK!=='new'||window.OG_KIT_TOWNS===false||typeof PKIT==='undefined'||!PKIT.places||!PKIT.places.grotto)return null;
+    if(nationKeyOf(c.i,c.j)!=='aurenne')return null;
+    const k=cellKey(c.i,c.j),r=PKIT.stream('grotto:'+k);if(r()>=.5)return null;
+    const byId={};for(const t of c.sites)byId[t.id]=t;const lakes=[];for(let j=c.j-1;j<=c.j+1;j++)for(let i=c.i-1;i<=c.i+1;i++){const n=getCell(i,j);if(n&&n.lakes)lakes.push(...n.lakes);}
+    const segD=(x,z,a,b)=>{const dx=b.x-a.x,dz=b.z-a.z,t=Math.max(0,Math.min(1,((x-a.x)*dx+(z-a.z)*dz)/(dx*dx+dz*dz||1)));return Math.hypot(x-a.x-dx*t,z-a.z-dz*t);};
+    withPlace(c.ox+SIZE/2,c.oz+SIZE/2,()=>{const cand=[];
+      for(let z=c.oz+60;z<c.oz+SIZE-60;z+=60)for(let x=c.ox+60;x<c.ox+SIZE-60;x+=60){const h=rawH(x,z);if(h<4||h>30)continue;if([[100,0],[-100,0],[0,100],[0,-100]].some(([a,b])=>rawH(x+a,z+b)<0))cand.push([x,z,r()]);}
+      cand.sort((a,b)=>a[2]-b[2]);
+      for(let q=0;q<cand.length&&q<80&&!c._grotto;q++){const [x,z]=cand[q],h=rawH(x,z);
+        if(c.sites.some(s=>Math.hypot(s.x-x,s.z-z)<(s.pad||0)+80)||c.doors.some(e=>Math.hypot(e.x-x,e.z-z)<90))continue;
+        if(c.roadDefs.some(d=>byId[d.a]&&byId[d.b]&&segD(x,z,byId[d.a],byId[d.b])<70)||lakes.some(l=>Math.hypot(l.x-x,l.z-z)<(l.r||60)+40))continue;
+        let best=null,near=1e9;for(let a=0;a<24;a++){const dx=Math.sin(a/24*Math.PI*2),dz=Math.cos(a/24*Math.PI*2);let t=10;while(t<=110&&rawH(x+dx*t,z+dz*t)>=-.5)t+=5;near=Math.min(near,t);if(t>110)continue;if(!best||t<best.t)best={t,dx,dz};}
+        if(!best||near<40||best.t<75||best.t>100)continue;const {t,dx,dz}=best;
+        if(rawH(x+dx*(t+20),z+dz*(t+20))>-.5)continue;let land=true;for(let u=5;u<=Math.min(60,t-15);u+=5)if(rawH(x+dx*u,z+dz*u)<1.5){land=false;break;}if(!land)continue;
+        const hb=rawH(x-dx*6,z-dz*6);if(hb<3||Math.abs(hb-h)>3)continue;
+        c._grotto={id:`grotto_${k.replace(',','_')}`,x:+x.toFixed(2),z:+z.toFixed(2),ry:+Math.atan2(-dx,-dz).toFixed(4),name:`${genName(r,c.reg)} Grotto`,cell:k,sea:t};}});
+    return c._grotto;}
+  // its pad and clearing (the cell's first step), as the sea cove's; the mouth, the outcrop in Aurenne's pale rock with the stair's frame on
+  // its face, stood on the pad with its face to the land; the outcrop's solids; the record in the world's houses for a save made inside
+  // (type 'seacave', so the way out is the caves'; grotto marks it), taken out when the cell unloads
+  function seaGrottoStamps(c,k){const C=seaGrotto(c);if(!C)return [];const s=Math.sin(C.ry),co=Math.cos(C.ry),y=landH(C.x,C.z);
+    return [addStamp({id:C.id+'_pad',kind:'door',x:C.x-s*2.4,z:C.z-co*2.4,r:4.6,blend:5,y,cell:k}),addStamp({id:C.id+'_clear',kind:'door',noFlat:true,x:C.x-s*4,z:C.z-co*4,r:10,blend:2,y,cell:k})];}
+  function placeSeaGrotto(c,k){const C=seaGrotto(c);if(!C)return null;const M=PKIT.places.cavemouth({key:C.id,rock:'aurenne',frame:true}),y=worldH(C.x,C.z),co=Math.cos(C.ry),s_=Math.sin(C.ry);
+    M.group.position.set(C.x,y,C.z);M.group.rotation.y=C.ry;M.group.name='grotto mouth';sc.add(M.group);
+    for(const b of M.sol)STATIC_SOL.push({cx:C.x+b.x*co+b.z*s_,cz:C.z-b.x*s_+b.z*co,rx:b.w/2,rz:b.d/2,c:Math.cos(C.ry+b.ry),s:Math.sin(C.ry+b.ry),h:b.h,cave:true});
+    C.y=y;C.tris=M.tris;C.draws=M.draws;C.mouth=M.mouth;C.out={x:C.x+s_*2.2,z:C.z+co*2.2,yaw:C.ry+Math.PI};
+    try{seaGrottoArch(C,M.group,y);}catch(e){console.warn('grotto arch',e);} /* S1788 — the way in from the sea */
+    C.house={id:`g_${C.id}`,type:'seacave',grotto:true,byAim:true,siteId:C.id,name:C.name,keeper:'',reg:c.reg,style:'aurenne',w:48,d:84,two:false,doorX:C.x,doorZ:C.z,doorFace:'S',exitX:C.out.x,exitZ:C.out.z,exitYaw:C.out.yaw};
+    if(ZONES.world&&ZONES.world.houses&&!ZONES.world.houses.some(h=>h.id===C.house.id))ZONES.world.houses.push(C.house);
+    return M.group;}
+  // S1788 (card F8; Michael's A on #339, "both ways, as drawn") — the grotto's way in from the sea: its sea arch where the grotto's line
+  // meets the sea. Down the line from the stair's head (seaward, the way the grotto runs) the first point 50 to 140 m out where the sea
+  // floor is GROTTO_ARCH_D under the surface: there the cave's outcrop in the same pale rock (PKIT.places.cavemouth, no frame) stands
+  // with its face to the sea, its throat's floor that far down, so the mouth (4.4 m wide, 3.6 high) clears the water by 1.9 m: a
+  // swimmer's way, not a hull's. A child of the mouth's group (it goes when the cell does); its solids beside the mouth's.
+  // -> C.arch {x, z, u, w, out {x, z, yaw}} or none, when the sea floor never falls that far on the line
+  const GROTTO_ARCH_D=1.7;
+  function seaGrottoArch(C,G,y){
+    const sx=-Math.sin(C.ry),sz=-Math.cos(C.ry);let u=0;
+    for(let t=50;t<=140;t+=.5)if(worldH(C.x+sx*t,C.z+sz*t)<SEA_Y-GROTTO_ARCH_D){u=t;break;}
+    if(!u)return;
+    const A=PKIT.places.cavemouth({key:C.id+':arch',rock:'aurenne'}),ay=SEA_Y-GROTTO_ARCH_D;
+    A.group.position.set(0,ay-y,-u);A.group.rotation.y=Math.PI;A.group.name='grotto sea arch';G.add(A.group);
+    const ax=C.x+sx*u,az=C.z+sz*u,ry=C.ry+Math.PI,co=Math.cos(ry),s_=Math.sin(ry);
+    for(const b of A.sol)STATIC_SOL.push({cx:ax+b.x*co+b.z*s_,cz:az-b.x*s_+b.z*co,rx:b.w/2,rz:b.d/2,c:Math.cos(ry+b.ry),s:Math.sin(ry+b.ry),h:b.h,cave:true});
+    C.arch={x:+ax.toFixed(2),z:+az.toFixed(2),u,w:A.mouth.w,tris:A.tris,draws:A.draws,out:{x:+(ax+sx*5).toFixed(2),z:+(az+sz*5).toFixed(2),yaw:C.ry}};}
   // S1782 (backlog L5, OG-096; Michael's B on #1005, "one impossible element each, nothing lit") — the Weaver doors: the gate kit's arch at
   // half its size, alone in a Gatelands pasture within sight of a road, standing a hand clear of the grass (PKIT.wonders.weaverDoor). One
   // Gatelands cell in three keeps one, by its own stream (weaverdoor:<cell>), so no other draw of the cell moves. Read by place (withPlace
