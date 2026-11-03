@@ -5908,7 +5908,10 @@ function aurenneOrrery(hAt, o = {}) {
       const next = new Map(); for (const [a, b, v] of runs) { const k = a + ',' + b + ',' + v, c = open.get(k); if (c) { c.z0 = MZ - (j + 1) * G; next.set(k, c); } else { const n = { x0: X0c + a * G, x1: X0c + b * G, z0: MZ - (j + 1) * G, z1: MZ - j * G, y: v }; cells.push(n); next.set(k, n); } }
       open.clear(); for (const [k, c] of next) open.set(k, c); }
     const low = Math.min(...WS.filter(w => w.y > .1).map(w => w.y));
-    return { group, sky, tris: Math.round(tris), draws: group.children.length, path, walkY, glow, bollards, waterStairs: WS,
+    // S1801 (Michael's A on #1083, swimming in a room) — the sea's bed (and the beach, where it stands over the water) wherever the hall's
+    // ring holds a body 1 m over the water or the sand by 0.3 m, outside the landing and the quay; null for rock. The room swims over it.
+    const bedAt = (x, z) => { if (z > PEND || land(x, z) > 0) return null; const y = floorY(x, z); return inHall(x, Math.max(y, 0) + 1, z, .3) ? y : null; };
+    return { group, sky, tris: Math.round(tris), draws: group.children.length, path, walkY, bedAt, water: 0, glow, bollards, waterStairs: WS,
       quay: { y: QY, x: QX, z0: SHZ, z1: QZ1, w: QW }, stair: { z0: SZ0, z1: SZ1, n: NST, rise: RISE, run: RUN, top: TOPY }, mouth: { x: 0, z: MZ, w: 2 * PH, h: PW2 + PH, y: TOPY },
       arch: { w: 2 * AW, h: AH, z: Z1 }, gate: { w: 2 * GW, d: GD }, chamber: { x0: -RX(.5), x1: RX(.5), z0: Z0, z1: Z1, h: CY + RY(.5) }, spring: { x: bx0 + BD / 2, y: QY + BH, z: SZ }, skiff, beach: { z0: BZ0, z1: BZ1 },
       bounds: { x0: X0c, x1: -X0c, z0: MZ - NZc * G, z1: MZ }, low, cells, obs: OBS, arrive: [0, TOPY, MZ - 1.6, 0] };

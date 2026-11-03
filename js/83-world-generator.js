@@ -2566,8 +2566,8 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   // S1787 (card F8; Michael's A on #339 and #1026) — Aurenne's sea grotto (PKIT.places.grotto, places.js's aurenneGrotto) behind the stair's
   // frame on its outcrop (seaGrotto, 82), built as the sea cove is: moved into a room's frame (the floor 0.25 m under the water stairs'
   // lowest dry tread), its walk the place's own half-metre cells (the stair's treads, the landing and the quay), a foothold and a solid up
-  // to it where you stand and a solid to 60 m over rock and sea; the spring's basin and benches and the bollards boxes 1.2 m up. Nothing
-  // swims in a room: the water is a wall at the quay's edge, so the beach and the arch wait on the sea way in. The light: the day off the
+  // to it where you stand and a solid to 60 m over rock and sea; the spring's basin and benches and the bollards boxes 1.2 m up. Since
+  // S1801 (#1083 A) the sea is swum and the beach walked: only the rock is a wall, and INT_WATER gives the room its water (roomWaterTick, 88). The light: the day off the
   // sea through the arch by the hour, the sea's own glow from under it in two blue lights, and what comes down the stair from its head.
   function QYG(T){return T.quay.y-.05;} /* S1788 — below the quay: the water stairs' treads */
   function buildKitGrotto(house){
@@ -2583,7 +2583,11 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     intNPCMesh=null;intNPCPos={x:-99,z:-99};intBedPos=null;intStashPos=null;
     const SOL=[];INT_SOL=SOL;FOOTHOLDS=[];INT_BEDS=[];INT_DOORS=[];INT_DOORS.house=house.id;INT_CHAIR=null;INT_NPCS=[];HATCH.active=false;HATCH.roof=false;INT_LOOT=null;INT_BOX=null;INT_SHELF=null;
     T.group.position.set(-Bd.x0,-FY,-Bd.z0);sc_.add(T.group);
+    const wet=typeof T.bedAt==='function'; /* S1801 (#1083 A) — the sea and the beach are swum and walked (roomWaterTick, 88): only the rock is a wall */
+    INT_WATER=wet?{house:house.id,y:+ry(T.water).toFixed(2),bed:(x,z)=>{const b=T.bedAt(x+Bd.x0,z+Bd.z0);return b==null?null:b-FY;}}:null;
     for(const c of T.cells){const q={x0:rx(c.x0),x1:rx(c.x1),z0:rz(c.z0),z1:rz(c.z1)};
+      if(c.y==null&&wet){for(let z=c.z0;z<c.z1-.01;z+=.5){let a=null;for(let x=c.x0;x<=c.x1+.01;x+=.5){const rock=x<c.x1-.01&&T.bedAt(x+.25,z+.25)==null;
+          if(rock&&a==null)a=x;else if(!rock&&a!=null){SOL.push({x0:rx(a),x1:rx(x),z0:rz(z),z1:rz(Math.min(c.z1,z+.5)),y0:-20,y1:60});a=null;}}}continue;}
       if(c.y==null){SOL.push({...q,y0:-5,y1:60});continue;}
       const y=+ry(c.y).toFixed(2);SOL.push({...q,y0:-5,y1:y});FOOTHOLDS.push({...q,y});}
     for(const b of T.obs)SOL.push({x0:rx(b.x0),x1:rx(b.x1),z0:rz(b.z0),z1:rz(b.z1),y0:-5,y1:+ry(T.quay.y+1.2).toFixed(2)}); /* the spring's basin and benches, the bollards */
@@ -2600,6 +2604,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   function limeCaveAt(){
     if(isInterior()){const h=currentHouse;if(!h||(h.type!=='limecave'&&h.type!=='seacave'&&h.type!=='mine')||!h._limeCave)return null; /* S1790 — and the mine's adit */const T=h._limeCave,Bd=T.bounds,x=px+Bd.x0,z=pz+Bd.z0;
       if(h.grotto&&T.waterStairs){const w=T.waterStairs.filter(t=>t.y>0&&t.y<.7);if(w.some(t=>x>t.x0-.3&&x<t.x1+.3&&z>t.z0-.3&&z<t.z1+.3))return {seaOut:true};} /* S1788 — the water stairs' foot: the sea way out */
+      if(h.grotto&&T.arch&&typeof roomSwimming==='function'&&roomSwimming()&&z<T.arch.z+7&&Math.abs(x)<T.arch.w/2+2)return {seaOut:true}; /* S1801 (#1083 A) — swum to the arch from inside: the same way out */
       return z>T.mouth.z-3&&Math.abs(x-T.mouth.x)<3?{up:true}:null;}
     if(activeZoneId!=='world'||typeof CELLS==='undefined')return null;const [ci,cj]=cellOf(px,pz);
     for(let j=cj-1;j<=cj+1;j++)for(let i=ci-1;i<=ci+1;i++){const c=CELLS.get(cellKey(i,j));if(!c)continue;for(const C of [c._cave,c._cove,c._grotto,c._mine]){if(!C||!C.house||Math.abs(px-C.x)>12||Math.abs(pz-C.z)>12)continue;
