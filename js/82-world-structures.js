@@ -442,19 +442,22 @@
   // never REGIONS), so the same caves stand whatever has loaded: the ground 5 m or more over the sea, a slope of 1 in 8 to 1 in 1.3, dry
   // before the mouth, 80 m off every pad, 90 m off every door, 70 m off the line of every road and 40 m off every lake's rim; the mouth
   // faces down the slope. -> {id, x, z, ry, name, cell} or null, kept on the cell (c._cave)
+  // S1777 — in the Mark the same rule finds an ice cave (the hall in ice, PKIT.places.cave({ice:true}), places.js's markIceCave, Session 903;
+  // OG-121's "ice caverns, snowed-in mouths"), its mouth an outcrop of ice (cavemouth, rock 'ice'), only where the ground lies under snow all through
+  // (20 m over the cell's snow line, snowLineAt, 84: 38 m in a cold cell)
   function limeCave(c){
     if(c._cave!==undefined)return c._cave;c._cave=null;
     if(c.type==='sea'||c.home||window.OG_LOOK!=='new'||window.OG_KIT_TOWNS===false||typeof PKIT==='undefined'||!PKIT.places||!PKIT.places.cave)return null;
-    if(nationOf(c.i,c.j).people!=='gatelander')return null;
+    const ppl=nationOf(c.i,c.j).people,ice=ppl==='markman';if(ppl!=='gatelander'&&!ice)return null; /* S1777 — the Mark's cells keep the same hall in ice */
     const k=cellKey(c.i,c.j),r=PKIT.stream('limecave:'+k);if(r()>=.5)return null;
     const byId={};for(const t of c.sites)byId[t.id]=t;const lakes=[];for(let j=c.j-1;j<=c.j+1;j++)for(let i=c.i-1;i<=c.i+1;i++){const n=getCell(i,j);if(n&&n.lakes)lakes.push(...n.lakes);}
     const segD=(x,z,a,b)=>{const dx=b.x-a.x,dz=b.z-a.z,t=Math.max(0,Math.min(1,((x-a.x)*dx+(z-a.z)*dz)/(dx*dx+dz*dz||1)));return Math.hypot(x-a.x-dx*t,z-a.z-dz*t);};
     withPlace(c.ox+SIZE/2,c.oz+SIZE/2,()=>{for(let t=0;t<60&&!c._cave;t++){const x=c.ox+260+r()*(SIZE-520),z=c.oz+260+r()*(SIZE-520);
       if(c.sites.some(s=>Math.hypot(s.x-x,s.z-z)<(s.pad||0)+80)||c.doors.some(e=>Math.hypot(e.x-x,e.z-z)<90))continue;
       if(c.roadDefs.some(d=>byId[d.a]&&byId[d.b]&&segD(x,z,byId[d.a],byId[d.b])<70)||lakes.some(l=>Math.hypot(l.x-x,l.z-z)<(l.r||60)+40))continue;
-      const h=rawH(x,z);if(h<5)continue;const gx=(rawH(x+4,z)-rawH(x-4,z))/8,gz=(rawH(x,z+4)-rawH(x,z-4))/8,g=Math.hypot(gx,gz);if(g<.125||g>.77)continue;
+      const h=rawH(x,z);if(h<(ice?snowLineAt(x,z)+20:5))continue;const gx=(rawH(x+4,z)-rawH(x-4,z))/8,gz=(rawH(x,z+4)-rawH(x,z-4))/8,g=Math.hypot(gx,gz);if(g<.125||g>.77)continue;
       const dx=-gx/g,dz=-gz/g;if(rawH(x+dx*6,z+dz*6)<3||rawH(x-dx*8,z-dz*8)<h)continue;
-      c._cave={id:`cave_${k.replace(',','_')}`,x:+x.toFixed(2),z:+z.toFixed(2),ry:+Math.atan2(dx,dz).toFixed(4),name:`${genName(r,c.reg)} Cave`,cell:k};}});
+      c._cave={id:`cave_${k.replace(',','_')}`,x:+x.toFixed(2),z:+z.toFixed(2),ry:+Math.atan2(dx,dz).toFixed(4),name:`${genName(r,c.reg)} ${ice?'Ice Cave':'Cave'}`,cell:k,ice};}});
     return c._cave;}
   // its pad (in the cell's first step, so the chunks are built with it): flat at the ground before the mouth over the throat, 4.6 m round
   // its middle, so the rising slope is cut out of the throat; and a wider stamp that only clears the trees and rocks off the outcrop
@@ -462,11 +465,11 @@
     return [addStamp({id:C.id+'_pad',kind:'door',x:C.x-s*2.4,z:C.z-co*2.4,r:4.6,blend:5,y,cell:k}),addStamp({id:C.id+'_clear',kind:'door',noFlat:true,x:C.x-s*4,z:C.z-co*4,r:10,blend:2,y,cell:k})];}
   // the mouth (PKIT.places.cavemouth) stood on its pad, turned down the slope; the outcrop's solids; and the cave's record in the world's
   // houses for a save made inside (byAim: no door finds it by nearness; caveAt does), taken out when the cell unloads (unloadCell)
-  function placeLimeCave(c,k){const C=limeCave(c);if(!C)return null;const M=PKIT.places.cavemouth({key:C.id}),y=worldH(C.x,C.z),co=Math.cos(C.ry),s_=Math.sin(C.ry);
-    M.group.position.set(C.x,y,C.z);M.group.rotation.y=C.ry;M.group.name='cave mouth';sc.add(M.group);
+  function placeLimeCave(c,k){const C=limeCave(c);if(!C)return null;const M=PKIT.places.cavemouth(C.ice?{key:C.id,rock:'ice'}:{key:C.id}),y=worldH(C.x,C.z),co=Math.cos(C.ry),s_=Math.sin(C.ry);
+    M.group.position.set(C.x,y,C.z);M.group.rotation.y=C.ry;M.group.name=C.ice?'ice cave mouth':'cave mouth';sc.add(M.group);
     for(const b of M.sol)STATIC_SOL.push({cx:C.x+b.x*co+b.z*s_,cz:C.z-b.x*s_+b.z*co,rx:b.w/2,rz:b.d/2,c:Math.cos(C.ry+b.ry),s:Math.sin(C.ry+b.ry),h:b.h,cave:true});
     C.y=y;C.tris=M.tris;C.draws=M.draws;C.mouth=M.mouth;C.out={x:C.x+s_*2.2,z:C.z+co*2.2,yaw:C.ry+Math.PI};
-    C.house={id:`g_${C.id}`,type:'limecave',byAim:true,siteId:C.id,name:C.name,keeper:'',reg:c.reg,style:'irish',w:50,d:86,two:false,doorX:C.x,doorZ:C.z,doorFace:'S',exitX:C.out.x,exitZ:C.out.z,exitYaw:C.out.yaw};
+    C.house={id:`g_${C.id}`,type:'limecave',byAim:true,siteId:C.id,name:C.name,keeper:'',reg:c.reg,style:'irish',w:50,d:86,two:false,doorX:C.x,doorZ:C.z,doorFace:'S',exitX:C.out.x,exitZ:C.out.z,exitYaw:C.out.yaw,ice:!!C.ice};
     if(ZONES.world&&ZONES.world.houses&&!ZONES.world.houses.some(h=>h.id===C.house.id))ZONES.world.houses.push(C.house);
     return M.group;}
   // S1773 (card F8, Michael's A on #1026) — the smugglers' sea caves on the Gatelands' coast (PKIT.places.cove, places.js's smugglersLair,

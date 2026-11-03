@@ -2481,7 +2481,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   // flowers' own glow; a low ambient keeps the rock's shape. No one is here.
   function kitLimeCave(house){return !!(house&&house.type==='limecave'&&typeof PKIT!=='undefined'&&PKIT.places&&PKIT.places.cave);}
   function buildKitLimeCave(house){
-    const T=PKIT.places.cave({key:house.siteId}),Bd=T.bounds,FY=+(T.low-.25).toFixed(2),W=Bd.x1-Bd.x0,D=Bd.z1-Bd.z0;
+    const T=PKIT.places.cave(house.ice?{key:house.siteId,ice:true}:{key:house.siteId}),Bd=T.bounds,FY=+(T.low-.25).toFixed(2),W=Bd.x1-Bd.x0,D=Bd.z1-Bd.z0;
     const rx=x=>x-Bd.x0,rz=z=>z-Bd.z0,ry=y=>y-FY;
     house._counterFront=null;house.intW=W;house.intD=D;house._roomH=+(T.chamber.h-FY+6).toFixed(2);house._exitD=.01;house._exitW=.01;house._exitX=-99;house._exitZ=-99;house._exitText=true;house._limeCave=T;
     const A=T.arrive;house._arriveX=+rx(A[0]).toFixed(3);house._arriveZ=+rz(A[2]).toFixed(3);house._arriveYaw=A[3];
@@ -2495,7 +2495,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       const y=+ry(c.y).toFixed(2);SOL.push({...q,y0:-5,y1:y});FOOTHOLDS.push({...q,y});}
     const hr=typeof gameHour==='function'?gameHour():12,dayK=hr>=7&&hr<18?1:hr>=5&&hr<20?.45:.08;
     T.sky.color.setHex(hr>=7&&hr<18?0xc4d0dc:hr>=5&&hr<20?0x8a7a7a:0x0e1420);
-    sc_.add(new THREE.AmbientLight(0xbcc6d0,.32));
+    sc_.add(house.ice?new THREE.AmbientLight(0xb4cce2,.36):new THREE.AmbientLight(0xbcc6d0,.32)); /* S1777 — the ice gives back a little more, and bluer */
     {const M=T.mouth,l=new THREE.PointLight(0xdfe6f0,3.2*dayK,26,1);l.position.set(rx(M.x),ry(M.y)+2.2,rz(M.z)-1);l.userData.daylight=true;sc_.add(l);}
     {const S=T.shaft,s=new THREE.SpotLight(0xd8e2ee,9*dayK,60,.5,.6,1);s.position.set(rx(S.x),ry(S.top),rz(S.z));s.target.position.set(rx(T.falls.x),ry(T.falls.foot),rz(T.falls.z));s.userData.daylight=true;sc_.add(s,s.target);
       const p=new THREE.PointLight(0xb8d4e0,2.2*dayK+.2,30,1);p.position.set(rx(T.falls.x),ry(T.falls.foot)+3,rz(T.falls.z)+2);sc_.add(p);}
@@ -2543,7 +2543,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       const co=Math.cos(C.ry),s_=Math.sin(C.ry),dx=px-C.x,dz=pz-C.z,u=dx*co-dz*s_,v=dx*s_+dz*co;
       if(Math.abs(u)<C.mouth.w/2+.2&&v<1.8&&v>-3.4&&Math.abs(jumpY-C.y)<1.5)return {down:true,C};}}
     return null;}
-  function limeCavePrompt(){const t=limeCaveAt();return !t?null:t.up?"Press 'E' to go out into the day":"Press 'E' to go into the cave";}
+  function limeCavePrompt(){const t=limeCaveAt();return !t?null:t.up?"Press 'E' to go out of the cave":"Press 'E' to go into the cave";}
   function limeCaveUse(){const t=limeCaveAt();if(!t)return false;
     if(t.down){goToInterior(t.C.house);return true;}
     const h=currentHouse,[ci,cj]=h&&h.siteId?h.siteId.replace(/^(cave|cove)_/,'').split('_').map(Number):[NaN,NaN],c=CELLS.get(cellKey(ci,cj)),C=c&&(h.type==='seacave'?c._cove:c._cave);
