@@ -243,6 +243,15 @@ for (const [cls, hands] of [['cutter', ['navigator', 'carpenter']], ['cog', ['co
 console.log(JSON.stringify(crew), JSON.stringify(['cutter', 'cog'].map(c => [crew[c].moves, crew[c].out, crew[c].left])));
 check('below deck her crew stand at their stations, clear of the solids: the carpenter at the workbench; on the cutter the navigator, his chart table at the ladder\'s foot, by the sea chest; on the cog the cook by the barrels', ['cutter', 'cog'].every(c => crew[c].length === 2 && crew[c].every(h => h.d != null && h.d < .5 && h.free)) && crew.cutter.map(h => h.at).join() === 'sea chest,workbench' && crew.cog.map(h => h.at).join() === 'barrel,workbench', crew);
 check('each hand is a builder body whose bones move, stooped under the deck or the beam over him (the head bone + 0.15 under it), and stands off the ladder\'s foot, where E still takes you on deck', ['cutter', 'cog'].every(c => crew[c].every(h => h.hb && h.arrive >= 1.2 && h.crown != null && h.crown < h.clear) && crew[c].moves.every(Boolean) && crew[c].out === 'ok' && crew[c].left), ['cutter', 'cog'].map(c => [crew[c].map(h => [h.arrive, h.crown, h.clear]), crew[c].moves, crew[c].out, crew[c].left]));
+/* Session 1798 (the systems builder's ask, S1791): a hand met at a port takes that port's people and nation (crewPeople, from ship.met); a hand
+   from a save made before ship.met keeps the stream keyed by role and ship's name */
+const met = await page.evaluate(() => { const ks = worldState.ship, out = {}; try {
+    const ports = allPorts().filter(t => t && t.id && WORLD.nationKeyOf(...cellOf(t.x, t.z)) === 'mark'); const t = ports[0]; if (!t) return { port: null };
+    worldState.ship = { cls: 'cutter', name: 'Test Crew', crew: ['cook'], ashore: {}, met: { cook: t.id } };
+    out.port = t.id; out.got = crewPeopleOf('cook', worldState.ship); out.want = crewPeople('cook');
+    worldState.ship = { cls: 'cutter', name: 'Test Crew', crew: ['cook'], ashore: {} }; out.old = crewPeopleOf('cook', worldState.ship);
+    out.oldWant = CREW_PEOPLE[pHash('cook|Test Crew') % 3]; } finally { worldState.ship = ks; } return out; });
+check('a hand met at a Mark port takes that port\'s people and the Mark\'s nation; one from an older save keeps the roll by role and ship', !!met.port && JSON.stringify(met.got) === JSON.stringify(met.want) && met.got[1] === 'mark' && JSON.stringify(met.old) === JSON.stringify(met.oldWant), met);
 /* Session 1564 (backlog L6; #418 A): and below deck on your caravel is her hold (PKIT.ships.caravelBase): under the main deck from the
    cabin's bulkhead to the stem's, the ladder's foot mid-hold by the main mast; the workbench and the alchemist's table aft past the two
    chests, the barrels forward. Her berth is in the cabin under the castle, not here */
