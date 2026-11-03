@@ -2510,6 +2510,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   // the deck, the T-head); abandoned, the day alone. No one is here: whoever keeps the lair is the systems builder's to put in.
   function kitSeaCave(house){return !!(house&&house.type==='seacave'&&typeof PKIT!=='undefined'&&PKIT.places&&PKIT.places.cove);}
   function buildKitSeaCave(house){
+    if(house.grotto)return buildKitGrotto(house); /* S1784 — Aurenne's sea grotto */
     const T=PKIT.places.cove({key:house.siteId,held:house.held!==false}),Bd=T.bounds,FY=+(T.low-.25).toFixed(2),W=Bd.x1-Bd.x0,D=Bd.z1-Bd.z0;
     const rx=x=>x-Bd.x0,rz=z=>z-Bd.z0,ry=y=>y-FY;
     house._counterFront=null;house.intW=W;house.intD=D;house._roomH=+(T.chamber.h-FY+6).toFixed(2);house._exitD=.01;house._exitW=.01;house._exitX=-99;house._exitZ=-99;house._exitText=true;house._limeCave=T;house._seaCave=true;
@@ -2533,20 +2534,49 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     if(T.held){for(const [x,y,z,k] of [[T.fire.x,T.deck+1.2,T.fire.z,3],[-8,T.deck+2.6,(T.gallery.z0+T.gallery.z1)/2,2.4],[0,T.deck+1.6,T.jetty.z,2.4]]){const l=new THREE.PointLight(0xffb060,k,20,1.4);l.position.set(rx(x),ry(y),rz(z));sc_.add(l);}}
     return sc_;
   }
+  // S1784 (card F8; Michael's A on #339 and #1026) — Aurenne's sea grotto (PKIT.places.grotto, places.js's aurenneGrotto) behind the stair's
+  // frame on its outcrop (seaGrotto, 82), built as the sea cove is: moved into a room's frame (the floor 0.25 m under the water stairs'
+  // lowest dry tread), its walk the place's own half-metre cells (the stair's treads, the landing and the quay), a foothold and a solid up
+  // to it where you stand and a solid to 60 m over rock and sea; the spring's basin and benches and the bollards boxes 1.2 m up. Nothing
+  // swims in a room: the water is a wall at the quay's edge, so the beach and the arch wait on the sea way in. The light: the day off the
+  // sea through the arch by the hour, the sea's own glow from under it in two blue lights, and what comes down the stair from its head.
+  function buildKitGrotto(house){
+    const T=PKIT.places.grotto({key:house.siteId}),Bd=T.bounds,FY=+(T.low-.25).toFixed(2),W=Bd.x1-Bd.x0,D=Bd.z1-Bd.z0;
+    const rx=x=>x-Bd.x0,rz=z=>z-Bd.z0,ry=y=>y-FY;
+    house._counterFront=null;house.intW=W;house.intD=D;house._roomH=+(T.chamber.h-FY+6).toFixed(2);house._exitD=.01;house._exitW=.01;house._exitX=-99;house._exitZ=-99;house._exitText=true;house._limeCave=T;house._seaCave=true;
+    const A=T.arrive;house._arriveX=+rx(A[0]).toFixed(3);house._arriveZ=+rz(A[2]).toFixed(3);house._arriveYaw=A[3];
+    if(!window._pendingPos)window._pendingPos={x:house._arriveX,z:house._arriveZ,yaw:A[3],jumpY:ry(A[1])}; /* goToInterior stands you at the floor; the stair's head is 6 m over it */
+    const sc_=new THREE.Scene();interiorScene=sc_;landRoomPost(sc_);sc_.background=new THREE.Color(0x05080c);sc_.fog=new THREE.Fog(0x05080c,30,110);
+    intNPCMesh=null;intNPCPos={x:-99,z:-99};intBedPos=null;intStashPos=null;
+    const SOL=[];INT_SOL=SOL;FOOTHOLDS=[];INT_BEDS=[];INT_DOORS=[];INT_DOORS.house=house.id;INT_CHAIR=null;INT_NPCS=[];HATCH.active=false;HATCH.roof=false;INT_LOOT=null;INT_BOX=null;INT_SHELF=null;
+    T.group.position.set(-Bd.x0,-FY,-Bd.z0);sc_.add(T.group);
+    for(const c of T.cells){const q={x0:rx(c.x0),x1:rx(c.x1),z0:rz(c.z0),z1:rz(c.z1)};
+      if(c.y==null){SOL.push({...q,y0:-5,y1:60});continue;}
+      const y=+ry(c.y).toFixed(2);SOL.push({...q,y0:-5,y1:y});FOOTHOLDS.push({...q,y});}
+    for(const b of T.obs)SOL.push({x0:rx(b.x0),x1:rx(b.x1),z0:rz(b.z0),z1:rz(b.z1),y0:-5,y1:+ry(T.quay.y+1.2).toFixed(2)}); /* the spring's basin and benches, the bollards */
+    const hr=typeof gameHour==='function'?gameHour():12,dayK=hr>=7&&hr<18?1:hr>=5&&hr<20?.45:.08;
+    T.sky.color.setHex(hr>=7&&hr<18?0xc4d0dc:hr>=5&&hr<20?0x8a7a7a:0x0e1420);
+    sc_.add(new THREE.AmbientLight(0xbcc6d0,.26));
+    {const l=new THREE.PointLight(0xd8e4ec,6*dayK+.2,60,1);l.position.set(rx(0),ry(4),rz(T.arch.z+6));l.userData.daylight=true;sc_.add(l);}
+    for(const k of [1,3]){const [x,y,z]=T.glow[k],l=new THREE.PointLight(0x3a8ee8,3.2*dayK+.4,34,1.2);l.position.set(rx(x),ry(y),rz(z));l.userData.daylight=true;sc_.add(l);} /* the sea's light from under it */
+    {const M=T.mouth,l=new THREE.PointLight(0xdfe6f0,2.4*dayK,16,1);l.position.set(rx(M.x),ry(M.y)+2,rz(M.z-1.5));l.userData.daylight=true;sc_.add(l);}
+    return sc_;
+  }
   // the cave's one way, from either side: in the world, stood in the mouth's throat; inside, within the passage's first 3 m from its mouth
   // (S1773: the sea caves' too, c._cove beside c._cave)
   function limeCaveAt(){
     if(isInterior()){const h=currentHouse;if(!h||(h.type!=='limecave'&&h.type!=='seacave')||!h._limeCave)return null;const T=h._limeCave,Bd=T.bounds,x=px+Bd.x0,z=pz+Bd.z0;
       return z>T.mouth.z-3&&Math.abs(x-T.mouth.x)<3?{up:true}:null;}
     if(activeZoneId!=='world'||typeof CELLS==='undefined')return null;const [ci,cj]=cellOf(px,pz);
-    for(let j=cj-1;j<=cj+1;j++)for(let i=ci-1;i<=ci+1;i++){const c=CELLS.get(cellKey(i,j));if(!c)continue;for(const C of [c._cave,c._cove]){if(!C||!C.house||Math.abs(px-C.x)>12||Math.abs(pz-C.z)>12)continue;
+    for(let j=cj-1;j<=cj+1;j++)for(let i=ci-1;i<=ci+1;i++){const c=CELLS.get(cellKey(i,j));if(!c)continue;for(const C of [c._cave,c._cove,c._grotto]){if(!C||!C.house||Math.abs(px-C.x)>12||Math.abs(pz-C.z)>12)continue;
       const co=Math.cos(C.ry),s_=Math.sin(C.ry),dx=px-C.x,dz=pz-C.z,u=dx*co-dz*s_,v=dx*s_+dz*co;
       if(Math.abs(u)<C.mouth.w/2+.2&&v<1.8&&v>-3.4&&Math.abs(jumpY-C.y)<1.5)return {down:true,C};}}
     return null;}
-  function limeCavePrompt(){const t=limeCaveAt();return !t?null:t.up?"Press 'E' to go out of the cave":"Press 'E' to go into the cave";}
+  function limeCavePrompt(){const t=limeCaveAt();if(!t)return null;const gr=t.up?!!(currentHouse&&currentHouse.grotto):!!(t.C&&t.C.house&&t.C.house.grotto); /* S1784 — the grotto's stair */
+    return gr?(t.up?"Press 'E' to go up the stair":"Press 'E' to go down the stair"):t.up?"Press 'E' to go out of the cave":"Press 'E' to go into the cave";}
   function limeCaveUse(){const t=limeCaveAt();if(!t)return false;
     if(t.down){goToInterior(t.C.house);return true;}
-    const h=currentHouse,[ci,cj]=h&&h.siteId?h.siteId.replace(/^(cave|cove)_/,'').split('_').map(Number):[NaN,NaN],c=CELLS.get(cellKey(ci,cj)),C=c&&(h.type==='seacave'?c._cove:c._cave);
+    const h=currentHouse,[ci,cj]=h&&h.siteId?h.siteId.replace(/^(cave|cove|grotto)_/,'').split('_').map(Number):[NaN,NaN],c=CELLS.get(cellKey(ci,cj)),C=c&&(h.grotto?c._grotto:h.type==='seacave'?c._cove:c._cave); /* S1784 — and the grotto's */
     if(C&&C.out)window._pendingWorldPos={x:C.out.x,z:C.out.z,yaw:C.out.yaw,jumpY:worldH(C.out.x,C.out.z)};
     exitInterior();return true;}
   // S1288 (card F9, Michael's A on #321 and #588) — on the new look a Markish inn standing as the kit's hall (lot.kit.alehall, S1288's
