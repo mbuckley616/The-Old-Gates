@@ -15,6 +15,18 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+### The under-places — walk the ice, swim in a room, climb a ladder? (from the systems builder, 2026-11-03, #1083)
+**The question.** The look builder's under-places (card F8, #1026 A) are in, and three of their parts are drawn but cannot be used, because each needs a rule rooms do not have yet: the ice cave's frozen lake (the Mark, 4 caves) is a wall at its edge; the sea grotto's beach (Aurenne, 9 grottoes) lies across water and nothing swims in a room; the smugglers' sea cave's ladder (the Gatelands, 11 caves) goes up to a ledge and an escape tunnel, and nothing climbs in a room. Which of these should rooms gain?
+
+**Options.**
+- **A (recommended).** All three: walk on any frozen water in a room, as on the gates' frozen pool (`freezePool`, Session 1678); swim in a room's deep water by the open sea's rules; a ladder is E at its foot or top and carries you up or down in about 2 s. The tunnel from the ledge is a second way out of the cave. Three systems sessions.
+- **B.** The ice and the ladder only: no swimming in rooms; the grotto's beach is reached only by its sea arch. Two sessions.
+- **C.** The ice only: the rule is already in the gates. One session.
+- **D.** None for now: leave them drawn, as walls, until after F14.
+
+**Recommendation: A.** From Session 1791 (`docs/devlog/1791.md`).
+
+## Answered
 ### Wagons and carts by island — how far do the islands' vehicles differ? (from the concept artist, 2026-11-02, #1046)
 **The question.** Backlog L3 owes the wagons and carts (OG-046, OG-058). The concept artist built nine in the new look, three per island, on one shared running gear (wheels, axles, bed, shafts, pole, yoke, runners), each team from the creature kit with its harness fitted to the beast. A vehicle alone is 2.7k to 10.8k triangles; a team of two adds about 100k. How far should the islands' vehicles differ?
 
@@ -24,6 +36,8 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 - **C.** B, plus runners in the Mark's snow: while `WX.cover` lies, the ox cart and light cart run on runners; the carved wagon keeps its wheels. Two more bodies.
 
 **Recommendation: B.** Each island's vehicles look like that island at no more cost than one kit painted three ways; C can be added later without changing B. Pictures: [A, B and C](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1102/docs/prototypes/levelup/wagons-options.jpg), [in scale](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1102/docs/prototypes/levelup/wagons-scale.jpg), [close up](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1102/docs/prototypes/levelup/wagons-close.jpg), [the Mark in snow](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1102/docs/prototypes/levelup/wagons-road-mark-snow.jpg). The write-up is in `docs/concepts.md`.
+
+Michael: **Each island its own three, with its own animals** (B). (2026-11-03)
 
 ### The four aggressive island animals and the two river fish (from the systems builder, 2026-11-02, #1050)
 **The question.** Session 1769 put the three islands' own animals into the open country (33 kinds, by biome). Six bodies were left out because the catalogue makes them more than a peaceful one-blow animal: four it calls aggressive or hostile (the **Gatefen Boar**, the **Icecrab**, the **Saltspine Monitor**, the **Sand Wyrm**), and two are fish (the **River Pike**, the **Riverjaw Salmon**), each a new item with a price. How should they enter the world?
@@ -36,6 +50,8 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 
 **Recommendation: A.** Devlog `docs/devlog/1769.md`.
 
+Michael: **Animals that answer back** (A). (2026-11-03)
+
 ### Hearing, No mark and Word given — the last three perks (from the systems builder, 2026-11-03, #1055)
 **The question.** Asked again (#376): Michael's C on 16 Oct said to decide these three perks once 2.0's other systems were in, and they now are. Each perk takes away a rule the game does not have yet: nobody ever finds a picked lock (No mark, Locks 100), nobody refuses to talk at any favour (Hearing, Speech 75), and there is no trespass for a guard to waive (Word given, Speech 100). Cooking's *Shared pot* waits on a second person at the fire.
 
@@ -47,6 +63,8 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 
 **Recommendation: C.** From Session 1772 (`docs/devlog/1772.md`).
 
+Michael: **A's No mark and Word given, B's Hearing** (C). (2026-11-03)
+
 ### Naval combat — board and be boarded, weapons on their arcs, or a sea that answers? (from the designer, 2026-11-03, #1064)
 **The question.** Backlog L, *Naval combat, more of it* (OG-017). Today a black sail has no hull of her own: nothing fired from your deck can hurt her, your rams hurt only you, and a fight is won only by climbing her net. Which shape should a fight between two ships take, given Michael's 7 A (guns on the top ships only) and 4 C (crew without morale)?
 
@@ -56,6 +74,8 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 - **C.** B, and a sea that answers: Crown patrols, merchant traffic, distress calls, harbour towers, and the Mark's fog and ice. Twelve sessions; the patrols wait on the banner (#979 C) and the war.
 
 **Recommendation: B.** It gives the approach a weapon and the end a choice (sinking is safe and loses the prize, boarding is risky and pays), every weapon costs hold space against cargo, and the guns stay the galleon's. Page: `docs/design/naval-combat.md`.
+
+Michael: **A, with weapons on their arcs** (B). (2026-11-03)
 
 ### Aurenne's ruined aqueduct — fit it to the land, or wait? (from the look builder, 2026-11-03, #1072)
 **The question.** Card F8, backlog L10 (OG-121, OG-124). Michael chose the ruined aqueduct as drawn (#333 A): an arcade of 6 arches below and 10 above across a dry valley 20 m deep and 108 m wide. The world's ground cannot be cut, and Session 1784 measured Aurenne headless: in 400 random lines in each of its 21 land cells none was 120 m long, level at both ends and 12 m deep in the middle, and across every routed river the deepest valley in a cell is 0 to 10.2 m (most 4 to 8 m).
@@ -67,7 +87,8 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 
 **Recommendation: A.** Pictures: [the valley and the two tiers](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/places-aqueduct-aqueduct.jpg), [at the break](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/places-aqueduct-break.jpg). Meanwhile Aurenne's sea grotto went in instead (PR #1071).
 
-## Answered
+Michael: **Fit the arcade to the land** (A). (2026-11-03)
+
 ### The places under the land — how you get in (from the look builder, 2026-11-02, #1026)
 Card F8's places on the land are in the world (the abbey S1715, the tower house S1725, the passage cairn S1732). Three prototypes are left, all under the ground: the limestone cave (#313 A, its lake under falls), the smugglers' lair (#314) and the tower house's cellar, souterrain and pit (#401 A). The open world's terrain is one height per point, so nothing can be dug into it. How do you get in?
 
