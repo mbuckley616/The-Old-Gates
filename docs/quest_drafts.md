@@ -2,7 +2,7 @@
 
 These are the quest writer's drafts. None of them is canon until Michael promotes it into `quest_writing.md`, and none is a spec until it is approved. Each draft gives the quest's shape, every line verbatim with its speaker and people, and a note on what in the code would carry it.
 
-Calls read to: 2026-10-16T17:51:09.360Z (run 34, 2 Nov: no new calls on the page)
+Calls read to: 2026-10-16T17:51:09.360Z (run 35, 3 Nov: no new calls on the page)
 
 ---
 
@@ -2079,7 +2079,7 @@ The three ending rows and his answers to them are as built (*Break it. Let the w
 
 ## Asked in Passing — six townsfolk's errands
 
-*Approved by Michael, 14 Oct 2026.* *Building: the frame and errand 3, A Fever, Session 1510 (PR #817, on main 28 Oct), word for word but for two plain fixes: only a giver with children asks for a fever (the offer says* My youngest*), and the giver answers* I’ll do it. *with the people's line added to the shared table below. Errand 1, The Unanswered Letter, Session 1554 (PR #868), word for word; the resident on* there *has no line, so the topic is left off there and the addressee is marked at their door, and the hand-off to errand 4 on* dead *waits for errand 4.* *Errand 5, The Debt, Session 1677 (PR #970), word for word, with the debtor's answer to* Keep it *added (the draft had none): Gatelander "Tell them I'll pay at the harvest, so, and it'll be true." · Markman "Aye. Owe you one, then." · Aurennais "Then I owe you a discretion, Master. It is the dearer debt." · Old Blood "Good."* *Errand 2, The Borrowed Thing, Session 1722 (PR #1017), word for word, with what the draft left unwritten added in its register: the Gatelander's* {work} *by thing, the borrower's answers to* Keep it a month*,* Keep it. You need it more. *and* I'll take the coin. *(the hand-over's lines), the giver's answer to the month, and the three labels at home (*Here's what it sold for.*,* They'll bring it back in a month.*,* They sold it. I left them the coin.*); the shepherd's shears are a* pair of shears *and the net-mender's needles a* needle-case*, so that* a good {thing} is *and* I sold it *agree. Devlog 1722 has every added line.* *Errand 4, Say the Name at the Door, Session 1600, word for word, with the hand-off from errand 1. One plain fix: a Markman asks only with no spouse in their bio, since a townsperson with one answers* Married to {spouse} *in the same conversation.* The first piece of Michael's control-room note of 5 Oct (backlog A, *Questing, a big effort pass*): *"we also need to add probably 50–100 somewhat unique quests. We can probably generalize these and make it so that these can be recycled in different areas, but I want quests to be something far more likely to stumble upon / something that will incentivize players to talk to NPCs."* Today every town job comes from the lord (`townQuestFor`, `87-world-quests.js`: cull, retrieve, deliver, find, road) and every guild task from a guild head. The people in the street give nothing. This draft gives them six errands, each a template that recycles across every town, trade and people, each with a choice or a clock that the world remembers. Six templates × the twelve trades that can give them × four peoples × the towns they point at is the variety the note asks for; a second run can add six more on the same frame.
+*Approved by Michael, 14 Oct 2026.* *Building: the frame and errand 3, A Fever, Session 1510 (PR #817, on main 28 Oct), word for word but for two plain fixes: only a giver with children asks for a fever (the offer says* My youngest*), and the giver answers* I’ll do it. *with the people's line added to the shared table below. Errand 1, The Unanswered Letter, Session 1554 (PR #868), word for word; the resident on* there *has no line, so the topic is left off there and the addressee is marked at their door, and the hand-off to errand 4 on* dead *waits for errand 4.* *Errand 5, The Debt, Session 1677 (PR #970), word for word, with the debtor's answer to* Keep it *added (the draft had none): Gatelander "Tell them I'll pay at the harvest, so, and it'll be true." · Markman "Aye. Owe you one, then." · Aurennais "Then I owe you a discretion, Master. It is the dearer debt." · Old Blood "Good."* *Errand 2, The Borrowed Thing, Session 1722 (PR #1017), word for word, with what the draft left unwritten added in its register: the Gatelander's* {work} *by thing, the borrower's answers to* Keep it a month*,* Keep it. You need it more. *and* I'll take the coin. *(the hand-over's lines), the giver's answer to the month, and the three labels at home (*Here's what it sold for.*,* They'll bring it back in a month.*,* They sold it. I left them the coin.*); the shepherd's shears are a* pair of shears *and the net-mender's needles a* needle-case*, so that* a good {thing} is *and* I sold it *agree. Devlog 1722 has every added line.* *Errand 6, The Watch, Session 1776 (PR #1060), word for word, with the lapse's narrator line added (*The night at the {fold} is lost.*), the Gatelander's* fond of {beast} *given a plural of its own (*ewes*, *hens*, *honey*), and the* soldier off duty *left out (a guard gives no errand on the frame); devlog 1776. The first run's six are built.* *Errand 4, Say the Name at the Door, Session 1600, word for word, with the hand-off from errand 1. One plain fix: a Markman asks only with no spouse in their bio, since a townsperson with one answers* Married to {spouse} *in the same conversation.* The first piece of Michael's control-room note of 5 Oct (backlog A, *Questing, a big effort pass*): *"we also need to add probably 50–100 somewhat unique quests. We can probably generalize these and make it so that these can be recycled in different areas, but I want quests to be something far more likely to stumble upon / something that will incentivize players to talk to NPCs."* Today every town job comes from the lord (`townQuestFor`, `87-world-quests.js`: cull, retrieve, deliver, find, road) and every guild task from a guild head. The people in the street give nothing. This draft gives them six errands, each a template that recycles across every town, trade and people, each with a choice or a clock that the world remembers. Six templates × the twelve trades that can give them × four peoples × the towns they point at is the variety the note asks for; a second run can add six more on the same frame.
 
 ### What the canon fixes, and where it is silent
 
@@ -5907,3 +5907,232 @@ Cosmetic, from the stands while a ladder bout or a brawl runs (`Math.random` is 
 
 - Whether Red Finn is ever met, and what the raid was, is *The strange and the legendary* (backlog L2). This draft leaves room: nobody knows.
 - The occupied League town's lost duels (§12) are *Under Another Flag*'s; the master's line there is the only one this draft adds.
+
+---
+
+## Off the Road, I — six small mysteries with no marker
+
+*Unapproved.* *Drafted 3 Nov 2026. Backlog L5, *Off the road* (OG-124, panel 6): "small mysteries with no marker: an overturned carriage, a lone grave under a ringed cross, strange tracks, a locked cellar. Finds in four tiers by time spent, minutes to hours." The look builder's prototypes leave the words to the quest writer, place by place: the overturned carriage (S1025, "who was in it"), the locked cellar (S1026, "who comes, and what is below"), Aurenne's abandoned expedition (S1023, "what they found and why they ran"), the perched stone (S1031, "whether it is a lead"), the Mark's unfinished camp (S1032, "who, and why they stopped"), and the lone grave ("it wants the canon on who is buried and why, since the dead go to the gates"). This draft answers all six. The strange tracks are the bodies builder's first (whose feet) and wait; the pilgrims' rest waits on the same question the look builder named.*
+
+*Waits on the look builder:* none of the six is in the game yet; each is a `places.js` prototype. This draft is their words, ready for when they are placed.
+
+### What the canon fixes, and where it is silent
+
+- §10a: the surface is high fantasy, people mostly kind, busy and funny; the strange is written dry and the locals do not remark on it. So most of these mysteries have a plain answer, and the eeriness is the player's own. Only one (the expedition) touches the dark underneath, and it does so the way the canon asks: inferred, never said.
+- §14: *some ordinary animals have six legs and nobody remarks on it.* That is the carriage's answer.
+- §3.1: the Withdrawal forbade the *reading* of sigils; the Academy and the Church both sit in Aurenne; the Church blesses the dead into the gates. §3.3: an Old Blood feels a warm stone at a distance. That is the expedition.
+- §3.1 and *Say the Name at the Door* (built, S1600): the Old Blood giver's line, *"We bury ours in the ground. Not at the doors. My grandmother would not say why."* That is the lone grave. The canon has no cross: the backlog's *ringed cross* is a picture's shorthand. The plainer thing the canon allows is a standing stone with a hole through it, which the Gatelands' fields already have and nobody needs explained.
+- §1.1, §1.2: the Crown licenses and taxes; the Mark's pride is an oath kept and its contempt is ledgers. The cellar is a Gatelands still and the Crown's excise; the camp is a Markman who saw the sky turn.
+- The canon is silent on the perched stone. The Gatelands' folk answer goes to An Chloch, the Stone, a god of the canon's own pantheon (§4.1), not to a new figure.
+
+### The frame (all six)
+
+- **No marker, ever.** None of these is offered, starred or put on the map until the player has done something there. A place's first lines come from *E* on its props (the narrator), each once a visit; the thread is a topic in the nearest town, in the player's voice, which appears only once the player has seen the thing it asks about (`seen` on the place's record).
+- **Four tiers by time spent** (OG-124): *minutes* — the props' lines; *a quarter-hour* — the find (an item, read or carried); *an hour* — the nearest town's topic and its answer; *hours* — the last step, where there is one (a return, a night's wait, a choice).
+- **The ids.** Each place is keyed `<kind>:<cell i>,<cell j>:<n>`, by place and index (co-op rules), from wherever the look builder's scatter seeds it. A thread taken up is a quest record in `QJ()` with `kind:'mystery'`, `sub:` the place's kind, and the id `my:<place key>`, so nothing new is kept in `worldState` (as the errands). A prop's once-a-visit line is not saved.
+- **The pay** is small and never the point: a few coins, an item that is a little better than the shop's, a point of a town's favour, a line someone says later. Two of the six pay nothing at all.
+- The nearest town is the nearest site of 45 pad or more within 700 (as the errands pick), its people by `peopleOfNpc`.
+
+---
+
+### 1. The Overturned Carriage (the Gatelands, a lane)
+
+*Who was in it.* A Compact factor, **Nadira Hassan Belkadi** (Aurennais), hired a Gatelands coach to ride inland to a horse fair; the coachman, **Tomás Ó Ceallaigh** (Gatelander), drove her at dusk. On the lane a six-legged elk crossed in front of the team. Tomás's horses were from the coast and had never seen one. They bolted, the coach went over the ditch, Tomás cut the traces to save the horses, and the two of them walked to the nearest town with the horses and without the luggage. Nobody was hurt. The lamp is still burning because it happened last night.
+
+**The props** (*E*, the narrator, each once a visit):
+- the coach: *The coach lies on its side in the field. Its door stands open on the dark inside. Nobody is in it.*
+- the lamp: *The far lamp is still burning. Whatever happened here happened since it was filled.*
+- the traces: *The traces are cut, not snapped. Someone took a knife to them, close to the bar.*
+- the whip, in the road: *A coachman's whip, dropped where the lane bends.*
+- the hat, in the ditch: *A broad hat of good felt, with a blue silk band.* (taken: **A Factor's Hat**, `misc`, weight 0.3, 4 gold: *Felt, with a blue silk band. Sewn inside the crown: N. H. Belkadi.*)
+- the gouges: *Two gouges run from the lane over the ditch. Whatever went over went fast.*
+- the burst trunk: *Clothes, a writing case, and a ledger bound in blue.* (taken: **A Blue Ledger**, `misc`, weight 1, unsellable while the thread is open: *Columns of figures in a neat hand, in the Compact's ciphers. The first page: Belkadi House, the inland account.*) Taking it is not a crime: the trunk is in a field, and no witness stands in a field at dusk (if the crime system decides otherwise, it decides).
+
+**The thread.** At the nearest town, with the hat or the ledger in the bag, any townsperson's *About you* folder has *There's a coach over in a field on the lane.* Their answer, by people:
+- Gatelander: "Tomás's coach. He came in last night leading four horses and swearing at every one of them by name. There's a lady with him at the inn that's not said a word since, and she's said it very politely."
+- Markman: "Aye. The coachman's at the inn. Horses are fine. Coach isn't. Lady's not happy."
+- Aurennais: "I understand there was an accident, Master. The coachman and his passenger are at the inn. A factor, I am told. She has been asking whether anyone has been out to the lane."
+- Old Blood: "They are at the inn. Both. The horses too."
+
+At the inn, two people sit together (the inn's interior, at a table, from the morning after the coach is first seen until the thread ends or seven days pass).
+
+**Tomás** (Gatelander), *What happened on the lane?*: "An elk. One of the big six-footed ones off the hill, walking across the lane like it owned the grazing, and maybe it does. Now, these are coast horses. They've seen a ship and a gull and that's the whole of the world to them. Six legs was four too many. I'd a knife out and the traces cut before the coach finished going over, and the Weaver knows I'd do it again. You can buy a coach."
+- *You cut the horses free?* "I did. A coach is a box. A horse is a horse. The lady'll tell you I chose the horses over her, and she's not wrong, but she was never in danger; she was only upside down."
+
+**Nadira** (Aurennais), *Is this yours?* (the hat): "It is, Master, and I thank you. I had concluded it was lost along with my composure." (No pay for the hat alone: she offers to buy it back at its price, *I will not take a gift from a stranger; allow me to pay for it.*, 4 gold.)
+
+**Nadira**, *I found a ledger in your trunk.* (the ledger): "Ah. You will understand, Master, that the hat was a matter of vanity and this is a matter of the house's credit. Had it been read in the wrong office, I would have been explaining for a year. It was not read? Then you have done me a service I can name precisely. Twenty-five gold, which is the customary finder's tenth on the sum it protects, rounded in your favour." (25 gold; +1 favour at Belkadi House's home port if the game knows it; otherwise +1 at the town.)
+- *Did you look inside?* (a follow, only if the player asks): "Then you saw columns in a cipher, and nothing you could sell. I would rather believe that, Master, and I think you would rather I did."
+
+**After.** Tomás, for the rest of the week, *What happened on the lane?* again: "I'm going back for the coach with a team of oxen. Oxen have seen everything. Nothing surprises an ox."
+If the thread is never taken up: after seven days the inn is empty of them and the coach is gone from the field (the look builder's place reads the record's `ended`).
+
+---
+
+### 2. The Locked Cellar (the Gatelands, a fallen cottage)
+
+*Who comes.* **Máire Ní Bhriain** (Gatelander), a widow of the nearest village, the Elder's cousin and the best-regarded woman in it, keeps her grandmother's still in her grandmother's cellar. The padlock is new because the Crown's exciseman came through in the spring. She comes at dusk, every third evening, with a basket.
+
+**The props:**
+- the hatch: *Two oak leaves in a dressed-stone kerb, the hinges oiled. A chain lies across them, held by a padlock that has not seen a winter.*
+- the path: *The grass is worn from the lane to this hatch, and nowhere else. Someone comes, and comes straight here.*
+- the gable: *A fireplace, a patch of limewash, a hook where a pot hung. Nobody has lived here in a long while. Somebody still visits.*
+- the hatch, with an ear to it (a second *E*): *Nothing. Then, very faintly, a smell that is not damp: malt, and smoke, and something sweet.*
+
+**Picking the lock** (the lockpicking game, Locks as it stands; a town lock's difficulty): inside, down six steps, a copper pot still, a worm in a barrel of water, a cold fire, and on a shelf nine stoppered jars. *E* on the still: *A pot still, copper, beaten round and patched twice. It is clean. Somebody takes care of it.* Taking a jar: **Poitín**, `food`, weight 0.5, 12 gold: *Clear as water and nothing like it.* (drunk: the game's drink effect, if it has one; otherwise a meal's warmth.) Taking it is theft by the crime system's rules, with nobody to see it unless Máire is there.
+
+**Waiting.** At dusk (19h–21h) on Máire's evening (every third day, by the place's id), she comes down the lane with a basket. If the hatch is shut and the player is standing by it:
+
+**Máire** (Gatelander), greeting: "Well. You're either lost or you're the Crown's, and you've not the boots for the Crown."
+- *What's in the cellar?* "My grandmother's cellar, and what was in it when she had it. The Crown's man was through in the spring with a book and a pencil, and the Crown's book has a page for everything a woman might make in her own house. I've a padlock now. I'd sooner not have needed one."
+- *I won't tell anyone.* "Then you'll take a jar for the road, and if anyone asks where you had it, you had it at a wake. You'd not be lying; there's always a wake somewhere." (a jar of **Poitín**; the thread ends `kept`; from then on, in her village, Máire's greeting is: "There's the one that can keep a thing quiet. Rarer than you'd think, so.")
+- *The Crown should know.* "Should it. The Crown should know a great many things it doesn't, and it's the better for not knowing most of them. Go on, so, and tell it. I'll be in the cellar." (the thread ends `told`; the player may tell the village's lord, *There's a still in a cellar on the lane.*, whose answer is by the lord's people below; the still is gone from the cellar on the player's next visit, and Máire, after, says only: "Yourself." — the colder greeting, for a month, and −1 favour in the village.)
+
+If the lock has been picked and a jar taken before she comes, Máire, finding the hatch: "Someone's been in. Took a jar and left the rest, so they've manners, if not much else." (No more; she is not a witness and blames nobody.)
+
+**The lord**, *There's a still in a cellar on the lane.* (only after *The Crown should know.*):
+- Gatelander lord: "Is there, now. And you came the whole way here to tell me. I'll send a man, and he'll find it, and he'll find out whose it is, and then I'll have to do something about her. You might have thought of that." (+1 favour with the lord's town, as the job pays; 0 gold.)
+- Aurennais lord (a Crown town held by a Compact family): "Thank you, Master. The excise will be informed. The Crown's revenue is not my concern, but its records are." (+1 favour.)
+- Markish lord (a Markman in a Crown town): "A still. Good. Tell me where. I'll have a look myself." (+1 favour; and Máire's still, unlike the others, is still there next visit. Nobody says why.)
+
+---
+
+### 3. The Abandoned Expedition (Aurenne, a dry hillside)
+
+*What they found, and why they ran.* A small party from the Academy, under a scholar named **Hessa Amari** (Aurennais), was digging a terrace for the old aqueducts' footings and lifted a column drum out of the trench. Cut into its underside, where nobody was meant to see it, was a line of the old script. Hessa's assistant, **Idris** (an Aurennais from the hill towns, Old Blood far back, which he did not know), put his hand on it and said it was warm. It was night. Hessa wrote down what he said next, and what she saw, and then they left. The Church sealed the drum's report and Hessa's licence in the same week.
+
+The canon allows the reader to infer what Idris was: a man with the marks who touched a warm stone and began, for one evening, to read. It does not allow anyone to say it.
+
+**The props:**
+- the tents: *One tent still stands, its door flap torn. The other is down on its front pole. Nobody came back for either.*
+- the fire: *A cold fire. The pot is on its side, and the stool by it is knocked over. Whoever sat here stood up quickly.*
+- the cart: *A handcart down on one side, its crates spilled. One has burst: picks, brushes, a measuring rod, sacks of labels.*
+- the table: *A folding table on its side, a surveyor's tripod fallen beside it, papers held down by stones.* (taken: **A Field Journal**, a book, below)
+- the trench: *A trench cut through the old terrace, 1.6 m deep, with a ladder. The pick is still in the spoil.*
+- the column drum: *A column drum, lifted out onto the lip of the trench and left. Its underside faces the sky. There is a line of carving on it, small and very old.*
+  - touched (*E* again): *The stone is cold.* For an Old Blood player: *The stone is cold. It was warm, not long ago. You take your hand away before it can tell you anything else.*
+  - Rubbing it is not offered: the drum is not a gate's sigil and teaches nothing.
+
+**The Field Journal** (a book in the reader, `BOOKS`, `sheet:true`, Hessa's hand, four pages):
+
+> *Terrace IV, the eleventh day. Footings found at 1.4, as the survey said. The aqueduct's line is the old one; it was not moved for the Compact's, which is interesting, because the Compact's survey says it was. Idris has the trench. He works like a man who expects to be paid by the depth.*
+
+> *The fourteenth day. A drum, not a footing. Too large for the aqueduct; older than it. We had it out by evening. There is a line cut on its underside. Not the Compact's script, not the Church's. Older. I will not copy it here; the Church has opinions about copies, and I have a licence.*
+
+> *The same night. Idris says the drum is warm. I have touched it; it is not. He says it is warm the way a hearth is warm from across a room. He has his hand on it now and is speaking. I am writing down what he says because I cannot think what else to do.*
+> *"It is not a word. It is a door with a word on it."*
+> *"There is a room behind it. The room is full."*
+> *"Someone is in the room. They are looking at the door."*
+> *He took his hand away himself. His wrist —*
+
+> *The next morning. We are leaving. I have told the others it is the water. It is not the water. Idris has not spoken since he took his hand away, and he keeps his sleeve down. I am taking him home. Whoever finds this: put the drum back in the trench, face down, and fill it in. Do not read the underside. I did not, and I am glad.*
+> *— H. A.*
+
+**The thread.** With the journal in the bag, in the nearest Aurennais town, any townsperson's *About you*: *I found a dig on the hill, left in a hurry.* By people:
+- Aurennais: "The Academy's dig? It closed, Master. A licensing matter, I understand; the Church was involved, which in this province is the same thing as saying the matter is closed. The scholar who led it lives in the town still. I would not raise it with her in the street."
+- Gatelander: "Them with the shovels? Gone a month. Left their cart and all, which I'd not do, and I'm a careful man with a cart. The woman that ran it is still in the town, so. The young fellow went home to the hills and doesn't come down."
+- Markman: "Diggers. Left. One of them's here still. Ask her yourself."
+- Old Blood: "They found a stone. They should not have turned it over. The woman is here. The man went up the hill. Leave him there."
+
+**Hessa Amari** (Aurennais, a resident of that town, at her door by day), *Is this your journal?*:
+"It is, Master, and I had hoped it would be rained on. You have read it. I can see you have. Then you will understand why I would ask you for it, and why I would pay rather than ask twice."
+- *What happened to Idris?* "He is with his mother, in the hills. He is well. He works his father's terraces and does not dig anything deeper than a root. He has asked me not to visit, and I have honoured it. That is all I will say, Master, and it is more than the Church has heard."
+- *What was the room?* "I do not know, and I have arranged my life so as not to find out. I would advise you to do the same, but you are carrying my journal round the countryside, so I think the advice comes late."
+
+Three endings, each the player's choice:
+- **Give it to Hessa.** "Thank you. It goes in the fire tonight, and I will sleep." 30 gold. The thread ends `hessa`. For a month her greeting: "Master. I am sleeping, thank you."
+- **Sell it to the Mages' Guild** (the guild head, *I have a field journal from the Academy's dig.*): Aurennais head: "We are not the Academy, Master, and we do not answer to its licences. Forty gold. The Prior need not hear of it." (40 gold, the book gone; any other people's head: "Academy business. Forty, and you never brought it.") Hessa, after: "You sold it. Then someone else will turn the drum over. I hope it is not someone young." Her colder greeting for a month.
+- **Give it to the Prior** (the town's priest, *I have a field journal from the Academy's dig.*): "Thank you. The Church will see that the drum is returned to the ground and that the record of it is kept where records belong. You need not concern yourself further." (+2 favour with the Compact's standing if the game keeps it, else +1 at the town; 0 gold.) Hessa, after: "The Prior has it. Then it is safe, I suppose, in the way a thing locked in a room is safe."
+- **Keep it.** The book stays in the bag, readable. Nothing else happens, which is the canon's way: the drum stays on the trench's lip, face up.
+
+On any ending but *Keep it*, the drum is face down in the filled trench on the player's next visit (the look builder's place reads `ended`).
+
+---
+
+### 4. The Unfinished Camp (the Mark, a spruce clearing)
+
+*Who, and why they stopped.* **Ulf**, called **Short-Day** (Markman; the Mark names a man by what he did, not by his father), a trapper of the nearest town, came out to set a winter camp, looked up while he was standing the back pole, saw the sky to the north go the colour it goes before a three-day snow, and walked home. The snow came. It has covered his tracks out, which is why there are none. He means to come back for it in the spring.
+
+**The props:**
+- the tent: *A ridge tent begun and not finished: the back pole stood and guyed, the ridge pole leaned on it, the canvas still rolled at its foot.*
+- the fire: *A fire laid on birch bark in its ring, and never lit.*
+- the pulk: *A sledge half unloaded, its shafts down. Traps, a sack of meal, a coil of rope.*
+- the axe: *An axe left in the chopping round, a few billets split beside it.* (taken: **Ulf's Axe**, an `equip` weapon, the Mark's common axe at one tier above the place's, *A trapper's axe, the haft worn dark. Cut in the head: a short line, a long one, and a nick.*)
+- the snow: *Snow lies on all of it, smooth. There is no track in it, in or out. Not yours either, until now.*
+
+**The thread.** At the nearest town, once the camp has been seen, any townsperson's *About you*: *There's a camp in the spruce, left half made.* By people:
+- Markman: "Short-Day's. He saw the sky and came home. Smart. Leave his axe."
+- Gatelander: "That'll be Ulf's. They call him Short-Day, and not because of his height. He's in the alehall most evenings, telling it like he outran the snow. He didn't. He walked."
+- Aurennais: "A trapper's camp, Master. Its owner returned before the weather and intends to go back in the spring. It is common practice here; I am told the snow keeps things better than a warehouse."
+- Old Blood: "The man saw the north go white. He came home. That is all of it."
+
+**Ulf** (Markman, in the town's alehall from 18h, on the bench), greeting: "Short-Day. Who's asking?"
+- *I found your camp.* "Aye? Still there? Good. Snow keeps a camp. Better than a thief does."
+- *Why did you leave it?* "Sky went the wrong grey. You learn that or you learn nothing else. Walked home. Snow came an hour behind me. Nobody followed, so nobody needs to know I ran."
+- *I brought your axe.* (with the axe) "That's my axe. Didn't think I'd see it before the thaw. Good. Here. Drink on me, and on iron, you carried it straight." (8 gold; +1 favour; the thread ends `axe`.)
+- *I kept your axe.* (asked with the axe sold or used, the thread's record says it was taken and is not in the bag) "Kept it. Huh. It's a good axe. Use it well, then, or I'll come for it." (No pay, no favour lost: a Markman respects a thing taken openly. Ulf's greeting after: "Axe still sharp?")
+
+---
+
+### 5. The Perched Stone (the Gatelands, a limestone hill)
+
+*Whether it is a lead.* It is not a lead to a gate, a treasure or a quest. It is a thing on a hill that every people explains in their own way, and the player collects the explanations. It pays nothing. It is there to make the hill worth climbing, and to give the four peoples one subject on which they all talk at once.
+
+**The props:**
+- the boulder: *A boulder of a dark stone that is not the hill's, as tall as two men, sitting on a waist of the pale rock as if on a plinth.*
+- its foot: *The pale rock under it is higher than the hill around it. The rain has taken the hill down a hand's breadth a thousand years, everywhere but here, where the stone kept it dry.*
+- the smaller stranger: *Another of the dark stones, smaller, lying in the grass. It has not been here long enough to grow a pedestal. Long enough to grow moss.*
+- the boulder, for an Old Blood player (a second *E*): *It is cold all through. Not a gate's stone. Older than the gates, and from somewhere north.*
+
+**The talk** (any townsperson within 700, once the stone has been seen; *What's the dark stone on the hill?*):
+- Gatelander: "The Stone set it down there and forgot it. That's what my grandfather said, and his said, and nobody's had a better idea since. You don't move a thing a god forgot. He might come back for it."
+- Markman: "Ice left it. Ice leaves things. Come north and look. Whole valleys of them."
+- Aurennais: "A glacial erratic, Master. The Academy has a paper on them; the Church has a sermon. I prefer the paper, though I go to the sermon."
+- Old Blood: "It came down on the ice, from the north. Before the gates. Before us. It is the oldest thing on that hill, and it does not want anything."
+- a child (the town's children, if the bodies builder's children speak by then): "If you sit under it you'll be squashed. Everyone knows. Nobody's been squashed. That's how you know it works."
+
+Hearing all four peoples' answers (anywhere, any order, the record keeps which) gives one line in the log and nothing else: *Four answers for one stone. All of them true, after a fashion.* The record ends `heard`.
+
+---
+
+### 6. The Lone Grave (a field, any island; most often the Gatelands' hills and the Mark's high valleys, where the Old Blood are strongest, §3.1)
+
+*Who is buried, and why here.* The Old Blood keep a custom nobody explains: they bury their dead in the ground and mark the grave with a stone with a hole through it, and they do not take the name to a gate. This one is **Sadb**, a hermit's mother, buried twelve years ago on the hill above the farm she was born on. Her son, **Cúán** (Old Blood), who sells rubbings at the crossroads, tends it. The Church knows the custom exists and has decided not to know anything else about it.
+
+**The props:**
+- the stone: *A standing stone, waist-high, with a hole worn or cut through it the size of a fist. The wind goes through it with a low note.*
+- the grave: *A grave, long and grassed over, with fresh heather laid along it. Somebody comes.*
+- the back of the stone: *A name, cut in plain letters, not deep: SADB. Nothing else. No date, no prayer, no gate.*
+- the hole, looked through (*E* again): *Through it, the hill falls away to the farm below, and the sea beyond. Whoever set the stone set it for that.*
+
+**The thread.** Once the grave is seen, at the nearest town, any townsperson's *About you*: *There's a grave on its own on the hill, with a holed stone.* By people:
+- Gatelander: "The cold-eyes' grave. Leave it be. They don't take theirs to the gates, and the priest says nothing about it, which is the most a priest ever says. Her son sells rubbings at the crossroads. He's a decent man, for all he looks through you."
+- Markman: "One of the old people's. They bury in the ground, stone with a hole. Don't touch it. Her son's at the crossroads."
+- Aurennais: "An Old Blood burial, Master. The Church does not recognise the custom and does not forbid it, which is a position I admire for its economy. The family is still here; the son trades at the crossroads."
+- Old Blood: "It is Sadb's. Her son keeps it. You will find him at the crossroads. Do not ask him why the hole."
+
+**Cúán** (Old Blood; the rubbing-seller at the nearest crossroads, as the generator places them, or the town's own if none), *I saw your mother's grave.*:
+"You saw it. Good. The heather was mine. She liked the hill."
+- *Why not the gate?* "We bury ours in the ground. The stone has a hole, so the wind goes through her and not round her. My grandmother would not say why. I do not either."
+- *Why the hole?* "The older word for it is *poll na gaoithe*. The wind's door. It is a door that does not close."
+- *I could take her name to a gate, if you want.* "No." (The one bare *no* in the draft. It is an Old Blood's, and §2 allows them sparing and exact: the register forbids a Gatelander a bare no, and does not forbid him this one.) Then: "Thank you. No."
+- *I'm sorry for your loss.* "It was twelve years. It is not a loss now. It is a place."
+
+The thread pays nothing. It ends `cuan`, and from then on, if the player is at the grave between 6h and 8h on the day of the week Cúán keeps (by the place's id), he is there, laying heather, and his only line is: "She liked the hill." For an Old Blood player he adds, once: "You will want a stone like it. Choose the hill early."
+
+---
+
+### What in the code would carry it
+
+- **The places** are the look builder's: each prototype in `places.js` placed in the chunk scatter (`80-world-terrain.js`, `scatterChunk`) or as a cell's point of interest (`81-world-cells.js`), keyed by place and index. The words need from each place: a list of props with a position and a key, `E` reading the nearest within reach (as `limeCavePrompt` and `hatchPrompt` do, `83-world-generator.js` and `86-world-crime.js`), and a state read (`ended`, `told`) for the three that change (the coach gone, the still gone, the drum face down).
+- **`87-world-quests.js`**, beside the errands: a `MYSTERY` table keyed by kind (`carriage`, `cellar`, `expedition`, `camp`, `erratic`, `grave`), each with its props' lines, its topic's label and lines by people, its people's own topics, and its endings; `mysterySeen(key)` writes the record on first sight; `mysteryTopics(def,site)` returns the *About you* topic for any record whose nearest town is this site; the named people (Tomás and Nadira at the inn, Máire at the hatch at dusk, Hessa at her door, Ulf on the alehall bench, Cúán at the crossroads and the grave) are spawned as the debtor is (`erDebtTick`'s pattern: `makeDef` with `keepName`, `spawnNPC`, a schedule), keyed `my:<place key>:<who>`.
+- **Items**: the hat, the ledger, the axe, poitín (`bagAdd` with the descriptions above, `14-items.js` for the axe's base); the Field Journal as a `BOOKS` entry in `20-quests.js` (`sheet:true`, as *Warm Stones*).
+- **The still** uses the lockpicking game as it stands (`LP`, `openLockpick`) and the crime system's rules for the jars.
+- **Favour** through `addFavor`; nothing new in `worldState`: every thread is a record (`my:<place key>`, `sub`, `seen`, `heard` for the stone's four peoples, `ended`), saved with the quests.
+- **Rolls** by place and id (co-op rules): Máire's evening, Cúán's day, which prop holds what, are seeded on the place's key.
+
+### Owed, and not drafted here
+
+- **Strange tracks** (OG-124 panel 6): whose feet is the bodies builder's call first; then the words.
+- **The pilgrims' rest**: the canon has pilgrims (to shrines and gates, OG-118) and no word on whose, or to where. A second run can take it with *The road between towns*.
+- Hessa's journal is the first thing in the game that shows the window from the outside. If Michael wants it quieter, the third page loses its last two lines (*Someone is in the room. They are looking at the door.* and *His wrist —*) and still works.
