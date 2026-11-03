@@ -1066,7 +1066,13 @@
   // aboard and at their station
   function crewAt(r){const st=worldState.ship;return !!(st&&!st.sunk&&CREW[r]&&Array.isArray(st.crew)&&st.crew.includes(r)&&CREW[r].needs.every(k=>shipFitted(k)));}
   // the named actions: met (they wait at that port), taken aboard, sent ashore
-  function crewMeet(r,siteId){if(!CREW[r])return false;const st=shipCfg(),C=shipCrew(st);if(C.includes(r)||(r in st.ashore))return false;st.ashore[r]=siteId||null;return true;}
+  function crewMeet(r,siteId){if(!CREW[r])return false;const st=shipCfg(),C=shipCrew(st);if(C.includes(r)||(r in st.ashore))return false;st.ashore[r]=siteId||null;
+    if(siteId){if(!st.met||typeof st.met!=='object')st.met={};if(!st.met[r])st.met[r]=siteId;}return true;}
+  // S1791 — where each hand was met (st.met, kept through aboard, ashore and sinking; the bodies builder's ask of S1779), and so their people:
+  // the port's own by its townsfolk's stream (peopleOfNpc, a stranger at a port as often as on its quay), keyed by the hand and the port, and
+  // the port's nation. null for a hand met before S1791 or with no port, so the hold keeps its old roll by her name
+  function crewMetSite(r){const st=worldState.ship,id=st&&st.met&&st.met[r];if(!id)return null;try{return siteAnywhere(id)||null;}catch(e){return null;}}
+  function crewPeople(r){const s=crewMetSite(r);if(!s)return null;try{const c=cellOf(s.x,s.z);return [peopleOfNpc(s,seededRng('crew',r+'|'+s.id)),nationKeyOf(c[0],c[1])];}catch(e){return null;}}
   function crewAboard(r){const st=shipCfg(),C=shipCrew(st);if(!CREW[r])return 'No such hand.';if(C.includes(r))return `${crewName(r,1)} is aboard already.`;
     if(!(r in st.ashore))return `You have not met ${crewName(r)}.`;if(!shipFitted('bunks'))return 'She has no bunks for a crew.';
     if(C.length>=CREW_N)return 'Her bunks sleep two, and both are taken.';delete st.ashore[r];C.push(r);return true;}
