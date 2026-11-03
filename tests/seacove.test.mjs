@@ -1,4 +1,4 @@
-// seacove (Session 1772, card F8; Michael's A on #1026, "through a mouth, into a place of its own"): on the new look one coastal Gatelands
+// seacove (Session 1773, card F8; Michael's A on #1026, "through a mouth, into a place of its own"): on the new look one coastal Gatelands
 // cell in two keeps a smugglers' sea cave (seaCove, 82), its mouth an outcrop of grey rock on the land behind the shore (PKIT.places.cavemouth,
 // rock 'sea') and behind it places.js's smugglersLair (PKIT.places.cove, buildKitSeaCave), its arch on the sea. The suite counts the coves,
 // stands at the nearest mouth (the outcrop solid, its throat open, the prompt), goes in, walks the prototype's path from the passage over

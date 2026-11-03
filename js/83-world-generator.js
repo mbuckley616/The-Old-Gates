@@ -2501,7 +2501,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       const p=new THREE.PointLight(0xb8d4e0,2.2*dayK+.2,30,1);p.position.set(rx(T.falls.x),ry(T.falls.foot)+3,rz(T.falls.z)+2);sc_.add(p);}
     return sc_;
   }
-  // S1772 (card F8, Michael's A on #1026) — a smugglers' sea cave (PKIT.places.cove, places.js's smugglersLair, #314 A) behind its mouth on
+  // S1773 (card F8, Michael's A on #1026) — a smugglers' sea cave (PKIT.places.cove, places.js's smugglersLair, #314 A) behind its mouth on
   // the land over the shore (seaCove, 82), built as the limestone cave is: moved into a room's frame (the floor 0.25 m under the deck), its
   // walk the place's own half-metre cells at the deck's height, a foothold and a solid up to it where you stand, a solid to 60 m where it is
   // rock or sea, and the walls, posts and cargo as exact boxes 3 m up; the stair's seventeen treads and the gallery over the deck footholds of their own, with no solid
@@ -2534,7 +2534,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     return sc_;
   }
   // the cave's one way, from either side: in the world, stood in the mouth's throat; inside, within the passage's first 3 m from its mouth
-  // (S1772: the sea caves' too, c._cove beside c._cave)
+  // (S1773: the sea caves' too, c._cove beside c._cave)
   function limeCaveAt(){
     if(isInterior()){const h=currentHouse;if(!h||(h.type!=='limecave'&&h.type!=='seacave')||!h._limeCave)return null;const T=h._limeCave,Bd=T.bounds,x=px+Bd.x0,z=pz+Bd.z0;
       return z>T.mouth.z-3&&Math.abs(x-T.mouth.x)<3?{up:true}:null;}
@@ -2938,7 +2938,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     if(kitChurchHall(house))return buildKitChurchHall(house); /* S1326 — the Church of the Weaver inside, at its true size */
     if(kitGuildHall(house))return buildKitGuildHall(house); /* S1703 — a town's guild hall inside, at its true size */
     if(kitLimeCave(house))return buildKitLimeCave(house); /* S1768 — a limestone cave behind its mouth */
-    if(kitSeaCave(house))return buildKitSeaCave(house); /* S1772 — a smugglers' sea cave behind its mouth */
+    if(kitSeaCave(house))return buildKitSeaCave(house); /* S1773 — a smugglers' sea cave behind its mouth */
     if(kitTowerCellar(house))return buildKitTowerCellar(house); /* S1765 — a ruined tower house's cellar, souterrain and pit */
     const two=!!house.two;
     // S896 (F2a) — the room's true size in metres (07-scale.js; visual-foundation.md §1: a cottage room 4 to 6 across, an inn's hall

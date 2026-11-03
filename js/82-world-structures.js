@@ -187,7 +187,7 @@
     const L=LOADED.get(k);if(!L)return;const c=L.cell;
     // settlements in this cell go first
     c.sites.forEach(t=>{if(SETTLE.has(t.id))disposeSettlement(t.id);});
-    if(c._cave&&c._cave.house){const i=ZONES.world.houses.indexOf(c._cave.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1768 — the cave's record */if(c._cove&&c._cove.house){const i=ZONES.world.houses.indexOf(c._cove.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1772 — the sea cave's */
+    if(c._cave&&c._cave.house){const i=ZONES.world.houses.indexOf(c._cave.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1768 — the cave's record */if(c._cove&&c._cove.house){const i=ZONES.world.houses.indexOf(c._cove.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1773 — the sea cave's */
     (c._lone||[]).forEach(F=>{if(SETTLE.has(F.id))disposeSettlement(F.id);const i=F._site?LONE_FARMS.indexOf(F._site):-1;if(i>=0)LONE_FARMS.splice(i,1);}); /* S1473 — and its lone farms */
     if(L.staticsBuilt||L.staticsPending)dropStatics(L);
     L.statics.forEach(o=>{sc.remove(o);});
@@ -469,7 +469,7 @@
     C.house={id:`g_${C.id}`,type:'limecave',byAim:true,siteId:C.id,name:C.name,keeper:'',reg:c.reg,style:'irish',w:50,d:86,two:false,doorX:C.x,doorZ:C.z,doorFace:'S',exitX:C.out.x,exitZ:C.out.z,exitYaw:C.out.yaw};
     if(ZONES.world&&ZONES.world.houses&&!ZONES.world.houses.some(h=>h.id===C.house.id))ZONES.world.houses.push(C.house);
     return M.group;}
-  // S1772 (card F8, Michael's A on #1026) — the smugglers' sea caves on the Gatelands' coast (PKIT.places.cove, places.js's smugglersLair,
+  // S1773 (card F8, Michael's A on #1026) — the smugglers' sea caves on the Gatelands' coast (PKIT.places.cove, places.js's smugglersLair,
   // #314 A). One coastal Gatelands cell in two keeps one, by its own stream (seacove:<cell>), so no other draw of the cell moves. Its mouth
   // is on the land behind the shore, read by place (withPlace over the cell's middle), and its passage runs seaward under the land to the
   // cave, whose arch opens on the sea: the ground 4 to 30 m over the sea, the nearest sea in any of 24 ways 30 m off or more, and in the

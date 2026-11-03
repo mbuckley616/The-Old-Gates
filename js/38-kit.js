@@ -5403,7 +5403,7 @@ function aurenneOrrery(hAt, o = {}) {
   let CMO = null;
   function gatelandsCaveMouth(o = {}) {
     const key = String(o.key || 'cave'), r = stream('cavemouth:' + key), F = cairnField(stream('cavemouth:' + key + ':rock'), .45), B = new Map();
-    const dk = o.rock === 'sea' ? 'sea' : 'lime'; /* S1772 — the sea cave's mouth in the coast's dark grey rock, not the limestone */
+    const dk = o.rock === 'sea' ? 'sea' : 'lime'; /* S1773 — the sea cave's mouth in the coast's dark grey rock, not the limestone */
     if (!CMO) CMO = {}; if (!CMO[dk]) CMO[dk] = { lime: mat('rock', { ns: 1.5, color: dk === 'sea' ? 0x6a6e6c : 0xb4b0a4, rough: .92 }), throat: mat('rock', { ns: 1.4, color: dk === 'sea' ? 0x3e4442 : 0x6a685f, rough: .95 }), dark: new THREE.MeshBasicMaterial({ color: 0x030304 }), moss: mat('turfMoss', { ns: .8, color: 0x8aa868, rough: 1 }) };
     const M = CMO[dk], put = (geo, k) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal'].includes(a)) g.deleteAttribute(a); if (!g.attributes.normal) g.computeVertexNormals(); worldUV(g, .3); if (!B.has(k)) B.set(k, []); B.get(k).push(g); };
     const MW = 2.2, MH = 3.6, TD = 6, RXo = 7.5, RYo = 6.5, RZo = 6, CZ = -4.2, CYo = .6;
@@ -5430,7 +5430,7 @@ function aurenneOrrery(hAt, o = {}) {
     for (let x = -MW + .5; x <= MW - .4; x += 1.1) sq(x, -3.75);
     return { group, tris: Math.round(tris), draws: group.children.length, sol, mouth: { w: 2 * MW, h: MH, z: 0, back: -TD }, r: RXo + 1 };
   }
-  // ── the smugglers' sea cave on the Gatelands' coast (Session 1772, card F8; Michael's A on #1026: "through a mouth, into a place of its
+  // ── the smugglers' sea cave on the Gatelands' coast (Session 1773, card F8; Michael's A on #1026: "through a mouth, into a place of its
   // own"; the prototype is places.js's smugglersLair, Session 873 on #305's 3 A, rebuilt in Session 883 on #314 A; OG-121's "smugglers' and
   // bandits' lairs: plank platforms in a cave, storerooms, escape routes"). Copied as drawn, a metre a unit, +z the landward way in, the sea
   // at y 0: the passage 18 m in at 1.2 m over the sea; the cave of 52 m lofted ring by ring (26 to 38 m across, 13 to 19 m to the crown),
