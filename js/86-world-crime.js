@@ -485,7 +485,7 @@
     if(m.userData.asleep){if(sleeperNear())wakeSleeper(m,true);else if(!homeAsleepNow(currentHouse))wakeSleeper(m,false);}
     else if(!m.userData.woke&&homeAsleepNow(currentHouse))laySleeper(m);}
   function seenCrime(kind,house,w,value){const site=houseSite(house);const pts=CRIME_PTS[kind]||1;
-    if(site){addFavor(site,-pts);const C=worldState.crime||(worldState.crime={});const c=C[site.id]||(C[site.id]={bounty:0,debt:0,last:0});const fee=25*pts+Math.max(0,Math.round(value||0)),fst=typeof feastOn==='function'&&feastOn(absMin());c.bounty+=fst?Math.round(fee*.5):fee;if(fst)c.feast=dayNow();c.debt+=pts;c.last=dayNow();if(typeof lampCrime==='function')lampCrime(c,fst?Math.round(fee*.5):fee);} /* S550 — a feast day halves a petty crime's fine */ // S168 — a theft's fine is 50 and the goods' value (the spec)
+    if(site){addFavor(site,-pts);const C=worldState.crime||(worldState.crime={});const c=C[site.id]||(C[site.id]={bounty:0,debt:0,last:0});const b0=c.bounty;const fee=25*pts+Math.max(0,Math.round(value||0)),fst=typeof feastOn==='function'&&feastOn(absMin());c.bounty+=fst?Math.round(fee*.5):fee;if(fst)c.feast=dayNow();c.debt+=pts;c.last=dayNow();if(typeof lampCrime==='function')lampCrime(c,fst?Math.round(fee*.5):fee);if(kind==='lock')c.lockFine=(c.lockFine||0)+c.bounty-b0;} /* S1795 — the part of the fine that is lock crimes, for Word given */ /* S550 — a feast day halves a petty crime's fine */ // S168 — a theft's fine is 50 and the goods' value (the spec)
     if(house.keeper&&house.type!=='home')(worldState.refuse||(worldState.refuse={}))[house.id]=dayNow()+5;
     const what=kind==='lock'?'pick the lock':kind==='theft'?'take what was not yours':'strike';
     if(site&&typeof isInterior==='function'&&isInterior())try{dispatchGuard(house,site);}catch(e){} // S239 — seen indoors: a guard is sent
@@ -564,7 +564,7 @@
     const gtm=worldState.gameTimeMinutes||0,op=HRS.shopOpen*60,to=gtm<op?op-gtm:1440-gtm+op;
     (c.unfound||(c.unfound={}))[house.id]={at:absMin()+to,name:house.name||'A shop'};return true;}
   function tickPicksFound(){const C=worldState.crime;if(!C)return;const m=absMin();
-    for(const id in C){const U=C[id].unfound;if(!U)continue;for(const hid in U){const u=U[hid];if(m<u.at)continue;delete U[hid];findPick(id,u);}}}
+    for(const id in C){if(!(C[id].bounty>0)&&C[id].lockFine)delete C[id].lockFine; /* S1795 — paid or waived: no lock fine stands */const U=C[id].unfound;if(!U)continue;for(const hid in U){const u=U[hid];if(m<u.at)continue;delete U[hid];findPick(id,u);}}}
   function findPick(siteId,u){const c=worldState.crime[siteId],site=SITE[siteId]||siteAnywhere(siteId);addFavor(siteId,-1);c.debt=(c.debt||0)+1;c.last=dayNow();
     if(typeof addLog==='function')addLog('🔓',`${u.name} opened on a picked lock${site?' in '+site.name:''}. The town thinks the less of strangers.`);}
   function refusesTrade(house){const R=worldState.refuse;if(!R||!house||R[house.id]==null)return false;if(dayNow()>=R[house.id]){delete R[house.id];return false;}return true;}
@@ -747,12 +747,14 @@
     openDialog({name,role:'Guard',ico:'⚔',noIntro:true,greeting:[talkedGreet(S,c,fine)||L.greet(fine,S.site.name)+feastFineLine(S,c)],topics:[
       {label:`Pay the fine (${fine} gold)`,quest:true,fn:()=>{if(gold<fine)return L.poor;gold-=fine;updateHUD();c.bounty=0;c.shut=false;CR.cool=5;if(typeof addLog==='function')addLog('⚖',`Paid ${fine} gold to ${name} at ${S.site.name}.`);endSent();return L.pay;}},
       ...talkDownTopic(S,c,()=>confrontIndoor(s,S,c)),
+      ...wordGivenTopic(S,c,true),
       {label:'I’ll not pay.',quest:true,fn:()=>{setTimeout(()=>{try{closeDialog();}catch(e){}guardFightIndoor(s,S);},60);return L.refuse;}},
       {label:'Not now.',bye:true}]});}
   function confront(n,S,c){CR.cool=60;if(CR.sent&&CR.sent.npc===n)endSent();/* S239 — caught: the chase is over */const fine=c.bounty;const name=(n.def&&n.def.name)||'The guard';const L=haltLines(S);
     openDialog({name,role:'Guard',ico:'⚔',noIntro:true,greeting:[talkedGreet(S,c,fine)||L.greet(fine,S.site.name)+feastFineLine(S,c)],topics:[
       {label:`Pay the fine (${fine} gold)`,quest:true,fn:()=>{if(gold<fine)return L.poor;gold-=fine;updateHUD();c.bounty=0;c.shut=false;CR.cool=5;if(typeof addLog==='function')addLog('⚖',`Paid ${fine} gold to ${name} at ${S.site.name}.`);return L.pay;}},
       ...talkDownTopic(S,c,()=>confront(n,S,c)),
+      ...wordGivenTopic(S,c,false),
       {label:'I’ll not pay.',quest:true,fn:()=>{setTimeout(()=>{try{closeDialog();}catch(e){}guardDraw(n,S);},60);return L.refuse;}},
       {label:'Not now.',bye:true}]});}
   // S973 — Talk it down (Speech 50): once in each town, a guard's fine is halved; the halt opens again on the new fine
@@ -761,6 +763,14 @@
   function talkDownTopic(S,c,reopen){if(!c||c.talked||!perk('speech',50))return [];
     return [{label:'Talk it down. (Speech)',quest:true,fn:()=>{if(!talkDownFine(S,c))return '';c.talkedNow=1;showMsg(`The fine is halved: ${c.bounty} gold.`,'#c8e88a');
       setTimeout(()=>{try{closeDialog();}catch(e){}reopen();},60);return '';}}];}
+  /* S1795 — Word given (Speech 100; Michael's C on #1055, A's half): once a day, a guard who halts you for a fine made only of lock crimes
+     (c.lockFine, laid by seenCrime, covers the whole of c.bounty) takes your word and waives it. The favour the locks cost stays lost. */
+  function wordGivenOk(c){const W=worldState.speech;return !!c&&c.bounty>0&&(c.lockFine||0)>=c.bounty&&perk('speech',100)&&!(W&&W.word===dayNow());}
+  function wordGiven(S,c){if(!wordGivenOk(c))return false;const W=worldState.speech||(worldState.speech={});W.word=dayNow();const f=c.bounty;c.bounty=0;delete c.lockFine;CR.cool=5;
+    if(typeof addLog==='function')addLog('⚖',`Word given at ${S.site.name}: a fine of ${f} gold for locks, waived.`);return true;}
+  function wordGivenTopic(S,c,indoor){if(!wordGivenOk(c))return [];
+    return [{label:'Give my word. (Speech)',quest:true,fn:()=>{if(!wordGiven(S,c))return '';if(indoor)endSent();showMsg('Word given. The fine is waived.','#c8e88a');
+      setTimeout(()=>{try{closeDialog();}catch(e){}},60);return '';}}];}
   const GUARD_TIER=3;
   function guardDraw(n,S){if(n._drawn)return null;return guardEnemy(n,S,sc,STATIC_SOL,n.g.position.x,n.g.position.z);}
   function guardEnemy(n,S,scn,sol,x,z){n._drawn=true;n._retreated=true;n.g.visible=false;if(n.dot)n.dot.visible=false; // S241 — in the street, or in a room
