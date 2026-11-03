@@ -175,7 +175,8 @@ const PERK_LIVE=new Set(['cloch:100','scath:100','gaoth:100', /* S1626 */
   'joinery:25','joinery:50','joinery:75','joinery:100', /* S1519 — Field splice, Tight seams and Shipwright's hand, with the ship's patch and splice; S1549 — Bowyer, its two bows */
   'cooking:25','cooking:75','cooking:100', /* S1503 — Seasoned; S1500 — Two portions and Full belly; Shared pot waits on someone else at the fire */
   'smithing:25','smithing:50','smithing:75','smithing:100','mining:25','mining:50','mining:75','mining:100', /* S1562 — Lodestone (#860 A) */ /* S1495 — the forge's and the vein's (survival B, session 7's first part) */
-  'locks:25','locks:50','locks:75','speech:25','speech:50',
+  'locks:25','locks:50','locks:75','locks:100', /* S1794 — No mark: an unseen shop pick is found at the opening without it (pickUnseen, 86-world-crime.js) */
+  'speech:25','speech:50',
   'stealth:25','stealth:50','stealth:75','stealth:100','athletics:25','athletics:50','athletics:75','athletics:100', /* S976 — Stealth's three and Athletics' four */
   'acrobatics:50','armour:25', /* S977 — Cat's fall and Fitted */
   'acrobatics:25', /* S1385 — Catch, the mantle to 2.2 m and on the way down (mantleTick, 10-player.js) */

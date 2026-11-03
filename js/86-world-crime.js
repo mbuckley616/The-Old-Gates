@@ -555,11 +555,23 @@
   function noteCrime(kind,house,value,coins){(worldState.crimes||(worldState.crimes=[])).push({kind,site:house.siteId||null,house:house.id,day:dayNow(),min:absMin()});
     if(coins>0&&house.siteId){const C=worldState.crime||(worldState.crime={});const c=C[house.siteId]||(C[house.siteId]={bounty:0,debt:0,last:0});c.loot=(c.loot||0)+coins;} // S168 — the gold taken in a town, for the cells to take back
     const w=witnessOf(house,kind==='lock');if(w)seenCrime(kind,house,w,value);return !!w;}
+  /* S1794 — No mark (Locks 100; Michael's C on #1055, A's half): a shop lock picked with nobody to see it is found by its keeper at the
+     next opening (HRS.shopOpen, 8:00): the town's favour −1, a lock crime's point of debt (back after three quiet days, as any), no fine
+     and no refusal, since nobody knows whose work it was. Picked with No mark, it is never found. A home's lock is not a shop's: as before,
+     nobody finds it. Kept as worldState.crime[site].unfound[house] = {at, name}, so the save carries it with the rest of the town's record. */
+  function pickUnseen(house){if(!house||house.type==='home'||!house.siteId||perk('locks',100))return false;
+    const C=worldState.crime||(worldState.crime={});const c=C[house.siteId]||(C[house.siteId]={bounty:0,debt:0,last:0});
+    const gtm=worldState.gameTimeMinutes||0,op=HRS.shopOpen*60,to=gtm<op?op-gtm:1440-gtm+op;
+    (c.unfound||(c.unfound={}))[house.id]={at:absMin()+to,name:house.name||'A shop'};return true;}
+  function tickPicksFound(){const C=worldState.crime;if(!C)return;const m=absMin();
+    for(const id in C){const U=C[id].unfound;if(!U)continue;for(const hid in U){const u=U[hid];if(m<u.at)continue;delete U[hid];findPick(id,u);}}}
+  function findPick(siteId,u){const c=worldState.crime[siteId],site=SITE[siteId]||siteAnywhere(siteId);addFavor(siteId,-1);c.debt=(c.debt||0)+1;c.last=dayNow();
+    if(typeof addLog==='function')addLog('🔓',`${u.name} opened on a picked lock${site?' in '+site.name:''}. The town thinks the less of strangers.`);}
   function refusesTrade(house){const R=worldState.refuse;if(!R||!house||R[house.id]==null)return false;if(dayNow()>=R[house.id]){delete R[house.id];return false;}return true;}
   function bountyAt(site){const C=worldState.crime;const c=C&&C[typeof site==='string'?site:site.id];return c?c.bounty:0;}
   function fineTopics(site){const b=bountyAt(site);if(b<=0)return [];
     return [{label:`Pay my fine (${b} gold)`,quest:true,fn:()=>{if(gold<b)return `The fine is ${b} gold. Come back when you have it.`;gold-=b;updateHUD();worldState.crime[site.id].bounty=0;worldState.crime[site.id].shut=false;if(typeof addLog==='function')addLog('⚖',`Paid a fine of ${b} gold at ${site.name}.`);return 'Paid. The town will still remember for a while; give it time.';}}];}
-  function tickCrimeDay(){const C=worldState.crime;if(!C)return;const day=dayNow();for(const id in C){const c=C[id];if(c.debt>0&&day-c.last>=3){c.debt--;c.last=day;addFavor(id,1);}}}
+  function tickCrimeDay(){tickPicksFound();const C=worldState.crime;if(!C)return;const day=dayNow();for(const id in C){const c=C[id];if(c.debt>0&&day-c.last>=3){c.debt--;c.last=day;addFavor(id,1);}}}
   // ── S157: guards (the crime system, part 3 of 4) ──
   // With a fine on you, a guard within five units and a clear line stops you: pay, or he draws. Drawn, the guard
   // stands in as a zone enemy (the Bandit body for now, in the watch's red) and the guard himself steps out of the
@@ -572,7 +584,7 @@
   function crimeOf(S){const C=worldState.crime;return C&&S&&C[S.site.id];}
   function drawnAt(S){return ZONES.world.enemies.filter(e=>e._guard&&!e.dead&&e._guard.site===S.site.id);}
   function tickCrime(dt,now){
-    CR.cool=Math.max(0,CR.cool-dt);try{tickSent(dt,false);}catch(e){}const S=nearSite();if(!S)return;const c=crimeOf(S);const talking=(typeof dlgOpen!=='undefined')&&dlgOpen;
+    CR.cool=Math.max(0,CR.cool-dt);try{tickSent(dt,false);}catch(e){}try{tickPicksFound();}catch(e){}const S=nearSite();if(!S)return;const c=crimeOf(S);const talking=(typeof dlgOpen!=='undefined')&&dlgOpen;
     const drawn=drawnAt(S);
     if(drawn.length){ // the fight: they hold while you talk; at low health, the offer to yield
       if(!c||(c.bounty<=0&&!c.shut)){standDown(S);return;} // S433 — the fine paid to the lord mid-fight: nothing left to fight over (he fought on, and no yield could come)
@@ -804,7 +816,7 @@
     else{best._scared=performance.now()+20000;showMsg(`You struck ${name}. ${site.name} will not forget it.`,'#ff6060');if(typeof addLog==='function')addLog('👁',`Struck ${name} at ${site.name}.`);}
     return true;}
   function doorLockFor(house){const home=house.type==='home';return {seed:'door_'+house.id,minPins:lockPins(house),lockBonus:home?-1:0,lockTitle:home?'A locked door':'A shop door, locked for the night',live:true,house,
-    onPick:()=>{(worldState.picked||(worldState.picked={}))[house.id]=absMin();noteCrime('lock',house);if(typeof goToInterior==='function')goToInterior(house);}};}
+    onPick:()=>{(worldState.picked||(worldState.picked={}))[house.id]=absMin();if(!noteCrime('lock',house))pickUnseen(house); /* S1794 — unseen, its keeper finds it at the opening */if(typeof goToInterior==='function')goToInterior(house);}};}
   // a shop's takings before the day's luck (Michael’s A on #68, S361): 10 + 50 a 100 prosperity, by the shop's kind; was 20 + 180 (S155)
   function boxCoins(p,type){const mult=/weapon|armor|armoury|forge/.test(type)?1.2:/potion|apothecary/.test(type)?.8:1;return (10+50*Math.max(0,Math.min(100,p))/100)*mult;}
   function boxState(){if(!INT_BOX)return null;const B=worldState.boxes||(worldState.boxes={});const r=B[INT_BOX.id];if(r&&dayNow()-r.taken<5)return 'empty';if(r&&INT_BOX.open)INT_BOX.open=false; // refilled: locked again
