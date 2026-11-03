@@ -122,7 +122,7 @@ const trout = await page.evaluate(() => { forceTime(12); for (const ch of [...WI
   const mv = Math.hypot(e.x - x0, e.z - z0); out.dart = +mv.toFixed(1); out.down = +(((e.x - x0) * Math.sin(down) + (e.z - z0) * Math.cos(down)) / mv).toFixed(2); out.wetAfter = wildWet(e.x, e.z);
   e._w = { mode: 'graze', t: 99 }; px = e.x + 60; pz = e.z + 60; for (let k = 0; k < 120; k++) tickZoneEnemies(1 / 60, 0, WORLD.scene);
   px = e.x - Math.sin(e.combatYaw) * 1.1; pz = e.z - Math.cos(e.combatYaw) * 1.1; jumpY = -1.45; _pStep = false; for (let k = 0; k < 30; k++) tickZoneEnemies(1 / 60, 0, WORLD.scene);
-  const has = () => BAG.filter(b => b && b.name === 'Trout').reduce((a, b) => a + (b.qty || 1), 0), b0 = has();
+  const has = () => BAG.filter(b => b && ['Trout', 'River Pike', 'Riverjaw Salmon'].includes(b.name) /* S1797 — in the Gatelands' deep water it may be a pike */).reduce((a, b) => a + (b.qty || 1), 0), b0 = has();
   out.prompt = fishPrompt(); out.took = catchFish(); out.got = has() - b0; out.gone = !ZONES.world.enemies.includes(e) && WILD_TAKEN.get(e._wildKey) === lootDay();
   for (const o of ZE) o._duelHold = false;
   const f = ZONES.world.enemies.find(o => o.swim && !o.dead); if (!f) return out; const w0 = EQ.weapon;
@@ -178,4 +178,20 @@ const ans = await page.evaluate(() => { forceTime(12); stream(px, pz, true);
 console.log('  answer:', JSON.stringify(ans));
 check(`a Gatefen Boar (${ans.hp} health, blow ${ans.dmg}) grazes at 10 m, turns on you at 3 m (${ans.lost} lost) and gives up at 30; struck from 30 m it comes (gives up past ${ans.quit && ans.quit.toFixed(1)} m)`,
   ans.wild && ans.hp === 16 && ans.dmg === 5 && !ans.at10 && ans.at3 && ans.lost > 0 && ans.fight && !ans.at30 && ans.struck && ans.quit > 30, ans);
+// S1797 — the river fish (#1050 A): along the routed rivers, the Gatelands' deep water holds River Pike, the Mark's rivers Riverjaw Salmon, each
+// about half of its chunk's fish, and Aurenne's only trout; taken off the body, 1.2 weight and 18 gold
+const fish = await page.evaluate(() => { const seen = new Set(), t = {}, items = {};
+  for (const rv of WORLD.routed.reaches) for (let k = 0; k < rv.pts.length; k += 3) { const p = rv.pts[k], cx = Math.floor(p[0] / CHUNK), cz = Math.floor(p[1] / CHUNK), key = cx + ',' + cz;
+    if (seen.has(key) || seen.size >= 900) continue; seen.add(key); const ch = { cx, cz, wild: [] }; wildTroutChunk(ch, key);
+    let isle = null; try { const [i, j] = cellOf(cx * CHUNK, cz * CHUNK); isle = nationKeyOf(i, j); } catch (e) {}
+    for (const e of ch.wild) { const n = isle + ':' + e.baseName; t[n] = (t[n] || 0) + 1; if (!items[e.baseName]) { const it = bodyMeat(e, [], null)[0]; items[e.baseName] = [it.name, it.weight, it.buyPrice]; }
+      if (e.baseName === 'River Pike' && !(SEA_Y - worldH(e.x, e.z) > 3)) t.shallowPike = (t.shallowPike || 0) + 1;
+      e.dead = true; if (e.mesh && e.mesh.parent) e.mesh.parent.remove(e.mesh); const ix = ZONES.world.enemies.indexOf(e); if (ix >= 0) ZONES.world.enemies.splice(ix, 1); } }
+  return { t, items, chunks: seen.size }; });
+console.log('  fish:', JSON.stringify(fish));
+{ const T = fish.t, I = fish.items, share = (a, b) => (T[a] || 0) / ((T[a] || 0) + (T[b] || 0));
+  check(`the river fish: Gatelands ${T['gatelands:River Pike']} pike to ${T['gatelands:Trout']} trout, the Mark ${T['mark:Riverjaw Salmon']} salmon to ${T['mark:Trout']} trout, none elsewhere; each 1.2 weight and 18 gold`,
+    share('gatelands:River Pike', 'gatelands:Trout') > .3 && share('gatelands:River Pike', 'gatelands:Trout') < .6 && share('mark:Riverjaw Salmon', 'mark:Trout') > .25 && share('mark:Riverjaw Salmon', 'mark:Trout') < .6
+    && !T['aurenne:River Pike'] && !T['aurenne:Riverjaw Salmon'] && !T['mark:River Pike'] && !T['gatelands:Riverjaw Salmon'] && !T.shallowPike
+    && I['River Pike'][1] === 1.2 && I['River Pike'][2] === 18 && I['Riverjaw Salmon'][1] === 1.2 && I['Riverjaw Salmon'][2] === 18 && I.Trout[1] === .6, fish); }
 await g.close();

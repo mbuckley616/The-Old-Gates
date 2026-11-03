@@ -793,6 +793,8 @@ const WILD_ISLE_KINDS={
 const WILD_ANSWER={near:4,quit:25};
 const WILD_ANSWER_KINDS={'Gatefen Boar':{walk:.7,run:6},'Icecrab':{walk:.2,run:1.8},'Saltspine Monitor':{walk:.3,run:4}};
 for(const k in WILD_ANSWER_KINDS)WILD_ISLE_KINDS[k]=Object.assign({answer:true},WILD_ANSWER_KINDS[k]);
+// S1797 — the two river fish (#1050 A) swim as the trout does, on its path and its rules (wildTroutChunk rolls which)
+for(const k of ['River Pike','Riverjaw Salmon']){WILD_PACE[k]=WILD_PACE.Trout;ZONE_FOE_DEF[k]=Object.assign({},ZONE_FOE_DEF.Trout,{col:SWIMMER[k].col});}
 // S1784 — the watcher's three sheep (the farm's Sheep, OG-023's livestock body): peaceful on the wild path, no meat (not in MEAT_BODIES)
 WILD_PACE.Sheep={walk:.5,run:5};
 ZONE_FOE_DEF.Sheep={minLevel:1,col:WOLF_KINDS.Sheep.coat,eyeCol:0x0a0a0c,hp:1,maxHp:1,spd:1.0,dmg:0,atk:9,xpVal:0,scale:1,shape:'wolf',def:0,resist:{},wild:true};

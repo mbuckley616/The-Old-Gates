@@ -322,11 +322,16 @@
     for(let k=0;k<16&&!ok;k++){ax=ch.cx*CHUNK+4+r()*(CHUNK-8);az=ch.cz*CHUNK+4+r()*(CHUNK-8);ok=wildWet(ax,az)&&(wildRiverNear(ax,az,0)||wildLakeNear(ax,az));}
     if(!ok)return;if(typeof gateToll==='function'&&gateToll('uisce')&&(()=>{try{const [i,j]=cellOf(ax,az);return nationKeyOf(i,j)==='gatelands';}catch(err){return false;}})())return;
     const count=1+Math.floor(r()*3);
+    /* S1797 — the river fish (#1050 A): in the Gatelands, each fish over a bed more than 3 m down is a River Pike one time in two; in the
+       Mark's rivers (not its lakes), each is a Riverjaw Salmon one time in two; rolled by the fish's own id. The rest are trout */
+    let isle=null;try{const [ci,cj]=cellOf(ax,az);isle=nationKeyOf(ci,cj);}catch(err){}
+    const fishKind=(id,x,z)=>{const half=seededRng('fishkind',id)()<.5;
+      if(isle==='gatelands'&&SEA_Y-worldH(x,z)>3&&half)return 'River Pike';if(isle==='mark'&&wildRiverNear(x,z,0)&&half)return 'Riverjaw Salmon';return 'Trout';};
     for(let i=0;i<count;i++){const id=key+':t'+i;if(WILD_TAKEN.get(id)===lootDay())continue;
       const pr=seededRng('wildspot',id);let ex=ax,ez=az,good=i===0;
       for(let k=0;k<8&&!good;k++){ex=ax+(pr()-.5)*12;ez=az+(pr()-.5)*12;good=wildWet(ex,ez)&&(wildRiverNear(ex,ez,0)||wildLakeNear(ex,ez));}
       if(!good)continue;
-      const e=keyFoe(buildZoneEnemy(sc,STATIC_SOL,ex,ez,'Trout',null,{tier:1,key:id}),'wild:'+id);
+      const e=keyFoe(buildZoneEnemy(sc,STATIC_SOL,ex,ez,fishKind(id,ex,ez),null,{tier:1,key:id}),'wild:'+id);
       e._wildKey=id;e._chunk=key;e.homeX=ex;e.homeZ=ez;e.combatYaw=pr()*Math.PI*2;e.mesh.position.y=SEA_Y-WILD_SWIM.under;
       ZONES.world.enemies.push(e);ch.wild.push(e);}}
   // S1784 — the watcher (backlog L5, OG-096; Michael's B on #1005, "one impossible element each, nothing lit"): the concept artist's grey
