@@ -789,6 +789,10 @@ const giver=`${lord.title} ${lord.name}`;
   // the line itself: the first meeting from GREET_FIRST (or, one time in three, the trade's own line), later ones from GREET_AGAIN
   // (GREET_AGAIN_OB to an Old Blood player; one time in three the temper's); an Old Blood player's first meeting may carry a
   // description after the address. Which line is cosmetic (Math.random); worldState.met already counts the meetings.
+  /* S1795 — Hearing (Speech 75; Michael's C on #1055, B's half): the first talk with someone you have never met raises their town's favour
+     by 1, once in each town a day (worldState.speech.heard[site] is the day it last did) */
+  function hearingFirst(site){if(!site||!site.id||!perk('speech',75))return false;const W=worldState.speech||(worldState.speech={}),H=W.heard||(W.heard={}),d=dayNow();
+    if(H[site.id]===d)return false;H[site.id]=d;addFavor(site,1);if(typeof addLog==='function')addLog('🗣',`A first word well taken at ${site.name}: favour +1.`);return true;}
   function firstWords(def,site){
     const key=metKey(def,site),n=metCount(key),sp=GREET_FIRST[def.people]?def.people:'gatelander',pp=GREET_FIRST[playerPeople()]?playerPeople():'gatelander',T=TEMPERS[def.temper];
     let g;
@@ -799,6 +803,7 @@ const giver=`${lord.title} ${lord.name}`;
     const G=GREET_TAG[sp];
     const owner=worldState.owned&&site&&Object.values(worldState.owned).some(o=>o.site===site.id)?G.owner:'';
     const rank=worldState.guild&&((worldState.guild.guild_f&&worldState.guild.guild_f.done>=3)||(worldState.guild.guild_m&&worldState.guild.guild_m.done>=3))?G.guild:'';
+    if(n===0)try{hearingFirst(site);}catch(e){} /* S1795 — Hearing (Speech 75) */
     noteMet(key);return g+owner+rank;
   }
 

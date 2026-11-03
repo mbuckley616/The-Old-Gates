@@ -31,5 +31,16 @@ const fine = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'); 
   const f0 = WORLD.favor(site); const c = worldState.crime[site.id]; c.last -= 3; WORLD.tickCrimeDay(); const f1 = WORLD.favor(site); WORLD.tickCrimeDay(); const f2 = WORLD.favor(site);
   return { label: t.label, poor, paid, bounty: WORLD.bountyAt(site), gold, f0, f1, f2, debt: c.debt }; });
 check('the lord takes the fine (if you have it); favour recovers a point per three quiet days and no more', /25 gold/.test(fine.label) && /Come back/.test(fine.poor) && /Paid/.test(fine.paid) && fine.bounty === 0 && fine.gold === 475 && fine.f1 === fine.f0 + 1 && fine.f2 === fine.f1 && fine.debt === 0, fine);
+// S1794 — No mark (Locks 100; #1055 C): a shop lock picked unseen is found by its keeper at the next opening (8:00): favour −1, a point of
+// debt, no fine; picked with No mark it is never found
+const found = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'); const site = S.site; S.npcs.forEach(n => { n.g.visible = false; });
+  const shops = S.houses.filter(x => /weapon|armor|potion|misc/.test(x.type) && x.keeper); const h = shops[2] || shops[0], h2 = shops[3] || shops[1] || shops[0];
+  const gi = goToInterior; goToInterior = () => {}; const c0 = worldState.crime[site.id]; const b0 = WORLD.bountyAt(site), d0 = c0.debt;
+  forceTime(23); const f0 = WORLD.favor(site); SKILLS.locks = { lv: 60, p: 0 }; WORLD.doorLockFor(h).onPick(); const rec = worldState.crime[site.id].unfound && worldState.crime[site.id].unfound[h.id];
+  const at = rec && rec.at - worldState.gameTimeAbsMinutes; tickCrime(0, performance.now()); const fBefore = WORLD.favor(site);
+  worldState.gameTimeAbsMinutes += at; tickCrime(0, performance.now()); const fAfter = WORLD.favor(site), debt = worldState.crime[site.id].debt, log = GAME_LOG.slice(-1)[0] && GAME_LOG.slice(-1)[0].text;
+  SKILLS.locks = { lv: 100, p: 0 }; WORLD.doorLockFor(h2).onPick(); const marked = !!(worldState.crime[site.id].unfound || {})[h2.id];
+  goToInterior = gi; return { at, f0, fBefore, fAfter, debt, d0, bounty: WORLD.bountyAt(site), b0, log, left: Object.keys(worldState.crime[site.id].unfound || {}).length, marked }; });
+check('an unseen shop pick is found at the 8:00 opening, 9 hours on: favour −1 and a point of debt then, no fine; with No mark, never', found.at === 540 && found.fBefore === found.f0 && found.fAfter === found.f0 - 1 && found.debt === found.d0 + 1 && found.bounty === found.b0 && /opened on a picked lock/.test(found.log) && found.left === 0 && !found.marked, found);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

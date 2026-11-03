@@ -156,7 +156,7 @@ function ssMetaFrom(d,kind,slot){return {key:`${d.charId||'legacy'}_${kind}_${sl
 // host's world row (_applyLoadData(c,w)). The index keeps one entry per slot at the character row's key;
 // the world row sits beside it at ssWorldKey(key). Loading joins the two (ssJoinPayload), so a key read from
 // either row still lands: moving a key between the lists is a change to what the next save writes, nothing more.
-const SS_CHAR_WS={register:1,charId:1,gatesWalked:1,shuttleCarry:1,look:1,people:1,stats:1,tut:1,met:1,quests:1,guild:1,cold:1,knowing:1,unbound:1,masteries:1,varek:1,chapelAt:1,roadsWalked:1,wdisc:1,rubbings:1,sigilsRead:1,favor:1,factions:1,crime:1,crimes:1,church:1,refuse:1,rented:1,coachSeat:1,tutorialDone:1,journal:1,told:1,mapNotes:1,feastMeals:1,artifactTries:1,herbsKnown:1,fed:1,masterworks:1,arena:1}; /* S1495 — the metals you have made a Masterwork of */
+const SS_CHAR_WS={register:1,charId:1,gatesWalked:1,shuttleCarry:1,look:1,people:1,stats:1,tut:1,met:1,speech:1,quests:1,guild:1,cold:1,knowing:1,unbound:1,masteries:1,varek:1,chapelAt:1,roadsWalked:1,wdisc:1,rubbings:1,sigilsRead:1,favor:1,factions:1,crime:1,crimes:1,church:1,refuse:1,rented:1,coachSeat:1,tutorialDone:1,journal:1,told:1,mapNotes:1,feastMeals:1,artifactTries:1,herbsKnown:1,fed:1,masterworks:1,arena:1}; /* S1495 — the metals you have made a Masterwork of */
 const SS_WORLD_TOP={QS:1,merchantStock:1}; /* top-level fields of the one-row payload that are the world's; wS is divided by SS_CHAR_WS */
 function ssWorldKey(key){return key+'~w';}
 function ssSplitPayload(d){const c={},w={v:d.v,ts:d.ts,charId:d.charId};
@@ -741,6 +741,7 @@ function _applyLoadData(d,w){
   worldState.people           = (d.wS && d.wS.people) || null;    // v80 N — the player's people
   worldState.towns            = (d.wS && d.wS.towns) || null;     // v80 O — settlement states
   worldState.favor            = (d.wS && d.wS.favor) || null;
+  worldState.speech           = (d.wS && d.wS.speech) || null;    // S1795 — Hearing's day by town, Word given's day
   worldState.roadsCleared     = (d.wS && d.wS.roadsCleared) || null;
   worldState.lairs            = (d.wS && d.wS.lairs) || null;
   worldState.camps            = (d.wS && d.wS.camps) || null;

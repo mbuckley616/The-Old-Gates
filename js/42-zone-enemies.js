@@ -786,13 +786,23 @@ const WILD_ISLE_KINDS={
   'Duneskimmer':{walk:1.2,run:11},'Terrace Ram':{walk:.8,run:7},'Sunspire Lynx':{walk:.7,run:9},'Oasis Hare':{walk:.6,run:9},
   'Mirage Fox':{walk:1,run:7},'Scarlet Ibis':{walk:.4,run:5},'Cypress Stalker':{walk:.4,run:5},'Sunbeak Vulture':{walk:.3,run:11,fly:true},
   'Cliffswift':{walk:.1,run:12,fly:true},'Glasswing Moth':{walk:.05,run:3,fly:true},'Amber Shellcrab':{walk:.2,run:1.5},'Spined Gekko':{walk:.3,run:3}};
+// S1796 — animals that answer back (Michael's A on #1050): the three the catalogue calls aggressive (the Gatefen Boar, the Icecrab, the
+// Saltspine Monitor) graze as the rest do and never bolt, but one you strike or come within WILD_ANSWER.near of turns on you (e.angry) and
+// fights as a foe with the hostile Boar's blow (5, every 1.3 s) and 16 health at tier 1 everywhere; WILD_ANSWER.quit off it gives up and
+// grazes again where it stands. Dead, it is an animal: its meat, no loot. The Sand Wyrm waits for its set piece
+const WILD_ANSWER={near:4,quit:25};
+const WILD_ANSWER_KINDS={'Gatefen Boar':{walk:.7,run:6},'Icecrab':{walk:.2,run:1.8},'Saltspine Monitor':{walk:.3,run:4}};
+for(const k in WILD_ANSWER_KINDS)WILD_ISLE_KINDS[k]=Object.assign({answer:true},WILD_ANSWER_KINDS[k]);
+// S1797 — the two river fish (#1050 A) swim as the trout does, on its path and its rules (wildTroutChunk rolls which)
+for(const k of ['River Pike','Riverjaw Salmon']){WILD_PACE[k]=WILD_PACE.Trout;ZONE_FOE_DEF[k]=Object.assign({},ZONE_FOE_DEF.Trout,{col:SWIMMER[k].col});}
 // S1784 — the watcher's three sheep (the farm's Sheep, OG-023's livestock body): peaceful on the wild path, no meat (not in MEAT_BODIES)
 WILD_PACE.Sheep={walk:.5,run:5};
 ZONE_FOE_DEF.Sheep={minLevel:1,col:WOLF_KINDS.Sheep.coat,eyeCol:0x0a0a0c,hp:1,maxHp:1,spd:1.0,dmg:0,atk:9,xpVal:0,scale:1,shape:'wolf',def:0,resist:{},wild:true};
 for(const k in WILD_ISLE_KINDS){const P=WILD_ISLE_KINDS[k];WILD_PACE[k]=P;
   const body=(WOLF_KINDS[k]&&WOLF_KINDS[k].wild)?'wolf':BIRD[k]?'bird':(SWIMMER[k]&&SWIMMER[k].land)?'crawl':null;if(!body)continue;
   const col=body==='wolf'?WOLF_KINDS[k].coat:body==='bird'?BIRD[k].col:SWIMMER[k].col;
-  ZONE_FOE_DEF[k]={minLevel:1,col,eyeCol:0x0a0a0c,hp:1,maxHp:1,spd:1.0,dmg:0,atk:9,xpVal:0,scale:1,shape:body,def:0,resist:{},wild:true};}
+  ZONE_FOE_DEF[k]={minLevel:1,col,eyeCol:0x0a0a0c,hp:1,maxHp:1,spd:1.0,dmg:0,atk:9,xpVal:0,scale:1,shape:body,def:0,resist:{},wild:true};
+  if(P.answer){const B=ZONE_FOE_DEF.Boar;Object.assign(ZONE_FOE_DEF[k],{hp:B.hp,maxHp:B.maxHp,dmg:B.dmg,atk:B.atk,spd:B.spd,xpVal:B.xpVal,def:B.def,answer:true});}} /* S1796 — the Boar's row at tier 1 (wild: never scaled) */
 // S1759 — a trout holds a metre under the surface, head to the current, wandering a little where the water is deep enough to hide it.
 // Seen or heard (the same senses) it darts 10 m downstream (on a lake, away from you) and holds again. Under the water an arrow strikes it
 // only when it passes within 0.6 m of the fish's height (wildArrowMisses), and of the blows only the spear's reaches it (strikeCandidate)
@@ -822,7 +832,7 @@ function wildArrowMisses(e,y){if(e&&e.swim&&e.mesh)return Math.abs(y-e.mesh.posi
 const WILD_FLEE=40,WILD_HERD=12,WILD_HOME=10;
 function wildOpen(x,z){if(activeZoneId!=='world')return true;if(typeof worldH==='function'&&worldH(x,z)<.5)return false;
   if(typeof slopeNormalY==='function'&&slopeNormalY(x,z)<.6)return false;return !(typeof solidAt==='function'&&solidAt(x,z));}
-function wildFlee(e,T){if(e.watch)return; /* S1784 — the watcher never runs */const W=e._w||(e._w={});if(W.mode==='flee'||W.mode==='fly')return;
+function wildFlee(e,T){if(e.watch||e.answer)return; /* S1784 — the watcher never runs; S1796 — nor does an animal that answers back */const W=e._w||(e._w={});if(W.mode==='flee'||W.mode==='fly')return;
   W.mode='flee';W.left=WILD_FLEE;W.yaw=Math.atan2(e.x-T.x,e.z-T.z)+(e.rng()-.5)*.6;
   if((WILD_PACE[e.baseName]||{}).fly){W.mode='fly';W.gone=0;W.cruise=WILD_FLY.lo+e.rng()*(WILD_FLY.hi-WILD_FLY.lo);W.fy=W.fy||0;}
   for(const o of ZE)if(o!==e&&o.wild&&!o.dead&&Math.hypot(o.x-e.x,o.z-e.z)<WILD_HERD)wildFlee(o,T);}
@@ -830,6 +840,7 @@ function tickWildOne(e,dt){if(!(dt>0))return;
   if(e.watch){watchTick(e,dt);return;}
   const P=WILD_PACE[e.baseName]||WILD_PACE.Deer,W=e._w||(e._w={mode:'graze',t:2+e.rng()*6});
   const T=targetOf(e),dist=Math.hypot(T.x-e.x,T.z-e.z);
+  if(e.answer&&(e.alert||dist<WILD_ANSWER.near)){e.angry=true;e.alert=true;e._agg=true;e._quit=Math.max(WILD_ANSWER.quit,dist+WILD_ANSWER.near);W.mode='graze';W.t=0;return;} /* S1796 — struck, or come too near: it turns on you (an arrow from past 25 m: it comes for you, and gives up 4 m past where you shot from) */
   if(e.alert){e.alert=false;wildFlee(e,T);} /* a blow that did not kill, or a pack's cry */
   else if(W.mode!=='flee'&&W.mode!=='fly'&&!_hasBuff('vanish')&&canSeePlayer(e,dist,20))wildFlee(e,T);
   if(W.mode==='fly'){wildFlyStep(e,W,P,T,dt);return;}
@@ -1002,7 +1013,7 @@ function buildZoneEnemy(sc,sol,x,z,type,variantKey,zOpts){
   // brute/humanoid — distinct from dungeon buildFn vocabulary).
   const zoneE = {size:sc2,limbs,hpBg,x,z,hp:d.hp,maxHp:d.maxHp,mesh:g,hpFg,el,name:displayName,baseName:type,spd:d.spd,dmg:d.dmg,atkSpd:d.atk,dead:false,alert:false,atkCd:0,ph:Math.random()*Math.PI*2,homeX:x,homeZ:z,xpVal:d.xpVal,walkT:Math.random()*Math.PI*2,def:d.def||0,resist:d.resist||{},variant:vr.variant,xpMult:vr.xpMult,telegraphT:0,telegraphMax:0,minLevel,locked:isLocked,_origCol:d.col,shape:d.shape,beast:BEAST_TYPES.has(type),combatYaw:Math.random()*Math.PI*2};
   zoneE.tier=_tier;
-  if(d.wild){zoneE.wild=true;el.intensity=0;if(d.swim)zoneE.swim=true;if(wolfRig&&wolfRig.hcKind==='Hind')zoneE.hind=true;} /* S1707 — no foe's eye-glow on a deer */
+  if(d.wild){zoneE.wild=true;el.intensity=0;if(d.swim)zoneE.swim=true;if(wolfRig&&wolfRig.hcKind==='Hind')zoneE.hind=true;if(d.answer)zoneE.answer=true;} /* S1707 — no foe's eye-glow on a deer */
   initPosture(zoneE);
   if(wolfRig)wolfRig.e=zoneE;
   if(personRig){personRig.e=zoneE;hpBg.position.y=hpFg.position.y=1.3*SCALE.ROOM_K*sc2;} // the bar over a person's head (S905: at the taller man's, F2a)
@@ -1108,7 +1119,8 @@ function tickZoneEnemies(dt,now,sc){
   ZE.forEach(e=>{
     if(e.dead||e.locked)return;
     if(e._duelHold)return; /* S373 — Rowe holds: talking, or on one knee */
-    if(e.wild){tickWildOne(e,dt);return;} /* S1707 — a peaceful animal grazes, wanders and runs; it never fights */
+    if(e.wild&&e.angry){const T=targetOf(e);if(Math.hypot(T.x-e.x,T.z-e.z)>(e._quit||WILD_ANSWER.quit)){e.angry=false;e.alert=false;e._agg=false;e.homeX=e.x;e.homeZ=e.z;}} /* S1796 — 25 m off, it gives up */
+    if(e.wild&&!e.angry){tickWildOne(e,dt);return;} /* S1707 — a peaceful animal grazes, wanders and runs; it never fights (S1796 — unless it answers back) */
     // v61gj — Defensive lazy init for pre-ship saves (enemies in ZONES[id].enemies
     // that predate v61gj). Idempotent — no-op if already stamped. Then regen tick.
     if(typeof e.posture!=='number') initPosture(e);

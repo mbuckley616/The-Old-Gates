@@ -710,11 +710,14 @@ function useFireThing(i){const it=BAG[i];if(!it)return;
 // S1707 — and off the hunted (Michael's A on #984): a deer 2 to 4, a hare 1; the fox, the badger and the otter give none
 const MEAT_BODIES=/(^|\s)(Wolf|Bear|Boar|Deer|Hare|Elderstag|Elk|Duneskimmer|Icehorn|Ram)$/;
 const MEAT_N={Deer:[2,4],Hare:[1,1],Elderstag:[2,4],Elk:[2,4]}; /* S1769 — the islands' grazers: the stag and the elk a deer's, the gazelle, the goat and the rams the default 1 to 3 */
-function bodyMeat(e,items,key){if(e&&e.swim&&e.baseName==='Trout'){items.push(troutItem());return items;}if(!e||!MEAT_BODIES.test(e.name||''))return items;
+function bodyMeat(e,items,key){if(e&&e.swim&&(e.baseName==='Trout'||RIVER_FISH[e.baseName])){items.push(riverFishItem(e.baseName));return items;}if(!e||!MEAT_BODIES.test(e.name||''))return items;
   const N=MEAT_N[(e.name||'').split(' ').pop()]||[1,3];
   const r=key!=null?seededRng('meat',key):lootRand;items.push(survItem('meat',N[0]+Math.floor(r()*(N[1]-N[0]+1))));return items;}
 // S1759 — a trout (#1014 A): one, a fish like the sea's (0.6 weight, 9 gold), taken by hand or off its body when struck
 function troutItem(){return {name:'Trout',ico:'🐟',type:'misc',weight:.6,sellMult:.7,buyPrice:9,qty:1,_typeKey:'fish'};}
+// S1797 — the River Pike and the Riverjaw Salmon (Michael's A on #1050): taken as the trout is, 1.2 weight and 18 gold each
+const RIVER_FISH={'River Pike':{weight:1.2,gold:18},'Riverjaw Salmon':{weight:1.2,gold:18}};
+function riverFishItem(name){const f=RIVER_FISH[name];if(!f)return troutItem();return {name,ico:'🐟',type:'misc',weight:f.weight,sellMult:.7,buyPrice:f.gold,qty:1,_typeKey:'fish'};}
 // the goods shop and the inn: the tinderbox and produce; fish in a port
 function survivalFor(h){if(!h||!(h.type==='misc'||h.type==='inn'))return [];const out=[{...SURV_ITEMS.tinderbox},{...SURV_ITEMS.produce}];
   const st=h.siteId&&typeof SITE!=='undefined'?SITE[h.siteId]:null;if(st&&st.kind==='port')out.push({...SURV_ITEMS.fish});return out;}
@@ -1832,7 +1835,7 @@ function _canWait(){
   // S1112 — on watch on the spire (the draft's §4 line); asked before the enemies, which stand on the roof with you
   if(typeof WORLD!=='undefined'&&WORLD.onWatch&&WORLD.onWatch()) return {ok:false, reason:'Not on watch.'};
   // Block during combat — any non-dead enemy aggroed within 20m.
-  const inCombat = ZE && ZE.some(e=>e && !e.dead && !e.locked && !e.wild && Math.hypot(px-e.x,pz-e.z)<20); /* S1707 — a grazing deer is no foe */
+  const inCombat = ZE && ZE.some(e=>e && !e.dead && !e.locked && (!e.wild||e.angry) && Math.hypot(px-e.x,pz-e.z)<20); /* S1707 — a grazing deer is no foe */
   if(inCombat) return {ok:false, reason:'You cannot pass time while enemies are near.'};
   // Block while a UI modal is open (dialog, shop, inventory etc).
   if(typeof dlg!=='undefined' && dlg && dlg.style && dlg.style.display==='flex') return {ok:false, reason:''};

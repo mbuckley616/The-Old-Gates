@@ -46,6 +46,21 @@ const r = await page.evaluate(async () => {
   out.fine = c.bounty; out.halt2 = labels(); out.said2 = say(); out.people = peopleOfSite(S.site); out.want2 = TALKED_LINES[out.people](38); try { closeDialog(); } catch (e) {}
   confrontIndoor({ npc: n }, S, c); out.indoor2 = labels(); out.saidIn = say(); out.talkedNow = !!c.talkedNow; try { closeDialog(); } catch (e) {}
   delete C[S.site.id];
+  // S1795 — Word given (Speech 100): a fine made only of lock crimes is waived on your word, once a day; a fine with a theft in it is not
+  const W0 = worldState.speech; worldState.speech = null; const hs = S.houses.find(x => x.keeper && x.type !== 'home'); const wit = { name: 'Someone' };
+  const lay = kinds => { delete C[S.site.id]; for (const k of kinds) WORLD.seenCrime ? WORLD.seenCrime(k, hs, wit) : seenCrime(k, hs, wit); return C[S.site.id]; };
+  const offered = (lv, cc) => { set('speech', lv); confront(n, S, cc); const l = labels(); try { closeDialog(); } catch (e) {} return l.some(x => /Give my word/.test(x)); };
+  let cw = lay(['lock', 'lock']); out.word99 = offered(99, cw); out.word100 = offered(100, cw); out.wordFine = cw.bounty;
+  confront(n, S, cw); const wb = [...document.querySelectorAll('#dlg-choices > button')].find(b => /Give my word/.test(b.textContent)); if (wb) wb.click();
+  await new Promise(res => setTimeout(res, 300)); out.wordAfter = cw.bounty; out.wordDebt = cw.debt; try { closeDialog(); } catch (e) {}
+  cw = lay(['lock']); out.wordAgain = offered(100, cw); worldState.speech.word = dayNow() - 1; out.wordTomorrow = offered(100, cw);
+  cw = lay(['lock', 'theft']); out.wordMixed = offered(100, cw); delete C[S.site.id];
+  // S1795 — Hearing (Speech 75): the first talk with someone new raises the town's favour by 1, once in the town a day
+  const fv = () => WORLD.favor(S.site); const strangers = npcs.filter(x => x.def && !(worldState.met || {})[metKey(x.def, S.site)]).slice(0, 3);
+  set('speech', 74); let f0 = fv(); firstWords(strangers[0].def, S.site); out.hear74 = fv() - f0;
+  set('speech', 75); f0 = fv(); firstWords(strangers[1].def, S.site); out.hear75 = fv() - f0;
+  f0 = fv(); firstWords(strangers[2].def, S.site); firstWords(strangers[1].def, S.site); out.hearSame = fv() - f0;
+  worldState.speech = W0;
   // the Skills tab: four perks under Locks; at Locks 50 two are lit; Speech's 75 and 100 are marked not yet built
   set('locks', 50); set('speech', 50); openHub('skills');
   const row = sel => [...document.querySelectorAll(`.sk-perk[data-perk^="${sel}:"]`)].map(e => ({ t: e.textContent, held: e.classList.contains('held'), later: e.classList.contains('later') }));
@@ -66,7 +81,10 @@ check(`the guard gives way in his people's voice (${r.people}): "${r.said2}"`, r
 check(`and the next halt in that town greets as before: "${r.saidIn.slice(0, 60)}…"`, !r.saidIn.includes(r.want2) && /38/.test(r.saidIn) && !r.talkedNow, { saidIn: r.saidIn });
 check('once in a town: it is not offered again, in the street or indoors', !r.halt2.some(l => /Talk it down/.test(l)) && !r.indoor2.some(l => /Talk it down/.test(l)), r);
 check(`the Skills tab: Locks shows four perks, two lit at 50 (${r.tabLocks.map(p => p.t + (p.held ? '*' : '')).join(', ')})`, r.tabLocks.length === 4 && r.tabLocks.filter(p => p.held).length === 2, r.tabLocks);
-check(`Speech 75 and 100 are marked not yet in the game`, r.tabSpeech[2].later && r.tabSpeech[3].later && !r.tabSpeech[0].later, r.tabSpeech);
+check(`Speech's four are all in the game since Session 1795 (Hearing and Word given)`, r.tabSpeech.length === 4 && r.tabSpeech.every(p => !p.later), r.tabSpeech);
+check(`Word given: offered at Speech 100 (not 99) on a fine of locks alone (${r.wordFine} gold), which it waives; the favour's debt stays (${r.wordDebt})`, !r.word99 && r.word100 && r.wordFine === 50 && r.wordAfter === 0 && r.wordDebt === 2, r);
+check('once a day: not again today, again tomorrow; never on a fine with a theft in it', !r.wordAgain && r.wordTomorrow && !r.wordMixed, r);
+check(`Hearing: a first talk at Speech 75 raises the town's favour by ${r.hear75} (at 74, ${r.hear74}); a second stranger the same day, ${r.hearSame}`, r.hear75 === 1 && r.hear74 === 0 && r.hearSame === 0, r);
 /* S1542 — eleven until survival B's six skills took theirs (S1494–S1519): every skill with perks carries its line */
 check(`every skill with perks carries a perk line (${r.tabCount} of ${r.perkSkills})`, r.perkSkills >= 17 && r.tabCount === r.perkSkills, r);
 check('no page errors', g.errs.length === 0, g.errs);

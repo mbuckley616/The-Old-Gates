@@ -34,8 +34,8 @@ const rules = await page.evaluate(() => { const W = () => ZONES.world.enemies.fi
   const bad = W().filter(e => { const ri = roadInfo(e.x, e.z); return (ri && ri.d < 7.9) || wildPadNear(e.x, e.z, 0); }).map(e => e.name + ' ' + e.id);
   const sig = () => W().map(e => e.id + '|' + e.name + '|' + e.x.toFixed(2) + ',' + e.z.toFixed(2)).sort().join();
   const before = sig(), n = W().length; for (const ch of [...WILD_CH]) wildDrop(ch); const gone = W().length; _wildT = 0; tickWildSpawn(.1);
-  return { n, bad, gone, same: before === sig(), noFoe: W().every(e => !e.alert && e.hp === 1 && e.limbs.wolf) }; });
-check(`none on a road or a pad (${rules.n} animals), the same group again by its chunk's id, each a one-blow animal on its own body`, rules.n > 0 && !rules.bad.length && rules.gone === 0 && rules.same && rules.noFoe, rules);
+  return { n, bad, gone, same: before === sig(), noFoe: W().every(e => !e.alert && e.hp === (e.answer ? 16 : 1) && e.limbs.wolf) /* S1796 — the three that answer back have the Boar's 16 */ }; });
+check(`none on a road or a pad (${rules.n} animals), the same group again by its chunk's id, each a one-blow animal on its own body (one that answers back, 16)`, rules.n > 0 && !rules.bad.length && rules.gone === 0 && rules.same && rules.noFoe, rules);
 
 const flee = await page.evaluate(() => { const W = ZONES.world.enemies.filter(e => e.wild && !e.dead), e = W.find(o => o.name === 'Deer');
   for (const o of W) o._duelHold = o !== e; e._w = { mode: 'graze', t: 99 };
@@ -122,7 +122,7 @@ const trout = await page.evaluate(() => { forceTime(12); for (const ch of [...WI
   const mv = Math.hypot(e.x - x0, e.z - z0); out.dart = +mv.toFixed(1); out.down = +(((e.x - x0) * Math.sin(down) + (e.z - z0) * Math.cos(down)) / mv).toFixed(2); out.wetAfter = wildWet(e.x, e.z);
   e._w = { mode: 'graze', t: 99 }; px = e.x + 60; pz = e.z + 60; for (let k = 0; k < 120; k++) tickZoneEnemies(1 / 60, 0, WORLD.scene);
   px = e.x - Math.sin(e.combatYaw) * 1.1; pz = e.z - Math.cos(e.combatYaw) * 1.1; jumpY = -1.45; _pStep = false; for (let k = 0; k < 30; k++) tickZoneEnemies(1 / 60, 0, WORLD.scene);
-  const has = () => BAG.filter(b => b && b.name === 'Trout').reduce((a, b) => a + (b.qty || 1), 0), b0 = has();
+  const has = () => BAG.filter(b => b && ['Trout', 'River Pike', 'Riverjaw Salmon'].includes(b.name) /* S1797 — in the Gatelands' deep water it may be a pike */).reduce((a, b) => a + (b.qty || 1), 0), b0 = has();
   out.prompt = fishPrompt(); out.took = catchFish(); out.got = has() - b0; out.gone = !ZONES.world.enemies.includes(e) && WILD_TAKEN.get(e._wildKey) === lootDay();
   for (const o of ZE) o._duelHold = false;
   const f = ZONES.world.enemies.find(o => o.swim && !o.dead); if (!f) return out; const w0 = EQ.weapon;
@@ -164,4 +164,34 @@ check(`the wolf never moves (${wt.moved} m; ${wt.bolted} of its 3 sheep ran) nor
   wt.moved === 0 && !wt.alert && wt.wild && wt.hp === 1 && wt.dmg === 0 && wt.dead, wt);
 check(`it sits in the kit's own sit (${wt.sit && wt.sit.gait}): hips ${wt.sit && wt.sit.hips} m over the ground, paws at ${JSON.stringify(wt.sit && wt.sit.paws)}, breathing (${wt.sit && wt.sit.breath}), no shadow from its kit body; killed, it leaves the sit (${wt.up})`,
   !!wt.sit && wt.sit.gait === 'sit' && wt.sit.hips < .2 && wt.sit.paws.every(y => Math.abs(y) < .03) && wt.sit.breath > 1e-4 && wt.sit.shadow === 0 && wt.up === true, wt);
+// S1796 — animals that answer back (#1050 A): a Gatefen Boar grazes with you 10 m off and does not bolt; within 4 m it turns on you with the
+// hostile Boar's blow (5) and 16 health, holds a fight open, and gives up 25 m off; struck from 30 m it comes, and gives up past 34
+const ans = await page.evaluate(() => { forceTime(12); stream(px, pz, true);
+  let x = px, z = pz; for (let k = 0; k < 40 && !wildGround(x, z); k++) { x = px + (k % 7 - 3) * 9; z = pz + Math.floor(k / 7) * 9; }
+  const e = keyFoe(buildZoneEnemy(WORLD.scene, STATIC_SOL, x, z, 'Gatefen Boar', null, { tier: 1, key: 'test:answer' }), 'wild:test:answer');
+  e.homeX = x; e.homeZ = z; e.combatYaw = 0; ZONES.world.enemies.push(e); for (const o of ZE) o._duelHold = o !== e; const T = n => { for (let i = 0; i < n; i++) tickZoneEnemies(1 / 60, 0, WORLD.scene); };
+  const o = { hp: e.hp, dmg: e.dmg, wild: !!e.wild }; px = x + 10; pz = z; T(120); o.at10 = !!e.angry || (e._w && e._w.mode === 'flee');
+  px = e.x + 3; pz = e.z; PHP = PMAXHP = 500; T(60 * 4); o.at3 = !!e.angry; o.lost = 500 - PHP;
+  o.fight = ZE.some(q => q && !q.dead && !q.locked && (!q.wild || q.angry) && Math.hypot(px - q.x, pz - q.z) < 20);
+  px = e.x + 30; T(30); o.at30 = !!e.angry; e.alert = true; T(30); o.struck = !!e.angry; o.quit = e._quit; PHP = PMAXHP;
+  for (const q of ZE) q._duelHold = false; e.dead = true; if (e.mesh.parent) e.mesh.parent.remove(e.mesh); ZONES.world.enemies.splice(ZONES.world.enemies.indexOf(e), 1); return o; });
+console.log('  answer:', JSON.stringify(ans));
+check(`a Gatefen Boar (${ans.hp} health, blow ${ans.dmg}) grazes at 10 m, turns on you at 3 m (${ans.lost} lost) and gives up at 30; struck from 30 m it comes (gives up past ${ans.quit && ans.quit.toFixed(1)} m)`,
+  ans.wild && ans.hp === 16 && ans.dmg === 5 && !ans.at10 && ans.at3 && ans.lost > 0 && ans.fight && !ans.at30 && ans.struck && ans.quit > 30, ans);
+// S1797 — the river fish (#1050 A): along the routed rivers, the Gatelands' deep water holds River Pike, the Mark's rivers Riverjaw Salmon, each
+// about half of its chunk's fish, and Aurenne's only trout; taken off the body, 1.2 weight and 18 gold
+const fish = await page.evaluate(() => { const seen = new Set(), t = {}, items = {};
+  for (const rv of WORLD.routed.reaches) for (let k = 0; k < rv.pts.length; k += 3) { const p = rv.pts[k], cx = Math.floor(p[0] / CHUNK), cz = Math.floor(p[1] / CHUNK), key = cx + ',' + cz;
+    if (seen.has(key) || seen.size >= 900) continue; seen.add(key); const ch = { cx, cz, wild: [] }; wildTroutChunk(ch, key);
+    let isle = null; try { const [i, j] = cellOf(cx * CHUNK, cz * CHUNK); isle = nationKeyOf(i, j); } catch (e) {}
+    for (const e of ch.wild) { const n = isle + ':' + e.baseName; t[n] = (t[n] || 0) + 1; if (!items[e.baseName]) { const it = bodyMeat(e, [], null)[0]; items[e.baseName] = [it.name, it.weight, it.buyPrice]; }
+      if (e.baseName === 'River Pike' && !(SEA_Y - worldH(e.x, e.z) > 3)) t.shallowPike = (t.shallowPike || 0) + 1;
+      e.dead = true; if (e.mesh && e.mesh.parent) e.mesh.parent.remove(e.mesh); const ix = ZONES.world.enemies.indexOf(e); if (ix >= 0) ZONES.world.enemies.splice(ix, 1); } }
+  return { t, items, chunks: seen.size }; });
+console.log('  fish:', JSON.stringify(fish));
+{ const T = fish.t, I = fish.items, share = (a, b) => (T[a] || 0) / ((T[a] || 0) + (T[b] || 0));
+  check(`the river fish: Gatelands ${T['gatelands:River Pike']} pike to ${T['gatelands:Trout']} trout, the Mark ${T['mark:Riverjaw Salmon']} salmon to ${T['mark:Trout']} trout, none elsewhere; each 1.2 weight and 18 gold`,
+    share('gatelands:River Pike', 'gatelands:Trout') > .3 && share('gatelands:River Pike', 'gatelands:Trout') < .6 && share('mark:Riverjaw Salmon', 'mark:Trout') > .25 && share('mark:Riverjaw Salmon', 'mark:Trout') < .6
+    && !T['aurenne:River Pike'] && !T['aurenne:Riverjaw Salmon'] && !T['mark:River Pike'] && !T['gatelands:Riverjaw Salmon'] && !T.shallowPike
+    && I['River Pike'][1] === 1.2 && I['River Pike'][2] === 18 && I['Riverjaw Salmon'][1] === 1.2 && I['Riverjaw Salmon'][2] === 18 && I.Trout[1] === .6, fish); }
 await g.close();
