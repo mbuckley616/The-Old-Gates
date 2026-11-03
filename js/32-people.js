@@ -1041,6 +1041,7 @@ function buildNPCMesh(def,opts){
   // the same name in the same place is the same person, behind the counter as in the street
   let g=def.name&&!def.authored?PEOPLE_GENOMES.get(key):null;
   if(!g){g=personGenome(def,opts);if(def.name)PEOPLE_GENOMES.set(key,g);}
+  if(def.authored&&def.name)g.castOk=true;
   if(hbOn()&&!opts.noBuilder)hbPrep(g,(opts.key||'')+':'+(def.name||def.role||'?')); /* S1195 (F4) — the builder's genome, keyed by place and name */
   let gb=g,G=g.hbKey&&hbOn()?HB_GENOMES.get(g.hbKey):null;
   if(G){const W=hbSeasonDress(g,G);if(W!==G&&W.dress.coat&&!(G.dress||{}).coat){gb=Object.assign({},g,{cloth:new THREE.Color(...W.dress.coat)});gb.sleeve=gb.cloth.clone().multiplyScalar(.9);}G=W;} /* S1763 — the distant copy in the coat's colour */
@@ -1468,12 +1469,22 @@ const HB_MAP=[['hips','root'],['spine','spine05'],['neck','neck01'],['head','hea
 function hbOn(){return HBODY.on&&window.OG_LOOK==='new'&&typeof HB!=='undefined'&&typeof MH_PACK!=='undefined';}
 // the builder's genome for a game genome: its people, sex and age from personGenome, the rest rolled inside the people's ranges
 function hbGenome(g){let G=HB_GENOMES.get(g.hbKey);if(G)return G;HB.loadPack();
-  const people=HB.PEOPLES[g.people]?g.people:'gatelander';
-  G=HB.rollGenome(g.hbKey,{people,g:g.female?0:1,child:!!g.child,old:g.age==='elder'});
+  const people=HB.PEOPLES[g.people]?g.people:'gatelander',cast=hbCastName(g);
+  G=cast?HB.castGenome(cast,{people}):HB.rollGenome(g.hbKey,{people,g:g.female?0:1,child:!!g.child,old:g.age==='elder'});
   // a guard is known by his mail, helm and spear (the town's guards keep their old kit's role; the armour tiers are F10's)
   if(GUARD_ROLE.test(g.role||''))G.dress=Object.assign({},G.dress,{mail:[.55,.56,.58],helm:[.42,.43,.45],spear:[.46,.33,.2],cloak:null,hood:null,basket:null,staff:null,shield:null,crossbow:null});
   if(/^crew:/.test(g.hbKey||'')){const m=/carpenter|cook|navigator/.exec(g.role||''),C=m&&CREW_BODY[m[0]];if(C)G.dress=Object.assign({},G.dress,CREW_STRIP,C.dress);} /* S1779 — her crew's working dress */
   HB_GENOMES.set(g.hbKey,G);return G;}
+/* S1792 (L2, OG-069) — the cast: a named person of Act I (the builder's CAST: Bram, Edna, Corwin, Niamh, Áine) wears the sheet's body and
+   dress wherever they stand, not a roll of their key. Only at their own place (Ashenmoor; Niamh at Inis Rua, Áine at Carraig Mór) or
+   when the game authors them (Corwin at the harbours), so a generated town's own Edna is still her own woman */
+const HB_CAST_SITE={Bram:'ashenmoor',Edna:'ashenmoor',Corwin:'ashenmoor',Niamh:'inis_rua',Áine:'carraig_mor'};
+// the driver follows the sheet: its sex (the gait, the far copy's skirt), its age and the cast's stature, so the builder's body, scaled to
+// the driver's, stands as tall as the sheet has them (Edna's town roll had made her a young man of 1.85)
+function hbCastDriver(g,G){const C=HB.CAST[G.cast];g.female=G.g<.5;g.dress=g.female;g.age=G.age>=.8?'elder':G.age<.58?'young':'adult';
+  g.height=C.metres/(personScale(g)*SCALE.PERSON_MODEL);if(G.beard<.05)g.beard='none';}
+function hbCastName(g){if(typeof HB.castGenome!=='function'||!g.hbKey)return null;const m=/^([^:#]*)(?:#[^:]*)?:(.+)$/.exec(g.hbKey);if(!m||!HB.CAST[m[2]])return null;
+  return g.castOk||HB_CAST_SITE[m[2]]===m[1]?m[2]:null;}
 // the distant copy in the genome's colours, so the body does not change colour when it comes near
 function hbTint(g,G){const C=a=>new THREE.Color(a[0],a[1],a[2]),D=G.dress||{};
   if(G.skin)g.skin=C(G.skin);if(G.hairCol)g.hair=C(G.hairCol);
@@ -1546,7 +1557,7 @@ function crewHoldBodies(sc_,house){const st=typeof worldState!=='undefined'&&wor
 function crewLine(r){try{if(r==='carpenter'){const b=shipBars();return `She's at ${Math.round(b.hull)} of ${b.hullMax}. Under way I patch her, while the chest has planks and pitch.`;}
   if(r==='cook')return crewAt('cook')?'At six each morning I cook a fish from the chest, or a joint if there’s no fish, and put it back there.':'No galley, no fire. I can’t cook on good intentions.';
   if(r==='navigator')return crewAt('navigator')?'With the chart table I see twice as far round her.':'Fit her a chart table and I’ll earn my bunk.';}catch(e){}return '';}
-function hbPrep(g,key){if(g.hbKey)return;g.hbKey=key;try{hbTint(g,hbGenome(g));}catch(e){console.warn('F4: no genome for',key,e);g.hbKey=null;}}
+function hbPrep(g,key){if(g.hbKey)return;g.hbKey=key;try{const G=hbGenome(g);if(G.cast)hbCastDriver(g,G);hbTint(g,G);}catch(e){console.warn('F4: no genome for',key,e);g.hbKey=null;}}
 // the human foes (S1201): which of FOE_DRESS wear the builder's body (the people, not the dead, the stone or the folk of the hills),
 // and what each wears over the builder's own rolled clothes, from its FOE_DRESS colour (c): the weapon and shield stay the game's
 // kit, held by the driver's bones, so the builder's own spear, staff, crossbow, basket and shield are taken off every one
