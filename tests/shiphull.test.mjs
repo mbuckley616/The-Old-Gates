@@ -65,9 +65,9 @@ const rams = await page.evaluate(() => { const S = WORLD.ship, out = {}; const f
   m.speed = 0; m.x += sx * 6; m.z += sz * 6; WORLD.tickHullCollisions(1 / 60); m.x -= sx * 7; m.z -= sz * 7; m.speed = 4; WORLD.tickHullCollisions(1 / 60); out.beamAgain = WORLD.shipBars().hull;
   WORLD.despawnOtherShip(m); return out; });
 console.log(JSON.stringify(rams));
-check('bow-on into her at 7: half of 7 × 3, hull −11 (to 89)', rams.bow.hull === 89 && /You ram her\. Hull −11\./.test(rams.bow.msg), rams.bow);
+check('bow-on into her at 7: half of 7 × 3, hull −11 (to 89); hers 7 × 4 (S1813)', rams.bow.hull === 89 && /You ram her\. Hull −11, hers −28\./.test(rams.bow.msg), rams.bow);
 check('still touching, it does not count again', rams.bowAgain === 89, rams);
-check('a merchantman into your beam at 4 while you lie still: 4 × 3, hull −12 (to 88)', rams.beam.hull === 88 && /The hulls strike\. Hull −12\./.test(rams.beam.msg), rams.beam);
+check('a merchantman into your beam at 4 while you lie still: 4 × 3, hull −12 (to 88); hers 4 × 1.5, her bow (S1813)', rams.beam.hull === 88 && /The hulls strike\. Hull −12, hers −6\./.test(rams.beam.msg), rams.beam);
 check('once she has drawn off and comes again, it counts again (76)', rams.beamAgain === 76, rams);
 
 // a volley on your deck (from a black sail's crew since S612, her own volleys and ram held off): 2 hull and 3 rig, once a volley however many arrows; one at you in the water off her costs her nothing

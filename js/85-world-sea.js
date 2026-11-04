@@ -901,7 +901,7 @@
     sc.add(m);
     if(id==null)id=`sea:${chunkKey(Math.floor(x/CHUNK),Math.floor(z/CHUNK))}:${Math.floor(worldState.gameTimeAbsMinutes||0)}:${kind}`;
     const rng=seededRng('ship',id);
-    const o={id,rng,kind,mesh:m,x,z,yaw:rng()*Math.PI*2,speed:0,L:cls.L,W:cls.W,plat:{x0:0,x1:0,z0:0,z1:0,y:DECK_Y},crew:[],chest:null,boarded:false,volleyT:2,dead:false,wp:null,name:kind==='pirate'?'a black-sailed ship':'a merchantman'};
+    const o={id,rng,kind,mesh:m,x,z,yaw:rng()*Math.PI*2,speed:0,L:cls.L,W:cls.W,hull:cls.hull,hullMax:cls.hull,rig:100, /* S1813 — her bars (naval combat) */ plat:{x0:0,x1:0,z0:0,z1:0,y:DECK_Y},crew:[],chest:null,boarded:false,volleyT:2,dead:false,wp:null,name:kind==='pirate'?'a black-sailed ship':'a merchantman'};
     ZONES.world.platforms.push(o.plat);OTHER.push(o);placeOther(o);
     if(kind==='pirate')crewUp(o,false);
     return o;
@@ -926,6 +926,7 @@
       }
     }
     for(const o of OTHER){
+      if(otherDown(o,dt)){if(o.boarded)pirateFled(o);continue;} /* S1813 — lying to or foundering */
       if(o.boarded){placeOther(o);pirateFled(o);continue;}
       const T=targetOf(o),dP=Math.hypot(T.x-o.x,T.z-o.z); /* S542 — co-op rule: whom a black sail hunts is targetOf's */
       let tx,tz;
@@ -935,7 +936,7 @@
         // hull; the first touch spends it (tickHullCollisions) and she goes back to her circle; 30 s before the next, 12 s to land it
         o.ramWait=(o.ramWait||0)-dt;const aboard=!!SHIP.mesh&&(SHIP.sailing||onDeck());
         if(o.ramming){o.ramming-=dt;if(o.ramming<=0||!aboard){o.ramming=0;o.ramWait=PIRATE_RAM.wait;}}
-        else if(aboard&&dP<=PIRATE_RAM.range&&o.ramWait<=0&&(SHIP.speed||0)<PIRATE_RAM.top)o.ramming=PIRATE_RAM.run;
+        else if(aboard&&dP<=PIRATE_RAM.range&&o.ramWait<=0&&(SHIP.speed||0)<PIRATE_RAM.top*otherSpeedMul(o))o.ramming=PIRATE_RAM.run;
         const dx=T.x-o.x,dz=T.z-o.z;if(o.ramming){tx=SHIP.x;tz=SHIP.z;}else if(dP>30){tx=T.x;tz=T.z;}else{tx=o.x-dz*.5;tz=o.z+dx*.5;}
         o.volleyT-=dt;if(dP<70&&o.volleyT<=0){o.volleyT=2.2+(o.rng?o.rng():Math.random());volley(o);}
       } else if(o.sated){tx=o.x+(o.x-T.x);tz=o.z+(o.z-T.z);
@@ -944,7 +945,7 @@
         if(o.wp){tx=o.wp.x;tz=o.wp.z;}
         if(o.kind!=='pirate'&&typeof headGiveWay==='function'){const gw=headGiveWay(o);if(gw){tx=gw.x;tz=gw.z;o.wp=null;}} /* S1734 — the skull: merchantmen give way */
       }
-      if(tx!=null){const want=Math.atan2(-(tx-o.x),-(tz-o.z));let d=want-o.yaw;d=Math.atan2(Math.sin(d),Math.cos(d));o.yaw+=Math.max(-.5*dt,Math.min(.5*dt,d));o.speed+=((o.kind==='pirate'?6.5:4.5)-o.speed)*Math.min(1,dt*.6);}
+      if(tx!=null){const want=Math.atan2(-(tx-o.x),-(tz-o.z));let d=want-o.yaw;d=Math.atan2(Math.sin(d),Math.cos(d));o.yaw+=Math.max(-.5*dt,Math.min(.5*dt,d));o.speed+=((o.kind==='pirate'?6.5:4.5)*otherSpeedMul(o)-o.speed)*Math.min(1,dt*.6);}
       const fx=-Math.sin(o.yaw),fz=-Math.cos(o.yaw);const bx=o.x+fx*(o.L/2+3),bz=o.z+fz*(o.L/2+3);
       if(worldH(bx,bz)>-1.8){o.speed=0;o.wp=null;}
       o.x+=fx*o.speed*dt;o.z+=fz*o.speed*dt;placeOther(o);
@@ -1011,8 +1012,8 @@
   function pirateFled(o){if(o.kind!=='pirate'||o._fled||PHP<=0||!o.crew.some(e=>!e.dead))return;if(deckOff(o.plat)<1.5&&!onDeck())return;
     o._fled=true;if(!worldState.ship||!SHIP.mesh||Math.hypot(SHIP.x-o.x,SHIP.z-o.z)>PIRATE_REACH)return;const took=pirateTake();if(!took.length)return;
     showMsg(`They come over your rail behind you and take ${pirateStow(o,took)} from the hold.`,'#ff8060');}
-  function otherPrompt(){const o=nearOther();return o&&!o.boarded?`Press 'E' to climb aboard ${o.name}`:null;}
-  function otherInteract(){const o=nearOther();if(o&&!o.boarded)return startClimb(o.mesh,o.W,shipNetSide(o.mesh,o.W),o);return false;}
+  function otherPrompt(){const o=nearOther();return o&&!o.boarded?`Press 'E' to climb aboard ${o.name}`:hookPrompt();} /* S1814 — a net under the crosshair first, then the hooks */
+  function otherInteract(){const o=nearOther();if(o&&!o.boarded)return startClimb(o.mesh,o.W,shipNetSide(o.mesh,o.W),o);return hookInteract();} /* S1814 */
   // S613 (Michael's sailing playtest, 6 Oct) — the dead ride where they fell. A hand killed on her deck (or a boarder on
   // yours) is carried with the ship, turned with her as she turns, ragdoll, body, search and glow alike; the sea is a floor
   // to a falling body, so one that goes over the side comes to rest on the water and floats where it fell. A body on a
