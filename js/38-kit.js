@@ -3374,9 +3374,9 @@ function felledTrunk(L = 9, R = .35, seed = 1) {
 //   Differences from the prototype: o.hatchZ puts the hatch (the game's is forward, L/2 - 3.2, where the cabin's door is); the braces and
 //   sheets are left off (they would hang loose once the yard braces round); the sail's harp carries no colour space (the kit's rule).
 const SHM = {};
-function shipSailTex(harp) { const c = document.createElement('canvas'); c.width = c.height = 512; const x = c.getContext('2d');
-  x.fillStyle = '#3f6e3c'; x.fillRect(0, 0, 512, 512); x.fillStyle = 'rgba(0,0,0,.08)'; for (let i = 0; i < 512; i += 64) x.fillRect(i, 0, 3, 512);
-  if (harp) { x.strokeStyle = x.fillStyle = '#e6d6a4'; x.lineCap = 'round'; x.lineJoin = 'round';
+function shipSailTex(harp, cl = {}) { const c = document.createElement('canvas'); c.width = c.height = 512; const x = c.getContext('2d');
+  x.fillStyle = cl.base || '#3f6e3c'; x.fillRect(0, 0, 512, 512); x.fillStyle = 'rgba(0,0,0,.08)'; for (let i = 0; i < 512; i += 64) x.fillRect(i, 0, 3, 512);
+  if (harp) { x.strokeStyle = x.fillStyle = cl.mark || '#e6d6a4'; x.lineCap = 'round'; x.lineJoin = 'round';
     const sb = xx => 130 + (xx - 175) * 2.4, nk = xx => { const t = (xx - 175) / 190; return 130 - 70 * Math.sin(Math.PI * t) + 40 * t; };
     x.lineWidth = 9; for (let xx = 196; xx < 352; xx += 13) { const y0 = nk(xx) + 6, y1 = Math.min(sb(xx), 440) - 10; if (y1 > y0 + 10) { x.beginPath(); x.moveTo(xx, y0); x.lineTo(xx, y1); x.stroke(); } }
     x.lineWidth = 30; x.beginPath(); x.moveTo(175, 130); x.lineTo(304, 440); x.stroke();
@@ -3397,18 +3397,48 @@ function shipMats(dress) { const key = dress === 'mark' || dress === 'aurenne' ?
   else M = { ...base, tar: mat('wood', { ns: .6, color: 0x2a2420, rough: .55 }), oak: mat('wood', { ns: 1.0, color: 0xc29a6a, rough: .7 }), green: mat('wood', { ns: .8, color: 0x2f5a34, rough: .6 }),
     cream: mat('wood', { ns: .5, color: 0xe2d6b0, rough: .6 }), deck: mat('wood', { ns: .9, color: 0xb49a74, rough: .85 }), spar: mat('wood', { ns: .8, color: 0x7a5a3a, rough: .7 }),
     sail: new THREE.MeshStandardMaterial({ map: shipSailTex(true), roughness: .9, side: THREE.DoubleSide }) };
+  (key === 'mark' ? M.tar : key === 'aurenne' ? M.blue : M.green).userData.swatch = 'paint'; M.sail.userData.swatch = 'cloth'; /* S1843 — what the yard's colours move (shipSwatch) */
   return SHM[key] = M; }
 // the Mark's sails (ships.js's cutterSail): tanned red-brown cloths, their seams and reef bands
-function shipTannedTex() { const c = document.createElement('canvas'); c.width = c.height = 512; const x = c.getContext('2d');
-  for (let i = 0; i < 8; i++) { x.fillStyle = i % 2 ? '#7a3826' : '#723422'; x.fillRect(i * 64, 0, 64, 512); }
+function shipTannedTex(cl = null) { const c = document.createElement('canvas'); c.width = c.height = 512; const x = c.getContext('2d');
+  for (let i = 0; i < 8; i++) { x.fillStyle = cl ? cl.cloths[i % 2] : i % 2 ? '#7a3826' : '#723422'; x.fillRect(i * 64, 0, 64, 512); }
   x.fillStyle = 'rgba(0,0,0,.12)'; for (let i = 0; i < 512; i += 64) x.fillRect(i, 0, 3, 512); for (let j = 0; j < 512; j += 128) x.fillRect(0, j, 512, 2);
   return finishTex(c); }
 // Aurenne's (ships.js's caravelSail): white cloths and the sun-star in gold, sixteen rays long and short by turns (#316 A)
-function shipStarTex() { const c = document.createElement('canvas'); c.width = c.height = 512; const x = c.getContext('2d');
-  x.fillStyle = '#ece5d2'; x.fillRect(0, 0, 512, 512); x.fillStyle = 'rgba(80,60,30,.09)'; for (let i = 0; i < 512; i += 48) x.fillRect(i, 0, 3, 512);
-  x.fillStyle = '#c9982e'; x.beginPath(); for (let k = 0; k < 32; k++) { const a = k * Math.PI / 16 - Math.PI / 2, rr = k % 2 ? 62 : (k / 2) % 2 ? 128 : 172; x.lineTo(256 + rr * Math.cos(a), 256 + rr * Math.sin(a)); } x.closePath(); x.fill();
-  x.fillStyle = '#e2b84a'; x.beginPath(); x.arc(256, 256, 70, 0, Math.PI * 2); x.fill(); x.strokeStyle = '#a87a22'; x.lineWidth = 6; x.beginPath(); x.arc(256, 256, 54, 0, Math.PI * 2); x.stroke();
+function shipStarTex(cl = {}) { const c = document.createElement('canvas'); c.width = c.height = 512; const x = c.getContext('2d');
+  x.fillStyle = cl.base || '#ece5d2'; x.fillRect(0, 0, 512, 512); x.fillStyle = 'rgba(80,60,30,.09)'; for (let i = 0; i < 512; i += 48) x.fillRect(i, 0, 3, 512);
+  x.fillStyle = cl.rays || '#c9982e'; x.beginPath(); for (let k = 0; k < 32; k++) { const a = k * Math.PI / 16 - Math.PI / 2, rr = k % 2 ? 62 : (k / 2) % 2 ? 128 : 172; x.lineTo(256 + rr * Math.cos(a), 256 + rr * Math.sin(a)); } x.closePath(); x.fill();
+  x.fillStyle = cl.disc || '#e2b84a'; x.beginPath(); x.arc(256, 256, 70, 0, Math.PI * 2); x.fill(); x.strokeStyle = cl.ring || '#a87a22'; x.lineWidth = 6; x.beginPath(); x.arc(256, 256, 54, 0, Math.PI * 2); x.stroke();
   const t = finishTex(c); t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; return t; }
+// Session 1843 — the yard's colours (ships.js's SWATCHES and swatch, Session 1836; Michael's "as drawn" on #1133): four hull paints and
+// three sail cloths an island, the first of each the dress as built. A paint moves the dress's one painted surface (the Gatelands' green
+// sheer strake and castles, the Mark's tar topsides, Aurenne's blue strakes and castles), a cloth every sail, the island's mark kept on it.
+//   PKIT.ships.SWATCHES[dress] -> { paints: [{ name, hex }], cloths: [{ name, ... }] }
+//   PKIT.ships.swatch(mats, dress, { paint, cloth }) -> a copy of a bake's material array (hull.mats, a rig's mats) with the painted and the
+//   sail materials swapped for copies in that paint and cloth; copies are shared by colour, so a ship repainted twice paints no new canvas.
+//   Index 0 (or none) leaves a material as it is. The geometry is untouched: one bake serves every colour.
+const SHIP_SWATCHES = {
+  gatelands: {
+    paints: [{ name: 'green', hex: 0x2f5a34 }, { name: 'madder red', hex: 0x9e3a2a }, { name: 'woad blue', hex: 0x3c5c8e }, { name: 'lime white', hex: 0xf2ecdc }],
+    cloths: [{ name: 'green', base: '#3f6e3c', mark: '#e6d6a4' }, { name: 'undyed', base: '#d8ceb0', mark: '#3f6e3c' }, { name: 'madder', base: '#7c3628', mark: '#e6d6a4' }] },
+  mark: {
+    paints: [{ name: 'tar', hex: 0x1e1c1c }, { name: 'oxblood', hex: 0x7e2a1e }, { name: 'slate', hex: 0x3e5470 }, { name: 'pine', hex: 0x365a3c }],
+    cloths: [{ name: 'tanned', cloths: ['#723422', '#7a3826'] }, { name: 'red and black', cloths: ['#8a2a1e', '#1c1a1a'] }, { name: 'wadmal', cloths: ['#b4aa94', '#bdb39c'] }] },
+  aurenne: {
+    paints: [{ name: 'blue', hex: 0x2b4a80 }, { name: 'teal', hex: 0x1d5e60 }, { name: 'saffron', hex: 0xc0882a }, { name: 'red', hex: 0x8a2a20 }],
+    cloths: [{ name: 'white', base: '#ece5d2' }, { name: 'saffron', base: '#ecbc58', rays: '#8a2e1e', disc: '#a8381e', ring: '#6e2414' }, { name: 'teal', base: '#4a9a94' }] }
+};
+const SHIP_SWC = new Map();
+function shipSwatch(mats, dress, o = {}) { const d = SHIP_SWATCHES[dress] ? dress : 'gatelands', W = SHIP_SWATCHES[d];
+  const pi = Math.max(0, Math.min(W.paints.length - 1, o.paint | 0)), ci = Math.max(0, Math.min(W.cloths.length - 1, o.cloth | 0)), P = W.paints[pi], C = W.cloths[ci];
+  const one = m => { const u = m && m.userData; if (!u) return m;
+    if (u.swatch === 'paint' && pi) { const k = m.uuid + '|' + P.hex; if (!SHIP_SWC.has(k)) { const c = m.clone(); c.color.setHex(P.hex); c.userData = { swatch: 'paint', paint: P.name, of: m.uuid }; SHIP_SWC.set(k, c); } return SHIP_SWC.get(k); }
+    if (u.swatch === 'cloth' && ci) { const k = m.uuid + '|' + d + ':' + ci;
+      if (!SHIP_SWC.has(k)) { const c = m.clone(), t = d === 'mark' ? shipTannedTex(C) : d === 'aurenne' ? shipStarTex(C) : shipSailTex(true, C); if (m.map) { t.wrapS = m.map.wrapS; t.wrapT = m.map.wrapT; }
+        c.map = t; c.userData = { swatch: 'cloth', cloth: C.name, of: m.uuid }; SHIP_SWC.set(k, c); }
+      return SHIP_SWC.get(k); }
+    return m; };
+  return Array.isArray(mats) ? mats.map(one) : one(mats); }
 // a sail through four corners (or three, d = c), bilinear, bellied out to +x most in its middle (ships.js's quadSail)
 function shipQuadSail(a, b, c, d, belly, nu = 12, nv = 12) { const P = [], U = [], v3 = q => new THREE.Vector3(...q), A = v3(a), B = v3(b), C = v3(c), D = v3(d), at = (u, v) => A.clone().lerp(B, u).lerp(D.clone().lerp(C, u), v).add(new THREE.Vector3(belly * Math.sin(Math.PI * u) * Math.sin(Math.PI * Math.min(1, v * 1.1)), 0, 0));
   for (let i = 0; i < nu; i++) for (let j = 0; j < nv; j++) for (const [u, v] of [[i, j], [i + 1, j], [i + 1, j + 1], [i, j], [i + 1, j + 1], [i, j + 1]]) { const p = at(u / nu, v / nv); P.push(p.x, p.y, p.z); U.push(u / nu, v / nv); }
@@ -6365,7 +6395,7 @@ function aurenneOrrery(hAt, o = {}) {
     return { group, tris: Math.round(tris), draws: group.children.length, sol, piers: piers.map(f2), bays: bays.map(({ hi, ...b }) => ({ ...b, x0: f2(b.x0), x1: f2(b.x1) })), gap: GAP ? { x0: f2(GAP.x0), x1: f2(GAP.x1), stump: f2(GAP.stump) } : null,
       two, depth: f2(D), deep: f2(xd), arch: { pitch: PITCH, pier: PIER, span: SPAN, r: RAD, upSpring: f2(US), lowSpring: two ? f2(LS) : null, tier: two ? f2(TIER + SC) : null, deck: DECK }, channel: { w: CW, x0: CX0, x1: CX1, runs }, x0: X0, x1: X1, broken: !!GAP };
   }
-  return { stream, hashKey, mergeByMaterial, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, coveEscape, grotto: aurenneGrotto, mine: markMine, aqueduct: aurenneAqueduct }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, trunk: felledTrunk }, ships: { sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
+  return { stream, hashKey, mergeByMaterial, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, coveEscape, grotto: aurenneGrotto, mine: markMine, aqueduct: aurenneAqueduct }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, trunk: felledTrunk }, ships: { SWATCHES: SHIP_SWATCHES, swatch: shipSwatch, sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
     mk: { hall: markHall, lot: markLot, alehall: markAlehall, longhouse: markLonghouse, mats: markMats, yard: markYard, ring: markRing },
     au: { house: aurenneHouse, lot: aurenneLot, courtyard: aurenneCourtyard, church: aurenneChurch, churchBox: aurenneChurchBox, churchHall: aurenneChurchHall, courtyardHouse: aurenneCourtyardHouse, home: aurenneHome, tavern: aurenneTavern, mats: aurMats, roomMats: homeMats, AUR, tunnel: aurenneTunnel },
     gl: { PLANS, FIN, PS, PAINTS, guildHall: guildHallRoom, TOWN: GL_TOWN, building, church, keep, farmstead, coachInn, coachInnPlan, coachRoom, townhouse: townhouseRoom, farmhouse: farmhouseRoom, byre: byreRoom, barn: barnRoom, row: shrineRow, ROW_GODS, inn: gatelandsInn, cottage: gatelandsCottage, churchLen: n => +((n === 2 ? 2 : 3) * 4.8 + 1.6 + 5.6 - .5 + 7.2 - .9 - .02).toFixed(2), lot: gatelandsLot, mats: glMats, BAYS, bayPlan, bayWidth, baysFor } };
