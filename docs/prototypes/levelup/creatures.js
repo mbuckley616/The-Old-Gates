@@ -841,7 +841,7 @@ export function build(g) { const it = buildSteps(g); for (;;) { const r = it.nex
 export function buildIter(g) { return buildSteps(g); }
 function* buildSteps(g) {
   const plan = PLANS[g.plan], pal = {}; let ms = 0, t0 = performance.now(); const pause = () => { ms += performance.now() - t0; }, go = () => { t0 = performance.now(); };
-  for (const [k, c] of Object.entries({ ...plan.palette, ...(COATS[g.island]?.[g.plan] || {}) })) { const C = new THREE.Color().setRGB(...c, THREE.SRGBColorSpace), hsl = {}; C.getHSL(hsl); C.setHSL((hsl.h + g.tint + 1) % 1, hsl.s, Math.max(0, Math.min(1, hsl.l * (1 + g.light)))); pal[k] = C; }
+  for (const [k, c] of Object.entries({ ...plan.palette, ...(COATS[g.island]?.[g.plan] || COATS[g.island]?.[plan.coatAs] || {}) })) { const C = new THREE.Color().setRGB(...c, THREE.SRGBColorSpace), hsl = {}; C.getHSL(hsl); C.setHSL((hsl.h + g.tint + 1) % 1, hsl.s, Math.max(0, Math.min(1, hsl.l * (1 + g.light)))); pal[k] = C; }
   const sg = { ...g, sliders: { ...g.sliders, size: 1 } }; // parts build at size 1; the size slider scales the finished body
   const B = new Body(plan, sg); B.tone = t => pal[t] || pal.coat;
   for (const [part, o] of plan.parts) P[part](B, o);
@@ -1513,7 +1513,10 @@ export const COATS = {
     cow: { coat: [.1, .08, .08], saddle: [.07, .06, .06], pale: [.12, .1, .09], belly: [.16, .13, .12] },
     sheep: { coat: [.3, .22, .16], saddle: [.26, .19, .14], belly: [.24, .18, .13] },
     goat: { coat: [.84, .82, .78], saddle: [.74, .72, .68], belly: [.9, .88, .84] },
-    hen: { coat: [.5, .48, .46], saddle: [.24, .23, .22], belly: [.62, .6, .58] } },
+    hen: { coat: [.5, .48, .46], saddle: [.24, .23, .22], belly: [.62, .6, .58] },
+    // Session 1825 (#1046 B: the Mark's teams): the fjord horse, a pale brown dun with a darker back and a cream mane. Any plan that says
+    // `coatAs: 'horse'` takes it (the horse, the draught horse, the wagons' harnessed horse), so the Mark's horses are one breed
+    horse: { coat: [.7, .58, .4], saddle: [.5, .4, .27], belly: [.8, .72, .56], mane: [.86, .82, .72] } },
   aurenne: {
     wolf: { coat: [.64, .56, .46], saddle: [.42, .34, .26], belly: [.9, .86, .78] },
     redfox: { coat: [.84, .62, .38], saddle: [.68, .48, .28], belly: [.97, .94, .88] },
@@ -1893,7 +1896,7 @@ export const SHORE = ['gull', 'herring'];
 // its own plan and the mule and the donkey are the horse; the ox and the yak are the cow, the reindeer the stag, the
 // giant goat the goat with a saddle. OG-046's llama is the Frostmane (Session 853) and its cow is the livestock's ──
 Object.assign(PLANS, {
-  horse: { name: 'Horse', src: 'OG-046 (beasts of burden: the horse)', gaits: ['walk', 'trot', 'gallop', 'stand'], speedK: 1.1, wag: .06, neckNod: .08, rough: .5,
+  horse: { name: 'Horse', src: 'OG-046 (beasts of burden: the horse)', coatAs: 'horse', gaits: ['walk', 'trot', 'gallop', 'stand'], speedK: 1.1, wag: .06, neckNod: .08, rough: .5,
     palette: { coat: [.34, .22, .14], saddle: [.24, .15, .09], belly: [.44, .3, .2], dark: [.04, .03, .03], hoof: [.1, .08, .07], mane: [.07, .05, .04] },
     // Session 1261: heavier. At the coach's size the first horse read as a thin-legged foal (S1251's trial): the barrel deeper and
     // rounder, the neck deep at the withers and flat-sided, the legs a third thicker with a full hoof (Michael on S262's horse, "far too
@@ -2032,7 +2035,7 @@ AURENNE.push('glasswingmoth');
 const GEAR = { blanket: [.46, .36, .22], pack: [.5, .42, .3], leather: [.3, .19, .1], roll: [.36, .32, .24], brass: [.72, .56, .26], wood: [.42, .3, .18] };
 Object.assign(PLANS, {
   packmule: re(PLANS.mule, { name: 'Pack mule', src: 'OG-046 (beasts of burden: the mule with its packs)', scale: PLANS.mule.scale, palette: { ...PLANS.mule.palette, ...GEAR }, parts: [...PLANS.mule.parts, ['packs', { at: .55, len: .55 }]] }),
-  draughthorse: re(PLANS.horse, { name: 'Draught horse', src: 'OG-046 (beasts of burden: the horse in harness)', scale: 1.1, palette: { ...PLANS.horse.palette, ...GEAR }, parts: [...PLANS.horse.parts, ['harness', { kind: 'collar', at: .28, fit: 1.4 }]] }),
+  draughthorse: re(PLANS.horse, { name: 'Draught horse', src: 'OG-046 (beasts of burden: the horse in harness)', coatAs: 'horse', scale: 1.1, palette: { ...PLANS.horse.palette, ...GEAR }, parts: [...PLANS.horse.parts, ['harness', { kind: 'collar', at: .28, fit: 1.4 }]] }),
   yokedox: re(PLANS.ox, { name: 'Yoked ox', src: 'OG-046 (beasts of burden: the ox under its yoke)', scale: PLANS.ox.scale, speedK: PLANS.ox.speedK, palette: { ...PLANS.ox.palette, ...GEAR }, parts: [...PLANS.ox.parts, ['harness', { kind: 'yoke', at: .7, over: .5, fit: 1.05 }]] })
 });
 export const HARNESSED = ['packmule', 'draughthorse', 'yokedox'];
