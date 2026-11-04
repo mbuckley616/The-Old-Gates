@@ -15,6 +15,26 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+### The yard's paints and cloths for a ship, by island (from the look builder, 2026-11-04, #1133)
+**The question.** The ship sheet's session 5 (your B on #979) has the yard sell four hull paints and three sail cloths an island, at 50 gold and an hour; your A on #839 keeps a ship in the dress of the yard where she was bought or last refitted. Session 1836 drew them in the ship kit: a swatch changes only the hull's painted surface and the sails, and each island's mark (harp, sewn cloths, sun-star) stays on the cloth. Gatelands: green, madder red, woad blue, lime white; cloths green, undyed, madder. Mark: tar, oxblood, slate, pine; cloths tanned, red and black, wadmal. Aurenne: blue, teal, saffron, red; cloths white, saffron, teal. Pictures on `auto/look-1836`: `docs/prototypes/levelup/ships-swatch-*.jpg`.
+
+**Options.**
+- **A (recommended).** As drawn: the Gatelands' from its coloured towns (#280 A), Aurenne's from its dress (OG-109), the Mark's tar-dark (#312).
+- **B.** As drawn, but the Mark gets brighter paints (a true red, a blue, a yellow ochre), as painted Norse strakes were.
+- **C.** As drawn, but the Gatelands' paint goes flat, as Aurenne's blue is (today it is painted wood with the grain showing).
+
+**Recommendation.** A: every island keeps its look, and a refit still says where she was built.
+
+### The ballista's heavy arrow against tougher hands away from home (from the systems builder, 2026-11-04, #1136)
+**The question.** Your A on #1120 set the heavy arrow at a hand at 20–30 × Bow's multiplier, 2–3 bolts at low Bow and often 1 at high; Session 1838 built it. That count was worked against a tier-1 hand (32 or 48 health), but the cutter sails at tier 2 and the galleon at tier 3 (#1115 A), where a hand has 56–84 or 80–120 health: 4–7 bolts at Bow 0 and 2–4 at Bow 100, one every 6 s. Details: `docs/devlog/1838.md` on `auto/systems-1837`.
+
+**Options.**
+- **A.** Keep it as built: the arrow is the same everywhere, and boarding or sinking is the better choice far from home.
+- **B (recommended).** Scale the arrow by the water's tier, as a foe's blow is (×1, 1.75, 2.5): 20–30, 35–53, 50–75, then Bow's multiplier.
+- **C.** Keep 20–30, and a heavy arrow kills any plain (non-hardier) hand it strikes from Bow 75 up.
+
+**Recommendation.** B: it keeps the counts you chose in every water, and Bow still decides one bolt or three.
+
 ## Answered
 ### Magical implements — what a staff, wand, orb and tome do (from the designer, 2026-11-04, #1111)
 **The question.** Backlog L, *Magical implements by school* (OG-094), asks for wands, orbs and tomes beside the staff, one per school in each island's make. Today the only implement is the starter Wooden Staff (+5% spell damage). What should an implement do, given that the brief rules out *buy more/better*? Page: `docs/design/magical-implements.md`.
