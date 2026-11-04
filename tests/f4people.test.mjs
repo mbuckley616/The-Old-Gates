@@ -199,7 +199,7 @@ const cast = await page.evaluate(() => { const forget = () => { for (const m of 
   const one = (def, key) => { const root = buildNPCMesh(def, { key }), r = [...HB_RIGS].find(x => x.root === root); HB_RIGS.delete(r); PEOPLE_RIGS.delete && PEOPLE_RIGS.delete(r);
     return { cast: r.hbG.cast || null, fem: r.g.female, age: r.g.age, st: +(r.g.height * personScale(r.g) * SCALE.PERSON_MODEL).toFixed(2), sheet: r.hbG.g === 0,
       hair: r.hbG.hair.style, apron: !!r.hbG.dress.apronLeather, tartan: !!r.hbG.dress.tartan, cape: !!r.hbG.dress.cape, waistcoat: !!r.hbG.dress.waistcoat,
-      dHat: r.g.hat, dGear: r.g.gear, dEx: r.g.extras.length, dApron: r.g.apron != null, dStyle: r.g.style }; };
+      dHat: r.g.hat, dGear: r.g.gear, dEx: r.g.extras.length, dApron: r.g.apron != null, dStyle: r.g.style, dCloth: r.g.cloth && r.g.cloth.isColor ? r.g.cloth.getHexString() : null }; };
   forget(); const out = { bram: one({ name: 'Bram', role: 'Blacksmith' }, 'ashenmoor'), edna: one({ name: 'Edna', role: 'Herbalist' }, 'ashenmoor'),
     corwin: one({ name: 'Corwin', role: '', authored: true, people: 'gatelander' }, 'ctest_port'), other: one({ name: 'Edna', role: 'Herbalist' }, 'ctest_town'),
     corwinHome: one({ name: 'Corwin', role: 'Traveling Merchant' }, 'ashenmoor') }; forget(); return out; });
@@ -234,6 +234,14 @@ const tankard = await page.evaluate(() => { const P = HB.makePerson(HB.castGenom
   return { on: !!tk, wrist: tk && tk.parent && tk.parent.name, st: P.tankard }; });
 check('Corwin holds his tankard: on the wrist, upright, nothing of him within 8 mm of it, no point of the hand in its pewter',
   tankard.on && tankard.wrist === 'wrist.R' && tankard.st.inside === 0 && tankard.st.handIn === 0 && tankard.st.sideIn === 0 && tankard.st.thumbIn === 0 && tankard.st.lean < .1, tankard);
+// S1846 (L2, OG-069): Corwin's red coat worn open to the knee over the waistcoat: both shells holed down the front, and the middle-level
+// bake (hbCutFn) reads the hole; the waistcoat, its buttons and the belt kept under it; gold at its edges; nothing of the legs out of its
+// skirt; the far copy (the driver) in the coat's red, not the shirt's linen
+const ocoat = await page.evaluate(() => { const P = HB.makePerson(HB.castGenome('Corwin', {}), { hoodStats: false }), m = k => P.root.getObjectByName(k), c = m('coat'), cs = m('coatSkirt'), f = c && hbCutFn(c.material.userData), fs = cs && hbCutFn(cs.material.userData);
+  return { coat: !!c, skirt: !!cs, wc: !!m('waistcoat'), belt: !!m('belt'), btn: P.buttons && P.buttons.buttons, legsOut: P.coat && P.coat.legsOut, trim: !!(c && c.material.customProgramCacheKey().includes('trim')),
+    bake: !!(f && fs && f({ x: 0, y: .3, z: .1 }) && !f({ x: .15, y: .3, z: .1 }) && !f({ x: 0, y: .3, z: -.1 }) && fs({ x: 0, y: -.2, z: .1 }) && !fs({ x: .15, y: -.2, z: .1 })), red: new THREE.Color(.5, .12, .1).getHexString() }; });
+check('Corwin wears his coat open: the fronts holed collar to hem (and the bake drops them), the waistcoat, its six buttons and the belt under it, gold at the edges, no leg out of its skirt; his far copy in its red',
+  ocoat.coat && ocoat.skirt && ocoat.bake && ocoat.wc && ocoat.belt && ocoat.btn === 6 && ocoat.legsOut === 0 && ocoat.trim && cast.corwinHome.dCloth === ocoat.red && cast.corwin.dCloth === ocoat.red, { ocoat, far: cast.corwinHome.dCloth });
 // S1835 (L2, OG-069, OG-057): Bram's smith's hammer, by the throat of its haft in his right fist, head up, nothing of him near it, no finger in it
 const hammer = await page.evaluate(() => { const P = HB.makePerson(HB.castGenome('Bram', {}), { hoodStats: false }), hm = P.root.getObjectByName('hammer');
   return { on: !!hm, wrist: hm && hm.parent && hm.parent.name, st: P.hammer }; });
