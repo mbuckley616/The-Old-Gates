@@ -1383,15 +1383,34 @@
   // The roll is the sea's own stream, keyed by where you are and the minute (S508). A quest's ship keeps her own hull. Her ballista is
   // the page's: a bolt every 6 s, 10 hull, at your ship when it lies within 30° of her bow and 90 m to your side, worked by a living hand
   // on her deck (S612: a ship looses nothing herself). It reads the clock, never the frame count, and bears only while you are aboard.
-  const BLACK_GALLEON=false;
+  // S1840 — and the black galleon: one sail in five at tier 3, her class's 200 hull and 9.5 m/s, and her guns turned on you (herGuns): six
+  // a side of round shot, 6 hull a ball (36 a broadside, the page's count), in the 0.6 s ripple, a side reloading 20 s, firing when your
+  // ship lies within 25° of her beam and 150 m side to side, as yours do. Worked by a living hand, as her ballista is; round shot only.
+  const BLACK_GALLEON=true;
+  const HER_BALLS=[];let HER_VOL=0;
   function blackSailCls(x,z,r){const t=typeof worldTierAt==='function'?worldTierAt(x,z):1;if(t<=1)return 'sloop';
     if(t>=3&&BLACK_GALLEON&&(r?r():Math.random())<.2)return 'galleon';return 'cutter';}
   function herBallista(o){return !!o&&o.kind==='pirate'&&o.cls==='cutter';}
+  function herGuns(o){return !!o&&o.kind==='pirate'&&o.cls==='galleon';}
+  // the side of hers that bears on your ship, or null
+  function herGunsSide(o){if(!SHIP.mesh||!worldState.ship||!(SHIP.sailing||(typeof onDeck==='function'&&onDeck())))return null;const fx=-Math.sin(o.yaw),fz=-Math.cos(o.yaw),rx=-fz,rz=fx;
+    const dx=SHIP.x-o.x,dz=SHIP.z-o.z,lat=dx*rx+dz*rz,lon=dx*fx+dz*fz,d=Math.max(0,Math.hypot(dx,dz)-(o.W||7)/2-(SHIP.W||4.4)/2);
+    if(d>BROADSIDE.range||Math.abs(Math.atan2(lon,Math.abs(lat)))>BROADSIDE.arc)return null;return lat>=0?'stbd':'port';}
+  function tickHerGuns(now){
+    for(const o of OTHER){if(!herGuns(o)||o.dead||o.founder!=null||o.struck||o.boarded||!o.mesh)continue;if(!o.gunT)o.gunT={port:now,stbd:now};
+      const sd=herGunsSide(o);if(!sd||now-o.gunT[sd]<BROADSIDE.reload||!o.crew.some(e=>!e.dead&&e._ship===o))continue;o.gunT[sd]=now;HER_VOL++;
+      const fx=-Math.sin(o.yaw),fz=-Math.cos(o.yaw),s=sd==='stbd'?1:-1;
+      for(let i=0;i<BROADSIDE.guns;i++){const along=(i/(BROADSIDE.guns-1)-.5)*o.L*.6,x0=o.x+fx*along+(-fz)*s*o.W/2,z0=o.z+fz*along+fx*s*o.W/2;
+        HER_BALLS.push({o,vol:HER_VOL,t0:now+i*BROADSIDE.ripple/(BROADSIDE.guns-1),dur:Math.hypot(SHIP.x-x0,SHIP.z-z0)/BROADSIDE.speed,last:i===BROADSIDE.guns-1});}
+      if(typeof sfxNoise==='function')sfxNoise(.35,0,0,.25,160);showMsg('The black galleon runs out her guns.','#ff8060');}
+    for(let i=HER_BALLS.length-1;i>=0;i--){const f=HER_BALLS[i];if(now<f.t0+f.dur)continue;HER_BALLS.splice(i,1);if(!SHIP.mesh||!worldState.ship)continue;
+      const r=damageShip(SHIP,SHOT.round.hull,0);if(r&&!r.sunk){HER_BALLS.t=(HER_BALLS.v===f.vol?HER_BALLS.t:0)+r.hull;HER_BALLS.v=f.vol;}
+      if(f.last&&HER_BALLS.v===f.vol&&HER_BALLS.t>0){showMsg(`The black galleon's broadside strikes the ${SHIP.name}. Hull −${HER_BALLS.t}.`,'#ff8060');HER_BALLS.t=0;}}}
   const HER_BOLTS=[];
   function herBallistaBears(o){if(!SHIP.mesh||!worldState.ship||!(SHIP.sailing||(typeof onDeck==='function'&&onDeck())))return false;
     const fx=-Math.sin(o.yaw),fz=-Math.cos(o.yaw),bx=o.x+fx*o.L/2,bz=o.z+fz*o.L/2,dx=SHIP.x-bx,dz=SHIP.z-bz,c=Math.hypot(dx,dz),d=Math.max(0,c-(SHIP.W||4.4)/2);
     return d<=BALLISTA.range&&(c<.01||(dx*fx+dz*fz)/c>=Math.cos(BALLISTA.arc));}
-  function tickHerBallistas(){const now=hookClock();
+  function tickHerBallistas(){const now=hookClock();tickHerGuns(now);
     for(const o of OTHER){if(!herBallista(o)||o.dead||o.founder!=null||o.struck||o.boarded||!o.mesh)continue;if(o.balT==null)o.balT=now;
       if(now-o.balT<BALLISTA.reload||!o.crew.some(e=>!e.dead&&e._ship===o)||!herBallistaBears(o))continue;o.balT=now;
       const fx=-Math.sin(o.yaw),fz=-Math.cos(o.yaw),x0=o.x+fx*o.L/2,z0=o.z+fz*o.L/2,fly={o,x0,z0,t0:now,dur:Math.hypot(SHIP.x-x0,SHIP.z-z0)/BALLISTA.speed,mesh:null};

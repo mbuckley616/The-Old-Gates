@@ -393,7 +393,7 @@ console.log('hand', JSON.stringify(ha));
 const cu = await page.evaluate(() => {
   for (const o of [...OTHER]) despawnOtherShip(o);
   worldState.ship = { cls: 'sloop', name: 'Test Gull', sails: 0, cargo: 0, hold: {} }; WORLD.spawnShip(_sea.x, _sea.z, 0); const S = WORLD.ship; S.sailing = true; S.speed = 0; S.yaw = 0;
-  const out = {}; const wt = window.worldTierAt; out.byTier = [1, 2, 3, 4].map(t => { window.worldTierAt = () => t; return blackSailCls(0, 0, () => .1); }); window.worldTierAt = wt;
+  const out = {}; const wt = window.worldTierAt; out.byTier = [1, 2, 3, 4].map(t => { window.worldTierAt = () => t; return blackSailCls(0, 0, () => .1) + '/' + blackSailCls(0, 0, () => .5); }); window.worldTierAt = wt;
   out.here = worldTierAt(_sea.x, _sea.z); out.plain = spawnOtherShip('pirate', S.x + 300, S.z, 'test:plain').cls;
   const c = spawnOtherShip('pirate', S.x, S.z - 60, 'test:cutter', 'cutter'); out.cls = c.cls; out.hull = c.hull; out.hullMax = c.hullMax; out.top = c.top; out.crew = c.crew.length;
   let pinYaw = Math.PI, pinD = 60, hold = true;
@@ -407,11 +407,29 @@ const cu = await page.evaluate(() => {
   hold = false; c.x = S.x; c.z = S.z - 200; c.yaw = Math.PI; c.speed = 0; step(600); out.speed = +c.speed.toFixed(2);
   despawnOtherShip(c); return out; });
 console.log('cutter', JSON.stringify(cu));
-check('the hull by the water: tier 1 a sloop, tiers 2–4 a cutter (the galleon not yet); a plain spawn keeps the sloop', cu.byTier.join() === 'sloop,cutter,cutter,cutter' && cu.plain === 'sloop', cu);
+check('the hull by the water: tier 1 a sloop, tier 2 a cutter, tier 3 and up a cutter or one in five a galleon; a plain spawn keeps the sloop', cu.byTier.join() === 'sloop/sloop,cutter/cutter,galleon/cutter,galleon/cutter' && cu.plain === 'sloop', cu);
 check('the cutter: 80 hull, a top of 12 m/s, three hands', cu.cls === 'cutter' && cu.hull === 80 && cu.hullMax === 80 && cu.top === 12 && cu.crew === 3, cu);
 check('bow on at 60 m her ballista strikes your ship for 10 every 6 s', cu.bow.length === 2 && cu.bow.every(e => e.lost === 10 && /The black sail's bolt strikes the Test Gull\. Hull −10\./.test(e.msg)) && cu.bow[1].t - cu.bow[0].t > 5.8 && cu.bow[1].t - cu.bow[0].t < 6.4 && cu.bow[0].t > 5.8, cu.bow);
 check('abeam she cannot bring it to bear; with no living hand nothing looses', cu.abeam.length === 0 && cu.noCrew.length === 0, cu);
 check('hunting, she makes her own 12 m/s', cu.speed > 11 && cu.speed <= 12.01, cu.speed);
+
+// S1840 — the black galleon: 200 hull, 9.5 m/s; with your ship within 25° of her beam and 150 m, a side's six guns strike for 6 each (36),
+// that side then reloading 20 s; bow-on, nothing
+const bg = await page.evaluate(() => {
+  for (const o of [...OTHER]) despawnOtherShip(o);
+  worldState.ship = { cls: 'sloop', name: 'Test Gull', sails: 0, cargo: 0, hold: {} }; WORLD.spawnShip(_sea.x, _sea.z, 0); const S = WORLD.ship; S.sailing = true; S.speed = 0; S.yaw = 0;
+  const out = {}; const G = spawnOtherShip('pirate', S.x - 80, S.z, 'test:galleon', 'galleon'); out.cls = G.cls; out.hull = G.hullMax; out.top = G.top; out.L = G.L;
+  let gx = -80, gz = 0, gyaw = 0;
+  const step = n => { for (let i = 0; i < n; i++) { S.x = _sea.x; S.z = _sea.z; S.speed = 0; S.yaw = 0; G.x = S.x + gx; G.z = S.z + gz; G.yaw = gyaw; G.speed = 0; G.volleyT = 1e9; G.ramWait = 1e9; G.hookWait = 1e9; G.ramming = 0;
+    for (const o of [...OTHER]) if (o !== G) despawnOtherShip(o); WORLD.tick(1 / 60, performance.now()); } };
+  const watch = secs => { const ev = [], t0 = performance.now(); let h = shipBars().hull; while (performance.now() - t0 < secs * 1000) { step(1); const h2 = shipBars().hull; if (h2 < h) { ev.push({ t: +((performance.now() - t0) / 1000).toFixed(2), lost: h - h2 }); h = h2; } } return { ev, msg: document.getElementById('msg').textContent, lost: ev.reduce((a, e) => a + e.lost, 0) }; };
+  step(1); out.side = herGunsSide(G); G.gunT = { port: -1e9, stbd: -1e9 }; out.fire = watch(3); out.reload = watch(5);
+  gx = 0; gz = -80; gyaw = Math.PI; step(1); G.gunT = { port: -1e9, stbd: -1e9 }; out.bowSide = herGunsSide(G); out.bow = watch(2);
+  despawnOtherShip(G); return out; });
+console.log('galleon', JSON.stringify(bg));
+check('the black galleon: 200 hull, 9.5 m/s, a galleon\'s 22 m', bg.cls === 'galleon' && bg.hull === 200 && bg.top === 9.5 && bg.L === 22, bg);
+check('your ship 80 m off her starboard beam: six balls of 6 in a ripple, 36 in all, and the line says so', bg.side === 'stbd' && bg.fire.lost === 36 && bg.fire.ev.length >= 2 && /The black galleon's broadside strikes the Test Gull\. Hull −36\./.test(bg.fire.msg), bg.fire);
+check('that side reloads 20 s; bow-on no side bears', bg.reload.lost === 0 && bg.bowSide === null && bg.bow.lost === 0, bg);
 
 check('no page errors', g.errs.length === 0, g.errs);
 if (stop) stop();
