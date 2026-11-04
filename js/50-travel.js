@@ -551,6 +551,21 @@ function brewLines(it){const b=it.brew;if(!b)return '';const t=brewTurned(it),s=
 // the mortar at an apothecary and the Mages' Guild (40 gold, weight 1)
 const MORTAR_ITEM={name:MORTAR_NAME,ico:'🥣',type:'misc',weight:1,buyPrice:40,sellMult:.4};
 function mortarFor(h){return h&&(h.type==='potion'||h.type==='apothecary'||h.type==='guild_m')?[{...MORTAR_ITEM}]:[];}
+// S1837 — naval combat's fire pot (Michael's B on #1064, docs/design/naval-combat.md; his A on #1108): an empty clay pot, 3 gold and half
+// a weight, sold at an apothecary and a goods shop; at the mortar, from Alchemy 25, a clay pot and a pitch are sealed into a fire pot
+// (one a time, an Alchemy use as a grinding is). Thrown from the bag at a ship (throwPot, js/86-world-crime.js).
+const CLAY_POT_ITEM={name:'Clay Pot',ico:'🏺',type:'misc',weight:.5,buyPrice:3,sellMult:.4};
+const FIRE_POT_ITEM={name:'Fire Pot',ico:'🏺',type:'misc',weight:1,buyPrice:11,sellMult:.3,firePot:true};
+const FIRE_POT_ALCH=25;
+function clayPotFor(h){return h&&(h.type==='potion'||h.type==='apothecary'||h.type==='misc')?[{...CLAY_POT_ITEM}]:[];}
+function clayPotCount(){return bagCount(b=>b.name===CLAY_POT_ITEM.name);}
+function firePotCount(){return bagCount(b=>!!b.firePot);}
+// why a fire pot cannot be sealed now, or null
+function sealPotWhy(){if(skillLv('alchemy')<FIRE_POT_ALCH)return `Sealing a fire pot wants Alchemy ${FIRE_POT_ALCH}.`;if(clayPotCount()<1)return 'It needs a clay pot.';
+  if(pitchCount()<1)return 'It needs a pitch.';return null;}
+// the named action: a clay pot and a pitch from the bag, a fire pot into it
+function sealFirePot(){const why=sealPotWhy();if(why)return why;bagTake(b=>b.name===CLAY_POT_ITEM.name,1);bagTake(b=>b.name===SURV_ITEMS.pitch.name,1);
+  bagAdd({...FIRE_POT_ITEM});skillUse('alchemy',8);addLog('🏺','Sealed a fire pot');return true;}
 
 // ── the brewing page (parchment, Michael's A on the interface): the herbs on the left, the chosen herbs' four rows right ──
 let brewOpen=false,brewSel=[],brewSaid='';
@@ -585,6 +600,10 @@ function brewDraw(){const ov=document.getElementById('brewui');if(!ov)return;con
   if(brewSel.length>=2){const kn=new Set();brewSel.forEach(k=>HERB_FX[k].forEach((f,i)=>{if(herbFxKnown(k,i)&&brewSel.filter(o=>o!==k).some(o=>HERB_FX[o].some((g,j)=>g===f&&herbFxKnown(o,j))))kn.add(f);}));
     r+=`<div style="margin-top:8px;border-top:1px dotted #a89060;padding-top:4px;font-style:italic">${kn.size?'Known to share: '+[...kn].map(f=>ALCH_FX[f].label).join(', '):'Nothing known between them.'}</div>`;}
   ov.querySelector('#br-right').innerHTML=r||`<i style="color:#8a7050">Choose ${brewMax()===3?'two or three herbs':'two herbs'}.</i>`;
+  {let fp=ov.querySelector('#br-pot');if(!fp){fp=document.createElement('div');fp.id='br-pot';fp.style.cssText='margin-top:8px;border-top:1px dotted #a89060;padding-top:6px;font-size:14px';ov.querySelector('#br-said').before(fp);}
+    const why=sealPotWhy(); /* S1837 — the fire pot, under the herbs */
+    fp.innerHTML=`<button type="button" id="br-seal" style="background:none;border:1px solid ${why?'#a89060':'#7a1f10'};border-radius:3px;font:14px Georgia,serif;color:${why?'#a09070':'#7a1f10'};cursor:pointer;padding:1px 8px">Seal a fire pot</button> <span style="color:#8a7050;font-size:13px">a clay pot ×${clayPotCount()} and a pitch ×${pitchCount()} · Alchemy ${FIRE_POT_ALCH}</span>`;
+    fp.querySelector('#br-seal').onclick=()=>{const r=sealFirePot();brewSaid=r===true?`A fire pot, sealed. You carry ${firePotCount()}.`:r;if(r===true&&typeof uiTone==='function')uiTone(220,300,.1,.08,'sine');brewDraw();};}
   ov.querySelector('#br-said').textContent=brewSaid;
 }
 function brewPick(k){const i=brewSel.indexOf(k);if(i>=0)brewSel.splice(i,1);else{if(brewSel.length>=brewMax())brewSel.shift();brewSel.push(k);}brewSaid='';brewDraw();}

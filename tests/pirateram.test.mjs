@@ -330,6 +330,39 @@ check('a bolt on a merchantman is piracy: booked at a town of her nation, a fine
 check('her crew saw it, and she runs at once though barely holed', /Her crew saw you fire on her\./.test(pr.msg) && /crowds on sail and runs/.test(pr.msg) && pr.fleeing && pr.pirated, pr);
 check('once a ship: a second hit books nothing; a black sail is no crime', pr.again === null && pr.bounty2 === 50 && pr.pirate === null, pr);
 
+// S1837 — the fire pot (the page's table; Michael's A on #1108): a clay pot, 3 gold, at an apothecary and the goods shop; sealed with a pitch at
+// the mortar from Alchemy 25; thrown where you look at a ship within 20 m, her rig 3 a second for 6 s, 12 fire to a hand within 2 m of it
+const fp = await page.evaluate(() => {
+  for (const o of [...OTHER]) despawnOtherShip(o);
+  worldState.ship = { cls: 'sloop', name: 'Test Gull', sails: 0, cargo: 0, hold: {} }; WORLD.spawnShip(_sea.x, _sea.z, 0); const S = WORLD.ship; S.sailing = true; S.speed = 0; S.yaw = 0;
+  const out = {};
+  out.shops = ['potion', 'apothecary', 'misc', 'smith', 'inn'].map(t => clayPotFor({ type: t }).map(i => i.name + ':' + i.buyPrice + ':' + i.weight).join());
+  bagTake(b => b.name === 'Clay Pot' || b.firePot, 999); bagTake(b => b.name === SURV_ITEMS.pitch.name, 999);
+  const sk = skillsReady().alchemy, lv0 = sk.lv; sk.lv = 20; out.low = sealFirePot();
+  sk.lv = 25; out.noPot = sealFirePot(); bagAdd({ ...CLAY_POT_ITEM }); bagAdd({ ...CLAY_POT_ITEM }); out.noPitch = sealFirePot();
+  bagAdd(Object.assign({}, SURV_ITEMS.pitch, { qty: 1 })); out.seal = sealFirePot(); out.pots = firePotCount(); out.clay = clayPotCount(); out.pitch = pitchCount(); sk.lv = lv0;
+  // a black sail 15 m ahead (yaw 0 looks along -z), her ram, hooks and volleys held off
+  const p = spawnOtherShip('pirate', S.x, S.z - 15, 'test:pot'); p.speed = 0; p.yaw = Math.PI / 2; p.rig = 100;
+  const pin = () => { S.x = _sea.x; S.z = _sea.z; S.speed = 0; S.yaw = 0; p.x = S.x; p.z = S.z - 15; p.speed = 0; p.volleyT = 1e9; p.ramWait = 1e9; p.hookWait = 1e9; p.ramming = 0; };
+  const step = n => { for (let i = 0; i < n; i++) { pin(); for (const o of [...OTHER]) if (o !== p) despawnOtherShip(o); WORLD.tick(1 / 60, performance.now()); } };
+  step(2); yaw = Math.PI; out.away = throwPotWhy(); yaw = 0; out.target = potTarget() === p; out.dist = +Math.hypot(p.x - px, p.z - pz).toFixed(1);
+  const hand = p.crew.filter(e => !e.dead && Math.hypot(e.x - p.x, e.z - p.z) <= 2), hp0 = hand.map(e => e.hp), far = p.crew.filter(e => !hand.includes(e)).map(e => e.hp);
+  out.hands = hand.length; out.res = hand.map(e => e.resist && e.resist.tine);
+  const h0 = p.hull, t0 = performance.now(); out.thrown = throwPot(); out.potsLeft = firePotCount();
+  while (!(p.burn > 0) && performance.now() - t0 < 4000) step(1);
+  out.arrive = +((performance.now() - t0) / 1000).toFixed(2); out.msg = document.getElementById('msg').textContent; out.hullLost = h0 - p.hull;
+  out.handLost = hand.map((e, i) => hp0[i] - Math.max(0, e.hp)); out.farLost = p.crew.filter(e => !hand.includes(e)).map((e, i) => far[i] - e.hp);
+  let nb = 0; while (p.burn > 0 && nb < 1200) { step(1); nb++; } out.burnS = +(nb / 60).toFixed(2); out.rig = p.rig;
+  out.none = (bagTake(b => b.firePot, 999), throwPotWhy()); bagAdd({ ...FIRE_POT_ITEM }); p.x = S.x; p.z = S.z - 40; out.tooFar = throwPotWhy();
+  despawnOtherShip(p); bagTake(b => b.firePot, 999); return out; });
+console.log('firepot', JSON.stringify(fp));
+check('a clay pot, 3 gold and half a weight, at an apothecary and the goods shop, not the smith or the inn', fp.shops[0] === 'Clay Pot:3:0.5' && fp.shops[1] === fp.shops[0] && fp.shops[2] === fp.shops[0] && !fp.shops[3] && !fp.shops[4], fp.shops);
+check('sealed from Alchemy 25 out of a clay pot and a pitch, and refused without them', /Alchemy 25/.test(fp.low) && fp.noPot === 'It needs a clay pot.' && fp.noPitch === 'It needs a pitch.' && fp.seal === true && fp.pots === 1 && fp.clay === 1 && fp.pitch === 0, fp);
+check('thrown only where you look: a black sail 15 m ahead is the mark, none behind you', fp.target && /No ship within a throw/.test(fp.away || ''), fp);
+check('it lands: her rig alight for 6 s at 3 a second (18 rig), no hull', fp.thrown === true && fp.potsLeft === 0 && fp.hullLost === 0 && Math.abs(fp.burnS - 6) < .05 && fp.rig === 82 && /Your fire pot breaks on the black sail's deck, and her rig is alight\./.test(fp.msg), fp);
+check('12 fire to each hand within 2 m (as his resistance), none to the hands beyond', fp.hands >= 1 && fp.handLost.every((l, i) => l === Math.max(1, Math.round(12 * (fp.res[i] != null ? fp.res[i] : 1)))) && fp.farLost.every(l => l === 0), fp);
+check('no pot, no throw; beyond 20 m, no throw', fp.none === 'You have no fire pot.' && /20 m/.test(fp.tooFar || ''), fp);
+
 check('no page errors', g.errs.length === 0, g.errs);
 if (stop) stop();
 await g.close();

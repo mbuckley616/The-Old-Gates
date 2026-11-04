@@ -1399,11 +1399,43 @@
       if(o.dead||o.founder!=null||!OTHER.includes(o))continue;const r=damageShip(o,f.fire?BALLISTA.fireHull:BALLISTA.hull,0),who=shipNoun(o);
       if(r&&r.hull>0){if(typeof skillUse==='function')skillUse('bow',1,'ballista:'+(o.id||'ship'));if(!o.founder&&!o.struck)showMsg(f.fire?`Your fire bolt strikes the ${who}. Hull −${r.hull}, and her rig is alight.`:`Your bolt strikes the ${who}. Hull −${r.hull}.`,'#e8c890');}
       if(r){const pm=piracy(o);if(pm)showMsgLong(pm,'#e88a8a');}
-      if(f.fire&&o.founder==null&&!o.dead){o.burn=BALLISTA.burnS;o._burnAcc=o._burnAcc||0;}}}
+      if(f.fire&&o.founder==null&&!o.dead){o.burn=BALLISTA.burnS;o.burnRate=BALLISTA.burn;o._burnAcc=o._burnAcc||0;}}}
   // once a frame: a rig alight loses 2 a second until its 8 s are out, or she founders
   function tickShipFires(dt){for(const o of OTHER){if(!(o.burn>0))continue;if(o.dead||o.founder!=null){o.burn=0;continue;}
-    const t=Math.min(dt,o.burn);o.burn-=t;o._burnAcc=(o._burnAcc||0)+t*BALLISTA.burn;const n=Math.floor(o._burnAcc+1e-9);if(n>0){o._burnAcc-=n;damageShip(o,0,n);}
+    const t=Math.min(dt,o.burn);o.burn-=t;o._burnAcc=(o._burnAcc||0)+t*(o.burnRate||BALLISTA.burn);const n=Math.floor(o._burnAcc+1e-9);if(n>0){o._burnAcc-=n;damageShip(o,0,n);}
     if(o.burn<=0){o.burn=0;o._burnAcc=0;}}}
+  // S1837 — the fire pot (the page's table: your hand, thrown 20 m; her rig 3 a second for 6 s; 12 fire to a hand within 2 m; Michael's
+  // A on #1108 for the pot). Used from the bag, a fire pot is thrown where you look: at the nearest ship whose side is within 20 m and
+  // within 15° of your line of sight, a black sail, a quest's ship or a merchantman (a hit on her is piracy, as a bolt's is). With none
+  // there it stays in the bag: it is a sea weapon, and nothing is said of it ashore. It flies at 16 m/s and follows her; when it lands her
+  // rig is lit for 6 s at 3 a second (a fire already in her rig is lit again with the pot's, never doubled, as the fire bolt's rule), and
+  // each living hand within 2 m of where it breaks takes 12 fire, less as his resistance to fire (Tine's) says. It reads no skill.
+  const FIRE_POT={range:20,cone:Math.PI/12,speed:16,burn:3,burnS:6,hand:12,handR:2};
+  const POTS={fly:[],geo:null,mat:null};
+  function potTarget(){if(activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior()))return null;const fx=-Math.sin(yaw),fz=-Math.cos(yaw);let best=null,bd=1e9;
+    for(const o of OTHER){if(o.dead||o.founder!=null||o.struck||!o.mesh)continue;const dx=o.x-px,dz=o.z-pz,c=Math.hypot(dx,dz),d=Math.max(0,c-(o.W||4)/2);
+      if(d>FIRE_POT.range||d>=bd)continue;if(c>.01&&Math.acos(Math.max(-1,Math.min(1,(dx*fx+dz*fz)/c)))>FIRE_POT.cone+Math.atan2((o.W||4)/2,Math.max(c,.01)))continue;bd=d;best=o;}
+    return best;}
+  // why a fire pot cannot be thrown now, or null
+  function throwPotWhy(){if(typeof firePotCount!=='function'||firePotCount()<1)return 'You have no fire pot.';if(activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior()))return 'Not here.';
+    if(!potTarget())return `No ship within a throw: a fire pot carries ${FIRE_POT.range} m.`;return null;}
+  // the named action: a fire pot from the bag at the ship you look at; it breaks when it arrives
+  function throwPot(){const why=throwPotWhy();if(why)return why;const o=potTarget();bagTake(b=>!!b.firePot,1);
+    const fly={o,x0:px,z0:pz,y0:CAM.position.y-.3,t0:hookClock(),dur:Math.max(.1,Math.hypot(o.x-px,o.z-pz)/FIRE_POT.speed),mesh:null};
+    if(typeof THREE!=='undefined'&&typeof sc!=='undefined'&&sc){if(!POTS.geo){POTS.geo=new THREE.SphereGeometry(.13,8,6);POTS.mat=new THREE.MeshLambertMaterial({color:0x8a4a2a});}
+      fly.mesh=new THREE.Mesh(POTS.geo,POTS.mat);fly.mesh.position.set(px,fly.y0,pz);sc.add(fly.mesh);}
+    POTS.fly.push(fly);if(typeof sfxNoise==='function')sfxNoise(.08,0,0,.06,600);if(typeof updateHUD==='function')updateHUD();return true;}
+  // once a frame: the pots in flight; one lands on her deck, lights her rig and burns the hands by it
+  function tickPots(dt){if(!POTS.fly.length)return;const now=hookClock();
+    for(let i=POTS.fly.length-1;i>=0;i--){const f=POTS.fly[i],o=f.o,u=Math.min(1,(now-f.t0)/f.dur);
+      if(f.mesh)f.mesh.position.set(f.x0+(o.x-f.x0)*u,f.y0+(DECK_Y+1-f.y0)*u+Math.sin(u*Math.PI)*2,f.z0+(o.z-f.z0)*u);
+      if(u<1)continue;if(f.mesh){sc.remove(f.mesh);f.mesh=null;}POTS.fly.splice(i,1);
+      if(o.dead||o.founder!=null||!OTHER.includes(o))continue;o.burn=FIRE_POT.burnS;o.burnRate=FIRE_POT.burn;o._burnAcc=o._burnAcc||0;
+      let hit=0;const foes=(ZONES.world&&ZONES.world.enemies)||[];
+      for(const e of foes.slice()){if(e.dead||!(e.hp>0)||Math.hypot(e.x-o.x,e.z-o.z)>FIRE_POT.handR)continue;const k=e.resist&&e.resist.tine!=null?e.resist.tine:1;
+        e.hp-=Math.max(1,Math.round(FIRE_POT.hand*k));e.alert=true;hit++;if(e.hp<=0&&typeof killZoneEnemy==='function')killZoneEnemy(e,sc);}
+      const who=shipNoun(o);showMsg(`Your fire pot breaks on the ${who}'s deck, and her rig is alight.${hit?(hit===1?' One of her hands is caught in it.':` ${hit} of her hands are caught in it.`):''}`,'#e8c890');
+      const pm=piracy(o);if(pm)showMsgLong(pm,'#e88a8a');}}
   function ballistaHud(){if(!shipFitted('ballista'))return '';const n=boltsAboard(),w=ballistaWait();
     return `Ballista${BOLTS.fire?' (fire)':''}: ${!n?'no bolts':w>0?`winding, ${Math.ceil(w)} s`:ballistaBears()?'she bears':'ready'} · ${n} ${n===1?'bolt':'bolts'}`;}
   // at the helm with a ballista fitted, the left button is the ballista's, not the sword's: caught before the canvas's own handler
@@ -1456,7 +1488,7 @@
     for(let i=GUNS.fly.length-1;i>=0;i--){const f=GUNS.fly[i],o=f.o;if(now<f.t0+f.dur)continue;GUNS.fly.splice(i,1);if(o.dead||o.founder!=null||!OTHER.includes(o))continue;const S=SHOT[f.k];
       if(S.grape){if(!f.first)continue;const d=Math.max(0,Math.hypot(o.x-f.x0,o.z-f.z0)-(o.W||4)/2);if(d>BROADSIDE.grapeR){said='The grape falls short of her deck.';continue;}let hit=0;
         for(const e of (o.crew||[]).slice()){if(e.dead)continue;e.hp-=BROADSIDE.grapeHit;hit++;if(e.hp<=0&&typeof killZoneEnemy==='function')killZoneEnemy(e,sc);}pir=piracy(o)||pir;said=hit?`Grape sweeps her deck: ${hit} of her crew hit.`:'Grape sweeps her empty deck.';continue;}
-      const r=damageShip(o,S.hull,S.rig);if(r)pir=piracy(o)||pir;if(S.burn&&o.founder==null&&!o.dead){o.burn=BALLISTA.burnS;o._burnAcc=o._burnAcc||0;}
+      const r=damageShip(o,S.hull,S.rig);if(r)pir=piracy(o)||pir;if(S.burn&&o.founder==null&&!o.dead){o.burn=BALLISTA.burnS;o.burnRate=BALLISTA.burn;o._burnAcc=o._burnAcc||0;}
       const V=GUNS.fly.filter(q=>q.vol===f.vol).length;if(r){const V0=GUNS._v||(GUNS._v={}),T0=V0[f.vol]||(V0[f.vol]={h:0,r:0});T0.h+=r.hull;T0.r+=r.rig;}
       if(!V&&GUNS._v&&GUNS._v[f.vol]){const T=GUNS._v[f.vol];delete GUNS._v[f.vol];if(!o.founder&&!o.struck)said=`The broadside strikes the ${shipNoun(o)}.${T.h?` Hull −${T.h}.`:''}${T.r?` Rig −${T.r}.`:''}${S.burn?' Her rig is alight.':''}`;}}
     if(pir)showMsgLong(pir,'#e88a8a');else if(said)showMsg(said,'#e8c890');}
