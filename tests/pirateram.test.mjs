@@ -363,7 +363,7 @@ check('it lands: her rig alight for 6 s at 3 a second (18 rig), no hull', fp.thr
 check('12 fire to each hand within 2 m (as his resistance), none to the hands beyond', fp.hands >= 1 && fp.handLost.every((l, i) => l === Math.max(1, Math.round(12 * (fp.res[i] != null ? fp.res[i] : 1)))) && fp.farLost.every(l => l === 0), fp);
 check('no pot, no throw; beyond 20 m, no throw', fp.none === 'You have no fire pot.' && /20 m/.test(fp.tooFar || ''), fp);
 
-// S1838 — the heavy arrow at a hand (Michael's A on #1120): with the crosshair on one of her hands, the bolt flies at him: 20–30 × Bow's
+// S1838 — the heavy arrow at a hand (Michael's A on #1120; S1844, by the water's tier, #1136 B): with the crosshair on one of her hands, the bolt flies at him: 20–30 × tier × Bow's
 // multiplier (×0.6 at Bow 0, ×1.4 at 100) on his own stream, none to her hull; with the crosshair off them, the bolt strikes her hull as before
 const ha = await page.evaluate(() => {
   for (const o of [...OTHER]) despawnOtherShip(o);
@@ -376,15 +376,17 @@ const ha = await page.evaluate(() => {
   const shot = (lv, at) => { if (p) despawnOtherShip(p); p = spawnOtherShip('pirate', S.x, S.z - 50, 'test:hand:' + out.shots.length); p.yaw = Math.PI / 2; step(2); sk.lv = lv;
     const e = p.crew.find(c => !c.dead); const ey = e.mesh ? e.mesh.position.y : DECK_Y;
     if (at === 'hand') aim(e.x, ey + 1.1, e.z); else aim(p.x, DECK_Y + 40, p.z);
-    const r = { lv, at, m: +skillMult('bow').toFixed(2), hand: ballistaHand(p) === e, hp0: e.hp, hull0: p.hull }; BOLTS.t = -1e9; r.hud = ballistaHud(); r.tier = worldTierAt(p.x, p.z); r.fire = fireBallista();
+    const r = { lv, at, m: +skillMult('bow').toFixed(2), hand: ballistaHand(p) === e, hp0: e.hp, hull0: p.hull }; BOLTS.t = -1e9; r.hud = ballistaHud(); r.tier = worldTierAt(p.x, p.z); r.etier = e.tier; r.k = ballistaHandTierK(e); r.fire = fireBallista();
     const t0 = performance.now(); while (BOLTS.fly.length && performance.now() - t0 < 4000) step(1);
     r.lost = r.hp0 - Math.max(0, e.hp); r.dead = !!e.dead || e.hp <= 0; r.hull = r.hull0 - p.hull; r.msg = document.getElementById('msg').textContent; out.shots.push(r); };
   shot(0, 'hand'); shot(0, 'hand'); shot(100, 'hand'); shot(100, 'hand'); shot(50, 'sky');
+  out.ks = [1, 2, 3].map(t => ballistaHandTierK({ tier: t }));
   sk.lv = lv0; despawnOtherShip(p); return out; });
 console.log('hand', JSON.stringify(ha));
 { const H = ha.shots.filter(s => s.at === 'hand'), sky = ha.shots.find(s => s.at === 'sky');
   check('with the crosshair on a hand, the bolt flies at him and her hull is untouched', H.every(s => s.hand && s.fire === true && s.hull === 0 && s.lost > 0) && /on a hand/.test(H[0].hud), ha);
-  check('20–30 × Bow: 12–18 at Bow 0, 28–42 at Bow 100 (a kill is all he had)', H.every(s => { const lo = Math.round(20 * s.m), hi = Math.round(30 * s.m); return s.dead ? s.lost >= Math.min(lo, s.hp0) : s.lost >= lo && s.lost <= hi; }) && H[0].m === .6 && H[2].m === 1.4, H);
+  check('the arrow scales by the water\'s tier as his health does (#1136 B): ×1, 1.75, 2.5 at tiers 1–3, his own tier read here', ha.ks.join() === '1,1.75,2.5' && H.every(s => s.k === ha.ks[(s.etier || 1) - 1]), { ks: ha.ks, h: H.map(s => [s.etier, s.k]) });
+  check('20–30 × tier × Bow: in this tier-2 water 21–32 at Bow 0, 49–74 at Bow 100 (a kill is all he had)', H.every(s => { const lo = Math.round(20 * s.k * s.m), hi = Math.round(30 * s.k * s.m); return s.dead ? s.lost >= Math.min(lo, s.hp0) : s.lost >= lo && s.lost <= hi; }) && H[0].m === .6 && H[2].m === 1.4, H);
   check('the line names the hand', H.every(s => /Your bolt (strikes|takes) one of the black sail's hands/.test(s.msg)), H.map(s => s.msg));
   check('with the crosshair off her hands, the bolt strikes her hull for 10', sky && !sky.hand && sky.hull === 10 && sky.lost === 0, sky); }
 
