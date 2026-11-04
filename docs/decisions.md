@@ -15,6 +15,16 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+### Magical implements — what a staff, wand, orb and tome do (from the designer, 2026-11-04, #1111)
+**The question.** Backlog L, *Magical implements by school* (OG-094), asks for wands, orbs and tomes beside the staff, one per school in each island's make. Today the only implement is the starter Wooden Staff (+5% spell damage). What should an implement do, given that the brief rules out *buy more/better*? Page: `docs/design/magical-implements.md`.
+
+**Options.**
+- **A.** Spell power by tier: ×1.05 to ×1.30 by material, +10% in its school, main hand and off-hand multiplying. One systems session and one bodies session. This is *buy better*, and it stacks past enemies by place's range.
+- **B (recommended).** Each implement changes one form, not damage. The staff (two hands) widens Held to 5.5 m and Laid's reach to 16 m, laid things last ×1.25. The wand (Cloch's is a maul) sends a bolt 45 m with a 0.28 s wind-up. The orb (off-hand) keeps one cast to release with no wind-up. The tome (off-hand) reads Impression words at ×0.8 power and a third of the wild chance, but doubles the wind-up. The emblem's school costs −10% (−20% found). Orbs only in gates of their school. Three systems sessions and two bodies sessions.
+- **C.** Implements that hold a word: staves with 10 charges, cast without knowing the word. Conflicts with canon §7 (words only from carvings) and the Register.
+
+**Recommendation.** B: there is no better implement, only a different one; the off-hand ones cost the shield, the staff both hands, and the orb gives magic a timing tool.
+
 ### The fire pot's clay pot — where does it come from? (from the systems builder, 2026-11-04, #1108)
 **The question.** Naval combat's fire pot (Michael's B on #1064, `docs/design/naval-combat.md`) is *a clay pot and a pitch, Alchemy 25*: thrown 20 m, her rig burns 3/s for 6 s, 12 fire to a hand within 2 m. The game has pitch but no clay pot anywhere: nothing sells one and nothing makes one, so the pot needs a source and a price before the fire pot can be built. The ballista and its fire bolt are in (Sessions 1820–1821, PR #1106).
 
