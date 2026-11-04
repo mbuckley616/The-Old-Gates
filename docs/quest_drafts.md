@@ -2,7 +2,7 @@
 
 These are the quest writer's drafts. None of them is canon until Michael promotes it into `quest_writing.md`, and none is a spec until it is approved. Each draft gives the quest's shape, every line verbatim with its speaker and people, and a note on what in the code would carry it.
 
-Calls read to: 2026-10-16T17:51:09.360Z (run 35, 3 Nov: no new calls on the page)
+Calls read to: 2026-10-16T17:51:09.360Z (run 36, 4 Nov: no new calls on the page)
 
 ---
 
@@ -2389,7 +2389,7 @@ At 22:00 in the circle, a `showMsg`: *You settle in by the {fold}.* At 02:00 if 
 
 ## Asked in Passing, the second run — six more errands
 
-*Approved by Michael, 14 Oct 2026.* The second piece of Michael's 5 Oct note (*50–100 somewhat unique quests … far more likely to stumble upon … incentivize players to talk to NPCs*), on the first run's frame exactly: the same givers (generated townsfolk, one errand in five a game-week, `seededRng('errand', site.id+':'+def.name+':'+week)`), the same *hint* in the greeting and *ask* in the *you* folder, the same shared lines (*Not now*, *Not yet*, *Done, paid*), the same ids (`er:<site>:<giver name>:<n>`) and the same small pay (15–40 gold by tier and a point of the giver's town's favour). The first run's last section listed six ideas for this one. Two of them changed on the way: *a dog gone after a deer* needs a dog and a deer, and the game has neither (a new creature is the look builder's, and the errand is not worth one), so it is replaced by **a prayer carried to a shrine**, on the shrines that exist; and *a fish from a named lake* became a fish from the sea, because `catchFish` (`86-world-crime.js`) catches only from the sea's schools. Every errand here runs on machinery the game already has.
+*Approved by Michael, 14 Oct 2026.* *Built in part: errand 12, A Prayer Carried, Session 1817 (PR #1103), the draft's lines word for word, with the Markman's hint for the mine (*My {sister}'s down the mine. That's all.*) added in register. The other five follow, one a run.* The second piece of Michael's 5 Oct note (*50–100 somewhat unique quests … far more likely to stumble upon … incentivize players to talk to NPCs*), on the first run's frame exactly: the same givers (generated townsfolk, one errand in five a game-week, `seededRng('errand', site.id+':'+def.name+':'+week)`), the same *hint* in the greeting and *ask* in the *you* folder, the same shared lines (*Not now*, *Not yet*, *Done, paid*), the same ids (`er:<site>:<giver name>:<n>`) and the same small pay (15–40 gold by tier and a point of the giver's town's favour). The first run's last section listed six ideas for this one. Two of them changed on the way: *a dog gone after a deer* needs a dog and a deer, and the game has neither (a new creature is the look builder's, and the errand is not worth one), so it is replaced by **a prayer carried to a shrine**, on the shrines that exist; and *a fish from a named lake* became a fish from the sea, because `catchFish` (`86-world-crime.js`) catches only from the sea's schools. Every errand here runs on machinery the game already has.
 
 The `sub` values: `cart`, `child`, `fish`, `rubbing`, `hedge`, `prayer`. Numbering continues from the first run.
 
@@ -6136,3 +6136,169 @@ The thread pays nothing. It ends `cuan`, and from then on, if the player is at t
 - **Strange tracks** (OG-124 panel 6): whose feet is the bodies builder's call first; then the words.
 - **The pilgrims' rest**: the canon has pilgrims (to shrines and gates, OG-118) and no word on whose, or to where. A second run can take it with *The road between towns*.
 - Hessa's journal is the first thing in the game that shows the window from the outside. If Michael wants it quieter, the third page loses its last two lines (*Someone is in the room. They are looking at the door.* and *His wrist —*) and still works.
+
+## Ports and Their Trades — the quay's people, the Navigators' Hall, and the free captains' mark
+
+*Unapproved. Drafted 4 Nov 2026. Backlog L, *Ports and their trades* (quest writer; OG-093): "chandlers, brokers, salvagers and wreckers, an Explorers' and a Navigators' Guild; the Aurenne Trade Consortium is the Compact by another name. A pirate mark of the world's own in place of the skull and crossbones (OG-017, OG-093)." Naval combat (Sessions 1813–1815) and the crew (S1733, S1791, S1799) have made the quay a place you come back to; today it holds one person, the harbourmaster, who says one line in one voice to every people. This draft fills the quay: the harbourmaster's line by people, three trades at the water (the chandler, the broker, the salvager), the wreckers as talk and never as people, one hall for the navigators, and the mark the free captains fly.*
+
+### What the canon fixes, and where it is silent
+
+- §1.5: *ports and edge cities blend: two peoples in the crowd and a third at the quay; harbourmasters are often foreign*; *speech follows the speaker, not the province*. Every person here speaks by their own people, wherever the port is.
+- §1.3: the Compact is *merchant houses under the Church of the Weaver*, *Factors over the houses' ports*, *every hull that passes is tithed*, *known for ships that come back*. The concept art's *Aurenne Trade Consortium* is this, and the game never says *Consortium*: a house is *House {name}*, the body is *the Compact*.
+- §1.2: the Mark *quietly sponsors the free captains who prey on Crown and Compact shipping*; §1.4: *piracy is the Mark's undeclared war; the Compact's tithe-ships are the pirates' favourite prey*. §8.4: the free captains have *no seat*; standing with them costs standing everywhere else.
+- §1.1 and §1.3: the Gatelands' *salvage economy* of the gates is licensed by the Crown; to the Church, *gate-grubbing* is sacrilege. Salvage from the sea is not named either way.
+- *Silent:* whether wrecking (lights to bring ships aground) is done, and by whom. The plainer thing: it is talked of on every coast and proven on none. Nobody in this draft is a wrecker, and nobody says who is.
+- *Silent:* an Explorers' Guild. The plainer thing: there is one hall, the Navigators', and it keeps the explorers' book. Two guilds for one trade would be a second answer to a question nobody in the world asks. (If Michael wants the Explorers apart, the book below is their whole charter and moves house.)
+- *Silent:* the free captains' mark. Drafted below as **the nailed penny**; it is Michael's to keep or replace (it names what the free captains are against, the tithe, and not a death's head, which the brief's tone has no use for).
+
+---
+
+### 1. The harbourmaster, by people
+
+Today `84-world-interiors.js` gives every harbourmaster *What comes through here?* → *Salt fish, timber, wool, and trouble. Mostly fish.* The harbourmaster's people follows §1.5: one port in two, a people of another island (by the port's id); otherwise the port's own. The line by the harbourmaster's people and the port's island:
+
+| Harbourmaster's people | Gatelands port | Mark port | Aurenne port |
+|---|---|---|---|
+| Gatelander | "Wool out, salt in, and the news both ways. The news is the heavier cargo, and nobody pays duty on it." | "Iron and furs out, and whatever the Mark's short of in. I keep the book. A Gatelander keeps a book honest; it's the only reason they let me near one." | "Glass, dye and salt, and every hull of it tithed. I count; the Factor's clerk counts behind me. Two counts make one truth here." |
+| Markman | "Wool. Grain. Horses, when the Crown's buying. Not my country. Pays." | "Iron. Silver. Timber. Men. Same as ever." | "Glass and dye. Tithed. I don't count the tithe. Their clerk does." |
+| Aurennais | "Wool and hides outward, Master, salt and oil inward, and a remarkable quantity of rumour in both directions, untaxed." | "Ore and timber outward, Master, and whatever the League cannot make, inward. The duties here are settled by agreement, or by a captain; I prefer the agreement." | "Salt, glass, dye and grain, Master, and every hull entered in the register and tithed according to its burden. Nothing comes through this harbour unwritten." |
+
+An Old Blood harbourmaster does not occur (the generator keeps them to inland trades; canon is silent and the plainer thing is that the office is a ledger's).
+
+**New topic, *Any black sails?*** (the harbourmaster only; reads `OTHER.some(o=>o.kind==='pirate')` as the news topic already does):
+- Gatelander, sails seen: "There's a sail off the head that doesn't fly a house or a crown. A ship with no colours has one reason for it." Not seen: "Not this week. The sea keeps its own counsel, and I'd not thank it for breaking it."
+- Markman, seen: "Aye. Off the head. Nailed penny on the sail." Not seen: "None. They'll be back."
+- Aurennais, seen: "One has been observed off the headland, Master, flying the nailed penny. The houses have been notified; the houses will do what they consider prudent, which is to wait." Not seen: "None reported, Master. I would not read too much into an absence."
+
+---
+
+### 2. The chandler
+
+*Where:* every port of 45 pad or more, the misc shop nearest the quay (its noun is already *Chandlery* one time in four; the chandler's shop always takes it). *Sells:* the ship's field-work stock (planks, pitch, rope, the carpenter's chest) and lamp oil, at the misc shop's prices. A chandler is a `Merchant` with `bio.trade:'chandler'`, so the errands' frame (`ER_ROLES`) may give one an errand.
+
+**Greeting (first words follow *First Words*; after them, one of):**
+- Gatelander: "Rope, pitch and plank, and a word of advice thrown in for nothing, which is about what it's worth." · "Mind the coil there. It's been tripping better than you all morning."
+- Markman: "Rope. Pitch. Plank. What d'you need?" · "Patch her yourself? Good. Cheaper."
+- Aurennais: "Everything a hull requires between harbours, Master, at the house's prices." · "You will find nothing here that a ship does not eventually need."
+- Old Blood: "Cord. Tar. Board."
+
+**Topics:**
+- *What does a ship run short of first?*
+  - Gatelander: "Pitch, then patience, then rope. I sell the first and the last. The middle one you bring yourself."
+  - Markman: "Pitch. Then rope. Then nerve. I sell two."
+  - Aurennais: "In my experience, Master, pitch, then rope, then the captain's good opinion of his carpenter. The third I cannot supply, though the first two help."
+  - Old Blood: "Tar."
+- *Who buys from you?* (the port's own news)
+  - Gatelander: "Fishermen, mostly, and a house ship when the Compact's clerk has gone to his dinner. And the odd one with no colours, who pays in good coin and doesn't stay to count the change. I don't ask. A shop that asks is a shop that's shut."
+  - Markman: "Anyone with coin. Didn't ask the last one his colours. Didn't need to."
+  - Aurennais: "The houses' ships, Master, on account. Fishermen in coin. Others in coin of a quality I prefer not to examine. The chandlery does not take sides in matters of the sea; it supplies them all equally."
+
+---
+
+### 3. The broker
+
+*Where:* every Aurenne port, and one port in three elsewhere (by id); the broker is always Aurennais (the trade is the Compact's; a broker in the Mark is the Compact's man there). At a table in the quay's warehouse or, where there is none, under the quay's awning. *What it carries:* talk, and one service the game already has the arithmetic for: **a hold insured.** For a tenth of the hold's worth at the factor's prices, paid at the broker, the next voyage's cargo is insured: if a black sail's boarders take it or your ship founders before you next sell at a harbour, the broker of any port pays you half its worth. One policy at a time, kept as `worldState.ship.policy = {port, worth, at}` (the ship's, the world row's).
+
+**Greeting:**
+- Aurennais (always): "Good day, Master. A cargo carries two risks, the sea and the people on it; I can relieve you of the anxiety of both, for a consideration." · "Master. Sit, if you have business. The terms are written; I will read them to you if you prefer."
+
+**Topics:**
+- *What do you sell?*: "Assurance, Master, in its literal sense. You pay me a tenth of what your hold is worth; if the sea or a black sail takes it before you sell, I pay you the half. Most years the sea takes nothing and I am a little richer. Some years it takes a great deal and I am the reason a captain is not ruined. Both are honest work."
+- *Insure my hold.* (with goods in the hold): "A hold worth {worth} gold at the factor's prices. The premium is {fee}. Should the cargo be lost before you next sell at a harbour, any broker of the Compact will pay you {half}. Sign here, Master. A mark will do, if you do not write." → paid: "Entered. Fair winds, Master, and may this be the least profitable contract I make this year." No goods: "There is nothing in your hold to insure, Master. I can insure an empty hold, but I would be ashamed to take the fee."
+- *My cargo was taken.* (a policy, and the hold emptied by boarders or the founder): "I am sorry to hear it, Master; I am also obliged to believe you, since the register agrees. {half} gold, as written. The house will be displeased and I will tell them that is what assurance is for."
+- *Who are the houses?*: "The Compact is the houses, Master, and the houses are families who have kept ledgers for longer than other people have kept surnames. House Belkadi, House Amari, House Sabri, House Doukas, a dozen more. The Church sits over them, which is to say, the Weaver audits the accounts."
+- *What do you make of the free captains?*: "That they are a cost, Master, like weather. I do not hate the weather. I price it."
+- *You're a long way from Aurenne.* (outside Aurenne only): "The Compact is wherever a contract is, Master. This harbour has several. I am here to see they are honoured, and to write new ones."
+
+---
+
+### 4. The salvager
+
+*Where:* every Gatelands and Mark port within 600 of a wreck (`spawnWreck`'s wrecks, `85-world-sea.js`), one by the quay's boats; a Gatelander or a Markman by the port's people. *What it carries:* a lead to the nearest wreck not yet looted (its compass word and a distance in plain words, as `nearbyDoors` gives gates), and a buyer for what comes up: the salvager buys any wreck chest's goods at the merchant's price plus a tenth (the trade's own premium for the salt on them).
+
+**Greeting:**
+- Gatelander: "If it went down in the bay, I've had my hands on it, or I will. The sea's a poor keeper of other people's things." · "Wet coin spends dry. Have you anything off the bottom?"
+- Markman: "Got anything off a wreck? I buy." · "Salvage. Anything that comes up."
+
+**Topics:**
+- *Where's there a wreck?*
+  - Gatelander: "There's a hull down {dir} of here, {far}, that nobody's been into yet, or nobody that came back to say. The sea doesn't mind who opens a chest. Mind the chest doesn't mind you."
+  - Markman: "One {dir}. {far}. Nobody's had it. Yet."
+  - Old wrecks all looted: Gatelander: "You've had them all, by the look of you. Wait for weather; the sea's always writing more." Markman: "None left. Wait for a storm."
+- *Isn't that gate-grubbing?* (the Aurennais coinage, asked of a salvager)
+  - Gatelander: "That's what the Compact calls it when we do it to a gate. When it's their ship gone down off our coast, they call it recovery and send a clerk with a bill. The word changes with whose it was."
+  - Markman: "A wreck's not a gate. A wreck's just bad luck. Mine now."
+- *Do they light false lamps on this coast?* (the wreckers, talk only)
+  - Gatelander: "Every coast says the next coast does. I've never met a wrecker, and I've drunk with every rogue on this water. That's either proof there are none or proof they're better at it than me."
+  - Markman: "Heard it. Never seen it. Wouldn't say if I had."
+- *Sell what came up.* (opens the sell slip, wreck goods only)
+
+**The salvager's licence (one line, never a quest).** Asked in a Gatelands port, *Does the Crown take its cut?*: Gatelander: "The Crown licenses the gates, and the gates are on land. The sea's a different matter, and I'd not be the one to point that out to them."
+
+---
+
+### 5. The Navigators' Hall
+
+*Where:* one per island, at its largest port (the anchored-place rule of §9: picked by the seed, named, always there), a guild hall with the *Navigators' Hall* sign. *Who:* the hall's master (a guild head, `guildDef`, of the port's people), and, by day, the navigators the crew may be met from (the design's *a navigator at a Navigators' hall*, `docs/design/making-a-ship-yours.md`). *What it carries:* the explorers' book, and charts.
+
+**The hall's master, greeting:**
+- Gatelander: "Come in out of the wind. Every map in here was drawn by someone who came back, which is the only qualification we ask."
+- Markman: "Hall's open. Charts on the wall. Don't touch the old ones."
+- Aurennais: "Welcome to the Hall, Master. The charts are the house's; the book is everyone's. Both are to be read, and only one is to be written in."
+
+**Topics:**
+- *What is the book?*
+  - Gatelander: "The explorers' book. Every captain who's first to a coast, a wreck or a strange water writes it here, with the day and their name. Nobody's paid for it. Nobody needs to be. You'd be surprised what people will do to be written down."
+  - Markman: "First to a place, you write it. Your name stays. That's all."
+  - Aurennais: "The register of first landings, Master. Whoever is first to a place enters it here with the date, and the entry stands against all later claims. It is the only document in Aurenne the Church does not countersign."
+- *Write my name in the book.* (when the player has found a place no earlier entry names: a wonder, a lair, a wreck, a great gate's island, by `worldState` flags the game already keeps): the hall's master writes it, and reads it back: *"{Place}. First come to by {your name}, on {date}."* Each entry is `worldState.firsts[<place id>] = {at}` (the character's, `SS_CHAR_WS`), +1 favour at the hall's port. Nothing else; the reward is the line.
+- *Read me the book.* (the hall's master reads the last five entries, the player's and the world's: the world's own first entries are three a hall, drafted below)
+- *Charts?* (the misc shop's stock of charts, when the systems builder makes charts a thing: each island's coast as the minimap's at the navigator's range for a day)
+
+**The book's first entries** (the world's own, three a hall, read in the master's voice):
+- Gatelands hall: *"The Hollow Strand, with the bones of a ship on it older than the Crown. First come to by Tadhg Ó Murchú, in the second year of the peace."* · *"The rocks called the Teeth, off the west head. First come to by a crew who did not stay to give their names."* · *"Inis Rua's far side, on a spring tide. First come to by Gormlaith, a ferryman's widow, who went to look and came back."*
+- Mark hall: *"The ice shelf north of the strait. First come to by Wulfa Long-Oar. She said it groaned."* · *"The sea-cave under Caer Slige's head. First come to by Ceolric, who did not like it."* · *"A wreck of a tithe-ship in the shallows of the strait. First come to by Oswy Blackhand. He wrote it himself."*
+- Aurenne hall: *"The salt lake inland of the dunes, by sea, through the old canal. First come to by Factor Lucan Sabri, for House Sabri."* · *"The drowned colonnade off the southern point. First come to by the Academy's boat under Master Theodora Kallis, who measured it."* · *"The far-side reef, by night, by the light of what lay under it. First come to by Hessa Amari. The entry was afterwards sealed; this line is all that remains."* (Hessa is *Off the Road, I*'s scholar, whose licence the Church took; the line is the first place a player meets her name if they come here first.)
+
+*(Oswy's entry is the one place a hall's book names a free captain. It stands because the book takes all comers, which is the hall's whole pride. It is a thread for the player who knows his name from Act II, and nothing more.)*
+
+---
+
+### 6. The free captains' mark — the nailed penny
+
+*What it is:* a coin with an iron nail driven through it, painted black on a red cloth: the free captains' flag at the masthead of every black sail (OG-017, OG-093's skull and crossbones replaced). *What it says:* the tithe refused. A coin is what the Compact takes from every hull that passes; a nail through it is what the Mark thinks of that. It is a sign of a refusal, not of death, and it is never a skull.
+
+**What each people calls it, and says of it** (one line each, for the news topics and the black sail's own `showMsg` when she is first seen within hail):
+- Gatelander, *the nailed penny*: "When you see the penny with the nail in it, the Weaver's telling you to be somewhere else."
+- Markman, *the Nail*: "The Nail. Iron through silver. Good sign, if you're not the silver."
+- Aurennais, *the defaced coin*: "It is the defaced coin, Master. Defacing coin is a crime in the Compact, which is, I am told, the joke."
+- Old Blood, *the pinned coin*: "A nail through silver. They mean the tithe."
+
+**The narrator, when a black sail is first sighted** (once a voyage, replacing nothing; a new line): *A black sail off the bow, the nailed penny at her masthead.*
+
+**The coinages.** The draft uses one, *gate-grubbing*, put to a salvager who answers it; the contradiction §2.1 asks for is the canon's own Aurennais line (*Nobody keeps a field or a promise like a Gatelander.*) and needs no new person.
+
+---
+
+### What in the code would carry it
+
+- **The harbourmaster** (`84-world-interiors.js`, the quay's builder at *harbourmaster at the landward end of the quay*): `def.people` rolled on `seededRng('harbour-people', site.id)` (one port in two another island's people), the name from that people's bank; *What comes through here?* from a table `HARBOUR_SAYS[people][island]`; *Any black sails?* beside it, reading `OTHER` as `87-world-quests.js`'s news topic does.
+- **The chandler**: the port's misc shop takes the noun *Chandlery* (`84-world-interiors.js`'s `nouns`) and its keeper `bio.trade='chandler'`; the stock adds the field-work goods (`SHOP_STOCK`, `60-shop.js`); the greeting and topics from `SHOP_DIALOG` by people.
+- **The broker**: a `makeDef` person keyed `<site>:broker`, `people:'aurennais'`, at the quay's warehouse; the policy is a named action, `insureHold(port)` and `claimHold()`, reading the hold's worth at the factor's prices (`86-world-crime.js`'s factor panel); `worldState.ship.policy` is the world's, already saved with `worldState.ship`. A boarding's take and a founder clear the hold where they already do; a claim is open while `policy` is set and the hold is empty of what it held. The rule (a tenth for a half) is the systems builder's to confirm or change; the words are these.
+- **The salvager**: a `makeDef` person keyed `<site>:salvager`; *Where's there a wreck?* reads the wrecks of `85-world-sea.js` (`wreckSpot` by cell, through `getCell`, never what has loaded: the S533 rule) and their looted flags; *Sell what came up* filters the sell slip to items with the wreck chest's tag (a `_wreck` flag set where the wreck's chest is filled).
+- **The Navigators' Hall**: an anchored place per island (§9's rule; `genSettlement`'s guild halls), the head by `guildDef`; `worldState.firsts` in `SS_CHAR_WS` and `_applyLoadData`'s list; the first-entries table beside the hall's def. The crew's navigator is offered here (`CREW`, `32-people.js` and `86-world-crime.js`) when the systems builder moves where they are met.
+- **The mark**: the look builder's (a sail cloth `&nail`, `docs/decisions.md`'s sail dress list; the black sail's flag); the narrator's sighting line in `86-world-crime.js` where `OTHER`'s pirate first comes within hail.
+
+### Checked against the canon
+
+- No Aurennais oath (the broker *is obliged*, *prefers the agreement*, *prices* the weather); every Markman line is short and has no honorific; every Gatelander line is indirect or a proverb; the one Old Blood line says the older word (*cord*, *tar*, *board*, *the pinned coin*) and no more.
+- No *Consortium* anywhere; the houses are *House {name}* under the Church, Factors over ports, as §1.3.
+- Nobody is named as a wrecker; nobody explains the gates; no chosen-one line.
+- The new names: Aurennais (*Lucan Sabri*, *Theodora Kallis*; *House Sabri*, *House Doukas* beside the canon's own drafts' *Belkadi* and *Amari*), Markish (*Wulfa Long-Oar*, *Ceolric*), Gatelander (*Tadhg Ó Murchú*, *Gormlaith*), each in its people's register. Oswy Blackhand is the canon's.
+
+### Owed, and not drafted here
+
+- Charts as a thing to buy, and the navigator met at the hall rather than where the crew are met now: the systems builder's, once Michael has read this.
+- A wreck-diving errand for the salvager (the Sunken Library is *Sea Legends, I*'s), on the errands' frame, after the second run of *Asked in Passing* is built.
+
+---
