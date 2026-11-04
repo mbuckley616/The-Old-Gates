@@ -222,6 +222,11 @@ const pipe = await page.evaluate(() => { const P = HB.makePerson(HB.castGenome('
   return { on: !!pi, bone: pi && pi.parent && pi.parent.name, st: P.pipe }; });
 check('Edna smokes her clay pipe: on the head, its mouthpiece inside her lips, nothing worn within 2 mm of the stem past them or of the bowl',
   pipe.on && pipe.bone === 'head' && pipe.st.inside === 0 && pipe.st.tipIn && pipe.st.side === 'L', pipe);
+// S1829 (L2, OG-069): Corwin's tankard, by its handle in his right fist, upright, nothing of him near it and no finger through its pewter
+const tankard = await page.evaluate(() => { const P = HB.makePerson(HB.castGenome('Corwin', {}), { hoodStats: false }), tk = P.root.getObjectByName('tankard');
+  return { on: !!tk, wrist: tk && tk.parent && tk.parent.name, st: P.tankard }; });
+check('Corwin holds his tankard: on the wrist, upright, nothing of him within 8 mm of it, no point of the hand in its pewter',
+  tankard.on && tankard.wrist === 'wrist.R' && tankard.st.inside === 0 && tankard.st.handIn === 0 && tankard.st.sideIn === 0 && tankard.st.thumbIn === 0 && tankard.st.lean < .1, tankard);
 await g.close();
 
 // a second boot: the same people, the same bodies
