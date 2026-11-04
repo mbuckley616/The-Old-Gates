@@ -188,6 +188,7 @@
     // settlements in this cell go first
     c.sites.forEach(t=>{if(SETTLE.has(t.id))disposeSettlement(t.id);});
     if(c._cave&&c._cave.house){const i=ZONES.world.houses.indexOf(c._cave.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1768 — the cave's record */if(c._cove&&c._cove.house){const i=ZONES.world.houses.indexOf(c._cove.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1773 — the sea cave's */if(c._grotto&&c._grotto.house){const i=ZONES.world.houses.indexOf(c._grotto.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1787 — the grotto's */if(c._mine&&c._mine.house){const i=ZONES.world.houses.indexOf(c._mine.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1790 — the mine's */
+    if(c._tunnel&&c._tunnel.house){const i=ZONES.world.houses.indexOf(c._tunnel.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1827 — the tunnel's */
     (c._lone||[]).forEach(F=>{if(SETTLE.has(F.id))disposeSettlement(F.id);const i=F._site?LONE_FARMS.indexOf(F._site):-1;if(i>=0)LONE_FARMS.splice(i,1);}); /* S1473 — and its lone farms */
     if(L.staticsBuilt||L.staticsPending)dropStatics(L);
     L.statics.forEach(o=>{sc.remove(o);});
@@ -508,6 +509,55 @@
     C.house={id:`g_${C.id}`,type:'mine',byAim:true,siteId:C.id,name:C.name,keeper:'',reg:c.reg,style:'mark',w:13,d:35,two:false,doorX:C.x,doorZ:C.z,doorFace:'S',exitX:C.out.x,exitZ:C.out.z,exitYaw:C.out.yaw,worked:C.worked};
     if(ZONES.world&&ZONES.world.houses&&!ZONES.world.houses.some(h=>h.id===C.house.id))ZONES.world.houses.push(C.house);
     return M.group;}
+  // S1827 (card F8; Michael's A on #335, "a road", and his A on #1096, "inland, under a ridge beside a road") — Aurenne's trade tunnels
+  // (PKIT.au.tunnel, places.js's aurenneTunnel): the road's short way under a hill, a bore of 56 m with a portal each side of the ridge
+  // beside one of the cell's roads. Every Aurenne cell whose land holds one keeps one. Read by place (withPlace over the cell's middle, the
+  // bare land, rawH), from the roads' lines (roadCurve): from points 20 to 40 m off a road, every 12 m along it, lines of 56 m in 16 ways
+  // whose far end is also within 60 m of the same road, the two portals' ground 3 m or more over the sea and within a cart's grade of each
+  // other (1 in 12, 4.7 m), the ground 6 m out of each within 3 m of its portal, and the hill over the bore: TUN_ROCK m or more over the
+  // floor from 8 to 48 m in (the crown is 4.2). Each portal 40 m off every pad, 60 m off every door, 30 m off every lake's rim and 120 m
+  // off the cell's grotto, and 12 m off the line of every road. The most rock over the floor wins. -> {id, x, z, ry, x1, z1, ry1, y0, y1,
+  // rise, rock, road, name, cell} (portal A at x, z facing out along ry; portal B at x1, z1 facing out along ry1) or null, kept on c._tunnel
+  const TUN_L=56,TUN_ROCK=5;
+  function tunnelAt(c){
+    if(c._tunnel!==undefined)return c._tunnel;c._tunnel=null;
+    if(c.type==='sea'||c.home||window.OG_LOOK!=='new'||window.OG_KIT_TOWNS===false||typeof PKIT==='undefined'||!PKIT.au||!PKIT.au.tunnel)return null;
+    if(nationKeyOf(c.i,c.j)!=='aurenne')return null;
+    const k=cellKey(c.i,c.j),r=PKIT.stream('tunnel:'+k);
+    const byId={};for(const t of c.sites)byId[t.id]=t;const lakes=[];for(let j=c.j-1;j<=c.j+1;j++)for(let i=c.i-1;i<=c.i+1;i++){const n=getCell(i,j);if(n&&n.lakes)lakes.push(...n.lakes);}
+    const roads=c.roadDefs.filter(d=>d.via!=='quay'&&d.via!=='spur'&&byId[d.a]&&byId[d.b]).map(d=>({d,pts:roadCurve(d,byId[d.a],byId[d.b])}));if(!roads.length)return null;
+    const near=(pts,x,z)=>{let b=1e9;for(let i=0;i<pts.length-1;i++){const a=pts[i],q=pts[i+1],dx=q.x-a.x,dz=q.z-a.z,t=Math.max(0,Math.min(1,((x-a.x)*dx+(z-a.z)*dz)/(dx*dx+dz*dz||1)));b=Math.min(b,Math.hypot(a.x+dx*t-x,a.z+dz*t-z));}return b;};
+    const grotto=seaGrotto(c),clear=(x,z)=>!(c.sites.some(s=>Math.hypot(s.x-x,s.z-z)<(s.pad||0)+40)||c.doors.some(e=>Math.hypot(e.x-x,e.z-z)<60)||lakes.some(l=>Math.hypot(l.x-x,l.z-z)<(l.r||60)+30)||(grotto&&Math.hypot(grotto.x-x,grotto.z-z)<120)||roads.some(o=>near(o.pts,x,z)<12));
+    let best=null;const L=TUN_L;
+    withPlace(c.ox+SIZE/2,c.oz+SIZE/2,()=>{for(const R of roads){const P=R.pts;
+      for(let i=0;i<P.length-1;i+=2){const a=P[i],b=P[i+1],Lr=Math.hypot(b.x-a.x,b.z-a.z)||1,nx=-(b.z-a.z)/Lr,nz=(b.x-a.x)/Lr;
+        for(const off of [-40,-30,-20,20,30,40]){const x0=a.x+nx*off,z0=a.z+nz*off;if(x0<c.ox+60||x0>c.ox+SIZE-60||z0<c.oz+60||z0>c.oz+SIZE-60)continue;const h0=rawH(x0,z0);if(h0<3)continue;
+          for(let d=0;d<16;d++){const tx=Math.sin(d/16*Math.PI*2),tz=Math.cos(d/16*Math.PI*2),x1=x0+tx*L,z1=z0+tz*L;if(rawH(x0+tx*L/2,z0+tz*L/2)<h0+TUN_ROCK-L/24)continue; /* the hill at the middle first: the cheap test */const h1=rawH(x1,z1);if(h1<3||Math.abs(h1-h0)>L/12)continue;
+            if(Math.abs(rawH(x0-tx*6,z0-tz*6)-h0)>3||Math.abs(rawH(x1+tx*6,z1+tz*6)-h1)>3)continue;
+            let lo=1e9;for(let t=8;t<=48&&lo>=TUN_ROCK;t+=4)lo=Math.min(lo,rawH(x0+tx*t,z0+tz*t)-(h0+(h1-h0)*t/L));if(lo<TUN_ROCK||(best&&lo<=best.rock))continue;
+            const n1=near(P,x1,z1);if(n1>60||!clear(x0,z0)||!clear(x1,z1))continue;
+            best={x:+x0.toFixed(2),z:+z0.toFixed(2),ry:+Math.atan2(-tx,-tz).toFixed(4),x1:+x1.toFixed(2),z1:+z1.toFixed(2),ry1:+Math.atan2(tx,tz).toFixed(4),rock:+lo.toFixed(2),road:R.d.via||''};}}}}});
+    if(!best)return null;
+    c._tunnel={id:`tunnel_${k.replace(',','_')}`,...best,name:`${genName(r,c.reg)} Tunnel`,cell:k};return c._tunnel;}
+  // each portal's pad and the clearing before it (the cell's first step), as the mine's
+  function tunnelStamps(c,k){const C=tunnelAt(c);if(!C)return [];const out=[];
+    for(const [x,z,ry,e] of [[C.x,C.z,C.ry,'a'],[C.x1,C.z1,C.ry1,'b']]){const s=Math.sin(ry),co=Math.cos(ry),y=landH(x,z);
+      out.push(addStamp({id:`${C.id}_${e}pad`,kind:'door',x:x+s*1.5,z:z+co*1.5,r:5.5,blend:6,y,cell:k}),addStamp({id:`${C.id}_${e}clear`,kind:'door',noFlat:true,x:x+s*5,z:z+co*5,r:11,blend:2,y,cell:k}));}
+    return out;}
+  // the two portals (PKIT.places.cavemouth, rock 'aurenne' with the tunnel's frame), each on its pad facing out of the hill, their solids;
+  // the floor's climb from A to B as the pads stand (the room's o.rise); and the tunnel's record in the world's houses (type 'tunnel'), taken
+  // out when the cell unloads. The far portal is C.far, a mouth of its own that opens the same room at its other end.
+  function placeTunnel(c,k){const C=tunnelAt(c);if(!C)return null;const G=new THREE.Group();G.name='tunnel portals';
+    const mouth=(x,z,ry,key)=>{const M=PKIT.places.cavemouth({key,rock:'aurenne',frame:true,tunnel:true}),y=worldH(x,z),co=Math.cos(ry),s_=Math.sin(ry);
+      M.group.position.set(x,y,z);M.group.rotation.y=ry;M.group.name='tunnel portal';G.add(M.group);
+      for(const b of M.sol)STATIC_SOL.push({cx:x+b.x*co+b.z*s_,cz:z-b.x*s_+b.z*co,rx:b.w/2,rz:b.d/2,c:Math.cos(ry+b.ry),s:Math.sin(ry+b.ry),h:b.h,cave:true});
+      return {y,M,out:{x:+(x+s_*2.2).toFixed(2),z:+(z+co*2.2).toFixed(2),yaw:ry+Math.PI}};};
+    const A=mouth(C.x,C.z,C.ry,C.id+':a'),Bm=mouth(C.x1,C.z1,C.ry1,C.id+':b');sc.add(G);
+    C.y=A.y;C.y1=Bm.y;C.rise=+Math.max(-TUN_L/12,Math.min(TUN_L/12,Bm.y-A.y)).toFixed(2);C.mouth=A.M.mouth;C.out=A.out;C.tris=A.M.tris+Bm.M.tris;C.draws=A.M.draws+Bm.M.draws;C.group=G;
+    C.house={id:`g_${C.id}`,type:'tunnel',byAim:true,siteId:C.id,name:C.name,keeper:'',reg:c.reg,style:'aurenne',w:10,d:TUN_L+10,two:false,doorX:C.x,doorZ:C.z,doorFace:'S',exitX:C.out.x,exitZ:C.out.z,exitYaw:C.out.yaw,rise:C.rise};
+    C.far={x:C.x1,z:C.z1,ry:C.ry1,y:Bm.y,mouth:Bm.M.mouth,out:Bm.out,house:C.house,end:1};C.end=0;
+    if(ZONES.world&&ZONES.world.houses&&!ZONES.world.houses.some(h=>h.id===C.house.id))ZONES.world.houses.push(C.house);
+    return G;}
   // S1773 (card F8, Michael's A on #1026) — the smugglers' sea caves on the Gatelands' coast (PKIT.places.cove, places.js's smugglersLair,
   // #314 A). One coastal Gatelands cell in two keeps one, by its own stream (seacove:<cell>), so no other draw of the cell moves. Its mouth
   // is on the land behind the shore, read by place (withPlace over the cell's middle), and its passage runs seaward under the land to the

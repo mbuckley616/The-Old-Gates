@@ -5538,7 +5538,7 @@ function aurenneOrrery(hAt, o = {}) {
         iron: new THREE.MeshStandardMaterial({ color: 0x2c2a28, roughness: .5, metalness: .6 }) }
       : { lime: mat('rock', { ns: 1.5, color: dk === 'sea' ? 0x6a6e6c : 0xb4b0a4, rough: .92 }), throat: mat('rock', { ns: 1.4, color: dk === 'sea' ? 0x3e4442 : 0x6a685f, rough: .95 }), dark: new THREE.MeshBasicMaterial({ color: 0x030304 }), moss: mat('turfMoss', { ns: .8, color: 0x8aa868, rough: 1 }) };
     const M = CMO[dk], put = (geo, k) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal'].includes(a)) g.deleteAttribute(a); if (!g.attributes.normal) g.computeVertexNormals(); worldUV(g, .3); if (!B.has(k)) B.set(k, []); B.get(k).push(g); };
-    const MW = 2.2, MH = 3.6, TD = 6, RXo = 7.5, RYo = 6.5, RZo = 6, CZ = -4.2, CYo = .6;
+    const TUN = !!o.tunnel, MW = 2.2, MH = TUN ? 4.6 : 3.6, TD = 6, RXo = TUN ? 9.5 : 7.5, RYo = TUN ? 8.5 : 6.5, RZo = TUN ? 7 : 6, CZ = TUN ? -5.2 : -4.2, CYo = .6; /* S1827 — o.tunnel (Aurenne's trade tunnel, with o.frame): the throat as high as the tunnel's portal, the outcrop larger round its frame */
     const inMouth = (x, y, z, m = 0) => z > -TD - .5 && y > -.6 && Math.hypot(x / (MW + m), Math.max(0, y - MH + MW) / (MW + m)) < 1 && y < MH + m;
     // the outcrop: a sphere lofted and moved by the rock's field, a bluff above the mouth, its faces in the throat dropped
     const blob = (i, j, NS, NA) => { const v = i / NS * Math.PI, u = j / NA * Math.PI * 2, sx = Math.sin(v) * Math.cos(u), sy = Math.cos(v), sz = Math.sin(v) * Math.sin(u);
@@ -5555,13 +5555,13 @@ function aurenneOrrery(hAt, o = {}) {
     // S1787 — o.frame (Aurenne's grotto): the stair's frame of places.js's aurenneGrotto on the outcrop's face, a block of plaster round a
     // round-headed opening (2.7 m wide, springing at 2.1 so its crown stays under the throat's 3.6), an ashlar ring and jambs, the band of
     // blue tile over it and a cornice, set into the rock 0.7 m; the throat runs on dark behind it
-    if (o.frame && M.plaster) { const FZ = o.frameZ ?? 1.5, W2 = 1.35, SP = 2.1, OW = 2.2, OH = 4.6, depth = .7, pth = [new THREE.Vector2(W2, -.1), new THREE.Vector2(W2, SP)];
+    if (o.frame && M.plaster) { const FZ = o.frameZ ?? 1.5, W2 = TUN ? 1.85 : 1.35, SP = TUN ? 2.4 : 2.1, OW = TUN ? 3.2 : 2.2, OH = TUN ? 6.2 : 4.6, depth = .7, pth = [new THREE.Vector2(W2, -.1), new THREE.Vector2(W2, SP)];
       for (let s = 1; s < 20; s++) { const a = s / 20 * Math.PI; pth.push(new THREE.Vector2(Math.cos(a) * W2, SP + Math.sin(a) * W2)); } pth.push(new THREE.Vector2(-W2, SP), new THREE.Vector2(-W2, -.1));
       const sh = new THREE.Shape([new THREE.Vector2(-OW, -.25), new THREE.Vector2(OW, -.25), new THREE.Vector2(OW, OH), new THREE.Vector2(-OW, OH)]); sh.holes.push(new THREE.Path(pth));
       const g = new THREE.ExtrudeGeometry(sh, { depth, bevelEnabled: false, curveSegments: 20 }); g.translate(0, 0, FZ - depth); put(g, 'plaster');
       const rg = new THREE.Shape(); rg.absarc(0, 0, W2 + .42, 0, Math.PI, false); rg.absarc(0, 0, W2, Math.PI, 0, true); const rgg = new THREE.ExtrudeGeometry(rg, { depth: .1, bevelEnabled: false, curveSegments: 20 }); rgg.translate(0, SP, FZ); put(rgg, 'ashlar');
-      for (const e of [-1, 1]) { put(new THREE.BoxGeometry(.22, SP, .1).translate(e * (W2 + .11), SP / 2, FZ + .05), 'ashlar'); put(new THREE.BoxGeometry(.5, .8, .02).translate(e * 1.75, 2.9, FZ + .01), 'zellige'); }
-      put(new THREE.BoxGeometry(4.4, .24, .02).translate(0, 4.0, FZ + .01), 'zellige'); put(new THREE.BoxGeometry(4.8, .22, .4).translate(0, OH + .11, FZ - .15), 'ashlar'); }
+      for (const e of [-1, 1]) { put(new THREE.BoxGeometry(.22, SP, .1).translate(e * (W2 + .11), SP / 2, FZ + .05), 'ashlar'); if (TUN) put(new THREE.BoxGeometry(.8, 1.1, .02).translate(e * 2.65, 3.6, FZ + .01), 'zellige'); else put(new THREE.BoxGeometry(.5, .8, .02).translate(e * 1.75, 2.9, FZ + .01), 'zellige'); }
+      if (TUN) put(new THREE.BoxGeometry(1.8, .7, .08).translate(0, 5.45, FZ + .04), 'ashlar'); /* the tunnel's blank tablet over its arch, as drawn */ else put(new THREE.BoxGeometry(4.4, .24, .02).translate(0, 4.0, FZ + .01), 'zellige'); put(new THREE.BoxGeometry(2 * OW + .4, TUN ? .3 : .22, TUN ? .9 : .4).translate(0, OH + (TUN ? .15 : .11), FZ - (TUN ? .35 : .15)), 'ashlar'); }
     // S1790 — o.adit (the Mark's silver mine, places.js's markMine): the adit's timber sets in the throat, as the mine's own (two posts and a
     // cap, 2.07 m clear and the cap at 2.3, every 1.5 m), a heavier set at the face for its portal with lagging over the caps, and the
     // tramway (0.6 m gauge on sleepers) out of the dark and 4.5 m onto the pad, where the mine's waste was tipped
@@ -5925,6 +5925,108 @@ function aurenneOrrery(hAt, o = {}) {
       arch: { w: 2 * AW, h: AH, z: Z1 }, gate: { w: 2 * GW, d: GD }, chamber: { x0: -RX(.5), x1: RX(.5), z0: Z0, z1: Z1, h: CY + RY(.5) }, spring: { x: bx0 + BD / 2, y: QY + BH, z: SZ }, skiff, beach: { z0: BZ0, z1: BZ1 },
       bounds: { x0: X0c, x1: -X0c, z0: MZ - NZc * G, z1: MZ }, low, cells, obs: OBS, arrive: [0, TOPY, MZ - 1.6, 0] };
   }
+  // ── Aurenne's trade tunnel (Session 1827, card F8; places.js's aurenneTunnel, Session 908, OG-121's Aurenne panel, "trade tunnels";
+  // Michael's A on #335, "a road", and his A on #1096: "inland, under a ridge beside a road", since no headland on the land holds it).
+  // Copied as drawn, a metre a unit: portal A at z 0 faces +z, the bore runs 56 m to portal B at z -56, winding 1.6 m either side, 3.6 m
+  // wide on its paving with ruts and a gutter, upright to 2.4 m under a round vault (4.2 m at the crown); the passing place midway (6 m
+  // wide for 6 m, plastered to a dado under the blue tile band, the bench, the tally-keeper's table and ledger, amphorae, the shaft to the
+  // sky); clay lamps in arched niches every 6 m on alternate walls, lit (o.used, default true); both portals in plaster rung in ashlar, a
+  // blank tablet over each, the cut cliff round them. What differs: o.rise, the floor climbing that far from A to B (a cart's grade, at
+  // most 1 in 12: every vertex is lifted by its share of the length, so walls stay upright and the treads tilt); both portals open on the
+  // dust road (the drawn quay's paving was the headland's); beyond each a plane of sky and over the shaft a disc of it (o.sky, coloured by
+  // the hour by the room); and the walk as half-metre cells along the bore and 5 m out of each portal, with the bench, the table and the
+  // amphorae as boxes.
+  //   PKIT.au.tunnel(o) -> { group, sky, tris, draws, L, rise, floorY(z), xc(z), half(z), lamps ([x, y, z]), used, mouths ([{ z, w, h, y }] A, B),
+  //   shaft, passing, crown, bounds { x0, x1, z0, z1 }, cells ([{ x0, x1, z0, z1, y }], y null for rock), obs ([{ x0, x1, z0, z1 }]), arrive [[x, y, z, yaw] A, B] }
+  let TUM = null;
+  function tunnelMats() {
+    if (TUM) return TUM; const std = (c, ro = .85, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: ro, ...o });
+    TUM = { rock: mat('rock', { ns: 1.3, color: 0xd2c2a2, rough: .95 }), cliff: mat('rock', { ns: 1.5, color: 0xd8caa8, rough: .95 }), pave: mat('limestone', { ns: 1.0, rough: .8 }),
+      rut: std(0x7a6c58, 1), gutter: std(0x4a4034, 1), plaster: mat('plaster', { ns: .6, color: 0xeee0c4, rough: .95 }), ashlar: mat('ashlar', { ns: .9, color: 0xfff6e2, rough: .9 }),
+      zellige: mat('zellige', { ns: .6, rough: .3 }), dust: mat('turfDry', { ns: .4, color: 0xfff0c8, rough: 1 }), dark: std(0x0d0a08, 1), clay: std(0xb06a40, .8), cedar: mat('wood', { ns: .9, color: 0xc89870, rough: .7 }),
+      book: std(0x5a2a1e, .7), flame: new THREE.MeshStandardMaterial({ color: 0xffd090, emissive: new THREE.Color(1, .75, .4), emissiveIntensity: 4 }) };
+    TUM.rock.side = TUM.cliff.side = THREE.DoubleSide; return TUM;
+  }
+  function aurenneTunnel(o = {}) {
+    const M = tunnelMats(), B = new Map(), used = o.used !== false, key = String(o.key || 'tunnel');
+    const put = (geo, k, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, uv = .5) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal'].includes(a)) g.deleteAttribute(a);
+      if (!g.attributes.normal) g.computeVertexNormals();
+      g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), new THREE.Vector3(1, 1, 1))); worldUV(g, uv);
+      if (!B.has(k)) B.set(k, []); B.get(k).push(g); };
+    const L = 56, H0 = 1.8, H1 = 3.0, S = 2.4, PZ = -28, sm = t => t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t), RISE = Math.max(-L / 12, Math.min(L / 12, +o.rise || 0));
+    const lift = z => RISE * Math.max(0, Math.min(1, -z / L)), floorY = z => +lift(z).toFixed(3);
+    const xc = z => 1.6 * Math.sin(-z * Math.PI / 28) * sm(-z / 9) * sm((z + L) / 9), half = z => H0 + (H1 - H0) * sm((z - (PZ - 6)) / 3) * sm(((PZ + 6) - z) / 3);
+    const F = cairnField(stream(key + ':rock'), .12), SH = { x: xc(PZ), z: PZ, r: 1.2, cut: .8, y0: 5.0, top: 18 };
+    // the bore
+    { const NS = Math.round((L + .6) / .5), nF = 8, nW = 8, nV = 24;
+      const ring = (i, j) => { const z = .3 - i * (L + .6) / NS, h = half(z), R = h, c = xc(z); let u, y, nu, ny;
+        if (j < nF) { u = -h + 2 * h * j / nF; y = 0; nu = 0; ny = -1; }
+        else if (j < nF + nW) { u = h; y = S * (j - nF) / nW; nu = 1; ny = 0; }
+        else if (j < nF + nW + nV) { const a = (j - nF - nW) / nV * Math.PI; u = Math.cos(a) * R; y = S + Math.sin(a) * R; nu = Math.cos(a); ny = Math.sin(a); }
+        else if (j < nF + 2 * nW + nV) { u = -h; y = S * (1 - (j - nF - nW - nV) / nW); nu = -1; ny = 0; }
+        else { u = -h + 2 * h * (j - nF - 2 * nW - nV) / nF; y = 0; nu = 0; ny = -1; }
+        const d = y > .05 ? Math.min(.22, Math.abs(F(c + u, y, z)[0]) * 1.4 + .02) : 0; return [c + u + nu * d, y + ny * d, z]; };
+      put(caveLoft(NS, nF + 2 * nW + nV, ring, true, c => !(Math.hypot(c.x - SH.x, c.z - SH.z) < SH.cut && c.y > 4.5)), 'rock', 0, 0, 0, 0, 0, 0, .35); }
+    // the shaft
+    put(caveLoft(10, 16, (i, j) => { const y = SH.y0 + (SH.top - SH.y0) * i / 10, a = j / 16 * Math.PI * 2, d = Math.abs(F(SH.x, y, SH.z + j)[0]) * .6; return [SH.x + Math.cos(a) * (SH.r + d), y, SH.z + Math.sin(a) * (SH.r + d)]; }, true), 'rock', 0, 0, 0, 0, 0, 0, .35);
+    // the floor: paving in 2 m lengths, the ruts and the gutter
+    for (let z = .3; z > -L - .3; z -= 2) { const zm = z - 1, h = half(zm), c = xc(zm), ry = Math.atan2(xc(z - 2) - xc(z), -2) + Math.PI;
+      put(new THREE.BoxGeometry(2 * h - .05, .04, 2.05), 'pave', c, .02, zm, 0, ry, 0, .55);
+      for (const u of [-.7, .7]) put(new THREE.BoxGeometry(.14, .004, 2.05), 'rut', c + u, .042, zm, 0, ry);
+      put(new THREE.BoxGeometry(.2, .004, 2.05), 'gutter', c - h + .25, .042, zm, 0, ry); }
+    // the lamp niches
+    const lamps = [], arched = (w, h0, rr) => { const p = [new THREE.Vector2(-w / 2, 0), new THREE.Vector2(w / 2, 0), new THREE.Vector2(w / 2, h0)]; for (let s = 1; s < 12; s++) { const a = s / 12 * Math.PI; p.push(new THREE.Vector2(Math.cos(a) * rr, h0 + Math.sin(a) * rr)); } p.push(new THREE.Vector2(-w / 2, h0)); return p; };
+    const lampG = () => new THREE.LatheGeometry([[0, 0], [.07, .01], [.08, .035], [.03, .05], [0, .05]].map(([a, b]) => new THREE.Vector2(a, b)), 8);
+    for (let k = 0, z = -4; z > -L + 3; z -= 6, k++) { if (Math.abs(z - PZ) < 4) continue; const e = k % 2 ? 1 : -1, h = half(z), c = xc(z), wx = c + e * (h - .02), ry = e > 0 ? -Math.PI / 2 : Math.PI / 2;
+      const sh = new THREE.Shape(arched(.7, .55, .35)); sh.holes.push(new THREE.Path(arched(.44, .5, .22).reverse())); const g = new THREE.ExtrudeGeometry(sh, { depth: .05, bevelEnabled: false, curveSegments: 12 }); g.translate(0, 0, -.025); put(g, 'plaster', wx, 1.3, z, 0, ry);
+      put(new THREE.BoxGeometry(.02, .72, .44), 'dark', wx + e * .01, 1.3 + .36, z); put(new THREE.BoxGeometry(.16, .04, .5), 'plaster', wx - e * .06, 1.3, z); put(lampG(), 'clay', wx - e * .08, 1.32, z);
+      if (used) { put(new THREE.SphereGeometry(.025, 6, 4), 'flame', wx - e * .08 - e * .07, 1.4, z); lamps.push([+(wx - e * .3).toFixed(2), +(1.45 + lift(z)).toFixed(2), z]); } }
+    for (const e of [-1, 1]) { const z = PZ + e * 1.5, c = xc(z), wx = c + e * (H1 - .06); put(new THREE.BoxGeometry(.3, .05, .24), 'cedar', wx - e * .12, 1.75, z); put(lampG(), 'clay', wx - e * .14, 1.775, z);
+      if (used) { put(new THREE.SphereGeometry(.025, 6, 4), 'flame', wx - e * .2, 1.85, z); lamps.push([+(wx - e * .45).toFixed(2), +(1.9 + lift(z)).toFixed(2), z]); } }
+    // the passing place: dado and tile band, the bench, the table and ledger, the stool, amphorae
+    for (const e of [-1, 1]) for (let z = PZ + 2.9; z > PZ - 2.9; z -= 1.16) { const c = xc(z - .58), u = c + e * (H1 - .03), ry = Math.atan2(xc(z - 1.16) - xc(z), -1.16) + Math.PI; put(new THREE.BoxGeometry(.06, 1.2, 1.2), 'plaster', u, .6, z - .58, 0, ry); put(new THREE.BoxGeometry(.065, .25, 1.2), 'zellige', u, 1.32, z - .58, 0, ry); }
+    const c0 = xc(PZ), tx = c0 + 1.2, tz = PZ - 1.6, obs = [];
+    { put(new THREE.BoxGeometry(.5, .45, 3), 'ashlar', c0 - H1 + .3, .225, PZ + .8); obs.push({ x0: c0 - H1, x1: c0 - H1 + .55, z0: PZ - .7, z1: PZ + 2.3 });
+      put(new THREE.BoxGeometry(1.5, .06, .8), 'cedar', tx, .78, tz); for (const [a, b] of [[-.68, -.33], [.68, -.33], [-.68, .33], [.68, .33]]) put(new THREE.BoxGeometry(.06, .75, .06), 'cedar', tx + a, .375, tz + b);
+      put(new THREE.BoxGeometry(.42, .06, .3), 'book', tx - .2, .84, tz, 0, .2); put(new THREE.BoxGeometry(.5, .45, .5), 'cedar', tx, .225, tz + .75); obs.push({ x0: tx - .75, x1: tx + .75, z0: tz - .4, z1: tz + 1.0 });
+      const prof = [[0, 0], [.05, .02], [.18, .25], [.21, .45], [.16, .7], [.06, .8], [.05, .95], [.08, 1.0], [0, 1.0]].map(([a, b]) => new THREE.Vector2(a, b));
+      for (let k = 0; k < 9; k++) { const ax = c0 + H1 - .35 - (k % 3) * .02 - (k >= 6 ? .4 : 0), az = PZ + 2.2 - (k % 6) * .46; put(new THREE.LatheGeometry(prof, 10), 'clay', ax, .04, az, 0, 0, k >= 6 ? .3 : 0); }
+      obs.push({ x0: c0 + H1 - 1.0, x1: c0 + H1, z0: PZ - .25, z1: PZ + 2.45 }); }
+    // the portals and the cut cliff round them, and the dust road out of each
+    const W = H0 + .05;
+    for (const [pz, ry] of [[0, 0], [-L, Math.PI]]) { const out = [new THREE.Vector2(-3.2, -.2), new THREE.Vector2(-3.2, 6.2), new THREE.Vector2(3.2, 6.2), new THREE.Vector2(3.2, -.2)];
+      const hp = [new THREE.Vector2(W, -.1), new THREE.Vector2(W, S)]; for (let s = 1; s < 24; s++) { const a = s / 24 * Math.PI; hp.push(new THREE.Vector2(Math.cos(a) * W, S + Math.sin(a) * W)); } hp.push(new THREE.Vector2(-W, S), new THREE.Vector2(-W, -.1));
+      const sh = new THREE.Shape(out); sh.holes.push(new THREE.Path(hp)); const g = new THREE.ExtrudeGeometry(sh, { depth: .7, bevelEnabled: false, curveSegments: 24 }); g.translate(0, 0, -.35); put(g, 'plaster', 0, 0, pz, 0, ry, 0, .45);
+      const rg = new THREE.Shape(); rg.absarc(0, 0, W + .5, 0, Math.PI, false); rg.absarc(0, 0, W, Math.PI, 0, true); const rgg = new THREE.ExtrudeGeometry(rg, { depth: .1, bevelEnabled: false, curveSegments: 24 }); rgg.translate(0, S, .33); put(rgg, 'ashlar', 0, 0, pz, 0, ry);
+      for (const e of [-1, 1]) { put(new THREE.BoxGeometry(.24, S, .1), 'ashlar', e * (W + .12), S / 2, pz + (ry ? -.38 : .38)); put(new THREE.BoxGeometry(.8, 1.1, .02), 'zellige', e * 2.65, 3.6, pz + (ry ? -.36 : .36)); }
+      put(new THREE.BoxGeometry(1.8, .7, .08), 'ashlar', 0, 5.45, pz + (ry ? -.37 : .37)); put(new THREE.BoxGeometry(6.8, .3, .9), 'ashlar', 0, 6.3, pz);
+      const cg = new THREE.PlaneGeometry(48, 18, 60, 22).toNonIndexed(), P = cg.attributes.position.array, CF = cairnField(stream(key + ':cliff' + pz), .9), kept = [];
+      for (let i = 0; i < P.length; i += 9) { let cx = 0, cy = 0; for (let k = 0; k < 3; k++) { cx += P[i + k * 3] / 3; cy += P[i + k * 3 + 1] / 3; } cy += 8; if (Math.abs(cx) < 3.0 && cy < 6.1) continue; for (let k = 0; k < 9; k++) kept.push(P[i + k]); }
+      for (let i = 0; i < kept.length; i += 3) { const x = kept[i], y = kept[i + 1] + 8, d = Math.max(0, Math.max(Math.abs(x) - 3.2, y - 6.4)); kept[i + 1] = y; kept[i + 2] = .25 + Math.min(1, d / 3) * Math.max(.1, .7 + CF(x, y, pz)[2] * 1.2); }
+      const cgeo = new THREE.BufferGeometry(); cgeo.setAttribute('position', new THREE.Float32BufferAttribute(kept, 3)); cg.dispose(); const mg = grWeld(cgeo); mg.computeVertexNormals(); put(mg, 'cliff', 0, 0, pz, 0, ry, 0, .3);
+      put(new THREE.BoxGeometry(30, .4, 12), 'dust', 0, -.16, pz + (ry ? -6.35 : 6.35), 0, 0, 0, .3); }
+    // the floor's climb: every vertex lifted by its share of the length from A
+    const group = new THREE.Group(); group.name = 'tunnel'; let tris = 0;
+    for (const [k, gs] of B) { const g = mergeGeometries(gs); gs.forEach(x => x.dispose()); if (RISE) { const P = g.attributes.position; for (let i = 0; i < P.count; i++) P.setY(i, P.getY(i) + lift(P.getZ(i))); P.needsUpdate = true; }
+      const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = !['flame', 'rut', 'gutter'].includes(k); m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
+    // the day beyond each portal and over the shaft (the room colours it by the hour)
+    const sky = new THREE.MeshBasicMaterial({ color: 0xc4d0dc, fog: false });
+    for (const [z, ry, y] of [[9, Math.PI, 0], [-L - 9, 0, RISE]]) { const m = new THREE.Mesh(new THREE.PlaneGeometry(40, 24), sky); m.position.set(0, y + 8, z); m.rotation.y = ry; m.name = 'sky'; group.add(m); tris += 2; }
+    { const m = new THREE.Mesh(new THREE.CircleGeometry(SH.r + .4, 16), sky); m.rotation.x = Math.PI / 2; m.position.set(SH.x, SH.top - .2 + lift(SH.z), SH.z); m.name = 'sky'; group.add(m); tris += 16; }
+    // the walk as half-metre cells: the bore within 0.35 m of its walls at its floor's height, and the dust road 5 m out of each portal
+    const G = .5, X0c = -5, NXc = 20, Z1c = 5, NZc = Math.round((L + 10) / G);
+    const cellAt = (x, z) => { if (z > 0) return Math.abs(x) < 4.5 ? 0 : null; if (z < -L) return Math.abs(x) < 4.5 ? +RISE.toFixed(2) : null;
+      return Math.abs(x - xc(z)) < half(z) - .35 ? Math.round(lift(z) / .02) * .02 : null; };
+    const cells = [], open = new Map();
+    for (let j = 0; j < NZc; j++) { const z = Z1c - (j + .5) * G, runs = []; let i0 = 0, v0 = cellAt(X0c + G / 2, z);
+      for (let i = 1; i <= NXc; i++) { const v = i < NXc ? cellAt(X0c + (i + .5) * G, z) : NaN; if (v !== v0) { runs.push([i0, i, v0]); i0 = i; v0 = v; } }
+      const next = new Map(); for (const [a, b, v] of runs) { const k = a + ',' + b + ',' + v, c = open.get(k); if (c) { c.z0 = Z1c - (j + 1) * G; next.set(k, c); } else { const n = { x0: X0c + a * G, x1: X0c + b * G, z0: Z1c - (j + 1) * G, z1: Z1c - j * G, y: v }; cells.push(n); next.set(k, n); } }
+      open.clear(); for (const [k, c] of next) open.set(k, c); }
+    for (const c of cells) if (c.y != null) c.y = +c.y.toFixed(2);
+    return { group, sky, tris: Math.round(tris), draws: group.children.length, L, rise: +RISE.toFixed(2), floorY, xc, half, lamps, used, crown: S + H0, shaft: SH, passing: { z0: PZ + 3, z1: PZ - 3, half: H1 },
+      mouths: [{ x: 0, z: 0, w: 2 * H0, h: S + H0, y: 0 }, { x: 0, z: -L, w: 2 * H0, h: S + H0, y: +RISE.toFixed(2) }], bounds: { x0: X0c, x1: -X0c, z0: Z1c - NZc * G, z1: Z1c }, low: Math.min(0, RISE), cells, obs,
+      arrive: [[+xc(-1.6).toFixed(3), 0, -1.6, 0], [+xc(-L + 1.6).toFixed(3), +lift(-L + 1.6).toFixed(2), -L + 1.6, Math.PI]] };
+  }
   // ── the Mark's silver mine (Session 1790, card F8; places.js's markMine, Session 857, Michael's A on #305: "the levels as built
   // (2.07 m), lamps only while worked"; OG-121's "mines and quarries: timber galleries and walkways over a shaft, ore, a working site" and
   // its Mark panel's "mountain mines"). Copied as drawn, a metre a unit, +z the mouth at z 0, the adit's floor at y 0: the adit of 18 m in
@@ -6059,6 +6161,6 @@ function aurenneOrrery(hAt, o = {}) {
   }
   return { stream, hashKey, mergeByMaterial, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, coveEscape, grotto: aurenneGrotto, mine: markMine }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, trunk: felledTrunk }, ships: { sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
     mk: { hall: markHall, lot: markLot, alehall: markAlehall, longhouse: markLonghouse, mats: markMats, yard: markYard, ring: markRing },
-    au: { house: aurenneHouse, lot: aurenneLot, courtyard: aurenneCourtyard, church: aurenneChurch, churchBox: aurenneChurchBox, churchHall: aurenneChurchHall, courtyardHouse: aurenneCourtyardHouse, tavern: aurenneTavern, mats: aurMats, roomMats: homeMats, AUR },
+    au: { house: aurenneHouse, lot: aurenneLot, courtyard: aurenneCourtyard, church: aurenneChurch, churchBox: aurenneChurchBox, churchHall: aurenneChurchHall, courtyardHouse: aurenneCourtyardHouse, tavern: aurenneTavern, mats: aurMats, roomMats: homeMats, AUR, tunnel: aurenneTunnel },
     gl: { PLANS, FIN, PS, PAINTS, guildHall: guildHallRoom, TOWN: GL_TOWN, building, church, keep, farmstead, coachInn, coachInnPlan, coachRoom, townhouse: townhouseRoom, farmhouse: farmhouseRoom, byre: byreRoom, barn: barnRoom, row: shrineRow, ROW_GODS, inn: gatelandsInn, cottage: gatelandsCottage, churchLen: n => +((n === 2 ? 2 : 3) * 4.8 + 1.6 + 5.6 - .5 + 7.2 - .9 - .02).toFixed(2), lot: gatelandsLot, mats: glMats, BAYS, bayPlan, bayWidth, baysFor } };
 })();
