@@ -348,6 +348,7 @@ const giver=`${lord.title} ${lord.name}`;
       else if(q.kind==='deliver'){const t=siteAnywhere(d.siteId);if(t)push(t.x,t.z,GREEN,d.who);}
       else if(q.kind==='errand'&&q.sub==='letter'){if(d.learned){const g=siteAnywhere(q.erSite);if(g)push(g.x,g.z,GREEN,`report to ${q.giver}`);}else if(q._npc&&q._npc.g)push(q._npc.g.position.x,q._npc.g.position.z,GREEN,d.who,'\u2709');else push(d.x,d.z,GREEN,d.who,'\u2709');} /* S1554 */
       else if(q.kind==='errand'&&q.sub==='name'){if(d.said){const g=siteAnywhere(q.erSite);if(g)push(g.x,g.z,GREEN,`report to ${q.giver}`);}else push(d.x,d.z,GREEN,d.gate,'\ud83d\udd6f');} /* S1600 */
+      else if(q.kind==='errand'&&q.sub==='prayer'){if(d.prayed){const g=siteAnywhere(q.erSite);if(g)push(g.x,g.z,GREEN,`report to ${q.giver}`);}else push(d.x,d.z,GREEN,d.shrine,'\u26e9');} /* S1817 */
       else if(q.kind==='errand'&&q.sub==='watch'){if(d.done){const g=siteAnywhere(q.erSite);if(g)push(g.x,g.z,GREEN,`report to ${q.giver}`);}else push(d.x,d.z,GREEN,`the ${d.fold}`,'\ud83c\udf19');} /* S1776 */
       else if(q.kind==='road'||q.kind==='cull')push(d.x,d.z,GREEN,q.kind==='road'?'the camp':plural(2,q.data.target),q.kind==='road'?'\u26fa':'\u2620');
       else if(q.kind==='duel'&&d.state!=='lost')push(d.x,d.z,GREEN,'the yard','\u2694');}
@@ -586,10 +587,10 @@ const giver=`${lord.title} ${lord.name}`;
   function shrinePrompt(){for(const S of SETTLE.values()){if(S.site.kind!=='shrine'||!S.altar)continue;if(Math.hypot(px-S.altar.x,pz-S.altar.z)<2.6)return `Press 'E' to pray to ${S.god?S.god.name+', '+S.god.en:'the altar'}`;}return null;}
   // S497 — on its god's own day (calDay, the calendar's week) a shrine's boon lasts twice as long, two days; the once a day stays
   function shrineInteract(){for(const S of SETTLE.values()){if(S.site.kind!=='shrine'||!S.altar)continue;if(Math.hypot(px-S.altar.x,pz-S.altar.z)>=2.6)continue;
-    const st=worldState.shrines||(worldState.shrines={});const abs=worldState.gameTimeAbsMinutes||0;if(st[S.site.id]&&abs-st[S.site.id]<1440){showMsg('The altar is quiet. Come back tomorrow.','#c8b880');return true;}
+    const st=worldState.shrines||(worldState.shrines={});const abs=worldState.gameTimeAbsMinutes||0;if(st[S.site.id]&&abs-st[S.site.id]<1440){const er=erPrayerAt(S);showMsg(er||'The altar is quiet. Come back tomorrow.',er?'#e8d8a0':'#c8b880');return true;} /* S1817 — a carried prayer is said on a quiet day too */
     st[S.site.id]=abs;PHP=effMaxHP();mana=effMaxMana();if(typeof stamina!=='undefined')stamina=effMaxStamina();updateHUD();
     const b=(S.god&&S.god.boon)||SHRINE_BOONS[Math.floor(seededRng('boon',S.site.id+':'+Math.floor(abs/1440))()*SHRINE_BOONS.length)]; /* S679 — the boon rolls on the shrine and the day (co-op rules), not Math.random */if(S.god&&!S.god.boon){const d=nearestSigilDoorFrom(S.site);if(d&&typeof bagAdd==='function'){bagAdd({name:`Rubbing: ${d.name}`,ico:'📜',type:'rubbing',seed:d.seed,gate:d.name,weight:.2,sellMult:.3,buyPrice:60,qty:1});showMsg(`You are restored. The Weaver leaves a rubbing on the altar: ${d.name}.`,'#e8d8a0');}else showMsg('You are restored.','#e8d8a0');}
-    else{const own=!!(S.god&&typeof isGodsDay==='function'&&isGodsDay(S.god.key,abs));if(typeof _applyBuff==='function')_applyBuff({type:b.type,mult:b.mult,rate:b.rate,duration:(own?3600:1800)*(cloakOn('pilgrim')?1.25:1)/* S552 — pilgrim's grey */,label:b.label,col:'#e8d8a0'});showMsg(own?`It is ${calDay(abs).day.name}. You are restored, and carry ${b.label} two days.`:`You are restored, and carry ${b.label} until tomorrow.`,'#e8d8a0');}if(typeof addLog==='function')addLog('⛩',`Prayed at ${S.site.name}: ${b.label}.`);altarVerse(S); /* S792 — the name under the altar, once a shrine */if(typeof sfxTone==='function')sfxTone(660,660,.6,.15);return true;}
+    else{const own=!!(S.god&&typeof isGodsDay==='function'&&isGodsDay(S.god.key,abs));if(typeof _applyBuff==='function')_applyBuff({type:b.type,mult:b.mult,rate:b.rate,duration:(own?3600:1800)*(cloakOn('pilgrim')?1.25:1)/* S552 — pilgrim's grey */,label:b.label,col:'#e8d8a0'});showMsg(own?`It is ${calDay(abs).day.name}. You are restored, and carry ${b.label} two days.`:`You are restored, and carry ${b.label} until tomorrow.`,'#e8d8a0');}if(typeof addLog==='function')addLog('⛩',`Prayed at ${S.site.name}: ${b.label}.`);altarVerse(S); /* S792 — the name under the altar, once a shrine */{const er=erPrayerAt(S);if(er)setTimeout(()=>showMsg(er,'#e8d8a0'),2400);} /* S1817 — the errand's prayer, after the boon's line */if(typeof sfxTone==='function')sfxTone(660,660,.6,.15);return true;}
     return false;}
   // S545 — the lair's look alone (the rock heap with its cave mouth, and the bones), on the builder's rolls in its order
   function lairGeoParts(r,cx,cz,H){const c=x=>new THREE.Color(x);const parts=[];
@@ -920,6 +921,7 @@ const giver=`${lord.title} ${lord.name}`;
     {const D=erDebtRoll(def,site,wk,R.length);if(D)return D;} /* S1677 — the debt, on its own stream */
     {const B=erBorrowRoll(def,site,wk,R.length);if(B)return B;} /* S1722 — the borrowed thing, on its own stream */
     {const W=erWatchRoll(def,site,wk,R.length);if(W)return W;} /* S1776 — the watch, on its own stream */
+    {const P=erPrayerRoll(def,site,wk,R.length);if(P)return P;} /* S1817 — the prayer, on its own stream */
     {const s=seededRng('errand-sub',site.id+':'+erTag(def)+':'+wk),kids=def.bio.kids>0,pref=def.bio.wish==='to hear from my daughter'||def.bio.worry==='my brother went for a soldier and never wrote'; /* S1554 — the sub on its own stream, so a fever's herb, count and date roll as before */
       if(pref||!kids||s()<.5){const L=erLetter(def,site,s,wk,R.length);if(L||!kids)return L;}}
     const n=2+Math.floor(r()*3),days=3+Math.floor(r()*3),H=erHerb(site,r),day=Math.floor((worldState.gameTimeAbsMinutes||0)/1440);
@@ -1064,6 +1066,7 @@ const giver=`${lord.title} ${lord.name}`;
     qTurnIn(q);addFavor(site,1);return ER_DONE[p];}
   function erLapse(q){if(!q||q.kind!=='errand'||q.turnedIn||!q.erDue||(worldState.gameTimeAbsMinutes||0)<q.erDue)return false;
     q.turnedIn=true;q.lapsed=true;q.erUnsaid=true;if(q.sub==='borrowed'){addFavor(q.erSite,-1);qJournal(q,'lapsed',`You kept the coin the ${q.data.thing} fetched, and ${q.giver} has heard it.`);return true;} /* S1722 */
+    if(q.sub==='prayer'){qJournal(q,'lapsed',`The week passed, and ${q.giver} carried the prayer another way.`);return true;} /* S1817 */
     qJournal(q,'lapsed',`The date passed, and the fever in ${q.giver}'s house broke without the ${q.data.herb}.`);return true;}
   // S1776 — errand 6, *The Watch*: a shepherd, a farmer or a beekeeper, or anyone in a village, camp or outpost, has lost a beast in
   // the night. Sit the night within 25 of the giver's door from 22:00 to the morning bell at 05:00 (read on the clock, never the frame):
@@ -1120,6 +1123,46 @@ const giver=`${lord.title} ${lord.name}`;
   function erWatchTurnIn(q,site,p){const d=q.data;if(q.lapsed){q.erUnsaid=false;return ER_WATCH.lapse[p](d);}if(!d.done)return ER_SHARED[p].notYet;
     qTurnIn(q);addFavor(site,1);if(p==='gatelander')bagAdd({name:'Loaf of Bread',ico:'🍞',type:'misc',weight:.4,buyPrice:2,sellMult:.3,qty:1});
     return (d.came?ER_WATCH.came:ER_WATCH.none)[p](d);}
+  // S1817 — errand 12, *A Prayer Carried* (Asked in Passing, the second run; approved 14 Oct 2026): a prayer for someone of the giver's
+  // house, said at the nearest shrine within 1,200 of the god of what is wanted. A Gatelander asks any of the six; a Markman only for
+  // someone at sea or down the mine (An Mhuir, An Chloch); an Aurennais only at the Weaver's shrine, whatever the want; an Old Blood
+  // giver answers the ask with one line and no errand. Want, god, kin and name on the errand's own stream. Prayed at any shrine of that
+  // god (shrineInteract), even on a day the altar is quiet; seven days to do it in. Two lines the draft left unwritten, added in its
+  // register: the Markman's hint for the mine, and the Markman's pay said as *{n} gold.* rather than a bare number.
+  const ER_PRAYER_WANT={
+    muir:{gatelander:o=>`my ${o.rel}, at sea these ten days`,markman:o=>`My ${o.rel}. At sea`,aurennais:o=>`my ${o.rel}, at sea these ten days and not yet returned`},
+    speir:{gatelander:o=>`my ${o.rel}, with the barley standing and the sky not settled`,aurennais:o=>`my ${o.rel}, whose harvest stands uncut under an unsettled sky`},
+    beithigh:{gatelander:o=>`my ${o.rel}, whose cow is near her calving and not easy`,aurennais:o=>`my ${o.rel}, whose herd is calving`},
+    cloch:{gatelander:o=>`my ${o.rel}, gone down the mine at the new moon`,markman:o=>`My ${o.rel}. Down the mine`,aurennais:o=>`my ${o.rel}, who has gone down the mine`},
+    teallach:{gatelander:o=>`my ${o.rel}, gone on the road this week`,aurennais:o=>`my ${o.rel}, who opens a shop this week`},
+    fiodoir:{gatelander:o=>`my ${o.rel}, near her time with her first`,aurennais:o=>`my ${o.rel}, who is near her time`}};
+  const ER_PRAYER={
+    hint:{gatelander:()=>"There's a prayer wants saying that I can't walk to say.",markman:o=>o.want==='cloch'?`My ${o.rel}'s down the mine. That's all.`:`My ${o.rel} is at sea. That's all.`,
+      aurennais:()=>"I have a petition, Master, for the Weaver's shrine, and no one to carry it."},
+    offer:{gatelander:o=>`For ${o.who}, that's ${o.wanted}. The shrine of ${o.god} is ${o.dir}${o.shrine===`Shrine of ${o.god}`?'':`, at ${erThe(o.shrine)}`}. A prayer said at home is a letter; a prayer said at the stone is a hand on the shoulder. Kneel there and say it's from me. That's all. ${o.n} gold, and mine too, next time I'm near one.`,
+      markman:o=>`${o.who}. ${o.wanted}. ${o.god}'s shrine. ${erCap(o.dir)}. Kneel there. Say it's from me. I'll not go; they'd see me. ${o.n} gold.`,
+      aurennais:o=>`For ${o.who}, Master: ${o.wanted}. The Weaver's shrine${o.shrine===`Shrine of ${o.god}`?'':` at ${erThe(o.shrine)}`}, ${o.dir} of here, is the oldest on this side of the hills, and a petition carried there is, I am told, more carefully attended to. ${o.n} gold for the carrying.`},
+    oldblood:"We do not send prayers. We go, or we do not.",
+    at:o=>`You pray for ${o.who}, as ${o.giver} asked.`,
+    done:{gatelander:"Did you. Did you, now. Then it's said, and at the stone, and that's all a body can do. Here. And the Weaver keep you that carried it.",
+      markman:"Good. Here. Don't tell anyone.",aurennais:"Then the petition was delivered, Master. I am obliged. Your fee."},
+    lapse:{gatelander:"I walked it myself in the end. My knees have opinions about it.",markman:"Went myself. At night. Nobody saw.",
+      aurennais:"The petition was carried by other hands, Master. The fee lapsed with the term."}};
+  function erThe(n){return /^Shrine of /.test(n)?'the '+n:n;}
+  function erShrineOf(site,key){let best=null,bd=1200;for(const t of sitesNearFixed(site,1200)){if(t.kind!=='shrine'||godOf(t).key!==key)continue;const d=Math.hypot(t.x-site.x,t.z-site.z);if(d<bd){bd=d;best=t;}}return best;}
+  function erPrayerRoll(def,site,wk,idx){const p=erPeople(def),s=seededRng('errand-prayer',site.id+':'+erTag(def)+':'+wk);if(s()>=.25)return null;
+    if(p==='oldblood')return {sub:'prayer',oldblood:true,week:wk,idx};
+    const keys=p==='markman'?['muir','cloch']:Object.keys(ER_PRAYER_WANT);for(let i=keys.length-1;i>0;i--){const j=Math.floor(s()*(i+1));[keys[i],keys[j]]=[keys[j],keys[i]];}
+    let want=null,god=null,sh=null;for(const k of keys){const g=p==='aurennais'?'fiodoir':k;const t=erShrineOf(site,g);if(t){want=k;god=g;sh=t;break;}}if(!sh)return null;
+    const fem=want==='fiodoir'||s()<.5,rel=fem?(s()<.5?'daughter':'sister'):(s()<.5?'son':'brother'),bank=NAMES[(PEOPLES[p]||{}).names]||NAMES.irish;
+    let who=pick(s,fem?bank.f:bank.m);if(who===def.name)who=pick(s,fem?bank.f:bank.m);
+    const G=GODS.find(x=>x.key===god),o={rel,want};
+    return {sub:'prayer',want,godKey:god,god:G.name,rel,fem,who,wanted:ER_PRAYER_WANT[want][p](o),shrine:sh.name,shrineId:sh.id,sx:sh.x,sz:sh.z,dir:compassWord(sh.x-site.x,sh.z-site.z),week:wk,idx};}
+  // the altar: an open prayer for this shrine's god is said here, the giver's first and yours second (shrineInteract calls it)
+  function erPrayerAt(S){if(!S||!S.god)return false;const q=qActive().find(q=>q.kind==='errand'&&q.sub==='prayer'&&!q.turnedIn&&!q.data.prayed&&q.data.godKey===S.god.key);if(!q)return false;
+    const d=q.data;d.prayed=true;d.at=S.site.name;const line=ER_PRAYER.at({who:d.who,giver:q.giver});if(typeof addLog==='function')addLog('🕯',line);qJournal(q,'ready',line);return line;}
+  function erPrayerTurnIn(q,site,p){if(q.lapsed||erLapse(q)){q.erUnsaid=false;return ER_PRAYER.lapse[p];}if(!q.data.prayed)return ER_SHARED[p].notYet;
+    qTurnIn(q);addFavor(site,1);return ER_PRAYER.done[p];}
   function errandAccept(def,site,E){const p=erPeople(def),tier=Math.max(1,worldTierAt(site.x,site.z)||1),base=Math.min(40,15+5*(tier-1));
     if(E.sub==='letter'){const q={id:erPre(def,site)+E.idx,kind:'errand',sub:'letter',giver:def.name,erSite:site.id,week:E.week,erPeople:p,
         title:`A letter for ${E.who}`,desc:`${def.name} of ${site.name} has written to ${E.who} at ${E.town} and had no answer. Carry the letter there and ask after ${erPro(E).her}.`,
@@ -1139,6 +1182,10 @@ const giver=`${lord.title} ${lord.name}`;
         title:`A night at the ${E.fold}`,desc:`Something comes at night to ${def.name}'s ${E.fold} at ${site.name}. Sit up by it from ten until the morning bell, and kill whatever comes.`,
         objective:`Keep the night at ${def.name}'s ${E.fold} in ${site.name}, ten until the morning bell, on ${calDateLine(start)}`,reward:E.n,
         data:{x:E.x,z:E.z,beast:E.beast,fond:E.fond,fold:E.fold,foe:E.foe,beasts:E.beasts,start,end:start+420,seen:null,outAt:null,settled:false,came:null,killed:false,done:false}});return ER_SHARED[p].yes;}
+    if(E.sub==='prayer'){const day=Math.floor((worldState.gameTimeAbsMinutes||0)/1440);qAdd({id:erPre(def,site)+E.idx,kind:'errand',sub:'prayer',giver:def.name,erSite:site.id,week:E.week,erDue:(day+7)*1440,erPeople:p,
+        title:`A prayer at ${erThe(E.shrine)}`,desc:`${def.name} of ${site.name} wants a prayer said for ${E.who} at ${erThe(E.shrine)}, the shrine of ${E.god}.`,
+        objective:`Pray for ${E.who} at ${erThe(E.shrine)}, ${E.dir} of ${site.name}`,reward:base,
+        data:{x:E.sx,z:E.sz,shrine:E.shrine,shrineId:E.shrineId,god:E.god,godKey:E.godKey,dir:E.dir,who:E.who,fem:E.fem,rel:E.rel,want:E.want,prayed:false,at:null}});return ER_SHARED[p].yes;} /* S1817 */
     if(E.sub==='borrowed'){const id=erPre(def,site)+E.idx,br=seededRng('errand-why',id),why=br()<.5?'need':'sold',n=Math.min(30,8+3*(tier-1)+Math.floor(br()*6)); /* S1722 — why, and what it fetched, on the errand's id */
       qAdd({id,kind:'errand',sub:'borrowed',giver:def.name,erSite:site.id,week:E.week,erPeople:p,
         title:`${def.name}’s ${E.thing}`,desc:`${def.name} of ${site.name} lent ${E.who} of ${E.town} the ${E.thing}, and has not had it back. Ask for it.`,
@@ -1155,6 +1202,7 @@ const giver=`${lord.title} ${lord.name}`;
     if(q.sub==='debt'){const c=q.data.choice;if(!c)return ER_SHARED[p].notYet;if(q._npc){duelRemoveNpc(q._npc);q._npc=null;}
       if(c==='keep'){q.reward=0;qTurnIn(q);addFavor(site,-1);return ER_DEBT.keep[p];}qTurnIn(q);addFavor(site,1);return ER_DONE[p];}
     if(q.sub==='borrowed')return erBorrowTurnIn(q,site,p); /* S1722 */
+    if(q.sub==='prayer')return erPrayerTurnIn(q,site,p); /* S1817 */
     if(q.sub==='watch')return erWatchTurnIn(q,site,p); /* S1776 */ /* S1677 — the debt: a fifth, paid as if collected either way */
     if(q.lapsed||erLapse(q)){q.erUnsaid=false;return ER_FEVER.lapse[p];}
     const isH=b=>b.type==='herb'&&b.name===q.data.herb;if(bagCount(isH)<q.data.n)return ER_SHARED[p].notYet;
@@ -1187,6 +1235,8 @@ const giver=`${lord.title} ${lord.name}`;
   function erNameAsk(def,site,E){const p=erPeople(def),label='Can I do anything for you?';if(E.oldblood)return {cat:'you',label,response:ER_NAME.oldblood};
     return {cat:'you',label,response:ER_NAME.offer[p](erPro(E)),follow:[{label:'I’ll do it.',fn:()=>erRecs(def,site).some(q=>!q.turnedIn)?ER_SHARED[p].notYet:errandAccept(def,site,E)},{label:'Not now.',response:ER_SHARED[p].no}]};}
   function errandAsk(def,site){const E=errandFor(def,site);if(!E)return null;const p=erPeople(def);if(E.sub==='name')return erNameAsk(def,site,E); /* S1600 */
+    if(E.sub==='prayer'){if(E.oldblood)return {cat:'you',label:'Can I do anything for you?',response:ER_PRAYER.oldblood}; /* S1817 */
+      return {cat:'you',label:'Who’s the prayer for?',response:ER_PRAYER.offer[p](Object.assign({},E,{n:Math.min(40,15+5*(Math.max(1,worldTierAt(site.x,site.z)||1)-1))})),follow:[{label:'I’ll do it.',fn:()=>errandFor(def,site)?errandAccept(def,site,E):ER_SHARED[p].no},{label:'Not now.',response:ER_SHARED[p].no}]};}
     if(E.sub==='watch')return {cat:'you',label:'What’s coming at night?',response:ER_WATCH.offer[p](E),follow:[{label:'I’ll do it.',fn:()=>errandFor(def,site)?errandAccept(def,site,E):ER_SHARED[p].no},{label:'Not now.',response:ER_SHARED[p].no}]}; /* S1776 */
     const L=E.sub==='letter',D=E.sub==='debt',B=E.sub==='borrowed',label=B?'Something of yours gone missing?':D?'Who owes you?':L?'You’re waiting on word from someone?':'Who’s sick?',said=B?ER_BORROW.offer[p](E):D?ER_DEBT.offer[p](E):L?ER_LETTER.offer[p](erPro(E)):ER_FEVER.offer[p](E);
     return {cat:'you',label,response:said,follow:[{label:'I’ll do it.',fn:()=>errandFor(def,site)?errandAccept(def,site,E):ER_SHARED[p].no},{label:'Not now.',response:ER_SHARED[p].no}]};}
@@ -1194,13 +1244,13 @@ const giver=`${lord.title} ${lord.name}`;
   // the top level: *About that errand.* while one is open, or once more to hear how a lapsed one ended; the letter's own lines
   function errandTopics(def,site){const L=erLetterTopics(def,site);if(!erGiver(def,site))return L;const q=erRecs(def,site).find(q=>!q.turnedIn||(q.lapsed&&q.erUnsaid));
     if(!q||(q.sub==='letter'&&q.data.learned))return L;
-    return [{label:q.sub==='name'&&q.data.said?'I said the name.':q.sub==='debt'&&q.data.choice==='keep'?'They haven’t got it.':q.sub==='borrowed'&&!q.lapsed?erBorrowLabel(q):q.sub==='watch'&&!q.lapsed&&q.data.done?(q.data.came?`I sat the night. ${q.data.beasts}.`:'I sat the night. Nothing came.'):'About that errand.',quest:true,fn:()=>errandTurnIn(q,site)},...L];}
+    return [{label:q.sub==='name'&&q.data.said?'I said the name.':q.sub==='debt'&&q.data.choice==='keep'?'They haven’t got it.':q.sub==='borrowed'&&!q.lapsed?erBorrowLabel(q):q.sub==='prayer'&&!q.lapsed&&q.data.prayed?`I prayed at ${erThe(q.data.at)}.`:q.sub==='watch'&&!q.lapsed&&q.data.done?(q.data.came?`I sat the night. ${q.data.beasts}.`:'I sat the night. Nothing came.'):'About that errand.',quest:true,fn:()=>errandTurnIn(q,site)},...L];}
   // the greeting: the hint after First Words while an errand is on offer (from the second meeting), or for a week after a lapse the colder line;
   // after a letter lied about, from the next game-week, one week in two the waiting line, until the giver writes again
   function errandGreet(def,site){if(!erGiver(def,site))return null;const met=metCount(metKey(def,site));const line=firstWords(def,site);
     const now=worldState.gameTimeAbsMinutes||0,R=erRecs(def,site),cold=met>0&&R.find(q=>q.lapsed&&now<q.erDue+1440*7);if(cold)return cold.sub==='borrowed'?ER_BORROW.kept[erPeople(def)](erPro(cold.data)):ER_FEVER.cold[erPeople(def)];
     {const bq=met>0&&R.find(q=>q.sub==='borrowed'&&q.turnedIn&&q.data.choice==='month'&&now>=q.data.at+30*1440&&now<q.data.at+37*1440);if(bq)return line+' '+ER_BORROW.back[erPeople(def)](erPro(bq.data));} /* S1722 — the month out, the thing walked home: a week of the line */
-    const E=met>0&&errandFor(def,site);if(E){if(E.sub==='name')return E.oldblood?line:line+' '+ER_NAME.hint[erPeople(def)](erPro(E));if(E.sub==='borrowed')return line+' '+ER_BORROW.hint[erPeople(def)](E);if(E.sub==='watch')return line+' '+ER_WATCH.hint[erPeople(def)](E);return line+' '+(E.sub==='debt'?ER_DEBT.hint:E.sub==='letter'?ER_LETTER.hint:ER_FEVER.hint)[erPeople(def)];} /* S1600 — the name's hint; none for the Old Blood */
+    const E=met>0&&errandFor(def,site);if(E){if(E.sub==='name')return E.oldblood?line:line+' '+ER_NAME.hint[erPeople(def)](erPro(E));if(E.sub==='borrowed')return line+' '+ER_BORROW.hint[erPeople(def)](E);if(E.sub==='watch')return line+' '+ER_WATCH.hint[erPeople(def)](E);if(E.sub==='prayer')return E.oldblood?line:line+' '+ER_PRAYER.hint[erPeople(def)](E); /* S1817 */return line+' '+(E.sub==='debt'?ER_DEBT.hint:E.sub==='letter'?ER_LETTER.hint:ER_FEVER.hint)[erPeople(def)];} /* S1600 — the name's hint; none for the Old Blood */
     const lq=R.filter(q=>q.sub==='letter').pop(),wk=erWeek();
     if(met>0&&lq&&lq.turnedIn&&lq.data.told==='lie'&&wk>lq.data.toldWeek&&seededRng('errand-wait',erPre(def,site)+wk)()<.5)return ER_LETTER.wait[erPeople(def)](erPro(lq.data));
     return line;}
