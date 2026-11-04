@@ -3400,6 +3400,64 @@ function buildLantern(G, body, byName, meshes, root, grip) {
   let tris = 0; ln.traverse(m => { if (m.isMesh) tris += m.geometry.index ? m.geometry.index.count / 3 : m.geometry.attributes.position.count / 3; });
   return { mesh: ln, stats: { lit: D.lanternLit !== false, inside: T.n, tested: T.tested, clear: +T.clear.toFixed(4), lift: +lift.toFixed(2), fist, handPts: handN, foot: +foot.toFixed(3), gap: grip.gap, thumbIn: grip.thumbIn, curl: grip.curl, gripPts: grip.n, tris } };
 }
+// ── the clay pipe (Session 1816, L2; OG-069's Edna, who smokes one) ──
+// A short white clay pipe, the cutty of a Gatelands hearth, held in the teeth at the left corner of the mouth and carried by the head.
+// Its numbers, in metres: a stem 9 cm long from the mouthpiece, 3.5 mm thick at the bowl and 2.6 at the lips, sagging a few millimetres
+// over its length; a bowl 3.6 cm tall, 2 cm across its rim and 1.4 at its foot, with a little heel under it, its inside burnt dark and a
+// dull ember in it (D.pipeLit unless false). The mouthpiece sits 1.2 cm inside the corner of the lips, where the face's own joints put
+// it (the upper lip's corner, oris03, and the lower's, oris07), so it fits every face. The stem goes out forward, down and a little out;
+// if anything worn (the body, the hair, a collar, a cape's brooch) comes within 2 mm of the stem past the lips or of the bowl, it is
+// turned out from the face and up a little at a time (.05 rad out and .02 up a step) until nothing does
+const PIPE = { stem: .09, rIn: .0013, r0: .0026, r1: .0035, sag: .004, bowlH: .036, bowlR: .01, footR: .007, wall: .0018, inside: .012, clr: .002 };
+function pipeParts(D, dir, side) {
+  const K = PIPE, parts = [], lit = D.pipeLit !== false;
+  const clay = new THREE.MeshStandardMaterial({ color: sRGB(...D.pipe), roughness: .62 }), burnt = new THREE.MeshStandardMaterial({ color: sRGB(.14, .1, .08), roughness: .9, side: THREE.DoubleSide });
+  const ember = new THREE.MeshStandardMaterial({ color: sRGB(.2, .14, .1), emissive: lit ? sRGB(.9, .32, .08) : new THREE.Color(0), emissiveIntensity: lit ? .6 : 0, roughness: .9 });
+  const add = (g, m, name) => { const o = new THREE.Mesh(g, m); o.name = name; parts.push(o); return o; };
+  // the stem's curve: from the mouthpiece (the frame's origin) along dir, sagging under its own length, then up a touch into the bowl
+  const down = new THREE.Vector3(0, -1, 0), pts = []; for (let k = 0; k <= 12; k++) { const s = k / 12; pts.push(dir.clone().multiplyScalar(K.stem * s).addScaledVector(down, K.sag * Math.sin(Math.PI * s * .9))); }
+  const curve = new THREE.CatmullRomCurve3(pts), tube = new THREE.TubeGeometry(curve, 24, 1, 8, false), pa = tube.attributes.position, uv = tube.attributes.uv, c = new THREE.Vector3(), v = new THREE.Vector3();
+  // the stem tapers from the bowl to the lips: each ring's points pulled in to its own radius round the curve
+  for (let i = 0; i < pa.count; i++) { const s = uv.getX(i); curve.getPointAt(s, c); v.fromBufferAttribute(pa, i).sub(c); pa.setXYZ(i, ...c.clone().addScaledVector(v, K.r0 + (K.r1 - K.r0) * s).toArray()); }
+  tube.computeVertexNormals(); add(tube, clay, 'pipeStem');
+  // the mouthpiece's end, a round cap
+  const tip = add(new THREE.SphereGeometry(K.r0, 8, 6), clay, 'pipeTip');
+  // the bowl: a lathe from the heel up, its rim level, leaning forward a little from the stem's end, the stem meeting it near its foot
+  const E = curve.getPointAt(1), out = new THREE.Vector3(dir.x, 0, dir.z).normalize(), prof = [];
+  prof.push(new THREE.Vector2(0, -.004), new THREE.Vector2(K.footR * .5, -.004), new THREE.Vector2(K.footR, 0));
+  for (let k = 1; k <= 8; k++) { const t = k / 8; prof.push(new THREE.Vector2(K.footR + (K.bowlR - K.footR) * Math.sin(t * Math.PI / 2), K.bowlH * t)); }
+  prof.push(new THREE.Vector2(K.bowlR - K.wall, K.bowlH)); for (let k = 7; k >= 2; k--) { const t = k / 8; prof.push(new THREE.Vector2(Math.max(.002, K.footR + (K.bowlR - K.footR) * Math.sin(t * Math.PI / 2) - K.wall), K.bowlH * t)); }
+  const bowl = add(new THREE.LatheGeometry(prof, 24), clay, 'pipeBowl'); bowl.geometry.computeVertexNormals();
+  const inner = add(new THREE.CylinderGeometry(K.bowlR - K.wall - .0003, K.footR - K.wall, K.bowlH * .78, 16, 1, true), burnt, 'pipeChar');
+  const coal = add(new THREE.CircleGeometry(K.bowlR - K.wall - .0006, 16), ember, 'pipeEmber'); coal.rotation.x = -Math.PI / 2;
+  // the bowl's frame: its axis up, leaned .22 away from the mouth; its foot just past the stem's end, so the stem runs into its side
+  const axis = new THREE.Vector3(0, 1, 0).addScaledVector(out, .22).normalize(), qb = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), axis), base = E.clone().addScaledVector(out, K.footR * .6).addScaledVector(axis, -.006);
+  bowl.quaternion.copy(qb); bowl.position.copy(base);
+  inner.quaternion.copy(qb); inner.position.copy(base).addScaledVector(axis, K.bowlH * .61);
+  coal.quaternion.premultiply(qb); coal.position.copy(base).addScaledVector(axis, K.bowlH * .78);
+  // the points the clearance reads: along the stem past the lips (from the mouthpiece's inside depth plus 6 mm), and round the bowl
+  const probes = []; for (let k = 0; k <= 40; k++) { const s = k / 40; if (s * K.stem < K.inside + .006) continue; probes.push({ p: curve.getPointAt(s), r: K.r0 + (K.r1 - K.r0) * s }); }
+  for (let k = 0; k <= 8; k++) probes.push({ p: base.clone().addScaledVector(axis, K.bowlH * k / 8), r: K.footR + (K.bowlR - K.footR) * Math.sin(k / 8 * Math.PI / 2) });
+  return { parts, probes, side };
+}
+function buildPipe(G, body, byName, meshes, root, heads, jp, bones) {
+  const D = G.dress, K = PIPE, side = D.pipeSide === 'R' ? 'R' : 'L', sg = side === 'R' ? -1 : 1, head = byName['head'], tail = n => jp(bones.find(b => b.name === n).tail);
+  // the corner of the mouth, between the lips' corners, and the mouthpiece the stem's length inside it along the stem
+  const C = tail('oris03.' + side).add(tail('oris07.' + side)).multiplyScalar(.5), clouds = wornClouds(body, meshes, root, true), R0 = PACK.rest;
+  let turn = 0, pp, grp, T;
+  const test = () => { root.updateMatrixWorld(true); const W = pp.probes.map(q => ({ p: q.p.clone().applyMatrix4(grp.matrixWorld), r: q.r })), bb = new THREE.Box3(); for (const q of W) bb.expandByPoint(q.p); bb.expandByScalar(.03); let n = 0, clear = 1;
+    eachPoint(clouds, (x, y, z) => { if (x < bb.min.x || x > bb.max.x || y < bb.min.y || y > bb.max.y || z < bb.min.z || z > bb.max.z) return; for (const q of W) { const d = Math.hypot(x - q.p.x, y - q.p.y, z - q.p.z) - q.r; if (d < clear) clear = d; if (d < K.clr) { n++; break; } } });
+    return { n, clear }; };
+  for (;;) { const dir = new THREE.Vector3(sg * (.3 + turn), -.32 + turn * .4, .9).normalize();
+    if (grp) { head.remove(grp); grp.traverse(m => m.geometry && m.geometry.dispose()); }
+    pp = pipeParts(D, dir, side); grp = new THREE.Group(); grp.name = 'pipe'; for (const m of pp.parts) { m.castShadow = true; m.receiveShadow = true; m.userData.shield = true; grp.add(m); }
+    // in the head bone's own frame, which at rest is the body's (as the eyes are set)
+    grp.position.copy(C).sub(heads['head']).addScaledVector(dir, -K.inside); head.add(grp); T = test(); if (!T.n || turn >= .5) break; turn += .05; }
+  let tris = 0; grp.traverse(m => { if (m.isMesh) tris += m.geometry.index ? m.geometry.index.count / 3 : m.geometry.attributes.position.count / 3; });
+  // the mouthpiece inside the lips: the tip nearer the head's middle than the corner is
+  const hc = heads['head'], tipIn = grp.position.clone().add(hc).distanceTo(new THREE.Vector3(hc.x, C.y, hc.z)) < C.distanceTo(new THREE.Vector3(hc.x, C.y, hc.z));
+  return { mesh: grp, stats: { side, lit: D.pipeLit !== false, inside: T.n, clear: +T.clear.toFixed(4), turn: +turn.toFixed(2), tipIn, corner: C.toArray().map(v => +v.toFixed(4)), tris } };
+}
 // the sash belt's promises (Session 1010), read on the posed meshes round the waist's own axis, at 15 points on every triangle: in 72
 // angles and 1 cm rows, nothing worn under it (the tunic, a skirt, a bodice, mail, the body) stands out past its inside, no point of
 // an arm is within it, and a leather belt worn over it lies outside it
@@ -4044,6 +4102,8 @@ function* makePersonSteps(G, o = {}) {
   // a lantern in the same fist (Session 1809), on the basket's grip; it takes the fist from a basket
   let basketStats = null, lanternStats = null; if (basketGrip && D.lantern) lanternStats = { ...buildLantern(G, body, byName, meshes, root, basketGrip).stats, wrist: basketWrist };
   else if (basketGrip) basketStats = { ...buildBasket(G, body, byName, meshes, root, basketGrip).stats, wrist: basketWrist };
+  // the clay pipe in the teeth (Session 1816), after everything worn, so it is turned clear of all of it; not under a helm, a raised hood or a veil
+  let pipeStats = null; if (D.pipe && !D.helm && !hoodUpOn(D) && !veilOn(D) && !(D.tier && tierHelmOn(D))) pipeStats = buildPipe(G, body, byName, meshes, root, heads, jp, ix.bones).stats;
   // the wheeled chair (Session 1106), last, built to the seated body and everything on it
   yield;
   let chairSt = null; if (D.chair) { const Ch = buildChair(G, body, byName, meshes, root); chairSt = { ...Ch.stats, armLift: +seatArms.toFixed(2), ground: Ch.ground };
@@ -4056,7 +4116,7 @@ function* makePersonSteps(G, o = {}) {
   yield;
   let tierFit = null; if (D.tier && (tierHelmOn(D) || hoodUpOn(D) && !D.helm)) { root.updateMatrixWorld(true); const F = fitHead({ root, skeleton, byName, meshes }), h = D.helm ? tierHelm(D.tier, F, { bold: true, closed: true }) : hoodDress(D.tier, F, { bold: true });
     if (h) { byName['head'].add(h.group); tierFit = { F, h }; const st = { tier: D.tier, tris: h.tris, draws: h.draws, gap: h.gap, size: h.size, above: h.top }; if (D.helm) helmStats = st; else hoodStats = { ...(hoodStats || {}), dress: st }; } }
-  root.position.y = -(chairSt ? chairSt.ground : sandalSt ? sandalSt.ground : minY); return { root, skeleton, byName, meshes, coldLook: { eyes: G.eyes, skin: G.skin }, buttons: buttonStats, hair: hairStats, cloak: cloakStats, tabard: tabardStats, sash: sashStats, shoulderWrap: shoulderWrapStats, wrap: wrapStats, veil: veilStats, wrapTail: tailStats, earrings: earStats, circlet: circletStats, eyepatch: patchStats, necklace: neckStats, beltCoins: beltCoinStats, beltCharms: charmStats, sandals: sandalSt, sashBelt: sashBeltSt, cord: cordStats, lacing: laceStats, skirtHands, hood: hoodStats, brows: browStats, helm: helmStats, mail: mailSt, shield: shieldStats, spear: spearStats, crossbow: crossbowStats, staff: staffStats, basket: basketStats, lantern: lanternStats, legWraps: legWrapSt, chair: chairSt, coat: coatSt, coatHood: coatHoodSt, tierFit };
+  root.position.y = -(chairSt ? chairSt.ground : sandalSt ? sandalSt.ground : minY); return { root, skeleton, byName, meshes, coldLook: { eyes: G.eyes, skin: G.skin }, buttons: buttonStats, hair: hairStats, cloak: cloakStats, tabard: tabardStats, sash: sashStats, shoulderWrap: shoulderWrapStats, wrap: wrapStats, veil: veilStats, wrapTail: tailStats, earrings: earStats, circlet: circletStats, eyepatch: patchStats, necklace: neckStats, beltCoins: beltCoinStats, beltCharms: charmStats, sandals: sandalSt, sashBelt: sashBeltSt, cord: cordStats, lacing: laceStats, skirtHands, hood: hoodStats, brows: browStats, helm: helmStats, mail: mailSt, shield: shieldStats, spear: spearStats, crossbow: crossbowStats, staff: staffStats, basket: basketStats, lantern: lanternStats, pipe: pipeStats, legWraps: legWrapSt, chair: chairSt, coat: coatSt, coatHood: coatHoodSt, tierFit };
 }
 
 // palettes from OG-025: undyed wool, browns, slate blue, madder red; furs; ash-blond to red hair; pale to weathered skin
@@ -4079,7 +4139,7 @@ function markGenome(rnd, g, o = {}) {
 const hex = c => '#' + c.map(v => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, '0')).join('');
 const unhex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
 const r3 = v => Math.round(v * 1000) / 1000, round = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, r3(v)]));
-const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'sash', 'sashBorder', 'wrap', 'wrapBorder', 'earrings', 'necklace', 'beltCoins', 'sashBelt', 'sandals', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'legWraps', 'scarfPrint', 'basket', 'basketCloth', 'amulet', 'charms', 'dots', 'shoulderWrap', 'eyepatch', 'staff', 'chair', 'waistcoat', 'tartan', 'tartanLine', 'coat', 'coatFur', 'bands', 'bandsMotif', 'robeStripe', 'robeStripeLine', 'circlet', 'circletStone', 'gownBorder', 'burnousStripe', 'veil', 'vambrace', 'gloves', 'greaves', 'plateGlow', 'cowl', 'lantern'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, sashSide: 'L', sashPrint: true, sashKnot: true, turban: false, scarf: false, wrapTail: null, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', scales: false, spearHead: null, crossbowMake: null, amuletSide: 'L', shoulderWrapSide: 'L', eyepatchSide: 'L', staffMake: null, dotsStyle: 'powder', waistcoatLeather: false, coatLen: .75, coatHood: null, tier: null, burnous: false, plate: null, vambraceKind: 'sheet', glovesKind: 'leather', greavesKind: 'sheet', cuisses: false, plateSig: null };
+const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'sash', 'sashBorder', 'wrap', 'wrapBorder', 'earrings', 'necklace', 'beltCoins', 'sashBelt', 'sandals', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'legWraps', 'scarfPrint', 'basket', 'basketCloth', 'amulet', 'charms', 'dots', 'shoulderWrap', 'eyepatch', 'staff', 'chair', 'waistcoat', 'tartan', 'tartanLine', 'coat', 'coatFur', 'bands', 'bandsMotif', 'robeStripe', 'robeStripeLine', 'circlet', 'circletStone', 'gownBorder', 'burnousStripe', 'veil', 'vambrace', 'gloves', 'greaves', 'plateGlow', 'cowl', 'lantern', 'pipe'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, sashSide: 'L', sashPrint: true, sashKnot: true, turban: false, scarf: false, wrapTail: null, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', scales: false, spearHead: null, crossbowMake: null, amuletSide: 'L', shoulderWrapSide: 'L', eyepatchSide: 'L', staffMake: null, dotsStyle: 'powder', waistcoatLeather: false, coatLen: .75, coatHood: null, tier: null, burnous: false, plate: null, vambraceKind: 'sheet', glovesKind: 'leather', greavesKind: 'sheet', cuisses: false, plateSig: null };
 function toSaved(G) {
   const D = G.dress || {}, dress = {}; for (const k of GARMENTS) if (D[k]) dress[k] = hex(D[k]); dress.skirt = D.skirt || null; for (const [k, d] of Object.entries(DRESS_FLAGS)) if (D[k] != null && (typeof D[k] === 'number' ? r3(D[k]) : D[k]) !== d) dress[k] = typeof D[k] === 'number' ? r3(D[k]) : D[k];
   const style = G.hair?.style ?? ((G.hairLen ?? .3) < .45 ? 'short' : 'loose');
@@ -4246,7 +4306,7 @@ function peopleGenome(rnd, people, g, o = {}) {
   if (P.gown && sx === 'f' && D.skirt === 'long' && !D.apron && !D.mail && !D.tabard) { const rg = seeded(String(o.seed ?? 'person') + '|gown'); if (rg() < P.gown) { const k = rg(), c = k < .5 ? [.6, .14, .1] : k < .75 ? [.78, .55, .16] : [.1, .38, .38];
     D.tunic = c; D.skirtColor = c; D.cuffs = null; D.cuffBand = null; D.gownBorder = c[0] === .78 && rg() < .4 ? [.5, .1, .08] : [.85, .66, .3]; } }
   if (o.child) { const rc = seeded(String(o.seed ?? 'person') + '|child'), ta = rc(); G.age = .1875 + .09 * ta; G.muscle = .3 + .15 * rc(); G.weight = .3 + .15 * rc(); G.beard = 0; G.scar = null;
-    for (const k of ['helm', 'mail', 'scales', 'plate', 'tabard', 'tabardTrim', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'eyepatch', 'staff', 'staffMake', 'lantern', 'tier']) D[k] = DRESS_FLAGS[k] ?? null;
+    for (const k of ['helm', 'mail', 'scales', 'plate', 'tabard', 'tabardTrim', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'eyepatch', 'staff', 'staffMake', 'lantern', 'pipe', 'tier']) D[k] = DRESS_FLAGS[k] ?? null;
     if (G.marks != null) G.marks = Math.min(G.marks, .06 * rc()); const M = P.body[sx].metres, f = .8 + .12 * ta + .03 * (rc() - .5); G.height = heightFor(G, (M[0] + M[1]) / 2 * f);
     // a cloak or cape cut to the child (its length in buildCloak is in metres: .4 + the length, or a cape's .24 + .14 of it), so a long one does not pool on the ground
     if (D.cloak) D.cloakLen = Math.max(0, D.cape ? ((.24 + .14 * (D.cloakLen ?? .8)) * f - .24) / .14 : (.4 + (D.cloakLen ?? .8)) * f - .4); }
@@ -4259,7 +4319,8 @@ function rollGenome(seed, o = {}) { const rnd = seeded(seed), g = o.g ?? (rnd() 
 // brows stay the builder's own and only what the sheet fixes is set. The canon over the sheet: Bram grey (thirty years at the forge;
 // OG-057 has him grey where OG-069 draws him dark), Niamh and Áine Gatelanders, Corwin's people never said (Michael's 11 C: he keeps
 // the people the game gives him). `dress` replaces the roll's whole wardrobe, so nothing rolled (a tartan, leg wraps) rides over it.
-// What the kit has no piece for yet is owed: Bram's rolled sleeves and hammer, Edna's clay pipe, Corwin's open coat and tankard.
+// What the kit has no piece for yet is owed: Bram's rolled sleeves and hammer, Corwin's open coat and tankard. Edna's clay pipe is hers
+// since Session 1816 (OG-069): a short white cutty in the left corner of her mouth, its ember lit.
 // Niamh's lantern is hers since Session 1809 (OG-069, OG-057): a horn lantern of blackened iron in her right fist, lit.
 // Edna's and Áine's sticks (OG-069), held back in Session 1792 while a short cape was dragged out over the staff's forearm, are theirs again
 // since Session 1798 (the cape opens on the staff's side): hazel, the Gatelanders' make.
@@ -4271,7 +4332,7 @@ const CAST = {
   // white hair in a bun, a dark green shawl (the short cape) over brown and madder layers, the long skirt
   Edna: { people: 'gatelander', g: 0, age: .85, muscle: .3, weight: .5, metres: 1.6, hairCol: [.88, .87, .85], hair: { style: 'bun', len: .7 }, pose: { stoop: .45 },
     dress: { tunic: [.42, .3, .2], skirtColor: [.45, .16, .12], boots: [.3, .2, .13], belt: [.36, .25, .16], cuffs: [.3, .36, .22],
-      cloak: [.17, .25, .16], cape: true, cloakLen: 1, brooch: [.62, .47, .22], cloakHem: [.62, .47, .22], staff: [.36, .26, .16], staffMake: 'hazel' } },
+      cloak: [.17, .25, .16], cape: true, cloakLen: 1, brooch: [.62, .47, .22], cloakHem: [.62, .47, .22], staff: [.36, .26, .16], staffMake: 'hazel', pipe: [.84, .81, .74] } },
   // lean, dark curls worn long, clean-shaven for the grin; the sheet's red-and-gold as a madder tunic under the ochre-gold waistcoat
   // (the kit's coat is the closed winter coat, which on him read as a robe: an open coat over the waistcoat is owed), good boots
   Corwin: { people: 'gatelander', g: 1, age: .6, muscle: .5, weight: .32, metres: 1.8, hairCol: [.16, .11, .08], hair: { style: 'short', len: .6 }, beard: 0,
