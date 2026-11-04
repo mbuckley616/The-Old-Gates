@@ -1436,8 +1436,11 @@
   function ballistaHand(o){if(!o||!o.crew)return null;CAM.getWorldDirection(_laDir);const O=CAM.position;let best=null,bd=1e9;
     for(const e of o.crew){if(e.dead||!(e.hp>0))continue;const y=e.mesh?e.mesh.position.y:DECK_Y;_baA.set(e.x,y,e.z);_baB.set(e.x,y+BALLISTA.handH,e.z);
       const d=Math.hypot(e.x-O.x,e.z-O.z);if(d<bd&&_raySegHit(O,_laDir,_baA,_baB,BALLISTA.handR,0,BALLISTA.range+30)){bd=d;best=e;}}return best;}
+  // S1844 — Michael's B on #1136: the arrow is scaled by the water's tier as his health is (enemyHpScale: ×1, 1.75, 2.5 at tiers 1–3),
+  // read from the tier he was built at, so the answer's counts on #1120 hold in every water: 20–30, 35–53, 50–75, then Bow's multiplier.
+  function ballistaHandTierK(e){const t=e&&e.tier!=null?e.tier:(typeof worldTierAt==='function'&&e?worldTierAt(e.x,e.z):1);return enemyHpScale(t);}
   function ballistaHandDmg(e){const r=BALLISTA.hand[0]+Math.floor(foeRand(e)*(BALLISTA.hand[1]-BALLISTA.hand[0]+1)),k=e.resist&&typeof e.resist.pierce==='number'?e.resist.pierce:1;
-    return challengeDealt(Math.max(1,Math.round(r*skillMult('bow')*k)));}
+    return challengeDealt(Math.max(1,Math.round(r*ballistaHandTierK(e)*skillMult('bow')*k)));}
   // why the ballista cannot loose now, or null
   function ballistaWhy(){if(!shipFitted('ballista'))return 'She has no ballista.';if(!SHIP.sailing)return 'The ballista is worked from the helm.';
     if(!boltsAboard())return 'No bolts in her hold.';if(BOLTS.fire&&typeof pitchCount==='function'&&pitchCount()<1)return 'A fire bolt needs a pitch, and you have none.';if(ballistaWait()>0)return 'The ballista is still winding.';if(!ballistaBears())return 'Nothing bears: bring her bow onto the black sail.';return null;}
