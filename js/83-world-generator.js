@@ -2642,7 +2642,8 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   // S1807 (#1083 A) — where the escape tunnel comes out: the cave's frame turned into the world's as the mouth is (+z the land, the mouth
   // at the origin), 1.5 m past the tunnel's end; if that is sea or solid, the nearest dry open ground along its line out to 20 m either way,
   // else the mouth's own spot. Facing out along the tunnel.
-  function caveEscapeOut(C,T){const co=Math.cos(C.ry),s_=Math.sin(C.ry),E=T.escape,W=(fx,fz)=>[C.x+fx*co+fz*s_,C.z-fx*s_+fz*co],yaw=Math.atan2(-co,s_);
+  function caveEscapeOut(C,T){if(C._esc&&C._esc.out)return C._esc.out; /* S1811 — before the bolt-hole's face, facing out of it */
+    const co=Math.cos(C.ry),s_=Math.sin(C.ry),E=T.escape,W=(fx,fz)=>[C.x+fx*co+fz*s_,C.z-fx*s_+fz*co],yaw=Math.atan2(-co,s_);
     for(const d of [1.5,3,5,8,12,16,20,0,-1.5,-3]){const [x,z]=W(E.xPlane+d,E.z);if(worldH(x,z)>SEA_Y+.5&&!solidAt(x,z))return {x:+x.toFixed(2),z:+z.toFixed(2),yaw};}
     return {x:C.out.x,z:C.out.z,yaw:C.out.yaw};}
   function limeCavePrompt(){const t=limeCaveAt();if(!t)return null;const gr=t.up?!!(currentHouse&&currentHouse.grotto):!!(t.C&&t.C.house&&t.C.house.grotto); /* S1787 — the grotto's stair */
