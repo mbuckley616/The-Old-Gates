@@ -188,7 +188,7 @@
     // settlements in this cell go first
     c.sites.forEach(t=>{if(SETTLE.has(t.id))disposeSettlement(t.id);});
     if(c._cave&&c._cave.house){const i=ZONES.world.houses.indexOf(c._cave.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1768 — the cave's record */if(c._cove&&c._cove.house){const i=ZONES.world.houses.indexOf(c._cove.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1773 — the sea cave's */if(c._grotto&&c._grotto.house){const i=ZONES.world.houses.indexOf(c._grotto.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1787 — the grotto's */if(c._mine&&c._mine.house){const i=ZONES.world.houses.indexOf(c._mine.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1790 — the mine's */
-    if(c._tunnel&&c._tunnel.house){const i=ZONES.world.houses.indexOf(c._tunnel.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1827 — the tunnel's */
+    if(c._tunnel&&c._tunnel.house){const i=ZONES.world.houses.indexOf(c._tunnel.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1828 — the tunnel's */
     (c._lone||[]).forEach(F=>{if(SETTLE.has(F.id))disposeSettlement(F.id);const i=F._site?LONE_FARMS.indexOf(F._site):-1;if(i>=0)LONE_FARMS.splice(i,1);}); /* S1473 — and its lone farms */
     if(L.staticsBuilt||L.staticsPending)dropStatics(L);
     L.statics.forEach(o=>{sc.remove(o);});
@@ -509,7 +509,7 @@
     C.house={id:`g_${C.id}`,type:'mine',byAim:true,siteId:C.id,name:C.name,keeper:'',reg:c.reg,style:'mark',w:13,d:35,two:false,doorX:C.x,doorZ:C.z,doorFace:'S',exitX:C.out.x,exitZ:C.out.z,exitYaw:C.out.yaw,worked:C.worked};
     if(ZONES.world&&ZONES.world.houses&&!ZONES.world.houses.some(h=>h.id===C.house.id))ZONES.world.houses.push(C.house);
     return M.group;}
-  // S1827 (card F8; Michael's A on #335, "a road", and his A on #1096, "inland, under a ridge beside a road") — Aurenne's trade tunnels
+  // S1828 (card F8; Michael's A on #335, "a road", and his A on #1096, "inland, under a ridge beside a road") — Aurenne's trade tunnels
   // (PKIT.au.tunnel, places.js's aurenneTunnel): the road's short way under a hill, a bore of 56 m with a portal each side of the ridge
   // beside one of the cell's roads. Every Aurenne cell whose land holds one keeps one. Read by place (withPlace over the cell's middle, the
   // bare land, rawH), from the roads' lines (roadCurve): from points 20 to 40 m off a road, every 12 m along it, lines of 56 m in 16 ways

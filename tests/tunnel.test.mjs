@@ -1,4 +1,4 @@
-// tunnel (Session 1827, card F8; Michael's A on #335, "a road", and his A on #1096, "inland, under a ridge beside a road"): an Aurenne cell
+// tunnel (Session 1828, card F8; Michael's A on #335, "a road", and his A on #1096, "inland, under a ridge beside a road"): an Aurenne cell
 // whose land holds one keeps a trade tunnel (tunnelAt, 82), places.js's aurenneTunnel (PKIT.au.tunnel) between two portals, each the cave's
 // outcrop in Aurenne's pale rock with the tunnel's frame (PKIT.places.cavemouth, rock 'aurenne', frame, tunnel), on either side of a ridge
 // beside one of the cell's roads. The suite builds the kit on a climb, counts the tunnels, goes to the nearest, in at one portal, walks the

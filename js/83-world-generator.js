@@ -2586,7 +2586,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       const l=new THREE.PointLight(0xffb060,k,14,1.4);l.position.set(rx(x),ry(y),rz(z));l.userData.mineLamp=true;sc_.add(l);}} /* the adit's lamps, the landing, the gallery, the face, the kibble's in the shaft */
     return sc_;
   }
-  // S1827 (card F8; Michael's A on #335 and #1096) — Aurenne's trade tunnel (PKIT.au.tunnel, places.js's aurenneTunnel) between its two
+  // S1828 (card F8; Michael's A on #335 and #1096) — Aurenne's trade tunnel (PKIT.au.tunnel, places.js's aurenneTunnel) between its two
   // portals (tunnelAt, 82), built as the mine is: moved into a room's frame (the floor 0.25 m under the lower portal's), its walk the place's
   // own half-metre cells along the bore and out onto the dust road at either end, the bench, the table and the amphorae boxes 1.2 m up.
   // You come in at the end you went in by (house._tunEnd, 0 for A, 1 for B) and go out at whichever portal you walk to. The light: the
@@ -2655,14 +2655,14 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   // (S1773: the sea caves' too, c._cove beside c._cave)
   function limeCaveAt(){
     if(isInterior()){const h=currentHouse;if(!h||(h.type!=='limecave'&&h.type!=='seacave'&&h.type!=='mine'&&h.type!=='tunnel')||!h._limeCave)return null; /* S1790 — and the mine's adit */const T=h._limeCave,Bd=T.bounds,x=px+Bd.x0,z=pz+Bd.z0;
-      if(h.type==='tunnel')return z>-3&&Math.abs(x)<4?{up:true,end:0}:z<-T.L+3&&Math.abs(x)<4?{up:true,end:1}:null; /* S1827 — the tunnel's two portals */
+      if(h.type==='tunnel')return z>-3&&Math.abs(x)<4?{up:true,end:0}:z<-T.L+3&&Math.abs(x)<4?{up:true,end:1}:null; /* S1828 — the tunnel's two portals */
       if(h.grotto&&T.waterStairs){const w=T.waterStairs.filter(t=>t.y>0&&t.y<.7);if(w.some(t=>x>t.x0-.3&&x<t.x1+.3&&z>t.z0-.3&&z<t.z1+.3))return {seaOut:true};} /* S1788 — the water stairs' foot: the sea way out */
       if(h.grotto&&T.arch&&typeof roomSwimming==='function'&&roomSwimming()&&z<T.arch.z+7&&Math.abs(x)<T.arch.w/2+2)return {seaOut:true}; /* S1805 (#1083 A) — swum to the arch from inside: the same way out */
       {const ld=typeof ladderNear==='function'?ladderNear():null;if(ld)return {ladder:ld};} /* S1807 (#1083 A) — a ladder's foot or head */
       if(h._seaCave&&!h.grotto&&T.escape&&x>T.escape.xPlane-1.6&&Math.abs(z-T.escape.z)<1.2&&Math.abs(jumpY-(T.ledge-h._caveFY))<.6)return {escape:true}; /* S1807 — the escape tunnel's end */
       return z>T.mouth.z-3&&Math.abs(x-T.mouth.x)<3?{up:true}:null;}
     if(activeZoneId!=='world'||typeof CELLS==='undefined')return null;const [ci,cj]=cellOf(px,pz);
-    for(let j=cj-1;j<=cj+1;j++)for(let i=ci-1;i<=ci+1;i++){const c=CELLS.get(cellKey(i,j));if(!c)continue;for(const C of [c._cave,c._cove,c._grotto,c._mine,c._tunnel,c._tunnel&&c._tunnel.far]){ /* S1827 — and a tunnel's two portals */if(!C||!C.house||Math.abs(px-C.x)>12||Math.abs(pz-C.z)>12)continue;
+    for(let j=cj-1;j<=cj+1;j++)for(let i=ci-1;i<=ci+1;i++){const c=CELLS.get(cellKey(i,j));if(!c)continue;for(const C of [c._cave,c._cove,c._grotto,c._mine,c._tunnel,c._tunnel&&c._tunnel.far]){ /* S1828 — and a tunnel's two portals */if(!C||!C.house||Math.abs(px-C.x)>12||Math.abs(pz-C.z)>12)continue;
       const co=Math.cos(C.ry),s_=Math.sin(C.ry),dx=px-C.x,dz=pz-C.z,u=dx*co-dz*s_,v=dx*s_+dz*co;
       if(Math.abs(u)<C.mouth.w/2+.2&&v<1.8&&v>-3.4&&Math.abs(jumpY-C.y)<1.5)return {down:true,C};}
       {const C=c._grotto;if(C&&C.house&&C.arch&&Math.abs(px-C.arch.x)<10&&Math.abs(pz-C.arch.z)<10&&typeof isSwimming==='function'&&isSwimming()){ /* S1788 — swimming at the grotto's sea arch */
@@ -2681,17 +2681,17 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     if(t.ladder)return t.ladder.up?"Press 'E' to climb the ladder":"Press 'E' to climb down the ladder";if(t.escape)return "Press 'E' to crawl out of the tunnel"; /* S1807 */
     const mn=t.up?!!(currentHouse&&currentHouse.type==='mine'):!!(t.C&&t.C.house&&t.C.house.type==='mine'); /* S1790 — the mine's adit */
     if(mn)return t.up?"Press 'E' to go out of the mine":"Press 'E' to go into the mine";
-    const tn=t.up?!!(currentHouse&&currentHouse.type==='tunnel'):!!(t.C&&t.C.house&&t.C.house.type==='tunnel'); /* S1827 */
+    const tn=t.up?!!(currentHouse&&currentHouse.type==='tunnel'):!!(t.C&&t.C.house&&t.C.house.type==='tunnel'); /* S1828 */
     if(tn)return t.up?"Press 'E' to go out of the tunnel":"Press 'E' to go into the tunnel";
     return gr?(t.up?"Press 'E' to go up the stair":"Press 'E' to go down the stair"):t.up?"Press 'E' to go out of the cave":"Press 'E' to go into the cave";}
   function limeCaveUse(){const t=limeCaveAt();if(!t)return false;
-    if(t.down){if(t.C.house.type==='tunnel')t.C.house._tunEnd=t.C.end||0; /* S1827 — in at the portal you stand at */goToInterior(t.C.house);return true;}
+    if(t.down){if(t.C.house.type==='tunnel')t.C.house._tunEnd=t.C.end||0; /* S1828 — in at the portal you stand at */goToInterior(t.C.house);return true;}
     if(t.sea){t.C.house._bySea=true;goToInterior(t.C.house);return true;} /* S1788 — in from the sea */
     if(t.ladder)return climbLadder(t.ladder.L,t.ladder.up); /* S1807 */
     const h=currentHouse,[ci,cj]=h&&h.siteId?h.siteId.replace(/^(cave|cove|grotto|mine|tunnel)_/,'').split('_').map(Number):[NaN,NaN],c=CELLS.get(cellKey(ci,cj)),C=c&&(h.grotto?c._grotto:h.type==='seacave'?c._cove:h.type==='mine'?c._mine:h.type==='tunnel'?c._tunnel:c._cave); /* S1790 — and the mine's */ /* S1787 — and the grotto's */
     if(t.escape&&C){const o=caveEscapeOut(C,h._limeCave);window._pendingWorldPos={x:o.x,z:o.z,yaw:o.yaw,jumpY:worldH(o.x,o.z)};} /* S1807 — out at the tunnel's end, on the land over it */
     else if(t.seaOut&&C&&C.arch){const o=C.arch.out;window._pendingWorldPos={x:o.x,z:o.z,yaw:o.yaw,jumpY:SWIM_Y};} /* S1788 — out under the arch, in the water beyond it, facing the sea */
-    else if(t.end===1&&C&&C.far)window._pendingWorldPos={x:C.far.out.x,z:C.far.out.z,yaw:C.far.out.yaw,jumpY:worldH(C.far.out.x,C.far.out.z)}; /* S1827 — out of the tunnel's far portal */
+    else if(t.end===1&&C&&C.far)window._pendingWorldPos={x:C.far.out.x,z:C.far.out.z,yaw:C.far.out.yaw,jumpY:worldH(C.far.out.x,C.far.out.z)}; /* S1828 — out of the tunnel's far portal */
     else if(C&&C.out)window._pendingWorldPos={x:C.out.x,z:C.out.z,yaw:C.out.yaw,jumpY:worldH(C.out.x,C.out.z)};
     exitInterior();return true;}
   // S1288 (card F9, Michael's A on #321 and #588) — on the new look a Markish inn standing as the kit's hall (lot.kit.alehall, S1288's
@@ -3085,7 +3085,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     if(kitLimeCave(house))return buildKitLimeCave(house); /* S1768 — a limestone cave behind its mouth */
     if(kitSeaCave(house))return buildKitSeaCave(house); /* S1773 — a smugglers' sea cave behind its mouth */
     if(kitMine(house))return buildKitMine(house); /* S1790 — the Mark's silver mine behind its adit */
-    if(kitTunnel(house))return buildKitTunnel(house); /* S1827 — Aurenne's trade tunnel between its portals */
+    if(kitTunnel(house))return buildKitTunnel(house); /* S1828 — Aurenne's trade tunnel between its portals */
     if(kitTowerCellar(house))return buildKitTowerCellar(house); /* S1765 — a ruined tower house's cellar, souterrain and pit */
     const two=!!house.two;
     // S896 (F2a) — the room's true size in metres (07-scale.js; visual-foundation.md §1: a cottage room 4 to 6 across, an inn's hall

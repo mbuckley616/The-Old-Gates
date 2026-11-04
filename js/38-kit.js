@@ -5538,7 +5538,7 @@ function aurenneOrrery(hAt, o = {}) {
         iron: new THREE.MeshStandardMaterial({ color: 0x2c2a28, roughness: .5, metalness: .6 }) }
       : { lime: mat('rock', { ns: 1.5, color: dk === 'sea' ? 0x6a6e6c : 0xb4b0a4, rough: .92 }), throat: mat('rock', { ns: 1.4, color: dk === 'sea' ? 0x3e4442 : 0x6a685f, rough: .95 }), dark: new THREE.MeshBasicMaterial({ color: 0x030304 }), moss: mat('turfMoss', { ns: .8, color: 0x8aa868, rough: 1 }) };
     const M = CMO[dk], put = (geo, k) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal'].includes(a)) g.deleteAttribute(a); if (!g.attributes.normal) g.computeVertexNormals(); worldUV(g, .3); if (!B.has(k)) B.set(k, []); B.get(k).push(g); };
-    const TUN = !!o.tunnel, MW = 2.2, MH = TUN ? 4.6 : 3.6, TD = 6, RXo = TUN ? 9.5 : 7.5, RYo = TUN ? 8.5 : 6.5, RZo = TUN ? 7 : 6, CZ = TUN ? -5.2 : -4.2, CYo = .6; /* S1827 — o.tunnel (Aurenne's trade tunnel, with o.frame): the throat as high as the tunnel's portal, the outcrop larger round its frame */
+    const TUN = !!o.tunnel, MW = 2.2, MH = TUN ? 4.6 : 3.6, TD = 6, RXo = TUN ? 9.5 : 7.5, RYo = TUN ? 8.5 : 6.5, RZo = TUN ? 7 : 6, CZ = TUN ? -5.2 : -4.2, CYo = .6; /* S1828 — o.tunnel (Aurenne's trade tunnel, with o.frame): the throat as high as the tunnel's portal, the outcrop larger round its frame */
     const inMouth = (x, y, z, m = 0) => z > -TD - .5 && y > -.6 && Math.hypot(x / (MW + m), Math.max(0, y - MH + MW) / (MW + m)) < 1 && y < MH + m;
     // the outcrop: a sphere lofted and moved by the rock's field, a bluff above the mouth, its faces in the throat dropped
     const blob = (i, j, NS, NA) => { const v = i / NS * Math.PI, u = j / NA * Math.PI * 2, sx = Math.sin(v) * Math.cos(u), sy = Math.cos(v), sz = Math.sin(v) * Math.sin(u);
@@ -5925,7 +5925,7 @@ function aurenneOrrery(hAt, o = {}) {
       arch: { w: 2 * AW, h: AH, z: Z1 }, gate: { w: 2 * GW, d: GD }, chamber: { x0: -RX(.5), x1: RX(.5), z0: Z0, z1: Z1, h: CY + RY(.5) }, spring: { x: bx0 + BD / 2, y: QY + BH, z: SZ }, skiff, beach: { z0: BZ0, z1: BZ1 },
       bounds: { x0: X0c, x1: -X0c, z0: MZ - NZc * G, z1: MZ }, low, cells, obs: OBS, arrive: [0, TOPY, MZ - 1.6, 0] };
   }
-  // ── Aurenne's trade tunnel (Session 1827, card F8; places.js's aurenneTunnel, Session 908, OG-121's Aurenne panel, "trade tunnels";
+  // ── Aurenne's trade tunnel (Session 1828, card F8; places.js's aurenneTunnel, Session 908, OG-121's Aurenne panel, "trade tunnels";
   // Michael's A on #335, "a road", and his A on #1096: "inland, under a ridge beside a road", since no headland on the land holds it).
   // Copied as drawn, a metre a unit: portal A at z 0 faces +z, the bore runs 56 m to portal B at z -56, winding 1.6 m either side, 3.6 m
   // wide on its paving with ruts and a gutter, upright to 2.4 m under a round vault (4.2 m at the crown); the passing place midway (6 m
