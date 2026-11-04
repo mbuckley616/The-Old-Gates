@@ -1141,7 +1141,7 @@
   function otherSpeedMul(o){if(!(o.hullMax>0))return 1;return hullState(o.hull,o.hullMax).mul*(.5+.5*Math.max(0,o.rig)/100);}
   function otherWho(o){return o.id&&String(o.id).startsWith('story:')?String(o.name||'She').replace(/^./,c=>c.toUpperCase()):o.kind==='pirate'?'The black sail':'The merchantman';}
   function shipStrikes(o){return !!o&&(String(o.id||'').startsWith('story:')||o.kind==='pirate'&&((typeof tutWantsPirate==='function'&&tutWantsPirate())||(typeof factionWantsPirate==='function'&&factionWantsPirate())));}
-  const HULL_SAY={light:'is holed in her sails',heavy:'is holed and slowing',sinking:'is low in the water and sinking'};
+  const HULL_SAY={light:'is holed above the waterline',heavy:'is holed and slowing',sinking:'is low in the water and sinking'};
   function damageShip(o,hull,rig){if(!o)return null;if(o===SHIP)return shipWear(hull,rig);if(o.dead||o.founder!=null||!(o.hullMax>0))return null;
     hull=Math.max(0,Math.round(hull||0));rig=Math.max(0,Math.round(rig||0));const was=hullState(o.hull,o.hullMax),h0=o.hull,r0=o.rig;
     const floor=shipStrikes(o)?Math.ceil(o.hullMax*SHIP_STRIKE):0;o.hull=Math.max(Math.min(floor,h0),h0-hull);o.rig=Math.max(0,r0-rig);

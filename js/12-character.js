@@ -165,7 +165,7 @@ const PERK_DEF={
   scath:[['Steady voice','its Impression words go wild 15% (was 30%)'],['Thrift','its words cost 15% less mana'],['Long step','the step reaches 18 m (was 12)'],['Unseen','you are unseen 3 s after a step']],
   solas:[['Steady voice','its Impression words go wild 15% (was 30%)'],['Thrift','its words cost 15% less mana'],['Warm hand','heals +25%'],['Dawn','light staggers the undead 1.5 s']],
   gaoth:[['Steady voice','its Impression words go wild 15% (was 30%)'],['Thrift','its words cost 15% less mana'],['High wind','the updraft lifts 1.5 m more'],['Downwind','a sent Gaoth knocks a foe down']],
-  speech:[['Haggle','5% better prices both ways'],['Talk it down','a guard’s fine halved, once in each town'],['Hearing','a person at favour −1 still talks'],['Word given','once a day a guard takes your word for a trespass']]};
+  speech:[['Haggle','5% better prices both ways'],['Talk it down','a guard’s fine halved, once in each town'],['Hearing','a first talk with a stranger raises the town’s favour, once a day in each town'],['Word given','once a day a guard takes your word on a fine for picked locks']]};
 const PERK_LIVE=new Set(['cloch:100','scath:100','gaoth:100', /* S1626 */
   'tine:100','uisce:100','solas:100', /* S1659 — Michael's A on #942 */
   'tine:75','uisce:75','cloch:75','scath:75','solas:75','gaoth:75', /* S1625 — each school's own at 75 */
