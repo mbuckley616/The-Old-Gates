@@ -1213,13 +1213,13 @@ const BENCH_RECIPES=[
   {id:'patch',name:'Patch the hull',need:'a plank and a pitch',ship:true,has:()=>!shipWorkWhy('patch')}, /* S1519 — shown only at your ship */
   {id:'splice',name:'Splice the rig',need:'a spar and a pitch',ship:true,has:()=>!shipWorkWhy('splice')},
   {id:'heartsplice',name:'Splice with heartwood',need:'a heartwood spar and a pitch',ship:true,heart:true,has:()=>!shipWorkWhy('heartsplice')},
-  ...['stowage','still','galley','chart','bunks','arms'].map(k=>({id:'fit_'+k,fit:k,ship:true,get name(){return 'Build '+shipBenchName(k);},get need(){return shipBenchNeed(k);},has:()=>!shipBenchWhy(k)}))];
+  ...['stowage','still','galley','chart','bunks','arms','ballista'].map(k=>({id:'fit_'+k,fit:k,ship:true,get name(){return 'Build '+shipBenchName(k);},get need(){return shipBenchNeed(k);},has:()=>!shipBenchWhy(k)}))];
 // S1733 — her fittings built at her own bench (the build sheet of #979 B, session 2): a third of the yard's gold or so, as the
 // shipwright's own planks, spars and iron; Joinery 25, the chart table and the arms rack 50; a Joinery use of 12, twice a patch,
 // and the forge's half-hour. A fitting is built into her, so it goes straight in, and the bench refuses one she has no place,
 // no weight or no need for (fitShipWhy), before anything is spent
 const SHIP_BENCH={stowage:{j:25,planks:6,spars:2,iron:0},still:{j:25,planks:4,spars:0,iron:2},galley:{j:25,planks:4,spars:0,iron:1},
-  chart:{j:50,planks:4,spars:0,iron:0},bunks:{j:25,planks:8,spars:0,iron:0},arms:{j:50,planks:4,spars:0,iron:1}};
+  chart:{j:50,planks:4,spars:0,iron:0},bunks:{j:25,planks:8,spars:0,iron:0},arms:{j:50,planks:4,spars:0,iron:1},ballista:{j:50,planks:4,spars:1,iron:2}}; /* S1820 — the ballista, Joinery 50 as the page says; its stuff a third of its 350 or so, as the others */
 const SHIP_BENCH_XP=12,SHIP_BENCH_IRON=3;
 function shipBenchName(k){return k==='stowage'?'stowage':typeof SHIP_FITS!=='undefined'&&SHIP_FITS[k]?SHIP_FITS[k].n:k;}
 function shipBenchNeed(k){const B=SHIP_BENCH[k],p=[`${B.planks} planks`];if(B.spars)p.push(`${B.spars} spars`);if(B.iron)p.push(B.iron>1?`${B.iron} iron ingots`:'an iron ingot');

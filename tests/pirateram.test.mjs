@@ -1,7 +1,7 @@
 // The pirate's ram (Session 418; and naval combat's hulls, Session 1813; Michael's B on #100, docs/design/sailing.md). Within 30 units, faster than you and with
 // her ram ready, the black sail steers at your hull; the first touch costs you the closing speed × 3 (half if your bow is
 // on her) and spends it, and she goes back to her circle. She may ram again 30 s later; a run that has not touched in
-// 12 s is given up. Her volleys are held off here so that only rams cost hull.
+// 12 s is given up. Her volleys are held off here so that only rams cost hull. Session 1820: and the ballista, the last block.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
@@ -166,6 +166,49 @@ check('lashed 5 s after her throw with nobody across yet; across 6 s after the l
 check('both lines cut while she hauls: she is free, nobody crosses, and she must ram again before she hooks', rb.second === 'haul' && !rb.cut.hooks && !rb.cut.rammed && !rb.cut.sent && !rb.cut.boarded && rb.after.boarders === 0 && !rb.after.hooks, rb);
 check('in a storm nobody grapples', !rb.storm.hooks, rb.storm);
 
+// S1820 — naval combat's ballista (B's fourth systems session): a fitting of 5 hold at her bow, bolts 20 to 1 of the hold; at the helm a
+// bolt at a black sail within 30° of her bow and 90 m strikes for 10 hull when it arrives, one every 6 s; abeam, far or a merchantman, no shot
+const bl = await page.evaluate(async () => {
+  for (const o of [...OTHER]) despawnOtherShip(o);
+  worldState.ship = { cls: 'sloop', name: 'Test Gull', sails: 0, cargo: 0, hold: {} }; WORLD.spawnShip(_sea.x, _sea.z, 0); const S = WORLD.ship; S.sailing = true; S.speed = 0; S.yaw = 0;
+  const out = {}; const hold = () => { S.x = _sea.x; S.z = _sea.z; S.speed = 0; S.yaw = 0; };
+  out.noFit = fireBallista();
+  out.cap0 = holdCap(); out.used0 = holdUsed();
+  gold = 1000; out.fit = fitShip('ballista'); out.cap1 = holdCap();
+  out.noBolts = fireBallista();
+  worldState.ship.hold.bolts = 21; out.used21 = holdUsed(); out.cap21 = holdCap();
+  // a black sail 60 m ahead (north is -z at yaw 0), still, her volleys and ram held off
+  const p = spawnOtherShip('pirate', S.x, S.z - 60); p.speed = 0; p.yaw = Math.PI / 2; p.volleyT = 1e9; p.ramWait = 1e9; p.hookWait = 1e9; p.circleR = 0;
+  const pin = () => { p.x = S.x; p.z = S.z - 60; p.speed = 0; p.volleyT = 1e9; p.ramWait = 1e9; p.hookWait = 1e9; p.ramming = 0; };
+  let slow = 0; const step = n => { for (let i = 0; i < n; i++) { const t1 = performance.now(); hold(); pin(); for (const o of [...OTHER]) if (o !== p) despawnOtherShip(o); WORLD.tick(1 / 60, performance.now()); slow = Math.max(slow, (performance.now() - t1) / 1000); } };
+  step(2);
+  out.bears = ballistaBears() === p; out.hud = ballistaHud();
+  const h0 = p.hull; const t0 = performance.now();
+  out.fire1 = fireBallista(); out.dur = BOLTS.fly[0] && +BOLTS.fly[0].dur.toFixed(3); out.again = fireBallista(); out.bolts1 = boltsAboard();
+  while (p.hull === h0 && performance.now() - t0 < 4000) { step(1); }
+  out.arrive = +((performance.now() - t0) / 1000).toFixed(2); out.lost = h0 - p.hull; out.msg = document.getElementById('msg').textContent;
+  out.hudWind = ballistaHud();
+  while (fireBallista() !== true && performance.now() - t0 < 9000) step(1);
+  out.reload = +((performance.now() - t0) / 1000).toFixed(2); out.slow = +slow.toFixed(3);
+  // out of the arc: she lies abeam, 40 m to starboard
+  p.x = S.x + 40; p.z = S.z; const pinA = () => { p.x = S.x + 40; p.z = S.z; }; hold(); pinA(); BOLTS.t = -1e9; out.abeam = ballistaBears(); out.abeamWhy = ballistaWhy();
+  // out of range: 120 m ahead
+  p.x = S.x; p.z = S.z - 120; out.far = ballistaBears();
+  // a merchantman ahead is not offered
+  despawnOtherShip(p); const m = spawnOtherShip('merchant', S.x, S.z - 50); m.speed = 0; out.merchant = ballistaBears();
+  despawnOtherShip(m);
+  out.bench = SHIP_BENCH.ballista; out.yard = yardOffers({ x: S.x, z: S.z, name: 'X', id: 'x', quayStart: null }).map(o => o.label).filter(l => /ballista|Bolts/.test(l));
+  return out; });
+console.log('ballista', JSON.stringify(bl));
+check('no ballista, no shot', bl.noFit === 'She has no ballista.', bl.noFit);
+check('fitted for 350, 5 of the hold', bl.fit === true && bl.cap0 - bl.cap1 === 5, bl);
+check('no bolts', bl.noBolts === 'No bolts in her hold.', bl.noBolts);
+check('21 bolts take 2 of the hold', bl.used21 - bl.used0 === 2, bl);
+check('she bears 60 m ahead', bl.bears && /she bears · 21 bolts/.test(bl.hud), bl.hud);
+check('a bolt loosed, the next refused while winding', bl.fire1 === true && bl.again === 'The ballista is still winding.' && bl.bolts1 === 20, bl);
+check('it strikes for 10 hull once it has flown (bow to her, about 54 m at 60 m/s)', bl.lost === 10 && bl.dur > .8 && bl.dur < 1 && bl.arrive >= bl.dur - .01 && bl.arrive < 4 && /Your bolt strikes the black sail\. Hull −10\./.test(bl.msg), bl);
+check('6 s to wind again, read off the clock (late by no more than the slowest tick)', bl.reload >= 6 && bl.reload <= 6 + bl.slow + .05, bl);
+check('abeam and far do not bear; a merchantman is not offered', !bl.abeam && !bl.far && !bl.merchant && /Nothing bears/.test(bl.abeamWhy), bl);
 check('no page errors', g.errs.length === 0, g.errs);
 if (stop) stop();
 await g.close();

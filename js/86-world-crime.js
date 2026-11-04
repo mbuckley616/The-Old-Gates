@@ -982,7 +982,7 @@
   // a ship is a trader or a home. A fitting taken out, or one a smaller hull has no place for, waits in st.stored and is fitted
   // again free at any yard. What each one does at sea (the still, the galley, the crew's stations, the rack) is the page's later sessions.
   const SHIP_PLACES={sloop:2,cutter:2,cog:3,caravel:3,galleon:5};
-  const SHIP_FITS={still:{n:'still',a:'a still',w:10,price:400},galley:{n:'galley',a:'a galley',w:10,price:300},chart:{n:'chart table',a:'a chart table',w:5,price:300},bunks:{n:'crew bunks',a:'crew bunks',w:10,price:250},arms:{n:'arms rack',a:'an arms rack',w:5,price:200}};
+  const SHIP_FITS={still:{n:'still',a:'a still',w:10,price:400},galley:{n:'galley',a:'a galley',w:10,price:300},chart:{n:'chart table',a:'a chart table',w:5,price:300},bunks:{n:'crew bunks',a:'crew bunks',w:10,price:250},arms:{n:'arms rack',a:'an arms rack',w:5,price:200},ballista:{n:'ballista',a:'a ballista',w:5,price:350}}; /* S1820 — naval combat's ballista */
   function shipFitList(st){st=st||shipCfg();if(!Array.isArray(st.fit))st.fit=[];for(let i=st.fit.length-1;i>=0;i--)if(!SHIP_FITS[st.fit[i]])st.fit.splice(i,1);if(!Array.isArray(st.stored))st.stored=[];return st.fit;}
   function shipPlaces(cls){return SHIP_PLACES[cls||(worldState.ship&&worldState.ship.cls)||'sloop']||2;}
   function shipPlacesUsed(st){st=st||shipCfg();return (st.cargo||0)+shipFitList(st).length;}
@@ -1206,7 +1206,7 @@
   // S639 — Michael's 6 Oct note and B on #192 (the page's shared ground): what she carries is *all lost if the ship is
   // destroyed*. The hold goes down with her, horse and all, and a raised ship comes up empty (Session 413 kept it).
   function shipSink(){const st=shipCfg();const aboard=SHIP.sailing||onDeck();
-    const lost=Object.values(st.hold||{}).reduce((a,n)=>a+(n>0?n:0),0);st.hold={};
+    const lost=Object.keys(st.hold||{}).reduce((a,k)=>a+(CARGO_GOODS[k]&&st.hold[k]>0?st.hold[k]:0),0);st.hold={}; /* S1820 — crates only: her bolts are not crates */
     const crewSaid=crewSink(); /* S1737 */st.sunk={x:SHIP.x,z:SHIP.z};st.hull=0;Object.assign(st,{x:SHIP.x,z:SHIP.z,yaw:SHIP.yaw});SHIP.sailing=false;SHIP.speed=0;
     for(const e of BOARDERS){if(e.mesh&&e.mesh.parent)e.mesh.parent.remove(e.mesh);const j=ZONES.world.enemies.indexOf(e);if(j>=0)ZONES.world.enemies.splice(j,1);}BOARDERS.length=0;
     if(SHIP.mesh){sc.remove(SHIP.mesh);SHIP.mesh=null;}if(SHIP.plat){const j=ZONES.world.platforms.indexOf(SHIP.plat);if(j>=0)ZONES.world.platforms.splice(j,1);SHIP.plat=null;}
@@ -1245,12 +1245,12 @@
   function shipBarsUI(){
     if(typeof document==='undefined'||!document.body)return;
     let el=SHIPBAR.ui;if(!el){el=document.createElement('div');if(!el.style)return;el.id='shipbars';el.style.cssText='position:fixed;right:14px;bottom:150px;width:150px;padding:5px 8px;background:rgba(40,30,18,.82);border:1px solid #a08a5a;border-radius:4px;color:#e8dcc0;font:11px Georgia,serif;display:none;z-index:50';
-      el.innerHTML='<div id="shipbars-name" style="margin-bottom:3px"></div>'+shipLogSVG()+'<div id="shipbars-sea" style="margin-bottom:3px;color:#c8b890"></div><div>Hull <span id="shipbars-hull"></span></div><div style="height:5px;background:#2a2014;margin:1px 0 3px"><div id="shipbars-hf" style="height:100%;background:#b08a4a"></div></div><div>Rig <span id="shipbars-rig"></span></div><div style="height:5px;background:#2a2014;margin-top:1px"><div id="shipbars-rf" style="height:100%;background:#d8c8a0"></div></div>';document.body.appendChild(el);SHIPBAR.ui=el;}
+      el.innerHTML='<div id="shipbars-name" style="margin-bottom:3px"></div>'+shipLogSVG()+'<div id="shipbars-sea" style="margin-bottom:3px;color:#c8b890"></div><div>Hull <span id="shipbars-hull"></span></div><div style="height:5px;background:#2a2014;margin:1px 0 3px"><div id="shipbars-hf" style="height:100%;background:#b08a4a"></div></div><div>Rig <span id="shipbars-rig"></span></div><div style="height:5px;background:#2a2014;margin-top:1px"><div id="shipbars-rf" style="height:100%;background:#d8c8a0"></div></div><div id="shipbars-bal" style="margin-top:3px;color:#e8c890;display:none"></div>';document.body.appendChild(el);SHIPBAR.ui=el;}
     const show=!!(worldState.ship&&SHIP.mesh&&activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior())&&(SHIP.sailing||onDeck()));
     if(show)shipLogUI();
-    const b=show?shipBars():null,hint=show?seaHint():'',key=show?`${SHIP.name}|${b.hull}|${b.hullMax}|${b.rig}|${SHIP.sea||0}|${hint}`:'';if(key===SHIPBAR.key)return;SHIPBAR.key=key;el.style.display=show?'block':'none';if(!show)return;
+    const b=show?shipBars():null,hint=show?seaHint():'',bal=show?ballistaHud():'',key=show?`${SHIP.name}|${b.hull}|${b.hullMax}|${b.rig}|${SHIP.sea||0}|${hint}|${bal}`:'';if(key===SHIPBAR.key)return;SHIPBAR.key=key;el.style.display=show?'block':'none';if(!show)return;
     const q=id=>document.getElementById(id);q('shipbars-name').textContent=`The ${SHIP.name}`;q('shipbars-sea').textContent=`Sea: ${SEA_WORD[SHIP.sea||0]}${hint}`;q('shipbars-hull').textContent=`${b.hull} / ${b.hullMax}`;q('shipbars-rig').textContent=`${b.rig} / 100`;
-    q('shipbars-hf').style.width=(b.hull/b.hullMax*100)+'%';q('shipbars-hf').style.background=b.hull/b.hullMax<.25?'#c85040':'#b08a4a';q('shipbars-rf').style.width=b.rig+'%';
+    q('shipbars-hf').style.width=(b.hull/b.hullMax*100)+'%';q('shipbars-hf').style.background=b.hull/b.hullMax<.25?'#c85040':'#b08a4a';q('shipbars-rf').style.width=b.rig+'%';{const B=q('shipbars-bal');if(B){B.textContent=bal;B.style.display=bal?'block':'none';}} /* S1820 — the ballista's line */
   }
   // S638 — the boarding nets (Michael's B on #192, the page's shared ground; his 6 Oct note: *a netting or ladder on either
   // side to walk up, or "press E to climb" when looking at the mesh — not a general "board" option always available in
@@ -1299,6 +1299,50 @@
     const lz=Math.max(-NET_HALF+.3,Math.min(NET_HALF-.3,_netO.set(px,0,pz).applyMatrix4(_netInv).z));
     const v=new THREE.Vector3(s.side*(s.W/2+1.0),SHIP_DECK,lz).applyMatrix4(s.mesh.matrixWorld);
     px=v.x;pz=v.z;jumpY=DECK_Y+.2;velY=0;onGround=false;showMsg('You go over the side.','#c8b880');return true;}
+  // S1820 — naval combat's ballista (Michael's B on #1064, docs/design/naval-combat.md, B's fourth systems session): a fitting of 5
+  // hold that stands at her bow (350 gold at a yard, or built at her bench at Joinery 50), and its bolts in her hold (hold.bolts, 20
+  // to 1 of the hold, 2 gold each at a yard). At the helm the left button looses a bolt at the nearest black sail (or a quest's ship)
+  // that bears: within 30° of her bow either way (the page's 60° arc) and 90 m from the bow to her side. The aim is in the steering,
+  // so a bolt that bears strikes (ten bolts to a sloop's 100, a minute of fire, as the page counts): it flies at 60 m/s and takes
+  // 10 hull through damageShip when it arrives, and it is a use of Bow. One every 6 s, off the clock, never the frame count. A
+  // merchantman is not offered a bolt: firing on one is piracy, the page's foes-by-tier session. The fire bolt, the pots and the
+  // heavy arrow at a hand are the next session's.
+  const BALLISTA={arc:Math.PI/6,range:90,reload:6,hull:10,speed:60,per:20,price:2};
+  const BOLTS={t:-1e9,fly:[],n:0,geo:null,mat:null};
+  function boltsAboard(){const h=worldState.ship&&worldState.ship.hold;return h&&h.bolts>0?h.bolts:0;}
+  function shipShotWeight(){const n=boltsAboard();return n?Math.ceil(n/BALLISTA.per):0;}
+  function ballistaWait(){return Math.max(0,BALLISTA.reload-(hookClock()-BOLTS.t));}
+  function ballistaBow(){const fx=-Math.sin(SHIP.yaw),fz=-Math.cos(SHIP.yaw);return {x:SHIP.x+fx*SHIP.L/2,z:SHIP.z+fz*SHIP.L/2,fx,fz};}
+  function ballistaFoe(o){return !!o&&(o.kind==='pirate'||String(o.id||'').startsWith('story:'));}
+  // the ship she bears on now, or null: the nearest in the arc and the range
+  function ballistaBears(){if(!SHIP.mesh||!SHIP.sailing||!shipFitted('ballista'))return null;const b=ballistaBow();let best=null,bd=1e9;
+    for(const o of OTHER){if(o.dead||o.founder!=null||o.struck||!o.mesh||!ballistaFoe(o))continue;const dx=o.x-b.x,dz=o.z-b.z,c=Math.hypot(dx,dz);
+      const d=Math.max(0,c-(o.W||4)/2);if(d>BALLISTA.range||d>=bd)continue;if(c>.01&&(dx*b.fx+dz*b.fz)/c<Math.cos(BALLISTA.arc))continue;bd=d;best=o;}
+    return best;}
+  // why the ballista cannot loose now, or null
+  function ballistaWhy(){if(!shipFitted('ballista'))return 'She has no ballista.';if(!SHIP.sailing)return 'The ballista is worked from the helm.';
+    if(!boltsAboard())return 'No bolts in her hold.';if(ballistaWait()>0)return 'The ballista is still winding.';if(!ballistaBears())return 'Nothing bears: bring her bow onto the black sail.';return null;}
+  // the named action: loose a bolt at the ship that bears; it strikes when it arrives
+  function fireBallista(){const why=ballistaWhy();if(why)return why;const o=ballistaBears(),b=ballistaBow(),h=worldState.ship.hold;
+    h.bolts--;if(h.bolts<=0)delete h.bolts;BOLTS.t=hookClock();BOLTS.n++;
+    const d=Math.hypot(o.x-b.x,o.z-b.z),fly={o,x0:b.x,z0:b.z,t0:BOLTS.t,dur:d/BALLISTA.speed,mesh:null};
+    if(typeof THREE!=='undefined'&&typeof sc!=='undefined'&&sc){if(!BOLTS.geo){BOLTS.geo=new THREE.CylinderGeometry(.05,.05,1.4,5);BOLTS.geo.rotateX(Math.PI/2);BOLTS.mat=new THREE.MeshLambertMaterial({color:0x3a2c1c});}
+      fly.mesh=new THREE.Mesh(BOLTS.geo,BOLTS.mat);fly.mesh.position.set(b.x,DECK_Y+1.2,b.z);sc.add(fly.mesh);}
+    BOLTS.fly.push(fly);if(typeof sfxNoise==='function')sfxNoise(.12,0,0,.1,420);shipBarsUI();return true;}
+  // once a frame: the bolts in flight; one arrives and strikes her, wherever she has sailed to in the meantime
+  function tickBolts(dt){if(!BOLTS.fly.length)return;const now=hookClock();
+    for(let i=BOLTS.fly.length-1;i>=0;i--){const f=BOLTS.fly[i],o=f.o,u=Math.min(1,(now-f.t0)/Math.max(.05,f.dur));
+      if(f.mesh){f.mesh.position.set(f.x0+(o.x-f.x0)*u,DECK_Y+1.2+Math.sin(u*Math.PI)*1.5,f.z0+(o.z-f.z0)*u);f.mesh.lookAt(o.x,DECK_Y+1.2,o.z);}
+      if(u<1)continue;if(f.mesh){sc.remove(f.mesh);f.mesh=null;}BOLTS.fly.splice(i,1);
+      if(o.dead||o.founder!=null||!OTHER.includes(o))continue;const r=damageShip(o,BALLISTA.hull,0);
+      if(r&&r.hull>0){if(typeof skillUse==='function')skillUse('bow',1,'ballista:'+(o.id||'ship'));if(!o.founder&&!o.struck)showMsg(`Your bolt strikes the ${o.kind==='pirate'?'black sail':String(o.name||'ship')}. Hull −${r.hull}.`,'#e8c890');}}}
+  function ballistaHud(){if(!shipFitted('ballista'))return '';const n=boltsAboard(),w=ballistaWait();
+    return `Ballista: ${!n?'no bolts':w>0?`winding, ${Math.ceil(w)} s`:ballistaBears()?'she bears':'ready'} · ${n} ${n===1?'bolt':'bolts'}`;}
+  // at the helm with a ballista fitted, the left button is the ballista's, not the sword's: caught before the canvas's own handler
+  if(typeof window!=='undefined'&&window.addEventListener)window.addEventListener('mousedown',e=>{
+    if(e.button!==0||typeof SHIP==='undefined'||!SHIP.sailing||!shipFitted('ballista')||typeof started!=='undefined'&&!started)return;
+    if(typeof document!=='undefined'&&document.pointerLockElement==null)return;if(typeof _isMenuOpen==='function'&&_isMenuOpen())return;
+    e.preventDefault();e.stopPropagation();const r=fireBallista();if(r!==true)showMsg(r,'#c8b880');},true);
   // S1814 — naval combat's hooks (Michael's B on #1064, docs/design/naval-combat.md, A): from your deck or the helm, with her hull
   // under the crosshair within 10 m and the two ships moving at under 3 m/s to each other, E throws the hooks. The throw takes 1.0 s;
   // then 4 s of hauling draws her alongside, parallel and 0.6 m off, and both ships come to 0 m/s. Lashed, she is held there and
@@ -1480,6 +1524,9 @@
     // S1726 — the fittings (#979 B): a row for each one she lacks while a place is free, one to fit back each stored one, one to take each out
     if(free)for(const k in SHIP_FITS){if(st.fit.includes(k)||st.stored.includes(k))continue;const F=SHIP_FITS[k];
       out.push({label:`Fit ${F.a} (${F.price} gold, ${F.w} of the hold)`,cls,quest:true,fn:()=>{const r=fitShip(k);return r===true?`Fitted: ${F.a}. Her hold takes ${holdCap()} now.`:r===null?`${F.a[0].toUpperCase()+F.a.slice(1)}: ${F.price} gold.`:r;}});}
+    if(shipFitted('ballista')&&shipHere(site))out.push({label:`Bolts for the ballista, ${BALLISTA.per} (${BALLISTA.per*BALLISTA.price} gold, 1 of the hold)`,cls,quest:true,fn:()=>{const p=BALLISTA.per*BALLISTA.price;if(gold<p)return `${BALLISTA.per} bolts: ${p} gold.`; /* S1820 */
+      const n=boltsAboard(),w=Math.ceil((n+BALLISTA.per)/BALLISTA.per)-Math.ceil(n/BALLISTA.per);if(holdUsed()+w>holdCap())return 'No room in her hold for the bolts.';
+      gold-=p;updateHUD();const h=holdOf();h.bolts=n+BALLISTA.per;shipBarsUI();return `${BALLISTA.per} bolts stowed. She carries ${h.bolts}.`;}});
     if(free)for(const k of [...new Set(st.stored)])out.push({label:`Fit her ${shipFitNames([k])[0]} again (kept at the yard)`,cls,quest:true,fn:()=>{const r=fitShip(k,true);return r===true?`Fitted again: ${shipFitNames([k])[0]}. Her hold takes ${holdCap()} now.`:r;}});
     // S1734 — her figureheads: each found one in the bag fitted free, each kept one set back free, the yard's own island's carved for 150
     {const H=shipHeads(st),nat=nationAt(site.x,site.z),cap=t=>t[0].toUpperCase()+t.slice(1);

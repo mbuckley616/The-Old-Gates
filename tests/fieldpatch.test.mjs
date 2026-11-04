@@ -90,7 +90,7 @@ check('two patches at Joinery 25: 40 + 13 + 13 = 66, each after 8 s, Joinery +6'
 check('the field cap at 25 is 70 of 100: the third patch stops there, the fourth is refused', r.cap === 70 && r.h3 === 70 && /yard/.test(r.capWhy) && r.left.planks === 2 && r.left.pitch === 3, r);
 check('walking off stops the work with nothing spent', r.walked.work === null && r.walked.hull === 40 && r.walked.planks, r.walked);
 check('under sail there is no work', /hove to/.test(r.sailingWhy), r.sailingWhy);
-check('the bench\'s page shows the patch and the splice at her side, not away', r.rowsShip - r.rowsAway === 8 && r.rowsAway >= 5 /* S1733: and her six fittings */ /* S1555: Bowyer's two bows (S1549) are rows of their own: 9 and 7 */, { ship: r.rowsShip, away: r.rowsAway });
+check('the bench\'s page shows the patch and the splice at her side, not away', r.rowsShip - r.rowsAway === 9 && r.rowsAway >= 5 /* S1733: and her six fittings; S1820: seven, with the ballista */ /* S1555: Bowyer's two bows (S1549) are rows of their own: 9 and 7 */, { ship: r.rowsShip, away: r.rowsAway });
 check('a splice at sea asks Field splice (25); at 25 the rig +20', (!r.atSea || /At sea/.test(r.sea24)) && r.rig1 === 60, { atSea: r.atSea, why: r.sea24, rig: r.rig1 });
 check('Heartwood: a heartwood spar splices past the field cap (70 at 25): 60 → 100, a plain spar refused at 70; 85 → 100, then the rig is sound', r.capRig === 70 && /yard/.test(r.plainAtCap) && /heartwood spar/.test(r.noHeart) && (!r.atSea || /At sea/.test(r.heart24)) && r.hw1 === 'working' && r.hwRig === 100 && r.hwLeft.heart === 0 && r.hwLeft.spar && r.hwFull === 100 && /sound/.test(r.hwSound), r);
 check('the heartwood splice\'s row is on the bench\'s page only with a heartwood spar in the bag (or the perk)', !r.rowNo && r.rowYes, [r.rowNo, r.rowYes]);
@@ -102,7 +102,7 @@ check('at 25 the bunks are built and fitted: 8 planks, 10 of the hold, Joinery +
 check('the chart table asks Joinery 50; at 50 an arms rack is 4 planks and an iron ingot', /Joinery 50/.test(r.chart25) && r.arms, [r.chart25, r.arms]);
 check('a sloop\'s two places full: the bench refuses and keeps the planks', /rooms are full/.test(r.full) && r.fullLeft === 8, [r.full, r.fullLeft]);
 check('one the yard keeps for her, or a hold too full for its weight: refused', /yard keeps/.test(r.stored) && /clear the hold/.test(r.heavy) && r.heavyLeft === 8, [r.stored, r.heavy]);
-check('the bench\'s page shows her six fittings at her side', r.fitRows === 6, r.fitRows);
+check('the bench\'s page shows her seven fittings at her side (the ballista, Session 1820)', r.fitRows === 7, r.fitRows);
 check('her still in her hold: brewing ×1.10; it is no fire', r.still === 1.1 && r.stillFire === false && r.stillOff === 1, [r.still, r.stillOff]);
 check('her galley in her hold is a fire: a fish cooks; once it has a spot, within 2 m of it; out of her hold, no fire', r.galley && r.cook && !r.galleyFar && r.galleyNear && !r.galleyOut, r);
 check('the arms rack: none fitted, refused; weapons only; three, the fourth refused', /no arms rack/.test(r.rackNone) && /weapons only/.test(r.rackPlank) && r.rackPuts.slice(0, 3).every(x => x === true) && /full/.test(r.rackPuts[3]) && r.rackNames.join() === 'Rack A,Rack B,Rack C', r);
