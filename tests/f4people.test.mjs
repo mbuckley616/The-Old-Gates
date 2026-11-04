@@ -217,6 +217,11 @@ const lantern = await page.evaluate(() => { const P = HB.makePerson(HB.castGenom
   return { on: !!ln, wrist: ln && ln.parent && ln.parent.name, st: P.lantern, cloak: P.cloak.through.out, under: P.cloak.under }; });
 check('Niamh carries her lantern in her right fist: on the wrist, nothing of her within a centimetre of it, the fingers closed and none through its grip, her cloak clear',
   lantern.on && lantern.wrist === 'wrist.R' && lantern.st.inside === 0 && lantern.st.fist === 0 && lantern.st.gap > -.002 && lantern.st.foot > .3 && lantern.cloak === 0 && lantern.under === 0, lantern);
+// S1816 (L2, OG-069): Edna's clay pipe, in the left corner of her mouth, carried by the head, nothing of her within 2 mm of it past her lips
+const pipe = await page.evaluate(() => { const P = HB.makePerson(HB.castGenome('Edna', {}), { hoodStats: false }), pi = P.root.getObjectByName('pipe');
+  return { on: !!pi, bone: pi && pi.parent && pi.parent.name, st: P.pipe }; });
+check('Edna smokes her clay pipe: on the head, its mouthpiece inside her lips, nothing worn within 2 mm of the stem past them or of the bowl',
+  pipe.on && pipe.bone === 'head' && pipe.st.inside === 0 && pipe.st.tipIn && pipe.st.side === 'L', pipe);
 await g.close();
 
 // a second boot: the same people, the same bodies
