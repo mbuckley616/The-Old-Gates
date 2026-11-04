@@ -66,5 +66,30 @@ const shot = await page.evaluate(() => { forceTime(11); const cv = REN.domElemen
   cam.position.set(sx + 30, y0 + 9, sz + 38); cam.lookAt(sx + 7, y0 + 3, sz + 2); sc.updateMatrixWorld(true); REN.render(sc, cam); x2.drawImage(cv, 0, cv.height / 4, cv.width, cv.height / 2, 0, 360, 1280, 360);
   added.forEach(m => sc.remove(m)); _O.forEach(o => { o.mesh.visible = true; }); return out.toDataURL(); });
 fs.writeFileSync('tests/out/ships.png', Buffer.from(shot.split(',')[1], 'base64'));
+// Session 1843 (#1133, Michael: as drawn): your own ship in the yard's colours. worldState.ship.paint and .cloth index her dress's
+// PKIT.ships.SWATCHES; the paint moves only the dress's painted material, the cloth every sail, the geometry is the one bake.
+const sw = await page.evaluate(() => { const o = {}, was = worldState.ship;
+  const hulls = [['sloop', 'gatelands', 13], ['sloop', 'mark', 13], ['sloop', 'aurenne', 13], ['cutter', 'mark', 14], ['caravel', 'aurenne', 17.5], ['cog', 'gatelands', 17], ['galleon', 'mark', 22]];
+  const mats = m => [].concat(m.material, ...m.userData.rigs.map(q => q.m.material));
+  for (const [cls, dress, L] of hulls) { const W = PKIT.ships.SWATCHES[dress], k = cls + ':' + dress, r = o[k] = { bad: [] };
+    worldState.ship = { cls, dress }; const m0 = WORLD.buildShipMesh(L, 4, undefined), M0 = mats(m0);
+    r.kit = !!m0.userData.swatch; r.base = M0.every(x => !x.userData.of);
+    for (let pi = 0; pi < 4; pi++) for (let ci = 0; ci < 3; ci++) { if (!pi && !ci) continue; worldState.ship = { cls, dress, paint: pi, cloth: ci };
+      const m = WORLD.buildShipMesh(L, 4, undefined), M = mats(m), u = m.userData.swatch;
+      if (m.geometry !== m0.geometry) r.bad.push('geo'); if (!u || u.paint !== pi || u.cloth !== ci || u.names[0] !== W.paints[pi].name) r.bad.push('ud' + pi + ci);
+      M.forEach((x, i) => { const b = M0[i], t = b.userData.swatch, moved = x !== b;
+        if (t === 'paint' && (moved !== !!pi || (pi && x.color.getHex() !== W.paints[pi].hex))) r.bad.push(`paint${pi}${ci}@${i}`);
+        if (t === 'cloth' && (moved !== !!ci || (ci && x.map === b.map))) r.bad.push(`cloth${pi}${ci}@${i}`);
+        if (!t && moved) r.bad.push(`other${pi}${ci}@${i}`); });
+      if (pi && !M.some(x => x.userData.swatch === 'paint' && x.userData.of)) r.bad.push('nopaint' + pi); if (ci && !M.some(x => x.userData.swatch === 'cloth' && x.userData.of)) r.bad.push('nocloth' + ci); }
+    // repainting in place (the yard's call) and back to the dress as built
+    worldState.ship = { cls, dress, paint: 2, cloth: 1 }; shipSwatchOn(m0); r.inPlace = m0.userData.swatch.paint === 2 && mats(m0).some(x => x.userData.of);
+    worldState.ship = { cls, dress }; shipSwatchOn(m0); r.back = mats(m0).every((x, i) => x === M0[i]); }
+  worldState.ship = { cls: 'sloop', paint: 1, cloth: 1 }; const a = WORLD.buildShipMesh(13, 4.4, undefined), b = WORLD.buildShipMesh(13, 4.4, undefined); o.shared = a.material[0] === b.material[0] || a.material.every((x, i) => x === b.material[i]);
+  o.pirate = !WORLD.buildShipMesh(13, 4.4, 'pirate').userData.swatch; o.stage = !WORLD.buildShipMesh(13, 4.4, 'player', 'sloop').userData.swatch;
+  worldState.ship = was; return o; });
+console.log(JSON.stringify(sw));
+for (const [k, r] of Object.entries(sw)) if (r && r.bad) check(`the yard's colours on your ${k.replace(':', ' in the ')} dress: 11 swatches move only her paint and her sails, on the one bake, and she repaints in place`, r.kit && r.base && !r.bad.length && r.inPlace && r.back, r);
+check('two ships in one colour share its copies; a black sail and the yard\'s stage keep their own dress', sw.shared && sw.pirate && sw.stage, sw);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

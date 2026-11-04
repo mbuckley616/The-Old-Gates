@@ -437,8 +437,18 @@
     mesh.userData.wheel=wheel;mesh.userData.deck=r.deck;mesh.userData.kind=kind;mesh.userData.props=r.props||[];mesh.userData.bakeKey=bk;mesh.userData.castle=r.castle||null;mesh.userData.fore=r.fore||null;mesh.userData.helm=r.helm||null;mesh.userData.hatchZ=r.hatchZ;mesh.userData.hatchOut=r.hatchOut;mesh.userData.berth=r.berth||null;mesh.userData.kit=r.kit?r.kit.dress||'gatelands':null; /* S1555 — a kit hull, and her dress (the base below deck) */
     mesh.userData.rigs=(r.rigs||[]).map(q=>{const m=new THREE.Mesh(q.geo,q.mats||SHIP_MAT);m.castShadow=true;m.position.z=q.z;mesh.add(m);if(q.extra){const e=new THREE.Mesh(q.extra,SHIP_MAT);e.castShadow=true;m.add(e);}return {m,type:q.type,a:0};});
     mesh.userData.trimSnap=true;
+    if(!look&&r.kit)shipSwatchOn(mesh); /* S1843 — your own ship in the yard's colours */
     return mesh;
   }
+  // S1843 (#1133, Michael: as drawn) — the yard's colours: her paint and cloth (worldState.ship.paint, .cloth, indices into her dress's
+  // PKIT.ships.SWATCHES; 0 or none the dress as built) laid on a kit hull's materials in place. The bake is shared and untouched; only the
+  // mesh's material arrays change, so the yard (the systems builder's paintShip) repaints her by calling this again. sw overrides the
+  // ship's own (a stage's preview). -> {dress, paint, cloth} as worn, or null on a hull that is not the kit's.
+  function shipSwatchOn(mesh,sw){const ud=mesh&&mesh.userData,r=ud&&SHIP_GEO.get(ud.bakeKey);if(!r||!r.kit||!PKIT.ships.swatch)return null;
+    const st=worldState.ship||{},o=sw||{paint:st.paint|0,cloth:st.cloth|0},d=r.dress||'gatelands';
+    mesh.material=PKIT.ships.swatch(r.mats,d,o);(ud.rigs||[]).forEach((q,i)=>{const R=r.rigs[i];if(R&&R.mats)q.m.material=PKIT.ships.swatch(R.mats,d,o);});
+    const W=PKIT.ships.SWATCHES[d],pi=Math.max(0,Math.min(W.paints.length-1,o.paint|0)),ci=Math.max(0,Math.min(W.cloths.length-1,o.cloth|0));
+    return ud.swatch={dress:d,paint:pi,cloth:ci,names:[W.paints[pi].name,W.cloths[ci].name]};}
   // S330 (Michael's 1, #57) — trim a ship's sails to the wind. th is the way the wind blows, against the bow in the hull's frame (0 dead astern,
   // +/-PI/2 on the beam, towards +x or -x). Square yards brace round to bisect the wind and the bow, at most 35 degrees; a gaff's
   // boom swings to leeward, out to 72 degrees running and in to 15 close-hauled; the gaff sails and the jib belly to leeward
