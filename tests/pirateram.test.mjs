@@ -148,7 +148,7 @@ const rb = await page.evaluate(() => {
   run(13, o, () => { const n = performance.now(); worst = Math.max(worst, n - last); last = n; const S = WORLD.ship; px = S.x; pz = S.z; jumpY = DECK_Y;
     if (HOOKS.by === 'her' && !t0) { t0 = n; out.thrown = { by: HOOKS.by, phase: HOOKS.phase }; }
     if (t0 && HOOKS.phase === 'lashed' && T.lashed == null) { T.lashed = +((n - t0) / 1000).toFixed(2); T.boardersAtLash = WORLD.boarders.length; }
-    if (t0 && WORLD.boarders.length && T.crossed == null) T.crossed = +((n - t0) / 1000).toFixed(2); });
+    if (t0 && WORLD.boarders.length && T.crossed == null) { T.crossed = +((n - t0) / 1000).toFixed(2); T.afterLash = +(n / 1000 - HOOKS.tl).toFixed(3); /* S1821 — from the game's own lashing stamp, unrounded: two rounded samples made 6.00 read 5.99 */ } });
   if (!out.thrown) out.thrown = { by: HOOKS.by, phase: HOOKS.phase };
   T.slack = +(worst / 1000).toFixed(2); out.T = T; out.crossed = { boarders: WORLD.boarders.length, msg: document.getElementById('msg').textContent, still: lashed(o) };
   // again, and you cut both lines while she hauls: nobody crosses, and she must ram again
@@ -162,7 +162,7 @@ const rb = await page.evaluate(() => {
 console.log('boarders', JSON.stringify(rb));
 check('within 10 m, her ram not yet landed: no hooks, nobody on your deck (the old 12-second crossing is gone)', !rb.unrammed.hooks && rb.unrammed.boarders === 0, rb.unrammed);
 check('her ram spent: her hooks come over your rail', rb.thrown.by === 'her' && rb.thrown.phase === 'throw', rb.thrown);
-check('lashed 5 s after her throw with nobody across yet; across 6 s after the lashing: two of her crew on your deck', rb.T.lashed >= 5 && rb.T.lashed <= 5.05 + Math.max(.2, rb.T.slack) && rb.T.boardersAtLash === 0 && rb.T.crossed - rb.T.lashed >= 6 && rb.T.crossed - rb.T.lashed <= 6.05 + Math.max(.2, rb.T.slack) && rb.crossed.boarders === 2 && /Pirates on your deck/.test(rb.crossed.msg) && rb.crossed.still, rb);
+check('lashed 5 s after her throw with nobody across yet; across 6 s after the lashing: two of her crew on your deck', rb.T.lashed >= 5 && rb.T.lashed <= 5.05 + Math.max(.2, rb.T.slack) && rb.T.boardersAtLash === 0 && rb.T.afterLash >= 6 && rb.T.afterLash <= 6.05 + Math.max(.2, rb.T.slack) && rb.crossed.boarders === 2 && /Pirates on your deck/.test(rb.crossed.msg) && rb.crossed.still, rb);
 check('both lines cut while she hauls: she is free, nobody crosses, and she must ram again before she hooks', rb.second === 'haul' && !rb.cut.hooks && !rb.cut.rammed && !rb.cut.sent && !rb.cut.boarded && rb.after.boarders === 0 && !rb.after.hooks, rb);
 check('in a storm nobody grapples', !rb.storm.hooks, rb.storm);
 
@@ -190,6 +190,15 @@ const bl = await page.evaluate(async () => {
   out.hudWind = ballistaHud();
   while (fireBallista() !== true && performance.now() - t0 < 9000) step(1);
   out.reload = +((performance.now() - t0) / 1000).toFixed(2); out.slow = +slow.toFixed(3);
+  // S1821 — the fire bolt: a bolt and a pitch, 4 hull, her rig 2 a second for 8 s
+  { const tw = performance.now(); while (BOLTS.fly.length && performance.now() - tw < 4000) step(1); } /* the reload check's bolt lands first */
+  BOLTS.t = -1e9; ballistaFireMode(true); bagTake(b => b.name === SURV_ITEMS.pitch.name, 999); out.noPitch = fireBallista();
+  bagAdd(Object.assign({}, SURV_ITEMS.pitch, { qty: 1 })); p.rig = 100; const hf = p.hull, bf = boltsAboard(); const tf = performance.now();
+  out.fireShot = fireBallista(); out.pitchLeft = pitchCount(); out.boltsF = bf - boltsAboard(); out.hudFire = ballistaHud();
+  while (p.hull === hf && performance.now() - tf < 4000) step(1);
+  out.fireLost = hf - p.hull; out.fireMsg = document.getElementById('msg').textContent; const tb = performance.now(); out.rigAt = p.rig;
+  let nb = 0; while (p.burn > 0 && nb < 1200) { step(1); nb++; } /* the fire runs on the tick's time, as the leak does */
+  out.burnS = +(nb / 60).toFixed(2); out.rigAfter = p.rig; out.burnLeft = p.burn; ballistaFireMode(false);
   // out of the arc: she lies abeam, 40 m to starboard
   p.x = S.x + 40; p.z = S.z; const pinA = () => { p.x = S.x + 40; p.z = S.z; }; hold(); pinA(); BOLTS.t = -1e9; out.abeam = ballistaBears(); out.abeamWhy = ballistaWhy();
   // out of range: 120 m ahead
@@ -208,6 +217,8 @@ check('she bears 60 m ahead', bl.bears && /she bears · 21 bolts/.test(bl.hud), 
 check('a bolt loosed, the next refused while winding', bl.fire1 === true && bl.again === 'The ballista is still winding.' && bl.bolts1 === 20, bl);
 check('it strikes for 10 hull once it has flown (bow to her, about 54 m at 60 m/s)', bl.lost === 10 && bl.dur > .8 && bl.dur < 1 && bl.arrive >= bl.dur - .01 && bl.arrive < 4 && /Your bolt strikes the black sail\. Hull −10\./.test(bl.msg), bl);
 check('6 s to wind again, read off the clock (late by no more than the slowest tick)', bl.reload >= 6 && bl.reload <= 6 + bl.slow + .05, bl);
+check('fire bolts: refused with no pitch; a bolt and a pitch spent; (fire) on the panel', /needs a pitch/.test(bl.noPitch) && bl.fireShot === true && bl.pitchLeft === 0 && bl.boltsF === 1 && /^Ballista \(fire\)/.test(bl.hudFire), bl);
+check('a fire bolt takes 4 hull and sets her rig alight: 16 rig over 8 s, then out', bl.fireLost === 4 && /her rig is alight/.test(bl.fireMsg) && bl.rigAt >= 98 && bl.rigAfter === 84 && bl.burnLeft === 0 && bl.burnS >= 7.9, bl);
 check('abeam and far do not bear; a merchantman is not offered', !bl.abeam && !bl.far && !bl.merchant && /Nothing bears/.test(bl.abeamWhy), bl);
 check('no page errors', g.errs.length === 0, g.errs);
 if (stop) stop();

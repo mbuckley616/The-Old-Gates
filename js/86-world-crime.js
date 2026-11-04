@@ -1307,8 +1307,12 @@
   // 10 hull through damageShip when it arrives, and it is a use of Bow. One every 6 s, off the clock, never the frame count. A
   // merchantman is not offered a bolt: firing on one is piracy, the page's foes-by-tier session. The fire bolt, the pots and the
   // heavy arrow at a hand are the next session's.
-  const BALLISTA={arc:Math.PI/6,range:90,reload:6,hull:10,speed:60,per:20,price:2};
-  const BOLTS={t:-1e9,fly:[],n:0,geo:null,mat:null};
+  // S1821 — the fire bolt (the page's table): the right button at the helm sets the ballista to fire bolts and back. A fire bolt is a
+  // bolt and a pitch from your bag; it takes 4 hull, and her rig burns 2 a second for 8 s (16 in all), through damageShip. A fire
+  // already in her rig is lit again for its full 8 s, never doubled. Her crew do not douse it yet: a hand at her rig is the page's
+  // merchantmen's session, as her hand at a line was (Session 1815).
+  const BALLISTA={arc:Math.PI/6,range:90,reload:6,hull:10,speed:60,per:20,price:2,fireHull:4,burn:2,burnS:8};
+  const BOLTS={t:-1e9,fly:[],n:0,geo:null,mat:null,fire:false};
   function boltsAboard(){const h=worldState.ship&&worldState.ship.hold;return h&&h.bolts>0?h.bolts:0;}
   function shipShotWeight(){const n=boltsAboard();return n?Math.ceil(n/BALLISTA.per):0;}
   function ballistaWait(){return Math.max(0,BALLISTA.reload-(hookClock()-BOLTS.t));}
@@ -1321,11 +1325,11 @@
     return best;}
   // why the ballista cannot loose now, or null
   function ballistaWhy(){if(!shipFitted('ballista'))return 'She has no ballista.';if(!SHIP.sailing)return 'The ballista is worked from the helm.';
-    if(!boltsAboard())return 'No bolts in her hold.';if(ballistaWait()>0)return 'The ballista is still winding.';if(!ballistaBears())return 'Nothing bears: bring her bow onto the black sail.';return null;}
+    if(!boltsAboard())return 'No bolts in her hold.';if(BOLTS.fire&&typeof pitchCount==='function'&&pitchCount()<1)return 'A fire bolt needs a pitch, and you have none.';if(ballistaWait()>0)return 'The ballista is still winding.';if(!ballistaBears())return 'Nothing bears: bring her bow onto the black sail.';return null;}
   // the named action: loose a bolt at the ship that bears; it strikes when it arrives
   function fireBallista(){const why=ballistaWhy();if(why)return why;const o=ballistaBears(),b=ballistaBow(),h=worldState.ship.hold;
-    h.bolts--;if(h.bolts<=0)delete h.bolts;BOLTS.t=hookClock();BOLTS.n++;
-    const d=Math.hypot(o.x-b.x,o.z-b.z),fly={o,x0:b.x,z0:b.z,t0:BOLTS.t,dur:d/BALLISTA.speed,mesh:null};
+    h.bolts--;if(h.bolts<=0)delete h.bolts;BOLTS.t=hookClock();BOLTS.n++;const fire=BOLTS.fire;if(fire)bagTake(b=>b.name===SURV_ITEMS.pitch.name,1);
+    const d=Math.hypot(o.x-b.x,o.z-b.z),fly={o,x0:b.x,z0:b.z,t0:BOLTS.t,dur:d/BALLISTA.speed,mesh:null,fire};
     if(typeof THREE!=='undefined'&&typeof sc!=='undefined'&&sc){if(!BOLTS.geo){BOLTS.geo=new THREE.CylinderGeometry(.05,.05,1.4,5);BOLTS.geo.rotateX(Math.PI/2);BOLTS.mat=new THREE.MeshLambertMaterial({color:0x3a2c1c});}
       fly.mesh=new THREE.Mesh(BOLTS.geo,BOLTS.mat);fly.mesh.position.set(b.x,DECK_Y+1.2,b.z);sc.add(fly.mesh);}
     BOLTS.fly.push(fly);if(typeof sfxNoise==='function')sfxNoise(.12,0,0,.1,420);shipBarsUI();return true;}
@@ -1334,15 +1338,25 @@
     for(let i=BOLTS.fly.length-1;i>=0;i--){const f=BOLTS.fly[i],o=f.o,u=Math.min(1,(now-f.t0)/Math.max(.05,f.dur));
       if(f.mesh){f.mesh.position.set(f.x0+(o.x-f.x0)*u,DECK_Y+1.2+Math.sin(u*Math.PI)*1.5,f.z0+(o.z-f.z0)*u);f.mesh.lookAt(o.x,DECK_Y+1.2,o.z);}
       if(u<1)continue;if(f.mesh){sc.remove(f.mesh);f.mesh=null;}BOLTS.fly.splice(i,1);
-      if(o.dead||o.founder!=null||!OTHER.includes(o))continue;const r=damageShip(o,BALLISTA.hull,0);
-      if(r&&r.hull>0){if(typeof skillUse==='function')skillUse('bow',1,'ballista:'+(o.id||'ship'));if(!o.founder&&!o.struck)showMsg(`Your bolt strikes the ${o.kind==='pirate'?'black sail':String(o.name||'ship')}. Hull −${r.hull}.`,'#e8c890');}}}
+      if(o.dead||o.founder!=null||!OTHER.includes(o))continue;const r=damageShip(o,f.fire?BALLISTA.fireHull:BALLISTA.hull,0),who=o.kind==='pirate'?'black sail':String(o.name||'ship');
+      if(r&&r.hull>0){if(typeof skillUse==='function')skillUse('bow',1,'ballista:'+(o.id||'ship'));if(!o.founder&&!o.struck)showMsg(f.fire?`Your fire bolt strikes the ${who}. Hull −${r.hull}, and her rig is alight.`:`Your bolt strikes the ${who}. Hull −${r.hull}.`,'#e8c890');}
+      if(f.fire&&o.founder==null&&!o.dead){o.burn=BALLISTA.burnS;o._burnAcc=o._burnAcc||0;}}}
+  // once a frame: a rig alight loses 2 a second until its 8 s are out, or she founders
+  function tickShipFires(dt){for(const o of OTHER){if(!(o.burn>0))continue;if(o.dead||o.founder!=null){o.burn=0;continue;}
+    const t=Math.min(dt,o.burn);o.burn-=t;o._burnAcc=(o._burnAcc||0)+t*BALLISTA.burn;const n=Math.floor(o._burnAcc+1e-9);if(n>0){o._burnAcc-=n;damageShip(o,0,n);}
+    if(o.burn<=0){o.burn=0;o._burnAcc=0;}}}
   function ballistaHud(){if(!shipFitted('ballista'))return '';const n=boltsAboard(),w=ballistaWait();
-    return `Ballista: ${!n?'no bolts':w>0?`winding, ${Math.ceil(w)} s`:ballistaBears()?'she bears':'ready'} · ${n} ${n===1?'bolt':'bolts'}`;}
+    return `Ballista${BOLTS.fire?' (fire)':''}: ${!n?'no bolts':w>0?`winding, ${Math.ceil(w)} s`:ballistaBears()?'she bears':'ready'} · ${n} ${n===1?'bolt':'bolts'}`;}
   // at the helm with a ballista fitted, the left button is the ballista's, not the sword's: caught before the canvas's own handler
   if(typeof window!=='undefined'&&window.addEventListener)window.addEventListener('mousedown',e=>{
     if(e.button!==0||typeof SHIP==='undefined'||!SHIP.sailing||!shipFitted('ballista')||typeof started!=='undefined'&&!started)return;
     if(typeof document!=='undefined'&&document.pointerLockElement==null)return;if(typeof _isMenuOpen==='function'&&_isMenuOpen())return;
     e.preventDefault();e.stopPropagation();const r=fireBallista();if(r!==true)showMsg(r,'#c8b880');},true);
+  if(typeof window!=='undefined'&&window.addEventListener)window.addEventListener('mousedown',e=>{ /* S1821 — the right button: fire bolts or plain */
+    if(e.button!==2||typeof SHIP==='undefined'||!SHIP.sailing||!shipFitted('ballista')||typeof started!=='undefined'&&!started)return;
+    if(typeof document!=='undefined'&&document.pointerLockElement==null)return;if(typeof _isMenuOpen==='function'&&_isMenuOpen())return;
+    e.preventDefault();e.stopPropagation();ballistaFireMode(!BOLTS.fire);},true);
+  function ballistaFireMode(on){BOLTS.fire=!!on;showMsg(on?'Fire bolts: each takes a pitch from your bag.':'Plain bolts.','#c8b880');shipBarsUI();return BOLTS.fire;}
   // S1814 — naval combat's hooks (Michael's B on #1064, docs/design/naval-combat.md, A): from your deck or the helm, with her hull
   // under the crosshair within 10 m and the two ships moving at under 3 m/s to each other, E throws the hooks. The throw takes 1.0 s;
   // then 4 s of hauling draws her alongside, parallel and 0.6 m off, and both ships come to 0 m/s. Lashed, she is held there and
