@@ -1492,3 +1492,42 @@ This is a playtest turn; my last entry looked at the new look. The harness ran f
 - None new. Every earlier critic line in section I is struck.
 
 **Proposal**: one, *Keep watch*, in docs/proposals.md.
+
+## 2026-11-04 — The new look: the concept artist's two vaults (OG-123: the great gate's vault and the lesser gate's keep, mode C), the gate kit's mended bridge, and Act I's cast at Ashenmoor (Bram, Edna, Corwin) at 1.6 m, 4 m and night (build s1214, read to Session 1827)
+
+This is a new-look turn, because my last entry was a playtest. The harness ran first (`export` 1/1). I read the devlog from Session 1784 to 1827 (38 entries). I chose the three new-look things a player will meet soonest: the vault rooms that DECISION #1092 asks about, the kit bridge that S1818 mended for them, and the five people of OG-069 now in the game. I rendered the vaults on `vaults.html` at 1920×1080 (served over http, `&nopeople`). I rendered the cast in the game on the new look by placing `buildNPCMesh` with the key `ashenmoor` in Ashenmoor's open centre (12800, 25750) and looking through the game's own loop. Pictures are in `docs/critic/2026-11-04-*`.
+
+**The great vault (OG-123's first panel), mode C, from the door and down the causeway** (`vault-great-door.jpg`, `vault-great-causeway.jpg`; my frames were 157k and 153k triangles in 322 and 297 calls, 34.7k of them the vault in 105 draws, 13 lights, no NaN, no page errors)
+- It reads as the panel. The four rings and their burning shard are the brightest thing in the room, the bays stand dark behind them, and the script runs up the piers. From the door, the camp is in the foreground (bedroll, rope, cold hearth, torch), and that tells the story before you step onto the causeway. The concept's own scale picture shows a 1.62 m Gatelander on the causeway with the rings' crown 14.6 m over her (`vaults-great-scale.jpg`). That is the panel's ratio of person to machine, and it is right.
+- The statues' faces are wrong. Each one is a perfect black disc, flat on the front of a rounded head (door and causeway frames; plainest in the concept's `vaults-great-high.jpg`). At 13.4 m it reads as a porthole or a hole bored in a ball, not as the dark under a hood. OG-123's statues are cowled, with the hood's brim coming forward over the face and a pointed crown. A deeper cowl with the dark set back inside it would keep the canon's "whom they show" open and still read as a face.
+- The broken bridge's floating stones are lit Cloch's lilac from beneath. Against the room's amber they are the second-brightest thing in the frame and pull the eye off the rings. The panel's floating debris is lit by the room. As a cue for "the way across is here" it works. As a colour it is louder than the shard.
+- The delver in C (`vaults-great-close.jpg`) is the weak part of the room. He is a sphere skull, a coil-spring ribcage, a box pelvis and stick limbs: a Halloween prop beside stone that is otherwise carefully made. His purse's 44 coins glow like embers on the floor, as if they were lit, when they should catch the shard's light. If Michael chooses C, the delver wants the bodies builder's skeleton (or a body under a cloak). He carries the mode, and the brief's "unsettling" is lost if he looks like a toy.
+
+**The lesser keep, mode C** (`vault-lesser-door.jpg`; 10.6k triangles in 55 calls, 5 lights)
+- This is the better of the two rooms. One shaft of light, the coffer on its dais, the ring sigil burning over it, the cache in the left wall and the delver at the foot of the steps make a quiet frame that reads in a second. It is the panel's sealed chest under its shaft of light.
+- From the door, the coffer reads as a box with a dark front and red-brown sides, more like a cabinet than a chest of the gate's own stone. The bronze corners are the colour of the dais's wood.
+- The crystal (right of the coffer) is a burst of yellow shards hanging in the air in front of a pier, a firework more than a vein out of the wall. In the great vault it breaks out of the pit's wall and reads. Here it does not touch anything.
+
+**The gate kit's bridge after S1818** (`gatekit-bridge.jpg` on main)
+- The ring now sits under the deck in all three (whole, cracked, broken). The segmental arch is flatter than the gate's pointed ones, as S1818 says, and inside a gate of pointed bays it does look like a road bridge brought indoors. In the vault's frames the west bridge (the kit's, cracked) reads as part of the room only because it is dark. A pointed second kind (S1818's `o.pointed`) would suit the vault better. If Michael chooses a mode, the concept artist can now swap the vault's own causeway for the kit's bridge.
+
+**Act I's cast at Ashenmoor at 13h and 21h30** (`ashenmoor-cast-1m6.png`, `-4m.png`, `-night-4m.png`, `-driver-4m.png`)
+- At 1.6 m with the builder's bodies on, they are the sheet's people. Bram is grey-haired and grey-bearded, broad, in undyed linen and the leather bib apron, and reads as the smith at once. Corwin's madder tunic and ochre waistcoat say "merchant" only by their colour, as S1792 warned. Without the open coat and the tankard (S1829, not on main yet) he could be any well-off young man. Edna is short and stooped with her stick, and she is the one who reads best.
+- S1816's question: *at arm's length, does a 9 cm white stem read as a pipe or as a stray tooth-pick?* At 1.6 m it reads as a pipe, a small white stroke at the corner of her mouth with the bowl below. At 4 m it is gone, which is as it should be. I could not see the ember at noon. At night her face was too dark at 4 m to tell.
+- S1798's question: *with the cape opened on the stick's side, does it read as pushed back or slipping off?* As neither, I am afraid. From the front at 1.6 and 4 m, the green cape hangs as a flat panel down her left breast to the waist, with its hem across her front. It looks like a cloth or a shawl carried over the shoulder, and from 4 m it reads as a green bundle held against her chest. It does not read as a cape thrown back. What shows a cape pushed back is the cloth gathering behind the shoulder, not a panel in front of it.
+- S1809 (Niamh's lantern lit or painted at noon): I could not judge it. Niamh is cast only at Inis Rua, a placeholder zone, so she is not in the world.
+- **The far copy is not the cast** (in backlog I). Before a builder's body is built, and past `HBODY.mid` (42 m), a person is drawn as the 17-bone driver, and the driver keeps its own roll of hat, hair and gear. At Ashenmoor the drivers' genomes give Corwin a brimmed hat (`hat:'brim'`) that the cast does not have, and give Edna a kerchief and no stick (`gear:null`). My 4 m frame taken before the bodies were built (`ashenmoor-cast-driver-4m.png`) shows it: Corwin in a hat, Edna in a plain brown dress with a green bottle and no stick. Walking up to them, the hat vanishes and a stick appears in her hand. `hbCastDriver` sets the driver's sex, age and stature from the cast but not its hat, hair or gear.
+- Related, and not filed: with the town's job queue not empty, the loop's `hbTick` held all three bodies back. In my first run, 80 frames of the loop with me 1.6 to 12 m away left them as drivers (`busy` while `JOBS.length` in the world). Once I drained the queue, all three were built on the first pass. On software GL I cannot say how many real seconds a player at Ashenmoor spends looking at the drivers, so this is a *Needs eyes*, not a bug.
+- At night (21h30) the three read as silhouettes with lit edges. Bram's hair and beard read black at night and grey at noon, which is the light, not the genome.
+
+**The *Needs eyes*, from what I saw**
+- S1818 (the bridge): judged above. The vault can use it, and a pointed kind would suit a gate better.
+- S1792 (the five at conversation distance): judged above for Bram, Edna and Corwin. Bram's beard reads the same grey as his hair at noon, not darker. Corwin is a merchant by colour only. Bram fallen at the forge (*read_corpse*) I did not look at.
+- S1798 (the cape): judged above. S1816 (the pipe): judged at noon, not at night. S1809 (the lantern): could not.
+- S1825 (the fjord horse without its stripe), S1784/1785 (the watcher), S1787–S1790 (the grotto and the mine), S1811 (the bolt-hole): not looked at this run.
+- Frame counter: `vaults.html` reports 1.2 to 1.9 s a frame on software GL. That is the container, not the page, and no real frame rate can be read headless.
+
+**Backlog notes**
+- None new.
+
+No proposal this run.
