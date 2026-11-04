@@ -1482,7 +1482,16 @@ const HB_CAST_SITE={Bram:'ashenmoor',Edna:'ashenmoor',Corwin:'ashenmoor',Niamh:'
 // the driver follows the sheet: its sex (the gait, the far copy's skirt), its age and the cast's stature, so the builder's body, scaled to
 // the driver's, stands as tall as the sheet has them (Edna's town roll had made her a young man of 1.85)
 function hbCastDriver(g,G){const C=HB.CAST[G.cast];g.female=G.g<.5;g.dress=g.female;g.age=G.age>=.8?'elder':G.age<.58?'young':'adult';
-  g.height=C.metres/(personScale(g)*SCALE.PERSON_MODEL);if(G.beard<.05)g.beard='none';}
+  g.height=C.metres/(personScale(g)*SCALE.PERSON_MODEL);if(G.beard<.05)g.beard='none';hbCastDress(g,G);}
+/* S1832 (section I, critic 4 Nov) — and the sheet's dress, not the role's or the roll's: past 42 m Corwin wore the merchant's brimmed hat
+   and bag, Edna the herbalist's kerchief and no stick, and both changed at the line. The cast wear no hat (a hood only when it is up); a
+   staff is the driver's stick and a spear its spear, nothing else in the fist (the driver has no tankard or lantern); no bag, satchel,
+   book or mantle; the apron and the cloak as the sheet has them; the hair's style the nearest of the driver's */
+const HB_CAST_HAIR={bun:'bun',plait:'braid',loose:'straight',short:'crop'};
+function hbCastDress(g,G){const D=G.dress||{},hx=a=>(Math.round(a[0]*255)<<16)|(Math.round(a[1]*255)<<8)|Math.round(a[2]*255);
+  g.hat=D.helm?'helm':D.hood==='up'?'hood':'none';if(D.hood==='up'&&D.cloak)g.hoodCol=hx(D.cloak);
+  g.gear=D.spear?'spear':D.staff?'stick':null;g.extras=[];g.apron=D.apron?hx(D.apron):null;g.cloak=!!D.cloak;
+  const st=G.hair&&HB_CAST_HAIR[G.hair.style];if(st)g.style=st;}
 function hbCastName(g){if(typeof HB.castGenome!=='function'||!g.hbKey)return null;const m=/^([^:#]*)(?:#[^:]*)?:(.+)$/.exec(g.hbKey);if(!m||!HB.CAST[m[2]])return null;
   return g.castOk||HB_CAST_SITE[m[2]]===m[1]?m[2]:null;}
 // the distant copy in the genome's colours, so the body does not change colour when it comes near
