@@ -123,13 +123,24 @@ const BUILD = {
   stair() { const bl = [], W = 8, n = 12, rise = .35, run = .6; for (let k = 0; k < n; k++) for (const sx of [-1, 1]) bl.push(B([{ key: 'floor', geo: stoneBox(W / 2, rise * (k + 1), run, sx * W / 4, rise * (k + 1) / 2, -k * run, .4, .02) }], { flat: true }));
     for (const sx of [-1, 1]) for (let k = 0; k < n; k += 3) bl.push(B([{ key: 'dress', geo: stoneBox(.8, rise * (k + 3) + .9, run * 3, sx * (W / 2 + .4), (rise * (k + 3) + .9) / 2, -(k + 1) * run) }]));
     return { bl, axis: 'x', size: { w: W + 1.6, h: n * rise + .9, d: n * run } }; },
-  bridge() { const bl = [], L = 16, Wd = 4, ys = 0, hh = 5.5, dk = 6.2;
-    const inner = archCurve(L - 2, ys, hh, 0), outer = archCurve(L - 2, ys, hh, -1.2), n = inner.length - 1;
-    for (let i = 0; i < n; i += 2) { const j = Math.min(n, i + 2); bl.push(B([{ key: 'stone', geo: prism([inner[i], inner[j], outer[j], outer[i]], -Wd / 2, Wd / 2) }])); }
+  // Session 1818: the ring is segmental, 13 m over a rise of 4.6 m, its extrados 5.8 m at the crown, under the deck's underside at
+  // 5.95. archCurve's two-centred arch falls back to a semicircle when the rise is under half the span, which stood the ring 1.75 m up
+  // through the deck at the crown (the concept artist's note, Session 1103's vaults). The spandrels' beds follow the extrados, and the
+  // ends from the springing out are solid abutments.
+  bridge() { const bl = [], L = 16, Wd = 4, ys = 0, S = 13, hh = 4.6, RD = 1.2, dk = 6.2, top = dk - .25;
+    const R = (S * S / 4 + hh * hh) / (2 * hh), cy = ys + hh - R, t0 = Math.atan2(ys - cy, S / 2), nv = 24;
+    const at = (t, r) => [Math.cos(t) * r, cy + Math.sin(t) * r];
+    for (let i = 0; i < nv; i++) { const a = Math.PI - t0 - (Math.PI - 2 * t0) * i / nv, b = Math.PI - t0 - (Math.PI - 2 * t0) * (i + 1) / nv;
+      bl.push(B([{ key: 'stone', geo: prism([at(a, R), at(b, R), at(b, R + RD), at(a, R + RD)], -Wd / 2, Wd / 2) }])); }
     const nd = 8; for (let k = 0; k < nd; k++) { const x = -L / 2 + (k + .5) * L / nd; bl.push(B([{ key: 'floor', geo: stoneBox(L / nd, .5, Wd, x, dk, 0, .4, .02) }], { flat: true }));
       for (const sz of [-1, 1]) bl.push(B([{ key: 'dress', geo: stoneBox(L / nd, 1.0, .4, x, dk + .75, sz * (Wd / 2 - .2)) }], { flat: true })); }
-    // the spandrels: courses between the ring and the deck
-    for (let k = 0; k < nd; k++) { const x = -L / 2 + (k + .5) * L / nd, top = dk - .25, base = Math.max(0, Math.min(top - .5, hh + 1.2 - Math.abs(x) * .9)); if (top - base > .4) bl.push(B([{ key: 'stone', geo: stoneBox(L / nd, top - base, Wd - .2, x, (top + base) / 2, 0) }])); }
+    // the spandrels: courses between the ring and the deck, each bed on the extrados (a chord, its sag inside the ring), and past
+    // the springing down to the footing; a course that straddles the springing is cut there in two
+    const bed = x => Math.abs(x) > S / 2 ? ys : Math.max(ys, cy + Math.sqrt((R + RD) ** 2 - x * x));
+    for (let k = 0; k < nd; k++) { const x0 = -L / 2 + k * L / nd, x1 = x0 + L / nd, cuts = [x0, ...[-S / 2, S / 2].filter(c => c > x0 + .01 && c < x1 - .01), x1], parts = [];
+      for (let c = 0; c < cuts.length - 1; c++) { const a = cuts[c] + .015, b = cuts[c + 1] - .015, ya = bed(a), yb = bed(b);
+        if (top - Math.max(ya, yb) > .05) parts.push({ key: 'stone', geo: prism([[a, ya], [b, yb], [b, top], [a, top]], -Wd / 2 + .1, Wd / 2 - .1) }); }
+      if (parts.length) bl.push(B(parts)); }
     return { bl, axis: 'x', size: { w: L, h: dk + 1.25, d: Wd } }; },
   balcony() { const bl = [], L = 9, out = 2.2, y = 6, T = 1.0;
     for (let k = 0; k < 6; k++) { const x = -L / 2 + .8 + k * (L - 1.6) / 5; /* a corbel: deep at the wall, cut back to the gallery's edge */ const g = new THREE.BoxGeometry(.6, 1.4, out), P = g.attributes.position; for (let i = 0; i < P.count; i++) if (P.getY(i) < 0 && P.getZ(i) > 0) P.setY(i, P.getY(i) + 1.1); g.translate(x, y - .7, out / 2); g.computeVertexNormals(); worldUV(g, .25); bl.push(B([{ key: 'dress', geo: g }])); }
