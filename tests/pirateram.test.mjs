@@ -101,8 +101,10 @@ const hk = await page.evaluate(() => {
   const out = {}; look(o.x, o.z); out.prompt = hookPrompt();
   o.speed = 4; look(o.x, o.z); out.fast = hookPrompt(); o.speed = 0;
   WX.type = 'storm'; WX.next = 'storm'; out.storm = hookPrompt(); out.stormThrow = hookInteract(); WX.type = 'clear'; WX.next = 'clear';
-  look(o.x, o.z); out.thrown = hookInteract(); out.phase0 = HOOKS.phase;
-  run(.9, () => { o.wp = { x: o.x, z: o.z }; }); out.at09 = HOOKS.phase; run(.25); out.at115 = HOOKS.phase; run(3.5); out.at465 = HOOKS.phase; run(.8);
+  /* the times are read off the clock as each phase begins, not sampled at fixed moments: one slow tick on a CI runner can overshoot a sample */
+  look(o.x, o.z); const tThrow = performance.now(); out.thrown = hookInteract(); out.phase0 = HOOKS.phase; const ph = {};
+  run(6, () => { o.wp = { x: o.x, z: o.z }; if (HOOKS.phase && ph[HOOKS.phase] == null) ph[HOOKS.phase] = +((performance.now() - tThrow) / 1000).toFixed(2); });
+  out.phases = ph;
   const [lx, lz] = shipLocal(side, o.x, o.z); out.lashed = { phase: HOOKS.phase, on: !!o.lashed, gap: +(Math.abs(lx) - S.W / 2 - o.W / 2).toFixed(2), along: +lz.toFixed(2), her: o.speed, mine: S.speed, lines: HOOKS.lines.length };
   S.speed = 5; run(.5); const [lx2] = shipLocal(side, o.x, o.z); out.held = { mine: S.speed, gap: +(Math.abs(lx2) - S.W / 2 - o.W / 2).toFixed(2) };
   // across: from your rail with her hull under the crosshair
@@ -111,7 +113,8 @@ const hk = await page.evaluate(() => {
   look(S.x, S.z); out.backPrompt = hookPrompt(); hookInteract(); out.back = onDeck();
   // the cut: by the first cleat, E, 1.5 s
   const c0 = HOOKS.cleats[0], c1 = HOOKS.cleats[1]; let a = at(c0.lx, c0.lz); px = a.x; pz = a.z; jumpY = DECK_Y; look(a.x, a.z, 0);
-  out.cutPrompt = hookPrompt(); hookInteract(); run(1.2, () => { px = a.x; pz = a.z; }); out.cutAt12 = c0.cut; run(.5, () => { px = a.x; pz = a.z; }); out.cutAt17 = c0.cut; out.still = lashed(o);
+  out.cutPrompt = hookPrompt(); const tCut = performance.now(); let tick0 = tCut, worst = 0; hookInteract(); run(2.2, () => { px = a.x; pz = a.z; const n = performance.now(); worst = Math.max(worst, n - tick0); tick0 = n; if (c0.cut && out.cutAt == null) out.cutAt = +((n - tCut) / 1000).toFixed(2); });
+  out.cutSlack = +(worst / 1000).toFixed(2); out.still = lashed(o);
   a = at(c1.lx, c1.lz); px = a.x; pz = a.z; hookInteract(); run(.4); px += 5; run(.2); out.walkedOff = { cut: c1.cut, msg: said.filter(t => /uncut/.test(t)).pop() || said[said.length - 1] };
   a = at(c1.lx, c1.lz); px = a.x; pz = a.z; hookInteract(); run(1.7, () => { px = a.x; pz = a.z; }); out.free = { cut: c1.cut, lashed: !!o.lashed, hooks: !!HOOKS.o, msg: said.filter(t => /free/.test(t)).pop() || said[said.length - 1] };
   // a rough sea: a throw misses one time in two, by her id and the throw's number
@@ -121,10 +124,10 @@ const hk = await page.evaluate(() => {
   despawnOtherShip(o); showMsg = sm; return out; });
 console.log('hooks', JSON.stringify(hk));
 check('her hull under the crosshair within 10 m: E throws the hooks; at 4 m/s apart, close slower; in a storm, none', hk.prompt === "Press 'E' to throw the hooks" && /more slowly/.test(hk.fast) && /No hook/.test(hk.storm) && !hk.stormThrow, hk);
-check('the throw takes 1 s, the haul 4 s, then lashed', hk.thrown && hk.phase0 === 'throw' && hk.at09 === 'throw' && hk.at115 === 'haul' && hk.at465 === 'haul' && hk.lashed.phase === 'lashed' && hk.lashed.on && hk.lashed.lines === 2, hk);
+check('the throw takes 1 s, the haul 4 s, then lashed', hk.thrown && hk.phase0 === 'throw' && hk.phases.haul >= 1 && hk.phases.haul < 1.6 && hk.phases.lashed >= 5 && hk.phases.lashed < 5.6 && hk.lashed.phase === 'lashed' && hk.lashed.on && hk.lashed.lines === 2, hk);
 check('lashed: alongside 0.6 m off, both ships at 0 m/s, and held so when you put on way', Math.abs(hk.lashed.gap - .6) < .05 && hk.lashed.her === 0 && hk.lashed.mine === 0 && hk.held.mine === 0 && Math.abs(hk.held.gap - .6) < .05, hk);
 check('across to her deck from your rail (boarding her), and back', /cross to her deck/.test(hk.crossPrompt) && hk.cross && hk.onHers && hk.boarded && /cross back/.test(hk.backPrompt) && hk.back, hk);
-check('a line cut at its cleat in 1.5 s; one line still holds her', /cut the line/.test(hk.cutPrompt) && !hk.cutAt12 && hk.cutAt17 && hk.still, hk);
+check('a line cut at its cleat in 1.5 s (not before; after by no more than the slowest tick); one line still holds her', /cut the line/.test(hk.cutPrompt) && hk.cutAt >= 1.5 && hk.cutAt <= 1.5 + Math.max(.2, hk.cutSlack) + .05 && hk.still, hk);
 check('walk off a cut and the line stays; both cut and she is free', !hk.walkedOff.cut && /uncut/.test(hk.walkedOff.msg) && hk.free.cut && !hk.free.lashed && !hk.free.hooks && /free/.test(hk.free.msg), hk);
 check('in a rough sea the throw misses by the seeded roll (her id, the throw)', JSON.stringify(hk.rough.got) === JSON.stringify(hk.rough.want), hk.rough);
 
@@ -140,9 +143,14 @@ const rb = await page.evaluate(() => {
     for (const x of [...OTHER]) if (x !== o) despawnOtherShip(x); if (!HOOKS.o) { Object.assign(o, hold); o.speed = 0; } if (!each) { const S = WORLD.ship; px = S.x; pz = S.z; jumpY = DECK_Y; } WORLD.tick(1 / 60, performance.now()); if (each) each(); } };
   const out = {};
   let [S, o] = fresh(); run(1.5, o); out.unrammed = { hooks: !!HOOKS.o, boarders: WORLD.boarders.length };
-  o._rammed = true; run(.3, o); out.thrown = { by: HOOKS.by, phase: HOOKS.phase, msg: document.getElementById('msg').textContent };
-  run(5, o); out.lashedAt5 = { phase: HOOKS.phase, boarders: WORLD.boarders.length }; run(5.2, o); out.at105 = { boarders: WORLD.boarders.length, sent: !!o.sentBoarders };
-  run(1.2, o); out.crossed = { boarders: WORLD.boarders.length, msg: document.getElementById('msg').textContent, still: lashed(o) };
+  /* each step's time is read off the clock when it happens (a slow tick on a CI runner overshoots a fixed sample) */
+  o._rammed = true; const T = {}; let t0 = 0, last = performance.now(), worst = 0;
+  run(13, o, () => { const n = performance.now(); worst = Math.max(worst, n - last); last = n; const S = WORLD.ship; px = S.x; pz = S.z; jumpY = DECK_Y;
+    if (HOOKS.by === 'her' && !t0) { t0 = n; out.thrown = { by: HOOKS.by, phase: HOOKS.phase }; }
+    if (t0 && HOOKS.phase === 'lashed' && T.lashed == null) { T.lashed = +((n - t0) / 1000).toFixed(2); T.boardersAtLash = WORLD.boarders.length; }
+    if (t0 && WORLD.boarders.length && T.crossed == null) T.crossed = +((n - t0) / 1000).toFixed(2); });
+  if (!out.thrown) out.thrown = { by: HOOKS.by, phase: HOOKS.phase };
+  T.slack = +(worst / 1000).toFixed(2); out.T = T; out.crossed = { boarders: WORLD.boarders.length, msg: document.getElementById('msg').textContent, still: lashed(o) };
   // again, and you cut both lines while she hauls: nobody crosses, and she must ram again
   [S, o] = fresh(); o._rammed = true; run(1.2, o); out.second = HOOKS.phase;
   for (const c of HOOKS.cleats.slice()) { const at = () => { const a = shipToWorld(S.mesh, c.lx, c.lz); px = a.x; pz = a.z; jumpY = DECK_Y; }; at(); hookInteract(); run(1.6, o, at); }
@@ -154,7 +162,7 @@ const rb = await page.evaluate(() => {
 console.log('boarders', JSON.stringify(rb));
 check('within 10 m, her ram not yet landed: no hooks, nobody on your deck (the old 12-second crossing is gone)', !rb.unrammed.hooks && rb.unrammed.boarders === 0, rb.unrammed);
 check('her ram spent: her hooks come over your rail', rb.thrown.by === 'her' && rb.thrown.phase === 'throw', rb.thrown);
-check('lashed at 5 s with nobody across yet; across 6 s after the lashing: two of her crew on your deck', rb.lashedAt5.phase === 'lashed' && rb.lashedAt5.boarders === 0 && rb.crossed.boarders === 2 && /Pirates on your deck/.test(rb.crossed.msg) && rb.crossed.still, rb);
+check('lashed 5 s after her throw with nobody across yet; across 6 s after the lashing: two of her crew on your deck', rb.T.lashed >= 5 && rb.T.lashed <= 5.05 + Math.max(.2, rb.T.slack) && rb.T.boardersAtLash === 0 && rb.T.crossed - rb.T.lashed >= 6 && rb.T.crossed - rb.T.lashed <= 6.05 + Math.max(.2, rb.T.slack) && rb.crossed.boarders === 2 && /Pirates on your deck/.test(rb.crossed.msg) && rb.crossed.still, rb);
 check('both lines cut while she hauls: she is free, nobody crosses, and she must ram again before she hooks', rb.second === 'haul' && !rb.cut.hooks && !rb.cut.rammed && !rb.cut.sent && !rb.cut.boarded && rb.after.boarders === 0 && !rb.after.hooks, rb);
 check('in a storm nobody grapples', !rb.storm.hooks, rb.storm);
 
