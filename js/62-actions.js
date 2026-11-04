@@ -738,6 +738,7 @@ function useItem(i){
   if(it.type==='herb'){useHerb(i);return;}
   if(it.brew){useTincture(i);return;} /* S1483 — a tincture drunk, a poison on the blade */
   if(it.name===MORTAR_NAME){openBrewPage();return;}
+  if(it.firePot){const r=throwPot();if(r!==true)showMsg(r,'#cc8844');return;} /* S1837 — a fire pot thrown at a ship */
   if(it.meal){eatMeal(i);return;} /* S1486 — a meal leaves you fed */
   if(it.name===TINDERBOX_NAME||it.log||it.food){useFireThing(i);return;} /* S1486 — a fire, and what it makes */
   if(it.tool==='pick'||it.ore||it.ingot){useOreThing(i);return;} /* S1491 — a pick at a vein */
