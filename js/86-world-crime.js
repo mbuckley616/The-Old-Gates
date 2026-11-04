@@ -1118,6 +1118,13 @@
     showMsg(`The carpenter's patch holds: hull ${to} of ${b.hullMax}.`,'#d8c8a0');return to-b.hull;}
   function crewCook(){const f=stashTakeOne(x=>x.food==='fish')?'fish':stashTakeOne(x=>x.food==='meat')?'meat':null;if(!f)return null;
     const it=mealItem(f,1);_stashAdd(it);showMsg(`The cook has a ${it.name.toLowerCase()} in the sea chest for you.`,'#d8c8a0');return it;}
+  // S1834 — #979 B, the sheet's session 5: renaming her is free, at any yard. One named action (the co-op rules), the name kept in
+  // worldState.ship.name (the world's row) and SHIP.name together. Letters, digits, spaces, apostrophes and hyphens, 24 at most;
+  // a leading "the" is dropped, since every line says "the {name}". Sunk, or with no ship, nothing is renamed.
+  const SHIP_NAME_MAX=24;
+  function shipNameClean(s){s=String(s==null?'':s).replace(/[^A-Za-z0-9 '’\-À-ÿ]/g,'').replace(/\s+/g,' ').trim().replace(/^the\s+/i,'').trim();if(s.length>SHIP_NAME_MAX)s=s.slice(0,SHIP_NAME_MAX).trim();return s?s[0].toUpperCase()+s.slice(1):'';}
+  function renameShip(n){const st=worldState.ship;if(!st||st.sunk)return null;const nm=shipNameClean(n);if(!nm)return null;const old=st.name||SHIP.name;if(nm===old)return nm;
+    st.name=nm;SHIP.name=nm;if(typeof addLog==='function')addLog('⛵',`The ${old} is the ${nm} now.`);return nm;}
   function shipFitNames(arr){return arr.map(k=>k==='stowage'?'stowage':SHIP_FITS[k]?SHIP_FITS[k].n:k);}
   function shipCfg(){return worldState.ship||(worldState.ship={});}
   function shipClass(){return SHIP_CLASSES[(worldState.ship&&worldState.ship.cls)||'sloop'];}
@@ -1790,6 +1797,9 @@ function yardPanelDraw(){const ov=document.getElementById('yardui');if(!ov||!YAR
   else if(!st&&cls!=='sloop')note=`Sold as a sloop; refitted as a ${cls} for ${refitCost('sloop',cls)} gold more.`;
   const A='display:block;width:100%;margin-top:6px;background:none;border:1px solid #8a7040;border-radius:3px;font:15px Georgia,serif;color:#3a2c18;cursor:pointer;padding:4px 8px';
   ov.querySelector('#yard-acts').innerHTML=offers.map((o,i)=>`<button type="button" data-i="${i}" style="${A}">${o.label}</button>`).join('')+(note?`<div style="font-size:13px;color:#6a5a3a;margin-top:6px">${note}</div>`:'');
+  if(mine&&mine===cls){const nm=st.name||SHIP.name||'';ov.querySelector('#yard-acts').insertAdjacentHTML('beforeend',`<div style="margin-top:10px;font-size:13px;color:#6a5a3a">Her name</div><input id="yard-name" type="text" maxlength="${SHIP_NAME_MAX+4}" value="${nm}" style="width:100%;box-sizing:border-box;margin-top:2px;font:15px Georgia,serif;color:#3a2c18;background:#f4ead6;border:1px solid #8a7040;border-radius:3px;padding:3px 6px"><button type="button" id="yard-rename" style="${A}">Rename her</button>`); /* S1834 — renaming her is free (#979 B, session 5) */
+    const inp=ov.querySelector('#yard-name'),go=()=>{const was=worldState.ship.name||SHIP.name,r=renameShip(inp.value);YARD.said=r&&r!==was?`Renamed: the ${r}.`:'';yardPanelDraw();};
+    ov.querySelector('#yard-rename').onclick=go;inp.addEventListener('keydown',e=>{e.stopPropagation();if(e.code==='Enter'){e.preventDefault();go();}else if(e.code==='Escape'){closeYardPanel();}});}
   for(const b of ov.querySelectorAll('#yard-acts button'))b.onclick=()=>{const o=offers[+b.dataset.i];const r=o.fn();YARD.said=typeof r==='string'?r:'';if(worldState.ship&&!worldState.ship.sunk)YARD.cls=yardHulls(site).includes(worldState.ship.cls||'sloop')?(worldState.ship.cls||'sloop'):YARD.cls;yardPanelDraw();};
   ov.querySelector('#yard-said').textContent=YARD.said;ov.querySelector('#yard-gold').textContent=`Your purse: ${gold} gold`;
   yardShow(cls);}
@@ -1813,4 +1823,4 @@ function openYardPanel(site){if(!site)return;
   ov.querySelector('#yard-title').textContent=`The yard at ${site.name}`;
   ov.style.display='flex';yardOpen=true;yardPanelDraw();YARD.last=0;if(!YARD.raf)YARD.raf=requestAnimationFrame(yardLoop);}
 function closeYardPanel(){const ov=document.getElementById('yardui');if(ov)ov.style.display='none';yardOpen=false;YARD.site=null;if(typeof G!=='undefined'&&G&&G.focus)G.focus();}
-window.addEventListener('keydown',e=>{if(!yardOpen)return;if(e.code==='Escape'||e.code==='KeyE'){if(!e.repeat)closeYardPanel();e.preventDefault();e.stopPropagation();}},true);
+window.addEventListener('keydown',e=>{if(!yardOpen)return;if(e.target&&e.target.id==='yard-name')return; /* S1834 — typing her name: E is a letter there */if(e.code==='Escape'||e.code==='KeyE'){if(!e.repeat)closeYardPanel();e.preventDefault();e.stopPropagation();}},true);
