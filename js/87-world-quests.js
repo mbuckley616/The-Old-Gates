@@ -64,7 +64,8 @@
           // S1813 — rams both ways (naval combat, #1064): her hull takes the closing speed × 4 from your bow, × 1.5 when it is her bow
           // that strikes, × 3 when neither does; what yours takes is unchanged (× 1.5 bow on, × 3 otherwise)
           if(close>.5){const herBow=(b.o.speed||0)>.5&&-(fb[0]*ux+fb[1]*uz)>.7;const d=damageShip(b.o,close*(bow?4:herBow?1.5:3),0);const w=shipWear(close*3*(bow?.5:1),0);
-            if(w&&w.hull||d&&d.hull){showMsg(`${bow?'You ram her':rammed?'The black sail rams you':'The hulls strike'}. Hull −${w&&w.hull||0}${d&&d.hull?`, hers −${d.hull}`:''}.`,'#ff8060');a._bump=performance.now();}}}
+            if(w&&w.hull||d&&d.hull){showMsg(`${bow?'You ram her':rammed?'The black sail rams you':'The hulls strike'}. Hull −${w&&w.hull||0}${d&&d.hull?`, hers −${d.hull}`:''}.`,'#ff8060');a._bump=performance.now();}
+            if(bow&&d&&typeof piracy==='function'){const pm=piracy(b.o);if(pm)showMsgLong(pm,'#e88a8a');}}} /* S1827 — your bow into a merchantman is piracy */
         else if(C.gap>1)b.o._touch=false;}
       if(C.pen>0){const push=C.pen*.5;const ux=C.ux,uz=C.uz;a.o.x-=ux*push;a.o.z-=uz*push;b.o.x+=ux*push;b.o.z+=uz*push;a.o.speed*=.6;b.o.speed*=.6;if(!a._bump||performance.now()-a._bump>1500){a._bump=performance.now();if(typeof sfxNoise==='function')sfxNoise(.5,0,0,.16,240);if(a.mine||b.mine)showMsg('Hulls grind together.','#c8b880');}}}
   }
