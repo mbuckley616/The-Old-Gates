@@ -18,7 +18,10 @@ import { stream } from './pieces.js';
 let SM = null;
 function sailTex(harp, cl = {}) { const c = document.createElement('canvas'); c.width = c.height = 512; const x = c.getContext('2d');
   x.fillStyle = cl.base || '#3f6e3c'; x.fillRect(0, 0, 512, 512); x.fillStyle = 'rgba(0,0,0,.08)'; for (let i = 0; i < 512; i += 64) x.fillRect(i, 0, 3, 512); /* the cloths' seams */
-  if (harp) { x.strokeStyle = x.fillStyle = cl.mark || '#e6d6a4'; x.lineCap = 'round'; x.lineJoin = 'round';
+  if (harp) drawHarp(x, cl.mark || '#e6d6a4');
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; }
+// the harp in the sail's 512 square (Session 1847: drawn by the sail and by the Crown's flag alike)
+function drawHarp(x, col) { x.strokeStyle = x.fillStyle = col; x.lineCap = 'round'; x.lineJoin = 'round';
     // the harp side on: the soundbox a thick diagonal from the neck's head down to the foot, the neck curving over the top to the
     // forepillar, which bows out and down to the foot; the strings straight down from the neck to the soundbox
     const sb = xx => 130 + (xx - 175) * 2.4, nk = xx => { const t = (xx - 175) / 190; return 130 - 70 * Math.sin(Math.PI * t) + 40 * t; };
@@ -26,7 +29,6 @@ function sailTex(harp, cl = {}) { const c = document.createElement('canvas'); c.
     x.lineWidth = 30; x.beginPath(); x.moveTo(175, 130); x.lineTo(304, 440); x.stroke();
     x.lineWidth = 20; x.beginPath(); x.moveTo(175, 130); for (let xx = 175; xx <= 365; xx += 5) x.lineTo(xx, nk(xx)); x.stroke();
     x.lineWidth = 22; x.beginPath(); x.moveTo(365, nk(365)); x.bezierCurveTo(400, 260, 380, 380, 304, 440); x.stroke(); }
-  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; }
 function mats(harp) {
   if (SM && SM.harp === harp) return SM.M;
   const M = { tar: mat('wood', { ns: .6, color: 0x2a2420, rough: .55 }), oak: mat('wood', { ns: 1.0, color: 0xc29a6a, rough: .7 }), green: mat('wood', { ns: .8, color: 0x2f5a34, rough: .6 }),
@@ -326,10 +328,12 @@ export function markCutter(o = {}, r = stream('cutter')) {
 let AM = null;
 function caravelSail(star, cl = {}) { const c = document.createElement('canvas'); c.width = c.height = 512; const x = c.getContext('2d');
   x.fillStyle = cl.base || '#ece5d2'; x.fillRect(0, 0, 512, 512); x.fillStyle = 'rgba(80,60,30,.09)'; for (let i = 0; i < 512; i += 48) x.fillRect(i, 0, 3, 512); /* the cloths' seams */
-  if (star) { /* the sun-star: a disc with sixteen rays, long and short by turns, in gold */ x.fillStyle = cl.rays || '#c9982e'; x.beginPath();
+  if (star) drawStar(x, cl);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; return t; }
+// the sun-star: a disc with sixteen rays, long and short by turns, in gold, about (256, 256) (Session 1847: the sail's and the Compact's flag's)
+function drawStar(x, cl = {}) { x.fillStyle = cl.rays || '#c9982e'; x.beginPath();
     for (let k = 0; k < 32; k++) { const a = k * Math.PI / 16 - Math.PI / 2, rr = k % 2 ? 62 : (k / 2) % 2 ? 128 : 172; x.lineTo(256 + rr * Math.cos(a), 256 + rr * Math.sin(a)); } x.closePath(); x.fill();
     x.fillStyle = cl.disc || '#e2b84a'; x.beginPath(); x.arc(256, 256, 70, 0, Math.PI * 2); x.fill(); x.strokeStyle = cl.ring || '#a87a22'; x.lineWidth = 6; x.beginPath(); x.arc(256, 256, 54, 0, Math.PI * 2); x.stroke(); }
-  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; return t; }
 function caravelMats(star) {
   if (AM && AM.star === star) return AM.M;
   const M = { tallow: mat('wood', { ns: .4, color: 0xd6ccb4, rough: .7 }), hull: mat('wood', { ns: .8, color: 0xb08458, rough: .6 }), blue: new THREE.MeshStandardMaterial({ color: 0x2b4a80, roughness: .72 }), paint: new THREE.MeshStandardMaterial({ color: 0xe6dcc4, roughness: .8 }),
@@ -828,4 +832,59 @@ export function swatch(S, dress, o = {}) {
         c.userData = { swatch: 'cloth', cloth: C.name }; SWC.set(k, c); }
       m.material = SWC.get(k); } });
   S.swatch = { dress, paint: P.name, cloth: C.name }; return S;
+}
+
+// ── the banner (Session 1847, card F11; the ship sheet's session 5, `making-a-ship-yours-build.md`: "The banners are the three nations',
+//   your house's once you own one, or none. A banner is only a look until naval combat's C"). The colours are the canon's national
+//   signage (lore_canon §1.5: the Crown crimson-and-gold, the Mark black-and-iron, the Compact blue-and-white), the game's
+//   NATIONS[].banner and .trim (87-world-quests.js); the devices are the marks the sails already carry where an island has one (OG-004's
+//   harp and sun-star, which fill the canon's gap), and for the Mark, whose sail mark is its sewn stripes, a band of iron across the black.
+//   Your house has no arms yet, so 'house' is not drawn here.
+export const BANNERS = {
+  gatelands: { name: 'the Crown', field: '#8a1a1a', trim: '#d8b040', device: 'harp' },
+  mark: { name: 'the Mark', field: '#1a1a1e', trim: '#8a8a90', device: 'band' },
+  aurenne: { name: 'the Compact', field: '#1e3a7a', trim: '#e8e8f0', device: 'star' } };
+const FLAGT = new Map();
+function flagTex(n) { if (FLAGT.has(n)) return FLAGT.get(n); const B = BANNERS[n], c = document.createElement('canvas'); c.width = 384; c.height = 256; const x = c.getContext('2d');
+  x.fillStyle = B.field; x.fillRect(0, 0, 384, 256); x.fillStyle = 'rgba(0,0,0,.07)'; for (let i = 0; i < 384; i += 48) x.fillRect(i, 0, 2, 256); /* the cloths' seams */
+  x.save();
+  if (B.device === 'harp') { x.translate(150, 128); x.scale(.5, .5); x.translate(-270, -285); drawHarp(x, B.trim); }
+  else if (B.device === 'star') { x.translate(150, 128); x.scale(.58, .58); x.translate(-256, -256); drawStar(x, { rays: B.trim, disc: B.trim, ring: B.field }); }
+  else { x.fillStyle = B.trim; x.fillRect(0, 98, 384, 60); x.fillStyle = B.field; x.fillRect(0, 122, 384, 12); }
+  x.restore(); x.strokeStyle = B.trim; x.lineWidth = 10; x.strokeRect(5, 5, 374, 246); /* a hem in the trim */
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; FLAGT.set(n, t); return t; }
+const FLAGM = new Map(), STAFFM = { m: null };
+// banner(S, nation, o): S from any hull builder; nation 'gatelands' | 'mark' | 'aurenne' (the Crown's, the Mark's, the Compact's) or
+//   'none'. A staff stepped at the stern on the centreline (on the aft castle where she has one), raked 6° aft, and the flag at its head
+//   flying aft on the wind with a ripple. The hoist is 7% of her length (0.8 to 2.4 m), the fly 1.5 the hoist, its foot 1.2 m clear of
+//   the rail so it flies over heads. A hull whose gaff boom swings out over her stern (the Mark's sloop, cutter, caravel and cog, and
+//   every galleon's mizzen but Aurenne's) has no room there: her banner flies from a pole on the head of the mast that carries the boom instead, as a gaff
+//   rig's colours are carried aloft (o.at 'stern' | 'mast' forces either). o.yaw turns the fly off the centreline (the wind's side, rad,
+//   default .35 to port); o.phase the ripple.
+//   -> S, with S.banner { nation, at, hoist, fly, staff: [x, y, z] (the foot), head (y), tris, draws }.
+export function banner(S, nation, o = {}) {
+  if (S.banner && S.banner.group) { S.group.remove(S.banner.group); S.banner = null; }
+  if (!BANNERS[nation]) { S.banner = { nation: 'none', tris: 0, draws: 0 }; return S; }
+  const aft = S.castles ? S.castles.aft : S.castle, railZ = Math.min(...S.rail.map(p => p[0])), boom = S.boom || (S.gaff && S.gaff.boom) || (S.rig === 'gaff' ? { z0: S.mast[1] - .2 } : null);
+  const at = o.at || (boom ? 'mast' : 'stern'), h = Math.max(.8, Math.min(2.4, S.L * .07)), fly = 1.5 * h; let fz, fy, len, rake;
+  if (at === 'mast') { /* the boom's mast (the boom's foot is 0.2 aft of it), its head the highest spar vertex within 0.35 m of its line */
+    const mz = boom ? boom.z0 + .2 : S.mast[1]; let top = S.deck; S.group.updateMatrixWorld(true);
+    S.group.traverse(m => { if (!m.isMesh || m.name !== 'spar') return; const P = m.geometry.attributes.position; for (let i = 0; i < P.count; i++) if (Math.hypot(P.getX(i), P.getZ(i) - mz) < .35) top = Math.max(top, P.getY(i)); });
+    fz = mz; fy = top - .4; len = .4 + .5 + h; rake = 0; }
+  else { fz = aft ? aft.z0 + .45 : railZ + .45; fy = aft ? aft.y : S.deck; const railY = aft ? aft.y + 1.0 : Math.max(...S.rail.filter(p => p[0] < railZ + .8).map(p => p[1])); len = (railY - fy) + 1.2 + h; rake = .105; }
+  const g = new THREE.Group(); g.name = 'banner'; g.position.set(0, fy, fz); g.rotation.x = -rake;
+  if (!STAFFM.m) STAFFM.m = mat('wood', { ns: .8, color: 0x6a4a2e, rough: .7 });
+  const sg = mergeGeometries([new THREE.CylinderGeometry(.035, .06, len, 8).translate(0, len / 2, 0), new THREE.SphereGeometry(.08, 10, 6).translate(0, len + .05, 0)], false);
+  const staff = new THREE.Mesh(sg, STAFFM.m); staff.castShadow = true; g.add(staff);
+  const NU = 16, NV = 8, fg = new THREE.PlaneGeometry(fly, h, NU, NV), P = fg.attributes.position, ph = o.phase || 0;
+  for (let i = 0; i < P.count; i++) { const u = (P.getX(i) + fly / 2) / fly, v = (P.getY(i) + h / 2) / h; /* u 0 at the hoist, v 0 at the foot */
+    const z = -u * fly + .04, x = u * .32 * h * Math.sin(u * 7.5 - ph + v * .8) * .5, y = len - .1 - h + v * h - .12 * h * u * u;
+    P.setXYZ(i, x, y, z); }
+  fg.computeVertexNormals();
+  if (!FLAGM.has(nation)) FLAGM.set(nation, new THREE.MeshStandardMaterial({ map: flagTex(nation), roughness: .9, side: THREE.DoubleSide }));
+  const flag = new THREE.Mesh(fg, FLAGM.get(nation)); flag.rotation.y = -(o.yaw ?? .35); flag.castShadow = true; g.add(flag);
+  S.group.add(g);
+  const tris = Math.round(sg.index.count / 3 + fg.index.count / 3);
+  S.banner = { nation, at, group: g, hoist: +h.toFixed(2), fly: +fly.toFixed(2), staff: [0, +fy.toFixed(2), +fz.toFixed(2)], head: +(fy + len * Math.cos(rake)).toFixed(2), tris, draws: 2 };
+  return S;
 }
