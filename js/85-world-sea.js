@@ -1012,8 +1012,8 @@
   function pirateFled(o){if(o.kind!=='pirate'||o._fled||PHP<=0||!o.crew.some(e=>!e.dead))return;if(deckOff(o.plat)<1.5&&!onDeck())return;
     o._fled=true;if(!worldState.ship||!SHIP.mesh||Math.hypot(SHIP.x-o.x,SHIP.z-o.z)>PIRATE_REACH)return;const took=pirateTake();if(!took.length)return;
     showMsg(`They come over your rail behind you and take ${pirateStow(o,took)} from the hold.`,'#ff8060');}
-  function otherPrompt(){const o=nearOther();return o&&!o.boarded?`Press 'E' to climb aboard ${o.name}`:null;}
-  function otherInteract(){const o=nearOther();if(o&&!o.boarded)return startClimb(o.mesh,o.W,shipNetSide(o.mesh,o.W),o);return false;}
+  function otherPrompt(){const o=nearOther();return o&&!o.boarded?`Press 'E' to climb aboard ${o.name}`:hookPrompt();} /* S1814 — a net under the crosshair first, then the hooks */
+  function otherInteract(){const o=nearOther();if(o&&!o.boarded)return startClimb(o.mesh,o.W,shipNetSide(o.mesh,o.W),o);return hookInteract();} /* S1814 */
   // S613 (Michael's sailing playtest, 6 Oct) — the dead ride where they fell. A hand killed on her deck (or a boarder on
   // yours) is carried with the ship, turned with her as she turns, ragdoll, body, search and glow alike; the sea is a floor
   // to a falling body, so one that goes over the side comes to rest on the water and floats where it fell. A body on a

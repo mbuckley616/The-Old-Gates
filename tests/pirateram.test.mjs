@@ -86,6 +86,47 @@ check('a heavy merchantman makes 4.5 × 0.8 = 3.6', nc.merch.state === 'heavy' &
 check('a ship a quest needs strikes at 25 and lies to: no leak, no way on her, never founders', nc.strike.hull === 25 && nc.strike.struck && nc.strike.speed === 0 && nc.strike.there && nc.strike.lost === 75 && /lies to/.test(nc.strike.msg), nc.strike);
 check('your own ship under a quarter leaks a point every 10 s while you are aboard, to waterlogged and no further', nc.mine.hull === 0 && nc.mine.mesh && !nc.mine.sunk, nc.mine);
 
+// S1814 — the hooks: thrown within 10 m under 3 m/s, 1 s and 4 s, lashed 0.6 m off and still; across and back; two lines cut in 1.5 s
+const hk = await page.evaluate(() => {
+  for (const o of [...OTHER]) despawnOtherShip(o);
+  WX.type = 'clear'; WX.next = 'clear';
+  worldState.ship = { cls: 'sloop', name: 'Test Gull', sails: 0, cargo: 0, hold: {} }; WORLD.spawnShip(_sea.x, _sea.z, 0); const S = WORLD.ship; S.sailing = false; S.speed = 0;
+  px = S.x; pz = S.z; jumpY = DECK_Y; velY = 0; onGround = true;
+  const look = (x, z, y) => { CAM.position.set(px, jumpY + 1.55, pz); CAM.lookAt(x, y == null ? DECK_Y + .5 : y, z); CAM.updateMatrixWorld(); };
+  const run = (secs, each) => { const t0 = performance.now(); let n = 0; while (performance.now() - t0 < secs * 1000) { S.x = S.x; WORLD.tick(1 / 60, performance.now()); if (each) each(); n++; } return n; };
+  const side = WORLD.ship.mesh; const o = spawnOtherShip('merchant', 0, 0, 'test:hooks');
+  const at = (lx, lz) => shipToWorld(side, lx, lz);
+  const p0 = at(S.W / 2 + o.W / 2 + 6, 1.5); o.x = p0.x; o.z = p0.z; o.yaw = S.yaw; o.speed = 0; o.wp = { x: o.x, z: o.z }; placeOther(o);
+  const out = {}; look(o.x, o.z); out.prompt = hookPrompt();
+  o.speed = 4; look(o.x, o.z); out.fast = hookPrompt(); o.speed = 0;
+  WX.type = 'storm'; WX.next = 'storm'; out.storm = hookPrompt(); out.stormThrow = hookInteract(); WX.type = 'clear'; WX.next = 'clear';
+  look(o.x, o.z); out.thrown = hookInteract(); out.phase0 = HOOKS.phase;
+  run(.9, () => { o.wp = { x: o.x, z: o.z }; }); out.at09 = HOOKS.phase; run(.25); out.at115 = HOOKS.phase; run(3.5); out.at465 = HOOKS.phase; run(.8);
+  const [lx, lz] = shipLocal(side, o.x, o.z); out.lashed = { phase: HOOKS.phase, on: !!o.lashed, gap: +(Math.abs(lx) - S.W / 2 - o.W / 2).toFixed(2), along: +lz.toFixed(2), her: o.speed, mine: S.speed, lines: HOOKS.lines.length };
+  S.speed = 5; run(.5); const [lx2] = shipLocal(side, o.x, o.z); out.held = { mine: S.speed, gap: +(Math.abs(lx2) - S.W / 2 - o.W / 2).toFixed(2) };
+  // across: from your rail with her hull under the crosshair
+  const r = at(Math.sign(lx) * (S.W / 2 - .9), 1.5); px = r.x; pz = r.z; jumpY = DECK_Y; look(o.x, o.z); out.crossPrompt = hookPrompt(); out.cross = hookInteract();
+  out.onHers = inDeck(o.plat, px, pz) && !onDeck(); out.boarded = !!o.boarded;
+  look(S.x, S.z); out.backPrompt = hookPrompt(); hookInteract(); out.back = onDeck();
+  // the cut: by the first cleat, E, 1.5 s
+  const c0 = HOOKS.cleats[0], c1 = HOOKS.cleats[1]; let a = at(c0.lx, c0.lz); px = a.x; pz = a.z; jumpY = DECK_Y; look(a.x, a.z, 0);
+  out.cutPrompt = hookPrompt(); hookInteract(); run(1.2, () => { px = a.x; pz = a.z; }); out.cutAt12 = c0.cut; run(.5, () => { px = a.x; pz = a.z; }); out.cutAt17 = c0.cut; out.still = lashed(o);
+  a = at(c1.lx, c1.lz); px = a.x; pz = a.z; hookInteract(); run(.4); px += 5; run(.2); out.walkedOff = { cut: c1.cut, msg: document.getElementById('msg').textContent };
+  a = at(c1.lx, c1.lz); px = a.x; pz = a.z; hookInteract(); run(1.7, () => { px = a.x; pz = a.z; }); out.free = { cut: c1.cut, lashed: !!o.lashed, hooks: !!HOOKS.o, msg: document.getElementById('msg').textContent };
+  // a rough sea: a throw misses one time in two, by her id and the throw's number
+  const ss = seaState; seaState = () => 2; const got = [], want = [];
+  for (let i = 0; i < 4; i++) { const n = (HOOKS.n['test:hooks'] || 0) + 1; want.push(seededRng('hooks', `test:hooks:${n}`)() < .5); px = S.x; pz = S.z; jumpY = DECK_Y; throwHooks(o); got.push(HOOKS.miss); run(1.15); hookDrop(); }
+  seaState = ss; out.rough = { got, want };
+  despawnOtherShip(o); return out; });
+console.log('hooks', JSON.stringify(hk));
+check('her hull under the crosshair within 10 m: E throws the hooks; at 4 m/s apart, close slower; in a storm, none', hk.prompt === "Press 'E' to throw the hooks" && /more slowly/.test(hk.fast) && /No hook/.test(hk.storm) && !hk.stormThrow, hk);
+check('the throw takes 1 s, the haul 4 s, then lashed', hk.thrown && hk.phase0 === 'throw' && hk.at09 === 'throw' && hk.at115 === 'haul' && hk.at465 === 'haul' && hk.lashed.phase === 'lashed' && hk.lashed.on && hk.lashed.lines === 2, hk);
+check('lashed: alongside 0.6 m off, both ships at 0 m/s, and held so when you put on way', Math.abs(hk.lashed.gap - .6) < .05 && hk.lashed.her === 0 && hk.lashed.mine === 0 && hk.held.mine === 0 && Math.abs(hk.held.gap - .6) < .05, hk);
+check('across to her deck from your rail (boarding her), and back', /cross to her deck/.test(hk.crossPrompt) && hk.cross && hk.onHers && hk.boarded && /cross back/.test(hk.backPrompt) && hk.back, hk);
+check('a line cut at its cleat in 1.5 s; one line still holds her', /cut the line/.test(hk.cutPrompt) && !hk.cutAt12 && hk.cutAt17 && hk.still, hk);
+check('walk off a cut and the line stays; both cut and she is free', !hk.walkedOff.cut && /uncut/.test(hk.walkedOff.msg) && hk.free.cut && !hk.free.lashed && !hk.free.hooks && /free/.test(hk.free.msg), hk);
+check('in a rough sea the throw misses by the seeded roll (her id, the throw)', JSON.stringify(hk.rough.got) === JSON.stringify(hk.rough.want), hk.rough);
+
 check('no page errors', g.errs.length === 0, g.errs);
 if (stop) stop();
 await g.close();

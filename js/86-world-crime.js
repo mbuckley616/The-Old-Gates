@@ -1299,6 +1299,77 @@
     const lz=Math.max(-NET_HALF+.3,Math.min(NET_HALF-.3,_netO.set(px,0,pz).applyMatrix4(_netInv).z));
     const v=new THREE.Vector3(s.side*(s.W/2+1.0),SHIP_DECK,lz).applyMatrix4(s.mesh.matrixWorld);
     px=v.x;pz=v.z;jumpY=DECK_Y+.2;velY=0;onGround=false;showMsg('You go over the side.','#c8b880');return true;}
+  // S1814 — naval combat's hooks (Michael's B on #1064, docs/design/naval-combat.md, A): from your deck or the helm, with her hull
+  // under the crosshair within 10 m and the two ships moving at under 3 m/s to each other, E throws the hooks. The throw takes 1.0 s;
+  // then 4 s of hauling draws her alongside, parallel and 0.6 m off, and both ships come to 0 m/s. Lashed, she is held there and
+  // your ship makes no way; E at your rail with her deck under the crosshair crosses to it (boarding her) and back. Each line is
+  // made fast at a cleat on your rail, two of them; E at a cleat cuts that line in 1.5 s (stay by it), and with both cut she is
+  // free. In a rough sea a throw misses one time in two (seeded by her id and the throw); in a storm nobody throws. Her crew's
+  // own hooks, and her hand cutting yours (6 s), are the next session's (repel boarders).
+  const HOOK_REACH=10,HOOK_CLOSE=3,HOOK_THROW=1.0,HOOK_HAUL=4,HOOK_CUT=1.5,HOOK_GAP=.6,HOOK_CROSS=3,HOOK_CLEAT=1.3;
+  const HOOKS={o:null,phase:null,t0:0,n:{},side:1,lz:0,yawK:0,from:null,cleats:[],lines:[],cut:null};
+  function hookClock(){return performance.now()/1000;}
+  function shipToWorld(mesh,lx,lz){const ry=mesh.rotation.y,c=Math.cos(ry),s=Math.sin(ry);return {x:mesh.position.x+lx*c+lz*s,z:mesh.position.z-lx*s+lz*c};}
+  const _hkInv=new THREE.Matrix4(),_hkO=new THREE.Vector3(),_hkD=new THREE.Vector3(),_hkR=new THREE.Ray(),_hkB=new THREE.Box3(),_hkH=new THREE.Vector3(),_hkA=new THREE.Vector3(),_hkC=new THREE.Vector3();
+  // the eye's distance to a hull's box (her sides to a hand over the rail), or -1 when the crosshair is not on her
+  function eyeOnHull(mesh,W,L){if(!mesh||typeof CAM==='undefined'||!CAM)return -1;mesh.updateMatrixWorld(true);_hkInv.copy(mesh.matrixWorld).invert();
+    CAM.updateMatrixWorld();CAM.getWorldDirection(_hkD);_hkO.copy(CAM.position).applyMatrix4(_hkInv);_hkD.transformDirection(_hkInv);_hkR.set(_hkO,_hkD);
+    _hkB.set(_hkA.set(-W/2-.3,-.6,-L/2),_hkC.set(W/2+.3,SHIP_DECK+1.4,L/2));return _hkR.intersectBox(_hkB,_hkH)?_hkO.distanceTo(_hkH):-1;}
+  function eyeSlack(){return (typeof thirdPerson!=='undefined'&&thirdPerson&&typeof TP!=='undefined')?TP.dist:0;}
+  function shipVel(o){const v=o.speed||0;return [-Math.sin(o.yaw||0)*v,-Math.cos(o.yaw||0)*v];}
+  function hookCloseSpeed(o){const a=shipVel(SHIP),b=shipVel(o);return Math.hypot(a[0]-b[0],a[1]-b[1]);}
+  function hookAimed(){if(HOOKS.o||!SHIP.mesh||climbing()||!(onDeck()||SHIP.sailing))return null;let best=null,bd=1e9;
+    for(const o of OTHER){if(o.dead||o.founder!=null||!o.mesh)continue;if(deckOff(o.plat)>HOOK_REACH)continue;const d=eyeOnHull(o.mesh,o.W,o.L);if(d<0||d>HOOK_REACH+eyeSlack()||d>=bd)continue;bd=d;best=o;}
+    return best;}
+  function hookPrompt(){if(HOOKS.o)return lashPrompt();const o=hookAimed();if(!o)return null;if(seaState()>=3)return 'No hook will hold in this sea';
+    if(hookCloseSpeed(o)>=HOOK_CLOSE)return 'Close with her more slowly to throw the hooks';return "Press 'E' to throw the hooks";}
+  function hookInteract(){if(HOOKS.o)return lashInteract();const o=hookAimed();if(!o||seaState()>=3||hookCloseSpeed(o)>=HOOK_CLOSE)return false;return throwHooks(o);}
+  // the named action: the throw at a ship; it lands (or not) 1 s later
+  function throwHooks(o){if(!o||HOOKS.o||!SHIP.mesh||o.dead||o.founder!=null)return false;const k=o.id||'ship';HOOKS.n[k]=(HOOKS.n[k]||0)+1;
+    const miss=seaState()>=2&&seededRng('hooks',`${k}:${HOOKS.n[k]}`)()<.5;
+    const [lx,lz]=shipLocal(SHIP.mesh,o.x,o.z);HOOKS.side=lx>=0?1:-1;HOOKS.lz=Math.max(-SHIP.L/2,Math.min(SHIP.L/2,lz));
+    let dy=(o.yaw-SHIP.yaw)%(Math.PI*2);dy=Math.atan2(Math.sin(dy),Math.cos(dy));HOOKS.yawK=Math.abs(dy)>Math.PI/2?Math.PI:0;
+    HOOKS.cleats=[-.25,.25].map(f=>({lx:HOOKS.side*cleatOff(f*SHIP.L),lz:f*SHIP.L,cut:false}));
+    Object.assign(HOOKS,{o,phase:'throw',t0:hookClock(),miss,cut:null,from:{x:o.x,z:o.z,yaw:o.yaw,v:SHIP.speed||0}});o.ramming=0;
+    hookLines(true);if(typeof sfxNoise==='function')sfxNoise(.15,0,0,.08,700);showMsg('You throw the hooks.','#c8b880');return true;}
+  // a cleat stands on your planking, 0.35 m in from the deck's edge at its station (the deck narrows fore and aft)
+  function cleatOff(lz){const p=SHIP.plat;let w=SHIP.W/2-.3;if(p&&p.inside)for(;w>.4;w-=.05){const q=shipToWorld(SHIP.mesh,HOOKS.side*w,lz);if(p.inside(q.x,q.z))break;}return Math.max(.4,w-.35);}
+  // where she lies when lashed: parallel to your hull, 0.6 m off your side, as far along as she was
+  function lashPose(){const o=HOOKS.o,p=shipToWorld(SHIP.mesh,HOOKS.side*(SHIP.W/2+o.W/2+HOOK_GAP),HOOKS.lz);return {x:p.x,z:p.z,yaw:SHIP.yaw+HOOKS.yawK};}
+  function hookEnds(c){const o=HOOKS.o,a=shipToWorld(SHIP.mesh,c.lx,c.lz),[ox,oz]=shipLocal(o.mesh,a.x,a.z);
+    const sd=ox>=0?1:-1,b=shipToWorld(o.mesh,sd*(o.W/2-.3),Math.max(-o.L/2+1,Math.min(o.L/2-1,oz)));return [a,b];}
+  function hookLines(make){for(const l of HOOKS.lines){sc.remove(l);l.geometry.dispose();}HOOKS.lines=[];if(!make)return;
+    const mat=new THREE.LineBasicMaterial({color:0x5a4428});for(const c of HOOKS.cleats){const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(6),3));const l=new THREE.Line(g,mat);l.frustumCulled=false;l.userData.c=c;sc.add(l);HOOKS.lines.push(l);}}
+  function hookDrop(why){const o=HOOKS.o;if(o){o.lashed=false;}hookLines(false);Object.assign(HOOKS,{o:null,phase:null,cut:null,cleats:[]});if(why)showMsg(why,'#c8b880');}
+  function lashed(o){return !!HOOKS.o&&HOOKS.phase==='lashed'&&(!o||HOOKS.o===o);}
+  // once a frame, after the other ships have moved: the throw, the haul, the lashing held, a cut
+  function tickHooks(dt){const o=HOOKS.o;if(!o)return;
+    if(!SHIP.mesh||o.dead||o.founder!=null||!OTHER.includes(o)||activeZoneId!=='world'){hookDrop(SHIP.mesh&&o.founder!=null?'The lines go with her.':null);return;}
+    const t=hookClock()-HOOKS.t0;o.ramming=0;
+    if(HOOKS.phase==='throw'){if(t>=HOOK_THROW){if(HOOKS.miss){hookDrop('The hooks fall short in the swell.');return;}HOOKS.phase='haul';HOOKS.t0=hookClock();
+        HOOKS.from={x:o.x,z:o.z,yaw:o.yaw,v:SHIP.speed||0};showMsg('The hooks bite. Haul her in.','#e8d8a0');}}
+    else if(HOOKS.phase==='haul'){const u=Math.min(1,t/HOOK_HAUL),e=u*u*(3-2*u),P=lashPose(),f=HOOKS.from;
+      let dy=P.yaw-f.yaw;dy=Math.atan2(Math.sin(dy),Math.cos(dy));o.x=f.x+(P.x-f.x)*e;o.z=f.z+(P.z-f.z)*e;o.yaw=f.yaw+dy*e;o.speed=0;SHIP.speed=f.v*(1-u);placeOther(o);
+      if(u>=1){HOOKS.phase='lashed';o.lashed=true;showMsg(`Lashed. ${o.kind==='pirate'?'Her crew are waiting.':'Her crew keep back from the rail.'}`,'#e8d8a0');}}
+    else{const P=lashPose();o.x=P.x;o.z=P.z;o.yaw=P.yaw;o.speed=0;SHIP.speed=0;placeOther(o);
+      const C=HOOKS.cut;if(C){const a=shipToWorld(SHIP.mesh,C.c.lx,C.c.lz);if(!onDeck()||Math.hypot(px-a.x,pz-a.z)>HOOK_CLEAT+.3){HOOKS.cut=null;showMsg('You leave the line uncut.','#c8b880');}
+        else if(hookClock()-C.t0>=HOOK_CUT){HOOKS.cut=null;cutLine(C.c);}}}
+    const draw=HOOKS.phase==='throw'?Math.min(1,t/HOOK_THROW):1;
+    for(const l of HOOKS.lines){const c=l.userData.c;l.visible=!c.cut;if(c.cut)continue;const [a,b]=hookEnds(c),A=l.geometry.attributes.position;
+      A.setXYZ(0,a.x,DECK_Y+.4,a.z);A.setXYZ(1,a.x+(b.x-a.x)*draw,DECK_Y+.6+Math.sin(draw*Math.PI)*1.5,a.z+(b.z-a.z)*draw);A.needsUpdate=true;}}
+  // the named action: one line cut; with none left she is free
+  function cutLine(c){if(!c||c.cut)return false;c.cut=true;if(typeof sfxNoise==='function')sfxNoise(.08,0,0,.05,1600);
+    if(HOOKS.cleats.every(x=>x.cut)){hookDrop('The last line parts. She is free of you.');return true;}showMsg('You cut a line. One holds her still.','#c8b880');return true;}
+  function cleatNear(){if(!lashed()||!onDeck()||HOOKS.cut)return null;for(const c of HOOKS.cleats){if(c.cut)continue;const a=shipToWorld(SHIP.mesh,c.lx,c.lz);if(Math.hypot(px-a.x,pz-a.z)<HOOK_CLEAT)return c;}return null;}
+  // across the gap: from your deck with her hull under the crosshair, within 3 m, onto her deck at her near rail (boarding her);
+  // from hers with yours under it, back
+  function crossTarget(){if(!lashed()||climbing()||SHIP.sailing||Math.abs(jumpY-DECK_Y)>.6)return null;const o=HOOKS.o;
+    const mine=onDeck(),hers=inDeck(o.plat,px,pz);if(!mine&&!hers)return null;const to=mine?{mesh:o.mesh,W:o.W,L:o.L,other:o}:{mesh:SHIP.mesh,W:SHIP.W,L:SHIP.L,other:null};
+    const d=eyeOnHull(to.mesh,to.W,to.L);if(d<0||d>HOOK_CROSS+eyeSlack())return null;return to;}
+  function lashPrompt(){if(HOOKS.phase!=='lashed')return null;if(HOOKS.cut)return 'Cutting the line…';if(cleatNear())return "Press 'E' to cut the line";const t=crossTarget();if(t)return t.other?"Press 'E' to cross to her deck":"Press 'E' to cross back aboard";return null;}
+  function lashInteract(){if(HOOKS.phase!=='lashed')return false;const c=cleatNear();if(c){HOOKS.cut={c,t0:hookClock()};showMsg('You set your knife to the line.','#c8b880');return true;}
+    const t=crossTarget();if(!t)return false;const [lx,lz]=shipLocal(t.mesh,px,pz),sd=lx>=0?1:-1,P=shipToWorld(t.mesh,sd*(t.W/2-.9),Math.max(-t.L/2+1.5,Math.min(t.L/2-1.5,lz)));
+    if(t.other&&!t.other.boarded)boardOther(t.other,P);else{px=P.x;pz=P.z;jumpY=DECK_Y;velY=0;onGround=true;}return true;}
   // S743 — Michael's A on #237: the body is held on the net, .35 off the planking, where it took hold (the first .15 of the
   // climb carries it there from the water or the quay), rising evenly to the deck's height by four-fifths of the climb; the
   // last fifth swings it in over the rail (an arc of .5 over the deck) to the rail's walk. `climbPose()` gives the third
