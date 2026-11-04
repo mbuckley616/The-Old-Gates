@@ -484,8 +484,11 @@
   function tickSleeper(){if(typeof intNPCMesh==='undefined'||!intNPCMesh||!currentHouse||currentHouse.type!=='home')return;const m=intNPCMesh;
     if(m.userData.asleep){if(sleeperNear())wakeSleeper(m,true);else if(!homeAsleepNow(currentHouse))wakeSleeper(m,false);}
     else if(!m.userData.woke&&homeAsleepNow(currentHouse))laySleeper(m);}
-  function seenCrime(kind,house,w,value){const site=houseSite(house);const pts=CRIME_PTS[kind]||1;
-    if(site){addFavor(site,-pts);const C=worldState.crime||(worldState.crime={});const c=C[site.id]||(C[site.id]={bounty:0,debt:0,last:0});const b0=c.bounty;const fee=25*pts+Math.max(0,Math.round(value||0)),fst=typeof feastOn==='function'&&feastOn(absMin());c.bounty+=fst?Math.round(fee*.5):fee;if(fst)c.feast=dayNow();c.debt+=pts;c.last=dayNow();if(typeof lampCrime==='function')lampCrime(c,fst?Math.round(fee*.5):fee);if(kind==='lock')c.lockFine=(c.lockFine||0)+c.bounty-b0;} /* S1795 — the part of the fine that is lock crimes, for Word given */ /* S550 — a feast day halves a petty crime's fine */ // S168 — a theft's fine is 50 and the goods' value (the spec)
+  // a seen crime's cost to its town: favour and debt by its points, the fine 25 a point and the goods' value (S1827: shared with piracy)
+  function bookCrime(site,kind,value){const pts=CRIME_PTS[kind]||1;addFavor(site,-pts);const C=worldState.crime||(worldState.crime={});const c=C[site.id]||(C[site.id]={bounty:0,debt:0,last:0});const b0=c.bounty;const fee=25*pts+Math.max(0,Math.round(value||0)),fst=typeof feastOn==='function'&&feastOn(absMin());c.bounty+=fst?Math.round(fee*.5):fee;if(fst)c.feast=dayNow();c.debt+=pts;c.last=dayNow();if(typeof lampCrime==='function')lampCrime(c,fst?Math.round(fee*.5):fee);if(kind==='lock')c.lockFine=(c.lockFine||0)+c.bounty-b0; /* S1795 — the part of the fine that is lock crimes, for Word given */ /* S550 — a feast day halves a petty crime's fine */ /* S168 — a theft's fine is 50 and the goods' value (the spec) */
+    return c;}
+  function seenCrime(kind,house,w,value){const site=houseSite(house);
+    if(site)bookCrime(site,kind,value);
     if(house.keeper&&house.type!=='home')(worldState.refuse||(worldState.refuse={}))[house.id]=dayNow()+5;
     const what=kind==='lock'?'pick the lock':kind==='theft'?'take what was not yours':'strike';
     if(site&&typeof isInterior==='function'&&isInterior())try{dispatchGuard(house,site);}catch(e){} // S239 — seen indoors: a guard is sent
@@ -1154,6 +1157,25 @@
   // keeps running until she is out of sight: mended or not, she does not come back. A merchantman never carried arms, so she has none to drop.
   function merchantFlees(o){if(!o||o.kind==='pirate'||String(o.id||'').startsWith('story:')||o.struck||o.founder!=null||o.boarded)return false;if(o.fleeing)return true;
     if(!(o.hullMax>0)||o.hull/o.hullMax>=.5)return false;o.fleeing=true;o.wp=null;showMsg(`${otherWho(o)} crowds on sail and runs.`,'#e8d8a0');return true;}
+  // S1827 — the page's piracy (#1064 B): "A hit on a merchantman is piracy. Her crew are witnesses to the crime system, her nation's
+  // bounty applies as for a witnessed theft, and she flees." A bolt, a ball, grape on her deck, or your bow rammed into her: the first
+  // such hit on a merchantman (not a quest's ship) is booked once for that ship, as a seen theft of nothing (CRIME_PTS.theft: favour −2,
+  // debt 2, a fine of 50) at the nearest town of her nation, the nation of the water where she is struck,
+  // within two cells (any town there if none of hers is).
+  // She runs at once, whatever her hull. Her crew are always aboard to see it. The booking is the named action `piracy`; it returns the line
+  // to show, shown after the strike's own so it is the one read.
+  const PIRACY_TOWNS=['port','city','town','village'];
+  function shipNoun(o){return o.kind==='pirate'?'black sail':o.kind==='merchant'?'merchantman':String(o.name||'ship');}
+  function merchantOf(o){return !!o&&o.kind==='merchant'&&!String(o.id||'').startsWith('story:');}
+  function piracyTown(o){const nat=o.nation||nationAt(o.x,o.z),[ci,cj]=cellOf(o.x,o.z);let best=null,bd=1e9,any=null,ad=1e9;
+    for(let i=ci-2;i<=ci+2;i++)for(let j=cj-2;j<=cj+2;j++){const c=getCell(i,j);if(!c||!c.sites)continue;const n=nationKeyOf(i,j);
+      for(const t of c.sites){if(!PIRACY_TOWNS.includes(t.kind))continue;const d=Math.hypot(t.x-o.x,t.z-o.z);if(n===nat&&d<bd){bd=d;best=t;}if(d<ad){ad=d;any=t;}}}
+    return best||any;}
+  function piracy(o){if(!merchantOf(o)||o.pirated||o.founder!=null||o.dead)return null;o.pirated=true;o.fleeing=true;o.wp=null;
+    const site=piracyTown(o);(worldState.crimes||(worldState.crimes=[])).push({kind:'piracy',site:site?site.id:null,house:null,day:dayNow(),min:absMin()});
+    if(site)bookCrime(site,'theft',0);
+    if(typeof addLog==='function')addLog('👁',`Fired on a merchantman${site?' of '+site.name+'; '+site.name+' will not forget it':''}.`);
+    return `Her crew saw you fire on her. ${site?site.name+' will not forget it.':'They will not forget it.'} The merchantman crowds on sail and runs.`;}
   // a ship lying to or foundering steers nothing; a foundering one settles 3 m and lists over 8 s, then she is gone, her living crew
   // and her chest with her (the wreck to dive is naval combat's fourth session); you, on her deck, are left in the water
   function otherDown(o,dt){if(o.founder==null&&!o.struck)return false;o.speed=0;o.ramming=0;placeOther(o);
@@ -1348,10 +1370,10 @@
   function ballistaBow(){const fx=-Math.sin(SHIP.yaw),fz=-Math.cos(SHIP.yaw);return {x:SHIP.x+fx*SHIP.L/2,z:SHIP.z+fz*SHIP.L/2,fx,fz};}
   function ballistaFoe(o){return !!o&&(o.kind==='pirate'||String(o.id||'').startsWith('story:'));}
   // the ship she bears on now, or null: the nearest in the arc and the range
-  function ballistaBears(){if(!SHIP.mesh||!SHIP.sailing||!shipFitted('ballista'))return null;const b=ballistaBow();let best=null,bd=1e9;
-    for(const o of OTHER){if(o.dead||o.founder!=null||o.struck||!o.mesh||!ballistaFoe(o))continue;const dx=o.x-b.x,dz=o.z-b.z,c=Math.hypot(dx,dz);
-      const d=Math.max(0,c-(o.W||4)/2);if(d>BALLISTA.range||d>=bd)continue;if(c>.01&&(dx*b.fx+dz*b.fz)/c<Math.cos(BALLISTA.arc))continue;bd=d;best=o;}
-    return best;}
+  function ballistaBears(){if(!SHIP.mesh||!SHIP.sailing||!shipFitted('ballista'))return null;const b=ballistaBow();let best=null,bd=1e9,mer=null,md=1e9; /* S1827 — a merchantman bears only when no foe does */
+    for(const o of OTHER){if(o.dead||o.founder!=null||o.struck||!o.mesh)continue;const foe=ballistaFoe(o);if(!foe&&!merchantOf(o))continue;const dx=o.x-b.x,dz=o.z-b.z,c=Math.hypot(dx,dz);
+      const d=Math.max(0,c-(o.W||4)/2);if(d>BALLISTA.range||d>=(foe?bd:md))continue;if(c>.01&&(dx*b.fx+dz*b.fz)/c<Math.cos(BALLISTA.arc))continue;if(foe){bd=d;best=o;}else{md=d;mer=o;}}
+    return best||mer;}
   // why the ballista cannot loose now, or null
   function ballistaWhy(){if(!shipFitted('ballista'))return 'She has no ballista.';if(!SHIP.sailing)return 'The ballista is worked from the helm.';
     if(!boltsAboard())return 'No bolts in her hold.';if(BOLTS.fire&&typeof pitchCount==='function'&&pitchCount()<1)return 'A fire bolt needs a pitch, and you have none.';if(ballistaWait()>0)return 'The ballista is still winding.';if(!ballistaBears())return 'Nothing bears: bring her bow onto the black sail.';return null;}
@@ -1367,8 +1389,9 @@
     for(let i=BOLTS.fly.length-1;i>=0;i--){const f=BOLTS.fly[i],o=f.o,u=Math.min(1,(now-f.t0)/Math.max(.05,f.dur));
       if(f.mesh){f.mesh.position.set(f.x0+(o.x-f.x0)*u,DECK_Y+1.2+Math.sin(u*Math.PI)*1.5,f.z0+(o.z-f.z0)*u);f.mesh.lookAt(o.x,DECK_Y+1.2,o.z);}
       if(u<1)continue;if(f.mesh){sc.remove(f.mesh);f.mesh=null;}BOLTS.fly.splice(i,1);
-      if(o.dead||o.founder!=null||!OTHER.includes(o))continue;const r=damageShip(o,f.fire?BALLISTA.fireHull:BALLISTA.hull,0),who=o.kind==='pirate'?'black sail':String(o.name||'ship');
+      if(o.dead||o.founder!=null||!OTHER.includes(o))continue;const r=damageShip(o,f.fire?BALLISTA.fireHull:BALLISTA.hull,0),who=shipNoun(o);
       if(r&&r.hull>0){if(typeof skillUse==='function')skillUse('bow',1,'ballista:'+(o.id||'ship'));if(!o.founder&&!o.struck)showMsg(f.fire?`Your fire bolt strikes the ${who}. Hull −${r.hull}, and her rig is alight.`:`Your bolt strikes the ${who}. Hull −${r.hull}.`,'#e8c890');}
+      if(r){const pm=piracy(o);if(pm)showMsgLong(pm,'#e88a8a');}
       if(f.fire&&o.founder==null&&!o.dead){o.burn=BALLISTA.burnS;o._burnAcc=o._burnAcc||0;}}}
   // once a frame: a rig alight loses 2 a second until its 8 s are out, or she founders
   function tickShipFires(dt){for(const o of OTHER){if(!(o.burn>0))continue;if(o.dead||o.founder!=null){o.burn=0;continue;}
@@ -1406,8 +1429,10 @@
   function gunsWait(side){return Math.max(0,BROADSIDE.reload-(hookClock()-GUNS.t[side]));}
   // the ship each side bears on now: {port, stbd}, each the nearest foe in that side's arc and range, or null
   function gunsBear(){const out={port:null,stbd:null};if(!SHIP.mesh||!SHIP.sailing||!shipGunned())return out;const fx=-Math.sin(SHIP.yaw),fz=-Math.cos(SHIP.yaw),rx=-fz,rz=fx;const bd={port:1e9,stbd:1e9};
-    for(const o of OTHER){if(o.dead||o.founder!=null||o.struck||!o.mesh||!ballistaFoe(o))continue;const dx=o.x-SHIP.x,dz=o.z-SHIP.z,lat=dx*rx+dz*rz,lon=dx*fx+dz*fz;
-      const side=lat>=0?'stbd':'port',d=Math.max(0,Math.hypot(dx,dz)-SHIP.W/2-(o.W||4)/2);if(d>BROADSIDE.range||d>=bd[side])continue;if(Math.abs(Math.atan2(lon,Math.abs(lat)))>BROADSIDE.arc)continue;bd[side]=d;out[side]=o;}
+    const mer={port:null,stbd:null},md={port:1e9,stbd:1e9}; /* S1827 — a merchantman bears on a side only when no foe does */
+    for(const o of OTHER){if(o.dead||o.founder!=null||o.struck||!o.mesh)continue;const foe=ballistaFoe(o);if(!foe&&!merchantOf(o))continue;const dx=o.x-SHIP.x,dz=o.z-SHIP.z,lat=dx*rx+dz*rz,lon=dx*fx+dz*fz;
+      const side=lat>=0?'stbd':'port',d=Math.max(0,Math.hypot(dx,dz)-SHIP.W/2-(o.W||4)/2);if(d>BROADSIDE.range||d>=(foe?bd:md)[side])continue;if(Math.abs(Math.atan2(lon,Math.abs(lat)))>BROADSIDE.arc)continue;if(foe){bd[side]=d;out[side]=o;}else{md[side]=d;mer[side]=o;}}
+    for(const sd of ['port','stbd'])if(!out[sd])out[sd]=mer[sd];
     return out;}
   // the side to fire now: one that bears, is loaded and has shot; the nearer if both
   function gunsSide(){const B=gunsBear();let best=null,bd=1e9;for(const sd of ['port','stbd']){const o=B[sd];if(!o||gunsWait(sd)>0)continue;const d=Math.hypot(o.x-SHIP.x,o.z-SHIP.z);if(d<bd){bd=d;best=sd;}}return best;}
@@ -1420,14 +1445,14 @@
       GUNS.fly.push({o,k,x0,z0,t0:t0+i*BROADSIDE.ripple/(BROADSIDE.guns-1),dur:Math.hypot(o.x-x0,o.z-z0)/BROADSIDE.speed,first:i===0,last:i===n-1,vol:GUNS.n,hit:0});}
     if(typeof sfxNoise==='function')sfxNoise(.35,0,0,.25,180);showMsg(`${sd==='stbd'?'Starboard':'Port'} guns, ${SHOT[k].n}: fire!`,'#e8c890');shipBarsUI();return true;}
   // once a frame: the balls in flight. Grape is reckoned once a broadside, on its first ball's arrival
-  function tickGuns(dt){if(!GUNS.fly.length)return;const now=hookClock();let said=null;
+  function tickGuns(dt){if(!GUNS.fly.length)return;const now=hookClock();let said=null,pir=null;
     for(let i=GUNS.fly.length-1;i>=0;i--){const f=GUNS.fly[i],o=f.o;if(now<f.t0+f.dur)continue;GUNS.fly.splice(i,1);if(o.dead||o.founder!=null||!OTHER.includes(o))continue;const S=SHOT[f.k];
       if(S.grape){if(!f.first)continue;const d=Math.max(0,Math.hypot(o.x-f.x0,o.z-f.z0)-(o.W||4)/2);if(d>BROADSIDE.grapeR){said='The grape falls short of her deck.';continue;}let hit=0;
-        for(const e of (o.crew||[]).slice()){if(e.dead)continue;e.hp-=BROADSIDE.grapeHit;hit++;if(e.hp<=0&&typeof killZoneEnemy==='function')killZoneEnemy(e,sc);}said=hit?`Grape sweeps her deck: ${hit} of her crew hit.`:'Grape sweeps her empty deck.';continue;}
-      const r=damageShip(o,S.hull,S.rig);if(S.burn&&o.founder==null&&!o.dead){o.burn=BALLISTA.burnS;o._burnAcc=o._burnAcc||0;}
+        for(const e of (o.crew||[]).slice()){if(e.dead)continue;e.hp-=BROADSIDE.grapeHit;hit++;if(e.hp<=0&&typeof killZoneEnemy==='function')killZoneEnemy(e,sc);}pir=piracy(o)||pir;said=hit?`Grape sweeps her deck: ${hit} of her crew hit.`:'Grape sweeps her empty deck.';continue;}
+      const r=damageShip(o,S.hull,S.rig);if(r)pir=piracy(o)||pir;if(S.burn&&o.founder==null&&!o.dead){o.burn=BALLISTA.burnS;o._burnAcc=o._burnAcc||0;}
       const V=GUNS.fly.filter(q=>q.vol===f.vol).length;if(r){const V0=GUNS._v||(GUNS._v={}),T0=V0[f.vol]||(V0[f.vol]={h:0,r:0});T0.h+=r.hull;T0.r+=r.rig;}
-      if(!V&&GUNS._v&&GUNS._v[f.vol]){const T=GUNS._v[f.vol];delete GUNS._v[f.vol];if(!o.founder&&!o.struck)said=`The broadside strikes the ${o.kind==='pirate'?'black sail':String(o.name||'ship')}.${T.h?` Hull −${T.h}.`:''}${T.r?` Rig −${T.r}.`:''}${S.burn?' Her rig is alight.':''}`;}}
-    if(said)showMsg(said,'#e8c890');}
+      if(!V&&GUNS._v&&GUNS._v[f.vol]){const T=GUNS._v[f.vol];delete GUNS._v[f.vol];if(!o.founder&&!o.struck)said=`The broadside strikes the ${shipNoun(o)}.${T.h?` Hull −${T.h}.`:''}${T.r?` Rig −${T.r}.`:''}${S.burn?' Her rig is alight.':''}`;}}
+    if(pir)showMsgLong(pir,'#e88a8a');else if(said)showMsg(said,'#e8c890');}
   function gunsHud(){if(!shipGunned())return '';const k=GUNS.shot,n=shotAboard(k),B=gunsBear(),w=sd=>{const t=gunsWait(sd);return t>0?`${Math.ceil(t)} s`:B[sd]?'bears':'ready';};
     return `Guns, ${SHOT[k].n} (${n}): port ${w('port')} · starboard ${w('stbd')}`;}
   function gunsShot(k){if(!SHOT[k])return null;GUNS.shot=k;if(shipFitted('ballista'))BOLTS.fire=k==='shell';showMsg(`The guns load ${SHOT[k].n}${shipFitted('ballista')?(k==='shell'?'; the ballista, fire bolts':'; the ballista, plain bolts'):''}.`,'#c8b880');shipBarsUI();return k;}

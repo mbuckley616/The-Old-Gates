@@ -203,8 +203,9 @@ const bl = await page.evaluate(async () => {
   p.x = S.x + 40; p.z = S.z; const pinA = () => { p.x = S.x + 40; p.z = S.z; }; hold(); pinA(); BOLTS.t = -1e9; out.abeam = ballistaBears(); out.abeamWhy = ballistaWhy();
   // out of range: 120 m ahead
   p.x = S.x; p.z = S.z - 120; out.far = ballistaBears();
-  // a merchantman ahead is not offered
-  despawnOtherShip(p); const m = spawnOtherShip('merchant', S.x, S.z - 50); m.speed = 0; out.merchant = ballistaBears();
+  // S1827 — a merchantman ahead bears only when no black sail does: with both ahead, the merchantman nearer, the black sail is chosen
+  p.x = S.x; p.z = S.z - 60; const m = spawnOtherShip('merchant', S.x + 3, S.z - 45); m.speed = 0; out.both = ballistaBears() === p;
+  despawnOtherShip(p); out.merchant = ballistaBears() === m;
   despawnOtherShip(m);
   out.bench = SHIP_BENCH.ballista; out.yard = yardOffers({ x: S.x, z: S.z, name: 'X', id: 'x', quayStart: null }).map(o => o.label).filter(l => /ballista|Bolts/.test(l));
   return out; });
@@ -219,7 +220,7 @@ check('it strikes for 10 hull once it has flown (bow to her, about 54 m at 60 m/
 check('6 s to wind again, read off the clock (late by no more than the slowest tick)', bl.reload >= 6 && bl.reload <= 6 + bl.slow + .05, bl);
 check('fire bolts: refused with no pitch; a bolt and a pitch spent; (fire) on the panel', /needs a pitch/.test(bl.noPitch) && bl.fireShot === true && bl.pitchLeft === 0 && bl.boltsF === 1 && /^Ballista \(fire\)/.test(bl.hudFire), bl);
 check('a fire bolt takes 4 hull and sets her rig alight: 16 rig over 8 s, then out', bl.fireLost === 4 && /her rig is alight/.test(bl.fireMsg) && bl.rigAt >= 98 && bl.rigAfter === 84 && bl.burnLeft === 0 && bl.burnS >= 7.9, bl);
-check('abeam and far do not bear; a merchantman is not offered', !bl.abeam && !bl.far && !bl.merchant && /Nothing bears/.test(bl.abeamWhy), bl);
+check('abeam and far do not bear; a merchantman bears only when no black sail does', !bl.abeam && !bl.far && bl.both && bl.merchant && /Nothing bears/.test(bl.abeamWhy), bl);
 // S1822 — the galleon's broadside: six guns a side, ±25° of abeam, 150 m, a 0.6 s ripple, 20 s a side to reload; round 6 hull a ball,
 // chain 6 rig, grape 20 to each of her hands within 60 m, shell 8 hull and the burn; shot 20 to 1 of the hold; no guns but a galleon's
 const gn = await page.evaluate(() => {
@@ -304,6 +305,30 @@ const mf = await page.evaluate(() => {
 console.log('merchant', JSON.stringify(mf));
 check('an intact merchantman does not run', !mf.intact, mf);
 check('holed to heavy she crowds on sail and runs from you at her holed best (4.5 × 0.8), and keeps running though mended', mf.state === 'heavy' && mf.fleeing && /crowds on sail and runs/.test(mf.msg) && mf.d1 - mf.d0 > 40 && Math.abs(mf.speed - mf.top) < .2 && mf.stillRuns, mf);
+
+
+// S1827 — piracy (the page: "A hit on a merchantman is piracy"): the first hit on a merchantman is booked once, as a seen theft of
+// nothing (favour −2, debt 2, a fine of 50) at the nearest town of her nation; she runs at once; a second hit books nothing more
+const pr = await page.evaluate(() => {
+  for (const o of [...OTHER]) despawnOtherShip(o);
+  worldState.ship = { cls: 'sloop', name: 'Test Gull', sails: 0, cargo: 0, hold: { bolts: 20 } }; WORLD.spawnShip(_sea.x, _sea.z, 0); const S = WORLD.ship; S.sailing = true; S.speed = 0; S.yaw = 0;
+  gold = 1000; if (!shipFitted('ballista')) fitShip('ballista'); worldState.ship.hold.bolts = 20; BOLTS.t = -1e9; ballistaFireMode(false);
+  const m = spawnOtherShip('merchant', S.x, S.z - 50, 'test:piracy'); m.speed = 0; m.yaw = Math.PI / 2;
+  const out = {}; const town = piracyTown(m); out.town = town && town.id; out.townNation = town && nationAt(town.x, town.z); out.herNation = nationAt(m.x, m.z);
+  const C0 = JSON.parse(JSON.stringify((worldState.crime || {})[out.town] || { bounty: 0, debt: 0 })), f0 = (worldState.favor || {})[out.town] || 0, n0 = (worldState.crimes || []).length;
+  const step = n => { for (let i = 0; i < n; i++) { S.x = _sea.x; S.z = _sea.z; S.speed = 0; S.yaw = 0; if (!m.pirated) { m.x = S.x; m.z = S.z - 50; m.speed = 0; } for (const o of [...OTHER]) if (o !== m) despawnOtherShip(o); WORLD.tick(1 / 60, performance.now()); } };
+  out.fire = fireBallista(); const h0 = m.hull, t0 = performance.now(); while (m.hull === h0 && performance.now() - t0 < 4000) step(1); /* the bolt flies on the clock */
+  out.lost = h0 - m.hull; out.msg = document.getElementById('msg').textContent; out.fleeing = !!m.fleeing; out.pirated = !!m.pirated;
+  const C1 = (worldState.crime || {})[out.town] || { bounty: 0, debt: 0 }; out.bounty = C1.bounty - C0.bounty; out.debt = C1.debt - (C0.debt || 0); out.favor = ((worldState.favor || {})[out.town] || 0) - f0;
+  out.logged = (worldState.crimes || []).slice(n0).map(c => c.kind);
+  out.again = piracy(m); out.bounty2 = ((worldState.crime || {})[out.town] || { bounty: 0 }).bounty - C0.bounty;
+  // a black sail struck is no crime
+  const p = spawnOtherShip('pirate', S.x + 200, S.z, 'test:nopiracy'); out.pirate = piracy(p);
+  despawnOtherShip(m); despawnOtherShip(p); return out; });
+console.log('piracy', JSON.stringify(pr));
+check('a bolt on a merchantman is piracy: booked at a town of her nation, a fine of 50, favour −2, debt 2', pr.fire === true && pr.lost === 10 && !!pr.town && pr.townNation === pr.herNation && pr.bounty === 50 && pr.favor === -2 && pr.debt === 2 && pr.logged.join() === 'piracy', pr);
+check('her crew saw it, and she runs at once though barely holed', /Her crew saw you fire on her\./.test(pr.msg) && /crowds on sail and runs/.test(pr.msg) && pr.fleeing && pr.pirated, pr);
+check('once a ship: a second hit books nothing; a black sail is no crime', pr.again === null && pr.bounty2 === 50 && pr.pirate === null, pr);
 
 check('no page errors', g.errs.length === 0, g.errs);
 if (stop) stop();
