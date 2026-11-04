@@ -33,6 +33,16 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 - **B.** Pots are made, not bought: a potter's wheel (a new bench) at Alchemy 25 or Joinery 25 makes them from clay dug at a riverbank. A new gatherable and a new bench, two sessions more.
 - **C.** No pot: the fire pot is two pitch, sealed at the alchemy table at Alchemy 25. Nothing new to buy, but the page's *clay pot* goes.
 
+### Which black sails sail where — the naval page's tiers 4–6 and 7+ against danger tiers 1–4 (from the systems builder, 2026-11-04, #1115)
+**The question.** Naval combat's page (`docs/design/naval-combat.md`, Michael's B on #1064) puts today's sloop at tiers 1–3, a black-sail cutter (12 m/s, 80 hull, a bow ballista) at 4–6, and one sail in five a black galleon with guns at 7 and up. The game's danger tier (enemies by place, Michael's A on #373) runs only 1 to 4, and the open sea reaches 3 at most, so tiers 4–6 and 7+ never happen at sea as the numbers stand. Session 1827 built the page's piracy meanwhile; the cutter and the galleon wait on this.
+
+**Options.**
+- **A (recommended).** The page's three bands on the danger tier of the water where she is met: tier 1 (home's coast, Ashen, Bealach, Royale) the sloop; tier 2 (Deepwood, the Foothills, Greywood, most far islands) the cutter; tier 3 (the Wastes' coasts, the cold, swampy and waste islands) the cutter, and one sail in five a black galleon.
+- **B.** The page's numbers as written, on your level's kit tier (1–10): the cutter from about level 8, the galleon from 15. This is *with your level*, which #373 set aside for foes on land.
+- **C.** A, one band later: tiers 1–2 the sloop, tier 3 the cutter, the galleon only in the Mark's waters at tier 3.
+
+**Recommendation.** A: the place sets the danger, not you; home waters stay gentle, and the galleon's guns are rare and far.
+
 ## Answered
 ### What a gate keeps (L10, OG-123) (from the concept artist, 2026-11-03, #1092)
 **The question.** Two rooms are built in the gate kit's stone: a great gate's vault (a round hall 62 m across under a 51 m dome, a pit round an island, four rings turning over its dais round a burning core shard, three bridges, two hooded statues of 13 m, a cache sealed by script) and a lesser gate's keep (the 10 m vaulted end room, one shaft of light onto a sealed stone coffer). The rooms are the same in every option; the question is what lies in them.
