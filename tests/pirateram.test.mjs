@@ -197,8 +197,16 @@ const bl = await page.evaluate(async () => {
   out.fireShot = fireBallista(); out.pitchLeft = pitchCount(); out.boltsF = bf - boltsAboard(); out.hudFire = ballistaHud();
   while (p.hull === hf && performance.now() - tf < 4000) step(1);
   out.fireLost = hf - p.hull; out.fireMsg = document.getElementById('msg').textContent; const tb = performance.now(); out.rigAt = p.rig;
+  out.hands = p.crew.filter(e => !e.dead && e._ship === p).length;
   let nb = 0; while (p.burn > 0 && nb < 1200) { step(1); nb++; } /* the fire runs on the tick's time, as the leak does */
-  out.burnS = +(nb / 60).toFixed(2); out.rigAfter = p.rig; out.burnLeft = p.burn; ballistaFireMode(false);
+  out.burnS = +(nb / 60).toFixed(2); out.rigAfter = p.rig; out.burnLeft = p.burn; out.douseMsg = document.getElementById('msg').textContent;
+  // S1848 — her hands douse it after 3 s (#1143 A); a hand hit in that time starts the 3 s again; with her hands down it runs full
+  const relight = () => { p.rig = 100; lightRig(p, BALLISTA.burn, BALLISTA.burnS); };
+  relight(); nb = 0; while (p.burn > 0 && nb < 1200) { step(1); nb++; if (nb === 120) p.crew.find(e => !e.dead).hp -= 1; }
+  out.hitS = +(nb / 60).toFixed(2); out.hitRig = p.rig;
+  for (const e of p.crew) { e.hp = 0; e.dead = true; }
+  relight(); nb = 0; while (p.burn > 0 && nb < 1200) { step(1); nb++; } out.downS = +(nb / 60).toFixed(2); out.downRig = p.rig;
+  ballistaFireMode(false);
   // out of the arc: she lies abeam, 40 m to starboard
   p.x = S.x + 40; p.z = S.z; const pinA = () => { p.x = S.x + 40; p.z = S.z; }; hold(); pinA(); BOLTS.t = -1e9; out.abeam = ballistaBears(); out.abeamWhy = ballistaWhy();
   // out of range: 120 m ahead
@@ -219,7 +227,8 @@ check('a bolt loosed, the next refused while winding', bl.fire1 === true && bl.a
 check('it strikes for 10 hull once it has flown (bow to her, about 54 m at 60 m/s)', bl.lost === 10 && bl.dur > .8 && bl.dur < 1 && bl.arrive >= bl.dur - .01 && bl.arrive < 4 && /Your bolt strikes the black sail\. Hull −10\./.test(bl.msg), bl);
 check('6 s to wind again, read off the clock (late by no more than the slowest tick)', bl.reload >= 6 && bl.reload <= 6 + bl.slow + .05, bl);
 check('fire bolts: refused with no pitch; a bolt and a pitch spent; (fire) on the panel', /needs a pitch/.test(bl.noPitch) && bl.fireShot === true && bl.pitchLeft === 0 && bl.boltsF === 1 && /^Ballista \(fire\)/.test(bl.hudFire), bl);
-check('a fire bolt takes 4 hull and sets her rig alight: 16 rig over 8 s, then out', bl.fireLost === 4 && /her rig is alight/.test(bl.fireMsg) && bl.rigAt >= 98 && bl.rigAfter === 84 && bl.burnLeft === 0 && bl.burnS >= 7.9, bl);
+check('a fire bolt takes 4 hull and sets her rig alight; her hands douse it after 3 s: 6 rig', bl.hands >= 1 && bl.fireLost === 4 && /her rig is alight/.test(bl.fireMsg) && bl.rigAt >= 98 && bl.rigAfter === 94 && bl.burnLeft === 0 && Math.abs(bl.burnS - 3) < .05 && /The black sail's hands put out the fire in her rig\./.test(bl.douseMsg), bl);
+check('a hand hit at 2 s starts the 3 s again (5 s, 10 rig); with her hands down it burns its full 8 s (16 rig)', Math.abs(bl.hitS - 5) < .05 && bl.hitRig === 90 && Math.abs(bl.downS - 8) < .05 && bl.downRig === 84, bl);
 check('abeam and far do not bear; a merchantman bears only when no black sail does', !bl.abeam && !bl.far && bl.both && bl.merchant && /Nothing bears/.test(bl.abeamWhy), bl);
 // S1822 — the galleon's broadside: six guns a side, ±25° of abeam, 150 m, a 0.6 s ripple, 20 s a side to reload; round 6 hull a ball,
 // chain 6 rig, grape 20 to each of her hands within 60 m, shell 8 hull and the burn; shot 20 to 1 of the hold; no guns but a galleon's
@@ -359,7 +368,7 @@ console.log('firepot', JSON.stringify(fp));
 check('a clay pot, 3 gold and half a weight, at an apothecary and the goods shop, not the smith or the inn', fp.shops[0] === 'Clay Pot:3:0.5' && fp.shops[1] === fp.shops[0] && fp.shops[2] === fp.shops[0] && !fp.shops[3] && !fp.shops[4], fp.shops);
 check('sealed from Alchemy 25 out of a clay pot and a pitch, and refused without them', /Alchemy 25/.test(fp.low) && fp.noPot === 'It needs a clay pot.' && fp.noPitch === 'It needs a pitch.' && fp.seal === true && fp.pots === 1 && fp.clay === 1 && fp.pitch === 0, fp);
 check('thrown only where you look: a black sail 15 m ahead is the mark, none behind you', fp.target && /No ship within a throw/.test(fp.away || ''), fp);
-check('it lands: her rig alight for 6 s at 3 a second (18 rig), no hull', fp.thrown === true && fp.potsLeft === 0 && fp.hullLost === 0 && Math.abs(fp.burnS - 6) < .05 && fp.rig === 82 && /Your fire pot breaks on the black sail's deck, and her rig is alight\./.test(fp.msg), fp);
+check('it lands: her rig alight at 3 a second, her hands douse it after 3 s (9 rig), no hull', fp.thrown === true && fp.potsLeft === 0 && fp.hullLost === 0 && Math.abs(fp.burnS - 3) < .05 && fp.rig === 91 && /Your fire pot breaks on the black sail's deck, and her rig is alight\./.test(fp.msg), fp);
 check('12 fire to each hand within 2 m (as his resistance), none to the hands beyond', fp.hands >= 1 && fp.handLost.every((l, i) => l === Math.max(1, Math.round(12 * (fp.res[i] != null ? fp.res[i] : 1)))) && fp.farLost.every(l => l === 0), fp);
 check('no pot, no throw; beyond 20 m, no throw', fp.none === 'You have no fire pot.' && /20 m/.test(fp.tooFar || ''), fp);
 

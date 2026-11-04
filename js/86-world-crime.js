@@ -1384,8 +1384,7 @@
   // heavy arrow at a hand are the next session's.
   // S1821 — the fire bolt (the page's table): the right button at the helm sets the ballista to fire bolts and back. A fire bolt is a
   // bolt and a pitch from your bag; it takes 4 hull, and her rig burns 2 a second for 8 s (16 in all), through damageShip. A fire
-  // already in her rig is lit again for its full 8 s, never doubled. Her crew do not douse it yet: a hand at her rig is the page's
-  // merchantmen's session, as her hand at a line was (Session 1815).
+  // already in her rig is lit again for its full 8 s, never doubled. Her hands douse it after 3 s (Session 1848, lightRig).
   // S1838 — the heavy arrow at a hand (the page's "or a heavy arrow at a hand on Bow's multiplier"; Michael's A on #1120: 20–30, scaled
   // by Bow). When you loose, if the crosshair lies on one of her living hands (a man-sized upright, 0.55 m about him, 1.8 m tall from his
   // feet) and she bears, the bolt flies at him, not her hull. It rolls 20–30 on his own stream (foeRand), times Bow's multiplier (×0.6 at
@@ -1478,15 +1477,27 @@
         if(typeof skillUse==='function')skillUse('bow',1,e);e.hp=Math.max(0,e.hp-n);e.alert=true;if(e.hpFg){e.hpFg.scale.x=e.hp/e.maxHp;e.hpFg.position.x=(e.hp/e.maxHp-1)*.275;}
         const dead=e.hp<=0;if(dead&&typeof killZoneEnemy==='function')killZoneEnemy(e,sc);
         showMsg(dead?`Your bolt takes one of the ${who}'s hands.${f.fire?' Her rig is alight.':''}`:`Your bolt strikes one of the ${who}'s hands: −${n}.${f.fire?' Her rig is alight.':''}`,'#e8c890');
-        const pm=piracy(o);if(pm)showMsgLong(pm,'#e88a8a');if(f.fire&&o.founder==null&&!o.dead){o.burn=BALLISTA.burnS;o.burnRate=BALLISTA.burn;o._burnAcc=o._burnAcc||0;}continue;}
+        const pm=piracy(o);if(pm)showMsgLong(pm,'#e88a8a');if(f.fire&&o.founder==null&&!o.dead){lightRig(o,BALLISTA.burn,BALLISTA.burnS);}continue;}
       const r=damageShip(o,f.fire?BALLISTA.fireHull:BALLISTA.hull,0),who=shipNoun(o);
       if(r&&r.hull>0){if(typeof skillUse==='function')skillUse('bow',1,'ballista:'+(o.id||'ship'));if(!o.founder&&!o.struck)showMsg(f.fire?`Your fire bolt strikes the ${who}. Hull −${r.hull}, and her rig is alight.`:`Your bolt strikes the ${who}. Hull −${r.hull}.`,'#e8c890');}
       if(r){const pm=piracy(o);if(pm)showMsgLong(pm,'#e88a8a');}
-      if(f.fire&&o.founder==null&&!o.dead){o.burn=BALLISTA.burnS;o.burnRate=BALLISTA.burn;o._burnAcc=o._burnAcc||0;}}}
-  // once a frame: a rig alight loses 2 a second until its 8 s are out, or she founders
+      if(f.fire&&o.founder==null&&!o.dead){lightRig(o,BALLISTA.burn,BALLISTA.burnS);}}}
+  // S1848 — her hands douse it (Michael's A on #1143): a living hand on her deck puts the fire in her rig out 3 s after it catches,
+  // unless one of her hands is hit in that time (a heavy arrow, the pot's fire, grape, your own blade or bow: any loss of her crew's
+  // health), which starts the 3 s again. With none of her hands on her deck the fire runs its full time. So a fire bolt takes 6 rig,
+  // or 16 with her hands down; a pot 9, or 18. A merchantman carries no crew to douse it, and her fire runs full as before.
+  const RIG_DOUSE=3;
+  // the named action: her rig catches (or is lit again: a fire already there runs its new time, never doubled), and her hands' 3 s start
+  function lightRig(o,rate,secs){if(!o||o.dead||o.founder!=null)return false;o.burn=secs;o.burnRate=rate;o._burnAcc=o._burnAcc||0;o.douse=RIG_DOUSE;o._crewHp=null;return true;}
+  function rigHands(o){return (o.crew||[]).filter(e=>!e.dead&&e.hp>0&&e._ship===o);}
+  function crewHp(o){let h=0;for(const e of (o.crew||[]))h+=Math.max(0,e.hp||0);return h;}
+  // once a frame: a rig alight loses its rate a second until its time is out, her hands douse it, or she founders
   function tickShipFires(dt){for(const o of OTHER){if(!(o.burn>0))continue;if(o.dead||o.founder!=null){o.burn=0;continue;}
-    const t=Math.min(dt,o.burn);o.burn-=t;o._burnAcc=(o._burnAcc||0)+t*(o.burnRate||BALLISTA.burn);const n=Math.floor(o._burnAcc+1e-9);if(n>0){o._burnAcc-=n;damageShip(o,0,n);}
-    if(o.burn<=0){o.burn=0;o._burnAcc=0;}}}
+    const hp=crewHp(o);if(o._crewHp!=null&&hp<o._crewHp-1e-9)o.douse=RIG_DOUSE;o._crewHp=hp;
+    const dousing=o.douse!=null&&rigHands(o).length>0;let t=Math.min(dt,o.burn);if(dousing)t=Math.max(0,Math.min(t,o.douse));
+    o.burn-=t;o._burnAcc=(o._burnAcc||0)+t*(o.burnRate||BALLISTA.burn);const n=Math.floor(o._burnAcc+1e-9);if(n>0){o._burnAcc-=n;damageShip(o,0,n);}
+    if(dousing){o.douse-=dt;if(o.douse<=1e-6&&o.burn>0){o.burn=0;if(!o.founder&&!o.struck)showMsg(`The ${shipNoun(o)}'s hands put out the fire in her rig.`,'#c8b880');}}
+    if(o.burn<=0){o.burn=0;o._burnAcc=0;o.douse=null;}}}
   // S1837 — the fire pot (the page's table: your hand, thrown 20 m; her rig 3 a second for 6 s; 12 fire to a hand within 2 m; Michael's
   // A on #1108 for the pot). Used from the bag, a fire pot is thrown where you look: at the nearest ship whose side is within 20 m and
   // within 15° of your line of sight, a black sail, a quest's ship or a merchantman (a hit on her is piracy, as a bolt's is). With none
@@ -1513,7 +1524,7 @@
     for(let i=POTS.fly.length-1;i>=0;i--){const f=POTS.fly[i],o=f.o,u=Math.min(1,(now-f.t0)/f.dur);
       if(f.mesh)f.mesh.position.set(f.x0+(o.x-f.x0)*u,f.y0+(DECK_Y+1-f.y0)*u+Math.sin(u*Math.PI)*2,f.z0+(o.z-f.z0)*u);
       if(u<1)continue;if(f.mesh){sc.remove(f.mesh);f.mesh=null;}POTS.fly.splice(i,1);
-      if(o.dead||o.founder!=null||!OTHER.includes(o))continue;o.burn=FIRE_POT.burnS;o.burnRate=FIRE_POT.burn;o._burnAcc=o._burnAcc||0;
+      if(o.dead||o.founder!=null||!OTHER.includes(o))continue;lightRig(o,FIRE_POT.burn,FIRE_POT.burnS);
       let hit=0;const foes=(ZONES.world&&ZONES.world.enemies)||[];
       for(const e of foes.slice()){if(e.dead||!(e.hp>0)||Math.hypot(e.x-o.x,e.z-o.z)>FIRE_POT.handR)continue;const k=e.resist&&e.resist.tine!=null?e.resist.tine:1;
         e.hp-=Math.max(1,Math.round(FIRE_POT.hand*k));e.alert=true;hit++;if(e.hp<=0&&typeof killZoneEnemy==='function')killZoneEnemy(e,sc);}
@@ -1571,7 +1582,7 @@
     for(let i=GUNS.fly.length-1;i>=0;i--){const f=GUNS.fly[i],o=f.o;if(now<f.t0+f.dur)continue;GUNS.fly.splice(i,1);if(o.dead||o.founder!=null||!OTHER.includes(o))continue;const S=SHOT[f.k];
       if(S.grape){if(!f.first)continue;const d=Math.max(0,Math.hypot(o.x-f.x0,o.z-f.z0)-(o.W||4)/2);if(d>BROADSIDE.grapeR){said='The grape falls short of her deck.';continue;}let hit=0;
         for(const e of (o.crew||[]).slice()){if(e.dead)continue;e.hp-=BROADSIDE.grapeHit;hit++;if(e.hp<=0&&typeof killZoneEnemy==='function')killZoneEnemy(e,sc);}pir=piracy(o)||pir;said=hit?`Grape sweeps her deck: ${hit} of her crew hit.`:'Grape sweeps her empty deck.';continue;}
-      const r=damageShip(o,S.hull,S.rig);if(r)pir=piracy(o)||pir;if(S.burn&&o.founder==null&&!o.dead){o.burn=BALLISTA.burnS;o.burnRate=BALLISTA.burn;o._burnAcc=o._burnAcc||0;}
+      const r=damageShip(o,S.hull,S.rig);if(r)pir=piracy(o)||pir;if(S.burn&&o.founder==null&&!o.dead){lightRig(o,BALLISTA.burn,BALLISTA.burnS);}
       const V=GUNS.fly.filter(q=>q.vol===f.vol).length;if(r){const V0=GUNS._v||(GUNS._v={}),T0=V0[f.vol]||(V0[f.vol]={h:0,r:0});T0.h+=r.hull;T0.r+=r.rig;}
       if(!V&&GUNS._v&&GUNS._v[f.vol]){const T=GUNS._v[f.vol];delete GUNS._v[f.vol];if(!o.founder&&!o.struck)said=`The broadside strikes the ${shipNoun(o)}.${T.h?` Hull −${T.h}.`:''}${T.r?` Rig −${T.r}.`:''}${S.burn?' Her rig is alight.':''}`;}}
     if(pir)showMsgLong(pir,'#e88a8a');else if(said)showMsg(said,'#e8c890');}
