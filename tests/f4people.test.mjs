@@ -210,8 +210,8 @@ check('Corwin authored at a harbour is the same man in his madder and gold; an E
 // S1798 (section I): Edna and Áine carry their sticks again, and the short cape opens on the staff's side instead of being draped over its
 // forearm (S1792: it came out level with the arm as a slab 38 cm in front of the neck; without the staff 23 cm)
 // S1832 (section I, critic 4 Nov): the far copy wears the sheet too, not the role's hat and gear: no hat on any, Edna's stick, Bram's apron, no bag
-check('the cast\'s driver (the far copy) wears the sheet: no hat, Edna\'s stick, Bram\'s apron, Corwin no merchant\'s brim or bag; another town\'s Edna keeps her kerchief',
-  cast.bram.dHat === 'none' && cast.bram.dApron && cast.edna.dHat === 'none' && cast.edna.dGear === 'stick' && cast.edna.dEx === 0 && cast.edna.dStyle === 'bun' &&
+check('the cast\'s driver (the far copy) wears the sheet: no hat, Edna\'s stick, Bram\'s apron and hammer (S1835), Corwin no merchant\'s brim or bag; another town\'s Edna keeps her kerchief',
+  cast.bram.dHat === 'none' && cast.bram.dApron && cast.bram.dGear === 'hammer' && cast.edna.dHat === 'none' && cast.edna.dGear === 'stick' && cast.edna.dEx === 0 && cast.edna.dStyle === 'bun' &&
   cast.corwinHome.cast === 'Corwin' && cast.corwinHome.dHat === 'none' && cast.corwinHome.dEx === 0 && cast.corwinHome.dGear === null && cast.corwin.dHat === 'none' &&
   cast.other.dHat === 'kerchief', cast);
 const capes = await page.evaluate(() => { const out = {}; for (const nm of ['Edna', 'Áine']) { const G = HB.castGenome(nm, {}), P = HB.makePerson(G, { hoodStats: false });
@@ -234,6 +234,11 @@ const tankard = await page.evaluate(() => { const P = HB.makePerson(HB.castGenom
   return { on: !!tk, wrist: tk && tk.parent && tk.parent.name, st: P.tankard }; });
 check('Corwin holds his tankard: on the wrist, upright, nothing of him within 8 mm of it, no point of the hand in its pewter',
   tankard.on && tankard.wrist === 'wrist.R' && tankard.st.inside === 0 && tankard.st.handIn === 0 && tankard.st.sideIn === 0 && tankard.st.thumbIn === 0 && tankard.st.lean < .1, tankard);
+// S1835 (L2, OG-069, OG-057): Bram's smith's hammer, by the throat of its haft in his right fist, head up, nothing of him near it, no finger in it
+const hammer = await page.evaluate(() => { const P = HB.makePerson(HB.castGenome('Bram', {}), { hoodStats: false }), hm = P.root.getObjectByName('hammer');
+  return { on: !!hm, wrist: hm && hm.parent && hm.parent.name, st: P.hammer }; });
+check('Bram holds his hammer: on the wrist, upright, nothing of him within 8 mm of it, no point of the hand in its haft or head',
+  hammer.on && hammer.wrist === 'wrist.R' && hammer.st.inside === 0 && hammer.st.handIn === 0 && hammer.st.headIn === 0 && hammer.st.thumbIn === 0 && hammer.st.lean < .1, hammer);
 await g.close();
 
 // a second boot: the same people, the same bodies
