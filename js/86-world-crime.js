@@ -1149,6 +1149,11 @@
     else if(o.hull<=0){o.founder=SHIP_FOUNDER_S;o.speed=0;o.ramming=0;showMsg(`${otherWho(o)} founders.`,'#ff8060');}
     else{const now=hullState(o.hull,o.hullMax);if(now!==was&&HULL_SAY[now.k])showMsg(`${otherWho(o)} ${HULL_SAY[now.k]}.`,'#ffb060');}
     return {hull:h0-o.hull,rig:r0-o.rig};}
+  // S1824 — the page's merchantmen: "Merchantmen carry nothing and flee at heavy." A merchantman (not a quest's ship) whose hull falls
+  // to heavy (under half) turns from whom she would meet (targetOf) and runs at the best her holes allow (×0.8 heavy, ×0.6 sinking), and
+  // keeps running until she is out of sight: mended or not, she does not come back. A merchantman never carried arms, so she has none to drop.
+  function merchantFlees(o){if(!o||o.kind==='pirate'||String(o.id||'').startsWith('story:')||o.struck||o.founder!=null||o.boarded)return false;if(o.fleeing)return true;
+    if(!(o.hullMax>0)||o.hull/o.hullMax>=.5)return false;o.fleeing=true;o.wp=null;showMsg(`${otherWho(o)} crowds on sail and runs.`,'#e8d8a0');return true;}
   // a ship lying to or foundering steers nothing; a foundering one settles 3 m and lists over 8 s, then she is gone, her living crew
   // and her chest with her (the wreck to dive is naval combat's fourth session); you, on her deck, are left in the water
   function otherDown(o,dt){if(o.founder==null&&!o.struck)return false;o.speed=0;o.ramming=0;placeOther(o);

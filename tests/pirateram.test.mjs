@@ -290,6 +290,21 @@ check('her chest goes down with her, its crates lost', wk.items >= 1 && !wk.carg
 check('within 250 m it is laid on the bed, its chest the record’s own items', wk.laid && wk.chestY < wk.seaY - 1, wk);
 check('what is taken stays taken, through a save; a quest’s ship leaves none; far off it is lifted', wk.loaded.length === 1 && wk.loaded[0][1] === wk.left && wk.relaid && wk.storyNone && wk.lifted, wk);
 
+// S1824 — a merchantman holed to heavy (under half) runs from you at the best her holes allow, and keeps running
+const mf = await page.evaluate(() => {
+  for (const o of [...OTHER]) despawnOtherShip(o);
+  worldState.ship = { cls: 'sloop', name: 'Test Gull', sails: 0, cargo: 0, hold: {} }; WORLD.spawnShip(_sea.x, _sea.z, 0); const S = WORLD.ship; S.sailing = true;
+  const out = {}; const m = spawnOtherShip('merchant', S.x + 40, S.z, 'test:merchant'); m.yaw = Math.PI; m.wp = { x: S.x + 40, z: S.z - 400 };
+  const step = n => { for (let i = 0; i < n; i++) { S.x = _sea.x; S.z = _sea.z; S.speed = 0; for (const o of [...OTHER]) if (o !== m) despawnOtherShip(o); WORLD.tick(1 / 60, performance.now()); } };
+  step(120); out.intact = !!m.fleeing;
+  damageShip(m, 75, 0); out.state = shipStateOf(m); step(1); out.msg = document.getElementById('msg').textContent; out.fleeing = !!m.fleeing;
+  const d0 = Math.hypot(m.x - S.x, m.z - S.z); step(20 * 60); const d1 = Math.hypot(m.x - S.x, m.z - S.z);
+  out.d0 = +d0.toFixed(1); out.d1 = +d1.toFixed(1); out.speed = +m.speed.toFixed(2); out.top = +(4.5 * otherSpeedMul(m)).toFixed(2);
+  m.hull = m.hullMax; step(60); out.stillRuns = !!m.fleeing; despawnOtherShip(m); return out; });
+console.log('merchant', JSON.stringify(mf));
+check('an intact merchantman does not run', !mf.intact, mf);
+check('holed to heavy she crowds on sail and runs from you at her holed best (4.5 × 0.8), and keeps running though mended', mf.state === 'heavy' && mf.fleeing && /crowds on sail and runs/.test(mf.msg) && mf.d1 - mf.d0 > 40 && Math.abs(mf.speed - mf.top) < .2 && mf.stillRuns, mf);
+
 check('no page errors', g.errs.length === 0, g.errs);
 if (stop) stop();
 await g.close();
