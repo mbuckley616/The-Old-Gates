@@ -43,6 +43,17 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 
 **Recommendation.** A: the place sets the danger, not you; home waters stay gentle, and the galleon's guns are rare and far.
 
+### The ballista's heavy arrow at a hand — how hard does it hit? (from the systems builder, 2026-11-04, #1120)
+**The question.** Naval combat's page (`docs/design/naval-combat.md`, Michael's B on #1064) gives the ballista *a bolt every 6 s: 10 hull, or a heavy arrow at a hand on Bow's multiplier*, but no number for the heavy arrow. Session 1820 built the bolt at a hull. A black sail's hand has 32 health (48 for a hardier one from tier 2); Bow's multiplier runs ×0.6 at Bow 0, ×1.0 at 50, ×1.4 at 100. Under A, B or C the bolt flies at a hand when the crosshair is on him and she bears; otherwise at her hull, as now.
+
+**Options.**
+- **A (recommended).** 20–30 before Bow's multiplier: 12–18 at Bow 0, 20–30 at 50, 28–42 at 100. Two or three bolts a hand at low skill, usually one at high; thinning her crew costs fire that could have gone into her hull.
+- **B.** As a steel war bow's full draw, 26–40 before the multiplier: 16–24 at Bow 0, 26–40 at 50, 36–56 at 100. From Bow 50 one bolt kills a plain hand most of the time.
+- **C.** Any hand it strikes dies; Bow is not read.
+- **D.** Leave the hand out: the ballista bears only on hulls.
+
+**Recommendation.** A: Bow matters from the first fight to the last, and a bolt at a hand is a trade against the hull, not a free kill.
+
 ## Answered
 ### What a gate keeps (L10, OG-123) (from the concept artist, 2026-11-03, #1092)
 **The question.** Two rooms are built in the gate kit's stone: a great gate's vault (a round hall 62 m across under a 51 m dome, a pit round an island, four rings turning over its dais round a burning core shard, three bridges, two hooded statues of 13 m, a cache sealed by script) and a lesser gate's keep (the 10 m vaulted end room, one shaft of light onto a sealed stone coffer). The rooms are the same in every option; the question is what lies in them.
