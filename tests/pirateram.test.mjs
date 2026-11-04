@@ -22,7 +22,7 @@ const run = (T, v, opts = {}) => page.evaluate(([T, v, opts]) => {
   const ev = []; let t = 0, hull = WORLD.shipBars().hull, wasRamming = false, minD = 1e9, runs = 0;
   for (let i = 0; i < T * 60; i++) { t = i / 60;
     for (const x of WORLD.others) if (x !== o) WORLD.despawnOtherShip(x);
-    o.volleyT = 1e9; S.x = _sea.x; S.z = _sea.z; S.speed = v; S.yaw = 0; if (opts.swim) { px = _sea.x + 20; pz = _sea.z; }
+    o.volleyT = 1e9; o.hookWait = 1e9; /* S1815 — the ram alone: her hooks after it are checked below */ S.x = _sea.x; S.z = _sea.z; S.speed = v; S.yaw = 0; if (opts.swim) { px = _sea.x + 20; pz = _sea.z; }
     WORLD.tick(1 / 60, performance.now());
     if (o.ramming && !wasRamming) { runs++; ev.push({ t: +t.toFixed(1), what: 'run' }); }
     const h = WORLD.shipBars().hull; if (h < hull) { ev.push({ t: +t.toFixed(1), what: 'hit', lost: hull - h, msg: document.getElementById('msg').textContent, spent: !o.ramming && o.ramWait > 29 }); hull = h; }
@@ -93,7 +93,8 @@ const hk = await page.evaluate(() => {
   worldState.ship = { cls: 'sloop', name: 'Test Gull', sails: 0, cargo: 0, hold: {} }; WORLD.spawnShip(_sea.x, _sea.z, 0); const S = WORLD.ship; S.sailing = false; S.speed = 0;
   px = S.x; pz = S.z; jumpY = DECK_Y; velY = 0; onGround = true;
   const look = (x, z, y) => { CAM.position.set(px, jumpY + 1.55, pz); CAM.lookAt(x, y == null ? DECK_Y + .5 : y, z); CAM.updateMatrixWorld(); };
-  const run = (secs, each) => { const t0 = performance.now(); let n = 0; while (performance.now() - t0 < secs * 1000) { S.x = S.x; WORLD.tick(1 / 60, performance.now()); if (each) each(); n++; } return n; };
+  const run = (secs, each) => { const t0 = performance.now(); let n = 0; while (performance.now() - t0 < secs * 1000) { for (const x of [...OTHER]) if (x.id !== 'test:hooks') despawnOtherShip(x); /* no sea-spawned ship in the test */ WORLD.tick(1 / 60, performance.now()); if (each) each(); n++; } return n; };
+  const said = []; const sm = showMsg; showMsg = (t, ...r) => { said.push(t); return sm(t, ...r); }; /* the lines said, not the last one shown: a sea-spawned ship's line can land in the same tick */
   const side = WORLD.ship.mesh; const o = spawnOtherShip('merchant', 0, 0, 'test:hooks');
   const at = (lx, lz) => shipToWorld(side, lx, lz);
   const p0 = at(S.W / 2 + o.W / 2 + 6, 1.5); o.x = p0.x; o.z = p0.z; o.yaw = S.yaw; o.speed = 0; o.wp = { x: o.x, z: o.z }; placeOther(o);
@@ -111,13 +112,13 @@ const hk = await page.evaluate(() => {
   // the cut: by the first cleat, E, 1.5 s
   const c0 = HOOKS.cleats[0], c1 = HOOKS.cleats[1]; let a = at(c0.lx, c0.lz); px = a.x; pz = a.z; jumpY = DECK_Y; look(a.x, a.z, 0);
   out.cutPrompt = hookPrompt(); hookInteract(); run(1.2, () => { px = a.x; pz = a.z; }); out.cutAt12 = c0.cut; run(.5, () => { px = a.x; pz = a.z; }); out.cutAt17 = c0.cut; out.still = lashed(o);
-  a = at(c1.lx, c1.lz); px = a.x; pz = a.z; hookInteract(); run(.4); px += 5; run(.2); out.walkedOff = { cut: c1.cut, msg: document.getElementById('msg').textContent };
-  a = at(c1.lx, c1.lz); px = a.x; pz = a.z; hookInteract(); run(1.7, () => { px = a.x; pz = a.z; }); out.free = { cut: c1.cut, lashed: !!o.lashed, hooks: !!HOOKS.o, msg: document.getElementById('msg').textContent };
+  a = at(c1.lx, c1.lz); px = a.x; pz = a.z; hookInteract(); run(.4); px += 5; run(.2); out.walkedOff = { cut: c1.cut, msg: said.filter(t => /uncut/.test(t)).pop() || said[said.length - 1] };
+  a = at(c1.lx, c1.lz); px = a.x; pz = a.z; hookInteract(); run(1.7, () => { px = a.x; pz = a.z; }); out.free = { cut: c1.cut, lashed: !!o.lashed, hooks: !!HOOKS.o, msg: said.filter(t => /free/.test(t)).pop() || said[said.length - 1] };
   // a rough sea: a throw misses one time in two, by her id and the throw's number
   const ss = seaState; seaState = () => 2; const got = [], want = [];
   for (let i = 0; i < 4; i++) { const n = (HOOKS.n['test:hooks'] || 0) + 1; want.push(seededRng('hooks', `test:hooks:${n}`)() < .5); px = S.x; pz = S.z; jumpY = DECK_Y; throwHooks(o); got.push(HOOKS.miss); run(1.15); hookDrop(); }
   seaState = ss; out.rough = { got, want };
-  despawnOtherShip(o); return out; });
+  despawnOtherShip(o); showMsg = sm; return out; });
 console.log('hooks', JSON.stringify(hk));
 check('her hull under the crosshair within 10 m: E throws the hooks; at 4 m/s apart, close slower; in a storm, none', hk.prompt === "Press 'E' to throw the hooks" && /more slowly/.test(hk.fast) && /No hook/.test(hk.storm) && !hk.stormThrow, hk);
 check('the throw takes 1 s, the haul 4 s, then lashed', hk.thrown && hk.phase0 === 'throw' && hk.at09 === 'throw' && hk.at115 === 'haul' && hk.at465 === 'haul' && hk.lashed.phase === 'lashed' && hk.lashed.on && hk.lashed.lines === 2, hk);
@@ -126,6 +127,36 @@ check('across to her deck from your rail (boarding her), and back', /cross to he
 check('a line cut at its cleat in 1.5 s; one line still holds her', /cut the line/.test(hk.cutPrompt) && !hk.cutAt12 && hk.cutAt17 && hk.still, hk);
 check('walk off a cut and the line stays; both cut and she is free', !hk.walkedOff.cut && /uncut/.test(hk.walkedOff.msg) && hk.free.cut && !hk.free.lashed && !hk.free.hooks && /free/.test(hk.free.msg), hk);
 check('in a rough sea the throw misses by the seeded roll (her id, the throw)', JSON.stringify(hk.rough.got) === JSON.stringify(hk.rough.want), hk.rough);
+
+// S1815 — repel boarders: a black sail whose ram is spent hooks you within 10 m; her crew cross 6 s after the lashing unless both lines are cut
+const rb = await page.evaluate(() => {
+  for (const o of [...OTHER]) despawnOtherShip(o); hookDrop();
+  const ss = seaState; seaState = () => 1; /* the weather moves on over a long real-time run: the sea is held moderate */
+  const fresh = () => { for (const o of [...OTHER]) despawnOtherShip(o); hookDrop(); for (const e of WORLD.boarders.splice(0)) { if (e.mesh && e.mesh.parent) e.mesh.parent.remove(e.mesh); const j = ZONES.world.enemies.indexOf(e); if (j >= 0) ZONES.world.enemies.splice(j, 1); }
+    worldState.ship = { cls: 'sloop', name: 'Test Gull', sails: 0, cargo: 0, hold: {} }; WORLD.spawnShip(_sea.x, _sea.z, 0); const S = WORLD.ship; S.sailing = false; S.speed = 0;
+    px = S.x; pz = S.z; jumpY = DECK_Y; velY = 0; onGround = true; PHP = 9999;
+    const p0 = shipToWorld(S.mesh, S.W / 2 + 4.4 / 2 + 5, 0); const o = spawnOtherShip('pirate', p0.x, p0.z, 'test:boarders'); o.yaw = S.yaw; o.speed = 0; o.volleyT = 1e9; o.ramWait = 25; return [S, o]; };
+  const run = (secs, o, each) => { const t0 = performance.now(), hold = { x: o.x, z: o.z, yaw: o.yaw }; while (performance.now() - t0 < secs * 1000) { o.volleyT = 1e9; o.ramWait = Math.max(o.ramWait, 5); PHP = 9999;
+    for (const x of [...OTHER]) if (x !== o) despawnOtherShip(x); if (!HOOKS.o) { Object.assign(o, hold); o.speed = 0; } if (!each) { const S = WORLD.ship; px = S.x; pz = S.z; jumpY = DECK_Y; } WORLD.tick(1 / 60, performance.now()); if (each) each(); } };
+  const out = {};
+  let [S, o] = fresh(); run(1.5, o); out.unrammed = { hooks: !!HOOKS.o, boarders: WORLD.boarders.length };
+  o._rammed = true; run(.3, o); out.thrown = { by: HOOKS.by, phase: HOOKS.phase, msg: document.getElementById('msg').textContent };
+  run(5, o); out.lashedAt5 = { phase: HOOKS.phase, boarders: WORLD.boarders.length }; run(5.2, o); out.at105 = { boarders: WORLD.boarders.length, sent: !!o.sentBoarders };
+  run(1.2, o); out.crossed = { boarders: WORLD.boarders.length, msg: document.getElementById('msg').textContent, still: lashed(o) };
+  // again, and you cut both lines while she hauls: nobody crosses, and she must ram again
+  [S, o] = fresh(); o._rammed = true; run(1.2, o); out.second = HOOKS.phase;
+  for (const c of HOOKS.cleats.slice()) { const at = () => { const a = shipToWorld(S.mesh, c.lx, c.lz); px = a.x; pz = a.z; jumpY = DECK_Y; }; at(); hookInteract(); run(1.6, o, at); }
+  out.cut = { hooks: !!HOOKS.o, rammed: !!o._rammed, sent: !!o.sentBoarders, boarded: !!o.boarded, msg: document.getElementById('msg').textContent };
+  run(7, o); out.after = { boarders: WORLD.boarders.length, hooks: !!HOOKS.o };
+  // a storm: nobody grapples
+  [S, o] = fresh(); seaState = () => 3; o._rammed = true; run(1.5, o); out.storm = { hooks: !!HOOKS.o }; seaState = () => 1;
+  fresh(); for (const x of [...OTHER]) despawnOtherShip(x); seaState = ss; return out; });
+console.log('boarders', JSON.stringify(rb));
+check('within 10 m, her ram not yet landed: no hooks, nobody on your deck (the old 12-second crossing is gone)', !rb.unrammed.hooks && rb.unrammed.boarders === 0, rb.unrammed);
+check('her ram spent: her hooks come over your rail', rb.thrown.by === 'her' && rb.thrown.phase === 'throw', rb.thrown);
+check('lashed at 5 s with nobody across yet; across 6 s after the lashing: two of her crew on your deck', rb.lashedAt5.phase === 'lashed' && rb.lashedAt5.boarders === 0 && rb.crossed.boarders === 2 && /Pirates on your deck/.test(rb.crossed.msg) && rb.crossed.still, rb);
+check('both lines cut while she hauls: she is free, nobody crosses, and she must ram again before she hooks', rb.second === 'haul' && !rb.cut.hooks && !rb.cut.rammed && !rb.cut.sent && !rb.cut.boarded && rb.after.boarders === 0 && !rb.after.hooks, rb);
+check('in a storm nobody grapples', !rb.storm.hooks, rb.storm);
 
 check('no page errors', g.errs.length === 0, g.errs);
 if (stop) stop();

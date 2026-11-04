@@ -68,8 +68,9 @@ check('the floating body stays after she goes, and goes when you are 720 units o
 // 4. boarders on your deck: one killed there sails and turns with your ship (W held 20 s, A the first 4)
 const mine = await page.evaluate(() => { const S = WORLD.ship; worldState.ship = { cls: 'sloop', name: 'Test Gull', sails: 0, cargo: 0, hold: {} }; WORLD.spawnShip(_sea.x, _sea.z, 0); S.sailing = true; S.speed = 0;
   WORLD.tick(1 / 60, performance.now());
-  const o = WORLD.spawnOtherShip('pirate', S.x + 12, S.z); o.yaw = Math.PI; o.speed = 0; o.volleyT = 1e9; o.ramWait = 1e9; o.closeT = 20;
-  for (let i = 0; i < 5 && !WORLD.boarders.length; i++) { o.x = S.x + 12; o.z = S.z; o.speed = 0; WORLD.tick(1 / 60, performance.now()); }
+  const o = WORLD.spawnOtherShip('pirate', S.x + 12, S.z); o.yaw = Math.PI; o.speed = 0; o.volleyT = 1e9; o.ramWait = 1e9;
+  pirateCross(o); /* S1815 — her crew cross at the end of her hooks now (naval combat); the crossing itself, as before */
+  for (let i = 0; i < 5; i++) { o.x = S.x + 12; o.z = S.z; o.speed = 0; WORLD.tick(1 / 60, performance.now()); }
   const e = WORLD.boarders[0]; if (!e) return { boarders: 0 };
   killZoneEnemy(e, WORLD.scene); for (const b of WORLD.boarders) if (!b.dead) killZoneEnemy(b, WORLD.scene);
   WORLD.despawnOtherShip(o);

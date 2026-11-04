@@ -4,17 +4,22 @@
     if(!SHIP.mesh)return;
     for(const o of OTHER){
       if(o.kind!=='pirate'||o.boarded||o.dead)continue;
-      const d=Math.hypot(o.x-SHIP.x,o.z-SHIP.z);
-      const mine=onDeck()||SHIP.sailing;
-      if(mine&&d<40){o.closeT=(o.closeT||0)+dt;}else o.closeT=0;
-      if(mine&&d<16&&o.closeT>12&&!o.sentBoarders){o.sentBoarders=true;let n=0;
-        for(const e of o.crew){if(e.dead||n>=2)continue;n++;const fwd=[-Math.sin(SHIP.yaw),-Math.cos(SHIP.yaw)];e.x=SHIP.x+fwd[0]*(-2+n*2);e.z=SHIP.z+fwd[1]*(-2+n*2);e.alert=true;e._ship={plat:SHIP.plat};e._from=o;BOARDERS.push(e);const k=o.crew.indexOf(e);if(k>=0)o.crew.splice(k,1);}
-        if(n){showMsg('Pirates on your deck!','#ff6060');splash(true);rackDraw();}} /* S1733 — her arms rack arms empty hands */
+      // S1815 — naval combat's repel boarders (Michael's B on #1064): her crew no longer appear on your deck after 12 s within 16 units.
+      // A black sail whose ram is spent (it has landed, S418) hooks you when her hull comes within 10 m of yours, you aboard; her
+      // crew cross 6 s after the hulls are lashed unless both lines are cut first (pirateHookTick, 86). A miss in a rough sea, or
+      // lines cut, and she circles and must ram again first. In a storm nobody grapples.
+      const mine=onDeck()||SHIP.sailing;o.hookWait=Math.max(0,(o.hookWait||0)-dt);
+      if(mine&&!HOOKS.o&&o._rammed&&!o.ramming&&!o.sentBoarders&&!o.struck&&o.founder==null&&o.hookWait<=0&&seaState()<3&&Math.hypot(o.x-SHIP.x,o.z-SHIP.z)<10+(SHIP.W+o.W)/2)throwHooks(o,'her');
     }
     pirateBoardersHold();
     // keep boarders aboard
     const p=SHIP.plat;for(let i=BOARDERS.length-1;i>=0;i--){const e=BOARDERS[i];if(e.dead){BOARDERS.splice(i,1);DECK_DEAD.push(e);continue;}if(!e._lx){e._lx=SHIP.x;e._lz=SHIP.z;}e.x+=SHIP.x-e._lx;e.z+=SHIP.z-e._lz;e._lx=SHIP.x;e._lz=SHIP.z;e.x=Math.max(p.x0+.6,Math.min(p.x1-.6,e.x));e.z=Math.max(p.z0+.6,Math.min(p.z1-.6,e.z));e.homeX=SHIP.x;e.homeZ=SHIP.z;}
   }
+  // her crew come over the rail: two of her living hands, onto your deck amidships (S168's boarders, as before)
+  function pirateCross(o){if(!o||o.sentBoarders)return 0;o.sentBoarders=true;let n=0;
+    for(const e of o.crew.slice()){if(e.dead||n>=2)continue;n++;const fwd=[-Math.sin(SHIP.yaw),-Math.cos(SHIP.yaw)];e.x=SHIP.x+fwd[0]*(-2+n*2);e.z=SHIP.z+fwd[1]*(-2+n*2);e.alert=true;e._ship={plat:SHIP.plat};e._from=o;BOARDERS.push(e);const k=o.crew.indexOf(e);if(k>=0)o.crew.splice(k,1);}
+    if(n){showMsg('Pirates on your deck!','#ff6060');splash(true);rackDraw();} /* S1733 — her arms rack arms empty hands */
+    return n;}
   // S613 — a boarder killed on your deck lies there and sails with her (carryDead, 85-world-sea.js) until you are 700 units off
   const DECK_DEAD=[];let _deckPose=null;
   function tickDeckDead(){if(!DECK_DEAD.length){_deckPose=null;return;}
@@ -55,7 +60,7 @@
       // S411 — a ram: on first touch your hull takes the closing speed × 3, half if your bow is on her; they part before it counts again
       if(a.mine){if(C.pen>0&&!b.o._touch){b.o._touch=true;const ux=C.ux,uz=C.uz,fa=[-Math.sin(a.o.yaw),-Math.cos(a.o.yaw)],fb=[-Math.sin(b.o.yaw||0),-Math.cos(b.o.yaw||0)];
           const close=(fa[0]*(a.o.speed||0)-fb[0]*(b.o.speed||0))*ux+(fa[1]*(a.o.speed||0)-fb[1]*(b.o.speed||0))*uz;const bow=(a.o.speed||0)>.5&&fa[0]*ux+fa[1]*uz>.7;
-          const rammed=!!b.o.ramming;if(rammed){b.o.ramming=0;b.o.ramWait=PIRATE_RAM.wait;}
+          const rammed=!!b.o.ramming;if(rammed){b.o.ramming=0;b.o.ramWait=PIRATE_RAM.wait;b.o._rammed=true; /* S1815 — her ram spent: now she may hook you */}
           // S1813 — rams both ways (naval combat, #1064): her hull takes the closing speed × 4 from your bow, × 1.5 when it is her bow
           // that strikes, × 3 when neither does; what yours takes is unchanged (× 1.5 bow on, × 3 otherwise)
           if(close>.5){const herBow=(b.o.speed||0)>.5&&-(fb[0]*ux+fb[1]*uz)>.7;const d=damageShip(b.o,close*(bow?4:herBow?1.5:3),0);const w=shipWear(close*3*(bow?.5:1),0);
