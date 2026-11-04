@@ -212,6 +212,11 @@ const capes = await page.evaluate(() => { const out = {}; for (const nm of ['Edn
     let fwd = -1; for (let i = 0; i < pa.count; i++) fwd = Math.max(fwd, v.fromBufferAttribute(pa, i).applyMatrix4(cl.matrixWorld).z - n.z);
     out[nm] = { staff: !!P.root.getObjectByName('staff'), fwd: +fwd.toFixed(3), out: P.cloak.through.out, under: P.cloak.under }; } return out; });
 check('Edna and Áine carry their sticks, and the cape stays on the shoulder: under 30 cm in front of the neck, nothing through it', Object.values(capes).every(c => c.staff && c.fwd < .3 && c.out === 0 && c.under === 0), capes);
+// S1809 (L2, OG-069): Niamh's lantern, in her right fist on the basket's grip, hanging clear of her and her cloak, on her wrist so it goes where the arm goes
+const lantern = await page.evaluate(() => { const P = HB.makePerson(HB.castGenome('Niamh', {}), { hoodStats: false }), ln = P.root.getObjectByName('lantern');
+  return { on: !!ln, wrist: ln && ln.parent && ln.parent.name, st: P.lantern, cloak: P.cloak.through.out, under: P.cloak.under }; });
+check('Niamh carries her lantern in her right fist: on the wrist, nothing of her within a centimetre of it, the fingers closed and none through its grip, her cloak clear',
+  lantern.on && lantern.wrist === 'wrist.R' && lantern.st.inside === 0 && lantern.st.fist === 0 && lantern.st.gap > -.002 && lantern.st.foot > .3 && lantern.cloak === 0 && lantern.under === 0, lantern);
 await g.close();
 
 // a second boot: the same people, the same bodies

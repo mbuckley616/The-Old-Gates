@@ -1472,7 +1472,7 @@ function hbGenome(g){let G=HB_GENOMES.get(g.hbKey);if(G)return G;HB.loadPack();
   const people=HB.PEOPLES[g.people]?g.people:'gatelander',cast=hbCastName(g);
   G=cast?HB.castGenome(cast,{people}):HB.rollGenome(g.hbKey,{people,g:g.female?0:1,child:!!g.child,old:g.age==='elder'});
   // a guard is known by his mail, helm and spear (the town's guards keep their old kit's role; the armour tiers are F10's)
-  if(GUARD_ROLE.test(g.role||''))G.dress=Object.assign({},G.dress,{mail:[.55,.56,.58],helm:[.42,.43,.45],spear:[.46,.33,.2],cloak:null,hood:null,basket:null,staff:null,shield:null,crossbow:null});
+  if(GUARD_ROLE.test(g.role||''))G.dress=Object.assign({},G.dress,{mail:[.55,.56,.58],helm:[.42,.43,.45],spear:[.46,.33,.2],cloak:null,hood:null,basket:null,staff:null,lantern:null,shield:null,crossbow:null});
   if(/^crew:/.test(g.hbKey||'')){const m=/carpenter|cook|navigator/.exec(g.role||''),C=m&&CREW_BODY[m[0]];if(C)G.dress=Object.assign({},G.dress,CREW_STRIP,C.dress);} /* S1779 — her crew's working dress */
   HB_GENOMES.set(g.hbKey,G);return G;}
 /* S1792 (L2, OG-069) — the cast: a named person of Act I (the builder's CAST: Bram, Edna, Corwin, Niamh, Áine) wears the sheet's body and
@@ -1533,7 +1533,7 @@ const CREW_BODY={
   carpenter:{role:"Ship's carpenter",at:['workbench','mast','sea chest'],dress:{apron:[.36,.25,.16],apronLeather:true,bib:true,coat:null}},
   cook:{role:"Ship's cook",at:['water cask','barrel','mast','sea chest'],dress:{apron:[.8,.76,.66],apronLeather:false,bib:true,coat:null}},
   navigator:{role:'Navigator',at:['chart table','alchemy table','chest','sea chest','mast'],dress:{coat:[.18,.22,.32],coatLen:.8,coatHood:null,coatFur:null,apron:null,bib:null}}};
-const CREW_STRIP={cloak:null,hood:null,cape:null,mantle:null,spear:null,staff:null,crossbow:null,basket:null,basketCloth:null,shield:null,chair:null,burnous:null};
+const CREW_STRIP={cloak:null,hood:null,cape:null,mantle:null,spear:null,staff:null,crossbow:null,basket:null,basketCloth:null,lantern:null,shield:null,chair:null,burnous:null};
 const CREW_PEOPLE=[['gatelander','gatelands'],['markman','mark'],['aurennais','aurenne']];
 function crewHoldSpot(house,B,a,taken,far){const X=house.intW/2,z1=B.hold.z1,x0=X-a[3],x1=X-a[0],z0=z1-a[5],zz1=z1-a[2],cx=(x0+x1)/2,cz=(z0+zz1)/2,o=.38;
   let gz=cz;if(Array.isArray(B.beams)){const k=z1-cz,bs=B.beams.slice().sort((p,q)=>p-q),i=bs.findIndex(v=>v>k);if(i>0){const m=(bs[i-1]+bs[i])/2;if(Math.abs(m-k)<(zz1-z0)/2)gz=z1-m;}} /* beside the item, between two deck beams: a head stands clear of them */
@@ -1620,7 +1620,7 @@ function hbFoeGenome(rig){const g=rig.g,dr=FOE_DRESS[rig.hbFoe]||{},id=rig.e&&ri
   const G=HB.rollGenome(key,{people:HB.PEOPLES[g.people]?g.people:'gatelander',g:g.female?0:1});
   const h=dr.cloth!=null?dr.cloth:0x3a3a3a,c=[(h>>16&255)/255,(h>>8&255)/255,(h&255)/255];
   if(HB_FOE_BODY[rig.hbFoe])HB_FOE_BODY[rig.hbFoe](G);
-  G.dress=Object.assign({},G.dress,{tunic:c,spear:null,staff:null,crossbow:null,basket:null,basketCloth:null,shield:null,chair:null,apron:null,bib:null,cape:null,coat:null,scarf:null,wrap:null},(HB_FOE_DRESS[rig.hbFoe]||(()=>({})))(c));
+  G.dress=Object.assign({},G.dress,{tunic:c,spear:null,staff:null,crossbow:null,basket:null,basketCloth:null,lantern:null,shield:null,chair:null,apron:null,bib:null,cape:null,coat:null,scarf:null,wrap:null},(HB_FOE_DRESS[rig.hbFoe]||(()=>({})))(c));
   // S1464 — a foe that rolled the gear kit's spear (a Deserter one time in two) holds the builder's, as the Ash Wight does: the driver's is baked into its hidden mesh
   if(g.gear==='spear'&&!G.dress.spear)G.dress.spear=[.46,.33,.2];
   HB_GENOMES.set(key,G);return G;}
@@ -1798,7 +1798,7 @@ function hbGive(rig){const H=rig.hb;for(const h of H.held)if(h.o.parent===H.root
 // under one thrown back off the right shoulder (a spear, a crossbow, a staff, a basket). A blow, a ragdoll and a sleeper are left alone
 // (S1435: your own body's arms are held side by side, each by rig.tpHold.L/.R, which tpPose sets while that arm is on the gait's swing)
 const HB_CLOAK_HOLD=1;
-function hbCloakArms(D,map){if(!D||!D.cloak)return null;const thrown=!!(D.spear||D.crossbow||D.staff||D.basket)&&(!D.cape||!!D.staff&&!D.spear&&!D.crossbow),sides=thrown?/L$/:/[LR]$/; /* S1798: a cape over a staff opens on the staff's side, as people.js's buildCloak */
+function hbCloakArms(D,map){if(!D||!D.cloak)return null;const thrown=!!(D.spear||D.crossbow||D.staff||D.basket||D.lantern)&&(!D.cape||!!D.staff&&!D.spear&&!D.crossbow),sides=thrown?/L$/:/[LR]$/; /* S1798: a cape over a staff opens on the staff's side, as people.js's buildCloak */
   const i=map.map(([j],k)=>/^(sh|el|wr)[LR]$/.test(j)&&sides.test(j)?k:-1).filter(k=>k>=0);return i.length?new Set(i):null;}
 function hbHoldF(rig){const H=rig.hb,w=rig.w;if(!H.hold||!w||rig.limp||rig.sleep)return 0;if(rig.tpHold)return HB_CLOAK_HOLD;const e=rig.e;
   if(e&&((e._wind||0)>0||(e._lunge!=null&&e._lunge>0)||(e.atkAnim||0)>0))return 0;return HB_CLOAK_HOLD*Math.min(1,(w.walk||0)+(w.run||0));}

@@ -1425,7 +1425,7 @@ function buildCloak(G, body, byName, rnd) {
   // as a flat slab 38 cm in front of the neck. It opens on the right as the full cloak does, but from the side itself (the cloak's start, just
   // forward of it, caught the forearm in a point at the hem), so the shoulder and upper arm stay under it and the forearm comes out in front
   const capeStaff = cape && !!D.staff && !D.spear && !D.crossbow;
-  const thrown = !!(D.spear || D.crossbow || D.staff || D.basket) && (!cape || capeStaff), low = thrown && !D.spear && !D.crossbow && !D.basket;
+  const thrown = !!(D.spear || D.crossbow || D.staff || D.basket || D.lantern) && (!cape || capeStaff), low = thrown && !D.spear && !D.crossbow && !D.basket && !D.lantern;
   const th0 = capeStaff ? -Math.PI / 2 - .15 : low ? -Math.PI / 2 - .33 : thrown ? -Math.PI / 2 + .35 : -Math.PI + open, th1 = Math.PI - open, cols = [], tops = [];
   for (let k = 0; k < K; k++) { const th = th0 + (k / (K - 1)) * (th1 - th0), dir = new THREE.Vector3(Math.sin(th), 0, -Math.cos(th));
     const e = S.extreme(neck, dir.clone().add(new THREE.Vector3(0, -.42, 0)).normalize(), p => p.y > neckY - .16 && p.y < neckY + .03);
@@ -3351,6 +3351,55 @@ function buildBasket(G, body, byName, meshes, root, grip) {
   let tris = 0; bk.traverse(m => { if (m.isMesh) tris += m.geometry.index ? m.geometry.index.count / 3 : m.geometry.attributes.position.count / 3; });
   return { mesh: bk, stats: { load: D.basketCloth ? 'cloth' : 'apples', inside: T.n, tested: T.tested, clear: +T.clear.toFixed(4), lift: +lift.toFixed(2), fist, handPts: handN, foot: +foot.toFixed(3), gap: grip.gap, thumbIn: grip.thumbIn, thumbGap: grip.thumbGap, curl: grip.curl, gripPts: grip.n, tris } };
 }
+// ── the lantern (Session 1809, L2; OG-069's and OG-057's Niamh, who carries one) ──
+// A round horn lantern of blackened iron carried by its bail in the right fist, as the basket is: the arm hanging with the weight, the
+// hand turned fingers down and the four fingers closed round the bail's wooden sleeve at its crown (the basket's grip, fistGrip). The
+// lantern hangs plumb under the fist. Its numbers, in metres: a base plate 13 cm across, four straps between two bands round panes of
+// horn 15 cm high and 11 across, a cone of a cap 7 cm high with a ring on its point, the bail from the cap's rim to a crown 6 cm over the
+// ring, a sleeve 10 cm long round its straight top (the bail's wires come down outside the fist). The horn glows as a candle behind it would (an emissive amber, D.lanternLit unless
+// false); its own light is the game's to give, not the kit's. Built in its own frame: x along the bail's crown, y up, the foot at 0.
+// The arm is lifted clear of everything worn, three hundredths of a radian at a time, as for the basket
+const LANTERN = { r: .056, base: .066, H: .15, foot: .018, cap: .07, top: .305, flat: .05, wire: .004, R: SPEAR_R, rr: .069 };
+function lanternParts(D) {
+  const K = LANTERN, parts = [], iron = new THREE.MeshStandardMaterial({ color: sRGB(...D.lantern), metalness: .6, roughness: .55 }), lit = D.lanternLit !== false;
+  const horn = new THREE.MeshStandardMaterial({ color: sRGB(.62, .42, .2), emissive: lit ? sRGB(.9, .5, .16) : new THREE.Color(0), emissiveIntensity: lit ? .5 : 0, roughness: .5, side: THREE.DoubleSide });
+  const wood = new THREE.MeshStandardMaterial({ color: sRGB(.34, .23, .14), roughness: .7 });
+  const add = (g, m, name, x = 0, y = 0, z = 0) => { const o = new THREE.Mesh(g, m); o.position.set(x, y, z); o.name = name; parts.push(o); return o; };
+  const y0 = K.foot, y1 = K.foot + K.H, yc = y1 + K.cap;
+  add(new THREE.CylinderGeometry(K.base, K.base + .004, K.foot, 24), iron, 'lanternBase', 0, K.foot / 2, 0);
+  add(new THREE.CylinderGeometry(K.r, K.r, K.H, 24, 1, true), horn, 'lanternHorn', 0, (y0 + y1) / 2, 0);
+  for (const y of [y0 + .004, y1 - .004]) add(new THREE.TorusGeometry(K.r + .002, .0045, 6, 32), iron, 'lanternBand', 0, y, 0).rotation.x = Math.PI / 2;
+  for (let k = 0; k < 4; k++) { const a = (k + .5) / 4 * Math.PI * 2, s = add(new THREE.BoxGeometry(.009, K.H, .005), iron, 'lanternStrap', Math.sin(a) * (K.r + .002), (y0 + y1) / 2, Math.cos(a) * (K.r + .002)); s.rotation.y = a; }
+  add(new THREE.CylinderGeometry(.006, K.base, K.cap, 24, 1, true), iron, 'lanternCap', 0, y1 + K.cap / 2, 0);
+  add(new THREE.CylinderGeometry(K.base, K.base, .006, 24), iron, 'lanternRim', 0, y1 + .003, 0);
+  add(new THREE.TorusGeometry(.013, .0035, 6, 16), iron, 'lanternRing', 0, yc + .012, 0);
+  // the bail: from a lug at each side of the cap's rim up and in to the crown, straight and level over its middle, where the sleeve is
+  const e = K.base, hp = []; for (let k = 0; k <= 48; k++) { const x = -e + 2 * e * k / 48, u = Math.max(0, (Math.abs(x) - K.flat) / (e - K.flat)); hp.push(new THREE.Vector3(x, y1 + .004 + (K.top - y1 - .004) * Math.sqrt(Math.max(0, 1 - u * u)), 0)); }
+  const hc = new THREE.CatmullRomCurve3(hp); add(new THREE.TubeGeometry(hc, 64, K.wire, 6, false), iron, 'lanternBail');
+  add(new THREE.CylinderGeometry(K.R, K.R, 2 * K.flat, 12), wood, 'lanternGrip', 0, K.top, 0).rotation.z = Math.PI / 2;
+  return { parts, handleCurve: new THREE.LineCurve3(new THREE.Vector3(-K.flat, K.top, 0), new THREE.Vector3(K.flat, K.top, 0)) };
+}
+function buildLantern(G, body, byName, meshes, root, grip) {
+  const D = G.dress, K = LANTERN, R0 = PACK.rest, wr = byName['wrist.R'], arm = byName['upperarm01.R'], P = lanternParts(D);
+  const ln = new THREE.Group(); ln.name = 'lantern'; for (const m of P.parts) { m.castShadow = m.receiveShadow = true; m.userData.shield = true; ln.add(m); } root.add(ln);
+  root.updateMatrixWorld(true); const toW = wr.matrixWorld.clone().invert(), Cl = grip.C.clone().applyMatrix4(toW), Al = grip.A.clone().transformDirection(toW);
+  let floor = 1e9; { const PP = posedBody(body); for (const i of bodyV()) floor = Math.min(floor, PP[i * 3 + 1]); }
+  const place = () => { root.updateMatrixWorld(true); const C = Cl.clone().applyMatrix4(wr.matrixWorld), A = Al.clone().transformDirection(wr.matrixWorld); A.y = 0; A.normalize(); if (A.z < 0) A.negate();
+    const Y = new THREE.Vector3(0, 1, 0), Z = A.clone().cross(Y); ln.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(A, Y, Z)); ln.position.copy(C).addScaledVector(Y, -K.top); root.updateMatrixWorld(true); return C; };
+  const clouds = wornClouds(body, meshes, root), again = wornMover(clouds, root, arm), top = K.foot + K.H + K.cap;
+  // what is within a centimetre of the lantern's body (its foot to the cap's point, inside its widest round), the right hand apart
+  const test = () => { const inv = ln.matrixWorld.clone().invert(), v = new THREE.Vector3(); let n = 0, clear = 1, tested = 0;
+    eachPoint(clouds, (x, y, z, i) => { if (i >= 0 && R0[i * 3] < -.39) return; v.set(x, y, z).applyMatrix4(inv); if (v.y < -.02 || v.y > top + .02) return; tested++;
+      const r = Math.hypot(v.x, v.z); if (r < K.rr + .01) n++; clear = Math.min(clear, r - K.rr); });
+    return { n, clear, tested }; };
+  let lift = 0, T; place(); for (;;) { T = test(); if (!T.n || lift >= .6) break; lift += .03; arm.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), -.03)); place(); again(); }
+  // the fist on the sleeve: the right hand's points inside it
+  const inv = ln.matrixWorld.clone().invert(), v = new THREE.Vector3(), HP = P.handleCurve.getSpacedPoints(60); let fist = 0, handN = 0;
+  eachPoint(clouds, (x, y, z, i) => { if (i < 0 || R0[i * 3] >= -.39) return; v.set(x, y, z).applyMatrix4(inv); let d = 1; for (const p of HP) d = Math.min(d, p.distanceTo(v)); if (d < .05) handN++; if (d < K.R - .001) fist++; });
+  const foot = ln.getWorldPosition(new THREE.Vector3()).y - floor; wr.attach(ln);
+  let tris = 0; ln.traverse(m => { if (m.isMesh) tris += m.geometry.index ? m.geometry.index.count / 3 : m.geometry.attributes.position.count / 3; });
+  return { mesh: ln, stats: { lit: D.lanternLit !== false, inside: T.n, tested: T.tested, clear: +T.clear.toFixed(4), lift: +lift.toFixed(2), fist, handPts: handN, foot: +foot.toFixed(3), gap: grip.gap, thumbIn: grip.thumbIn, curl: grip.curl, gripPts: grip.n, tris } };
+}
 // the sash belt's promises (Session 1010), read on the posed meshes round the waist's own axis, at 15 points on every triangle: in 72
 // angles and 1 cm rows, nothing worn under it (the tunic, a skirt, a bodice, mail, the body) stands out past its inside, no point of
 // an arm is within it, and a leather belt worn over it lies outside it
@@ -3683,7 +3732,7 @@ function* makePersonSteps(G, o = {}) {
   // seated in a wheeled chair (Session 1106) nothing is worn or carried that hangs to the ground or is built round a standing body: no
   // cloak, tabard, sash or shoulder wrap, apron, long skirt or mail skirt's hang over the lap, nothing in the fist and no shield; a long skirt gives way to trousers
   // (a crossbow stays: it is laid across the knees, Session 1116); a knee-length tunic (Session 1164) is cut short
-  if (G.dress?.chair) { const C = G.dress; G = { ...G, dress: { ...C, cloak: null, hood: null, tabard: null, sash: null, shoulderWrap: null, apron: null, bib: null, shield: null, spear: null, staff: null, basket: null, wrapTail: null,
+  if (G.dress?.chair) { const C = G.dress; G = { ...G, dress: { ...C, cloak: null, hood: null, tabard: null, sash: null, shoulderWrap: null, apron: null, bib: null, shield: null, spear: null, staff: null, basket: null, lantern: null, wrapTail: null,
     ...(C.skirt === 'knee' ? { skirt: 'short' } : {}), ...(C.skirt === 'long' || C.robe ? { skirt: null, robe: null, trousers: C.trousers || C.skirtColor || C.robe || [.3, .26, .2] } : {}) } }; }
   if (G.dress?.mail && !G.dress.robe) { const M = G.dress; G = { ...G, dress: { ...M, tunic: M.tunic || [.6, .54, .42], belt: M.belt || [.24, .16, .1] } }; }
   if (coatOn(G.dress)) { const C = G.dress; G = { ...G, dress: { ...C, tunic: C.tunic || [.6, .54, .42], belt: C.belt || [.24, .16, .1], cloak: null, hood: null, mantle: null, apron: null, bib: false, sash: null, shoulderWrap: null, waistcoat: null, bodice: null, sashBelt: null, cuffs: null, cuffBand: null } }; }
@@ -3925,7 +3974,7 @@ function* makePersonSteps(G, o = {}) {
     spearGrip = fistGrip(body, byName, root, curl, hinge); }
   // a basket in the right fist (Session 1033), when it holds no spear or crossbow: the arm straight with the weight, the hand turned so
   // its fingers point down and its knuckles run level fore and aft, then the four fingers close round the handle's crown (fistGrip)
-  let basketGrip = null, basketWrist = 0; if (D.basket && !D.spear && !D.crossbow && !D.staff) { const at = n => new THREE.Vector3().setFromMatrixPosition(byName[n].matrixWorld), wr = byName['wrist.R'];
+  let basketGrip = null, basketWrist = 0; if ((D.basket || D.lantern) && !D.spear && !D.crossbow && !D.staff) { const at = n => new THREE.Vector3().setFromMatrixPosition(byName[n].matrixWorld), wr = byName['wrist.R'];
     byName['lowerarm01.R'].quaternion.copy(q(.12, 0, 0)); root.updateMatrixWorld(true);
     const frame = (L, K) => { K = K.clone().normalize(); L = L.clone().addScaledVector(K, -L.dot(K)).normalize(); return new THREE.Matrix4().makeBasis(L, K, L.clone().cross(K)); };
     const mid = at('finger3-1.R').add(at('finger4-1.R')).multiplyScalar(.5), kn = at('finger2-1.R').sub(at('finger5-1.R')), cur = frame(mid.sub(at('wrist.R')), kn), tgt = frame(new THREE.Vector3(0, -1, 0), new THREE.Vector3(0, 0, Math.sign(kn.z) || 1));
@@ -3992,7 +4041,9 @@ function* makePersonSteps(G, o = {}) {
   let staffStats = null; if (D.staff && !D.spear && !D.crossbow) staffStats = { ...buildStaff(G, body, byName, meshes, root, spearGrip).stats, wrist: wristFix };
   // a basket in the same fist (Session 1033), when it holds no spear, crossbow or staff; last, as it is lifted clear of all the rest
   yield;
-  let basketStats = null; if (basketGrip) basketStats = { ...buildBasket(G, body, byName, meshes, root, basketGrip).stats, wrist: basketWrist };
+  // a lantern in the same fist (Session 1809), on the basket's grip; it takes the fist from a basket
+  let basketStats = null, lanternStats = null; if (basketGrip && D.lantern) lanternStats = { ...buildLantern(G, body, byName, meshes, root, basketGrip).stats, wrist: basketWrist };
+  else if (basketGrip) basketStats = { ...buildBasket(G, body, byName, meshes, root, basketGrip).stats, wrist: basketWrist };
   // the wheeled chair (Session 1106), last, built to the seated body and everything on it
   yield;
   let chairSt = null; if (D.chair) { const Ch = buildChair(G, body, byName, meshes, root); chairSt = { ...Ch.stats, armLift: +seatArms.toFixed(2), ground: Ch.ground };
@@ -4005,7 +4056,7 @@ function* makePersonSteps(G, o = {}) {
   yield;
   let tierFit = null; if (D.tier && (tierHelmOn(D) || hoodUpOn(D) && !D.helm)) { root.updateMatrixWorld(true); const F = fitHead({ root, skeleton, byName, meshes }), h = D.helm ? tierHelm(D.tier, F, { bold: true, closed: true }) : hoodDress(D.tier, F, { bold: true });
     if (h) { byName['head'].add(h.group); tierFit = { F, h }; const st = { tier: D.tier, tris: h.tris, draws: h.draws, gap: h.gap, size: h.size, above: h.top }; if (D.helm) helmStats = st; else hoodStats = { ...(hoodStats || {}), dress: st }; } }
-  root.position.y = -(chairSt ? chairSt.ground : sandalSt ? sandalSt.ground : minY); return { root, skeleton, byName, meshes, coldLook: { eyes: G.eyes, skin: G.skin }, buttons: buttonStats, hair: hairStats, cloak: cloakStats, tabard: tabardStats, sash: sashStats, shoulderWrap: shoulderWrapStats, wrap: wrapStats, veil: veilStats, wrapTail: tailStats, earrings: earStats, circlet: circletStats, eyepatch: patchStats, necklace: neckStats, beltCoins: beltCoinStats, beltCharms: charmStats, sandals: sandalSt, sashBelt: sashBeltSt, cord: cordStats, lacing: laceStats, skirtHands, hood: hoodStats, brows: browStats, helm: helmStats, mail: mailSt, shield: shieldStats, spear: spearStats, crossbow: crossbowStats, staff: staffStats, basket: basketStats, legWraps: legWrapSt, chair: chairSt, coat: coatSt, coatHood: coatHoodSt, tierFit };
+  root.position.y = -(chairSt ? chairSt.ground : sandalSt ? sandalSt.ground : minY); return { root, skeleton, byName, meshes, coldLook: { eyes: G.eyes, skin: G.skin }, buttons: buttonStats, hair: hairStats, cloak: cloakStats, tabard: tabardStats, sash: sashStats, shoulderWrap: shoulderWrapStats, wrap: wrapStats, veil: veilStats, wrapTail: tailStats, earrings: earStats, circlet: circletStats, eyepatch: patchStats, necklace: neckStats, beltCoins: beltCoinStats, beltCharms: charmStats, sandals: sandalSt, sashBelt: sashBeltSt, cord: cordStats, lacing: laceStats, skirtHands, hood: hoodStats, brows: browStats, helm: helmStats, mail: mailSt, shield: shieldStats, spear: spearStats, crossbow: crossbowStats, staff: staffStats, basket: basketStats, lantern: lanternStats, legWraps: legWrapSt, chair: chairSt, coat: coatSt, coatHood: coatHoodSt, tierFit };
 }
 
 // palettes from OG-025: undyed wool, browns, slate blue, madder red; furs; ash-blond to red hair; pale to weathered skin
@@ -4028,7 +4079,7 @@ function markGenome(rnd, g, o = {}) {
 const hex = c => '#' + c.map(v => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, '0')).join('');
 const unhex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
 const r3 = v => Math.round(v * 1000) / 1000, round = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, r3(v)]));
-const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'sash', 'sashBorder', 'wrap', 'wrapBorder', 'earrings', 'necklace', 'beltCoins', 'sashBelt', 'sandals', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'legWraps', 'scarfPrint', 'basket', 'basketCloth', 'amulet', 'charms', 'dots', 'shoulderWrap', 'eyepatch', 'staff', 'chair', 'waistcoat', 'tartan', 'tartanLine', 'coat', 'coatFur', 'bands', 'bandsMotif', 'robeStripe', 'robeStripeLine', 'circlet', 'circletStone', 'gownBorder', 'burnousStripe', 'veil', 'vambrace', 'gloves', 'greaves', 'plateGlow', 'cowl'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, sashSide: 'L', sashPrint: true, sashKnot: true, turban: false, scarf: false, wrapTail: null, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', scales: false, spearHead: null, crossbowMake: null, amuletSide: 'L', shoulderWrapSide: 'L', eyepatchSide: 'L', staffMake: null, dotsStyle: 'powder', waistcoatLeather: false, coatLen: .75, coatHood: null, tier: null, burnous: false, plate: null, vambraceKind: 'sheet', glovesKind: 'leather', greavesKind: 'sheet', cuisses: false, plateSig: null };
+const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'sash', 'sashBorder', 'wrap', 'wrapBorder', 'earrings', 'necklace', 'beltCoins', 'sashBelt', 'sandals', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'legWraps', 'scarfPrint', 'basket', 'basketCloth', 'amulet', 'charms', 'dots', 'shoulderWrap', 'eyepatch', 'staff', 'chair', 'waistcoat', 'tartan', 'tartanLine', 'coat', 'coatFur', 'bands', 'bandsMotif', 'robeStripe', 'robeStripeLine', 'circlet', 'circletStone', 'gownBorder', 'burnousStripe', 'veil', 'vambrace', 'gloves', 'greaves', 'plateGlow', 'cowl', 'lantern'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, sashSide: 'L', sashPrint: true, sashKnot: true, turban: false, scarf: false, wrapTail: null, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', scales: false, spearHead: null, crossbowMake: null, amuletSide: 'L', shoulderWrapSide: 'L', eyepatchSide: 'L', staffMake: null, dotsStyle: 'powder', waistcoatLeather: false, coatLen: .75, coatHood: null, tier: null, burnous: false, plate: null, vambraceKind: 'sheet', glovesKind: 'leather', greavesKind: 'sheet', cuisses: false, plateSig: null };
 function toSaved(G) {
   const D = G.dress || {}, dress = {}; for (const k of GARMENTS) if (D[k]) dress[k] = hex(D[k]); dress.skirt = D.skirt || null; for (const [k, d] of Object.entries(DRESS_FLAGS)) if (D[k] != null && (typeof D[k] === 'number' ? r3(D[k]) : D[k]) !== d) dress[k] = typeof D[k] === 'number' ? r3(D[k]) : D[k];
   const style = G.hair?.style ?? ((G.hairLen ?? .3) < .45 ? 'short' : 'loose');
@@ -4195,7 +4246,7 @@ function peopleGenome(rnd, people, g, o = {}) {
   if (P.gown && sx === 'f' && D.skirt === 'long' && !D.apron && !D.mail && !D.tabard) { const rg = seeded(String(o.seed ?? 'person') + '|gown'); if (rg() < P.gown) { const k = rg(), c = k < .5 ? [.6, .14, .1] : k < .75 ? [.78, .55, .16] : [.1, .38, .38];
     D.tunic = c; D.skirtColor = c; D.cuffs = null; D.cuffBand = null; D.gownBorder = c[0] === .78 && rg() < .4 ? [.5, .1, .08] : [.85, .66, .3]; } }
   if (o.child) { const rc = seeded(String(o.seed ?? 'person') + '|child'), ta = rc(); G.age = .1875 + .09 * ta; G.muscle = .3 + .15 * rc(); G.weight = .3 + .15 * rc(); G.beard = 0; G.scar = null;
-    for (const k of ['helm', 'mail', 'scales', 'plate', 'tabard', 'tabardTrim', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'eyepatch', 'staff', 'staffMake', 'tier']) D[k] = DRESS_FLAGS[k] ?? null;
+    for (const k of ['helm', 'mail', 'scales', 'plate', 'tabard', 'tabardTrim', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'eyepatch', 'staff', 'staffMake', 'lantern', 'tier']) D[k] = DRESS_FLAGS[k] ?? null;
     if (G.marks != null) G.marks = Math.min(G.marks, .06 * rc()); const M = P.body[sx].metres, f = .8 + .12 * ta + .03 * (rc() - .5); G.height = heightFor(G, (M[0] + M[1]) / 2 * f);
     // a cloak or cape cut to the child (its length in buildCloak is in metres: .4 + the length, or a cape's .24 + .14 of it), so a long one does not pool on the ground
     if (D.cloak) D.cloakLen = Math.max(0, D.cape ? ((.24 + .14 * (D.cloakLen ?? .8)) * f - .24) / .14 : (.4 + (D.cloakLen ?? .8)) * f - .4); }
@@ -4208,7 +4259,8 @@ function rollGenome(seed, o = {}) { const rnd = seeded(seed), g = o.g ?? (rnd() 
 // brows stay the builder's own and only what the sheet fixes is set. The canon over the sheet: Bram grey (thirty years at the forge;
 // OG-057 has him grey where OG-069 draws him dark), Niamh and Áine Gatelanders, Corwin's people never said (Michael's 11 C: he keeps
 // the people the game gives him). `dress` replaces the roll's whole wardrobe, so nothing rolled (a tartan, leg wraps) rides over it.
-// What the kit has no piece for yet is owed: Bram's rolled sleeves and hammer, Edna's clay pipe, Corwin's open coat and tankard, Niamh's lantern.
+// What the kit has no piece for yet is owed: Bram's rolled sleeves and hammer, Edna's clay pipe, Corwin's open coat and tankard.
+// Niamh's lantern is hers since Session 1809 (OG-069, OG-057): a horn lantern of blackened iron in her right fist, lit.
 // Edna's and Áine's sticks (OG-069), held back in Session 1792 while a short cape was dragged out over the staff's forearm, are theirs again
 // since Session 1798 (the cape opens on the staff's side): hazel, the Gatelanders' make.
 const CAST = {
@@ -4228,7 +4280,7 @@ const CAST = {
   // dark hair, loose to the shoulders (to the waist it was 215k triangles of hair); the black hooded cloak, hood down, on a round brooch; grey wool under it
   Niamh: { people: 'gatelander', g: 0, age: .68, muscle: .55, weight: .4, metres: 1.7, hairCol: [.1, .08, .07], hair: { style: 'loose', len: .45 },
     dress: { tunic: [.42, .42, .4], skirtColor: [.28, .26, .2], boots: [.22, .14, .09], belt: [.22, .14, .09],
-      cloak: [.1, .1, .11], cloakLen: .9, hood: 'down', brooch: [.6, .6, .62] } },
+      cloak: [.1, .1, .11], cloakLen: .9, hood: 'down', brooch: [.6, .6, .62], lantern: [.17, .16, .15] } },
   // a long white braid over the shoulder, the deep red wrap with its woven border
   Áine: { people: 'gatelander', g: 0, age: .88, muscle: .25, weight: .42, metres: 1.58, hairCol: [.9, .89, .87], hair: { style: 'plait', len: .85 }, pose: { stoop: .3 },
     dress: { tunic: [.8, .76, .66], skirtColor: [.3, .26, .22], boots: [.3, .2, .13], belt: [.36, .25, .16],
