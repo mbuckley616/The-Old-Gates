@@ -317,7 +317,7 @@ const pr = await page.evaluate(() => {
   const out = {}; const town = piracyTown(m); out.town = town && town.id; out.townNation = town && nationAt(town.x, town.z); out.herNation = nationAt(m.x, m.z);
   const C0 = JSON.parse(JSON.stringify((worldState.crime || {})[out.town] || { bounty: 0, debt: 0 })), f0 = (worldState.favor || {})[out.town] || 0, n0 = (worldState.crimes || []).length;
   const step = n => { for (let i = 0; i < n; i++) { S.x = _sea.x; S.z = _sea.z; S.speed = 0; S.yaw = 0; if (!m.pirated) { m.x = S.x; m.z = S.z - 50; m.speed = 0; } for (const o of [...OTHER]) if (o !== m) despawnOtherShip(o); WORLD.tick(1 / 60, performance.now()); } };
-  out.fire = fireBallista(); const h0 = m.hull; let k = 0; while (m.hull === h0 && k < 240) { step(1); k++; }
+  out.fire = fireBallista(); const h0 = m.hull, t0 = performance.now(); while (m.hull === h0 && performance.now() - t0 < 4000) step(1); /* the bolt flies on the clock */
   out.lost = h0 - m.hull; out.msg = document.getElementById('msg').textContent; out.fleeing = !!m.fleeing; out.pirated = !!m.pirated;
   const C1 = (worldState.crime || {})[out.town] || { bounty: 0, debt: 0 }; out.bounty = C1.bounty - C0.bounty; out.debt = C1.debt - (C0.debt || 0); out.favor = ((worldState.favor || {})[out.town] || 0) - f0;
   out.logged = (worldState.crimes || []).slice(n0).map(c => c.kind);
