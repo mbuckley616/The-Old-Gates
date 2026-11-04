@@ -135,13 +135,19 @@ export async function boot(opts = {}) {
   // and `dayseed` read no shrine on 16 Oct. Each poll now also runs the queue the game has laid out (the same jobs in the
   // same order, only more of them per frame), and polls until the site is in SETTLE, up to SETTLE_MS (180 s by default); a
   // site that never builds says so in the log and returns false, so the suite's own check names the fault.
+  // Session 1842 (written as 1779, then 1793): each poll also asks for the cells first (`tickCells(1)`, as g.cells does; only in the open world). The cells
+  // are otherwise asked for only every 0.75 s of world time on the game's own frames, seconds apart under load, so a site's
+  // cell could go unqueued for the whole wait (`blacksail` under four boots, S1764: c9_1_s7 not built after 180 s).
   g.settle = async (id) => {
     await page.evaluate(() => WORLD.devUnlockAll());
     const until = Date.now() + (+process.env.SETTLE_MS || 180000); let built = false;
     while (!built && Date.now() < until) {
       await page.waitForTimeout(2500);
       await page.evaluate((id) => { const t = WORLD.siteAnywhere(id); if (Math.hypot(px - t.x, pz - t.z) > 40) { px = t.x; pz = t.z + 4; } }, id);
-      await page.evaluate(() => { const t0 = performance.now(); while (JOBS.length && performance.now() - t0 < 1500) runJobs(); });
+      await page.evaluate(() => {
+        if (lid === 'overworld' && activeZoneId === 'world') tickCells(1);
+        const t0 = performance.now(); while (JOBS.length && performance.now() - t0 < 1500) runJobs();
+      });
       built = await page.evaluate((id) => !!WORLD.settle.get(id), id);
     }
     if (!built) console.log(`  settle: ${id} not built after ${Math.round((+process.env.SETTLE_MS || 180000) / 1000)} s`);
