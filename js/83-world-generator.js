@@ -440,7 +440,7 @@ function genSettlement(site){
         // the widest that fits at the least depth, then the deepest at that width (each halved to within 5 cm: a house that fits fits smaller)
         const most=(lo,hi,ok)=>{if(ok(hi))return hi;while(hi-lo>.05){const m=(lo+hi)/2;if(ok(m))lo=m;else hi=m;}return Math.floor(lo*100)/100;};
         for(const v of vars){const E=ext(v);if(!fit(W0,D0,E))continue;const w=most(W0,v.w,q=>fit(q,D0,E)),d=most(D0,v.d,q=>fit(w,q,E));
-          if(!fit(w,d,E))continue;const o=Object.assign({},v,{w,d});lot.kit={kind:MK?'markhall':'aurhouse',o,ext:E,w0,d0};if(!MK)lot.kit.shell=`${site.id}:windows:${lot.n}`; /* S1830 — the street's stream, which the rooms inside draw their shell from */if(MK)lot.kit.stoop=E[1];if(inn)lot.kit.alehall=true;return;}
+          if(!fit(w,d,E))continue;const o=Object.assign({},v,{w,d});lot.kit={kind:MK?'markhall':'aurhouse',o,ext:E,w0,d0};if(!MK)lot.kit.shell=`${site.id}:windows:${lot.n}`; /* S1831 — the street's stream, which the rooms inside draw their shell from */if(MK)lot.kit.stoop=E[1];if(inn)lot.kit.alehall=true;return;}
         lot.w=w0;lot.d=d0;lot.x=x0;lot.z=z0;});
       else{
       // S1275 — its front goes first on the lot's own street line (dB: planLots grew a guild's lot to 13 by 11 m about its centre, which
@@ -2425,7 +2425,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     else{intNPCMesh=null;intNPCPos={x:-99,z:-99};}
     return sc_;
   }
-  // S1830 (card F9, Michael's A on #318; OG-115) — on the new look a two-storey flat-roofed Aurennais street home (lot.kit.kind 'aurhouse',
+  // S1831 (card F9, Michael's A on #318; OG-115) — on the new look a two-storey flat-roofed Aurennais street home (lot.kit.kind 'aurhouse',
   // PKIT.au.lot's 'flat' with two storeys, S1287), 6.4 by 6.0 m or more, is the flat over the dyer's shop inside (PKIT.au.home, rooms.js's
   // Session 891 laid to the street's lots in Session 1802): the street's own shell (its options and its stream, so its wall, its door and
   // the door's side are the street's), the shop below, the stair of 16 risers to the flat, the steep stair up through the hatch to the roof
@@ -3104,7 +3104,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     if(kitByre(house))return buildKitByre(house); /* S1480 — a Gatelands farm's byre inside, at its true size */
     if(kitBarn(house))return buildKitBarn(house); /* S1475 — a Gatelands farm's barn inside, at its true size */
     if(kitCourtHouse(house))return buildKitCourtHouse(house); /* S1425 — Aurenne's courtyard house inside, at its true size */
-    if(kitAurHome(house))return buildKitAurHome(house); /* S1830 — Aurenne's flat over the dyer's shop inside, at its true size */
+    if(kitAurHome(house))return buildKitAurHome(house); /* S1831 — Aurenne's flat over the dyer's shop inside, at its true size */
     if(kitLonghouse(house))return buildKitLonghouse(house); /* S1453 — a Markish home: the longhouse inside, at its true size */
     if(kitChurchHall(house))return buildKitChurchHall(house); /* S1326 — the Church of the Weaver inside, at its true size */
     if(kitGuildHall(house))return buildKitGuildHall(house); /* S1703 — a town's guild hall inside, at its true size */

@@ -1,4 +1,4 @@
-// Aurenne's flat over the dyer's shop in the game (Session 1830; card F9, Michael's A on #318; OG-115; rooms.js's aurenneHome of Session 891,
+// Aurenne's flat over the dyer's shop in the game (Session 1831; card F9, Michael's A on #318; OG-115; rooms.js's aurenneHome of Session 891,
 // laid to the street's lots in Session 1802). On the new look a two-storey flat-roofed Aurennais street home of 6.4 by 6.0 m or more opens on
 // its own rooms: the street's own shell at its true size (its wall's colour the street's), the dyer's shop below, the stair of 16 risers to
 // the flat, the steep stair through the hatch to the roof terrace. You arrive clear; the prototype's three walks, the stair up to the flat

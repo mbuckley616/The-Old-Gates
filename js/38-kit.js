@@ -2214,7 +2214,7 @@ function homeMats() {
   return AH;
 }
 
-// Aurenne's flat over the dyer's shop (Session 1830: rooms.js's aurenneHome of Session 891, laid to the street's lot in Session 1802, copied
+// Aurenne's flat over the dyer's shop (Session 1831: rooms.js's aurenneHome of Session 891, laid to the street's lot in Session 1802, copied
 // as it stands; Michael's A on #318, OG-115). A two-storey flat-roofed street house: the dyer's shop below (bolts on shelves, the counter, the
 // cloths on their pole, the dye jars), a stair of 16 risers to the flat (the divan and its brass table, the bed, the chest, the kitchen's
 // cooking bench), a steep stair up through a hatch to the roof terrace. o.w, o.d (6.4 to 9.6 by 6.0 to 8.0); o.shell, the shell's stream
@@ -2225,7 +2225,7 @@ function aurenneHome(o = {}, r = stream('aurhome')) {
   // so the way to its foot passes the rail), the hatch over its head; both are laid before the shell, which cuts the hatch.
   const w = o.w ?? 9.0, d = o.d ?? 7.6, HZ = -d / 2 + 1.2 /* the hatch's front edge, 1.2 m in from the back face */, WX0 = w / 2 - .32 - 3.81 /* the well's west edge (the shell's walls are 0.32) */,
     RX1 = Math.min(-.3, WX0 - .55), RX0 = RX1 - 1.3;
-  const S = o.house /* the street's own options (the game, Session 1830): its wall, door and windows drawn from the street's stream, o.shell */, sh = aurenneHouse({ kind: 'flat', w, d, two: true, pergola: true, lattice: S ? !!S.lattice : true, stair: false, dome: null, wall: S ? S.wall : 1, door: S ? S.door : 0, pointed: S ? !!S.pointed : false, interior: true, hatch: { x0: RX0 - .02, x1: RX1 + .15, z0: -d / 2 + .2, z1: HZ } }, stream(o.shell || 'aurhome-shell'));
+  const S = o.house /* the street's own options (the game, Session 1831): its wall, door and windows drawn from the street's stream, o.shell */, sh = aurenneHouse({ kind: 'flat', w, d, two: true, pergola: true, lattice: S ? !!S.lattice : true, stair: false, dome: null, wall: S ? S.wall : 1, door: S ? S.door : 0, pointed: S ? !!S.pointed : false, interior: true, hatch: { x0: RX0 - .02, x1: RX1 + .15, z0: -d / 2 + .2, z1: HZ } }, stream(o.shell || 'aurhome-shell'));
   const M = homeMats(), B = new Map(), boxes = [];
   const put = (geo, key, x = 0, y = 0, z = 0, ry = 0, uv = .6, rx = 0, rz = 0) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const k of Object.keys(g.attributes)) if (!['position', 'normal', ...(key === 'rug' ? ['uv'] : [])].includes(k)) g.deleteAttribute(k);
     g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), new THREE.Vector3(1, 1, 1))); if (key !== 'rug') worldUV(g, uv);
