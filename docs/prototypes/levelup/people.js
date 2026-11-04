@@ -51,6 +51,10 @@ export async function loadPack(base = 'mh/') {
     // the cuffs: a band 4 cm wide at the sleeve's end, cut in the shader (Session 889); the region is wider, so neither edge is a
     // triangle's, and it runs to .411, past the bare skin's own stepped edge (body triangles from .395), which showed as teeth beyond it
     cuffs: sel(tri, (x, y, z) => slvX(x, y, z) > .355 && slvX(x, y, z) < .425),
+    // rolled sleeves (Session 1841, L2; OG-069's Bram): the roll's band, off the body's own skin past its edges (ROLL) both ways, and the
+    // arm's own skin from under the roll to where the bare hand begins (slvX .375), drawn with the body when the sleeves are rolled
+    roll: sel(G['body'], (x, y, z) => y > .25 && y <= .585 && Math.abs(x) > .225 && uaOf(x, y, z) > .6 && uaOf(x, y, z) < .94),
+    foreSkin: sel(G['body'], (x, y, z) => y > 0 && y <= .585 && Math.abs(x) > .225 && uaOf(x, y, z) > .72 && slvX(x, y, z) <= .375),
     skirtShort: sel(G['helper-skirt'], (x, y) => y > -.24),
     skirtLong: sel(G['helper-skirt'], () => true),
     // the beard under a cheek line (Session 840): from the sideburn by the ear (y .712) down to the corner of the mouth
@@ -135,6 +139,10 @@ const sRGB = (r, g, b) => new THREE.Color().setRGB(r, g, b, THREE.SRGBColorSpace
 // SLV_S is the angle round that axis. The same in JS for the regions (slvX).
 const SLV_Q = 'vec3(abs(vB.x), vB.y, vB.z) - vec3(.3129, .3493, .0132)', SLV_T = `(abs(vB.x) > .26 && vB.y > 0. ? .3129 + .5225 * dot(${SLV_Q}, vec3(.5225, -.4598, .7178)) : abs(vB.x))`,
   SLV_S = `atan(dot(${SLV_Q}, vec3(0., .8419, .5393)), dot(${SLV_Q}, vec3(.8528, .2818, -.4399)))`;
+// the upper arm's own axis (Session 1841, for rolled sleeves): a point's place from the shoulder's joint (rest .1677, .5246, .0146), 0, to the
+// elbow's (.3129, .3493, .0132), 1, read on the axis between them; the same in GLSL (UA_T), in plain arithmetic so the game's bake reads it
+const uaOf = (x, y, z) => ((Math.abs(x) - .1677) * .638 - (y - .5246) * .7702 - (z - .0146) * .0062) / .2276;
+const UA_T = '(((abs(vB.x) - .1677) * .638 - (vB.y - .5246) * .7702 - (vB.z - .0146) * .0062) / .2276)';
 const slvX = (x, y, z) => { const a = Math.abs(x); return a > .26 && y > 0 ? .3129 + .5225 * ((a - .3129) * .5225 - (y - .3493) * .4598 + (z - .0132) * .7178) : a; };
 // a cut past |x| .35 is the sleeve's end, square to the forearm; a shorter one (the mail's, at the elbow) stays a plain |x|
 const CUT = (c) => c ? `if (vB.y < ${c[0].toFixed(3)} + (fract(sin(dot(vB.xz, vec2(91.7, 37.3))) * 4375.) - .5) * ${(c[3] ?? .004).toFixed(4)} || vB.y > ${c[1].toFixed(3)} || ${(c[2] ?? 9) > .35 && (c[2] ?? 9) < 1 ? SLV_T : 'abs(vB.x)'} > ${(c[2] ?? 9).toFixed(3)}) discard;` : '';
@@ -3597,6 +3605,15 @@ function sashBeltPush(D, x, y) { const inner = Math.abs(x) < .2 ? .022 * Math.ma
 // 0.35 cm a centimetre up, and the armholes, curving in from the shell's 19 cm under the arm to 16 cm at the shoulder
 // the waistcoat's front edge (Session 1144): the right front lapped over the left, its edge 1.2 cm to the wearer's right of the buttons'
 // line and from the belt up to where it meets the V, drawn as the shadow it casts, a dark line 2 mm wide fading out over another 1.5 mm
+// rolled sleeves (Session 1841, L2; OG-069's Bram, "sleeves rolled"): only over a tunic, and not under a coat or as a robe (makePerson
+// drops the flag for both). Rolled above the elbow, along the upper arm (uaOf, 0 at the shoulder's joint, 1 at the elbow's, 22.8 cm in
+// the rest body): the sleeve is cut at .8, the roll covers .68 to .87, 4.3 cm wide, so its lower edge lies 1.6 cm over the bare skin and
+// the cut is under it. Below the elbow the bend tore the tights' shell (its points there are weighted to the upper arm) into strips
+const ROLL = { cut: .8, lo: .68, hi: .87, push: .028 };
+// the arm's points past the roll's cut (the upper arm and below it), for the tunic's hole: no point of the body's side is so far out
+const ROLL_ARM = 'abs(vB.x) > .225 && vB.y > .1';
+const rolledOn = D => !!(D && D.sleevesRolled && D.tunic && !D.robe && !coatOn(D));
+const ROLL_SHADE = `(.62 + .48 * sqrt(max(0., sin(3.14159 * fract(3. * clamp((${UA_T} - ${ROLL.lo.toFixed(3)}) / ${(ROLL.hi - ROLL.lo).toFixed(3)}, 0., .999))))))`;
 const WAISTCOAT_EDGE = '(vB.z > .02 && vB.y < .46 ? 1. - .5 * (1. - smoothstep(.001, .0025, abs(vB.x + .012))) : 1.)';
 const WAISTCOAT_HOLE = '(vB.z > .02 && vB.y > .44 && abs(vB.x) < .006 + .35 * (vB.y - .44)) || abs(vB.x) > .19 - .03 * smoothstep(.38, .485, vB.y)';
 // the winter coat (Session 1147; OG-109's Gatelands winter column, "fur-lined winter coats"): the outer layer, so a coat takes the
@@ -3647,7 +3664,7 @@ function* makePersonSteps(G, o = {}) {
     G = { ...G, eyes: mix(G.eyes, [.76, .8, .85], .9 * cold), skin: mix(G.skin, [L + .02, L + .03, L + .06].map(v => Math.min(1, v)), .6 * cold) }; }
   // the robe (Session 887, B2): one cloth from the shoulders to the ankles, worn as the tunic and the long skirt in the robe's
   // colour, with sleeves that widen to the cuff and a fuller hem; a rope cord takes the belt's place, nothing under it shows
-  if (G.dress?.robe) { const R = G.dress; G = { ...G, dress: { ...R, tunic: R.robe, skirt: 'long', skirtColor: R.robe, trousers: null, belt: null, sashBelt: null, cuffs: null, cord: R.cord || [.62, .55, .42] } }; }
+  if (G.dress?.robe) { const R = G.dress; G = { ...G, dress: { ...R, tunic: R.robe, skirt: 'long', skirtColor: R.robe, trousers: null, belt: null, sashBelt: null, cuffs: null, sleevesRolled: false, cord: R.cord || [.62, .55, .42] } }; }
   // mail (Session 897) is worn over a padded coat, the tunic, and belted over: a man or woman in mail without either gets them
   // seated in a wheeled chair (Session 1106) nothing is worn or carried that hangs to the ground or is built round a standing body: no
   // cloak, tabard, sash or shoulder wrap, apron, long skirt or mail skirt's hang over the lap, nothing in the fist and no shield; a long skirt gives way to trousers
@@ -3655,7 +3672,7 @@ function* makePersonSteps(G, o = {}) {
   if (G.dress?.chair) { const C = G.dress; G = { ...G, dress: { ...C, cloak: null, hood: null, tabard: null, sash: null, shoulderWrap: null, apron: null, bib: null, shield: null, spear: null, staff: null, basket: null, lantern: null, tankard: null, hammer: null, wrapTail: null,
     ...(C.skirt === 'knee' ? { skirt: 'short' } : {}), ...(C.skirt === 'long' || C.robe ? { skirt: null, robe: null, trousers: C.trousers || C.skirtColor || C.robe || [.3, .26, .2] } : {}) } }; }
   if (G.dress?.mail && !G.dress.robe) { const M = G.dress; G = { ...G, dress: { ...M, tunic: M.tunic || [.6, .54, .42], belt: M.belt || [.24, .16, .1] } }; }
-  if (coatOn(G.dress)) { const C = G.dress; G = { ...G, dress: { ...C, tunic: C.tunic || [.6, .54, .42], belt: C.belt || [.24, .16, .1], cloak: null, hood: null, mantle: null, apron: null, bib: false, sash: null, shoulderWrap: null, waistcoat: null, bodice: null, sashBelt: null, cuffs: null, cuffBand: null } }; }
+  if (coatOn(G.dress)) { const C = G.dress; G = { ...G, dress: { ...C, tunic: C.tunic || [.6, .54, .42], belt: C.belt || [.24, .16, .1], cloak: null, hood: null, mantle: null, apron: null, bib: false, sash: null, shoulderWrap: null, waistcoat: null, bodice: null, sashBelt: null, cuffs: null, cuffBand: null, sleevesRolled: false } }; }
   // the Mark's woven bands (Session 1156) run round the cuffs too: a tunic with bands and no cuffs of its own gets them in its colour
   if (G.dress?.bands && !G.dress.robe && !G.dress.cuffs && G.dress.tunic && !coatOn(G.dress)) G = { ...G, dress: { ...G.dress, cuffs: G.dress.tunic } };
   const P = morph(G), { ix } = PACK, rest0 = PACK.rest; RND = seeded(G.seed ?? 'person'); let hairStats = null, hoodStats = null, browStats = null;
@@ -3667,7 +3684,8 @@ function* makePersonSteps(G, o = {}) {
   for (const b of ix.bones) { const bone = new THREE.Bone(); bone.name = b.name; heads[b.name] = jp(b.head); bones.push(bone); byName[b.name] = bone;
     if (b.parent) { byName[b.parent].add(bone); bone.position.copy(heads[b.name]).sub(heads[b.parent]); } else bone.position.copy(heads[b.name]); }
   const skeleton = new THREE.Skeleton(bones), root = new THREE.Group(), meshes = [];
-  const D0 = G.dress || {}, bodyIdx = D0.tunic ? (D0.trousers || D0.skirt === 'long' ? (D0.sandals ? PACK.R.bareFeet || (PACK.R.bareFeet = new Uint32Array([...PACK.R.bare, ...PACK.R.feet])) : PACK.R.bare) : PACK.R.bareLegs) : PACK.G.body, body = new THREE.SkinnedMesh(geomFor(P, bodyIdx), skinMat(sRGB(...G.skin), G.marks ?? null, G.scar || null, G.rot || 0));
+  const D0 = G.dress || {}, bodyIdx0 = D0.tunic ? (D0.trousers || D0.skirt === 'long' ? (D0.sandals ? PACK.R.bareFeet || (PACK.R.bareFeet = new Uint32Array([...PACK.R.bare, ...PACK.R.feet])) : PACK.R.bare) : PACK.R.bareLegs) : PACK.G.body,
+    bodyIdx = rolledOn(D0) ? (PACK['rolled' + bodyIdx0.length] || (PACK['rolled' + bodyIdx0.length] = new Uint32Array([...bodyIdx0, ...PACK.R.foreSkin]))) : bodyIdx0, body = new THREE.SkinnedMesh(geomFor(P, bodyIdx), skinMat(sRGB(...G.skin), G.marks ?? null, G.scar || null, G.rot || 0));
   // skin tones by region: lips and cheeks warmer, the brow a touch darker
   { const col = new Float32Array(PACK.N * 3), BS = browShape(G); for (let i = 0; i < PACK.N; i++) { const x = rest0[i * 3], y = rest0[i * 3 + 1], z = rest0[i * 3 + 2]; let r = 1, g = 1, b = 1;
       const lip = Math.exp(-((x / .022) ** 2) - ((y - .655) / .009) ** 2) * (z > .13 ? 1 : 0), cheek = Math.exp(-(((Math.abs(x) - .05) / .025) ** 2) - ((y - .69) / .02) ** 2) * (z > .07 ? 1 : 0), nose = Math.exp(-((x / .02) ** 2) - ((y - .69) / .015) ** 2) * (z > .14 ? 1 : 0);
@@ -3695,7 +3713,7 @@ function* makePersonSteps(G, o = {}) {
   // the winter coat's two shells (Session 1147), defined here since the belt rides over them: see the coat, below
   const coat = coatOn(D), coatPush = (x, y) => tunicPush(x, y) + .014, cHem = coat ? coatHem(D) : 0, coatSkirtPush = (x, y) => .028 + .008 * Math.max(0, Math.min(1, (y + .05) / .15)) + .012 * Math.max(0, Math.min(1, (.14 - y) / .3)) + .025 * Math.max(0, Math.min(1, (-.1 - y) / .45)) ** 1.2;
   yield;
-  if (D.tunic) push('tunic', PACK.R.tunic, clothMat(sRGB(...D.tunic), 'wool', { cut: [D.robe ? .145 : D.skirt ? .12 : -.02, .612, .4, .002], ...(D.robe ? { side: THREE.DoubleSide, inner: .55 } : {}), ...(D.dots ? { dots: sRGB(...D.dots), dotsPowder: D.dotsStyle !== 'drift' } : {}), ...lozOf(LOZ_NECK), ...embOf(EMB_NECK, EMB_SLEEVE), ...stripeOf(D, true) }), tunicPush);
+  if (D.tunic) push('tunic', PACK.R.tunic, clothMat(sRGB(...D.tunic), 'wool', { cut: [D.robe ? .145 : D.skirt ? .12 : -.02, .612, rolledOn(D) ? 9 : .4, .002], ...(rolledOn(D) ? { hole: `${ROLL_ARM} && ${UA_T} > ${ROLL.cut.toFixed(3)}` } : {}), ...(D.robe ? { side: THREE.DoubleSide, inner: .55 } : {}), ...(D.dots ? { dots: sRGB(...D.dots), dotsPowder: D.dotsStyle !== 'drift' } : {}), ...lozOf(LOZ_NECK), ...embOf(EMB_NECK, EMB_SLEEVE), ...stripeOf(D, true) }), tunicPush);
   // a laced bodice over the chemise (Session 888; OG-110's green laced gown, OG-109's Gatelands bodices): 8 mm over the
   // tunic, ending under the belt (rest .14), open down the front between the eyelets, so the chemise shows in the gap; the lacing is built after the pose
   if (D.bodice) push('bodice', PACK.R.bodice, clothMat(sRGB(...D.bodice), 'wool', { cut: [.14, .62, .19, .002], hole: '(vB.z > .03 && abs(vB.x) < .0085 && vB.y > .2 && vB.y < .5) || (vB.y > .485 && (abs(vB.x) < .068 || abs(vB.x) > .148))', side: THREE.DoubleSide, inner: .5 }), (x, y) => .021 + (Math.abs(x) < .2 ? .022 * Math.max(0, Math.min(1, (.46 - y) / .2)) * (1 - .8 * waistIn(D, y)) : 0));
@@ -3733,7 +3751,11 @@ function* makePersonSteps(G, o = {}) {
   if (D.greaves) { const k = D.greavesKind || 'sheet', o = { cut: [-.72, k === 'sheet' ? -.34 : -.37, 9, .001] }; push('greaves', PACK.R.greave, armour(D.greaves, k, o), .03).customDepthMaterial = cutDepth(o);
     if (D.cuisses) { const c = { cut: [-.4, -.14, 9, .001] }; push('cuisses', PACK.R.cuisse, armour(D.greaves, k, c), .02).customDepthMaterial = cutDepth(c); } }
   yield;
-  if (D.cuffs) push('cuffs', PACK.R.cuffs, clothMat(sRGB(...D.cuffs), 'wool', { hole: `${SLV_T} < .371 || ${SLV_T} > .411`, ...(D.bands ? lozOf(LOZ_CUFF) : D.cuffBand ? { band: sRGB(...D.cuffBand) } : {}) }), .02);
+  // rolled sleeves (Session 1841): the tunic cut 4.6 cm above the elbow, and the roll over its end, the sleeve's own cloth turned up three
+  // times: a band 4.3 cm wide, off the arm's own skin by 2.8 cm (1.3 over the sleeve), each turn lighter on its crown and dark in the crease between; no cuffs
+  if (rolledOn(D)) { const o = { hole: `${UA_T} < ${ROLL.lo.toFixed(3)} || ${UA_T} > ${ROLL.hi.toFixed(3)}`, shade: ROLL_SHADE };
+    push('roll', PACK.R.roll, clothMat(sRGB(...D.tunic), 'wool', o), ROLL.push).customDepthMaterial = cutDepth(o); }
+  if (D.cuffs && !rolledOn(D)) push('cuffs', PACK.R.cuffs, clothMat(sRGB(...D.cuffs), 'wool', { hole: `${SLV_T} < .371 || ${SLV_T} > .411`, ...(D.bands ? lozOf(LOZ_CUFF) : D.cuffBand ? { band: sRGB(...D.cuffBand) } : {}) }), .02);
   // the winter coat (Session 1147): its body and sleeves the tunic's shell 1.4 cm further out, to the wrist (rest |x| .405) and down under
   // the belt to rest .1, 2 cm past the tunic's own edge under it, so no tunic shows between the belt and the coat's skirt; its skirt off the skirt shell, from under the belt to its hem, 1.6 cm over a skirt's (2.4 at the waist, over the coat's own body there) and flaring to 2.5 cm more at
   // the hem, so it hangs over a man's tunic skirt, a woman's long skirt and the trousers alike; heavy wool, its inside darker; belted over
@@ -4005,7 +4027,7 @@ export function markGenome(rnd, g, o = {}) {
 const hex = c => '#' + c.map(v => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, '0')).join('');
 const unhex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
 const r3 = v => Math.round(v * 1000) / 1000, round = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, r3(v)]));
-export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'sash', 'sashBorder', 'wrap', 'wrapBorder', 'earrings', 'necklace', 'beltCoins', 'sashBelt', 'sandals', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'legWraps', 'scarfPrint', 'basket', 'basketCloth', 'amulet', 'charms', 'dots', 'shoulderWrap', 'eyepatch', 'staff', 'chair', 'waistcoat', 'tartan', 'tartanLine', 'coat', 'coatFur', 'bands', 'bandsMotif', 'robeStripe', 'robeStripeLine', 'circlet', 'circletStone', 'gownBorder', 'burnousStripe', 'veil', 'vambrace', 'gloves', 'greaves', 'plateGlow', 'cowl', 'lantern', 'pipe', 'tankard', 'hammer'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, sashSide: 'L', sashPrint: true, sashKnot: true, turban: false, scarf: false, wrapTail: null, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', scales: false, spearHead: null, crossbowMake: null, amuletSide: 'L', shoulderWrapSide: 'L', eyepatchSide: 'L', staffMake: null, dotsStyle: 'powder', waistcoatLeather: false, coatLen: .75, coatHood: null, tier: null, burnous: false, plate: null, vambraceKind: 'sheet', glovesKind: 'leather', greavesKind: 'sheet', cuisses: false, plateSig: null };
+export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'sash', 'sashBorder', 'wrap', 'wrapBorder', 'earrings', 'necklace', 'beltCoins', 'sashBelt', 'sandals', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'legWraps', 'scarfPrint', 'basket', 'basketCloth', 'amulet', 'charms', 'dots', 'shoulderWrap', 'eyepatch', 'staff', 'chair', 'waistcoat', 'tartan', 'tartanLine', 'coat', 'coatFur', 'bands', 'bandsMotif', 'robeStripe', 'robeStripeLine', 'circlet', 'circletStone', 'gownBorder', 'burnousStripe', 'veil', 'vambrace', 'gloves', 'greaves', 'plateGlow', 'cowl', 'lantern', 'pipe', 'tankard', 'hammer'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, sashSide: 'L', sashPrint: true, sashKnot: true, turban: false, scarf: false, wrapTail: null, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', scales: false, spearHead: null, crossbowMake: null, amuletSide: 'L', shoulderWrapSide: 'L', eyepatchSide: 'L', staffMake: null, dotsStyle: 'powder', waistcoatLeather: false, coatLen: .75, coatHood: null, tier: null, burnous: false, plate: null, vambraceKind: 'sheet', glovesKind: 'leather', greavesKind: 'sheet', cuisses: false, plateSig: null, sleevesRolled: false };
 export function toSaved(G) {
   const D = G.dress || {}, dress = {}; for (const k of GARMENTS) if (D[k]) dress[k] = hex(D[k]); dress.skirt = D.skirt || null; for (const [k, d] of Object.entries(DRESS_FLAGS)) if (D[k] != null && (typeof D[k] === 'number' ? r3(D[k]) : D[k]) !== d) dress[k] = typeof D[k] === 'number' ? r3(D[k]) : D[k];
   const style = G.hair?.style ?? ((G.hairLen ?? .3) < .45 ? 'short' : 'loose');
@@ -4185,7 +4207,7 @@ export function rollGenome(seed, o = {}) { const rnd = seeded(seed), g = o.g ?? 
 // brows stay the builder's own and only what the sheet fixes is set. The canon over the sheet: Bram grey (thirty years at the forge;
 // OG-057 has him grey where OG-069 draws him dark), Niamh and Áine Gatelanders, Corwin's people never said (Michael's 11 C: he keeps
 // the people the game gives him). `dress` replaces the roll's whole wardrobe, so nothing rolled (a tartan, leg wraps) rides over it.
-// What the kit has no piece for yet is owed: Bram's rolled sleeves, Corwin's open coat. Bram's hammer is his since Session 1835 (OG-069, OG-057): a cross-peen hand hammer on an ash haft, in his right fist. Corwin's tankard is his since Session 1829 (OG-069): pewter, of ale, in his right fist. Edna's clay pipe is hers
+// What the kit has no piece for yet is owed: Corwin's open coat. Bram's sleeves are rolled since Session 1841 (OG-069): above the elbow, three turns. Bram's hammer is his since Session 1835 (OG-069, OG-057): a cross-peen hand hammer on an ash haft, in his right fist. Corwin's tankard is his since Session 1829 (OG-069): pewter, of ale, in his right fist. Edna's clay pipe is hers
 // since Session 1816 (OG-069): a short white cutty in the left corner of her mouth, its ember lit.
 // Niamh's lantern is hers since Session 1809 (OG-069, OG-057): a horn lantern of blackened iron in her right fist, lit.
 // Edna's and Áine's sticks (OG-069), held back in Session 1792 while a short cape was dragged out over the staff's forearm, are theirs again
@@ -4194,7 +4216,7 @@ export const CAST = {
   // barrel-chested, the beard short and full, grey; the leather apron with its bib over undyed linen; arms that work iron
   Bram: { people: 'gatelander', g: 1, age: .75, muscle: .9, weight: .68, metres: 1.82, hairCol: [.7, .69, .66], hair: { style: 'short', len: .3 }, beard: .45,
     brow: { thick: .85, arch: .3 },
-    dress: { tunic: [.74, .68, .56], trousers: [.28, .24, .2], boots: [.3, .2, .13], belt: [.36, .25, .16], apron: [.36, .25, .16], apronLeather: true, bib: true, hammer: [.62, .5, .34] } },
+    dress: { tunic: [.74, .68, .56], trousers: [.28, .24, .2], boots: [.3, .2, .13], belt: [.36, .25, .16], apron: [.36, .25, .16], apronLeather: true, bib: true, hammer: [.62, .5, .34], sleevesRolled: true } },
   // white hair in a bun, a dark green shawl (the short cape) over brown and madder layers, the long skirt
   Edna: { people: 'gatelander', g: 0, age: .85, muscle: .3, weight: .5, metres: 1.6, hairCol: [.88, .87, .85], hair: { style: 'bun', len: .7 }, pose: { stoop: .45 },
     dress: { tunic: [.42, .3, .2], skirtColor: [.45, .16, .12], boots: [.3, .2, .13], belt: [.36, .25, .16], cuffs: [.3, .36, .22],
