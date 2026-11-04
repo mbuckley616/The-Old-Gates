@@ -25,6 +25,15 @@ const w = await page.evaluate(id => { const c = [...CELLS.values()].find(c => c.
 console.log(JSON.stringify(w));
 check(`the mouth of ${w.id} (${w.tris} triangles in ${w.draws} draws) stands on its pad and offers the way in only in its throat`, !w.none && w.tris < 10000 && w.draws <= 6 && !w.away && /into the cave/.test(w.inn) && Math.abs(w.floor.mouth) < .1 && Math.abs(w.floor.throat) < .1, w);
 check('its throat open, the outcrop round it solid', !w.none && Object.values(w.open).every(v => !v) && Object.values(w.solid).every(v => v), w);
+// S1811 — the escape tunnel's land end: a bolt-hole in the same rock, its face out along the tunnel, its hole open and its outcrop solid
+const bh = await page.evaluate(id => { const all = [...CELLS.values()].map(c => c._cove).filter(C => C && C.house), C = all.find(C => C.id === id), E = C && C._esc;
+  const r = { coves: all.length, holes: all.filter(C => C._esc && C._esc.tris).length, none: !E }; if (!E) return r;
+  const c2 = Math.cos(E.yaw), s2 = Math.sin(E.yaw), W = (u, v) => [E.x + u * c2 + v * s2, E.z - u * s2 + v * c2], at = (u, v) => solidAt(...W(u, v));
+  Object.assign(r, { d: E.d, tris: E.tris, draws: E.draws, w: E.w, h: E.h, open: { out: at(0, 1.5), face: at(0, .3) }, solid: { left: at(-2, -1), right: at(2, -1), back: at(0, -2.6) },
+    outDry: +(worldH(E.out.x, E.out.z) - SEA_Y).toFixed(2), face: +(Math.hypot(-Math.sin(E.out.yaw) - s2, -Math.cos(E.out.yaw) - c2)).toFixed(3) }); return r; }, k.near.id);
+console.log(JSON.stringify(bh));
+check(`the tunnel's land end a bolt-hole (${bh.holes} of ${bh.coves} loaded coves; ${bh.tris} triangles in ${bh.draws} draws, ${bh.w} by ${bh.h} m), open before its face, solid round it`,
+  !bh.none && bh.tris < 10000 && bh.draws <= 6 && bh.w > 1.9 && bh.h > 1.9 && Object.values(bh.open).every(v => !v) && Object.values(bh.solid).every(v => v) && bh.outDry > .5 && bh.face < .01, bh);
 const inside = () => page.waitForFunction(() => isInterior() && currentHouse && currentHouse.type === 'seacave', null, { timeout: 40000 }).then(() => true, () => false);
 check('into the sea cave', await inside());
 await page.waitForTimeout(1500);
@@ -77,6 +86,7 @@ check(`along the ledge and the tunnel to its end with no wall in the way (${ld.t
 check(`down the ladder from its head onto the landing (${ld.below.y} m)`, /climb down/.test(ld.down) && !ld.below.on && Math.abs(ld.below.y - 1.2) < .05 && Math.abs(ld.below.x) < .01, ld);
 check(`at the tunnel's end, offered the way out`, /crawl out of the tunnel/.test(ld.end), ld);
 const outT = await page.waitForFunction(() => !isInterior(), null, { timeout: 30000 }).then(() => true, () => false); await page.waitForTimeout(1500);
-const e = await page.evaluate(id => { const C = [...CELLS.values()].find(c => c._cove && c._cove.id === id)._cove; return { fromMouth: +Math.hypot(px - C.out.x, pz - C.out.z).toFixed(2), dy: +(jumpY - activeTerrainH(px, pz)).toFixed(2), land: +(worldH(px, pz) - SEA_Y).toFixed(2), solid: solidAt(px, pz) }; }, k.near.id);
+const e = await page.evaluate(id => { const C = [...CELLS.values()].find(c => c._cove && c._cove.id === id)._cove; return { hole: C._esc ? +Math.hypot(px - C._esc.out.x, pz - C._esc.out.z).toFixed(2) : null, fromMouth: +Math.hypot(px - C.out.x, pz - C.out.z).toFixed(2), dy: +(jumpY - activeTerrainH(px, pz)).toFixed(2), land: +(worldH(px, pz) - SEA_Y).toFixed(2), solid: solidAt(px, pz) }; }, k.near.id);
 check(`out of the tunnel onto the land over the cave, ${e.fromMouth} m from the mouth, ${e.land} m over the sea`, outT && e.fromMouth > 5 && e.land > .5 && Math.abs(e.dy) < .3 && !e.solid, e);
+check(`out before the bolt-hole's face (${e.hole} m from its spot)`, e.hole !== null && e.hole < .1, e);
 await g.close();

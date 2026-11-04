@@ -47,8 +47,19 @@
       d.a=d.from+(d.want-d.from)*e;if(t>=1)d.a=d.want;
       d.g.rotation.y=d.ang+d.dir*d.a*1.62;}
   }
+  // S1812 — under a room's water (INT_WATER, the grotto's sea, a sump: roomWaterTick, 88) the world's underwater blue (atmosphere, 80):
+  // while the eye is under the room's surface the room's fog and background turn to the sea's blue, darker than the open sea's for the
+  // rock over it (ROOM_DEEP), and close in to 0.5 to 14 m, and they turn back to the room's own as the eye comes up. Its view only.
+  const ROOM_DEEP=0x123a50;
+  function roomUnderwater(){const W=typeof roomWater==='function'?roomWater():null;if(!W||W.bed(px,pz)==null)return false;
+    return jumpY+(typeof _eyeHeightCur==='number'?_eyeHeightCur:SCALE.EYE_SWIM)<W.y-.05;}
+  function tickRoomUnderwater(){const S=interiorScene;if(!S||!S.fog||!S.fog.isFog)return;const u=roomUnderwater(),D=S.userData;
+    if(u&&!D._dry){D._dry={fog:S.fog.color.getHex(),near:S.fog.near,far:S.fog.far,bg:S.background&&S.background.isColor?S.background.getHex():null};
+      S.fog.color.setHex(ROOM_DEEP);S.fog.near=.5;S.fog.far=14;if(S.background&&S.background.isColor)S.background.setHex(ROOM_DEEP);}
+    else if(!u&&D._dry){const d=D._dry;S.fog.color.setHex(d.fog);S.fog.near=d.near;S.fog.far=d.far;if(d.bg!=null&&S.background&&S.background.isColor)S.background.setHex(d.bg);D._dry=null;}}
   function tickInterior(dt,now){
     try{tickSent(dt,true);}catch(e){} // S239 — a guard sent after you
+    try{tickRoomUnderwater();}catch(e){} /* S1812 — the blue under a room's water */
     tickIntDoors(); // v80 S143
     if(interiorScene&&interiorScene.userData.hallTick)interiorScene.userData.hallTick(performance.now()); /* S1521 — a hall's torches, sconces and lamps */
     try{tickSleeper();}catch(e){} /* S739 — a householder sleeps 23h to 5h */

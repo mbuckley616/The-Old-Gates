@@ -538,12 +538,35 @@
     return c._cove;}
   // its pad and clearing, as the limestone cave's (the cell's first step); the mouth, in the coast's grey rock, stood on the pad with its
   // face to the land; the outcrop's solids; the record in the world's houses for a save made inside, taken out when the cell unloads
-  function seaCoveStamps(c,k){const C=seaCove(c);if(!C)return [];const s=Math.sin(C.ry),co=Math.cos(C.ry),y=landH(C.x,C.z);
-    return [addStamp({id:C.id+'_pad',kind:'door',x:C.x-s*2.4,z:C.z-co*2.4,r:4.6,blend:5,y,cell:k}),addStamp({id:C.id+'_clear',kind:'door',noFlat:true,x:C.x-s*4,z:C.z-co*4,r:10,blend:2,y,cell:k})];}
+  function seaCoveStamps(c,k){const C=seaCove(c);if(!C)return [];const s=Math.sin(C.ry),co=Math.cos(C.ry),y=landH(C.x,C.z),E=seaCoveEscape(C);
+    const st=[addStamp({id:C.id+'_pad',kind:'door',x:C.x-s*2.4,z:C.z-co*2.4,r:4.6,blend:5,y,cell:k}),addStamp({id:C.id+'_clear',kind:'door',noFlat:true,x:C.x-s*4,z:C.z-co*4,r:10,blend:2,y,cell:k})];
+    if(E)st.push(addStamp({id:C.id+'_esc',kind:'door',noFlat:true,x:E.x,z:E.z,r:6,blend:2,y:landH(E.x,E.z),cell:k})); /* S1811 — no tree in the bolt-hole */
+    return st;}
+  // S1811 — the escape tunnel's land end (Session 1807 crawls you out of it; until now onto bare grass): where the tunnel's line (the cove's
+  // own numbers, PKIT.places.coveEscape, in the cave's frame turned into the world's as the mouth is) comes up, a bolt-hole in the coast's
+  // grey rock, the cave mouth's outcrop at COVE_HOLE_K of its size (its hole 2.4 m wide and 2.0 high, the tunnel's 1.9 by 2.35 crawled
+  // out of), its face out along the tunnel. It stands at the tunnel's end, or up to 8 m back along it toward the cave, wherever first both
+  // its foot and the spot 1.5 m before its face are dry land (0.5 m over the sea) no more than 1.2 m apart; none, and the way out is
+  // Session 1807's search. -> {x, z, d, yaw, out {x, z, yaw}} or null, kept on C (C._esc)
+  const COVE_HOLE_K=.55;
+  function seaCoveEscape(C){
+    if(C._esc!==undefined)return C._esc;C._esc=null;if(!PKIT.places.coveEscape)return null;
+    const E=PKIT.places.coveEscape(C.id),co=Math.cos(C.ry),s_=Math.sin(C.ry),W=(fx,fz)=>[C.x+fx*co+fz*s_,C.z-fx*s_+fz*co],yaw=Math.atan2(-co,s_);
+    for(const d of [0,-2,-4,-6,-8]){const [x,z]=W(E.xPlane+d,E.z),[ox,oz]=W(E.xPlane+d+1.5,E.z),h=landH(x,z),ho=landH(ox,oz);
+      if(h>SEA_Y+.5&&ho>SEA_Y+.5&&Math.abs(h-ho)<1.2){C._esc={x:+x.toFixed(2),z:+z.toFixed(2),d,yaw:C.ry+Math.PI/2,out:{x:+ox.toFixed(2),z:+oz.toFixed(2),yaw}};break;}}
+    return C._esc;}
+  // the bolt-hole built: a child of the mouth's group (it goes when the cell does), its solids beside the mouth's, shrunk with it
+  function placeCoveHole(C,G,y){const E=seaCoveEscape(C);if(!E)return;
+    const M=PKIT.places.cavemouth({key:C.id+':escape',rock:'sea'}),K=COVE_HOLE_K,hy=worldH(E.x,E.z),co=Math.cos(C.ry),s_=Math.sin(C.ry),fx=(E.x-C.x)*co-(E.z-C.z)*s_,fz=(E.x-C.x)*s_+(E.z-C.z)*co;
+    M.group.position.set(fx,hy-y,fz);M.group.rotation.y=Math.PI/2;M.group.scale.setScalar(K);M.group.name='sea cave bolt-hole';G.add(M.group);
+    const ry=E.yaw,c2=Math.cos(ry),s2=Math.sin(ry);
+    for(const b of M.sol)STATIC_SOL.push({cx:E.x+K*(b.x*c2+b.z*s2),cz:E.z+K*(-b.x*s2+b.z*c2),rx:b.w*K/2,rz:b.d*K/2,c:Math.cos(ry+b.ry),s:Math.sin(ry+b.ry),h:b.h*K,cave:true});
+    E.y=hy;E.tris=M.tris;E.draws=M.draws;E.w=+(M.mouth.w*K).toFixed(2);E.h=+(M.mouth.h*K).toFixed(2);}
   function placeSeaCove(c,k){const C=seaCove(c);if(!C)return null;const M=PKIT.places.cavemouth({key:C.id,rock:'sea'}),y=worldH(C.x,C.z),co=Math.cos(C.ry),s_=Math.sin(C.ry);
     M.group.position.set(C.x,y,C.z);M.group.rotation.y=C.ry;M.group.name='sea cave mouth';sc.add(M.group);
     for(const b of M.sol)STATIC_SOL.push({cx:C.x+b.x*co+b.z*s_,cz:C.z-b.x*s_+b.z*co,rx:b.w/2,rz:b.d/2,c:Math.cos(C.ry+b.ry),s:Math.sin(C.ry+b.ry),h:b.h,cave:true});
     C.y=y;C.tris=M.tris;C.draws=M.draws;C.mouth=M.mouth;C.out={x:C.x+s_*2.2,z:C.z+co*2.2,yaw:C.ry+Math.PI};
+    try{placeCoveHole(C,M.group,y);}catch(e){console.warn('cove hole',e);} /* S1811 — the escape tunnel's land end */
     C.house={id:`g_${C.id}`,type:'seacave',byAim:true,siteId:C.id,name:C.name,keeper:'',reg:c.reg,style:'irish',w:44,d:70,two:false,doorX:C.x,doorZ:C.z,doorFace:'S',exitX:C.out.x,exitZ:C.out.z,exitYaw:C.out.yaw,held:C.held};
     if(ZONES.world&&ZONES.world.houses&&!ZONES.world.houses.some(h=>h.id===C.house.id))ZONES.world.houses.push(C.house);
     return M.group;}
