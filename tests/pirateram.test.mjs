@@ -220,6 +220,51 @@ check('6 s to wind again, read off the clock (late by no more than the slowest t
 check('fire bolts: refused with no pitch; a bolt and a pitch spent; (fire) on the panel', /needs a pitch/.test(bl.noPitch) && bl.fireShot === true && bl.pitchLeft === 0 && bl.boltsF === 1 && /^Ballista \(fire\)/.test(bl.hudFire), bl);
 check('a fire bolt takes 4 hull and sets her rig alight: 16 rig over 8 s, then out', bl.fireLost === 4 && /her rig is alight/.test(bl.fireMsg) && bl.rigAt >= 98 && bl.rigAfter === 84 && bl.burnLeft === 0 && bl.burnS >= 7.9, bl);
 check('abeam and far do not bear; a merchantman is not offered', !bl.abeam && !bl.far && !bl.merchant && /Nothing bears/.test(bl.abeamWhy), bl);
+// S1822 — the galleon's broadside: six guns a side, ±25° of abeam, 150 m, a 0.6 s ripple, 20 s a side to reload; round 6 hull a ball,
+// chain 6 rig, grape 20 to each of her hands within 60 m, shell 8 hull and the burn; shot 20 to 1 of the hold; no guns but a galleon's
+const gn = await page.evaluate(() => {
+  for (const o of [...OTHER]) despawnOtherShip(o);
+  worldState.ship = { cls: 'sloop', name: 'Test Gull', sails: 0, cargo: 0, hold: { round: 12 } }; WORLD.spawnShip(_sea.x, _sea.z, 0); let S = WORLD.ship; S.sailing = true;
+  const out = {}; out.sloop = fireBroadside();
+  worldState.ship = { cls: 'galleon', name: 'Test Gull', sails: 0, cargo: 0, hold: { round: 12, chain: 20, grape: 20, shell: 20 } }; WORLD.spawnShip(_sea.x, _sea.z, 0); S = WORLD.ship; S.sailing = true;
+  out.used = holdUsed(); GUNS.t = { port: -1e9, stbd: -1e9 }; gunsShot('round');
+  const p = spawnOtherShip('pirate', S.x + 60, S.z); p.speed = 0; p.yaw = 0;
+  const at = (dx, dz) => { p.x = S.x + dx; p.z = S.z + dz; };
+  let pos = [60, 0]; const hold = () => { S.x = _sea.x; S.z = _sea.z; S.speed = 0; S.yaw = 0; at(...pos); p.speed = 0; p.volleyT = 1e9; p.ramWait = 1e9; p.hookWait = 1e9; p.ramming = 0; p.burn = 0; };
+  const step = n => { for (let i = 0; i < n; i++) { hold(); for (const o of [...OTHER]) if (o !== p) despawnOtherShip(o); WORLD.tick(1 / 60, performance.now()); } };
+  const wait = () => { const t = performance.now(); while (GUNS.fly.length && performance.now() - t < 6000) step(1); };
+  step(2); out.bear = gunsBear(); out.bear = { stbd: out.bear.stbd === p, port: out.bear.port === p }; out.hud = gunsHud();
+  const h0 = p.hull; out.fire = fireBroadside(); out.round = shotAboard('round'); out.again = fireBroadside(); wait();
+  out.roundLost = h0 - p.hull; out.roundMsg = document.getElementById('msg').textContent; out.wait = Math.round(gunsWait('stbd'));
+  // chain from the port side, 50 m off
+  pos = [-50, 0]; hold(); gunsShot('chain'); const r0 = p.rig; out.chain = fireBroadside(); wait(); out.chainRig = r0 - p.rig;
+  // grape at her crew, 40 m to starboard: 20 to each; then 90 m off, short
+  pos = [40, 0]; step(1); crewUp(p, false); const hp0 = p.crew.map(e => e.hp); GUNS.t = { port: -1e9, stbd: -1e9 }; gunsShot('grape'); out.grape = fireBroadside(); wait();
+  out.grapeHit = p.crew.map((e, i) => hp0[i] - e.hp); out.grapeMsg = document.getElementById('msg').textContent;
+  pos = [90, 0]; GUNS.t = { port: -1e9, stbd: -1e9 }; out.grapeFar = fireBroadside(); wait(); out.grapeFarMsg = document.getElementById('msg').textContent;
+  // shell: 8 a ball and her rig alight
+  pos = [60, 0]; p.hull = p.hullMax; GUNS.t = { port: -1e9, stbd: -1e9 }; gunsShot('shell'); const hs = p.hull; out.shell = fireBroadside();
+  { const t = performance.now(); while (GUNS.fly.length && performance.now() - t < 6000) { S.x = _sea.x; S.z = _sea.z; S.speed = 0; S.yaw = 0; at(...pos); p.volleyT = 1e9; p.ramWait = 1e9; p.hookWait = 1e9; WORLD.tick(1 / 60, performance.now()); } }
+  out.shellLost = hs - p.hull; out.burn = p.burn > 0;
+  // dead ahead, 60 m: no side bears
+  pos = [0, -60]; hold(); GUNS.t = { port: -1e9, stbd: -1e9 }; gunsShot('round'); out.ahead = broadsideWhy();
+  // 30° off the beam: no; 20°: yes
+  pos = [60 * Math.cos(30 * Math.PI / 180), -60 * Math.sin(30 * Math.PI / 180)]; hold(); out.at30 = !!gunsBear().stbd;
+  pos = [60 * Math.cos(20 * Math.PI / 180), -60 * Math.sin(20 * Math.PI / 180)]; hold(); out.at20 = !!gunsBear().stbd;
+  const nAt = nationAt; const rows = nat => { window.nationAt = () => nat; try { return yardOffers({ x: S.x, z: S.z, name: 'X', id: 'x', quayStart: null }).map(o => o.label).filter(l => /for the guns/.test(l)); } finally { window.nationAt = nAt; } };
+  out.rowsMark = rows('mark'); out.rowsGl = rows('gatelands');
+  despawnOtherShip(p); return out; });
+console.log('broadside', JSON.stringify(gn));
+check('no guns but a galleon’s', gn.sloop === 'Only a galleon carries guns.', gn.sloop);
+check('her shot: 12 round, 20 chain, 20 grape, 20 shell take 4 of the hold', gn.used === 4, gn.used);
+check('a black sail 60 m to starboard: the starboard side bears, not the port', gn.bear.stbd && !gn.bear.port && /starboard bears/.test(gn.hud), gn);
+check('round: six balls fired, 36 hull, that side 20 s to reload', gn.fire === true && gn.round === 6 && /still loading/.test(gn.again) && gn.roundLost === 36 && /Hull −36/.test(gn.roundMsg) && gn.wait >= 19, gn);
+check('chain from the port side while starboard reloads: 36 rig', gn.chain === true && gn.chainRig === 36, gn);
+check('grape at 40 m: 20 to each of her hands; at 90 m it falls short', gn.grape === true && gn.grapeHit.length === 3 && gn.grapeHit.every(x => x === 20) && /Grape sweeps her deck: 3/.test(gn.grapeMsg) && gn.grapeFar === true && /falls short/.test(gn.grapeFarMsg), gn);
+check('shell: 48 hull and her rig alight', gn.shell === true && gn.shellLost === 48 && gn.burn, gn);
+check('dead ahead no side bears; 20° off the beam bears, 30° does not', /Nothing bears/.test(gn.ahead) && gn.at20 && !gn.at30, gn);
+check('the yard sells round, chain and grape to a galleon; shell only in the Mark', gn.rowsGl.length === 3 && gn.rowsMark.length === 4 && gn.rowsMark.some(l => /^Shell for the guns, 20 \(300 gold/.test(l)), gn);
+
 check('no page errors', g.errs.length === 0, g.errs);
 if (stop) stop();
 await g.close();

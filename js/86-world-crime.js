@@ -1248,9 +1248,9 @@
       el.innerHTML='<div id="shipbars-name" style="margin-bottom:3px"></div>'+shipLogSVG()+'<div id="shipbars-sea" style="margin-bottom:3px;color:#c8b890"></div><div>Hull <span id="shipbars-hull"></span></div><div style="height:5px;background:#2a2014;margin:1px 0 3px"><div id="shipbars-hf" style="height:100%;background:#b08a4a"></div></div><div>Rig <span id="shipbars-rig"></span></div><div style="height:5px;background:#2a2014;margin-top:1px"><div id="shipbars-rf" style="height:100%;background:#d8c8a0"></div></div><div id="shipbars-bal" style="margin-top:3px;color:#e8c890;display:none"></div>';document.body.appendChild(el);SHIPBAR.ui=el;}
     const show=!!(worldState.ship&&SHIP.mesh&&activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior())&&(SHIP.sailing||onDeck()));
     if(show)shipLogUI();
-    const b=show?shipBars():null,hint=show?seaHint():'',bal=show?ballistaHud():'',key=show?`${SHIP.name}|${b.hull}|${b.hullMax}|${b.rig}|${SHIP.sea||0}|${hint}|${bal}`:'';if(key===SHIPBAR.key)return;SHIPBAR.key=key;el.style.display=show?'block':'none';if(!show)return;
+    const b=show?shipBars():null,hint=show?seaHint():'',bal=show?[gunsHud(),ballistaHud()].filter(Boolean).join('\n'):'',key=show?`${SHIP.name}|${b.hull}|${b.hullMax}|${b.rig}|${SHIP.sea||0}|${hint}|${bal}`:'';if(key===SHIPBAR.key)return;SHIPBAR.key=key;el.style.display=show?'block':'none';if(!show)return;
     const q=id=>document.getElementById(id);q('shipbars-name').textContent=`The ${SHIP.name}`;q('shipbars-sea').textContent=`Sea: ${SEA_WORD[SHIP.sea||0]}${hint}`;q('shipbars-hull').textContent=`${b.hull} / ${b.hullMax}`;q('shipbars-rig').textContent=`${b.rig} / 100`;
-    q('shipbars-hf').style.width=(b.hull/b.hullMax*100)+'%';q('shipbars-hf').style.background=b.hull/b.hullMax<.25?'#c85040':'#b08a4a';q('shipbars-rf').style.width=b.rig+'%';{const B=q('shipbars-bal');if(B){B.textContent=bal;B.style.display=bal?'block':'none';}} /* S1820 — the ballista's line */
+    q('shipbars-hf').style.width=(b.hull/b.hullMax*100)+'%';q('shipbars-hf').style.background=b.hull/b.hullMax<.25?'#c85040':'#b08a4a';q('shipbars-rf').style.width=b.rig+'%';{const B=q('shipbars-bal');if(B){B.style.whiteSpace='pre-line';B.textContent=bal;B.style.display=bal?'block':'none';}} /* S1820 — the ballista's line */
   }
   // S638 — the boarding nets (Michael's B on #192, the page's shared ground; his 6 Oct note: *a netting or ladder on either
   // side to walk up, or "press E to climb" when looking at the mesh — not a general "board" option always available in
@@ -1314,7 +1314,7 @@
   const BALLISTA={arc:Math.PI/6,range:90,reload:6,hull:10,speed:60,per:20,price:2,fireHull:4,burn:2,burnS:8};
   const BOLTS={t:-1e9,fly:[],n:0,geo:null,mat:null,fire:false};
   function boltsAboard(){const h=worldState.ship&&worldState.ship.hold;return h&&h.bolts>0?h.bolts:0;}
-  function shipShotWeight(){const n=boltsAboard();return n?Math.ceil(n/BALLISTA.per):0;}
+  function shipShotWeight(){const h=(worldState.ship&&worldState.ship.hold)||{};let w=0;for(const k of ['bolts',...Object.keys(SHOT)])if(h[k]>0)w+=Math.ceil(h[k]/BALLISTA.per);return w;} /* S1822 — and the guns' shot, 20 to 1 a kind */
   function ballistaWait(){return Math.max(0,BALLISTA.reload-(hookClock()-BOLTS.t));}
   function ballistaBow(){const fx=-Math.sin(SHIP.yaw),fz=-Math.cos(SHIP.yaw);return {x:SHIP.x+fx*SHIP.L/2,z:SHIP.z+fz*SHIP.L/2,fx,fz};}
   function ballistaFoe(o){return !!o&&(o.kind==='pirate'||String(o.id||'').startsWith('story:'));}
@@ -1349,14 +1349,60 @@
     return `Ballista${BOLTS.fire?' (fire)':''}: ${!n?'no bolts':w>0?`winding, ${Math.ceil(w)} s`:ballistaBears()?'she bears':'ready'} · ${n} ${n===1?'bolt':'bolts'}`;}
   // at the helm with a ballista fitted, the left button is the ballista's, not the sword's: caught before the canvas's own handler
   if(typeof window!=='undefined'&&window.addEventListener)window.addEventListener('mousedown',e=>{
-    if(e.button!==0||typeof SHIP==='undefined'||!SHIP.sailing||!shipFitted('ballista')||typeof started!=='undefined'&&!started)return;
+    if(e.button!==0||typeof SHIP==='undefined'||!SHIP.sailing||!(shipFitted('ballista')||shipGunned())||typeof started!=='undefined'&&!started)return;
     if(typeof document!=='undefined'&&document.pointerLockElement==null)return;if(typeof _isMenuOpen==='function'&&_isMenuOpen())return;
-    e.preventDefault();e.stopPropagation();const r=fireBallista();if(r!==true)showMsg(r,'#c8b880');},true);
+    e.preventDefault();e.stopPropagation();const r=helmFire();if(r!==true)showMsg(r,'#c8b880');},true);
+  /* S1822 — a galleon's side that can fire goes first; else the ballista; else the guns' reason */
+  function helmFire(){if(shipGunned()&&!broadsideWhy())return fireBroadside();if(shipFitted('ballista'))return fireBallista();return broadsideWhy();}
   if(typeof window!=='undefined'&&window.addEventListener)window.addEventListener('mousedown',e=>{ /* S1821 — the right button: fire bolts or plain */
-    if(e.button!==2||typeof SHIP==='undefined'||!SHIP.sailing||!shipFitted('ballista')||typeof started!=='undefined'&&!started)return;
+    if(e.button!==2||typeof SHIP==='undefined'||!SHIP.sailing||!(shipFitted('ballista')||shipGunned())||typeof started!=='undefined'&&!started)return;
     if(typeof document!=='undefined'&&document.pointerLockElement==null)return;if(typeof _isMenuOpen==='function'&&_isMenuOpen())return;
-    e.preventDefault();e.stopPropagation();ballistaFireMode(!BOLTS.fire);},true);
+    e.preventDefault();e.stopPropagation();if(shipGunned())gunsCycle();else ballistaFireMode(!BOLTS.fire);},true);
   function ballistaFireMode(on){BOLTS.fire=!!on;showMsg(on?'Fire bolts: each takes a pitch from your bag.':'Plain bolts.','#c8b880');shipBarsUI();return BOLTS.fire;}
+  // S1822 — the galleon's broadside (B's sixth systems session; Michael's 7 A: guns on the top ships only). A galleon carries six guns a
+  // side with her hull. The left button at the helm fires the side that bears on a black sail (or a quest's ship): within 25° of abeam
+  // and 150 m from her side to the foe's. The six go in a 0.6 s ripple, and that side then takes 20 s to reload. The guns read no skill.
+  // The shot comes from her hold, 20 to 1 of the hold a kind, sold 20 at a time at a yard to a galleon:
+  //   round 6 hull a ball (1 gold), chain 6 rig a ball (2), grape 20 to every hand of hers within 60 m (2; once a broadside, not a
+  //   ball), shell 8 hull a ball and the fire bolt's burn (15, the Mark's yards only: saltpeter, canon).
+  // A side fires as many balls as she holds, up to six. The right button cycles the shot; a ballista she also carries looses fire bolts
+  // while the shot is shell (the two burning loads) and plain bolts otherwise. Every ball strikes, as the page counts it: a sloop's 100
+  // is three broadsides of round. A merchantman is not offered, as for the ballista (piracy is the foes-by-tier session).
+  const BROADSIDE={arc:25*Math.PI/180,range:150,guns:6,ripple:.6,reload:20,grapeR:60,grapeHit:20,per:20,speed:150};
+  const SHOT={round:{n:'round shot',hull:6,rig:0,price:1},chain:{n:'chain shot',hull:0,rig:6,price:2},grape:{n:'grape',hull:0,rig:0,price:2,grape:true},shell:{n:'shell',hull:8,rig:0,price:15,burn:true,mark:true}};
+  const SHOT_KEYS=['round','chain','grape','shell'];
+  const GUNS={t:{port:-1e9,stbd:-1e9},shot:'round',fly:[],n:0};
+  function shipGunned(){const st=worldState.ship;return !!(st&&!st.sunk&&(st.cls||'sloop')==='galleon');}
+  function shotAboard(k){const h=worldState.ship&&worldState.ship.hold;return h&&h[k]>0?h[k]:0;}
+  function gunsWait(side){return Math.max(0,BROADSIDE.reload-(hookClock()-GUNS.t[side]));}
+  // the ship each side bears on now: {port, stbd}, each the nearest foe in that side's arc and range, or null
+  function gunsBear(){const out={port:null,stbd:null};if(!SHIP.mesh||!SHIP.sailing||!shipGunned())return out;const fx=-Math.sin(SHIP.yaw),fz=-Math.cos(SHIP.yaw),rx=-fz,rz=fx;const bd={port:1e9,stbd:1e9};
+    for(const o of OTHER){if(o.dead||o.founder!=null||o.struck||!o.mesh||!ballistaFoe(o))continue;const dx=o.x-SHIP.x,dz=o.z-SHIP.z,lat=dx*rx+dz*rz,lon=dx*fx+dz*fz;
+      const side=lat>=0?'stbd':'port',d=Math.max(0,Math.hypot(dx,dz)-SHIP.W/2-(o.W||4)/2);if(d>BROADSIDE.range||d>=bd[side])continue;if(Math.abs(Math.atan2(lon,Math.abs(lat)))>BROADSIDE.arc)continue;bd[side]=d;out[side]=o;}
+    return out;}
+  // the side to fire now: one that bears, is loaded and has shot; the nearer if both
+  function gunsSide(){const B=gunsBear();let best=null,bd=1e9;for(const sd of ['port','stbd']){const o=B[sd];if(!o||gunsWait(sd)>0)continue;const d=Math.hypot(o.x-SHIP.x,o.z-SHIP.z);if(d<bd){bd=d;best=sd;}}return best;}
+  function broadsideWhy(){if(!shipGunned())return 'Only a galleon carries guns.';if(!SHIP.sailing)return 'The guns are fired from the helm.';const k=GUNS.shot;if(!shotAboard(k))return `No ${SHOT[k].n} in her hold.`;
+    const B=gunsBear();if(!B.port&&!B.stbd)return 'Nothing bears: bring her abeam of the black sail.';if(!gunsSide())return 'That side is still loading.';return null;}
+  // the named action: fire the side that bears; each ball strikes when it arrives
+  function fireBroadside(){const why=broadsideWhy();if(why)return why;const sd=gunsSide(),o=gunsBear()[sd],k=GUNS.shot,h=worldState.ship.hold,n=Math.min(BROADSIDE.guns,shotAboard(k));
+    h[k]-=n;if(h[k]<=0)delete h[k];const t0=hookClock();GUNS.t[sd]=t0;GUNS.n++;const fx=-Math.sin(SHIP.yaw),fz=-Math.cos(SHIP.yaw),s=sd==='stbd'?1:-1;
+    for(let i=0;i<n;i++){const along=(i/(BROADSIDE.guns-1)-.5)*SHIP.L*.6,x0=SHIP.x+fx*along+(-fz)*s*SHIP.W/2,z0=SHIP.z+fz*along+fx*s*SHIP.W/2;
+      GUNS.fly.push({o,k,x0,z0,t0:t0+i*BROADSIDE.ripple/(BROADSIDE.guns-1),dur:Math.hypot(o.x-x0,o.z-z0)/BROADSIDE.speed,first:i===0,last:i===n-1,vol:GUNS.n,hit:0});}
+    if(typeof sfxNoise==='function')sfxNoise(.35,0,0,.25,180);showMsg(`${sd==='stbd'?'Starboard':'Port'} guns, ${SHOT[k].n}: fire!`,'#e8c890');shipBarsUI();return true;}
+  // once a frame: the balls in flight. Grape is reckoned once a broadside, on its first ball's arrival
+  function tickGuns(dt){if(!GUNS.fly.length)return;const now=hookClock();let said=null;
+    for(let i=GUNS.fly.length-1;i>=0;i--){const f=GUNS.fly[i],o=f.o;if(now<f.t0+f.dur)continue;GUNS.fly.splice(i,1);if(o.dead||o.founder!=null||!OTHER.includes(o))continue;const S=SHOT[f.k];
+      if(S.grape){if(!f.first)continue;const d=Math.max(0,Math.hypot(o.x-f.x0,o.z-f.z0)-(o.W||4)/2);if(d>BROADSIDE.grapeR){said='The grape falls short of her deck.';continue;}let hit=0;
+        for(const e of (o.crew||[]).slice()){if(e.dead)continue;e.hp-=BROADSIDE.grapeHit;hit++;if(e.hp<=0&&typeof killZoneEnemy==='function')killZoneEnemy(e,sc);}said=hit?`Grape sweeps her deck: ${hit} of her crew hit.`:'Grape sweeps her empty deck.';continue;}
+      const r=damageShip(o,S.hull,S.rig);if(S.burn&&o.founder==null&&!o.dead){o.burn=BALLISTA.burnS;o._burnAcc=o._burnAcc||0;}
+      const V=GUNS.fly.filter(q=>q.vol===f.vol).length;if(r){const V0=GUNS._v||(GUNS._v={}),T0=V0[f.vol]||(V0[f.vol]={h:0,r:0});T0.h+=r.hull;T0.r+=r.rig;}
+      if(!V&&GUNS._v&&GUNS._v[f.vol]){const T=GUNS._v[f.vol];delete GUNS._v[f.vol];if(!o.founder&&!o.struck)said=`The broadside strikes the ${o.kind==='pirate'?'black sail':String(o.name||'ship')}.${T.h?` Hull −${T.h}.`:''}${T.r?` Rig −${T.r}.`:''}${S.burn?' Her rig is alight.':''}`;}}
+    if(said)showMsg(said,'#e8c890');}
+  function gunsHud(){if(!shipGunned())return '';const k=GUNS.shot,n=shotAboard(k),B=gunsBear(),w=sd=>{const t=gunsWait(sd);return t>0?`${Math.ceil(t)} s`:B[sd]?'bears':'ready';};
+    return `Guns, ${SHOT[k].n} (${n}): port ${w('port')} · starboard ${w('stbd')}`;}
+  function gunsShot(k){if(!SHOT[k])return null;GUNS.shot=k;if(shipFitted('ballista'))BOLTS.fire=k==='shell';showMsg(`The guns load ${SHOT[k].n}${shipFitted('ballista')?(k==='shell'?'; the ballista, fire bolts':'; the ballista, plain bolts'):''}.`,'#c8b880');shipBarsUI();return k;}
+  function gunsCycle(){return gunsShot(SHOT_KEYS[(SHOT_KEYS.indexOf(GUNS.shot)+1)%SHOT_KEYS.length]);}
   // S1814 — naval combat's hooks (Michael's B on #1064, docs/design/naval-combat.md, A): from your deck or the helm, with her hull
   // under the crosshair within 10 m and the two ships moving at under 3 m/s to each other, E throws the hooks. The throw takes 1.0 s;
   // then 4 s of hauling draws her alongside, parallel and 0.6 m off, and both ships come to 0 m/s. Lashed, she is held there and
@@ -1538,6 +1584,10 @@
     // S1726 — the fittings (#979 B): a row for each one she lacks while a place is free, one to fit back each stored one, one to take each out
     if(free)for(const k in SHIP_FITS){if(st.fit.includes(k)||st.stored.includes(k))continue;const F=SHIP_FITS[k];
       out.push({label:`Fit ${F.a} (${F.price} gold, ${F.w} of the hold)`,cls,quest:true,fn:()=>{const r=fitShip(k);return r===true?`Fitted: ${F.a}. Her hold takes ${holdCap()} now.`:r===null?`${F.a[0].toUpperCase()+F.a.slice(1)}: ${F.price} gold.`:r;}});}
+    if(shipGunned()&&shipHere(site))for(const k of SHOT_KEYS){const S=SHOT[k];if(S.mark&&nationAt(site.x,site.z)!=='mark')continue; /* S1822 — the guns' shot; shell at the Mark's yards only */
+      out.push({label:`${S.n[0].toUpperCase()+S.n.slice(1)} for the guns, ${BROADSIDE.per} (${BROADSIDE.per*S.price} gold, 1 of the hold)`,cls,quest:true,fn:()=>{const p=BROADSIDE.per*S.price;if(gold<p)return `${BROADSIDE.per} ${S.n}: ${p} gold.`;
+        const n=shotAboard(k),w=Math.ceil((n+BROADSIDE.per)/BROADSIDE.per)-Math.ceil(n/BROADSIDE.per);if(holdUsed()+w>holdCap())return `No room in her hold for the ${S.n}.`;
+        gold-=p;updateHUD();const h=holdOf();h[k]=n+BROADSIDE.per;shipBarsUI();return `${BROADSIDE.per} ${S.n} stowed. She carries ${h[k]}.`;}});}
     if(shipFitted('ballista')&&shipHere(site))out.push({label:`Bolts for the ballista, ${BALLISTA.per} (${BALLISTA.per*BALLISTA.price} gold, 1 of the hold)`,cls,quest:true,fn:()=>{const p=BALLISTA.per*BALLISTA.price;if(gold<p)return `${BALLISTA.per} bolts: ${p} gold.`; /* S1820 */
       const n=boltsAboard(),w=Math.ceil((n+BALLISTA.per)/BALLISTA.per)-Math.ceil(n/BALLISTA.per);if(holdUsed()+w>holdCap())return 'No room in her hold for the bolts.';
       gold-=p;updateHUD();const h=holdOf();h.bolts=n+BALLISTA.per;shipBarsUI();return `${BALLISTA.per} bolts stowed. She carries ${h.bolts}.`;}});
