@@ -1128,6 +1128,42 @@
   function shipWear(hull,rig){if(!worldState.ship)return null;const b=shipBars(),st=shipCfg();hull=Math.max(0,Math.round(hull||0));rig=Math.max(0,Math.round(rig||0));
     if(b.hull===0&&hull>0&&SHIP.mesh){shipSink();return {hull:0,rig:0,sunk:true};}
     st.hull=Math.max(0,b.hull-hull);st.rig=Math.max(0,b.rig-rig);if(b.hull>0&&st.hull===0)showMsg(`The ${SHIP.name} is waterlogged. She will make two knots and a half.`,'#ff8060');shipBarsUI();return {hull:b.hull-st.hull,rig:b.rig-st.rig};}
+  // S1813 — naval combat (Michael's B on #1064, docs/design/naval-combat.md; A's first part): every hull has the bars and one of
+  // four states by what is left of it: intact at 75% or more, light 50–75 (holed sails, no penalty), heavy 25–50 (×0.8), sinking
+  // under 25 (×0.6, and she loses 1 hull every 10 s until mended or gone). A black sail is a sloop of 100, a merchantman a cog of
+  // 140, each with a rig of 100; your own ship's slowdowns were already these (shipSpeedMul). Every change to a hull goes through
+  // damageShip, the named action. A ship a quest needs strikes at 25% and lies to for boarding; any other at 0 founders over 8 s.
+  const HULL_STATES=[{k:'sinking',f:0,mul:.6},{k:'heavy',f:.25,mul:.8},{k:'light',f:.5,mul:1},{k:'intact',f:.75,mul:1}];
+  const SHIP_LEAK_S=10,SHIP_STRIKE=.25,SHIP_FOUNDER_S=8;
+  function hullState(hull,max){const f=max>0?hull/max:0;for(let i=HULL_STATES.length-1;i>0;i--)if(f>=HULL_STATES[i].f)return HULL_STATES[i];return HULL_STATES[0];}
+  function shipHullOf(o){if(o===SHIP){const b=shipBars();return {hull:b.hull,hullMax:b.hullMax,rig:b.rig};}return {hull:o.hull,hullMax:o.hullMax,rig:o.rig};}
+  function shipStateOf(o){const b=shipHullOf(o);return hullState(b.hull,b.hullMax).k;}
+  function otherSpeedMul(o){if(!(o.hullMax>0))return 1;return hullState(o.hull,o.hullMax).mul*(.5+.5*Math.max(0,o.rig)/100);}
+  function otherWho(o){return o.id&&String(o.id).startsWith('story:')?String(o.name||'She').replace(/^./,c=>c.toUpperCase()):o.kind==='pirate'?'The black sail':'The merchantman';}
+  function shipStrikes(o){return !!o&&(String(o.id||'').startsWith('story:')||o.kind==='pirate'&&((typeof tutWantsPirate==='function'&&tutWantsPirate())||(typeof factionWantsPirate==='function'&&factionWantsPirate())));}
+  const HULL_SAY={light:'is holed in her sails',heavy:'is holed and slowing',sinking:'is low in the water and sinking'};
+  function damageShip(o,hull,rig){if(!o)return null;if(o===SHIP)return shipWear(hull,rig);if(o.dead||o.founder!=null||!(o.hullMax>0))return null;
+    hull=Math.max(0,Math.round(hull||0));rig=Math.max(0,Math.round(rig||0));const was=hullState(o.hull,o.hullMax),h0=o.hull,r0=o.rig;
+    const floor=shipStrikes(o)?Math.ceil(o.hullMax*SHIP_STRIKE):0;o.hull=Math.max(Math.min(floor,h0),h0-hull);o.rig=Math.max(0,r0-rig);
+    if(floor&&o.hull<=floor&&!o.struck){o.struck=true;o.speed=0;o.ramming=0;showMsg(`${otherWho(o)} lies to, low in the water. Her deck is yours to take.`,'#e8d8a0');}
+    else if(o.hull<=0){o.founder=SHIP_FOUNDER_S;o.speed=0;o.ramming=0;showMsg(`${otherWho(o)} founders.`,'#ff8060');}
+    else{const now=hullState(o.hull,o.hullMax);if(now!==was&&HULL_SAY[now.k])showMsg(`${otherWho(o)} ${HULL_SAY[now.k]}.`,'#ffb060');}
+    return {hull:h0-o.hull,rig:r0-o.rig};}
+  // a ship lying to or foundering steers nothing; a foundering one settles 3 m and lists over 8 s, then she is gone, her living crew
+  // and her chest with her (the wreck to dive is naval combat's fourth session); you, on her deck, are left in the water
+  function otherDown(o,dt){if(o.founder==null&&!o.struck)return false;o.speed=0;o.ramming=0;placeOther(o);
+    if(o.founder!=null){o.founder-=dt;const u=Math.min(1,1-o.founder/SHIP_FOUNDER_S);o.mesh.position.y-=u*3;o.mesh.rotation.z=u*.35;
+      if(o.founder<=0){o.dead=true;despawnOtherShip(o);}}
+    return true;}
+  // once a frame: a hull in the sinking state loses 1 every 10 s; yours while you are aboard her, down to waterlogged (never sunk by
+  // the leak alone: the sink is still a hull lost at 0), until a shipwright or the carpenter lifts her over a quarter
+  function tickShipLeaks(dt){
+    for(const o of OTHER){if(o.dead||o.struck||o.founder!=null||!(o.hullMax>0)||hullState(o.hull,o.hullMax).k!=='sinking'){o._leak=0;continue;}
+      o._leak=(o._leak||0)+dt;while(o._leak>=SHIP_LEAK_S&&o.founder==null){o._leak-=SHIP_LEAK_S;damageShip(o,1,0);}}
+    if(!SHIP.mesh||!worldState.ship||!(SHIP.sailing||onDeck())){SHIP._leak=0;return;}const b=shipBars();
+    if(b.hull<=0||hullState(b.hull,b.hullMax).k!=='sinking'){SHIP._leak=0;SHIP._leakSaid=false;return;}
+    if(!SHIP._leakSaid){SHIP._leakSaid=true;showMsg(`The ${SHIP.name} is taking water: a hull point every ten seconds until she is mended.`,'#ff8060');}
+    SHIP._leak=(SHIP._leak||0)+dt;if(SHIP._leak>=SHIP_LEAK_S){SHIP._leak-=SHIP_LEAK_S;shipWear(1,0);}}
   // S412 — the sea's state where she is, 0 calm, 1 moderate, 2 rough, 3 storm: the weather (clear and fog 0; overcast, rain and
   // snow 1; a storm 3) plus one in open water, at most 3. Open water is the sea's own floor (the bed blends to −8 at a full
   // sea cell, so the page's "below −8" is never met; −7.9 here) with no shore within 150 units. Read once a second.

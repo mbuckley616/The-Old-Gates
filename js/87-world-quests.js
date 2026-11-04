@@ -56,7 +56,10 @@
       if(a.mine){if(C.pen>0&&!b.o._touch){b.o._touch=true;const ux=C.ux,uz=C.uz,fa=[-Math.sin(a.o.yaw),-Math.cos(a.o.yaw)],fb=[-Math.sin(b.o.yaw||0),-Math.cos(b.o.yaw||0)];
           const close=(fa[0]*(a.o.speed||0)-fb[0]*(b.o.speed||0))*ux+(fa[1]*(a.o.speed||0)-fb[1]*(b.o.speed||0))*uz;const bow=(a.o.speed||0)>.5&&fa[0]*ux+fa[1]*uz>.7;
           const rammed=!!b.o.ramming;if(rammed){b.o.ramming=0;b.o.ramWait=PIRATE_RAM.wait;}
-          if(close>.5){const w=shipWear(close*3*(bow?.5:1),0);if(w&&w.hull){showMsg(`${bow?'You ram her':rammed?'The black sail rams you':'The hulls strike'}. Hull −${w.hull}.`,'#ff8060');a._bump=performance.now();}}}
+          // S1813 — rams both ways (naval combat, #1064): her hull takes the closing speed × 4 from your bow, × 1.5 when it is her bow
+          // that strikes, × 3 when neither does; what yours takes is unchanged (× 1.5 bow on, × 3 otherwise)
+          if(close>.5){const herBow=(b.o.speed||0)>.5&&-(fb[0]*ux+fb[1]*uz)>.7;const d=damageShip(b.o,close*(bow?4:herBow?1.5:3),0);const w=shipWear(close*3*(bow?.5:1),0);
+            if(w&&w.hull||d&&d.hull){showMsg(`${bow?'You ram her':rammed?'The black sail rams you':'The hulls strike'}. Hull −${w&&w.hull||0}${d&&d.hull?`, hers −${d.hull}`:''}.`,'#ff8060');a._bump=performance.now();}}}
         else if(C.gap>1)b.o._touch=false;}
       if(C.pen>0){const push=C.pen*.5;const ux=C.ux,uz=C.uz;a.o.x-=ux*push;a.o.z-=uz*push;b.o.x+=ux*push;b.o.z+=uz*push;a.o.speed*=.6;b.o.speed*=.6;if(!a._bump||performance.now()-a._bump>1500){a._bump=performance.now();if(typeof sfxNoise==='function')sfxNoise(.5,0,0,.16,240);if(a.mine||b.mine)showMsg('Hulls grind together.','#c8b880');}}}
   }
