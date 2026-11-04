@@ -440,7 +440,7 @@ function genSettlement(site){
         // the widest that fits at the least depth, then the deepest at that width (each halved to within 5 cm: a house that fits fits smaller)
         const most=(lo,hi,ok)=>{if(ok(hi))return hi;while(hi-lo>.05){const m=(lo+hi)/2;if(ok(m))lo=m;else hi=m;}return Math.floor(lo*100)/100;};
         for(const v of vars){const E=ext(v);if(!fit(W0,D0,E))continue;const w=most(W0,v.w,q=>fit(q,D0,E)),d=most(D0,v.d,q=>fit(w,q,E));
-          if(!fit(w,d,E))continue;const o=Object.assign({},v,{w,d});lot.kit={kind:MK?'markhall':'aurhouse',o,ext:E,w0,d0};if(MK)lot.kit.stoop=E[1];if(inn)lot.kit.alehall=true;return;}
+          if(!fit(w,d,E))continue;const o=Object.assign({},v,{w,d});lot.kit={kind:MK?'markhall':'aurhouse',o,ext:E,w0,d0};if(!MK)lot.kit.shell=`${site.id}:windows:${lot.n}`; /* S1831 — the street's stream, which the rooms inside draw their shell from */if(MK)lot.kit.stoop=E[1];if(inn)lot.kit.alehall=true;return;}
         lot.w=w0;lot.d=d0;lot.x=x0;lot.z=z0;});
       else{
       // S1275 — its front goes first on the lot's own street line (dB: planLots grew a guild's lot to 13 by 11 m about its centre, which
@@ -2425,6 +2425,64 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     else{intNPCMesh=null;intNPCPos={x:-99,z:-99};}
     return sc_;
   }
+  // S1831 (card F9, Michael's A on #318; OG-115) — on the new look a two-storey flat-roofed Aurennais street home (lot.kit.kind 'aurhouse',
+  // PKIT.au.lot's 'flat' with two storeys, S1287), 6.4 by 6.0 m or more, is the flat over the dyer's shop inside (PKIT.au.home, rooms.js's
+  // Session 891 laid to the street's lots in Session 1802): the street's own shell (its options and its stream, so its wall, its door and
+  // the door's side are the street's), the shop below, the stair of 16 risers to the flat, the steep stair up through the hatch to the roof
+  // terrace under its pergola. Drawn in metres and moved into the room's frame as the courtyard house is (nothing scaled). The bed upstairs
+  // is the resident's, head to the back wall (-z); the home's chest is the one at its foot. The dyer keeps the shop, behind the counter.
+  function kitAurHome(house){const o=house&&house.kit&&house.kit.o;return !!(house&&house.type==='home'&&house.kit.kind==='aurhouse'&&house.kit.shell&&o&&o.kind==='flat'&&o.two&&o.w>=6.4&&o.d>=6.0&&window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.au&&PKIT.au.home);}
+  function buildKitAurHome(house){
+    const k=house.kit,T=PKIT.au.home({w:k.o.w,d:k.o.d,shell:k.shell,house:k.o},PKIT.stream(house.id+':aurhome')),I=T.inner,X=I.x1,Z=I.z1,W=2*X,D=2*Z,F0=T.floors[0];
+    const rx=x=>x+X,rz=z=>z+Z,ry=y=>y-F0,FL=T.floors.map(y=>+(y-F0).toFixed(3)),ds=T.door.x<0?-1:1,U=u=>-ds*u;
+    house._counterFront=null;house.intW=W;house.intD=D;house._roomH=+(FL[2]+3.5).toFixed(3);house._exitD=.8;house._exitW=1.0;house._exitX=+rx(T.door.x).toFixed(3);house._aurHome=T;
+    const sc_=new THREE.Scene();interiorScene=sc_;landRoomPost(sc_);sc_.background=new THREE.Color(0x120a06);sc_.fog=new THREE.Fog(0x120a06,Math.max(W,D)*.8*SCALE.ROOM_K,Math.max(W,D)*2.4*SCALE.ROOM_K);
+    intNPCMesh=null;intBedPos=null;intStashPos=null;
+    const SOL=[];INT_SOL=SOL;FOOTHOLDS=[];INT_BEDS=[];INT_DOORS=[];INT_DOORS.house=house.id;INT_CHAIR=null;INT_NPCS=[];HATCH.active=false;HATCH.roof=false;INT_LOOT=null;INT_BOX=null;INT_SHELF=null;
+    T.group.position.set(X,-F0,Z);T.group.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false;}});sc_.add(T.group);
+    {const E=new THREE.Object3D();E.position.set(rx(T.door.x),0,D);E.userData.entrance=true;E.userData.leaf=[T.door.w,+(T.door.h-T.door.w/2).toFixed(3)];sc_.add(E);} /* the street door's leaf, as the courtyard house records it */
+    const box=(q,foot)=>{const b={x0:rx(q.x0),x1:rx(q.x1),z0:rz(q.z0),z1:rz(q.z1),y0:ry(q.y0),y1:ry(q.y1)};SOL.push(b);if(foot)FOOTHOLDS.push({x0:b.x0,x1:b.x1,z0:b.z0,z1:b.z1,y:b.y1});return b;};
+    // the room's boxes: the stair's treads and landing, the stool and the furniture of both floors, their tops footholds (a bed to its tick
+    // and blanket, 0.55, so it stops you); the shelves, the hung cloths, the door's leaf, the rails and the line's posts are not stood on.
+    // The roof stair is one box in the prototype: here its ten treads, footholds only. Its going is 0.13 m (a stepladder's), so a tread two
+    // ahead is within the walker's 0.3 m and would stop you if it were solid; you climb it as a ladder, its treads under your feet
+    const NOFOOT=['shelves','cloths','leaf','wellrail','linepost'];
+    for(const q of T.boxes){if(q.tag==='roofstair')continue;const b=box(q,false);if(q.tag==='bed')b.y1=FL[1]+.55;if(!NOFOOT.includes(q.tag))FOOTHOLDS.push({x0:b.x0,x1:b.x1,z0:b.z0,z1:b.z1,y:b.y1});}
+    {const RS=T.roofStair,gg=(RS.x1-RS.x0)/RS.n;for(let i=1;i<=RS.n;i++)FOOTHOLDS.push({x0:rx(RS.x1-(i+.5)*gg),x1:rx(RS.x1-(i-.5)*gg),z0:rz(RS.z0),z1:rz(RS.z1),y:+(FL[1]+i*RS.rise).toFixed(3)});}
+    // the upper floor over the shop, open over the stair's well; the roof over the flat, open at the hatch (each one's underside the head room below)
+    {const w=T.well,h=T.hatch,hole=q=>({x0:rx(q.x0),x1:rx(q.x1),z0:rz(q.z0),z1:rz(q.z1)});
+      FOOTHOLDS.push({x0:0,x1:W,z0:0,z1:D,y:FL[1],hole:hole(w)},{x0:0,x1:W,z0:0,z1:D,y:FL[2],hole:hole(h)});}
+    // the bed upstairs is the resident's (the sleeper lies in it, head to -z)
+    {const b=T.bed,x=rx((b.x0+b.x1)/2),cz=rz((b.z0+b.z1)/2);INT_BEDS.push({x,z:cz+.2,y:FL[1],owner:'home',room:null,cz});intBedPos={x,z:cz+.2};}
+    // the home's chest: the cedar chest at the bed's foot (drawn in the room, so it has no lid of its own to lift)
+    {const q=T.boxes.find(q=>q.tag==='chest');INT_BOX={x:rx((q.x0+q.x1)/2),z:rz((q.z0+q.z1)/2),y:FL[1],lid:null,g:null,id:house.id,kind:'home',type:'home',house,open:false};}
+    // a bought house's cellar: the hatch in the shop's flags on the door's side, between the jars and the hung cloths
+    if(hasCellar(house)){const hx=rx(U(-(X-1.0))),hz=rz(Z-2.2);const lid=new THREE.Mesh(new THREE.BoxGeometry(.8,.04,.8),new THREE.MeshLambertMaterial({color:0x3a2612}));lid.position.set(hx,.02,hz);sc_.add(lid);
+      const ring=new THREE.Mesh(new THREE.TorusGeometry(.07,.015,5,10),new THREE.MeshLambertMaterial({color:0x2a2622}));ring.position.set(hx+.25,.05,hz);ring.rotation.x=Math.PI/2;sc_.add(ring);house._hatch={x:hx,z:hz};HATCH.x=hx;HATCH.z=hz;HATCH.y=0;HATCH.active=true;}
+    // the day: one box round the house, 20 m out, facing in (beyond the door, every window and the terrace's parapet), and the street's
+    // flags under it, by the hour
+    const hr=typeof gameHour==='function'?gameHour():12,dayK=hr>=7&&hr<18?1:hr>=5&&hr<20?.45:.08;
+    {const day=hr>=7&&hr<18?0xc4d0dc:hr>=5&&hr<20?0x8a7a7a:0x0e1420,S=Math.max(W,D)+40,g=new THREE.BoxGeometry(S,40,S);g.translate(X,20-.3,Z);
+      const m=new THREE.Mesh(g,new THREE.MeshBasicMaterial({color:day,side:THREE.BackSide,fog:false}));m.userData.daylight=true;sc_.add(m);
+      const f=new THREE.Mesh(new THREE.PlaneGeometry(S,S).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({color:new THREE.Color(0x9a8c74).multiplyScalar(.25+.6*dayK),fog:false}));f.position.set(X,-.25,Z);sc_.add(f);}
+    kitDaylight(sc_,[{x:rx(T.door.x),y:1.5,z:D,nx:0,nz:-1,w:T.door.w,h:T.door.h}],.4);
+    // the light: the brass lamp on the counter, the lantern from the flat's ceiling, the kitchen's braziers, the day on the terrace and
+    // down through the hatch, and the room's warmth
+    const KA=kitRoomAir(sc_,.45);
+    const L=(x,y,z,c,i,d)=>{const l=new THREE.PointLight(c,i,d);l.position.set(x,y,z);sc_.add(l);return l;};
+    L(rx(T.lamp0[0]),ry(T.lamp0[1])+.2,rz(T.lamp0[2]),0xffaa44,.7*KA.lamp,6);
+    L(rx(T.lamp[0]),ry(T.lamp[1]),rz(T.lamp[2]),0xffaa44,.9*KA.lamp,8);
+    {const b=T.braziers[0];L(rx(b[0])-.4,ry(b[1])+.5,rz(b[2]),0xff6a20,1.0*KA.fire,5);}
+    {const l=L(X,FL[2]+4,Z,0xe8eef8,.15+1.4*dayK,16);l.userData.daylight=true;}
+    // the dyer, in the shop behind the counter beside the stool, facing the door's side
+    const npc={x:rx(U(X-.82)),z:rz(.6)};
+    if(npcInsideNow(house)){const g=buildNPCMesh({role:'Resident',name:house.keeper,_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
+      g.rotation.y=ds*Math.PI/2;g.position.set(npc.x,0,npc.z);sc_.add(g);intNPCMesh=g;intNPCPos={x:npc.x,z:npc.z};
+      intNPCMesh.userData.amble={wa:0,wt:1,minZ:npc.z,maxZ:npc.z,minX:npc.x,maxX:npc.x,speed:.25,paused:true};
+      if(homeAsleepNow(house))laySleeper(intNPCMesh);}
+    else{intNPCMesh=null;intNPCPos={x:-99,z:-99};}
+    return sc_;
+  }
   // S1765 (card F8, Michael's A on #1026) — a ruined tower house's cellar (PKIT.places.towercellar, places.js's gatelandsTowerHouse below
   // ground): down the stair from the hall's hatch, the cellar under its flags and two beams with the band's store, west through the broken
   // wall along the souterrain, 16.6 m under lintels, to the pit's stair and up into the day. Drawn in the tower house's frame and moved into
@@ -3046,6 +3104,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     if(kitByre(house))return buildKitByre(house); /* S1480 — a Gatelands farm's byre inside, at its true size */
     if(kitBarn(house))return buildKitBarn(house); /* S1475 — a Gatelands farm's barn inside, at its true size */
     if(kitCourtHouse(house))return buildKitCourtHouse(house); /* S1425 — Aurenne's courtyard house inside, at its true size */
+    if(kitAurHome(house))return buildKitAurHome(house); /* S1831 — Aurenne's flat over the dyer's shop inside, at its true size */
     if(kitLonghouse(house))return buildKitLonghouse(house); /* S1453 — a Markish home: the longhouse inside, at its true size */
     if(kitChurchHall(house))return buildKitChurchHall(house); /* S1326 — the Church of the Weaver inside, at its true size */
     if(kitGuildHall(house))return buildKitGuildHall(house); /* S1703 — a town's guild hall inside, at its true size */
