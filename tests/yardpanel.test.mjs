@@ -193,6 +193,30 @@ check('her page shows her name in a field with Rename her', rn.shown && rn.val =
 check('typing her name (an E among it) keeps the yard open', rn1.open && /Eastlake/.test(rn1.val), rn1);
 check('renamed: "the" and the marks dropped, the Heron of Eastlake, free, kept on the ship and SHIP, said and logged', rn2.name === 'Heron of Eastlake' && rn2.ship === 'Heron of Eastlake' && rn2.gold === rn.gold && rn2.said === 'Renamed: the Heron of Eastlake.' && rn2.val === 'Heron of Eastlake' && /is the Heron of Eastlake now/.test(rn2.log), rn2);
 check('a blank name is refused, a long one held to 24, a sunk ship not renamed', rn2.blank === null && rn2.tooLong === 24 && rn2.sunk === null && rn2.after === 'Heron of Eastlake', rn2);
+// S1845 — her paint and her sails (#979 B, session 5; the look builder's swatches, #1133): 50 gold and an hour each, from the yard's own
+// island's four paints and three cloths, only on a ship of that island's build; kept in the world's row
+const pt = await page.evaluate(() => { YARD.cls = worldState.ship.cls || 'sloop'; yardPanelDraw(); const st = worldState.ship, out = { cls: st.cls, dress: herDress() };
+  const rows = k => [...document.querySelectorAll(`#yard-acts button[data-paint="${k}"]`)];
+  out.paints = rows('paint').map(b => b.textContent.trim()); out.cloths = rows('cloth').map(b => b.textContent.trim()); out.W = shipSwatches();
+  gold = 500; const g0 = gold, m0 = worldState.gameTimeAbsMinutes; rows('paint')[2].click();
+  out.p = { gold: g0 - gold, mins: Math.round(worldState.gameTimeAbsMinutes - m0), paint: st.paint, said: document.getElementById('yard-said').textContent, log: GAME_LOG.slice(-1)[0].text,
+    mesh: SHIP.mesh ? (SHIP.mesh.userData.swatch || null) : 'none', hers: rows('paint')[2].textContent };
+  const g1 = gold; out.again = paintShip('paint', 2, YARD.site); out.againGold = g1 - gold;
+  rows('cloth')[1].click(); out.c = { gold: g1 - gold, cloth: st.cloth, said: document.getElementById('yard-said').textContent, mesh: SHIP.mesh ? (SHIP.mesh.userData.swatch || null) : 'none' };
+  out.stage = YARD.m[YARD.cls] && YARD.m[YARD.cls].userData.swatch || null;
+  const gp = WORLD.allPorts().find(p => WORLD.cargoNation(p) !== out.dress); out.away = gp ? paintShip('paint', 1, gp) : 'no port';
+  const kg = gold; gold = 10; out.poor = paintShip('paint', 3, YARD.site); gold = kg; out.bad = paintShip('paint', 9, YARD.site);
+  out.dressOf = [herDress('cutter', 'gatelands'), herDress('caravel', 'mark'), herDress('cog', 'aurenne'), herDress('sloop', 'gatelands')];
+  const d = JSON.parse(ssStringify(_buildSavePayload())); st.paint = 0; st.cloth = 0; _applyLoadData(d); out.kept = [worldState.ship.paint, worldState.ship.cloth];
+  return out; });
+console.log(JSON.stringify(pt));
+check(`her yard shows her dress's (${pt.dress}) four paints and three cloths, hers marked`, pt.paints.length === 4 && pt.cloths.length === 3 && pt.paints.every((t, i) => t.toLowerCase().startsWith(pt.W.paints[i].name.toLowerCase())) && /\(hers\)/.test(pt.paints[0]), pt);
+check('painted: 50 gold, an hour, kept on her, said and logged, laid on her mesh', pt.p.gold === 50 && pt.p.mins === 60 && pt.p.paint === 2 && pt.p.said === `Painted ${pt.W.paints[2].name}.` && new RegExp(`is painted ${pt.W.paints[2].name}`).test(pt.p.log) && /\(hers\)/.test(pt.p.hers) && (pt.p.mesh === 'none' || pt.p.mesh.paint === 2), pt.p);
+check('the same paint again costs nothing and is refused', /already/.test(pt.again) && pt.againGold === 0, pt);
+check('new sails: 50 gold, kept, said; her mesh and her hull on the stage wear both', pt.c.gold === 50 && pt.c.cloth === 1 && /sails\.$/.test(pt.c.said) && (pt.c.mesh === 'none' || (pt.c.mesh.paint === 2 && pt.c.mesh.cloth === 1)) && (!pt.stage || (pt.stage.paint === 2 && pt.stage.cloth === 1)), pt.c);
+check('another island’s yard will not paint her; short of 50, refused; no such colour, refused', /own island/.test(pt.away) && pt.poor === 'It is 50 gold.' && pt.bad === 'No such colour.', pt);
+check('her dress is her hull’s: the cutter the Mark’s, the caravel Aurenne’s, the rest the yard’s', pt.dressOf.join() === 'mark,aurenne,aurenne,gatelands', pt.dressOf);
+check('a save keeps her paint and her sails', pt.kept.join() === '2,1', pt.kept);
 // sunk: nothing offered, the note says so
 await page.evaluate(() => { worldState.ship.sunk = { x: 0, z: 0 }; yardPanelDraw(); }); const j = await R();
 check('sunk: no offers, a note to ask about raising her', j.acts.length === 0 && /lies on the bottom/.test(j.note), j);

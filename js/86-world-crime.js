@@ -1125,6 +1125,23 @@
   function shipNameClean(s){s=String(s==null?'':s).replace(/[^A-Za-z0-9 '’\-À-ÿ]/g,'').replace(/\s+/g,' ').trim().replace(/^the\s+/i,'').trim();if(s.length>SHIP_NAME_MAX)s=s.slice(0,SHIP_NAME_MAX).trim();return s?s[0].toUpperCase()+s.slice(1):'';}
   function renameShip(n){const st=worldState.ship;if(!st||st.sunk)return null;const nm=shipNameClean(n);if(!nm)return null;const old=st.name||SHIP.name;if(nm===old)return nm;
     st.name=nm;SHIP.name=nm;if(typeof addLog==='function')addLog('⛵',`The ${old} is the ${nm} now.`);return nm;}
+  // S1845 — #979 B, the sheet's session 5, with the look builder's swatches (S1843, Michael's "as drawn" on #1133): a yard paints her
+  // hull and changes her sails from its own island's four paints and three cloths, 50 gold and an hour on the clock each, as a
+  // shipwright's mending is. The swatches are her dress's (#839 A), so a yard works only on a ship in its own island's dress; a refit
+  // there gives her that dress first. One named action (the co-op rules): paintShip(k, v), k 'paint' or 'cloth', v an index into
+  // PKIT.ships.SWATCHES[her dress] (0 is the dress as built). Kept in worldState.ship.paint and .cloth, the world's row.
+  const YARD_PAINT={gold:50,mins:60};
+  // the dress her hull wears (shipBake's rule): the cutter is always the Mark's, the caravel Aurenne's, the rest the yard's that sold or refitted her
+  function herDress(cls,d){cls=cls||(worldState.ship&&worldState.ship.cls)||'sloop';return cls==='cutter'?'mark':cls==='caravel'?'aurenne':shipDress(d);}
+  function shipSwatches(){const W=typeof PKIT!=='undefined'&&PKIT.ships&&PKIT.ships.SWATCHES;return W?W[herDress()]||null:null;}
+  function paintShipWhy(site,k,v){const st=worldState.ship;if(!st||st.sunk)return 'She is not afloat.';const W=shipSwatches();if(!W)return 'The yard has no colours for her.';
+    const L=k==='paint'?W.paints:k==='cloth'?W.cloths:null;if(!L||!(v>=0&&v<L.length&&v===(v|0)))return 'No such colour.';
+    if(site&&nationAt(site.x,site.z)!==herDress())return 'This yard paints only ships of its own island’s build.';
+    if(((st[k]|0))===v)return k==='paint'?'She is that colour already.':'Her sails are that cloth already.';if(gold<YARD_PAINT.gold)return `It is ${YARD_PAINT.gold} gold.`;return null;}
+  function paintShip(k,v,site){const why=paintShipWhy(site,k,v);if(why)return why;const st=worldState.ship,W=shipSwatches(),nm=(k==='paint'?W.paints:W.cloths)[v].name;
+    gold-=YARD_PAINT.gold;updateHUD();st[k]=v;if(typeof advanceClock==='function')advanceClock(YARD_PAINT.mins);else worldState.gameTimeMinutes+=YARD_PAINT.mins;
+    if(SHIP.mesh&&typeof shipSwatchOn==='function')shipSwatchOn(SHIP.mesh);
+    if(typeof addLog==='function')addLog('⛵',k==='paint'?`The ${st.name||SHIP.name} is painted ${nm}.`:`The ${st.name||SHIP.name} has ${nm} sails.`);return true;}
   function shipFitNames(arr){return arr.map(k=>k==='stowage'?'stowage':SHIP_FITS[k]?SHIP_FITS[k].n:k);}
   function shipCfg(){return worldState.ship||(worldState.ship={});}
   function shipClass(){return SHIP_CLASSES[(worldState.ship&&worldState.ship.cls)||'sloop'];}
@@ -1736,7 +1753,7 @@
     const cls=st.cls||'sloop';
     for(const next of yardHulls(site)){if(next===cls)continue;const c0=refitCost(cls,next);
       out.push({label:c0>=0?`Refit her as a ${next} (${c0} gold)`:`Refit her as a ${next} (the yard pays ${-c0} gold)`,cls:next,quest:true,fn:()=>{const from=st.cls||'sloop',p=refitCost(from,next);if(p>0&&gold<p)return L.refitPoor(next,p);gold-=p;updateHUD();
-        st.cls=next;st.hull=SHIP_CLASSES[next].hull;st.dress=nationAt(site.x,site.z);const left=shipFitToHull(); /* S1726 — what her new rooms cannot hold waits in the yard */applyShipClass(); /* S1538 — #839 A: refitted, she takes this yard's dress */if(typeof addLog==='function')addLog('⛵',`The ${SHIP.name} refitted as a ${next}.`);
+        const nd=nationAt(site.x,site.z);if(herDress(from,st.dress)!==herDress(next,nd)){st.paint=0;st.cloth=0;} /* S1845 — a new dress is worn as built */st.cls=next;st.hull=SHIP_CLASSES[next].hull;st.dress=nd;const left=shipFitToHull(); /* S1726 — what her new rooms cannot hold waits in the yard */applyShipClass(); /* S1538 — #839 A: refitted, she takes this yard's dress */if(typeof addLog==='function')addLog('⛵',`The ${SHIP.name} refitted as a ${next}.`);
         const line=L.refitted(next),said=SHIP_CLASSES[next].L>SHIP_CLASSES[from].L?line:line.split(/[.:]/)[0]+'.';return left.length?`${said} Kept at the yard, no place for them: ${shipFitNames(left).join(', ')}.`:said;}});}
     const sails=st.sails||0;if(sails<SAIL_TIERS.length-1)out.push({label:`Better sails, tier ${sails+1} (${SAIL_TIERS[sails+1]} gold)`,cls,quest:true,fn:()=>{const p=SAIL_TIERS[sails+1];if(gold<p)return L.sailsPoor(p);gold-=p;updateHUD();st.sails=sails+1;return L.sailed(shipTopSpeed().toFixed(1));}});
     const cargo=st.cargo||0,free=shipPlacesUsed(st)<shipPlaces(cls);if(cargo<2&&free&&!st.stored.includes('stowage'))out.push({label:`Bigger hold, tier ${cargo+1} (${CARGO_TIERS[cargo+1]} gold)`,cls,quest:true,fn:()=>{const p=CARGO_TIERS[cargo+1];if(gold<p)return L.holdPoor(p);gold-=p;updateHUD();st.cargo=cargo+1;return L.held(25*(cargo+1));}});
@@ -1876,6 +1893,7 @@ function yardStage(){if(YARD.r)return true;const cv=document.getElementById('yar
     YARD.c=new THREE.PerspectiveCamera(30,320/240,.5,200);}catch(e){YARD.r=null;return false;}return true;}
 function yardShow(cls){const C=SHIP_CLASSES[cls];if(!C||!yardStage())return;for(const k in YARD.m)YARD.m[k].visible=false;
   let m=YARD.m[cls];if(!m){try{m=buildShipMesh(C.L,C.W,'player',cls);} /* S683 — the stage shows each class on its own hull (S665's cutter and caravel), not the hull of her length */catch(e){return;}YARD.m[cls]=m;YARD.s.add(m);}
+  const st=worldState.ship;if(st&&!st.sunk&&(st.cls||'sloop')===cls&&m.userData.kit===herDress()&&typeof shipSwatchOn==='function')shipSwatchOn(m); /* S1845 — her own hull on the stage wears her colours */
   m.visible=true;const d=C.L*1.9;YARD.c.position.set(0,C.L*.55,d);YARD.c.lookAt(0,2.2,0);}
 function yardLoop(){if(!yardOpen){YARD.raf=0;return;}YARD.raf=requestAnimationFrame(yardLoop);const now=performance.now(),dt=Math.min(.1,(now-(YARD.last||now))/1000);YARD.last=now;
   YARD.yaw+=dt*.35;const m=YARD.m[YARD.cls];if(m)m.rotation.y=YARD.yaw;if(YARD.r)try{YARD.r.render(YARD.s,YARD.c);}catch(e){}}
@@ -1898,7 +1916,15 @@ function yardPanelDraw(){const ov=document.getElementById('yardui');if(!ov||!YAR
   if(mine&&mine===cls){const nm=st.name||SHIP.name||'';ov.querySelector('#yard-acts').insertAdjacentHTML('beforeend',`<div style="margin-top:10px;font-size:13px;color:#6a5a3a">Her name</div><input id="yard-name" type="text" maxlength="${SHIP_NAME_MAX+4}" value="${nm}" style="width:100%;box-sizing:border-box;margin-top:2px;font:15px Georgia,serif;color:#3a2c18;background:#f4ead6;border:1px solid #8a7040;border-radius:3px;padding:3px 6px"><button type="button" id="yard-rename" style="${A}">Rename her</button>`); /* S1834 — renaming her is free (#979 B, session 5) */
     const inp=ov.querySelector('#yard-name'),go=()=>{const was=worldState.ship.name||SHIP.name,r=renameShip(inp.value);YARD.said=r&&r!==was?`Renamed: the ${r}.`:'';yardPanelDraw();};
     ov.querySelector('#yard-rename').onclick=go;inp.addEventListener('keydown',e=>{e.stopPropagation();if(e.code==='Enter'){e.preventDefault();go();}else if(e.code==='Escape'){closeYardPanel();}});}
-  for(const b of ov.querySelectorAll('#yard-acts button'))b.onclick=()=>{const o=offers[+b.dataset.i];const r=o.fn();YARD.said=typeof r==='string'?r:'';if(worldState.ship&&!worldState.ship.sunk)YARD.cls=yardHulls(site).includes(worldState.ship.cls||'sloop')?(worldState.ship.cls||'sloop'):YARD.cls;yardPanelDraw();};
+  if(mine&&mine===cls){const W=shipSwatches(),acts=ov.querySelector('#yard-acts'); /* S1845 — her paint and her sails (#979 B, session 5) */
+    if(W&&nationAt(site.x,site.z)===herDress()){const chip=c=>`<span style="display:inline-block;width:12px;height:12px;margin-right:6px;vertical-align:-1px;border:1px solid #6a5a3a;background:${c}"></span>`;
+      const hex=n=>'#'+(n>>>0).toString(16).padStart(6,'0');
+      const row=(k,L,col)=>`<div style="margin-top:10px;font-size:13px;color:#6a5a3a">${k==='paint'?'Her paint':'Her sails'} (${YARD_PAINT.gold} gold, an hour)</div>`+L.map((o,i)=>`<button type="button" data-paint="${k}" data-v="${i}" style="${A};text-transform:capitalize${(st[k]|0)===i?';border-width:2px;font-weight:bold':''}">${chip(col(o))}${o.name}${(st[k]|0)===i?' <span style="font-size:12px;font-weight:normal;text-transform:none">(hers)</span>':''}</button>`).join('');
+      acts.insertAdjacentHTML('beforeend',row('paint',W.paints,o=>hex(o.hex))+row('cloth',W.cloths,o=>o.base||(o.cloths&&o.cloths[0])||'#ccc'));
+      for(const b of acts.querySelectorAll('button[data-paint]'))b.onclick=e=>{e.stopPropagation();const k=b.dataset.paint,v=+b.dataset.v,r=paintShip(k,v,site),W2=shipSwatches(),L2=k==='paint'?W2.paints:W2.cloths;
+        YARD.said=r===true?(k==='paint'?`Painted ${L2[v].name}.`:`${L2[v].name[0].toUpperCase()+L2[v].name.slice(1)} sails.`):r;yardPanelDraw();};}
+    else if(W)acts.insertAdjacentHTML('beforeend',`<div style="font-size:13px;color:#6a5a3a;margin-top:10px">This yard paints only ships of its own island’s build. A refit here would give her its lines and its colours.</div>`);}
+  for(const b of ov.querySelectorAll('#yard-acts button[data-i]'))b.onclick=()=>{const o=offers[+b.dataset.i];const r=o.fn();YARD.said=typeof r==='string'?r:'';if(worldState.ship&&!worldState.ship.sunk)YARD.cls=yardHulls(site).includes(worldState.ship.cls||'sloop')?(worldState.ship.cls||'sloop'):YARD.cls;yardPanelDraw();};
   ov.querySelector('#yard-said').textContent=YARD.said;ov.querySelector('#yard-gold').textContent=`Your purse: ${gold} gold`;
   yardShow(cls);}
 function openYardPanel(site){if(!site)return;
