@@ -265,6 +265,31 @@ check('shell: 48 hull and her rig alight', gn.shell === true && gn.shellLost ===
 check('dead ahead no side bears; 20° off the beam bears, 30° does not', /Nothing bears/.test(gn.ahead) && gn.at20 && !gn.at30, gn);
 check('the yard sells round, chain and grape to a galleon; shell only in the Mark', gn.rowsGl.length === 3 && gn.rowsMark.length === 4 && gn.rowsMark.some(l => /^Shell for the guns, 20 \(300 gold/.test(l)), gn);
 
+// S1823 — the wreck: a ship gone down leaves her wreck where she sank, keyed by her id, her chest without its crates; laid within 250 m;
+// what is taken from it stays taken, through a save
+const wk = await page.evaluate(() => {
+  for (const o of [...OTHER]) despawnOtherShip(o); worldState.sunkShips = [];
+  worldState.ship = { cls: 'sloop', name: 'Test Gull', sails: 0, cargo: 0, hold: {} }; WORLD.spawnShip(_sea.x, _sea.z, 0); const S = WORLD.ship; S.sailing = true;
+  const out = {}; const p = spawnOtherShip('pirate', S.x + 40, S.z, 'test:wreck'); p.speed = 0;
+  const step = n => { for (let i = 0; i < n; i++) { S.x = _sea.x; S.z = _sea.z; S.speed = 0; p.volleyT = 1e9; p.ramWait = 1e9; p.hookWait = 1e9; WORLD.tick(1 / 60, performance.now()); } };
+  damageShip(p, 1000, 0); out.founder = p.founder; step(8.2 * 60 + 70);
+  const L = worldState.sunkShips; out.n = L.length; const w = L[0] || {}; out.key = w.key; out.items = (w.items || []).length; out.cargo = (w.items || []).some(it => it.type === 'cargo');
+  out.at = w.x != null && Math.hypot(w.x - (_sea.x + 40), w.z - _sea.z) < 12; out.gone = !OTHER.includes(p);
+  sunkWrecksTick(0, true); const Ld = SUNK_LAID.get(w.key); out.laid = !!Ld && ZONE_CORPSES.includes(Ld.c) && Ld.c.items === w.items; out.chestY = Ld && +(Ld.c.y).toFixed(1); out.seaY = WORLD.SEA_Y;
+  // take one, save, load: the wreck comes back one short
+  const took = w.items.shift(); out.left = w.items.length;
+  const d = JSON.parse(ssStringify(_buildSavePayload())); worldState.sunkShips = []; _applyLoadData(d);
+  out.loaded = (worldState.sunkShips || []).map(x => [x.key, x.items.length]); sunkWrecksTick(0, true); const L2 = SUNK_LAID.get(w.key); out.relaid = !!L2 && L2.c.items === worldState.sunkShips[0].items;
+  // a quest's ship leaves none; sailed 300 m off, the wreck is lifted
+  const q = spawnOtherShip('pirate', S.x - 40, S.z, 'story:test'); sinkWreck(q); out.storyNone = worldState.sunkShips.length === 1; despawnOtherShip(q);
+  px += 300; sunkWrecksTick(0, true); out.lifted = !SUNK_LAID.has(w.key) && !ZONE_CORPSES.some(c => c.sunk === w.key); px -= 300;
+  worldState.sunkShips = []; sunkWrecksTick(0, true); return out; });
+console.log('wreck', JSON.stringify(wk));
+check('she founders at 0 and is gone; her wreck is recorded where she sank, keyed by her id', wk.founder > 0 && wk.gone && wk.n === 1 && wk.key === 'sunk:test:wreck' && wk.at, wk);
+check('her chest goes down with her, its crates lost', wk.items >= 1 && !wk.cargo, wk);
+check('within 250 m it is laid on the bed, its chest the record’s own items', wk.laid && wk.chestY < wk.seaY - 1, wk);
+check('what is taken stays taken, through a save; a quest’s ship leaves none; far off it is lifted', wk.loaded.length === 1 && wk.loaded[0][1] === wk.left && wk.relaid && wk.storyNone && wk.lifted, wk);
+
 check('no page errors', g.errs.length === 0, g.errs);
 if (stop) stop();
 await g.close();

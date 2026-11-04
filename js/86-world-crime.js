@@ -1153,8 +1153,32 @@
   // and her chest with her (the wreck to dive is naval combat's fourth session); you, on her deck, are left in the water
   function otherDown(o,dt){if(o.founder==null&&!o.struck)return false;o.speed=0;o.ramming=0;placeOther(o);
     if(o.founder!=null){o.founder-=dt;const u=Math.min(1,1-o.founder/SHIP_FOUNDER_S);o.mesh.position.y-=u*3;o.mesh.rotation.z=u*.35;
-      if(o.founder<=0){o.dead=true;despawnOtherShip(o);}}
+      if(o.founder<=0){o.dead=true;sinkWreck(o);despawnOtherShip(o);}}
     return true;}
+  // S1823 — naval combat's wreck (B's last session, its first half; the page: "A ship that reaches 0 hull founders over 8 s. Her chest
+  // becomes one of spawnWreck's wrecks at her depth, keyed by her id, and her crates are lost."). When a foundering ship is gone, her
+  // wreck is recorded where she went down (worldState.sunkShips, the world's row, on the S242 list; the last 24 kept), keyed `sunk:<id>`,
+  // with her chest: the chest you had opened on her deck as it stands, or, never boarded, the one boarding her would have rolled (the same
+  // stream, `<id>:chest`, and the same tier), less every crate. Within 250 m of you it is laid on the bed (sunkWrecksTick, once a second),
+  // a broken hull and a sea chest as the scatter's wrecks are, and the chest's items are the record's own, so what you take stays taken.
+  const SUNK_MAX=24,SUNK_NEAR=250;const SUNK_LAID=new Map();let _sunkT=0;
+  function sunkList(){return Array.isArray(worldState.sunkShips)?worldState.sunkShips:(worldState.sunkShips=[]);}
+  function sinkWreck(o){if(!o||!o.id||String(o.id).startsWith('story:'))return null;const L=sunkList(),key='sunk:'+o.id;if(L.some(w=>w.key===key))return null;
+    let items;if(o.chest&&Array.isArray(o.chest.items))items=o.chest.items.slice();
+    else{items=(typeof rollContainerLoot==='function'?rollContainerLoot('chest',o.kind==='pirate'?1.8:1.2,null,1,`${o.id}:chest`,worldTierAt(o.x,o.z)):[])||[];if(!items.length)items.push({name:o.kind==='pirate'?'Pirate Gold':'Sea-worn Coins',ico:'🪙',type:'misc',weight:.5,sellMult:1,buyPrice:o.kind==='pirate'?120:60});}
+    items=items.filter(it=>it&&it.type!=='cargo').map(it=>Object.assign({},it,{qty:it.qty==null?1:it.qty}));
+    const w={key,x:+o.x.toFixed(2),z:+o.z.toFixed(2),yaw:+(o.yaw||0).toFixed(3),kind:o.kind,items};L.push(w);while(L.length>SUNK_MAX){const old=L.shift();sunkUnlay(old.key);}
+    if(typeof addLog==='function')addLog('⚓',`${otherWho(o)} went down. Her wreck lies on the bed where she sank.`);return w;}
+  function sunkLay(w){if(SUNK_LAID.has(w.key)||typeof THREE==='undefined'||!sc)return;const y=worldH(w.x,w.z);if(y>SEA_Y-1)return;
+    const m=new THREE.Mesh(wreckGeo(pRng(pHash('sunk|'+w.key))),VC_MAT);m.position.set(w.x,y,w.z);m.rotation.y=w.yaw;sc.add(m);
+    const cx=w.x+Math.cos(w.yaw)*2.2,cz=w.z+Math.sin(w.yaw)*2.2,chest=new THREE.Group();chest.position.set(cx,worldH(cx,cz),cz);chest.rotation.set(.08,w.yaw+2.2,-.06);const {lid}=buildChestShell(chest,1.8,0x5a3a1c);sc.add(chest);
+    const c={id:w.key,x:cx,z:cz,y:chest.position.y+.3,name:w.kind==='pirate'?"Captain's Chest":'Sea Chest',displayName:w.kind==='pirate'?"Captain's Chest":'Sea Chest',items:w.items,zone:'world',kind:'chest',g:chest,lid,opened:!w.items.length,sunk:w.key};
+    if(typeof ZONE_CORPSES!=='undefined')ZONE_CORPSES.push(c);SUNK_LAID.set(w.key,{m,chest,c});}
+  function sunkUnlay(key){const L=SUNK_LAID.get(key);if(!L)return;sc.remove(L.m);sc.remove(L.chest);if(L.m.geometry)L.m.geometry.dispose();
+    if(typeof ZONE_CORPSES!=='undefined'){const i=ZONE_CORPSES.indexOf(L.c);if(i>=0)ZONE_CORPSES.splice(i,1);}SUNK_LAID.delete(key);}
+  function sunkWrecksTick(dt,force){_sunkT-=dt;if(_sunkT>0&&!force)return;_sunkT=1;const L=sunkList(),keep=new Set();
+    if(activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior()))for(const w of L){if(Math.hypot(w.x-px,w.z-pz)<SUNK_NEAR){keep.add(w.key);const Ld=SUNK_LAID.get(w.key);if(Ld&&Ld.c.items!==w.items)sunkUnlay(w.key); /* a save loaded since */sunkLay(w);}}
+    for(const k of [...SUNK_LAID.keys()])if(!keep.has(k))sunkUnlay(k);}
   // once a frame: a hull in the sinking state loses 1 every 10 s; yours while you are aboard her, down to waterlogged (never sunk by
   // the leak alone: the sink is still a hull lost at 0), until a shipwright or the carpenter lifts her over a quarter
   function tickShipLeaks(dt){
