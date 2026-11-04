@@ -16,9 +16,9 @@ import { mat, worldUV } from './common.js';
 import { stream } from './pieces.js';
 
 let SM = null;
-function sailTex(harp) { const c = document.createElement('canvas'); c.width = c.height = 512; const x = c.getContext('2d');
-  x.fillStyle = '#3f6e3c'; x.fillRect(0, 0, 512, 512); x.fillStyle = 'rgba(0,0,0,.08)'; for (let i = 0; i < 512; i += 64) x.fillRect(i, 0, 3, 512); /* the cloths' seams */
-  if (harp) { x.strokeStyle = x.fillStyle = '#e6d6a4'; x.lineCap = 'round'; x.lineJoin = 'round';
+function sailTex(harp, cl = {}) { const c = document.createElement('canvas'); c.width = c.height = 512; const x = c.getContext('2d');
+  x.fillStyle = cl.base || '#3f6e3c'; x.fillRect(0, 0, 512, 512); x.fillStyle = 'rgba(0,0,0,.08)'; for (let i = 0; i < 512; i += 64) x.fillRect(i, 0, 3, 512); /* the cloths' seams */
+  if (harp) { x.strokeStyle = x.fillStyle = cl.mark || '#e6d6a4'; x.lineCap = 'round'; x.lineJoin = 'round';
     // the harp side on: the soundbox a thick diagonal from the neck's head down to the foot, the neck curving over the top to the
     // forepillar, which bows out and down to the foot; the strings straight down from the neck to the soundbox
     const sb = xx => 130 + (xx - 175) * 2.4, nk = xx => { const t = (xx - 175) / 190; return 130 - 70 * Math.sin(Math.PI * t) + 40 * t; };
@@ -33,6 +33,7 @@ function mats(harp) {
     cream: mat('wood', { ns: .5, color: 0xe2d6b0, rough: .6 }), deck: mat('wood', { ns: .9, color: 0xb49a74, rough: .85 }), spar: mat('wood', { ns: .8, color: 0x7a5a3a, rough: .7 }),
     dark: new THREE.MeshStandardMaterial({ color: 0x14100c, roughness: 1 }), rope: new THREE.MeshStandardMaterial({ color: 0x3a3024, roughness: .95 }), iron: new THREE.MeshStandardMaterial({ color: 0x2c2a28, roughness: .5, metalness: .6 }),
     sail: new THREE.MeshStandardMaterial({ map: sailTex(harp), roughness: .9, side: THREE.DoubleSide }) };
+  M.green.userData.swatch = 'paint'; M.sail.userData.swatch = 'cloth'; M.sail.userData.cloth = { kind: 'gatelands', harp };
   SM = { harp, M }; return M;
 }
 function kit(M) { const B = new Map();
@@ -195,8 +196,8 @@ function glCutterMats(harp) { if (GCM && GCM.harp === harp) return GCM.M; const 
   GCM = { harp, M: { ...C, bottom: C.tar, gilt: C.cream, jib: new THREE.MeshStandardMaterial({ map: sailTex(false), roughness: .9, side: THREE.DoubleSide }) } }; return GCM.M; }
 export function gatelandsCutter(o = {}, r = stream('glcutter')) { return markCutter({ ...o, dress: 'gatelands' }, r); }
 let CM2 = null;
-function cutterSail(stripe) { const c = document.createElement('canvas'); c.width = c.height = 512; const x = c.getContext('2d');
-  for (let i = 0; i < 8; i++) { x.fillStyle = stripe ? (i % 2 ? '#1c1a1a' : '#8a2a1e') : (i % 2 ? '#7a3826' : '#723422'); x.fillRect(i * 64, 0, 64, 512); }
+function cutterSail(stripe, cl = null) { const c = document.createElement('canvas'); c.width = c.height = 512; const x = c.getContext('2d');
+  for (let i = 0; i < 8; i++) { x.fillStyle = cl ? cl.cloths[i % 2] : stripe ? (i % 2 ? '#1c1a1a' : '#8a2a1e') : (i % 2 ? '#7a3826' : '#723422'); x.fillRect(i * 64, 0, 64, 512); }
   x.fillStyle = 'rgba(0,0,0,.12)'; for (let i = 0; i < 512; i += 64) x.fillRect(i, 0, 3, 512); for (let j = 0; j < 512; j += 128) x.fillRect(0, j, 512, 2); /* the cloths' seams and the reef bands */
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; }
 function cutterMats(stripe) {
@@ -205,6 +206,7 @@ function cutterMats(stripe) {
     deck: mat('wood', { ns: .9, color: 0xa89270, rough: .85 }), oak: mat('wood', { ns: 1.0, color: 0x8a6a48, rough: .7 }), spar: mat('wood', { ns: .8, color: 0x6a4a2e, rough: .7 }),
     dark: new THREE.MeshStandardMaterial({ color: 0x14100c, roughness: 1 }), rope: new THREE.MeshStandardMaterial({ color: 0x3a3024, roughness: .95 }), iron: new THREE.MeshStandardMaterial({ color: 0x2c2a28, roughness: .5, metalness: .6 }),
     sail: new THREE.MeshStandardMaterial({ map: cutterSail(stripe), roughness: .9, side: THREE.DoubleSide }) };
+  M.tar.userData.swatch = 'paint'; M.sail.userData.swatch = 'cloth'; M.sail.userData.cloth = { kind: 'mark' };
   CM2 = { stripe, M }; return M;
 }
 // a sail through four corners (or three, d = c), bilinear, bellied out to +x most in its middle
@@ -322,11 +324,11 @@ export function markCutter(o = {}, r = stream('cutter')) {
 //   -> as markCutter, with castle ({ z0, z1, y, door: { x0, x1, y1 }, ladders: [x...] }), lateens ([{ mast: [x, z], top, tack, peak, clew,
 //      side }]), wheel (bool), and no boom.
 let AM = null;
-function caravelSail(star) { const c = document.createElement('canvas'); c.width = c.height = 512; const x = c.getContext('2d');
-  x.fillStyle = '#ece5d2'; x.fillRect(0, 0, 512, 512); x.fillStyle = 'rgba(80,60,30,.09)'; for (let i = 0; i < 512; i += 48) x.fillRect(i, 0, 3, 512); /* the cloths' seams */
-  if (star) { /* the sun-star: a disc with sixteen rays, long and short by turns, in gold */ x.fillStyle = '#c9982e'; x.beginPath();
+function caravelSail(star, cl = {}) { const c = document.createElement('canvas'); c.width = c.height = 512; const x = c.getContext('2d');
+  x.fillStyle = cl.base || '#ece5d2'; x.fillRect(0, 0, 512, 512); x.fillStyle = 'rgba(80,60,30,.09)'; for (let i = 0; i < 512; i += 48) x.fillRect(i, 0, 3, 512); /* the cloths' seams */
+  if (star) { /* the sun-star: a disc with sixteen rays, long and short by turns, in gold */ x.fillStyle = cl.rays || '#c9982e'; x.beginPath();
     for (let k = 0; k < 32; k++) { const a = k * Math.PI / 16 - Math.PI / 2, rr = k % 2 ? 62 : (k / 2) % 2 ? 128 : 172; x.lineTo(256 + rr * Math.cos(a), 256 + rr * Math.sin(a)); } x.closePath(); x.fill();
-    x.fillStyle = '#e2b84a'; x.beginPath(); x.arc(256, 256, 70, 0, Math.PI * 2); x.fill(); x.strokeStyle = '#a87a22'; x.lineWidth = 6; x.beginPath(); x.arc(256, 256, 54, 0, Math.PI * 2); x.stroke(); }
+    x.fillStyle = cl.disc || '#e2b84a'; x.beginPath(); x.arc(256, 256, 70, 0, Math.PI * 2); x.fill(); x.strokeStyle = cl.ring || '#a87a22'; x.lineWidth = 6; x.beginPath(); x.arc(256, 256, 54, 0, Math.PI * 2); x.stroke(); }
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; return t; }
 function caravelMats(star) {
   if (AM && AM.star === star) return AM.M;
@@ -335,6 +337,7 @@ function caravelMats(star) {
     spar: mat('wood', { ns: .8, color: 0x6a4a2e, rough: .7 }), dark: new THREE.MeshStandardMaterial({ color: 0x14100c, roughness: 1 }), rope: new THREE.MeshStandardMaterial({ color: 0x3a3024, roughness: .95 }),
     lamp: new THREE.MeshStandardMaterial({ color: 0xffd890, emissive: 0xffb050, emissiveIntensity: .8, roughness: .4 }),
     sail: new THREE.MeshStandardMaterial({ map: caravelSail(star), roughness: .9, side: THREE.DoubleSide }) };
+  M.blue.userData.swatch = 'paint'; M.sail.userData.swatch = 'cloth'; M.sail.userData.cloth = { kind: 'aurenne', star };
   AM = { star, M }; return M;
 }
 // a lateen sail: the triangle tack-peak-clew, bellied out to `side` (+1 starboard, -1 port) most at its middle; its UVs are the sail's
@@ -790,4 +793,39 @@ export function gatelandsGalleon(o = {}, r = stream('galleon')) {
     put(new THREE.CylinderGeometry(.07, .07, .3, 8).rotateZ(Math.PI / 2).rotateY(Math.PI / 2), 'iron', 0, wy, wz - .12); put(new THREE.BoxGeometry(.18, wy - CY, .18), 'oak', 0, (wy + CY) / 2 - .05, wz - .3); }
   return finish({ L, W, deck: DECK, sections, sect, nstr: NSTR, deckAt, rail, sailFoot: DECK + 2.2, mast: [0, -.4], hatch: hatches[0], hatches, sheerAt, keelAt, transom: ZT, carvel: true, harp, wheel: true, ports, sails, lateens, dress: MKD ? 'mark' : AUD ? 'aurenne' : 'gatelands', stripe, star, boom: AUD ? null : { y: BY, z0: MZ - .2, z1: ZT - 1.4 },
     castles: { aft: { z0: ZT, z1: ZA, y: CY, door, ladders }, fore: { z0: ZF, z1: zb - .3, y: CY, ladder: fladder, posts } } });
+}
+
+// The yard's colours (Session 1836; making-a-ship-yours-build.md session 5, Michael's B on #979: "four hull paints and three sail cloths
+//   an island", chosen from the yard's island, as #839's A keeps the dress the yard's). Each dress has one painted surface and one cloth:
+//   the Gatelands' paint is the sheer strake (the top two on the carvel hulls) and the castles' walls, the green; the Mark's is the whole
+//   topsides over the red-brown bottom, the tar; Aurenne's is the top strakes and the castles' walls, the blue. The cloth keeps its
+//   island's mark: the harp, the Mark's cloths of two shades sewn by turns, the sun-star. The first of each list is the dress as drawn.
+//   paints: hex; cloths: gatelands { base, mark (the harp) }, mark { cloths: [even, odd] }, aurenne { base, rays, disc, ring }.
+export const SWATCHES = {
+  gatelands: {
+    paints: [{ name: 'green', hex: 0x2f5a34 }, { name: 'madder red', hex: 0x9e3a2a }, { name: 'woad blue', hex: 0x3c5c8e }, { name: 'lime white', hex: 0xf2ecdc }],
+    cloths: [{ name: 'green', base: '#3f6e3c', mark: '#e6d6a4' }, { name: 'undyed', base: '#d8ceb0', mark: '#3f6e3c' }, { name: 'madder', base: '#7c3628', mark: '#e6d6a4' }] },
+  mark: {
+    paints: [{ name: 'tar', hex: 0x1e1c1c }, { name: 'oxblood', hex: 0x7e2a1e }, { name: 'slate', hex: 0x3e5470 }, { name: 'pine', hex: 0x365a3c }],
+    cloths: [{ name: 'tanned', cloths: ['#723422', '#7a3826'] }, { name: 'red and black', cloths: ['#8a2a1e', '#1c1a1a'] }, { name: 'wadmal', cloths: ['#b4aa94', '#bdb39c'] }] },
+  aurenne: {
+    paints: [{ name: 'blue', hex: 0x2b4a80 }, { name: 'teal', hex: 0x1d5e60 }, { name: 'saffron', hex: 0xc0882a }, { name: 'red', hex: 0x8a2a20 }],
+    cloths: [{ name: 'white', base: '#ece5d2' }, { name: 'saffron', base: '#ecbc58', rays: '#8a2e1e', disc: '#a8381e', ring: '#6e2414' }, { name: 'teal', base: '#4a9a94' }] }
+};
+const SWC = new Map();
+// swatch(S, dress, { paint, cloth }): S from any hull builder above in that dress; paint and cloth index its island's lists (0, the dress as
+//   drawn, leaves it be). Every mesh on a painted material takes a copy in the paint (its wood's texture kept), every sail one in the cloth,
+//   the island's mark drawn on it as before (o.harp / o.star as built). Copies are shared by colour. -> S, with S.swatch { dress, paint, cloth }.
+export function swatch(S, dress, o = {}) {
+  const W = SWATCHES[dress] || SWATCHES.gatelands, pi = Math.max(0, Math.min(W.paints.length - 1, o.paint | 0)), ci = Math.max(0, Math.min(W.cloths.length - 1, o.cloth | 0));
+  const P = W.paints[pi], C = W.cloths[ci];
+  S.group.traverse(m => { if (!m.isMesh || !m.material.userData) return; const u = m.material.userData;
+    if (u.swatch === 'paint' && pi) { const k = m.material.uuid + '|' + P.hex; if (!SWC.has(k)) { const c = m.material.clone(); c.color.setHex(P.hex); c.userData = { swatch: 'paint', paint: P.name }; SWC.set(k, c); } m.material = SWC.get(k); }
+    if (u.swatch === 'cloth' && ci) { const cl = u.cloth || {}, k = m.material.uuid + '|' + dress + ':' + ci;
+      if (!SWC.has(k)) { const c = m.material.clone(), t0 = m.material.map;
+        c.map = cl.kind === 'mark' ? cutterSail(false, C) : cl.kind === 'aurenne' ? caravelSail(cl.star, C) : sailTex(cl.harp, C);
+        if (t0) { c.map.wrapS = t0.wrapS; c.map.wrapT = t0.wrapT; }
+        c.userData = { swatch: 'cloth', cloth: C.name }; SWC.set(k, c); }
+      m.material = SWC.get(k); } });
+  S.swatch = { dress, paint: P.name, cloth: C.name }; return S;
 }
