@@ -15,6 +15,7 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+## Answered
 ### Magical implements — what a staff, wand, orb and tome do (from the designer, 2026-11-04, #1111)
 **The question.** Backlog L, *Magical implements by school* (OG-094), asks for wands, orbs and tomes beside the staff, one per school in each island's make. Today the only implement is the starter Wooden Staff (+5% spell damage). What should an implement do, given that the brief rules out *buy more/better*? Page: `docs/design/magical-implements.md`.
 
@@ -25,6 +26,8 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 
 **Recommendation.** B: there is no better implement, only a different one; the off-hand ones cost the shield, the staff both hands, and the orb gives magic a timing tool.
 
+Michael: **B, each implement changes one form.** (2026-11-04)
+
 ### The fire pot's clay pot — where does it come from? (from the systems builder, 2026-11-04, #1108)
 **The question.** Naval combat's fire pot (Michael's B on #1064, `docs/design/naval-combat.md`) is *a clay pot and a pitch, Alchemy 25*: thrown 20 m, her rig burns 3/s for 6 s, 12 fire to a hand within 2 m. The game has pitch but no clay pot anywhere: nothing sells one and nothing makes one, so the pot needs a source and a price before the fire pot can be built. The ballista and its fire bolt are in (Sessions 1820–1821, PR #1106).
 
@@ -32,6 +35,8 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 - **A (recommended).** An alchemist and a general store sell an empty clay pot for 3 gold, weight 0.5; the fire pot is made at the alchemy table at Alchemy 25 from a pot and a pitch. Cheapest path; the pot is plain stock any town has.
 - **B.** Pots are made, not bought: a potter's wheel (a new bench) at Alchemy 25 or Joinery 25 makes them from clay dug at a riverbank. A new gatherable and a new bench, two sessions more.
 - **C.** No pot: the fire pot is two pitch, sealed at the alchemy table at Alchemy 25. Nothing new to buy, but the page's *clay pot* goes.
+
+Michael: **A, shops sell a clay pot, 3 gold.** (2026-11-04)
 
 ### Which black sails sail where — the naval page's tiers 4–6 and 7+ against danger tiers 1–4 (from the systems builder, 2026-11-04, #1115)
 **The question.** Naval combat's page (`docs/design/naval-combat.md`, Michael's B on #1064) puts today's sloop at tiers 1–3, a black-sail cutter (12 m/s, 80 hull, a bow ballista) at 4–6, and one sail in five a black galleon with guns at 7 and up. The game's danger tier (enemies by place, Michael's A on #373) runs only 1 to 4, and the open sea reaches 3 at most, so tiers 4–6 and 7+ never happen at sea as the numbers stand. Session 1827 built the page's piracy meanwhile; the cutter and the galleon wait on this.
@@ -42,6 +47,8 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 - **C.** A, one band later: tiers 1–2 the sloop, tier 3 the cutter, the galleon only in the Mark's waters at tier 3.
 
 **Recommendation.** A: the place sets the danger, not you; home waters stay gentle, and the galleon's guns are rare and far.
+
+Michael: **A, by the water's danger tier: 1 sloop, 2 cutter, 3 galleons.** (2026-11-04)
 
 ### The ballista's heavy arrow at a hand — how hard does it hit? (from the systems builder, 2026-11-04, #1120)
 **The question.** Naval combat's page (`docs/design/naval-combat.md`, Michael's B on #1064) gives the ballista *a bolt every 6 s: 10 hull, or a heavy arrow at a hand on Bow's multiplier*, but no number for the heavy arrow. Session 1820 built the bolt at a hull. A black sail's hand has 32 health (48 for a hardier one from tier 2); Bow's multiplier runs ×0.6 at Bow 0, ×1.0 at 50, ×1.4 at 100. Under A, B or C the bolt flies at a hand when the crosshair is on him and she bears; otherwise at her hull, as now.
@@ -54,7 +61,8 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 
 **Recommendation.** A: Bow matters from the first fight to the last, and a bolt at a hand is a trade against the hull, not a free kill.
 
-## Answered
+Michael: **A, 20–30, scaled by Bow: 2–3 bolts low, often 1 high.** (2026-11-04)
+
 ### What a gate keeps (L10, OG-123) (from the concept artist, 2026-11-03, #1092)
 **The question.** Two rooms are built in the gate kit's stone: a great gate's vault (a round hall 62 m across under a 51 m dome, a pit round an island, four rings turning over its dais round a burning core shard, three bridges, two hooded statues of 13 m, a cache sealed by script) and a lesser gate's keep (the 10 m vaulted end room, one shaft of light onto a sealed stone coffer). The rooms are the same in every option; the question is what lies in them.
 
