@@ -43,6 +43,34 @@ check('the yard’s staff is still the one-handed walking-staff', !r.spar || (r.
 check('a Wooden Staff saved before the implements loads as the staff of no school, in hand, in the bag and in the stash', r.mig.every(m => m.k === 'staff' && m.two && m.s === null && m.name === 'Wooden Staff' && m.price === 14), r.mig);
 check('an implement keeps its kind, school and find through the save', r.ser.k === 'wand' && r.ser.s === 'uisce' && r.ser.f === true, r.ser);
 
+// S1850 — the tome in the off hand: Impression ×0.8 (was ×0.6), wild a third as often (30% → 10%, 5% with Steady voice; two schools'
+// 10% → 3%), every wind-up doubled; equipped from the bag beside a one-handed weapon, refused beside the staff; its emblem as a wand's
+const T = await page.evaluate(() => {
+  const out = {}, keepW = EQ.weapon, keepO = EQ.offhand, sv = PERK_LIVE.has('tine:25');
+  const tome = makeTome(1, 'tine'); out.tome = { name: tome.name, slot: tome.slot, k: tome.implement, s: tome.school, block: tome.block, shield: tome.shieldType };
+  EQ.weapon = null; EQ.offhand = null;
+  const read = () => ({ mag: TIER_MULT.magnitude.join(), wild: wordWildChance('caor'), mixed: mixedWildChance(), tell: +castTell().toFixed(3), touch: +touchTell().toFixed(3), held: tomeHeld() });
+  out.bare = read();
+  BAG.push(tome); useItem(BAG.length - 1); out.equipped = EQ.offhand === tome; out.with = read();
+  PERK_LIVE.add('tine:25'); const lv = skillsReady().tine.lv; skillsReady().tine.lv = 25; out.steady = wordWildChance('caor'); skillsReady().tine.lv = lv; if (!sv) PERK_LIVE.delete('tine:25');
+  EQ.weapon = makeImplement(1, 'wand', null); out.wandTome = +castTell().toFixed(3);
+  out.dmg = [1, 2].map(t => spellMag(SPELLS.find(s => s.id === 'caor'), t));
+  const c = () => wordCost('caor', 'sent', null, { skill: 50, buff: 1, tier: 2, thrift: false });
+  EQ.weapon = null; out.cTome = c(); EQ.weapon = makeImplement(1, 'wand', 'tine', { found: true }); out.cBoth = c();
+  EQ.offhand = null; out.cOff = c();
+  // beside the staff it is refused, and the staff stows it
+  EQ.weapon = makeImplement(1, 'staff', null); BAG.push(makeTome(1, null)); const n = BAG.length; useItem(n - 1); out.refused = EQ.offhand === null && BAG.length === n; BAG.pop();
+  EQ.weapon = keepW; EQ.offhand = keepO; return out; });
+console.log('tome', JSON.stringify(T));
+check('a tome is an off-hand book, no shield, no block', T.tome.slot === 'offhand' && T.tome.k === 'tome' && T.tome.s === 'tine' && T.tome.block == null && !T.tome.shield, T.tome);
+check('it is equipped from the bag into the off hand', T.equipped && T.with.held, T);
+check(`without it: Impression ×0.6, wild 30%, two schools +10%, the Cast 0.35 s, a touch 0.25 s`, T.bare.mag === '0.6,1,1.3' && T.bare.wild === .3 && T.bare.mixed === .1 && T.bare.tell === .35 && T.bare.touch === .25, T.bare);
+check(`with it: Impression ×0.8, wild 10%, two schools +3%, the Cast 0.70 s, a touch 0.50 s`, T.with.mag === '0.8,1,1.3' && T.with.wild === .1 && T.with.mixed === .03 && T.with.tell === .7 && T.with.touch === .5, T.with);
+check(`with Steady voice 5% (${T.steady}); with a wand too, the Cast 0.56 s (${T.wandTome})`, T.steady === .05 && T.wandTome === .56, T);
+check(`Caor's Impression bolt ${T.dmg[0]}, Comprehension unchanged ${T.dmg[1]}`, Math.abs(T.dmg[0] / T.dmg[1] - .8) < 1e-9, T.dmg);
+check(`its emblem as a wand's: Caor ${T.cTome} with a Tine tome, ${T.cBoth} with a found Tine wand too (the better, not both), ${T.cOff} with the wand alone`, T.cTome === 27 && T.cBoth === 24 && T.cOff === 24, T);
+check('beside the two-handed staff it is refused', T.refused, T);
+
 // the laid thing: 14 m is past the bare reach, inside the staff's; a pillar stands 20 s bare, 25 s with the staff
 const L = await page.evaluate(() => {
   const keep = EQ.weapon, x0 = px, z0 = pz; let spot = null;

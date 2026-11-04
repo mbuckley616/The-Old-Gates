@@ -52,8 +52,12 @@ const SPELLS=[
 ];
 
 // Tier multipliers: [Impression, Comprehension, Mastery]
+// S1850 — the tome in the off hand reads an Impression word aloud at ×0.8 (magical-implements.md, B): `magnitude` is read through
+// tierMags(), so every place that reads TIER_MULT.magnitude[tier-1] sees it without each saying so
+const TIER_MAG=[0.60, 1.00, 1.30],TIER_MAG_TOME=[0.80, 1.00, 1.30];
+function tierMags(){return typeof tomeHeld==='function'&&tomeHeld()?TIER_MAG_TOME:TIER_MAG;}
 const TIER_MULT={
-  magnitude: [0.60, 1.00, 1.30], // dmg / heal
+  get magnitude(){return tierMags();}, // dmg / heal
   cost:      [1.00, 1.00, 0.70], // mana
   cooldown:  [1.00, 1.00, 0.80],
 };
@@ -93,7 +97,10 @@ function tineCatch(e){const B=e&&e._burn;if(!B||!B.leap)return null;const dun=!!
   for(const o of heldTargets()){if(o===e||o.dead||o.hp<=0||o.locked||o.disguised||(dun&&o.floor!==currentFloor)||(o._burn&&o._burn.until>playClockS))continue;
     const d=Math.hypot(o.x-e.x,o.z-e.z);if(d<=bd){bd=d;best=o;}}
   if(!best)return null;B.leap=false;riderHit(best,'caor',0,{caught:true});best.alert=true;return best;}
-function wordWildChance(word){const w=WORD_BY[word]||SPELLS.find(s=>s.id===word);return w&&perk(w.school,25)?STEADY_VOICE_WILD:IMPRESSION_WILD_CHANCE;}
+/* S1850 — read aloud from a tome, a third as often: 10%, or 5% with Steady voice */
+function wordWildChance(word){const w=WORD_BY[word]||SPELLS.find(s=>s.id===word),sv=w&&perk(w.school,25);if(typeof tomeHeld==='function'&&tomeHeld())return sv?IMPLEMENT.tomeWildSteady:IMPLEMENT.tomeWild;return sv?STEADY_VOICE_WILD:IMPRESSION_WILD_CHANCE;}
+/* S1850 — two schools' extra wild, 10%, or 3% from a tome */
+function mixedWildChance(){return typeof tomeHeld==='function'&&tomeHeld()?IMPLEMENT.tomeMixed:WORD_MIXED_WILD;}
 // S1571 — overcasting (magic-build.md): short of mana, the rest is paid in health, 2 a point of mana, with a 0.5 s stagger; a cast
 // that would leave you under 1 health is refused.
 const OVERCAST_HP=2,OVERCAST_STAGGER_S=.5;
@@ -1414,7 +1421,7 @@ function holdWord(bk){
   if(mana<tick)return {say:`Not enough mana! (need ${Math.ceil(tick)})`};
   const mixed=!!(bk.rider&&riderMixedWild(bk.word,bk.rider)); /* S1602 — two schools: 10% at any tier until both reach 25 */
   const wr=tier===1||mixed?casterRand(bk.word+':held'):null;
-  if(wr&&wr()<(tier===1?wordWildChance(H.word):0)+(mixed?WORD_MIXED_WILD:0)){mana-=tick*.5;spCd=spellCooldown(H.sp,tier);startCastAnim(H.sp,'fizzle');
+  if(wr&&wr()<(tier===1?wordWildChance(H.word):0)+(mixed?mixedWildChance():0)){mana-=tick*.5;spCd=spellCooldown(H.sp,tier);startCastAnim(H.sp,'fizzle');
     return {ok:true,wild:'fizzle',say:`${w.ico} ${w.nameIr} fizzles — the shape will not hold.`};}
   _offenceS=playClockS;HELD=H;H.mesh=heldMesh(H);startCastAnim(H.sp,'projectile');
   if(typeof sndSpellCharge==='function')sndSpellCharge(w.school);
@@ -1472,11 +1479,11 @@ function touchWord(bk){
   const sp=heldSpell(bk.word);spCd=spellCooldown(sp,tier);
   const mixed=!!(bk.rider&&riderMixedWild(bk.word,bk.rider));
   const wr=tier===1||mixed?casterRand(bk.word+':touched'):null;
-  if(wr&&wr()<(tier===1?wordWildChance(bk.word):0)+(mixed?WORD_MIXED_WILD:0)){mana=Math.min(effMaxMana(),mana+Math.round((cost-short)*.5));startCastAnim(sp,'fizzle');
+  if(wr&&wr()<(tier===1?wordWildChance(bk.word):0)+(mixed?mixedWildChance():0)){mana=Math.min(effMaxMana(),mana+Math.round((cost-short)*.5));startCastAnim(sp,'fizzle');
     return {ok:true,wild:'fizzle',say:`${w.ico} ${w.nameIr} fizzles — the shape will not hold.`};}
-  castMark(FORMS.touched.windup);startCastAnim(sp,'projectile');
+  castMark(touchTell());startCastAnim(sp,'projectile');
   if(typeof sndSpellCharge==='function')sndSpellCharge(w.school);
-  TOUCH_PEND={word:bk.word,rider:bk.rider||null,tier,sp,at:performance.now()/1000+FORMS.touched.windup,key:laidKey()};
+  TOUCH_PEND={word:bk.word,rider:bk.rider||null,tier,sp,at:performance.now()/1000+touchTell(),key:laidKey()};
   return {ok:true,blood:short?blood:0};}
 function castTouched(bk){const r=touchWord(bk);if(r.say)showMsg(r.say,r.ok?'#8a8ac8':'#a8a8d4');
   else if(r.blood)showMsg(`Not enough mana: the word takes ${r.blood} health.`,'#d48a8a');return !!r.ok;}

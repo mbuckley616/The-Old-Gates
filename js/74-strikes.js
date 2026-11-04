@@ -70,7 +70,9 @@ const WEAPON_ATTACKS={
   Cast:     {tell:.35,strike:0,recovery:.30,reach:30,arc:null,dmg:1,posture:0,cleave:1,blockable:false,parryable:false,heavy:null,third:null,walk:.35},
 };
 // S1849 — the Cast row's wind-up with a wand (or a maul) in hand, 0.28 s; a sent bolt's flight ×1.5 (45 m for 30)
-function castTell(){const k=typeof heldImplement==='function'?heldImplement():null;return k==='wand'||k==='maul'?IMPLEMENT.castTell:WEAPON_ATTACKS.Cast.tell;}
+/* S1850 — a tome in the off hand doubles every cast's wind-up (0.70 s; 0.56 with a wand; Touched's 0.25 to 0.50) */
+function castTell(){const k=typeof heldImplement==='function'?heldImplement():null;return (k==='wand'||k==='maul'?IMPLEMENT.castTell:WEAPON_ATTACKS.Cast.tell)*(typeof tomeHeld==='function'&&tomeHeld()?IMPLEMENT.tomeTell:1);}
+function touchTell(){return FORMS.touched.windup*(typeof tomeHeld==='function'&&tomeHeld()?IMPLEMENT.tomeTell:1);}
 function sentReachMult(){const k=typeof heldImplement==='function'?heldImplement():null;return k==='wand'||k==='maul'?IMPLEMENT.sentReach/FORMS.sent.reach:1;}
 // S1035 — F2b, session 1 (docs/design/scale-numbers-build.md, *Reach*): the reach column is hull to hull, so a blow lands when
 // the foe's centre is inside your hull + the weapon's reach + its hull. Against a townsperson a sword lands at 2.2 centre to
