@@ -939,7 +939,7 @@
         else if(aboard&&dP<=PIRATE_RAM.range&&o.ramWait<=0&&(SHIP.speed||0)<PIRATE_RAM.top*otherSpeedMul(o))o.ramming=PIRATE_RAM.run;
         const dx=T.x-o.x,dz=T.z-o.z;if(o.ramming){tx=SHIP.x;tz=SHIP.z;}else if(dP>30){tx=T.x;tz=T.z;}else{tx=o.x-dz*.5;tz=o.z+dx*.5;}
         o.volleyT-=dt;if(dP<70&&o.volleyT<=0){o.volleyT=2.2+(o.rng?o.rng():Math.random());volley(o);}
-      } else if(o.sated){tx=o.x+(o.x-T.x);tz=o.z+(o.z-T.z);
+      } else if(o.sated||(typeof merchantFlees==='function'&&merchantFlees(o))){tx=o.x+(o.x-T.x);tz=o.z+(o.z-T.z); /* S1824 — and a merchantman holed to heavy runs (86) */
       } else {
         if(!o.wp||Math.hypot(o.wp.x-o.x,o.wp.z-o.z)<20){for(let k=0;k<10;k++){const a=Math.random()*Math.PI*2,d=150+Math.random()*250;const x=o.x+Math.cos(a)*d,z=o.z+Math.sin(a)*d;if(worldH(x,z)<-4){o.wp={x,z};break;}}}
         if(o.wp){tx=o.wp.x;tz=o.wp.z;}

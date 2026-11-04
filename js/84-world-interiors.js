@@ -193,7 +193,7 @@
   function shipHere(site){if(!(worldState.ship&&SHIP.mesh))return false;if(Math.hypot(SHIP.x-site.x,SHIP.z-site.z)<140)return true;const q=site.quayStart;return !!(q&&Math.hypot(SHIP.x-q.x,SHIP.z-q.z)<60);}
   function holdOf(){const st=shipCfg();return st.hold||(st.hold={});}
   function holdCap(){const st=shipCfg();return Math.max(0,(CARGO_HOLD[st.cls||'sloop']||40)+25*(st.cargo||0)-(typeof shipFitWeight==='function'?shipFitWeight():0));} /* S1726 — her fittings take hold weight (#979 B) */
-  function holdUsed(){const h=holdOf();let w=0;for(const k in h)if(CARGO_GOODS[k])w+=h[k]*CARGO_GOODS[k].w;return w;}
+  function holdUsed(){const h=holdOf();let w=0;for(const k in h)if(CARGO_GOODS[k])w+=h[k]*CARGO_GOODS[k].w;return w+(typeof shipShotWeight==='function'?shipShotWeight():0);} /* S1820 — and her ballista's bolts, 20 to 1 */
   function cargoItem(key){const g=CARGO_GOODS[key];return {name:g.n,ico:'📦',type:'cargo',cargo:key,weight:g.w,qty:1,desc:`Trade goods. A harbour's factor buys them.`};}
   function cargoHave(key){const b=BAG.find(it=>it.type==='cargo'&&it.cargo===key);return {bag:b?(b.qty||1):0,hold:(worldState.ship&&worldState.ship.hold&&worldState.ship.hold[key])||0};}
   function cargoBuy(site,key){const g=CARGO_GOODS[key];if(!g||g.home!==cargoNation(site))return 'That is not sold here.';const p=cargoAsk(site,key);

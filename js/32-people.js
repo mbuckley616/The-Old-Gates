@@ -1552,15 +1552,32 @@ function crewHoldBodies(sc_,house){const st=typeof worldState!=='undefined'&&wor
   for(const r of st.crew)if(CREW_BODY[r]&&!spot[r])spot[r]=find(r,CREW_BODY[r].at.slice(1));
   for(const r of st.crew){const C=CREW_BODY[r],sp=spot[r];if(!C||!sp)continue;
     const P=crewPeopleOf(r,st),nm=typeof crewName==='function'?crewName(r,1):r;
-    const def={name:nm,role:C.role,people:P[0],ico:r==='cook'?'\u{1F372}':r==='navigator'?'\u{1F9ED}':'\u{1F528}',greeting:[crewLine(r)],topics:[{label:'Farewell.',bye:true}]};
+    const def={name:nm,role:C.role,people:P[0],ico:r==='cook'?'\u{1F372}':r==='navigator'?'\u{1F9ED}':'\u{1F528}',greeting:[crewLine(r,P[0])],topics:[{label:'Farewell.',bye:true}]};
     const g=buildNPCMesh(def,{nation:P[1],key:'crew'});g.position.set(sp.x,0,sp.z);g.rotation.y=sp.ry;sc_.add(g);
     {const rig=g.userData.rig,G=rig&&rig.g;if(G){const st=G.height*personScale(G)*SCALE.PERSON_MODEL,kz=B.hold.z1-sp.z,clear=Array.isArray(B.beams)&&B.beams.some(v=>Math.abs(v-kz)<.25)?B.beamBottom-B.floor:house._roomH;
       const need=st+.05-clear;if(need>0)rig.stoop=need/st;}} /* S1779 — stooped to the beams or the deck over them (pwStoop) */
     INT_NPCS.push({g,def,wa:0,wt:1,walk:false,box:{x0:sp.x,x1:sp.x,z0:sp.z,z1:sp.z},crew:r,station:sp.at});out.push(r);}
   return out;}
-function crewLine(r){try{if(r==='carpenter'){const b=shipBars();return `She's at ${Math.round(b.hull)} of ${b.hullMax}. Under way I patch her, while the chest has planks and pitch.`;}
-  if(r==='cook')return crewAt('cook')?'At six each morning I cook a fish from the chest, or a joint if there’s no fish, and put it back there.':'No galley, no fire. I can’t cook on good intentions.';
-  if(r==='navigator')return crewAt('navigator')?'With the chart table I see twice as far round her.':'Fit her a chart table and I’ll earn my bunk.';}catch(e){}return '';}
+const CREW_LINES={
+  gatelander:{carpenter:(h,m)=>`She's ${h} of ${m} sound. A patch is a prayer with nails in it, so under way I pray, while the chest has planks and pitch.`,
+    cook:'Six each morning I cook a fish from the chest, or a joint when the sea\'s been mean, and back in the chest it goes.',
+    cookNo:'No galley, no fire. You can’t cook on good intentions, though the Weaver knows I’ve tried.',
+    nav:'With the chart table I see twice as far round her. A map\'s an eye that never sleeps.',
+    navNo:'Fit her a chart table and I’ll earn my bunk. A pilot with no table is a harper with no harp.'},
+  markman:{carpenter:(h,m)=>`${h} of ${m}. I patch her under way. Keep planks and pitch in the chest.`,
+    cook:'Six each morning. Fish from the chest, or a joint if there\'s none. Back in the chest.',
+    cookNo:'No galley. No fire. No supper.',
+    nav:'Good table. I see twice as far round her.',
+    navNo:'No table, no use. Fit one, aye, and I earn my bunk.'},
+  aurennais:{carpenter:(h,m)=>`Her hull stands at ${h} of ${m}, Master. Under way I keep her in repair, provided the chest holds planks and pitch.`,
+    cook:'At six each morning, Master, I cook a fish from the chest, or a joint should there be none, and return it there.',
+    cookNo:'Without a galley there is no fire, Master. I was engaged to cook, not to wish.',
+    nav:'With the chart table, Master, I read twice as far round her as I could without it.',
+    navNo:'Fit her a chart table, Master, and I will earn my bunk. Until then the terms are only half met.'}};
+/* quest review run 36, Finding 41: each hand speaks as the people of the port they were met at; any other people takes the Gatelander's line */
+function crewLine(r,people){const L=CREW_LINES[people]||CREW_LINES.gatelander;try{if(r==='carpenter'){const b=shipBars();return L.carpenter(Math.round(b.hull),b.hullMax);}
+  if(r==='cook')return crewAt('cook')?L.cook:L.cookNo;
+  if(r==='navigator')return crewAt('navigator')?L.nav:L.navNo;}catch(e){}return '';}
 function hbPrep(g,key){if(g.hbKey)return;g.hbKey=key;try{const G=hbGenome(g);if(G.cast)hbCastDriver(g,G);hbTint(g,G);}catch(e){console.warn('F4: no genome for',key,e);g.hbKey=null;}}
 // the human foes (S1201): which of FOE_DRESS wear the builder's body (the people, not the dead, the stone or the folk of the hills),
 // and what each wears over the builder's own rolled clothes, from its FOE_DRESS colour (c): the weapon and shield stay the game's
