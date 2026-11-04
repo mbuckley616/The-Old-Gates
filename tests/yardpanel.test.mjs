@@ -180,6 +180,19 @@ check('back to a sloop pays: the yard pays 1067', i.acts.join() === 'Refit her a
 // the chat keeps no refit, sails or hold rows
 const chat = await page.evaluate((pid) => WORLD.upgradeTopics(WORLD.siteAnywhere(pid)).map(t => t.label), pid);
 check('the shipwright’s chat no longer carries refit, sails or hold rows', !chat.some(l => /^Refit|^Better sails|^Bigger hold/.test(l)), chat);
+// S1834 — renaming her is free, at the yard (#979 B, session 5): typed into the field, E typed there does not close the panel
+const rn = await page.evaluate(() => { YARD.cls = worldState.ship.cls || 'sloop'; yardPanelDraw(); const inp = document.getElementById('yard-name'); return { shown: !!inp, val: inp && inp.value, name: worldState.ship.name, gold }; });
+await page.click('#yard-name', { clickCount: 3 }); await page.keyboard.type('the  Heron of Eastlake<>!');
+const rn1 = await page.evaluate(() => ({ open: yardOpen, val: document.getElementById('yard-name').value }));
+await page.keyboard.press('Enter'); await g.frames(1);
+const rn2 = await page.evaluate(() => ({ name: worldState.ship.name, ship: SHIP.name, gold, said: document.getElementById('yard-said').textContent, val: document.getElementById('yard-name').value,
+  log: GAME_LOG.slice(-3).map(l => l.text).join(' | '), blank: renameShip('  <> '), tooLong: shipNameClean('a'.repeat(40)).length,
+  sunk: (() => { worldState.ship.sunk = { x: 0, z: 0 }; const r = renameShip('Mercy'); delete worldState.ship.sunk; return r; })(), after: worldState.ship.name }));
+console.log(JSON.stringify({ rn, rn1, rn2 }));
+check('her page shows her name in a field with Rename her', rn.shown && rn.val === rn.name && rn.val.length > 0, rn);
+check('typing her name (an E among it) keeps the yard open', rn1.open && /Eastlake/.test(rn1.val), rn1);
+check('renamed: "the" and the marks dropped, the Heron of Eastlake, free, kept on the ship and SHIP, said and logged', rn2.name === 'Heron of Eastlake' && rn2.ship === 'Heron of Eastlake' && rn2.gold === rn.gold && rn2.said === 'Renamed: the Heron of Eastlake.' && rn2.val === 'Heron of Eastlake' && /is the Heron of Eastlake now/.test(rn2.log), rn2);
+check('a blank name is refused, a long one held to 24, a sunk ship not renamed', rn2.blank === null && rn2.tooLong === 24 && rn2.sunk === null && rn2.after === 'Heron of Eastlake', rn2);
 // sunk: nothing offered, the note says so
 await page.evaluate(() => { worldState.ship.sunk = { x: 0, z: 0 }; yardPanelDraw(); }); const j = await R();
 check('sunk: no offers, a note to ask about raising her', j.acts.length === 0 && /lies on the bottom/.test(j.note), j);
