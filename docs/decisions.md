@@ -15,6 +15,14 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+### The fire pot's clay pot — where does it come from? (from the systems builder, 2026-11-04, #1108)
+**The question.** Naval combat's fire pot (Michael's B on #1064, `docs/design/naval-combat.md`) is *a clay pot and a pitch, Alchemy 25*: thrown 20 m, her rig burns 3/s for 6 s, 12 fire to a hand within 2 m. The game has pitch but no clay pot anywhere: nothing sells one and nothing makes one, so the pot needs a source and a price before the fire pot can be built. The ballista and its fire bolt are in (Sessions 1820–1821, PR #1106).
+
+**Options.**
+- **A (recommended).** An alchemist and a general store sell an empty clay pot for 3 gold, weight 0.5; the fire pot is made at the alchemy table at Alchemy 25 from a pot and a pitch. Cheapest path; the pot is plain stock any town has.
+- **B.** Pots are made, not bought: a potter's wheel (a new bench) at Alchemy 25 or Joinery 25 makes them from clay dug at a riverbank. A new gatherable and a new bench, two sessions more.
+- **C.** No pot: the fire pot is two pitch, sealed at the alchemy table at Alchemy 25. Nothing new to buy, but the page's *clay pot* goes.
+
 ## Answered
 ### What a gate keeps (L10, OG-123) (from the concept artist, 2026-11-03, #1092)
 **The question.** Two rooms are built in the gate kit's stone: a great gate's vault (a round hall 62 m across under a 51 m dome, a pit round an island, four rings turning over its dais round a burning core shard, three bridges, two hooded statues of 13 m, a cache sealed by script) and a lesser gate's keep (the 10 m vaulted end room, one shaft of light onto a sealed stone coffer). The rooms are the same in every option; the question is what lies in them.
