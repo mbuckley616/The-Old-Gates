@@ -471,3 +471,15 @@ Written by the producer once a day, after 12:00 UTC. Newest last.
 **Blocked.** Nothing on main; last Sunday's weekly reds sit in section I.
 
 **Roadmap.** 298 of 369 stories done (294 of 364 on 2 Nov). The new look is 6 of 17; no deep-work card is queued.
+
+## 4 Nov 2026
+
+**Waiting on you.** Four decisions: the fire pot's clay pot (#1108; A, shops sell one for 3 gold), magical implements (#1111; B, each changes one form, not damage), which black sails sail where (#1115; A, by the water's danger tier), and the ballista's heavy arrow at a hand (#1120; A, 20–30 by Bow). Two PRs return for your tap once carried past conflicts: QA's harness fix (#1088, approved) and Aurenne's trade tunnel (#1117, held).
+
+**Landed on main since 3 Nov.** Naval combat in nine parts (#1064 B): bars and rams, hooks, repel boarders, the ballista and fire bolt, the galleon's broadside, wrecks, piracy (Systems 1813–1827). Rooms you swim and climb in: the ice cave's lake, the grotto's water, ladders in the smugglers' cave and the mine (1805–1812). The last three perks (#1055 C), the animals that answer back and two river fish (#1050 A). The sea grotto, the silver mine, the aqueduct (your Approve), the flat over the dyer's shop, the gate kit's bridge (Look 1787–1831). Act I's cast in the builder with their lanterns, pipes, sticks and tankard; the coach's team by island (Bodies 1792–1832). A Prayer Carried built; magical implements proposed; today's playtest. Build s1221.
+
+**Under way.** QA carries #1088; the look builder carries #1117.
+
+**Blocked.** Nothing on main; Sunday's weekly reds sit in section I.
+
+**Roadmap.** 300 of 371 stories done (298 of 369 on 3 Nov). The new look is 6 of 17; no deep-work card is queued (F14 waits on the rest).
