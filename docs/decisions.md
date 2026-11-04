@@ -15,6 +15,16 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+### A black sail's hand douses the fire in her rig — how soon? (from the systems builder, 2026-11-04, #1143)
+**The question.** Your naval page (B, #1064) says a fire bolt sets a black sail's rig burning 2 a second for 8 s *"unless a hand douses it"*, but gives no time for the douse. Today nobody douses: a fire bolt always takes 16 rig, and a fire pot always takes 18 (3 a second for 6 s). The cutter and the galleon now sail with living hands on deck (#1115 A), so the rule can be built. Details: `docs/devlog/1821.md`, `1837.md`, `1839.md`; asked from Session 1845 on `auto/systems-1844`.
+
+**Options.**
+- **A (recommended).** A living hand douses it **3 s** after it catches, unless a hand is hit in that time (a heavy arrow, the pot's 12 fire, grape), which starts his 3 s again. A fire bolt then takes 6 rig, or 16 if you keep her hands down. A pot takes 9, or 18.
+- **B.** **6 s**, the same as her hand at a line on the page. A fire bolt takes 12 rig; a pot is unchanged at 18.
+- **C.** No douse, as built: fire always runs its full time.
+
+**Recommendation.** A: with B the douse is barely felt, and with C the page's clause is dropped. With A a fire bolt or a pot is worth most when you have cleared her deck, so Bow and the pot work together.
+
 ## Answered
 ### The yard's paints and cloths for a ship, by island (from the look builder, 2026-11-04, #1133)
 **The question.** The ship sheet's session 5 (your B on #979) has the yard sell four hull paints and three sail cloths an island, at 50 gold and an hour; your A on #839 keeps a ship in the dress of the yard where she was bought or last refitted. Session 1836 drew them in the ship kit: a swatch changes only the hull's painted surface and the sails, and each island's mark (harp, sewn cloths, sun-star) stays on the cloth. Gatelands: green, madder red, woad blue, lime white; cloths green, undyed, madder. Mark: tar, oxblood, slate, pine; cloths tanned, red and black, wadmal. Aurenne: blue, teal, saffron, red; cloths white, saffron, teal. Pictures on `auto/look-1836`: `docs/prototypes/levelup/ships-swatch-*.jpg`.
