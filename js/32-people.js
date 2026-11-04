@@ -1499,6 +1499,8 @@ function hbCastName(g){if(typeof HB.castGenome!=='function'||!g.hbKey)return nul
 function hbTint(g,G){const C=a=>new THREE.Color(a[0],a[1],a[2]),D=G.dress||{};
   if(G.skin)g.skin=C(G.skin);if(G.hairCol)g.hair=C(G.hairCol);
   if(D.tunic){g.cloth=C(D.tunic);g.sleeve=C(D.tunic).multiplyScalar(.9);}
+  /* S1846 — a coat worn over it (the builder's coatOn: Corwin's open coat, the navigator's) is the outer colour, body and sleeves */
+  if(D.coat&&!D.robe&&!D.mail&&!D.scales&&!D.tabard&&!D.chair){g.cloth=C(D.coat);g.sleeve=C(D.coat).multiplyScalar(.9);}
   const leg=D.trousers||D.skirtColor;if(leg)g.legs=C(leg);if(D.boots)g.boot=C(D.boots);}
 // called by buildNPCMesh before the bake: the key, the genome and the tint, once per cached genome
 // S1763 (L1, OG-109's winter column) — the winter dress: in winter (calDay's season) a share of each people, out of doors, wear the
