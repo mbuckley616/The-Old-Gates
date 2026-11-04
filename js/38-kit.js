@@ -5956,7 +5956,7 @@ function aurenneOrrery(hAt, o = {}) {
     const L = 56, H0 = 1.8, H1 = 3.0, S = 2.4, PZ = -28, sm = t => t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t), RISE = Math.max(-L / 12, Math.min(L / 12, +o.rise || 0));
     const lift = z => RISE * Math.max(0, Math.min(1, -z / L)), floorY = z => +lift(z).toFixed(3);
     const xc = z => 1.6 * Math.sin(-z * Math.PI / 28) * sm(-z / 9) * sm((z + L) / 9), half = z => H0 + (H1 - H0) * sm((z - (PZ - 6)) / 3) * sm(((PZ + 6) - z) / 3);
-    const F = cairnField(stream(key + ':rock'), .12), SH = { x: xc(PZ), z: PZ, r: 1.2, cut: .8, y0: 5.0, top: 18 };
+    const F = cairnField(stream(key + ':rock'), .12), SH = { x: xc(PZ), z: PZ, r: 1.2, cut: 1.25, y0: 5.1, top: 18 }; /* the vault cut as wide as the shaft, and the shaft from where the vault meets it (5.13 m at its radius): the drawn 0.8 and 5.0 left a ring hanging under the crown */
     // the bore
     { const NS = Math.round((L + .6) / .5), nF = 8, nW = 8, nV = 24;
       const ring = (i, j) => { const z = .3 - i * (L + .6) / NS, h = half(z), R = h, c = xc(z); let u, y, nu, ny;
