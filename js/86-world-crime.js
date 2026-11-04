@@ -1377,6 +1377,32 @@
   // deck. A fire bolt at a hand lights her rig as at her hull. If he is dead before it lands, the bolt strikes her hull.
   const BALLISTA={arc:Math.PI/6,range:90,reload:6,hull:10,speed:60,per:20,price:2,fireHull:4,burn:2,burnS:8,hand:[20,30],handR:.55,handH:1.8};
   const BOLTS={t:-1e9,fly:[],n:0,geo:null,mat:null,fire:false};
+  // S1839 — black sails by the water's tier (Michael's A on #1115; the page's foes by tier): where a black sail comes up at sea, tier 1
+  // water (home's coast, Ashen, Bealach, Royale) sends today's sloop; tier 2 a black-sail cutter, 12 m/s and 80 hull (her class's own
+  // numbers) with a bow ballista; tier 3 the cutter too, and one sail in five a black galleon with guns (BLACK_GALLEON, the next session).
+  // The roll is the sea's own stream, keyed by where you are and the minute (S508). A quest's ship keeps her own hull. Her ballista is
+  // the page's: a bolt every 6 s, 10 hull, at your ship when it lies within 30° of her bow and 90 m to your side, worked by a living hand
+  // on her deck (S612: a ship looses nothing herself). It reads the clock, never the frame count, and bears only while you are aboard.
+  const BLACK_GALLEON=false;
+  function blackSailCls(x,z,r){const t=typeof worldTierAt==='function'?worldTierAt(x,z):1;if(t<=1)return 'sloop';
+    if(t>=3&&BLACK_GALLEON&&(r?r():Math.random())<.2)return 'galleon';return 'cutter';}
+  function herBallista(o){return !!o&&o.kind==='pirate'&&o.cls==='cutter';}
+  const HER_BOLTS=[];
+  function herBallistaBears(o){if(!SHIP.mesh||!worldState.ship||!(SHIP.sailing||(typeof onDeck==='function'&&onDeck())))return false;
+    const fx=-Math.sin(o.yaw),fz=-Math.cos(o.yaw),bx=o.x+fx*o.L/2,bz=o.z+fz*o.L/2,dx=SHIP.x-bx,dz=SHIP.z-bz,c=Math.hypot(dx,dz),d=Math.max(0,c-(SHIP.W||4.4)/2);
+    return d<=BALLISTA.range&&(c<.01||(dx*fx+dz*fz)/c>=Math.cos(BALLISTA.arc));}
+  function tickHerBallistas(){const now=hookClock();
+    for(const o of OTHER){if(!herBallista(o)||o.dead||o.founder!=null||o.struck||o.boarded||!o.mesh)continue;if(o.balT==null)o.balT=now;
+      if(now-o.balT<BALLISTA.reload||!o.crew.some(e=>!e.dead&&e._ship===o)||!herBallistaBears(o))continue;o.balT=now;
+      const fx=-Math.sin(o.yaw),fz=-Math.cos(o.yaw),x0=o.x+fx*o.L/2,z0=o.z+fz*o.L/2,fly={o,x0,z0,t0:now,dur:Math.hypot(SHIP.x-x0,SHIP.z-z0)/BALLISTA.speed,mesh:null};
+      if(typeof THREE!=='undefined'&&typeof sc!=='undefined'&&sc){if(!BOLTS.geo){BOLTS.geo=new THREE.CylinderGeometry(.05,.05,1.4,5);BOLTS.geo.rotateX(Math.PI/2);BOLTS.mat=new THREE.MeshLambertMaterial({color:0x3a2c1c});}
+        fly.mesh=new THREE.Mesh(BOLTS.geo,BOLTS.mat);fly.mesh.position.set(x0,DECK_Y+1.2,z0);sc.add(fly.mesh);}
+      HER_BOLTS.push(fly);if(typeof sfxNoise==='function')sfxNoise(.12,0,0,.1,380);}
+    for(let i=HER_BOLTS.length-1;i>=0;i--){const f=HER_BOLTS[i],u=Math.min(1,(now-f.t0)/Math.max(.05,f.dur));
+      if(f.mesh){f.mesh.position.set(f.x0+(SHIP.x-f.x0)*u,DECK_Y+1.2+Math.sin(u*Math.PI)*1.5,f.z0+(SHIP.z-f.z0)*u);f.mesh.lookAt(SHIP.x,DECK_Y+1.2,SHIP.z);}
+      if(u<1)continue;if(f.mesh&&f.mesh.parent)f.mesh.parent.remove(f.mesh);HER_BOLTS.splice(i,1);
+      if(!SHIP.mesh||!worldState.ship)continue;const r=damageShip(SHIP,BALLISTA.hull,0);
+      if(r&&r.hull>0&&!r.sunk)showMsg(`The black sail's bolt strikes the ${SHIP.name}. Hull −${r.hull}.`,'#ff8060');}}
   function boltsAboard(){const h=worldState.ship&&worldState.ship.hold;return h&&h.bolts>0?h.bolts:0;}
   function shipShotWeight(){const h=(worldState.ship&&worldState.ship.hold)||{};let w=0;for(const k of ['bolts',...Object.keys(SHOT)])if(h[k]>0)w+=Math.ceil(h[k]/BALLISTA.per);return w;} /* S1822 — and the guns' shot, 20 to 1 a kind */
   function ballistaWait(){return Math.max(0,BALLISTA.reload-(hookClock()-BOLTS.t));}
@@ -1404,7 +1430,7 @@
       fly.mesh=new THREE.Mesh(BOLTS.geo,BOLTS.mat);fly.mesh.position.set(b.x,DECK_Y+1.2,b.z);sc.add(fly.mesh);}
     BOLTS.fly.push(fly);if(typeof sfxNoise==='function')sfxNoise(.12,0,0,.1,420);shipBarsUI();return true;}
   // once a frame: the bolts in flight; one arrives and strikes her, wherever she has sailed to in the meantime
-  function tickBolts(dt){if(!BOLTS.fly.length)return;const now=hookClock();
+  function tickBolts(dt){tickHerBallistas();if(!BOLTS.fly.length)return;const now=hookClock();
     for(let i=BOLTS.fly.length-1;i>=0;i--){const f=BOLTS.fly[i],o=f.o,u=Math.min(1,(now-f.t0)/Math.max(.05,f.dur));
       const T=f.hand&&!f.hand.dead?f.hand:o;if(f.mesh){f.mesh.position.set(f.x0+(T.x-f.x0)*u,DECK_Y+1.2+Math.sin(u*Math.PI)*1.5,f.z0+(T.z-f.z0)*u);f.mesh.lookAt(T.x,DECK_Y+1.2,T.z);}
       if(u<1)continue;if(f.mesh){sc.remove(f.mesh);f.mesh=null;}BOLTS.fly.splice(i,1);

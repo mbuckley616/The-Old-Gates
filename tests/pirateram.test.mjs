@@ -388,6 +388,31 @@ console.log('hand', JSON.stringify(ha));
   check('the line names the hand', H.every(s => /Your bolt (strikes|takes) one of the black sail's hands/.test(s.msg)), H.map(s => s.msg));
   check('with the crosshair off her hands, the bolt strikes her hull for 10', sky && !sky.hand && sky.hull === 10 && sky.lost === 0, sky); }
 
+// S1839 — black sails by the water's tier (Michael's A on #1115): tier 1 the sloop, 2 and 3 the cutter (12 m/s, 80 hull) with a bow
+// ballista that looses at your ship every 6 s for 10 hull while it lies in her bow arc, worked by a living hand
+const cu = await page.evaluate(() => {
+  for (const o of [...OTHER]) despawnOtherShip(o);
+  worldState.ship = { cls: 'sloop', name: 'Test Gull', sails: 0, cargo: 0, hold: {} }; WORLD.spawnShip(_sea.x, _sea.z, 0); const S = WORLD.ship; S.sailing = true; S.speed = 0; S.yaw = 0;
+  const out = {}; const wt = window.worldTierAt; out.byTier = [1, 2, 3, 4].map(t => { window.worldTierAt = () => t; return blackSailCls(0, 0, () => .1); }); window.worldTierAt = wt;
+  out.here = worldTierAt(_sea.x, _sea.z); out.plain = spawnOtherShip('pirate', S.x + 300, S.z, 'test:plain').cls;
+  const c = spawnOtherShip('pirate', S.x, S.z - 60, 'test:cutter', 'cutter'); out.cls = c.cls; out.hull = c.hull; out.hullMax = c.hullMax; out.top = c.top; out.crew = c.crew.length;
+  let pinYaw = Math.PI, pinD = 60, hold = true;
+  const pin = () => { S.x = _sea.x; S.z = _sea.z; S.speed = 0; S.yaw = 0; if (hold) { c.x = S.x + (pinYaw === Math.PI ? 0 : pinD); c.z = S.z - (pinYaw === Math.PI ? pinD : 0); c.yaw = pinYaw; c.speed = 0; } c.volleyT = 1e9; c.ramWait = 1e9; c.hookWait = 1e9; c.ramming = 0; };
+  const step = n => { for (let i = 0; i < n; i++) { pin(); for (const o of [...OTHER]) if (o !== c) despawnOtherShip(o); WORLD.tick(1 / 60, performance.now()); } };
+  const watch = secs => { const ev = [], t0 = performance.now(); let h = shipBars().hull; while (performance.now() - t0 < secs * 1000) { step(1); const h2 = shipBars().hull; if (h2 < h) { ev.push({ t: +((performance.now() - t0) / 1000).toFixed(2), lost: h - h2, msg: document.getElementById('msg').textContent }); h = h2; } } return ev; };
+  step(1); out.bow = watch(14);
+  pinYaw = 0; pinD = 40; c.balT = -1e9; out.abeam = watch(3); /* at 40 m to starboard, her bow north */
+  pinYaw = Math.PI; pinD = 60; for (const e of c.crew) e.dead = true; c.balT = -1e9; out.noCrew = watch(3);
+  // she hunts at her own top: let her go from 200 m off
+  hold = false; c.x = S.x; c.z = S.z - 200; c.yaw = Math.PI; c.speed = 0; step(600); out.speed = +c.speed.toFixed(2);
+  despawnOtherShip(c); return out; });
+console.log('cutter', JSON.stringify(cu));
+check('the hull by the water: tier 1 a sloop, tiers 2–4 a cutter (the galleon not yet); a plain spawn keeps the sloop', cu.byTier.join() === 'sloop,cutter,cutter,cutter' && cu.plain === 'sloop', cu);
+check('the cutter: 80 hull, a top of 12 m/s, three hands', cu.cls === 'cutter' && cu.hull === 80 && cu.hullMax === 80 && cu.top === 12 && cu.crew === 3, cu);
+check('bow on at 60 m her ballista strikes your ship for 10 every 6 s', cu.bow.length === 2 && cu.bow.every(e => e.lost === 10 && /The black sail's bolt strikes the Test Gull\. Hull −10\./.test(e.msg)) && cu.bow[1].t - cu.bow[0].t > 5.8 && cu.bow[1].t - cu.bow[0].t < 6.4 && cu.bow[0].t > 5.8, cu.bow);
+check('abeam she cannot bring it to bear; with no living hand nothing looses', cu.abeam.length === 0 && cu.noCrew.length === 0, cu);
+check('hunting, she makes her own 12 m/s', cu.speed > 11 && cu.speed <= 12.01, cu.speed);
+
 check('no page errors', g.errs.length === 0, g.errs);
 if (stop) stop();
 await g.close();

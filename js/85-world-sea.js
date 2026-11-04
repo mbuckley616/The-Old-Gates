@@ -894,14 +894,15 @@
   const OTHER=[]; // {kind,mesh,x,z,yaw,speed,plat,crew:[],chest,boarded,volleyT,dead}
   // S508 — a ship met at sea is keyed (co-op rules): her id is where and when she came up, `sea:<chunk>:<minute>:<kind>`
   // (Oswy's Kestrel is `story:oswy`), and her heading, crew, volleys and chest roll on streams of that id.
-  function spawnOtherShip(kind,x,z,id){
+  function spawnOtherShip(kind,x,z,id,ck){
     // S168 — the black sail and the merchantman are looks of their own, not tints; S285 — the merchantman on the cog, broad and slow (Michael's A, #50)
-    const cls=kind==='pirate'?SHIP_CLASSES.sloop:SHIP_CLASSES.cog;
-    const m=buildShipMesh(cls.L,cls.W,kind==='pirate'?'pirate':'merchant');
+    // S1839 — a black sail's hull by the water's tier (ck, blackSailCls in 86-world-crime.js; Michael's A on #1115): the sloop unless told
+    const cls=kind==='pirate'?SHIP_CLASSES[ck&&SHIP_CLASSES[ck]?ck:'sloop']:SHIP_CLASSES.cog;
+    const m=buildShipMesh(cls.L,cls.W,kind==='pirate'?'pirate':'merchant',cls.name==='cutter'?'cutter':undefined);
     sc.add(m);
     if(id==null)id=`sea:${chunkKey(Math.floor(x/CHUNK),Math.floor(z/CHUNK))}:${Math.floor(worldState.gameTimeAbsMinutes||0)}:${kind}`;
     const rng=seededRng('ship',id);
-    const o={id,rng,kind,mesh:m,x,z,yaw:rng()*Math.PI*2,speed:0,L:cls.L,W:cls.W,hull:cls.hull,hullMax:cls.hull,rig:100, /* S1813 — her bars (naval combat) */ plat:{x0:0,x1:0,z0:0,z1:0,y:DECK_Y},crew:[],chest:null,boarded:false,volleyT:2,dead:false,wp:null,name:kind==='pirate'?'a black-sailed ship':'a merchantman'};
+    const o={id,rng,kind,cls:cls.name,top:kind==='pirate'?(cls.name==='sloop'?PIRATE_RAM.top:cls.speed):4.5,mesh:m,x,z,yaw:rng()*Math.PI*2,speed:0,L:cls.L,W:cls.W,hull:cls.hull,hullMax:cls.hull,rig:100, /* S1813 — her bars (naval combat) */ plat:{x0:0,x1:0,z0:0,z1:0,y:DECK_Y},crew:[],chest:null,boarded:false,volleyT:2,dead:false,wp:null,name:kind==='pirate'?'a black-sailed ship':'a merchantman'};
     ZONES.world.platforms.push(o.plat);OTHER.push(o);placeOther(o);
     if(kind==='pirate')crewUp(o,false);
     return o;
@@ -922,7 +923,7 @@
       if(atSea()){
         const pk=chunkKey(Math.floor(px/CHUNK),Math.floor(pz/CHUNK)),mn=Math.floor(worldState.gameTimeAbsMinutes||0);
         for(const kind of ['pirate','merchant']){if(OTHER.some(o=>o.kind===kind))continue;const sr=seededRng('sea',`${pk}:${mn}:${kind}`); /* S508 — the sea's roll is keyed by where you are and the minute */ if(sr()>(kind==='pirate'?((tutWantsPirate()||factionWantsPirate())?1:.5):.6))continue;
-          for(let k=0;k<12;k++){const a=sr()*Math.PI*2,d=260+sr()*200;const x=px+Math.cos(a)*d,z=pz+Math.sin(a)*d;if(worldH(x,z)<-4&&!SITES.some(t=>Math.hypot(t.x-x,t.z-z)<t.pad+80)){spawnOtherShip(kind,x,z);if(kind==='pirate')showMsg('Black sails on the horizon.','#ffb060');break;}}}
+          for(let k=0;k<12;k++){const a=sr()*Math.PI*2,d=260+sr()*200;const x=px+Math.cos(a)*d,z=pz+Math.sin(a)*d;if(worldH(x,z)<-4&&!SITES.some(t=>Math.hypot(t.x-x,t.z-z)<t.pad+80)){spawnOtherShip(kind,x,z,undefined,kind==='pirate'&&typeof blackSailCls==='function'?blackSailCls(x,z,sr):undefined);if(kind==='pirate')showMsg('Black sails on the horizon.','#ffb060');break;}}}
       }
     }
     for(const o of OTHER){
@@ -936,7 +937,7 @@
         // hull; the first touch spends it (tickHullCollisions) and she goes back to her circle; 30 s before the next, 12 s to land it
         o.ramWait=(o.ramWait||0)-dt;const aboard=!!SHIP.mesh&&(SHIP.sailing||onDeck());
         if(o.ramming){o.ramming-=dt;if(o.ramming<=0||!aboard){o.ramming=0;o.ramWait=PIRATE_RAM.wait;}}
-        else if(aboard&&dP<=PIRATE_RAM.range&&o.ramWait<=0&&(SHIP.speed||0)<PIRATE_RAM.top*otherSpeedMul(o))o.ramming=PIRATE_RAM.run;
+        else if(aboard&&dP<=PIRATE_RAM.range&&o.ramWait<=0&&(SHIP.speed||0)<(o.top||PIRATE_RAM.top)*otherSpeedMul(o))o.ramming=PIRATE_RAM.run;
         const dx=T.x-o.x,dz=T.z-o.z;if(o.ramming){tx=SHIP.x;tz=SHIP.z;}else if(dP>30){tx=T.x;tz=T.z;}else{tx=o.x-dz*.5;tz=o.z+dx*.5;}
         o.volleyT-=dt;if(dP<70&&o.volleyT<=0){o.volleyT=2.2+(o.rng?o.rng():Math.random());volley(o);}
       } else if(o.sated||(typeof merchantFlees==='function'&&merchantFlees(o))){tx=o.x+(o.x-T.x);tz=o.z+(o.z-T.z); /* S1824 — and a merchantman holed to heavy runs (86) */
@@ -945,7 +946,7 @@
         if(o.wp){tx=o.wp.x;tz=o.wp.z;}
         if(o.kind!=='pirate'&&typeof headGiveWay==='function'){const gw=headGiveWay(o);if(gw){tx=gw.x;tz=gw.z;o.wp=null;}} /* S1734 — the skull: merchantmen give way */
       }
-      if(tx!=null){const want=Math.atan2(-(tx-o.x),-(tz-o.z));let d=want-o.yaw;d=Math.atan2(Math.sin(d),Math.cos(d));o.yaw+=Math.max(-.5*dt,Math.min(.5*dt,d));o.speed+=((o.kind==='pirate'?6.5:4.5)*otherSpeedMul(o)-o.speed)*Math.min(1,dt*.6);}
+      if(tx!=null){const want=Math.atan2(-(tx-o.x),-(tz-o.z));let d=want-o.yaw;d=Math.atan2(Math.sin(d),Math.cos(d));o.yaw+=Math.max(-.5*dt,Math.min(.5*dt,d));o.speed+=((o.top||(o.kind==='pirate'?6.5:4.5))*otherSpeedMul(o)-o.speed)*Math.min(1,dt*.6);}
       const fx=-Math.sin(o.yaw),fz=-Math.cos(o.yaw);const bx=o.x+fx*(o.L/2+3),bz=o.z+fz*(o.L/2+3);
       if(worldH(bx,bz)>-1.8){o.speed=0;o.wp=null;}
       o.x+=fx*o.speed*dt;o.z+=fz*o.speed*dt;placeOther(o);
