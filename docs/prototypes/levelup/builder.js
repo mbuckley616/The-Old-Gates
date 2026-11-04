@@ -197,6 +197,9 @@ function buildPanel() {
     const bu = el('input', { type: 'checkbox', checked: !!D().burnous, onchange: () => { D().burnous = bu.checked; schedule(); } });
     panel.append(el('div', { className: 'bar' }, hd, el('label', {}, bib, ' bib'), el('label', {}, lea, ' leather apron'), el('label', {}, cp, ' cape'), el('label', {}, bu, ' burnous')));
     inputs.cloakFlags = () => { hd.value = D().hood || 'none'; bib.checked = !!D().bib; lea.checked = !!D().apronLeather; cp.checked = !!D().cape; bu.checked = !!D().burnous; }; }
+  // rolled sleeves (Session 1841, OG-069's Bram): the tunic's sleeves turned up to below the elbow, the forearm bare
+  { const rs = el('input', { type: 'checkbox', checked: !!D().sleevesRolled, onchange: () => { D().sleevesRolled = rs.checked; schedule(); } });
+    panel.append(el('div', { className: 'bar' }, el('label', {}, rs, ' sleeves rolled to the elbow'))); inputs.sleevesRolled = () => rs.checked = !!D().sleevesRolled; }
   slider('cloak length', () => D().cloakLen ?? .8, v => D().cloakLen = v, 0, 1, 'cloakLen');
   slider('coat length', () => D().coatLen ?? .75, v => D().coatLen = v, 0, 1, 'coatLen');
   // the coat's hood (Session 1152, OG-109's Mark): up over the head, fur round the face when the coat has fur; down on the back (Session 1153)

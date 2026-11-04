@@ -239,6 +239,17 @@ const hammer = await page.evaluate(() => { const P = HB.makePerson(HB.castGenome
   return { on: !!hm, wrist: hm && hm.parent && hm.parent.name, st: P.hammer }; });
 check('Bram holds his hammer: on the wrist, upright, nothing of him within 8 mm of it, no point of the hand in its haft or head',
   hammer.on && hammer.wrist === 'wrist.R' && hammer.st.inside === 0 && hammer.st.handIn === 0 && hammer.st.headIn === 0 && hammer.st.thumbIn === 0 && hammer.st.lean < .1, hammer);
+// S1841 (L2, OG-069): Bram's sleeves rolled above the elbow: the roll on both arms, the tunic's sleeve cut under it, the forearm's skin drawn;
+// Corwin's sleeves down
+const rolled = await page.evaluate(() => { const one = n => { const P = HB.makePerson(HB.castGenome(n, {}), { hoodStats: false }), R0 = HB.PACK.rest, m = k => P.root.getObjectByName(k);
+    const roll = m('roll'), tunic = m('tunic'), body = P.meshes ? P.meshes[0] : P.root.children.find(c => c.isSkinnedMesh);
+    const ua = i => ((Math.abs(R0[i * 3]) - .1677) * .638 - (R0[i * 3 + 1] - .5246) * .7702 - (R0[i * 3 + 2] - .0146) * .0062) / .2276;
+    const bodyIdx = new Set(body.geometry.index.array), fore = [...bodyIdx].filter(i => Math.abs(R0[i * 3]) > .26 && R0[i * 3 + 1] > .1 && R0[i * 3 + 1] < .55 && ua(i) > 1.05 && HB.slvX(R0[i * 3], R0[i * 3 + 1], R0[i * 3 + 2]) < .365).length;
+    return { roll: !!roll, rollTris: roll ? roll.geometry.index.count / 3 : 0, hole: !!(tunic && tunic.material.userData.hole), fore, gene: !!HB.castGenome(n, {}).dress.sleevesRolled }; };
+  return { bram: one('Bram'), corwin: one('Corwin') }; });
+check('Bram\'s sleeves are rolled above the elbow (S1841): the roll drawn, the tunic\'s sleeve holed under it, his forearms\' skin drawn; Corwin\'s sleeves down',
+  rolled.bram.gene && rolled.bram.roll && rolled.bram.rollTris > 200 && rolled.bram.hole && rolled.bram.fore > 100 &&
+  !rolled.corwin.gene && !rolled.corwin.roll && !rolled.corwin.hole && rolled.corwin.fore < 20, rolled);
 await g.close();
 
 // a second boot: the same people, the same bodies
