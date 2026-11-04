@@ -363,6 +363,31 @@ check('it lands: her rig alight for 6 s at 3 a second (18 rig), no hull', fp.thr
 check('12 fire to each hand within 2 m (as his resistance), none to the hands beyond', fp.hands >= 1 && fp.handLost.every((l, i) => l === Math.max(1, Math.round(12 * (fp.res[i] != null ? fp.res[i] : 1)))) && fp.farLost.every(l => l === 0), fp);
 check('no pot, no throw; beyond 20 m, no throw', fp.none === 'You have no fire pot.' && /20 m/.test(fp.tooFar || ''), fp);
 
+// S1838 — the heavy arrow at a hand (Michael's A on #1120): with the crosshair on one of her hands, the bolt flies at him: 20–30 × Bow's
+// multiplier (×0.6 at Bow 0, ×1.4 at 100) on his own stream, none to her hull; with the crosshair off them, the bolt strikes her hull as before
+const ha = await page.evaluate(() => {
+  for (const o of [...OTHER]) despawnOtherShip(o);
+  worldState.ship = { cls: 'sloop', name: 'Test Gull', sails: 0, cargo: 0, hold: {} }; WORLD.spawnShip(_sea.x, _sea.z, 0); const S = WORLD.ship; S.sailing = true; S.speed = 0; S.yaw = 0;
+  gold = 1000; if (!shipFitted('ballista')) fitShip('ballista'); worldState.ship.hold.bolts = 40; ballistaFireMode(false);
+  const out = { shots: [] }; const sk = skillsReady().bow, lv0 = sk.lv;
+  let p = null; const pin = () => { S.x = _sea.x; S.z = _sea.z; S.speed = 0; S.yaw = 0; if (p) { p.x = S.x; p.z = S.z - 50; p.speed = 0; p.volleyT = 1e9; p.ramWait = 1e9; p.hookWait = 1e9; p.ramming = 0; } };
+  const step = n => { for (let i = 0; i < n; i++) { pin(); for (const o of [...OTHER]) if (o !== p) despawnOtherShip(o); WORLD.tick(1 / 60, performance.now()); } };
+  const aim = (x, y, z) => { CAM.position.set(S.x, DECK_Y + 2.5, S.z); CAM.lookAt(x, y, z); CAM.updateMatrixWorld(true); };
+  const shot = (lv, at) => { if (p) despawnOtherShip(p); p = spawnOtherShip('pirate', S.x, S.z - 50, 'test:hand:' + out.shots.length); p.yaw = Math.PI / 2; step(2); sk.lv = lv;
+    const e = p.crew.find(c => !c.dead); const ey = e.mesh ? e.mesh.position.y : DECK_Y;
+    if (at === 'hand') aim(e.x, ey + 1.1, e.z); else aim(p.x, DECK_Y + 40, p.z);
+    const r = { lv, at, m: +skillMult('bow').toFixed(2), hand: ballistaHand(p) === e, hp0: e.hp, hull0: p.hull }; BOLTS.t = -1e9; r.hud = ballistaHud(); r.tier = worldTierAt(p.x, p.z); r.fire = fireBallista();
+    const t0 = performance.now(); while (BOLTS.fly.length && performance.now() - t0 < 4000) step(1);
+    r.lost = r.hp0 - Math.max(0, e.hp); r.dead = !!e.dead || e.hp <= 0; r.hull = r.hull0 - p.hull; r.msg = document.getElementById('msg').textContent; out.shots.push(r); };
+  shot(0, 'hand'); shot(0, 'hand'); shot(100, 'hand'); shot(100, 'hand'); shot(50, 'sky');
+  sk.lv = lv0; despawnOtherShip(p); return out; });
+console.log('hand', JSON.stringify(ha));
+{ const H = ha.shots.filter(s => s.at === 'hand'), sky = ha.shots.find(s => s.at === 'sky');
+  check('with the crosshair on a hand, the bolt flies at him and her hull is untouched', H.every(s => s.hand && s.fire === true && s.hull === 0 && s.lost > 0) && /on a hand/.test(H[0].hud), ha);
+  check('20–30 × Bow: 12–18 at Bow 0, 28–42 at Bow 100 (a kill is all he had)', H.every(s => { const lo = Math.round(20 * s.m), hi = Math.round(30 * s.m); return s.dead ? s.lost >= Math.min(lo, s.hp0) : s.lost >= lo && s.lost <= hi; }) && H[0].m === .6 && H[2].m === 1.4, H);
+  check('the line names the hand', H.every(s => /Your bolt (strikes|takes) one of the black sail's hands/.test(s.msg)), H.map(s => s.msg));
+  check('with the crosshair off her hands, the bolt strikes her hull for 10', sky && !sky.hand && sky.hull === 10 && sky.lost === 0, sky); }
+
 check('no page errors', g.errs.length === 0, g.errs);
 if (stop) stop();
 await g.close();

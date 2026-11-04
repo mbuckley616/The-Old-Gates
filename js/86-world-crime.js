@@ -1369,7 +1369,13 @@
   // bolt and a pitch from your bag; it takes 4 hull, and her rig burns 2 a second for 8 s (16 in all), through damageShip. A fire
   // already in her rig is lit again for its full 8 s, never doubled. Her crew do not douse it yet: a hand at her rig is the page's
   // merchantmen's session, as her hand at a line was (Session 1815).
-  const BALLISTA={arc:Math.PI/6,range:90,reload:6,hull:10,speed:60,per:20,price:2,fireHull:4,burn:2,burnS:8};
+  // S1838 — the heavy arrow at a hand (the page's "or a heavy arrow at a hand on Bow's multiplier"; Michael's A on #1120: 20–30, scaled
+  // by Bow). When you loose, if the crosshair lies on one of her living hands (a man-sized upright, 0.55 m about him, 1.8 m tall from his
+  // feet) and she bears, the bolt flies at him, not her hull. It rolls 20–30 on his own stream (foeRand), times Bow's multiplier (×0.6 at
+  // 0, ×1.0 at 50, ×1.4 at 100), times his resistance to piercing, with the challenge's scale as an arrow's: 2–3 bolts to a hand at low
+  // Bow, often one at high. His armour is not read, as the answer's numbers are before it. A hit is a use of Bow; a kill drops him on her
+  // deck. A fire bolt at a hand lights her rig as at her hull. If he is dead before it lands, the bolt strikes her hull.
+  const BALLISTA={arc:Math.PI/6,range:90,reload:6,hull:10,speed:60,per:20,price:2,fireHull:4,burn:2,burnS:8,hand:[20,30],handR:.55,handH:1.8};
   const BOLTS={t:-1e9,fly:[],n:0,geo:null,mat:null,fire:false};
   function boltsAboard(){const h=worldState.ship&&worldState.ship.hold;return h&&h.bolts>0?h.bolts:0;}
   function shipShotWeight(){const h=(worldState.ship&&worldState.ship.hold)||{};let w=0;for(const k of ['bolts',...Object.keys(SHOT)])if(h[k]>0)w+=Math.ceil(h[k]/BALLISTA.per);return w;} /* S1822 — and the guns' shot, 20 to 1 a kind */
@@ -1381,22 +1387,34 @@
     for(const o of OTHER){if(o.dead||o.founder!=null||o.struck||!o.mesh)continue;const foe=ballistaFoe(o);if(!foe&&!merchantOf(o))continue;const dx=o.x-b.x,dz=o.z-b.z,c=Math.hypot(dx,dz);
       const d=Math.max(0,c-(o.W||4)/2);if(d>BALLISTA.range||d>=(foe?bd:md))continue;if(c>.01&&(dx*b.fx+dz*b.fz)/c<Math.cos(BALLISTA.arc))continue;if(foe){bd=d;best=o;}else{md=d;mer=o;}}
     return best||mer;}
+  // the living hand of hers under the crosshair, or null
+  function ballistaHand(o){if(!o||!o.crew)return null;CAM.getWorldDirection(_laDir);const O=CAM.position;let best=null,bd=1e9;
+    for(const e of o.crew){if(e.dead||!(e.hp>0))continue;const y=e.mesh?e.mesh.position.y:DECK_Y;_baA.set(e.x,y,e.z);_baB.set(e.x,y+BALLISTA.handH,e.z);
+      const d=Math.hypot(e.x-O.x,e.z-O.z);if(d<bd&&_raySegHit(O,_laDir,_baA,_baB,BALLISTA.handR,0,BALLISTA.range+30)){bd=d;best=e;}}return best;}
+  function ballistaHandDmg(e){const r=BALLISTA.hand[0]+Math.floor(foeRand(e)*(BALLISTA.hand[1]-BALLISTA.hand[0]+1)),k=e.resist&&typeof e.resist.pierce==='number'?e.resist.pierce:1;
+    return challengeDealt(Math.max(1,Math.round(r*skillMult('bow')*k)));}
   // why the ballista cannot loose now, or null
   function ballistaWhy(){if(!shipFitted('ballista'))return 'She has no ballista.';if(!SHIP.sailing)return 'The ballista is worked from the helm.';
     if(!boltsAboard())return 'No bolts in her hold.';if(BOLTS.fire&&typeof pitchCount==='function'&&pitchCount()<1)return 'A fire bolt needs a pitch, and you have none.';if(ballistaWait()>0)return 'The ballista is still winding.';if(!ballistaBears())return 'Nothing bears: bring her bow onto the black sail.';return null;}
   // the named action: loose a bolt at the ship that bears; it strikes when it arrives
   function fireBallista(){const why=ballistaWhy();if(why)return why;const o=ballistaBears(),b=ballistaBow(),h=worldState.ship.hold;
     h.bolts--;if(h.bolts<=0)delete h.bolts;BOLTS.t=hookClock();BOLTS.n++;const fire=BOLTS.fire;if(fire)bagTake(b=>b.name===SURV_ITEMS.pitch.name,1);
-    const d=Math.hypot(o.x-b.x,o.z-b.z),fly={o,x0:b.x,z0:b.z,t0:BOLTS.t,dur:d/BALLISTA.speed,mesh:null,fire};
+    const hand=ballistaHand(o),d=hand?Math.hypot(hand.x-b.x,hand.z-b.z):Math.hypot(o.x-b.x,o.z-b.z),fly={o,hand,x0:b.x,z0:b.z,t0:BOLTS.t,dur:d/BALLISTA.speed,mesh:null,fire};
     if(typeof THREE!=='undefined'&&typeof sc!=='undefined'&&sc){if(!BOLTS.geo){BOLTS.geo=new THREE.CylinderGeometry(.05,.05,1.4,5);BOLTS.geo.rotateX(Math.PI/2);BOLTS.mat=new THREE.MeshLambertMaterial({color:0x3a2c1c});}
       fly.mesh=new THREE.Mesh(BOLTS.geo,BOLTS.mat);fly.mesh.position.set(b.x,DECK_Y+1.2,b.z);sc.add(fly.mesh);}
     BOLTS.fly.push(fly);if(typeof sfxNoise==='function')sfxNoise(.12,0,0,.1,420);shipBarsUI();return true;}
   // once a frame: the bolts in flight; one arrives and strikes her, wherever she has sailed to in the meantime
   function tickBolts(dt){if(!BOLTS.fly.length)return;const now=hookClock();
     for(let i=BOLTS.fly.length-1;i>=0;i--){const f=BOLTS.fly[i],o=f.o,u=Math.min(1,(now-f.t0)/Math.max(.05,f.dur));
-      if(f.mesh){f.mesh.position.set(f.x0+(o.x-f.x0)*u,DECK_Y+1.2+Math.sin(u*Math.PI)*1.5,f.z0+(o.z-f.z0)*u);f.mesh.lookAt(o.x,DECK_Y+1.2,o.z);}
+      const T=f.hand&&!f.hand.dead?f.hand:o;if(f.mesh){f.mesh.position.set(f.x0+(T.x-f.x0)*u,DECK_Y+1.2+Math.sin(u*Math.PI)*1.5,f.z0+(T.z-f.z0)*u);f.mesh.lookAt(T.x,DECK_Y+1.2,T.z);}
       if(u<1)continue;if(f.mesh){sc.remove(f.mesh);f.mesh=null;}BOLTS.fly.splice(i,1);
-      if(o.dead||o.founder!=null||!OTHER.includes(o))continue;const r=damageShip(o,f.fire?BALLISTA.fireHull:BALLISTA.hull,0),who=shipNoun(o);
+      if(o.dead||o.founder!=null||!OTHER.includes(o))continue;
+      if(f.hand&&!f.hand.dead&&f.hand.hp>0){const e=f.hand,n=ballistaHandDmg(e),who=shipNoun(o); /* S1838 — the heavy arrow at a hand */
+        if(typeof skillUse==='function')skillUse('bow',1,e);e.hp=Math.max(0,e.hp-n);e.alert=true;if(e.hpFg){e.hpFg.scale.x=e.hp/e.maxHp;e.hpFg.position.x=(e.hp/e.maxHp-1)*.275;}
+        const dead=e.hp<=0;if(dead&&typeof killZoneEnemy==='function')killZoneEnemy(e,sc);
+        showMsg(dead?`Your bolt takes one of the ${who}'s hands.${f.fire?' Her rig is alight.':''}`:`Your bolt strikes one of the ${who}'s hands: −${n}.${f.fire?' Her rig is alight.':''}`,'#e8c890');
+        const pm=piracy(o);if(pm)showMsgLong(pm,'#e88a8a');if(f.fire&&o.founder==null&&!o.dead){o.burn=BALLISTA.burnS;o.burnRate=BALLISTA.burn;o._burnAcc=o._burnAcc||0;}continue;}
+      const r=damageShip(o,f.fire?BALLISTA.fireHull:BALLISTA.hull,0),who=shipNoun(o);
       if(r&&r.hull>0){if(typeof skillUse==='function')skillUse('bow',1,'ballista:'+(o.id||'ship'));if(!o.founder&&!o.struck)showMsg(f.fire?`Your fire bolt strikes the ${who}. Hull −${r.hull}, and her rig is alight.`:`Your bolt strikes the ${who}. Hull −${r.hull}.`,'#e8c890');}
       if(r){const pm=piracy(o);if(pm)showMsgLong(pm,'#e88a8a');}
       if(f.fire&&o.founder==null&&!o.dead){o.burn=BALLISTA.burnS;o.burnRate=BALLISTA.burn;o._burnAcc=o._burnAcc||0;}}}
@@ -1437,7 +1455,7 @@
       const who=shipNoun(o);showMsg(`Your fire pot breaks on the ${who}'s deck, and her rig is alight.${hit?(hit===1?' One of her hands is caught in it.':` ${hit} of her hands are caught in it.`):''}`,'#e8c890');
       const pm=piracy(o);if(pm)showMsgLong(pm,'#e88a8a');}}
   function ballistaHud(){if(!shipFitted('ballista'))return '';const n=boltsAboard(),w=ballistaWait();
-    return `Ballista${BOLTS.fire?' (fire)':''}: ${!n?'no bolts':w>0?`winding, ${Math.ceil(w)} s`:ballistaBears()?'she bears':'ready'} · ${n} ${n===1?'bolt':'bolts'}`;}
+    return `Ballista${BOLTS.fire?' (fire)':''}: ${!n?'no bolts':w>0?`winding, ${Math.ceil(w)} s`:ballistaBears()?(ballistaHand(ballistaBears())?'on a hand':'she bears'):'ready'} · ${n} ${n===1?'bolt':'bolts'}`;}
   // at the helm with a ballista fitted, the left button is the ballista's, not the sword's: caught before the canvas's own handler
   if(typeof window!=='undefined'&&window.addEventListener)window.addEventListener('mousedown',e=>{
     if(e.button!==0||typeof SHIP==='undefined'||!SHIP.sailing||!(shipFitted('ballista')||shipGunned())||typeof started!=='undefined'&&!started)return;
