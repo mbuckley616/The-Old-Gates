@@ -146,6 +146,27 @@ const hoof = await page.evaluate(() => { const { hg, rg } = _HS[0], H = rg.hc, b
 check(`at the trot each planted hoof keeps within ${hoof.worst} m of the driver's (${hoof.n} planted samples; it was 0.11 m before the legs were bent onto it)`, hoof.trot > .5 && hoof.n > 20 && hoof.worst < .06, hoof);
 await page.evaluate(() => { for (const { hg } of _HS) hg.parent.remove(hg); tickCreatures(1 / 60, 9e5); });
 
+// the teams by island (Session 1825, #1046 B): buildCoachBeast as buildCoachLine calls it with its road's island. The Mark's two are the
+// kit's horse in the Mark's dun (paler than the Gatelands' bay), Aurenne's two the kit's mule; each on its hooves, keyed by its place
+const teams = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.cos(yaw), sx = -fz, sz = fx;
+  const T = [['gatelands', 0], ['mark', 0], ['mark', 1], ['aurenne', 0], ['aurenne', 1]].map(([isle, i], j) => { const hg = new THREE.Group(), rg = buildCoachBeast('f4teams', i, isle); hg.add(rg.root);
+    const x = px + fx * 14 + sx * (j - 2) * 3.4, z = pz + fz * 14 + sz * (j - 2) * 3.4; hg.position.set(x, WORLD.worldH(x, z), z); hg.rotation.y = yaw; WORLD.scene.add(hg); return { isle, i, hg, rg }; });
+  window._TS = T; CAM.position.set(px, worldH(px, pz) + 1.65, pz); CAM.updateMatrixWorld(true);
+  let k = 0; HBODY.last = -1e9; while (T.some(h => !h.rg.hc && !h.rg.hcFail) && k++ < 200) tickCreatures(1 / 60, 9.5e5 + k * (HBODY.gap + 1));
+  const mean = H => { let r = 0, g = 0, b = 0, n = 0; for (const m of H.C.meshes) { const c = m.geometry.attributes.color; if (!c) continue; for (let v = 0; v < c.count; v++) { r += c.getX(v); g += c.getY(v); b += c.getZ(v); n++; } break; } return +((r + g + b) / 3 / n).toFixed(3); };
+  const out = T.map(({ isle, i, hg, rg }) => { const H = rg.hc; if (!H) return { isle, i, hc: false }; hg.updateMatrixWorld(true); const by = H.C.byName;
+    return { isle, i, hc: true, kind: rg.name, plan: H.C.g.plan, island: H.C.g.island || null, seed: H.C.g.seed, want: HC.hashKey(rg.hcKey), map: H.map.length, tris: H.C.stats.tris, light: mean(H),
+      toes: ['leg0L_4', 'leg0R_4', 'leg1L_4', 'leg1R_4'].map(t => +(by[t].getWorldPosition(new THREE.Vector3()).y - hg.position.y).toFixed(3)) }; });
+  for (const { hg } of T) hg.parent.remove(hg); tickCreatures(1 / 60, 9.9e5); return out; });
+console.log('  teams:', JSON.stringify(teams));
+const [tg, tm0, tm1, ta0, ta1] = teams;
+check(`the Mark's coach horses are the kit's horse in the Mark's dun (mean colour ${tm0.light}, ${tm1.light} against the Gatelands' ${tg.light})`,
+  [tg, tm0, tm1].every(h => h.hc && h.plan === 'game:Horse' && h.map === 24 && h.seed === h.want) && tg.island === 'gatelands' && tm0.island === 'mark' && tm1.island === 'mark'
+  && tm0.seed !== tm1.seed && tm0.light > tg.light + .08 && tm1.light > tg.light + .08, teams);
+check(`Aurenne's coach team is two mules (${ta0.tris}, ${ta1.tris} triangles), keyed by their place`,
+  [ta0, ta1].every(h => h.hc && h.kind === 'Mule' && h.plan === 'mule' && h.island === 'aurenne' && h.map === 24 && h.seed === h.want) && ta0.seed !== ta1.seed, teams);
+check(`every team stands on its hooves (${teams.map(h => h.toes.join(', ')).join('; ')} m)`, teams.every(h => h.toes && h.toes.every(y => Math.abs(y) < .05)), teams.map(h => h.toes));
+
 // the pictures: the line from 7 m, then the bear from 4 m
 await page.evaluate(() => { const a = _W[0].e, b = _W[2].e, mx = (a.x + b.x) / 2, mz = (a.z + b.z) / 2, fx = -Math.sin(yaw), fz = -Math.cos(yaw); px = mx - fx * 7; pz = mz - fz * 7; pitch = -.12; });
 for (let i = 0; i < 8; i++) { await page.evaluate(() => tickCreatures(1 / 60, performance.now())); await g.frames(1); }

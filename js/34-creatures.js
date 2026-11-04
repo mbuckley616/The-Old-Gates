@@ -21,6 +21,8 @@ const WOLF_KINDS={
   // their own (k.horse), a bay and a grey; legK scales the gait's stride to the longer legs
   'Horse':     {coat:0x6a4428,saddle:0x24160c,belly:0x8a6444,eye:0x140c08,horse:true,legK:1.8,legs:{fore:{root:[-.03,.03],a:[-.22,-.04],b:[-.22,.02],c:[-.23,.01]},hind:{root:[-.02,-.02],a:[-.2,.08],b:[-.2,-.1],c:[-.26,.01]}},hipY:.70,bulk:1.05,eyePos:[.052,.02,.03]},
   'Grey Horse':{coat:0xb4aea4,saddle:0x5a5650,belly:0xd4cec4,eye:0x140c08,horse:true,legK:1.8,legs:{fore:{root:[-.03,.03],a:[-.22,-.04],b:[-.22,.02],c:[-.23,.01]},hind:{root:[-.02,-.02],a:[-.2,.08],b:[-.2,-.1],c:[-.26,.01]}},hipY:.70,bulk:1.05,eyePos:[.052,.02,.03]},
+  /* S1825 — Aurenne's coach mules (#1046 B), the kit's mule on the horse's driver, its far body in the mule's brown */
+  'Mule':      {coat:0x4d3829,saddle:0x38291c,belly:0x9e8a75,eye:0x140c08,horse:true,legK:1.8,legs:{fore:{root:[-.03,.03],a:[-.22,-.04],b:[-.22,.02],c:[-.23,.01]},hind:{root:[-.02,-.02],a:[-.2,.08],b:[-.2,-.1],c:[-.26,.01]}},hipY:.70,bulk:.95,eyePos:[.052,.02,.03]},
   // Session 1704 — the common land animals (L3, OG-084; Michael's A on #984: present and huntable), peaceful, on the wolf's bones and gait.
   // Their bodies are the creature kit's (HC_KINDS); the driver's own is seen only past the kit's last level. world: the root's scale that
   // stands the kit's body at its own size in metres (its hips at hipY·world: the deer's 0.87 m, the fox's 0.35, the hare's 0.29, the
@@ -954,7 +956,7 @@ const HC_GOB_COAT={coat:0x6a8a42,saddle:0x4e6a30,belly:0x86a058,skin:0x72924a};
 const HC_WRAITH_REST={spine:[.42,0,0],neck:[.22,0,0],head:[-.42,0,0],shL:[-1.8,0,.08],shR:[-1.74,0,-.08],elL:[-.3,0,.04],elR:[-.3,0,-.04],wrL:[.28,0,0],wrR:[.28,0,0]};
 const HC_TROLL_COAT={cave:{coat:0x6e7a5c,saddle:0x5a664c,belly:0x7e8a6c,skin:0x646e54},forest:{coat:0x5a6e40,saddle:0x4a5a34,belly:0x6a7e50,skin:0x52643a,moss:0x34501a},
   frost:{coat:0xaebac2,saddle:0x96a4ae,belly:0xc0cad0,skin:0xa2aeb6,moss:0xe0e4e8}};
-const HC_KINDS={'Wolf':{plan:'wolf'},'Snow Wolf':{plan:'wolf',own:true},'Dire Wolf':{plan:'ironwolf',own:true},'Boar':{plan:'boar'},'Cave Bear':{plan:'bear',own:true,ik:true},'Ash Hound':{plan:'ashhound'},'Horse':{plan:'horse',own:true,ik:true},'Grey Horse':{plan:'horse',own:true,ik:true},
+const HC_KINDS={'Wolf':{plan:'wolf'},'Snow Wolf':{plan:'wolf',own:true},'Dire Wolf':{plan:'ironwolf',own:true},'Boar':{plan:'boar'},'Cave Bear':{plan:'bear',own:true,ik:true},'Ash Hound':{plan:'ashhound'},'Horse':{plan:'horse',own:true,ik:true},'Grey Horse':{plan:'horse',own:true,ik:true},'Mule':{plan:'mule',ik:true},
   'Spider':{plan:'spider',own:true,spider:true,cell:.028,merge:true},'Sand Scorpion':{plan:'dunescorpion',own:true,spider:true,cell:.02,merge:true},
   'Bog Crawler':{plan:'bogcrawler',own:true,spider:true,cell:.018,merge:true},'Faolchú':{plan:'faolchu',own:true,cell:.03,unhunch:true,arms:true},
   'Dragon':{plan:'dragon',own:true,cell:.11,wings:true,sway:true},
@@ -993,6 +995,12 @@ const HC_PMAP=[['hips','spine0'],['spine','spine1'],['neck','neck0'],['head','he
 function hcPMap(by,legless){const out=[];for(const [j,n] of HC_PMAP){if(legless&&/^leg/.test(n))continue;if(!by[n])return n;out.push([j,by[n]]);}return out;}
 function hcOn(){return HC_BODY.on&&window.OG_LOOK==='new'&&typeof HC!=='undefined';}
 // a kind's plan: the kit's own, or (k.own) a copy of it in the kind's coat, saddle and belly, made once
+// Session 1825 (#1046 B, Michael's B of 3 Nov: each island its own vehicles with its own animals): the coach's team by its road's island.
+// The Gatelands keep the bay and the grey (Session 1273); the Mark's two are its fjord horses (the kit's horse in the Mark's dun, COATS.mark
+// .horse); Aurenne's are two mules (the carpentum's team in wagons.js), on the horse's driver at nine tenths its size, as the kit's mule
+// is to its horse. Keyed as before, `coach:<road>:<i>`, so a team's two are two bodies and the same two every time.
+function buildCoachBeast(key,i,isle){const au=isle==='aurenne',mk=isle==='mark';
+  const rg=buildWolf(au?'Mule':(i&&!mk&&(pHash(key)&1))?'Grey Horse':'Horse',au?1.44:1.6);rg.hcKey='coach:'+key+':'+i;if(ANIMAL_ISLES.includes(isle))rg.hcIsland=isle;return rg;}
 function hcPlan(name){const K=HC_KINDS[name];if(!K.own)return K.plan;const id='game:'+name;
   // a person's (Session 1356): what it holds is the game's (a sword, or a spear), not the plan's sword and shield, which no rule of the
   // Skeleton's fight has; its sockets lit in the foe's eye colour (ZONE_FOE_DEF's 0x80c0ff), as the old body's are

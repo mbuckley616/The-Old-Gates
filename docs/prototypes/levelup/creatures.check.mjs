@@ -423,6 +423,16 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
     return out; });
   for (const plan of await page.evaluate(async () => { const K = await import('./creatures.js'); return [...K.COMMON, ...K.LIVESTOCK]; })) for (const isle of ['mark', 'aurenne']) { const q = isl[plan][isle];
     check(`${plan} on ${isle === 'mark' ? 'the Mark' : 'Aurenne'}: ${q.recoloured ? 'a coat of its own' : 'the same coat'} on the same bones (mean colour moved ${q.d})`, q.sameBones && (q.recoloured ? q.d > .015 : q.d < .002), q); }
+  // the Mark's horse (Session 1825, #1046 B): the fjord dun on every plan that takes the horse's coat, on the same bones; Aurenne's and
+  // the mule keep their own
+  const fj = await page.evaluate(async () => { const K = await import('./creatures.js'), out = {};
+    const mean = C => { const col = C.meshes[0].geometry.attributes.color; let r = 0, g = 0, b = 0; for (let v = 0; v < col.count; v++) { r += col.getX(v); g += col.getY(v); b += col.getZ(v); } return [r / col.count, g / col.count, b / col.count]; };
+    for (const plan of ['horse', 'draughthorse', 'mule']) { const base = K.build(K.genome(plan, plan + ':isle')), m0 = mean(base); out[plan] = {};
+      for (const isle of ['mark', 'aurenne']) { const C = K.build(K.genome(plan, plan + ':isle', { island: isle })), m = mean(C);
+        out[plan][isle] = { d: +Math.hypot(m[0] - m0[0], m[1] - m0[1], m[2] - m0[2]).toFixed(3), light: +((m[0] + m[1] + m[2]) / 3 - (m0[0] + m0[1] + m0[2]) / 3).toFixed(3), sameBones: C.stats.bones === base.stats.bones }; } }
+    return out; });
+  check(`the Mark's horses are dun (mean colour moved ${fj.horse.mark.d} and ${fj.draughthorse.mark.d}, lighter by ${fj.horse.mark.light}); Aurenne's (${fj.horse.aurenne.d}) and the Mark's mule (${fj.mule.mark.d}) keep their coats`,
+    ['horse', 'draughthorse'].every(p => fj[p].mark.sameBones && fj[p].mark.d > .05 && fj[p].mark.light > .05 && fj[p].aurenne.d < .002) && fj.mule.mark.d < .002, fj);
   check(`a creature's island survives the saved genome, and a genome with none or an unknown one carries none`, isl.saved.island === 'mark' && isl.saved.none && isl.saved.bad, isl.saved);
   check(`the common set: ten animals, each a plan from OG-084 (${common.map(c => c.k).join(', ')})`, common.length === 10 && common.every(c => c.ok && c.src.includes('OG-084')), common.filter(c => !c.ok || !c.src.includes('OG-084')));
   // the hounds (Session 1107): OG-065's black wolfhound, a plan, standing taller at the withers than the grey wolf and its chest deeper than its loin
