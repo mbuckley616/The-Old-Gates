@@ -264,5 +264,49 @@ for (const x of d6.by) { const nm = `watch (${x.pp}, ${x.how})`; if (x.missing) 
   check('watch: the slip warns of a jump that loses the night, not of an hour\'s wait before it', !!k && !!s && !k.pre.wait1 && k.pre.sleep8 && s.pre.inWait1 && !s.pre.after, { kept: k && k.pre, slept: s && s.pre }); }
 check('watch: the records are saved, no live beast in them', d6.saved >= 4, d6.saved);
 
+// S1817 — errand 12, A Prayer Carried: a prayer for the giver's kin at the nearest shrine within 1,200 of the want's god (a Markman for the
+// sea or the mine only, an Aurennais at the Weaver's only, an Old Blood giver one line); said at the altar (shrineInteract), even on a quiet
+// day; turned in for the pay and a point of favour; seven days, then the lapse
+const d12 = await page.evaluate(() => {
+  worldState.quests = []; worldState.met = {}; const T0 = 160 * 1440 + 600; worldState.gameTimeAbsMinutes = T0;
+  const towns = []; for (let j = 0; j < GRID; j++) for (let i = 0; i < GRID; i++) getCell(i, j).sites.forEach(t => { if (t.pad >= 30 && t.kind !== 'shrine' && t.kind !== 'portal') towns.push(t); });
+  const mk = (site, i, pp) => { const d = makeDef(site, site.reg || 'irish', seededRng('ertest12', i), 'Villager', 'Seán', {}); d._twin = 'P' + i; if (pp) d.people = pp; return d; };
+  const find = (pp, want) => { for (const site of towns) { if (!erGiver(mk(site, 0, pp), site)) continue; for (let i = 0; i < 400; i++) { const d = mk(site, pp + i, pp); const e = errandFor(d, site);
+      if (e && e.sub === 'prayer' && (!want || want(e))) return { d, site, e }; } } return null; };
+  const bad = { mk: 0, au: 0, n: 0 }; for (const site of towns.slice(0, 40)) for (let i = 0; i < 60; i++) for (const pp of ['markman', 'aurennais']) { const e = errandFor(mk(site, 'b' + pp + i, pp), site);
+    if (!e || e.sub !== 'prayer' || e.oldblood) continue; bad.n++; if (pp === 'markman' && !['muir', 'cloch'].includes(e.godKey)) bad.mk++; if (pp === 'aurennais' && e.godKey !== 'fiodoir') bad.au++; }
+  const msgs = []; const sm = window.showMsg; window.showMsg = t => msgs.push(t); const by = [];
+  const GOD = k => GODS.find(g => g.key === k);
+  try { for (const [pp, how] of [['gatelander', 'fresh'], ['markman', 'quiet'], ['aurennais', 'lapse']]) { worldState.gameTimeAbsMinutes = T0; worldState.shrines = {}; msgs.length = 0;
+      const F = find(pp); if (!F) { by.push({ pp, missing: true }); continue; } const { d: A, site, e: E } = F; const p = pp;
+      A.greeting[0]; const greet = A.greeting[0]; const you = A.topics.find(t => /^About you/.test(t.label)); const ask = you && you.follow.find(t => t.label === 'Who’s the prayer for?');
+      const n = Math.min(40, 15 + 5 * (Math.max(1, worldTierAt(site.x, site.z) || 1) - 1)); const wantOffer = ER_PRAYER.offer[p](Object.assign({}, E, { n }));
+      const yes = ask.follow[0].fn(); const q = qActive().find(x => x.giver === A.name && x.sub === 'prayer'); const notYet = A.topics.find(t => t.label === 'About that errand.').fn();
+      const x = { pp, how, greet, hint: ER_PRAYER.hint[p](E), offer: ask.response, wantOffer, yes, ys: ER_SHARED[p].yes, title: q.title, wtitle: `A prayer at ${erThe(E.shrine)}`, notYet, ny: ER_SHARED[p].notYet, god: E.godKey, shrine: E.shrine };
+      if (how === 'lapse') { worldState.gameTimeAbsMinutes = T0 + 8 * 1440; tickDatedWork(); const g1 = gold; const t = A.topics.find(t => t.label === 'About that errand.'); x.done = t && t.fn(); x.wdone = ER_PRAYER.lapse[p]; x.lapsed = q.lapsed; x.paid = gold - g1; x.again = !!A.topics.find(t => t.label === 'About that errand.'); by.push(x); continue; }
+      // a stand-in shrine of another god first (nothing said), then one of the errand's god under the player's feet
+      const other = GODS.find(g => g.boon && g.key !== E.godKey); const S0 = { site: { id: 'tshr0', kind: 'shrine', name: 'Test Shrine' }, altar: { x: px, z: pz }, god: other };
+      SETTLE.set('tshr0', S0); shrineInteract(); SETTLE.delete('tshr0'); x.wrongGod = q.data.prayed;
+      const S1 = { site: { id: 'tshr1', kind: 'shrine', name: 'Cill na Muire' }, altar: { x: px, z: pz }, god: GOD(E.godKey) };
+      if (how === 'quiet') worldState.shrines.tshr1 = worldState.gameTimeAbsMinutes - 10;
+      SETTLE.set('tshr1', S1); msgs.length = 0; shrineInteract(); SETTLE.delete('tshr1');
+      x.prayed = q.data.prayed; x.at = q.data.at; x.line = ER_PRAYER.at({ who: E.who, giver: A.name }); x.quietMsg = msgs.slice();
+      const label = `I prayed at Cill na Muire.`; const t = A.topics.find(t => t.label === label); const g1 = gold, f1 = favor(site);
+      x.done = t && t.fn(); x.wdone = ER_PRAYER.done[p]; x.paid = gold - g1; x.wpaid = questGold(q.reward); x.fav = favor(site) - f1; x.turned = q.turnedIn; by.push(x); }
+    // the Old Blood giver: one line, no errand
+    const O = find('oldblood'); var ob = O && (() => { const you = O.d.topics.find(t => /^About you/.test(t.label)); const a = you && you.follow.find(t => t.label === 'Can I do anything for you?'); return { said: a && a.response, follow: !!(a && a.follow) }; })();
+  } finally { window.showMsg = sm; }
+  return { bad, by, ob, OBL: ER_PRAYER.oldblood, saved: JSON.parse(ssStringify(worldState.quests)).filter(x => x.sub === 'prayer').length };
+});
+console.log(JSON.stringify(d12).slice(0, 3000));
+check('prayer: a Markman asks only for the sea or the mine, an Aurennais only at the Weaver\'s shrine', d12.bad.n > 0 && d12.bad.mk === 0 && d12.bad.au === 0, d12.bad);
+for (const x of d12.by) { const nm = `prayer (${x.pp}, ${x.how})`; if (x.missing) { check(`${nm}: a giver asks`, false); continue; }
+  check(`${nm}: the hint after First Words, the offer word for word, taken and titled, not yet`, x.greet.endsWith(' ' + x.hint) && x.offer === x.wantOffer && x.yes === x.ys && x.title === x.wtitle && x.notYet === x.ny && !/\{|undefined/.test(x.offer), { greet: x.greet, offer: x.offer, title: x.title });
+  if (x.how === 'lapse') { check(`${nm}: seven days pass, the lapse in the giver's words, once, nothing paid`, x.lapsed && x.done === x.wdone && x.paid === 0 && !x.again, x); continue; }
+  check(`${nm}: another god's altar says nothing of it; the errand's god's altar says it${x.how === 'quiet' ? ', on a quiet day too' : ''}`, !x.wrongGod && x.prayed && x.at === 'Cill na Muire' && (x.how !== 'quiet' || x.quietMsg.includes(x.line)), { msgs: x.quietMsg, line: x.line });
+  check(`${nm}: I prayed at …, answered in their words, paid, a point of favour`, x.turned && x.done === x.wdone && x.paid === x.wpaid && x.paid > 0 && x.fav === 1, { done: x.done, paid: x.paid, fav: x.fav }); }
+check('prayer: an Old Blood giver has the one line to the ask, and no errand', !!d12.ob && d12.ob.said === d12.OBL && !d12.ob.follow, d12.ob);
+check('prayer: the records are saved', d12.saved >= 3, d12.saved);
+
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
