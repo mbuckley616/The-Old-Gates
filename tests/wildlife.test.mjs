@@ -146,9 +146,12 @@ const wt = await page.evaluate(() => { const G = [...CELLS.values()].filter(c =>
   if (!e) return out; let cast = 0, scast = 0; e.mesh.traverse(o => { if ((o.isMesh || o.isPoints) && o.castShadow) cast++; }); sh.forEach(s => { let k = 0; s.mesh.traverse(o => { if (o.isMesh && o.castShadow) k++; }); if (k) scast++; });
   Object.assign(out, { name: e.name, cast, sheep: sh.length, scast, sd: sh.map(s => +Math.hypot(s.x - e.x, s.z - e.z).toFixed(1)) });
   { const rig = e.limbs.wolf; out.built = _drive(() => rig.hc && rig.hc.L < 2, 900); const H = rig.hc; /* S1785 — it sits, in the kit's own sit */
-    if (H) { const gy = activeTerrainH(e.x, e.z), w = b => H.C.byName[b].getWorldPosition(new THREE.Vector3()), m0 = Array.from(H.C.skel.boneMatrices);
+    if (H) { const g0 = activeTerrainH(e.x, e.z), w = b => H.C.byName[b].getWorldPosition(new THREE.Vector3()), m0 = Array.from(H.C.skel.boneMatrices);
       _drive(() => false, 40); H.C.root.updateMatrixWorld(true); H.C.skel.update(); let mv = 0; H.C.skel.boneMatrices.forEach((v, i) => { mv = Math.max(mv, Math.abs(v - m0[i])); });
-      out.sit = { gait: H.C.gait, hips: +(w('spine0').y - gy).toFixed(3), paws: H.C.B.legs.map(L => +(w(L.names[L.names.length - 1]).y - gy).toFixed(3)), breath: +mv.toFixed(4), shadow: (() => { let k = 0; H.W.traverse(o => { if ((o.isMesh || o.isPoints) && o.castShadow) k++; }); return k; })() }; } }
+      /* S1874 — the ground is read where it is when the body is read: the world loads on through the 40 frames, and the watcher is set on
+         the ground each tick (watchTick), so a ground read before them can be off by what loaded since (CI, 5 Nov: every paw 0.038 up) */
+      const gy = activeTerrainH(e.x, e.z);
+      out.sit = { gait: H.C.gait, L: H.L, drift: +(gy - g0).toFixed(3), mesh: +(e.mesh.position.y - gy).toFixed(3), hips: +(w('spine0').y - gy).toFixed(3), paws: H.C.B.legs.map(L => +(w(L.names[L.names.length - 1]).y - gy).toFixed(3)), breath: +mv.toFixed(4), shadow: (() => { let k = 0; H.W.traverse(o => { if ((o.isMesh || o.isPoints) && o.castShadow) k++; }); return k; })() }; } }
   const a = D.ry + 1.8; px = D.x + Math.sin(a) * 15; pz = D.z + Math.cos(a) * 15; for (let i = 0; i < 240; i++) tickZoneEnemies(1 / 60, 0, WORLD.scene);
   const face = () => { const f = Math.atan2(px - e.x, pz - e.z); return +Math.abs(Math.atan2(Math.sin(f - e.combatYaw), Math.cos(f - e.combatYaw))).toFixed(3); };
   out.face = face(); out.bolted = sh.filter(s => Math.hypot(s.x - s.homeX, s.z - s.homeZ) > 10).length;
