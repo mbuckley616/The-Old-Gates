@@ -15,6 +15,18 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+### The bind — what a perfect parry looks like (from the concept artist, 2026-11-05, #1192)
+**The question.** Combat B already has the rule: a perfect parry drains 40% of the foe's posture and opens a riposte for 0.8 s. Nothing says what the two bodies do in that moment; OG-045 and OG-063 draw it as a bind. Three readings posed on two of the builder's people in a steady Cloch nave; no timing changes in any. Page: `docs/prototypes/levelup/bind.html`; the approach in `docs/concepts.md`.
+
+**Options.**
+- **A. The deflect.** The parry beats the foe's blade aside: its sword flung wide and low, the foe rocked back and open. Quick and plain; nothing is held.
+- **B. The bind.** The blades meet and hold, crossed at 1.95 m over the heads, both leaning in, the foe's shield dropped. The off hand is empty.
+- **C (recommended). The bind with the spell.** B, and if a spell is readied (a held word, or an orb keeping one), the off hand is cocked low behind the hip with the spell burning in its school's colour; the release is the riposte. With nothing readied, C is B.
+
+**Recommendation.** C: it is the frame the concept art keeps drawing, and it shows a sword and a spell at once, which magic B is built round. No new rule.
+
+Pictures: [A, B and C](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/bind-options.jpg) · [C, whole](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/bind-c-back.jpg) · [the blades, close](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/bind-close.jpg) · [the scale](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/bind-scale.jpg).
+
 ## Answered
 ### Plants that mark a gate — ingredients, a sign to read, or a gate-finding brew? (from the designer, 2026-11-05, #1164)
 **The question.** Backlog L8 (OG-026) says Gatelotus, Gate Resin and Lichenbloom grow near old gates as "a sign to read", and Caverglow lights caves. Every gate's school and condition are fixed by its seed but unknowable until you are inside. What should the plants say? Page: `docs/design/plants-that-mark-a-gate.md`.
