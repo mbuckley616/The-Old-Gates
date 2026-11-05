@@ -783,7 +783,7 @@
   // rack forward. Her berth is in the great cabin under the quarterdeck (S1581).
   function shipBaseOk(house){return !!(house&&house.type==='cabin'&&window.OG_LOOK==='new'&&SHIP.mesh&&SHIP.mesh.userData.kit&&['sloop','cutter','caravel','cog','galleon'].includes(SHIP.mesh.userData.kind)&&typeof PKIT!=='undefined'&&PKIT.ships&&PKIT.ships.caravelBase);}
   function buildShipBase(house){
-    const kd=SHIP.mesh.userData.kind,B=kd==='galleon'?PKIT.ships.galleonBase({dress:SHIP.mesh.userData.kit}):kd==='cog'?PKIT.ships.cogBase({dress:SHIP.mesh.userData.kit}):kd==='caravel'?PKIT.ships.caravelBase():kd==='cutter'?PKIT.ships.cutterBase():PKIT.ships.sloopBase({dress:SHIP.mesh.userData.kit}),F0=B.floor,z0=B.hold.z0,z1=B.hold.z1,X=kd==='galleon'?3.5:kd==='cog'?2.8:kd==='caravel'?2.5:kd==='cutter'?2.0:2.2,W=2*X,D=z1-z0;
+    const kd=SHIP.mesh.userData.kind,B=kd==='galleon'?PKIT.ships.galleonBase({dress:SHIP.mesh.userData.kit}):kd==='cog'?PKIT.ships.cogBase({dress:SHIP.mesh.userData.kit}):kd==='caravel'?PKIT.ships.caravelBase():kd==='cutter'?PKIT.ships.cutterBase():PKIT.ships.sloopBase({dress:SHIP.mesh.userData.kit,chart:shipFitted('chart')}),F0=B.floor,z0=B.hold.z0,z1=B.hold.z1,X=kd==='galleon'?3.5:kd==='cog'?2.8:kd==='caravel'?2.5:kd==='cutter'?2.0:2.2,W=2*X,D=z1-z0;
     const rx=x=>X-x,rz=z=>z1-z,ry=y=>y-F0,fr=b=>({x0:rx(b[3]),x1:rx(b[0]),z0:rz(b[5]),z1:rz(b[2]),y0:Math.max(0,ry(b[1])),y1:ry(b[4])});
     house._counterFront=null;house._bench=null;house._chart=null;house.intW=W;house.intD=D;house._roomH=+(B.deckUnder-F0).toFixed(3);house._eyeMax=+(B.beamBottom-F0-.2).toFixed(3);
     const fz=+rz(B.ladder.foot[2]).toFixed(3),aft=D-fz>1;house._exitD=aft?.3:.8;house._exitZ=aft?fz:null;house._exitW=.5;house._exitX=X;house._exitText="Press 'E' to go on deck";house._arriveX=X;house._arriveZ=aft?+(fz-.1).toFixed(3):+(D-.35).toFixed(3); /* S1558 — the cutter's ladder foot is mid-hold, the berth aft of it */house._arriveYaw=0;house._base=B;
@@ -801,7 +801,7 @@
     for(const n of ['sea chest','chest','water cask','mast','barrel','stool','crate','sack','arms rack'])for(const q of all(n))SOL.push(fr(q.box)); /* S1564 — the caravel's two masts, two chests and four barrels; S1578 the cog's crates and sacks; S1584 the galleon's arms rack */
     for(const n of ['chart table','workbench','alchemy table','hammock'])for(const q of all(n)){const a=q.box;SOL.push(fr([a[0],F0,a[2],a[3],a[4],a[5]]));} /* S1584 — the galleon's hammocks, slung at head height, are walked round, not under */
     if(it('workbench')){const a=it('workbench').box;house._bench={x:+rx((a[0]+a[3])/2).toFixed(3),z:+rz((a[2]+a[5])/2).toFixed(3)};} /* S1558 — E at it (benchNear) */
-    if(it('chart table')){const a=it('chart table').box;house._chart={x:+rx((a[0]+a[3])/2).toFixed(3),z:+rz((a[2]+a[5])/2).toFixed(3)};} /* S1880 — the cutter's chart table, E at it (chartHoldNear) */
+    if(it('chart table')){const a=it('chart table').box;house._chart={x:+rx((a[0]+a[3])/2).toFixed(3),z:+rz((a[2]+a[5])/2).toFixed(3)};} /* S1880 — the cutter's chart table, E at it (chartHoldNear); S1884 the sloop's when fitted */
     {const c=it('sea chest').box;intStashPos={x:+rx((c[0]+c[3])/2).toFixed(3),z:+rz((c[2]+c[5])/2).toFixed(3)};}
     // the sky over the open hatch, by the hour, and the day down through it; the lantern under the beam and the hold's air
     const hr=typeof gameHour==='function'?gameHour():12,dayK=hr>=7&&hr<18?1:hr>=5&&hr<20?.4:0;
