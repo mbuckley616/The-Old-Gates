@@ -483,3 +483,15 @@ Written by the producer once a day, after 12:00 UTC. Newest last.
 **Blocked.** Nothing on main; Sunday's weekly reds sit in section I.
 
 **Roadmap.** 300 of 371 stories done (298 of 369 on 3 Nov). The new look is 6 of 17; no deep-work card is queued (F14 waits on the rest).
+
+## 5 Nov 2026
+
+**Waiting on you.** Three decisions: plants that mark a gate (#1164; B, the ground tells you the gate), found implements' drop rate (#1169; A, a lair master 1 in 4, a rich chest 1 in 20), a found orb's price (#1176; A, the tome's 120). No PR waits on your tap.
+
+**Landed on main since 4 Nov.** Magical implements end to end (#1111 B): the staff, wand, maul, tome and orb, held in both views, the Mages' Guild's stock, the gates' orbs, the counter's own glyphs (Systems 1849–1871, Bodies 1856, 1862). Naval combat finished: the heavy arrow by the water's tier, her hands douse the fire (1844, 1848). Your ship's paint and sails at the yard; the three banners drawn (1843–1847). The five strange beasts built and roaming the country (1852–1853, 1870). The smithies of the Gatelands, Aurenne and the Mark, street and room (1855–1869). A failing gate's wraith, skeletons, golem and gargoyle (1866–1873). The first-person hands no longer burn white in kit rooms (1872). A Fish for the Wedding (1857, 1859). Build s1260.
+
+**Under way.** QA's #1180 (the wildlife flake; suite and docs only) lands on green.
+
+**Blocked.** Nothing; main is green.
+
+**Roadmap.** 301 of 376 stories done (300 of 371 on 4 Nov). The new look is 6 of 17; no deep-work card is queued.
