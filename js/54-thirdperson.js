@@ -45,6 +45,8 @@ function tpWeapon(it){const g=new THREE.Group();if(!it)return g;
   const blade=tpHex(it.matCol,0xb8bcc4),guard=tpHex(it.matGuard,0x6a5030),grip=0x3a2616;const sh=it.weaponShape||(/bow/i.test(it.name)?'bow':/staff/i.test(it.name)?'staff':/axe/i.test(it.name)?'axe':/mace|hammer|club/i.test(it.name)?'mace':/dagger|knife/i.test(it.name)?'dagger':'sword');
   // S227 — the weapon kit (Michael's A on Session 220), tinted by the item's own metal, guard and glow; the bow's wood is its
   // material colour, and it turns to put the string on your side of the grip, as the box bow had it
+  // S1856 — a staff, wand or maul that is an implement is the kit's implement in its island's make with its school's emblem (implKind)
+  const im=typeof implementOf==='function'?implementOf(it):null;if(im==='staff'||im==='wand'||im==='maul'){g.add(buildWeapon(implKind(it)));g.userData.kit='impl';return g;}
   const kind={scimitar:'cutlass',flail:'flail',greatclub:'greatclub',greataxe:'greataxe',claymore:'claymore'}[sh]||(WPN_KINDS.includes(sh)?sh:'sword');
   const w=buildWeapon(kind==='crossbow'?'crossbowbare':kind==='bow'&&BOW_LEN[it.bowKind]?it.bowKind:kind,{tint:{metal:blade,guard,glow:tpHex(it.matGlow,0x88c0ff),wood:sh==='bow'?tpHex(it.matCol,0x6a4428):null}});g.add(w);
   if(kind==='bow'){w.rotation.y=Math.PI;g.userData.bow=true;g.userData.bowLen=bowLenOf(it);} /* S1550 — a longbow or a war bow is the kit's own, longer */if(kind==='crossbow'){w.rotation.x=Math.PI;g.userData.xbow=xbowRig(w);}g.userData.kit=kind; /* S1476 — its string and bolt drawn by the span */
@@ -167,6 +169,10 @@ function tpBuild(lookIn,ppIn,reuse){
     sg.position.set(.07,-.08,0);R.elL.add(sg);R.shield=sg;
     if(oh.enchant){const sb=new THREE.Box3().setFromObject(k);if(!sb.isEmpty())tpMotes(R,sg,oh.enchant.col!=null?oh.enchant.col:tpHex(oh.matGlow,TP_MOTE.armour),sb);}}
   else if(oh&&oh.torchType==='torch'){const tg=new THREE.Group();tpBox(.03,.3,.03,0x4a3018,tg,0,.1,0);const f=new THREE.Mesh(new THREE.ConeGeometry(.045,.12,5),new THREE.MeshBasicMaterial({color:0xff8830}));f.position.y=.3;tg.add(f);tg.rotation.x=Math.PI/2;R.torch=grip(R.handL,tg);}
+  // S1856 — the tome and the orb are the kit's (implKind): the tome where the box was, open-handed, its covers to the sides; the orb's
+  // grip in the closed left fist as a torch's is, the glass ahead. How each is held, and in first person, is the next session's (#1111 B)
+  else if(oh&&typeof implementOf==='function'&&(implementOf(oh)==='tome'||implementOf(oh)==='orb')){const tg=new THREE.Group();tg.add(buildWeapon(implKind(oh)));tg.userData.kit='impl';
+    if(implementOf(oh)==='tome'){tg.rotation.y=Math.PI/2;tg.position.set(0,-.06,.06);R.handL.add(tg);R.tome=tg;}else{tg.rotation.x=Math.PI/2;R.orb=grip(R.handL,tg);}}
   else if(oh){R.tome=tpBox(.12,.16,.05,tpMatColor(oh,0x5a3a5a),R.handL,0,-.06,.06);}
   // the worn pieces: a box about the bone each hangs on, in that bone's frame
   const BX=(x0,y0,z0,x1,y1,z1)=>new THREE.Box3(new THREE.Vector3(x0,y0,z0),new THREE.Vector3(x1,y1,z1));
@@ -194,7 +200,7 @@ function tpBuild(lookIn,ppIn,reuse){
       // what the hands hold rides in the builder's group: a copy of each piece (its geometry shared) in a carrier that follows the piece,
       // which stays on its driver bone where tpPose turns it, each frame (tpHBHold); a weapon's grip goes to the builder's curled fingers
       R.hbHeld=[];const by=rig.hb.P.byName,sw=HBODY.swap,side=s=>sw?(s==='L'?'R':'L'):s;
-      for(const [o,sd,grip] of [[R.weapon,'R',true],[R.weaponL,'L',true],[R.shield,'L',false],[R.torch,'L',true],[R.tome,'L',false]]){if(!o)continue;
+      for(const [o,sd,grip] of [[R.weapon,'R',true],[R.weaponL,'L',true],[R.shield,'L',false],[R.torch,'L',true],[R.orb,'L',true],[R.tome,'L',false]]){if(!o)continue;
         const c=new THREE.Group();c.matrixAutoUpdate=false;c.name='held';c.add(tpHBCopy(o,true));rig.hb.root.add(c);
         const s=side(sd);R.hbHeld.push({o,c,f:grip?[2,3,4,5].map(f=>by[`finger${f}-2.${s}`]).filter(Boolean):null,arm:[B['el'+sd],B['wr'+sd],by['lowerarm01.'+s],by['wrist.'+s]]});}
       // Michael's D on #99: an empty hand is a folded fist, and a hand that holds something closes on it; a tome is held open-handed
@@ -204,7 +210,7 @@ function tpBuild(lookIn,ppIn,reuse){
   return R;}
 // S1509 — a knife, a spear or a crossbow at its true size in the hand (wpnTrue): the kit's piece under the carried group, and with it the
 // group's other things drawn in that piece's frame (an enchantment's motes, the left hand's place on a two-handed grip), by the body's scale
-function tpTrue(R){const W=R.weapon||R.weaponL,k=W&&W.children[0];R.trueK=1;if(!k||!WPN_TRUE.has(W.userData.kit))return;
+function tpTrue(R){for(const o of [R.tome,R.orb])if(o&&o.userData.kit==='impl'&&o.children[0])wpnTrue('impl',o.children[0],R.root);const W=R.weapon||R.weaponL,k=W&&W.children[0];R.trueK=1;if(!k||!WPN_TRUE.has(W.userData.kit))return;
   wpnTrue(W.userData.kit,k,R.root);const f=k.scale.x;R.trueK=f;for(const c of W.children)if(c.isPoints)c.scale.setScalar(f);if(R.gripL)R.gripL.multiplyScalar(f);}
 // a held piece's copy for the builder's group: its meshes and points on the same geometry and materials, its own turns below the top
 // (Object3D.clone copies userData through JSON, which the kit's pieces do not all survive)

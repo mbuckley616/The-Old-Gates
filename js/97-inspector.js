@@ -122,6 +122,10 @@ function inspRegistry(){
   for(const k of KIT)add('Weapons and armour','The weapon kit',k,'32-people.js',()=>({obj:buildWeapon(k)}));
   for(const k of ['sword','axe','mace'])add('Weapons and armour','The weapon kit',k+' (rusted)','32-people.js',()=>({obj:buildWeapon(k,{rust:true})}));
   for(const k of ['round','kite','tower'])add('Weapons and armour','Shields',k,'32-people.js',()=>({obj:buildWeapon(k)}));
+  // S1856 — the magical implements (#1111 B): each shape in each island's make, and the six emblems and the plain crystal on the Gatelands' staff
+  {const SC=['uisce','cloch','scath','solas','gaoth','tine'];let n=0;
+    for(const mk of ['gatelands','mark','aurenne'])for(const sh of ['staff','wand','maul','orb','tome']){const sc=sh==='maul'?'cloch':SC[(n++)%6];add('Weapons and armour','Magical implements',`${sh} (${mk}, ${sc})`,'32-people.js',()=>({obj:buildWeapon(`impl:${sh}:${mk}:${sc}`)}));}
+    for(const sc of [...SC,''])add('Weapons and armour','Magical implements',`emblem: ${sc||'no school'}`,'32-people.js',()=>({obj:buildWeapon(`impl:staff:gatelands:${sc}`)}));}
   const withEQ=(set,fn)=>{const was={};for(const k in EQ)was[k]=EQ[k];try{set();return fn();}finally{for(const k in was)EQ[k]=was[k];for(const k in EQ)if(!(k in was))delete EQ[k];}};
   const armorOf=(tier,type)=>makeItem(tier,ARMOR_TYPES.find(a=>a.type===type),null,true);
   const grabVM=()=>{const g=new THREE.Group();for(const o of [vmSword,vmArmR]){if(!o)continue;if(o.parent)o.parent.remove(o);g.add(o);}if(vmSword&&vmSword.userData.fistL){const f=vmSword.userData.fistL;if(f.parent)f.parent.remove(f);g.add(f);}return g;};
