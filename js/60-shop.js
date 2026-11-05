@@ -683,6 +683,8 @@ function shopRowHTML(it, side, priceVal, affordable, locked, fullStock){
     /* v80 S451 — a piece you can't wear was only dimmed; the row now says why (canEquip's own words) */
     if(locked){ const req=canEquip(it); if(!req.ok&&req.msg) note += `<span class="sh-note warn">${req.msg}</span>`; }
   }
+  /* S1863 — an implement's row says what it changes (the page's "the rule, not a percentage"), on both sides */
+  if(typeof implementRule==='function'){ const r=implementRule(it); if(r) note += `<span class="sh-note sh-impl">${r}</span>`; }
   const wt    = itemWeight(it);
   const priceCol = side==='buy' && !affordable ? '#6a5230' : (side==='sell' ? '#6ed36e' : '#c8a84a');
   return `
@@ -829,8 +831,9 @@ function itemDesc(it){
     const attrLbl=(typeof ATTR_DEF!=='undefined'&&ATTR_DEF[def.attr])?ATTR_DEF[def.attr].label:def.attr;
     return read?`Skill book (already read)`:`Skill book · +1 ${attrLbl} on read`;
   }
+  {const r=typeof implementRule==='function'?implementRule(it):'';if(r){const base=it.atk?`ATK ${it.atk[0]}–${it.atk[1]} · `:'';return base+r+(it.material?` · Tier ${it.tier} ${it.material}`:'')+(it.enchant?` · ${it.enchant.name}`:'');}} /* S1863 — an implement's rule */
   if(it.type==='equip'&&it.atk){
-    const wlbl=['','Light','Medium','Heavy'][it.weight||2]||'';
+    const wlbl=typeof weaponWeightLabel==='function'?weaponWeightLabel(it.weight||2):'';
     const tierStr=it.material?` · Tier ${it.tier} ${it.material}`:'';
     const ench=it.enchant?` · ${it.enchant.name}`:'';
     const wt = it.wType || (it.weaponShape && WSHAPE_TO_WTYPE[it.weaponShape]) || '';

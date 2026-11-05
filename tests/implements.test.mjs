@@ -193,5 +193,27 @@ check(`third person, the orb: carried before the waist (hand ${H.rest.y} m up, $
 check(`the orb's light is its own: ${H.rest.glow} at rest, ${H.raised.glow} raised, ${H.kept.glow} keeping a word`, H.rest.glow === 1 && H.raised.glow > 1.1 && H.kept.glow > 1.3 && !H.rest.shared, H);
 check(`the tome is lifted before the chest in a cast (hand ${H.tomeRest.y} → ${H.tomeRead.y} m)`, H.tomeRead.y > H.tomeRest.y + .2 && H.tomeRead.fwd > H.tomeRest.fwd, H);
 check('first person draws the orb and the tome in the off hand, raised, pushed out in a cast and lifted to read', H.fp === 'orb' && H.fpTome === 'tome' && H.fpRest.every(v => v === 0) && H.fpRaised[1] > .1 && H.fpCast[2] < -.15 && H.fpRead[1] > .1, H);
+// S1863 — the rule, not a percentage: the shop's row, the loot list, the bag's tooltip and the worn slot each say what the implement
+// changes, in metres and seconds, with its emblem's cut; a sword's row says none of it
+const RU = await page.evaluate(() => {
+  const keep = { w: EQ.weapon, o: EQ.offhand }, pieces = { staff: makeImplement(1, 'staff', 'tine'), wand: makeImplement(1, 'wand', 'uisce'),
+    maul: makeImplement(1, 'wand', 'cloch'), tome: makeTome(1, 'solas'), orb: makeOrb(1, 'gaoth', { found: true }), sword: makeItem(1, WEAPON_TYPES.find(t => t.type === 'Sword'), null, false) };
+  const out = {};
+  for (const [k, it] of Object.entries(pieces)) {
+    const row = shopRowHTML(it, 'buy', 50, true, false, []), sell = shopRowHTML(it, 'sell', 20, true, false, []);
+    BAG.push(it); showBagTooltip(BAG.length - 1, { clientX: 10, clientY: 10 }); const tip = document.getElementById('bag-tooltip').textContent; BAG.pop();
+    const slot = it.slot; EQ[slot] = it; hoverEqSlot(slot); const worn = document.getElementById('eq-tooltip-stat').textContent;
+    out[k] = { rule: implementRule(it), row: row.includes('sh-impl') && row.includes(implementRule(it) || '§'), sell: sell.includes('sh-impl'), loot: lootItemDesc(it), tip, worn };
+  }
+  EQ.weapon = keep.w; EQ.offhand = keep.o; return out; });
+console.log('rule', JSON.stringify(RU));
+check(`each implement's rule in a line: staff "${RU.staff.rule}", wand "${RU.wand.rule}", tome "${RU.tome.rule}", found orb "${RU.orb.rule}"`,
+  RU.staff.rule === 'Held 5.5 m · Laid 16 m, lasts ×1.25 · Tine −10% mana' && RU.wand.rule === 'Sent 45 m · wind-up 0.28 s · Uisce −10% mana'
+  && RU.maul.rule === 'Sent 45 m · wind-up 0.28 s · Cloch −10% mana' && RU.tome.rule === 'Impression ×0.8, wild 10% · wind-up ×2 · Solas −10% mana'
+  && RU.orb.rule === 'Keeps a cast 60 s · Gaoth −20% mana' && RU.sword.rule === '', RU);
+check('the shop\'s row says it on both sides; the loot list, the bag\'s tooltip and the worn slot say it too; a sword says none of it; the tooltip\'s weight reads Light, Medium or Heavy, never undefined',
+  ['staff', 'wand', 'maul', 'tome', 'orb'].every(k => RU[k].row && RU[k].sell && RU[k].loot.includes(RU[k].rule) && RU[k].tip.includes(k === 'orb' ? 'keeps the cast a minute' : k === 'tome' ? 'Read aloud' : k === 'staff' ? 'Held reaches 5.5 m' : 'A sent spell flies') && RU[k].worn.includes(RU[k].rule))
+  && !/undefined/.test(RU.staff.tip + RU.wand.tip + RU.sword.tip) && RU.staff.tip.includes('Heavy · 28 stamina') && RU.wand.tip.includes('Light · 11 stamina') && RU.sword.tip.includes('Medium · 21 stamina')
+  && !RU.sword.row && !RU.sword.sell && !/Held|Sent|Keeps/.test(RU.sword.loot + RU.sword.tip + RU.sword.worn) && RU.staff.loot.startsWith('ATK '), RU);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
