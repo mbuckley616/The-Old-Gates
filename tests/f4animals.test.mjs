@@ -73,6 +73,14 @@ console.log('  walk:', JSON.stringify(walk));
 check(`walked 1 m/s along the ground (the deer and the fox trot, the small ones bound at a gallop) each one's bones move and its lowest toe stays by the ground (${walk.map(w => w.nm + ' ' + w.low).join(', ')} m)`,
   walk.every(w => w.moved > .01 && w.stand < .2 && Math.abs(w.low) < .06), walk);
 
+// Session 1852: the Lanternfox's glow (OG-040: "glows blue and silver at night") is out by day and at full by night, by the clock
+const lamp = await page.evaluate(() => { const f = _A.find(a => a.nm === 'Lanternfox'), H = f.rig.hc, at = h => { forceTime(h); tickCreatures(1 / 60, 8e5 + h * 100);
+  return +Math.max(...H.glow.map(u => u.value.r + u.value.g + u.value.b)).toFixed(2); };
+  const r = { noon: at(12), dusk: at(18), night: at(23), full: +Math.max(...(H.night || []).map(c => c.r + c.g + c.b)).toFixed(2), uniforms: H.glow.length }; forceTime(12); tickCreatures(1 / 60, 8.1e5); return r; });
+console.log('  lamp:', JSON.stringify(lamp));
+check(`the Lanternfox's glow by the clock: ${lamp.noon} at noon, ${lamp.dusk} at 18:00, ${lamp.night} at 23:00 (its full ${lamp.full})`,
+  lamp.uniforms > 0 && lamp.full > 1 && lamp.noon === 0 && Math.abs(lamp.night - lamp.full) < .01 && lamp.dusk > .3 * lamp.full && lamp.dusk < .7 * lamp.full, lamp);
+
 // Session 1706: a deer is a hind one time in two by its key (f4animals:0 a stag, f4animals:5 a hind): the kit's deer without antlers,
 // a tenth smaller; over a field of keys about half are hinds
 const hind = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.cos(yaw), x = px + fx * 12, z = pz + fz * 12;
