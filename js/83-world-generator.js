@@ -444,6 +444,10 @@ function genSettlement(site){
         // its arcade before the front, the forge's flue up through the roof at the back left corner; its wall and door the street's draw.
         // Inside it is the smith's shop (kitAurSmithy). A lot with no room for it takes PKIT.au.lot's house as before.
         if(AU&&t==='weapon'){const S={kind:'tile',w:7.2,d:6,two:false,arcade:true,pointed:false},E=ext(S);if(fit(S.w,S.d,E)){lot.kit={kind:'aurhouse',o:S,ext:E,w0,d0,smithy:true,shell:`${site.id}:windows:${lot.n}`};return;}}
+        // S1894 (card F9; Michael's A on #303 and on the kit in every interior; OG-043, OG-114, OG-133) — an Aurennais apothecary (the
+        // 'potion' shop) is the apothecary of rooms.js (Session 938) where it fits whole: the smithy's Roman house, 7.2 by 6 m under hipped
+        // pantile with its arcade, the still's flue up through the roof at the back right corner. Inside it is the shop of glass (kitAurApothecary).
+        if(AU&&t==='potion'){const S={kind:'tile',w:7.2,d:6,two:false,arcade:true,pointed:false},E=ext(S);if(fit(S.w,S.d,E)){lot.kit={kind:'aurhouse',o:S,ext:E,w0,d0,apothecary:true,shell:`${site.id}:windows:${lot.n}`};return;}}
         // S1869 (card F9; Michael's A on #303 and on the kit in every interior; OG-043) — a Markish smithy (the 'weapon' shop) is the smithy
         // of rooms.js (Session 930) where it fits whole: pieces.js's Mark hall of 6.4 by 9 m under shingle, carved, no chimney but the smoke
         // louver on the ridge over the forge; with its porch where that fits too, else without. Its wall the lot's, drawn from the street's
@@ -611,8 +615,8 @@ function genSettlement(site){
       if(tile&&o.arcade){const n=Math.max(3,Math.round(o.w/2.2));part(o.w+.3,2.05+o.w/n/2+.35+H.yW,1.9,0,0,o.d/2+.95);} /* the arcade */
       if(o.stair&&!tile)part(.9,H.top*.6,o.d-.6,-(o.w/2+.5),0,.3); /* the outside stair, its flight as a block of 0.6 of the wall */
       if(tile){const rw=o.w/2+.45,rd=o.d/2+.45,r=rw>=rd?kitRoof(rw,rd,hgt,hgt+Math.tan(22*Math.PI/180)*rd):kitRoof(rd,rw,hgt,hgt+Math.tan(22*Math.PI/180)*rw);if(rw<rd)r.rotateY(Math.PI/2);kitLo.push([r,mx,new THREE.Color(.58,.32,.22)]);}
-      let stk=null;if(k.smithy){stk=PKIT.au.smithyStack(H,o);const f=stk.flue;part(f.x1-f.x0+.2,f.y1+.28-H.top,f.z1-f.z0+.2,(f.x0+f.x1)/2,H.top,(f.z0+f.z1)/2);
-        const fu=(f.x0+f.x1)/2,fv=(f.z0+f.z1)/2;k.stack={x:+(X+fu*c+fv*s_).toFixed(3),z:+(Z-fu*s_+fv*c).toFixed(3),y:+(y+f.y1+.25).toFixed(3)};S.chimneys.push({x:k.stack.x,y:k.stack.y+.1,z:k.stack.z,t:'weapon',k:0});} /* S1865 — the smithy's stack, in the far copy a block, and the forge's smoke (the one Aurennais house that smokes) */
+      let stk=null;if(k.smithy||k.apothecary){stk=PKIT.au.smithyStack(H,o,!!k.apothecary);const f=stk.flue;part(f.x1-f.x0+.2,f.y1+.28-H.top,f.z1-f.z0+.2,(f.x0+f.x1)/2,H.top,(f.z0+f.z1)/2);
+        const fu=(f.x0+f.x1)/2,fv=(f.z0+f.z1)/2;k.stack={x:+(X+fu*c+fv*s_).toFixed(3),z:+(Z-fu*s_+fv*c).toFixed(3),y:+(y+f.y1+.25).toFixed(3)};S.chimneys.push({x:k.stack.x,y:k.stack.y+.1,z:k.stack.z,t:k.apothecary?'potion':'weapon',k:0});} /* S1865 — the smithy's stack, in the far copy a block, and the forge's smoke (the one Aurennais house that smokes); S1894 the apothecary's still's, at the back right */
       lot._kitDoor=+(u+H.doorX).toFixed(3);lot._wallH=+(H.top-H.yW).toFixed(3);lot._storeys=o.two?2:1; /* S1321 — the wall over its floor, the plinth's top (H.yW, 0.24): a storey is floor to eaves, as SCALE's table measures it */lot.two=!!o.two;k.tris=H.tris+(stk?stk.tris:0);k.calls=H.draws+(stk?2:0);k.colour=o.kind;k.door=lot._kitDoor;}
     // S1419 — the courtyard house (PKIT.au.courtyard, its own stream keyed by the town and the lot), its front on the lot's less the step;
     // its far copy one box to the cornice in its wall's colour (the roof slopes in, under the parapet)
@@ -2494,6 +2498,56 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     else{intNPCMesh=null;intNPCPos={x:-99,z:-99};}
     return sc_;
   }
+  // S1894 (card F9; Michael's A on #303 and on the kit in every interior; OG-043, OG-114, OG-133) — on the new look an Aurennais apothecary
+  // that stands as rooms.js's (lot.kit.apothecary, the smithy's Roman house of 7.2 by 6 m with its arcade) opens on the shop of glass and
+  // glazed jars (PKIT.au.apothecary, Session 938) inside the street's own shell: the tiled counter across the shop with the brass scales on
+  // its marble top, the bench for those who wait by the front wall, the back wall of albarelli; behind the counter the four steps (the
+  // worktable, the bronze mortar on its block, the glass alembic on its tiled furnace in the back right corner under the hood into the
+  // flue, the bench of phials down the right wall); the cedar joists and the brass lamp; under the arcade the stall of jars and herbs.
+  // Drawn in metres and moved into the room's frame as the smithy is. The apothecary stands behind the counter, facing the door across it.
+  function kitAurApothecary(house){return !!(house&&house.type==='potion'&&house.kit&&house.kit.kind==='aurhouse'&&house.kit.apothecary&&house.kit.shell&&window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.au&&PKIT.au.apothecary);}
+  function buildKitAurApothecary(house){
+    const k=house.kit,T=PKIT.au.apothecary({shell:k.shell,house:k.o},PKIT.stream(house.id+':aurapo')),I=T.inner,X=I.x1,Z=I.z1,F0=T.floor,W=2*X,D=2*Z;
+    const rx=x=>x+X,rz=z=>z+Z,ry=y=>y-F0,dr=T.door;
+    house._counterFront=null;house.intW=W;house.intD=D;house._roomH=+(T.ceil-F0).toFixed(3);house._exitD=.8;house._exitW=1.0;house._exitX=+rx(dr.x).toFixed(3);house._aurApothecary=T;
+    /* you arrive 0.9 m inside the door, facing the counter's front */
+    house._arriveX=+rx(dr.x).toFixed(3);house._arriveZ=+rz(Z-.9).toFixed(3);
+    const sc_=new THREE.Scene();interiorScene=sc_;landRoomPost(sc_);sc_.background=new THREE.Color(0x120a06);sc_.fog=new THREE.Fog(0x120a06,Math.max(W,D)*.8*SCALE.ROOM_K,Math.max(W,D)*2.4*SCALE.ROOM_K);
+    intNPCMesh=null;intNPCPos={x:-99,z:-99};intBedPos=null;intStashPos=null;
+    const SOL=[];INT_SOL=SOL;FOOTHOLDS=[];INT_BEDS=[];INT_DOORS=[];INT_DOORS.house=house.id;INT_CHAIR=null;INT_NPCS=[];HATCH.active=false;HATCH.roof=false;INT_LOOT=null;INT_BOX=null;INT_SHELF=null;
+    T.group.position.set(X,-F0,Z);T.group.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false;}});sc_.add(T.group);
+    {const E=new THREE.Object3D();E.position.set(rx(dr.x),0,D);E.userData.entrance=true;E.userData.leaf=[dr.w,+(dr.h-dr.w/2).toFixed(3)];sc_.add(E);} /* the arched door's leaf, as the smithy's */
+    // the solids are the prototype's boxes (the counter, the waiting bench, the shelves of jars, the table, the mortar, the furnace, the
+    // receiver's stand, the bench of phials and the shelf over it); the waiting bench's and the bench of phials' tops are footholds (not
+    // the counter's scales, the furnace's still nor the table's work)
+    const FOOT=['mastaba','bench'];
+    for(const q of T.boxes){const b={x0:rx(q.x0),x1:rx(q.x1),z0:rz(q.z0),z1:rz(q.z1),y0:Math.max(0,ry(q.y0)),y1:ry(q.y1)};SOL.push(b);if(FOOT.includes(q.tag))FOOTHOLDS.push({x0:b.x0,x1:b.x1,z0:b.z0,z1:b.z1,y:b.y1});}
+    // the hood over the furnace, from 1.9 m to the ceiling, so a jump onto the furnace meets it
+    {const H=T.furnace;SOL.push({x0:rx(H.x0),x1:rx(H.x1),z0:rz(H.z0),z1:rz(H.z1),y0:ry(T.hood.y0),y1:ry(T.hood.y1)});}
+    // the shop's strongbox (S155) against the back wall between the back window and the receiver's stand, past the worktable's end
+    {const bx=rx(1.25),bz=rz(-Z+.35);const bg=new THREE.Group();const shell=buildChestShell(bg,.6,0x4a3018);bg.position.set(bx,0,bz);sc_.add(bg);
+      SOL.push({x0:bx-.32,x1:bx+.32,z0:bz-.28,z1:bz+.28,y0:0,y1:.5});FOOTHOLDS.push({x0:bx-.32,x1:bx+.32,z0:bz-.28,z1:bz+.28,y:.5});
+      INT_BOX={x:bx,z:bz,lid:shell.lid,g:bg,id:house.id,kind:'shop',type:house.type,house,open:false};}
+    // the day: one box round the house, 20 m out, facing in (beyond the door, the arcade and every window), and the street's flags under it, by the hour
+    const hr=typeof gameHour==='function'?gameHour():12,dayK=hr>=7&&hr<18?1:hr>=5&&hr<20?.45:.08;
+    {const day=hr>=7&&hr<18?0xc4d0dc:hr>=5&&hr<20?0x8a7a7a:0x0e1420,S=Math.max(W,D)+40,g=new THREE.BoxGeometry(S,40,S);g.translate(X,20-.3,Z);
+      const m=new THREE.Mesh(g,new THREE.MeshBasicMaterial({color:day,side:THREE.BackSide,fog:false}));m.userData.daylight=true;sc_.add(m);
+      const f=new THREE.Mesh(new THREE.PlaneGeometry(S,S).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({color:new THREE.Color(0x9a8c74).multiplyScalar(.25+.6*dayK),fog:false}));f.position.set(X,-.3,Z);sc_.add(f);}
+    kitDaylight(sc_,[{x:rx(dr.x),y:1.4,z:D,nx:0,nz:-1,w:dr.w,h:dr.h}],.4);
+    // the light: the furnace's fire door, the brass lamp over the customers' side, and the day through the door
+    const KA=kitRoomAir(sc_,.4);
+    {const l=new THREE.PointLight(0xff7a30,1.2*KA.fire,6);l.position.set(rx(T.glow[0]),ry(T.glow[1]+.2),rz(T.glow[2]));sc_.add(l);}
+    {const l=new THREE.PointLight(0xffaa44,1.1*KA.lamp,8);l.position.set(rx(T.lamp[0]),ry(T.lamp[1]-.12),rz(T.lamp[2]));sc_.add(l);}
+    {const l=new THREE.PointLight(0xe8eef8,.1+.9*dayK,7);l.position.set(rx(dr.x),2.2,D-.6);l.userData.daylight=true;sc_.add(l);}
+    // the apothecary behind the counter's left end, before the wall of jars and beside the mortar, out of the walk behind the counter;
+    // facing the door across it
+    const npc={x:rx(-2.25),z:rz(T.counter.z0-.45)};
+    if(npcInsideNow(house)){const g=buildNPCMesh({role:'Merchant',name:house.keeper,_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
+      g.rotation.y=0;g.position.set(npc.x,0,npc.z);sc_.add(g);intNPCMesh=g;intNPCPos={x:npc.x,z:npc.z};
+      intNPCMesh.userData.amble={wa:0,wt:1,minZ:npc.z,maxZ:npc.z,minX:npc.x,maxX:npc.x,speed:.25,paused:true};}
+    else{intNPCMesh=null;intNPCPos={x:-99,z:-99};}
+    return sc_;
+  }
   // S1475 (card F9; Michael's C on #744, A on #303; OG-115, OG-114) — on the new look a Gatelands farm's barn (its record S1475's, in
   // buildFarm) is the barn's own rooms inside (PKIT.gl.barn, rooms.js's Session 1198), in the farmstead barn's black-doored shell: below,
   // the cart bay behind the arch (the plough, the harrow, the seed sacks, the scythe and the flail) and through a board partition the
@@ -3419,6 +3473,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     if(kitApothecary(house))return buildKitApothecary(house); /* S1876 — a Gatelands village's apothecary inside, at its true size */
     if(kitCourtHouse(house))return buildKitCourtHouse(house); /* S1425 — Aurenne's courtyard house inside, at its true size */
     if(kitAurSmithy(house))return buildKitAurSmithy(house); /* S1865 — an Aurennais smithy inside, at its true size */
+    if(kitAurApothecary(house))return buildKitAurApothecary(house); /* S1894 — an Aurennais apothecary inside, at its true size */
     if(kitMarkSmithy(house))return buildKitMarkSmithy(house); /* S1869 — a Markish smithy inside, at its true size */
     if(kitMarkApothecary(house))return buildKitMarkApothecary(house); /* S1881 — a Markish apothecary inside, at its true size */
     if(kitAurHome(house))return buildKitAurHome(house); /* S1831 — Aurenne's flat over the dyer's shop inside, at its true size */
