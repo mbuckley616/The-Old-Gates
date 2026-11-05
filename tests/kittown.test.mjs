@@ -28,7 +28,9 @@ const r = await page.evaluate(() => {
     const s = S.sol.find(q => q.hid === h.id); if (!s) { out.push({ id: h.id, nosol: true }); continue; }
     const nx = s.s, nz = s.c, ex = s.c, ez = -s.s, base = WORLD.worldH(s.cx, s.cz);
     /* the four faces at 0.5 m, a little off the middle (clear of a door in the middle bay): from 0.55 m out (inside the 0.6 m every lot keeps clear), toward the centre */
-    const faces = [[nx, nz, s.rz, ex * .45, ez * .45], [-nx, -nz, s.rz, ex * .45, ez * .45], [ex, ez, s.rx, nx * .4, nz * .4], [-ex, -ez, s.rx, nx * .4, nz * .4]].map(([ax, az, half, ox, oz]) => {
+    /* S1855 — the forge's cart door is 2.4 m wide and stands open: its front is sampled 2.2 m off the middle on the side away from the door */
+    const fo = h.kit.kind === 'forge' ? -Math.sign((h.doorX - s.cx) * ex + (h.doorZ - s.cz) * ez) * 2.2 : .45;
+    const faces = [[nx, nz, s.rz, ex * fo, ez * fo], [-nx, -nz, s.rz, ex * .45, ez * .45], [ex, ez, s.rx, nx * .4, nz * .4], [-ex, -ez, s.rx, nx * .4, nz * .4]].map(([ax, az, half, ox, oz]) => {
       const x = s.cx + ax * (half + .55) + ox, z = s.cz + az * (half + .55) + oz, k = hit(x, base + .5, z, -ax, -az, 3); return k ? +(.55 - k.distance).toFixed(3) : null; });
     /* the door: from 1.5 m out, at 1.3 m, straight in */
     const fx = -Math.sin(h.exitYaw), fz = -Math.cos(h.exitYaw), dh = hit(h.doorX + fx * 1.5, WORLD.worldH(h.doorX, h.doorZ) + 1.3, h.doorZ + fz * 1.5, -fx, -fz, 3);
@@ -45,8 +47,9 @@ const halls = r.none ? [] : r.out.filter(h => h.kind === 'guildhall');
 check(`both of Dunmore's guild halls are the kit's hall (${halls.map(h => h.id).join(', ')}), measured with its houses below`, halls.length === 2, r.none ? r : r.out.map(h => h.kind));
 const bad = r.out.filter(h => h.nosol || h.faces.some(f => f == null || f > .05 || f < -.75));
 check(`every kit house's four walls stand on its solid, within the wall's thickness (${r.n} houses; each face ${-Math.max(...r.out.flatMap(h => h.faces))} to ${-Math.min(...r.out.flatMap(h => h.faces))} m inside its solid)`, bad.length === 0, bad.slice(0, 5));
-const badD = r.out.filter(h => h.door == null || h.door < 1.7 || h.door > 2.3 || !h.painted);
-check(`the door you use is the drawn door: its painted leaf (a merchant's glazed), set back in the wall, ${Math.min(...r.out.map(h => h.door))} to ${Math.max(...r.out.map(h => h.door))} m from a point 1.5 m out`, badD.length === 0, badD.slice(0, 5));
+const badD = r.out.filter(h => h.kind !== 'forge' && (h.door == null || h.door < 1.7 || h.door > 2.3 || !h.painted)), forges = r.out.filter(h => h.kind === 'forge');
+check(`the forge's cart door stands open: a ray at it from 1.5 m out goes 3 m and meets nothing (${forges.map(h => h.id).join(', ')})`, forges.length >= 1 && forges.every(h => h.door == null), forges);
+check(`the door you use is the drawn door: its painted leaf (a merchant's glazed), set back in the wall, ${Math.min(...r.out.filter(h => h.kind !== 'forge').map(h => h.door))} to ${Math.max(...r.out.filter(h => h.kind !== 'forge').map(h => h.door))} m from a point 1.5 m out`, badD.length === 0, badD.slice(0, 5));
 check(`the town's kit houses are ${r.calls} draws (${r.tris} triangles)`, r.calls > 8 && r.calls <= 60, r);
 check('the old builder\'s houses are gone from the kit lots', r.under === 0, { under: r.under });
 
@@ -63,7 +66,7 @@ check(`it covers the kit houses' ground within ${dB.toFixed(2)} m and their heig
 check('from outside the town the far copy is drawn, in the town the kit\'s houses', !far.none && far.out.lo && !far.out.hi && far.inn.hi && !far.inn.lo, far);
 
 // the shops' signs (Session 1074): one painted for each trade, shared by its shops, and none more when the town is built again
-const sg = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'), shops = S.houses.filter(h => h.siteId === 'dunmore' && h.kit && h.kit.kind === 'merchant'), trades = new Set(shops.map(h => h.type));
+const sg = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'), shops = S.houses.filter(h => h.siteId === 'dunmore' && h.kit && h.kit.kind === 'merchant'), trades = new Set([...WORLD.settle.values()].flatMap(T => T.houses || []).filter(h => h.kit && h.kit.kind === 'merchant').map(h => h.type)); /* S1855 — the signs are counted over every town built so far, so the trades are too: Dunmore's smith is a forge now, and another town's arms merchant paints that sign */
   const a = PKIT.signsMade(), p = PKIT.panelsMade(), calls = S.kitCalls; disposeSettlement('dunmore'); genSettlement(allSites().find(t => t.id === 'dunmore')); const T = WORLD.settle.get('dunmore');
   return { shops: shops.length, trades: trades.size, a, b: PKIT.signsMade(), p, p2: PKIT.panelsMade(), calls, calls2: T.kitCalls }; });
 check(`${sg.shops} shops of ${sg.trades} trades paint ${sg.a} signs, and building the town again paints none (${sg.calls} draws, then ${sg.calls2})`, sg.shops > 3 && sg.a === sg.trades && sg.b === sg.a && sg.calls2 === sg.calls, sg);

@@ -493,7 +493,7 @@ function bayPlan(kind, n, o = {}) {
 // with dressed quoins, string courses and a cornice; no two neighbours share a colour, as in Kinsale or Dingle, and the
 // door and sashes are painted in a colour that does not drown in the wall's. Cottages stay limewashed under thatch, farmhouses
 // white under slate, and the warehouse bare stone (the decision's text). s.kind: 'townhouse' | 'merchant' | 'warehouse' |
-// 'farmhouse' | 'cottage'; by default a town lot, one in four a merchant's house with a shop. Everything comes from streams
+// 'farmhouse' | 'cottage' | 'forge'; by default a town lot, one in four a merchant's house with a shop. Everything comes from streams
 // keyed by the street and the lot, the windows lit at night among them (plan.r). -> { plan, kind, colour, paint }
 const GL_TOWN = ['ochre', 'rose', 'cream', 'sage', 'blue', 'oxblood'];
 const GL_CLASH = { blue: ['blue', 'teal'], oxblood: ['red'], rose: ['red'], sage: ['green', 'teal'], ochre: ['yellow'], cream: ['yellow'] };
@@ -507,8 +507,9 @@ function gatelandsLot(street, i, s = {}) {
     : kind === 'merchant' ? { color: colour, paint, trade: s.trade } : { color: colour, paint, doorX: i % 2 ? 1.95 : -1.95 };
   const plan = s.bays && BAYS[kind] ? bayPlan(kind, s.bays, { ...opts, d: s.d }) : PLANS[kind](opts);
   plan.r = stream(`${street}:windows:${i}`);
+  if (kind === 'forge') plan.doorX = plan.open.front[0].x; /* Session 1855: a smithy's door is its open cart door, 1.2 m east of the middle */
   const town = kind === 'townhouse' || kind === 'merchant';
-  return { plan, kind, colour: town ? colour : kind === 'warehouse' ? 'stone' : 'lime', paint: town ? paint : plan.paint };
+  return { plan, kind, colour: town ? colour : kind === 'warehouse' || kind === 'forge' ? 'stone' : 'lime', paint: town ? paint : plan.paint };
 }
 
 // the town church (Session 1127, card F6; Michael's B on DECISION #410: a square west tower). From pieces.js's Session 1087, its
