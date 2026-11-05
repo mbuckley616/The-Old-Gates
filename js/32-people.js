@@ -798,7 +798,7 @@ const WPN_GEO=new Map();
 // S1509 — the kit's pieces are drawn to the old person (1.233 tall) and grow with the body that carries them (×1.2 to ×1.35), which
 // brings most of them to their true length: a sword 0.89 m, a longsword 1.17, an axe 0.76. Three were drawn in true metres and came out
 // too big: the knife 0.49 m, the spear 2.97, the crossbow 1.40. These are carried at their own size, whatever the stature (wpnTrue)
-const WPN_TRUE=new Set(['dagger','spear','crossbow','pick','hatchet']);
+const WPN_TRUE=new Set(['dagger','spear','crossbow','pick','hatchet','impl']);
 function wpnTrue(kind,w,holder){if(WPN_TRUE.has(kind)&&holder&&holder.scale.x>0)w.scale.setScalar(1/holder.scale.x);return w;}
 // S1550 — the length of Bowyer's two bows to the plain bow's (#851 A: the longbow 1.5×, the war bow 1.7×), by the item's bowKind
 const BOW_LEN={longbow:1.5,warbow:1.7};
@@ -900,7 +900,7 @@ function wpnBuild(kind,rust,tint){tint=tint||{};
       // S231 — the boss and rivets on the +x face, the face every shield turns outward from the left forearm (it faced the body)
       add(SK.ball(.045,12,8,0,Math.PI*2,0,Math.PI/2),'metal',BRASS,[.028,.05,0],[0,0,-Math.PI/2]);for(const [a,b2] of [[.2,.1],[-.24,0]])add(SK.ball(.012,6,5),'metal',BRASS,[.03,a,b2]);}
   };
-  (K[kind]||K.sword)();
+  const IM=/^impl:(staff|wand|maul|orb|tome):(gatelands|mark|aurenne):(\w*)$/.exec(kind);if(IM)wpnImpl(add,IM[1],IM[2],IM[3]);else (K[kind]||K.sword)();
   // merge by material: vertex colours carry each part's colour
   const by={};for(const [geo,m,c,mx] of L)(by[m]=by[m]||[]).push([geo,c,mx]);
   const out=[];const v=new THREE.Vector3(),nm=new THREE.Matrix3();
@@ -911,6 +911,94 @@ function wpnBuild(kind,rust,tint){tint=tint||{};
     out.push({geo:g,mat:m});}
   return out;
 }
+// S1856 — the magical implements' meshes (#1111 B, magical-implements.md: "four shapes in three makes and six emblem heads"; OG-094,
+// Tine redone as fire). A kit kind `impl:<shape>:<make>:<school>`: the staff (two hands, 1.80 to 1.91 m), the wand (0.45 m; Cloch's is the
+// maul, 0.68 m, a stone head), the orb (a glass on a short grip) and the tome (a book 24 by 17 cm, its covers facing ±x as a shield's
+// face is), each in its island's make (implementMake): the Gatelands' wood, bone and leather; the Mark's stone and iron; Aurenne's
+// gilt metal and carving. They are drawn in true metres (WPN_TRUE's 'impl'), along +y from the fist at 0 as every kit piece is.
+// The emblem (implEmblem) is the school's, OG-094's: Uisce a crescent moon, Cloch a mountain, Scáth an eye, Solas a sun, Gaoth a
+// spiral, Tine a flame; no school, a plain crystal. Its body is the make's (bone, iron, gilt) and its heart glows the school's colour.
+const IMPL_MAKE={
+  gatelands:{wood:0x7a5636,shaft:0x6a4a2e,leath:0x5a3a22,band:0x3e2816,fit:0xe2d6bc,fitM:'matte',stone:0x8a8276,cover:0x6a4426},
+  mark:     {wood:0x3a2c20,shaft:0x3a2c20,leath:0x2e2420,band:0x1e1814,fit:0x5a5d63,fitM:'metal',stone:0x6e6c66,cover:0x2e2622},
+  aurenne:  {wood:0xb08a5a,shaft:0xb89868,leath:0x5a1e28,band:0x3a1218,fit:0xd8b25a,fitM:'metal',stone:0xc8bca8,cover:0x5a1e28}};
+// an implement item's kit kind: its shape, its island's make (`make`, which the guild's stock sets: 'gatelands', 'mark' or 'aurenne';
+// Gatelands when it has none) and its school's emblem
+function implKind(it){const m=it&&IMPL_MAKE[it.make]?it.make:'gatelands';return 'impl:'+((typeof implementOf==='function'&&implementOf(it))||'wand')+':'+m+':'+((it&&it.school)||'');}
+function implSchoolCol(sc){return typeof SCHOOL_DEF!=='undefined'&&SCHOOL_DEF[sc]?new THREE.Color(SCHOOL_DEF[sc].col).getHex():0xdde8ff;}
+// the emblem in a unit's square in the xy plane, facing ±z, scaled s, turned ry about y and set at P; its body in mat/c, its heart glowing
+function implEmblem(add,sc,mat,c,P,s,ry,allGlow){const G=implSchoolCol(sc),bodyM=allGlow?'glow':mat,bodyC=allGlow?G:c;
+  const put=(geo,m,cc)=>{geo.scale(s,s,s);if(ry)geo.rotateY(ry);geo.translate(P[0],P[1],P[2]);add(geo,m,cc);};
+  const ext=(sh,d,holes)=>{if(holes)sh.holes.push(...holes);const g=new THREE.ExtrudeGeometry(sh,{depth:d,bevelEnabled:true,bevelThickness:.05,bevelSize:.05,bevelSegments:1,curveSegments:10});g.translate(0,0,-d/2);return g;};
+  if(sc==='uisce'){const sh=new THREE.Shape(),a=Math.atan2(.78,.625),b=Math.atan2(.78,.175);sh.absarc(0,0,1,a,Math.PI*2-a,false);sh.absarc(.45,0,.8,Math.PI*2-b,b,true);
+    put(ext(sh,.22),bodyM,bodyC);put(SK.ball(.24,10,8).translate(.6,0,0),'glow',G);}
+  else if(sc==='cloch'){const sh=new THREE.Shape();[[-1,-.7],[-.45,.35],[-.22,.08],[.15,.92],[.52,.28],[.68,.42],[1,-.7]].forEach(([x,y],i)=>i?sh.lineTo(x,y):sh.moveTo(x,y));
+    put(ext(sh,.24),bodyM,bodyC);put(new THREE.OctahedronGeometry(.2,0).scale(1,1.3,1).translate(.12,.18,0),'glow',G);}
+  else if(sc==='scath'){const alm=(k)=>{const sh=new THREE.Shape();for(let i=0;i<24;i++){const x=i<12?-1+i/6:1-(i-12)/6,y=(i<12?1:-1)*.62*k*(1-x*x);i?sh.lineTo(x*k,y):sh.moveTo(x*k,y);}sh.closePath();return sh;};
+    put(ext(alm(1),.2,[alm(.74)]),bodyM,bodyC);put(SK.ball(.3,12,9),'glow',G);put(SK.ball(.12,8,6).translate(0,0,.22),'matte',0x101018);}
+  else if(sc==='solas'){put(SK.cyl(.42,.42,.24,16).rotateX(Math.PI/2),'glow',G);put(SK.torus(.46,.06,5,18),bodyM,bodyC);
+    for(let i=0;i<8;i++){const a=i/8*Math.PI*2,L=i%2?.34:.5;put(SK.cone(.12,L,4).scale(1,1,.6).rotateZ(-a).translate(Math.sin(a)*(.56+L/2),Math.cos(a)*(.56+L/2),0),bodyM,bodyC);}}
+  else if(sc==='gaoth'){const pts=[];for(let i=0;i<=40;i++){const t=i/40,a=t*Math.PI*2*2.1,r=.12+.82*t;pts.push(new THREE.Vector3(Math.cos(a)*r,Math.sin(a)*r,0));}
+    put(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),48,.09,5),bodyM,bodyC);put(SK.ball(.17,8,6),'glow',G);}
+  else if(sc==='tine'){const fl=(k,dy)=>{const sh=new THREE.Shape(),m=(x,y)=>[x*k,y*k+dy];sh.moveTo(...m(0,-.9));sh.bezierCurveTo(...m(.75,-.9),...m(.8,-.1),...m(.4,.35));sh.quadraticCurveTo(...m(.36,.6),...m(.52,.78));
+      sh.quadraticCurveTo(...m(.1,.62),...m(0,1));sh.quadraticCurveTo(...m(-.16,.55),...m(-.46,.56));sh.quadraticCurveTo(...m(-.3,.36),...m(-.42,.2));sh.bezierCurveTo(...m(-.8,-.2),...m(-.72,-.9),...m(0,-.9));return sh;};
+    put(ext(fl(1,0),.2),bodyM,bodyC);put(ext(fl(.5,-.3),.36),'glow',G);}
+  else put(new THREE.OctahedronGeometry(.42,0).scale(1,1.6,1),'glow',G);}
+function wpnImpl(add,shape,make,sc){const M=IMPL_MAKE[make]||IMPL_MAKE.gatelands,FIT=M.fit,FM=M.fitM,EM=make==='gatelands'?'matte':'metal';
+  const ring=(r,t,y,m,c)=>add(SK.torus(r,t,4,14),m||FM,c!=null?c:FIT,[0,y,0],[Math.PI/2,0,0]);
+  const tube=(pts,r,m,c,rs)=>add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts.map(q=>new THREE.Vector3(...q))),rs||10,r,4),m,c);
+  const helix=(r,y0,y1,turns,t)=>{const P=[];for(let i=0;i<=turns*12;i++){const k=i/(turns*12),a=k*turns*Math.PI*2;P.push([Math.cos(a)*r,y0+(y1-y0)*k,Math.sin(a)*r]);}tube(P,t,'metal',FIT,turns*16);};
+  const wrap=(r,y0,y1,n)=>{add(SK.cyl(r,r,y1-y0,10),'matte',M.leath,[0,(y0+y1)/2,0]);for(let i=0;i<n;i++)ring(r*1.03,r*.16,y0+(y1-y0)*(i+.5)/n,'matte',M.band);};
+  if(shape==='staff'){const B=-.55,T=1.02,E=1.13;
+    if(make==='gatelands'){add(SK.bumpy(SK.cyl(.017,.023,T-B,8,16),.004,23,30),'matte',M.shaft,[0,(B+T)/2,0]);wrap(.025,-.1,.12,3);
+      add(SK.cone(.023,.07,8),FM,FIT,[0,B-.03,0],[Math.PI,0,0]);ring(.02,.006,T-.02);
+      for(const sd of [-1,1])add(SK.cone(.012,.17,6),'matte',M.shaft,[sd*.045,T+.07,0],[0,0,-sd*.42]);
+      tube([[.018,T-.03,0],[.03,T-.09,.004],[.032,T-.15,0]],.0016,'matte',M.band,6);for(const y of [T-.155,T-.185])add(SK.ball(.008,6,5),'matte',FIT,[.032,y,0]);
+      implEmblem(add,sc,EM,FIT,[0,E,0],.05);}
+    else if(make==='mark'){add(SK.cyl(.019,.024,T-B,8),'matte',M.shaft,[0,(B+T)/2,0]);wrap(.026,-.1,.12,3);
+      for(const y of [-.32,.38,.72])ring(.024,.005,y);add(SK.cone(.025,.08,8),'metal',FIT,[0,B-.035,0],[Math.PI,0,0]);
+      add(SK.ball(.034,10,8),'matte',M.stone,[0,T+.01,0],null,[1,.8,1]);
+      for(let i=0;i<4;i++){const a=i/4*Math.PI*2+Math.PI/4,c=Math.cos(a),s2=Math.sin(a);tube([[0,T+.03,0],[.05*c,T+.07,.05*s2],[.068*c,E,.068*s2],[.05*c,E+.07,.05*s2],[0,E+.105,0]],.0055,'metal',FIT);}
+      add(SK.cone(.012,.05,6),'metal',FIT,[0,E+.13,0]);implEmblem(add,sc,EM,0x8a8d93,[0,E,0],.042);}
+    else{add(SK.cyl(.015,.019,T-B,10),'matte',M.shaft,[0,(B+T)/2,0]);wrap(.02,-.09,.11,2);
+      add(SK.cone(.019,.06,10),'metal',FIT,[0,B-.03,0],[Math.PI,0,0]);for(const y of [-.11,.13,.66,T-.01])ring(.019,.004,y);helix(.0165,.68,T-.02,4,.0028);
+      add(SK.torus(.074,.0065,6,28),'metal',FIT,[0,E,0]);add(SK.cyl(.008,.012,.05,8),'metal',FIT,[0,T+.02,0]);add(SK.cone(.01,.05,8),'metal',FIT,[0,E+.1,0]);add(SK.ball(.01,8,6),'metal',FIT,[0,E+.076,0]);
+      implEmblem(add,sc,EM,FIT,[0,E,0],.052);}}
+  else if(shape==='wand'){const T=.29,E=.318;
+    if(make==='gatelands'){add(SK.bumpy(SK.cyl(.006,.011,T-.06,8,8),.0015,31,9),'matte',M.wood,[0,(T+.06)/2,0]);wrap(.0125,-.07,.06,3);
+      add(SK.ball(.015,8,6),'matte',FIT,[0,-.082,0],null,[1,1.2,1]);add(SK.cyl(.008,.006,.02,8),'matte',FIT,[0,T+.004,0]);implEmblem(add,sc,EM,FIT,[0,E,0],.026);}
+    else if(make==='mark'){add(SK.cyl(.0055,.009,T-.06,8),'metal',FIT,[0,(T+.06)/2,0]);wrap(.012,-.07,.06,3);
+      add(SK.rbox(.03,.03,.03,.006,1),'matte',M.stone,[0,-.088,0],[0,Math.PI/4,0]);ring(.012,.004,.065);ring(.008,.003,T-.004);implEmblem(add,sc,EM,0x8a8d93,[0,E,0],.026);}
+    else{add(SK.lathe([[.0001,-.096],[.012,-.09],[.013,-.08],[.009,-.074],[.012,-.068],[.011,.06],[.014,.066],[.009,.075],[.0075,.2],[.009,.21],[.006,.22],[.0045,T],[.0001,T+.002]],10),'matte',M.shaft);
+      for(const y of [-.076,.068,.212])ring(.011,.0025,y);helix(.0095,.08,.2,3,.0018);add(SK.torus(.034,.0035,5,22),'metal',FIT,[0,E,0]);implEmblem(add,sc,EM,FIT,[0,E,0],.024);}}
+  else if(shape==='maul'){const H=.5,hw=.2;add(SK.cyl(.016,.02,.6,8),'matte',make==='mark'?M.shaft:M.wood,[0,.18,0]);wrap(.021,-.1,.04,3);
+    add(SK.bumpy(SK.rbox(hw,.11,.11,.025,2),make==='aurenne'?.002:.006,13,11),'matte',M.stone,[0,H,0]);
+    if(make==='gatelands'){for(const sd of [-1,1])add(SK.rbox(.02,.118,.118,.008,1),'matte',M.leath,[sd*.035,H,0]);tube([[0,H-.06,.03],[.02,H-.11,.024],[0,H-.16,.02]],.003,'matte',M.leath,6);}
+    else if(make==='mark'){for(const sd of [-1,1])add(SK.rbox(.022,.12,.12,.006,1),'metal',FIT,[sd*(hw/2-.016),H,0]);add(SK.cyl(.02,.023,.07,8),'metal',FIT,[0,H-.085,0]);}
+    else{add(SK.cyl(.019,.024,.05,10),'metal',FIT,[0,H-.075,0]);for(const sd of [-1,1])add(SK.rbox(.006,.116,.116,.003,1),'metal',FIT,[sd*hw/2,H,0]);}
+    for(const sd of [-1,1])implEmblem(add,sc,EM,make==='mark'?0x8a8d93:make==='gatelands'?M.band:FIT,[0,H,sd*.058],.038);}
+  else if(shape==='orb'){const C=.14,R=.058;wrap(.014,-.06,.05,2);add(SK.cyl(.01,.016,.04,8),FM,FIT,[0,.07,0]);
+    add(SK.ball(R,18,14),'halo',implSchoolCol(sc),[0,C,0]);add(SK.ball(R*.94,18,14),'halo',implSchoolCol(sc),[0,C,0]);
+    implEmblem(add,sc,'glow',0,[0,C,0],.024,0,true);
+    if(make==='gatelands'){for(let i=0;i<3;i++){const a=i/3*Math.PI*2,c=Math.cos(a),s2=Math.sin(a);tube([[0,.08,0],[.03*c,.088,.03*s2],[(R+.006)*c,C-.02,(R+.006)*s2],[(R-.005)*c,C+.035,(R-.005)*s2]],.0045,'matte',M.wood,8);}
+      ring(.016,.004,.09);}
+    else if(make==='mark'){add(SK.torus(R+.005,.005,5,24),'metal',FIT,[0,C,0],[Math.PI/2,0,0]);for(let i=0;i<4;i++){const a=i/4*Math.PI*2,c=Math.cos(a),s2=Math.sin(a);tube([[0,.088,0],[(R*.7)*c,C-R*.85,(R*.7)*s2],[(R+.005)*c,C,(R+.005)*s2],[(R*.7)*c,C+R*.75,(R*.7)*s2]],.0042,'metal',FIT,8);}
+      add(SK.rbox(.034,.02,.034,.006,1),'matte',M.stone,[0,.088,0]);}
+    else{add(SK.lathe([[.0001,.08],[.014,.08],[.02,.088],[.03,.094],[.04,C-R*.75],[.001,C-R*.75]],12),'metal',FIT);for(const r of [[0,0,0],[0,Math.PI/2,0]])add(SK.torus(R+.004,.0022,4,30),'metal',FIT,[0,C,0],r);
+      add(SK.torus(R+.004,.0026,4,30),'metal',FIT,[0,C,0],[Math.PI/2,0,0]);add(SK.ball(.006,6,5),'metal',FIT,[0,C+R+.008,0]);}
+  }
+  else if(shape==='tome'){const H=.24,W=.17,Tk=.06,cv=.0075;add(SK.rbox(Tk-2*cv+.002,H-.012,W-.012,.003,1),'matte',0xe6dac0,[0,0,.004]);
+    for(const sd of [-1,1])add(SK.rbox(cv,H,W,.0025,1),'matte',M.cover,[sd*(Tk/2-cv/2),0,0]);
+    add(SK.cyl(Tk/2,Tk/2,H,12,1,false,Math.PI,Math.PI),'matte',M.cover,[0,0,-W/2+.004],[0,Math.PI/2,0],[1,1,.45]);
+    for(const y of [-.07,0,.07])add(SK.rbox(Tk+.004,.008,.016,.003,1),'matte',M.band,[0,y,-W/2-.004]);
+    const ex=Tk/2+.001;
+    if(make==='gatelands'){add(SK.rbox(Tk+.006,.03,.012,.004,1),'matte',FIT,[0,0,W/2+.002]);for(const sd of [-1,1])add(SK.ball(.006,6,5),'matte',FIT,[sd*(Tk/2+.003),0,W/2-.005]);
+      for(const y of [-.1,.1])add(SK.rbox(.002,.006,W-.03,.001,1),'matte',M.band,[ex,y,0]);implEmblem(add,sc,EM,FIT,[ex+.003,.01,.006],.045,Math.PI/2);}
+    else if(make==='mark'){for(const sd of [-1,1])for(const y of [-1,1])for(const z of [-1,1])add(SK.rbox(.003,.032,.032,.002,1),'metal',FIT,[sd*(Tk/2+.001),y*(H/2-.014),z*(W/2-.014)]);
+      add(SK.rbox(Tk+.008,.034,.014,.003,1),'metal',FIT,[0,0,W/2+.003]);add(SK.cyl(.036,.038,.008,14),'matte',M.stone,[ex+.003,.01,.006],[0,0,Math.PI/2]);
+      implEmblem(add,sc,EM,0x8a8d93,[ex+.01,.01,.006],.03,Math.PI/2);}
+    else{for(const sd of [-1,1]){const x=sd*(Tk/2+.0005);for(const y of [-1,1])add(SK.rbox(.002,.005,W-.012,.001,1),'metal',FIT,[x,y*(H/2-.006),0]);for(const z of [-1,1])add(SK.rbox(.002,H-.012,.005,.001,1),'metal',FIT,[x,0,z*(W/2-.006)]);}
+      add(SK.torus(.05,.003,4,24),'metal',FIT,[ex+.002,.01,.006],[0,Math.PI/2,0]);implEmblem(add,sc,EM,FIT,[ex+.004,.01,.006],.036,Math.PI/2);}}}
 // S1476 — the crossbow's span drawn (#745 2 A's 2.0 s, XBOW): the string in two lengths from the prod's tips (the kit's frame: 0.33
 // across, 0.49 up the tiller) to a middle that comes back from where it is braced (0.486) to the nut's catch (0.163), and the bolt
 // laid in the groove ahead of the nut once it is spanned. xbowRig adds them to the kit's crossbow; xbowRigSet poses any copy of it
