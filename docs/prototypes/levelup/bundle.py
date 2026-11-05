@@ -74,6 +74,7 @@ def build(name, title, note, srcfile, use_common, query=''):
     if use_common:
         s = scene(src)
         if "from './wrongness.js'" in s: s = kits(s, ['gatekit', 'creatures', 'wrongness'])
+        if "from './bind.js'" in s: s = kits(s, ['gatekit', 'gatecond', 'bind'])
         if "from './gatecond.js'" in s: s = kits(s, ['gatekit', 'gatecond'])
         if "from './vaults.js'" in s: s = kits(s, ['gatekit', 'pieces', 'props', 'vaults'])
         if "from './legendary.js'" in s: s = kits(s, ['legendary'])
@@ -196,4 +197,5 @@ build('wrongness-lane.html', 'Small wrongnesses', 'Small wrongnesses in a pleasa
 build('wagons-roads.html', 'Wagons by island', 'Wagons and carts by island (L3, OG-046): three an island on one running gear, with their teams from the creature kit. ?view=road|close|side|front, &island=gatelands|mark|aurenne, &mode=one|own|snow (A one kit painted by island, B each island its own three, C B and the Mark on runners in snow), &piece=<key>. Drag to look.', 'wagons-view.js', True, '?view=road&island=gatelands&mode=own')
 build('vaults-gate.html', 'What a gate keeps', 'What a gate keeps (L10, OG-123): a great gate’s vault under its turning rings and a lesser gate’s keep under its shaft of light. ?room=great|lesser, &mode=relics|hoard|left (A the gate’s own things, B the hoard as drawn, C the gate’s own and what the delvers left), &cam=door|dais|close|high|scale. Drag to look.', 'vaults-view.js', True, '?room=great&mode=left&cam=door')
 build('gatecond-hall.html', 'A gate’s condition', 'A gate’s condition, seen (L10, OG-120): one nave of the gate kit steady, failing and catastrophic, its door, lift and ring chamber with it. ?cond=steady|failing|catastrophic, &mode=stones|drawn|school (A one light, B OG-120 as drawn, C the school’s colour holds and the light weakens), &cam=wide|high|door|scale|script, &school=<one of the six>. Drag to look.', 'gatecond-view.js', True, '?cond=failing&mode=school&cam=wide')
+build('bind-hall.html', 'The bind', 'The bind (L7, OG-045 and OG-063): the beat after a perfect parry, posed on two people in a steady gate’s first bay. ?pose=deflect|bind|spell (A the blade beaten aside, B blades crossed high and both leaning in, C the bind with a spell cocked low behind), &cam=back|side|close|front|wide|scale, &school=<the spell’s school>. Drag to look.', 'bind-view.js', True, '?pose=spell&cam=back')
 print('ok')
