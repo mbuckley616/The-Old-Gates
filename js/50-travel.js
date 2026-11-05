@@ -377,7 +377,7 @@ function harvestHerb(h){
   h.harvested=true;h.gl.intensity=0;skillUse('alchemy',1,h); /* S941 — a pick is an Alchemy use */
   {const u=h.g.userData;if(u&&u.picked){u.whole.visible=false;u.picked.visible=true;}else h.g.visible=false;} // S217 — a bush picked in the old zones stays, bare, as in the world
   if(h.def.respawn!=null)h.respawnT=h.def.respawn;
-  bagAdd(item);
+  bagAdd(item);if(h.gate&&typeof gateHerbPicked==='function')gateHerbPicked(h); /* S1886 — a gate's plant: entered within the hour, its gate teaches it */
   addLog('🌿','Harvested '+h.def.name);
   if(typeof uiTone==='function'){uiTone(320,420,.12,.1,'sine');uiNoise(.1,.1,600);}
   showMsg('Harvested '+h.def.name+'!','#88cc88');
@@ -476,6 +476,9 @@ const HERB_FX={
   duilleogghorm:['restoreMana','regenMana','waterBreathing','fortifyBow'],
   kelp:['restoreStamina','waterBreathing','slow','fortifyMelee'],sealily:['restoreMana','nightEye','regenMana','drainStamina'],
   pearlweed:['restoreHealth','waterBreathing','resistCold','fortifyBow'],
+  /* S1886 — the plants that mark a gate (#1164 B): each carries Night Eye or Featherfall, what a gate's dark and broken floors ask */
+  lichenbloom:['restoreStamina','nightEye','fortifyBlock','resistCold'],gatelotus:['regenHealth','featherfall','waterBreathing','swiftness'],
+  gateresin:['regenHealth','nightEye','featherfall','fortifyMelee'],
 };
 // the herbs whose second effect is their hidden one's kin, so 15 eats teach it as well; the sea's three have no hidden of their own
 const HERB_KIN=new Set(['firemoss','silverleaf','muirfhear','thornberry','shadowcap','deepmoss','caordubh','kelp','sealily','pearlweed']);

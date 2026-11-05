@@ -10,7 +10,7 @@ const g = await boot(); const { page } = g;
 await g.intoWorld(); await g.spin(null, 240);
 
 const all = await page.evaluate(() => { const H = ZONES.world.herbs; const ids = H.map(h => h.id);
-  const re = /^(-?\d+,-?\d+:(herb|verge|hot|seabed):\d+|[^:]+:herb:\d+)$/;
+  const re = /^(-?\d+,-?\d+:(herb|verge|hot|seabed):\d+|[^:]+:herb:\d+|\d+:gp:\d+)$/; /* S1886 — a gate's plant is <seed>:gp:<i> */
   return { n: H.length, withId: ids.filter(id => typeof id === 'string').length, unique: new Set(ids).size, shaped: ids.filter(id => re.test(id)).length,
     kinds: [...new Set(ids.map(id => String(id).split(':').slice(-2, -1)[0]))], sample: ids.slice(0, 4) }; });
 console.log('herbs', JSON.stringify(all));
@@ -36,5 +36,42 @@ check(`with ${twice.refused}'s spot taken by a solid it is refused; the other ${
 
 check(`with no town built (${twice.towns} taken out), every herb placed both times has the same spot and kind (${twice.unbuilt} of ${twice.shared}; S533)`, !twice.none && twice.towns > 0 && twice.shared >= twice.a - 2 && twice.unbuilt === twice.shared, twice);
 check(`a chunk that planted a tree on every spot gives every herb the same kind (${twice.treeSame} of ${twice.a}; S533: the kind read the trees planted so far)`, !twice.none && twice.treeSame === twice.a, twice);
+// S1886 — the plants that mark a gate (Michael's B on #1164): a ring of its condition's plant round each old gate, keyed <seed>:gp:<i>
+// from the seed alone; the Greenmeadow (ordinary herbs ×1.3 within 60 m of a failing or catastrophic gate); the plant read by what it looks
+// like until a pick and an entry within the hour teach it, then by its name, the gate's condition and school
+const GP = await page.evaluate(() => {
+  const out = { conds: {} }, H = ZONES.world.herbs, [ci, cj] = cellOf(px, pz), found = {};
+  for (let r = 0; r <= 3 && Object.keys(found).length < 3; r++) for (let dj = -r; dj <= r; dj++) for (let di = -r; di <= r; di++) { const c = getCell(ci + di, cj + dj); if (!c || !c.doors) continue;
+    for (const e of c.doors) if (gateHerbDoor(e)) { const k = gateHerbCond(e); if (!found[k]) found[k] = e; } }
+  const spawnAt = (e) => { const R = gateRing(e), [ex, ez] = [R.x, R.z], chunks = new Set(R.pts.map(p => Math.floor(p.at[0] / CHUNK) + ',' + Math.floor(p.at[1] / CHUNK))), recs = [];
+    for (const k of chunks) { const [cx, cz] = k.split(',').map(Number), n0 = H.length, ch = { cx, cz, herbs: [{ id: 'probe', x: ex + 10, z: ez + 10, type: 'firemoss' }, { id: 'far', x: ex + 200, z: ez, type: 'firemoss' }] };
+      spawnGateHerbs(ch); H.splice(n0); recs.push(...ch.herbs.filter(h => h.gate && h.gate.seed === e.seed)); if (!out.meadow) out.meadow = {}; out.meadow[gateHerbCond(e)] = [ch.herbs[0].gm || 1, ch.herbs[1].gm || 1]; }
+    return { R, recs }; };
+  for (const cond in found) { const e = found[cond], A = spawnAt(e), B = spawnAt(e), d = A.recs.map(h => Math.hypot(h.x - A.R.x, h.z - A.R.z));
+    out.conds[cond] = { seed: e.seed, n: A.R.pts.length, recs: A.recs.length, ids: A.recs.every(h => new RegExp('^' + e.seed + ':gp:\\d+$').test(h.id)), unique: new Set(A.recs.map(h => h.id)).size,
+      home: e.zone !== 'gen', type: [...new Set(A.recs.map(h => h.type))], school: A.recs[0] && A.recs[0].gate.school, want: gateSchool(e), dMin: Math.min(...d), dMax: Math.max(...d),
+      same: JSON.stringify(A.recs.map(h => [h.id, h.x, h.z])) === JSON.stringify(B.recs.map(h => [h.id, h.x, h.z])), rec: A.recs[0] }; }
+  // the prompt, the pick, the entry within the hour
+  const any = Object.values(out.conds)[0], h = any && any.rec; out.rec = !!h;
+  if (h) { const K = herbsKnown(), keepR = K.read, keepP = K.gatePick; delete K.read; delete K.gatePick;
+    out.unread = herbPromptName(h); out.n0 = BAG.length; harvestHerb(h); out.bag = BAG.length > out.n0 ? BAG[BAG.length - 1].name : null; if (out.bag) BAG.pop();
+    out.pick = K.gatePick && K.gatePick.seed === h.gate.seed; out.other = gateReadOnEnter({ seed: h.gate.seed + 1 });
+    const t0 = worldState.gameTimeAbsMinutes; worldState.gameTimeAbsMinutes = (t0 || 0) + 61; out.late = gateReadOnEnter({ seed: h.gate.seed }); worldState.gameTimeAbsMinutes = t0;
+    out.inTime = gateReadOnEnter({ seed: h.gate.seed }); out.read = herbPromptName(h); gateHerbPicked(h); out.again = gateReadOnEnter({ seed: h.gate.seed });
+    K.read = keepR; K.gatePick = keepP; if (!keepR) delete K.read; if (!keepP) delete K.gatePick; }
+  let gl = 0; for (let i = 0; i < 3000; i++) { const it = randomLootHerb(); if (it && /Lichenbloom|Gatelotus|Gate Resin/.test(it.name)) gl++; } out.loot = gl;
+  out.fx = ['lichenbloom', 'gatelotus', 'gateresin'].map(k => [k, HERB_DEF[k] && HERB_DEF[k].zone, (HERB_FX[k] || []).some(f => f === 'nightEye' || f === 'featherfall')]);
+  return out; });
+console.log('gateplants', JSON.stringify(GP));
+const PL = { steady: 'lichenbloom', failing: 'gatelotus', catastrophic: 'gateresin' };
+const cs = Object.entries(GP.conds);
+check(`each old gate keeps 6 to 10 of its condition's plant in a ring, 20 to 80 m out (Gate Resin to 120), keyed <seed>:gp:<i>: ${cs.map(([k, c]) => `${k} #${c.seed} ${c.recs} ${c.type} ${c.dMin.toFixed(0)}–${c.dMax.toFixed(0)} m`).join('; ')}`,
+  cs.length >= 2 && cs.every(([k, c]) => c.recs === c.n && c.n >= 6 && c.n <= 10 && c.ids && c.unique === c.n && c.type.length === 1 && c.type[0] === PL[k] && c.dMin >= 20 && c.dMax <= (k === 'catastrophic' ? 120 : 80) + .01), GP.conds);
+check('the ring is laid from the seed alone: placed twice, the same ids at the same spots; each plant carries its gate\'s school', cs.every(([k, c]) => c.same && c.school === c.want), GP.conds);
+check(`the Greenmeadow: an ordinary herb 14 m from a failing or catastrophic gate stands ×1.3, from a steady one ×1; one 200 m off ×1 (${JSON.stringify(GP.meadow)})`,
+  Object.entries(GP.meadow).every(([k, v]) => v[0] === (k === 'steady' ? 1 : 1.3) && v[1] === 1), GP.meadow);
+check(`unread, the plant is what it looks like ("${GP.unread}"); picked, it is in the bag (${GP.bag}) and remembered; another gate or an entry after the hour teaches nothing`, GP.rec && !/gate of/.test(GP.unread) && !!GP.bag && GP.pick && !GP.other && !GP.late, GP);
+check(`entered within the hour, its gate teaches it: "${GP.read}"; once only`, GP.inTime && /gate of/.test(GP.read) && !GP.again, GP);
+check(`no barrel or corpse draws a gate's plant (${GP.loot} of 3,000); each is zone 'gate' and carries Night Eye or Featherfall`, GP.loot === 0 && GP.fx.every(f => f[1] === 'gate' && f[2]), GP.fx);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
