@@ -1531,3 +1531,37 @@ This is a new-look turn, because my last entry was a playtest. The harness ran f
 - None new.
 
 No proposal this run.
+
+## 2026-11-05 — A mage's day in Dunmore: the Mages' Guild's new implements at 14h (bought a staff and a wand), staff, wand and maul in first person, Lorcan's forge room at 10h and 22h, and a haunted gate's orb kept and let go in third person (build s1254, read to Session 1865)
+
+**What I did.** On the new look, a fresh character in Dunmore. I took the Mages' Guild (`g_dunmore_1`, Sorcha) at 14h with 400 gold, read the whole counter, and bought the Staff of Tine (listed 60, paid 57) and the Wand of Uisce (listed 80, paid 77). I read the bag tooltip and the rule line, and equipped the staff: Held 5.5 m, Laid 16 m, as the page says. I carried the wand to Lorcan's Forge (`g_dunmore_2`, the kit's forge since Session 1860) at 10h and 22h, opened his counter and sold nothing. Outside at 13h I held a staff, a wand of Tine and Cloch's maul in turn in first person. Then I took a haunted gate whose seed keeps an orb (seed 4001, the first one `gateOrbDue` gives). The orb lies in floor 1's treasure chest beside a Wooden Ring: *Wooden Orb of the Mage*, Scáth's (the gate's school), found, `magic_boost`. Taken, it went into the off hand beside the wand. In third person, guard up, F kept Caor for 31 mana and launched no bolt. The next F, guard down, paid 0 and put one bolt in `BALLS`. For comparison I also looked at the hands in Clodagh's Goods (13h, 22h) and The Grey Heron (13h). No page errors in five boots.
+
+**What was wrong**
+- *The Mages' Guild says it sells "Odds, ends, and things that fell off carts."* The shop's subtitle is `Sorcha · "Odds, ends, and things that fell off carts."` (`2026-11-05-guild-shop.png`). `TAGLINES` in `82-world-structures.js` has no `guild_m` or `guild_f` row, so the house falls back to `TAGLINES.misc` (`pick(r,TAGLINES[type]||TAGLINES.misc)`). Every guild in every town is a junk shop in its own header. In backlog I.
+- *Six staves of six schools read as one staff at the counter.* At 1280 px, every staff row reads `Wooden Staff of …`. The 2H badge and a second *Two-handed* note take the width, and the rule line is cut to `Tine −10…` or `Uisce −1…`. So the school, the only thing that tells one staff from the next, is cut from both the name and the rule. The wands' rows fit and read in full. The *2H* badge and the *Two-handed* note say the same thing twice. In backlog I.
+- *The shop draws the staff as a wand and the wand as a sword.* The item's own icon is right (staff 🥢, wand 🪄, maul 🔨, and the HUD's bag line shows the wand as 🪄). But the counter's glyph (`22-dialogue.js`, the `t==='equip'` branch) keys on `weaponShape`, which gives `staff → 🪄` and `wand → ⚔`. Visible in the same picture. In backlog I.
+- *In the kit's rooms by day, your own first-person hands are pure white.* In the Mages' Guild at 14h and Lorcan's Forge at 10h, both fists are white with no shading (`2026-11-05-forge-10h-white-hands.png`). In the Grey Heron at 13h (`-inn-13h-hands.png`), Clodagh's at 13h and 22h, the forge at 22h, and outdoors at 13h, they are skin and shade. The material is the same everywhere: `hbHand`, Lambert, white with vertex colours. The difference is the viewmodel's lights. In the guild and the forge, `VM_SCENE` has a directional `ffffff` at 1 and a hemisphere `676a6e` at 1. In the generated shops it has a directional `ffff87` with the hemisphere off and ambient `734f32`. So the kit rooms' day light on the hands is enough to clip them. In backlog I, for the look builder (whatever sets the viewmodel's light for a kit room, `kitDaylight`), with the bodies builder's eye.
+- *The rarest implement is worth four coins.* The gate's orb is found, enchanted, −20% on its school, and in one gate in three. It is priced by the tome's formula (`makeOrb`, `TIER_VALUE×1.5`, at least 3), which gives 8 at Wooden, and it sells at `sellMult .45`. A shop wand of the same wood lists at 80, and Lorcan offered 36 for the one I had just bought. So the orb sells for a tenth of a wand bought in the next street. I read this from the code and the item's `buyPrice` of 8; I did not sell it. It is a small thing until gold matters, so it is filed low.
+
+**Not bugs, for the record**
+- Empty fists where a staff should be, twice, turned out to be the auto-sheath (`tickSheath`, after `SHEATH_IDLE_S` of no swing). Equipped and looked at straight away, each piece is drawn. The staff is a shaft from the bottom right of the frame to off the top, with no visible hand and no head in frame. The wand of Tine is a short haft whose flame emblem glows orange (`2026-11-05-wand-fp.png`): readable and good.
+- At 22h the forge's counter still opens if you call it straight. No one is in, and the prompt says so (*No one is in · Walk south to exit*), so a player cannot reach it.
+
+**What worked**
+- The counter is right to the coin. It has 12 pieces from Novice, the maul for Cloch alone and no orb, and every piece is the Gatelands' make. Each paid price is the list less the counter's 5%. The bag tooltip gives the page's sentence, and the weight reads *Heavy* where it used to read *undefined* (S1863's fix holds).
+- Lorcan's forge reads as a forge from the cart door. It has the sooted hood over a lit hearth, the anvil on its stump with the smith behind it, the tub, the rack of tongs on the back wall, the bench, and the strongbox on the cinders. He is 2.4 m away and the prompt offers him. At 22h he is gone and the room is lit by the lantern alone, as a shut shop should be.
+- The orb did what the page says, end to end, in the game rather than in the suite: the chest on the deepest floor, the school of the gate, keeping at full cost, letting go for nothing, one bolt.
+
+**The *Needs eyes*, from what I saw**
+- S1860 (the forge room): judged above, and it reads. The lantern on the middle tie beam is a flat, unshaded peach-coloured glass under a black cap. Looking up (`2026-11-05-forge-lantern.png`), it reads as a cut-out, not as a lit lantern. That is a look call, not filed.
+- S1863 (the rule, not a percentage): the line is right and reads well on wands. It is cut short on staves (above).
+- S1864 (the bolt leaving the orb's fist): could not judge. My release frame at 4 ticks shows the body from behind, with a lit point at the left shoulder (`2026-11-05-orb-release-tp.png`). The bolt's first frames across the body need real frame rate.
+- The bodies builder's question from Session 1861, *is the kept orb behind the hip cocked enough?*: from behind at 3 m, with the orb keeping Caor, the left arm is not readable against the robe in the gate's torchlight. I cannot say.
+- The look builder's question from Session 1855, *does the low stone forge read as the smith's from the street?*: not looked at from outside this run.
+- S1857 (too many weddings in a port) and S1859 (no sign that the inn keeps the wedding's table): not played. Neither can be judged in one sitting headless.
+- S1866–1868 (the failing forms) are on PR #1173, not on main, and not seen.
+
+**Backlog notes**
+- None new.
+
+No proposal this run.
