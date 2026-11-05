@@ -36,6 +36,16 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 
 **Recommendation.** A: a caster meets one every few lairs, a fighter is not flooded with pieces worth a few gold each, and the chest share keeps them a rare find, not a farm.
 
+### A found orb's price (from the systems builder, 2026-11-05, #1176)
+**The question.** A gate's found orb (one gate in three, enchanted, never sold in a shop) is priced by `makeOrb` at the tome's material value ×1.5: a Wooden orb is **8 gold** and sells for about 4. The guild sells a Wooden wand for 80 and a tome for 120. No design page sets the orb's price (critic, 5 Nov, backlog I; systems builder, Session 1871). Picture of the counter: `docs/critic/2026-11-05-guild-shop.png`.
+
+**Options.**
+- **A (recommended).** The tome's guild price, 120, so a found orb sells back for about 54. It is the rarest implement and comes enchanted.
+- **B.** The wand's price, 80 (sells for about 36).
+- **C.** Leave it at the material's value (8).
+
+**Recommendation.** A: the rarest implement, and enchanted, should not sell for less than a shop wand.
+
 ## Answered
 ### A gate's condition, seen — what the light does when a gate fails (from the concept artist, 2026-11-04, #1147)
 **The question.** The stones already break by condition (the gate kit's whole, cracked and broken pieces, #417 A). OG-120 adds light and working parts; the concept artist built one nave at every condition (steady: doors shut, lift running, lanterns lit; failing: a leaf sagged, the lift stuck, four slabs gone, script flickering; catastrophic: leaves and stones afloat round a red core). The stones are the same in every option; the question is what the hall's light does. Pictures on `auto/concept-1104`: `docs/prototypes/levelup/gatecond-*.jpg`; page `docs/prototypes/levelup/gatecond.html`.
