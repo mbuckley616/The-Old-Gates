@@ -241,5 +241,26 @@ check('the shop\'s row says it on both sides; the loot list, the bag\'s tooltip 
   ['staff', 'wand', 'maul', 'tome', 'orb'].every(k => RU[k].row && RU[k].sell && RU[k].loot.includes(RU[k].rule) && RU[k].tip.includes(k === 'orb' ? 'keeps the cast a minute' : k === 'tome' ? 'Read aloud' : k === 'staff' ? 'Held reaches 5.5 m' : 'A sent spell flies') && RU[k].worn.includes(RU[k].rule))
   && !/undefined/.test(RU.staff.tip + RU.wand.tip + RU.sword.tip) && RU.staff.tip.includes('Heavy · 28 stamina') && RU.wand.tip.includes('Light · 11 stamina') && RU.sword.tip.includes('Medium · 21 stamina')
   && !RU.sword.row && !RU.sword.sell && !/Held|Sent|Keeps/.test(RU.sword.loot + RU.sword.tip + RU.sword.worn) && RU.staff.loot.startsWith('ATK '), RU);
+
+// S1869, S1870 — the counter (critic 5 Nov): an implement's badge draws its own glyph (staff 🥢, wand 🪄, maul 🔨, tome 📖, orb 🔮; a
+// sword still ⚔), and a staff's row at 1280 px shows its whole name: the 2H badge stays, the second "Two-handed" note is gone
+const CT = await page.evaluate(() => {
+  const keep = EQ.offhand; EQ.offhand = null;
+  const glyph = it => { const d = document.createElement('div'); d.innerHTML = iconHTML(it); return d.textContent; };
+  const p = { staff: makeImplement(1, 'staff', 'cloch'), wand: makeImplement(1, 'wand', 'uisce'), maul: makeImplement(1, 'wand', 'cloch'),
+    tome: makeTome(1, 'solas'), orb: makeOrb(1, 'gaoth'), sword: makeItem(1, WEAPON_TYPES.find(t => t.type === 'Sword'), null, false) };
+  const out = { g: {} }; for (const [k, it] of Object.entries(p)) out.g[k] = glyph(it);
+  p.staff.name += ' of Cloch';
+  const list = document.createElement('div'); list.style.cssText = 'position:fixed;left:14px;top:100px;width:620px';
+  const row = document.createElement('div'); row.className = 'sh-row'; row.innerHTML = shopRowHTML(p.staff, 'buy', 57, true, false, []);
+  list.appendChild(row); document.getElementById('shop-panel')?.appendChild(list) || document.body.appendChild(list);
+  const nm = row.querySelector('.sh-name-text');
+  out.row = { text: row.textContent.replace(/\s+/g, ' ').trim(), cut: nm.scrollWidth > nm.clientWidth + 1, w: nm.clientWidth, sw: nm.scrollWidth, badge: !!row.querySelector('.sh-2h') };
+  list.remove(); EQ.offhand = keep; return out; });
+console.log('counter', JSON.stringify(CT));
+check(`an implement's badge draws its own glyph: staff ${CT.g.staff}, wand ${CT.g.wand}, maul ${CT.g.maul}, tome ${CT.g.tome}, orb ${CT.g.orb}, sword ${CT.g.sword}`,
+  CT.g.staff === '🥢' && CT.g.wand === '🪄' && CT.g.maul === '🔨' && CT.g.tome === '📖' && CT.g.orb === '🔮' && CT.g.sword === '⚔', CT.g);
+check(`a staff's row shows its whole name (${CT.row.sw} px of ${CT.row.w}), the 2H badge and no second "Two-handed" note`,
+  !CT.row.cut && CT.row.text.includes('Wooden Staff of Cloch') && CT.row.badge && !/Two-handed/.test(CT.row.text), CT.row);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
