@@ -449,6 +449,10 @@ function genSettlement(site){
         // louver on the ridge over the forge; with its porch where that fits too, else without. Its wall the lot's, drawn from the street's
         // stream. Inside it is the smith's hall (kitMarkSmithy). A lot with no room for it takes PKIT.mk.lot's hall as before.
         if(MK&&t==='weapon')for(const porch of [true,false]){const S={roof:'shingle',w:6.4,d:9,porch,chimney:false,carve:true,wall:o1.wall},E=ext(S);if(fit(S.w,S.d,E)){lot.kit={kind:'markhall',o:S,ext:E,w0,d0,stoop:E[1],smithy:true,shell:`${site.id}:windows:${lot.n}`};return;}}
+        // S1879 (card F9; Michael's A on #303 and on the kit in every interior; OG-043, OG-133) — a Markish apothecary (the 'potion' shop)
+        // is the healer's hall of rooms.js (Session 937) where it fits whole: the smithy's hall, 6.4 by 9 m under shingle, carved, no
+        // chimney but the louver over the long hearth; with its porch where that fits too. Inside it is the healer's hall (kitMarkApothecary).
+        if(MK&&t==='potion')for(const porch of [true,false]){const S={roof:'shingle',w:6.4,d:9,porch,chimney:false,carve:true,wall:o1.wall},E=ext(S);if(fit(S.w,S.d,E)){lot.kit={kind:'markhall',o:S,ext:E,w0,d0,stoop:E[1],apothecary:true,shell:`${site.id}:windows:${lot.n}`};return;}}
         for(const v of vars){const E=ext(v);if(!fit(W0,D0,E))continue;const w=most(W0,v.w,q=>fit(q,D0,E)),d=most(D0,v.d,q=>fit(w,q,E));
           if(!fit(w,d,E))continue;const o=Object.assign({},v,{w,d});lot.kit={kind:MK?'markhall':'aurhouse',o,ext:E,w0,d0};if(!MK)lot.kit.shell=`${site.id}:windows:${lot.n}`; /* S1831 — the street's stream, which the rooms inside draw their shell from */if(MK)lot.kit.stoop=E[1];if(inn)lot.kit.alehall=true;return;}
         lot.w=w0;lot.d=d0;lot.x=x0;lot.z=z0;});
@@ -3028,6 +3032,54 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     else{intNPCMesh=null;intNPCPos={x:-99,z:-99};}
     return sc_;
   }
+  // S1879 (card F9; Michael's A on #303 and on the kit in every interior; OG-043, OG-133) — on the new look a Markish apothecary that
+  // stands as rooms.js's healer's hall (lot.kit.apothecary, the Mark hall of 6.4 by 9 m under shingle) opens on it (PKIT.mk.apothecary,
+  // Session 937) inside the street's own shell: no counter but a trade board on trestles inside the door with a steelyard over it; the
+  // long low hearth under the louver with its two fires, the cauldron on its tripod at the front (heat) and the still at the back, its
+  // arm out through a log of snow-water to a jug (distil); the long table down the left wall (prepare), the stamp mortar between it and
+  // the hearth (combine), the bench and shelves of horn flasks, birch-bark boxes and soapstone jars down the right wall (bottle); herbs
+  // drying from the tie beams; a chest and two casks by the door, the healer's bed of furs across the back. Drawn in metres and moved
+  // into the room's frame as the smithy is (nothing scaled). The healer stands behind the board facing the door.
+  function kitMarkApothecary(house){return !!(house&&house.type==='potion'&&house.kit&&house.kit.kind==='markhall'&&house.kit.apothecary&&house.kit.o&&house.kit.shell&&window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.mk&&PKIT.mk.apothecary);}
+  function buildKitMarkApothecary(house){
+    const k=house.kit,T=PKIT.mk.apothecary({shell:k.shell,house:k.o},PKIT.stream(house.id+':markapo')),I=T.inner,X=I.x1,Z=I.z1,FY=T.floor,W=2*X,D=2*Z;
+    const rx=x=>x+X,rz=z=>z+Z,ry=y=>y-FY,dr=T.door;
+    house._counterFront=null;house.intW=W;house.intD=D;house._roomH=+(T.tieBeam-FY).toFixed(3);house._exitD=.8;house._exitW=1.0;house._exitX=+rx(dr.x).toFixed(3);house._markApothecary=T;
+    /* you arrive 1 m inside the door on the hall's axis, facing the trade board's front */
+    house._arriveX=+rx(dr.x).toFixed(3);house._arriveZ=+rz(Z-1.0).toFixed(3);
+    {const p=T.paths[0][2];house._arriveYaw=+Math.atan2(-(rx(p[0])-house._arriveX),-(rz(p[1])-house._arriveZ)).toFixed(4);}
+    const sc_=new THREE.Scene();interiorScene=sc_;landRoomPost(sc_);sc_.background=new THREE.Color(0x120a06);sc_.fog=new THREE.Fog(0x120a06,Math.max(W,D)*.8*SCALE.ROOM_K,Math.max(W,D)*2.4*SCALE.ROOM_K);
+    intNPCMesh=null;intNPCPos={x:-99,z:-99};intBedPos=null;intStashPos=null;
+    const SOL=[];INT_SOL=SOL;FOOTHOLDS=[];INT_BEDS=[];INT_DOORS=[];INT_DOORS.house=house.id;INT_CHAIR=null;INT_NPCS=[];HATCH.active=false;HATCH.roof=false;INT_LOOT=null;INT_BOX=null;INT_SHELF=null;
+    T.group.position.set(X,-FY,Z);T.group.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false;}});sc_.add(T.group);
+    {const E=new THREE.Object3D();E.position.set(rx(dr.x),0,D);E.userData.entrance=true;E.userData.leaf=[dr.w,dr.h];sc_.add(E);}
+    // the solids are the prototype's boxes (the posts, the hearth, the trough and its jug, the table, the mortar, the bench and its
+    // shelves, the board, the chest, the casks, the bed, the door's leaf). The hearth's kerb is 0.2 m, but its fires and the cauldron's
+    // tripod stand to 1.35 m: it is solid to 1.4 m, so you cannot walk into the fire. The chest's, the table's, the bench's, the casks'
+    // and the bed's tops are footholds (the bed at its furs).
+    const FOOT=['chest','table','bench','cask','cask2','bed'];
+    for(const q of T.boxes){const y1=q.tag==='hearth'?q.y0+1.4:q.tag==='bed'?q.y1+.16:q.y1,b={x0:rx(q.x0),x1:rx(q.x1),z0:rz(q.z0),z1:rz(q.z1),y0:Math.max(0,ry(q.y0)),y1:ry(y1)};SOL.push(b);if(FOOT.includes(q.tag))FOOTHOLDS.push({x0:b.x0,x1:b.x1,z0:b.z0,z1:b.z1,y:b.y1});}
+    // the shop's strongbox (S155) against the back wall between the bed's foot and the cask, out of the walk round the hearth
+    {const bx=rx(1.4),bz=rz(-Z+.35);const bg=new THREE.Group();const shell=buildChestShell(bg,.6,0x4a3018);bg.position.set(bx,0,bz);sc_.add(bg);
+      SOL.push({x0:bx-.32,x1:bx+.32,z0:bz-.28,z1:bz+.28,y0:0,y1:.5});FOOTHOLDS.push({x0:bx-.32,x1:bx+.32,z0:bz-.28,z1:bz+.28,y:.5});
+      INT_BOX={x:bx,z:bz,lid:shell.lid,g:bg,id:house.id,kind:'shop',type:house.type,house,open:false};}
+    // the day beyond the side walls' shuttered windows (the hall's, one every 4 m) and the open front door, by the hour, and in through them
+    {const hr=typeof gameHour==='function'?gameHour():12,day=hr>=7&&hr<18?0xc4d0dc:hr>=5&&hr<20?0x8a7a7a:0x0e1420,M=new THREE.MeshBasicMaterial({color:day});
+      for(const z of T.windows)for(const sx of [-1,1]){const m=new THREE.Mesh(new THREE.PlaneGeometry(.7,.6),M);m.position.set(rx(sx*(T.w/2+.08)),1.51,rz(z));m.rotation.y=-sx*Math.PI/2;m.userData.daylight=true;sc_.add(m);}
+      const m=new THREE.Mesh(new THREE.PlaneGeometry(dr.w+.1,dr.h+.1),M);m.position.set(rx(dr.x),dr.h/2,rz(dr.z)+.08);m.rotation.y=Math.PI;m.userData.daylight=true;sc_.add(m);}
+    kitDaylight(sc_,[...T.windows.flatMap(z=>[-1,1].map(sx=>({x:rx(sx*X),y:1.55,z:rz(z),nx:-sx,nz:0,w:.6,h:.5}))),{x:rx(dr.x),y:dr.h*.7,z:D,nx:0,nz:-1,w:dr.w,h:dr.h}]);
+    // the light: the long hearth's two fires as one, the iron lamp from the front tie beam
+    const KA=kitRoomAir(sc_,.4);
+    {const l=new THREE.PointLight(0xff6a20,1.8*KA.fire,8);l.position.set(rx(0),ry(T.hearth.y+.5),rz(T.louver));sc_.add(l);}
+    {const l=new THREE.PointLight(0xffaa44,1.0*KA.lamp,8);l.position.set(rx(T.lamp[0]),ry(T.lamp[1]-.1),rz(T.lamp[2]));sc_.add(l);}
+    // the healer behind the trade board, facing the door across it
+    const npc={x:rx(T.board.x1-.8),z:rz(T.board.z0-.45)};
+    if(npcInsideNow(house)){const g=buildNPCMesh({role:'Merchant',name:house.keeper,_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
+      g.rotation.y=0;g.position.set(npc.x,0,npc.z);sc_.add(g);intNPCMesh=g;intNPCPos={x:npc.x,z:npc.z};
+      intNPCMesh.userData.amble={wa:0,wt:1,minZ:npc.z,maxZ:npc.z,minX:npc.x,maxX:npc.x,speed:.25,paused:true};}
+    else{intNPCMesh=null;intNPCPos={x:-99,z:-99};}
+    return sc_;
+  }
   // S1453 (card F9, Michael's A on #311 and #303; OG-115) — on the new look a Markish home standing as the kit's hall (lot.kit.kind
   // 'markhall', S1286, fitted to its lot: 5.6 to 8.4 m wide, 6.5 to 14.5 deep) is the Mark's longhouse inside (PKIT.mk.longhouse,
   // rooms.js's Session 870, laid out by size in Session 1452), in the street's own shell with its own options: the drawn plan (the long
@@ -3364,6 +3416,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     if(kitCourtHouse(house))return buildKitCourtHouse(house); /* S1425 — Aurenne's courtyard house inside, at its true size */
     if(kitAurSmithy(house))return buildKitAurSmithy(house); /* S1865 — an Aurennais smithy inside, at its true size */
     if(kitMarkSmithy(house))return buildKitMarkSmithy(house); /* S1869 — a Markish smithy inside, at its true size */
+    if(kitMarkApothecary(house))return buildKitMarkApothecary(house); /* S1879 — a Markish apothecary inside, at its true size */
     if(kitAurHome(house))return buildKitAurHome(house); /* S1831 — Aurenne's flat over the dyer's shop inside, at its true size */
     if(kitLonghouse(house))return buildKitLonghouse(house); /* S1453 — a Markish home: the longhouse inside, at its true size */
     if(kitChurchHall(house))return buildKitChurchHall(house); /* S1326 — the Church of the Weaver inside, at its true size */
