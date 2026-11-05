@@ -438,6 +438,7 @@ function restAtBed(hours){
   if(typeof doFade!=='function'){return;}
   hours=Math.max(1,Math.min(24,hours||8));
   doFade(()=>{
+    if(typeof orbDrop==='function')orbDrop(); /* S1854 — sleep empties the orb */
     {const p=restPreview(hours);PHP=p.hp;mana=p.mp;stamina=effMaxStamina();}
     if(typeof worldState !== 'undefined' && typeof worldState.gameTimeMinutes === 'number'){
       if(typeof fedSleep==='function')fedSleep(hours*60); /* S1500 — Full belly */
@@ -599,7 +600,7 @@ function _shopCompareBadge(it){
   // Weapons.
   if(slot==='weapon' && it.atk){
     const isBow   = it.weaponShape==='bow';
-    const isStaff = it.weaponShape==='staff' || it.spellPower;
+    const isStaff = !it.implement && (it.weaponShape==='staff' || it.spellPower); /* S1849 — an implement has no spell power to compare; its melee compares as any weapon's */
     // Staff: compare spell-power %, not melee. Only meaningful vs another staff.
     if(isStaff){
       const itSp  = (it.spellPower||1);

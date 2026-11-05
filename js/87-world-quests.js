@@ -2379,7 +2379,8 @@ const giver=`${lord.title} ${lord.name}`;
   const SPAR_HITS=3,SPAR_BAND=.15,SPAR_SKILL=.5,SPAR_R=5,SPAR_LEAVE=8,SPAR_OPEN=8,SPAR_CLOSE=18;
   let SPAR=null; /* {foe,x,z,site,you,them,held:{weapon,offhand},hitAt,call,end} */
   function sparOpen(){const h=hourNow();return h>=SPAR_OPEN&&h<SPAR_CLOSE;}
-  function sparStaff(){const t=STARTER_WEAPONS.staff,o=Object.assign({},t,{name:'Yard Staff',yard:true,buyPrice:0,sellMult:0,desc:'The yard’s staff. It goes back on the rack.'});delete o.spellPower;return o;}
+  /* S1849 — the yard's staff is the old one-handed walking-staff, kept as it was when the creator's staff became an implement */
+  function sparStaff(){return {name:'Yard Staff',ico:'🥢',type:'equip',slot:'weapon',atk:[4,7],weight:2.5,tier:1,material:'Wooden',weaponShape:'staff',wType:'blunt',matCol:0x6a3e12,matGuard:0x4a2808,matGlow:null,yard:true,buyPrice:0,sellMult:0,desc:'The yard’s staff. It goes back on the rack.'};}
   function sparKitRefresh(){if(typeof invalidateArmorCache==='function')invalidateArmorCache();try{if(typeof buildViewmodel==='function')buildViewmodel();if(typeof buildShieldViewmodel==='function')buildShieldViewmodel();}catch(err){}}
   // the rack holds your weapon and shield: into your pack for the bout (a save mid-bout loses nothing), back into your hands after
   function kitHold(){const held={weapon:null,offhand:null};for(const k of ['weapon','offhand']){const it=EQ[k];if(!it||it.yard)continue;bagAdd(eqBagCopy(it,k));held[k]=BAG[BAG.length-1];EQ[k]=null;}

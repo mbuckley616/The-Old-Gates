@@ -932,7 +932,7 @@ function renderHubMagic(){
   const cost=magicCost(id,f,join.ok?rider:null),per=FORMS[f].perSec?' a second':'',over=cost-maxMana;
   mid+=`<div class="mp-dv"><span>Mana</span><span>${cost}${per}${over>0&&!per?` · ${over} past your pool of ${maxMana}`:''}</span></div>`;
   if(FORMS[f].reach)mid+=`<div class="mp-dv"><span>Reach</span><span>${FORMS[f].reach} m</span></div>`;
-  if(join.ok&&rider&&riderMixedWild(id,rider))mid+=`<div class="mp-dv"><span>Wild</span><span class="mp-warn">+${Math.round(WORD_MIXED_WILD*100)}% while either school is under ${WORD_MIXED_SKILL}</span></div>`;
+  if(join.ok&&rider&&riderMixedWild(id,rider))mid+=`<div class="mp-dv"><span>Wild</span><span class="mp-warn">+${Math.round(mixedWildChance()*100)}% while either school is under ${WORD_MIXED_SKILL}</span></div>`;
   mid+=`<div class="mp-btns"><span class="mp-btn hot" onclick="magicWrite()">Write it into the book · ${spellBook.length}/${SPELL_BOOK_MAX}</span><span class="mp-btn" onclick="magicClear()">Clear</span><span class="mp-meta">Enter writes it · 1–8 readies a line</span></div>`;
   // the book
   let bk=`<div class="mp-h">The book · keys 1–8</div>`;
