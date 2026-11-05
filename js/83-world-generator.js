@@ -2524,8 +2524,8 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     for(const q of T.boxes){const b={x0:rx(q.x0),x1:rx(q.x1),z0:rz(q.z0),z1:rz(q.z1),y0:Math.max(0,ry(q.y0)),y1:ry(q.y1)};SOL.push(b);if(FOOT.includes(q.tag))FOOTHOLDS.push({x0:b.x0,x1:b.x1,z0:b.z0,z1:b.z1,y:b.y1});}
     // the hood over the furnace, from 1.9 m to the ceiling, so a jump onto the furnace meets it
     {const H=T.furnace;SOL.push({x0:rx(H.x0),x1:rx(H.x1),z0:rz(H.z0),z1:rz(H.z1),y0:ry(T.hood.y0),y1:ry(T.hood.y1)});}
-    // the shop's strongbox (S155) against the back wall between the back window and the receiver's stand, behind the worktable
-    {const bx=rx(.9),bz=rz(-Z+.35);const bg=new THREE.Group();const shell=buildChestShell(bg,.6,0x4a3018);bg.position.set(bx,0,bz);sc_.add(bg);
+    // the shop's strongbox (S155) against the back wall between the back window and the receiver's stand, past the worktable's end
+    {const bx=rx(1.25),bz=rz(-Z+.35);const bg=new THREE.Group();const shell=buildChestShell(bg,.6,0x4a3018);bg.position.set(bx,0,bz);sc_.add(bg);
       SOL.push({x0:bx-.32,x1:bx+.32,z0:bz-.28,z1:bz+.28,y0:0,y1:.5});FOOTHOLDS.push({x0:bx-.32,x1:bx+.32,z0:bz-.28,z1:bz+.28,y:.5});
       INT_BOX={x:bx,z:bz,lid:shell.lid,g:bg,id:house.id,kind:'shop',type:house.type,house,open:false};}
     // the day: one box round the house, 20 m out, facing in (beyond the door, the arcade and every window), and the street's flags under it, by the hour

@@ -63,7 +63,7 @@ if (id) {
     check(`the shop's strongbox stands on its own against the back wall, with clear floor before it`, !!r.box && r.box.kind === 'shop' && r.box.front && r.box.alone, r.box);
     check(`lit (${r.lights} lights); ${r.draws} meshes (45 or fewer) and ${r.tris.toLocaleString()} triangles (30,000 or fewer) besides the apothecary's ${r.people}`, r.lights >= 3 && r.draws <= 45 && r.tris <= 30000 && r.people >= 1, r);
     const pic = path.join(here, '../docs/prototypes/kit-aurapothecary-room.png');
-    await page.evaluate(() => { const h = currentHouse; VM_SCENE.visible = false; px = h._exitX + .3; pz = h.intD - .4; jumpY = 0; yaw = -.35; pitch = -.08; });
+    await page.evaluate(() => { const h = currentHouse; VM_SCENE.visible = false; px = h._exitX + .3; pz = h.intD - .4; jumpY = 0; yaw = .5; pitch = -.1; });
     await g.frames(6); await page.screenshot({ path: pic }); console.log(`  (picture: ${path.relative(path.join(here, '..'), pic)})`);
     await page.evaluate(() => { const h = currentHouse; VM_SCENE.visible = true; px = h._exitX; pz = h.intD - .4; jumpY = 0; yaw = Math.PI; pitch = 0; interact(); });
     for (let k = 0; k < 40 && (await page.evaluate(() => isInterior())); k++) await page.waitForTimeout(250);
