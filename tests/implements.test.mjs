@@ -193,6 +193,32 @@ check(`third person, the orb: carried before the waist (hand ${H.rest.y} m up, $
 check(`the orb's light is its own: ${H.rest.glow} at rest, ${H.raised.glow} raised, ${H.kept.glow} keeping a word`, H.rest.glow === 1 && H.raised.glow > 1.1 && H.kept.glow > 1.3 && !H.rest.shared, H);
 check(`the tome is lifted before the chest in a cast (hand ${H.tomeRest.y} → ${H.tomeRead.y} m)`, H.tomeRead.y > H.tomeRest.y + .2 && H.tomeRead.fwd > H.tomeRest.fwd, H);
 check('first person draws the orb and the tome in the off hand, raised, pushed out in a cast and lifted to read', H.fp === 'orb' && H.fpTome === 'tome' && H.fpRest.every(v => v === 0) && H.fpRaised[1] > .1 && H.fpCast[2] < -.15 && H.fpRead[1] > .1, H);
+// S1864 — the kept word leaves the orb in the left hand: in third person from the left hand's bone, in first person 0.3 m to the
+// left of your centre, where a cast of your own leaves the right
+await page.evaluate(() => { const push = Array.prototype.push; for (const A of [ZB, BALLS]) A.push = function (fb) { window._spawns = (window._spawns || []).concat([fb.position.clone()]); return push.apply(this, arguments); };
+  window._where = { ow: isOverworldZone(), floor: currentFloor }; });
+const SH = [];
+for (const tp of [true, false]) {
+  await page.evaluate((tp) => {
+    for (const k2 in K) K[k2] = false; EQ.offhand = makeOrb(1, 'tine'); thirdPerson = tp; if (tp) { tpEnsure(); for (let i = 0; i < 20; i++) tpUpdate(1 / 60, { moving: false, sprinting: false, camY: CAM.position.y, now: performance.now(), roll: null }); }
+    castT = 0; _castFreeAt = 0; _castReleaseAt = 0; spCd = 0; TOUCH_PEND = null; HELD = null; mana = 100; window._spawns = [];
+    bookSelect(bookAdd('caor'));
+    ORB_KEPT = { word: 'caor', form: 'sent', rider: null, ready: 0, at: playClockS, key: laidKey() }; window._rel = orbRelease(); }, tp);
+  await page.waitForFunction(() => window._spawns.length > 0, null, { timeout: 5000, polling: 20 }).catch(() => {});
+  SH.push(await page.evaluate((tp) => {
+    const p = window._spawns[0], out = { tp, rel: window._rel, n: window._spawns.length };
+    if (!p) return out;
+    out.lat = +((p.x - px) * rgtX + (p.z - pz) * rgtZ).toFixed(2);
+    if (tp && TP.rig) { TP.rig.root.updateMatrixWorld(true); const L = TP.rig.handL.getWorldPosition(new THREE.Vector3()), R = TP.rig.handR.getWorldPosition(new THREE.Vector3());
+      out.dL = +p.distanceTo(L).toFixed(2); out.dR = +p.distanceTo(R).toFixed(2); }
+    castT = 0; return out; }, tp));
+  await page.waitForFunction(() => !castRecovering(), null, { timeout: 15000, polling: 50 }).catch(() => {});
+}
+const WH = await page.evaluate(() => { delete ZB.push; delete BALLS.push; thirdPerson = false; EQ.offhand = null; return window._where; });
+console.log('orb hand', JSON.stringify(WH), JSON.stringify(SH));
+check(`the orb's word leaves the left hand: third person ${SH[0].dL} m from the left hand (${SH[0].dR} from the right), first person ${-SH[1].lat} m to your left`,
+  SH[0].rel && SH[0].n === 1 && SH[0].dL < .05 && SH[0].dR > .2 && SH[1].rel && SH[1].n === 1 && Math.abs(SH[1].lat + .3) < .02, SH);
+
 // S1863 — the rule, not a percentage: the shop's row, the loot list, the bag's tooltip and the worn slot each say what the implement
 // changes, in metres and seconds, with its emblem's cut; a sword's row says none of it
 const RU = await page.evaluate(() => {

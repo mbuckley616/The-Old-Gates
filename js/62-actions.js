@@ -465,10 +465,12 @@ function castSpell(rel){ /* S1854 — rel: an orb's kept Sent entry, let go (orb
       // Matches the visual position of the cast orb on the sword tip during the release frame.
       const groundY = snapIsOW?activeTerrainH(snapPx,snapPz):(snapFloor===2?FLOOR2_Y:0);
       const spellBaseY = groundY + 1.0;
-      const spawnX = snapPx + snapRgtX*0.3 + snapFwdX*0.7;
-      const spawnZ = snapPz + snapRgtZ*0.3 + snapFwdZ*0.7;
+      /* S1864 — an orb's kept word leaves the orb, in the left hand (magical-implements.md B: "The release leaves from the left hand") */
+      const _side = rel ? -0.3 : 0.3;
+      const spawnX = snapPx + snapRgtX*_side + snapFwdX*0.7;
+      const spawnZ = snapPz + snapRgtZ*_side + snapFwdZ*0.7;
       fb.position.set(spawnX, spellBaseY, spawnZ);
-      const _tpShot=tpShotFrom('R',snapScene,snapAim);
+      const _tpShot=tpShotFrom(rel?'L':'R',snapScene,snapAim);
       if(_tpShot)fb.position.copy(_tpShot.from);
       const cosPitch=_tpShot?Math.hypot(_tpShot.dir.x,_tpShot.dir.z):Math.cos(snapPitch);
       const cj=Math.cos(aimJitter), sj=Math.sin(aimJitter);
