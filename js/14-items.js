@@ -194,7 +194,8 @@ const IMPLEMENT_TYPES={
   maul: {type:'Maul', slot:'weapon',weight:4,  atkMult:[0.90,1.15],shape:'mace', wType:'blunt'},
 };
 const IMPLEMENT={heldReach:5.5,laidReach:16,laidDur:1.25,sentReach:45,castTell:.28,cut:.10,foundCut:.20,cutMax:.35,
-  tomeWild:.10,tomeWildSteady:.05,tomeMixed:.03,tomeTell:2,orbKeep:60}; /* S1850 — the tome: Impression ×0.8 (TIER_MAG_TOME), wild a third as often, every wind-up doubled */
+  tomeWild:.10,tomeWildSteady:.05,tomeMixed:.03,tomeTell:2,orbKeep:60,
+  guildPrice:{staff:60,wand:80,tome:120},tomeRank:1,orbGate:1/3,orbEnchants:['mp_regen','magic_boost','fortify_int']}; /* S1850 — the tome: Impression ×0.8 (TIER_MAG_TOME), wild a third as often, every wind-up doubled */
 // S1850 — the tome (the sheet's second session, its other half the orb's kept cast): an off-hand book, no shield, no block, weight 1.
 const TOME_TYPE={type:'Tome',slot:'offhand',weight:1};
 // S1854 — the orb (the sheet's second session, its first half the tome): an off-hand glass, no shield, no block, weight 1; it keeps one cast.
@@ -601,6 +602,31 @@ function implementCut(school){if(typeof EQ==='undefined')return 0;let c=0;for(co
 function implementMigrate(it){if(!it||implementOf(it)||it.weaponShape!=='staff'||it.twoHand||it.yard||it.name==='Yard Staff')return it;
   const n=makeImplement(it.tier||1,'staff',null);if(it.name)n.name=it.name;if(it.enchant){n.enchant=it.enchant;n.enchantId=it.enchantId;}
   if(it.yard)n.yard=it.yard;if(it.sellMult!=null)n.sellMult=it.sellMult;if(it.buyPrice!=null)n.buyPrice=it.buyPrice;return n;}
+// S1858 — the sheet's third session (magical-implements.md, Michael's B on #1111): the Mages' Guild's stock and the gates' orbs.
+// The guild sells its island's make (`make`, look only) at the common grade, Wooden, in every school's emblem: a staff for 60 gold and a
+// wand for 80 (Cloch's is the maul) from Novice, a tome for 120 from Adept. Orbs are never sold.
+function guildImplements(make,rank){const out=[];if(typeof SCHOOL_DEF==='undefined')return out;
+  for(const s of Object.keys(SCHOOL_DEF)){const ps=[makeImplement(1,'staff',s),makeImplement(1,'wand',s)];if((rank||0)>=IMPLEMENT.tomeRank)ps.push(makeTome(1,s));
+    for(const it of ps){if(!it)continue;it.make=make||'gatelands';it.buyPrice=IMPLEMENT.guildPrice[it.implement==='maul'?'wand':it.implement];it.name+=` of ${SCHOOL_DEF[s].name}`;out.push(it);}}
+  return out;}
+// One gate in three (by its seed) keeps an orb of its school: a great gate's school, else the school its carvings are drawn from. It lies
+// in the deepest floor's treasure chest (the vault and the keep are not built yet), found: 20% off its school's words and one enchant
+// (Clarity, the Mage or Intellect), its material and enchant rolled on the gate's own stream. Taken once (`takeGateOrb`), it is gone for good.
+function gateOrbDue(portal){if(!portal||portal.seed==null||portal.tutorial)return false;
+  const W=typeof worldState!=='undefined'&&worldState&&worldState.gateOrbs;if(W&&W[portal.seed])return false;
+  return seededRng('gateorb-has',portal.seed)()<IMPLEMENT.orbGate;}
+function gateOrbSchool(portal){const g=typeof greatSchoolOf==='function'?greatSchoolOf(portal):null;if(g)return g;
+  try{return typeof gateSchool==='function'?gateSchool(portal):null;}catch(e){return null;}}
+function gateOrbItem(portal,school,tier,make){return withLootRng(seededRng('gateorb',portal.seed),()=>withLootTier(tier,()=>{
+  const it=makeOrb(lootMatTier(portal.diffScale),school,{found:true}),ids=IMPLEMENT.orbEnchants,e=ARMOR_ENCHANTS.find(x=>x.id===ids[Math.floor(lootRand()*ids.length)]);
+  if(e){it.name+=` ${e.name}`;it.enchant=e;it.enchantId=e.id;it.enchantStats=e.apply(it);}
+  if(make)it.make=make;it.gateOrb=String(portal.seed);return it;}));}
+function gateOrbPlace(portal,chests){if(!gateOrbDue(portal)||!chests||!chests.length)return null;const school=gateOrbSchool(portal);if(!school)return null;
+  const deep=Math.max(...chests.map(c=>c.floor||1)),on=chests.filter(c=>(c.floor||1)===deep),tr=on.filter(c=>c.treasure),pool=tr.length?tr:on,ch=pool[pool.length-1];
+  let make=null;try{if(portal.x!=null&&typeof nationKeyOf==='function')make=nationKeyOf(...cellOf(portal.x,portal.z));}catch(e){}
+  ch.items.unshift(gateOrbItem(portal,school,typeof dungeonTier==='function'?dungeonTier(portal,deep):null,make));return ch;}
+// the named action (co-op rules): the gate's orb is taken, and the gate keeps no other
+function takeGateOrb(seed){if(seed==null)return;(worldState.gateOrbs||(worldState.gateOrbs={}))[seed]=1;}
 function makeItem(matTier, typeObj, enchant, isArmor){
   const mat=MATERIALS[matTier-1]||MATERIALS[0];
   const t=matTier;
@@ -800,6 +826,18 @@ function rollConsumable(kind){
   return pool[0].roll();
 }
 
+// the material tier a found piece rolls: capped by the place's level and the difficulty, weighted by dropW (one draw)
+function lootMatTier(diffScale){
+  if(typeof diffScale==='number')diffScale={hp:diffScale};
+  const playerLv = lootLevel(); /* S1073 — the place's level, not yours (DECISION #394) */
+  const diffFactor = diffScale ? diffScale.hp : 1.0;
+  const maxTier = Math.min(10, Math.max(1, Math.floor(1 + playerLv*0.4 + diffFactor*1.2)));
+  const weights=MATERIALS.map(m=>m.dropW*(m.tier<=maxTier?1:0));
+  const totalW=weights.reduce((a,b)=>a+b,0);
+  let r2=lootRand()*totalW,t=1;
+  for(let i=0;i<weights.length;i++){r2-=weights[i];if(r2<=0){t=i+1;break;}}
+  return t;
+}
 function rollLoot(diffScale, theme, kind){
   // v80 S472 — the world's containers pass the difficulty as a number (1 a town barrel, 1.4 a wreck, 2.4 a hoard); read it as {hp}
   if(typeof diffScale==='number')diffScale={hp:diffScale};
@@ -814,13 +852,7 @@ function rollLoot(diffScale, theme, kind){
   // v57: previously `round(3 + diffScale.hp*5)` gave too-generous drops at low level (Obsidian at L5).
   // New cap blends player level (0.4/level) with difficulty (1.2/diffScale.hp), floored at T1.
   // At L5 normal → cap T4 (Steel). L10 normal → T6 (Adamant). L15 hard → T9 (Demonic).
-  const playerLv = lootLevel(); /* S1073 — the place's level, not yours (DECISION #394) */
-  const diffFactor = diffScale ? diffScale.hp : 1.0;
-  const maxTier = Math.min(10, Math.max(1, Math.floor(1 + playerLv*0.4 + diffFactor*1.2)));
-  const weights=MATERIALS.map(m=>m.dropW*(m.tier<=maxTier?1:0));
-  const totalW=weights.reduce((a,b)=>a+b,0);
-  let r2=lootRand()*totalW,t=1;
-  for(let i=0;i<weights.length;i++){r2-=weights[i];if(r2<=0){t=i+1;break;}}
+  const t=lootMatTier(diffScale); /* S1858 — the material's roll, shared with a gate's orb; the same one draw */
   const isWeapon=lootRand()<0.45;
   const typeObj=isWeapon?WEAPON_TYPES[Math.floor(lootRand()*WEAPON_TYPES.length)]
                         :ARMOR_TYPES[Math.floor(lootRand()*ARMOR_TYPES.length)];

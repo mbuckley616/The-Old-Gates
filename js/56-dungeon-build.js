@@ -3293,6 +3293,7 @@ function buildDungeon(portal){
   // S599 — what floor 1 has registered to collide is floor 1's: a table in the hall above no longer stops you in the vault below
   if(dMap2){for(const p of DUNGEON_PROPS)if(p.floor==null)p.floor=1;for(const p of DUNGEON_COLUMNS)if(p.floor==null)p.floor=1;}
   if(dMap2)renderFloor(dMap2,2,f2WallMat,f2FloorMat,FLOOR2_Y);
+  if(gen.gate&&typeof gateOrbPlace==='function')gateOrbPlace(portal,CHESTS); /* S1858 — one gate in three keeps an orb of its school */
   if(dMap2&&gen.gaolCells)buildGaolGrilles();
   // v80 S8 — floor 2 as a walkable platform with the shaft cut out; floor 1 is the base (0)
   try{decorateDungeonRooms(gen,portal);}catch(e){console.warn('decorate',e);} // v80 — room types, traps, containers
