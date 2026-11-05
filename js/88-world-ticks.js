@@ -284,16 +284,16 @@
   // plains and coast, Aurenne's plains, dunes, swamp, wasteland, wastes and coast
   const WILD_ISLE={
     gatelands:{
-      forest:[{name:'Elderstag',w:3,n:[1,3]},{name:'Hollowcat',w:1,n:[1,1]},{name:'Capercaillie',w:1,n:[1,1]},{name:'Crag Hawk',w:1,n:[1,1]},{name:'Lantern Beetle',w:.5,n:[2,4],night:true},{name:'Gatefen Boar',w:2,n:[1,2]}], /* S1796 — the three that answer back (#1050 A), unmarked: 2 */
-      autumn:[{name:'Elderstag',w:3,n:[1,3]},{name:'Hollowcat',w:1,n:[1,1]},{name:'Capercaillie',w:1,n:[1,1]},{name:'Lantern Beetle',w:.5,n:[2,4],night:true},{name:'Gatefen Boar',w:2,n:[1,2]}],
-      plains:[{name:'Redspine Fox',w:3,n:[1,1]},{name:'Greenward Stoat',w:2,n:[1,1]},{name:'Stonecrawler',w:1,n:[1,1]}],
+      forest:[{name:'Elderstag',w:3,n:[1,3]},{name:'Hollowcat',w:1,n:[1,1]},{name:'Capercaillie',w:1,n:[1,1]},{name:'Crag Hawk',w:1,n:[1,1]},{name:'Lantern Beetle',w:.5,n:[2,4],night:true},{name:'Gatefen Boar',w:2,n:[1,2]},{name:'Crownstag',w:.5,n:[1,1]},{name:'Lanternfox',w:.5,n:[1,1]}], /* S1870 — OG-040's strange beasts by its habitats and rarity, S1769's weights: the Crownstag and the Lanternfox rare in the woods, the Thornrunner unmarked on the hills and farmland, the Frostmane in the Mark's snow forests in small herds, the Stonejaw on its tundra */ /* S1796 — the three that answer back (#1050 A), unmarked: 2 */
+      autumn:[{name:'Elderstag',w:3,n:[1,3]},{name:'Hollowcat',w:1,n:[1,1]},{name:'Capercaillie',w:1,n:[1,1]},{name:'Lantern Beetle',w:.5,n:[2,4],night:true},{name:'Gatefen Boar',w:2,n:[1,2]},{name:'Crownstag',w:.5,n:[1,1]},{name:'Lanternfox',w:.5,n:[1,1]}],
+      plains:[{name:'Redspine Fox',w:3,n:[1,1]},{name:'Greenward Stoat',w:2,n:[1,1]},{name:'Stonecrawler',w:1,n:[1,1]},{name:'Thornrunner',w:2,n:[1,1]}],
       fen:   [{name:'Great Heron',w:3,n:[1,1]},{name:'Marsh Frog',w:2,n:[1,3]},{name:'Mire Snake',w:1,n:[1,1]},{name:'Gatefen Boar',w:2,n:[1,2]}],
-      moor:  [{name:'Crag Hawk',w:2,n:[1,1]},{name:'Stonecrawler',w:1,n:[1,1]},{name:'Greenward Stoat',w:1,n:[1,1]}],
+      moor:  [{name:'Crag Hawk',w:2,n:[1,1]},{name:'Stonecrawler',w:1,n:[1,1]},{name:'Greenward Stoat',w:1,n:[1,1]},{name:'Thornrunner',w:2,n:[1,1]}],
       coast: [{name:'Great Heron',w:1,n:[1,1]}]},
     mark:{
-      forest:[{name:'Ironpine Elk',w:3,n:[2,4]},{name:'Snowleap Hare',w:3,n:[1,1]}],
+      forest:[{name:'Ironpine Elk',w:3,n:[2,4]},{name:'Snowleap Hare',w:3,n:[1,1]},{name:'Frostmane',w:2,n:[2,4]}],
       plains:[{name:'Ironpine Elk',w:2,n:[2,4]}],
-      tundra:[{name:'Snowleap Hare',w:3,n:[1,1]},{name:'Skyraven',w:3,n:[1,2]},{name:'Glacial Marmot',w:3,n:[1,3]},{name:'Tundra Grouse',w:2,n:[1,3]},{name:'Icehorn',w:1,n:[1,3]},{name:'Stormshrike',w:1,n:[1,1]},{name:'Stormlynx',w:1,n:[1,1]},{name:'Craghorn Ram',w:1,n:[1,3]},{name:'Frostspine Lizard',w:.5,n:[1,1]}],
+      tundra:[{name:'Snowleap Hare',w:3,n:[1,1]},{name:'Skyraven',w:3,n:[1,2]},{name:'Glacial Marmot',w:3,n:[1,3]},{name:'Tundra Grouse',w:2,n:[1,3]},{name:'Icehorn',w:1,n:[1,3]},{name:'Stormshrike',w:1,n:[1,1]},{name:'Stormlynx',w:1,n:[1,1]},{name:'Craghorn Ram',w:1,n:[1,3]},{name:'Frostspine Lizard',w:.5,n:[1,1]},{name:'Stonejaw',w:2,n:[1,1]}],
       moor:  [{name:'Skyraven',w:2,n:[1,2]},{name:'Glacial Marmot',w:2,n:[1,3]},{name:'Tundra Grouse',w:2,n:[1,3]},{name:'Craghorn Ram',w:1,n:[1,3]},{name:'Stormlynx',w:1,n:[1,1]},{name:'Frostspine Lizard',w:.5,n:[1,1]}],
       coast: [{name:'Skyraven',w:1,n:[1,2]},{name:'Icecrab',w:2,n:[1,2]}]},
     aurenne:{

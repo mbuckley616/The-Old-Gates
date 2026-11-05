@@ -785,7 +785,10 @@ const WILD_ISLE_KINDS={
   'Stormshrike':{walk:.3,run:12,fly:true},'Tundra Grouse':{walk:.4,run:5},'Frostspine Lizard':{walk:.3,run:3},
   'Duneskimmer':{walk:1.2,run:11},'Terrace Ram':{walk:.8,run:7},'Sunspire Lynx':{walk:.7,run:9},'Oasis Hare':{walk:.6,run:9},
   'Mirage Fox':{walk:1,run:7},'Scarlet Ibis':{walk:.4,run:5},'Cypress Stalker':{walk:.4,run:5},'Sunbeak Vulture':{walk:.3,run:11,fly:true},
-  'Cliffswift':{walk:.1,run:12,fly:true},'Glasswing Moth':{walk:.05,run:3,fly:true},'Amber Shellcrab':{walk:.2,run:1.5},'Spined Gekko':{walk:.3,run:3}};
+  'Cliffswift':{walk:.1,run:12,fly:true},'Glasswing Moth':{walk:.05,run:3,fly:true},'Amber Shellcrab':{walk:.2,run:1.5},'Spined Gekko':{walk:.3,run:3},
+  /* S1870 — OG-040's five strange beasts with bodies in the game (Session 1852), peaceful as the rest: the Crownstag the Elderstag's pace,
+     the Lanternfox a fox's, the Thornrunner ("very fast") 12 at a run, past a hare's 9, the Frostmane a browser's, the Stonejaw a burrower's */
+  'Crownstag':{walk:1.1,run:9},'Lanternfox':{walk:1,run:7},'Thornrunner':{walk:1,run:12},'Frostmane':{walk:.8,run:7},'Stonejaw':{walk:.4,run:3.5}};
 // S1796 — animals that answer back (Michael's A on #1050): the three the catalogue calls aggressive (the Gatefen Boar, the Icecrab, the
 // Saltspine Monitor) graze as the rest do and never bolt, but one you strike or come within WILD_ANSWER.near of turns on you (e.angry) and
 // fights as a foe with the hostile Boar's blow (5, every 1.3 s) and 16 health at tier 1 everywhere; WILD_ANSWER.quit off it gives up and

@@ -727,8 +727,8 @@ function useFireThing(i){const it=BAG[i];if(!it)return;
   if(lightFire())openCookPage();}
 // meat off a bear, a boar or a wolf: 1 to 3, seeded by the corpse's key (as bodyPicks)
 // S1707 — and off the hunted (Michael's A on #984): a deer 2 to 4, a hare 1; the fox, the badger and the otter give none
-const MEAT_BODIES=/(^|\s)(Wolf|Bear|Boar|Deer|Hare|Elderstag|Elk|Duneskimmer|Icehorn|Ram)$/;
-const MEAT_N={Deer:[2,4],Hare:[1,1],Elderstag:[2,4],Elk:[2,4]}; /* S1769 — the islands' grazers: the stag and the elk a deer's, the gazelle, the goat and the rams the default 1 to 3 */
+const MEAT_BODIES=/(^|\s)(Wolf|Bear|Boar|Deer|Hare|Elderstag|Elk|Duneskimmer|Icehorn|Ram|Crownstag|Frostmane)$/;
+const MEAT_N={Deer:[2,4],Hare:[1,1],Elderstag:[2,4],Elk:[2,4],Crownstag:[2,4],Frostmane:[2,4]}; /* S1870 — the two strange grazers a deer's; the Lanternfox, the Thornrunner and the Stonejaw none, as the fox and the badger */ /* S1769 — the islands' grazers: the stag and the elk a deer's, the gazelle, the goat and the rams the default 1 to 3 */
 function bodyMeat(e,items,key){if(e&&e.swim&&(e.baseName==='Trout'||RIVER_FISH[e.baseName])){items.push(riverFishItem(e.baseName));return items;}if(!e||!MEAT_BODIES.test(e.name||''))return items;
   const N=MEAT_N[(e.name||'').split(' ').pop()]||[1,3];
   const r=key!=null?seededRng('meat',key):lootRand;items.push(survItem('meat',N[0]+Math.floor(r()*(N[1]-N[0]+1))));return items;}

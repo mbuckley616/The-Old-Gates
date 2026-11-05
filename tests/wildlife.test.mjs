@@ -194,4 +194,26 @@ console.log('  fish:', JSON.stringify(fish));
     share('gatelands:River Pike', 'gatelands:Trout') > .3 && share('gatelands:River Pike', 'gatelands:Trout') < .6 && share('mark:Riverjaw Salmon', 'mark:Trout') > .25 && share('mark:Riverjaw Salmon', 'mark:Trout') < .6
     && !T['aurenne:River Pike'] && !T['aurenne:Riverjaw Salmon'] && !T['mark:River Pike'] && !T['gatelands:Riverjaw Salmon'] && !T.shallowPike
     && I['River Pike'][1] === 1.2 && I['River Pike'][2] === 18 && I['Riverjaw Salmon'][1] === 1.2 && I['Riverjaw Salmon'][2] === 18 && I.Trout[1] === .6, fish); }
+
+// S1870 — OG-040's five strange beasts with bodies (Session 1852) join their islands' tables by the catalogue's habitat and rarity (S1769's
+// weights): each builds as a one-blow animal on the wolf's driver with its pace; the Crownstag and the Frostmane give a deer's meat, the
+// Lanternfox, the Thornrunner and the Stonejaw none; and rolled across the Mark's snow forests and tundra, the Frostmane and the Stonejaw stand
+const SB = await page.evaluate(() => { const out = { k: {}, rows: {} };
+  for (const k of ['Crownstag', 'Lanternfox', 'Thornrunner', 'Frostmane', 'Stonejaw']) {
+    const e = buildZoneEnemy(sc, STATIC_SOL, px + 6, pz + 6, k, null, { tier: 1, key: 's1870:' + k, island: k === 'Frostmane' || k === 'Stonejaw' ? 'mark' : 'gatelands' });
+    out.k[k] = { wild: !!e.wild, hp: e.hp, wolf: !!(e.limbs && e.limbs.wolf), run: WILD_PACE[k] && WILD_PACE[k].run, meat: bodyMeat(e, [], 's1870:' + k).reduce((a, it) => a + (it.qty || 1), 0) };
+    if (e.mesh && e.mesh.parent) e.mesh.parent.remove(e.mesh); }
+  for (const [i, t] of Object.entries(WILD_ISLE)) for (const [b, rows] of Object.entries(t)) for (const r of rows) if (out.k[r.name]) out.rows[r.name] = (out.rows[r.name] || []).concat(i + '/' + b + ':' + r.w);
+  const per = {}; for (let cz = 12; cz < 245; cz += 4) for (let cx = 25; cx < 220; cx += 4) { const x = cx * CHUNK + CHUNK / 2, z = cz * CHUNK + CHUNK / 2;
+    if (nationAt(x, z) !== 'mark' || worldH(x, z) < 2) continue; const b = lairBiome({ x, z }); if (b !== 'forest' && b !== 'tundra') continue;
+    const ch = { cx, cz }; try { wildSpawnChunk(ch); } catch (e) { continue; }
+    if (ch.wild && ch.wild.length) { const nm = ch.wild[0].name; per[b + ':' + nm] = (per[b + ':' + nm] || 0) + 1; } wildDrop(ch); }
+  out.mark = { frostmane: per['forest:Frostmane'] || 0, stonejaw: per['tundra:Stonejaw'] || 0, elsewhere: (per['tundra:Frostmane'] || 0) + (per['forest:Stonejaw'] || 0) };
+  return out; });
+console.log('  strange:', JSON.stringify(SB));
+check(`the strange beasts: five one-blow animals on the wolf's driver, meat ${['Crownstag', 'Frostmane', 'Lanternfox', 'Thornrunner', 'Stonejaw'].map(k => k + ' ' + SB.k[k].meat).join(', ')}; the Mark rolls ${SB.mark.frostmane} Frostmane groups in its forests and ${SB.mark.stonejaw} Stonejaw on its tundra`,
+  Object.values(SB.k).every(o => o.wild && o.hp === 1 && o.wolf && o.run > 0) && SB.k.Crownstag.meat >= 2 && SB.k.Frostmane.meat >= 2 && !SB.k.Lanternfox.meat && !SB.k.Thornrunner.meat && !SB.k.Stonejaw.meat
+  && SB.rows.Crownstag.join() === 'gatelands/forest:0.5,gatelands/autumn:0.5' && SB.rows.Lanternfox.join() === 'gatelands/forest:0.5,gatelands/autumn:0.5'
+  && SB.rows.Thornrunner.join() === 'gatelands/plains:2,gatelands/moor:2' && SB.rows.Frostmane.join() === 'mark/forest:2' && SB.rows.Stonejaw.join() === 'mark/tundra:2'
+  && SB.mark.frostmane >= 3 && SB.mark.stonejaw >= 3 && !SB.mark.elsewhere, SB);
 await g.close();
