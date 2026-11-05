@@ -923,6 +923,7 @@ const giver=`${lord.title} ${lord.name}`;
     {const B=erBorrowRoll(def,site,wk,R.length);if(B)return B;} /* S1722 — the borrowed thing, on its own stream */
     {const W=erWatchRoll(def,site,wk,R.length);if(W)return W;} /* S1776 — the watch, on its own stream */
     {const P=erPrayerRoll(def,site,wk,R.length);if(P)return P;} /* S1817 — the prayer, on its own stream */
+    {const F=erFishRoll(def,site,wk,R.length);if(F)return F;} /* S1857 — the wedding's fish, on its own stream */
     {const s=seededRng('errand-sub',site.id+':'+erTag(def)+':'+wk),kids=def.bio.kids>0,pref=def.bio.wish==='to hear from my daughter'||def.bio.worry==='my brother went for a soldier and never wrote'; /* S1554 — the sub on its own stream, so a fever's herb, count and date roll as before */
       if(pref||!kids||s()<.5){const L=erLetter(def,site,s,wk,R.length);if(L||!kids)return L;}}
     const n=2+Math.floor(r()*3),days=3+Math.floor(r()*3),H=erHerb(site,r),day=Math.floor((worldState.gameTimeAbsMinutes||0)/1440);
@@ -1068,6 +1069,7 @@ const giver=`${lord.title} ${lord.name}`;
   function erLapse(q){if(!q||q.kind!=='errand'||q.turnedIn||!q.erDue||(worldState.gameTimeAbsMinutes||0)<q.erDue)return false;
     q.turnedIn=true;q.lapsed=true;q.erUnsaid=true;if(q.sub==='borrowed'){addFavor(q.erSite,-1);qJournal(q,'lapsed',`You kept the coin the ${q.data.thing} fetched, and ${q.giver} has heard it.`);return true;} /* S1722 */
     if(q.sub==='prayer'){qJournal(q,'lapsed',`The week passed, and ${q.giver} carried the prayer another way.`);return true;} /* S1817 */
+    if(q.sub==='fish'){qJournal(q,'lapsed',`The wedding was held on ${q.data.date}, and no fish of yours on the table.`);return true;} /* S1857 */
     qJournal(q,'lapsed',`The date passed, and the fever in ${q.giver}'s house broke without the ${q.data.herb}.`);return true;}
   // S1776 — errand 6, *The Watch*: a shepherd, a farmer or a beekeeper, or anyone in a village, camp or outpost, has lost a beast in
   // the night. Sit the night within 25 of the giver's door from 22:00 to the morning bell at 05:00 (read on the clock, never the frame):
@@ -1164,6 +1166,50 @@ const giver=`${lord.title} ${lord.name}`;
     const d=q.data;d.prayed=true;d.at=S.site.name;const line=ER_PRAYER.at({who:d.who,giver:q.giver});if(typeof addLog==='function')addLog('🕯',line);qJournal(q,'ready',line);return line;}
   function erPrayerTurnIn(q,site,p){if(q.lapsed||erLapse(q)){q.erUnsaid=false;return ER_PRAYER.lapse[p];}if(!q.data.prayed)return ER_SHARED[p].notYet;
     qTurnIn(q);addFavor(site,1);return ER_PRAYER.done[p];}
+  // S1857 — errand 9, *A Fish for the Wedding* (Asked in Passing, the second run; approved 14 Oct 2026): a wedding in the giver's
+  // house, in a port or a town within 400 of the sea, four to six days off; the table wants a Fine catch (catchFish's one in eight).
+  // A fine fish by six in the morning of the day pays in full; a plain one, half. An innkeeper, a harbourmaster or a shipwright asks
+  // more often. Whom they marry and the day on the errand's own stream. On the day, a fine fish brought, the giver greets you with the
+  // wedding's line; erWeddingAt(siteId) says the day is on, for the square and the inn's meal (backlog A: those hooks are the look's
+  // and the systems builder's files). Two plain fixes: the Gatelander's pay is said as *{n} gold* where the draft had a bare {n}, and a comma follows
+  // the Gatelander's {date}, which holds one of its own.
+  const ER_FISH={
+    hint:{gatelander:()=>"A wedding in the house, and not a decent fish on the coast.",markman:o=>`Wedding on ${o.weekday}. No fish worth the name.`,
+      aurennais:o=>`We are marrying ${o.who} on ${o.weekday}, Master, and the table is not yet what it ought to be.`,oldblood:()=>"There is a handfasting. There is no fish."},
+    offer:{gatelander:o=>`A fish on the table, a fine one, for the Sea's luck. It's how my mother was married and hers. The boats bring in what the sea gives them, and this week it's giving sprats. Bring me a fine one by ${o.date}, and you'll eat at the wedding, and ${o.n} gold besides.`,
+      markman:o=>`A big fish. For the table. The custom. Boats got nothing. Bring one by ${o.date}. ${o.n} gold and a seat.`,
+      aurennais:o=>`A fine fish, Master, the centrepiece of the table. The guests will expect one, and the family on the other side will notice its absence; there was a great deal of discussion about the dowry. By ${o.date}, ${o.n} gold and a place at the table.`,
+      oldblood:o=>`A fish from the sea. A large one. For the handfasting. By ${o.date}. ${o.n} gold.`},
+    fine:{gatelander:o=>`Would you look at that. That's a fish with a past. The Sea's smiled on it and on us. ${o.n} gold, and come on ${o.weekday}, and eat.`,
+      markman:()=>"That's a fish. Good. Here. Come and drink.",aurennais:()=>"That is entirely satisfactory, Master. More than. Your fee, and your place at the table is kept.",oldblood:()=>"Good. That one. Come."},
+    plain:{gatelander:"A fish is a fish, and a wedding's a wedding. We'll lay a sprig of something by it and nobody'll be the wiser. Here's half, and no hard feelings.",
+      markman:"Small. It'll do. Half.",aurennais:"It will serve, Master, if presented well. Half the agreed fee, as the terms were for a fine one.",oldblood:"It is a fish. Half."},
+    wed:{gatelander:"Come in, come in. They're married, the fish is eaten, and the Weaver can see we did it right.",markman:"They're wed. Drink. That's all a wedding is.",
+      aurennais:"You honour us, Master. The contract is signed and the table was everything it ought to have been.",oldblood:"They are joined. Eat."},
+    lapse:{gatelander:"We married them with a ham on the table. The Sea'll forgive a ham. I'm less sure I will.",markman:"Wedding's done. No fish. Fine.",
+      aurennais:"The wedding was held without it, Master. It was remarked upon.",oldblood:"It is done. No fish."}};
+  const ER_FISH_ROLES=new Set(['Innkeeper','Harbourmaster','Shipwright']);
+  const ER_SEA_NEAR=new Map();
+  function erSeaNear(site){if(site.kind==='port')return true;if(ER_SEA_NEAR.has(site.id))return ER_SEA_NEAR.get(site.id);let wet=false;
+    for(let a=0;a<16&&!wet;a++){const ca=Math.cos(a*Math.PI/8),sa=Math.sin(a*Math.PI/8);for(let r=100;r<=400;r+=100)if(rawH(site.x+ca*r,site.z+sa*r)<SEA_Y-.5){wet=true;break;}}
+    ER_SEA_NEAR.set(site.id,wet);return wet;}
+  function erFishRoll(def,site,wk,idx){const s=seededRng('errand-fish',site.id+':'+erTag(def)+':'+wk);if(s()>=(ER_FISH_ROLES.has(def.role)?.4:.15))return null;if(!erSeaNear(site))return null;
+    const p=erPeople(def),bank=NAMES[(PEOPLES[p]||{}).names]||NAMES.irish;let who=pick(s,s()<.5?bank.f:bank.m);if(who===def.name)who=pick(s,bank.f);
+    const wday=Math.floor((worldState.gameTimeAbsMinutes||0)/1440)+4+Math.floor(s()*3);
+    return {sub:'fish',who,wday,weekday:calDay(wday*1440).day.name,date:calDateLine(wday*1440),week:wk,idx};}
+  function erIsFish(fine){return b=>b&&b._typeKey==='fish'&&(/^Fine /.test(b.name||''))===fine;}
+  // the turn-in: a fine fish (full pay, the wedding kept) or a plain one (half); by six in the morning of the day
+  function erFishTurnIn(q,site,p,fine){if(q.lapsed||erLapse(q)){q.erUnsaid=false;return ER_FISH.lapse[p];}const isF=erIsFish(fine);if(!bagCount(isF))return ER_SHARED[p].notYet;
+    const it=BAG.find(isF);bagTake(isF,1);q.data.fine=fine;q.data.fish=it?it.name:null;if(!fine)q.reward=Math.round(q.reward/2);
+    const n=q.reward;qTurnIn(q);addFavor(site,1);return fine?ER_FISH.fine[p]({n,weekday:q.data.weekday}):ER_FISH.plain[p];}
+  function erFishTopics(q,site){const p=q.erPeople||'gatelander',out=[];if(q.lapsed||erLapse(q))return [{label:'About that errand.',quest:true,fn:()=>erFishTurnIn(q,site,p,true)}];
+    const f=BAG.find(erIsFish(true));if(f)out.push({label:`A fine ${f.name.replace(/^Fine /,'').toLowerCase()}, for the table.`,quest:true,fn:()=>erFishTurnIn(q,site,p,true)});
+    if(BAG.find(erIsFish(false)))out.push({label:'It’s not a fine one. It’s what I could get.',quest:true,fn:()=>erFishTurnIn(q,site,p,false)});
+    if(!out.length)out.push({label:'About that errand.',quest:true,fn:()=>ER_SHARED[p].notYet});return out;}
+  // the day: a fine fish brought for a wedding at this site today
+  function erWeddingQ(siteId,R){const day=Math.floor((worldState.gameTimeAbsMinutes||0)/1440);
+    return (R||QJ()).find(q=>q.kind==='errand'&&q.sub==='fish'&&q.erSite===siteId&&q.turnedIn&&!q.lapsed&&q.data.fine&&q.data.wday===day)||null;}
+  function erWeddingAt(siteId){return !!erWeddingQ(siteId);}
   function errandAccept(def,site,E){const p=erPeople(def),tier=Math.max(1,worldTierAt(site.x,site.z)||1),base=Math.min(40,15+5*(tier-1));
     if(E.sub==='letter'){const q={id:erPre(def,site)+E.idx,kind:'errand',sub:'letter',giver:def.name,erSite:site.id,week:E.week,erPeople:p,
         title:`A letter for ${E.who}`,desc:`${def.name} of ${site.name} has written to ${E.who} at ${E.town} and had no answer. Carry the letter there and ask after ${erPro(E).her}.`,
@@ -1187,6 +1233,10 @@ const giver=`${lord.title} ${lord.name}`;
         title:`A prayer at ${erThe(E.shrine)}`,desc:`${def.name} of ${site.name} wants a prayer said for ${E.who} at ${erThe(E.shrine)}, the shrine of ${E.god}.`,
         objective:`Pray for ${E.who} at ${erThe(E.shrine)}, ${E.dir} of ${site.name}`,reward:base,
         data:{x:E.sx,z:E.sz,shrine:E.shrine,shrineId:E.shrineId,god:E.god,godKey:E.godKey,dir:E.dir,who:E.who,fem:E.fem,rel:E.rel,want:E.want,prayed:false,at:null}});return ER_SHARED[p].yes;} /* S1817 */
+    if(E.sub==='fish'){qAdd({id:erPre(def,site)+E.idx,kind:'errand',sub:'fish',giver:def.name,erSite:site.id,week:E.week,erDue:E.wday*1440+360,erPeople:p,
+        title:'A fish for the wedding',desc:`${def.name} of ${site.name} wants a fine fish for the wedding table on ${E.date}. A plain one will be taken, for half.`,
+        objective:`Bring ${def.name} at ${site.name} a fine fish before ${E.date}`,reward:base,
+        data:{x:site.x,z:site.z,who:E.who,wday:E.wday,weekday:E.weekday,date:E.date,fine:null,fish:null}});return ER_SHARED[p].yes;} /* S1857 */
     if(E.sub==='borrowed'){const id=erPre(def,site)+E.idx,br=seededRng('errand-why',id),why=br()<.5?'need':'sold',n=Math.min(30,8+3*(tier-1)+Math.floor(br()*6)); /* S1722 — why, and what it fetched, on the errand's id */
       qAdd({id,kind:'errand',sub:'borrowed',giver:def.name,erSite:site.id,week:E.week,erPeople:p,
         title:`${def.name}’s ${E.thing}`,desc:`${def.name} of ${site.name} lent ${E.who} of ${E.town} the ${E.thing}, and has not had it back. Ask for it.`,
@@ -1204,6 +1254,7 @@ const giver=`${lord.title} ${lord.name}`;
       if(c==='keep'){q.reward=0;qTurnIn(q);addFavor(site,-1);return ER_DEBT.keep[p];}qTurnIn(q);addFavor(site,1);return ER_DONE[p];}
     if(q.sub==='borrowed')return erBorrowTurnIn(q,site,p); /* S1722 */
     if(q.sub==='prayer')return erPrayerTurnIn(q,site,p); /* S1817 */
+    if(q.sub==='fish')return erFishTurnIn(q,site,p,true); /* S1857 */
     if(q.sub==='watch')return erWatchTurnIn(q,site,p); /* S1776 */ /* S1677 — the debt: a fifth, paid as if collected either way */
     if(q.lapsed||erLapse(q)){q.erUnsaid=false;return ER_FEVER.lapse[p];}
     const isH=b=>b.type==='herb'&&b.name===q.data.herb;if(bagCount(isH)<q.data.n)return ER_SHARED[p].notYet;
@@ -1238,6 +1289,7 @@ const giver=`${lord.title} ${lord.name}`;
   function errandAsk(def,site){const E=errandFor(def,site);if(!E)return null;const p=erPeople(def);if(E.sub==='name')return erNameAsk(def,site,E); /* S1600 */
     if(E.sub==='prayer'){if(E.oldblood)return {cat:'you',label:'Can I do anything for you?',response:ER_PRAYER.oldblood}; /* S1817 */
       return {cat:'you',label:'Who’s the prayer for?',response:ER_PRAYER.offer[p](Object.assign({},E,{n:Math.min(40,15+5*(Math.max(1,worldTierAt(site.x,site.z)||1)-1))})),follow:[{label:'I’ll do it.',fn:()=>errandFor(def,site)?errandAccept(def,site,E):ER_SHARED[p].no},{label:'Not now.',response:ER_SHARED[p].no}]};}
+    if(E.sub==='fish')return {cat:'you',label:'What’s the wedding missing?',response:ER_FISH.offer[p](Object.assign({},E,{n:Math.min(40,15+5*(Math.max(1,worldTierAt(site.x,site.z)||1)-1))})),follow:[{label:'I’ll do it.',fn:()=>errandFor(def,site)?errandAccept(def,site,E):ER_SHARED[p].no},{label:'Not now.',response:ER_SHARED[p].no}]}; /* S1857 */
     if(E.sub==='watch')return {cat:'you',label:'What’s coming at night?',response:ER_WATCH.offer[p](E),follow:[{label:'I’ll do it.',fn:()=>errandFor(def,site)?errandAccept(def,site,E):ER_SHARED[p].no},{label:'Not now.',response:ER_SHARED[p].no}]}; /* S1776 */
     const L=E.sub==='letter',D=E.sub==='debt',B=E.sub==='borrowed',label=B?'Something of yours gone missing?':D?'Who owes you?':L?'You’re waiting on word from someone?':'Who’s sick?',said=B?ER_BORROW.offer[p](E):D?ER_DEBT.offer[p](E):L?ER_LETTER.offer[p](erPro(E)):ER_FEVER.offer[p](E);
     return {cat:'you',label,response:said,follow:[{label:'I’ll do it.',fn:()=>errandFor(def,site)?errandAccept(def,site,E):ER_SHARED[p].no},{label:'Not now.',response:ER_SHARED[p].no}]};}
@@ -1245,13 +1297,15 @@ const giver=`${lord.title} ${lord.name}`;
   // the top level: *About that errand.* while one is open, or once more to hear how a lapsed one ended; the letter's own lines
   function errandTopics(def,site){const L=erLetterTopics(def,site);if(!erGiver(def,site))return L;const q=erRecs(def,site).find(q=>!q.turnedIn||(q.lapsed&&q.erUnsaid));
     if(!q||(q.sub==='letter'&&q.data.learned))return L;
+    if(q.sub==='fish')return [...erFishTopics(q,site),...L]; /* S1857 */
     return [{label:q.sub==='name'&&q.data.said?'I said the name.':q.sub==='debt'&&q.data.choice==='keep'?'They haven’t got it.':q.sub==='borrowed'&&!q.lapsed?erBorrowLabel(q):q.sub==='prayer'&&!q.lapsed&&q.data.prayed?`I prayed at ${erThe(q.data.at)}.`:q.sub==='watch'&&!q.lapsed&&q.data.done?(q.data.came?`I sat the night. ${q.data.beasts}.`:'I sat the night. Nothing came.'):'About that errand.',quest:true,fn:()=>errandTurnIn(q,site)},...L];}
   // the greeting: the hint after First Words while an errand is on offer (from the second meeting), or for a week after a lapse the colder line;
   // after a letter lied about, from the next game-week, one week in two the waiting line, until the giver writes again
   function errandGreet(def,site){if(!erGiver(def,site))return null;const met=metCount(metKey(def,site));const line=firstWords(def,site);
-    const now=worldState.gameTimeAbsMinutes||0,R=erRecs(def,site),cold=met>0&&R.find(q=>q.lapsed&&now<q.erDue+1440*7);if(cold)return cold.sub==='borrowed'?ER_BORROW.kept[erPeople(def)](erPro(cold.data)):ER_FEVER.cold[erPeople(def)];
+    const now=worldState.gameTimeAbsMinutes||0,R=erRecs(def,site);if(met>0&&erWeddingQ(site.id,R))return ER_FISH.wed[erPeople(def)]; /* S1857 — the wedding day */
+    const cold=met>0&&R.find(q=>q.lapsed&&now<q.erDue+1440*7);if(cold)return cold.sub==='borrowed'?ER_BORROW.kept[erPeople(def)](erPro(cold.data)):ER_FEVER.cold[erPeople(def)];
     {const bq=met>0&&R.find(q=>q.sub==='borrowed'&&q.turnedIn&&q.data.choice==='month'&&now>=q.data.at+30*1440&&now<q.data.at+37*1440);if(bq)return line+' '+ER_BORROW.back[erPeople(def)](erPro(bq.data));} /* S1722 — the month out, the thing walked home: a week of the line */
-    const E=met>0&&errandFor(def,site);if(E){if(E.sub==='name')return E.oldblood?line:line+' '+ER_NAME.hint[erPeople(def)](erPro(E));if(E.sub==='borrowed')return line+' '+ER_BORROW.hint[erPeople(def)](E);if(E.sub==='watch')return line+' '+ER_WATCH.hint[erPeople(def)](E);if(E.sub==='prayer')return E.oldblood?line:line+' '+ER_PRAYER.hint[erPeople(def)](E); /* S1817 */return line+' '+(E.sub==='debt'?ER_DEBT.hint:E.sub==='letter'?ER_LETTER.hint:ER_FEVER.hint)[erPeople(def)];} /* S1600 — the name's hint; none for the Old Blood */
+    const E=met>0&&errandFor(def,site);if(E){if(E.sub==='name')return E.oldblood?line:line+' '+ER_NAME.hint[erPeople(def)](erPro(E));if(E.sub==='borrowed')return line+' '+ER_BORROW.hint[erPeople(def)](E);if(E.sub==='watch')return line+' '+ER_WATCH.hint[erPeople(def)](E);if(E.sub==='prayer')return E.oldblood?line:line+' '+ER_PRAYER.hint[erPeople(def)](E); /* S1817 */if(E.sub==='fish')return line+' '+ER_FISH.hint[erPeople(def)](E); /* S1857 */return line+' '+(E.sub==='debt'?ER_DEBT.hint:E.sub==='letter'?ER_LETTER.hint:ER_FEVER.hint)[erPeople(def)];} /* S1600 — the name's hint; none for the Old Blood */
     const lq=R.filter(q=>q.sub==='letter').pop(),wk=erWeek();
     if(met>0&&lq&&lq.turnedIn&&lq.data.told==='lie'&&wk>lq.data.toldWeek&&seededRng('errand-wait',erPre(def,site)+wk)()<.5)return ER_LETTER.wait[erPeople(def)](erPro(lq.data));
     return line;}
