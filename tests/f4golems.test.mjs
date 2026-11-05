@@ -50,6 +50,32 @@ console.log('  size:', JSON.stringify(size));
 check(`each stands at its driver's size, by its stature: its head ${size.map(s => s.head).join(', ')} m up (the driver's ${size.map(s => s.drvHead).join(', ')}), its hips over the driver's (${size.map(s => s.hips).join(', ')} m across), its toes on the ground (${size.map(s => s.toes.join(', ')).join('; ')} m)`,
   size.length === 2 && size.every(s => s.hips < .05 && Math.abs(s.head - s.drvHead) < .12 && s.toes.every(y => Math.abs(y) < .06)), size);
 
+// Session 1868 (L4, OG-073): a failing gate's golem wears the kit's failing golem (two heads and two pairs of arms on one rig, the cracks
+// lit violet), at its driver's stature; the lower pair posed by hcArms through the blow. Picture: docs/prototypes/f4/f4-failinggolem.jpg
+const fg = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.cos(yaw), real = window.hcFailing; window.hcFailing = () => true;
+  const a = _S[0].e, b = _S[1].e, X = (a.x + b.x) / 2 + fx * 3.5, Z = (a.z + b.z) / 2 + fz * 3.5;
+  const pr = buildFoe('Golem', X, Z, null, 0x22aaff), m = new THREE.Group(); pr.root.scale.multiplyScalar(1.7); m.add(pr.root); window.hcFailing = real;
+  const e = { id: 'f4golems:failing', name: 'Golem', mesh: m, limbs: { person: pr } }, rig = pr; e.x = X; e.z = Z;
+  m.position.set(X, WORLD.worldH(X, Z), Z); m.rotation.y = Math.atan2(px - X, pz - Z); e.combatYaw = m.rotation.y; e.locked = false; WORLD.scene.add(m); rig.e = e; window._FG = { e, rig };
+  let n = 0; HBODY.last = -1e9; while (!rig.hc && !rig.hcFail && n++ < 100) { tickPeople(1 / 60, 2.5e5 + n * (HBODY.gap + 1)); tickCreatures(1 / 60, 2.5e5 + n * (HBODY.gap + 1)); }
+  const H = rig.hc; if (!H) return { hc: false, kind: rig.hcKind, fail: !!rig.hcFail };
+  for (let i = 0; i < 30; i++) { tickPeople(1 / 60, 3.5e5 + i * 16.7); tickCreatures(1 / 60, 3.5e5 + i * 16.7); } rig.root.parent.updateMatrixWorld(true);
+  const by = H.C.byName, W = o => o.getWorldPosition(new THREE.Vector3()), gy = m.position.y; let lit = 0, violet = 0;
+  H.W.traverse(o => { if (o.isMesh && o.material && o.material.emissive && o.material.emissive.b > .5) { lit++; if (o.material.emissive.r > o.material.emissive.g) violet++; } });
+  const inv = new THREE.Matrix4().copy(m.matrixWorld).invert(), L = o => W(o).applyMatrix4(inv), out = [];
+  for (const [wind, anim] of [[0, 0], [1, 0], [0, .1]]) { tickPeople(1 / 60, 6e5); tickCreatures(1 / 60, 6e5); e._wind = wind; e.atkAnim = anim; attackPose(e, true); hcPose(rig); rig.root.parent.updateMatrixWorld(true); out.push(+L(by.arm1R_2).z.toFixed(2)); }
+  e._wind = 0; e.atkAnim = 0;
+  return { hc: true, kind: rig.hcKind, seed: H.C.g.seed, want: HC.hashKey('foe:' + e.id), pairs: H.C.B.arms.length / 2, posed: (H.arms || []).map(A => A.pair).join(''), heads: !!by.head && !!by.head1, lit, violet,
+    tris: H.C.stats.tris, steady: _S[0].rig.hc.C.stats.tris, head: +(W(by.head).y - gy).toFixed(2), drvHead: +(W(rig.B.head).y - gy).toFixed(2), toes: ['leg0L_3', 'leg0R_3'].map(nm => +(W(by[nm]).y - gy).toFixed(3)), driver: rig.mesh.visible, blow: out }; });
+console.log('  failing:', JSON.stringify(fg));
+check(`a failing gate's golem wears the kit's failing golem (${fg.tris} triangles against ${fg.steady}): two heads, ${fg.pairs} pairs of arms, ${fg.violet} of ${fg.lit} lit meshes violet, keyed by its foe id, at its driver's stature (its head ${fg.head} m up, the driver's ${fg.drvHead}), its toes on the ground (${(fg.toes || []).join(', ')} m)`,
+  fg.hc && fg.kind === 'Golem (failing)' && fg.seed === fg.want && fg.heads && fg.pairs === 2 && fg.posed === '11' && fg.violet >= 2 && !fg.driver && fg.tris > fg.steady && Math.abs(fg.head - fg.drvHead) < .15 && fg.toes.every(y => Math.abs(y) < .06), fg);
+check(`its lower pair draws back through the wind-up and rakes forward in the strike (its wrist ${fg.blow && fg.blow.join(', ')} m ahead at rest, wound, raking)`, fg.blow && fg.blow[1] < fg.blow[0] - .03 && fg.blow[2] > fg.blow[1] + .08, fg);
+await page.evaluate(() => { const m = _FG.e.mesh, fx = -Math.sin(yaw), fz = -Math.cos(yaw); window._P = [px, pz]; px = m.position.x - fx * 4.5; pz = m.position.z - fz * 4.5; pitch = .12; });
+for (let i = 0; i < 8; i++) { await page.evaluate(() => { tickPeople(1 / 60, performance.now()); tickCreatures(1 / 60, performance.now()); }); await g.frames(1); }
+await page.screenshot({ path: path.join(OUT, 'f4-failinggolem.jpg') });
+await page.evaluate(() => { _FG.e.mesh.parent.remove(_FG.e.mesh); [px, pz] = _P; });
+
 // the picture: the two from 3.5 m
 await page.evaluate(() => { const a = _S[0].e, b = _S[1].e, mx = (a.x + b.x) / 2, mz = (a.z + b.z) / 2, fx = -Math.sin(yaw), fz = -Math.cos(yaw); px = mx - fx * 5; pz = mz - fz * 5; pitch = .05; });
 for (let i = 0; i < 8; i++) { await page.evaluate(() => { tickPeople(1 / 60, performance.now()); tickCreatures(1 / 60, performance.now()); }); await g.frames(1); }

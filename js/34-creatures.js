@@ -983,6 +983,10 @@ const HC_KINDS={'Wolf':{plan:'wolf'},'Snow Wolf':{plan:'wolf',own:true},'Dire Wo
 // Session 1867 (L4, OG-073): a failing gate's skeletons, the sword's and the spear's, on the kit's failing skeleton: two more pairs of arms
 // (posed by hcArms), spurs down the back, more ribs, the bones cracked and only the cracks lit white-gold. What each holds is the game's,
 // as the steady one's; its sockets keep the plan's own gold (no K.glow), the colour of the cracks
+// Session 1868: and its Golem on the failing golem (OG-073's Cloch form: doubled into a pair on one rig, two heads and two pairs of arms
+// on a widened chest, the blocks cracked and only the cracks lit violet), its four eyes lit in the plan's violet; it stands at the driver's stature,
+// as every kit body does, not the plan's 1.45
+HC_KINDS['Golem (failing)']=Object.assign({},HC_KINDS.Golem,{plan:'failinggolem',glow:[.72,.32,1],arms:true});
 for(const k of ['Skeleton','Skeleton (spear)'])HC_KINDS[k.replace(/\)$/,', failing)').replace(/^Skeleton$/,'Skeleton (failing)')]=Object.assign({},HC_KINDS[k],{plan:'failingskeleton',glow:null,arms:true});
 // the driver's joints and the kit's bones they move, parents first (the kit's front legs hang on spine3, the hind on spine0)
 const HC_MAP=[['hips','spine0'],['spine','spine1'],['neck','neck0'],['head','head'],['jaw','jaw'],['tail1','tail0'],['tail2','tail1'],['tail3','tail2'],
