@@ -78,6 +78,39 @@ for (let i = 0; i < 8; i++) { await page.evaluate(() => { tickPeople(1 / 60, per
 await page.screenshot({ path: path.join(OUT, 'f4-failingskeletons.jpg') });
 await page.evaluate(() => { for (const f of _F) if (f.e.mesh.parent) f.e.mesh.parent.remove(f.e.mesh); [px, pz] = _P; });
 
+// Session 1878 (L4, OG-018): an Uisce gate's two wear the kit's drowned skeleton, weed-hung, its sockets the sea's blue; a failing Uisce gate's
+// the failing skeleton (the condition shows over the school); any other school's the steady
+const kinds = await page.evaluate(() => { const rF = window.hcFailing, rS = window.hcGateSchool, out = [];
+  for (const [f, s] of [[false, 'uisce'], [true, 'uisce'], [false, 'cloch'], [false, null]]) { window.hcFailing = () => f; window.hcGateSchool = () => s; out.push(hcSkelKind('Skeleton') + '|' + hcSkelKind('Skeleton (spear)')); }
+  window.hcFailing = rF; window.hcGateSchool = rS; return out; });
+check(`a skeleton's form by its gate: Uisce ${kinds[0]}; Uisce failing ${kinds[1]}; Cloch ${kinds[2]}; outside ${kinds[3]}`,
+  kinds.join() === 'Skeleton (drowned)|Skeleton (spear, drowned),Skeleton (failing)|Skeleton (spear, failing),Skeleton|Skeleton (spear),Skeleton|Skeleton (spear)', kinds);
+const dr = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.cos(yaw), sx = -fz, sz = fx, real = window.hcGateSchool, got = {}; window._D = []; window.hcGateSchool = () => 'uisce';
+  const a = _S[0].e, b = _S[1].e, mx = (a.x + b.x) / 2 + fx * 2.5, mz = (a.z + b.z) / 2 + fz * 2.5;
+  for (let i = 0; i < 24 && !(got.sword && got.spear); i++) { const e = keyFoe(buildZoneEnemy(WORLD.scene, [], mx + sx * (i * .37 - 2), mz + sz * (i * .37 - 2), 'Skeleton', null), 'f4bones:drowned:' + i), rig = e.limbs && e.limbs.person, k = rig && rig.g.gear === 'spear' ? 'spear' : 'sword';
+    if (!rig || got[k]) { if (e.mesh.parent) e.mesh.parent.remove(e.mesh); continue; } got[k] = 1;
+    const at = _D.length ? 1 : -1, X = mx + sx * at * 1.1, Z = mz + sz * at * 1.1; e.x = X; e.z = Z;
+    e.mesh.position.set(X, WORLD.worldH(X, Z), Z); e.mesh.rotation.y = Math.atan2(px - X, pz - Z); e.combatYaw = e.mesh.rotation.y; e.locked = false; e.mesh.visible = true;
+    if (!e.mesh.parent) WORLD.scene.add(e.mesh); rig.e = e; _D.push({ k, e, rig }); }
+  window.hcGateSchool = real;
+  let n = 0; HBODY.last = -1e9; while (_D.some(f => !f.rig.hc && !f.rig.hcFail) && n++ < 100) { tickPeople(1 / 60, 2.7e5 + n * (HBODY.gap + 1)); tickCreatures(1 / 60, 2.7e5 + n * (HBODY.gap + 1)); }
+  for (let i = 0; i < 30; i++) { tickPeople(1 / 60, 3.7e5 + i * 16.7); tickCreatures(1 / 60, 3.7e5 + i * 16.7); }
+  return _D.map(({ k, e, rig }) => { const H = rig.hc; if (!H) return { k, hc: false, kind: rig.hcKind, fail: !!rig.hcFail }; rig.root.parent.updateMatrixWorld(true); const by = H.C.byName, W = o => o.getWorldPosition(new THREE.Vector3()), gy = e.mesh.position.y;
+    const P = H.C.plan, head = P.parts.find(([q]) => q === 'head')[1];
+    return { k, hc: true, kind: rig.hcKind, name: P.name, seed: H.C.g.seed, want: HC.hashKey('foe:' + e.id), bones: H.C.bones.length, fronds: P.parts.some(([q]) => q === 'fronds'), eye: head.eyes[0].color.map(v => +v.toFixed(2)),
+      coat: P.palette.coat.map(v => +v.toFixed(2)), gear: H.C.B.gear, tris: H.C.stats.tris, steady: _S[0].rig.hc.C.stats.tris, head: +(W(by.head).y - gy).toFixed(2), drvHead: +(W(rig.B.head).y - gy).toFixed(2),
+      toes: ['leg0L_3', 'leg0R_3'].map(nm => +(W(by[nm]).y - gy).toFixed(3)), driver: rig.mesh.visible }; }); });
+console.log('  drowned:', JSON.stringify(dr));
+check(`an Uisce gate's sword and spear skeletons wear the kit's drowned skeleton (${dr.map(f => f.kind + ', ' + f.bones + ' bones, ' + f.tris + ' triangles').join('; ')}; the steady ${dr[0] && dr[0].steady}): weed-hung, grey-green (${dr[0] && dr[0].coat}), sockets ${dr[0] && dr[0].eye}, keyed by their foe id, holding what they were dealt`,
+  dr.length === 2 && dr.every(f => f.hc && /drowned/.test(f.kind) && f.name === f.kind && f.fronds && f.bones === 23 && f.seed === f.want && f.gear && f.gear.length === 1 && f.gear[0] === f.k && !f.driver
+    && f.tris > f.steady && f.eye.join() === '0.35,0.75,0.95'), dr);
+check(`each stands at its driver's stature (heads ${dr.map(f => f.head).join(', ')} m up, the drivers' ${dr.map(f => f.drvHead).join(', ')}), its toes on the ground (${dr.map(f => (f.toes || []).join(', ')).join('; ')} m)`,
+  dr.every(f => f.hc && Math.abs(f.head - f.drvHead) < .12 && f.toes.every(y => Math.abs(y) < .06)), dr);
+await page.evaluate(() => { const a = _D[0].e, b = _D[1].e, mx = (a.x + b.x) / 2, mz = (a.z + b.z) / 2, fx = -Math.sin(yaw), fz = -Math.cos(yaw); window._P2 = [px, pz]; for (const f of _S) f.e.mesh.visible = false; px = mx - fx * 3; pz = mz - fz * 3; pitch = -.12; });
+for (let i = 0; i < 8; i++) { await page.evaluate(() => { tickPeople(1 / 60, performance.now()); tickCreatures(1 / 60, performance.now()); }); await g.frames(1); }
+await page.screenshot({ path: path.join(OUT, 'f4-drownedskeletons.jpg') });
+await page.evaluate(() => { for (const f of _D) if (f.e.mesh.parent) f.e.mesh.parent.remove(f.e.mesh); for (const f of _S) f.e.mesh.visible = true; [px, pz] = _P2; });
+
 // the picture: the two from 3.5 m
 await page.evaluate(() => { const a = _S[0].e, b = _S[1].e, mx = (a.x + b.x) / 2, mz = (a.z + b.z) / 2, fx = -Math.sin(yaw), fz = -Math.cos(yaw); px = mx - fx * 3.2; pz = mz - fz * 3.2; pitch = -.08; });
 for (let i = 0; i < 8; i++) { await page.evaluate(() => { tickPeople(1 / 60, performance.now()); tickCreatures(1 / 60, performance.now()); }); await g.frames(1); }

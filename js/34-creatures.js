@@ -994,6 +994,9 @@ HC_KINDS['Gargoyle (failing)']=Object.assign({},HC_KINDS.Gargoyle,{plan:'failing
 // Session 1877: the gate's trolls, in their plan's own hide and eyes (no coat or eye of the driver's), with the troll's maul
 for(const [k,plan] of [['tine','tinetroll'],['uisce','uiscetroll'],['cloch','stonetroll']])HC_KINDS['Cave Troll ('+k+')']={plan,own:true,person:true,merge:true,ik:true,gear:'plan',gearFrom:'troll'};
 for(const k of ['Skeleton','Skeleton (spear)'])HC_KINDS[k.replace(/\)$/,', failing)').replace(/^Skeleton$/,'Skeleton (failing)')]=Object.assign({},HC_KINDS[k],{plan:'failingskeleton',glow:null,arms:true});
+// Session 1878: and an Uisce gate's on the kit's drowned skeleton (OG-018: grey-green from the sea, weed on its bones and hanging in strands
+// from its skull, spine and arms), its sockets the sea's blue, holding what the game dealt it as the steady one does
+for(const k of ['Skeleton','Skeleton (spear)'])HC_KINDS[k.replace(/\)$/,', drowned)').replace(/^Skeleton$/,'Skeleton (drowned)')]=Object.assign({},HC_KINDS[k],{plan:'drownedskeleton',glow:[.35,.75,.95]});
 // the driver's joints and the kit's bones they move, parents first (the kit's front legs hang on spine3, the hind on spine0)
 const HC_MAP=[['hips','spine0'],['spine','spine1'],['neck','neck0'],['head','head'],['jaw','jaw'],['tail1','tail0'],['tail2','tail1'],['tail3','tail2'],
   ['shL','leg0L_0'],['elL','leg0L_1'],['wrL','leg0L_2'],['pfL','leg0L_3'],['shR','leg0R_0'],['elR','leg0R_1'],['wrR','leg0R_2'],['pfR','leg0R_3'],
@@ -1041,6 +1044,10 @@ function hcGateSchool(){try{const P=currentPortal;if(hcGateCond()==null||typeof 
 // a cave troll outside a gate, keeps the moss-backed troll
 const HC_TROLL_SCHOOL={tine:'Cave Troll (tine)',uisce:'Cave Troll (uisce)',cloch:'Cave Troll (cloch)'};
 function hcTrollKind(type){return type==='Cave Troll'&&HC_TROLL_SCHOOL[hcGateSchool()]||type;}
+// Session 1878 (L4, OG-018; the roster's own note, S763: "deep Uisce (its Skeleton the drowned)"): a skeleton's form by its gate, the
+// failing skeleton in a failing or catastrophic gate (Session 1867, the condition shows over the school), else the drowned skeleton in an
+// Uisce gate, else the steady. base is 'Skeleton' or 'Skeleton (spear)'; the form is added to its brackets
+function hcSkelKind(base){const t=hcFailing()?'failing':hcGateSchool()==='uisce'?'drowned':null;return t?base.replace(/\)$|$/,m=>m?', '+t+')':' ('+t+')'):base;}
 function hcPlan(name){const K=HC_KINDS[name];if(!K.own)return K.plan;const id='game:'+name;
   // a person's (Session 1356): what it holds is the game's (a sword, or a spear), not the plan's sword and shield, which no rule of the
   // Skeleton's fight has; its sockets lit in the foe's eye colour (ZONE_FOE_DEF's 0x80c0ff), as the old body's are
