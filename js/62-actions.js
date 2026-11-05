@@ -387,7 +387,7 @@ function castSpell(){
   let aimJitter=0; // radians added to yaw for scatter
   const mixed=bk.rider&&riderMixedWild(bk.word,bk.rider); /* S1602 — two schools: 10% wild at any tier until both reach 25 */
   const wr=((tier===1||mixed) && sp.wild && sp.wild.length)?casterRand(sp.id):null;
-  if(wr && wr()<(tier===1?wordWildChance(sp.id):0)+(mixed?WORD_MIXED_WILD:0)){ /* S1623 — Steady voice */
+  if(wr && wr()<(tier===1?wordWildChance(sp.id):0)+(mixed?mixedWildChance():0)){ /* S1623 — Steady voice */
     wildPattern=sp.wild[Math.floor(wr()*sp.wild.length)];
     if(wildPattern==='fizzle'){
       // Half-refund mana, nothing else happens. Brief hand-raise with no orb release.
@@ -422,7 +422,7 @@ function castSpell(){
 
   // Delay the actual projectile/heal resolution to the release frame of the animation (60% through).
   // This creates the classic telegraph-then-release rhythm players expect from spellcasting.
-  const releaseDelayMs = Math.round(WEAPON_ATTACKS.Cast.tell*1000); /* S1575 — the Cast row's wind-up (was 60% of the hand's 0.55 s) */
+  const releaseDelayMs = Math.round(castTell()*1000); /* S1575 — the Cast row's wind-up (was 60% of the hand's 0.55 s) */
   castMark(releaseDelayMs/1000);
   // Snapshot aim state at the moment of release so the spell follows where you WERE looking when you pressed F,
   // NOT wherever you've moved the camera during the 330ms animation. This prevents late-frame yaw changes from
@@ -476,7 +476,7 @@ function castSpell(){
       const vx=aimFwdX*sp.speed*cosPitch;
       const vz=aimFwdZ*sp.speed*cosPitch;
       const vy=_tpShot?_tpShot.dir.y*sp.speed:Math.sin(snapPitch)*sp.speed;
-      fb.userData={vx,vy,vz,life:3,spell:sp,tier,rider:bk.rider||null,_halo:fb.userData._halo}; /* S1602 — the joined word's rider rides the bolt */
+      fb.userData={vx,vy,vz,life:3*sentReachMult(),spell:sp,tier,rider:bk.rider||null,_halo:fb.userData._halo}; /* S1602 — the joined word's rider rides the bolt */
       snapScene.add(fb);
       if(snapIsOW)ZB.push(fb); else BALLS.push(fb);
 

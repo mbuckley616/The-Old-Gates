@@ -69,6 +69,11 @@ const WEAPON_ATTACKS={
   // a spell is neither blocked nor parried. Reach is the bolt's 30 m; its damage and posture are the word's, not the row's.
   Cast:     {tell:.35,strike:0,recovery:.30,reach:30,arc:null,dmg:1,posture:0,cleave:1,blockable:false,parryable:false,heavy:null,third:null,walk:.35},
 };
+// S1849 — the Cast row's wind-up with a wand (or a maul) in hand, 0.28 s; a sent bolt's flight ×1.5 (45 m for 30)
+/* S1850 — a tome in the off hand doubles every cast's wind-up (0.70 s; 0.56 with a wand; Touched's 0.25 to 0.50) */
+function castTell(){const k=typeof heldImplement==='function'?heldImplement():null;return (k==='wand'||k==='maul'?IMPLEMENT.castTell:WEAPON_ATTACKS.Cast.tell)*(typeof tomeHeld==='function'&&tomeHeld()?IMPLEMENT.tomeTell:1);}
+function touchTell(){return FORMS.touched.windup*(typeof tomeHeld==='function'&&tomeHeld()?IMPLEMENT.tomeTell:1);}
+function sentReachMult(){const k=typeof heldImplement==='function'?heldImplement():null;return k==='wand'||k==='maul'?IMPLEMENT.sentReach/FORMS.sent.reach:1;}
 // S1035 — F2b, session 1 (docs/design/scale-numbers-build.md, *Reach*): the reach column is hull to hull, so a blow lands when
 // the foe's centre is inside your hull + the weapon's reach + its hull. Against a townsperson a sword lands at 2.2 centre to
 // centre, today's number; the dagger loses 0.4, the two-handers gain 0.6, a punch is a close thing (1.5). The hulls are the
@@ -87,7 +92,9 @@ function hullOf(e){
 // the centre-to-centre distance a blow of reach r (hull to hull) lands within, against e
 function reachTo(e,r){return HULL_YOU+r+hullOf(e);}
 const WSHAPE_TO_ROW={dagger:'Dagger',sword:'Sword',longsword:'Longsword',scimitar:'Scimitar',mace:'Mace',flail:'Flail',spear:'Spear',bow:'Bow',crossbow:'Crossbow',claymore:'Claymore',greataxe:'GreatAxe',warhammer:'WarHammer',greatclub:'GreatClub'};
-function weaponAttack(w){if(!w)return WEAPON_ATTACKS.Fists;return WEAPON_ATTACKS[WSHAPE_TO_ROW[w.weaponShape]]||WEAPON_ATTACKS.Sword;}
+// S1849 — an implement's row: the staff the Great Club's, the wand the Dagger's, the maul the Mace's (by its shape)
+const IMPLEMENT_ROW={staff:'GreatClub',wand:'Dagger'};
+function weaponAttack(w){if(!w)return WEAPON_ATTACKS.Fists;if(w.implement&&IMPLEMENT_ROW[w.implement])return WEAPON_ATTACKS[IMPLEMENT_ROW[w.implement]];return WEAPON_ATTACKS[WSHAPE_TO_ROW[w.weaponShape]]||WEAPON_ATTACKS.Sword;}
 // The foes, a row per family built today. Each has one attack, its light one, from today's numbers: a tell by kind
 // (S282's 0.45–0.9 s; a kind not named takes the family's 0.61), a blow in a 1.6-unit, 90° arc about the way it faced
 // at the wind-up (S275), a troll's sweep 2.4 and 140°, a boss's bite its own reach. Recovery is the dungeon's 1.0 s;

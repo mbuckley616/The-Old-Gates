@@ -181,7 +181,22 @@ const WEAPON_TYPES=[
 // (Rusty Sword, quest rewards) falls back via weaponShape. Unarmed defaults to blunt.
 // Declared here (not near applyMeleeDamage) because itemStatShort/itemDesc reference it and need
 // guaranteed visibility — forward-referencing a later `const` was causing ReferenceErrors in some browsers.
-const WSHAPE_TO_WTYPE = {dagger:'pierce', sword:'slash', longsword:'slash', scimitar:'slash', mace:'blunt', flail:'blunt', spear:'pierce', bow:'pierce', crossbow:'pierce', claymore:'slash', greataxe:'slash', warhammer:'blunt', greatclub:'blunt'};
+const WSHAPE_TO_WTYPE = {dagger:'pierce', sword:'slash', longsword:'slash', scimitar:'slash', mace:'blunt', flail:'blunt', spear:'pierce', bow:'pierce', crossbow:'pierce', claymore:'slash', greataxe:'slash', warhammer:'blunt', greatclub:'blunt', staff:'blunt', wand:'blunt'};
+// S1849 — magical implements (Michael's B on #1111, docs/design/magical-implements.md, session 1): an implement changes one form, never a
+// spell's damage. The staff (two hands, the Great Club's row): Held's cone reaches 5.5 m (4), Laid reaches 16 m (12), a laid thing lasts
+// ×1.25. The wand (one hand, blunt 0.35–0.45; Cloch's is the maul, the Mace's row): a sent bolt flies ×1.5 as far (45 m for 30) and the
+// Cast row's wind-up is 0.28 s (0.35). Each bears one school's emblem (`school`, or none): that school's words cost 10% less, 20% for a
+// piece found in a gate (`found`), added to Thrift's 15% (at most 35% off). They are kept out of WEAPON_TYPES, so no loot table, forge or
+// shop rolls one until the sheet's third session stocks the guild and the vaults; the orb and the tome are its second.
+const IMPLEMENT_TYPES={
+  staff:{type:'Staff',slot:'weapon',weight:4,  atkMult:[0.55,0.75],shape:'staff',wType:'blunt',twoHand:true,cleaveTargets:1,postureMult:1.5,blockReduce:0.40},
+  wand: {type:'Wand', slot:'weapon',weight:1.5,atkMult:[0.35,0.45],shape:'wand', wType:'blunt'},
+  maul: {type:'Maul', slot:'weapon',weight:4,  atkMult:[0.90,1.15],shape:'mace', wType:'blunt'},
+};
+const IMPLEMENT={heldReach:5.5,laidReach:16,laidDur:1.25,sentReach:45,castTell:.28,cut:.10,foundCut:.20,cutMax:.35,
+  tomeWild:.10,tomeWildSteady:.05,tomeMixed:.03,tomeTell:2}; /* S1850 — the tome: Impression ×0.8 (TIER_MAG_TOME), wild a third as often, every wind-up doubled */
+// S1850 — the tome (the sheet's second session, its other half the orb's kept cast): an off-hand book, no shield, no block, weight 1.
+const TOME_TYPE={type:'Tome',slot:'offhand',weight:1};
 function weaponDamageType(w){
   if(!w) return 'blunt';
   if(w.wType) return w.wType;
@@ -553,6 +568,30 @@ function makeCloak(kind,tier,enchant){const K=CLOAK_KINDS[kind]||CLOAK_KINDS.woo
   return it;}
 function cloakOn(kind){return !!(EQ.back&&EQ.back.virtue===kind);}
 function cloakSwimMult(){const K=EQ.back&&CLOAK_KINDS[EQ.back.virtue];return K?K.swim:1;}
+// S1849 — an implement: makeItem's weapon of the kind's row, with its kind and its school's emblem. A wand of Cloch is a maul.
+function makeImplement(matTier,kind,school,o){o=o||{};if(kind==='wand'&&school==='cloch')kind='maul';const T=IMPLEMENT_TYPES[kind];if(!T)return null;
+  const it=makeItem(matTier||1,T,null,false);it.implement=kind;it.school=(school&&typeof SCHOOL_DEF!=='undefined'&&SCHOOL_DEF[school])?school:null;
+  if(o.found)it.found=true;it.ico=kind==='staff'?'🥢':kind==='wand'?'🪄':'🔨';it.desc=implementDesc(it);return it;}
+// the implement an item is ('staff', 'wand', 'maul', 'tome'), or null
+function implementOf(w){return w&&w.implement&&(IMPLEMENT_TYPES[w.implement]||w.implement==='tome')?w.implement:null;}
+function tomeHeld(){return typeof EQ!=='undefined'&&implementOf(EQ.offhand)==='tome';}
+// S1850 — a tome: Wooden is the Gatelands' bound leather; the island's make is look only (the page), so the tier is its price, never its power
+function makeTome(matTier,school,o){o=o||{};const mat=MATERIALS[(matTier||1)-1]||MATERIALS[0];
+  const it={type:'equip',tier:mat.tier,material:mat.name,slot:'offhand',name:`${mat.name} Tome`,ico:'📖',weight:TOME_TYPE.weight,implement:'tome',
+    school:(school&&typeof SCHOOL_DEF!=='undefined'&&SCHOOL_DEF[school])?school:null,matCol:mat.blade,buyPrice:Math.max(3,Math.round(TIER_VALUE[mat.tier]*1.5)),sellMult:.45};
+  if(o.found)it.found=true;it.desc=implementDesc(it);return it;}
+function heldImplement(){return typeof EQ!=='undefined'?implementOf(EQ.weapon):null;}
+function implementDesc(it){const k=implementOf(it);if(!k)return it.desc||'';
+  const what=k==='staff'?'Held reaches 5.5 m and Laid 16 m; a laid thing lasts a quarter longer.':k==='tome'?'Read aloud, a word not yet understood comes stronger and goes wild a third as often; every cast is twice as slow.':'A sent spell flies half as far again, and the cast comes quicker.';
+  const S=it.school&&SCHOOL_DEF[it.school];return what+(S?` It bears ${S.name}’s emblem: ${S.name}’s words cost ${Math.round((it.found?IMPLEMENT.foundCut:IMPLEMENT.cut)*100)}% less.`:'');}
+// the share off a word's mana from the implement in hand: its school's 10% (20% found), or 0
+// S1850 — the weapon's and the tome's emblems are not added: the better of the two counts
+function implementCut(school){if(typeof EQ==='undefined')return 0;let c=0;for(const w of [EQ.weapon,EQ.offhand]){if(!implementOf(w)||!w.school||w.school!==school)continue;c=Math.max(c,w.found?IMPLEMENT.foundCut:IMPLEMENT.cut);}return c;}
+// S1849 — a staff from before the implements (one hand; the save never kept its spellPower) becomes a Staff of no school at its tier; the
+// yard's staff and anything else are unchanged
+function implementMigrate(it){if(!it||implementOf(it)||it.weaponShape!=='staff'||it.twoHand||it.yard||it.name==='Yard Staff')return it;
+  const n=makeImplement(it.tier||1,'staff',null);if(it.name)n.name=it.name;if(it.enchant){n.enchant=it.enchant;n.enchantId=it.enchantId;}
+  if(it.yard)n.yard=it.yard;if(it.sellMult!=null)n.sellMult=it.sellMult;if(it.buyPrice!=null)n.buyPrice=it.buyPrice;return n;}
 function makeItem(matTier, typeObj, enchant, isArmor){
   const mat=MATERIALS[matTier-1]||MATERIALS[0];
   const t=matTier;
