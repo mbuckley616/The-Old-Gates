@@ -1,4 +1,4 @@
-// A Gatelands smithy inside, on the new look (Session 1858; card F9, Michael's A on #303 and on the kit in every interior; rooms.js's
+// A Gatelands smithy inside, on the new look (Session 1860; card F9, Michael's A on #303 and on the kit in every interior; rooms.js's
 // gatelandsForge of Session 929; OG-043). On ?look=new a smith's shop standing as the kit's forge (lot.kit.kind 'forge', S1855) opens on
 // the forge's own room at its true size: PKIT.gl.forge, the hearth under its hood against the west gable, the bellows, the anvil, the
 // tub and the bin, the rack, the bench, the grindstone and the farrier's box, open to the couples. Dunmore's smithy: walled below the

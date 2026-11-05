@@ -637,7 +637,7 @@ function genSettlement(site){
       {const sz=U.size,th=L.plan.roof.kind==='thatch',wc=PKIT.gl.mats()['w:'+(L.colour==='stone'?'lime':L.colour)],box=new THREE.BoxGeometry(sz.w,sz.eave,sz.d).toNonIndexed(),mx=new THREE.Matrix4(); /* S1073 — its far copy: the walls a box and the roof a prism, in the wall's and the roof's colours */
         box.translate(0,sz.eave/2,0);mx.makeRotationY(lot.ry).setPosition(lot.x,worldH(lot.x,lot.z)-.06,lot.z);
         kitLo.push([box,mx,wc?wc.color.clone().multiplyScalar(.82):new THREE.Color(.8,.78,.72)],[kitRoof(sz.w/2+(th?.35:.2),sz.d/2+(th?.45:.25),sz.eave,sz.ridge),mx,new THREE.Color(...(th?[.42,.35,.22]:[.24,.26,.30]))]);}
-      lot._kitDoor=L.plan.doorX||0;lot._wallH=U.size.eave;lot._storeys=L.plan.floors.length;lot.two=L.plan.floors.length>1;lot.kit.tris=U.tris;lot.kit.colour=L.colour;lot.kit.paint=L.paint;lot.kit.door=lot._kitDoor+(lot.kit.slide||0);if(lot.kit.kind==='forge')lot.kit.shell=`${site.id}:windows:${lot.n}`; /* S1858 — the room's shell takes the street's windows */
+      lot._kitDoor=L.plan.doorX||0;lot._wallH=U.size.eave;lot._storeys=L.plan.floors.length;lot.two=L.plan.floors.length>1;lot.kit.tris=U.tris;lot.kit.colour=L.colour;lot.kit.paint=L.paint;lot.kit.door=lot._kitDoor+(lot.kit.slide||0);if(lot.kit.kind==='forge')lot.kit.shell=`${site.id}:windows:${lot.n}`; /* S1860 — the room's shell takes the street's windows */
       const c=(L.plan.chim||[])[0];if(c){const x=c.gable?c.gable*(U.size.w/2-.36):c.x,y=U.size.ridge+(L.plan.roof.kind==='thatch'?1.0:.85),cs=Math.cos(lot.ry),sn=Math.sin(lot.ry),wy=b.position.y;
         S.chimneys.push({x:lot.x+x*cs,y:wy+y,z:lot.z-x*sn,t:type||'home',k:0});}}
     const names=NAMES[reg];
@@ -2315,7 +2315,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     for(const p of T.lamps){const l=new THREE.PointLight(0xffaa44,1.0*KA.lamp,7);l.position.set(rx(p[0]),ry(p[1]),rz(p[2]));sc_.add(l);}
     return sc_;
   }
-  // S1858 (card F9; Michael's A on #303 and on the kit in every interior; OG-043) — on the new look a Gatelands smithy that stands as the
+  // S1860 (card F9; Michael's A on #303 and on the kit in every interior; OG-043) — on the new look a Gatelands smithy that stands as the
   // kit's forge (lot.kit.kind 'forge', S1855) opens on the forge's own room (PKIT.gl.forge, rooms.js's Session 929) inside the street's
   // shell: the hearth against the west gable under its hood, the great bellows, the anvil on its stump, the slack tub and the coal bin,
   // the tool rack, the bench and its vice under the back window, the grindstone and the farrier's box at the east end, open to the
@@ -3195,7 +3195,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     if(kitFarmhouse(house))return buildKitFarmhouse(house); /* S1459 — a Gatelands village farm's house inside, at its true size */
     if(kitByre(house))return buildKitByre(house); /* S1480 — a Gatelands farm's byre inside, at its true size */
     if(kitBarn(house))return buildKitBarn(house); /* S1475 — a Gatelands farm's barn inside, at its true size */
-    if(kitForge(house))return buildKitForge(house); /* S1858 — a Gatelands smithy's forge inside, at its true size */
+    if(kitForge(house))return buildKitForge(house); /* S1860 — a Gatelands smithy's forge inside, at its true size */
     if(kitCourtHouse(house))return buildKitCourtHouse(house); /* S1425 — Aurenne's courtyard house inside, at its true size */
     if(kitAurHome(house))return buildKitAurHome(house); /* S1831 — Aurenne's flat over the dyer's shop inside, at its true size */
     if(kitLonghouse(house))return buildKitLonghouse(house); /* S1453 — a Markish home: the longhouse inside, at its true size */

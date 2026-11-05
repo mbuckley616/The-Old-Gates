@@ -2591,7 +2591,7 @@ function guildHallRoom(o = {}, r = stream('guild')) {
 }
 
 
-// ── the forge's room (Session 1858, card F9; rooms.js's gatelandsForge of Session 929 inside PLANS.forge, Michael's A on #303 and on the
+// ── the forge's room (Session 1860, card F9; rooms.js's gatelandsForge of Session 929 inside PLANS.forge, Michael's A on #303 and on the
 // kit in every interior), copied as it stands with the inn's renames (mats() → roomMats(), GL_PLANS → PLANS, gatelandsBuilding → building,
 // SCALE → PS) and its own: forgeMats() → forgeRoomMats(); frustum is the cottage's (above). o.shell is the shell's stream key and o.paint
 // its doors' paint (the game passes the street's). The prototype's comment follows. ──
