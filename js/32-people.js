@@ -924,7 +924,7 @@ const IMPL_MAKE={
   aurenne:  {wood:0xb08a5a,shaft:0xb89868,leath:0x5a1e28,band:0x3a1218,fit:0xd8b25a,fitM:'metal',stone:0xc8bca8,cover:0x5a1e28}};
 // an implement item's kit kind: its shape, its island's make (`make`, which the guild's stock sets: 'gatelands', 'mark' or 'aurenne';
 // Gatelands when it has none) and its school's emblem
-// S1861 — a held implement's own glow (#1111 B, the hold): implGlowOwn gives the piece its own copies of the kit's shared glow and halo
+// S1862 — a held implement's own glow (#1111 B, the hold): implGlowOwn gives the piece its own copies of the kit's shared glow and halo
 // materials, so one orb's light leaves every other piece's alone; implGlowSet sets how it burns, 1 the kit's own: the emblem's heart and
 // the glass's colour (a halo's opacity goes as k², so a kept word fills the glass)
 function implGlowOwn(g){const m=new Map();g.traverse(o=>{if(!o.isMesh||(o.material!==WPN_MAT.glow&&o.material!==WPN_MAT.halo))return;let c=m.get(o.material);

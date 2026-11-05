@@ -169,7 +169,7 @@ check(`in such a gate the deepest floor's treasure chest holds a found orb of th
 check('taken, it is the gate\'s for good: the next visit finds none; the save keeps its make, school, find and enchant', GO.took && GO.ws && again === 0 && GO.back[0] && GO.back[1] === GO.orb.s && GO.back[2] === true && GO.back[3] === GO.orb.ench, { GO, again });
 check('a gate that keeps none has none', none === 0, none);
 
-// S1861 — the hold in both views (the sheet's second bodies session): the orb carried up before the waist, raised before the chest with the
+// S1862 — the hold in both views (the sheet's second bodies session): the orb carried up before the waist, raised before the chest with the
 // guard, drawn back past the hip while it keeps a word, its light brighter as it keeps one; the tome lifted before the chest in a cast. In
 // first person the off hand draws the orb or the tome and moves through the same states
 const H = await page.evaluate(() => {

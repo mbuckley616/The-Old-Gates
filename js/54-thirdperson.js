@@ -172,7 +172,7 @@ function tpBuild(lookIn,ppIn,reuse){
   // S1856 — the tome and the orb are the kit's (implKind): the tome open-handed, its covers to the sides; the orb's
   // grip in the closed left fist as a torch's is, the glass ahead. How each is held, and in first person, is the next session's (#1111 B)
   else if(oh&&typeof implementOf==='function'&&(implementOf(oh)==='tome'||implementOf(oh)==='orb')){const tg=new THREE.Group();tg.add(buildWeapon(implKind(oh)));tg.userData.kit='impl';
-    if(implementOf(oh)==='tome'){tg.rotation.y=Math.PI/2;tg.position.set(0,-.08,-.04); /* S1861 — in the palm, the hand on its fore-edge */R.handL.add(tg);R.tome=tg;}else{tg.rotation.x=Math.PI/2;R.orbG=implGlowOwn(tg);R.orb=grip(R.handL,tg);}}
+    if(implementOf(oh)==='tome'){tg.rotation.y=Math.PI/2;tg.position.set(0,-.08,-.04); /* S1862 — in the palm, the hand on its fore-edge */R.handL.add(tg);R.tome=tg;}else{tg.rotation.x=Math.PI/2;R.orbG=implGlowOwn(tg);R.orb=grip(R.handL,tg);}}
   else if(oh){R.tome=tpBox(.12,.16,.05,tpMatColor(oh,0x5a3a5a),R.handL,0,-.06,.06);}
   // the worn pieces: a box about the bone each hangs on, in that bone's frame
   const BX=(x0,y0,z0,x1,y1,z1)=>new THREE.Box3(new THREE.Vector3(x0,y0,z0),new THREE.Vector3(x1,y1,z1));
@@ -210,7 +210,7 @@ function tpBuild(lookIn,ppIn,reuse){
   return R;}
 // S1509 — a knife, a spear or a crossbow at its true size in the hand (wpnTrue): the kit's piece under the carried group, and with it the
 // group's other things drawn in that piece's frame (an enchantment's motes, the left hand's place on a two-handed grip), by the body's scale
-// S1861 — the off hand's implement each frame (tpPose): the orb's light, brighter raised or in a cast and pulsing while it keeps a word.
+// S1862 — the off hand's implement each frame (tpPose): the orb's light, brighter raised or in a cast and pulsing while it keeps a word.
 // Returns what tpPose needs for the left arm, or null with neither in hand
 // the left arm's poses, [shoulder x, y, z, elbow] (negative x raises the arm forward): the raised orb's forearm level, so the glass stands
 // upright over the fist; the tome read, held up before the chest with its emblemed cover to the foe
@@ -416,7 +416,7 @@ function tpPose(R,dt,st){
   if(R.twoH&&!air){aR={x:-.9,y:1.1,z:0};eR=-.6;aL={x:-.75,y:-.2,z:0};eL=-.7;wR=.55;if(st.moving){aR.x-=Math.sin(ph)*.08;aL.x-=Math.sin(ph)*.08;}}
   if(R.shield&&!air){eL=Math.min(eL,-.6);}
   if(R.torch){aL.x=Math.min(aL.x,-.3);eL=-1.2;}
-  // S1861 — the orb in the off hand (#1111 B, the hold): at rest it is carried as a torch is, the glass up before the waist; the tome hangs
+  // S1862 — the orb in the off hand (#1111 B, the hold): at rest it is carried as a torch is, the glass up before the waist; the tome hangs
   // at your side as before (tpImplHold below takes the raised orb, the kept word and the reading)
   if(R.orb&&!air){aL.x=Math.min(aL.x,TP_IMPL.rest[0]);eL=TP_IMPL.rest[1];}
   // S411 — Michael's D on #99: with both hands empty the jab's guard is carried, the right fist by the chin and the left by
@@ -480,7 +480,7 @@ function tpPose(R,dt,st){
   const drawing=typeof _bowDrawing!=='undefined'&&_bowDrawing;
   if(R.bow&&(drawing||blocking)){const s=drawing?Math.min(1,_bowDrawT/BOW_DRAW_MAX):.3;const aim=-Math.PI/2-pitch*.9;ty=-.55;aL={x:aim,y:.55,z:0};eL=-.05;aR={x:aim,y:.55+.3+s*.45,z:0};eR=-.4-s*2.0;}
   else if(R.bow&&!air){aL.x=Math.min(aL.x,-.25);eL=-.5;}
-  // S1861 — the orb raised (the guard held with an orb, orbRaised) is held out before the chest at the eye's pitch, the glass between you
+  // S1862 — the orb raised (the guard held with an orb, orbRaised) is held out before the chest at the eye's pitch, the glass between you
   // and the foe; a kept word (ORB_KEPT) is carried low and behind the left hip, cocked to let go (OG-045), standing and on the move; neither
   // takes a swing's arm
   const IH=tpImplHold(R);

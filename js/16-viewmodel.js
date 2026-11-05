@@ -929,7 +929,7 @@ function buildShieldViewmodel(){
     g.position.set(-.28,-.32,-.55);g.rotation.set(.1,-.5,.08);
     VM_SCENE.add(g);vmShield=g;
   } else if(typeof implementOf==='function'&&(implementOf(sh)==='orb'||implementOf(sh)==='tome')){
-    // S1861 — the orb and the tome in the left hand (#1111 B, the hold), the kit's piece in its island's make (implKind) at its true size:
+    // S1862 — the orb and the tome in the left hand (#1111 B, the hold), the kit's piece in its island's make (implKind) at its true size:
     // the orb gripped below the glass, the tome held upright by its spine, its emblemed cover inward. The piece and the hand sit in a pose
     // group (userData.pose) that vmImplPose turns each frame: the orb raised, keeping a word, or let go; the tome lifted to be read
     const tome=implementOf(sh)==='tome',g=new THREE.Group(),p=new THREE.Group();g.add(p);
@@ -943,7 +943,7 @@ function buildShieldViewmodel(){
     VM_SCENE.add(g);vmShield=g;
   }
 }
-// S1861 — the off hand's implement in first person, each frame after the hands are placed (90-main.js): the pose group eases to the orb's
+// S1862 — the off hand's implement in first person, each frame after the hands are placed (90-main.js): the pose group eases to the orb's
 // rest, raised (the guard held, orbRaised), kept (a word in it, ORB_KEPT: drawn down and back, cocked as OG-045's) or cast (pushed out
 // ahead as the word goes in or leaves), or to the tome's rest and read (lifted, its cover turned to you, through the cast); the orb's
 // light as in third person (implGlowSet). Each pose is [x, y, z, rx, ry, rz] in the off hand's frame
