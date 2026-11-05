@@ -3,26 +3,6 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
-### A gate's condition, seen — what the light does when a gate fails (from the concept artist, 2026-11-04, #1147)
-**The question.** The stones already break by condition (the gate kit's whole, cracked and broken pieces, #417 A). OG-120 adds light and working parts; the concept artist built one nave at every condition (steady: doors shut, lift running, lanterns lit; failing: a leaf sagged, the lift stuck, four slabs gone, script flickering; catastrophic: leaves and stones afloat round a red core). The stones are the same in every option; the question is what the hall's light does. Pictures on `auto/concept-1104`: `docs/prototypes/levelup/gatecond-*.jpg`; page `docs/prototypes/levelup/gatecond.html`.
-
-**Options.**
-- **A.** One light: the school's own at full strength in every condition; the condition reads only from masonry and script (cracked dims a third of the script, broken turns it violet).
-- **B.** OG-120 as drawn: the light takes the condition's colour on every school (amber steady, cold blue failing, violet with a red core catastrophic); Uisce's blue gate turns amber when steady.
-- **C (recommended).** The school's colour holds, the light weakens: steady full and even; failing lanterns at half, a third dead, the rest guttering; catastrophic dark but for violet seams, the void and a red core.
-
-**Recommendation.** C: a gate keeps its school's face to the end, and a failing gate reads as the loom straining rather than every school turning the same blue.
-
-### A ship's banner: the three nations' flags and where they fly (from the look builder, 2026-11-04, #1150)
-**The question.** The ship sheet's session 5 (#979 B) has the yard sell a banner: the three nations', your house's once you own one, or none. Session 1847 drew them in the ship kit in the canon's national colours (the Crown crimson and gold, the Mark black and iron, the Compact blue and white), each carrying the mark its sails already carry (OG-004's harp and sun-star; the Mark a band of iron, since its sails carry stripes). Each flag flies from a stern staff, or from a pole at the masthead where a gaff boom swings over the stern (the Mark's small hulls, the galleons' mizzen). 388 triangles in 2 draws. Pictures on `auto/look-1847`: `docs/prototypes/levelup/ships-banner.jpg`, `ships-banner-close.jpg`.
-
-**Options.**
-- **A (recommended).** As drawn: the harp, the iron band and the sun-star, on the stern staff or the boom's masthead.
-- **B.** As drawn, but the Mark's flag carries OG-147's runic wolf, not the iron band (a new emblem; OG-004's notes call its wolf invented heraldry).
-- **C.** As drawn, but every hull flies it at the masthead: one place for all, seen from farther off, no stern staffs.
-
-**Recommendation.** A: only the canon's colours and the marks the sails already carry; the stern staff keeps the flag in sight from the helm wherever the rig allows.
-
 ### The dungeon's cell by kind: old gates at 3 m, and forts and lairs at what? (systems builder, Session 1105) — DECISION #421
 **The question.** F2b's last session sets a dungeon's grid cell at true scale; it is one unit today, so corridors are 1 m wide for a 1.8 m body. Michael chose **C, 3 m** on #300 and added: "If by dungeon we mean Old Gates, they should be extremely massive and cavernous. A normal 'dungeon' like a mine, or a cave can be a more typical size." The game has three kinds of underground place: the **old gates** (the world's portals, themed by school: crypts, haunted halls, elemental and deep caverns, ruins), **fort interiors** (the `fort_` layouts), and **lairs and dens** (a beast's lair, the cloak's den). So the cell can differ by kind, and "a more typical size" is a number a player feels.
 
@@ -36,6 +16,30 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
 ## Answered
+### A gate's condition, seen — what the light does when a gate fails (from the concept artist, 2026-11-04, #1147)
+**The question.** The stones already break by condition (the gate kit's whole, cracked and broken pieces, #417 A). OG-120 adds light and working parts; the concept artist built one nave at every condition (steady: doors shut, lift running, lanterns lit; failing: a leaf sagged, the lift stuck, four slabs gone, script flickering; catastrophic: leaves and stones afloat round a red core). The stones are the same in every option; the question is what the hall's light does. Pictures on `auto/concept-1104`: `docs/prototypes/levelup/gatecond-*.jpg`; page `docs/prototypes/levelup/gatecond.html`.
+
+**Options.**
+- **A.** One light: the school's own at full strength in every condition; the condition reads only from masonry and script (cracked dims a third of the script, broken turns it violet).
+- **B.** OG-120 as drawn: the light takes the condition's colour on every school (amber steady, cold blue failing, violet with a red core catastrophic); Uisce's blue gate turns amber when steady.
+- **C (recommended).** The school's colour holds, the light weakens: steady full and even; failing lanterns at half, a third dead, the rest guttering; catastrophic dark but for violet seams, the void and a red core.
+
+**Recommendation.** C: a gate keeps its school's face to the end, and a failing gate reads as the loom straining rather than every school turning the same blue.
+
+Michael: **C, the school's colour holds, the light weakens.** (2026-11-04)
+
+### A ship's banner: the three nations' flags and where they fly (from the look builder, 2026-11-04, #1150)
+**The question.** The ship sheet's session 5 (#979 B) has the yard sell a banner: the three nations', your house's once you own one, or none. Session 1847 drew them in the ship kit in the canon's national colours (the Crown crimson and gold, the Mark black and iron, the Compact blue and white), each carrying the mark its sails already carry (OG-004's harp and sun-star; the Mark a band of iron, since its sails carry stripes). Each flag flies from a stern staff, or from a pole at the masthead where a gaff boom swings over the stern (the Mark's small hulls, the galleons' mizzen). 388 triangles in 2 draws. Pictures on `auto/look-1847`: `docs/prototypes/levelup/ships-banner.jpg`, `ships-banner-close.jpg`.
+
+**Options.**
+- **A (recommended).** As drawn: the harp, the iron band and the sun-star, on the stern staff or the boom's masthead.
+- **B.** As drawn, but the Mark's flag carries OG-147's runic wolf, not the iron band (a new emblem; OG-004's notes call its wolf invented heraldry).
+- **C.** As drawn, but every hull flies it at the masthead: one place for all, seen from farther off, no stern staffs.
+
+**Recommendation.** A: only the canon's colours and the marks the sails already carry; the stern staff keeps the flag in sight from the helm wherever the rig allows.
+
+Michael: **A, as drawn: harp, iron band, sun-star.** (2026-11-04)
+
 ### A black sail's hand douses the fire in her rig — how soon? (from the systems builder, 2026-11-04, #1143)
 **The question.** Your naval page (B, #1064) says a fire bolt sets a black sail's rig burning 2 a second for 8 s *"unless a hand douses it"*, but gives no time for the douse. Today nobody douses: a fire bolt always takes 16 rig, and a fire pot always takes 18 (3 a second for 6 s). The cutter and the galleon now sail with living hands on deck (#1115 A), so the rule can be built. Details: `docs/devlog/1821.md`, `1837.md`, `1839.md`; asked from Session 1845 on `auto/systems-1844`.
 
