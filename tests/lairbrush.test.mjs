@@ -65,4 +65,41 @@ const end = await page.evaluate(() => { const t = window._B; t.burnAt = performa
 console.log(JSON.stringify({ mid, end }));
 check('fireBrush once: still a wall while it burns, flames and a light midway, the thicket sinking', R.f1 && !R.f2 && R.still && mid.burning && mid.fire && mid.light > .5 && mid.wall && mid.sunk < 1, mid);
 check(`after 3.5 s: ash (${end.tris} triangles, ${end.draws} draw), the light out, the way open, nothing left to fire`, end.burnt && end.open && !end.light && end.draws === 1 && end.gone && !end.again, end);
+// S1896 — Caverglow (#1164 B): on each floor of every cavern, 4 to 8 patches on the wall along the shortest way from where you come in to
+// the deepest place (floor one's well when there is a floor two), on a cell of that way or beside it, never far back from the one before (either side of one cell, two out on a short way) nor within 2 of the start,
+// never in a locked door's or the treasure room's cell, laid the same twice. Built: one draw a patch, no light; within touch, E picks it
+// (the prompt names it), the herb in the bag, the patch gone and kept gone by its id; eaten, Night Eye
+const CG = await page.evaluate(() => { const o = { n: 0, per: [], bad: [], same: true, ids: true };
+  for (const size of ['medium', 'large']) for (let k = 0; k < 150; k++) { const seed = 3001 + k * 131, G = makeDungeon(size, seed); lairBrush(G, seed);
+    const a = JSON.stringify(lairCaverglow(G, seed).filter(t => t.kind === 'glow')), G2 = makeDungeon(size, seed); lairBrush(G2, seed);
+    if (a !== JSON.stringify(lairCaverglow(G2, seed).filter(t => t.kind === 'glow'))) o.same = false; o.n++;
+    const all = G.things.filter(t => t.kind === 'glow'); if (new Set(all.map(t => t.id)).size !== all.length) o.ids = false;
+    for (const fl of [1, 2]) { const M = fl === 2 ? G.map2 : G.map; if (!M) continue; const L = all.filter(t => t.floor === fl); o.per.push(L.length);
+      const W = G.W, H = G.H, s0 = fl === 1 ? [G.entC, G.entR] : [G.stairC, G.stairR], dist = new Map([[s0[0] + s0[1] * W, 0]]), q = [s0];
+      const open = (c, y) => y >= 0 && c >= 0 && y < H && c < W && M[y][c] > 0 && ![5, 6, 8, 9].includes(M[y][c]);
+      while (q.length) { const [c, y] = q.shift(), d = dist.get(c + y * W); for (const [a2, b2] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nc = c + a2, ny = y + b2;
+        if (open(nc, ny) && !dist.has(nc + ny * W)) { dist.set(nc + ny * W, d + 1); q.push([nc, ny]); } } }
+      let last = -1; for (const t of L) { const d = dist.get(t.c + t.r * W), wc = t.c + t.dc, wr = t.r + t.dr;
+        const rock = wr < 0 || wc < 0 || wr >= H || wc >= W || M[wr][wc] === 0;
+        if (d == null || d < 2 || d < last - 4 || !rock || !open(t.c, t.r)) o.bad.push([size, seed, fl, t.id, d, last, rock]); last = d == null ? last : Math.max(last, d); } } }
+  o.min = Math.min(...o.per); o.max = Math.max(...o.per); o.floors = o.per.length; return o; });
+console.log(JSON.stringify(Object.assign({}, CG, { per: undefined })));
+check(`Caverglow in three hundred caverns, laid the same twice: ${CG.min} to ${CG.max} patches on each of ${CG.floors} floors (${CG.per.filter(n => n < 4).length} under 4), each on a wall along the way in`,
+  CG.same && CG.ids && CG.n === 300 && CG.min >= 4 && CG.max <= 8 && !CG.bad.length, CG.bad.slice(0, 5));
+const PK = await page.evaluate(() => { const L = GATE_THINGS.filter(t => t.kind === 'glow'), o = { built: L.length, floor1: L.filter(t => t.floor === 1).length };
+  let draws = 0, lights = 0; for (const t of L) t.group.traverse(q => { if (q.isMesh) draws++; if (q.isLight) lights++; }); o.draws = draws; o.lights = lights;
+  o.inScene = L.every(t => t.group.parent === dScene);
+  const t = L.find(q => q.floor === 1); currentFloor = 1; const T = window._lastGen.things.find(q => q.id === t.id); px = dAt(T.c); pz = dAt(T.r);
+  o.near = caverglowNear() === t; o.reach = +Math.hypot(px - t.x, pz - t.z).toFixed(2);
+  loop(performance.now()); o.prompt = document.getElementById('ipr').textContent;
+  const had = BAG.filter(i => i.name === 'Caverglow').reduce((a, i) => a + (i.qty || 1), 0); interact();
+  o.got = BAG.filter(i => i.name === 'Caverglow').reduce((a, i) => a + (i.qty || 1), 0) - had; o.saved = worldState.picked && worldState.picked[t.id] != null;
+  o.gone = !t.group.parent && caverglowNear() !== t;
+  gateThingsBuild(window._lastGen, null); o.rebuilt = GATE_THINGS.some(q => q.id === t.id); o.others = GATE_THINGS.filter(q => q.kind === 'glow').length;
+  SPELL_FX.nighteye = 0; const i = BAG.findIndex(q => q.name === 'Caverglow'); useHerb(i); o.nightEye = +((SPELL_FX.nighteye - performance.now()) / 1000).toFixed(0);
+  return o; });
+console.log(JSON.stringify(PK));
+check(`the cavern's ${PK.built} patches built (${PK.draws} draws, ${PK.lights} lights); at ${PK.reach} m, "${PK.prompt}"; E picks it (+${PK.got}), gone and not built again (${PK.others} left); eaten, Night Eye ${PK.nightEye} s`,
+  PK.built >= 6 && PK.draws === PK.built && PK.lights === 0 && PK.inScene && PK.near && PK.prompt === "Press 'E' to pick the Caverglow" && PK.got === 1 && PK.saved && PK.gone
+  && !PK.rebuilt && PK.others === PK.built - 1 && PK.nightEye >= 58 && PK.nightEye <= 60, PK);
 await g.close();
