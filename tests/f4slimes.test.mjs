@@ -5,6 +5,7 @@
 // two Small Slimes dressed too. Picture: docs/prototypes/f4/f4-slimes.jpg (the kit's and the old, side by side).
 // Session 1630: killed, it slumps where it lay as a jelly, upright, squashed and spread; f4-slime-dead.jpg.
 // Session 1686: the split's two Small Slimes fall either side of it, clear of the puddle, never in a wall.
+// Session 1882: an elemental gate is Tine's, and its slimes wear the kit's magma slime (OG-018); a steady Uisce gate's keep the steady slime.
 // Session 1631: killed, the Fire Elemental gutters out, upright, sunk, its flames dark; f4-elemental-dead.jpg.
 // Session 1593: the Fire Elemental in the same gate wears the kit's `fireelemental`, fitted by its height; f4-elemental.jpg.
 import { boot, check, ROOT } from './lib/game.mjs';
@@ -14,10 +15,10 @@ const OUT = path.join(ROOT, 'docs', 'prototypes', 'f4'); fs.mkdirSync(OUT, { rec
 const g = await boot({ look: 'new' }); const { page } = g;
 await g.intoWorld();
 let found = null;
-for (const seed of [5, 11, 17, 23, 31, 44, 52]) { await page.evaluate(() => { level = 6; }); await enterDungeon(page, { theme: 'elemental', seed });
-  found = await page.evaluate(() => ENEMIES.filter(x => !x.dead && x.floor === currentFloor && x.limbs && x.limbs.slime && x.variant !== 'small').length >= 2 ? { seed: currentPortal.seed } : null);
+for (const seed of [5, 11, 17, 23, 31, 44, 52, 61, 73, 88]) { await page.evaluate(() => { level = 6; }); await enterDungeon(page, { theme: 'elemental', seed });
+  found = await page.evaluate(() => hcGateSchool() === 'tine' && ENEMIES.filter(x => !x.dead && x.floor === currentFloor && x.limbs && x.limbs.slime && x.variant !== 'small').length >= 2 ? { seed: currentPortal.seed, school: hcGateSchool(), cond: hcGateCond() } : null);
   if (found) break; }
-check('an elemental gate holds two slimes', !!found, found);
+check('an elemental gate (Tine\'s, not Gaoth\'s) holds two slimes', !!found, found);
 
 // one slime ahead of you, one killed before its body was built (never dressed)
 const made = await page.evaluate(() => { const L = ENEMIES.filter(x => !x.dead && x.floor === currentFloor && x.limbs && x.limbs.slime && x.variant !== 'small');
@@ -28,10 +29,12 @@ const made = await page.evaluate(() => { const L = ENEMIES.filter(x => !x.dead &
   while (!(rig() && rig().hc) && k++ < 300) { at(); tickCreatures(1 / 60, 2e5 + k * (HBODY.gap + 1)); }
   const jobs = JOBS.length; JOBS.splice(JOBS.indexOf(J), 1);
   const R = rig(); window._R = R; if (!R || !R.hc) return { k, jobs, rig: !!R, fail: R && R.hcFail };
-  return { k, jobs, bodies: HC_BODY.n - n0, plan: R.hc.C.g.plan, seed: R.hc.C.g.seed, want: HC.hashKey('slime:' + S.id), bones: R.hc.C.bones.length, tris: R.hc.C.stats.tris, f: +R.hc.f.toFixed(3),
+  const P = HC.PLANS[R.hc.C.g.plan];
+  return { k, jobs, bodies: HC_BODY.n - n0, plan: R.hc.C.g.plan, kind: R.hcKind, coat: P.palette.coat.map(v => +v.toFixed(2)), clinker: JSON.stringify(P.parts.find(([q]) => q === 'inclusions')[1].n), glow: R.hc.glow.length, seed: R.hc.C.g.seed, want: HC.hashKey('slime:' + S.id), bones: R.hc.C.bones.length, tris: R.hc.C.stats.tris, f: +R.hc.f.toFixed(3),
     other: [...HC_RIGS].some(r => r.e === O && r.hc), oldKids: R.mesh.children.length, bar: S.mesh.children.filter(o => o.isMesh && o.geometry.type === 'PlaneGeometry').length }; });
 console.log('  built:', JSON.stringify(made));
-check(`the Slime wears the kit's slime (${made.bones} bones, ${made.tris} tris), keyed by its foe id, built with ${made.jobs} world job(s) still queued`, made.plan === 'slime' && made.jobs > 0 && made.seed === made.want && made.bones > 2, made);
+check(`a Tine gate's Slime wears the kit's magma slime (${made.bones} bones, ${made.tris} tris): molten orange (${made.coat}), clinker for bones (${made.clinker}), lit from inside (${made.glow} glow), keyed by its foe id, built with ${made.jobs} world job(s) still queued`,
+  made.kind === 'Slime (tine)' && made.plan === 'magmaslime' && made.coat.join() === '0.6,0.17,0.03' && made.clinker === '{"rubble":11}' && made.glow > 0 && made.jobs > 0 && made.seed === made.want && made.bones > 2, made);
 check('a slime already dead gets no kit body; the health bar stays out of the old body\'s group', made.plan && !made.other && made.bar === 2 && made.oldKids >= 1, made);
 
 // its size: the old blob's length, centred on it along the axis, its foot on the floor
@@ -85,10 +88,11 @@ const pud = await page.evaluate(() => { const R = _R, S = _S, m = S.mesh, f = R.
   R.hc.W.traverse(o => { if (!o.isMesh || !o.geometry.attributes.position) return; const p = o.geometry.attributes.position; for (let i = 0; i < p.count; i += 5) { v.fromBufferAttribute(p, i); if (o.isSkinnedMesh) o.applyBoneTransform(i, v); else v.applyMatrix4(o.matrixWorld); v.applyMatrix4(inv); b.expandByPoint(v); } });
   R.mesh.scale.copy(R.oldS); CAM.position.set(m.position.x - 45, m.position.y + 1.6, m.position.z); CAM.updateMatrixWorld(true); for (let i = 0; i < 3; i++) tickCreatures(1 / 60, 7e5 + i * 17);
   const far = +(R.mesh.scale.y / R.oldS.y).toFixed(3), farL = R.hc.L; CAM.position.set(m.position.x - 3, m.position.y + 1.6, m.position.z); CAM.updateMatrixWorld(true); for (let i = 0; i < 3; i++) tickCreatures(1 / 60, 7.1e5 + i * 17);
-  return { rotZ: m.rotation.z, y: +m.position.y.toFixed(3), baseY: S.baseY, half, sy: +(R.hc.W.scale.y / f).toFixed(3), sx: +(R.hc.W.scale.x / f).toFixed(3), foot: +b.min.y.toFixed(4), top: +b.max.y.toFixed(3), far, farL }; });
+  const cool = R.hc.glow.map((u, i) => +(u.value.r / R.hc.glow0[i].r).toFixed(3));
+  return { rotZ: m.rotation.z, y: +m.position.y.toFixed(3), baseY: S.baseY, half, cool, sy: +(R.hc.W.scale.y / f).toFixed(3), sx: +(R.hc.W.scale.x / f).toFixed(3), foot: +b.min.y.toFixed(4), top: +b.max.y.toFixed(3), far, farL }; });
 console.log('  puddle:', JSON.stringify(pud));
-check(`killed, it slumps upright on the floor (squashed to ${pud.sy}, spread to ${pud.sx}, ${pud.half} at 0.1 s), not on its side; the old blob with it`,
-  pud.rotZ === 0 && Math.abs(pud.y - pud.baseY) < 1e-3 && pud.sy === .28 && pud.sx === 1.3 && pud.half < 1 && pud.half > .28 && Math.abs(pud.foot) < .03 && pud.far === .28 && pud.farL === 2, pud);
+check(`killed, it slumps upright on the floor (squashed to ${pud.sy}, spread to ${pud.sx}, ${pud.half} at 0.1 s), not on its side; the old blob with it; its molten glow cooled to ${pud.cool}`,
+  pud.rotZ === 0 && pud.cool.length > 0 && pud.cool.every(v => Math.abs(v - .12) < 1e-3) && Math.abs(pud.y - pud.baseY) < 1e-3 && pud.sy === .28 && pud.sx === 1.3 && pud.half < 1 && pud.half > .28 && Math.abs(pud.foot) < .03 && pud.far === .28 && pud.farL === 2, pud);
 // Session 1686: the split's two fall either side of the slime, clear of its puddle (0.65 × its size + 0.3), one bearing from its roll, never in
 // a wall: they fell within 0.6 m of it in each axis and one sat on the puddle (the critic, 31 Oct). Beside a wall the bearing turns; the same roll, the same spots.
 const split = await page.evaluate(() => { const S = _S, kids = ENEMIES.filter(e => e.name === 'Small Slime' && e.id && e.id.startsWith(S.id + ':s'));
@@ -109,7 +113,7 @@ const small = await page.evaluate(() => { const L = ENEMIES.filter(e => e.name =
   const rig = () => [...HC_RIGS].find(r => r.e === S); let k = 0; HBODY.last = -1e9; /* S1879 — the last build's stamp may be a real clock past these ticks' 5e5 on a slow run, which kept every tick busy */
   while (!(rig() && rig().hc) && k++ < 300) { CAM.position.set(S.mesh.position.x - 3, S.mesh.position.y + 1.6, S.mesh.position.z); CAM.updateMatrixWorld(true); tickCreatures(1 / 60, 5e5 + k * (HBODY.gap + 1)); }
   const R = rig(); return { n: L.length, k, plan: R && R.hc && R.hc.C.g.plan, seed: R && R.hc && R.hc.C.g.seed, want: HC.hashKey('slime:' + S.id), f: R && R.hc && +R.hc.f.toFixed(3), big: _R.hc.f }; });
-check(`the split's ${small.n} Small Slimes wear the kit's slime too, keyed by their own ids, smaller (×${small.f} against ×${(+small.big).toFixed(3)})`, small.n === 2 && small.plan === 'slime' && small.seed === small.want && small.f < small.big, small);
+check(`the split's ${small.n} Small Slimes wear the kit's magma slime too, keyed by their own ids, smaller (×${small.f} against ×${(+small.big).toFixed(3)})`, small.n === 2 && small.plan === 'magmaslime' && small.seed === small.want && small.f < small.big, small);
 // Session 1593: the Fire Elemental wears the kit's `fireelemental`, standing: fitted by its height, hovering on the plan's bob
 const el = await page.evaluate(() => { const F = ENEMIES.find(x => !x.dead && x.floor === currentFloor && x.limbs && x.limbs.flames); if (!F) return { none: true }; window._F = F;
   const rig = () => [...HC_RIGS].find(r => r.e === F); let k = 0; HBODY.last = -1e9;
@@ -169,8 +173,8 @@ for (const seed of seeds) { await enterDungeon(page, { theme: 'deep', seed });
     return { seed: currentPortal.seed, cond: hcGateCond(), school: hcGateSchool(), hc: true, kind: R.hcKind, plan: R.hc.C.g.plan, crests: P.parts.some(([q]) => q === 'crests'), want: HC.hashKey('slime:' + S.id), got: R.hc.C.g.seed,
       tris: R.hc.C.stats.tris, coat: P.palette.coat.map(v => +v.toFixed(2)) }; });
   if (fsl) break; }
-console.log('  failing slime:', JSON.stringify(fsl), 'steady tris', made.tris);
-check(`a failing Uisce gate's slime (seed ${fsl && fsl.seed}: ${fsl && fsl.cond}, ${fsl && fsl.school}) wears the kit's failing slime: crests breaking off its back, pale blue-white (${fsl && fsl.coat}), ${fsl && fsl.tris} tris against the steady ${made.tris}, keyed by its foe id`,
+console.log('  failing slime:', JSON.stringify(fsl), 'magma tris', made.tris);
+check(`a failing Uisce gate's slime (seed ${fsl && fsl.seed}: ${fsl && fsl.cond}, ${fsl && fsl.school}) wears the kit's failing slime: crests breaking off its back, pale blue-white (${fsl && fsl.coat}), ${fsl && fsl.tris} tris against the magma slime's ${made.tris}, keyed by its foe id`,
   !!fsl && fsl.hc && fsl.cond === 'failing' && fsl.school === 'uisce' && fsl.kind === 'Slime (failing)' && fsl.plan === 'failingslime' && fsl.crests && fsl.got === fsl.want && fsl.coat.join() === '0.6,0.74,0.82', fsl);
 if (fsl && fsl.hc) { const shotF = await page.evaluate(() => { const F = _FS, m = F.mesh, x = m.position.x, y = m.position.y, z = m.position.z, s = Math.max(m.scale.x, .5), L = new THREE.PointLight(0xc0d8ff, 1.0, 12); L.position.set(x + 1.6 * s, y + 1.6 * s, z + 1.4 * s); dScene.add(L);
   for (let i = 0; i < 20; i++) tickCreatures(1 / 60, 9e5 + i * 16.7);
@@ -179,5 +183,18 @@ if (fsl && fsl.hc) { const shotF = await page.evaluate(() => { const F = _FS, m 
   dScene.updateMatrixWorld(true); REN.render(dScene, cam); dScene.remove(L); hid.forEach(e => e.mesh.visible = true);
   const o = document.createElement('canvas'); o.width = cv.width; o.height = cv.height; o.getContext('2d').drawImage(cv, 0, 0); return o.toDataURL('image/jpeg', .85); });
   fs.writeFileSync(path.join(OUT, 'f4-failingslime.jpg'), Buffer.from(shotF.split(',')[1], 'base64')); }
+// Session 1882: a steady Uisce gate's slime keeps the steady slime: the magma slime is Tine's alone, and the failing one a failing gate's
+const sseeds = await page.evaluate(() => { const out = []; for (let s = 100; s < 4000 && out.length < 6; s++) if (gateCondRoll(s) === 'steady' && seededRng('gaoth', s)() >= 1 / 6 && !WORLD_DUNGEONS.some(e => e.seed === s)) out.push(s); return out; });
+let ssl = null;
+for (const seed of sseeds) { await enterDungeon(page, { theme: 'deep', seed });
+  ssl = await page.evaluate(() => { const S = ENEMIES.find(x => !x.dead && x.floor === currentFloor && x.limbs && x.limbs.slime && x.variant !== 'small'); if (!S) return null;
+    const rig = () => [...HC_RIGS].find(r => r.e === S); let k = 0; HBODY.last = -1e9;
+    while (!(rig() && rig().hc) && k++ < 300) { CAM.position.set(S.mesh.position.x - 3, S.mesh.position.y + 1.6, S.mesh.position.z); CAM.updateMatrixWorld(true); tickCreatures(1 / 60, 1e6 + k * (HBODY.gap + 1)); }
+    const R = rig(); if (!R || !R.hc) return { seed: currentPortal.seed, hc: false, fail: R && R.hcFail };
+    return { seed: currentPortal.seed, cond: hcGateCond(), school: hcGateSchool(), hc: true, kind: R.hcKind, plan: R.hc.C.g.plan, tris: R.hc.C.stats.tris, coat: HC.PLANS[R.hc.C.g.plan].palette.coat.map(v => +v.toFixed(2)) }; });
+  if (ssl) break; }
+console.log('  steady slime:', JSON.stringify(ssl));
+check(`a steady Uisce gate's slime (seed ${ssl && ssl.seed}: ${ssl && ssl.cond}, ${ssl && ssl.school}) keeps the steady slime, pale green (${ssl && ssl.coat}), ${ssl && ssl.tris} tris`,
+  !!ssl && ssl.hc && ssl.cond === 'steady' && ssl.school === 'uisce' && ssl.kind === 'Slime' && ssl.plan === 'slime' && ssl.coat.join() === '0.62,0.78,0.5', ssl);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
