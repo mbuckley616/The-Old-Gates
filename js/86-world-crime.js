@@ -1110,6 +1110,20 @@
   // the minimap's reach at sea, and the navigator's *ahead* line
   function navMapR(){return crewAt('navigator')&&(SHIP.sailing||onDeck())?NAV_MAP_R:MINIMAP_R;}
   function navAboard(){return crewAt('navigator')&&(SHIP.sailing||onDeck());}
+  // S1880 — the chart table read (making-a-ship-yours-build.md's fittings: "Shoals under 2 m appear on the world map while you read it at
+  // the table"; #979 B). E at her drawn table, with the chart table fitted, opens the world map with every bed under SHOAL_D drawn
+  // SHOAL_COL; the map's tiles for it are kept apart (MAP.shoals, 83's tileKey), and closing the hub puts the plain map back. The table is
+  // in the cutter's hold (house._chart) and in the cabin on the main deck of the caravel, the cog and the galleon (userData.chart); the
+  // sloop's hold has none drawn. Not under sail, as the berth's rule; no hand is needed (the sheet: the table does little alone).
+  const CHART_PROMPT="Press 'E' to read the chart";
+  function chartOk(){return typeof SHIP!=='undefined'&&!!SHIP.mesh&&!SHIP.sailing&&shipFitted('chart');}
+  function chartHoldNear(){if(!chartOk()||typeof cabinBench!=='function'||!cabinBench()||currentHouse!==CABIN.house)return false;const c=currentHouse._chart;return !!c&&Math.hypot(px-c.x,pz-c.z)<=TOUCH;}
+  function chartDeckNear(){const c=SHIP.mesh&&SHIP.mesh.userData.chart;if(!c||!chartOk()||!onDeck()||shipUpper(SHIP.mesh))return false;const [lx,lz]=shipLocal(SHIP.mesh,px,pz);
+    return Math.hypot(Math.max(0,Math.abs(lx-c.x)-c.hx),Math.max(0,Math.abs(lz-c.z)-c.hz))<=.6;}
+  function chartRead(){if(!chartOk())return false;MAP.shoals=true;MAP.dirty=true;openHub('map');
+    if(MAP.cv){const k=baseScale()*MAP.zoom;MAP.ox=MAP.cssW/2-SHIP.x*k;MAP.oy=MAP.cssH/2-SHIP.z*k;mapClamp();MAP.dirty=true;} /* on her, not on the hold's own floor */
+    return true;}
+  function chartDone(){if(!MAP.shoals)return;MAP.shoals=false;MAP.dirty=true;}
   function stashTakeOne(pred){const i=stashBag.findIndex(b=>b&&pred(b));if(i<0)return null;const b=stashBag[i];const one={...b,qty:1};b.qty=(b.qty||1)-1;if(b.qty<=0)stashBag.splice(i,1);return one;}
   function tickShipCrew(dt){const st=worldState.ship;if(!st||st.sunk||!Array.isArray(st.crew)||!st.crew.length)return;
     if(crewAt('carpenter')&&SHIP.sailing&&Math.abs(SHIP.speed)>.5){SHIP._carpT=(SHIP._carpT||0)+dt;if(SHIP._carpT>=CREW_PATCH_S){SHIP._carpT-=CREW_PATCH_S;crewPatch();}}

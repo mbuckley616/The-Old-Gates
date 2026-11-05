@@ -225,6 +225,30 @@ await page.evaluate(() => { delete worldState.ship.sunk; });
 await page.keyboard.press('e'); await g.frames(3);
 const k = await page.evaluate(() => ({ open: yardOpen, shown: document.getElementById('yardui').style.display, raf: YARD.raf, dlg: dlgOpen }));
 check('E closes the yard, the stage stops, nothing else opens', !k.open && k.shown === 'none' && !k.raf && !k.dlg, k);
+// S1880 — the chart table read: E at it in the caravel's cabin opens the world map with every bed under 2 m drawn as a shoal, its tiles kept
+// apart; closing the hub puts the plain map back. Not without the fitting, not under sail.
+const ch = await page.evaluate(() => { const out = {};
+  let c = null; for (let a = 0; a < 6.28 && !c; a += .2) { const cx = Math.cos(a), cz = Math.sin(a);
+    for (let d = 20; d < 1500; d += 4) { const x = px + cx * d, z = pz + cz * d; if (WORLD.worldH(x, z) > WORLD.SEA_Y - 1.4) continue;
+      let deep = true; for (let k = 4; k <= 60; k += 4) if (WORLD.worldH(px + cx * (d + k), pz + cz * (d + k)) > -4) { deep = false; break; }
+      if (deep) c = { cx, cz, x0: x, z0: z }; break; } }
+  if (!c) return null; if (SHIP.mesh) { sc.remove(SHIP.mesh); SHIP.mesh = null; }
+  worldState.ship = { cls: 'caravel', name: 'Test Gull', hull: 100, rig: 100, fit: [] }; WORLD.spawnShip(c.x0 + c.cx * 40, c.z0 + c.cz * 40, Math.atan2(c.cx, c.cz)); SHIP.sailing = false; SHIP.speed = 0;
+  const m = SHIP.mesh, t = m.userData.chart; out.table = !!t; if (!t) return out; m.updateMatrixWorld(true);
+  const v = new THREE.Vector3(t.x - t.hx - .3, 0, t.z).applyMatrix4(m.matrixWorld); px = v.x; pz = v.z; jumpY = DECK_Y;
+  out.unfitted = [chartDeckNear(), shipPrompt()]; worldState.ship.fit.push('chart'); out.fitted = [chartDeckNear(), shipPrompt()];
+  SHIP.sailing = true; out.sailing = chartDeckNear(); SHIP.sailing = false;
+  shipInteract(); out.read = { hub: hubOpen, sh: MAP.shoals, mid: screenToMap(MAP.cssW / 2, MAP.cssH / 2).map(q => Math.round(q)), ship: [Math.round(SHIP.x), Math.round(SHIP.z)] };
+  // a map tile on the nearest shore, plain and read at the table
+  let s = null; for (let a = 0; a < 6.28 && !s; a += .2) for (let d = 4; d < 1500; d += 4) { const x = SHIP.x + Math.cos(a) * d, z = SHIP.z + Math.sin(a) * d, h = WORLD.worldH(x, z); if (h < 0 && h > -2) { s = { x, z }; break; } }
+  const [i, j] = cellOf(s.x, s.z), cl = getCell(i, j), L = 5, span = WORLD.SIZE / (1 << L), qi = Math.floor((s.x - cl.ox) / span), qj = Math.floor((s.z - cl.oz) / span);
+  const tile = () => { const q = mapStartQ(cl, L, qi, qj, 128); for (let n = 0; !q.done && n < 400; n++) mapStepQ(q, 1e9, performance.now());
+    const d = q.ctx.getImageData(0, 0, 128, 128).data; let k = 0; for (let o = 0; o < d.length; o += 4) if (d[o] === 0x76 && d[o + 1] === 0x88 && d[o + 2] === 0x8e) k++; return k; };
+  out.shoalsRead = tile(); closeHub(); out.after = MAP.shoals; out.shoalsPlain = tile();
+  sc.remove(SHIP.mesh); SHIP.mesh = null; return out; });
+console.log(JSON.stringify(ch));
+check('her chart table: no prompt unfitted or under sail; fitted, E reads it', ch && ch.table && ch.unfitted[0] === false && ch.unfitted[1] !== "Press 'E' to read the chart" && ch.fitted[0] === true && ch.fitted[1] === "Press 'E' to read the chart" && ch.sailing === false, ch);
+check('read at the table, the world map opens on her with the beds under 2 m drawn as shoals; closed, the plain map has none', ch && ch.read.hub && ch.read.sh && Math.hypot(ch.read.mid[0] - ch.read.ship[0], ch.read.mid[1] - ch.read.ship[1]) < 2 && ch.shoalsRead > 0 && ch.after === false && ch.shoalsPlain === 0, ch);
 await page.evaluate(() => { worldState.ship = null; });
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

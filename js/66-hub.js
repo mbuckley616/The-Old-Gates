@@ -251,7 +251,7 @@ let hubLastTab='map';
 function _hubVitals(){try{const s=(id,v,m,n)=>{const b=document.getElementById(id);if(b)b.style.width=Math.max(0,Math.min(100,v/m*100))+'%';const t=document.getElementById(n);if(t)t.textContent=Math.floor(v)+' / '+m;};s('hv-hp',PHP,effMaxHP(),'hv-hpn');s('hv-mp',mana,effMaxMana(),'hv-mpn');s('hv-st',stamina,effMaxStamina(),'hv-stn');}catch(e){}}
 let _hubVitalsT=null;
 function openHub(tab){_hubVitals();if(!_hubVitalsT)_hubVitalsT=setInterval(()=>{if(!hubOpen){clearInterval(_hubVitalsT);_hubVitalsT=null;return;}_hubVitals();},200);_releasePointerLockForMenu();hubOpen=true;blocking=false;document.getElementById('hub').style.display='flex';hubTab(tab||'inv');}
-function closeHub(){hubOpen=false;document.getElementById('hub').style.display='none';hideBagTooltip();setQuickDestroy(false);G.focus();}
+function closeHub(){hubOpen=false;if(typeof chartDone==='function')chartDone();document.getElementById('hub').style.display='none';hideBagTooltip();setQuickDestroy(false);G.focus();}
 // S952 — the Skills tab, plain markup until the parchment kit (#142 A): the level's marks, then 23 rows, majors first
 function renderHubSkills(){const head=document.getElementById('skill-head'),box=document.getElementById('skill-rows');if(!box)return;
   if(head)head.innerHTML=`Level <b>${level}</b> · marks <b>${+levelMarks.toFixed(2)}</b> of ${marksNeeded()} to the next${levelReady()?' — <span style="color:#ffd700">rest in a bed</span>':''}. A major's or minor's rise is a mark, any other a quarter.`;
