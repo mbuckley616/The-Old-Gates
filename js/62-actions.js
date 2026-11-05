@@ -290,7 +290,7 @@ function killE(e,tag=''){
       const byE = (0)+floorGroundY; // slimes sit on floor
       nb.g.position.set(sx, byE, sz);
       dScene.add(nb.g);
-      const el = new THREE.PointLight(smallDef.light, 0.5, 3); el.position.set(sx, byE+0.5, sz); dScene.add(el);
+      const el = new THREE.PointLight(dunSlimeLight(smallDef.light), 0.5, 3); el.position.set(sx, byE+0.5, sz); dScene.add(el);
       ENEMIES.push({x:sx, z:sz, hp:smallDef.hp, maxHp:smallDef.hp, mesh:nb.g, hpFg:nb.hpFg, limbs:nb.limbs, el,
         name:'Small Slime', spd:smallDef.spd, size:smallDef.scale||1, dead:false, alert:true, atkCd:0.5, ph:Math.random()*Math.PI*2,
         path:[], pathT:0, _origCol:smallDef.col, baseY:byE, isWraith:false, atkAnim:0, atkDir:{x:0,z:0},

@@ -4159,6 +4159,17 @@ function sloopBase(o = {}) {
   { const z = -.25, x = .05; cyl('metal', .09, .1, .22, x, beamY - .26, z, 8); { const g = new THREE.SphereGeometry(.05, 8, 6); g.translate(x, beamY - .27, z); add('lamp', g); } box('iron', .01, .14, .01, x, beamY - .08, z); lights.push({ x, y: beamY - .27, z });
     if (D.fur) { const g = new THREE.CircleGeometry(.55, 9); g.scale(1, 1.4, 1); g.rotateX(-Math.PI / 2); g.translate(.05, FLOOR + .006, -.2); add('fur', g); }
     else { box('rug0', .7, .01, 1.5, .05, FLOOR + .006, -.2); box('rug1', .5, .012, 1.2, .05, FLOOR + .008, -.2); } }
+  if (o.chart) { // Session 1884 — her chart table when one is fitted (the yard's fitting, Session 1880's read): the cutter's table, to starboard under
+    // the hatch's edge (z -2.3 to -1.3), clear of the ladder aft and the sea chest forward; its top 0.7 m up, where the hull is 1.5 m across,
+    // its legs inboard where the floor is; a chart, the log, dividers and a candle; the stool inboard of it, a body's width from the berth
+    const z0 = -2.3, z1 = -1.3, ht = .7, ty = FLOOR + ht, xo = inAt(z0, z1, ty - .1) - .02, xi = Math.min(xo - .62, inAt(z0, z1, FLOOR) - .14), D2 = xo - xi, x = (xo + xi) / 2;
+    box('wood', D2, .06, z1 - z0, x, ty, (z0 + z1) / 2); for (const zz of [z0 + .07, z1 - .07]) box('dark', .06, ht - .03, .06, xi + .07, FLOOR + (ht - .03) / 2, zz);
+    for (const zz of [z0 + .1, z1 - .1]) box('dark', .3, .06, .06, xo - .17, ty - .07, zz);
+    box('paper', .44, .004, .7, x - .02, ty + .033, (z0 + z1) / 2, .1); box('dark', .2, .05, .28, x + .14, ty + .055, z0 + .2); { const g = new THREE.CylinderGeometry(.006, .006, .18, 4); g.rotateX(1.2); g.translate(x - .05, ty + .04, (z0 + z1) / 2 + .1); add('metal', g); }
+    cyl('metal', .05, .06, .03, x + .12, ty + .045, z1 - .15, 8); cyl('paper', .02, .02, .1, x + .12, ty + .11, z1 - .15, 8); { const g = new THREE.SphereGeometry(.018, 6, 5); g.translate(x + .12, ty + .175, z1 - .15); add('lamp', g); }
+    const sx = xi - .2; cyl('dark', .16, .15, .4, sx, FLOOR + .2, (z0 + z1) / 2, 10);
+    item('chart table', 'hold', xi, ty - .1, z0, xo, ty + .2, z1); item('chart table legs', 'hold', xi + .04, FLOOR, z0 + .04, xi + .1, ty, z1 - .04); item('stool', 'hold', sx - .16, FLOOR, (z0 + z1) / 2 - .16, sx + .16, FLOOR + .4, (z0 + z1) / 2 + .16);
+    if (!M.paper) M.paper = new THREE.MeshStandardMaterial({ color: 0xd8ccaa, roughness: 1 }); }
   const G = new THREE.Group(), hull = new THREE.Mesh(S.hull.geo, S.hull.mats); hull.name = 'base:hull'; G.add(hull); let tris = S.hull.tris, draws = S.hull.mats.length;
   for (const k in by) { const geo = mergeGeometries(by[k]), m = new THREE.Mesh(geo, M[k]); m.name = 'base:' + k; G.add(m); tris += geo.attributes.position.count / 3; draws++; }
   return { group: G, kind: 'sloop', tris: Math.round(tris), draws, items, hb, floor: FLOOR, beams, beamY, beamBottom: BEAM - BH / 2, deckUnder: DECK - .05,
