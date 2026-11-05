@@ -464,8 +464,19 @@ const giver=`${lord.title} ${lord.name}`;
     for(const k in GATE_HERB){const G=GATE_HERB[k],base=HERB_DEF[G.kind]||HERB_DEF.firemoss;
       HERB_DEF[k]=Object.assign({},base,{name:G.name,ico:'🌿',zone:'gate',glowInt:0,respawn:360,desc:`${G.seen[0].toUpperCase()+G.seen.slice(1)}.`,knownDesc:G.known,hiddenDesc:'',
         item:{name:G.name,ico:'🌿',type:'herb',effect:G.effect,buyPrice:G.price,sellMult:.6,weight:.1}});
-      if(typeof PLANT_KIND!=='undefined'&&PLANT_KIND[G.kind])PLANT_KIND[k]=PLANT_KIND[G.kind];}}
+      if(typeof PLANT_KIND!=='undefined'&&PLANT_KIND[G.kind])PLANT_KIND[k]=PLANT_KIND[G.kind];}
+    /* S1896 — Caverglow (the page: 15, in no shop; eaten, Night Eye): picked from a lair's wall, never grown in the world */
+    HERB_DEF.caverglow=Object.assign({},HERB_DEF.firemoss,{name:'Caverglow',ico:'🍄',zone:'gate',glowInt:0,respawn:null,desc:'Small caps that glow on a cave wall.',knownDesc:'Night Eye for 60s',hiddenDesc:'',
+      item:{name:'Caverglow',ico:'🍄',type:'herb',effect:{type:'nightEye',s:1},buyPrice:15,sellMult:.6,weight:.1}});}
   ensureGateHerbs();
+  // S1896 — Caverglow on a lair's way in (lairCaverglow, 52-dungeon-gen.js; drawn by gateThingsBuild): within touch of a patch, E picks it.
+  // The named action: picked for good, by its id in worldState.picked (the world's, beside a picked door's), the patch gone, the herb in the bag
+  function caverglowNear(){if(activeZoneId!=='dungeon'||typeof GATE_THINGS==='undefined')return null;let best=null,bd=TOUCH;
+    for(const t of GATE_THINGS){if(t.kind!=='glow'||t.picked||t.floor!==currentFloor)continue;const d=Math.hypot(px-t.x,pz-t.z);if(d<=bd){bd=d;best=t;}}return best;}
+  function pickCaverglow(t){if(!t||t.picked)return false;ensureGateHerbs();const item={...HERB_DEF.caverglow.item,qty:1,_typeKey:'caverglow'};
+    if(!canCarry(item)){showMsg('Too heavy to carry!','#cc8844');return false;}
+    t.picked=true;(worldState.picked||(worldState.picked={}))[t.id]=worldState.gameTimeAbsMinutes||0;
+    if(t.group&&t.group.parent)t.group.parent.remove(t.group);bagAdd(item);skillUse('alchemy',1,t);addLog('🍄','Picked Caverglow');showMsg('Picked Caverglow!','#8ff0d8');return true;}
   function gateHerbDoor(e){return !!(e&&e.seed!=null&&!e.wet&&!e.lairDoor&&!e.root&&!e.great&&!e.tutorial&&e.kind!=='fort_door'&&!(typeof e.interior==='string'&&e.interior.startsWith('fort_'))&&e.x!=null);}
   // the ring's centre, from the door's own record: a generated gate's spot, a home gate's spot through its zone's anchor (placeDoor's mapping,
   // before it steps off a road or a pad, which reads what has loaded)

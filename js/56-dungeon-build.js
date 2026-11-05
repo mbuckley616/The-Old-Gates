@@ -1082,8 +1082,24 @@ function gateThingsBuild(gen,portal){GATE_THINGS=[];if(!gen||!gen.things)return 
       const at=tries.find(([x,z,R])=>!busy(x,z,R));if(!at)continue;const [x,z,R]=at;
       const grp=gatePoolProp(t.id,R,gen.cond);grp.position.set(x,y,z);dScene.add(grp);const col={x,z,r:R,floor:t.floor,pool:t.id};DUNGEON_COLUMNS.push(col);
       GATE_THINGS.push({id:t.id,kind:'pool',floor:t.floor,x,y,z,R,frozen:false,group:grp,col,ice:null});}
-    else if(t.kind==='brush'){const rec=gtBrushLay(t,gen);if(rec)GATE_THINGS.push(rec);}}
+    else if(t.kind==='brush'){const rec=gtBrushLay(t,gen);if(rec)GATE_THINGS.push(rec);}
+    else if(t.kind==='glow'){if(worldState.picked&&worldState.picked[t.id]!=null)continue; /* S1896 — Caverglow, picked once for good */
+      const x=cx+t.dc*(H-.04),z=cz+t.dr*(H-.04),grp=caverglowProp(t.id);grp.position.set(x,y,z);grp.rotation.y=Math.atan2(-t.dc,-t.dr);dScene.add(grp);
+      GATE_THINGS.push({id:t.id,kind:'glow',floor:t.floor,x,y,z,picked:false,group:grp});}}
   return GATE_THINGS;}
+// S1896 — a patch of Caverglow on a lair's wall (#1164 B): eleven to sixteen small caps in a loose clump 0.6 m across, 0.25 to 1.5 m up,
+// standing out of the rock (+z, the group turned to face away from the wall), lit from their own parts: an unlit pale blue-green, no
+// light added (a lair's pool stays as it was). One mesh, one draw, the caps merged; the stand-in until the bodies builder's plant
+let _cgMat=null,_cgCap=null;
+function caverglowProp(id){const r=seededRng('caverglow',id),g=new THREE.Group();g.name='caverglow';
+  if(!_cgMat){_cgMat=new THREE.MeshBasicMaterial({color:0x8ff0d8});_cgCap=new THREE.SphereGeometry(.05,7,4,0,Math.PI*2,0,Math.PI/2).toNonIndexed();}
+  const n=11+Math.floor(r()*6),h0=.25+r()*.9,pos=[],nor=[],P=_cgCap.attributes.position.array,N=_cgCap.attributes.normal.array;
+  const m=new THREE.Matrix4(),q=new THREE.Quaternion(),e=new THREE.Euler(),v=new THREE.Vector3(),w=new THREE.Vector3();
+  for(let k=0;k<n;k++){const s=.5+r()*1.1,ax=(r()-.5)*.6,ay=h0+(r()-.5)*.5;e.set(Math.PI/2-.35+r()*.3,0,(r()-.5)*.6);q.setFromEuler(e);
+    m.compose(new THREE.Vector3(ax,ay,.01),q,new THREE.Vector3(s,s*(.6+r()*.5),s));const nm=new THREE.Matrix3().getNormalMatrix(m);
+    for(let i=0;i<P.length;i+=3){v.set(P[i],P[i+1],P[i+2]).applyMatrix4(m);pos.push(v.x,v.y,v.z);w.set(N[i],N[i+1],N[i+2]).applyMatrix3(nm).normalize();nor.push(w.x,w.y,w.z);}}
+  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));geo.setAttribute('normal',new THREE.Float32BufferAttribute(nor,3));
+  const mesh=new THREE.Mesh(geo,_cgMat);mesh.name='caverglowCaps';g.add(mesh);return g;}
 // S1678 — a gate's pool, for Sioc's touch ("freezes a pool", magic-build.md). A round cistern 2.4 to 5.2 m across (R, by its room):
 // a kerb of dressed stones 0.36 m high and 0.24 m thick (eight, or twelve past 1.8 m) round black water 0.24 m up, which reads as deep (the floor under it is never seen). Solid while it is water (a body
 // cannot wade it); frozen (freezePool), the water is a sheet of grey-white ice with its cracks and a rim of frost, drawn from the
@@ -1308,6 +1324,7 @@ function buildDungeon(portal){
   if(gen.gate&&clochBlockDue(portal))gateBlock(gen,portal.seed); /* S1376 — Cloch's toll: a fallen block on each floor of the Mark's lesser gates (52-dungeon-gen.js) */
   if(gen.gate)gateThings(gen,portal.seed); /* S1675 — the braziers and webs a touched word acts on (52-dungeon-gen.js); S1678 the pools */
   if(portal.lair&&!portal.tutorial&&!gen.gate)lairBrush(gen,portal.seed); /* S1708 — a lair cavern's dry brush, for Loscadh's touch (#973 A) */
+  if(portal.lair&&!portal.tutorial&&!gen.gate)lairCaverglow(gen,portal.seed); /* S1896 — Caverglow on the way in (#1164 B) */
   if(gen.hall)FLOOR2_Y=-gen.hall.D; /* S1298 — a massive gate's floor two lies its stair hall's flights down (2 or 3 of 4.2 m) */
   dMap=gen.map;dMap2=gen.map2||null;dR=gen.H;dC=gen.W;
   mmRevealed=Array.from({length:dR},()=>new Uint8Array(dC));

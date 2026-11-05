@@ -426,6 +426,7 @@ function herbKnownApply(eff,name){
   if(eff.type==='mana'){mana=Math.min(effMaxMana(),mana+eff.amount);return [`+${eff.amount} Mana`,'#88aaff'];}
   if(eff.type==='hpRegen'){_applyBuff({...eff,label:name+' Regen',col:'#44cc44'});return null;}
   if(eff.type==='damage'){PHP=Math.max(1,PHP-eff.amount);return [`-${eff.amount} HP (bitter)...`,'#cc4444'];}
+  if(eff.type==='nightEye'){const said=ALCH_FX.nightEye.drink(eff.s||1);return [said,ALCH_FX.nightEye.col];} /* S1896 — Caverglow */
   return null;}
 // ── S1483 — Survival B, session 1: herbs and brewing (`docs/design/survival-build.md`, Michael's B of 30 Sep 2026) ──
 // Every herb has four brewing effects from one pool of 22. The first is the one you learn by eating it; the second is its
@@ -479,6 +480,7 @@ const HERB_FX={
   /* S1886 — the plants that mark a gate (#1164 B): each carries Night Eye or Featherfall, what a gate's dark and broken floors ask */
   lichenbloom:['restoreStamina','nightEye','fortifyBlock','resistCold'],gatelotus:['regenHealth','featherfall','waterBreathing','swiftness'],
   gateresin:['regenHealth','nightEye','featherfall','fortifyMelee'],
+  caverglow:['nightEye','quiet','regenMana','fortifyCarry'], /* S1896 — Caverglow: Night Eye eaten, three from the effects on four herbs */
 };
 // the herbs whose second effect is their hidden one's kin, so 15 eats teach it as well; the sea's three have no hidden of their own
 const HERB_KIN=new Set(['firemoss','silverleaf','muirfhear','thornberry','shadowcap','deepmoss','caordubh','kelp','sealily','pearlweed']);
@@ -2345,6 +2347,7 @@ function interact(){
   if(typeof knotNear==='function'&&knotNear()){knotUse();return;} /* S1346 — a great gate's knot */
   if(typeof shuttleNear==='function'&&shuttleNear()){shuttleTake();return;} /* S797 — the Shuttle, in its gate's deepest room */
   if(typeof cloakDenNear==='function'&&cloakDenNear()){cloakDenTake();return;} /* S992 — the cloak, from under its sleeping master */
+  {const cg=typeof caverglowNear==='function'&&caverglowNear();if(cg){pickCaverglow(cg);return;}} /* S1896 — Caverglow on a lair's wall */
   // Sigil touch — floor 2 only, closer range than most interactables
   const nearSig=SIGILS.find(s=>s.floor===currentFloor && Math.hypot(px-s.x,pz-s.z)<TOUCH); /* S1670 — F2b's touch, 1.6 m, for every E in a dungeon (was 1.1 to 1.5 by thing) */
   if(nearSig){touchSigil(nearSig);return;}

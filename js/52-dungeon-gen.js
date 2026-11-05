@@ -714,6 +714,37 @@ function lairBrush(gen,seed){
   const p=parts[Math.floor(r()*parts.length)],n=T.filter(t=>t.floor===1).length;
   T.push({id:(seed|0)+':1:'+n,kind:'brush',floor:1,c:p.c,r:p.r,dc:p.dc,dr:p.dr,behind:p.behind});
   return T;}
+// S1896 — Caverglow (Michael's B on #1164, plants-that-mark-a-gate.md: "grows on the walls of lairs, dens and caverns, 4 to 8 patches
+// to a floor, along the path from the entrance to the deepest room"). On each floor of a lair, the shortest way from where you come
+// in (the entrance on floor one, the well on floor two) to the deepest place (floor one's well when there is a floor two, else the
+// open cell farthest by that way), through open cells and unlocked doors, never a locked door's or the treasure room's. 4 to 8
+// patches, evenly along it, each on the wall beside a cell of it or one beside it (dc,dr: from the cell to the rock; two cells out when
+// the way is too short for four), none within 3 cells of the start.
+// Pure, from the cavern's seed on its own stream, after the brush; the id is <seed>:<floor>:cg:<i>. gateThingsBuild draws it.
+const CAVERGLOW_N=[4,8],CAVERGLOW_SKIP=3;
+function lairCaverglow(gen,seed){
+  if(!gen.things)gen.things=[];const T=gen.things;if(gen.gate)return T;
+  const r=dunLcg((hashSeed(((seed|0)+0x6c9d)>>>0)>>>0)||1),H=gen.H,W=gen.W;
+  for(const fl of [1,2]){const M=fl===2?gen.map2:gen.map;if(!M)continue;
+    const n=CAVERGLOW_N[0]+Math.floor(r()*(CAVERGLOW_N[1]-CAVERGLOW_N[0]+1));
+    const open=(c,y)=>y>=0&&c>=0&&y<H&&c<W&&M[y][c]>0&&M[y][c]!==5&&M[y][c]!==6&&M[y][c]!==8&&M[y][c]!==9;
+    const rock=(c,y)=>y<0||c<0||y>=H||c>=W||M[y][c]===0;
+    const s0=fl===1?[gen.entC,gen.entR]:[gen.stairC,gen.stairR];if(s0[0]==null||!open(s0[0],s0[1]))continue;
+    const prev=new Int32Array(W*H).fill(-2),q=[s0[0]+s0[1]*W];prev[q[0]]=-1;
+    for(let i=0;i<q.length;i++){const c=q[i]%W,y=(q[i]-c)/W;for(const [a,b] of [[1,0],[-1,0],[0,1],[0,-1]]){const nc=c+a,ny=y+b;
+      if(!open(nc,ny))continue;const k=nc+ny*W;if(prev[k]===-2){prev[k]=q[i];q.push(k);}}}
+    let end=q[q.length-1];if(fl===1&&gen.map2&&gen.stairC!=null){const k=gen.stairC+gen.stairR*W;if(prev[k]!==-2)end=k;}
+    const path=[];for(let k=end;k>=0;k=prev[k])path.unshift(k);
+    /* the wall beside the way: each side of rock of a cell on it, or of an open cell beside it (a room's way runs down its middle), in the way's order */
+    const near1=[[0,0],[1,0],[-1,0],[0,1],[0,-1]],near2=near1.concat([[2,0],[-2,0],[0,2],[0,-2],[1,1],[1,-1],[-1,1],[-1,-1]]);
+    const along=OFF=>{const wall=[],seen=new Set();for(let i=CAVERGLOW_SKIP;i<path.length;i++){const c0=path[i]%W,y0=(path[i]-c0)/W;
+      for(const [oc,oy] of OFF){const c=c0+oc,y=y0+oy;if(!open(c,y)||M[y][c]===3||(oc||oy)&&Math.abs(c-s0[0])+Math.abs(y-s0[1])<CAVERGLOW_SKIP)continue;
+        for(const [a,b] of [[1,0],[-1,0],[0,1],[0,-1]]){const key=c+','+y+','+a+','+b;if(!rock(c+a,y+b)||seen.has(key))continue;seen.add(key);wall.push({c,r:y,dc:a,dr:b});}}}return wall;};
+    let wall=along(near1);if(wall.length<CAVERGLOW_N[0])wall=along(near2); /* a short way in (a floor two's well in its master's room): the walls two cells out */
+    if(!wall.length)continue;const used=new Set();let i=0;
+    for(let k=0;k<n;k++){let j=Math.min(wall.length-1,Math.floor((k+r())*wall.length/n));while(used.has(j)&&j<wall.length-1)j++;while(used.has(j)&&j>0)j--;if(used.has(j))continue;const w=wall[j];used.add(j);
+      T.push({id:(seed|0)+':'+fl+':cg:'+(i++),kind:'glow',floor:fl,c:w.c,r:w.r,dc:w.dc,dr:w.dr});}}
+  return T;}
 // S1323 (card F5, the build sheet's session 3, "Pockets and the leash") — where a gate's fights stand. Each space of a floor
 // (the stair hall aside) holds pockets along its way, evenly: 25 to 42 m apart (one alone in a short space), so two
 // pockets never wake as one, and each end is within 25 m of one, so no stretch of the way runs 50 m without a fight. A pocket's radius is 0.4 of its spacing,
