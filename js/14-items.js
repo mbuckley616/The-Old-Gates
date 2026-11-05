@@ -594,6 +594,12 @@ function heldImplement(){return typeof EQ!=='undefined'?implementOf(EQ.weapon):n
 function implementDesc(it){const k=implementOf(it);if(!k)return it.desc||'';
   const what=k==='staff'?'Held reaches 5.5 m and Laid 16 m; a laid thing lasts a quarter longer.':k==='tome'?'Read aloud, a word not yet understood comes stronger and goes wild a third as often; every cast is twice as slow.':k==='orb'?'Cast a sent or touched word into it with your guard raised, and it keeps the cast a minute; your next cast lets it go at once.':'A sent spell flies half as far again, and the cast comes quicker.';
   const S=it.school&&SCHOOL_DEF[it.school];return what+(S?` It bears ${S.name}’s emblem: ${S.name}’s words cost ${Math.round((it.found?IMPLEMENT.foundCut:IMPLEMENT.cut)*100)}% less.`:'');}
+// S1863 — the rule in a line (the page's "the rule, not a percentage"), for the shop's row, the loot list, the bag's tooltip and the
+// worn slot: what the implement changes, in metres and seconds, and its emblem's cut. The numbers are IMPLEMENT's, so the line follows them.
+function implementRule(it){const k=implementOf(it);if(!k)return '';const I=IMPLEMENT;
+  const what=k==='staff'?`Held ${I.heldReach} m · Laid ${I.laidReach} m, lasts ×${I.laidDur}`:k==='tome'?`Impression ×${typeof TIER_MAG_TOME!=='undefined'?TIER_MAG_TOME[0]:0.8}, wild ${Math.round(I.tomeWild*100)}% · wind-up ×${I.tomeTell}`:k==='orb'?`Keeps a cast ${I.orbKeep} s`:`Sent ${I.sentReach} m · wind-up ${I.castTell} s`;
+  const S=it.school&&typeof SCHOOL_DEF!=='undefined'&&SCHOOL_DEF[it.school];
+  return what+(S?` · ${S.name} −${Math.round((it.found?I.foundCut:I.cut)*100)}% mana`:'');}
 // the share off a word's mana from the implement in hand: its school's 10% (20% found), or 0
 // S1850 — the weapon's and the tome's emblems are not added: the better of the two counts
 function implementCut(school){if(typeof EQ==='undefined')return 0;let c=0;for(const w of [EQ.weapon,EQ.offhand]){if(!implementOf(w)||!w.school||w.school!==school)continue;c=Math.max(c,w.found?IMPLEMENT.foundCut:IMPLEMENT.cut);}return c;}

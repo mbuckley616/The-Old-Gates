@@ -673,6 +673,9 @@ function statDelta(label,newVal,oldVal,higherIsBetter=true){
   if(diff!==0){const better=(diff>0)===higherIsBetter;cls=better?'better':'worse';sym=(diff>0?'+':'')+diff;}
   return `<div class="bt-row"><span class="bt-label">${label}</span><span class="bt-val">${newVal!==undefined?newVal:'—'}${sym?` <span class="bt-delta ${cls}">(${sym})</span>`:''}</span></div>`;
 }
+// S1863 — a weapon's weight in words: the rows' weights run 1.5 to 5 since v61, but the label still read them as 1, 2 and 3, so a dagger,
+// a longsword, a mace, a flail, a staff or a maul read "undefined"
+function weaponWeightLabel(w){return w<=2?'Light':w<=3.5?'Medium':'Heavy';}
 function showBagTooltip(idx,ev){
   const it=BAG[idx];if(!it)return;
   const tip=document.getElementById('bag-tooltip');
@@ -683,6 +686,7 @@ function showBagTooltip(idx,ev){
     const cur=EQ[it.slot];
     if(it.line==='light')html+=`<div class="bt-row" style="color:#c8b880;font-size:9px">Light armour · 3% harder to notice while sneaking</div>`; /* S564 */
     if(it.line==='robe')html+=`<div class="bt-row" style="color:#c8b880;font-size:9px">Robe · +${3*(it.tier||1)} max mana</div>`; /* S564 */
+    if(typeof implementOf==='function'&&implementOf(it))html+=`<div class="bt-row" style="color:#c8b880;font-size:9px">${implementDesc(it)}</div>`; /* S1863 — what an implement changes, in the page's words */
     if(it.virtue&&typeof CLOAK_KINDS!=='undefined'&&CLOAK_KINDS[it.virtue])html+=`<div class="bt-row" style="color:#c8b880;font-size:9px">Cloak · ${CLOAK_KINDS[it.virtue].virtue}${CLOAK_KINDS[it.virtue].swim<1?' · slower in the water':''}</div>`; // S552
     // Tier/material badge
     if(it.material){
@@ -738,7 +742,7 @@ function showBagTooltip(idx,ev){
         html+=`<div class="bt-row"><span class="bt-label">Type</span><span class="bt-val">${(typeof wtLabel!=='undefined'&&wtLabel)||_typeWord(it)}</span></div>`;
         if(wtHint) html+=`<div class="bt-row" style="color:#6a5838;font-size:9px;font-style:italic;margin-top:-1px">${wtHint}</div>`;
       }
-      if(it.weight){const wlbl=['','Light','Medium','Heavy'][it.weight];const stCost=it.weight*7;html+=`<div class="bt-row"><span class="bt-label">Weight</span><span class="bt-val">${wlbl} · ${stCost} stamina/swing</span></div>`;}
+      if(it.weight){const wlbl=weaponWeightLabel(it.weight);const stCost=Math.round(it.weight*7);html+=`<div class="bt-row"><span class="bt-label">Weight</span><span class="bt-val">${wlbl} · ${stCost} stamina/swing</span></div>`;}
     }
     if(it.def!==undefined||(cur&&cur.def!==undefined)){
       const nd=it.def||0,od=(cur&&cur.def)||0;
@@ -851,6 +855,7 @@ function hoverEqSlot(key){
   if(it.atk)lines.push('ATK '+it.atk[0]+'–'+it.atk[1]);
   if(it.def)lines.push('DEF +'+it.def);
   if(it.block)lines.push('Block '+Math.round(it.block*100)+'%');
+  {const r=typeof implementRule==='function'?implementRule(it):'';if(r)lines.push(r);} /* S1863 — an implement's rule */
   statEl.textContent=lines.join('  ·  ')||'No combat stats';
   hintEl.textContent='Click to unequip';
 }
