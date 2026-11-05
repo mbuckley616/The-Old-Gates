@@ -2687,11 +2687,11 @@ function forgeRoom(o = {}, r = stream('forge')) {
     hearth, hood, fire, anvil, tub, bench, bellows: bel, grind, door: { x: door.x, z: plan.d / 2, w: door.w, h: door.h }, paths, boxes, lantern, windows, w: plan.w, d: plan.d, eave: h };
 }
 
-// ── the Aurennais smithy (Session 1863, card F9; rooms.js's aurenneSmithy of Session 931 in pieces.js's Roman house, Michael's A on #303
+// ── the Aurennais smithy (Session 1865, card F9; rooms.js's aurenneSmithy of Session 931 in pieces.js's Roman house, Michael's A on #303
 // and on the kit in every interior; OG-043), copied as it stands with forgeMats() → forgeRoomMats(), the flue drawn by aurSmithyFlue (shared
 // with the street's stack) and one option of the game's: o.house, the street's own options, so the shell inside draws its wall and door
 // from the street's stream (o.shell) as the flat over the dyer's does. The prototype's comment follows. ──
-// the smithy's flue (Session 1863): from the ceiling up through the hipped pantile roof at the back left corner to a tiled cap on four
+// the smithy's flue (Session 1865): from the ceiling up through the hipped pantile roof at the back left corner to a tiled cap on four
 // posts, as rooms.js's aurenneSmithy draws it; shared by the room and the street (aurSmithyStack), so the stack outside is the flue inside.
 // sh is the shell (aurenneHouse's T and top). -> { flue {x0, x1, z0, z1, roof, y1}, flue_ [geometries], cap [geometries] }
 function aurSmithyFlue(sh, w, d) {

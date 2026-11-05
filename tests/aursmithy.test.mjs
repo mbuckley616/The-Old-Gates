@@ -1,4 +1,4 @@
-// An Aurennais smithy, on the street and inside, on the new look (Session 1863; card F9, Michael's A on #303 and on the kit in every interior;
+// An Aurennais smithy, on the street and inside, on the new look (Session 1865; card F9, Michael's A on #303 and on the kit in every interior;
 // rooms.js's aurenneSmithy of Session 931; OG-043). An Aurennais 'weapon' shop that fits stands as pieces.js's Roman house of 7.2 by 6 m with its
 // arcade and the forge's flue through the roof (lot.kit.smithy), and opens on the smith's shop at its true size (PKIT.au.smithy) inside the
 // street's own shell: walled below the sills but the door; you arrive clear; the prototype's three walks on foot; the smith behind the anvil,

@@ -439,7 +439,7 @@ function genSettlement(site){
           return use.every(u=>u===lot||(apart(A,u)&&!(apK(u)&&!apart(lot,ap(u)))));};
         // the widest that fits at the least depth, then the deepest at that width (each halved to within 5 cm: a house that fits fits smaller)
         const most=(lo,hi,ok)=>{if(ok(hi))return hi;while(hi-lo>.05){const m=(lo+hi)/2;if(ok(m))lo=m;else hi=m;}return Math.floor(lo*100)/100;};
-        // S1863 (card F9; Michael's A on #303 and on the kit in every interior; OG-043) — an Aurennais smithy (the 'weapon' shop) is the
+        // S1865 (card F9; Michael's A on #303 and on the kit in every interior; OG-043) — an Aurennais smithy (the 'weapon' shop) is the
         // smithy of rooms.js (Session 931) where it fits whole: pieces.js's Roman house of one storey, 7.2 by 6 m under hipped pantile with
         // its arcade before the front, the forge's flue up through the roof at the back left corner; its wall and door the street's draw.
         // Inside it is the smith's shop (kitAurSmithy). A lot with no room for it takes PKIT.au.lot's house as before.
@@ -596,7 +596,7 @@ function genSettlement(site){
       if(o.stair&&!tile)part(.9,H.top*.6,o.d-.6,-(o.w/2+.5),0,.3); /* the outside stair, its flight as a block of 0.6 of the wall */
       if(tile){const rw=o.w/2+.45,rd=o.d/2+.45,r=rw>=rd?kitRoof(rw,rd,hgt,hgt+Math.tan(22*Math.PI/180)*rd):kitRoof(rd,rw,hgt,hgt+Math.tan(22*Math.PI/180)*rw);if(rw<rd)r.rotateY(Math.PI/2);kitLo.push([r,mx,new THREE.Color(.58,.32,.22)]);}
       let stk=null;if(k.smithy){stk=PKIT.au.smithyStack(H,o);const f=stk.flue;part(f.x1-f.x0+.2,f.y1+.28-H.top,f.z1-f.z0+.2,(f.x0+f.x1)/2,H.top,(f.z0+f.z1)/2);
-        const fu=(f.x0+f.x1)/2,fv=(f.z0+f.z1)/2;k.stack={x:+(X+fu*c+fv*s_).toFixed(3),z:+(Z-fu*s_+fv*c).toFixed(3),y:+(y+f.y1+.25).toFixed(3)};S.chimneys.push({x:k.stack.x,y:k.stack.y+.1,z:k.stack.z,t:'weapon',k:0});} /* S1863 — the smithy's stack, in the far copy a block, and the forge's smoke (the one Aurennais house that smokes) */
+        const fu=(f.x0+f.x1)/2,fv=(f.z0+f.z1)/2;k.stack={x:+(X+fu*c+fv*s_).toFixed(3),z:+(Z-fu*s_+fv*c).toFixed(3),y:+(y+f.y1+.25).toFixed(3)};S.chimneys.push({x:k.stack.x,y:k.stack.y+.1,z:k.stack.z,t:'weapon',k:0});} /* S1865 — the smithy's stack, in the far copy a block, and the forge's smoke (the one Aurennais house that smokes) */
       lot._kitDoor=+(u+H.doorX).toFixed(3);lot._wallH=+(H.top-H.yW).toFixed(3);lot._storeys=o.two?2:1; /* S1321 — the wall over its floor, the plinth's top (H.yW, 0.24): a storey is floor to eaves, as SCALE's table measures it */lot.two=!!o.two;k.tris=H.tris+(stk?stk.tris:0);k.calls=H.draws+(stk?2:0);k.colour=o.kind;k.door=lot._kitDoor;}
     // S1419 — the courtyard house (PKIT.au.courtyard, its own stream keyed by the town and the lot), its front on the lot's less the step;
     // its far copy one box to the cornice in its wall's colour (the roof slopes in, under the parapet)
@@ -2371,7 +2371,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     else{intNPCMesh=null;intNPCPos={x:-99,z:-99};}
     return sc_;
   }
-  // S1863 (card F9; Michael's A on #303 and on the kit in every interior; OG-043) — on the new look an Aurennais smithy that stands as
+  // S1865 (card F9; Michael's A on #303 and on the kit in every interior; OG-043) — on the new look an Aurennais smithy that stands as
   // rooms.js's smithy (lot.kit.smithy, the Roman house of 7.2 by 6 m with its arcade) opens on the smith's shop (PKIT.au.smithy, Session
   // 931) inside the street's own shell: the forge of plastered masonry in the back left corner, its lip of blue tile, its sooted hood into
   // the flue; the two goatskin bellows and the apprentice's stool; the anvil on its block of limestone, the quench trough by the left wall;
@@ -3251,7 +3251,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     if(kitBarn(house))return buildKitBarn(house); /* S1475 — a Gatelands farm's barn inside, at its true size */
     if(kitForge(house))return buildKitForge(house); /* S1860 — a Gatelands smithy's forge inside, at its true size */
     if(kitCourtHouse(house))return buildKitCourtHouse(house); /* S1425 — Aurenne's courtyard house inside, at its true size */
-    if(kitAurSmithy(house))return buildKitAurSmithy(house); /* S1863 — an Aurennais smithy inside, at its true size */
+    if(kitAurSmithy(house))return buildKitAurSmithy(house); /* S1865 — an Aurennais smithy inside, at its true size */
     if(kitAurHome(house))return buildKitAurHome(house); /* S1831 — Aurenne's flat over the dyer's shop inside, at its true size */
     if(kitLonghouse(house))return buildKitLonghouse(house); /* S1453 — a Markish home: the longhouse inside, at its true size */
     if(kitChurchHall(house))return buildKitChurchHall(house); /* S1326 — the Church of the Weaver inside, at its true size */
