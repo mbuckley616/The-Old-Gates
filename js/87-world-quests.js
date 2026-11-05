@@ -498,6 +498,9 @@ const giver=`${lord.title} ${lord.name}`;
     if(gateHerbRead(h.type))return `${G.name}, ${hue}: a ${G.cond} gate of ${S?S.name:'no school'} is near`;
     const w=G.seen.split(' ');return `the ${hue} ${w.slice(1).join(' ')}`;}
   function gateHerbRead(type){const K=herbsKnown();return !!(K.read&&K.read[type]);}
+  // S1887 — what reading gives (the page): once you know the plant of a gate's condition, its map entry and card say the condition and school
+  function gateReadLine(e){try{if(!gateHerbDoor(e))return '';const cond=gateHerbCond(e);if(!gateHerbRead(GATE_HERB_OF[cond]))return '';
+    const s=gateSchool(e),S=typeof SCHOOL_DEF!=='undefined'&&SCHOOL_DEF[s];return ` · ${cond}, of ${S?S.name:s}`;}catch(err){return '';}}
   // the named actions (co-op rules): a gate's plant picked, and its meaning learnt; both the character's (herbsKnown is in SS_CHAR_WS)
   function gateHerbPicked(h){if(!h||!h.gate)return;herbsKnown().gatePick={seed:h.gate.seed,type:h.type,at:worldState.gameTimeAbsMinutes||0};}
   function learnGateRead(type){const K=herbsKnown(),R=K.read||(K.read={});if(R[type])return false;R[type]=1;return true;}

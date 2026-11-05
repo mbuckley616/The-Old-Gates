@@ -73,5 +73,15 @@ check(`the Greenmeadow: an ordinary herb 14 m from a failing or catastrophic gat
 check(`unread, the plant is what it looks like ("${GP.unread}"); picked, it is in the bag (${GP.bag}) and remembered; another gate or an entry after the hour teaches nothing`, GP.rec && !/gate of/.test(GP.unread) && !!GP.bag && GP.pick && !GP.other && !GP.late, GP);
 check(`entered within the hour, its gate teaches it: "${GP.read}"; once only`, GP.inTime && /gate of/.test(GP.read) && !GP.again, GP);
 check(`no barrel or corpse draws a gate's plant (${GP.loot} of 3,000); each is zone 'gate' and carries Night Eye or Featherfall`, GP.loot === 0 && GP.fx.every(f => f[1] === 'gate' && f[2]), GP.fx);
+// S1887 — what reading gives: once a gate's condition's plant is read, its map entry and card say the condition and school; nothing before
+const ML = await page.evaluate(() => { const K = herbsKnown(), keep = K.read, all = [];
+  for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) { const [ci, cj] = cellOf(px, pz); all.push(...mapEntries(getCell(ci + di, cj + dj)).filter(o => /^door_/.test(o.id))); }
+  const gates = all.filter(o => { const e = doorAnywhere(+o.id.slice(5)); return e && gateHerbDoor(e); }).map(o => { const e = doorAnywhere(+o.id.slice(5)); return { id: o.id, cond: gateHerbCond(e), school: SCHOOL_DEF[gateSchool(e)].name }; });
+  const fail = gates.find(x => x.cond === 'failing'), other = gates.find(x => x.cond !== 'failing'), sub = id => { for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) { const [ci, cj] = cellOf(px, pz); const o = mapEntries(getCell(ci + di, cj + dj)).find(o => o.id === id); if (o) return o.sub; } return null; };
+  delete K.read; const before = fail && sub(fail.id); K.read = { gatelotus: 1 }; const after = fail && sub(fail.id), otherAfter = other && sub(other.id);
+  K.read = keep; if (!keep) delete K.read; return { n: gates.length, fail, other, before, after, otherAfter }; });
+console.log('mapline', JSON.stringify(ML));
+check(`a gate's map entry says nothing of its state until its plant is read ("${ML.before}"); then "${ML.after}"; a gate of another condition still says nothing ("${ML.otherAfter}")`,
+  !!ML.fail && !/failing/.test(ML.before) && ML.after === ML.before + ` · failing, of ${ML.fail.school}` && !!ML.other && !/(steady|catastrophic|failing), of/.test(ML.otherAfter), ML);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
