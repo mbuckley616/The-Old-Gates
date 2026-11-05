@@ -924,6 +924,13 @@ const IMPL_MAKE={
   aurenne:  {wood:0xb08a5a,shaft:0xb89868,leath:0x5a1e28,band:0x3a1218,fit:0xd8b25a,fitM:'metal',stone:0xc8bca8,cover:0x5a1e28}};
 // an implement item's kit kind: its shape, its island's make (`make`, which the guild's stock sets: 'gatelands', 'mark' or 'aurenne';
 // Gatelands when it has none) and its school's emblem
+// S1862 — a held implement's own glow (#1111 B, the hold): implGlowOwn gives the piece its own copies of the kit's shared glow and halo
+// materials, so one orb's light leaves every other piece's alone; implGlowSet sets how it burns, 1 the kit's own: the emblem's heart and
+// the glass's colour (a halo's opacity goes as k², so a kept word fills the glass)
+function implGlowOwn(g){const m=new Map();g.traverse(o=>{if(!o.isMesh||(o.material!==WPN_MAT.glow&&o.material!==WPN_MAT.halo))return;let c=m.get(o.material);
+    if(!c){c=o.material.clone();c.userData.base=o.material.transparent?o.material.opacity:1;m.set(o.material,c);}o.material=c;});
+  g.userData.glowMats=[...m.values()];return g;}
+function implGlowSet(g,k){const L=g&&g.userData.glowMats;if(!L)return;for(const m of L){if(m.transparent)m.opacity=Math.min(.85,m.userData.base*k*k);else m.color.setScalar(k);}}
 function implKind(it){const m=it&&IMPL_MAKE[it.make]?it.make:'gatelands';return 'impl:'+((typeof implementOf==='function'&&implementOf(it))||'wand')+':'+m+':'+((it&&it.school)||'');}
 function implSchoolCol(sc){return typeof SCHOOL_DEF!=='undefined'&&SCHOOL_DEF[sc]?new THREE.Color(SCHOOL_DEF[sc].col).getHex():0xdde8ff;}
 // the emblem in a unit's square in the xy plane, facing ±z, scaled s, turned ry about y and set at P; its body in mat/c, its heart glowing

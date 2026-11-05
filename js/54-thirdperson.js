@@ -169,10 +169,10 @@ function tpBuild(lookIn,ppIn,reuse){
     sg.position.set(.07,-.08,0);R.elL.add(sg);R.shield=sg;
     if(oh.enchant){const sb=new THREE.Box3().setFromObject(k);if(!sb.isEmpty())tpMotes(R,sg,oh.enchant.col!=null?oh.enchant.col:tpHex(oh.matGlow,TP_MOTE.armour),sb);}}
   else if(oh&&oh.torchType==='torch'){const tg=new THREE.Group();tpBox(.03,.3,.03,0x4a3018,tg,0,.1,0);const f=new THREE.Mesh(new THREE.ConeGeometry(.045,.12,5),new THREE.MeshBasicMaterial({color:0xff8830}));f.position.y=.3;tg.add(f);tg.rotation.x=Math.PI/2;R.torch=grip(R.handL,tg);}
-  // S1856 — the tome and the orb are the kit's (implKind): the tome where the box was, open-handed, its covers to the sides; the orb's
+  // S1856 — the tome and the orb are the kit's (implKind): the tome open-handed, its covers to the sides; the orb's
   // grip in the closed left fist as a torch's is, the glass ahead. How each is held, and in first person, is the next session's (#1111 B)
   else if(oh&&typeof implementOf==='function'&&(implementOf(oh)==='tome'||implementOf(oh)==='orb')){const tg=new THREE.Group();tg.add(buildWeapon(implKind(oh)));tg.userData.kit='impl';
-    if(implementOf(oh)==='tome'){tg.rotation.y=Math.PI/2;tg.position.set(0,-.06,.06);R.handL.add(tg);R.tome=tg;}else{tg.rotation.x=Math.PI/2;R.orb=grip(R.handL,tg);}}
+    if(implementOf(oh)==='tome'){tg.rotation.y=Math.PI/2;tg.position.set(0,-.08,-.04); /* S1862 — in the palm, the hand on its fore-edge */R.handL.add(tg);R.tome=tg;}else{tg.rotation.x=Math.PI/2;R.orbG=implGlowOwn(tg);R.orb=grip(R.handL,tg);}}
   else if(oh){R.tome=tpBox(.12,.16,.05,tpMatColor(oh,0x5a3a5a),R.handL,0,-.06,.06);}
   // the worn pieces: a box about the bone each hangs on, in that bone's frame
   const BX=(x0,y0,z0,x1,y1,z1)=>new THREE.Box3(new THREE.Vector3(x0,y0,z0),new THREE.Vector3(x1,y1,z1));
@@ -210,6 +210,15 @@ function tpBuild(lookIn,ppIn,reuse){
   return R;}
 // S1509 — a knife, a spear or a crossbow at its true size in the hand (wpnTrue): the kit's piece under the carried group, and with it the
 // group's other things drawn in that piece's frame (an enchantment's motes, the left hand's place on a two-handed grip), by the body's scale
+// S1862 — the off hand's implement each frame (tpPose): the orb's light, brighter raised or in a cast and pulsing while it keeps a word.
+// Returns what tpPose needs for the left arm, or null with neither in hand
+// the left arm's poses, [shoulder x, y, z, elbow] (negative x raises the arm forward): the raised orb's forearm level, so the glass stands
+// upright over the fist; the tome read, held up before the chest with its emblemed cover to the foe
+const TP_IMPL={rest:[-.2,-.8],raised:[-1.1,-.45,0,-.45],kept:[.7,.1,.35,-1],read:[-.6,-.3,0,-1.2]};
+function tpImplHold(R){if(!R.orb&&!R.tome)return null;
+  const raised=!!R.orb&&typeof orbRaised==='function'&&orbRaised(),kept=!!R.orb&&typeof ORB_KEPT!=='undefined'&&!!ORB_KEPT,cast=typeof castT!=='undefined'&&castT>0;
+  if(R.orbG)implGlowSet(R.orbG,kept?1.6+.25*Math.sin(performance.now()/1000*5):raised||cast?1.25:1);
+  return {orb:!!R.orb,raised,kept};}
 function tpTrue(R){for(const o of [R.tome,R.orb])if(o&&o.userData.kit==='impl'&&o.children[0])wpnTrue('impl',o.children[0],R.root);const W=R.weapon||R.weaponL,k=W&&W.children[0];R.trueK=1;if(!k||!WPN_TRUE.has(W.userData.kit))return;
   wpnTrue(W.userData.kit,k,R.root);const f=k.scale.x;R.trueK=f;for(const c of W.children)if(c.isPoints)c.scale.setScalar(f);if(R.gripL)R.gripL.multiplyScalar(f);}
 // a held piece's copy for the builder's group: its meshes and points on the same geometry and materials, its own turns below the top
@@ -407,6 +416,9 @@ function tpPose(R,dt,st){
   if(R.twoH&&!air){aR={x:-.9,y:1.1,z:0};eR=-.6;aL={x:-.75,y:-.2,z:0};eL=-.7;wR=.55;if(st.moving){aR.x-=Math.sin(ph)*.08;aL.x-=Math.sin(ph)*.08;}}
   if(R.shield&&!air){eL=Math.min(eL,-.6);}
   if(R.torch){aL.x=Math.min(aL.x,-.3);eL=-1.2;}
+  // S1862 — the orb in the off hand (#1111 B, the hold): at rest it is carried as a torch is, the glass up before the waist; the tome hangs
+  // at your side as before (tpImplHold below takes the raised orb, the kept word and the reading)
+  if(R.orb&&!air){aL.x=Math.min(aL.x,TP_IMPL.rest[0]);eL=TP_IMPL.rest[1];}
   // S411 — Michael's D on #99: with both hands empty the jab's guard is carried, the right fist by the chin and the left by
   // the face, standing and on the move (bobbing a little with the stride); a sprint or a jump drops to the swinging arms,
   // and the punch, the block and the cast take over from it as before
@@ -468,8 +480,16 @@ function tpPose(R,dt,st){
   const drawing=typeof _bowDrawing!=='undefined'&&_bowDrawing;
   if(R.bow&&(drawing||blocking)){const s=drawing?Math.min(1,_bowDrawT/BOW_DRAW_MAX):.3;const aim=-Math.PI/2-pitch*.9;ty=-.55;aL={x:aim,y:.55,z:0};eL=-.05;aR={x:aim,y:.55+.3+s*.45,z:0};eR=-.4-s*2.0;}
   else if(R.bow&&!air){aL.x=Math.min(aL.x,-.25);eL=-.5;}
-  // casting: both hands out, the right leading
-  if(typeof castT!=='undefined'&&castT>0){const c=castT/CAST_ANIM_DURATION;const push=Math.sin((1-c)*Math.PI);aR={x:-1.45-pitch*.8,y:.15,z:0};eR=-.25-.5*(1-push);aL={x:-1.1-pitch*.6,y:-.25,z:0};eL=-.9;ty=-.15;tx=-.1*push;}
+  // S1862 — the orb raised (the guard held with an orb, orbRaised) is held out before the chest at the eye's pitch, the glass between you
+  // and the foe; a kept word (ORB_KEPT) is carried low and behind the left hip, cocked to let go (OG-045), standing and on the move; neither
+  // takes a swing's arm
+  const IH=tpImplHold(R);
+  if(IH&&IH.orb&&!air&&!(swingT>0)&&!TP.swim){const P=IH.raised?TP_IMPL.raised:IH.kept?TP_IMPL.kept:null;if(P){aL={x:P[0]-(IH.raised?pitch*.6:0),y:P[1],z:P[2]};eL=P[3];}}
+  // casting: both hands out, the right leading; with an orb the left leads (the word goes into the orb and leaves from it), and with a
+  // tome the left holds the book up open before the chest, read aloud, while the right makes the cast
+  if(typeof castT!=='undefined'&&castT>0){const c=castT/CAST_ANIM_DURATION;const push=Math.sin((1-c)*Math.PI);aR={x:-1.45-pitch*.8,y:.15,z:0};eR=-.25-.5*(1-push);aL={x:-1.1-pitch*.6,y:-.25,z:0};eL=-.9;ty=-.15;tx=-.1*push;
+    if(R.orb){aL={x:-1.45-pitch*.8,y:-.15,z:0};eL=-.25-.5*(1-push);aR={x:-.6,y:.15,z:-.1};eR=-.9;ty=.15;}
+    else if(R.tome){const P=TP_IMPL.read;aL={x:P[0]-pitch*.3,y:P[1],z:P[2]};eL=P[3];}}
   // S1272 — swimming (card F10): under way a breaststroke, still a tread. The stroke's cycle (TP.swPh, a look only, eased by the time
   // swum) reaches the arms forward and glides with the legs drawn out straight, sweeps them out and back, draws the hands in to the chest
   // and the knees up, and kicks out into the next reach; treading, the arms scull out to the sides and the legs pedal. The legs and arms are

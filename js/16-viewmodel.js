@@ -928,8 +928,34 @@ function buildShieldViewmodel(){
     vmArmL=buildArmBridge();vmArmL.userData.shoulder=SHOULDER_L;vmArmL.userData.wristHand=shieldHand.userData.elbow;VM_SCENE.add(vmArmL); /* S536 */
     g.position.set(-.28,-.32,-.55);g.rotation.set(.1,-.5,.08);
     VM_SCENE.add(g);vmShield=g;
+  } else if(typeof implementOf==='function'&&(implementOf(sh)==='orb'||implementOf(sh)==='tome')){
+    // S1862 — the orb and the tome in the left hand (#1111 B, the hold), the kit's piece in its island's make (implKind) at its true size:
+    // the orb gripped below the glass, the tome held upright by its spine, its emblemed cover inward. The piece and the hand sit in a pose
+    // group (userData.pose) that vmImplPose turns each frame: the orb raised, keeping a word, or let go; the tome lifted to be read
+    const tome=implementOf(sh)==='tome',g=new THREE.Group(),p=new THREE.Group();g.add(p);
+    const k=buildWeapon(implKind(sh));if(!tome)implGlowOwn(k);
+    k.traverse(o=>{if(o.isMesh&&o.material.metalness>.3){o.material=o.material.clone();o.material.metalness=.25;o.material.roughness=.4;}});
+    if(tome)k.rotation.y=Math.PI;p.add(k);
+    const hand=buildHandMesh(true,1.0);hand.position.set(0,tome?-.05:-.01,tome?.085:0);p.add(hand);
+    Object.assign(g.userData,{handMain:hand,impl:tome?'tome':'orb',pose:p,kitImpl:k});
+    vmArmL=buildArmBridge();vmArmL.userData.shoulder=SHOULDER_L;vmArmL.userData.wristHand=hand.userData.elbow;VM_SCENE.add(vmArmL);
+    g.position.set(-.28,-.32,-.55);g.rotation.set(.1,-.5,.08);
+    VM_SCENE.add(g);vmShield=g;
   }
 }
+// S1862 — the off hand's implement in first person, each frame after the hands are placed (90-main.js): the pose group eases to the orb's
+// rest, raised (the guard held, orbRaised), kept (a word in it, ORB_KEPT: drawn down and back, cocked as OG-045's) or cast (pushed out
+// ahead as the word goes in or leaves), or to the tome's rest and read (lifted, its cover turned to you, through the cast); the orb's
+// light as in third person (implGlowSet). Each pose is [x, y, z, rx, ry, rz] in the off hand's frame
+const FP_IMPL={orb:{rest:[0,0,0,0,0,0],raised:[.13,.15,-.06,.15,.35,0],kept:[-.03,-.06,.04,.3,0,.2],cast:[.16,.12,-.2,-.25,.3,0]},
+  tome:{rest:[0,0,0,0,0,0],read:[.12,.12,.02,-.3,-1.1,0]}};
+function vmImplPose(dt){const g=vmShield,u=g&&g.userData,p=u&&u.pose;if(!p)return;
+  const cast=typeof castT!=='undefined'&&castT>0,k=Math.min(1,(dt||1/60)*12);let T;
+  if(u.impl==='orb'){const kept=typeof ORB_KEPT!=='undefined'&&!!ORB_KEPT,raised=typeof orbRaised==='function'&&orbRaised();
+    T=FP_IMPL.orb[cast?'cast':raised?'raised':kept?'kept':'rest'];implGlowSet(u.kitImpl,kept?1.6+.25*Math.sin(performance.now()/1000*5):raised||cast?1.25:1);}
+  else T=FP_IMPL.tome[cast?'read':'rest'];
+  p.position.x+=(T[0]-p.position.x)*k;p.position.y+=(T[1]-p.position.y)*k;p.position.z+=(T[2]-p.position.z)*k;
+  p.rotation.x+=(T[3]-p.rotation.x)*k;p.rotation.y+=(T[4]-p.rotation.y)*k;p.rotation.z+=(T[5]-p.rotation.z)*k;}
 // S1306 — the hands are lit by the place they are in (backlog I, the critic's s827: VM_SCENE's fixed ambient 0.8 and warm sun 1.2 lit
 // them at 179–188 of 255 in a gate's black ring as at noon). Before the view model is drawn its lights take the lights of the scene
 // drawn under it, as they fall at the eye: the ambient lights summed, the hemisphere lights summed with the world's up turned into the
