@@ -449,7 +449,7 @@ function genSettlement(site){
         // louver on the ridge over the forge; with its porch where that fits too, else without. Its wall the lot's, drawn from the street's
         // stream. Inside it is the smith's hall (kitMarkSmithy). A lot with no room for it takes PKIT.mk.lot's hall as before.
         if(MK&&t==='weapon')for(const porch of [true,false]){const S={roof:'shingle',w:6.4,d:9,porch,chimney:false,carve:true,wall:o1.wall},E=ext(S);if(fit(S.w,S.d,E)){lot.kit={kind:'markhall',o:S,ext:E,w0,d0,stoop:E[1],smithy:true,shell:`${site.id}:windows:${lot.n}`};return;}}
-        // S1879 (card F9; Michael's A on #303 and on the kit in every interior; OG-043, OG-133) — a Markish apothecary (the 'potion' shop)
+        // S1881 (card F9; Michael's A on #303 and on the kit in every interior; OG-043, OG-133) — a Markish apothecary (the 'potion' shop)
         // is the healer's hall of rooms.js (Session 937) where it fits whole: the smithy's hall, 6.4 by 9 m under shingle, carved, no
         // chimney but the louver over the long hearth; with its porch where that fits too. Inside it is the healer's hall (kitMarkApothecary).
         if(MK&&t==='potion')for(const porch of [true,false]){const S={roof:'shingle',w:6.4,d:9,porch,chimney:false,carve:true,wall:o1.wall},E=ext(S);if(fit(S.w,S.d,E)){lot.kit={kind:'markhall',o:S,ext:E,w0,d0,stoop:E[1],apothecary:true,shell:`${site.id}:windows:${lot.n}`};return;}}
@@ -3032,7 +3032,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     else{intNPCMesh=null;intNPCPos={x:-99,z:-99};}
     return sc_;
   }
-  // S1879 (card F9; Michael's A on #303 and on the kit in every interior; OG-043, OG-133) — on the new look a Markish apothecary that
+  // S1881 (card F9; Michael's A on #303 and on the kit in every interior; OG-043, OG-133) — on the new look a Markish apothecary that
   // stands as rooms.js's healer's hall (lot.kit.apothecary, the Mark hall of 6.4 by 9 m under shingle) opens on it (PKIT.mk.apothecary,
   // Session 937) inside the street's own shell: no counter but a trade board on trestles inside the door with a steelyard over it; the
   // long low hearth under the louver with its two fires, the cauldron on its tripod at the front (heat) and the still at the back, its
@@ -3416,7 +3416,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     if(kitCourtHouse(house))return buildKitCourtHouse(house); /* S1425 — Aurenne's courtyard house inside, at its true size */
     if(kitAurSmithy(house))return buildKitAurSmithy(house); /* S1865 — an Aurennais smithy inside, at its true size */
     if(kitMarkSmithy(house))return buildKitMarkSmithy(house); /* S1869 — a Markish smithy inside, at its true size */
-    if(kitMarkApothecary(house))return buildKitMarkApothecary(house); /* S1879 — a Markish apothecary inside, at its true size */
+    if(kitMarkApothecary(house))return buildKitMarkApothecary(house); /* S1881 — a Markish apothecary inside, at its true size */
     if(kitAurHome(house))return buildKitAurHome(house); /* S1831 — Aurenne's flat over the dyer's shop inside, at its true size */
     if(kitLonghouse(house))return buildKitLonghouse(house); /* S1453 — a Markish home: the longhouse inside, at its true size */
     if(kitChurchHall(house))return buildKitChurchHall(house); /* S1326 — the Church of the Weaver inside, at its true size */

@@ -52,6 +52,42 @@ console.log('  size:', JSON.stringify(size));
 check(`each stands at its driver's size, by its legs: its head ${size.map(s => s.head).join(', ')} m up (the driver's ${size.map(s => s.drvHead).join(', ')}; the kit's troll stoops), its hips over the driver's (${size.map(s => s.hips).join(', ')} m across), its toes on the ground (${size.map(s => s.toes.join(', ')).join('; ')} m)`,
   size.length === 3 && size.every(s => s.hips < .05 && s.head < s.drvHead && s.head > .85 * s.drvHead && s.toes.every(y => Math.abs(y) < .06)), size);
 
+// Session 1877 (L4, OG-018 and OG-088): a gate's cave troll wears its school's: Tine's basalt troll, Uisce's drowned-pale one, Cloch's stone
+// troll fused with rock; any other school's, and an occupied gate's, the moss-backed troll. The school is read off the gate's world entry
+const sch = await page.evaluate(() => { const realC = window.hcGateCond, realP = currentPortal, out = {}; window.hcGateCond = () => 'steady';
+  for (const th of ['elemental', 'deep', 'ruins', 'haunted', 'goblin']) { const e = WORLD_DUNGEONS.find(d => d.theme === th && seededRng('gaoth', d.seed)() >= 1 / 6 && (th === 'goblin' || !d.occupied));
+    if (!e) { out[th] = 'none'; continue; } currentPortal = { seed: e.seed }; out[th] = hcGateSchool() + ':' + hcTrollKind('Cave Troll') + ':' + hcTrollKind('Forest Troll'); }
+  window.hcGateCond = () => null; out.outside = String(hcGateSchool()) + ':' + hcTrollKind('Cave Troll'); window.hcGateCond = realC; currentPortal = realP; return out; });
+console.log('  schools:', JSON.stringify(sch));
+check(`a gate's school picks its cave troll (${Object.entries(sch).map(([k, v]) => k + ' ' + v).join('; ')}); a Forest Troll keeps its own`,
+  sch.elemental === 'tine:Cave Troll (tine):Forest Troll' && sch.deep === 'uisce:Cave Troll (uisce):Forest Troll' && sch.ruins === 'cloch:Cave Troll (cloch):Forest Troll'
+  && sch.haunted === 'scath:Cave Troll:Forest Troll' && /^null:Cave Troll:/.test(sch.goblin) && sch.outside === 'null:Cave Troll', sch);
+const gt = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.cos(yaw), sx = -fz, sz = fx, a = _S[1].e, real = window.hcGateSchool; window._GT = [];
+  for (const [i, s] of ['tine', 'uisce', 'cloch'].entries()) { window.hcGateSchool = () => s; const X = a.x + fx * 3.5 + sx * (i - 1) * 2.4, Z = a.z + fz * 3.5 + sz * (i - 1) * 2.4;
+    const pr = buildFoe('Cave Troll', X, Z, null, 0xff2200), m = new THREE.Group(); pr.root.scale.multiplyScalar(1.5); m.add(pr.root);
+    const e = { id: 'f4trolls:gate:' + s, name: 'Cave Troll', mesh: m, limbs: { person: pr } }; e.x = X; e.z = Z; m.position.set(X, WORLD.worldH(X, Z), Z); m.rotation.y = Math.atan2(px - X, pz - Z);
+    e.combatYaw = m.rotation.y; e.locked = false; WORLD.scene.add(m); pr.e = e; _GT.push({ s, e, rig: pr }); }
+  window.hcGateSchool = real; let n = 0; HBODY.last = -1e9; const want = () => _GT.filter(f => !f.rig.hc && !f.rig.hcFail).length;
+  while (want() && n++ < 120) { tickPeople(1 / 60, 2.6e5 + n * (HBODY.gap + 1)); tickCreatures(1 / 60, 2.6e5 + n * (HBODY.gap + 1)); }
+  for (let i = 0; i < 30; i++) { tickPeople(1 / 60, 3.6e5 + i * 16.7); tickCreatures(1 / 60, 3.6e5 + i * 16.7); }
+  const moss = _S[2].rig.hc.C.stats.tris;
+  return _GT.map(({ s, e, rig }) => { const H = rig.hc; if (!H) return { s, hc: false, kind: rig.hcKind, fail: !!rig.hcFail }; rig.root.parent.updateMatrixWorld(true);
+    const by = H.C.byName, W = o => o.getWorldPosition(new THREE.Vector3()), gy = e.mesh.position.y, P = HC.PLANS[H.C.g.plan] || {};
+    const lit = H.C.plan.glow ? H.C.plan.glow.color.map(v => +v.toFixed(2)).join('/') : 'none';
+    return { s, hc: true, kind: rig.hcKind, plan: H.C.g.plan, seed: H.C.g.seed, want: HC.hashKey('foe:' + e.id), bones: H.C.bones.length, map: H.map.length, tris: H.C.stats.tris, moss,
+      gear: (H.C.B.gear || []).join('+'), driver: rig.mesh.visible, coat: H.C.plan.palette.coat.map(v => +v.toFixed(2)), own: (P.palette || {}).coat ? P.palette.coat.map(v => +v.toFixed(2)) : null, lit,
+      head: +(W(by.head).y - gy).toFixed(2), drvHead: +(W(rig.B.head).y - gy).toFixed(2), toes: ['leg0L_3', 'leg0R_3'].map(nm => +(W(by[nm]).y - gy).toFixed(3)) }; }); });
+console.log('  gate trolls:', JSON.stringify(gt));
+check(`each school's troll is built on the kit's 23 bones in its plan's own hide (${gt.map(t => t.s + ': ' + t.plan + ', ' + t.tris + ' triangles, cracks ' + t.lit).join('; ')}; the moss troll ${gt[0] && gt[0].moss}), keyed by its foe id, holding the maul`,
+  gt.length === 3 && gt.every(t => t.hc && t.bones === 23 && t.map === 16 && t.seed === t.want && t.gear === 'maul' && !t.driver && t.coat.join() === (t.own || []).join())
+  && gt.map(t => t.plan).join() === 'game:Cave Troll (tine),game:Cave Troll (uisce),game:Cave Troll (cloch)' && gt[2].tris > gt[2].moss && gt[0].lit !== 'none' && gt[2].lit !== 'none' && gt[1].lit === 'none', gt);
+check(`each stands at its driver's size (heads ${gt.map(t => t.head).join(', ')} m up, the drivers' ${gt.map(t => t.drvHead).join(', ')}), its toes on the ground (${gt.map(t => (t.toes || []).join(', ')).join('; ')} m)`,
+  gt.every(t => t.hc && t.head < t.drvHead + .1 && t.head > .8 * t.drvHead && t.toes.every(y => Math.abs(y) < .06)), gt);
+await page.evaluate(() => { const m = _GT[1].e.mesh, fx = -Math.sin(yaw), fz = -Math.cos(yaw); window._P = [px, pz]; for (const f of _S) f.e.mesh.visible = false; px = m.position.x - fx * 6; pz = m.position.z - fz * 6; pitch = .06; });
+for (let i = 0; i < 8; i++) { await page.evaluate(() => { tickPeople(1 / 60, performance.now()); tickCreatures(1 / 60, performance.now()); }); await g.frames(1); }
+await page.screenshot({ path: path.join(OUT, 'f4-gatetrolls.jpg') });
+await page.evaluate(() => { for (const f of _GT) f.e.mesh.parent.remove(f.e.mesh); for (const f of _S) f.e.mesh.visible = true; [px, pz] = _P; });
+
 // the picture: the two from 3.5 m
 await page.evaluate(() => { const a = _S[1].e, mx = a.x, mz = a.z, fx = -Math.sin(yaw), fz = -Math.cos(yaw); px = mx - fx * 6.5; pz = mz - fz * 6.5; pitch = .02; });
 for (let i = 0; i < 8; i++) { await page.evaluate(() => { tickPeople(1 / 60, performance.now()); tickCreatures(1 / 60, performance.now()); }); await g.frames(1); }

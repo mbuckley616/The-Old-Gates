@@ -3003,7 +3003,7 @@ function markSmithy(o = {}, r = stream('smithy')) {
     fire, hearth: H, louver: lz, anvil, tub, bench, grind, door: { x: 0, z: d / 2, w: hall.door.w, h: hall.door.h }, paths, boxes, lamp, windows: hall.windows, w, d };
 }
 
-// ── the Mark's apothecary (Session 1879, card F9; rooms.js's markApothecary of Session 937 in pieces.js's Mark hall, Michael's A on #303
+// ── the Mark's apothecary (Session 1881, card F9; rooms.js's markApothecary of Session 937 in pieces.js's Mark hall, Michael's A on #303
 // and on the kit in every interior; OG-043, OG-133), copied as it stands with apoMats() → apoRoomMats() and the smithy's option of the
 // game's (S1869): o.house, the street's own options, so the shell inside takes the street's wall and porch and draws from the street's
 // stream (o.shell). The prototype's comment follows. ──

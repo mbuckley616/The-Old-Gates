@@ -1,4 +1,4 @@
-// A Markish apothecary, on the street and inside, on the new look (Session 1879; card F9, Michael's A on #303 and on the kit in every
+// A Markish apothecary, on the street and inside, on the new look (Session 1881; card F9, Michael's A on #303 and on the kit in every
 // interior; rooms.js's markApothecary of Session 937; OG-043, OG-133). A Markish 'potion' shop that fits stands as pieces.js's Mark hall of
 // 6.4 by 9 m under shingle (lot.kit.apothecary), and opens on the healer's hall at its true size (PKIT.mk.apothecary) inside the street's
 // own shell: walled below the windows but the door; you arrive clear; the prototype's five walks on foot; no walking into the hearth's

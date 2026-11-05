@@ -979,7 +979,7 @@ const HC_KINDS={'Wolf':{plan:'wolf'},'Snow Wolf':{plan:'wolf',own:true},'Dire Wo
   'Wraith':{plan:'wraith',own:true,person:true,legless:true,rest:HC_WRAITH_REST},'Phantom':{plan:'phantom',own:true,person:true,legless:true,rest:HC_WRAITH_REST},
   'Wraith (failing)':{plan:'failingwraith',own:true,person:true,legless:true,rest:HC_WRAITH_REST,arms:true,float:.05}, /* S1866 — its hem is 15% longer, so it rides 5 cm higher, clear of the floor */
   'Deer':{plan:'deer',ik:true},'Hind':{plan:'deer',own:true,ik:true,bare:true},'Red Fox':{plan:'redfox'},'Brown Hare':{plan:'brownhare'},'Badger':{plan:'badger'},'Otter':{plan:'otter'},'Cow':{plan:'cow',ik:true},'Sheep':{plan:'sheep',ik:true},'Goat':{plan:'goat',ik:true},'Elderstag':{plan:'stag',ik:true},'Gatefen Boar':{plan:'gatefenboar'},'Redspine Fox':{plan:'redspinefox'},'Hollowcat':{plan:'hollowcat'},'Greenward Stoat':{plan:'stoat'},'Icehorn':{plan:'icehorn',ik:true},'Ironpine Elk':{plan:'ironpineelk',ik:true},'Craghorn Ram':{plan:'craghornram',ik:true},'Stormlynx':{plan:'stormlynx'},'Glacial Marmot':{plan:'glacialmarmot'},'Snowleap Hare':{plan:'snowhare'},'Duneskimmer':{plan:'duneskimmer',ik:true},'Terrace Ram':{plan:'terraceram',ik:true},'Sunspire Lynx':{plan:'sunspirelynx'},'Oasis Hare':{plan:'oasishare'},'Mirage Fox':{plan:'miragefox'},'Crownstag':{plan:'crownstag',ik:true},'Frostmane':{plan:'frostmane',ik:true},'Lanternfox':{plan:'lanternfox',night:true},'Thornrunner':{plan:'thornrunner'},'Stonejaw':{plan:'stonejaw'},
-  'Shark':{plan:'reefshark',fish:true},'Whale':{plan:'stormwhale',fish:true},'Dolphin':{plan:'stormswift',fish:true},'Gull':{plan:'gull',fish:true,own:true,cell:.014},'Raven':{plan:'raven',fish:true,own:true,cell:.014},'Crow':{plan:'crow',fish:true,own:true,cell:.012},'Trout':{plan:'trout',fish:true,own:true,cell:.014},'River Pike':{plan:'riverpike',fish:true,own:true,cell:.02},'Riverjaw Salmon':{plan:'riverjaw',fish:true,own:true,cell:.02},'Mire Snake':{plan:'miresnake',fish:true,own:true,cell:.016},'Lantern Beetle':{plan:'lanternbeetle',fish:true,own:true,cell:.03},'Stonecrawler':{plan:'stonecrawler',fish:true,own:true,cell:.01},'Marsh Frog':{plan:'marshfrog',fish:true,own:true,cell:.012},'Frostspine Lizard':{plan:'frostspinelizard',fish:true,own:true,cell:.01},'Icecrab':{plan:'icecrab',fish:true,own:true,cell:.02},'Saltspine Monitor':{plan:'saltspinemonitor',fish:true,own:true,cell:.008},'Spined Gekko':{plan:'spinedgekko',fish:true,own:true,cell:.01},'Amber Shellcrab':{plan:'ambershellcrab',fish:true,own:true,cell:.02},'Sand Wyrm':{plan:'sandwyrm',fish:true,own:true,cell:.01},'Hen':{plan:'hen',fish:true,own:true,cell:.012},'Great Heron':{plan:'heron',fish:true,own:true,cell:.016},'Crag Hawk':{plan:'craghawk',fish:true,own:true,cell:.014},'Capercaillie':{plan:'capercaillie',fish:true,own:true,cell:.016},'Skyraven':{plan:'skyraven',fish:true,own:true,cell:.014},'Stormshrike':{plan:'stormshrike',fish:true,own:true,cell:.014},'Tundra Grouse':{plan:'tundragrouse',fish:true,own:true,cell:.012},'Scarlet Ibis':{plan:'scarletibis',fish:true,own:true,cell:.016},'Cypress Stalker':{plan:'cypressstalker',fish:true,own:true,cell:.016},'Sunbeak Vulture':{plan:'sunbeakvulture',fish:true,own:true,cell:.016},'Cliffswift':{plan:'cliffswift',fish:true,own:true,cell:.01},'Glasswing Moth':{plan:'glasswingmoth',fish:true,own:true,cell:.014},'Slime':{plan:'slime',fish:true},'Fire Elemental':{plan:'fireelemental',fish:true}};
+  'Shark':{plan:'reefshark',fish:true},'Whale':{plan:'stormwhale',fish:true},'Dolphin':{plan:'stormswift',fish:true},'Gull':{plan:'gull',fish:true,own:true,cell:.014},'Raven':{plan:'raven',fish:true,own:true,cell:.014},'Crow':{plan:'crow',fish:true,own:true,cell:.012},'Trout':{plan:'trout',fish:true,own:true,cell:.014},'River Pike':{plan:'riverpike',fish:true,own:true,cell:.02},'Riverjaw Salmon':{plan:'riverjaw',fish:true,own:true,cell:.02},'Mire Snake':{plan:'miresnake',fish:true,own:true,cell:.016},'Lantern Beetle':{plan:'lanternbeetle',fish:true,own:true,cell:.03},'Stonecrawler':{plan:'stonecrawler',fish:true,own:true,cell:.01},'Marsh Frog':{plan:'marshfrog',fish:true,own:true,cell:.012},'Frostspine Lizard':{plan:'frostspinelizard',fish:true,own:true,cell:.01},'Icecrab':{plan:'icecrab',fish:true,own:true,cell:.02},'Saltspine Monitor':{plan:'saltspinemonitor',fish:true,own:true,cell:.008},'Spined Gekko':{plan:'spinedgekko',fish:true,own:true,cell:.01},'Amber Shellcrab':{plan:'ambershellcrab',fish:true,own:true,cell:.02},'Sand Wyrm':{plan:'sandwyrm',fish:true,own:true,cell:.01},'Hen':{plan:'hen',fish:true,own:true,cell:.012},'Great Heron':{plan:'heron',fish:true,own:true,cell:.016},'Crag Hawk':{plan:'craghawk',fish:true,own:true,cell:.014},'Capercaillie':{plan:'capercaillie',fish:true,own:true,cell:.016},'Skyraven':{plan:'skyraven',fish:true,own:true,cell:.014},'Stormshrike':{plan:'stormshrike',fish:true,own:true,cell:.014},'Tundra Grouse':{plan:'tundragrouse',fish:true,own:true,cell:.012},'Scarlet Ibis':{plan:'scarletibis',fish:true,own:true,cell:.016},'Cypress Stalker':{plan:'cypressstalker',fish:true,own:true,cell:.016},'Sunbeak Vulture':{plan:'sunbeakvulture',fish:true,own:true,cell:.016},'Cliffswift':{plan:'cliffswift',fish:true,own:true,cell:.01},'Glasswing Moth':{plan:'glasswingmoth',fish:true,own:true,cell:.014},'Slime':{plan:'slime',fish:true},'Slime (failing)':{plan:'failingslime',fish:true},'Fire Elemental':{plan:'fireelemental',fish:true}};
 // Session 1867 (L4, OG-073): a failing gate's skeletons, the sword's and the spear's, on the kit's failing skeleton: two more pairs of arms
 // (posed by hcArms), spurs down the back, more ribs, the bones cracked and only the cracks lit white-gold. What each holds is the game's,
 // as the steady one's; its sockets keep the plan's own gold (no K.glow), the colour of the cracks
@@ -991,7 +991,12 @@ HC_KINDS['Golem (failing)']=Object.assign({},HC_KINDS.Golem,{plan:'failinggolem'
 // the Cloch gargoyle's span, a second pair of wings behind them (hcGarg) and a second pair of clawed arms out of the shoulder blades
 // (hcArms), the stone cracked and only the cracks lit a storm's blue-white); its eyes in the plan's pale blue, not the steady one's ember
 HC_KINDS['Gargoyle (failing)']=Object.assign({},HC_KINDS.Gargoyle,{plan:'failinggargoyle',glow:[.55,.75,1],arms:true});
+// Session 1877: the gate's trolls, in their plan's own hide and eyes (no coat or eye of the driver's), with the troll's maul
+for(const [k,plan] of [['tine','tinetroll'],['uisce','uiscetroll'],['cloch','stonetroll']])HC_KINDS['Cave Troll ('+k+')']={plan,own:true,person:true,merge:true,ik:true,gear:'plan',gearFrom:'troll'};
 for(const k of ['Skeleton','Skeleton (spear)'])HC_KINDS[k.replace(/\)$/,', failing)').replace(/^Skeleton$/,'Skeleton (failing)')]=Object.assign({},HC_KINDS[k],{plan:'failingskeleton',glow:null,arms:true});
+// Session 1878: and an Uisce gate's on the kit's drowned skeleton (OG-018: grey-green from the sea, weed on its bones and hanging in strands
+// from its skull, spine and arms), its sockets the sea's blue, holding what the game dealt it as the steady one does
+for(const k of ['Skeleton','Skeleton (spear)'])HC_KINDS[k.replace(/\)$/,', drowned)').replace(/^Skeleton$/,'Skeleton (drowned)')]=Object.assign({},HC_KINDS[k],{plan:'drownedskeleton',glow:[.35,.75,.95]});
 // the driver's joints and the kit's bones they move, parents first (the kit's front legs hang on spine3, the hind on spine0)
 const HC_MAP=[['hips','spine0'],['spine','spine1'],['neck','neck0'],['head','head'],['jaw','jaw'],['tail1','tail0'],['tail2','tail1'],['tail3','tail2'],
   ['shL','leg0L_0'],['elL','leg0L_1'],['wrL','leg0L_2'],['pfL','leg0L_3'],['shR','leg0R_0'],['elR','leg0R_1'],['wrR','leg0R_2'],['pfR','leg0R_3'],
@@ -1029,6 +1034,20 @@ function hcGateCond(){try{const P=currentPortal;if(activeZoneId!=='dungeon'||!P|
   const W=(WORLD_DUNGEONS.find(e=>e.seed===P.seed)||{}).cond;return GATE_CONDS.includes(W)?W:gateCondRoll(P.seed);}catch(e){return null;}}
 // a foe whose kind the kit has a failing form for wears it in a failing gate, and in a catastrophic one, which has failed further
 function hcFailing(){const c=hcGateCond();return c==='failing'||c==='catastrophic';}
+// Session 1877 (backlog L4, OG-018 and OG-088: each school's antibodies wear the animals of its country): the school of the gate you are in, or
+// null outside one, and null in an occupied gate (its trolls came in with the goblins). The gate is hcGateCond's; its school gateSchool's
+// (87-world-quests.js), read off the world's entry, so a gate's foes take its school's form as they are made
+function hcGateSchool(){try{const P=currentPortal;if(hcGateCond()==null||typeof gateSchool!=='function')return null;
+  const W=WORLD_DUNGEONS.find(e=>e.seed===P.seed)||P;if(gateOf(W).occupied)return null;return gateSchool(W);}catch(e){return null;}}
+// a gate's cave troll by its school: Tine's basalt troll with forge-light in its cracks and Uisce's drowned-pale one (OG-018, the kit's
+// tinetroll and uiscetroll), and Cloch's stone troll fused with rock (OG-088's corrupted troll, the kit's stonetroll). Any other school, and
+// a cave troll outside a gate, keeps the moss-backed troll
+const HC_TROLL_SCHOOL={tine:'Cave Troll (tine)',uisce:'Cave Troll (uisce)',cloch:'Cave Troll (cloch)'};
+function hcTrollKind(type){return type==='Cave Troll'&&HC_TROLL_SCHOOL[hcGateSchool()]||type;}
+// Session 1878 (L4, OG-018; the roster's own note, S763: "deep Uisce (its Skeleton the drowned)"): a skeleton's form by its gate, the
+// failing skeleton in a failing or catastrophic gate (Session 1867, the condition shows over the school), else the drowned skeleton in an
+// Uisce gate, else the steady. base is 'Skeleton' or 'Skeleton (spear)'; the form is added to its brackets
+function hcSkelKind(base){const t=hcFailing()?'failing':hcGateSchool()==='uisce'?'drowned':null;return t?base.replace(/\)$|$/,m=>m?', '+t+')':' ('+t+')'):base;}
 function hcPlan(name){const K=HC_KINDS[name];if(!K.own)return K.plan;const id='game:'+name;
   // a person's (Session 1356): what it holds is the game's (a sword, or a spear), not the plan's sword and shield, which no rule of the
   // Skeleton's fight has; its sockets lit in the foe's eye colour (ZONE_FOE_DEF's 0x80c0ff), as the old body's are
@@ -1037,7 +1056,10 @@ function hcPlan(name){const K=HC_KINDS[name];if(!K.own)return K.plan;const id='g
     // a troll's (Session 1378): the plan's own maul (gear 'plan'), and its eyes in the driver's colour (K.eye)
     HC.PLANS[id]=Object.assign({},P,K.cell?{name,cell:K.cell}:{name},pal?{palette:Object.assign({},P.palette,pal)}:{},{parts:P.parts.map(([k,o])=>k==='gear'&&K.gear!=='plan'?[k,{list:K.gear?[K.gear]:[]}]
     :k==='head'&&K.glow?[k,Object.assign({},o,{eyes:o.eyes.map(e=>Object.assign({},e,{r:K.glowR||.017,glow:1.6,color:K.glow},K.glowAt||{}))})]
-    :k==='head'&&K.eye!=null?[k,Object.assign({},o,{eyes:o.eyes.map(e=>Object.assign({},e,{color:c(K.eye)}))})]:[k,o])});}
+    :k==='head'&&K.eye!=null?[k,Object.assign({},o,{eyes:o.eyes.map(e=>Object.assign({},e,{color:c(K.eye)}))})]:[k,o])});
+    // a plan copied from another before that one took its gear (the school trolls, made from the troll before its maul, Session 1378)
+    // borrows that one's gear part (K.gearFrom; Session 1877)
+    if(K.gearFrom&&!HC.PLANS[id].parts.some(([k])=>k==='gear')){const G=HC.PLANS[K.gearFrom].parts.find(([k])=>k==='gear');if(G)HC.PLANS[id].parts=[...HC.PLANS[id].parts,G];}}
   // a hind (Session 1706, K.bare): the deer's plan without its antlers
   if(!HC.PLANS[id]&&(K.spider||!WOLF_KINDS[name]))HC.PLANS[id]=Object.assign({},HC.PLANS[K.plan],{name,cell:K.cell},K.bare?{parts:HC.PLANS[K.plan].parts.map(([k,o])=>k==='head'?[k,Object.assign({},o,{antlers:null})]:[k,o])}:{});
   if(!HC.PLANS[id]){const k=WOLF_KINDS[name],c=h=>[(h>>16&255)/255,(h>>8&255)/255,(h&255)/255];
@@ -1370,7 +1392,11 @@ function hcDunRig(e,name,o){const g=e.mesh,old=new THREE.Group();old.name=name.t
   for(const c of [...g.children])if(c.isGroup||c.isMesh&&!(c.geometry&&c.geometry.type==='PlaneGeometry'))old.add(c);
   g.add(old);const root=new THREE.Group();root.name='kitroot';g.add(root);e._hcRig=true;
   return {name,fish:true,e,root,mesh:old,hcKey:name.toLowerCase().replace(/ /g,'')+':'+(e.id!=null?e.id:'0'),ph:(e.ph||0)/(Math.PI*2)%1,t:0,axis:0,reach:1,em0:e.limbs.body,...o};}
-function hcSlimeRig(e){return hcDunRig(e,'Slime',{crawl:true,gait:'crawl',rate:[3,7],die:HC_PUDDLE});}
+// Session 1879 (L4, OG-073's Uisce row: the slime "multiplies into a cresting wave of jelly"): in a failing or catastrophic Uisce gate the
+// slime, and the Small Slimes it splits into, wear the kit's failing slime (Session 1174: a third bigger, pale blue-white and clearer, three
+// more crests breaking off its back, two skulls inside, only its veins lit sea-blue); the kit draws no failing slime for another school
+function hcSlimeKind(){return hcFailing()&&hcGateSchool()==='uisce'?'Slime (failing)':'Slime';}
+function hcSlimeRig(e){return hcDunRig(e,'Slime',{crawl:true,gait:'crawl',rate:[3,7],die:HC_PUDDLE,hcKind:hcSlimeKind()});}
 function hcElemRig(e){return hcDunRig(e,'Fire Elemental',{tall:true,gait:'hover',rate:[2.5,4],die:HC_GUTTER,emOwn:e.limbs.coreEm?e.limbs.coreEm.getHex():null});}
 function hcFishAttach(rig,C){const tA=performance.now();
   if(!C)try{C=HC.build(hcGenome(rig));}catch(e){rig.hcFail=true;console.warn('F4: the kit could not build',rig.name,e);return;}
