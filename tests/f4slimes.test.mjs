@@ -106,7 +106,7 @@ const shotP = await page.evaluate(() => { const S = _S, m = S.mesh; const x = m.
   const o = document.createElement('canvas'); o.width = cv.width; o.height = cv.height; o.getContext('2d').drawImage(cv, 0, 0); return o.toDataURL('image/jpeg', .85); });
 fs.writeFileSync(path.join(OUT, 'f4-slime-dead.jpg'), Buffer.from(shotP.split(',')[1], 'base64'));
 const small = await page.evaluate(() => { const L = ENEMIES.filter(e => e.name === 'Small Slime' && !e.dead); const S = L[0]; if (!S) return { n: 0 };
-  const rig = () => [...HC_RIGS].find(r => r.e === S); let k = 0;
+  const rig = () => [...HC_RIGS].find(r => r.e === S); let k = 0; HBODY.last = -1e9; /* S1879 — the last build's stamp may be a real clock past these ticks' 5e5 on a slow run, which kept every tick busy */
   while (!(rig() && rig().hc) && k++ < 300) { CAM.position.set(S.mesh.position.x - 3, S.mesh.position.y + 1.6, S.mesh.position.z); CAM.updateMatrixWorld(true); tickCreatures(1 / 60, 5e5 + k * (HBODY.gap + 1)); }
   const R = rig(); return { n: L.length, k, plan: R && R.hc && R.hc.C.g.plan, seed: R && R.hc && R.hc.C.g.seed, want: HC.hashKey('slime:' + S.id), f: R && R.hc && +R.hc.f.toFixed(3), big: _R.hc.f }; });
 check(`the split's ${small.n} Small Slimes wear the kit's slime too, keyed by their own ids, smaller (×${small.f} against ×${(+small.big).toFixed(3)})`, small.n === 2 && small.plan === 'slime' && small.seed === small.want && small.f < small.big, small);
@@ -155,5 +155,29 @@ const shotG = await page.evaluate(() => { const F = _F, m = F.mesh, x = m.positi
   dScene.updateMatrixWorld(true); REN.render(dScene, cam); dScene.remove(L); hid.forEach(e => e.mesh.visible = true);
   const o = document.createElement('canvas'); o.width = cv.width; o.height = cv.height; o.getContext('2d').drawImage(cv, 0, 0); return o.toDataURL('image/jpeg', .85); });
 fs.writeFileSync(path.join(OUT, 'f4-elemental-dead.jpg'), Buffer.from(shotG.split(',')[1], 'base64'));
+
+// Session 1879 (L4, OG-073's Uisce row): in a failing Uisce (deep) gate the slime wears the kit's failing slime, a cresting wave of jelly.
+// The gate is a real one: a seed whose condition rolls failing, not Gaoth's, holding a slime
+const seeds = await page.evaluate(() => { const out = []; for (let s = 100; s < 4000 && out.length < 6; s++) if (gateCondRoll(s) === 'failing' && seededRng('gaoth', s)() >= 1 / 6 && !WORLD_DUNGEONS.some(e => e.seed === s)) out.push(s); return out; });
+let fsl = null;
+for (const seed of seeds) { await enterDungeon(page, { theme: 'deep', seed });
+  fsl = await page.evaluate(() => { const S = ENEMIES.find(x => !x.dead && x.floor === currentFloor && x.limbs && x.limbs.slime && x.variant !== 'small'); if (!S) return null;
+    const rig = () => [...HC_RIGS].find(r => r.e === S); let k = 0; HBODY.last = -1e9;
+    while (!(rig() && rig().hc) && k++ < 300) { CAM.position.set(S.mesh.position.x - 3, S.mesh.position.y + 1.6, S.mesh.position.z); CAM.updateMatrixWorld(true); tickCreatures(1 / 60, 8e5 + k * (HBODY.gap + 1)); }
+    const R = rig(); window._FS = S; if (!R || !R.hc) return { seed: currentPortal.seed, hc: false, fail: R && R.hcFail };
+    const P = HC.PLANS[R.hc.C.g.plan];
+    return { seed: currentPortal.seed, cond: hcGateCond(), school: hcGateSchool(), hc: true, kind: R.hcKind, plan: R.hc.C.g.plan, crests: P.parts.some(([q]) => q === 'crests'), want: HC.hashKey('slime:' + S.id), got: R.hc.C.g.seed,
+      tris: R.hc.C.stats.tris, coat: P.palette.coat.map(v => +v.toFixed(2)) }; });
+  if (fsl) break; }
+console.log('  failing slime:', JSON.stringify(fsl), 'steady tris', made.tris);
+check(`a failing Uisce gate's slime (seed ${fsl && fsl.seed}: ${fsl && fsl.cond}, ${fsl && fsl.school}) wears the kit's failing slime: crests breaking off its back, pale blue-white (${fsl && fsl.coat}), ${fsl && fsl.tris} tris against the steady ${made.tris}, keyed by its foe id`,
+  !!fsl && fsl.hc && fsl.cond === 'failing' && fsl.school === 'uisce' && fsl.kind === 'Slime (failing)' && fsl.plan === 'failingslime' && fsl.crests && fsl.got === fsl.want && fsl.coat.join() === '0.6,0.74,0.82', fsl);
+if (fsl && fsl.hc) { const shotF = await page.evaluate(() => { const F = _FS, m = F.mesh, x = m.position.x, y = m.position.y, z = m.position.z, s = Math.max(m.scale.x, .5), L = new THREE.PointLight(0xc0d8ff, 1.0, 12); L.position.set(x + 1.6 * s, y + 1.6 * s, z + 1.4 * s); dScene.add(L);
+  for (let i = 0; i < 20; i++) tickCreatures(1 / 60, 9e5 + i * 16.7);
+  const hid = ENEMIES.filter(e => e.mesh && e !== F && e.mesh.visible); hid.forEach(e => e.mesh.visible = false);
+  const cv = REN.domElement, cam = new THREE.PerspectiveCamera(45, cv.width / cv.height, .05, 60); cam.position.set(x + 1.6 * s, y + 1.1 * s, z + 2.6 * s); cam.lookAt(x, y + .3 * s, z);
+  dScene.updateMatrixWorld(true); REN.render(dScene, cam); dScene.remove(L); hid.forEach(e => e.mesh.visible = true);
+  const o = document.createElement('canvas'); o.width = cv.width; o.height = cv.height; o.getContext('2d').drawImage(cv, 0, 0); return o.toDataURL('image/jpeg', .85); });
+  fs.writeFileSync(path.join(OUT, 'f4-failingslime.jpg'), Buffer.from(shotF.split(',')[1], 'base64')); }
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
