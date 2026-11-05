@@ -445,6 +445,68 @@ const giver=`${lord.title} ${lord.name}`;
   const CARVE_POOL=[[1,3],[6,10],[12,99]];
   let _carvings=null;
   function gateSchool(e){if(!e)return null;if(seededRng('gaoth',e.seed)()<1/6)return 'gaoth';return GATE_SCHOOL[gateOf(e).theme]||'cloch';}
+  // S1886 — the plants that mark a gate (Michael's B on #1164, plants-that-mark-a-gate.md): the ground tells you the gate. Each old gate
+  // (not a fort, a lair, the Root or a great gate) keeps 6 to 10 plants of its condition's kind in a ring 20 to 80 m from its door (a
+  // catastrophic gate's Gate Resin to 120 m), keyed <seed>:gp:<i> and laid from the seed alone, so they never hang on what has loaded (S533).
+  // A failing or catastrophic gate's Greenmeadow: the ordinary herbs within 60 m stand ×1.3 (cosmetic). Picking one and entering its gate
+  // within the hour teaches the plant (herbsKnown().read, the character's); its prompt then names the gate's condition and school.
+  const GATE_HERB_OF={steady:'lichenbloom',failing:'gatelotus',catastrophic:'gateresin'};
+  const GATE_HERB={lichenbloom:{cond:'steady',name:'Lichenbloom',kind:'graywort',seen:'lichen in flower on the stone',r:80,price:12,
+      effect:{type:'stamina',amount:25},known:'Restores 25 Stamina'},
+    gatelotus:{cond:'failing',name:'Gatelotus',kind:'luibhuisce',seen:'a lotus blooming in dry grass',r:80,price:20,
+      effect:{type:'hpRegen',rate:1.5,duration:60},known:'+1.5 HP/s regen for 60s'},
+    gateresin:{cond:'catastrophic',name:'Gate Resin',kind:'credearg',seen:'resin weeping from bare stone',r:120,price:30,
+      effect:{type:'hpRegen',rate:2,duration:60},known:'+2 HP/s regen for 60s'}};
+  const SCHOOL_HUE={tine:'red',uisce:'blue',cloch:'brown',scath:'purple',solas:'gold',gaoth:'grey'};
+  const GATE_MEADOW_R=60,GATE_MEADOW_K=1.3,GATE_READ_MIN=60;
+  // the plants' HERB_DEF rows, zone 'gate' (no barrel, shop or gather quest draws them); the stand-in mesh is a kin herb's (the bodies builder's four come later)
+  function ensureGateHerbs(){if(typeof HERB_DEF==='undefined'||HERB_DEF.lichenbloom)return;
+    for(const k in GATE_HERB){const G=GATE_HERB[k],base=HERB_DEF[G.kind]||HERB_DEF.firemoss;
+      HERB_DEF[k]=Object.assign({},base,{name:G.name,ico:'🌿',zone:'gate',glowInt:0,respawn:360,desc:`${G.seen[0].toUpperCase()+G.seen.slice(1)}.`,knownDesc:G.known,hiddenDesc:'',
+        item:{name:G.name,ico:'🌿',type:'herb',effect:G.effect,buyPrice:G.price,sellMult:.6,weight:.1}});
+      if(typeof PLANT_KIND!=='undefined'&&PLANT_KIND[G.kind])PLANT_KIND[k]=PLANT_KIND[G.kind];}}
+  ensureGateHerbs();
+  function gateHerbDoor(e){return !!(e&&e.seed!=null&&!e.wet&&!e.lairDoor&&!e.root&&!e.great&&!e.tutorial&&e.kind!=='fort_door'&&!(typeof e.interior==='string'&&e.interior.startsWith('fort_'))&&e.x!=null);}
+  // the ring's centre, from the door's own record: a generated gate's spot, a home gate's spot through its zone's anchor (placeDoor's mapping,
+  // before it steps off a road or a pad, which reads what has loaded)
+  function gateHerbAt(e){if(e.zone==='gen')return [e.x,e.z];try{const an=ZONE_ANCHOR[e.zone]||ZONE_ANCHOR.overworld;return [an.x()+(e.x-an.local)*an.scale,an.z()+(e.z-an.local)*an.scale];}catch(err){return null;}}
+  function gateHerbCond(e){const W=GATE_CONDS.includes(e.cond)?e.cond:null;return W||gateCondRoll(e.seed);}
+  // every old gate whose ring could reach (x0..x1, z0..z1): its own cell and the eight round it, read through getCell
+  function gatesNear(x0,z0,x1,z1,pad){const out=[],[ci,cj]=cellOf((x0+x1)/2,(z0+z1)/2);
+    for(let dj=-1;dj<=1;dj++)for(let di=-1;di<=1;di++){const c=getCell(ci+di,cj+dj);if(!c||!c.doors)continue;
+      for(const e of c.doors){if(!gateHerbDoor(e))continue;const at=gateHerbAt(e);if(!at||at[0]<x0-pad||at[0]>x1+pad||at[1]<z0-pad||at[1]>z1+pad)continue;out.push(e);}}
+    return out;}
+  // a gate's ring, from its seed: each plant tries four spots and takes the first on dry land (four draws each, so one refused moves no other)
+  function gateRing(e){const cond=gateHerbCond(e),type=GATE_HERB_OF[cond],G=GATE_HERB[type],r=seededRng('gateherb',e.seed),n=6+Math.floor(r()*5),out=[],[ex,ez]=gateHerbAt(e)||[e.x,e.z];
+    for(let i=0;i<n;i++){let pick=null;
+      for(let t=0;t<4;t++){const a=r()*Math.PI*2,d=20+r()*(G.r-20),x=ex+Math.cos(a)*d,z=ez+Math.sin(a)*d;if(pick)continue;
+        const h=worldH(x,z);if(h<1.0)continue;pick={i,at:[x,z,h]};}
+      if(pick)out.push(pick);}
+    return {type,cond,school:gateSchool(e),pts:out,x:ex,z:ez};}
+  function spawnGateHerbs(ch){if(typeof HERB_DEF==='undefined')return;ensureGateHerbs();
+    const x0=ch.cx*CHUNK,z0=ch.cz*CHUNK,x1=x0+CHUNK,z1=z0+CHUNK;let gates;try{gates=gatesNear(x0,z0,x1,z1,GATE_HERB.gateresin.r+2);}catch(err){return;}
+    for(const e of gates){const R=gateRing(e);
+      for(const p of R.pts){const [x,z,h]=p.at;if(x<x0||x>=x1||z<z0||z>=z1)continue;
+        const def=HERB_DEF[R.type],g=new THREE.Group();g.position.set(x,h,z);
+        const rec={id:`${e.seed}:gp:${p.i}`,x,z,type:R.type,def,g,gl:{intensity:0,parent:null},harvested:false,respawnT:0,ph:Math.random()*Math.PI*2,
+          gate:{seed:e.seed,cond:R.cond,school:R.school}};
+        ZONES.world.herbs.push(rec);ch.herbs.push(rec);}
+      if(R.cond!=='steady')for(const h of ch.herbs){if(h.gate||h.bed)continue;if(Math.hypot(h.x-R.x,h.z-R.z)<GATE_MEADOW_R)h.gm=GATE_MEADOW_K;}}}
+  // what the prompt calls a herb: a gate's plant by what it looks like, until you have learnt it, then by its name and what it says
+  function herbPromptName(h){if(!h||!h.gate)return h&&h.def?h.def.name:'';const G=GATE_HERB[h.type];if(!G)return h.def.name;
+    const hue=SCHOOL_HUE[h.gate.school]||'pale',S=typeof SCHOOL_DEF!=='undefined'&&SCHOOL_DEF[h.gate.school];
+    if(gateHerbRead(h.type))return `${G.name}, ${hue}: a ${G.cond} gate of ${S?S.name:'no school'} is near`;
+    const w=G.seen.split(' ');return `the ${hue} ${w.slice(1).join(' ')}`;}
+  function gateHerbRead(type){const K=herbsKnown();return !!(K.read&&K.read[type]);}
+  // S1887 — what reading gives (the page): once you know the plant of a gate's condition, its map entry and card say the condition and school
+  function gateReadLine(e){try{if(!gateHerbDoor(e))return '';const cond=gateHerbCond(e);if(!gateHerbRead(GATE_HERB_OF[cond]))return '';
+    const s=gateSchool(e),S=typeof SCHOOL_DEF!=='undefined'&&SCHOOL_DEF[s];return ` · ${cond}, of ${S?S.name:s}`;}catch(err){return '';}}
+  // the named actions (co-op rules): a gate's plant picked, and its meaning learnt; both the character's (herbsKnown is in SS_CHAR_WS)
+  function gateHerbPicked(h){if(!h||!h.gate)return;herbsKnown().gatePick={seed:h.gate.seed,type:h.type,at:worldState.gameTimeAbsMinutes||0};}
+  function learnGateRead(type){const K=herbsKnown(),R=K.read||(K.read={});if(R[type])return false;R[type]=1;return true;}
+  function gateReadOnEnter(portal){if(!portal||portal.seed==null)return false;const K=herbsKnown(),P=K.gatePick;if(!P||P.seed!==portal.seed)return false;
+    if((worldState.gameTimeAbsMinutes||0)-P.at>GATE_READ_MIN)return false;delete K.gatePick;const G=GATE_HERB[P.type];if(!G||!learnGateRead(P.type))return false;
+    showMsg(`${G.name} grows by a ${G.cond} gate, coloured by its school. You will know it again.`,'#c8b878');return true;}
   function carvingPool(school,tier){const ws=WORDS.filter(w=>w.school===school);
     for(let t=Math.max(1,Math.min(3,tier));t>=1;t--){const [a,b]=CARVE_POOL[t-1];const p=ws.filter(w=>w.intReqs[0]>=a&&w.intReqs[0]<=b);if(p.length)return p;}return ws;}
   function carvingTable(){if(_carvings)return _carvings;if(!RV.ready)routeWorld();

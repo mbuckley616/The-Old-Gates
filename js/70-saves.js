@@ -224,7 +224,7 @@ function ssLoad(key){return ssLoadRows(key).then(r=>r&&ssJoinPayload(r.c,r.w));}
 // flags whose NPC, pickup or camp no longer exists after a load: the quest could never finish.
 function ssSanitizeLoaded(){
   /* S1849 — a Wooden Staff saved before the implements (one hand, spellPower) is the Staff of no school now, in hand, in the bag and in the stash */
-  if(typeof implementMigrate==='function'){if(typeof EQ!=='undefined'&&EQ.weapon)EQ.weapon=implementMigrate(EQ.weapon);
+  if(typeof implementMigrate==='function'){if(typeof EQ!=='undefined'&&EQ.weapon)EQ.weapon=implementMigrate(EQ.weapon);if(typeof EQ!=='undefined'&&EQ.offhand)EQ.offhand=implementMigrate(EQ.offhand);
     if(typeof BAG!=='undefined')for(let i=0;i<BAG.length;i++)BAG[i]=implementMigrate(BAG[i]);
     const ST=typeof stashBag!=="undefined"?stashBag:null;if(Array.isArray(ST))for(let i=0;i<ST.length;i++)ST[i]=implementMigrate(ST[i]);}
   const Q=worldState.quests;if(Array.isArray(Q))for(const q of Q){if(!q)continue;delete q._npc;delete q._obj;if(q.turnedIn||q.done||!q.data)continue;

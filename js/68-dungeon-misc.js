@@ -523,7 +523,7 @@ function tryLockpick(door){const i=BAG.findIndex(b=>b.name==='Lockpick');if(i<0)
 // S694 — worldState.masters[seed]: true (an old save: dead, the hoard gone) or {dead, hoard:{x,z,floor,items}}. The hoard rolls once
 // and its items are the chest's own list, so what you take stays taken and a day's turn does not refill it; the master is dead from
 // the blow that kills him (slayMaster), not from a cavern cleared to the last rat.
-function lairHoardChest(portal,h,dragon){const group=new THREE.Group();const {lid}=buildChestShell(group,1.3,0xaa8030);group.position.set(h.x,(h.floor===2?FLOOR2_Y:0),h.z);dScene.add(group);
+function lairHoardChest(portal,h,dragon){foundRestore(h.items);const group=new THREE.Group();const {lid}=buildChestShell(group,1.3,0xaa8030);group.position.set(h.x,(h.floor===2?FLOOR2_Y:0),h.z);dScene.add(group);
   CHESTS.push({id:`${dKeyOf(portal,h.floor||1)}:hoard`,x:h.x,z:h.z,opened:false,lid,treasure:true,floor:h.floor||1,mesh:group,items:h.items,displayName:dragon?"The Wyrm's Hoard":'The Hoard'});}
 // S696 — the hoard's spot: beside the master, on an open cell of its own floor. It stood at the master's spot plus (1.2, .6),
 // which was often inside a wall (Carrigowen's floor 2: the chest unseen, its prompt only when you looked down at the bricks). A
@@ -535,6 +535,9 @@ function lairHoardSpot(e){const map=(e.floor===2&&dMap2)?dMap2:dMap;const fl=e.f
   for(let i=-3;i<=3;i++)for(let j=-3;j<=3;j++){if(!i&&!j)continue;const c=c0+i,r=r0+j;if(open(c,r))cells.push({c,r,d:Math.hypot(c-e.x-1.2,r-e.z-.6)});}
   cells.sort((a,b)=>a.d-b.d);const best=cells.find(k=>room(k.c,k.r,8))||cells.find(k=>room(k.c,k.r,4))||cells[0];
   return best?{x:best.c,z:best.r}:{x:e.x,z:e.z};}
+// S1885 — a hoard's items live in worldState and come back from a save without their enchant's functions: put them back by id
+function foundRestore(items){if(!Array.isArray(items))return;for(const it of items){if(!it||!it.enchantId||(it.enchant&&typeof it.enchant.apply==='function'))continue;
+  const e=ARMOR_ENCHANTS.find(x=>x.id===it.enchantId);if(e){it.enchant=e;it.enchantStats=e.apply(it);}}}
 function slayMaster(portal){if(!portal||!portal.lair)return;const M=worldState.masters||(worldState.masters={}),r=M[portal.seed];const was=r===true||!!(r&&r.dead);if(r&&typeof r==='object')r.dead=true;else M[portal.seed]=true;
   if(!was&&typeof cloakMasterSlain==='function')cloakMasterSlain(portal); /* S781 — the Wolf-Mother's Cloak off its master's corpse */
   if(!was&&typeof grantHead==='function')grantHead('skull');} /* S1734 — the first lair beast you kill gives the beast's skull, a figurehead (once) */
@@ -563,6 +566,7 @@ function lairFinish(portal){try{if(!portal||!portal.lair||!ENEMIES.length)return
   {const it=items[1];if(it.slot==='weapon'){const m=MATERIALS.find(q=>q.tier===tier);if(m&&m.reqAttr){it.reqAttr=m.reqAttr;it.reqVal=m.reqVal;}}else Object.assign(it,armorReq(tier,armorTypeOf(it)));} /* S708 — the hoard's piece asks what its tier asks of any other (it was built bare: a Steel Sword with no requirement) */
   if(dragon)items.push({name:'Dragon Scale',ico:'🔥',type:'misc',buyPrice:400,sellMult:.6,weight:.8,qty:1+Math.floor(hr()*2)});
   items.push({name:'Greater Potion',ico:'🧪',type:'potion',heal:60,buyPrice:45,sellMult:.4,qty:2});
+  {const fr=seededRng('found-master',portal.seed);if(typeof foundImplement==='function'&&fr()<IMPLEMENT.foundMaster){const f=withLootRng(fr,()=>foundImplement(tier,null));if(f)items.splice(items.length-1,0,f);}} /* S1885 — #1169 A: one master in four keeps a found staff, wand or tome, on the lair's seed */
   const hs=lairHoardSpot(e);const hoard={x:hs.x,z:hs.z,floor:e.floor||1,items};M[portal.seed]={dead:false,hoard};lairHoardChest(portal,hoard,dragon);
   showMsg(dragon?'The air is hot, and something very large is breathing in the dark.':'Something large is waiting further in.','#ffb060');
   window._lairBoss=e;}catch(err){console.warn('lairFinish',err);}}

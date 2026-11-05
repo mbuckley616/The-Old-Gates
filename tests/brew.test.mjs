@@ -73,7 +73,7 @@ const r = await page.evaluate(() => {
 });
 console.log(JSON.stringify(r));
 const C = r.counts, over = Object.keys(C).filter(f => C[f] < 4 || C[f] > (f === 'restoreHealth' || f === 'restoreMana' ? 8 : 7));
-check(`the pool: ${r.herbs} herbs, each four effects of the 22`, r.herbs === 26 && !r.missing.length && !r.four.length && !r.unknownFx.length && Object.keys(C).length === 22);
+check(`the pool: ${r.herbs} herbs, each four effects of the 22`, r.herbs === 29 && /* S1886 — the three plants that mark a gate */ !r.missing.length && !r.four.length && !r.unknownFx.length && Object.keys(C).length === 22);
 check(`every effect on 4 to 7 herbs (Restore Health ${C.restoreHealth}, Restore Mana ${C.restoreMana}); no two herbs share more than ${r.most}`, !over.length && r.most <= 2, { over, C });
 check(`no mortar, no brew: "${r.noMortar}"`, /mortar/.test(r.noMortar || ''));
 check(`Firemoss and Silverleaf: ${r.a.name}, ×${r.a.s} at Alchemy 5; Swiftness learnt on both; ${r.a.uses} Alchemy points`, r.a.made && r.a.name === 'Tincture of Swiftness' && Math.abs(r.a.s - .64) < .01 && r.a.firemoss3 && r.a.silverleaf1 && r.a.uses > 0, r.a);

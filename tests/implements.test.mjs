@@ -151,7 +151,9 @@ const GS = await page.evaluate(() => {
 await enterDungeon(page, { theme: 'haunted', size: 'medium', seed: GS.has });
 const GO = await page.evaluate(() => { const o = CHESTS.filter(c => c.items.some(i => i.gateOrb != null)), c = o[0], it = c && c.items.find(i => i.gateOrb != null);
   const deep = Math.max(...CHESTS.map(c => c.floor || 1)), out = { gate: !!window._lastGen?.gate, n: o.length, deep: c && (c.floor || 1) === deep, treasure: c && c.treasure,
-    orb: it && { k: it.implement, s: it.school, want: gateOrbSchool(currentPortal), found: it.found, ench: it.enchantId, name: it.name } };
+    orb: it && { k: it.implement, s: it.school, want: gateOrbSchool(currentPortal), found: it.found, ench: it.enchantId, name: it.name, price: it.buyPrice, tier: it.tier } };
+  const old = makeOrb(1, 'tine'); old.buyPrice = 8; const keepO = EQ.offhand; EQ.offhand = old; BAG.push(Object.assign(makeOrb(1, 'solas'), { buyPrice: 8 }));
+  out.ps = !!foundPlaceSchool() && foundPlaceSchool() === gateOrbSchool(currentPortal); ssSanitizeLoaded(); out.mig = [EQ.offhand.buyPrice, BAG[BAG.length - 1].buyPrice, makeOrb(5, 'tine').buyPrice]; BAG.pop(); EQ.offhand = keepO;
   const sm = showMsg; showMsg = () => {}; openLoot(c); const n0 = BAG.length; takeLootItem(c.items.indexOf(it)); closeLoot(); showMsg = sm;
   const got = BAG[BAG.length - 1]; out.took = BAG.length === n0 + 1 && got.implement === 'orb' && got.gateOrb == null; out.ws = !!(worldState.gateOrbs && worldState.gateOrbs[currentPortal.seed]);
   const back = _restoreEnchant(JSON.parse(JSON.stringify(_serItem(got)))); out.back = [back.make, back.school, back.found, back.enchantId || (back.enchant && back.enchant.id)]; BAG.pop(); return out; });
@@ -168,6 +170,45 @@ check(`one gate in three keeps an orb (${GS.share.toFixed(3)} of 3,000 seeds)`, 
 check(`in such a gate the deepest floor's treasure chest holds a found orb of the gate's school with one enchant (${GO.orb && GO.orb.name})`, GO.gate && GO.n === 1 && GO.deep && GO.treasure && GO.orb.k === 'orb' && GO.orb.s === GO.orb.want && GO.orb.found && ['mp_regen', 'magic_boost', 'fortify_int'].includes(GO.orb.ench), GO);
 check('taken, it is the gate\'s for good: the next visit finds none; the save keeps its make, school, find and enchant', GO.took && GO.ws && again === 0 && GO.back[0] && GO.back[1] === GO.orb.s && GO.back[2] === true && GO.back[3] === GO.orb.ench, { GO, again });
 check('a gate that keeps none has none', none === 0, none);
+// S1884 — the orb's price (Michael's A on #1176): the tome's guild price, 120, or a finer make's material value where that is more; a saved orb is repriced
+check(`a found orb is priced as the tome, 120 (this one ${GO.orb && GO.orb.price}, tier ${GO.orb && GO.orb.tier}); a saved one at 8 is 120 after a load (${GO.mig}); a tier 5 orb keeps its material's 413`, GO.orb.price === Math.max(120, Math.round([0, 5, 20, 40, 75, 275][GO.orb.tier] * 1.5)) && GO.mig[0] === 120 && GO.mig[1] === 120 && GO.mig[2] === 413, GO);
+
+// S1885 — found implements (Michael's A on #1169): a lair master keeps one in four (on the lair's seed), a chest's weapon roll of tier 4
+// or finer is one in twenty, of the gate's school in a gate, else any; found, with one of the orb's enchants
+const FI = await page.evaluate(() => {
+  const out = {}; let has = 0, not = 0; for (let s = 5001; s < 5400 && (!has || !not); s++) { if (seededRng('found-master', s)() < .25) has = has || s; else not = not || s; }
+  let m = 0; for (let s = 1; s <= 4000; s++) if (seededRng('found-master', s * 104729)() < IMPLEMENT.foundMaster) m++; out.master = m / 4000; out.has = has; out.not = not;
+  const roll = (n, tier, kind) => { let imp = 0, wpn = 0, ok = true; withLootRng(seededRng('foundchest', tier + kind), () => withLootTier(4, () => { for (let i = 0; i < n; i++) { const it = rollLoot({ hp: 6 }, null, kind);
+    if (!it || it.slot !== 'weapon' && it.slot !== 'offhand') continue; if (it.found && implementOf(it)) { imp++; ok = ok && (it.tier || 0) >= 4 && !!it.school && IMPLEMENT.orbEnchants.includes(it.enchantId); } else if (it.slot === 'weapon' && (it.tier || 0) >= 4) wpn++; } })); return { imp, wpn, ok }; };
+  let oe = 0; for (let k = 1; k <= 300; k++) if (gateOrbItem({ seed: k * 31, diffScale: { hp: 1 } }, 'tine', 2, null).enchantId) oe++; out.orbEnch = oe;
+  out.chest = roll(30000, 4, 'chest'); out.corpse = roll(6000, 4, 'corpse');
+  const lo = { imp: 0 }; withLootRng(seededRng('foundlo', 1), () => withLootTier(1, () => { for (let i = 0; i < 6000; i++) { const it = rollLoot({ hp: .5 }, null, 'chest'); if (it && it.found && implementOf(it) && it.tier < 4) lo.imp++; } })); out.lo = lo.imp;
+  const fx = withLootRng(seededRng('fx', 3), () => foundImplement(5, 'tine')); out.fx = { k: implementOf(fx), s: fx.school, found: fx.found, ench: fx.enchantId, name: fx.name, desc: /20% less/.test(fx.desc) };
+  const st = withLootRng(seededRng('fx', 9), () => { for (let i = 0; i < 50; i++) { const f = foundImplement(4, null); if (f.slot === 'weapon' && f.enchant) return f; } });
+  const keep = EQ.weapon; EQ.weapon = st; _armorBonusDirty = true; let threw = null; try { out.strike = applyWeaponEnchant(10, { hp: 50, maxHp: 50, hpFg: { scale: {}, position: {} } }); } catch (e) { threw = String(e); }
+  out.threw = threw; out.bonus = Object.entries(getArmorEnchantBonuses()).filter(([k, v]) => v).map(([k]) => k); EQ.weapon = keep; _armorBonusDirty = true;
+  return out; });
+const lairIn = async (seed) => { await page.evaluate((seed) => { window._prevDScene = typeof dScene !== 'undefined' ? dScene : null;
+    goToDungeon(Object.assign({}, PORTALS[0], { theme: 'deep', seed, size: 'medium', interior: 'cave', zone: 'world', tutorial: false, lair: { place: 'Test', boss: 'Troll King' } })); }, seed);
+  for (let k = 0; k < 60 && !(await page.evaluate(() => activeZoneId === 'dungeon' && scene === dScene && dScene !== window._prevDScene && ENEMIES.length > 0)); k++) await page.waitForTimeout(500);
+  await page.waitForTimeout(1000); };
+const hoardOf = () => page.evaluate(() => { const h = CHESTS.find(c => /:hoard$/.test(c.id)); const f = h && h.items.find(i => implementOf(i));
+  return { ps: foundPlaceSchool(), n: h ? h.items.length : -1, f: f && { k: implementOf(f), s: f.school, found: f.found, ench: f.enchantId, fn: !!(f.enchant && f.enchant.apply), name: f.name, tier: f.tier, stats: f.enchantStats } }; });
+await lairIn(FI.has); const LH = await hoardOf();
+await page.evaluate((seed) => { worldState.masters = JSON.parse(JSON.stringify(worldState.masters)); }, FI.has);
+await page.evaluate(() => goToOW()); for (let k = 0; k < 40 && (await page.evaluate(() => activeZoneId === 'dungeon')); k++) await page.waitForTimeout(500); await page.waitForTimeout(1500);
+await lairIn(FI.has); const LH2 = await hoardOf();
+await lairIn(FI.not); const LN = await hoardOf();
+console.log('found', JSON.stringify({ FI, LH, LH2, LN }));
+check(`a lair master keeps a found implement in one hoard in four (${FI.master.toFixed(3)} of 4,000 seeds)`, Math.abs(FI.master - .25) < .025, FI.master);
+check(`in such a lair the hoard holds it: ${LH.f && LH.f.name} (${LH.f && LH.f.k}, ${LH.f && LH.f.s}), found, with one of the orb's enchants; a lair whose roll misses holds none`, !!LH.f && LH.f.found && !!LH.f.s && ['mp_regen', 'magic_boost', 'fortify_int'].includes(LH.f.ench) && LH.f.fn && LN.n > 0 && !LN.f, { LH, LN });
+check('through the save\'s JSON the hoard\'s piece keeps its enchant (put back by id) and its numbers', !!LH2.f && LH2.f.fn && LH2.f.name === LH.f.name && JSON.stringify(LH2.f.stats) === JSON.stringify(LH.f.stats), { LH, LH2 });
+const share = FI.chest.imp / (FI.chest.imp + FI.chest.wpn);
+check(`a chest's weapon roll of tier 4 or finer is a found implement one time in twenty (${FI.chest.imp} of ${FI.chest.imp + FI.chest.wpn}, ${share.toFixed(3)}), each found, of a school, enchanted`, Math.abs(share - .05) < .015 && FI.chest.ok, FI.chest);
+check(`every gate orb carries its enchant (${FI.orbEnch} of 300 seeds; the draw sat inside find's test and missed some, Session 1889)`, FI.orbEnch === 300, FI.orbEnch);
+check(`a corpse never gives one (${FI.corpse.imp}); nor does a chest's piece under tier 4 (${FI.lo})`, FI.corpse.imp === 0 && FI.lo === 0, { c: FI.corpse, lo: FI.lo });
+check(`a gate's chest gives the gate's school (the gate's own read in the gate; none in a lair): foundImplement(5, 'tine') is ${FI.fx.name}, Tine's, found, 20% off`, GO.ps && LN.ps === null && FI.fx.s === 'tine' && FI.fx.found && FI.fx.desc && ['staff', 'wand', 'maul', 'tome'].includes(FI.fx.k), { fx: FI.fx, gate: GO.ps, lair: LN.ps });
+check(`a found staff or wand's armour enchant counts in hand (${FI.bonus.join(', ')}) and its strike is plain, no throw`, !FI.threw && FI.strike === null && FI.bonus.length >= 1, FI);
 
 // S1862 — the hold in both views (the sheet's second bodies session): the orb carried up before the waist, raised before the chest with the
 // guard, drawn back past the hip while it keeps a word, its light brighter as it keeps one; the tome lifted before the chest in a cast. In

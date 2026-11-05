@@ -11,7 +11,9 @@ const kinds = await page.evaluate(() => { const out = {}; ensureSeaHerbs(); /* S
   for (const k in PLANT_KIND) { const geo = plantGeo(k, false); const bb = geo.boundingBox; const pg = plantGeo(k, true);
     out[k] = { kind: PLANT_KIND[k], h: +bb.max.y.toFixed(2), w: +Math.max(bb.max.x - bb.min.x, bb.max.z - bb.min.z).toFixed(2), tris: geo.attributes.position.count / 3, picked: pg ? pg.attributes.position.count / 3 : null, stub: !!(pg && pg.userData.stub), stubTop: pg && pg.userData.stub ? +pg.boundingSphere.radius.toFixed(2) : null }; }
   out._missing = Object.keys(HERB_DEF).filter(k => !PLANT_KIND[k]); return out; });
-const K = Object.fromEntries(Object.entries(kinds).filter(([k]) => k !== '_missing'));
+const GATE3 = ['lichenbloom', 'gatelotus', 'gateresin']; /* S1886 — the plants that mark a gate stand in as a kin herb's kind until the bodies builder's own four land; counted apart */
+const K = Object.fromEntries(Object.entries(kinds).filter(([k]) => k !== '_missing' && !GATE3.includes(k)));
+check(`the three plants that mark a gate bake as their stand-in kinds (${GATE3.map(k => kinds[k] && kinds[k].kind).join(', ')})`, GATE3.every(k => kinds[k] && kinds[k].tris > 0), GATE3.map(k => kinds[k]));
 check('all 26 herbs bake as plants, the sea\'s three among them (S1589: kelp, sea lily, pearlweed)', Object.keys(K).length === 26 && kinds._missing.length === 0, { n: Object.keys(K).length, missing: kinds._missing });
 check('sizes follow what they are: mosses and the rosette hug the ground, goldenrod and the rowan are waist-high, the bush wider than tall',
   K.graywort.h < .07 && K.firemoss.h < .1 && K.goldenrod.h > .7 && K.caorthann.h > .7 && K.thornberry.w > K.thornberry.h && K.thornberry.h > .4 && K.muirfhear.h > .45,

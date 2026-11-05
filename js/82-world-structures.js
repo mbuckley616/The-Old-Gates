@@ -1635,7 +1635,7 @@
   // copy: each herb shows in one of the two, the other holding it at a thousandth of its size (syncHerbInstance)
   function herbIM(type,geo,list,group,yOf){const kind=PLANT_KIND[type];const pg=plantGeo(type,true),K=herbLift(); /* S1573 — the picked copy at the same size, its colour left as cut */
     const mk=(g,picked)=>{const im=new THREE.InstancedMesh(g,window.OG_LOOK==='new'&&g.attributes.glow?HERB_GLOW_MAT:HERB_MAT,list.length); /* S1577 — a kind that glows by nature lights its own parts */im.castShadow=false;im.receiveShadow=true;im.userData.noBake=true;
-      list.forEach((h,i)=>{if(picked)h.instP=im;else{h.inst=im;h.idx=i;}const show=picked?h.harvested:!h.harvested;_hp.set(h.x,yOf(h),h.z);_hq.setFromAxisAngle(_hy,h.ph);_hs.setScalar(show?K:.001);_hm.compose(_hp,_hq,_hs);im.setMatrixAt(i,_hm);});
+      list.forEach((h,i)=>{if(picked)h.instP=im;else{h.inst=im;h.idx=i;}const show=picked?h.harvested:!h.harvested;_hp.set(h.x,yOf(h),h.z);_hq.setFromAxisAngle(_hy,h.ph);_hs.setScalar(show?K*(h.gm||1):.001);_hm.compose(_hp,_hq,_hs);im.setMatrixAt(i,_hm);});
       im.instanceMatrix.needsUpdate=true;group.add(im);return im;};
     const a=mk(geo,false),b=pg?mk(pg,true):null;let cx=0,cz=0;list.forEach(h=>{cx+=h.x;cz+=h.z;});cx/=list.length;cz/=list.length;
     list.forEach(h=>{h.top=(geo.userData.top||.3)*K;h.spread=(geo.userData.spread||.3)*K;});const rec={ims:b?[a,b]:[a],x:cx,z:cz,shadow:!!kind&&PLANT_SHADOW.has(kind),list,picked:list.some(h=>h.harvested)};list.forEach(h=>{h._imr=rec;});HERB_IMS.push(rec);} // S263 — the picked copy is drawn only while one is picked (every kind has one now)
@@ -1645,7 +1645,7 @@
   const HERB_IMS=[],HERB_LOD={far:100,shadow:45};
   function tickHerbLod(){for(let i=HERB_IMS.length-1;i>=0;i--){const r=HERB_IMS[i],im=r.ims[0];if(!im.parent||!im.parent.parent){HERB_IMS.splice(i,1);continue;}
       const d=Math.hypot(px-r.x,pz-r.z),vis=d<HERB_LOD.far,cast=r.shadow&&d<HERB_LOD.shadow;for(let k=0;k<r.ims.length;k++){const m=r.ims[k];m.visible=vis&&(k===0||r.picked);m.castShadow=cast;}}}
-  function syncHerbInstance(h){if(!h.inst)return;const hidden=h.harvested||!h.g.visible;_hp.set(h.x,propH(h.x,h.z),h.z);_hq.setFromAxisAngle(_hy,h.ph);const K=herbLift();_hs.setScalar(hidden?.001:K);_hm.compose(_hp,_hq,_hs);h.inst.setMatrixAt(h.idx,_hm);h.inst.instanceMatrix.needsUpdate=true;
+  function syncHerbInstance(h){if(!h.inst)return;const hidden=h.harvested||!h.g.visible;_hp.set(h.x,propH(h.x,h.z),h.z);_hq.setFromAxisAngle(_hy,h.ph);const K=herbLift()*(h.gm||1);_hs.setScalar(hidden?.001:K);_hm.compose(_hp,_hq,_hs);h.inst.setMatrixAt(h.idx,_hm);h.inst.instanceMatrix.needsUpdate=true;
     if(h.instP){_hs.setScalar(h.harvested?K:.001);_hm.compose(_hp,_hq,_hs);h.instP.setMatrixAt(h.idx,_hm);h.instP.instanceMatrix.needsUpdate=true;}
     if(h._imr){h._imr.picked=h._imr.list.some(q=>q.harvested);if(h._imr.picked&&h.instP)h.instP.visible=h.inst.visible;}} // the picked bush stands where the whole one did
   const _hy=new THREE.Vector3(0,1,0);
@@ -1703,6 +1703,7 @@
     // v80 — the verge: herbs grow along the sides of roads, just off the surface
     {let vp=0;for(let i=0;i<40&&vp<6;i++){const hx=ch.cx*CHUNK+1+hash01(ch.cx+i,ch.cz+7,131)*(CHUNK-2),hz=ch.cz*CHUNK+1+hash01(ch.cz+i,ch.cx+3,132)*(CHUNK-2);const ri=roadInfo(hx,hz);if(!ri||ri.d<ROAD_HALF+1.0||ri.d>ROAD_HALF+3.2)continue;const h=worldH(hx,hz);if(h<1.0||solidAt(hx,hz))continue;const st=stampAt(hx,hz);if(st&&st.kind==='site'&&Math.hypot(hx-st.x,hz-st.z)<st.r)continue;const cands=herbCandidates(biome,'open');if(!cands.length)continue;const type=cands[Math.floor(hash01(ch.cx+i,ch.cz,133)*cands.length)][0];if(put(hx,hz,type,'verge:'+i))vp++;}
     }
+    if(typeof spawnGateHerbs==='function')spawnGateHerbs(ch); /* S1886 — the plants that mark a gate, and its Greenmeadow (87-world-quests.js) */
     if(hot){
       const hx0=ch.cx*CHUNK+10+hash01(ch.cx,ch.cz,125)*(CHUNK-20),hz0=ch.cz*CHUNK+10+hash01(ch.cz,ch.cx,126)*(CHUNK-20);const h0=worldH(hx0,hz0);if(h0<1)return;
       const ctx=placeCtx(hx0,hz0,h0,ch);const cands=herbCandidates(biome,ctx==='sea'?'open':ctx);if(!cands.length)return;
