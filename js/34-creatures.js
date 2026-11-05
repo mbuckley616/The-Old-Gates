@@ -60,7 +60,7 @@ const WOLF_KINDS={
   'Sunspire Lynx':{coat:0xa88561,saddle:0x8a6645,belly:0xf0e3cc,eye:0xbfcc40,ruff:.6,ears:1.4,muzzle:.6,lean:.85,bulk:.9,neck:.06,world:1.0,wild:true},
   'Oasis Hare':{coat:0xd1ad80,saddle:0xad8a61,belly:0xf5f0e6,eye:0x1f120a,ruff:.6,ears:1.6,muzzle:.8,lean:.85,bulk:.95,neck:.05,world:.70,wild:true},
   'Mirage Fox':{coat:0xe6c794,saddle:0xcca875,belly:0xfaf5eb,eye:0xd98c1a,ruff:.7,ears:1.5,muzzle:1.0,lean:.8,bulk:.9,neck:.1,world:.53,wild:true},
-  // Session 1851 — OG-040's strange beasts on four legs (L3; the kit's STRANGE since Session 853), wild: the Gatelands' Crownstag and the Mark's
+  // Session 1852 — OG-040's strange beasts on four legs (L3; the kit's STRANGE since Session 853), wild: the Gatelands' Crownstag and the Mark's
   // Frostmane on the deer's long legs, the Gatelands' Lanternfox and Thornrunner on the wolf's, the Mark's Stonejaw (a shell over a badger's legs)
   'Crownstag': {coat:0x5c4029,saddle:0x38261a,belly:0xbda885,eye:0x0f0a08,horse:true,legK:1.8,legs:{fore:{root:[-.03,.03],a:[-.22,-.04],b:[-.22,.02],c:[-.23,.01]},hind:{root:[-.02,-.02],a:[-.2,.08],b:[-.2,-.1],c:[-.26,.01]}},hipY:.70,bulk:.95,eyePos:[.048,.02,.03],world:2.135,wild:true},
   'Frostmane': {coat:0xd1ccc2,saddle:0x99948c,belly:0xe6e0d6,eye:0x140c0a,horse:true,legK:1.8,legs:{fore:{root:[-.03,.03],a:[-.22,-.04],b:[-.22,.02],c:[-.23,.01]},hind:{root:[-.02,-.02],a:[-.2,.08],b:[-.2,-.1],c:[-.26,.01]}},hipY:.70,bulk:.9,eyePos:[.046,.02,.03],world:1.559,wild:true},
@@ -1101,7 +1101,7 @@ function hcAttach(rig,C){const tA=performance.now();
   const sway=K.sway?Object.keys(by).filter(n=>/^tail\d+$/.test(n)).map(n=>by[n]):null;
   rig.hc={W,C,map,s0,t0,fur,small,ik,feet,hb,scorp,bug,arms,wings,sway,garg,merge:!!HC_KINDS[hcKind(rig)].merge,unhunch:!!HC_KINDS[hcKind(rig)].unhunch,rest:K.rest?Object.entries(K.rest):null,ank:K.person&&ik?map.map(([j],i)=>/^an/.test(j)?i:-1).filter(i=>i>=0):null,glow:meshes.map(m=>m.material.userData&&m.material.userData.uGlow).filter(u=>u&&u.value&&u.value.isColor),mid:null,bits:C.B.bits.map(b=>b.obj),hide:meshes.filter(m=>!fur.includes(m)),lift:K.legless?.24*SCALE.ROOM_K:0,hip0:sp?B.body.position.clone():K.person?new THREE.Vector3(0,PW.HIPS,0):new THREE.Vector3(B.hips.position.x,wolfHipY(rig.k),B.hips.position.z),pos0:by.spine0.position.clone(),k:1/(f*C.S),L:-1,drv:rig.mesh.material,em:-1};
   rig.hc.gr=hcGroundLegs(rig,by,K,W);
-  if(HC_KINDS[hcKind(rig)].night)rig.hc.night=rig.hc.glow.map(u=>u.value.clone()); /* S1852 — a glow lit only at night (the Lanternfox), its full colour kept */
+  if(HC_KINDS[hcKind(rig)].night)rig.hc.night=rig.hc.glow.map(u=>u.value.clone()); /* S1853 — a glow lit only at night (the Lanternfox), its full colour kept */
   HC_BODY.ms+=performance.now()-tA;HC_BODY.n++;}
 // Session 1785: the watcher (S1784, 42-zone-enemies.js' watchMake; Michael's B on #1005, as the prototype's wrongness.js has it) sits.
 // The kit's own `sit` gait poses its body, not a copy of the driver's stand: the haunches down on its hocks, the forelegs straight,
@@ -1115,7 +1115,7 @@ function hcSitPose(rig){const H=rig.hc,C=H.C,e=rig.e;C.gait='sit';H.sat=true;
   const T=typeof targetOf==='function'?targetOf(e):{x:px,z:pz};let dy=Math.atan2(T.x-e.x,T.z-e.z)-(e.combatYaw||0);dy=Math.atan2(Math.sin(dy),Math.cos(dy));
   const a=Math.max(-HC_SIT.lead,Math.min(HC_SIT.lead,dy*HC_SIT.share)),N=[...(C.B.chains.neck||[]),'head'].filter(n=>C.byName[n]);
   for(const n of N)C.byName[n].rotation.y+=a/N.length;H.lead=a;rig.gaitNow='sit';}
-// Session 1852: OG-040's Lanternfox glows "at night": the kit's glow (HC_KINDS' night) at full from 19:00 to 05:00, out from 07:00 to
+// Session 1853: OG-040's Lanternfox glows "at night": the kit's glow (HC_KINDS' night) at full from 19:00 to 05:00, out from 07:00 to
 // 17:00, faded linearly between; read off the clock each pose (gameHour), never the frame count
 function hcNightK(){const h=typeof gameHour==='function'?gameHour():12;return h>=19||h<5?1:h>=7&&h<17?0:h<7?(7-h)/2:(h-17)/2;}
 function hcPose(rig){const H=rig.hc,B=rig.B,map=H.map,uh=H.unhunch&&rig.hunch,rs=H.rest;

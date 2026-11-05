@@ -146,7 +146,7 @@ const rb = await page.evaluate(() => {
   /* each step's time is read off the clock when it happens (a slow tick on a CI runner overshoots a fixed sample) */
   o._rammed = true; const T = {}; let t0 = 0, last = performance.now(), worst = 0;
   run(13, o, () => { const n = performance.now(); worst = Math.max(worst, n - last); last = n; const S = WORLD.ship; px = S.x; pz = S.z; jumpY = DECK_Y;
-    if (HOOKS.by === 'her' && !t0) { t0 = n; out.thrown = { by: HOOKS.by, phase: HOOKS.phase }; }
+    if (HOOKS.by === 'her' && !t0) { t0 = HOOKS.phase === 'throw' ? HOOKS.t0 * 1000 : n; out.thrown = { by: HOOKS.by, phase: HOOKS.phase }; /* S1851 — the throw from the game's own stamp, made inside the tick: n, read after it, was up to one tick late, and lashed read 4.99 when the throw's tick ran longer than the lashing's */ }
     if (t0 && HOOKS.phase === 'lashed' && T.lashed == null) { T.lashed = +((n - t0) / 1000).toFixed(2); T.boardersAtLash = WORLD.boarders.length; }
     if (t0 && WORLD.boarders.length && T.crossed == null) { T.crossed = +((n - t0) / 1000).toFixed(2); T.afterLash = +(n / 1000 - HOOKS.tl).toFixed(3); /* S1821 — from the game's own lashing stamp, unrounded: two rounded samples made 6.00 read 5.99 */ } });
   if (!out.thrown) out.thrown = { by: HOOKS.by, phase: HOOKS.phase };

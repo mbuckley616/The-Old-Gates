@@ -17,7 +17,7 @@ const KINDS = { 'Deer': ['deer', .87], 'Red Fox': ['redfox', .35], 'Brown Hare':
   'Icehorn': ['icehorn', .69], 'Ironpine Elk': ['ironpineelk', 1.44], 'Craghorn Ram': ['craghornram', .60], 'Stormlynx': ['stormlynx', .40], 'Glacial Marmot': ['glacialmarmot', .125], 'Snowleap Hare': ['snowhare', .26],
   // Session 1744: Aurenne's own on four legs
   'Duneskimmer': ['duneskimmer', .69], 'Terrace Ram': ['terraceram', .58], 'Sunspire Lynx': ['sunspirelynx', .39], 'Oasis Hare': ['oasishare', .275], 'Mirage Fox': ['miragefox', .21],
-  // Session 1851: OG-040's strange beasts on four legs
+  // Session 1852: OG-040's strange beasts on four legs
   'Crownstag': ['crownstag', 1.48], 'Frostmane': ['frostmane', 1.08], 'Lanternfox': ['lanternfox', .36], 'Thornrunner': ['thornrunner', .70], 'Stonejaw': ['stonejaw', .30] };
 const g = await boot({ look: 'new' }); const { page } = g;
 // Session 1745: a picture is one frame drawn and read back from the canvas (autumn's way, S1470). Playwright's screenshot waited on the
@@ -73,7 +73,7 @@ console.log('  walk:', JSON.stringify(walk));
 check(`walked 1 m/s along the ground (the deer and the fox trot, the small ones bound at a gallop) each one's bones move and its lowest toe stays by the ground (${walk.map(w => w.nm + ' ' + w.low).join(', ')} m)`,
   walk.every(w => w.moved > .01 && w.stand < .2 && Math.abs(w.low) < .06), walk);
 
-// Session 1852: the Lanternfox's glow (OG-040: "glows blue and silver at night") is out by day and at full by night, by the clock
+// Session 1853: the Lanternfox's glow (OG-040: "glows blue and silver at night") is out by day and at full by night, by the clock
 const lamp = await page.evaluate(() => { const f = _A.find(a => a.nm === 'Lanternfox'), H = f.rig.hc, at = h => { forceTime(h); tickCreatures(1 / 60, 8e5 + h * 100);
   return +Math.max(...H.glow.map(u => u.value.r + u.value.g + u.value.b)).toFixed(2); };
   const r = { noon: at(12), dusk: at(18), night: at(23), full: +Math.max(...(H.night || []).map(c => c.r + c.g + c.b)).toFixed(2), uniforms: H.glow.length }; forceTime(12); tickCreatures(1 / 60, 8.1e5); return r; });
