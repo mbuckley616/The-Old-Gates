@@ -690,13 +690,17 @@ function genSettlement(site){
         if(burnedV&&hero&&hero[i]&&hero[i].keeper==='Bram')S._forge={x:lot.x+lot.tx*(lot.d/2+1.6),z:lot.z+lot.tz*(lot.d/2+1.6)}; // S270 — where Bram fell, before his door
         const sh=buildingGeoLo(lot.w,lot.d,Object.assign({},st,{wall:burnedV?0x1a1614:0x6a665e,wall2:burnedV?0x120f0d:0x5a564e,roof:burnedV?0x0a0806:0x3a3632,roof2:0x0a0806,thatch:false,framed:false}),r,{chimney:false,twoStory:false,h:st.h*.8,rise:.2});const m=addMesh(sh,lot.x,lot.z,lot.ry,0);return;} // forEach: skip the rest of this lot
       if(!isShop&&TST&&r()<shutteredShare(site))lot._shuttered=true;
-      if(type==='church')geo=churchGeo(lot.w,lot.d,st,r);
-      else if(type==='castle')geo=keepGeo(lot.w,lot.d,st,r);
-      else if(type==='guild_f'||type==='guild_m'){lot.two=true;geo=buildingGeo(lot.w,lot.d,STYLE.stone,r,{chimney:true,twoStory:true,h:3.4,rise:1.8});}
-      else if(site.kind==='port'&&site.quayStart&&Math.hypot(lot.x-site.quayStart.x,lot.z-site.quayStart.z)<34){const fk=NAT.people==='gatelander'?'aurenne':NAT.people==='aurennais'?'mark':'irish';lot.two=r()<.4;geo=buildingGeo(lot.w,lot.d,STYLE[fk]||STYLE.irish,r,{chimney:true,twoStory:lot.two,h:(STYLE[fk]||STYLE.irish).h,rise:(STYLE[fk]||STYLE.irish).rise});lot.foreign=fk;} // the foreign quarter by the water
+      // S1884 — a kit lot's old house is let go once built, and only its draws on the town's stream count (they keep the town's people as on
+      // the old look): so it builds the plain far form alone, which makes every one of those draws, and skips the detailed one, whose own
+      // stream is seeded by the house's count (_houseN, _civN), stepped here as if it had been built. Aurenne's town took 1.7× as long.
+      const KP=lot.kit?{plain:true,kitStep:true}:{},kitGeo=(lo,civ)=>{if(civ)_civN++;else _houseN++;return lo;};
+      if(type==='church')geo=lot.kit?kitGeo(churchGeoLo(lot.w,lot.d,st,r),1):churchGeo(lot.w,lot.d,st,r);
+      else if(type==='castle')geo=lot.kit?kitGeo(keepGeoLo(lot.w,lot.d,st,r),1):keepGeo(lot.w,lot.d,st,r);
+      else if(type==='guild_f'||type==='guild_m'){lot.two=true;geo=buildingGeo(lot.w,lot.d,STYLE.stone,r,{chimney:true,twoStory:true,h:3.4,rise:1.8,...KP});}
+      else if(site.kind==='port'&&site.quayStart&&Math.hypot(lot.x-site.quayStart.x,lot.z-site.quayStart.z)<34){const fk=NAT.people==='gatelander'?'aurenne':NAT.people==='aurennais'?'mark':'irish';lot.two=r()<.4;geo=buildingGeo(lot.w,lot.d,STYLE[fk]||STYLE.irish,r,{chimney:true,twoStory:lot.two,h:(STYLE[fk]||STYLE.irish).h,rise:(STYLE[fk]||STYLE.irish).rise,...KP});lot.foreign=fk;} // the foreign quarter by the water
       else if(biome==='swamp'&&site.kind==='village'){lot.two=false;geo=mushroomGeo(lot.w,lot.d,st,r);}
       else if(biome==='tundra'&&site.kind==='village'&&site.islet){lot.two=false;geo=iceGeo(lot.w,lot.d,st,r);}
-      else{lot.two=r()<(st.twoStory||0)||type==='inn';geo=buildingGeo(lot.w,lot.d,st,r,{chimney:r()<.65,twoStory:lot.two,h:type==='inn'?SCALE.STOREY_MAX:st.h,rise:type==='inn'?1.9:st.rise});}
+      else{lot.two=r()<(st.twoStory||0)||type==='inn';geo=buildingGeo(lot.w,lot.d,st,r,{chimney:r()<.65,twoStory:lot.two,h:type==='inn'?SCALE.STOREY_MAX:st.h,rise:type==='inn'?1.9:st.rise,...KP});}
       solR=Math.max(lot.w,lot.d)/2*.85;
       if(lot.kit){kitHouse(lot,type);geo.dispose();if(geo.userData&&geo.userData.lo)geo.userData.lo.dispose();} /* S1072 — the old builder still runs (its draws keep the town's stream, and so its people, as on the old look), and its mesh is let go */
       else{const m=addMesh(geo,lot.x,lot.z,lot.ry,0);

@@ -2056,7 +2056,7 @@
     if(!opts.noYard&&r0()<.5){const x=(r0()<.5?1:-1)*(w/2-.6);for(let k=0;k<9;k++)add(SK.cyl(.08,.08,.7,6),0x7a5a3a,x+(k%3)*.17-.17,.1+Math.floor(k/3)*.15,d/2+.4,0,0,Math.PI/2,.1);}
     if(!opts.noYard&&r0()<.5)add(SK.lathe([[.001,0],[.25,0],[.28,.3],[.26,.6],[.001,.6]],10),0x6a4a2a,-w/2+.5,0,d/2+.45);
     const g=mergeParts(P,HAO);g.userData.variant=key;g.userData.thatch=thatch;g.userData.winTop=wy+wh/2+.12;g.userData.eaveLow=eaveLow;g.userData.chimney=chTop;g.userData.wallH=H;g.userData.storeys=two?2:1;return g;} /* S881 — the wall's height and storeys, for the house record (scaleratio) */
-  function buildingGeo(w,d,st,r,opts){opts=opts||{};const lo=buildingGeoLo(w,d,st,r,opts);if(opts.plain)return lo;
+  function buildingGeo(w,d,st,r,opts){opts=opts||{};const lo=buildingGeoLo(w,d,st,r,opts);if(opts.plain){if(opts.kitStep)_houseN++;return lo;} /* S1884 — a kit lot's: the detailed house's count stepped as if built */
     const hi=buildingGeoHi(w,d,st,r,opts,lo.userData.picks);hi.userData.lo=lo;return hi;}
   function buildingGeoLo(w,d,st,r,opts){
     const parts=[];const c=x=>new THREE.Color(x);
