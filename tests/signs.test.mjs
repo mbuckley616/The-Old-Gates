@@ -9,7 +9,7 @@ for (const id of ['portclare', 'dunmore']) {
   const r = await page.evaluate((id) => { const S = WORLD.settle.get(id);
     const faces = []; S.group.traverse(o => { if (o.userData && o.userData.sign) { const p = new THREE.Vector3(); o.getWorldPosition(p); faces.push({ sign: o.userData.sign, x: p.x, z: p.z }); } });
     const out = S.houses.filter(h => h.type !== 'home' && h.type !== 'castle' && h.type !== 'barber').map(h => { // S512 — the barber's sign is the basins, no board (tests/barber)
-      const near = faces.filter(f => Math.hypot(f.x - h.doorX, f.z - h.doorZ) < 2);
+      const near = faces.filter(f => Math.hypot(f.x - h.doorX, f.z - h.doorZ) < (h.kit && h.kit.kind === 'forge' ? 2.6 : 2)); /* S1854 — a forge's board hangs 1.75 m along its wall, off the open cart door */
       /* S1316 — the new look's guild hall (the kit's, Session 964) hangs no board: its name is cut in a stone panel over the great
          door, baked into the hall. Read from the hall's own plan: the panel's words, and that it stands over the door it is built with */
       if (h.kit && h.kit.kind === 'guildhall' && !near.length && typeof PKIT !== 'undefined' && PKIT.panelsMade() > 0) { const P = PKIT.gl.PLANS.guildhall({ guild: h.kit.guild }), d = P.open.front[0];
