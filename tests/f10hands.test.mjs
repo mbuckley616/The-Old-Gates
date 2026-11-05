@@ -76,5 +76,11 @@ const lit = await page.evaluate(() => { forceTime(12); applyDayNightLighting(per
   const lamp = new THREE.PointLight(0xffa050, 2, 10); lamp.position.set(CAM.position.x + 3, CAM.position.y, CAM.position.z); dark.add(lamp); vmLight(dark, 1 / 60); const eased = sum(); vmLight(dark, 9); const lamped = sum();
   vmLight(scene, 9); return { day, vault, eased, lamped, back: sum() }; });
 check('the hands are lit by the place: bright over the world at noon, dim in a black vault, brighter by a lamp, eased toward it', lit.day > 1 && lit.vault < .1 && lit.lamped > lit.vault + .5 && lit.eased > lit.vault && lit.eased < lit.lamped && lit.back === lit.day, lit);
+// S1872 — a kit room's day spot (kitDaylight: 0xd4dcea up to 6, distance 9, angle 1.15, penumbra 1) burned the hands white at the door
+// (the critic's s1254): a spot reaches them only inside its cone, and the pool's light at the hands is held to 1.5 in its brightest channel
+const spot = await page.evaluate(() => { const E = CAM.getWorldPosition(new THREE.Vector3()), pt = () => Math.max(VM_PT.color.r, VM_PT.color.g, VM_PT.color.b);
+  const mk = (dx, ty) => { const sc = new THREE.Scene(), s = new THREE.SpotLight(0xd4dcea, 6, 9, 1.15, 1, 1); s.position.set(E.x + dx, E.y, E.z); s.target.position.set(E.x + dx + ty, E.y - 1.6, E.z); sc.add(s, s.target); sc.add(new THREE.AmbientLight(0x404050, .2)); vmLight(sc, 0); return +pt().toFixed(3); };
+  const away = mk(-.7, -3), at = mk(-1, 3); vmLight(scene, 9); return { away, at }; });
+check(`a day spot behind you shining away does not light the hands (${spot.away}); one shining on them from 1 m lights them no more than 1.5 (${spot.at})`, spot.away < .05 && spot.at > .5 && spot.at <= 1.5 + 1e-6, spot);
 check('no page errors, and the hands never fell back (no F10 or F4 warning)', g.errs.length === 0 && !g.logs.some(l => /F10:|F4:/.test(l)), { errs: g.errs, logs: g.logs.filter(l => /F10:|F4:/.test(l)) });
 await g.close();

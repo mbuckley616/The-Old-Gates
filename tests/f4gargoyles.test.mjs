@@ -79,6 +79,41 @@ console.log('  walk:', JSON.stringify(walk));
 check(`its walk and its run turn the kit's bones (by ${walk.moved}); its toes lift (${walk.walk.lift}, ${walk.run.lift} m) and sink no lower than ${Math.min(walk.walk.low, walk.run.low)} m; its wrist within ${Math.max(walk.walk.hand, walk.run.hand)} m of the driver's (${hand0} at a stand)`,
   walk.moved > .02 && walk.walk.w > .5 && walk.run.w > .5 && walk.walk.lift > .03 && walk.run.lift > .05 && Math.min(walk.walk.low, walk.run.low) > -.06 && Math.max(walk.walk.hand, walk.run.hand) < hand0 + .25, walk);
 
+// Session 1872 (L4, OG-073): a failing gate's gargoyle wears the kit's failing gargoyle (Gaoth's form: wings half again the span, a second
+// pair of wings behind them and a second pair of clawed arms, the cracks lit a storm's blue-white). Both pairs of wings fold asleep and open
+// awake by hcGarg, the second on its own beat; the arms' second pair posed by hcArms. Picture: docs/prototypes/f4/f4-failinggargoyle.jpg
+const fg = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.cos(yaw), real = window.hcFailing; window.hcFailing = () => true;
+  const a = _S[0].e, b = _S[1].e, X = (a.x + b.x) / 2 + fx * 3.5, Z = (a.z + b.z) / 2 + fz * 3.5;
+  const pr = buildFoe('Gargoyle', X, Z, null, 0x880000), m = new THREE.Group(); pr.root.scale.multiplyScalar(1.35); m.add(pr.root); window.hcFailing = real;
+  const e = { id: 'f4gargoyles:failing', name: 'Gargoyle', mesh: m, limbs: { person: pr }, dormant: true }, rig = pr; e.x = X; e.z = Z;
+  m.position.set(X, WORLD.worldH(X, Z), Z); m.rotation.y = Math.atan2(px - X, pz - Z); e.combatYaw = m.rotation.y; e.locked = false; WORLD.scene.add(m); rig.e = e; window._FG = { e, rig };
+  let n = 0; HBODY.last = -1e9; while (!rig.hc && !rig.hcFail && n++ < 100) { tickPeople(1 / 60, 2.5e5 + n * (HBODY.gap + 1)); tickCreatures(1 / 60, 2.5e5 + n * (HBODY.gap + 1)); }
+  const H = rig.hc; if (!H) return { hc: false, kind: rig.hcKind, fail: !!rig.hcFail };
+  const by = H.C.byName, W = o => o.getWorldPosition(new THREE.Vector3()), gy = m.position.y, r = m.rotation.y, sx = Math.cos(r), sz = -Math.sin(r);
+  const tips = t0 => { for (let i = 0; i < 90; i++) { tickPeople(1 / 60, t0 + i * 16.7); tickCreatures(1 / 60, t0 + i * 16.7); } m.updateMatrixWorld(true); const sp = W(by.spine1);
+    return H.garg.wings.map(Wg => { const p = W(Wg.fing[0]).sub(sp); return +Math.abs(p.x * sx + p.z * sz).toFixed(2); }); };
+  const asleep = tips(3e5), toes = ['leg0L_3', 'leg0R_3'].map(nm => +(W(by[nm]).y - gy).toFixed(3)); e.dormant = false; e.alert = true; const awake = tips(3.2e5);
+  /* the two pairs' beat: the root's turn about z through a second, first pair against second (left wings) */
+  const L1 = H.garg.wings.find(w => w.side > 0 && !w.ph), L2 = H.garg.wings.find(w => w.side > 0 && w.ph), z1 = [], z2 = [];
+  for (let i = 0; i < 60; i++) { tickPeople(1 / 60, 3.4e5 + i * 16.7); tickCreatures(1 / 60, 3.4e5 + i * 16.7); z1.push(L1.arm[0].rotation.z); z2.push(L2 ? L2.arm[0].rotation.z : 0); }
+  const span = A => +(Math.max(...A) - Math.min(...A)).toFixed(2); let off = 0; for (let i = 0; i < 60; i++) off = Math.max(off, Math.abs((z1[i] - z1[0]) - (z2[i] - z2[0])));
+  let lit = 0, blue = 0; H.W.traverse(o => { if (o.isMesh && o.material && o.material.emissive && o.material.emissive.b > .5) { lit++; if (o.material.emissive.b > o.material.emissive.r) blue++; } });
+  const inv = new THREE.Matrix4().copy(m.matrixWorld).invert(), Lp = o => W(o).applyMatrix4(inv), out = [];
+  for (const [wind, anim] of [[0, 0], [1, 0], [0, .1]]) { e._wind = wind; e.atkAnim = anim; attackPose(e, true); hcPose(rig); m.updateMatrixWorld(true); out.push(+Lp(by.arm1R_2).z.toFixed(2)); }
+  e._wind = 0; e.atkAnim = 0;
+  return { hc: true, kind: rig.hcKind, seed: H.C.g.seed, want: HC.hashKey('foe:' + e.id), wings: H.garg.wings.length, pair2: !!by.wing2L0, arms: H.C.B.arms.length / 2, posed: (H.arms || []).map(A => A.pair).join(''),
+    tris: H.C.stats.tris, steady: _S[1].rig.hc.C.stats.tris, asleep, awake, toes, beat: [span(z1), span(z2), +off.toFixed(2)], lit, blue, driver: rig.mesh.visible, blow: out }; });
+console.log('  failing:', JSON.stringify(fg));
+check(`a failing gate's gargoyle wears the kit's failing gargoyle (${fg.tris} triangles against ${fg.steady}): ${fg.wings} wings, ${fg.arms} pairs of arms, ${fg.blue} of ${fg.lit} lit meshes blue, keyed by its foe id, its toes on the ground asleep (${(fg.toes || []).join(', ')} m)`,
+  fg.hc && fg.kind === 'Gargoyle (failing)' && fg.seed === fg.want && fg.wings === 4 && fg.pair2 && fg.arms === 2 && fg.posed === '11' && fg.blue >= 2 && !fg.driver && fg.tris > fg.steady && fg.toes.every(y => Math.abs(y) < .06), fg);
+check(`all four wings fold asleep (tips ${fg.asleep && fg.asleep.join(', ')} m out) and open awake (${fg.awake && fg.awake.join(', ')} m); the second pair beats on its own phase (${fg.beat && fg.beat.join(', ')})`,
+  fg.asleep && fg.awake.every((v, i) => v > fg.asleep[i] * 1.2) && fg.beat[0] > .1 && fg.beat[1] > .1 && fg.beat[2] > .05, fg);
+check(`its second pair of arms draws back through the wind-up and rakes forward in the strike (its wrist ${fg.blow && fg.blow.join(', ')} m ahead at rest, wound, raking)`, fg.blow && fg.blow[1] < fg.blow[0] - .03 && fg.blow[2] > fg.blow[1] + .08, fg);
+await page.evaluate(() => { const m = _FG.e.mesh, fx = -Math.sin(yaw), fz = -Math.cos(yaw); window._P = [px, pz]; px = m.position.x - fx * 4.5; pz = m.position.z - fz * 4.5; pitch = .12; });
+for (let i = 0; i < 8; i++) { await page.evaluate(() => { tickPeople(1 / 60, performance.now()); tickCreatures(1 / 60, performance.now()); }); await g.frames(1); }
+await page.screenshot({ path: path.join(OUT, 'f4-failinggargoyle.jpg') });
+await page.evaluate(() => { _FG.e.mesh.parent.remove(_FG.e.mesh); tickPeople(1 / 60, 8e5); tickCreatures(1 / 60, 8e5); [px, pz] = _P; });
+
 // the levels: near and at 25 m the kit's body; at 60 m the driver's, with its knife back
 const lv = await page.evaluate(() => { const out = {}, f = _S[1], g0 = f.e.mesh, fx = -Math.sin(yaw), fz = -Math.cos(yaw);
   const at = (dd, k) => { CAM.position.set(g0.position.x - fx * dd, g0.position.y + 1.65, g0.position.z - fz * dd); CAM.updateMatrixWorld(true); for (let i = 0; i < 3; i++) { tickPeople(1 / 60, 5e5 + k * 100 + i * 17); tickCreatures(1 / 60, 5e5 + k * 100 + i * 17); }

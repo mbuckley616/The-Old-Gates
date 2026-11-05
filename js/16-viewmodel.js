@@ -968,7 +968,12 @@ const VM_HEMI=new THREE.HemisphereLight(0,0,1),VM_PT=new THREE.DirectionalLight(
 const VM_LIT={sc:null,amb:new THREE.Color(),sky:new THREE.Color(),gnd:new THREE.Color(),sun:new THREE.Color(),pt:new THREE.Color(),
   up:new THREE.Vector3(0,1,0),sd:new THREE.Vector3(1,2,1).normalize(),pd:new THREE.Vector3(0,1,0)};
 const _vlQ=new THREE.Quaternion(),_vlP=new THREE.Vector3(),_vlT=new THREE.Vector3(),_vlE=new THREE.Vector3(),_vlS=new THREE.Vector3(),_vlD=new THREE.Vector3();
-const _vlA=new THREE.Color(),_vlK=new THREE.Color(),_vlG=new THREE.Color(),_vlU=new THREE.Color(),_vlC=new THREE.Color();
+const _vlA=new THREE.Color(),_vlK=new THREE.Color(),_vlG=new THREE.Color(),_vlU=new THREE.Color(),_vlC=new THREE.Color(),_vlL=new THREE.Vector3();
+// S1872 — a spotlight reaches the eye only inside its cone, by three's own fall-off (smoothstep from the cone's edge to the penumbra's
+// inner edge): a kit room's day spots (kitDaylight, up to 6 each) were summed as if they shone every way, and burned the hands white
+// at the door, where the spot stands behind you (backlog I, the critic's s1254). c is the cosine between the spot's axis and the eye.
+const VM_PT_MAX=1.5;
+function vmSpotCone(o,c){const a=Math.cos(o.angle),b=Math.cos(o.angle*(1-(o.penumbra||0)));if(c<=a)return 0;if(c>=b||b<=a)return 1;const t=(c-a)/(b-a);return t*t*(3-2*t);}
 function vmLight(sc,dt){
   if(!sc||!VM_AMB)return;
   _vlA.setRGB(0,0,0);_vlK.setRGB(0,0,0);_vlG.setRGB(0,0,0);_vlU.setRGB(0,0,0);_vlC.setRGB(0,0,0);_vlS.set(0,0,0);_vlD.set(0,0,0);
@@ -979,8 +984,14 @@ function vmLight(sc,dt){
     else if(o.isDirectionalLight){o.getWorldPosition(_vlP);if(o.target)o.target.getWorldPosition(_vlT);else _vlT.set(0,0,0);_vlP.sub(_vlT);const l=_vlP.length();if(l<1e-6)continue;
       _vlU.r+=o.color.r*i;_vlU.g+=o.color.g*i;_vlU.b+=o.color.b*i;_vlS.addScaledVector(_vlP,i/l);}
     else if(o.isPointLight||o.isSpotLight){o.getWorldPosition(_vlP);_vlP.sub(_vlE);const d=_vlP.length();
-      const f=o.distance>0&&o.decay>0?Math.pow(Math.max(0,1-d/o.distance),o.decay):1;if(!(f>0))continue;const w=i*f;
+      let f=o.distance>0&&o.decay>0?Math.pow(Math.max(0,1-d/o.distance),o.decay):1;
+      if(o.isSpotLight&&f>0){o.target.getWorldPosition(_vlT);_vlT.sub(o.getWorldPosition(_vlL));const tl=_vlT.length();
+        f*=tl>1e-6&&d>1e-4?vmSpotCone(o,-_vlT.dot(_vlP)/(tl*d)):0;}
+      if(!(f>0))continue;const w=i*f;
       _vlC.r+=o.color.r*w;_vlC.g+=o.color.g*w;_vlC.b+=o.color.b*w;if(d>1e-4)_vlD.addScaledVector(_vlP,w/d);else _vlD.y+=w;}}
+  /* S1872 — the pool's light at the hands is held to VM_PT_MAX in its brightest channel: the pool falls on them as one light square to them, where the room's
+     own surfaces take it aslant (a kit room's door spot stands 0.7 m behind you at 5) */
+  {const m=Math.max(_vlC.r,_vlC.g,_vlC.b);if(m>VM_PT_MAX)_vlC.multiplyScalar(VM_PT_MAX/m);}
   const L=VM_LIT,k=L.sc!==sc?1:1-Math.exp(-(dt||0)*12);L.sc=sc;
   L.amb.lerp(_vlA,k);L.sky.lerp(_vlK,k);L.gnd.lerp(_vlG,k);L.sun.lerp(_vlU,k);L.pt.lerp(_vlC,k);
   _vlP.set(0,1,0).applyQuaternion(_vlQ);L.up.lerp(_vlP,k).normalize();

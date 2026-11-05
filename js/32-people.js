@@ -1126,7 +1126,7 @@ function buildFoe(type,x,z,genome,eyeCol,arm){
   if(g.troll&&typeof hcOn==='function'&&hcOn()&&HC_KINDS[type]){rig.hcKind=type;HC_RIGS.add(rig);} /* S1378 (F4) — the trolls the kit's troll, with its maul, in their kind's hide */
   if(g.golem&&typeof hcOn==='function'&&hcOn()){rig.hcKind=hcFailing()?'Golem (failing)':'Golem';HC_RIGS.add(rig);} /* S1868 — in a failing gate the failing golem (OG-073) */ /* S1371 (F4) — the Golem the kit's golem, its eyes rune-lit */
   if(g.wraith&&typeof hcOn==='function'&&hcOn()){rig.hcKind=g.phantom?'Phantom':hcFailing()?'Wraith (failing)':'Wraith';HC_RIGS.add(rig);} /* S1866 — in a failing gate the failing wraith (OG-073) */ /* S1429 (F4) — the Wraith and the Phantom the kit's, floating legless with their claws (hcPose takes off the driver's stance) */
-  if(g.gargoyle&&typeof hcOn==='function'&&hcOn()){rig.hcKind='Gargoyle';HC_RIGS.add(rig);} /* S1375 (F4) — the Gargoyle the kit's gargoyle, its stone wings folded by its fold (hcGarg) */
+  if(g.gargoyle&&typeof hcOn==='function'&&hcOn()){rig.hcKind=hcFailing()?'Gargoyle (failing)':'Gargoyle';HC_RIGS.add(rig);} /* S1872 — in a failing gate the failing gargoyle (OG-073) */ /* S1375 (F4) — the Gargoyle the kit's gargoyle, its stone wings folded by its fold (hcGarg) */
   if(hbOn()&&hbFoeOk(type,genome,g)){rig.hbFoe=type;if(g.hbKey)rig.hbG=HB_GENOMES.get(g.hbKey);HB_RIGS.add(rig);} /* S1201 (F4) — a human foe wears the builder's body too, its genome rolled at its first attach, by its id */
   return rig;
 }
@@ -1525,7 +1525,7 @@ function tickPeople(dt,now){
     if((rig.B.cloak||rig.B.hairB)&&!rig.lod&&!rig.sleep)peopleSwing(rig,dt); // S267; a sleeper's hair and cloak lie still (S752)
     // a captain's shield guard (S175): while it is up the left arm holds the shield across the body, the elbow bent
     // a gargoyle's wings fold down its back while it sleeps and spread and beat slowly once it wakes; the tail sways
-    if(rig.g.gargoyle){const f=rig.e&&rig.e.dormant?1:0;rig.fold+=(f-rig.fold)*(1-Math.exp(-dt/.3));const fo=rig.fold,beat=Math.sin(now*.005+rig.g.phase)*(1-fo);rig.beat=beat;
+    if(rig.g.gargoyle){const f=rig.e&&rig.e.dormant?1:0;rig.fold+=(f-rig.fold)*(1-Math.exp(-dt/.3));const fo=rig.fold,beat=Math.sin(now*.005+rig.g.phase)*(1-fo);rig.beat=beat;rig.beatA=now*.005+rig.g.phase; /* S1872 — the beat's angle, for a second pair of wings on its own phase (hcGarg) */
       rig.B.wingL.rotation.set(.1+.2*fo,.35+.95*fo,-.75*fo+.3*beat);rig.B.wingR.rotation.set(.1+.2*fo,-.35-.95*fo,.75*fo-.3*beat);
       rig.B.tail.rotation.set(.35*fo,.3*Math.sin(now*.0017+rig.g.phase)*(1-fo),0);}
     if(rig.foe&&rig.e&&rig.e.shieldUp){const L=rig.e.limbs;if(L&&L.shieldArm){L.shieldArm.rotation.x=L.shieldArmUpX;L.shieldArm.rotation.z=L.shieldArmUpZ;rig.B.elL.rotation.x=-1.1;}}
