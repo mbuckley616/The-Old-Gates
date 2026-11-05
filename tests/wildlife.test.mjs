@@ -219,4 +219,32 @@ check(`the strange beasts: five one-blow animals on the wolf's driver, meat ${['
   && SB.rows.Crownstag.join() === 'gatelands/forest:0.5,gatelands/autumn:0.5' && SB.rows.Lanternfox.join() === 'gatelands/forest:0.5,gatelands/autumn:0.5'
   && SB.rows.Thornrunner.join() === 'gatelands/plains:2,gatelands/moor:2' && SB.rows.Frostmane.join() === 'mark/forest:2' && SB.rows.Stonejaw.join() === 'mark/tundra:2'
   && SB.mark.frostmane >= 3 && SB.mark.stonejaw >= 3 && !SB.mark.elsewhere, SB);
+// S1895 — the birds' four and the Bellthroat (bodies Sessions 1892 and 1893) join the tables by the catalogue's habitat and rarity: each builds
+// as an animal on its own body; the Glasswing flies; the Stormplume and the Redcrest, which the catalogue calls hostile, answer back (#1050 A:
+// 16 health, the Boar's blow); a Stormplume within 3 m turns on you and lands a blow; rolled across Aurenne's scrub, Redcrest packs of 2 to 4
+const NB = await page.evaluate(() => { const out = { k: {}, rows: {} }; const isle = { Bellthroat: 'gatelands', Glasswing: 'mark', Stormplume: 'mark', Redcrest: 'aurenne', Sunfan: 'aurenne' };
+  for (const k of Object.keys(isle)) {
+    const e = buildZoneEnemy(sc, STATIC_SOL, px + 6, pz + 6, k, null, { tier: 1, key: 's1895:' + k, island: isle[k] });
+    out.k[k] = { wild: !!e.wild, hp: e.hp, dmg: e.dmg, answer: !!e.answer, body: !!(e.limbs && (e.limbs.bird || e.limbs.wolf || e.limbs.crawl)) || !!e.mesh, fly: !!(WILD_PACE[k] && WILD_PACE[k].fly), run: WILD_PACE[k] && WILD_PACE[k].run, meat: bodyMeat(e, [], 's1895:' + k).length };
+    if (e.mesh && e.mesh.parent) e.mesh.parent.remove(e.mesh); }
+  for (const [i, t] of Object.entries(WILD_ISLE)) for (const [b, rows] of Object.entries(t)) for (const r of rows) if (out.k[r.name]) out.rows[r.name] = (out.rows[r.name] || []).concat(i + '/' + b + ':' + r.w);
+  forceTime(12); stream(px, pz, true);
+  let x = px, z = pz; for (let k = 0; k < 40 && !wildGround(x, z); k++) { x = px + (k % 7 - 3) * 9; z = pz + Math.floor(k / 7) * 9; }
+  const e = keyFoe(buildZoneEnemy(WORLD.scene, STATIC_SOL, x, z, 'Stormplume', null, { tier: 1, key: 'test:plume', island: 'mark' }), 'wild:test:plume');
+  e.homeX = x; e.homeZ = z; e.combatYaw = 0; ZONES.world.enemies.push(e); for (const o of ZE) o._duelHold = o !== e; const T = n => { for (let i = 0; i < n; i++) tickZoneEnemies(1 / 60, 0, WORLD.scene); };
+  px = x + 10; pz = z; T(120); out.at10 = !!e.angry; px = e.x + 3; pz = e.z; PHP = PMAXHP = 500; T(60 * 4); out.at3 = !!e.angry; out.lost = 500 - PHP; PHP = PMAXHP;
+  for (const q of ZE) q._duelHold = false; e.dead = true; if (e.mesh.parent) e.mesh.parent.remove(e.mesh); ZONES.world.enemies.splice(ZONES.world.enemies.indexOf(e), 1);
+  const packs = []; let scrub = 0; for (let cz = 12; cz < 296; cz += 4) for (let cx = 228; cx < 444; cx += 4) { const x = cx * CHUNK + CHUNK / 2, z = cz * CHUNK + CHUNK / 2;
+    if (nationAt(x, z) !== 'aurenne' || worldH(x, z) < 2) continue; if (lairBiome({ x, z }) !== 'wasteland') continue; scrub++;
+    const ch = { cx, cz }; try { wildSpawnChunk(ch); } catch (er) { continue; }
+    if (ch.wild && ch.wild.length && ch.wild[0].name === 'Redcrest') packs.push(ch.wild.length); wildDrop(ch); }
+  out.packs = packs; out.scrub = scrub; return out; });
+console.log('  strange birds:', JSON.stringify(NB));
+check(`the strange birds and the Bellthroat: ${Object.entries(NB.k).map(([k, o]) => k + ' ' + o.hp + (o.answer ? ' answers' : '') + (o.fly ? ' flies' : '')).join(', ')}; a Stormplume grazes at 10 m and turns on you at 3 m (${NB.lost} lost); ${NB.packs.length} Redcrest packs in ${NB.scrub} scrub chunks (${NB.packs.join(' ')})`,
+  Object.values(NB.k).every(o => o.wild && o.body && o.run > 0 && !o.meat) && NB.k.Glasswing.fly && !NB.k.Stormplume.fly && !NB.k.Redcrest.fly
+  && NB.k.Stormplume.answer && NB.k.Stormplume.hp === 16 && NB.k.Stormplume.dmg === 5 && NB.k.Redcrest.answer && NB.k.Redcrest.hp === 16
+  && ['Glasswing', 'Sunfan', 'Bellthroat'].every(k => NB.k[k].hp === 1 && !NB.k[k].answer)
+  && NB.rows.Bellthroat.join() === 'gatelands/fen:2' && NB.rows.Glasswing.join() === 'mark/tundra:0.5,mark/moor:0.5' && NB.rows.Stormplume.join() === 'mark/tundra:0.5,mark/moor:0.5'
+  && NB.rows.Redcrest.join() === 'aurenne/wasteland:0.5' && NB.rows.Sunfan.join() === 'aurenne/plains:0.5,aurenne/dunes:0.5'
+  && !NB.at10 && NB.at3 && NB.lost > 0 && NB.packs.length >= 1 && NB.packs.every(n => n >= 2 && n <= 4), NB);
 await g.close();
