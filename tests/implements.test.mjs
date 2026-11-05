@@ -205,7 +205,7 @@ check(`in such a lair the hoard holds it: ${LH.f && LH.f.name} (${LH.f && LH.f.k
 check('through the save\'s JSON the hoard\'s piece keeps its enchant (put back by id) and its numbers', !!LH2.f && LH2.f.fn && LH2.f.name === LH.f.name && JSON.stringify(LH2.f.stats) === JSON.stringify(LH.f.stats), { LH, LH2 });
 const share = FI.chest.imp / (FI.chest.imp + FI.chest.wpn);
 check(`a chest's weapon roll of tier 4 or finer is a found implement one time in twenty (${FI.chest.imp} of ${FI.chest.imp + FI.chest.wpn}, ${share.toFixed(3)}), each found, of a school, enchanted`, Math.abs(share - .05) < .015 && FI.chest.ok, FI.chest);
-check(`every gate orb carries its enchant (${FI.orbEnch} of 300 seeds; the draw sat inside find's test and missed some, Session 1885)`, FI.orbEnch === 300, FI.orbEnch);
+check(`every gate orb carries its enchant (${FI.orbEnch} of 300 seeds; the draw sat inside find's test and missed some, Session 1889)`, FI.orbEnch === 300, FI.orbEnch);
 check(`a corpse never gives one (${FI.corpse.imp}); nor does a chest's piece under tier 4 (${FI.lo})`, FI.corpse.imp === 0 && FI.lo === 0, { c: FI.corpse, lo: FI.lo });
 check(`a gate's chest gives the gate's school (the gate's own read in the gate; none in a lair): foundImplement(5, 'tine') is ${FI.fx.name}, Tine's, found, 20% off`, GO.ps && LN.ps === null && FI.fx.s === 'tine' && FI.fx.found && FI.fx.desc && ['staff', 'wand', 'maul', 'tome'].includes(FI.fx.k), { fx: FI.fx, gate: GO.ps, lair: LN.ps });
 check(`a found staff or wand's armour enchant counts in hand (${FI.bonus.join(', ')}) and its strike is plain, no throw`, !FI.threw && FI.strike === null && FI.bonus.length >= 1, FI);
