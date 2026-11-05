@@ -277,8 +277,9 @@
     if(S.cargo)for(const [x,z,r] of S.cargo)P.push({x,z,r});
     for(const q of S.cabinItems||[])if(q.name!=='shelf'){const b=q.box;P.push({x:(b[0]+b[3])/2,z:(b[2]+b[5])/2,hx:(b[3]-b[0])/2,hz:(b[5]-b[2])/2,ry:0,lv:'lo'});} /* S1565 — the caravel's cabin, on the main deck */
     const bk=(S.cabinItems||[]).find(q=>q.name==='bunk'),berth=bk?{x:bk.box[3]+.35,z:(bk.box[2]+bk.box[5])/2,hz:(bk.box[5]-bk.box[2])/2}:null;
+    const ct=(S.cabinItems||[]).find(q=>q.name==='chart table'),chart=ct?{x:(ct.box[0]+ct.box[3])/2,z:(ct.box[2]+ct.box[5])/2,hx:(ct.box[3]-ct.box[0])/2,hz:(ct.box[5]-ct.box[2])/2}:null; /* S1880 — the cabin's chart table, E at it (chartDeckNear) */
     return {geo:S.hull.geo,mats:S.hull.mats,deck:{z0,z1,at:z=>z<z0||z>z1?0:S.deckAt(z)-.06},L:S.L,W:S.W,zs:S.zs,zb:S.zb,
-      rigs:S.rigs.map(q=>({geo:q.geo,mats:q.mats,z:q.z,type:q.type})),props:P,at:S.at,tiller:S.tiller,wheel:S.wheel,castle:C||null,fore:F||null,helm:S.helm||null,hatchZ:(h.z0+h.z1)/2,hatchOut:Math.max(1.2,(h.z1-h.z0)/2+.7),kit:S,dress,berth};}
+      rigs:S.rigs.map(q=>({geo:q.geo,mats:q.mats,z:q.z,type:q.type})),props:P,at:S.at,tiller:S.tiller,wheel:S.wheel,castle:C||null,fore:F||null,helm:S.helm||null,hatchZ:(h.z0+h.z1)/2,hatchOut:Math.max(1.2,(h.z1-h.z0)/2+.7),kit:S,dress,berth,chart};}
   // a harbour boat: an open clinker boat with thwarts, oars shipped, a stubby mast with the sail furled; four paints
   function boatBake(v){const key='boat|'+v;let r=SHIP_GEO.get(key);if(r)return r;
     const R=(()=>{let s=(v*2654435761+12345)>>>0;return ()=>{s=(s*1664525+1013904223)>>>0;return s/4294967296;};})();const B=new ShipBake();const paint=[0x5a6a4a,0x6a3a2a,0x3a4a6a,0x7a6a4a][v%4];
@@ -434,7 +435,7 @@
     const mesh=new THREE.Mesh(r.geo,r.mats||SHIP_MAT);mesh.castShadow=true;mesh.receiveShadow=true;
     const wheel=r.tiller?r.tiller.clone():r.wheel?r.wheel.clone():shipWheelMesh();if(!r.tiller&&!r.wheel)wheel.position.set(0,SHIP_DECK+.95,-r.L/2+2.8);mesh.add(wheel);mesh.userData.tiller=!!r.tiller; /* S1531 — the kit's sloop steers by a tiller */
     mesh.add(r.at?shipNetsMesh(r):shipNetMesh(SHIP_W||r.W||4.4)); /* S723 — the boarding nets laid on the hull (S638's stand-in where a bake has no section) */
-    mesh.userData.wheel=wheel;mesh.userData.deck=r.deck;mesh.userData.kind=kind;mesh.userData.props=r.props||[];mesh.userData.bakeKey=bk;mesh.userData.castle=r.castle||null;mesh.userData.fore=r.fore||null;mesh.userData.helm=r.helm||null;mesh.userData.hatchZ=r.hatchZ;mesh.userData.hatchOut=r.hatchOut;mesh.userData.berth=r.berth||null;mesh.userData.kit=r.kit?r.kit.dress||'gatelands':null; /* S1555 — a kit hull, and her dress (the base below deck) */
+    mesh.userData.wheel=wheel;mesh.userData.deck=r.deck;mesh.userData.kind=kind;mesh.userData.props=r.props||[];mesh.userData.bakeKey=bk;mesh.userData.castle=r.castle||null;mesh.userData.fore=r.fore||null;mesh.userData.helm=r.helm||null;mesh.userData.hatchZ=r.hatchZ;mesh.userData.hatchOut=r.hatchOut;mesh.userData.berth=r.berth||null;mesh.userData.chart=r.chart||null;mesh.userData.kit=r.kit?r.kit.dress||'gatelands':null; /* S1555 — a kit hull, and her dress (the base below deck) */
     mesh.userData.rigs=(r.rigs||[]).map(q=>{const m=new THREE.Mesh(q.geo,q.mats||SHIP_MAT);m.castShadow=true;m.position.z=q.z;mesh.add(m);if(q.extra){const e=new THREE.Mesh(q.extra,SHIP_MAT);e.castShadow=true;m.add(e);}return {m,type:q.type,a:0};});
     mesh.userData.trimSnap=true;
     if(!look&&r.kit)shipSwatchOn(mesh); /* S1843 — your own ship in the yard's colours */
@@ -583,6 +584,7 @@
     if(!SHIP.mesh)return false;
     if(!SHIP.sailing&&cabinPrompt()){goToInterior(CABIN.house);return true;}
     if(berthNear()){openSleepUI();return true;} /* S1565 */
+    if(chartDeckNear()){chartRead();return true;} /* S1880 */
     if(SHIP.sailing){SHIP.sailing=false;SHIP.speed=0;Object.assign(worldState.ship,{x:SHIP.x,z:SHIP.z,yaw:SHIP.yaw,name:SHIP.name});showMsg(`You let go of the ${helmWord()}.`,'#c8b880');return true;}
     if(nearWheel()){px=SHIP.helm.x;pz=SHIP.helm.z;jumpY=SHIP.helm.y;yaw=SHIP.yaw;SHIP.sailing=true;showMsg(`You take the ${helmWord()} of the ${SHIP.name}. W/S sail, A/D turn, E to let go.`,'#c8b880');return true;}
     if(nearShip())return startClimb(SHIP.mesh,SHIP.W,shipNetSide(SHIP.mesh,SHIP.W),null);
@@ -591,7 +593,7 @@
   function nearNpcName(){let best=null,bd=3.2;for(const n of npcs){if(n._retreated||!n.g.visible)continue;const d=Math.hypot(n.g.position.x-px,n.g.position.z-pz);if(d<bd){bd=d;best=n;}}return best?`${best.def.name}${best.def.role&&best.def.role!=='Villager'?' — '+best.def.role:''}`:null;}
   function roofPrompt(){for(const S of SETTLE.values()){if(!S.roof)continue;if(Math.abs(jumpY-S.roof.y)<1.2&&Math.hypot(px-S.roof.hatch.x,pz-S.roof.hatch.z)<TOUCH)return "Press 'E' to climb back down";}return null;}
   function roofInteract(){for(const S of SETTLE.values()){if(!S.roof)continue;if(Math.abs(jumpY-S.roof.y)<1.2&&Math.hypot(px-S.roof.hatch.x,pz-S.roof.hatch.z)<TOUCH){const hs=ZONES.world.houses.find(x=>x.type==='tower'&&x.siteId===S.site.id);if(!hs)return false;window._pendingPos={x:4.5,z:4.5-2.2+1.0,yaw:0,jumpY:30};goToInterior(hs);return true;}}return false;}
-  function shipPrompt(){const rp=roofPrompt();if(rp)return rp;const cop=coachPrompt();if(cop)return cop;const sp=shrinePrompt();if(sp)return sp;const fp=fishPrompt();if(fp)return fp;const op=otherPrompt();if(op)return op;const osp=overSidePrompt();if(osp)return osp;if(!SHIP.mesh)return null;if(SHIP.sailing)return `Press 'E' to let go of the ${helmWord()}`;const cp=cabinPrompt();if(cp)return cp;if(berthNear())return "Your berth \u2014 press 'E' to rest";if(nearWheel())return `Press 'E' to pilot the ${SHIP.name}`;if(nearShip())return `Press 'E' to climb aboard the ${SHIP.name}`;return null;}
+  function shipPrompt(){const rp=roofPrompt();if(rp)return rp;const cop=coachPrompt();if(cop)return cop;const sp=shrinePrompt();if(sp)return sp;const fp=fishPrompt();if(fp)return fp;const op=otherPrompt();if(op)return op;const osp=overSidePrompt();if(osp)return osp;if(!SHIP.mesh)return null;if(SHIP.sailing)return `Press 'E' to let go of the ${helmWord()}`;const cp=cabinPrompt();if(cp)return cp;if(berthNear())return "Your berth \u2014 press 'E' to rest";if(chartDeckNear())return CHART_PROMPT;if(nearWheel())return `Press 'E' to pilot the ${SHIP.name}`;if(nearShip())return `Press 'E' to climb aboard the ${SHIP.name}`;return null;}
   // ── sea sounds (use the engine's AX / sfxGain) ──
   const SND={wind:null,windG:null,creakT:0,splashT:0,wasSwim:false};
   function ensureWind(){if(SND.wind||typeof AX==='undefined'||!AX)return;const buf=AX.createBuffer(1,AX.sampleRate*2,AX.sampleRate);const d=buf.getChannelData(0);let l=0;for(let i=0;i<d.length;i++){l=l*.97+(Math.random()*2-1)*.03;d[i]=l*4;}const src=AX.createBufferSource();src.buffer=buf;src.loop=true;const f=AX.createBiquadFilter();f.type='lowpass';f.frequency.value=380;const g=AX.createGain();g.gain.value=0;src.connect(f);f.connect(g);g.connect(sfxGain);src.start();SND.wind=src;SND.windG=g;}
@@ -783,7 +785,7 @@
   function buildShipBase(house){
     const kd=SHIP.mesh.userData.kind,B=kd==='galleon'?PKIT.ships.galleonBase({dress:SHIP.mesh.userData.kit}):kd==='cog'?PKIT.ships.cogBase({dress:SHIP.mesh.userData.kit}):kd==='caravel'?PKIT.ships.caravelBase():kd==='cutter'?PKIT.ships.cutterBase():PKIT.ships.sloopBase({dress:SHIP.mesh.userData.kit}),F0=B.floor,z0=B.hold.z0,z1=B.hold.z1,X=kd==='galleon'?3.5:kd==='cog'?2.8:kd==='caravel'?2.5:kd==='cutter'?2.0:2.2,W=2*X,D=z1-z0;
     const rx=x=>X-x,rz=z=>z1-z,ry=y=>y-F0,fr=b=>({x0:rx(b[3]),x1:rx(b[0]),z0:rz(b[5]),z1:rz(b[2]),y0:Math.max(0,ry(b[1])),y1:ry(b[4])});
-    house._counterFront=null;house._bench=null;house.intW=W;house.intD=D;house._roomH=+(B.deckUnder-F0).toFixed(3);house._eyeMax=+(B.beamBottom-F0-.2).toFixed(3);
+    house._counterFront=null;house._bench=null;house._chart=null;house.intW=W;house.intD=D;house._roomH=+(B.deckUnder-F0).toFixed(3);house._eyeMax=+(B.beamBottom-F0-.2).toFixed(3);
     const fz=+rz(B.ladder.foot[2]).toFixed(3),aft=D-fz>1;house._exitD=aft?.3:.8;house._exitZ=aft?fz:null;house._exitW=.5;house._exitX=X;house._exitText="Press 'E' to go on deck";house._arriveX=X;house._arriveZ=aft?+(fz-.1).toFixed(3):+(D-.35).toFixed(3); /* S1558 — the cutter's ladder foot is mid-hold, the berth aft of it */house._arriveYaw=0;house._base=B;
     const sc_=new THREE.Scene();interiorScene=sc_;landRoomPost(sc_);sc_.background=new THREE.Color(0x0c0806);sc_.fog=new THREE.Fog(0x0c0806,6,14);
     intNPCMesh=null;intNPCPos={x:-99,z:-99};intBedPos=null;intStashPos=null;
@@ -799,6 +801,7 @@
     for(const n of ['sea chest','chest','water cask','mast','barrel','stool','crate','sack','arms rack'])for(const q of all(n))SOL.push(fr(q.box)); /* S1564 — the caravel's two masts, two chests and four barrels; S1578 the cog's crates and sacks; S1584 the galleon's arms rack */
     for(const n of ['chart table','workbench','alchemy table','hammock'])for(const q of all(n)){const a=q.box;SOL.push(fr([a[0],F0,a[2],a[3],a[4],a[5]]));} /* S1584 — the galleon's hammocks, slung at head height, are walked round, not under */
     if(it('workbench')){const a=it('workbench').box;house._bench={x:+rx((a[0]+a[3])/2).toFixed(3),z:+rz((a[2]+a[5])/2).toFixed(3)};} /* S1558 — E at it (benchNear) */
+    if(it('chart table')){const a=it('chart table').box;house._chart={x:+rx((a[0]+a[3])/2).toFixed(3),z:+rz((a[2]+a[5])/2).toFixed(3)};} /* S1880 — the cutter's chart table, E at it (chartHoldNear) */
     {const c=it('sea chest').box;intStashPos={x:+rx((c[0]+c[3])/2).toFixed(3),z:+rz((c[2]+c[5])/2).toFixed(3)};}
     // the sky over the open hatch, by the hour, and the day down through it; the lantern under the beam and the hold's air
     const hr=typeof gameHour==='function'?gameHour():12,dayK=hr>=7&&hr<18?1:hr>=5&&hr<20?.4:0;

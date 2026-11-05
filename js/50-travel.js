@@ -2314,6 +2314,7 @@ function interact(){
       return;
     }
     if(benchNear()){openBenchPage();return;} /* S1527 — the cabin's bench */
+    if(chartHoldNear()){chartRead();return;} /* S1880 — her chart table */
     if(intBedPos && !INT_BEDS.length && Math.hypot(px-intBedPos.x,pz-intBedPos.z)<TOUCH && bedAimed(intBedPos)){ // v80 S11 — generated rooms use INT_BEDS (height-aware)
       openSleepUI();
       return;

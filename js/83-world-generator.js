@@ -1491,7 +1491,7 @@ function genSettlement(site){
     wastes:{col:0xa08e74,amt:.46,label:'Wastes'},
   };
   const _mb=new THREE.Color();
-  function tileKey(i,j,res){return i+','+j+':'+res;}
+  function tileKey(i,j,res){return i+','+j+':'+res+(MAP.shoals?':s':'');} /* S1880 — the chart table's shoals are their own tiles */
   // S588's names for the map's CSS size, kept as aliases of S704's (the merge of 11 Oct kept S704's quadtree, Michael's A on #220)
   function mapLW(){return mapCssW();}
   function mapLH(){return mapCssH();}
@@ -1505,8 +1505,8 @@ function genSettlement(site){
   }
   // colour one map pixel from height / region / slope
   const _mc=new THREE.Color();
-  function mapPixel(x,z,h,shade,out){
-    if(h<0){_mc.copy(WATER).lerp(DEEP,sstep(0,-7,h));if(h>-1.2)_mc.lerp(PARCH,.35);}
+  function mapPixel(x,z,h,shade,out,sh){
+    if(h<0){_mc.copy(WATER).lerp(DEEP,sstep(0,-7,h));if(h>-1.2)_mc.lerp(PARCH,.35);if(sh&&h>-SHOAL_D)_mc.set(SHOAL_COL);} /* S1880 — read at her chart table, a bed under 2 m is a shoal (the navigator's colour, S1780) */
     else{
       _mc.copy(PARCH).lerp(LOWC,sstep(1,8,h)).lerp(HILL,sstep(8,30,h)).lerp(MTN,sstep(30,70,h)).lerp(SNOWC,sstep(70,130,h));
       const dom=dominantRegion(x,z).r;const B=MAPBIO[dom.biome];
@@ -1524,7 +1524,7 @@ function genSettlement(site){
     const key=tileKey(cell.i,cell.j,res)+(sub?'/'+sub.n+'/'+sub.a+'/'+sub.b:'');if(MAP.tiles.has(key))return MAP.tiles.get(key);
     const cv=document.createElement('canvas');cv.width=res;cv.height=res;const ctx=cv.getContext('2d');
     const n=sub?sub.n:1;const img=ctx.createImageData(res,res);const step=SIZE/res/n;const H=new Float32Array((res+1)*(res+1));
-    const t={cv,ctx,img,H,row:0,hrow:0,done:false,cell,res,step,sub:sub||null,key,n,X0:cell.ox+(sub?sub.a*SIZE/n:0),Z0:cell.oz+(sub?sub.b*SIZE/n:0)};MAP.tiles.set(key,t);MAP.jobs.push(t); /* S588 — sub: one of n×n squares of the cell at full resolution, for a deep zoom */
+    const t={cv,ctx,img,H,row:0,hrow:0,done:false,cell,res,step,sub:sub||null,key,n,sh:!!MAP.shoals,X0:cell.ox+(sub?sub.a*SIZE/n:0),Z0:cell.oz+(sub?sub.b*SIZE/n:0)};MAP.tiles.set(key,t);MAP.jobs.push(t); /* S588 — sub: one of n×n squares of the cell at full resolution, for a deep zoom */
     if(res<=TILE_C){while(!t.done)tileStep(t,1e9);}
     return t;
   }
@@ -1539,7 +1539,7 @@ function genSettlement(site){
         for(let i=0;i<res;i++){const h=H[j*(res+1)+i];const x=X0+i*step,z=Z0+j*step;
           const hx=H[j*(res+1)+Math.min(res,i+1)]-H[j*(res+1)+Math.max(0,i-1)],hz=H[Math.min(res,j+1)*(res+1)+i]-H[Math.max(0,j-1)*(res+1)+i];
           const shade=Math.max(.72,Math.min(1.22,1+(-hx-hz)*(res>=TILE_F?.045*nS:.02)));
-          mapPixel(x,z,h,shade,px3);const k=(j*res+i)*4;d[k]=px3[0];d[k+1]=px3[1];d[k+2]=px3[2];d[k+3]=255;}
+          mapPixel(x,z,h,shade,px3,t.sh);const k=(j*res+i)*4;d[k]=px3[0];d[k+1]=px3[1];d[k+2]=px3[2];d[k+3]=255;}
         t.row++;rowsBudget--;}
       if(t.row>=res){t.ctx.putImageData(t.img,0,0);
         if(res>=TILE_F){ // hatched water on fine tiles
@@ -1550,10 +1550,10 @@ function genSettlement(site){
   }
   // A quadtree tile (cell, L, qi, qj) at res pixels: heights first, then pixels, as tileStep does, to a time budget. The relief
   // is shaded by slope per world unit, so a deep tile is shaded as strongly as the old fine tile.
-  function mapQKey(c,L,qi,qj,res){return 'q'+c.i+','+c.j+':'+L+':'+qi+','+qj+':'+res;}
+  function mapQKey(c,L,qi,qj,res){return 'q'+c.i+','+c.j+':'+L+':'+qi+','+qj+':'+res+(MAP.shoals?':s':'');}
   function mapStartQ(c,L,qi,qj,res){const key=mapQKey(c,L,qi,qj,res);let t=MAP.tiles.get(key);if(t)return t;
     const span=SIZE/(1<<L);const cv=document.createElement('canvas');cv.width=res;cv.height=res;const ctx=cv.getContext('2d');
-    t={cv,ctx,img:ctx.createImageData(res,res),H:new Float32Array((res+1)*(res+1)),row:0,hrow:0,done:false,cell:c,res,L,qi,qj,span,step:span/res,X0:c.ox+qi*span,Z0:c.oz+qj*span,q:true,key,want:MAP.drawN};
+    t={cv,ctx,img:ctx.createImageData(res,res),H:new Float32Array((res+1)*(res+1)),row:0,hrow:0,done:false,sh:!!MAP.shoals,cell:c,res,L,qi,qj,span,step:span/res,X0:c.ox+qi*span,Z0:c.oz+qj*span,q:true,key,want:MAP.drawN};
     MAP.tiles.set(key,t);MAP.jobs.push(t);return t;}
   function mapStepQ(t,budgetMs,t0){const {res,step,X0,Z0}=t;const H=t.H;
     withCellData(t.cell,()=>{
@@ -1562,7 +1562,7 @@ function genSettlement(site){
       while(t.row<res&&performance.now()-t0<budgetMs){const j=t.row;
         for(let i=0;i<res;i++){const h=H[j*(res+1)+i];
           const hx=H[j*(res+1)+Math.min(res,i+1)]-H[j*(res+1)+Math.max(0,i-1)],hz=H[Math.min(res,j+1)*(res+1)+i]-H[Math.max(0,j-1)*(res+1)+i];
-          const shade=Math.max(.72,Math.min(1.22,1+(-hx-hz)*k));mapPixel(X0+i*step,Z0+j*step,h,shade,px3);const o=(j*res+i)*4;d[o]=px3[0];d[o+1]=px3[1];d[o+2]=px3[2];d[o+3]=255;}
+          const shade=Math.max(.72,Math.min(1.22,1+(-hx-hz)*k));mapPixel(X0+i*step,Z0+j*step,h,shade,px3,t.sh);const o=(j*res+i)*4;d[o]=px3[0];d[o+1]=px3[1];d[o+2]=px3[2];d[o+3]=255;}
         t.row++;}
       if(t.row>=res){t.ctx.putImageData(t.img,0,0);
         if(step<=10){const c=t.ctx,gap=Math.max(4,Math.round(45/step/1.5));c.strokeStyle='rgba(60,90,110,.22)';c.lineWidth=1;
