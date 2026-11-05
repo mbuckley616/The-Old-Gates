@@ -89,5 +89,55 @@ if (L) {
   check(`bare: a pillar at 6 m stands ${L.bare6} s; 14 m is too far (${L.bare14})`, L.bare6 === 20 && L.bare14 === 'far', L);
   check(`with the staff: at 6 m it stands ${L.staff6} s (×1.25), and 14 m is in reach (${L.staff14})`, L.staff6 === 25 && L.staff14 === 25, L);
 }
+// Session 1854 — the orb: guard up, F keeps a Sent or Touched word at its full cost and wind-up; the next F lets it go at once
+const O = await page.evaluate(() => {
+  const out = {}, keepW = EQ.weapon, keepO = EQ.offhand, now = () => performance.now() / 1000;
+  const orb = makeOrb(1, 'tine'); out.orb = { name: orb.name, slot: orb.slot, k: orb.implement, s: orb.school, block: orb.block, shield: orb.shieldType };
+  EQ.weapon = makeImplement(1, 'staff', null); EQ.offhand = null; BAG.push(makeOrb(1, null)); let n = BAG.length; useItem(n - 1); out.refused = EQ.offhand === null && BAG.length === n; BAG.pop();
+  EQ.weapon = null; BAG.push(orb); useItem(BAG.length - 1); out.equipped = EQ.offhand === orb && orbHeld();
+  knownWords = { caor: 2 }; SKILLS.tine = { lv: 50, p: 0 }; spellBook.length = 0; bookSelect(bookAdd('caor'));
+  const clear = () => { for (const k2 in K) K[k2] = false; castT = 0; _castFreeAt = 0; _castReleaseAt = 0; spCd = 0; ORB_KEPT = null; TOUCH_PEND = null; };
+  const sm = showMsg; window._orbSaid = []; showMsg = t => window._orbSaid.push(t);
+  out.cost = wordCost('caor', 'sent', null, { tier: effTier('caor') });
+  clear(); mana = 100; blocking = true; const z0 = ZB.length, t0 = now(); castSpell();
+  out.keep = { kept: !!ORB_KEPT && ORB_KEPT.word === 'caor' && ORB_KEPT.form === 'sent', paid: 100 - mana, tell: +(_castReleaseAt - t0).toFixed(2), bolts: ZB.length - z0 };
+  // without the guard the orb is a plain off hand: F casts as ever
+  window._orbFree = () => { clear(); mana = 100; blocking = false; const z = ZB.length, t = now(); castSpell(); return { kept: !!ORB_KEPT, tell: +(_castReleaseAt - t).toFixed(2), paid: 100 - mana }; };
+  showMsg = sm; return out; });
+// the wind-up and its recovery run on the clock; then the next F lets it go (the hand's animation is the loop's, and cosmetic: cleared as wordforms does)
+await page.waitForFunction(() => !castRecovering(), null, { timeout: 15000, polling: 50 });
+await page.evaluate(() => { castT = 0; });
+const R = await page.evaluate(() => {
+  const now = () => performance.now() / 1000, sm = showMsg; showMsg = t => window._orbSaid.push(t);
+  const z0 = ZB.length; mana = 100; blocking = false; spCd = 5; const t0 = now(); castSpell();
+  const out = { kept: !!ORB_KEPT, paid: 100 - mana, tell: +(_castReleaseAt - t0).toFixed(2), rec: +(_castFreeAt - t0).toFixed(2) };
+  showMsg = sm; window._orbZ0 = z0; return out; });
+await page.waitForFunction(() => ZB.length > window._orbZ0, null, { timeout: 5000, polling: 20 }).catch(() => {});
+const R2 = await page.evaluate(() => ({ bolts: ZB.length - window._orbZ0, spell: ZB.length ? ZB[ZB.length - 1].userData.spell.id : null, free: window._orbFree() }));
+// the charge's losses: 60 s of play, a change of place, the orb leaving the hand, and the touched form kept and let go
+const X = await page.evaluate(() => {
+  const out = {}, sm = showMsg; showMsg = () => {};
+  const keepNow = () => { for (const k2 in K) K[k2] = false; castT = 0; _castFreeAt = 0; _castReleaseAt = 0; spCd = 0; ORB_KEPT = null; TOUCH_PEND = null; mana = 100; blocking = true; castSpell(); blocking = false; return !!ORB_KEPT; };
+  out.k59 = keepNow(); playClockS += 59.5; orbTick(); out.at59 = !!ORB_KEPT; playClockS += 1; orbTick(); out.at61 = !!ORB_KEPT;
+  out.kPlace = keepNow(); ORB_KEPT.key = 'elsewhere'; orbTick(); out.place = !!ORB_KEPT;
+  const o = EQ.offhand; out.kHand = keepNow(); EQ.offhand = null; orbTick(); out.hand = !!ORB_KEPT; EQ.offhand = o;
+  formsGranted.push('touched'); const mt = bookMake('touched', 'caor'); bookSelect(mt.i);
+  out.kTouch = keepNow() && ORB_KEPT.form === 'touched'; out.touchPaid = 100 - mana;
+  out.touchPend = !!TOUCH_PEND; castT = 0; _castFreeAt = 0; _castReleaseAt = 0; ORB_KEPT.ready = 0;
+  const t0 = performance.now() / 1000; mana = 100; castSpell(); out.touchRel = { kept: !!ORB_KEPT, pend: !!TOUCH_PEND, at: TOUCH_PEND ? +(TOUCH_PEND.at - t0).toFixed(2) : null, paid: 100 - mana };
+  TOUCH_PEND = null; out.kSleep = keepNow(); showMsg = sm; return out; });
+await page.evaluate(() => restAtBed(1));
+const slept = await page.waitForFunction(() => ORB_KEPT === null, null, { timeout: 8000, polling: 100 }).then(() => true).catch(() => false);
+await page.evaluate(() => { EQ.offhand = null; spellBook.length = 0; });
+console.log('orb', JSON.stringify({ O, R, R2, X, slept }));
+check('an orb is an off-hand glass, no shield, no block', O.orb.slot === 'offhand' && O.orb.k === 'orb' && O.orb.s === 'tine' && O.orb.block == null && !O.orb.shield, O.orb);
+check('beside the two-handed staff it is refused; otherwise it equips from the bag', O.refused && O.equipped, O);
+check(`guard up, F keeps Caor sent: paid ${O.keep.paid} (its cost ${O.cost}, Tine’s emblem in it), the full 0.35 s wind-up (${O.keep.tell}), no bolt`, O.keep.kept && O.keep.paid === O.cost && O.keep.tell === .35 && O.keep.bolts === 0, O.keep);
+check(`the next F lets it go at once: no mana (${R.paid}), wind-up ${R.tell} s, the 0.30 s recovery (${R.rec}), past a cooldown, a Caor bolt flies`, !R.kept && R.paid === 0 && R.tell === 0 && R.rec === .3 && R2.bolts === 1 && R2.spell === 'caor', { R, R2 });
+check(`guard down, the orb keeps nothing: F casts as ever (wind-up ${R2.free.tell} s, paid ${R2.free.paid})`, !R2.free.kept && R2.free.tell === .35 && R2.free.paid === O.cost, R2.free);
+check('the charge holds 59.5 s of play and is gone past 60 s', X.k59 && X.at59 && !X.at61, X);
+check('a change of place or the orb leaving the hand loses it', X.kPlace && !X.place && X.kHand && !X.hand, X);
+check(`a Touched entry is kept at its cost (${X.touchPaid}) and lands at once on release (${JSON.stringify(X.touchRel)})`, X.kTouch && X.touchPaid > 0 && !X.touchPend && !X.touchRel.kept && X.touchRel.pend && X.touchRel.at === 0 && X.touchRel.paid === 0, X);
+check('sleep empties the orb', X.kSleep && slept, { kSleep: X.kSleep, slept });
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

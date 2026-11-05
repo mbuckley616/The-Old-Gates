@@ -348,15 +348,16 @@ let _castReleaseAt=0,_castFreeAt=0;
 function castMark(tellS){const t=performance.now()/1000;_castReleaseAt=t+tellS;_castFreeAt=_castReleaseAt+WEAPON_ATTACKS.Cast.recovery;}
 function castWinding(){return performance.now()/1000<_castReleaseAt;}
 function castRecovering(){return performance.now()/1000<_castFreeAt;}
-function castSpell(){
+function castSpell(rel){ /* S1854 — rel: an orb's kept Sent entry, let go (orbRelease) */
+  if(!rel&&ORB_KEPT&&typeof orbHeld==='function'&&orbHeld()){orbRelease();return;} /* S1854 — the orb's next F lets its word go */
   // Empty-knownWords hint — one of the two signals (along with HUD dimming) that there are carvings to find.
   if(!activeSpellId||Object.keys(knownWords).length===0){
     if(Object.keys(knownWords).length){showMsg('The words you hold are not yet spells you can cast.','#a8a8d4');return;} /* S1586 — a new word from a carving, before its forms are built */
     showMsg('You know no magic. Words are carved into the walls deep in the gates.','#a8a8d4');
     return;
   }
-  {const lb=spellBook[bookSync()];if(lb&&lb.form==='laid'){castLaid(lb);return;}if(lb&&lb.form==='held'){castHeld(lb);return;}if(lb&&lb.form==='touched'){castTouched(lb);return;}} /* S1590 — a laid entry (64-spells.js); S1601 — a held one; S1603 — a touched one */
-  const sp=SPELLS.find(s=>s.id===activeSpellId);
+  {const lb=rel||spellBook[bookSync()];if(lb&&lb.form==='laid'){castLaid(lb);return;}if(lb&&lb.form==='held'){castHeld(lb);return;}if(lb&&lb.form==='touched'){if(!rel&&orbRaised())castOrbKeep(lb);else castTouched(lb);return;}} /* S1854 — touched into the orb */ /* S1590 — a laid entry (64-spells.js); S1601 — a held one; S1603 — a touched one */
+  const sp=SPELLS.find(s=>s.id===(rel?rel.word:activeSpellId));
   if(!sp){showMsg('Spell not learned!','#6688cc');return;}
   const tier=effTier(sp.id); /* S1346 — a great gate torn or bound moves the tier cast */
   if(!tier){showMsg('Spell not learned!','#6688cc');return;}
@@ -365,11 +366,12 @@ function castSpell(){
   if(isCasting()||castRecovering()){return;} /* S1575 — and the Cast row's 0.30 s after the release */
   // S1575 — the spell F casts is the book's entry for it (magic B): its form, its word, its rider, and wordCost's mana. Until the
   // composing page, the book holds only Novice forms, Sent for the bolts and Worn for the rest, as the spells always cast.
-  const bk=spellBook[bookSync()]||{form:bookFormFor(sp.id)||'sent',word:sp.id,rider:null};
-  const actualCost=wordCost(bk.word,bk.form,bk.rider,{tier}); /* S941 — the school's skill sets the cost, inside wordCost since S1575 */
+  const bk=rel||spellBook[bookSync()]||{form:bookFormFor(sp.id)||'sent',word:sp.id,rider:null};
+  if(!rel&&bk.form==='sent'&&orbRaised()){castOrbKeep(bk);return;} /* S1854 — sent into the orb */
+  const actualCost=rel?0:wordCost(bk.word,bk.form,bk.rider,{tier}); /* S941 — the school's skill sets the cost, inside wordCost since S1575 */
   const short=Math.max(0,actualCost-Math.floor(mana)),blood=short*OVERCAST_HP; /* S1571 — the overcast */
   if(short&&PHP-blood<1){showMsg(`Not enough mana! (need ${actualCost})`,'#6688cc');return;}
-  if(spCd>0){showMsg('Cooling down...','#6688cc');return;}
+  if(spCd>0&&!rel){showMsg('Cooling down...','#6688cc');return;}
   const paid=actualCost-short;mana=Math.max(0,mana-actualCost);_offenceS=playClockS; /* S408 */
   if(short){PHP-=blood;PPOST.stagUntil=Math.max(PPOST.stagUntil,performance.now()/1000+OVERCAST_STAGGER_S);blocking=false;powerCharging=false;powerCharge=0;
     lvAct.damageTaken+=blood;updateHUD();showMsg(`Not enough mana: the word takes ${blood} health.`,'#d48a8a');}
@@ -418,11 +420,11 @@ function castSpell(){
   startCastAnim(sp, animType);
   // Charge-up sound — per-school ambient buildup that plays during the cast animation.
   // Fizzle is the one case where the charge still plays (the shape almost held) — reinforces the failed-cast fiction.
-  sndSpellCharge(sp.school);
+  if(!rel)sndSpellCharge(sp.school);
 
   // Delay the actual projectile/heal resolution to the release frame of the animation (60% through).
   // This creates the classic telegraph-then-release rhythm players expect from spellcasting.
-  const releaseDelayMs = Math.round(castTell()*1000); /* S1575 — the Cast row's wind-up (was 60% of the hand's 0.55 s) */
+  const releaseDelayMs = rel?0:Math.round(castTell()*1000); /* S1854 — the orb lets it go at once */ /* S1575 — the Cast row's wind-up (was 60% of the hand's 0.55 s) */
   castMark(releaseDelayMs/1000);
   // Snapshot aim state at the moment of release so the spell follows where you WERE looking when you pressed F,
   // NOT wherever you've moved the camera during the 330ms animation. This prevents late-frame yaw changes from

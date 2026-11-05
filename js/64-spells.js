@@ -916,6 +916,7 @@ function tickSpellFx(dt){
   if(HELD)heldTick(dt); /* S1601 — the held form */
   if(RIDDEN.size)riderTick(); /* S1602 — the riders' burns and glows */
   if(TOUCH_PEND)touchTick(); /* S1603 — the touched form's landing */
+  if(ORB_KEPT)orbTick(); /* S1854 — the orb's kept cast */
   if(LAID&&LAID.rideR)laidRiderTick(); /* S1604 — a rider on a laid thing */
   if(LAID&&LAID.snare&&!LAID.rooted)laidSnareTick(); /* S1612 — Fréamh laid */
   if(LAID&&LAID.fire)laidFireTick(); /* S1617 — Loscadh laid */
@@ -1470,8 +1471,8 @@ function touchWord(bk){
   if(!formHeld('touched'))return {say:'The Touched form is not yet yours.'};
   if(!wordLive(bk.word,'touched'))return {say:'You cannot shape that word so.'};
   if(TOUCH_PEND||HELD||isCasting()||castRecovering())return {why:'busy'};
-  if(spCd>0)return {say:'Cooling down...'};
-  const cost=wordCost(bk.word,'touched',bk.rider,{tier}),short=Math.max(0,cost-Math.floor(mana)),blood=short*OVERCAST_HP;
+  if(spCd>0&&!ORB_REL)return {say:'Cooling down...'}; /* S1854 — an orb's release is paid for */
+  const cost=ORB_REL?0:wordCost(bk.word,'touched',bk.rider,{tier}),short=Math.max(0,cost-Math.floor(mana)),blood=short*OVERCAST_HP;
   if(short&&PHP-blood<1)return {say:`Not enough mana! (need ${cost})`};
   mana=Math.max(0,mana-cost);_offenceS=playClockS;
   if(short){PHP-=blood;PPOST.stagUntil=Math.max(PPOST.stagUntil,performance.now()/1000+OVERCAST_STAGGER_S);blocking=false;powerCharging=false;powerCharge=0;
@@ -1481,12 +1482,53 @@ function touchWord(bk){
   const wr=tier===1||mixed?casterRand(bk.word+':touched'):null;
   if(wr&&wr()<(tier===1?wordWildChance(bk.word):0)+(mixed?mixedWildChance():0)){mana=Math.min(effMaxMana(),mana+Math.round((cost-short)*.5));startCastAnim(sp,'fizzle');
     return {ok:true,wild:'fizzle',say:`${w.ico} ${w.nameIr} fizzles — the shape will not hold.`};}
-  castMark(touchTell());startCastAnim(sp,'projectile');
-  if(typeof sndSpellCharge==='function')sndSpellCharge(w.school);
-  TOUCH_PEND={word:bk.word,rider:bk.rider||null,tier,sp,at:performance.now()/1000+touchTell(),key:laidKey()};
+  const tell=ORB_REL?0:touchTell(); /* S1854 — the orb lets it go at once */
+  castMark(tell);startCastAnim(sp,'projectile');
+  if(typeof sndSpellCharge==='function'&&!ORB_REL)sndSpellCharge(w.school);
+  TOUCH_PEND={word:bk.word,rider:bk.rider||null,tier,sp,at:performance.now()/1000+tell,key:laidKey()};
   return {ok:true,blood:short?blood:0};}
 function castTouched(bk){const r=touchWord(bk);if(r.say)showMsg(r.say,r.ok?'#8a8ac8':'#a8a8d4');
   else if(r.blood)showMsg(`Not enough mana: the word takes ${r.blood} health.`,'#d48a8a');return !!r.ok;}
+// S1854 — the orb's kept cast (magical-implements.md, #1111 B): with an orb in the off hand and the guard raised (the right button), F casts a
+// Sent or Touched entry into the orb at its full cost and full wind-up. The orb keeps it: one charge, 60 s by the play clock, lost on sleep,
+// a change of place, death, or the orb leaving your hand. Its next F lets it go at once: no wind-up, the Cast row's 0.30 s recovery after. The
+// release goes through the form's own cast (castSpell or touchWord) with ORB_REL set, which skips the cost, the cooldown and the wind-up; the
+// word's wild roll is made as it leaves. Never saved (the page): a reload is a change of place.
+let ORB_KEPT=null,ORB_REL=false; /* {word,form,rider,ready,at,key} */
+function orbRaised(){return typeof orbHeld==='function'&&orbHeld()&&!!blocking;}
+// orbKeep: the named action. Pays for and winds up bk {word,form,rider} into the orb
+function orbKeep(bk){
+  const w=WORD_BY[bk.word],tier=wordTierOf(bk.word);if(!w||!tier)return {say:'Spell not learned!'};
+  if(bk.form!=='sent'&&bk.form!=='touched')return {say:'An orb keeps only a sent or a touched word.'};
+  if(bk.form==='touched'&&!formHeld('touched'))return {say:'The Touched form is not yet yours.'};
+  if(!wordLive(bk.word,bk.form))return {say:'You cannot shape that word so.'};
+  if(ORB_KEPT)return {say:'The orb already keeps a word.'};
+  if(TOUCH_PEND||HELD||isCasting()||castRecovering())return {why:'busy'};
+  if(spCd>0)return {say:'Cooling down...'};
+  const cost=wordCost(bk.word,bk.form,bk.rider,{tier}),short=Math.max(0,cost-Math.floor(mana)),blood=short*OVERCAST_HP;
+  if(short&&PHP-blood<1)return {say:`Not enough mana! (need ${cost})`};
+  mana=Math.max(0,mana-cost);
+  if(short){PHP-=blood;PPOST.stagUntil=Math.max(PPOST.stagUntil,performance.now()/1000+OVERCAST_STAGGER_S);blocking=false;powerCharging=false;powerCharge=0;
+    lvAct.damageTaken+=blood;updateHUD();}
+  const sp=heldSpell(bk.word);spCd=spellCooldown(sp,tier);
+  const tell=bk.form==='touched'?touchTell():castTell();castMark(tell);startCastAnim(sp,'self');
+  if(typeof sndSpellCharge==='function')sndSpellCharge(w.school);
+  ORB_KEPT={word:bk.word,form:bk.form,rider:bk.rider||null,ready:performance.now()/1000+tell,at:playClockS+tell,key:laidKey()};
+  return {ok:true,blood:short?blood:0,say:`${w.ico} ${w.nameIr} — kept in the orb.`};}
+function castOrbKeep(bk){const r=orbKeep(bk);if(r.blood)showMsg(`Not enough mana: the word takes ${r.blood} health.`,'#d48a8a');else if(r.say)showMsg(r.say,r.ok?'#b8a8e8':'#a8a8d4');return !!r.ok;}
+// the kept cast's release: true when it went (or went wild); false while the hands are still busy, the charge kept
+function orbRelease(){const K=ORB_KEPT;if(!K)return false;
+  if(performance.now()/1000<K.ready||TOUCH_PEND||HELD||isCasting()||castRecovering())return false;
+  ORB_KEPT=null;ORB_REL=true;
+  try{if(K.form==='touched')castTouched({form:'touched',word:K.word,rider:K.rider});else castSpell({form:'sent',word:K.word,rider:K.rider});}
+  finally{ORB_REL=false;}
+  return true;}
+function orbDrop(say){if(!ORB_KEPT)return;ORB_KEPT=null;if(say)showMsg(say,'#a8a8d4');}
+// each frame, from tickSpellFx: the charge goes after 60 s of play, at a change of place, at death, or when the orb leaves the off hand
+function orbTick(){const K=ORB_KEPT;if(!K)return;
+  if(dead||K.key!==laidKey()){orbDrop();return;}
+  if(!(typeof orbHeld==='function'&&orbHeld())){orbDrop('The word kept in the orb is lost.');return;}
+  if(playClockS-K.at>IMPLEMENT.orbKeep)orbDrop('The word kept in the orb fades.');}
 // each frame, from tickSpellFx: the touch lands when its wind-up is done, on the nearest foe in reach then
 function touchTick(){const T=TOUCH_PEND;if(!T)return;
   if(dead||T.key!==laidKey()){TOUCH_PEND=null;return;}

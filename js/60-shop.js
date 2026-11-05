@@ -438,6 +438,7 @@ function restAtBed(hours){
   if(typeof doFade!=='function'){return;}
   hours=Math.max(1,Math.min(24,hours||8));
   doFade(()=>{
+    if(typeof orbDrop==='function')orbDrop(); /* S1854 — sleep empties the orb */
     {const p=restPreview(hours);PHP=p.hp;mana=p.mp;stamina=effMaxStamina();}
     if(typeof worldState !== 'undefined' && typeof worldState.gameTimeMinutes === 'number'){
       if(typeof fedSleep==='function')fedSleep(hours*60); /* S1500 — Full belly */

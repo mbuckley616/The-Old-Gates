@@ -194,9 +194,12 @@ const IMPLEMENT_TYPES={
   maul: {type:'Maul', slot:'weapon',weight:4,  atkMult:[0.90,1.15],shape:'mace', wType:'blunt'},
 };
 const IMPLEMENT={heldReach:5.5,laidReach:16,laidDur:1.25,sentReach:45,castTell:.28,cut:.10,foundCut:.20,cutMax:.35,
-  tomeWild:.10,tomeWildSteady:.05,tomeMixed:.03,tomeTell:2}; /* S1850 — the tome: Impression ×0.8 (TIER_MAG_TOME), wild a third as often, every wind-up doubled */
+  tomeWild:.10,tomeWildSteady:.05,tomeMixed:.03,tomeTell:2,orbKeep:60}; /* S1850 — the tome: Impression ×0.8 (TIER_MAG_TOME), wild a third as often, every wind-up doubled */
 // S1850 — the tome (the sheet's second session, its other half the orb's kept cast): an off-hand book, no shield, no block, weight 1.
 const TOME_TYPE={type:'Tome',slot:'offhand',weight:1};
+// S1854 — the orb (the sheet's second session, its first half the tome): an off-hand glass, no shield, no block, weight 1; it keeps one cast.
+// Never sold (the page): one gate in three keeps one, the sheet's third session.
+const ORB_TYPE={type:'Orb',slot:'offhand',weight:1};
 function weaponDamageType(w){
   if(!w) return 'blunt';
   if(w.wType) return w.wType;
@@ -572,17 +575,23 @@ function cloakSwimMult(){const K=EQ.back&&CLOAK_KINDS[EQ.back.virtue];return K?K
 function makeImplement(matTier,kind,school,o){o=o||{};if(kind==='wand'&&school==='cloch')kind='maul';const T=IMPLEMENT_TYPES[kind];if(!T)return null;
   const it=makeItem(matTier||1,T,null,false);it.implement=kind;it.school=(school&&typeof SCHOOL_DEF!=='undefined'&&SCHOOL_DEF[school])?school:null;
   if(o.found)it.found=true;it.ico=kind==='staff'?'🥢':kind==='wand'?'🪄':'🔨';it.desc=implementDesc(it);return it;}
-// the implement an item is ('staff', 'wand', 'maul', 'tome'), or null
-function implementOf(w){return w&&w.implement&&(IMPLEMENT_TYPES[w.implement]||w.implement==='tome')?w.implement:null;}
+// the implement an item is ('staff', 'wand', 'maul', 'tome', 'orb'), or null
+function implementOf(w){return w&&w.implement&&(IMPLEMENT_TYPES[w.implement]||w.implement==='tome'||w.implement==='orb')?w.implement:null;}
 function tomeHeld(){return typeof EQ!=='undefined'&&implementOf(EQ.offhand)==='tome';}
+function orbHeld(){return typeof EQ!=='undefined'&&implementOf(EQ.offhand)==='orb';}
 // S1850 — a tome: Wooden is the Gatelands' bound leather; the island's make is look only (the page), so the tier is its price, never its power
 function makeTome(matTier,school,o){o=o||{};const mat=MATERIALS[(matTier||1)-1]||MATERIALS[0];
   const it={type:'equip',tier:mat.tier,material:mat.name,slot:'offhand',name:`${mat.name} Tome`,ico:'📖',weight:TOME_TYPE.weight,implement:'tome',
     school:(school&&typeof SCHOOL_DEF!=='undefined'&&SCHOOL_DEF[school])?school:null,matCol:mat.blade,buyPrice:Math.max(3,Math.round(TIER_VALUE[mat.tier]*1.5)),sellMult:.45};
   if(o.found)it.found=true;it.desc=implementDesc(it);return it;}
+// S1854 — an orb: Wooden is the Gatelands' turned wood about a clouded glass; the make is look only, so the tier is its price, never its power
+function makeOrb(matTier,school,o){o=o||{};const mat=MATERIALS[(matTier||1)-1]||MATERIALS[0];
+  const it={type:'equip',tier:mat.tier,material:mat.name,slot:'offhand',name:`${mat.name} Orb`,ico:'🔮',weight:ORB_TYPE.weight,implement:'orb',
+    school:(school&&typeof SCHOOL_DEF!=='undefined'&&SCHOOL_DEF[school])?school:null,matCol:mat.blade,buyPrice:Math.max(3,Math.round(TIER_VALUE[mat.tier]*1.5)),sellMult:.45};
+  if(o.found)it.found=true;it.desc=implementDesc(it);return it;}
 function heldImplement(){return typeof EQ!=='undefined'?implementOf(EQ.weapon):null;}
 function implementDesc(it){const k=implementOf(it);if(!k)return it.desc||'';
-  const what=k==='staff'?'Held reaches 5.5 m and Laid 16 m; a laid thing lasts a quarter longer.':k==='tome'?'Read aloud, a word not yet understood comes stronger and goes wild a third as often; every cast is twice as slow.':'A sent spell flies half as far again, and the cast comes quicker.';
+  const what=k==='staff'?'Held reaches 5.5 m and Laid 16 m; a laid thing lasts a quarter longer.':k==='tome'?'Read aloud, a word not yet understood comes stronger and goes wild a third as often; every cast is twice as slow.':k==='orb'?'Cast a sent or touched word into it with your guard raised, and it keeps the cast a minute; your next cast lets it go at once.':'A sent spell flies half as far again, and the cast comes quicker.';
   const S=it.school&&SCHOOL_DEF[it.school];return what+(S?` It bears ${S.name}’s emblem: ${S.name}’s words cost ${Math.round((it.found?IMPLEMENT.foundCut:IMPLEMENT.cut)*100)}% less.`:'');}
 // the share off a word's mana from the implement in hand: its school's 10% (20% found), or 0
 // S1850 — the weapon's and the tome's emblems are not added: the better of the two counts
