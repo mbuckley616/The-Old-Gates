@@ -308,5 +308,45 @@ for (const x of d12.by) { const nm = `prayer (${x.pp}, ${x.how})`; if (x.missing
 check('prayer: an Old Blood giver has the one line to the ask, and no errand', !!d12.ob && d12.ob.said === d12.OBL && !d12.ob.follow, d12.ob);
 check('prayer: the records are saved', d12.saved >= 3, d12.saved);
 
+// S1857 — errand 9, A Fish for the Wedding: a giver in a port or a town within 400 of the sea; a fine fish by the morning of the day for the
+// pay and a point of favour, and the wedding's line that day (erWeddingAt, the day's flag for the square and the meal); a plain one for half;
+// past the morning, the lapse
+const d9 = await page.evaluate(() => {
+  worldState.quests = []; worldState.met = {}; const T0 = 180 * 1440 + 600; worldState.gameTimeAbsMinutes = T0;
+  const towns = []; for (let j = 0; j < GRID; j++) for (let i = 0; i < GRID; i++) getCell(i, j).sites.forEach(t => { if (t.pad >= 30 && t.kind !== 'shrine' && t.kind !== 'portal') towns.push(t); });
+  const mk = (site, i, pp) => { const d = makeDef(site, site.reg || 'irish', seededRng('ertest9', i), 'Innkeeper', 'Seán', {}); d._twin = 'F' + i; if (pp) d.people = pp; return d; };
+  const find = pp => { for (const site of towns) { if (!erGiver(mk(site, 0, pp), site)) continue; for (let i = 0; i < 300; i++) { const d = mk(site, pp + i, pp); const e = errandFor(d, site);
+      if (e && e.sub === 'fish') return { d, site, e }; } } return null; };
+  const inland = towns.filter(t => t.kind !== 'port' && !erSeaNear(t)), coast = towns.filter(t => erSeaNear(t));
+  let offInland = 0; for (const site of inland.slice(0, 20)) for (let i = 0; i < 60; i++) { const e = errandFor(mk(site, 'in' + i), site); if (e && e.sub === 'fish') offInland++; }
+  const by = [];
+  for (const [pp, how] of [['gatelander', 'fine'], ['markman', 'plain'], ['aurennais', 'lapse'], ['oldblood', 'fine']]) { worldState.gameTimeAbsMinutes = T0;
+    for (let i = BAG.length - 1; i >= 0; i--) if (BAG[i] && BAG[i]._typeKey === 'fish') BAG.splice(i, 1);
+    const F = find(pp); if (!F) { by.push({ pp, missing: true }); continue; } const { d: A, site, e: E } = F; const p = pp;
+    A.greeting[0]; const greet = A.greeting[0]; const you = A.topics.find(t => /^About you/.test(t.label)); const ask = you && you.follow.find(t => t.label === 'What’s the wedding missing?');
+    const n = Math.min(40, 15 + 5 * (Math.max(1, worldTierAt(site.x, site.z) || 1) - 1)); const wantOffer = ER_FISH.offer[p](Object.assign({}, E, { n }));
+    const yes = ask.follow[0].fn(); const q = qActive().find(x => x.giver === A.name && x.sub === 'fish'); const notYet = A.topics.find(t => t.label === 'About that errand.').fn();
+    const x = { pp, how, greet, hint: ER_FISH.hint[p](E), offer: ask.response, wantOffer, yes, ys: ER_SHARED[p].yes, title: q.title, notYet, ny: ER_SHARED[p].notYet, days: E.wday - Math.floor(T0 / 1440), sea: erSeaNear(site) };
+    if (how === 'lapse') { worldState.gameTimeAbsMinutes = E.wday * 1440 + 400; tickDatedWork(); bagAdd({ name: 'Fine Cod', ico: '🐟', type: 'misc', weight: 1.2, qty: 1, _typeKey: 'fish' });
+      const g1 = gold; const t = A.topics.find(t => t.label === 'About that errand.'); x.done = t && t.fn(); x.wdone = ER_FISH.lapse[p]; x.lapsed = q.lapsed; x.paid = gold - g1; x.again = !!A.topics.find(t => t.label === 'About that errand.'); by.push(x); continue; }
+    worldState.gameTimeAbsMinutes = E.wday * 1440 + 300; tickDatedWork();
+    const fine = how === 'fine'; bagAdd({ name: fine ? 'Fine Cod' : 'Cod', ico: '🐟', type: 'misc', weight: 1, qty: 1, _typeKey: 'fish' });
+    const label = fine ? 'A fine cod, for the table.' : 'It’s not a fine one. It’s what I could get.'; const t = A.topics.find(t => t.label === label);
+    const g1 = gold, f1 = favor(site); x.done = t && t.fn(); x.wdone = fine ? ER_FISH.fine[p]({ n, weekday: E.weekday }) : ER_FISH.plain[p]; x.paid = gold - g1; x.wpaid = questGold(fine ? n : Math.round(n / 2)); x.fav = favor(site) - f1; x.turned = q.turnedIn;
+    x.left = bagCount(b => b._typeKey === 'fish' && b.name === (fine ? 'Fine Cod' : 'Cod'));
+    worldState.gameTimeAbsMinutes = E.wday * 1440 + 600; x.wed = A.greeting[0]; x.wwed = ER_FISH.wed[p]; x.on = erWeddingAt(site.id); x.mine = !!erWeddingQ(site.id, erRecs(A, site));
+    worldState.gameTimeAbsMinutes = E.wday * 1440 + 1500; x.off = erWeddingAt(site.id); by.push(x); }
+  return { inland: inland.length, coast: coast.length, offInland, by, saved: JSON.parse(ssStringify(worldState.quests)).filter(x => x.sub === 'fish').length };
+});
+console.log(JSON.stringify(d9).slice(0, 3000));
+check('fish: never asked inland, and the coast has towns to ask in', d9.offInland === 0 && d9.coast > 0, { inland: d9.inland, coast: d9.coast, off: d9.offInland });
+for (const x of d9.by) { const nm = `fish (${x.pp}, ${x.how})`; if (x.missing) { check(`${nm}: a giver asks`, false); continue; }
+  check(`${nm}: the hint after First Words, the offer word for word, taken and titled, not yet; four to six days`, x.sea && x.greet.endsWith(' ' + x.hint) && x.offer === x.wantOffer && x.yes === x.ys && x.title === 'A fish for the wedding' && x.notYet === x.ny && x.days >= 4 && x.days <= 6 && !/\{|undefined/.test(x.offer + x.hint), { greet: x.greet, offer: x.offer, days: x.days });
+  if (x.how === 'lapse') { check(`${nm}: past the morning of the day, the lapse in the giver's words, once, nothing paid`, x.lapsed && x.done === x.wdone && x.paid === 0 && !x.again, x); continue; }
+  check(`${nm}: the ${x.how} fish taken, answered in their words, ${x.how === 'fine' ? 'paid in full' : 'half paid'}, a point of favour`, x.turned && x.done === x.wdone && x.paid === x.wpaid && x.paid > 0 && x.fav === 1 && x.left === 0, { done: x.done, paid: x.paid, wpaid: x.wpaid, fav: x.fav });
+  if (x.how === 'fine') check(`${nm}: on the day, the wedding's greeting and the day's flag; gone the day after`, x.wed === x.wwed && x.on && !x.off, { wed: x.wed, on: x.on, off: x.off });
+  else check(`${nm}: a plain fish keeps no wedding for you`, x.wed !== x.wwed && !x.mine, { wed: x.wed }); }
+check('fish: the records are saved', d9.saved >= 3, d9.saved);
+
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
