@@ -1880,6 +1880,9 @@
     inn:['"A bed, a bowl, and no questions."','"Fire\'s lit. Door\'s open."','"Travellers welcome. Trouble isn\'t."'],
     barber:['"Shorn, shaved, or dyed. Sit still."','"A sharp razor and a steady hand."','"Come in rough, go out kempt."'],
     church:['"The door is always open."','"Come in out of the dark."','"Rest a moment. It costs nothing."'],
+    /* S1875 — the guilds, the castle and the shipwright have no tagline until the quest writer gives them one (critic s1254); each row is
+       one entry so the street's stream draws once, as the misc fallback did, and no lot after it changes */
+    guild_f:[''],guild_m:[''],castle:[''],shipwright:[''],
   };
   // Per-kind plan: building count, shop set, extras. S512: `late` shops come after the optional ones, so a new trade takes
   // the first home's lot and no shop that stood before moves (the barber and dyer, Michael's B on #144)

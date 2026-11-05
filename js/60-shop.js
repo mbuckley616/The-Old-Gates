@@ -8,7 +8,7 @@ function openShop(){
   const el=document.getElementById('shop');
   el.style.display='flex';
   document.getElementById('sh-title').textContent=currentHouse.name;
-  document.getElementById('sh-sub').textContent=`${currentHouse.keeper} · ${currentHouse.tagline}`;
+  document.getElementById('sh-sub').textContent=currentHouse.tagline?`${currentHouse.keeper} · ${currentHouse.tagline}`:(currentHouse.keeper||''); /* S1875 — no tagline, no dot */
   setShopTab('all'); // v67 — reset category each open; setShopTab calls renderShop
   {let fb=document.getElementById('sh-forge');const on=typeof forgeHere==='function'&&forgeHere(); /* S1494 — a smith's room: the forge */
     if(on&&!fb){fb=document.createElement('button');fb.id='sh-forge';fb.className='sh-tab';fb.textContent='Forge';fb.onclick=()=>openForgePage();document.getElementById('sh-tabs').appendChild(fb);}
