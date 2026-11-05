@@ -987,6 +987,10 @@ const HC_KINDS={'Wolf':{plan:'wolf'},'Snow Wolf':{plan:'wolf',own:true},'Dire Wo
 // on a widened chest, the blocks cracked and only the cracks lit violet), its four eyes lit in the plan's violet; it stands at the driver's stature,
 // as every kit body does, not the plan's 1.45
 HC_KINDS['Golem (failing)']=Object.assign({},HC_KINDS.Golem,{plan:'failinggolem',glow:[.72,.32,1],arms:true});
+// Session 1872: and its Gargoyle on the failing gargoyle (OG-073's Gaoth form, the only failing gargoyle the kit draws: wings half again
+// the Cloch gargoyle's span, a second pair of wings behind them (hcGarg) and a second pair of clawed arms out of the shoulder blades
+// (hcArms), the stone cracked and only the cracks lit a storm's blue-white); its eyes in the plan's pale blue, not the steady one's ember
+HC_KINDS['Gargoyle (failing)']=Object.assign({},HC_KINDS.Gargoyle,{plan:'failinggargoyle',glow:[.55,.75,1],arms:true});
 for(const k of ['Skeleton','Skeleton (spear)'])HC_KINDS[k.replace(/\)$/,', failing)').replace(/^Skeleton$/,'Skeleton (failing)')]=Object.assign({},HC_KINDS[k],{plan:'failingskeleton',glow:null,arms:true});
 // the driver's joints and the kit's bones they move, parents first (the kit's front legs hang on spine3, the hind on spine0)
 const HC_MAP=[['hips','spine0'],['spine','spine1'],['neck','neck0'],['head','head'],['jaw','jaw'],['tail1','tail0'],['tail2','tail1'],['tail3','tail2'],
@@ -1114,7 +1118,7 @@ function hcAttach(rig,C){const tA=performance.now();
   // a dragon's wings (Session 1348): the kit's membrane wings, each arm's three bones and its fingers, posed by hcWings from the driver's
   const wings=HC_KINDS[hcKind(rig)].wings?C.B.wings.filter(W=>!W.feathered).map(W=>({side:W.side,ph:W.phase||0,arm:W.arm.map(n=>by[n]),fing:W.fingers.map(f=>by[f[0]])})):null;
   // a gargoyle's (Session 1375): the same wings, and its tail's joints
-  const garg=K.garg?{wings:C.B.wings.map(W=>({side:W.side,arm:W.arm.map(n=>by[n]),fing:W.fingers.map(f=>by[f[0]])})),tail:Object.keys(by).filter(n=>/^tail\d+$/.test(n)).map(n=>by[n]),R:C.plan.wingRest}:null;
+  const garg=K.garg?{wings:C.B.wings.map(W=>({side:W.side,arm:W.arm.map(n=>by[n]),fing:W.fingers.map(f=>by[f[0]]),R:W.rest||null,ph:W.pair?W.phase||0:0})),tail:Object.keys(by).filter(n=>/^tail\d+$/.test(n)).map(n=>by[n]),R:C.plan.wingRest}:null;
   const sway=K.sway?Object.keys(by).filter(n=>/^tail\d+$/.test(n)).map(n=>by[n]):null;
   rig.hc={W,C,map,s0,t0,fur,small,ik,feet,hb,scorp,bug,arms,wings,sway,garg,merge:!!HC_KINDS[hcKind(rig)].merge,unhunch:!!HC_KINDS[hcKind(rig)].unhunch,rest:K.rest?Object.entries(K.rest):null,ank:K.person&&ik?map.map(([j],i)=>/^an/.test(j)?i:-1).filter(i=>i>=0):null,glow:meshes.map(m=>m.material.userData&&m.material.userData.uGlow).filter(u=>u&&u.value&&u.value.isColor),mid:null,bits:C.B.bits.map(b=>b.obj),hide:meshes.filter(m=>!fur.includes(m)),lift:K.legless?.24*SCALE.ROOM_K-(K.float||0):0,hip0:sp?B.body.position.clone():K.person?new THREE.Vector3(0,PW.HIPS,0):new THREE.Vector3(B.hips.position.x,wolfHipY(rig.k),B.hips.position.z),pos0:by.spine0.position.clone(),k:1/(f*C.S),L:-1,drv:rig.mesh.material,em:-1};
   rig.hc.gr=hcGroundLegs(rig,by,K,W);
@@ -1259,8 +1263,9 @@ function hcWings(rig){const w=rig.wing||0,C=rig.hc.C,fold=(C.plan.wingFold??.5)*
 // slowly, once it wakes (tickPeople: rig.fold 1 to 0, rig.beat the beat already scaled by 1 - fold). The kit's wings take the same two
 // numbers: folded at the plan's own rest (wingRest, its turns for an upright back) by the fold, and open from the kit's rest, beating
 // about z, by the rest; the tail carries the driver's one tail bone's sway spread over its joints
-function hcGarg(rig){const G=rig.hc.garg,fo=rig.fold??1,b=rig.beat||0,R=G.R,o=1-fo,B=rig.B;
-  for(const W of G.wings){const s=W.side,bz=[.5,-.3,-.2];
+// Session 1872: a second pair of wings (the failing gargoyle's, the kit's wing2L/R) folds to its own rest (W.R) and beats on its own phase
+function hcGarg(rig){const G=rig.hc.garg,fo=rig.fold??1,b0=rig.beat||0,o=1-fo,B=rig.B;
+  for(const W of G.wings){const s=W.side,bz=[.5,-.3,-.2],R=W.R||G.R,b=W.ph&&rig.beatA!=null?Math.sin(rig.beatA+W.ph)*o:b0;
     for(let k=0;k<3;k++)W.arm[k].rotation.set(R[k][0]*fo,s*R[k][1]*fo,s*(R[k][2]*fo+bz[k]*b));
     W.fing.forEach((f,k)=>f.rotation.set(0,s*(k/W.fing.length)*((R[3]??.2)*fo+.1*o),0));}
   if(B.tail&&G.tail.length){const y=1.5*B.tail.rotation.y/G.tail.length;for(const t of G.tail)t.rotation.set(0,y,0);}}
