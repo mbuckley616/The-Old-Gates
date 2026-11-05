@@ -637,7 +637,7 @@ function genSettlement(site){
       {const sz=U.size,th=L.plan.roof.kind==='thatch',wc=PKIT.gl.mats()['w:'+(L.colour==='stone'?'lime':L.colour)],box=new THREE.BoxGeometry(sz.w,sz.eave,sz.d).toNonIndexed(),mx=new THREE.Matrix4(); /* S1073 — its far copy: the walls a box and the roof a prism, in the wall's and the roof's colours */
         box.translate(0,sz.eave/2,0);mx.makeRotationY(lot.ry).setPosition(lot.x,worldH(lot.x,lot.z)-.06,lot.z);
         kitLo.push([box,mx,wc?wc.color.clone().multiplyScalar(.82):new THREE.Color(.8,.78,.72)],[kitRoof(sz.w/2+(th?.35:.2),sz.d/2+(th?.45:.25),sz.eave,sz.ridge),mx,new THREE.Color(...(th?[.42,.35,.22]:[.24,.26,.30]))]);}
-      lot._kitDoor=L.plan.doorX||0;lot._wallH=U.size.eave;lot._storeys=L.plan.floors.length;lot.two=L.plan.floors.length>1;lot.kit.tris=U.tris;lot.kit.colour=L.colour;lot.kit.paint=L.paint;lot.kit.door=lot._kitDoor+(lot.kit.slide||0);
+      lot._kitDoor=L.plan.doorX||0;lot._wallH=U.size.eave;lot._storeys=L.plan.floors.length;lot.two=L.plan.floors.length>1;lot.kit.tris=U.tris;lot.kit.colour=L.colour;lot.kit.paint=L.paint;lot.kit.door=lot._kitDoor+(lot.kit.slide||0);if(lot.kit.kind==='forge')lot.kit.shell=`${site.id}:windows:${lot.n}`; /* S1860 — the room's shell takes the street's windows */
       const c=(L.plan.chim||[])[0];if(c){const x=c.gable?c.gable*(U.size.w/2-.36):c.x,y=U.size.ridge+(L.plan.roof.kind==='thatch'?1.0:.85),cs=Math.cos(lot.ry),sn=Math.sin(lot.ry),wy=b.position.y;
         S.chimneys.push({x:lot.x+x*cs,y:wy+y,z:lot.z-x*sn,t:type||'home',k:0});}}
     const names=NAMES[reg];
@@ -2315,6 +2315,55 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     for(const p of T.lamps){const l=new THREE.PointLight(0xffaa44,1.0*KA.lamp,7);l.position.set(rx(p[0]),ry(p[1]),rz(p[2]));sc_.add(l);}
     return sc_;
   }
+  // S1860 (card F9; Michael's A on #303 and on the kit in every interior; OG-043) — on the new look a Gatelands smithy that stands as the
+  // kit's forge (lot.kit.kind 'forge', S1855) opens on the forge's own room (PKIT.gl.forge, rooms.js's Session 929) inside the street's
+  // shell: the hearth against the west gable under its hood, the great bellows, the anvil on its stump, the slack tub and the coal bin,
+  // the tool rack, the bench and its vice under the back window, the grindstone and the farrier's box at the east end, open to the
+  // couples. Drawn in metres and moved into the room's frame as the byre's is. The smith stands at the anvil; the forge you work at is
+  // smithForge's (the shop's type), as before. You come in by the open cart door.
+  function kitForge(house){return !!(house&&house.type==='weapon'&&house.kit&&house.kit.kind==='forge'&&window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.gl&&PKIT.gl.forge);}
+  function buildKitForge(house){
+    const T=PKIT.gl.forge({paint:house.kit.paint,shell:house.kit.shell},PKIT.stream(house.id+':forge')),I=T.inner,X=I.x1,Z=I.z1,F0=T.floor,W=2*X,D=2*Z;
+    const rx=x=>x+X,rz=z=>z+Z,ry=y=>y-F0,dr=T.door;
+    house._counterFront=null;house.intW=W;house.intD=D;house._roomH=+(T.tieBeam-F0).toFixed(3);house._exitD=.8;house._exitW=Math.min(1.2,dr.w/2);house._exitX=+rx(dr.x).toFixed(3);house._forge=T;
+    house._arriveX=+rx(dr.x).toFixed(3);house._arriveZ=+rz(Z-1.0).toFixed(3);
+    const sc_=new THREE.Scene();interiorScene=sc_;landRoomPost(sc_);sc_.background=new THREE.Color(0x120a06);sc_.fog=new THREE.Fog(0x120a06,Math.max(W,D)*.8*SCALE.ROOM_K,Math.max(W,D)*2.4*SCALE.ROOM_K);
+    intNPCMesh=null;intNPCPos={x:-99,z:-99};intBedPos=null;intStashPos=null;
+    const SOL=[];INT_SOL=SOL;FOOTHOLDS=[];INT_BEDS=[];INT_DOORS=[];INT_DOORS.house=house.id;INT_CHAIR=null;INT_NPCS=[];HATCH.active=false;HATCH.roof=false;INT_LOOT=null;INT_BOX=null;INT_SHELF=null;
+    T.group.position.set(X,-F0,Z);T.group.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false;}});sc_.add(T.group);
+    {const E=new THREE.Object3D();E.position.set(rx(dr.x),0,D);E.userData.entrance=true;E.userData.leaf=[dr.w,dr.h];sc_.add(E);}
+    const fr=q=>({x0:rx(q.x0),x1:rx(q.x1),z0:rz(q.z0),z1:rz(q.z1),y0:Math.max(0,ry(q.y0)),y1:ry(q.y1)});
+    // the solids are the prototype's boxes; the coal bin's, the bench's and the farrier's box's tops are footholds (not the fire, the tub's
+    // water, the anvil's face, nor the bellows, the rack, the vice, the grindstone or the iron stock)
+    const FOOT=['bin','bench','farrier'];
+    for(const q of T.boxes){const b=fr(q);SOL.push(b);if(FOOT.includes(q.tag))FOOTHOLDS.push({x0:b.x0,x1:b.x1,z0:b.z0,z1:b.z1,y:b.y1});}
+    // the hood over the hearth: its foot at 1.85 m, so a jump onto the hearth meets it
+    {const H=T.hearth;SOL.push({x0:rx(H.x0),x1:rx(H.x1+.05),z0:rz(H.z0-.1),z1:rz(H.z1+.1),y0:ry(T.hood.y0),y1:ry(T.hood.y1)});}
+    // the shop's strongbox (S155) on the cinders under the tool rack, against the back wall, in the smith's sight from the anvil
+    {const bx=rx(-1.3),bz=rz(-Z+.36);const bg=new THREE.Group();const shell=buildChestShell(bg,.6,0x4a3018);bg.position.set(bx,0,bz);bg.rotation.y=0;sc_.add(bg);
+      SOL.push({x0:bx-.32,x1:bx+.32,z0:bz-.28,z1:bz+.28,y0:0,y1:.5});FOOTHOLDS.push({x0:bx-.32,x1:bx+.32,z0:bz-.28,z1:bz+.28,y:.5});
+      INT_BOX={x:bx,z:bz,lid:shell.lid,g:bg,id:house.id,kind:'shop',type:house.type,house,open:false};}
+    // the day beyond every window and the open cart door: one mesh of planes outside them, by the hour
+    {const hr=typeof gameHour==='function'?gameHour():12,day=hr>=7&&hr<18?0xc4d0dc:hr>=5&&hr<20?0x8a7a7a:0x0e1420,M=new THREE.MeshBasicMaterial({color:day}),P=[];
+      const RY={front:Math.PI,back:0,left:Math.PI/2,right:-Math.PI/2},NO={front:[0,1],back:[0,-1],left:[-1,0],right:[1,0]};
+      const out=(f,x,y,z,w,h)=>{const g=new THREE.PlaneGeometry(w+.2,h+.2).toNonIndexed();g.rotateY(RY[f]);const n=NO[f];g.translate(rx(x+n[0]*.08),ry(y+h/2),rz(z+n[1]*.08));P.push(g.attributes.position.array);g.dispose();};
+      for(const q of T.windows)out(q.face,q.x,q.y,q.z,q.w,q.h);out('front',dr.x,0,dr.z,dr.w,dr.h);
+      const A=new Float32Array(P.reduce((n,a)=>n+a.length,0));let o=0;for(const a of P){A.set(a,o);o+=a.length;}
+      const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(A,3));const m=new THREE.Mesh(g,M);m.userData.daylight=true;sc_.add(m);}
+    // and the day in through the cart door (S1490's kitDaylight, at the barn's 0.4); the windows, a square metre or less, light only themselves
+    kitDaylight(sc_,[{x:rx(dr.x),y:dr.h*.7,z:D,nx:0,nz:-1,w:dr.w,h:dr.h}],.4);
+    // the light: the forge's fire under the hood and the lantern from the middle tie beam
+    const KA=kitRoomAir(sc_,.4);
+    {const l=new THREE.PointLight(0xff6a20,1.8*KA.fire,7);l.position.set(rx(T.fire[0]+.45),ry(T.fire[1]+.35),rz(T.fire[2]));sc_.add(l);}
+    {const l=new THREE.PointLight(0xffaa44,1.2*KA.lamp,8);l.position.set(rx(T.lantern[0]),ry(T.lantern[1]-.15),rz(T.lantern[2]));sc_.add(l);}
+    // the smith at the anvil, on its door side, facing the door's half of the room
+    const npc={x:rx(T.anvil.x+.62),z:rz(T.anvil.z-.1)};
+    if(npcInsideNow(house)){const g=buildNPCMesh({role:'Merchant',name:house.keeper,_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
+      g.rotation.y=Math.PI/2;g.position.set(npc.x,0,npc.z);sc_.add(g);intNPCMesh=g;intNPCPos={x:npc.x,z:npc.z};
+      intNPCMesh.userData.amble={wa:0,wt:1,minZ:npc.z,maxZ:npc.z,minX:npc.x,maxX:npc.x,speed:.25,paused:true};}
+    else{intNPCMesh=null;intNPCPos={x:-99,z:-99};}
+    return sc_;
+  }
   // S1475 (card F9; Michael's C on #744, A on #303; OG-115, OG-114) — on the new look a Gatelands farm's barn (its record S1475's, in
   // buildFarm) is the barn's own rooms inside (PKIT.gl.barn, rooms.js's Session 1198), in the farmstead barn's black-doored shell: below,
   // the cart bay behind the arch (the plough, the harrow, the seed sacks, the scythe and the flail) and through a board partition the
@@ -2441,7 +2490,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   // the door's side are the street's), the shop below, the stair of 16 risers to the flat, the steep stair up through the hatch to the roof
   // terrace under its pergola. Drawn in metres and moved into the room's frame as the courtyard house is (nothing scaled). The bed upstairs
   // is the resident's, head to the back wall (-z); the home's chest is the one at its foot. The dyer keeps the shop, behind the counter.
-  function kitAurHome(house){const o=house&&house.kit&&house.kit.o;return !!(house&&house.type==='home'&&house.kit.kind==='aurhouse'&&house.kit.shell&&o&&o.kind==='flat'&&o.two&&o.w>=6.4&&o.d>=6.0&&window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.au&&PKIT.au.home);}
+  function kitAurHome(house){const o=house&&house.kit&&house.kit.o;return !!(house&&house.type==='home'&&house.kit&&house.kit.kind==='aurhouse'&&house.kit.shell&&o&&o.kind==='flat'&&o.two&&o.w>=6.4&&o.d>=6.0&&window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.au&&PKIT.au.home);}
   function buildKitAurHome(house){
     const k=house.kit,T=PKIT.au.home({w:k.o.w,d:k.o.d,shell:k.shell,house:k.o},PKIT.stream(house.id+':aurhome')),I=T.inner,X=I.x1,Z=I.z1,W=2*X,D=2*Z,F0=T.floors[0];
     const rx=x=>x+X,rz=z=>z+Z,ry=y=>y-F0,FL=T.floors.map(y=>+(y-F0).toFixed(3)),ds=T.door.x<0?-1:1,U=u=>-ds*u;
@@ -3146,6 +3195,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     if(kitFarmhouse(house))return buildKitFarmhouse(house); /* S1459 — a Gatelands village farm's house inside, at its true size */
     if(kitByre(house))return buildKitByre(house); /* S1480 — a Gatelands farm's byre inside, at its true size */
     if(kitBarn(house))return buildKitBarn(house); /* S1475 — a Gatelands farm's barn inside, at its true size */
+    if(kitForge(house))return buildKitForge(house); /* S1860 — a Gatelands smithy's forge inside, at its true size */
     if(kitCourtHouse(house))return buildKitCourtHouse(house); /* S1425 — Aurenne's courtyard house inside, at its true size */
     if(kitAurHome(house))return buildKitAurHome(house); /* S1831 — Aurenne's flat over the dyer's shop inside, at its true size */
     if(kitLonghouse(house))return buildKitLonghouse(house); /* S1453 — a Markish home: the longhouse inside, at its true size */
