@@ -43,9 +43,9 @@ if (id) {
     const short = P => { const Q = P.map(([x, z]) => [x + X, z + Z]), [a, b] = [Q[Q.length - 2], Q[Q.length - 1]], L = Math.hypot(b[0] - a[0], b[1] - a[1]); Q[Q.length - 1] = [b[0] - (b[0] - a[0]) / L * .05, b[1] - (b[1] - a[1]) / L * .05]; return Q; };
     const walks = T.paths.map(P => walk(short(P)));
     const P = intNPCMesh ? { x: +intNPCPos.x.toFixed(2), z: +intNPCPos.z.toFixed(2) } : null; let talk = null;
-    if (P) { const ox = px, oz = pz, [ex, ez] = T.paths[0][T.paths[0].length - 1]; px = ex + X; pz = ez + Z; jumpY = 0; talk = { reach: keeperInReach(), d: +Math.hypot(px - P.x, pz - P.z).toFixed(2), clear: !intSolidAt(P.x, P.z, .2, 0), behind: P.z < T.board.z0 + Z && P.x > T.board.x0 + X && P.x < T.board.x1 + X };
-    /* the hearth: nothing walks into its fires; from the hall's axis 0.4 m before the kerb, a step onto the ash bed is a solid */
-    const fire = { kerb: intSolidAt(X, T.hearth.z1 + Z - .2, .2, 0), over: intSolidAt(X, T.hearth.z1 + Z - .2, .2, 1.0) }; px = ox; pz = oz; }
+    if (P) { const ox = px, oz = pz, [ex, ez] = T.paths[0][T.paths[0].length - 1]; px = ex + X; pz = ez + Z; jumpY = 0; talk = { reach: keeperInReach(), d: +Math.hypot(px - P.x, pz - P.z).toFixed(2), clear: !intSolidAt(P.x, P.z, .2, 0), behind: P.z < T.board.z0 + Z && P.x > T.board.x0 + X && P.x < T.board.x1 + X }; px = ox; pz = oz; }
+    /* the hearth: nothing walks into its fires; on the hall's axis 0.2 m inside the kerb, solid on the floor and a metre up */
+    const fire = { kerb: intSolidAt(X, T.hearth.z1 + Z - .2, .2, 0), over: intSolidAt(X, T.hearth.z1 + Z - .2, .2, 1.0) };
     const box = INT_BOX ? { x: +INT_BOX.x.toFixed(2), z: +INT_BOX.z.toFixed(2), kind: INT_BOX.kind, front: !intSolidAt(INT_BOX.x, INT_BOX.z + .65, .25, 0), alone: INT_SOL.filter(q => INT_BOX.x + .26 > q.x0 && INT_BOX.x - .26 < q.x1 && INT_BOX.z + .3 > q.z0 && INT_BOX.z - .3 < q.z1 && q.y0 < .5).length === 1 } : null;
     return { W: +W.toFixed(2), D: +D.toFixed(2), H: h._roomH, scaledBy: T.group.scale.x, open, upY, arrive, walks, P, talk, box, fire, lights, draws, people, tris: Math.round(tris) };
   });
