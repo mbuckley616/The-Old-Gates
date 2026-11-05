@@ -168,5 +168,30 @@ check(`one gate in three keeps an orb (${GS.share.toFixed(3)} of 3,000 seeds)`, 
 check(`in such a gate the deepest floor's treasure chest holds a found orb of the gate's school with one enchant (${GO.orb && GO.orb.name})`, GO.gate && GO.n === 1 && GO.deep && GO.treasure && GO.orb.k === 'orb' && GO.orb.s === GO.orb.want && GO.orb.found && ['mp_regen', 'magic_boost', 'fortify_int'].includes(GO.orb.ench), GO);
 check('taken, it is the gate\'s for good: the next visit finds none; the save keeps its make, school, find and enchant', GO.took && GO.ws && again === 0 && GO.back[0] && GO.back[1] === GO.orb.s && GO.back[2] === true && GO.back[3] === GO.orb.ench, { GO, again });
 check('a gate that keeps none has none', none === 0, none);
+
+// S1861 — the hold in both views (the sheet's second bodies session): the orb carried up before the waist, raised before the chest with the
+// guard, drawn back past the hip while it keeps a word, its light brighter as it keeps one; the tome lifted before the chest in a cast. In
+// first person the off hand draws the orb or the tome and moves through the same states
+const H = await page.evaluate(() => {
+  const out = {}, keepT = thirdPerson; EQ.weapon = makeImplement(1, 'wand', 'uisce'); EQ.offhand = makeOrb(1, 'tine'); EQ.offhand.make = 'mark';
+  thirdPerson = true; tpEnsure();
+  const at = (set) => { blocking = false; ORB_KEPT = null; castT = 0; set();
+    for (let i = 0; i < 40; i++) tpUpdate(1 / 60, { moving: false, sprinting: false, camY: CAM.position.y, now: performance.now(), roll: null });
+    const R = TP.rig; R.root.updateMatrixWorld(true); const h = R.handL.getWorldPosition(new THREE.Vector3()).sub(R.root.getWorldPosition(new THREE.Vector3()));
+    const f = new THREE.Vector3(Math.sin(R.root.rotation.y), 0, Math.cos(R.root.rotation.y)); const gm = R.orbG && R.orbG.userData.glowMats.find(m => !m.transparent);
+    return { y: +h.y.toFixed(2), fwd: +h.dot(f).toFixed(2), glow: gm ? +gm.color.r.toFixed(2) : null, shared: gm === WPN_MAT.glow }; };
+  out.rest = at(() => {}); out.raised = at(() => { blocking = true; }); out.kept = at(() => { ORB_KEPT = { word: 'caor', form: 'sent', ready: 0, at: playClockS, key: laidKey() }; });
+  out.hang = (() => { const e = EQ.offhand; EQ.offhand = null; const r = at(() => {}); EQ.offhand = e; return r; })();
+  thirdPerson = false; buildShieldViewmodel(); out.fp = vmShield && vmShield.userData.impl;
+  const fp = (set) => { blocking = false; ORB_KEPT = null; castT = 0; set(); for (let i = 0; i < 60; i++) vmImplPose(1 / 60); return vmShield.userData.pose.position.toArray().map(v => +v.toFixed(2)); };
+  out.fpRest = fp(() => {}); out.fpRaised = fp(() => { blocking = true; }); out.fpCast = fp(() => { castT = .3; });
+  EQ.offhand = makeTome(1, 'solas'); thirdPerson = true; tpEnsure(); out.tomeRest = at(() => {}); out.tomeRead = at(() => { castT = .3; });
+  thirdPerson = false; buildShieldViewmodel(); out.fpTome = vmShield && vmShield.userData.impl; out.fpRead = fp(() => { castT = .3; });
+  blocking = false; ORB_KEPT = null; castT = 0; EQ.offhand = null; buildShieldViewmodel(); thirdPerson = keepT; return out; });
+console.log('hold', JSON.stringify(H));
+check(`third person, the orb: carried before the waist (hand ${H.rest.y} m up, ${H.rest.fwd} ahead), raised before the chest (${H.raised.y}, ${H.raised.fwd}), kept behind the hip (${H.kept.fwd})`, H.rest.fwd > H.hang.fwd + .05 && H.raised.y > H.rest.y + .1 && H.raised.fwd > H.rest.fwd && H.kept.fwd < H.hang.fwd - .05, H);
+check(`the orb's light is its own: ${H.rest.glow} at rest, ${H.raised.glow} raised, ${H.kept.glow} keeping a word`, H.rest.glow === 1 && H.raised.glow > 1.1 && H.kept.glow > 1.3 && !H.rest.shared, H);
+check(`the tome is lifted before the chest in a cast (hand ${H.tomeRest.y} → ${H.tomeRead.y} m)`, H.tomeRead.y > H.tomeRest.y + .2 && H.tomeRead.fwd > H.tomeRest.fwd, H);
+check('first person draws the orb and the tome in the off hand, raised, pushed out in a cast and lifted to read', H.fp === 'orb' && H.fpTome === 'tome' && H.fpRest.every(v => v === 0) && H.fpRaised[1] > .1 && H.fpCast[2] < -.15 && H.fpRead[1] > .1, H);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

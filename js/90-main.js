@@ -744,6 +744,7 @@ function loop(now){
     vmMantle(); /* S1401 — the mantle's pull in first person (16-viewmodel.js) */
     vmXbowSpan(); /* S1476 — the crossbow's span drawn (16-viewmodel.js) */
     vmAirDip(); /* S1594 — the double jump's and the air dash's hands (16-viewmodel.js) */
+    vmImplPose(dt); /* S1861 — the orb's and the tome's hold in first person (16-viewmodel.js) */
     // Animate enchant sparks (orbitPhase children)
     if(EQ.weapon&&EQ.weapon.enchant){
       vmSword.children.forEach(c=>{
