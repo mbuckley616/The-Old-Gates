@@ -1033,7 +1033,7 @@ function effMaxStamina(){const b=getArmorEnchantBonuses();return Math.round((max
 // rendering. Life Drain/Fire/Frost were firing the whole time (HP, stagger, mana
 // were all applying); only the confirmation toast was invisible.
 function applyWeaponEnchant(dmg,e){
-  const w=EQ.weapon;if(!w||!w.enchant)return null;
+  const w=EQ.weapon;if(!w||!w.enchant||typeof w.enchant.effect!=='function')return null; /* S1885 — a found staff or wand carries an armour enchant: it strikes plain */
   const eff=w.enchant.effect(dmg);
   if(eff.extraDmg>0){e.hp=Math.max(0,e.hp-eff.extraDmg);e.hpFg.scale.x=e.hp/e.maxHp;e.hpFg.position.x=(e.hp/e.maxHp-1)*.275;}
   if(eff.extraType==='frost'&&eff.stagger)staggered.push({e,t:eff.stagger});

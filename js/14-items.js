@@ -195,7 +195,7 @@ const IMPLEMENT_TYPES={
 };
 const IMPLEMENT={heldReach:5.5,laidReach:16,laidDur:1.25,sentReach:45,castTell:.28,cut:.10,foundCut:.20,cutMax:.35,
   tomeWild:.10,tomeWildSteady:.05,tomeMixed:.03,tomeTell:2,orbKeep:60,
-  guildPrice:{staff:60,wand:80,tome:120},orbPrice:120,tomeRank:1,orbGate:1/3,orbEnchants:['mp_regen','magic_boost','fortify_int']}; /* S1850 — the tome: Impression ×0.8 (TIER_MAG_TOME), wild a third as often, every wind-up doubled */
+  guildPrice:{staff:60,wand:80,tome:120},orbPrice:120,tomeRank:1,orbGate:1/3,foundMaster:1/4,foundChest:1/20,foundChestTier:4,orbEnchants:['mp_regen','magic_boost','fortify_int']}; /* S1850 — the tome: Impression ×0.8 (TIER_MAG_TOME), wild a third as often, every wind-up doubled */
 // S1850 — the tome (the sheet's second session, its other half the orb's kept cast): an off-hand book, no shield, no block, weight 1.
 const TOME_TYPE={type:'Tome',slot:'offhand',weight:1};
 // S1854 — the orb (the sheet's second session, its first half the tome): an off-hand glass, no shield, no block, weight 1; it keeps one cast.
@@ -627,13 +627,24 @@ function gateOrbDue(portal){if(!portal||portal.seed==null||portal.tutorial)retur
 function gateOrbSchool(portal){const g=typeof greatSchoolOf==='function'?greatSchoolOf(portal):null;if(g)return g;
   try{return typeof gateSchool==='function'?gateSchool(portal):null;}catch(e){return null;}}
 function gateOrbItem(portal,school,tier,make){return withLootRng(seededRng('gateorb',portal.seed),()=>withLootTier(tier,()=>{
-  const it=makeOrb(lootMatTier(portal.diffScale),school,{found:true}),ids=IMPLEMENT.orbEnchants,e=ARMOR_ENCHANTS.find(x=>x.id===ids[Math.floor(lootRand()*ids.length)]);
+  const it=makeOrb(lootMatTier(portal.diffScale),school,{found:true}),ids=IMPLEMENT.orbEnchants,id=ids[Math.floor(lootRand()*ids.length)],e=ARMOR_ENCHANTS.find(x=>x.id===id); /* S1885 — one draw, not one a row: the orb sometimes had none */
   if(e){it.name+=` ${e.name}`;it.enchant=e;it.enchantId=e.id;it.enchantStats=e.apply(it);}
   if(make)it.make=make;it.gateOrb=String(portal.seed);return it;}));}
 function gateOrbPlace(portal,chests){if(!gateOrbDue(portal)||!chests||!chests.length)return null;const school=gateOrbSchool(portal);if(!school)return null;
   const deep=Math.max(...chests.map(c=>c.floor||1)),on=chests.filter(c=>(c.floor||1)===deep),tr=on.filter(c=>c.treasure),pool=tr.length?tr:on,ch=pool[pool.length-1];
   let make=null;try{if(portal.x!=null&&typeof nationKeyOf==='function')make=nationKeyOf(...cellOf(portal.x,portal.z));}catch(e){}
   ch.items.unshift(gateOrbItem(portal,school,typeof dungeonTier==='function'?dungeonTier(portal,deep):null,make));return ch;}
+// S1885 — a found staff, wand or tome (Michael's A on #1169): a lair master's hoard holds one in four (`foundMaster`, on the lair's seed)
+// and a chest's weapon roll of tier 4 or finer is one in twenty (`foundChest`). Of the place's school where it has one (a gate's), else any;
+// its kind, school and one of the orb's enchants drawn from the stream the caller sets (lootRand), found: 20% off its school's words.
+function foundImplement(tier,school){const ks=['staff','wand','tome'],kind=ks[Math.floor(lootRand()*ks.length)];
+  const all=typeof SCHOOL_DEF!=='undefined'?Object.keys(SCHOOL_DEF):[],pick=all[Math.floor(lootRand()*all.length)]||null,sc=school&&all.includes(school)?school:pick;
+  const it=kind==='tome'?makeTome(tier,sc,{found:true}):makeImplement(tier,kind,sc,{found:true});if(!it)return null;
+  const ids=IMPLEMENT.orbEnchants,id=ids[Math.floor(lootRand()*ids.length)],e=ARMOR_ENCHANTS.find(x=>x.id===id);
+  if(e){it.name+=` ${e.name}`;it.enchant=e;it.enchantId=e.id;it.enchantStats=e.apply(it);}return it;}
+// the school of the gate you stand in, for a chest's found piece; a lair, a fort or the open world has none
+function foundPlaceSchool(){try{if(typeof activeZoneId==='undefined'||activeZoneId!=='dungeon'||typeof currentPortal==='undefined'||!currentPortal||currentPortal.lair)return null;
+  return gateOrbSchool(currentPortal);}catch(e){return null;}}
 // the named action (co-op rules): the gate's orb is taken, and the gate keeps no other
 function takeGateOrb(seed){if(seed==null)return;(worldState.gateOrbs||(worldState.gateOrbs={}))[seed]=1;}
 function makeItem(matTier, typeObj, enchant, isArmor){
@@ -865,6 +876,7 @@ function rollLoot(diffScale, theme, kind){
   const isWeapon=lootRand()<0.45;
   const typeObj=isWeapon?WEAPON_TYPES[Math.floor(lootRand()*WEAPON_TYPES.length)]
                         :ARMOR_TYPES[Math.floor(lootRand()*ARMOR_TYPES.length)];
+  if(isWeapon&&t>=IMPLEMENT.foundChestTier&&(kind==='chest'||kind==='treasure')&&lootRand()<IMPLEMENT.foundChest)return foundImplement(t,foundPlaceSchool()); /* S1885 — #1169 A: one in twenty, in place of the weapon */
   if(!isWeapon&&t>=4&&lootRand()<1/12){const ks=Object.keys(CLOAK_KINDS);return makeCloak(ks[Math.floor(lootRand()*ks.length)],t,CLOAK_ENCHANTS[Math.floor(lootRand()*CLOAK_ENCHANTS.length)]);} /* S552 — a magical cloak */
   let armorObj=typeObj;
   if(!isWeapon&&ARMOR_LINES.light.names[typeObj.slot]){const lr=lootRand();if(lr>=.5){const ln=(lr<.75||typeObj.slot==='feet')?'light':'robe';armorObj=lineType(ln,typeObj.slot);}} /* S564 — a body piece: heavy half the time, light a quarter, robes a quarter (no robe boots: light) */
