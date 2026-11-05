@@ -97,6 +97,7 @@ function takeLootItem(idx){
   } else {
     // bagAdd may refuse if adding would push total carry weight over 125% of max.
     if(!canCarry(it)){showMsg('Too heavy to carry!','#cc8844');return;}
+    if(it.gateOrb!=null){takeGateOrb(it.gateOrb);delete it.gateOrb;} /* S1858 — a gate's orb, taken once */
     bagAdd(it);
     showMsg(`Obtained: ${it.name}`, '#c8a84a');
     // v61d0 — Fire receive_item event so quest objectives that gate on
@@ -734,6 +735,7 @@ function renderShop(){
   if(typeof cloaksFor==='function'){const ck=cloaksFor(currentHouse);if(ck.length)stock=[...stock,...ck];} // S552 — cloaks
   if(typeof loreBooksFor==='function'){const lb=loreBooksFor(currentHouse);if(lb.length)stock=[...stock,...lb];} /* S979 — The Seventh Niche at the Mages' Guild */
   {const ln=armorLinesFor(currentHouse);if(ln.length)stock=[...stock,...ln];}
+  {const im=implementsFor(currentHouse);if(im.length)stock=[...stock,...im];} /* S1858 — staves, wands and tomes at the Mages' Guild */
   {const mo=mortarFor(currentHouse);if(mo.length)stock=[...stock,...mo];}
   {const pk=minersPickFor(currentHouse);if(pk.length)stock=[...stock,...pk.filter(a=>!stock.some(b=>b.name===a.name))];} /* S1491 — the pick at the smith's and the goods shop */
   {const hk=hatchetFor(currentHouse);if(hk.length)stock=[...stock,...hk.filter(a=>!stock.some(b=>b.name===a.name))];} /* S1511 — and the hatchet */
@@ -872,6 +874,10 @@ function speechPct(){return Math.min(SPEECH_MAX,Math.max(0,(typeof skillLv==='fu
 function barterPct(){return Math.min(BARTER_MAX,Math.max(0,(ATTRS.charisma||0)*BARTER_PCT))+speechPct()+(perk('speech',25)?.05:0)+(capeCounter()?.02:0);} /* S973 — Haggle, Speech 25 */
 // S552 — which cloaks a counter sells (#148 B): the traveller's at any armourer or goods shop; the dark hood in towns and
 // cities; oilskin in ports; fur in the Mark; the short cape in Aurenne; the pilgrim's grey where the town has a church
+// S1858 — the Mages' Guild's implements in its island's make; the tome from Adept (guildImplements, 14-items.js)
+function implementsFor(h){if(!h||h.type!=='guild_m'||typeof guildImplements!=='function')return [];let make='gatelands';
+  try{const t=h.siteId&&siteAnywhere(h.siteId);if(t)make=nationKeyOf(...cellOf(t.x,t.z))||make;}catch(e){}
+  return guildImplements(make,typeof mageRank==='function'?mageRank():0);}
 function cloaksFor(h){if(!h||(h.type!=='armor'&&h.type!=='misc'))return [];const out=['wool'];
   try{const t=h.siteId&&siteAnywhere(h.siteId);if(t){const nk=nationKeyOf(...cellOf(t.x,t.z));const S=WORLD.settle&&WORLD.settle.get(t.id);
     if(t.kind==='town'||t.kind==='city')out.push('hood');if(t.kind==='port')out.push('oilskin');if(nk==='mark')out.push('fur');if(nk==='aurenne')out.push('cape');

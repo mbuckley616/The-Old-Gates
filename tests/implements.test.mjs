@@ -2,6 +2,7 @@
 // the wand and the maul change one form each, never a spell's damage; an emblem's school costs 10% less (20% found), with Thrift at
 // most 35%; a Wooden Staff saved before them loads as the Staff of no school.
 import { boot, check } from './lib/game.mjs';
+import { enterDungeon } from './lib/dungeonshot.mjs';
 const g = await boot(); const { page } = g;
 const r = await page.evaluate(() => {
   const out = {}; const keep = EQ.weapon;
@@ -139,5 +140,33 @@ check('the charge holds 59.5 s of play and is gone past 60 s', X.k59 && X.at59 &
 check('a change of place or the orb leaving the hand loses it', X.kPlace && !X.place && X.kHand && !X.hand, X);
 check(`a Touched entry is kept at its cost (${X.touchPaid}) and lands at once on release (${JSON.stringify(X.touchRel)})`, X.kTouch && X.touchPaid > 0 && !X.touchPend && !X.touchRel.kept && X.touchRel.pend && X.touchRel.at === 0 && X.touchRel.paid === 0, X);
 check('sleep empties the orb', X.kSleep && slept, { kSleep: X.kSleep, slept });
+// the sheet's third session (Session 1858): the Mages' Guild's stock and one gate in three's orb
+await g.intoWorld();
+const GS = await page.evaluate(() => {
+  const nov = guildImplements('mark', 0), ad = guildImplements('aurenne', 1), row = i => [i.implement, i.school, i.make, i.buyPrice, i.tier];
+  let n = 0; for (let s = 1; s <= 3000; s++) if (gateOrbDue({ seed: s * 7919 })) n++;
+  let has = 0, not = 0; for (let s = 4001; s < 4500 && (!has || !not); s++) { if (gateOrbDue({ seed: s })) has = has || s; else not = not || s; }
+  return { nov: nov.map(row), ad: ad.map(row), names: ad.slice(0, 3).map(i => i.name), orbs: ad.filter(i => i.implement === 'orb').length,
+    hall: implementsFor({ type: 'guild_m', siteId: 'dunmore' }).map(i => i.make), other: implementsFor({ type: 'armor' }).length, share: n / 3000, has, not }; });
+await enterDungeon(page, { theme: 'haunted', size: 'medium', seed: GS.has });
+const GO = await page.evaluate(() => { const o = CHESTS.filter(c => c.items.some(i => i.gateOrb != null)), c = o[0], it = c && c.items.find(i => i.gateOrb != null);
+  const deep = Math.max(...CHESTS.map(c => c.floor || 1)), out = { gate: !!window._lastGen?.gate, n: o.length, deep: c && (c.floor || 1) === deep, treasure: c && c.treasure,
+    orb: it && { k: it.implement, s: it.school, want: gateOrbSchool(currentPortal), found: it.found, ench: it.enchantId, name: it.name } };
+  const sm = showMsg; showMsg = () => {}; openLoot(c); const n0 = BAG.length; takeLootItem(c.items.indexOf(it)); closeLoot(); showMsg = sm;
+  const got = BAG[BAG.length - 1]; out.took = BAG.length === n0 + 1 && got.implement === 'orb' && got.gateOrb == null; out.ws = !!(worldState.gateOrbs && worldState.gateOrbs[currentPortal.seed]);
+  const back = _restoreEnchant(JSON.parse(JSON.stringify(_serItem(got)))); out.back = [back.make, back.school, back.found, back.enchantId || (back.enchant && back.enchant.id)]; BAG.pop(); return out; });
+await enterDungeon(page, { theme: 'haunted', size: 'medium', seed: GS.has });
+const again = await page.evaluate(() => CHESTS.filter(c => c.items.some(i => i.implement === 'orb')).length);
+await enterDungeon(page, { theme: 'ruins', size: 'medium', seed: GS.not });
+const none = await page.evaluate(() => CHESTS.filter(c => c.items.some(i => i.implement === 'orb')).length);
+console.log('guild', JSON.stringify({ GS: Object.assign({}, GS, { nov: GS.nov.length, ad: GS.ad.length }), GO, again, none }));
+const kinds = r => r.map(x => x[0] + ':' + x[1]).join(' ');
+check(`the guild sells from Novice a staff (60) and a wand (80; Cloch's the maul) in each of the six emblems, ${GS.nov.length} pieces, Wooden, in the island's make`, GS.nov.length === 12 && GS.nov.every(x => x[2] === 'mark' && x[4] === 1 && x[3] === (x[0] === 'staff' ? 60 : 80)) && GS.nov.filter(x => x[0] === 'maul').length === 1 && GS.nov.find(x => x[0] === 'maul')[1] === 'cloch', kinds(GS.nov));
+check(`from Adept the tome too, 120 (${GS.ad.length} pieces: ${GS.names.join(', ')}); never an orb`, GS.ad.length === 18 && GS.ad.filter(x => x[0] === 'tome').every(x => x[3] === 120) && GS.ad.filter(x => x[0] === 'tome').length === 6 && GS.orbs === 0, kinds(GS.ad));
+check(`a Mages' Guild counter in Dunmore stocks the Gatelands' make; no other counter stocks them`, GS.hall.length === 12 && GS.hall.every(m => m === 'gatelands') && GS.other === 0, GS);
+check(`one gate in three keeps an orb (${GS.share.toFixed(3)} of 3,000 seeds)`, Math.abs(GS.share - 1 / 3) < .03, GS.share);
+check(`in such a gate the deepest floor's treasure chest holds a found orb of the gate's school with one enchant (${GO.orb && GO.orb.name})`, GO.gate && GO.n === 1 && GO.deep && GO.treasure && GO.orb.k === 'orb' && GO.orb.s === GO.orb.want && GO.orb.found && ['mp_regen', 'magic_boost', 'fortify_int'].includes(GO.orb.ench), GO);
+check('taken, it is the gate\'s for good: the next visit finds none; the save keeps its make, school, find and enchant', GO.took && GO.ws && again === 0 && GO.back[0] && GO.back[1] === GO.orb.s && GO.back[2] === true && GO.back[3] === GO.orb.ench, { GO, again });
+check('a gate that keeps none has none', none === 0, none);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
