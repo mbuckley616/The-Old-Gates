@@ -3622,7 +3622,7 @@ function buildDungeon(portal){
       if(d.shieldUp){ attachShieldProp(g, limbs, limbs.person?1:d.scale, 'tower'); if(limbs.person){limbs.shieldArmUpZ=-.5;limbs.shieldArm.rotation.z=-.5;} } // S199 — a person's guard, as the captain's (S175)
       const baseYe=(d.buildFn==='wraith'&&!limbs.person?.3:0)+baseY; // S212 — a wraith person glides at its own height (tickPeople)
       g.position.set(ec,baseYe,er);dScene.add(g);
-      const el=new THREE.PointLight(d.light,.7,4);el.position.set(ec,baseY+.8,er);dScene.add(el);
+      const el=new THREE.PointLight(d.buildFn==='slime'?dunSlimeLight(d.light):d.light,.7,4);el.position.set(ec,baseY+.8,er);dScene.add(el); /* S1884 — a slime's light is its form's glow */
       // Disguised/dormant enemies should not glow at full strength — would give them away.
       // Mimic chest: no aura at all. Gargoyle statue: very dim. Both restored to .7 on reveal/activation.
       if(d.disguise) el.intensity = 0;
@@ -4129,3 +4129,7 @@ function goToOW(){
     saveGame();
   });
 }
+// S1884 — a slime's point light takes the colour of the form it wears (hcSlimeKind, Session 1882): the magma slime's molten glow in a Tine
+// gate (the kit's glow, 2.6/.7/.12), the failing slime's sea-blue in a failing Uisce gate (.35/1.5/2.4); the steady slime keeps its green.
+// It left a green fleck on the orange slime. The old look, and anything outside a gate, keep the def's own.
+function dunSlimeLight(c){try{if(window.OG_LOOK!=='new'||typeof hcSlimeKind!=='function')return c;const k=hcSlimeKind();return k==='Slime (tine)'?0xff4512:k==='Slime (failing)'?0x25a0ff:c;}catch(e){return c;}}

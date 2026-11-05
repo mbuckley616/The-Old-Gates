@@ -19,6 +19,9 @@ for (const seed of [5, 11, 17, 23, 31, 44, 52, 61, 73, 88]) { await page.evaluat
   found = await page.evaluate(() => hcGateSchool() === 'tine' && ENEMIES.filter(x => !x.dead && x.floor === currentFloor && x.limbs && x.limbs.slime && x.variant !== 'small').length >= 2 ? { seed: currentPortal.seed, school: hcGateSchool(), cond: hcGateCond() } : null);
   if (found) break; }
 check('an elemental gate (Tine\'s, not Gaoth\'s) holds two slimes', !!found, found);
+// Session 1884: a slime's light is its form's glow, the magma slime's orange in a Tine gate (it was the old blob's green)
+const tl = await page.evaluate(() => ENEMIES.filter(x => !x.dead && x.floor === currentFloor && x.limbs && x.limbs.slime && x.el).map(x => x.el.color.getHex()));
+check(`a Tine gate's slimes are lit orange, not green (${tl.map(h => '#' + h.toString(16)).join(', ')})`, tl.length >= 2 && tl.every(h => h === 0xff4512), tl);
 
 // one slime ahead of you, one killed before its body was built (never dressed)
 const made = await page.evaluate(() => { const L = ENEMIES.filter(x => !x.dead && x.floor === currentFloor && x.limbs && x.limbs.slime && x.variant !== 'small');
@@ -114,6 +117,8 @@ const small = await page.evaluate(() => { const L = ENEMIES.filter(e => e.name =
   while (!(rig() && rig().hc) && k++ < 300) { CAM.position.set(S.mesh.position.x - 3, S.mesh.position.y + 1.6, S.mesh.position.z); CAM.updateMatrixWorld(true); tickCreatures(1 / 60, 5e5 + k * (HBODY.gap + 1)); }
   const R = rig(); return { n: L.length, k, plan: R && R.hc && R.hc.C.g.plan, seed: R && R.hc && R.hc.C.g.seed, want: HC.hashKey('slime:' + S.id), f: R && R.hc && +R.hc.f.toFixed(3), big: _R.hc.f }; });
 check(`the split's ${small.n} Small Slimes wear the kit's magma slime too, keyed by their own ids, smaller (×${small.f} against ×${(+small.big).toFixed(3)})`, small.n === 2 && small.plan === 'magmaslime' && small.seed === small.want && small.f < small.big, small);
+const sl = await page.evaluate(() => ENEMIES.filter(e => e.name === 'Small Slime' && !e.dead && e.el).map(e => e.el.color.getHex()));
+check(`the split's Small Slimes are lit orange too (${sl.map(h => '#' + h.toString(16)).join(', ')})`, sl.length === 2 && sl.every(h => h === 0xff4512), sl);
 // Session 1593: the Fire Elemental wears the kit's `fireelemental`, standing: fitted by its height, hovering on the plan's bob
 const el = await page.evaluate(() => { const F = ENEMIES.find(x => !x.dead && x.floor === currentFloor && x.limbs && x.limbs.flames); if (!F) return { none: true }; window._F = F;
   const rig = () => [...HC_RIGS].find(r => r.e === F); let k = 0; HBODY.last = -1e9;
@@ -170,12 +175,13 @@ for (const seed of seeds) { await enterDungeon(page, { theme: 'deep', seed });
     while (!(rig() && rig().hc) && k++ < 300) { CAM.position.set(S.mesh.position.x - 3, S.mesh.position.y + 1.6, S.mesh.position.z); CAM.updateMatrixWorld(true); tickCreatures(1 / 60, 8e5 + k * (HBODY.gap + 1)); }
     const R = rig(); window._FS = S; if (!R || !R.hc) return { seed: currentPortal.seed, hc: false, fail: R && R.hcFail };
     const P = HC.PLANS[R.hc.C.g.plan];
-    return { seed: currentPortal.seed, cond: hcGateCond(), school: hcGateSchool(), hc: true, kind: R.hcKind, plan: R.hc.C.g.plan, crests: P.parts.some(([q]) => q === 'crests'), want: HC.hashKey('slime:' + S.id), got: R.hc.C.g.seed,
+    return { seed: currentPortal.seed, cond: hcGateCond(), school: hcGateSchool(), hc: true, kind: R.hcKind, light: S.el && S.el.color.getHex(), plan: R.hc.C.g.plan, crests: P.parts.some(([q]) => q === 'crests'), want: HC.hashKey('slime:' + S.id), got: R.hc.C.g.seed,
       tris: R.hc.C.stats.tris, coat: P.palette.coat.map(v => +v.toFixed(2)) }; });
   if (fsl) break; }
 console.log('  failing slime:', JSON.stringify(fsl), 'magma tris', made.tris);
 check(`a failing Uisce gate's slime (seed ${fsl && fsl.seed}: ${fsl && fsl.cond}, ${fsl && fsl.school}) wears the kit's failing slime: crests breaking off its back, pale blue-white (${fsl && fsl.coat}), ${fsl && fsl.tris} tris against the magma slime's ${made.tris}, keyed by its foe id`,
   !!fsl && fsl.hc && fsl.cond === 'failing' && fsl.school === 'uisce' && fsl.kind === 'Slime (failing)' && fsl.plan === 'failingslime' && fsl.crests && fsl.got === fsl.want && fsl.coat.join() === '0.6,0.74,0.82', fsl);
+check(`and its light is the failing slime's sea-blue (${fsl && fsl.light != null && '#' + fsl.light.toString(16)})`, !!fsl && fsl.light === 0x25a0ff, fsl);
 if (fsl && fsl.hc) { const shotF = await page.evaluate(() => { const F = _FS, m = F.mesh, x = m.position.x, y = m.position.y, z = m.position.z, s = Math.max(m.scale.x, .5), L = new THREE.PointLight(0xc0d8ff, 1.0, 12); L.position.set(x + 1.6 * s, y + 1.6 * s, z + 1.4 * s); dScene.add(L);
   for (let i = 0; i < 20; i++) tickCreatures(1 / 60, 9e5 + i * 16.7);
   const hid = ENEMIES.filter(e => e.mesh && e !== F && e.mesh.visible); hid.forEach(e => e.mesh.visible = false);
@@ -191,10 +197,11 @@ for (const seed of sseeds) { await enterDungeon(page, { theme: 'deep', seed });
     const rig = () => [...HC_RIGS].find(r => r.e === S); let k = 0; HBODY.last = -1e9;
     while (!(rig() && rig().hc) && k++ < 300) { CAM.position.set(S.mesh.position.x - 3, S.mesh.position.y + 1.6, S.mesh.position.z); CAM.updateMatrixWorld(true); tickCreatures(1 / 60, 1e6 + k * (HBODY.gap + 1)); }
     const R = rig(); if (!R || !R.hc) return { seed: currentPortal.seed, hc: false, fail: R && R.hcFail };
-    return { seed: currentPortal.seed, cond: hcGateCond(), school: hcGateSchool(), hc: true, kind: R.hcKind, plan: R.hc.C.g.plan, tris: R.hc.C.stats.tris, coat: HC.PLANS[R.hc.C.g.plan].palette.coat.map(v => +v.toFixed(2)) }; });
+    return { seed: currentPortal.seed, cond: hcGateCond(), school: hcGateSchool(), hc: true, kind: R.hcKind, plan: R.hc.C.g.plan, tris: R.hc.C.stats.tris, light: S.el && S.el.color.getHex(), coat: HC.PLANS[R.hc.C.g.plan].palette.coat.map(v => +v.toFixed(2)) }; });
   if (ssl) break; }
 console.log('  steady slime:', JSON.stringify(ssl));
 check(`a steady Uisce gate's slime (seed ${ssl && ssl.seed}: ${ssl && ssl.cond}, ${ssl && ssl.school}) keeps the steady slime, pale green (${ssl && ssl.coat}), ${ssl && ssl.tris} tris`,
   !!ssl && ssl.hc && ssl.cond === 'steady' && ssl.school === 'uisce' && ssl.kind === 'Slime' && ssl.plan === 'slime' && ssl.coat.join() === '0.62,0.78,0.5', ssl);
+check(`and its old green light (${ssl && ssl.light != null && '#' + ssl.light.toString(16)})`, !!ssl && ssl.light === 0x44ff44, ssl);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
