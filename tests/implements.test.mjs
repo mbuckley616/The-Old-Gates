@@ -151,7 +151,9 @@ const GS = await page.evaluate(() => {
 await enterDungeon(page, { theme: 'haunted', size: 'medium', seed: GS.has });
 const GO = await page.evaluate(() => { const o = CHESTS.filter(c => c.items.some(i => i.gateOrb != null)), c = o[0], it = c && c.items.find(i => i.gateOrb != null);
   const deep = Math.max(...CHESTS.map(c => c.floor || 1)), out = { gate: !!window._lastGen?.gate, n: o.length, deep: c && (c.floor || 1) === deep, treasure: c && c.treasure,
-    orb: it && { k: it.implement, s: it.school, want: gateOrbSchool(currentPortal), found: it.found, ench: it.enchantId, name: it.name } };
+    orb: it && { k: it.implement, s: it.school, want: gateOrbSchool(currentPortal), found: it.found, ench: it.enchantId, name: it.name, price: it.buyPrice, tier: it.tier } };
+  const old = makeOrb(1, 'tine'); old.buyPrice = 8; const keepO = EQ.offhand; EQ.offhand = old; BAG.push(Object.assign(makeOrb(1, 'solas'), { buyPrice: 8 }));
+  ssSanitizeLoaded(); out.mig = [EQ.offhand.buyPrice, BAG[BAG.length - 1].buyPrice, makeOrb(5, 'tine').buyPrice]; BAG.pop(); EQ.offhand = keepO;
   const sm = showMsg; showMsg = () => {}; openLoot(c); const n0 = BAG.length; takeLootItem(c.items.indexOf(it)); closeLoot(); showMsg = sm;
   const got = BAG[BAG.length - 1]; out.took = BAG.length === n0 + 1 && got.implement === 'orb' && got.gateOrb == null; out.ws = !!(worldState.gateOrbs && worldState.gateOrbs[currentPortal.seed]);
   const back = _restoreEnchant(JSON.parse(JSON.stringify(_serItem(got)))); out.back = [back.make, back.school, back.found, back.enchantId || (back.enchant && back.enchant.id)]; BAG.pop(); return out; });
@@ -168,6 +170,8 @@ check(`one gate in three keeps an orb (${GS.share.toFixed(3)} of 3,000 seeds)`, 
 check(`in such a gate the deepest floor's treasure chest holds a found orb of the gate's school with one enchant (${GO.orb && GO.orb.name})`, GO.gate && GO.n === 1 && GO.deep && GO.treasure && GO.orb.k === 'orb' && GO.orb.s === GO.orb.want && GO.orb.found && ['mp_regen', 'magic_boost', 'fortify_int'].includes(GO.orb.ench), GO);
 check('taken, it is the gate\'s for good: the next visit finds none; the save keeps its make, school, find and enchant', GO.took && GO.ws && again === 0 && GO.back[0] && GO.back[1] === GO.orb.s && GO.back[2] === true && GO.back[3] === GO.orb.ench, { GO, again });
 check('a gate that keeps none has none', none === 0, none);
+// S1884 — the orb's price (Michael's A on #1176): the tome's guild price, 120, or a finer make's material value where that is more; a saved orb is repriced
+check(`a found orb is priced as the tome, 120 (this one ${GO.orb && GO.orb.price}, tier ${GO.orb && GO.orb.tier}); a saved one at 8 is 120 after a load (${GO.mig}); a tier 5 orb keeps its material's 413`, GO.orb.price === Math.max(120, Math.round([0, 5, 20, 40, 75, 275][GO.orb.tier] * 1.5)) && GO.mig[0] === 120 && GO.mig[1] === 120 && GO.mig[2] === 413, GO);
 
 // S1862 — the hold in both views (the sheet's second bodies session): the orb carried up before the waist, raised before the chest with the
 // guard, drawn back past the hip while it keeps a word, its light brighter as it keeps one; the tome lifted before the chest in a cast. In
