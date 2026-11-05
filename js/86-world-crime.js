@@ -312,10 +312,12 @@
   // S550 — a feast day: the innkeeper's line comes before the room offer, and the meal (a Hot Stew) is the house's, once
   // a feast at each inn, put in your pack when you ask for something to eat; the shop opens as on any day
   function feastInnLine(people){const f=typeof feastOn==='function'&&feastOn(absMin());return f?(FEAST_INN[people]||FEAST_INN.gatelander):'';}
-  function feastMeal(house){const f=typeof feastOn==='function'&&feastOn(absMin());if(!f||!house)return false;const key=house.id+'@'+dayNow(),M=worldState.feastMeals||(worldState.feastMeals={});
+  // S1859 — and on a wedding day in the town (A Fish for the Wedding, S1857: a fine fish brought, `erWeddingAt`), the same stew, once
+  function feastMeal(house){if(!house)return false;const f=typeof feastOn==='function'&&feastOn(absMin()),sid=house.siteId||house.site,
+    wed=!f&&sid&&typeof erWeddingAt==='function'&&erWeddingAt(sid);if(!f&&!wed)return false;const key=house.id+'@'+dayNow(),M=worldState.feastMeals||(worldState.feastMeals={});
     if(M.day!==dayNow()){for(const k in M)delete M[k];M.day=dayNow();}if(M[key])return false;
     const st=(SHOP_STOCK.inn||[]).find(i=>i.name==='Hot Stew');if(!st)return false;M[key]=1;bagAdd({...st,qty:1});
-    if(typeof updateHUD==='function')updateHUD();showMsg(`🥣 Hot Stew — ${f.name}’s meal, on the house.`,'#e8c890');return true;}
+    if(typeof updateHUD==='function')updateHUD();showMsg(wed?'🥣 Hot Stew — the wedding’s meal, on the house.':`🥣 Hot Stew — ${f.name}’s meal, on the house.`,'#e8c890');return true;}
   // S551 — the barber's fee (Michael's A on DECISION #151): one fee for the visit, an inn room's price in that place (a town
   // 9–17, a city 17–25, by house); anything on the look page may change for it, and leaving with nothing changed costs
   // nothing. barberPay(house, changed) is what the chair's look page (slice 2) calls when you rise: 'free' when nothing
