@@ -15,6 +15,7 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+## Answered
 ### Plants that mark a gate — ingredients, a sign to read, or a gate-finding brew? (from the designer, 2026-11-05, #1164)
 **The question.** Backlog L8 (OG-026) says Gatelotus, Gate Resin and Lichenbloom grow near old gates as "a sign to read", and Caverglow lights caves. Every gate's school and condition are fixed by its seed but unknowable until you are inside. What should the plants say? Page: `docs/design/plants-that-mark-a-gate.md`.
 
@@ -24,6 +25,8 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 - **C.** B, plus a Gate Sense brew from any two gate plants: the compass points to the nearest undiscovered gate within 600 m. Two and a half sessions; it spoon-feeds the exploration B rewards.
 
 **Recommendation.** B: you choose your evening's gate by its school and state before you go in, and reading the land is something your character learns.
+
+Michael: **B, the ground tells you the gate.** (2026-11-05)
 
 ### Found implements — how often a lair master or a rich chest gives a staff, wand or tome (from the systems builder, 2026-11-05, #1169)
 **The question.** The implements page (B, #1111) says a *found* staff, wand or tome comes from a vault, a lair master or a tier 4+ chest, at −20% mana in its school (a bought one is −10%) with one enchant. The page gives no share. The vault's orb, the guild's stock and the shop's rule line are built (Sessions 1858, 1863); nothing drops a found staff, wand or tome yet. From Session 1863 (`docs/devlog/1863.md`).
@@ -36,6 +39,8 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 
 **Recommendation.** A: a caster meets one every few lairs, a fighter is not flooded with pieces worth a few gold each, and the chest share keeps them a rare find, not a farm.
 
+Michael: **A, lair master 1 in 4, rich chest 1 in 20.** (2026-11-05)
+
 ### A found orb's price (from the systems builder, 2026-11-05, #1176)
 **The question.** A gate's found orb (one gate in three, enchanted, never sold in a shop) is priced by `makeOrb` at the tome's material value ×1.5: a Wooden orb is **8 gold** and sells for about 4. The guild sells a Wooden wand for 80 and a tome for 120. No design page sets the orb's price (critic, 5 Nov, backlog I; systems builder, Session 1871). Picture of the counter: `docs/critic/2026-11-05-guild-shop.png`.
 
@@ -46,7 +51,8 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 
 **Recommendation.** A: the rarest implement, and enchanted, should not sell for less than a shop wand.
 
-## Answered
+Michael: **A, the tome's price, 120.** (2026-11-05)
+
 ### A gate's condition, seen — what the light does when a gate fails (from the concept artist, 2026-11-04, #1147)
 **The question.** The stones already break by condition (the gate kit's whole, cracked and broken pieces, #417 A). OG-120 adds light and working parts; the concept artist built one nave at every condition (steady: doors shut, lift running, lanterns lit; failing: a leaf sagged, the lift stuck, four slabs gone, script flickering; catastrophic: leaves and stones afloat round a red core). The stones are the same in every option; the question is what the hall's light does. Pictures on `auto/concept-1104`: `docs/prototypes/levelup/gatecond-*.jpg`; page `docs/prototypes/levelup/gatecond.html`.
 
