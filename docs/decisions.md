@@ -25,6 +25,17 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 
 **Recommendation.** B: you choose your evening's gate by its school and state before you go in, and reading the land is something your character learns.
 
+### Found implements — how often a lair master or a rich chest gives a staff, wand or tome (from the systems builder, 2026-11-05, #1169)
+**The question.** The implements page (B, #1111) says a *found* staff, wand or tome comes from a vault, a lair master or a tier 4+ chest, at −20% mana in its school (a bought one is −10%) with one enchant. The page gives no share. The vault's orb, the guild's stock and the shop's rule line are built (Sessions 1858, 1863); nothing drops a found staff, wand or tome yet. From Session 1863 (`docs/devlog/1863.md`).
+
+**Options.**
+- **A (recommended).** A lair master drops one in four, rolled on the lair's seed. A tier 4+ chest gives one in twenty, in place of its weapon roll. Each is of the place's school where it has one (a gate's), else any.
+- **B.** A lair master always drops one; chests never do.
+- **C.** A tier 4+ chest gives one in ten; lair masters never do.
+- **D.** None for now: found pieces wait for the vault and the keep (L10), and the orbs stay the only find.
+
+**Recommendation.** A: a caster meets one every few lairs, a fighter is not flooded with pieces worth a few gold each, and the chest share keeps them a rare find, not a farm.
+
 ## Answered
 ### A gate's condition, seen — what the light does when a gate fails (from the concept artist, 2026-11-04, #1147)
 **The question.** The stones already break by condition (the gate kit's whole, cracked and broken pieces, #417 A). OG-120 adds light and working parts; the concept artist built one nave at every condition (steady: doors shut, lift running, lanterns lit; failing: a leaf sagged, the lift stuck, four slabs gone, script flickering; catastrophic: leaves and stones afloat round a red core). The stones are the same in every option; the question is what the hall's light does. Pictures on `auto/concept-1104`: `docs/prototypes/levelup/gatecond-*.jpg`; page `docs/prototypes/levelup/gatecond.html`.
