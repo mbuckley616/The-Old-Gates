@@ -4,6 +4,8 @@
 // (HC_WRAITH_REST) since the kit's plan already stands in it. Checked: on the kit's bones, keyed by the foe id; floating clear of the
 // ground, not 0.35 m up as the driver's root is; the driver's hood darkness hidden with its body; the claws swing with a blow; three
 // levels by distance. Picture: docs/prototypes/f4/f4-wraiths.jpg.
+// Session 1866 (backlog L4, OG-073): in a failing gate the Wraith wears the kit's failing wraith (`failingwraith`: a second pair of
+// clawed arms from the robe's middle, posed by hcArms through the blow); the gate's condition is read by hcGateCond.
 import { boot, check, ROOT } from './lib/game.mjs';
 import fs from 'fs'; import path from 'path';
 const OUT = path.join(ROOT, 'docs', 'prototypes', 'f4'); fs.mkdirSync(OUT, { recursive: true });
@@ -17,11 +19,14 @@ const made = await page.evaluate(() => { forceTime(12);
   const clear = (x, z) => { for (let dx = -2; dx <= 2; dx += .5) for (let dz = -2; dz <= 2; dz += .5) if (WORLD.solidAt(x + dx, z + dz)) return false; return true; };
   let d = 7; for (; d < 60; d += 3) { let ok = true; for (let i = -1; i <= 1; i++) if (!clear(px + fx * d + sx * i * 1.6, pz + fz * d + sz * i * 1.6)) { ok = false; break; } if (ok) break; }
   window._S = [];
-  for (const [i, type] of ['Wraith', 'Phantom'].entries()) { const at = i ? 1 : -1, X = px + fx * d + sx * at * 1.6, Z = pz + fz * d + sz * at * 1.6;
+  const real = window.hcFailing;
+  for (const [i, type] of ['Wraith', 'Phantom', 'Wraith'].entries()) { const at = [-1, 1, 0][i]; window.hcFailing = () => i === 2; // the third as a failing gate builds it
+    const X = px + fx * (d + (i === 2 ? 2.5 : 0)) + sx * at * 1.6, Z = pz + fz * (d + (i === 2 ? 2.5 : 0)) + sz * at * 1.6;
     const pr = buildFoe(type, X, Z, null, 0xa0e0ff), m = new THREE.Group(); m.add(pr.root); const e = { id: 'f4wraiths:' + i, name: type, mesh: m, limbs: { torso: pr.mesh, armR: pr.B.shR, person: pr } }; // as a dungeon builds a person-bodied foe (buildDungeon)
     const rig = e.limbs.person; e.x = X; e.z = Z;
     e.mesh.position.set(X, WORLD.worldH(X, Z), Z); e.mesh.rotation.y = Math.atan2(px - X, pz - Z); e.combatYaw = e.mesh.rotation.y; e.locked = false; e.mesh.visible = true;
-    WORLD.scene.add(e.mesh); rig.e = e; _S.push({ k: type, e, rig }); }
+    WORLD.scene.add(e.mesh); rig.e = e; _S.push({ k: i === 2 ? 'Wraith (failing)' : type, e, rig }); }
+  window.hcFailing = real;
   CAM.position.set(px, worldH(px, pz) + 1.65, pz); CAM.updateMatrixWorld(true);
   const want = () => _S.filter(f => !f.rig.hc && !f.rig.hcFail).length;
   let k = 0; HBODY.last = -1e9; while (want() && k++ < 100) { tickPeople(1 / 60, 2e5 + k * (HBODY.gap + 1)); tickCreatures(1 / 60, 2e5 + k * (HBODY.gap + 1)); }
@@ -34,7 +39,7 @@ const who = await page.evaluate(() => _S.map(({ k, e, rig }) => { const H = rig.
     tris: H ? H.C.stats.tris : 0, hood, lights, driver: rig.mesh.visible, hollow: (rig.hollow || []).filter(m => m.visible).length, clear: H && H.C.plan.clear }; }));
 console.log('  ghosts:', JSON.stringify(who));
 check(`the Wraith and the Phantom wear the kit's (${who.map(w => w.plan + ', ' + w.tris + ' triangles').join('; ')}), keyed by their foe id, with no legs to move (${who.map(w => w.map).join(', ')} joints copied), built in ${made.each} ms each`,
-  made.n === 2 && made.left === 0 && who.every(w => w.hc && w.legs === 0 && w.map === 10 && w.seed === w.want) && who[0].plan === 'Wraith' && who[1].plan === 'Phantom', who);
+  made.n === 3 && made.left === 0 && who.every(w => w.hc && w.legs === 0 && w.map === 10 && w.seed === w.want) && who[0].plan === 'Wraith' && who[1].plan === 'Phantom' && who[2].plan === 'Wraith (failing)' && who[2].seed === who[2].want, who);
 check(`the wraith's hollow hood and the phantom's face (${who.map(w => w.lights).join(', ')} lit eyes); the driver's body and its hood's darkness hidden while the kit shows`,
   who[0].hood && !who[1].hood && who.every(w => w.lights >= 2 && !w.driver && w.hollow === 0), who);
 
@@ -69,7 +74,29 @@ const blow = await page.evaluate(() => _S.map(({ e, rig }) => { const by = rig.h
 console.log('  blow:', JSON.stringify(blow));
 check(`a blow swings the kit's claw: its wrist ${blow.map(b => b[0]).join(', ')} m up at rest, ${blow.map(b => b[1]).join(', ')} at the wind-up, ${blow.map(b => b[2]).join(', ')} in the rake`, blow.every(b => b[1] > b[0] + .2 && b[2] < b[1] - .2), blow);
 
-// the picture: the two from 4 m
+// Session 1866: the failing wraith's second pair of arms, from the robe's middle, is the kit's own (no driver arm to copy): hcArms poses it,
+// so it swings back through the wind-up and rakes forward in the strike (a dungeon's e.atkAnim, counting down from 0.35 s)
+const fail = await page.evaluate(() => { const { e, rig } = _S[2], H = rig.hc, by = H.C.byName, inv = () => new THREE.Matrix4().copy(e.mesh.matrixWorld).invert(), out = [];
+  const L = o => o.getWorldPosition(new THREE.Vector3()).applyMatrix4(inv());
+  for (const [wind, anim] of [[0, 0], [1, 0], [0, .1]]) { tickPeople(1 / 60, 6e5); tickCreatures(1 / 60, 6e5); e._wind = wind; e.atkAnim = anim; attackPose(e, true); hcPose(rig); rig.root.parent.updateMatrixWorld(true);
+    const w = L(by.arm1R_2); out.push({ y: +w.y.toFixed(2), z: +w.z.toFixed(2) }); }
+  e._wind = 0; e.atkAnim = 0;
+  return { pairs: H.C.B.arms.length / 2, posed: (H.arms || []).map(A => A.pair + (A.side > 0 ? 'L' : 'R')), rest: out[0], wind: out[1], rake: out[2], tris: H.C.stats.tris, steady: _S[0].rig.hc.C.stats.tris }; });
+console.log('  failing:', JSON.stringify(fail));
+check(`a failing gate's wraith has two pairs of clawed arms (${fail.tris} triangles against the steady one's ${fail.steady}); its lower pair (${fail.posed.join(', ')}) is posed by the kit's arms: its wrist ${fail.rest.z} m ahead at rest, ${fail.wind.z} drawn back at the wind-up, ${fail.rake.z} in the rake`,
+  fail.pairs === 2 && fail.posed.length === 2 && fail.posed.every(p => p[0] === '1') && fail.wind.z < fail.rest.z - .05 && fail.rake.z > fail.wind.z + .1 && fail.tris > fail.steady, fail);
+
+// the gate's condition, read by hcGateCond: outside a dungeon nothing; in a gate its seed's (gateCondRoll), or its world entry's own
+const cond = await page.evaluate(() => { const z0 = activeZoneId, p0 = currentPortal, out = { world: hcGateCond() }; const seeds = { steady: 0, failing: 0, catastrophic: 0 };
+  for (let s = 1; s < 4000 && Object.values(seeds).some(v => !v); s++) { const c = gateCondRoll(s); if (!seeds[c] && !WORLD_DUNGEONS.some(e => e.seed === s)) seeds[c] = s; }
+  activeZoneId = 'dungeon'; for (const c in seeds) { currentPortal = { seed: seeds[c], size: 'small' }; out[c] = [hcGateCond(), hcFailing()]; }
+  currentPortal = { seed: seeds.failing, size: 'small', lair: {} }; out.lair = hcGateCond();
+  activeZoneId = z0; currentPortal = p0; return out; });
+console.log('  cond:', JSON.stringify(cond));
+check(`a gate's condition is read for its foes: none in the world (${cond.world}), a lair none (${cond.lair}); steady, failing and catastrophic gates by their seeds (${['steady', 'failing', 'catastrophic'].map(c => cond[c].join('/')).join(', ')}), the failing form in the last two`,
+  cond.world === null && cond.lair === null && cond.steady[0] === 'steady' && !cond.steady[1] && cond.failing[0] === 'failing' && cond.failing[1] && cond.catastrophic[0] === 'catastrophic' && cond.catastrophic[1], cond);
+
+// the picture: the three from 4 m
 await page.evaluate(() => { const a = _S[0].e, b = _S[1].e, mx = (a.x + b.x) / 2, mz = (a.z + b.z) / 2, fx = -Math.sin(yaw), fz = -Math.cos(yaw); px = mx - fx * 4.5; pz = mz - fz * 4.5; pitch = .05; });
 for (let i = 0; i < 8; i++) { await page.evaluate(() => { tickPeople(1 / 60, performance.now()); tickCreatures(1 / 60, performance.now()); }); await g.frames(1); }
 await page.screenshot({ path: path.join(OUT, 'f4-wraiths.jpg') });

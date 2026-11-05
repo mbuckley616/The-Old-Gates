@@ -4,6 +4,8 @@
 // spear, and neither the plan's shield. Checked: each on the kit's 23 bones, keyed by its foe id; the driver's weapon and lit eyes hidden
 // while the kit's show; its hips at the driver's and its feet on the ground; a walk that turns the kit's bones with its ankles by the
 // driver's; three levels by distance; and killed, darkened, lying with its driver. Picture: docs/prototypes/f4/f4-skeletons.jpg.
+// Session 1867 (L4, OG-073): in a failing gate a skeleton wears the kit's failing skeleton (two more pairs of arms, posed by hcArms; spurs
+// down the back; only its cracks lit), holding what it was dealt as the steady one does. Picture: docs/prototypes/f4/f4-failingskeletons.jpg.
 import { boot, check, ROOT } from './lib/game.mjs';
 import fs from 'fs'; import path from 'path';
 const OUT = path.join(ROOT, 'docs', 'prototypes', 'f4'); fs.mkdirSync(OUT, { recursive: true });
@@ -47,6 +49,34 @@ const size = await page.evaluate(() => _S.map(({ k, e, rig }) => { rig.root.pare
 console.log('  size:', JSON.stringify(size));
 check(`each stands at its driver's stature: its head within 3 cm of the driver's (${size.map(s => s.head).join(', ')} m), its hips over the driver's (${size.map(s => s.up).join(', ')} m higher), its toes on the ground (${size.map(s => s.toes.join(', ')).join('; ')} m)`,
   size.every(s => s.hips < .03 && Math.abs(s.head) < .03 && s.toes.every(y => Math.abs(y) < .06)), size);
+
+// Session 1867: a failing gate's two, a sword's and a spear's, built 2.5 m behind as buildDungeon builds them there (hcFailing true)
+const fs1 = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.cos(yaw), sx = -fz, sz = fx, real = window.hcFailing, got = {}; window._F = []; window.hcFailing = () => true;
+  const a = _S[0].e, b = _S[1].e, mx = (a.x + b.x) / 2 + fx * 2.5, mz = (a.z + b.z) / 2 + fz * 2.5;
+  for (let i = 0; i < 24 && !(got.sword && got.spear); i++) { const e = keyFoe(buildZoneEnemy(WORLD.scene, [], mx + sx * (i * .37 - 2), mz + sz * (i * .37 - 2), 'Skeleton', null), 'f4bones:failing:' + i), rig = e.limbs && e.limbs.person, k = rig && rig.g.gear === 'spear' ? 'spear' : 'sword';
+    if (!rig || got[k]) { if (e.mesh.parent) e.mesh.parent.remove(e.mesh); continue; } got[k] = 1;
+    const at = _F.length ? 1 : -1, X = mx + sx * at * 1.1, Z = mz + sz * at * 1.1; e.x = X; e.z = Z;
+    e.mesh.position.set(X, WORLD.worldH(X, Z), Z); e.mesh.rotation.y = Math.atan2(px - X, pz - Z); e.combatYaw = e.mesh.rotation.y; e.locked = false; e.mesh.visible = true;
+    if (!e.mesh.parent) WORLD.scene.add(e.mesh); rig.e = e; _F.push({ k, e, rig }); }
+  window.hcFailing = real;
+  let n = 0; HBODY.last = -1e9; while (_F.some(f => !f.rig.hc && !f.rig.hcFail) && n++ < 100) { tickPeople(1 / 60, 2.5e5 + n * (HBODY.gap + 1)); tickCreatures(1 / 60, 2.5e5 + n * (HBODY.gap + 1)); }
+  return _F.map(({ k, e, rig }) => { const H = rig.hc; if (!H) return { k, hc: false }; rig.root.parent.updateMatrixWorld(true); const by = H.C.byName, W = o => o.getWorldPosition(new THREE.Vector3()), gy = e.mesh.position.y;
+    return { k, hc: true, kind: rig.hcKind, plan: HC.PLANS[H.C.g.plan].from || HC.PLANS[H.C.g.plan].plan, name: HC.PLANS[H.C.g.plan].name, seed: H.C.g.seed, want: HC.hashKey('foe:' + e.id), pairs: H.C.B.arms.length / 2,
+      posed: (H.arms || []).map(A => A.pair).join(''), gear: H.C.B.gear, tris: H.C.stats.tris, steady: _S[0].rig.hc.C.stats.tris, toes: ['leg0L_3', 'leg0R_3'].map(nm => +(W(by[nm]).y - gy).toFixed(3)), driver: rig.mesh.visible }; }); });
+console.log('  failing:', JSON.stringify(fs1));
+check(`a failing gate's sword and spear skeletons wear the kit's failing skeleton (${fs1.map(f => f.kind + ', ' + f.pairs + ' pairs of arms, ' + f.tris + ' triangles').join('; ')}; the steady ${fs1[0] && fs1[0].steady}), keyed by their foe id, holding what they were dealt, their toes on the ground (${fs1.map(f => (f.toes || []).join(', ')).join('; ')} m)`,
+  fs1.length === 2 && fs1.every(f => f.hc && /failing/.test(f.kind) && f.pairs === 3 && f.posed === '1122' && f.seed === f.want && f.gear && f.gear.length === 1 && f.gear[0] === f.k && !f.driver && f.tris > f.steady && f.toes.every(y => Math.abs(y) < .06)), fs1);
+const fb = await page.evaluate(() => { const { e, rig } = _F[0], by = rig.hc.C.byName, inv = () => new THREE.Matrix4().copy(e.mesh.matrixWorld).invert(), L = o => o.getWorldPosition(new THREE.Vector3()).applyMatrix4(inv()), out = [];
+  for (const [wind, anim] of [[0, 0], [1, 0], [0, .1]]) { tickPeople(1 / 60, 6e5); tickCreatures(1 / 60, 6e5); e._wind = wind; e.atkAnim = anim; attackPose(e, true); hcPose(rig); rig.root.parent.updateMatrixWorld(true);
+    out.push(['arm1R_2', 'arm2R_2'].map(n => +L(by[n]).z.toFixed(2))); }
+  e._wind = 0; e.atkAnim = 0; return { rest: out[0], wind: out[1], rake: out[2] }; });
+console.log('  failing blow:', JSON.stringify(fb));
+check(`its two lower pairs draw back through the wind-up and rake forward in the strike (wrists ${fb.rest.join(', ')} m ahead at rest, ${fb.wind.join(', ')} at the wind-up, ${fb.rake.join(', ')} in the rake)`,
+  [0, 1].every(i => fb.wind[i] < fb.rest[i] - .015 && fb.rake[i] > fb.wind[i] + .04), fb);
+await page.evaluate(() => { const a = _F[0].e, b = _F[1].e, mx = (a.x + b.x) / 2, mz = (a.z + b.z) / 2, fx = -Math.sin(yaw), fz = -Math.cos(yaw); const ox = px, oz = pz; px = mx - fx * 3; pz = mz - fz * 3; pitch = -.12; window._P = [ox, oz]; });
+for (let i = 0; i < 8; i++) { await page.evaluate(() => { tickPeople(1 / 60, performance.now()); tickCreatures(1 / 60, performance.now()); }); await g.frames(1); }
+await page.screenshot({ path: path.join(OUT, 'f4-failingskeletons.jpg') });
+await page.evaluate(() => { for (const f of _F) if (f.e.mesh.parent) f.e.mesh.parent.remove(f.e.mesh); [px, pz] = _P; });
 
 // the picture: the two from 3.5 m
 await page.evaluate(() => { const a = _S[0].e, b = _S[1].e, mx = (a.x + b.x) / 2, mz = (a.z + b.z) / 2, fx = -Math.sin(yaw), fz = -Math.cos(yaw); px = mx - fx * 3.2; pz = mz - fz * 3.2; pitch = -.08; });

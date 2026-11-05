@@ -977,8 +977,17 @@ const HC_KINDS={'Wolf':{plan:'wolf'},'Snow Wolf':{plan:'wolf',own:true},'Dire Wo
   'Golem':{plan:'golem',own:true,person:true,merge:true,ik:true,tall:true,glow:[.42,.69,1],glowR:.02},
   'Gargoyle':{plan:'gargoyle',own:true,person:true,merge:true,ik:true,glow:[1,.31,.13],glowR:.032,glowAt:{f:.8,up:.55,out:.5},garg:true},
   'Wraith':{plan:'wraith',own:true,person:true,legless:true,rest:HC_WRAITH_REST},'Phantom':{plan:'phantom',own:true,person:true,legless:true,rest:HC_WRAITH_REST},
+  'Wraith (failing)':{plan:'failingwraith',own:true,person:true,legless:true,rest:HC_WRAITH_REST,arms:true,float:.05}, /* S1866 — its hem is 15% longer, so it rides 5 cm higher, clear of the floor */
   'Deer':{plan:'deer',ik:true},'Hind':{plan:'deer',own:true,ik:true,bare:true},'Red Fox':{plan:'redfox'},'Brown Hare':{plan:'brownhare'},'Badger':{plan:'badger'},'Otter':{plan:'otter'},'Cow':{plan:'cow',ik:true},'Sheep':{plan:'sheep',ik:true},'Goat':{plan:'goat',ik:true},'Elderstag':{plan:'stag',ik:true},'Gatefen Boar':{plan:'gatefenboar'},'Redspine Fox':{plan:'redspinefox'},'Hollowcat':{plan:'hollowcat'},'Greenward Stoat':{plan:'stoat'},'Icehorn':{plan:'icehorn',ik:true},'Ironpine Elk':{plan:'ironpineelk',ik:true},'Craghorn Ram':{plan:'craghornram',ik:true},'Stormlynx':{plan:'stormlynx'},'Glacial Marmot':{plan:'glacialmarmot'},'Snowleap Hare':{plan:'snowhare'},'Duneskimmer':{plan:'duneskimmer',ik:true},'Terrace Ram':{plan:'terraceram',ik:true},'Sunspire Lynx':{plan:'sunspirelynx'},'Oasis Hare':{plan:'oasishare'},'Mirage Fox':{plan:'miragefox'},'Crownstag':{plan:'crownstag',ik:true},'Frostmane':{plan:'frostmane',ik:true},'Lanternfox':{plan:'lanternfox',night:true},'Thornrunner':{plan:'thornrunner'},'Stonejaw':{plan:'stonejaw'},
   'Shark':{plan:'reefshark',fish:true},'Whale':{plan:'stormwhale',fish:true},'Dolphin':{plan:'stormswift',fish:true},'Gull':{plan:'gull',fish:true,own:true,cell:.014},'Raven':{plan:'raven',fish:true,own:true,cell:.014},'Crow':{plan:'crow',fish:true,own:true,cell:.012},'Trout':{plan:'trout',fish:true,own:true,cell:.014},'River Pike':{plan:'riverpike',fish:true,own:true,cell:.02},'Riverjaw Salmon':{plan:'riverjaw',fish:true,own:true,cell:.02},'Mire Snake':{plan:'miresnake',fish:true,own:true,cell:.016},'Lantern Beetle':{plan:'lanternbeetle',fish:true,own:true,cell:.03},'Stonecrawler':{plan:'stonecrawler',fish:true,own:true,cell:.01},'Marsh Frog':{plan:'marshfrog',fish:true,own:true,cell:.012},'Frostspine Lizard':{plan:'frostspinelizard',fish:true,own:true,cell:.01},'Icecrab':{plan:'icecrab',fish:true,own:true,cell:.02},'Saltspine Monitor':{plan:'saltspinemonitor',fish:true,own:true,cell:.008},'Spined Gekko':{plan:'spinedgekko',fish:true,own:true,cell:.01},'Amber Shellcrab':{plan:'ambershellcrab',fish:true,own:true,cell:.02},'Sand Wyrm':{plan:'sandwyrm',fish:true,own:true,cell:.01},'Hen':{plan:'hen',fish:true,own:true,cell:.012},'Great Heron':{plan:'heron',fish:true,own:true,cell:.016},'Crag Hawk':{plan:'craghawk',fish:true,own:true,cell:.014},'Capercaillie':{plan:'capercaillie',fish:true,own:true,cell:.016},'Skyraven':{plan:'skyraven',fish:true,own:true,cell:.014},'Stormshrike':{plan:'stormshrike',fish:true,own:true,cell:.014},'Tundra Grouse':{plan:'tundragrouse',fish:true,own:true,cell:.012},'Scarlet Ibis':{plan:'scarletibis',fish:true,own:true,cell:.016},'Cypress Stalker':{plan:'cypressstalker',fish:true,own:true,cell:.016},'Sunbeak Vulture':{plan:'sunbeakvulture',fish:true,own:true,cell:.016},'Cliffswift':{plan:'cliffswift',fish:true,own:true,cell:.01},'Glasswing Moth':{plan:'glasswingmoth',fish:true,own:true,cell:.014},'Slime':{plan:'slime',fish:true},'Fire Elemental':{plan:'fireelemental',fish:true}};
+// Session 1867 (L4, OG-073): a failing gate's skeletons, the sword's and the spear's, on the kit's failing skeleton: two more pairs of arms
+// (posed by hcArms), spurs down the back, more ribs, the bones cracked and only the cracks lit white-gold. What each holds is the game's,
+// as the steady one's; its sockets keep the plan's own gold (no K.glow), the colour of the cracks
+// Session 1868: and its Golem on the failing golem (OG-073's Cloch form: doubled into a pair on one rig, two heads and two pairs of arms
+// on a widened chest, the blocks cracked and only the cracks lit violet), its four eyes lit in the plan's violet; it stands at the driver's stature,
+// as every kit body does, not the plan's 1.45
+HC_KINDS['Golem (failing)']=Object.assign({},HC_KINDS.Golem,{plan:'failinggolem',glow:[.72,.32,1],arms:true});
+for(const k of ['Skeleton','Skeleton (spear)'])HC_KINDS[k.replace(/\)$/,', failing)').replace(/^Skeleton$/,'Skeleton (failing)')]=Object.assign({},HC_KINDS[k],{plan:'failingskeleton',glow:null,arms:true});
 // the driver's joints and the kit's bones they move, parents first (the kit's front legs hang on spine3, the hind on spine0)
 const HC_MAP=[['hips','spine0'],['spine','spine1'],['neck','neck0'],['head','head'],['jaw','jaw'],['tail1','tail0'],['tail2','tail1'],['tail3','tail2'],
   ['shL','leg0L_0'],['elL','leg0L_1'],['wrL','leg0L_2'],['pfL','leg0L_3'],['shR','leg0R_0'],['elR','leg0R_1'],['wrR','leg0R_2'],['pfR','leg0R_3'],
@@ -1008,6 +1017,14 @@ function hcOn(){return HC_BODY.on&&window.OG_LOOK==='new'&&typeof HC!=='undefine
 // is to its horse. Keyed as before, `coach:<road>:<i>`, so a team's two are two bodies and the same two every time.
 function buildCoachBeast(key,i,isle){const au=isle==='aurenne',mk=isle==='mark';
   const rg=buildWolf(au?'Mule':(i&&!mk&&(pHash(key)&1))?'Grey Horse':'Horse',au?1.44:1.6);rg.hcKey='coach:'+key+':'+i;if(ANIMAL_ISLES.includes(isle))rg.hcIsland=isle;return rg;}
+// Session 1866 (backlog L4, OG-073: "failing gates change their foes"): the condition of the gate you are in, or null outside one. A gate
+// is buildDungeon's own test (a cave that is no keep, lair or tutorial; 56-dungeon-build.js), and its condition makeGate's: the world's
+// entry's if it names one, else the gate's seed's (gateCondRoll, 52-dungeon-gen.js). Read when a foe's driver is built, so a gate's foes
+// take its form as they are made
+function hcGateCond(){try{const P=currentPortal;if(activeZoneId!=='dungeon'||!P||P.tutorial||dunKeepKind(P)||fortShapeFor(P)!=='cave')return null;
+  const W=(WORLD_DUNGEONS.find(e=>e.seed===P.seed)||{}).cond;return GATE_CONDS.includes(W)?W:gateCondRoll(P.seed);}catch(e){return null;}}
+// a foe whose kind the kit has a failing form for wears it in a failing gate, and in a catastrophic one, which has failed further
+function hcFailing(){const c=hcGateCond();return c==='failing'||c==='catastrophic';}
 function hcPlan(name){const K=HC_KINDS[name];if(!K.own)return K.plan;const id='game:'+name;
   // a person's (Session 1356): what it holds is the game's (a sword, or a spear), not the plan's sword and shield, which no rule of the
   // Skeleton's fight has; its sockets lit in the foe's eye colour (ZONE_FOE_DEF's 0x80c0ff), as the old body's are
@@ -1093,13 +1110,13 @@ function hcAttach(rig,C){const tA=performance.now();
   // a water bug's forelegs (Session 1337): each femur and tibia, and the tibia's hinge from the kit's rest (its bones' rest turns are the identity)
   const bug=rig.k&&rig.k.bug&&by.arm0L_2?['L','R'].map(n=>({n,fem:by['arm0'+n+'_0'],tib:by['arm0'+n+'_1'],ax:by['arm0'+n+'_1'].position.clone().cross(by['arm0'+n+'_2'].position).normalize()})):null;
   // the Faolchú's two pairs of arms (Session 1347): the kit's own list, posed by hcArms (the driver has no arm bones)
-  const arms=HC_KINDS[hcKind(rig)].arms?C.B.arms.map(A=>({b:A.names.slice(0,3).map(n=>by[n]),side:A.side,ph:A.phase,sw:A.swing,pair:+A.names[0][3]})):null;
+  const arms=HC_KINDS[hcKind(rig)].arms?C.B.arms.map(A=>({b:A.names.slice(0,3).map(n=>by[n]),side:A.side,ph:A.phase,sw:A.swing,pair:+A.names[0][3]})).filter(A=>!K.person||A.pair>0):null; /* S1866 — a person's first pair is the driver's own arms (HC_PMAP); only its extra pairs are posed by hcArms */
   // a dragon's wings (Session 1348): the kit's membrane wings, each arm's three bones and its fingers, posed by hcWings from the driver's
   const wings=HC_KINDS[hcKind(rig)].wings?C.B.wings.filter(W=>!W.feathered).map(W=>({side:W.side,ph:W.phase||0,arm:W.arm.map(n=>by[n]),fing:W.fingers.map(f=>by[f[0]])})):null;
   // a gargoyle's (Session 1375): the same wings, and its tail's joints
   const garg=K.garg?{wings:C.B.wings.map(W=>({side:W.side,arm:W.arm.map(n=>by[n]),fing:W.fingers.map(f=>by[f[0]])})),tail:Object.keys(by).filter(n=>/^tail\d+$/.test(n)).map(n=>by[n]),R:C.plan.wingRest}:null;
   const sway=K.sway?Object.keys(by).filter(n=>/^tail\d+$/.test(n)).map(n=>by[n]):null;
-  rig.hc={W,C,map,s0,t0,fur,small,ik,feet,hb,scorp,bug,arms,wings,sway,garg,merge:!!HC_KINDS[hcKind(rig)].merge,unhunch:!!HC_KINDS[hcKind(rig)].unhunch,rest:K.rest?Object.entries(K.rest):null,ank:K.person&&ik?map.map(([j],i)=>/^an/.test(j)?i:-1).filter(i=>i>=0):null,glow:meshes.map(m=>m.material.userData&&m.material.userData.uGlow).filter(u=>u&&u.value&&u.value.isColor),mid:null,bits:C.B.bits.map(b=>b.obj),hide:meshes.filter(m=>!fur.includes(m)),lift:K.legless?.24*SCALE.ROOM_K:0,hip0:sp?B.body.position.clone():K.person?new THREE.Vector3(0,PW.HIPS,0):new THREE.Vector3(B.hips.position.x,wolfHipY(rig.k),B.hips.position.z),pos0:by.spine0.position.clone(),k:1/(f*C.S),L:-1,drv:rig.mesh.material,em:-1};
+  rig.hc={W,C,map,s0,t0,fur,small,ik,feet,hb,scorp,bug,arms,wings,sway,garg,merge:!!HC_KINDS[hcKind(rig)].merge,unhunch:!!HC_KINDS[hcKind(rig)].unhunch,rest:K.rest?Object.entries(K.rest):null,ank:K.person&&ik?map.map(([j],i)=>/^an/.test(j)?i:-1).filter(i=>i>=0):null,glow:meshes.map(m=>m.material.userData&&m.material.userData.uGlow).filter(u=>u&&u.value&&u.value.isColor),mid:null,bits:C.B.bits.map(b=>b.obj),hide:meshes.filter(m=>!fur.includes(m)),lift:K.legless?.24*SCALE.ROOM_K-(K.float||0):0,hip0:sp?B.body.position.clone():K.person?new THREE.Vector3(0,PW.HIPS,0):new THREE.Vector3(B.hips.position.x,wolfHipY(rig.k),B.hips.position.z),pos0:by.spine0.position.clone(),k:1/(f*C.S),L:-1,drv:rig.mesh.material,em:-1};
   rig.hc.gr=hcGroundLegs(rig,by,K,W);
   if(HC_KINDS[hcKind(rig)].night)rig.hc.night=rig.hc.glow.map(u=>u.value.clone()); /* S1853 — a glow lit only at night (the Lanternfox), its full colour kept */
   HC_BODY.ms+=performance.now()-tA;HC_BODY.n++;}
@@ -1219,12 +1236,16 @@ function hcBug(rig){const B=rig.B;for(const A of rig.hc.bug){const o=B['fang'+A.
 // forward past their rest and settle, the hind pair a beat behind the fore. The kit's arm bones rest at the identity, so a turn about
 // x swings an arm fore and aft in the body's plane, as the kit's gait does (creatures.js, pose's "arms swing against the legs")
 const HC_FAOL={rise:.7,cock:-1.1,push:.9,reach:-.9,lag:.3};
-function hcArms(rig){const H=rig.hc,e=rig.e,w=e?(e._wind||0):0,lk=e&&e._lunge!=null?1-Math.max(0,e._lunge)/.3:-1,mv=1-((rig.w&&rig.w.stand)||0),tau=Math.PI*2,F=HC_FAOL;
+// Session 1866: a dungeon's foe strikes by e.atkAnim (0.35 s, counting down), not by the open world's e._lunge, so the rake reads either
+// a person's extra pair (Session 1866, the failing wraith's from the robe's middle) reaches ahead and down, where the Faolchú's hang
+// straight down, so the same turn about x runs the other way: drawn back and low through the wind-up, raked forward and up (sg); and
+// a pair that reaches out to the side (the failing skeleton's, Session 1867) barely moves about x, so the shoulder also turns about y
+function hcArms(rig){const H=rig.hc,sg=HC_KINDS[hcKind(rig)].person?-1:1,e=rig.e,w=e?(e._wind||0):0,lk=e&&e._lunge!=null?1-Math.max(0,e._lunge)/.3:e&&e.atkAnim>0?1-Math.min(1,e.atkAnim/.35):-1,mv=1-((rig.w&&rig.w.stand)||0),tau=Math.PI*2,F=HC_FAOL;
   for(const A of H.arms){let u=-w;
     // the strike's course: from drawn back (-1) through the rake (+1) to the rest (0); the hind pair starts a beat late
     if(lk>=0){const k=Math.max(0,Math.min(1,(lk-(A.pair?F.lag:0))/(1-F.lag)));u=-Math.cos(1.5*Math.PI*k);}
     const s=A.sw*mv*Math.sin(tau*(rig.phase||0)+(A.side>0?0:Math.PI)+A.ph);
-    A.b[0].rotation.set(s+(u<0?F.rise:F.push)*u,0,0);A.b[1].rotation.set(-Math.abs(s)*.6-.2-F.cock*Math.max(0,-u)+F.reach*Math.max(0,u),0,0);A.b[2].rotation.set(.3*u,0,0);}}
+    const f0=s+(u<0?F.rise:F.push)*u;A.b[0].rotation.set(sg*f0,sg<0?-A.side*.8*f0:0,0);A.b[1].rotation.set(sg*(-Math.abs(s)*.6-.2-F.cock*Math.max(0,-u)+F.reach*Math.max(0,u)),0,0);A.b[2].rotation.set(sg*.3*u,0,0);}}
 // Session 1348: a dragon's wings. The driver has one bone a side, folded along the back at rest and spread and beating once roused
 // (wgApply: rig.wing 0 to 1, rig.flap the beat's phase). The kit's wings take the same two numbers through its own pose's turns
 // (creatures.js, "wings rest half-folded … or beat"): folded at the plan's own rest (wingFold, 0.22; at 1 a dragon's wings hang open to
