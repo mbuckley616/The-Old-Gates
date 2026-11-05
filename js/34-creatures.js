@@ -991,6 +991,8 @@ HC_KINDS['Golem (failing)']=Object.assign({},HC_KINDS.Golem,{plan:'failinggolem'
 // the Cloch gargoyle's span, a second pair of wings behind them (hcGarg) and a second pair of clawed arms out of the shoulder blades
 // (hcArms), the stone cracked and only the cracks lit a storm's blue-white); its eyes in the plan's pale blue, not the steady one's ember
 HC_KINDS['Gargoyle (failing)']=Object.assign({},HC_KINDS.Gargoyle,{plan:'failinggargoyle',glow:[.55,.75,1],arms:true});
+// Session 1877: the gate's trolls, in their plan's own hide and eyes (no coat or eye of the driver's), with the troll's maul
+for(const [k,plan] of [['tine','tinetroll'],['uisce','uiscetroll'],['cloch','stonetroll']])HC_KINDS['Cave Troll ('+k+')']={plan,own:true,person:true,merge:true,ik:true,gear:'plan',gearFrom:'troll'};
 for(const k of ['Skeleton','Skeleton (spear)'])HC_KINDS[k.replace(/\)$/,', failing)').replace(/^Skeleton$/,'Skeleton (failing)')]=Object.assign({},HC_KINDS[k],{plan:'failingskeleton',glow:null,arms:true});
 // the driver's joints and the kit's bones they move, parents first (the kit's front legs hang on spine3, the hind on spine0)
 const HC_MAP=[['hips','spine0'],['spine','spine1'],['neck','neck0'],['head','head'],['jaw','jaw'],['tail1','tail0'],['tail2','tail1'],['tail3','tail2'],
@@ -1029,6 +1031,16 @@ function hcGateCond(){try{const P=currentPortal;if(activeZoneId!=='dungeon'||!P|
   const W=(WORLD_DUNGEONS.find(e=>e.seed===P.seed)||{}).cond;return GATE_CONDS.includes(W)?W:gateCondRoll(P.seed);}catch(e){return null;}}
 // a foe whose kind the kit has a failing form for wears it in a failing gate, and in a catastrophic one, which has failed further
 function hcFailing(){const c=hcGateCond();return c==='failing'||c==='catastrophic';}
+// Session 1877 (backlog L4, OG-018 and OG-088: each school's antibodies wear the animals of its country): the school of the gate you are in, or
+// null outside one, and null in an occupied gate (its trolls came in with the goblins). The gate is hcGateCond's; its school gateSchool's
+// (87-world-quests.js), read off the world's entry, so a gate's foes take its school's form as they are made
+function hcGateSchool(){try{const P=currentPortal;if(hcGateCond()==null||typeof gateSchool!=='function')return null;
+  const W=WORLD_DUNGEONS.find(e=>e.seed===P.seed)||P;if(gateOf(W).occupied)return null;return gateSchool(W);}catch(e){return null;}}
+// a gate's cave troll by its school: Tine's basalt troll with forge-light in its cracks and Uisce's drowned-pale one (OG-018, the kit's
+// tinetroll and uiscetroll), and Cloch's stone troll fused with rock (OG-088's corrupted troll, the kit's stonetroll). Any other school, and
+// a cave troll outside a gate, keeps the moss-backed troll
+const HC_TROLL_SCHOOL={tine:'Cave Troll (tine)',uisce:'Cave Troll (uisce)',cloch:'Cave Troll (cloch)'};
+function hcTrollKind(type){return type==='Cave Troll'&&HC_TROLL_SCHOOL[hcGateSchool()]||type;}
 function hcPlan(name){const K=HC_KINDS[name];if(!K.own)return K.plan;const id='game:'+name;
   // a person's (Session 1356): what it holds is the game's (a sword, or a spear), not the plan's sword and shield, which no rule of the
   // Skeleton's fight has; its sockets lit in the foe's eye colour (ZONE_FOE_DEF's 0x80c0ff), as the old body's are
@@ -1037,7 +1049,10 @@ function hcPlan(name){const K=HC_KINDS[name];if(!K.own)return K.plan;const id='g
     // a troll's (Session 1378): the plan's own maul (gear 'plan'), and its eyes in the driver's colour (K.eye)
     HC.PLANS[id]=Object.assign({},P,K.cell?{name,cell:K.cell}:{name},pal?{palette:Object.assign({},P.palette,pal)}:{},{parts:P.parts.map(([k,o])=>k==='gear'&&K.gear!=='plan'?[k,{list:K.gear?[K.gear]:[]}]
     :k==='head'&&K.glow?[k,Object.assign({},o,{eyes:o.eyes.map(e=>Object.assign({},e,{r:K.glowR||.017,glow:1.6,color:K.glow},K.glowAt||{}))})]
-    :k==='head'&&K.eye!=null?[k,Object.assign({},o,{eyes:o.eyes.map(e=>Object.assign({},e,{color:c(K.eye)}))})]:[k,o])});}
+    :k==='head'&&K.eye!=null?[k,Object.assign({},o,{eyes:o.eyes.map(e=>Object.assign({},e,{color:c(K.eye)}))})]:[k,o])});
+    // a plan copied from another before that one took its gear (the school trolls, made from the troll before its maul, Session 1378)
+    // borrows that one's gear part (K.gearFrom; Session 1877)
+    if(K.gearFrom&&!HC.PLANS[id].parts.some(([k])=>k==='gear')){const G=HC.PLANS[K.gearFrom].parts.find(([k])=>k==='gear');if(G)HC.PLANS[id].parts=[...HC.PLANS[id].parts,G];}}
   // a hind (Session 1706, K.bare): the deer's plan without its antlers
   if(!HC.PLANS[id]&&(K.spider||!WOLF_KINDS[name]))HC.PLANS[id]=Object.assign({},HC.PLANS[K.plan],{name,cell:K.cell},K.bare?{parts:HC.PLANS[K.plan].parts.map(([k,o])=>k==='head'?[k,Object.assign({},o,{antlers:null})]:[k,o])}:{});
   if(!HC.PLANS[id]){const k=WOLF_KINDS[name],c=h=>[(h>>16&255)/255,(h>>8&255)/255,(h&255)/255];
