@@ -15,6 +15,16 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+### Plants that mark a gate — ingredients, a sign to read, or a gate-finding brew? (from the designer, 2026-11-05, #1164)
+**The question.** Backlog L8 (OG-026) says Gatelotus, Gate Resin and Lichenbloom grow near old gates as "a sign to read", and Caverglow lights caves. Every gate's school and condition are fixed by its seed but unknowable until you are inside. What should the plants say? Page: `docs/design/plants-that-mark-a-gate.md`.
+
+**Options.**
+- **A.** Three more herbs and Caverglow as plain ingredients near gates and in caves. They say nothing. One systems session.
+- **B (recommended).** The ground tells you the gate: Lichenbloom by a steady gate, Gatelotus by a failing one, Gate Resin by a catastrophic one, each tinted in the school's colour with one wrong element, nothing lit (#1005 B). Ordinary herbs near a failing gate grow ×1.3. Entering a gate after picking its plant teaches its meaning; from then on the gate's map card shows its condition and school. Caverglow grows along a cave's path to its deepest room: picking it gives Night Eye and leaves the way back dark. Two systems sessions and one bodies session.
+- **C.** B, plus a Gate Sense brew from any two gate plants: the compass points to the nearest undiscovered gate within 600 m. Two and a half sessions; it spoon-feeds the exploration B rewards.
+
+**Recommendation.** B: you choose your evening's gate by its school and state before you go in, and reading the land is something your character learns.
+
 ## Answered
 ### A gate's condition, seen — what the light does when a gate fails (from the concept artist, 2026-11-04, #1147)
 **The question.** The stones already break by condition (the gate kit's whole, cracked and broken pieces, #417 A). OG-120 adds light and working parts; the concept artist built one nave at every condition (steady: doors shut, lift running, lanterns lit; failing: a leaf sagged, the lift stuck, four slabs gone, script flickering; catastrophic: leaves and stones afloat round a red core). The stones are the same in every option; the question is what the hall's light does. Pictures on `auto/concept-1104`: `docs/prototypes/levelup/gatecond-*.jpg`; page `docs/prototypes/levelup/gatecond.html`.
