@@ -16,7 +16,9 @@ const KINDS = { 'Deer': ['deer', .87], 'Red Fox': ['redfox', .35], 'Brown Hare':
   // Session 1739: the Mark's own on four legs
   'Icehorn': ['icehorn', .69], 'Ironpine Elk': ['ironpineelk', 1.44], 'Craghorn Ram': ['craghornram', .60], 'Stormlynx': ['stormlynx', .40], 'Glacial Marmot': ['glacialmarmot', .125], 'Snowleap Hare': ['snowhare', .26],
   // Session 1744: Aurenne's own on four legs
-  'Duneskimmer': ['duneskimmer', .69], 'Terrace Ram': ['terraceram', .58], 'Sunspire Lynx': ['sunspirelynx', .39], 'Oasis Hare': ['oasishare', .275], 'Mirage Fox': ['miragefox', .21] };
+  'Duneskimmer': ['duneskimmer', .69], 'Terrace Ram': ['terraceram', .58], 'Sunspire Lynx': ['sunspirelynx', .39], 'Oasis Hare': ['oasishare', .275], 'Mirage Fox': ['miragefox', .21],
+  // Session 1851: OG-040's strange beasts on four legs
+  'Crownstag': ['crownstag', 1.48], 'Frostmane': ['frostmane', 1.08], 'Lanternfox': ['lanternfox', .36], 'Thornrunner': ['thornrunner', .70], 'Stonejaw': ['stonejaw', .30] };
 const g = await boot({ look: 'new' }); const { page } = g;
 // Session 1745: a picture is one frame drawn and read back from the canvas (autumn's way, S1470). Playwright's screenshot waited on the
 // live loop's queue of frames, and with two dozen furred bodies on software GL it ran past 120 s (the line's, here, after S1744's fix)
@@ -34,10 +36,10 @@ const made = await page.evaluate((names) => { forceTime(12);
     const rig = buildAnimal(nm, 'f4animals:' + i), G = new THREE.Group(); G.add(rig.root); G.position.set(x, WORLD.worldH(x, z), z); G.rotation.y = yaw + Math.PI / 2; WORLD.scene.add(G); return { nm, rig, G }; });
   CAM.position.set(px, worldH(px, pz) + 1.65, pz); CAM.updateMatrixWorld(true);
   const want = () => _A.filter(f => hcOk(f.rig) && !f.rig.hc && !f.rig.hcFail).length;
-  let k = 0; HBODY.last = -1e9; while (want() && k++ < 600) tickCreatures(1 / 60, 2e5 + k * (HBODY.gap + 1));
+  let k = 0; HBODY.last = -1e9; while (want() && k++ < 1200) tickCreatures(1 / 60, 2e5 + k * (HBODY.gap + 1));
   return { d, ticks: k, left: want(), fails: _A.filter(f => f.rig.hcFail).map(f => f.nm), nope: buildAnimal('Wolf') === null, each: Math.round(HC_BODY.ms / Math.max(1, HC_BODY.n)) }; }, Object.keys(KINDS));
 console.log('  built:', JSON.stringify(made));
-check('buildAnimal builds the twenty-four and only the wild and farm kinds (a Wolf is a foe\'s)', made.nope && made.left === 0 && made.fails.length === 0, made);
+check('buildAnimal builds the twenty-nine and only the wild and farm kinds (a Wolf is a foe\'s)', made.nope && made.left === 0 && made.fails.length === 0, made);
 
 const who = await page.evaluate(() => _A.map(({ nm, rig, G }) => { const H = rig.hc; if (!H) return { nm, hc: false }; G.updateMatrixWorld(true);
   const a = H.C.byName.spine0.getWorldPosition(new THREE.Vector3()), b = rig.B.hips.getWorldPosition(new THREE.Vector3());
