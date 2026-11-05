@@ -655,7 +655,7 @@ function _shopAffordanceNote(it, stockItems){
       return `<span class="sh-note">Ranged · bolts sold here</span>`;
     }
     if(EQ.offhand) return `<span class="sh-note warn">Two-handed · stows your ${EQ.offhand.name}</span>`;
-    return ''; /* S1870 — the 2H badge beside the name says it; the note said it twice and took the name's width */
+    return ''; /* S1871 — the 2H badge beside the name says it; the note said it twice and took the name's width */
   }
   return '';
 }

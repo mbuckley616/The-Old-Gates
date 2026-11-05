@@ -242,7 +242,7 @@ check('the shop\'s row says it on both sides; the loot list, the bag\'s tooltip 
   && !/undefined/.test(RU.staff.tip + RU.wand.tip + RU.sword.tip) && RU.staff.tip.includes('Heavy · 28 stamina') && RU.wand.tip.includes('Light · 11 stamina') && RU.sword.tip.includes('Medium · 21 stamina')
   && !RU.sword.row && !RU.sword.sell && !/Held|Sent|Keeps/.test(RU.sword.loot + RU.sword.tip + RU.sword.worn) && RU.staff.loot.startsWith('ATK '), RU);
 
-// S1869, S1870 — the counter (critic 5 Nov): an implement's badge draws its own glyph (staff 🥢, wand 🪄, maul 🔨, tome 📖, orb 🔮; a
+// S1871 — the counter (critic 5 Nov): an implement's badge draws its own glyph (staff 🥢, wand 🪄, maul 🔨, tome 📖, orb 🔮; a
 // sword still ⚔), and a staff's row at 1280 px shows its whole name: the 2H badge stays, the second "Two-handed" note is gone
 const CT = await page.evaluate(() => {
   const keep = EQ.offhand; EQ.offhand = null;
