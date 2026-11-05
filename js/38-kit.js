@@ -507,7 +507,7 @@ function gatelandsLot(street, i, s = {}) {
     : kind === 'merchant' ? { color: colour, paint, trade: s.trade } : { color: colour, paint, doorX: i % 2 ? 1.95 : -1.95 };
   const plan = s.bays && BAYS[kind] ? bayPlan(kind, s.bays, { ...opts, d: s.d }) : PLANS[kind](opts);
   plan.r = stream(`${street}:windows:${i}`);
-  if (kind === 'forge') plan.doorX = plan.open.front[0].x; /* Session 1854: a smithy's door is its open cart door, 1.2 m east of the middle */
+  if (kind === 'forge') plan.doorX = plan.open.front[0].x; /* Session 1855: a smithy's door is its open cart door, 1.2 m east of the middle */
   const town = kind === 'townhouse' || kind === 'merchant';
   return { plan, kind, colour: town ? colour : kind === 'warehouse' || kind === 'forge' ? 'stone' : 'lime', paint: town ? paint : plan.paint };
 }

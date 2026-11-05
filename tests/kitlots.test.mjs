@@ -13,7 +13,7 @@ const pickSites = () => { const nat = t => nationKeyOf(...cellOf(t.x, t.z)), d =
   return [...near('gatelands', 'town', 2), ...near('gatelands', 'village', 2), ...near('gatelands', 'port', 1), ...near('gatelands', 'city', 1), ...near('mark', 'town', 1)].map(t => ({ id: t.id, kind: t.kind, nat: nat(t) })); };
 const survey = ids => { const out = {};
   for (const id of ids) { const site = allSites().find(t => t.id === id); if (!WORLD.settle.get(id)) genSettlement(site); const S = WORLD.settle.get(id); if (!S) { out[id] = null; continue; }
-    out[id] = { houses: S.houses.filter(h => h.siteId === id && !h.farm && h.type !== 'byre' && h.type !== 'barn') /* S1854 — a village's byre and barn (tests/kitfarm) are the new look's alone */.map(h => ({ id: h.id, type: h.type, w: h.w, d: h.d, x: +h.doorX.toFixed(3), z: +h.doorZ.toFixed(3), yaw: h.exitYaw, kit: h.kit })),
+    out[id] = { houses: S.houses.filter(h => h.siteId === id && !h.farm && h.type !== 'byre' && h.type !== 'barn') /* S1855 — a village's byre and barn (tests/kitfarm) are the new look's alone */.map(h => ({ id: h.id, type: h.type, w: h.w, d: h.d, x: +h.doorX.toFixed(3), z: +h.doorZ.toFixed(3), yaw: h.exitYaw, kit: h.kit })),
       innPlot: !!(S.plots || []).find(P => P.type === 'inn'), lots: S.sol.filter(s => s.hid && !s.farm).map(s => ({ hid: s.hid, cx: s.cx, cz: s.cz, rx: s.rx, rz: s.rz, c: s.c, s: s.s })) }; }
   return out; };
 
@@ -36,7 +36,7 @@ const gl = sites.filter(s => s.nat === 'gatelands'), mk = sites.find(s => s.nat 
 const same = sites.map(s => { const a = old[s.id].houses, b = neu[s.id].houses; const one = (h, i) => { const k = b[i].kit ? b[i].kit.door || 0 : 0, tx = -Math.sin(h.yaw), tz = -Math.cos(h.yaw); /* a kit house's door stands in its bay (Session 1072), k along the front */
     const hall = b[i].kit && b[i].kit.kind === 'guildhall'; /* a guild hall takes the kit hall's 9 m (Session 1083), its front kept */
     const inn = b[i].kit && b[i].kit.inn, kch = b[i].kit && b[i].kit.kind === 'church'; /* a town's church takes the kit church's size (Session 1127), its front kept */ /* a village's inn takes the farmhouse's 6.2 m (Session 1086), its front kept */
-    const forge = b[i].kit && b[i].kit.kind === 'forge'; /* a smithy takes the kit forge's 6 m (Session 1854), its front kept */
+    const forge = b[i].kit && b[i].kit.kind === 'forge'; /* a smithy takes the kit forge's 6 m (Session 1855), its front kept */
     return h.id === b[i].id && h.type === b[i].type && (hall ? b[i].d === 9 : inn ? b[i].d === 6.2 : forge ? b[i].d === 6 && b[i].kit.d0 === h.d : kch ? b[i].d === (b[i].kit.side ? 8.4 : CL[b[i].kit.bays]) : b[i].kit && b[i].kit.kind === 'markhall' ? b[i].kit.d0 === h.d && b[i].d > h.d : b[i].kit && b[i].kit.d0 ? b[i].kit.d0 === h.d && b[i].d > h.d && b[i].d <= 8 : h.d === b[i].d) && (hall ? (e => Math.abs(e.x * tz - e.z * tx) < .01 && e.x * tx + e.z * tz > -3.51 && e.x * tx + e.z * tz < .01)({ x: b[i].x - h.x - tz * k, z: b[i].z - h.z + tx * k }) : Math.hypot(h.x + tz * k - b[i].x, h.z - tx * k - b[i].z) < .01); }; /* Session 1275: a hall's door is on its lot's own street line, up to 3.5 m behind the old look's, whose hall stood on the 13 by 11 m lot grown about its centre */
   /* Session 1343 (Michael's A on #642): on the new look a Gatelands town's or city's lots are laid round the coaching inn's plot, which
      the old look has not, so its houses move; each keeps its id and its type, in order, and the new ones after them are homes */
@@ -67,7 +67,7 @@ check(`the towns' churches are the kit's church where it fits: ${kch.length} of 
 // the guild halls (Session 1083, Michael's C on #352): a town's or city's is the kit's hall, 14.4 by 9 m, slid along its front by 0.7 m at most
 const halls = rows.filter(h => h.type === 'guild_f' || h.type === 'guild_m'), badH = halls.filter(h => !h.kit || h.kit.kind !== 'guildhall' || h.w !== 14.4 || h.d !== 9 || Math.abs(h.kit.slide) > .7 || h.kit.guild !== (h.type === 'guild_m' ? 'mages' : 'fighters'));
 check(`every guild hall of the Gatelands' towns and city is the kit's hall, 14.4 by 9 m (${halls.length}; slid ${[...new Set(halls.map(h => h.kit && h.kit.slide))].join(', ')} m)`, halls.length >= 4 && badH.length === 0, badH.slice(0, 4));
-// the smithies (Session 1854; card F9, OG-043): a Gatelands smith's lot is the kit's forge, 8.4 by 6 m, slid along its front by 0.7 m at most,
+// the smithies (Session 1855; card F9, OG-043): a Gatelands smith's lot is the kit's forge, 8.4 by 6 m, slid along its front by 0.7 m at most,
 // where it fits; one that does not is a merchant's house as before
 const smiths = rows.filter(h => h.type === 'weapon'), forges = smiths.filter(h => h.kit && h.kit.kind === 'forge'), badF = forges.filter(h => h.w !== 8.4 || h.d !== 6 || Math.abs(h.kit.slide) > .7);
 check(`the Gatelands' smithies are the kit's forge, 8.4 by 6 m: ${forges.length} of ${smiths.length} (${forges.map(h => h.site).join(', ')})`, forges.length >= 4 && forges.length >= smiths.length - 1 && badF.length === 0 && smiths.every(h => h.kit), badF.slice(0, 4));

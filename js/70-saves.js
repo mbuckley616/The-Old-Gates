@@ -27,7 +27,7 @@ function _serItem(it){
                   'zone','col','glowCol','respawn','desc','knownDesc','hiddenDesc',
                   'herbKey','isHerb','isMisc','shieldType','torchType','block','blockMult',
                   'bookId','virtue','cloak','line', // S552 — a cloak's kind; S564 — an armour piece's line (light, robe)
-                  'unique','stolen','artifact','half','licence','brew','brewKey','meal','food','log','ore','tool','ingot','made','tempers','baseAtk','baseDef','quality','plank','spar','feather','bowKind','heartwood','lodestone','figurehead']){ /* S1517 — the bench's planks, spars and feathers; S1549 — a longbow's or a war bow's kind */ /* S1494 — ore and the pick (S1491's were lost on a reload), an ingot, a made piece and its tempers */ /* S1486 — a meal's kind and strength, a food, a log */ /* S781 — the Wolf-Mother's Cloak gone thin */  // S776 — kept through a reload: a quest piece stays unsellable, stolen goods stay stolen, a Maker's tool knows which it is
+                  'unique','stolen','artifact','half','licence','brew','brewKey','meal','food','log','ore','tool','ingot','made','tempers','baseAtk','baseDef','quality','plank','spar','feather','bowKind','heartwood','lodestone','figurehead','implement','school','found']){ /* S1849 — an implement's kind, its emblem's school, found in a gate */ /* S1517 — the bench's planks, spars and feathers; S1549 — a longbow's or a war bow's kind */ /* S1494 — ore and the pick (S1491's were lost on a reload), an ingot, a made piece and its tempers */ /* S1486 — a meal's kind and strength, a food, a log */ /* S781 — the Wolf-Mother's Cloak gone thin */  // S776 — kept through a reload: a quest piece stays unsellable, stolen goods stay stolen, a Maker's tool knows which it is
     if(it[k]!==undefined)s[k]=it[k];
   }
   if(it.enchant){
@@ -223,6 +223,10 @@ function ssLoad(key){return ssLoadRows(key).then(r=>r&&ssJoinPayload(r.c,r.w));}
 // v80 S137 — saves from before S137 carry scene-graph dumps where live handles were, and 'spawned'
 // flags whose NPC, pickup or camp no longer exists after a load: the quest could never finish.
 function ssSanitizeLoaded(){
+  /* S1849 — a Wooden Staff saved before the implements (one hand, spellPower) is the Staff of no school now, in hand, in the bag and in the stash */
+  if(typeof implementMigrate==='function'){if(typeof EQ!=='undefined'&&EQ.weapon)EQ.weapon=implementMigrate(EQ.weapon);
+    if(typeof BAG!=='undefined')for(let i=0;i<BAG.length;i++)BAG[i]=implementMigrate(BAG[i]);
+    const ST=typeof stashBag!=="undefined"?stashBag:null;if(Array.isArray(ST))for(let i=0;i<ST.length;i++)ST[i]=implementMigrate(ST[i]);}
   const Q=worldState.quests;if(Array.isArray(Q))for(const q of Q){if(!q)continue;delete q._npc;delete q._obj;if(q.turnedIn||q.done||!q.data)continue;
     if(q.kind==='find'&&q.data.spawned&&!q.data.found)q.data.spawned=false;
     if(q.kind==='road'&&q.data.spawned&&(q.data.have||0)<(q.data.count||0))q.data.spawned=false;}

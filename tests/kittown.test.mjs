@@ -28,7 +28,7 @@ const r = await page.evaluate(() => {
     const s = S.sol.find(q => q.hid === h.id); if (!s) { out.push({ id: h.id, nosol: true }); continue; }
     const nx = s.s, nz = s.c, ex = s.c, ez = -s.s, base = WORLD.worldH(s.cx, s.cz);
     /* the four faces at 0.5 m, a little off the middle (clear of a door in the middle bay): from 0.55 m out (inside the 0.6 m every lot keeps clear), toward the centre */
-    /* S1854 — the forge's cart door is 2.4 m wide and stands open: its front is sampled 2.2 m off the middle on the side away from the door */
+    /* S1855 — the forge's cart door is 2.4 m wide and stands open: its front is sampled 2.2 m off the middle on the side away from the door */
     const fo = h.kit.kind === 'forge' ? -Math.sign((h.doorX - s.cx) * ex + (h.doorZ - s.cz) * ez) * 2.2 : .45;
     const faces = [[nx, nz, s.rz, ex * fo, ez * fo], [-nx, -nz, s.rz, ex * .45, ez * .45], [ex, ez, s.rx, nx * .4, nz * .4], [-ex, -ez, s.rx, nx * .4, nz * .4]].map(([ax, az, half, ox, oz]) => {
       const x = s.cx + ax * (half + .55) + ox, z = s.cz + az * (half + .55) + oz, k = hit(x, base + .5, z, -ax, -az, 3); return k ? +(.55 - k.distance).toFixed(3) : null; });
@@ -66,7 +66,7 @@ check(`it covers the kit houses' ground within ${dB.toFixed(2)} m and their heig
 check('from outside the town the far copy is drawn, in the town the kit\'s houses', !far.none && far.out.lo && !far.out.hi && far.inn.hi && !far.inn.lo, far);
 
 // the shops' signs (Session 1074): one painted for each trade, shared by its shops, and none more when the town is built again
-const sg = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'), shops = S.houses.filter(h => h.siteId === 'dunmore' && h.kit && h.kit.kind === 'merchant'), trades = new Set([...WORLD.settle.values()].flatMap(T => T.houses || []).filter(h => h.kit && h.kit.kind === 'merchant').map(h => h.type)); /* S1854 — the signs are counted over every town built so far, so the trades are too: Dunmore's smith is a forge now, and another town's arms merchant paints that sign */
+const sg = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'), shops = S.houses.filter(h => h.siteId === 'dunmore' && h.kit && h.kit.kind === 'merchant'), trades = new Set([...WORLD.settle.values()].flatMap(T => T.houses || []).filter(h => h.kit && h.kit.kind === 'merchant').map(h => h.type)); /* S1855 — the signs are counted over every town built so far, so the trades are too: Dunmore's smith is a forge now, and another town's arms merchant paints that sign */
   const a = PKIT.signsMade(), p = PKIT.panelsMade(), calls = S.kitCalls; disposeSettlement('dunmore'); genSettlement(allSites().find(t => t.id === 'dunmore')); const T = WORLD.settle.get('dunmore');
   return { shops: shops.length, trades: trades.size, a, b: PKIT.signsMade(), p, p2: PKIT.panelsMade(), calls, calls2: T.kitCalls }; });
 check(`${sg.shops} shops of ${sg.trades} trades paint ${sg.a} signs, and building the town again paints none (${sg.calls} draws, then ${sg.calls2})`, sg.shops > 3 && sg.a === sg.trades && sg.b === sg.a && sg.calls2 === sg.calls, sg);

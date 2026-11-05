@@ -52,8 +52,12 @@ const SPELLS=[
 ];
 
 // Tier multipliers: [Impression, Comprehension, Mastery]
+// S1850 — the tome in the off hand reads an Impression word aloud at ×0.8 (magical-implements.md, B): `magnitude` is read through
+// tierMags(), so every place that reads TIER_MULT.magnitude[tier-1] sees it without each saying so
+const TIER_MAG=[0.60, 1.00, 1.30],TIER_MAG_TOME=[0.80, 1.00, 1.30];
+function tierMags(){return typeof tomeHeld==='function'&&tomeHeld()?TIER_MAG_TOME:TIER_MAG;}
 const TIER_MULT={
-  magnitude: [0.60, 1.00, 1.30], // dmg / heal
+  get magnitude(){return tierMags();}, // dmg / heal
   cost:      [1.00, 1.00, 0.70], // mana
   cooldown:  [1.00, 1.00, 0.80],
 };
@@ -93,7 +97,10 @@ function tineCatch(e){const B=e&&e._burn;if(!B||!B.leap)return null;const dun=!!
   for(const o of heldTargets()){if(o===e||o.dead||o.hp<=0||o.locked||o.disguised||(dun&&o.floor!==currentFloor)||(o._burn&&o._burn.until>playClockS))continue;
     const d=Math.hypot(o.x-e.x,o.z-e.z);if(d<=bd){bd=d;best=o;}}
   if(!best)return null;B.leap=false;riderHit(best,'caor',0,{caught:true});best.alert=true;return best;}
-function wordWildChance(word){const w=WORD_BY[word]||SPELLS.find(s=>s.id===word);return w&&perk(w.school,25)?STEADY_VOICE_WILD:IMPRESSION_WILD_CHANCE;}
+/* S1850 — read aloud from a tome, a third as often: 10%, or 5% with Steady voice */
+function wordWildChance(word){const w=WORD_BY[word]||SPELLS.find(s=>s.id===word),sv=w&&perk(w.school,25);if(typeof tomeHeld==='function'&&tomeHeld())return sv?IMPLEMENT.tomeWildSteady:IMPLEMENT.tomeWild;return sv?STEADY_VOICE_WILD:IMPRESSION_WILD_CHANCE;}
+/* S1850 — two schools' extra wild, 10%, or 3% from a tome */
+function mixedWildChance(){return typeof tomeHeld==='function'&&tomeHeld()?IMPLEMENT.tomeMixed:WORD_MIXED_WILD;}
 // S1571 — overcasting (magic-build.md): short of mana, the rest is paid in health, 2 a point of mana, with a 0.5 s stagger; a cast
 // that would leave you under 1 health is refused.
 const OVERCAST_HP=2,OVERCAST_STAGGER_S=.5;
@@ -909,6 +916,7 @@ function tickSpellFx(dt){
   if(HELD)heldTick(dt); /* S1601 — the held form */
   if(RIDDEN.size)riderTick(); /* S1602 — the riders' burns and glows */
   if(TOUCH_PEND)touchTick(); /* S1603 — the touched form's landing */
+  if(ORB_KEPT)orbTick(); /* S1854 — the orb's kept cast */
   if(LAID&&LAID.rideR)laidRiderTick(); /* S1604 — a rider on a laid thing */
   if(LAID&&LAID.snare&&!LAID.rooted)laidSnareTick(); /* S1612 — Fréamh laid */
   if(LAID&&LAID.fire)laidFireTick(); /* S1617 — Loscadh laid */
@@ -1108,7 +1116,9 @@ function wordCost(id,form,rider,o){o=o||{};const w=WORD_BY[id];if(!w||!FORMS[for
   if(rider&&WORD_BY[rider])m=(m+WORD_BY[rider].cost*TIER_MULT.cost[tr-1])*WORD_JOIN_MULT;
   const s=o.skill!=null?o.skill:skillLv(w.school);
   m*=FORMS[form].mana*(1.4-.8*s/100)*(o.buff!=null?o.buff:(typeof _buffMult==='function'?_buffMult('spellCost',1):1));
-  if(o.thrift!=null?o.thrift:perk(w.school,50))m*=THRIFT_MULT; /* S1623 — Thrift, the school at 50 */
+  /* S1623 — Thrift, the school at 50; S1849 — and the implement's emblem (10%, 20% found), added to it, at most 35% off */
+  const cut=((o.thrift!=null?o.thrift:perk(w.school,50))?1-THRIFT_MULT:0)+(o.cut!=null?o.cut:(typeof implementCut==='function'?implementCut(w.school):0));
+  if(cut>0)m*=1-Math.min(IMPLEMENT.cutMax,cut);
   return Math.round(m+1e-9);}
 
 // S1574 — magic B's book (magic-build.md, "The save"): up to eight made spells {form, word, rider}; `activeSpell` is the index of the one F
@@ -1149,6 +1159,9 @@ function spellBookLoad(d){spellBook.length=0;formsGranted.length=0;
 // 0.5 m from a solid or a door, or on a body. The loop reads LAID through laidGround (what you stand on) and laidBlocks (what you
 // walk into); the mantle (10-player.js) takes a laid top as a ledge outdoors too. The other laid words (Loscadh's fire (S1617), Reo (S1616), Fréamh (S1612),
 // Dorcha (S1636), Solas, Tonn alone) are the sheet's session 4. Named actions (the co-op rules): bookMake, layWord, laidEnd.
+// S1849 — the staff in hand: Held reaches 5.5 m, Laid 16 m, a laid thing lasts ×1.25 (magical-implements.md, B)
+function heldReach(){return typeof heldImplement==='function'&&heldImplement()==='staff'?IMPLEMENT.heldReach:FORMS.held.reach;}
+function laidReach(){return typeof heldImplement==='function'&&heldImplement()==='staff'?IMPLEMENT.laidReach:LAID_REACH;}
 const LAID_REACH=12,LAID_CLEAR=.5,LAID_MAX_S=60,LAID_UPDRAFT_APEX=2.2,LAID_OVERSHOOT=1.5,LAID_WILD=['fizzle','overshoot'];
 let LAID=null,_onLaid=false; /* the one laid thing: {kind,word,rider,x,z,r|hw,hl,ux,uz,base,top,solid,until,key,mesh} */
 // the place a laid thing belongs to: leaving it ends the thing (the fall's own key: the zone, the dungeon, the room)
@@ -1191,8 +1204,8 @@ function laidClear(x,z,r,y,o){o=o||{};const R=r+LAID_CLEAR,ow=!isInterior()&&!(l
 // the point under the crosshair: the camera's ray marched to the first walkable top, or null at a wall or past the reach
 function laidAimPoint(){
   if(typeof CAM==='undefined'||!CAM)return null;const o=CAM.position,d=CAM.getWorldDirection(new THREE.Vector3());
-  for(let s=.1;s<=LAID_REACH*1.6;s+=.05){const x=o.x+d.x*s,y=o.y+d.y*s,z=o.z+d.z*s;
-    if(Math.hypot(x-px,z-pz)>LAID_REACH+.5)return {x,z,y,far:true};
+  for(let s=.1;s<=laidReach()*1.6;s+=.05){const x=o.x+d.x*s,y=o.y+d.y*s,z=o.z+d.z*s;
+    if(Math.hypot(x-px,z-pz)>laidReach()+.5)return {x,z,y,far:true};
     const g=laidSurf(x,z,y);if(y<=g+.01)return {x,z,y:g};
     if(laidSolidPt(x,z,y))return null;}
   return null;}
@@ -1244,7 +1257,7 @@ function laidShape(word,rider){
 // pillar's height. Returns {ok} or {say}; nothing is paid here (the cast pays).
 function layWord(word,rider,x,z,o){o=o||{};
   const kind=laidShape(word,rider);if(!kind)return {say:'That word lays nothing yet.'};
-  if(Math.hypot(x-px,z-pz)>LAID_REACH+1e-6)return {say:'Too far to lay it.',why:'far'};
+  if(Math.hypot(x-px,z-pz)>laidReach()+1e-6)return {say:'Too far to lay it.',why:'far'};
   const cap=o.cap!=null?o.cap:jumpY+1,y=laidSurf(x,z,cap),w=WORD_BY[word],F=w.forms.laid;
   const ow=activeZoneId==='world'&&!isInterior()&&!(lid&&lid.startsWith('dyn_'));
   const wet=ow&&typeof worldH==='function'&&worldH(x,z)<(typeof SEA_Y!=='undefined'?SEA_Y-.35:-1e9)&&activeTerrainH(x,z)<SEA_Y; /* open water: no quay or deck over it */
@@ -1277,7 +1290,7 @@ function layWord(word,rider,x,z,o){o=o||{};
     if(len<1)return {say:'Too near the wall to lay it.',why:'solid'};
     Object.assign(L,{hw:B.wide/2,hl:len/2,ux,uz,base:y-.35,top:y,solid:true,dur:B.dur});}
   laidEnd();
-  L.until=playClockS+Math.min(LAID_MAX_S,L.dur);L.mesh=laidMesh(L);LAID=L;
+  L.until=playClockS+Math.min(LAID_MAX_S,L.dur*(typeof heldImplement==='function'&&heldImplement()==='staff'?IMPLEMENT.laidDur:1));L.mesh=laidMesh(L);LAID=L;
   if(rider&&RIDERS[rider])laidRiderStart(L,rider);
   if(L.nova)L.held=laidNovaBurst(L);
   return {ok:true,kind,thrown:!!L.thrown,held:L.held||0};}
@@ -1374,7 +1387,7 @@ function castLaid(bk){
   if(wild==='fizzle'){mana=Math.min(effMaxMana(),mana+Math.round(paid*.5));showMsg(`${w.ico} ${w.nameIr} fizzles — the shape will not hold.`,'#8a8ac8');startCastAnim(sp,'fizzle');return true;}
   if(wild==='overshoot')showMsg(`${w.ico} ${w.nameIr} overshoots — the stone climbs past the shape.`,'#a8a8d4');
   if(SKILL_DEF[w.school])skillUse(w.school,1,'cast');
-  startCastAnim(sp,'self');castMark(WEAPON_ATTACKS.Cast.tell);
+  startCastAnim(sp,'self');castMark(castTell());
   return true;}
 
 // S1601 — magic B's session 4, part 1 (magic-build.md, "The five forms"): the Held form. F on a held entry pours the word out while F is
@@ -1394,7 +1407,7 @@ function heldSpell(word){const s=SPELLS.find(x=>x.id===word);if(s)return s;const
 function heldTargets(){return (lid&&lid.startsWith('dyn_'))?ENEMIES:ZE;}
 function heldTickCost(H){return wordCost(H.word,'held',H.rider,{tier:H.tier})*HELD_TICK;}
 // is e in the cone: its centre within 4 m of your edge plus its own hull, and within 30° of your facing (-sin yaw, -cos yaw)
-function heldInCone(e){const dx=e.x-px,dz=e.z-pz,d=Math.hypot(dx,dz);if(d>reachTo(e,FORMS.held.reach))return false;if(d<1e-3)return true;
+function heldInCone(e){const dx=e.x-px,dz=e.z-pz,d=Math.hypot(dx,dz);if(d>reachTo(e,heldReach()))return false;if(d<1e-3)return true;
   return (-dx*Math.sin(yaw)-dz*Math.cos(yaw))/d>=Math.cos(FORMS.held.cone/2*Math.PI/180)-1e-9;}
 // holdWord: the named action. Starts the held word (bk {word,rider}) if it can; the first tick lands at once.
 function holdWord(bk){
@@ -1409,7 +1422,7 @@ function holdWord(bk){
   if(mana<tick)return {say:`Not enough mana! (need ${Math.ceil(tick)})`};
   const mixed=!!(bk.rider&&riderMixedWild(bk.word,bk.rider)); /* S1602 — two schools: 10% at any tier until both reach 25 */
   const wr=tier===1||mixed?casterRand(bk.word+':held'):null;
-  if(wr&&wr()<(tier===1?wordWildChance(H.word):0)+(mixed?WORD_MIXED_WILD:0)){mana-=tick*.5;spCd=spellCooldown(H.sp,tier);startCastAnim(H.sp,'fizzle');
+  if(wr&&wr()<(tier===1?wordWildChance(H.word):0)+(mixed?mixedWildChance():0)){mana-=tick*.5;spCd=spellCooldown(H.sp,tier);startCastAnim(H.sp,'fizzle');
     return {ok:true,wild:'fizzle',say:`${w.ico} ${w.nameIr} fizzles — the shape will not hold.`};}
   _offenceS=playClockS;HELD=H;H.mesh=heldMesh(H);startCastAnim(H.sp,'projectile');
   if(typeof sndSpellCharge==='function')sndSpellCharge(w.school);
@@ -1458,8 +1471,8 @@ function touchWord(bk){
   if(!formHeld('touched'))return {say:'The Touched form is not yet yours.'};
   if(!wordLive(bk.word,'touched'))return {say:'You cannot shape that word so.'};
   if(TOUCH_PEND||HELD||isCasting()||castRecovering())return {why:'busy'};
-  if(spCd>0)return {say:'Cooling down...'};
-  const cost=wordCost(bk.word,'touched',bk.rider,{tier}),short=Math.max(0,cost-Math.floor(mana)),blood=short*OVERCAST_HP;
+  if(spCd>0&&!ORB_REL)return {say:'Cooling down...'}; /* S1854 — an orb's release is paid for */
+  const cost=ORB_REL?0:wordCost(bk.word,'touched',bk.rider,{tier}),short=Math.max(0,cost-Math.floor(mana)),blood=short*OVERCAST_HP;
   if(short&&PHP-blood<1)return {say:`Not enough mana! (need ${cost})`};
   mana=Math.max(0,mana-cost);_offenceS=playClockS;
   if(short){PHP-=blood;PPOST.stagUntil=Math.max(PPOST.stagUntil,performance.now()/1000+OVERCAST_STAGGER_S);blocking=false;powerCharging=false;powerCharge=0;
@@ -1467,14 +1480,55 @@ function touchWord(bk){
   const sp=heldSpell(bk.word);spCd=spellCooldown(sp,tier);
   const mixed=!!(bk.rider&&riderMixedWild(bk.word,bk.rider));
   const wr=tier===1||mixed?casterRand(bk.word+':touched'):null;
-  if(wr&&wr()<(tier===1?wordWildChance(bk.word):0)+(mixed?WORD_MIXED_WILD:0)){mana=Math.min(effMaxMana(),mana+Math.round((cost-short)*.5));startCastAnim(sp,'fizzle');
+  if(wr&&wr()<(tier===1?wordWildChance(bk.word):0)+(mixed?mixedWildChance():0)){mana=Math.min(effMaxMana(),mana+Math.round((cost-short)*.5));startCastAnim(sp,'fizzle');
     return {ok:true,wild:'fizzle',say:`${w.ico} ${w.nameIr} fizzles — the shape will not hold.`};}
-  castMark(FORMS.touched.windup);startCastAnim(sp,'projectile');
-  if(typeof sndSpellCharge==='function')sndSpellCharge(w.school);
-  TOUCH_PEND={word:bk.word,rider:bk.rider||null,tier,sp,at:performance.now()/1000+FORMS.touched.windup,key:laidKey()};
+  const tell=ORB_REL?0:touchTell(); /* S1854 — the orb lets it go at once */
+  castMark(tell);startCastAnim(sp,'projectile');
+  if(typeof sndSpellCharge==='function'&&!ORB_REL)sndSpellCharge(w.school);
+  TOUCH_PEND={word:bk.word,rider:bk.rider||null,tier,sp,at:performance.now()/1000+tell,key:laidKey()};
   return {ok:true,blood:short?blood:0};}
 function castTouched(bk){const r=touchWord(bk);if(r.say)showMsg(r.say,r.ok?'#8a8ac8':'#a8a8d4');
   else if(r.blood)showMsg(`Not enough mana: the word takes ${r.blood} health.`,'#d48a8a');return !!r.ok;}
+// S1854 — the orb's kept cast (magical-implements.md, #1111 B): with an orb in the off hand and the guard raised (the right button), F casts a
+// Sent or Touched entry into the orb at its full cost and full wind-up. The orb keeps it: one charge, 60 s by the play clock, lost on sleep,
+// a change of place, death, or the orb leaving your hand. Its next F lets it go at once: no wind-up, the Cast row's 0.30 s recovery after. The
+// release goes through the form's own cast (castSpell or touchWord) with ORB_REL set, which skips the cost, the cooldown and the wind-up; the
+// word's wild roll is made as it leaves. Never saved (the page): a reload is a change of place.
+let ORB_KEPT=null,ORB_REL=false; /* {word,form,rider,ready,at,key} */
+function orbRaised(){return typeof orbHeld==='function'&&orbHeld()&&!!blocking;}
+// orbKeep: the named action. Pays for and winds up bk {word,form,rider} into the orb
+function orbKeep(bk){
+  const w=WORD_BY[bk.word],tier=wordTierOf(bk.word);if(!w||!tier)return {say:'Spell not learned!'};
+  if(bk.form!=='sent'&&bk.form!=='touched')return {say:'An orb keeps only a sent or a touched word.'};
+  if(bk.form==='touched'&&!formHeld('touched'))return {say:'The Touched form is not yet yours.'};
+  if(!wordLive(bk.word,bk.form))return {say:'You cannot shape that word so.'};
+  if(ORB_KEPT)return {say:'The orb already keeps a word.'};
+  if(TOUCH_PEND||HELD||isCasting()||castRecovering())return {why:'busy'};
+  if(spCd>0)return {say:'Cooling down...'};
+  const cost=wordCost(bk.word,bk.form,bk.rider,{tier}),short=Math.max(0,cost-Math.floor(mana)),blood=short*OVERCAST_HP;
+  if(short&&PHP-blood<1)return {say:`Not enough mana! (need ${cost})`};
+  mana=Math.max(0,mana-cost);
+  if(short){PHP-=blood;PPOST.stagUntil=Math.max(PPOST.stagUntil,performance.now()/1000+OVERCAST_STAGGER_S);blocking=false;powerCharging=false;powerCharge=0;
+    lvAct.damageTaken+=blood;updateHUD();}
+  const sp=heldSpell(bk.word);spCd=spellCooldown(sp,tier);
+  const tell=bk.form==='touched'?touchTell():castTell();castMark(tell);startCastAnim(sp,'self');
+  if(typeof sndSpellCharge==='function')sndSpellCharge(w.school);
+  ORB_KEPT={word:bk.word,form:bk.form,rider:bk.rider||null,ready:performance.now()/1000+tell,at:playClockS+tell,key:laidKey()};
+  return {ok:true,blood:short?blood:0,say:`${w.ico} ${w.nameIr} — kept in the orb.`};}
+function castOrbKeep(bk){const r=orbKeep(bk);if(r.blood)showMsg(`Not enough mana: the word takes ${r.blood} health.`,'#d48a8a');else if(r.say)showMsg(r.say,r.ok?'#b8a8e8':'#a8a8d4');return !!r.ok;}
+// the kept cast's release: true when it went (or went wild); false while the hands are still busy, the charge kept
+function orbRelease(){const K=ORB_KEPT;if(!K)return false;
+  if(performance.now()/1000<K.ready||TOUCH_PEND||HELD||isCasting()||castRecovering())return false;
+  ORB_KEPT=null;ORB_REL=true;
+  try{if(K.form==='touched')castTouched({form:'touched',word:K.word,rider:K.rider});else castSpell({form:'sent',word:K.word,rider:K.rider});}
+  finally{ORB_REL=false;}
+  return true;}
+function orbDrop(say){if(!ORB_KEPT)return;ORB_KEPT=null;if(say)showMsg(say,'#a8a8d4');}
+// each frame, from tickSpellFx: the charge goes after 60 s of play, at a change of place, at death, or when the orb leaves the off hand
+function orbTick(){const K=ORB_KEPT;if(!K)return;
+  if(dead||K.key!==laidKey()){orbDrop();return;}
+  if(!(typeof orbHeld==='function'&&orbHeld())){orbDrop('The word kept in the orb is lost.');return;}
+  if(playClockS-K.at>IMPLEMENT.orbKeep)orbDrop('The word kept in the orb fades.');}
 // each frame, from tickSpellFx: the touch lands when its wind-up is done, on the nearest foe in reach then
 function touchTick(){const T=TOUCH_PEND;if(!T)return;
   if(dead||T.key!==laidKey()){TOUCH_PEND=null;return;}
@@ -1597,7 +1651,7 @@ function riderGlow(e,on){const m=e&&e.mesh;if(!m||typeof THREE==='undefined')ret
 function riderMixedWild(word,rider){const a=WORD_BY[word],b=WORD_BY[rider];return !!(a&&b&&a.school!==b.school&&(skillLv(a.school)<WORD_MIXED_SKILL||skillLv(b.school)<WORD_MIXED_SKILL));}
 // the cone drawn: open, faint, the word's colour, its point at your chest (the look builder's to dress)
 function heldMesh(H){if(typeof THREE==='undefined'||typeof scene==='undefined'||!scene)return null;
-  const R=FORMS.held.reach+HULL_YOU,rad=R*Math.tan(FORMS.held.cone/2*Math.PI/180);
+  const R=heldReach()+HULL_YOU,rad=R*Math.tan(FORMS.held.cone/2*Math.PI/180);
   const d=typeof heldDress==='function'?heldDress(H,R,rad):null; /* S1609 — the look builder's dress (82-world-structures.js), its point at the origin, its mouth along −z */
   if(d){scene.add(d);return d;}
   const geo=new THREE.ConeGeometry(rad,R,16,1,true);geo.translate(0,-R/2,0);geo.rotateX(Math.PI/2);

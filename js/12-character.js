@@ -68,9 +68,10 @@ const STARTER_WEAPONS={
            desc:'Slow swing, heavy hit. Good against bone and stone.'},
   dagger: {name:'Wooden Dagger', ico:'🗡️', type:'equip', slot:'weapon', atk:[4,7],  weight:1.5, tier:1, material:'Wooden', weaponShape:'dagger', wType:'pierce', matCol:0x8B5E3C, matGuard:0x6B3E20, matGlow:null, sellMult:.3, buyPrice:14,
            desc:'Quick, light, lethal in close.'},
-  staff:  {name:'Wooden Staff',  ico:'🥢', type:'equip', slot:'weapon', atk:[4,7],  weight:2.5, tier:1, material:'Wooden', weaponShape:'staff',  wType:'blunt',  matCol:0x6a3e12, matGuard:0x4a2808, matGlow:null, sellMult:.3, buyPrice:14,
-           spellPower:1.05,
-           desc:'A walking-staff. Channels mana well — small spell-power passive while wielded.'},
+  /* S1849 — the staff is an implement of no school (magical-implements.md, B): two hands and the Great Club's row, as makeImplement(1,'staff') builds it; Held and Laid reach further with it */
+  staff:  {name:'Wooden Staff',  ico:'🥢', type:'equip', slot:'weapon', atk:[4,6],  weight:4,   tier:1, material:'Wooden', weaponShape:'staff',  wType:'blunt',  matCol:0x8B5E3C, matGuard:0x6B3E20, matGlow:null, sellMult:.3, buyPrice:14,
+           weaponType:'Staff', implement:'staff', school:null, twoHand:true, cleaveTargets:1, postureMult:1.5, blockReduce:0.40,
+           desc:'A walking-staff, held in both hands. Held reaches 5.5 m and Laid 16 m; a laid thing lasts a quarter longer.'},
   // v66 — character-creator slots for the v64/v65 weapon classes. Unlike the
   // four melee starters above (hand-authored field sets), these two are
   // materialized at equip time in ccBegin() via makeItem() against the live

@@ -450,7 +450,7 @@ function genSettlement(site){
         lot.w=P.w;lot.d=P.d;for(const dF of [...new Set([lot.dB||d0,d0])]){const sh=(dF-P.d)/2;for(const sl of [0,.35,-.35,.7,-.7]){lot.x=x0+lot.tx*sh+lot.tz*sl;lot.z=z0+lot.tz*sh-lot.tx*sl;
           if(near(lot,lot.street)>=m0-1e-6&&use.every(u=>u===lot||apart(lot,u))&&offPlots(lot)){lot.kit={kind:'guildhall',guild:t==='guild_m'?'mages':'fighters',w0,d0,slide:sl};return;}}}
         lot.w=w0;lot.d=d0;lot.x=x0;lot.z=z0;});
-      // S1854 (card F9, Michael's A on the kit in every interior; OG-043) — a Gatelands smithy (the 'weapon' shop, whose room is the
+      // S1855 (card F9, Michael's A on the kit in every interior; OG-043) — a Gatelands smithy (the 'weapon' shop, whose room is the
       // forge: smithForge) is the kit's forge (Session 929), 8.4 by 6 m of bare rubble under slate with its cart door open, in a town or a
       // village: as a guild hall, its front kept on the lot's street line, no nearer a road or street than the lot was, clear of every other
       // lot and plot, slid along its front by up to 0.7 m. It goes before the bays, so a widened house never takes its room; a lot with no
@@ -720,7 +720,7 @@ function genSettlement(site){
       houses.push(house);if(lot._wallH){house.wallH=lot._wallH;house.storeys=lot._storeys;}
       if(lot.kit&&lot.kit.kind==='keep'){house.w=lot.kit.w0;house.d=lot.kit.d0;} /* S1143 — the steward's room is the old keep's (its lot is the tower's now) */
       { // wall lantern by the door (glow only)
-        const lo=lot.kit&&lot.kit.kind==='forge'?1.55:1.05; /* S1854 — beside the forge's cart door (1.2 m each side of its middle), not in it */
+        const lo=lot.kit&&lot.kit.kind==='forge'?1.55:1.05; /* S1855 — beside the forge's cart door (1.2 m each side of its middle), not in it */
         const lx=doorX+lot.tx*.25+lot.tz*lo,lz=doorZ+lot.tz*.25-lot.tx*lo,ly=worldH(doorX,doorZ)+SCALE.DOOR_H+.2;
         {const m=new THREE.Mesh(doorLanternGeo(),VC_MAT);m.position.set(doorX+lot.tz*lo,ly,doorZ-lot.tx*lo);m.rotation.y=lot.ry;group.add(m);} // S258 — bracket and cage on the kit
         const lg=new THREE.Group();const pane=new THREE.Mesh(new THREE.BoxGeometry(.12,.17,.12),new THREE.MeshBasicMaterial({color:0xffc860,transparent:true,opacity:.55}));lg.add(pane);
@@ -754,7 +754,7 @@ function genSettlement(site){
       const def=(type==='guild_f'||type==='guild_m')?guildDef(type,site,keeper,{x:kx,z:kz,bCol:house.bCol,sCol:house.sCol}):makeDef(site,reg,r,role,keeper,{nameKey:lot.n,authored:!!heroH,people:heroH?'gatelander':undefined,x:kx,z:kz,bCol:house.bCol,sCol:house.sCol,topics:type==='shipwright'?[{label:'Browse ships',quest:true,panel:()=>openYardPanel(site)},{label:`What do you sell?`,response:'Hulls. Sound ones. And rope, if you ask nicely.'}]:house.tagline?[{label:`What do you sell?`,response:house.tagline}]:[]}); /* S592 — no topic while the tagline is blank; the barber's has one since Session 735 (the quest writer's Finding 26) */
       def._houseId=house.id; // v80 S138 — who keeps what, by identity (names collide)
       house.keeper=def.name;house._twin=def._twin;if(!heroH&&/'s /.test(house.name||''))house.name=house.name.replace(/^[^']+'s /,def.name+"'s ");
-      if(signY!==null){const so=lot.kit&&lot.kit.kind==='forge'?-1.75:0;buildTradeSign(group,type,house.name,doorX+lot.tz*so,doorZ-lot.tx*so,lot.tx,lot.tz,lot.ry,signY+.3);} /* S1854 — a forge's board on the wall between its window and the open cart door, not in the doorway */ /* S881 (F2a) — the board's foot at 1.87, over a 1.78 m head (1.57 before) */
+      if(signY!==null){const so=lot.kit&&lot.kit.kind==='forge'?-1.75:0;buildTradeSign(group,type,house.name,doorX+lot.tz*so,doorZ-lot.tx*so,lot.tx,lot.tz,lot.ry,signY+.3);} /* S1855 — a forge's board on the wall between its window and the open cart door, not in the doorway */ /* S881 (F2a) — the board's foot at 1.87, over a 1.78 m head (1.57 before) */
       if(type==='shipwright'){const base=def._extra.slice();Object.defineProperty(def,'_extra',{get(){const buy=base[0],rest=base.slice(1);return worldState.ship?[buy,...upgradeTopics(site),...rest]:[buy,...rest];}});}
       if(house.guild||type==='shipwright'||type==='inn'||type==='barber')house.dlg=def; // steward / shipwright / innkeeper talk inside (the innkeeper lets the rooms)
       if(type==='inn'&&innBench(house))def.greeting=INN_BENCH_GREET; /* S1285 — the alehall's keeper (#588 A) */
