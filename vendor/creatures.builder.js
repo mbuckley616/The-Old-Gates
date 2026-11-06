@@ -1992,7 +1992,15 @@ function crystals(o, S, c, p, side, r) {
     g.translate(side * i * o.r * S * .6, -i * o.r * S * .3, -i * o.r * S * .9 * rk); geos.push(g.toNonIndexed()); }
   const m = new THREE.Mesh(mergeGeometries(geos), o.stone ? stdMat(c, { rough: .95, flat: true }) : new THREE.MeshPhysicalMaterial({ color: c, roughness: .15, metalness: 0, flatShading: true, emissive: c.clone().multiplyScalar(.25), clearcoat: 1, transparent: true, opacity: .92 })); m.position.copy(p); return m;
 }
-function beak(o, S, c, p, dir) { const g = new THREE.ConeGeometry(o.r * S, o.len * S, 8); g.scale(1, 1, .75); g.translate(0, o.len * S / 2, 0); const m = new THREE.Mesh(g, stdMat(c, { rough: .4 })); m.position.copy(p); m.quaternion.setFromUnitVectors(UP, dir.clone().add(V(0, -(o.hook || .1), 0)).normalize()); return m; }
+// Session 1925: `curve` bends the beak down toward its tip (a raptor's or a terror bird's hook), a share of its length at the tip, and
+// `deep` makes it taller than it is wide. The cone is built along y and turned onto `dir`; whichever of its cross axes the turn carries
+// nearest the vertical is the one bent and deepened
+function beak(o, S, c, p, dir) { const q = new THREE.Quaternion().setFromUnitVectors(UP, dir.clone().add(V(0, -(o.hook || .1), 0)).normalize());
+  const g = new THREE.ConeGeometry(o.r * S, o.len * S, 8, o.curve ? 5 : 1); g.scale(1, 1, .75); g.translate(0, o.len * S / 2, 0);
+  if (o.curve || o.deep) { const ax = V(1, 0, 0).applyQuaternion(q).y, az = V(0, 0, 1).applyQuaternion(q).y, useX = Math.abs(ax) > Math.abs(az), sg = -Math.sign(useX ? ax : az) || 1, P = g.attributes.position;
+    for (let i = 0; i < P.count; i++) { const t = P.getY(i) / (o.len * S); let v = useX ? P.getX(i) : P.getZ(i); v = v * (o.deep || 1) + sg * (o.curve || 0) * o.len * S * t * t; useX ? P.setX(i, v) : P.setZ(i, v); }
+    g.computeVertexNormals(); }
+  const m = new THREE.Mesh(g, stdMat(c, { rough: .4 })); m.position.copy(p); m.quaternion.copy(q); return m; }
 
 // ── the flesh: a smooth surface grown around the capsules, meshed by surface nets on a grid ──
 // A capsule's field is exp(-d/k), d its distance; capsules of one group take their nearest (hard union), groups add
@@ -2734,8 +2742,11 @@ const PLANS = {
     fur: { len: .1, layers: 10, sx: 34, sy: 18, droop: .7 },
     parts: [
       ['spine', { hip: [1.6, -.32], chest: [1.72, .3], n: 3, r: [.4, .46, .38], s: [.86, 1.05], rump: .45, rumpDrop: -.15, front: .22, frontDrop: .05 }],
-      ['neck', { len: 1.05, n: 4, rise: 78, curve: -50, r: [.2, .085], fwd: -.06 }],
-      ['head', { len: .28, r: .095, pitch: 5, eyes: [{ f: .48, up: .3, out: .6, r: .02, color: [.9, .55, .1] }], beak: { len: .26, r: .06, up: -.1, hook: .3 } }],
+      // Session 1925 (the critic, 6 Nov: "a beak on a stalk", the head a third of OG-040's): the art's bird is heavy-headed, a thick neck
+      // to a big head and a deep hooked beak. Neck .2 to .085 was thinned to a stalk; now .24 to .14. Head .28 by .095, now .42 by .165; beak
+      // .26 by .06, now .34 by .13, deeper than wide and curved down to a hook at the tip (the beak's new `curve` and `deep`)
+      ['neck', { len: 1.0, n: 4, rise: 78, curve: -50, r: [.24, .14], fwd: -.06 }],
+      ['head', { len: .42, r: .165, pitch: 5, eyes: [{ f: .48, up: .35, out: .62, r: .026, color: [.9, .55, .1] }], beak: { len: .34, r: .13, up: -.15, hook: .2, curve: .3, deep: 1.4 } }],
       ['tail', { len: .55, n: 2, r: [.2, .12], droop: -25 }],
       ['legs', { at: .38, kind: 'bird', out: .18, drop: .3, claws: { r: .012, len: .07 } }]
     ] },
