@@ -410,7 +410,7 @@
   function tick(dt,now){
     if(activeZoneId!=='world'||!sc)return;
     tickCells(dt,false);runJobs();
-    tickLightPool(dt);tickWeather(dt);tickSmoke(dt);tickShip(dt);tickSailTrim(dt);tickBehaviours(dt);cabinUpdate();tickSchoolCool(dt);tickWhales(dt,now||performance.now());tickBoarding(dt);tickHullCollisions(dt);tickShipLeaks(dt);tickOtherShips(dt,now||performance.now());tickHooks(dt);tickBolts(dt);tickPots(dt);tickGuns(dt);tickShipFires(dt);sunkWrecksTick(dt);tickCrew();tickSharks();tickFish(dt,now||performance.now());tickGulls(dt,now||performance.now());tickDolphins(dt,now||performance.now());
+    tickLightPool(dt);tickWeather(dt);tickSmoke(dt);tickShip(dt);tickSailTrim(dt);tickBehaviours(dt);cabinUpdate();tickSchoolCool(dt);tickWhales(dt,now||performance.now());tickBoarding(dt);tickHullCollisions(dt);tickShipLeaks(dt);tickOtherShips(dt,now||performance.now());tickHooks(dt);tickBolts(dt);tickPots(dt);tickGuns(dt);tickShipFires(dt);tickMerchantHands(dt);sunkWrecksTick(dt);tickCrew();tickSharks();tickFish(dt,now||performance.now());tickGulls(dt,now||performance.now());tickDolphins(dt,now||performance.now());
     stream(px,pz,false);
     tickWildSpawn(dt); /* S1707 — the peaceful animals */
     houseLod();
