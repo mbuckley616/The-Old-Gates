@@ -15,6 +15,7 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+## Answered
 ### Where the corrupted animals appear (from the systems builder, 2026-11-06, #1201)
 **The question.** The bodies builder has drawn OG-088's corrupted animals: the frost wraith bear (Uisce), the blight boar with crystal spines (Cloch), the stag of shadows (Scáth) and the dusk eagle (Gaoth). No rule says where they meet you. Today every gate's roster is six foes from the canon's table, and a gate's condition rolls steady 50%, failing 35% or catastrophic 15%.
 
@@ -27,6 +28,8 @@ Under any option each takes its kin's numbers graded by the gate's tier (the Cav
 
 **Recommendation: B.** It ties the shape change to the gate's failing; a steady gate stays plain for a first visit; no new system.
 
+Michael: **Only in failing or catastrophic gates.** (2026-11-06)
+
 ### The Mark's and Aurenne's new herbs — what they do (from the systems builder, 2026-11-06, #1202)
 **The question.** The botanical atlas (OG-039) gives the Mark nine new plants and Aurenne eleven; the concept artist has drawn all twenty. Each needs an item, effects and a price. Brewing gives every herb 4 effects from a pool of 22, with each effect on 4 to 7 herbs; twenty more herbs at four effects would put an effect on about 9, so the rule cannot hold as written.
 
@@ -36,6 +39,8 @@ Under any option each takes its kin's numbers graded by the gate's tier (the Cav
 - **C.** Only the five climate herbs now (Icebloom, Frostcap, Rimeberry, Sandlotus, Sagepalm), four effects each; the 4–7 rule nearly holds (one effect on 8).
 
 **Recommendation: A.** The atlas exists to give each island its own plants, and climate B wants its remedies growing where the cold and heat are.
+
+Michael: **All twenty, four effects, grown by island.** (2026-11-06)
 
 ### Climate B — how hard Bitter and Scorching bite (from the systems designer, 2026-11-06, #1211)
 **The question.** Your 5 B makes the Mark's cold and Aurenne's heat wear your stamina without the right clothes. The build sheet (`docs/design/climate-build.md`) settles everything except what the worse grade costs (Bitter: a Mark blizzard, a winter night or the water; Scorching: Aurenne's summer noon on the sand). The milder grade slows stamina regeneration to ×0.75; protection (fur cloak or cape, a robe, a tincture, a Hearty or Clear meal) cancels a grade a point at a time; climate never takes health.
@@ -47,6 +52,8 @@ Under any option each takes its kin's numbers graded by the gate's tier (the Cav
 
 Recommendation: A.
 
+Michael: **Regeneration ×0.5, stamina capped at 80%.** (2026-11-06)
+
 ### A merchantman's hands — who cuts her lines and douses her rig? (from the systems builder, 2026-11-06, #1225)
 **The question.** Naval combat's page gives a merchantman's hand 6 s to cut a grappling line "if he reaches it unhurt", and your A on #1143 gives a living hand 3 s to douse a burning rig. A black sail's hands are the Pirates on her deck, but a merchantman spawns with no crew bodies, so neither rule can reach her: today none of her lines is ever cut and her fire always runs its full 6–8 s.
 
@@ -57,7 +64,8 @@ Recommendation: A.
 
 **Recommendation: A.** It is the page's rule as written, it keeps Bow and the ballista's heavy arrow useful against a ship that runs, and her crew already witness piracy, so bodies add no new crime.
 
-## Answered
+Michael: **Two unarmed hands with bodies.** (2026-11-06)
+
 ### The bind — what a perfect parry looks like (from the concept artist, 2026-11-05, #1192)
 **The question.** Combat B already has the rule: a perfect parry drains 40% of the foe's posture and opens a riposte for 0.8 s. Nothing says what the two bodies do in that moment; OG-045 and OG-063 draw it as a bind. Three readings posed on two of the builder's people in a steady Cloch nave; no timing changes in any. Page: `docs/prototypes/levelup/bind.html`; the approach in `docs/concepts.md`.
 
