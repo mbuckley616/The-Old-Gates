@@ -23,7 +23,7 @@ const r = await page.evaluate(() => {
   WORLD.scene.updateMatrixWorld(true);
   const rc = new THREE.Raycaster(), org = new THREE.Vector3(), dir = new THREE.Vector3();
   const hit = (x, y, z, dx, dz, far) => { org.set(x, y, z); dir.set(dx, 0, dz).normalize(); rc.set(org, dir); rc.far = far; return rc.intersectObjects(meshes, false)[0] || null; };
-  const H = S.houses.filter(h => h.siteId === 'dunmore' && h.kit), out = [];
+  const H = S.houses.filter(h => h.siteId === 'dunmore' && h.kit && h.kit.kind !== 'market'), out = []; /* S1905 — the market house's room is a house at the stair's foot, not a lot (tests/kitmarket, townplots) */
   for (const h of H) {
     const s = S.sol.find(q => q.hid === h.id); if (!s) { out.push({ id: h.id, nosol: true }); continue; }
     const nx = s.s, nz = s.c, ex = s.c, ez = -s.s, base = WORLD.worldH(s.cx, s.cz);
@@ -70,7 +70,8 @@ const sg = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'), sh
   const a = PKIT.signsMade(), p = PKIT.panelsMade(), calls = S.kitCalls; disposeSettlement('dunmore'); genSettlement(allSites().find(t => t.id === 'dunmore')); const T = WORLD.settle.get('dunmore');
   return { shops: shops.length, trades: trades.size, a, b: PKIT.signsMade(), p, p2: PKIT.panelsMade(), calls, calls2: T.kitCalls }; });
 check(`${sg.shops} shops of ${sg.trades} trades paint ${sg.a} signs, and building the town again paints none (${sg.calls} draws, then ${sg.calls2})`, sg.shops > 3 && sg.a === sg.trades && sg.b === sg.a && sg.calls2 === sg.calls, sg);
-check(`the two guild halls paint ${sg.p} name panels and banners, and none more when the town is built again`, sg.p === 4 && sg.p2 === sg.p, sg);
+/* S1904 — and the market house its MARKET HOUSE panel (Michael's A on #475) */
+check(`the two guild halls and the market house paint ${sg.p} name panels and banners, and none more when the town is built again`, sg.p === 5 && sg.p2 === sg.p, sg);
 
 // a picture: a street of them at noon, from across it
 const shot = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'), H = S.houses.filter(h => h.siteId === 'dunmore' && h.kit && h.kit.kind !== 'cottage');
