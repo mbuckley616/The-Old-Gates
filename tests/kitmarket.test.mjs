@@ -1,5 +1,5 @@
-// The room over a town's market house, on the new look (Session 1902; card F9, Michael's A on #475 and on the kit in every interior;
-// rooms.js's gatelandsMarketRoom of Session 1188; OG-114, OG-070). Session 1901 stood the market house on the square of every Gatelands
+// The room over a town's market house, on the new look (Session 1905; card F9, Michael's A on #475 and on the kit in every interior;
+// rooms.js's gatelandsMarketRoom of Session 1188; OG-114, OG-070). Session 1904 stood the market house on the square of every Gatelands
 // town, port and city (tests/townplots); its room upstairs is a house of its own (type 'market', g_<site>_6000), its door at the foot of
 // the stair up the east end. It opens on PKIT.gl.marketRoom at its true size inside the town's own shell, turned a quarter so the stair
 // door is the room's front: the town's room (the long table under two rings of candles, the hearth, the press) and, through the

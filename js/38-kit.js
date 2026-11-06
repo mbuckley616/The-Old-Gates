@@ -648,7 +648,7 @@ function keep(o = {}) {
 // or 'stalls' (no building, the market on the square as the game holds it today: seven trestle stalls and the beam on a timber tripod).
 // Michael chose the house (A on #475). Session 1188: its ridge stack is carried down to the ground on a dressed pier in the arcade's
 // west bays (the room above has its hearths on it), and o.interior leaves out the dark box behind the upper windows and the stair
-// door's leaf, for rooms.js's gatelandsMarketRoom to build the room inside. Copied into the game as it stands (Session 1901, card F6):
+// door's leaf, for rooms.js's gatelandsMarketRoom to build the room inside. Copied into the game as it stands (Session 1904, card F6):
 // PKIT.gl.market; the town lays its plot on the square (townPlots, 83-world-generator.js) and builds the house (kitMarket).
 // -> a Group, its userData {name, kind, tris, calls, size, door, parts, arcade, stair, beam, pier}
 function marketHouse(o = {}) {
@@ -2699,7 +2699,7 @@ let FRM = null;
 // a court, a hiring hall, the toll-taker); nothing in it is one of those. gatelandsMarketRoom(o, r) -> { group, shell, room, tris,
 // draws, shellTris, shellCalls, inner, floor, ceil, door, stair, pier, breast, part, partDoor, hearth, fire, grate, table, benches,
 // chairs, press, measures, desk, chest, rings, candle, paths, boxes, windows, w, d }
-// Copied into the game as it stands (Session 1902): PKIT.gl.marketRoom; o.shell names the shell's stream (the town's market house's).
+// Copied into the game as it stands (Session 1905): PKIT.gl.marketRoom; o.shell names the shell's stream (the town's market house's).
 function marketRoom(o = {}, r = stream('marketroom')) {
   const shell = marketHouse({ kind: 'house', interior: true, r: stream(o.shell || 'market-shell') }), U = shell.userData, P = U.arcade.plan, M = { ...roomMats(), dress: glMats().dress,
     plaster: mat('plaster', { ns: .35, color: 0xf0ebe0, rough: .95 }), wax: new THREE.MeshStandardMaterial({ color: 0xeee2c4, roughness: .6 }),

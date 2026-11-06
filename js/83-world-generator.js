@@ -219,7 +219,7 @@ function genSettlement(site){
         outer:for(const [sx,sz] of [[ax,az],[-ax,-az],[bx,bz],[-bx,-bz]])for(let a1=inner-4;a1-W-Y>=10;a1-=2)for(const sd of [1,-1]){const ux=-sz*sd,uz=sx*sd,P=frame(ux,uz,sx,sz,2.8,2.8+D+Y,a1-W-Y,a1+Y);
           if(!fits(P,along(sx,sz))||!out.every(Q=>rectsApart(P,Q,1)))continue;
           const lot=Object.assign(frame(ux,uz,sx,sz,2.8,2.8+D,a1-W,a1),{w:W,d:D,row:0,street:null,k:-3,plot:'inn'});P.type='inn';P.lot=lot;out.push(P);break outer;}}
-      // S1901 (card F6, Michael's A on #475) — on the new look a Gatelands town's, port's or city's market house (PKIT.gl.market, 15 by 8.6 m,
+      // S1904 (card F6, Michael's A on #475) — on the new look a Gatelands town's, port's or city's market house (PKIT.gl.market, 15 by 8.6 m,
       // the arcade below and the room above by the stair up its east end) stands on the square, after the church, the keep and the inn:
       // beside a street through the heart, its front of five arches to the street 3.2 m off its line, its length along it, the west end's
       // three arches toward the heart and the stair away from it (else the stair toward it); as near the heart as fits, clear of the well,
@@ -571,7 +571,7 @@ function genSettlement(site){
       {const b=new THREE.BoxGeometry(T.s,T.h,T.s).toNonIndexed();b.translate(lot.kit.side?T.at:0,T.h/2,lot.kit.side?0:T.at);kitLo.push([b,mx,stone]);}
       lot._kitDoor=U.door;lot._wallH=sz.eave;lot._storeys=1;lot.two=false;lot.kit.tris=U.tris;lot.kit.calls=U.calls;lot.kit.colour='stone';lot.kit.door=U.door+(lot.kit.slide||0);
       if(lot.gods)kitGods(lot.gods);}
-    // S1901 (card F6, Michael's A on #475) — the market house on its plot (PKIT.gl.market, pieces.js's Session 1179/1188 as it stands): its
+    // S1904 (card F6, Michael's A on #475) — the market house on its plot (PKIT.gl.market, pieces.js's Session 1179/1188 as it stands): its
     // walls a solid each between the arches, so the arcade can be walked through end to end and side to side under the beams at 3.0 m;
     // the chimney's pier in the west bays, the four stalls under the arches, the beam's pans and the stair's mass up the east end solids too.
     // The stair is not climbed outside (the world has no footholds): its foot is where the room's door will be (S.market.foot). The far copy
@@ -594,7 +594,7 @@ function genSettlement(site){
       if(St){const b=new THREE.BoxGeometry(St.width+.3,St.landing.y+1,St.foot[1]-St.landing.z0+.3).toNonIndexed();b.translate(St.landing.x0+(St.width+.3)/2,(St.landing.y+1)/2,(St.foot[1]+St.landing.z0-.3)/2);kitLo.push([b,mx,lime]);}
       const ft=St?W_(St.foot[0],St.foot[1]+.5):null,beam=W_(0,0);
       S.market={id:`${site.id}:market`,x:L.x,z:L.z,y,ry:L.ry,w,d,eave:sz.eave,ridge:sz.ridge,stairOut:!!L.stairOut,foot:ft,beam,tris:U.tris,calls:U.calls,sols,r:Math.hypot(hw+1.5,hd)+.5};
-      /* S1902 — the room upstairs is a house of its own (type 'market', g_<site>_6000, nobody keeps it, never locked): its door at the stair's
+      /* S1905 — the room upstairs is a house of its own (type 'market', g_<site>_6000, nobody keeps it, never locked): its door at the stair's
          foot, where you come off the square; E there takes you up into the room (PKIT.gl.marketRoom, buildKitMarketRoom) */
       if(St){const D_=W_(St.foot[0],St.foot[1]+.1),X_=W_(St.foot[0],St.foot[1]+1.2),h={id:`g_${site.id}_6000`,doorX:D_.x,doorZ:D_.z,doorFace:cardinalFace(s_,c),exitX:X_.x,exitZ:X_.z,exitYaw:Math.atan2(-s_,-c),
           name:'Market House',keeper:'',type:'market',tagline:'',w,d,two:false,reg:site.reg||'irish',style:'stone',dlg:null,siteKind:site.kind,siteId:site.id,kit:{kind:'market',shell:`${site.id}:market`}};
@@ -872,7 +872,7 @@ function genSettlement(site){
         addMesh(stallGeo(r),sx,sz,ang+Math.PI/2,1.4);
       }
     }
-    {const MP=PLOTS.find(P=>P.type==='market');if(MP&&plan.rows>0)try{kitMarket(MP.lot);}catch(e){console.warn('market',e);}} /* S1901 — the market house on its plot */
+    {const MP=PLOTS.find(P=>P.type==='market');if(MP&&plan.rows>0)try{kitMarket(MP.lot);}catch(e){console.warn('market',e);}} /* S1904 — the market house on its plot */
     // Walls with gates where roads cross; towers at the gates.
     if(plan.walls&&!burnedV&&!abandonedV){
       const WT=TST?wallTierFor(site):(plan.walls==='palisade'?'logs':'stone');const WS=WALL_SPEC[WT]; // v80 S129 — fence → logs → stone → dressed stone
@@ -1223,7 +1223,7 @@ function genSettlement(site){
         h.exitX=nx;h.exitZ=nz;}}
     if(kitG){S.kitTris=PKIT.mergeByMaterial(kitG);S.kitCalls=kitG.children.length; // S1072 — the kit's houses, one mesh per material
       const lo=new THREE.Mesh(mergeGeos(kitLo),VC_MAT);lo.name='kit houses far';lo.userData.noBake=true;lo.castShadow=true;lo.receiveShadow=true;lo.visible=false;group.add(lo);kitLo.forEach(([g])=>g.dispose()); /* S1073 — and their far copy */
-      let r=0;for(const l of use)if(l.kit)r=Math.max(r,Math.hypot(l.x-cx,l.z-cz)+(l.kit.r||Math.max(l.w,l.d)/2)); /* S1143 — the keep's reach is its bawn's */for(const Y of S.yards||[])r=Math.max(r,Math.hypot(Y.x-cx,Y.z-cz)+Y.r+2);if(S.market)r=Math.max(r,Math.hypot(S.market.x-cx,S.market.z-cz)+S.market.r); /* S1901 — and the market house */ /* S1658 — and a yard outside the walls */S.kitLod={hi:kitG,lo,x:cx,z:cz,r,tris:lo.geometry.attributes.position.count/3};}
+      let r=0;for(const l of use)if(l.kit)r=Math.max(r,Math.hypot(l.x-cx,l.z-cz)+(l.kit.r||Math.max(l.w,l.d)/2)); /* S1143 — the keep's reach is its bawn's */for(const Y of S.yards||[])r=Math.max(r,Math.hypot(Y.x-cx,Y.z-cz)+Y.r+2);if(S.market)r=Math.max(r,Math.hypot(S.market.x-cx,S.market.z-cz)+S.market.r); /* S1904 — and the market house */ /* S1658 — and a yard outside the walls */S.kitLod={hi:kitG,lo,x:cx,z:cz,r,tris:lo.geometry.attributes.position.count/3};}
     bakeSettlement(S);
     if(S.chimneys.length)try{smokeFor(S);}catch(e){console.warn('smoke',e);}
     sc.add(group);
@@ -2598,7 +2598,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   // stable (two stalls facing the back wall under the manger and rack, the corn bin and the harness); up a straight stair of 16 risers
   // on the west gable, the loft open to the couples (collared at 6.6 m), the hay by the pitching door, the grain in sacks and a chest.
   // Drawn in metres and moved into the room's frame as the farmhouse's is. You come in by the doorway the record names.
-  // S1902 (card F9; Michael's A on #475 and on the kit in every interior; OG-114, OG-070) — the room over the market house (PKIT.gl.marketRoom,
+  // S1905 (card F9; Michael's A on #475 and on the kit in every interior; OG-114, OG-070) — the room over the market house (PKIT.gl.marketRoom,
   // rooms.js's Session 1188 copied as it stands) inside the town's own shell (its stream, house.kit.shell): the town's room, its long table
   // under two rings of candles, the hearth, the press, the sideboard and the pegs; through the partition the clerk of the market's room,
   // the desk, the press of the standard measures, the strongbox and the board of the tolls. The house's stair door is on its east end, so
@@ -3569,7 +3569,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     if(kitMine(house))return buildKitMine(house); /* S1790 — the Mark's silver mine behind its adit */
     if(kitTunnel(house))return buildKitTunnel(house); /* S1828 — Aurenne's trade tunnel between its portals */
     if(kitTowerCellar(house))return buildKitTowerCellar(house); /* S1765 — a ruined tower house's cellar, souterrain and pit */
-    if(kitMarketRoom(house))return buildKitMarketRoom(house); /* S1902 — the room over a town's market house, at its true size */
+    if(kitMarketRoom(house))return buildKitMarketRoom(house); /* S1905 — the room over a town's market house, at its true size */
     const two=!!house.two;
     // S896 (F2a) — the room's true size in metres (07-scale.js; visual-foundation.md §1: a cottage room 4 to 6 across, an inn's hall
     // 10 to 14, a church's nave 8 to 12 wide), then laid out in the old unit (÷ SCALE.ROOM_K) and scaled back up at the end

@@ -5,7 +5,7 @@
 // street; no lot, widened house or street stands in either. A Gatelands church on its plot is the kit's church with its west tower.
 // Session 1485 (Michael's C on #294): an Aurennais village that has a church lays its plot too, for the village's Church of the Weaver
 // (12 m a side under the limewashed dome, 16.85 by 18.98 m), on ground level to 0.5 m; its door opens on a room.
-// Session 1901 (Michael's A on #475): a Gatelands town's, port's or city's market house on its plot on the square, its arcade open on foot.
+// Session 1904 (Michael's A on #475): a Gatelands town's, port's or city's market house on its plot on the square, its arcade open on foot.
 // The new look only since 1.0 was frozen (18 Oct 2026): the old look's half and the two looks' comparison are gone.
 import fs from 'fs';
 import { boot, check } from './lib/game.mjs';
@@ -79,7 +79,7 @@ check(`each Gatelands town and city with an inn has the coaching inn on its plot
   ci.length === want.length && ci.length >= 3 && ci.every(p => p.nat === 'gatelands' && p.kind !== 'port' && p.lot.w === 17.6 && p.lot.d === 23 && p.heart >= 20 && p.house && p.house.kit && p.house.kit.kind === 'coachinn' && p.house.w === 12.6 && p.house.d === 9), ci);
 const yl = all.flatMap(s => s.n.yardLoot.map(b => [s.id, b]));
 check('no barrel or crate stands in the coaching inn\'s gateway, yard or stables', yl.length === 0, yl);
-// S1901 (card F6, Michael's A on #475): on the new look every Gatelands town, port and city has its market house on the square
+// S1904 (card F6, Michael's A on #475): on the new look every Gatelands town, port and city has its market house on the square
 // (PKIT.gl.market, 15 by 8.6 m with its stair up the east end), on its plot (no other building or street in it: the checks above). Its
 // arcade is walked through: from outside the first front arch, every arch's inner mouth is reached on foot (a flood over the floor at
 // 0.1 m, the body 0.3 round by solidAt); the stair's foot is clear; within the prototype's budget (16k triangles, 24 draws); on level ground.
