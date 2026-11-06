@@ -3536,7 +3536,7 @@ function buildDungeon(portal){
     // v80 S478 — the foes' spots, kinds and variants come from the floor's stream; each foe is keyed <dungeon>:<floor>:<index>
     // and rolls its fight from its own (keyFoe, 42-zone-enemies.js). The shuffle was a sort on Math.random.
     const dKey=dKeyOf(portal,floorIdx),dFoes=seededRng('dfoes',dKey);
-    const themeEnemies=portal.occupied?OCCUPIED_ROSTER:(THEME_DEF[portal.theme]||THEME_DEF.ruins).enemies; /* S759 — an occupied gate holds the warren (gateOf, 20-quests.js) */
+    const themeEnemies=gateRoster(portal,gen,dTier,portal.occupied?OCCUPIED_ROSTER:(THEME_DEF[portal.theme]||THEME_DEF.ruins).enemies); /* S1933 — a failing gate's corrupted animal in one slot (gateRoster, 42-zone-enemies.js) */ /* S759 — an occupied gate holds the warren (gateOf, 20-quests.js) */
     // v59: filter the theme roster to the kinds this floor can hold. Preserves order + repeats
     // so theme weighting (e.g. Skeleton appearing 3× in undead) still applies. If every entry is
     // gated (shouldn't happen — Skeleton is level 1), fall back to plain Skeleton.
@@ -3671,6 +3671,7 @@ function buildDungeon(portal){
       // v61gj — Posture init. Family resolves from buildFn (stamped above) so the
       // family lookup doesn't have to fall back to name-matching for dungeon enemies.
       initPosture(ENEMIES[ENEMIES.length-1]);
+      if(gateCorruptOf(name))gateCorruptBody(ENEMIES[ENEMIES.length-1],portal); /* S1933 — built again on its kin's driver, at its own numbers (68-dungeon-misc.js) */
     });
   }
   spawnFloorEnemies(dMap,1,0,1.0);

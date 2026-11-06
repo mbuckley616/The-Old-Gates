@@ -1005,7 +1005,8 @@ const HC_GOB_COAT={coat:0x6a8a42,saddle:0x4e6a30,belly:0x86a058,skin:0x72924a};
 const HC_WRAITH_REST={spine:[.42,0,0],neck:[.22,0,0],head:[-.42,0,0],shL:[-1.8,0,.08],shR:[-1.74,0,-.08],elL:[-.3,0,.04],elR:[-.3,0,-.04],wrL:[.28,0,0],wrR:[.28,0,0]};
 const HC_TROLL_COAT={cave:{coat:0x6e7a5c,saddle:0x5a664c,belly:0x7e8a6c,skin:0x646e54},forest:{coat:0x5a6e40,saddle:0x4a5a34,belly:0x6a7e50,skin:0x52643a,moss:0x34501a},
   frost:{coat:0xaebac2,saddle:0x96a4ae,belly:0xc0cad0,skin:0xa2aeb6,moss:0xe0e4e8}};
-const HC_KINDS={'Wolf':{plan:'wolf'},'Snow Wolf':{plan:'wolf',own:true},'Dire Wolf':{plan:'ironwolf',own:true},'Boar':{plan:'boar'},'Cave Bear':{plan:'bear',own:true,ik:true},'Ash Hound':{plan:'ashhound'},'Horse':{plan:'horse',own:true,ik:true},'Grey Horse':{plan:'horse',own:true,ik:true},'Mule':{plan:'mule',ik:true},
+const HC_KINDS={'Wolf':{plan:'wolf'},'Snow Wolf':{plan:'wolf',own:true},'Dire Wolf':{plan:'ironwolf',own:true},'Boar':{plan:'boar'},'Cave Bear':{plan:'bear',own:true,ik:true},'Frost Wraith Bear':{plan:'frostbear',own:true,ik:true},'Blight Boar':{plan:'blightboar',own:true},'Stag of Shadows':{plan:'shadowstag',own:true,ik:true}, /* S1933 — a failing gate's corrupted animals (OG-088, #1201 B), on the Cave Bear's, the Boar's and the Elderstag's drivers (gateCorruptBody) */
+  'Ash Hound':{plan:'ashhound'},'Horse':{plan:'horse',own:true,ik:true},'Grey Horse':{plan:'horse',own:true,ik:true},'Mule':{plan:'mule',ik:true},
   'Spider':{plan:'spider',own:true,spider:true,cell:.028,merge:true},'Sand Scorpion':{plan:'dunescorpion',own:true,spider:true,cell:.02,merge:true},
   'Bog Crawler':{plan:'bogcrawler',own:true,spider:true,cell:.018,merge:true},'Faolchú':{plan:'faolchu',own:true,cell:.03,unhunch:true,arms:true},
   'Dragon':{plan:'dragon',own:true,cell:.11,wings:true,sway:true},

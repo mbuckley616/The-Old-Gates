@@ -734,7 +734,7 @@ function useFireThing(i){const it=BAG[i];if(!it)return;
 // S1707 — and off the hunted (Michael's A on #984): a deer 2 to 4, a hare 1; the fox, the badger and the otter give none
 const MEAT_BODIES=/(^|\s)(Wolf|Bear|Boar|Deer|Hare|Elderstag|Elk|Duneskimmer|Icehorn|Ram|Crownstag|Frostmane|Shatterhorn)$/;
 const MEAT_N={Deer:[2,4],Hare:[1,1],Elderstag:[2,4],Elk:[2,4],Crownstag:[2,4],Frostmane:[2,4],Shatterhorn:[2,4]}; /* S1911 — the Shatterhorn a grazer, a deer's; the tortoises and the Mineprowler none */ /* S1870 — the two strange grazers a deer's; the Lanternfox, the Thornrunner and the Stonejaw none, as the fox and the badger */ /* S1769 — the islands' grazers: the stag and the elk a deer's, the gazelle, the goat and the rams the default 1 to 3 */
-function bodyMeat(e,items,key){if(e&&e.swim&&(e.baseName==='Trout'||RIVER_FISH[e.baseName])){items.push(riverFishItem(e.baseName));return items;}if(!e||!MEAT_BODIES.test(e.name||''))return items;
+function bodyMeat(e,items,key){if(e&&e.swim&&(e.baseName==='Trout'||RIVER_FISH[e.baseName])){items.push(riverFishItem(e.baseName));return items;}if(!e||e.corrupt||!MEAT_BODIES.test(e.name||''))return items; /* S1933 — a gate's corrupted animal is the gate's, no meat on it */
   const N=MEAT_N[(e.name||'').split(' ').pop()]||[1,3];
   const r=key!=null?seededRng('meat',key):lootRand;items.push(survItem('meat',N[0]+Math.floor(r()*(N[1]-N[0]+1))));return items;}
 // S1759 — a trout (#1014 A): one, a fish like the sea's (0.6 weight, 9 gold), taken by hand or off its body when struck

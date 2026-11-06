@@ -576,8 +576,11 @@ function lairFinish(portal){try{if(!portal||!portal.lair||!ENEMIES.length)return
 // Its numbers are the kind's own at the cavern's scale, as any foe of the cavern is scaled: health by the gate's difficulty
 // and the cavern's tier (its floor's, S1058; once your level and ×1.5 below); a blow by the same, its dmgMult set so the cavern's roll (10–20 before armour, 15 on
 // average) lands the kind's own blow. lairFinish then makes it the master (×3 health, ×1.6 a blow, 1.5× the size) as before.
-function lairMasterBody(e,kind,portal){const D=typeof ZONE_FOE_DEF!=='undefined'&&ZONE_FOE_DEF[kind];if(!D||!e||!e.mesh)return false;
-  const z=buildZoneEnemy(new THREE.Group(),[],0,0,kind,null);const rig=z.limbs&&(z.limbs.person||z.limbs.wolf);if(!rig||!rig.root)return false;
+function lairMasterBody(e,kind,portal){const D=typeof ZONE_FOE_DEF!=='undefined'&&ZONE_FOE_DEF[kind];return foeRebody(e,kind,D,kind,portal);}
+// S1933 — the same for any gate foe built again as a beast: kind is its name, D its numbers, body the kind whose driver it runs on (a gate's
+// corrupted animal: a Frost Wraith Bear on the Cave Bear's, its own plan worn by the kit; gateCorruptBody, below)
+function foeRebody(e,kind,D,body,portal){if(!D||!e||!e.mesh)return false;
+  const z=buildZoneEnemy(new THREE.Group(),[],0,0,body,null);const rig=z.limbs&&(z.limbs.person||z.limbs.wolf);if(!rig||!rig.root)return false;
   const g=e.mesh,L=e.limbs&&!Array.isArray(e.limbs)?e.limbs:{};const hpBg=L.hpBg||e.hpBg;
   g.children.slice().forEach(c=>{if(c===hpBg||c===e.hpFg||c.isLight)return;g.remove(c);});g.scale.set(1,1,1);g.rotation.set(0,g.rotation.y,0);
   if(rig.root.parent)rig.root.parent.remove(rig.root);g.add(rig.root);rig.e=e;
@@ -591,6 +594,11 @@ function lairMasterBody(e,kind,portal){const D=typeof ZONE_FOE_DEF!=='undefined'
   const top=(z.limbs.person?1.3:1.25)*(D.scale||1);if(hpBg)hpBg.position.y=top;if(e.hpFg)e.hpFg.position.y=top;
   if(e.el){e.el.color.setHex(D.eyeCol||0xffb040);e.el.intensity=.7;}
   e._lairBody=kind;e._detailed=true;return true;}
+// S1933 (Michael's B on #1201) — a failing gate's corrupted animal (GATE_CORRUPT, 42-zone-enemies.js): the roster's foe built again on its
+// kin's driver, its numbers its own row at the floor's tier, wearing the kit's corrupted plan by its name. It keeps its name and place
+function gateCorruptBody(e,portal){const C=e&&gateCorruptOf(e.baseType);if(!C)return false;const D=gateCorruptDef(C.kind);
+  if(!foeRebody(e,C.kind,D,C.body,portal))return false;const rig=e.limbs&&e.limbs.wolf;if(rig){rig.hcKind=C.kind;delete rig.hcKey;}
+  e.name=C.kind;e.corrupt=C.school;e.shape=D.shape;delete e.posture;delete e.maxPosture;initPosture(e);return true;}
 // the master is 1.5× the beast: one that would stand through the cavern's ceiling is made the largest that clears it
 function masterUnderCeiling(e){const g=e&&e.mesh;if(!g)return;const rig=e.limbs&&(e.limbs.person||e.limbs.wolf);const root=rig&&rig.root;if(!root)return;
   g.updateMatrixWorld(true);const b=new THREE.Box3().setFromObject(root),h=b.max.y-b.min.y,room=FLOOR_HEIGHT-.15;if(h>room)g.scale.multiplyScalar(room/h);}
