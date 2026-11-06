@@ -3530,6 +3530,21 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     L(rx(T.fire[0]+.6),ry(T.fire[1]+.3),rz(T.fire[2]),0xff6a20,1.6,8);L(rx(T.lamp[0]),ry(T.lamp[1]),rz(T.lamp[2]),0xffaa44,1.7,11);L(rx(T.dormLamp[0]+.3),ry(T.dormLamp[1]),rz(T.dormLamp[2]),0xffaa44,.7,6);
     L(rx((T.stTable.x0+T.stTable.x1)/2),ry(F0+2.2),rz(T.stTable.z1),0xffb070,.6,5);
     if(T.still&&T.still.glow)L(rx(T.still.glow[0]),ry(T.still.glow[1]+.3),rz(T.still.glow[2]-.4),0x60ff80,.8,4);
+    // S1921 (#805, Michael's C: each island its own; what S1523 left owed) — the Gatelands' candle sconces (the concept's halls.js) and
+    // candles on the long table. The hall's ground floor west of the partition: one in the middle of each stretch of the front and back
+    // walls at least 0.6 m clear (0.2 m from a low window, the great door and its open leaf, the weapon stands, the still, the rack, the
+    // shelves and the board; 0.5 m from the hearth's gable and the partition), one on the partition's face between the stair's foot and
+    // the steward's door, and one on the hall's face of each of the gallery's three posts; two candles on the table. Lamps by the hour, as the wheel of candles
+    if(PKIT.halls){const list=[],M=.2,low=q=>q.y<T.floors[1]-.3,xE=T.part.x0,bx_=t=>T.boxes.filter(q=>q.tag===t);
+      const walls=[['front',Z,-1,[...T.windows.filter(q=>q.face==='front'&&low(q)).map(q=>[q.x-q.w/2,q.x+q.w/2]),[T.door.x-T.door.w/2,T.door.x+T.door.w/2],...bx_('leaf').filter(q=>q.z1>Z-.3&&q.y0<1).map(q=>[q.x0,q.x1]),...bx_('stand').map(q=>[q.x0,q.x1]),...bx_('still').map(q=>[q.x0,q.x1])]],
+        ['back',-Z,1,[...T.windows.filter(q=>q.face==='back'&&low(q)).map(q=>[q.x-q.w/2,q.x+q.w/2]),...bx_('rack').map(q=>[q.x0,q.x1]),...(T.shelves||[]).map(q=>[q.x0,q.x1]),[T.board.x0,T.board.x1]]]];
+      for(const [face,zw,nz,spans] of walls){const bl=[[-X-1,-X+.5],[xE-.5,X+1],...spans.map(([a,b])=>[a-M,b+M])];
+        bl.sort((a,b)=>a[0]-b[0]);let x=-X;for(const [a,b] of bl){if(a-x>=.6)list.push({type:'sconce',x:rx((x+a)/2),y:0,z:rz(zw),nx:0,nz});x=Math.max(x,b);}}
+      {const a=T.stair.z1+M,b=T.doors.steward.z0-M;if(b-a>=.6)list.push({type:'sconce',x:rx(xE),y:0,z:rz((a+b)/2),nx:-1,nz:0});}
+      for(const p of bx_('post'))list.push({type:'sconce',x:rx((p.x0+p.x1)/2),y:0,z:rz(p.z1),nx:0,nz:1});
+      {const t=T.table;for(const f of [.3,.7])list.push({type:'tablecandle',x:rx(t.x0+(t.x1-t.x0)*f),y:ry(t.y),z:rz((t.z0+t.z1)/2)});}
+      const HF=PKIT.halls.fixtures(list);sc_.add(HF.group);sc_.userData.hallTick=HF.tick;house._hallFix=HF;
+      for(const f of HF.lights){const l=new THREE.PointLight(new THREE.Color(...f.col),f.k*KA.lamp,f.r);l.position.set(...f.p);l.userData.hallFix=f.type;sc_.add(l);}}
     // the members, off the arrival and the walks: one behind the long table's far bench, one by the practice floor, one by the hearth
     // under the gallery's west end
     guildMembers(sc_,house,F_,reg,[[rx(-3.9),rz(T.table.z0-1.15)],[rx(T.pell.x+.9),rz(T.pell.z+.7)],[rx(-5.4),rz(T.gallery.z1+.75)]],{x0:rx(-X+1),x1:rx(T.part.x0-.6),z0:rz(T.gallery.z1+.4),z1:D-1});
