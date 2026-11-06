@@ -83,7 +83,7 @@ const ML = await page.evaluate(() => { const K = herbsKnown(), keep = K.read, al
 console.log('mapline', JSON.stringify(ML));
 check(`a gate's map entry says nothing of its state until its plant is read ("${ML.before}"); then "${ML.after}"; a gate of another condition still says nothing ("${ML.otherAfter}")`,
   !!ML.fail && !/failing/.test(ML.before) && ML.after === ML.before + ` · failing, of ${ML.fail.school}` && !!ML.other && !/(steady|catastrophic|failing), of/.test(ML.otherAfter), ML);
-// S1939 — grown by island (#1202 A): each island's land herbs only on it, the twenty among them; a chest's herbs are its island's
+// S1940 — grown by island (#1202 A): each island's land herbs only on it, the twenty among them; a chest's herbs are its island's
 const IS = await page.evaluate(() => {
   const o = { cand: {}, loot: {}, world: [] }, B = { gatelands: ['forest', 'plains', 'autumn', 'fen', 'moor', 'coast'], mark: ['forest', 'tundra', 'moor', 'plains', 'coast'], aurenne: ['plains', 'dunes', 'swamp', 'wasteland', 'wastes', 'coast'] };
   for (const I in B) { const ks = new Set(); let bare = 0; for (const b of B[I]) { let any = 0; for (const c of ['tree', 'water', 'sand', 'house', 'rock', 'open']) herbCandidates(b, c, I).forEach(([k]) => { ks.add(k); any++; }); if (!any) bare++; }

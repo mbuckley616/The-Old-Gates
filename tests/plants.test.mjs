@@ -10,9 +10,9 @@ fs.mkdirSync('tests/out', { recursive: true });
 const kinds = await page.evaluate(() => { const out = {}; ensureSeaHerbs(); /* S1589 — the sea's three herbs are defined when the sea's chunks first load */
   for (const k in PLANT_KIND) { const geo = plantGeo(k, false); const bb = geo.boundingBox; const pg = plantGeo(k, true);
     out[k] = { kind: PLANT_KIND[k], h: +bb.max.y.toFixed(2), w: +Math.max(bb.max.x - bb.min.x, bb.max.z - bb.min.z).toFixed(2), tris: geo.attributes.position.count / 3, picked: pg ? pg.attributes.position.count / 3 : null, stub: !!(pg && pg.userData.stub), stubTop: pg && pg.userData.stub ? +pg.boundingSphere.radius.toFixed(2) : null }; }
-  out._missing = Object.keys(HERB_DEF).filter(k => !PLANT_KIND[k] && k !== 'caverglow'); /* S1938 — Caverglow (S1896) is picked off a lair's wall as a prop of its own, never grown as a plant */ out._island = typeof ISLAND_HERB === 'undefined' ? [] : Object.keys(ISLAND_HERB); return out; });
+  out._missing = Object.keys(HERB_DEF).filter(k => !PLANT_KIND[k] && k !== 'caverglow'); /* S1939 — Caverglow (S1896) is picked off a lair's wall as a prop of its own, never grown as a plant */ out._island = typeof ISLAND_HERB === 'undefined' ? [] : Object.keys(ISLAND_HERB); return out; });
 const GATE3 = ['lichenbloom', 'gatelotus', 'gateresin']; /* S1886 — the plants that mark a gate stand in as a kin herb's kind until the bodies builder's own four land; counted apart */
-const ISL = kinds._island; /* S1938 — the islands' twenty (#1202 A) stand in as kin kinds until the look builder's own land; counted apart */
+const ISL = kinds._island; /* S1939 — the islands' twenty (#1202 A) stand in as kin kinds until the look builder's own land; counted apart */
 const K = Object.fromEntries(Object.entries(kinds).filter(([k]) => k !== '_missing' && k !== '_island' && !GATE3.includes(k) && !ISL.includes(k)));
 check(`the islands' ${ISL.length} herbs bake as their stand-in kinds`, ISL.length === 20 && ISL.every(k => kinds[k] && kinds[k].tris > 0), ISL.map(k => kinds[k] && kinds[k].kind));
 check(`the three plants that mark a gate bake as their stand-in kinds (${GATE3.map(k => kinds[k] && kinds[k].kind).join(', ')})`, GATE3.every(k => kinds[k] && kinds[k].tris > 0), GATE3.map(k => kinds[k]));

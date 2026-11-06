@@ -427,7 +427,7 @@ function herbKnownApply(eff,name){
   if(eff.type==='hpRegen'){_applyBuff({...eff,label:name+' Regen',col:'#44cc44'});return null;}
   if(eff.type==='damage'){PHP=Math.max(1,PHP-eff.amount);return [`-${eff.amount} HP (bitter)...`,'#cc4444'];}
   if(eff.type==='nightEye'){const said=ALCH_FX.nightEye.drink(eff.s||1);return [said,ALCH_FX.nightEye.col];} /* S1896 — Caverglow */
-  if(eff.type==='fx'){const d=ALCH_FX[eff.fx];if(!d||d.harm)return null;if(d.drink)return [d.drink(eff.s||1),d.col];if(d.buff){_applyBuff({duration:ALCH_FORTIFY_S,...d.buff(eff.s||1),label:d.label,col:d.col});return null;}return null;} /* S1938 — an island herb's first effect, eaten as a tincture */
+  if(eff.type==='fx'){const d=ALCH_FX[eff.fx];if(!d||d.harm)return null;if(d.drink)return [d.drink(eff.s||1),d.col];if(d.buff){_applyBuff({duration:ALCH_FORTIFY_S,...d.buff(eff.s||1),label:d.label,col:d.col});return null;}return null;} /* S1939 — an island herb's first effect, eaten as a tincture */
   return null;}
 // ── S1483 — Survival B, session 1: herbs and brewing (`docs/design/survival-build.md`, Michael's B of 30 Sep 2026) ──
 // Every herb has four brewing effects from one pool of 22. The first is the one you learn by eating it; the second is its
@@ -483,7 +483,7 @@ const HERB_FX={
   gateresin:['regenHealth','nightEye','featherfall','fortifyMelee'],
   caverglow:['nightEye','quiet','regenMana','fortifyCarry'], /* S1896 — Caverglow: Night Eye eaten, three from the effects on four herbs */
 };
-// S1938 — the Mark's nine and Aurenne's eleven (OG-039, Michael's A on #1202: all twenty, four effects, grown by island). The first is
+// S1939 — the Mark's nine and Aurenne's eleven (OG-039, Michael's A on #1202: all twenty, four effects, grown by island). The first is
 // the atlas's (devlog 1903's list), eaten as a tincture of strength 1 for ALCH_FORTIFY_S; the other three are dealt so that every effect
 // sits on 4 to 10 herbs (the rule widened from 4 to 7) and no two herbs share more than two. Priced as the herbs that share the first
 // effect (their median; where none has it first, those that carry it at all). Zone 'island': no barrel, shop or gather task draws one
@@ -518,7 +518,7 @@ for(const k in ISLAND_HERB){const H=ISLAND_HERB[k],[eff,known]=islandHerbEat(H.f
   HERB_DEF[k]=Object.assign({},base,{name:H.name,ico:'🌿',zone:'overworld',island:H.island,col:H.col,stemCol:H.stem,glowCol:H.glow[0],glowInt:H.glow[1],glowRad:H.glow[2],respawn:240,
     desc:H.desc,knownDesc:known,hiddenDesc:'',item:{name:H.name,ico:'🌿',type:'herb',effect:eff,buyPrice:H.price,sellMult:.8,weight:.1}});
   HERB_FX[k]=H.fx.slice();PLANT_KIND[k]=H.kin;}
-// S1939 — grown by island (#1202 A, the atlas's lists): the twenty on their own island; the Mark's five of the game's herbs (Wolf's Bane,
+// S1940 — grown by island (#1202 A, the atlas's lists): the twenty on their own island; the Mark's five of the game's herbs (Wolf's Bane,
 // Coldmoss, Stonecress, Ferrous Weed, Cré Dearg) on the Mark, the rest of the land herbs on the Gatelands; the sea's three anywhere.
 // A cell's island is its landmass's nation (nationKeyOf), fixed by the seed, so a chunk's herbs never hang on what has loaded.
 for(const k of ['wolfsbane','coldmoss','stonecress','ferrousweed','credearg'])if(HERB_DEF[k])HERB_DEF[k].island='mark';
@@ -809,7 +809,7 @@ function _climOutside(){if(activeZoneId!=='world'||lid!=='overworld')return fals
   return !atFire();}
 // the raw grade where you stand: {g, side:'cold'|'hot'|null, why}
 function exposureNow(){const none={g:0,side:null,why:''};if(!_climOutside())return none;
-  let cl;try{const [i,j]=cellOf(px,pz);cl=climateOfCell(i,j);HERB_ISLE_LAST=nationKeyOf(i,j);}catch(e){return none;} /* S1939 — the island a chest indoors draws its herbs from */
+  let cl;try{const [i,j]=cellOf(px,pz);cl=climateOfCell(i,j);HERB_ISLE_LAST=nationKeyOf(i,j);}catch(e){return none;} /* S1940 — the island a chest indoors draws its herbs from */
   const h=gameHour(),sea=calDay().season;
   if(cl==='cold'){let line=18;try{line=snowLineAt(px,pz);}catch(e){}const y=typeof worldH==='function'?worldH(px,pz):0;
     if(_clim.above){if(y<line-CLIMATE.band)_clim.above=false;}else if(y>line+CLIMATE.band)_clim.above=true;

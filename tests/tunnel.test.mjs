@@ -2,7 +2,7 @@
 // whose land holds one keeps a trade tunnel (tunnelAt, 82), places.js's aurenneTunnel (PKIT.au.tunnel) between two portals, each the cave's
 // outcrop in Aurenne's pale rock with the tunnel's frame (PKIT.places.cavemouth, rock 'aurenne', frame, tunnel), on either side of a ridge
 // beside one of the cell's roads. The suite builds the kit on a climb, counts the tunnels, goes to the nearest, in at one portal, walks the
-// bore and out at the other, and in again at that one.
+// bore and out at the other, and in again at that one. Session 1938: the lane from each portal to the road.
 import { boot, check } from './lib/game.mjs';
 const g = await boot({ look: 'new' }); const { page } = g; await g.intoWorld();
 await page.evaluate(() => REN.setSize(320, 180, false));
@@ -20,6 +20,19 @@ console.log(JSON.stringify(k));
 check(`${k.n} of ${k.cells} Aurenne cells keep a trade tunnel, none elsewhere; each 56 m portal to portal with ${Math.min(...k.rock)} m or more of hill over its floor`, k.n > 0 && k.other === 0 && k.len.every(l => Math.abs(l - 56) < .1) && k.rock.every(r => r >= 5) && /Tunnel$/.test(k.near.name), k);
 await page.evaluate(C => { px = C.x + Math.sin(C.ry) * 8; pz = C.z + Math.cos(C.ry) * 8; }, k.near);
 for (let n = 0; n < 8; n++) { await g.cells(); const ok = await page.evaluate(id => { const c = [...CELLS.values()].find(c => c._tunnel && c._tunnel.id === id); return !!(c && c._tunnel.house); }, k.near.id); if (ok) break; await page.waitForTimeout(1000); }
+// S1938 — a lane from each portal to the road: from 4 m before the throat, out of the hill and round its outcrop, onto a road's line, its bed
+// the ground (cut or built up), drawn by the chunks' road ribbon, and never through a solid
+await g.frames(2);
+const ln = await page.evaluate(id => { const c = [...CELLS.values()].find(c => c._tunnel && c._tunnel.id === id), C = c._tunnel;
+  return (C.lanes || []).map(rd => { const P = rd.pts, E = rd.def.end === 'a' ? C : C.far, pe = P[P.length - 1];
+    let onRoad = 1e9; for (const s of RSEG) { if (s.road.def.via === 'spur' || s.road.def.via === 'quay') continue; const vx = s.bx - s.ax, vz = s.bz - s.az, t = Math.max(0, Math.min(1, ((pe.x - s.ax) * vx + (pe.z - s.az) * vz) / (s.len2 || 1))); onRoad = Math.min(onRoad, Math.hypot(s.ax + vx * t - pe.x, s.az + vz * t - pe.z)); }
+    let drawn = 0; for (let i = 1; i < P.length - 1; i++) { const p = P[i], ch = chunks.get(chunkKey(Math.floor(p.x / CHUNK), Math.floor(p.z / CHUNK)));
+      if (ch && ch.group.children.some(o => { if (!o.userData.ribbon) return false; const a = o.geometry.attributes.position; for (let k = 0; k < a.count; k++) if (Math.hypot(a.getX(k) - p.x, a.getZ(k) - p.z) < 3) return true; return false; })) drawn++; }
+    return { end: rd.def.end, via: rd.def.via, len: rd.len, grade: rd.grade, cut: rd.cut, start: +Math.hypot(P[0].x - E.x, P[0].z - E.z).toFixed(2), onRoad: +onRoad.toFixed(2), solid: P.filter(p => solidAt(p.x, p.z)).length,
+      bed: +Math.max(...P.map(p => Math.abs(worldH(p.x, p.z) - p.y))).toFixed(2), drawn, inner: P.length - 2 }; }); }, k.near.id);
+console.log(JSON.stringify(ln));
+check(`a lane from each portal to the road (${ln.map(l => `${l.end}: ${l.len} m at 1 in ${(1 / Math.max(l.grade, .001)).toFixed(1)}, cut or fill to ${l.cut} m`).join('; ')}): 4 m out of the throat, onto a road's line, the ground its bed, drawn all along, through no solid`,
+  ln.length === 2 && ln.every(l => l.via === 'spur' && Math.abs(l.start - 4) < .05 && l.onRoad < .05 && l.solid === 0 && l.bed < .05 && l.drawn === l.inner && l.grade <= .25 && l.len < 110), ln);
 const at = async end => page.evaluate(([id, end]) => { const c = [...CELLS.values()].find(c => c._tunnel && c._tunnel.id === id), T = c && c._tunnel, C = T && (end ? T.far : T); if (!C || !T.house) return { none: true };
   const co = Math.cos(C.ry), s = Math.sin(C.ry), W = (u, v) => [C.x + u * co + v * s, C.z - u * s + v * co], sol = (u, v) => solidAt(...W(u, v));
   [px, pz] = W(0, 6); jumpY = activeTerrainH(px, pz); const away = limeCavePrompt(); [px, pz] = W(0, -1); jumpY = activeTerrainH(px, pz); const inn = limeCavePrompt();
