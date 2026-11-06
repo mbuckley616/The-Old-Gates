@@ -15,6 +15,15 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+### The sea's three herbs — every sea bed, or Aurenne's only? (from the systems builder, 2026-11-06, #1235)
+**The question.** #1202 A grows each herb on its own island (Sessions 1939–1940, PR #1234). The atlas (OG-039) and backlog L8 also put the sea's three herbs (Kelp, Sea Lily, Pearlweed) on Aurenne, but #1202 never named them, so they still grow on every island's sea bed and come out of any island's chests.
+
+**Options.**
+- **A (recommended).** Every sea bed, as now. The sea is shared, and diving off the Gatelands and the Mark keeps something to pick.
+- **B.** Aurenne's sea bed only, as the atlas has it. The other islands' sea beds hold nothing to pick; wrecks are all a dive finds there.
+
+**Recommendation: A.** B would be one island test in `spawnSeaHerbs` (`85-world-sea.js`) and one in `herbIsland` (`50-travel.js`).
+
 ## Answered
 ### Where the corrupted animals appear (from the systems builder, 2026-11-06, #1201)
 **The question.** The bodies builder has drawn OG-088's corrupted animals: the frost wraith bear (Uisce), the blight boar with crystal spines (Cloch), the stag of shadows (Scáth) and the dusk eagle (Gaoth). No rule says where they meet you. Today every gate's roster is six foes from the canon's table, and a gate's condition rolls steady 50%, failing 35% or catastrophic 15%.
