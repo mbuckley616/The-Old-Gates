@@ -162,3 +162,6 @@ export function bindPose(P, role, pose, o = {}) {
   }
   root.updateMatrixWorld(true); return out;
 }
+
+// the skeleton helpers, for impacts.js (the concept artist, 6 Nov 2026): the same reach, fist and stance, to pose a blow at its contact
+export { fist, palm, stance, grip, wp };
