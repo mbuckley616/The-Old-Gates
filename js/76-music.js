@@ -259,6 +259,75 @@ const VOICES={
     const nb=AX.createBuffer(1,AX.sampleRate*.25,AX.sampleRate);const d=nb.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*(1-i/d.length);const n=AX.createBufferSource();n.buffer=nb;const ng=AX.createGain();ng.gain.value=vel*.35;const lp=AX.createBiquadFilter();lp.type='lowpass';lp.frequency.value=300;n.connect(lp);lp.connect(ng);ng.connect(_vOut());n.start(t);EXPLORE.nodes.push(o,g,n,ng);},
 };
 
+// ── the islands' bands (S1901; OG-112) ──
+// Each island's exploring music is played by its own five instruments: the Gatelands' fiddle, whistle, bodhrán, harp and lute; the Mark's
+// tagelharpa, war horn, frame drum, lyre and bone flute; Aurenne's oud, qanun, ney, riq and santur. The pieces, the pad, the bass and the
+// choir are the same everywhere; the lead, the arpeggio, the counter-line, the bells and the drum are the island's. The band is the island
+// you stand on when a piece starts (the last you stood on, indoors), so crossing to another island changes it at the next piece.
+let _bandNoiseB=null;
+function _bandNoise(){const sr=AX.sampleRate;if(!_bandNoiseB||_bandNoiseB.sampleRate!==sr){const n=Math.ceil(sr*1.5);_bandNoiseB=AX.createBuffer(1,n,sr);const d=_bandNoiseB.getChannelData(0);for(let i=0;i<n;i++)d[i]=Math.random()*2-1;}
+  const s=AX.createBufferSource();s.buffer=_bandNoiseB;s.loop=true;return s;}
+// a plucked or struck string: a bright attack that dulls as it rings (o.dec seconds); o.bend glides in from that many semitones off
+function _pluck(m,t,dur,vel,o){const f=midiHz(m),dec=o.dec;const g=AX.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vel,t+.004);g.gain.exponentialRampToValueAtTime(.0004,t+dec);
+  const lp=AX.createBiquadFilter();lp.type='lowpass';lp.Q.value=o.q||.8;lp.frequency.setValueAtTime(Math.min(9000,f*o.cut),t);lp.frequency.exponentialRampToValueAtTime(Math.max(220,f*1.3),t+dec*.7);lp.connect(g);g.connect(_vOut());
+  (o.dt||[0]).forEach(dt=>{const x=AX.createOscillator();x.type=o.type;x.frequency.setValueAtTime(o.bend?f*Math.pow(2,o.bend/12):f,t);if(o.bend)x.frequency.exponentialRampToValueAtTime(f,t+.05);x.detune.value=dt;x.connect(lp);x.start(t);x.stop(t+dec+.05);EXPLORE.nodes.push(x);});
+  EXPLORE.nodes.push(g,lp);}
+// a blown pipe: a tone with breath in it (o.air, 0..1), a vibrato that grows in, and o.bend semitones of scoop at the start
+function _blown(m,t,dur,vel,o){const f=midiHz(m);const g=AX.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vel,t+o.att);g.gain.setValueAtTime(vel,t+Math.max(o.att,dur-.08));g.gain.linearRampToValueAtTime(0,t+dur+o.rel);g.connect(_vOut());
+  const x=AX.createOscillator();x.type=o.type||'sine';x.frequency.setValueAtTime(o.bend?f*Math.pow(2,o.bend/12):f,t);if(o.bend)x.frequency.exponentialRampToValueAtTime(f,t+.12);
+  const v=AX.createOscillator();v.frequency.value=o.vib||5;const vg=AX.createGain();vg.gain.setValueAtTime(0,t);vg.gain.linearRampToValueAtTime(o.vibD||6,t+Math.min(.45,dur*.6));v.connect(vg);vg.connect(x.detune);
+  const tg=AX.createGain();tg.gain.value=1-(o.air||.2);x.connect(tg);tg.connect(g);
+  const n=_bandNoise(),bp=AX.createBiquadFilter();bp.type='bandpass';bp.frequency.value=Math.min(9000,f*(o.airF||1));bp.Q.value=o.airQ||3;const ng=AX.createGain();ng.gain.value=(o.air||.2)*2.5;n.connect(bp);bp.connect(ng);ng.connect(g);
+  const end=t+dur+o.rel+.05;x.start(t);x.stop(end);v.start(t);v.stop(end);n.start(t,Math.random());n.stop(end);EXPLORE.nodes.push(x,v,vg,tg,n,bp,ng,g);}
+// a bowed string or a lip-blown horn: sawtooth through a body (o.nasal, a peak in Hz); o.drone adds the octave below, as a bourdon
+function _bowed(m,t,dur,vel,o){const f=midiHz(m);const g=AX.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vel,t+o.att);g.gain.setValueAtTime(vel*.9,t+Math.max(o.att,dur-.1));g.gain.linearRampToValueAtTime(0,t+dur+o.rel);g.connect(_vOut());
+  const lp=AX.createBiquadFilter();lp.type='lowpass';lp.frequency.value=Math.min(7000,f*o.cut);lp.connect(g);let into=lp;
+  if(o.nasal){const pk=AX.createBiquadFilter();pk.type='peaking';pk.frequency.value=o.nasal;pk.Q.value=2.5;pk.gain.value=9;pk.connect(lp);into=pk;EXPLORE.nodes.push(pk);}
+  const v=AX.createOscillator();v.frequency.value=o.vib||5.5;const vg=AX.createGain();vg.gain.setValueAtTime(0,t);vg.gain.linearRampToValueAtTime(o.vibD||0,t+Math.min(.4,dur*.5));v.connect(vg);
+  const end=t+dur+o.rel+.05,parts=(o.dt||[0]).map(dt=>[f,dt]);if(o.drone)parts.push([f/2,0]);
+  parts.forEach(([fr,dt])=>{const x=AX.createOscillator();x.type='sawtooth';x.frequency.setValueAtTime(o.bend?fr*Math.pow(2,o.bend/12):fr,t);if(o.bend)x.frequency.exponentialRampToValueAtTime(fr,t+(o.bendT||.07));x.detune.value=dt;vg.connect(x.detune);x.connect(into);x.start(t);x.stop(end);EXPLORE.nodes.push(x);});
+  v.start(t);v.stop(end);EXPLORE.nodes.push(v,vg,lp,g);}
+// a hand drum: a skin's thump falling from o.f0 to o.f1 Hz (none when o.f0 is 0) and its slap or jingle as filtered noise
+function _drum(t,vel,o){const out=_vOut();
+  if(o.f0){const g=AX.createGain();g.gain.setValueAtTime(vel,t);g.gain.exponentialRampToValueAtTime(.0004,t+o.dec);g.connect(out);
+    const x=AX.createOscillator();x.type='sine';x.frequency.setValueAtTime(o.f0,t);x.frequency.exponentialRampToValueAtTime(o.f1,t+o.sweep);x.connect(g);x.start(t);x.stop(t+o.dec+.05);EXPLORE.nodes.push(x,g);}
+  const n=_bandNoise(),bp=AX.createBiquadFilter();bp.type=o.ntype||'bandpass';bp.frequency.value=o.nf;bp.Q.value=o.nq||1;const ng=AX.createGain();ng.gain.setValueAtTime(vel*o.nv,t);ng.gain.exponentialRampToValueAtTime(.0004,t+o.ndec);
+  n.connect(bp);bp.connect(ng);ng.connect(out);n.start(t,Math.random());n.stop(t+o.ndec+.05);EXPLORE.nodes.push(n,bp,ng);}
+const _bandRing=(d,a,b,k)=>Math.max(a,Math.min(b,d*k));
+Object.assign(VOICES,{
+  // the Gatelands
+  fiddle(m,t,d,v){_bowed(m,t,d,v*1.05,{att:.05,rel:.18,cut:7,nasal:2600,vib:6,vibD:9,dt:[-3,3],bend:-1,bendT:.07});},
+  whistle(m,t,d,v){_blown(m,t,d,v,{att:.03,rel:.12,type:'sine',vib:5.8,vibD:7,air:.16,airF:1,airQ:6});},
+  bodhran(m,t,d,v){_drum(t,v,{f0:150,f1:68,sweep:.08,dec:.3,nf:900,nq:.8,nv:.45,ndec:.07});},
+  lute(m,t,d,v){_pluck(m,t,d,v*1.2,{type:'sawtooth',cut:5,dec:_bandRing(d,.5,1.6,1.3),q:1,dt:[-4,4]});},
+  // the Mark
+  tagelharpa(m,t,d,v){_bowed(m,t,d,v*.62,{att:.25,rel:.5,cut:4,nasal:900,vib:4.2,vibD:4,dt:[-6,5],drone:true});},
+  warhorn(m,t,d,v){_bowed(m,t,d,v,{att:.22,rel:.4,cut:2.2,nasal:480,vib:3,vibD:2,dt:[0],bend:-2,bendT:.2});},
+  framedrum(m,t,d,v){_drum(t,v*1.2,{f0:95,f1:46,sweep:.15,dec:.6,nf:300,nq:.7,nv:.3,ndec:.12});},
+  lyre(m,t,d,v){_pluck(m,t,d,v*1.1,{type:'triangle',cut:8,dec:_bandRing(d,.8,2.4,1.8),dt:[-3,3]});},
+  boneflute(m,t,d,v){_blown(m,t,d,v*1.5,{att:.07,rel:.2,type:'triangle',vib:4.5,vibD:10,air:.36,airF:1.5,airQ:2,bend:-.6});},
+  // Aurenne; the oud holds a long note as a tremolo of plucks, as its players do
+  oud(m,t,d,v){const n=d>.9?Math.min(12,Math.floor(d/.22)):1;for(let k=0;k<n;k++)_pluck(m,t+k*.22,.3,v*1.3*(k?.6:1),{type:'sawtooth',cut:4,dec:n>1?.32:_bandRing(d,.4,1.2,1.2),q:1.4,dt:[-5,5],bend:k?0:-.5});},
+  qanun(m,t,d,v){_pluck(m,t,d,v,{type:'triangle',cut:10,dec:_bandRing(d,.6,1.4,1.2),dt:[-2,2]});},
+  ney(m,t,d,v){_blown(m,t,d,v*1.1,{att:.14,rel:.3,type:'sine',vib:4.8,vibD:12,air:.42,airF:1,airQ:4,bend:-.8});},
+  riq(m,t,d,v){if(m<60)_drum(t,v,{f0:180,f1:110,sweep:.05,dec:.18,nf:6500,nq:1.5,nv:.5,ndec:.12});else _drum(t,v,{f0:0,nf:8000,nq:2,nv:2,ndec:.16});},
+  santur(m,t,d,v){_pluck(m,t,d,v*.9,{type:'triangle',cut:12,dec:_bandRing(d,1,2.6,1.6),dt:[-7,7]});},
+});
+// a band: the lead for the piece's horn or flute line, the arpeggio (harp), the counter-line, the bells, and a drum with its bar
+// ([beat, velocity, low] in a bar of four), which plays in a piece's fuller sections and takes the timpani's accent
+const ISLAND_BAND={
+  gatelands:{lead:{horn:'fiddle',flute:'whistle'},harp:'harp',counter:'lute',bells:'harp',drum:'bodhran',
+    bar:[[0,1,1],[1,.45],[1.5,.6],[2,.8,1],[3,.45],[3.5,.6]]},
+  mark:{lead:{horn:'warhorn',flute:'boneflute'},harp:'lyre',counter:'tagelharpa',bells:'lyre',drum:'framedrum',
+    bar:[[0,1,1],[2,.7,1]]},
+  aurenne:{lead:{horn:'oud',flute:'ney'},harp:'qanun',counter:'oud',bells:'santur',drum:'riq',
+    bar:[[0,1,1],[.5,.5],[1.5,.55],[2,.85,1],[3,.55]]}};
+const BAND_DRUM_DYN=.68;
+// the island whose band plays: where you stand in the open world, else the last island you stood on, else the Gatelands (home)
+function musicIsland(){if(EXPLORE.forceIsland)return EXPLORE.forceIsland;if(typeof nationAt!=='function')return null;
+  try{if(activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior())){const n=nationAt(px,pz);if(ISLAND_BAND[n])EXPLORE.island=n;}}catch(e){}
+  return EXPLORE.island||'gatelands';}
+
 // ── the pieces ──
 // Chords: scale degree of the root (1..7), optional suffix: 'sus' (sus4), '7' (add 7th), 'm' forced minor 3rd, 'M' forced major 3rd.
 // Melody phrases: strings of "deg:beats" tokens; a leading "." is a rest; "^"/"_" shift an octave.
@@ -325,7 +394,8 @@ const PIECES=[
 // A piece plays its sections in order, then repeats the middle sections
 // once with variation (octave-up lead, added counter-line) before the
 // coda, which lands it at 3½–5 minutes.
-function pieceEvents(P){
+function pieceEvents(P,band){
+  const B=band||null,lv=B?B.lead[P.lead]||P.lead:P.lead; /* S1901 — the island's band (ISLAND_BAND); none is the orchestra, as before */
   const root=NOTE_ROOT[P.root]||60,mode=P.mode,beat=60/P.bpm;
   const ev=[];let t=0;
   const chordTones=(deg)=>[degMidi(root,mode,deg,0),degMidi(root,mode,deg+2,0),degMidi(root,mode,deg+4,0),degMidi(root,mode,deg+7,0)];
@@ -337,14 +407,15 @@ function pieceEvents(P){
       if(v.pad){ct.slice(0,3).forEach((m,k)=>ev.push({v:'strings',m:m-12*(k===0?1:0),t:bt,d:4*beat,vel:.055*dyn*(k===0?1.1:.9)}));}
       if(v.choir){ct.slice(0,3).forEach((m,k)=>ev.push({v:'choir',m:m+(k===2?12:0),t:bt,d:4*beat,vel:.04*dyn}));}
       if(v.bass){ev.push({v:'lowstrings',m:ct[0]-24,t:bt,d:2*beat,vel:.11*dyn});ev.push({v:'lowstrings',m:ct[0]-24+(b%2?0:0),t:bt+2*beat,d:2*beat,vel:.09*dyn});}
-      if(v.harp){const arp=[ct[0],ct[1],ct[2],ct[3],ct[2],ct[1],ct[0]+12,ct[1]];for(let e=0;e<8;e++){if(S.vary&&e%2)continue;ev.push({v:'harp',m:arp[e]+(e>=4?0:-12)+12,t:bt+e*beat*.5,d:beat*.5,vel:.06*dyn});}}
-      if(v.timp&&b%4===0)ev.push({v:'timpani',m:ct[0],t:bt,d:1,vel:.18*dyn});
-      if(v.bells&&b%2===0)ev.push({v:'bells',m:ct[b%4===0?0:2]+12,t:bt+(b%4?2*beat:0),d:2,vel:.05*dyn});
+      if(v.harp){const arp=[ct[0],ct[1],ct[2],ct[3],ct[2],ct[1],ct[0]+12,ct[1]];for(let e=0;e<8;e++){if(S.vary&&e%2)continue;ev.push({v:B?B.harp:'harp',m:arp[e]+(e>=4?0:-12)+12,t:bt+e*beat*.5,d:beat*.5,vel:.06*dyn});}}
+      if(B&&dyn>=BAND_DRUM_DYN){for(const [q,a,lo] of B.bar)ev.push({v:B.drum,m:lo?40:80,t:bt+q*beat,d:.2,vel:.16*dyn*a*(v.timp&&b%4===0&&!q?1.5:1)});}
+      else if(v.timp&&b%4===0)ev.push({v:B?B.drum:'timpani',m:B?40:ct[0],t:bt,d:1,vel:.18*dyn});
+      if(v.bells&&b%2===0)ev.push({v:B?B.bells:'bells',m:ct[b%4===0?0:2]+12,t:bt+(b%4?2*beat:0),d:2,vel:.05*dyn});
     }
     if(v.lead||v.counter){
       (S.melody||[]).forEach((phrase,b)=>{let cur=t0+b*4*beat;phrase.split(' ').forEach(tok=>{const [dS,bS]=tok.split(':');const beats=+bS;if(dS!=='.'){let d=+dS;const m=degMidi(root,mode,d,S.vary?1:0);
-          if(v.lead)ev.push({v:P.lead,m:m+(P.lead==='horn'?0:12),t:cur,d:beats*beat*.95,vel:(P.lead==='horn'?.13:.1)*dyn});
-          if(v.counter)ev.push({v:'strings',m:degMidi(root,mode,d-2,0),t:cur,d:beats*beat*.95,vel:.05*dyn});}
+          if(v.lead)ev.push({v:lv,m:m+(P.lead==='horn'?0:12),t:cur,d:beats*beat*.95,vel:(P.lead==='horn'?.13:.1)*dyn});
+          if(v.counter)ev.push({v:B?B.counter:'strings',m:degMidi(root,mode,d-2,0),t:cur,d:beats*beat*.95,vel:.05*dyn});}
         cur+=beats*beat;});});
     }
     t=t0+S.bars*4*beat;
@@ -364,8 +435,8 @@ function nextPiece(){
 function explorePlay(){
   if(!AX)return;if(EXPLORE.playing)return;
   EXPLORE.playing=true;const bus=_exBus();const now=AX.currentTime;bus.gain.cancelScheduledValues(now);bus.gain.setValueAtTime(0,now);bus.gain.linearRampToValueAtTime(1,now+2.5);
-  const P=nextPiece();const {events,length}=pieceEvents(P);EXPLORE.track=P;EXPLORE.startAt=now+.3;let i=0;
-  const CEIL={strings:79,lowstrings:60,horn:74,flute:81,harp:86,choir:77,bells:88,timpani:60};
+  const P=nextPiece(),isle=musicIsland();EXPLORE.band=isle;const {events,length}=pieceEvents(P,isle?ISLAND_BAND[isle]:null);EXPLORE.track=P;EXPLORE.startAt=now+.3;let i=0;
+  const CEIL={strings:79,lowstrings:60,horn:74,flute:81,harp:86,choir:77,bells:88,timpani:60,fiddle:88,whistle:93,lute:79,tagelharpa:72,warhorn:67,lyre:84,boneflute:84,oud:74,qanun:89,ney:83,santur:91,bodhran:127,framedrum:127,riq:127};
   const step=()=>{if(!EXPLORE.playing)return;const cur=AX.currentTime;while(i<events.length&&EXPLORE.startAt+events[i].t<cur+1.2){const e=events[i++];const vf=VOICES[e.v];let m=e.m;const c=CEIL[e.v]||84;while(m>c)m-=12;if(vf)vf(m,EXPLORE.startAt+e.t,e.d,e.vel);}
     // prune finished nodes' references now and then
     if(EXPLORE.nodes.length>900)EXPLORE.nodes.splice(0,EXPLORE.nodes.length-600);
@@ -374,7 +445,7 @@ function explorePlay(){
   step();
 }
 const PEACEFUL_ZONES=new Set(['overworld','village','town','city','forest','road','mountain','wastes','coast','shop','church','castle']);
-window.devMusic=function(id){const P=typeof id==='number'?PIECES[id]:PIECES.find(p=>p.id===id);if(!P)return PIECES.map(p=>p.id);exploreStop(.5);EXPLORE.order=[PIECES.indexOf(P)];EXPLORE.cursor=0;_musicZone='explore';setTimeout(explorePlay,600);return P.name;};
+window.devMusic=function(id,island){EXPLORE.forceIsland=ISLAND_BAND[island]?island:null;const P=typeof id==='number'?PIECES[id]:PIECES.find(p=>p.id===id);if(!P)return PIECES.map(p=>p.id);exploreStop(.5);EXPLORE.order=[PIECES.indexOf(P)];EXPLORE.cursor=0;_musicZone='explore';setTimeout(explorePlay,600);return P.name;};
 
 function startMusic(zone,theme){
   if(!AX)return;
