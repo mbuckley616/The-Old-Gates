@@ -300,7 +300,9 @@ const PLANT_BUILD={
   // a low cushion patch, wide rather than tall: moss on stone or the forest floor
   moss(P,R,col,stem,key){const n=5+Math.floor(R()*3);for(let i=0;i<n;i++){const a=i/n*6.283+R(),r=i?.12+R()*.16:0,s=.11+R()*.08;
       P.add(SK.bumpy(SK.ball(1,10,6,0,6.283,0,1.7),.18,9,R()*9),[Math.sin(a)*r,-.01,Math.cos(a)*r],[0,R()*6,0],[s,s*.42,s],plantMix(col,stem,R()*.35));}
-    if(key==='firemoss'){P.glow=true;for(let i=0;i<14;i++){const a=R()*6.283,r=R()*.3;P.add(SK.ball(.012,4,3),[Math.sin(a)*r,.045,Math.cos(a)*r],0,0,0xffaa44);}P.glow=false;}},
+    if(key==='firemoss'){P.glow=true;for(let i=0;i<14;i++){const a=R()*6.283,r=R()*.3;P.add(SK.ball(.012,4,3),[Math.sin(a)*r,.045,Math.cos(a)*r],0,0,0xffaa44);}P.glow=false;}
+    if(key==='snowthyme')for(let i=0;i<40;i++){const a=R()*6.283,r=R()*.32;P.add(SK.ball(.011,4,3),[Math.sin(a)*r,.05+R()*.015,Math.cos(a)*r],0,0,plantShade(0xe8c8e0,.9+R()*.2));}
+    if(key==='shardmoss'){P.glow=true;for(let i=0;i<16;i++){const a=R()*6.283,r=R()*.26,h=.04+R()*.07;P.add(SK.cone(.012,h,4),[Math.sin(a)*r,h/2+.02,Math.cos(a)*r],[(R()-.5)*.7,a,(R()-.5)*.7],0,plantShade(0x8fe8f0,.8+R()*.3));}P.glow=false;}},
   // a lumpy wet red mound on the bank
   clay(P,R,col,stem){for(let i=0;i<4;i++){const a=i*1.7+R(),r=i?.08+R()*.06:0,s=.07+R()*.05;P.add(SK.bumpy(SK.ball(1,8,5),.2,6,R()*5),[Math.sin(a)*r,s*.25,Math.cos(a)*r],0,[s*1.3,s*.8,s*1.1],plantMix(col,stem,R()*.4));}
     for(let i=0;i<5;i++){const a=R()*6.283;P.add(plantBlade(.1+R()*.06,.008,.03),[Math.sin(a)*.14,.02,Math.cos(a)*.14],[.2,a,0],0,0x4a5a2a);}},
@@ -359,16 +361,18 @@ const PLANT_BUILD={
         P.take=false;P.add(g,[x,y,z],[Math.atan2(Math.hypot(dx,dz),dy),Math.atan2(dx,dz),0],0,stem);
         if(k<seg-2)for(const sd of[1,-1]){P.take=true;P.add(plantLeaf(.08,.06,.008,.02),[nx,ny,nz],[-.1,a+sd*(1+R()*.5),0],0,plantMix(0x4a5a22,col,.35+R()*.3));}x=nx;y=ny;z=nz;}}P.take=false;},
   // a grey-green moor shrub: a low mound of small twiggy clumps (picked, three are left on the twigs)
-  shrub(P,R,col,stem){for(let i=0;i<4;i++){const a=R()*6.283;P.add(plantStalk(.2,.012,.008,4),[0,0,0],[.5,a,0],0,stem);}
-    for(let i=0;i<9;i++){const a=R()*6.283,r=i?.08+R()*.14:0,s=.1+R()*.06;P.take=i>=3;P.add(SK.bumpy(SK.ball(1,8,6),.22,8,R()*6),[Math.sin(a)*r,.2+R()*.12-r*.4,Math.cos(a)*r],0,[s,s*.8,s],plantMix(col,0x9aa888,R()*.4));}P.take=false;},
+  shrub(P,R,col,stem,key){for(let i=0;i<4;i++){const a=R()*6.283;P.add(plantStalk(.2,.012,.008,4),[0,0,0],[.5,a,0],0,stem);}
+    for(let i=0;i<9;i++){const a=R()*6.283,r=i?.08+R()*.14:0,s=.1+R()*.06;P.take=i>=3;P.add(SK.bumpy(SK.ball(1,8,6),.22,8,R()*6),[Math.sin(a)*r,.2+R()*.12-r*.4,Math.cos(a)*r],0,[s,s*.8,s],plantMix(col,0x9aa888,R()*.4));}P.take=false;
+    if(key==='saltthorn')for(let i=0;i<30;i++){const a=R()*6.283,r=.12+R()*.14,y=.14+R()*.2;P.add(SK.cone(.006,.07,3),[Math.sin(a)*r,y,Math.cos(a)*r],[-.4,a,0],0,0xd8d0c0);}},
   // a berry bush, knee-high and wider than tall, red clusters hanging on the outside (picked, the clusters go)
-  bush(P,R,col,stem,key){const leaf=key==='thornberry'?0x3a5a22:0x2a4a1a;
+  bush(P,R,col,stem,key){const leaf=key==='thornberry'?0x3a5a22:key==='cyprusblossom'?0x3a5228:0x2a4a1a;
     for(let i=0;i<5;i++){const a=R()*6.283;P.add(plantStalk(.25,.014,.01,4),[0,0,0],[.55,a,0],0,stem);}
     const blobs=[];for(let i=0;i<11;i++){const a=R()*6.283,r=i?.14+R()*.18:0,s=.13+R()*.07,y=.3+R()*.12-r*.45;blobs.push([a,r,s,y]);P.add(SK.bumpy(SK.ball(1,8,5),.2,8,R()*6),[Math.sin(a)*r,y,Math.cos(a)*r],0,[s,s*.85,s],plantMix(leaf,0x6a8a3a,R()*.3));}
+    if(key==='cyprusblossom'){P.take=true;for(let c=0;c<26;c++){const [a,r,s,y]=blobs[Math.floor(R()*11)];const oa=a+(R()-.5)*1.2,rr=r+s*.8;P.add(SK.bumpy(SK.ball(1,6,4),.25,9,c),[Math.sin(oa)*rr,y+s*.5*R(),Math.cos(oa)*rr],0,[.035,.03,.035],plantShade(col,.9+R()*.2));}P.take=false;return;}
     P.take=true;for(let c=0;c<9;c++){const [a,r,s,y]=blobs[1+Math.floor(R()*10)];const oa=a+(R()-.5)*.6,rr=r+s*.9;
       for(let k=0;k<5;k++)P.add(SK.ball(.024,5,3),[Math.sin(oa)*rr+(R()-.5)*.04,y-.02-R()*.05,Math.cos(oa)*rr+(R()-.5)*.04],0,0,plantShade(col,.9+R()*.2));}P.take=false;},
-  lowbush(P,R,col,stem,key){const leaf=0x2a3a20;for(let i=0;i<7;i++){const a=R()*6.283,r=i?.08+R()*.12:0,s=.1+R()*.05;P.add(SK.bumpy(SK.ball(1,8,6),.2,8,R()*6),[Math.sin(a)*r,.2+R()*.08-r*.4,Math.cos(a)*r],0,[s,s*.8,s],plantMix(leaf,0x4a5a30,R()*.3));}
-    P.take=true;for(let c=0;c<7;c++){const a=R()*6.283,r=.16+R()*.08,y=.12+R()*.16;for(let k=0;k<4;k++)P.add(SK.ball(.022,5,3),[Math.sin(a)*r+(R()-.5)*.04,y+(R()-.5)*.04,Math.cos(a)*r+(R()-.5)*.04],0,0,0x1a0a20);}P.take=false;},
+  lowbush(P,R,col,stem,key){const leaf=key==='rimeberry'?0x3a4a3a:0x2a3a20,berry=key==='rimeberry'?0xc8d8ea:0x1a0a20;for(let i=0;i<7;i++){const a=R()*6.283,r=i?.08+R()*.12:0,s=.1+R()*.05;P.add(SK.bumpy(SK.ball(1,8,6),.2,8,R()*6),[Math.sin(a)*r,.2+R()*.08-r*.4,Math.cos(a)*r],0,[s,s*.8,s],plantMix(leaf,0x4a5a30,R()*.3));}
+    P.take=true;for(let c=0;c<7;c++){const a=R()*6.283,r=.16+R()*.08,y=.12+R()*.16;for(let k=0;k<4;k++)P.add(SK.ball(.022,5,3),[Math.sin(a)*r+(R()-.5)*.04,y+(R()-.5)*.04,Math.cos(a)*r+(R()-.5)*.04],0,0,berry);}P.take=false;},
   // a young rowan: a slim grey trunk, feathered leaves and heavy red clusters, head-high to a child (picked, the clusters go)
   sapling(P,R,col,stem){P.add(plantStalk(.75,.028,.014,6),[0,0,0],[0,0,.04],0,0x6a6258);
     for(let b=0;b<4;b++){const a=b*1.6+R(),y=.4+b*.1;P.add(plantStalk(.24,.012,.006,4),[0,y,0],[.9,a,0],0,0x6a6258);
@@ -377,12 +381,13 @@ const PLANT_BUILD={
       P.take=true;for(let k=0;k<10;k++)P.add(SK.ball(.022,5,3),[tx+(R()-.5)*.08,ty-.05-R()*.06,tz+(R()-.5)*.08],0,0,plantShade(col,.9+R()*.2));P.take=false;}
     for(let l=0;l<5;l++){const la=l*1.26;P.add(plantLeaf(.16,.05,.01,.04),[0,.76,0],[-.3,la,0],0,0x3a6a2a);}},
   // shelves of bracket fungus on an old stump (picked, the stump is left)
-  bracket(P,R,col,stem){P.add(SK.bumpy(SK.cyl(.13,.16,.28,10,3),.012,14,2),[0,.14,0],0,0,0x4a3a2a);P.add(SK.cyl(.12,.12,.01,10),[0,.285,0],0,0,0x8a7458);
+  bracket(P,R,col,stem,key){P.add(SK.bumpy(SK.cyl(.13,.16,.28,10,3),.012,14,2),[0,.14,0],0,0,key==='sunfungus'?stem:0x4a3a2a);P.add(SK.cyl(.12,.12,.01,10),[0,.285,0],0,0,0x8a7458);
     P.take=true;for(let i=0;i<7;i++){const a=R()*6.283,y=.05+R()*.2,w=.07+R()*.04;P.add(SK.lathe([[.001,.012],[w,.004],[w*.95,-.008],[.001,-.012]],10),[Math.sin(a)*.14,y,Math.cos(a)*.14],[0,0,0],[1,1,.7],plantShade(col,.85+R()*.3));}P.take=false;},
   // a cluster of mushrooms: stalks and domed caps, one tall, several small
-  mushrooms(P,R,col,stem){for(let i=0;i<6;i++){const a=R()*6.283,r=i?.06+R()*.1:0,s=i?.5+R()*.4:1.1,h=.12*s,cr=.06*s;
+  mushrooms(P,R,col,stem,key){for(let i=0;i<6;i++){const a=R()*6.283,r=i?.06+R()*.1:0,s=i?.5+R()*.4:1.1,h=.12*s,cr=.06*s;
       P.add(SK.lathe([[.012*s,0],[.014*s,h*.5],[.011*s,h]],6),[Math.sin(a)*r,0,Math.cos(a)*r],[0,0,(R()-.5)*.3],0,0xcfc4d0);
-      P.add(SK.lathe([[.001,-.004],[cr*.9,0],[cr,.012*s],[cr*.7,.04*s],[.001,.05*s]],9),[Math.sin(a)*r,h,Math.cos(a)*r],0,0,plantShade(col,.9+R()*.3));}},
+      P.add(SK.lathe([[.001,-.004],[cr*.9,0],[cr,.012*s],[cr*.7,.04*s],[.001,.05*s]],9),[Math.sin(a)*r,h,Math.cos(a)*r],0,0,plantShade(col,.9+R()*.3));
+      if(key==='frostcap')for(let k=0;k<6;k++){const fa=R()*6.283;P.add(SK.ball(.006*s+.003,4,3),[Math.sin(a)*r+Math.sin(fa)*cr*.55,h+.03*s,Math.cos(a)*r+Math.cos(fa)*cr*.55],0,0,0xf4f8ff);}}},
   // S1589 — the sea bed's (herbs.js's, as drawn): kelp's long olive ribbons from a holdfast, waving
   kelp(P,R,col,stem){P.add(SK.bumpy(SK.ball(1,7,5),.25,7,1),[0,.01,0],0,[.05,.03,.05],stem);
     for(let i=0;i<9;i++){const a=R()*6.283,L=.7+R()*.5;P.add(plantStrap(L,.06,10,.05,-.1),[0,.02,0],[-1.2-R()*.3,a,0],0,plantShade(col,.85+R()*.3));}},
@@ -391,10 +396,77 @@ const PLANT_BUILD={
     for(let k=0;k<10;k++){const a=k/10*6.283;for(let j=0;j<4;j++)P.add(plantLeaf(.04,.02,.005,-.01),[Math.sin(a)*j*.022,t+.01+j*.02,Math.cos(a)*j*.022],[-.9+j*.15,a,0],0,plantShade(col,.9+j*.04));}},
   // pearlweed: fine strands strung with pale beads that shine a little in the dark (the beads glow by nature)
   pearl(P,R,col,stem){for(let i=0;i<9;i++){const a=R()*6.283,lean=.2+R()*.4,L=.2+R()*.14;P.add(plantBlade(L,.004,.03),[0,0,0],[lean,a,0],0,stem);
-      P.glow=true;for(let k=2;k<8;k++){const y=L*k/8;P.add(SK.ball(.01+R()*.005,5,4),[Math.sin(a)*Math.sin(lean)*y,Math.cos(lean)*y,Math.cos(a)*Math.sin(lean)*y],0,0,plantShade(col,.9+R()*.2));}P.glow=false;}}
+      P.glow=true;for(let k=2;k<8;k++){const y=L*k/8;P.add(SK.ball(.01+R()*.005,5,4),[Math.sin(a)*Math.sin(lean)*y,Math.cos(lean)*y,Math.cos(a)*Math.sin(lean)*y],0,0,plantShade(col,.9+R()*.2));}P.glow=false;}},
+  // S1942 — the Mark's and Aurenne's own kinds (OG-039; Michael's A on #1202), ported from the concept artist's herbs.js part for part,
+  // in the kit's old unit as the rest. PLANT_ISLE names which herb wears which; what a picker takes is marked P.take.
+  // living ice: a grey rosette, and on short stems cups of six clear pointed petals that hold the light (the petals glow)
+  icebloom(P,R,col,stem){for(let i=0;i<9;i++){const a=i/9*6.283;P.add(plantLeaf(.1,.04,.01,.02),[0,.01,0],[-.25,a,0],0,0x5a6a68);}
+    for(let s=0;s<3;s++){const a=s*2.1+R(),t=.12+R()*.08;P.add(plantStalk(t,.006,.005,4),[0,0,0],[.35,a,0],0,stem);
+      const tx=Math.sin(a)*(.05+t*.34),tz=Math.cos(a)*(.05+t*.34);P.glow=true;
+      for(let ring=0;ring<2;ring++)for(let k=0;k<6;k++){const pa=k/6*6.283+ring*.52;P.add(plantLeaf(.055-ring*.012,.028,.006,-.006),[tx,t+.005+ring*.004,tz],[-.75-ring*.4,pa,0],0,plantShade(col,.88+ring*.1+R()*.1));}
+      P.add(SK.ball(.01,5,4),[tx,t+.015,tz],0,0,0xffffff);P.glow=false;}},
+  // a globe thistle: grey-green spiny leaves, stiff stems, each topped by a ball of steel-blue spikes
+  globe(P,R,col,stem){for(let i=0;i<6;i++){const a=i/6*6.283+R()*.3;P.add(plantLeaf(.18,.07,.01,.05),[0,.03,0],[-.4,a,0],0,0x6a7a68);}
+    const up=new THREE.Vector3(0,1,0),d=new THREE.Vector3(),q=new THREE.Quaternion();
+    for(let s=0;s<4;s++){const a=s*1.6+R(),t=.38+R()*.2,lean=.12+R()*.1;P.add(plantStalk(t,.009,.006,5),[0,0,0],[lean,a,0],0,stem);
+      const tx=Math.sin(a)*Math.sin(lean)*t,ty=Math.cos(lean)*t,tz=Math.cos(a)*Math.sin(lean)*t,r=.028+R()*.01;
+      P.add(SK.ball(r*.8,8,6),[tx,ty,tz],0,0,plantShade(col,.7));
+      for(let k=0;k<26;k++){const u=R()*2-1,ph=R()*6.283;d.set(Math.sqrt(1-u*u)*Math.cos(ph),u,Math.sqrt(1-u*u)*Math.sin(ph));
+        const g=SK.cone(.006,.022,3);g.translate(0,r*.7+.011,0);g.applyQuaternion(q.setFromUnitVectors(up,d));P.add(g,[tx,ty,tz],0,0,plantShade(col,.9+R()*.25));}}},
+  // amber resin bleeding from a cut pine stump: the stump, its rings, roots, and drips that catch the light (picked, the stump is left)
+  resin(P,R,col,stem){P.add(SK.bumpy(SK.cyl(.15,.19,.34,11,3),.015,12,4),[0,.17,0],0,0,0x4a3828);P.add(SK.cyl(.145,.145,.01,11),[0,.345,0],0,0,0xa88a60);
+    for(let i=0;i<4;i++){const a=R()*6.283;P.add(SK.limb(.2,.05,.02),[Math.sin(a)*.15,.04,Math.cos(a)*.15],[1.35,a,0],0,0x3a2c20);}
+    P.take=true;P.glow=true;for(let i=0;i<9;i++){const a=R()*6.283,y=.1+R()*.22,l=.03+R()*.05;P.add(SK.limb(l,.012,.007),[Math.sin(a)*.17,y,Math.cos(a)*.17],0,0,plantShade(col,.85+R()*.3));}
+    P.add(SK.ball(.03,8,5,0,6.283,0,1.6),[.03,.35,-.02],0,[1.3,.5,1],col);P.glow=false;P.take=false;},
+  // a lily: strap leaves, a tall stem, three white trumpets turned out and down
+  lily(P,R,col,stem){for(let i=0;i<7;i++){const a=i/7*6.283+R()*.3;P.add(plantStrap(.28+R()*.08,.04,6,.01,.08),[0,.01,0],[-.9-R()*.3,a,0],0,0x3a5a40);}
+    const t=.5+R()*.1;P.add(plantStalk(t,.008,.006,5),[0,0,0],0,0,stem);
+    for(let k=0;k<3;k++){const a=k*2.1+R()*.4;P.add(SK.lathe([[.004,0],[.01,.03],[.022,.07],[.045,.1],[.05,.102]],10),[Math.sin(a)*.02,t-.02-k*.03,Math.cos(a)*.02],[1.9-k*.1,a,0],0,plantShade(col,.95+R()*.08));}},
+  // a twisted knot of root on a cliff stone: grey bark limbs, and a few leaves where it still lives
+  gnarl(P,R,col,stem){P.add(SK.bumpy(SK.ball(1,9,6),.22,5,3),[0,.08,0],0,[.22,.14,.18],0x7a7468);
+    for(let i=0;i<7;i++){const a=R()*6.283;P.add(SK.limb(.22+R()*.14,.035,.012),[Math.sin(a)*.08,.16,Math.cos(a)*.08],[1.1+R()*.6,a,(R()-.5)*.6],0,plantShade(col,.8+R()*.3));}
+    for(let i=0;i<6;i++){const a=R()*6.283;P.add(plantLeaf(.08,.04,.01,.02),[Math.sin(a)*.12,.2,Math.cos(a)*.12],[-.3,a,0],0,0x4a6a30);}},
+  // a lotus of the sand: grey-green leaf pads on the ground and a flat many-pointed flower, pale rose
+  lotus(P,R,col,stem){for(let i=0;i<5;i++){const a=i/5*6.283+R()*.4,r=.1+R()*.05;P.add(SK.cyl(.08,.08,.006,12,1,false),[Math.sin(a)*r,.01,Math.cos(a)*r],[0,a,0],[1,1,.85],plantShade(0x7a8a6a,.9+R()*.2));}
+    P.add(plantStalk(.08,.008,.007,4),[0,0,0],0,0,stem);
+    for(let ring=0;ring<3;ring++){const n=8-ring,el=-.25-ring*.45,L=.09-ring*.015;for(let k=0;k<n;k++){const a=k/n*6.283+ring*.4;P.add(plantLeaf(L,.045,.008,-.01),[0,.08+ring*.006,0],[el,a,0],0,plantShade(col,.9+ring*.07));}}
+    P.add(SK.cyl(.018,.014,.02,8),[0,.1,0],0,0,0xd8b040);},
+  // a dwarf fan palm: a short hairy trunk, stiff stalks, each a fan of narrow blades
+  fanpalm(P,R,col,stem){P.add(SK.bumpy(SK.cyl(.05,.07,.16,8,2),.01,10,1),[0,.08,0],0,0,0x6a5038);
+    for(let f=0;f<9;f++){const a=f/9*6.283+R()*.3,el=.5+R()*.5,L=.32+R()*.12;P.add(plantStalk(L,.007,.005,4),[0,.15,0],[el,a,0],0,stem);
+      const tx=Math.sin(a)*Math.sin(el)*L,ty=.15+Math.cos(el)*L,tz=Math.cos(a)*Math.sin(el)*L;
+      for(let b=0;b<11;b++){const fa=a+(b-5)*.14;P.add(plantLeaf(.2,.025,.006,.03),[tx,ty,tz],[-(.6-el*.5)+Math.abs(b-5)*.05,fa,0],0,plantShade(col,.85+R()*.25));}}},
+  // a sunflower of the terraces: rough leaves up a stalk and two heads of gold rays round a dark disc, turned to the sun
+  sunpetal(P,R,col,stem){for(let s=0;s<2;s++){const a=s*3+R(),t=.5+R()*.2-s*.12,bx=Math.sin(a)*.05,bz=Math.cos(a)*.05;P.add(plantStalk(t,.012,.008,5),[bx,0,bz],0,0,stem);
+      for(let k=0;k<4;k++){const la=k*2.4+s;P.add(plantLeaf(.12,.08,.01,.04),[bx,.08+k*t*.2,bz],[-.3,la,0],0,0x4a6a28);}
+      const hz=bz+.02,fr=[-.5+Math.PI/2,.35*(s?-1:1),0];
+      P.add(SK.cyl(.045,.045,.02,14),[bx,t,hz],fr,0,0x3a2410);
+      for(let k=0;k<18;k++){const g=plantLeaf(.085,.032,.006,0);g.translate(0,0,.035);g.rotateY(k/18*6.283);g.rotateX(-Math.PI/2+.2);P.add(g,[bx,t,hz],fr,0,plantShade(col,.9+R()*.15));}}},
+  // sage: grey felted leaves in pairs up square stems, and whorls of violet flowers at the tops
+  sage(P,R,col,stem){for(let s=0;s<6;s++){const a=s*1.05+R()*.3,t=.25+R()*.12,lean=.25+R()*.15;P.add(plantStalk(t,.007,.005,4),[0,0,0],[lean,a,0],0,stem);
+      for(let k=0;k<4;k++){const y=.05+k*t*.2,ox=Math.sin(a)*Math.sin(lean)*y,oz=Math.cos(a)*Math.sin(lean)*y;for(const sd of[-1,1])P.add(plantLeaf(.07,.035,.01,.02),[ox,y,oz],[-.35,a+sd*1.3+k*.4,0],0,plantShade(0x8a9a80,.9+R()*.15));}
+      const tx=Math.sin(a)*Math.sin(lean)*t,tz=Math.cos(a)*Math.sin(lean)*t;for(let k=0;k<4;k++)for(let q=0;q<4;q++){const qa=q/4*6.283;P.add(SK.ball(.011,4,3),[tx+Math.sin(qa)*.013,t+k*.022,tz+Math.cos(qa)*.013],0,[1,1.3,1],plantShade(col,.9+R()*.2));}}},
+  // a chilli: a small dark-leaved bush hung with long red pods (picked, the pods go)
+  chilli(P,R,col,stem){for(let i=0;i<4;i++){const a=R()*6.283;P.add(plantStalk(.22,.01,.007,4),[0,0,0],[.4,a,0],0,stem);}
+    for(let i=0;i<16;i++){const a=R()*6.283,r=.05+R()*.12,y=.14+R()*.14;P.add(plantLeaf(.07,.035,.008,.02),[Math.sin(a)*r,y,Math.cos(a)*r],[-.1,a+R(),0],0,plantShade(0x2a4a20,.9+R()*.2));}
+    P.take=true;for(let i=0;i<12;i++){const a=R()*6.283,r=.08+R()*.1,y=.1+R()*.14;P.add(SK.limb(.055,.009,.003),[Math.sin(a)*r,y+.06,Math.cos(a)*r],[.2*(R()-.5),a,.2*(R()-.5)],0,plantShade(col,.85+R()*.25));}P.take=false;},
+  // an aloe: a rosette of thick, pointed, upturned leaves, and one red flower spike
+  aloe(P,R,col,stem){for(let ring=0;ring<3;ring++){const n=7-ring;for(let k=0;k<n;k++){const a=k/n*6.283+ring*.45,el=.5+ring*.3,L=.22-ring*.04;
+      const g=SK.cone(.028,L,4);g.scale(1,1,.4);g.translate(0,L/2,0);P.add(g,[0,.01,0],[el,a,0],0,plantShade(col,.85+ring*.08+R()*.1));}}
+    const t=.45;P.add(plantStalk(t,.008,.005,4),[0,0,0],0,0,0x6a7040);for(let k=0;k<12;k++)P.add(SK.limb(.025,.006,.004),[0,t-.12+k*.011,0],[2.6,k*2.3,0],0,0xd85030);},
+  // a truffle in cracked desert ground: a low mound, broken plates of crust, and the warty dark tuber showing
+  truffle(P,R,col,stem){P.add(SK.bumpy(SK.ball(1,12,6,0,6.283,0,1.6),.2,7,2),[0,-.02,0],0,[.24,.06,.24],0xa88a62);
+    for(let i=0;i<7;i++){const a=i/7*6.283+R()*.3,r=.13+R()*.05;P.add(new THREE.BoxGeometry(.08+R()*.04,.015,.06),[Math.sin(a)*r,.035,Math.cos(a)*r],[-.25,a,(R()-.5)*.3],0,0xc0a478);}
+    P.add(SK.bumpy(SK.ball(1,10,7),.25,13,5),[.01,.04,0],0,[.05,.04,.045],col);}
 };
+// S1942 — which island herb wears which of its own kinds (herbs.js's HERBS). PLANT_KIND keeps the kin kind that 50-travel.js gives it
+// (HERB_DEF's base row is read from that), so the mesh is chosen here: plantKindOf, never PLANT_KIND, picks the builder.
+const PLANT_ISLE={icebloom:'icebloom',stormthistle:'globe',pineresin:'resin',glacierlily:'lily',gnarlroot:'gnarl',sandlotus:'lotus',sagepalm:'fanpalm',
+  sunpetal:'sunpetal',drakesage:'sage',spicethorn:'chilli',jadealoe:'aloe',deserttruffle:'truffle'};
+for(const k of ['resin','chilli'])PLANT_STAYS.add(k);for(const k of ['globe','lily','sunpetal','fanpalm'])PLANT_SHADOW.add(k);
+function plantKindOf(key){return PLANT_ISLE[key]||PLANT_KIND[key];}
 // the baked geometry of a herb (by its HERB_DEF key), whole or picked; null for anything without a kind
-function plantGeo(key,picked){const kind=PLANT_KIND[key],def=typeof HERB_DEF!=='undefined'&&HERB_DEF[key];if(!kind||!def)return null;
+function plantGeo(key,picked){const kind=plantKindOf(key),def=typeof HERB_DEF!=='undefined'&&HERB_DEF[key];if(!kind||!def)return null;
   if(picked&&!PLANT_STAYS.has(kind)){const k2=key+'|stub';let g2=PLANT_GEO.get(k2);if(!g2){g2=plantStubGeo(key,plantGeo(key,false));PLANT_GEO.set(k2,g2);}return g2;}
   const k=key+(picked?'|picked':'');let g=PLANT_GEO.get(k);if(g)return g;
   const P=new Plant(picked);if(picked){const whole=plantGeo(key,false);P.top=whole.userData.top;}
@@ -422,7 +494,7 @@ const PLANT_MAT=new THREE.MeshLambertMaterial({vertexColors:true,side:THREE.Doub
 function mkHerbMesh(hx,hz,def,sc){
   const g=new THREE.Group();
   {const key=plantKeyOf(def),geo=key&&plantGeo(key,false);if(geo){ // v80 S167 — the herb as the plant it is
-    const m=new THREE.Mesh(geo,PLANT_MAT);m.castShadow=PLANT_SHADOW.has(PLANT_KIND[key]);m.receiveShadow=true;g.add(m);
+    const m=new THREE.Mesh(geo,PLANT_MAT);m.castShadow=PLANT_SHADOW.has(plantKindOf(key));m.receiveShadow=true;g.add(m);
     // S217 — a plant that stays when picked (a bush, a sapling, the stump's fungus) carries its picked copy, hidden until then
     const pg=plantGeo(key,true);if(pg){const pm=new THREE.Mesh(pg,PLANT_MAT);pm.castShadow=m.castShadow;pm.receiveShadow=true;pm.visible=false;g.add(pm);g.userData.whole=m;g.userData.picked=pm;}
     const gl=new THREE.PointLight(def.glowCol,def.glowInt||.5,def.glowRad||1.6);gl.position.set(0,.28,0);g.add(gl);
