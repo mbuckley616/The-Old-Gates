@@ -997,6 +997,7 @@ const giver=`${lord.title} ${lord.name}`;
     {const W=erWatchRoll(def,site,wk,R.length);if(W)return W;} /* S1776 — the watch, on its own stream */
     {const P=erPrayerRoll(def,site,wk,R.length);if(P)return P;} /* S1817 — the prayer, on its own stream */
     {const F=erFishRoll(def,site,wk,R.length);if(F)return F;} /* S1857 — the wedding's fish, on its own stream */
+    {const U=erRubRoll(def,site,wk,R.length);if(U)return U;} /* S1908 — the rubbing, on its own stream */
     {const s=seededRng('errand-sub',site.id+':'+erTag(def)+':'+wk),kids=def.bio.kids>0,pref=def.bio.wish==='to hear from my daughter'||def.bio.worry==='my brother went for a soldier and never wrote'; /* S1554 — the sub on its own stream, so a fever's herb, count and date roll as before */
       if(pref||!kids||s()<.5){const L=erLetter(def,site,s,wk,R.length);if(L||!kids)return L;}}
     const n=2+Math.floor(r()*3),days=3+Math.floor(r()*3),H=erHerb(site,r),day=Math.floor((worldState.gameTimeAbsMinutes||0)/1440);
@@ -1283,6 +1284,82 @@ const giver=`${lord.title} ${lord.name}`;
   function erWeddingQ(siteId,R){const day=Math.floor((worldState.gameTimeAbsMinutes||0)/1440);
     return (R||QJ()).find(q=>q.kind==='errand'&&q.sub==='fish'&&q.erSite===siteId&&q.turnedIn&&!q.lapsed&&q.data.fine&&q.data.wday===day)||null;}
   function erWeddingAt(siteId){return !!erWeddingQ(siteId);}
+  // S1908 — errand 10, *A Rubbing to Be Read* (Asked in Passing, the second run; approved 14 Oct 2026): a grandparent's rubbing of
+  // the nearest carved gate within 900 (carvingsNear, by place), read by the Mages' Guild head (the English), an Old Blood townsperson
+  // within 900 of the giver's town (the word and its plain sense, and *burn it*), or by you at Mastery (the true name); then told to the
+  // giver. Never asked by an Old Blood giver. Pay in full for a reading or for *burn it*, half for *Nobody could read it*; the giver's
+  // town a point; the Guild's town a point for its reading told, the Old Blood reader's for *burn it*. Plain fixes: a reading that opens
+  // a giver's line is capitalised there (*'A spark'.*), a gate called *The …* is *the …* inside a sentence, and a word with no Mastery name
+  // (nameMa null) has no Mastery reading. Looking at the rubbing yourself (erRubLook) waits on a one-line hook in useItem (backlog A).
+  const ER_RUB_SENSE={caor:'a spark',sioc:'frost',leigheas:'a cure',sideen:'a gust of breath',smol:'the last of an ember',cloch_ghear:'a sharp stone',
+    solas_gheal:'a bright light',tintreach:'lightning',reo:'held fast in ice',ean:'a bird',freamh:'a root',loscadh:'a burning of the land',
+    dorcha:'the dark before morning',tonn:'a wave',dul_thart:'going past'};
+  const ER_RUB={
+    hint:{gatelander:"My grandfather left me a drawing off a gate wall, and no word of what's on it.",markman:"Got a rubbing off a gate. Can't read it. Nobody can.",
+      aurennais:"I have a rubbing, Master, from my grandmother's time, which no one in this town has been able to read."},
+    offer:{gatelander:o=>`That's the question, isn't it. My grandfather went down ${o.gate} three times and came up with this and a limp. He'd say 'it's a word' and no more. A word's no use folded in a drawer. Find someone who can read it, and tell me what he kept. ${o.n} gold.`,
+      markman:o=>`Grandad went down ${o.gate}. Came back with this. Said it was a word. Never said which. Find out. ${o.n}.`,
+      aurennais:o=>`It was made in ${o.gate}, Master, by my grandmother, who was in the trade before the trade was licensed. The family has always assumed it is a blessing. I should like to know, and to know it from someone qualified. ${o.n} gold for a reading.`},
+    guild:{gatelander:o=>`I can, after a fashion. That stroke's the root and that's the turn. In the Guild's tongue it's '${o.en}'. That's what it does; what it means is another matter, and not one we teach.`,
+      markman:o=>`Aye. '${o.en}'. That's what it does. That's all the Guild reads in it.`,
+      aurennais:o=>`Certainly, Master. The Guild's reading is '${o.en}'. It is a common enough form; we have it catalogued. Anything beyond the gloss is not the Guild's to give.`,
+      oldblood:o=>`The Guild reads it '${o.en}'. I am the Guild here. I read it no further.`},
+    old:o=>`${o.ir}. It means ${o.sense}. That is all it says to me. That should be all it says to you. Tell them to put it in the fire.`,
+    oldNone:"It is an old word. I know it. I will not say it.",
+    fold:'They fold the paper and hand it back.',
+    look:{1:o=>`You know the shape. ${o.ir}. No more than that.`,2:o=>`${o.ir}: ${o.en}.`,3:o=>`${o.ir}. ${o.en}. And under that, ${o.ma}.`},
+    told:{guild:o=>`The Guild reads it “${o.en}”.`,old:o=>`It’s an old word. It means “${o.sense}”.`,mine:o=>`It says “${o.ma}”.`,none:()=>'Nobody could read it.',burn:()=>'I was told to tell you to burn it.'},
+    guildSaid:{gatelander:o=>`'${o.en}'. Is that all. Three trips down a gate for a word you'd find in a book. Well, it's his word, and now it's mine. Here.`,
+      markman:o=>`'${o.en}'. Huh. Thought it'd be more. Here.`,
+      aurennais:o=>`'${o.en}'. Then it is catalogued, Master, and the family's question is answered as far as a qualified reader can answer it. Your fee.`},
+    oldSaid:{gatelander:o=>`'${o.Sense}'. Say it again. …He used to say that, at the door going out. I never knew it was off a wall. Here, and thank you.`,
+      markman:o=>`'${o.Sense}'. That's it? …He'd say something like that. Here.`,
+      aurennais:o=>`'${o.Sense}'. That is not what the Guild's catalogue would say, I think. But I believe it, Master, and I could not tell you why. Your fee.`},
+    mineSaid:{gatelander:o=>`'${o.ma}'. That's a name and not a word. You said it like you'd been told it. I'll not ask who told you. Here.`,
+      markman:o=>`'${o.ma}'. Never heard it. You say it like you know. Here.`,
+      aurennais:o=>`'${o.ma}'. No catalogue I know of has that, Master. I am not sure whether I have bought a reading or been given one. Your fee, in any case.`},
+    noneSaid:{gatelander:"Ah, well. Some things are kept by being lost. Thank you for trying. Here's half.",markman:"Thought so. Half for the walk.",
+      aurennais:"Then it remains a family question, Master. Half the fee, for the effort."},
+    burnSaid:{gatelander:"Burn it. …Who'd say that? One of the cold-eyed, was it. My grandfather sat with one of them, the night before he went down the last time. You burn it, then. I haven't the hands for it.",
+      markman:"Burn it? It's paper. Fine. You do it. I'll not.",
+      aurennais:"I cannot be party to destroying a family document, Master. But I find I do not want it in the house. Take it. Do as you think right."}};
+  function erGateIn(n){return String(n||'the old gate').replace(/^The /,'the ');}
+  function erRubRoll(def,site,wk,idx){const p=erPeople(def);if(p==='oldblood')return null;const s=seededRng('errand-rub',site.id+':'+erTag(def)+':'+wk);if(s()>=.2)return null;
+    let c=null;try{c=carvingsNear(site.x,site.z,900)[0]||null;}catch(e){c=null;}if(!c||!WORD_BY[c.word])return null;
+    return {sub:'rub',seed:c.seed,word:c.word,gate:c.name,gx:c.x,gz:c.z,dir:compassWord(c.x-site.x,c.z-site.z),week:wk,idx};}
+  function erRubWords(d){const w=WORD_BY[d.word]||{};const sense=ER_RUB_SENSE[d.word]||null;
+    return {ir:w.nameIr||d.word,en:w.nameEn||d.word,ma:w.nameMa||null,sense,Sense:sense?sense[0].toUpperCase()+sense.slice(1):null};}
+  function erIsRub(q){return b=>b&&b.type==='misc'&&b.erRub===q.id;}
+  function erRubOpen(){return qActive().filter(q=>q.kind==='errand'&&q.sub==='rub'&&!q.turnedIn&&bagCount(erIsRub(q))>0);}
+  // your own reading: the gate's carving touched (sigilsRead), at your tier for its word
+  function erRubMine(d){const read=worldState.sigilsRead||{};if(!read[d.seed])return 0;return Math.min(3,(typeof knownWords!=='undefined'&&knownWords[d.word])||0);}
+  function erRubLook(it){const q=it&&it.erRub&&qActive().find(q=>q.id===it.erRub&&!q.turnedIn);if(!q)return null;const t=erRubMine(q.data);if(!t)return null;
+    const o=erRubWords(q.data),line=ER_RUB.look[t===3&&!o.ma?2:t](o);showMsg(line,'#c8d8f0');return line;}
+  // the readers' named actions: the Guild's reading and the Old Blood's, each kept on the record with the reader's town
+  function erRubReadGuild(q,site,gp){const o=erRubWords(q.data),d=q.data;if(!d.guild){d.guild=site.id;qJournal(q,'ready',`The Mages' Guild at ${site.name} reads ${q.giver}'s rubbing as '${o.en}'.`);}
+    return ER_RUB.guild[ER_RUB.guild[gp]?gp:'markman'](o);}
+  function erRubReadOld(q,site){const o=erRubWords(q.data),d=q.data;if(!o.sense)return ER_RUB.oldNone;
+    if(!d.old){d.old=site.id;qJournal(q,'ready',`An Old Blood reader at ${site.name} says ${q.giver}'s rubbing means '${o.sense}', and that it should be burned.`);}
+    showMsg(ER_RUB.fold,'#c8b878');return ER_RUB.old(o);}
+  // two rubbings open at once: each asked by its giver's name, so neither label hides the other
+  function erRubAskLabel(q,many){return many?`Can you read ${q.giver}'s rubbing?`:'Can you read this?';}
+  function erRubGuildTopics(site,gp){const Q=erRubOpen();return Q.map(q=>({label:erRubAskLabel(q,Q.length>1),quest:true,fn:()=>erRubReadGuild(q,site,gp)}));}
+  function erRubReaderTopics(def,site){if(!def||def.people!=='oldblood'||!def.bio||def.authored||def._lost)return [];const pre=erPre(def,site);
+    const Q=erRubOpen().filter(q=>{const g=siteAnywhere(q.erSite);return !String(q.id).startsWith(pre)&&g&&Math.hypot(g.x-site.x,g.z-site.z)<=900;});
+    return Q.map(q=>({label:erRubAskLabel(q,Q.length>1),quest:true,fn:()=>erRubReadOld(q,site)}));}
+  // the turn-in: what you tell the giver, each label only if you have it
+  function erRubTell(q,site,p,how){const o=erRubWords(q.data),d=q.data;bagTake(erIsRub(q),1);d.told=how;if(how==='none')q.reward=Math.round(q.reward/2);
+    qTurnIn(q);addFavor(site,1);if(how==='guild'&&d.guild)addFavor(d.guild,1);
+    if(how==='burn'){if(d.old)addFavor(d.old,1);bagAdd({name:`Rubbing: ${d.gate}`,ico:'📜',type:'rubbing',seed:d.seed,gate:d.gate,weight:.2,sellMult:.3,buyPrice:60,qty:1});}
+    return how==='guild'?ER_RUB.guildSaid[p](o):how==='old'?ER_RUB.oldSaid[p](o):how==='mine'?ER_RUB.mineSaid[p](o):how==='burn'?ER_RUB.burnSaid[p]:ER_RUB.noneSaid[p];}
+  function erRubTopics(q,site){const p=ER_RUB.offer[q.erPeople]?q.erPeople:'gatelander',d=q.data,o=erRubWords(d),out=[];
+    if(!bagCount(erIsRub(q)))return [{label:'About that errand.',quest:true,fn:()=>ER_SHARED[p].notYet}];
+    if(d.guild)out.push({label:ER_RUB.told.guild(o),quest:true,fn:()=>erRubTell(q,site,p,'guild')});
+    if(d.old&&o.sense)out.push({label:ER_RUB.told.old(o),quest:true,fn:()=>erRubTell(q,site,p,'old')});
+    if(erRubMine(d)>=3&&o.ma)out.push({label:ER_RUB.told.mine(o),quest:true,fn:()=>erRubTell(q,site,p,'mine')});
+    out.push({label:ER_RUB.told.none(o),quest:true,fn:()=>erRubTell(q,site,p,'none')});
+    if(d.old&&o.sense)out.push({label:ER_RUB.told.burn(o),quest:true,fn:()=>erRubTell(q,site,p,'burn')});
+    return out;}
   function errandAccept(def,site,E){const p=erPeople(def),tier=Math.max(1,worldTierAt(site.x,site.z)||1),base=Math.min(40,15+5*(tier-1));
     if(E.sub==='letter'){const q={id:erPre(def,site)+E.idx,kind:'errand',sub:'letter',giver:def.name,erSite:site.id,week:E.week,erPeople:p,
         title:`A letter for ${E.who}`,desc:`${def.name} of ${site.name} has written to ${E.who} at ${E.town} and had no answer. Carry the letter there and ask after ${erPro(E).her}.`,
@@ -1310,6 +1387,11 @@ const giver=`${lord.title} ${lord.name}`;
         title:'A fish for the wedding',desc:`${def.name} of ${site.name} wants a fine fish for the wedding table on ${E.date}. A plain one will be taken, for half.`,
         objective:`Bring ${def.name} at ${site.name} a fine fish before ${E.date}`,reward:base,
         data:{x:site.x,z:site.z,who:E.who,wday:E.wday,weekday:E.weekday,date:E.date,fine:null,fish:null}});return ER_SHARED[p].yes;} /* S1857 */
+    if(E.sub==='rub'){const id=erPre(def,site)+E.idx;qAdd({id,kind:'errand',sub:'rub',giver:def.name,erSite:site.id,week:E.week,erPeople:p,
+        title:'What the rubbing says',desc:`${def.name} of ${site.name} has a rubbing of a carving in ${erGateIn(E.gate)}, made by a grandparent who went in, and wants to know what it says. Find someone who can read it.`,
+        objective:`Have ${def.name}'s rubbing read, and tell ${def.name} at ${site.name} what it says`,reward:base,
+        data:{seed:E.seed,word:E.word,gate:E.gate,x:E.gx,z:E.gz,dir:E.dir,guild:null,old:null,told:null}});
+      bagAdd({name:`${def.name}'s rubbing`,ico:'📜',type:'misc',weight:.1,qty:1,unique:true,erRub:id,desc:`Charcoal on old paper, off a wall in ${erGateIn(E.gate)}. ${def.name}'s, lent.`});return ER_SHARED[p].yes;} /* S1908 */
     if(E.sub==='borrowed'){const id=erPre(def,site)+E.idx,br=seededRng('errand-why',id),why=br()<.5?'need':'sold',n=Math.min(30,8+3*(tier-1)+Math.floor(br()*6)); /* S1722 — why, and what it fetched, on the errand's id */
       qAdd({id,kind:'errand',sub:'borrowed',giver:def.name,erSite:site.id,week:E.week,erPeople:p,
         title:`${def.name}’s ${E.thing}`,desc:`${def.name} of ${site.name} lent ${E.who} of ${E.town} the ${E.thing}, and has not had it back. Ask for it.`,
@@ -1328,6 +1410,7 @@ const giver=`${lord.title} ${lord.name}`;
     if(q.sub==='borrowed')return erBorrowTurnIn(q,site,p); /* S1722 */
     if(q.sub==='prayer')return erPrayerTurnIn(q,site,p); /* S1817 */
     if(q.sub==='fish')return erFishTurnIn(q,site,p,true); /* S1857 */
+    if(q.sub==='rub')return ER_SHARED[p].notYet; /* S1908 — told by its own labels */
     if(q.sub==='watch')return erWatchTurnIn(q,site,p); /* S1776 */ /* S1677 — the debt: a fifth, paid as if collected either way */
     if(q.lapsed||erLapse(q)){q.erUnsaid=false;return ER_FEVER.lapse[p];}
     const isH=b=>b.type==='herb'&&b.name===q.data.herb;if(bagCount(isH)<q.data.n)return ER_SHARED[p].notYet;
@@ -1363,14 +1446,16 @@ const giver=`${lord.title} ${lord.name}`;
     if(E.sub==='prayer'){if(E.oldblood)return {cat:'you',label:'Can I do anything for you?',response:ER_PRAYER.oldblood}; /* S1817 */
       return {cat:'you',label:'Who’s the prayer for?',response:ER_PRAYER.offer[p](Object.assign({},E,{n:Math.min(40,15+5*(Math.max(1,worldTierAt(site.x,site.z)||1)-1))})),follow:[{label:'I’ll do it.',fn:()=>errandFor(def,site)?errandAccept(def,site,E):ER_SHARED[p].no},{label:'Not now.',response:ER_SHARED[p].no}]};}
     if(E.sub==='fish')return {cat:'you',label:'What’s the wedding missing?',response:ER_FISH.offer[p](Object.assign({},E,{n:Math.min(40,15+5*(Math.max(1,worldTierAt(site.x,site.z)||1)-1))})),follow:[{label:'I’ll do it.',fn:()=>errandFor(def,site)?errandAccept(def,site,E):ER_SHARED[p].no},{label:'Not now.',response:ER_SHARED[p].no}]}; /* S1857 */
+    if(E.sub==='rub')return {cat:'you',label:'What does the rubbing say?',response:ER_RUB.offer[p](Object.assign({},E,{gate:erGateIn(E.gate),n:Math.min(40,15+5*(Math.max(1,worldTierAt(site.x,site.z)||1)-1))})),follow:[{label:'I’ll do it.',fn:()=>errandFor(def,site)?errandAccept(def,site,E):ER_SHARED[p].no},{label:'Not now.',response:ER_SHARED[p].no}]}; /* S1908 */
     if(E.sub==='watch')return {cat:'you',label:'What’s coming at night?',response:ER_WATCH.offer[p](E),follow:[{label:'I’ll do it.',fn:()=>errandFor(def,site)?errandAccept(def,site,E):ER_SHARED[p].no},{label:'Not now.',response:ER_SHARED[p].no}]}; /* S1776 */
     const L=E.sub==='letter',D=E.sub==='debt',B=E.sub==='borrowed',label=B?'Something of yours gone missing?':D?'Who owes you?':L?'You’re waiting on word from someone?':'Who’s sick?',said=B?ER_BORROW.offer[p](E):D?ER_DEBT.offer[p](E):L?ER_LETTER.offer[p](erPro(E)):ER_FEVER.offer[p](E);
     return {cat:'you',label,response:said,follow:[{label:'I’ll do it.',fn:()=>errandFor(def,site)?errandAccept(def,site,E):ER_SHARED[p].no},{label:'Not now.',response:ER_SHARED[p].no}]};}
   function erBorrowLabel(q){const c=q.data.choice;return c==='coin'?'Here’s what it sold for.':c==='month'?'They’ll bring it back in a month.':c==='spare'?'They sold it. I left them the coin.':'About that errand.';} /* S1722 */
   // the top level: *About that errand.* while one is open, or once more to hear how a lapsed one ended; the letter's own lines
-  function errandTopics(def,site){const L=erLetterTopics(def,site);if(!erGiver(def,site))return L;const q=erRecs(def,site).find(q=>!q.turnedIn||(q.lapsed&&q.erUnsaid));
+  function errandTopics(def,site){const L=[...erLetterTopics(def,site),...erRubReaderTopics(def,site)]; /* S1908 — an Old Blood reader's *Can you read this?* */if(!erGiver(def,site))return L;const q=erRecs(def,site).find(q=>!q.turnedIn||(q.lapsed&&q.erUnsaid));
     if(!q||(q.sub==='letter'&&q.data.learned))return L;
     if(q.sub==='fish')return [...erFishTopics(q,site),...L]; /* S1857 */
+    if(q.sub==='rub')return [...erRubTopics(q,site),...L]; /* S1908 */
     return [{label:q.sub==='name'&&q.data.said?'I said the name.':q.sub==='debt'&&q.data.choice==='keep'?'They haven’t got it.':q.sub==='borrowed'&&!q.lapsed?erBorrowLabel(q):q.sub==='prayer'&&!q.lapsed&&q.data.prayed?`I prayed at ${erThe(q.data.at)}.`:q.sub==='watch'&&!q.lapsed&&q.data.done?(q.data.came?`I sat the night. ${q.data.beasts}.`:'I sat the night. Nothing came.'):'About that errand.',quest:true,fn:()=>errandTurnIn(q,site)},...L];}
   // the greeting: the hint after First Words while an errand is on offer (from the second meeting), or for a week after a lapse the colder line;
   // after a letter lied about, from the next game-week, one week in two the waiting line, until the giver writes again
@@ -1378,7 +1463,7 @@ const giver=`${lord.title} ${lord.name}`;
     const now=worldState.gameTimeAbsMinutes||0,R=erRecs(def,site);if(met>0&&erWeddingQ(site.id,R))return ER_FISH.wed[erPeople(def)]; /* S1857 — the wedding day */
     const cold=met>0&&R.find(q=>q.lapsed&&now<q.erDue+1440*7);if(cold)return cold.sub==='borrowed'?ER_BORROW.kept[erPeople(def)](erPro(cold.data)):ER_FEVER.cold[erPeople(def)];
     {const bq=met>0&&R.find(q=>q.sub==='borrowed'&&q.turnedIn&&q.data.choice==='month'&&now>=q.data.at+30*1440&&now<q.data.at+37*1440);if(bq)return line+' '+ER_BORROW.back[erPeople(def)](erPro(bq.data));} /* S1722 — the month out, the thing walked home: a week of the line */
-    const E=met>0&&errandFor(def,site);if(E){if(E.sub==='name')return E.oldblood?line:line+' '+ER_NAME.hint[erPeople(def)](erPro(E));if(E.sub==='borrowed')return line+' '+ER_BORROW.hint[erPeople(def)](E);if(E.sub==='watch')return line+' '+ER_WATCH.hint[erPeople(def)](E);if(E.sub==='prayer')return E.oldblood?line:line+' '+ER_PRAYER.hint[erPeople(def)](E); /* S1817 */if(E.sub==='fish')return line+' '+ER_FISH.hint[erPeople(def)](E); /* S1857 */return line+' '+(E.sub==='debt'?ER_DEBT.hint:E.sub==='letter'?ER_LETTER.hint:ER_FEVER.hint)[erPeople(def)];} /* S1600 — the name's hint; none for the Old Blood */
+    const E=met>0&&errandFor(def,site);if(E){if(E.sub==='name')return E.oldblood?line:line+' '+ER_NAME.hint[erPeople(def)](erPro(E));if(E.sub==='borrowed')return line+' '+ER_BORROW.hint[erPeople(def)](E);if(E.sub==='watch')return line+' '+ER_WATCH.hint[erPeople(def)](E);if(E.sub==='prayer')return E.oldblood?line:line+' '+ER_PRAYER.hint[erPeople(def)](E); /* S1817 */if(E.sub==='fish')return line+' '+ER_FISH.hint[erPeople(def)](E); /* S1857 */if(E.sub==='rub')return line+' '+ER_RUB.hint[erPeople(def)]; /* S1908 */return line+' '+(E.sub==='debt'?ER_DEBT.hint:E.sub==='letter'?ER_LETTER.hint:ER_FEVER.hint)[erPeople(def)];} /* S1600 — the name's hint; none for the Old Blood */
     const lq=R.filter(q=>q.sub==='letter').pop(),wk=erWeek();
     if(met>0&&lq&&lq.turnedIn&&lq.data.told==='lie'&&wk>lq.data.toldWeek&&seededRng('errand-wait',erPre(def,site)+wk)()<.5)return ER_LETTER.wait[erPeople(def)](erPro(lq.data));
     return line;}
@@ -3662,8 +3747,8 @@ const giver=`${lord.title} ${lord.name}`;
     oldblood:{teach:'Two degrees. The third is the stone’s. Léamh, my mother called it. Reading. She did not do it.',
       buy:'Forty gold. The words are in it. The meaning is not.',short:'Forty gold.',
       sheet:'There is a sheet. Take it. Do what it says about reading.',had:'You have it.'}};
-  function sigilLoreTopic(g,gp){const L=SIGIL_LORE[gp]||SIGIL_LORE.markman;
-    if(g==='guild_m'){const price=40;return [{label:'What does the Guild teach of the sigils?',folder:true,response:L.teach,follow:[{label:`Is it written down? (Buy On the Seals, ${price} gold)`,quest:true,fn:()=>{
+  function sigilLoreTopic(g,gp,site){const L=SIGIL_LORE[gp]||SIGIL_LORE.markman;
+    if(g==='guild_m'){const price=40;return [...(site?erRubGuildTopics(site,gp):[]),{label:'What does the Guild teach of the sigils?',folder:true,response:L.teach,follow:[{label:`Is it written down? (Buy On the Seals, ${price} gold)`,quest:true,fn:()=>{
       if(gold<price)return L.short;const it=loreBookItem('on_the_seals');if(!it)return L.short;gold-=price;updateHUD();if(typeof bagAdd==='function')bagAdd(it);else BAG.push(it);return L.buy;}}]}];}
     if(g==='guild_f')return [{label:'Anything I should know about the warm stones?',quest:true,fn:()=>{
       if(booksRead.has('warm_stones')||BAG.some(b=>b&&b.bookId==='warm_stones'))return L.had;const it=loreBookItem('warm_stones');if(!it)return L.had;it.buyPrice=0;if(typeof bagAdd==='function')bagAdd(it);else BAG.push(it);return L.sheet;}}];

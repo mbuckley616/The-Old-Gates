@@ -351,5 +351,50 @@ for (const x of d9.by) { const nm = `fish (${x.pp}, ${x.how})`; if (x.missing) {
   else check(`${nm}: a plain fish keeps no wedding for you`, x.wed !== x.wwed && !x.mine, { wed: x.wed }); }
 check('fish: the records are saved', d9.saved >= 3, d9.saved);
 
+// S1908 — errand 10, A Rubbing to Be Read: the nearest carved gate within 900; read by the Mages' Guild head (the English), an Old Blood
+// townsperson within 900 (the word's plain sense, and burn it), or by you at Mastery; each label at the giver only once you have it; half for
+// Nobody could read it; burn it gives you the gate's rubbing. Never from an Old Blood giver.
+const d10 = await page.evaluate(() => {
+  worldState.quests = []; worldState.met = {}; const T0 = 220 * 1440 + 600; worldState.gameTimeAbsMinutes = T0;
+  const towns = []; for (let j = 0; j < GRID; j++) for (let i = 0; i < GRID; i++) getCell(i, j).sites.forEach(t => { if (t.pad >= 30 && t.kind !== 'shrine' && t.kind !== 'portal') towns.push(t); });
+  const mk = (site, i, pp) => { const d = makeDef(site, site.reg || 'irish', seededRng('ertest10', i), 'Villager', 'Seán', {}); d._twin = 'R' + i; if (pp) d.people = pp; return d; };
+  const find = (pp, ok) => { for (const site of towns) { if (!erGiver(mk(site, 0, pp), site)) continue; for (let i = 0; i < 400; i++) { const d = mk(site, pp + i, pp); const e = errandFor(d, site);
+      if (e && e.sub === 'rub' && (!ok || ok(e))) return { d, site, e }; } } return null; };
+  let obAsk = 0; for (const site of towns.slice(0, 15)) for (let i = 0; i < 80; i++) { const e = errandFor(mk(site, 'ob' + i, 'oldblood'), site); if (e && e.sub === 'rub') obAsk++; }
+  const by = [];
+  for (const [pp, how] of [['gatelander', 'guild'], ['markman', 'old'], ['aurennais', 'burn'], ['gatelander', 'mine'], ['markman', 'none']]) { worldState.gameTimeAbsMinutes = T0;
+    worldState.sigilsRead = {}; knownWords = {}; for (let i = BAG.length - 1; i >= 0; i--) if (BAG[i] && BAG[i].type === 'rubbing') BAG.splice(i, 1);
+    const F = find(pp, how === 'mine' ? e => !!WORD_BY[e.word].nameMa : how === 'old' || how === 'burn' ? e => !!ER_RUB_SENSE[e.word] : null); if (!F) { by.push({ pp, how, missing: true }); continue; }
+    const { d: A, site, e: E } = F, p = pp, o = erRubWords(E);
+    A.greeting[0]; const greet = A.greeting[0]; const you = A.topics.find(t => /^About you/.test(t.label)); const ask = you && you.follow.find(t => t.label === 'What does the rubbing say?');
+    const n = Math.min(40, 15 + 5 * (Math.max(1, worldTierAt(site.x, site.z) || 1) - 1)); const wantOffer = ER_RUB.offer[p](Object.assign({}, E, { gate: erGateIn(E.gate), n }));
+    const yes = ask && ask.follow[0].fn(); const q = qActive().find(x => x.giver === A.name && x.sub === 'rub');
+    const x = { pp, how, greet, hint: ER_RUB.hint[p], offer: ask && ask.response, wantOffer, yes, ys: ER_SHARED[p].yes, title: q && q.title, item: bagCount(b => b.erRub === (q && q.id)),
+      near: Math.hypot(E.gx - site.x, E.gz - site.z), before: A.topics.filter(t => t.quest).map(t => t.label) };
+    let readSay = null, want = null, readerFav = null;
+    if (how === 'guild') { const head = guildDef('guild_m', site); const t = head.topics.find(t => t.label === 'Can you read this?'); readSay = t && t.fn(); want = ER_RUB.guild[head.people] ? ER_RUB.guild[head.people](o) : ER_RUB.guild.markman(o); readerFav = site.id; }
+    if (how === 'old' || how === 'burn') { const R = mk(site, 'reader' + how, 'oldblood'); const t = R.topics.find(t => t.label === 'Can you read this?'); readSay = t && t.fn(); want = ER_RUB.old(o); readerFav = site.id; x.fold = GAME_LOG.length >= 0; }
+    if (how === 'mine') { worldState.sigilsRead[E.seed] = E.word; knownWords[E.word] = 3; const it = BAG.find(b => b.erRub === q.id); x.look = erRubLook(it); x.wlook = ER_RUB.look[3](o); }
+    if (how === 'none') { const R = mk(site, 'notob', 'gatelander'); x.noReader = !R.topics.find(t => t.label === 'Can you read this?'); }
+    x.readSay = readSay; x.want = want;
+    const label = ER_RUB.told[how](o); x.labels = A.topics.filter(t => t.quest).map(t => t.label);
+    const t = A.topics.find(t => t.label === label); const g1 = gold, f1 = favor(site);
+    x.done = t && t.fn(); x.wdone = how === 'guild' ? ER_RUB.guildSaid[p](o) : how === 'old' ? ER_RUB.oldSaid[p](o) : how === 'mine' ? ER_RUB.mineSaid[p](o) : how === 'burn' ? ER_RUB.burnSaid[p] : ER_RUB.noneSaid[p];
+    x.paid = gold - g1; x.wpaid = questGold(how === 'none' ? Math.round(n / 2) : n); x.fav = favor(site) - f1; x.turned = q.turnedIn; x.left = bagCount(b => b.erRub === q.id);
+    x.rubbing = bagCount(b => b.type === 'rubbing' && b.seed === E.seed && b.name === `Rubbing: ${E.gate}`); by.push(x); }
+  return { obAsk, by, saved: JSON.parse(ssStringify(worldState.quests)).filter(x => x.sub === 'rub').length };
+});
+console.log(JSON.stringify(d10).slice(0, 3500));
+check('rubbing: an Old Blood giver never asks it', d10.obAsk === 0, d10.obAsk);
+for (const x of d10.by) { const nm = `rubbing (${x.pp}, ${x.how})`; if (x.missing) { check(`${nm}: a giver asks`, false); continue; }
+  check(`${nm}: the hint after First Words, the offer word for word, taken and titled, the giver's rubbing in the bag, a gate within 900`, x.greet.endsWith(' ' + x.hint) && x.offer === x.wantOffer && x.yes === x.ys && x.title === 'What the rubbing says' && x.item === 1 && x.near <= 900 && !/\{|undefined|null/.test(x.offer), { greet: x.greet, offer: x.offer, near: x.near });
+  check(`${nm}: before a reading, only Nobody could read it`, x.before.length === 1 && x.before[0] === 'Nobody could read it.', x.before);
+  if (x.how === 'guild' || x.how === 'old' || x.how === 'burn') check(`${nm}: the reader's words`, x.readSay === x.want && !/undefined|null/.test(x.readSay), { said: x.readSay, want: x.want });
+  if (x.how === 'mine') check(`${nm}: looking at it, your Mastery's reading`, x.look === x.wlook && !/null|undefined/.test(x.look), { look: x.look });
+  if (x.how === 'none') check(`${nm}: a townsperson not of the Old Blood cannot read it`, x.noReader);
+  check(`${nm}: told, answered in their words, ${x.how === 'none' ? 'half' : 'in full'}, a point of favour, the lent rubbing gone`, x.turned && x.done === x.wdone && x.paid === x.wpaid && x.paid > 0 && x.fav >= 1 && x.left === 0, { labels: x.labels, done: x.done, paid: x.paid, wpaid: x.wpaid, fav: x.fav });
+  check(`${nm}: ${x.how === 'burn' ? 'burn it gives you the gate’s rubbing' : 'no rubbing of yours'}`, x.how === 'burn' ? x.rubbing === 1 : x.rubbing === 0, x.rubbing); }
+check('rubbing: the records are saved', d10.saved >= 4, d10.saved);
+
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
