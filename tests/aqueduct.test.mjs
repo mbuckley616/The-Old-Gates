@@ -55,5 +55,13 @@ check(`its channel walked from the hill to the breach in ${ch.ticks} ticks, held
   !ch.none && ch.left < .2 && ch.lo > -.05 && ch.hi < .45 && ch.off < .35 && ch.over > 3, ch);
 check('on the bed the walls block and the arcade does not; a foe still meets the arcade; under an arch nothing is lifted onto the channel',
   !ch.none && !ch.bed.mid && ch.bed.wall && ch.bed.outside && ch.bed.foe && !!ch.arch && ch.arch.lifted === 0 && ch.arch.self === 0 && ch.arch.free, ch);
+// S1932 — its far copy: one draw of the tiers' outlines, the channel, the string course and the tile band, shown from 70 m past half its
+// reach (houseLod's rule), the arcade as drawn nearer
+const fc = await page.evaluate(id => { const C = [...CELLS.values()].find(c => c._aq && c._aq.id === id)._aq, L = C.lod; if (!L || !C.far) return { none: true };
+  const co = Math.cos(C.ry), s = Math.sin(C.ry), at = d => { const cam = new THREE.PerspectiveCamera(); cam.position.set(C.x + s * d, C.y, C.z + co * d); cam.updateMatrixWorld(); L.updateMatrixWorld(); L.update(cam); return { near: C.group.visible, far: C.far.visible }; };
+  const r = { farAt: C.farAt, farTris: C.farTris, tris: C.tris, mats: Array.isArray(C.far.material) ? C.far.material.length : 1, inScene: L.parent === sc, close: at(C.farAt - 10), away: at(C.farAt + 10) }; L.update(CAM); return r; }, k.near.id);
+console.log(JSON.stringify(fc));
+check(`its far copy (${fc.farTris} triangles in one draw, against ${fc.tris}) stands in from ${fc.farAt} m, the arcade as drawn nearer`,
+  !fc.none && fc.inScene && fc.mats === 1 && fc.farTris > 0 && fc.farTris < fc.tris / 4 && fc.close.near && !fc.close.far && fc.away.far && !fc.away.near, fc);
 check('no errors on the new look', g.errs.length === 0, g.errs);
 await g.close();

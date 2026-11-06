@@ -784,12 +784,14 @@
   function placeAqueduct(c,k){const C=aqueductAt(c);if(!C)return null;const co=Math.cos(C.ry),s_=Math.sin(C.ry),W=(u,v)=>[C.x+u*co+v*s_,C.z-u*s_+v*co];
     const G=new Map(),ground=u=>{const q=Math.round(u*2)/2;let h=G.get(q);if(h===undefined){h=1e9;for(const v of [-1.5,0,1.5])h=Math.min(h,meshH(...W(q,v)));h-=C.y;G.set(q,h);}return h;},groundAt=(u,v)=>meshH(...W(u,v))-C.y;
     const M=PKIT.places.aqueduct({key:C.id,x0:C.x0,x1:C.x1,deep:C.deep,ground,groundAt});
-    M.group.position.set(C.x,C.y,C.z);M.group.rotation.y=C.ry;M.group.name='aqueduct';sc.add(M.group);
+    /* S1932 — near, the arcade as drawn; from AQ_LOD m past half its reach (houseLod's rule: HOUSE_LOD.near, less half the reach), its far copy in one draw */
+    const F=M.far.map(([fg,col])=>[fg,new THREE.Matrix4(),new THREE.Color(col)]),lo=new THREE.Mesh(mergeGeos(F),VC_MAT);F.forEach(([fg])=>fg.dispose());lo.name='aqueduct far';lo.castShadow=true;lo.receiveShadow=true;
+    const LD=new THREE.LOD(),reach=Math.max(-C.x0,C.x1);LD.name='aqueduct lod';LD.position.set(C.x,C.y,C.z);LD.rotation.y=C.ry;M.group.name='aqueduct';LD.addLevel(M.group,0);LD.addLevel(lo,AQ_LOD+reach/2,.05);sc.add(LD);
     /* S1927 — over a run of the channel a solid's top is the channel's bed (C.y): walked from the bed you pass over the arcade */
     const onRun=x=>M.channel.runs.some(([a,b])=>x>=a-.01&&x<=b+.01);
     for(const b of M.sol){const [cx,cz]=W(b.x,b.z);STATIC_SOL.push({cx,cz,rx:b.w/2,rz:b.d/2,c:Math.cos(C.ry+b.ry),s:Math.sin(C.ry+b.ry),h:b.h,aqueduct:true,...(onRun(b.x)?{top:C.y}:{})});}
     aqWalkDrop(C.id);C.walks=M.channel.runs.map(([a,b],i)=>aqWalk(C,co,s_,a,b,M.channel.w,i));C.walks.forEach(P=>{ZONES.world.platforms.push(P);AQ_WALKS.push(P);});
-    C.tris=M.tris;C.draws=M.draws;C.two=M.two;C.bays=M.bays;C.piers=M.piers;C.gap=M.gap;C.arch=M.arch;C.sol=M.sol.length;C.group=M.group;
+    C.tris=M.tris;C.draws=M.draws;C.two=M.two;C.bays=M.bays;C.piers=M.piers;C.gap=M.gap;C.arch=M.arch;C.sol=M.sol.length;C.group=M.group;C.lod=LD;C.far=lo;C.farTris=M.farTris;C.farAt=+(AQ_LOD+reach/2).toFixed(1);
     return M.group;}
   // S1927 — the channel walked (OG-121, OG-124; places.js's aurenneAqueduct is "the walk from the west terrace", #333 A): each unbroken run of
   // it a world platform at its bed, the channel's inner width plus its walls (the bed's height under a foot that strays into a wall, never
@@ -798,6 +800,7 @@
   // never climbs onto it but from the hill. At the bed's level the walls either side block (aqWalkBlocks, read by solidAt with a height);
   // a run's ragged end over the breach is open, a drop to the ground or the string course. Tagged aqueduct:<id>, dropped with its cell.
   const AQ_WALL=1.05; /* the walls' copings over the bed */
+  const AQ_LOD=70; /* S1932 — HOUSE_LOD.near: the far copy from 70 m past half the arcade's reach */
   function aqWalk(C,co,s,u0,u1,cw,i){const hw=cw/2+.55,xs=[],zs=[];
     for(const u of [u0,u1])for(const v of [-hw,hw]){xs.push(C.x+u*co+v*s);zs.push(C.z-u*s+v*co);}
     return {x0:Math.min(...xs),x1:Math.max(...xs),z0:Math.min(...zs),z1:Math.max(...zs),y:C.y,aqueduct:C.id,run:i,u0,u1,cw,hw,X:C.x,Z:C.z,co,s,
