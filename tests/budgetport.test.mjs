@@ -20,7 +20,10 @@ const inn = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'), h
 for (let k = 0; k < 120 && inn && !(await page.evaluate(() => isInterior())); k++) await page.waitForTimeout(250);
 const inside = !!inn && await page.evaluate(() => isInterior());
 if (inside) { await g.frames(4); rows.push(await measure(`${inn} (Dunmore's inn), the hall from the door, 20h`, 'Middle (indoors)'));
-  await page.evaluate(() => exitInterior()); await page.waitForFunction(() => currentHouse == null, null, { timeout: 60000 }); await g.frames(2); await g.hide(); }
+  // S1916 — polled on a timer, not on the page's frames (waitForFunction's default): the exit clears currentHouse 0.44 s after it is
+  // called, but the first world frames after the inn are long on software GL, so a frame-polled wait timed out at 60 s, twice, at s1287.
+  const tx = Date.now(); await page.evaluate(() => exitInterior()); await page.waitForFunction(() => currentHouse == null, null, { timeout: 60000, polling: 250 });
+  const tOut = Date.now() - tx; await g.frames(2); console.log(`  out of the inn in ${tOut} ms, two frames after in ${Date.now() - tx - tOut} ms`); await g.hide(); }
 // S1684 — the gate's cosmetic rolls (rubble heaps, wall torches and their flames, a floor's odd pieces) are Math.random, as the co-op
 // rules allow, so the same seed drew 222 to 281 top-level pieces in four boots of one build. For the ledger's one fixed spot, its build
 // runs on a seeded stream: buildDungeon is wrapped for this one call, and Math.random is the game's own again as soon as it returns.
