@@ -97,8 +97,9 @@ P.head = (B, o) => {
   if (o.antlers?.mist) B.mist = { ...o.antlers.mist, tips: B.mistTips, color: B.tone(o.antlers.mist.tone || 'mist') };
   if (o.crystals) for (const sd of [1, -1]) B.bit(hn, crystals(o.crystals, S, B.tone('horn'), at(o.crystals.f, o.crystals.up, o.crystals.out * sd), sd, rng(B.g.seed + (sd > 0 ? 3 : 4))));
   if (o.beak) B.bit(hn, beak(o.beak, S, B.tone('horn'), at(1, o.beak.up || 0, 0), dir));
-  // a throat sac (the Bellthroat's): a rigid ball under the jaw that the pose fills and empties
-  if (o.sac) { const m = new THREE.Mesh(new THREE.SphereGeometry(o.sac.r * S, 24, 16), new THREE.MeshPhysicalMaterial({ color: B.tone('sac'), roughness: .25, clearcoat: .6, transmission: 0 })); m.position.copy(at(o.sac.f, -o.sac.drop, 0)); m.scale.set(1.15, .8, 1); B.bit(hn, m); B.sac = m; }
+  // a throat sac (the Bellthroat's): a rigid ball under the jaw that the pose fills and empties. Session 1923: matte, as the skin is
+  // (the critic: a clearcoat's hard highlight made it read as a plastic ball); OG-040's is blue-violet and dull
+  if (o.sac) { const m = new THREE.Mesh(new THREE.SphereGeometry(o.sac.r * S, 24, 16), new THREE.MeshStandardMaterial({ color: B.tone('sac'), roughness: Math.max(.55, B.plan.rough ?? .5) })); m.position.copy(at(o.sac.f, -o.sac.drop, 0)); m.scale.set(1.15, .8, 1); B.bit(hn, m); B.sac = m; }
   if (o.stalks) for (const sd of [1, -1]) { const p = at(o.stalks.f, o.stalks.up, o.stalks.out * sd); B.bit(hn, claw(o.stalks.r * .5, o.stalks.len, B.tone('dark'), p.clone().addScaledVector(up, -o.stalks.len), up.clone()));
     B.bit(hn, eye(o.stalks.r, o.stalks.color, p)); }
   // a brow (Session 927): a ridge of flesh across the skull over the eyes, grown into the head as one surface (the troll's)
@@ -1346,7 +1347,7 @@ export const PLANS = {
     fur: { len: .02, layers: 8, sx: 160 },
     parts: null }, // the Snowleap Hare's parts and a saddle, filled in below: a plan may be another plan at another size
   bellthroat: { name: 'Bellthroat', src: 'OG-040 (a red frog with a violet throat sac)', gaits: ['hop', 'stand'], rough: .4, mottle: 1.4, fold: .3, wag: 0, pant: 0,
-    palette: { coat: [.78, .2, .1], saddle: [.45, .07, .04], belly: [.93, .8, .55], dark: [.06, .04, .03], sac: [.56, .3, .78] },
+    palette: { coat: [.78, .2, .1], saddle: [.45, .07, .04], belly: [.93, .8, .55], dark: [.06, .04, .03], sac: [.42, .3, .66] },
     parts: [
       ['spine', { hip: [.075, -.07], chest: [.085, .07], n: 3, r: [.055, .065, .06], s: [1.3, .72], rump: .035, front: .02 }],
       ['head', { len: .1, r: .055, pitch: -4, s: [1.35, .62, 1], muzzle: { len: 1, r: .042, s: [1.4, .55, 1], taper: .75 }, eyes: [{ f: .3, up: .8, out: 1.05, r: .016, color: [.95, .7, .15] }], sac: { r: .045, f: .55, drop: 1.05 } }],
