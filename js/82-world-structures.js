@@ -913,6 +913,24 @@
     const ya=baseH(A.x,A.z),yb=Math.max(SEA_Y+.6,baseH(B.x,B.z)),n=Math.max(2,Math.round(L/3)),pts=[];
     for(let i=0;i<=n;i++){const u=i/n;pts.push({x:A.x+(B.x-A.x)*u,z:A.z+(B.z-A.z)*u,y:ya+(yb-ya)*u});}
     const road={def:{a:'quay_'+t.id,b:'road',via:'quay'},pts};ROADS.push(road);indexRoad(road);return road;}
+  // S1938 (card F8, #1096 A; owed since S1828) — a lane from each of a trade tunnel's portals to its road. It leaves the portal straight out of
+  // the hill, 4 m before the throat, and bends to the nearest point on the cell's roads (a quadratic curve, its handle up to 14 m out, so it
+  // clears the outcrop's flanks), in points about 3 m apart. Its bed is the ground smoothed over three points each way, held to the pad's
+  // height across the pad and the clearing before it (as a road's bed is held to a town's pad) and eased into the road's own bed at the join.
+  // A spur's def (via 'spur', with tunnel and end), so the coaches, the camps and the night's roads never take it. -> the lanes (C.lanes)
+  function addTunnelLanes(c,k,L){const C=tunnelAt(c);if(!C)return [];const out=[];
+    const roads=L.roads.filter(rd=>rd.def&&rd.def.via!=='spur'&&rd.def.via!=='quay'&&rd.pts&&rd.pts.length>1);if(!roads.length)return out;
+    for(const [x,z,ry,e] of [[C.x,C.z,C.ry,'a'],[C.x1,C.z1,C.ry1,'b']]){const s=Math.sin(ry),co=Math.cos(ry),x0=x+s*4,z0=z+co*4;
+      let q=null,bd=1e9;for(const rd of roads){const P=rd.pts;for(let i=0;i<P.length-1;i++){const a=P[i],b=P[i+1],dx=b.x-a.x,dz=b.z-a.z,t=Math.max(0,Math.min(1,((x0-a.x)*dx+(z0-a.z)*dz)/(dx*dx+dz*dz||1))),qx=a.x+dx*t,qz=a.z+dz*t,d=Math.hypot(qx-x0,qz-z0);
+        if(d<bd){bd=d;q={x:qx,z:qz,y:a.y+(b.y-a.y)*t};}}}
+      if(!q||bd<3)continue;const h=Math.min(14,bd*.45),hx=x0+s*h,hz=z0+co*h,n=Math.max(3,Math.round(bd/3)),pts=[];
+      for(let i=0;i<=n;i++){const u=i/n,w0=(1-u)*(1-u),w1=2*u*(1-u),w2=u*u;pts.push({x:w0*x0+w1*hx+w2*q.x,z:w0*z0+w1*hz+w2*q.z});}
+      const raw=pts.map(p=>baseH(p.x,p.z)),pad=baseH(x+s*1.5,z+co*1.5);let run=0;
+      for(let i=0;i<pts.length;i++){let acc=0,w=0;for(let j=-3;j<=3;j++){const m=i+j;if(m<0||m>=raw.length)continue;const wt=4-Math.abs(j);acc+=raw[m]*wt;w+=wt;}
+        let y=acc/w;const t=1-sstep(7,13,Math.hypot(pts[i].x-x-s*5,pts[i].z-z-co*5));y=y*(1-t)+pad*t;
+        if(i>=pts.length-2)y=i===pts.length-1?q.y:(y+q.y)/2;pts[i].y=Math.max(SEA_Y+.6,y);if(i)run+=Math.hypot(pts[i].x-pts[i-1].x,pts[i].z-pts[i-1].z);}
+      const road={def:{a:`${C.id}_${e}`,b:'road',via:'spur',tunnel:C.id,end:e},pts,cell:k,len:+run.toFixed(1)};ROADS.push(road);indexRoad(road);out.push(road);}
+    C.lanes=out;return out;}
   // S744 — Michael's A on #236: where a port's lane cuts deeper than 1.2 into the ground (the ground 8 out over the lane), a
   // dry-stone retaining wall stands at the foot of each bank: coursed grey stone in courses of about .35, a tone a stone, broken
   // joint course on course, the face battered back 1 in 5, a cap of flat stones, at most 2.6 over the lane. Behind the cap a
