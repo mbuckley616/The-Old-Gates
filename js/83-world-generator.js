@@ -587,16 +587,19 @@ function genSettlement(site){
       if(U.pier)put(U.pier.x0,U.pier.x1,U.pier.z0,U.pier.z1,U.pier.y1);
       for(const [x,z,len,f] of [[-4.2,1.8,2.2,1],[4.2,1.8,2.2,1],[-4.2,-1.8,2.2,-1],[4.6,-1.8,1.8,-1]])put(x-len/2,x+len/2,f>0?z-.4:z-1.05,f>0?z+1.05:z+.4,.9); /* the stalls and their sacks */
       put(-1.1,1.1,-.3,.3,2.3);put(1.2,1.6,.3,.7,.35); /* the beam's pans and the weight-stone */
-      const St=U.stair;if(St)put(St.landing.x0,St.landing.x1+.3,St.landing.z0-.3,St.foot[1],St.landing.y+1);
+      /* S1909 — the stair is climbed from the square: its parapet and the landing's end wall are solids, the flight and the landing one world
+         platform (marketStairPlat), so you walk up from its foot to the room's door on the landing */
+      const St=U.stair;if(St){put(St.landing.x1,St.landing.x1+.3,St.landing.z0,St.foot[1],St.landing.y+1);put(St.landing.x0,St.landing.x1+.3,St.landing.z0-.3,St.landing.z0,St.landing.y+1);}
       const mx=new THREE.Matrix4().makeRotationY(L.ry).setPosition(L.x,y,L.z),lime=new THREE.Color(.86,.84,.79);
       {const b=new THREE.BoxGeometry(w,sz.eave,d).toNonIndexed();b.translate(0,sz.eave/2,0);kitLo.push([b,mx,lime]);}
       {const rr=kitRoof(hw+.32,hd+.32,sz.eave,sz.eave+(hd+.32)*Math.tan(32*Math.PI/180));kitLo.push([rr,mx,new THREE.Color(.24,.26,.30)]);}
       if(St){const b=new THREE.BoxGeometry(St.width+.3,St.landing.y+1,St.foot[1]-St.landing.z0+.3).toNonIndexed();b.translate(St.landing.x0+(St.width+.3)/2,(St.landing.y+1)/2,(St.foot[1]+St.landing.z0-.3)/2);kitLo.push([b,mx,lime]);}
       const ft=St?W_(St.foot[0],St.foot[1]+.5):null,beam=W_(0,0);
       S.market={id:`${site.id}:market`,x:L.x,z:L.z,y,ry:L.ry,w,d,eave:sz.eave,ridge:sz.ridge,stairOut:!!L.stairOut,foot:ft,beam,tris:U.tris,calls:U.calls,sols,r:Math.hypot(hw+1.5,hd)+.5};
-      /* S1905 — the room upstairs is a house of its own (type 'market', g_<site>_6000, nobody keeps it, never locked): its door at the stair's
-         foot, where you come off the square; E there takes you up into the room (PKIT.gl.marketRoom, buildKitMarketRoom) */
-      if(St){const D_=W_(St.foot[0],St.foot[1]+.1),X_=W_(St.foot[0],St.foot[1]+1.2),h={id:`g_${site.id}_6000`,doorX:D_.x,doorZ:D_.z,doorFace:cardinalFace(s_,c),exitX:X_.x,exitZ:X_.z,exitYaw:Math.atan2(-s_,-c),
+      if(St){{const P=ZONES.world.platforms;for(let i=P.length-1;i>=0;i--)if(P[i].market===site.id)P.splice(i,1);}const P_=marketStairPlat(site.id,L.x,L.z,y,c,s_,St);ZONES.world.platforms.push(P_);S.market.plat=P_;S.market.landing=W_((St.landing.x0+St.landing.x1)/2,St.door.z);}
+      /* S1905 — the room upstairs is a house of its own (type 'market', g_<site>_6000, nobody keeps it, never locked); S1909 — its door on the
+         landing, where the stair comes up, and you step out onto the landing facing down the flight (PKIT.gl.marketRoom, buildKitMarketRoom) */
+      if(St){const D_=W_(St.landing.x0+.15,St.door.z),X_=W_((St.landing.x0+St.landing.x1)/2,St.door.z),h={id:`g_${site.id}_6000`,doorX:D_.x,doorZ:D_.z,doorFace:cardinalFace(c,-s_),exitX:X_.x,exitZ:X_.z,exitYaw:Math.atan2(-s_,-c),
           name:'Market House',keeper:'',type:'market',tagline:'',w,d,two:false,reg:site.reg||'irish',style:'stone',dlg:null,siteKind:site.kind,siteId:site.id,kit:{kind:'market',shell:`${site.id}:market`}};
         houses.push(h);S.market.house=h.id;}}
     // S1232 (card F6, Michael's B on #464) — the six gods' row of seven in the church's yard (PKIT.gl.row): its plinths one solid and
@@ -1336,7 +1339,7 @@ function genSettlement(site){
     S.houses.forEach(h=>{const i=ZONES.world.houses.indexOf(h);if(i>=0)ZONES.world.houses.splice(i,1);});
     if(S.towerHouse&&S.towerHouse.cellar){const i=ZONES.world.houses.indexOf(S.towerHouse.cellar);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1765 — the tower house's cellar */
     if(S.loot&&typeof ZONE_CORPSES!=='undefined')S.loot.forEach(c=>{const i=ZONE_CORPSES.indexOf(c);if(i>=0)ZONE_CORPSES.splice(i,1);});
-    for(let i=ZONES.world.platforms.length-1;i>=0;i--)if(ZONES.world.platforms[i].site===id)ZONES.world.platforms.splice(i,1);
+    for(let i=ZONES.world.platforms.length-1;i>=0;i--)if(ZONES.world.platforms[i].site===id||ZONES.world.platforms[i].market===id)ZONES.world.platforms.splice(i,1); /* S1909 — and the market house's stair */
     unregLights(id);S.npcs.forEach(n=>{if(n._torch&&n._torch.userData.light)unregLight(n._torch.userData.light);});
     if(IMPOSTORS[id])IMPOSTORS[id].visible=true;
     SETTLE.delete(id);
@@ -2604,6 +2607,14 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   // the desk, the press of the standard measures, the strongbox and the board of the tolls. The house's stair door is on its east end, so
   // the room is turned a quarter in the room's frame: the east wall is the frame's front (z = D, where every room's door is), the front
   // wall its x = 0, the west end its z = 0. In the house's own metres a point (x, z) is (Z - z, X + x) here. Nobody keeps it.
+  // S1909 — the market house's outside stair as one world platform: its box the flight's and the landing's in the world, and inside() the
+  // point taken into the house's frame (the market's c, s), its height the top of the step under it (18 risers of St.rise up the east
+  // face from the foot, St.tread each) or the landing's. Tagged market:<site>, dropped with the town (disposeSettlement).
+  function marketStairPlat(id,X0,Z0,y0,c,s,St){const La=St.landing,lx0=La.x0,lx1=La.x1,lz0=La.z0,lz1=St.foot[1],xs=[],zs=[];
+    for(const lx of [lx0,lx1])for(const lz of [lz0,lz1]){xs.push(X0+lx*c+lz*s);zs.push(Z0-lx*s+lz*c);}
+    return {x0:Math.min(...xs),x1:Math.max(...xs),z0:Math.min(...zs),z1:Math.max(...zs),y:y0+La.y,market:id,
+      inside(wx,wz){const dx=wx-X0,dz=wz-Z0,lx=dx*c-dz*s,lz=dx*s+dz*c;if(lx<lx0||lx>lx1||lz<lz0||lz>lz1)return false;
+        if(lz<=La.z1){this.y=y0+La.y;return true;}const i=Math.min(St.risers-1,Math.max(1,Math.floor((lz1-lz)/St.tread)+1));this.y=y0+i*St.rise;return true;}};}
   function kitMarketRoom(house){return !!(house&&house.type==='market'&&house.kit&&house.kit.kind==='market'&&window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.gl&&PKIT.gl.marketRoom);}
   function buildKitMarketRoom(house){
     const T=PKIT.gl.marketRoom({shell:house.kit.shell},PKIT.stream(house.id+':room')),I=T.inner,X=I.x1,Z=I.z1,F0=T.floor,W=2*Z,D=2*X;

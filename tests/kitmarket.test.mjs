@@ -12,9 +12,27 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 
 const g = await boot({ look: 'new' }); const { page } = g; await g.intoWorld(); await g.settle('dunmore');
 const info = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'), h = S.houses.find(h => h.type === 'market'), M = S.market;
-  return h ? { id: h.id, name: h.name, keeper: h.keeper, nobody: !npcInsideNow(h), open: !shopClosedNow(h), door: Math.hypot(h.doorX - M.foot.x, h.doorZ - M.foot.z), exitClear: !WORLD.solidAt(h.exitX, h.exitZ) } : null; });
-check(`Dunmore's market house has its room upstairs, a house of its own (${info && info.id}), its door at the stair's foot`, !!info && info.id === 'g_dunmore_6000' && info.door < .5 && info.exitClear, info);
+  return h ? { id: h.id, name: h.name, keeper: h.keeper, nobody: !npcInsideNow(h), open: !shopClosedNow(h), door: +Math.hypot(h.doorX - M.landing.x, h.doorZ - M.landing.z).toFixed(2), exitClear: !WORLD.solidAt(h.exitX, h.exitZ),
+    doorUp: +(activeTerrainH(h.doorX, h.doorZ) - M.y).toFixed(2), exitUp: +(activeTerrainH(h.exitX, h.exitZ) - M.y).toFixed(2) } : null; });
+check(`Dunmore's market house has its room upstairs, a house of its own (${info && info.id}), its door on the stair's landing (${info && info.doorUp} m up)`, !!info && info.id === 'g_dunmore_6000' && info.door < .6 && info.exitClear && Math.abs(info.doorUp - 3.6) < .05 && Math.abs(info.exitUp - 3.6) < .05, info);
 check('nobody keeps it, and it is never locked', !!info && info.nobody && info.open, info);
+// S1909 — the stair is climbed from the square: walked through the game's own loop at fixed 1/60 steps (the draw held off), W held toward
+// the landing from a metre off the stair's foot; up every step and onto the landing with nothing in the way, no rise over a riser's 0.2;
+// E there takes you in. From the ground beside the stair, under the landing, E does not.
+const up = await page.evaluate(() => {
+  const S = WORLD.settle.get('dunmore'), M = S.market, h = S.houses.find(h => h.type === 'market'), c = Math.cos(M.ry), s = Math.sin(M.ry), W = (lx, lz) => ({ x: M.x + lx * c + lz * s, z: M.z - lx * s + lz * c });
+  const U = PKIT.gl.market().userData, St = U.stair, f = W(St.foot[0], St.foot[1] + 1), T = M.landing;
+  const raf = window.requestAnimationFrame, rr = REN.render; window.requestAnimationFrame = () => 0; REN.render = () => {};
+  for (const k in K) K[k] = false; px = f.x; pz = f.z; jumpY = activeTerrainH(px, pz); velY = 0; onGround = true; stamina = maxStamina; ROLL = null; pitch = 0;
+  let t = performance.now(), n = 0, prev = jumpY, maxRise = 0, top = jumpY; prevT = t;
+  try { for (; n < 900; n++) { const d = Math.hypot(T.x - px, T.z - pz); if (d < .15) break; yaw = Math.atan2(-(T.x - px), -(T.z - pz)); K['KeyW'] = true; t += 1000 / 60; loop(t);
+      maxRise = Math.max(maxRise, jumpY - prev); prev = jumpY; top = Math.max(top, jumpY); } }
+  finally { for (const k in K) K[k] = false; window.requestAnimationFrame = raf; REN.render = rr; prevT = 0; }
+  const res = { ticks: n, left: +Math.hypot(T.x - px, T.z - pz).toFixed(2), up: +(jumpY - M.y).toFixed(2), maxRise: +maxRise.toFixed(3), atDoor: doorAtFeet(h) };
+  const b = W(St.landing.x1 + .3 + .35, St.door.z); px = b.x; pz = b.z; jumpY = activeTerrainH(px, pz); res.below = { up: +(jumpY - M.y).toFixed(2), near: +Math.hypot(h.doorX - px, h.doorZ - pz).toFixed(2), door: doorAtFeet(h) };
+  return res; });
+check(`up the stair from the square on foot: onto the landing ${up.up} m up in ${up.ticks} ticks, no rise over ${up.maxRise} m, at the room's door; from the ground under the landing the door is out of reach`,
+  up.left < .2 && Math.abs(up.up - 3.6) < .1 && up.maxRise <= .21 && up.atDoor && !up.below.door && up.below.up < 1, up);
 if (info) {
   await page.evaluate(id => { const h = WORLD.settle.get('dunmore').houses.find(h => h.id === id); window._H = h; forceTime(12); px = h.exitX; pz = h.exitZ; goToInterior(h); }, info.id);
   for (let k = 0; k < 60 && !(await page.evaluate(() => isInterior() && currentHouse === _H)); k++) await page.waitForTimeout(250);
