@@ -388,6 +388,15 @@ function buildBird(name,key){const B=BIRD[name];if(!B)return null;const root=new
   const rig={name,bird:true,fish:true,crawl:true,gait:'stand',k:{bird:true},root,mesh,e:null,hcKey:(B.farm?'farm:':'wild:')+(key!=null?key:name),reach:1,ph:0,t:0,lx:null,lz:null,v:0,tris:mesh.geometry.attributes.position.count/3};
   root.userData.rig=rig;return rig;}
 // the bird's pose, near: the gait by where its group is, the phase by the ground it covers (or by the clock aloft and standing)
+// Session 1915: the birds that fight with their feet (the Stormplume and the Redcrest, which answer back, #1050 A) kick: the kit's kick
+// (HC.KICK, C.kick) chambered by the strike's wind-up (e._wind, 0 to 1, or a dungeon's e.atkAnim) and struck through the lunge (e._lunge,
+// 0.3 s counting down): the foot out and back in a half sine. The side alternates strike by strike. Any other bird is posed as before
+const KICKERS={Stormplume:1,Redcrest:1};
+function hcBirdKick(rig,e){if(!KICKERS[rig.name]||!e)return null;const w=Math.max(0,Math.min(1,e._wind||0));
+  const s=e._lunge!=null&&e._lunge>0?1-e._lunge/.3:e.atkAnim>0?1-Math.min(1,e.atkAnim/.35):-1;
+  if(s>=0&&!rig.kickOn){rig.kickOn=true;rig.kickSide=-(rig.kickSide||-1);}if(s<0)rig.kickOn=false;
+  const b=s>=0?Math.sin(Math.PI*s):0,a=s>=0?(s<.5?1:Math.max(0,1-(s-.5)*2)):w;
+  return a>0||b>0?{a,b,side:rig.kickSide||1}:null;}
 function hcBirdPose(rig){const H=rig.hc,e=rig.e,g=e&&e.mesh;if(!H||!g||e.dead)return;const now=performance.now()/1000,dt=rig.t?Math.min(.1,now-rig.t):0;rig.t=now;
   if(H.spineY0==null){H.C.root.updateMatrixWorld(true);const s0=H.C.byName.spine0;H.spineY0=s0?H.C.root.worldToLocal(s0.getWorldPosition(new THREE.Vector3())).y:0;} /* at the stand it was attached in */
   const x=g.position.x,z=g.position.z;let d=rig.lx==null?0:Math.hypot(x-rig.lx,z-rig.lz);rig.lx=x;rig.lz=z;if(d>2)d=0;
@@ -396,7 +405,7 @@ function hcBirdPose(rig){const H=rig.hc,e=rig.e,g=e&&e.mesh;if(!H||!g||e.dead)re
   const C=H.C,PG=C.plan.gaits||['hop','soar'],fast=B.run||(PG.includes('hop')?'hop':PG.includes('trot')?'trot':'walk');
   let gait=up&&PG.includes('soar')?'soar':rig.v>B.hop?fast:rig.v>BIRD.walk?'walk':'stand';
   if(C.plan.gaits&&!PG.includes(gait))gait='stand'; /* S1746: a gait its plan lacks (the swift's walk) is a stand */
-  C.gait=gait;
+  C.gait=gait;C.kick=hcBirdKick(rig,e);
   if(gait==='soar'||gait==='stand')rig.ph+=dt*(gait==='soar'?B.beat||BIRD.beat:.25);else rig.ph+=d/Math.max(1e-3,HC.strideOf(C)*H.f);
   HC.pose(C,rig.ph);
   // aloft the kit lifts its body by the plan's flyH: the group's own height is the flight, so the lift is taken back off
@@ -448,6 +457,15 @@ SWIMMER['Sand Wyrm']={len:14,col:0xb38f61,land:true,reach:4};
 // Session 1893: OG-040's Bellthroat (L3; the kit's bellthroat, Session 853, the Marsh Frog's parent: a red frog with a violet throat sac,
 // whose call is heard at dusk), wild, on the frog's path at the kit's own size, 0.37 m nose to rump, going by the kit's hop
 SWIMMER.Bellthroat={len:.37,col:0xc7331a,land:true,move:'hop',w:.55,h:.4};
+// Session 1914: the sac swells as it calls (OG-040: "a huge violet throat sac whose call echoes across valleys at dusk"). A call is seen by
+// e._calls going up (bellthroatCall, S1913), and the sac fills with sndBellthroat's three booms: up in `rise` s, held at `hold` over the
+// call, and on each boom (0.32 s apart, 0.26 s long) a swell of `boom` more; it empties over `fall` s after the third. Scales the sac's
+// radius, on the near body only (the kit's own pulse with the hop is under it). On the clock, so a dropped frame changes nothing
+const BELL_SAC={rise:.08,hold:.55,boom:.6,gap:.32,len:.26,fall:.3};
+function hcBellSac(t){const B=BELL_SAC,end=2*B.gap+B.len;if(!(t>=0)||t>end+B.fall)return 0;
+  let k=B.hold*Math.min(1,t/B.rise)*(t>end?1-(t-end)/B.fall:1);
+  for(let i=0;i<3;i++){const u=(t-i*B.gap)/B.len;if(u>0&&u<1)k+=B.boom*Math.sin(Math.PI*u);}
+  return k;}
 // Session 1906: OG-040's two tortoises (L3; the kit's mossback and sailshell, Session 775), wild, on the same path at the kit's own size: the
 // Mossback, an ancient tortoise carrying a living garden (moss, ferns and flowers on its shell), and Aurenne's Sailshell, a desert tortoise
 // with a sail standing on its shell; both go at the kit's plodding walk while their group moves, on four pillar legs, and stand at rest
@@ -477,7 +495,9 @@ function buildSwimmer(name,key){const F=SWIMMER[name];if(!F)return null;const ro
 function hcSwimPose(rig){const H=rig.hc,e=rig.e,g=e&&e.mesh;if(!H||!g||e.dead)return;const now=performance.now()/1000,dt=rig.t?Math.min(.1,now-rig.t):0;rig.t=now;
   const p=g.position;let d=rig.lx==null?0:Math.hypot(p.x-rig.lx,p.y-rig.ly,p.z-rig.lz);rig.lx=p.x;rig.ly=p.y;rig.lz=p.z;if(d>2)d=0;
   rig.v=dt>0?rig.v+(d/dt-rig.v)*Math.min(1,dt*6):rig.v;
-  if(rig.land){const gait=rig.v>.02?SWIMMER[rig.name].move||'slither':'stand';if(H.C.gait!==gait)H.C.gait=gait;rig.ph+=d/Math.max(1e-3,HC.strideOf(H.C)*H.f);HC.pose(H.C,rig.ph);rig.gaitNow=gait;return;}
+  if(rig.land){const gait=rig.v>.02?SWIMMER[rig.name].move||'slither':'stand';if(H.C.gait!==gait)H.C.gait=gait;rig.ph+=d/Math.max(1e-3,HC.strideOf(H.C)*H.f);HC.pose(H.C,rig.ph);rig.gaitNow=gait;
+    if(H.C.sac){const c=e._calls||0;if(rig.calls===undefined)rig.calls=c;else if(c!==rig.calls){rig.calls=c;rig.callT=now;}const k=rig.callT!=null?hcBellSac(now-rig.callT):0;if(k>0){const q=H.C.sac.scale;q.set(q.x*(1+k),q.y*(1+k),q.z*(1+k));}rig.sacK=k;}
+    return;}
   rig.ph+=Math.max(dt*SWIMMER.idle,d/Math.max(1e-3,HC.strideOf(H.C)*H.f));HC.pose(H.C,rig.ph);rig.gaitNow=rig.v>.05?'swim':'hold';}
 // ── the wolf's motion: every joint an [x,y,z] rotation; `drop` lowers the hips ──
 const WG={

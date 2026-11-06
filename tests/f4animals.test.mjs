@@ -154,6 +154,19 @@ console.log('  fly:', JSON.stringify(fly));
 const FAST = { Raven: 'hop', Crow: 'hop', Hen: 'trot', 'Great Heron': 'walk', 'Crag Hawk': 'walk', Capercaillie: 'trot', Skyraven: 'hop', Stormshrike: 'walk', 'Tundra Grouse': 'trot', 'Scarlet Ibis': 'walk', 'Cypress Stalker': 'walk', 'Sunbeak Vulture': 'walk', Cliffswift: 'stand', 'Glasswing Moth': 'walk', Glasswing: 'walk', Stormplume: 'trot', Redcrest: 'trot', Sunfan: 'walk' }, UP = { Raven: 'soar', Crow: 'soar', 'Crag Hawk': 'soar', Skyraven: 'soar', Stormshrike: 'soar', 'Sunbeak Vulture': 'soar', Cliffswift: 'soar', 'Glasswing Moth': 'soar', Glasswing: 'soar' }, SLOW = { Cliffswift: 'stand' };
 check(`each bird's gait is its group's, fast and aloft by its plan's gaits (the hen, the heron, the capercaillie, the ibis, the stalker, the Stormplume, the Redcrest and the Sunfan never soar; the swift never walks): still ${fly.map(f => f.seen.still).join('/')}, 0.4 m/s ${fly.map(f => f.seen.slow).join('/')}, 1.6 m/s ${fly.map(f => f.seen.fast).join('/')}, 4 m up ${fly.map(f => f.seen.up).join('/')}; aloft its spine ${fly.map(f => f.soarSpine).join(', ')} m over the group (standing ${birds.map(b => b.spine).join(', ')})`,
   fly.every((f, i) => f.seen.still === 'stand' && f.seen.slow === (SLOW[f.nm] || 'walk') && f.seen.fast === FAST[f.nm] && f.seen.up === (UP[f.nm] || FAST[f.nm]) && f.moved.every(m => m > .01) && Math.abs(f.soarSpine - birds[i].spine) < .08), fly);
+// Session 1915: the Stormplume and the Redcrest kick (HC.KICK through hcBirdKick): the strike's wind-up chambers a foot (raised, by the
+// leg's height), the lunge drives it forward and up, and the next strike kicks with the other foot; standing again, the feet are back;
+// a raven given the same wind-up is posed as before
+const kick = await page.evaluate(() => _B.filter(b => ['Stormplume', 'Redcrest', 'Raven'].includes(b.nm)).map(({ nm, rig, e }) => { const H = rig.hc, C = H.C, t0 = performance.now; let i0 = 0;
+  const pose = () => { i0++; performance.now = () => 8e5 + i0 * 1000 / 60; try { hcBirdPose(rig); } finally { performance.now = t0; } C.rig.updateMatrixWorld(true);
+    return C.B.legs.map(L => { const p = C.rig.worldToLocal(C.byName[L.names[L.names.length - 1]].getWorldPosition(new THREE.Vector3())); return { side: L.side, y: p.y, f: p.dot(C.dir), h: L.hR }; }); };
+  const best = (a, b, k) => Math.max(...a.map((p, i) => (b[i][k] - p[k]) / p.h));
+  rig.e.mesh.position.y = WORLD.worldH(rig.e.mesh.position.x, rig.e.mesh.position.z); e._wind = 0; e._lunge = null; for (let i = 0; i < 120; i++) pose(); const rest = pose(); e._wind = 1; const ch = pose(); e._wind = 0; e._lunge = .15; const st = pose(); const side1 = rig.kickSide;
+  e._lunge = null; pose(); e._lunge = .15; pose(); const side2 = rig.kickSide; e._lunge = null; for (let i = 0; i < 5; i++) pose(); const back = pose();
+  const r = v => +v.toFixed(2); return { nm, up: r(best(rest, ch, 'y')), fwd: r(best(rest, st, 'f')), hi: r(best(rest, st, 'y')), sides: [side1, side2], back: r(Math.max(...rest.map((p, i) => Math.hypot(back[i].y - p.y, back[i].f - p.f) / p.h))) }; }));
+console.log('  kick:', JSON.stringify(kick));
+check(`the Stormplume and the Redcrest kick: chambered a foot rises ${kick.filter(k => k.nm !== 'Raven').map(k => k.nm + ' ' + k.up).join(', ')} of the leg's height; struck it goes ${kick.filter(k => k.nm !== 'Raven').map(k => k.fwd + ' forward, ' + k.hi + ' up').join('; ')}; the next strike the other foot (${kick.map(k => k.sides.join('/')).join(', ')}); standing, back within ${Math.max(...kick.map(k => k.back))}; the raven ${kick.find(k => k.nm === 'Raven').up} with the same wind-up`,
+  kick.length === 3 && kick.every(k => k.nm === 'Raven' ? Math.abs(k.up) < .02 && Math.abs(k.fwd) < .02 : k.up > .3 && k.fwd > .6 && k.hi > .2 && k.sides[0] === -k.sides[1] && k.back < .02), kick);
 await page.evaluate(() => { const a = _B[0].G, b = _B[_B.length - 1].G, mx = (a.position.x + b.position.x) / 2, mz = (a.position.z + b.position.z) / 2, fx = -Math.sin(yaw), fz = -Math.cos(yaw);
   for (const { G } of _B) G.position.y = WORLD.worldH(G.position.x, G.position.z); px = mx - fx * 5; pz = mz - fz * 5; pitch = -.24; });
 for (let i = 0; i < 8; i++) await g.frames(1);
@@ -298,6 +311,21 @@ for (const [nm, move, L, sp, legs] of [['Stonecrawler', 'trot', .3, .5, 4], ['Ma
   check(`the ${nm} wears the kit's (${r.plan}, ${r.legs} legs, ${r.tris} triangles), ${r.len} m long, its lowest ${r.low} m off its ground at rest; at rest ${r.rest}, moving ${r.move} (${r.cyc} cycles over ${sp} m, the bones moving ${r.moved}); taken away, dropped`,
     !r.fail && r.plan === 'game:' + nm && r.seed === r.want && r.legs === legs && r.tris < 9000 && r.len > L * .8 && r.len < L * 1.15 && Math.abs(r.low) < .01 && r.rest === 'stand' && r.move === move && r.cyc > .3 && r.moved > 1e-3 && r.dropped, r);
 }
+// Session 1914: the Bellthroat's sac swells as it calls (bellthroatCall counts e._calls): over the call's three booms it fills to more than
+// half again its rest size, peaks on a boom, and is back to rest a second and a half later; with no call it stays at rest
+{ const r = await page.evaluate((T) => { const fx = -Math.sin(yaw), fz = -Math.cos(yaw), x = px + fx * 2, z = pz + fz * 2;
+    const rig = buildAnimal('Bellthroat', 'f4sac'), G = new THREE.Group(); G.add(rig.root); G.position.set(x, WORLD.worldH(x, z), z); WORLD.scene.add(G);
+    const e = { name: 'Bellthroat', baseName: 'Bellthroat', x, z, mesh: G, limbs: { wolf: rig, torso: rig.mesh }, dead: false }; rig.e = e;
+    const ZE = ZONES.world.enemies; ZE.push(e); let k = 0; HBODY.last = -1e9; while (!rig.hc && !rig.hcFail && k++ < 300) hcTick(T + k * (HBODY.gap + 1)); ZE.splice(ZE.indexOf(e), 1);
+    const H = rig.hc; if (!H || !H.C.sac) { G.parent.remove(G); return { fail: true, hc: !!H }; }
+    const t0 = performance.now, sx = () => H.C.sac.scale.x / 1.15; let now = T + 5e3; const at = ms => { now += ms; performance.now = () => now; try { hcSwimPose(rig); } finally { performance.now = t0; } return sx(); };
+    let quiet = 0; for (let i = 0; i < 60; i++) quiet = Math.max(quiet, at(1000 / 60));
+    e._calls = 1; const sw = []; for (let i = 0; i < 90; i++) sw.push(at(1000 / 60));
+    const out = { quiet: +quiet.toFixed(3), peak: +Math.max(...sw).toFixed(3), peakAt: +((sw.indexOf(Math.max(...sw)) + 1) / 60).toFixed(2), mid: +sw[30].toFixed(3), after: +at(600).toFixed(3) };
+    G.parent.remove(G); hcTick(T + 9e3); return out; }, 1.0015e6);
+  console.log('  sac:', JSON.stringify(r));
+  check(`the Bellthroat's sac swells as it calls: at rest ${r.quiet} of its size, ${r.peak} at the peak (${r.peakAt} s in), ${r.mid} between booms, ${r.after} after`,
+    !r.fail && r.quiet < 1.05 && r.peak > 1.9 && r.mid > 1.4 && r.after < 1.05, r); }
 // Session 1721: an island given to buildAnimal is the kit's coat for it (HC.COATS): the Mark's black hill cow and grey hen, Aurenne's cream
 // cow and buff hen; the hind (an own plan) takes the deer's. The same key keeps its seed; an unknown island is none
 const isles = await page.evaluate(() => { const mean = C => { const a = C.meshes[0].geometry.attributes.color.array; let r = 0, g = 0, b = 0; const n = a.length / 3;
