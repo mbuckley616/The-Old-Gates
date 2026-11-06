@@ -1899,7 +1899,7 @@ function hbHold(rig){const H=rig.hb,top=rig.foe?rig.root.parent:rig.root;top.upd
 // same place). A person-bodied foe's driver is blended toward it after tickPeople has posed it, and the builder's or the kit's body copies
 // it; any other foe (a wolf, a troll on its old rig, a slime) is rocked back whole about its feet. A look only: the stagger, the window
 // and the riposte's damage are the rules', untouched. The foe's right is its -x, so its right arm goes out on -z and its left on +z
-// Session 1924 (the critic, 6 Nov: "reads as a shrug", the two arms out level and mirrored, close to a T-pose at 4 m): the
+// Session 1928 (the critic, 6 Nov: "reads as a shrug", the two arms out level and mirrored, close to a T-pose at 4 m): the
 // two sides are no longer alike. The weapon arm is flung further out and back (.7, -1.15) with the wrist broken back; the shield arm drops
 // low and bent across the hip (.35, .22; the elbow -.7), so the foe is beaten, not standing open; and the trunk is turned away from the
 // blade (spine y -.35, the neck and head a little after it), the weapon's shoulder carried back with the blow

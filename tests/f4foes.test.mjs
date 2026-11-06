@@ -97,7 +97,7 @@ console.log('  deflect:', JSON.stringify(dfl));
 const FOE_DL = await page.evaluate(() => ({ spineY: FOE_DEFLECT.j.spine[1] }));
 check(`parried perfectly, a ${'Bandit'}'s driver takes the deflect through the zone's tick: its weapon arm, shield arm and spine within ${Math.max(...dfl.at)} of the pose (from ${Math.min(...dfl.rest)} at rest), the builder's weapon hand thrown ${dfl.hand} m`,
   dfl.stag && dfl.k > .9 && dfl.at.every(v => v < .1) && dfl.rest.every(v => v > .3) && dfl.hand > .2, dfl);
-// Session 1924 (the critic, 6 Nov: "a shrug", the arms out level and mirrored): the two sides differ, the weapon hand flung at least
+// Session 1928 (the critic, 6 Nov: "a shrug", the arms out level and mirrored): the two sides differ, the weapon hand flung at least
 // 25 cm further from the body's axis than the off hand, which is dropped in by the hip, and the trunk turned away from the blade
 check(`the deflect is not mirrored: the weapon hand ${dfl.wpnOut} m out from the body's axis, the off hand ${dfl.offOut} m (${dfl.wpnY} and ${dfl.offY} m up), the spine turned ${FOE_DL.spineY}`, dfl.wpnOut - dfl.offOut > .25 && FOE_DL.spineY < -.2, dfl);
 check(`the deflect comes in by .1 s, holds to .45 and is gone by .9 (${dfl.env.join(', ')}); after it the arm is its own again`, dfl.env[0] === 0 && dfl.env[2] === 1 && dfl.env[4] === 1 && dfl.env[5] > 0 && dfl.env[5] < 1 && dfl.env[6] === 0 && dfl.after === 0 && dfl.back < .1, dfl);
