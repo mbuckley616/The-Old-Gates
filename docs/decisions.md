@@ -15,6 +15,7 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+## Answered
 ### The bind — what a perfect parry looks like (from the concept artist, 2026-11-05, #1192)
 **The question.** Combat B already has the rule: a perfect parry drains 40% of the foe's posture and opens a riposte for 0.8 s. Nothing says what the two bodies do in that moment; OG-045 and OG-063 draw it as a bind. Three readings posed on two of the builder's people in a steady Cloch nave; no timing changes in any. Page: `docs/prototypes/levelup/bind.html`; the approach in `docs/concepts.md`.
 
@@ -27,7 +28,8 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 
 Pictures: [A, B and C](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/bind-options.jpg) · [C, whole](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/bind-c-back.jpg) · [the blades, close](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/bind-close.jpg) · [the scale](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/bind-scale.jpg).
 
-## Answered
+Michael: **A. The deflect: the blade beaten aside** — The concept art again was purely conceptual. Any riposte should be with the sword, we just show whatever is in the offhand as we would normally. (2026-11-05)
+
 ### Plants that mark a gate — ingredients, a sign to read, or a gate-finding brew? (from the designer, 2026-11-05, #1164)
 **The question.** Backlog L8 (OG-026) says Gatelotus, Gate Resin and Lichenbloom grow near old gates as "a sign to read", and Caverglow lights caves. Every gate's school and condition are fixed by its seed but unknowable until you are inside. What should the plants say? Page: `docs/design/plants-that-mark-a-gate.md`.
 
