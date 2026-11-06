@@ -52,10 +52,10 @@ const cost = await page.evaluate(() => { const run = (season, h) => { _clT(seaso
     const before = stamina; for (let i = 0; i < 600; i++) { const r = climateRegenMult(); stamina = Math.min(effMaxStamina(), stamina + (1 / 60) * (3 + (level - 1) * .4 + ATTRS.resolve * .3) * r); } return { gain: stamina - before, grade: _clim.g, cap: climateStamCap(), max: effMaxStamina() }; };
   const o = { calm: run('summer', 12), bitter: run('winter', 23), cold: run('winter', 12) }; return o; });
 check('the cost: Bitter regenerates half of grade 0\'s, Cold three quarters', Math.abs(cost.bitter.gain / cost.calm.gain - .5) < .05 && Math.abs(cost.cold.gain / cost.calm.gain - .75) < .05 && cost.bitter.grade === 2 && cost.cold.grade === 1, cost);
-check('the ceiling under Bitter is #1211\'s number (1 until answered), and the stamina never passes it', cost.bitter.cap === (await page.evaluate(() => CLIMATE.cap2)) && cost.bitter.gain <= cost.bitter.max, cost.bitter);
-const cap = await page.evaluate(() => { CLIMATE.cap2 = .8; _clT('winter', 23); _clim.g = 0; climateGrade(); const base = Math.round(maxStamina * fedStamMult()); const o = { max: effMaxStamina(), base };
-  stamina = 999; tickSurvival(1 / 60); o.st = stamina; CLIMATE.cap2 = 1; _clT('summer', 12); _clim.g = 0; climateGrade(); o.after = effMaxStamina(); return o; });
-check('with a ceiling of 0.8 set, Bitter caps the maximum at four fifths and the bar holds it there', Math.abs(cap.max - Math.round(cap.base * .8)) <= 1 && cap.st === cap.max && cap.after > cap.max, cap);
+check('the ceiling under Bitter is #1211\'s A, four fifths, and the stamina never passes it', cost.bitter.cap === .8 && (await page.evaluate(() => CLIMATE.cap2)) === .8 && cost.bitter.gain <= cost.bitter.max, cost.bitter);
+const cap = await page.evaluate(() => { _clT('winter', 23); _clim.g = 0; climateGrade(); const base = Math.round(maxStamina * fedStamMult()); const o = { max: effMaxStamina(), base };
+  stamina = 999; tickSurvival(1 / 60); o.st = stamina; _clT('summer', 12); _clim.g = 0; climateGrade(); o.after = effMaxStamina(); return o; });
+check('Bitter caps the maximum at four fifths and the bar holds it there; it lifts when the grade falls', Math.abs(cap.max - Math.round(cap.base * .8)) <= 1 && cap.st === cap.max && cap.after > cap.max, cap);
 
 // 6. Aurenne: midday heat, the sand at noon, the evening free, and metal in the sun
 await go(sites.au);
