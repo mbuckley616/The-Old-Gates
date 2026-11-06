@@ -2,7 +2,7 @@
 
 These are the quest writer's drafts. None of them is canon until Michael promotes it into `quest_writing.md`, and none is a spec until it is approved. Each draft gives the quest's shape, every line verbatim with its speaker and people, and a note on what in the code would carry it.
 
-Calls read to: 2026-10-16T17:51:09.360Z (run 37, 5 Nov: no new calls on the page)
+Calls read to: 2026-10-16T17:51:09.360Z (run 38, 6 Nov: no new calls on the page)
 
 ---
 
@@ -2389,7 +2389,7 @@ At 22:00 in the circle, a `showMsg`: *You settle in by the {fold}.* At 02:00 if 
 
 ## Asked in Passing, the second run — six more errands
 
-*Approved by Michael, 14 Oct 2026.* *Built in part: errand 12, A Prayer Carried, Session 1817 (PR #1103), the draft's lines word for word, with the Markman's hint for the mine (*My {sister}'s down the mine. That's all.*) added in register. Errand 9, A Fish for the Wedding, Session 1857, word for word but for the Gatelander's *{n} gold* and a comma after the Gatelander's {date}; an innkeeper, a harbourmaster or a shipwright asks it more often, since no generated giver is a fisher or a cook; the full square and the free meal on the day wait on two one-line hooks in other builders' files (backlog A). The other four follow, one a run.* The second piece of Michael's 5 Oct note (*50–100 somewhat unique quests … far more likely to stumble upon … incentivize players to talk to NPCs*), on the first run's frame exactly: the same givers (generated townsfolk, one errand in five a game-week, `seededRng('errand', site.id+':'+def.name+':'+week)`), the same *hint* in the greeting and *ask* in the *you* folder, the same shared lines (*Not now*, *Not yet*, *Done, paid*), the same ids (`er:<site>:<giver name>:<n>`) and the same small pay (15–40 gold by tier and a point of the giver's town's favour). The first run's last section listed six ideas for this one. Two of them changed on the way: *a dog gone after a deer* needs a dog and a deer, and the game has neither (a new creature is the look builder's, and the errand is not worth one), so it is replaced by **a prayer carried to a shrine**, on the shrines that exist; and *a fish from a named lake* became a fish from the sea, because `catchFish` (`86-world-crime.js`) catches only from the sea's schools. Every errand here runs on machinery the game already has.
+*Approved by Michael, 14 Oct 2026.* *Built in part: errand 12, A Prayer Carried, Session 1817 (PR #1103), the draft's lines word for word, with the Markman's hint for the mine (*My {sister}'s down the mine. That's all.*) added in register. Errand 9, A Fish for the Wedding, Session 1857, word for word but for the Gatelander's *{n} gold* and a comma after the Gatelander's {date}; an innkeeper, a harbourmaster or a shipwright asks it more often, since no generated giver is a fisher or a cook; the full square and the free meal on the day wait on two one-line hooks in other builders' files (backlog A). Errand 10, A Rubbing to Be Read, Session 1908 (PR #1206), word for word but for plain fixes listed in devlog 1908 (a reading capitalised where it opens a line, *the* for a gate's *The* mid-sentence, no Mastery reading for a word with no Mastery name, the giver's name in the reader's label when two rubbings are open); looking at the rubbing yourself waits on a one-line hook in `useItem` (backlog A). The other three follow, one a run.* The second piece of Michael's 5 Oct note (*50–100 somewhat unique quests … far more likely to stumble upon … incentivize players to talk to NPCs*), on the first run's frame exactly: the same givers (generated townsfolk, one errand in five a game-week, `seededRng('errand', site.id+':'+def.name+':'+week)`), the same *hint* in the greeting and *ask* in the *you* folder, the same shared lines (*Not now*, *Not yet*, *Done, paid*), the same ids (`er:<site>:<giver name>:<n>`) and the same small pay (15–40 gold by tier and a point of the giver's town's favour). The first run's last section listed six ideas for this one. Two of them changed on the way: *a dog gone after a deer* needs a dog and a deer, and the game has neither (a new creature is the look builder's, and the errand is not worth one), so it is replaced by **a prayer carried to a shrine**, on the shrines that exist; and *a fish from a named lake* became a fish from the sea, because `catchFish` (`86-world-crime.js`) catches only from the sea's schools. Every errand here runs on machinery the game already has.
 
 The `sub` values: `cart`, `child`, `fish`, `rubbing`, `hedge`, `prayer`. Numbering continues from the first run.
 
@@ -6302,3 +6302,127 @@ An Old Blood harbourmaster does not occur (the generator keeps them to inland tr
 - A wreck-diving errand for the salvager (the Sunken Library is *Sea Legends, I*'s), on the errands' frame, after the second run of *Asked in Passing* is built.
 
 ---
+
+---
+
+## Arms of Name — the fifteen legendary weapons: names, cards, where they lie, and what is said of them
+
+*Unapproved. Drafted 6 Nov 2026.* Backlog L7, *Legendary weapons* (OG-075). The concept artist's prototype (`docs/prototypes/levelup/legendary.js`, 31 Oct) built fifteen pieces, five to an island, and left "its names, owners and stat lines" and "where each is found (ruins, royal houses, wrecks, trials)" to the quest writer; Michael answered DECISION #960 on 1 Nov with **C**, faint at rest and full when drawn. This draft names the fifteen, writes each one's item card, places each in one kind of place the game already has, and gives each the one line a person of its island says of it. How each plays (a harpoon that pulls, an axe whose arcs strike) stays the systems builder's; nothing here depends on it. The gate relics (a greatsword cut with gate runes, a dagger that drinks sound, and the rest) wait on the canon, as the prototype says, and are not drafted.
+
+### What the canon fixes, and where it is silent
+
+- §10a: the surface is high fantasy, *visible magic … belong on the surface*; these are wonders people are glad of, not curses. No chosen-one line: none of the fifteen chooses a bearer, waits for one, or is promised to anyone (Part I; §4.2).
+- §1.1–1.3: what each island prides itself on. The Gatelands' are the old kings before the Crown, the roads, the cattle and the yew. The Mark's are the oath, the quarrel finished by noon, the acclamation and *no king*, the war a generation ago that the Crown won and the Mark remembers (§1.4). Aurenne's are the ledger, the sea that is a road, and the academy. Each piece belongs to one of these.
+- §2: the names follow the registers. The Gatelands' are in the old tongue with a common name (as the gods are, §4.1); the Mark's are nicknames, the way a Markman names anything he respects; Aurenne's are the Register's (Session 1474): Greek, Latin, Punic and Arabic roots.
+- *Silent:* how a mortal weapon comes to burn, arc or breathe frost. The plainer thing, and the one the game already does: a smith worked an enchant into it (`ARMOR_ENCHANTS`, the bench's tempers), and age and use did the rest. None of the fifteen is made by the Makers, holds a sigil, or is cut with the deep register: the six Makers' things (*The Makers' Things*, this file) are a different order of thing and keep that ground to themselves. No legendary's name uses a word of power (*Caor*, *Tintreach*, *Smól* and the rest are left alone).
+- The Church: Aurenne's pieces are the Compact's property in the Compact's own reckoning; the Church blesses none of them and condemns none. An Aurennais speaks of them with a qualifier and never swears by them.
+
+### The card's shape
+
+Every card, as `makeItem`'s unique items already read: the name, then the people's name in brackets where there is one, then one or two sentences of *desc*. No stat line on the card past what the game prints for every weapon (Michael's OG-075 note: drop the MMO stat lines).
+
+---
+
+### The Gatelands
+
+**1. Gealán** — *the Sword of the First Kings* (the longsword, the wheel pommel, the dawn-gold fuller).
+- *Card:* "The kings before the Crown were buried with a sword. The Crown keeps one at Coeur de Vie. This is the other one."
+- *Where:* the master's hoard of a lair in the Gatelands' hills (a barrow's lair, `lairHoardChest`), the oldest on the island by its seed.
+- *Said of it* (a Gatelander, *Heard anything strange?*): "They say the sword at Coeur de Vie is the first kings' own. They say a lot of things at Coeur de Vie."
+
+**2. Toirneach** — *the Drover's Axe* (the bearded storm axe, arcs on the edge).
+- *Card:* "A drover cut a road through a storm with it, or so the song goes. The song doesn't say where the road went."
+- *Where:* a wreck's chest off the Gatelands' coast (`85-world-sea.js`, the wrecks), the cattle boat it was carried on.
+- *Said of it:* "There's an axe in a song my father sang, that the lightning wouldn't leave alone. A thing the sky keeps coming back to is a thing to keep at arm's length."
+
+**3. An Eidhneán** — *the Ivy, the Wardens' Spear* (the leaf blade, the ivy lit up the shaft).
+- *Card:* "Carried by the wardens of the roads, before there were royal patrols to carry anything. The ivy on it has never been seen to grow, and has never been seen to wither."
+- *Where:* a royal house: the strongbox of a Gatelands keep's lord (the keep's interior), bought or taken; the lord's people call it an heirloom, which it is not.
+- *Said of it:* "The wardens kept the roads with a spear and a word. The Crown keeps them with forty men and a toll, and calls it progress."
+
+**4. Aithinne** — *the Firebrand* (the ember mace, the live coal in its flanges).
+- *Card:* "A smith's, from a forge whose fire was never let out in three hundred years. When the forge was pulled down, the coal went into this."
+- *Where:* a ruin: the forge at the heart of a Tine gate on the home island, on the floor past its sigil (a gate's last chest).
+- *Said of it:* "There was a forge at {town} never let go out, three hundred years, and the day they let it go the smith's hammer wouldn't ring. Some fires you don't put out; you move them."
+
+**5. Iúr Fhiachna** — *Fiachna's Yew* (the longbow, the moss-green knot down its back).
+- *Card:* "Fiachna hunted the autumn woods for sixty years and missed twice, and both times on purpose. She was buried with it, and it was not buried long."
+- *Where:* a trial: the prize of the Gatelands' best archery at a feast (the feast's contest where one exists; else a lair in the autumn woods).
+- *Said of it:* "Fiachna's bow. My grandmother saw it drawn once, at a feast. Said it was like watching someone remember a thing they'd forgotten."
+
+### The Mark
+
+**6. The Long Grudge** (the great axe, the rune band burning red-gold).
+- *Card:* "Lost on the Hollowed Wastes, in the war the Crown won. The Mark remembers the war. It remembers the axe better."
+- *Where:* a ruin: a lair or gate on the Hollowed Wastes (the Gatelands), the war's field; a Markman who sees it on you says the line below.
+- *Said of it* (a Markman): "The Grudge? Went down with Osric on the Wastes. If it's above ground, someone owes the Mark an axe."
+- *Seen on you* (a Markman, once, in the greeting): "That's the Grudge. Where'd you get it? No. Don't. Just carry it right."
+
+**7. Neverthaw** (the glacier blade, the frost mist).
+- *Card:* "Forged in the high valleys, in a winter so long they named it after a man. It has not been warm since, and the scabbard is lined with fur for the hand, not the blade."
+- *Where:* the master's hoard of a lair on the Mark's tundra, or a dragon's lair there if there is one (a catastrophic failure, §5).
+- *Said of it:* "Neverthaw. Cold to hold. Colder to be hit with."
+
+**8. Hereward's Line** (the whaler's harpoon, the sea-green head, the coil).
+- *Card:* "Hereward threw it into the biggest whale in the strait and held the line for a day and a night. The whale took the boat. He kept the harpoon."
+- *Where:* a wreck's chest in the strait (the Mark's coast).
+- *Said of it:* "Hereward's line. The Sea owns the whale, and he took the iron back off her. Brave or stupid. Both, aye."
+
+**9. Northlight** (the aurora flail).
+- *Card:* "Made to be swung in the dark of the year, when the sky does the same. The grooves in the ball catch the aurora and keep it."
+- *Where:* a trial: the title belt's prize at the Mark's rings, the first time the ladder's title is won (the arenas' title, Sessions 1637–1659); one in the island, given once.
+- *Said of it:* "Northlight goes to whoever takes the rings' title. Last one sold it for drink. Not a great day for the rings."
+
+**10. First Blood** (the rite spear, the fur collar, the raven feathers).
+- *Card:* "One high valley lent it to every child for their first hunt, for three hundred years. Then a child did not bring it back. The valley still has the rack."
+- *Where:* a ruin: a lair in the Mark's high valleys, near the hunters' camp the child set out from.
+- *Said of it:* "First Blood. Every child in that valley held it once. Then one didn't come back, and nor did it. That's the whole story. They don't tell it twice."
+- *Brought back* (a Markman of that valley's town, the greeting once, if the systems builder gives it a home rack): "You brought it home. Iron and blood. Sit. Drink."
+
+### Aurenne
+
+**11. The Exception** — *Exceptio* (the duellist's rapier, the gilt swept hilt).
+- *Card:* "The Compact forbids the duel. The Compact has, once, in a clause still in force, permitted one. The rapier was made for it, and the clause has not been used again."
+- *Where:* a royal house: a Factor's strongbox in a Compact port (the house's interior); taken, it is stolen, and the crime system treats it so.
+- *Said of it* (an Aurennais): "There is a single exception in the articles, Master, and a single sword made for it. I am told both are still valid. I would not wish to test either."
+
+**12. Kawkab** — *the Star-Iron* (the near-black nimcha whose stars burn).
+- *Card:* "Iron from a fallen star, bought at an oasis for its weight in salt and its weight again in water. The stars in the blade are the star's own."
+- *Where:* a ruin: the master's hoard of a lair in Aurenne's dunes.
+- *Said of it:* "Star-iron, Master. The academy has a piece the size of a fig and three monographs on it. The rest went into a sword, which the academy considers a waste."
+
+**13. The Rim of Heliodora** — *Heliodora's Bow* (the sun bow, its ears lit).
+- *Card:* "Heliodora shot from the walls of her own city for forty days and was never paid for it. The bow was sent to her heirs in lieu of the fee."
+- *Where:* a wreck's chest off Aurenne's terraced coast, the ship that carried it to the heirs.
+- *Said of it:* "Heliodora's account was never settled, Master. The Compact regards the bow as payment in full. The heirs do not."
+
+**14. Thalassine** — *the Tide Glaive* (the crescent head, the pearl, the circling drops).
+- *Card:* "Carried at the head of the first convoy that came back with every hull. The water round it is the sea's, and goes where it goes."
+- *Where:* a trial: the Navigators' Hall's reward (the draft *Ports and Their Trades*, unapproved) when one is built; until then, a wreck in the deep water off Aurenne.
+- *Said of it:* "Thalassine went at the head of the first convoy that came home whole, Master. Every convoy since carries a copy. None has quite returned the investment."
+
+**15. Raqisa** — *the Dancer's Blade* (the takouba with silk at the pommel).
+- *Card:* "A dancer's, for the dance with a sword in it. The silk moves in no wind, and the blade is sharper than the dance needs."
+- *Where:* a royal house: the strongbox of a caravanserai's master inland (the oasis towns, OG-061), where it is kept as a curiosity.
+- *Said of it:* "They dance with it at the caravan's end, Master, and it is very fine. I would only observe that no one has asked why a dancer's blade is kept sharp."
+
+---
+
+### What in the code would carry it
+
+- **The items.** Fifteen rows in a table beside `ARTIFACTS`/the unique items in `14-items.js` (the systems builder's): `{key, name, alt, desc, weaponShape, look:'legendary:<key>'}`, built by `makeItem` as uniques (`unique:true`), the new look's mesh `legendary(key,{mode})` from the prototype with Michael's C (`k` 0.2 at rest, 1 drawn). The card's text is `desc`; the bracketed name is `alt`.
+- **The places.** One a kind the game has: a lair's hoard (`lairHoardChest`, `56-dungeon-build.js`, keyed by the lair's seed, the co-op rules), a wreck's chest (`85-world-sea.js`), a gate's last chest past the sigil, a keep's or a Factor's strongbox (the interior's strongbox, `84-world-interiors.js`), the rings' title (`87-world-quests.js`'s arenas). Which lair, wreck or gate holds each is chosen once per seed on `seededRng('legendary', key)` among the places of its kind on its island, never by what has loaded (`getCell`, the S533 rule). Each lies in one place only, and once taken, `worldState.legendaries[key]` (the world's) says so.
+- **The talk.** Each *Said of it* is a line added to *Heard anything strange?* (`richTopics`, `83-world-generator.js`, my file) for a townsperson of that island's people, one in six, until `worldState.legendaries[key]` is set. The two *Seen on you* and *Brought back* lines are greetings (`errandGreet`'s neighbour, once each, the character's `worldState.told`).
+- **Rule read** for the systems builder: a legendary taken from a strongbox is stolen like any other thing (`stolen:true`), and the crime system needs nothing new. If that is wrong, only *The Exception*'s card line changes (*taken, it is stolen*).
+
+### Checked against the canon
+
+- No piece is the Makers', holds a sigil, or is named with a word of power; the Makers' six keep that ground.
+- No bearer is chosen, foretold or awaited; three of the fifteen are lost by their owners, two are owed to someone, one is a debt unpaid. That is the plainer thing, and it is the world's (§10a: people are busy and funny).
+- Every Aurennais line has an honorific and a qualifier and no oath; every Markman line is short, with *aye* or an oath on iron and blood and no honorific; every Gatelander line comes at it sideways. The Old Blood say nothing of any of them, because none of them is theirs.
+- The war a generation ago is named as §1.4 has it, and its field is the Hollowed Wastes.
+
+### Owed, and not drafted here
+
+- The five gate relics, when the canon says what the Makers and the gates' origin allow.
+- Whether a legendary is known on sight to the townsfolk of its island beyond the two lines above (a greeting for each would be fifteen more lines; the plainer thing is the two).
