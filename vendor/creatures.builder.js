@@ -1527,8 +1527,9 @@ P.head = (B, o) => {
   if (o.antlers?.mist) B.mist = { ...o.antlers.mist, tips: B.mistTips, color: B.tone(o.antlers.mist.tone || 'mist') };
   if (o.crystals) for (const sd of [1, -1]) B.bit(hn, crystals(o.crystals, S, B.tone('horn'), at(o.crystals.f, o.crystals.up, o.crystals.out * sd), sd, rng(B.g.seed + (sd > 0 ? 3 : 4))));
   if (o.beak) B.bit(hn, beak(o.beak, S, B.tone('horn'), at(1, o.beak.up || 0, 0), dir));
-  // a throat sac (the Bellthroat's): a rigid ball under the jaw that the pose fills and empties
-  if (o.sac) { const m = new THREE.Mesh(new THREE.SphereGeometry(o.sac.r * S, 24, 16), new THREE.MeshPhysicalMaterial({ color: B.tone('sac'), roughness: .25, clearcoat: .6, transmission: 0 })); m.position.copy(at(o.sac.f, -o.sac.drop, 0)); m.scale.set(1.15, .8, 1); B.bit(hn, m); B.sac = m; }
+  // a throat sac (the Bellthroat's): a rigid ball under the jaw that the pose fills and empties. Session 1923: matte, as the skin is
+  // (the critic: a clearcoat's hard highlight made it read as a plastic ball); OG-040's is blue-violet and dull
+  if (o.sac) { const m = new THREE.Mesh(new THREE.SphereGeometry(o.sac.r * S, 24, 16), new THREE.MeshStandardMaterial({ color: B.tone('sac'), roughness: Math.max(.55, B.plan.rough ?? .5) })); m.position.copy(at(o.sac.f, -o.sac.drop, 0)); m.scale.set(1.15, .8, 1); B.bit(hn, m); B.sac = m; }
   if (o.stalks) for (const sd of [1, -1]) { const p = at(o.stalks.f, o.stalks.up, o.stalks.out * sd); B.bit(hn, claw(o.stalks.r * .5, o.stalks.len, B.tone('dark'), p.clone().addScaledVector(up, -o.stalks.len), up.clone()));
     B.bit(hn, eye(o.stalks.r, o.stalks.color, p)); }
   // a brow (Session 927): a ridge of flesh across the skull over the eyes, grown into the head as one surface (the troll's)
@@ -1767,7 +1768,8 @@ P.radial = (B, o) => { const c = V(...o.c), parent = o.parent || B.spineNames[0]
     else for (let j = 0; j < seg; j++) B.meat(names[j], pts[j], pts[j + 1], along(o.r, j / seg), along(o.r, (j + 1) / seg), { group: tag, tone: o.tone, s: o.s });
     B.radials.push({ names, a, thread: !!o.thread, k, n: o.n }); } };
 // a shell (Session 775): a rigid dome over the spine with a rim and a flat plastron. Its scutes are cells of a hexagonal
-// lattice seen from above, their seams darkened; a garden may grow on it (the Mossback), or a sail stand on it (the Sailshell)
+// lattice seen from above, their seams darkened; a garden may grow on it (the Mossback), or a sail stand on it (the Sailshell).
+// `top` tints it from `topFrom` of its height, full by `topTo` (Session 1926; .95 unless a plan names it)
 P.shell = (B, o) => { const sp = B.spineAt(o.at), c = sp.p.clone().add(V(0, o.lift || 0, o.dz || 0)), rx = o.w / 2, rz = o.len / 2, base = B.tone(o.tone || 'shell'), seam = B.tone('seam'), r = rng(B.g.seed + 9);
   const g = new THREE.SphereGeometry(1, 48, 20, 0, Math.PI * 2, 0, Math.PI / 2); g.scale(rx, o.h, rz);
   const lat = []; const s = o.scute || rx * .5; for (let i = -6; i <= 6; i++) for (let j = -6; j <= 6; j++) lat.push([(i + (j % 2 ? .5 : 0)) * s, j * s * .87]);
@@ -1775,7 +1777,7 @@ P.shell = (B, o) => { const sp = B.spineAt(o.at), c = sp.p.clone().add(V(0, o.li
   for (let v = 0; v < P0.count; v++) { const x = P0.getX(v), y = P0.getY(v), z = P0.getZ(v); let d1 = 1e9, d2 = 1e9, k1 = 0;
     for (let k = 0; k < lat.length; k++) { const d = Math.hypot(x - lat[k][0], z - lat[k][1]); if (d < d1) { d2 = d1; d1 = d; k1 = k; } else if (d < d2) d2 = d; }
     const edge = sstep(s * .12, 0, d2 - d1), ring = .9 + .1 * Math.cos(d1 / s * 14), C = base.clone().multiplyScalar(ring * (.88 + .24 * ((k1 * 2654435761) % 97) / 97)).lerp(seam, edge * .85);
-    if (o.top) C.lerp(B.tone(o.top), sstep(o.topFrom ?? .55, .95, y / o.h) * .9); if (y < o.h * .12) C.lerp(seam, .35); col.push(C.r, C.g, C.b); }
+    if (o.top) C.lerp(B.tone(o.top), sstep(o.topFrom ?? .55, o.topTo ?? .95, y / o.h) * .9); if (y < o.h * .12) C.lerp(seam, .35); col.push(C.r, C.g, C.b); }
   g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
   const plast = new THREE.CircleGeometry(1, 40); plast.rotateX(Math.PI / 2); plast.scale(rx * .9, 1, rz * .92); plast.translate(0, -o.h * .02, 0); const pc = []; for (let v = 0; v < plast.attributes.position.count; v++) pc.push(...B.tone('belly').toArray()); plast.setAttribute('color', new THREE.Float32BufferAttribute(pc, 3));
   const m = new THREE.Mesh(mergeGeometries([g.toNonIndexed(), plast.toNonIndexed()]), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: o.rough ?? .7, side: THREE.DoubleSide })); m.geometry.computeVertexNormals(); m.position.copy(c); B.bit(sp.bone, m);
@@ -1786,17 +1788,24 @@ P.shell = (B, o) => { const sp = B.spineAt(o.at), c = sp.p.clone().add(V(0, o.li
   // these keeps the old spread (.62 and .7), no mounds or grass, one flower to a spot and heads of .07
   if (o.garden) { const G = o.garden, sz = G.size, geos = [], sp1 = G.spread || .62, sp2 = G.spread || .7, cl = G.cluster || 1, bl = G.bloom || .07;
     const yAt = (x, z) => o.h * Math.sqrt(Math.max(0, 1 - (x / rx) ** 2 - (z / rz) ** 2));
-    const add = (geo, color, x, z, rot, sink = .01) => { geo.deleteAttribute('uv'); geo.rotateY(rot); geo.translate(x, yAt(x, z) - sink, z); const cc = []; for (let v = 0; v < geo.attributes.position.count; v++) cc.push(color.r, color.g, color.b); geo.setAttribute('color', new THREE.Float32BufferAttribute(cc, 3)); geos.push(geo.index ? geo.toNonIndexed() : geo); };
-    const spot = f => { const a = r() * Math.PI * 2, d = Math.sqrt(r()) * f; return [Math.cos(a) * d * rx, Math.sin(a) * d * rz]; };
+    // Session 1926 (the critic, 6 Nov: "a crest, not a garden", every plant on the top third and the flanks bare to a clean rim; OG-040
+    // drapes the moss to the rim): `drape` stands each plant on the dome's own slope, turned from straight up toward the surface's normal
+    // by that share, so a fern on the flank lies along it as moss and ferns do on a stone; `edge` (a power under .5) puts more of the
+    // spots out on the flanks, where most of the dome's area is; `low` scales the ferns' and the grass's height (the art's are low)
+    const dr = G.drape || 0, ex = G.edge || .5, lo = G.low || 1, nq = new THREE.Quaternion();
+    const add = (geo, color, x, z, rot, sink = .01) => { geo.deleteAttribute('uv'); geo.rotateY(rot);
+      if (dr) { const y = yAt(x, z), n = V(x / (rx * rx), y / (o.h * o.h), z / (rz * rz)).normalize(); nq.setFromUnitVectors(UP, UP.clone().lerp(n, dr).normalize()); geo.applyQuaternion(nq); }
+      geo.translate(x, yAt(x, z) - sink, z); const cc = []; for (let v = 0; v < geo.attributes.position.count; v++) cc.push(color.r, color.g, color.b); geo.setAttribute('color', new THREE.Float32BufferAttribute(cc, 3)); geos.push(geo.index ? geo.toNonIndexed() : geo); };
+    const spot = f => { const a = r() * Math.PI * 2, d = Math.pow(r(), ex) * f; return [Math.cos(a) * d * rx, Math.sin(a) * d * rz]; };
     const tris = pts => { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pts.flat(), 3)); g.computeVertexNormals(); return g; };
     // a blade leaning out by `lean`, `w` wide at two-thirds of its height: base, the two shoulders, the tip
     const blade = (h, w, lean) => { const L = [-w, h * .6, h * .3 * lean], R = [w, h * .6, h * .3 * lean], T = [0, h, h * .75 * lean]; return tris([[0, 0, 0], R, L, L, R, T]); };
-    for (let i = 0; i < (G.moss || 0); i++) { const [x, z] = spot(.82), m = sz * (.3 + .3 * r()), mg = new THREE.IcosahedronGeometry(1, 0); mg.scale(m, m * .32, m * (.8 + .4 * r())); add(mg, B.tone('moss').clone().multiplyScalar(.82 + .3 * r()), x, z, r() * 6, m * .2); }
-    for (let i = 0; i < G.ferns; i++) { const [x, z] = spot(sp1), h = sz * (.6 + .6 * r()), n = 5 + (i % 3); for (let f = 0; f < n; f++) add(blade(h * (.75 + .35 * r()), h * .09, .5 + .7 * r()), B.tone('fern').clone().multiplyScalar(.8 + .4 * r()), x, z, f / n * Math.PI * 2 + r()); }
-    for (let i = 0; i < (G.grass || 0); i++) { const [x, z] = spot(.8), h = sz * (.3 + .3 * r()); for (let f = 0; f < 7; f++) add(blade(h * (.7 + .5 * r()), h * .035, .2 + .5 * r()), B.tone('fern').clone().multiplyScalar(1.05 + .35 * r()).lerp(B.tone('moss'), .3), x, z, r() * Math.PI * 2); }
+    for (let i = 0; i < (G.moss || 0); i++) { const [x, z] = spot(dr ? .96 : .82), m = sz * (.3 + .3 * r()), mg = new THREE.IcosahedronGeometry(1, 0); mg.scale(m, m * .32, m * (.8 + .4 * r())); add(mg, B.tone('moss').clone().multiplyScalar(.82 + .3 * r()), x, z, r() * 6, m * .2); }
+    for (let i = 0; i < G.ferns; i++) { const [x, z] = spot(sp1), h = sz * lo * (.6 + .6 * r()), n = 5 + (i % 3); for (let f = 0; f < n; f++) add(blade(h * (.75 + .35 * r()), h * .09, .5 + .7 * r()), B.tone('fern').clone().multiplyScalar(.8 + .4 * r()), x, z, f / n * Math.PI * 2 + r()); }
+    for (let i = 0; i < (G.grass || 0); i++) { const [x, z] = spot(dr ? sp1 : .8), h = sz * lo * (.3 + .3 * r()); for (let f = 0; f < 7; f++) add(blade(h * (.7 + .5 * r()), h * .035, .2 + .5 * r()), B.tone('fern').clone().multiplyScalar(1.05 + .35 * r()).lerp(B.tone('moss'), .3), x, z, r() * Math.PI * 2); }
     // `shrubs` (Session 1920): a low bush of three leafy lumps on a short stem, the garden's tallest things
     for (let i = 0; i < (G.shrubs || 0); i++) { const [x, z] = spot(.45), h = sz * (.9 + .4 * r()); add(tris([[-.012, 0, 0], [.012, 0, 0], [0, h * .7, 0]]), B.tone('seam'), x, z, r() * 6);
-      for (let k = 0; k < 3; k++) { const b = sz * (.32 + .14 * r()), lg = new THREE.IcosahedronGeometry(b, 0), a = k / 3 * Math.PI * 2 + r(); lg.scale(1, .75, 1); lg.translate(Math.cos(a) * b * .6, h * (.62 + .2 * k), Math.sin(a) * b * .6); add(lg, B.tone('fern').clone().multiplyScalar(.62 + .25 * r()), x, z, 0); } }
+      for (let k = 0; k < 3; k++) { const b = sz * (.32 + .14 * r()), lg = new THREE.IcosahedronGeometry(b, dr ? 1 : 0), a = k / 3 * Math.PI * 2 + r(); lg.scale(1, .75, 1); lg.translate(Math.cos(a) * b * .6, h * (.62 + .2 * k), Math.sin(a) * b * .6); add(lg, B.tone('fern').clone().multiplyScalar(.62 + .25 * r()), x, z, 0); } }
     for (let i = 0; i < G.flowers; i++) { const [x0, z0] = spot(sp2), tone = B.tone(r() < .5 ? 'bloom' : 'bloom2');
       for (let k = 0; k < cl; k++) { const x = x0 + (k ? (r() - .5) * sz * .3 : 0), z = z0 + (k ? (r() - .5) * sz * .3 : 0), hs = sz * (.36 + .2 * r()), lean = (r() - .5) * sz * .1;
         add(tris([[-.004, 0, 0], [.004, 0, 0], [lean, hs, 0]]), B.tone('fern'), x, z, r() * 6);
@@ -1991,7 +2000,15 @@ function crystals(o, S, c, p, side, r) {
     g.translate(side * i * o.r * S * .6, -i * o.r * S * .3, -i * o.r * S * .9 * rk); geos.push(g.toNonIndexed()); }
   const m = new THREE.Mesh(mergeGeometries(geos), o.stone ? stdMat(c, { rough: .95, flat: true }) : new THREE.MeshPhysicalMaterial({ color: c, roughness: .15, metalness: 0, flatShading: true, emissive: c.clone().multiplyScalar(.25), clearcoat: 1, transparent: true, opacity: .92 })); m.position.copy(p); return m;
 }
-function beak(o, S, c, p, dir) { const g = new THREE.ConeGeometry(o.r * S, o.len * S, 8); g.scale(1, 1, .75); g.translate(0, o.len * S / 2, 0); const m = new THREE.Mesh(g, stdMat(c, { rough: .4 })); m.position.copy(p); m.quaternion.setFromUnitVectors(UP, dir.clone().add(V(0, -(o.hook || .1), 0)).normalize()); return m; }
+// Session 1925: `curve` bends the beak down toward its tip (a raptor's or a terror bird's hook), a share of its length at the tip, and
+// `deep` makes it taller than it is wide. The cone is built along y and turned onto `dir`; whichever of its cross axes the turn carries
+// nearest the vertical is the one bent and deepened
+function beak(o, S, c, p, dir) { const q = new THREE.Quaternion().setFromUnitVectors(UP, dir.clone().add(V(0, -(o.hook || .1), 0)).normalize());
+  const g = new THREE.ConeGeometry(o.r * S, o.len * S, 8, o.curve ? 5 : 1); g.scale(1, 1, .75); g.translate(0, o.len * S / 2, 0);
+  if (o.curve || o.deep) { const ax = V(1, 0, 0).applyQuaternion(q).y, az = V(0, 0, 1).applyQuaternion(q).y, useX = Math.abs(ax) > Math.abs(az), sg = -Math.sign(useX ? ax : az) || 1, P = g.attributes.position;
+    for (let i = 0; i < P.count; i++) { const t = P.getY(i) / (o.len * S); let v = useX ? P.getX(i) : P.getZ(i); v = v * (o.deep || 1) + sg * (o.curve || 0) * o.len * S * t * t; useX ? P.setX(i, v) : P.setZ(i, v); }
+    g.computeVertexNormals(); }
+  const m = new THREE.Mesh(g, stdMat(c, { rough: .4 })); m.position.copy(p); m.quaternion.copy(q); return m; }
 
 // ── the flesh: a smooth surface grown around the capsules, meshed by surface nets on a grid ──
 // A capsule's field is exp(-d/k), d its distance; capsules of one group take their nearest (hard union), groups add
@@ -2733,8 +2750,11 @@ const PLANS = {
     fur: { len: .1, layers: 10, sx: 34, sy: 18, droop: .7 },
     parts: [
       ['spine', { hip: [1.6, -.32], chest: [1.72, .3], n: 3, r: [.4, .46, .38], s: [.86, 1.05], rump: .45, rumpDrop: -.15, front: .22, frontDrop: .05 }],
-      ['neck', { len: 1.05, n: 4, rise: 78, curve: -50, r: [.2, .085], fwd: -.06 }],
-      ['head', { len: .28, r: .095, pitch: 5, eyes: [{ f: .48, up: .3, out: .6, r: .02, color: [.9, .55, .1] }], beak: { len: .26, r: .06, up: -.1, hook: .3 } }],
+      // Session 1925 (the critic, 6 Nov: "a beak on a stalk", the head a third of OG-040's): the art's bird is heavy-headed, a thick neck
+      // to a big head and a deep hooked beak. Neck .2 to .085 was thinned to a stalk; now .24 to .14. Head .28 by .095, now .42 by .165; beak
+      // .26 by .06, now .34 by .13, deeper than wide and curved down to a hook at the tip (the beak's new `curve` and `deep`)
+      ['neck', { len: 1.0, n: 4, rise: 78, curve: -50, r: [.24, .14], fwd: -.06 }],
+      ['head', { len: .42, r: .165, pitch: 5, eyes: [{ f: .48, up: .35, out: .62, r: .026, color: [.9, .55, .1] }], beak: { len: .34, r: .13, up: -.15, hook: .2, curve: .3, deep: 1.4 } }],
       ['tail', { len: .55, n: 2, r: [.2, .12], droop: -25 }],
       ['legs', { at: .38, kind: 'bird', out: .18, drop: .3, claws: { r: .012, len: .07 } }]
     ] },
@@ -2776,7 +2796,7 @@ const PLANS = {
     fur: { len: .02, layers: 8, sx: 160 },
     parts: null }, // the Snowleap Hare's parts and a saddle, filled in below: a plan may be another plan at another size
   bellthroat: { name: 'Bellthroat', src: 'OG-040 (a red frog with a violet throat sac)', gaits: ['hop', 'stand'], rough: .4, mottle: 1.4, fold: .3, wag: 0, pant: 0,
-    palette: { coat: [.78, .2, .1], saddle: [.45, .07, .04], belly: [.93, .8, .55], dark: [.06, .04, .03], sac: [.56, .3, .78] },
+    palette: { coat: [.78, .2, .1], saddle: [.45, .07, .04], belly: [.93, .8, .55], dark: [.06, .04, .03], sac: [.42, .3, .66] },
     parts: [
       ['spine', { hip: [.075, -.07], chest: [.085, .07], n: 3, r: [.055, .065, .06], s: [1.3, .72], rump: .035, front: .02 }],
       ['head', { len: .1, r: .055, pitch: -4, s: [1.35, .62, 1], muzzle: { len: 1, r: .042, s: [1.4, .55, 1], taper: .75 }, eyes: [{ f: .3, up: .8, out: 1.05, r: .016, color: [.95, .7, .15] }], sac: { r: .045, f: .55, drop: 1.05 } }],
@@ -2847,11 +2867,13 @@ const PLANS = {
       ['radial', { c: [0, 1.5, 0], parent: 'spine0', n: 14, ring: .32, len: 2.4, seg: 7, down: 88, curl: -1, r: [.009, .003], thread: 1, jitter: .1, tag: 'thr' }]
     ] },
   // ── Session 775: shells and feathered wings ──
+  // Session 1930: the two tortoises' hides darker (Session 1906's note: the Sailshell's pillar legs rendered pale, near skin, at noon,
+  // and the Mossback's grey); OG-040 draws them as old leathery scale, the Sailshell's tan-brown and the Mossback's dark grey-brown
   mossback: { name: 'Mossback', src: 'OG-040 (an ancient tortoise carrying a living garden)', gaits: ['walk', 'stand'], speedK: .22, wag: .02, pant: .02, fold: .4, rough: .8,
-    palette: { coat: [.42, .4, .32], saddle: [.32, .3, .24], belly: [.62, .56, .42], dark: [.06, .05, .04], shell: [.44, .31, .18], seam: [.17, .11, .06], moss: [.3, .43, .16], fern: [.26, .5, .18], bloom: [.88, .76, .3], bloom2: [.62, .36, .78] },
+    palette: { coat: [.2, .19, .15], saddle: [.15, .14, .11], belly: [.36, .32, .24], dark: [.06, .05, .04], shell: [.38, .32, .19], seam: [.17, .11, .06], moss: [.3, .43, .16], fern: [.26, .5, .18], bloom: [.88, .76, .3], bloom2: [.62, .36, .78] },
     parts: null },
   sailshell: { name: 'Sailshell', src: 'OG-040 (a desert tortoise with a sail-like shell)', gaits: ['walk', 'stand'], speedK: .25, wag: .02, pant: .02, fold: .4, rough: .7, finOpacity: 1,
-    palette: { coat: [.62, .5, .36], saddle: [.48, .37, .25], belly: [.8, .7, .52], dark: [.08, .06, .04], shell: [.76, .58, .34], seam: [.34, .21, .1], sail: [.8, .3, .15], sail2: [.93, .56, .25] },
+    palette: { coat: [.38, .28, .18], saddle: [.28, .2, .12], belly: [.52, .43, .3], dark: [.08, .06, .04], shell: [.76, .58, .34], seam: [.34, .21, .1], sail: [.8, .3, .15], sail2: [.93, .56, .25] },
     parts: null },
   skyraven: { name: 'Skyraven', src: 'OG-031 (follows travellers, scavenges battlefields)', gaits: ['hop', 'soar', 'walk', 'stand'], flyH: .9, finOpacity: 1, rough: .35, neckNod: .1, wag: .04, fold: 1.1,
     palette: { coat: [.08, .08, .1], saddle: [.05, .05, .07], belly: [.1, .1, .12], dark: [.03, .03, .03], horn: [.05, .05, .06], skin: [.08, .08, .08], feather: [.08, .08, .1], featherTip: [.03, .03, .05], covert: [.1, .1, .13] },
@@ -2871,7 +2893,8 @@ const tortoise = shell => [
   ['legs', { at: .95, kind: 'plantFore', out: .55, drop: .15, r: [.17, .16, .15, .15], claws: { r: .02, len: .05 } }],
   ['legs', { at: .05, kind: 'plantHind', out: .55, drop: .1, r: [.19, .17, .16, .16], claws: { r: .02, len: .05 } }],
   ['shell', shell]];
-PLANS.mossback.parts = tortoise({ at: .5, lift: .02, len: 2.3, w: 1.75, h: 1.0, top: 'moss', topFrom: .3, garden: { ferns: 34, flowers: 22, cluster: 3, bloom: .13, grass: 26, moss: 18, shrubs: 2, spread: .8, size: .5 } });
+// Session 1926: the moss runs from .04 of the dome's height (was .3) and is full by .4 (was .95), the shrubs' lumps rounder, the mounds and the plants out to the rim, laid along the slope
+PLANS.mossback.parts = tortoise({ at: .5, lift: .02, len: 2.3, w: 1.75, h: 1.0, top: 'moss', topFrom: .04, topTo: .4, garden: { ferns: 34, flowers: 22, cluster: 3, bloom: .13, grass: 30, moss: 34, shrubs: 2, spread: .94, size: .5, drape: .75, edge: .32, low: .7 } });
 PLANS.sailshell.parts = tortoise({ at: .5, lift: .02, len: 2.0, w: 1.5, h: .8, sail: { h: 1.3, len: 1.8 } });
 // a bird of the air: a perching body on bird legs, a fanned tail and feathered wings; a raven and a hawk differ in beak and colour
 const flier = o => [

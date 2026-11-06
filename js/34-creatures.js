@@ -461,7 +461,9 @@ SWIMMER.Bellthroat={len:.37,col:0xc7331a,land:true,move:'hop',w:.55,h:.4};
 // e._calls going up (bellthroatCall, S1913), and the sac fills with sndBellthroat's three booms: up in `rise` s, held at `hold` over the
 // call, and on each boom (0.32 s apart, 0.26 s long) a swell of `boom` more; it empties over `fall` s after the third. Scales the sac's
 // radius, on the near body only (the kit's own pulse with the hop is under it). On the clock, so a dropped frame changes nothing
-const BELL_SAC={rise:.08,hold:.55,boom:.6,gap:.32,len:.26,fall:.3};
+// Session 1923 (the critic, 6 Nov: "a balloon", larger than the frog, with a hard highlight): the call's peak is 1.5 times the sac's
+// radius, was 2.15 (hold .55 and boom .6), and with the kit's own pulse under it the sac never passes `max` times its rest size
+const BELL_SAC={rise:.08,hold:.3,boom:.2,gap:.32,len:.26,fall:.3,max:1.5};
 function hcBellSac(t){const B=BELL_SAC,end=2*B.gap+B.len;if(!(t>=0)||t>end+B.fall)return 0;
   let k=B.hold*Math.min(1,t/B.rise)*(t>end?1-(t-end)/B.fall:1);
   for(let i=0;i<3;i++){const u=(t-i*B.gap)/B.len;if(u>0&&u<1)k+=B.boom*Math.sin(Math.PI*u);}
@@ -496,7 +498,7 @@ function hcSwimPose(rig){const H=rig.hc,e=rig.e,g=e&&e.mesh;if(!H||!g||e.dead)re
   const p=g.position;let d=rig.lx==null?0:Math.hypot(p.x-rig.lx,p.y-rig.ly,p.z-rig.lz);rig.lx=p.x;rig.ly=p.y;rig.lz=p.z;if(d>2)d=0;
   rig.v=dt>0?rig.v+(d/dt-rig.v)*Math.min(1,dt*6):rig.v;
   if(rig.land){const gait=rig.v>.02?SWIMMER[rig.name].move||'slither':'stand';if(H.C.gait!==gait)H.C.gait=gait;rig.ph+=d/Math.max(1e-3,HC.strideOf(H.C)*H.f);HC.pose(H.C,rig.ph);rig.gaitNow=gait;
-    if(H.C.sac){const c=e._calls||0;if(rig.calls===undefined)rig.calls=c;else if(c!==rig.calls){rig.calls=c;rig.callT=now;}const k=rig.callT!=null?hcBellSac(now-rig.callT):0;if(k>0){const q=H.C.sac.scale;q.set(q.x*(1+k),q.y*(1+k),q.z*(1+k));}rig.sacK=k;}
+    if(H.C.sac){const c=e._calls||0;if(rig.calls===undefined)rig.calls=c;else if(c!==rig.calls){rig.calls=c;rig.callT=now;}const k=rig.callT!=null?hcBellSac(now-rig.callT):0;if(k>0){const q=H.C.sac.scale,f=Math.max(1,Math.min(1+k,BELL_SAC.max/Math.max(q.z,1e-3)));q.set(q.x*f,q.y*f,q.z*f);}rig.sacK=k;}
     return;}
   rig.ph+=Math.max(dt*SWIMMER.idle,d/Math.max(1e-3,HC.strideOf(H.C)*H.f));HC.pose(H.C,rig.ph);rig.gaitNow=rig.v>.05?'swim':'hold';}
 // ── the wolf's motion: every joint an [x,y,z] rotation; `drop` lowers the hips ──
