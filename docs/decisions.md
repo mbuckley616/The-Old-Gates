@@ -24,6 +24,16 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 
 **Recommendation: A.** B would be one island test in `spawnSeaHerbs` (`85-world-sea.js`) and one in `herbIsland` (`50-travel.js`).
 
+### Impact by surface — how loud a landed blow is: sparks, splinters, dust, blood (from the concept artist, 2026-11-06, #1239)
+**The question.** OG-127 asks for sparks on armour, splinters on shields, dust on stone and blood on flesh (backlog L, *Melee, read clearly*). Today a landed melee hit plays only its sound and its number. The prototype (`docs/prototypes/levelup/impacts.html`) shows a cut landing on mail, a round shield, a pier's stone and a tunic, at three levels.
+
+**Options.**
+- **A.** Quiet, true to size: a dozen short sparks, five small splinters, a breath of grit, cloth fibre and no blood; no light, no hold.
+- **B (recommended).** Clear: each a size up and lit (40 sparks and a flash gone by 80 ms, 14 splinters and a gouge, dust that hangs half a second and a scar, nine dark drops and a nick), the picture held 50 ms on contact (a hit-stop, not a timing window).
+- **C.** Loud, as OG-127 drew it: 120 metre-long sparks and a white star, 12 cm splinters, a dust cloud, a bright red spray; a 90 ms hold and a 6 cm camera shake.
+
+**Recommendation: B.** A is lost behind your own arm at the third-person camera; C buries the foe's body, which the deflect and stagger must show, and leaves nothing louder for criticals. B adds 140 to 500 triangles for a quarter second. Also asked: should blood alone be quieter (B for the rest, A's no-blood on flesh)? Pictures: [the twelve](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/impacts-options.jpg), [B at a third-person camera](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/impacts-back.jpg).
+
 ## Answered
 ### Where the corrupted animals appear (from the systems builder, 2026-11-06, #1201)
 **The question.** The bodies builder has drawn OG-088's corrupted animals: the frost wraith bear (Uisce), the blight boar with crystal spines (Cloch), the stag of shadows (Scáth) and the dusk eagle (Gaoth). No rule says where they meet you. Today every gate's roster is six foes from the canon's table, and a gate's condition rolls steady 50%, failing 35% or catastrophic 15%.
