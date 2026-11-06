@@ -605,3 +605,34 @@ implements' meshes, Quests 1857), at Middle: Dunmore's street at noon 773 → 77
 The one call more in each outdoor view is in *Other* (102 → 103 in Dunmore's street). The largest rise is Portclare at Low, 385 → 386 (+0.3%). No spot rose by
 more than 10%, and nothing merged since s1220 stands in these views: the forge's room, the beasts and the implements are elsewhere. Dunmore at midnight at Low
 is 680 of its 700 calls: 20 left.*
+
+### s1287 — 2026-11-06 07:05 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Dunmore street, noon | Low | 618 | 1.14 M | 0 | 0 | 112 | 136 | 269 | 101 | Mesh 52, oldGate 24, cave mouth 8, sea cave mouth 8, weaver door 4 |
+| Dunmore street, noon | Middle | 774 | 1.88 M | 136 | 6 | 113 | 136 | 282 | 101 | Mesh 52, oldGate 24, cave mouth 8, sea cave mouth 8, weaver door 4 |
+| Dunmore street, noon | High | 825 | 2.38 M | 168 | 6 | 113 | 136 | 301 | 101 | Mesh 52, oldGate 24, cave mouth 8, sea cave mouth 8, weaver door 4 |
+| Dunmore street, midnight | Low | 682 | 1.09 M | 0 | 0 | 109 | 202 | 269 | 102 | Mesh 52, oldGate 24, cave mouth 8, sea cave mouth 8, weaver door 4 |
+| Dunmore street, midnight | Middle | 861 | 1.82 M | 160 | 6 | 109 | 202 | 282 | 102 | Mesh 52, oldGate 24, cave mouth 8, sea cave mouth 8, weaver door 4 |
+| Dunmore street, midnight | High | 922 | 2.38 M | 202 | 6 | 109 | 202 | 301 | 102 | Mesh 52, oldGate 24, cave mouth 8, sea cave mouth 8, weaver door 4 |
+| the field west of Dunmore, noon | Low | 563 | 652k | 0 | 0 | 105 | 107 | 302 | 49 | Mesh 28, oldGate 8, cave mouth 4, Group 4, quaywall 2 |
+| the field west of Dunmore, noon | Middle | 672 | 1.07 M | 83 | 6 | 105 | 107 | 322 | 49 | Mesh 28, oldGate 8, cave mouth 4, Group 4, quaywall 2 |
+| the field west of Dunmore, noon | High | 721 | 1.56 M | 122 | 6 | 105 | 107 | 332 | 49 | Mesh 28, oldGate 8, cave mouth 4, Group 4, quaywall 2 |
+| the field west of Dunmore, dawn | Low | 646 | 643k | 0 | 0 | 108 | 186 | 302 | 50 | Mesh 28, oldGate 8, cave mouth 4, Group 4, quaywall 2 |
+| the field west of Dunmore, dawn | Middle | 815 | 1.13 M | 143 | 6 | 108 | 186 | 322 | 50 | Mesh 28, oldGate 8, cave mouth 4, Group 4, quaywall 2 |
+| the field west of Dunmore, dawn | High | 869 | 1.67 M | 187 | 6 | 108 | 186 | 332 | 50 | Mesh 28, oldGate 8, cave mouth 4, Group 4, quaywall 2 |
+| Portclare square, noon | Low | 387 | 727k | 0 | 0 | 31 | 65 | 208 | 83 | Mesh 36, oldGate 14, cave mouth 8, sea cave mouth 8, Group 8 |
+| Portclare square, noon | Middle | 556 | 1.48 M | 144 | 6 | 31 | 65 | 227 | 83 | Mesh 36, oldGate 14, cave mouth 8, sea cave mouth 8, Group 8 |
+| Portclare square, noon | High | 604 | 1.89 M | 179 | 6 | 31 | 65 | 240 | 83 | Mesh 36, oldGate 14, cave mouth 8, sea cave mouth 8, Group 8 |
+| The Bramble Hearth (Dunmore's inn), the hall from the door, 20h | Middle (indoors) | 38 | 26k | 0 | 0 | 1 | 0 | 0 | 37 |  |
+| a medium gate (ruins, seed 11), from its entrance | Middle (indoors) | 102 | 394k | 0 | 0 | 33 | 0 | 0 | 68 |  |
+
+*s1287, QA Session 1916 (`budget` 18/18 in 463 s, one try; `budgetport` 9/9 in its fixed form, one try, run after it on four cores with no other
+boot. The unchanged `budgetport` was red twice here first, at its wait for the inn's exit, Session 1916's devlog). Against s1247, 40 builds later (every merge to
+6 Nov 05:20 UTC, among them the look builder's market house on the square, its room and its stair, and the bodies builder's strange beasts), at
+Middle: Dunmore's street at noon 773 → 774 calls, 1.88 M → 1.88 M triangles; at midnight 854 → 861 (+0.8%), 1.80 M → 1.82 M (Low 680 → 682 of its 700);
+the field west at noon 672 → 672 and at dawn 816 → 815; Portclare's square 552 → 556 (+0.7%), 1.46 M → 1.48 M (+1.5%); the inn's hall 38 → 38; the medium
+gate 102 → 102. Dunmore's *Houses* rose by one call in each view (135 → 136 at noon, 201 → 202 at midnight): the market house on the square (Look 1904),
+which its builder put at 21 draws, mostly out of this view. Midnight's shadow pass rose 155 → 160 at Middle. The largest rise is Portclare at Low in
+triangles, 713k → 727k (+2.0%). No spot rose by more than 10%. Dunmore at midnight at Low is 682 of its 700 calls: 18 left.*
