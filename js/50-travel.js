@@ -427,6 +427,7 @@ function herbKnownApply(eff,name){
   if(eff.type==='hpRegen'){_applyBuff({...eff,label:name+' Regen',col:'#44cc44'});return null;}
   if(eff.type==='damage'){PHP=Math.max(1,PHP-eff.amount);return [`-${eff.amount} HP (bitter)...`,'#cc4444'];}
   if(eff.type==='nightEye'){const said=ALCH_FX.nightEye.drink(eff.s||1);return [said,ALCH_FX.nightEye.col];} /* S1896 — Caverglow */
+  if(eff.type==='fx'){const d=ALCH_FX[eff.fx];if(!d||d.harm)return null;if(d.drink)return [d.drink(eff.s||1),d.col];if(d.buff){_applyBuff({duration:ALCH_FORTIFY_S,...d.buff(eff.s||1),label:d.label,col:d.col});return null;}return null;} /* S1938 — an island herb's first effect, eaten as a tincture */
   return null;}
 // ── S1483 — Survival B, session 1: herbs and brewing (`docs/design/survival-build.md`, Michael's B of 30 Sep 2026) ──
 // Every herb has four brewing effects from one pool of 22. The first is the one you learn by eating it; the second is its
@@ -482,6 +483,41 @@ const HERB_FX={
   gateresin:['regenHealth','nightEye','featherfall','fortifyMelee'],
   caverglow:['nightEye','quiet','regenMana','fortifyCarry'], /* S1896 — Caverglow: Night Eye eaten, three from the effects on four herbs */
 };
+// S1938 — the Mark's nine and Aurenne's eleven (OG-039, Michael's A on #1202: all twenty, four effects, grown by island). The first is
+// the atlas's (devlog 1903's list), eaten as a tincture of strength 1 for ALCH_FORTIFY_S; the other three are dealt so that every effect
+// sits on 4 to 10 herbs (the rule widened from 4 to 7) and no two herbs share more than two. Priced as the herbs that share the first
+// effect (their median; where none has it first, those that carry it at all). Zone 'island': no barrel, shop or gather task draws one
+// until they grow. The mesh is a kin kind in the atlas's colours until the look builder's own kinds land.
+const ISLAND_HERB={
+  icebloom:{name:'Icebloom',island:'mark',kin:'rosette',fx:['resistCold','slow','fortifyBlock','regenMana'],price:22,col:0xcfe8f8,stem:0x5a6a68,glow:[0xaaddff,.5,1.6],desc:'A pale flower of the snowfields, frost on its petals.'},
+  frostcap:{name:'Frostcap',island:'mark',kin:'mushrooms',fx:['resistCold','nightEye','drainStamina','vanish'],price:22,col:0x7a4aa8,stem:0x3a2a4a,glow:[0xaa88ff,.4,1.4],desc:'Violet caps from the pine woods.'},
+  rimeberry:{name:'Rimeberry',island:'mark',kin:'lowbush',fx:['resistCold','regenHealth','swiftness','fortifyBow'],price:22,col:0x3a4a3a,stem:0x3a3a2a,glow:[0xcce0ff,.3,1.4],desc:'A heath shrub hung with frosted berries.'},
+  snowthyme:{name:'Snowthyme',island:'mark',kin:'moss',fx:['restoreStamina','resistCold','swiftness','fortifyCarry'],price:20,col:0x5a6a4a,stem:0x3a4a2a,glow:[0xeeccee,.3,1.3],desc:'Low thyme of the high pasture.'},
+  pineresin:{name:'Pine Resin',island:'mark',kin:'clay',fx:['fortifyBow','regenHealth','fortifyBlock','curePoison'],price:30,col:0xe09020,stem:0x4a3828,glow:[0xffaa33,.5,1.5],desc:'Amber resin from a cut pine.'},
+  shardmoss:{name:'Shardmoss',island:'mark',kin:'moss',fx:['fortifyCarry','fortifyBlock','weaken','restoreStamina'],price:38,col:0x3a5a5a,stem:0x2a3a3a,glow:[0x88eeff,.6,1.6],desc:'Dark moss grown through with small crystals.'},
+  glacierlily:{name:'Glacier Lily',island:'mark',kin:'flowerspike',fx:['slow','resistCold','weaken','waterBreathing'],price:28,col:0xeef4fa,stem:0x4a6a50,glow:[0xddeeff,.4,1.5],desc:'A white lily from the glacier’s edge.'},
+  gnarlroot:{name:'Gnarlroot',island:'mark',kin:'root',fx:['nightEye','fortifyCarry','featherfall','fortifyBow'],price:15,col:0x6a5a48,stem:0x4a3a2a,glow:[0xaa8866,.3,1.4],desc:'A twisted root from the cliffs.'},
+  stormthistle:{name:'Stormthistle',island:'mark',kin:'thistle',fx:['fortifyBlock','swiftness','damageHealth','waterBreathing'],price:19,col:0x5a7ac8,stem:0x5a6a58,glow:[0x88aaff,.4,1.6],desc:'A blue globe thistle of the storm coasts.'},
+  sandlotus:{name:'Sandlotus',island:'aurenne',kin:'herb',fx:['resistHeat','waterBreathing','quiet','regenMana'],price:20,col:0xf0c8c0,stem:0x6a7a5a,glow:[0xffd8d0,.4,1.5],desc:'A pink lotus that flowers in the dunes.'},
+  amberbloom:{name:'Amberbloom',island:'aurenne',kin:'flowerspike',fx:['fortifyMelee','resistHeat','swiftness','fortifyBlock'],price:28,col:0xe88a20,stem:0x5a6a30,glow:[0xff9933,.5,1.6],desc:'An orange spike of the dry hills.'},
+  sagepalm:{name:'Sagepalm',island:'aurenne',kin:'broadleaf',fx:['resistHeat','curePoison','quiet','drainStamina'],price:20,col:0x7a9a70,stem:0x6a6a40,glow:[0xaaccaa,.3,1.5],desc:'A grey-green fan palm of the maquis.'},
+  sunpetal:{name:'Sunpetal',island:'aurenne',kin:'cliffflower',fx:['fortifyCarry','resistHeat','featherfall','regenHealth'],price:38,col:0xf0b820,stem:0x5a7030,glow:[0xffcc33,.5,1.6],desc:'A yellow flower of the terraces.'},
+  saltthorn:{name:'Saltthorn',island:'aurenne',kin:'shrub',fx:['curePoison','resistHeat','waterBreathing','weaken'],price:22,col:0x7a9070,stem:0x7a7060,glow:[0xeeeeee,.3,1.4],desc:'A thorny shrub crusted with salt.'},
+  drakesage:{name:'Drakesage',island:'aurenne',kin:'herb',fx:['damageHealth','quiet','slow','vanish'],price:40,col:0x8a5ac0,stem:0x6a7058,glow:[0xaa77ee,.4,1.5],desc:'A purple sage from the limestone. Bitter.'},
+  spicethorn:{name:'Spicethorn',island:'aurenne',kin:'bush',fx:['restoreStamina','fortifyMelee','damageHealth','swiftness'],price:20,col:0xd02818,stem:0x3a5a28,glow:[0xff4422,.4,1.5],desc:'Red pods that burn the tongue.'},
+  jadealoe:{name:'Jade Aloe',island:'aurenne',kin:'rosette',fx:['regenHealth','curePoison','resistHeat','restoreHealth'],price:28,col:0x5a9a78,stem:0x5a6a48,glow:[0x77ccaa,.4,1.5],desc:'A thick-leaved aloe from the rocky coast.'},
+  sunfungus:{name:'Sunfungus',island:'aurenne',kin:'bracket',fx:['nightEye','regenMana','fortifyBow','weaken'],price:15,col:0xe8b030,stem:0x9a8670,glow:[0xffcc44,.4,1.5],desc:'A gold bracket from the canyon walls.'},
+  cyprusblossom:{name:'Cyprus Blossom',island:'aurenne',kin:'bush',fx:['restoreMana','regenMana','quiet','vanish'],price:35,col:0xf0c0d8,stem:0x4a3a2a,glow:[0xffccee,.4,1.6],desc:'Pink blossom from the hillside groves.'},
+  deserttruffle:{name:'Desert Truffle',island:'aurenne',kin:'clay',fx:['restoreHealth','fortifyCarry','drainStamina','regenMana'],price:14,col:0x3a2a20,stem:0x8a6a48,glow:[0xaa8866,.3,1.3],desc:'A dark truffle dug from under the sand.'}};
+// what each first effect does eaten: the restores as the land herbs' medians, the rest as a tincture of strength 1
+function islandHerbEat(f){if(f==='restoreHealth')return [{type:'heal',amount:15},'Restores 15 HP'];if(f==='restoreStamina')return [{type:'stamina',amount:20},'Restores 20 Stamina'];
+  if(f==='restoreMana')return [{type:'mana',amount:25},'Restores 25 Mana'];if(f==='regenHealth')return [{type:'hpRegen',rate:1.5,duration:ALCH_FORTIFY_S},'+1.5 HP/s regen for 60s'];
+  if(f==='damageHealth')return [{type:'damage',amount:10},'-10 HP immediately'];
+  const d=ALCH_FX[f];return [{type:'fx',fx:f,s:1},d.harm?`${d.label} (harmful)`:d.buff?`${d.label} for 60s`:d.label];}
+for(const k in ISLAND_HERB){const H=ISLAND_HERB[k],[eff,known]=islandHerbEat(H.fx[0]),kin=Object.keys(PLANT_KIND).find(p=>PLANT_KIND[p]===H.kin)||'firemoss',base=HERB_DEF[kin]||HERB_DEF.firemoss;
+  HERB_DEF[k]=Object.assign({},base,{name:H.name,ico:'🌿',zone:'island',island:H.island,col:H.col,stemCol:H.stem,glowCol:H.glow[0],glowInt:H.glow[1],glowRad:H.glow[2],respawn:240,
+    desc:H.desc,knownDesc:known,hiddenDesc:'',item:{name:H.name,ico:'🌿',type:'herb',effect:eff,buyPrice:H.price,sellMult:.8,weight:.1}});
+  HERB_FX[k]=H.fx.slice();PLANT_KIND[k]=H.kin;}
 // the herbs whose second effect is their hidden one's kin, so 15 eats teach it as well; the sea's three have no hidden of their own
 const HERB_KIN=new Set(['firemoss','silverleaf','muirfhear','thornberry','shadowcap','deepmoss','caordubh','kelp','sealily','pearlweed']);
 // a herb in the bag by its HERB_DEF key: the pick's _typeKey, which a reload drops, else its name

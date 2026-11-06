@@ -483,7 +483,7 @@ function randomLootHerb(){
   const keys=Object.keys(HERB_DEF);
   if(!keys.length)return null;
   // Filter out any dungeon-only herbs so adventurers/barrels don't cough up rare underground flora.
-  const pool=keys.filter(k=>HERB_DEF[k].zone!=='dungeon'&&HERB_DEF[k].zone!=='gate'); /* S1886 — a gate's plants grow only by their gate */
+  const pool=keys.filter(k=>HERB_DEF[k].zone!=='dungeon'&&HERB_DEF[k].zone!=='gate'&&HERB_DEF[k].zone!=='island'); /* S1886 — a gate's plants grow only by their gate; S1938 — the islands' twenty not until they grow */
   const k=pool.length?pool[Math.floor(lootRand()*pool.length)]:keys[Math.floor(lootRand()*keys.length)];
   return {...HERB_DEF[k].item, qty:1};
 }
