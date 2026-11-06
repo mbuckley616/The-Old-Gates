@@ -5,8 +5,14 @@
     for(let dz=-1;dz<=1;dz++)for(let dx=-1;dx<=1;dx++){const ch=chunks.get(chunkKey(cx+dx,cz+dz));if(!ch)continue;const sol=ch.sol;for(let i=0;i<sol.length;i++){const s=sol[i];if(Math.max(s.rx,s.rz)<MIN)continue;if(Math.abs(x-s.cx)<s.rx+R&&Math.abs(z-s.cz)<s.rz+R)return true;}}
     for(let i=0;i<STATIC_SOL.length;i++){const s=STATIC_SOL[i];if(Math.max(s.rx,s.rz)<MIN)continue;if(Math.abs(x-s.cx)<s.rx+R&&Math.abs(z-s.cz)<s.rz+R)return true;}
     if(settleSolid(x,z,R,MIN))return true;return false;}
-  function solidAt(x,z){
+  // S1927 — a solid may carry its top (world y): one asked with the feet's height y (the player's own step, currentZoneSolid's third
+  // argument) passes over it when y stands within STEP_UP of that top, so you walk along an aqueduct's channel over its arcade. Asked
+  // without y (the foes, the camera, the scatter) every solid blocks as before. AQ_WALKS holds the channels walked now: on one, the walls
+  // either side block from the bed's level to their copings (aqWalkBlocks, 82)
+  const AQ_WALKS=[];
+  function solidAt(x,z,y){
     const R=.3;
+    if(y!=null&&AQ_WALKS.length&&aqWalkBlocks(x,z,y,R))return true;
     const WMAX=SIZE*GRID;if(x<R||z<R||x>WMAX-R||z>WMAX-R)return true; // continent edge
     // deep water is swimmable (groundY lifts the ground to the surface); nothing to block here
     const cx=Math.floor(x/CHUNK),cz=Math.floor(z/CHUNK);
@@ -15,7 +21,7 @@
       const sol=ch.sol;
       for(let i=0;i<sol.length;i++){const s=sol[i];if(Math.abs(x-s.cx)<s.rx+R&&Math.abs(z-s.cz)<s.rz+R)return true;}
     }
-    for(let i=0;i<STATIC_SOL.length;i++){const s=STATIC_SOL[i];if(Math.abs(x-s.cx)<s.rx+R&&Math.abs(z-s.cz)<s.rz+R)return true;}
+    for(let i=0;i<STATIC_SOL.length;i++){const s=STATIC_SOL[i];if(s.top!=null&&y!=null&&y>=s.top-STEP_UP)continue;if(Math.abs(x-s.cx)<s.rx+R&&Math.abs(z-s.cz)<s.rz+R)return true;}
     if(settleSolid(x,z,R))return true;
     if(typeof shipPropSolid==='function'&&shipPropSolid(x,z,R))return true; /* S616 — barrels, crates and masts on a deck */
     return false;

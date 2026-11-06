@@ -379,7 +379,7 @@ function loop(now){
     const tdx = (dx + _lbx) * _ak;
     const tdz = (dz + _lbz) * _ak;
     if(lid==='overworld'){const _rl=typeof shipRailHolds==='function'; /* S1588 — the ship's rail (#882 A) */
-      if(!currentZoneSolid(px+tdx,pz)&&!(_rl&&shipRailHolds(px,pz,px+tdx,pz))&&!laidBlocks(px+tdx,pz,jumpY))px+=tdx;if(!currentZoneSolid(px,pz+tdz)&&!(_rl&&shipRailHolds(px,pz,px,pz+tdz))&&!laidBlocks(px,pz+tdz,jumpY))pz+=tdz;} /* S1590 — a laid pillar, floe or bridge (64-spells.js) */
+      if(!currentZoneSolid(px+tdx,pz,jumpY)&&!(_rl&&shipRailHolds(px,pz,px+tdx,pz))&&!laidBlocks(px+tdx,pz,jumpY))px+=tdx;if(!currentZoneSolid(px,pz+tdz,jumpY)&&!(_rl&&shipRailHolds(px,pz,px,pz+tdz))&&!laidBlocks(px,pz+tdz,jumpY))pz+=tdz;} /* S1590 — a laid pillar, floe or bridge (64-spells.js) */
     else if(isInterior()){
       const R=0.3,idx=dx*_ak,idz=dz*_ak,nx2=px+idx,nz2=pz+idz;
       const _intW={weapon:11,armor:11,potion:9,misc:10,inn:13,church:10,castle:18};
