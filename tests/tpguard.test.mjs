@@ -55,5 +55,24 @@ check('on the move the guard is carried: neither fist further than .33 from the 
 check('sprinting drops to the swinging arms: the right fist never comes up to its shoulder', bare.sprint.rUp < 0, bare.sprint);
 check('with a sword the arms hang as before: the right hand below its shoulder, standing and on the move', sword.stand.rUp < 0 && sword.walk.rUp < 0, { stand: sword.stand, walk: sword.walk });
 check('with a torch there is no guard: the right hand below its shoulder standing', torch.stand.rUp < 0, torch.stand);
+// Session 1899 (Michael's A on #1192, the deflect): a perfect parry sweeps the guard's sword out to your right, or punches the shield out,
+// on the play clock (in by .06 s, back by .42); the riposte's swing is yours after it
+const dfl = await page.evaluate(() => { const raf = window.requestAnimationFrame; window.requestAnimationFrame = () => 0; const out = {};
+  const sword = { name: 'Steel Sword', slot: 'weapon', weaponShape: 'sword' }, shield = { name: 'Iron Kite Shield', slot: 'offhand', shieldType: 'shield' };
+  const hands = () => { const R = TP.rig; R.root.updateMatrixWorld(true); return [R.handR, R.handL].map(h => R.root.worldToLocal(h.getWorldPosition(new THREE.Vector3()))); };
+  const at = (t) => { _lastParryG = t == null ? -1e9 : playClockS - t; for (let i = 0; i < 40; i++) tpUpdate(1 / 60, { moving: false, sprinting: false, camY: 1.6, now: performance.now() + i * 16.7, roll: null }); return hands(); };
+  try {
+    thirdPerson = true; blocking = true; swingT = 0; EQ.weapon = sword; EQ.offhand = null; buildViewmodel();
+    const g0 = at(null), g1 = at(.12), g2 = at(.5);
+    out.sword = { out: +(g0[0].x - g1[0].x).toFixed(3), back: +g2[0].distanceTo(g0[0]).toFixed(3), k: [0, .03, .06, .18, .3, .42].map(t => { _lastParryG = playClockS - t; return +tpDeflectK().toFixed(2); }) };
+    EQ.offhand = shield; buildViewmodel(); buildShieldViewmodel();
+    const s0 = at(null), s1 = at(.12);
+    out.shield = { fwd: +(s1[1].z - s0[1].z).toFixed(3), out: +(s1[1].x - s0[1].x).toFixed(3), right: +s1[0].distanceTo(s0[0]).toFixed(3) };
+  } finally { blocking = false; _lastParryG = -1e9; EQ.offhand = null; window.requestAnimationFrame = raf; }
+  return out; });
+console.log('deflect', JSON.stringify(dfl));
+check(`a perfect parry sweeps the guard's sword out to your right (${dfl.sword.out} m), and by .5 s it is back in the guard (${dfl.sword.back} m off); in by .06 s, held to .18, gone by .42 (${dfl.sword.k.join(', ')})`,
+  dfl.sword.out > .15 && dfl.sword.back < .02 && dfl.sword.k[0] === 0 && dfl.sword.k[2] === 1 && dfl.sword.k[3] === 1 && dfl.sword.k[5] === 0, dfl.sword);
+check(`with a shield the shield is punched out (${dfl.shield.fwd} m forward, ${dfl.shield.out} m to the left) and the sword hand stays where it was (${dfl.shield.right} m)`, dfl.shield.fwd > .08 && dfl.shield.out > .05 && dfl.shield.right < .02, dfl.shield);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

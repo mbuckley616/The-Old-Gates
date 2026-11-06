@@ -273,6 +273,10 @@ function tpMotesTick(R,t){if(!R||!R.motes)return;for(const m of R.motes){const {
   a.needsUpdate=true;}}
 function tpDispose(R){if(!R)return;if(R.rig&&R.rig.hb){if(R.hbHeld)for(const h of R.hbHeld)h.c.removeFromParent();hbDrop(R.rig);} /* F10: the held copies share the pieces' geometry, disposed once below */if(R.root.parent)R.root.parent.remove(R.root);R.root.traverse(o=>{if(o.isMesh||o.isPoints){o.geometry.dispose();if(o.material!==PEOPLE_MAT)o.material.dispose();}});}
 const _tpL=(a,b,k)=>a+(b-a)*k;
+// S1899 — your deflect's beat after a perfect parry (74-strikes.js sets _lastParryG on the play clock): w, the sword arm's; s, the shield's
+const TP_DEFLECT={rise:.06,hold:.18,out:.42,w:{aR:[-1.05,-.6,0],eR:-.45,wR:.35},s:{aL:[-1.15,-.3,0],eL:-.55,shY:.15,shZ:-.65}};
+function tpDeflectK(){if(typeof _lastParryG!=='number')return 0;const D=TP_DEFLECT,t=playClockS-_lastParryG;if(t<0||t>=D.out)return 0;
+  const u=t<D.rise?t/D.rise:t<D.hold?1:1-(t-D.hold)/(D.out-D.hold);return u*u*(3-2*u);}
 function tpSet(g,x,y,z,k){g.rotation.x=_tpL(g.rotation.x,x,k);g.rotation.y=_tpL(g.rotation.y,y||0,k);g.rotation.z=_tpL(g.rotation.z,z||0,k);}
 // ── camera collision ──
 function tpInteriorBox(){const _intW={weapon:11,armor:11,potion:9,misc:10,inn:13,church:10,castle:18},_intD={weapon:10,armor:10,potion:9,misc:9,inn:11,church:16,castle:22},_ceil={weapon:2.4,armor:2.4,potion:2.2,misc:2.3,inn:2.5,church:3.8,castle:5.2};const t=currentHouse&&currentHouse.type||'misc';return {W:(currentHouse&&currentHouse._roomW)||_intW[t]||10,D:(currentHouse&&currentHouse._roomD)||_intD[t]||9,C:(currentHouse&&currentHouse._ceilH)||_ceil[t]||2.3};}
@@ -476,6 +480,14 @@ function tpPose(R,dt,st){
   } else TP.swMax=0;
   // block
   if(blocking&&swingT<=0){if(R.shield){aL={x:-1.3,y:-.95,z:0};eL=-1.2;shY=.5;shZ=-.4;}else if(R.twoH||R.weapon){aR={x:-1.3,y:.6,z:0};eR=-1.2;wR=1.2;if(R.twoH){aL={x:-1.3,y:-.4,z:0};eL=-1.3;}}else{aL={x:-1.5,y:-.3,z:0};aR={x:-1.5,y:.3,z:0};eL=eR=-1.6;}}
+  // S1899 (Michael's A on #1192, the deflect; your side of the beat that 32-people.js' foeDeflect is the foe's): a perfect parry beats the
+  // foe's blade aside: the guard's sword is swept out to your right, the arm straightening, or the shield punched out to the left and
+  // forward; quicker than the foe's (in by .06 s, back by .42 on the play clock), so the riposte's swing (which takes the arm) is yours
+  // within the 0.8 s. Nothing is held, and the off hand keeps what it carries
+  const dk=tpDeflectK();
+  if(dk>0&&swingT<=0&&!R.bow){const D=TP_DEFLECT;
+    if(R.shield){aL={x:_tpL(aL.x,D.s.aL[0],dk),y:_tpL(aL.y,D.s.aL[1],dk),z:_tpL(aL.z,D.s.aL[2],dk)};eL=_tpL(eL,D.s.eL,dk);shY=_tpL(shY,D.s.shY,dk);shZ=_tpL(shZ,D.s.shZ,dk);}
+    else if(R.weapon||R.twoH){aR={x:_tpL(aR.x,D.w.aR[0],dk),y:_tpL(aR.y,D.w.aR[1],dk),z:_tpL(aR.z,D.w.aR[2],dk)};eR=_tpL(eR,D.w.eR,dk);wR=_tpL(wR,D.w.wR,dk);}}
   // the bow: left arm out along the aim, right hand draws to the cheek
   const drawing=typeof _bowDrawing!=='undefined'&&_bowDrawing;
   if(R.bow&&(drawing||blocking)){const s=drawing?Math.min(1,_bowDrawT/BOW_DRAW_MAX):.3;const aim=-Math.PI/2-pitch*.9;ty=-.55;aL={x:aim,y:.55,z:0};eL=-.05;aR={x:aim,y:.55+.3+s*.45,z:0};eR=-.4-s*2.0;}
