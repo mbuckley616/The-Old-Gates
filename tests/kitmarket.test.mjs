@@ -16,7 +16,7 @@ const info = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'), 
     doorUp: +(activeTerrainH(h.doorX, h.doorZ) - M.y).toFixed(2), exitUp: +(activeTerrainH(h.exitX, h.exitZ) - M.y).toFixed(2) } : null; });
 check(`Dunmore's market house has its room upstairs, a house of its own (${info && info.id}), its door on the stair's landing (${info && info.doorUp} m up)`, !!info && info.id === 'g_dunmore_6000' && info.door < .6 && info.exitClear && Math.abs(info.doorUp - 3.6) < .05 && Math.abs(info.exitUp - 3.6) < .05, info);
 check('nobody keeps it, and it is never locked', !!info && info.nobody && info.open, info);
-// S1909 — the stair is climbed from the square: walked through the game's own loop at fixed 1/60 steps (the draw held off), W held toward
+// S1912 — the stair is climbed from the square: walked through the game's own loop at fixed 1/60 steps (the draw held off), W held toward
 // the landing from a metre off the stair's foot; up every step and onto the landing with nothing in the way, no rise over a riser's 0.2;
 // E there takes you in. From the ground beside the stair, under the landing, E does not.
 const up = await page.evaluate(() => {
