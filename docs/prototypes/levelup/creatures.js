@@ -999,6 +999,9 @@ function stowQuills(C, W, k) {
     _vN.copy(f.n).applyQuaternion(qp).applyQuaternion(_qD); _vF.set(W.side * Math.cos(e), Math.sin(e), 0).addScaledVector(_vT, -_vT.dot(_vF)).normalize();
     if (_vN.dot(_vF) < 0) _vF.negate(); _qD.premultiply(_qR.setFromUnitVectors(_vN, _vF));
     _qP.copy(qp).invert().multiply(_qD).multiply(qp); b.quaternion.copy(_qI).slerp(_qP, k); } }
+// the kick's numbers (Session 1915), as fractions of the leg's own height (hR) and radians: chambered, the foot lifts `lift` and draws back
+// `tuck` and the knee folds by `fold`; struck, the foot is `high` up and `reach` ahead; the body pitches by `back` (nose up, negative) chambered and by `fwd` (nose down) struck
+export const KICK = { lift: .55, tuck: .15, fold: 1.3, high: .4, reach: 1.0, back: -.2, fwd: .12, neck: .7 };
 export function pose(C, phase) {
   const G = GAITS[C.gait], B = C.B, n = B.legs.length / 2, tau = Math.PI * 2, ph = phase - Math.floor(phase);
   // a rest's numbers are found once per creature and gait (the sit's pitch, the lie's drop, the tail's lift), while finding them it poses itself
@@ -1061,6 +1064,11 @@ export function pose(C, phase) {
     C.byName[W.arm[1]].rotation.set(0, W.side * 1.1 * fold, W.side * -.3 * flap); C.byName[W.arm[2]].rotation.set(0, -W.side * .9 * fold, W.side * -.2 * flap);
     W.fingers.forEach((f, k) => C.byName[f[0]].rotation.set(0, W.side * (k / W.fingers.length) * .4 * fold, 0)); }
   if (G.sit) sitBody(C);
+  // a kick (Session 1915; the Stormplume's and the Redcrest's, which fight with their feet): C.kick = { a, b, side }, set by the caller
+  // each frame. `a` (0 to 1) chambers the hind leg on that side, knee drawn up and the body rocked back; `b` (0 to 1) drives the foot
+  // forward and down through the strike, the body pitching into it. The other leg stands; the neck takes back most of the rock
+  const KK = C.kick && (C.kick.a > 0 || C.kick.b > 0) ? C.kick : null;
+  if (KK) { const lean = KICK.back * KK.a * (1 - KK.b) + KICK.fwd * KK.b; sp.rotation.x += lean; if (B.chains.neck) C.byName[B.chains.neck[0]].rotation.x -= lean * KICK.neck; }
   C.rig.updateMatrixWorld(true);
   // the legs: the foot's target from the gait, then IK
   const sweep = sweepOf(C, G), D = C.dir;
@@ -1076,6 +1084,8 @@ export function pose(C, phase) {
     // aloft, the feet tuck up and back; an insect's splayed legs only lift a little and hang (Session 864)
     if (G.aloft) { if (L.yaw) { T.y += (C.plan.flyH || 0) - .1 * L.hR; T.x = lerp(T.x, L.rest[0].x, .25); } else { T.y += (C.plan.flyH || 0) + .55 * L.hR; T.addScaledVector(D, -.45 * L.hR); fold = 1.2; } }
     else if (G.fr > 0 && !G.wave) { if (fl < G.duty) T.addScaledVector(D, sweep * (.5 - fl / G.duty)); else { const u = (fl - G.duty) / (1 - G.duty), e = u * u * (3 - 2 * u); T.addScaledVector(D, sweep * (-.5 + e)); T.y += (G.lift || .15) * L.hR * Math.sin(Math.PI * u) + air; fold = (C.plan.fold ?? .9) * Math.sin(Math.PI * u); } }
+    if (KK && L.at === order[order.length - 1] && Math.sign(L.side) === Math.sign(KK.side || 1)) { const h = L.hR, a = KK.a * (1 - KK.b), k = KK.b;
+      T.copy(F0); T.y += h * (KICK.lift * a + KICK.high * k); T.addScaledVector(D, h * (-KICK.tuck * a + KICK.reach * k)); fold = KICK.fold * a; }
     worst = Math.max(worst, solveLeg(C, L, T, fold));
   }
   if (C.mist) { const hd = C.mist.parent; hd.updateWorldMatrix(true, false); const qi = hd.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(C.rig.getWorldQuaternion(new THREE.Quaternion())); mistTick(C.mist, ph, qi); }

@@ -388,6 +388,15 @@ function buildBird(name,key){const B=BIRD[name];if(!B)return null;const root=new
   const rig={name,bird:true,fish:true,crawl:true,gait:'stand',k:{bird:true},root,mesh,e:null,hcKey:(B.farm?'farm:':'wild:')+(key!=null?key:name),reach:1,ph:0,t:0,lx:null,lz:null,v:0,tris:mesh.geometry.attributes.position.count/3};
   root.userData.rig=rig;return rig;}
 // the bird's pose, near: the gait by where its group is, the phase by the ground it covers (or by the clock aloft and standing)
+// Session 1915: the birds that fight with their feet (the Stormplume and the Redcrest, which answer back, #1050 A) kick: the kit's kick
+// (HC.KICK, C.kick) chambered by the strike's wind-up (e._wind, 0 to 1, or a dungeon's e.atkAnim) and struck through the lunge (e._lunge,
+// 0.3 s counting down): the foot out and back in a half sine. The side alternates strike by strike. Any other bird is posed as before
+const KICKERS={Stormplume:1,Redcrest:1};
+function hcBirdKick(rig,e){if(!KICKERS[rig.name]||!e)return null;const w=Math.max(0,Math.min(1,e._wind||0));
+  const s=e._lunge!=null&&e._lunge>0?1-e._lunge/.3:e.atkAnim>0?1-Math.min(1,e.atkAnim/.35):-1;
+  if(s>=0&&!rig.kickOn){rig.kickOn=true;rig.kickSide=-(rig.kickSide||-1);}if(s<0)rig.kickOn=false;
+  const b=s>=0?Math.sin(Math.PI*s):0,a=s>=0?(s<.5?1:Math.max(0,1-(s-.5)*2)):w;
+  return a>0||b>0?{a,b,side:rig.kickSide||1}:null;}
 function hcBirdPose(rig){const H=rig.hc,e=rig.e,g=e&&e.mesh;if(!H||!g||e.dead)return;const now=performance.now()/1000,dt=rig.t?Math.min(.1,now-rig.t):0;rig.t=now;
   if(H.spineY0==null){H.C.root.updateMatrixWorld(true);const s0=H.C.byName.spine0;H.spineY0=s0?H.C.root.worldToLocal(s0.getWorldPosition(new THREE.Vector3())).y:0;} /* at the stand it was attached in */
   const x=g.position.x,z=g.position.z;let d=rig.lx==null?0:Math.hypot(x-rig.lx,z-rig.lz);rig.lx=x;rig.lz=z;if(d>2)d=0;
@@ -396,7 +405,7 @@ function hcBirdPose(rig){const H=rig.hc,e=rig.e,g=e&&e.mesh;if(!H||!g||e.dead)re
   const C=H.C,PG=C.plan.gaits||['hop','soar'],fast=B.run||(PG.includes('hop')?'hop':PG.includes('trot')?'trot':'walk');
   let gait=up&&PG.includes('soar')?'soar':rig.v>B.hop?fast:rig.v>BIRD.walk?'walk':'stand';
   if(C.plan.gaits&&!PG.includes(gait))gait='stand'; /* S1746: a gait its plan lacks (the swift's walk) is a stand */
-  C.gait=gait;
+  C.gait=gait;C.kick=hcBirdKick(rig,e);
   if(gait==='soar'||gait==='stand')rig.ph+=dt*(gait==='soar'?B.beat||BIRD.beat:.25);else rig.ph+=d/Math.max(1e-3,HC.strideOf(C)*H.f);
   HC.pose(C,rig.ph);
   // aloft the kit lifts its body by the plan's flyH: the group's own height is the flight, so the lift is taken back off
