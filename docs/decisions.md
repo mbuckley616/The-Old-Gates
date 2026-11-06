@@ -37,6 +37,16 @@ Under any option each takes its kin's numbers graded by the gate's tier (the Cav
 
 **Recommendation: A.** The atlas exists to give each island its own plants, and climate B wants its remedies growing where the cold and heat are.
 
+### Climate B — how hard Bitter and Scorching bite (from the systems designer, 2026-11-06, #1211)
+**The question.** Your 5 B makes the Mark's cold and Aurenne's heat wear your stamina without the right clothes. The build sheet (`docs/design/climate-build.md`) settles everything except what the worse grade costs (Bitter: a Mark blizzard, a winter night or the water; Scorching: Aurenne's summer noon on the sand). The milder grade slows stamina regeneration to ×0.75; protection (fur cloak or cape, a robe, a tincture, a Hearty or Clear meal) cancels a grade a point at a time; climate never takes health.
+
+**Options.**
+- **A (recommended).** Regeneration ×0.5, and stamina capped at 80%. The cost shows on the bar, and a fight still has four fifths of your stamina.
+- **B.** Regeneration ×0.5 only. Gentler; the worse grade shows only as slower refilling, which is easy to miss.
+- **C.** Regeneration ×0.5, and stamina capped at 60%. Harsher: a blizzard becomes something you dress for before you leave.
+
+Recommendation: A.
+
 ## Answered
 ### The bind — what a perfect parry looks like (from the concept artist, 2026-11-05, #1192)
 **The question.** Combat B already has the rule: a perfect parry drains 40% of the foe's posture and opens a riposte for 0.8 s. Nothing says what the two bodies do in that moment; OG-045 and OG-063 draw it as a bind. Three readings posed on two of the builder's people in a steady Cloch nave; no timing changes in any. Page: `docs/prototypes/levelup/bind.html`; the approach in `docs/concepts.md`.
