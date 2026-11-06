@@ -454,7 +454,7 @@ function sndEnemyDeath(){
   sfxTone(160,60,.2,.15,'sawtooth');
 }
 // Per-monster alert cries — called once when enemy first spots the player
-// S1912 — the Bellthroat's call at dusk (OG-040: "whose call echoes across valleys at dusk, an ambient sound"): three low booms off the
+// S1913 — the Bellthroat's call at dusk (OG-040: "whose call echoes across valleys at dusk, an ambient sound"): three low booms off the
 // throat sac, falling a little, and the same again quieter a breath later for the valley's echo. k is 0 (at the edge of hearing) to 1 (beside it)
 function sndBellthroat(k){
   if(!AX||volLevel===0)return;k=Math.max(0,Math.min(1,k||0));const g=.04+.22*k;
