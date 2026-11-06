@@ -1062,12 +1062,14 @@ if (!process.argv.includes('--shots-only')) { const page = await browser.newPage
       ['hood up', 'short', 1, { mantle: null, cloak: [.3, .3, .3], hood: 'up' }], ['necklace', 'short', 0, { mantle: null, cloak: null, hood: null, necklace: [.85, .66, .3] }],
       ['bodice', 'short', 0, { mantle: null, cloak: null, hood: null, bodice: [.5, .2, .1] }], ['cord', 'short', 1, { mantle: null, cloak: null, hood: null, robe: [.3, .26, .4], cord: [.7, .6, .4] }],
       ['kite', 'short', 1, { mantle: null, cloak: null, hood: null, shield: [.5, .2, .1], shieldShape: 'kite' }],
-      ['hoplon', 'short', 1, { mantle: null, cloak: null, hood: null, shield: [.5, .2, .1], shieldShape: 'hoplon' }]]) {
+      ['hoplon', 'short', 1, { mantle: null, cloak: null, hood: null, shield: [.5, .2, .1], shieldShape: 'hoplon' }],
+      // the fur collar's six shells (Session 1931), the last roll wound inward
+      ['fur collar', 'short', 1, { mantle: null, cloak: [.25, .2, .16], cloakFur: [.5, .42, .32], cloakLen: 1, hood: null }]]) {
       const G = K.rollGenome('rolls:' + nm, { g: sex }), p = K.makePerson({ ...G, hair: { style, len: .8 }, dress: { ...G.dress, ...dress } }), ms = [];
       p.root.traverse(m => { if (m.isMesh && m.userData.axis) ms.push([m.name, face(m)]); }); out[nm] = ms; }
     return out; });
   for (const [k, ms] of Object.entries(r)) check(`${k}: the rolls face out of themselves (${ms.map(([n, f]) => `${n} ${(f.out * 100).toFixed(1)}%`).join(', ')}), so a single-sided roll is drawn and lit from outside`,
-    ms.length >= ({ braids: 4, braid: 2, bun: 1, 'hood down': 1, 'hood up': 1, necklace: 1, bodice: 4, cord: 3, kite: 1, hoplon: 1 })[k] && ms.every(([, f]) => f.out > .95), ms);
+    ms.length >= ({ braids: 4, braid: 2, bun: 1, 'hood down': 1, 'hood up': 1, necklace: 1, bodice: 4, cord: 3, kite: 1, hoplon: 1, 'fur collar': 6 })[k] && ms.every(([, f]) => f.out > .95), ms);
   check('the rolls: no page errors', errs.length === 0, errs.slice(0, 3)); await page.close(); }
 const shotArg = process.argv.find(a => a.startsWith('--shots') && a !== '--shots-only');
 if (shotArg) { const only = shotArg.split('=')[1];
