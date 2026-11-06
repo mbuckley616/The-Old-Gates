@@ -23,7 +23,7 @@ const r = await page.evaluate(() => {
   WORLD.scene.updateMatrixWorld(true);
   const rc = new THREE.Raycaster(), org = new THREE.Vector3(), dir = new THREE.Vector3();
   const hit = (x, y, z, dx, dz, far) => { org.set(x, y, z); dir.set(dx, 0, dz).normalize(); rc.set(org, dir); rc.far = far; return rc.intersectObjects(meshes, false)[0] || null; };
-  const H = S.houses.filter(h => h.siteId === 'dunmore' && h.kit), out = [];
+  const H = S.houses.filter(h => h.siteId === 'dunmore' && h.kit && h.kit.kind !== 'market'), out = []; /* S1905 — the market house's room is a house at the stair's foot, not a lot (tests/kitmarket, townplots) */
   for (const h of H) {
     const s = S.sol.find(q => q.hid === h.id); if (!s) { out.push({ id: h.id, nosol: true }); continue; }
     const nx = s.s, nz = s.c, ex = s.c, ez = -s.s, base = WORLD.worldH(s.cx, s.cz);
