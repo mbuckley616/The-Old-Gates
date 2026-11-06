@@ -1635,11 +1635,11 @@ let ZE=[]; // active zone enemies; replaced on zone switch
 let ZONE_CORPSES=[]; // active zone corpses; reset on zone switch. Unified with dungeon corpses at the loot-panel level.
 let ZB=[]; // active zone projectile balls (overworld spells)
 
-function currentZoneSolid(x,z){
+function currentZoneSolid(x,z,y){ /* S1927 — y, the feet's height, only from the player's own step (a solid's top) */
   if(typeof isInterior==='function'&&isInterior()&&typeof intSolidAt==='function')return intSolidAt(x,z,.3,INT_FOE_Y!=null?INT_FOE_Y:0); // v80 S241 — indoors, the room's own solids
   const z2=ZONES[activeZoneId];
   if(!z2)return owSolid(x,z);
-  if(z2.solidFn)return z2.solidFn(x,z); // v80: streamed world supplies its own solid test
+  if(z2.solidFn)return z2.solidFn(x,z,y); // v80: streamed world supplies its own solid test
   const R=0.3,sz=z2.size||60;
   if(x<R||x>sz-R||z<R||z>sz-R)return true;
   for(const s of z2.sol)if(Math.abs(x-s.cx)<s.rx+R&&Math.abs(z-s.cz)<s.rz+R)return true;

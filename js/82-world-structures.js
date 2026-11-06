@@ -188,6 +188,7 @@
     // settlements in this cell go first
     c.sites.forEach(t=>{if(SETTLE.has(t.id))disposeSettlement(t.id);});
     if(c._cave&&c._cave.house){const i=ZONES.world.houses.indexOf(c._cave.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1768 — the cave's record */if(c._cove&&c._cove.house){const i=ZONES.world.houses.indexOf(c._cove.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1773 — the sea cave's */if(c._grotto&&c._grotto.house){const i=ZONES.world.houses.indexOf(c._grotto.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1787 — the grotto's */if(c._mine&&c._mine.house){const i=ZONES.world.houses.indexOf(c._mine.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1790 — the mine's */
+    if(c._aq&&c._aq.walks){aqWalkDrop(c._aq.id);c._aq.walks=null;} /* S1927 — the aqueduct's channel */
     if(c._tunnel&&c._tunnel.house){const i=ZONES.world.houses.indexOf(c._tunnel.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1828 — the tunnel's */
     (c._lone||[]).forEach(F=>{if(SETTLE.has(F.id))disposeSettlement(F.id);const i=F._site?LONE_FARMS.indexOf(F._site):-1;if(i>=0)LONE_FARMS.splice(i,1);}); /* S1473 — and its lone farms */
     if(L.staticsBuilt||L.staticsPending)dropStatics(L);
@@ -784,9 +785,28 @@
     const G=new Map(),ground=u=>{const q=Math.round(u*2)/2;let h=G.get(q);if(h===undefined){h=1e9;for(const v of [-1.5,0,1.5])h=Math.min(h,meshH(...W(q,v)));h-=C.y;G.set(q,h);}return h;},groundAt=(u,v)=>meshH(...W(u,v))-C.y;
     const M=PKIT.places.aqueduct({key:C.id,x0:C.x0,x1:C.x1,deep:C.deep,ground,groundAt});
     M.group.position.set(C.x,C.y,C.z);M.group.rotation.y=C.ry;M.group.name='aqueduct';sc.add(M.group);
-    for(const b of M.sol){const [cx,cz]=W(b.x,b.z);STATIC_SOL.push({cx,cz,rx:b.w/2,rz:b.d/2,c:Math.cos(C.ry+b.ry),s:Math.sin(C.ry+b.ry),h:b.h,aqueduct:true});}
+    /* S1927 — over a run of the channel a solid's top is the channel's bed (C.y): walked from the bed you pass over the arcade */
+    const onRun=x=>M.channel.runs.some(([a,b])=>x>=a-.01&&x<=b+.01);
+    for(const b of M.sol){const [cx,cz]=W(b.x,b.z);STATIC_SOL.push({cx,cz,rx:b.w/2,rz:b.d/2,c:Math.cos(C.ry+b.ry),s:Math.sin(C.ry+b.ry),h:b.h,aqueduct:true,...(onRun(b.x)?{top:C.y}:{})});}
+    aqWalkDrop(C.id);C.walks=M.channel.runs.map(([a,b],i)=>aqWalk(C,co,s_,a,b,M.channel.w,i));C.walks.forEach(P=>{ZONES.world.platforms.push(P);AQ_WALKS.push(P);});
     C.tris=M.tris;C.draws=M.draws;C.two=M.two;C.bays=M.bays;C.piers=M.piers;C.gap=M.gap;C.arch=M.arch;C.sol=M.sol.length;C.group=M.group;
     return M.group;}
+  // S1927 — the channel walked (OG-121, OG-124; places.js's aurenneAqueduct is "the walk from the west terrace", #333 A): each unbroken run of
+  // it a world platform at its bed, the channel's inner width plus its walls (the bed's height under a foot that strays into a wall, never
+  // the ground 5 to 16 m under it). It holds a point whose drawn ground lies within 0.6 m under the bed (the ends, where the hill comes up
+  // to it), or the player's own spot while their feet are within 0.6 m of the bed; so nothing under an arch is lifted onto it, and a foe
+  // never climbs onto it but from the hill. At the bed's level the walls either side block (aqWalkBlocks, read by solidAt with a height);
+  // a run's ragged end over the breach is open, a drop to the ground or the string course. Tagged aqueduct:<id>, dropped with its cell.
+  const AQ_WALL=1.05; /* the walls' copings over the bed */
+  function aqWalk(C,co,s,u0,u1,cw,i){const hw=cw/2+.55,xs=[],zs=[];
+    for(const u of [u0,u1])for(const v of [-hw,hw]){xs.push(C.x+u*co+v*s);zs.push(C.z-u*s+v*co);}
+    return {x0:Math.min(...xs),x1:Math.max(...xs),z0:Math.min(...zs),z1:Math.max(...zs),y:C.y,aqueduct:C.id,run:i,u0,u1,cw,hw,X:C.x,Z:C.z,co,s,
+      local(wx,wz){const dx=wx-this.X,dz=wz-this.Z;return [dx*this.co-dz*this.s,dx*this.s+dz*this.co];},
+      inside(wx,wz){const [u,v]=this.local(wx,wz);if(u<this.u0||u>this.u1||Math.abs(v)>this.hw)return false;
+        if(wx===px&&wz===pz&&jumpY>=this.y-.6)return true;return meshH(wx,wz)>=this.y-.6;}};}
+  function aqWalkBlocks(x,z,y,R){for(const P of AQ_WALKS){if(y<P.y-STEP_UP||y>=P.y+AQ_WALL-STEP_UP)continue;const [u,v]=P.local(x,z);
+      if(u<P.u0-R||u>P.u1+R||Math.abs(v)>P.hw+R)continue;if(Math.abs(v)>P.cw/2-R)return true;}return false;}
+  function aqWalkDrop(id){for(const L of [ZONES.world.platforms,AQ_WALKS])for(let i=L.length-1;i>=0;i--)if(L[i].aqueduct===id)L.splice(i,1);}
   function rebuildRoadGrid(){
     RSEG.length=0;RGRID.clear();ROAD_DEFS.length=0;
     ROADS.forEach(road=>{ROAD_DEFS.push(road.def);indexRoad(road);});
