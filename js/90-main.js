@@ -1355,7 +1355,7 @@ function loop(now){
       e.atkCd-=dt;e.pathT-=dt;
       if(e._slamT>0&&isStaggered(e))slamCancel(e); // S404 — a staggered master loses its slam
       // Stagger check
-      const stag=staggered.find(s=>s.e===e);if(stag){stag.t-=dt;if(stag.t<=0){staggered=staggered.filter(s=>s.e!==e);reraiseGuard(e);}else{e.mesh.position.set(e.x,e.baseY,e.z);e.mesh.lookAt(T.x,e.mesh.position.y,T.z);e.el.position.set(e.x,.8,e.z);return;}}
+      const stag=staggered.find(s=>s.e===e);if(stag){stag.t-=dt;if(stag.t<=0){staggered=staggered.filter(s=>s.e!==e);reraiseGuard(e);}else{e.mesh.position.set(e.x,e.baseY,e.z);e.mesh.lookAt(T.x,e.mesh.position.y,T.z);e.el.position.set(e.x,.8,e.z);if(typeof foeDeflect==='function')foeDeflect(e);return;}} /* S1898 — a parried foe's deflect (32-people.js) */
       // Dormant state (Gargoyle) — statue-frozen until player comes close. No movement, no attack, no orbit.
       // Activation happens when player within 4u: flash + cry + clears dormant flag.
       if(e.dormant){
