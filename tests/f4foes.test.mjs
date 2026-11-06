@@ -86,15 +86,20 @@ const dfl = await page.evaluate(() => { const f = _F[0], e = f.e, rig = f.rig, B
   blocking = true; lastBlockAttemptG = playClockS - .05; lastBlockAttemptT = performance.now() / 1000 - .05; executeStrike(e, 10, performance.now()); blocking = false;
   const stag = isStaggered(e); e._ripAt = performance.now() / 1000 - .25; tick();
   const k = foeDeflectK(e), r1 = ['shR', 'shL', 'spine'].map(j => B[j].rotation.toArray().slice(0, 3)), h1 = hand();
+  const hL = rig.hb.map.find(([j]) => j === 'wrL')[1].getWorldPosition(new THREE.Vector3()), feet = rig.root.parent.position.y, P0 = rig.root.parent.position;
   const off = (r, j) => Math.max(...r.map((v, i) => Math.abs(v - D[j][i])));
   window._DF = { e, rig };
-  const out = { stag, k: +k.toFixed(2), at: ['shR', 'shL', 'spine'].map((j, i) => +off(r1[i], j).toFixed(3)), rest: ['shR', 'shL', 'spine'].map((j, i) => +off(r0[i], j).toFixed(3)), hand: +h1.distanceTo(h0).toFixed(2), handDrop: +(h0.y - h1.y).toFixed(2) };
+  const out = { stag, k: +k.toFixed(2), at: ['shR', 'shL', 'spine'].map((j, i) => +off(r1[i], j).toFixed(3)), rest: ['shR', 'shL', 'spine'].map((j, i) => +off(r0[i], j).toFixed(3)), hand: +h1.distanceTo(h0).toFixed(2), handDrop: +(h0.y - h1.y).toFixed(2), wpnY: +(h1.y - feet).toFixed(2), offY: +(hL.y - feet).toFixed(2), wpnOut: +Math.hypot(h1.x - P0.x, h1.z - P0.z).toFixed(2), offOut: +Math.hypot(hL.x - P0.x, hL.z - P0.z).toFixed(2) };
   e._ripAt = performance.now() / 1000 - .95; tick(); out.after = +foeDeflectK(e).toFixed(2); out.back = +Math.abs(B.shR.rotation.z - r0[0][2]).toFixed(3);
   out.env = [0, .05, .1, .3, .45, .675, .9].map(t => { e._ripAt = performance.now() / 1000 - t; return +foeDeflectK(e).toFixed(2); });
   e._ripAt = performance.now() / 1000 - .3; tick(); e.spd = sp; return out; });
 console.log('  deflect:', JSON.stringify(dfl));
+const FOE_DL = await page.evaluate(() => ({ spineY: FOE_DEFLECT.j.spine[1] }));
 check(`parried perfectly, a ${'Bandit'}'s driver takes the deflect through the zone's tick: its weapon arm, shield arm and spine within ${Math.max(...dfl.at)} of the pose (from ${Math.min(...dfl.rest)} at rest), the builder's weapon hand thrown ${dfl.hand} m`,
   dfl.stag && dfl.k > .9 && dfl.at.every(v => v < .1) && dfl.rest.every(v => v > .3) && dfl.hand > .2, dfl);
+// Session 1924 (the critic, 6 Nov: "a shrug", the arms out level and mirrored): the two sides differ, the weapon hand flung at least
+// 25 cm further from the body's axis than the off hand, which is dropped in by the hip, and the trunk turned away from the blade
+check(`the deflect is not mirrored: the weapon hand ${dfl.wpnOut} m out from the body's axis, the off hand ${dfl.offOut} m (${dfl.wpnY} and ${dfl.offY} m up), the spine turned ${FOE_DL.spineY}`, dfl.wpnOut - dfl.offOut > .25 && FOE_DL.spineY < -.2, dfl);
 check(`the deflect comes in by .1 s, holds to .45 and is gone by .9 (${dfl.env.join(', ')}); after it the arm is its own again`, dfl.env[0] === 0 && dfl.env[2] === 1 && dfl.env[4] === 1 && dfl.env[5] > 0 && dfl.env[5] < 1 && dfl.env[6] === 0 && dfl.after === 0 && dfl.back < .1, dfl);
 const shotD = await page.evaluate(() => { const { e } = _DF; parryFlashEnd(e); e._ripAt = performance.now() / 1000 - .3; ZE.includes(e) || 0; tickPeople(1 / 60, performance.now()); e.mesh.lookAt(px, e.mesh.position.y, pz); foeDeflect(e);
   const m = e.mesh.position, cv = REN.domElement, cam = new THREE.PerspectiveCamera(40, cv.width / cv.height, .05, 60), d = new THREE.Vector3(px - m.x, 0, pz - m.z).normalize(), s = new THREE.Vector3(-d.z, 0, d.x);

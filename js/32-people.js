@@ -1899,7 +1899,11 @@ function hbHold(rig){const H=rig.hb,top=rig.foe?rig.root.parent:rig.root;top.upd
 // same place). A person-bodied foe's driver is blended toward it after tickPeople has posed it, and the builder's or the kit's body copies
 // it; any other foe (a wolf, a troll on its old rig, a slime) is rocked back whole about its feet. A look only: the stagger, the window
 // and the riposte's damage are the rules', untouched. The foe's right is its -x, so its right arm goes out on -z and its left on +z
-const FOE_DEFLECT={rise:.1,hold:.45,out:.9,lean:.16,j:{shR:[.55,0,-.85],elR:[-.12,0,0],wrR:[.35,0,0],shL:[-.15,0,.62],elL:[-.35,0,0],spine:[-.3,0,0],neck:[.1,0,0],head:[.06,0,0]}};
+// Session 1924 (the critic, 6 Nov: "reads as a shrug", the two arms out level and mirrored, close to a T-pose at 4 m): the
+// two sides are no longer alike. The weapon arm is flung further out and back (.7, -1.15) with the wrist broken back; the shield arm drops
+// low and bent across the hip (.35, .22; the elbow -.7), so the foe is beaten, not standing open; and the trunk is turned away from the
+// blade (spine y -.35, the neck and head a little after it), the weapon's shoulder carried back with the blow
+const FOE_DEFLECT={rise:.1,hold:.45,out:.9,lean:.16,j:{shR:[.7,0,-1.15],elR:[-.2,0,0],wrR:[.5,0,0],shL:[.35,0,.22],elL:[-.7,0,0],spine:[-.3,-.35,0],neck:[.12,.15,0],head:[.08,.1,0]}};
 function foeDeflectK(e){if(!e||typeof e._ripAt!=='number'||e.dead)return 0;const D=FOE_DEFLECT,t=performance.now()/1000-e._ripAt;if(t<0||t>=D.out)return 0;
   const u=t<D.rise?t/D.rise:t<D.hold?1:1-(t-D.hold)/(D.out-D.hold);return u*u*(3-2*u);}
 function foeDeflect(e){const k=foeDeflectK(e);if(!k)return 0;const P=e.limbs&&e.limbs.person,B=P&&P.B;
