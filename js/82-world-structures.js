@@ -913,24 +913,36 @@
     const ya=baseH(A.x,A.z),yb=Math.max(SEA_Y+.6,baseH(B.x,B.z)),n=Math.max(2,Math.round(L/3)),pts=[];
     for(let i=0;i<=n;i++){const u=i/n;pts.push({x:A.x+(B.x-A.x)*u,z:A.z+(B.z-A.z)*u,y:ya+(yb-ya)*u});}
     const road={def:{a:'quay_'+t.id,b:'road',via:'quay'},pts};ROADS.push(road);indexRoad(road);return road;}
-  // S1938 (card F8, #1096 A; owed since S1828) — a lane from each of a trade tunnel's portals to its road. It leaves the portal straight out of
-  // the hill, 4 m before the throat, and bends to the nearest point on the cell's roads (a quadratic curve, its handle up to 14 m out, so it
-  // clears the outcrop's flanks), in points about 3 m apart. Its bed is the ground smoothed over three points each way, held to the pad's
-  // height across the pad and the clearing before it (as a road's bed is held to a town's pad) and eased into the road's own bed at the join.
-  // A spur's def (via 'spur', with tunnel and end), so the coaches, the camps and the night's roads never take it. -> the lanes (C.lanes)
+  // S1938 (card F8, #1096 A; owed since S1828) — a lane from each of a trade tunnel's portals to its road. It leaves 4 m before the throat
+  // straight out of the hill and bends (a quadratic curve, its handle 6 to 14 m out) to a point on the cell's roads, in points about 3 m
+  // apart. The road runs beside the ridge, often level with a portal or behind it, so the nearest point would take the lane back over the
+  // outcrop and the hill: every point of the roads within 100 m (every 4 m along them) is tried, and a line that passes behind either
+  // portal's face within 10.5 m of its outcrop's middle is refused. Its bed holds the pad's height for 6 m and then climbs evenly to the
+  // road's bed, cut into the ground or built up over it as the road's own bed is; of the lines left, the one whose length, grade over 1 in
+  // 12 and deepest cut or fill cost least is taken (TL_GRADE, TL_CUT). A spur's def (via 'spur', with tunnel and end), so the coaches, the
+  // camps and the night's roads never take it. -> the lanes (C.lanes)
+  const TL_GRADE=25,TL_CUT=1.5;
   function addTunnelLanes(c,k,L){const C=tunnelAt(c);if(!C)return [];const out=[];
     const roads=L.roads.filter(rd=>rd.def&&rd.def.via!=='spur'&&rd.def.via!=='quay'&&rd.pts&&rd.pts.length>1);if(!roads.length)return out;
-    for(const [x,z,ry,e] of [[C.x,C.z,C.ry,'a'],[C.x1,C.z1,C.ry1,'b']]){const s=Math.sin(ry),co=Math.cos(ry),x0=x+s*4,z0=z+co*4;
-      let q=null,bd=1e9;for(const rd of roads){const P=rd.pts;for(let i=0;i<P.length-1;i++){const a=P[i],b=P[i+1],dx=b.x-a.x,dz=b.z-a.z,t=Math.max(0,Math.min(1,((x0-a.x)*dx+(z0-a.z)*dz)/(dx*dx+dz*dz||1))),qx=a.x+dx*t,qz=a.z+dz*t,d=Math.hypot(qx-x0,qz-z0);
-        if(d<bd){bd=d;q={x:qx,z:qz,y:a.y+(b.y-a.y)*t};}}}
-      if(!q||bd<3)continue;const h=Math.min(14,bd*.45),hx=x0+s*h,hz=z0+co*h,n=Math.max(3,Math.round(bd/3)),pts=[];
-      for(let i=0;i<=n;i++){const u=i/n,w0=(1-u)*(1-u),w1=2*u*(1-u),w2=u*u;pts.push({x:w0*x0+w1*hx+w2*q.x,z:w0*z0+w1*hz+w2*q.z});}
-      const raw=pts.map(p=>baseH(p.x,p.z)),pad=baseH(x+s*1.5,z+co*1.5);let run=0;
-      for(let i=0;i<pts.length;i++){let acc=0,w=0;for(let j=-3;j<=3;j++){const m=i+j;if(m<0||m>=raw.length)continue;const wt=4-Math.abs(j);acc+=raw[m]*wt;w+=wt;}
-        let y=acc/w;const t=1-sstep(7,13,Math.hypot(pts[i].x-x-s*5,pts[i].z-z-co*5));y=y*(1-t)+pad*t;
-        if(i>=pts.length-2)y=i===pts.length-1?q.y:(y+q.y)/2;pts[i].y=Math.max(SEA_Y+.6,y);if(i)run+=Math.hypot(pts[i].x-pts[i-1].x,pts[i].z-pts[i-1].z);}
-      const road={def:{a:`${C.id}_${e}`,b:'road',via:'spur',tunnel:C.id,end:e},pts,cell:k,len:+run.toFixed(1)};ROADS.push(road);indexRoad(road);out.push(road);}
-    C.lanes=out;return out;}
+    const ends=[[C.x,C.z,C.ry,'a'],[C.x1,C.z1,C.ry1,'b']],behind=(x,z)=>ends.some(([ex,ez,ery])=>{const s=Math.sin(ery),co=Math.cos(ery),dx=x-ex,dz=z-ez,u=dx*co-dz*s,v=dx*s+dz*co;return v<2&&Math.hypot(u,v+5.4)<10.5;});
+    for(const [x,z,ry,e] of ends){const s=Math.sin(ry),co=Math.cos(ry),x0=x+s*4,z0=z+co*4,pad=baseH(x+s*1.5,z+co*1.5);
+      const cand=[];for(const rd of roads){const P=rd.pts;for(let i=0;i<P.length-1;i++){const a=P[i],b=P[i+1],sl=Math.hypot(b.x-a.x,b.z-a.z),n=Math.max(1,Math.ceil(sl/4));
+        for(let j=0;j<n;j++){const t=j/n,q={x:a.x+(b.x-a.x)*t,z:a.z+(b.z-a.z)*t,y:a.y+(b.y-a.y)*t};const d=Math.hypot(q.x-x0,q.z-z0);if(d>=6&&d<=100)cand.push(q);}}}
+      let best=null;
+      for(const q of cand){const d=Math.hypot(q.x-x0,q.z-z0),h=Math.max(6,Math.min(14,d*.45)),hx=x0+s*h,hz=z0+co*h,n=Math.max(3,Math.round(d/3)),pts=[];let len=0,ok=true;
+        for(let i=0;i<=n;i++){const u=i/n,w0=(1-u)*(1-u),w1=2*u*(1-u),w2=u*u,p={x:w0*x0+w1*hx+w2*q.x,z:w0*z0+w1*hz+w2*q.z};if(i&&behind(p.x,p.z)){ok=false;break;}if(i)len+=Math.hypot(p.x-pts[i-1].x,p.z-pts[i-1].z);p.s=len;pts.push(p);}
+        if(!ok)continue;const run=Math.max(1,len-6),grade=Math.abs(q.y-pad)/run;if(best&&len>=best.cost)continue;let cut=0;
+        for(const p of pts){p.y=p.s<=6?pad:pad+(q.y-pad)*(p.s-6)/run;cut=Math.max(cut,Math.abs(baseH(p.x,p.z)-p.y));}
+        const cost=len+TL_GRADE*Math.max(0,grade-1/12)*len+TL_CUT*cut;if(!best||cost<best.cost)best={cost,pts,len,grade,cut};}
+      if(!best)continue;const pts=best.pts.map(p=>({x:p.x,z:p.z,y:Math.max(SEA_Y+.6,p.y)}));
+      const road={def:{a:`${C.id}_${e}`,b:'road',via:'spur',tunnel:C.id,end:e},pts,cell:k,len:+best.len.toFixed(1),grade:+best.grade.toFixed(3),cut:+best.cut.toFixed(2)};ROADS.push(road);indexRoad(road);out.push(road);}
+    C.lanes=out;if(out.length)laneChunks(out);return out;}
+  // a lane laid after the chunks round it were built: their ground, the new look's mask and their road ribbon are made again under it
+  // (the ribbon's old geometry dropped from the snow's list by losing its colour)
+  function laneChunks(lanes){const reach=ROAD_HALF+ROAD_BLEND;
+    for(const ch of chunks.values()){const x0=ch.cx*CHUNK-reach,z0=ch.cz*CHUNK-reach,x1=x0+CHUNK+2*reach,z1=z0+CHUNK+2*reach;
+      if(!lanes.some(rd=>rd.pts.some(p=>p.x>x0&&p.x<x1&&p.z>z0&&p.z<z1)))continue;refreshChunkTerrain(ch);
+      for(const o of ch.group.children.filter(o=>o.userData.ribbon)){ch.group.remove(o);o.geometry.dispose();o.geometry.deleteAttribute('color');}buildRoadRibbons(ch.cx,ch.cz,ch.group);}}
   // S744 — Michael's A on #236: where a port's lane cuts deeper than 1.2 into the ground (the ground 8 out over the lane), a
   // dry-stone retaining wall stands at the foot of each bank: coursed grey stone in courses of about .35, a tone a stone, broken
   // joint course on course, the face battered back 1 in 5, a cap of flat stones, at most 2.6 over the lane. Behind the cap a
@@ -1012,11 +1024,17 @@
     const ox=cx*CHUNK,oz=cz*CHUNK;
     const pos=[],col=[];
     const W=ROAD_HALF*.85;
-    function addQuad(a,b){
-      const dx=b.x-a.x,dz=b.z-a.z,L=Math.hypot(dx,dz)||1,nx=-dz/L*W,nz=dx/L*W;
+    // S1938 — each end of a quad is cut on the bisector of the turn there (its half-width over the half-angle's cosine, at most twice
+    // it), so a bend is one strip, not a run of slabs with wedges open on the outside of the turn (a tunnel's lane bends hard)
+    const miter=(p,i,o)=>{const a=p[Math.max(0,i-1)],b=p[i],q=p[Math.min(p.length-1,i+1)];let d1x=b.x-a.x,d1z=b.z-a.z,d2x=q.x-b.x,d2z=q.z-b.z;
+      const l1=Math.hypot(d1x,d1z),l2=Math.hypot(d2x,d2z);if(l1<1e-6){d1x=d2x;d1z=d2z;}else{d1x/=l1;d1z/=l1;}if(l2<1e-6){d2x=d1x;d2z=d1z;}else{d2x/=l2;d2z/=l2;}
+      const sx=d1x+d2x,sz=d1z+d2z,sl=Math.hypot(sx,sz);const ux=sl>1e-6?sx/sl:d1x,uz=sl>1e-6?sz/sl:d1z,k=W/Math.max(.5,ux*(o.x)+uz*(o.z));o.nx=-uz*k;o.nz=ux*k;return o;};
+    function addQuad(a,b,P,i){
+      const dx=b.x-a.x,dz=b.z-a.z,L=Math.hypot(dx,dz)||1,d={x:dx/L,z:dz/L};
       const c=roadTone((a.x+b.x)/2,(a.z+b.z)/2);
       const y=(x,z)=>worldH(x,z)+.07;
-      const v=[[a.x+nx,a.z+nz],[a.x-nx,a.z-nz],[b.x-nx,b.z-nz],[b.x+nx,b.z+nz]];
+      const ma=miter(P,i,{x:d.x,z:d.z}),mb=miter(P,i+1,{x:d.x,z:d.z});
+      const v=[[a.x+ma.nx,a.z+ma.nz],[a.x-ma.nx,a.z-ma.nz],[b.x-mb.nx,b.z-mb.nz],[b.x+mb.nx,b.z+mb.nz]];
       // Winding: counter-clockwise seen from above (+y), whichever way the road runs.
       const cross=(v[1][0]-v[0][0])*(v[2][1]-v[0][1])-(v[1][1]-v[0][1])*(v[2][0]-v[0][0]);
       const tri=cross<0?[0,1,2,0,2,3]:[0,2,1,0,3,2];
@@ -1034,7 +1052,7 @@
       for(let i=0;i<pts.length-1;i++){
         const mx=(pts[i].x+pts[i+1].x)/2,mz=(pts[i].z+pts[i+1].z)/2;
         if(mx<ox||mx>=ox+CHUNK||mz<oz||mz>=oz+CHUNK)continue;
-        addQuad(pts[i],pts[i+1]);
+        addQuad(pts[i],pts[i+1],pts,i);
       }
     }
     if(!pos.length)return;
@@ -1046,7 +1064,7 @@
     const nor=new Float32Array(pos.length);for(let i=1;i<nor.length;i+=3)nor[i]=1;
     g.setAttribute('normal',new THREE.BufferAttribute(nor,3));
     g.computeBoundingSphere();
-    const m=new THREE.Mesh(g,ROAD_MAT);m.receiveShadow=true;
+    const m=new THREE.Mesh(g,ROAD_MAT);m.receiveShadow=true;m.userData.ribbon=true;
     snowWatch(g); // v80 S147 — a road takes snow too, but trodden: half of what the fields take
     group.add(m);
   }
