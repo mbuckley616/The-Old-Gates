@@ -374,7 +374,7 @@ const d10 = await page.evaluate(() => {
     let readSay = null, want = null, readerFav = null;
     if (how === 'guild') { const head = guildDef('guild_m', site); const t = head.topics.find(t => t.label === 'Can you read this?'); readSay = t && t.fn(); want = ER_RUB.guild[head.people] ? ER_RUB.guild[head.people](o) : ER_RUB.guild.markman(o); readerFav = site.id; }
     if (how === 'old' || how === 'burn') { const R = mk(site, 'reader' + how, 'oldblood'); const t = R.topics.find(t => t.label === 'Can you read this?'); readSay = t && t.fn(); want = ER_RUB.old(o); readerFav = site.id; x.fold = GAME_LOG.length >= 0; }
-    if (how === 'mine') { worldState.sigilsRead[E.seed] = E.word; knownWords[E.word] = 3; const it = BAG.find(b => b.erRub === q.id); x.look = erRubLook(it); x.wlook = ER_RUB.look[3](o); }
+    if (how === 'mine') { worldState.sigilsRead[E.seed] = E.word; knownWords[E.word] = 3; const it = BAG.find(b => b.erRub === q.id); x.look = erRubLook(it); x.wlook = ER_RUB.look[3](o); const sm = window.showMsg; let said = null; window.showMsg = (m, ...r) => { said = m; return sm(m, ...r); }; try { useItem(BAG.indexOf(it)); } finally { window.showMsg = sm; } x.used = said; x.kept = BAG.includes(it); }
     if (how === 'none') { const R = mk(site, 'notob', 'gatelander'); x.noReader = !R.topics.find(t => t.label === 'Can you read this?'); }
     x.readSay = readSay; x.want = want;
     const label = ER_RUB.told[how](o); x.labels = A.topics.filter(t => t.quest).map(t => t.label);
@@ -391,6 +391,7 @@ for (const x of d10.by) { const nm = `rubbing (${x.pp}, ${x.how})`; if (x.missin
   check(`${nm}: before a reading, only Nobody could read it`, x.before.length === 1 && x.before[0] === 'Nobody could read it.', x.before);
   if (x.how === 'guild' || x.how === 'old' || x.how === 'burn') check(`${nm}: the reader's words`, x.readSay === x.want && !/undefined|null/.test(x.readSay), { said: x.readSay, want: x.want });
   if (x.how === 'mine') check(`${nm}: looking at it, your Mastery's reading`, x.look === x.wlook && !/null|undefined/.test(x.look), { look: x.look });
+  if (x.how === 'mine') check(`${nm}: used from the bag, the same reading, and the rubbing kept`, x.used === x.wlook && x.kept, { used: x.used, kept: x.kept });
   if (x.how === 'none') check(`${nm}: a townsperson not of the Old Blood cannot read it`, x.noReader);
   check(`${nm}: told, answered in their words, ${x.how === 'none' ? 'half' : 'in full'}, a point of favour, the lent rubbing gone`, x.turned && x.done === x.wdone && x.paid === x.wpaid && x.paid > 0 && x.fav >= 1 && x.left === 0, { labels: x.labels, done: x.done, paid: x.paid, wpaid: x.wpaid, fav: x.fav });
   check(`${nm}: ${x.how === 'burn' ? 'burn it gives you the gate’s rubbing' : 'no rubbing of yours'}`, x.how === 'burn' ? x.rubbing === 1 : x.rubbing === 0, x.rubbing); }

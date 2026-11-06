@@ -792,14 +792,17 @@ const WILD_ISLE_KINDS={
   /* S1895 — the birds' four and the Bellthroat (bodies Sessions 1892 and 1893): the Glasswing glides as the Crag Hawk, the Sunfan walks as
      the heron, the Bellthroat hops at a little more than the Marsh Frog's pace, three times its size. The Stormplume and the Redcrest the
      catalogue calls hostile: they answer back (WILD_ANSWER_KINDS, below) */
-  'Glasswing':{walk:.3,run:12,fly:true},'Sunfan':{walk:.4,run:5},'Bellthroat':{walk:.3,run:2}};
+  'Glasswing':{walk:.3,run:12,fly:true},'Sunfan':{walk:.4,run:5},'Bellthroat':{walk:.3,run:2},
+  /* S1911 — the last three peaceful ones (bodies Sessions 1906 and 1907, on the crawlers' path): the two tortoises plod at 0.2 and make off at
+     0.4, the Shatterhorn ("a peaceful giant") a browser's walk and 6 at a run, under the Frostmane's 7 for its size */
+  'Mossback':{walk:.2,run:.4},'Sailshell':{walk:.2,run:.4},'Shatterhorn':{walk:.8,run:6}};
 // S1796 — animals that answer back (Michael's A on #1050): the three the catalogue calls aggressive (the Gatefen Boar, the Icecrab, the
 // Saltspine Monitor) graze as the rest do and never bolt, but one you strike or come within WILD_ANSWER.near of turns on you (e.angry) and
 // fights as a foe with the hostile Boar's blow (5, every 1.3 s) and 16 health at tier 1 everywhere; WILD_ANSWER.quit off it gives up and
 // grazes again where it stands. Dead, it is an animal: its meat, no loot. The Sand Wyrm waits for its set piece
 const WILD_ANSWER={near:4,quit:25};
 const WILD_ANSWER_KINDS={'Gatefen Boar':{walk:.7,run:6},'Icecrab':{walk:.2,run:1.8},'Saltspine Monitor':{walk:.3,run:4},
-  'Stormplume':{walk:.8,run:8},'Redcrest':{walk:.8,run:9}}; /* S1895 — OG-040's two the catalogue calls hostile (the Stormplume territorial, the Redcrest in packs), on #1050 A's rule; on foot, never flying */
+  'Stormplume':{walk:.8,run:8},'Redcrest':{walk:.8,run:9},'Mineprowler':{walk:.6,run:7}}; /* S1911 — the Mineprowler ("lithe six-legged spiny sand predator: hostile"), a lynx's walk and a fox's run, the rule's 16 health and blow */ /* S1895 — OG-040's two the catalogue calls hostile (the Stormplume territorial, the Redcrest in packs), on #1050 A's rule; on foot, never flying */
 for(const k in WILD_ANSWER_KINDS)WILD_ISLE_KINDS[k]=Object.assign({answer:true},WILD_ANSWER_KINDS[k]);
 // S1797 — the two river fish (#1050 A) swim as the trout does, on its path and its rules (wildTroutChunk rolls which)
 for(const k of ['River Pike','Riverjaw Salmon']){WILD_PACE[k]=WILD_PACE.Trout;ZONE_FOE_DEF[k]=Object.assign({},ZONE_FOE_DEF.Trout,{col:SWIMMER[k].col});}
@@ -844,10 +847,17 @@ function wildFlee(e,T){if(e.watch||e.answer)return; /* S1784 — the watcher nev
   W.mode='flee';W.left=WILD_FLEE;W.yaw=Math.atan2(e.x-T.x,e.z-T.z)+(e.rng()-.5)*.6;
   if((WILD_PACE[e.baseName]||{}).fly){W.mode='fly';W.gone=0;W.cruise=WILD_FLY.lo+e.rng()*(WILD_FLY.hi-WILD_FLY.lo);W.fy=W.fy||0;}
   for(const o of ZE)if(o!==e&&o.wild&&!o.dead&&Math.hypot(o.x-e.x,o.z-e.z)<WILD_HERD)wildFlee(o,T);}
+// S1913 — the Bellthroat calls at dusk (OG-040; the clock's dusk, 17 to 19): heard within BELL_CALL.r, one call every BELL_CALL.gap seconds
+// or so, never while it runs from you. Cosmetic, so the gap is Math.random's; e._calls counts them
+const BELL_CALL={r:150,gap:12};
+function bellthroatCall(e,W,dist,dt){if(W.mode==='flee'||dist>BELL_CALL.r||gameTimeOfDay()!=='dusk'){if(e._call==null)e._call=Math.random()*BELL_CALL.gap;return;}
+  if(e._call==null)e._call=Math.random()*BELL_CALL.gap;e._call-=dt;if(e._call>0)return;
+  e._call=BELL_CALL.gap*(.7+Math.random()*.6);e._calls=(e._calls||0)+1;if(typeof sndBellthroat==='function')sndBellthroat(1-dist/BELL_CALL.r);}
 function tickWildOne(e,dt){if(!(dt>0))return;
   if(e.watch){watchTick(e,dt);return;}
   const P=WILD_PACE[e.baseName]||WILD_PACE.Deer,W=e._w||(e._w={mode:'graze',t:2+e.rng()*6});
   const T=targetOf(e),dist=Math.hypot(T.x-e.x,T.z-e.z);
+  if(e.baseName==='Bellthroat')bellthroatCall(e,W,dist,dt);
   if(e.answer&&(e.alert||dist<WILD_ANSWER.near)){e.angry=true;e.alert=true;e._agg=true;e._quit=Math.max(WILD_ANSWER.quit,dist+WILD_ANSWER.near);W.mode='graze';W.t=0;return;} /* S1796 — struck, or come too near: it turns on you (an arrow from past 25 m: it comes for you, and gives up 4 m past where you shot from) */
   if(e.alert){e.alert=false;wildFlee(e,T);} /* a blow that did not kill, or a pack's cry */
   else if(W.mode!=='flee'&&W.mode!=='fly'&&!_hasBuff('vanish')&&canSeePlayer(e,dist,20))wildFlee(e,T);
