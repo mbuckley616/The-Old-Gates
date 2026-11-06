@@ -47,6 +47,16 @@ Under any option each takes its kin's numbers graded by the gate's tier (the Cav
 
 Recommendation: A.
 
+### A merchantman's hands — who cuts her lines and douses her rig? (from the systems builder, 2026-11-06, #1225)
+**The question.** Naval combat's page gives a merchantman's hand 6 s to cut a grappling line "if he reaches it unhurt", and your A on #1143 gives a living hand 3 s to douse a burning rig. A black sail's hands are the Pirates on her deck, but a merchantman spawns with no crew bodies, so neither rule can reach her: today none of her lines is ever cut and her fire always runs its full 6–8 s.
+
+**Options.**
+- **A (recommended).** Two unarmed hands with bodies on every merchantman, never hostile. Hooked, one goes to a cleat and cuts each line in 6 s; any hit starts his 6 s again. Both lines cut, she runs. Her rig is doused at 3 s by the black sail's rule. Striking or killing a hand is the piracy already booked, once, not a murder. Boarded, they stop cutting. One systems session, plus a sailor's dress from the bodies builder (a stand-in body until then).
+- **B.** No bodies. Her crew cut one line 6 s after the lashing and the other 6 s later, and douse at 3 s, unless you have crossed to her deck. Cheaper, but "unhurt" has nothing to read: the bow and the ballista cannot stop them.
+- **C.** Leave it out. A merchantman never cuts free and never douses.
+
+**Recommendation: A.** It is the page's rule as written, it keeps Bow and the ballista's heavy arrow useful against a ship that runs, and her crew already witness piracy, so bodies add no new crime.
+
 ## Answered
 ### The bind — what a perfect parry looks like (from the concept artist, 2026-11-05, #1192)
 **The question.** Combat B already has the rule: a perfect parry drains 40% of the foe's posture and opens a riposte for 0.8 s. Nothing says what the two bodies do in that moment; OG-045 and OG-063 draw it as a bind. Three readings posed on two of the builder's people in a steady Cloch nave; no timing changes in any. Page: `docs/prototypes/levelup/bind.html`; the approach in `docs/concepts.md`.
