@@ -97,6 +97,11 @@ P.head = (B, o) => {
   if (o.antlers?.mist) B.mist = { ...o.antlers.mist, tips: B.mistTips, color: B.tone(o.antlers.mist.tone || 'mist') };
   if (o.crystals) for (const sd of [1, -1]) B.bit(hn, crystals(o.crystals, S, B.tone('horn'), at(o.crystals.f, o.crystals.up, o.crystals.out * sd), sd, rng(B.g.seed + (sd > 0 ? 3 : 4))));
   if (o.beak) B.bit(hn, beak(o.beak, S, B.tone('horn'), at(1, o.beak.up || 0, 0), dir));
+  // a crown (Session 1936, OG-040's Stormplume: a red patch on the crown above the beak): a low ellipsoid of bare skin laid along the
+  // skull's top, `f` along the head, `up` its height in the head's radius (out past the fur where a plan has fur), `len` its length in the
+  // head's length, `w` and `h` its half-width and half-height in the head's radius; matte, its own tone (`comb` by default)
+  if (o.cap) { const c = o.cap, m = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 12), stdMat(B.tone(c.tone || 'comb'), { rough: c.rough ?? .7 }));
+    m.scale.set(c.w * r, c.h * r, c.len * len / 2); m.position.copy(at(c.f, c.up, 0)); m.quaternion.setFromUnitVectors(V(0, 0, 1), dir); m.name = 'cap'; B.bit(hn, m); }
   // a throat sac (the Bellthroat's): a rigid ball under the jaw that the pose fills and empties. Session 1923: matte, as the skin is
   // (the critic: a clearcoat's hard highlight made it read as a plastic ball); OG-040's is blue-violet and dull
   if (o.sac) { const m = new THREE.Mesh(new THREE.SphereGeometry(o.sac.r * S, 24, 16), new THREE.MeshStandardMaterial({ color: B.tone('sac'), roughness: Math.max(.55, B.plan.rough ?? .5) })); m.position.copy(at(o.sac.f, -o.sac.drop, 0)); m.scale.set(1.15, .8, 1); B.bit(hn, m); B.sac = m; }
@@ -1316,7 +1321,7 @@ export const PLANS = {
       ['legs', { at: .12, kind: 'insect', out: .12, drop: -.02, fan: -50, reach: 1.25, r: [.05, .045, .035, .02], thorns: { per: 7, len: .085, r: .016 } }]
     ] },
   stormplume: { name: 'Stormplume', src: 'OG-040 (flightless bird, the Mark)', gaits: ['walk', 'trot', 'stand'], speedK: 1.2, neckNod: .12, fold: 1.2,
-    palette: { coat: [.34, .38, .44], saddle: [.17, .19, .23], belly: [.74, .74, .72], dark: [.08, .07, .06], skin: [.56, .48, .3], horn: [.66, .58, .36] },
+    palette: { coat: [.34, .38, .44], saddle: [.17, .19, .23], belly: [.74, .74, .72], dark: [.08, .07, .06], skin: [.56, .48, .3], horn: [.66, .58, .36], comb: [.55, .02, .03] },
     fur: { len: .1, layers: 10, sx: 34, sy: 18, droop: .7 },
     parts: [
       ['spine', { hip: [1.6, -.32], chest: [1.72, .3], n: 3, r: [.4, .46, .38], s: [.86, 1.05], rump: .45, rumpDrop: -.15, front: .22, frontDrop: .05 }],
@@ -1324,7 +1329,7 @@ export const PLANS = {
       // to a big head and a deep hooked beak. Neck .2 to .085 was thinned to a stalk; now .24 to .14. Head .28 by .095, now .42 by .165; beak
       // .26 by .06, now .34 by .13, deeper than wide and curved down to a hook at the tip (the beak's new `curve` and `deep`)
       ['neck', { len: 1.0, n: 4, rise: 78, curve: -50, r: [.24, .14], fwd: -.06 }],
-      ['head', { len: .42, r: .165, pitch: 5, eyes: [{ f: .48, up: .35, out: .62, r: .026, color: [.9, .55, .1] }], beak: { len: .34, r: .13, up: -.15, hook: .2, curve: .3, deep: 1.4 } }],
+      ['head', { len: .42, r: .165, pitch: 5, eyes: [{ f: .48, up: .35, out: .62, r: .026, color: [.9, .55, .1] }], beak: { len: .34, r: .13, up: -.15, hook: .2, curve: .3, deep: 1.4 }, cap: { f: .5, up: .98, len: .75, w: .72, h: .5 } }],
       ['tail', { len: .55, n: 2, r: [.2, .12], droop: -25 }],
       ['legs', { at: .38, kind: 'bird', out: .18, drop: .3, claws: { r: .012, len: .07 } }]
     ] },
