@@ -5,16 +5,22 @@
 // shops' keeper starts at z 2.2 behind the counter, not on its edge at 2.6. A keeper ever set down inside a solid
 // steps to the nearest free spot within their bounds on the first step.
 // Every house with a walking keeper in both towns is entered at 13h and its keeper walked for ten minutes of 1/60 steps.
+// Session 1924 (QA): the weekly run of 1 Nov had it at 900 s, `run.mjs`'s cap, killed while it closed after its last check. 92 rooms
+// were entered with a fixed 4 s after the door and 2 s after the exit (9 min of pauses), and every frame was drawn on software GL.
+// The room is built in the fade's callback, so each step now waits for the room it needs (the fade done, `lid` the room's), polled
+// every 250 ms, and the drawing is stubbed once in the world; the keepers' walk is stepped by hand as before, every check unchanged.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
+await page.evaluate(() => { REN.render = () => {}; });
+const t0 = Date.now(); let rooms = 0, waitIn = 0, waitOut = 0;
 const rows = [];
 for (const town of ['portclare', 'dunmore']) {
   await g.settle(town);
   const ids = await page.evaluate((town) => { forceTime(13); const S = WORLD.settle.get(town); return S ? S.houses.filter(x => x.keeper).map(x => x.id) : []; }, town);
   for (const id of ids) {
     await page.evaluate(([town, id]) => { const h = WORLD.settle.get(town).houses.find(x => x.id === id); window._h = h; forceTime(13); px = h.exitX; pz = h.exitZ; goToInterior(h); }, [town, id]);
-    await page.waitForTimeout(4000); await g.hide();
+    let w = Date.now(); await page.waitForFunction((id) => lid === 'int_' + id && currentHouse === window._h, id, { polling: 250, timeout: 60000 }); waitIn += Date.now() - w; rooms++; await g.hide();
     rows.push(await page.evaluate((town) => {
       const h = window._h; const K = intNPCMesh; const am = K && K.userData.amble;
       if (!K || !am || am.paused) { exitInterior(); return { town, name: h.name, type: h.type, none: true }; }
@@ -35,9 +41,10 @@ for (const town of ['portclare', 'dunmore']) {
       exitInterior();
       return { town, name: h.name, type: h.type, counter: !!ctr, start, first, k0: { x: +k0.x.toFixed(2), z: +k0.z.toFixed(2) }, inSolid: +(inS / n).toFixed(3), inCounter: +(inC / n).toFixed(3), front: +(front / n).toFixed(3), far: +far.toFixed(2) };
     }, town));
-    await page.waitForTimeout(2000); await g.hide();
+    w = Date.now(); await page.waitForFunction(() => currentHouse == null && !lid.startsWith('int_'), null, { polling: 250, timeout: 60000 }); waitOut += Date.now() - w; await g.hide();
   }
 }
+console.log(`${rooms} rooms in ${Math.round((Date.now() - t0) / 1000)} s: ${Math.round(waitIn / 1000)} s waiting at the doors, ${Math.round(waitOut / 1000)} s on the way out`);
 const ok = rows.filter(r => !r.none);
 console.log(`\n${ok.length} walking keepers (${rows.length - ok.length} standing or none)`);
 for (const r of ok) console.log(`  ${r.town.padEnd(10)} ${String(r.type).padEnd(10)} in a solid ${(r.inSolid * 100).toFixed(0).padStart(3)}%  in the counter ${(r.inCounter * 100).toFixed(0).padStart(3)}%  before it ${(r.front * 100).toFixed(0).padStart(3)}%  farthest ${r.far}  ${r.name}`);

@@ -33,5 +33,27 @@ console.log(JSON.stringify(w));
 check(`${w.id} (${w.depth} m deep, ${w.tris} triangles in ${w.draws} draws) is built ${w.two ? 'in two tiers' : 'in one tier'} as its valley asks, broken`, !w.none && w.two === (w.depth >= 12) && !!w.gap && w.draws <= 7 && w.tris < 60000 && w.names.includes('zellige'), w);
 check(`under each of its ${w.under && w.under.length} open arches (${w.under && w.under.filter(u => u.fallen).length} of them fallen) the way through is clear, with ${w.under && Math.min(...w.under.map(u => u.head))} m or more under the spring`, !w.none && w.under.length >= 3 && w.under.every(u => u.blocked === 0 && u.head >= .5), w.under);
 check('its piers and its ends in the hill are solid', !w.none && w.piers.length > 0 && w.piers.every(Boolean) && w.ends.every(Boolean), { piers: w.piers, ends: w.ends });
+// S1927 — the channel walked: from the hill at its west end along the bed to the pier before the breach, held at the bed's height and
+// between its walls; at the bed the walls block, the arcade under it does not; nothing under an arch is lifted onto it, and the foes'
+// test (no height) still meets the arcade
+const ch = await page.evaluate(id => { const C = [...CELLS.values()].find(c => c._aq && c._aq.id === id)._aq, co = Math.cos(C.ry), s = Math.sin(C.ry), W = (u, v) => ({ x: C.x + u * co + v * s, z: C.z - u * s + v * co });
+  const P = C.walks && C.walks[0]; if (!P) return { none: true };
+  const f = W(C.x0 - 3, 0), T = W(C.gap.x0 - 1, 0), raf = window.requestAnimationFrame, rr = REN.render; window.requestAnimationFrame = () => 0; REN.render = () => {};
+  for (const k in K) K[k] = false; px = f.x; pz = f.z; jumpY = activeTerrainH(px, pz); velY = 0; onGround = true; stamina = maxStamina; ROLL = null; pitch = 0;
+  let t = performance.now(), n = 0, lo = 1e9, hi = -1e9, off = 0; prevT = t; const start = +(jumpY - C.y).toFixed(2);
+  try { for (; n < 3000; n++) { const d = Math.hypot(T.x - px, T.z - pz); if (d < .15) break; yaw = Math.atan2(-(T.x - px), -(T.z - pz)); K['KeyW'] = true; t += 1000 / 60; loop(t);
+      const [u, v] = P.local(px, pz); if (u > C.x0 + 1) { lo = Math.min(lo, jumpY - C.y); hi = Math.max(hi, jumpY - C.y); off = Math.max(off, Math.abs(v)); } } }
+  finally { for (const k in K) K[k] = false; window.requestAnimationFrame = raf; REN.render = rr; prevT = 0; }
+  const res = { id, runs: C.walks.length, ticks: n, start, left: +Math.hypot(T.x - px, T.z - pz).toFixed(2), lo: +lo.toFixed(3), hi: +hi.toFixed(3), off: +off.toFixed(2), over: +(C.y - meshH(px, pz)).toFixed(2) };
+  const m = W((C.x0 + C.gap.x0) / 2, 0), side = W((C.x0 + C.gap.x0) / 2, .45), out = W((C.x0 + C.gap.x0) / 2, 1.4);
+  res.bed = { mid: currentZoneSolid(m.x, m.z, C.y), wall: currentZoneSolid(side.x, side.z, C.y), outside: currentZoneSolid(out.x, out.z, C.y), foe: currentZoneSolid(m.x, m.z) };
+  const a = C.bays.filter(b => b.upper && !(C.gap && b.x0 >= C.gap.x0 - .01 && b.x1 <= C.gap.x1 + .01))[0]; if (a) { const q = W((a.x0 + a.x1) / 2, 0), g = ZONES.world.getY(q.x, q.z);
+    res.arch = { lifted: +(activeTerrainH(q.x, q.z) - g).toFixed(2) }; px = q.x; pz = q.z; jumpY = g; res.arch.self = +(activeTerrainH(px, pz) - g).toFixed(2); res.arch.free = !currentZoneSolid(q.x, q.z, g); }
+  return res; }, k.near.id);
+console.log(JSON.stringify(ch));
+check(`its channel walked from the hill to the breach in ${ch.ticks} ticks, held ${ch.lo} to ${ch.hi} m on its bed ${ch.over} m over the ground and within ${ch.off} m of its line`,
+  !ch.none && ch.left < .2 && ch.lo > -.05 && ch.hi < .45 && ch.off < .35 && ch.over > 3, ch);
+check('on the bed the walls block and the arcade does not; a foe still meets the arcade; under an arch nothing is lifted onto the channel',
+  !ch.none && !ch.bed.mid && ch.bed.wall && ch.bed.outside && ch.bed.foe && !!ch.arch && ch.arch.lifted === 0 && ch.arch.self === 0 && ch.arch.free, ch);
 check('no errors on the new look', g.errs.length === 0, g.errs);
 await g.close();
