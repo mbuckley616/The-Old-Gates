@@ -1025,7 +1025,7 @@ function attrEff(k){const b={might:'mightBonus',fortitude:'fortitudeBonus',fines
 // Effective max stat helpers — base + armor enchant bonuses (a fortified Fortitude or Intelligence adds what a point of it adds)
 function effMaxHP(){const b=getArmorEnchantBonuses();return maxHP+(b.maxHPBonus||0)+10*(b.fortitudeBonus||0);}
 function effMaxMana(){const b=getArmorEnchantBonuses();return maxMana+(b.maxManaBonus||0)+10*(b.intBonus||0);}
-function effMaxStamina(){const b=getArmorEnchantBonuses();return Math.round((maxStamina+(b.maxStaminaBonus||0)+5*(b.fortitudeBonus||0))*(typeof fedStamMult==='function'?fedStamMult():1));} /* S1486 — Hearty, +15% */
+function effMaxStamina(){const b=getArmorEnchantBonuses();return Math.round((maxStamina+(b.maxStaminaBonus||0)+5*(b.fortitudeBonus||0))*(typeof fedStamMult==='function'?fedStamMult():1)*(typeof climateStamCap==='function'?climateStamCap():1));} /* S1486 — Hearty, +15% */
 
 // Returns {tag, col} for the caller to render alongside its hit message, or null.
 // v61k: no longer calls showMsg directly — doing so raced with the caller's own

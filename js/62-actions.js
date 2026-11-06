@@ -864,8 +864,8 @@ function updateHUD(){
   document.getElementById('hb').style.width=(PHP/emHP*100)+'%';document.getElementById('hv').textContent=Math.floor(PHP);
   {const tl=document.getElementById('hbt');if(tl)tl.style.width=(hpTailStep(PHP/emHP,performance.now())*100)+'%';}
   document.getElementById('mb').style.width=(mana/emMana*100)+'%';document.getElementById('mv').textContent=Math.floor(mana);
-  document.getElementById('stb').style.width=(stamina/emSt*100)+'%';
-  document.getElementById('stb').style.background=staminaCD>0?'#a03030':'#40a040';document.getElementById('sv').textContent=Math.floor(stamina);document.getElementById('lv').textContent=level;document.getElementById('xv').textContent=+levelMarks.toFixed(2);document.getElementById('xn').textContent=marksNeeded(); /* S952 — the level's marks */document.getElementById('bh').textContent=BAG.length?BAG.slice(-2).map(b=>b.ico+' '+b.name).join(' · '):'';
+  document.getElementById('stb').style.width=(stamina/(emSt/(typeof climateStamCap==='function'?climateStamCap():1))*100)+'%'; /* S1917 — under Bitter's ceiling the bar keeps the whole maximum, the lost part hatched */
+  document.getElementById('stb').style.background=staminaCD>0?'#a03030':'#40a040';{const sb=document.getElementById('stb').parentElement,cp=typeof climateStamCap==='function'?climateStamCap():1;if(sb){const want=cp<1?`repeating-linear-gradient(45deg,transparent 0 3px,${(typeof _clim!=='undefined'&&_clim.side==='hot')?'rgba(255,150,60,.45)':'rgba(170,210,255,.45)'} 3px 5px) ${cp*100}% 0/${(1-cp)*100}% 100% no-repeat,#1a1410`:'';if(sb._climBg!==want){sb._climBg=want;sb.style.background=want;}}}document.getElementById('sv').textContent=Math.floor(stamina);document.getElementById('lv').textContent=level;document.getElementById('xv').textContent=+levelMarks.toFixed(2);document.getElementById('xn').textContent=marksNeeded(); /* S952 — the level's marks */document.getElementById('bh').textContent=BAG.length?BAG.slice(-2).map(b=>b.ico+' '+b.name).join(' · '):'';
   // Active buffs line
   const buffEl=document.getElementById('buff-bar');
   if(buffEl){
@@ -883,7 +883,7 @@ function updateHUD(){
       minimapPulse:'🗺', detectReduce:'👁',
       maxStamBuff:'⚡',
     };
-    const _fedP = typeof fedPill==='function' ? fedPill() : ''; // S1486 — fed
+    const _fedP = (typeof fedPill==='function' ? fedPill() : '') + (typeof climatePill==='function' ? climatePill() : ''); // S1486 — fed; S1917 — climate
     if(ACTIVE_BUFFS.length||_fedP){
       buffEl.classList.add('has-buffs');
       buffEl.innerHTML = _fedP + ACTIVE_BUFFS.map(b=>{

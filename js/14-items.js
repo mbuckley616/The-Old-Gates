@@ -560,8 +560,8 @@ const CLOAK_KINDS={
   wool:   {name:'Traveller’s Cloak',  ico:'🧥',weight:1.5,buyPrice:12,swim:.9, virtue:'none: the plain one'},
   hood:   {name:'Dark Hood',          ico:'🧥',weight:1.5,buyPrice:25,swim:.9, virtue:'seen 5% less while sneaking; a witness’s reach 12 → 11'},
   oilskin:{name:'Oilskin Cloak',      ico:'🧥',weight:2,  buyPrice:30,swim:1,  virtue:'no drag in the water'},
-  fur:    {name:'Fur-lined Cloak',    ico:'🧥',weight:3,  buyPrice:45,swim:.85,virtue:'stamina +10% in snow, or at night above the snowline'},
-  cape:   {name:'Aurennais Short Cape',ico:'🧥',weight:.5,buyPrice:60,swim:.9, virtue:'barter +2% at Aurenne’s counters'},
+  fur:    {name:'Fur-lined Cloak',    ico:'🧥',weight:3,  buyPrice:45,swim:.85,virtue:'stamina +10% in snow, or at night above the snowline; Warmth 1 against the Mark’s cold'},
+  cape:   {name:'Aurennais Short Cape',ico:'🧥',weight:.5,buyPrice:60,swim:.9, virtue:'barter +2% at Aurenne’s counters; Cool 1 against Aurenne’s heat'},
   pilgrim:{name:'Pilgrim’s Grey',     ico:'🧥',weight:1,  buyPrice:20,swim:.9, virtue:'a shrine’s boon lasts 25% longer'}};
 const CLOAK_ENCHANTS=[['stamina_boost','cloak_endurance'],['st_regen','cloak_vigor'],['mp_regen','cloak_clarity'],['hp_regen','cloak_mending'],['fortify_swift','cloak_swiftness']].map(([from,id])=>{
   const e=ARMOR_ENCHANTS.find(x=>x.id===from);return {id,name:e.name,_unique:true,_cloak:true,apply:(it)=>{const s=e.apply(it),o={};for(const k in s)o[k]=/Bonus$/.test(k)?Math.max(1,Math.round(s[k]*.6)):Math.round(s[k]*.6*100)/100;return o;}};});

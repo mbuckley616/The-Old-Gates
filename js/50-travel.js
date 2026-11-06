@@ -628,8 +628,8 @@ window.addEventListener('keydown',e=>{if(!brewOpen)return;const c=e.code;let hit
 // Meat comes off a bear, a boar or a wolf (1 to 3, seeded by the corpse's key); produce and fish from the goods shop and the
 // inn, fish only in a port. Fed is kept by the game clock (`worldState.fed`, the character's), so sleep runs it down.
 const FIRE_HOURS=1,FIRE_REACH=2.5,FED_MIN=120,TINDERBOX_NAME='Tinderbox';
-const FED_KIND={hearty:{label:'Hearty',ico:'🍖',col:'#e8a060',say:'+15% stamina'},steady:{label:'Steady',ico:'🐟',col:'#80c8a0',say:'+1 health every 5 s'},
-  clear:{label:'Clear',ico:'🥕',col:'#88aaff',say:'+10% mana regeneration'}};
+const FED_KIND={hearty:{label:'Hearty',ico:'🍖',col:'#e8a060',say:'+15% stamina · Warmth 1'},steady:{label:'Steady',ico:'🐟',col:'#80c8a0',say:'+1 health every 5 s'},
+  clear:{label:'Clear',ico:'🥕',col:'#88aaff',say:'+10% mana regeneration · Cool 1'}};
 const FOOD_MEAL={meat:{name:'Roast Meat',ico:'🍖',kind:'hearty'},fish:{name:'Baked Fish',ico:'🐟',kind:'steady'},produce:{name:'Pottage',ico:'🥣',kind:'clear'}};
 const SURV_ITEMS={
   tinderbox:{name:TINDERBOX_NAME,ico:'🔥',type:'misc',weight:.2,buyPrice:5,sellMult:.4},
@@ -748,6 +748,53 @@ function survivalFor(h){if(!h||!(h.type==='misc'||h.type==='inn'))return [];cons
 // the buff bar's pill for fed
 function fedPill(){const F=fedNow();if(!F)return '';const K=FED_KIND[F.kind],m=Math.ceil(F.until-gameMinNow());
   return `<span class="buff-pill" title="${K.label} — ${K.say}, ${m} min remaining"><span class="bp-ico">${K.ico}</span><span class="bp-time">${m}m</span></span>`;}
+
+// ── S1917 — climate B (Michael's 5 B; docs/design/climate-build.md, session 1): the Mark's cold and Aurenne's heat wear your
+// stamina, never your health. Exposure is a grade 0–2 read from where you stand, the hour, the season and the weather; warmth
+// and cool take a grade off a point each (two at most); the grade rises at once and falls 3 s later, by the clock, not frames.
+// cap2 is the open number (DECISION #1211: A 0.8, B 1, C 0.6): until it is answered grade 2 slows regeneration only (B).
+const CLIMATE={regen:[1,.75,.5],cap2:1,fall:3000,band:2,names:{cold:['','Cold','Bitter'],hot:['','Hot','Scorching']},
+  ico:{cold:'❄',hot:'☀'},sand:{dunes:1,wasteland:1,wastes:1}};
+const _clim={above:false,g:0,side:null,at:0,why:''};
+function _climOutside(){if(activeZoneId!=='world'||lid!=='overworld')return false;if(typeof isInterior==='function'&&isInterior())return false;
+  return !atFire();}
+// the raw grade where you stand: {g, side:'cold'|'hot'|null, why}
+function exposureNow(){const none={g:0,side:null,why:''};if(!_climOutside())return none;
+  let cl;try{const [i,j]=cellOf(px,pz);cl=climateOfCell(i,j);}catch(e){return none;}
+  const h=gameHour(),sea=calDay().season;
+  if(cl==='cold'){let line=18;try{line=snowLineAt(px,pz);}catch(e){}const y=typeof worldH==='function'?worldH(px,pz):0;
+    if(_clim.above){if(y<line-CLIMATE.band)_clim.above=false;}else if(y>line+CLIMATE.band)_clim.above=true;
+    let swim=false;try{swim=WORLD.isSwimming();}catch(e){}
+    const blizz=WX.type==='snow'&&(WX.heavy||0)>.5;
+    if(blizz)return {g:2,side:'cold',why:'blizzard'};if(sea==='winter'&&(h>=20||h<6))return {g:2,side:'cold',why:'winter night'};
+    if(swim&&sea!=='summer')return {g:2,side:'cold',why:'the water'};
+    if(sea==='summer'&&h>=6&&h<20&&!_clim.above)return none;return {g:1,side:'cold',why:'the Mark'};}
+  if(cl==='warm'){if(h<9||h>=17||sea==='winter'||WX.type==='rain'||WX.type==='storm')return none;
+    let b='';try{b=dominantRegion(px,pz).r.biome;}catch(e){}
+    let g=sea==='summer'&&h>=11&&h<16&&CLIMATE.sand[b]?2:1,why=g===2?'the noon sand':'the day’s heat';
+    if(heavyChestOn()){g=Math.min(2,g+1);why+=', metal';}return {g,side:'hot',why};}
+  return none;}
+// a mail or plate chest (the heavy line from tier 3: AR_FAM's mail and plate)
+function heavyChestOn(){const c=EQ.chest;return !!(c&&!c.line&&(c.tier||0)>=3);}
+function warmthNow(){const w=[];if(typeof cloakOn==='function'&&cloakOn('fur'))w.push('fur cloak');if(_hasBuff('resistCold'))w.push('Resist Cold');
+  if(fedKind()==='hearty')w.push('Hearty');return {n:Math.min(2,w.length),by:w};}
+function coolNow(){const w=[];if(typeof cloakOn==='function'&&cloakOn('cape'))w.push('cape');if(EQ.chest&&EQ.chest.line==='robe')w.push('robe');
+  if(_hasBuff('resistHeat'))w.push('Resist Heat');if(fedKind()==='clear')w.push('Clear');return {n:Math.min(2,w.length),by:w};}
+// exposure after protection, with the 3 s fall; .raw is the grade before it, .by what is taking it off
+function climateGrade(){const e=exposureNow(),P=e.side==='cold'?warmthNow():e.side==='hot'?coolNow():{n:0,by:[]};
+  const g=Math.max(0,e.g-P.n),now=performance.now();
+  if(g>=_clim.g){_clim.g=g;_clim.at=now;}else if(now-_clim.at>CLIMATE.fall){_clim.g=g;_clim.at=now;}
+  if(e.side)_clim.side=e.side;_clim.raw=e.g;_clim.by=P.by;_clim.why=e.why;
+  if(_clim.g>0&&_clim.side){const k=CLIMATE.names[_clim.side][_clim.g].toLowerCase();const S=worldState.exposureSeen||(worldState.exposureSeen={});if(!S[k])S[k]=1;}
+  return _clim.g;}
+function climateRegenMult(){return CLIMATE.regen[climateGrade()]||1;}
+function climateStamCap(){return _clim.g>=2?CLIMATE.cap2:1;}
+// the buff bar's chip: the grade's name; dimmed, naming what warms or cools you, when protection cancels it
+function climatePill(){const g=_clim.g,raw=_clim.raw||0,side=_clim.side;if(!side||(!g&&!raw))return '';
+  const N=CLIMATE.names[side],ico=CLIMATE.ico[side].repeat(Math.max(1,g||raw));
+  if(!g)return `<span class="buff-pill" style="opacity:.45" title="${N[raw]} — ${side==='cold'?'warmed':'cooled'}: ${_clim.by.join(', ')}"><span class="bp-ico">${ico}</span><span class="bp-time">${N[raw]}</span></span>`;
+  const cost=g>=2?(CLIMATE.cap2<1?`stamina regenerates at half and stops at ${Math.round(CLIMATE.cap2*100)}%`:'stamina regenerates at half'):'stamina regenerates at three quarters';
+  return `<span class="buff-pill" title="${N[g]} (${_clim.why}) — ${cost}${_clim.by.length?'; '+(side==='cold'?'warmed':'cooled')+': '+_clim.by.join(', '):''}"><span class="bp-ico">${ico}</span><span class="bp-time">${N[g]}</span></span>`;}
 
 // ── the fire's page (the brewing page's layout): what can be made on the left, the recipe on the right ──
 let cookOpen=false,cookSel=null,cookSaid='',cookSeason=null;
