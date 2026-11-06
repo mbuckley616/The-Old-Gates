@@ -522,7 +522,8 @@ for(const k in ISLAND_HERB){const H=ISLAND_HERB[k],[eff,known]=islandHerbEat(H.f
 // Coldmoss, Stonecress, Ferrous Weed, Cré Dearg) on the Mark, the rest of the land herbs on the Gatelands; the sea's three anywhere.
 // A cell's island is its landmass's nation (nationKeyOf), fixed by the seed, so a chunk's herbs never hang on what has loaded.
 for(const k of ['wolfsbane','coldmoss','stonecress','ferrousweed','credearg'])if(HERB_DEF[k])HERB_DEF[k].island='mark';
-const HERB_PLACE_OVR={credearg:{ctx:['water','rock'],biomes:['plains','moor','tundra']}}; /* the atlas's riverbeds of the Mark: its old dunes and wastes are Aurenne's */
+const HERB_PLACE_OVR={credearg:{ctx:['water','rock'],biomes:['plains','moor','tundra']}, /* the atlas's riverbeds of the Mark: its old dunes and wastes are Aurenne's */
+  wolfsbane:{ctx:['tree'],biomes:['forest'],rare:true}}; /* the atlas's "high forests, rare": it had no place in the open world; rare is a third of the weight, and never a hotspot */
 function herbIsland(k){const d=typeof HERB_DEF!=='undefined'&&HERB_DEF[k];return d&&d.zone==='sea'?null:(d&&d.island)||'gatelands';}
 function herbIsleAt(x,z){try{const [i,j]=cellOf(x,z);return nationKeyOf(i,j);}catch(e){return null;}}
 let HERB_ISLE_LAST=null;

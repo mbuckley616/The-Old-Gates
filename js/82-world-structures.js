@@ -1630,8 +1630,8 @@
     return 'open';
   }
   // S1939 — by island too (#1202 A): a herb grows only on its own (herbIsland, 50-travel.js), and the islands' twenty carry their places in ISLAND_HERB
-  function herbCandidates(biome,ctx,isle){const out=[];const add=(k,p)=>{if(!p||!HERB_DEF[k])return;if(isle&&typeof herbIsland==='function'&&herbIsland(k)!==isle)return;if(!p.biomes.includes(biome))return;const w=p.ctx.indexOf(ctx);if(w<0)return;out.push([k,w===0?3:1]);};
-    for(const k in HERB_PLACE)add(k,(typeof HERB_PLACE_OVR!=='undefined'&&HERB_PLACE_OVR[k])||HERB_PLACE[k]);if(typeof ISLAND_HERB!=='undefined')for(const k in ISLAND_HERB)add(k,ISLAND_HERB[k]);return out;}
+  function herbCandidates(biome,ctx,isle){const out=[];const add=(k,p)=>{if(!p||!HERB_DEF[k])return;if(isle&&typeof herbIsland==='function'&&herbIsland(k)!==isle)return;if(!p.biomes.includes(biome))return;const w=p.ctx.indexOf(ctx);if(w<0)return;out.push([k,(w===0?3:1)/(p.rare?3:1)]);};
+    for(const k in HERB_PLACE)add(k,(typeof HERB_PLACE_OVR!=='undefined'&&HERB_PLACE_OVR[k])||HERB_PLACE[k]);if(typeof HERB_PLACE_OVR!=='undefined')for(const k in HERB_PLACE_OVR)if(!HERB_PLACE[k])add(k,HERB_PLACE_OVR[k]);if(typeof ISLAND_HERB!=='undefined')for(const k in ISLAND_HERB)add(k,ISLAND_HERB[k]);return out;}
   const HERB_GEO={};
   // S1573 (backlog L8, Michael's C on #855: lifted) — on the new look a herb stands at its true size (the kit's old unit ×1.444, SCALE.ROOM_K)
   // and 1.15 over it, its colour a little stronger (saturation ×1.18, lightness ×1.1 + 0.02, as herbs.js's bake), the grass short in a 0.35 m
@@ -1731,7 +1731,7 @@
     if(typeof spawnGateHerbs==='function')spawnGateHerbs(ch); /* S1886 — the plants that mark a gate, and its Greenmeadow (87-world-quests.js) */
     if(hot){
       const hx0=ch.cx*CHUNK+10+hash01(ch.cx,ch.cz,125)*(CHUNK-20),hz0=ch.cz*CHUNK+10+hash01(ch.cz,ch.cx,126)*(CHUNK-20);const h0=worldH(hx0,hz0);if(h0<1)return;
-      const ctx=placeCtx(hx0,hz0,h0,ch);const cands=herbCandidates(biome,ctx==='sea'?'open':ctx,isle);if(!cands.length)return;
+      const ctx=placeCtx(hx0,hz0,h0,ch);const cands=herbCandidates(biome,ctx==='sea'?'open':ctx,isle).filter(c=>c[1]>=1);if(!cands.length)return;
       const type=cands[Math.floor(hash01(ch.cx,ch.cz,127)*cands.length)][0];const m=8+Math.floor(hash01(ch.cx,ch.cz,128)*9);
       for(let i=0;i<m;i++){const a=hash01(ch.cx+i,ch.cz,129)*Math.PI*2,rr=1.5+hash01(ch.cz+i,ch.cx,130)*7;const hx=hx0+Math.cos(a)*rr,hz=hz0+Math.sin(a)*rr;if(worldH(hx,hz)<1||!okSpot(hx,hz))continue;put(hx,hz,type,'hot:'+i);}
     }
