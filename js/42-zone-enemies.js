@@ -814,6 +814,25 @@ for(const k in WILD_ISLE_KINDS){const P=WILD_ISLE_KINDS[k];WILD_PACE[k]=P;
   const col=body==='wolf'?WOLF_KINDS[k].coat:body==='bird'?BIRD[k].col:SWIMMER[k].col;
   ZONE_FOE_DEF[k]={minLevel:1,col,eyeCol:0x0a0a0c,hp:1,maxHp:1,spd:1.0,dmg:0,atk:9,xpVal:0,scale:1,shape:body,def:0,resist:{},wild:true};
   if(P.answer){const B=ZONE_FOE_DEF.Boar;Object.assign(ZONE_FOE_DEF[k],{hp:B.hp,maxHp:B.maxHp,dmg:B.dmg,atk:B.atk,spd:B.spd,xpVal:B.xpVal,def:B.def,answer:true});}} /* S1796 — the Boar's row at tier 1 (wild: never scaled) */
+// Session 1933 (Michael's B on #1201: "Only in failing or catastrophic gates"): a gate's corrupted animals (OG-088; the kit's plans since
+// Session 919). In a failing or catastrophic gate of Uisce, Cloch or Scáth (not an occupied one) one slot of the school's roster becomes
+// its corrupted animal: Uisce's first Slime the Frost Wraith Bear, Cloch's first Skeleton the Blight Boar, Scáth's first Skeleton the Stag of
+// Shadows. A steady gate keeps its roster. Each takes its kin's numbers (the Cave Bear's, the Boar's, and a new stag row at the Dire Wolf's),
+// graded by the floor's tier as any gate foe's are (foeRebody, 68-dungeon-misc.js), its kin's least tier, and its school's resistance
+// (its own school ×0.7, as the Slime's uisce and the Phantom's scáth). It runs on its kin's driver (body) and wears the kit's corrupted
+// plan (HC_KINDS by its name). The dusk eagle waits for Gaoth's roster. Not in ZONE_FOE_DEF: they never stand in the open
+const GATE_CORRUPT={
+  deep:   {slot:'Slime',   kind:'Frost Wraith Bear',body:'Cave Bear',school:'uisce'},
+  ruins:  {slot:'Skeleton',kind:'Blight Boar',      body:'Boar',     school:'cloch'},
+  haunted:{slot:'Skeleton',kind:'Stag of Shadows',  body:'Elderstag',school:'scath',from:'Dire Wolf'}};
+function gateCorruptDef(kind){const C=Object.values(GATE_CORRUPT).find(c=>c.kind===kind);if(!C)return null;const K=ZONE_FOE_DEF[C.from||C.body];if(!K)return null;
+  return Object.assign({},K,{wild:false,answer:false,resist:Object.assign({},C.from?{}:K.resist,{[C.school]:.7}),corrupt:C.school});}
+function gateCorruptOf(kind){return Object.values(GATE_CORRUPT).find(c=>c.kind===kind)||null;}
+// the roster a gate's floor draws from: its school's six, with the corrupted slot when the gate is failing or worse and the floor's tier
+// reaches the kin's least tier (Cave Bear and Dire Wolf 2, Boar 1)
+function gateRoster(portal,gen,tier,list){if(!portal||portal.occupied||portal.tutorial||!gen||!gen.gate||!(gen.cond==='failing'||gen.cond==='catastrophic'))return list;
+  const C=GATE_CORRUPT[portal.theme],D=C&&gateCorruptDef(C.kind);if(!D||minTierOf(D.minLevel)>tier)return list;
+  const i=list.indexOf(C.slot);if(i<0)return list;const L=list.slice();L[i]=C.kind;return L;}
 // S1759 — a trout holds a metre under the surface, head to the current, wandering a little where the water is deep enough to hide it.
 // Seen or heard (the same senses) it darts 10 m downstream (on a lake, away from you) and holds again. Under the water an arrow strikes it
 // only when it passes within 0.6 m of the fish's height (wildArrowMisses), and of the blows only the spear's reaches it (strikeCandidate)

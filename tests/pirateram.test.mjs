@@ -95,7 +95,7 @@ const hk = await page.evaluate(() => {
   const look = (x, z, y) => { CAM.position.set(px, jumpY + 1.55, pz); CAM.lookAt(x, y == null ? DECK_Y + .5 : y, z); CAM.updateMatrixWorld(); };
   const run = (secs, each) => { const t0 = performance.now(); let n = 0; while (performance.now() - t0 < secs * 1000) { for (const x of [...OTHER]) if (x.id !== 'test:hooks') despawnOtherShip(x); /* no sea-spawned ship in the test */ WORLD.tick(1 / 60, performance.now()); if (each) each(); n++; } return n; };
   const said = []; const sm = showMsg; showMsg = (t, ...r) => { said.push(t); return sm(t, ...r); }; /* the lines said, not the last one shown: a sea-spawned ship's line can land in the same tick */
-  const side = WORLD.ship.mesh; const o = spawnOtherShip('merchant', 0, 0, 'test:hooks');
+  const side = WORLD.ship.mesh; const o = spawnOtherShip('merchant', 0, 0, 'test:hooks'); o._hands = true; /* S1935 — your cut alone here; her hands' are checked below */
   const at = (lx, lz) => shipToWorld(side, lx, lz);
   const p0 = at(S.W / 2 + o.W / 2 + 6, 1.5); o.x = p0.x; o.z = p0.z; o.yaw = S.yaw; o.speed = 0; o.wp = { x: o.x, z: o.z }; placeOther(o);
   const out = {}; look(o.x, o.z); out.prompt = hookPrompt();
@@ -130,6 +130,59 @@ check('across to her deck from your rail (boarding her), and back', /cross to he
 check('a line cut at its cleat in 1.5 s (not before; after by no more than the slowest tick); one line still holds her', /cut the line/.test(hk.cutPrompt) && hk.cutAt >= 1.5 && hk.cutAt <= 1.5 + Math.max(.2, hk.cutSlack) + .05 && hk.still, hk);
 check('walk off a cut and the line stays; both cut and she is free', !hk.walkedOff.cut && /uncut/.test(hk.walkedOff.msg) && hk.free.cut && !hk.free.lashed && !hk.free.hooks && /free/.test(hk.free.msg), hk);
 check('in a rough sea the throw misses by the seeded roll (her id, the throw)', JSON.stringify(hk.rough.got) === JSON.stringify(hk.rough.want), hk.rough);
+
+// S1935 (Michael's A on #1225) — a merchantman's two hands: bodies on her deck, unarmed, never hostile. Lashed, the first walks to her end of
+// a line and cuts it in 6 s; a hit on him starts his 6 s again; both cut and she runs. On her deck you stop them. Striking one is piracy
+const mh = await page.evaluate(() => {
+  for (const x of [...OTHER]) despawnOtherShip(x);
+  worldState.ship = { cls: 'sloop', name: 'Test Gull', sails: 0, cargo: 0, hold: {} }; WORLD.spawnShip(_sea.x, _sea.z, 0); const S = WORLD.ship; S.sailing = false; S.speed = 0;
+  px = S.x; pz = S.z; jumpY = DECK_Y;
+  const run = (secs, each) => { const t0 = performance.now(); while (performance.now() - t0 < secs * 1000) { for (const x of [...OTHER]) if (x.id !== 'test:hands') despawnOtherShip(x); WORLD.tick(1 / 60, performance.now()); if (each) each(); } };
+  const said = []; const sm = showMsg; showMsg = (t, ...r) => { said.push(t); return sm(t, ...r); }; const ss = seaState; seaState = () => 0; /* a calm sea: no throw misses */
+  const side = WORLD.ship.mesh, o = spawnOtherShip('merchant', 0, 0, 'test:hands'), at = (lx, lz) => shipToWorld(side, lx, lz);
+  const p0 = at(S.W / 2 + o.W / 2 + 6, 1.5); o.x = p0.x; o.z = p0.z; o.yaw = S.yaw; o.speed = 0; o.wp = { x: o.x, z: o.z }; placeOther(o);
+  run(.1); const hands = o.crew.filter(e => e.hand), out = {};
+  out.made = { n: hands.length, ids: hands.map(e => e.id), alive: hands.every(e => !e.dead && e.mesh && e.mesh.parent), armed: hands.some(e => e.limbs.person && e.limbs.person.weapon), names: hands.map(e => e.name) };
+  // never hostile: stood next to them for 3 s, no blow, no alert
+  const hp0 = PHP; const h0 = hands[0]; px = h0.x + .8; pz = h0.z; jumpY = DECK_Y; run(3, () => { px = h0.x + .8; pz = h0.z; }); out.calm = { hp: PHP === hp0, alert: hands.some(e => e.alert), pir: !!o.pirated };
+  px = S.x; pz = S.z; jumpY = DECK_Y;
+  // hooked and lashed: her hand to her end of a line, 6 s
+  throwHooks(o); run(5.3, () => { o.wp = { x: o.x, z: o.z }; px = S.x; pz = S.z; }); out.lashed = lashed(o);
+  const tL = performance.now(); let first = null, both = null;
+  run(16, () => { px = S.x; pz = S.z; o.wp = o.fleeing ? o.wp : { x: o.x, z: o.z }; const n = (performance.now() - tL) / 1000; if (first == null && HOOKS.cleats.some(c => c.cut)) first = n; if (both == null && !HOOKS.o) both = n; });
+  out.cut = { first: first && +first.toFixed(2), both: both && +both.toFixed(2), free: !HOOKS.o && !o.lashed, runs: !!o.fleeing, msg: said.filter(t => /Her hand cuts/.test(t)), pir: !!o.pirated };
+  // again, with a hit on him at 4 s into his cut: his 6 s start again, and the hit is piracy
+  o.fleeing = false; o.pirated = false; o.speed = 0; const p1 = at(S.W / 2 + o.W / 2 + 6, 1.5); o.x = p1.x; o.z = p1.z; o.yaw = S.yaw; placeOther(o);
+  for (const e of hands) { e.x = o.x; e.z = o.z; }
+  const crimes0 = (worldState.crimes || []).length;
+  throwHooks(o); run(5.3, () => { o.wp = { x: o.x, z: o.z }; px = S.x; pz = S.z; });
+  let started = null, hitAt = null, cutAt = null; const t1 = performance.now();
+  run(14, () => { px = S.x; pz = S.z; if (!o.fleeing) o.wp = { x: o.x, z: o.z }; const n = (performance.now() - t1) / 1000, C = o._cut;
+    if (started == null && C && C.t0 != null) started = n;
+    if (started != null && hitAt == null && n - started >= 4) { hitAt = n; const e = C.e; e.hp -= 3; }
+    if (cutAt == null && HOOKS.cleats.some(c => c.cut)) cutAt = n; });
+  out.hit = { started: started && +started.toFixed(2), hitAt: hitAt && +hitAt.toFixed(2), cutAt: cutAt && +cutAt.toFixed(2), pir: !!o.pirated, booked: (worldState.crimes || []).length - crimes0 };
+  hookDrop();
+  // on her deck: they keep their heads down and cut nothing
+  o.fleeing = false; o.speed = 0; const p2 = at(S.W / 2 + o.W / 2 + 6, 1.5); o.x = p2.x; o.z = p2.z; o.yaw = S.yaw; placeOther(o);
+  throwHooks(o); run(5.3, () => { o.wp = { x: o.x, z: o.z }; px = S.x; pz = S.z; });
+  run(8, () => { o.wp = { x: o.x, z: o.z }; px = o.x; pz = o.z; jumpY = DECK_Y; }); out.aboard = { cut: HOOKS.cleats.filter(c => c.cut).length, lashed: lashed(o) };
+  hookDrop(); px = S.x; pz = S.z;
+  // her rig: a living hand douses it at 3 s, as a black sail's
+  o.rig = 100; lightRig(o, BALLISTA.burn, BALLISTA.burnS); let doused = null, nt = 0; for (let i = 0; i < 300 && doused == null; i++) { WORLD.tick(1 / 60, performance.now()); nt++; if (!(o.burn > 0)) doused = nt / 60; } /* by the ticks, as the douse counts them */
+  out.douse = doused && +doused.toFixed(2);
+  // killed: the same piracy, once; no murder
+  const c0 = (worldState.crimes || []).length; o.pirated = false; for (const e of hands) { if (!e.dead) { e.hp = 0; killZoneEnemy(e, WORLD.scene); } } run(.2);
+  out.kill = { crimes: (worldState.crimes || []).slice(c0).map(c => c.kind), dead: hands.every(e => e.dead) };
+  despawnOtherShip(o); showMsg = sm; seaState = ss; return out; });
+console.log('hands', JSON.stringify(mh));
+check('a merchantman near you carries two hands, keyed by her id, on bodies with nothing in their hands', mh.made.n === 2 && mh.made.ids.join() === 'test:hands:hand:0,test:hands:hand:1' && mh.made.alive && !mh.made.armed, mh.made);
+check('they never turn on you: three seconds beside one, no blow, no alert, no piracy', mh.calm.hp && !mh.calm.alert && !mh.calm.pir, mh.calm);
+check('lashed, her hand cuts a line about 6 s after he reaches it and the other after, and she runs free; no piracy without a blow', mh.cut.first >= 6 && mh.cut.first < 11 && mh.cut.both > mh.cut.first + 5.9 && mh.cut.free && mh.cut.runs && mh.cut.msg.length >= 2 && !mh.cut.pir, mh.cut);
+check('a hit on him 4 s into his cut starts his 6 s again (cut 10 s after he began), and the hit is piracy, booked once', mh.hit.cutAt - mh.hit.started >= 9.9 && mh.hit.pir && mh.hit.booked === 1, mh.hit);
+check('with you on her deck they cut nothing', mh.aboard.cut === 0 && mh.aboard.lashed, mh.aboard);
+check('a living hand douses her rig at 3 s', mh.douse >= 2.9 && mh.douse < 3.5, mh.douse);
+check('killing her hands is the one piracy, not a murder', mh.kill.dead && mh.kill.crimes.join() === 'piracy', mh.kill);
 
 // S1815 — repel boarders: a black sail whose ram is spent hooks you within 10 m; her crew cross 6 s after the lashing unless both lines are cut
 const rb = await page.evaluate(() => {

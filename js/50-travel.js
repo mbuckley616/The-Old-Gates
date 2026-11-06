@@ -734,7 +734,7 @@ function useFireThing(i){const it=BAG[i];if(!it)return;
 // S1707 — and off the hunted (Michael's A on #984): a deer 2 to 4, a hare 1; the fox, the badger and the otter give none
 const MEAT_BODIES=/(^|\s)(Wolf|Bear|Boar|Deer|Hare|Elderstag|Elk|Duneskimmer|Icehorn|Ram|Crownstag|Frostmane|Shatterhorn)$/;
 const MEAT_N={Deer:[2,4],Hare:[1,1],Elderstag:[2,4],Elk:[2,4],Crownstag:[2,4],Frostmane:[2,4],Shatterhorn:[2,4]}; /* S1911 — the Shatterhorn a grazer, a deer's; the tortoises and the Mineprowler none */ /* S1870 — the two strange grazers a deer's; the Lanternfox, the Thornrunner and the Stonejaw none, as the fox and the badger */ /* S1769 — the islands' grazers: the stag and the elk a deer's, the gazelle, the goat and the rams the default 1 to 3 */
-function bodyMeat(e,items,key){if(e&&e.swim&&(e.baseName==='Trout'||RIVER_FISH[e.baseName])){items.push(riverFishItem(e.baseName));return items;}if(!e||!MEAT_BODIES.test(e.name||''))return items;
+function bodyMeat(e,items,key){if(e&&e.swim&&(e.baseName==='Trout'||RIVER_FISH[e.baseName])){items.push(riverFishItem(e.baseName));return items;}if(!e||e.corrupt||!MEAT_BODIES.test(e.name||''))return items; /* S1933 — a gate's corrupted animal is the gate's, no meat on it */
   const N=MEAT_N[(e.name||'').split(' ').pop()]||[1,3];
   const r=key!=null?seededRng('meat',key):lootRand;items.push(survItem('meat',N[0]+Math.floor(r()*(N[1]-N[0]+1))));return items;}
 // S1759 — a trout (#1014 A): one, a fish like the sea's (0.6 weight, 9 gold), taken by hand or off its body when struck
@@ -752,8 +752,8 @@ function fedPill(){const F=fedNow();if(!F)return '';const K=FED_KIND[F.kind],m=M
 // ── S1917 — climate B (Michael's 5 B; docs/design/climate-build.md, session 1): the Mark's cold and Aurenne's heat wear your
 // stamina, never your health. Exposure is a grade 0–2 read from where you stand, the hour, the season and the weather; warmth
 // and cool take a grade off a point each (two at most); the grade rises at once and falls 3 s later, by the clock, not frames.
-// cap2 is the open number (DECISION #1211: A 0.8, B 1, C 0.6): until it is answered grade 2 slows regeneration only (B).
-const CLIMATE={regen:[1,.75,.5],cap2:1,fall:3000,band:2,names:{cold:['','Cold','Bitter'],hot:['','Hot','Scorching']},
+// cap2 is grade 2's ceiling on stamina: Michael's A on #1211 ("Regeneration ×0.5, stamina capped at 80%"), set in Session 1934.
+const CLIMATE={regen:[1,.75,.5],cap2:.8,fall:3000,band:2,names:{cold:['','Cold','Bitter'],hot:['','Hot','Scorching']},
   ico:{cold:'❄',hot:'☀'},sand:{dunes:1,wasteland:1,wastes:1}};
 const _clim={above:false,g:0,side:null,at:0,why:''};
 function _climOutside(){if(activeZoneId!=='world'||lid!=='overworld')return false;if(typeof isInterior==='function'&&isInterior())return false;

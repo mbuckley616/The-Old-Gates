@@ -1513,7 +1513,7 @@
   // S1848 — her hands douse it (Michael's A on #1143): a living hand on her deck puts the fire in her rig out 3 s after it catches,
   // unless one of her hands is hit in that time (a heavy arrow, the pot's fire, grape, your own blade or bow: any loss of her crew's
   // health), which starts the 3 s again. With none of her hands on her deck the fire runs its full time. So a fire bolt takes 6 rig,
-  // or 16 with her hands down; a pot 9, or 18. A merchantman carries no crew to douse it, and her fire runs full as before.
+  // or 16 with her hands down; a pot 9, or 18. (A merchantman's two hands douse hers the same way since Session 1935, below.)
   const RIG_DOUSE=3;
   // the named action: her rig catches (or is lit again: a fire already there runs its new time, never doubled), and her hands' 3 s start
   function lightRig(o,rate,secs){if(!o||o.dead||o.founder!=null)return false;o.burn=secs;o.burnRate=rate;o._burnAcc=o._burnAcc||0;o.douse=RIG_DOUSE;o._crewHp=null;return true;}
@@ -1526,6 +1526,38 @@
     o.burn-=t;o._burnAcc=(o._burnAcc||0)+t*(o.burnRate||BALLISTA.burn);const n=Math.floor(o._burnAcc+1e-9);if(n>0){o._burnAcc-=n;damageShip(o,0,n);}
     if(dousing){o.douse-=dt;if(o.douse<=1e-6&&o.burn>0){o.burn=0;if(!o.founder&&!o.struck)showMsg(`The ${shipNoun(o)}'s hands put out the fire in her rig.`,'#c8b880');}}
     if(o.burn<=0){o.burn=0;o._burnAcc=0;o.douse=null;}}}
+  // S1935 — a merchantman's hands (Michael's A on #1225, "Two unarmed hands with bodies"; naval-combat.md: "Cutting a line is E at its
+  // cleat: 1.5 s for you, 6 s for her hand if he reaches it unhurt"). Every merchantman within 250 m of you carries two hands on her deck,
+  // townsmen's bodies with nothing in their hands, keyed <her id>:hand:<k>, never hostile (held as a yielded duellist is: they never
+  // fight, and a blow never wakes them). Hooked and lashed by you, the first hand standing walks to her end of a line that still holds
+  // (1.5 m/s) and cuts it in 6 s; any hit on her hands (any loss of their health: a blade, an arrow, grape, a pot) starts his 6 s again.
+  // With both cut she is free, and runs. While you stand on her deck they keep their heads down and cut nothing. A living hand douses
+  // her rig by the black sail's rule (rigHands, RIG_DOUSE). Striking a hand is piracy, as any hit on her is (booked once, piracy());
+  // killing him is the same piracy, not a murder
+  const MERCH_HANDS={n:2,near:250,cut:6,walk:1.5,reach:.8};
+  function merchantHands(o){if(!merchantOf(o)||o._hands||o.dead||o.founder!=null||o.struck||(o.crew&&o.crew.length))return false;
+    if(Math.hypot(o.x-px,o.z-pz)>MERCH_HANDS.near)return false;o._hands=true;const fwd=[-Math.sin(o.yaw),-Math.cos(o.yaw)];
+    for(let k=0;k<MERCH_HANDS.n;k++){const at=k?-2.2:2,ex=o.x+fwd[0]*at+(-fwd[1])*(k?.8:-.8),ez=o.z+fwd[1]*at+fwd[0]*(k?.8:-.8),fid=`${o.id||'ship'}:hand:${k}`;
+      const e=buildZoneEnemy(sc,STATIC_SOL,ex,ez,'Pirate',null,{genome:personGenome({name:'Hand '+fid,role:'villager'},{key:fid})});keyFoe(e,fid);
+      e.name='Deckhand';e.hand=true;e._duelHold=true;e.alert=false;e.homeX=o.x;e.homeZ=o.z;e._ship=o;ZONES.world.enemies.push(e);o.crew.push(e);}
+    o._handHp=crewHp(o);return true;}
+  function handOnLine(o){return HOOKS.o===o&&HOOKS.by!=='her'&&HOOKS.phase==='lashed';}
+  // the named action: her hand's 6 s at a line run out; that line parts, and with none left she is free and runs
+  function handCutLine(o,c){if(!c||c.cut)return false;c.cut=true;if(typeof sfxNoise==='function')sfxNoise(.08,0,0,.05,1600);
+    if(HOOKS.cleats.every(x=>x.cut)){hookDrop(`Her hand cuts the last line. The ${shipNoun(o)} is free of you, and runs.`);o.fleeing=true;o.wp=null;return true;}
+    showMsg('Her hand cuts one of your lines.','#ff8060');return true;}
+  function tickMerchantHands(dt){const now=hookClock();
+    for(const o of OTHER){if(!merchantOf(o))continue;if(!o._hands){merchantHands(o);continue;}const live=(o.crew||[]).filter(e=>e.hand&&!e.dead&&e.hp>0);
+      const hp=crewHp(o),hurt=o._handHp!=null&&hp<o._handHp-1e-9;o._handHp=hp;
+      if(hurt){const pm=piracy(o);if(pm)showMsgLong(pm,'#e88a8a');if(o._cut)o._cut.t0=now;}
+      for(const e of live){e.alert=false;e._duelHold=true;}
+      const aboard=inDeck(o.plat,px,pz)&&Math.abs(jumpY-DECK_Y)<1;
+      if(!handOnLine(o)||!live.length||aboard){if(o._cut&&(aboard||!handOnLine(o)))o._cut=null;}
+      else{const c=HOOKS.cleats.find(x=>!x.cut);if(c){const e=live[0],b=hookEnds(c)[1];
+        if(!o._cut||o._cut.c!==c||o._cut.e!==e)o._cut={c,e,t0:null};const d=Math.hypot(b.x-e.x,b.z-e.z);
+        if(d>MERCH_HANDS.reach){const k=Math.min(1,MERCH_HANDS.walk*dt/d);e.x+=(b.x-e.x)*k;e.z+=(b.z-e.z)*k;e.combatYaw=Math.atan2(b.x-e.x,b.z-e.z);o._cut.t0=null;}
+        else{if(o._cut.t0==null)o._cut.t0=now;if(now-o._cut.t0>=MERCH_HANDS.cut){o._cut=null;handCutLine(o,c);}}}}
+      for(const e of live)if(e.mesh){const y=typeof activeTerrainH==='function'?activeTerrainH(e.x,e.z):e.mesh.position.y;e.mesh.position.set(e.x,y,e.z);e.mesh.rotation.set(0,e.combatYaw||0,0);}}}
   // S1837 — the fire pot (the page's table: your hand, thrown 20 m; her rig 3 a second for 6 s; 12 fire to a hand within 2 m; Michael's
   // A on #1108 for the pot). Used from the bag, a fire pot is thrown where you look: at the nearest ship whose side is within 20 m and
   // within 15° of your line of sight, a black sail, a quest's ship or a merchantman (a hit on her is piracy, as a bolt's is). With none
