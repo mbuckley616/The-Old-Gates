@@ -451,11 +451,11 @@ const giver=`${lord.title} ${lord.name}`;
   // A failing or catastrophic gate's Greenmeadow: the ordinary herbs within 60 m stand ×1.3 (cosmetic). Picking one and entering its gate
   // within the hour teaches the plant (herbsKnown().read, the character's); its prompt then names the gate's condition and school.
   const GATE_HERB_OF={steady:'lichenbloom',failing:'gatelotus',catastrophic:'gateresin'};
-  const GATE_HERB={lichenbloom:{cond:'steady',name:'Lichenbloom',kind:'graywort',seen:'lichen in flower on the stone',r:80,price:12,
+  const GATE_HERB={lichenbloom:{cond:'steady',name:'Lichenbloom',kind:'graywort',seen:'a lichen in flower on the stone',r:80,price:12,
       effect:{type:'stamina',amount:25},known:'Restores 25 Stamina'},
     gatelotus:{cond:'failing',name:'Gatelotus',kind:'luibhuisce',seen:'a lotus blooming in dry grass',r:80,price:20,
       effect:{type:'hpRegen',rate:1.5,duration:60},known:'+1.5 HP/s regen for 60s'},
-    gateresin:{cond:'catastrophic',name:'Gate Resin',kind:'credearg',seen:'resin weeping from bare stone',r:120,price:30,
+    gateresin:{cond:'catastrophic',name:'Gate Resin',kind:'credearg',seen:'a bead of resin weeping from bare stone',r:120,price:30,
       effect:{type:'hpRegen',rate:2,duration:60},known:'+2 HP/s regen for 60s'}};
   const SCHOOL_HUE={tine:'red',uisce:'blue',cloch:'brown',scath:'purple',solas:'gold',gaoth:'grey'};
   const GATE_MEADOW_R=60,GATE_MEADOW_K=1.3,GATE_READ_MIN=60;
@@ -1290,7 +1290,7 @@ const giver=`${lord.title} ${lord.name}`;
   // giver. Never asked by an Old Blood giver. Pay in full for a reading or for *burn it*, half for *Nobody could read it*; the giver's
   // town a point; the Guild's town a point for its reading told, the Old Blood reader's for *burn it*. Plain fixes: a reading that opens
   // a giver's line is capitalised there (*'A spark'.*), a gate called *The …* is *the …* inside a sentence, and a word with no Mastery name
-  // (nameMa null) has no Mastery reading. Looking at the rubbing yourself (erRubLook) waits on a one-line hook in useItem (backlog A).
+  // (nameMa null) has no Mastery reading. Looking at the rubbing yourself (erRubLook) is useItem's (S1910).
   const ER_RUB_SENSE={caor:'a spark',sioc:'frost',leigheas:'a cure',sideen:'a gust of breath',smol:'the last of an ember',cloch_ghear:'a sharp stone',
     solas_gheal:'a bright light',tintreach:'lightning',reo:'held fast in ice',ean:'a bird',freamh:'a root',loscadh:'a burning of the land',
     dorcha:'the dark before morning',tonn:'a wave',dul_thart:'going past'};
