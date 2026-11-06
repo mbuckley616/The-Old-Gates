@@ -70,7 +70,14 @@ for (const type of ['guild_f', 'guild_m']) {
   check(`${tag}: the cellar's hatch in the steward's room, on clear flags, with room to come back up beside it`, !!r.hatch && r.hatch.clear && r.hatch.back && r.hatch.inSteward, r.hatch);
   if (type === 'guild_m') check(`${tag}: the guild's book is on the gallery's middle press, ${r.shelf && r.shelf.y} m up, with gallery floor before it`, !!r.shelf && r.shelf.y > 3 && r.shelf.stand, r.shelf);
   else check(`${tag}: no shelf book (the Fighters keep none)`, r.shelf === null, r.shelf);
-  check(`${tag}: lit (${r.lights} lights); ${r.draws} meshes (40 or fewer) and ${r.tris.toLocaleString()} triangles (30,000 or fewer) besides the ${r.people} of its people`, r.lights >= 4 && r.draws <= 40 && r.tris <= 30000 && r.people >= 4, r);
+  check(`${tag}: lit (${r.lights} lights); ${r.draws} meshes (45 or fewer: 40 and S1921's six for the sconces) and ${r.tris.toLocaleString()} triangles (30,000 or fewer) besides the ${r.people} of its people`, r.lights >= 4 && r.draws <= 45 && r.tris <= 30000 && r.people >= 4, r);
+  /* S1921 (#805 C): the Gatelands' candle sconces on the hall's clear walls, its partition and its gallery's posts, two candles on the table; each flame's light in the room and clear of every solid (the stands, the still, the leaf, the stair) */
+  const fx = await page.evaluate(() => { const h = currentHouse, T = h._guildHall, HF = h._hallFix; if (!HF) return null; const F0 = T.floors[0], top = T.table.y - F0;
+    const inSol = ([x, y, z]) => INT_SOL.some(b => x > b.x0 && x < b.x1 && z > b.z0 && z < b.z1 && y > b.y0 && y < b.y1);
+    const L = HF.lights.map(f => ({ type: f.type, p: f.p.map(v => +v.toFixed(2)), inRoom: f.p[0] > 0 && f.p[0] < h.intW && f.p[2] > 0 && f.p[2] < h.intD, clear: !inSol(f.p) }));
+    return { sconces: L.filter(f => f.type === 'sconce').length, candles: L.filter(f => f.type === 'tablecandle'), onTable: L.filter(f => f.type === 'tablecandle').every(f => Math.abs(f.p[1] - .3 - top) < .01), bad: L.filter(f => !f.inRoom || !f.clear), n: HF.lights.length, tris: HF.tris, draws: HF.draws, all: L }; });
+  console.log('  fixtures', JSON.stringify(fx && { ...fx, all: fx.all.map(f => f.type[0] + f.p.join(',')) }));
+  check(`${tag}: the Gatelands' candle sconces (${fx && fx.sconces}) and two candles on the table, every light in the room and clear of the solids (${fx && fx.tris} triangles in ${fx && fx.draws} draws)`, !!fx && fx.sconces >= 4 && fx.candles.length === 2 && fx.onTable && fx.bad.length === 0, fx);
 
   const pic = n => path.join(here, `../docs/prototypes/guildhall-${type === 'guild_f' ? 'fighters' : 'mages'}-${n}.png`);
   await page.evaluate(() => { const h = currentHouse; VM_SCENE.visible = false; px = h._exitX + .9; pz = h.intD - .7; jumpY = 0; yaw = .35; pitch = .1; });
