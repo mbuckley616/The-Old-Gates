@@ -217,6 +217,28 @@ check('new sails: 50 gold, kept, said; her mesh and her hull on the stage wear b
 check('another island’s yard will not paint her; short of 50, refused; no such colour, refused', /own island/.test(pt.away) && pt.poor === 'It is 50 gold.' && pt.bad === 'No such colour.', pt);
 check('her dress is her hull’s: the cutter the Mark’s, the caravel Aurenne’s, the rest the yard’s', pt.dressOf.join() === 'mark,aurenne,aurenne,gatelands', pt.dressOf);
 check('a save keeps her paint and her sails', pt.kept.join() === '2,1', pt.kept);
+// S1922 — her banner (#979 B, session 5; the look builder's banner, S1919, #1150 A): the Crown's, the Mark's, the Compact's or none,
+// 50 gold and an hour, at any yard; laid on her mesh and on her hull on the stage; kept in the world's row
+const bn = await page.evaluate(() => { YARD.cls = worldState.ship.cls || 'sloop'; yardPanelDraw(); const st = worldState.ship, out = {};
+  const rows = () => [...document.querySelectorAll('#yard-acts button[data-flag]')];
+  out.rows = rows().map(b => b.textContent.trim()); gold = 500; const g0 = gold, m0 = worldState.gameTimeAbsMinutes;
+  rows().find(b => b.dataset.flag === 'mark').click();
+  out.m = { gold: g0 - gold, mins: Math.round(worldState.gameTimeAbsMinutes - m0), banner: st.banner, said: document.getElementById('yard-said').textContent, log: GAME_LOG.slice(-1)[0].text,
+    mesh: SHIP.mesh ? (SHIP.mesh.userData.banner ? SHIP.mesh.userData.banner.nation : null) : 'none', stage: YARD.m[YARD.cls] && YARD.m[YARD.cls].userData.kit ? (YARD.m[YARD.cls].userData.banner || {}).nation || null : 'old',
+    hers: rows().find(b => b.dataset.flag === 'mark').textContent };
+  const g1 = gold; out.again = bannerShip('mark'); out.againGold = g1 - gold;
+  const gp = WORLD.allPorts().find(p => WORLD.cargoNation(p) !== herDress()); out.away = gp ? bannerShip('aurenne') : 'no port'; out.awayFlag = st.banner;
+  const d = JSON.parse(ssStringify(_buildSavePayload())); delete st.banner; _applyLoadData(d); out.kept = worldState.ship.banner;
+  const kg = gold; gold = 10; out.poor = bannerShip('gatelands'); gold = kg; out.bad = bannerShip('pirate');
+  rows().find(b => b.dataset.flag === '').click(); out.none = { banner: worldState.ship.banner, said: document.getElementById('yard-said').textContent,
+    mesh: SHIP.mesh ? (SHIP.mesh.userData.banner || null) : 'none', stage: YARD.m[YARD.cls] && YARD.m[YARD.cls].userData.kit ? (YARD.m[YARD.cls].userData.banner || null) : 'old' };
+  return out; });
+console.log(JSON.stringify(bn));
+check('her yard offers the Crown’s, the Mark’s, the Compact’s banner and none, none marked hers', bn.rows.length === 4 && /^The Crown’s/.test(bn.rows[0]) && /^The Mark’s/.test(bn.rows[1]) && /^The Compact’s/.test(bn.rows[2]) && /^None \(hers\)/.test(bn.rows[3]), bn.rows);
+check('the Mark’s banner: 50 gold, an hour, kept, said and logged, flown on her mesh and on the stage', bn.m.gold === 50 && bn.m.mins === 60 && bn.m.banner === 'mark' && bn.m.said === 'She flies the Mark’s banner.' && /flies the Mark’s banner/.test(bn.m.log) && /\(hers\)/.test(bn.m.hers) && (bn.m.mesh === 'none' || bn.m.mesh === 'mark') && (bn.m.stage === 'old' || bn.m.stage === 'mark'), bn.m);
+check('the same banner again is refused and costs nothing; the Compact’s is hung at any yard', /already/.test(bn.again) && bn.againGold === 0 && bn.away === true && bn.awayFlag === 'aurenne', bn);
+check('a save keeps her banner; short of 50, refused; no such banner, refused', bn.kept === 'aurenne' && bn.poor === 'It is 50 gold.' && bn.bad === 'No such banner.', bn);
+check('struck: she flies none, on her mesh and on the stage', bn.none.banner === undefined && bn.none.said === 'Her banner is struck.' && (bn.none.mesh === 'none' || bn.none.mesh === null) && (bn.none.stage === 'old' || bn.none.stage === null), bn.none);
 // sunk: nothing offered, the note says so
 await page.evaluate(() => { worldState.ship.sunk = { x: 0, z: 0 }; yardPanelDraw(); }); const j = await R();
 check('sunk: no offers, a note to ask about raising her', j.acts.length === 0 && /lies on the bottom/.test(j.note), j);

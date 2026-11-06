@@ -1158,6 +1158,18 @@
     gold-=YARD_PAINT.gold;updateHUD();st[k]=v;if(typeof advanceClock==='function')advanceClock(YARD_PAINT.mins);else worldState.gameTimeMinutes+=YARD_PAINT.mins;
     if(SHIP.mesh&&typeof shipSwatchOn==='function')shipSwatchOn(SHIP.mesh);
     if(typeof addLog==='function')addLog('⛵',k==='paint'?`The ${st.name||SHIP.name} is painted ${nm}.`:`The ${st.name||SHIP.name} has ${nm} sails.`);return true;}
+  // S1922 — #979 B, the sheet's session 5, with the look builder's banner (S1919, Michael's A on #1150): any yard hangs her banner, the
+  // Crown's, the Mark's or the Compact's, or strikes it, 50 gold and an hour as her paint is. A banner is only a look (the sheet: until
+  // naval combat's C), so no yard refuses another nation's; your house's waits on your house having arms. One named action (the co-op
+  // rules): bannerShip(v), v 'gatelands' | 'mark' | 'aurenne' | '' (none). Kept in worldState.ship.banner, the world's row.
+  const SHIP_FLAGS=['gatelands','mark','aurenne',''];
+  function bannerName(v){const B=typeof PKIT!=='undefined'&&PKIT.ships&&PKIT.ships.BANNERS;return v&&B&&B[v]?B[v].name+'’s':'none';}
+  function bannerShipWhy(v){const st=worldState.ship;if(!st||st.sunk)return 'She is not afloat.';if(v==null)v='';if(!SHIP_FLAGS.includes(v))return 'No such banner.';
+    if((st.banner||'')===v)return v?'She flies it already.':'She flies none already.';if(gold<YARD_PAINT.gold)return `It is ${YARD_PAINT.gold} gold.`;return null;}
+  function bannerShip(v){if(v==null)v='';const why=bannerShipWhy(v);if(why)return why;const st=worldState.ship;
+    gold-=YARD_PAINT.gold;updateHUD();if(v)st.banner=v;else delete st.banner;if(typeof advanceClock==='function')advanceClock(YARD_PAINT.mins);else worldState.gameTimeMinutes+=YARD_PAINT.mins;
+    if(SHIP.mesh&&typeof shipBannerOn==='function')shipBannerOn(SHIP.mesh);const n=st.name||SHIP.name;
+    if(typeof addLog==='function')addLog('⛵',v?`The ${n} flies ${bannerName(v)} banner.`:`The ${n} flies no banner.`);return true;}
   function shipFitNames(arr){return arr.map(k=>k==='stowage'?'stowage':SHIP_FITS[k]?SHIP_FITS[k].n:k);}
   function shipCfg(){return worldState.ship||(worldState.ship={});}
   function shipClass(){return SHIP_CLASSES[(worldState.ship&&worldState.ship.cls)||'sloop'];}
@@ -1920,7 +1932,7 @@ function yardStage(){if(YARD.r)return true;const cv=document.getElementById('yar
     YARD.c=new THREE.PerspectiveCamera(30,320/240,.5,200);}catch(e){YARD.r=null;return false;}return true;}
 function yardShow(cls){const C=SHIP_CLASSES[cls];if(!C||!yardStage())return;for(const k in YARD.m)YARD.m[k].visible=false;
   let m=YARD.m[cls];if(!m){try{m=buildShipMesh(C.L,C.W,'player',cls);} /* S683 — the stage shows each class on its own hull (S665's cutter and caravel), not the hull of her length */catch(e){return;}YARD.m[cls]=m;YARD.s.add(m);}
-  const st=worldState.ship;if(st&&!st.sunk&&(st.cls||'sloop')===cls&&m.userData.kit===herDress()&&typeof shipSwatchOn==='function')shipSwatchOn(m); /* S1845 — her own hull on the stage wears her colours */
+  const st=worldState.ship;if(st&&!st.sunk&&(st.cls||'sloop')===cls&&m.userData.kit===herDress()&&typeof shipSwatchOn==='function'){shipSwatchOn(m);if(typeof shipBannerOn==='function')shipBannerOn(m);} /* S1845 — her own hull on the stage wears her colours; S1922 — and her banner */
   m.visible=true;const d=C.L*1.9;YARD.c.position.set(0,C.L*.55,d);YARD.c.lookAt(0,2.2,0);}
 function yardLoop(){if(!yardOpen){YARD.raf=0;return;}YARD.raf=requestAnimationFrame(yardLoop);const now=performance.now(),dt=Math.min(.1,(now-(YARD.last||now))/1000);YARD.last=now;
   YARD.yaw+=dt*.35;const m=YARD.m[YARD.cls];if(m)m.rotation.y=YARD.yaw;if(YARD.r)try{YARD.r.render(YARD.s,YARD.c);}catch(e){}}
@@ -1950,7 +1962,12 @@ function yardPanelDraw(){const ov=document.getElementById('yardui');if(!ov||!YAR
       acts.insertAdjacentHTML('beforeend',row('paint',W.paints,o=>hex(o.hex))+row('cloth',W.cloths,o=>o.base||(o.cloths&&o.cloths[0])||'#ccc'));
       for(const b of acts.querySelectorAll('button[data-paint]'))b.onclick=e=>{e.stopPropagation();const k=b.dataset.paint,v=+b.dataset.v,r=paintShip(k,v,site),W2=shipSwatches(),L2=k==='paint'?W2.paints:W2.cloths;
         YARD.said=r===true?(k==='paint'?`Painted ${L2[v].name}.`:`${L2[v].name[0].toUpperCase()+L2[v].name.slice(1)} sails.`):r;yardPanelDraw();};}
-    else if(W)acts.insertAdjacentHTML('beforeend',`<div style="font-size:13px;color:#6a5a3a;margin-top:10px">This yard paints only ships of its own island’s build. A refit here would give her its lines and its colours.</div>`);}
+    else if(W)acts.insertAdjacentHTML('beforeend',`<div style="font-size:13px;color:#6a5a3a;margin-top:10px">This yard paints only ships of its own island’s build. A refit here would give her its lines and its colours.</div>`);
+    if(typeof PKIT!=='undefined'&&PKIT.ships&&PKIT.ships.BANNERS){const flies=st.banner||''; /* S1922 — her banner (#979 B, session 5; #1150 A) at any yard */
+      acts.insertAdjacentHTML('beforeend',`<div style="margin-top:10px;font-size:13px;color:#6a5a3a">Her banner (${YARD_PAINT.gold} gold, an hour)</div>`+SHIP_FLAGS.map(v=>{const B=v&&PKIT.ships.BANNERS[v],on=flies===v;
+        return `<button type="button" data-flag="${v}" style="${A}${on?';border-width:2px;font-weight:bold':''}">${B?`<span style="display:inline-block;width:12px;height:12px;margin-right:6px;vertical-align:-1px;border:1px solid #6a5a3a;background:${B.field};box-shadow:inset 0 -3px ${B.trim}"></span>`+B.name[0].toUpperCase()+B.name.slice(1)+'’s':'None'}${on?' <span style="font-size:12px;font-weight:normal">(hers)</span>':''}</button>`;}).join(''));
+      for(const b of acts.querySelectorAll('button[data-flag]'))b.onclick=e=>{e.stopPropagation();const v=b.dataset.flag,r=bannerShip(v);
+        YARD.said=r===true?(v?`She flies ${bannerName(v)} banner.`:'Her banner is struck.'):r;yardPanelDraw();};}}
   for(const b of ov.querySelectorAll('#yard-acts button[data-i]'))b.onclick=()=>{const o=offers[+b.dataset.i];const r=o.fn();YARD.said=typeof r==='string'?r:'';if(worldState.ship&&!worldState.ship.sunk)YARD.cls=yardHulls(site).includes(worldState.ship.cls||'sloop')?(worldState.ship.cls||'sloop'):YARD.cls;yardPanelDraw();};
   ov.querySelector('#yard-said').textContent=YARD.said;ov.querySelector('#yard-gold').textContent=`Your purse: ${gold} gold`;
   yardShow(cls);}
