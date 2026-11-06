@@ -6,6 +6,11 @@ import { boot, check } from './lib/game.mjs';
 import { enterDungeon } from './lib/dungeonshot.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
+// S1937 — nothing here reads the game's pixels, and on software GL the drawing was the suite's cost: 859 s of the run.mjs cap's 900 on
+// the weekly run of 1 Nov (the world's death and load 10 min 19 s, the dungeon's 3 min 48 s). The loop still runs every frame (the
+// keys, the walk, the camera enterDungeon waits for); only the draw is stubbed, as keeperwalk and mainrun do.
+await page.evaluate(() => { REN.render = () => {}; });
+const t0 = Date.now(), lap = w => console.log(`  ${w} at ${((Date.now() - t0) / 1000).toFixed(1)} s`);
 await page.evaluate(async () => { await saveToSlot(0); });
 const out = [];
 for (const where of ['world', 'dungeon']) {
@@ -22,7 +27,7 @@ for (const where of ['world', 'dungeon']) {
   await g.frames(30); await page.keyboard.up('KeyW'); await g.frames(2);
   const after = await page.evaluate(() => ({ x: px, z: pz, zone: activeZoneId }));
   const o = { where, shown, focus: before.focus, held, moved: +Math.hypot(after.x - before.x, after.z - before.z).toFixed(2), zone: after.zone };
-  out.push(o); console.log(' ', JSON.stringify(o));
+  out.push(o); console.log(' ', JSON.stringify(o)); lap(where);
 }
 check('the death screen shows, and *Load last save* loads', out.every(o => o.shown), out);
 check('after the load the view has the focus', out.every(o => o.focus === 'g'), out);
