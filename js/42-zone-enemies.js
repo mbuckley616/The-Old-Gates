@@ -792,14 +792,17 @@ const WILD_ISLE_KINDS={
   /* S1895 — the birds' four and the Bellthroat (bodies Sessions 1892 and 1893): the Glasswing glides as the Crag Hawk, the Sunfan walks as
      the heron, the Bellthroat hops at a little more than the Marsh Frog's pace, three times its size. The Stormplume and the Redcrest the
      catalogue calls hostile: they answer back (WILD_ANSWER_KINDS, below) */
-  'Glasswing':{walk:.3,run:12,fly:true},'Sunfan':{walk:.4,run:5},'Bellthroat':{walk:.3,run:2}};
+  'Glasswing':{walk:.3,run:12,fly:true},'Sunfan':{walk:.4,run:5},'Bellthroat':{walk:.3,run:2},
+  /* S1911 — the last three peaceful ones (bodies Sessions 1906 and 1907, on the crawlers' path): the two tortoises plod at 0.2 and make off at
+     0.4, the Shatterhorn ("a peaceful giant") a browser's walk and 6 at a run, under the Frostmane's 7 for its size */
+  'Mossback':{walk:.2,run:.4},'Sailshell':{walk:.2,run:.4},'Shatterhorn':{walk:.8,run:6}};
 // S1796 — animals that answer back (Michael's A on #1050): the three the catalogue calls aggressive (the Gatefen Boar, the Icecrab, the
 // Saltspine Monitor) graze as the rest do and never bolt, but one you strike or come within WILD_ANSWER.near of turns on you (e.angry) and
 // fights as a foe with the hostile Boar's blow (5, every 1.3 s) and 16 health at tier 1 everywhere; WILD_ANSWER.quit off it gives up and
 // grazes again where it stands. Dead, it is an animal: its meat, no loot. The Sand Wyrm waits for its set piece
 const WILD_ANSWER={near:4,quit:25};
 const WILD_ANSWER_KINDS={'Gatefen Boar':{walk:.7,run:6},'Icecrab':{walk:.2,run:1.8},'Saltspine Monitor':{walk:.3,run:4},
-  'Stormplume':{walk:.8,run:8},'Redcrest':{walk:.8,run:9}}; /* S1895 — OG-040's two the catalogue calls hostile (the Stormplume territorial, the Redcrest in packs), on #1050 A's rule; on foot, never flying */
+  'Stormplume':{walk:.8,run:8},'Redcrest':{walk:.8,run:9},'Mineprowler':{walk:.6,run:7}}; /* S1911 — the Mineprowler ("lithe six-legged spiny sand predator: hostile"), a lynx's walk and a fox's run, the rule's 16 health and blow */ /* S1895 — OG-040's two the catalogue calls hostile (the Stormplume territorial, the Redcrest in packs), on #1050 A's rule; on foot, never flying */
 for(const k in WILD_ANSWER_KINDS)WILD_ISLE_KINDS[k]=Object.assign({answer:true},WILD_ANSWER_KINDS[k]);
 // S1797 — the two river fish (#1050 A) swim as the trout does, on its path and its rules (wildTroutChunk rolls which)
 for(const k of ['River Pike','Riverjaw Salmon']){WILD_PACE[k]=WILD_PACE.Trout;ZONE_FOE_DEF[k]=Object.assign({},ZONE_FOE_DEF.Trout,{col:SWIMMER[k].col});}

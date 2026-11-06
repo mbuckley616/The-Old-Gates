@@ -247,4 +247,27 @@ check(`the strange birds and the Bellthroat: ${Object.entries(NB.k).map(([k, o])
   && NB.rows.Bellthroat.join() === 'gatelands/fen:2' && NB.rows.Glasswing.join() === 'mark/tundra:0.5,mark/moor:0.5' && NB.rows.Stormplume.join() === 'mark/tundra:0.5,mark/moor:0.5'
   && NB.rows.Redcrest.join() === 'aurenne/wasteland:0.5' && NB.rows.Sunfan.join() === 'aurenne/plains:0.5,aurenne/dunes:0.5'
   && !NB.at10 && NB.at3 && NB.lost > 0 && NB.packs.length >= 1 && NB.packs.every(n => n >= 2 && n <= 4), NB);
+// S1911 — the last four of OG-040 (bodies Sessions 1906 and 1907, the crawlers' path) join the tables by the catalogue's habitat and rarity:
+// each builds as an animal on its own body; the Mineprowler, which the catalogue calls hostile, answers back (#1050 A) and turns on you at 3 m;
+// the Shatterhorn, a grazer, gives a deer's meat; the tortoises and the Mineprowler none
+const NC = await page.evaluate(() => { const out = { k: {}, rows: {} }; const isle = { Mossback: 'gatelands', Shatterhorn: 'mark', Mineprowler: 'aurenne', Sailshell: 'aurenne' };
+  for (const k of Object.keys(isle)) {
+    const e = buildZoneEnemy(sc, STATIC_SOL, px + 6, pz + 6, k, null, { tier: 1, key: 's1911:' + k, island: isle[k] });
+    out.k[k] = { wild: !!e.wild, hp: e.hp, dmg: e.dmg, answer: !!e.answer, body: !!(e.limbs && (e.limbs.bird || e.limbs.wolf || e.limbs.crawl)) || !!e.mesh, walk: WILD_PACE[k] && WILD_PACE[k].walk, run: WILD_PACE[k] && WILD_PACE[k].run, meat: bodyMeat(e, [], 's1911:' + k).length };
+    if (e.mesh && e.mesh.parent) e.mesh.parent.remove(e.mesh); }
+  for (const [i, t] of Object.entries(WILD_ISLE)) for (const [b, rows] of Object.entries(t)) for (const r of rows) if (out.k[r.name]) out.rows[r.name] = (out.rows[r.name] || []).concat(i + '/' + b + ':' + r.w);
+  forceTime(12); stream(px, pz, true);
+  let x = px, z = pz; for (let k = 0; k < 40 && !wildGround(x, z); k++) { x = px + (k % 7 - 3) * 9; z = pz + Math.floor(k / 7) * 9; }
+  const e = keyFoe(buildZoneEnemy(WORLD.scene, STATIC_SOL, x, z, 'Mineprowler', null, { tier: 1, key: 'test:prowl', island: 'aurenne' }), 'wild:test:prowl');
+  e.homeX = x; e.homeZ = z; e.combatYaw = 0; ZONES.world.enemies.push(e); for (const o of ZE) o._duelHold = o !== e; const T = n => { for (let i = 0; i < n; i++) tickZoneEnemies(1 / 60, 0, WORLD.scene); };
+  px = x + 10; pz = z; T(120); out.at10 = !!e.angry; px = e.x + 3; pz = e.z; PHP = PMAXHP = 500; T(60 * 4); out.at3 = !!e.angry; out.lost = 500 - PHP; PHP = PMAXHP;
+  for (const q of ZE) q._duelHold = false; e.dead = true; if (e.mesh.parent) e.mesh.parent.remove(e.mesh); ZONES.world.enemies.splice(ZONES.world.enemies.indexOf(e), 1);
+  return out; });
+console.log('  last four:', JSON.stringify(NC));
+check(`OG-040's last four: ${Object.entries(NC.k).map(([k, o]) => k + ' ' + o.hp + (o.answer ? ' answers' : '') + ' ' + o.walk + '/' + o.run + (o.meat ? ' meat' : '')).join(', ')}; a Mineprowler grazes at 10 m and turns on you at 3 m (${NC.lost} lost)`,
+  Object.values(NC.k).every(o => o.wild && o.body && o.run > 0) && NC.k.Shatterhorn.meat > 0 && ['Mossback', 'Sailshell', 'Mineprowler'].every(k => !NC.k[k].meat)
+  && NC.k.Mineprowler.answer && NC.k.Mineprowler.hp === 16 && NC.k.Mineprowler.dmg === 5 && ['Mossback', 'Sailshell', 'Shatterhorn'].every(k => NC.k[k].hp === 1 && !NC.k[k].answer)
+  && NC.rows.Mossback.join() === 'gatelands/forest:1,gatelands/autumn:1' && NC.rows.Shatterhorn.join() === 'mark/tundra:0.5'
+  && NC.rows.Mineprowler.join() === 'aurenne/dunes:1,aurenne/wastes:1' && NC.rows.Sailshell.join() === 'aurenne/dunes:2,aurenne/wasteland:2,aurenne/wastes:2'
+  && !NC.at10 && NC.at3 && NC.lost > 0, NC);
 await g.close();
