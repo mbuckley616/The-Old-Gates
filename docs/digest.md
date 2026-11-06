@@ -495,3 +495,15 @@ Written by the producer once a day, after 12:00 UTC. Newest last.
 **Blocked.** Nothing; main is green.
 
 **Roadmap.** 301 of 376 stories done (300 of 371 on 4 Nov). The new look is 6 of 17; no deep-work card is queued.
+
+## 6 Nov 2026
+
+**Waiting on you.** Three decisions: where the corrupted animals appear (#1201; B, only in failing or catastrophic gates), what the Mark's and Aurenne's twenty new herbs do (#1202; A, four effects each, grown by island), and how hard climate's worse grade bites (#1211; A, regeneration halved and stamina capped at 80%). No PR waits on your tap.
+
+**Landed on main since 5 Nov.** The deflect, your A on #1192: a perfect parry throws the foe open and your guard beats the blade aside (Bodies 1898–1899). The ground tells you the gate: three plants round each old gate, read on the map, Caverglow at lairs (Systems 1890–1891, 1896). Found implements and the orb's price (1888–1889). All the strange beasts in the country, the Bellthroat calling at dusk (1892–1895, 1906–1915, 1920). A failing gate's forms finished (1877–1879, 1882, 1897). Apothecaries on all three islands, Dunmore's market house and its room, the guild hall's sconces (Look 1876–1921). Climate B's milder grade: cold and heat wear your stamina (1917–1918). Her banner on the hulls and sold at the yard (1919, 1922). Each island's band (1901). A Rubbing to Be Read (1908, 1910). Build s1297.
+
+**Under way.** QA's #1222 (keeperwalk back under its cap) and the bodies builder's draft #1221.
+
+**Blocked.** Nothing on main; the corrupted animals, the new herbs and climate's worse grade wait on your three answers.
+
+**Roadmap.** 309 of 384 stories done (301 of 376 on 5 Nov). The new look is 6 of 17; no deep-work card is queued.
