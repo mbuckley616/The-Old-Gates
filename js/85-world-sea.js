@@ -438,7 +438,7 @@
     mesh.userData.wheel=wheel;mesh.userData.deck=r.deck;mesh.userData.kind=kind;mesh.userData.props=r.props||[];mesh.userData.bakeKey=bk;mesh.userData.castle=r.castle||null;mesh.userData.fore=r.fore||null;mesh.userData.helm=r.helm||null;mesh.userData.hatchZ=r.hatchZ;mesh.userData.hatchOut=r.hatchOut;mesh.userData.berth=r.berth||null;mesh.userData.chart=r.chart||null;mesh.userData.kit=r.kit?r.kit.dress||'gatelands':null; /* S1555 — a kit hull, and her dress (the base below deck) */
     mesh.userData.rigs=(r.rigs||[]).map(q=>{const m=new THREE.Mesh(q.geo,q.mats||SHIP_MAT);m.castShadow=true;m.position.z=q.z;mesh.add(m);if(q.extra){const e=new THREE.Mesh(q.extra,SHIP_MAT);e.castShadow=true;m.add(e);}return {m,type:q.type,a:0};});
     mesh.userData.trimSnap=true;
-    if(!look&&r.kit){shipSwatchOn(mesh);shipBannerOn(mesh);} /* S1843 — your own ship in the yard's colours; S1916 — and her banner */
+    if(!look&&r.kit){shipSwatchOn(mesh);shipBannerOn(mesh);} /* S1843 — your own ship in the yard's colours; S1919 — and her banner */
     return mesh;
   }
   // S1843 (#1133, Michael: as drawn) — the yard's colours: her paint and cloth (worldState.ship.paint, .cloth, indices into her dress's
@@ -450,7 +450,7 @@
     mesh.material=PKIT.ships.swatch(r.mats,d,o);(ud.rigs||[]).forEach((q,i)=>{const R=r.rigs[i];if(R&&R.mats)q.m.material=PKIT.ships.swatch(R.mats,d,o);});
     const W=PKIT.ships.SWATCHES[d],pi=Math.max(0,Math.min(W.paints.length-1,o.paint|0)),ci=Math.max(0,Math.min(W.cloths.length-1,o.cloth|0));
     return ud.swatch={dress:d,paint:pi,cloth:ci,names:[W.paints[pi].name,W.cloths[ci].name]};}
-  // S1916 (card F11; Michael's A on #1150, the ship sheet's session 5) — her banner: the Crown's, the Mark's or the Compact's
+  // S1919 (card F11; Michael's A on #1150, the ship sheet's session 5) — her banner: the Crown's, the Mark's or the Compact's
   // (worldState.ship.banner 'gatelands' | 'mark' | 'aurenne'; none, or anything else, flies nothing), PKIT.ships.banner's staff at her
   // stern or the gaff's masthead, the flag a rig of type 'flag' about the staff, so shipTrim streams it down the wind as the black sail's
   // flag does. The yard (the systems builder's) sets the key and calls this again; nation overrides the ship's own (a stage's preview).

@@ -4253,7 +4253,7 @@ function shipSwatch(mats, dress, o = {}) { const d = SHIP_SWATCHES[dress] ? dres
       return SHIP_SWC.get(k); }
     return m; };
   return Array.isArray(mats) ? mats.map(one) : one(mats); }
-// ── the banner (Session 1916, card F11; ships.js's banner and BANNERS, Session 1847; Michael's A on #1150: "as drawn: harp, iron band,
+// ── the banner (Session 1919, card F11; ships.js's banner and BANNERS, Session 1847; Michael's A on #1150: "as drawn: harp, iron band,
 //   sun-star"). The three nations' flags in the canon's national colours (the Crown crimson and gold, the Mark black and iron, the Compact
 //   blue and white), each with the mark its sails carry (the Mark's a band of iron). On a staff stepped at the stern on the centreline (on
 //   the aft castle where she has one), raked 6° aft; or, where a gaff's boom swings out over her stern (the Mark's sloop and cutter, the

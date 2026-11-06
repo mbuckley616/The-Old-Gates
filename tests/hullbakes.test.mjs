@@ -334,7 +334,7 @@ check(`in third person below deck on the cutter the camera stands ${ct.tp && ct.
 check(`below deck on the cutter the HUD reads "${ct.hud}"`, /ladder/.test(ct.hud || '') && !/south/.test(ct.hud || ''), ct.hud);
 const tl = await page.evaluate(() => { const o = {}; for (const cls of ['sloop', 'caravel']) { if (SHIP.mesh) { sc.remove(SHIP.mesh); SHIP.mesh = null; } worldState.ship = { cls, name: 'Test Helm', sails: 0, cargo: 0 }; WORLD.spawnShip(px + 1, pz + 1, .7); SHIP.sailing = true; o[cls] = shipPrompt(); SHIP.sailing = false; } return o; });
 check(`at the helm: the sloop "${tl.sloop}", the caravel "${tl.caravel}"`, /tiller/.test(tl.sloop) && /wheel/.test(tl.caravel), tl);
-/* Session 1916 (card F11; Michael's A on #1150, ships.js's banner of Session 1847): her banner, worldState.ship.banner, the Crown's, the
+/* Session 1919 (card F11; Michael's A on #1150, ships.js's banner of Session 1847): her banner, worldState.ship.banner, the Crown's, the
    Mark's or the Compact's, on a staff at her stern (the aft castle's where she has one) or, where a gaff swings over her stern, at that
    mast's head; the flag a rig of type 'flag' streaming down the wind; none flies nothing */
 const bn = await page.evaluate(() => { const was = worldState.ship, o = {}, LW = { sloop: [13, 4.4], caravel: [17.5, 5], cog: [17, 5.6], galleon: [22, 7] };
