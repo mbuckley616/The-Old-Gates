@@ -1893,6 +1893,21 @@ function hbHold(rig){const H=rig.hb,top=rig.foe?rig.root.parent:rig.root;top.upd
 // forward and comes back as the spear rises again. rig.thrust (0 to 1) is how level the spear lies: the hand holding it (the builder's
 // grip, the kit's, or the driver's gear bone) is turned so the shaft points along the foe's facing, a little down, after the arm is posed
 // (hbPose, hcPose), so the head stays on its line whatever the shoulder does; at 0, or fallen (limp), every hold is its own again
+// Session 1898 (Michael's A on #1192, the deflect: "the foe's blade beaten aside and the foe rocked back and open, nothing held"): a foe
+// you parried perfectly (74-strikes.js sets e._ripAt) has its weapon arm flung out wide and low, its off arm (the shield's) thrown open and
+// its trunk rocked back, over the riposte's beat: in by .1 s, held to .45, back by .9, read on the clock (a dropped frame lands it in the
+// same place). A person-bodied foe's driver is blended toward it after tickPeople has posed it, and the builder's or the kit's body copies
+// it; any other foe (a wolf, a troll on its old rig, a slime) is rocked back whole about its feet. A look only: the stagger, the window
+// and the riposte's damage are the rules', untouched. The foe's right is its -x, so its right arm goes out on -z and its left on +z
+const FOE_DEFLECT={rise:.1,hold:.45,out:.9,lean:.16,j:{shR:[.55,0,-.85],elR:[-.12,0,0],wrR:[.35,0,0],shL:[-.15,0,.62],elL:[-.35,0,0],spine:[-.3,0,0],neck:[.1,0,0],head:[.06,0,0]}};
+function foeDeflectK(e){if(!e||typeof e._ripAt!=='number'||e.dead)return 0;const D=FOE_DEFLECT,t=performance.now()/1000-e._ripAt;if(t<0||t>=D.out)return 0;
+  const u=t<D.rise?t/D.rise:t<D.hold?1:1-(t-D.hold)/(D.out-D.hold);return u*u*(3-2*u);}
+function foeDeflect(e){const k=foeDeflectK(e);if(!k)return 0;const P=e.limbs&&e.limbs.person,B=P&&P.B;
+  if(B&&B.shR){for(const [j,v] of Object.entries(FOE_DEFLECT.j)){const b=B[j];if(!b)continue;b.rotation.x+=(v[0]-b.rotation.x)*k;b.rotation.y+=(v[1]-b.rotation.y)*k;b.rotation.z+=(v[2]-b.rotation.z)*k;}
+    if(B.gear&&P.g&&P.g.gear==='spear')B.gear.rotation.x*=1-k; /* the spear's aim (foeThrust) let go: it goes out with the arm */
+    if(P.hb)hbRepose(P);else if(P.hc)hcRepose(P);}
+  else if(e.mesh)e.mesh.rotateX(-FOE_DEFLECT.lean*k);
+  return k;}
 const FOE_THRUST={back:.6,fwd:-1.15,dip:-.08};
 function foeThrust(rig,w,st){const T=FOE_THRUST,f=st>0?Math.sin((1-st)*Math.PI):0,lv=Math.max(w,st>0?Math.min(1,st*2):0),B=rig.B;
   rig.thrust=lv*lv*(3-2*lv);B.shR.rotation.x=T.back*(st>0?st*(1-f):w)+T.fwd*f;

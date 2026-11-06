@@ -1322,6 +1322,7 @@ function tickZoneEnemies(dt,now,sc){
         e.mesh.position.set(e.x,ety,e.z);
         e.mesh.lookAt(T.x,ety,T.z);
         e.el.position.set(e.x,ety+.8,e.z);
+        if(typeof foeDeflect==='function')foeDeflect(e); /* S1898 — a parried foe's deflect (32-people.js) */
         return;
       }
     }

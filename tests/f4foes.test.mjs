@@ -3,6 +3,7 @@
 // built on the builder's 163-bone skeleton over its 17-bone driver, its genome rolled from its foe id (keyFoe, the co-op rule's
 // place and index) and dressed from its kind; its weapon stays the game's, in the builder's fist; it glows with the tell; and
 // killed, its corpse is darkened with the garments' shaders kept. Pictures: docs/prototypes/f4/f4-foes.jpg and f4-foes-near.jpg.
+// Session 1898: parried perfectly, a human foe takes the deflect (Michael's A on #1192); f4-deflect.jpg.
 import { boot, check, ROOT } from './lib/game.mjs';
 import fs from 'fs'; import path from 'path';
 const OUT = path.join(ROOT, 'docs', 'prototypes', 'f4'); fs.mkdirSync(OUT, { recursive: true });
@@ -75,6 +76,32 @@ const glow = await page.evaluate(() => { const f = _F[0], rig = f.rig, mats = ()
   const lit = () => mats().filter(m => m.emissive && m.emissive.getHex() !== 0).length;
   telegraphPulse(f.e, 1); tickPeople(1 / 60, 6e5); const on = lit(), all = mats().length; telegraphReset(f.e); tickPeople(1 / 60, 6e5 + 17); return { on, all, off: lit(), level: rig.hb.L }; });
 check('the tell\'s glow lights the builder\'s body and goes out with it', glow.on > 0 && glow.on === glow.all && glow.off === 0, glow);
+
+// Session 1898 (Michael's A on #1192, the deflect): parried perfectly, a human foe's weapon arm is flung out wide and low, its shield arm
+// thrown open and its trunk rocked back, through the zone's own tick, and the builder's body follows; by .9 s it is its own again
+const dfl = await page.evaluate(() => { const f = _F[0], e = f.e, rig = f.rig, B = rig.B, D = FOE_DEFLECT.j, keep = ZE, sp = e.spd, cd = e.atkCd;
+  const hand = () => { rig.root.parent.updateMatrixWorld(true); const h = rig.hb.map.find(([j]) => j === 'wrR')[1].getWorldPosition(new THREE.Vector3()); return h; };
+  const tick = () => { ZE = [e]; try { tickPeople(1 / 60, performance.now()); tickZoneEnemies(1 / 60, performance.now(), WORLD.scene); } finally { ZE = keep; } };
+  e.spd = 0; e.atkCd = 1e9; if (typeof e.posture !== 'number') initPosture(e); tick(); const h0 = hand(), r0 = ['shR', 'shL', 'spine'].map(j => B[j].rotation.toArray().slice(0, 3));
+  blocking = true; lastBlockAttemptG = playClockS - .05; lastBlockAttemptT = performance.now() / 1000 - .05; executeStrike(e, 10, performance.now()); blocking = false;
+  const stag = isStaggered(e); e._ripAt = performance.now() / 1000 - .25; tick();
+  const k = foeDeflectK(e), r1 = ['shR', 'shL', 'spine'].map(j => B[j].rotation.toArray().slice(0, 3)), h1 = hand();
+  const off = (r, j) => Math.max(...r.map((v, i) => Math.abs(v - D[j][i])));
+  window._DF = { e, rig };
+  const out = { stag, k: +k.toFixed(2), at: ['shR', 'shL', 'spine'].map((j, i) => +off(r1[i], j).toFixed(3)), rest: ['shR', 'shL', 'spine'].map((j, i) => +off(r0[i], j).toFixed(3)), hand: +h1.distanceTo(h0).toFixed(2), handDrop: +(h0.y - h1.y).toFixed(2) };
+  e._ripAt = performance.now() / 1000 - .95; tick(); out.after = +foeDeflectK(e).toFixed(2); out.back = +Math.abs(B.shR.rotation.z - r0[0][2]).toFixed(3);
+  out.env = [0, .05, .1, .3, .45, .675, .9].map(t => { e._ripAt = performance.now() / 1000 - t; return +foeDeflectK(e).toFixed(2); });
+  e._ripAt = performance.now() / 1000 - .3; tick(); e.spd = sp; return out; });
+console.log('  deflect:', JSON.stringify(dfl));
+check(`parried perfectly, a ${'Bandit'}'s driver takes the deflect through the zone's tick: its weapon arm, shield arm and spine within ${Math.max(...dfl.at)} of the pose (from ${Math.min(...dfl.rest)} at rest), the builder's weapon hand thrown ${dfl.hand} m`,
+  dfl.stag && dfl.k > .9 && dfl.at.every(v => v < .1) && dfl.rest.every(v => v > .3) && dfl.hand > .2, dfl);
+check(`the deflect comes in by .1 s, holds to .45 and is gone by .9 (${dfl.env.join(', ')}); after it the arm is its own again`, dfl.env[0] === 0 && dfl.env[2] === 1 && dfl.env[4] === 1 && dfl.env[5] > 0 && dfl.env[5] < 1 && dfl.env[6] === 0 && dfl.after === 0 && dfl.back < .1, dfl);
+const shotD = await page.evaluate(() => { const { e } = _DF; parryFlashEnd(e); e._ripAt = performance.now() / 1000 - .3; ZE.includes(e) || 0; tickPeople(1 / 60, performance.now()); e.mesh.lookAt(px, e.mesh.position.y, pz); foeDeflect(e);
+  const m = e.mesh.position, cv = REN.domElement, cam = new THREE.PerspectiveCamera(40, cv.width / cv.height, .05, 60), d = new THREE.Vector3(px - m.x, 0, pz - m.z).normalize(), s = new THREE.Vector3(-d.z, 0, d.x);
+  cam.position.set(m.x + d.x * 3 + s.x * 1.5, m.y + 1.3, m.z + d.z * 3 + s.z * 1.5); cam.lookAt(m.x, m.y + .95, m.z);
+  WORLD.scene.updateMatrixWorld(true); REN.render(WORLD.scene, cam); const o = document.createElement('canvas'); o.width = cv.width; o.height = cv.height; o.getContext('2d').drawImage(cv, 0, 0); return o.toDataURL('image/jpeg', .85); });
+fs.writeFileSync(path.join(OUT, 'f4-deflect.jpg'), Buffer.from(shotD.split(',')[1], 'base64'));
+await page.evaluate(() => { const { e } = _DF; e._ripAt = null; e._ripUntil = null; staggered = staggered.filter(s => s.e !== e); parryFlashEnd(e); });
 
 // the picture: the line from 4 m, then each kind killed
 await page.evaluate(() => { const f = _F[4].e; const fx = -Math.sin(yaw), fz = -Math.cos(yaw); px = f.x - fx * 6; pz = f.z - fz * 6; pitch = -.05; });
