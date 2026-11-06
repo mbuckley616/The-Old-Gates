@@ -79,9 +79,13 @@ for (const [nk, kind, pk] of ISLES) {
   check(`it covers their ground within ${dB.toFixed(2)} m and their height within ${far.none ? '?' : Math.abs(far.A.y1 - far.B.y1).toFixed(2)} m`, !far.none && dB < 3.5 && Math.abs(far.A.y1 - far.B.y1) < 1.6, far.none ? far : { A: far.A, B: far.B });
   check('from outside the town the far copy is drawn, in the town the houses', !far.none && far.out.lo && !far.out.hi && far.inn.hi && !far.inn.lo, far);
 
-  // the time to build the town again, with its kit houses and with the old houses (window.OG_KIT_TOWNS=false), best of three each
-  const t = await page.evaluate((id) => { const site = allSites().find(s => s.id === id), run = () => { const t0 = performance.now(); disposeSettlement(id); genSettlement(site); return performance.now() - t0; };
-    const kit = Math.min(run(), run(), run()); window.OG_KIT_TOWNS = false; const old = Math.min(run(), run(), run()); window.OG_KIT_TOWNS = true; run(); return { kit: Math.round(kit), old: Math.round(old) }; }, id);
+  // the time to build the town again, with its kit houses and with the old houses (window.OG_KIT_TOWNS=false), best of three each;
+  // one warm-up build of each, then the two in turn, so neither is timed colder (every build of a page is faster than the one before, Session 1883)
+  const t = await page.evaluate((id) => { const site = allSites().find(s => s.id === id), run = (k) => { window.OG_KIT_TOWNS = k; const t0 = performance.now(); disposeSettlement(id); genSettlement(site); return performance.now() - t0; };
+    run(true); run(false); const K = [], O = [];
+    for (let i = 0; i < 3; i++) { O.push(Math.round(run(false))); K.push(Math.round(run(true))); }
+    window.OG_KIT_TOWNS = true; return { kit: Math.min(...K), old: Math.min(...O), K, O }; }, id);
+  console.log(`  kit builds ${t.K.join(', ')} ms; old builds ${t.O.join(', ')} ms`);
   check(`building the town takes ${t.kit} ms with its kit houses, ${t.old} ms with the old houses (no more than 1.2 s over, as Dunmore's kit costs it)`, t.kit < t.old + 1200, t);
 
   const shot = await page.evaluate(([id, kind]) => { const S = WORLD.settle.get(id), H = S.houses.filter(h => h.siteId === id && h.kit && h.kit.o).sort((a, b) => b.kit.o.d - a.kit.o.d);
