@@ -5,6 +5,7 @@
 // street; no lot, widened house or street stands in either. A Gatelands church on its plot is the kit's church with its west tower.
 // Session 1485 (Michael's C on #294): an Aurennais village that has a church lays its plot too, for the village's Church of the Weaver
 // (12 m a side under the limewashed dome, 16.85 by 18.98 m), on ground level to 0.5 m; its door opens on a room.
+// Session 1901 (Michael's A on #475): a Gatelands town's, port's or city's market house on its plot on the square, its arcade open on foot.
 // The new look only since 1.0 was frozen (18 Oct 2026): the old look's half and the two looks' comparison are gone.
 import fs from 'fs';
 import { boot, check } from './lib/game.mjs';
@@ -78,6 +79,36 @@ check(`each Gatelands town and city with an inn has the coaching inn on its plot
   ci.length === want.length && ci.length >= 3 && ci.every(p => p.nat === 'gatelands' && p.kind !== 'port' && p.lot.w === 17.6 && p.lot.d === 23 && p.heart >= 20 && p.house && p.house.kit && p.house.kit.kind === 'coachinn' && p.house.w === 12.6 && p.house.d === 9), ci);
 const yl = all.flatMap(s => s.n.yardLoot.map(b => [s.id, b]));
 check('no barrel or crate stands in the coaching inn\'s gateway, yard or stables', yl.length === 0, yl);
+// S1901 (card F6, Michael's A on #475): on the new look every Gatelands town, port and city has its market house on the square
+// (PKIT.gl.market, 15 by 8.6 m with its stair up the east end), on its plot (no other building or street in it: the checks above). Its
+// arcade is walked through: from outside the first front arch, every arch's inner mouth is reached on foot (a flood over the floor at
+// 0.1 m, the body 0.3 round by solidAt); the stair's foot is clear; within the prototype's budget (16k triangles, 24 draws); on level ground.
+const mk = await page.evaluate(ids => ids.map(id => { const site = allSites().find(t => t.id === id); if (!WORLD.settle.get(id)) genSettlement(site); const S = WORLD.settle.get(id), M = S.market; if (!M) return { id, none: true, plots: (S.plots || []).map(p => p.type) };
+  const c = Math.cos(M.ry), s = Math.sin(M.ry), W = (lx, lz) => ({ x: M.x + lx * c + lz * s, z: M.z - lx * s + lz * c }), U = PKIT.gl.market().userData, hw = M.w / 2, hd = M.d / 2, t = U.arcade.t;
+  const free = (lx, lz) => { const p = W(lx, lz); return !solidAt(p.x, p.z); };
+  const st = 0.1, X0 = -hw - 1.5, Z0 = -hd - 1.5, NX = Math.round((M.w + 3) / st), NZ = Math.round((M.d + 3) / st), seen = new Uint8Array(NX * NZ), q = [];
+  const at = (lx, lz) => [Math.round((lx - X0) / st), Math.round((lz - Z0) / st)], push = (i, j) => { if (i < 0 || j < 0 || i >= NX || j >= NZ) return; const k = j * NX + i; if (seen[k]) return; seen[k] = 1; if (!free(X0 + i * st, Z0 + j * st)) { seen[k] = 2; return; } q.push(k); };
+  const [i0, j0] = at(U.arcade.front[0].x, hd + 1); push(i0, j0); while (q.length) { const k = q.pop(), i = k % NX, j = (k - i) / NX; push(i + 1, j); push(i - 1, j); push(i, j + 1); push(i, j - 1); }
+  const reach = (lx, lz) => { const [i, j] = at(lx, lz); for (let di = -2; di <= 2; di++) for (let dj = -2; dj <= 2; dj++) { const k = (j + dj) * NX + i + di; if (seen[k] === 1) return true; } return false; };
+  const mouths = [...U.arcade.front.map(a => ['front', a.x, hd - t - .45]), ...U.arcade.front.map(a => ['back', a.x, -hd + t + .45]), ...U.arcade.end.map(a => ['west', -hw + t + .45, a.x])].map(([f, x, z]) => [f, x, z]);
+  const miss = mouths.filter(([f, x, z]) => !(f === 'west' ? reach(x, z) : reach(x, z))).map(([f, x, z]) => [f, x, +z.toFixed(2)]);
+  const hs = []; for (const lx of [-hw, 0, hw]) for (const lz of [-hd, 0, hd]) { const p = W(lx, lz); hs.push(worldH(p.x, p.z)); }
+  return { id, kind: site.kind, heart: +Math.hypot(M.x - site.x, M.z - site.z).toFixed(1), stairOut: M.stairOut, tris: M.tris, calls: M.calls, mouths: mouths.length, miss, foot: M.foot && !solidAt(M.foot.x, M.foot.z),
+    level: +(Math.max(...hs) - Math.min(...hs)).toFixed(2), floor: +(M.y + .06 - Math.min(...hs)).toFixed(2), plot: (S.plots || []).some(p => p.type === 'market') }; }), all.map(s => s.id));
+const mg = mk.filter(m => all.find(s => s.id === m.id).nat === 'gatelands'), mo = mk.filter(m => all.find(s => s.id === m.id).nat !== 'gatelands');
+console.log(JSON.stringify(mk));
+check(`every Gatelands town, port and city has its market house on the square (${mg.filter(m => !m.none).map(m => `${m.id} ${m.heart} m from the heart`).join('; ')}); the other islands none`,
+  mg.length >= 6 && mg.every(m => !m.none && m.plot) && mo.every(m => m.none), mk.filter(m => m.none));
+const mh = mg.filter(m => !m.none);
+check(`through the arcade on foot: from the street every arch's inner mouth is reached (${mh.map(m => `${m.mouths - m.miss.length}/${m.mouths}`).join(', ')}), and the stair's foot is clear`, mh.length && mh.every(m => m.miss.length === 0 && m.foot), mh.filter(m => m.miss.length || !m.foot));
+check(`each in the prototype's budget (${mh[0] && mh[0].tris.toLocaleString()} triangles in ${mh[0] && mh[0].calls} draws; 16k and 24) on level ground (to ${Math.max(...mh.map(m => m.level))} m)`, mh.every(m => m.tris <= 16000 && m.calls <= 24 && m.level <= .5 && Math.abs(m.floor) <= .4), mh.map(m => ({ id: m.id, tris: m.tris, level: m.level, floor: m.floor })));
+// a picture of Dunmore's market house from across the street, at noon (docs/prototypes/kit-market-ingame.png)
+{ const url = await page.evaluate(() => { forceTime(12); const S = WORLD.settle.get('dunmore') || genSettlement(allSites().find(t => t.id === 'dunmore')), M = S.market, cv = REN.domElement, sc = WORLD.scene;
+    const c = Math.cos(M.ry), s = Math.sin(M.ry), W = (lx, lz) => ({ x: M.x + lx * c + lz * s, z: M.z - lx * s + lz * c }), E = W(-11, 15), A = W(.5, 0);
+    const cam = new THREE.PerspectiveCamera(55, cv.width / cv.height, .1, 900); cam.position.set(E.x, WORLD.worldH(E.x, E.z) + 1.7, E.z); cam.lookAt(A.x, M.y + 4.2, A.z);
+    CAM.position.copy(cam.position); WORLD.tick(1 / 60, performance.now()); sc.updateMatrixWorld(true); REN.render(sc, cam);
+    const o = document.createElement('canvas'); o.width = cv.width; o.height = cv.height; o.getContext('2d').drawImage(cv, 0, 0); return o.toDataURL('image/png'); });
+  fs.writeFileSync(new URL('../docs/prototypes/kit-market-ingame.png', import.meta.url), Buffer.from(url.split(',')[1], 'base64')); console.log('  (picture: docs/prototypes/kit-market-ingame.png, dunmore)'); }
 // a picture of a city's keep plot and its church's, from high over the heart at noon (docs/prototypes/kit-plots-ingame.png)
 { const c = all.find(s => s.nat === 'gatelands' && s.kind === 'city'); const url = await page.evaluate(id => { forceTime(12); const site = allSites().find(t => t.id === id); if (!WORLD.settle.get(id)) genSettlement(site); const S = WORLD.settle.get(id), K = S.plots.find(p => p.type === 'castle'), C = S.plots.find(p => p.type === 'church');
     const mx = (K.x + C.x) / 2, mz = (K.z + C.z) / 2, cv = REN.domElement, sc = WORLD.scene, X = mx + (mz - site.z) * .5 + 60, Z = mz - (mx - site.x) * .5 + 60;

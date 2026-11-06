@@ -13,8 +13,8 @@ const pickSites = () => { const nat = t => nationKeyOf(...cellOf(t.x, t.z)), d =
   return [...near('gatelands', 'town', 2), ...near('gatelands', 'village', 2), ...near('gatelands', 'port', 1), ...near('gatelands', 'city', 1), ...near('mark', 'town', 1)].map(t => ({ id: t.id, kind: t.kind, nat: nat(t) })); };
 const survey = ids => { const out = {};
   for (const id of ids) { const site = allSites().find(t => t.id === id); if (!WORLD.settle.get(id)) genSettlement(site); const S = WORLD.settle.get(id); if (!S) { out[id] = null; continue; }
-    out[id] = { houses: S.houses.filter(h => h.siteId === id && !h.farm && h.type !== 'byre' && h.type !== 'barn') /* S1855 — a village's byre and barn (tests/kitfarm) are the new look's alone */.map(h => ({ id: h.id, type: h.type, w: h.w, d: h.d, x: +h.doorX.toFixed(3), z: +h.doorZ.toFixed(3), yaw: h.exitYaw, kit: h.kit })),
-      innPlot: !!(S.plots || []).find(P => P.type === 'inn'), lots: S.sol.filter(s => s.hid && !s.farm).map(s => ({ hid: s.hid, cx: s.cx, cz: s.cz, rx: s.rx, rz: s.rz, c: s.c, s: s.s })) }; }
+    out[id] = { houses: S.houses.filter(h => h.siteId === id && !h.farm && h.type !== 'byre' && h.type !== 'barn' && h.type !== 'market') /* S1855 — a village's byre and barn (tests/kitfarm) are the new look's alone; S1902, and a town's market house's room (tests/kitmarket) */.map(h => ({ id: h.id, type: h.type, w: h.w, d: h.d, x: +h.doorX.toFixed(3), z: +h.doorZ.toFixed(3), yaw: h.exitYaw, kit: h.kit })),
+      innPlot: !!(S.plots || []).find(P => P.type === 'inn' || P.type === 'market') /* S1901 — or the market house's (Michael's A on #475), laid on the new look alone, as the inn's */, lots: S.sol.filter(s => s.hid && !s.farm).map(s => ({ hid: s.hid, cx: s.cx, cz: s.cz, rx: s.rx, rz: s.rz, c: s.c, s: s.s })) }; }
   return out; };
 
 // (a village's farm on the new look, S1455, a home since S1459, stands off the lots by a road out: tests/kitfarm and kitfarmhouse)
@@ -40,12 +40,13 @@ const same = sites.map(s => { const a = old[s.id].houses, b = neu[s.id].houses; 
     const apo = b[i].kit && b[i].kit.kind === 'apothecary'; /* a village's apothecary takes the drawn cottage's 5.4 m (Session 1876), its front kept */
     return h.id === b[i].id && h.type === b[i].type && (hall ? b[i].d === 9 : inn ? b[i].d === 6.2 : forge ? b[i].d === 6 && b[i].kit.d0 === h.d : apo ? b[i].d === 5.4 && b[i].kit.d0 === h.d : kch ? b[i].d === (b[i].kit.side ? 8.4 : CL[b[i].kit.bays]) : b[i].kit && b[i].kit.kind === 'markhall' ? b[i].kit.d0 === h.d && b[i].d > h.d : b[i].kit && b[i].kit.d0 ? b[i].kit.d0 === h.d && b[i].d > h.d && b[i].d <= 8 : h.d === b[i].d) && (hall ? (e => Math.abs(e.x * tz - e.z * tx) < .01 && e.x * tx + e.z * tz > -3.51 && e.x * tx + e.z * tz < .01)({ x: b[i].x - h.x - tz * k, z: b[i].z - h.z + tx * k }) : Math.hypot(h.x + tz * k - b[i].x, h.z - tx * k - b[i].z) < .01); }; /* Session 1275: a hall's door is on its lot's own street line, up to 3.5 m behind the old look's, whose hall stood on the 13 by 11 m lot grown about its centre */
   /* Session 1343 (Michael's A on #642): on the new look a Gatelands town's or city's lots are laid round the coaching inn's plot, which
-     the old look has not, so its houses move; each keeps its id and its type, in order, and the new ones after them are homes */
+     the old look has not, so its houses move; each keeps its id and its type, in order, and the new ones after them are homes.
+     Session 1901: the market house's plot on the square (every Gatelands town, port and city, the new look's alone) is held to the same */
   if (neu[s.id].innPlot) { const ok = a.every((h, i) => b[i] && b[i].id === h.id && b[i].type === h.type) && b.slice(a.length).every(h => h.type === 'home'), bad = ok ? -1 : a.findIndex((h, i) => !b[i] || b[i].id !== h.id || b[i].type !== h.type);
     return { id: s.id, ok, n: a.length, nb: b.length, plot: 'inn', first: ok ? null : [a[bad], b[bad]] }; }
   const ok = a.length === b.length && a.every(one), bad = ok ? -1 : a.findIndex((h, i) => !b[i] || !one(h, i)); /* the first house that fails, as it was and as it is */
   return { id: s.id, ok, n: a.length, nb: b.length, first: ok ? null : [a[bad], b[bad]] }; });
-check(`every settlement keeps its houses, ids, doors (in their bays) and depths (${same.map(s => s.n).join(', ')} houses; round the coaching inn's plot, ids and types: ${same.filter(s => s.plot).map(s => s.id).join(', ')})`, same.every(s => s.ok), same.filter(s => !s.ok));
+check(`every settlement keeps its houses, ids, doors (in their bays) and depths (${same.map(s => s.n).join(', ')} houses; round the coaching inn's or the market's plot, ids and types: ${same.filter(s => s.plot).map(s => s.id).join(', ')})`, same.every(s => s.ok), same.filter(s => !s.ok));
 
 // the widths: whole bays, by kind of settlement and of lot
 const rows = gl.flatMap(s => neu[s.id].houses.map(h => ({ ...h, site: s.id, sk: s.kind, w0: neu[s.id].innPlot ? (h.kit && h.kit.w0 != null ? h.kit.w0 : h.w) : old[s.id].houses.find(o => o.id === h.id).w }))); /* S1343 — round the coaching inn's plot a lot's width before the bays is its own, not the old look's */
