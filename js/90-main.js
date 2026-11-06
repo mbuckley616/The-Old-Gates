@@ -110,7 +110,7 @@ function loop(now){
   const _encState = encumbranceState();
   const _stRegenMult = (_encState==='burdened' || _encState==='overloaded' || _encState==='immobile') ? 0.8 : 1.0;
   if(staminaCD>0){staminaCD=Math.max(0,staminaCD-dt);}
-  else if(stamina<_emSt){stamina=Math.min(_emSt,stamina+dt*(3+(level-1)*0.4+ATTRS.resolve*0.3+_ab.stRegen)*_stRegenMult*(furWarm()?1.1:1));}
+  else if(stamina<_emSt){stamina=Math.min(_emSt,stamina+dt*(3+(level-1)*0.4+ATTRS.resolve*0.3+_ab.stRegen)*_stRegenMult*(furWarm()?1.1:1)*(typeof climateRegenMult==='function'?climateRegenMult():1));} /* S1917 — climate B */
   mana=Math.min(_emMana,mana+dt*(0.8+(level-1)*0.15+attrEff('intelligence')*0.2+_ab.mpRegen)*fedManaMult()); /* S1486 — Clear, +10% */
   // HP regen from armor enchants
   if(PHP<_emHP&&_ab.hpRegen>0){PHP=Math.min(_emHP,PHP+dt*_ab.hpRegen);}
