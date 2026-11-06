@@ -1565,3 +1565,39 @@ No proposal this run.
 - None new.
 
 No proposal this run.
+
+## 2026-11-06 — The new look: Dunmore's market house (F6) at noon and 21:30, its arcade and landing; Aurenne's apothecary (F9) from the door; OG-040's Mossback, Sailshell and Bellthroat in the game and in the kit; the deflect (L7, OG-045) in still (build s1294, read to Session 1920)
+
+A new-look run, as the rota asks after yesterday's playtest. I worked headless on main at s1294 with the new look, through `tests/lib/game.mjs`. `export` passed first. I made one throwaway script per pass under `tests/tmp/`. I opened none of the levelup pages in their own browser this time. Two pages are new since my last review: the concept artist's `bind.html` and the creature kit's retaken pictures. For both I read the committed shots against the catalogue's thumbnails. The frame counts below are the builders' own, not mine.
+
+**What reads**
+- *Dunmore's market house is the best building on a Gatelands square so far.* It is two storeys of limewashed stone with dressed quoins, a slate roof and a green cupola with a weathervane. Five arches run along the long side, and the stalls stand beside it (`2026-11-06-market-clear-noon.png`, from 24 m out on the square's longest clear line). It reads as an Irish market house and nothing else. The size is right against the people walking past it. The arches are a little over twice a townsman's height, and the first floor sits at the landing's 3.6 m, inside visual-foundation's 2.6–3.0 m storey plus a plinth. At 21:30 (`-clear-night.png`) the arcade is lit from inside, the lamp at the corner lights the stall, and the square around it falls dark. This is the town at night that the brief asks for. From the north-east (`-clear-2.png`), the tables and benches show through the arches and the upper sashes read as glass, not as the dark box S1904 feared.
+- *Standing in the arcade at noon* (`-market-arcade.png`): the wooden ceiling joists, the stone flags and the arches frame the street on both sides. You see the next houses' doors through each bay. I stood at the centre with nothing solid underfoot.
+- *Aurenne's apothecary at c7_1_s4* (`g_c7_1_s4_3`, 10h, from the door; `2026-11-06-aur-apothecary-door.png`) reads as a shop. The answer to S1894's question is yes. The scales sit at the counter's middle, the albarelli wall faces you, the alembic glows on its tiled furnace under the hood at the right, and the keeper is the first thing your eye meets at the left. "Turn left to talk" costs nothing, because he is in frame from the threshold. The blue-and-ochre tiles on the counter and the hood carry Aurenne in one look, as OG-133's workstation panel does.
+
+**What is off**
+- *The Mossback's garden is a crest, not a garden.* In the kit (`creatures-mossback.jpg`, beside the 1.8 m post) and in S1920's 4 m shot, every plant stands on the top third of the shell. The blades are long and upright, and the shrubs are faceted lumps. The flanks stay bare and red-brown down to a clean rim. In OG-040 (G1-D, the Gatelands' panel), the moss drapes the whole shell to the rim, the ferns are low, and the outline is a mound with growth on it. In the game, at 10 m in a Dunmore lane (`2026-11-06-beasts-noon-10m.png`), it reads as a tortoise wearing a hedge, which is the bodies builder's own worry. Turning `ferns` and `grass` down would not fix it. The cover needs to go down the flanks and lie flatter, and the shell needs the art's green-brown. Pointing the blades along the surface rather than straight up would cost no triangles. A look call, not filed.
+- *The Bellthroat's sac at 2.15× is a balloon* (`f4-bellthroat-call.jpg`). It is larger than the whole head and body in front of it, and it carries a hard specular highlight that the matte skin has nowhere else, so it reads as a plastic ball held under the chin. OG-040's sac is about the size of the head, blue and dull. I would try about 1.5× with the skin's own roughness. Not filed.
+- *The Stormplume's head is a beak on a stalk* (`f4-kick.jpg`). Against OG-040's Mark panel, the body and legs are right, but the head is about a third of the art's size. The art's bird is heavy-headed, and that is half of what makes it a Stormplume rather than an emu. The kick itself reads in still: the chambered foot and the struck foot are plain at 10 m. At speed I could not judge it, see below.
+- *The deflect, in still, reads as a shrug* (`f4-deflect.jpg`). The foe's arms are thrown out level and wide, the weapon hangs low, and the spine is back. That is "open", but at 4 m, with the cloak's shoulders squared, it is close to a T-pose. Dropping the shield arm lower than the weapon arm, so that the two are not mirrored, would make it read as beaten rather than as a stance. In `bind-a-back.jpg`, the option Michael took, the spark sits at the foe's shoulder well clear of either blade, and from behind your own sword is not in frame. The concept artist reported 350k–375k tris in 308–511 calls for these frames; I did not re-measure them.
+
+**Not bugs, for the record**
+- My first pass threw `Cannot read properties of undefined (reading 'position')` every frame. That came from my own stand-in foes pushed into `ZONES.world.enemies` without the fields the tick reads, not from the game. With them taken out after building, the second pass had 0 page errors.
+- The Mossback, Sailshell and Bellthroat did not build (`rig.hc` stayed empty, with no `hcFail`) when I stood them 160+ m out of Dunmore in the open. That was the same call that worked in the town, and the cells were probably not loaded around me. I did not chase it, and I do not claim it as the game's fault.
+- Dunmore's square is tight. Of 16 bearings from the market house, only one has more than 18 m clear before the next wall (41 m). That is a town, not a fault. But on most approaches a player first meets the house from 10–15 m, under its eaves rather than across a square.
+
+**The *Needs eyes*, from what I saw**
+- S1894 (does the apothecary read as a shop?): yes, see above.
+- S1904/S1905 (the market house; the windows upstairs as a dark box): the house reads, and the upstairs sashes read as glass from the square at noon. I did not go into the room.
+- S1912 (the stair, 0.5 m wide, turning rubs the parapet): not walked by me. `kitmarket`'s walk is the evidence. Headless, I cannot feel a rub.
+- S1914 (is the sac too much of a balloon?): yes, see above.
+- S1915 and S1898–1899 (do the kick and the deflect read at full speed; is 0.45 s held enough?): cannot be judged headless at a few frames a second. The stills are judged above.
+- S1920 (garden or hedge?): a hedge on a shell, see above.
+- S1916/S1919 (the banner's height over the castle deck in a head wind): not looked at.
+- S1917–1918 (is ×0.75 stamina felt on the Mark's first walk?): not played. It is a feel question for a real hand on the keys.
+- S1901 (the islands' bands; is the bodhrán busy?): no ears headless.
+
+**Backlog notes**
+- Section I is all struck through to date: every item from my 5 Nov run was done in Sessions 1871–1888. Nothing new is confirmed in play this run, so no lines are added.
+
+No proposal this run.
