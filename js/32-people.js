@@ -1057,6 +1057,7 @@ const FOE_DRESS={
 // and on the new look the builder's spear (hbFoeGenome), so foeRearm, which swaps a kit weapon after the build, cannot give one.
 function buildFoe(type,x,z,genome,eyeCol,arm){
   let g=genome;
+  if(g&&!g.hbKey&&hbOn()){const m=/^Hand (.+:hand:\d+)$/.exec(g.name||'');if(m)hbPrep(g,m[1]+':Deckhand');} /* S1941 — a merchantman's hand is keyed for the builder's body */
   if(!g){const dr=FOE_DRESS[type]||FOE_DRESS.Bandit;const def={name:type+' '+Math.round(x)+','+Math.round(z),role:'villager',bCol:dr.cloth||0x3a3a3a};
     g=personGenome(def,{key:'foe'});g.hat=dr.hat||'none';g.gear=dr.gear;g.cloak=false;g.dress=false;g.apron=null;g.extras=[];
     g.legs=new THREE.Color(0x2a2218);g.sleeve=new THREE.Color(dr.cloth||0x3a3a3a).multiplyScalar(.8);
@@ -1568,6 +1569,7 @@ function hbGenome(g){let G=HB_GENOMES.get(g.hbKey);if(G)return G;HB.loadPack();
   G=cast?HB.castGenome(cast,{people}):HB.rollGenome(g.hbKey,{people,g:g.female?0:1,child:!!g.child,old:g.age==='elder'});
   // a guard is known by his mail, helm and spear (the town's guards keep their old kit's role; the armour tiers are F10's)
   if(GUARD_ROLE.test(g.role||''))G.dress=Object.assign({},G.dress,{mail:[.55,.56,.58],helm:[.42,.43,.45],spear:[.46,.33,.2],cloak:null,hood:null,basket:null,staff:null,lantern:null,shield:null,crossbow:null});
+  if(/:hand:\d+:Deckhand$/.test(g.hbKey||''))G.dress=hbDeckDress(g.hbKey); /* S1941 — a merchantman's hand, dressed for her deck */
   if(/^crew:/.test(g.hbKey||'')){const m=/carpenter|cook|navigator/.exec(g.role||''),C=m&&CREW_BODY[m[0]];if(C)G.dress=Object.assign({},G.dress,CREW_STRIP,C.dress);} /* S1779 — her crew's working dress */
   HB_GENOMES.set(g.hbKey,G);return G;}
 /* S1792 (L2, OG-069) — the cast: a named person of Act I (the builder's CAST: Bram, Edna, Corwin, Niamh, Áine) wears the sheet's body and
@@ -1640,6 +1642,20 @@ const CREW_BODY={
   carpenter:{role:"Ship's carpenter",at:['workbench','mast','sea chest'],dress:{apron:[.36,.25,.16],apronLeather:true,bib:true,coat:null}},
   cook:{role:"Ship's cook",at:['water cask','barrel','mast','sea chest'],dress:{apron:[.8,.76,.66],apronLeather:false,bib:true,coat:null}},
   navigator:{role:'Navigator',at:['chart table','alchemy table','chest','sea chest','mast'],dress:{coat:[.18,.22,.32],coatLen:.8,coatHood:null,coatFur:null,apron:null,bib:null}}};
+// S1941 — a merchantman's two hands (the systems builder's S1935, Michael's A on #1225) dressed for her deck. They were built on a bare
+// townsman's genome (personGenome, no key), so on the new look they stood on the 17-bone driver alone, the only people at sea with no
+// builder's body. Now buildFoe gives that genome its key, `<her id>:hand:<k>:Deckhand`, and the dress is the deck's, nothing of the
+// town's: a linen shirt with its sleeves rolled, canvas slops to the ankle, barefoot (a wet deck, and the rigging), a waist sash in one
+// of two and a knotted kerchief on the head in one of two (the Gatelanders' headscarf, tied the same way), else a leather belt and the
+// hair bare. No hat, coat, apron, cloak, bag or jewellery; a woman's skirt goes too. From a stream keyed by the hand's key, so a hand is
+// the same each time her ship is met. The colours are the hard-wearing ones: undyed, faded blue or red linen, tarred or blue canvas; the kerchief never the shirt's cream.
+const DECK_SHIRT=[[.8,.76,.66],[.66,.62,.52],[.42,.5,.6],[.62,.34,.28]],DECK_SLOPS=[[.5,.47,.4],[.22,.22,.24],[.26,.3,.42],[.4,.36,.28]],
+  DECK_SASH=[[.55,.18,.12],[.2,.26,.5],[.74,.52,.16],[.3,.36,.22]],DECK_KERCHIEF=[[.55,.16,.12],[.2,.3,.42],[.3,.36,.22],[.74,.52,.16]];
+function hbDeckDress(key){const r=pRng(pHash(key+'|deck')),pick=A=>A[Math.floor(r()*A.length)];
+  const D={tunic:pick(DECK_SHIRT),trousers:pick(DECK_SLOPS),sleevesRolled:true,boots:null,sandals:null,skirt:null,skirtColor:null};
+  if(r()<.5)D.sashBelt=pick(DECK_SASH);else D.belt=[.24,.17,.11];
+  if(r()<.5){D.wrap=pick(DECK_KERCHIEF);D.scarf=true;}
+  return D;}
 const CREW_STRIP={cloak:null,hood:null,cape:null,mantle:null,spear:null,staff:null,crossbow:null,basket:null,basketCloth:null,lantern:null,shield:null,chair:null,burnous:null};
 const CREW_PEOPLE=[['gatelander','gatelands'],['markman','mark'],['aurennais','aurenne']];
 function crewHoldSpot(house,B,a,taken,far){const X=house.intW/2,z1=B.hold.z1,x0=X-a[3],x1=X-a[0],z0=z1-a[5],zz1=z1-a[2],cx=(x0+x1)/2,cz=(z0+zz1)/2,o=.38;

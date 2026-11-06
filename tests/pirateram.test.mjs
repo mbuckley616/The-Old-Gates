@@ -143,6 +143,8 @@ const mh = await page.evaluate(() => {
   const p0 = at(S.W / 2 + o.W / 2 + 6, 1.5); o.x = p0.x; o.z = p0.z; o.yaw = S.yaw; o.speed = 0; o.wp = { x: o.x, z: o.z }; placeOther(o);
   run(.1); const hands = o.crew.filter(e => e.hand), out = {};
   out.made = { n: hands.length, ids: hands.map(e => e.id), alive: hands.every(e => !e.dead && e.mesh && e.mesh.parent), armed: hands.some(e => e.limbs.person && e.limbs.person.weapon), names: hands.map(e => e.name) };
+  /* S1941 — on the new look each hand wears the builder's body, keyed by his id, in the deck's dress: shirt, slops, barefoot, nothing of the town's */
+  out.dress = hands.map(e => { const rig = e.limbs.person, D = rig.hbG && rig.hbG.dress; return { hb: HB_RIGS.has(rig), key: rig.g.hbKey, D: D && { shirt: !!D.tunic, slops: !!D.trousers, bare: !D.boots && !D.sandals, rolled: !!D.sleevesRolled, extra: Object.keys(D).filter(k => D[k] && !/^(tunic|trousers|sleevesRolled|belt|sashBelt|wrap|scarf)$/.test(k)) } }; });
   // never hostile: stood next to them for 3 s, no blow, no alert
   const hp0 = PHP; const h0 = hands[0]; px = h0.x + .8; pz = h0.z; jumpY = DECK_Y; run(3, () => { px = h0.x + .8; pz = h0.z; }); out.calm = { hp: PHP === hp0, alert: hands.some(e => e.alert), pir: !!o.pirated };
   px = S.x; pz = S.z; jumpY = DECK_Y;
@@ -177,6 +179,7 @@ const mh = await page.evaluate(() => {
   despawnOtherShip(o); showMsg = sm; seaState = ss; return out; });
 console.log('hands', JSON.stringify(mh));
 check('a merchantman near you carries two hands, keyed by her id, on bodies with nothing in their hands', mh.made.n === 2 && mh.made.ids.join() === 'test:hands:hand:0,test:hands:hand:1' && mh.made.alive && !mh.made.armed, mh.made);
+check('on the new look each hand wears the builder\'s body keyed <her id>:hand:<k>:Deckhand, in a shirt with its sleeves rolled and slops, barefoot, with nothing of the town\'s (S1941)', mh.dress.every((d, k) => d.hb && d.key === `test:hands:hand:${k}:Deckhand` && d.D && d.D.shirt && d.D.slops && d.D.bare && d.D.rolled && !d.D.extra.length), mh.dress);
 check('they never turn on you: three seconds beside one, no blow, no alert, no piracy', mh.calm.hp && !mh.calm.alert && !mh.calm.pir, mh.calm);
 check('lashed, her hand cuts a line about 6 s after he reaches it and the other after, and she runs free; no piracy without a blow', mh.cut.first >= 6 && mh.cut.first < 11 && mh.cut.both > mh.cut.first + 5.9 && mh.cut.free && mh.cut.runs && mh.cut.msg.length >= 2 && !mh.cut.pir, mh.cut);
 check('a hit on him 4 s into his cut starts his 6 s again (cut 10 s after he began), and the hit is piracy, booked once', mh.hit.cutAt - mh.hit.started >= 9.9 && mh.hit.pir && mh.hit.booked === 1, mh.hit);
