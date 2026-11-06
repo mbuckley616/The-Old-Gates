@@ -2867,7 +2867,7 @@ const PLANS = {
       ['radial', { c: [0, 1.5, 0], parent: 'spine0', n: 14, ring: .32, len: 2.4, seg: 7, down: 88, curl: -1, r: [.009, .003], thread: 1, jitter: .1, tag: 'thr' }]
     ] },
   // ── Session 775: shells and feathered wings ──
-  // Session 1927: the two tortoises' hides darker (Session 1906's note: the Sailshell's pillar legs rendered pale, near skin, at noon,
+  // Session 1930: the two tortoises' hides darker (Session 1906's note: the Sailshell's pillar legs rendered pale, near skin, at noon,
   // and the Mossback's grey); OG-040 draws them as old leathery scale, the Sailshell's tan-brown and the Mossback's dark grey-brown
   mossback: { name: 'Mossback', src: 'OG-040 (an ancient tortoise carrying a living garden)', gaits: ['walk', 'stand'], speedK: .22, wag: .02, pant: .02, fold: .4, rough: .8,
     palette: { coat: [.2, .19, .15], saddle: [.15, .14, .11], belly: [.36, .32, .24], dark: [.06, .05, .04], shell: [.38, .32, .19], seam: [.17, .11, .06], moss: [.3, .43, .16], fern: [.26, .5, .18], bloom: [.88, .76, .3], bloom2: [.62, .36, .78] },
