@@ -7,6 +7,7 @@
 // Session 1686: the split's two Small Slimes fall either side of it, clear of the puddle, never in a wall.
 // Session 1882: an elemental gate is Tine's, and its slimes wear the kit's magma slime (OG-018); a steady Uisce gate's keep the steady slime.
 // Session 1631: killed, the Fire Elemental gutters out, upright, sunk, its flames dark; f4-elemental-dead.jpg.
+// Session 1897: a failing Tine gate's Fire Elemental wears the kit's failing fire elemental (OG-073); f4-failingelemental.jpg.
 // Session 1593: the Fire Elemental in the same gate wears the kit's `fireelemental`, fitted by its height; f4-elemental.jpg.
 import { boot, check, ROOT } from './lib/game.mjs';
 import { enterDungeon } from './lib/dungeonshot.mjs';
@@ -135,8 +136,9 @@ const el = await page.evaluate(() => { const F = ENEMIES.find(x => !x.dead && x.
   return { k, plan: R.hc.C.g.plan, seed: R.hc.C.g.seed, want: HC.hashKey('fireelemental:' + F.id), bones: R.hc.C.bones.length, tris: R.hc.C.stats.tris, f: +R.hc.f.toFixed(3),
     kit: [kb.min.y, kb.max.y].map(v => +v.toFixed(3)), old: [ob.min.y, ob.max.y].map(v => +v.toFixed(3)), idle, on, easing, all: R.hc.hide.length, mv: +mv.toFixed(3) }; });
 console.log('  elemental:', JSON.stringify(el));
-check(`the Fire Elemental wears the kit's fire elemental (${el.bones} bones, ${el.tris} tris), keyed by its foe id`, el.plan === 'fireelemental' && el.seed === el.want, el);
-check(`it stands the old figure's height (${el.kit && el.kit[1]} against ${el.old && el.old[1]}), off the floor`, el.kit && Math.abs(el.kit[1] - el.old[1]) < .08 * el.old[1] && el.kit[0] > -.02, el);
+const elWant = found && (found.cond === 'failing' || found.cond === 'catastrophic') ? 'failingfireelemental' : 'fireelemental'; /* S1897 — this seed's Tine gate rolls failing: its elemental wears the failing form */
+check(`the Fire Elemental wears the kit's fire elemental of its gate's condition (${found && found.cond}: ${el.plan}; ${el.bones} bones, ${el.tris} tris), keyed by its foe id`, el.plan === elWant && el.seed === el.want, { el, cond: found && found.cond });
+check(`it stands the old figure's height (${el.kit && el.kit[1]} against ${el.old && el.old[1]}), off the floor`, el.kit && Math.abs(el.kit[1] - el.old[1]) < (elWant === 'fireelemental' ? .08 : .12) * el.old[1] /* S1897 — the failing form's tongues are a fifth longer and flicker */ && el.kit[0] > -.02, el);
 check('its crust is lit by the wind-up only, not by the core\'s own glow or its ease back to it; its flames lick (the bones move)', el.idle === 0 && el.on === el.all && el.on > 0 && el.easing === 0 && el.mv > 1e-3, el);
 const shotF = await page.evaluate(() => { const F = _F, R = _RF, m = F.mesh; R.hc.C.skel.update();
   const x = m.position.x, y = m.position.y, z = m.position.z, s = Math.max(m.scale.x, .5), L = new THREE.PointLight(0xffb070, 1.0, 12); L.position.set(x + 1.6 * s, y + 1.6 * s, z + 1.4 * s); dScene.add(L);
@@ -203,5 +205,44 @@ console.log('  steady slime:', JSON.stringify(ssl));
 check(`a steady Uisce gate's slime (seed ${ssl && ssl.seed}: ${ssl && ssl.cond}, ${ssl && ssl.school}) keeps the steady slime, pale green (${ssl && ssl.coat}), ${ssl && ssl.tris} tris`,
   !!ssl && ssl.hc && ssl.cond === 'steady' && ssl.school === 'uisce' && ssl.kind === 'Slime' && ssl.plan === 'slime' && ssl.coat.join() === '0.62,0.78,0.5', ssl);
 check(`and its old green light (${ssl && ssl.light != null && '#' + ssl.light.toString(16)})`, !!ssl && ssl.light === 0x44ff44, ssl);
+// Session 1897 (L4, OG-073's Tine row): in a failing Tine (elemental) gate the Fire Elemental wears the kit's failing fire elemental, a stone
+// skeleton grown inside its flame and a second pair of arms; fitted by the old figure's height as the steady one is
+const eseeds = await page.evaluate(() => { const out = []; for (let s = 100; s < 6000 && out.length < 8; s++) if (gateCondRoll(s) === 'failing' && seededRng('gaoth', s)() >= 1 / 6 && !WORLD_DUNGEONS.some(e => e.seed === s)) out.push(s); return out; });
+let fel = null;
+for (const seed of eseeds) { await page.evaluate(() => { level = 6; }); await enterDungeon(page, { theme: 'elemental', seed });
+  fel = await page.evaluate(() => { const F = ENEMIES.find(x => !x.dead && x.floor === currentFloor && x.limbs && x.limbs.flames); if (!F || hcGateSchool() !== 'tine') return null;
+    const rig = () => [...HC_RIGS].find(r => r.e === F); let k = 0; HBODY.last = -1e9;
+    while (!(rig() && rig().hc) && k++ < 400) { CAM.position.set(F.mesh.position.x - 3, F.mesh.position.y + 1.6, F.mesh.position.z); CAM.updateMatrixWorld(true); tickCreatures(1 / 60, 1.2e6 + k * (HBODY.gap + 1)); }
+    const R = rig(); window._FF = F; window._RFF = R; if (!R || !R.hc) return { seed: currentPortal.seed, hc: false, fail: R && R.hcFail };
+    const m = F.mesh; m.updateMatrixWorld(true); R.hc.C.skel.update(); const inv = new THREE.Matrix4().copy(m.matrixWorld).invert(), box = (root, skin) => { const b = new THREE.Box3(), v = new THREE.Vector3();
+      root.traverse(o => { if (!o.isMesh || !o.geometry.attributes.position) return; const p = o.geometry.attributes.position; for (let i = 0; i < p.count; i += 5) { v.fromBufferAttribute(p, i); if (skin && o.isSkinnedMesh) o.applyBoneTransform(i, v); else v.applyMatrix4(o.matrixWorld); v.applyMatrix4(inv); b.expandByPoint(v); } }); return b; };
+    const kb = box(R.hc.W, true), ob = box(R.mesh, false), P = HC.PLANS[R.hc.C.g.plan];
+    const a = Array.from(R.hc.C.skel.boneMatrices); for (let i = 0; i < 8; i++) { R.t = performance.now() / 1000 - 1 / 30; hcFishPose(R); } R.hc.C.skel.update(); const b = Array.from(R.hc.C.skel.boneMatrices);
+    let mv = 0; for (let i = 0; i < a.length; i++) mv = Math.max(mv, Math.abs(a[i] - b[i]));
+    return { seed: currentPortal.seed, cond: hcGateCond(), school: hcGateSchool(), hc: true, kind: R.hcKind, plan: R.hc.C.g.plan, got: R.hc.C.g.seed, want: HC.hashKey('fireelemental:' + F.id),
+      arms: R.hc.C.B.arms.length, frame: P.parts.some(([q]) => q === 'frame'), bones: R.hc.C.bones.length, tris: R.hc.C.stats.tris, kit: [kb.min.y, kb.max.y].map(v => +v.toFixed(3)), old: [ob.min.y, ob.max.y].map(v => +v.toFixed(3)), mv: +mv.toFixed(3) }; });
+  if (fel) break; }
+if (fel && fel.hc) { const shotE = await page.evaluate(() => { const F = _FF, R = _RFF, m = F.mesh; R.hc.C.skel.update(); const x = m.position.x, y = m.position.y, z = m.position.z, s = Math.max(m.scale.x, .5), L = new THREE.PointLight(0xffb070, 1.0, 12); L.position.set(x + 1.6 * s, y + 1.6 * s, z + 1.4 * s); dScene.add(L);
+  ENEMIES.forEach(e => { if (e.mesh && e !== F) e.mesh.visible = false; });
+  const twin = R.mesh.clone(); twin.visible = true; twin.position.set(x + 1.1 * s, y, z); twin.scale.copy(m.scale); twin.rotation.copy(m.rotation); dScene.add(twin);
+  const cv = REN.domElement, cam = new THREE.PerspectiveCamera(45, cv.width / cv.height, .05, 60); cam.position.set(x + .55 * s, y + .9 * s, z + 2.6 * s); cam.lookAt(x + .55 * s, y + .55 * s, z);
+  dScene.updateMatrixWorld(true); REN.render(dScene, cam); dScene.remove(L); dScene.remove(twin); ENEMIES.forEach(e => { if (e.mesh && !e.dead) e.mesh.visible = true; });
+  const o = document.createElement('canvas'); o.width = cv.width; o.height = cv.height; o.getContext('2d').drawImage(cv, 0, 0); return o.toDataURL('image/jpeg', .85); });
+  fs.writeFileSync(path.join(OUT, 'f4-failingelemental.jpg'), Buffer.from(shotE.split(',')[1], 'base64')); }
+const tseeds = await page.evaluate(() => { const out = []; for (let s = 100; s < 6000 && out.length < 8; s++) if (gateCondRoll(s) === 'steady' && seededRng('gaoth', s)() >= 1 / 6 && !WORLD_DUNGEONS.some(e => e.seed === s)) out.push(s); return out; });
+let sel = null;
+for (const seed of tseeds) { await page.evaluate(() => { level = 6; }); await enterDungeon(page, { theme: 'elemental', seed });
+  sel = await page.evaluate(() => { const F = ENEMIES.find(x => !x.dead && x.floor === currentFloor && x.limbs && x.limbs.flames); if (!F || hcGateSchool() !== 'tine') return null;
+    const rig = () => [...HC_RIGS].find(r => r.e === F); let k = 0; HBODY.last = -1e9;
+    while (!(rig() && rig().hc) && k++ < 400) { CAM.position.set(F.mesh.position.x - 3, F.mesh.position.y + 1.6, F.mesh.position.z); CAM.updateMatrixWorld(true); tickCreatures(1 / 60, 1.4e6 + k * (HBODY.gap + 1)); }
+    const R = rig(); if (!R || !R.hc) return { seed: currentPortal.seed, hc: false, fail: R && R.hcFail };
+    return { seed: currentPortal.seed, cond: hcGateCond(), school: hcGateSchool(), hc: true, kind: R.hcKind, plan: R.hc.C.g.plan, arms: R.hc.C.B.arms.length, frame: HC.PLANS[R.hc.C.g.plan].parts.some(([q]) => q === 'frame'), bones: R.hc.C.bones.length, tris: R.hc.C.stats.tris }; });
+  if (sel) break; }
+console.log('  failing elemental:', JSON.stringify(fel), 'steady:', JSON.stringify(sel));
+check(`a steady Tine gate's Fire Elemental (seed ${sel && sel.seed}: ${sel && sel.cond}) keeps the steady one: no stone frame, ${sel && sel.arms} arms, ${sel && sel.tris} tris`,
+  !!sel && sel.hc && sel.cond === 'steady' && sel.school === 'tine' && sel.kind === 'Fire Elemental' && sel.plan === 'fireelemental' && !sel.frame, sel);
+check(`a failing Tine gate's Fire Elemental (seed ${fel && fel.seed}: ${fel && fel.cond}, ${fel && fel.school}) wears the kit's failing fire elemental: a stone frame inside, ${fel && fel.arms} arms against the steady one's ${sel && sel.arms} (${fel && fel.bones} bones, ${fel && fel.tris} tris against ${sel && sel.bones} and ${sel && sel.tris}), keyed by its foe id`,
+  !!fel && fel.hc && fel.cond === 'failing' && fel.school === 'tine' && fel.kind === 'Fire Elemental (failing)' && fel.plan === 'failingfireelemental' && fel.frame && fel.got === fel.want && !!sel && fel.arms > sel.arms, { fel, sel });
+check(`it stands the old figure's height (${fel && fel.kit && fel.kit[1]} against ${fel && fel.old && fel.old[1]}), off the floor, and its flames lick`, !!fel && fel.kit && Math.abs(fel.kit[1] - fel.old[1]) < .12 * fel.old[1] && fel.kit[0] > -.02 && fel.mv > 1e-3, fel);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

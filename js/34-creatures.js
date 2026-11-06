@@ -1409,7 +1409,13 @@ function hcDunRig(e,name,o){const g=e.mesh,old=new THREE.Group();old.name=name.t
 // since the kit draws no failing form for Tine's; every other gate (a steady Uisce one, an occupied one) and the world keep the steady slime
 function hcSlimeKind(){const s=hcGateSchool();return s==='uisce'&&hcFailing()?'Slime (failing)':s==='tine'?'Slime (tine)':'Slime';}
 function hcSlimeRig(e){return hcDunRig(e,'Slime',{crawl:true,gait:'crawl',rate:[3,7],die:HC_PUDDLE,hcKind:hcSlimeKind()});}
-function hcElemRig(e){return hcDunRig(e,'Fire Elemental',{tall:true,gait:'hover',rate:[2.5,4],die:HC_GUTTER,emOwn:e.limbs.coreEm?e.limbs.coreEm.getHex():null});}
+// Session 1897 (L4, OG-073's Tine row: the fire elemental "grows a stone skeleton inside its flame"): in a failing or catastrophic Tine gate
+// the Fire Elemental wears the kit's failing fire elemental (Session 1186: the crust burnt through to clearer flame, a skeleton of dark hewn
+// stone inside it, a second pair of flaming arms off the ribs on their own beat, stone spurs at the shoulders and back, its tongues a fifth
+// longer); the kit draws no failing form for another school's, so every other gate keeps the steady one
+HC_KINDS['Fire Elemental (failing)']={plan:'failingfireelemental',fish:true};
+function hcElemKind(){return hcGateSchool()==='tine'&&hcFailing()?'Fire Elemental (failing)':'Fire Elemental';}
+function hcElemRig(e){return hcDunRig(e,'Fire Elemental',{tall:true,gait:'hover',rate:[2.5,4],die:HC_GUTTER,hcKind:hcElemKind(),emOwn:e.limbs.coreEm?e.limbs.coreEm.getHex():null});}
 function hcFishAttach(rig,C){const tA=performance.now();
   if(!C)try{C=HC.build(hcGenome(rig));}catch(e){rig.hcFail=true;console.warn('F4: the kit could not build',rig.name,e);return;}
   const g=rig.e.mesh,W=new THREE.Group();W.name='kit';C.gait=rig.gait||'swim';HC.pose(C,0);C.root.updateMatrixWorld(true);
