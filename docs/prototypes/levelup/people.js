@@ -715,10 +715,10 @@ function mergeGeoms(gs) { const pos = [], idx = []; let n = 0; for (const g of g
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); return g; }
 // the rolled hood's centre line (Session 1255): the collar's ring repeats points where its columns meet and steps up and down between them,
 // so the roll was a crumpled tube. Points within 4 mm of the last are dropped, the rest smoothed four times (the ends kept) and laid
-// again 1.5 cm apart along a curve through them
-function hoodLine(raw) { const pts = [raw[0]]; for (const q of raw.slice(1)) if (q.distanceTo(pts[pts.length - 1]) > .004) pts.push(q.clone());
+// again 1.5 cm apart along a curve through them (`step`; the fur collar's, Session 1931, 3 cm)
+function hoodLine(raw, step = .015) { const pts = [raw[0]]; for (const q of raw.slice(1)) if (q.distanceTo(pts[pts.length - 1]) > .004) pts.push(q.clone());
   if (pts.length < 3) return raw; for (let it = 0; it < 4; it++) { const prev = pts.map(q => q.clone()); for (let i = 1; i < pts.length - 1; i++) pts[i].lerpVectors(prev[i], prev[i - 1].clone().add(prev[i + 1]).multiplyScalar(.5), .5); }
-  const c = new THREE.CatmullRomCurve3(pts); return c.getSpacedPoints(Math.max(4, Math.round(c.getLength() / .015))); }
+  const c = new THREE.CatmullRomCurve3(pts); return c.getSpacedPoints(Math.max(4, Math.round(c.getLength() / step))); }
 function turnOut(g) { const ix = g.index.array; for (let i = 0; i < ix.length; i += 3) { const t = ix[i + 1]; ix[i + 1] = ix[i + 2]; ix[i + 2] = t; } g.computeVertexNormals(); return g; }
 const lockMat = color => new THREE.MeshStandardMaterial({ map: lockTex(), color, roughness: .78 });
 // a braid's three locks and its core (Session 1501). The locks were laid on the braid's 1 cm line, about four and a half points to a
@@ -1172,10 +1172,13 @@ function buildCloak(G, body, byName, rnd) {
     const bm = new THREE.Mesh(bg, clothMat(sRGB(...D.cloakHem), 'wool', { side: THREE.DoubleSide, scale: 60 })); bm.name = 'cloakHem'; out.push(bm); }
   // a fur lining turned out at the collar (the Markmen's), or the hood rolled on the shoulders
   // (the rolled hood turned out, Session 1255: tubeGeom winds inward and the cloth is single-sided, so the roll drew its own far wall from inside.
-  // The fur collar's shells are left as they are: their shader reads the layer)
+  // The fur collar's shells were left as they were, since their shader reads the layer; Session 1931: it reads the layer and the rest
+  // position, never the normal, so they are turned out too, and the collar no longer reads its own shadow (it went near black). Its line is
+  // the hood's (hoodLine, 3 cm apart): the raw ring's 11 repeated points and a 22 cm jump gave tubeGeom no direction, and a sixth of each
+  // shell faced in)
   const ring = tops.map(t => t.start.clone().addScaledVector(t.n, .012).add(new THREE.Vector3(0, .012, 0)));
   let pointStats = null;
-  if (D.cloakFur && !burnousOn(D)) for (let s = 0; s < 6; s++) { const m = new THREE.Mesh(tubeGeom(ring, ring.map(() => .026 + s * .004), 8), shellMat(sRGB(...D.cloakFur), s, 6, { sx: 260, sy: 70, solid: s === 0 })); m.geometry.setAttribute('aBase', m.geometry.attributes.position); m.name = 'collar' + s; out.push(m); }
+  if (D.cloakFur && !burnousOn(D)) { const fl = hoodLine(ring, .03); for (let s = 0; s < 6; s++) { const m = new THREE.Mesh(turnOut(tubeGeom(fl, fl.map(() => .026 + s * .004), 8)), shellMat(sRGB(...D.cloakFur), s, 6, { sx: 260, sy: 70, solid: s === 0 })); m.geometry.setAttribute('aBase', m.geometry.attributes.position); m.name = 'collar' + s; m.userData.axis = { line: fl, sides: 8 }; out.push(m); } }
   else if (D.hood === 'down') { const kb = Math.round(-th0 / (th1 - th0) * (K - 1)), back = hoodLine(ring.slice(Math.max(0, kb - Math.round(K * .2)), kb + Math.round(K * .2)).map(q => q.clone().lerp(new THREE.Vector3(neck.x, q.y + .025, neck.z), .25))), m = new THREE.Mesh(turnOut(tubeGeom(back, back.map((_, i) => .03 + .018 * Math.sin(Math.PI * i / (back.length - 1))), 10)), clothMat(sRGB(...D.cloak).multiplyScalar(.92), 'wool', { scale: 26, ...cloakPattern(D, [neck.x, neck.z], .2) })); m.geometry.setAttribute('aBase', m.geometry.attributes.position); m.geometry.setAttribute('aTart', m.geometry.attributes.position); m.name = 'hood'; m.userData.axis = { line: back, sides: 10 }; out.push(m);
     if (burnousOn(D)) { const B = buildBurnousPoint(cols, R, kb, neck, back[Math.floor(back.length / 2)].y, D); out.push(...B.meshes); pointStats = B.stats; } }
   // the brooch at the throat, where the two front columns meet
