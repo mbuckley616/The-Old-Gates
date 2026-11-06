@@ -1,5 +1,5 @@
 // Survival B, session 1: herbs and brewing (Session 1483; `docs/design/survival-build.md`). The pool: every herb has four
-// effects, every effect sits on 4 to 7 herbs (Restore Health and Restore Mana on 8, the herbs that restore them when eaten),
+// effects, every effect sits on 4 to 10 herbs (was 4 to 7 until the islands' twenty, Michael's A on #1202, Session 1939),
 // no two herbs share more than two. A brew: two herbs, every effect both carry, at the Alchemy curve's ×0.64 / ×1.0 / ×1.4;
 // no shared effect keeps the herbs and marks the pair; a tincture five days old is at half; a harmful shared effect is a
 // poison on the blade for three blows. The page opens from the mortar and grinds.
@@ -72,9 +72,30 @@ const r = await page.evaluate(() => {
   return out;
 });
 console.log(JSON.stringify(r));
-const C = r.counts, over = Object.keys(C).filter(f => C[f] < 4 || C[f] > (f === 'restoreHealth' || f === 'restoreMana' ? 8 : 7));
-check(`the pool: ${r.herbs} herbs, each four effects of the 22`, r.herbs === 30 && /* S1886 — the three plants that mark a gate; S1896 — Caverglow */ !r.missing.length && !r.four.length && !r.unknownFx.length && Object.keys(C).length === 22);
-check(`every effect on 4 to 7 herbs (Restore Health ${C.restoreHealth}, Restore Mana ${C.restoreMana}); no two herbs share more than ${r.most}`, !over.length && r.most <= 2, { over, C });
+// S1939 — the Mark's nine and Aurenne's eleven (#1202 A): each by its island, eaten as its first effect, not in a Gatelands chest
+const isl = await page.evaluate(() => {
+  const o = {}; const keys = Object.keys(ISLAND_HERB);
+  o.n = keys.length; o.mark = keys.filter(k => HERB_DEF[k].island === 'mark').length; o.aurenne = keys.filter(k => HERB_DEF[k].island === 'aurenne').length;
+  o.prices = keys.map(k => HERB_DEF[k].item.buyPrice); o.first = keys.every(k => HERB_FX[k][0] === ISLAND_HERB[k].fx[0]);
+  o.mesh = keys.every(k => PLANT_KIND[k] && typeof plantGeo === 'function' && !!plantGeo(k, false));
+  const seen = new Set(); for (let i = 0; i < 600; i++) { const h = randomLootHerb(); if (h) seen.add(h.name); } o.loot = keys.filter(k => seen.has(HERB_DEF[k].name));
+  BAG.length = 0; ACTIVE_BUFFS.length = 0; const eat = k => { bagAdd({ ...HERB_DEF[k].item, qty: 1, _typeKey: k }); useHerb(BAG.findIndex(b => herbKeyOf(b) === k)); };
+  eat('icebloom'); o.cold = _hasBuff('resistCold'); o.warm = typeof warmthNow === 'function' ? warmthNow().by.join(',') : '';
+  eat('sandlotus'); o.heat = _hasBuff('resistHeat');
+  PHP = 50; eat('drakesage'); o.drake = 50 - PHP;
+  const hp = PHP, n = ACTIVE_BUFFS.length; eat('glacierlily'); o.lily = PHP === hp && ACTIVE_BUFFS.length === n; o.lilyKnown = herbFxKnown('glacierlily', 0);
+  o.byName = herbKeyOf({ name: 'Desert Truffle', type: 'herb' });
+  bagAdd({ ...MORTAR_ITEM }); bagAdd({ ...HERB_DEF.icebloom.item, qty: 2, _typeKey: 'icebloom' }); bagAdd({ ...HERB_DEF.snowthyme.item, qty: 2, _typeKey: 'snowthyme' });
+  const b = brewHerbs(['icebloom', 'snowthyme']); o.brew = b.item && b.item.name;
+  return o; });
+console.log(JSON.stringify(isl));
+check(`the islands' twenty: ${isl.mark} of the Mark, ${isl.aurenne} of Aurenne, priced ${Math.min(...isl.prices)}–${Math.max(...isl.prices)}, the first effect the atlas's, each with a mesh`, isl.n === 20 && isl.mark === 9 && isl.aurenne === 11 && isl.prices.every(p => p >= 6 && p <= 40) && isl.first && isl.mesh, isl);
+check(`none of them in a chest on the Gatelands, where the suite stands (${isl.loot.length} of 600 draws; S1940: each grows on its own island)`, isl.loot.length === 0, isl);
+check(`eaten: Icebloom gives Resist Cold, warmth "${isl.warm}"; Sandlotus Resist Heat; Drakesage −${isl.drake} HP; Glacier Lily nothing, Slow known`, isl.cold && /Resist Cold/.test(isl.warm) && isl.heat && isl.drake === 10 && isl.lily && isl.lilyKnown, isl);
+check(`a reloaded herb found by its name (${isl.byName}); Icebloom and Snowthyme ground: ${isl.brew}`, isl.byName === 'deserttruffle' && isl.brew === 'Tincture of Resist Cold', isl);
+const C = r.counts, over = Object.keys(C).filter(f => C[f] < 4 || C[f] > 10);
+check(`the pool: ${r.herbs} herbs, each four effects of the 22`, r.herbs === 50 && /* S1886 — the three plants that mark a gate; S1896 — Caverglow; S1939 — the islands' twenty */ !r.missing.length && !r.four.length && !r.unknownFx.length && Object.keys(C).length === 22);
+check(`every effect on 4 to 10 herbs (Restore Health ${C.restoreHealth}, Restore Mana ${C.restoreMana}); no two herbs share more than ${r.most}`, !over.length && r.most <= 2, { over, C });
 check(`no mortar, no brew: "${r.noMortar}"`, /mortar/.test(r.noMortar || ''));
 check(`Firemoss and Silverleaf: ${r.a.name}, ×${r.a.s} at Alchemy 5; Swiftness learnt on both; ${r.a.uses} Alchemy points`, r.a.made && r.a.name === 'Tincture of Swiftness' && Math.abs(r.a.s - .64) < .01 && r.a.firemoss3 && r.a.silverleaf1 && r.a.uses > 0, r.a);
 check(`one of each herb ground (${r.left.firemoss}, ${r.left.silverleaf} left of 5)`, r.left.firemoss === 4 && r.left.silverleaf === 4, r.left);
