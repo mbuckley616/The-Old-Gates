@@ -345,16 +345,32 @@ P.shell = (B, o) => { const sp = B.spineAt(o.at), c = sp.p.clone().add(V(0, o.li
   for (let v = 0; v < P0.count; v++) { const x = P0.getX(v), y = P0.getY(v), z = P0.getZ(v); let d1 = 1e9, d2 = 1e9, k1 = 0;
     for (let k = 0; k < lat.length; k++) { const d = Math.hypot(x - lat[k][0], z - lat[k][1]); if (d < d1) { d2 = d1; d1 = d; k1 = k; } else if (d < d2) d2 = d; }
     const edge = sstep(s * .12, 0, d2 - d1), ring = .9 + .1 * Math.cos(d1 / s * 14), C = base.clone().multiplyScalar(ring * (.88 + .24 * ((k1 * 2654435761) % 97) / 97)).lerp(seam, edge * .85);
-    if (o.top) C.lerp(B.tone(o.top), sstep(.55, .95, y / o.h) * .9); if (y < o.h * .12) C.lerp(seam, .35); col.push(C.r, C.g, C.b); }
+    if (o.top) C.lerp(B.tone(o.top), sstep(o.topFrom ?? .55, .95, y / o.h) * .9); if (y < o.h * .12) C.lerp(seam, .35); col.push(C.r, C.g, C.b); }
   g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
   const plast = new THREE.CircleGeometry(1, 40); plast.rotateX(Math.PI / 2); plast.scale(rx * .9, 1, rz * .92); plast.translate(0, -o.h * .02, 0); const pc = []; for (let v = 0; v < plast.attributes.position.count; v++) pc.push(...B.tone('belly').toArray()); plast.setAttribute('color', new THREE.Float32BufferAttribute(pc, 3));
   const m = new THREE.Mesh(mergeGeometries([g.toNonIndexed(), plast.toNonIndexed()]), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: o.rough ?? .7, side: THREE.DoubleSide })); m.geometry.computeVertexNormals(); m.position.copy(c); B.bit(sp.bone, m);
-  // a garden: ferns, grass and flowers rooted in the moss on top
-  if (o.garden) { const G = o.garden, geos = [];
-    const add = (geo, color, x, z, rot) => { const y = o.h * Math.sqrt(Math.max(0, 1 - (x / rx) ** 2 - (z / rz) ** 2)); geo.rotateY(rot); geo.translate(x, y - .01, z); const cc = []; for (let v = 0; v < geo.attributes.position.count; v++) cc.push(color.r, color.g, color.b); geo.setAttribute('color', new THREE.Float32BufferAttribute(cc, 3)); geos.push(geo.toNonIndexed()); };
+  // a garden: ferns, grass and flowers rooted in the moss on top. Session 1920 (the critic's note on Session 1906: thin in play): the
+  // fronds and grass are blades of two triangles each, a flower a one-triangle stem and an eight-sided head, cheap enough that a garden
+  // can be thick; `spread` takes the clumps out to the moss's edge, `moss` lays low mounds that break the dome's line, `grass` adds
+  // tufts of blades, `cluster` sets flowers in little groups and `bloom` their heads' size (of `size`); a plan that names none of
+  // these keeps the old spread (.62 and .7), no mounds or grass, one flower to a spot and heads of .07
+  if (o.garden) { const G = o.garden, sz = G.size, geos = [], sp1 = G.spread || .62, sp2 = G.spread || .7, cl = G.cluster || 1, bl = G.bloom || .07;
+    const yAt = (x, z) => o.h * Math.sqrt(Math.max(0, 1 - (x / rx) ** 2 - (z / rz) ** 2));
+    const add = (geo, color, x, z, rot, sink = .01) => { geo.deleteAttribute('uv'); geo.rotateY(rot); geo.translate(x, yAt(x, z) - sink, z); const cc = []; for (let v = 0; v < geo.attributes.position.count; v++) cc.push(color.r, color.g, color.b); geo.setAttribute('color', new THREE.Float32BufferAttribute(cc, 3)); geos.push(geo.index ? geo.toNonIndexed() : geo); };
     const spot = f => { const a = r() * Math.PI * 2, d = Math.sqrt(r()) * f; return [Math.cos(a) * d * rx, Math.sin(a) * d * rz]; };
-    for (let i = 0; i < G.ferns; i++) { const [x, z] = spot(.62), h = G.size * (.6 + .6 * r()); for (let f = 0; f < 5; f++) { const fg = new THREE.ConeGeometry(h * .16, h, 3); fg.scale(1, 1, .25); fg.translate(0, h / 2, 0); fg.rotateZ((r() - .5) * 1.2); add(fg, B.tone('fern').clone().multiplyScalar(.8 + .4 * r()), x, z, f / 5 * Math.PI * 2 + r()); } }
-    for (let i = 0; i < G.flowers; i++) { const [x, z] = spot(.7), st = new THREE.CylinderGeometry(.004, .004, G.size * .45, 4); st.translate(0, G.size * .22, 0); add(st, B.tone('fern'), x, z, 0); const fl = new THREE.SphereGeometry(G.size * .07, 6, 4); fl.translate(0, G.size * .46, 0); add(fl, B.tone(r() < .5 ? 'bloom' : 'bloom2'), x, z, 0); }
+    const tris = pts => { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pts.flat(), 3)); g.computeVertexNormals(); return g; };
+    // a blade leaning out by `lean`, `w` wide at two-thirds of its height: base, the two shoulders, the tip
+    const blade = (h, w, lean) => { const L = [-w, h * .6, h * .3 * lean], R = [w, h * .6, h * .3 * lean], T = [0, h, h * .75 * lean]; return tris([[0, 0, 0], R, L, L, R, T]); };
+    for (let i = 0; i < (G.moss || 0); i++) { const [x, z] = spot(.82), m = sz * (.3 + .3 * r()), mg = new THREE.IcosahedronGeometry(1, 0); mg.scale(m, m * .32, m * (.8 + .4 * r())); add(mg, B.tone('moss').clone().multiplyScalar(.82 + .3 * r()), x, z, r() * 6, m * .2); }
+    for (let i = 0; i < G.ferns; i++) { const [x, z] = spot(sp1), h = sz * (.6 + .6 * r()), n = 5 + (i % 3); for (let f = 0; f < n; f++) add(blade(h * (.75 + .35 * r()), h * .09, .5 + .7 * r()), B.tone('fern').clone().multiplyScalar(.8 + .4 * r()), x, z, f / n * Math.PI * 2 + r()); }
+    for (let i = 0; i < (G.grass || 0); i++) { const [x, z] = spot(.8), h = sz * (.3 + .3 * r()); for (let f = 0; f < 7; f++) add(blade(h * (.7 + .5 * r()), h * .035, .2 + .5 * r()), B.tone('fern').clone().multiplyScalar(1.05 + .35 * r()).lerp(B.tone('moss'), .3), x, z, r() * Math.PI * 2); }
+    // `shrubs` (Session 1920): a low bush of three leafy lumps on a short stem, the garden's tallest things
+    for (let i = 0; i < (G.shrubs || 0); i++) { const [x, z] = spot(.45), h = sz * (.9 + .4 * r()); add(tris([[-.012, 0, 0], [.012, 0, 0], [0, h * .7, 0]]), B.tone('seam'), x, z, r() * 6);
+      for (let k = 0; k < 3; k++) { const b = sz * (.32 + .14 * r()), lg = new THREE.IcosahedronGeometry(b, 0), a = k / 3 * Math.PI * 2 + r(); lg.scale(1, .75, 1); lg.translate(Math.cos(a) * b * .6, h * (.62 + .2 * k), Math.sin(a) * b * .6); add(lg, B.tone('fern').clone().multiplyScalar(.62 + .25 * r()), x, z, 0); } }
+    for (let i = 0; i < G.flowers; i++) { const [x0, z0] = spot(sp2), tone = B.tone(r() < .5 ? 'bloom' : 'bloom2');
+      for (let k = 0; k < cl; k++) { const x = x0 + (k ? (r() - .5) * sz * .3 : 0), z = z0 + (k ? (r() - .5) * sz * .3 : 0), hs = sz * (.36 + .2 * r()), lean = (r() - .5) * sz * .1;
+        add(tris([[-.004, 0, 0], [.004, 0, 0], [lean, hs, 0]]), B.tone('fern'), x, z, r() * 6);
+        const fl = new THREE.OctahedronGeometry(sz * bl * (.8 + .4 * r()), 0); fl.scale(1, .6, 1); fl.translate(lean, hs, 0); add(fl, tone.clone().multiplyScalar(.9 + .2 * r()), x, z, 0); } }
     const gm = new THREE.Mesh(mergeGeometries(geos), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .85, side: THREE.DoubleSide })); gm.position.copy(c); B.bit(sp.bone, gm); }
   // a sail: a sheet along the crest, striped, stiffened by its spines
   if (o.sail) { const top = c.clone().add(V(0, o.h * .97, 0)), pts = [top.clone()], cols = [B.tone('sail')], N = 9; for (let i = 0; i <= N; i++) { const t = i / N, z = (t - .5) * o.sail.len, h = o.sail.h * Math.sin(Math.PI * Math.pow(t, .8)) * (.85 + .15 * Math.sin(t * 40)); pts.push(top.clone().add(V(0, h - o.h * (1 - Math.sqrt(Math.max(0, 1 - (z / rz) ** 2))) , z))); cols.push(B.tone(i % 2 ? 'sail' : 'sail2')); }
@@ -1425,7 +1441,7 @@ const tortoise = shell => [
   ['legs', { at: .95, kind: 'plantFore', out: .55, drop: .15, r: [.17, .16, .15, .15], claws: { r: .02, len: .05 } }],
   ['legs', { at: .05, kind: 'plantHind', out: .55, drop: .1, r: [.19, .17, .16, .16], claws: { r: .02, len: .05 } }],
   ['shell', shell]];
-PLANS.mossback.parts = tortoise({ at: .5, lift: .02, len: 2.3, w: 1.75, h: 1.0, top: 'moss', garden: { ferns: 14, flowers: 20, size: .35 } });
+PLANS.mossback.parts = tortoise({ at: .5, lift: .02, len: 2.3, w: 1.75, h: 1.0, top: 'moss', topFrom: .3, garden: { ferns: 34, flowers: 22, cluster: 3, bloom: .13, grass: 26, moss: 18, shrubs: 2, spread: .8, size: .5 } });
 PLANS.sailshell.parts = tortoise({ at: .5, lift: .02, len: 2.0, w: 1.5, h: .8, sail: { h: 1.3, len: 1.8 } });
 // a bird of the air: a perching body on bird legs, a fanned tail and feathered wings; a raven and a hawk differ in beak and colour
 const flier = o => [
