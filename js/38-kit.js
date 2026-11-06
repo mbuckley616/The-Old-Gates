@@ -4187,13 +4187,15 @@ function felledTrunk(L = 9, R = .35, seed = 1) {
 const SHM = {};
 function shipSailTex(harp, cl = {}) { const c = document.createElement('canvas'); c.width = c.height = 512; const x = c.getContext('2d');
   x.fillStyle = cl.base || '#3f6e3c'; x.fillRect(0, 0, 512, 512); x.fillStyle = 'rgba(0,0,0,.08)'; for (let i = 0; i < 512; i += 64) x.fillRect(i, 0, 3, 512);
-  if (harp) { x.strokeStyle = x.fillStyle = cl.mark || '#e6d6a4'; x.lineCap = 'round'; x.lineJoin = 'round';
+  if (harp) shipHarp(x, cl.mark || '#e6d6a4');
+  return finishTex(c); }
+// the harp on the Gatelands' sail (and, at half size, on the Crown's banner), in the sail's 512 square, about (270, 285)
+function shipHarp(x, col) { x.strokeStyle = x.fillStyle = col; x.lineCap = 'round'; x.lineJoin = 'round';
     const sb = xx => 130 + (xx - 175) * 2.4, nk = xx => { const t = (xx - 175) / 190; return 130 - 70 * Math.sin(Math.PI * t) + 40 * t; };
     x.lineWidth = 9; for (let xx = 196; xx < 352; xx += 13) { const y0 = nk(xx) + 6, y1 = Math.min(sb(xx), 440) - 10; if (y1 > y0 + 10) { x.beginPath(); x.moveTo(xx, y0); x.lineTo(xx, y1); x.stroke(); } }
     x.lineWidth = 30; x.beginPath(); x.moveTo(175, 130); x.lineTo(304, 440); x.stroke();
     x.lineWidth = 20; x.beginPath(); x.moveTo(175, 130); for (let xx = 175; xx <= 365; xx += 5) x.lineTo(xx, nk(xx)); x.stroke();
     x.lineWidth = 22; x.beginPath(); x.moveTo(365, nk(365)); x.bezierCurveTo(400, 260, 380, 380, 304, 440); x.stroke(); }
-  return finishTex(c); }
 function shipMats(dress) { const key = dress === 'mark' || dress === 'aurenne' ? dress : 'gatelands'; if (SHM[key]) return SHM[key];
   const std = (c, r = .6, m = 0) => new THREE.MeshStandardMaterial({ color: c, roughness: r, metalness: m }), base = { dark: std(0x14100c, 1), rope: std(0x3a3024, .95), iron: std(0x2c2a28, .5, .6) };
   let M;
@@ -4218,9 +4220,10 @@ function shipTannedTex(cl = null) { const c = document.createElement('canvas'); 
 // Aurenne's (ships.js's caravelSail): white cloths and the sun-star in gold, sixteen rays long and short by turns (#316 A)
 function shipStarTex(cl = {}) { const c = document.createElement('canvas'); c.width = c.height = 512; const x = c.getContext('2d');
   x.fillStyle = cl.base || '#ece5d2'; x.fillRect(0, 0, 512, 512); x.fillStyle = 'rgba(80,60,30,.09)'; for (let i = 0; i < 512; i += 48) x.fillRect(i, 0, 3, 512);
-  x.fillStyle = cl.rays || '#c9982e'; x.beginPath(); for (let k = 0; k < 32; k++) { const a = k * Math.PI / 16 - Math.PI / 2, rr = k % 2 ? 62 : (k / 2) % 2 ? 128 : 172; x.lineTo(256 + rr * Math.cos(a), 256 + rr * Math.sin(a)); } x.closePath(); x.fill();
-  x.fillStyle = cl.disc || '#e2b84a'; x.beginPath(); x.arc(256, 256, 70, 0, Math.PI * 2); x.fill(); x.strokeStyle = cl.ring || '#a87a22'; x.lineWidth = 6; x.beginPath(); x.arc(256, 256, 54, 0, Math.PI * 2); x.stroke();
-  const t = finishTex(c); t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; return t; }
+  shipStar(x, cl); const t = finishTex(c); t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; return t; }
+// the sun-star on Aurenne's sail (and on the Compact's banner), about (256, 256) in the sail's 512 square
+function shipStar(x, cl) { x.fillStyle = cl.rays || '#c9982e'; x.beginPath(); for (let k = 0; k < 32; k++) { const a = k * Math.PI / 16 - Math.PI / 2, rr = k % 2 ? 62 : (k / 2) % 2 ? 128 : 172; x.lineTo(256 + rr * Math.cos(a), 256 + rr * Math.sin(a)); } x.closePath(); x.fill();
+  x.fillStyle = cl.disc || '#e2b84a'; x.beginPath(); x.arc(256, 256, 70, 0, Math.PI * 2); x.fill(); x.strokeStyle = cl.ring || '#a87a22'; x.lineWidth = 6; x.beginPath(); x.arc(256, 256, 54, 0, Math.PI * 2); x.stroke(); }
 // Session 1843 — the yard's colours (ships.js's SWATCHES and swatch, Session 1836; Michael's "as drawn" on #1133): four hull paints and
 // three sail cloths an island, the first of each the dress as built. A paint moves the dress's one painted surface (the Gatelands' green
 // sheer strake and castles, the Mark's tar topsides, Aurenne's blue strakes and castles), a cloth every sail, the island's mark kept on it.
@@ -4250,6 +4253,59 @@ function shipSwatch(mats, dress, o = {}) { const d = SHIP_SWATCHES[dress] ? dres
       return SHIP_SWC.get(k); }
     return m; };
   return Array.isArray(mats) ? mats.map(one) : one(mats); }
+// ── the banner (Session 1916, card F11; ships.js's banner and BANNERS, Session 1847; Michael's A on #1150: "as drawn: harp, iron band,
+//   sun-star"). The three nations' flags in the canon's national colours (the Crown crimson and gold, the Mark black and iron, the Compact
+//   blue and white), each with the mark its sails carry (the Mark's a band of iron). On a staff stepped at the stern on the centreline (on
+//   the aft castle where she has one), raked 6° aft; or, where a gaff's boom swings out over her stern (the Mark's sloop and cutter, the
+//   Gatelands' and the Mark's cog and galleon's mizzen), on a pole at the head of the mast that carries the gaff. The hoist is 7% of her
+//   length (0.8 to 2.4 m), the fly 1.5 the hoist, its foot 1.2 m over the rail.
+//   PKIT.ships.BANNERS -> { gatelands, mark, aurenne: { name, field, trim, device } }
+//   PKIT.ships.banner(S, nation) -> null for 'none' (or anything not a nation), else { nation, at: 'stern' | 'mast', foot: [x, y, z],
+//   rake, len, hoist, fly, staff: { geo, mat }, flag: { geo, mat, y }, head, tris, draws: 2 }. S is a kit hull (PKIT.ships.sloop, …). The
+//   staff's geometry stands from the foot along +y; the flag's hangs from the staff's axis at flag.y up it, its cloth running aft (-z)
+//   from the hoist, so the game turns it about the staff to stream down the wind. Geometry is cached by hull and nation, materials by nation.
+//   Differences from the prototype: the masthead is read off the bake's spar group (the prototype's spar meshes), and a gaff rig is what
+//   sends the flag aloft (the game's hulls have no boom record but the cutter's).
+const SHIP_BANNERS = {
+  gatelands: { name: 'the Crown', field: '#8a1a1a', trim: '#d8b040', device: 'harp' },
+  mark: { name: 'the Mark', field: '#1a1a1e', trim: '#8a8a90', device: 'band' },
+  aurenne: { name: 'the Compact', field: '#1e3a7a', trim: '#e8e8f0', device: 'star' } };
+const SHIP_FLAGM = new Map(), SHIP_FLAGG = new Map();
+function shipFlagMat(n) { if (SHIP_FLAGM.has(n)) return SHIP_FLAGM.get(n); const B = SHIP_BANNERS[n], c = document.createElement('canvas'); c.width = 384; c.height = 256; const x = c.getContext('2d');
+  x.fillStyle = B.field; x.fillRect(0, 0, 384, 256); x.fillStyle = 'rgba(0,0,0,.07)'; for (let i = 0; i < 384; i += 48) x.fillRect(i, 0, 2, 256); /* the cloths' seams */
+  x.save();
+  if (B.device === 'harp') { x.translate(150, 128); x.scale(.5, .5); x.translate(-270, -285); shipHarp(x, B.trim); }
+  else if (B.device === 'star') { x.translate(150, 128); x.scale(.58, .58); x.translate(-256, -256); shipStar(x, { rays: B.trim, disc: B.trim, ring: B.field }); }
+  else { x.fillStyle = B.trim; x.fillRect(0, 98, 384, 60); x.fillStyle = B.field; x.fillRect(0, 122, 384, 12); }
+  x.restore(); x.strokeStyle = B.trim; x.lineWidth = 10; x.strokeRect(5, 5, 374, 246); /* a hem in the trim */
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.NoColorSpace; t.anisotropy = 4;
+  const m = new THREE.MeshStandardMaterial({ map: t, roughness: .9, side: THREE.DoubleSide }); m.userData.banner = n; SHIP_FLAGM.set(n, m); return m; }
+// the highest point of a bake's spar group within 0.35 m of the line x = 0, z = mz (the hull's, z in its frame; a rig's, in its mast's)
+function shipSparTop(bk, mz, spar) { let top = -1e9; const P = bk.geo.attributes.position;
+  for (const g of bk.geo.groups) { if (bk.mats[g.materialIndex] !== spar) continue; for (let i = g.start; i < g.start + g.count; i++) if (Math.hypot(P.getX(i), P.getZ(i) - mz) < .35) top = Math.max(top, P.getY(i)); }
+  return top; }
+function shipBanner(S, nation) {
+  if (!S || !SHIP_BANNERS[nation]) return null;
+  const DECK = 1.0, M = shipMats(S.dress), gaffs = (S.rigs || []).filter(q => q.type === 'gaff'), gaff = gaffs.length ? gaffs.reduce((a, q) => q.z < a.z ? q : a) : null;
+  const at = gaff ? 'mast' : 'stern', h = Math.max(.8, Math.min(2.4, S.L * .07)), fly = 1.5 * h, aft = S.castle || null; let fz, fy, len, rake;
+  if (at === 'mast') { /* the gaff's mast: the head of its spars, in the hull's bake and in the rigs stepped on it */
+    const mz = gaff.z; let top = shipSparTop(S.hull, mz, M.spar); for (const q of S.rigs) if (Math.abs(q.z - mz) < .05) top = Math.max(top, shipSparTop(q, 0, M.spar) + 0);
+    if (top < DECK) top = DECK + S.L * .7;
+    fz = mz; fy = top - .4; len = .4 + .5 + h; rake = 0; }
+  else { fz = aft ? aft.z0 + .45 : S.zs + .45; fy = aft ? aft.y : DECK; const railY = aft ? aft.y + 1.0 : Math.max(DECK + 1.0, S.sheerAt(fz) + .12); len = (railY - fy) + 1.2 + h; rake = .105; }
+  const key = [S.L, S.dress, at, fy.toFixed(2), fz.toFixed(2)].join('|');
+  let G = SHIP_FLAGG.get(key);
+  if (!G) {
+    const sg = mergeGeometries([new THREE.CylinderGeometry(.035, .06, len, 8).translate(0, len / 2, 0).toNonIndexed(), new THREE.SphereGeometry(.08, 10, 6).translate(0, len + .05, 0).toNonIndexed()]);
+    const NU = 16, NV = 8, fg = new THREE.PlaneGeometry(fly, h, NU, NV), P = fg.attributes.position;
+    for (let i = 0; i < P.count; i++) { const u = (P.getX(i) + fly / 2) / fly, v = (P.getY(i) + h / 2) / h; /* u 0 at the hoist, v 0 at the foot */
+      P.setXYZ(i, u * .32 * h * Math.sin(u * 7.5 + v * .8) * .5, v * h - .12 * h * u * u, -u * fly + .04); }
+    fg.computeVertexNormals(); fg.computeBoundingSphere();
+    G = { sg, fg, tris: Math.round(sg.attributes.position.count / 3 + fg.index.count / 3) }; SHIP_FLAGG.set(key, G); }
+  if (!SHIP_FLAGM.has('staff')) SHIP_FLAGM.set('staff', mat('wood', { ns: .8, color: 0x6a4a2e, rough: .7 }));
+  return { nation, at, foot: [0, +fy.toFixed(3), +fz.toFixed(3)], rake, len: +len.toFixed(3), hoist: +h.toFixed(2), fly: +fly.toFixed(2),
+    staff: { geo: G.sg, mat: SHIP_FLAGM.get('staff') }, flag: { geo: G.fg, mat: shipFlagMat(nation), y: +(len - .1 - h).toFixed(3) },
+    head: +(fy + len * Math.cos(rake)).toFixed(2), tris: G.tris, draws: 2 }; }
 // a sail through four corners (or three, d = c), bilinear, bellied out to +x most in its middle (ships.js's quadSail)
 function shipQuadSail(a, b, c, d, belly, nu = 12, nv = 12) { const P = [], U = [], v3 = q => new THREE.Vector3(...q), A = v3(a), B = v3(b), C = v3(c), D = v3(d), at = (u, v) => A.clone().lerp(B, u).lerp(D.clone().lerp(C, u), v).add(new THREE.Vector3(belly * Math.sin(Math.PI * u) * Math.sin(Math.PI * Math.min(1, v * 1.1)), 0, 0));
   for (let i = 0; i < nu; i++) for (let j = 0; j < nv; j++) for (const [u, v] of [[i, j], [i + 1, j], [i + 1, j + 1], [i, j], [i + 1, j + 1], [i, j + 1]]) { const p = at(u / nu, v / nv); P.push(p.x, p.y, p.z); U.push(u / nu, v / nv); }
@@ -7217,7 +7273,7 @@ function aurenneOrrery(hAt, o = {}) {
     return { group, tris: Math.round(tris), draws: group.children.length, sol, piers: piers.map(f2), bays: bays.map(({ hi, ...b }) => ({ ...b, x0: f2(b.x0), x1: f2(b.x1) })), gap: GAP ? { x0: f2(GAP.x0), x1: f2(GAP.x1), stump: f2(GAP.stump) } : null,
       two, depth: f2(D), deep: f2(xd), arch: { pitch: PITCH, pier: PIER, span: SPAN, r: RAD, upSpring: f2(US), lowSpring: two ? f2(LS) : null, tier: two ? f2(TIER + SC) : null, deck: DECK }, channel: { w: CW, x0: CX0, x1: CX1, runs }, x0: X0, x1: X1, broken: !!GAP };
   }
-  return { stream, hashKey, mergeByMaterial, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, coveEscape, grotto: aurenneGrotto, mine: markMine, aqueduct: aurenneAqueduct }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, trunk: felledTrunk }, ships: { SWATCHES: SHIP_SWATCHES, swatch: shipSwatch, sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
+  return { stream, hashKey, mergeByMaterial, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, coveEscape, grotto: aurenneGrotto, mine: markMine, aqueduct: aurenneAqueduct }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, trunk: felledTrunk }, ships: { SWATCHES: SHIP_SWATCHES, swatch: shipSwatch, BANNERS: SHIP_BANNERS, banner: shipBanner, sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
     mk: { hall: markHall, lot: markLot, alehall: markAlehall, smithy: markSmithy, apothecary: markApothecary, longhouse: markLonghouse, mats: markMats, yard: markYard, ring: markRing },
     au: { house: aurenneHouse, lot: aurenneLot, smithy: aurenneSmithy, smithyStack: aurSmithyStack, apothecary: aurenneApothecary, courtyard: aurenneCourtyard, church: aurenneChurch, churchBox: aurenneChurchBox, churchHall: aurenneChurchHall, courtyardHouse: aurenneCourtyardHouse, home: aurenneHome, tavern: aurenneTavern, mats: aurMats, roomMats: homeMats, AUR, tunnel: aurenneTunnel },
     gl: { PLANS, FIN, PS, PAINTS, guildHall: guildHallRoom, forge: forgeRoom, apothecary: apothecaryRoom, TOWN: GL_TOWN, building, church, keep, market: marketHouse, marketRoom, farmstead, coachInn, coachInnPlan, coachRoom, townhouse: townhouseRoom, farmhouse: farmhouseRoom, byre: byreRoom, barn: barnRoom, row: shrineRow, ROW_GODS, inn: gatelandsInn, cottage: gatelandsCottage, churchLen: n => +((n === 2 ? 2 : 3) * 4.8 + 1.6 + 5.6 - .5 + 7.2 - .9 - .02).toFixed(2), lot: gatelandsLot, mats: glMats, BAYS, bayPlan, bayWidth, baysFor } };

@@ -438,7 +438,7 @@
     mesh.userData.wheel=wheel;mesh.userData.deck=r.deck;mesh.userData.kind=kind;mesh.userData.props=r.props||[];mesh.userData.bakeKey=bk;mesh.userData.castle=r.castle||null;mesh.userData.fore=r.fore||null;mesh.userData.helm=r.helm||null;mesh.userData.hatchZ=r.hatchZ;mesh.userData.hatchOut=r.hatchOut;mesh.userData.berth=r.berth||null;mesh.userData.chart=r.chart||null;mesh.userData.kit=r.kit?r.kit.dress||'gatelands':null; /* S1555 — a kit hull, and her dress (the base below deck) */
     mesh.userData.rigs=(r.rigs||[]).map(q=>{const m=new THREE.Mesh(q.geo,q.mats||SHIP_MAT);m.castShadow=true;m.position.z=q.z;mesh.add(m);if(q.extra){const e=new THREE.Mesh(q.extra,SHIP_MAT);e.castShadow=true;m.add(e);}return {m,type:q.type,a:0};});
     mesh.userData.trimSnap=true;
-    if(!look&&r.kit)shipSwatchOn(mesh); /* S1843 — your own ship in the yard's colours */
+    if(!look&&r.kit){shipSwatchOn(mesh);shipBannerOn(mesh);} /* S1843 — your own ship in the yard's colours; S1916 — and her banner */
     return mesh;
   }
   // S1843 (#1133, Michael: as drawn) — the yard's colours: her paint and cloth (worldState.ship.paint, .cloth, indices into her dress's
@@ -450,6 +450,20 @@
     mesh.material=PKIT.ships.swatch(r.mats,d,o);(ud.rigs||[]).forEach((q,i)=>{const R=r.rigs[i];if(R&&R.mats)q.m.material=PKIT.ships.swatch(R.mats,d,o);});
     const W=PKIT.ships.SWATCHES[d],pi=Math.max(0,Math.min(W.paints.length-1,o.paint|0)),ci=Math.max(0,Math.min(W.cloths.length-1,o.cloth|0));
     return ud.swatch={dress:d,paint:pi,cloth:ci,names:[W.paints[pi].name,W.cloths[ci].name]};}
+  // S1916 (card F11; Michael's A on #1150, the ship sheet's session 5) — her banner: the Crown's, the Mark's or the Compact's
+  // (worldState.ship.banner 'gatelands' | 'mark' | 'aurenne'; none, or anything else, flies nothing), PKIT.ships.banner's staff at her
+  // stern or the gaff's masthead, the flag a rig of type 'flag' about the staff, so shipTrim streams it down the wind as the black sail's
+  // flag does. The yard (the systems builder's) sets the key and calls this again; nation overrides the ship's own (a stage's preview).
+  // -> the kit's record ({nation, at, foot, hoist, fly, tris, draws}), or null when she flies none or is not a kit hull. Two draws.
+  function shipBannerOn(mesh,nation){const ud=mesh&&mesh.userData,r=ud&&SHIP_GEO.get(ud.bakeKey);if(!ud)return null;
+    if(ud.banner){if(ud.banner.pivot.parent)ud.banner.pivot.parent.remove(ud.banner.pivot);ud.rigs=(ud.rigs||[]).filter(q=>!q.banner);ud.banner=null;}
+    if(!r||!r.kit||!PKIT.ships.banner)return null;if(nation==null)nation=worldState.ship&&worldState.ship.banner;
+    const B=PKIT.ships.banner(r.kit,nation);if(!B)return null;
+    const pivot=new THREE.Group();pivot.name='banner';pivot.position.set(...B.foot);pivot.rotation.x=-B.rake;
+    const staff=new THREE.Mesh(B.staff.geo,B.staff.mat);staff.castShadow=true;pivot.add(staff);
+    const flag=new THREE.Mesh(B.flag.geo,B.flag.mat);flag.position.y=B.flag.y;flag.castShadow=true;pivot.add(flag);mesh.add(pivot);
+    (ud.rigs||(ud.rigs=[])).push({m:flag,type:'flag',a:0,banner:true});ud.trimSnap=true;
+    ud.banner={nation:B.nation,at:B.at,foot:B.foot,hoist:B.hoist,fly:B.fly,head:B.head,tris:B.tris,draws:B.draws,pivot,flag};return ud.banner;}
   // S330 (Michael's 1, #57) — trim a ship's sails to the wind. th is the way the wind blows, against the bow in the hull's frame (0 dead astern,
   // +/-PI/2 on the beam, towards +x or -x). Square yards brace round to bisect the wind and the bow, at most 35 degrees; a gaff's
   // boom swings to leeward, out to 72 degrees running and in to 15 close-hauled; the gaff sails and the jib belly to leeward

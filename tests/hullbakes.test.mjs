@@ -334,5 +334,29 @@ check(`in third person below deck on the cutter the camera stands ${ct.tp && ct.
 check(`below deck on the cutter the HUD reads "${ct.hud}"`, /ladder/.test(ct.hud || '') && !/south/.test(ct.hud || ''), ct.hud);
 const tl = await page.evaluate(() => { const o = {}; for (const cls of ['sloop', 'caravel']) { if (SHIP.mesh) { sc.remove(SHIP.mesh); SHIP.mesh = null; } worldState.ship = { cls, name: 'Test Helm', sails: 0, cargo: 0 }; WORLD.spawnShip(px + 1, pz + 1, .7); SHIP.sailing = true; o[cls] = shipPrompt(); SHIP.sailing = false; } return o; });
 check(`at the helm: the sloop "${tl.sloop}", the caravel "${tl.caravel}"`, /tiller/.test(tl.sloop) && /wheel/.test(tl.caravel), tl);
+/* Session 1916 (card F11; Michael's A on #1150, ships.js's banner of Session 1847): her banner, worldState.ship.banner, the Crown's, the
+   Mark's or the Compact's, on a staff at her stern (the aft castle's where she has one) or, where a gaff swings over her stern, at that
+   mast's head; the flag a rig of type 'flag' streaming down the wind; none flies nothing */
+const bn = await page.evaluate(() => { const was = worldState.ship, o = {}, LW = { sloop: [13, 4.4], caravel: [17.5, 5], cog: [17, 5.6], galleon: [22, 7] };
+  for (const [cls, dress] of [['sloop', 'gatelands'], ['sloop', 'mark'], ['caravel', 'aurenne'], ['cog', 'gatelands'], ['galleon', 'mark']]) for (const ban of ['gatelands', 'mark', 'aurenne', 'none', undefined]) {
+    worldState.ship = { cls, dress, banner: ban }; const m = WORLD.buildShipMesh(...LW[cls]), b = m.userData.banner, k = cls + ':' + dress + ':' + ban;
+    if (!b) { o[k] = { none: true, kids: m.children.filter(c => c.name === 'banner').length }; continue; }
+    const q = m.userData.rigs.find(r => r.banner); shipTrim(m, Math.PI / 2); const a1 = q.m.rotation.y; shipTrim(m, 0); const a0 = q.m.rotation.y; shipTrim(m, Math.PI); const aF = q.m.rotation.y;
+    m.updateMatrixWorld(true); const bb = new THREE.Box3().setFromObject(b.flag), sp = new THREE.Box3().setFromObject(m.children.find(c => c.name === 'banner').children[0]);
+    shipBannerOn(m, 'mark'); shipBannerOn(m, 'aurenne');
+    o[k] = { at: b.at, foot: b.foot, tris: b.tris, draws: b.draws, mat: b.flag.material.userData.banner, a: [a1, a0, aF].map(v => +v.toFixed(2)), flag: [+bb.min.y.toFixed(2), +bb.max.y.toFixed(2)], staffTop: +sp.max.y.toFixed(2),
+      again: m.children.filter(c => c.name === 'banner').length + '/' + m.userData.rigs.filter(r => r.banner).length + '/' + m.userData.banner.nation }; }
+  worldState.ship = was; return o; });
+console.log(JSON.stringify(bn));
+const bv = Object.entries(bn).filter(([k, v]) => !v.none);
+check('with no banner, or none, she flies nothing', Object.entries(bn).filter(([k]) => /:(none|undefined)$/.test(k)).every(([k, v]) => v.none && v.kids === 0), bn);
+check(`each nation's banner is its own flag, ${bv[0] && bv[0][1].tris} triangles in 2 draws on every hull`, bv.length === 15 && bv.every(([k, v]) => v.mat === k.split(':')[2] && v.tris < 500 && v.draws === 2), bv.map(([k, v]) => [k, v.mat, v.tris]));
+check('it flies at the stern of the square-rigged and lateen hulls, at the caravel\'s and the cog\'s castle, and at the gaff\'s masthead on the Mark\'s sloop and galleon',
+  bv.every(([k, v]) => v.at === (/sloop:mark|galleon:mark/.test(k) ? 'mast' : 'stern')) && bn['sloop:gatelands:mark'].foot[1] === 1 && bn['caravel:aurenne:mark'].foot[1] > 3 && bn['cog:gatelands:mark'].foot[1] > 3 && bn['sloop:mark:mark'].foot[1] > 10,
+  bv.map(([k, v]) => [k, v.at, v.foot]));
+check('the flag flies clear: at the stern about head height over the deck it stands on, into a head wind too (its foot 1.7 m over the staff\'s), over the masthead aloft (wholly above the staff\'s foot)',
+  bv.every(([k, v]) => v.at === 'stern' ? v.flag[0] > v.foot[1] + 1.7 : v.flag[0] > v.foot[1] + .5) && bv.every(([k, v]) => v.flag[1] < v.staffTop + .1), bv.map(([k, v]) => [k, v.foot[1], v.flag, v.staffTop]));
+check('the flag streams down the wind: abeam to leeward, forward with the wind astern, aft into a head wind', bv.every(([k, v]) => v.a[0] === 4.71 && v.a[1] === 3.14 && Math.cos(v.a[2]) > .999), bv.map(([k, v]) => [k, v.a]));
+check('a new banner replaces the old: one staff, one flag', bv.every(([k, v]) => v.again === '1/1/aurenne'), bv.map(([k, v]) => v.again));
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
