@@ -15,6 +15,28 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+### Where the corrupted animals appear (from the systems builder, 2026-11-06, #1201)
+**The question.** The bodies builder has drawn OG-088's corrupted animals: the frost wraith bear (Uisce), the blight boar with crystal spines (Cloch), the stag of shadows (Scáth) and the dusk eagle (Gaoth). No rule says where they meet you. Today every gate's roster is six foes from the canon's table, and a gate's condition rolls steady 50%, failing 35% or catastrophic 15%.
+
+**Options.**
+- **A.** One slot in every gate of its school (a Slime slot in Uisce, a Skeleton slot in Cloch and in Scáth), in every condition.
+- **B (recommended).** Only where the gate is failing or catastrophic; a steady gate keeps today's roster. The first piece of "the condition setting how strange the foes are".
+- **C.** Outside: within 120 m of a failing or catastrophic gate, that island's bears, boars and deer spawn as the school's corrupted form and answer back (#1050 A). Rosters inside unchanged.
+
+Under any option each takes its kin's numbers graded by the gate's tier (the Cave Bear's, the Boar's, a new stag row at the Dire Wolf's), with its school's resistance. The dusk eagle waits for Gaoth's roster.
+
+**Recommendation: B.** It ties the shape change to the gate's failing; a steady gate stays plain for a first visit; no new system.
+
+### The Mark's and Aurenne's new herbs — what they do (from the systems builder, 2026-11-06, #1202)
+**The question.** The botanical atlas (OG-039) gives the Mark nine new plants and Aurenne eleven; the concept artist has drawn all twenty. Each needs an item, effects and a price. Brewing gives every herb 4 effects from a pool of 22, with each effect on 4 to 7 herbs; twenty more herbs at four effects would put an effect on about 9, so the rule cannot hold as written.
+
+**Options.**
+- **A (recommended).** All twenty, four effects each (the first from the atlas, three dealt by the builder), grown on their own island. The rule becomes 4 to 10 herbs an effect, still no two herbs sharing more than two. Priced like today's herb with the same first effect (6 to 40 gold).
+- **B.** All twenty as lesser herbs: two effects each (eaten and hidden), never brewed. The table unchanged.
+- **C.** Only the five climate herbs now (Icebloom, Frostcap, Rimeberry, Sandlotus, Sagepalm), four effects each; the 4–7 rule nearly holds (one effect on 8).
+
+**Recommendation: A.** The atlas exists to give each island its own plants, and climate B wants its remedies growing where the cold and heat are.
+
 ## Answered
 ### The bind — what a perfect parry looks like (from the concept artist, 2026-11-05, #1192)
 **The question.** Combat B already has the rule: a perfect parry drains 40% of the foe's posture and opens a riposte for 0.8 s. Nothing says what the two bodies do in that moment; OG-045 and OG-063 draw it as a bind. Three readings posed on two of the builder's people in a steady Cloch nave; no timing changes in any. Page: `docs/prototypes/levelup/bind.html`; the approach in `docs/concepts.md`.
