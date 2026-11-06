@@ -88,5 +88,14 @@ const rt = await page.evaluate(() => { worldState.exposureSeen = { bitter: 1, ho
   return { inChar, inWorld, seen: worldState.exposureSeen, keys: Object.keys(rows) }; });
 check('exposureSeen rides the character\'s row, not the world\'s, and a save and load keeps it', rt.inChar && !rt.inWorld && rt.seen && rt.seen.bitter === 1 && rt.seen.hot === 1, rt);
 
+// 9. the words (session 2): each piece and meal says what it gives
+const tt = await page.evaluate(() => { const tip = it => { BAG.push(it); showBagTooltip(BAG.length - 1, { clientX: 10, clientY: 10 }); const t = document.getElementById('bag-tooltip').textContent; BAG.pop(); return t; };
+  return { robe: tip(makeItem(3, lineType('robe', 'chest'), null, true)), plate: tip(makeItem(5, ARMOR_TYPES.find(t => t.slot === 'chest'), null, true)),
+    mail: tip(makeItem(3, ARMOR_TYPES.find(t => t.slot === 'chest'), null, true)), leather: tip(makeItem(2, ARMOR_TYPES.find(t => t.slot === 'chest'), null, true)),
+    fur: tip(makeCloak('fur')), cape: tip(makeCloak('cape')), hearty: FED_KIND.hearty.say, clear: FED_KIND.clear.say, steady: FED_KIND.steady.say }; });
+check('the tooltips: a robe chest Cool 1, mail and plate heavy in the sun, tier 2 not; the fur Warmth 1, the cape Cool 1; Hearty Warmth 1, Clear Cool 1, Steady neither',
+  /Cool 1/.test(tt.robe) && /Plate · heavy in the sun/.test(tt.plate) && /Mail · heavy in the sun/.test(tt.mail) && !/heavy in the sun/.test(tt.leather) &&
+  /Warmth 1/.test(tt.fur) && /Cool 1/.test(tt.cape) && /Warmth 1/.test(tt.hearty) && /Cool 1/.test(tt.clear) && !/Warmth|Cool/.test(tt.steady), tt);
+
 check('no page errors', g.errs.length === 0, g.errs.slice(0, 5));
 await g.close();

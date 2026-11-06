@@ -628,8 +628,8 @@ window.addEventListener('keydown',e=>{if(!brewOpen)return;const c=e.code;let hit
 // Meat comes off a bear, a boar or a wolf (1 to 3, seeded by the corpse's key); produce and fish from the goods shop and the
 // inn, fish only in a port. Fed is kept by the game clock (`worldState.fed`, the character's), so sleep runs it down.
 const FIRE_HOURS=1,FIRE_REACH=2.5,FED_MIN=120,TINDERBOX_NAME='Tinderbox';
-const FED_KIND={hearty:{label:'Hearty',ico:'🍖',col:'#e8a060',say:'+15% stamina'},steady:{label:'Steady',ico:'🐟',col:'#80c8a0',say:'+1 health every 5 s'},
-  clear:{label:'Clear',ico:'🥕',col:'#88aaff',say:'+10% mana regeneration'}};
+const FED_KIND={hearty:{label:'Hearty',ico:'🍖',col:'#e8a060',say:'+15% stamina · Warmth 1'},steady:{label:'Steady',ico:'🐟',col:'#80c8a0',say:'+1 health every 5 s'},
+  clear:{label:'Clear',ico:'🥕',col:'#88aaff',say:'+10% mana regeneration · Cool 1'}};
 const FOOD_MEAL={meat:{name:'Roast Meat',ico:'🍖',kind:'hearty'},fish:{name:'Baked Fish',ico:'🐟',kind:'steady'},produce:{name:'Pottage',ico:'🥣',kind:'clear'}};
 const SURV_ITEMS={
   tinderbox:{name:TINDERBOX_NAME,ico:'🔥',type:'misc',weight:.2,buyPrice:5,sellMult:.4},

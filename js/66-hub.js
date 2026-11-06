@@ -685,7 +685,8 @@ function showBagTooltip(idx,ev){
   if(it.type==='equip'&&it.slot){
     const cur=EQ[it.slot];
     if(it.line==='light')html+=`<div class="bt-row" style="color:#c8b880;font-size:9px">Light armour · 3% harder to notice while sneaking</div>`; /* S564 */
-    if(it.line==='robe')html+=`<div class="bt-row" style="color:#c8b880;font-size:9px">Robe · +${3*(it.tier||1)} max mana</div>`; /* S564 */
+    if(it.line==='robe')html+=`<div class="bt-row" style="color:#c8b880;font-size:9px">Robe · +${3*(it.tier||1)} max mana${it.slot==='chest'?' · Cool 1':''}</div>`; /* S564; S1917 — a robe chest cools (climate B) */
+    if(it.slot==='chest'&&!it.line&&(it.tier||0)>=3)html+=`<div class="bt-row" style="color:#c8b880;font-size:9px">${(it.tier||0)>=4?'Plate':'Mail'} · heavy in the sun</div>`; /* S1917 — climate B: a grade more in Aurenne's heat */
     if(typeof implementOf==='function'&&implementOf(it))html+=`<div class="bt-row" style="color:#c8b880;font-size:9px">${implementDesc(it)}</div>`; /* S1863 — what an implement changes, in the page's words */
     if(it.virtue&&typeof CLOAK_KINDS!=='undefined'&&CLOAK_KINDS[it.virtue])html+=`<div class="bt-row" style="color:#c8b880;font-size:9px">Cloak · ${CLOAK_KINDS[it.virtue].virtue}${CLOAK_KINDS[it.virtue].swim<1?' · slower in the water':''}</div>`; // S552
     // Tier/material badge
