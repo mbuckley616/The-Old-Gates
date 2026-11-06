@@ -83,5 +83,22 @@ const ML = await page.evaluate(() => { const K = herbsKnown(), keep = K.read, al
 console.log('mapline', JSON.stringify(ML));
 check(`a gate's map entry says nothing of its state until its plant is read ("${ML.before}"); then "${ML.after}"; a gate of another condition still says nothing ("${ML.otherAfter}")`,
   !!ML.fail && !/failing/.test(ML.before) && ML.after === ML.before + ` · failing, of ${ML.fail.school}` && !!ML.other && !/(steady|catastrophic|failing), of/.test(ML.otherAfter), ML);
+// S1939 — grown by island (#1202 A): each island's land herbs only on it, the twenty among them; a chest's herbs are its island's
+const IS = await page.evaluate(() => {
+  const o = { cand: {}, loot: {}, world: [] }, B = { gatelands: ['forest', 'plains', 'autumn', 'fen', 'moor', 'coast'], mark: ['forest', 'tundra', 'moor', 'plains', 'coast'], aurenne: ['plains', 'dunes', 'swamp', 'wasteland', 'wastes', 'coast'] };
+  for (const I in B) { const ks = new Set(); let bare = 0; for (const b of B[I]) { let any = 0; for (const c of ['tree', 'water', 'sand', 'house', 'rock', 'open']) herbCandidates(b, c, I).forEach(([k]) => { ks.add(k); any++; }); if (!any) bare++; }
+    o.cand[I] = { n: ks.size, wrong: [...ks].filter(k => herbIsland(k) !== I), bare }; }
+  const pt = {}; for (let j = 0; j < GRID && Object.keys(pt).length < 3; j++) for (let i = 0; i < GRID; i++) { if (!isLandCell(i, j)) continue; const n = nationKeyOf(i, j); if (!pt[n]) pt[n] = [i * SIZE + SIZE / 2, j * SIZE + SIZE / 2]; }
+  const sx = px, sz = pz;
+  for (const I in pt) { px = pt[I][0]; pz = pt[I][1]; const seen = new Set(); for (let i = 0; i < 400; i++) { const h = randomLootHerb(); if (h) seen.add(herbKeyOf(h)); }
+    o.loot[I] = { at: herbIsleHere(), wrong: [...seen].filter(k => herbIsland(k) !== null && herbIsland(k) !== I), n: seen.size }; }
+  px = sx; pz = sz; herbIsleHere();
+  o.home = herbIsleAt(px, pz); o.world = [...new Set(ZONES.world.herbs.filter(h => !h.gate && h.def && h.def.zone !== 'sea').map(h => h.type))].filter(k => herbIsland(k) !== o.home);
+  return o; });
+console.log(JSON.stringify(IS));
+check(`by island: the Gatelands' ${IS.cand.gatelands.n} land herbs, the Mark's ${IS.cand.mark.n}, Aurenne's ${IS.cand.aurenne.n}; none grows on another's ground; no biome of an island bare`,
+  ['gatelands', 'mark', 'aurenne'].every(I => !IS.cand[I].wrong.length && IS.cand[I].bare === 0) && IS.cand.mark.n >= 12 && IS.cand.aurenne.n === 11 && IS.cand.gatelands.n >= 15, IS.cand);
+check(`a chest's herbs are its island's: ${Object.entries(IS.loot).map(([I, L]) => `${I} ${L.n} kinds, ${L.wrong.length} wrong`).join('; ')}`, Object.keys(IS.loot).length === 3 && Object.entries(IS.loot).every(([I, L]) => L.at === I && !L.wrong.length && L.n > 3), IS.loot);
+check(`the loaded country round the start (${IS.home}) grows none of the other islands' herbs (${IS.world.join(',') || 'none'})`, IS.home === 'gatelands' && IS.world.length === 0, IS.world);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

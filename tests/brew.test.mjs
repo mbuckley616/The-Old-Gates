@@ -72,7 +72,7 @@ const r = await page.evaluate(() => {
   return out;
 });
 console.log(JSON.stringify(r));
-// S1938 — the Mark's nine and Aurenne's eleven (#1202 A): each by its island, eaten as its first effect, not yet in loot
+// S1938 — the Mark's nine and Aurenne's eleven (#1202 A): each by its island, eaten as its first effect, not in a Gatelands chest
 const isl = await page.evaluate(() => {
   const o = {}; const keys = Object.keys(ISLAND_HERB);
   o.n = keys.length; o.mark = keys.filter(k => HERB_DEF[k].island === 'mark').length; o.aurenne = keys.filter(k => HERB_DEF[k].island === 'aurenne').length;
@@ -90,7 +90,7 @@ const isl = await page.evaluate(() => {
   return o; });
 console.log(JSON.stringify(isl));
 check(`the islands' twenty: ${isl.mark} of the Mark, ${isl.aurenne} of Aurenne, priced ${Math.min(...isl.prices)}–${Math.max(...isl.prices)}, the first effect the atlas's, each with a mesh`, isl.n === 20 && isl.mark === 9 && isl.aurenne === 11 && isl.prices.every(p => p >= 6 && p <= 40) && isl.first && isl.mesh, isl);
-check(`none of them in a barrel's or chest's herbs until they grow (${isl.loot.length} of 600 draws)`, isl.loot.length === 0, isl);
+check(`none of them in a chest on the Gatelands, where the suite stands (${isl.loot.length} of 600 draws; S1939: each grows on its own island)`, isl.loot.length === 0, isl);
 check(`eaten: Icebloom gives Resist Cold, warmth "${isl.warm}"; Sandlotus Resist Heat; Drakesage −${isl.drake} HP; Glacier Lily nothing, Slow known`, isl.cold && /Resist Cold/.test(isl.warm) && isl.heat && isl.drake === 10 && isl.lily && isl.lilyKnown, isl);
 check(`a reloaded herb found by its name (${isl.byName}); Icebloom and Snowthyme ground: ${isl.brew}`, isl.byName === 'deserttruffle' && isl.brew === 'Tincture of Resist Cold', isl);
 const C = r.counts, over = Object.keys(C).filter(f => C[f] < 4 || C[f] > 10);

@@ -481,9 +481,9 @@ function randomBookItem(){
 // the special 'dungeon' marker. HERB_DEF values have an `item` field ready to pocket.
 function randomLootHerb(){
   const keys=Object.keys(HERB_DEF);
-  if(!keys.length)return null;
+  if(!keys.length)return null;const isle=typeof herbIsleHere==='function'?herbIsleHere():'gatelands';
   // Filter out any dungeon-only herbs so adventurers/barrels don't cough up rare underground flora.
-  const pool=keys.filter(k=>HERB_DEF[k].zone!=='dungeon'&&HERB_DEF[k].zone!=='gate'&&HERB_DEF[k].zone!=='island'); /* S1886 — a gate's plants grow only by their gate; S1938 — the islands' twenty not until they grow */
+  const pool=keys.filter(k=>HERB_DEF[k].zone!=='dungeon'&&HERB_DEF[k].zone!=='gate'&&(typeof herbIsland!=='function'||herbIsland(k)===null||herbIsland(k)===isle)); /* S1886 — a gate's plants grow only by their gate; S1939 — the land herbs of the island it lies on (#1202 A) */
   const k=pool.length?pool[Math.floor(lootRand()*pool.length)]:keys[Math.floor(lootRand()*keys.length)];
   return {...HERB_DEF[k].item, qty:1};
 }
