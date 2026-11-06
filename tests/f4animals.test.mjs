@@ -298,6 +298,21 @@ for (const [nm, move, L, sp, legs] of [['Stonecrawler', 'trot', .3, .5, 4], ['Ma
   check(`the ${nm} wears the kit's (${r.plan}, ${r.legs} legs, ${r.tris} triangles), ${r.len} m long, its lowest ${r.low} m off its ground at rest; at rest ${r.rest}, moving ${r.move} (${r.cyc} cycles over ${sp} m, the bones moving ${r.moved}); taken away, dropped`,
     !r.fail && r.plan === 'game:' + nm && r.seed === r.want && r.legs === legs && r.tris < 9000 && r.len > L * .8 && r.len < L * 1.15 && Math.abs(r.low) < .01 && r.rest === 'stand' && r.move === move && r.cyc > .3 && r.moved > 1e-3 && r.dropped, r);
 }
+// Session 1914: the Bellthroat's sac swells as it calls (bellthroatCall counts e._calls): over the call's three booms it fills to more than
+// half again its rest size, peaks on a boom, and is back to rest a second and a half later; with no call it stays at rest
+{ const r = await page.evaluate((T) => { const fx = -Math.sin(yaw), fz = -Math.cos(yaw), x = px + fx * 2, z = pz + fz * 2;
+    const rig = buildAnimal('Bellthroat', 'f4sac'), G = new THREE.Group(); G.add(rig.root); G.position.set(x, WORLD.worldH(x, z), z); WORLD.scene.add(G);
+    const e = { name: 'Bellthroat', baseName: 'Bellthroat', x, z, mesh: G, limbs: { wolf: rig, torso: rig.mesh }, dead: false }; rig.e = e;
+    const ZE = ZONES.world.enemies; ZE.push(e); let k = 0; HBODY.last = -1e9; while (!rig.hc && !rig.hcFail && k++ < 300) hcTick(T + k * (HBODY.gap + 1)); ZE.splice(ZE.indexOf(e), 1);
+    const H = rig.hc; if (!H || !H.C.sac) { G.parent.remove(G); return { fail: true, hc: !!H }; }
+    const t0 = performance.now, sx = () => H.C.sac.scale.x / 1.15; let now = T + 5e3; const at = ms => { now += ms; performance.now = () => now; try { hcSwimPose(rig); } finally { performance.now = t0; } return sx(); };
+    let quiet = 0; for (let i = 0; i < 60; i++) quiet = Math.max(quiet, at(1000 / 60));
+    e._calls = 1; const sw = []; for (let i = 0; i < 90; i++) sw.push(at(1000 / 60));
+    const out = { quiet: +quiet.toFixed(3), peak: +Math.max(...sw).toFixed(3), peakAt: +((sw.indexOf(Math.max(...sw)) + 1) / 60).toFixed(2), mid: +sw[30].toFixed(3), after: +at(600).toFixed(3) };
+    G.parent.remove(G); hcTick(T + 9e3); return out; }, 1.0015e6);
+  console.log('  sac:', JSON.stringify(r));
+  check(`the Bellthroat's sac swells as it calls: at rest ${r.quiet} of its size, ${r.peak} at the peak (${r.peakAt} s in), ${r.mid} between booms, ${r.after} after`,
+    !r.fail && r.quiet < 1.05 && r.peak > 1.9 && r.mid > 1.4 && r.after < 1.05, r); }
 // Session 1721: an island given to buildAnimal is the kit's coat for it (HC.COATS): the Mark's black hill cow and grey hen, Aurenne's cream
 // cow and buff hen; the hind (an own plan) takes the deer's. The same key keeps its seed; an unknown island is none
 const isles = await page.evaluate(() => { const mean = C => { const a = C.meshes[0].geometry.attributes.color.array; let r = 0, g = 0, b = 0; const n = a.length / 3;
