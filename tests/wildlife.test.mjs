@@ -270,4 +270,14 @@ check(`OG-040's last four: ${Object.entries(NC.k).map(([k, o]) => k + ' ' + o.hp
   && NC.rows.Mossback.join() === 'gatelands/forest:1,gatelands/autumn:1' && NC.rows.Shatterhorn.join() === 'mark/tundra:0.5'
   && NC.rows.Mineprowler.join() === 'aurenne/dunes:1,aurenne/wastes:1' && NC.rows.Sailshell.join() === 'aurenne/dunes:2,aurenne/wasteland:2,aurenne/wastes:2'
   && !NC.at10 && NC.at3 && NC.lost > 0, NC);
+// S1912 — the Bellthroat calls at dusk (17 to 19), within 150 m, every 12 s or so; at noon, or 200 m off, it says nothing
+const NBC = await page.evaluate(() => { const e = buildZoneEnemy(sc, STATIC_SOL, px + 6, pz + 6, 'Bellthroat', null, { tier: 1, key: 's1912:bell', island: 'gatelands' });
+  const sb = window.sndBellthroat, ks = []; window.sndBellthroat = k => { ks.push(+k.toFixed(2)); };
+  const run = (h, d, secs) => { forceTime(h); e._calls = 0; e._call = null; e._w = { mode: 'graze', t: 99 }; const T0 = { x: e.x + d, z: e.z };
+    const tg = window.targetOf; window.targetOf = () => T0; try { for (let i = 0; i < secs * 10; i++) { e._w.mode = 'graze'; e._w.t = 99; bellthroatCall(e, e._w, d, .1); } } finally { window.targetOf = tg; } return e._calls; };
+  const out = { dusk: run(18, 30, 60), noon: run(12, 30, 60), far: run(18, 200, 60), night: run(22, 30, 60) };
+  window.sndBellthroat = sb; try { sb(.5); out.played = true; } catch (er) { out.played = String(er); } out.ks = ks; out.ok = typeof sndBellthroat === 'function'; if (e.mesh && e.mesh.parent) e.mesh.parent.remove(e.mesh); forceTime(12); return out; });
+console.log('  bellthroat:', JSON.stringify(NBC));
+check(`the Bellthroat's call: ${NBC.dusk} calls in a minute at dusk from 30 m (k ${NBC.ks[0]}), ${NBC.noon} at noon, ${NBC.far} from 200 m, ${NBC.night} at night`,
+  NBC.ok && NBC.played === true && NBC.dusk >= 3 && NBC.dusk <= 8 && NBC.noon === 0 && NBC.far === 0 && NBC.night === 0 && NBC.ks.length === NBC.dusk && NBC.ks.every(k => k === 0.8), NBC);
 await g.close();

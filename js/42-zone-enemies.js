@@ -847,10 +847,17 @@ function wildFlee(e,T){if(e.watch||e.answer)return; /* S1784 — the watcher nev
   W.mode='flee';W.left=WILD_FLEE;W.yaw=Math.atan2(e.x-T.x,e.z-T.z)+(e.rng()-.5)*.6;
   if((WILD_PACE[e.baseName]||{}).fly){W.mode='fly';W.gone=0;W.cruise=WILD_FLY.lo+e.rng()*(WILD_FLY.hi-WILD_FLY.lo);W.fy=W.fy||0;}
   for(const o of ZE)if(o!==e&&o.wild&&!o.dead&&Math.hypot(o.x-e.x,o.z-e.z)<WILD_HERD)wildFlee(o,T);}
+// S1912 — the Bellthroat calls at dusk (OG-040; the clock's dusk, 17 to 19): heard within BELL_CALL.r, one call every BELL_CALL.gap seconds
+// or so, never while it runs from you. Cosmetic, so the gap is Math.random's; e._calls counts them
+const BELL_CALL={r:150,gap:12};
+function bellthroatCall(e,W,dist,dt){if(W.mode==='flee'||dist>BELL_CALL.r||gameTimeOfDay()!=='dusk'){if(e._call==null)e._call=Math.random()*BELL_CALL.gap;return;}
+  if(e._call==null)e._call=Math.random()*BELL_CALL.gap;e._call-=dt;if(e._call>0)return;
+  e._call=BELL_CALL.gap*(.7+Math.random()*.6);e._calls=(e._calls||0)+1;if(typeof sndBellthroat==='function')sndBellthroat(1-dist/BELL_CALL.r);}
 function tickWildOne(e,dt){if(!(dt>0))return;
   if(e.watch){watchTick(e,dt);return;}
   const P=WILD_PACE[e.baseName]||WILD_PACE.Deer,W=e._w||(e._w={mode:'graze',t:2+e.rng()*6});
   const T=targetOf(e),dist=Math.hypot(T.x-e.x,T.z-e.z);
+  if(e.baseName==='Bellthroat')bellthroatCall(e,W,dist,dt);
   if(e.answer&&(e.alert||dist<WILD_ANSWER.near)){e.angry=true;e.alert=true;e._agg=true;e._quit=Math.max(WILD_ANSWER.quit,dist+WILD_ANSWER.near);W.mode='graze';W.t=0;return;} /* S1796 — struck, or come too near: it turns on you (an arrow from past 25 m: it comes for you, and gives up 4 m past where you shot from) */
   if(e.alert){e.alert=false;wildFlee(e,T);} /* a blow that did not kill, or a pack's cry */
   else if(W.mode!=='flee'&&W.mode!=='fly'&&!_hasBuff('vanish')&&canSeePlayer(e,dist,20))wildFlee(e,T);
