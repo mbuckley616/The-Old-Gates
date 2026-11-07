@@ -1417,6 +1417,8 @@ function buildBurnousPoint(cols, R, kb, neck, rollY, D) {
   const ta = tg.attributes.position; for (let i = 0; i < ta.count; i++) tasNear = Math.min(tasNear, sheet(v.fromBufferAttribute(ta, i), tn));
   return { meshes: [m, tm], stats: { rows: N, len: +rows[N - 1].len.toFixed(3), top: +(neck.y - cols[kb][rs].y).toFixed(3), tip: +(neck.y - tipP.y).toFixed(3), tris: idx.length / 3, tasselTris: tg.index.count / 3, near: +near.toFixed(4), tasNear: +tasNear.toFixed(4) } };
 }
+// how far the hang keeps a full cloak off the hands and lower forearms (wornMask's armRoom)
+const CLOAK_ARM_ROOM = .03;
 function buildCloak(G, body, byName, rnd) {
   const D = G.dress, out = [], PP = posedBody(body), S = surfGrid(PP, PACK.G['body'], (x, y) => y > -.75);
   const neck = new THREE.Vector3(); byName['neck01'].getWorldPosition(neck); const neckY = neck.y;
@@ -1472,7 +1474,7 @@ function buildCloak(G, body, byName, rnd) {
   // Below the last row where it lies on the body (the shoulder, the arm, the hand), it comes in toward the legs, halfway
   // to the body's outline below it, along a smooth step; then folds are laid down whole columns, out and in, deepening
   // toward the hem, never in closer than the body allows; the hem rises on a fold's ridge and drops in its trough.
-  const worn = wornMask(D), H = buildHang(cols, R, PP, neck, clearAt, len, rnd, worn);
+  const worn = wornMask(D), H = buildHang(cols, R, PP, neck, clearAt, len, rnd, wornMask(D, { armRoom: cape ? 0 : CLOAK_ARM_ROOM }));
   // the sheet
   const pos = [], uv = [], idx = [];
   for (let k = 0; k < K; k++) for (let r = 0; r < R; r++) { const q = cols[k][r]; pos.push(q.x, q.y, q.z); uv.push(k / (K - 1), r / (R - 1)); }
@@ -1520,7 +1522,12 @@ function buildCloak(G, body, byName, rnd) {
 // which points of the pack stand for what the person wears under the cloak: the body, and the skirt's fitting shell
 // when a skirt is worn (the short tunic's skirt is cut from it, and stands out of the body by up to 2.5 cm, plus its push)
 // and a robe's sleeves (Session 888): the tights' shell along the arms, standing out by the robe's own push, up to 4.6 cm at the cuff
-function wornMask(D) { const m = new Uint8Array(PACK.N), R0 = PACK.rest; m.off = new Float32Array(PACK.N); for (const v of PACK.G['body']) m[v] = 1;
+// o.armRoom (Session 1944): the lower forearm and the hand read that much further out, for the hang alone. The game poses the arms under a
+// cloak from its own driver, a few centimetres from the builder's pose the cloak was hung on, and a column set close over the hand let the
+// fingers through in the walk (f4people, dunmore#3:Pádraig); the test of the arms through the sheet still reads them where they are
+function wornMask(D, o = {}) { const m = new Uint8Array(PACK.N), R0 = PACK.rest; m.off = new Float32Array(PACK.N); for (const v of PACK.G['body']) m[v] = 1;
+  if (o.armRoom) { const B = PACK.ix.bones, arm = PACK.armBones || (PACK.armBones = new Uint8Array(B.map(b => /^(lowerarm02|wrist|finger|metacarpal)/.test(b.name) ? 1 : 0)));
+    for (const v of PACK.G['body']) { let b = 0, w = 0; for (let q = 0; q < 4; q++) if (PACK.skinWeight[v * 4 + q] > w) { w = PACK.skinWeight[v * 4 + q]; b = PACK.skinIndex[v * 4 + q]; } if (arm[b]) m.off[v] = o.armRoom; } }
   if (D.skirt) { const sk = skirtR(D); for (const v of sk) { m[v] = 2; m.off[v] = .025; } }
   // mail (Session 897): its body off the tights, standing as the tunic does and 9 mm more, and its skirt off the skirt shell, by its own push and 6 to 8 mm more
   if (D.mail && !D.robe) { for (const v of PACK.R.mailTop) { const y = R0[v * 3 + 1], ax = Math.abs(R0[v * 3]); if (ax > .3 || y < .06) continue; m[v] = 3; m.off[v] = .032 + (ax < .2 ? .022 * Math.max(0, Math.min(1, (.46 - y) / .2)) : 0) + .012 * Math.max(0, Math.min(1, (.2 - y) / .1)); }
