@@ -13,6 +13,11 @@ await page.evaluate(() => { window._prevDScene = typeof dScene !== 'undefined' ?
 await page.evaluate(() => goToDungeon(Object.assign({}, PORTALS[0], { theme: 'ruins', seed: 11, size: 'medium', interior: 'cave', zone: 'world', tutorial: false, lair: null, lairDoor: true })));
 for (let k = 0; k < 40 && !(await page.evaluate(() => activeZoneId === 'dungeon' && scene === dScene && dScene !== window._prevDScene)); k++) await page.waitForTimeout(500);
 await page.waitForTimeout(1500);
+// S1970 — and wait, as enterDungeon does (S950, S1055), for the loop to have put the camera at the floor's start: this entry is its own
+// (the lair's door), so it had no such wait, and on a slow runner the cost line's render below drew from the world's x, z (CI on #1271,
+// run 42396260543: calls 0, tris 0, where every other run reads about 300 calls)
+{ const t0 = Date.now(); while (Date.now() - t0 < 120000 && (await page.evaluate(() => Math.hypot(CAM.position.x - px, CAM.position.z - pz))) >= 30)
+  await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))); }
 // S1514 — the rays below read the shell's world matrices, which only a rendered frame updates; on a slow runner none has run 1.5 s
 // after the fade (CI on PR #822: 0 calls, 279 of 346 cells missed, the floor still at its unscaled cell), so update them first
 const r = await page.evaluate(() => { dScene.updateMatrixWorld(true); const out = {}; let meshes = 0; const shell = []; dScene.traverse(o => { if (o.isMesh) meshes++; if (o.userData && o.userData.dunShell) shell.push(o); });
@@ -72,5 +77,6 @@ check('the kit\'s rounded box has rounded corners (a unit cube with radius .1 re
 const bar = await page.evaluate(() => { const B = BARRELS.filter(b => b.displayName === 'Barrel'); return { n: B.length, kit: B.filter(b => b.mesh.children.some(o => o.userData && o.userData.dunShell === 'barrel') && b.top && b.top.parent === b.mesh).length }; });
 check('the dungeon\'s barrels are the kit\'s barrel, the lid still its own to pop off (Session 200)', bar.n === 0 || bar.kit === bar.n, bar);
 console.log('  cost', JSON.stringify({ meshes: r.meshes, calls: r.calls, tris: r.tris }));
+check('the floor draws from the player\'s place: the cost line\'s render is not empty (Session 1970)', r.calls > 0 && r.tris > 0, { calls: r.calls, tris: r.tris });
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
