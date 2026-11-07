@@ -8,12 +8,12 @@ await g.intoWorld();
 await g.settle('dunmore');
 
 const slotText = (n) => page.evaluate(async (n) => { await saveToSlot(n); const m = SS.idx.find(e => e.kind === 'manual' && e.slot === n);
-  _slMode = 'load'; renderSLSlots(); const el = [...document.querySelectorAll('#sl-slots .sl-slot-name')].map(x => x.textContent);
-  return { place: m && m.place, label: el.find(t => t.includes(m.place || '¬')) || el.join(' / ') }; }, n);
+  _slMode = 'load'; renderSLSlots(); const el = [...document.querySelectorAll('#sl-slots .sl-slot-place')].map(x => x.textContent); /* S1965 — the register's row: the place in its own span */
+  return { place: m && m.place, label: el.find(t => t === (m.place || '¬')) || el.join(' / ') }; }, n);
 
 const t = await page.evaluate(() => { const t = WORLD.siteAnywhere('dunmore'); px = t.x + 3; pz = t.z + 3; return { name: t.name, pad: t.pad }; });
 const s1 = await slotText(0);
-check(`a save in ${t.name}'s street reads "${s1.label}"`, s1.place === t.name && s1.label === `Lv${await page.evaluate(() => level)} · ${t.name}`, { s1, t });
+check(`a save in ${t.name}'s street reads "${s1.label}"`, s1.place === t.name && s1.label === t.name, { s1, t });
 
 const near = await page.evaluate(() => { const t = WORLD.siteAnywhere('dunmore');
   for (let a = 0; a < 24; a++) { const x = t.x + Math.cos(a / 24 * 6.283) * (t.pad + 260), z = t.z + Math.sin(a / 24 * 6.283) * (t.pad + 260);
@@ -28,8 +28,8 @@ const s3 = await page.evaluate(() => { const was = currentHouse; currentHouse = 
 check(`indoors a save names the house and its town ("${s3.house}"); underground the gate ("${s3.gate}")`, s3.house === 'The Bramble Hearth, ' + t.name && s3.gate === 'The Lost Chasm of Silence', s3);
 
 const old = await page.evaluate(() => { const m = SS.idx.find(e => e.kind === 'manual' && e.slot === 0); const keep = m.place; delete m.place; renderSLSlots();
-  const el = [...document.querySelectorAll('#sl-slots .sl-slot-name')].map(x => x.textContent); m.place = keep; return el; });
-check('an old save with no place keeps "the open country"', old.some(x => /· the open country$/.test(x)), old);
+  const el = [...document.querySelectorAll('#sl-slots .sl-slot-place')].map(x => x.textContent); m.place = keep; return el; });
+check('an old save with no place keeps "the open country"', old.some(x => x === 'the open country'), old);
 
 const tag = await page.evaluate(() => ({ tag: ssBuildTag(), bar: /build (s\d+)/.exec(document.getElementById('cbar').textContent)[1] }));
 check(`the export's build is the running tag (${tag.tag})`, tag.tag === tag.bar && /^s\d+$/.test(tag.tag), tag);

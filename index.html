@@ -21,24 +21,64 @@
 .ov-btn-grey{margin-top:8px;padding:9px 28px;background:rgba(60,60,60,.4);border:1px solid rgba(180,180,180,.25);color:#b0b0a0;font-size:14px;border-radius:6px;cursor:pointer;width:220px}
 .ov-btn-grey:hover{background:rgba(80,80,80,.5);color:#d4d4c0}
 /* Save/Load modal */
-#slmenu{display:none;position:absolute;inset:0;background:rgba(4,3,1,.97);z-index:55;flex-direction:column;padding:16px;border-radius:8px}
-#slmenu h2{color:#c8a84a;font-size:15px;font-weight:500;margin-bottom:10px;border-bottom:1px solid rgba(200,168,74,.2);padding-bottom:7px}
-.sl-tabs{display:flex;gap:8px;margin-bottom:12px}
-.sl-tab{padding:6px 20px;border-radius:5px;border:1px solid rgba(200,168,74,.2);background:rgba(0,0,0,.3);color:#806030;font-size:12px;cursor:pointer}
-.sl-tab.active{background:rgba(200,168,74,.15);color:#c8a84a;border-color:rgba(200,168,74,.5)}
-.sl-tab:hover:not(.active){background:rgba(255,255,255,.05);color:#a08040}
-.sl-slots{display:flex;flex-direction:column;gap:6px;overflow-y:auto;flex:1}
-.sl-slot{display:flex;align-items:center;gap:10px;padding:9px 11px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:6px;cursor:pointer;transition:background .15s}
-.sl-slot:hover{background:rgba(200,168,74,.08);border-color:rgba(200,168,74,.2)}
-.sl-slot.active-slot{border-color:rgba(100,200,80,.4);background:rgba(80,160,40,.08)}
-.sl-slot-num{color:#3a3020;font-size:11px;width:16px;flex-shrink:0}
-.sl-slot-ico{font-size:16px;width:22px;text-align:center;flex-shrink:0}
-.sl-thumb{width:96px;height:54px;object-fit:cover;flex-shrink:0;border:1px solid rgba(232,216,160,.35);border-radius:3px;background:#1a1610}
-.sl-slot-info{flex:1}
-.sl-slot-name{color:#c8a84a;font-size:12px;font-weight:500}
-.sl-slot-detail{color:#5a4a28;font-size:10px;margin-top:1px}
-.sl-slot-empty .sl-slot-name{color:#2a2418;font-style:italic}
-.sl-slot-time{color:#3a3020;font-size:10px;flex-shrink:0}
+/* S1965 — the save register on the parchment (Michael's B on DECISION #199, docs/prototypes/saves/): characters left, the chosen one's saves, the chosen save's picture large */
+#slmenu{display:none;position:fixed;inset:0;background:rgba(10,8,4,.45);backdrop-filter:blur(2px) sepia(.25);-webkit-backdrop-filter:blur(2px) sepia(.25);z-index:8450;align-items:center;justify-content:center;font-family:Georgia,'Times New Roman',serif}
+#sl-paper{position:relative;width:min(1160px,calc(100vw - 32px));height:min(640px,calc(100vh - 32px));box-sizing:border-box;padding:20px 30px 12px;background:#e9dcc2;color:#3a2c18;border:6px double #8a7040;border-radius:6px;box-shadow:0 10px 40px #000a;display:flex;flex-direction:column;min-height:0}
+#sl-head{display:flex;align-items:flex-end;gap:16px;border-bottom:1px solid #a89060;padding-bottom:8px;margin-right:30px}
+#slmenu h2{margin:0;font:400 36px/1 Georgia,serif;color:#7a1f10;font-variant:small-caps;letter-spacing:.04em;white-space:nowrap}
+#sl-sub{font:italic 16px Georgia,serif;color:#5a4128;padding-bottom:3px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sl-tabs{display:flex;gap:18px;padding-bottom:3px}
+.sl-tab{background:none;border:none;border-bottom:2px solid transparent;padding:0 0 1px;font:18px Georgia,serif;font-variant:small-caps;letter-spacing:.04em;color:#a08a60;cursor:pointer}
+.sl-tab.active{color:#7a1f10;border-bottom-color:#7a1f10}
+.sl-tab:hover:not(.active){color:#5a4128}
+#sl-slots{flex:1;min-height:0;display:grid;grid-template-columns:250px minmax(0,1fr) 340px;grid-template-rows:minmax(0,1fr) auto;gap:0 24px;padding-top:10px}
+.sl-who{grid-column:1;grid-row:1;border-right:1px solid rgba(90,65,40,.3);padding-right:16px;overflow-y:auto;min-height:0}
+.sl-list{grid-column:2;grid-row:1;overflow-y:auto;min-height:0;padding-right:4px}
+.sl-big{grid-column:3;grid-row:1;border-left:1px solid rgba(90,65,40,.3);padding:0 7px 6px 20px;overflow-y:auto;min-height:0}
+@media (max-width:900px){#sl-slots{grid-template-columns:200px minmax(0,1fr)}.sl-big{display:none}}
+.sl-colh{font:13px Georgia,serif;font-variant:small-caps;letter-spacing:.12em;color:#8a7050;margin:2px 0 6px}
+.sl-ch{padding:8px 10px 9px;border-bottom:1px solid rgba(90,65,40,.18);cursor:pointer}
+.sl-ch:hover{background:rgba(122,31,16,.04)}
+.sl-ch.sl-on{background:linear-gradient(90deg,rgba(122,31,16,.14),rgba(122,31,16,.03));box-shadow:inset 3px 0 #7a1f10}
+.sl-ch.sl-off{opacity:.55;cursor:default}
+.sl-ch-nm{font:22px/1.1 Georgia,serif;font-variant:small-caps;color:#3a2c18}
+.sl-ch.sl-on .sl-ch-nm{color:#7a1f10}
+.sl-ch-play{font:11px Georgia,serif;letter-spacing:.12em;color:#9a7a30;margin-left:8px;font-variant:normal}
+.sl-ch-ln{font:14.5px/1.3 Georgia,serif;color:#5a4128}
+.sl-ch-ln2{font:italic 13px/1.3 Georgia,serif;color:#8a7050}
+.sl-ch-acts{display:flex;gap:6px;margin-top:5px}
+.sl-none{font:italic 15px Georgia,serif;color:#8a7050;padding:10px}
+.sl-slot{display:grid;grid-template-columns:96px minmax(0,1fr) auto;gap:0 12px;align-items:center;padding:6px 8px;min-height:66px;box-sizing:border-box;border-bottom:1px solid rgba(90,65,40,.18);cursor:pointer}
+.sl-slot:hover{background:rgba(122,31,16,.04)}
+.sl-slot.sl-on{background:linear-gradient(90deg,rgba(122,31,16,.14),rgba(122,31,16,.03));box-shadow:inset 3px 0 #7a1f10}
+.sl-slot.sl-primed{box-shadow:inset 3px 0 #7a1f10,inset 0 0 0 1.5px rgba(122,31,16,.55)}
+.sl-slot.sl-on .sl-slot-name,.sl-slot.sl-primed .sl-slot-name{color:#7a1f10}
+.sl-slot.sl-idle{cursor:default}
+.sl-thumb,.sl-nothumb{width:96px;height:54px;object-fit:cover;border-radius:2px;box-shadow:0 0 0 1px rgba(46,28,12,.6),0 0 0 3px rgba(224,201,148,.7),0 0 0 4px rgba(90,65,40,.4);filter:sepia(.25) saturate(.9);background:#d8c8a4}
+.sl-nothumb{display:block;background:repeating-linear-gradient(135deg,rgba(90,65,40,.1) 0 6px,transparent 6px 12px)}
+.sl-slot-info{min-width:0}
+.sl-slot-name{font:17px/1.2 Georgia,serif;color:#3a2c18}
+.sl-slot.sl-auto .sl-slot-name{color:#4a3a22}
+.sl-slot-detail{font:italic 14px/1.25 Georgia,serif;color:#5a4128}
+.sl-k{font:12px Georgia,serif;font-style:normal;letter-spacing:.1em;font-variant:small-caps;color:#8a7050}
+.sl-ask{color:#7a1f10}
+.sl-slot-empty .sl-slot-name{font-style:italic;color:#8a7050}
+.sl-slot-ago{font:italic 13px/1.3 Georgia,serif;color:#8a7050;text-align:right;white-space:nowrap}
+.sl-slot-ago small{display:block;font-size:12.5px}
+.sl-sub2{font:12px Georgia,serif;font-variant:small-caps;letter-spacing:.14em;color:#8a7050;margin:10px 0 2px 8px;display:flex;gap:10px;align-items:center}
+.sl-sub2::after{content:"";flex:1;height:1px;background:rgba(90,65,40,.25)}
+.sl-bigpic{width:100%;aspect-ratio:16/9;background:#d8c8a4 center/cover no-repeat;border-radius:2px;box-shadow:0 0 0 1px rgba(46,28,12,.7),0 0 0 4px rgba(224,201,148,.8),0 0 0 5px rgba(90,65,40,.5),0 6px 12px rgba(40,20,5,.35);filter:sepia(.2) saturate(.92);margin:4px 0 14px}
+.sl-bigpic.sl-blank{background:repeating-linear-gradient(135deg,rgba(90,65,40,.1) 0 8px,transparent 8px 16px)}
+.sl-big-t{font:21px/1.15 Georgia,serif;font-variant:small-caps;color:#7a1f10}
+.sl-big-l{font:16px/1.4 Georgia,serif;color:#3a2c18}
+.sl-big-f{font:italic 14px/1.35 Georgia,serif;color:#8a7050}
+.sl-big-rule{border-top:1px solid #a89060;margin:10px 0 6px}
+.sl-dv{display:flex;justify-content:space-between;font:15.5px/1.7 Georgia,serif;color:#3a2c18}
+.sl-foot{grid-column:1/-1;grid-row:2;display:flex;align-items:center;flex-wrap:wrap;gap:8px 10px;border-top:1px solid #a89060;padding-top:9px;margin-top:6px}
+.sl-store{font:italic 13px Georgia,serif;color:#8a7050;flex:1;min-width:160px}
+.sl-err{font:italic 14px Georgia,serif;color:#7a1f10;margin:2px 0 6px}
+.sl-keyline{font:italic 12.5px Georgia,serif;color:#8a7050;white-space:nowrap;margin-left:auto}
+.sl-key{display:inline-block;min-width:14px;padding:0 5px;margin:0 2px;border:1px solid #8a7040;border-bottom-width:2px;border-radius:3px;background:#f3e8d0;font:11.5px Georgia,serif;font-style:normal;color:#3a2c18;text-align:center}
 #lockpick{display:none;position:fixed;inset:0;background:rgba(6,5,3,.72);z-index:60;align-items:center;justify-content:center;cursor:pointer}
 #lp-box{background:linear-gradient(#17140e,#0e0c08);border:1px solid #4a3f28;border-radius:8px;padding:16px 18px 12px;min-width:380px;box-shadow:0 12px 40px rgba(0,0,0,.6);font:13px Georgia,serif;color:#d8ccb0;text-align:center}
 #lp-title,#lpk-title{color:#e8d8a0;font-size:15px;letter-spacing:.04em;margin-bottom:10px}
@@ -56,14 +96,15 @@
 #lp-picks{white-space:nowrap}
 #lp-keys{text-align:right}
 #lp-picks b{color:#c8a84a}
-.sl-btn{background:rgba(255,255,255,.04);border:1px solid rgba(200,168,74,.35);color:#c8a84a;border-radius:4px;padding:3px 10px;font:11px Georgia,serif;letter-spacing:.02em;cursor:pointer;transition:background .15s,border-color .15s,color .15s;flex:0 0 auto;white-space:nowrap}
-.sl-btn:hover{background:rgba(200,168,74,.16);border-color:rgba(200,168,74,.6);color:#e8d8a0}
-.sl-btn:active{background:rgba(200,168,74,.26)}
-.sl-btn.sl-danger{border-color:rgba(200,90,70,.35);color:#c08070}
-.sl-btn.sl-danger:hover{background:rgba(200,90,70,.16);border-color:rgba(200,90,70,.65);color:#e8a890}
-.sl-btn.sl-armed{background:rgba(200,90,70,.22);border-color:rgba(232,138,96,.8);color:#f0b090}
-#slmenu-close{position:absolute;top:12px;right:14px;background:none;border:none;color:#5a4a28;font-size:16px;cursor:pointer;padding:4px 8px}
-#slmenu-close:hover{color:#c8a84a}
+.sl-btn{background:none;border:1px solid #8a7040;border-radius:2px;padding:3px 10px;font:14px Georgia,serif;font-variant:small-caps;letter-spacing:.03em;color:#3a2c18;cursor:pointer;flex:0 0 auto;white-space:nowrap}
+.sl-btn:hover{background:rgba(122,31,16,.07);color:#7a1f10}
+.sl-btn:active{background:rgba(122,31,16,.14)}
+.sl-btn.sl-small{font-size:12.5px;padding:1px 7px}
+.sl-btn.sl-danger{border-color:rgba(122,31,16,.45);color:#7a1f10}
+.sl-btn.sl-armed{background:rgba(122,31,16,.16);border-color:#7a1f10;color:#7a1f10}
+.sl-btn:disabled{opacity:.45;cursor:default}
+#slmenu-close{position:absolute;top:10px;right:12px;background:none;border:none;color:#8a7050;font-size:18px;cursor:pointer;padding:4px 8px;z-index:2}
+#slmenu-close:hover{color:#7a1f10}
 #hud{position:absolute;top:10px;left:10px;color:#e8d4a0;font-size:12px;pointer-events:none;text-shadow:0 1px 4px #000;display:none}
 #vol-btn{position:absolute;top:10px;right:120px;background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.15);color:#c8b880;font-size:13px;width:28px;height:28px;border-radius:5px;cursor:pointer;display:none;z-index:10;pointer-events:all;line-height:1;padding:0}
 #vol-btn:hover{background:rgba(255,255,255,.12)}
@@ -956,13 +997,18 @@
   </div>
   <!-- SAVE / LOAD MENU -->
   <div id="slmenu">
-    <button id="slmenu-close" onclick="closeSLMenu()">✕</button>
-    <h2 id="slmenu-title">💾 Save / Load</h2>
-    <div class="sl-tabs">
-      <button class="sl-tab active" id="sl-tab-save" onclick="setSLTab('save')">Save</button>
-      <button class="sl-tab" id="sl-tab-load" onclick="setSLTab('load')">Load</button>
+    <div id="sl-paper">
+      <button id="slmenu-close" onclick="closeSLMenu()" title="Close (Esc)">✕</button>
+      <div id="sl-head">
+        <h2 id="slmenu-title">The Register</h2>
+        <span id="sl-sub"></span>
+        <div class="sl-tabs">
+          <button class="sl-tab active" id="sl-tab-save" onclick="setSLTab('save')">Save</button>
+          <button class="sl-tab" id="sl-tab-load" onclick="setSLTab('load')">Load</button>
+        </div>
+      </div>
+      <div class="sl-slots" id="sl-slots"></div>
     </div>
-    <div class="sl-slots" id="sl-slots"></div>
   </div>
   <div id="ws"><h2 id="wt">—</h2><p id="wp">—</p><button onclick="location.reload()">Play Again</button></div>
   <!-- DIALOG SYSTEM -->

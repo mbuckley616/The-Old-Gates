@@ -17,7 +17,7 @@ const r = await page.evaluate(async () => {
 console.log(JSON.stringify(r));
 check('the wait menu opens on the date in full: Skyday, the 12th of Reaping, in the 27th year of the Peace · 7:40 am', r.wait.shown === 'flex' && r.wait.sub === 'Skyday, the 12th of Reaping, in the 27th year of the Peace · 7:40 am', r.wait);
 check('a slot keeps the game\'s date when it was saved', r.at === 1440 * 11 + 460 && r.tod === 460, { at: r.at, tod: r.tod });
-check('and the slot list shows it', /Skyday 12 Reaping · 7:40 am · \d+🪙/.test(r.slotText), r.slotText);
-check('a slot saved before this build shows no date and nothing else changes', r.oldText && !/Skyday/.test(r.oldText) && /\d+🪙/.test(r.oldText), r.oldText);
+check('and the slot list shows it', /Skyday, the 12th of Reaping\s+7:40 am, [^\n]+· slot 1[\s\S]*level \d+ · \d+ gold/i.test(r.slotText), r.slotText); /* S1965 — the register's row: the day, then the hour and place */
+check('a slot saved before this build shows no date and nothing else changes', r.oldText && !/Skyday/.test(r.oldText) && /\d+ gold/.test(r.oldText), r.oldText);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

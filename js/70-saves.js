@@ -930,10 +930,11 @@ function openSLMenu(mode, fromTitle){
   _releasePointerLockForMenu();
   _slMode=mode||'save';
   _slFromTitle=!!fromTitle;
+  _slChar=null;_slSel=null;
+  _slNowPic=(_slMode==='save'&&!_slFromTitle)?ssShot():null; /* S1965 — the view you would keep, for the save page's large pane */
   setSLTab(_slMode);
   document.getElementById('slmenu').style.display='flex';
 }
-
 function closeSLMenu(){
   document.getElementById('slmenu').style.display='none';
   if(_slFromTitle&&!_slLoaded){location.reload();return;} // S251 — Load Game has already stepped into the scene; back out to the title for real
@@ -948,54 +949,140 @@ function closeSLMenu(){
 }
 
 function setSLTab(mode){
-  _slMode=mode;
+  if(mode==='save'&&_slFromTitle)mode='load';
+  _slMode=mode;_slSel=null;
+  if(mode==='save'&&!_slNowPic&&document.getElementById('slmenu').style.display==='flex')_slNowPic=ssShot(); /* S1965 — turned to Save by Tab: the view under the register */
   document.getElementById('sl-tab-save').classList.toggle('active',mode==='save');
   document.getElementById('sl-tab-load').classList.toggle('active',mode==='load');
-  document.getElementById('slmenu-title').textContent=mode==='save'?'💾 Save Game':'📂 Load Game';
   // Hide save tab when opened from title (can only load from there)
   document.getElementById('sl-tab-save').style.display=_slFromTitle?'none':'';
   renderSLSlots();
 }
 
+// ═══ THE REGISTER (Session 1965 — Michael's B on DECISION #199, docs/prototypes/saves/ b-load and b-save) ═══
+// One sheet of the parchment: your characters down the left, the chosen one's saves in the middle (newest first to load; the eight
+// slots as leaves to write), and the chosen save's picture large on the right with its day, era, hour, place, level and gold. The
+// rules are today's: eight slots and five autosaves a character, a second press to load or to write over, the two exports, Import.
+// A row is chosen by the mouse or by ↑↓, pressed by a click or E/Enter; Tab turns between Save and Load.
+let _slChar=null,_slSel=null,_slNowPic=null;
+const SL_PEOPLE={gatelander:'Gatelander',markman:'Markman',aurennais:'Aurennais',oldblood:'Old Blood'};
+function slEsc(t){return String(t==null?'':t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]);}
+function slAgo(ts){const d=Math.floor((Date.now()-ts)/60000);return d<1?'just now':d<60?`${d} min ago`:d<1440?`${Math.floor(d/60)} h ago`:`${Math.floor(d/1440)} d ago`;}
+function slPlace(m){return m.place?m.place:m.zone==='world'?'the open country':((ZONE_LABEL&&ZONE_LABEL[m.zone])||m.zone||'…').replace(/^\S+\s/,'');}
+function slKind(m,slot){return m&&m.kind==='auto'?'autosave':'slot '+((m?m.slot:slot)+1);}
+function slArch(id){try{const a=ARCHETYPES.find(x=>x.id===id);return a?a.label:'';}catch(e){return '';}}
+function slDay(m){return m.at!=null?calDateLine(m.at):'';}
+function slEra(m){if(m.at==null)return '';const s=gameDateLine(m.at,m.tod,'date'),i=s.indexOf(', in the ');return i<0?'':s.slice(i+2);}
+function slHour(m){return m.at!=null?gameDateLine(m.at,m.tod,'time'):'';}
+function slAsk(m,slot){return _slMode==='load'?'Press again to load: the day as it was. What you have not saved is lost.':`Press again to write over Slot ${slot+1}. The day it holds is lost.`;}
+
 function renderSLSlots(){
-  const container=document.getElementById('sl-slots');container.innerHTML='';
-  const fmtT=ts=>{const d=Math.floor((Date.now()-ts)/60000);return d<1?'just now':d<60?`${d} min ago`:d<1440?`${Math.floor(d/60)} h ago`:`${Math.floor(d/1440)} d ago`;};
-  const zoneOf=m=>m.place?m.place:m.zone==='world'?'the open country':(ZONE_LABEL&&ZONE_LABEL[m.zone])||m.zone||'…';
-  const active=ssActiveKey();const curId=(typeof worldState!=='undefined'&&worldState&&worldState.charId)||null;
-  const row=(m,kind,slot,charId)=>{const div=document.createElement('div');div.className='sl-slot'+(m&&m.key===active?' active-slot':'')+(m?'':' sl-slot-empty');div.dataset.key=m?m.key:'';
-    div.innerHTML=`<span class="sl-slot-num">${kind==='auto'?'A'+(slot+1):slot+1}</span><span class="sl-slot-ico">${m?(kind==='auto'?'⟳':'💾'):'·'}</span>${m&&m.pic?'<img class="sl-thumb" alt="">':''}<span class="sl-slot-info"><div class="sl-slot-name">${m?`Lv${m.level} · ${zoneOf(m)}`:'— Empty —'}</div>${m?`<div class="sl-slot-detail">${m.at!=null?gameDateLine(m.at,m.tod,'short')+' · ':''}${m.gold}🪙 · ${fmtT(m.ts)}${m.size?` · ${(m.size/1024).toFixed(0)} KB`:''}</div>`:''}</span>${m?`<button type="button" class="sl-del" title="Delete this save" style="background:none;border:1px solid rgba(255,255,255,.12);color:#a08070;border-radius:4px;padding:2px 7px;cursor:pointer;font-size:12px">🗑</button>`:''}`;
-    if(m&&m.pic){const im=div.querySelector('.sl-thumb');ssPic(m.key).then(u=>{if(u&&im&&im.isConnected)im.src=u;else if(im)im.remove();});} /* S653 — the picture of the save */
-    if(m){const del=div.querySelector('.sl-del');del.onclick=(ev)=>{ev.stopPropagation();if(del.dataset.primed==='1'){ssDelete(m.key).then(()=>renderSLSlots());}else{del.dataset.primed='1';del.textContent='Delete?';del.style.color='#e88a60';setTimeout(()=>{if(del.isConnected){del.dataset.primed='0';del.textContent='🗑';del.style.color='';}},2500);}};}
-    if(_slMode==='save'){if(kind==='manual')div.onclick=()=>_slotSaveClick(div,slot,m);else div.style.opacity='.6';}
-    else if(m)div.onclick=()=>_slotLoadClick(div,m);
-    return div;};
-  const header=(txt,sub)=>{const h=document.createElement('div');h.style.cssText='margin:10px 0 4px;font:600 13px Georgia,serif;color:#e8d8a0;letter-spacing:.04em;display:flex;align-items:center;gap:8px';h.innerHTML=`<span>${txt}</span>${sub?`<span style="font-weight:400;font-size:11px;color:#8a7a60;letter-spacing:0">${sub}</span>`:''}<span style="flex:1"></span>`;container.appendChild(h);return h;}; // v80 S140 — name, then detail, then the buttons at the right
-  const chars=ssChars();
-  // v80 S137 — where the saves live and how much they take; the last failure, in words
-  {const st=document.createElement('div');st.style.cssText='font-size:11px;color:#7a6a50;margin:0 0 4px 2px';const tot=SS.idx.reduce((a,e)=>a+(e.size||0)+(e.picSize||0),0);
-    st.textContent=`${SS.fallback?"Saved in this browser's localStorage (IndexedDB unavailable)":SS.db?'Saved in IndexedDB':'Save store not open yet'} · ${SS.idx.length} save${SS.idx.length===1?'':'s'}, ${(tot/1024).toFixed(0)} KB`;container.appendChild(st);
-    try{if(navigator.storage&&navigator.storage.estimate)navigator.storage.estimate().then(e=>{if(st.isConnected&&e&&e.quota)st.textContent+=` · browser storage ${(e.usage/1048576).toFixed(1)} of ${(e.quota/1048576).toFixed(0)} MB`;}).catch(()=>{});}catch(e){}
-    const imp=document.createElement('button');imp.type='button';imp.textContent='\u2913 Import a character from a file';imp.className='sl-btn';imp.title='Load a character from a file you exported';imp.style.cssText+='margin:2px 0 6px 2px;align-self:flex-start';imp.onclick=ssPickImport;container.appendChild(imp); // v80 S139
-    if(SS.lastErr&&_slMode==='save'){const er=document.createElement('div');er.style.cssText='font-size:12px;color:#e88a8a;margin:2px 0 6px 2px';er.textContent=`Last save failed (${fmtT(SS.lastErr.ts)}): ${SS.lastErr.why}`;container.appendChild(er);}}
-  if(_slMode==='save'){
-    const cid=ssCharId();const mine=chars.find(c=>c.id===cid)||{id:cid,name:(typeof playerName!=='undefined'&&playerName)||'This character',saves:[]};
-    {const _h=header(`${mine.name}`,`Lv${typeof level!=='undefined'?level:'?'} · slots`);if(mine.saves&&mine.saves.length)_h.appendChild(_slExportBtn(cid));} // v80 S139
-    for(let i=0;i<SS_MANUAL;i++)container.appendChild(row(mine.saves.find(e=>e.kind==='manual'&&e.slot===i)||null,'manual',i,cid));
-    const autos=mine.saves.filter(e=>e.kind==='auto').sort((a,b)=>b.ts-a.ts);if(autos.length){header('Autosaves',`${autos.length} of ${SS_AUTO} · newest first · load from the Load tab`);autos.forEach(a=>container.appendChild(row(a,'auto',a.slot,cid)));}
-    return;}
-  if(!chars.length){const none=document.createElement('div');none.style.cssText='color:#5a5040;padding:12px';none.textContent='No saves yet.';container.appendChild(none);return;} // S251 — below the Import button, not over it: a new browser is where a character comes in
-  for(const c of chars){const h=header(`${c.name}${c.id===curId?' <span style="color:#8ac880;font-size:11px">(playing)</span>':''}`,`Lv${c.level}${c.people?' · '+c.people:''} · ${fmtT(c.last)}`);
-    h.appendChild(_slExportBtn(c.id)); // v80 S139 — a copy of this character, outside the browser
-    const delc=document.createElement('button');delc.type='button';delc.textContent='\uD83D\uDDD1 Delete character';delc.className='sl-btn sl-danger';delc.title='Remove this character and every one of their saves';delc.style.marginLeft='8px';
-    delc.onclick=()=>{if(delc.dataset.primed==='1'){ssDeleteChar(c.id).then(()=>renderSLSlots());}else{delc.dataset.primed='1';delc.textContent='Delete all their saves?';delc.classList.add('sl-armed');setTimeout(()=>{if(delc.isConnected){delc.dataset.primed='0';delc.textContent='\uD83D\uDDD1 Delete character';delc.classList.remove('sl-armed');}},3000);}};h.appendChild(delc);
-    const autos=c.saves.filter(e=>e.kind==='auto').sort((a,b)=>b.ts-a.ts);if(autos.length){const sh=document.createElement('div');sh.style.cssText='font-size:10px;color:#8a7a60;letter-spacing:.2em;text-transform:uppercase;margin:4px 0 2px 4px';sh.textContent='Autosaves';container.appendChild(sh);autos.forEach(a=>container.appendChild(row(a,'auto',a.slot,c.id)));}
-    const mans=c.saves.filter(e=>e.kind==='manual').sort((a,b)=>a.slot-b.slot);if(mans.length){const sh=document.createElement('div');sh.style.cssText='font-size:10px;color:#8a7a60;letter-spacing:.2em;text-transform:uppercase;margin:4px 0 2px 4px';sh.textContent='Slots';container.appendChild(sh);mans.forEach(m=>container.appendChild(row(m,'manual',m.slot,c.id)));}
-  }
+  const C=document.getElementById('sl-slots');C.innerHTML='';
+  const save=_slMode==='save',chars=ssChars(),active=ssActiveKey();
+  const curId=(typeof worldState!=='undefined'&&worldState&&worldState.charId)||null,playing=!_slFromTitle&&typeof started!=='undefined'&&started;
+  let cid;
+  if(save){cid=ssCharId();if(!chars.some(c=>c.id===cid))chars.unshift({id:cid,name:(typeof playerName!=='undefined'&&playerName)||'This character',people:(worldState&&worldState.people)||'',arch:(typeof playerArchetype!=='undefined'&&playerArchetype)||'',level:typeof level!=='undefined'?level:0,last:Date.now(),saves:[]});}
+  else{if(!_slChar||!chars.some(c=>c.id===_slChar)){const a=active&&ssEntry(active);_slChar=curId&&chars.some(c=>c.id===curId)?curId:a&&chars.some(c=>c.id===a.charId)?a.charId:chars[0]?chars[0].id:null;}cid=_slChar;}
+  const ch=chars.find(c=>c.id===cid)||null;
+  {const sub=document.getElementById('sl-sub');if(sub){let t='Choose a day to go back to.';
+    if(save){try{t=`${gameDateLine(undefined,undefined,'day')} · ${gameDateLine(undefined,undefined,'time')}${typeof ssPlaceName==='function'&&ssPlaceName()?', '+ssPlaceName():''}`;}catch(e){t='Write this day in a slot.';}}sub.textContent=t;}}
+  // the characters
+  const who=document.createElement('div');who.className='sl-who';who.innerHTML='<div class="sl-colh">characters</div>';C.appendChild(who);
+  if(!chars.length){const n=document.createElement('div');n.className='sl-none';n.textContent='No saves yet.';who.appendChild(n);} // S251 — a new browser is where a character comes in: Import is in the foot
+  for(const c of chars){const last=c.saves.slice().sort((a,b)=>b.ts-a.ts)[0],off=save&&c.id!==cid;
+    const card=document.createElement('div');card.className='sl-ch'+(c.id===cid?' sl-on':'')+(off?' sl-off':'');card.dataset.char=c.id;
+    const ln=[slArch(c.arch),SL_PEOPLE[c.people]||''].filter(Boolean).concat(c.level?['level '+c.level]:[]).join(' · ');
+    card.innerHTML=`<div class="sl-ch-nm">${slEsc(c.name)}${c.id===curId&&playing?'<span class="sl-ch-play">PLAYING</span>':''}</div>`+(ln?`<div class="sl-ch-ln">${slEsc(ln)}</div>`:'')+
+      (last?`<div class="sl-ch-ln2">${slEsc([slDay(last),slPlace(last)].filter(Boolean).join(', '))}</div><div class="sl-ch-ln2">${c.saves.length} save${c.saves.length===1?'':'s'} · ${slAgo(c.last)}</div>`:'<div class="sl-ch-ln2">Not yet written in the register</div>');
+    if(c.saves.length)card.appendChild(_slExportBtn(c.id)); // v80 S139 — a copy of this character, outside the browser
+    if(!save&&c.id!==cid)card.onclick=ev=>{if(ev.target.closest('button'))return;_slChar=c.id;_slSel=null;renderSLSlots();};
+    who.appendChild(card);}
+  // the saves
+  const list=document.createElement('div');list.className='sl-list';C.appendChild(list);
+  list.innerHTML=`<div class="sl-colh">${save?'write this day in a slot':ch?slEsc(ch.name)+'’s saves':'saves'}</div>`;
+  if(SS.lastErr&&save){const er=document.createElement('div');er.className='sl-err';er.textContent=`The last save failed (${slAgo(SS.lastErr.ts)}): ${SS.lastErr.why}`;list.appendChild(er);}
+  const rows=[];
+  if(save){const mine=ch?ch.saves:[];for(let i=0;i<SS_MANUAL;i++)rows.push([mine.find(e=>e.kind==='manual'&&e.slot===i)||null,i]);}
+  else if(ch)ch.saves.slice().sort((a,b)=>b.ts-a.ts).forEach(m=>rows.push([m,m.slot]));
+  if(!save&&!rows.length&&chars.length){const n=document.createElement('div');n.className='sl-none';n.textContent='Nothing written for this character.';list.appendChild(n);}
+  for(const [m,slot] of rows)list.appendChild(slRow(m,slot));
+  if(save&&ch){const autos=ch.saves.filter(e=>e.kind==='auto').length;const s2=document.createElement('div');s2.className='sl-sub2';s2.textContent=`${autos} of ${SS_AUTO} autosaves kept · loaded from the Load page`;list.appendChild(s2);}
+  // the large pane
+  const big=document.createElement('div');big.className='sl-big';C.appendChild(big);
+  // the foot: Import, delete, the store, the keys
+  const foot=document.createElement('div');foot.className='sl-foot';C.appendChild(foot);
+  const imp=document.createElement('button');imp.type='button';imp.textContent='⤓ Import';imp.className='sl-btn';imp.title='Load a character from a file you exported';imp.onclick=ssPickImport;foot.appendChild(imp); // v80 S139
+  const dels=document.createElement('button');dels.type='button';dels.className='sl-btn sl-danger';dels.id='sl-delsave';dels.textContent='Delete this save';dels.title='Remove the chosen save';foot.appendChild(dels);
+  dels.onclick=()=>{const m=_slSel&&ssEntry(_slSel);if(!m)return;if(dels.dataset.primed==='1'){ssDelete(m.key).then(()=>{_slSel=null;renderSLSlots();});}else{dels.dataset.primed='1';dels.textContent='Delete it?';dels.classList.add('sl-armed');setTimeout(()=>{if(dels.isConnected){dels.dataset.primed='0';dels.textContent='Delete this save';dels.classList.remove('sl-armed');}},2500);}};
+  if(ch&&ch.saves.length&&!save){const delc=document.createElement('button');delc.type='button';delc.textContent='Delete character';delc.className='sl-btn sl-danger';delc.title=`Remove ${ch.name} and every one of their saves`;
+    delc.onclick=()=>{if(delc.dataset.primed==='1'){ssDeleteChar(ch.id).then(()=>{_slChar=null;_slSel=null;renderSLSlots();});}else{delc.dataset.primed='1';delc.textContent='Delete all their saves?';delc.classList.add('sl-armed');setTimeout(()=>{if(delc.isConnected){delc.dataset.primed='0';delc.textContent='Delete character';delc.classList.remove('sl-armed');}},3000);}};foot.appendChild(delc);}
+  // v80 S137 — where the saves live and how much they take
+  {const st=document.createElement('span');st.className='sl-store';const tot=SS.idx.reduce((a,e)=>a+(e.size||0)+(e.picSize||0),0);
+    st.textContent=`${SS.idx.length} save${SS.idx.length===1?'':'s'}, ${(tot/1024).toFixed(0)} KB ${SS.fallback?"in this browser's localStorage (IndexedDB unavailable)":SS.db?'in this browser':'· the store is not open yet'}`;foot.appendChild(st);
+    try{if(navigator.storage&&navigator.storage.estimate)navigator.storage.estimate().then(e=>{if(st.isConnected&&e&&e.quota)st.textContent+=` · ${(e.usage/1048576).toFixed(1)} of ${(e.quota/1048576).toFixed(0)} MB used`;}).catch(()=>{});}catch(e){}}
+  {const k=document.createElement('span');k.className='sl-keyline';const K=t=>`<span class="sl-key">${t}</span>`;k.innerHTML=`${K('↑')}${K('↓')} choose · ${K('E')} twice to ${save?'write over':'load'}${_slFromTitle?'':` · ${K('Tab')} save / load`} · ${K('Esc')} close`;foot.appendChild(k);}
+  // the chosen row: kept across a redraw, else the active save, else the first
+  const all=[...list.querySelectorAll('.sl-slot')];let pick=all.find(r=>r.dataset.sel===_slSel);
+  if(!pick&&!save)pick=all.find(r=>r.dataset.key===active)||all[0];
+  if(!pick&&save)pick=null;
+  slChoose(pick||null);
 }
 
-function _slExportBtn(charId){ // v80 S139; Session 456 — two buttons, the character and their world
-  const wrap=document.createElement('span');wrap.style.cssText='display:inline-flex;gap:6px;margin-left:10px';
-  const mk=(label,title,world)=>{const b=document.createElement('button');b.type='button';b.textContent=label;b.className='sl-btn';b.title=title;
+function slRow(m,slot){
+  const auto=m&&m.kind==='auto',div=document.createElement('div');
+  div.className='sl-slot'+(auto?' sl-auto':'')+(m?'':' sl-slot-empty');div.dataset.key=m?m.key:'';div.dataset.sel=m?m.key:'slot:'+slot;div.dataset.slot=slot;
+  const day=m?slDay(m):'',place=m?slEsc(slPlace(m)):'';
+  div.innerHTML=(m&&m.pic?'<img class="sl-thumb" alt="">':'<span class="sl-nothumb"></span>')+
+    `<span class="sl-slot-info"><div class="sl-slot-name">${m?(day||`<span class="sl-slot-place">${place}</span>`):'An empty leaf'}</div>`+
+    `<div class="sl-slot-detail">${m?`${day?`${slHour(m)}, <span class="sl-slot-place">${place}</span> · `:''}<span class="sl-k">${slKind(m)}</span>`:`<span class="sl-k">slot ${slot+1}</span>`}</div></span>`+
+    `<span class="sl-slot-ago">${m?`${slAgo(m.ts)}<small>level ${m.level} · ${m.gold} gold</small>`:''}</span>`;
+  if(m&&m.pic){const im=div.querySelector('.sl-thumb');ssPic(m.key).then(u=>{if(u&&im&&im.isConnected)im.src=u;else if(im)im.replaceWith(Object.assign(document.createElement('span'),{className:'sl-nothumb'}));});} /* S653 — the picture of the save */
+  if(_slMode==='save'||m){div.onclick=()=>slPress(div);div.onmouseenter=()=>slChoose(div,true);}
+  else div.classList.add('sl-idle');
+  return div;}
+
+// choose a row: it is marked and the large pane shows it; a press elsewhere disarms any row that was asking
+function slChoose(div){
+  const list=document.querySelector('#sl-slots .sl-list');if(!list)return;
+  list.querySelectorAll('.sl-slot').forEach(r=>r.classList.toggle('sl-on',r===div));_slSel=div?div.dataset.sel:null;
+  slBigDraw(div);}
+
+function slUnprime(){document.querySelectorAll('#sl-slots .sl-slot').forEach(r=>{if(r.dataset.primed==='1'){r.dataset.primed='0';r.classList.remove('sl-primed');const d=r.querySelector('.sl-slot-detail');if(d&&r._was!=null)d.innerHTML=r._was;}});}
+
+function slPress(div){
+  const m=div.dataset.key?ssEntry(div.dataset.key):null,slot=+div.dataset.slot;slChoose(div);
+  if(_slMode==='save'){if(m)_slotSaveClick(div,slot,m);else _slotSaveClick(div,slot,null);}
+  else if(m)_slotLoadClick(div,m);}
+
+function slBigDraw(div){
+  const big=document.querySelector('#sl-slots .sl-big');if(!big)return;
+  const m=div&&div.dataset.key?ssEntry(div.dataset.key):null,save=_slMode==='save';
+  if(save){const slot=div?+div.dataset.slot:null;let place='';try{place=ssPlaceName()||'';}catch(e){}
+    let html=`<div class="sl-colh">now</div><div class="sl-bigpic${_slNowPic?'':' sl-blank'}"${_slNowPic?` style="background-image:url(${_slNowPic})"`:''}></div>`;
+    try{html+=`<div class="sl-big-t">${gameDateLine(undefined,undefined,'day')}</div><div class="sl-big-l">${gameDateLine(undefined,undefined,'time')}${place?', '+slEsc(place):''}</div>`;}catch(e){}
+    html+=`<div class="sl-big-l">level ${typeof level!=='undefined'?level:'?'} · ${typeof gold!=='undefined'?gold:'?'} gold</div><div class="sl-big-rule"></div>`;
+    if(div)html+=m?`<div class="sl-big-f">Slot ${slot+1} holds ${slEsc([slDay(m),slPlace(m)].filter(Boolean).join(', '))}, level ${m.level}. Writing over it keeps this day and loses that one.</div>`:`<div class="sl-big-f">Slot ${slot+1} is an empty leaf. This day is written there at a press.</div>`;
+    else html+='<div class="sl-big-f">Choose a leaf to write this day in.</div>';
+    big.innerHTML=html;return;}
+  if(!m){big.innerHTML='<div class="sl-colh">&nbsp;</div><div class="sl-bigpic sl-blank"></div>';return;}
+  big.innerHTML=`<div class="sl-colh">${slKind(m)}</div><div class="sl-bigpic${m.pic?'':' sl-blank'}"></div>`+
+    (m.at!=null?`<div class="sl-big-t">${slDay(m)}</div><div class="sl-big-l">${slEra(m)}</div><div class="sl-big-l">${slHour(m)}, ${slEsc(slPlace(m))}</div>`:`<div class="sl-big-t">${slEsc(slPlace(m))}</div><div class="sl-big-f">Saved before the register kept the day.</div>`)+
+    `<div class="sl-big-rule"></div><div class="sl-dv"><span>Level</span><b>${m.level}</b></div><div class="sl-dv"><span>Gold</span><b>${m.gold}</b></div><div class="sl-dv"><span>Written</span><b>${slAgo(m.ts)}</b></div>`+
+    `<div class="sl-big-f" style="margin-top:6px">${m.size?(m.size/1024).toFixed(0)+' KB':''}${m.size&&m.build?' · ':''}${m.build?'build '+slEsc(m.build):''}</div>`;
+  if(m.pic){const pc=big.querySelector('.sl-bigpic');ssPic(m.key).then(u=>{if(u&&pc.isConnected)pc.style.backgroundImage=`url(${u})`;else if(pc.isConnected)pc.classList.add('sl-blank');});}}
+
+// the keys while the register is open: ↑↓ choose, E or Enter press, Tab turns the page (Esc is the game's, in 92-creator.js)
+window.addEventListener('keydown',e=>{const M=document.getElementById('slmenu');if(!M||M.style.display!=='flex')return;const t=e.target;if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'))return;
+  const c=e.code,rows=[...document.querySelectorAll('#sl-slots .sl-slot:not(.sl-idle)')];let hit=true;
+  if(c==='ArrowDown'||c==='ArrowUp'){if(rows.length){const i=rows.findIndex(r=>r.classList.contains('sl-on'));const j=i<0?(c==='ArrowDown'?0:rows.length-1):Math.max(0,Math.min(rows.length-1,i+(c==='ArrowDown'?1:-1)));slUnprime();slChoose(rows[j]);rows[j].scrollIntoView({block:'nearest'});}}
+  else if(c==='KeyE'||c==='Enter'){const r=rows.find(r=>r.classList.contains('sl-on'));if(r&&!e.repeat)slPress(r);}
+  else if(c==='Tab'){if(!_slFromTitle)setSLTab(_slMode==='save'?'load':'save');}
+  else hit=false;
+  if(hit){e.preventDefault();e.stopPropagation();}},true);
+
+function _slExportBtn(charId){ // v80 S139; Session 456 — two buttons, the character and their world; S1965 on each character's card
+  const wrap=document.createElement('span');wrap.className='sl-ch-acts';
+  const mk=(label,title,world)=>{const b=document.createElement('button');b.type='button';b.textContent=label;b.className='sl-btn sl-small';b.title=title;
     b.onclick=(ev)=>{ev.stopPropagation();b.disabled=true;b.textContent='Exporting\u2026';ssExportChar(charId,world).then(()=>{if(b.isConnected){b.disabled=false;b.textContent=label;}});};return b;};
   wrap.appendChild(mk('\u2912 Export','Save this character to a file you can keep: who they are and what they carry, no world in it',false));
   wrap.appendChild(mk('\u2931 World','Save their world to a second file: the clock, the towns, the quests\u2019 stages, everything the places remember',true));
@@ -1008,9 +1095,9 @@ function _fmtTime(ts){
 }
 
 function _slotSaveClick(div,slot,existing){
-  const after=m=>{if(m)closeSLMenu();else renderSLSlots();}; // v80 S137 — a failed save keeps the menu open with the reason
+  const after=m=>{if(m)closeSLMenu();else renderSLSlots();}; // v80 S137 — a failed save keeps the register open with the reason
   if(existing){if(div.dataset.primed==='1'){saveToSlot(slot).then(after);}
-    else{document.querySelectorAll('#sl-slots .sl-slot').forEach(b=>{b.dataset.primed='0';b.style.borderColor='';});div.dataset.primed='1';div.style.borderColor='rgba(200,100,60,.7)';const nm=div.querySelector('.sl-slot-name');if(nm){nm.textContent='Click again to overwrite';nm.style.color='#e88a60';}}}
+    else{slUnprime();div.dataset.primed='1';div.classList.add('sl-primed');const d=div.querySelector('.sl-slot-detail');if(d){div._was=d.innerHTML;d.innerHTML=`<span class="sl-ask">${slAsk(existing,slot)}</span>`;}}}
   else{saveToSlot(slot).then(after);}
 }
 
@@ -1019,6 +1106,6 @@ function _slotLoadClick(div,meta){
     ssLoad(meta.key).then(d=>{if(!d){closeSLMenu();return;}_slLoaded=true;ssSetActive(meta.key);_applyLoadData(d);_applyZoneFromSave(d);closeSLMenu();updateHUD();renderInv();buildViewmodel();buildShieldViewmodel();
       addLog('💾',`${meta.kind==='auto'?'Autosave':'Slot '+(meta.slot+1)} loaded — Lv${d.level}, ${d.gold}\uD83E\uDE99`);showMsg(`Save loaded. (${ZONE_LABEL[activeZoneId]||activeZoneId})`,'#c8e88a');});
   } else {
-    document.querySelectorAll('#sl-slots .sl-slot').forEach(b=>{b.dataset.primed='0';b.style.borderColor='';});div.dataset.primed='1';div.style.borderColor='rgba(100,200,80,.7)';const nm=div.querySelector('.sl-slot-name');if(nm){nm.textContent='Click again to load';nm.style.color='#8ac880';}
+    slUnprime();div.dataset.primed='1';div.classList.add('sl-primed');const d=div.querySelector('.sl-slot-detail');if(d){div._was=d.innerHTML;d.innerHTML=`<span class="sl-ask">${slAsk(meta)}</span>`;}
   }
 }

@@ -63,7 +63,7 @@ check('closing the save menu brings the leaf back', s2.open && s2.shown && s2.sl
 // Load: a load that went through (the load path sets _slLoaded and closes the menu) leaves the leaf closed
 await page.evaluate(() => { pauseLeaf.on = 2; pauseTake(); });
 await g.frames(2);
-const l = await page.evaluate(() => { const m = document.getElementById('slmenu').style.display, tab = document.getElementById('slmenu-title').textContent; _slLoaded = true; closeSLMenu(); return { m, tab, open: pauseOpen }; });
+const l = await page.evaluate(() => { const m = document.getElementById('slmenu').style.display, tab = document.querySelector('.sl-tab.active').textContent; /* S1965 — the register's title is its name; the page is the tab */ _slLoaded = true; closeSLMenu(); return { m, tab, open: pauseOpen }; });
 check('Load opens the load menu; once a load replaces the world, the leaf is gone', l.m === 'flex' && /Load/.test(l.tab) && !l.open, l);
 
 // 6. Esc on the leaf resumes, and the world moves again
