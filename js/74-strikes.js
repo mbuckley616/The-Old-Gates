@@ -279,8 +279,8 @@ function resolvePlayerStrike(_isPow){
     if(dist<reach&&(ex*fwdX+ez*fwdZ)/(dist||1)>cosArc)_candidates.push({e,dist});
   });
   _candidates.sort((a,b)=>a.dist-b.dist);
-  if(!_candidates.length&&activeZoneId==='world'&&typeof WORLD!=='undefined'&&WORLD.strikeNpc)WORLD.strikeNpc(fwdX,fwdZ); // S157 — assault
-  if(!_candidates.length)impactWallAhead(row.reach); /* S1952 — the swing meets the wall (#1239 B) */
+  const _struckNpc=!_candidates.length&&activeZoneId==='world'&&typeof WORLD!=='undefined'&&WORLD.strikeNpc&&WORLD.strikeNpc(fwdX,fwdZ); // S157 — assault
+  if(!_candidates.length&&!_struckNpc)impactWallAhead(row.reach); /* S1952 — the swing meets the wall (#1239 B); S1959 — the open world's too */
   const out=[];
   let _hitsLanded=0;
   const _impSide=SWING&&SWING.chain%2===0?-1:1; /* S1949 — the cut's way across the foe, alternating with the chain */
@@ -927,6 +927,7 @@ function impactOnYou(e,kind){
 // crossed). The open world's solids are trees, timber and stone with nothing to say which, so they throw nothing yet; fists
 // nothing anywhere, as on a foe. The hold is the same 50 ms. Nothing else changes: the swing still misses.
 function impactWallAhead(reach){
+  if(impactOn()&&activeZoneId==='world'&&EQ.weapon&&!isInterior())return impactWorldAhead(reach);
   if(!impactOn()||activeZoneId!=='dungeon'||!EQ.weapon||typeof dSolid!=='function')return null;
   const R=HULL_YOU+reach,eye=jumpY+(typeof _eyeHeightCur==='number'?_eyeHeightCur:SCALE.EYE_STAND),map=activeMap();
   let pc=dCellOf(px),pr=dCellOf(pz);if(dSolid(px,pz))return null;
@@ -940,6 +941,54 @@ function impactWallAhead(reach){
     const at=new THREE.Vector3(x,eye-.3,z).addScaledVector(n,.03),side=SWING&&SWING.chain%2===0?-1:1,cut=new THREE.Vector3(-n.z*side,-.25,n.x*side).normalize();
     impactHold();
     return impactSpawn(surface,{at,n:n.clone().setY(.15),cut,seed:'wall:'+c+','+r+':'+(++IMPACT.n),ground:jumpY,wall:true});}
+  return null;
+}
+// S1959 — the open world's solids (owed by S1952): a swing with a weapon that finds no foe and no townsperson in reach walks your
+// facing out to HULL_YOU plus the row's reach, as in a gate, and the first solid it meets throws its stuff. The builders' solids carry
+// no material, so impactWorldSurface reads it from the tags they do carry: a tree's id is wood; a chunk's other square solid is a rock;
+// a wall, a tower house, an abbey, a cairn, a barracks, a cave's or a tunnel's rock, a door's jambs, an aqueduct, a wonder, a road's
+// carving, a bridge, a road's retaining wall and a town gate's jambs are stone; a town gate's leaves and its yard timber (racks, benches, the ring's stands and
+// post) are wood; a house is wood in the Mark (its longhouses are timber) and stone elsewhere (plaster, whitewash and rubble). Anything
+// else (a tent, a lamp, a barrel, a camp's fire, a signpost, a wreck) throws nothing, as a gate's furniture does. A solid whose top you
+// stand over (an aqueduct's channel) is passed. The face's normal is the box's own, the side the line came in by.
+function impactWorldSurface(s,S){
+  if(!s)return null;
+  if(s.tid!=null)return 'wood';
+  if(S){if(s.jamb)return 'stone';if(s.bt==='gate'||s.yard||s.ring)return 'wood';
+    if(s.hid!=null){const P=impactSitePeople(S.site);return P==='markman'?'wood':'stone';}
+    return s.bt==='wall'||s.bt==='barracks'?'stone':null;}
+  if(s.cave||s.wdoor||s.aqueduct||s.wonder||s.carving||s.bt==='wall'||s.bt==='barracks'||s.cell!=null)return 'stone'; /* s.cell: a bridge's parapets and a road's retaining walls */
+  if(s.chunk&&s.rx===s.rz)return 'stone';
+  return null;
+}
+function impactSitePeople(t){try{const [ni,nj]=cellOf(t.x,t.z);const N=nationOf(ni,nj);return N&&N.people||'';}catch(e){return '';}}
+function impactInBox(s,x,z){const dx=x-s.cx,dz=z-s.cz;if(s.c!==undefined){const lx=dx*s.c-dz*s.s,lz=dx*s.s+dz*s.c;return Math.abs(lx)<s.rx&&Math.abs(lz)<s.rz;}return Math.abs(dx)<s.rx&&Math.abs(dz)<s.rz;}
+/* the solid at (x,z) for a swing at feet height y: the chunks' (tagged chunk:true here, not on the record), the stamps', the towns' */
+function impactWorldSolid(x,z,y){
+  const cx=Math.floor(x/CHUNK),cz=Math.floor(z/CHUNK);
+  for(let dz=-1;dz<=1;dz++)for(let dx=-1;dx<=1;dx++){const ch=chunks.get(chunkKey(cx+dx,cz+dz));if(!ch)continue;for(const s of ch.sol)if(impactInBox(s,x,z))return {s:s.tid!=null||s.rx!==s.rz?s:Object.assign({chunk:true},s),src:s};}
+  for(const s of STATIC_SOL){if(s.top!=null&&y>=s.top-STEP_UP)continue;if(impactInBox(s,x,z))return {s,src:s};}
+  for(const S of SETTLE.values()){const t=S.site,reach=S.reach||t.pad+6;if(Math.abs(x-t.x)>reach||Math.abs(z-t.z)>reach)continue;for(const s of S.sol)if(impactInBox(s,x,z))return {s,src:s,S};}
+  return null;
+}
+function impactBoxNormal(s,x,z,fx,fz){
+  const c=s.c!==undefined?s.c:1,sn=s.c!==undefined?s.s:0,dx=x-s.cx,dz=z-s.cz,lx=dx*c-dz*sn,lz=dx*sn+dz*c;
+  const ux=Math.abs(lx)/Math.max(s.rx,1e-3),uz=Math.abs(lz)/Math.max(s.rz,1e-3);
+  let nx=0,nz=0;if(s.tid!=null||s.chunk){const L=Math.hypot(dx,dz)||1;return new THREE.Vector3(dx/L,0,dz/L);} /* a trunk or a rock is round */
+  if(ux>=uz)nx=Math.sign(lx)||1;else nz=Math.sign(lz)||1;
+  const wx=nx*c+nz*sn,wz=-nx*sn+nz*c,n=new THREE.Vector3(wx,0,wz);
+  if(n.x*fx+n.z*fz>0)n.multiplyScalar(-1);return n;
+}
+function impactWorldAhead(reach){
+  if(typeof chunks==='undefined'||typeof STATIC_SOL==='undefined')return null;
+  const R=HULL_YOU+reach,eye=jumpY+(typeof _eyeHeightCur==='number'?_eyeHeightCur:SCALE.EYE_STAND);
+  if(impactWorldSolid(px,pz,jumpY))return null;
+  for(let d=.05;d<=R+1e-6;d+=.05){const x=px+fwdX*d,z=pz+fwdZ*d,hit=impactWorldSolid(x,z,jumpY);if(!hit)continue;
+    const surface=impactWorldSurface(hit.s,hit.S);if(!surface)return null;
+    const n=impactBoxNormal(hit.s,x,z,fwdX,fwdZ),side=SWING&&SWING.chain%2===0?-1:1;
+    const at=new THREE.Vector3(x,eye-.3,z).addScaledVector(n,.03),cut=new THREE.Vector3(-n.z*side,-.25,n.x*side).normalize();
+    impactHold();
+    return impactSpawn(surface,{at,n:n.clone().setY(.15),cut,seed:'world:'+Math.round(x*10)+','+Math.round(z*10)+':'+(++IMPACT.n),ground:jumpY,wall:true});}
   return null;
 }
 function impactSpawn(surface,o){

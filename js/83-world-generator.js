@@ -936,7 +936,7 @@ function genSettlement(site){
             for(const lf of gg.userData.leaves){const c2=Math.cos(lf.ry),s2=Math.sin(lf.ry);for(let u=-1;u<=1;u+=.5)if(onRoad(lf.x+u*lf.rx*c2,lf.z-u*lf.rx*s2))clash=true;}
             if(clash){gg.dispose();gg.userData.lo.dispose();S._gates[S._gates.length-1].open=true;}
             else{const gm=addMesh(gg,gx,gz,gry,0);gm.userData.gate=WT;
-            for(const s of [-1,1]){const [jx,jz]=w2(s*(inner-.1),0);sol.push({cx:jx,cz:jz,rx:.4,rz:WS.d/2+.1,c:cs,s:sn,bt:'gate'});}
+            for(const s of [-1,1]){const [jx,jz]=w2(s*(inner-.1),0);sol.push({cx:jx,cz:jz,rx:.4,rz:WS.d/2+.1,c:cs,s:sn,bt:'gate',jamb:true});}
             for(const lf of gg.userData.leaves){const [lx,lz]=w2(lf.x,lf.z),a=gry+lf.ry;sol.push({cx:lx,cz:lz,rx:lf.rx,rz:lf.rz,c:Math.cos(a),s:Math.sin(a),bt:'gate'});}}}
           if(!WS.towers)continue;
           [-1,1].forEach(sd=>{const tx=gx+ax_*sd*(ROAD_HALF+3.6),tz=gz+az_*sd*(ROAD_HALF+3.6);
