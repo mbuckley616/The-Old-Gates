@@ -292,7 +292,7 @@ export function aurenneHome(o = {}, r = stream('aurhome')) {
   // so the way to its foot passes the rail), the hatch over its head; both are laid before the shell, which cuts the hatch.
   const w = o.w ?? 9.0, d = o.d ?? 7.6, HZ = -d / 2 + 1.2 /* the hatch's front edge, 1.2 m in from the back face */, WX0 = w / 2 - .32 - 3.81 /* the well's west edge (the shell's walls are 0.32) */,
     RX1 = Math.min(-.3, WX0 - .55), RX0 = RX1 - 1.3;
-  // o.house.kind === 'tile' (Session 1974): the street's two-storey Roman house (PKIT.au.lot's 'tile' with two true) round the same shop and
+  // o.house.kind === 'tile' (Session 1975): the street's two-storey Roman house (PKIT.au.lot's 'tile' with two true) round the same shop and
   // flat: its door in the middle of the front, its arcade before the front if the lot has one; no roof to stand on (a hipped roof of pantile
   // over the cornice's slab), so no roof stair, hatch or terrace, and the flat is under a ceiling of cedar boards on the beams (roof: false)
   const S = o.house /* the street's own options (the game, Session 1831): its wall, door and windows drawn from the street's stream, o.shell */, tile = !!(S && S.kind === 'tile');

@@ -74,7 +74,7 @@ if (home) {
     check('at the door E takes you out', !(await page.evaluate(() => isInterior())));
   }
 }
-// the two-storey Roman (tiled) home (Session 1974): the same shop and flat round its door in the middle, the flat under cedar boards, no roof stair
+// the two-storey Roman (tiled) home (Session 1975): the same shop and flat round its door in the middle, the flat under cedar boards, no roof stair
 check(`a two-storey Roman home of 6.4 by 6.0 m or more stands in the first three towns of Aurenne (${roman && roman.id}, ${roman && roman.w} by ${roman && roman.d} m${roman && roman.arcade ? ', arcaded' : ''})`, !!roman, tally);
 if (roman) {
   await g.settle(roman.site);

@@ -2842,9 +2842,9 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   // the door's side are the street's), the shop below, the stair of 16 risers to the flat, the steep stair up through the hatch to the roof
   // terrace under its pergola. Drawn in metres and moved into the room's frame as the courtyard house is (nothing scaled). The bed upstairs
   // is the resident's, head to the back wall (-z); the home's chest is the one at its foot. The dyer keeps the shop, behind the counter.
-  // S1974: the two-storey Roman (tiled) home too (PKIT.au.lot's 'tile' with two true), the same shop and flat round its door in the middle,
+  // S1975: the two-storey Roman (tiled) home too (PKIT.au.lot's 'tile' with two true), the same shop and flat round its door in the middle,
   // the flat under a ceiling of cedar boards (T.roof false): no roof stair, hatch or terrace, and the room's height is the boards'.
-  function kitAurHome(house){const o=house&&house.kit&&house.kit.o;return !!(house&&house.type==='home'&&house.kit&&house.kit.kind==='aurhouse'&&house.kit.shell&&o&&(o.kind==='flat'||o.kind==='tile' /* S1974: the two-storey Roman home */)&&o.two&&o.w>=6.4&&o.d>=6.0&&window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.au&&PKIT.au.home);}
+  function kitAurHome(house){const o=house&&house.kit&&house.kit.o;return !!(house&&house.type==='home'&&house.kit&&house.kit.kind==='aurhouse'&&house.kit.shell&&o&&(o.kind==='flat'||o.kind==='tile' /* S1975: the two-storey Roman home */)&&o.two&&o.w>=6.4&&o.d>=6.0&&window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.au&&PKIT.au.home);}
   function buildKitAurHome(house){
     const k=house.kit,T=PKIT.au.home({w:k.o.w,d:k.o.d,shell:k.shell,house:k.o},PKIT.stream(house.id+':aurhome')),I=T.inner,X=I.x1,Z=I.z1,W=2*X,D=2*Z,F0=T.floors[0];
     const rx=x=>x+X,rz=z=>z+Z,ry=y=>y-F0,FL=T.floors.map(y=>+(y-F0).toFixed(3)),ds=T.door.x<0?-1:1,U=u=>-ds*u;
