@@ -1437,9 +1437,28 @@ function buildCloak(G, body, byName, rnd) {
   const capeStaff = cape && !!D.staff && !D.spear && !D.crossbow;
   const thrown = !!(D.spear || D.crossbow || D.staff || D.basket || D.lantern) && (!cape || capeStaff), low = thrown && !D.spear && !D.crossbow && !D.basket && !D.lantern;
   const th0 = capeStaff ? -Math.PI / 2 - .15 : low ? -Math.PI / 2 - .33 : thrown ? -Math.PI / 2 + .35 : -Math.PI + open, th1 = Math.PI - open, cols = [], tops = [];
-  for (let k = 0; k < K; k++) { const th = th0 + (k / (K - 1)) * (th1 - th0), dir = new THREE.Vector3(Math.sin(th), 0, -Math.cos(th));
+  // the shoulder line, set out evenly along itself (Session 1944): the furthest point in each of K evenly turned directions is not evenly
+  // placed. Many directions over the back find the same few points by the spine, and over the shoulders' round a few find points far
+  // apart, so a man's 56 columns stood 14 to 0.4 rad over the spine (the seam down the back, its folds crowded into a pleat) and 12 cm
+  // apart over the shoulder and arm (the side a few flat facets, the box). The line is sought in three times as many directions, put in
+  // order round the neck, and K starts are laid along it at even steps of its own length, each cleared of the body as before
+  const ring0 = [], polarTh = q => Math.atan2(q.x - neck.x, -(q.z - neck.z));
+  for (let k = 0, KK = cape ? K : 3 * K; k < KK; k++) { const th = th0 + (k / (KK - 1)) * (th1 - th0), dir = new THREE.Vector3(Math.sin(th), 0, -Math.cos(th));
     const e = S.extreme(neck, dir.clone().add(new THREE.Vector3(0, -.42, 0)).normalize(), p => p.y > neckY - .16 && p.y < neckY + .03);
-    const start = e.p.clone().addScaledVector(e.n, clearAt(e.p) + .006); tops.push({ start, dir, n: e.n });
+    const p = e.p.clone().addScaledVector(e.n, clearAt(e.p) + .006), w = polarTh(p) - th; ring0.push({ p, n: e.n.clone(), th: th + Math.atan2(Math.sin(w), Math.cos(w)), dth: th }); }
+  // in order round the neck, each point's angle unwrapped against the direction that found it (a cape's ends reach past the throat), and
+  // none past the sweep's own ends (a staff's or a spear's side starts where it did, clear of the shaft)
+  const thA = ring0[0].th, thB = ring0[ring0.length - 1].th, ringS = ring0.filter(q => q.th >= thA && q.th <= thB).sort((a, b) => a.th - b.th);
+  const ringU = ringS.filter((q, i) => i === 0 || q.p.distanceTo(ringS[i - 1].p) > 1e-4);
+  const arc = [0]; for (let i = 1; i < ringU.length; i++) arc.push(arc[i - 1] + ringU[i].p.distanceTo(ringU[i - 1].p));
+  // a shoulder cape keeps its evenly turned starts: a short circle of cloth wrapped to the throat, whose ends the even line pulled across
+  // each other (its columns crossed and an arm came through)
+  if (cape) for (const q of ring0) { const dir = new THREE.Vector3(Math.sin(q.dth), 0, -Math.cos(q.dth)); tops.push({ start: q.p, dir, n: q.n });
+    cols.push(drape(S, q.p, dir.clone().multiplyScalar(.5).add(new THREE.Vector3(0, -1, 0)), L, q => clearAt(q) + .006)); }
+  else for (let k = 0, j = 0; k < K; k++) { const s = arc[arc.length - 1] * k / (K - 1); while (j < ringU.length - 2 && arc[j + 1] < s) j++;
+    const t = Math.max(0, Math.min(1, (s - arc[j]) / Math.max(1e-9, arc[j + 1] - arc[j]))), n = ringU[j].n.clone().lerp(ringU[j + 1].n, t).normalize(), start = ringU[j].p.clone().lerp(ringU[j + 1].p, t);
+    for (let it = 0; it < 3; it++) { const cl = clearAt(start) + .006, hit = heightOver(S, start); if (hit && hit.h < cl) start.addScaledVector(hit.e.n, cl - hit.h); }
+    const th = polarTh(start), dir = new THREE.Vector3(Math.sin(th), 0, -Math.cos(th)); tops.push({ start, dir, n });
     cols.push(drape(S, start, dir.clone().multiplyScalar(.5).add(new THREE.Vector3(0, -1, 0)), L, q => clearAt(q) + .006)); }
   const R = Math.min(...cols.map(c => c.length));
   // hold neighbours to a spacing that widens toward the hem, then clear the body again
@@ -1478,7 +1497,9 @@ function buildCloak(G, body, byName, rnd) {
   const ring = tops.map(t => t.start.clone().addScaledVector(t.n, .012).add(new THREE.Vector3(0, .012, 0)));
   let pointStats = null;
   if (D.cloakFur && !burnousOn(D)) { const fl = hoodLine(ring, .03); for (let s = 0; s < 6; s++) { const m = new THREE.Mesh(turnOut(tubeGeom(fl, fl.map(() => .026 + s * .004), 8)), shellMat(sRGB(...D.cloakFur), s, 6, { sx: 260, sy: 70, solid: s === 0 })); m.geometry.setAttribute('aBase', m.geometry.attributes.position); m.name = 'collar' + s; m.userData.axis = { line: fl, sides: 8 }; out.push(m); } }
-  else if (D.hood === 'down') { const kb = Math.round(-th0 / (th1 - th0) * (K - 1)), back = hoodLine(ring.slice(Math.max(0, kb - Math.round(K * .2)), kb + Math.round(K * .2)).map(q => q.clone().lerp(new THREE.Vector3(neck.x, q.y + .025, neck.z), .25))), m = new THREE.Mesh(turnOut(tubeGeom(back, back.map((_, i) => .03 + .018 * Math.sin(Math.PI * i / (back.length - 1))), 10)), clothMat(sRGB(...D.cloak).multiplyScalar(.92), 'wool', { scale: 26, ...cloakPattern(D, [neck.x, neck.z], .2) })); m.geometry.setAttribute('aBase', m.geometry.attributes.position); m.geometry.setAttribute('aTart', m.geometry.attributes.position); m.name = 'hood'; m.userData.axis = { line: back, sides: 10 }; out.push(m);
+  // the column at the middle of the back, and the rolled hood over the columns within 0.8 rad of it, by their angles: a cloak's columns are
+  // set out by length since Session 1944, so they are no longer evenly turned (a cape's still are, and keep the old count)
+  else if (D.hood === 'down') { const thT = tops.map(t => polarTh(t.start)), kb = cape ? Math.round(-th0 / (th1 - th0) * (K - 1)) : thT.reduce((b, t, k) => Math.abs(t) < Math.abs(thT[b]) ? k : b, 0), kw0 = cape ? kb - Math.round(K * .2) : thT.findIndex(t => t > -.8), kw1 = cape ? kb + Math.round(K * .2) : thT.findLastIndex(t => t < .8) + 1, back = hoodLine(ring.slice(Math.max(0, cape ? kw0 : Math.min(kb - 3, kw0)), cape ? kw1 : Math.max(kb + 4, kw1)).map(q => q.clone().lerp(new THREE.Vector3(neck.x, q.y + .025, neck.z), .25))), m = new THREE.Mesh(turnOut(tubeGeom(back, back.map((_, i) => .03 + .018 * Math.sin(Math.PI * i / (back.length - 1))), 10)), clothMat(sRGB(...D.cloak).multiplyScalar(.92), 'wool', { scale: 26, ...cloakPattern(D, [neck.x, neck.z], .2) })); m.geometry.setAttribute('aBase', m.geometry.attributes.position); m.geometry.setAttribute('aTart', m.geometry.attributes.position); m.name = 'hood'; m.userData.axis = { line: back, sides: 10 }; out.push(m);
     if (burnousOn(D)) { const B = buildBurnousPoint(cols, R, kb, neck, back[Math.floor(back.length / 2)].y, D); out.push(...B.meshes); pointStats = B.stats; } }
   // the brooch at the throat, where the two front columns meet
   const a = thrown ? tops[K - 1] : tops[0], b = tops[K - 1], at = a.start.clone().add(b.start).multiplyScalar(.5), nrm = a.n.clone().add(b.n).normalize();
