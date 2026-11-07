@@ -2842,11 +2842,13 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   // the door's side are the street's), the shop below, the stair of 16 risers to the flat, the steep stair up through the hatch to the roof
   // terrace under its pergola. Drawn in metres and moved into the room's frame as the courtyard house is (nothing scaled). The bed upstairs
   // is the resident's, head to the back wall (-z); the home's chest is the one at its foot. The dyer keeps the shop, behind the counter.
-  function kitAurHome(house){const o=house&&house.kit&&house.kit.o;return !!(house&&house.type==='home'&&house.kit&&house.kit.kind==='aurhouse'&&house.kit.shell&&o&&o.kind==='flat'&&o.two&&o.w>=6.4&&o.d>=6.0&&window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.au&&PKIT.au.home);}
+  // S1974: the two-storey Roman (tiled) home too (PKIT.au.lot's 'tile' with two true), the same shop and flat round its door in the middle,
+  // the flat under a ceiling of cedar boards (T.roof false): no roof stair, hatch or terrace, and the room's height is the boards'.
+  function kitAurHome(house){const o=house&&house.kit&&house.kit.o;return !!(house&&house.type==='home'&&house.kit&&house.kit.kind==='aurhouse'&&house.kit.shell&&o&&(o.kind==='flat'||o.kind==='tile' /* S1974: the two-storey Roman home */)&&o.two&&o.w>=6.4&&o.d>=6.0&&window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.au&&PKIT.au.home);}
   function buildKitAurHome(house){
     const k=house.kit,T=PKIT.au.home({w:k.o.w,d:k.o.d,shell:k.shell,house:k.o},PKIT.stream(house.id+':aurhome')),I=T.inner,X=I.x1,Z=I.z1,W=2*X,D=2*Z,F0=T.floors[0];
     const rx=x=>x+X,rz=z=>z+Z,ry=y=>y-F0,FL=T.floors.map(y=>+(y-F0).toFixed(3)),ds=T.door.x<0?-1:1,U=u=>-ds*u;
-    house._counterFront=null;house.intW=W;house.intD=D;house._roomH=+(FL[2]+3.5).toFixed(3);house._exitD=.8;house._exitW=1.0;house._exitX=+rx(T.door.x).toFixed(3);house._aurHome=T;
+    house._counterFront=null;house.intW=W;house.intD=D;house._roomH=+(T.roof?FL[2]+3.5:T.ceil[1]+.18-F0).toFixed(3);house._exitD=.8;house._exitW=1.0;house._exitX=+rx(T.door.x).toFixed(3);house._aurHome=T;
     const sc_=new THREE.Scene();interiorScene=sc_;landRoomPost(sc_);sc_.background=new THREE.Color(0x120a06);sc_.fog=new THREE.Fog(0x120a06,Math.max(W,D)*.8*SCALE.ROOM_K,Math.max(W,D)*2.4*SCALE.ROOM_K);
     intNPCMesh=null;intBedPos=null;intStashPos=null;
     const SOL=[];INT_SOL=SOL;FOOTHOLDS=[];INT_BEDS=[];INT_DOORS=[];INT_DOORS.house=house.id;INT_CHAIR=null;INT_NPCS=[];HATCH.active=false;HATCH.roof=false;INT_LOOT=null;INT_BOX=null;INT_SHELF=null;
@@ -2859,10 +2861,10 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     // ahead is within the walker's 0.3 m and would stop you if it were solid; you climb it as a ladder, its treads under your feet
     const NOFOOT=['shelves','cloths','leaf','wellrail','linepost'];
     for(const q of T.boxes){if(q.tag==='roofstair')continue;const b=box(q,false);if(q.tag==='bed')b.y1=FL[1]+.55;if(!NOFOOT.includes(q.tag))FOOTHOLDS.push({x0:b.x0,x1:b.x1,z0:b.z0,z1:b.z1,y:b.y1});}
-    {const RS=T.roofStair,gg=(RS.x1-RS.x0)/RS.n;for(let i=1;i<=RS.n;i++)FOOTHOLDS.push({x0:rx(RS.x1-(i+.5)*gg),x1:rx(RS.x1-(i-.5)*gg),z0:rz(RS.z0),z1:rz(RS.z1),y:+(FL[1]+i*RS.rise).toFixed(3)});}
+    if(T.roofStair){const RS=T.roofStair,gg=(RS.x1-RS.x0)/RS.n;for(let i=1;i<=RS.n;i++)FOOTHOLDS.push({x0:rx(RS.x1-(i+.5)*gg),x1:rx(RS.x1-(i-.5)*gg),z0:rz(RS.z0),z1:rz(RS.z1),y:+(FL[1]+i*RS.rise).toFixed(3)});}
     // the upper floor over the shop, open over the stair's well; the roof over the flat, open at the hatch (each one's underside the head room below)
     {const w=T.well,h=T.hatch,hole=q=>({x0:rx(q.x0),x1:rx(q.x1),z0:rz(q.z0),z1:rz(q.z1)});
-      FOOTHOLDS.push({x0:0,x1:W,z0:0,z1:D,y:FL[1],hole:hole(w)},{x0:0,x1:W,z0:0,z1:D,y:FL[2],hole:hole(h)});}
+      FOOTHOLDS.push({x0:0,x1:W,z0:0,z1:D,y:FL[1],hole:hole(w)});if(h)FOOTHOLDS.push({x0:0,x1:W,z0:0,z1:D,y:FL[2],hole:hole(h)});}
     // the bed upstairs is the resident's (the sleeper lies in it, head to -z)
     {const b=T.bed,x=rx((b.x0+b.x1)/2),cz=rz((b.z0+b.z1)/2);INT_BEDS.push({x,z:cz+.2,y:FL[1],owner:'home',room:null,cz});intBedPos={x,z:cz+.2};}
     // the home's chest: the cedar chest at the bed's foot (drawn in the room, so it has no lid of its own to lift)
