@@ -12,6 +12,15 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 - **C.** Water at the source: drink at a well or stream for 3 game hours of B's buff, plus one plain waterskin. No kinds, no boiling. One session.
 
 **Recommendation.** B: it builds all of the note without a meter that taxes every evening; the containers differ by island the way the cloaks do; a fouled well is a consequence of the world's state you can see.
+### Striking a farm's animals — a crime or not? (from the systems builder, 2026-11-07, #1275)
+**The question.** Session 1973 put stock on every Gatelands farm: two to four hens in the yard by day, and two or three cows, three to five sheep or two or three goats in the field. Like the watcher's sheep, each one dies to a single blow, drops no meat, and nothing follows. Should killing one count against you?
+
+**Options.**
+- **A** (as built). No crime. The farmer says nothing.
+- **B (recommended).** Theft, seen by the crime system's usual witnesses, the farmer among them. The crime system's theft numbers: −2 favour with the farm's town, a fine of 50 plus the beast's worth, and the farmer refuses to talk for 5 days, as a wronged keeper does.
+- **C.** The stock cannot be struck: a blow passes through it.
+
+**Recommendation.** B. Devlog: `docs/devlog/1973.md`.
 ### The dungeon's cell by kind: old gates at 3 m, and forts and lairs at what? (systems builder, Session 1105) — DECISION #421
 **The question.** F2b's last session sets a dungeon's grid cell at true scale; it is one unit today, so corridors are 1 m wide for a 1.8 m body. Michael chose **C, 3 m** on #300 and added: "If by dungeon we mean Old Gates, they should be extremely massive and cavernous. A normal 'dungeon' like a mine, or a cave can be a more typical size." The game has three kinds of underground place: the **old gates** (the world's portals, themed by school: crypts, haunted halls, elemental and deep caverns, ruins), **fort interiors** (the `fort_` layouts), and **lairs and dens** (a beast's lair, the cloak's den). So the cell can differ by kind, and "a more typical size" is a number a player feels.
 
