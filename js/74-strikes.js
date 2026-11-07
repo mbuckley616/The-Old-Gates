@@ -280,10 +280,10 @@ function resolvePlayerStrike(_isPow){
   });
   _candidates.sort((a,b)=>a.dist-b.dist);
   if(!_candidates.length&&activeZoneId==='world'&&typeof WORLD!=='undefined'&&WORLD.strikeNpc)WORLD.strikeNpc(fwdX,fwdZ); // S157 — assault
-  if(!_candidates.length)impactWallAhead(row.reach); /* S1951 — the swing meets the wall (#1239 B) */
+  if(!_candidates.length)impactWallAhead(row.reach); /* S1952 — the swing meets the wall (#1239 B) */
   const out=[];
   let _hitsLanded=0;
-  const _impSide=SWING&&SWING.chain%2===0?-1:1; /* S1948 — the cut's way across the foe, alternating with the chain */
+  const _impSide=SWING&&SWING.chain%2===0?-1:1; /* S1949 — the cut's way across the foe, alternating with the chain */
   for(const _c of _candidates){
     if(_hitsLanded>=_cleaveCap)break;
     const e=_c.e;
@@ -301,7 +301,7 @@ function resolvePlayerStrike(_isPow){
       if(armsPerk('blunt',50))e._rung=true; /* S1077 — Ringing (Blunt 50, Michael's A on #399): the shield stays down for the fight (reraiseGuard) */
       sndPowerHit();
       showMsg(`💥 ${e.name}'s guard breaks!`,'#ffcc66');
-      impactAt(e,{guardBroke:true,side:_impSide}); /* S1948 — the shield's wood (#1239 B) */
+      impactAt(e,{guardBroke:true,side:_impSide}); /* S1949 — the shield's wood (#1239 B) */
       out.push({e,guardBroke:true});
       if(e._spar&&typeof sparPoint==='function')sparPoint('you'); /* S1638 — a posture break is a clean hit */
       continue;
@@ -332,7 +332,7 @@ function resolvePlayerStrike(_isPow){
     const _guardTag=(shMult<1.0)?' (GUARDED)':'';
     const _killTag=`${_isPow?' (POWER)':''}${info.backstab?' (BACKSTAB)':''}${info.finisher?' (FINISHER)':info.riposte?' (RIPOSTE)':info.crit?' (CRIT)':''}${_guardTag}${dmgTag(info,e)}`;
     dmgNum(e,dmg,info,{guarded:shMult<1.0,power:_isPow}); /* S761 — the blow's number at its head (#198 A) */
-    if(dmg>0)impactAt(e,{guarded:shMult<1.0,side:_impSide,surface:EQ.weapon?undefined:null}); /* S1948 — what the blow throws off where it lands (#1239 B); fists throw nothing and still hold */
+    if(dmg>0)impactAt(e,{guarded:shMult<1.0,side:_impSide,surface:EQ.weapon?undefined:null}); /* S1949 — what the blow throws off where it lands (#1239 B); fists throw nothing and still hold */
     const kill=()=>{if(inW)killZoneEnemy(e,activeZoneId==='forest'?forestScene:ironhavenScene,_killTag);else killE(e,_killTag);};
     if(e.hp<=0)kill();
     else{
@@ -574,7 +574,7 @@ function executeStrike(e, rawDmg, now){
     lvAct.parries++;skillUse('guard',3,e);_lastParryG=playClockS;if(e._spar&&typeof sparBlow==='function')sparBlow(e,'parry'); /* S1638 — the yard's call */
     // v61gj-a2 — Shield/sword recoil. Forward kick — you deflected the strike outward.
     shieldImpact('parry', rawDmg, e.x, e.z);
-    impactOnYou(e,'parry'); /* S1950 — the blow meets your guard (#1239 B) */
+    impactOnYou(e,'parry'); /* S1951 — the blow meets your guard (#1239 B) */
     // v61c7 — Parry stamina cost rebalanced. WAS rawDmg (100% — meaning a
     // 32-dmg Faolchú bite parried cost 32 stamina, more than a sloppy
     // late-block at 65% of raw). That punished perfect timing. NOW: 20%
@@ -618,7 +618,7 @@ function executeStrike(e, rawDmg, now){
     if(e._spar&&typeof sparBlow==='function')sparBlow(e,'block',!!_gBroke);
     // v61gj-a2 — Shield/sword recoil. Backward push — you absorbed the blow.
     shieldImpact('block', rawDmg, e.x, e.z);
-    impactOnYou(e,'block'); /* S1950 */
+    impactOnYou(e,'block'); /* S1951 */
     if(PHP<=0 && !dead) playerDead();
   } else {
     // Unblocked hit — apply damage reduction buffs
@@ -627,7 +627,7 @@ function executeStrike(e, rawDmg, now){
     sndPlayerHurt(); lvAct.damageTaken += finalDmg;armourUse();
     lastHitT = now/1000;
     playerPostureHit(rawDmg*_row.posture*(_hv?_hv.posture:1), now/1000, false, !!_hv); // S281; S940 — the row's multiple (1.5 for every family today); S1136 — twice for a heavy
-    if(finalDmg>0)impactOnYou(e,'hit'); /* S1950 — on a heavy chest, sparks (#1239 B) */
+    if(finalDmg>0)impactOnYou(e,'hit'); /* S1951 — on a heavy chest, sparks (#1239 B) */
     e._lunge=.3; // v80 — every strike moves the body
     if(e._spar&&typeof sparBlow==='function')sparBlow(e,'hit');
     if(PHP<=0 && !dead) playerDead();
@@ -820,7 +820,7 @@ function tickDmgNums(){
     placeDmgNum(d,now);}
 }
 
-// ── S1948 — Impact by surface (#1239 B, Michael 6 Nov 2026: "clear: a size up, lit, a 50 ms hold"; OG-127; the concept artist's
+// ── S1949 — Impact by surface (#1239 B, Michael 6 Nov 2026: "clear: a size up, lit, a 50 ms hold"; OG-127; the concept artist's
 // docs/prototypes/levelup/impacts.js, its 'clear' numbers). A landed blow of yours throws off what the thing it lands on throws:
 // sparks off mail and plate, splinters and a pale gouge off a shield, dust, chips and a scar off stone and bone, a few dark drops
 // and a nick off cloth and flesh. A warm light lights the two of you for 80 ms (a pooled light, as every glow). The picture holds
@@ -895,7 +895,7 @@ function impactAt(e,o){
   const at=new THREE.Vector3(e.x+dx*h,base+.6*Math.max(.3,top-base),e.z+dz*h),n=new THREE.Vector3(dx,.15,dz).normalize(),cut=new THREE.Vector3(-dz*side,-.25,dx*side).normalize();
   return impactSpawn(surface,{at,n,cut,seed:o.seed!=null?o.seed:(impactKind(e)+':'+(e.id||'')+':'+(++IMPACT.n)),tint:IMPACT_TINT[impactKind(e)],e,ground:base});
 }
-// S1950 — a foe's blow on you (owed by S1948): what it meets throws its burst at your arm, 0.6 m out toward the foe and 0.28 m
+// S1951 — a foe's blow on you (owed by S1949): what it meets throws its burst at your arm, 0.6 m out toward the foe and 0.28 m
 // under your eye, so the first-person view sees it past the hands. A shield takes it in its wood, a blade or a haft in steel, and
 // a heavy chest (no light or robe line) takes an unguarded blow in steel. Your own flesh throws nothing: the blow's drops are the
 // foe's alone. No mark is left (there is nothing of yours in the scene to carry it). The hold is the same 50 ms.
@@ -913,7 +913,7 @@ function impactOnYou(e,kind){
   const at=new THREE.Vector3(px+dx*.6,eye-.28,pz+dz*.6),n=new THREE.Vector3(dx,.15,dz).normalize(),cut=new THREE.Vector3(-dz,-.25,dx).normalize();
   return impactSpawn(surface,{at,n,cut,seed:'you:'+kind+':'+impactKind(e)+':'+(++IMPACT.n),ground:jumpY,mark:false,you:kind});
 }
-// S1951 — a swing that meets a wall (owed by S1948): in a gate or a dungeon, a swing of a weapon that finds no foe in reach and
+// S1952 — a swing that meets a wall (owed by S1949): in a gate or a dungeon, a swing of a weapon that finds no foe in reach and
 // meets the rock within the row's reach (HULL_YOU + reach, along your facing) throws the stone's burst off the wall's face and
 // leaves its scar on it; a door's leaf throws its wood and a gouge, a column its stone; a room's furniture nothing. The face's normal is the grid's (the cell edge the line
 // crossed). The open world's solids are trees, timber and stone with nothing to say which, so they throw nothing yet; fists

@@ -51,7 +51,7 @@ function loop(now){
   REN.autoClear=true;
   tickCrosshair(); // v80 — the crosshair shows what E will open
   try{tickDmgNums();}catch(e){} // S761 — the damage numbers rise and fade (74-strikes.js)
-  try{tickImpacts();}catch(e){} // S1948 — what a blow throws off, by surface (74-strikes.js)
+  try{tickImpacts();}catch(e){} // S1949 — what a blow throws off, by surface (74-strikes.js)
   try{tickPeople(dt,now);}catch(e){} // v80 S153 — every townsperson's stride and breath, indoors too
   try{tickMimicJaws(now);}catch(e){} // v80 S198
   try{tickCreatures(dt,now);}catch(e){} // v80 S166 — every wolf's stride, crouch and spring
@@ -62,7 +62,7 @@ function loop(now){
   // v80 — the main story is handed to you: if a main quest is complete and what it unlocks is still locked, hand it over with the popup
   try{if(!window._mqT||performance.now()-window._mqT>1500){window._mqT=performance.now();for(const q of QUEST_DEFS){if(qState(q.id)!=='complete'||!q.unlocks)continue;for(const nid of q.unlocks){const nq=getQuest(nid);if(!nq||qState(nid)!=='locked'||!QS[nid])continue;QS[nid].state=nq.autoAccept?'active':'available';if(nq.autoAccept){showQuestUpdatePopup('accept',nq);if(typeof addLog==='function')addLog('📜',`New quest: ${nq.title}.`);}else if(nq.announce&&!QS[nid]._announced){QS[nid]._announced=true;showQuestUpdatePopup('accept',Object.assign({},nq,{title:`${nq.title} — speak with ${nq.giver}`}));if(typeof addLog==='function')addLog('📜',`${nq.giver} has something for you: ${nq.title}.`);}}}}}catch(e){}
   const _pfD=PERF.on?performance.now():0;
-  const _held=impactHeld(); /* S1948 — the 50 ms hold on a blow's contact (#1239 B): the picture only, nothing waits on it */
+  const _held=impactHeld(); /* S1949 — the 50 ms hold on a blow's contact (#1239 B): the picture only, nothing waits on it */
   if(_held){}else if(scene===dScene)dRender(scene,CAM);else REN.render(scene,CAM); /* S1302 — a gate draws by space (56-dungeon-build.js) */
   if(PERF.on)perfNote(now,_pfL,_pfD,performance.now());
   // Viewmodel render on top (clear depth only, not colour)

@@ -120,17 +120,17 @@ const gate = await page.evaluate(() => {
 const d0 = gate.nums && gate.nums[0];
 check(`in a gate, a swing at a ${gate.name} raises its number at its head, and no line`, !gate.none && gate.took > 0 && gate.nums.length === 1 && d0.text === String(gate.took) && d0.shown
   && Math.abs(d0.x - gate.head.x) < 40 && Math.abs(d0.y - gate.head.y) < 60 && gate.msgs.every(m => !/Hit |for \d|Swing!/.test(m)), gate);
-// S1948 — impact by surface (#1239 B): the swing threw its surface's burst in the gate, and the 50 ms hold lets the picture go
+// S1949 — impact by surface (#1239 B): the swing threw its surface's burst in the gate, and the 50 ms hold lets the picture go
 const held = await page.evaluate(async () => { const a = impactHeld(); await new Promise(r => setTimeout(r, 120)); return { a, b: impactHeld() }; });
 check(`the blow on the ${gate.name} threw its surface's burst (${gate.imp && gate.imp.surf}) in the gate, and the 50 ms hold let the picture go`, !gate.none && gate.imp.surf === gate.imp.want && (gate.imp.surf === null || gate.imp.inGate) && gate.imp.hold && held.b === false, { imp: gate.imp, held });
-// S1951 — a swing into the gate's rock with no foe in reach throws the stone's burst off the wall's face, its normal toward you
+// S1952 — a swing into the gate's rock with no foe in reach throws the stone's burst off the wall's face, its normal toward you
 const wall = await page.evaluate(() => { const map = activeMap(), w0 = EQ.weapon; EQ.weapon = { name: 'Steel Sword', slot: 'weapon', weaponShape: 'sword', weight: 3, atk: [8, 12] };
   for (let r = 1; r < dR - 1; r++) for (let c = 1; c < dC - 1; c++) if (map[r][c] === 1 && map[r - 1][c] === 0 && !dSolid(dAt(c), dAt(r))) {
     px = dAt(c); pz = dAt(r); jumpY = 0; fwdX = 0; fwdZ = -1; let d = 0; while (d < 20 && !dSolid(px, pz - d - .35)) d += .05; pz -= d;
     const B = impactWallAhead(weaponAttack(EQ.weapon).reach); EQ.weapon = w0; return { surf: B && B.surface, nz: B && +B.n.z.toFixed(2), inGate: !!B && B.g.parent === dScene }; }
   EQ.weapon = w0; return { none: true }; });
 check(`a swing at the gate's rock throws its stone off the wall's face (${wall.surf}, normal ${wall.nz})`, wall.surf === 'stone' && wall.nz > .9 && wall.inGate, wall);
-// S1950 — a foe's blow on you: a shield throws its wood at your arm, 0.6 m out toward the foe; a light chest throws nothing
+// S1951 — a foe's blow on you: a shield throws its wood at your arm, 0.6 m out toward the foe; a light chest throws nothing
 const you = await page.evaluate(() => { const e = { x: px - Math.sin(yaw) * 1.2, z: pz - Math.cos(yaw) * 1.2, name: 'Bandit' }, sh0 = EQ.offhand, ch0 = EQ.chest;
   EQ.offhand = makeItem(2, ARMOR_TYPES.find(t => t.type === 'Buckler'), null, true); const B = impactOnYou(e, 'block');
   EQ.chest = makeItem(2, lineType('light', 'chest'), null, true); const L = impactOnYou(e, 'hit'); EQ.offhand = sh0; EQ.chest = ch0;
