@@ -749,12 +749,12 @@ function braidLocks(pts, nrm, w, per, closed, tp, col, bone, mat) {
 function drape(S, start, dir0, L, clearAt, o = {}) {
   const line = [start.clone()], dir = dir0.clone().normalize(), step = .01;
   for (let l = 0; l < L; l += step) { const pl = o.pull && o.pull(line[line.length - 1]); if (pl) dir.add(pl); dir.y -= o.grav ?? .25; dir.normalize(); const q = line[line.length - 1].clone().addScaledVector(dir, step);
-    const clear = clearAt(q); for (let it = 0; it < 3; it++) { const hit = heightOver(S, q); if (hit && hit.h < clear) q.addScaledVector(hit.e.n, clear - hit.h); }
+    const clear = clearAt(q); for (let it = 0; it < 3; it++) { const hit = heightOver(S, q), c = hit && o.room ? clear + o.room[hit.e.v] : clear; if (hit && hit.h < c) q.addScaledVector(hit.e.n, c - hit.h); }
     if (o.keepX != null) q.x = start.x + Math.max(-o.keepX, Math.min(o.keepX, q.x - start.x));
     dir.copy(q).sub(line[line.length - 1]).normalize(); line.push(q); }
   // smoothed, so the push-outs do not leave kinks, then cleared once more
   for (let it = 0; it < 6; it++) for (let i = 1; i < line.length - 1; i++) line[i].lerp(line[i - 1].clone().add(line[i + 1]).multiplyScalar(.5), .5);
-  for (const q of line.slice(1)) { const c = clearAt(q), hit = heightOver(S, q); if (hit && hit.h < c) q.addScaledVector(hit.e.n, c - hit.h); }
+  for (const q of line.slice(1)) { const hit = heightOver(S, q), c = clearAt(q) + (hit && o.room ? o.room[hit.e.v] : 0); if (hit && hit.h < c) q.addScaledVector(hit.e.n, c - hit.h); }
   return line;
 }
 // how far out of its clearance the plait lies down the breast (Session 1665): its own half-thickness, so the locks sit on the cloth
@@ -1118,6 +1118,12 @@ function buildBurnousPoint(cols, R, kb, neck, rollY, D) {
   const ta = tg.attributes.position; for (let i = 0; i < ta.count; i++) tasNear = Math.min(tasNear, sheet(v.fromBufferAttribute(ta, i), tn));
   return { meshes: [m, tm], stats: { rows: N, len: +rows[N - 1].len.toFixed(3), top: +(neck.y - cols[kb][rs].y).toFixed(3), tip: +(neck.y - tipP.y).toFixed(3), tris: idx.length / 3, tasselTris: tg.index.count / 3, near: +near.toFixed(4), tasNear: +tasNear.toFixed(4) } };
 }
+// how far a full cloak is kept off the hands and lower forearms (Sessions 1944 and 1953): in the hang (wornMask's armRoom) and in the
+// drape's push-out and the spacing's clearing (armRoomV, by each surface point's own bone), since the drape places the cloth by the hand
+const CLOAK_ARM_ROOM = .03;
+// per vertex of the pack: m where the vertex's heaviest bone is the lower forearm, the wrist, a metacarpal or a finger, else 0
+function armRoomV(m) { const B = PACK.ix.bones, arm = PACK.armBones || (PACK.armBones = new Uint8Array(B.map(b => /^(lowerarm02|wrist|finger|metacarpal)/.test(b.name) ? 1 : 0))), r = new Float32Array(PACK.N);
+  for (let v = 0; v < PACK.N; v++) { let b = 0, w = 0; for (let q = 0; q < 4; q++) if (PACK.skinWeight[v * 4 + q] > w) { w = PACK.skinWeight[v * 4 + q]; b = PACK.skinIndex[v * 4 + q]; } if (arm[b]) r[v] = m; } return r; }
 function buildCloak(G, body, byName, rnd) {
   const D = G.dress, out = [], PP = posedBody(body), S = surfGrid(PP, PACK.G['body'], (x, y) => y > -.75);
   const neck = new THREE.Vector3(); byName['neck01'].getWorldPosition(neck); const neckY = neck.y;
@@ -1138,10 +1144,29 @@ function buildCloak(G, body, byName, rnd) {
   const capeStaff = cape && !!D.staff && !D.spear && !D.crossbow;
   const thrown = !!(D.spear || D.crossbow || D.staff || D.basket || D.lantern) && (!cape || capeStaff), low = thrown && !D.spear && !D.crossbow && !D.basket && !D.lantern;
   const th0 = capeStaff ? -Math.PI / 2 - .15 : low ? -Math.PI / 2 - .33 : thrown ? -Math.PI / 2 + .35 : -Math.PI + open, th1 = Math.PI - open, cols = [], tops = [];
-  for (let k = 0; k < K; k++) { const th = th0 + (k / (K - 1)) * (th1 - th0), dir = new THREE.Vector3(Math.sin(th), 0, -Math.cos(th));
+  // the shoulder line, set out evenly along itself (Session 1944): the furthest point in each of K evenly turned directions is not evenly
+  // placed. Many directions over the back find the same few points by the spine, and over the shoulders' round a few find points far
+  // apart, so a man's 56 columns stood 14 to 0.4 rad over the spine (the seam down the back, its folds crowded into a pleat) and 12 cm
+  // apart over the shoulder and arm (the side a few flat facets, the box). The line is sought in three times as many directions, put in
+  // order round the neck, and K starts are laid along it at even steps of its own length, each cleared of the body as before
+  const room = cape ? null : (PACK.cloakRoom || (PACK.cloakRoom = armRoomV(CLOAK_ARM_ROOM))), ring0 = [], polarTh = q => Math.atan2(q.x - neck.x, -(q.z - neck.z));
+  for (let k = 0, KK = cape ? K : 3 * K; k < KK; k++) { const th = th0 + (k / (KK - 1)) * (th1 - th0), dir = new THREE.Vector3(Math.sin(th), 0, -Math.cos(th));
     const e = S.extreme(neck, dir.clone().add(new THREE.Vector3(0, -.42, 0)).normalize(), p => p.y > neckY - .16 && p.y < neckY + .03);
-    const start = e.p.clone().addScaledVector(e.n, clearAt(e.p) + .006); tops.push({ start, dir, n: e.n });
-    cols.push(drape(S, start, dir.clone().multiplyScalar(.5).add(new THREE.Vector3(0, -1, 0)), L, q => clearAt(q) + .006)); }
+    const p = e.p.clone().addScaledVector(e.n, clearAt(e.p) + .006), w = polarTh(p) - th; ring0.push({ p, n: e.n.clone(), th: th + Math.atan2(Math.sin(w), Math.cos(w)), dth: th }); }
+  // in order round the neck, each point's angle unwrapped against the direction that found it (a cape's ends reach past the throat), and
+  // none past the sweep's own ends (a staff's or a spear's side starts where it did, clear of the shaft)
+  const thA = ring0[0].th, thB = ring0[ring0.length - 1].th, ringS = ring0.filter(q => q.th >= thA && q.th <= thB).sort((a, b) => a.th - b.th);
+  const ringU = ringS.filter((q, i) => i === 0 || q.p.distanceTo(ringS[i - 1].p) > 1e-4);
+  const arc = [0]; for (let i = 1; i < ringU.length; i++) arc.push(arc[i - 1] + ringU[i].p.distanceTo(ringU[i - 1].p));
+  // a shoulder cape keeps its evenly turned starts: a short circle of cloth wrapped to the throat, whose ends the even line pulled across
+  // each other (its columns crossed and an arm came through)
+  if (cape) for (const q of ring0) { const dir = new THREE.Vector3(Math.sin(q.dth), 0, -Math.cos(q.dth)); tops.push({ start: q.p, dir, n: q.n });
+    cols.push(drape(S, q.p, dir.clone().multiplyScalar(.5).add(new THREE.Vector3(0, -1, 0)), L, q => clearAt(q) + .006)); }
+  else for (let k = 0, j = 0; k < K; k++) { const s = arc[arc.length - 1] * k / (K - 1); while (j < ringU.length - 2 && arc[j + 1] < s) j++;
+    const t = Math.max(0, Math.min(1, (s - arc[j]) / Math.max(1e-9, arc[j + 1] - arc[j]))), n = ringU[j].n.clone().lerp(ringU[j + 1].n, t).normalize(), start = ringU[j].p.clone().lerp(ringU[j + 1].p, t);
+    for (let it = 0; it < 3; it++) { const cl = clearAt(start) + .006, hit = heightOver(S, start); if (hit && hit.h < cl) start.addScaledVector(hit.e.n, cl - hit.h); }
+    const th = polarTh(start), dir = new THREE.Vector3(Math.sin(th), 0, -Math.cos(th)); tops.push({ start, dir, n });
+    cols.push(drape(S, start, dir.clone().multiplyScalar(.5).add(new THREE.Vector3(0, -1, 0)), L, q => clearAt(q) + .006, { room })); }
   const R = Math.min(...cols.map(c => c.length));
   // hold neighbours to a spacing that widens toward the hem, then clear the body again
   const sp0 = cols.slice(1).map((c, k) => c[0].distanceTo(cols[k][0]));
@@ -1149,12 +1174,12 @@ function buildCloak(G, body, byName, rnd) {
     for (let r = 1; r < R; r++) { const t = r / (R - 1), f = 1 + (flare - 1) * t;
       for (let k = 0; k < K - 1; k++) { const a = cols[k][r], b = cols[k + 1][r], d = a.distanceTo(b), want = sp0[k] * f; if (d > want * 1.02 || d < want * .6) { const m = a.clone().sub(b).multiplyScalar((d - want) / d * .5); a.sub(m); b.add(m); } } }
     for (const c of cols) for (let r = 1; r < R; r++) { const q = c[r], seg = q.clone().sub(c[r - 1]), l = seg.length(); if (l > .0105) q.copy(c[r - 1]).addScaledVector(seg, .0105 / l);
-      const cl = clearAt(q) + .006, hit = heightOver(S, q); if (hit && hit.h < cl) q.addScaledVector(hit.e.n, cl - hit.h); } }
+      const hit = heightOver(S, q), cl = clearAt(q) + .006 + (hit && room ? room[hit.e.v] : 0); if (hit && hit.h < cl) q.addScaledVector(hit.e.n, cl - hit.h); } }
   // the hang (Session 839, #274's A): each column is moved as one curve, in polar terms round the neck's vertical axis.
   // Below the last row where it lies on the body (the shoulder, the arm, the hand), it comes in toward the legs, halfway
   // to the body's outline below it, along a smooth step; then folds are laid down whole columns, out and in, deepening
   // toward the hem, never in closer than the body allows; the hem rises on a fold's ridge and drops in its trough.
-  const worn = wornMask(D), H = buildHang(cols, R, PP, neck, clearAt, len, rnd, worn);
+  const worn = wornMask(D), H = buildHang(cols, R, PP, neck, clearAt, len, rnd, wornMask(D, { armRoom: cape ? 0 : CLOAK_ARM_ROOM }));
   // the sheet
   const pos = [], uv = [], idx = [];
   for (let k = 0; k < K; k++) for (let r = 0; r < R; r++) { const q = cols[k][r]; pos.push(q.x, q.y, q.z); uv.push(k / (K - 1), r / (R - 1)); }
@@ -1179,7 +1204,9 @@ function buildCloak(G, body, byName, rnd) {
   const ring = tops.map(t => t.start.clone().addScaledVector(t.n, .012).add(new THREE.Vector3(0, .012, 0)));
   let pointStats = null;
   if (D.cloakFur && !burnousOn(D)) { const fl = hoodLine(ring, .03); for (let s = 0; s < 6; s++) { const m = new THREE.Mesh(turnOut(tubeGeom(fl, fl.map(() => .026 + s * .004), 8)), shellMat(sRGB(...D.cloakFur), s, 6, { sx: 260, sy: 70, solid: s === 0 })); m.geometry.setAttribute('aBase', m.geometry.attributes.position); m.name = 'collar' + s; m.userData.axis = { line: fl, sides: 8 }; out.push(m); } }
-  else if (D.hood === 'down') { const kb = Math.round(-th0 / (th1 - th0) * (K - 1)), back = hoodLine(ring.slice(Math.max(0, kb - Math.round(K * .2)), kb + Math.round(K * .2)).map(q => q.clone().lerp(new THREE.Vector3(neck.x, q.y + .025, neck.z), .25))), m = new THREE.Mesh(turnOut(tubeGeom(back, back.map((_, i) => .03 + .018 * Math.sin(Math.PI * i / (back.length - 1))), 10)), clothMat(sRGB(...D.cloak).multiplyScalar(.92), 'wool', { scale: 26, ...cloakPattern(D, [neck.x, neck.z], .2) })); m.geometry.setAttribute('aBase', m.geometry.attributes.position); m.geometry.setAttribute('aTart', m.geometry.attributes.position); m.name = 'hood'; m.userData.axis = { line: back, sides: 10 }; out.push(m);
+  // the column at the middle of the back, and the rolled hood over the columns within 0.8 rad of it, by their angles: a cloak's columns are
+  // set out by length since Session 1944, so they are no longer evenly turned (a cape's still are, and keep the old count)
+  else if (D.hood === 'down') { const thT = tops.map(t => polarTh(t.start)), kb = cape ? Math.round(-th0 / (th1 - th0) * (K - 1)) : thT.reduce((b, t, k) => Math.abs(t) < Math.abs(thT[b]) ? k : b, 0), kw0 = cape ? kb - Math.round(K * .2) : thT.findIndex(t => t > -.8), kw1 = cape ? kb + Math.round(K * .2) : thT.findLastIndex(t => t < .8) + 1, back = hoodLine(ring.slice(Math.max(0, cape ? kw0 : Math.min(kb - 3, kw0)), cape ? kw1 : Math.max(kb + 4, kw1)).map(q => q.clone().lerp(new THREE.Vector3(neck.x, q.y + .025, neck.z), .25))), m = new THREE.Mesh(turnOut(tubeGeom(back, back.map((_, i) => .03 + .018 * Math.sin(Math.PI * i / (back.length - 1))), 10)), clothMat(sRGB(...D.cloak).multiplyScalar(.92), 'wool', { scale: 26, ...cloakPattern(D, [neck.x, neck.z], .2) })); m.geometry.setAttribute('aBase', m.geometry.attributes.position); m.geometry.setAttribute('aTart', m.geometry.attributes.position); m.name = 'hood'; m.userData.axis = { line: back, sides: 10 }; out.push(m);
     if (burnousOn(D)) { const B = buildBurnousPoint(cols, R, kb, neck, back[Math.floor(back.length / 2)].y, D); out.push(...B.meshes); pointStats = B.stats; } }
   // the brooch at the throat, where the two front columns meet
   const a = thrown ? tops[K - 1] : tops[0], b = tops[K - 1], at = a.start.clone().add(b.start).multiplyScalar(.5), nrm = a.n.clone().add(b.n).normalize();
@@ -1200,7 +1227,11 @@ function buildCloak(G, body, byName, rnd) {
 // which points of the pack stand for what the person wears under the cloak: the body, and the skirt's fitting shell
 // when a skirt is worn (the short tunic's skirt is cut from it, and stands out of the body by up to 2.5 cm, plus its push)
 // and a robe's sleeves (Session 888): the tights' shell along the arms, standing out by the robe's own push, up to 4.6 cm at the cuff
-function wornMask(D) { const m = new Uint8Array(PACK.N), R0 = PACK.rest; m.off = new Float32Array(PACK.N); for (const v of PACK.G['body']) m[v] = 1;
+// o.armRoom (Session 1944): the lower forearm and the hand read that much further out, for the hang alone. The game poses the arms under a
+// cloak from its own driver, a few centimetres from the builder's pose the cloak was hung on, and a column set close over the hand let the
+// fingers through in the walk (f4people, dunmore#3:Pádraig); the test of the arms through the sheet still reads them where they are
+function wornMask(D, o = {}) { const m = new Uint8Array(PACK.N), R0 = PACK.rest; m.off = new Float32Array(PACK.N); for (const v of PACK.G['body']) m[v] = 1;
+  if (o.armRoom) { const r = armRoomV(o.armRoom); for (const v of PACK.G['body']) if (r[v]) m.off[v] = r[v]; }
   if (D.skirt) { const sk = skirtR(D); for (const v of sk) { m[v] = 2; m.off[v] = .025; } }
   // mail (Session 897): its body off the tights, standing as the tunic does and 9 mm more, and its skirt off the skirt shell, by its own push and 6 to 8 mm more
   if (D.mail && !D.robe) { for (const v of PACK.R.mailTop) { const y = R0[v * 3 + 1], ax = Math.abs(R0[v * 3]); if (ax > .3 || y < .06) continue; m[v] = 3; m.off[v] = .032 + (ax < .2 ? .022 * Math.max(0, Math.min(1, (.46 - y) / .2)) : 0) + .012 * Math.max(0, Math.min(1, (.2 - y) / .1)); }
