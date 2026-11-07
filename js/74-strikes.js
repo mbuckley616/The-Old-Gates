@@ -282,6 +282,7 @@ function resolvePlayerStrike(_isPow){
   if(!_candidates.length&&activeZoneId==='world'&&typeof WORLD!=='undefined'&&WORLD.strikeNpc)WORLD.strikeNpc(fwdX,fwdZ); // S157 — assault
   const out=[];
   let _hitsLanded=0;
+  const _impSide=SWING&&SWING.chain%2===0?-1:1; /* S1946 — the cut's way across the foe, alternating with the chain */
   for(const _c of _candidates){
     if(_hitsLanded>=_cleaveCap)break;
     const e=_c.e;
@@ -299,6 +300,7 @@ function resolvePlayerStrike(_isPow){
       if(armsPerk('blunt',50))e._rung=true; /* S1077 — Ringing (Blunt 50, Michael's A on #399): the shield stays down for the fight (reraiseGuard) */
       sndPowerHit();
       showMsg(`💥 ${e.name}'s guard breaks!`,'#ffcc66');
+      impactAt(e,{guardBroke:true,side:_impSide}); /* S1946 — the shield's wood (#1239 B) */
       out.push({e,guardBroke:true});
       if(e._spar&&typeof sparPoint==='function')sparPoint('you'); /* S1638 — a posture break is a clean hit */
       continue;
@@ -329,6 +331,7 @@ function resolvePlayerStrike(_isPow){
     const _guardTag=(shMult<1.0)?' (GUARDED)':'';
     const _killTag=`${_isPow?' (POWER)':''}${info.backstab?' (BACKSTAB)':''}${info.finisher?' (FINISHER)':info.riposte?' (RIPOSTE)':info.crit?' (CRIT)':''}${_guardTag}${dmgTag(info,e)}`;
     dmgNum(e,dmg,info,{guarded:shMult<1.0,power:_isPow}); /* S761 — the blow's number at its head (#198 A) */
+    if(dmg>0)impactAt(e,{guarded:shMult<1.0,side:_impSide,surface:EQ.weapon?undefined:null}); /* S1946 — what the blow throws off where it lands (#1239 B); fists throw nothing and still hold */
     const kill=()=>{if(inW)killZoneEnemy(e,activeZoneId==='forest'?forestScene:ironhavenScene,_killTag);else killE(e,_killTag);};
     if(e.hp<=0)kill();
     else{
@@ -811,6 +814,129 @@ function tickDmgNums(){
   for(let i=DMG_NUMS.length-1;i>=0;i--){const d=DMG_NUMS[i];
     if((now-d.t0)/1000>=DMG_NUM_S){if(d.el.parentNode)d.el.parentNode.removeChild(d.el);DMG_NUMS.splice(i,1);continue;}
     placeDmgNum(d,now);}
+}
+
+// ── S1946 — Impact by surface (#1239 B, Michael 6 Nov 2026: "clear: a size up, lit, a 50 ms hold"; OG-127; the concept artist's
+// docs/prototypes/levelup/impacts.js, its 'clear' numbers). A landed blow of yours throws off what the thing it lands on throws:
+// sparks off mail and plate, splinters and a pale gouge off a shield, dust, chips and a scar off stone and bone, a few dark drops
+// and a nick off cloth and flesh. A warm light lights the two of you for 80 ms (a pooled light, as every glow). The picture holds
+// 50 ms on contact: the frame is not drawn again for that long, and nothing waits on it (no outcome reads it, no window). The burst
+// is placed by the clock from a seeded stream, so it never depends on the frame rate. New look only. What it lands on is
+// impactSurface: a raised shield's front, or a guard broken, is the shield's wood; the dressed stone and bone kinds are stone;
+// a foe whose dress has a chest of armour, and a fire elemental, steel; a ghost nothing; a mimic its chest's wood; the rest
+// flesh. Fists throw nothing off (they still hold).
+const IMPACT_HOLD_S=.05,IMPACT_LIFE_S=.8,IMPACT_MARK_S=4,IMPACT_MAX=6;
+const IMPACT_STONE=/^(Skeleton|Golem|Gargoyle)$/,IMPACT_GHOST=/^(Wraith|Phantom)$/,IMPACT_TINT={Slime:[.3,.5,.22],'Small Slime':[.3,.5,.22]};
+const IMPACT={list:[],marks:[],hold:{pending:false,until:0},n:0,last:null,tex:{}};
+const _IG=new THREE.Vector3(0,-9.8,0);
+function impactOn(){return window.OG_LOOK==='new';}
+function impactKind(e){return e&&(e.baseType||e.baseName||e.name)||'';}
+function impactSurface(e,o){
+  o=o||{};const k=impactKind(e);
+  if(IMPACT_GHOST.test(k)||(e&&e.isWraith))return null;
+  if(o.guarded||o.guardBroke||/Mimic/.test(k))return 'wood';
+  if(IMPACT_STONE.test(k))return 'stone';
+  if(/Elemental/.test(k))return 'steel';
+  const dr=typeof FOE_DRESS!=='undefined'&&FOE_DRESS[k];
+  if(dr&&dr.kit&&dr.kit.chest)return 'steel';
+  return 'flesh';
+}
+function impactRng(seed){let s=0;for(const ch of String(seed))s=(s*31+ch.charCodeAt(0))%2147483647;s=s||7;return ()=>(s=(s*16807)%2147483647)/2147483647;}
+function impactSpray(r,axis,k){return axis.clone().add(new THREE.Vector3(r()*2-1,r()*2-1,r()*2-1).multiplyScalar(k)).normalize();}
+// where a thing thrown from the point at v is after t, with air drag k (1/s) and gravity scaled by gk
+function impactPos(out,v,t,k,gk){const f=k?(1-Math.exp(-k*t))/k:t;return out.copy(v).multiplyScalar(f).addScaledVector(_IG,.5*t*t*gk);}
+function impactPuffTex(){if(IMPACT.tex.puff)return IMPACT.tex.puff;const c=document.createElement('canvas');c.width=c.height=64;const x=c.getContext('2d'),g=x.createRadialGradient(32,32,0,32,32,32);
+  g.addColorStop(0,'rgba(255,255,255,1)');g.addColorStop(.45,'rgba(255,255,255,.5)');g.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=g;x.fillRect(0,0,64,64);return IMPACT.tex.puff=new THREE.CanvasTexture(c);}
+function impactMarkTex(kind){if(IMPACT.tex[kind])return IMPACT.tex[kind];const c=document.createElement('canvas');c.width=256;c.height=64;const x=c.getContext('2d'),g=x.createLinearGradient(0,0,0,64);
+  if(kind==='nick'){g.addColorStop(0,'rgba(40,6,6,0)');g.addColorStop(.5,'rgba(60,8,8,.95)');g.addColorStop(1,'rgba(40,6,6,0)');}
+  else{g.addColorStop(0,'rgba(255,240,215,0)');g.addColorStop(.35,'rgba(240,222,190,.9)');g.addColorStop(.6,'rgba(255,248,232,1)');g.addColorStop(1,'rgba(120,96,70,0)');}
+  x.fillStyle=g;x.beginPath();x.moveTo(4,32);x.quadraticCurveTo(128,-4,252,30);x.quadraticCurveTo(128,70,4,32);x.fill();return IMPACT.tex[kind]=new THREE.CanvasTexture(c);}
+// the burst's parts, each a list of throws made once at contact and placed from the clock in impactPlace
+function impactSparks(B,r,n,sp,life,smear,axis,k){
+  const S=[];for(let i=0;i<n;i++){const v=impactSpray(r,axis,k).multiplyScalar(sp[0]+r()*(sp[1]-sp[0]));S.push({v,L:life*(.35+r()*.65),tk:.85+r()*.3});}
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(new Float32Array(n*6),3));g.setAttribute('color',new THREE.Float32BufferAttribute(new Float32Array(n*6),3));
+  const m=new THREE.LineSegments(g,new THREE.LineBasicMaterial({vertexColors:true,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,toneMapped:false}));m.frustumCulled=false;
+  B.g.add(m);B.sparks={m,S,smear};B.counts.sparks=n;}
+function impactBits(B,r,kind,n,sp,size,axis,k,cols,drag){
+  const geo=kind==='chip'?new THREE.IcosahedronGeometry(1,0):kind==='drop'?new THREE.SphereGeometry(1,7,5):new THREE.BoxGeometry(1,1,1);
+  const im=new THREE.InstancedMesh(geo,new THREE.MeshStandardMaterial({roughness:kind==='drop'?.25:.85,metalness:0}),n),c=new THREE.Color(),P=[];
+  for(let i=0;i<n;i++){const v=impactSpray(r,axis,k).multiplyScalar(sp[0]+r()*(sp[1]-sp[0])),L=size[0]+r()*(size[1]-size[0]);
+    P.push({v,L,a:r(),b:r(),c:r(),spin:8+r()*30,e:new THREE.Euler(r()*6,r()*6,r()*6)});im.setColorAt(i,c.setRGB(...cols[Math.floor(r()*cols.length)]));}
+  im.frustumCulled=false;B.g.add(im);(B.bits=B.bits||[]).push({im,P,kind,drag});B.counts[kind]=n;}
+function impactPuffs(B,r,n,sp,r0,r1,axis,k,col,op){
+  const P=[];for(let i=0;i<n;i++){const v=impactSpray(r,axis,k).multiplyScalar(sp[0]+r()*(sp[1]-sp[0]));
+    const s=new THREE.Sprite(new THREE.SpriteMaterial({map:impactPuffTex(),color:new THREE.Color(...col).multiplyScalar((.85+r()*.3)*.45),transparent:true,depthWrite:false,opacity:0}));
+    s.material.rotation=r()*6;B.g.add(s);P.push({s,v,sz:.6+r()*.6,o:.6+r()*.4});}
+  (B.puffs=B.puffs||[]).push({P,r0,r1,op});B.counts.puffs=(B.counts.puffs||0)+n;}
+// a mark left on the thing struck, laid flat along the cut, carried by its body and gone after IMPACT_MARK_S
+function impactMark(B,e,kind,len,wid,n,cut){
+  const m=new THREE.Mesh(new THREE.PlaneGeometry(len,wid),new THREE.MeshStandardMaterial({map:impactMarkTex(kind),transparent:true,depthWrite:false,roughness:.9,polygonOffset:true,polygonOffsetFactor:-4}));
+  const Z=n.clone(),X=cut.clone().addScaledVector(Z,-cut.dot(Z)).normalize(),Y=Z.clone().cross(X);m.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(X,Y,Z));
+  m.position.copy(B.at).addScaledVector(Z,.004);m.userData.impactMark=kind;
+  const host=e&&(e.mesh||e.g);B.scene.add(m);if(host&&host.parent){host.updateMatrixWorld(true);host.attach(m);}
+  IMPACT.marks.push({m,t0:B.t0,kind});B.counts.mark=kind;
+  while(IMPACT.marks.length>IMPACT_MAX*2)impactDropMark(IMPACT.marks.shift());}
+function impactDropMark(k){if(k.m.parent)k.m.parent.remove(k.m);k.m.geometry.dispose();k.m.material.dispose();}
+function impactFlash(B,I,core,col){
+  if(I){const l=new THREE.PointLight(new THREE.Color(...(col||[1,.72,.4])),I,4,1.6);l.position.copy(B.n).multiplyScalar(.08);B.g.add(l);B.light={l,I};}
+  if(core){const m=new THREE.Mesh(new THREE.SphereGeometry(core,10,8),new THREE.MeshBasicMaterial({color:new THREE.Color(2.2,1.7,1.1),toneMapped:false,transparent:true,depthWrite:false}));B.g.add(m);B.core={m,core};}}
+// what a blow of yours throws off where it lands on e: o.surface (impactSurface's), o.seed, o.side (the cut's way, ±1)
+function impactAt(e,o){
+  o=o||{};if(!impactOn()||!e||typeof scene==='undefined'||!scene)return null;
+  const surface=o.surface!==undefined?o.surface:impactSurface(e,o);
+  if(o.hold!==false)impactHold();
+  if(!surface)return null;
+  const host=e.mesh||e.g,base=host?host.position.y:0,top=dmgNumAnchor(e,new THREE.Vector3()).y;
+  let dx=px-e.x,dz=pz-e.z;const dl=Math.hypot(dx,dz)||1;dx/=dl;dz/=dl;const h=hullOf(e)*.9,side=o.side||1;
+  const at=new THREE.Vector3(e.x+dx*h,base+.6*Math.max(.3,top-base),e.z+dz*h),n=new THREE.Vector3(dx,.15,dz).normalize(),cut=new THREE.Vector3(-dz*side,-.25,dx*side).normalize();
+  return impactSpawn(surface,{at,n,cut,seed:o.seed!=null?o.seed:(impactKind(e)+':'+(e.id||'')+':'+(++IMPACT.n)),tint:IMPACT_TINT[impactKind(e)],e,ground:base});
+}
+function impactSpawn(surface,o){
+  const r=impactRng('impact:'+surface+':'+o.seed),g=new THREE.Group();g.position.copy(o.at);g.userData.impact=surface;
+  const n=o.n.clone().normalize(),cut=o.cut.clone().normalize(),off=(a,b)=>n.clone().multiplyScalar(a).addScaledVector(cut,b).normalize();
+  const B={g,surface,at:o.at.clone(),n,cut,t0:performance.now()/1000+(IMPACT.hold.pending||performance.now()<IMPACT.hold.until?IMPACT_HOLD_S:0),ground:o.ground!=null?o.ground-o.at.y:-2,scene,counts:{}};
+  if(surface==='steel'){impactSparks(B,r,40,[4,9],.22,.014,off(.7,1),.75);impactFlash(B,1.8,.022);}
+  else if(surface==='wood'){const fresh=[[.86,.72,.52],[.8,.64,.44],[.74,.58,.4]];impactBits(B,r,'splinter',14,[1.6,4],[.025,.065],off(1,.6),.65,[...fresh,o.tint||[.5,.14,.1]],2);
+    impactPuffs(B,r,4,[.3,.9],.03,.14,off(1,.3),.8,[.72,.6,.44],.28);impactMark(B,o.e,'gouge',.13,.028,n,cut);impactFlash(B,.5,0,[1,.85,.6]);}
+  else if(surface==='stone'){impactPuffs(B,r,10,[.6,1.6],.05,.24,off(1,.5),.9,[.66,.6,.5],.32);impactBits(B,r,'chip',8,[2,5],[.005,.014],off(1,.7),.7,[[.62,.58,.5],[.5,.47,.42],[.72,.68,.6]],2);
+    impactSparks(B,r,8,[3,8],.14,.012,off(.4,1),.7);impactMark(B,o.e,'scar',.16,.025,n,cut);impactFlash(B,.6,0);}
+  else{impactBits(B,r,'drop',9,[1.2,3],[.003,.007],off(.45,1),.45,o.tint?[o.tint]:[[.24,.03,.03],[.18,.02,.02]],.8);impactMark(B,o.e,'nick',.09,.014,n,cut);}
+  scene.add(g);IMPACT.list.push(B);IMPACT.last={surface,counts:B.counts,t0:B.t0};
+  while(IMPACT.list.length>IMPACT_MAX)impactDrop(IMPACT.list.shift());
+  impactPlace(B,performance.now()/1000);return B;
+}
+const _ipA=new THREE.Vector3(),_ipB=new THREE.Vector3(),_ipM=new THREE.Matrix4(),_ipQ=new THREE.Quaternion(),_ipQ2=new THREE.Quaternion(),_ipS=new THREE.Vector3(),_ipU=new THREE.Vector3(0,1,0),_ipX=new THREE.Vector3(1,0,0),_ipD=new THREE.Vector3();
+function impactPlace(B,now){
+  const t=Math.max(.02,now-B.t0);
+  if(B.sparks){const {m,S,smear}=B.sparks,P=m.geometry.attributes.position.array,C=m.geometry.attributes.color.array;
+    S.forEach((s,i)=>{const ts=t*s.tk,j=i*6;if(ts>s.L){P.fill(0,j,j+6);C.fill(0,j,j+6);return;}
+      impactPos(_ipA,s.v,Math.max(0,ts-smear),1.5,.6);impactPos(_ipB,s.v,ts,1.5,.6);const hot=1-ts/s.L;
+      P[j]=_ipA.x;P[j+1]=_ipA.y;P[j+2]=_ipA.z;P[j+3]=_ipB.x;P[j+4]=_ipB.y;P[j+5]=_ipB.z;
+      C[j]=1.2*hot+.5;C[j+1]=.55*hot+.18;C[j+2]=.12*hot+.02;C[j+3]=2.2*hot+.8;C[j+4]=1.6*hot+.3;C[j+5]=.7*hot+.05;});
+    m.geometry.attributes.position.needsUpdate=true;m.geometry.attributes.color.needsUpdate=true;}
+  (B.bits||[]).forEach(b=>{b.P.forEach((p,i)=>{impactPos(_ipA,p.v,t,b.drag,1);
+      if(_ipA.y<B.ground){_ipS.set(0,0,0);_ipM.compose(_ipA,_ipQ.identity(),_ipS);b.im.setMatrixAt(i,_ipM);return;} /* on the ground: gone */
+      _ipD.copy(p.v).addScaledVector(_IG,t);const dir=_ipD.lengthSq()>1e-6?_ipD.normalize():_ipU,L=p.L;
+      if(b.kind==='splinter'){_ipQ.setFromUnitVectors(_ipU,dir).multiply(_ipQ2.setFromAxisAngle(_ipX,t*p.spin));_ipS.set(L*(.1+p.a*.12),L,L*(.05+p.b*.05));}
+      else if(b.kind==='chip'){_ipQ.setFromEuler(p.e);_ipS.set(L,L*(.6+p.a*.4),L*(.5+p.b*.4));}
+      else{_ipQ.setFromUnitVectors(_ipU,dir);_ipS.set(L,L*(1+Math.min(3,p.v.length()*.5)),L);}
+      _ipM.compose(_ipA,_ipQ,_ipS);b.im.setMatrixAt(i,_ipM);});b.im.instanceMatrix.needsUpdate=true;});
+  (B.puffs||[]).forEach(f=>{const grow=1-Math.exp(-t*5),fade=t<.5?1:Math.max(0,1-(t-.5)/.3);
+    f.P.forEach(p=>{impactPos(p.s.position,p.v,t,6,.05);p.s.scale.setScalar(f.r0+(f.r1-f.r0)*grow*p.sz);p.s.material.opacity=f.op*(1-grow*.55)*p.o*fade;});});
+  const fl=Math.max(0,1-t/.08);
+  if(B.light)B.light.l.intensity=B.light.I*fl;
+  if(B.core){B.core.m.visible=fl>0;B.core.m.scale.setScalar(.5+fl*.5);B.core.m.material.opacity=fl;}
+}
+function impactDrop(B){if(B.light)B.light.l.intensity=0;if(B.g.parent)B.g.parent.remove(B.g);
+  B.g.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material)o.material.dispose();});}
+// the hold: the frame that shows the contact is drawn, then none for IMPACT_HOLD_S (the loop asks impactHeld before it draws)
+function impactHold(){if(!impactOn())return;if(performance.now()>=IMPACT.hold.until)IMPACT.hold.pending=true;}
+function impactHeld(){const now=performance.now();if(IMPACT.hold.pending){IMPACT.hold.pending=false;IMPACT.hold.until=now+IMPACT_HOLD_S*1000;return false;}return now<IMPACT.hold.until;}
+function tickImpacts(){
+  if(!IMPACT.list.length&&!IMPACT.marks.length)return;const now=performance.now()/1000;
+  for(let i=IMPACT.list.length-1;i>=0;i--){const B=IMPACT.list[i];if(now-B.t0>IMPACT_LIFE_S||B.scene!==scene){impactDrop(B);IMPACT.list.splice(i,1);continue;}impactPlace(B,now);}
+  for(let i=IMPACT.marks.length-1;i>=0;i--){const k=IMPACT.marks[i],a=now-k.t0;
+    if(a>IMPACT_MARK_S||!k.m.parent){impactDropMark(k);IMPACT.marks.splice(i,1);continue;}k.m.material.opacity=a<IMPACT_MARK_S-1?1:IMPACT_MARK_S-a;}
 }
 
 // ═══════════════════════════════════════════════════════════════════════
