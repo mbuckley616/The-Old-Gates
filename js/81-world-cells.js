@@ -563,6 +563,17 @@
   // Loading is sliced into steps so a cell never lands in one frame.
   // loadCell(i,j) runs every step now (home cell, restores); loadCellSteps
   // returns the steps for the job queue.
+  // S1948 (card F6, Michael's A on #295) — an Aurennais port's warehouse (PKIT.au.civic, kind 'warehouse') on its own made ground beside the
+  // quay head: the bare land under a port's shore is sea (the shelf is the port's stamps), so the warehouse stands as a quay does, on a pad
+  // stamped at 1.05 when the cell loads (three circles along its length, so the flat stays off the town) over a quay wall down to the sea
+  // floor. It is 18 to 24 m along the shore and 10 to 11.5 deep (from a stream keyed by the port), its doors and the crates before them
+  // (2.1 m) to the sea, the front of that apron 8 m out from the quay's start; on the side of the shipwright's pad (the quay's -F), 21 m out
+  // from the quay's line to its near end, clear of the shipwright (and its 8 m pad) and the breakwater. Fixed by the port, not by the ground.
+  // -> {x, z, ry, W, D, A, y, stamps: [{x, z, r}]}
+  function aurWarehouseLot(t,sd){const q=t.quayStart;if(!q||!sd||typeof PKIT==='undefined')return null;
+    const r=PKIT.stream(t.id+':warehouse'),W=18+2*Math.floor(r()*4),D=+(10+r()*1.5).toFixed(2),A=2.1,F={x:sd.dz,z:-sd.dx},N={x:-sd.dx,z:-sd.dz},a=21+W/2,bf=-8,bc=bf+A+D/2,mb=bf+(A+D)/2;
+    const at=(u,v)=>({x:q.x-F.x*u+N.x*v,z:q.z-F.z*u+N.z*v}),c=at(a,bc),sr=+Math.hypot(W/6+.6,(A+D)/2+.6).toFixed(2);
+    return {x:c.x,z:c.z,ry:Math.atan2(sd.dx,sd.dz),W,D,A,y:1.05,stamps:[-1,0,1].map(k=>Object.assign(at(a+k*W/3,mb),{r:sr}))};}
   function loadCellSteps(i,j){
     const k=cellKey(i,j);if(LOADED.has(k))return null;
     const c=getCell(i,j);const L={cell:c,statics:[],stamps:[],roads:[],portals:[],solN:0,doorSeeds:[],pending:true};LOADED.set(k,L);
@@ -588,7 +599,9 @@
              // quay head from the shipwright, its terrace to the water (away from the quay) and its gate toward the town; the house's own pad
              // under it (the house and the loggia, 9.8 m square), the terrace left to stand out over the shore on its quay wall
              if(window.OG_LOOK==='new'&&window.OG_KIT_TOWNS!==false&&nationKeyOf(c.i,c.j)==='aurenne'){const F={x:sd.dz,z:-sd.dx},N={x:-sd.dx,z:-sd.dz},a=9,ox=x-sd.dx*a+F.x*10,oz=z-sd.dz*a+F.z*10;
-               t.tavernLot={x:ox+F.x*2.95,z:oz+F.z*2.95,F,N,o:{x:ox,z:oz}};const q3=addStamp({id:'tvpad_'+t.id,kind:'door',x:ox+F.x*.8,z:oz+F.z*.8,r:6.2,blend:6,y:1.05,cell:cellKey(c.i,c.j)});L.stamps.push(q3);}});
+               t.tavernLot={x:ox+F.x*2.95,z:oz+F.z*2.95,F,N,o:{x:ox,z:oz}};const q3=addStamp({id:'tvpad_'+t.id,kind:'door',x:ox+F.x*.8,z:oz+F.z*.8,r:6.2,blend:6,y:1.05,cell:cellKey(c.i,c.j)});L.stamps.push(q3);
+               // S1948 (card F6, Michael's A on #295: "the warehouse stays as drawn") — and a warehouse on the shore beside the quay head
+               const wl=aurWarehouseLot(t,sd);if(wl){t.warehouseLot=wl;wl.stamps.forEach((p,k)=>L.stamps.push(addStamp({id:`whpad_${t.id}_${k}`,kind:'door',x:p.x,z:p.z,r:p.r,blend:5,y:wl.y,cell:cellKey(c.i,c.j)})));}}});
            // S433 — a bank town's quay spot: the water line below the pad, found now; a stamp there clears the trees and rocks off the bank without flattening it
            c.sites.forEach(t=>{if(!t.bank||t.kind==='port')return;const B=t.bank;let x=t.x+B.dx*t.pad,z=t.z+B.dz*t.pad,n=0;while(worldH(x,z)>1.3&&n<160){x+=B.dx*2;z+=B.dz*2;n++;}if(n>=160)return;let wx=x,wz=z;n=0;while(worldH(wx,wz)>0&&n<40){wx+=B.dx;wz+=B.dz;n++;}if(Math.hypot(wx-x,wz-z)>30)return;
              t.quaySpot={x:wx,z:wz};const qs=addStamp({id:'rquay_'+t.id,kind:'door',noFlat:true,x:wx-B.dx*5,z:wz-B.dz*5,r:17,blend:2,y:1.05,cell:cellKey(c.i,c.j)});L.stamps.push(qs);});},
