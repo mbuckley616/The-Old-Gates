@@ -418,7 +418,9 @@ const d7 = await page.evaluate(() => {
       notYet: notYet && notYet.fn(), ny: ER_SHARED[p].notYet, along: Math.hypot(E.x - site.x, E.z - site.z), trade: A.bio.trade };
     if (how === 'lapse') { worldState.gameTimeAbsMinutes = q.erDue + 5; qTick(); const t = A.topics.find(t => t.label === 'About that errand.'); const g1 = gold; x.done = t && t.fn(); x.wdone = ER_CART.lapse[p]; x.lapsed = q.lapsed; x.paid = gold - g1;
       x.again = !!A.topics.find(t => t.label === 'About that errand.'); by.push(x); continue; }
-    px = q.data.x; pz = q.data.z; qTick(); x.mesh = !!(ER_CART_LIVE[q.id] && ER_CART_LIVE[q.id].m && ER_CART_LIVE[q.id].m.parent); x.prompt = WORLD.shipPrompt();
+    px = q.data.x; pz = q.data.z; qTick(); x.mesh = !!(ER_CART_LIVE[q.id] && ER_CART_LIVE[q.id].m && ER_CART_LIVE[q.id].m.parent);
+    { const D = erCartDitch(q.data), sx = Math.sin(q.data.ang), sz = Math.cos(q.data.ang); x.beside = [1, -1].map(k => { px = D.x + sx * 1.6 * k + Math.cos(q.data.ang) * .9; pz = D.z + sz * 1.6 * k - Math.sin(q.data.ang) * .9; return WORLD.shipPrompt(); }); }
+    px = q.data.x; pz = q.data.z; x.prompt = WORLD.shipPrompt();
     x.opened = erCartInteract() && dlgOpen; x.slip = document.getElementById('dlg-text') && document.getElementById('dlg-text').textContent; try { closeDialog(); } catch (e) {}
     if (how === 'stuck') { x.liftNo = !liftCart(q.id) && !q.data.shifted; worldState.roadsCleared[q.data.ra + '|' + q.data.rb] = T0; }
     if (how === 'lift') x.lifted = liftCart(q.id);
@@ -426,6 +428,7 @@ const d7 = await page.evaluate(() => {
       const F2 = (ER_CART_LIVE[q.id] && ER_CART_LIVE[q.id].foes) || []; x.foes = F2.length; x.foeIds = F2.map(e => e.id);
       if (how === 'band') { F2.forEach(e => { e.dead = true; }); qTick(); x.killed = q.data.band; } }
     x.shifted = q.data.shifted; x.label = A.topics.filter(t => t.quest).map(t => t.label);
+    { const m = ER_CART_LIVE[q.id] && ER_CART_LIVE[q.id].m; x.setDown = m ? { you: +Math.hypot(m.position.x - px, m.position.z - pz).toFixed(2), town: Math.hypot(m.position.x - site.x, m.position.z - site.z) < Math.hypot(q.data.x - site.x, q.data.z - site.z), off: +Math.hypot(m.position.x - q.data.x, m.position.z - q.data.z).toFixed(2), kept: q.data.sx === +m.position.x.toFixed(2) } : null; }
     px = site.x; pz = site.z; qTick(); x.goneAway = !(ER_CART_LIVE[q.id] && ER_CART_LIVE[q.id].m);
     const t = A.topics.find(t => t.label === ER_CART.told); const g1 = gold, f1 = favor(site); x.done = t && t.fn();
     x.wdone = how === 'band' ? ER_CART.done[p] + ' ' + ER_CART.road[p] : ER_CART.done[p]; x.paid = gold - g1; x.wpaid = questGold(E.n); x.fav = favor(site) - f1; x.turned = q.turnedIn; by.push(x); }
@@ -438,6 +441,8 @@ for (const x of d7.by) { const nm = `cart (${x.pp}, ${x.how})`; if (x.missing) {
   check(`${nm}: the hint after First Words, the offer word for word, taken and titled, not yet; the cart on a road out of town`, x.greet.endsWith(' ' + x.hint) && x.offer === x.wantOffer && x.yes === x.ys && x.title === x.wtitle && x.notYet === x.ny && x.along <= 320 && !/\{|undefined|null/.test(x.offer), { greet: x.greet, offer: x.offer, along: x.along, trade: x.trade });
   if (x.how === 'lapse') { check(`${nm}: fourteen days pass, the lapse in the giver's words, once, nothing paid`, x.lapsed && x.done === x.wdone && x.paid === 0 && !x.again, x); continue; }
   check(`${nm}: at the cart, its mesh, the prompt and the slip`, x.mesh && x.prompt === "Press 'E' to see to the cart" && x.opened && x.slip === 'The cart lies nose down in the ditch, one wheel off the ground.', { prompt: x.prompt, slip: x.slip });
+  check(`${nm}: the prompt beside the cart in the ditch, on either side of it (S1960)`, x.beside.every(p => p === "Press 'E' to see to the cart"), x.beside);
+  check(`${nm}: shifted, the cart is set down on the road toward the town, clear of you (${x.setDown && x.setDown.you} m)`, x.setDown && x.setDown.you >= 5 && x.setDown.town && x.setDown.off >= 8 && x.setDown.kept, x.setDown);
   if (x.how === 'lift') check(`${nm}: lifted at Might 5`, x.lifted && x.shifted);
   if (x.how === 'stuck') check(`${nm}: at Might 0 it does not shift; unloaded, two hours, no bandits on a cleared road`, x.liftNo && x.shifted && x.hours === 2 && !x.band && x.foes === 0, x);
   if (x.how === 'band') check(`${nm}: unloaded, two hours, two bandits come up the road, keyed by the errand, and killed`, x.shifted && x.hours === 2 && x.band === 'came' && x.foes === 2 && x.foeIds.every(i => i.includes(':foe:')) && x.killed === 'killed', x);

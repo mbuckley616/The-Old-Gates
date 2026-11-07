@@ -1404,10 +1404,20 @@ const giver=`${lord.title} ${lord.name}`;
     const s=seededRng('errand-cart',site.id+':'+erTag(def)+':'+wk);if(s()>=.3)return null;const P=erCartPoint(site,s);if(!P)return null;
     const tier=Math.max(1,worldTierAt(site.x,site.z)||1);
     return Object.assign({sub:'cart',dir:compassWord(P.x-site.x,P.z-site.z),n:Math.min(40,15+5*(tier-1)),week:wk,idx},P);}
-  function erCartQ(){return qActive().find(q=>q.kind==='errand'&&q.sub==='cart'&&!q.turnedIn&&!q.data.shifted&&Math.hypot(px-q.data.x,pz-q.data.z)<3)||null;}
-  // the cart in the ditch, a shoulder's width off the road and pitched nose down; upright on the road once shifted
-  function erCartPlace(m,d){const side=3.2,x=d.x+Math.cos(d.ang)*(d.shifted?0:side),z=d.z-Math.sin(d.ang)*(d.shifted?0:side);
-    m.rotation.set(0,d.ang,0);if(d.shifted){m.position.set(d.x,worldH(d.x,d.z),d.z);return;}m.position.set(x,worldH(x,z)-.25,z);m.rotateX(-.3);m.rotateZ(.28);}
+  // S1960 — the prompt answers within 3 m of the road's point or of the cart itself in the ditch (3.2 m off it): standing beside the
+  // cart gave nothing (critic, 7 Nov)
+  const ER_CART_SIDE=3.2,ER_CART_SET=8,ER_CART_CLEAR=5;
+  function erCartDitch(d){return {x:d.x+Math.cos(d.ang)*ER_CART_SIDE,z:d.z-Math.sin(d.ang)*ER_CART_SIDE};}
+  function erCartQ(){return qActive().find(q=>{if(q.kind!=='errand'||q.sub!=='cart'||q.turnedIn||q.data.shifted)return false;const D=erCartDitch(q.data);
+    return Math.hypot(px-q.data.x,pz-q.data.z)<3||Math.hypot(px-D.x,pz-D.z)<3;})||null;}
+  // the cart in the ditch, a shoulder's width off the road and pitched nose down; upright on the road once shifted, at the spot erCartSetDown
+  // chose (d.sx, d.sz), else the road's point (a save made before S1960)
+  function erCartPlace(m,d){const D=erCartDitch(d);
+    m.rotation.set(0,d.ang,0);if(d.shifted){const x=d.sx!=null?d.sx:d.x,z=d.sz!=null?d.sz:d.z;m.position.set(x,worldH(x,z),z);return;}m.position.set(D.x,worldH(D.x,D.z)-.25,D.z);m.rotateX(-.3);m.rotateZ(.28);}
+  // S1960 — a shifted cart is set down on the road a cart's length and more toward the town (8 m from the road's point), and on along
+  // the road until it stands 5 m clear of you, so it never appears round the camera (critic, 7 Nov); the spot is kept with the errand
+  function erCartSetDown(d){const ux=-Math.sin(d.ang),uz=-Math.cos(d.ang);let k=ER_CART_SET,x=d.x+ux*k,z=d.z+uz*k;
+    while(Math.hypot(px-x,pz-z)<ER_CART_CLEAR&&k<ER_CART_SET+20){k+=1;x=d.x+ux*k;z=d.z+uz*k;}d.sx=+x.toFixed(2);d.sz=+z.toFixed(2);}
   function erCartDrop(q){const L=ER_CART_LIVE[q.id];if(!L)return;if(L.m&&L.m.parent)L.m.parent.remove(L.m);
     for(const e of L.foes||[]){if(e.dead)continue;if(e.mesh&&e.mesh.parent)e.mesh.parent.remove(e.mesh);const i=ZONES.world.enemies.indexOf(e);if(i>=0)ZONES.world.enemies.splice(i,1);}
     delete ER_CART_LIVE[q.id];}
@@ -1420,7 +1430,7 @@ const giver=`${lord.title} ${lord.name}`;
     const show=d.shifted?far<40&&!d.gone:far<250;if(d.shifted&&far>=40)d.gone=true;
     if(show&&!L.m&&typeof cartMesh==='function'){L.m=cartMesh();sc.add(L.m);erCartPlace(L.m,d);}else if(!show&&L.m){if(L.m.parent)L.m.parent.remove(L.m);L.m=null;}
     if(d.band==='came'){if(!L.foes&&far<150)erCartSpawn(q);if(L.foes&&L.foes.length&&L.foes.every(e=>e.dead)){d.band='killed';L.foes=null;}}}
-  function erCartDone(q){const d=q.data;d.shifted=true;const L=ER_CART_LIVE[q.id];if(L&&L.m)erCartPlace(L.m,d);
+  function erCartDone(q){const d=q.data;d.shifted=true;erCartSetDown(d);const L=ER_CART_LIVE[q.id];if(L&&L.m)erCartPlace(L.m,d);
     qJournal(q,'ready',`The cart is out of the ditch and on its way home. Tell ${q.giver}.`);}
   // the slip at the cart: the two ways, read by name (co-op rules: liftCart, unloadCart)
   function liftCart(id){const q=qActive().find(x=>x.id===id);if(!q||q.data.shifted)return false;if((ATTRS.might||0)<5){showMsg(ER_CART.stuck,'#c8b880');return false;}
