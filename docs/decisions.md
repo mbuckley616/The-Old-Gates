@@ -15,15 +15,7 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
-### The sea's three herbs — every sea bed, or Aurenne's only? (from the systems builder, 2026-11-06, #1235)
-**The question.** #1202 A grows each herb on its own island (Sessions 1939–1940, PR #1234). The atlas (OG-039) and backlog L8 also put the sea's three herbs (Kelp, Sea Lily, Pearlweed) on Aurenne, but #1202 never named them, so they still grow on every island's sea bed and come out of any island's chests.
-
-**Options.**
-- **A (recommended).** Every sea bed, as now. The sea is shared, and diving off the Gatelands and the Mark keeps something to pick.
-- **B.** Aurenne's sea bed only, as the atlas has it. The other islands' sea beds hold nothing to pick; wrecks are all a dive finds there.
-
-**Recommendation: A.** B would be one island test in `spawnSeaHerbs` (`85-world-sea.js`) and one in `herbIsland` (`50-travel.js`).
-
+## Answered
 ### Impact by surface — how loud a landed blow is: sparks, splinters, dust, blood (from the concept artist, 2026-11-06, #1239)
 **The question.** OG-127 asks for sparks on armour, splinters on shields, dust on stone and blood on flesh (backlog L, *Melee, read clearly*). Today a landed melee hit plays only its sound and its number. The prototype (`docs/prototypes/levelup/impacts.html`) shows a cut landing on mail, a round shield, a pier's stone and a tunic, at three levels.
 
@@ -34,7 +26,19 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 
 **Recommendation: B.** A is lost behind your own arm at the third-person camera; C buries the foe's body, which the deflect and stagger must show, and leaves nothing louder for criticals. B adds 140 to 500 triangles for a quarter second. Also asked: should blood alone be quieter (B for the rest, A's no-blood on flesh)? Pictures: [the twelve](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/impacts-options.jpg), [B at a third-person camera](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/impacts-back.jpg).
 
-## Answered
+Michael: **B, clear: a size up, lit, a 50 ms hold.** (2026-11-06; no note on the blood question)
+
+### The sea's three herbs — every sea bed, or Aurenne's only? (from the systems builder, 2026-11-06, #1235)
+**The question.** #1202 A grows each herb on its own island (Sessions 1939–1940, PR #1234). The atlas (OG-039) and backlog L8 also put the sea's three herbs (Kelp, Sea Lily, Pearlweed) on Aurenne, but #1202 never named them, so they still grow on every island's sea bed and come out of any island's chests.
+
+**Options.**
+- **A (recommended).** Every sea bed, as now. The sea is shared, and diving off the Gatelands and the Mark keeps something to pick.
+- **B.** Aurenne's sea bed only, as the atlas has it. The other islands' sea beds hold nothing to pick; wrecks are all a dive finds there.
+
+**Recommendation: A.** B would be one island test in `spawnSeaHerbs` (`85-world-sea.js`) and one in `herbIsland` (`50-travel.js`).
+
+Michael: **A, every sea bed, as now.** (2026-11-06)
+
 ### Where the corrupted animals appear (from the systems builder, 2026-11-06, #1201)
 **The question.** The bodies builder has drawn OG-088's corrupted animals: the frost wraith bear (Uisce), the blight boar with crystal spines (Cloch), the stag of shadows (Scáth) and the dusk eagle (Gaoth). No rule says where they meet you. Today every gate's roster is six foes from the canon's table, and a gate's condition rolls steady 50%, failing 35% or catastrophic 15%.
 
