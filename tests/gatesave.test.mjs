@@ -46,12 +46,12 @@ check(`loaded with its cell not loaded, the gate reads the tier walking in reads
 check(`and its ${unloaded.roster.length} foes are the same kinds and health`, JSON.stringify(unloaded.roster) === JSON.stringify(before.roster), { before: before.roster, unloaded: unloaded.roster });
 // S1975 — a save made in a lair's cavern (the critic, 7 Nov: Carrigkeel's Lair, saved in and loaded, held Frost Wraith Bears): the load's
 // portal took no `lair` from its door, so the cavern was rebuilt as an old gate of its seed, failing, with a gate's corrupted animals and no
-// master. Walked in by the world's own portal, then entered as a load enters it: the same cavern, its master and its roster
+// master. Walked in by the portal its door makes, then entered as a load enters it: the same cavern, its master and its roster
 const lairOf = (P) => page.evaluate(() => ({ lair: !!(currentPortal && currentPortal.lair), gate: !!_lastGen.gate, master: ENEMIES.some(e => e._lairBody || e.lairMaster || / — /.test(e.name)),
   corrupt: ENEMIES.filter(e => e.corrupt).length, roster: ENEMIES.map(e => (e.id || '') + ' ' + e.name + ' ' + e.maxHp).sort() }));
-const lairSeed = await page.evaluate(() => { let best = null, bd = 1e9; for (const p of portals) if (p.lair && !p.lair.dragon) { const d = Math.hypot(p.x - px, p.z - pz); if (d < bd) { bd = d; best = p; } } return best && best.seed; });
+const lairSeed = await page.evaluate(() => { let best = null, bd = 1e9; for (const c of CELLS.values()) for (const e of (c.doors || [])) if (e.lairDoor && e.lair && !e.lair.dragon) { const d = Math.hypot(e.x - px, e.z - pz); if (d < bd) { bd = d; best = e; } } return best && best.seed; });
 const inLair = () => page.waitForFunction((s) => activeZoneId === 'dungeon' && typeof dScene !== 'undefined' && dScene !== window._prevDScene && scene === dScene && currentPortal && currentPortal.seed === s && ENEMIES.length > 0, lairSeed, { timeout: 120000, polling: 200 });
-await page.evaluate((s) => { window._prevDScene = dScene; goToDungeon(portals.find(p => p.seed === s)); }, lairSeed);
+await page.evaluate((s) => { window._prevDScene = dScene; const e = WORLD.doorAnywhere(s), p = makePortalDef(e); p.zone = 'world'; p.sigil = !!(e.sigil || e.kind === 'fort_door'); p.theme = p.theme || e.theme; if (e.lair) p.lair = e.lair; goToDungeon(p); }, lairSeed); /* the portal a cell's door makes (82-world-structures.js); its cell, 1.5 km out, is not loaded */
 await inLair(); const walked = await lairOf();
 await page.evaluate((s) => { window._prevDScene = dScene; _reenterPlace({ kind: 'dungeon', seed: s, floor: 1 }); }, lairSeed);
 await inLair(); const loaded = await lairOf();
