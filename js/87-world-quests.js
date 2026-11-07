@@ -1404,7 +1404,7 @@ const giver=`${lord.title} ${lord.name}`;
     const s=seededRng('errand-cart',site.id+':'+erTag(def)+':'+wk);if(s()>=.3)return null;const P=erCartPoint(site,s);if(!P)return null;
     const tier=Math.max(1,worldTierAt(site.x,site.z)||1);
     return Object.assign({sub:'cart',dir:compassWord(P.x-site.x,P.z-site.z),n:Math.min(40,15+5*(tier-1)),week:wk,idx},P);}
-  // S1960 — the prompt answers within 3 m of the road's point or of the cart itself in the ditch (3.2 m off it): standing beside the
+  // S1961 — the prompt answers within 3 m of the road's point or of the cart itself in the ditch (3.2 m off it): standing beside the
   // cart gave nothing (critic, 7 Nov)
   const ER_CART_SIDE=3.2,ER_CART_SET=8,ER_CART_CLEAR=5;
   function erCartDitch(d){return {x:d.x+Math.cos(d.ang)*ER_CART_SIDE,z:d.z-Math.sin(d.ang)*ER_CART_SIDE};}
@@ -1414,7 +1414,7 @@ const giver=`${lord.title} ${lord.name}`;
   // chose (d.sx, d.sz), else the road's point (a save made before S1960)
   function erCartPlace(m,d){const D=erCartDitch(d);
     m.rotation.set(0,d.ang,0);if(d.shifted){const x=d.sx!=null?d.sx:d.x,z=d.sz!=null?d.sz:d.z;m.position.set(x,worldH(x,z),z);return;}m.position.set(D.x,worldH(D.x,D.z)-.25,D.z);m.rotateX(-.3);m.rotateZ(.28);}
-  // S1960 — a shifted cart is set down on the road a cart's length and more toward the town (8 m from the road's point), and on along
+  // S1961 — a shifted cart is set down on the road a cart's length and more toward the town (8 m from the road's point), and on along
   // the road until it stands 5 m clear of you, so it never appears round the camera (critic, 7 Nov); the spot is kept with the errand
   function erCartSetDown(d){const ux=-Math.sin(d.ang),uz=-Math.cos(d.ang);let k=ER_CART_SET,x=d.x+ux*k,z=d.z+uz*k;
     while(Math.hypot(px-x,pz-z)<ER_CART_CLEAR&&k<ER_CART_SET+20){k+=1;x=d.x+ux*k;z=d.z+uz*k;}d.sx=+x.toFixed(2);d.sz=+z.toFixed(2);}

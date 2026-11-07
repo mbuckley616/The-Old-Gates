@@ -280,7 +280,7 @@ function resolvePlayerStrike(_isPow){
   });
   _candidates.sort((a,b)=>a.dist-b.dist);
   const _struckNpc=!_candidates.length&&activeZoneId==='world'&&typeof WORLD!=='undefined'&&WORLD.strikeNpc&&WORLD.strikeNpc(fwdX,fwdZ); // S157 — assault
-  if(!_candidates.length&&!_struckNpc)impactWallAhead(row.reach); /* S1952 — the swing meets the wall (#1239 B); S1959 — the open world's too */
+  if(!_candidates.length&&!_struckNpc)impactWallAhead(row.reach); /* S1952 — the swing meets the wall (#1239 B); S1960 — the open world's too */
   const out=[];
   let _hitsLanded=0;
   const _impSide=SWING&&SWING.chain%2===0?-1:1; /* S1949 — the cut's way across the foe, alternating with the chain */
@@ -943,7 +943,7 @@ function impactWallAhead(reach){
     return impactSpawn(surface,{at,n:n.clone().setY(.15),cut,seed:'wall:'+c+','+r+':'+(++IMPACT.n),ground:jumpY,wall:true});}
   return null;
 }
-// S1959 — the open world's solids (owed by S1952): a swing with a weapon that finds no foe and no townsperson in reach walks your
+// S1960 — the open world's solids (owed by S1952): a swing with a weapon that finds no foe and no townsperson in reach walks your
 // facing out to HULL_YOU plus the row's reach, as in a gate, and the first solid it meets throws its stuff. The builders' solids carry
 // no material, so impactWorldSurface reads it from the tags they do carry: a tree's id is wood; a chunk's other square solid is a rock;
 // a wall, a tower house, an abbey, a cairn, a barracks, a cave's or a tunnel's rock, a door's jambs, an aqueduct, a wonder, a road's

@@ -105,7 +105,7 @@ if (!street.noSpot) {
   await page.evaluate(() => { const e = window._picFoe; e.dead = true; WORLD.scene.remove(e.mesh); ZONES.world.enemies.splice(ZONES.world.enemies.indexOf(e), 1); DMG_NUMS.forEach(d => d.el.remove()); DMG_NUMS.length = 0; });
 }
 
-// S1959 — a swing at the open world's solids (owed by S1952): a house's wall in Dunmore throws stone, a gate's leaf and a tree their
+// S1960 — a swing at the open world's solids (owed by S1952): a house's wall in Dunmore throws stone, a gate's leaf and a tree their
 // wood, a lamp nothing; a house in the Mark is timber
 const ow = await page.evaluate(() => { const w0 = EQ.weapon, p0 = [px, pz, jumpY, fwdX, fwdZ]; EQ.weapon = { name: 'Steel Sword', slot: 'weapon', weaponShape: 'sword', weight: 3, atk: [8, 12] };
   const reach = weaponAttack(EQ.weapon).reach, S = [...SETTLE.values()].find(S => S.site.name === 'Dunmore') || [...SETTLE.values()][0];

@@ -441,7 +441,7 @@ for (const x of d7.by) { const nm = `cart (${x.pp}, ${x.how})`; if (x.missing) {
   check(`${nm}: the hint after First Words, the offer word for word, taken and titled, not yet; the cart on a road out of town`, x.greet.endsWith(' ' + x.hint) && x.offer === x.wantOffer && x.yes === x.ys && x.title === x.wtitle && x.notYet === x.ny && x.along <= 320 && !/\{|undefined|null/.test(x.offer), { greet: x.greet, offer: x.offer, along: x.along, trade: x.trade });
   if (x.how === 'lapse') { check(`${nm}: fourteen days pass, the lapse in the giver's words, once, nothing paid`, x.lapsed && x.done === x.wdone && x.paid === 0 && !x.again, x); continue; }
   check(`${nm}: at the cart, its mesh, the prompt and the slip`, x.mesh && x.prompt === "Press 'E' to see to the cart" && x.opened && x.slip === 'The cart lies nose down in the ditch, one wheel off the ground.', { prompt: x.prompt, slip: x.slip });
-  check(`${nm}: the prompt beside the cart in the ditch, on either side of it (S1960)`, x.beside.every(p => p === "Press 'E' to see to the cart"), x.beside);
+  check(`${nm}: the prompt beside the cart in the ditch, on either side of it (S1961)`, x.beside.every(p => p === "Press 'E' to see to the cart"), x.beside);
   check(`${nm}: shifted, the cart is set down on the road toward the town, clear of you (${x.setDown && x.setDown.you} m)`, x.setDown && x.setDown.you >= 5 && x.setDown.town && x.setDown.off >= 8 && x.setDown.kept, x.setDown);
   if (x.how === 'lift') check(`${nm}: lifted at Might 5`, x.lifted && x.shifted);
   if (x.how === 'stuck') check(`${nm}: at Might 0 it does not shift; unloaded, two hours, no bandits on a cleared road`, x.liftNo && x.shifted && x.hours === 2 && !x.band && x.foes === 0, x);
