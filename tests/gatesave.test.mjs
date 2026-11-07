@@ -44,5 +44,19 @@ const unloaded = await page.evaluate(() => { delete WORLD.dungeonPos[42]; window
 console.log('unloaded', JSON.stringify({ tier: unloaded.tier, diff: unloaded.diff, x: unloaded.x, z: unloaded.z }));
 check(`loaded with its cell not loaded, the gate reads the tier walking in reads (${unloaded.tier} and ${before.tier}) and stands where its door does (${unloaded.x}, ${unloaded.z})`, unloaded.tier === before.tier && unloaded.x > 2500, unloaded);
 check(`and its ${unloaded.roster.length} foes are the same kinds and health`, JSON.stringify(unloaded.roster) === JSON.stringify(before.roster), { before: before.roster, unloaded: unloaded.roster });
+// S1975 — a save made in a lair's cavern (the critic, 7 Nov: Carrigkeel's Lair, saved in and loaded, held Frost Wraith Bears): the load's
+// portal took no `lair` from its door, so the cavern was rebuilt as an old gate of its seed, failing, with a gate's corrupted animals and no
+// master. Walked in by the world's own portal, then entered as a load enters it: the same cavern, its master and its roster
+const lairOf = (P) => page.evaluate(() => ({ lair: !!(currentPortal && currentPortal.lair), gate: !!_lastGen.gate, master: ENEMIES.some(e => e._lairBody || e.lairMaster || / — /.test(e.name)),
+  corrupt: ENEMIES.filter(e => e.corrupt).length, roster: ENEMIES.map(e => (e.id || '') + ' ' + e.name + ' ' + e.maxHp).sort() }));
+const lairSeed = await page.evaluate(() => { let best = null, bd = 1e9; for (const p of portals) if (p.lair && !p.lair.dragon) { const d = Math.hypot(p.x - px, p.z - pz); if (d < bd) { bd = d; best = p; } } return best && best.seed; });
+const inLair = () => page.waitForFunction((s) => activeZoneId === 'dungeon' && typeof dScene !== 'undefined' && dScene !== window._prevDScene && scene === dScene && currentPortal && currentPortal.seed === s && ENEMIES.length > 0, lairSeed, { timeout: 120000, polling: 200 });
+await page.evaluate((s) => { window._prevDScene = dScene; goToDungeon(portals.find(p => p.seed === s)); }, lairSeed);
+await inLair(); const walked = await lairOf();
+await page.evaluate((s) => { window._prevDScene = dScene; _reenterPlace({ kind: 'dungeon', seed: s, floor: 1 }); }, lairSeed);
+await inLair(); const loaded = await lairOf();
+console.log('lair', lairSeed, JSON.stringify({ walked: { lair: walked.lair, gate: walked.gate, master: walked.master, n: walked.roster.length }, loaded: { lair: loaded.lair, gate: loaded.gate, master: loaded.master, corrupt: loaded.corrupt, n: loaded.roster.length } }));
+check(`a lair saved in loads as its cavern, not as an old gate: its master stands, no gate's corrupted animal (seed ${lairSeed})`, lairSeed != null && walked.lair && !walked.gate && walked.master && loaded.lair && !loaded.gate && loaded.master && loaded.corrupt === 0, { walked: { lair: walked.lair, gate: walked.gate, master: walked.master }, loaded: { lair: loaded.lair, gate: loaded.gate, master: loaded.master, corrupt: loaded.corrupt } });
+check(`and its ${loaded.roster.length} foes are the same kinds and health as walking in`, JSON.stringify(loaded.roster) === JSON.stringify(walked.roster), { walked: walked.roster.slice(0, 8), loaded: loaded.roster.slice(0, 8) });
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
