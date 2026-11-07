@@ -710,7 +710,7 @@ function genSettlement(site){
       lo.name='warehouse far';lo.userData.noBake=true;lo.castShadow=true;lo.receiveShadow=true;lo.visible=false;group.add(lo);
       sol.push({cx:L.x,cz:L.z,rx:L.W/2+.15,rz:L.D/2+.15,c,s:s_,bt:'warehouse'});
       S.warehouse={x:L.x,z:L.z,ry:L.ry,W:L.W,D:L.D,y,tris:B.tris,draws:B.draws,front:B.front};S.whLod={hi:G,lo,x:L.x,z:L.z,r:Math.hypot(L.W,L.D)/2,tris:lo.geometry.attributes.position.count/3};}
-    // S1955 (card F6, Michael's A on #295: stepped merlons) — and the Compact's tithe house past the warehouse along the shore (site.titheLot,
+    // S1956 (card F6, Michael's A on #295: stepped merlons) — and the Compact's tithe house past the warehouse along the shore (site.titheLot,
     // 81's aurTitheLot), pieces.js's as drawn, its loggia to the sea, its banner the Compact's blue and white; on a quay wall as the warehouse's,
     // its own far copy (a box and the lookout's, S.thLod), its solid its walls; not built where a road or another solid has come into it.
     function kitTithe(L){const c=Math.cos(L.ry),s_=Math.sin(L.ry),hx=L.W/2+.3,hz=L.D/2+.3,at=(u,v)=>[L.x+u*c+v*s_,L.z-u*s_+v*c];
@@ -896,7 +896,7 @@ function genSettlement(site){
     if(plan.rows>0&&(!TST||lampsLit(site))&&!burnedV&&!abandonedV){[[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([sx,sz])=>lampPost(cx+sx*9,cz+sz*9,true,cx,cz));}
     if(site.kind==='port'){buildHarbour(S,site,r);spawnGulls(S,site);}else if(site.bank){try{buildRiverQuay(S,site,r);}catch(e){console.warn('river quay',e);}} // S433 — a quay on a bank town
     if(site.kind==='port'&&site.warehouseLot&&window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.au&&PKIT.au.civic)try{kitWarehouse(site.warehouseLot);}catch(e){console.warn('warehouse',e);} /* S1948 — Aurenne's warehouse by the quay */
-    if(site.kind==='port'&&site.titheLot&&window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.au&&PKIT.au.civic)try{kitTithe(site.titheLot);}catch(e){console.warn('tithe house',e);} /* S1955 — and the Compact's tithe house past it */
+    if(site.kind==='port'&&site.titheLot&&window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.au&&PKIT.au.civic)try{kitTithe(site.titheLot);}catch(e){console.warn('tithe house',e);} /* S1956 — and the Compact's tithe house past it */
     if(plan.rows>0)streets.slice(0,3).forEach(rd=>{const q=rd.pts.find(p=>Math.abs(Math.hypot(p.x-cx,p.z-cz)-(pad-14))<5);if(q){const nx=-(cz-q.z),nz=(cx-q.x);const L2=Math.hypot(nx,nz)||1;lampPost(q.x+nx/L2*3.2,q.z+nz/L2*3.2,true,q.x,q.z);}});
     // Plaza: well + stalls; cairn already stands at the centre.
     if(plan.rows>0){

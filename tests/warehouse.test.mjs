@@ -36,7 +36,7 @@ const lod = await page.evaluate(() => { const S = WORLD.settle.get('c7_1_s4'), W
   CAM.position.set(W.x + fx * 200, 8, W.z + fz * 200); houseLod(); const far = [K.hi.visible, K.lo.visible];
   CAM.position.set(W.x + fx * 10, 3, W.z + fz * 10); houseLod(); const near = [K.hi.visible, K.lo.visible]; CAM.position.copy(P); return { far, near, tris: Math.round(K.tris) }; });
 check(`its far copy (${lod.tris} triangles, one draw) from 200 m out, the warehouse itself from 10 m`, lod.far[0] === false && lod.far[1] === true && lod.near[0] === true && lod.near[1] === false && lod.tris < 100, lod);
-// Session 1955 (card F6; #295 A, stepped merlons): the Compact's tithe house past the warehouse along the shore (81's aurTitheLot), as
+// Session 1956 (card F6; #295 A, stepped merlons): the Compact's tithe house past the warehouse along the shore (81's aurTitheLot), as
 // pieces.js's quay draws it, its banner the Compact's blue and white (canon §1.4)
 const tk = await page.evaluate(() => [20, 24].map(w => { const B = PKIT.au.civic({ kind: 'tithe', w, d: 12.5 }, PKIT.stream('test')); const names = B.group.children.map(m => m.name);
   return { w, tris: B.tris, draws: B.draws, top: +B.roofTop.toFixed(2), blue: names.includes('compact') && names.includes('cloth'), madder: names.includes('awning') }; }));
