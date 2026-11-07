@@ -1990,7 +1990,7 @@ function aurMats() {
   AM = { wall: AUR.walls.map(c => mat('plaster', { ns: .55, color: c, rough: .95 })), stone: mat('ashlar', { ns: .9, color: 0xfff1d6, rough: .85 }), plinth: mat('ashlar', { ns: 1.1, color: 0xd9c9a8, rough: .9 }),
     pantile: mat('pantile', { ns: 1.4, rough: .75 }), ridge: std(0x8a4428, { rough: .7 }), zellige: mat('zellige', { ns: .6, rough: .25 }), glaze: mat('glaze', { ns: .7, rough: .2 }),
     cedar: mat('wood', { ns: 1, color: 0xc89870 }), door: AUR.doors.map(c => { const m = mat('wood', { ns: .9 }); m.color.set(c).multiplyScalar(2.1); return m; }),
-    awning: mat('awning', { ns: .6, rough: .95 }), dark: std(0x0d0a08, { rough: 1 }), iron: std(0x1c1a18, { rough: .5, metal: .5 }), terra: std(0xa8582f, { rough: .85 }),
+    awning: mat('awning', { ns: .6, rough: .95 }), compact: std(0x2a4f8f, { rough: .9, side: THREE.DoubleSide }), cloth: std(0xf2eee2, { rough: .9, side: THREE.DoubleSide }), dark: std(0x0d0a08, { rough: 1 }), iron: std(0x1c1a18, { rough: .5, metal: .5 }), terra: std(0xa8582f, { rough: .85 }),
     gold: std(0xc8952e, { rough: .35, metal: .7 }), leaf: std(AUR.leaf, { rough: .9 }), leaf2: std(AUR.leaf2, { rough: .95 }), bloom: std(AUR.bloom, { rough: .8 }),
     /* the courtyard house's (Session 899) */ pave: mat('limestone', { ns: 1.0, rough: .8 }), floor: mat('flag', { ns: .7, color: 0xf0a078, rough: .7 }), orange: std(0xe07a1c, { rough: .6 }),
     water: new THREE.MeshStandardMaterial({ color: 0x2f6f82, roughness: .05, metalness: .1, transparent: true, opacity: .78 }),
@@ -2449,7 +2449,7 @@ function aurenneCivic(o, r) {
     { const s = 3.6, lx = -W / 2 + s / 2 + 1.2, lz = -D / 2 + s / 2 + 1.2, lh = 3.4; for (let f = 0; f < 4; f++) { const ry = f * Math.PI / 2; put(wallGeo(s, lh, [{ x: -.75, y: .6, w: 1.0, h: 2.2, arch: 1 }, { x: .75, y: .6, w: 1.0, h: 2.2, arch: 1 }], .35), wallK, lx + Math.sin(ry) * (s / 2 - .17), top + .2, lz + Math.cos(ry) * (s / 2 - .17), ry); }
       const ly = top + .2 + lh; put(box(s + .4, .3, s + .4), 'stone', lx, ly + .15, lz); for (let f = 0; f < 4; f++) { const ry = f * Math.PI / 2; merlons(s, lx + Math.sin(ry) * (s / 2), ly + .3, lz + Math.cos(ry) * (s / 2), ry); }
       put(new THREE.CylinderGeometry(.06, .08, 6, 8), 'cedar', lx, ly + 3.3, lz); put(new THREE.SphereGeometry(.12, 10, 8), 'gold', lx, ly + 6.35, lz);
-      const g = new THREE.PlaneGeometry(2.4, 1.3, 8, 1), P = g.attributes.position; for (let i = 0; i < P.count; i++) P.setZ(i, Math.sin(P.getX(i) * 2.2) * .12); g.computeVertexNormals(); put(g, 'awning', lx + 1.26, ly + 5.5, lz, 0); }
+      for (let k = 0; k < 6; k++) { const g = new THREE.PlaneGeometry(.4, 1.3, 2, 1), P = g.attributes.position; g.translate(-1 + k * .4, 0, 0); for (let i = 0; i < P.count; i++) P.setZ(i, Math.sin(P.getX(i) * 2.2) * .12); g.computeVertexNormals(); put(g, k % 2 ? 'cloth' : 'compact', lx + 1.26, ly + 5.5, lz, 0); } }
     front = D / 2 + .95;
   } else {
     // the warehouse: the walls with a row of tall arched doors on the quay, the loading door over the middle one
