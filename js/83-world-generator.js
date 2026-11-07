@@ -211,6 +211,20 @@ function genSettlement(site){
       if(types.includes('castle')){const T=Math.sqrt((inner-3)**2-15*15);
         outer:for(const [ux,uz] of [[-ax,-az],[bx,bz],[-bx,-bz],[ax,az]])for(let t1=T;t1-25>=20;t1-=6){const vx=-uz,vz=ux,P=frame(ux,uz,vx,vz,t1-25,t1,-15,15);if(!fits(P,along(ux,uz)))continue; /* the main street runs into its gate */
           const lot=Object.assign(frame(ux,uz,vx,vz,t1-1-11,t1-1,-7,7),{w:14,d:11,row:0,street:null,k:-2,plot:'castle'});P.type='castle';P.lot=lot;out.push(P);break outer;}}
+      // S1959 (card F6, Michael's A on #296: round, galleries, pointed white caps) — on the new look Aurenne's capital (the first Aurennais
+      // city in grid order: guestChapelHouse's, the Compact's seat) keeps a plot for the Mages' academy (PKIT.au.academy, pieces.js's of
+      // Session 836), the canon's one academy and its white towers (§1.3). Not astride a street as the church is: the roads come in along
+      // the capital's streets. Beside a street through the heart, its length along it and its arcade to it, its front 3.2 m off the
+      // street's line (else 4.2, else 6), as near the heart as fits; 30 m wide (else 26, else 24 with two towers), a yard of 1.5 m round
+      // it, on ground within 1.5 m over its plot (the plinth's footing takes the rest)
+      if(AUC&&site.kind==='city'&&PKIT.au&&PKIT.au.academy&&typeof guestChapelHouse==='function'&&(guestChapelHouse()||{}).id===site.id){const M=1.5;
+        const level=P=>{const c=Math.cos(P.ry),s_=Math.sin(P.ry),h=[];for(const u of [-.5,0,.5])for(const v of [-.5,0,.5]){const x=P.x+u*P.w*c+v*P.d*s_,z=P.z-u*P.w*s_+v*P.d*c;h.push(worldH(x,z));}return Math.max(...h)-Math.min(...h)<=1.5;};
+        outer:for(const [w,nt] of [[30,3],[26,3],[24,2]]){const B=PKIT.au.academyBox({w,towers:nt}),D=+(B.z1-B.z0).toFixed(2);
+          for(const FR of [3.2,4.2,6])for(let aC=w/2+6;aC<=inner-w/2-4;aC+=1)for(const [sx,sz] of [[ax,az],[-ax,-az],[bx,bz],[-bx,-bz]])for(const sd of [1,-1]){
+            const ux=-sz*sd,uz=sx*sd,vx=-uz,vz=ux,vc=(vx*sx+vz*sz)*aC; /* the plot's own +x is (vx,vz), along the street; its middle aC out */
+            const P=frame(ux,uz,vx,vz,FR-M,FR+D+M,vc+B.x0-M,vc+B.x1+M);if(!fits(P,along(sx,sz))||!level(P))continue;
+            const lot=Object.assign(frame(ux,uz,vx,vz,FR,FR+D,vc+B.x0,vc+B.x1),{w:+(B.x1-B.x0).toFixed(2),d:D,row:0,street:null,k:-5,plot:'academy',acW:w,acTowers:nt,box:B});
+            P.type='academy';P.lot=lot;out.push(P);break outer;}}}
       // S1339 (card F6, Michael's A on #411) — on the new look a Gatelands town's, port's or city's first inn is the kit's coaching inn, 17.6
       // by 23 m with its gateway and its yard: it takes a plot beside the main street (else the cross street), its front 2.8 m off the street's
       // line as a lot's is and a yard of 1 m round its sides and back, as far out toward the ring as fits, where the road comes in (the main
@@ -671,6 +685,26 @@ function genSettlement(site){
       const wm=H.group.children.find(m=>/^wall:/.test(m.name)),col=wm?wm.material.color.clone().multiplyScalar(.9):new THREE.Color(.86,.82,.72),b=new THREE.BoxGeometry(H.w+.16,H.top+.14,H.d+.16).toNonIndexed();
       b.translate(0,(H.top+.14)/2,0);kitLo.push([b,new THREE.Matrix4().makeRotationY(lot.ry).setPosition(X,y,Z),col]);
       lot._kitDoor=+u.toFixed(3);lot._wallH=+(2*(H.F1-H.F0)).toFixed(3);lot._storeys=2;lot.two=true;k.tris=H.tris;k.calls=H.draws;k.colour='court';k.door=lot._kitDoor;k.top=+H.top.toFixed(3);}
+    // S1959 (card F6, #296 A) — the Mages' academy on its plot (PKIT.au.academy, its own stream keyed by the city), the lot's front its
+    // plinth's: in the kit houses' group, so merged by material with the town. Its plinth stands on a footing of its own stone down 2.5 m
+    // (the plot's ground is level to 1.5 m), and is a world platform you step up onto; the hall's walls, each tower and the cypresses are
+    // solids, the arcade closed (no room: card F9). Its far copy a box for the hall, one for each tower's shaft and one for its cap.
+    function kitAcademy(L){const B=L.box,A=PKIT.au.academy({w:L.acW,towers:L.acTowers},PKIT.stream(`${site.id}:academy`)),I=A.inner,c=Math.cos(L.ry),s_=Math.sin(L.ry);
+      const u=-(B.x0+B.x1)/2,v=-(B.z0+B.z1)/2,X=L.x+u*c+v*s_,Z=L.z-u*s_+v*c;let y=1e9;for(const [a,b] of [[0,0],[-.5,-.5],[.5,-.5],[-.5,.5],[.5,.5]]){const x=L.x+a*L.w*c+b*L.d*s_,z=L.z-a*L.w*s_+b*L.d*c;y=Math.min(y,worldH(x,z));}y-=.06; /* on its lowest corner: the footing never shows its foot */
+      if(!kitG){kitG=new THREE.Group();kitG.name='kit houses';kitG.position.set(cx,0,cz);kitG.userData.noBake=true;group.add(kitG);}
+      {const f=new THREE.BoxGeometry(I.W+.4,2.5,I.D+3.6);f.translate(0,-1.25+.02,1.6);const m=new THREE.Mesh(f,PKIT.au.mats().plinth);m.name='footing';A.group.add(m);}
+      A.group.position.set(X-cx,y,Z-cz);A.group.rotation.y=L.ry;A.group.traverse(m=>{if(m.isMesh){m.castShadow=m.name!=='dark';m.receiveShadow=true;}});kitG.add(A.group);
+      const W_=(lx,lz)=>({x:X+lx*c+lz*s_,z:Z-lx*s_+lz*c}),sols=[],put=(lx,lz,hx,hz,h)=>{const m=W_(lx,lz),q={cx:m.x,cz:m.z,rx:hx,rz:hz,c,s:s_,h,bt:'academy'};sol.push(q);sols.push(q);};
+      put(0,0,I.W/2+.05,I.D/2+.05,I.pl+I.H+1.2); /* the hall */
+      for(const T of I.towers)put(T.x,T.z,T.r*.86,T.r*.86,I.pl+I.H+20); /* each tower's shaft, its box inside the round */
+      for(const sx of [-1,1])put(sx*(I.W/2-1.2),I.D/2+2.6,.55,.55,6); /* the cypresses */
+      const pl={x0:0,x1:0,z0:0,z1:0,y:y+I.pl,site:site.id,academy:true,inside(wx,wz){const dx=wx-X,dz=wz-Z,lx=dx*c-dz*s_,lz=dx*s_+dz*c;return Math.abs(lx)<=I.W/2+.2&&lz>=-I.D/2-.2&&lz<=I.D/2+3.4;}};
+      {const xs=[],zs=[];for(const lx of [-I.W/2-.2,I.W/2+.2])for(const lz of [-I.D/2-.2,I.D/2+3.4]){const m=W_(lx,lz);xs.push(m.x);zs.push(m.z);}pl.x0=Math.min(...xs);pl.x1=Math.max(...xs);pl.z0=Math.min(...zs);pl.z1=Math.max(...zs);}
+      ZONES.world.platforms.push(pl);
+      const mx=new THREE.Matrix4().makeRotationY(L.ry).setPosition(X,y,Z),lime=new THREE.Color(.92,.9,.84),part=(bw,bh,bd,bx,y0,bz,col)=>{const b=new THREE.BoxGeometry(bw,bh,bd).toNonIndexed();b.translate(bx,y0+bh/2,bz);kitLo.push([b,mx,col||lime]);};
+      part(I.W+.4,I.pl+I.H+1.2,I.D,0,0,0);part(I.W+.4,I.pl,3.6,0,0,I.D/2+1.8); /* the hall to its cresting; the plinth's apron */
+      I.towers.forEach((T,i)=>{const top=A.towerTops[i],sh=I.pl+I.H+(top-I.pl-I.H)*.62;part(2*T.r,sh,2*T.r,T.x,0,T.z);part(1.3*T.r,top-sh,1.3*T.r,T.x,sh,T.z);});
+      S.academy={id:`${site.id}:academy`,x:X,z:Z,y,ry:L.ry,W:I.W,D:I.D,towers:I.towers.length,tops:A.towerTops,tris:A.tris,draws:A.draws,sols,plat:pl,r:Math.hypot(L.w,L.d)/2+.5,cx:L.x,cz:L.z};}
     // S1305 — the Church of the Weaver (PKIT.au.church, a town's, its own stream keyed by the town), the foot of its steps on the lot's front
     // and its door on the street's line; its far copy a box for the podium and the cube, one for the porch, a block for the drum and
     // the dome, one for the tower and one for its little dome; no smoke
@@ -908,6 +942,7 @@ function genSettlement(site){
       }
     }
     {const MP=PLOTS.find(P=>P.type==='market');if(MP&&plan.rows>0)try{kitMarket(MP.lot);}catch(e){console.warn('market',e);}} /* S1904 — the market house on its plot */
+    {const AP=PLOTS.find(P=>P.type==='academy');if(AP)try{kitAcademy(AP.lot);}catch(e){console.warn('academy',e);}} /* S1959 — the Mages' academy on its plot */
     // Walls with gates where roads cross; towers at the gates.
     if(plan.walls&&!burnedV&&!abandonedV){
       const WT=TST?wallTierFor(site):(plan.walls==='palisade'?'logs':'stone');const WS=WALL_SPEC[WT]; // v80 S129 — fence → logs → stone → dressed stone
@@ -1258,7 +1293,7 @@ function genSettlement(site){
         h.exitX=nx;h.exitZ=nz;}}
     if(kitG){S.kitTris=PKIT.mergeByMaterial(kitG);S.kitCalls=kitG.children.length; // S1072 — the kit's houses, one mesh per material
       const lo=new THREE.Mesh(mergeGeos(kitLo),VC_MAT);lo.name='kit houses far';lo.userData.noBake=true;lo.castShadow=true;lo.receiveShadow=true;lo.visible=false;group.add(lo);kitLo.forEach(([g])=>g.dispose()); /* S1073 — and their far copy */
-      let r=0;for(const l of use)if(l.kit)r=Math.max(r,Math.hypot(l.x-cx,l.z-cz)+(l.kit.r||Math.max(l.w,l.d)/2)); /* S1143 — the keep's reach is its bawn's */for(const Y of S.yards||[])r=Math.max(r,Math.hypot(Y.x-cx,Y.z-cz)+Y.r+2);if(S.market)r=Math.max(r,Math.hypot(S.market.x-cx,S.market.z-cz)+S.market.r); /* S1904 — and the market house */ /* S1658 — and a yard outside the walls */S.kitLod={hi:kitG,lo,x:cx,z:cz,r,tris:lo.geometry.attributes.position.count/3};}
+      let r=0;for(const l of use)if(l.kit)r=Math.max(r,Math.hypot(l.x-cx,l.z-cz)+(l.kit.r||Math.max(l.w,l.d)/2)); /* S1143 — the keep's reach is its bawn's */for(const Y of S.yards||[])r=Math.max(r,Math.hypot(Y.x-cx,Y.z-cz)+Y.r+2);if(S.market)r=Math.max(r,Math.hypot(S.market.x-cx,S.market.z-cz)+S.market.r); /* S1904 — and the market house */if(S.academy)r=Math.max(r,Math.hypot(S.academy.cx-cx,S.academy.cz-cz)+S.academy.r); /* S1959 — and the academy */ /* S1658 — and a yard outside the walls */S.kitLod={hi:kitG,lo,x:cx,z:cz,r,tris:lo.geometry.attributes.position.count/3};}
     bakeSettlement(S);
     if(S.chimneys.length)try{smokeFor(S);}catch(e){console.warn('smoke',e);}
     sc.add(group);
