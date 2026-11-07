@@ -397,5 +397,53 @@ for (const x of d10.by) { const nm = `rubbing (${x.pp}, ${x.how})`; if (x.missin
   check(`${nm}: ${x.how === 'burn' ? 'burn it gives you the gate’s rubbing' : 'no rubbing of yours'}`, x.how === 'burn' ? x.rubbing === 1 : x.rubbing === 0, x.rubbing); }
 check('rubbing: the records are saved', d10.saved >= 4, d10.saved);
 
+// S1947 — errand 7, The Stuck Cart: a carter, farmer, cooper or trader's cart in the ditch 150 to 300 along a road out of town; E at it
+// (the world's prompt); lifted at Might 5, or unloaded for two hours, when one time in three on the errand's id (on a road not cleared) two
+// bandits come up the road, and killing them is a point more; turned in for the pay; fourteen days, the lapse
+const d7 = await page.evaluate(() => {
+  worldState.quests = []; worldState.met = {}; worldState.roadsCleared = {}; const T0 = 260 * 1440 + 600; worldState.gameTimeAbsMinutes = T0;
+  const towns = []; for (let j = 0; j < GRID; j++) for (let i = 0; i < GRID; i++) getCell(i, j).sites.forEach(t => { if (t.pad >= 30 && t.kind !== 'shrine' && t.kind !== 'portal') towns.push(t); });
+  const mk = (site, i, pp) => { const d = makeDef(site, site.reg || 'irish', seededRng('ertest7', i), 'Villager', 'Seán', {}); d._twin = 'C' + i; if (pp) d.people = pp; return d; };
+  const find = (pp, ok) => { for (const site of towns) { if (!erGiver(mk(site, 0, pp), site)) continue; for (let i = 0; i < 500; i++) { const d = mk(site, pp + i, pp); const e = errandFor(d, site);
+      if (e && e.sub === 'cart' && (!ok || ok(d, site, e))) return { d, site, e }; } } return null; };
+  let wrongTrade = 0; for (const site of towns.slice(0, 15)) for (let i = 0; i < 80; i++) { const d = mk(site, 'wt' + i); const e = errandFor(d, site); if (e && e.sub === 'cart' && !ER_CART_TRADES.has(d.bio.trade)) wrongTrade++; }
+  const band = (d, site, e) => seededRng('errand', erPre(d, site) + e.idx + ':band')() < 1 / 3;
+  const by = [];
+  for (const [pp, how] of [['gatelander', 'lift'], ['markman', 'stuck'], ['aurennais', 'band'], ['oldblood', 'lapse']]) { worldState.gameTimeAbsMinutes = T0; ATTRS.might = how === 'lift' ? 5 : 0;
+    const F = find(pp, how === 'band' ? band : how === 'stuck' ? (d, s, e) => !band(d, s, e) : null); if (!F) { by.push({ pp, how, missing: true }); continue; }
+    const { d: A, site, e: E } = F, p = pp;
+    A.greeting[0]; const greet = A.greeting[0]; const you = A.topics.find(t => /^About you/.test(t.label)); const ask = you && you.follow.find(t => t.label === 'Where’s your cart?');
+    const wantOffer = ER_CART.offer[p](E); const yes = ask && ask.follow[0].fn(); const q = qActive().find(x => x.giver === A.name && x.sub === 'cart');
+    const notYet = A.topics.find(t => t.label === 'About that errand.'); const x = { pp, how, greet, hint: ER_CART.hint[p], offer: ask && ask.response, wantOffer, yes, ys: ER_SHARED[p].yes, title: q && q.title, wtitle: A.name + "'s cart",
+      notYet: notYet && notYet.fn(), ny: ER_SHARED[p].notYet, along: Math.hypot(E.x - site.x, E.z - site.z), trade: A.bio.trade };
+    if (how === 'lapse') { worldState.gameTimeAbsMinutes = q.erDue + 5; qTick(); const t = A.topics.find(t => t.label === 'About that errand.'); const g1 = gold; x.done = t && t.fn(); x.wdone = ER_CART.lapse[p]; x.lapsed = q.lapsed; x.paid = gold - g1;
+      x.again = !!A.topics.find(t => t.label === 'About that errand.'); by.push(x); continue; }
+    px = q.data.x; pz = q.data.z; qTick(); x.mesh = !!(ER_CART_LIVE[q.id] && ER_CART_LIVE[q.id].m && ER_CART_LIVE[q.id].m.parent); x.prompt = WORLD.shipPrompt();
+    x.opened = erCartInteract() && dlgOpen; x.slip = document.getElementById('dlg-text') && document.getElementById('dlg-text').textContent; try { closeDialog(); } catch (e) {}
+    if (how === 'stuck') { x.liftNo = !liftCart(q.id) && !q.data.shifted; worldState.roadsCleared[q.data.ra + '|' + q.data.rb] = T0; }
+    if (how === 'lift') x.lifted = liftCart(q.id);
+    else { const t0 = worldState.gameTimeAbsMinutes; unloadCart(q.id); x.hours = (worldState.gameTimeAbsMinutes - t0) / 60; x.band = q.data.band;
+      const F2 = (ER_CART_LIVE[q.id] && ER_CART_LIVE[q.id].foes) || []; x.foes = F2.length; x.foeIds = F2.map(e => e.id);
+      if (how === 'band') { F2.forEach(e => { e.dead = true; }); qTick(); x.killed = q.data.band; } }
+    x.shifted = q.data.shifted; x.label = A.topics.filter(t => t.quest).map(t => t.label);
+    px = site.x; pz = site.z; qTick(); x.goneAway = !(ER_CART_LIVE[q.id] && ER_CART_LIVE[q.id].m);
+    const t = A.topics.find(t => t.label === ER_CART.told); const g1 = gold, f1 = favor(site); x.done = t && t.fn();
+    x.wdone = how === 'band' ? ER_CART.done[p] + ' ' + ER_CART.road[p] : ER_CART.done[p]; x.paid = gold - g1; x.wpaid = questGold(E.n); x.fav = favor(site) - f1; x.turned = q.turnedIn; by.push(x); }
+  ATTRS.might = 0;
+  return { wrongTrade, by, saved: JSON.parse(ssStringify(worldState.quests)).filter(x => x.sub === 'cart').length };
+});
+console.log(JSON.stringify(d7).slice(0, 3500));
+check('cart: only a carter, a farmer, a cooper or a trader asks it', d7.wrongTrade === 0, d7.wrongTrade);
+for (const x of d7.by) { const nm = `cart (${x.pp}, ${x.how})`; if (x.missing) { check(`${nm}: a giver asks`, false); continue; }
+  check(`${nm}: the hint after First Words, the offer word for word, taken and titled, not yet; the cart on a road out of town`, x.greet.endsWith(' ' + x.hint) && x.offer === x.wantOffer && x.yes === x.ys && x.title === x.wtitle && x.notYet === x.ny && x.along <= 320 && !/\{|undefined|null/.test(x.offer), { greet: x.greet, offer: x.offer, along: x.along, trade: x.trade });
+  if (x.how === 'lapse') { check(`${nm}: fourteen days pass, the lapse in the giver's words, once, nothing paid`, x.lapsed && x.done === x.wdone && x.paid === 0 && !x.again, x); continue; }
+  check(`${nm}: at the cart, its mesh, the prompt and the slip`, x.mesh && x.prompt === "Press 'E' to see to the cart" && x.opened && x.slip === 'The cart lies nose down in the ditch, one wheel off the ground.', { prompt: x.prompt, slip: x.slip });
+  if (x.how === 'lift') check(`${nm}: lifted at Might 5`, x.lifted && x.shifted);
+  if (x.how === 'stuck') check(`${nm}: at Might 0 it does not shift; unloaded, two hours, no bandits on a cleared road`, x.liftNo && x.shifted && x.hours === 2 && !x.band && x.foes === 0, x);
+  if (x.how === 'band') check(`${nm}: unloaded, two hours, two bandits come up the road, keyed by the errand, and killed`, x.shifted && x.hours === 2 && x.band === 'came' && x.foes === 2 && x.foeIds.every(i => i.includes(':foe:')) && x.killed === 'killed', x);
+  check(`${nm}: the cart gone from the road once you are away`, x.goneAway);
+  check(`${nm}: Your cart's out of the ditch., answered in their words, paid, ${x.how === 'band' ? 'two points' : 'a point'} of favour`, x.turned && x.done === x.wdone && x.paid === x.wpaid && x.paid > 0 && x.fav === (x.how === 'band' ? 2 : 1), { labels: x.label, done: x.done, paid: x.paid, fav: x.fav }); }
+check('cart: the records are saved', d7.saved >= 3, d7.saved);
+
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

@@ -313,6 +313,7 @@ const giver=`${lord.title} ${lord.name}`;
       if(q.kind==='errand'&&q.sub==='debt'){erDebtTick(q);continue;} /* S1677 */
       if(q.kind==='errand'&&q.sub==='borrowed'){erBorrowTick(q);continue;} /* S1722 */
       if(q.kind==='errand'&&q.sub==='watch'){erWatchTick(q);continue;} /* S1776 */
+      if(q.kind==='errand'&&q.sub==='cart'){erCartTick(q);continue;} /* S1947 */
       if(q.kind==='retrieve'&&q.data.fixed&&!q.data.got&&dungeonWorldPos[q.data.seed]){const w=dungeonWorldPos[q.data.seed];q.data.fixed=false;q.data.x=w.x+7;q.data.z=w.z+5; /* S985 — the job was given before its gate was placed: the thing lies by the real door */
         if(q._obj){const y=worldH(q.data.x,q.data.z)+.2;q._obj.m.position.set(q.data.x,y,q.data.z);q._obj.l.position.copy(q._obj.m.position);const pk=pickups.find(o=>o.id===q.id+':pickup');if(pk){pk.x=q.data.x;pk.z=q.data.z;}}}
       if(q.kind==='retrieve'&&!q.data.got&&!q._obj){const m=new THREE.Mesh(new THREE.BoxGeometry(.5,.4,.5),new THREE.MeshLambertMaterial({color:0xc8a040}));m.position.set(q.data.x,worldH(q.data.x,q.data.z)+.2,q.data.z);sc.add(m);const l=regLight(0xffd080,.8,5,'quest');l.position.copy(m.position);q._obj={m,l};pickups.push({id:q.id+':pickup',x:q.data.x,z:q.data.z,quest:q});} /* S518 — a quest's pickup is <quest id>:pickup (co-op rules) */
@@ -350,6 +351,7 @@ const giver=`${lord.title} ${lord.name}`;
       else if(q.kind==='errand'&&q.sub==='letter'){if(d.learned){const g=siteAnywhere(q.erSite);if(g)push(g.x,g.z,GREEN,`report to ${q.giver}`);}else if(q._npc&&q._npc.g)push(q._npc.g.position.x,q._npc.g.position.z,GREEN,d.who,'\u2709');else push(d.x,d.z,GREEN,d.who,'\u2709');} /* S1554 */
       else if(q.kind==='errand'&&q.sub==='name'){if(d.said){const g=siteAnywhere(q.erSite);if(g)push(g.x,g.z,GREEN,`report to ${q.giver}`);}else push(d.x,d.z,GREEN,d.gate,'\ud83d\udd6f');} /* S1600 */
       else if(q.kind==='errand'&&q.sub==='prayer'){if(d.prayed){const g=siteAnywhere(q.erSite);if(g)push(g.x,g.z,GREEN,`report to ${q.giver}`);}else push(d.x,d.z,GREEN,d.shrine,'\u26e9');} /* S1817 */
+      else if(q.kind==='errand'&&q.sub==='cart'){if(d.shifted){const g=siteAnywhere(q.erSite);if(g)push(g.x,g.z,GREEN,`report to ${q.giver}`);}else push(d.x,d.z,GREEN,`${q.giver}'s cart`,'\ud83d\udede');} /* S1947 */
       else if(q.kind==='errand'&&q.sub==='watch'){if(d.done){const g=siteAnywhere(q.erSite);if(g)push(g.x,g.z,GREEN,`report to ${q.giver}`);}else push(d.x,d.z,GREEN,`the ${d.fold}`,'\ud83c\udf19');} /* S1776 */
       else if(q.kind==='road'||q.kind==='cull')push(d.x,d.z,GREEN,q.kind==='road'?'the camp':plural(2,q.data.target),q.kind==='road'?'\u26fa':'\u2620');
       else if(q.kind==='duel'&&d.state!=='lost')push(d.x,d.z,GREEN,'the yard','\u2694');}
@@ -658,9 +660,9 @@ const giver=`${lord.title} ${lord.name}`;
     return GOD_SHRINE.get(god.name);}
   function godOf(site){const h=String(site.id).split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,13);return GODS[h%GODS.length];}
   const SHRINE_BOONS=[{type:'swiftness',mult:1.25,label:'the Boon of the Road'},{type:'warding',mult:.75,label:'the Boon of Stone'},{type:'regen',mult:1,rate:RENEWAL_RATE,label:'the Boon of Renewal'},{type:'meleeDmg',mult:1.2,label:'the Boon of the Arm'},{type:'spellCost',mult:.7,label:'the Boon of the Mind'}];
-  function shrinePrompt(){for(const S of SETTLE.values()){if(S.site.kind!=='shrine'||!S.altar)continue;if(Math.hypot(px-S.altar.x,pz-S.altar.z)<2.6)return `Press 'E' to pray to ${S.god?S.god.name+', '+S.god.en:'the altar'}`;}return null;}
+  function shrinePrompt(){{const cp=erCartPrompt();if(cp)return cp;} /* S1947 — the stuck cart, at the shrine's hook in the world's prompt */for(const S of SETTLE.values()){if(S.site.kind!=='shrine'||!S.altar)continue;if(Math.hypot(px-S.altar.x,pz-S.altar.z)<2.6)return `Press 'E' to pray to ${S.god?S.god.name+', '+S.god.en:'the altar'}`;}return null;}
   // S497 — on its god's own day (calDay, the calendar's week) a shrine's boon lasts twice as long, two days; the once a day stays
-  function shrineInteract(){for(const S of SETTLE.values()){if(S.site.kind!=='shrine'||!S.altar)continue;if(Math.hypot(px-S.altar.x,pz-S.altar.z)>=2.6)continue;
+  function shrineInteract(){if(erCartInteract())return true; /* S1947 — the stuck cart */for(const S of SETTLE.values()){if(S.site.kind!=='shrine'||!S.altar)continue;if(Math.hypot(px-S.altar.x,pz-S.altar.z)>=2.6)continue;
     const st=worldState.shrines||(worldState.shrines={});const abs=worldState.gameTimeAbsMinutes||0;if(st[S.site.id]&&abs-st[S.site.id]<1440){const er=erPrayerAt(S);showMsg(er||'The altar is quiet. Come back tomorrow.',er?'#e8d8a0':'#c8b880');return true;} /* S1817 — a carried prayer is said on a quiet day too */
     st[S.site.id]=abs;PHP=effMaxHP();mana=effMaxMana();if(typeof stamina!=='undefined')stamina=effMaxStamina();updateHUD();
     const b=(S.god&&S.god.boon)||SHRINE_BOONS[Math.floor(seededRng('boon',S.site.id+':'+Math.floor(abs/1440))()*SHRINE_BOONS.length)]; /* S679 — the boon rolls on the shrine and the day (co-op rules), not Math.random */if(S.god&&!S.god.boon){const d=nearestSigilDoorFrom(S.site);if(d&&typeof bagAdd==='function'){bagAdd({name:`Rubbing: ${d.name}`,ico:'📜',type:'rubbing',seed:d.seed,gate:d.name,weight:.2,sellMult:.3,buyPrice:60,qty:1});showMsg(`You are restored. The Weaver leaves a rubbing on the altar: ${d.name}.`,'#e8d8a0');}else showMsg('You are restored.','#e8d8a0');}
@@ -998,6 +1000,7 @@ const giver=`${lord.title} ${lord.name}`;
     {const P=erPrayerRoll(def,site,wk,R.length);if(P)return P;} /* S1817 — the prayer, on its own stream */
     {const F=erFishRoll(def,site,wk,R.length);if(F)return F;} /* S1857 — the wedding's fish, on its own stream */
     {const U=erRubRoll(def,site,wk,R.length);if(U)return U;} /* S1908 — the rubbing, on its own stream */
+    {const C=erCartRoll(def,site,wk,R.length);if(C)return C;} /* S1947 — the stuck cart, on its own stream */
     {const s=seededRng('errand-sub',site.id+':'+erTag(def)+':'+wk),kids=def.bio.kids>0,pref=def.bio.wish==='to hear from my daughter'||def.bio.worry==='my brother went for a soldier and never wrote'; /* S1554 — the sub on its own stream, so a fever's herb, count and date roll as before */
       if(pref||!kids||s()<.5){const L=erLetter(def,site,s,wk,R.length);if(L||!kids)return L;}}
     const n=2+Math.floor(r()*3),days=3+Math.floor(r()*3),H=erHerb(site,r),day=Math.floor((worldState.gameTimeAbsMinutes||0)/1440);
@@ -1143,6 +1146,7 @@ const giver=`${lord.title} ${lord.name}`;
   function erLapse(q){if(!q||q.kind!=='errand'||q.turnedIn||!q.erDue||(worldState.gameTimeAbsMinutes||0)<q.erDue)return false;
     q.turnedIn=true;q.lapsed=true;q.erUnsaid=true;if(q.sub==='borrowed'){addFavor(q.erSite,-1);qJournal(q,'lapsed',`You kept the coin the ${q.data.thing} fetched, and ${q.giver} has heard it.`);return true;} /* S1722 */
     if(q.sub==='prayer'){qJournal(q,'lapsed',`The week passed, and ${q.giver} carried the prayer another way.`);return true;} /* S1817 */
+    if(q.sub==='cart'){qJournal(q,'lapsed',`Fourteen days, and ${q.giver}'s cart came out of the ditch without you.`);return true;} /* S1947 */
     if(q.sub==='fish'){qJournal(q,'lapsed',`The wedding was held on ${q.data.date}, and no fish of yours on the table.`);return true;} /* S1857 */
     qJournal(q,'lapsed',`The date passed, and the fever in ${q.giver}'s house broke without the ${q.data.herb}.`);return true;}
   // S1776 — errand 6, *The Watch*: a shepherd, a farmer or a beekeeper, or anyone in a village, camp or outpost, has lost a beast in
@@ -1360,6 +1364,80 @@ const giver=`${lord.title} ${lord.name}`;
     out.push({label:ER_RUB.told.none(o),quest:true,fn:()=>erRubTell(q,site,p,'none')});
     if(d.old&&o.sense)out.push({label:ER_RUB.told.burn(o),quest:true,fn:()=>erRubTell(q,site,p,'burn')});
     return out;}
+  // S1947 — errand 7, *The Stuck Cart* (Asked in Passing, the second run; approved 14 Oct 2026): a carter, a farmer, a cooper or a
+  // trader has a cart in the ditch on a road out of town, 150 to 300 along it from the town's end (where, on the errand's own stream).
+  // At the cart, E: lift it (Might 5 or more), or unload it, lift it and load it again, two game-hours (advanceClock). While you unload,
+  // on a road not yet cleared, one time in three on the errand's id two of the road's bandits come up it (keyed <id>:foe:<k>); killed,
+  // the giver's town takes a point more. The cart is home before you are: once shifted it stands on the road until you are 40 away.
+  // Fourteen days to do it in. The cart's mesh and the bandits are live handles kept here, never saved. The draft's miller is left out
+  // (no generated townsperson is one); the slip's line over its labels, its *Leave it.* and the journal's lines are added, plainly.
+  const ER_CART_TRADES=new Set(['carter','farmer','cooper','trader']);
+  const ER_CART={
+    hint:{gatelander:"I'd a cart this morning. I've a ditch with a cart in it now.",markman:"Cart's in the ditch. Out the road.",
+      aurennais:"My cart is in a ditch on the road, Master, with the day's goods in it.",oldblood:"The wain is in the ditch."},
+    offer:{gatelander:o=>`Out the ${o.dir} road, a half-hour on, nose down in the ditch where the road's gone soft. I'd the strength for it once. A cart's like a grudge: easy got into, hard got out of. Shift it for me and there's ${o.n} gold in it.`,
+      markman:o=>`${erCap(o.dir)} road. Half an hour out. Wheel's in the ditch and my back's done. Lift it. ${o.n} gold.`,
+      aurennais:o=>`On the ${o.dir} road, Master, perhaps half an hour out. The wheel has gone into the ditch and the goods are owed in town by evening. If you could free it, ${o.n} gold, and the goods can still be delivered as contracted.`,
+      oldblood:o=>`The ${o.dir} road. A half-hour. Lift it out. ${o.n} gold.`},
+    prompt:"Press 'E' to see to the cart",slip:'The cart lies nose down in the ditch, one wheel off the ground.',
+    lift:'Lift it.',unload:'Unload it, lift it, load it again.',leave:'Leave it.',
+    lifted:'You get your shoulder under the bed and heave. The wheel comes up out of the ditch.',stuck:'It does not shift.',
+    unloaded:'Two hours, sack by sack. The cart comes out light, and goes back heavy.',band:'Someone is coming up the road.',
+    told:"Your cart's out of the ditch.",
+    done:{gatelander:"So it is, and on its four wheels and not three. Here, and the Weaver keep your back.",markman:"Saw it come in. Good. Here.",
+      aurennais:"It arrived an hour ago, Master, with the goods entire. Your fee, as agreed.",oldblood:"The wain came home. Good."},
+    road:{gatelander:"And them on the road that came at you — I'll not ask. A road's only as safe as the last one to walk it.",markman:"Heard about the road. Good work. Drinks are on me, if I'm there.",
+      aurennais:"And I understand the road was cleared of a certain difficulty. The town is in your debt, Master, and so am I.",oldblood:"The road is quieter."},
+    lapse:{gatelander:"My cousin came with the ox in the end. An ox doesn't promise; it just pulls.",markman:"Got it out myself. Took the day.",
+      aurennais:"The cart was recovered by other means, Master. The goods were late; I paid the penalty.",oldblood:"It is out. Not by you."}};
+  const ER_CART_LIVE={};
+  function erCap(s){s=String(s||'');return s.charAt(0).toUpperCase()+s.slice(1);}
+  // the point on a road out of the town, measured from the town's end; null when no built road ends at the site or none is long enough
+  function erCartPoint(site,s){const rds=ROADS.filter(r=>r.def&&r.def.via!=='quay'&&(r.def.a===site.id||r.def.b===site.id)&&r.pts&&r.pts.length>1);if(!rds.length)return null;
+    const rd=rds[Math.floor(s()*rds.length)],far=s(),L=150+far*150;let pts=rd.pts;
+    if(Math.hypot(pts[pts.length-1].x-site.x,pts[pts.length-1].z-site.z)<Math.hypot(pts[0].x-site.x,pts[0].z-site.z))pts=pts.slice().reverse();
+    let run=0;for(let i=0;i+1<pts.length;i++){const a=pts[i],b=pts[i+1],seg=Math.hypot(b.x-a.x,b.z-a.z);if(run+seg>=L){const f=(L-run)/(seg||1),x=a.x+(b.x-a.x)*f,z=a.z+(b.z-a.z)*f;
+        return {x,z,ang:Math.atan2(b.x-a.x,b.z-a.z),ra:rd.def.a,rb:rd.def.b};}run+=seg;}
+    return null;}
+  function erCartRoll(def,site,wk,idx){if(!ER_CART_TRADES.has(def.bio.trade))return null;
+    if(def.bio.wish==='to hear from my daughter'||def.bio.worry==='my brother went for a soldier and never wrote')return null;
+    const s=seededRng('errand-cart',site.id+':'+erTag(def)+':'+wk);if(s()>=.3)return null;const P=erCartPoint(site,s);if(!P)return null;
+    const tier=Math.max(1,worldTierAt(site.x,site.z)||1);
+    return Object.assign({sub:'cart',dir:compassWord(P.x-site.x,P.z-site.z),n:Math.min(40,15+5*(tier-1)),week:wk,idx},P);}
+  function erCartQ(){return qActive().find(q=>q.kind==='errand'&&q.sub==='cart'&&!q.turnedIn&&!q.data.shifted&&Math.hypot(px-q.data.x,pz-q.data.z)<3)||null;}
+  // the cart in the ditch, a shoulder's width off the road and pitched nose down; upright on the road once shifted
+  function erCartPlace(m,d){const side=3.2,x=d.x+Math.cos(d.ang)*(d.shifted?0:side),z=d.z-Math.sin(d.ang)*(d.shifted?0:side);
+    m.rotation.set(0,d.ang,0);if(d.shifted){m.position.set(d.x,worldH(d.x,d.z),d.z);return;}m.position.set(x,worldH(x,z)-.25,z);m.rotateX(-.3);m.rotateZ(.28);}
+  function erCartDrop(q){const L=ER_CART_LIVE[q.id];if(!L)return;if(L.m&&L.m.parent)L.m.parent.remove(L.m);
+    for(const e of L.foes||[]){if(e.dead)continue;if(e.mesh&&e.mesh.parent)e.mesh.parent.remove(e.mesh);const i=ZONES.world.enemies.indexOf(e);if(i>=0)ZONES.world.enemies.splice(i,1);}
+    delete ER_CART_LIVE[q.id];}
+  function erCartSpawn(q){const d=q.data,L=ER_CART_LIVE[q.id]||(ER_CART_LIVE[q.id]={}),F=[];
+    for(let k=0;k<2;k++){const x=d.x+Math.sin(d.ang)*(22+k*2.5)+(k?1.5:-1.5),z=d.z+Math.cos(d.ang)*(22+k*2.5);
+      const e=keyFoe(unlockFoe(buildZoneEnemy(sc,STATIC_SOL,x,z,'Bandit',null)),q.id+':foe:'+k);if(!e)continue;e.x=x;e.z=z;e._questTag=q.id;e.homeX=d.x;e.homeZ=d.z;e.alert=true;
+      if(e.mesh&&!e.mesh.parent)sc.add(e.mesh);ZONES.world.enemies.push(e);F.push(e);}
+    L.foes=F;}
+  function erCartTick(q){if(erLapse(q)){erCartDrop(q);return;}const d=q.data,L=ER_CART_LIVE[q.id]||(ER_CART_LIVE[q.id]={}),far=Math.hypot(px-d.x,pz-d.z);
+    const show=d.shifted?far<40&&!d.gone:far<250;if(d.shifted&&far>=40)d.gone=true;
+    if(show&&!L.m&&typeof cartMesh==='function'){L.m=cartMesh();sc.add(L.m);erCartPlace(L.m,d);}else if(!show&&L.m){if(L.m.parent)L.m.parent.remove(L.m);L.m=null;}
+    if(d.band==='came'){if(!L.foes&&far<150)erCartSpawn(q);if(L.foes&&L.foes.length&&L.foes.every(e=>e.dead)){d.band='killed';L.foes=null;}}}
+  function erCartDone(q){const d=q.data;d.shifted=true;const L=ER_CART_LIVE[q.id];if(L&&L.m)erCartPlace(L.m,d);
+    qJournal(q,'ready',`The cart is out of the ditch and on its way home. Tell ${q.giver}.`);}
+  // the slip at the cart: the two ways, read by name (co-op rules: liftCart, unloadCart)
+  function liftCart(id){const q=qActive().find(x=>x.id===id);if(!q||q.data.shifted)return false;if((ATTRS.might||0)<5){showMsg(ER_CART.stuck,'#c8b880');return false;}
+    q.data.how='lift';erCartDone(q);showMsg(ER_CART.lifted,'#e8d8a0');return true;}
+  function unloadCart(id){const q=qActive().find(x=>x.id===id);if(!q||q.data.shifted)return false;const d=q.data;
+    advanceClock(120);d.how='unload';
+    const clear=!!(worldState.roadsCleared||{})[d.ra+'|'+d.rb];if(!clear&&seededRng('errand',q.id+':band')()<1/3){d.band='came';erCartSpawn(q);}
+    erCartDone(q);showMsg(ER_CART.unloaded,'#e8d8a0');if(d.band==='came')setTimeout(()=>showMsg(ER_CART.band,'#ffb060'),2200);return true;}
+  function erCartPrompt(){return erCartQ()?ER_CART.prompt:null;}
+  function erCartInteract(){const q=erCartQ();if(!q)return false;const id=q.id,shut=()=>setTimeout(()=>{try{closeDialog();}catch(e){}},60);
+    openDialog({name:`${q.giver}'s cart`,role:'',ico:'🛞',noIntro:true,greeting:[ER_CART.slip],topics:[
+      {label:ER_CART.lift,quest:true,fn:()=>{if(liftCart(id)){shut();return '';}return ER_CART.stuck;}},
+      {label:ER_CART.unload,quest:true,fn:()=>{unloadCart(id);shut();return '';}},
+      {label:ER_CART.leave,bye:true}]});
+    return true;}
+  function erCartTurnIn(q,site,p){const d=q.data;if(q.lapsed||erLapse(q)){q.erUnsaid=false;erCartDrop(q);return ER_CART.lapse[p];}if(!d.shifted)return ER_SHARED[p].notYet;
+    qTurnIn(q);addFavor(site,d.band==='killed'?2:1);erCartDrop(q);return d.band==='killed'?ER_CART.done[p]+' '+ER_CART.road[p]:ER_CART.done[p];}
   function errandAccept(def,site,E){const p=erPeople(def),tier=Math.max(1,worldTierAt(site.x,site.z)||1),base=Math.min(40,15+5*(tier-1));
     if(E.sub==='letter'){const q={id:erPre(def,site)+E.idx,kind:'errand',sub:'letter',giver:def.name,erSite:site.id,week:E.week,erPeople:p,
         title:`A letter for ${E.who}`,desc:`${def.name} of ${site.name} has written to ${E.who} at ${E.town} and had no answer. Carry the letter there and ask after ${erPro(E).her}.`,
@@ -1387,6 +1465,10 @@ const giver=`${lord.title} ${lord.name}`;
         title:'A fish for the wedding',desc:`${def.name} of ${site.name} wants a fine fish for the wedding table on ${E.date}. A plain one will be taken, for half.`,
         objective:`Bring ${def.name} at ${site.name} a fine fish before ${E.date}`,reward:base,
         data:{x:site.x,z:site.z,who:E.who,wday:E.wday,weekday:E.weekday,date:E.date,fine:null,fish:null}});return ER_SHARED[p].yes;} /* S1857 */
+    if(E.sub==='cart'){const day=Math.floor((worldState.gameTimeAbsMinutes||0)/1440);qAdd({id:erPre(def,site)+E.idx,kind:'errand',sub:'cart',giver:def.name,erSite:site.id,week:E.week,erDue:(day+14)*1440,erPeople:p,
+        title:`${def.name}'s cart`,desc:`${def.name} of ${site.name} has a cart in the ditch on the ${E.dir} road, half an hour out. Shift it.`,
+        objective:`Get ${def.name}'s cart out of the ditch on the ${E.dir} road from ${site.name}`,reward:E.n,
+        data:{x:E.x,z:E.z,ang:E.ang,ra:E.ra,rb:E.rb,dir:E.dir,shifted:false,how:null,band:null,gone:false}});return ER_SHARED[p].yes;} /* S1947 */
     if(E.sub==='rub'){const id=erPre(def,site)+E.idx;qAdd({id,kind:'errand',sub:'rub',giver:def.name,erSite:site.id,week:E.week,erPeople:p,
         title:'What the rubbing says',desc:`${def.name} of ${site.name} has a rubbing of a carving in ${erGateIn(E.gate)}, made by a grandparent who went in, and wants to know what it says. Find someone who can read it.`,
         objective:`Have ${def.name}'s rubbing read, and tell ${def.name} at ${site.name} what it says`,reward:base,
@@ -1411,6 +1493,7 @@ const giver=`${lord.title} ${lord.name}`;
     if(q.sub==='prayer')return erPrayerTurnIn(q,site,p); /* S1817 */
     if(q.sub==='fish')return erFishTurnIn(q,site,p,true); /* S1857 */
     if(q.sub==='rub')return ER_SHARED[p].notYet; /* S1908 — told by its own labels */
+    if(q.sub==='cart')return erCartTurnIn(q,site,p); /* S1947 */
     if(q.sub==='watch')return erWatchTurnIn(q,site,p); /* S1776 */ /* S1677 — the debt: a fifth, paid as if collected either way */
     if(q.lapsed||erLapse(q)){q.erUnsaid=false;return ER_FEVER.lapse[p];}
     const isH=b=>b.type==='herb'&&b.name===q.data.herb;if(bagCount(isH)<q.data.n)return ER_SHARED[p].notYet;
@@ -1447,6 +1530,7 @@ const giver=`${lord.title} ${lord.name}`;
       return {cat:'you',label:'Who’s the prayer for?',response:ER_PRAYER.offer[p](Object.assign({},E,{n:Math.min(40,15+5*(Math.max(1,worldTierAt(site.x,site.z)||1)-1))})),follow:[{label:'I’ll do it.',fn:()=>errandFor(def,site)?errandAccept(def,site,E):ER_SHARED[p].no},{label:'Not now.',response:ER_SHARED[p].no}]};}
     if(E.sub==='fish')return {cat:'you',label:'What’s the wedding missing?',response:ER_FISH.offer[p](Object.assign({},E,{n:Math.min(40,15+5*(Math.max(1,worldTierAt(site.x,site.z)||1)-1))})),follow:[{label:'I’ll do it.',fn:()=>errandFor(def,site)?errandAccept(def,site,E):ER_SHARED[p].no},{label:'Not now.',response:ER_SHARED[p].no}]}; /* S1857 */
     if(E.sub==='rub')return {cat:'you',label:'What does the rubbing say?',response:ER_RUB.offer[p](Object.assign({},E,{gate:erGateIn(E.gate),n:Math.min(40,15+5*(Math.max(1,worldTierAt(site.x,site.z)||1)-1))})),follow:[{label:'I’ll do it.',fn:()=>errandFor(def,site)?errandAccept(def,site,E):ER_SHARED[p].no},{label:'Not now.',response:ER_SHARED[p].no}]}; /* S1908 */
+    if(E.sub==='cart')return {cat:'you',label:'Where’s your cart?',response:ER_CART.offer[p](E),follow:[{label:'I’ll do it.',fn:()=>errandFor(def,site)?errandAccept(def,site,E):ER_SHARED[p].no},{label:'Not now.',response:ER_SHARED[p].no}]}; /* S1947 */
     if(E.sub==='watch')return {cat:'you',label:'What’s coming at night?',response:ER_WATCH.offer[p](E),follow:[{label:'I’ll do it.',fn:()=>errandFor(def,site)?errandAccept(def,site,E):ER_SHARED[p].no},{label:'Not now.',response:ER_SHARED[p].no}]}; /* S1776 */
     const L=E.sub==='letter',D=E.sub==='debt',B=E.sub==='borrowed',label=B?'Something of yours gone missing?':D?'Who owes you?':L?'You’re waiting on word from someone?':'Who’s sick?',said=B?ER_BORROW.offer[p](E):D?ER_DEBT.offer[p](E):L?ER_LETTER.offer[p](erPro(E)):ER_FEVER.offer[p](E);
     return {cat:'you',label,response:said,follow:[{label:'I’ll do it.',fn:()=>errandFor(def,site)?errandAccept(def,site,E):ER_SHARED[p].no},{label:'Not now.',response:ER_SHARED[p].no}]};}
@@ -1456,14 +1540,14 @@ const giver=`${lord.title} ${lord.name}`;
     if(!q||(q.sub==='letter'&&q.data.learned))return L;
     if(q.sub==='fish')return [...erFishTopics(q,site),...L]; /* S1857 */
     if(q.sub==='rub')return [...erRubTopics(q,site),...L]; /* S1908 */
-    return [{label:q.sub==='name'&&q.data.said?'I said the name.':q.sub==='debt'&&q.data.choice==='keep'?'They haven’t got it.':q.sub==='borrowed'&&!q.lapsed?erBorrowLabel(q):q.sub==='prayer'&&!q.lapsed&&q.data.prayed?`I prayed at ${erThe(q.data.at)}.`:q.sub==='watch'&&!q.lapsed&&q.data.done?(q.data.came?`I sat the night. ${q.data.beasts}.`:'I sat the night. Nothing came.'):'About that errand.',quest:true,fn:()=>errandTurnIn(q,site)},...L];}
+    return [{label:q.sub==='name'&&q.data.said?'I said the name.':q.sub==='debt'&&q.data.choice==='keep'?'They haven’t got it.':q.sub==='borrowed'&&!q.lapsed?erBorrowLabel(q):q.sub==='prayer'&&!q.lapsed&&q.data.prayed?`I prayed at ${erThe(q.data.at)}.`:q.sub==='cart'&&!q.lapsed&&q.data.shifted?ER_CART.told:q.sub==='watch'&&!q.lapsed&&q.data.done?(q.data.came?`I sat the night. ${q.data.beasts}.`:'I sat the night. Nothing came.'):'About that errand.',quest:true,fn:()=>errandTurnIn(q,site)},...L];}
   // the greeting: the hint after First Words while an errand is on offer (from the second meeting), or for a week after a lapse the colder line;
   // after a letter lied about, from the next game-week, one week in two the waiting line, until the giver writes again
   function errandGreet(def,site){if(!erGiver(def,site))return null;const met=metCount(metKey(def,site));const line=firstWords(def,site);
     const now=worldState.gameTimeAbsMinutes||0,R=erRecs(def,site);if(met>0&&erWeddingQ(site.id,R))return ER_FISH.wed[erPeople(def)]; /* S1857 — the wedding day */
     const cold=met>0&&R.find(q=>q.lapsed&&now<q.erDue+1440*7);if(cold)return cold.sub==='borrowed'?ER_BORROW.kept[erPeople(def)](erPro(cold.data)):ER_FEVER.cold[erPeople(def)];
     {const bq=met>0&&R.find(q=>q.sub==='borrowed'&&q.turnedIn&&q.data.choice==='month'&&now>=q.data.at+30*1440&&now<q.data.at+37*1440);if(bq)return line+' '+ER_BORROW.back[erPeople(def)](erPro(bq.data));} /* S1722 — the month out, the thing walked home: a week of the line */
-    const E=met>0&&errandFor(def,site);if(E){if(E.sub==='name')return E.oldblood?line:line+' '+ER_NAME.hint[erPeople(def)](erPro(E));if(E.sub==='borrowed')return line+' '+ER_BORROW.hint[erPeople(def)](E);if(E.sub==='watch')return line+' '+ER_WATCH.hint[erPeople(def)](E);if(E.sub==='prayer')return E.oldblood?line:line+' '+ER_PRAYER.hint[erPeople(def)](E); /* S1817 */if(E.sub==='fish')return line+' '+ER_FISH.hint[erPeople(def)](E); /* S1857 */if(E.sub==='rub')return line+' '+ER_RUB.hint[erPeople(def)]; /* S1908 */return line+' '+(E.sub==='debt'?ER_DEBT.hint:E.sub==='letter'?ER_LETTER.hint:ER_FEVER.hint)[erPeople(def)];} /* S1600 — the name's hint; none for the Old Blood */
+    const E=met>0&&errandFor(def,site);if(E){if(E.sub==='name')return E.oldblood?line:line+' '+ER_NAME.hint[erPeople(def)](erPro(E));if(E.sub==='borrowed')return line+' '+ER_BORROW.hint[erPeople(def)](E);if(E.sub==='watch')return line+' '+ER_WATCH.hint[erPeople(def)](E);if(E.sub==='prayer')return E.oldblood?line:line+' '+ER_PRAYER.hint[erPeople(def)](E); /* S1817 */if(E.sub==='fish')return line+' '+ER_FISH.hint[erPeople(def)](E); /* S1857 */if(E.sub==='rub')return line+' '+ER_RUB.hint[erPeople(def)]; /* S1908 */if(E.sub==='cart')return line+' '+ER_CART.hint[erPeople(def)]; /* S1947 */return line+' '+(E.sub==='debt'?ER_DEBT.hint:E.sub==='letter'?ER_LETTER.hint:ER_FEVER.hint)[erPeople(def)];} /* S1600 — the name's hint; none for the Old Blood */
     const lq=R.filter(q=>q.sub==='letter').pop(),wk=erWeek();
     if(met>0&&lq&&lq.turnedIn&&lq.data.told==='lie'&&wk>lq.data.toldWeek&&seededRng('errand-wait',erPre(def,site)+wk)()<.5)return ER_LETTER.wait[erPeople(def)](erPro(lq.data));
     return line;}
