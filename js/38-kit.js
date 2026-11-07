@@ -2435,7 +2435,7 @@ function aurenneHomeOne(o = {}, r = stream('aurhome1')) {
   // ── the divan under the front windows, away from the door, its cushions against the wall; the rug and the low brass table before it
   const [dv0, dv1] = xs(tile ? .85 /* the door is in the middle */ : -.2, X - .05), divan = { x0: dv0, x1: dv1, z0: Z - .8, z1: Z, y: F0 + .42 }; bx('cedar', divan.x0, divan.x1, F0, F0 + .3, divan.z0, divan.z1, 'divan', 0); bx('indigo', divan.x0, divan.x1, F0 + .3, divan.y, divan.z0 + .02, divan.z1 - .02);
   for (let x = divan.x0 + .35, k = 0; x < divan.x1 - .3; x += .62, k++) put(new THREE.BoxGeometry(.52, .42, .16), k % 2 ? 'madder' : 'saffron', x, divan.y + .2, Z - .12, 0, .6, -.12);
-  const table = { x: (divan.x0 + divan.x1) / 2, z: Z - 1.75, y: F0 + .42 };
+  const table = { x: tile ? Math.max((divan.x0 + divan.x1) / 2, -X + 1.5) /* clear of the chest at the bed's foot in a shallow house */ : (divan.x0 + divan.x1) / 2, z: Z - 1.75, y: F0 + .42 };
   { const g = new THREE.PlaneGeometry(Math.min(2.8, divan.x1 - divan.x0 + .2), 1.9); g.rotateX(-Math.PI / 2); put(g, 'rug', table.x, F0 + .006, Z - 1.85); }
   put(new THREE.CylinderGeometry(.48, .48, .03, 28), 'brass', table.x, table.y - .015, table.z); for (let k = 0; k < 6; k++) { const a = k * Math.PI / 3; bx('cedarD', table.x + Math.cos(a) * .3 - .02, table.x + Math.cos(a) * .3 + .02, F0, table.y - .03, table.z + Math.sin(a) * .3 - .02, table.z + Math.sin(a) * .3 + .02); }
   boxes.push({ tag: 'table', x0: table.x - .48, x1: table.x + .48, y0: F0, y1: table.y, z0: table.z - .48, z1: table.z + .48, fl: 0 });
@@ -2474,7 +2474,7 @@ function aurenneHomeOne(o = {}, r = stream('aurhome1')) {
   // the door's leaf, hung open against the front wall inside, on the side away from the window
   { const lw = 1.05, lx = dx + ds * (lw / 2 + .04); bx('cedarD', lx - .03, lx + .03, F0, F0 + 1.95, Z - lw - .02, Z - .02, 'leaf', 0); }
   // the walks: in at the door to the roof stair's foot (or the back wall's middle), to the table's near side, to the bed's side
-  const mid = [dx, Math.min(0, Z - 2.4)], paths = [[[dx, Z - .3], mid, RS ? [RS.x0 - .35, (RS.z0 + RS.z1) / 2] : [0, -Z + .5]], [[dx, Z - .3], mid, [table.x, table.z - .75]], [[dx, Z - .3], mid, [bed.x1 + .35, (bed.z0 + bed.z1) / 2]]];
+  const mid = [dx, Math.min(0, Z - 2.4)], paths = [[[dx, Z - .3], mid, RS ? [RS.x0 - .35, (RS.z0 + RS.z1) / 2] : [0, -Z + .5]], [[dx, Z - .3], mid, tile ? [table.x + .8, table.z] /* its east side */ : [table.x, table.z - .75]], [[dx, Z - .3], mid, [bed.x1 + .35, (bed.z0 + bed.z1) / 2]]];
   const group = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = !['flame', 'ember', 'glow'].includes(k); m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
   const all = new THREE.Group(); all.add(sh.group, group);
   const windows = [...sh.open.front.filter(h => !h.door).map(h => ({ face: 'front', x: h.x, z: d / 2, y: sh.yW + h.y, w: h.w, h: h.h })), ...sh.open.back.map(h => ({ face: 'back', x: -h.x, z: -d / 2, y: sh.yW + h.y, w: h.w, h: h.h }))];
