@@ -951,6 +951,7 @@ function closeSLMenu(){
 function setSLTab(mode){
   if(mode==='save'&&_slFromTitle)mode='load';
   _slMode=mode;_slSel=null;
+  if(mode==='save'&&!_slNowPic&&document.getElementById('slmenu').style.display==='flex')_slNowPic=ssShot(); /* S1965 — turned to Save by Tab: the view under the register */
   document.getElementById('sl-tab-save').classList.toggle('active',mode==='save');
   document.getElementById('sl-tab-load').classList.toggle('active',mode==='load');
   // Hide save tab when opened from title (can only load from there)
