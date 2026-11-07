@@ -1484,7 +1484,7 @@ function buildCloak(G, body, byName, rnd) {
   // Below the last row where it lies on the body (the shoulder, the arm, the hand), it comes in toward the legs, halfway
   // to the body's outline below it, along a smooth step; then folds are laid down whole columns, out and in, deepening
   // toward the hem, never in closer than the body allows; the hem rises on a fold's ridge and drops in its trough.
-  const worn = wornMask(D), H = buildHang(cols, R, PP, neck, clearAt, len, rnd, wornMask(D, { armRoom: cape ? 0 : CLOAK_ARM_ROOM }));
+  const worn = wornMask(D), H = buildHang(cols, R, PP, neck, clearAt, len, rnd, wornMask(D, { armRoom: cape ? 0 : CLOAK_ARM_ROOM, mantle: !cape }));
   // the sheet
   const pos = [], uv = [], idx = [];
   for (let k = 0; k < K; k++) for (let r = 0; r < R; r++) { const q = cols[k][r]; pos.push(q.x, q.y, q.z); uv.push(k / (K - 1), r / (R - 1)); }
@@ -1535,13 +1535,53 @@ function buildCloak(G, body, byName, rnd) {
 // o.armRoom (Session 1944): the lower forearm and the hand read that much further out, for the hang alone. The game poses the arms under a
 // cloak from its own driver, a few centimetres from the builder's pose the cloak was hung on, and a column set close over the hand let the
 // fingers through in the walk (f4people, dunmore#3:Pádraig); the test of the arms through the sheet still reads them where they are
+// the braids and a tail laid over a long cloak (Session 1966). The hair is built before the cloak and keeps its own clearance off the body
+// (4.5 cm over a tunic, 10 over the fur mantle), while the cloak stands 6.6 cm off a tunic and 12 off the mantle, with its folds and floors
+// on top: where a braid crossed the collar and the shoulder blades, part of it lay under the sheet and the sheet (or the mantle's fur
+// through it) showed over the braid in stripes. Read once the cloak is built: for each point of the braids, their ties and brushes, and a
+// tail's strands, the nearest point of the sheet (and of its rolled hood and fur collar) within 4 cm, and how far it lies under that point's
+// outside. Each point is moved out along that normal by the most wanted near it (within 1.5 cm in full, eased off to nothing at 8 cm), so a
+// braid moves whole and does not flatten on the cloth. The plait over the shoulder and loose hair are left (they lie under it).
+const HAIR_OVER_GAP = .004, HAIR_OVER_NEAR = .04, HAIR_OVER_IN = .015, HAIR_OVER_OUT = .08;
+function hairOverCloak(meshes, cover) {
+  const hair = meshes.filter(m => m.isSkinnedMesh && /^(braid\d|tie|brush|tail)$/.test(m.name)), parts = cover.filter(m => /^(cloak|cloakHem|hood|collar\d)$/.test(m.name)); if (!hair.length || !parts.length) return null;
+  // the sheet's points and outward normals in a hash of 4 cm cells
+  const cell = HAIR_OVER_NEAR, key = (x, y, z) => Math.floor(x / cell) + ',' + Math.floor(y / cell) + ',' + Math.floor(z / cell), grid = new Map(), CP = [], CN = [];
+  for (const m of parts) { if (!m.geometry.attributes.normal) m.geometry.computeVertexNormals(); const a = m.geometry.attributes.position.array, nn = m.geometry.attributes.normal.array;
+    for (let i = 0; i < a.length; i += 3) { const k = CP.length / 3; CP.push(a[i], a[i + 1], a[i + 2]); CN.push(nn[i], nn[i + 1], nn[i + 2]); const h = key(a[i], a[i + 1], a[i + 2]); let l = grid.get(h); if (!l) grid.set(h, l = []); l.push(k); } }
+  const near = (x, y, z, R, G, P) => { let best = -1, bd = R * R; const cx = Math.floor(x / cell), cy = Math.floor(y / cell), cz = Math.floor(z / cell);
+    for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) for (let k = -1; k <= 1; k++) { const l = G.get((cx + i) + ',' + (cy + j) + ',' + (cz + k)); if (l) for (const q of l) { const d = (P[q * 3] - x) ** 2 + (P[q * 3 + 1] - y) ** 2 + (P[q * 3 + 2] - z) ** 2; if (d < bd) { bd = d; best = q; } } } return best; };
+  const depth = (x, y, z) => { const q = near(x, y, z, HAIR_OVER_NEAR, grid, CP); if (q < 0) return null; return { q, s: (x - CP[q * 3]) * CN[q * 3] + (y - CP[q * 3 + 1]) * CN[q * 3 + 1] + (z - CP[q * 3 + 2]) * CN[q * 3 + 2] }; };
+  // the push wanted at each point of the hair under the sheet (or within the gap over it); three passes at most, the second and third for
+  // what the first left under a turn of the sheet (the collar's edge, where the nearest point's normal changes)
+  let n0 = 0, under0 = 0, moved0 = 0, push0 = 0, after0 = 0;
+  for (let pass = 0; pass < 3; pass++) {
+  const W = [], wgrid = new Map(); let n = 0, under = 0;
+  for (const m of hair) { const a = m.geometry.attributes.position.array; for (let i = 0; i < a.length; i += 3) { const d = depth(a[i], a[i + 1], a[i + 2]); if (!d) continue; n++;
+    if (d.s < HAIR_OVER_GAP) { if (d.s < -.001) under++; const k = W.length / 7; W.push(a[i], a[i + 1], a[i + 2], CN[d.q * 3], CN[d.q * 3 + 1], CN[d.q * 3 + 2], HAIR_OVER_GAP - d.s); const h = key(a[i], a[i + 1], a[i + 2]); let l = wgrid.get(h); if (!l) wgrid.set(h, l = []); l.push(k); } } }
+  if (!pass) { n0 = n; under0 = under; } if (!under) break;
+  // each point moved by the most wanted near it, along that one's normal
+  let moved = 0, push = 0, after = 0; const ease = d => d <= HAIR_OVER_IN ? 1 : d >= HAIR_OVER_OUT ? 0 : (t => 1 - t * t * (3 - 2 * t))((d - HAIR_OVER_IN) / (HAIR_OVER_OUT - HAIR_OVER_IN));
+  for (const m of hair) { const p = m.geometry.attributes.position, a = p.array, out = new Float32Array(a.length);
+    for (let i = 0; i < a.length; i += 3) { let bw = 0, bk = -1; const cx = Math.floor(a[i] / cell), cy = Math.floor(a[i + 1] / cell), cz = Math.floor(a[i + 2] / cell);
+      for (let u = -2; u <= 2; u++) for (let v = -2; v <= 2; v++) for (let w = -2; w <= 2; w++) { const l = wgrid.get((cx + u) + ',' + (cy + v) + ',' + (cz + w)); if (l) for (const k of l) { const d = Math.hypot(W[k * 7] - a[i], W[k * 7 + 1] - a[i + 1], W[k * 7 + 2] - a[i + 2]), e = W[k * 7 + 6] * ease(d); if (e > bw) { bw = e; bk = k; } } }
+      if (bk >= 0) { out[i] = W[bk * 7 + 3] * bw; out[i + 1] = W[bk * 7 + 4] * bw; out[i + 2] = W[bk * 7 + 5] * bw; moved++; push = Math.max(push, bw); } }
+    for (let i = 0; i < a.length; i++) a[i] += out[i]; p.needsUpdate = true; m.geometry.computeBoundingSphere();
+    for (let i = 0; i < a.length; i += 3) { const d = depth(a[i], a[i + 1], a[i + 2]); if (d && d.s < -.001) after++; } }
+  moved0 = Math.max(moved0, moved); push0 += push; after0 = after; }
+  return { n: n0, under: under0, moved: moved0, push: +push0.toFixed(4), after: after0 };
+}
 function wornMask(D, o = {}) { const m = new Uint8Array(PACK.N), R0 = PACK.rest; m.off = new Float32Array(PACK.N); for (const v of PACK.G['body']) m[v] = 1;
   if (o.armRoom) { const r = armRoomV(o.armRoom); for (const v of PACK.G['body']) if (r[v]) m.off[v] = r[v]; }
   if (D.skirt) { const sk = skirtR(D); for (const v of sk) { m[v] = 2; m.off[v] = .025; } }
   // mail (Session 897): its body off the tights, standing as the tunic does and 9 mm more, and its skirt off the skirt shell, by its own push and 6 to 8 mm more
   if (D.mail && !D.robe) { for (const v of PACK.R.mailTop) { const y = R0[v * 3 + 1], ax = Math.abs(R0[v * 3]); if (ax > .3 || y < .06) continue; m[v] = 3; m.off[v] = .032 + (ax < .2 ? .022 * Math.max(0, Math.min(1, (.46 - y) / .2)) : 0) + .012 * Math.max(0, Math.min(1, (.2 - y) / .1)); }
     for (const v of PACK.R.mailSkirt) { const y = R0[v * 3 + 1]; if (y < -.27) continue; m[v] = 2; m.off[v] = .03 + .012 * Math.max(0, Math.min(1, (.14 - y) / .3)) + .03 * Math.max(0, Math.min(1, (y + .14) / .14)) + (D.skirt && D.skirt !== 'short' ? .006 : 0); } }
-  if (D.robe) for (const v of PACK.R.tunic) { const ax = Math.abs(R0[v * 3]); if (ax > .22 && ax < .4) { m[v] = 3; m.off[v] = .016 + .03 * Math.max(0, Math.min(1, (ax - .24) / .16)) ** 1.5; } } return m; }
+  if (D.robe) for (const v of PACK.R.tunic) { const ax = Math.abs(R0[v * 3]); if (ax > .22 && ax < .4) { m[v] = 3; m.off[v] = .016 + .03 * Math.max(0, Math.min(1, (ax - .24) / .16)) ** 1.5; } }
+  // the fur mantle's outermost shell (Session 1966; o.mantle, for the hang's last pass alone): its eleventh shell's push and 4 mm, so no
+  // fur shows through a cloak's back under the collar. Kind 4, which the floor does not read (the cloak would stand bulky over it)
+  if (o.mantle && D.mantle) { const f = mantlePush(10); m.mantle = true; for (const v of PACK.R.mantle) { const x = R0[v * 3], y = R0[v * 3 + 1]; if (Math.abs(x) > MANTLE_CUT.x || y > MANTLE_CUT.top || y < Math.min(MANTLE_CUT.front, MANTLE_CUT.back)) continue; m[v] = 4; m.off[v] = f(x, y) + .004; } }
+  return m; }
 function radialMap(PP, ax, az, y0, y1, B, keep = null, bridge = false) {
   const NA = 90, NY = Math.ceil((y1 - y0) / .02) + 1, M = new Float32Array(NA * NY), n = PP.length / 3;
   for (let i = 0; i < n; i++) { if (!B[i] || (keep && !keep(B[i]))) continue; const y = PP[i * 3 + 1]; if (y < y0 || y > y1) continue; const dx = PP[i * 3] - ax, dz = PP[i * 3 + 2] - az, r = Math.hypot(dx, dz) + B.off[i];
@@ -1562,7 +1602,7 @@ function buildHang(cols, R, PP, neck, clearAt, len, rnd, B) {
   // room for the tunic over the body, and was added over the skirt's shell too, which already stands for the skirt (2.5 cm off its
   // fitting shell). So a long cloak over a long skirt stood 9 to 10 cm off it to the ground, and its back never came in to the skirt.
   // Over a skirt's shell (or a mail skirt's) the floor is now the shell and 1.2 cm, over the body and the rest the clearance as before
-  const skinR = radialMap(PP, ax, az, yLo - .1, yTop + .05, B, k => k !== 2, true), skirtR2 = radialMap(PP, ax, az, yLo - .1, yTop + .05, B, k => k === 2, true);
+  const skinR = radialMap(PP, ax, az, yLo - .1, yTop + .05, B, k => k !== 2 && k !== 4, true), skirtR2 = radialMap(PP, ax, az, yLo - .1, yTop + .05, B, k => k === 2, true);
   const setR = (q, th, r) => { q.x = ax + Math.sin(th) * r; q.z = az - Math.cos(th) * r; };
   const floorAt = q => { const p = polar(q); return Math.max(skinR(p.th, q.y) + clearAt(q), skirtR2(p.th, q.y) + SKIRT_CLEAR) + .006; };
   // the columns in order round the axis on every row: the shoulder line can cross itself at the spine, which was hidden
@@ -1604,7 +1644,8 @@ function buildHang(cols, R, PP, neck, clearAt, len, rnd, B) {
     setR(q, p.th, p.r + d); q.y += .45 * d * s ** 4; if (Math.abs(d) > deep) deep = Math.abs(d); }
   // nothing it hangs over comes through (Session 898): the folds' troughs and the hem's rise move points in and up after the
   // body's outline was read, and over a stiff mail skirt a few came in past it; any such point goes back out to 4 mm over it
-  let floored = 0; for (const c of cols) for (let r = 1; r < R; r++) { const q = c[r]; if (q.y > yTop - .1) continue; const p = polar(q), f = bodyR(p.th, q.y) + .004; if (p.r < f) { setR(q, p.th, f); floored++; } }
+  // (Session 1966: over the fur mantle it reads the mantle's outer shell too, and reaches to 3 cm under the neck, not 10: the fur stood through the back under the collar)
+  let floored = 0; const reach = B.mantle ? .03 : .1; for (const c of cols) for (let r = 1; r < R; r++) { const q = c[r]; if (q.y > yTop - reach) continue; const p = polar(q), f = bodyR(p.th, q.y) + .004; if (p.r < f) { setR(q, p.th, f); floored++; } }
   let crossed = 0; for (let r = 0; r < R; r++) for (let k = 1; k < K; k++) if (polar(cols[k][r]).th < polar(cols[k - 1][r]).th) crossed++;
   return { stats: { untangled, crossed, floored, tapered, hemIn: +hemIn.toFixed(4), hemSlack: +hemSlack.toFixed(4), foldDepth: +deep.toFixed(4), foldPeriod: +P.toFixed(2) } };
 }
@@ -4332,7 +4373,8 @@ function* makePersonSteps(G, o = {}) {
   yield;
   let coatHoodSt = null; if (coat && D.coatHood === 'down') { root.updateMatrixWorld(true); const C = buildCoatHoodDown(G, body, byName, meshes); for (const m of C.meshes) root.add(m); coatHoodSt = C.stats; }
   yield;
-  let cloakStats = null; if (D.cloak) { root.updateMatrixWorld(true); const C = buildCloak(G, body, byName, RND); for (const m of C.meshes) root.add(m); cloakStats = C.stats; }
+  let cloakStats = null; if (D.cloak) { root.updateMatrixWorld(true); const C = buildCloak(G, body, byName, RND); for (const m of C.meshes) root.add(m); cloakStats = C.stats;
+    if (!D.cape && hairStats && /^(braid|braids|tail|shaved)$/.test(hairStats.style)) cloakStats.hairOver = hairOverCloak(meshes, C.meshes); }
   // the round shield (Session 904), last: it is laid outside everything else, and lifts the left arm clear where it must. Under a
   // cloak, which hangs over the arm that holds it, or a shoulder cape, which stands 8 cm out over the board's top edge, it is slung on the back (Session 905)
   yield;
