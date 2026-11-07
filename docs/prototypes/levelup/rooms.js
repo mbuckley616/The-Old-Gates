@@ -385,7 +385,7 @@ export function aurenneHome(o = {}, r = stream('aurhome')) {
     door: { x: dx, z: d / 2, w: 1.05, h: 2.1 }, stair: { x0: SX0, x1: LX, z0: -Z, z1: SZ1, rise: +rise.toFixed(4), going, n: N }, well, hatch, roofStair: RS, paths, boxes, bed, divan, table, counter, lamp, lamp0, braziers, windows, w, d, top: F2 };
 }
 
-// aurenneHomeOne(o, r) (Session 1967, card F9; OG-115's Aurenne panel; Michael's A on #318, the flat over the dyer's shop, and #303's rooms
+// aurenneHomeOne(o, r) (Session 1968, card F9; OG-115's Aurenne panel; Michael's A on #318, the flat over the dyer's shop, and #303's rooms
 //   inside the street's own shell): the one-storey flat-roofed house of Aurenne's streets (PKIT.au.lot's 'flat' with two false, about one
 //   home in three; 6.4 to 9.6 by 6.0 to 8.0 m, one storey of 3.0 m) as a home. No shop: the flat's own furniture comes down to the one room.
 //   The divan under the front windows on the side away from the door, its rug and low brass table before it; the bed against the west wall

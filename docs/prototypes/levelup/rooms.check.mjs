@@ -143,7 +143,7 @@ check(`the stair: ${A[0].rise} m rises, ${A[0].going} m goings, ${Math.min(...A.
 check(`the flat's headroom, away from the furniture: ${Math.min(...A.map(x => x.under[0]))} m under the beams in the shop, ${Math.min(...A.map(x => x.under[1]))} m upstairs`, A.every(x => x.under[0] >= 2.4 && x.under[1] >= 2.1));
 check(`a person fits: the bed ${mm(A, x => x.bed).join(' to ')} m, the divan at ${A[0].divan} m, the low table at ${A[0].table} m, the counter at ${A[0].counter} m, the door ${A[0].door.join(' by ')} m`, A.every(x => x.bed >= 1.9 && x.divan >= .38 && x.divan <= .47 && x.table >= .35 && x.table <= .45 && x.counter >= .9 && x.counter <= 1.05 && x.door[1] >= 1.95));
 check(`the roof: open sky over the roof stair's head (${A.every(x => x.sky)}), its rises ${A[0].rsRise} m; the terrace walled round (${JSON.stringify(A[0].par)}) by a parapet ${Math.min(...A.map(x => x.parTop))} m high`, A.every(x => x.sky && x.rsRise <= .25 && x.par.every(Boolean) && x.parTop >= .5));
-// Aurenne's one-storey home (Session 1967): over the game's street sizes and the street's roofs (a pergola or none, a dome or none, the
+// Aurenne's one-storey home (Session 1968): over the game's street sizes and the street's roofs (a pergola or none, a dome or none, the
 // outside stair or the hatch), both door sides: inside the walls, no two pieces in each other on their floor; the three walks clear by
 // 0.15 m (in at the door to the roof stair's foot, to the table, to the bed's side); 2.4 m under the beams; a person fits; the roof stair's
 // head under open sky and its treads under 0.25 m; the hatch clear of the dome; the terrace's things clear of the dome and the parapet.

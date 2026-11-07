@@ -2894,7 +2894,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     else{intNPCMesh=null;intNPCPos={x:-99,z:-99};}
     return sc_;
   }
-  // S1967 (card F9, OG-115; #318 A, the flat's room brought down to one storey) — on the new look a one-storey flat-roofed Aurennais street
+  // S1968 (card F9, OG-115; #318 A, the flat's room brought down to one storey) — on the new look a one-storey flat-roofed Aurennais street
   // home (PKIT.au.lot's 'flat' with two false, about one home in three) is the one room of PKIT.au.homeOne (rooms.js's aurenneHomeOne): the
   // street's own shell (its options and its stream, so its wall, its door's side, its dome, pergola and outside stair are the street's), the
   // divan, the bed and its chest, the cooking bench, and, unless the house has its outside stair, the steep stair up through the hatch to the
@@ -3755,7 +3755,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     if(kitMarkSmithy(house))return buildKitMarkSmithy(house); /* S1869 — a Markish smithy inside, at its true size */
     if(kitMarkApothecary(house))return buildKitMarkApothecary(house); /* S1881 — a Markish apothecary inside, at its true size */
     if(kitAurHome(house))return buildKitAurHome(house); /* S1831 — Aurenne's flat over the dyer's shop inside, at its true size */
-    if(kitAurHomeOne(house))return buildKitAurHomeOne(house); /* S1967 — Aurenne's one-storey home inside, at its true size */
+    if(kitAurHomeOne(house))return buildKitAurHomeOne(house); /* S1968 — Aurenne's one-storey home inside, at its true size */
     if(kitLonghouse(house))return buildKitLonghouse(house); /* S1453 — a Markish home: the longhouse inside, at its true size */
     if(kitChurchHall(house))return buildKitChurchHall(house); /* S1326 — the Church of the Weaver inside, at its true size */
     if(kitGuildHall(house))return buildKitGuildHall(house); /* S1703 — a town's guild hall inside, at its true size */

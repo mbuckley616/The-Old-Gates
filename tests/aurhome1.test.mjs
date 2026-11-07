@@ -1,4 +1,4 @@
-// Aurenne's one-storey home in the game (Session 1967; card F9, OG-115; the flat of Michael's A on #318 brought down to one storey, rooms.js's
+// Aurenne's one-storey home in the game (Session 1968; card F9, OG-115; the flat of Michael's A on #318 brought down to one storey, rooms.js's
 // aurenneHomeOne). On the new look a one-storey flat-roofed Aurennais street home opens on its own room: the street's own shell at its true
 // size (its wall's colour the street's), the divan, the bed and its chest, the cooking bench, and the steep stair up through the hatch to the
 // roof terrace (unless the street's house has its outside stair). You arrive clear; the prototype's three walks on foot with the game's
