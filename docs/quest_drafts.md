@@ -2,7 +2,7 @@
 
 These are the quest writer's drafts. None of them is canon until Michael promotes it into `quest_writing.md`, and none is a spec until it is approved. Each draft gives the quest's shape, every line verbatim with its speaker and people, and a note on what in the code would carry it.
 
-Calls read to: 2026-10-16T17:51:09.360Z (run 38, 6 Nov: no new calls on the page)
+Calls read to: 2026-10-16T17:51:09.360Z (run 39, 7 Nov: no new calls on the page)
 
 ---
 
@@ -2389,7 +2389,7 @@ At 22:00 in the circle, a `showMsg`: *You settle in by the {fold}.* At 02:00 if 
 
 ## Asked in Passing, the second run — six more errands
 
-*Approved by Michael, 14 Oct 2026.* *Built in part: errand 12, A Prayer Carried, Session 1817 (PR #1103), the draft's lines word for word, with the Markman's hint for the mine (*My {sister}'s down the mine. That's all.*) added in register. Errand 9, A Fish for the Wedding, Session 1857, word for word but for the Gatelander's *{n} gold* and a comma after the Gatelander's {date}; an innkeeper, a harbourmaster or a shipwright asks it more often, since no generated giver is a fisher or a cook; the full square and the free meal on the day wait on two one-line hooks in other builders' files (backlog A). Errand 10, A Rubbing to Be Read, Session 1908 (PR #1206), word for word but for plain fixes listed in devlog 1908 (a reading capitalised where it opens a line, *the* for a gate's *The* mid-sentence, no Mastery reading for a word with no Mastery name, the giver's name in the reader's label when two rubbings are open); looking at the rubbing yourself waits on a one-line hook in `useItem` (backlog A). The other three follow, one a run.* The second piece of Michael's 5 Oct note (*50–100 somewhat unique quests … far more likely to stumble upon … incentivize players to talk to NPCs*), on the first run's frame exactly: the same givers (generated townsfolk, one errand in five a game-week, `seededRng('errand', site.id+':'+def.name+':'+week)`), the same *hint* in the greeting and *ask* in the *you* folder, the same shared lines (*Not now*, *Not yet*, *Done, paid*), the same ids (`er:<site>:<giver name>:<n>`) and the same small pay (15–40 gold by tier and a point of the giver's town's favour). The first run's last section listed six ideas for this one. Two of them changed on the way: *a dog gone after a deer* needs a dog and a deer, and the game has neither (a new creature is the look builder's, and the errand is not worth one), so it is replaced by **a prayer carried to a shrine**, on the shrines that exist; and *a fish from a named lake* became a fish from the sea, because `catchFish` (`86-world-crime.js`) catches only from the sea's schools. Every errand here runs on machinery the game already has.
+*Approved by Michael, 14 Oct 2026.* *Built in part: errand 12, A Prayer Carried, Session 1817 (PR #1103), the draft's lines word for word, with the Markman's hint for the mine (*My {sister}'s down the mine. That's all.*) added in register. Errand 9, A Fish for the Wedding, Session 1857, word for word but for the Gatelander's *{n} gold* and a comma after the Gatelander's {date}; an innkeeper, a harbourmaster or a shipwright asks it more often, since no generated giver is a fisher or a cook; the full square and the free meal on the day wait on two one-line hooks in other builders' files (backlog A). Errand 10, A Rubbing to Be Read, Session 1908 (PR #1206), word for word but for plain fixes listed in devlog 1908 (a reading capitalised where it opens a line, *the* for a gate's *The* mid-sentence, no Mastery reading for a word with no Mastery name, the giver's name in the reader's label when two rubbings are open); looking at the rubbing yourself waits on a one-line hook in `useItem` (backlog A; done, Session 1910). Errand 7, The Stuck Cart, Session 1947 (PR #1249), word for word but for plain fixes listed in devlog 1947 (no miller, the bandits at the end of the two hours, the slip's line, *Leave it.* and the journal's lines added). Errands 8 and 11 follow, one a run.* The second piece of Michael's 5 Oct note (*50–100 somewhat unique quests … far more likely to stumble upon … incentivize players to talk to NPCs*), on the first run's frame exactly: the same givers (generated townsfolk, one errand in five a game-week, `seededRng('errand', site.id+':'+def.name+':'+week)`), the same *hint* in the greeting and *ask* in the *you* folder, the same shared lines (*Not now*, *Not yet*, *Done, paid*), the same ids (`er:<site>:<giver name>:<n>`) and the same small pay (15–40 gold by tier and a point of the giver's town's favour). The first run's last section listed six ideas for this one. Two of them changed on the way: *a dog gone after a deer* needs a dog and a deer, and the game has neither (a new creature is the look builder's, and the errand is not worth one), so it is replaced by **a prayer carried to a shrine**, on the shrines that exist; and *a fish from a named lake* became a fish from the sea, because `catchFish` (`86-world-crime.js`) catches only from the sea's schools. Every errand here runs on machinery the game already has.
 
 The `sub` values: `cart`, `child`, `fish`, `rubbing`, `hedge`, `prayer`. Numbering continues from the first run.
 
@@ -6426,3 +6426,62 @@ Every card, as `makeItem`'s unique items already read: the name, then the people
 
 - The five gate relics, when the canon says what the Makers and the gates' origin allow.
 - Whether a legendary is known on sight to the townsfolk of its island beyond the two lines above (a greeting for each would be fifteen more lines; the plainer thing is the two).
+
+---
+
+## Dressed for It — the climate's first-time lines and the two innkeepers' word on what to wear
+
+*Unapproved. Drafted 7 Nov 2026.* Owed by the climate build sheet (`docs/design/climate-build.md`, *Sessions*, row 3: "the four first-time lines and the two innkeepers' topics, in each island's register"; backlog L, *Camp and rest*). Climate B is on main (Sessions 1917–1918, 1934): the Mark is Cold or Bitter, Aurenne Hot or Scorching; a grade slows your stamina and the worse one caps it at four fifths; it never takes health; a fur cloak, a Resist Cold tincture or a Hearty meal is a point of Warmth, an Aurennais short cape, a robe, Resist Heat or a Clear meal a point of Cool; mail or plate in Aurenne's sun is a grade more; indoors, by a fire, in a cabin or under a gate there is none. Today the chip's name stands alone, and nobody in either island says a word about it.
+
+### What the canon fixes, and where it is silent
+
+- Part II, *Climate by island, not latitude*: the south temperate, the north-west cold, the north-east warm. The Mark's land is "cold … wind that has a name in every valley", and its buildings keep nothing "that does not also keep out cold". The Gatelands never expose you, so a Gatelander says nothing here.
+- §2's speech rows: a Markman in short sentences, no honorific; an Aurennais formally, with *Master* and a contract's terms, never an oath.
+- **The Cold** is the canon's own name for what a Mastery reading takes (§3.3, `worldState.cold`). The first-time lines never call the weather *the Cold*, capitalised, or say it *takes* anything from you: the Mark's weather is *the cold of the Mark*, lower case, and it costs breath, not warmth of the kind the Withdrawal means.
+- *Silent:* what a Markman thinks of a southerner in furs, and whether Aurenne's people stop work at noon. The plainer things: the Mark expects you to dress for it and does not discuss it further; Aurenne keeps its hours by the sun, as hot countries do, and an innkeeper says so as a matter of business.
+
+### 1. The first-time lines
+
+One line in the log (`addLog`, the chip's own icon) and the same as a `showMsg` (`#c8d8e8` for the cold, `#e8c890` for the heat), the first time you stand in each grade with nothing cancelling it. The narrator's voice, second person, plain: what you feel, and what would answer it.
+
+| Grade | Icon | The line |
+|---|---|---|
+| Cold | ❄ | *The cold of the Mark is in your clothes. You get your breath back more slowly here.* |
+| Bitter | ❄❄ | *Bitter cold. You cannot get your full breath in it. Fur, a hot meal or a fire would give it back.* |
+| Hot | ☀ | *Aurenne's sun is on your back. You get your breath back more slowly in it.* |
+| Scorching | ☀☀ | *The sand throws the noon back at you. You cannot get your full breath in it. Light cloth, a cool drink or a roof would give it back.* |
+
+If the first time you reach Hot or Scorching you are wearing mail or plate, one more clause after the line: *Your mail holds the heat.* (or *Your plate holds the heat.*, by `AR_FAM`).
+
+### 2. The innkeepers
+
+A topic in the inn's talk on each of the two islands, at every inn whose site is on that island (`herbIsleAt(site.x, site.z)`, the islands' own test): the keeper of a Mark alehall or inn, a Markman, and the keeper of an Aurennais inn, an Aurennais. A keeper of another people on that island (a port's mixed keeper) speaks the same rule in their own row, below. The topic sits beside the room and the meal (`innTopics`, `88-world-ticks.js`'s export), always offered, and answers the same each time.
+
+**The Mark.** Label: *What should I wear out there?*
+- Markman: "Fur. On your back, not in your pack. Eat something hot before you go. Night's worse. A blizzard's worse than night. Fire beats both. That's all there is to it."
+- Gatelander (a keeper on the Mark): "Fur, and plenty of it, and a hot dinner under it. I came up from the south with a good wool coat and the wind went through it like gossip through a parish. The summer days down by the water are kind enough. Nothing else here is."
+- Aurennais (a keeper on the Mark): "Fur, Master, worn, not carried. A hot meal before any journey of consequence. The nights and the storms are the hard terms; a fire settles them, and nothing else does."
+- Old Blood: "Fur. Hot food. Keep near a fire at night."
+
+**Aurenne.** Label: *How do I travel in this heat?*
+- Aurennais: "Early and late, Master, as the caravans do. The sun keeps office hours here, nine until five, and it does not negotiate. If you must walk in them, take the short cape, or a robe, and leave the mail with us; metal in our sun is a debt that falls due at noon. Something light to eat. And on the open sand at midday in summer, I would simply not."
+- Gatelander (a keeper in Aurenne): "Walk before the sun's up and after it's down, and sit out the middle of the day like a sensible lizard. Light cloth, a cool drink, and no iron on your back. A man in mail on the sand at noon is cooking his own dinner."
+- Markman (a keeper in Aurenne): "Go at dawn. Or dusk. Not between. Leave the mail. Wear the cape. Drink something cold."
+- Old Blood: "Dawn and dusk. Light cloth. No iron."
+
+### What it changes
+
+Nothing in the rule. The lines say what the sheet already does, so a player who reads them knows the rule without a page: what costs breath, when it is worst, and what answers it. `worldState.exposureSeen` (already in `SS_CHAR_WS` and the S242 list) keeps the four flags, so each line is said once per character, and a loaded character who has seen a grade is not told again.
+
+### What in the code would carry it
+
+- **The lines:** a table `CLIMATE_FIRST` (the four lines and the two clauses), in `87-world-quests.js` beside the other words, read by the one place the flag is set, `50-travel.js`'s stamina tick (S1917: `if(!S[k])S[k]=1;`), which would become `if(!S[k]){S[k]=1;climateFirst(k);}`. That one line is the systems builder's file: asked of them in backlog A under this draft's name, and the table and `climateFirst(k)` (the log, the message, the heavy chest's clause by `EQ.chest` and `AR_FAM`) are mine. A grade cancelled by protection (the chip dimmed) does not count as seen: the hook already sets the flag on the grade after protection.
+- **The innkeepers:** `innTopics(site, def)` gains one topic by the site's island and the keeper's people (`erPeople`-style fallback to the island's own people). On the Gatelands, none.
+- **The suite:** `tests/climate` gains the four lines once each and never twice (a save and a load between), the plate's clause in Aurenne, and the two topics at an inn of each island and not at a Gatelands inn.
+
+### Checked against the canon
+
+- No oath anywhere; the Aurennais keepers thank, advise and speak of terms and debts; every Markman line is short and has no honorific; the Gatelander's answers are indirect and carry a figure (*like gossip through a parish*, *a sensible lizard*); the Old Blood say the least.
+- The Mastery's *Cold* is never named or echoed; the weather is *the cold of the Mark*.
+- Nothing promises health lost: every line speaks of breath, which is what the rule costs.
+- *Silent, chosen plainly:* the keepers of another people on the island speak their own row; the Gatelands' keepers say nothing, since their island never exposes you.
