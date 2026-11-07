@@ -167,6 +167,27 @@ check(`Aurenne's coach team is two mules (${ta0.tris}, ${ta1.tris} triangles), k
   [ta0, ta1].every(h => h.hc && h.kind === 'Mule' && h.plan === 'mule' && h.island === 'aurenne' && h.map === 24 && h.seed === h.want) && ta0.seed !== ta1.seed, teams);
 check(`every team stands on its hooves (${teams.map(h => h.toes.join(', ')).join('; ')} m)`, teams.every(h => h.toes && h.toes.every(y => Math.abs(y) < .05)), teams.map(h => h.toes));
 
+// the beasts by island (Session 1969, L3, OG-031): a foe made in the open world wears its island's coat, read at its home. The Mark's Snow
+// Wolf is the kit's Stonefang (the Ironwolf's stone grey, darker than the white), its Cave Bear the kit's own Frostreach (paler than the
+// brown), its Wolf the kit's colder coat; made at home each is as before
+const isles = await page.evaluate(() => { let mk = null; for (let i = 0; i < 99 && !mk; i++) for (let j = 0; j < 99 && !mk; j++) if (nationKeyOf(i, j) === 'mark') mk = [i, j];
+  const fx = -Math.sin(yaw), fz = -Math.cos(yaw), sx = -fz, sz = fx;
+  const one = (n, j, mark) => { const x = px + fx * 20 + sx * (j - 2.5) * 3.4, z = pz + fz * 20 + sz * (j - 2.5) * 3.4;
+    const e = keyFoe(buildZoneEnemy(WORLD.scene, [], x, z, n, null), 'f4isle:' + j); e.mesh.position.set(x, WORLD.worldH(x, z), z); if (!e.mesh.parent) WORLD.scene.add(e.mesh); e.mesh.visible = true;
+    if (mark) { e.homeX = (mk[0] + .5) * SIZE; e.homeZ = (mk[1] + .5) * SIZE; }
+    const rig = e.limbs.wolf; rig.e = e; return { n, mark, e, rig }; };
+  const L = [['Snow Wolf', 0], ['Snow Wolf', 1], ['Cave Bear', 0], ['Cave Bear', 1], ['Wolf', 0], ['Wolf', 1]].map(([n, m], j) => one(n, j, !!m)); window._IS = L;
+  CAM.position.set(px, worldH(px, pz) + 1.65, pz); CAM.updateMatrixWorld(true);
+  let k = 0; HBODY.last = -1e9; while (L.some(f => !f.rig.hc && !f.rig.hcFail) && k++ < 200) tickCreatures(1 / 60, 1.1e6 + k * (HBODY.gap + 1));
+  const lum = H => { const c = H.C.meshes[0].geometry.attributes.color; let s = 0; for (let v = 0; v < c.count; v++) s += .2126 * c.getX(v) + .7152 * c.getY(v) + .0722 * c.getZ(v); return +(s / c.count).toFixed(3); };
+  const out = L.map(({ n, mark, e, rig }) => { const H = rig.hc; return H ? { n, mark, isle: H.C.g.island || null, home: nationKeyOf(...cellOf(e.homeX, e.homeZ)), plan: H.C.g.plan, seed: H.C.g.seed, want: HC.hashKey('wolf:' + e.id), L: lum(H) } : { n, mark, hc: false }; });
+  for (const { e } of L) { e.dead = true; if (e.mesh.parent) e.mesh.parent.remove(e.mesh); } tickCreatures(1 / 60, 1.2e6); return { mk, out }; });
+console.log('  by island:', JSON.stringify(isles));
+{ const [sw0, sw1, cb0, cb1, w0, w1] = isles.out;
+  check(`on the Mark the Snow Wolf wears the Stonefang's grey (${sw1.L} against ${sw0.L} at home) and the Cave Bear the Frostreach's pale (${cb1.L} against ${cb0.L}), the Wolf the kit's colder coat (${w1.L} against ${w0.L})`,
+    isles.out.every(w => w.plan && w.seed === w.want) && [sw1, cb1, w1].every(w => w.isle === 'mark' && w.home === 'mark') && [sw0, cb0, w0].every(w => w.isle === null && w.home !== 'mark')
+    && sw1.L < sw0.L - .25 && cb1.L > cb0.L + .3 && w1.L > w0.L + .05, isles); }
+
 // the pictures: the line from 7 m, then the bear from 4 m
 await page.evaluate(() => { const a = _W[0].e, b = _W[2].e, mx = (a.x + b.x) / 2, mz = (a.z + b.z) / 2, fx = -Math.sin(yaw), fz = -Math.cos(yaw); px = mx - fx * 7; pz = mz - fz * 7; pitch = -.12; });
 for (let i = 0; i < 8; i++) { await page.evaluate(() => tickCreatures(1 / 60, performance.now())); await g.frames(1); }
