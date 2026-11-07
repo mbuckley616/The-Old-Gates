@@ -1107,14 +1107,28 @@ function hcPlan(name){const K=HC_KINDS[name];if(!K.own)return K.plan;const id='g
   if(!HC.PLANS[id]&&(K.spider||!WOLF_KINDS[name]))HC.PLANS[id]=Object.assign({},HC.PLANS[K.plan],{name,cell:K.cell},K.bare?{parts:HC.PLANS[K.plan].parts.map(([k,o])=>k==='head'?[k,Object.assign({},o,{antlers:null})]:[k,o])}:{});
   if(!HC.PLANS[id]){const k=WOLF_KINDS[name],c=h=>[(h>>16&255)/255,(h>>8&255)/255,(h&255)/255];
     HC.PLANS[id]=Object.assign({},HC.PLANS[K.plan],K.cell?{cell:K.cell}:{},{name,palette:Object.assign({},HC.PLANS[K.plan].palette,{coat:c(k.coat),saddle:c(k.saddle),belly:c(k.belly)},HC.PLANS[K.plan].palette.mane?{mane:c(k.saddle)}:{})});}
+  // Session 1969 (L3, OG-031: "Stonefang Wolf and Frostreach Bear as reskins of the Snow Wolf and Cave Bear"): a kind named in
+  // HC_ISLE_COATS takes, on an island it names, that kit plan's own coat, saddle and belly, and on any other island keeps its own
+  // (the Snow Wolf stays white in Aurenne's snow, not the lowland wolf's sand)
+  if(HC.COATS&&HC_ISLE_COATS[name])for(const isle of ANIMAL_ISLES){const T=HC.COATS[isle]||(HC.COATS[isle]={}),src=HC_ISLE_COATS[name][isle],P=src&&HC.PLANS[src];
+    if(!T[id])T[id]=P?{coat:P.palette.coat,saddle:P.palette.saddle,belly:P.palette.belly}:{};}
   // an own plan takes its kit plan's island coats (Session 1721: the hind the deer's, the hen and the crow their own)
   if(HC.COATS)for(const isle in HC.COATS){const T=HC.COATS[isle];if(T[K.plan]&&!T[id])T[id]=T[K.plan];}
   return id;}
+// Session 1969: the Mark's two reskins (OG-031): its Snow Wolf the kit's Stonefang (the Ironwolf's stone grey over a near-black saddle),
+// its Cave Bear the kit's own Frostreach, pale as the plan has it. The same bones and flesh; only the coat
+const HC_ISLE_COATS={'Snow Wolf':{mark:'ironwolf'},'Cave Bear':{mark:'bear'}};
+// Session 1969: a beast met in the open world wears its island's coat, as a wild animal has since Session 1721 (the Wolf and the Boar the
+// kit's island coats, the Snow Wolf and the Cave Bear HC_ISLE_COATS). The island is read where it was made (its home), so it never
+// changes as it runs; in a gate, a room or the inspector there is none. The kit's plans are the Gatelands' coats, so there it names none
+// either, and a Gatelands foe's genome is the one its id alone rolls
+function hcIsleOf(rig){const e=rig.e;if(!e||!e.mesh||typeof WORLD==='undefined'||!WORLD.scene||e.mesh.parent!==WORLD.scene)return null;
+  try{const x=e.homeX!=null?e.homeX:e.x,z=e.homeZ!=null?e.homeZ:e.z,c=cellOf(x,z),n=nationKeyOf(c[0],c[1]);return n==='mark'||n==='aurenne'?n:null;}catch(err){return null;}}
 // a wolf the kit may dress: one of HC_KINDS, on the wolf's own body (not a boss on it, unless its builder names its kind: rig.hcKind)
 function hcKind(rig){return rig.hcKind||rig.name;}
 function hcOk(rig){const K=HC_KINDS[hcKind(rig)];return !!K&&!K.fish&&!rig.spider===!K.spider&&(!!rig.hcKind||!rig.hunch&&!(rig.e&&rig.e.bossId));}
 // its genome, keyed by its foe id (or its name)
-function hcGenome(rig){const key=rig.hcKey||(HC_KINDS[hcKind(rig)].person?'foe:'+(rig.e&&rig.e.id!=null?rig.e.id:rig.g.seed):'wolf:'+(rig.e&&rig.e.id!=null?rig.e.id:rig.name));return HC.genome(hcPlan(hcKind(rig)),key,rig.hcIsland?{island:rig.hcIsland}:{});}
+function hcGenome(rig){const key=rig.hcKey||(HC_KINDS[hcKind(rig)].person?'foe:'+(rig.e&&rig.e.id!=null?rig.e.id:rig.g.seed):'wolf:'+(rig.e&&rig.e.id!=null?rig.e.id:rig.name));const isle=rig.hcIsland||!rig.hcKey&&hcIsleOf(rig);return HC.genome(hcPlan(hcKind(rig)),key,isle?{island:isle}:{});}
 // C, the kit's body when hcTick has built it a step at a time; without it (foewarm) the body is built here in one go
 function hcAttach(rig,C){const tA=performance.now();
   if(!C)try{C=HC.build(hcGenome(rig));}catch(e){rig.hcFail=true;console.warn('F4: the kit could not build',rig.name,e);return;}
