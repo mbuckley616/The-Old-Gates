@@ -809,6 +809,13 @@ for(const k of ['River Pike','Riverjaw Salmon']){WILD_PACE[k]=WILD_PACE.Trout;ZO
 // S1784 — the watcher's three sheep (the farm's Sheep, OG-023's livestock body): peaceful on the wild path, no meat (not in MEAT_BODIES)
 WILD_PACE.Sheep={walk:.5,run:5};
 ZONE_FOE_DEF.Sheep={minLevel:1,col:WOLF_KINDS.Sheep.coat,eyeCol:0x0a0a0c,hp:1,maxHp:1,spd:1.0,dmg:0,atk:9,xpVal:0,scale:1,shape:'wolf',def:0,resist:{},wild:true};
+// S1973 — the farms' stock (L3 livestock, OG-023 and OG-035; bodies Sessions 1719 and 1720), on the same path and rules as the watcher's
+// sheep: peaceful, one blow, no meat (the farmer's, not the country's). Tame (FARM_TAME): it bolts only when struck, when one of its group is,
+// or when you come within FARM_TAME.near of it, facing it or not, not at sight from 20 m as the wild do. Placed by wildFarmChunk (88-world-ticks.js)
+const FARM_TAME={near:3};
+WILD_PACE.Cow={walk:.6,run:4};WILD_PACE.Goat={walk:.6,run:6};WILD_PACE.Hen={walk:.3,run:3};
+for(const k of ['Cow','Goat'])ZONE_FOE_DEF[k]=Object.assign({},ZONE_FOE_DEF.Sheep,{col:WOLF_KINDS[k].coat});
+ZONE_FOE_DEF.Hen=Object.assign({},ZONE_FOE_DEF.Sheep,{col:BIRD.Hen.col,shape:'bird'});
 for(const k in WILD_ISLE_KINDS){const P=WILD_ISLE_KINDS[k];WILD_PACE[k]=P;
   const body=(WOLF_KINDS[k]&&WOLF_KINDS[k].wild)?'wolf':BIRD[k]?'bird':(SWIMMER[k]&&SWIMMER[k].land)?'crawl':null;if(!body)continue;
   const col=body==='wolf'?WOLF_KINDS[k].coat:body==='bird'?BIRD[k].col:SWIMMER[k].col;
@@ -879,7 +886,7 @@ function tickWildOne(e,dt){if(!(dt>0))return;
   if(e.baseName==='Bellthroat')bellthroatCall(e,W,dist,dt);
   if(e.answer&&(e.alert||dist<WILD_ANSWER.near)){e.angry=true;e.alert=true;e._agg=true;e._quit=Math.max(WILD_ANSWER.quit,dist+WILD_ANSWER.near);W.mode='graze';W.t=0;return;} /* S1796 — struck, or come too near: it turns on you (an arrow from past 25 m: it comes for you, and gives up 4 m past where you shot from) */
   if(e.alert){e.alert=false;wildFlee(e,T);} /* a blow that did not kill, or a pack's cry */
-  else if(W.mode!=='flee'&&W.mode!=='fly'&&!_hasBuff('vanish')&&canSeePlayer(e,dist,20))wildFlee(e,T);
+  else if(W.mode!=='flee'&&W.mode!=='fly'&&!_hasBuff('vanish')&&(e.tame?dist<FARM_TAME.near:canSeePlayer(e,dist,20)))wildFlee(e,T);
   if(W.mode==='fly'){wildFlyStep(e,W,P,T,dt);return;}
   if(P.swim){wildSwimStep(e,W,P,T,dt);return;} /* S1759 — a trout */
   let sp=0;
