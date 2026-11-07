@@ -1536,18 +1536,24 @@ function wornMask(D, o = {}) { const m = new Uint8Array(PACK.N), R0 = PACK.rest;
   if (D.mail && !D.robe) { for (const v of PACK.R.mailTop) { const y = R0[v * 3 + 1], ax = Math.abs(R0[v * 3]); if (ax > .3 || y < .06) continue; m[v] = 3; m.off[v] = .032 + (ax < .2 ? .022 * Math.max(0, Math.min(1, (.46 - y) / .2)) : 0) + .012 * Math.max(0, Math.min(1, (.2 - y) / .1)); }
     for (const v of PACK.R.mailSkirt) { const y = R0[v * 3 + 1]; if (y < -.27) continue; m[v] = 2; m.off[v] = .03 + .012 * Math.max(0, Math.min(1, (.14 - y) / .3)) + .03 * Math.max(0, Math.min(1, (y + .14) / .14)) + (D.skirt && D.skirt !== 'short' ? .006 : 0); } }
   if (D.robe) for (const v of PACK.R.tunic) { const ax = Math.abs(R0[v * 3]); if (ax > .22 && ax < .4) { m[v] = 3; m.off[v] = .016 + .03 * Math.max(0, Math.min(1, (ax - .24) / .16)) ** 1.5; } } return m; }
-function radialMap(PP, ax, az, y0, y1, B) {
+function radialMap(PP, ax, az, y0, y1, B, keep = null) {
   const NA = 90, NY = Math.ceil((y1 - y0) / .02) + 1, M = new Float32Array(NA * NY), n = PP.length / 3;
-  for (let i = 0; i < n; i++) { if (!B[i]) continue; const y = PP[i * 3 + 1]; if (y < y0 || y > y1) continue; const dx = PP[i * 3] - ax, dz = PP[i * 3 + 2] - az, r = Math.hypot(dx, dz) + B.off[i];
+  for (let i = 0; i < n; i++) { if (!B[i] || (keep && !keep(B[i]))) continue; const y = PP[i * 3 + 1]; if (y < y0 || y > y1) continue; const dx = PP[i * 3] - ax, dz = PP[i * 3 + 2] - az, r = Math.hypot(dx, dz) + B.off[i];
     const a = ((Math.round((Math.atan2(dx, -dz) + Math.PI) / (2 * Math.PI) * NA) % NA) + NA) % NA, j = Math.round((y - y0) / .02), o = j * NA + a; if (r > M[o]) M[o] = r; }
   const S = new Float32Array(M.length); for (let j = 0; j < NY; j++) for (let a = 0; a < NA; a++) { let m = 0; for (let d = -2; d <= 2; d++) for (let e = -1; e <= 1; e++) { const jj = j + e; if (jj < 0 || jj >= NY) continue; m = Math.max(m, M[jj * NA + (a + d + NA) % NA]); } S[j * NA + a] = m; }
   return (th, y) => { const j = Math.max(0, Math.min(NY - 1, Math.round((y - y0) / .02))), a = ((Math.round((th + Math.PI) / (2 * Math.PI) * NA) % NA) + NA) % NA; return S[j * NA + a]; };
 }
+const SKIRT_CLEAR = .012;
 function buildHang(cols, R, PP, neck, clearAt, len, rnd, B) {
   const ax = neck.x, az = neck.z, K = cols.length, polar = q => ({ th: Math.atan2(q.x - ax, -(q.z - az)), r: Math.hypot(q.x - ax, q.z - az) });
   let yLo = 1e9; for (const c of cols) yLo = Math.min(yLo, c[R - 1].y); const yTop = neck.y, bodyR = radialMap(PP, ax, az, yLo - .1, yTop + .05, B);
+  // the floor is read apart for the body and for a skirt's shell (Session 1957): the drape's clearance (clearAt, 6 cm under a tunic) is
+  // room for the tunic over the body, and was added over the skirt's shell too, which already stands for the skirt (2.5 cm off its
+  // fitting shell). So a long cloak over a long skirt stood 9 to 10 cm off it to the ground, and its back never came in to the skirt.
+  // Over a skirt's shell (or a mail skirt's) the floor is now the shell and 1.2 cm, over the body and the rest the clearance as before
+  const skinR = radialMap(PP, ax, az, yLo - .1, yTop + .05, B, k => k !== 2), skirtR2 = radialMap(PP, ax, az, yLo - .1, yTop + .05, B, k => k === 2);
   const setR = (q, th, r) => { q.x = ax + Math.sin(th) * r; q.z = az - Math.cos(th) * r; };
-  const floorAt = q => { const p = polar(q); return bodyR(p.th, q.y) + clearAt(q) + .006; };
+  const floorAt = q => { const p = polar(q); return Math.max(skinR(p.th, q.y) + clearAt(q), skirtR2(p.th, q.y) + SKIRT_CLEAR) + .006; };
   // the columns in order round the axis on every row: the shoulder line can cross itself at the spine, which was hidden
   // while every column stood at one radius and shows as the sheet turned inside out once they come in by different amounts
   let untangled = 0;
