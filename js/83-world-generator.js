@@ -2899,12 +2899,13 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   // street's own shell (its options and its stream, so its wall, its door's side, its dome, pergola and outside stair are the street's), the
   // divan, the bed and its chest, the cooking bench, and, unless the house has its outside stair, the steep stair up through the hatch to the
   // terrace. Moved into the room's frame as the flat is (nothing scaled). The bed is the resident's, head to the back wall (-z); the home's
-  // chest is the one at its foot. The resident stands at the cooking bench.
-  function kitAurHomeOne(house){const o=house&&house.kit&&house.kit.o;return !!(house&&house.type==='home'&&house.kit&&house.kit.kind==='aurhouse'&&house.kit.shell&&o&&o.kind==='flat'&&!o.two&&o.w>=6.4&&o.d>=6.0&&window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.au&&PKIT.au.homeOne);}
+  // chest is the one at its foot. The resident stands at the cooking bench. S1972: the one-storey Roman (tiled) home too (PKIT.au.lot's 'tile'
+  // with two false, about one home in five): the same room round its door in the middle, under a ceiling of cedar boards, no roof to stand on.
+  function kitAurHomeOne(house){const o=house&&house.kit&&house.kit.o;return !!(house&&house.type==='home'&&house.kit&&house.kit.kind==='aurhouse'&&house.kit.shell&&o&&(o.kind==='flat'||o.kind==='tile')&&!o.two&&o.w>=6.4&&o.d>=6.0&&window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.au&&PKIT.au.homeOne);}
   function buildKitAurHomeOne(house){
     const k=house.kit,T=PKIT.au.homeOne({w:k.o.w,d:k.o.d,shell:k.shell,house:k.o},PKIT.stream(house.id+':aurhome1')),I=T.inner,X=I.x1,Z=I.z1,W=2*X,D=2*Z,F0=T.floors[0];
     const rx=x=>x+X,rz=z=>z+Z,ry=y=>y-F0,FL=T.floors.map(y=>+(y-F0).toFixed(3));
-    house._counterFront=null;house.intW=W;house.intD=D;house._roomH=+(FL[1]+3.5).toFixed(3);house._exitD=.8;house._exitW=1.0;house._exitX=+rx(T.door.x).toFixed(3);house._aurHomeOne=T;
+    house._counterFront=null;house.intW=W;house.intD=D;house._roomH=+(T.roof?FL[1]+3.5:T.ceil+.18-F0).toFixed(3);house._exitD=.8;house._exitW=1.0;house._exitX=+rx(T.door.x).toFixed(3);house._aurHomeOne=T;
     const sc_=new THREE.Scene();interiorScene=sc_;landRoomPost(sc_);sc_.background=new THREE.Color(0x120a06);sc_.fog=new THREE.Fog(0x120a06,Math.max(W,D)*.8*SCALE.ROOM_K,Math.max(W,D)*2.4*SCALE.ROOM_K);
     intNPCMesh=null;intBedPos=null;intStashPos=null;
     const SOL=[];INT_SOL=SOL;FOOTHOLDS=[];INT_BEDS=[];INT_DOORS=[];INT_DOORS.house=house.id;INT_CHAIR=null;INT_NPCS=[];HATCH.active=false;HATCH.roof=false;INT_LOOT=null;INT_BOX=null;INT_SHELF=null;
@@ -2917,7 +2918,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     for(const q of T.boxes){if(q.tag==='roofstair')continue;const b=box(q);if(q.tag==='bed')b.y1=.55;if(!NOFOOT.includes(q.tag))FOOTHOLDS.push({x0:b.x0,x1:b.x1,z0:b.z0,z1:b.z1,y:b.y1});}
     if(T.roofStair){const RS=T.roofStair,gg=(RS.x1-RS.x0)/RS.n;for(let i=1;i<=RS.n;i++)FOOTHOLDS.push({x0:rx(RS.x0+(i-.5)*gg),x1:rx(RS.x0+(i+.5)*gg),z0:rz(RS.z0),z1:rz(RS.z1),y:+(i*RS.rise).toFixed(3)});}
     // the roof over the room, open at the hatch if it has one (its underside the head room below)
-    {const h=T.hatch;FOOTHOLDS.push(h?{x0:0,x1:W,z0:0,z1:D,y:FL[1],hole:{x0:rx(h.x0),x1:rx(h.x1),z0:rz(h.z0),z1:rz(h.z1)}}:{x0:0,x1:W,z0:0,z1:D,y:FL[1]});}
+    if(T.roof){const h=T.hatch;FOOTHOLDS.push(h?{x0:0,x1:W,z0:0,z1:D,y:FL[1],hole:{x0:rx(h.x0),x1:rx(h.x1),z0:rz(h.z0),z1:rz(h.z1)}}:{x0:0,x1:W,z0:0,z1:D,y:FL[1]});}
     // the bed is the resident's (the sleeper lies in it, head to -z); the home's chest is the cedar chest at its foot (no lid of its own)
     {const b=T.bed,x=rx((b.x0+b.x1)/2),cz=rz((b.z0+b.z1)/2);INT_BEDS.push({x,z:cz+.2,y:0,owner:'home',room:null,cz});intBedPos={x,z:cz+.2};}
     {const q=T.chest;INT_BOX={x:rx((q.x0+q.x1)/2),z:rz((q.z0+q.z1)/2),y:0,lid:null,g:null,id:house.id,kind:'home',type:'home',house,open:false};}
