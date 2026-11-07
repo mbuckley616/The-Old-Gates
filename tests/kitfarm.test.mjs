@@ -36,6 +36,23 @@ check(`villageFarm lays a farm by ${P.farms} of the Gatelands' ${P.n} villages, 
 check(`each farm's middle is ${P.past.map(v => v.toFixed(1)).join(' to ')} m past its village's last lots, its front ${P.road.map(v => v.toFixed(2)).join(' to ')} m off its road's line`, P.past[0] >= 60 && P.past[1] <= 150 && P.road[0] >= 10 && P.road[1] <= 10.5, P);
 check(`no two farms on one another (${P.close}), none on a gate's or fort's spot (${P.gates}), none by another people's village (${P.other.length})`, !P.close && !P.gates && !P.other.length, P);
 
+// Session 1973: the farm's stock (L3's livestock). The chunk holding the farm's middle lays two to four hens in its yard by day and one
+// group (cows, sheep or goats) in a field behind or beside it, off its lot; keyed by the farm, the same each time the chunk loads; tame, so
+// they keep grazing with you 8 m off and bolt at 2 m; no hens at night
+const stockAt = id => page.evaluate(id => { forceTime(12); const S = WORLD.settle.get(id), F = S.farm; px = F.cx + 60; pz = F.cz; jumpY = 0;
+  for (let i = 0; i < 60; i++) WORLD.tick(1 / 60, performance.now());
+  const c = Math.cos(F.ry), s_ = Math.sin(F.ry), loc = e => { const dx = e.homeX - F.x, dz = e.homeZ - F.z; /* where it was laid: a hen may have pecked a step since */ return [+(dx * c - dz * s_).toFixed(1), +(dx * s_ + dz * c).toFixed(1)]; };
+  const ch = [...WILD_CH].find(q => q.cx === Math.floor(F.cx / CHUNK) && q.cz === Math.floor(F.cz / CHUNK)); if (!ch) return { none: true };
+  const mine = () => ch.wild.filter(e => e.farmStock && e._wildKey.startsWith(`farm:${F.id}:`)), A = mine().map(e => [e.baseName, e._wildKey, loc(e)]);
+  const yard = F.yard.slice(0, 2), inYard = ([, , [u, v]]) => yard.some(r => u >= r.x0 && u <= r.x1 && v >= r.z0 && v <= r.z1);
+  const hens = A.filter(a => a[0] === 'Hen'), field = A.filter(a => a[0] !== 'Hen'), kinds = [...new Set(field.map(a => a[0]))];
+  const offLot = field.every(a => { const [u, v] = a[2]; return !(u >= FARM_LOT.x0 && u <= FARM_LOT.x1 && v >= FARM_LOT.z0 && v <= FARM_LOT.z1); });
+  wildDrop(ch); wildSpawnChunk(ch); const B = mine().map(e => [e.baseName, e._wildKey, loc(e)]), same = JSON.stringify(B) === JSON.stringify(A);
+  const f = mine().find(e => e.baseName !== 'Hen'); let at8 = null, at2 = null;
+  if (f) { px = f.x + 8; pz = f.z; for (let i = 0; i < 120; i++) tickWildOne(f, 1 / 60); at8 = (f._w || {}).mode; px = f.x + 2; pz = f.z; for (let i = 0; i < 20; i++) tickWildOne(f, 1 / 60); at2 = (f._w || {}).mode; }
+  forceTime(23); wildDrop(ch); wildSpawnChunk(ch); const night = mine().map(e => e.baseName); forceTime(12); wildDrop(ch); wildSpawnChunk(ch);
+  return { A: same ? undefined : A, B: same ? undefined : B, hens: hens.length, henYard: hens.every(inYard), field: field.length, kinds, offLot, same, at8, at2, night }; }, id);
+const stockOK = T => !T.none && T.hens >= 2 && T.hens <= 4 && T.henYard && T.field >= 2 && T.kinds.length === 1 && ['Cow', 'Sheep', 'Goat'].includes(T.kinds[0]) && T.offLot && T.same && T.at8 !== 'flee' && T.at2 === 'flee' && !T.night.includes('Hen') && T.night.length === T.field;
 const tid = P.first;
 check(`${tid}, the first of them, stands`, !!tid && await g.settle(tid));
 const S = await page.evaluate(tid => { const S = WORLD.settle.get(tid), F = S.farm; if (!F) return { none: true }; const c = Math.cos(F.ry), s_ = Math.sin(F.ry), W = (u, v) => [F.x + u * c + v * s_, F.z - u * s_ + v * c], L = FARM_LOT;
@@ -55,6 +72,8 @@ check(`the way in from the road through the gate into the yard is clear (${S.blo
 const L = await page.evaluate(tid => { const S = WORLD.settle.get(tid), F = S.farm, K = S.farmLod, out = {};
   for (const [k, d] of [['near', 20], ['far', 160]]) { CAM.position.set(F.cx + d, F.y + 2, F.cz); houseLod(); houseLod(); out[k] = { hi: K.hi.visible, lo: K.lo.visible }; } return out; }, tid);
 check(`its far copy (${S.farTris} triangles) stands in for it from 160 m, the farmstead (${S.calls} draws) at 20 m`, L.near.hi && !L.near.lo && !L.far.hi && L.far.lo && S.hasFar && S.calls <= PROTO.draws, L);
+const ST = await stockAt(tid);
+check(`its stock: ${ST.hens} hens in the yard, ${ST.field} ${ST.kinds} in the field off its lot, the same when the chunk loads again, tame (${ST.at8} at 8 m, ${ST.at2} at 2 m), no hens at night`, stockOK(ST), ST);
 const N = await page.evaluate(() => { const all = [], other = []; let cells = 0;
   for (const c of CELLS.values()) { if (c.type === 'sea') continue; const gl = nationOf(c.i, c.j).people === 'gatelander'; if (gl && !c.home) cells++;
     const L = loneFarms(c), was = c._lone; if (!gl && L.length) other.push(c.i + ',' + c.j); if (!gl) continue;
@@ -77,6 +96,8 @@ const LF = await page.evaluate(id => { const S = WORLD.settle.get(id), F = S.far
   const sol = S.sol.find(q => q.farm === 'Farmhouse');
   return { name: S.site.name, id: h.id, house: h.name, kit: kitFarmhouse(h), listed: ZONES.world.houses.includes(h), resident: S.residents.some(r => r.def === h.dlg), keepsYard: S.residents.some(r => r.def === h.dlg && r.farm) && !!(F.yard && F.yardDoor), sol: S.sol.length, home: sol && sol.hid === h.id, dev, exitClear: !settleSolid(h.exitX, h.exitZ, .3), calls: S.group.children.find(o => o.name === 'farmstead').children.length }; }, N.first);
 check(`it is ${LF.name}: the farmstead (${LF.calls} draws) on its flat pad (${LF.dev != null ? LF.dev.toFixed(3) : '?'} m), ${LF.sol} solids, its farmhouse a home with its farmer, the step out clear`, !LF.none && LF.dev < .05 && LF.sol === K.foot.length && LF.home && LF.kit && LF.listed && LF.resident && LF.exitClear && LF.house === LF.name, LF);
+const SL = await stockAt(N.first);
+check(`the lone farm's stock: ${SL.hens} hens in the yard, ${SL.field} ${SL.kinds} in the field, the same again, tame, no hens at night`, stockOK(SL), SL);
 // Session 1482: a lone farm on the map. Its name is known before it is built (loneFarmName, the farmer's stream's first two draws) and
 // is the built house's; standing by it discovers it; the map's entries for its cell carry it with its own icon; the search finds it;
 // fast travel puts you on the road's verge in front of it, clear of its solids, facing it.

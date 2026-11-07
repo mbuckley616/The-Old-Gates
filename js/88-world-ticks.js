@@ -375,8 +375,51 @@
       const s=keyFoe(buildZoneEnemy(sc,STATIC_SOL,sx,sz,'Sheep',null,{tier:1,key:id,island:'gatelands'}),'wild:'+id);
       s._wildKey=id;s._chunk=key;s.homeX=sx;s.homeZ=sz;s.combatYaw=yaw;ZONES.world.enemies.push(s);ch.wild.push(s);}
     return true;}
+  // S1973 — the farms' stock (backlog L3's livestock, OG-023 and OG-035: "on farms and in fields"; the bodies builder's cow, sheep, goat and
+  // hen, Sessions 1719 and 1720). The chunk that holds a farm's middle (a village's, villageFarm, or one alone, loneFarms; the Gatelands on
+  // the new look) lays its stock once it loads, beside whatever wild group it rolls: by day two to four hens in the cobbled yard, and one
+  // group in the field behind the house (FARM_FIELD, the farm's own frame: the road along +z, the yard behind it to z -18.7): two or three
+  // cows, three to five sheep or two or three goats, weighted 2, 2, 1. A burned or abandoned village keeps none. Each is keyed by its farm
+  // (`farm:<id>:h<i>`, `farm:<id>:f<i>`) and placed from a stream of that key, so a farm keeps the same stock each time it loads; taken,
+  // one stays gone for the day, as a wild one does
+  const FARM_STOCK=[{name:'Cow',w:2,n:[2,3]},{name:'Sheep',w:2,n:[3,5]},{name:'Goat',w:1,n:[2,3]}],FARM_HENS=[2,4],FARM_FIELD={u:[-14,14],v:[-48,-34],side:36,spread:7};
+  function farmsOfChunk(ch){const x0=ch.cx*CHUNK,z0=ch.cz*CHUNK,seen=new Set(),out=[];
+    for(const [qx,qz] of [[x0,z0],[x0+CHUNK-.01,z0],[x0,z0+CHUNK-.01],[x0+CHUNK-.01,z0+CHUNK-.01]]){const [i,j]=cellOf(qx,qz),ck=i+','+j;if(seen.has(ck))continue;seen.add(ck);
+      const c=getCell(i,j);if(!c||c.type==='sea')continue;const fs=[];
+      try{for(const t of c.sites||[]){const F=villageFarm(t,c);if(!F)continue;const T=(worldState.towns||{})[t.id];if(T&&T.flags&&(T.flags.burned!=null||T.flags.abandoned!=null))continue;fs.push(F);}
+        fs.push(...loneFarms(c));}catch(e){continue;}
+      for(const F of fs)if(F.cx>=x0&&F.cx<x0+CHUNK&&F.cz>=z0&&F.cz<z0+CHUNK)out.push(F);}
+    return out;}
+  /* where stock may stand, from the cells and the kit alone, never from the solids loaded so far (solidAt), so a farm's stock stands in the
+     same spots whatever has loaded (S533): dry, not steep, off a town's stamp and a road's bed, and off the farmstead's own footprints
+     (FARM_FOOT, the kit's 'yard' farmstead's, read once; 0.4 m clear) */
+  let FARM_FOOT=null;
+  function farmFoot(){if(FARM_FOOT)return FARM_FOOT;const G=PKIT.gl.farmstead({kind:'yard',r:PKIT.stream('farmfoot')});FARM_FOOT=G.userData.foot.map(p=>({x0:p.x0-.4,x1:p.x1+.4,z0:p.z0-.4,z1:p.z1+.4}));
+    G.traverse(o=>{if(o.geometry)o.geometry.dispose();});return FARM_FOOT;}
+  function farmGround(x,z,F){if(worldH(x,z)<.5||slopeNormalY(x,z)<.7)return false;const st=stampAt(x,z);if(st&&st.kind==='site')return false;const ri=roadInfo(x,z);if(ri&&ri.d<8)return false;
+    const dx=x-F.x,dz=z-F.z,c=Math.cos(F.ry),s_=Math.sin(F.ry),u=dx*c-dz*s_,v=dx*s_+dz*c;return !farmFoot().some(p=>u>=p.x0&&u<=p.x1&&v>=p.z0&&v<=p.z1);}
+  function farmStockMake(ch,key,id,name,x,z,yaw){if(WILD_TAKEN.get(id)===lootDay())return null;
+    const e=keyFoe(buildZoneEnemy(sc,STATIC_SOL,x,z,name,null,{tier:1,key:id,island:'gatelands'}),'wild:'+id);
+    e.tame=true;e.farmStock=true;e._wildKey=id;e._chunk=key;e.homeX=x;e.homeZ=z;e.combatYaw=yaw;ZONES.world.enemies.push(e);ch.wild.push(e);return e;}
+  function wildFarmChunk(ch,key){let n=0;
+    for(const F of farmsOfChunk(ch)){const r=seededRng('farmstock',F.id),c=Math.cos(F.ry),s_=Math.sin(F.ry),at=(u,v)=>[F.x+u*c+v*s_,F.z-u*s_+v*c];
+      const yard=[{x0:-6,x1:6,z0:-18.2,z1:-3.1},{x0:-10.9,x1:11.9,z0:-6.7,z1:-3.1}]; /* the kit's 'yard' farmstead's two broad yards (farmstead's yard[0] and [1]) */
+      const hens=FARM_HENS[0]+Math.floor(r()*(FARM_HENS[1]-FARM_HENS[0]+1));
+      for(let i=0;i<hens;i++){const Y=yard[r()<.6?0:1],u=Y.x0+.8+r()*(Y.x1-Y.x0-1.6),v=Y.z0+.8+r()*(Y.z1-Y.z0-1.6),yaw=r()*Math.PI*2;
+        if(isNight())continue; /* shut in for the night */
+        const [x,z]=at(u,v);if(farmGround(x,z,F)&&farmStockMake(ch,key,`farm:${F.id}:h${i}`,'Hen',x,z,yaw))n++;}
+      let tw=0;for(const g of FARM_STOCK)tw+=g.w;let pk=r()*tw,G=FARM_STOCK[0];for(const g of FARM_STOCK){pk-=g.w;if(pk<=0){G=g;break;}}
+      const cnt=G.n[0]+Math.floor(r()*(G.n[1]-G.n[0]+1)),fu=FARM_FIELD.u[0]+r()*(FARM_FIELD.u[1]-FARM_FIELD.u[0]),fv=FARM_FIELD.v[0]+r()*(FARM_FIELD.v[1]-FARM_FIELD.v[0]);
+      /* the field: behind the house, else beside the farm on either side, else farther back; the first of them on open ground off every pad */
+      const free=(x,z)=>Math.hypot(x-F.cx,z-F.cz)>=FARM_R+2&&!wildPadNear(x,z,0)&&farmGround(x,z,F);
+      const mid=[[fu,fv],[-FARM_FIELD.side,-8],[FARM_FIELD.side,-8],[fu,fv-18]].map(([u,v])=>at(u,v)).find(([x,z])=>free(x,z));if(!mid)continue;
+      for(let i=0;i<cnt;i++){const id=`farm:${F.id}:f${i}`,pr=seededRng('farmspot',id),yaw=pr()*Math.PI*2;
+        if(WILD_TAKEN.get(id)===lootDay())continue;
+        for(let k=0;k<8;k++){const j=i||k,x=mid[0]+(j?(pr()-.5)*2*FARM_FIELD.spread:0),z=mid[1]+(j?(pr()-.5)*2*FARM_FIELD.spread:0);
+          if(!free(x,z))continue;if(farmStockMake(ch,key,id,G.name,x,z,yaw))n++;break;}}}
+    return n;}
   function wildSpawnChunk(ch){const key=chunkKey(ch.cx,ch.cz);ch.wild=[];WILD_CH.add(ch);
-    const cxw=ch.cx*CHUNK+CHUNK/2,czw=ch.cz*CHUNK+CHUNK/2;wildTroutChunk(ch,key);if(worldH(cxw,czw)<-3)return;
+    const cxw=ch.cx*CHUNK+CHUNK/2,czw=ch.cz*CHUNK+CHUNK/2;wildTroutChunk(ch,key);try{wildFarmChunk(ch,key);}catch(err){console.warn('farmstock',err);}if(worldH(cxw,czw)<-3)return;
     if(wildWatcherChunk(ch,key))return; /* S1784 — the watcher's chunk holds it and its sheep, no other group */
     const r=seededRng('wild',key);if(r()>WILD_P)return;
     if(wildPadNear(cxw,czw,40))return;
