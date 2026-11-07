@@ -1601,3 +1601,35 @@ A new-look run, as the rota asks after yesterday's playtest. I worked headless o
 - Section I is all struck through to date: every item from my 5 Nov run was done in Sessions 1871–1888. Nothing new is confirmed in play this run, so no lines are added.
 
 No proposal this run.
+
+## 2026-11-07 — Asked in Passing's new errand, *The Stuck Cart*, from Dunmore (taken, walked, failed to lift, unloaded, turned in); a save inside a gate near Dunmore, died and loaded; a fight in that gate with a sword; night and day frame times on the north road (build s1330, read to Session 1956)
+
+A playtest run, as the rota asks after yesterday's look at the new look. I played headless on main at s1330, on the new look, through `tests/lib/game.mjs`. `export` passed first. I wrote three throwaway scripts under `tests/tmp/`, each a fresh character booted into Dunmore.
+
+**What I did**
+- *The Stuck Cart.* I looked through Dunmore's own townsfolk (35 to 37 of them loaded), week by week. The first with a cart came in week 2: Niamh, a cooper. On a second boot it was Fionn, a carter, in week 10. 29 and 69 errand offers came up before each. Her greeting closes on the hint, and *About you → Where's your cart?* gives the offer word for word. "A cart's like a grudge: easy got into, hard got out of" is the best line in the errands so far. *I'll do it* answers "Go on, so, and mind the road home." It is titled *Niamh's cart*, 15 gold, on the north road. The compass shows "12 steps · Niamh's cart" as you come up the road. The cart lies 222 and 249 m out, in the verge, pitched nose down (`2026-11-07-cart-ditch-10h.png`, from 12 m at 10h). At Might 3 *Lift it* says "It does not shift." *Unload it* costs two hours on the clock to the minute. No band came on either cart, so I spawned the two Bandits myself to see them come up the road. They stand 22 m up it and close. Back in Dunmore, "Your cart's out of the ditch." pays 15 gold, closes the errand, and the cart is gone from the road. 0 page errors.
+- *A save in a gate.* The nearest door to Dunmore is a cave door 1,553 m out, seed 489634, *Carrigkeel's Lair — the cavern*, theme deep. I saved at its foot, set health to 0 and pressed *Load last save*. I woke in the same gate on floor 1 at the same cell (6, 27).
+- *A fight in it.* I fought a Skeleton (92 health) and a Frost Wraith Bear (158) with fists and then a tier-1 sword. Its floor holds 14 foes: 3 Frost Wraith Bears, 4 Slimes, a Greater Slime, 2 Skeletons, 2 Cave Trolls and 2 Mimics.
+
+**What was wrong**
+- *The cart gives no prompt while you stand at it.* The errand's E reads 3 m round the road's centre point, and the cart lies 3.2 m off that point in the ditch. Standing at the cart, or on its far side (4.6 m), gives no prompt. On the road's edge (1.8 m) the prompt shows. A player who walks to the thing in the ditch, as anyone would, gets nothing until they step back onto the road. Filed for the systems builder.
+- *Once shifted, the cart is set down on top of you* (`2026-11-07-cart-out.png`). It stands upright at that same centre point, which is where you had to stand to use it. Its bed and shaft fill the bottom of the frame, inside the camera. Filed for the systems builder.
+- *The frame after the unload.* On the first cart, three frames took 0.84 s before *Unload it* and 34–35 s after it. The screenshot afterwards took 257 s against about 1 s for the one before. The two hours had put the clock past midnight. I tried to reproduce it on a third boot, 230 m up the north road. There 10h ran 9–18 s for three frames, 23h 26 s, and 02h 32–34 s. With the draw stubbed, 02h still took 9.6 s. So night costs this box two to three times day's frame, and most of that is not the draw. Software GL shared with a second boot is too noisy for me to claim a fault, so I have not filed it. QA's `budget` measures Dunmore at midnight by calls, not by time. A time check on the north road at 02h would settle it.
+
+**What worked well**
+- The errand reads as a small thing that is worth doing: the hint, the offer, the compass and the slip ("The cart lies nose down in the ditch, one wheel off the ground.") all agree. It pays exactly what it said, and the giver's answer ("on its four wheels and not three") lands.
+- Death and *Load last save* inside a real gate put you back where you saved, same floor, same cell.
+
+**The *Needs eyes*, from what I saw**
+- S1937 (`diedload`'s save in a gate wakes you outside): the game is right. The suite's gate is a stand-in, seed 11, with no door in the world, so `_reenterPlace` says "The gate you saved in is closed to you" and leaves you outside, as written. A real gate's save brought me back inside, above. If the suite is meant to prove the gate half, it wants a real door's seed.
+- S1947 (does the cart read as in a ditch beside the road; is 150–300 m the giver's half-hour?): it reads as a cart in the verge rather than a ditch, because the verge is flat grass there. 222–249 m is under a minute's walk, and "a half-hour on" overstates it four times over. That is the draft's number. I would leave it, since a giver's sense of distance is a character's, not a map's.
+- S1933 (is the Blight Boar a pushover on tier 1?): not met. In the deep gate above, three Frost Wraith Bears at 158 health stood among the roster. #1201 says one *slot*, so three bears is the slot drawn three times. Whether that is meant is the systems builder's call; I note it and do not file it. A sword of tier 1 took a Skeleton from 92 to 85 in eight swings as I drove it, but I called `attack()` on a timer and cannot vouch that every swing finished, so this is not evidence the gate is too hard.
+- S1949, S1951, S1952, S1955 (the hit's bursts, the 50 ms hold, bone and fur): one burst was live during the bear fight, and `impactSurface` named the Skeleton bone and the bear fur. Whether the hold reads as weight at full speed cannot be judged at a few frames a second. I did not swing into a wall.
+- S1943 (the frame fills the window): every picture this run is 1280×720 with the HUD and the touch arrows where they were. Whether 108–122° reads as stretched is a monitor question.
+- S1923, S1925, S1926, S1928, S1930, S1936 (the beasts and the deflect after my 6 Nov notes), S1941 (the deckhands' slops), S1953 (the cloak), S1927, S1932, S1938, S1946, S1948, S1956 (the aqueduct, the tunnel lanes, Lichenbloom's stones, Aurenne's quays): not looked at this run. They are the new look's, and they are next run's review.
+- S1934 and S1939–1942 (Bitter's 80% ceiling, the islands' herbs): not played. The Mark was not reached this run.
+
+**Backlog notes**
+- Section I gains two lines, both the cart's. Nothing in it is done but unmarked.
+
+No proposal this run.
