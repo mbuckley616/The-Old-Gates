@@ -280,6 +280,7 @@ function resolvePlayerStrike(_isPow){
   });
   _candidates.sort((a,b)=>a.dist-b.dist);
   if(!_candidates.length&&activeZoneId==='world'&&typeof WORLD!=='undefined'&&WORLD.strikeNpc)WORLD.strikeNpc(fwdX,fwdZ); // S157 — assault
+  if(!_candidates.length)impactWallAhead(row.reach); /* S1951 — the swing meets the wall (#1239 B) */
   const out=[];
   let _hitsLanded=0;
   const _impSide=SWING&&SWING.chain%2===0?-1:1; /* S1948 — the cut's way across the foe, alternating with the chain */
@@ -912,6 +913,27 @@ function impactOnYou(e,kind){
   const at=new THREE.Vector3(px+dx*.6,eye-.28,pz+dz*.6),n=new THREE.Vector3(dx,.15,dz).normalize(),cut=new THREE.Vector3(-dz,-.25,dx).normalize();
   return impactSpawn(surface,{at,n,cut,seed:'you:'+kind+':'+impactKind(e)+':'+(++IMPACT.n),ground:jumpY,mark:false,you:kind});
 }
+// S1951 — a swing that meets a wall (owed by S1948): in a gate or a dungeon, a swing of a weapon that finds no foe in reach and
+// meets the rock within the row's reach (HULL_YOU + reach, along your facing) throws the stone's burst off the wall's face and
+// leaves its scar on it; a door's leaf throws its wood and a gouge, a column its stone; a room's furniture nothing. The face's normal is the grid's (the cell edge the line
+// crossed). The open world's solids are trees, timber and stone with nothing to say which, so they throw nothing yet; fists
+// nothing anywhere, as on a foe. The hold is the same 50 ms. Nothing else changes: the swing still misses.
+function impactWallAhead(reach){
+  if(!impactOn()||activeZoneId!=='dungeon'||!EQ.weapon||typeof dSolid!=='function')return null;
+  const R=HULL_YOU+reach,eye=jumpY+(typeof _eyeHeightCur==='number'?_eyeHeightCur:SCALE.EYE_STAND),map=activeMap();
+  let pc=dCellOf(px),pr=dCellOf(pz);if(dSolid(px,pz))return null;
+  for(let d=.05;d<=R+1e-6;d+=.05){const x=px+fwdX*d,z=pz+fwdZ*d;if(!dSolid(x,z)){pc=dCellOf(x);pr=dCellOf(z);continue;}
+    const c=dCellOf(x),r=dCellOf(z),v=map[r]?map[r][c]:0;let surface='stone',n=null;
+    if(v===8)return null; /* a chasm's open air */
+    if(v===4||v===5){const D=DOORS.find(o=>o.c===c&&o.r===r&&o.floor===currentFloor);
+      if(!dPropHit(x,z)&&D){surface='wood';n=D.isEW?new THREE.Vector3(Math.sign(px-D.x)||1,0,0):new THREE.Vector3(0,0,Math.sign(pz-D.z)||1);}}
+    else if(v!==0&&v!==9&&v!=null){if(!dColumnHit(x,z))return null;n=new THREE.Vector3(-fwdX,0,-fwdZ);} /* a room's props are of no one stuff: nothing; a column is stone */
+    if(!n)n=c!==pc?new THREE.Vector3(c>pc?-1:1,0,0):r!==pr?new THREE.Vector3(0,0,r>pr?-1:1):new THREE.Vector3(-fwdX,0,-fwdZ);
+    const at=new THREE.Vector3(x,eye-.3,z).addScaledVector(n,.03),side=SWING&&SWING.chain%2===0?-1:1,cut=new THREE.Vector3(-n.z*side,-.25,n.x*side).normalize();
+    impactHold();
+    return impactSpawn(surface,{at,n:n.clone().setY(.15),cut,seed:'wall:'+c+','+r+':'+(++IMPACT.n),ground:jumpY,wall:true});}
+  return null;
+}
 function impactSpawn(surface,o){
   const r=impactRng('impact:'+surface+':'+o.seed),g=new THREE.Group();g.position.copy(o.at);g.userData.impact=surface;
   const n=o.n.clone().normalize(),cut=o.cut.clone().normalize(),off=(a,b)=>n.clone().multiplyScalar(a).addScaledVector(cut,b).normalize();
@@ -922,7 +944,7 @@ function impactSpawn(surface,o){
   else if(surface==='stone'){impactPuffs(B,r,10,[.6,1.6],.05,.24,off(1,.5),.9,[.66,.6,.5],.32);impactBits(B,r,'chip',8,[2,5],[.005,.014],off(1,.7),.7,[[.62,.58,.5],[.5,.47,.42],[.72,.68,.6]],2);
     impactSparks(B,r,8,[3,8],.14,.012,off(.4,1),.7);if(o.mark!==false)impactMark(B,o.e,'scar',.16,.025,n,cut);impactFlash(B,.6,0);}
   else{impactBits(B,r,'drop',9,[1.2,3],[.003,.007],off(.45,1),.45,o.tint?[o.tint]:[[.24,.03,.03],[.18,.02,.02]],.8);if(o.mark!==false)impactMark(B,o.e,'nick',.09,.014,n,cut);}
-  scene.add(g);IMPACT.list.push(B);IMPACT.last={surface,counts:B.counts,t0:B.t0,you:o.you||null};
+  scene.add(g);IMPACT.list.push(B);IMPACT.last={surface,counts:B.counts,t0:B.t0,you:o.you||null,wall:!!o.wall};
   while(IMPACT.list.length>IMPACT_MAX)impactDrop(IMPACT.list.shift());
   impactPlace(B,performance.now()/1000);return B;
 }
