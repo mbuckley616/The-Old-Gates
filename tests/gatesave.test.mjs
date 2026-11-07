@@ -44,7 +44,7 @@ const unloaded = await page.evaluate(() => { delete WORLD.dungeonPos[42]; window
 console.log('unloaded', JSON.stringify({ tier: unloaded.tier, diff: unloaded.diff, x: unloaded.x, z: unloaded.z }));
 check(`loaded with its cell not loaded, the gate reads the tier walking in reads (${unloaded.tier} and ${before.tier}) and stands where its door does (${unloaded.x}, ${unloaded.z})`, unloaded.tier === before.tier && unloaded.x > 2500, unloaded);
 check(`and its ${unloaded.roster.length} foes are the same kinds and health`, JSON.stringify(unloaded.roster) === JSON.stringify(before.roster), { before: before.roster, unloaded: unloaded.roster });
-// S1975 — a save made in a lair's cavern (the critic, 7 Nov: Carrigkeel's Lair, saved in and loaded, held Frost Wraith Bears): the load's
+// S1976 — a save made in a lair's cavern (the critic, 7 Nov: Carrigkeel's Lair, saved in and loaded, held Frost Wraith Bears): the load's
 // portal took no `lair` from its door, so the cavern was rebuilt as an old gate of its seed, failing, with a gate's corrupted animals and no
 // master. Walked in by the portal its door makes, then entered as a load enters it: the same cavern, its master and its roster
 const lairOf = (P) => page.evaluate(() => ({ lair: !!(currentPortal && currentPortal.lair), gate: !!_lastGen.gate, master: ENEMIES.some(e => e._lairBody || e.lairMaster || / — /.test(e.name)),

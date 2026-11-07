@@ -2307,13 +2307,18 @@ function aurenneHome(o = {}, r = stream('aurhome')) {
   // so the way to its foot passes the rail), the hatch over its head; both are laid before the shell, which cuts the hatch.
   const w = o.w ?? 9.0, d = o.d ?? 7.6, HZ = -d / 2 + 1.2 /* the hatch's front edge, 1.2 m in from the back face */, WX0 = w / 2 - .32 - 3.81 /* the well's west edge (the shell's walls are 0.32) */,
     RX1 = Math.min(-.3, WX0 - .55), RX0 = RX1 - 1.3;
-  const S = o.house /* the street's own options (the game, Session 1831): its wall, door and windows drawn from the street's stream, o.shell */, sh = aurenneHouse({ kind: 'flat', w, d, two: true, pergola: true, lattice: S ? !!S.lattice : true, stair: false, dome: null, wall: S ? S.wall : 1, door: S ? S.door : 0, pointed: S ? !!S.pointed : false, interior: true, hatch: { x0: RX0 - .02, x1: RX1 + .15, z0: -d / 2 + .2, z1: HZ } }, stream(o.shell || 'aurhome-shell'));
+  // o.house.kind === 'tile' (Session 1975): the street's two-storey Roman house (PKIT.au.lot's 'tile' with two true) round the same shop and
+  // flat: its door in the middle of the front, its arcade before the front if the lot has one; no roof to stand on (a hipped roof of pantile
+  // over the cornice's slab), so no roof stair, hatch or terrace, and the flat is under a ceiling of cedar boards on the beams (roof: false)
+  const S = o.house /* the street's own options (the game, Session 1831): its wall, door and windows drawn from the street's stream, o.shell */, tile = !!(S && S.kind === 'tile');
+  const sh = tile ? aurenneHouse({ kind: 'tile', w, d, two: true, arcade: !!S.arcade, lattice: false, stair: false, dome: null, wall: S.wall, door: S.door, pointed: false, interior: true }, stream(o.shell || 'aurhome-shell'))
+    : aurenneHouse({ kind: 'flat', w, d, two: true, pergola: true, lattice: S ? !!S.lattice : true, stair: false, dome: null, wall: S ? S.wall : 1, door: S ? S.door : 0, pointed: S ? !!S.pointed : false, interior: true, hatch: { x0: RX0 - .02, x1: RX1 + .15, z0: -d / 2 + .2, z1: HZ } }, stream(o.shell || 'aurhome-shell'));
   const M = homeMats(), B = new Map(), boxes = [];
   const put = (geo, key, x = 0, y = 0, z = 0, ry = 0, uv = .6, rx = 0, rz = 0) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const k of Object.keys(g.attributes)) if (!['position', 'normal', ...(key === 'rug' ? ['uv'] : [])].includes(k)) g.deleteAttribute(k);
     g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), new THREE.Vector3(1, 1, 1))); if (key !== 'rug') worldUV(g, uv);
     if (!B.has(key)) B.set(key, []); B.get(key).push(g); return g; };
   const UVK = { zellige: 1.47, tile: 1.1 }, bx = (key, x0, x1, y0, y1, z0, z1, tag, fl) => { put(new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0), key, (x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2, 0, UVK[key] ?? .6); if (tag) boxes.push({ tag, x0, x1, y0, y1, z0, z1, fl }); };
-  const X = w / 2 - sh.T, Z = d / 2 - sh.T, F0 = sh.yW + .02, F1 = sh.yW + sh.fh, F2 = sh.top, CEIL = F2 - .14, dx = sh.doorX, ds = dx < 0 ? -1 : 1, U = u => -ds * u /* u > 0 is the side away from the door */;
+  const X = w / 2 - sh.T, Z = d / 2 - sh.T, F0 = sh.yW + .02, F1 = sh.yW + sh.fh, F2 = sh.top, CEIL = tile ? F2 - .03 /* under the cornice's slab */ : F2 - .14, dx = sh.doorX, ds = dx < 0 ? -1 : 1, U = u => -ds * u /* u > 0 is the side away from the door */;
   const xs = (a, b) => [Math.min(U(a), U(b)), Math.max(U(a), U(b))];
   // ── the ground floor: limestone flags, a dado of glazed tile to 1.0 m, the stair along the back wall
   bx('limestone', -X, X, sh.yW, F0, -Z, Z);
@@ -2373,31 +2378,32 @@ function aurenneHome(o = {}, r = stream('aurhome')) {
   // the brass lantern on a chain from the middle of the upper room's ceiling
   const lamp = [.2, CEIL - .55, .6]; bx('iron', lamp[0] - .005, lamp[0] + .005, lamp[1] + .2, CEIL - .2, lamp[2] - .005, lamp[2] + .005);
   put(new THREE.CylinderGeometry(.1, .12, .26, 8), 'glow', ...lamp); put(new THREE.ConeGeometry(.14, .18, 8), 'brass', lamp[0], lamp[1] + .22, lamp[2]); put(new THREE.CylinderGeometry(.13, .13, .03, 8), 'brass', lamp[0], lamp[1] - .14, lamp[2]);
-  // the roof's beams over the upper room, cut at the hatch
-  const hatch = { x0: RX0 - .02, x1: RX1 + .15, z0: -Z, z1: HZ };
-  for (let x = -X + .5; x < X - .2; x += .9) { const over = x > hatch.x0 - .1 && x < hatch.x1 + .1; bx('cedarD', x - .07, x + .07, CEIL - .18, CEIL, over ? hatch.z1 : -Z, Z); }
+  // the roof's beams over the upper room, cut at the hatch (the Roman house's whole, under its boards)
+  const hatch = tile ? null : { x0: RX0 - .02, x1: RX1 + .15, z0: -Z, z1: HZ };
+  for (let x = -X + .5; x < X - .2; x += .9) { const over = hatch && x > hatch.x0 - .1 && x < hatch.x1 + .1; bx('cedarD', x - .07, x + .07, CEIL - .18, CEIL, over ? hatch.z1 : -Z, Z); }
+  if (tile) bx('cedar', -X, X, CEIL, CEIL + .03, -Z, Z);
   // the steep stair to the roof: two cedar stringers and ten treads along the back wall, its foot by the well, its head under the hatch
-  const RS = { x0: RX0, x1: RX1, z0: -Z + .08, z1: -Z + .73, n: 10 }; { const rr = (F2 - F1) / (RS.n + 1), gg = (RS.x1 - RS.x0) / RS.n;
+  const RS = tile ? null : { x0: RX0, x1: RX1, z0: -Z + .08, z1: -Z + .73, n: 10 }; if (RS) { const rr = (F2 - F1) / (RS.n + 1), gg = (RS.x1 - RS.x0) / RS.n;
     for (const z of [RS.z0, RS.z1 - .05]) { const L = Math.hypot(RS.x1 - RS.x0, F2 - F1), g = new THREE.BoxGeometry(L + .3, .2, .05); g.rotateZ(-Math.atan2(F2 - F1, RS.x1 - RS.x0)); put(g, 'cedar', (RS.x0 + RS.x1) / 2 - .02, (F1 + F2) / 2, z + .025); }
     for (let k = 1; k <= RS.n; k++) bx('cedar', RS.x1 - k * gg - .07, RS.x1 - k * gg + .07, F1 + k * rr - .04, F1 + k * rr, RS.z0 + .05, RS.z1 - .05); RS.rise = +rr.toFixed(3); }
-  boxes.push({ tag: 'roofstair', x0: RS.x0, x1: RS.x1, y0: F1, y1: F2, z0: RS.z0, z1: RS.z1, fl: 1 });
+  if (RS) boxes.push({ tag: 'roofstair', x0: RS.x0, x1: RS.x1, y0: F1, y1: F2, z0: RS.z0, z1: RS.z1, fl: 1 });
   // ── the terrace: a coaming round the hatch, a bench and a jar under the pergola, a line of dyed cloth drying between two posts
-  { const q = hatch, y = F2; /* open on the west, where the stair's head steps off */ bx('plaster', q.x0 + .4, q.x1 + .06, y, y + .14, q.z1, q.z1 + .06); bx('plaster', q.x1, q.x1 + .06, y, y + .14, -Z + .1, q.z1); }
-  { const bxp = w / 2 - Math.min(2.6, w * .42) / 2 - .35, bzp = d / 2 - Math.min(2.2, d * .45) / 2 - .35; bx('cedar', bxp - .8, bxp + .8, F2 + .42, F2 + .46, bzp - .2, bzp + .2, 'roofbench', 2); for (const e of [-.7, .7]) bx('cedar', bxp + e - .04, bxp + e + .04, F2, F2 + .42, bzp - .16, bzp + .16);
+  if (!tile) { const q = hatch, y = F2; /* open on the west, where the stair's head steps off */ bx('plaster', q.x0 + .4, q.x1 + .06, y, y + .14, q.z1, q.z1 + .06); bx('plaster', q.x1, q.x1 + .06, y, y + .14, -Z + .1, q.z1); }
+  if (!tile) { const bxp = w / 2 - Math.min(2.6, w * .42) / 2 - .35, bzp = d / 2 - Math.min(2.2, d * .45) / 2 - .35; bx('cedar', bxp - .8, bxp + .8, F2 + .42, F2 + .46, bzp - .2, bzp + .2, 'roofbench', 2); for (const e of [-.7, .7]) bx('cedar', bxp + e - .04, bxp + e + .04, F2, F2 + .42, bzp - .16, bzp + .16);
     put(new THREE.LatheGeometry([[.001, 0], [.12, 0], [.22, .2], [.24, .45], [.14, .62], [.001, .62]].map(([a, b]) => new THREE.Vector2(a, b)), 12), 'terra', bxp + 1.2, F2, bzp - .5); }
-  { const z = -.9, xa = -X + .78, xb = Math.min(1.4, xa + 4.8), top = F2 + 1.85; for (const x of [xa, xb]) bx('cedar', x - .04, x + .04, F2, top, z - .04, z + .04, 'linepost', 2);
+  if (!tile) { const z = -.9, xa = -X + .78, xb = Math.min(1.4, xa + 4.8), top = F2 + 1.85; for (const x of [xa, xb]) bx('cedar', x - .04, x + .04, F2, top, z - .04, z + .04, 'linepost', 2);
     bx('linen', xa, xb, top - .06, top - .05, z - .005, z + .005); for (let x = xa + .35, k = 0; x < xb - .4; x += .75, k++) { const L = .9 + r() * .5, c = new THREE.PlaneGeometry(.6, L, 4, 4), P = c.attributes.position; for (let i = 0; i < P.count; i++) P.setZ(i, .04 * Math.sin(P.getX(i) * 8 + k));
       c.computeVertexNormals(); put(c, dyes[(k + 1) % 4], x + .3, top - .06 - L / 2, z, 0); } }
   // the door's leaf, hung open against the front wall inside, on the side away from the window
   { const lw = 1.05, lx = dx + ds * (lw / 2 + .04); bx('cedarD', lx - .03, lx + .03, F0, F0 + 1.95, Z - lw - .02, Z - .02, 'leaf', 0); }
   // the walks, each on its own floor: in at the door, past the counter's end to the stair's foot; off the landing to the divan's table;
   // from the landing to the roof stair's foot
-  const paths = [[[dx, Z - .3], [dx, WZ], [SX0 - .35, WZ], [SX0 - .35, (-Z + SZ1) / 2]], [[X - .45, (-Z + SZ1) / 2], [X - .45, SZ1 + 1.0], [-.1, SZ1 + 1.6], [table.x + .7, table.z - .7]], [[X - .45, SZ1 + 1.0], [RS.x1 + .25, SZ1 + 1.0], [RS.x1 + .25, (RS.z0 + RS.z1) / 2]]];
+  const paths = [[[dx, Z - .3], [dx, WZ], [SX0 - .35, WZ], [SX0 - .35, (-Z + SZ1) / 2]], [[X - .45, (-Z + SZ1) / 2], [X - .45, SZ1 + 1.0], [-.1, SZ1 + 1.6], [table.x + .7, table.z - .7]], ...(RS ? [[[X - .45, SZ1 + 1.0], [RS.x1 + .25, SZ1 + 1.0], [RS.x1 + .25, (RS.z0 + RS.z1) / 2]]] : [])];
   const group = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = !['flame', 'ember', 'glow'].includes(k); m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
   const all = new THREE.Group(); all.add(sh.group, group);
   const windows = [...sh.open.front.filter(h => !h.door).map(h => ({ face: 'front', x: h.x, z: d / 2, y: sh.yW + h.y, w: h.w, h: h.h })), ...sh.open.back.map(h => ({ face: 'back', x: -h.x, z: -d / 2, y: sh.yW + h.y, w: h.w, h: h.h }))];
   return { group: all, shell: sh.group, room: group, tris: Math.round(tris), draws: group.children.length, shellTris: sh.tris, shellCalls: sh.draws, inner: { x0: -X, x1: X, z0: -Z, z1: Z }, floors: [F0, F1, F2], ceil: [F1 - .4, CEIL - .18], beams,
-    door: { x: dx, z: d / 2, w: 1.05, h: 2.1 }, stair: { x0: SX0, x1: LX, z0: -Z, z1: SZ1, rise: +rise.toFixed(4), going, n: N }, well, hatch, roofStair: RS, paths, boxes, bed, divan, table, counter, lamp, lamp0, braziers, windows, w, d, top: F2 };
+    door: { x: dx, z: d / 2, w: 1.05, h: 2.1 }, stair: { x0: SX0, x1: LX, z0: -Z, z1: SZ1, rise: +rise.toFixed(4), going, n: N }, well, hatch, roofStair: RS, roof: !tile, tile, paths, boxes, bed, divan, table, counter, lamp, lamp0, braziers, windows, w, d, top: F2 };
 }
 
 // aurenneHomeOne(o, r) (Session 1968: rooms.js's, copied as it stands; card F9; OG-115's Aurenne panel; Michael's A on #318, the flat over the dyer's shop, and #303's rooms

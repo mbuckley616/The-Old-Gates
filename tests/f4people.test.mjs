@@ -138,6 +138,32 @@ check(`walking, no arm comes out through a cloak (${cloaks.map(c => c.out + ' of
   cloaks.length >= 2 && cloaks.every(c => c.held > 0 && c.walk > .9 && c.rest.out === 0 && c.tested > 1000 && c.out === 0 && c.worst < .006), cloaks);
 const freeArm = cloaks.filter(c => c.free);
 if (freeArm.length) check(`the right arm a thrown-back cloak leaves out still swings (the wrist ${freeArm.map(c => c.swing).join(', ')} m fore and aft)`, freeArm.every(c => c.swing > .05), freeArm);
+// S1974 — a braid laid over a long cloak stays over it in the walk (S1966 laid it there in the builder's pose). The cloak rides the pelvis
+// (hbSkinLoose) and the hair the head, so the walk sank most of a braid under the sheet; the hair on the sheet now rides the pelvis too
+// (hbHairOnCloak). Before the cast's checks, which leave Dunmore. One cloaked walker of Dunmore rebuilt with a long braid; every third point of it near the sheet (within 4 cm) read
+// along the sheet's normal, at rest and on every third tick of a 60-tick walk past the 24th; then her own body is put back
+const braidWalk = await page.evaluate(() => { const v = new THREE.Vector3();
+  const rig = [...HB_RIGS].find(r => r.hb && r.root.parent === WORLD.scene && !r.sleep && r.hbG && r.hbG.dress && r.hbG.dress.cloak && !r.hbG.dress.cape); if (!rig) return null;
+  const G0 = rig.hbG, G = JSON.parse(JSON.stringify(G0)); G.hair = { style: 'braid', len: .75 }; G.dress = Object.assign({}, G.dress, { hood: null, cloakLen: .9 });
+  hbDrop(rig); rig.hbG = G; hbAttach(rig); if (!rig.hb) return { fail: true }; hbLevel(rig, 0); hbPose(rig);
+  const P = rig.hb.P, full = rig.hb.full, hair = full.filter(m => m.isSkinnedMesh && /^(braid\d|tie|brush)$/.test(m.name)), parts = full.filter(m => m.isSkinnedMesh && /^(cloak|cloakHem|hood|collar\d)$/.test(m.name));
+  const sample = () => { rig.root.updateMatrixWorld(true); const CP = [], CN = [];
+    for (const m of parts) { const n = m.geometry.attributes.position.count, g2 = new THREE.BufferGeometry(), a = new Float32Array(n * 3); for (let i = 0; i < n; i++) { m.getVertexPosition(i, v); v.applyMatrix4(m.matrixWorld); a[i * 3] = v.x; a[i * 3 + 1] = v.y; a[i * 3 + 2] = v.z; }
+      g2.setAttribute('position', new THREE.BufferAttribute(a, 3)); if (m.geometry.index) g2.setIndex(m.geometry.index); g2.computeVertexNormals(); const nn = g2.attributes.normal.array; for (let i = 0; i < a.length; i++) { CP.push(a[i]); CN.push(nn[i]); } }
+    const cell = .04, grid = new Map(); for (let q = 0; q < CP.length / 3; q++) { const h = Math.floor(CP[q * 3] / cell) + ',' + Math.floor(CP[q * 3 + 1] / cell) + ',' + Math.floor(CP[q * 3 + 2] / cell); let l = grid.get(h); if (!l) grid.set(h, l = []); l.push(q); }
+    let n = 0, under = 0, worst = 0;
+    for (const m of hair) { const c = m.geometry.attributes.position.count; for (let i = 0; i < c; i += 3) { m.getVertexPosition(i, v); v.applyMatrix4(m.matrixWorld); let best = -1, bd = cell * cell; const cx = Math.floor(v.x / cell), cy = Math.floor(v.y / cell), cz = Math.floor(v.z / cell);
+      for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) for (let e = -1; e <= 1; e++) { const l = grid.get((cx + a) + ',' + (cy + b) + ',' + (cz + e)); if (l) for (const q of l) { const d = (CP[q * 3] - v.x) ** 2 + (CP[q * 3 + 1] - v.y) ** 2 + (CP[q * 3 + 2] - v.z) ** 2; if (d < bd) { bd = d; best = q; } } }
+      if (best < 0) continue; const s = (v.x - CP[best * 3]) * CN[best * 3] + (v.y - CP[best * 3 + 1]) * CN[best * 3 + 1] + (v.z - CP[best * 3 + 2]) * CN[best * 3 + 2]; n++; if (s < -.003) under++; worst = Math.min(worst, s); } }
+    return { n, under, worst }; };
+  const rest = sample(), root = rig.root, fy = root.rotation.y, o = { key: rig.g.hbKey, ride: P.cloak && P.cloak.hairOver && P.cloak.hairOver.ride, rest, tested: 0, under: 0, worst: 0 };
+  const T = performance.now() + 1e5; for (let i = 1; i <= 60; i++) { root.position.x += Math.sin(fy) * .012; root.position.z += Math.cos(fy) * .012; tickPeople(1 / 60, T + i * 16.7);
+    if (i > 24 && i % 3 === 0) { const c = sample(); o.tested += c.n; o.under += c.under; o.worst = Math.min(o.worst, c.worst); } }
+  o.worst = +o.worst.toFixed(4); o.walk = +rig.w.walk.toFixed(2); o.w = Object.fromEntries(Object.entries(rig.w).map(([k, x]) => [k, +x.toFixed(2)]));
+  hbDrop(rig); rig.hbG = G0; hbAttach(rig); if (rig.hb) { hbLevel(rig, 0); hbPose(rig); } o.back = !!rig.hb && rig.hbG === G0 && rig.hb.P.hair.style === (G0.hair && G0.hair.style || rig.hb.P.hair.style); return o; });
+console.log('  braid over the cloak:', JSON.stringify(braidWalk));
+check(`walking, a braid laid over a long cloak stays over it (${braidWalk && braidWalk.under} of ${braidWalk && braidWalk.tested} of its points near the sheet under it by 3 mm or more; it rides the pelvis where it lies on the cloth)`,
+  !!braidWalk && !braidWalk.fail && braidWalk.ride && braidWalk.ride.n > 500 && braidWalk.rest.under === 0 && braidWalk.walk > .9 && braidWalk.tested > 3000 && braidWalk.under <= braidWalk.tested * .002 && braidWalk.back, braidWalk);
 
 // the levels by distance, and the budget at the middle quality
 const lv = await page.evaluate(() => { SETTINGS.quality = 1; const t = WORLD.siteAnywhere('dunmore'); px = t.x; pz = t.z + 4; yaw = 0; pitch = 0;
