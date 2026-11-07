@@ -636,3 +636,37 @@ the field west at noon 672 → 672 and at dawn 816 → 815; Portclare's square 5
 gate 102 → 102. Dunmore's *Houses* rose by one call in each view (135 → 136 at noon, 201 → 202 at midnight): the market house on the square (Look 1904),
 which its builder put at 21 draws, mostly out of this view. Midnight's shadow pass rose 155 → 160 at Middle. The largest rise is Portclare at Low in
 triangles, 713k → 727k (+2.0%). No spot rose by more than 10%. Dunmore at midnight at Low is 682 of its 700 calls: 18 left.*
+
+### s1324 — 2026-11-07 07:03 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Dunmore street, noon | Low | 570 | 1.08 M | 0 | 0 | 107 | 120 | 253 | 90 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 |
+| Dunmore street, noon | Middle | 725 | 1.82 M | 136 | 6 | 108 | 120 | 265 | 90 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 |
+| Dunmore street, noon | High | 775 | 2.30 M | 168 | 6 | 108 | 120 | 283 | 90 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 |
+| Dunmore street, midnight | Low | 625 | 1.04 M | 0 | 0 | 105 | 176 | 253 | 91 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 |
+| Dunmore street, midnight | Middle | 802 | 1.77 M | 159 | 6 | 105 | 176 | 265 | 91 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 |
+| Dunmore street, midnight | High | 863 | 2.31 M | 202 | 6 | 105 | 176 | 283 | 91 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 |
+| the field west of Dunmore, noon | Low | 536 | 627k | 0 | 0 | 105 | 107 | 281 | 43 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 |
+| the field west of Dunmore, noon | Middle | 644 | 1.05 M | 83 | 6 | 105 | 107 | 300 | 43 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 |
+| the field west of Dunmore, noon | High | 691 | 1.51 M | 122 | 6 | 105 | 107 | 308 | 43 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 |
+| the field west of Dunmore, dawn | Low | 619 | 618k | 0 | 0 | 108 | 186 | 281 | 44 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 |
+| the field west of Dunmore, dawn | Middle | 787 | 1.10 M | 143 | 6 | 108 | 186 | 300 | 44 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 |
+| the field west of Dunmore, dawn | High | 839 | 1.62 M | 187 | 6 | 108 | 186 | 308 | 44 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 |
+| Portclare square, noon | Low | 356 | 680k | 0 | 0 | 28 | 60 | 192 | 76 | Mesh 31, oldGate 14, cave mouth 8, sea cave mouth 8, Group 6 |
+| Portclare square, noon | Middle | 523 | 1.39 M | 144 | 6 | 29 | 60 | 208 | 76 | Mesh 31, oldGate 14, cave mouth 8, sea cave mouth 8, Group 6 |
+| Portclare square, noon | High | 570 | 1.73 M | 179 | 6 | 30 | 60 | 219 | 76 | Mesh 31, oldGate 14, cave mouth 8, sea cave mouth 8, Group 6 |
+| The Bramble Hearth (Dunmore's inn), the hall from the door, 20h | Middle (indoors) | 34 | 26k | 0 | 0 | 1 | 0 | 0 | 33 |  |
+| a medium gate (ruins, seed 11), from its entrance | Middle (indoors) | 102 | 394k | 0 | 0 | 33 | 0 | 0 | 68 |  |
+
+*s1324, QA Session 1954 (`budget` 18/18 in 409 s and `budgetport` 9/9 in 416 s, one try each, run in series by `run.mjs budget budgetport` on four
+cores with no other boot). Against s1287, 37 builds later (every merge to 7 Nov 05:44 UTC, among them the impacts by surface, the tunnel lanes, the islands'
+herbs, Aurenne's warehouses, the deckhands and the cart in the ditch), every outdoor view **fell** 4–8% in calls, at Middle:
+Dunmore's street at noon 774 → 725 (−6.3%), 1.88 M → 1.82 M; at midnight 861 → 802 (−6.9%; Low 682 → 625 of its 700); the field west at noon 672 → 644
+and at dawn 815 → 787; Portclare's square 556 → 523 (−5.9%), 1.48 M → 1.39 M; the inn's hall 38 → 34; the medium gate 102 → 102. The cause is the
+frame, not the game's content: Session 1943 made `#g` 100vh, so the harness's 1280×720 page now draws a 1280×720 canvas where it drew 1280×600, and at
+the same 75° vertical field of view the horizontal one narrows from 117° to 108°. Houses, land and the old gates at the edges fall out of the view;
+the bodies near the centre hardly move (Dunmore noon 113 → 108). Proof: the same build with only `#g` set back to 600 px high (a scratch copy, `--src`)
+read 774, 861, 672, 815 and 556 at Middle, s1287's numbers to the call, and Portclare at Low 386 against s1287's 387. So nothing merged since s1287
+added a call in these views. From here on every row is on the 1280×720 canvas, and s1324 is the base the next run compares against. No spot rose.
+Dunmore at midnight at Low is 625 of its 700 calls: 75 left (18 at s1287, on the wider view).*
