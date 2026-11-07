@@ -457,20 +457,28 @@ const PLANT_BUILD={
   // a truffle in cracked desert ground: a low mound, broken plates of crust, and the warty dark tuber showing
   truffle(P,R,col,stem){P.add(SK.bumpy(SK.ball(1,12,6,0,6.283,0,1.6),.2,7,2),[0,-.02,0],0,[.24,.06,.24],0xa88a62);
     for(let i=0;i<7;i++){const a=i/7*6.283+R()*.3,r=.13+R()*.05;P.add(new THREE.BoxGeometry(.08+R()*.04,.015,.06),[Math.sin(a)*r,.035,Math.cos(a)*r],[-.25,a,(R()-.5)*.3],0,0xc0a478);}
-    P.add(SK.bumpy(SK.ball(1,10,7),.25,13,5),[.01,.04,0],0,[.05,.04,.045],col);}
+    P.add(SK.bumpy(SK.ball(1,10,7),.25,13,5),[.01,.04,0],0,[.05,.04,.045],col);},
+  // S1946 — lichen in flower on a fallen dressed stone: grey-green plates of lichen over the stone's top, and small gold cups rising
+  // from them (herbs.js's lichen; the steady gate's Lichenbloom). Picked, the cups go and the stone and its lichen stay.
+  lichen(P,R,col,stem){P.add(SK.rbox(.6,.28,.4,.025,1),[0,.13,0],[0,.2,0],0,0x8a8678);
+    for(let i=0;i<16;i++){const a=R()*6.283,x=(R()-.5)*.5,z=(R()-.5)*.3;P.add(SK.cyl(.03+R()*.03,.03+R()*.03,.008,9),[x,.275+R()*.006,z],[0,a,0],[1,1,.7],plantMix(0x8a9a6a,0xb8b890,R()));}
+    P.take=true;for(let i=0;i<12;i++){const x=(R()-.5)*.44,z=(R()-.5)*.26,h=.03+R()*.03;P.add(plantStalk(h,.004,.003,4),[x,.27,z],0,0,stem);
+      P.add(SK.lathe([[.001,0],[.012,.006],[.016,.016]],7),[x,.27+h,z],0,0,plantShade(col,.9+R()*.2));}P.take=false;}
 };
 // S1942 — which island herb wears which of its own kinds (herbs.js's HERBS). PLANT_KIND keeps the kin kind that 50-travel.js gives it
 // (HERB_DEF's base row is read from that), so the mesh is chosen here: plantKindOf, never PLANT_KIND, picks the builder.
 const PLANT_ISLE={icebloom:'icebloom',stormthistle:'globe',pineresin:'resin',glacierlily:'lily',gnarlroot:'gnarl',sandlotus:'lotus',sagepalm:'fanpalm',
-  sunpetal:'sunpetal',drakesage:'sage',spicethorn:'chilli',jadealoe:'aloe',deserttruffle:'truffle'};
-for(const k of ['resin','chilli'])PLANT_STAYS.add(k);for(const k of ['globe','lily','sunpetal','fanpalm'])PLANT_SHADOW.add(k);
+  sunpetal:'sunpetal',drakesage:'sage',spicethorn:'chilli',jadealoe:'aloe',deserttruffle:'truffle',lichenbloom:'lichen'};
+// S1946 — a herb whose HERB_DEF row is a kin's (the gate's plants copy theirs, 87-world-quests.js) is coloured as herbs.js draws it: [flower, stem]
+const PLANT_ISLE_COL={lichenbloom:[0xd8c050,0x9a9a70]};
+for(const k of ['resin','chilli','lichen'])PLANT_STAYS.add(k);for(const k of ['globe','lily','sunpetal','fanpalm'])PLANT_SHADOW.add(k);
 function plantKindOf(key){return PLANT_ISLE[key]||PLANT_KIND[key];}
 // the baked geometry of a herb (by its HERB_DEF key), whole or picked; null for anything without a kind
 function plantGeo(key,picked){const kind=plantKindOf(key),def=typeof HERB_DEF!=='undefined'&&HERB_DEF[key];if(!kind||!def)return null;
   if(picked&&!PLANT_STAYS.has(kind)){const k2=key+'|stub';let g2=PLANT_GEO.get(k2);if(!g2){g2=plantStubGeo(key,plantGeo(key,false));PLANT_GEO.set(k2,g2);}return g2;}
   const k=key+(picked?'|picked':'');let g=PLANT_GEO.get(k);if(g)return g;
   const P=new Plant(picked);if(picked){const whole=plantGeo(key,false);P.top=whole.userData.top;}
-  PLANT_BUILD[kind](P,plantRng(key),def.col,def.stemCol,key);g=P.bake();PLANT_GEO.set(k,g);return g;}
+  const IC=PLANT_ISLE_COL[key];PLANT_BUILD[kind](P,plantRng(key),IC?IC[0]:def.col,IC?IC[1]:def.stemCol,key);g=P.bake();PLANT_GEO.set(k,g);return g;}
 // S263 — what a picked herb leaves (Michael's A on Session 237): the plant cut near the ground, every triangle wholly under a
 // cut of 22% of its height (held to 3.5–9 cm) kept, so stalk bases, the crown and the lowest leaves stay, darkened; a flat
 // kind (under 13 cm: the mosses, the rosette) torn instead, two opposite sectors kept; on a flat patch of turned earth a

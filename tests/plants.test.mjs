@@ -21,6 +21,9 @@ check('of the islands\' own kinds, the resin\'s stump and the chilli\'s bush sta
   ['pineresin', 'spicethorn'].every(k => !kinds[k].stub && kinds[k].picked < kinds[k].tris) && ISL.filter(k => OWN.includes(kinds[k].kind) && !['pineresin', 'spicethorn'].includes(k)).every(k => kinds[k].stub),
   Object.fromEntries(ISL.map(k => [k, [kinds[k].picked, kinds[k].stub]])));
 check(`the three plants that mark a gate bake as their stand-in kinds (${GATE3.map(k => kinds[k] && kinds[k].kind).join(', ')})`, GATE3.every(k => kinds[k] && kinds[k].tris > 0), GATE3.map(k => kinds[k]));
+check('Lichenbloom wears the atlas\'s lichen on its stone, 100–2,500 triangles, and picked the stone stays without its cups (S1946)',
+  kinds.lichenbloom.kind === 'lichen' && kinds.lichenbloom.tris >= 100 && kinds.lichenbloom.tris <= 2500 && !kinds.lichenbloom.stub && kinds.lichenbloom.picked < kinds.lichenbloom.tris && kinds.lichenbloom.picked > kinds.lichenbloom.tris * .2,
+  kinds.lichenbloom);
 check('all 26 herbs bake as plants, the sea\'s three among them (S1589: kelp, sea lily, pearlweed)', Object.keys(K).length === 26 && kinds._missing.length === 0, { n: Object.keys(K).length, missing: kinds._missing });
 check('sizes follow what they are: mosses and the rosette hug the ground, goldenrod and the rowan are waist-high, the bush wider than tall',
   K.graywort.h < .07 && K.firemoss.h < .1 && K.goldenrod.h > .7 && K.caorthann.h > .7 && K.thornberry.w > K.thornberry.h && K.thornberry.h > .4 && K.muirfhear.h > .45,
