@@ -704,7 +704,13 @@ function genSettlement(site){
       const mx=new THREE.Matrix4().makeRotationY(L.ry).setPosition(X,y,Z),lime=new THREE.Color(.92,.9,.84),part=(bw,bh,bd,bx,y0,bz,col)=>{const b=new THREE.BoxGeometry(bw,bh,bd).toNonIndexed();b.translate(bx,y0+bh/2,bz);kitLo.push([b,mx,col||lime]);};
       part(I.W+.4,I.pl+I.H+1.2,I.D,0,0,0);part(I.W+.4,I.pl,3.6,0,0,I.D/2+1.8); /* the hall to its cresting; the plinth's apron */
       I.towers.forEach((T,i)=>{const top=A.towerTops[i],sh=I.pl+I.H+(top-I.pl-I.H)*.62;part(2*T.r,sh,2*T.r,T.x,0,T.z);part(1.3*T.r,top-sh,1.3*T.r,T.x,sh,T.z);});
-      S.academy={id:`${site.id}:academy`,x:X,z:Z,y,ry:L.ry,W:I.W,D:I.D,towers:I.towers.length,tops:A.towerTops,tris:A.tris,draws:A.draws,sols,plat:pl,r:Math.hypot(L.w,L.d)/2+.5,cx:L.x,cz:L.z};}
+      S.academy={id:`${site.id}:academy`,x:X,z:Z,y,ry:L.ry,W:I.W,D:I.D,towers:I.towers.length,tops:A.towerTops,tris:A.tris,draws:A.draws,sols,plat:pl,r:Math.hypot(L.w,L.d)/2+.5,cx:L.x,cz:L.z};
+      /* S1963 (card F9) — the library behind the arcade is a house of its own (type 'academy', g_<site>_6100, nobody keeps it, never locked),
+         at the drawn size only (30 m, three towers: the capital's): its door at the arcade's arch at x 10 on the apron (the middle one has the
+         loggia's bench behind it), and you step out 2 m before it facing the street (PKIT.au.library, buildKitLibrary) */
+      if(L.acW===30&&L.acTowers===3&&PKIT.au.library){const ax=A.arches.find(x=>x>9),D_=W_(ax,I.D/2+.9),X_=W_(ax,I.D/2+2.0),h={id:`g_${site.id}_6100`,doorX:D_.x,doorZ:D_.z,doorFace:cardinalFace(s_,c),exitX:X_.x,exitZ:X_.z,exitYaw:Math.atan2(-s_,-c),
+          name:'The Academy',keeper:'',type:'academy',tagline:'',w:I.W,d:I.D,two:false,reg:site.reg||'aurenne',style:'aurenne',dlg:null,siteKind:site.kind,siteId:site.id,kit:{kind:'library',shell:`${site.id}:academy`}};
+        houses.push(h);S.academy.house=h.id;}}
     // S1305 — the Church of the Weaver (PKIT.au.church, a town's, its own stream keyed by the town), the foot of its steps on the lot's front
     // and its door on the street's line; its far copy a box for the podium and the cube, one for the porch, a block for the drum and
     // the dome, one for the tower and one for its little dome; no smoke
@@ -3542,6 +3548,50 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     else{intNPCMesh=null;intNPCPos={x:-99,z:-99};}
     return sc_;
   }
+  // S1963 (card F9; rooms.js's aurenneLibrary of Session 948; OG-043, the canon's §1.3) — on the new look the Mages' academy in Aurenne's
+  // capital (S1959, at the drawn 30 m with three towers) is its library inside: the loggia behind the arcade, the cedar lattice screen and its
+  // three doorways, the presses of codices and scrolls between the windows and the towers' feet, the rolling ladder, four reading tables
+  // with their benches and brass lamps, two copyists' desks, the armillary sphere under the observatory, the painted beams. The shell is the
+  // street's academy (one stream, by the city), drawn in metres and moved into the room's frame as the church is (nothing scaled). The door is
+  // the arcade's arch at x 10, where the prototype's walks come in: the middle arch has the loggia's stone bench across it. Nobody keeps it.
+  function kitLibrary(house){return !!(house&&house.type==='academy'&&house.kit&&house.kit.kind==='library'&&window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.au&&PKIT.au.library);}
+  function buildKitLibrary(house){
+    const T=PKIT.au.library({shell:house.kit.shell},PKIT.stream(house.id+':library')),I=T.inner,X=I.x1,Z=I.z1,F0=T.floor,W=2*X,D=2*Z,arch=T.paths[0][0][0];
+    const rx=x=>x+X,rz=z=>z+Z,ry=y=>y-F0;
+    house._counterFront=null;house.intW=W;house.intD=D;house._roomH=+(T.ceil-F0).toFixed(3);house._exitD=.8;house._exitW=1.0;house._exitX=+rx(arch).toFixed(3);house._library=T;
+    house._arriveX=house._exitX;house._arriveZ=+(D-1.0).toFixed(3);
+    const sc_=new THREE.Scene();interiorScene=sc_;landRoomPost(sc_);sc_.background=new THREE.Color(0x0e0c0a);sc_.fog=new THREE.Fog(0x0e0c0a,Math.max(W,D)*1.2*SCALE.ROOM_K,Math.max(W,D)*3*SCALE.ROOM_K);
+    intNPCMesh=null;intNPCPos={x:-99,z:-99};intBedPos=null;intStashPos=null;
+    const SOL=[];INT_SOL=SOL;FOOTHOLDS=[];INT_BEDS=[];INT_DOORS=[];INT_DOORS.house=house.id;INT_CHAIR=null;INT_NPCS=[];HATCH.active=false;HATCH.roof=false;INT_LOOT=null;INT_BOX=null;INT_SHELF=null;
+    T.group.position.set(X,-F0,Z);T.group.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false;}});sc_.add(T.group);
+    // the solids are the prototype's boxes; the screen's are its sill and posts, so each stretch of lattice is stood up to the screen's
+    // head (3.3 m) to keep you to its doorways; the tops of the benches, the window seats, the stools, the tables and the loggia's bench
+    // are footholds (not the presses, the ladder, the towers' feet, the screen, the desks' legs, the armillary)
+    // the armillary's box is taken in to its rings' reach (0.52 m, the prototype's 0.55): the walk from the screen's middle doorway to the ladder
+    // passes 0.25 m off it
+    const FOOT=['bench','seat','stool','table','loggiabench'];
+    for(const q of T.boxes){const b={x0:rx(q.x0),x1:rx(q.x1),z0:rz(q.z0),z1:rz(q.z1),y0:Math.max(0,ry(q.y0)),y1:ry(q.y1)};if(q.tag==='screen')b.y1=Math.max(b.y1,3.3);if(q.tag==='armillary'){const A_=T.armillary,e=A_.r+.02;b.x0=rx(A_.x-e);b.x1=rx(A_.x+e);b.z0=rz(A_.z-e);b.z1=rz(A_.z+e);}SOL.push(b);
+      if(FOOT.includes(q.tag))FOOTHOLDS.push({x0:b.x0,x1:b.x1,z0:b.z0,z1:b.z1,y:b.y1});}
+    house._libraryPaths=T.paths.map(P=>P.map(([x,z])=>[rx(x),rz(z)]));
+    // the day: one plane past the arcade's columns, at the apron's edge, so the columns stand against it, and one outside each of the
+    // other windows (the front's tall lights over the arcade, the back's and the ends' two rows), by the hour
+    const A=PKIT.au.academyBox({w:30,towers:3}).inner,hd=A.D/2,hw=A.W/2;
+    const hr=typeof gameHour==='function'?gameHour():12;
+    {const day=hr>=7&&hr<18?0xc4d0dc:hr>=5&&hr<20?0x8a7a7a:0x0e1420,M=new THREE.MeshBasicMaterial({color:day}),P=[];
+      const out=(x,y,z,w,h,a)=>{const g=new THREE.PlaneGeometry(w+.2,h+.2).toNonIndexed();g.rotateY(a);g.translate(rx(x),ry(A.pl+y+h/2),rz(z));P.push(g.attributes.position.array);g.dispose();};
+      out(0,-A.pl,hd+3.6,A.W+6,5.6,Math.PI);
+      const n=Math.round(A.W/3.4),span=A.W/n;for(let i=0;i<n;i++)out(-hw+(i+.5)*span,6.0,hd+.08,1.1,3.2,Math.PI);
+      const rest=len=>{const xs=[],k=Math.max(1,Math.round(len/4));for(let i=0;i<k;i++)xs.push(-len/2+(i+.5)*len/k);return xs;};
+      for(const x of rest(A.W)){out(x,1.8,-hd-.08,.8,1.6,0);out(x,6.2,-hd-.08,1.0,2.8,0);}
+      for(const z of rest(A.D-2*A.T))for(const sx of [-1,1]){out(sx*(hw+.08),1.8,z,.8,1.6,-sx*Math.PI/2);out(sx*(hw+.08),6.2,z,1.0,2.8,-sx*Math.PI/2);}
+      const Fa=new Float32Array(P.reduce((n,a)=>n+a.length,0));let o=0;for(const a of P){Fa.set(a,o);o+=a.length;}
+      const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(Fa,3));const m=new THREE.Mesh(g,M);m.userData.daylight=true;sc_.add(m);}
+    // the day in through the arcade (its three arches before the screen's doorways), then the four reading lamps
+    {const n=Math.round(A.W/3.4),span=A.W/n,aw=span-.9;kitDaylight(sc_,T.screen.doors.map(x=>{const ax=-hw+(Math.floor((x+hw)/span)+.5)*span;return {x:rx(ax),y:3.2,z:D,nx:0,nz:-1,w:aw,h:4.6};}),.25);} /* a quarter: three arches of 2.4 by 4.6 m at the cap would light the loggia whiter than the street */
+    const KA=kitRoomAir(sc_,.45);
+    for(const [x,y,z] of T.lamps){const l=new THREE.PointLight(0xffc070,.9*KA.lamp,8);l.position.set(rx(x),ry(y),rz(z));sc_.add(l);}
+    return sc_;
+  }
   // S1703 (card F9, Michael's C on #352; rooms.js's gatelandsGuildHall, Sessions 939, 965 and 966; OG-043) — on the new look a town's guild
   // hall standing as the kit's own hall (PKIT.gl.PLANS.guildhall, lot.kit.kind 'guildhall', S1083) is that hall inside: the hall open to its
   // three arch-braced trusses, the hearth in the west gable, the long table, the steward's desk facing the great door with the notice board
@@ -3663,6 +3713,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     if(kitTunnel(house))return buildKitTunnel(house); /* S1828 — Aurenne's trade tunnel between its portals */
     if(kitTowerCellar(house))return buildKitTowerCellar(house); /* S1765 — a ruined tower house's cellar, souterrain and pit */
     if(kitMarketRoom(house))return buildKitMarketRoom(house); /* S1905 — the room over a town's market house, at its true size */
+    if(kitLibrary(house))return buildKitLibrary(house); /* S1963 — the academy's library, at its true size */
     const two=!!house.two;
     // S896 (F2a) — the room's true size in metres (07-scale.js; visual-foundation.md §1: a cottage room 4 to 6 across, an inn's hall
     // 10 to 14, a church's nave 8 to 12 wide), then laid out in the old unit (÷ SCALE.ROOM_K) and scaled back up at the end
