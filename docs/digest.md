@@ -507,3 +507,15 @@ Written by the producer once a day, after 12:00 UTC. Newest last.
 **Blocked.** Nothing on main; the corrupted animals, the new herbs and climate's worse grade wait on your three answers.
 
 **Roadmap.** 309 of 384 stories done (301 of 376 on 5 Nov). The new look is 6 of 17; no deep-work card is queued.
+
+## 7 Nov 2026
+
+**Waiting on you.** One decision: Water (#1254; B recommended, a carried draught with no thirst meter). No PR waits on your tap.
+
+**Landed on main since 6 Nov.** Your answers built: the corrupted animals in failing gates (#1201 B, Systems 1933); climate's worse grade stops stamina at four fifths (#1211 A, 1934); the Mark's and Aurenne's twenty herbs, their effects, islands and shapes (#1202 A, 1939–1942, 1946); a merchantman's two hands and their sailor's dress (#1225 A, 1935, 1941). Blows throw sparks, splinters, dust, stone, bone and fur (#1239 B, 1949–1952, 1955, 1960). Aurenne's warehouse, the Compact's tithe house and the Mages' academy (F6, Look 1948, 1956, 1959). A lane from each trade tunnel to its road (F8, 1938). The game fills the window (1943). The Stuck Cart and its two faults (1947, 1961); Cypress Blossom (1950). The long cloak hangs clean at the back (Bodies 1953, 1957–1958, 1962). QA steadied three suites; the budget is 4–8% lower (1937, 1944–1945, 1954). Build s1335.
+
+**Under way.** No PR is open. The systems builder takes water once you answer.
+
+**Blocked.** Nothing; main is green.
+
+**Roadmap.** 313 of 386 stories done (309 of 384 on 6 Nov). The new look is 6 of 17; no deep-work card is queued.
