@@ -710,6 +710,21 @@ function genSettlement(site){
       lo.name='warehouse far';lo.userData.noBake=true;lo.castShadow=true;lo.receiveShadow=true;lo.visible=false;group.add(lo);
       sol.push({cx:L.x,cz:L.z,rx:L.W/2+.15,rz:L.D/2+.15,c,s:s_,bt:'warehouse'});
       S.warehouse={x:L.x,z:L.z,ry:L.ry,W:L.W,D:L.D,y,tris:B.tris,draws:B.draws,front:B.front};S.whLod={hi:G,lo,x:L.x,z:L.z,r:Math.hypot(L.W,L.D)/2,tris:lo.geometry.attributes.position.count/3};}
+    // S1955 (card F6, Michael's A on #295: stepped merlons) — and the Compact's tithe house past the warehouse along the shore (site.titheLot,
+    // 81's aurTitheLot), pieces.js's as drawn, its loggia to the sea, its banner the Compact's blue and white; on a quay wall as the warehouse's,
+    // its own far copy (a box and the lookout's, S.thLod), its solid its walls; not built where a road or another solid has come into it.
+    function kitTithe(L){const c=Math.cos(L.ry),s_=Math.sin(L.ry),hx=L.W/2+.3,hz=L.D/2+.3,at=(u,v)=>[L.x+u*c+v*s_,L.z-u*s_+v*c];
+      const hit=(x,z)=>sol.some(q=>{const dx=x-q.cx,dz=z-q.cz;if(q.c!==undefined){const lx=dx*q.c-dz*q.s,lz=dx*q.s+dz*q.c;return Math.abs(lx)<q.rx&&Math.abs(lz)<q.rz;}return Math.abs(dx)<q.rx&&Math.abs(dz)<q.rz;});
+      for(let i=0;i<=8;i++)for(let j=0;j<=5;j++){const [x,z]=at(-hx+2*hx*i/8,-hz+(2*hz+L.A)*j/5),ri=roadInfo(x,z,true);if((ri&&ri.d<ROAD_HALF+1)||hit(x,z)){S.tithe={skipped:true};return;}}
+      const B=PKIT.au.civic({kind:'tithe',w:L.W,d:L.D},PKIT.stream(`${site.id}:tithe:look`)),y=L.y-.06,G=new THREE.Group();G.name='tithe house';G.userData.noBake=true;
+      B.group.position.set(L.x,y,L.z);B.group.rotation.y=L.ry;B.group.traverse(m=>{if(m.isMesh){m.castShadow=m.name!=='dark';m.receiveShadow=true;}});G.add(B.group);group.add(G);
+      {const h=y+9,g=new THREE.BoxGeometry(L.W+.6,h,L.D+L.A+.6);g.translate(0,-h/2+.02,L.A/2);const m=new THREE.Mesh(g,PKIT.au.roomMats().step);m.name='quaywall';m.castShadow=true;m.receiveShadow=true;B.group.add(m);}
+      const mx=new THREE.Matrix4().makeRotationY(L.ry).setPosition(L.x,y,L.z),top=.5+9.8+1.2,b=new THREE.BoxGeometry(L.W,top,L.D).toNonIndexed();b.translate(0,top/2,0);
+      const lk=new THREE.BoxGeometry(3.6,4,3.6).toNonIndexed();lk.translate(-L.W/2+3,top+1.5,-L.D/2+3);
+      const lo=new THREE.Mesh(mergeGeos([[b,mx,new THREE.Color(.9,.8,.62)],[lk,mx,new THREE.Color(.9,.8,.62)]]),VC_MAT);b.dispose();lk.dispose();
+      lo.name='tithe house far';lo.userData.noBake=true;lo.castShadow=true;lo.receiveShadow=true;lo.visible=false;group.add(lo);
+      sol.push({cx:L.x,cz:L.z,rx:L.W/2+.15,rz:L.D/2+.15,c,s:s_,bt:'tithe'});
+      S.tithe={x:L.x,z:L.z,ry:L.ry,W:L.W,D:L.D,y,tris:B.tris,draws:B.draws,front:B.front,top:B.roofTop};S.thLod={hi:G,lo,x:L.x,z:L.z,r:Math.hypot(L.W,L.D)/2,tris:lo.geometry.attributes.position.count/3};}
     function kitHouse(lot,type){
       if(!kitG){kitG=new THREE.Group();kitG.name='kit houses';kitG.position.set(cx,0,cz);kitG.userData.noBake=true;group.add(kitG);}
       if(lot.kit.kind==='church'){kitChurch(lot);return;}
@@ -881,6 +896,7 @@ function genSettlement(site){
     if(plan.rows>0&&(!TST||lampsLit(site))&&!burnedV&&!abandonedV){[[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([sx,sz])=>lampPost(cx+sx*9,cz+sz*9,true,cx,cz));}
     if(site.kind==='port'){buildHarbour(S,site,r);spawnGulls(S,site);}else if(site.bank){try{buildRiverQuay(S,site,r);}catch(e){console.warn('river quay',e);}} // S433 — a quay on a bank town
     if(site.kind==='port'&&site.warehouseLot&&window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.au&&PKIT.au.civic)try{kitWarehouse(site.warehouseLot);}catch(e){console.warn('warehouse',e);} /* S1948 — Aurenne's warehouse by the quay */
+    if(site.kind==='port'&&site.titheLot&&window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.au&&PKIT.au.civic)try{kitTithe(site.titheLot);}catch(e){console.warn('tithe house',e);} /* S1955 — and the Compact's tithe house past it */
     if(plan.rows>0)streets.slice(0,3).forEach(rd=>{const q=rd.pts.find(p=>Math.abs(Math.hypot(p.x-cx,p.z-cz)-(pad-14))<5);if(q){const nx=-(cz-q.z),nz=(cx-q.x);const L2=Math.hypot(nx,nz)||1;lampPost(q.x+nx/L2*3.2,q.z+nz/L2*3.2,true,q.x,q.z);}});
     // Plaza: well + stalls; cairn already stands at the centre.
     if(plan.rows>0){
@@ -1271,7 +1287,7 @@ function genSettlement(site){
   // S1073 — a kit town's houses (one group for the town, S.kitLod) by the same rule, measured from the town's centre less half its
   // houses' reach: near the town the kit's houses, from outside it their far copy
   function houseLod(){const cp=CAM.position;for(const S of SETTLE.values()){
-    for(const K of [S.kitLod,S.farmLod,S.ringLod,S.abbeyLod,S.towerLod,S.cairnLod,S.whLod])if(K){const d=Math.max(0,Math.hypot(K.x-cp.x,K.z-cp.z)-K.r*.5),near=d<HOUSE_LOD.near?true:d>HOUSE_LOD.far?false:K.hi.visible;K.hi.visible=near;K.lo.visible=!near;} /* S1455 — and a village's farm */
+    for(const K of [S.kitLod,S.farmLod,S.ringLod,S.abbeyLod,S.towerLod,S.cairnLod,S.whLod,S.thLod])if(K){const d=Math.max(0,Math.hypot(K.x-cp.x,K.z-cp.z)-K.r*.5),near=d<HOUSE_LOD.near?true:d>HOUSE_LOD.far?false:K.hi.visible;K.hi.visible=near;K.lo.visible=!near;} /* S1455 — and a village's farm */
     if(S.ring&&S.ring.paint&&S.ringLod&&S.ringLod.hi.visible)try{S.ring.paint(ringPostNames(S.ring.site));}catch(e){} /* S1662 — the post's names, cut again when the champion or the dead change (paint keeps its own key) */
     const L=S.lodMeshes;if(!L)continue;
     for(const m of L){if(m.userData.lod!=='hi')continue;const b=m.geometry.boundingSphere;const d=Math.max(0,Math.hypot(b.center.x-cp.x,b.center.z-cp.z)-b.radius*.5);

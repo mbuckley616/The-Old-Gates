@@ -574,6 +574,14 @@
     const r=PKIT.stream(t.id+':warehouse'),W=18+2*Math.floor(r()*4),D=+(10+r()*1.5).toFixed(2),A=2.1,F={x:sd.dz,z:-sd.dx},N={x:-sd.dx,z:-sd.dz},a=21+W/2,bf=-8,bc=bf+A+D/2,mb=bf+(A+D)/2;
     const at=(u,v)=>({x:q.x-F.x*u+N.x*v,z:q.z-F.z*u+N.z*v}),c=at(a,bc),sr=+Math.hypot(W/6+.6,(A+D)/2+.6).toFixed(2);
     return {x:c.x,z:c.z,ry:Math.atan2(sd.dx,sd.dz),W,D,A,y:1.05,stamps:[-1,0,1].map(k=>Object.assign(at(a+k*W/3,mb),{r:sr}))};}
+  // S1955 (card F6, Michael's A on #295: stepped merlons) — and the Compact's tithe house beside it, as pieces.js's quay draws them (the tithe
+  // house between warehouses, 2.5 m apart, their fronts on one line): past the warehouse's far end along the shore, 20, 22 or 24 m long and
+  // 12 to 13 deep (a stream keyed by the port), its loggia to the sea over the same 2.1 m apron, on three stamps at 1.05 as the warehouse's.
+  // -> the warehouse's shape, or null with no warehouse lot
+  function aurTitheLot(t,sd,wl){const q=t.quayStart;if(!q||!sd||!wl||typeof PKIT==='undefined')return null;
+    const r=PKIT.stream(t.id+':tithe'),W=20+2*Math.floor(r()*3),D=+(12+r()).toFixed(2),A=2.1,F={x:sd.dz,z:-sd.dx},N={x:-sd.dx,z:-sd.dz},a=21+wl.W+2.5+W/2,bf=-8,bc=bf+A+D/2,mb=bf+(A+D)/2;
+    const at=(u,v)=>({x:q.x-F.x*u+N.x*v,z:q.z-F.z*u+N.z*v}),c=at(a,bc),sr=+Math.hypot(W/6+.6,(A+D)/2+.6).toFixed(2);
+    return {x:c.x,z:c.z,ry:Math.atan2(sd.dx,sd.dz),W,D,A,y:1.05,stamps:[-1,0,1].map(k=>Object.assign(at(a+k*W/3,mb),{r:sr}))};}
   function loadCellSteps(i,j){
     const k=cellKey(i,j);if(LOADED.has(k))return null;
     const c=getCell(i,j);const L={cell:c,statics:[],stamps:[],roads:[],portals:[],solN:0,doorSeeds:[],pending:true};LOADED.set(k,L);
@@ -601,7 +609,8 @@
              if(window.OG_LOOK==='new'&&window.OG_KIT_TOWNS!==false&&nationKeyOf(c.i,c.j)==='aurenne'){const F={x:sd.dz,z:-sd.dx},N={x:-sd.dx,z:-sd.dz},a=9,ox=x-sd.dx*a+F.x*10,oz=z-sd.dz*a+F.z*10;
                t.tavernLot={x:ox+F.x*2.95,z:oz+F.z*2.95,F,N,o:{x:ox,z:oz}};const q3=addStamp({id:'tvpad_'+t.id,kind:'door',x:ox+F.x*.8,z:oz+F.z*.8,r:6.2,blend:6,y:1.05,cell:cellKey(c.i,c.j)});L.stamps.push(q3);
                // S1948 (card F6, Michael's A on #295: "the warehouse stays as drawn") — and a warehouse on the shore beside the quay head
-               const wl=aurWarehouseLot(t,sd);if(wl){t.warehouseLot=wl;wl.stamps.forEach((p,k)=>L.stamps.push(addStamp({id:`whpad_${t.id}_${k}`,kind:'door',x:p.x,z:p.z,r:p.r,blend:5,y:wl.y,cell:cellKey(c.i,c.j)})));}}});
+               const wl=aurWarehouseLot(t,sd);if(wl){t.warehouseLot=wl;wl.stamps.forEach((p,k)=>L.stamps.push(addStamp({id:`whpad_${t.id}_${k}`,kind:'door',x:p.x,z:p.z,r:p.r,blend:5,y:wl.y,cell:cellKey(c.i,c.j)})));}
+               const tl=aurTitheLot(t,sd,wl);if(tl){t.titheLot=tl;tl.stamps.forEach((p,k)=>L.stamps.push(addStamp({id:`thpad_${t.id}_${k}`,kind:'door',x:p.x,z:p.z,r:p.r,blend:5,y:tl.y,cell:cellKey(c.i,c.j)})));} /* S1955 — and the tithe house past it */}});
            // S433 — a bank town's quay spot: the water line below the pad, found now; a stamp there clears the trees and rocks off the bank without flattening it
            c.sites.forEach(t=>{if(!t.bank||t.kind==='port')return;const B=t.bank;let x=t.x+B.dx*t.pad,z=t.z+B.dz*t.pad,n=0;while(worldH(x,z)>1.3&&n<160){x+=B.dx*2;z+=B.dz*2;n++;}if(n>=160)return;let wx=x,wz=z;n=0;while(worldH(wx,wz)>0&&n<40){wx+=B.dx;wz+=B.dz;n++;}if(Math.hypot(wx-x,wz-z)>30)return;
              t.quaySpot={x:wx,z:wz};const qs=addStamp({id:'rquay_'+t.id,kind:'door',noFlat:true,x:wx-B.dx*5,z:wz-B.dz*5,r:17,blend:2,y:1.05,cell:cellKey(c.i,c.j)});L.stamps.push(qs);});},
