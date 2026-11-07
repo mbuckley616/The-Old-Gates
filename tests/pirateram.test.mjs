@@ -149,10 +149,13 @@ const mh = await page.evaluate(() => {
   const hp0 = PHP; const h0 = hands[0]; px = h0.x + .8; pz = h0.z; jumpY = DECK_Y; run(3, () => { px = h0.x + .8; pz = h0.z; }); out.calm = { hp: PHP === hp0, alert: hands.some(e => e.alert), pir: !!o.pirated };
   px = S.x; pz = S.z; jumpY = DECK_Y;
   // hooked and lashed: her hand to her end of a line, 6 s
-  throwHooks(o); run(5.3, () => { o.wp = { x: o.x, z: o.z }; px = S.x; pz = S.z; }); out.lashed = lashed(o);
-  const tL = performance.now(); let first = null, both = null;
-  run(16, () => { px = S.x; pz = S.z; o.wp = o.fleeing ? o.wp : { x: o.x, z: o.z }; const n = (performance.now() - tL) / 1000; if (first == null && HOOKS.cleats.some(c => c.cut)) first = n; if (both == null && !HOOKS.o) both = n; });
-  out.cut = { first: first && +first.toFixed(2), both: both && +both.toFixed(2), free: !HOOKS.o && !o.lashed, runs: !!o.fleeing, msg: said.filter(t => /Her hand cuts/.test(t)), pir: !!o.pirated };
+  // (Session 1945: the clock starts when he reaches the line, read off the game's own start, o._cut.t0, not at the end of the 5.3 s
+  // run: the lashing lands at about 5.02 s and he can reach his end before the run ends, so the old clock started late and read 5.90)
+  let reachT = null; const reach = () => { if (reachT == null && o._cut && o._cut.t0 != null) reachT = o._cut.t0; };
+  throwHooks(o); run(5.3, () => { o.wp = { x: o.x, z: o.z }; px = S.x; pz = S.z; reach(); }); out.lashed = lashed(o);
+  const tL = performance.now() / 1000; let first = null, both = null;
+  run(16, () => { reach(); px = S.x; pz = S.z; o.wp = o.fleeing ? o.wp : { x: o.x, z: o.z }; const n = performance.now() / 1000 - (reachT == null ? tL : reachT); if (first == null && HOOKS.cleats.some(c => c.cut)) first = n; if (both == null && !HOOKS.o) both = n; });
+  out.cut = { reachedAfterLash: reachT == null ? null : +(reachT - tL).toFixed(2), first: first && +first.toFixed(2), both: both && +both.toFixed(2), free: !HOOKS.o && !o.lashed, runs: !!o.fleeing, msg: said.filter(t => /Her hand cuts/.test(t)), pir: !!o.pirated };
   // again, with a hit on him at 4 s into his cut: his 6 s start again, and the hit is piracy
   o.fleeing = false; o.pirated = false; o.speed = 0; const p1 = at(S.W / 2 + o.W / 2 + 6, 1.5); o.x = p1.x; o.z = p1.z; o.yaw = S.yaw; placeOther(o);
   for (const e of hands) { e.x = o.x; e.z = o.z; }

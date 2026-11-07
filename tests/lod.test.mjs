@@ -68,14 +68,19 @@ const view = async (where) => { await page.evaluate(w => { forceTime(12); const 
   // (the main loop puts the eye at the player and WORLD.tick the sun: do both here, since on a slow machine no frame may
   // have run in the wait, and the townsfolk's distances would still be measured from where the player stood before)
   return page.evaluate(() => { CAM.position.set(px, WORLD.worldH(px, pz) + 1.7, pz); CAM.rotation.y = yaw; CAM.rotation.x = pitch; for (let i = 0; i < 3; i++) WORLD.tick(1 / 60, performance.now()); const rs = [...PEOPLE_RIGS].filter(r => r.root.parent === WORLD.scene);
+    // (Session 1944: on the new look tickPeople also runs hbTick, which sets each builder body's level for the camera and can hang
+    // one more body; called only in the second run, it made the two renders differ by the builder bodies, not the distant copies:
+    // 639 calls against 657 on the square, FLAKY on CI. So one tick at the new camera first, then no body is built between the two)
+    tickPeople(1 / 60, 6e5); const hbLast = typeof HBODY !== 'undefined' ? HBODY.last : 0; if (typeof HBODY !== 'undefined') HBODY.last = 6e5;
+    const hb = () => typeof HB_RIGS !== 'undefined' ? [...HB_RIGS].filter(r => r.hb).map(r => r.hb.L).join('') : '';
     const run = force => { rs.forEach(r => { if (force) { r.lod = 0; r.mesh.geometry = r.geoHi; } }); if (!force) tickPeople(1 / 60, 6e5);
       REN.render(scene, CAM); REN.render(scene, CAM); return { calls: REN.info.render.calls, triangles: REN.info.render.triangles }; };
     const saved = { far: PEOPLE_LOD.far, near: PEOPLE_LOD.near }; PEOPLE_LOD.far = PEOPLE_LOD.near = 1e9; const all = run(true);
-    PEOPLE_LOD.far = saved.far; PEOPLE_LOD.near = saved.near; const lod = run(false);
+    const hbAll = hb(); PEOPLE_LOD.far = saved.far; PEOPLE_LOD.near = saved.near; const lod = run(false); const hbLod = hb(); if (typeof HBODY !== 'undefined') HBODY.last = hbLast;
     // (each person is tagged, so the two views can be compared on the same people: the town's head-count changes between
     // them as folk go in and out of doors, and on CI 94 at the square against 81 from the road once left fewer distant)
     rs.forEach(r => { if (!r._tid) r._tid = window._tidN = (window._tidN || 0) + 1; });
-    return { people: rs.length, distant: rs.filter(r => r.lod).length, fullDetail: all, withLod: lod, saved: all.triangles - lod.triangles, ids: rs.map(r => r._tid), far: rs.filter(r => r.lod).map(r => r._tid) }; }); };
+    return { people: rs.length, distant: rs.filter(r => r.lod).length, fullDetail: all, withLod: lod, builderBodies: hbAll.length, builderSame: hbAll === hbLod, saved: all.triangles - lod.triangles, ids: rs.map(r => r._tid), far: rs.filter(r => r.lod).map(r => r._tid) }; }); };
 const sq = await view('square'), road = await view('road');
 const both = new Set(sq.ids.filter(i => road.ids.includes(i)));
 const same = { people: both.size, distantSquare: sq.far.filter(i => both.has(i)).length, distantRoad: road.far.filter(i => both.has(i)).length };
