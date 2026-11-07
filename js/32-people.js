@@ -1808,6 +1808,7 @@ function hbAttach(rig,P){if(rig.hbTintOwed)hbFoeTint(rig,true);const tA=performa
   root.traverse(o=>{if(!o.isMesh)return;o.castShadow=false;o.receiveShadow=true;full.push(o);
     if(o.isSkinnedMesh){o.bindMode='detached';o.bindMatrix.identity();o.bindMatrixInverse.identity();o.geometry.boundingSphere=sph.clone();o.frustumCulled=true;}
     if(HBODY.cards.test(o.name)||o.parent===by.head)cards.add(o);});
+  hbHairOnCloak(P);
   // F10 (Session 1256) — a body that is only ever seen near (the player's, rig.hbLazy) bakes its middle level when it is first asked for
   // (hbMid: first person's hands, a bed), not at attach: the bake was 200 to 700 ms of every change of what the player wears
   let mid=null;if(!rig.hbLazy){try{mid=hbMerge(P,cards);}catch(e){rig.root.remove(W);rig.hbFail=true;console.warn('F4: the middle level failed for',rig.g.hbKey,e);return;}mid.geometry.boundingSphere=sph.clone();root.add(mid);
@@ -1873,6 +1874,33 @@ function hbSkinLoose(P){const sk=P.skeleton,lo=P.byName.root,il=sk.bones.indexOf
     g.setAttribute('skinIndex',new THREE.Uint16BufferAttribute(si,4));g.setAttribute('skinWeight',new THREE.Float32BufferAttribute(sw,4));
     const m=new THREE.SkinnedMesh(g,o.material);m.name=o.name;m.renderOrder=o.renderOrder;m.visible=o.visible;m.bind(sk,new THREE.Matrix4());
     o.parent.remove(o);P.root.add(m);o.geometry.dispose();}}
+/* S1974 — braids and a tail laid over a long cloak ride the cloak. people.js lays them on the sheet (hairOverCloak, S1966), but here the cloak
+   is skinned whole to the pelvis (hbSkinLoose) and the hair to the head's bone, so in the walk 55 to 69 in a hundred of their points near
+   the sheet went under it, by up to 3 cm. Each point of the braids, their ties and brushes and a tail is weighted to the pelvis by how
+   near the sheet it lies (in full within 2 cm, none past 7), and given the rest position that draws it where it is drawn now, so the
+   build is unchanged and the hair on the cloth goes where the cloth goes; the hair at the nape keeps to the head. Before the bind
+   matrices are cleared nothing here is read: they are identity by now (hbAttach), and a bone's matrix is root⁻¹·bone·inverse, as sk.update makes it */
+const HB_HAIR_CLOAK={in:.02,out:.07,cell:.07};
+function hbHairOnCloak(P){const st=P.cloak&&P.cloak.hairOver;if(!st)return null;const sk=P.skeleton,lo=P.byName.root,il=sk.bones.indexOf(lo);if(il<0)return null;
+  const hair=[],sheet=[];P.root.traverse(o=>{if(!o.isSkinnedMesh)return;if(/^(braid\d|tie|brush|tail)$/.test(o.name))hair.push(o);else if(/^(cloak|cloakHem|hood|collar\d)$/.test(o.name))sheet.push(o);});
+  if(!hair.length||!sheet.length)return null;
+  P.root.updateMatrixWorld(true);const inv=new THREE.Matrix4().copy(P.root.matrixWorld).invert(),Ms=[],Mb=i=>Ms[i]||(Ms[i]=new THREE.Matrix4().multiplyMatrices(inv,sk.bones[i].matrixWorld).multiply(sk.boneInverses[i]));
+  const v=new THREE.Vector3(),w=new THREE.Vector3(),rel=new THREE.Matrix4(),posed=(m,i,out)=>{const g=m.geometry,si=g.attributes.skinIndex,sw=g.attributes.skinWeight;v.fromBufferAttribute(g.attributes.position,i);out.set(0,0,0);
+    for(let k=0;k<4;k++){const q=sw.getComponent(i,k);if(q)out.addScaledVector(w.copy(v).applyMatrix4(Mb(si.getComponent(i,k))),q);}return out;};
+  const C=HB_HAIR_CLOAK,key=(x,y,z)=>Math.floor(x/C.cell)+','+Math.floor(y/C.cell)+','+Math.floor(z/C.cell),grid=new Map(),pt=new THREE.Vector3();
+  for(const m of sheet){rel.multiplyMatrices(inv,m.matrixWorld);const n=m.geometry.attributes.position.count;for(let i=0;i<n;i++){posed(m,i,pt).applyMatrix4(rel);const h=key(pt.x,pt.y,pt.z);let l=grid.get(h);if(!l)grid.set(h,l=[]);l.push(pt.x,pt.y,pt.z);}}
+  const near=p=>{let bd=C.out*C.out;const cx=Math.floor(p.x/C.cell),cy=Math.floor(p.y/C.cell),cz=Math.floor(p.z/C.cell);
+    for(let a=-1;a<=1;a++)for(let b=-1;b<=1;b++)for(let c=-1;c<=1;c++){const l=grid.get((cx+a)+','+(cy+b)+','+(cz+c));if(l)for(let q=0;q<l.length;q+=3){const d=(l[q]-p.x)**2+(l[q+1]-p.y)**2+(l[q+2]-p.z)**2;if(d<bd)bd=d;}}return Math.sqrt(bd);};
+  const M=new THREE.Matrix4(),E=new THREE.Matrix4(),Wq=[0,0,0,0],Iq=[0,0,0,0];let n=0,full=0;
+  for(const m of hair){const g=m.geometry,pa=g.attributes.position,si=g.attributes.skinIndex,sw=g.attributes.skinWeight;rel.multiplyMatrices(inv,m.matrixWorld);
+    for(let i=0;i<pa.count;i++){posed(m,i,pt);const p=pt.clone(),d=near(pt.clone().applyMatrix4(rel)),t=d<=C.in?1:d>=C.out?0:(u=>1-u*u*(3-2*u))((d-C.in)/(C.out-C.in));if(t<=0)continue;
+      /* the weights: the pelvis's t, the rest scaled by 1-t; four at most, the smallest dropped and the rest made whole */
+      const ws=new Map();for(let k=0;k<4;k++){const q=sw.getComponent(i,k);if(q)ws.set(si.getComponent(i,k),(ws.get(si.getComponent(i,k))||0)+q*(1-t));}ws.set(il,(ws.get(il)||0)+t);
+      const top=[...ws].filter(e=>e[1]>1e-4).sort((x,y)=>y[1]-x[1]).slice(0,4),sum=top.reduce((s,e)=>s+e[1],0);
+      M.set(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0);for(let k=0;k<4;k++){Iq[k]=top[k]?top[k][0]:0;Wq[k]=top[k]?top[k][1]/sum:0;if(Wq[k]){const a=M.elements,e=Mb(Iq[k]).elements;for(let j=0;j<16;j++)a[j]+=e[j]*Wq[k];}}
+      if(Math.abs(M.determinant())<1e-9)continue;E.copy(M).invert();p.applyMatrix4(E);pa.setXYZ(i,p.x,p.y,p.z);for(let k=0;k<4;k++){si.setComponent(i,k,Iq[k]);sw.setComponent(i,k,Wq[k]);}n++;if(t>=1)full++;}
+    pa.needsUpdate=si.needsUpdate=sw.needsUpdate=true;}
+  return st.ride={n,full};}
 // S1224 — the builder's body as points in the world, for the bed (personLie): its middle level's vertices that a triangle uses (the whole
 // body baked, less the hair's cards and what a garment's cut discards), each skinned on the CPU by the posed bones
 function hbSkinPts(rig){const H=rig.hb,mid=hbMid(rig);if(!mid)return new Float32Array(0);const G=mid.geometry,pa=G.attributes.position,v=new THREE.Vector3();
