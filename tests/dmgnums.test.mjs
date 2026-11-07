@@ -115,9 +115,13 @@ const gate = await page.evaluate(() => {
   window._msgs.length = 0; DMG_NUMS.length = 0; document.getElementById('dmgnums').textContent = '';
   const hp0 = e.hp; _swing(e, keep);
   const v = new THREE.Vector3(); e.hpFg.getWorldPosition(v); v.project(CAM); const r = REN.domElement.getBoundingClientRect();
-  return { name: e.name, took: hp0 - e.hp, nums: _nums(), msgs: window._msgs.slice(), head: { x: r.left + (v.x * .5 + .5) * r.width, y: r.top + (-v.y * .5 + .5) * r.height } }; });
+  const B = IMPACT.list[IMPACT.list.length - 1], imp = { surf: IMPACT.last && IMPACT.last.surface, want: impactSurface(e, {}), inGate: !!B && B.g.parent === dScene, counts: IMPACT.last && IMPACT.last.counts, hold: IMPACT.hold.pending || performance.now() < IMPACT.hold.until };
+  return { name: e.name, took: hp0 - e.hp, nums: _nums(), msgs: window._msgs.slice(), imp, head: { x: r.left + (v.x * .5 + .5) * r.width, y: r.top + (-v.y * .5 + .5) * r.height } }; });
 const d0 = gate.nums && gate.nums[0];
 check(`in a gate, a swing at a ${gate.name} raises its number at its head, and no line`, !gate.none && gate.took > 0 && gate.nums.length === 1 && d0.text === String(gate.took) && d0.shown
   && Math.abs(d0.x - gate.head.x) < 40 && Math.abs(d0.y - gate.head.y) < 60 && gate.msgs.every(m => !/Hit |for \d|Swing!/.test(m)), gate);
+// S1948 — impact by surface (#1239 B): the swing threw its surface's burst in the gate, and the 50 ms hold lets the picture go
+const held = await page.evaluate(async () => { const a = impactHeld(); await new Promise(r => setTimeout(r, 120)); return { a, b: impactHeld() }; });
+check(`the blow on the ${gate.name} threw its surface's burst (${gate.imp && gate.imp.surf}) in the gate, and the 50 ms hold let the picture go`, !gate.none && gate.imp.surf === gate.imp.want && (gate.imp.surf === null || gate.imp.inGate) && gate.imp.hold && held.b === false, { imp: gate.imp, held });
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
