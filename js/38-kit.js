@@ -2568,6 +2568,65 @@ function aurenneChurchBox(o) {
   const out = { x0: b.min.x, x1: b.max.x, z0: b.min.z, z1: b.max.z, y1: b.max.y, front: C.front, domeTop: C.domeTop, towerTop: C.towerTop, inner: C.inner };
   AU_CH_BOX.set(key, out); return out;
 }
+// the Mages' academy (Session 1959: pieces.js's aurenneAcademy of Session 836, copied as it stands; card F6, Michael's A on #296,
+// "round, galleries, pointed white caps, as drawn"). aurenneAcademy({w, towers, wall, interior}, r): the hall, an arcade of round arches
+// along the front's ground floor under tall windows, a band of zellige; its round white towers rising out of the hall's back, the middle
+// one (or the end one of two) the tallest under the observatory's dome, the rest under pointed white caps; two cypresses and a bench.
+// Front +z, its plinth's foot y 0, the hall's middle at x = z = 0; closed (a dark fill behind the openings) unless o.interior.
+// -> { group, roofTop, tris, draws, kind, front, towerTops, arches, inner }
+function aurenneAcademy(o, r) {
+  const { put, wallGeo, box, finish } = aurKit(), W = o.w || 30, D = 13, T = .6, pl = .6, H = 10.5, wallK = 'wall:' + (o.wall ?? 4), nt = o.towers ?? 3;
+  const lathe = (pts, n) => new THREE.LatheGeometry(pts.map(([a, b]) => new THREE.Vector2(a, b)), n);
+  put(box(W + .4, pl, D + 3.6), 'plinth', 0, pl / 2, 1.6);
+  // the hall: an arcade of round arches along the ground floor of the front, tall windows over it, small windows round the rest
+  const n = Math.round(W / 3.4), span = W / n, fr = [];
+  for (let i = 0; i < n; i++) { const x = -W / 2 + (i + .5) * span; fr.push({ x, y: 0, w: span - .9, h: 4.6, arch: 1 }, { x, y: 6.0, w: 1.1, h: 3.2, arch: 1 }); }
+  put(wallGeo(W, H, fr, T), wallK, 0, pl, D / 2 - T / 2);
+  const rest = len => { const hs = [], k = Math.max(1, Math.round(len / 4)); for (let i = 0; i < k; i++) { const x = -len / 2 + (i + .5) * len / k; hs.push({ x, y: 1.8, w: .8, h: 1.6, arch: 1 }, { x, y: 6.2, w: 1.0, h: 2.8, arch: 1 }); } return hs; };
+  put(wallGeo(W, H, rest(W), T), wallK, 0, pl, -D / 2 + T / 2, Math.PI); for (const sx of [-1, 1]) put(wallGeo(D - 2 * T + .02, H, rest(D - 2 * T), T), wallK, sx * (W / 2 - T / 2), pl, 0, sx * Math.PI / 2);
+  if (!o.interior) put(box(W - 2 * T, H - .3, D - 2 * T), 'dark', 0, pl + (H - .3) / 2, 0);
+  for (let i = 0; i <= n; i++) { const x = Math.max(-W / 2 + .25, Math.min(W / 2 - .25, -W / 2 + i * span)); put(lathe([[0, 0], [.3, 0], [.3, .15], [.22, .25], [.2, 3.6], [.26, 3.75], [.34, 3.9], [.34, 4.0], [0, 4.0]], 12), 'stone', x, pl, D / 2 + .3); }
+  for (const f of fr.filter(h => h.y > 1)) { put(box(f.w + .3, .12, .35), 'stone', f.x, pl + f.y - .06, D / 2 + .1); for (let k = 1; k < 4; k++) put(new THREE.CylinderGeometry(.02, .02, f.h - f.w / 2, 5), 'iron', f.x - f.w / 2 + k * f.w / 4, pl + f.y + (f.h - f.w / 2) / 2, D / 2 - T / 2); }
+  put(box(W, .6, .04), 'zellige', 0, pl + 5.4, D / 2 + .02); put(box(W + .5, .35, D + .5), 'stone', 0, pl + H + .17, 0);
+  { const cap = len => { const g = new THREE.CylinderGeometry(.16, .16, len, 10, 1, false, 0, Math.PI); g.rotateZ(Math.PI / 2); return g; };
+    for (const sz of [1, -1]) { put(box(W + .2, .55, .32), wallK, 0, pl + H + .62, sz * (D / 2 + .05)); put(cap(W + .2), wallK, 0, pl + H + .9, sz * (D / 2 + .05)); }
+    for (const sx of [-1, 1]) { put(box(.32, .55, D - .3), wallK, sx * (W / 2 + .05), pl + H + .62, 0); put(cap(D - .3), wallK, sx * (W / 2 + .05), pl + H + .9, 0, Math.PI / 2); } }
+  // the towers: round shafts rising out of the hall's back, the middle one (or the end one of two) the tallest, with the observatory
+  let top = 0; const tops = [], towers = [];
+  for (let t = 0; t < nt; t++) { const x = nt === 1 ? 0 : -W / 2 + 3 + t * (W - 6) / (nt - 1), mid = nt === 3 ? t === 1 : t === nt - 1, R = mid ? 2.6 : 2.1, Ht = (mid ? 34 : 26) + Math.round(r() * 20) / 10, z = -D / 2 + .4; towers.push({ x, z, r: +(R * 1.06).toFixed(3) });
+    const sh = Ht - 3.2; put(new THREE.CylinderGeometry(R, R * 1.06, sh, 28), wallK, x, pl + sh / 2, z);
+    for (let k = 0; k < 5; k++) { const y = pl + H + 2 + k * (Ht - H - 6) / 5, a = k * 1.3; put(box(.3, 1.3, .2), 'dark', x + Math.sin(a) * (R + .01), y, z + Math.cos(a) * (R + .01), a); }
+    put(new THREE.TorusGeometry(R + .04, .12, 6, 28), 'stone', x, pl + H + .9, z, 0, Math.PI / 2);
+    // the gallery: a ring of corbels, a stone floor, a pierced parapet of little posts and a rail
+    const gy = pl + Ht - 3.2, gR = R + .9; for (let i = 0; i < 16; i++) { const a = i / 16 * Math.PI * 2; put(box(.3, .7, .9), 'stone', x + Math.sin(a) * (R + .4), gy - .45, z + Math.cos(a) * (R + .4), a); }
+    put(new THREE.CylinderGeometry(gR, gR, .25, 28), 'stone', x, gy, z); for (let i = 0; i < 28; i++) { const a = i / 28 * Math.PI * 2; put(box(.12, .8, .12), wallK, x + Math.sin(a) * (gR - .1), gy + .52, z + Math.cos(a) * (gR - .1)); }
+    put(new THREE.TorusGeometry(gR - .1, .08, 5, 28), wallK, x, gy + .95, z, 0, Math.PI / 2);
+    // the lantern: a narrower drum of arched openings over the gallery, its cap a pointed white cone, or the observatory's dome
+    const lR = R * .78, lh = 3.4, ly = gy + .15; put(new THREE.CylinderGeometry(lR, lR, lh, 24, 1, true), wallK, x, ly + lh / 2, z); put(new THREE.CylinderGeometry(lR - .3, lR - .3, lh, 16), 'dark', x, ly + lh / 2, z);
+    for (let i = 0; i < 6; i++) { const a = (i + .5) / 6 * Math.PI * 2, sh = new THREE.Shape(); sh.moveTo(-.4, 0); sh.lineTo(.4, 0); sh.lineTo(.4, 1.6); sh.absarc(0, 1.6, .4, 0, Math.PI, false); sh.lineTo(-.4, 0); put(new THREE.ShapeGeometry(sh, 6), 'dark', x + Math.sin(a) * (lR + .02), ly + .6, z + Math.cos(a) * (lR + .02), a); }
+    const cy = ly + lh; put(new THREE.TorusGeometry(lR + .1, .14, 6, 24), 'stone', x, cy, z, 0, Math.PI / 2);
+    let tt;
+    if (mid) { const pts = []; for (let i = 0; i <= 12; i++) { const a = i / 12 * Math.PI / 2; pts.push([Math.max(.001, (lR + .1) * Math.cos(a)), (lR + .1) * Math.sin(a)]); } put(lathe(pts, 28), wallK, x, cy, z);
+      put(box(.5, lR * .9, .08), 'dark', x, cy + lR * .55, z + lR * .62, 0, -.75); tt = cy + lR + .1; put(new THREE.CylinderGeometry(.05, .05, 1.6, 6), 'gold', x, tt + .8, z); put(new THREE.SphereGeometry(.2, 10, 8), 'gold', x, tt + .2, z); tt += 1.6; }
+    else { put(lathe([[.001, 0], [lR + .3, 0], [lR + .2, .3], [lR * .45, 3.2], [.001, 4.6]], 24), wallK, x, cy, z); put(new THREE.CylinderGeometry(.04, .04, 1.4, 6), 'gold', x, cy + 5.1, z); put(new THREE.SphereGeometry(.16, 10, 8), 'gold', x, cy + 4.6, z); tt = cy + 5.8; }
+    tops.push(+tt.toFixed(2)); top = Math.max(top, tt); }
+  // two cypresses at the arcade's ends, and a stone bench under it
+  for (const sx of [-1, 1]) { const ht = 6.5 + r() * 2, cx = sx * (W / 2 - 1.2), cz = D / 2 + 2.6, g = lathe([[.001, 0], [.55, .4], [.7, ht * .35], [.5, ht * .75], [.001, ht]], 12), P = g.attributes.position;
+    for (let i = 0; i < P.count; i++) { const k = 1 + .12 * Math.sin(P.getY(i) * 5 + Math.atan2(P.getZ(i), P.getX(i)) * 5 + r() * .5); P.setX(i, P.getX(i) * k); P.setZ(i, P.getZ(i) * k); } g.computeVertexNormals(); put(g, 'leaf2', cx, pl, cz); }
+  put(box(W * .5, .45, .5), 'stone', 0, pl + .22, D / 2 - T - .5);
+  const out = finish(); out.group.userData = { roofTop: out.roofTop, kind: 'academy', towerTops: tops }; return { ...out, kind: 'academy', front: D / 2 + 3.4, towerTops: tops, arches: fr.filter(h => h.y < 1).map(h => h.x), inner: { W, D, T, pl, H, towers, bench: { x0: -W * .25, x1: W * .25, z0: D / 2 - T - .75, z1: D / 2 - T - .25, y: pl + .45 } } };
+}
+// its ground, measured once for each size and kept (as the church's): a box in the academy's own frame; the towers' heights and the
+// cypresses' are the only rolls, and the box is taken with the tallest a size can give (the towers' and trees' tops read 2 and 2.0 m
+// over their least)
+const AU_AC_BOX = new Map();
+function aurenneAcademyBox(o = {}) {
+  const key = `${o.w || 30}:${o.towers ?? 3}`; if (AU_AC_BOX.has(key)) return AU_AC_BOX.get(key);
+  const A = aurenneAcademy(Object.assign({}, o), () => .999), b = new THREE.Box3().setFromObject(A.group);
+  A.group.traverse(m => { if (m.isMesh) m.geometry.dispose(); });
+  const out = { x0: b.min.x, x1: b.max.x, z0: b.min.z, z1: b.max.z, y1: b.max.y, front: A.front, towerTops: A.towerTops, inner: A.inner };
+  AU_AC_BOX.set(key, out); return out;
+}
 // ── the guild hall's room (Session 1703, card F9; rooms.js's gatelandsGuildHall of Sessions 939, 965 and 966, inside PLANS.guildhall,
 // Michael's C on #352), with the inn's renames (mats() → roomMats(), GL_PLANS → PLANS, gatelandsBuilding → building) and two of its
 // own: forgeMats() → guildForgeMats() (the three the room takes: steel, leather, the grindstone's grit) and libSpines() → guildSpines()
@@ -7361,6 +7420,6 @@ function aurenneOrrery(hAt, o = {}) {
   }
   return { stream, hashKey, mergeByMaterial, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, coveEscape, grotto: aurenneGrotto, mine: markMine, aqueduct: aurenneAqueduct }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, trunk: felledTrunk }, ships: { SWATCHES: SHIP_SWATCHES, swatch: shipSwatch, BANNERS: SHIP_BANNERS, banner: shipBanner, sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
     mk: { hall: markHall, lot: markLot, alehall: markAlehall, smithy: markSmithy, apothecary: markApothecary, longhouse: markLonghouse, mats: markMats, yard: markYard, ring: markRing },
-    au: { house: aurenneHouse, lot: aurenneLot, smithy: aurenneSmithy, smithyStack: aurSmithyStack, apothecary: aurenneApothecary, courtyard: aurenneCourtyard, church: aurenneChurch, churchBox: aurenneChurchBox, civic: aurenneCivic, churchHall: aurenneChurchHall, courtyardHouse: aurenneCourtyardHouse, home: aurenneHome, tavern: aurenneTavern, mats: aurMats, roomMats: homeMats, AUR, tunnel: aurenneTunnel },
+    au: { house: aurenneHouse, lot: aurenneLot, smithy: aurenneSmithy, smithyStack: aurSmithyStack, apothecary: aurenneApothecary, courtyard: aurenneCourtyard, church: aurenneChurch, churchBox: aurenneChurchBox, civic: aurenneCivic, academy: aurenneAcademy, academyBox: aurenneAcademyBox, churchHall: aurenneChurchHall, courtyardHouse: aurenneCourtyardHouse, home: aurenneHome, tavern: aurenneTavern, mats: aurMats, roomMats: homeMats, AUR, tunnel: aurenneTunnel },
     gl: { PLANS, FIN, PS, PAINTS, guildHall: guildHallRoom, forge: forgeRoom, apothecary: apothecaryRoom, TOWN: GL_TOWN, building, church, keep, market: marketHouse, marketRoom, farmstead, coachInn, coachInnPlan, coachRoom, townhouse: townhouseRoom, farmhouse: farmhouseRoom, byre: byreRoom, barn: barnRoom, row: shrineRow, ROW_GODS, inn: gatelandsInn, cottage: gatelandsCottage, churchLen: n => +((n === 2 ? 2 : 3) * 4.8 + 1.6 + 5.6 - .5 + 7.2 - .9 - .02).toFixed(2), lot: gatelandsLot, mats: glMats, BAYS, bayPlan, bayWidth, baysFor } };
 })();
