@@ -136,5 +136,11 @@ const you = await page.evaluate(() => { const e = { x: px - Math.sin(yaw) * 1.2,
   EQ.chest = makeItem(2, lineType('light', 'chest'), null, true); const L = impactOnYou(e, 'hit'); EQ.offhand = sh0; EQ.chest = ch0;
   return { surf: B && B.surface, d: B && +Math.hypot(B.at.x - px, B.at.z - pz).toFixed(2), light: L && L.surface }; });
 check(`a foe's blow on your shield throws its wood at your arm (${you.surf}, ${you.d} m out), and on a light chest nothing`, you.surf === 'wood' && Math.abs(you.d - .6) < .02 && you.light == null, you);
+// S1955 — bone and fur (owed by S1949): a Skeleton throws bone, a beast in a coat its hair (tufts that drift, in the coat's colour)
+const fb = await page.evaluate(() => { const S = n => impactSurface({ baseType: n }, {}); const surf = Object.fromEntries(['Skeleton', 'Wolf', 'Snow Wolf', 'Cave Bear', 'Boar', 'Bandit', 'Golem', 'Deserter'].map(n => [n, S(n)]));
+  const e = { x: px - Math.sin(yaw) * 1.2, z: pz - Math.cos(yaw) * 1.2, baseType: 'Snow Wolf' }, B = impactAt(e, { hold: false }), T = B && B.bits.find(b => b.kind === 'tuft'), c = new THREE.Color();
+  if (T) T.im.getColorAt(0, c); return { surf, counts: B && B.counts, coat: +c.r.toFixed(2) }; });
+check(`a Skeleton throws bone and a wolf, a bear and a boar their fur; a Snow Wolf's tufts are pale (${fb.coat})`, fb.surf.Skeleton === 'bone' && ['Wolf', 'Snow Wolf', 'Cave Bear', 'Boar'].every(n => fb.surf[n] === 'fur')
+  && fb.surf.Bandit === 'flesh' && fb.surf.Golem === 'stone' && fb.surf.Deserter === 'steel' && fb.counts && fb.counts.tuft === 10 && fb.counts.drop === 5 && fb.coat > .6, fb);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

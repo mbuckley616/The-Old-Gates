@@ -830,7 +830,13 @@ function tickDmgNums(){
 // a foe whose dress has a chest of armour, and a fire elemental, steel; a ghost nothing; a mimic its chest's wood; the rest
 // flesh. Fists throw nothing off (they still hold).
 const IMPACT_HOLD_S=.05,IMPACT_LIFE_S=.8,IMPACT_MARK_S=4,IMPACT_MAX=6;
-const IMPACT_STONE=/^(Skeleton|Golem|Gargoyle)$/,IMPACT_GHOST=/^(Wraith|Phantom)$/,IMPACT_TINT={Slime:[.3,.5,.22],'Small Slime':[.3,.5,.22]};
+const IMPACT_STONE=/^(Golem|Gargoyle)$/,IMPACT_BONE=/^Skeleton/,IMPACT_GHOST=/^(Wraith|Phantom)$/,IMPACT_TINT={Slime:[.3,.5,.22],'Small Slime':[.3,.5,.22]};
+// S1955 — bone and fur (owed by S1949): a Skeleton's bone throws pale chips and a breath of bone dust with its scar, and no spark
+// (bone strikes none); a beast in a coat (the creature kit's wolves, bears, boars, deer, foxes, hares, cats, cattle, horses) throws
+// tufts of its hair, which drift as they fall, with fewer drops than bare flesh and the same nick. The coat's colour is IMPACT_COAT's.
+const IMPACT_FUR=/Wolf|Hound|Faolch|Bear|Boar|Stag|Deer|Hind|Elk|Fox|Hare|Badger|Otter|Stoat|Lynx|Hollowcat|Marmot|Cow|Sheep|Goat|Ram$|Horse|Mule|Icehorn|Frostmane|Duneskimmer/;
+const IMPACT_COAT=[[/Snow|Frost|Sheep|Icehorn|Glacial/,[.8,.8,.78]],[/Dire|Ash Hound|Shadows|Faolch|Blight/,[.18,.17,.17]],[/Fox|Deer|Hind|Stag|Elk|Lynx/,[.52,.3,.16]],[/Wolf/,[.44,.42,.39]]];
+function impactCoat(k){for(const [re,c] of IMPACT_COAT)if(re.test(k))return c;return [.36,.27,.19];}
 const IMPACT={list:[],marks:[],hold:{pending:false,until:0},n:0,last:null,tex:{}};
 const _IG=new THREE.Vector3(0,-9.8,0);
 function impactOn(){return window.OG_LOOK==='new';}
@@ -840,9 +846,11 @@ function impactSurface(e,o){
   if(IMPACT_GHOST.test(k)||(e&&e.isWraith))return null;
   if(o.guarded||o.guardBroke||/Mimic/.test(k))return 'wood';
   if(IMPACT_STONE.test(k))return 'stone';
+  if(IMPACT_BONE.test(k))return 'bone';
   if(/Elemental/.test(k))return 'steel';
   const dr=typeof FOE_DRESS!=='undefined'&&FOE_DRESS[k];
   if(dr&&dr.kit&&dr.kit.chest)return 'steel';
+  if(IMPACT_FUR.test(k))return 'fur';
   return 'flesh';
 }
 function impactRng(seed){let s=0;for(const ch of String(seed))s=(s*31+ch.charCodeAt(0))%2147483647;s=s||7;return ()=>(s=(s*16807)%2147483647)/2147483647;}
@@ -861,12 +869,12 @@ function impactSparks(B,r,n,sp,life,smear,axis,k){
   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(new Float32Array(n*6),3));g.setAttribute('color',new THREE.Float32BufferAttribute(new Float32Array(n*6),3));
   const m=new THREE.LineSegments(g,new THREE.LineBasicMaterial({vertexColors:true,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,toneMapped:false}));m.frustumCulled=false;
   B.g.add(m);B.sparks={m,S,smear};B.counts.sparks=n;}
-function impactBits(B,r,kind,n,sp,size,axis,k,cols,drag){
-  const geo=kind==='chip'?new THREE.IcosahedronGeometry(1,0):kind==='drop'?new THREE.SphereGeometry(1,7,5):new THREE.BoxGeometry(1,1,1);
-  const im=new THREE.InstancedMesh(geo,new THREE.MeshStandardMaterial({roughness:kind==='drop'?.25:.85,metalness:0}),n),c=new THREE.Color(),P=[];
+function impactBits(B,r,kind,n,sp,size,axis,k,cols,drag,gk){
+  const geo=kind==='chip'||kind==='bone'?new THREE.IcosahedronGeometry(1,0):kind==='drop'?new THREE.SphereGeometry(1,7,5):new THREE.BoxGeometry(1,1,1);
+  const im=new THREE.InstancedMesh(geo,new THREE.MeshStandardMaterial({roughness:kind==='drop'?.25:kind==='tuft'?.95:.85,metalness:0}),n),c=new THREE.Color(),P=[];
   for(let i=0;i<n;i++){const v=impactSpray(r,axis,k).multiplyScalar(sp[0]+r()*(sp[1]-sp[0])),L=size[0]+r()*(size[1]-size[0]);
     P.push({v,L,a:r(),b:r(),c:r(),spin:8+r()*30,e:new THREE.Euler(r()*6,r()*6,r()*6)});im.setColorAt(i,c.setRGB(...cols[Math.floor(r()*cols.length)]));}
-  im.frustumCulled=false;B.g.add(im);(B.bits=B.bits||[]).push({im,P,kind,drag});B.counts[kind]=n;}
+  im.frustumCulled=false;B.g.add(im);(B.bits=B.bits||[]).push({im,P,kind,drag,gk:gk==null?1:gk});B.counts[kind]=n;}
 function impactPuffs(B,r,n,sp,r0,r1,axis,k,col,op){
   const P=[];for(let i=0;i<n;i++){const v=impactSpray(r,axis,k).multiplyScalar(sp[0]+r()*(sp[1]-sp[0]));
     const s=new THREE.Sprite(new THREE.SpriteMaterial({map:impactPuffTex(),color:new THREE.Color(...col).multiplyScalar((.85+r()*.3)*.45),transparent:true,depthWrite:false,opacity:0}));
@@ -893,7 +901,7 @@ function impactAt(e,o){
   const host=e.mesh||e.g,base=host?host.position.y:0,top=dmgNumAnchor(e,new THREE.Vector3()).y;
   let dx=px-e.x,dz=pz-e.z;const dl=Math.hypot(dx,dz)||1;dx/=dl;dz/=dl;const h=hullOf(e)*.9,side=o.side||1;
   const at=new THREE.Vector3(e.x+dx*h,base+.6*Math.max(.3,top-base),e.z+dz*h),n=new THREE.Vector3(dx,.15,dz).normalize(),cut=new THREE.Vector3(-dz*side,-.25,dx*side).normalize();
-  return impactSpawn(surface,{at,n,cut,seed:o.seed!=null?o.seed:(impactKind(e)+':'+(e.id||'')+':'+(++IMPACT.n)),tint:IMPACT_TINT[impactKind(e)],e,ground:base});
+  return impactSpawn(surface,{at,n,cut,seed:o.seed!=null?o.seed:(impactKind(e)+':'+(e.id||'')+':'+(++IMPACT.n)),tint:IMPACT_TINT[impactKind(e)],coat:impactCoat(impactKind(e)),e,ground:base});
 }
 // S1951 — a foe's blow on you (owed by S1949): what it meets throws its burst at your arm, 0.6 m out toward the foe and 0.28 m
 // under your eye, so the first-person view sees it past the hands. A shield takes it in its wood, a blade or a haft in steel, and
@@ -943,6 +951,10 @@ function impactSpawn(surface,o){
     impactPuffs(B,r,4,[.3,.9],.03,.14,off(1,.3),.8,[.72,.6,.44],.28);if(o.mark!==false)impactMark(B,o.e,'gouge',.13,.028,n,cut);impactFlash(B,.5,0,[1,.85,.6]);}
   else if(surface==='stone'){impactPuffs(B,r,10,[.6,1.6],.05,.24,off(1,.5),.9,[.66,.6,.5],.32);impactBits(B,r,'chip',8,[2,5],[.005,.014],off(1,.7),.7,[[.62,.58,.5],[.5,.47,.42],[.72,.68,.6]],2);
     impactSparks(B,r,8,[3,8],.14,.012,off(.4,1),.7);if(o.mark!==false)impactMark(B,o.e,'scar',.16,.025,n,cut);impactFlash(B,.6,0);}
+  else if(surface==='bone'){impactPuffs(B,r,5,[.4,1.1],.04,.17,off(1,.5),.9,[.82,.79,.7],.26);impactBits(B,r,'bone',10,[2,4.5],[.006,.016],off(1,.7),.7,[[.88,.84,.72],[.8,.76,.64],[.92,.89,.8]],2);
+    if(o.mark!==false)impactMark(B,o.e,'scar',.14,.022,n,cut);}
+  else if(surface==='fur'){const coat=o.coat||[.36,.27,.19];impactBits(B,r,'tuft',10,[.8,2.2],[.015,.035],off(.8,.8),.6,[coat,coat.map(v=>v*.8),coat.map(v=>Math.min(1,v*1.15))],4,.18);
+    impactBits(B,r,'drop',5,[1.2,3],[.003,.007],off(.45,1),.45,[[.24,.03,.03],[.18,.02,.02]],.8);if(o.mark!==false)impactMark(B,o.e,'nick',.09,.014,n,cut);}
   else{impactBits(B,r,'drop',9,[1.2,3],[.003,.007],off(.45,1),.45,o.tint?[o.tint]:[[.24,.03,.03],[.18,.02,.02]],.8);if(o.mark!==false)impactMark(B,o.e,'nick',.09,.014,n,cut);}
   scene.add(g);IMPACT.list.push(B);IMPACT.last={surface,counts:B.counts,t0:B.t0,you:o.you||null,wall:!!o.wall};
   while(IMPACT.list.length>IMPACT_MAX)impactDrop(IMPACT.list.shift());
@@ -957,11 +969,12 @@ function impactPlace(B,now){
       P[j]=_ipA.x;P[j+1]=_ipA.y;P[j+2]=_ipA.z;P[j+3]=_ipB.x;P[j+4]=_ipB.y;P[j+5]=_ipB.z;
       C[j]=1.2*hot+.5;C[j+1]=.55*hot+.18;C[j+2]=.12*hot+.02;C[j+3]=2.2*hot+.8;C[j+4]=1.6*hot+.3;C[j+5]=.7*hot+.05;});
     m.geometry.attributes.position.needsUpdate=true;m.geometry.attributes.color.needsUpdate=true;}
-  (B.bits||[]).forEach(b=>{b.P.forEach((p,i)=>{impactPos(_ipA,p.v,t,b.drag,1);
+  (B.bits||[]).forEach(b=>{b.P.forEach((p,i)=>{impactPos(_ipA,p.v,t,b.drag,b.gk);
       if(_ipA.y<B.ground){_ipS.set(0,0,0);_ipM.compose(_ipA,_ipQ.identity(),_ipS);b.im.setMatrixAt(i,_ipM);return;} /* on the ground: gone */
       _ipD.copy(p.v).addScaledVector(_IG,t);const dir=_ipD.lengthSq()>1e-6?_ipD.normalize():_ipU,L=p.L;
       if(b.kind==='splinter'){_ipQ.setFromUnitVectors(_ipU,dir).multiply(_ipQ2.setFromAxisAngle(_ipX,t*p.spin));_ipS.set(L*(.1+p.a*.12),L,L*(.05+p.b*.05));}
-      else if(b.kind==='chip'){_ipQ.setFromEuler(p.e);_ipS.set(L,L*(.6+p.a*.4),L*(.5+p.b*.4));}
+      else if(b.kind==='tuft'){_ipQ.setFromUnitVectors(_ipU,dir).multiply(_ipQ2.setFromAxisAngle(_ipX,t*p.spin*.4));_ipS.set(L*(.05+p.a*.05),L,L*(.05+p.b*.05));}
+      else if(b.kind==='chip'||b.kind==='bone'){_ipQ.setFromEuler(p.e);_ipS.set(L,L*(.6+p.a*.4),L*(.5+p.b*.4));}
       else{_ipQ.setFromUnitVectors(_ipU,dir);_ipS.set(L,L*(1+Math.min(3,p.v.length()*.5)),L);}
       _ipM.compose(_ipA,_ipQ,_ipS);b.im.setMatrixAt(i,_ipM);});b.im.instanceMatrix.needsUpdate=true;});
   (B.puffs||[]).forEach(f=>{const grow=1-Math.exp(-t*5),fade=t<.5?1:Math.max(0,1-(t-.5)/.3);
