@@ -105,6 +105,21 @@ if (!street.noSpot) {
   await page.evaluate(() => { const e = window._picFoe; e.dead = true; WORLD.scene.remove(e.mesh); ZONES.world.enemies.splice(ZONES.world.enemies.indexOf(e), 1); DMG_NUMS.forEach(d => d.el.remove()); DMG_NUMS.length = 0; });
 }
 
+// S1960 — a swing at the open world's solids (owed by S1952): a house's wall in Dunmore throws stone, a gate's leaf and a tree their
+// wood, a lamp nothing; a house in the Mark is timber
+const ow = await page.evaluate(() => { const w0 = EQ.weapon, p0 = [px, pz, jumpY, fwdX, fwdZ]; EQ.weapon = { name: 'Steel Sword', slot: 'weapon', weaponShape: 'sword', weight: 3, atk: [8, 12] };
+  const reach = weaponAttack(EQ.weapon).reach, S = [...SETTLE.values()].find(S => S.site.name === 'Dunmore') || [...SETTLE.values()][0];
+  const at = s => { const c = s.c !== undefined ? s.c : 1, sn = s.c !== undefined ? s.s : 0, lz = s.rz + .4; px = s.cx + lz * sn; pz = s.cz + lz * c; jumpY = worldH(px, pz);
+    const L = Math.hypot(s.cx - px, s.cz - pz); fwdX = (s.cx - px) / L; fwdZ = (s.cz - pz) / L; const B = impactWallAhead(reach);
+    return B ? { surf: B.surface, toward: +(-(B.n.x * fwdX + B.n.z * fwdZ)).toFixed(2), d: +Math.hypot(B.at.x - px, B.at.z - pz).toFixed(2) } : null; };
+  let tree = null; for (const ch of chunks.values()) for (const s of ch.sol) if (!tree && s.tid != null && s.rx > .2) tree = s;
+  const leaf = S.sol.find(s => s.bt === 'gate' && !s.jamb), house = S.sol.find(s => s.hid != null), lamp = S.sol.find(s => s.rx === .12);
+  let mark = null; for (let i = 0; i < 12 && !mark; i++) for (let j = 0; j < 12 && !mark; j++) if (nationOf(i, j).people === 'markman') mark = { site: { x: (i + .5) * WORLD.SIZE, z: (j + .5) * WORLD.SIZE } };
+  const out = { house: house && at(house), leaf: leaf && at(leaf), tree: tree && at(tree), lamp: lamp ? at(lamp) : 'none', markHouse: mark && impactWorldSurface({ hid: 'x', bt: 'home' }, mark) };
+  [px, pz, jumpY, fwdX, fwdZ] = p0; EQ.weapon = w0; IMPACT.list.forEach(impactDrop); IMPACT.list.length = 0; return out; });
+check(`a swing at the open world: a house's wall throws stone, a gate's leaf and a tree wood, a lamp nothing; a Mark house is timber (${ow.house && ow.house.surf}, ${ow.leaf && ow.leaf.surf}, ${ow.tree && ow.tree.surf}, ${ow.markHouse})`,
+  ow.house && ow.house.surf === 'stone' && ow.house.toward > .9 && ow.leaf && ow.leaf.surf === 'wood' && ow.tree && ow.tree.surf === 'wood' && ow.lamp === null && ow.markHouse === 'wood', ow);
+
 // 3. in a gate: a foe on the floor, a real swing, the number at its head in the dungeon's camera
 await enterDungeon(page, { theme: 'ruins', seed: 23, interior: 'cave', size: 'medium' });
 const gate = await page.evaluate(() => {
