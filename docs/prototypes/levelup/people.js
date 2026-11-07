@@ -1157,6 +1157,12 @@ function buildCloak(G, body, byName, rnd) {
   // none past the sweep's own ends (a staff's or a spear's side starts where it did, clear of the shaft)
   const thA = ring0[0].th, thB = ring0[ring0.length - 1].th, ringS = ring0.filter(q => q.th >= thA && q.th <= thB).sort((a, b) => a.th - b.th);
   const ringU = ringS.filter((q, i) => i === 0 || q.p.distanceTo(ringS[i - 1].p) > 1e-4);
+  // the line smoothed before it is measured (Session 1962): over the spine the furthest points jump up and down the 19 cm band they are
+  // sought in and in and out round the neck, so the line zigzags there and its length counted every zag. The even steps along it fell
+  // 1.5 to 3 cm apart across the back where they are 6 cm over the shoulders, and those columns kept their crowding to the hem: a groove
+  // down the spine and a step at the middle of the hem. Laid along the line with its zags smoothed out, the starts are even in the cloth;
+  // each is cleared of the body as before
+  if (!cape) for (let it = 0; it < 6; it++) { const P0 = ringU.map(q => q.p.clone()); for (let i = 1; i < ringU.length - 1; i++) ringU[i].p = P0[i - 1].clone().add(P0[i + 1]).addScaledVector(P0[i], 2).multiplyScalar(.25); }
   const arc = [0]; for (let i = 1; i < ringU.length; i++) arc.push(arc[i - 1] + ringU[i].p.distanceTo(ringU[i - 1].p));
   // a shoulder cape keeps its evenly turned starts: a short circle of cloth wrapped to the throat, whose ends the even line pulled across
   // each other (its columns crossed and an arm came through)
