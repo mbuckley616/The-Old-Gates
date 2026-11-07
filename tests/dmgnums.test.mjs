@@ -123,5 +123,11 @@ check(`in a gate, a swing at a ${gate.name} raises its number at its head, and n
 // S1948 — impact by surface (#1239 B): the swing threw its surface's burst in the gate, and the 50 ms hold lets the picture go
 const held = await page.evaluate(async () => { const a = impactHeld(); await new Promise(r => setTimeout(r, 120)); return { a, b: impactHeld() }; });
 check(`the blow on the ${gate.name} threw its surface's burst (${gate.imp && gate.imp.surf}) in the gate, and the 50 ms hold let the picture go`, !gate.none && gate.imp.surf === gate.imp.want && (gate.imp.surf === null || gate.imp.inGate) && gate.imp.hold && held.b === false, { imp: gate.imp, held });
+// S1950 — a foe's blow on you: a shield throws its wood at your arm, 0.6 m out toward the foe; a light chest throws nothing
+const you = await page.evaluate(() => { const e = { x: px - Math.sin(yaw) * 1.2, z: pz - Math.cos(yaw) * 1.2, name: 'Bandit' }, sh0 = EQ.offhand, ch0 = EQ.chest;
+  EQ.offhand = makeItem(2, ARMOR_TYPES.find(t => t.type === 'Buckler'), null, true); const B = impactOnYou(e, 'block');
+  EQ.chest = makeItem(2, lineType('light', 'chest'), null, true); const L = impactOnYou(e, 'hit'); EQ.offhand = sh0; EQ.chest = ch0;
+  return { surf: B && B.surface, d: B && +Math.hypot(B.at.x - px, B.at.z - pz).toFixed(2), light: L && L.surface }; });
+check(`a foe's blow on your shield throws its wood at your arm (${you.surf}, ${you.d} m out), and on a light chest nothing`, you.surf === 'wood' && Math.abs(you.d - .6) < .02 && you.light == null, you);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

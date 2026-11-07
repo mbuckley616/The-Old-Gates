@@ -573,6 +573,7 @@ function executeStrike(e, rawDmg, now){
     lvAct.parries++;skillUse('guard',3,e);_lastParryG=playClockS;if(e._spar&&typeof sparBlow==='function')sparBlow(e,'parry'); /* S1638 — the yard's call */
     // v61gj-a2 — Shield/sword recoil. Forward kick — you deflected the strike outward.
     shieldImpact('parry', rawDmg, e.x, e.z);
+    impactOnYou(e,'parry'); /* S1950 — the blow meets your guard (#1239 B) */
     // v61c7 — Parry stamina cost rebalanced. WAS rawDmg (100% — meaning a
     // 32-dmg Faolchú bite parried cost 32 stamina, more than a sloppy
     // late-block at 65% of raw). That punished perfect timing. NOW: 20%
@@ -616,6 +617,7 @@ function executeStrike(e, rawDmg, now){
     if(e._spar&&typeof sparBlow==='function')sparBlow(e,'block',!!_gBroke);
     // v61gj-a2 — Shield/sword recoil. Backward push — you absorbed the blow.
     shieldImpact('block', rawDmg, e.x, e.z);
+    impactOnYou(e,'block'); /* S1950 */
     if(PHP<=0 && !dead) playerDead();
   } else {
     // Unblocked hit — apply damage reduction buffs
@@ -624,6 +626,7 @@ function executeStrike(e, rawDmg, now){
     sndPlayerHurt(); lvAct.damageTaken += finalDmg;armourUse();
     lastHitT = now/1000;
     playerPostureHit(rawDmg*_row.posture*(_hv?_hv.posture:1), now/1000, false, !!_hv); // S281; S940 — the row's multiple (1.5 for every family today); S1136 — twice for a heavy
+    if(finalDmg>0)impactOnYou(e,'hit'); /* S1950 — on a heavy chest, sparks (#1239 B) */
     e._lunge=.3; // v80 — every strike moves the body
     if(e._spar&&typeof sparBlow==='function')sparBlow(e,'hit');
     if(PHP<=0 && !dead) playerDead();
@@ -891,17 +894,35 @@ function impactAt(e,o){
   const at=new THREE.Vector3(e.x+dx*h,base+.6*Math.max(.3,top-base),e.z+dz*h),n=new THREE.Vector3(dx,.15,dz).normalize(),cut=new THREE.Vector3(-dz*side,-.25,dx*side).normalize();
   return impactSpawn(surface,{at,n,cut,seed:o.seed!=null?o.seed:(impactKind(e)+':'+(e.id||'')+':'+(++IMPACT.n)),tint:IMPACT_TINT[impactKind(e)],e,ground:base});
 }
+// S1950 — a foe's blow on you (owed by S1948): what it meets throws its burst at your arm, 0.6 m out toward the foe and 0.28 m
+// under your eye, so the first-person view sees it past the hands. A shield takes it in its wood, a blade or a haft in steel, and
+// a heavy chest (no light or robe line) takes an unguarded blow in steel. Your own flesh throws nothing: the blow's drops are the
+// foe's alone. No mark is left (there is nothing of yours in the scene to carry it). The hold is the same 50 ms.
+function impactYouSurface(kind){
+  if(kind==='parry'||kind==='block'){const sh=EQ.offhand;if(sh&&sh.shieldType==='shield')return 'wood';return EQ.weapon&&EQ.weapon.weaponShape!=='bow'&&EQ.weapon.weaponShape!=='crossbow'?'steel':null;}
+  const ch=EQ.chest;return ch&&!ch.line?'steel':null;
+}
+function impactOnYou(e,kind){
+  if(!impactOn()||!e||typeof scene==='undefined'||!scene)return null;
+  const surface=impactYouSurface(kind);
+  if(surface||kind!=='hit')impactHold();
+  if(!surface)return null;
+  let dx=e.x-px,dz=e.z-pz;const dl=Math.hypot(dx,dz)||1;dx/=dl;dz/=dl;
+  const eye=jumpY+(typeof _eyeHeightCur==='number'?_eyeHeightCur:SCALE.EYE_STAND);
+  const at=new THREE.Vector3(px+dx*.6,eye-.28,pz+dz*.6),n=new THREE.Vector3(dx,.15,dz).normalize(),cut=new THREE.Vector3(-dz,-.25,dx).normalize();
+  return impactSpawn(surface,{at,n,cut,seed:'you:'+kind+':'+impactKind(e)+':'+(++IMPACT.n),ground:jumpY,mark:false,you:kind});
+}
 function impactSpawn(surface,o){
   const r=impactRng('impact:'+surface+':'+o.seed),g=new THREE.Group();g.position.copy(o.at);g.userData.impact=surface;
   const n=o.n.clone().normalize(),cut=o.cut.clone().normalize(),off=(a,b)=>n.clone().multiplyScalar(a).addScaledVector(cut,b).normalize();
   const B={g,surface,at:o.at.clone(),n,cut,t0:performance.now()/1000+(IMPACT.hold.pending||performance.now()<IMPACT.hold.until?IMPACT_HOLD_S:0),ground:o.ground!=null?o.ground-o.at.y:-2,scene,counts:{}};
   if(surface==='steel'){impactSparks(B,r,40,[4,9],.22,.014,off(.7,1),.75);impactFlash(B,1.8,.022);}
   else if(surface==='wood'){const fresh=[[.86,.72,.52],[.8,.64,.44],[.74,.58,.4]];impactBits(B,r,'splinter',14,[1.6,4],[.025,.065],off(1,.6),.65,[...fresh,o.tint||[.5,.14,.1]],2);
-    impactPuffs(B,r,4,[.3,.9],.03,.14,off(1,.3),.8,[.72,.6,.44],.28);impactMark(B,o.e,'gouge',.13,.028,n,cut);impactFlash(B,.5,0,[1,.85,.6]);}
+    impactPuffs(B,r,4,[.3,.9],.03,.14,off(1,.3),.8,[.72,.6,.44],.28);if(o.mark!==false)impactMark(B,o.e,'gouge',.13,.028,n,cut);impactFlash(B,.5,0,[1,.85,.6]);}
   else if(surface==='stone'){impactPuffs(B,r,10,[.6,1.6],.05,.24,off(1,.5),.9,[.66,.6,.5],.32);impactBits(B,r,'chip',8,[2,5],[.005,.014],off(1,.7),.7,[[.62,.58,.5],[.5,.47,.42],[.72,.68,.6]],2);
-    impactSparks(B,r,8,[3,8],.14,.012,off(.4,1),.7);impactMark(B,o.e,'scar',.16,.025,n,cut);impactFlash(B,.6,0);}
-  else{impactBits(B,r,'drop',9,[1.2,3],[.003,.007],off(.45,1),.45,o.tint?[o.tint]:[[.24,.03,.03],[.18,.02,.02]],.8);impactMark(B,o.e,'nick',.09,.014,n,cut);}
-  scene.add(g);IMPACT.list.push(B);IMPACT.last={surface,counts:B.counts,t0:B.t0};
+    impactSparks(B,r,8,[3,8],.14,.012,off(.4,1),.7);if(o.mark!==false)impactMark(B,o.e,'scar',.16,.025,n,cut);impactFlash(B,.6,0);}
+  else{impactBits(B,r,'drop',9,[1.2,3],[.003,.007],off(.45,1),.45,o.tint?[o.tint]:[[.24,.03,.03],[.18,.02,.02]],.8);if(o.mark!==false)impactMark(B,o.e,'nick',.09,.014,n,cut);}
+  scene.add(g);IMPACT.list.push(B);IMPACT.last={surface,counts:B.counts,t0:B.t0,you:o.you||null};
   while(IMPACT.list.length>IMPACT_MAX)impactDrop(IMPACT.list.shift());
   impactPlace(B,performance.now()/1000);return B;
 }
