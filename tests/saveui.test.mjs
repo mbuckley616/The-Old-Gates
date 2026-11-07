@@ -19,7 +19,8 @@ const loaded = (gold0) => page.waitForFunction((g0) => typeof started !== 'undef
 await page.waitForFunction(() => SS.idx.some(e => e.kind === 'auto') || SS.lastErr, null, { timeout: 60000, polling: 250 }).catch(() => {});
 const store = () => page.evaluate(() => ({ db: !!SS.db, fallback: !!SS.fallback, lastErr: SS.lastErr && SS.lastErr.why, retried: SS.retried && SS.retried.why, idx: SS.idx.map(e => e.kind + e.slot + ':' + e.gold) }));
 const arrived = await store();
-const clickRow = (i) => page.evaluate((i) => { const rows = [...document.querySelectorAll('#sl-slots .sl-slot')]; rows[i].click(); return rows[i].querySelector('.sl-slot-name').textContent; }, i);
+// Session 1965: the register (#199 B) names an empty slot *An empty leaf* and asks its second press in the row's detail line
+const clickRow = (i) => page.evaluate((i) => { const rows = [...document.querySelectorAll('#sl-slots .sl-slot')]; rows[i].click(); return rows[i].querySelector('.sl-slot-name').textContent + ' | ' + rows[i].querySelector('.sl-slot-detail').textContent; }, i);
 const where = await page.evaluate(() => { playerName = 'Wren'; gold = 321; level = 4; return { x: px, z: pz }; });
 
 // a slot, by the menu (window._since: a failure counts only if it came after the click)
@@ -28,7 +29,7 @@ const first = await clickRow(0);
 // written and closed, or failed with its reason (the menu stays open and SS.lastErr names it): up to 90 s, a slow runner's store
 await page.waitForFunction(() => (document.getElementById('slmenu').style.display === 'none' && SS.idx.some(e => e.kind === 'manual' && e.slot === 0)) || (SS.lastErr && SS.lastErr.ts >= _since), null, { timeout: 90000, polling: 250 }).catch(() => {});
 const s1 = await page.evaluate(() => ({ open: document.getElementById('slmenu').style.display, slot: SS.idx.filter(e => e.kind === 'manual').map(e => e.slot + ':' + e.gold) }));
-const ok1 = first === '— Empty —' && s1.open === 'none' && s1.slot.includes('0:321');
+const ok1 = first.startsWith('An empty leaf |') && s1.open === 'none' && s1.slot.includes('0:321');
 check('the menu saves to an empty slot and closes', ok1, ok1 ? { first, s1, retried: (await store()).retried } : { first, s1, arrived, store: await store(), said });
 
 // an overwrite, by the menu: the first click asks, the second writes
@@ -37,7 +38,7 @@ const ask = await clickRow(0); await W(600); const still = await page.evaluate((
 await clickRow(0);
 await page.waitForFunction(() => (SS.idx.find(e => e.kind === 'manual' && e.slot === 0) || {}).gold === 654 || (SS.lastErr && SS.lastErr.ts >= _since), null, { timeout: 90000, polling: 250 }).catch(() => {});
 const now = await page.evaluate(() => (SS.idx.find(e => e.kind === 'manual' && e.slot === 0) || {}).gold);
-const ok2 = ask === 'Click again to overwrite' && still === 321 && now === 654;
+const ok2 = /\| Press again to write over Slot 1\. The day it holds is lost\.$/.test(ask) && still === 321 && now === 654;
 check('an overwrite asks once, then writes', ok2, ok2 ? { ask, still, now } : { ask, still, now, store: await store(), said });
 
 // an autosave, the way the game makes one
