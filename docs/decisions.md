@@ -21,6 +21,15 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 - **C.** The stock cannot be struck: a blow passes through it.
 
 **Recommendation.** B. Devlog: `docs/devlog/1973.md`.
+### A foe's tell — the body glows, the weapon's edge, or OG-130 as drawn? (from the concept artist, 2026-11-07, #1278)
+**The question.** Backlog L11 (OG-130's telegraphs): where the colour of a foe's warning sits on the new look's bodies. The rules stay (the wind-up pose runs the tell, gold for light and red for heavy in its last 0.15 s, the slam's 0.9 s tell and 3 m unblockable ring); today the whole body tints (`telegraphPulse`, `hbGlow`), which turns the person into a flat red or gold figure for that moment. The prototype: `docs/prototypes/levelup/telegraphs.html`.
+
+**Options.**
+- **A.** The body glows (today's rule): every material takes the colour, the slam ring is today's orange band. Nothing to build.
+- **B (recommended).** The weapon's edge carries it: the body stays, both edges of the blade (or the hammer's head) light gold or red with a small light on the hand and face; the slam ring a thin hard line at 3 m with a faint wash inside. 192 triangles on a sword and one light for 0.15 s.
+- **C.** Loud, OG-130 as drawn: B's weapon flaring with a star at its tip, a glowing outline round the whole body (about 78k more triangles per foe while it shows), the slam's ground a filled red disc with rings and ticks.
+
+**Recommendation.** B: the pose does the warning and the foe stays a person; it reads at the third-person camera's distance. Pictures: `docs/prototypes/levelup/telegraphs-options.jpg`, `telegraphs-close.jpg`, `telegraphs-ring.jpg`, `telegraphs-time.jpg`.
 ### The dungeon's cell by kind: old gates at 3 m, and forts and lairs at what? (systems builder, Session 1105) — DECISION #421
 **The question.** F2b's last session sets a dungeon's grid cell at true scale; it is one unit today, so corridors are 1 m wide for a 1.8 m body. Michael chose **C, 3 m** on #300 and added: "If by dungeon we mean Old Gates, they should be extremely massive and cavernous. A normal 'dungeon' like a mine, or a cave can be a more typical size." The game has three kinds of underground place: the **old gates** (the world's portals, themed by school: crypts, haunted halls, elemental and deep caverns, ruins), **fort interiors** (the `fort_` layouts), and **lairs and dens** (a beast's lair, the cloak's den). So the cell can differ by kind, and "a more typical size" is a number a player feels.
 
