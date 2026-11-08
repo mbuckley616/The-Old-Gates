@@ -62,7 +62,7 @@ if (!lib.none) {
         for (let k = 1; k <= n; k++) { const xx = x + (x1 - x) * k / n, zz = z + (z1 - z) * k / n, ny = footholdY(xx, zz, y, 0); maxStep = Math.max(maxStep, Math.abs(ny - y)); y = ny; if (intSolidAt(xx, zz, .2, y)) blocked.push([+xx.toFixed(2), +zz.toFixed(2), +y.toFixed(2)]); } x = x1; z = z1; }
       return { blocked: blocked.length, at: blocked.slice(0, 3), maxStep: +maxStep.toFixed(3) }; };
     const walks = h._libraryPaths.map(walk);
-    /* the gallery (Session 1990): overhead, so the floor under it is open; its ladders stand on the floor as solids */
+    /* the gallery (Session 1991): overhead, so the floor under it is open; its ladders stand on the floor as solids */
     const G = T.gallery, gal = G ? { under: [-1, 1].map(sx => !intSolidAt(T.inner.x1 + sx * 7.6, T.inner.z1 - 5.0, .3, 0)), ladders: G.ladders.map(L => intSolidAt(L.x + T.inner.x1, (L.z0 + L.z1) / 2 + T.inner.z1, .2, 0)), deckY: +(G.y - T.floor).toFixed(2) } : null;
     /* the screen: from the loggia straight through the lattice between two doorways (x 5 m off the middle, either side), at a walker's height */
     const sz = T.screen.z + D / 2, screen = [-5, 5].map(u => intSolidAt(W / 2 + u, sz, .2, 0) && intSolidAt(W / 2 + u, sz, .2, 1.2));

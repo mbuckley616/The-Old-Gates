@@ -2387,7 +2387,7 @@ function aurenneHome(o = {}, r = stream('aurhome')) {
   { const pot = new THREE.SphereGeometry(.15, 12, 8, 0, Math.PI * 2, .4, Math.PI - .4); put(pot, 'copper', (kitchen.x0 + kitchen.x1) / 2, F1 + 1.0, kz0 + .7); }
   { const y = F1 + 1.75; bx('iron', X - .2, X - .17, y, y + .03, kz0 + .1, Z - .2); for (let k = 0; k < 4 && kz0 + .4 + k * .6 < Z - .3; k++) { const z = kz0 + .4 + k * .6, rr = .1 + (k % 2) * .05; bx('iron', X - .19, X - .18, y - .2, y, z - .005, z + .005);
       put(new THREE.CylinderGeometry(rr, rr * .85, rr * 1.2, 14), 'copper', X - .19 - rr, y - .2 - rr * .6, z); } }
-  put(new THREE.LatheGeometry([new THREE.Vector2(.001, 0), ...new THREE.SplineCurve([[.12, 0], [.26, .22], [.28, .5], [.16, .72], [.13, .78]].map(([a, b]) => new THREE.Vector2(a, b))).getPoints(16), new THREE.Vector2(.001, .78)] /* the body a smooth curve, not six straight bands (the critic's 8 Nov, S1990) */, 20), 'terra', jar[0], F1, jar[1]);
+  put(new THREE.LatheGeometry([new THREE.Vector2(.001, 0), ...new THREE.SplineCurve([[.12, 0], [.26, .22], [.28, .5], [.16, .72], [.13, .78]].map(([a, b]) => new THREE.Vector2(a, b))).getPoints(16), new THREE.Vector2(.001, .78)] /* the body a smooth curve, not six straight bands (the critic's 8 Nov, S1992) */, 20), 'terra', jar[0], F1, jar[1]);
   boxes.push({ tag: 'waterjar', x0: jar[0] - .28, x1: jar[0] + .28, y0: F1, y1: F1 + .78, z0: jar[1] - .28, z1: jar[1] + .28, fl: 1 });
   // the brass lantern on a chain from the middle of the upper room's ceiling
   const lamp = [.2, CEIL - .55, .6]; bx('iron', lamp[0] - .005, lamp[0] + .005, lamp[1] + .2, CEIL - .2, lamp[2] - .005, lamp[2] + .005);
@@ -2472,7 +2472,7 @@ function aurenneHomeOne(o = {}, r = stream('aurhome1')) {
   { const pot = new THREE.SphereGeometry(.15, 12, 8, 0, Math.PI * 2, .4, Math.PI - .4); put(pot, 'copper', (kitchen.x0 + kitchen.x1) / 2, F0 + 1.0, kz0 + .7); }
   { const y = F0 + 1.75, rz1 = Math.min(kz1 - .2, -.45); if (rz1 - (kz0 + .1) > .6) { bx('iron', X - .2, X - .17, y, y + .03, kz0 + .1, rz1); for (let k = 0; k < 4 && kz0 + .4 + k * .6 < rz1 - .1; k++) { const z = kz0 + .4 + k * .6, rr = .1 + (k % 2) * .05; bx('iron', X - .19, X - .18, y - .2, y, z - .005, z + .005);
       put(new THREE.CylinderGeometry(rr, rr * .85, rr * 1.2, 14), 'copper', X - .19 - rr, y - .2 - rr * .6, z); } } }
-  const jar = [X - .35, kz1 + .35]; put(new THREE.LatheGeometry([new THREE.Vector2(.001, 0), ...new THREE.SplineCurve([[.12, 0], [.26, .22], [.28, .5], [.16, .72], [.13, .78]].map(([a, b]) => new THREE.Vector2(a, b))).getPoints(16), new THREE.Vector2(.001, .78)] /* the body a smooth curve, not six straight bands (the critic's 8 Nov, S1990) */, 20), 'terra', jar[0], F0, jar[1]);
+  const jar = [X - .35, kz1 + .35]; put(new THREE.LatheGeometry([new THREE.Vector2(.001, 0), ...new THREE.SplineCurve([[.12, 0], [.26, .22], [.28, .5], [.16, .72], [.13, .78]].map(([a, b]) => new THREE.Vector2(a, b))).getPoints(16), new THREE.Vector2(.001, .78)] /* the body a smooth curve, not six straight bands (the critic's 8 Nov, S1992) */, 20), 'terra', jar[0], F0, jar[1]);
   boxes.push({ tag: 'waterjar', x0: jar[0] - .28, x1: jar[0] + .28, y0: F0, y1: F0 + .78, z0: jar[1] - .28, z1: jar[1] + .28, fl: 0 });
   // ── the ceiling's cedar beams across the house every 0.9 m under the slab, cut at the hatch; the lantern on its chain from the middle
   if (tile) bx('cedar', -X, X, CEIL, CEIL + .03, -Z, Z);
@@ -2752,7 +2752,7 @@ let LIBLAT = null;
 // with benches and brass lamps, two copyists' sloped desks, a brass armillary sphere in the middle (the observatory over it), window
 // seats, rugs, painted beams across the ceiling, and a tile dado round the towers' feet.
 // aurenneLibrary(o, r) -> { group, shell, room, tris, draws, inner, floor, ceil, screen {z, doors: [x]}, presses, tables, desks,
-//   armillary, lamps, towers, ladder, paths, boxes, w, d, gallery {y, d, runs, ladders, presses, struts, rail}, hangings (Session 1990) }
+//   armillary, lamps, towers, ladder, paths, boxes, w, d, gallery {y, d, runs, ladders, presses, struts, rail}, hangings (Session 1991) }
 function aurenneLibrary(o = {}, r = stream('library')) {
   const A = aurenneAcademy({ w: 30, towers: 3, wall: o.wall, interior: true }, stream(o.shell || 'library-shell')), I = A.inner, shell = A.group;
   if (!LIBLAT) { const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d'); x.fillStyle = '#8a5a36'; x.fillRect(0, 0, 128, 128); x.globalCompositeOperation = 'destination-out';
@@ -2791,7 +2791,7 @@ function aurenneLibrary(o = {}, r = stream('library')) {
   // the rolling ladder against the west presses
   const ladder = { x: -X + PD + .25, z: -2.0 }; { const { x, z } = ladder; for (const dz of [-.22, .22]) put(new THREE.BoxGeometry(.05, 2.84, .06), 'cedar', x - .1, F0 + 1.45, z + dz, 0, .6, 0, .16); for (let k = 0; k < 9; k++) bx('cedar', x - .2 + k * .045 - .02, x - .2 + k * .045 + .02, F0 + .3 + k * .3, F0 + .33 + k * .3, z - .22, z + .22);
     boxes.push({ tag: 'ladder', x0: -X + PD + .005 /* it leans on the press's face */, x1: x + .3, y0: F0, y1: F0 + 2.9, z0: z - .26, z1: z + .26 }); }
-  // the gallery (Session 1990; the critic's 8 Nov: OG-043's library has shelves to the roof): a cedar walk 1.15 m deep along the back wall
+  // the gallery (Session 1991; the critic's 8 Nov: OG-043's library has shelves to the roof): a cedar walk 1.15 m deep along the back wall
   // between the towers, its boards at 3.7 m over the lower presses and the low windows' heads (3.4), on a fascia beam and struts into the wall
   // between the windows, a lattice balustrade 1 m high of the screen's own lattice, a second tier of presses 2.3 m high on it up to the high
   // windows' sills (6.2), and a fixed ladder up to it at the middle tower's end of each run
