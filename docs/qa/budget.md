@@ -702,3 +702,27 @@ and caves' neighbourhood, not traced); Portclare's square 523 → 522; the inn's
 0.3% everywhere (Portclare at Low 680k → 682k). Nothing merged in these 18 builds stands in these views: the academy, the tithe house and the
 one-storey homes are Aurenne's, and the new rooms are behind doors this suite does not open. No spot rose by more than 10%. Dunmore at midnight
 at Low is 626 of its 700 calls: 74 left.*
+
+### s1368 — 2026-11-08 13:08 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Dunmore street, noon | Low | 570 | 1.08 M | 0 | 0 | 107 | 120 | 253 | 90 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 |
+| Dunmore street, noon | Middle | 725 | 1.82 M | 136 | 6 | 108 | 120 | 265 | 90 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 |
+| Dunmore street, noon | High | 775 | 2.30 M | 168 | 6 | 108 | 120 | 283 | 90 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 |
+| Dunmore street, midnight | Low | 625 | 1.04 M | 0 | 0 | 105 | 176 | 253 | 91 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 |
+| Dunmore street, midnight | Middle | 802 | 1.77 M | 159 | 6 | 105 | 176 | 265 | 91 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 |
+| Dunmore street, midnight | High | 863 | 2.31 M | 202 | 6 | 105 | 176 | 283 | 91 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 |
+| the field west of Dunmore, noon | Low | 536 | 627k | 0 | 0 | 105 | 107 | 281 | 43 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 |
+| the field west of Dunmore, noon | Middle | 644 | 1.05 M | 83 | 6 | 105 | 107 | 300 | 43 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 |
+| the field west of Dunmore, noon | High | 691 | 1.51 M | 122 | 6 | 105 | 107 | 308 | 43 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 |
+| the field west of Dunmore, dawn | Low | 619 | 618k | 0 | 0 | 108 | 186 | 281 | 44 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 |
+| the field west of Dunmore, dawn | Middle | 787 | 1.10 M | 143 | 6 | 108 | 186 | 300 | 44 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 |
+| the field west of Dunmore, dawn | High | 839 | 1.62 M | 187 | 6 | 108 | 186 | 308 | 44 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 |
+| Portclare square, noon | Low | 357 | 693k | 0 | 0 | 30 | 60 | 192 | 75 | Mesh 31, oldGate 14, cave mouth 8, sea cave mouth 8, Group 6 |
+| Portclare square, noon | Middle | 523 | 1.39 M | 144 | 6 | 30 | 60 | 208 | 75 | Mesh 31, oldGate 14, cave mouth 8, sea cave mouth 8, Group 6 |
+| Portclare square, noon | High | 569 | 1.72 M | 179 | 6 | 30 | 60 | 219 | 75 | Mesh 31, oldGate 14, cave mouth 8, sea cave mouth 8, Group 6 |
+| The Bramble Hearth (Dunmore's inn), the hall from the door, 20h | Middle (indoors) | 34 | 26k | 0 | 0 | 1 | 0 | 0 | 33 |  |
+| a medium gate (ruins, seed 11), from its entrance | Middle (indoors) | 102 | 394k | 0 | 0 | 33 | 0 | 0 | 68 |  |
+
+*s1368, QA Session 1991 (`budget` 8/8 in 446 s and `budgetport` 9/9 in 530 s, one try each, run in series by `run.mjs budget budgetport` on four cores with no other boot). Against s1342, 26 builds later (every merge to 8 Nov 11:03 UTC, among them the Roman homes' rooms and the wall plate, the elders' staffs and their walk, the long cloak weighted to the legs, the braids on the cloak, the farms' hens and herds, the lair reloaded as a lair, and the fire orb's ward), every view held within two calls at every level: Dunmore's street at noon 727 → 725 at Middle, at midnight 803 → 802; the field west at noon 645 → 644 and at dawn 788 → 787 (each the other column −1, and a body fewer at noon in the street); Portclare's square 522 → 523 (Low 356 → 357, 682k → 693k triangles, +1.6%, the one triangle move over 0.3%); the inn's hall 34 → 34; the medium gate 102 → 102. The farms' stock stands in none of these views (the field west is not a farm's), and the rooms and the plate are behind doors. No spot rose by more than 10%. Dunmore at midnight at Low is 625 of its 700 calls: 75 left.*
