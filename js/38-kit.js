@@ -2752,7 +2752,7 @@ let LIBLAT = null;
 // with benches and brass lamps, two copyists' sloped desks, a brass armillary sphere in the middle (the observatory over it), window
 // seats, rugs, painted beams across the ceiling, and a tile dado round the towers' feet.
 // aurenneLibrary(o, r) -> { group, shell, room, tris, draws, inner, floor, ceil, screen {z, doors: [x]}, presses, tables, desks,
-//   armillary, lamps, towers, ladder, paths, boxes, w, d }
+//   armillary, lamps, towers, ladder, paths, boxes, w, d, gallery {y, d, runs, ladders, presses, struts, rail}, hangings (Session 1990) }
 function aurenneLibrary(o = {}, r = stream('library')) {
   const A = aurenneAcademy({ w: 30, towers: 3, wall: o.wall, interior: true }, stream(o.shell || 'library-shell')), I = A.inner, shell = A.group;
   if (!LIBLAT) { const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d'); x.fillStyle = '#8a5a36'; x.fillRect(0, 0, 128, 128); x.globalCompositeOperation = 'destination-out';
@@ -2777,20 +2777,39 @@ function aurenneLibrary(o = {}, r = stream('library')) {
     for (const dx of doors) { bx('cedarD', dx - dw / 2, dx + dw / 2, F0 + 2.5, F0 + 2.62, SZ - .06, SZ + .06); const g = new THREE.PlaneGeometry(dw, SH - 2.62); const uv = g.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * dw / .8, uv.getY(i) * (SH - 2.62) / .8); put(g, 'lattice', dx, F0 + 2.62 + (SH - 2.62) / 2, SZ); } }
   // the presses: cedar cases 2.7 m high and 0.45 deep, five shelves of codices and scroll racks, in the gaps the windows and the towers leave
   const presses = [], side = [[-3.35, -.55], [.55, 3.25]] /* the end towers stand within a metre of the side walls: the corner by them is left bare */, back = [[-8.9, -6.15], [-5.15, -2.95], [2.95, 5.15], [6.15, 8.9]], PH = 2.7, PD = .45;
-  const press = (x0, x1, z0, z1, alongX) => { boxes.push({ tag: 'press', x0, x1, y0: F0, y1: F0 + PH, z0, z1 }); const len = alongX ? x1 - x0 : z1 - z0, face = alongX ? (z0 < 0 ? z1 : z0) : (x0 < 0 ? x1 : x0), dir = alongX ? (z0 < 0 ? -1 : 1) : (x0 < 0 ? -1 : 1);
-    /* the case: its back against the wall, two ends, a top and a plinth, open to the room */ if (alongX) { const bz = face + dir * PD; bx('cedarD', x0, x1, F0, F0 + PH, Math.min(bz, bz - dir * .04), Math.max(bz, bz - dir * .04)); for (const xx of [x0, x1 - .05]) bx('cedarD', xx, xx + .05, F0, F0 + PH, z0, z1); bx('cedarD', x0, x1, F0 + PH - .08, F0 + PH, z0, z1); bx('cedarD', x0, x1, F0, F0 + .1, z0, z1); }
-    else { const bxx = face + dir * PD; bx('cedarD', Math.min(bxx, bxx - dir * .04), Math.max(bxx, bxx - dir * .04), F0, F0 + PH, z0, z1); for (const zz of [z0, z1 - .05]) bx('cedarD', x0, x1, F0, F0 + PH, zz, zz + .05); bx('cedarD', x0, x1, F0 + PH - .08, F0 + PH, z0, z1); bx('cedarD', x0, x1, F0, F0 + .1, z0, z1); }
-    for (let k = 0; k < 6; k++) { const y = F0 + .12 + k * .43; if (k === 5) break; for (let u = .08; u < len - .12;) { const scrolls = r() < .18, w = scrolls ? .3 + r() * .2 : .5 + r() * .7, ht = .3 + r() * .06, key = 'books';
+  const press = (x0, x1, z0, z1, alongX, y0 = F0, ph = PH, list = presses, tag = 'press') => { boxes.push({ tag, x0, x1, y0, y1: y0 + ph, z0, z1 }); const len = alongX ? x1 - x0 : z1 - z0, face = alongX ? (z0 < 0 ? z1 : z0) : (x0 < 0 ? x1 : x0), dir = alongX ? (z0 < 0 ? -1 : 1) : (x0 < 0 ? -1 : 1);
+    /* the case: its back against the wall, two ends, a top and a plinth, open to the room */ if (alongX) { const bz = face + dir * PD; bx('cedarD', x0, x1, y0, y0 + ph, Math.min(bz, bz - dir * .04), Math.max(bz, bz - dir * .04)); for (const xx of [x0, x1 - .05]) bx('cedarD', xx, xx + .05, y0, y0 + ph, z0, z1); bx('cedarD', x0, x1, y0 + ph - .08, y0 + ph, z0, z1); bx('cedarD', x0, x1, y0, y0 + .1, z0, z1); }
+    else { const bxx = face + dir * PD; bx('cedarD', Math.min(bxx, bxx - dir * .04), Math.max(bxx, bxx - dir * .04), y0, y0 + ph, z0, z1); for (const zz of [z0, z1 - .05]) bx('cedarD', x0, x1, y0, y0 + ph, zz, zz + .05); bx('cedarD', x0, x1, y0 + ph - .08, y0 + ph, z0, z1); bx('cedarD', x0, x1, y0, y0 + .1, z0, z1); }
+    for (let k = 0; k < 6; k++) { const y = y0 + .12 + k * .43; if (k === 5) break; for (let u = .08; u < len - .12;) { const scrolls = r() < .18, w = scrolls ? .3 + r() * .2 : .5 + r() * .7, ht = .3 + r() * .06, key = 'books';
         const a = (alongX ? x0 : z0) + u, b = Math.min(a + w, (alongX ? x1 : z1) - .06);
         if (scrolls) for (let q = a + .05; q < b - .04; q += .09) for (let j = 0; j < 3; j++) { const g = new THREE.CylinderGeometry(.04, .04, PD - .1, 5); g.rotateX(Math.PI / 2); if (!alongX) g.rotateY(Math.PI / 2); put(g, 'scroll', alongX ? q : face + dir * .22, y + .05 + j * .085, alongX ? face + dir * .22 : q); }
         else if (alongX) bx(key, a, b, y, y + ht, Math.min(face, face + dir * .38), Math.max(face, face + dir * .38)); else bx(key, Math.min(face, face + dir * .38), Math.max(face, face + dir * .38), y, y + ht, a, b);
         u += w + .02; } if (alongX) bx('cedar', x0, x1, y - .03, y, Math.min(face, face + dir * .02), Math.max(face, face + dir * .02)); else bx('cedar', Math.min(face, face + dir * .02), Math.max(face, face + dir * .02), y - .03, y, z0, z1); }
-    presses.push({ x0, x1, z0, z1 }); };
+    list.push({ x0, x1, z0, z1 }); };
   for (const [z0, z1] of side) for (const sx of [-1, 1]) press(sx < 0 ? -X : X - PD, sx < 0 ? -X + PD : X, z0, z1, false);
   for (const [x0, x1] of back) press(x0, x1, -Z, -Z + PD, true);
   // the rolling ladder against the west presses
   const ladder = { x: -X + PD + .25, z: -2.0 }; { const { x, z } = ladder; for (const dz of [-.22, .22]) put(new THREE.BoxGeometry(.05, 2.84, .06), 'cedar', x - .1, F0 + 1.45, z + dz, 0, .6, 0, .16); for (let k = 0; k < 9; k++) bx('cedar', x - .2 + k * .045 - .02, x - .2 + k * .045 + .02, F0 + .3 + k * .3, F0 + .33 + k * .3, z - .22, z + .22);
     boxes.push({ tag: 'ladder', x0: -X + PD + .005 /* it leans on the press's face */, x1: x + .3, y0: F0, y1: F0 + 2.9, z0: z - .26, z1: z + .26 }); }
+  // the gallery (Session 1990; the critic's 8 Nov: OG-043's library has shelves to the roof): a cedar walk 1.15 m deep along the back wall
+  // between the towers, its boards at 3.7 m over the lower presses and the low windows' heads (3.4), on a fascia beam and struts into the wall
+  // between the windows, a lattice balustrade 1 m high of the screen's own lattice, a second tier of presses 2.3 m high on it up to the high
+  // windows' sills (6.2), and a fixed ladder up to it at the middle tower's end of each run
+  const GY = F0 + 3.7, GD = 1.15, GZ = -Z + GD, gallery = { y: GY, d: GD, runs: [], ladders: [], presses: [], struts: [], rail: 1.0 };
+  for (const sx of [-1, 1]) { const a = sx < 0 ? -9.7 : 2.85, b = sx < 0 ? -2.85 : 9.7, lx = sx * 3.4, gap = [lx - .3, lx + .3]; gallery.runs.push({ x0: a, x1: b });
+    bx('cedar', a, b, GY - .12, GY, -Z, GZ, 'gallery'); bx('cedarD', a, b, GY - .3, GY, GZ - .08, GZ);
+    for (const x of [-8.6, -7.45, -6.3, -4.6, -3.1].map(v => sx * v)) { bx('cedarD', x - .07, x + .07, GY - .45, GY - .12, -Z, -Z + .35); put(new THREE.BoxGeometry(.1, .12, 1.11), 'cedarD', x, F0 + 3.175, -Z + .5, 0, .6, -Math.atan2(.65, .9)); gallery.struts.push(x); }
+    /* the balustrade: posts, a bottom and a top rail, the lattice between, open where the ladder comes up */ for (const [p0, p1] of [[a, gap[0]], [gap[1], b]]) { if (p1 - p0 < .1) continue; const n = Math.max(1, Math.round((p1 - p0) / 1.5));
+      for (let k = 0; k <= n; k++) { const x = Math.min(p1 - .04, Math.max(p0 + .04, p0 + k * (p1 - p0) / n)); bx('cedarD', x - .04, x + .04, GY, GY + gallery.rail, GZ - .12, GZ - .04); }
+      bx('cedarD', p0, p1, GY, GY + .08, GZ - .12, GZ - .04); bx('cedarD', p0, p1, GY + gallery.rail - .08, GY + gallery.rail, GZ - .13, GZ - .03);
+      const g = new THREE.PlaneGeometry(p1 - p0, gallery.rail - .16); const uv = g.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * (p1 - p0) / .8, uv.getY(i) * (gallery.rail - .16) / .8); put(g, 'lattice', (p0 + p1) / 2, GY + gallery.rail / 2, GZ - .08); }
+    /* the upper presses, the deck's length short of the towers' feet */ press(a + .1, b - .1, -Z, -Z + PD, true, GY, 2.3, gallery.presses, 'gpress');
+    /* the ladder: two stiles from the floor 1 m out to the gallery's edge, rungs every 0.3 m */ { const z0 = GZ + 1.0, ang = Math.atan2(1.0, 3.7), len = Math.hypot(1.0, 3.7); for (const dx of [-.24, .24]) put(new THREE.BoxGeometry(.05, len, .07), 'cedar', lx + dx, F0 + 3.7 / 2, GZ + .5, 0, .6, -ang);
+      for (let k = 1; k * .3 < 3.6; k++) { const y = F0 + k * .3, z = z0 - (k * .3) / 3.7; bx('cedar', lx - .24, lx + .24, y - .02, y + .02, z - .03, z + .03); } boxes.push({ tag: 'ladder', x0: lx - .28, x1: lx + .28, y0: F0, y1: GY, z0: GZ, z1: z0 + .05 }); gallery.ladders.push({ x: lx, z0, z1: GZ }); } }
+  // hangings on the side walls between the high windows, over the presses: a madder field, indigo bands and a gilt fringe on an iron rod
+  const hangings = []; for (const sx of [-1, 1]) for (const hz of [-1.965, 1.965]) { const x1 = sx * X, x0 = x1 - sx * .03, xa = Math.min(x0, x1), xb = Math.max(x0, x1), y0 = F0 + 3.3, y1 = F0 + 6.0; hangings.push({ x: x1, z: hz, y0, y1 });
+    bx('madder', xa, xb, y0 + .08, y1 - .1, hz - .62, hz + .62); for (const y of [y0 + .4, y1 - .5]) bx('indigo', xa - .005, xb + .005, y, y + .18, hz - .62, hz + .62); bx('gold', xa - .004, xb + .004, y0, y0 + .08, hz - .6, hz + .6);
+    const g = new THREE.CylinderGeometry(.02, .02, 1.5, 6); g.rotateX(Math.PI / 2); put(g, 'iron', x1 - sx * .06, y1 - .05, hz); for (const s of [-1, 1]) put(new THREE.SphereGeometry(.04, 6, 4), 'gold', x1 - sx * .06, y1 - .05, hz + s * .76); }
   // window seats under the side walls' low windows (between the presses), a cushion on each
   for (const sx of [-1, 1]) for (const [z0, z1] of [[-4.35, -3.5], [-.45, .45]]) { const x0 = sx < 0 ? -X : X - .5, x1 = sx < 0 ? -X + .5 : X; bx('step', x0, x1, F0, F0 + .4, z0, z1, 'seat'); bx(sx < 0 ? 'madder' : 'indigo', x0 + .03, x1 - .03, F0 + .4, F0 + .47, z0 + .03, z1 - .03); }
   // four long reading tables with a bench either side, a rug under each, a brass lamp, codices open and a scroll weighted flat
@@ -2816,7 +2835,7 @@ function aurenneLibrary(o = {}, r = stream('library')) {
   const all = new THREE.Group(); all.add(shell, group);
   const arch = A.arches.find(x => x > 9), paths = [[[arch, Z + .3], [arch, Z - .4], [10, SZ + .5], [10, SZ - .5], [10, 1.0], [8.0, 1.0]], [[arch, Z - .4], [8.0, 4.4], [0, 4.4], [0, SZ - .5], [0, 1.4]], [[0, 1.4], [-2.3, 1.2], [-2.3, -2.2], [-7.5, -2.2]], [[-10, SZ - .5], [-10, 1.0], [-12.9, 1.0], [-12.9, -3.0]]];
   return { group: all, shell, room: group, tris: Math.round(tris), draws: group.children.length, shellTris: A.tris, shellCalls: A.draws, inner: { x0: -X, x1: X, z0: -Z, z1: Z }, floor: F0, ceil: CEIL,
-    screen: { z: SZ, doors, w: dw, h: 2.5 }, presses, tables, desks, armillary, lamps, towers: I.towers, ladder, paths, boxes, w: I.W, d: I.D, front: A.front };
+    screen: { z: SZ, doors, w: dw, h: 2.5 }, presses, gallery, hangings, tables, desks, armillary, lamps, towers: I.towers, ladder, paths, boxes, w: I.W, d: I.D, front: A.front };
 }
 // ── the guild hall's room (Session 1703, card F9; rooms.js's gatelandsGuildHall of Sessions 939, 965 and 966, inside PLANS.guildhall,
 // Michael's C on #352), with the inn's renames (mats() → roomMats(), GL_PLANS → PLANS, gatelandsBuilding → building) and two of its
