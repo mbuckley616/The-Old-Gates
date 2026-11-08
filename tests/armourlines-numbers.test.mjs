@@ -90,7 +90,7 @@ console.log(JSON.stringify(G));
 // S979 — and the guild library's lore book, The Seventh Niche (the approved draft), beside them
 // S1483's mortar (mortarFor sells the Mortar and Pestle at an apothecary, a potion shop and the Mages' Guild) is the guild's too, not a goods shop's
 const mortar = G.rows.filter(n => n === 'Mortar and Pestle').length;
-// S2002 — and since S1858 (Michael's B on #1111) the guild's implements: a staff and a wand of each of the six words, Cloch's wand the
+// S2004 — and since S1858 (Michael's B on #1111) the guild's implements: a staff and a wand of each of the six words, Cloch's wand the
 // maul, all Wooden, 12 at Novice (the tomes come at Adept). They are counted exactly, as the robes are.
 const IMPL = /^Wooden (Staff|Wand|Maul) of (Tine|Uisce|Gaoth|Cloch|Scáth|Solas)$/;
 const impl = G.rows.filter(n => IMPL.test(n));

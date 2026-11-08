@@ -18,7 +18,7 @@ const back = await page.evaluate(() => ssLoad(SS.idx.find(e => e.kind === 'manua
 check('the retried save reads back whole (both rows): 321 gold', back === 321, back);
 
 await refuse(2); const twice = await save(1, 400);
-// S2002 — the menu has said "The last save failed (…): why" since S1965 (the save register on the parchment); the check reads that.
+// S2004 — the menu has said "The last save failed (…): why" since S1965 (the save register on the parchment); the check reads that.
 const menu = await page.evaluate(() => { openSLMenu('save', false); const t = document.getElementById('sl-slots').textContent; closeSLMenu(); return /The last save failed/.test(t) && /refused by the test/.test(t); });
 check('refused twice, it fails as before: no slot 2, the reason named in the menu', !twice.ok && twice.row === undefined && twice.refused === 2 && twice.lastErr === 'refused by the test' && menu, { twice, menu });
 

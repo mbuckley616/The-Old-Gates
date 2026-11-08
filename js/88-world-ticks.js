@@ -303,7 +303,7 @@
       wasteland:[{name:'Sunbeak Vulture',w:3,n:[1,2]},{name:'Terrace Ram',w:2,n:[1,3]},{name:'Sunspire Lynx',w:.5,n:[1,1]},{name:'Spined Gekko',w:.5,n:[1,1],night:true},{name:'Redcrest',w:.5,n:[2,4]},{name:'Sailshell',w:2,n:[1,1]}], /* S1895 — the Redcrest (scrub and cliffs, rare; hunts in packs, two to four) */
       wastes:[{name:'Sunbeak Vulture',w:3,n:[1,2]},{name:'Duneskimmer',w:2,n:[2,4]},{name:'Oasis Hare',w:2,n:[1,1]},{name:'Mirage Fox',w:2,n:[1,1]},{name:'Glasswing Moth',w:1,n:[1,3],night:true},{name:'Spined Gekko',w:.5,n:[1,1],night:true},{name:'Mineprowler',w:1,n:[1,1]},{name:'Sailshell',w:2,n:[1,1]}],
       coast: [{name:'Cliffswift',w:3,n:[3,6]},{name:'Amber Shellcrab',w:3,n:[1,2]},{name:'Scarlet Ibis',w:2,n:[2,4]},{name:'Saltspine Monitor',w:2,n:[1,1]}]}};
-  // S2003 — animals by the hour and the rain (OG-142; Michael's A on #1293). When a chunk rolls its group: at dawn (5 to 8 h) the grazers
+  // S2005 — animals by the hour and the rain (OG-142; Michael's A on #1293). When a chunk rolls its group: at dawn (5 to 8 h) the grazers
   // weigh twice and come one to a group more; at dusk (18 to 21 h) the hunters weigh twice; at night (isNight, outside those hours) the
   // grazers weigh half, and the night kinds come as before. In rain, a storm or snowfall one chunk in eight holds a group, not one in four.
   // Fog changes nothing. The roll is still the chunk's own stream; only the weights and the chance read the hour and the sky.
