@@ -1823,7 +1823,7 @@ function hbAttach(rig,P){if(rig.hbTintOwed)hbFoeTint(rig,true);const tA=performa
   root.traverse(o=>{if(!o.isMesh)return;o.castShadow=false;o.receiveShadow=true;full.push(o);
     if(o.isSkinnedMesh){o.bindMode='detached';o.bindMatrix.identity();o.bindMatrixInverse.identity();o.geometry.boundingSphere=sph.clone();o.frustumCulled=true;}
     if(HBODY.cards.test(o.name)||o.parent===by.head)cards.add(o);});
-  hbHairOnCloak(P);
+  hbCloakLegs(P);hbHairOnCloak(P);
   // F10 (Session 1256) — a body that is only ever seen near (the player's, rig.hbLazy) bakes its middle level when it is first asked for
   // (hbMid: first person's hands, a bed), not at attach: the bake was 200 to 700 ms of every change of what the player wears
   let mid=null;if(!rig.hbLazy){try{mid=hbMerge(P,cards);}catch(e){rig.root.remove(W);rig.hbFail=true;console.warn('F4: the middle level failed for',rig.g.hbKey,e);return;}mid.geometry.boundingSphere=sph.clone();root.add(mid);
@@ -1895,6 +1895,34 @@ function hbSkinLoose(P){const sk=P.skeleton,lo=P.byName.root,il=sk.bones.indexOf
    near the sheet it lies (in full within 2 cm, none past 7), and given the rest position that draws it where it is drawn now, so the
    build is unchanged and the hair on the cloth goes where the cloth goes; the hair at the nape keeps to the head. Before the bind
    matrices are cleared nothing here is read: they are identity by now (hbAttach), and a bone's matrix is root⁻¹·bone·inverse, as sk.update makes it */
+/* S1987 — a long cloak's skirts go with the legs. Skinned whole to the pelvis (hbSkinLoose), the cloak stood still while the thighs swung
+   under it, so in the walk the stride carried a skirt, a tunic's hem or the trousers out through its sides and front edges (Sinéad in
+   Dunmore: 886 of 4,471 skirt points, out by up to 25 cm). Each point of the sheet and its hem below the hips is weighted in part to the
+   legs: none from 8 cm over the hip joints, eased in to w at the knees and to w2 at the ankles, shared between the two thighs by its side
+   of the body (half each at the middle of the back, so the two legs' swings cancel there), and below the knee part of its own side's
+   share goes to that side's shin. In front of the hips the whole weight; behind them only `back` of it, eased over `depth`: a long skirt's
+   back panel hangs between the legs and does not swing with either, and a cloak's back that went with each thigh cut through it. As
+   hbHairOnCloak does, each point is given the rest position that draws it where it is drawn now, so the build is unchanged */
+const HB_CLOAK_LEGS={w:.7,w2:.9,back:.3,depth:.12,shin:.5,side:1,up:.08};
+function hbCloakLegs(P){const sk=P.skeleton,by=P.byName,ix=n=>by[n]?sk.bones.indexOf(by[n]):-1,il=ix('root'),iL=ix('upperleg01.L'),iR=ix('upperleg01.R'),sL=ix('lowerleg01.L'),sR=ix('lowerleg01.R');
+  if(il<0||iL<0||iR<0||sL<0||sR<0||!by['foot.L']||!by['foot.R']||!by['toe1-1.L'])return null;
+  const sheet=[];P.root.traverse(o=>{if(o.isSkinnedMesh&&/^(cloak|cloakHem)$/.test(o.name))sheet.push(o);});if(!sheet.length)return null;
+  P.root.updateMatrixWorld(true);const inv=new THREE.Matrix4().copy(P.root.matrixWorld).invert(),Mb=i=>new THREE.Matrix4().multiplyMatrices(inv,sk.bones[i].matrixWorld).multiply(sk.boneInverses[i]);
+  const at=n=>by[n].getWorldPosition(new THREE.Vector3()).applyMatrix4(inv),hL=at('upperleg01.L'),hR=at('upperleg01.R'),kY=(at('lowerleg01.L').y+at('lowerleg01.R').y)/2,aY=(at('foot.L').y+at('foot.R').y)/2;
+  const hY=(hL.y+hR.y)/2,mid=hL.clone().add(hR).multiplyScalar(.5),ax=hL.clone().sub(hR).setY(0),half=ax.length()/2||.1;ax.normalize();
+  const fw=new THREE.Vector3(-ax.z,0,ax.x);if(fw.dot(at('toe1-1.L').sub(at('foot.L')))<0)fw.negate();
+  const B=[Mb(il),Mb(iL),Mb(iR),Mb(sL),Mb(sR)],C=HB_CLOAK_LEGS,ss=u=>u<=0?0:u>=1?1:u*u*(3-2*u),M=new THREE.Matrix4(),E=new THREE.Matrix4(),p=new THREE.Vector3(),d=new THREE.Vector3();let n=0;
+  for(const m of sheet){const g=m.geometry,pa=g.attributes.position,si=g.attributes.skinIndex,sw=g.attributes.skinWeight;
+    for(let i=0;i<pa.count;i++){if(si.getComponent(i,0)!==il||sw.getComponent(i,0)<.999)continue;p.fromBufferAttribute(pa,i).applyMatrix4(B[0]);
+      const lo=ss((kY-p.y)/Math.max(.05,kY-aY)),fr=ss(.5+.5*d.copy(p).sub(mid).dot(fw)/C.depth),w=(C.back+(1-C.back)*fr)*(C.w*ss((hY+C.up-p.y)/Math.max(.05,hY+C.up-kY))+(C.w2-C.w)*lo);if(w<=1e-3)continue;
+      /* the thighs share w by the point's side; below the knee part of its own side's share goes to that side's shin, none at the middle */
+      const aL=ss(.5+.5*d.copy(p).sub(mid).dot(ax)/(half*C.side)),dom=aL>=.5,sh=C.shin*lo*Math.abs(2*aL-1),wl=w*aL,wr=w*(1-aL);
+      const wq=[1-w,dom?wl*(1-sh):wl,dom?wr:wr*(1-sh),dom?wl*sh:wr*sh],bq=[0,1,2,dom?3:4];
+      const e=M.elements;e.fill(0);for(let k=0;k<4;k++)if(wq[k]){const b=B[bq[k]].elements;for(let j=0;j<16;j++)e[j]+=b[j]*wq[k];}
+      if(Math.abs(M.determinant())<1e-9)continue;p.applyMatrix4(E.copy(M).invert());pa.setXYZ(i,p.x,p.y,p.z);
+      si.setXYZW(i,il,iL,iR,dom?sL:sR);sw.setXYZW(i,wq[0],wq[1],wq[2],wq[3]);n++;}
+    pa.needsUpdate=si.needsUpdate=sw.needsUpdate=true;}
+  return P.cloakLegs={n};}
 const HB_HAIR_CLOAK={in:.02,out:.07,cell:.07};
 function hbHairOnCloak(P){const st=P.cloak&&P.cloak.hairOver;if(!st)return null;const sk=P.skeleton,lo=P.byName.root,il=sk.bones.indexOf(lo);if(il<0)return null;
   const hair=[],sheet=[];P.root.traverse(o=>{if(!o.isSkinnedMesh)return;if(/^(braid\d|tie|brush|tail)$/.test(o.name))hair.push(o);else if(/^(cloak|cloakHem|hood|collar\d)$/.test(o.name))sheet.push(o);});
