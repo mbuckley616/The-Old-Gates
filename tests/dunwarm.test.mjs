@@ -48,6 +48,7 @@ const POOL = await page.evaluate(() => _LPS.get(dScene).pool.length);
 const between = await page.evaluate(() => { const L = new THREE.PointLight(0xffcc44, 1.2, 3); L.position.set(px, 1, pz); dScene.add(L); let n = 0; dScene.traverse(o => { if (o.isPointLight) n++; }); return n; });
 await drawnLights(); const c1 = await page.evaluate(() => __cs); await g.frames(3); const after = await drawnLights(); const c2 = await page.evaluate(() => __cs);
 console.log('a light added between frames: the scene holds', between, 'then draws', JSON.stringify(after), 'compiled', c2 - c1);
+console.log('kit warm', JSON.stringify(await page.evaluate(() => HC_BODY.dunWarm && HC_BODY.dunWarm.log)));
 console.log('foes looked at', seen, 'kinds', [...kinds].join(', '), 'compiled on sight', JSON.stringify(onSight), 'kill:', JSON.stringify(lights));
 // S1293 — a medium gate is one floor of spaces now (the sheet's table: two floors only in a massive gate), so three of them hold 42 foes, not 60 and more
 check('every foe on every floor of three old gates comes into view with no shader compiled', seen >= 40 && onSight.length === 0, { seen, kinds: kinds.size, onSight });
