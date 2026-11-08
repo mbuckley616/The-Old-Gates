@@ -4,7 +4,7 @@
 // ?street=<seed> (Session 831): the lane's lots by markLot; &high, the lane from above its first hall. ?turf=dry|moss (Session 825): the sod's look, the late-season dry turf by default. ?view=roof: a turf hall close, from the lane.
 import * as THREE from 'three';
 import { Q, W, H, STATS, makeRenderer, makeComposer, buildTextures, mat, worldUV, skyDome, clouds, run } from './common.js';
-import { markHall, markLot, stream } from './pieces.js';
+import { markHall, markLot, markTownHouse, stream } from './pieces.js';
 import { loadPack, makePerson, rollGenome } from './people.js';
 
 const R = makeRenderer(.85), scene = new THREE.Scene(), VIEW = Q.get('view') || 'halls', MIX = Q.get('mix') || 'mix', TURF = Q.get('turf') || 'dry', STREET = Q.get('street') || 'mark-lane';
@@ -29,6 +29,27 @@ if (VIEW === 'halls') {
   cam.fov = 40; cam.updateProjectionMatrix(); cam.position.set(9, 2.2, 13); cam.lookAt(0, 3.6, 0);
   sun.position.set(60, 30, 50); sun.target.position.set(0, 0, 0); Object.assign(sun.shadow.camera, { left: -25, right: 25, top: 20, bottom: -20, near: 1, far: 200 }); sun.shadow.camera.updateProjectionMatrix();
   people.push([5, 6, -.5, 'mark:a']);
+} else if (VIEW === 'small') {
+  // Session 1986 (card F6; a prototype for DECISION: the Mark's tight lots): one side of a port's street, the lots at the sizes the game
+  // measured where its homes still keep the old builder (with the steps, w by d in metres), between two lots where the hall fits now.
+  // ?opt=a the hall cut down to 4.6 m deep on its full footing and 1.8 m of steps; b the hall on a low footing (0.36 m, two rises, 0.6 m of
+  // steps), down to 5.0 m deep; c the town house (markTownHouse) on every lot the hall will not take. A lot nothing fits keeps a pale
+  // block: the old builder's house. Each lot's kerb is drawn; &high looks from above.
+  const OPT = Q.get('opt') || 'c', LOTS = [[8.0, 12.5, 1], [6.0, 6.9], [4.8, 6.9], [7.4, 6.9], [6.8, 6.0], [5.9, 5.7], [6.6, 4.2], [7.6, 11, 1]];
+  const kerbM = mat('stone', { ns: 1.4, color: 0xa8a49a }), oldM = new THREE.MeshStandardMaterial({ color: 0xc8c2b4, roughness: .9 }), STAT2 = STATS.small = [];
+  let x = 0; LOTS.forEach(([W, D, hallFits], i) => { const cx = x + W / 2, key = stream('small:' + i), base = markLot('mark-port', i).o; x += W + .9;
+    for (const [a, b, c, e] of [[W, .12, cx, 0], [W, .12, cx, -D], [.12, D, cx - W / 2, -D / 2], [.12, D, cx + W / 2, -D / 2]]) { const k = new THREE.Mesh(new THREE.BoxGeometry(a, .1, b), kerbM); k.position.set(c, .05, e); k.receiveShadow = true; scene.add(k); }
+    let h = null, kind = 'old', E;
+    if (hallFits) { E = [.15, 1.8, .15, .15]; h = markHall({ ...base, roof: 'shingle', porch: false, w: Math.min(8.4, W - .3), d: D - 1.95, turf: TURF }, key); kind = 'hall'; }
+    else if (OPT === 'a' && D - 1.95 >= 4.6 && W - .3 >= 5.6) { E = [.15, 1.8, .15, .15]; h = markHall({ ...base, roof: 'shingle', porch: false, w: W - .3, d: D - 1.95, turf: TURF }, key); kind = 'hall, cut down'; }
+    else if (OPT === 'b' && D - .75 >= 5.0 && W - .3 >= 5.6) { E = [.15, .6, .15, .15]; h = markHall({ ...base, roof: 'shingle', porch: false, low: true, w: W - .3, d: D - .75, turf: TURF }, key); kind = 'hall, low'; }
+    else if (OPT === 'c') { E = [.12, .6, .12, .12]; h = markTownHouse({ w: Math.min(6.6, W - .24), d: Math.min(7, D - .72), wall: base.wall, chimney: i % 3 === 1 }, key); kind = 'town house'; }
+    if (h) { h.group.position.set(cx, 0, -(E[1] + h.front)); scene.add(h.group); STAT2.push({ lot: [W, D], kind, w: +new THREE.Box3().setFromObject(h.group).getSize(new THREE.Vector3()).x.toFixed(2), d: +(h.front * 2).toFixed(2), tris: h.tris, draws: h.draws, top: +h.roofTop.toFixed(2), stairOut: +(h.stairOut - h.front).toFixed(2) }); }
+    else { const m = new THREE.Mesh(new THREE.BoxGeometry(W - 1, 5.2, D - 1.6), oldM); m.position.set(cx, 2.6, -D / 2 - .4); m.castShadow = m.receiveShadow = true; scene.add(m); STAT2.push({ lot: [W, D], kind }); } });
+  { const g = new THREE.PlaneGeometry(x + 20, 4.4); g.rotateX(-Math.PI / 2); worldUV(g, .4); const m = new THREE.Mesh(g, mat('stone', { ns: 1.2, color: 0x8c8880 })); m.position.set(x / 2 - 5, .02, 2.3); m.receiveShadow = true; scene.add(m); }
+  const mid = x / 2; if (Q.has('high')) { cam.fov = 40; cam.updateProjectionMatrix(); cam.position.set(mid - 4, 30, 26); cam.lookAt(mid, 0, -5); } else { cam.fov = 42; cam.updateProjectionMatrix(); cam.position.set(mid - 20, 2.4, 24); cam.lookAt(mid + 1, 4.2, -5); }
+  sun.position.set(mid + 50, 45, 60); sun.target.position.set(mid, 0, -5); Object.assign(sun.shadow.camera, { left: -45, right: 45, top: 35, bottom: -35, near: 1, far: 260 }); sun.shadow.camera.updateProjectionMatrix();
+  people.push([mid - 3, 1.6, .4, 'small:a'], [mid + 6, 2.4, -2.6, 'small:b']);
 } else {
   // Session 831: the lots by markLot (two in three shingle, the turf on the poorer house); ?mix=shingle|turf forces one roof.
   // The far lot on the left (3) is a hall of note. Each lot sets its hall back from the lane and leaves its own yard.
