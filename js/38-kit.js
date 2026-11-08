@@ -2387,7 +2387,7 @@ function aurenneHome(o = {}, r = stream('aurhome')) {
   { const pot = new THREE.SphereGeometry(.15, 12, 8, 0, Math.PI * 2, .4, Math.PI - .4); put(pot, 'copper', (kitchen.x0 + kitchen.x1) / 2, F1 + 1.0, kz0 + .7); }
   { const y = F1 + 1.75; bx('iron', X - .2, X - .17, y, y + .03, kz0 + .1, Z - .2); for (let k = 0; k < 4 && kz0 + .4 + k * .6 < Z - .3; k++) { const z = kz0 + .4 + k * .6, rr = .1 + (k % 2) * .05; bx('iron', X - .19, X - .18, y - .2, y, z - .005, z + .005);
       put(new THREE.CylinderGeometry(rr, rr * .85, rr * 1.2, 14), 'copper', X - .19 - rr, y - .2 - rr * .6, z); } }
-  put(new THREE.LatheGeometry([[.001, 0], [.12, 0], [.26, .22], [.28, .5], [.16, .72], [.13, .78], [.001, .78]].map(([a, b]) => new THREE.Vector2(a, b)), 14), 'terra', jar[0], F1, jar[1]);
+  put(new THREE.LatheGeometry([new THREE.Vector2(.001, 0), ...new THREE.SplineCurve([[.12, 0], [.26, .22], [.28, .5], [.16, .72], [.13, .78]].map(([a, b]) => new THREE.Vector2(a, b))).getPoints(16), new THREE.Vector2(.001, .78)] /* the body a smooth curve, not six straight bands (the critic's 8 Nov, S1990) */, 20), 'terra', jar[0], F1, jar[1]);
   boxes.push({ tag: 'waterjar', x0: jar[0] - .28, x1: jar[0] + .28, y0: F1, y1: F1 + .78, z0: jar[1] - .28, z1: jar[1] + .28, fl: 1 });
   // the brass lantern on a chain from the middle of the upper room's ceiling
   const lamp = [.2, CEIL - .55, .6]; bx('iron', lamp[0] - .005, lamp[0] + .005, lamp[1] + .2, CEIL - .2, lamp[2] - .005, lamp[2] + .005);
@@ -2472,7 +2472,7 @@ function aurenneHomeOne(o = {}, r = stream('aurhome1')) {
   { const pot = new THREE.SphereGeometry(.15, 12, 8, 0, Math.PI * 2, .4, Math.PI - .4); put(pot, 'copper', (kitchen.x0 + kitchen.x1) / 2, F0 + 1.0, kz0 + .7); }
   { const y = F0 + 1.75, rz1 = Math.min(kz1 - .2, -.45); if (rz1 - (kz0 + .1) > .6) { bx('iron', X - .2, X - .17, y, y + .03, kz0 + .1, rz1); for (let k = 0; k < 4 && kz0 + .4 + k * .6 < rz1 - .1; k++) { const z = kz0 + .4 + k * .6, rr = .1 + (k % 2) * .05; bx('iron', X - .19, X - .18, y - .2, y, z - .005, z + .005);
       put(new THREE.CylinderGeometry(rr, rr * .85, rr * 1.2, 14), 'copper', X - .19 - rr, y - .2 - rr * .6, z); } } }
-  const jar = [X - .35, kz1 + .35]; put(new THREE.LatheGeometry([[.001, 0], [.12, 0], [.26, .22], [.28, .5], [.16, .72], [.13, .78], [.001, .78]].map(([a, b]) => new THREE.Vector2(a, b)), 14), 'terra', jar[0], F0, jar[1]);
+  const jar = [X - .35, kz1 + .35]; put(new THREE.LatheGeometry([new THREE.Vector2(.001, 0), ...new THREE.SplineCurve([[.12, 0], [.26, .22], [.28, .5], [.16, .72], [.13, .78]].map(([a, b]) => new THREE.Vector2(a, b))).getPoints(16), new THREE.Vector2(.001, .78)] /* the body a smooth curve, not six straight bands (the critic's 8 Nov, S1990) */, 20), 'terra', jar[0], F0, jar[1]);
   boxes.push({ tag: 'waterjar', x0: jar[0] - .28, x1: jar[0] + .28, y0: F0, y1: F0 + .78, z0: jar[1] - .28, z1: jar[1] + .28, fl: 0 });
   // ── the ceiling's cedar beams across the house every 0.9 m under the slab, cut at the hatch; the lantern on its chain from the middle
   if (tile) bx('cedar', -X, X, CEIL, CEIL + .03, -Z, Z);
