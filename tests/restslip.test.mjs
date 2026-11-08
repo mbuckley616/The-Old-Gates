@@ -31,7 +31,9 @@ await key('Digit3');
 const before = await page.evaluate(() => ({ abs: worldState.gameTimeAbsMinutes, lv: level }));
 await page.evaluate(() => document.getElementById('sleep-go').click());
 await page.waitForFunction((a) => worldState.gameTimeAbsMinutes - a >= 860, before.abs, { timeout: 30000 });
-await page.waitForTimeout(1500);
+/* S2002 — the level comes on restAtBed's 900 ms timer after the wake's autosave: on a slow runner that took longer than a fixed
+   1.5 s (the weekly run of 8 Nov read 1 → 1 and the next check read 2). Wait for it, up to 15 s; the check is unchanged. */
+await page.waitForFunction((lv) => level > lv, before.lv, { timeout: 15000 }).catch(() => {});
 const slept = await page.evaluate(() => ({ abs: worldState.gameTimeAbsMinutes, tod: worldState.gameTimeMinutes, hp: PHP, mh: effMaxHP(), lv: level, open: sleepOpen }));
 check(`Sleep to noon (key 3) sleeps 14 h 20 min, fills health and takes the level (${before.lv} → ${slept.lv})`, slept.abs - before.abs >= 860 && slept.abs - before.abs < 875 && slept.hp === slept.mh && slept.lv === before.lv + 1 && !slept.open, { before, slept });
 
