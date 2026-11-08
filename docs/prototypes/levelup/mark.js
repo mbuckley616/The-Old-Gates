@@ -30,7 +30,7 @@ if (VIEW === 'halls') {
   sun.position.set(60, 30, 50); sun.target.position.set(0, 0, 0); Object.assign(sun.shadow.camera, { left: -25, right: 25, top: 20, bottom: -20, near: 1, far: 200 }); sun.shadow.camera.updateProjectionMatrix();
   people.push([5, 6, -.5, 'mark:a']);
 } else if (VIEW === 'small') {
-  // Session 1985 (card F6; a prototype for DECISION: the Mark's tight lots): one side of a port's street, the lots at the sizes the game
+  // Session 1986 (card F6; a prototype for DECISION: the Mark's tight lots): one side of a port's street, the lots at the sizes the game
   // measured where its homes still keep the old builder (with the steps, w by d in metres), between two lots where the hall fits now.
   // ?opt=a the hall cut down to 4.6 m deep on its full footing and 1.8 m of steps; b the hall on a low footing (0.36 m, two rises, 0.6 m of
   // steps), down to 5.0 m deep; c the town house (markTownHouse) on every lot the hall will not take. A lot nothing fits keeps a pale

@@ -58,7 +58,7 @@ for (const h of r.halls) check(`${h.roof}${h.roof === 'turf' ? ' (' + h.turf + '
   check(`300 lots' halls in budget: turf ${t.tris[0]} to ${t.tris[1]} triangles, shingle ${sh.tris[0]} to ${sh.tris[1]}, halls of note ${nt.tris[0]} to ${nt.tris[1]}; at most ${Math.max(t.draws, sh.draws, nt.draws)} draws; ridges ${t.top[0]} to ${nt.top[1]} m`, Math.max(t.tris[1], sh.tris[1], nt.tris[1]) < 3000 && Math.max(t.draws, sh.draws, nt.draws) <= 12 && nt.top[1] < 14); }
 await page.goto(`http://localhost:${port}/mark.html?still&w=640&h=360&nopeople&view=lane`); await page.waitForFunction(() => window.__done || window.__err, null, { timeout: 300000 });
 { const H = await page.evaluate(() => window.__stats.halls); check(`the lane page: ${H.length} halls, roofs ${H.map(h => h.note ? 'N' : h.roof[0].toUpperCase()).join('')}, no page errors`, H.length === 8 && H.filter(h => h.roof === 'turf').length >= 2 && H[3].note && errs.length === 0, errs.slice(0, 3)); }
-// Session 1985 (card F6; a prototype for DECISION: the Mark's tight lots): the town house (markTownHouse) at every size of the range, one
+// Session 1986 (card F6; a prototype for DECISION: the Mark's tight lots): the town house (markTownHouse) at every size of the range, one
 // and two storeys; and the hall on its low footing (o.low). Each builds in budget, its steps rise 0.18 at most from the ground to the sill
 // and take 0.6 m before the front, the same key builds the same house; the small page lays out its eight lots under each option.
 { const R2 = await page.evaluate(async () => { const P = await import('./pieces.js'), T = await import('three'), out = { th: [], low: [], same: 0, n: 0 };

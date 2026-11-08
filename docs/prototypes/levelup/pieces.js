@@ -1498,7 +1498,7 @@ export function markHall(o, r) {
   // the threshold at the sill, and stone steps down from it to the ground, rises of foot / 5 (0.16 m; v2-scope §2's stairs are 0.18) and
   // treads of 0.3, each a little wider than the one above (Session 859: the critic's door 0.8 m up with no step)
   // with a porch the steps go down from the porch's stone floor, which is the threshold
-  // o.low (Session 1985, a prototype for the Mark's tight town lots): the footing 0.36 m, two rises of 0.18, the threshold 0.15 m out and one step
+  // o.low (Session 1986, a prototype for the Mark's tight town lots): the footing 0.36 m, two rises of 0.18, the threshold 0.15 m out and one step
   const RISE = foot / NR, TREAD = .3, THR = o.low ? .15 : .45, z1 = o.porch ? d / 2 + 2.15 : d / 2 + .15 + THR; if (!o.porch) add(box(door.w + .5, .2, THR), Mt.stone, 0, foot - .1, d / 2 + .15 + THR / 2, 0, 0, 0, .45);
   for (let k = NR - 1; k >= 1; k--) { const n = NR - k, z0 = z1 + (n - 1) * TREAD; add(box(door.w + .5 + n * .12, k * RISE, TREAD), Mt.stone, 0, k * RISE / 2, z0 + TREAD / 2, 0, 0, 0, .45); }
   // the roof: two slabs at the pitch, overhanging the gables; shingle, or turf over a birch-bark edge with a log holding it at the eaves
@@ -1528,7 +1528,7 @@ export function markHall(o, r) {
   const tris = mergeByMaterial(g); return { group: g, tris, draws: g.children.length, roofTop: new THREE.Box3().setFromObject(g).max.y, sill: foot, front: d / 2, stairOut: z1 + (NR - 1) * TREAD, wh, pitch, ry0, ov, louver: o.chimney ? null : -d * .15, door, windows: Array.from({ length: Math.max(1, Math.floor(d / 4)) }, (_, i) => -d / 2 + (i + .5) * d / Math.max(1, Math.floor(d / 4))) };
 }
 
-// ── the Markish town house (Session 1985, a prototype for DECISION: the tight lots of the Mark's ports and city) ──
+// ── the Markish town house (Session 1986, a prototype for DECISION: the tight lots of the Mark's ports and city) ──
 // The hall needs 6.5 m of depth and 1.8 m of steps before its door; a port's and the city's lots are 4.2 to 7 m deep with the steps, so
 // about one home in three there still stands as the old builder's. This is the hall's family drawn for a narrow lot, as a wharf town
 // builds when the ground is dear (the Hanseatic wharf at Bergen is the precedent): gable to the street, two storeys of the hall's vertical
