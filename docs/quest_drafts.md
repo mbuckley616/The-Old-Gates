@@ -2,7 +2,7 @@
 
 These are the quest writer's drafts. None of them is canon until Michael promotes it into `quest_writing.md`, and none is a spec until it is approved. Each draft gives the quest's shape, every line verbatim with its speaker and people, and a note on what in the code would carry it.
 
-Calls read to: 2026-10-16T17:51:09.360Z (run 39, 7 Nov: no new calls on the page)
+Calls read to: 2026-10-16T17:51:09.360Z (run 40, 8 Nov: no new calls on the page)
 
 ---
 
@@ -2389,7 +2389,7 @@ At 22:00 in the circle, a `showMsg`: *You settle in by the {fold}.* At 02:00 if 
 
 ## Asked in Passing, the second run — six more errands
 
-*Approved by Michael, 14 Oct 2026.* *Built in part: errand 12, A Prayer Carried, Session 1817 (PR #1103), the draft's lines word for word, with the Markman's hint for the mine (*My {sister}'s down the mine. That's all.*) added in register. Errand 9, A Fish for the Wedding, Session 1857, word for word but for the Gatelander's *{n} gold* and a comma after the Gatelander's {date}; an innkeeper, a harbourmaster or a shipwright asks it more often, since no generated giver is a fisher or a cook; the full square and the free meal on the day wait on two one-line hooks in other builders' files (backlog A). Errand 10, A Rubbing to Be Read, Session 1908 (PR #1206), word for word but for plain fixes listed in devlog 1908 (a reading capitalised where it opens a line, *the* for a gate's *The* mid-sentence, no Mastery reading for a word with no Mastery name, the giver's name in the reader's label when two rubbings are open); looking at the rubbing yourself waits on a one-line hook in `useItem` (backlog A; done, Session 1910). Errand 7, The Stuck Cart, Session 1947 (PR #1249), word for word but for plain fixes listed in devlog 1947 (no miller, the bandits at the end of the two hours, the slip's line, *Leave it.* and the journal's lines added). Errands 8 and 11 follow, one a run.* The second piece of Michael's 5 Oct note (*50–100 somewhat unique quests … far more likely to stumble upon … incentivize players to talk to NPCs*), on the first run's frame exactly: the same givers (generated townsfolk, one errand in five a game-week, `seededRng('errand', site.id+':'+def.name+':'+week)`), the same *hint* in the greeting and *ask* in the *you* folder, the same shared lines (*Not now*, *Not yet*, *Done, paid*), the same ids (`er:<site>:<giver name>:<n>`) and the same small pay (15–40 gold by tier and a point of the giver's town's favour). The first run's last section listed six ideas for this one. Two of them changed on the way: *a dog gone after a deer* needs a dog and a deer, and the game has neither (a new creature is the look builder's, and the errand is not worth one), so it is replaced by **a prayer carried to a shrine**, on the shrines that exist; and *a fish from a named lake* became a fish from the sea, because `catchFish` (`86-world-crime.js`) catches only from the sea's schools. Every errand here runs on machinery the game already has.
+*Approved by Michael, 14 Oct 2026.* *Built in part: errand 12, A Prayer Carried, Session 1817 (PR #1103), the draft's lines word for word, with the Markman's hint for the mine (*My {sister}'s down the mine. That's all.*) added in register. Errand 9, A Fish for the Wedding, Session 1857, word for word but for the Gatelander's *{n} gold* and a comma after the Gatelander's {date}; an innkeeper, a harbourmaster or a shipwright asks it more often, since no generated giver is a fisher or a cook; the full square and the free meal on the day wait on two one-line hooks in other builders' files (backlog A). Errand 10, A Rubbing to Be Read, Session 1908 (PR #1206), word for word but for plain fixes listed in devlog 1908 (a reading capitalised where it opens a line, *the* for a gate's *The* mid-sentence, no Mastery reading for a word with no Mastery name, the giver's name in the reader's label when two rubbings are open); looking at the rubbing yourself waits on a one-line hook in `useItem` (backlog A; done, Session 1910). Errand 7, The Stuck Cart, Session 1947 (PR #1249), word for word but for plain fixes listed in devlog 1947 (no miller, the bandits at the end of the two hours, the slip's line, *Leave it.* and the journal's lines added). Errand 8, The Child at the Gate, Session 1981 (PR #1289), word for word but for plain fixes listed in devlog 1981 (the Markman's and the Aurennais's hints follow the rolled child, *{n} gold*, the child's greeting and the journal's lines added). Errand 11 follows.* The second piece of Michael's 5 Oct note (*50–100 somewhat unique quests … far more likely to stumble upon … incentivize players to talk to NPCs*), on the first run's frame exactly: the same givers (generated townsfolk, one errand in five a game-week, `seededRng('errand', site.id+':'+def.name+':'+week)`), the same *hint* in the greeting and *ask* in the *you* folder, the same shared lines (*Not now*, *Not yet*, *Done, paid*), the same ids (`er:<site>:<giver name>:<n>`) and the same small pay (15–40 gold by tier and a point of the giver's town's favour). The first run's last section listed six ideas for this one. Two of them changed on the way: *a dog gone after a deer* needs a dog and a deer, and the game has neither (a new creature is the look builder's, and the errand is not worth one), so it is replaced by **a prayer carried to a shrine**, on the shrines that exist; and *a fish from a named lake* became a fish from the sea, because `catchFish` (`86-world-crime.js`) catches only from the sea's schools. Every errand here runs on machinery the game already has.
 
 The `sub` values: `cart`, `child`, `fish`, `rubbing`, `hedge`, `prayer`. Numbering continues from the first run.
 
@@ -6485,3 +6485,223 @@ Nothing in the rule. The lines say what the sheet already does, so a player who 
 - The Mastery's *Cold* is never named or echoed; the weather is *the cold of the Mark*.
 - Nothing promises health lost: every line speaks of breath, which is what the rule costs.
 - *Silent, chosen plainly:* the keepers of another people on the island speak their own row; the Gatelands' keepers say nothing, since their island never exposes you.
+
+---
+
+## Asked in Passing, the third run — the guest with no name, the ring off the bridge, the goat on the roof
+
+*Unapproved. Drafted 8 Nov 2026.* Owed by the second run's last section (*a third run on the same frame, when Michael has read these: a stranger at the inn who will not give a name; a lost ring in the river; a goat on a roof*); Michael approved the second run on 14 Oct, and five of its six are on main or building. The frame is the first run's exactly: generated townsfolk, one errand in five a game-week, `seededRng('errand', site.id+':'+def.name+':'+week)`, the *hint* in the greeting (from the second meeting), the *ask* in *About you*, the shared lines (*Not now*, *Not yet*, *Done, paid*), the ids `er:<site>:<giver>:<n>`, the pay 15–40 gold by tier and a point of the giver's town's favour. Each runs on what the game has: the inn's taproom and its keeper, the bridges (`buildBridges`, sites of kind `bridge`, named *{Town} Bridge*), the river's bed and the dive (`diveTick`), and the farms' goats (Session 1973). The `sub` values: `guest`, `ring`, `goat`. Numbering continues from the second run.
+
+### What the canon fixes, and where it is silent
+
+- §2's speech row for each people, and *First Words* (this file): the hints are short and never an opinion.
+- §1.3 and §12a: the Compact keeps *paper over oaths*, and a town is built up by investment and a deed. Errand 13's factor is that paper, come early.
+- §2.1: *ledgers*, *won't shake a hand without a witness*; and, contradicting it, *nobody keeps a field or a promise like a Gatelander*. Errand 13's Gatelander keeper uses the first and the factor answers with the second.
+- §4.1: An Mhuir owns what goes into the water (*the sea owns them twice a day*); the rivers run to her. Errand 14's Gatelander says so, and the canon is silent on whether a river is the Sea's: the plainer thing is that a Gatelander says it is, and nobody else says anything.
+- §10a: the surface is pleasant and a little funny. Nobody is hurt in any of the three; the goat is the point.
+- *Silent:* how a betrothal is marked. The plainer thing: a ring, in every nation, as errand 9's wedding chose; only the reason each people gives for it differs.
+
+---
+
+### 13. The Guest with No Name
+
+*Givers:* an innkeeper (`role==='Innkeeper'`, or a generated def whose `bio.trade==='innkeeper'`), in a town with an inn. Never an Old Blood giver (the Old Blood keeper's one line is below, and it pays nothing).
+
+**Shape.** A guest has had the best room for four nights, eats well, pays nothing yet, and will not give a name. The keeper wants to know who before the bill is any bigger. The guest sits in the taproom (spawned at a taproom seat while the errand is open, as the inn's other sitters are). Three things to ask the guest, any order; after all three the guest tells you who they are, on the errand's id: one time in two a **runaway apprentice** from a town within 700 (a youth of the giver's island's people), one time in two a **Compact factor** pricing the town before the house lends to it (always Aurennais). Then the choice: tell the keeper the truth, or settle the bill yourself and say nothing.
+
+**The hint:**
+- Gatelander: "There's a guest upstairs with a full plate and an empty name."
+- Markman: "Got a guest won't say who he is. Eats like two."
+- Aurennais: "I have a guest, Master, who has declined to sign the book. It is irregular."
+- Old Blood (keeper): "A guest with no name. That is their business."
+
+**Ask:** *Who's the guest?*
+
+**The offer.**
+- Gatelander: "Four nights in the best room, the best of the pot, and not a coin across the board yet. Asks for nothing and answers less. A guest without a name is like a cask without a mark: you don't know what's in it till you've paid for it. Find out who, and I'll stand you {n} gold."
+- Markman: "Four nights. Best room. Hasn't paid. Won't give a name. Find out. {n} gold."
+- Aurennais: "Four nights, Master, in the best room, on account, and no name in the book. The house extends credit to a name; it is not in the habit of extending it to a silence. If you could learn who it is, {n} gold."
+- Old Blood (keeper, to the ask; no errand): "They will say it when they want to. A name is not owed for a bed."
+
+**The guest's three topics** (labels the player's, answers the guest's; the guest's people decide the words: the apprentice speaks as the giver's island's people, the factor as an Aurennais):
+
+*Where've you come from?*
+- Apprentice, Gatelander: "From up the road. Every road's up the road from somewhere."
+- Apprentice, Markman: "North. Leave it."
+- Apprentice, Aurennais: "From the coast, Master, by the long way."
+- Factor: "From the capital, by way of three towns much like this one. I am travelling on business, and the business is not yet concluded."
+
+*What brings you here?*
+- Apprentice, Gatelander: "A bed and a dinner, and no one telling me which way to hold the chisel."
+- Apprentice, Markman: "Not work. That's what."
+- Apprentice, Aurennais: "I am considering my position, Master. I have not finished considering it."
+- Factor: "I look at things. The roof of the mill, the depth of the quay, how many lamps are lit after dark. It is very dull, and I am very good at it."
+
+*The keeper wants paying.*
+- Apprentice, Gatelander: "Well, now. So did my master, and look where that got the both of us."
+- Apprentice, Markman: "I'll pay. When I've got it."
+- Apprentice, Aurennais: "I am aware of the debt, Master. I am less aware of how I will meet it."
+- Factor: "And will be paid, to the copper, when I leave. The house I serve does not run up a bill it cannot settle; it would not lend to a town that did."
+
+**Who they are** (once all three are asked, the guest's next line, and the topic *Who are you, then?*):
+- Apprentice, Gatelander: "{Name}. Apprenticed to the {trade} at {town}. Three years of sweeping his floor and one of being shouted at for how I swept it. I'm not going back. Don't tell him where I am."
+- Apprentice, Markman: "{Name}. {Trade}'s boy at {town}. Ran. Don't tell him."
+- Apprentice, Aurennais: "{Name}, Master. Indentured to the {trade} at {town}, with two years still to run on the paper. I have broken the contract. I know what that means. I would rather you did not say where I am."
+- Factor: "{Name}, factor to a house of the Compact. I would rather the town did not know I am pricing it, Master; a town that knows it is being priced paints its shutters. If the keeper must know, tell the keeper. The bill will be paid either way."
+
+The labels at the keeper: **Tell the truth** (the label is the truth itself, below) · **I've paid the bill. Leave it there.** (the bill is 4 × the inn's room price, out of your purse).
+
+The truth, as the label:
+- Apprentice: *"It's {Name}, the {trade}'s runaway from {town}."*
+- Factor: *"A factor of the Compact. Pricing the town."*
+
+**Turned in.**
+
+*The truth, the apprentice:*
+- Gatelander: "A runaway. Well. I ran myself at that age, and came back when the hunger was bigger than the pride. I'll write to the {trade}, so, but slow. Here."
+- Markman: "Runaway. Ha. I'll feed him till he's skint, then he works the yard. Here."
+- Aurennais: "Then the indenture is the {trade}'s matter and the bill is mine, Master. I will write to {town}. Your fee."
+- Old Blood: (not asked; see above)
+
+*The truth, the factor:*
+- Gatelander: "A ledger, pricing us. Won't shake a hand without a witness, that lot. …Though they pay, I'll give them that. Here, and I'll be lighting every lamp on the street tonight."
+- Markman: "Compact. Counting us. Fine. Let him count. Here."
+- Aurennais: "A factor of the house. Then the account is good, Master, and I have been anxious over nothing. Your fee; and I will see the room is aired."
+
+*Paid and silent* (either guest):
+- Gatelander: "Paid, is it, and by you. I'll not ask what you know. A closed mouth catches no flies and pays no bills, and you've done the one and the other. Here's your {n} back, and a bit."
+- Markman: "Paid. By you. Huh. Fine. Here."
+- Aurennais: "The account is settled, Master, and by a third party. It is irregular. It is also settled. Your fee."
+
+**What it changes.** *Truth, apprentice:* full pay, the keeper's town +1, and the apprentice leaves the taproom on the next day. *Truth, factor:* full pay, +1, and the factor stays until the week's end (no other effect; a later draft may let a priced town be lent to). *Paid and silent:* the bill is gone from your purse, the pay is the errand's, no favour; the apprentice, if it was, says on leaving *"I'll pay you back. I will."* and does not; the factor, if it was, pays you the bill back at the week's end: *"Settled, as I said it would be."*
+
+**Lapsed** (seven days; the guest leaves without paying, or the factor pays and leaves):
+- Apprentice gone, Gatelander: "Gone in the night, the window open and the bill on the sill, unpaid. Well. The bird's flown and left the nest dirty."
+- Apprentice gone, Markman: "Gone. Window. Didn't pay. Fine."
+- Apprentice gone, Aurennais: "The guest departed without settling, Master. I have written it off."
+- Factor gone (any keeper): "Paid to the copper and gone this morning, and still no name in the book."
+
+---
+
+### 14. The Ring off the Bridge
+
+*Givers:* any, in a town within 400 of a bridge (a site of kind `bridge`). The ring is the giver's betrothal ring.
+
+**Shape.** The giver's ring went into the river from the bridge. It lies on the bed beside the bridge's middle pier, in the bridge's shadow (a glint, a pickup within 1.4 underwater, by the dive). Brought back, the giver is glad; ask *It slipped, did it?* and the giver tells the truth: it was thrown, after a quarrel, and the quarrel is mended. Nothing changes but what you know.
+
+**The hint:**
+- Gatelander: "There's a ring at the bottom of the river that's more mine than the river's."
+- Markman: "Dropped a ring off the bridge. Don't laugh."
+- Aurennais: "I have suffered a small loss at the bridge, Master. A ring."
+- Old Blood: "The water has my ring."
+
+**Ask:** *What did the river take?*
+
+**The offer.**
+- Gatelander: "My ring. Off {bridge}, three days ago, into the deep under the middle. The Sea has everything in the end, they say, but the river's only lending to her, and I'd like it back before it's paid over. {n} gold, and you'll get wet."
+- Markman: "Ring. Went off {bridge}. Middle. It's down there. {n} gold."
+- Aurennais: "My betrothal ring, Master. It went from {bridge} into the river, by the middle span. I would consider {n} gold a fair fee for its recovery, and a cloth to dry yourself."
+- Old Blood: "My ring. {Bridge}. The middle, deep. {n} gold."
+
+**At the bed:** *Something glints in the silt.* (the prompt under water: *Press 'E' to take it*). Taken: *A plain ring, the band worn thin on one side.*
+
+**Turned in** (*I have your ring.*):
+- Gatelander: "Ah, there it is, and none the worse. Here. And I'll keep it on the hand this time, and the hand out of tempers."
+- Markman: "That's it. Good. Here."
+- Aurennais: "That is the one, Master. Your fee, and my thanks, and I would be obliged if the matter went no further."
+- Old Blood: "Yes. Good. Take this."
+
+**Then the label** *It slipped, did it?* (once, after the pay):
+- Gatelander: "Slipped. So it did. Slipped out of a hand going like a windmill, over a word I'd take back if I could, and I have. Don't tell the other one you found it. Let them think the river gave it back for love."
+- Markman: "Threw it. We fought. We're fine now. Don't tell."
+- Aurennais: "I should be precise, Master: it was thrown. There was a disagreement over the terms of the house. It has since been resolved, to both parties' satisfaction. I would prefer the ring to have slipped."
+- Old Blood: "I threw it. Then I wanted it."
+
+**What it changes.** Full pay, the giver's town +1. *It slipped?* changes nothing.
+
+**Lapsed** (ten days):
+- Gatelander: "Leave it. The other one bought me a new one, and said the river could keep the first. Which I'll take as a kindness."
+- Markman: "Got a new one. Leave it."
+- Aurennais: "The matter is closed, Master. A replacement was made."
+- Old Blood: "Leave it to the water."
+
+---
+
+### 15. The Goat on the Roof
+
+*Givers:* a farmer (`bio.trade==='farmer'`, or a farm's keeper) with goats (a farm whose herd rolled goats, `FARM_STOCK`), or any giver in a Markish or Aurennais town whose house has a reachable roof. The goat is one of the farm's (keyed `farm:<id>:f<i>`), set on the roof of the giver's house: a turf roof's ridge in the Gatelands, a longhouse's in the Mark, the flat terrace in Aurenne (which has its outside stair, Session 1968).
+
+**Shape.** The goat is on the roof and will not come down. Three ways, any one: hold out food (anything to eat from your bag, one of it, the goat takes it and comes down); climb up after it (the terrace stair in Aurenne, or Might 4 at an eave elsewhere; the goat jumps down on its own once you are up, and you are the one left on the roof); or wait it out (an hour, `advanceClock(60)`, and it comes down when it likes). The giver pays for any of them, and has an opinion of each.
+
+**The hint:**
+- Gatelander: "If you're looking for the goat, look up."
+- Markman: "Goat's on the roof again."
+- Aurennais: "Forgive the noise above us, Master. It is a goat."
+- Old Blood: "The goat is on the house."
+
+**Ask:** *What's the goat doing up there?*
+
+**The offer.**
+- Gatelander: "Standing on my roof, eating it. That's my thatch, or my sod, or what's left of it. She's like a rumour: easy got up there, and won't come down for the asking. Get her down without breaking her or the roof and there's {n} gold in it."
+- Markman: "Eating the roof. Get her off. {n} gold."
+- Aurennais: "Consuming the roof, Master, by degrees. I have tried reason. I would pay {n} gold to anyone who can try something else."
+- Old Blood: "Eating it. Bring her down. {n} gold."
+
+**At the eave** (*Press 'E' to see to the goat*; a slip with no speaker, as the cart's): *The goat looks down at you, chewing.*
+- **Hold out something to eat.** (only with food in the bag) → *The goat considers it, and comes down for it. It takes the food and your sleeve.*
+- **Climb up after her.** (Might 4, or the terrace stair) → *You get up onto the roof. The goat steps past you, down onto the woodpile, and away into the yard. You are on the roof.*
+- **Wait.** → *An hour. The goat comes down when it suits the goat.*
+- **Leave her.**
+Under Might 4 at an eave: *You cannot get a purchase on the eave.*
+
+**Turned in** (*She's down.*), by how:
+
+*Fed down:*
+- Gatelander: "Bribed her. Well, that's how half this town was got down off something. Here."
+- Markman: "Fed her. Smart. Here."
+- Aurennais: "A negotiated settlement, Master. The house approves of those. Your fee."
+- Old Blood: "Good. Take this."
+
+*Climbed:*
+- Gatelander: "I saw. The whole street saw. She came down and you stayed up, like a weathercock with ambitions. Here, and a laugh I'll have for a year."
+- Markman: "Saw you up there. Ha. Here."
+- Aurennais: "I observed the method, Master. It was effective in its result, if not in its order. Your fee."
+- Old Blood: "You were on the house. She was not. Good. Take this."
+
+*Waited:*
+- Gatelander: "An hour to sit and watch a goat. There's worse jobs and I've done them. Here."
+- Markman: "Waited her out. Fine. Here."
+- Aurennais: "Patience, Master, is a currency too. Your fee."
+- Old Blood: "She came. Good."
+
+**What it changes.** Full pay, the giver's town +1; *Climbed* adds nothing more but the giver's line, which is the reward. The goat goes back to its field.
+
+**Lapsed** (three days; the goat comes down by itself):
+- Gatelander: "She came down on her own in the end, and ate the cabbages for her trouble. Never mind."
+- Markman: "Came down herself. Ate the cabbages."
+- Aurennais: "The goat descended unassisted, Master, and the matter is closed. The cabbages are another matter."
+- Old Blood: "She came down."
+
+---
+
+### What in the code would carry it
+
+- **The frame** (`87-world-quests.js`, Session 1510): three rolls beside `erCartRoll` and `erChildRoll`, each on its own stream (`errand-guest`, `errand-ring`, `errand-goat`), each in `errandFor`, `errandAsk`, `errandTopics`, `errandGreet`, `errandAccept`, `errandTurnIn` and `erLapse`'s journal lines, as errands 7 and 8 are. The tables `ER_GUEST`, `ER_RING`, `ER_GOAT`.
+- **13, the guest.** A def spawned at a taproom seat (`83-world-generator.js`'s taproom, where the inn's sitters are placed) while the errand is open and you are inside that inn (`onEnterInterior`), with three topics and a fourth after; who it is on `seededRng('errand-guest', id)`; the apprentice's town from `sitesNearFixed(site,700)`, the trade from the town's makeDef bank. The bill is 4 × the inn's room price (`rentRoom`'s price). Named actions: `askGuest(id, k)`, `settleGuest(id)`. The factor's week's-end repayment is a dated line on the record, read at the next talk with the keeper. Needs no new system.
+- **14, the ring.** The bridge from `SITES` (`kind==='bridge'`) within 400; the ring's point is the bridge's middle (`site.x, site.z`) offset 2.5 down the river's line, on the bed (`worldH`); a pickup keyed `<id>:pickup` (the `retrieve` kind's, Session 518) that answers only while you are under water (`diveTick`'s state). A small glint mesh and light, as the retrieve's box. Needs no new system.
+- **15, the goat.** The goat is the farm's own (`farmStockMake`), moved to the house's roof point for the errand's life (the kit house's ridge or terrace, from the lot's footprint), and back to the field at the end. The eave's E and prompt ride the hook the cart uses (`shrinePrompt`/`shrineInteract`). Food is any bag item of `type==='food'` or a meal (`50-travel.js`'s cooking). Might reads `ATTRS.might`; the wait is `advanceClock(60)`. One ask of the bodies builder, if wanted: a goat's idle with its head down, chewing, on a sloped roof; until then it stands as it stands in the field.
+- **Actions, by name** (co-op rules): `askGuest`, `settleGuest`, `takeRing` (the pickup), `feedGoat`, `climbToGoat`, `waitGoat`.
+- **Journal titles:** *The guest with no name* · *{Giver}'s ring* · *A goat on {giver}'s roof*.
+
+### Checked against the canon
+
+- No chosen-one line anywhere; the guest's withheld name is ordinary (a runaway, a factor), never the Guest of §4.2, and nothing in the errand's words echoes *the one who returns*.
+- No Aurennais oath: the keepers and the factor thank and speak of accounts, credit, terms and settlement. Every Gatelander answer carries a figure or turns aside (*a cask without a mark*, *a closed mouth catches no flies*, *like a weathercock with ambitions*); every Markman line is short, has *aye* or nothing, and no honorific; the Old Blood say the plain old word and little else (*The water has my ring*, *The goat is on the house*).
+- §2.1's coinage *ledgers … won't shake a hand without a witness* is used once, by the Gatelander keeper of the factor, and contradicted in the same breath (*Though they pay, I'll give them that*), and by the factor's own *The bill will be paid either way*.
+- The canon is silent on whether a river belongs to An Mhuir; the Gatelander's *the river's only lending to her* is a Gatelander's saying, not a rule, and no one else repeats it.
+- Nobody is hurt; the darkest line is a quarrel already mended.
+
+### Owed, and not drafted here
+
+- The factor's pricing as a hook for §12a's investment (a priced town that a house will lend to): a systems question for later, not this draft's.
+- The Fighters' and Mages' heads handing an errand on to the street (the first run's last note) still stands.
