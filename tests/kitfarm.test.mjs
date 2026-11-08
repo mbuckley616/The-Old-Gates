@@ -59,7 +59,7 @@ const stockOK = T => !T.none && T.hens >= 2 && T.hens <= 4 && T.henYard && T.fie
 const theftAt = id => page.evaluate(id => { forceTime(12); const S = WORLD.settle.get(id), F = S.farm, res = S.residents.find(r => r.farm);
   if (res) { px = res.def.x; pz = res.def.z; jumpY = 0; for (let i = 0; i < 120 && !res.n; i++) WORLD.tick(1 / 60, performance.now()); } /* a resident is spawned within 70 m, two a tick */
   const ch = [...WILD_CH].find(q => q.cx === Math.floor(F.cx / CHUNK) && q.cz === Math.floor(F.cz / CHUNK)); if (!ch || !res || !res.n) return { none: true, res: !!res, n: !!(res && res.n) };
-  const beasts = ch.wild.filter(e => e.farmStock && !e.dead && e._wildKey.startsWith(`farm:${F.id}:`)); if (beasts.length < 2) return { none: true, n: beasts.length };
+  const beasts = ch.wild.filter(e => e.farmStock && !e.dead && e._wildKey.startsWith(`farm:${F.id}:`)).sort((p, q) => (p.baseName === 'Hen') - (q.baseName === 'Hen')); /* a field beast first: open ground, no wall between it and the farmer */ if (beasts.length < 2) return { none: true, n: beasts.length };
   const town = stockTown(F.id); if (!town) return { none: true, town: null };
   worldState.crime = {}; worldState.crimes = []; worldState.refuse = {}; if (worldState.favor) delete worldState.favor[town.id];
   const n = res.n, kill = e => { px = e.x + 1; pz = e.z; jumpY = 0; killZoneEnemy(e, sc); };
