@@ -171,7 +171,8 @@ function genSettlement(site){
     const kitPre=new Map(); /* S1143 — a kit piece built at the plan to be measured (the keep), kept for its builder (kitKeep) */
     const plotC=(P,m)=>{const c=Math.cos(P.ry),s_=Math.sin(P.ry),hw=P.w/2+m,hd=P.d/2+m;return [[-hw,-hd],[hw,-hd],[hw,hd],[-hw,hd]].map(([u,v])=>({x:P.x+u*c+v*s_,z:P.z-u*s_+v*c}));};
     const rectsApart=(a,b,m)=>{const A=plotC(a,m),B=plotC(b,0);for(const P of [A,B])for(let k=0;k<2;k++){const ex=P[k+1].x-P[k].x,ez=P[k+1].z-P[k].z;const pa=A.map(q=>q.x*ex+q.z*ez),pb=B.map(q=>q.x*ex+q.z*ez);if(Math.max(...pa)<Math.min(...pb)||Math.max(...pb)<Math.min(...pa))return true;}return false;};
-    function inPlot(x,z,m){for(const P of PLOTS){const ex=x-P.x,ez=z-P.z,c=Math.cos(P.ry),s_=Math.sin(P.ry);if(Math.abs(ex*c-ez*s_)<P.w/2+m&&Math.abs(ex*s_+ez*c)<P.d/2+m)return true;}return false;}
+    function inPlotOf(P,x,z,m){const ex=x-P.x,ez=z-P.z,c=Math.cos(P.ry),s_=Math.sin(P.ry);return Math.abs(ex*c-ez*s_)<P.w/2+m&&Math.abs(ex*s_+ez*c)<P.d/2+m;}
+    function inPlot(x,z,m){return PLOTS.some(P=>inPlotOf(P,x,z,m));}
     const offPlots=(l,m=.6)=>!!l.plot||PLOTS.every(P=>rectsApart(l,P,m)); /* a plot's own building is in it by right */
     function townPlots(vil){const out=[];if(!(vil||site.kind==='town'||site.kind==='city'||site.kind==='port'))return out;
       const h0=heroShops(site),types=h0?h0.map(h=>h.type):plan.shops;
@@ -943,7 +944,8 @@ function genSettlement(site){
       addMesh(wellGeo(),cx+6,cz+4,r()*Math.PI,1.3);
       for(let i=0;i<plan.stalls;i++){
         const ang=r()*Math.PI*2,rad0=9+r()*5,sx=cx+Math.cos(ang)*rad0,sz=cz+Math.sin(ang)*rad0;
-        const ri=roadInfo(sx,sz,true);if(ri&&ri.d<4)continue;if(inPlot(sx,sz,1.5))continue; /* S1138 — not in the church's yard */
+        const ri=roadInfo(sx,sz,true);if(ri&&ri.d<4)continue;
+        if(inPlot(sx,sz,1.5)){if(!PLOTS.some(P=>P.type!=='market'&&inPlotOf(P,sx,sz,1.5)))try{stallGeoLo(r).dispose();}catch(e){}continue;} /* S1138 — not in the church's yard; S1997 — a stall only the market house's square (S1904) leaves out still takes its draws, so the guards and villagers drawn after it keep the names they had before it (townbarrels) */
         addMesh(stallGeo(r),sx,sz,ang+Math.PI/2,1.4);
       }
     }
