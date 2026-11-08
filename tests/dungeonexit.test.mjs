@@ -24,8 +24,12 @@ check('down by the door and up again: back at the gate, the log names it, no pag
 await page.evaluate(p => { px = p.x; pz = p.z + 3; goToDungeon(PORTALS.find(q => q.id === p.id)); }, gate);
 await page.waitForFunction(() => activeZoneId === 'dungeon', null, { timeout: 60000 }).catch(() => {}); await page.waitForTimeout(3000);
 await page.evaluate(() => saveToSlot(0)); await page.waitForTimeout(1200);
-await page.reload(); await page.waitForFunction(() => document.getElementById('cb') && typeof saveToSlot === 'function', null, { timeout: 120000 }); await page.waitForTimeout(1500);
+// S1985 (QA) — Continue is clicked once it is shown (the store read), not when the button exists: clicked 1.5 s after it existed, the load
+// never began (red here side by side at s1361, the zone still 'overworld'). Then, as gatesave (S1978), the load's one long task (90–151 s
+// side by side here) is waited for on its own, up to 300 s, before the gate it rebuilds after
+await page.reload(); await page.waitForFunction(() => { const b = document.getElementById('cb'); return b && typeof saveToSlot === 'function' && getComputedStyle(b).display !== 'none'; }, null, { timeout: 300000, polling: 100 });
 await page.evaluate(() => document.getElementById('cb').click());
+await page.waitForFunction(() => activeZoneId === 'world' || activeZoneId === 'dungeon', null, { timeout: 300000, polling: 200 });
 await page.waitForFunction(() => started && activeZoneId === 'dungeon', null, { timeout: 120000, polling: 500 }).catch(() => {}); await page.waitForTimeout(3000); await g.hide();
 const back = await page.evaluate(() => ({ zone: activeZoneId, inPortals: PORTALS.some(p => p && p.id === lid), cur: currentPortal && currentPortal.id }));
 const reloaded = await up();
