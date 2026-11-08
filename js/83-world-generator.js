@@ -1230,7 +1230,7 @@ function genSettlement(site){
       if(!S.dead){const fh=U.foot.find(p=>p.name==='Farmhouse'),v=fh.z1+.15,doorX=F.x+v*s_,doorZ=F.z+v*c,tx=s_,tz=c,exX=doorX+tx*2.4,exZ=doorZ+tz*2.4,resident=nameFn();
         const rdef=makeDef(site,reg,r,'Villager',resident,{nameKey:'farm',keepName:!!F.lone,x:doorX+tx*1.4+tz*1.0,z:doorZ+tz*1.4-tx*1.0,bCol:pick(r,[0x5a4030,0x3a5a3a,0x604828,0x504058,0x6a5a3a]),sCol:pick(r,[0xd4a878,0xc09070,0xb08060]),role:'farmer'});
         /* S1482 — a lone farm's farmer keeps the name the farm is known by on the map before it is built (loneFarmName): keepName */
-        rdef.roleTag='farmer';rdef.role='Villager';
+        rdef.roleTag='farmer';rdef.role='Villager';rdef._farm=F.id; /* S2008 — whose stock (farmerRefuses) */
         const hh={id:`g_${site.id}_${FARM_N}`,doorX,doorZ,doorFace:cardinalFace(tx,tz),exitX:exX,exitZ:exZ,exitYaw:Math.atan2(-tx,-tz),name:`${rdef.name}'s Farm`,keeper:rdef.name,_twin:rdef._twin,type:'home',tagline:'',bCol:rdef.bCol,sCol:rdef.sCol,dlg:rdef,
           w:U.parts.house.w,d:U.parts.house.d,two:true,reg,style:st===STYLE.stone?'stone':st===STYLE.garrison?'garrison':reg,roleTag:'farmer',siteKind:site.kind,siteId:site.id,kit:{kind:'farm',paint:'green'},farm:F.id};
         if(ownedHouse(hh.id)){hh.name='Your Farm';hh.ownedByPlayer=true;}else rdef._extra.unshift(...houseTopics(hh));

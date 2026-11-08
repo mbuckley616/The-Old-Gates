@@ -572,6 +572,28 @@
     for(const id in C){if(!(C[id].bounty>0)&&C[id].lockFine)delete C[id].lockFine; /* S1795 — paid or waived: no lock fine stands */const U=C[id].unfound;if(!U)continue;for(const hid in U){const u=U[hid];if(m<u.at)continue;delete U[hid];findPick(id,u);}}}
   function findPick(siteId,u){const c=worldState.crime[siteId],site=SITE[siteId]||siteAnywhere(siteId);addFavor(siteId,-1);c.debt=(c.debt||0)+1;c.last=dayNow();
     if(typeof addLog==='function')addLog('🔓',`${u.name} opened on a picked lock${site?' in '+site.name:''}. The town thinks the less of strangers.`);}
+  /* S2008 — a farm's beast killed is theft (Michael's B on #1275). A cow, a sheep, a goat or a hen of a farm's stock (wildFarmChunk, S1973)
+     struck dead is the theft of the crime system: recorded always; seen by its usual witnesses (witnessOf, the farmer at work in the yard
+     among them), it costs the farm's town 2 favour and a fine of 50 and the beast's worth, and the farmer will not talk for 5 days, as a
+     wronged keeper will not trade. A village's farm is its village's; a lone farm has no guard or lord, so its theft is the nearest town's
+     in its cell and the eight round it. The worth is the beast's: the cargo's horse is 110, a cow half that, a sheep a bale of wool's less 5,
+     a goat 20, a hen 5. Asked in Session 2008 as a DECISION; these are the numbers until Michael says otherwise. */
+  const STOCK_WORTH={Cow:55,Sheep:25,Goat:20,Hen:5};
+  function stockFarm(e){const m=/^farm:(.+):[hf]\d+$/.exec((e&&e._wildKey)||'');return m?m[1]:null;}
+  function stockTown(fid){let m=/^farm_(.+)$/.exec(fid);if(m)return siteAnywhere(m[1]);
+    m=/^c(-?\d+)_(-?\d+)_f\d+$/.exec(fid);if(!m)return null;const ci=+m[1],cj=+m[2],F=loneFarms(getCell(ci,cj)).find(f=>f.id===fid);if(!F)return null;
+    let best=null,bd=1e9;for(let j=cj-1;j<=cj+1;j++)for(let i=ci-1;i<=ci+1;i++){if(i<0||j<0||i>=GRID||j>=GRID)continue;const c=getCell(i,j);if(!c||!c.sites)continue;
+      for(const t of c.sites){if(!(t.pad>0)||t.kind==='portal')continue;const d=Math.hypot(t.x-F.cx,t.z-F.cz);if(d<bd){bd=d;best=t;}}}
+    return best;}
+  function stockKilled(e){const fid=stockFarm(e);if(!fid||!e.farmStock)return null;const site=stockTown(fid),worth=STOCK_WORTH[e.baseName||e.name]||0;
+    (worldState.crimes||(worldState.crimes=[])).push({kind:'theft',site:site?site.id:null,house:null,farm:fid,day:dayNow(),min:absMin()});
+    const w=witnessOf(null,false);if(!w)return {seen:false,site:site&&site.id};
+    if(site)bookCrime(site,'theft',worth);(worldState.refuse||(worldState.refuse={}))['farm:'+fid]=dayNow()+5;
+    showMsg(`${w.name} saw you take what was not yours.`,'#e88a8a');if(typeof addLog==='function')addLog('👁',`${w.name} saw you take what was not yours at a farm${site?'; '+site.name+' will not forget it':''}.`);
+    return {seen:true,by:w.name,site:site&&site.id,worth};}
+  /* the farmer of a farm whose stock you were seen to take: asked as any talk opens (openDialog) */
+  function farmerRefuses(def){const fid=def&&def._farm,R=worldState.refuse;if(!fid||!R||R['farm:'+fid]==null)return false;if(dayNow()>=R['farm:'+fid]){delete R['farm:'+fid];return false;}
+    showMsg(`${def.name||'The farmer'}: “I know what you did.”`,'#e8a880');return true;}
   function refusesTrade(house){const R=worldState.refuse;if(!R||!house||R[house.id]==null)return false;if(dayNow()>=R[house.id]){delete R[house.id];return false;}return true;}
   function bountyAt(site){const C=worldState.crime;const c=C&&C[typeof site==='string'?site:site.id];return c?c.bounty:0;}
   function fineTopics(site){const b=bountyAt(site);if(b<=0)return [];

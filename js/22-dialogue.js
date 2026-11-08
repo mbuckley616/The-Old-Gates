@@ -471,6 +471,7 @@ function questZoneNow(){
 let dlgWokenLine=null; // S770 — set by interact as E wakes a householder: one night line in place of the greeting, read once
 function dlgGreeting(n){const G=n.greeting,f=typeof feastGreeting==='function'?feastGreeting(n):null;if(f)return f;return G[Math.floor(Math.random()*G.length)];}
 function openDialog(npc){
+  if(typeof farmerRefuses==='function'&&farmerRefuses(npc))return; /* S2008 — a farmer whose stock you were seen to take (#1275 B) */
   _releasePointerLockForMenu();
   try{
     dlgOpen=true;
