@@ -275,15 +275,11 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
     Browse your wares., and the counter holds the four robes, the guild's lore book and nothing of a goods shop's*: the counter also holds
     twelve staves, wands and mauls of the six words and a Mortar and Pestle, with The Seventh Niche, the Bronze Cowl, Iron Robe, Bronze
     Wraps and Bronze Under-robe. If the guild's counter is meant to sell the words' weapons and the pestle now, say so and QA re-measures.
-  - **`lookpair`: a near house south of Dunmore's square changes its build from boot to boot** (for the look builder: the old town's
-    houses, `js/82-world-structures.js`/`83`, with `OG_KIT_TOWNS` off as the suite sets it). Found by QA's Session 2001. Standing 6–18 m east
-    and 34–46 m south of the square, looking north, the near house on the right is thatched and whitewashed in one boot and timber-framed
-    under slate in the next, in either look (two runs here on s1375: the old look had the thatch in one and the timber in the other).
-    The suite compares the two renderers' pictures, so its mean (19.4 against 12) and its grass box (31–37 levels) fail on the house alone;
-    sky, road and wall agree to 0–4. A house's build that is not the same every boot is also a house that changes on a reload. Once the
-    house holds still, `lookpair` is green or names a real difference.
   - **QA's own, taken in this run's next sessions:** ~~`foeseed` (the wildlife's `wild:<chunk>:<n>` keys, S1704 on, counted as chunk foes)~~ — done, Session 2000;
-    `placerooms` and ~~`lookpair`~~ — the wait done, Session 2001 (each try killed at `run.mjs`'s 900 s cap, 166–196 s a step on that runner). FLAKY in the ledger:
+    `placerooms` and `lookpair` (each try killed at `run.mjs`'s 900 s cap, 166–196 s a step on that runner). `lookpair`'s wait is fixed on
+    `auto/wip-lookpair` (Session 2001), not landed: past the wait its colour checks are red because the two looks build a near house
+    south of Dunmore's square differently (timber and slate on the old look, thatch on the new at 6 m east and 46 m south, the same here and
+    on CI), so the suite's `OG_KIT_TOWNS = false` no longer gives both looks one town. QA finds the switch that does, then lands both. FLAKY in the ledger:
     `guildfurn` (one cylinder left in the hall's bake, try 1), `people` (87 of 88 skinned, try 1).
 - ~~**`placesave` red on main in the weekly run: a Dunmore house moves lot when the town's prosperity swings** (QA, Session 1994, for the look
   builder: `genSettlement`'s lots, `js/83-world-generator.js`). Run 42479827264 (s1368, shard 14, 8 Nov), red on both tries: *across

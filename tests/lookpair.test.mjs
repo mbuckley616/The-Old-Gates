@@ -31,15 +31,7 @@ async function shoot(look) {
   await g.spin('clear', 120);
   for (let k = 0; k < 20 && await page.evaluate(() => !!(WORLD.wx.coverQ && WORLD.wx.coverQ.length)); k++) await g.spin('clear', 60);
   const r = await page.evaluate(() => {
-    const t = WORLD.siteAnywhere('dunmore');
-    // Session 2001 (QA): the spot, 34 m south of the square and 6 east, looked onto Dunmore's road until the town's roads moved; on main at
-    // s1375 both looks laid all 14 of that chunk's segments and the box's ray met grass, so the wait below ran its 300 frames (15 min on a
-    // slow runner: the weekly run of 8 Nov killed both tries at run.mjs's cap). Now, once the chunk's roads are all laid and the ray still
-    // meets ground, the camera steps toward or away from the square to the next spot, the framing kept (both looks lay the same seeded
-    // roads, so they stop at the same one); sideways last, where a near house the two looks build differently can fill the grass box.
-    const SPOTS = [[6, 34], [6, 30], [6, 38], [6, 26], [6, 42], [6, 22], [6, 46], [0, 34], [12, 34]]; let spot = 0;
-    const aim = () => { px = t.x + SPOTS[spot][0]; pz = t.z + SPOTS[spot][1]; yaw = Math.atan2(-(t.x - px), -(t.z - pz)); pitch = -.06; };
-    aim(); thirdPerson = false;
+    const t = WORLD.siteAnywhere('dunmore'); px = t.x + 6; pz = t.z + 34; yaw = Math.atan2(-(t.x - px), -(t.z - pz)); pitch = -.06; thirdPerson = false;
     forceTime(12);
     const raf = window.requestAnimationFrame; window.requestAnimationFrame = () => 0; let t0 = performance.now();
     // Session 1054: on bf251d1 (CI, 16 Oct) the new look's road box read (167,196,98), the grass's own colour: no road drawn there,
@@ -56,10 +48,8 @@ async function shoot(look) {
       return { hit: ribs.has(h.object.geometry) ? 'road' : 'ground', chunk: [ch.cx, ch.cz], segs: want, laid: have, queued: buildQueue.length }; };
     let extra = 0;
     try { for (let n = 0; n < 30; n++) { t0 += 1000 / 60; loop(t0); }
-      for (; extra < 300; extra++) { const u = under(); if (u.hit === 'road') break;
-        if (u.hit === 'ground' && !u.queued && u.segs === u.laid) { if (spot + 1 >= SPOTS.length) break; spot++; aim(); }
-        t0 += 1000 / 60; loop(t0); } } finally { window.requestAnimationFrame = raf; prevT = 0; }
-    const road = { ...under(), extra, spot: SPOTS[spot] };
+      for (; extra < 300 && under().hit !== 'road'; extra++) { t0 += 1000 / 60; loop(t0); } } finally { window.requestAnimationFrame = raf; prevT = 0; }
+    const road = { ...under(), extra };
     REN.render(scene, CAM); const cv = REN.domElement, o = document.createElement('canvas'); o.width = cv.width; o.height = cv.height; o.getContext('2d').drawImage(cv, 0, 0);
     // the draw alone: eight renders of the same frame (shadows included), each waited out by reading one pixel back
     const gl = REN.getContext(), px1 = new Uint8Array(4); REN.render(scene, CAM); gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px1);
