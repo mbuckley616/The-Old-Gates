@@ -276,7 +276,7 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
     twelve staves, wands and mauls of the six words and a Mortar and Pestle, with The Seventh Niche, the Bronze Cowl, Iron Robe, Bronze
     Wraps and Bronze Under-robe. If the guild's counter is meant to sell the words' weapons and the pestle now, say so and QA re-measures.
   - **QA's own, taken in this run's next sessions:** ~~`foeseed` (the wildlife's `wild:<chunk>:<n>` keys, S1704 on, counted as chunk foes)~~ — done, Session 2000;
-    `placerooms` and `lookpair` (each try killed at `run.mjs`'s 900 s cap, 166–196 s a step on that runner). `lookpair`'s wait is fixed on
+    ~~`placerooms`~~ — split, Session 2002; and `lookpair` (each try killed at `run.mjs`'s 900 s cap, 166–196 s a step on that runner). `lookpair`'s wait is fixed on
     `auto/wip-lookpair` (Session 2001), not landed: past the wait its colour checks are red because the two looks build a near house
     south of Dunmore's square differently (timber and slate on the old look, thatch on the new at 6 m east and 46 m south, the same here and
     on CI), so the suite's `OG_KIT_TOWNS = false` no longer gives both looks one town. QA finds the switch that does, then lands both. FLAKY in the ledger:
