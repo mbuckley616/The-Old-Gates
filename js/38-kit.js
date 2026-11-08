@@ -1702,7 +1702,7 @@ function markMats() {
   MM.shingle.side = THREE.DoubleSide; for (const m of Object.values(MM.turf)) m.side = THREE.DoubleSide; return MM;
 }
 function markHall(o, r) {
-  const Mt = markMats(), g = new THREE.Group(), w = o.w, d = o.d, turf = o.roof === 'turf', Turf = Mt.turf[o.turf || 'dry'], foot = .8, wh = turf ? 2.4 : 2.9, pitch = (turf ? 32 : 52) * Math.PI / 180, rise = Math.tan(pitch) * (w / 2 + .5);
+  const Mt = markMats(), g = new THREE.Group(), w = o.w, d = o.d, turf = o.roof === 'turf', Turf = Mt.turf[o.turf || 'dry'], foot = o.low ? .36 : .8, NR = o.low ? 2 : 5, wh = turf ? 2.4 : 2.9, pitch = (turf ? 32 : 52) * Math.PI / 180, rise = Math.tan(pitch) * (w / 2 + .5);
   const wallM = Mt.wall[o.wall ?? Math.floor(r() * Mt.wall.length)];
   const add = (geo, m, x = 0, y = 0, z = 0, ry = 0, rx = 0, rz = 0, uv = .5, slopeX) => { if (m.map) worldUV(geo, uv, { slopeX }); const mesh = new THREE.Mesh(geo, m); mesh.position.set(x, y, z); mesh.rotation.set(rx, ry, rz, 'YXZ'); mesh.castShadow = m !== Mt.dark && m !== Mt.glow; mesh.receiveShadow = true; g.add(mesh); return mesh; };
   const box = (a, b, c) => new THREE.BoxGeometry(a, b, c);
@@ -1729,8 +1729,9 @@ function markHall(o, r) {
   // the threshold at the sill, and stone steps down from it to the ground, rises of foot / 5 (0.16 m; v2-scope §2's stairs are 0.18) and
   // treads of 0.3, each a little wider than the one above (Session 859: the critic's door 0.8 m up with no step)
   // with a porch the steps go down from the porch's stone floor, which is the threshold
-  const RISE = foot / 5, TREAD = .3, z1 = o.porch ? d / 2 + 2.15 : d / 2 + .6; if (!o.porch) add(box(door.w + .5, .2, .45), Mt.stone, 0, foot - .1, d / 2 + .15 + .225, 0, 0, 0, .45);
-  for (let k = 4; k >= 1; k--) { const n = 5 - k, z0 = z1 + (n - 1) * TREAD; add(box(door.w + .5 + n * .12, k * RISE, TREAD), Mt.stone, 0, k * RISE / 2, z0 + TREAD / 2, 0, 0, 0, .45); }
+  // o.low (Session 1986, a prototype for the Mark's tight town lots): the footing 0.36 m, two rises of 0.18, the threshold 0.15 m out and one step
+  const RISE = foot / NR, TREAD = .3, THR = o.low ? .15 : .45, z1 = o.porch ? d / 2 + 2.15 : d / 2 + .15 + THR; if (!o.porch) add(box(door.w + .5, .2, THR), Mt.stone, 0, foot - .1, d / 2 + .15 + THR / 2, 0, 0, 0, .45);
+  for (let k = NR - 1; k >= 1; k--) { const n = NR - k, z0 = z1 + (n - 1) * TREAD; add(box(door.w + .5 + n * .12, k * RISE, TREAD), Mt.stone, 0, k * RISE / 2, z0 + TREAD / 2, 0, 0, 0, .45); }
   // the roof: two slabs at the pitch, overhanging the gables; shingle, or turf over a birch-bark edge with a log holding it at the eaves
   const ov = .5, slope = (w / 2 + ov) / Math.cos(pitch), t = turf ? .32 : .12, ry0 = foot + wh - ov * Math.tan(pitch) + .05, len = d + (turf ? .8 : 1.2);
   for (const sx of [-1, 1]) { const geo = box(slope, t, len); geo.translate(sx * slope / 2, t / 2, 0); add(geo, turf ? Turf : Mt.shingle, sx * -(w / 2 + ov), ry0, 0, 0, 0, sx * pitch, turf ? .6 : .9, true).rotation.z = sx * pitch;
@@ -1755,7 +1756,85 @@ function markHall(o, r) {
   // a stone chimney through the roof's back slope, or a smoke louver on the ridge
   if (o.chimney) { const cz = -d * .25, ch = ridgeY + .8; add(box(.9, ch, .9), Mt.stone, -(w / 4), ch / 2, cz, 0, 0, 0, .45); add(box(1.05, .15, 1.05), Mt.stone, -(w / 4), ch + .07, cz, 0, 0, 0, .45); }
   else { add(box(.7, .4, 1.2), Mt.beam, 0, ridgeY + .3, -d * .15, 0, 0, 0, .8); add(box(.9, .08, 1.4), turf ? Turf : Mt.shingle, 0, ridgeY + .54, -d * .15, 0, 0, 0, .9); }
-  const tris = mergeByMaterial(g); return { group: g, tris, draws: g.children.length, roofTop: new THREE.Box3().setFromObject(g).max.y, sill: foot, front: d / 2, stairOut: z1 + 4 * TREAD, wh, pitch, ry0, ov, louver: o.chimney ? null : -d * .15, door, windows: Array.from({ length: Math.max(1, Math.floor(d / 4)) }, (_, i) => -d / 2 + (i + .5) * d / Math.max(1, Math.floor(d / 4))) };
+  const tris = mergeByMaterial(g); return { group: g, tris, draws: g.children.length, roofTop: new THREE.Box3().setFromObject(g).max.y, sill: foot, front: d / 2, stairOut: z1 + (NR - 1) * TREAD, wh, pitch, ry0, ov, louver: o.chimney ? null : -d * .15, door, windows: Array.from({ length: Math.max(1, Math.floor(d / 4)) }, (_, i) => -d / 2 + (i + .5) * d / Math.max(1, Math.floor(d / 4))) };
+}
+// Session 2003 (card F6, Michael's C on #1300): copied from pieces.js for the Mark's tight lots (kitMarkTown, js/83-world-generator.js).
+// ── the Markish town house (Session 1986, a prototype for DECISION: the tight lots of the Mark's ports and city) ──
+// The hall needs 6.5 m of depth and 1.8 m of steps before its door; a port's and the city's lots are 4.2 to 7 m deep with the steps, so
+// about one home in three there still stands as the old builder's. This is the hall's family drawn for a narrow lot, as a wharf town
+// builds when the ground is dear (the Hanseatic wharf at Bergen is the precedent): gable to the street, two storeys of the hall's vertical
+// planks over the same frame, the upper floor jettied 0.4 m out over the door, the hall's steep shingle (52°) and carved bargeboards with
+// their beast heads, a hoist beam under the ridge for the loft, and the same stone footing kept low (0.36 m, two rises of 0.18) so the steps
+// take 0.6 m. o.w 4.2 to 6.6 (the gable), o.d 3.4 to 7 (to the street), o.wall (a stain), o.chimney, o.jetty (default on), o.storeys (1 | 2,
+// default 2), o.interior (as the hall's); for the game (Session 2003, the critic's 8 Nov: seven in a row read as one terrace) o.pitch (degrees,
+// default the hall's 52), o.h2 (the upper storey, default 2.35) and o.side (-1 | 1, the door's side, else drawn from r). One mesh per material. -> as markHall's: { group, tris, draws, roofTop, sill, front, stairOut, ... }
+function markTownHouse(o, r) {
+  const Mt = markMats(), g = new THREE.Group(), w = o.w, d = o.d, two = o.storeys !== 1, foot = .36, h1 = 2.6, h2 = two ? o.h2 ?? 2.35 : 0, J = two && o.jetty !== false ? .4 : 0;
+  const pitch = (o.pitch ?? 52) * Math.PI / 180, tp = Math.tan(pitch), T = .2, wallM = Mt.wall[o.wall ?? Math.floor(r() * Mt.wall.length)], top = foot + h1 + h2;
+  const add = (geo, m, x = 0, y = 0, z = 0, ry = 0, rx = 0, rz = 0, uv = .5, slopeX) => { if (m.map) worldUV(geo, uv, { slopeX }); const mesh = new THREE.Mesh(geo, m); mesh.position.set(x, y, z); mesh.rotation.set(rx, ry, rz, 'YXZ'); mesh.castShadow = m !== Mt.dark && m !== Mt.glow; mesh.receiveShadow = true; g.add(mesh); return mesh; };
+  const box = (a, b, c) => new THREE.BoxGeometry(a, b, c), V = (a, b) => new THREE.Vector2(a, b);
+  const rect = (p, x0, y0, x1, y1) => { const h = new THREE.Path(); h.moveTo(x0, y0); h.lineTo(x1, y0); h.lineTo(x1, y1); h.lineTo(x0, y1); h.lineTo(x0, y0); p.holes.push(h); };
+  // a wall: a shape in its own plane (x along it, y up), extruded T and centred on its thickness
+  const wall = (s, x, y, z, ry) => { const geo = new THREE.ExtrudeGeometry(s, { depth: T, bevelEnabled: false }); geo.translate(0, 0, -T / 2); return add(geo, wallM, x, y, z, ry, 0, 0, .9); };
+  const lit = [], win = (x, y, z, ry, ww, wh2) => { // a small window's fill and its two shutters, on a wall facing along ry
+    const c = Math.cos(ry), s = Math.sin(ry), nx = s, nz = c;
+    if (!o.interior) { const L = r() < .4; lit.push(L); add(box(ww - .04, wh2 - .04, .04), L ? Mt.glow : Mt.dark, x - nx * .04, y + wh2 / 2, z - nz * .04, ry); }
+    for (const k of [-1, 1]) add(box(ww * .55, wh2 + .06, .05), Mt.door, x + nx * .14 + c * k * (ww * .55 + .02), y + wh2 / 2, z + nz * .14 - s * k * (ww * .55 + .02), ry + k * .5); };
+  // the footing: rough stone, a little proud of the walls
+  add(box(w + .24, foot, d + .24), Mt.stone, 0, foot / 2, 0, 0, 0, 0, .45);
+  // the door: off the middle on a gable wide enough for a window beside it
+  const door = { w: 1.0, h: 2.0, x: w >= 5.2 ? (o.side ?? (r() < .5 ? -1 : 1)) * (w / 2 - 1.15) : 0 }, gw = { w: .6, h: .5 };
+  // the ground storey's front: the door under a rounded head, a window beside it when there is room
+  { const s = new THREE.Shape([V(-w / 2, 0), V(w / 2, 0), V(w / 2, h1), ...(two ? [] : [V(0, h1 + (w / 2) * tp)]), V(-w / 2, h1)]);
+    const h = new THREE.Path(), dx = door.x; h.moveTo(dx - door.w / 2, 0); h.lineTo(dx + door.w / 2, 0); h.lineTo(dx + door.w / 2, door.h - .22); h.quadraticCurveTo(dx, door.h + .1, dx - door.w / 2, door.h - .22); h.lineTo(dx - door.w / 2, 0); s.holes.push(h);
+    if (door.x) rect(s, -door.x - .35, 1.05, -door.x + .35, 1.6); if (!two) rect(s, -gw.w / 2, h1 + .45, gw.w / 2, h1 + .45 + gw.h);
+    wall(s, 0, foot, d / 2 - T / 2, 0); if (door.x) win(-door.x, foot + 1.05, d / 2, 0, .7, .55); if (!two) win(0, foot + h1 + .45, d / 2, 0, gw.w, gw.h);
+    if (!o.interior) { add(box(w - .5, h1 - .1, .05), Mt.dark, 0, foot + (h1 - .1) / 2, d / 2 - T - .03); for (let i = 0; i < 4; i++) add(box(door.w / 4 - .01, door.h - .1, .06), Mt.door, door.x - door.w / 2 + (i + .5) * door.w / 4, foot + (door.h - .1) / 2, d / 2 - .08); }
+    for (const y of [.5, 1.4]) add(box(door.w * .8, .06, .02), Mt.iron, door.x - door.w * .1, foot + y, d / 2 + .01); }
+  // the back: a plain wall to the eaves (a gable on one storey), the upper storey's gable over it
+  { const pts = two ? [V(-w / 2, 0), V(w / 2, 0), V(w / 2, h1), V(-w / 2, h1)] : [V(-w / 2, 0), V(w / 2, 0), V(w / 2, h1), V(0, h1 + (w / 2) * tp), V(-w / 2, h1)]; wall(new THREE.Shape(pts), 0, foot, -d / 2 + T / 2, 0); }
+  // the sides of the ground storey: a window a bay
+  const sideWins = (len, z0, y0, hh, wy) => { const n = Math.max(1, Math.floor(len / 3)), at = Array.from({ length: n }, (_, i) => z0 + (i + .5) * len / n);
+    for (const sx of [-1, 1]) { const s = new THREE.Shape([V(z0, 0), V(z0 + len, 0), V(z0 + len, hh), V(z0, hh)]); for (const z of at) rect(s, z - .28, wy, z + .28, wy + .48); wall(s, sx * (w / 2 - T / 2), y0, 0, -Math.PI / 2 * 1);
+      for (const z of at) win(sx * (w / 2), y0 + wy, z, sx * Math.PI / 2, .56, .48); } };
+  // a side wall's shape runs along z; turned -90° its x is the world's z (local z its thickness, along -x)
+  sideWins(d, -d / 2, foot, h1, 1.0);
+  // the upper storey: jettied J out over the front, its gables to the ridge; two windows to the street and the loft's hatch under the hoist
+  if (two) { const y2 = foot + h1, zf = d / 2 + J;
+    { const s = new THREE.Shape([V(-w / 2, 0), V(w / 2, 0), V(w / 2, h2), V(0, h2 + (w / 2) * tp), V(-w / 2, h2)]); const wx = w >= 5 ? w / 4 : w / 4 + .05, hy = h2 + .35, hh = Math.min(1.0, (w / 2) * tp - 1.2);
+      for (const k of [-1, 1]) rect(s, k * wx - .3, .95, k * wx + .3, 1.5); rect(s, -.38, hy, .38, hy + hh); wall(s, 0, y2, zf - T / 2, 0);
+      for (const k of [-1, 1]) win(k * wx, y2 + .95, zf, 0, .6, .55);
+      if (!o.interior) add(box(w - .5, h2 - .1, .05), Mt.dark, 0, y2 + (h2 - .1) / 2, zf - T - .03);
+      for (let i = 0; i < 3; i++) add(box(.76 / 3 - .01, hh, .05), Mt.door, -.38 + (i + .5) * .76 / 3, y2 + hy + hh / 2, zf - .05); }
+    wall(new THREE.Shape([V(-w / 2, 0), V(w / 2, 0), V(w / 2, h2), V(0, h2 + (w / 2) * tp), V(-w / 2, h2)]), 0, y2, -d / 2 + T / 2, 0);
+    sideWins(d + J, -d / 2, y2, h2, .95);
+    // the jetty: the joists' ends under the upper front, the bressumer across them
+    if (J) { const n = Math.max(4, Math.round(w / .6)); for (let i = 0; i < n; i++) add(box(.14, .16, J + .25), Mt.beam, -w / 2 + .12 + i * (w - .24) / (n - 1), y2 - .08, d / 2 + (J - .25) / 2 + .05, 0, 0, 0, .8);
+      add(box(w + .1, .22, .24), Mt.beam, 0, y2 + .02, zf - .1, 0, 0, 0, .8); }
+    // the frame between the storeys: a girt round the house
+    add(box(w + .12, .2, .2), Mt.beam, 0, y2, -d / 2 + .05, 0, 0, 0, .8); for (const sx of [-1, 1]) add(box(.2, .2, d + J + .1), Mt.beam, sx * (w / 2 - .02), y2, J / 2, 0, 0, 0, .8); }
+  // the frame: corner posts, sill beams and the wall plates, in dark beams
+  for (const [sx, sz] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) add(box(.24, h1 + .1, .24), Mt.beam, sx * (w / 2 - .04), foot + h1 / 2, sz * (d / 2 - .04), 0, 0, 0, .8);
+  if (two) for (const [sx, sz] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) add(box(.24, h2 + .1, .24), Mt.beam, sx * (w / 2 - .04), foot + h1 + h2 / 2, sz > 0 ? d / 2 + J - .04 : -d / 2 + .04, 0, 0, 0, .8);
+  for (const sx of [-1, 1]) { add(box(.22, .22, d + J + .1), Mt.beam, sx * (w / 2 - .02), top - .05, J / 2, 0, 0, 0, .8); add(box(.22, .18, d + .1), Mt.beam, sx * (w / 2 - .02), foot + .09, 0, 0, 0, 0, .8); }
+  // the steps: the threshold 0.15 m out from the footing at the sill, one step down from it (two rises of 0.18)
+  const TREAD = .3, z1 = d / 2 + .3; add(box(door.w + .4, .2, .19), Mt.stone, door.x, foot - .1, d / 2 + .11 + .095, 0, 0, 0, .45); add(box(door.w + .5, foot / 2, TREAD), Mt.stone, door.x, foot / 4, z1 + TREAD / 2, 0, 0, 0, .45);
+  // the roof: two shingle slabs at the hall's pitch over the jetty and both gables; the ridge beam, the carved bargeboards and their heads
+  const ov = .4, slope = (w / 2 + ov) / Math.cos(pitch), t = .12, ry0 = top - ov * tp + .05, z0r = -d / 2 - .45, z1r = d / 2 + J + .45, len = z1r - z0r, cz = (z0r + z1r) / 2;
+  for (const sx of [-1, 1]) { const geo = box(slope, t, len); geo.translate(sx * slope / 2, t / 2, 0); add(geo, Mt.shingle, sx * -(w / 2 + ov), ry0, cz, 0, 0, sx * pitch, .9, true); }
+  const ridgeY = ry0 + (w / 2 + ov) * tp; add(box(.2, .15, len + .05), Mt.beam, 0, ridgeY + .11, cz, 0, 0, 0, .8);
+  for (const z of [z1r + .03, z0r - .03]) for (const sx of [-1, 1]) { const E = V(sx * (w / 2 + ov), ry0 + t), Rg = V(0, ridgeY + t), dir = Rg.clone().sub(E).normalize(), P = Rg.clone().addScaledVector(dir, .6), L = P.distanceTo(E);
+    add(box(L, .26, .07), Mt.carve, (E.x + P.x) / 2, (E.y + P.y) / 2 + .07, z, 0, 0, Math.atan2(P.y - E.y, P.x - E.x), .8);
+    const hs = new THREE.Shape(); hs.moveTo(0, 0); hs.quadraticCurveTo(.17, .3, .04, .5); hs.quadraticCurveTo(-.08, .63, -.3, .57); hs.quadraticCurveTo(-.15, .5, -.12, .42); hs.quadraticCurveTo(-.02, .32, -.13, 0); hs.lineTo(0, 0);
+    const hg = new THREE.ExtrudeGeometry(hs, { depth: .07, bevelEnabled: true, bevelThickness: .02, bevelSize: .02, bevelSegments: 1, curveSegments: 6 }); hg.translate(0, 0, -.035); add(hg, Mt.carve, P.x, P.y + .05, z, sx > 0 ? 0 : Math.PI, 0, 0, .8); }
+  // the hoist: a beam out from under the ridge over the loft's hatch, a pulley and its rope
+  let hoist = null; if (two) { const hy = ridgeY - .55, hz = z1r + .5; add(box(.16, .18, 1.5), Mt.beam, 0, hy, z1r - .2, 0, 0, 0, .8); add(new THREE.CylinderGeometry(.12, .12, .07, 10).rotateZ(Math.PI / 2), Mt.beam, 0, hy - .2, hz - .05, 0, 0, 0, .8);
+    add(new THREE.CylinderGeometry(.015, .015, 1.6, 4), Mt.iron, .1, hy - 1.0, hz - .05); hoist = { y: hy, z: hz }; }
+  // a stone stack through the back slope, or the hall's smoke louver on the ridge
+  if (o.chimney) { const cz2 = -d * .25, ch = ridgeY + .7; add(box(.7, ch, .7), Mt.stone, -(w / 4), ch / 2, cz2, 0, 0, 0, .45); add(box(.85, .12, .85), Mt.stone, -(w / 4), ch + .06, cz2, 0, 0, 0, .45); }
+  else { add(box(.55, .35, .9), Mt.beam, 0, ridgeY + .27, -d * .2, 0, 0, 0, .8); add(box(.72, .07, 1.1), Mt.shingle, 0, ridgeY + .48, -d * .2, 0, 0, 0, .9); }
+  const tris = mergeByMaterial(g);
+  return { group: g, tris, draws: g.children.length, roofTop: new THREE.Box3().setFromObject(g).max.y, sill: foot, front: d / 2, stairOut: z1 + TREAD, wh: h1 + h2, h1, h2, jetty: J, pitch, ry0, ov, door, hoist, top };
 }
 // the Mark's lots (Session 1286: pieces.js's markLot of Session 831, copied as it stands; Michael's C on #277: two in three shingle, one turf, by lot). In every run of three lots one
 // is turf, which one by the street's seed, as Aurenne's mix; a hall of note (s.note, a list of lot indices: the hall at the
@@ -7629,7 +7708,7 @@ function aurenneOrrery(hAt, o = {}) {
       two, depth: f2(D), deep: f2(xd), arch: { pitch: PITCH, pier: PIER, span: SPAN, r: RAD, upSpring: f2(US), lowSpring: two ? f2(LS) : null, tier: two ? f2(TIER + SC) : null, deck: DECK }, channel: { w: CW, x0: CX0, x1: CX1, runs }, x0: X0, x1: X1, broken: !!GAP, far, farTris: Math.round(far.reduce((a, [g]) => a + g.attributes.position.count / 3, 0)) };
   }
   return { stream, hashKey, mergeByMaterial, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, coveEscape, grotto: aurenneGrotto, mine: markMine, aqueduct: aurenneAqueduct }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, trunk: felledTrunk }, ships: { SWATCHES: SHIP_SWATCHES, swatch: shipSwatch, BANNERS: SHIP_BANNERS, banner: shipBanner, sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
-    mk: { hall: markHall, lot: markLot, alehall: markAlehall, smithy: markSmithy, apothecary: markApothecary, longhouse: markLonghouse, mats: markMats, yard: markYard, ring: markRing },
+    mk: { hall: markHall, townhouse: markTownHouse, lot: markLot, alehall: markAlehall, smithy: markSmithy, apothecary: markApothecary, longhouse: markLonghouse, mats: markMats, yard: markYard, ring: markRing },
     au: { house: aurenneHouse, lot: aurenneLot, smithy: aurenneSmithy, smithyStack: aurSmithyStack, apothecary: aurenneApothecary, courtyard: aurenneCourtyard, church: aurenneChurch, churchBox: aurenneChurchBox, civic: aurenneCivic, academy: aurenneAcademy, academyBox: aurenneAcademyBox, library: aurenneLibrary, churchHall: aurenneChurchHall, courtyardHouse: aurenneCourtyardHouse, home: aurenneHome, homeOne: aurenneHomeOne, tavern: aurenneTavern, mats: aurMats, roomMats: homeMats, AUR, tunnel: aurenneTunnel },
     gl: { PLANS, FIN, PS, PAINTS, guildHall: guildHallRoom, forge: forgeRoom, apothecary: apothecaryRoom, TOWN: GL_TOWN, building, church, keep, market: marketHouse, marketRoom, farmstead, coachInn, coachInnPlan, coachRoom, townhouse: townhouseRoom, farmhouse: farmhouseRoom, byre: byreRoom, barn: barnRoom, row: shrineRow, ROW_GODS, inn: gatelandsInn, cottage: gatelandsCottage, churchLen: n => +((n === 2 ? 2 : 3) * 4.8 + 1.6 + 5.6 - .5 + 7.2 - .9 - .02).toFixed(2), lot: gatelandsLot, mats: glMats, BAYS, bayPlan, bayWidth, baysFor } };
 })();

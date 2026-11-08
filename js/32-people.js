@@ -1912,7 +1912,12 @@ function hbSkinLoose(P){const sk=P.skeleton,lo=P.byName.root,il=sk.bones.indexOf
 /* S1990 — the front of the thigh: in front of the hips the thighs' share eased in from `up` above the hips, so the top of the front stayed
    with the pelvis while the leading thigh came forward under it (Maeve of Dunmore's apron and skirt out by up to 12.7 cm). On the front the
    ease starts `upF` higher (by the front-ness past the hips' line), so the cloak's front rides the thigh from nearer the waist */
-const HB_CLOAK_LEGS={w:.7,w2:.9,back:.3,depth:.12,shin:.5,side:1,up:.08,heel:.8,k:1.1,arc:.8,low:.5,upF:.5};
+/* S1999 — the front pushed by the knee (STUCK #1313): the cloak's front took at most `w2` of the thighs, so a stride put a leading thigh's
+   apron (3 to 4.2 cm off the skin) out through it (Maeve of Dunmore, 8.2 cm). More of the thighs on the front came back onto the hands when
+   a thigh swung back. A second helper bone at the hips (`hemBoneF`) takes the front below `lowF` of the way to the knee, up to `toe` of each
+   point's weight, within `arcF` (the cosine) of straight ahead; hbHem swings it forward by `kF` of whichever leg leads further past its
+   rest, never back, so the front goes out over the knee and never in onto the hands */
+const HB_CLOAK_LEGS={w:.7,w2:.9,back:.3,depth:.12,shin:.5,side:1,up:.08,heel:.8,k:1.1,arc:.8,low:.5,upF:.5,toe:.9,kF:1.6,arcF:.85,lowF:.4};
 function hbCloakLegs(P,heel){const sk=P.skeleton,by=P.byName,ix=n=>by[n]?sk.bones.indexOf(by[n]):-1,il=ix('root'),iL=ix('upperleg01.L'),iR=ix('upperleg01.R'),sL=ix('lowerleg01.L'),sR=ix('lowerleg01.R');
   if(il<0||iL<0||iR<0||sL<0||sR<0||!by['foot.L']||!by['foot.R']||!by['toe1-1.L'])return null;
   if(P.cloakLegs)return P.cloakLegs;const sheet=[];P.root.traverse(o=>{if(o.isSkinnedMesh&&/^(cloak|cloakHem)$/.test(o.name))sheet.push(o);});if(!sheet.length)return null;
@@ -1922,23 +1927,23 @@ function hbCloakLegs(P,heel){const sk=P.skeleton,by=P.byName,ix=n=>by[n]?sk.bone
   const fw=new THREE.Vector3(-ax.z,0,ax.x);if(fw.dot(at('toe1-1.L').sub(at('foot.L')))<0)fw.negate();
   /* the hem's bone: at the hips' middle, its rest the identity (its inverse is its own matrix now); the skeleton's matrices are made again
      at the new count (the bone texture is made at the first draw, after this) */
-  let ih=-1,hem=null;if(heel){const rb=by.root,hb=new THREE.Bone();hb.name='hemBone';rb.add(hb);hb.position.copy(rb.worldToLocal(mid.clone().applyMatrix4(P.root.matrixWorld)));hb.updateMatrixWorld(true);
-  sk.bones.push(hb);sk.boneInverses.push(new THREE.Matrix4().multiplyMatrices(inv,hb.matrixWorld).invert());sk.boneMatrices=new Float32Array(sk.bones.length*16);
-  if(sk.boneTexture){sk.boneTexture.dispose();sk.boneTexture=null;}ih=sk.bones.length-1;
+  let ih=-1,iF=-1,hem=null;if(heel){const rb=by.root,mk=nm=>{const hb=new THREE.Bone();hb.name=nm;rb.add(hb);hb.position.copy(rb.worldToLocal(mid.clone().applyMatrix4(P.root.matrixWorld)));hb.updateMatrixWorld(true);
+  sk.bones.push(hb);sk.boneInverses.push(new THREE.Matrix4().multiplyMatrices(inv,hb.matrixWorld).invert());return hb;},hb=mk('hemBone'),fb=mk('hemBoneF');sk.boneMatrices=new Float32Array(sk.bones.length*16);
+  if(sk.boneTexture){sk.boneTexture.dispose();sk.boneTexture=null;}ih=sk.bones.length-2;iF=sk.bones.length-1;
   /* the hem's frame in the pelvis bone's: the hips' axis, forward and down, and each leg's rest angle behind the vertical */
   const qr=rb.getWorldQuaternion(new THREE.Quaternion()).invert(),qp=P.root.getWorldQuaternion(new THREE.Quaternion()),inL=v=>v.clone().applyQuaternion(qp).applyQuaternion(qr);
-  hem={bone:hb,ax:inL(ax),fw:inL(fw),dn:inL(new THREE.Vector3(0,-1,0)),rest:[0,0],a:0};hem.rest=[hbHemAngle(P,hem,'L'),hbHemAngle(P,hem,'R')];}
-  const B=[Mb(il),Mb(iL),Mb(iR),Mb(sL),Mb(sR),ih>=0?Mb(ih):null],C=HB_CLOAK_LEGS,ss=u=>u<=0?0:u>=1?1:u*u*(3-2*u),M=new THREE.Matrix4(),E=new THREE.Matrix4(),p=new THREE.Vector3(),d=new THREE.Vector3();let n=0;
+  hem={bone:hb,front:fb,ax:inL(ax),fw:inL(fw),dn:inL(new THREE.Vector3(0,-1,0)),rest:[0,0],a:0,aF:0};hem.rest=[hbHemAngle(P,hem,'L'),hbHemAngle(P,hem,'R')];}
+  const B=[Mb(il),Mb(iL),Mb(iR),Mb(sL),Mb(sR),ih>=0?Mb(ih):null,iF>=0?Mb(iF):null],C=HB_CLOAK_LEGS,ss=u=>u<=0?0:u>=1?1:u*u*(3-2*u),M=new THREE.Matrix4(),E=new THREE.Matrix4(),p=new THREE.Vector3(),d=new THREE.Vector3();let n=0;
   for(const m of sheet){const g=m.geometry,pa=g.attributes.position,si=g.attributes.skinIndex,sw=g.attributes.skinWeight;
     for(let i=0;i<pa.count;i++){if(si.getComponent(i,0)!==il||sw.getComponent(i,0)<.999)continue;p.fromBufferAttribute(pa,i).applyMatrix4(B[0]);
       const lo=ss((kY-p.y)/Math.max(.05,kY-aY)),fr=ss(.5+.5*d.copy(p).sub(mid).dot(fw)/C.depth),uf=C.up+C.upF*ss(2*fr-1),w=(C.back+(1-C.back)*fr)*(C.w*ss((hY+uf-p.y)/Math.max(.05,hY+uf-kY))+(C.w2-C.w)*lo);if(w<=1e-3)continue;
       /* the thighs share w by the point's side; below the knee part of its own side's share goes to that side's shin, none at the middle */
-      const aL=ss(.5+.5*d.copy(p).sub(mid).dot(ax)/(half*C.side)),dom=aL>=.5,dz=d.copy(p).sub(mid).dot(fw),dx=d.copy(p).sub(mid).dot(ax),bk=-dz/Math.max(1e-3,Math.hypot(dx,dz)),hw=ih<0?0:C.heel*ss((bk-C.arc)/(1-C.arc))*ss((hY-C.low*(hY-kY)-p.y)/Math.max(.05,(1-C.low)*(hY-kY))),sh=hw>.02?0:C.shin*lo*Math.abs(2*aL-1),wl=w*aL*(1-hw),wr=w*(1-aL)*(1-hw);
+      const aL=ss(.5+.5*d.copy(p).sub(mid).dot(ax)/(half*C.side)),dom=aL>=.5,dz=d.copy(p).sub(mid).dot(fw),dx=d.copy(p).sub(mid).dot(ax),bk=-dz/Math.max(1e-3,Math.hypot(dx,dz)),hb0=ih<0?0:C.heel*ss((bk-C.arc)/(1-C.arc))*ss((hY-C.low*(hY-kY)-p.y)/Math.max(.05,(1-C.low)*(hY-kY))),hf=iF<0?0:C.toe*ss((-bk-C.arcF)/(1-C.arcF))*ss((hY-C.lowF*(hY-kY)-p.y)/Math.max(.05,(1-C.lowF)*(hY-kY))),hw=Math.max(hb0,hf),hx=hf>hb0?6:5,sh=hw>.02?0:C.shin*lo*Math.abs(2*aL-1),wl=w*aL*(1-hw),wr=w*(1-aL)*(1-hw);
       /* the back: the hem's bone in the fourth place, the shin's share left with the thigh */
-      const wq=hw>.02?[1-wl-wr-hw,wl,wr,hw]:[1-w,dom?wl*(1-sh):wl,dom?wr:wr*(1-sh),dom?wl*sh:wr*sh],bq=[0,1,2,hw>.02?5:dom?3:4];
+      const wq=hw>.02?[1-wl-wr-hw,wl,wr,hw]:[1-w,dom?wl*(1-sh):wl,dom?wr:wr*(1-sh),dom?wl*sh:wr*sh],bq=[0,1,2,hw>.02?hx:dom?3:4];
       const e=M.elements;e.fill(0);for(let k=0;k<4;k++)if(wq[k]){const b=B[bq[k]].elements;for(let j=0;j<16;j++)e[j]+=b[j]*wq[k];}
       if(Math.abs(M.determinant())<1e-9)continue;p.applyMatrix4(E.copy(M).invert());pa.setXYZ(i,p.x,p.y,p.z);
-      si.setXYZW(i,il,iL,iR,hw>.02?ih:dom?sL:sR);sw.setXYZW(i,wq[0],wq[1],wq[2],wq[3]);n++;}
+      si.setXYZW(i,il,iL,iR,hw>.02?(hx===6?iF:ih):dom?sL:sR);sw.setXYZW(i,wq[0],wq[1],wq[2],wq[3]);n++;}
     pa.needsUpdate=si.needsUpdate=sw.needsUpdate=true;}
   if(hem)P.hem=hem;return P.cloakLegs={n};}
 /* a leg's angle behind the vertical, in the pelvis bone's frame: the hip joint to the ankle, on the hips' plane of forward and down */
@@ -1947,8 +1952,10 @@ function hbHemAngle(P,hem,s){const rb=P.byName.root;rb.getWorldQuaternion(_hbhR)
   _hbhB.sub(_hbhA).applyQuaternion(_hbhR);return Math.atan2(-_hbhB.dot(hem.fw),Math.max(1e-3,_hbhB.dot(hem.dn)));}
 /* each frame the full and middle levels are drawn: the hem's bone swung back by the further-trailing leg's angle past its rest, never forward */
 function hbHem(rig){const P=rig.hb.P,hem=P&&P.hem;if(!hem)return;P.byName.root.updateMatrixWorld(true);
-  const a=Math.max(0,hbHemAngle(P,hem,'L')-hem.rest[0],hbHemAngle(P,hem,'R')-hem.rest[1])*HB_CLOAK_LEGS.k;hem.a=a;
-  _hbhA.copy(hem.dn).multiplyScalar(Math.cos(a)).addScaledVector(hem.fw,-Math.sin(a));hem.bone.quaternion.setFromUnitVectors(hem.dn,_hbhA.normalize());}
+  const aL=hbHemAngle(P,hem,'L')-hem.rest[0],aR=hbHemAngle(P,hem,'R')-hem.rest[1],a=Math.max(0,aL,aR)*HB_CLOAK_LEGS.k;hem.a=a;
+  _hbhA.copy(hem.dn).multiplyScalar(Math.cos(a)).addScaledVector(hem.fw,-Math.sin(a));hem.bone.quaternion.setFromUnitVectors(hem.dn,_hbhA.normalize());
+  if(!hem.front)return;const f=Math.max(0,-aL,-aR)*HB_CLOAK_LEGS.kF;hem.aF=f;
+  _hbhA.copy(hem.dn).multiplyScalar(Math.cos(f)).addScaledVector(hem.fw,Math.sin(f));hem.front.quaternion.setFromUnitVectors(hem.dn,_hbhA.normalize());}
 const HB_HAIR_CLOAK={in:.02,out:.07,cell:.07};
 function hbHairOnCloak(P){const st=P.cloak&&P.cloak.hairOver;if(!st)return null;const sk=P.skeleton,lo=P.byName.root,il=sk.bones.indexOf(lo);if(il<0)return null;
   const hair=[],sheet=[];P.root.traverse(o=>{if(!o.isSkinnedMesh)return;if(/^(braid\d|tie|brush|tail)$/.test(o.name))hair.push(o);else if(/^(cloak|cloakHem|hood|collar\d)$/.test(o.name))sheet.push(o);});
