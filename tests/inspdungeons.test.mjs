@@ -10,7 +10,7 @@ const r = await page.evaluate(() => { openInspector();
     let tris = 0, meshes = 0; R.obj.traverse(o => { if (o.isMesh) { meshes++; const gg = o.geometry; tris += (gg.index ? gg.index.count : gg.attributes.position.count) / 3; } }); out[t] = { tris: Math.round(tris), meshes }; }
   // the groups in list order: each appears in one run
   const runs = []; for (const e of E) { if (!runs.length || runs[runs.length - 1] !== e.group) runs.push(e.group); }
-  const crag = keys.filter(k => /crag/.test(k) && !k.startsWith('creatures/')); /* S1991 — the Craghorn Ram (S1739, an animal of the Mark) is no crag */ closeInspector();
+  const crag = keys.filter(k => /crag/.test(k) && !k.startsWith('creatures/')); /* S1993 — the Craghorn Ram (S1739, an animal of the Mark) is no crag */ closeInspector();
   return { out, themes, crag, runs, poiCrag: keys.includes('buildings/places/poi-crag') };
 });
 console.log(JSON.stringify(r));

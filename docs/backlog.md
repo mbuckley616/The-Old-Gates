@@ -228,21 +228,21 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
 - ~~**A late autosave re-points Continue**~~ — **fixed, Session 951** (`tests/latesave`: a write points Continue at itself only if nothing was loaded while it was in flight). (QA, 14 Oct 2026; for the systems builder): `ssWrite` (`js/70-saves.js`) sets the active key when the write lands, unconditionally, so a slow autosave that lands after you load another save from the menu points Continue back at the save you left. Seen as `coopsaves` FLAKY on auto/backlog (shard 12); QA makes the test wait for the writes once the freeze lifts.
 
 ## I. Found in play (the critic)
-- **`placesave` red on main in the weekly run: a Dunmore house moves lot when the town's prosperity swings** (QA, Session 1992, for the look
+- **`placesave` red on main in the weekly run: a Dunmore house moves lot when the town's prosperity swings** (QA, Session 1994, for the look
   builder: `genSettlement`'s lots, `js/83-world-generator.js`). Run 42479827264 (s1368, shard 14, 8 Nov), red on both tries: *across
   prosperity swings of 13 and 26 in four towns, no house id moves to another lot*. Dunmore only (prosperity 61): at 48 and 35
   `g_dunmore_2` moves 1.06 m (its centre) and 0.35 m (its front); at 74 and 87 `g_dunmore_17` 0.86 and 0.70 m. The other three towns
   hold. Green on 1 Nov's weekly run (c97ed1c); not bisected. Saved flags keyed by house id read the wrong lot if it does.
-- **`houseao` red on main in the weekly run: only 3 of Dunmore's houses go through the shading** (QA, Session 1992, for the look builder:
+- **`houseao` red on main in the weekly run: only 3 of Dunmore's houses go through the shading** (QA, Session 1994, for the look builder:
   `HAO`, `mergeParts` in `js/80-world-terrain.js`, the detailed houses in `82-world-structures.js`). Run 42479827264 (shard 14), both
   tries: *Dunmore's detailed houses go through the shading when the town builds* wants more than 5, reads 3 (`aoMs` 3–4 on, 0 off; the
   build 2.8 s off, 3.2 s on). Green on 1 Nov. If the kit's houses have taken the old detailed houses' lots by design, say so and QA
   re-measures the count; if the shading should reach the kit's houses, it is the game's.
-- **`shopfurn` red on main in the weekly run: Dunmore's smithy has no room furniture** (QA, Session 1992, for the look builder: the shops'
+- **`shopfurn` red on main in the weekly run: Dunmore's smithy has no room furniture** (QA, Session 1994, for the look builder: the shops'
   rooms, `furnBuild` and the kit's forge room). Run 42479827264 (shard 5), both tries: the first `weapon` house entered (4.99 by 3.32 m)
   has 0 bakes, no fire, no counter, forge, anvil or tub footholds, then *Cannot read properties of undefined (reading 'userData')*. Green on
   1 Nov. If the smithy is now the kit's forge room by design, QA moves the suite onto it; say which.
-- **`townbarrels` red on main in the weekly run: Cœur de Vie and Portclare draw other people** (QA, Session 1992; owner not yet known).
+- **`townbarrels` red on main in the weekly run: Cœur de Vie and Portclare draw other people** (QA, Session 1994; owner not yet known).
   Run 42479827264 (shard 12), both tries: *its people are the people it drew before* reads -1122094953 for Cœur de Vie (pinned
   -1626674452) and -626595302 for Portclare (1470735334); Dunmore, Carraig Mór and Droichead hold. Green on 1 Nov. A merge since changed
   who those two towns draw (the market house and its room, S1901–1905, is the first suspect: a house with no keeper on the plots); the

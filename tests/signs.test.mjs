@@ -14,7 +14,7 @@ for (const id of ['portclare', 'dunmore']) {
          door, baked into the hall. Read from the hall's own plan: the panel's words, and that it stands over the door it is built with */
       if (h.kit && h.kit.kind === 'guildhall' && !near.length && typeof PKIT !== 'undefined' && PKIT.panelsMade() > 0) { const P = PKIT.gl.PLANS.guildhall({ guild: h.kit.guild }), d = P.open.front[0];
         if (P.plaque && Math.abs(P.plaque.x - d.x) < d.w / 2 && P.plaque.y >= d.h) near.push({ sign: P.plaque.text.replace(/’/g, "'").toLowerCase().replace(/(^| )\S/g, c => c.toUpperCase()) }); }
-      /* S1990 — the market house (Sessions 1901–1904, Michael's A on #475) hangs no board either: MARKET HOUSE is cut in a panel on its
+      /* S1992 — the market house (Sessions 1901–1904, Michael's A on #475) hangs no board either: MARKET HOUSE is cut in a panel on its
          front over the middle arch. Its record's door is the room's, up the east end's stair, so the panel is read from the house's own
          plan (the house built again from the town's stream, as kitMarket does), as the guild hall's is: the words, and that it stands over the arch it is built with */
       if (h.kit && h.kit.kind === 'market' && !near.length && typeof PKIT !== 'undefined' && PKIT.panelsMade() > 0) { const M = PKIT.gl.market({ r: PKIT.stream(`${id}:market`) }), P = M.userData.arcade && M.userData.arcade.plan; /* built as kitMarket builds it */
