@@ -56,8 +56,9 @@ const stockOK = T => !T.none && T.hens >= 2 && T.hens <= 4 && T.henYard && T.fie
 // Session 2007 (Michael's B on #1275): a farm's beast struck dead is theft. Seen (the farmer 3 m off, facing you): the farm's town loses 2
 // favour, the fine is 50 and the beast's worth (STOCK_WORTH), and the farmer will not talk ("I know what you did.") for 5 days; unseen
 // (nobody in sight), it is recorded and nothing else. A lone farm's theft is booked with the nearest town round it.
-const theftAt = id => page.evaluate(id => { forceTime(12); const S = WORLD.settle.get(id), F = S.farm, res = S.residents.find(r => r.farm && r.n);
-  const ch = [...WILD_CH].find(q => q.cx === Math.floor(F.cx / CHUNK) && q.cz === Math.floor(F.cz / CHUNK)); if (!ch || !res) return { none: true, res: !!res };
+const theftAt = id => page.evaluate(id => { forceTime(12); const S = WORLD.settle.get(id), F = S.farm, res = S.residents.find(r => r.farm);
+  if (res) { px = res.def.x; pz = res.def.z; jumpY = 0; for (let i = 0; i < 120 && !res.n; i++) WORLD.tick(1 / 60, performance.now()); } /* a resident is spawned within 70 m, two a tick */
+  const ch = [...WILD_CH].find(q => q.cx === Math.floor(F.cx / CHUNK) && q.cz === Math.floor(F.cz / CHUNK)); if (!ch || !res || !res.n) return { none: true, res: !!res, n: !!(res && res.n) };
   const beasts = ch.wild.filter(e => e.farmStock && !e.dead && e._wildKey.startsWith(`farm:${F.id}:`)); if (beasts.length < 2) return { none: true, n: beasts.length };
   const town = stockTown(F.id); if (!town) return { none: true, town: null };
   worldState.crime = {}; worldState.crimes = []; worldState.refuse = {}; if (worldState.favor) delete worldState.favor[town.id];
