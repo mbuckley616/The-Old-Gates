@@ -6,10 +6,12 @@
 // ahead, the houses are a few dozen draws, the old builder's houses are gone from those lots, the far copy stands for them from outside
 // the town, and the town takes no more than 1.2 s longer to build than with its old houses (Dunmore's kit costs it 1.0 s). On the old look the towns are as they were.
 // Session 1305 (Michael's C on #294): Aurenne's town church is the Church of the Weaver, its solid its ground, its great door straight in from its steps.
+// Session 2003 (Michael's C on #1300): a Markish lot the hall will not take is the kit's town house (PKIT.mk.townhouse), measured as the halls are,
+// 4.2 to 6.6 m wide by 3.4 to 7 deep, its door at its own side of the gable, its roofs not one terrace (ridges over a metre apart).
 import { boot, check } from './lib/game.mjs';
 import fs from 'fs'; import path from 'path'; import { fileURLToPath } from 'url';
 const here = path.dirname(fileURLToPath(import.meta.url));
-const ISLES = [['mark', 'markhall', 'mk'], ['aurenne', 'aurhouse', 'au']];
+const ISLES = [['mark', 'markhall', 'mk'], ['aurenne', 'aurhouse', 'au']], KINDS = { markhall: ['markhall', 'marktown'], aurhouse: ['aurhouse'] };
 const pickTown = nk => { anchoredPlaces(); const S = [...CELLS.values()].filter(c => c.type !== 'sea' && nationKeyOf(c.i, c.j) === nk).flatMap(c => c.sites); return (S.find(s => s.kind === 'town') || {}).id; };
 
 const g0 = await boot({ look: 'old' }); await g0.intoWorld();
@@ -22,7 +24,7 @@ const g = await boot({ look: 'new' }); const { page } = g; await g.intoWorld();
 for (const [nk, kind, pk] of ISLES) {
   const id = await page.evaluate(pickTown, nk);
   check(`a town of ${nk} (${id}) stands on the new look`, !!id && await g.settle(id));
-  const r = await page.evaluate(([id, kind, pk]) => {
+  const r = await page.evaluate(([id, kinds, pk]) => { const kind = kinds[0];
     const S = WORLD.settle.get(id); let kitG = null; S.group.traverse(x => { if (x.name === 'kit houses') kitG = x; });
     if (!kitG) return { none: true };
     const meshes = kitG.children.filter(m => m.isMesh), M = PKIT[pk].mats(), leaves = new Set(pk === 'mk' ? [M.door] : []);
@@ -31,7 +33,7 @@ for (const [nk, kind, pk] of ISLES) {
     WORLD.scene.updateMatrixWorld(true);
     const rc = new THREE.Raycaster(), org = new THREE.Vector3(), dir = new THREE.Vector3();
     const hit = (x, y, z, dx, dz, far) => { org.set(x, y, z); dir.set(dx, 0, dz).normalize(); rc.set(org, dir); rc.far = far; return rc.intersectObjects(meshes, false)[0] || null; };
-    const H = S.houses.filter(h => h.siteId === id && h.kit && h.kit.kind === kind), out = [];
+    const H = S.houses.filter(h => h.siteId === id && h.kit && kinds.includes(h.kit.kind)), out = [];
     for (const h of H) {
       const s = S.sol.find(q => q.hid === h.id); if (!s) { out.push({ id: h.id, nosol: true }); continue; }
       const k = h.kit, E = k.ext, nx = s.s, nz = s.c, ex = s.c, ez = -s.s, base = WORLD.worldH(s.cx, s.cz), hz = (s.rz - .15) - k.o.d / 2 - E[1];
@@ -41,8 +43,8 @@ for (const [nk, kind, pk] of ISLES) {
         const x = s.cx + ax * (half + .55) + ox, z = s.cz + az * (half + .55) + oz, q = hit(x, base + .4, z, -ax, -az, 3); return q ? +(.55 - q.distance).toFixed(3) : null; });
       /* the door: from 1.5 m before the lot's front, 0.3 m aside of the door's middle (clear of an arcade's column), at 1.3 m over the
          ground (1.6 for a hall, up its steps), straight in: past the steps, the porch, the pot or the arcade, to the leaf */
-      const fx = -Math.sin(h.exitYaw), fz = -Math.cos(h.exitYaw), sx = -fz * .3, sz = fx * .3, dh = hit(h.doorX + fx * 1.5 + sx, WORLD.worldH(h.doorX, h.doorZ) + (kind === 'markhall' ? 1.6 : 1.3), h.doorZ + fz * 1.5 + sz, -fx, -fz, 8);
-      out.push({ id: h.id, roof: k.o.roof || k.o.kind, w: k.o.w, d: k.o.d, ext: E, faces, door: dh ? +(dh.distance - 1.5 - .15 - E[1]).toFixed(2) : null, leaf: !!(dh && leaves.has(dh.object.material)) });
+      const fx = -Math.sin(h.exitYaw), fz = -Math.cos(h.exitYaw), sx = -fz * .3, sz = fx * .3, dh = hit(h.doorX + fx * 1.5 + sx, WORLD.worldH(h.doorX, h.doorZ) + (h.kit.kind === 'markhall' ? 1.6 : 1.3), h.doorZ + fz * 1.5 + sz, -fx, -fz, 8);
+      out.push({ id: h.id, kind: k.kind, ridge: k.ridge, roof: k.o.roof || k.o.kind, w: k.o.w, d: k.o.d, ext: E, faces, door: dh ? +(dh.distance - 1.5 - .15 - E[1]).toFixed(2) : null, leaf: !!(dh && leaves.has(dh.object.material)) });
     }
     const others = []; S.group.traverse(m => { if (m.isMesh && m.parent !== kitG && m.name !== 'kit houses far' && !m.isSkinnedMesh) others.push(m); });
     const down = new THREE.Raycaster(); let under = 0;
@@ -52,13 +54,15 @@ for (const [nk, kind, pk] of ISLES) {
     const ch = S.houses.find(h => h.siteId === id && h.type === 'church' && h.kit), church = ch && (() => { const s = S.sol.find(q => q.hid === ch.id), fx = -Math.sin(ch.exitYaw), fz = -Math.cos(ch.exitYaw), q = hit(ch.doorX + fx * 1.5 - fz * .3, WORLD.worldH(ch.doorX, ch.doorZ) + 2.2, ch.doorZ + fz * 1.5 + fx * .3, -fx, -fz, 14);
       return { kind: ch.kit.kind, tris: ch.kit.tris, w: +(2 * s.rx).toFixed(2), d: +(2 * s.rz).toFixed(2), door: q ? +q.distance.toFixed(2) : null, leaf: !!(q && leaves.has(q.object.material)) }; })();
     return { church, n: H.length, kinds: [...new Set(H.map(h => h.kit.kind))], all: S.houses.filter(h => h.siteId === id).length, calls: kitG.children.length, tris: S.kitTris, out, under };
-  }, [id, kind, pk]);
-  check(`${id} has its kit houses, all of the island's kind`, !r.none && r.n > 15 && r.kinds.length === 1 && r.kinds[0] === kind, r.none ? r : { n: r.n, all: r.all, kinds: r.kinds });
+  }, [id, KINDS[kind], pk]);
+  check(`${id} has its kit houses, all of the island's kind`, !r.none && r.n > 15 && r.kinds.includes(kind) && r.kinds.every(k => KINDS[kind].includes(k)), r.none ? r : { n: r.n, all: r.all, kinds: r.kinds });
   if (r.none) continue;
-  const minor = r.out.filter(h => h.roof === (kind === 'markhall' ? 'turf' : 'tile')).length;
-  check(`one in three or so is ${kind === 'markhall' ? 'turf' : 'Roman'} (${minor} of ${r.n})`, minor >= r.n * .2 && minor <= r.n * .5, { minor, n: r.n });
+  const main = r.out.filter(h => h.kind === kind), minor = main.filter(h => h.roof === (kind === 'markhall' ? 'turf' : 'tile')).length;
+  check(`one in three or so is ${kind === 'markhall' ? 'turf' : 'Roman'} (${minor} of ${main.length})`, minor >= main.length * .2 && minor <= main.length * .5, { minor, n: main.length });
   const W0 = kind === 'markhall' ? 5.6 : 5.4, D0 = kind === 'markhall' ? 6.5 : 5;
-  check(`every house is ${W0} m wide or more and ${D0} m deep or more (${Math.min(...r.out.map(h => h.w))} to ${Math.max(...r.out.map(h => h.w))} by ${Math.min(...r.out.map(h => h.d))} to ${Math.max(...r.out.map(h => h.d))} m)`, r.out.every(h => h.w >= W0 - 1e-6 && h.d >= D0 - 1e-6), r.out.filter(h => h.w < W0 || h.d < D0).slice(0, 5));
+  check(`every ${kind} is ${W0} m wide or more and ${D0} m deep or more (${Math.min(...main.map(h => h.w))} to ${Math.max(...main.map(h => h.w))} by ${Math.min(...main.map(h => h.d))} to ${Math.max(...main.map(h => h.d))} m)`, main.every(h => h.w >= W0 - 1e-6 && h.d >= D0 - 1e-6), main.filter(h => h.w < W0 || h.d < D0).slice(0, 5));
+  const tn = r.out.filter(h => h.kind === 'marktown');
+  if (tn.length) { const R = tn.map(h => h.ridge); check(`its ${tn.length} town houses are 4.2 to 6.6 m wide by 3.4 to 7 deep, their ridges ${Math.min(...R)} to ${Math.max(...R)} m`, tn.every(h => h.w >= 4.2 - 1e-6 && h.w <= 6.6 + 1e-6 && h.d >= 3.4 - 1e-6 && h.d <= 7 + 1e-6) && (tn.length < 4 || Math.max(...R) - Math.min(...R) > 1), tn.slice(0, 5)); }
   const bad = r.out.filter(h => h.nosol || h.faces.some(f => f == null || f > .05 || f < -.45));
   check(`every house's back and sides stand on its solid (${r.n} houses; each face ${-Math.max(...r.out.flatMap(h => h.faces))} to ${-Math.min(...r.out.flatMap(h => h.faces))} m inside)`, bad.length === 0, bad.slice(0, 5));
   const badD = r.out.filter(h => h.door == null || h.door < -.05 || h.door > .45 || !h.leaf);

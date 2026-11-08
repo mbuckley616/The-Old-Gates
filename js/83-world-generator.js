@@ -458,13 +458,13 @@ function genSettlement(site){
             if(ok&&g.length<=4){go=g;break;}}
           if(!go){lot.w=w0;lot.d=d0;lot.x=x0;lot.z=z0;continue;}
           lot.kit={kind:'aurcourt',ext:E,w0,d0,slide:0,shell:`${site.id}:court:${lot.n}`};lot.two=true;for(const u of go)use.splice(use.indexOf(u),1);n--;}}
-      if(MK||AU)use.forEach((lot,i)=>{const t=shopTypes[i]||null,inn=MK&&t==='inn';if(t&&!KIT_SHOPS.has(t)&&!inn)return;if(lot.kit&&lot.kit.kind==='aurcourt')return;if(lot.k==='sw'||(site.kind==='port'&&site.quayStart&&Math.hypot(lot.x-site.quayStart.x,lot.z-site.quayStart.z)<34))return;
+      if(MK||AU){const mkLater=[];use.forEach((lot,i)=>{const t=shopTypes[i]||null,inn=MK&&t==='inn';if(t&&!KIT_SHOPS.has(t)&&!inn)return;if(lot.kit&&lot.kit.kind==='aurcourt')return;if(lot.k==='sw'||(site.kind==='port'&&site.quayStart&&Math.hypot(lot.x-site.quayStart.x,lot.z-site.quayStart.z)<34))return;
         const o1=(MK?PKIT.mk:PKIT.au).lot(site.id,lot.n).o,o0=inn?Object.assign({},o1,{roof:'shingle',porch:true,chimney:false,carve:true,w:10,d:18}):o1,w0=lot.w,d0=lot.d,x0=lot.x,z0=lot.z,W0=inn?7:MK?5.6:5.4,D0=inn?10:MK?6.5:5;
         // what stands round the house, by side: [back, front, the -x side, the +x side]
         const ext=o=>MK?[.15,o.porch?3.35:1.8,.15,.15]:[.08,o.kind==='tile'&&o.arcade?2.46:.71,o.stair&&o.kind!=='tile'?.95:.08,.08];
         const vars=MK?(o0.porch?[o0,{...o0,porch:false}]:[o0]):[o0,...(o0.stair?[{...o0,stair:false}]:[]),...(o0.arcade?[{...o0,arcade:false}]:[])];
         // an apron of 1.8 m before the front is kept clear of every other lot, and this lot of every other kit house's apron, so no door looks onto a wall
-        const ap=l=>({x:l.x+l.tx*.9,z:l.z+l.tz*.9,w:l.w,d:l.d+1.8,ry:l.ry,tx:l.tx,tz:l.tz}),apK=u=>u.kit&&(u.kit.kind==='markhall'||u.kit.kind==='aurhouse'||u.kit.kind==='aurcourt');
+        const ap=l=>({x:l.x+l.tx*.9,z:l.z+l.tz*.9,w:l.w,d:l.d+1.8,ry:l.ry,tx:l.tx,tz:l.tz}),apK=u=>u.kit&&(u.kit.kind==='markhall'||u.kit.kind==='marktown'||u.kit.kind==='aurhouse'||u.kit.kind==='aurcourt');
         const fit=(w,d,E)=>{const D=d+E[0]+E[1],sh=(d0-D)/2;lot.w=w+E[2]+E[3];lot.d=D;lot.x=x0+lot.tx*sh;lot.z=z0+lot.tz*sh;if(!clear(lot,lot.street))return false;const A=ap(lot);
           return use.every(u=>u===lot||(apart(A,u)&&!(apK(u)&&!apart(lot,ap(u)))));};
         // the widest that fits at the least depth, then the deepest at that width (each halved to within 5 cm: a house that fits fits smaller)
@@ -489,7 +489,17 @@ function genSettlement(site){
         if(MK&&t==='potion')for(const porch of [true,false]){const S={roof:'shingle',w:6.4,d:9,porch,chimney:false,carve:true,wall:o1.wall},E=ext(S);if(fit(S.w,S.d,E)){lot.kit={kind:'markhall',o:S,ext:E,w0,d0,stoop:E[1],apothecary:true,shell:`${site.id}:windows:${lot.n}`};return;}}
         for(const v of vars){const E=ext(v);if(!fit(W0,D0,E))continue;const w=most(W0,v.w,q=>fit(q,D0,E)),d=most(D0,v.d,q=>fit(w,q,E));
           if(!fit(w,d,E))continue;const o=Object.assign({},v,{w,d});lot.kit={kind:MK?'markhall':'aurhouse',o,ext:E,w0,d0};if(!MK)lot.kit.shell=`${site.id}:windows:${lot.n}`; /* S1831 — the street's stream, which the rooms inside draw their shell from */if(MK)lot.kit.stoop=E[1];if(inn)lot.kit.alehall=true;return;}
-        lot.w=w0;lot.d=d0;lot.x=x0;lot.z=z0;});
+        // S2003 (card F6, Michael's C on #1300; OG-034, OG-025) — a Markish home or shop whose lot will not take the hall is the kit's town
+        // house (PKIT.mk.townhouse, Session 1986): gable to the street, two storeys jettied 0.4 m, on a low footing with 0.6 m of steps, 4.2 to
+        // 6.6 m wide and 3.4 to 7 deep, its front on the lot's street line as the hall's. Its pitch (46 to 58°), its upper storey (2.35 to 2.6 m)
+        // and its door's side are drawn from the lot's own stream, so a row of them is not one terrace (the critic, 8 Nov). Not an inn. It is
+        // fitted after every lot has had its try at the hall (mkLater), so a town house's lot and its apron never take a hall's place.
+        lot.w=w0;lot.d=d0;lot.x=x0;lot.z=z0;
+        if(MK&&!inn)mkLater.push(()=>{const E=[.12,.6,.12,.12];if(fit(4.2,3.4,E)){const w=most(4.2,6.6,q=>fit(q,3.4,E)),d=most(3.4,7,q=>fit(w,q,E));
+          if(fit(w,d,E)){const q=PKIT.stream(`${site.id}:townhouse:${lot.n}`),o={w,d,wall:o1.wall,chimney:!!o1.chimney,pitch:+(46+q()*12).toFixed(1),h2:+(2.35+q()*.25).toFixed(2),side:q()<.5?-1:1};
+            lot.kit={kind:'marktown',o,ext:E,w0,d0,stoop:E[1],shell:`${site.id}:windows:${lot.n}`};return;}}
+          lot.w=w0;lot.d=d0;lot.x=x0;lot.z=z0;});});
+        for(const f of mkLater)f();}
       else{
       // S1275 — its front goes first on the lot's own street line (dB: planLots grew a guild's lot to 13 by 11 m about its centre, which
       // brought that front 2.5–3 m nearer the street), so the hall stands where the house a poorer town puts on the lot stands, and the
@@ -664,6 +674,16 @@ function genSettlement(site){
       {const r=kitRoof(o.d/2+(turf?.4:.6),o.w/2+H.ov,H.ry0,ridge);r.rotateY(Math.PI/2);kitLo.push([r,mx,new THREE.Color(...(turf?[.42,.36,.24]:[.16,.15,.15]))]);}
       lot._kitDoor=0;lot._wallH=eave;lot._storeys=1;lot.two=false;k.tris=H.tris;k.calls=H.draws;k.colour=o.roof;k.door=0;
       const sm=o.chimney?{u:-o.w/4,v:-o.d*.25,y:ridge+.95}:{u:0,v:-o.d*.15,y:ridge+.6};S.chimneys.push({x:lot.x+sm.u*c+(hz+sm.v)*s_,y:y+sm.y,z:lot.z-sm.u*s_+(hz+sm.v)*c,t:type||'home',k:0});}
+    // S2003 — the Markish town house (PKIT.mk.townhouse, its options as fitted above; its lit windows keyed by the town and the lot): set back
+    // on its lot by its steps and the footing's 0.12 m, the door its own (off the middle on a gable of 5.2 m or more); its far copy a box for
+    // the footing and the walls to the eaves, out over the jetty, and a prism for the roof; smoke from the stack or the louver, as the hall's
+    function kitMarkTown(lot,type){const k=lot.kit,o=k.o,E=k.ext,H=PKIT.mk.townhouse(o,PKIT.stream(k.shell)),y=worldH(lot.x,lot.z)-.06,hz=lot.d/2-o.d/2-E[1],c=Math.cos(lot.ry),s_=Math.sin(lot.ry);
+      H.group.position.set(lot.x+hz*s_-cx,y,lot.z+hz*c-cz);H.group.rotation.y=lot.ry;H.group.traverse(m=>{if(m.isMesh){m.castShadow=true;m.receiveShadow=true;}});kitG.add(H.group);
+      const ridge=H.ry0+(o.w/2+H.ov)*Math.tan(H.pitch),J=H.jetty,mx=new THREE.Matrix4().makeRotationY(lot.ry).setPosition(lot.x+hz*s_,y,lot.z+hz*c);
+      {const b=new THREE.BoxGeometry(o.w+.24,H.top,o.d+J+.24).toNonIndexed();b.translate(0,H.top/2,J/2);kitLo.push([b,mx,PKIT.mk.mats().wall[o.wall].color.clone().multiplyScalar(.5)]);}
+      {const r=kitRoof((o.d+J)/2+.45,o.w/2+H.ov,H.ry0,ridge);r.rotateY(Math.PI/2);r.translate(0,0,J/2);kitLo.push([r,mx,new THREE.Color(.16,.15,.15)]);}
+      lot._kitDoor=+H.door.x.toFixed(3);lot._wallH=+(H.top-H.sill).toFixed(3);lot._storeys=2;lot.two=true;k.tris=H.tris;k.calls=H.draws;k.colour='shingle';k.door=lot._kitDoor;k.ridge=+ridge.toFixed(3);
+      const sm=o.chimney?{u:-o.w/4,v:-o.d*.25,y:ridge+.85}:{u:0,v:-o.d*.2,y:ridge+.6};S.chimneys.push({x:lot.x+sm.u*c+(hz+sm.v)*s_,y:y+sm.y,z:lot.z-sm.u*s_+(hz+sm.v)*c,t:type||'home',k:0});}
     // S1287 — an Aurennais house (PKIT.au.house, its options PKIT.au.lot's as fitted above; its own stream keyed by the town and the lot):
     // set back on its lot by its pot or its arcade and aside by its stair, the door its own; its far copy a box for the walls (and the
     // parapet on a flat roof) and, on a Roman house, a prism for the roof; no smoke (a southern house cooks in the yard)
@@ -771,6 +791,7 @@ function genSettlement(site){
       if(lot.kit.kind==='church'){kitChurch(lot);return;}
       if(lot.kit.kind==='keep'){kitKeep(lot);return;}
       if(lot.kit.kind==='markhall'){kitMarkHall(lot,type);return;}
+      if(lot.kit.kind==='marktown'){kitMarkTown(lot,type);return;}
       if(lot.kit.kind==='aurhouse'){kitAurHouse(lot);return;}
       if(lot.kit.kind==='aurchurch'||lot.kit.kind==='aurchapel'){kitAurChurch(lot);return;}
       if(lot.kit.kind==='aurtavern'){kitAurTavern(lot);return;}
