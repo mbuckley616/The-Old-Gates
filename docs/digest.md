@@ -519,3 +519,15 @@ Written by the producer once a day, after 12:00 UTC. Newest last.
 **Blocked.** Nothing; main is green.
 
 **Roadmap.** 313 of 386 stories done (309 of 384 on 6 Nov). The new look is 6 of 17; no deep-work card is queued.
+
+## 8 Nov 2026
+
+**Waiting on you.** Seven decisions: Water (#1254, B), striking a farm's animals (#1275, B), a foe's tell (#1278, B), the places off the road (#1292, A), animals by the hour (#1293, A), cooking (#1296, B), the Mark's tight lots (#1300, C). The systems builder has nothing to build until some are answered. No PR waits on your tap.
+
+**Landed on main since 7 Nov.** The save register on the parchment (#199 B, Systems 1965); the farms' hens and herds (1973); a lair saved in loads as its cavern (1976); fire burns every way it comes (1979). Aurenne's Roman homes open on their own rooms, with a cedar wall plate (F9, Look 1968–1988). The Mark's tight lots prototyped three ways (1986). Braids and tails over a long cloak, the cloak's skirts going with the legs, island coats on the Mark's wolf and bear, every elder with a walking staff (Bodies 1966–1987). The Child at the Gate (1981). QA steadied gatesave, corruption and dungeonexit; the budget held (1970–1985). The cooking page. Build s1369.
+
+**Under way.** Drafts from the bodies builder (#1308) and QA (#1309); the weekly run of every suite.
+
+**Blocked.** STUCK #1307: a long cloak's hem breaks the arm check; the bodies builder's own next run.
+
+**Roadmap.** 315 of 390 stories done (313 of 386 on 7 Nov). The new look is 6 of 17; no deep-work card is queued.
