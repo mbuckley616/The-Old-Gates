@@ -347,13 +347,13 @@ export function aurenneHome(o = {}, r = stream('aurhome')) {
   const jar = [Math.min(2.55, X - .65 - .4), Z - .35], divan = { x0: -X + .05, x1: Math.min(1.6, jar[0] - .4), z0: Z - .8, z1: Z, y: F1 + .42 }; bx('cedar', divan.x0, divan.x1, F1, F1 + .3, divan.z0, divan.z1, 'divan', 1); bx('indigo', divan.x0, divan.x1, F1 + .3, divan.y, divan.z0 + .02, divan.z1 - .02);
   for (let x = divan.x0 + .35, k = 0; x < divan.x1 - .3; x += .62, k++) { put(new THREE.BoxGeometry(.52, .42, .16).translate(0, 0, 0), k % 2 ? 'madder' : 'saffron', x, divan.y + .2, Z - .12, 0, .6, -.12); }
   // the table and its rug 1.0 m west of the middle, unless the bed (on the west wall, 1.42 m wide) would come within it: in a house under
-  // 6.5 m wide (Session 1978, the game's Roman homes down to 6.1 m) they stand 0.5 m east of the bed's side
+  // 6.5 m wide (Session 1979, the game's Roman homes down to 6.1 m) they stand 0.5 m east of the bed's side
   const TX = -X + 1.42 > -1.5 ? -X + 1.42 + .5 : -1.0;
   { const g = new THREE.PlaneGeometry(2.8, 1.9); g.rotateX(-Math.PI / 2); put(g, 'rug', TX, F1 + .006, Z - 1.85); }
   const table = { x: TX, z: Z - 1.75, y: F1 + .42 }; put(new THREE.CylinderGeometry(.48, .48, .03, 28), 'brass', table.x, table.y - .015, table.z); for (let k = 0; k < 6; k++) { const a = k * Math.PI / 3; bx('cedarD', table.x + Math.cos(a) * .3 - .02, table.x + Math.cos(a) * .3 + .02, F1, table.y - .03, table.z + Math.sin(a) * .3 - .02, table.z + Math.sin(a) * .3 + .02); }
   boxes.push({ tag: 'table', x0: table.x - .48, x1: table.x + .48, y0: F1, y1: table.y, z0: table.z - .48, z1: table.z + .48, fl: 1 });
   for (let k = 0; k < 3; k++) put(new THREE.CylinderGeometry(.035, .03, .08, 10), k ? 'delft' : 'blue', table.x - .2 + k * .2, table.y + .04, table.z + (k - 1) * .1); put(new THREE.SphereGeometry(.09, 12, 8).scale(1, 1.2, 1), 'brass', table.x + .15, table.y + .1, table.z - .2);
-  // the bed's head 1.0 m off the back wall (0.83 m in a smaller house), or nearer it in a house under 5.02 m deep (Session 1978, the game's lots
+  // the bed's head 1.0 m off the back wall (0.83 m in a smaller house), or nearer it in a house under 5.02 m deep (Session 1979, the game's lots
   // down to 5.0 m), so the chest at its foot ends at the divan's back
   const bz0 = Math.min(Math.max(-2.45, -Z + .83), Z - 3.55), bed = { x0: -X + .02, x1: -X + 1.42, z0: bz0, z1: bz0 + 2.05 }; bx('cedar', bed.x0, bed.x1, F1, F1 + .32, bed.z0, bed.z1, 'bed', 1); bx('linen', bed.x0 + .04, bed.x1 - .04, F1 + .32, F1 + .44, bed.z0 + .04, bed.z1 - .04); bx('indigo', bed.x0 + .02, bed.x1 - .02, F1 + .44, F1 + .48, bed.z0 + .5, bed.z1 - .02);
   { const g = new THREE.CylinderGeometry(.11, .11, 1.2, 12); g.rotateZ(Math.PI / 2); put(g, 'madder', (bed.x0 + bed.x1) / 2, F1 + .55, bed.z0 + .25); }

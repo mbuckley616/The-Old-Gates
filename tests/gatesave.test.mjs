@@ -23,6 +23,10 @@ await page.evaluate(() => saveToSlot(0));
 await page.reload();
 await page.waitForFunction(() => { const b = document.getElementById('cb'); return b && typeof saveToSlot === 'function' && getComputedStyle(b).display !== 'none'; }, null, { timeout: 120000, polling: 100 });
 await page.evaluate(() => document.getElementById('cb').click());
+// S1978 (QA) — Continue's load holds the page's one thread in one task while it restores the world (92–95 s on four cores here, at
+// s1352 and on 5 Nov's main alike), and only then, 0.3 s later, rebuilds the gate (another 14 s). One 120 s wait over both was red twice
+// on a slower runner (run 42423911187). Wait for each stage: the world restored (the page was 'overworld' before the click), then the gate
+await page.waitForFunction(() => activeZoneId === 'world' || activeZoneId === 'dungeon', null, { timeout: 300000, polling: 200 });
 await inGate(); await g.hide();
 const after = await page.evaluate(([B]) => {
   const foe = ENEMIES.find(e => e.id === B.foe), ch = CHESTS.concat(BARRELS).find(b => b.id === B.chest), door = B.door ? DOORS.find(d => d.id === B.door) : null;
