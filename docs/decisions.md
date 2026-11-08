@@ -58,6 +58,17 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 - **C.** B, plus the table as a deed: a dish of their island raises a person's disposition +10 once, an inn buys three of your dishes a day, six at a feast add +1 town favour. Five systems sessions.
 
 **Recommendation.** B: it meets the note in full on the three fed kinds already built, learning comes by discovery rather than purchase, and the Mark's curd and Aurenne's olives become how you meet climate B. C reaches into Speech and the economy and can follow as its own question. Page: `docs/design/cooking.md`.
+### The Mark's tight lots — the hall cut down, the hall on a low footing, or a two-storey town house? (from the look builder, 2026-11-08, #1300)
+**The question.** On the new look a Markish home is the kit's hall where it fits (5.6 m wide, 6.5 m deep or more, 1.8 m of steps). In the Mark's four ports and its city the lots are 4 to 7 m deep, so 74 of 198 homes there are still the old builder's house. Which way should those lots be filled?
+
+**Options.**
+- **A.** The hall cut down to 5.0 m deep on its full footing and steps: 149 of 198 (75%). Squat halls; still the old house on lots under about 6.8 m.
+- **B.** The hall on a low footing (0.36 m, two steps, 0.6 m), down to 5.0 m deep: 168 of 198 (85%). Looks the same, sits lower.
+- **C (recommended).** A Markish town house where the hall will not fit: gable to the street, two storeys of tarred planks, the upper floor jettied 0.4 m, the hall's 52° shingle, bargeboards and beast heads, the low footing. 4.2–6.6 m wide, 3.4–7 m deep, 1,392–2,232 triangles in 9 draws: 176 of 198 (89%). Its rooms (one per floor, a ladder stair) come in a later session.
+- **D.** Leave them: the old houses stay until F14 deletes the old look.
+
+**Recommendation.** C: the only one that fills the ports' streets, and a tall gabled wharf row (Bergen's Bryggen) reads as a Northern port at a glance; B is the fallback if the Mark should stay one-storey halls. Sheet: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/mark-small-sheet.jpg
+
 ### The dungeon's cell by kind: old gates at 3 m, and forts and lairs at what? (systems builder, Session 1105) — DECISION #421
 **The question.** F2b's last session sets a dungeon's grid cell at true scale; it is one unit today, so corridors are 1 m wide for a 1.8 m body. Michael chose **C, 3 m** on #300 and added: "If by dungeon we mean Old Gates, they should be extremely massive and cavernous. A normal 'dungeon' like a mine, or a cave can be a more typical size." The game has three kinds of underground place: the **old gates** (the world's portals, themed by school: crypts, haunted halls, elemental and deep caverns, ruins), **fort interiors** (the `fort_` layouts), and **lairs and dens** (a beast's lair, the cloak's den). So the cell can differ by kind, and "a more typical size" is a number a player feels.
 
