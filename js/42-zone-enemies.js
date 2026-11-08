@@ -1841,6 +1841,7 @@ function killZoneEnemy(e,sc,tag=''){
   // Roll loot via shared pipeline — corpse drop chance + bonus roll, zone-appropriate theme
   const items = e.wild?[]:rollContainerLoot('corpse', null, null, lootDropChance(e), e.id?`${e.id}:corpse:${lootDay()}`:undefined, e.tier); // S478 — a keyed foe's corpse rolls on its id; S1707 — an animal carries only its meat
   if(e.wild&&typeof wildTaken==='function')wildTaken(e);
+  if(e.farmStock&&typeof stockKilled==='function')try{stockKilled(e);}catch(err){console.warn('stock',err);} /* S2007 — a farm's beast is theft (#1275 B) */
   bodyMeat(e,items,e.id?`${e.id}:corpse:${lootDay()}`:undefined); /* S1486 — meat off a bear, a boar or a wolf */
   bodyPicks(e,items,e.id?`${e.id}:corpse:${lootDay()}`:undefined); // S633 — a bandit's, kobold's, skeleton's or goblin's body may hold picks (#191 A)
   // v61c2 — Boss death hooks. The Faolchú gets:

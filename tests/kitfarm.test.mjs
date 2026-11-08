@@ -53,6 +53,25 @@ const stockAt = id => page.evaluate(id => { forceTime(12); const S = WORLD.settl
   forceTime(23); wildDrop(ch); wildSpawnChunk(ch); const night = mine().map(e => e.baseName); forceTime(12); wildDrop(ch); wildSpawnChunk(ch);
   return { A: same ? undefined : A, B: same ? undefined : B, hens: hens.length, henYard: hens.every(inYard), field: field.length, kinds, offLot, same, at8, at2, night }; }, id);
 const stockOK = T => !T.none && T.hens >= 2 && T.hens <= 4 && T.henYard && T.field >= 2 && T.kinds.length === 1 && ['Cow', 'Sheep', 'Goat'].includes(T.kinds[0]) && T.offLot && T.same && T.at8 !== 'flee' && T.at2 === 'flee' && !T.night.includes('Hen') && T.night.length === T.field;
+// Session 2007 (Michael's B on #1275): a farm's beast struck dead is theft. Seen (the farmer 3 m off, facing you): the farm's town loses 2
+// favour, the fine is 50 and the beast's worth (STOCK_WORTH), and the farmer will not talk ("I know what you did.") for 5 days; unseen
+// (nobody in sight), it is recorded and nothing else. A lone farm's theft is booked with the nearest town round it.
+const theftAt = id => page.evaluate(id => { forceTime(12); const S = WORLD.settle.get(id), F = S.farm, res = S.residents.find(r => r.farm && r.n);
+  const ch = [...WILD_CH].find(q => q.cx === Math.floor(F.cx / CHUNK) && q.cz === Math.floor(F.cz / CHUNK)); if (!ch || !res) return { none: true, res: !!res };
+  const beasts = ch.wild.filter(e => e.farmStock && !e.dead && e._wildKey.startsWith(`farm:${F.id}:`)); if (beasts.length < 2) return { none: true, n: beasts.length };
+  const town = stockTown(F.id); if (!town) return { none: true, town: null };
+  worldState.crime = {}; worldState.crimes = []; worldState.refuse = {}; if (worldState.favor) delete worldState.favor[town.id];
+  const n = res.n, kill = e => { px = e.x + 1; pz = e.z; jumpY = 0; killZoneEnemy(e, sc); };
+  const a = beasts[0]; n.g.visible = true; n._retreated = false; n.g.position.set(a.x + 4, n.g.position.y, a.z); n.g.rotation.y = Math.atan2(-1, 0); n.wt = 99;
+  kill(a); const c = (worldState.crime || {})[town.id] || {}, fav = (worldState.favor || {})[town.id] || 0, ref = (worldState.refuse || {})['farm:' + F.id];
+  dlgOpen = false; openDialog(n.def); const talks = dlgOpen; if (dlgOpen) closeDialog();
+  const hide = npcs.filter(m => m.g.visible); hide.forEach(m => { m.g.visible = false; });
+  const b = beasts[1]; kill(b); hide.forEach(m => { m.g.visible = true; });
+  const c2 = (worldState.crime || {})[town.id] || {}, fav2 = (worldState.favor || {})[town.id] || 0;
+  const back = dayNow(); worldState.refuse['farm:' + F.id] = back; dlgOpen = false; openDialog(n.def); const talksAfter = dlgOpen; if (dlgOpen) closeDialog();
+  return { town: town.id, kind: town.kind, d: Math.round(Math.hypot(town.x - F.cx, town.z - F.cz)), a: a.baseName, worth: STOCK_WORTH[a.baseName], bounty: c.bounty, fav, ref: ref != null ? ref - dayNow() : null, talks,
+    b: b.baseName, bounty2: c2.bounty, fav2, crimes: (worldState.crimes || []).filter(r => r.farm === F.id).length, talksAfter }; }, id);
+const theftOK = T => !T.none && T.bounty === 50 + T.worth && T.fav === -2 && T.ref === 5 && !T.talks && T.bounty2 === T.bounty && T.fav2 === -2 && T.crimes === 2 && T.talksAfter;
 const tid = P.first;
 check(`${tid}, the first of them, stands`, !!tid && await g.settle(tid));
 const S = await page.evaluate(tid => { const S = WORLD.settle.get(tid), F = S.farm; if (!F) return { none: true }; const c = Math.cos(F.ry), s_ = Math.sin(F.ry), W = (u, v) => [F.x + u * c + v * s_, F.z - u * s_ + v * c], L = FARM_LOT;
@@ -74,6 +93,8 @@ const L = await page.evaluate(tid => { const S = WORLD.settle.get(tid), F = S.fa
 check(`its far copy (${S.farTris} triangles) stands in for it from 160 m, the farmstead (${S.calls} draws) at 20 m`, L.near.hi && !L.near.lo && !L.far.hi && L.far.lo && S.hasFar && S.calls <= PROTO.draws, L);
 const ST = await stockAt(tid);
 check(`its stock: ${ST.hens} hens in the yard, ${ST.field} ${ST.kinds} in the field off its lot, the same when the chunk loads again, tame (${ST.at8} at 8 m, ${ST.at2} at 2 m), no hens at night`, stockOK(ST), ST);
+const TH = await theftAt(tid);
+check(`a ${TH.a} of its stock struck dead with the farmer 4 m off is theft: ${TH.town}'s favour ${TH.fav}, a fine of ${TH.bounty} (50 and its worth, ${TH.worth}), the farmer silent ${TH.ref} days; a ${TH.b} struck unseen is recorded (${TH.crimes} records) and costs nothing more`, theftOK(TH), TH);
 const N = await page.evaluate(() => { const all = [], other = []; let cells = 0;
   for (const c of CELLS.values()) { if (c.type === 'sea') continue; const gl = nationOf(c.i, c.j).people === 'gatelander'; if (gl && !c.home) cells++;
     const L = loneFarms(c), was = c._lone; if (!gl && L.length) other.push(c.i + ',' + c.j); if (!gl) continue;
@@ -98,6 +119,8 @@ const LF = await page.evaluate(id => { const S = WORLD.settle.get(id), F = S.far
 check(`it is ${LF.name}: the farmstead (${LF.calls} draws) on its flat pad (${LF.dev != null ? LF.dev.toFixed(3) : '?'} m), ${LF.sol} solids, its farmhouse a home with its farmer, the step out clear`, !LF.none && LF.dev < .05 && LF.sol === K.foot.length && LF.home && LF.kit && LF.listed && LF.resident && LF.exitClear && LF.house === LF.name, LF);
 const SL = await stockAt(N.first);
 check(`the lone farm's stock: ${SL.hens} hens in the yard, ${SL.field} ${SL.kinds} in the field, the same again, tame, no hens at night`, stockOK(SL), SL);
+const TL = await theftAt(N.first);
+check(`at the lone farm the theft of a ${TL.a} is ${TL.town}'s, the nearest place round it (a ${TL.kind}, ${TL.d} m off): favour ${TL.fav}, a fine of ${TL.bounty}, the farmer silent ${TL.ref} days`, theftOK(TL), TL);
 // Session 1482: a lone farm on the map. Its name is known before it is built (loneFarmName, the farmer's stream's first two draws) and
 // is the built house's; standing by it discovers it; the map's entries for its cell carry it with its own icon; the search finds it;
 // fast travel puts you on the road's verge in front of it, clear of its solids, facing it.
