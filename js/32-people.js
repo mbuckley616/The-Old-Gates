@@ -1578,7 +1578,15 @@ function hbGenome(g){let G=HB_GENOMES.get(g.hbKey);if(G)return G;HB.loadPack();
   if(GUARD_ROLE.test(g.role||''))G.dress=Object.assign({},G.dress,{mail:[.55,.56,.58],helm:[.42,.43,.45],spear:[.46,.33,.2],cloak:null,hood:null,basket:null,staff:null,lantern:null,shield:null,crossbow:null});
   if(/:hand:\d+:Deckhand$/.test(g.hbKey||''))G.dress=hbDeckDress(g.hbKey); /* S1941 — a merchantman's hand, dressed for her deck */
   if(/^crew:/.test(g.hbKey||'')){const m=/carpenter|cook|navigator/.exec(g.role||''),C=m&&CREW_BODY[m[0]];if(C)G.dress=Object.assign({},G.dress,CREW_STRIP,C.dress);} /* S1779 — her crew's working dress */
+  if(!cast&&g.gear==='stick'&&!(G.dress&&G.dress.staff))G.dress=hbRoleStaff(g,G); /* S1980 — the elder's and the hermit's staff */
   HB_GENOMES.set(g.hbKey,G);return G;}
+/* S1980 (L1, OG-001/OG-065; owed by Session 1977) — the role's staff. An elder or a hermit carries the driver's stick (personGenome's role),
+   but people.js rolls its walking staff on only a third of the old, so four of Dunmore's six (Sinéad, Lorcan, Maeve, Fíachra) held the
+   driver's grip, the elbow bent at pwHold's 0.45, round an empty fist. Their genome now takes the staff the builder would have rolled for
+   their people (the same woods), seeded by their key, and gives up what the right fist held instead (a basket, a lantern), as the roll does */
+const HB_ROLE_STAFF={oldblood:[[.2,.16,.13],[.3,.24,.19]],aurennais:[[.5,.4,.28],[.42,.32,.2]],other:[[.45,.33,.2],[.36,.26,.16],[.52,.42,.3]]};
+function hbRoleStaff(g,G){const D=G.dress||{};if(D.spear||D.crossbow||D.chair)return D;let h=2166136261;for(const c of String(g.hbKey)+'|staff')h=Math.imul(h^c.charCodeAt(0),16777619);
+  const W=HB_ROLE_STAFF[G.people]||HB_ROLE_STAFF.other;return Object.assign({},D,{staff:W[(h>>>0)%W.length],basket:null,basketCloth:null,lantern:null,tankard:null,hammer:null});}
 /* S1792 (L2, OG-069) — the cast: a named person of Act I (the builder's CAST: Bram, Edna, Corwin, Niamh, Áine) wears the sheet's body and
    dress wherever they stand, not a roll of their key. Only at their own place (Ashenmoor; Niamh at Inis Rua, Áine at Carraig Mór) or
    when the game authors them (Corwin at the harbours), so a generated town's own Edna is still her own woman */
