@@ -69,6 +69,25 @@ const pl = await page.evaluate(() => { thirdPerson = true; const st = m => ({ mo
     elbow }; });
 check('the player at walking speed runs, feet planted, arms bent, leaning into it (sprint and sneak lean forward too)', pl.run && pl.rw > .95 && pl.leanRun > 30 && pl.leanSprint > pl.leanRun && pl.leanSneak > 30 && pl.stillMm < 3 && pl.elbow < -1 && pl.stepsPerSec < 6, pl);
 
+// Session 1977: an old townsperson's walking staff (the builder's own, in the right fist) goes down with the left foot and stays where it
+// went down while that foot carries the body, then swings on to the next (32-people.js, pwStaffWalk and hbStaffWalk). Dunmore's first
+// walker with a staff, its body built near the eye, walked 160 ticks at a stroll; over the last 80: the staff's foot while planted
+// (the stride's phase inside the left foot's stance, a tick clear of each end) must not slide or sink, and in the swing it must travel
+const staff = await page.evaluate(() => { thirdPerson = false;
+  const rig = [...HB_RIGS].find(r => r.root.parent === WORLD.scene && r.hbG && r.hbG.dress && r.hbG.dress.staff && !r.foe); if (!rig) return { none: true };
+  const root = rig.root; root.visible = true; const put = () => { CAM.position.set(root.position.x + 3, worldH(root.position.x, root.position.z) + 1.65, root.position.z + 3); CAM.updateMatrixWorld(true); };
+  put(); let k = 0; while ((!rig.hb || rig.hb.cold) && !rig.hbFail && k++ < 800) tickPeople(1 / 60, 4e5 + k * (HBODY.gap + 1));
+  if (!rig.hb) return { name: rig.g.name, noBody: true }; let st = null; rig.hb.root.traverse(o => { if (o.name === 'staff') st = o; }); if (!st) return { name: rig.g.name, noStaff: true };
+  const fyaw = root.rotation.y, step = .7 / 60, v = new THREE.Vector3(), D = PW.DUTY; let prev = null, slide = 0, sink = 0, travel = 0, planted = 0, lv = [];
+  for (let i = 1; i <= 160; i++) { root.position.x += Math.sin(fyaw) * step; root.position.z += Math.cos(fyaw) * step; put();
+    tickPeople(1 / 60, 5e5 + i * 16.7); root.updateMatrixWorld(true); st.updateMatrixWorld(true); st.getWorldPosition(v); lv.push(rig.hb.L);
+    const f = rig.phase % 1, cur = { x: v.x, z: v.z, d: worldH(v.x, v.z) - v.y, f };
+    if (i > 80 && prev) { const dh = Math.hypot(cur.x - prev.x, cur.z - prev.z);
+      if (f > .02 && f < D - .02 && prev.f > .02 && prev.f < f) { slide = Math.max(slide, dh); sink = Math.max(sink, Math.abs(cur.d)); planted++; } else if (f >= D) travel += dh; }
+    prev = cur; }
+  return { name: rig.g.name, level: Math.max(...lv.slice(80)), planted, slideMm: +(slide * 1000).toFixed(1), sinkMm: +(sink * 1000).toFixed(1), swingMm: Math.round(travel * 1000) }; });
+check('a walking staff stays where it went down while the left foot is planted, and swings on with that foot', !staff.none && staff.level < 2 && staff.planted > 30 && staff.slideMm < 3 && staff.sinkMm < 15 && staff.swingMm > 400, staff);
+
 // the photograph: one townsperson side on, eight frames through a run's stride, on a plain sky
 const strip = await page.evaluate(async () => { forceTime(12); const src = [...PEOPLE_RIGS].find(r => r.root.parent === WORLD.scene && !r.g.dress && !r.g.gear) || window._gr; const rig = buildPerson(src.g); PEOPLE_RIGS.delete(rig);
   const t = WORLD.siteAnywhere('dunmore'); const cx = t.x, cz = t.z + t.pad + 30, y = WORLD.worldH(cx, cz);
