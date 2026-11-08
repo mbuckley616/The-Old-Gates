@@ -450,5 +450,52 @@ for (const x of d7.by) { const nm = `cart (${x.pp}, ${x.how})`; if (x.missing) {
   check(`${nm}: Your cart's out of the ditch., answered in their words, paid, ${x.how === 'band' ? 'two points' : 'a point'} of favour`, x.turned && x.done === x.wdone && x.paid === x.wpaid && x.paid > 0 && x.fav === (x.how === 'band' ? 2 : 1), { labels: x.label, done: x.done, paid: x.paid, fav: x.fav }); }
 check('cart: the records are saved', d7.saved >= 3, d7.saved);
 
+// S1981 — errand 8, The Child at the Gate: a giver with children, an old gate within 700; the child at its door when you come within 200,
+// Home. Now. or Show me (a carved gate starred on the map, the warm line; else the cold one); the child walks home behind you; turned in
+// for the pay, a point of favour for Home. Now. only; the third day, the lapse
+const d8 = await page.evaluate(() => {
+  worldState.quests = []; worldState.met = {}; worldState.rubbings = {}; const T0 = 300 * 1440 + 600; worldState.gameTimeAbsMinutes = T0;
+  const towns = []; for (let j = 0; j < GRID; j++) for (let i = 0; i < GRID; i++) getCell(i, j).sites.forEach(t => { if (t.pad >= 30 && t.kind !== 'shrine' && t.kind !== 'portal') towns.push(t); });
+  const mk = (site, i, pp) => { const d = makeDef(site, site.reg || 'irish', seededRng('ertest8', i), 'Villager', 'Seán', {}); d._twin = 'K' + i; if (pp) d.people = pp; return d; };
+  const find = (pp, ok) => { for (const site of towns) { if (!erGiver(mk(site, 0, pp), site)) continue; for (let i = 0; i < 500; i++) { const d = mk(site, pp + i, pp); const e = errandFor(d, site);
+      if (e && e.sub === 'child' && (!ok || ok(d, site, e))) return { d, site, e }; } } return null; };
+  let wrong = 0, far = 0; for (const site of towns.slice(0, 15)) for (let i = 0; i < 80; i++) { const d = mk(site, 'wk' + i); const e = errandFor(d, site); if (e && e.sub === 'child') { if (!(d.bio.kids > 0)) wrong++; if (Math.hypot(e.gx - site.x, e.gz - site.z) > 700) far++; } }
+  const warm = (d, s, e) => !!gateCarving(e.seed), cold = (d, s, e) => !gateCarving(e.seed);
+  const by = [];
+  for (const [pp, how] of [['gatelander', 'now'], ['markman', 'warm'], ['aurennais', 'cold'], ['oldblood', 'lapse']]) { worldState.gameTimeAbsMinutes = T0;
+    const F = find(pp, how === 'warm' ? warm : how === 'cold' ? cold : null) || (how === 'warm' || how === 'cold' ? find(pp) : null); if (!F) { by.push({ pp, how, missing: true }); continue; }
+    const { d: A, site, e: E } = F, p = pp, isWarm = !!gateCarving(E.seed);
+    A.greeting[0]; const greet = A.greeting[0]; const you = A.topics.find(t => /^About you/.test(t.label)); const ask = you && you.follow.find(t => t.label === 'Who’s not back?');
+    const wantOffer = ER_CHILD.offer[p](erPro(Object.assign({}, E, { gate: erGateIn(E.gate) }))); const yes = ask && ask.follow[0].fn(); const q = qActive().find(x => x.giver === A.name && x.sub === 'child');
+    const notYet = A.topics.find(t => t.label === 'About that errand.');
+    const x = { pp, how, isWarm, greet, hint: ER_CHILD.hint[p](erPro(E)), offer: ask && ask.response, wantOffer, yes, ys: ER_SHARED[p].yes, title: q && q.title, wtitle: E.who + ' at ' + erGateIn(E.gate),
+      notYet: notYet && notYet.fn(), ny: ER_SHARED[p].notYet, kids: A.bio.kids, gateFar: Math.hypot(E.gx - site.x, E.gz - site.z) };
+    if (how === 'lapse') { px = E.gx + 300; pz = E.gz; worldState.gameTimeAbsMinutes = q.erDue + 5; qTick(); const t = A.topics.find(t => t.label === 'About that errand.'); const g1 = gold; x.done = t && t.fn(); x.wdone = ER_CHILD.lapse[p](erChildO(q)); x.lapsed = q.lapsed; x.paid = gold - g1;
+      x.again = !!A.topics.find(t => t.label === 'About that errand.'); by.push(x); continue; }
+    px = E.gx + 250; pz = E.gz; qTick(); x.farNone = !q._npc;
+    px = E.gx + 150; pz = E.gz; qTick(); const n = q._npc; x.spawned = !!n && Math.hypot(n.g.position.x - E.gx, n.g.position.z - E.gz) < 3;
+    x.child = n && n.def.role === 'Child'; x.body = n && n.g && n.g.parent === sc; x.cgreet = n && n.def.greeting[0]; x.wgreet = ER_CHILD.greet[p];
+    const ct = n && n.def.topics.find(t => t.quest); x.ctl = ct && ct.label; x.wctl = `Your ${q.data.pa} wants you home.`; x.cat = ct && ct.response; x.wat = ER_CHILD.at[p];
+    x.labels = ct ? ct.follow.map(f => f.label) : [];
+    const pick = how === 'now' ? ct.follow[0] : ct.follow[1]; x.said = pick.fn(); x.wsaid = how === 'now' ? '' : isWarm ? ER_CHILD.warm[p] : ER_CHILD.cold[p];
+    x.starred = !!worldState.rubbings[E.seed]; x.choice = q.data.choice; x.gone = !(n.def.topics.find(t => t.quest));
+    x.early = A.topics.find(t => t.label === 'About that errand.'); x.early = x.early && x.early.fn();
+    px = E.gx + 10; pz = E.gz; qTick(); x.follows = q._npc === n && Math.hypot(n.g.position.x - px, n.g.position.z - pz) < 41;
+    px = site.x; pz = site.z; qTick(); x.home = q.data.home && !q._npc && !npcs.includes(n);
+    const t = A.topics.find(t => t.label === `${E.who} is home.`); const g1 = gold, f1 = favor(site); x.done = t && t.fn();
+    x.wdone = (how === 'now' ? ER_CHILD.homeNow : ER_CHILD.shown)[p](erChildO(q)); x.paid = gold - g1; x.wpaid = questGold(E.n); x.fav = favor(site) - f1; x.turned = q.turnedIn; by.push(x); }
+  return { wrong, far, by, saved: JSON.parse(ssStringify(worldState.quests)).filter(x => x.sub === 'child').length };
+});
+console.log(JSON.stringify(d8).slice(0, 3500));
+check('child: only a giver with children asks it, at a gate within 700', d8.wrong === 0 && d8.far === 0, d8);
+for (const x of d8.by) { const nm = `child (${x.pp}, ${x.how})`; if (x.missing) { check(`${nm}: a giver asks`, false); continue; }
+  check(`${nm}: the hint after First Words, the offer word for word, taken and titled, not yet`, x.greet.endsWith(' ' + x.hint) && x.offer === x.wantOffer && x.yes === x.ys && x.title === x.wtitle && x.notYet === x.ny && !/\{|undefined|null/.test(x.offer + x.hint), { greet: x.greet, offer: x.offer });
+  if (x.how === 'lapse') { check(`${nm}: the third day, the lapse in the giver's words, once, nothing paid`, x.lapsed && x.done === x.wdone && x.paid === 0 && !x.again, x); continue; }
+  check(`${nm}: the child stands at the door within 200 and not before, a child's body, the greeting and the line`, x.farNone && x.spawned && x.child && x.body && x.cgreet === x.wgreet && x.ctl === x.wctl && x.cat === x.wat && x.labels.join('|') === 'Home. Now.|Show me what you found, then home.', x);
+  check(`${nm}: ${x.how === 'now' ? 'home now, nothing starred' : x.isWarm ? 'shown the warm stone, the gate starred' : 'shown, the cold line, nothing starred'}`, x.said === x.wsaid && x.choice === (x.how === 'now' ? 'now' : 'show') && x.starred === (x.how !== 'now' && x.isWarm) && x.gone, { said: x.said, starred: x.starred });
+  check(`${nm}: not yet while the child walks; the child follows, and is home inside the town`, x.early === x.ny && x.follows && x.home, x);
+  check(`${nm}: is home., answered in their words, paid, ${x.how === 'now' ? 'a point' : 'no'} favour`, x.turned && x.done === x.wdone && x.paid === x.wpaid && x.paid > 0 && x.fav === (x.how === 'now' ? 1 : 0), { done: x.done, paid: x.paid, fav: x.fav }); }
+check('child: the records are saved, the child is not', d8.saved >= 3, d8.saved);
+
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

@@ -314,6 +314,7 @@ const giver=`${lord.title} ${lord.name}`;
       if(q.kind==='errand'&&q.sub==='borrowed'){erBorrowTick(q);continue;} /* S1722 */
       if(q.kind==='errand'&&q.sub==='watch'){erWatchTick(q);continue;} /* S1776 */
       if(q.kind==='errand'&&q.sub==='cart'){erCartTick(q);continue;} /* S1947 */
+      if(q.kind==='errand'&&q.sub==='child'){erChildTick(q);continue;} /* S1981 */
       if(q.kind==='retrieve'&&q.data.fixed&&!q.data.got&&dungeonWorldPos[q.data.seed]){const w=dungeonWorldPos[q.data.seed];q.data.fixed=false;q.data.x=w.x+7;q.data.z=w.z+5; /* S985 — the job was given before its gate was placed: the thing lies by the real door */
         if(q._obj){const y=worldH(q.data.x,q.data.z)+.2;q._obj.m.position.set(q.data.x,y,q.data.z);q._obj.l.position.copy(q._obj.m.position);const pk=pickups.find(o=>o.id===q.id+':pickup');if(pk){pk.x=q.data.x;pk.z=q.data.z;}}}
       if(q.kind==='retrieve'&&!q.data.got&&!q._obj){const m=new THREE.Mesh(new THREE.BoxGeometry(.5,.4,.5),new THREE.MeshLambertMaterial({color:0xc8a040}));m.position.set(q.data.x,worldH(q.data.x,q.data.z)+.2,q.data.z);sc.add(m);const l=regLight(0xffd080,.8,5,'quest');l.position.copy(m.position);q._obj={m,l};pickups.push({id:q.id+':pickup',x:q.data.x,z:q.data.z,quest:q});} /* S518 — a quest's pickup is <quest id>:pickup (co-op rules) */
@@ -1001,6 +1002,7 @@ const giver=`${lord.title} ${lord.name}`;
     {const F=erFishRoll(def,site,wk,R.length);if(F)return F;} /* S1857 — the wedding's fish, on its own stream */
     {const U=erRubRoll(def,site,wk,R.length);if(U)return U;} /* S1908 — the rubbing, on its own stream */
     {const C=erCartRoll(def,site,wk,R.length);if(C)return C;} /* S1947 — the stuck cart, on its own stream */
+    {const K=erChildRoll(def,site,wk,R.length);if(K)return K;} /* S1981 — the child at the gate, on its own stream */
     {const s=seededRng('errand-sub',site.id+':'+erTag(def)+':'+wk),kids=def.bio.kids>0,pref=def.bio.wish==='to hear from my daughter'||def.bio.worry==='my brother went for a soldier and never wrote'; /* S1554 — the sub on its own stream, so a fever's herb, count and date roll as before */
       if(pref||!kids||s()<.5){const L=erLetter(def,site,s,wk,R.length);if(L||!kids)return L;}}
     const n=2+Math.floor(r()*3),days=3+Math.floor(r()*3),H=erHerb(site,r),day=Math.floor((worldState.gameTimeAbsMinutes||0)/1440);
@@ -1147,6 +1149,7 @@ const giver=`${lord.title} ${lord.name}`;
     q.turnedIn=true;q.lapsed=true;q.erUnsaid=true;if(q.sub==='borrowed'){addFavor(q.erSite,-1);qJournal(q,'lapsed',`You kept the coin the ${q.data.thing} fetched, and ${q.giver} has heard it.`);return true;} /* S1722 */
     if(q.sub==='prayer'){qJournal(q,'lapsed',`The week passed, and ${q.giver} carried the prayer another way.`);return true;} /* S1817 */
     if(q.sub==='cart'){qJournal(q,'lapsed',`Fourteen days, and ${q.giver}'s cart came out of the ditch without you.`);return true;} /* S1947 */
+    if(q.sub==='child'){qJournal(q,'lapsed',`The third day, and ${q.data.who} walked home without you.`);return true;} /* S1981 */
     if(q.sub==='fish'){qJournal(q,'lapsed',`The wedding was held on ${q.data.date}, and no fish of yours on the table.`);return true;} /* S1857 */
     qJournal(q,'lapsed',`The date passed, and the fever in ${q.giver}'s house broke without the ${q.data.herb}.`);return true;}
   // S1776 — errand 6, *The Watch*: a shepherd, a farmer or a beekeeper, or anyone in a village, camp or outpost, has lost a beast in
@@ -1448,6 +1451,73 @@ const giver=`${lord.title} ${lord.name}`;
     return true;}
   function erCartTurnIn(q,site,p){const d=q.data;if(q.lapsed||erLapse(q)){q.erUnsaid=false;erCartDrop(q);return ER_CART.lapse[p];}if(!d.shifted)return ER_SHARED[p].notYet;
     qTurnIn(q);addFavor(site,d.band==='killed'?2:1);erCartDrop(q);return d.band==='killed'?ER_CART.done[p]+' '+ER_CART.road[p]:ER_CART.done[p];}
+  // S1981 — errand 8, *The Child at the Gate* (Asked in Passing, the second run; approved 14 Oct 2026): a giver with children (bio.kids),
+  // one week's errand in three of theirs on its own stream `errand-child`, after the cart, with an old gate within 700 of the town (erGate).
+  // The child went this morning to look at it; when you come within 200 of its door the child stands there, the giver's people, named from
+  // the giver's bank. *Home. Now.* or *Show me what you found, then home.*: shown at a gate with a carving (gateCarving), the child says
+  // why it is the warm one and the gate is starred on your map (worldState.rubbings, as a rubbing marks it). Either way the child walks
+  // home behind you and runs on ahead once you are inside the town's pad; *{Child} is home.* is paid in full, with a point of the giver's
+  // town's favour for *Home. Now.* only. On the third day the child walks home alone (the lapse). The child is a live handle kept on the
+  // record (q._npc), never saved: a reload after the choice sets the child down beside you. Plain fixes against the draft: the Markman's
+  // and the Aurennais's hints follow the rolled child (*My girl's not back*, *My son has not come home*); *{n} gold* where the Gatelander
+  // says *{n}*; a gate called *The …* is *the …* mid-sentence. Added, in the narrator's plain voice or the child's people's: the child's
+  // greeting, the line as the child runs on ahead, and the journal's lines.
+  const ER_CHILD={
+    hint:{gatelander:()=>"If you see a child on the road with more nerve than sense, it's mine.",markman:o=>`My ${o.fem?'girl':'boy'}'s not back. ${erCap(o.he)}'s not lost. ${erCap(o.he)}'s just not back.`,
+      aurennais:o=>`Forgive me, Master. My ${o.fem?'daughter':'son'} has not come home, and I am trying not to look at the road.`,oldblood:()=>"My child went to the door."},
+    offer:{gatelander:o=>`${o.who}. Gone off to look at ${o.gate}, ${o.dir} of here, for no reason but that I said not to. A child told 'don't' hears 'go and see'. Bring ${o.him} home to me by the ear, and I'll pay you ${o.n} gold and give ${o.him} the scolding.`,
+      markman:o=>`${o.who}. Went to look at ${o.gate}. ${erCap(o.dir)}. Bring ${o.him} back. ${o.n} gold, and I'll see to the rest.`,
+      aurennais:o=>`${o.who}, Master. ${erCap(o.he)} has gone to look at ${o.gate}, ${o.dir} of here, against every instruction. I would go myself, but there is no one else to keep the house. ${o.n} gold for ${o.his} safe return; I will not pretend I would bargain over it.`,
+      oldblood:o=>`${o.who}. ${erCap(o.he)} went to ${o.gate}. ${erCap(o.dir)}. ${erCap(o.he)} felt it from here. Bring ${o.him} home. ${o.n} gold.`},
+    greet:{gatelander:"Who's asking, and why are they asking it?",markman:"What.",aurennais:"Good day, Master.",oldblood:"You came from the town."},
+    at:{gatelander:"I was only looking. You can look without touching. I touched it a bit.",markman:"I'm not scared of it. I'm not. I was just about to go in.",
+      aurennais:"I was making a drawing of it, for the archive. Somebody ought to. Nobody has drawn this one.",oldblood:"It is warm. I could feel it from the road. I wanted to see why."},
+    now:'Home. Now.',show:'Show me what you found, then home.',
+    warm:{gatelander:"Here, put your hand there. Feel it? It's warmer than the rest. Gran says that's the dead keeping it warm.",markman:"This bit. Here. It's warm. Stone's not meant to be warm.",
+      aurennais:"This mark here, Master. The stone is warm under it. I have made a note.",oldblood:"This one. Not the others. This one is awake."},
+    cold:{gatelander:"There's nothing. I thought there'd be something. It's only an old door.",markman:"Nothing. Just stone. Waste of a morning.",
+      aurennais:"There is nothing remarkable, Master. I have made a note of that as well.",oldblood:"It is cold. This one is asleep."},
+    homeNow:{gatelander:o=>`Look at the state of ${o.him}. There, now. Here's your ${o.n} gold, and here's my thanks, which is worth more and weighs less.`,markman:o=>`Good. Here. ${erCap(o.he)}'ll be up to something else by tomorrow.`,
+      aurennais:o=>`Thank you, Master. Your fee. ${erCap(o.he)} will be kept indoors until ${o.he} can recite the reasons.`,oldblood:()=>"Home. Good. Take this."},
+    shown:{gatelander:o=>`${erCap(o.he)} says you let ${o.him} show you the stone. Well. Better you than nobody, and better nobody than ${o.him} alone. Here.`,markman:o=>`${erCap(o.he)} says you went and looked with ${o.him}. Ha. Fine. Here.`,
+      aurennais:()=>"I am told the excursion was extended, Master. I will not ask on whose authority. Your fee.",oldblood:o=>`${erCap(o.he)} showed you. Then you know where it is. Do not take ${o.him} back.`},
+    lapse:{gatelander:o=>`${erCap(o.he)} came home on ${o.his} own, the third day, hungry and pleased with ${o.him}self. No thanks to anyone.`,markman:o=>`Came back on ${o.his} own. Hungry. Fine.`,
+      aurennais:o=>`${erCap(o.he)} returned unaided, Master. We have discussed it.`,oldblood:o=>`${erCap(o.he)} came back.`}};
+  function erChildRoll(def,site,wk,idx){if(!(def.bio.kids>0))return null;
+    if(def.bio.wish==='to hear from my daughter'||def.bio.worry==='my brother went for a soldier and never wrote')return null;
+    const s=seededRng('errand-child',site.id+':'+erTag(def)+':'+wk);if(s()>=1/3)return null;
+    const G=erGate(site);if(!G||Math.hypot(G.gx-site.x,G.gz-site.z)>700)return null;
+    const p=erPeople(def),fem=s()<.5,bank=NAMES[(PEOPLES[p]||{}).names]||NAMES.irish;let who=pick(s,fem?bank.f:bank.m);if(who===def.name)who=pick(s,fem?bank.f:bank.m);
+    const tier=Math.max(1,worldTierAt(site.x,site.z)||1);
+    return Object.assign(G,{sub:'child',who,fem,n:Math.min(40,15+5*(tier-1)),week:wk,idx});}
+  function erChildO(q){const d=q.data;return erPro({who:d.who,fem:d.fem,gate:erGateIn(d.gate),dir:d.dir,n:q.reward,pa:d.pa});}
+  function erChildDrop(q){if(q._npc){duelRemoveNpc(q._npc);q._npc=null;}}
+  function erChildSpawn(q,x,z){const site=siteAnywhere(q.erSite);if(!site)return;const d=q.data,p=q.erPeople||'gatelander';
+    const def=makeDef(site,site.reg||'irish',seededRng('errand-child-def',q.id),'Villager',d.who,{x,z,keepName:true,people:p,topics:[]});
+    def.role='Child';def.female=!!d.fem;def._lost=true;def._erChild=q.id;def._siteId=q.id;
+    Object.defineProperty(def,'greeting',{configurable:true,value:[ER_CHILD.greet[p]]});
+    Object.defineProperty(def,'topics',{configurable:true,get(){return [...erChildTopics(q.id),{label:'Farewell.',bye:true}];}});
+    const n=spawnNPC(def,0,true);n.sched={type:'lost'};n._settle=null;n.g.position.set(x,worldH(x,z),z);q._npc=n;}
+  function erChildTopics(id){const q=qActive().find(x=>x.id===id);if(!q||q.data.choice)return [];const p=q.erPeople||'gatelander',o=erChildO(q);
+    return [{label:`Your ${o.pa} wants you home.`,quest:true,response:ER_CHILD.at[p],follow:[
+      {label:ER_CHILD.now,fn:()=>{erChildChoose(id,'now');setTimeout(()=>{try{closeDialog();}catch(e){}},60);return '';}},
+      {label:ER_CHILD.show,fn:()=>erChildChoose(id,'show')||''}]}];}
+  // the choice at the door, by name (co-op rules): the child follows you home either way; shown, a carved gate is starred on your map
+  function erChildChoose(id,choice){const q=qActive().find(x=>x.id===id);if(!q||q.data.choice)return null;const d=q.data,p=q.erPeople||'gatelander',site=siteAnywhere(q.erSite);
+    d.choice=choice;if(site){d.x=site.x;d.z=site.z;}qJournal(q,'ready',`${d.who} is walking home behind you. Take ${erPro(d).him} to ${q.giver} at ${site?site.name:'the town'}.`);
+    if(choice!=='show')return null;d.warm=!!gateCarving(d.seed);if(!d.warm)return ER_CHILD.cold[p];
+    (worldState.rubbings||(worldState.rubbings={}))[d.seed]=d.gate;setTimeout(()=>showMsg(`${d.gate} is marked on your map.`,'#c0e0ff'),1600);return ER_CHILD.warm[p];}
+  let _erChildT=0;
+  function erChildTick(q){if(erLapse(q)){erChildDrop(q);return;}const d=q.data;if(d.home)return;if(typeof isInterior==='function'&&isInterior())return;
+    const n=q._npc;if(!d.choice){if(!n&&Math.hypot(px-d.gx,pz-d.gz)<200)erChildSpawn(q,d.gx+1.5,d.gz);return;}
+    if(!n){erChildSpawn(q,px+3,pz+3);return;}
+    const now=performance.now(),dt=Math.min(.1,Math.max(0,(now-(_erChildT||now))/1000));_erChildT=now;
+    const g=n.g.position,fd=Math.hypot(px-g.x,pz-g.z);
+    if(fd>40){g.set(px+3,worldH(px+3,pz+3),pz+3);}else if(fd>4)npcStep(n,px,pz,Math.min(3.4,.9+(fd-4)*.6),dt);
+    const site=siteAnywhere(q.erSite);if(site&&Math.hypot(g.x-site.x,g.z-site.z)<(site.pad||40)){d.home=true;erChildDrop(q);
+      showMsg(`${d.who} runs on ahead to the house.`,'#e8d8a0');qJournal(q,'ready',`${d.who} is home. Tell ${q.giver}.`);}}
+  function erChildTurnIn(q,site,p){const o=erChildO(q);if(q.lapsed||erLapse(q)){q.erUnsaid=false;erChildDrop(q);return ER_CHILD.lapse[p](o);}if(!q.data.home)return ER_SHARED[p].notYet;
+    qTurnIn(q);if(q.data.choice!=='show')addFavor(site,1);return (q.data.choice==='show'?ER_CHILD.shown:ER_CHILD.homeNow)[p](o);}
   function errandAccept(def,site,E){const p=erPeople(def),tier=Math.max(1,worldTierAt(site.x,site.z)||1),base=Math.min(40,15+5*(tier-1));
     if(E.sub==='letter'){const q={id:erPre(def,site)+E.idx,kind:'errand',sub:'letter',giver:def.name,erSite:site.id,week:E.week,erPeople:p,
         title:`A letter for ${E.who}`,desc:`${def.name} of ${site.name} has written to ${E.who} at ${E.town} and had no answer. Carry the letter there and ask after ${erPro(E).her}.`,
@@ -1479,6 +1549,10 @@ const giver=`${lord.title} ${lord.name}`;
         title:`${def.name}'s cart`,desc:`${def.name} of ${site.name} has a cart in the ditch on the ${E.dir} road, half an hour out. Shift it.`,
         objective:`Get ${def.name}'s cart out of the ditch on the ${E.dir} road from ${site.name}`,reward:E.n,
         data:{x:E.x,z:E.z,ang:E.ang,ra:E.ra,rb:E.rb,dir:E.dir,shifted:false,how:null,band:null,gone:false}});return ER_SHARED[p].yes;} /* S1947 */
+    if(E.sub==='child'){const day=Math.floor((worldState.gameTimeAbsMinutes||0)/1440),pa=Object.values(NAMES).some(b=>b.f&&b.f.includes(def.name))?'mother':'father';qAdd({id:erPre(def,site)+E.idx,kind:'errand',sub:'child',giver:def.name,erSite:site.id,week:E.week,erDue:(day+3)*1440,erPeople:p,
+        title:`${E.who} at ${erGateIn(E.gate)}`,desc:`${def.name} of ${site.name} has a ${E.fem?'daughter':'son'}, ${E.who}, gone off this morning to look at ${erGateIn(E.gate)}, and not back. Bring ${E.fem?'her':'him'} home.`,
+        objective:`Bring ${E.who} home from ${erGateIn(E.gate)}, ${E.dir} of ${site.name}`,reward:E.n,
+        data:{x:E.gx,z:E.gz,gx:E.gx,gz:E.gz,seed:E.seed,gate:E.gate,dir:E.dir,who:E.who,fem:E.fem,pa,choice:null,warm:false,home:false}});return ER_SHARED[p].yes;} /* S1981 */
     if(E.sub==='rub'){const id=erPre(def,site)+E.idx;qAdd({id,kind:'errand',sub:'rub',giver:def.name,erSite:site.id,week:E.week,erPeople:p,
         title:'What the rubbing says',desc:`${def.name} of ${site.name} has a rubbing of a carving in ${erGateIn(E.gate)}, made by a grandparent who went in, and wants to know what it says. Find someone who can read it.`,
         objective:`Have ${def.name}'s rubbing read, and tell ${def.name} at ${site.name} what it says`,reward:base,
@@ -1504,6 +1578,7 @@ const giver=`${lord.title} ${lord.name}`;
     if(q.sub==='fish')return erFishTurnIn(q,site,p,true); /* S1857 */
     if(q.sub==='rub')return ER_SHARED[p].notYet; /* S1908 — told by its own labels */
     if(q.sub==='cart')return erCartTurnIn(q,site,p); /* S1947 */
+    if(q.sub==='child')return erChildTurnIn(q,site,p); /* S1981 */
     if(q.sub==='watch')return erWatchTurnIn(q,site,p); /* S1776 */ /* S1677 — the debt: a fifth, paid as if collected either way */
     if(q.lapsed||erLapse(q)){q.erUnsaid=false;return ER_FEVER.lapse[p];}
     const isH=b=>b.type==='herb'&&b.name===q.data.herb;if(bagCount(isH)<q.data.n)return ER_SHARED[p].notYet;
@@ -1540,6 +1615,7 @@ const giver=`${lord.title} ${lord.name}`;
       return {cat:'you',label:'Who’s the prayer for?',response:ER_PRAYER.offer[p](Object.assign({},E,{n:Math.min(40,15+5*(Math.max(1,worldTierAt(site.x,site.z)||1)-1))})),follow:[{label:'I’ll do it.',fn:()=>errandFor(def,site)?errandAccept(def,site,E):ER_SHARED[p].no},{label:'Not now.',response:ER_SHARED[p].no}]};}
     if(E.sub==='fish')return {cat:'you',label:'What’s the wedding missing?',response:ER_FISH.offer[p](Object.assign({},E,{n:Math.min(40,15+5*(Math.max(1,worldTierAt(site.x,site.z)||1)-1))})),follow:[{label:'I’ll do it.',fn:()=>errandFor(def,site)?errandAccept(def,site,E):ER_SHARED[p].no},{label:'Not now.',response:ER_SHARED[p].no}]}; /* S1857 */
     if(E.sub==='rub')return {cat:'you',label:'What does the rubbing say?',response:ER_RUB.offer[p](Object.assign({},E,{gate:erGateIn(E.gate),n:Math.min(40,15+5*(Math.max(1,worldTierAt(site.x,site.z)||1)-1))})),follow:[{label:'I’ll do it.',fn:()=>errandFor(def,site)?errandAccept(def,site,E):ER_SHARED[p].no},{label:'Not now.',response:ER_SHARED[p].no}]}; /* S1908 */
+    if(E.sub==='child')return {cat:'you',label:'Who’s not back?',response:ER_CHILD.offer[p](erPro(Object.assign({},E,{gate:erGateIn(E.gate)}))),follow:[{label:'I’ll do it.',fn:()=>errandFor(def,site)?errandAccept(def,site,E):ER_SHARED[p].no},{label:'Not now.',response:ER_SHARED[p].no}]}; /* S1981 */
     if(E.sub==='cart')return {cat:'you',label:'Where’s your cart?',response:ER_CART.offer[p](E),follow:[{label:'I’ll do it.',fn:()=>errandFor(def,site)?errandAccept(def,site,E):ER_SHARED[p].no},{label:'Not now.',response:ER_SHARED[p].no}]}; /* S1947 */
     if(E.sub==='watch')return {cat:'you',label:'What’s coming at night?',response:ER_WATCH.offer[p](E),follow:[{label:'I’ll do it.',fn:()=>errandFor(def,site)?errandAccept(def,site,E):ER_SHARED[p].no},{label:'Not now.',response:ER_SHARED[p].no}]}; /* S1776 */
     const L=E.sub==='letter',D=E.sub==='debt',B=E.sub==='borrowed',label=B?'Something of yours gone missing?':D?'Who owes you?':L?'You’re waiting on word from someone?':'Who’s sick?',said=B?ER_BORROW.offer[p](E):D?ER_DEBT.offer[p](E):L?ER_LETTER.offer[p](erPro(E)):ER_FEVER.offer[p](E);
@@ -1550,14 +1626,14 @@ const giver=`${lord.title} ${lord.name}`;
     if(!q||(q.sub==='letter'&&q.data.learned))return L;
     if(q.sub==='fish')return [...erFishTopics(q,site),...L]; /* S1857 */
     if(q.sub==='rub')return [...erRubTopics(q,site),...L]; /* S1908 */
-    return [{label:q.sub==='name'&&q.data.said?'I said the name.':q.sub==='debt'&&q.data.choice==='keep'?'They haven’t got it.':q.sub==='borrowed'&&!q.lapsed?erBorrowLabel(q):q.sub==='prayer'&&!q.lapsed&&q.data.prayed?`I prayed at ${erThe(q.data.at)}.`:q.sub==='cart'&&!q.lapsed&&q.data.shifted?ER_CART.told:q.sub==='watch'&&!q.lapsed&&q.data.done?(q.data.came?`I sat the night. ${q.data.beasts}.`:'I sat the night. Nothing came.'):'About that errand.',quest:true,fn:()=>errandTurnIn(q,site)},...L];}
+    return [{label:q.sub==='name'&&q.data.said?'I said the name.':q.sub==='debt'&&q.data.choice==='keep'?'They haven’t got it.':q.sub==='borrowed'&&!q.lapsed?erBorrowLabel(q):q.sub==='prayer'&&!q.lapsed&&q.data.prayed?`I prayed at ${erThe(q.data.at)}.`:q.sub==='cart'&&!q.lapsed&&q.data.shifted?ER_CART.told:q.sub==='child'&&!q.lapsed&&q.data.home?`${q.data.who} is home.`:q.sub==='watch'&&!q.lapsed&&q.data.done?(q.data.came?`I sat the night. ${q.data.beasts}.`:'I sat the night. Nothing came.'):'About that errand.',quest:true,fn:()=>errandTurnIn(q,site)},...L];}
   // the greeting: the hint after First Words while an errand is on offer (from the second meeting), or for a week after a lapse the colder line;
   // after a letter lied about, from the next game-week, one week in two the waiting line, until the giver writes again
   function errandGreet(def,site){if(!erGiver(def,site))return null;const met=metCount(metKey(def,site));const line=firstWords(def,site);
     const now=worldState.gameTimeAbsMinutes||0,R=erRecs(def,site);if(met>0&&erWeddingQ(site.id,R))return ER_FISH.wed[erPeople(def)]; /* S1857 — the wedding day */
     const cold=met>0&&R.find(q=>q.lapsed&&now<q.erDue+1440*7);if(cold)return cold.sub==='borrowed'?ER_BORROW.kept[erPeople(def)](erPro(cold.data)):ER_FEVER.cold[erPeople(def)];
     {const bq=met>0&&R.find(q=>q.sub==='borrowed'&&q.turnedIn&&q.data.choice==='month'&&now>=q.data.at+30*1440&&now<q.data.at+37*1440);if(bq)return line+' '+ER_BORROW.back[erPeople(def)](erPro(bq.data));} /* S1722 — the month out, the thing walked home: a week of the line */
-    const E=met>0&&errandFor(def,site);if(E){if(E.sub==='name')return E.oldblood?line:line+' '+ER_NAME.hint[erPeople(def)](erPro(E));if(E.sub==='borrowed')return line+' '+ER_BORROW.hint[erPeople(def)](E);if(E.sub==='watch')return line+' '+ER_WATCH.hint[erPeople(def)](E);if(E.sub==='prayer')return E.oldblood?line:line+' '+ER_PRAYER.hint[erPeople(def)](E); /* S1817 */if(E.sub==='fish')return line+' '+ER_FISH.hint[erPeople(def)](E); /* S1857 */if(E.sub==='rub')return line+' '+ER_RUB.hint[erPeople(def)]; /* S1908 */if(E.sub==='cart')return line+' '+ER_CART.hint[erPeople(def)]; /* S1947 */return line+' '+(E.sub==='debt'?ER_DEBT.hint:E.sub==='letter'?ER_LETTER.hint:ER_FEVER.hint)[erPeople(def)];} /* S1600 — the name's hint; none for the Old Blood */
+    const E=met>0&&errandFor(def,site);if(E){if(E.sub==='name')return E.oldblood?line:line+' '+ER_NAME.hint[erPeople(def)](erPro(E));if(E.sub==='borrowed')return line+' '+ER_BORROW.hint[erPeople(def)](E);if(E.sub==='watch')return line+' '+ER_WATCH.hint[erPeople(def)](E);if(E.sub==='prayer')return E.oldblood?line:line+' '+ER_PRAYER.hint[erPeople(def)](E); /* S1817 */if(E.sub==='fish')return line+' '+ER_FISH.hint[erPeople(def)](E); /* S1857 */if(E.sub==='rub')return line+' '+ER_RUB.hint[erPeople(def)]; /* S1908 */if(E.sub==='cart')return line+' '+ER_CART.hint[erPeople(def)]; /* S1947 */if(E.sub==='child')return line+' '+ER_CHILD.hint[erPeople(def)](erPro(E)); /* S1981 */return line+' '+(E.sub==='debt'?ER_DEBT.hint:E.sub==='letter'?ER_LETTER.hint:ER_FEVER.hint)[erPeople(def)];} /* S1600 — the name's hint; none for the Old Blood */
     const lq=R.filter(q=>q.sub==='letter').pop(),wk=erWeek();
     if(met>0&&lq&&lq.turnedIn&&lq.data.told==='lie'&&wk>lq.data.toldWeek&&seededRng('errand-wait',erPre(def,site)+wk)()<.5)return ER_LETTER.wait[erPeople(def)](erPro(lq.data));
     return line;}
