@@ -40,8 +40,13 @@ check(`five torn and one sealed is level 5, fate still open`, r.five === 5 && r.
 check('the state is the world\'s: it rides the world row, not the character\'s', r.split.world && !r.split.char, r.split);
 await page.evaluate(() => saveToSlot(0));
 await page.reload();
-await page.waitForFunction(() => { const b = document.getElementById('cb'); return b && typeof saveToSlot === 'function' && getComputedStyle(b).display !== 'none'; }, null, { timeout: 120000, polling: 100 });
+// S1985 (QA) — the reload and Continue's load each hold the page's one thread in long tasks: with two boots side by side on four cores the
+// title came back 5–70 s after the reload and the world was restored 90–151 s after the click, against one 120 s wait each (red 1/1 at
+// the title's wait here, and twice at the load's in Session 1979). As gatesave (S1978): each stage waited for, up to 300 s, ending the moment
+// the game says so; the page reads 'overworld' until the load has restored the world
+await page.waitForFunction(() => { const b = document.getElementById('cb'); return b && typeof saveToSlot === 'function' && getComputedStyle(b).display !== 'none'; }, null, { timeout: 300000, polling: 100 });
 await page.evaluate(() => document.getElementById('cb').click());
+await page.waitForFunction(() => activeZoneId === 'world' || activeZoneId === 'dungeon', null, { timeout: 300000, polling: 200 });
 await page.waitForFunction(() => typeof corruptionLevel === 'function' && worldState.greatGates, null, { timeout: 120000, polling: 200 });
 const s = await page.evaluate(() => {
   const out = { loaded: corruptionLevel() };
