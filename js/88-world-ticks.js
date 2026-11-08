@@ -303,6 +303,18 @@
       wasteland:[{name:'Sunbeak Vulture',w:3,n:[1,2]},{name:'Terrace Ram',w:2,n:[1,3]},{name:'Sunspire Lynx',w:.5,n:[1,1]},{name:'Spined Gekko',w:.5,n:[1,1],night:true},{name:'Redcrest',w:.5,n:[2,4]},{name:'Sailshell',w:2,n:[1,1]}], /* S1895 — the Redcrest (scrub and cliffs, rare; hunts in packs, two to four) */
       wastes:[{name:'Sunbeak Vulture',w:3,n:[1,2]},{name:'Duneskimmer',w:2,n:[2,4]},{name:'Oasis Hare',w:2,n:[1,1]},{name:'Mirage Fox',w:2,n:[1,1]},{name:'Glasswing Moth',w:1,n:[1,3],night:true},{name:'Spined Gekko',w:.5,n:[1,1],night:true},{name:'Mineprowler',w:1,n:[1,1]},{name:'Sailshell',w:2,n:[1,1]}],
       coast: [{name:'Cliffswift',w:3,n:[3,6]},{name:'Amber Shellcrab',w:3,n:[1,2]},{name:'Scarlet Ibis',w:2,n:[2,4]},{name:'Saltspine Monitor',w:2,n:[1,1]}]}};
+  // S2003 — animals by the hour and the rain (OG-142; Michael's A on #1293). When a chunk rolls its group: at dawn (5 to 8 h) the grazers
+  // weigh twice and come one to a group more; at dusk (18 to 21 h) the hunters weigh twice; at night (isNight, outside those hours) the
+  // grazers weigh half, and the night kinds come as before. In rain, a storm or snowfall one chunk in eight holds a group, not one in four.
+  // Fog changes nothing. The roll is still the chunk's own stream; only the weights and the chance read the hour and the sky.
+  const WILD_GRAZE=new Set(['Deer','Elderstag','Ironpine Elk','Icehorn','Terrace Ram']);
+  const WILD_HUNT=new Set(['Red Fox','Redspine Fox','Mirage Fox','Lanternfox','Stormlynx','Sunspire Lynx','Hollowcat','Crag Hawk','Stormshrike']);
+  const WILD_HOUR={dawn:[5,8],dusk:[18,21],graze:2,hunt:2,nightGraze:.5,dawnMore:1,wetP:.125};
+  function wildPart(){const h=typeof gameHour==='function'?gameHour():12;
+    if(h>=WILD_HOUR.dawn[0]&&h<WILD_HOUR.dawn[1])return 'dawn';if(h>=WILD_HOUR.dusk[0]&&h<WILD_HOUR.dusk[1])return 'dusk';return isNight()?'night':'day';}
+  function wildRainy(){return WX.type==='rain'||WX.type==='storm'||WX.type==='snow';}
+  function wildWeight(g,part){if(part==='dawn'&&WILD_GRAZE.has(g.name))return g.w*WILD_HOUR.graze;if(part==='dusk'&&WILD_HUNT.has(g.name))return g.w*WILD_HOUR.hunt;
+    if(part==='night'&&WILD_GRAZE.has(g.name))return g.w*WILD_HOUR.nightGraze;return g.w;}
   function wildTaken(e){if(!e||!e._wildKey)return;WILD_TAKEN.set(e._wildKey,lootDay());
     for(const o of ZONES.world.enemies)if(o!==e&&o.wild&&!o.dead&&Math.hypot(o.x-e.x,o.z-e.z)<WILD_HERD){wildFlee(o,targetOf(o));break;}} /* the rest of the group bolts (wildFlee takes the herd) */
   function wildRiverNear(x,z,r){const bk=RVG.get(sgKey(Math.floor(x/RVSG),Math.floor(z/RVSG)));if(!bk)return false;const o=[0,0];
@@ -421,15 +433,16 @@
   function wildSpawnChunk(ch){const key=chunkKey(ch.cx,ch.cz);ch.wild=[];WILD_CH.add(ch);
     const cxw=ch.cx*CHUNK+CHUNK/2,czw=ch.cz*CHUNK+CHUNK/2;wildTroutChunk(ch,key);try{wildFarmChunk(ch,key);}catch(err){console.warn('farmstock',err);}if(worldH(cxw,czw)<-3)return;
     if(wildWatcherChunk(ch,key))return; /* S1784 — the watcher's chunk holds it and its sheep, no other group */
-    const r=seededRng('wild',key);if(r()>WILD_P)return;
+    const r=seededRng('wild',key);if(r()>(wildRainy()?WILD_HOUR.wetP:WILD_P))return;
     if(wildPadNear(cxw,czw,40))return;
     const biome=lairBiome({x:cxw,z:czw}),night=isNight();
     const isle=nationAt(cxw,czw),own=WILD_ISLE[isle]&&WILD_ISLE[isle][biome]; /* S1769 — the island's own beside the common set */
     let table=(WILD_TABLE[biome]||[]).concat(own||[]).filter(g=>(!g.night||night)&&ZONE_FOE_DEF[g.name]);
     const river=wildRiverNear(cxw,czw,30);if(river)table=table.concat([{name:'Otter',w:3,n:[1,1]}]);
     if(!table.length)return;
-    let tw=0;for(const g of table)tw+=g.w;let pick=r()*tw,grp=table[0];for(const g of table){pick-=g.w;if(pick<=0){grp=g;break;}}
-    const count=grp.n[0]+Math.floor(r()*(grp.n[1]-grp.n[0]+1));
+    const part=wildPart();
+    let tw=0;for(const g of table)tw+=wildWeight(g,part);let pick=r()*tw,grp=table[0];for(const g of table){pick-=wildWeight(g,part);if(pick<=0){grp=g;break;}}
+    const count=grp.n[0]+Math.floor(r()*(grp.n[1]-grp.n[0]+1))+(part==='dawn'&&WILD_GRAZE.has(grp.name)?WILD_HOUR.dawnMore:0);
     let ax=0,az=0,ok=false;
     for(let k=0;k<10&&!ok;k++){ax=ch.cx*CHUNK+8+r()*(CHUNK-16);az=ch.cz*CHUNK+8+r()*(CHUNK-16);ok=wildGround(ax,az)&&(grp.name!=='Otter'||wildRiverNear(ax,az,14));}
     if(!ok)return;
