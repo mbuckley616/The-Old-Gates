@@ -73,6 +73,20 @@ check('the player at walking speed runs, feet planted, arms bent, leaning into i
 // went down while that foot carries the body, then swings on to the next (32-people.js, pwStaffWalk and hbStaffWalk). Dunmore's first
 // walker with a staff, its body built near the eye, walked 160 ticks at a stroll; over the last 80: the staff's foot while planted
 // (the stride's phase inside the left foot's stance, a tick clear of each end) must not slide or sink, and in the swing it must travel
+// Session 1980: every townsperson whose role carries the driver's stick (an elder, a hermit) holds the builder's staff in that fist, not
+// an empty hand (people.js rolls a staff on a third of the old; before this four of Dunmore's six held nothing) nor a basket
+const roleStaff = await page.evaluate(() => { const out = [];
+  for (const rig of [...PEOPLE_RIGS].filter(r => r.root.parent === WORLD.scene && !r.foe && r.g.gear === 'stick' && r.g.hbKey)) {
+    const D = hbGenome(rig.g).dress || {}; const o = { name: rig.g.name, role: rig.g.role, staff: !!D.staff, basket: !!D.basket };
+    if (out.filter(x => x.built).length < 2 && !D.chair) { const root = rig.root, vis = root.visible; root.visible = true;
+      CAM.position.set(root.position.x + 3, worldH(root.position.x, root.position.z) + 1.65, root.position.z + 3); CAM.updateMatrixWorld(true);
+      let k = 0; while ((!rig.hb || rig.hb.cold) && !rig.hbFail && k++ < 800) tickPeople(1 / 60, 3e5 + k * (HBODY.gap + 1));
+      if (rig.hb) { const names = new Set(); rig.hb.root.traverse(x => names.add(x.name)); o.built = true; o.staffMesh = names.has('staff'); o.basketMesh = [...names].some(n => /basket/i.test(n)); o.walk = pwOpts(rig).staff; }
+      root.visible = vis; }
+    out.push(o); }
+  return out; });
+check('every elder and hermit holds the builder\'s staff, not an empty fist', roleStaff.length >= 3 && roleStaff.every(o => o.staff && !o.basket) && roleStaff.filter(o => o.built).length >= 1 && roleStaff.filter(o => o.built).every(o => o.staffMesh && !o.basketMesh && o.walk), roleStaff);
+
 const staff = await page.evaluate(() => { thirdPerson = false;
   const rig = [...HB_RIGS].find(r => r.root.parent === WORLD.scene && r.hbG && r.hbG.dress && r.hbG.dress.staff && !r.foe); if (!rig) return { none: true };
   const root = rig.root; root.visible = true; const put = () => { CAM.position.set(root.position.x + 3, worldH(root.position.x, root.position.z) + 1.65, root.position.z + 3); CAM.updateMatrixWorld(true); };
