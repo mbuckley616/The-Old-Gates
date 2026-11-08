@@ -1513,6 +1513,28 @@ function hcShown(o){for(;o;o=o.parent)if(!o.visible)return false;return true;}
 function hcAt(rig,g){return rig.nest?g.getWorldPosition(_hcW):g.position;}
 // S1785 — the watcher's driver stands, so it keeps the kit's body (the middle level past HC_BODY.mid) wherever it is seen: one in a cell at most
 function hcSits(rig){return !!(rig.e&&rig.e.watch&&!rig.e.dead);}
+// Session 2006 (QA's dunwarm, s1368): in a gate a foe's kit body is built when you first come within HC_BODY.build of it, and the first
+// Skeleton, Phantom or Fire Elemental (its eyes' physical material, the skeleton's fins, the elemental's glow) compiled 1–2 programs on
+// the frame it came into view. The world's prewarmFoes dresses the kit's kinds behind its loading fade, but against the world's 24 lights
+// and fog, which key other programs than a dungeon's pool of 8 or 20. So on the first creature tick in a new dungeon scene (the frame
+// behind the way-down fade) one foe of every kit kind on the floors is dressed at once, both its levels shown, and compiled against the
+// dungeon's own lights; the body stays on that foe, and hcTick sets its level by distance from the next frame. The slimes' and the
+// elementals' rigs are made by hcTick itself a frame or more after the floor's foes, so each kind is taken when it first appears, not once
+function hcDunWarm(){if(typeof REN==='undefined'||!REN.compile)return;const D=HC_BODY.dunWarm&&HC_BODY.dunWarm.sc===dScene?HC_BODY.dunWarm:(HC_BODY.dunWarm={sc:dScene,kinds:new Set(),log:[]});
+  let todo=null;for(const rig of HC_RIGS){const g=rig.root.parent;if(!g||g.parent!==dScene||rig.bird||rig.swimmer||rig.nest||rig.hcFail||rig.e&&rig.e.dead)continue;
+    const k=hcKind(rig);if(D.kinds.has(k))continue;D.kinds.add(k);if(!rig.hc)(todo||(todo=[])).push(rig);}
+  if(!todo)return;const t0=performance.now(),p0=REN.info.programs.length,warm=[];
+  for(const rig of todo){const g=rig.root.parent;
+    if(HC_BODY.job&&HC_BODY.job.rig===rig)HC_BODY.job=null;
+    try{(rig.fish?hcFishAttach:hcAttach)(rig);}catch(e){rig.hcFail=true;console.warn('F4: the kit could not build',rig.name,e);} /* a slime's and an elemental's are fish-like rigs (hcDunRig) */
+    if(!rig.hc)continue;const H=rig.hc,shown=[];
+    try{hcLevel(rig,0);if(H.merge&&!H.mid)hcBake(rig);(rig.fish?hcFishPose:hcPose)(rig);}catch(e){}
+    for(let o=g;o;o=o.parent)if(!o.visible){o.visible=true;shown.push(o);} /* a foe on the other floor */
+    H.W.traverse(o=>{if(!o.visible){o.visible=true;shown.push(o);}});warm.push([rig,shown]);}
+  for(const [rig] of warm)try{hbCompile(rig.hc.W,false);rig.hc.W.traverse(hbUpload);}catch(e){}
+  const ps=REN.info.programs;for(let i=p0;i<ps.length;i++)try{ps[i].getUniforms();}catch(e){} /* Chrome links a program when first asked: now, not on the first draw */
+  for(const [rig,shown] of warm){for(const o of shown)o.visible=false;rig.hc.L=null;}
+  D.log.push({kinds:todo.map(hcKind),dressed:warm.length,programs:REN.info.programs.length-p0,ms:Math.round(performance.now()-t0)});}
 function hcTick(now){let best=null,bd=HC_BODY.build;
   const busy=now-HBODY.last<HBODY.gap||(typeof JOBS!=='undefined'&&JOBS.length&&activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior())); /* S1591 — as the people's (hbTick): the world's queue only where the world runs it, or no kit body is built in a gate entered with town jobs queued */
   for(const rig of WOLF_RIGS){if(!rig.hc&&(rig.hcFail||!hcOk(rig)))continue;HC_RIGS.add(rig);}
@@ -1523,6 +1545,7 @@ function hcTick(now){let best=null,bd=HC_BODY.build;
   if(activeZoneId==='world'&&typeof LIFE!=='undefined')hcSchools(now,busy); /* S1599 — the shallows' schools */
   if(activeZoneId==='world')for(const e of ZONES.world.enemies){const r=e.limbs&&e.limbs.wolf;if(r&&(r.bird||r.swimmer)&&!r._hcIn&&r.e&&e.mesh&&e.mesh.parent){r._hcIn=true;HC_RIGS.add(r);}} /* S1710 — the raven and the crow; S1712 — the trout */
   if(activeZoneId==='world'&&typeof LIFE!=='undefined')for(const gl of LIFE.gulls)if(gl.g.parent)for(const m of [...gl.g.children])if(m.isMesh&&!m.userData.hcGull){m.userData.hcGull=true;HC_RIGS.add(hcGullRig(m));} /* S1595 — the ports' gulls */
+  if(typeof dScene!=='undefined'&&dScene&&scene===dScene)hcDunWarm(); /* S2006 — one of each kind dressed and compiled as it first comes into the dungeon, behind the fade on the way down */
   for(const rig of HC_RIGS){const g=rig.root.parent;
     if(!g||!g.parent||rig.nest&&!hcTop(g).isScene){hcDrop(rig);HC_RIGS.delete(rig);continue;}
     if(rig.nest?hcTop(g)!==scene||!hcShown(g):g.parent!==scene||!g.visible)continue;
