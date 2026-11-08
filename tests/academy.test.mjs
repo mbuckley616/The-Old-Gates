@@ -62,9 +62,11 @@ if (!lib.none) {
         for (let k = 1; k <= n; k++) { const xx = x + (x1 - x) * k / n, zz = z + (z1 - z) * k / n, ny = footholdY(xx, zz, y, 0); maxStep = Math.max(maxStep, Math.abs(ny - y)); y = ny; if (intSolidAt(xx, zz, .2, y)) blocked.push([+xx.toFixed(2), +zz.toFixed(2), +y.toFixed(2)]); } x = x1; z = z1; }
       return { blocked: blocked.length, at: blocked.slice(0, 3), maxStep: +maxStep.toFixed(3) }; };
     const walks = h._libraryPaths.map(walk);
+    /* the gallery (Session 1995): overhead, so the floor under it is open; its ladders stand on the floor as solids */
+    const G = T.gallery, gal = G ? { under: [-1, 1].map(sx => !intSolidAt(T.inner.x1 + sx * 7.6, T.inner.z1 - 5.0, .3, 0)), ladders: G.ladders.map(L => intSolidAt(L.x + T.inner.x1, (L.z0 + L.z1) / 2 + T.inner.z1, .2, 0)), deckY: +(G.y - T.floor).toFixed(2) } : null;
     /* the screen: from the loggia straight through the lattice between two doorways (x 5 m off the middle, either side), at a walker's height */
     const sz = T.screen.z + D / 2, screen = [-5, 5].map(u => intSolidAt(W / 2 + u, sz, .2, 0) && intSolidAt(W / 2 + u, sz, .2, 1.2));
-    return { W: +W.toFixed(2), D: +D.toFixed(2), H: h._roomH, door, upY, arrive, walks, screen, lights, draws, tris: Math.round(tris), npc: !!intNPCMesh };
+    return { W: +W.toFixed(2), D: +D.toFixed(2), H: h._roomH, door, upY, arrive, walks, screen, gal, lights, draws, tris: Math.round(tris), npc: !!intNPCMesh };
   });
   console.log(JSON.stringify(r));
   check(`the room is the academy's library, ${r.W} by ${r.D} m and ${r.H} m to the ceiling, at its true size`, !r.none && Math.abs(r.W - 28.8) < .05 && Math.abs(r.D - 11.8) < .05 && Math.abs(r.H - 10.5) < .05, r);
@@ -73,6 +75,7 @@ if (!lib.none) {
     check(`you arrive clear in the loggia at ${r.arrive.x}, ${r.arrive.z} m`, r.arrive.clear && !r.arrive.exits, r.arrive);
     check(`the prototype's four walks (in at the arch, through the screen's three doorways, to the tables, the ladder and the armillary) on foot, nothing in the way`, r.walks.length === 4 && r.walks.every(w => w.blocked === 0 && w.maxStep <= .1), r.walks);
     check('the lattice screen between its doorways is a wall: you go round by a doorway', r.screen.every(Boolean), r.screen);
+    check(`the gallery's boards ${r.gal && r.gal.deckY} m up along the back wall: the floor under it open, its two ladders solid`, r.gal && r.gal.deckY >= 3.5 && r.gal.under.every(Boolean) && r.gal.ladders.length === 2 && r.gal.ladders.every(Boolean), r.gal);
     check(`nobody in it; lit (${r.lights} lights, 12 or fewer); ${r.draws} meshes (60 or fewer) and ${r.tris.toLocaleString()} triangles (60,000 or fewer)`, !r.npc && r.lights >= 4 && r.lights <= 12 && r.draws <= 60 && r.tris <= 60000, r);
     if (SHOTS) {
       for (const [name, set] of [['academy-library-hall.jpg', 'px=h._exitX-1.2;pz=h.intD-4.6;yaw=.55;pitch=.12;'], ['academy-library-loggia.jpg', 'px=h._exitX+.4;pz=h.intD-1.0;yaw=-Math.PI/2+.12;pitch=.04;']]) {
