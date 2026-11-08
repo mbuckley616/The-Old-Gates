@@ -15,7 +15,7 @@ for (const id of await page.evaluate(towns)) {
   if (!(await g.settle(id))) { check(`${id} stands`, false); continue; }
   const r = await page.evaluate(id => { const S = WORLD.settle.get(id), H = S.houses.filter(h => h.siteId === id && h.type === 'home' && h.kit && h.kit.kind === 'aurhouse'),
       one = H.filter(h => h.kit.o.kind === 'flat' && !h.kit.o.two), hatch = one.filter(h => !h.kit.o.stair);
-    const pick = hatch.sort((a, b) => b.kit.o.w - a.kit.o.w)[0], tile = H.filter(h => h.kit.o.kind === 'tile' && !h.kit.o.two).sort((a, b) => b.kit.o.w - a.kit.o.w)[0];
+    const pick = hatch.filter(h => kitAurHomeOne(h)).sort((a, b) => a.kit.o.d - b.kit.o.d)[0] /* the shallowest that opens on the room (6.1 by 5.0 m or more since Session 1978) */, tile = H.filter(h => h.kit.o.kind === 'tile' && !h.kit.o.two).sort((a, b) => b.kit.o.w - a.kit.o.w)[0];
     return { tiles: H.filter(h => h.kit.o.kind === 'tile' && !h.kit.o.two).length, tile: tile && { id: tile.id, w: tile.kit.o.w, d: tile.kit.o.d, arcade: !!tile.kit.o.arcade }, kit: H.length, one: one.length, hatch: hatch.length, pick: pick && { id: pick.id, w: pick.kit.o.w, d: pick.kit.o.d, dome: pick.kit.o.dome || null, wall: 'wall:' + Math.floor(PKIT.stream(pick.kit.shell)() * PKIT.au.AUR.walls.length) } }; }, id);
   tally.push(`${id}: ${r.one} one-storey flat homes of ${r.kit} (${r.hatch} with the hatch), ${r.tiles} one-storey Roman`); if (!home && r.pick) home = { site: id, ...r.pick }; if (!roman && r.tile) roman = { site: id, ...r.tile };
 }

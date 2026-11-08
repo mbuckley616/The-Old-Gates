@@ -2844,7 +2844,9 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   // is the resident's, head to the back wall (-z); the home's chest is the one at its foot. The dyer keeps the shop, behind the counter.
   // S1975: the two-storey Roman (tiled) home too (PKIT.au.lot's 'tile' with two true), the same shop and flat round its door in the middle,
   // the flat under a ceiling of cedar boards (T.roof false): no roof stair, hatch or terrace, and the room's height is the boards'.
-  function kitAurHome(house){const o=house&&house.kit&&house.kit.o;return !!(house&&house.type==='home'&&house.kit&&house.kit.kind==='aurhouse'&&house.kit.shell&&o&&(o.kind==='flat'||o.kind==='tile' /* S1975: the two-storey Roman home */)&&o.two&&o.w>=6.4&&o.d>=6.0&&window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.au&&PKIT.au.home);}
+  // S1978: the shallow lots too, 5.0 m deep or more (the bed's head nearer the back wall so its chest clears the divan), and the Roman home
+  // down to 6.1 m wide (the table and its rug 0.5 m east of the bed); the flat-roofed one stays at 6.4 m, the width its roof stair needs.
+  function kitAurHome(house){const o=house&&house.kit&&house.kit.o;return !!(house&&house.type==='home'&&house.kit&&house.kit.kind==='aurhouse'&&house.kit.shell&&o&&(o.kind==='flat'||o.kind==='tile' /* S1975: the two-storey Roman home */)&&o.two&&o.w>=(o.kind==='tile'?6.1:6.4)&&o.d>=5.0 /* S1978: the shallow lots, down to 5.0 m deep, and the Roman home down to 6.1 m wide */&&window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.au&&PKIT.au.home);}
   function buildKitAurHome(house){
     const k=house.kit,T=PKIT.au.home({w:k.o.w,d:k.o.d,shell:k.shell,house:k.o},PKIT.stream(house.id+':aurhome')),I=T.inner,X=I.x1,Z=I.z1,W=2*X,D=2*Z,F0=T.floors[0];
     const rx=x=>x+X,rz=z=>z+Z,ry=y=>y-F0,FL=T.floors.map(y=>+(y-F0).toFixed(3)),ds=T.door.x<0?-1:1,U=u=>-ds*u;
@@ -2904,7 +2906,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   // chest is the one at its foot. The resident stands at the cooking bench. S1972: the one-storey Roman (tiled) home too (PKIT.au.lot's 'tile'
   // with two false, about one home in five; 5.4 by 5.0 m or more, as the lot's fit makes them): the same room round its door in the middle, under a
   // ceiling of cedar boards, no roof to stand on.
-  function kitAurHomeOne(house){const o=house&&house.kit&&house.kit.o;return !!(house&&house.type==='home'&&house.kit&&house.kit.kind==='aurhouse'&&house.kit.shell&&o&&!o.two&&(o.kind==='flat'?o.w>=6.4&&o.d>=6.0:o.kind==='tile'&&o.w>=5.4&&o.d>=5.0 /* S1972: the lot's fit takes an arcaded Roman house down to 5.4 by 5.0 */)&&window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.au&&PKIT.au.homeOne);}
+  function kitAurHomeOne(house){const o=house&&house.kit&&house.kit.o;return !!(house&&house.type==='home'&&house.kit&&house.kit.kind==='aurhouse'&&house.kit.shell&&o&&!o.two&&(o.kind==='flat'?o.w>=6.1&&o.d>=5.0 /* S1978: the flat-roofed home down to 6.1 by 5.0 m */:o.kind==='tile'&&o.w>=5.4&&o.d>=5.0 /* S1972: the lot's fit takes an arcaded Roman house down to 5.4 by 5.0 */)&&window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.au&&PKIT.au.homeOne);}
   function buildKitAurHomeOne(house){
     const k=house.kit,T=PKIT.au.homeOne({w:k.o.w,d:k.o.d,shell:k.shell,house:k.o},PKIT.stream(house.id+':aurhome1')),I=T.inner,X=I.x1,Z=I.z1,W=2*X,D=2*Z,F0=T.floors[0];
     const rx=x=>x+X,rz=z=>z+Z,ry=y=>y-F0,FL=T.floors.map(y=>+(y-F0).toFixed(3));

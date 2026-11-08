@@ -1,5 +1,5 @@
 // Aurenne's flat over the dyer's shop in the game (Session 1831; card F9, Michael's A on #318; OG-115; rooms.js's aurenneHome of Session 891,
-// laid to the street's lots in Session 1802). On the new look a two-storey flat-roofed Aurennais street home of 6.4 by 6.0 m or more opens on
+// laid to the street's lots in Session 1802). On the new look a two-storey flat-roofed Aurennais street home of 6.4 by 6.0 m or more (5.0 m deep since Session 1978) opens on
 // its own rooms: the street's own shell at its true size (its wall's colour the street's), the dyer's shop below, the stair of 16 risers to
 // the flat, the steep stair through the hatch to the roof terrace. You arrive clear; the prototype's three walks, the stair up to the flat
 // and the roof stair up onto the terrace, on foot with the game's ground and solids; the shop's head room is the floor above, the flat's the
@@ -14,14 +14,14 @@ let home = null, roman = null; const tally = [];
 for (const id of await page.evaluate(towns)) {
   if (!(await g.settle(id))) { check(`${id} stands`, false); continue; }
   const r = await page.evaluate(id => { const S = WORLD.settle.get(id), H = S.houses.filter(h => h.siteId === id && h.type === 'home' && h.kit && h.kit.kind === 'aurhouse'),
-      flat2 = H.filter(h => h.kit.o.kind === 'flat' && h.kit.o.two), ok = flat2.filter(h => h.kit.o.w >= 6.4 && h.kit.o.d >= 6.0);
+      flat2 = H.filter(h => h.kit.o.kind === 'flat' && h.kit.o.two), ok = flat2.filter(h => kitAurHome(h)) /* 6.4 by 5.0 m or more since Session 1978 (6.0 deep before) */;
     /* the street's wall colour, as the street's house draws it: the shell's stream's first draw, as aurenneHouse takes it */
-    const pick = ok.sort((a, b) => b.kit.o.w - a.kit.o.w)[0], tile2 = H.filter(h => h.kit.o.kind === 'tile' && h.kit.o.two), tok = tile2.filter(h => h.kit.o.w >= 6.4 && h.kit.o.d >= 6.0).sort((a, b) => b.kit.o.w - a.kit.o.w);
+    const pick = ok.sort((a, b) => a.kit.o.d - b.kit.o.d)[0] /* the shallowest (Session 1978; the widest before) */, tile2 = H.filter(h => h.kit.o.kind === 'tile' && h.kit.o.two), tok = tile2.filter(h => kitAurHome(h)).sort((a, b) => a.kit.o.w - b.kit.o.w) /* 6.1 by 5.0 m or more, the narrowest first (Session 1978) */;
     return { tile2: tile2.length, tok: tok.length, tsz: tile2.map(h => h.kit.o.w + 'x' + h.kit.o.d), roman: tok[0] && { id: tok[0].id, w: tok[0].kit.o.w, d: tok[0].kit.o.d, arcade: !!tok[0].kit.o.arcade }, kit: H.length, flat2: flat2.length, ok: ok.length, pick: pick && { id: pick.id, w: pick.kit.o.w, d: pick.kit.o.d, wall: 'wall:' + Math.floor(PKIT.stream(pick.kit.shell)() * PKIT.au.AUR.walls.length) } }; }, id);
-  tally.push(`${id}: ${r.ok} of ${r.flat2} two-storey flat homes of ${r.kit}, ${r.tok} of ${r.tile2} two-storey Roman (${r.tsz.join(' ')})`); if (!home && r.pick) home = { site: id, ...r.pick }; if (!roman && r.roman) roman = { site: id, ...r.roman };
+  tally.push(`${id}: ${r.ok} of ${r.flat2} two-storey flat homes of ${r.kit}, ${r.tok} of ${r.tile2} two-storey Roman (${r.tsz.join(' ')})`); if (r.pick && (!home || r.pick.d < home.d)) home = { site: id, ...r.pick }; if (r.roman && (!roman || r.roman.w < roman.w)) roman = { site: id, ...r.roman }; /* across the three towns (Session 1978) */
 }
 console.log('  ' + tally.join('; '));
-check(`a two-storey flat-roofed home of 6.4 by 6.0 m or more stands in the first three towns of Aurenne (${home && home.id}, ${home && home.w} by ${home && home.d} m)`, !!home, tally);
+check(`a two-storey flat-roofed home of 6.4 by 5.0 m or more (the shallowest) stands in the first three towns of Aurenne (${home && home.id}, ${home && home.w} by ${home && home.d} m)`, !!home, tally);
 if (home) {
   await g.settle(home.site);
   await page.evaluate(([site, id]) => { const h = WORLD.settle.get(site).houses.find(h => h.id === id); forceTime(12); px = h.exitX; pz = h.exitZ; goToInterior(h); }, [home.site, home.id]);
@@ -75,7 +75,7 @@ if (home) {
   }
 }
 // the two-storey Roman (tiled) home (Session 1975): the same shop and flat round its door in the middle, the flat under cedar boards, no roof stair
-check(`a two-storey Roman home of 6.4 by 6.0 m or more stands in the first three towns of Aurenne (${roman && roman.id}, ${roman && roman.w} by ${roman && roman.d} m${roman && roman.arcade ? ', arcaded' : ''})`, !!roman, tally);
+check(`a two-storey Roman home of 6.1 by 5.0 m or more (the narrowest) stands in the first three towns of Aurenne (${roman && roman.id}, ${roman && roman.w} by ${roman && roman.d} m${roman && roman.arcade ? ', arcaded' : ''})`, !!roman, tally);
 if (roman) {
   await g.settle(roman.site);
   await page.evaluate(([site, id]) => { const h = WORLD.settle.get(site).houses.find(h => h.id === id); forceTime(12); px = h.exitX; pz = h.exitZ; goToInterior(h); }, [roman.site, roman.id]);
