@@ -572,12 +572,12 @@
     for(const id in C){if(!(C[id].bounty>0)&&C[id].lockFine)delete C[id].lockFine; /* S1795 — paid or waived: no lock fine stands */const U=C[id].unfound;if(!U)continue;for(const hid in U){const u=U[hid];if(m<u.at)continue;delete U[hid];findPick(id,u);}}}
   function findPick(siteId,u){const c=worldState.crime[siteId],site=SITE[siteId]||siteAnywhere(siteId);addFavor(siteId,-1);c.debt=(c.debt||0)+1;c.last=dayNow();
     if(typeof addLog==='function')addLog('🔓',`${u.name} opened on a picked lock${site?' in '+site.name:''}. The town thinks the less of strangers.`);}
-  /* S2007 — a farm's beast killed is theft (Michael's B on #1275). A cow, a sheep, a goat or a hen of a farm's stock (wildFarmChunk, S1973)
+  /* S2008 — a farm's beast killed is theft (Michael's B on #1275). A cow, a sheep, a goat or a hen of a farm's stock (wildFarmChunk, S1973)
      struck dead is the theft of the crime system: recorded always; seen by its usual witnesses (witnessOf, the farmer at work in the yard
      among them), it costs the farm's town 2 favour and a fine of 50 and the beast's worth, and the farmer will not talk for 5 days, as a
      wronged keeper will not trade. A village's farm is its village's; a lone farm has no guard or lord, so its theft is the nearest town's
      in its cell and the eight round it. The worth is the beast's: the cargo's horse is 110, a cow half that, a sheep a bale of wool's less 5,
-     a goat 20, a hen 5. Asked in Session 2007 as a DECISION; these are the numbers until Michael says otherwise. */
+     a goat 20, a hen 5. Asked in Session 2008 as a DECISION; these are the numbers until Michael says otherwise. */
   const STOCK_WORTH={Cow:55,Sheep:25,Goat:20,Hen:5};
   function stockFarm(e){const m=/^farm:(.+):[hf]\d+$/.exec((e&&e._wildKey)||'');return m?m[1]:null;}
   function stockTown(fid){let m=/^farm_(.+)$/.exec(fid);if(m)return siteAnywhere(m[1]);

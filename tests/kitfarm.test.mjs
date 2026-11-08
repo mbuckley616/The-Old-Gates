@@ -53,7 +53,7 @@ const stockAt = id => page.evaluate(id => { forceTime(12); const S = WORLD.settl
   forceTime(23); wildDrop(ch); wildSpawnChunk(ch); const night = mine().map(e => e.baseName); forceTime(12); wildDrop(ch); wildSpawnChunk(ch);
   return { A: same ? undefined : A, B: same ? undefined : B, hens: hens.length, henYard: hens.every(inYard), field: field.length, kinds, offLot, same, at8, at2, night }; }, id);
 const stockOK = T => !T.none && T.hens >= 2 && T.hens <= 4 && T.henYard && T.field >= 2 && T.kinds.length === 1 && ['Cow', 'Sheep', 'Goat'].includes(T.kinds[0]) && T.offLot && T.same && T.at8 !== 'flee' && T.at2 === 'flee' && !T.night.includes('Hen') && T.night.length === T.field;
-// Session 2007 (Michael's B on #1275): a farm's beast struck dead is theft. Seen (the farmer 3 m off, facing you): the farm's town loses 2
+// Session 2008 (Michael's B on #1275): a farm's beast struck dead is theft. Seen (the farmer 3 m off, facing you): the farm's town loses 2
 // favour, the fine is 50 and the beast's worth (STOCK_WORTH), and the farmer will not talk ("I know what you did.") for 5 days; unseen
 // (nobody in sight), it is recorded and nothing else. A lone farm's theft is booked with the nearest town round it.
 const theftAt = id => page.evaluate(id => { forceTime(12); const S = WORLD.settle.get(id), F = S.farm, res = S.residents.find(r => r.farm);
