@@ -182,6 +182,26 @@ console.log(JSON.stringify(gf));
 check(`Tine torn: fire takes half (${gf.off.fire} → ${gf.on.fire}, a Fire Elemental ${gf.off.elem} → ${gf.on.elem}), other blows whole`, gf.on.fire === Math.max(1, Math.round(gf.off.fire / 2)) && gf.on.elem === gf.on.fire && gf.on.plain === gf.off.plain, gf);
 check(`Cloch torn: carry ×1.5 (${gf.off.carry} → ${gf.on.carry}); Gaoth torn: top speed ×1.5 (${gf.off.sea} → ${gf.on.sea})`, Math.abs(gf.on.carry - gf.off.carry * 1.5) < 1e-9 && Math.abs(gf.on.sea - gf.off.sea * 1.5) < 1e-9, gf);
 check('Solas torn: the undead are at peace until one is struck, then its zone wakes and the next zone stays at peace', gf.offWard === false && Array.isArray(gf.ward) && gf.ward.every(x => x === true) && gf.struck[0] === false && gf.struck[1] === false && gf.struck[2] === true, gf);
+// Session 1979: what burns reaches every way fire comes at you. A Fire Elemental's orb, through the dungeon's bolt path (the game's own
+// loop, an orb dropped where you stand), and a Tine gate's slime (the magma slime) are halved while Tine is torn; another orb, a slime of
+// another gate, whole
+const fo = await page.evaluate(async () => {
+  const G = worldState.greatGates.gates, save = Object.assign({}, G), hs = window.hcGateSchool, out = {};
+  const frames = n => new Promise(r => { let k = 0; const f = () => (++k >= n ? r() : requestAnimationFrame(f)); requestAnimationFrame(f); });
+  const orb = async fire => { const o = new THREE.Group(); o.position.set(px, (currentFloor === 2 ? FLOOR2_Y : 0) + .8, pz);
+    o.userData = { vx: 0, vy: 0, vz: 0, life: 4, isEnemyOrb: true, fire, dmg: 40 }; dScene.add(o); BALLS.push(o); PHP = maxHP; blocking = false;
+    for (let k = 0; k < 40 && BALLS.includes(o); k++) await frames(1); return BALLS.includes(o) ? null : maxHP - PHP; };
+  const base = () => Math.max(1, Math.round(40 * _magicResist()) - Math.floor(_armour() * .3));
+  for (const k of Object.keys(G)) delete G[k]; G.tine = 'torn';
+  out.mark = [fireFoe({ baseType: 'Fire Elemental' }), fireFoe({ baseType: 'Wraith' })];
+  out.fireOrb = await orb(true); out.plainOrb = await orb(false); out.want = [_warded(base(), FIRE_SRC), _warded(base(), null)];
+  window.hcGateSchool = () => 'tine'; out.tineSlime = [_warded(40, { baseType: 'Slime' }), _warded(40, { baseType: 'Small Slime' })];
+  window.hcGateSchool = () => 'cloch'; out.clochSlime = _warded(40, { baseType: 'Slime' });
+  window.hcGateSchool = hs; out.plain = _warded(40, {});
+  for (const k of Object.keys(G)) delete G[k]; Object.assign(G, save); PHP = maxHP; return out; });
+console.log(JSON.stringify(fo));
+check(`Tine torn: a Fire Elemental's orb burns (${fo.fireOrb} against another orb's ${fo.plainOrb}), as its blow does`, fo.mark[0] && !fo.mark[1] && fo.fireOrb != null && fo.fireOrb === fo.want[0] && fo.plainOrb === fo.want[1] && fo.fireOrb < fo.plainOrb, fo);
+check(`Tine torn: a Tine gate's Slime and Small Slime burn (${fo.tineSlime.join(', ')}), another gate's slime whole (${fo.clochSlime})`, fo.tineSlime.every(x => x === Math.max(1, Math.round(fo.plain / 2))) && fo.clochSlime === fo.plain, fo);
 // the talk (Session 1350)
 const tk = await page.evaluate(() => {
   const g = worldState.greatGates, save = JSON.parse(JSON.stringify(g)), site = siteAnywhere('ironhaven'), P = peopleOfSite(site), out = { P };

@@ -1137,14 +1137,14 @@ function loop(now){
           if(blocking){
             const magicReduction = _blockBoost(hasShield ? (sh.magicBlock||0.40) : 0.15);
             const reducedRaw = Math.round(dmg * (1-magicReduction) * _magicResist());
-            finalDmg = _warded(Math.max(1, reducedRaw - Math.floor(def2*.3)));
+            finalDmg = _warded(Math.max(1, reducedRaw - Math.floor(def2*.3)), fb.userData.fire?FIRE_SRC:null);
             const absorbed = dmg - Math.round(dmg * (1-magicReduction));
             const magicBlockStamCost = Math.max(1, Math.round(absorbed * _resolveMult));
             stamina = Math.max(0, stamina - magicBlockStamCost);
             if(stamina===0){ staminaCD = 2; lvAct.staminaDepleted++; }
             sndBlock(); blockFlashT = 0.4; blockFlashCol = '#cc44ff';
           } else {
-            finalDmg = _warded(Math.max(1, Math.round(dmg * _magicResist()) - Math.floor(def2*.3)));
+            finalDmg = _warded(Math.max(1, Math.round(dmg * _magicResist()) - Math.floor(def2*.3)), fb.userData.fire?FIRE_SRC:null);
             sndPlayerHurt();
           }
           PHP=Math.max(0,PHP-finalDmg);hurtT=.4;
@@ -1508,7 +1508,7 @@ function loop(now){
           // The +0.8 offset puts the orb at chest-height for both floors.
           const orbGroundY = e.floor===2 ? FLOOR2_Y : 0;
           orb.position.set(e.x, orbGroundY+0.8, e.z);
-          orb.userData={vx:(dx2/dd)*5,vy:0,vz:(dz3/dd)*5,life:4,isEnemyOrb:true,dmg:8+Math.floor(Math.random()*7)+Math.floor(foeTierLevel(e)*1.5)}; /* S1036 — the orb grows with the foe's tier's level, not yours (#373 A) */
+          orb.userData={vx:(dx2/dd)*5,vy:0,vz:(dz3/dd)*5,life:4,isEnemyOrb:true,fire:fireFoe(e),dmg:8+Math.floor(Math.random()*7)+Math.floor(foeTierLevel(e)*1.5)}; /* S1979 — a Fire Elemental's orb burns (Tine's gift, Resist Heat) */ /* S1036 — the orb grows with the foe's tier's level, not yours (#373 A) */
           dScene.add(orb);BALLS.push(orb);sndEnemyOrb();
         }
       }
