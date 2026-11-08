@@ -25,7 +25,11 @@ const WANT = { city: 20, town: 14, village: 8, hamlet: 4, port: 4 };
 // Session 1343: the towns and the city laid round the coaching inn's plot (Michael's A on #642, which accepts that their lots move) re-pin
 // Dunmore, Carraig Mór and Cœur de Vie: the same shopkeepers where they stood, the villagers and guards drawn on the moved homes (one
 // more home in each); Portclare (a port, no plot) and Droichead are unchanged.
-const PEOPLE = { dunmore: 1245121883, carraig_mor: -1131477979, coeur_de_vie: -1626674452, portclare: 1470735334, droichead: -1790770419 }; // drawn people, names and roles
+// Session 1998: the market house's square (S1904) left a stall out of Cœur de Vie's square, and its draws with it, which renamed the eight
+// guards and villagers drawn after it; the stall's draws are taken again (genSettlement's stalls). Cœur de Vie and Portclare re-pinned to what
+// 1 Nov's code (c97ed1c, with 1 Nov's suite and tests/lib) draws here: 374393723 and -626595302, which this code draws too, as it does the
+// other three towns' pins. The old pins (-1626674452, 1470735334) were not what c97ed1c drew either; what moved them came before it
+const PEOPLE = { dunmore: 1245121883, carraig_mor: -1131477979, coeur_de_vie: 374393723, portclare: -626595302, droichead: -1790770419 }; // drawn people, names and roles
 for (const id of ['dunmore', 'carraig_mor', 'coeur_de_vie', 'portclare', 'droichead']) {
   await g.settle(id);
   const r = await page.evaluate((id) => { const S = WORLD.settle.get(id); const L = S.loot || [];
