@@ -23,7 +23,9 @@ await g.settle('dunmore');
 const t = await page.evaluate(() => { const site = WORLD.settlements.get('dunmore').site; const build = on => { HAO.on = on; HAO.ms = 0; HAO.n = 0; WORLD.disposeSettlement('dunmore'); const t0 = performance.now(); WORLD.genSettlement(site); return { ms: +(performance.now() - t0).toFixed(0), aoMs: +HAO.ms.toFixed(0), houses: HAO.n }; };
   const off = build(false), on = build(true); HAO.on = true; return { off, on }; });
 console.log(JSON.stringify(t));
-check('Dunmore\'s detailed houses go through the shading when the town builds, and it takes time only when on', t.on.houses > 5 && t.on.aoMs > 0 && t.off.aoMs < 5, t);
+// S1997: since S1884 a kit town builds no old house its kit houses replace (Dunmore's homes, shops and smithy stand as the Gatelands
+// kit's pieces, which this shading does not touch), so only the few old detailed houses left on its lots go through it: 3 at s1373
+check('Dunmore\'s old detailed houses go through the shading when the town builds, and it takes time only when on', t.on.houses > 0 && t.on.aoMs > 0 && t.off.aoMs < 5, t);
 check('the shading costs under 25 ms a house on average and under 1.5 s for the whole town', t.on.aoMs / t.on.houses < 25 && t.on.aoMs < 1500, t);
 // the picture: Dunmore from its edge in the afternoon, today (off) and now (on); the town is rebuilt between, so a
 // house's variant can differ (the variant is drawn from a running counter)
