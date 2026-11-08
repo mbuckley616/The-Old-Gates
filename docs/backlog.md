@@ -275,7 +275,7 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
     Browse your wares., and the counter holds the four robes, the guild's lore book and nothing of a goods shop's*: the counter also holds
     twelve staves, wands and mauls of the six words and a Mortar and Pestle, with The Seventh Niche, the Bronze Cowl, Iron Robe, Bronze
     Wraps and Bronze Under-robe. If the guild's counter is meant to sell the words' weapons and the pestle now, say so and QA re-measures.
-  - **QA's own, taken in this run's next sessions:** `foeseed` (the wildlife's `wild:<chunk>:<n>` keys, S1704 on, counted as chunk foes),
+  - **QA's own, taken in this run's next sessions:** ~~`foeseed` (the wildlife's `wild:<chunk>:<n>` keys, S1704 on, counted as chunk foes)~~ — done, Session 2000;
     `placerooms` and `lookpair` (each try killed at `run.mjs`'s 900 s cap, 166–196 s a step on that runner). FLAKY in the ledger:
     `guildfurn` (one cylinder left in the hall's bake, try 1), `people` (87 of 88 skinned, try 1).
 - ~~**`placesave` red on main in the weekly run: a Dunmore house moves lot when the town's prosperity swings** (QA, Session 1994, for the look
