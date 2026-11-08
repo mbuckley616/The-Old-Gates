@@ -18,6 +18,7 @@ const look = () => page.evaluate(() => { const sc = interiorScene, KR = SCALE.RO
 // S1997: on the new look a smithy is the kit's forge where its lot holds it (Gatelands S1855, Aurenne S1863, the Mark S1869), and
 // kitforge, aursmithy and marksmithy walk those rooms; this one is the old builder's smithy, which a lot too tight for the forge keeps.
 // With every smithy loaded here standing as the kit's (Dunmore's, s1373), its checks are reported and passed over, and the rest runs
+fs.mkdirSync('tests/out', { recursive: true });
 const smithy = await enter('weapon');
 const kitSmiths = await page.evaluate(() => { let n = 0, all = 0; for (const S of WORLD.settle.values()) for (const x of S.houses) if (x.type === 'weapon') { all++; if ((typeof kitForge === 'function' && kitForge(x)) || (typeof kitAurSmithy === 'function' && kitAurSmithy(x)) || (typeof kitMarkSmithy === 'function' && kitMarkSmithy(x))) n++; } return { n, all }; });
 console.log('smithies', JSON.stringify(kitSmiths));
@@ -38,7 +39,6 @@ const shot = await page.evaluate(() => { const sc = interiorScene, W = _S.intW, 
   const c = document.createElement('canvas'); c.width = CW; c.height = CH / 2; const x = c.getContext('2d');
   [[W * .7, 1.3, D * .6, 1.2, .6, 1.2], [W * .45, .95, 5.6, W - .2, .45, 5.5]].forEach((v, i) => { cam.position.set(v[0], v[1], v[2]); cam.lookAt(v[3], v[4], v[5]); sc.updateMatrixWorld(true); REN.render(sc, cam); x.drawImage(cv, 0, 0, CW, CH, i * CW / 2, 0, CW / 2, CH / 2); });
   return c.toDataURL(); });
-fs.mkdirSync('tests/out', { recursive: true });
 fs.writeFileSync('tests/out/smithy.png', Buffer.from(shot.split(',')[1], 'base64'));
 } else console.log('every smithy loaded is the kit\'s room: the old smithy\'s checks are passed over');
 // the armourer, the apothecary and the general goods (Session 290): each room one bake beside its counter; the stands,
