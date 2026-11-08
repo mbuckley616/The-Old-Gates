@@ -1633,3 +1633,40 @@ A playtest run, as the rota asks after yesterday's look at the new look. I playe
 - Section I gains two lines, both the cart's. Nothing in it is done but unmarked.
 
 No proposal this run.
+
+## 2026-11-08 — The new look: the Mark's tight lots (DECISION #1300's three options), the academy's library and its street front, Aurenne's one-storey homes (flat and Roman) and a 5 m flat; the long cloak and the Mark's beasts from the bodies builder's pictures (build s1366, read to Session 1986)
+
+My last entry was a playtest, so this run reviews the new look. `node tests/run.mjs export` passed. I served `docs/prototypes/levelup/` over http and shot nine views at 1280×720 in the container's Chromium on software GL: `rooms.html?room=home1` (inside and outside), `room=home1&kind=tile&arcade=1`, `room=home&hd=5.0&view=flat`, `room=library` (hall and outside), and `mark.html?view=small&opt=a|b|c`. Every page finished in 4 to 6 s with no page errors. The cloaks, the Mark's beasts and the elders' staffs I judged from the bodies builder's own pictures (`builder-cloak-bridge.jpg`, `f4-beasts-mark.jpg`), not from my own shots. The art I held them against is OG-115 (homes by island), OG-043 (important buildings: the library and academy) and OG-034 and OG-025 (the Mark's towns).
+
+**The Mark's tight lots (S1986, #1300)** (`2026-11-08-mark-townhouse-row.png`)
+- Option C fills every lot, as the devlog says, and the jetty, the bressumer and the beast heads all read at street distance. But seven town houses in a row read as one terrace and not as a town. All seven have the same 52° roof, a ridge at about 10 m, the same tar-dark plank and the same two rows of small shutters. The "four stains" do not separate in daylight: at 30 m I see one brown. Bryggen, the precedent cited, reads as a row because its gables differ in colour and height. OG-034's fjord port has snow on the roofs, gables at mixed heights and lit windows, and this row has none of them. If C is chosen, I would ask for the ridge to vary by ±1 m from lot to lot and for one gable in three to turn its eaves to the street. Neither needs a new piece.
+- The doors are the planks' own colour and read only by their arch line. From the street you cannot tell which house you can enter. A paler door leaf or a lit lamp over it would fix that. The hall has the same problem, but its steps point you to its door.
+- The town house's upper storey is 2.35 m, under the foundation's 2.6–3.0 m floor to floor (`visual-foundation.md`). Under a 52° roof with a loft above it, that may be right for a jettied upper floor. I note it rather than call it wrong. The page shows no 1.8 m figure for scale beside the street (`view=halls` has one), so I cannot judge the 2.6 m ground floor against a person by eye.
+- Options A and B leave pale blocks (4 and 3 of the 8 lots), as drawn. On the evidence of the pictures alone I would choose C, with the variation above. It is Michael's decision.
+
+**The academy (S1959, S1963)** (`2026-11-08-academy-library.png`)
+- From the street, the arcade, the band of blue chequer tile, the cypresses and the three towers read as OG-043's academy. In the prototype the arches show the lit lattice screens behind them, which the devlog says the game draws as dark fill. That is the one thing the prototype promises that the game does not deliver.
+- Inside, the hall is mostly empty plaster. The bookcases stand about 2.2 m high under walls I put at 8 to 9 m, with nothing between them and the clerestory: no gallery, no second tier of shelves, no hangings. The library in OG-043 has shelves to the roof. Most of this frame is bare wall, with an armillary sphere in the middle of it. The floor's tile reads as near-black, and the red rugs under the tables are flat solid fields. The light through the windows, falling on the floor, is the best thing in the room. Nobody is in it, as S1963 says.
+
+**Aurenne's one-storey homes (S1968, S1972, S1982)** (`2026-11-08-aurenne-home-flat-roof.png`, `2026-11-08-aurenne-home-roman.png`)
+- From the street the flat-roofed home matches OG-115's Aurenne: the tiled door frame, the waterspouts, the pergola with its striped awning, and the washing on the parapet. It is 2,142 triangles in 20 draws.
+- Inside, the 2.98 m ladder rises steeply into the hatch from beside the cooking bench, and at noon the hatch is the brightest thing in the room. It reads as a ladder and not as a stair. That suits a one-storey house. Whether it is comfortable to climb is a question for play, and I cannot judge it headless.
+- In both homes the ceiling meets the side walls in a sawtooth: the joists' and rafters' ends stand above the wall's top as dark teeth against the plaster. It is clearest at top left in the Roman home. It reads as a gap between the wall and the roof rather than as joists resting on a wall plate. A plate or a cornice strip along the wall's head would close it. For the look builder; a prototype finding, not filed.
+- The blue and white chequer dado is the same tile in every Aurennais room I opened, here and in the library. At this saturation it is the loudest thing in each room, louder than OG-115's homes, where the tile is a border.
+- In the 5.0 m flat (S1982) everything fits as the devlog says. The divan, the table and the rug read well. At this distance the foreground jar is an octagon of 8 flat faces.
+
+**The long cloak (S1957, S1958, S1962, S1966, S1974)**
+- From `builder-cloak-bridge.jpg`: from the front, the bridge does what it says, and the gap between the legs is gone. From the side and from behind, the cloak is a cylinder as wide as the elbows from the collar to the hem, and the arms are lost inside it. To me it reads as a blanket or a tent, not as wool on shoulders. Wool on shoulders narrows below the shoulder blades and swings out only at the hem. S1958's own suggestion of a narrower bridge (45°) is worth trying. The fold steps at the hem of the "before" picture are gone in the "after".
+- Braids over the cloak (S1966, S1974) I could not judge in a walk, which wants frames at full speed.
+
+**The Mark's beasts (S1969)**
+- `f4-beasts-mark.jpg` is taken on Dunmore's green, not on snow, so S1969's question, whether the pale bear reads against snow, is not answered by the picture. On grass the Frostreach Bear is so pale and fleecy that at 15 m it reads as a large sheep. The Stonefang Wolf reads as a wolf. A picture of both on the Mark's snow is what the question needs.
+
+**The *Needs eyes*, from what I saw**
+- Judged here: S1959, S1963 (the academy: the street front matches OG-043; the hall is under-furnished, as above), S1968, S1972, S1982 (the homes: they read; there is a sawtooth at the wall's head), S1958 (the cloak reads as a tent from the side), S1986 (the row reads as the Mark by its heads and its tar, and as a terrace by its sameness).
+- Not judged: S1957 and S1962 (the cloak's plumb fall and the mantle at the collar; not in the pictures I had at a size I could read), S1966 and S1974 (braids in the walk), S1977 and S1980 (the staff's plant at full speed), S1973 (the farms' hens: not rendered this run), S1975 (the two-storey Roman homes: not shot), S1961 and S1981 (the cart's move and the child at the door: both are things to play, and next run's playtest is where they belong), S1960 (swing debris), S1965 (the save register on parchment), S1967, S1970, S1971, S1978, S1985 (QA's, with nothing to see).
+
+**Backlog notes**
+- Nothing new goes into section I: this run found no fault in today's game. The new-look findings above stay here, as the routine says.
+
+No proposal this run.
