@@ -30,6 +30,25 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 - **C.** Loud, OG-130 as drawn: B's weapon flaring with a star at its tip, a glowing outline round the whole body (about 78k more triangles per foe while it shows), the slam's ground a filled red disc with rings and ticks.
 
 **Recommendation.** B: the pose does the warning and the foe stays a person; it reads at the third-person camera's distance. Pictures: `docs/prototypes/levelup/telegraphs-options.jpg`, `telegraphs-close.jpg`, `telegraphs-ring.jpg`, `telegraphs-time.jpg`.
+### The places off the road — where they stand and how you find them (OG-124) (from the look builder, 2026-11-08, #1292)
+**The question.** Thirteen places are drawn as prototypes and none is in the world: the Gatelands' shepherd's hut, peat-cutting camp and falls with the cave behind; the Mark's hunting cabin and logging camp; four camps by a road (charcoal burners, merchants, the Mark's hunters, Aurenne's abandoned expedition); and four small mysteries (the overturned coach, the locked cellar, the perched stone, the unfinished camp). The quest writer's *Off the Road, I* has words for five of them. Where should they stand, and how do you find them?
+
+**Options.**
+- **A (recommended).** By the land, unmarked until found. Each cell rolls at most one off-road place and one by a road, the same in every load. An off-road place stands on the ground it was drawn for, 150 m or more from roads and sites; a road place 20–60 m off a road between two places, by its island. About one cell in three keeps each kind. Each goes on the map, with a small icon and its name, once you come within 40 m; no fast travel to it.
+- **B.** As A, the road camps and the mysteries only for now; the five off-road places wait.
+- **C.** A few by hand: one of each at a chosen spot near each island's first towns, named on the map from the start.
+- **D.** As A, but each marked on the map from the start, as the towns are.
+
+**Recommendation.** A: OG-124 asks for small mysteries with no marker, found by time spent; it reuses the rule the caves and the lone farms already run. Picture: `docs/prototypes/levelup/offroad-sheet.jpg`. Devlog: `docs/devlog/1983.md`.
+### Animals by the hour — the dawn, the dusk and the rain in the wild tables, the scenes too, or the designer's page first? (from the systems builder, 2026-11-08, #1293)
+**The question.** The open country's animals are rolled per chunk as it loads (`wildSpawnChunk`); the hour enters only for the Badger and the Lantern Beetle, by night. OG-142 lists a lot (deer at dawn, predators at dusk, an owl, wolves running deer through snow, the rut, geese, shelter from rain). Which slice should the systems builder build first?
+
+**Options.**
+- **A (recommended).** The hour and the rain, in the tables (one session). Dawn (5–8h): the grazers weigh ×2 and their groups come one larger. Dusk (18–21h): the hunters weigh ×2. Night: the grazers ×0.5. Rain or snowfall: one chunk in eight holds a group, not one in four. The roll stays seeded by the chunk. No new body.
+- **B.** A, then the scenes (about three sessions): wolves running deer on snow at dusk, the rut in autumn evenings, geese overhead once they have a body.
+- **C.** Wait for the designer's page: OG-142 written up as a proposal first.
+
+**Recommendation.** A. The numbers (×2, one in eight) are the ones a player would feel: say if you want them otherwise. Devlog: `docs/devlog/1984.md`.
 ### The dungeon's cell by kind: old gates at 3 m, and forts and lairs at what? (systems builder, Session 1105) — DECISION #421
 **The question.** F2b's last session sets a dungeon's grid cell at true scale; it is one unit today, so corridors are 1 m wide for a 1.8 m body. Michael chose **C, 3 m** on #300 and added: "If by dungeon we mean Old Gates, they should be extremely massive and cavernous. A normal 'dungeon' like a mine, or a cave can be a more typical size." The game has three kinds of underground place: the **old gates** (the world's portals, themed by school: crypts, haunted halls, elemental and deep caverns, ruins), **fort interiors** (the `fort_` layouts), and **lairs and dens** (a beast's lair, the cloak's den). So the cell can differ by kind, and "a more typical size" is a number a player feels.
 
