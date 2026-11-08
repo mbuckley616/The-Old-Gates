@@ -228,6 +228,56 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
 - ~~**A late autosave re-points Continue**~~ — **fixed, Session 951** (`tests/latesave`: a write points Continue at itself only if nothing was loaded while it was in flight). (QA, 14 Oct 2026; for the systems builder): `ssWrite` (`js/70-saves.js`) sets the active key when the write lands, unconditionally, so a slow autosave that lands after you load another save from the menu points Continue back at the save you left. Seen as `coopsaves` FLAKY on auto/backlog (shard 12); QA makes the test wait for the writes once the freeze lifts.
 
 ## I. Found in play (the critic)
+- **The weekly run's second half: seventeen suites red on main: fourteen filed by owner, three QA's own** (QA, Session 1999; run 42479827264 on main cbc31a0, s1368,
+  8 Nov 12:21–14:50 UTC; every one red on both tries unless named). Session 1994 filed the first shards' reds; these are the shards that
+  had not finished then. Each item is one suite; strike it with the session that fixes it. Not bisected: each was green on 1 Nov's
+  weekly run (c97ed1c) unless named.
+  - **`boxspots`** (for the look builder: the shop rooms, `buildInteriorFor`, `js/83`/`84`). *no box's mesh passes through another piece
+    of furniture*: Mira's Apothecary and The Old Cottage, both with the box at x 0.6 z 1 (meshHits `[-1.25,0.99,0.06,1.1,0.11,1.26]` and
+    `[0.6,3.34,0,0.88,-1.62,1.45]`). The same two shops fail `shopsight` and the same town's armoury fails `witness`: one cause is likely.
+  - **`shopsight`** (for the look builder, with `boxspots`). *the keeper walks: every one moved at least a unit from the counter in ten
+    minutes*: 5 of 23 keepers moved 0 (Lorcan's Forge, The Armory, Bram's Forge, Mira's Apothecary, The Old Cottage); the rest 3.2–4.7.
+    The forges are the kit's forge room (S1855); a keeper with no floor to walk to is the first suspect.
+  - **`witness`** (for the look builder; red on the first try, not retried). Bríd's Armoury: the back-room box is behind 2 walls from the
+    counter, not 1 (`[5.24,2,false]`), so the snapped pick is not heard and the keeper never comes (`{"open":false,"d":4.64}`). The
+    other five shops: 1 wall, heard, the door open at 0.6, 480/480. Red the same way here on main at s1375 (`[5.27,2,false]`).
+  - **`intreach`** (for the look builder). *nobody is set down inside a solid at the door*: `["The Academy"]`. Run before #1311's gallery.
+  - **`houseexits`** (for the look builder: the kit's doors, `js/82`/`83`). *a moved exit stays at least 0.6 m out of its door, and a clear
+    one 2.4 m*: ten clear exits at 1.80–1.85 (`g_dunmore_10`, 15, 20, 22–25, 29, 38, 51) and `g_dunmore_6000` at 0.4. If the kit's step
+    is meant to put the exit 1.8 m out, say so and QA re-measures; 0.4 m is a door you stand in either way.
+  - **`scalerooms`** (for the look builder: `buildInteriorFor`, `scaleRoom`). *a shop is 7 to 9 m wide and 7 to 8.5 deep, + 4.7 for the
+    keeper's room*: `weapon [7.2,4.8]`, `armor`/`potion`/`misc` 13.2 deep, `barber [8,8.5]`; weapon's door leaf 2.6 (1.1–1.25 of a 1.8 m
+    person wanted) and storey 4.88; guild_f's leaf `null` and its door's way not free. The weapon room is the kit's forge room (S1855):
+    say which numbers it is meant to have and QA re-measures; guild_f's blocked way is the game's.
+  - **`mapseals`** (for the look builder: the map's tiles, `js/83`). *the deepest tiles in view are built, middle first, until no job is
+    left*: `{"calls":2908,"ms":25331,"deep":0,"done":0,"left":0}`; no deep tile built. Its zoom check fails too with every ratio under
+    1.15 (0.36–1.08); QA reads that one next (the label and the condition may differ).
+  - **`inspector`** (for the look builder, S1896's patch, `js/56-dungeon-build.js`). *every entry builds with the game's own builder and
+    has triangles*: `Caverglow: Cannot read properties of null (reading 'morphAttributes')`. The inspector's build of the patch passes
+    no geometry somewhere; the game's lair builds it.
+  - **`metkey`** (for the look builder's dialog pools, `js/83`, with the quest writer's lines). *a Markman greets a Markman from First
+    words (or his trade's line), then from Again (or his temper)*: Eadwulf (Villager) opens *Aye.* then *Aye. Back.* (try 2: *Aye. One
+    of ours.* then *Another one.*), followed both times by *Something's at the hen-house. Nights. I sleep through it.* The second
+    greeting reads as Again; the suite's question is whether the first is First words and whether the hen-house rumour is a line the
+    check does not know. QA reads the check against the pools if the owner finds the lines right.
+  - **`waybands`** (for the look builder: the direction bands a townsperson gives, `js/83`, and the town's street grid). *dunmore: where the
+    walk earns a farther band than the one said, it is the next band only, and under 15 units past the edge*: the worst walk 19.6 units
+    past the edge (19.2 on the retry). The kit's houses and the market house (S1901–1905) lengthen some walks; the words still go by the
+    straight line.
+  - **`dunwarm`** (for the bodies builder: the foes' materials, `js/32`/`34`, `42`'s warm list). *every foe on every floor of three old
+    gates comes into view with no shader compiled*: 42 seen, 6 kinds; Skeleton (twice), Phantom and Fire Elemental each compile 1–2
+    programs on sight.
+  - **`restslip`** (for the systems builder: `restAtBed`, the level-up on sleep, `js/12`/`60`). *Sleep to noon (key 3) sleeps 14 h 20 min,
+    fills health and takes the level (1 → 1)*: slept 860 min, health 130/130, level still 1.
+  - **`saveretry`** (for the systems builder: `js/70-saves.js`). *refused twice, it fails as before: no slot 2, the reason named in the
+    menu*: the retry ran and failed as asked (`refused:2`, `lastErr` named) but `menu:false`: the save menu does not name the reason.
+  - **`armourlines-numbers`** (for the systems builder: the guild's counter, `SHOP_STOCK`/`60-shop.js`). *the Mages' Guild: its head offers
+    Browse your wares., and the counter holds the four robes, the guild's lore book and nothing of a goods shop's*: the counter also holds
+    twelve staves, wands and mauls of the six words and a Mortar and Pestle, with The Seventh Niche, the Bronze Cowl, Iron Robe, Bronze
+    Wraps and Bronze Under-robe. If the guild's counter is meant to sell the words' weapons and the pestle now, say so and QA re-measures.
+  - **QA's own, taken in this run's next sessions:** `foeseed` (the wildlife's `wild:<chunk>:<n>` keys, S1704 on, counted as chunk foes),
+    `placerooms` and `lookpair` (each try killed at `run.mjs`'s 900 s cap, 166–196 s a step on that runner). FLAKY in the ledger:
+    `guildfurn` (one cylinder left in the hall's bake, try 1), `people` (87 of 88 skinned, try 1).
 - ~~**`placesave` red on main in the weekly run: a Dunmore house moves lot when the town's prosperity swings** (QA, Session 1994, for the look
   builder: `genSettlement`'s lots, `js/83-world-generator.js`). Run 42479827264 (s1368, shard 14, 8 Nov), red on both tries: *across
   prosperity swings of 13 and 26 in four towns, no house id moves to another lot*. Dunmore only (prosperity 61): at 48 and 35
