@@ -74,6 +74,7 @@ def build(name, title, note, srcfile, use_common, query=''):
     if use_common:
         s = scene(src)
         if "from './wrongness.js'" in s: s = kits(s, ['gatekit', 'creatures', 'wrongness'])
+        if "from './naves.js'" in s: s = kits(s, ['gatekit', 'gatecond', 'naves'])
         if "from './impacts.js'" in s: s = kits(s, ['gatekit', 'gatecond', 'bind', 'impacts'])
         if "from './telegraphs.js'" in s: s = kits(s, ['gatekit', 'gatecond', 'bind', 'telegraphs'])
         if "from './bind.js'" in s: s = kits(s, ['gatekit', 'gatecond', 'bind'])
@@ -202,4 +203,5 @@ build('gatecond-hall.html', 'A gate’s condition', 'A gate’s condition, seen 
 build('bind-hall.html', 'The bind', 'The bind (L7, OG-045 and OG-063): the beat after a perfect parry, posed on two people in a steady gate’s first bay. ?pose=deflect|bind|spell (A the blade beaten aside, B blades crossed high and both leaning in, C the bind with a spell cocked low behind), &cam=back|side|close|front|wide|scale, &school=<the spell’s school>. Drag to look.', 'bind-view.js', True, '?pose=spell&cam=back')
 build('impacts-hall.html', 'Impact by surface', 'Impact by surface (L, “Melee, read clearly”; OG-127): what a blow throws off where it lands, posed at its contact in a steady gate’s first bay. ?surface=steel|wood|stone|flesh, &level=a|b|c (A quiet, true to size; B clear, a size up and lit; C loud, as drawn), &t=<seconds after contact>, &cam=close|back|side|scale. Drag to look.', 'impacts-view.js', True, '?surface=steel&level=b&cam=close')
 build('telegraphs-hall.html', 'A foe’s tell', 'A foe’s tell (L11, “Foes and bosses”; OG-130): where the warning before a foe’s blow shows, at the top of its wind-up in a steady gate’s first bay. ?kind=light|heavy|slam (a cut, gold; an overhead, red; the war hammer’s 3 m ring), &level=a|b|c (A the body glows, today’s rule; B the weapon’s edge carries the colour and the ring is a line; C loud, as drawn), &k=<0 to 1, the glow’s share>, &cam=back|foe|wide|scale. Drag to look.', 'telegraphs-view.js', True, '?kind=heavy&level=b&cam=back')
+build('naves-hall.html', 'The six schools’ halls', 'The six schools’ great halls, inside (L10, OG-119; F5): one nave of the gate kit dressed by each school. ?school=tine|uisce|cloch|scath|solas|gaoth, &level=colour|dressed|drawn (A the kit as built; B dressed: walls, aisles, air and light, the floor the same; C OG-119 as drawn: the floor changed and a set piece), &cam=wide|eye|high|aisle|up|scale. Drag to look.', 'naves-view.js', True, '?school=tine&level=dressed&cam=wide')
 print('ok')
