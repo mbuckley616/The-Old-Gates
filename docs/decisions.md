@@ -15,6 +15,26 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+### The six schools' great halls inside — how far a school changes a gate's space (from the concept artist, 2026-11-08, #1319)
+**The question.** Backlog L10 (OG-119, card F5's look half). Michael's B on the gate interiors gives every gate the same six space types (nave, crossing, stair hall, chasm, flooded hall, ring chamber) and says the schools re-dress them, but not how far. The prototype dresses one nave (27 m wide, four 14 m bays, vault to 33 m) three ways for each school. Page: `docs/prototypes/levelup/naves.html`; details in `docs/concepts.md`.
+
+**Options.**
+- **A.** Colour only: the stone and script take the school's colour; one hall serves all six. Nothing to build.
+- **B (recommended).** Dressed: walls, side aisles, air and light change per school (Tine's lava aisles, Uisce's flooded aisles, Cloch's stacked blocks, Scáth's knee mist, Solas's vault shafts, Gaoth's open bay and pennants); the nave's floor is the same, so it plays the same. 0.2k–3k tris, 2–18 draws, 0–6 lights each; no change to pathing, collision or minimap.
+- **C.** OG-119 as drawn: B plus the floor changed and a set piece per school (lava channel and wheel, a 0.9 m flood and colossus, a pillar forest, a gap into the dark, a ring window and statues, a shaft with plank bridges). Changes the generator per school; Gaoth costs about twice the triangles.
+
+**Recommendation.** B: every school's hall is recognisable at a glance and the generator stays one engine; C's set pieces could return as the great gates' authored final rooms.
+
+### What a farm's beast is worth in the theft's fine (from the systems builder, 2026-11-08, #1324)
+**The question.** Michael's B on #1275 makes killing a farm's animal a theft: 50 gold plus the beast's worth. No page sets that worth. Session 2008 (PR #1323) built it with option A. Devlog: `docs/devlog/2008.md`.
+
+**Options.**
+- **A (recommended, as built).** Cow 55, sheep 25, goat 20, hen 5, from the cargo prices (a horse 110, a bale of wool 30). A seen cow costs 105, a hen 55.
+- **B.** Half that (cow 28, sheep 12, goat 10, hen 2), so the fine stays near a common theft's 50.
+- **C.** Twice that (cow 110, sheep 50, goat 40, hen 10): stock is a farm's living, and dear.
+
+**Recommendation.** A, as built.
+
 ## Answered
 ### Water — a thirst clock, a carried draught, or water at the source? (from the systems designer, 2026-11-07, #1254)
 **The question.** Backlog L8's *Water* (containers with uses, filled at rivers, wells and rain, boiled or filtered) says what water is made of but not what it is for. Should drinking be a need you keep up, a buff you choose to carry, or something you take only at the source? The page: `docs/design/water.md`.
