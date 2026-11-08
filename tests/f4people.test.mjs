@@ -38,11 +38,12 @@ check('the first frame that draws the new bodies compiles no program: they were 
 const who = await page.evaluate(() => { const rs = [...PEOPLE_RIGS].filter(r => r.root.parent === WORLD.scene && !r.foe);
   const hb = rs.filter(r => HB_RIGS.has(r)), built = hb.filter(r => r.hb);
   return { people: rs.length, hb: hb.length, built: built.length, keys: hb.every(r => /^dunmore|:/.test(r.g.hbKey)),
-    bones: [...new Set(built.map(r => r.hb.P.skeleton.bones.length))], driver: built.every(r => r.mesh.skeleton.bones.length >= 17 && r.mesh.skeleton.bones.length <= 20),
+    bones: [...new Set(built.map(r => r.hb.P.skeleton.bones.filter(b => b.name !== 'hemBone').length))], hem: built.filter(r => r.hb.P.hem).length, // S1988: a long cloak's hem adds one bone of its own
+    driver: built.every(r => r.mesh.skeleton.bones.length >= 17 && r.mesh.skeleton.bones.length <= 20),
     tris: built.map(r => { let t = 0; r.hb.root.traverse(o => { if (o.isMesh) t += (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3; }); return Math.round(t); }),
     statures: built.map(r => +(r.hb.st * r.hb.root.scale.x * r.root.scale.x).toFixed(2)), oldStatures: built.map(r => +(r.root.scale.y * SCALE.PERSON_MODEL / PW.BODY).toFixed(2)),
     peoples: [...new Set(built.map(r => r.hbG.people))], sample: built.slice(0, 6).map(r => r.g.hbKey) }; });
-check('every townsperson in Dunmore wears the builder\'s body, keyed by place and name, on its 163-bone skeleton over the 17-bone driver',
+check('every townsperson in Dunmore wears the builder\'s body, keyed by place and name, on its 163-bone skeleton (a long cloak adds its hem\'s bone) over the 17-bone driver',
   who.people >= 8 && who.hb === who.people && who.built >= 4 && who.keys && who.bones.length === 1 && who.bones[0] === 163 && who.driver, who);
 check('at the stature the game gives them (within 2 cm of the driver\'s)', who.statures.every((s, i) => Math.abs(s - who.oldStatures[i]) < .02), { s: who.statures, old: who.oldStatures });
 
@@ -131,6 +132,7 @@ const cloaks = await page.evaluate(() => { const v = new THREE.Vector3();
   return rigs.map(rig => { const root = rig.root, fy = root.rotation.y, hold = rig.hb.hold, o = { key: rig.g.hbKey, held: hold ? hold.size : 0, rest: test(rig), tested: 0, out: 0, worst: 0, swing: 0 };
     const wr = rig.hb.P.byName['wrist.R'], free = hold && !hold.has(rig.hb.map.findIndex(([j]) => j === 'wrR')), seen = [];
     for (let i = 1; i <= 60; i++) { root.position.x += Math.sin(fy) * .012; root.position.z += Math.cos(fy) * .012; tickPeople(1 / 60, 6e5 + i * 16.7);
+      if (rig.hb.P.hem) o.hem = Math.max(o.hem, +rig.hb.P.hem.a.toFixed(2));
       if (i > 15 && i % 3 === 0) { const c = test(rig); o.tested += c.tested; o.out += c.out; if (c.worst > o.worst) { o.worst = c.worst; o.at = c.at + ' tick ' + i + ' walk ' + rig.w.walk.toFixed(2); } if (free) seen.push(wr.getWorldPosition(new THREE.Vector3()).applyMatrix4(root.matrixWorld.clone().invert())); } }
     if (free) o.swing = +Math.max(...seen.map(a => Math.max(...seen.map(b => Math.abs(a.z - b.z))))).toFixed(3); o.free = !!free; o.worst = +o.worst.toFixed(3); o.walk = +rig.w.walk.toFixed(2); return o; }); });
 console.log('  cloaks:', JSON.stringify(cloaks));
@@ -159,14 +161,19 @@ const cloakLegs = await page.evaluate(() => { const v = new THREE.Vector3();
       const t = Math.max(0, Math.min(1, (th - A.th) / Math.max(1e-6, B.th - A.th))), cr = A.r + (B.r - A.r) * t; tested++; worst = Math.max(worst, r - cr); if (r > cr + .003) out++; }
     return { tested, out, worst }; };
   const rigs = [...HB_RIGS].filter(r => r.hb && r.hb.L < 2 && r.root.parent === WORLD.scene && !r.sleep && r.hb.full.find(m => m.name === 'cloak')).slice(0, 4);
-  return rigs.map(rig => { const root = rig.root, fy = root.rotation.y, o = { key: rig.g.hbKey, legs: rig.hb.P.cloakLegs ? rig.hb.P.cloakLegs.n : 0, tested: 0, out: 0, worst: 0 };
+  return rigs.map(rig => { const root = rig.root, fy = root.rotation.y, o = { key: rig.g.hbKey, legs: rig.hb.P.cloakLegs ? rig.hb.P.cloakLegs.n : 0, tested: 0, out: 0, worst: 0, hem: rig.hb.P.hem ? 0 : -1 };
     for (let i = 1; i <= 60; i++) { root.position.x += Math.sin(fy) * .012; root.position.z += Math.cos(fy) * .012; tickPeople(1 / 60, 7e5 + i * 16.7);
+      if (rig.hb.P.hem) o.hem = Math.max(o.hem, +rig.hb.P.hem.a.toFixed(2));
       if (i > 15 && i % 3 === 0) { const c = test(rig); o.tested += c.tested; o.out += c.out; o.worst = Math.max(o.worst, c.worst); } }
     o.worst = +o.worst.toFixed(3); return o; }); });
 console.log('  legs under the cloaks:', JSON.stringify(cloakLegs));
 { const T = cloakLegs.reduce((a, c) => a + c.tested, 0), O = cloakLegs.reduce((a, c) => a + c.out, 0);
   check(`walking, the legs stay under a long cloak: its skirts go with the thighs (${O} of ${T} points of what the legs wear out of it by 3 mm or more, ${cloakLegs.filter(c => c.tested).length} walkers in a long cloak)`,
     cloakLegs.filter(c => c.tested).length >= 2 && T > 3000 && cloakLegs.every(c => !c.tested || c.legs > 0) && O / T < .08, cloakLegs); }
+// S1988 — the hem pushed by the heel: the back of a long cloak rides a bone of its own at the hips (hbCloakLegs adds it, hbHem swings it
+// back by the further-trailing leg), so a trailing heel no longer goes out through the back hem (Clodagh of Dunmore, 16.8 cm out)
+check(`walking, a long cloak's back hem swings back over the trailing heel (its bone up to ${Math.max(...cloakLegs.map(c => c.hem))} rad)`,
+  cloakLegs.every(c => !c.tested || c.hem >= 0) && cloakLegs.filter(c => c.tested && c.hem > .1).length >= 2, cloakLegs);
 // S1974 — a braid laid over a long cloak stays over it in the walk (S1966 laid it there in the builder's pose). The cloak rides the pelvis
 // (hbSkinLoose) and the hair the head, so the walk sank most of a braid under the sheet; the hair on the sheet now rides the pelvis too
 // (hbHairOnCloak). Before the cast's checks, which leave Dunmore. One cloaked walker of Dunmore rebuilt with a long braid; every third point of it near the sheet (within 4 cm) read
