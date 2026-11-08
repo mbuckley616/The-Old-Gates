@@ -1564,6 +1564,7 @@ function genSettlement(site){
     _discT+=dt;if(_discT<.5)return;_discT=0;try{tickTownArrival();}catch(e){console.warn('arrival save',e);}
     for(const t of SITES){if(t.pad<0)continue;if(Math.hypot(px-t.x,pz-t.z)<t.pad+30)discover(t.id,t.name);}
     for(const t of LONE_FARMS)if(Math.hypot(px-t.x,pz-t.z)<t.pad+30)discover(t.id,t.name); /* S1482 — and a farm alone in the country */
+    for(const L of LOADED.values()){const D=L.cell&&L.cell._wayside;if(D&&D.group&&Math.hypot(px-D.x,pz-D.z)<WAYSIDE_FIND)discover(D.id,D.name);} /* S2007 — a place by the road, found by coming within 40 m (#1292 A) */
     for(const e of CELL_DOORS){const p=dungeonWorldPos[e.seed];if(Math.hypot(px-p.x,pz-p.z)<34)discover('door_'+e.seed,e.canonicalName||(typeof dungeonName==='function'?dungeonName(e.seed,e.theme):'an old gate'));}
     for(const p of PEAKS){if(Math.hypot(px-p.x,pz-p.z)<140)discover(p.id,p.name);}
     for(const l of LAKES){if(Math.hypot(px-l.x,pz-l.z)<l.r+60)discover(l.id,l.name);}
@@ -1762,6 +1763,7 @@ function genSettlement(site){
     if(kind==='city'){ctx.beginPath();ctx.rect(-7,-4,14,8);ctx.fill();ctx.stroke();for(let i=-6;i<=6;i+=4){ctx.beginPath();ctx.rect(i-1.2,-8,2.4,4);ctx.fill();ctx.stroke();}ctx.beginPath();ctx.rect(-2.5,-13,5,9);ctx.fill();ctx.stroke();}
     else if(kind==='town'||kind==='garrison'||kind==='port'){ctx.beginPath();ctx.rect(-6,-3,12,6);ctx.fill();ctx.stroke();for(let i=-5;i<=5;i+=5){ctx.beginPath();ctx.rect(i-1.2,-6,2.4,3);ctx.fill();ctx.stroke();}house(0,-3,3);if(kind==='port'){ctx.fillStyle='#2a3a6a';ctx.fillRect(-1,4,2,6);ctx.beginPath();ctx.arc(0,8,4,.2*Math.PI,.8*Math.PI);ctx.stroke();}}
     else if(kind==='village'){house(-3,3,3);house(3,2,2.6);}
+    else if(kind==='wayside'){ctx.beginPath();ctx.arc(0,0,6,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.beginPath();for(let k=0;k<6;k++){const a=k*Math.PI/3;ctx.moveTo(0,0);ctx.lineTo(Math.cos(a)*6,Math.sin(a)*6);}ctx.stroke();} /* S2007 — a place by the road: a cart's wheel */
     else if(kind==='farm'){house(-3,3,2.6);ctx.beginPath();ctx.rect(.5,-.5,7,3.5);ctx.fill();ctx.stroke();ctx.beginPath();ctx.moveTo(-7,5.5);ctx.lineTo(8,5.5);ctx.stroke();} /* S1482 — a lone farm: the house, the long byre beside it, the field's edge */
     else if(kind==='outpost'){ctx.beginPath();ctx.rect(-2.5,-6,5,10);ctx.fill();ctx.stroke();ctx.beginPath();ctx.moveTo(-3.5,-6);ctx.lineTo(0,-9.5);ctx.lineTo(3.5,-6);ctx.closePath();ctx.fill();ctx.stroke();}
     else if(kind==='fort'){ctx.beginPath();ctx.rect(-4,-4,8,9);ctx.fill();ctx.stroke();for(let i=-3;i<=3;i+=3){ctx.beginPath();ctx.rect(i-.9,-7,1.8,3);ctx.fill();ctx.stroke();}}
@@ -1788,6 +1790,7 @@ function genSettlement(site){
     c.sites.forEach(t=>{if(t.kind==='portal')return;out.push({id:t.id,name:t.name,kind:t.kind,x:t.x,z:t.z,sub:t.kind==='glade'&&typeof gladeDoubled==='function'&&gladeDoubled(t)?'Glade · grown thick since the beast died':SUB[t.kind]||(t.kind.charAt(0).toUpperCase()+t.kind.slice(1)),major:t.kind==='city'||t.kind==='town'||t.kind==='port'||t.kind==='garrison'||t.kind==='tower'||t.kind==='shrine'});});
     c.doors.forEach(e=>{if(e.wet)return;const p=dungeonWorldPos[e.seed]||(e.zone==='gen'?{x:e.x,z:e.z}:null);if(!p)return;out.push({id:'door_'+e.seed,name:e.canonicalName||(typeof dungeonName==='function'?dungeonName(e.seed,e.theme):'Old gate'),kind:e.kind==='fort_door'?'fort':'cave',x:p.x,z:p.z,sub:`${e.kind==='fort_door'?'Fort':'Old gate'} · ${e.theme}`+mapDoorGrade(e,p)+(typeof gateReadLine==='function'?gateReadLine(e):''),major:e.kind==='fort_door'});});
     try{loneFarms(c).forEach(F=>{const t=loneFarmSite(F,c);out.push({id:t.id,name:t.name,kind:'farm',x:t.x,z:t.z,sub:'Farm',major:false});});}catch(e){} /* S1482 — the farms alone in the country */
+    try{if(discovered(`wayside_${c.i}_${c.j}`)){const D=waysideAt(c);if(D)out.push({id:D.id,name:D.name,kind:'wayside',x:D.x,z:D.z,sub:'By the road',major:false,noTravel:true});}}catch(e){} /* S2007 — a place by the road, once found; no travel to it (#1292 A) */
     c.peaks.forEach(p=>out.push({id:p.id,name:p.name,kind:'peak',x:p.x,z:p.z,sub:'Mountain',major:true}));
     c.lakes.forEach(l=>out.push({id:l.id,name:l.name,kind:'lake',x:l.x,z:l.z,sub:'Lake',major:true}));
     const wk=worldState.ship&&worldState.ship.sunk;if(wk&&wk.x>=c.ox&&wk.x<c.ox+SIZE&&wk.z>=c.oz&&wk.z<c.oz+SIZE)out.push({id:'shipwreck',name:`The wreck of the ${worldState.ship.name||SHIP.name}`,kind:'ship',x:wk.x,z:wk.z,sub:'Where she went down',major:true});
@@ -1979,7 +1982,7 @@ function genSettlement(site){
     if(!e){const mk=mapMarksHtml();body.innerHTML=mk||'<div class="wm-placeholder">Scroll to zoom, drag to pan.<br><br>Hover a place to learn more; click a discovered place to travel there.<br><br>Places appear as you find them.</div>';if(mk)mapWireMarks(body);return;}
     const k=discovered(e.id);
     const tsite=(e.kind in BASE_P)?siteAnywhere(e.id):null;
-    body.innerHTML=`<div style="font:600 16px Georgia,serif;color:#e8d8a0">${e.name}</div><div style="color:#b8a880;font-size:12px;margin:4px 0 10px">${e.sub}${tsite?' · '+stateLine(tsite):''}</div>`+(k?`<button type="button" id="w80-travel" style="padding:8px 12px;background:#3a2a16;color:#f0e2c0;border:1px solid #8a6a3a;border-radius:4px;cursor:pointer;font:14px Georgia,serif">Travel to ${e.name}</button><div style="color:#8a7a60;font-size:11px;margin-top:6px">${Math.round(Math.hypot(e.x-px,e.z-pz))}u away</div>`:'<div style="color:#8a7a60;font-size:12px">Not yet discovered.</div>');
+    body.innerHTML=`<div style="font:600 16px Georgia,serif;color:#e8d8a0">${e.name}</div><div style="color:#b8a880;font-size:12px;margin:4px 0 10px">${e.sub}${tsite?' · '+stateLine(tsite):''}</div>`+(k&&e.noTravel?`<div style="color:#8a7a60;font-size:12px">Found on foot; no road's end to travel to. ${Math.round(Math.hypot(e.x-px,e.z-pz))}u away</div>`:k?`<button type="button" id="w80-travel" style="padding:8px 12px;background:#3a2a16;color:#f0e2c0;border:1px solid #8a6a3a;border-radius:4px;cursor:pointer;font:14px Georgia,serif">Travel to ${e.name}</button><div style="color:#8a7a60;font-size:11px;margin-top:6px">${Math.round(Math.hypot(e.x-px,e.z-pz))}u away</div>`:'<div style="color:#8a7a60;font-size:12px">Not yet discovered.</div>');
     const b=document.getElementById('w80-travel');if(b)b.onclick=()=>fastTravel(e.id);
   }
   function openMap(){
