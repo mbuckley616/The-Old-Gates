@@ -2336,6 +2336,15 @@ function aurenneHome(o = {}, r = stream('aurhome')) {
   slab(F1, well, 'tile');
   const bx0 = SX0 + Math.floor((F1 - .4 - F0 - 2.0) / rise) * going /* the first tread a beam's soffit would come within 2 m of */;
   const beams = []; for (let x = -X + .5; x < X - .2; x += .9) { const over = x + .08 > Math.min(well.x0, bx0) - .02 && x < well.x1 + .1, z0 = over ? well.z1 : -Z; bx('cedarD', x - .08, x + .08, F1 - .4, F1 - .2, z0, Z); beams.push({ x, z0, y: F1 - .4 }); }
+  // the wall plate (Session 1988, the critic's 8 Nov: the beams' ends stood against the plaster as dark teeth): a cedar plate 0.3 m deep
+  // round the walls' head under the ceiling, 0.1 m proud where the beams rest on it and 0.08 on the side walls; cut where a stair or hatch
+  // rises past it. One more box per wall in the beams' own material, no draw added. cut: { back, front, west, east } as [a0, a1] spans
+  const plates = [], plate = (y0, y1, cut = {}) => { const run = (a, b, cs = []) => cs.reduce((S, [c0, c1]) => S.flatMap(([s0, s1]) => c1 <= s0 || c0 >= s1 ? [[s0, s1]] : [[s0, c0], [c1, s1]]), [[a, b]]).filter(([s0, s1]) => s1 - s0 > .05);
+    for (const [a0, a1] of run(-X, X, cut.back)) { bx('cedarD', a0, a1, y0, y1, -Z, -Z + .1); plates.push({ face: 'back', x0: a0, x1: a1, y0, y1, z0: -Z, z1: -Z + .1 }); }
+    for (const [a0, a1] of run(-X, X, cut.front)) { bx('cedarD', a0, a1, y0, y1, Z - .1, Z); plates.push({ face: 'front', x0: a0, x1: a1, y0, y1, z0: Z - .1, z1: Z }); }
+    for (const [a0, a1] of run(-Z + .1, Z - .1, cut.west)) { bx('cedarD', -X, -X + .08, y0, y1, a0, a1); plates.push({ face: 'west', x0: -X, x1: -X + .08, y0, y1, z0: a0, z1: a1 }); }
+    for (const [a0, a1] of run(-Z + .1, Z - .1, cut.east)) { bx('cedarD', X - .08, X, y0, y1, a0, a1); plates.push({ face: 'east', x0: X - .08, x1: X, y0, y1, z0: a0, z1: a1 }); } };
+  plate(F1 - .52, F1 - .2, { back: [[Math.min(well.x0, bx0) - .1, X]], east: [[-Z, SZ1 + .05]] }) /* the shop's ceiling: none over the stair and its landing */;
   // ── the shop: bolts of cloth on shelves along the far wall, a counter before them, the shopkeeper's stool between; lengths of dyed
   // cloth hung from a pole on the near wall; jars of dye by the door; a brass oil lamp on the counter
   const dyes = ['madder', 'indigo', 'saffron', 'weld'];
@@ -2387,6 +2396,7 @@ function aurenneHome(o = {}, r = stream('aurhome')) {
   const hatch = tile ? null : { x0: RX0 - .02, x1: RX1 + .15, z0: -Z, z1: HZ };
   for (let x = -X + .5; x < X - .2; x += .9) { const over = hatch && x > hatch.x0 - .1 && x < hatch.x1 + .1; bx('cedarD', x - .07, x + .07, CEIL - .18, CEIL, over ? hatch.z1 : -Z, Z); }
   if (tile) bx('cedar', -X, X, CEIL, CEIL + .03, -Z, Z);
+  plate(CEIL - .3, CEIL, hatch ? { back: [[hatch.x0 - .1, hatch.x1 + .1]] } : {}) /* the upper room's: none where the roof stair climbs to the hatch */;
   // the steep stair to the roof: two cedar stringers and ten treads along the back wall, its foot by the well, its head under the hatch
   const RS = tile ? null : { x0: RX0, x1: RX1, z0: -Z + .08, z1: -Z + .73, n: 10 }; if (RS) { const rr = (F2 - F1) / (RS.n + 1), gg = (RS.x1 - RS.x0) / RS.n;
     for (const z of [RS.z0, RS.z1 - .05]) { const L = Math.hypot(RS.x1 - RS.x0, F2 - F1), g = new THREE.BoxGeometry(L + .3, .2, .05); g.rotateZ(-Math.atan2(F2 - F1, RS.x1 - RS.x0)); put(g, 'cedar', (RS.x0 + RS.x1) / 2 - .02, (F1 + F2) / 2, z + .025); }
@@ -2407,7 +2417,7 @@ function aurenneHome(o = {}, r = stream('aurhome')) {
   const group = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = !['flame', 'ember', 'glow'].includes(k); m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
   const all = new THREE.Group(); all.add(sh.group, group);
   const windows = [...sh.open.front.filter(h => !h.door).map(h => ({ face: 'front', x: h.x, z: d / 2, y: sh.yW + h.y, w: h.w, h: h.h })), ...sh.open.back.map(h => ({ face: 'back', x: -h.x, z: -d / 2, y: sh.yW + h.y, w: h.w, h: h.h }))];
-  return { group: all, shell: sh.group, room: group, tris: Math.round(tris), draws: group.children.length, shellTris: sh.tris, shellCalls: sh.draws, inner: { x0: -X, x1: X, z0: -Z, z1: Z }, floors: [F0, F1, F2], ceil: [F1 - .4, CEIL - .18], beams,
+  return { group: all, shell: sh.group, room: group, tris: Math.round(tris), draws: group.children.length, shellTris: sh.tris, shellCalls: sh.draws, inner: { x0: -X, x1: X, z0: -Z, z1: Z }, floors: [F0, F1, F2], ceil: [F1 - .4, CEIL - .18], beams, plates,
     door: { x: dx, z: d / 2, w: 1.05, h: 2.1 }, stair: { x0: SX0, x1: LX, z0: -Z, z1: SZ1, rise: +rise.toFixed(4), going, n: N }, well, hatch, roofStair: RS, roof: !tile, tile, paths, boxes, bed, divan, table, counter, lamp, lamp0, braziers, windows, w, d, top: F2 };
 }
 
@@ -2467,6 +2477,15 @@ function aurenneHomeOne(o = {}, r = stream('aurhome1')) {
   // ── the ceiling's cedar beams across the house every 0.9 m under the slab, cut at the hatch; the lantern on its chain from the middle
   if (tile) bx('cedar', -X, X, CEIL, CEIL + .03, -Z, Z);
   const beams = []; for (let x = -X + .5; x < X - .2; x += .9) { const over = hatch && x > hatch.x0 - .1 && x < hatch.x1 + .1; bx('cedarD', x - .07, x + .07, CEIL - .18, CEIL, over ? hatch.z1 : -Z, Z); beams.push({ x, z0: over ? hatch.z1 : -Z, y: CEIL - .18 }); }
+  // the wall plate (Session 1988, the critic's 8 Nov: the beams' ends stood against the plaster as dark teeth): a cedar plate 0.3 m deep
+  // round the walls' head under the ceiling, 0.1 m proud where the beams rest on it and 0.08 on the side walls; cut where a stair or hatch
+  // rises past it. One more box per wall in the beams' own material, no draw added. cut: { back, front, west, east } as [a0, a1] spans
+  const plates = [], plate = (y0, y1, cut = {}) => { const run = (a, b, cs = []) => cs.reduce((S, [c0, c1]) => S.flatMap(([s0, s1]) => c1 <= s0 || c0 >= s1 ? [[s0, s1]] : [[s0, c0], [c1, s1]]), [[a, b]]).filter(([s0, s1]) => s1 - s0 > .05);
+    for (const [a0, a1] of run(-X, X, cut.back)) { bx('cedarD', a0, a1, y0, y1, -Z, -Z + .1); plates.push({ face: 'back', x0: a0, x1: a1, y0, y1, z0: -Z, z1: -Z + .1 }); }
+    for (const [a0, a1] of run(-X, X, cut.front)) { bx('cedarD', a0, a1, y0, y1, Z - .1, Z); plates.push({ face: 'front', x0: a0, x1: a1, y0, y1, z0: Z - .1, z1: Z }); }
+    for (const [a0, a1] of run(-Z + .1, Z - .1, cut.west)) { bx('cedarD', -X, -X + .08, y0, y1, a0, a1); plates.push({ face: 'west', x0: -X, x1: -X + .08, y0, y1, z0: a0, z1: a1 }); }
+    for (const [a0, a1] of run(-Z + .1, Z - .1, cut.east)) { bx('cedarD', X - .08, X, y0, y1, a0, a1); plates.push({ face: 'east', x0: X - .08, x1: X, y0, y1, z0: a0, z1: a1 }); } };
+  plate(CEIL - .3, CEIL, hatch ? { back: [[hatch.x0 - .1, hatch.x1 + .1]] } : {}) /* none where the roof stair climbs to the hatch */;
   const lamp = [0, CEIL - .55, .2]; bx('iron', lamp[0] - .005, lamp[0] + .005, lamp[1] + .2, CEIL - .18, lamp[2] - .005, lamp[2] + .005);
   put(new THREE.CylinderGeometry(.1, .12, .26, 8), 'glow', ...lamp); put(new THREE.ConeGeometry(.14, .18, 8), 'brass', lamp[0], lamp[1] + .22, lamp[2]); put(new THREE.CylinderGeometry(.13, .13, .03, 8), 'brass', lamp[0], lamp[1] - .14, lamp[2]);
   // ── the steep stair to the roof: two cedar stringers and twelve treads along the back wall, its foot toward the room's middle, its head
@@ -2489,7 +2508,7 @@ function aurenneHomeOne(o = {}, r = stream('aurhome1')) {
   const group = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = !['flame', 'ember', 'glow'].includes(k); m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
   const all = new THREE.Group(); all.add(sh.group, group);
   const windows = [...sh.open.front.filter(h => !h.door).map(h => ({ face: 'front', x: h.x, z: d / 2, y: sh.yW + h.y, w: h.w, h: h.h })), ...sh.open.back.map(h => ({ face: 'back', x: -h.x, z: -d / 2, y: sh.yW + h.y, w: h.w, h: h.h }))];
-  return { group: all, shell: sh.group, room: group, tris: Math.round(tris), draws: group.children.length, shellTris: sh.tris, shellCalls: sh.draws, inner: { x0: -X, x1: X, z0: -Z, z1: Z }, floors: [F0, F2], ceil: CEIL - .18, beams, roof: !tile, tile,
+  return { group: all, shell: sh.group, room: group, tris: Math.round(tris), draws: group.children.length, shellTris: sh.tris, shellCalls: sh.draws, inner: { x0: -X, x1: X, z0: -Z, z1: Z }, floors: [F0, F2], ceil: CEIL - .18, beams, plates, roof: !tile, tile,
     door: { x: dx, z: d / 2, w: 1.05, h: 2.1 }, hatch, roofStair: RS, paths, boxes, bed, divan, table, kitchen, chest, lamp, braziers, jar, windows, w, d, top: F2 };
 }
 // Aurenne's civic buildings (Session 1948: pieces.js's aurenneCivic of Session 833, copied as it stands; card F6, Michael's A on #295,
