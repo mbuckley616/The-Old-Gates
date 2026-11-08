@@ -746,6 +746,57 @@
     for(const [u,v] of [[-.5,-.17],[.5,-.17],[-.5,.17],[.5,.17]])lo=Math.min(lo,meshH(D.x+u*co+v*s_,D.z-u*s_+v*co));
     M.group.position.set(D.x,lo-.25,D.z);M.group.rotation.y=D.ry;M.group.name='carving';sc.add(M.group);STATIC_SOL.push({cx:D.x,cz:D.z,rx:.5,rz:.5,carving:true});
     D.y=lo-.25;D.tris=M.tris;D.draws=M.draws;D.group=M.group;return M.group;}
+  // S2007 (card F8, OG-124; Michael's A on #1292: "by the land, unmarked until found") — the places by a road. One cell in three of an
+  // island keeps one, by its own stream (wayside:<cell>), so no other draw of the cell moves: its kind drawn from its island's list (the
+  // Gatelands' charcoal burners, merchants' camp, overturned coach, locked cellar and perched stone; the Mark's hunters' camp and
+  // unfinished camp; Aurenne's abandoned expedition), and a kind the kit has not built yet keeps the cell empty until it has (so the
+  // kinds come in one at a time and none moves another). It stands off the line of a road between two places (never a quay's, a spur's
+  // or a gate's), between a fifth and four fifths of its length, facing it: 20 to 60 m off by the decision, each kind at its own distance
+  // in that (the coach 20 to 24, where it went over the verge); read by place (withPlace over the cell's middle), on dry bare land 2 m or
+  // more over the sea that rises no more than 1.2 m across its pad; 40 m off every pad, 60 m off every door, 30 m off a farm's yard, 60 m
+  // off the cell's caves, mine, Weaver door, carving and watcher, 15 m off every lake's rim, and no nearer another road than its own.
+  // Nothing marks it until you come within 40 m (tickDiscovery, 83), and then the map has it, with no travel to it.
+  // -> {id, kind, name, x, z, ry, off, cell} or null, kept on the cell (c._wayside)
+  const WAYSIDE={gatelander:['charcoal','merchants','carriage','cellar','erratic'],markman:['hunters','unfinished'],aurennais:['expedition']};
+  const WAYSIDE_OFF={carriage:[20,24]},WAYSIDE_NAME={carriage:'An overturned coach'},WAYSIDE_FIND=40;
+  function waysideAt(c){
+    if(!c||c._wayside!==undefined)return c?c._wayside:null;c._wayside=null;
+    if(c.type==='sea'||c.home||!c.sites||!c.roadDefs||window.OG_LOOK!=='new'||window.OG_KIT_TOWNS===false||typeof PKIT==='undefined'||!PKIT.places)return null;
+    const list=WAYSIDE[nationOf(c.i,c.j).people];if(!list)return null;
+    const k=cellKey(c.i,c.j),r=PKIT.stream('wayside:'+k);if(r()>=1/3)return null;
+    const kind=list[Math.floor(r()*list.length)];if(!PKIT.places[kind])return null; /* drawn, not built yet: the cell waits for it */
+    const byId={};for(const t of c.sites)byId[t.id]=t;const lakes=[];for(let j=c.j-1;j<=c.j+1;j++)for(let i=c.i-1;i<=c.i+1;i++){const n=getCell(i,j);if(n&&n.lakes)lakes.push(...n.lakes);}
+    const roads=c.roadDefs.filter(d=>d.via!=='quay'&&d.via!=='spur'&&byId[d.a]&&byId[d.b]&&byId[d.a].kind!=='portal'&&byId[d.b].kind!=='portal').map(d=>({d,pts:roadCurve(d,byId[d.a],byId[d.b])}));if(!roads.length)return null;
+    const others=[];try{for(const f of [limeCave,seaCove,mineAt,weaverDoorAt,roadCarvingAt,watcherAt]){const o=f(c);if(o)others.push(o);}}catch(e){}
+    const farms=[];try{loneFarms(c).forEach(F=>farms.push(F));c.sites.forEach(t=>{const F=villageFarm(t,c);if(F)farms.push(F);});}catch(e){}
+    const near=(pts,x,z)=>{let b=1e9;for(let i=0;i<pts.length-1;i++){const a=pts[i],q=pts[i+1],dx=q.x-a.x,dz=q.z-a.z,t=Math.max(0,Math.min(1,((x-a.x)*dx+(z-a.z)*dz)/(dx*dx+dz*dz||1)));b=Math.min(b,Math.hypot(a.x+dx*t-x,a.z+dz*t-z));}return b;};
+    const OFF=WAYSIDE_OFF[kind]||[20,60];
+    withPlace(c.ox+SIZE/2,c.oz+SIZE/2,()=>{for(let t=0;t<80&&!c._wayside;t++){const R=roads[Math.floor(r()*roads.length)],P=R.pts;if(P.length<2)continue;
+        const i=Math.min(P.length-2,Math.floor(P.length*(.2+r()*.6))),a=P[i],b=P[i+1],L=Math.hypot(b.x-a.x,b.z-a.z)||1,
+        nx=-(b.z-a.z)/L,nz=(b.x-a.x)/L,sd=r()<.5?-1:1,u=r(),off=OFF[0]+r()*(OFF[1]-OFF[0]),rx=a.x+(b.x-a.x)*u,rz=a.z+(b.z-a.z)*u,x=rx+nx*sd*off,z=rz+nz*sd*off;
+        if(cellOf(x,z)[0]!==c.i||cellOf(x,z)[1]!==c.j)continue;
+        if(c.sites.some(s=>Math.hypot(s.x-x,s.z-z)<(s.pad||0)+40)||(c.doors||[]).some(e=>Math.hypot(e.x-x,e.z-z)<60)||farms.some(F=>Math.hypot(F.cx-x,F.cz-z)<FARM_R+30))continue;
+        if(others.some(C=>Math.hypot(C.x-x,C.z-z)<60)||lakes.some(l=>Math.hypot(l.x-x,l.z-z)<(l.r||60)+15)||roads.some(o=>o!==R&&near(o.pts,x,z)<off-1)||near(P,x,z)<OFF[0]-1)continue;
+        const ry=Math.atan2(nx*sd,nz*sd),co=Math.cos(ry),s_=Math.sin(ry);let lo=1e9,hi=-1e9,wet=false;
+        for(const [lx,lz] of [[0,0],[-5,-3],[5,-3],[-5,5],[5,5],[0,-off*.5],[10,-off*.7]]){const qx=x+lx*co+lz*s_,qz=z-lx*s_+lz*co,h=rawH(qx,qz);if(Math.abs(lx)<=5&&lz>-4){lo=Math.min(lo,h);hi=Math.max(hi,h);}if(farmWet(qx,qz))wet=true;}
+        if(wet||lo<2||hi-lo>1.2)continue;
+        c._wayside={id:`wayside_${c.i}_${c.j}`,kind,name:WAYSIDE_NAME[kind]||kind,x:+x.toFixed(2),z:+z.toFixed(2),ry:+ry.toFixed(4),off:+off.toFixed(2),cell:k};}});
+    return c._wayside;}
+  // its stamps (the cell's first step, so the chunks are built with them): a pad flat at the ground under the coach, so it lies on level
+  // turf, and clearings of the scatter (noFlat) round it and along the gouges to the road, so no tree stands in the way it went
+  function waysideStamps(c,k){const D=waysideAt(c);if(!D)return [];const co=Math.cos(D.ry),s_=Math.sin(D.ry),W=(lx,lz)=>[D.x+lx*co+lz*s_,D.z-lx*s_+lz*co],y=landH(D.x,D.z),out=[];
+    {const [x,z]=W(0,-.3);out.push(addStamp({id:D.id+'_pad',kind:'door',x,z,r:3.4,blend:3,y,cell:k}));}
+    {const [x,z]=W(0,1);out.push(addStamp({id:D.id+'_clear',kind:'door',noFlat:true,x,z,r:9,blend:2,y:0,cell:k}));}
+    for(let q=1;q<=4;q++){const t=q/4,[x,z]=W(2+17*t,-.8+(-D.off+2.6+.8)*t);out.push(addStamp({id:`${D.id}_way${q}`,kind:'door',noFlat:true,x,z,r:3.5,blend:1.5,y:0,cell:k}));}
+    return out;}
+  // the piece built on the drawn ground (meshH) in its own frame, turned to face the road; its solids, squares along the coach's length
+  // (the world's solids are squares, so a turned body is three of them, each as wide as it)
+  function placeWayside(c,k){const D=waysideAt(c);if(!D)return null;const co=Math.cos(D.ry),s_=Math.sin(D.ry),W=(lx,lz)=>[D.x+lx*co+lz*s_,D.z-lx*s_+lz*co],y0=meshH(D.x,D.z);
+    const M=PKIT.places[D.kind]({key:D.id,road:-D.off,ground:(lx,lz)=>meshH(...W(lx,lz))-y0});
+    M.group.position.set(D.x,y0,D.z);M.group.rotation.y=D.ry;M.group.name='wayside '+D.kind;sc.add(M.group);
+    for(const b of M.sol||[]){const ca=Math.cos(b.ry),sa=Math.sin(b.ry),along=b.w>=b.d,L=Math.max(b.w,b.d),h=Math.min(b.w,b.d)/2,n=Math.max(1,Math.ceil(L/(2*h)));
+      for(let q=0;q<n;q++){const t=n>1?-L/2+h+q*(L-2*h)/(n-1):0,lu=along?t:0,lv=along?0:t,[cx,cz]=W(b.x+lu*ca+lv*sa,b.z-lu*sa+lv*ca);STATIC_SOL.push({cx,cz,rx:h,rz:h,top:y0+b.h,wayside:true});}}
+    D.y=y0;D.tris=M.tris;D.draws=M.draws;D.group=M.group;D.lying=M.lying;D.coach=M.coach;return M.group;}
   // S1800 (card F8; Michael's A on #333, "broken, as drawn", and his A on #1072, "fit the arcade to the land") — Aurenne's ruined aqueducts
   // (PKIT.places.aqueduct, places.js's aurenneAqueduct): an arcade across a river's valley, one tier where it is under 12 m deep and two where
   // deeper. One Aurenne cell in three keeps one, by its own stream (aqueduct:<cell>), so no other draw of the cell moves. Read by place
