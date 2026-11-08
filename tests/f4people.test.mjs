@@ -38,7 +38,7 @@ check('the first frame that draws the new bodies compiles no program: they were 
 const who = await page.evaluate(() => { const rs = [...PEOPLE_RIGS].filter(r => r.root.parent === WORLD.scene && !r.foe);
   const hb = rs.filter(r => HB_RIGS.has(r)), built = hb.filter(r => r.hb);
   return { people: rs.length, hb: hb.length, built: built.length, keys: hb.every(r => /^dunmore|:/.test(r.g.hbKey)),
-    bones: [...new Set(built.map(r => r.hb.P.skeleton.bones.filter(b => b.name !== 'hemBone').length))], hem: built.filter(r => r.hb.P.hem).length, // S1989: a long cloak's hem adds one bone of its own
+    bones: [...new Set(built.map(r => r.hb.P.skeleton.bones.filter(b => !/^hemBone/.test(b.name)).length))], hem: built.filter(r => r.hb.P.hem).length, // S1989: a long cloak's hem adds one bone of its own (S1999: and its front another)
     driver: built.every(r => r.mesh.skeleton.bones.length >= 17 && r.mesh.skeleton.bones.length <= 20),
     tris: built.map(r => { let t = 0; r.hb.root.traverse(o => { if (o.isMesh) t += (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3; }); return Math.round(t); }),
     statures: built.map(r => +(r.hb.st * r.hb.root.scale.x * r.root.scale.x).toFixed(2)), oldStatures: built.map(r => +(r.root.scale.y * SCALE.PERSON_MODEL / PW.BODY).toFixed(2)),
