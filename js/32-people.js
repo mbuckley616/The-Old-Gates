@@ -1912,7 +1912,11 @@ function hbSkinLoose(P){const sk=P.skeleton,lo=P.byName.root,il=sk.bones.indexOf
 /* S1990 — the front of the thigh: in front of the hips the thighs' share eased in from `up` above the hips, so the top of the front stayed
    with the pelvis while the leading thigh came forward under it (Maeve of Dunmore's apron and skirt out by up to 12.7 cm). On the front the
    ease starts `upF` higher (by the front-ness past the hips' line), so the cloak's front rides the thigh from nearer the waist */
-const HB_CLOAK_LEGS={w:.7,w2:.9,back:.3,depth:.12,shin:.5,side:1,up:.08,heel:.8,k:1.1,arc:.8,low:.5,upF:.5};
+/* S1997 — the front over the stride: on the front the thighs' share at the knee rises from `w` to `wF` and at the ankle from `w2` to
+   `w2F`, by the front-ness past the hips' line and only from `lowF` of the way down from the hips to the knee, below the fingertips (the hands hang
+   in front of the thighs, and a cloak's front that rode the thighs there came back through them). An apron sits 3 to 4 cm off the skin, further forward than any
+   skirt, and it went out through the front of a long cloak on each leading thigh (Maeve of Dunmore, 146 of 788 points out, by up to 8.2 cm) */
+const HB_CLOAK_LEGS={w:.7,w2:.9,back:.3,depth:.12,shin:.5,side:1,up:.08,heel:.8,k:1.1,arc:.8,low:.5,upF:.5,wF:.9,w2F:1,lowF:.55,arcF:.5};
 function hbCloakLegs(P,heel){const sk=P.skeleton,by=P.byName,ix=n=>by[n]?sk.bones.indexOf(by[n]):-1,il=ix('root'),iL=ix('upperleg01.L'),iR=ix('upperleg01.R'),sL=ix('lowerleg01.L'),sR=ix('lowerleg01.R');
   if(il<0||iL<0||iR<0||sL<0||sR<0||!by['foot.L']||!by['foot.R']||!by['toe1-1.L'])return null;
   if(P.cloakLegs)return P.cloakLegs;const sheet=[];P.root.traverse(o=>{if(o.isSkinnedMesh&&/^(cloak|cloakHem)$/.test(o.name))sheet.push(o);});if(!sheet.length)return null;
@@ -1931,7 +1935,7 @@ function hbCloakLegs(P,heel){const sk=P.skeleton,by=P.byName,ix=n=>by[n]?sk.bone
   const B=[Mb(il),Mb(iL),Mb(iR),Mb(sL),Mb(sR),ih>=0?Mb(ih):null],C=HB_CLOAK_LEGS,ss=u=>u<=0?0:u>=1?1:u*u*(3-2*u),M=new THREE.Matrix4(),E=new THREE.Matrix4(),p=new THREE.Vector3(),d=new THREE.Vector3();let n=0;
   for(const m of sheet){const g=m.geometry,pa=g.attributes.position,si=g.attributes.skinIndex,sw=g.attributes.skinWeight;
     for(let i=0;i<pa.count;i++){if(si.getComponent(i,0)!==il||sw.getComponent(i,0)<.999)continue;p.fromBufferAttribute(pa,i).applyMatrix4(B[0]);
-      const lo=ss((kY-p.y)/Math.max(.05,kY-aY)),fr=ss(.5+.5*d.copy(p).sub(mid).dot(fw)/C.depth),uf=C.up+C.upF*ss(2*fr-1),w=(C.back+(1-C.back)*fr)*(C.w*ss((hY+uf-p.y)/Math.max(.05,hY+uf-kY))+(C.w2-C.w)*lo);if(w<=1e-3)continue;
+      const lo=ss((kY-p.y)/Math.max(.05,kY-aY)),fr=ss(.5+.5*d.copy(p).sub(mid).dot(fw)/C.depth),uf=C.up+C.upF*ss(2*fr-1),fz=d.copy(p).sub(mid).dot(fw),fa=fz/Math.max(1e-3,Math.hypot(fz,d.copy(p).sub(mid).dot(ax))),ff=ss(2*fr-1)*ss((fa-C.arcF)/(1-C.arcF))*ss((hY-C.lowF*(hY-kY)-p.y)/Math.max(.05,(1-C.lowF)*(hY-kY))),wk=C.w+(C.wF-C.w)*ff,wa=C.w2+(C.w2F-C.w2)*ff,w=(C.back+(1-C.back)*fr)*(wk*ss((hY+uf-p.y)/Math.max(.05,hY+uf-kY))+(wa-wk)*lo);if(w<=1e-3)continue;
       /* the thighs share w by the point's side; below the knee part of its own side's share goes to that side's shin, none at the middle */
       const aL=ss(.5+.5*d.copy(p).sub(mid).dot(ax)/(half*C.side)),dom=aL>=.5,dz=d.copy(p).sub(mid).dot(fw),dx=d.copy(p).sub(mid).dot(ax),bk=-dz/Math.max(1e-3,Math.hypot(dx,dz)),hw=ih<0?0:C.heel*ss((bk-C.arc)/(1-C.arc))*ss((hY-C.low*(hY-kY)-p.y)/Math.max(.05,(1-C.low)*(hY-kY))),sh=hw>.02?0:C.shin*lo*Math.abs(2*aL-1),wl=w*aL*(1-hw),wr=w*(1-aL)*(1-hw);
       /* the back: the hem's bone in the fourth place, the shin's share left with the thigh */
