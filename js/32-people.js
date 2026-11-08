@@ -1205,7 +1205,14 @@ function pwWalk(ph,o){const p=pwZero();const S=PW.STRIDE,D=PW.DUTY,phL=ph%1,phR=
   if(lim)pwShamble(p,c,s,lim,bs);
   if(o.goblin){pwGoblin(p,.3*c);p.thL[2]+=.1;p.thR[2]-=.1;p.anL[2]-=.1;p.anR[2]+=.1;}
   if(o.wraith)pwWraith(p,ph*6.28); // the game never walks a wraith (tickPeople); the inspector's walk shows it reaching as it glides
-  if(o.holds)pwHold(p,-.08*c,o.gear);return p;}
+  if(o.holds){pwHold(p,-.08*c,o.gear);if(o.staff)pwStaffWalk(p,phL);}return p;}
+// S1977 (L1, OG-001/OG-065: the old who walk leaning on a staff; owed since Session 1130) — a staff in the right fist goes down with the
+// left foot and stays where it went down while that foot carries the body, then swings on with it, as a stick is used: the right
+// upper arm follows the left foot's way under the body (PW.STAFF.REACH, the shoulder to the staff's foot in figure units) and the trunk
+// leans forward onto it. The builder's body plants the foot exactly (hbStaffWalk); this is the swing that brings it near
+PW.STAFF={REACH:1.19,LEAN:.06};
+function pwStaffWalk(p,f){const S=PW.STRIDE,D=PW.DUTY;let z;if(f<D)z=S-2*S*(f/D);else{const u=(f-D)/(1-D);z=-S+2*S*u*u*(3-2*u);}
+  p.shR[0]=-.12-Math.asin(pwClamp(z/PW.STAFF.REACH));p.spine[0]+=PW.STAFF.LEAN;}
 // S535 — a goblin (Michael, the inspector: "Looks a bit too friendly/humanoid", distort and contort it): crouched and hunched,
 // the head thrust forward on the neck so the face stays up, the long arms hanging wide and swinging (sw)
 function pwGoblin(p,sw){p.spine[0]+=.38;p.neck[0]-=.32;p.head[0]-=.06;
@@ -1254,7 +1261,7 @@ function pwWave(t,o){const p=pwIdle(t,o);const w=Math.sin(t*7.5);
   else{p.shR=[-.25,0,-2.35];p.elR=[0,-.2,-.55+.42*w];p.wrR=[0,0,.25*w];p.neck=[0,-.18,0];p.head=[.04,0,-.08];p.spine=[p.spine[0],-.06,.03];}
   return p;}
 // the pose options a rig walks and stands with; a ghoul limps on the leg its seed picks (S534)
-function pwOpts(rig){const g=rig.g;return {holds:rig.holds,gear:g.gear,elder:g.age==='elder',limp:g.ghoul?((g.seed>>>0)%2?1:-1):0,goblin:!!g.goblin,wraith:!!g.wraith,stoop:rig.stoop||0};}
+function pwOpts(rig){const g=rig.g,hd=rig.hbG&&rig.hbG.dress;return {holds:rig.holds,gear:g.gear,staff:g.gear==='stick'&&(!rig.hbG||!!(hd&&hd.staff)),elder:g.age==='elder',limp:g.ghoul?((g.seed>>>0)%2?1:-1):0,goblin:!!g.goblin,wraith:!!g.wraith,stoop:rig.stoop||0};}
 // blend toward the chosen motion over about a third of a second
 // S210 — a crouch on the haunches, leaning forward with the head up, the hands down by the feet: the gargoyle's statue pose
 function pwCrouch(t,o){const p=pwZero();const h=.2,z=.07;const [th,kn]=pwIK(z,-h);
@@ -1996,7 +2003,35 @@ function hbPose(rig){const H=rig.hb,B=rig.B,map=H.map,grip=H.grip&&rig.holds&&!r
     hbRel(B[j],rig.root,_hbq).multiply(H.s0[i]);if(hf>0&&H.hold.has(i)){const k=rig.tpHold?hf*(rig.tpHold[j.slice(-1)]||0):hf;if(k>0)_hbq.copy(_hbqA.copy(_hbq).slerp(_hbqH,k));}_hbq.multiply(H.t0[i]);
     if(b.parent&&b.parent!==H.P.root){hbRel(b.parent,H.root,_hbq2).invert();b.quaternion.copy(_hbq2.multiply(_hbq));}else b.quaternion.copy(_hbq);}
   const hp=B.hips.position,rb=map[0][1];_hbv.set(hp.x,hp.y-PW.HIPS,hp.z).applyMatrix3(H.A);_hbv.y*=H.kh;rb.position.copy(H.pos0).add(_hbv.applyMatrix3(H.Bi));
-  if(grip&&rig.thrust>0){const wb=(map.find(m=>m[0]==='wrR')||[])[1],sp=wb&&foeSpearOf(rig,H.root,wb);if(sp)foeSpearAim(rig,wb,sp);}}
+  if(grip&&rig.thrust>0){const wb=(map.find(m=>m[0]==='wrR')||[])[1],sp=wb&&foeSpearOf(rig,H.root,wb);if(sp)foeSpearAim(rig,wb,sp);}
+  if(grip&&!rig.foe)hbStaffWalk(rig);}
+// S1977 — the staff planted (L1; pwStaffWalk swings it near): while the left foot is down the staff's foot stays on the ground where it
+// went down, and through the left foot's swing it is carried on to the next, lifted HB_STAFF.LIFT at the middle, by bending the right
+// elbow and turning the upper arm toward it. Its weight is the walk's, so standing, running
+// or a blow the arm is the pose's. Only the builder's own staff, on townsfolk; the far driver keeps pwStaffWalk's swing. The elbow does
+// most of it: the arm hangs nearly straight down the staff (164° at the elbow), and as the body passes over the foot the shoulder comes
+// 7 cm nearer it, which takes up to 0.67 rad more bend (HB_STAFF.BEND)
+const HB_STAFF={LIFT:.05,TURN:1,BEND:1},_hbsT=new THREE.Vector3(),_hbsA=new THREE.Vector3(),_hbsB=new THREE.Vector3(),_hbsP=new THREE.Vector3(),_hbsQ=new THREE.Quaternion(),_hbsR=new THREE.Quaternion();
+function hbStaffWalk(rig){const H=rig.hb,w=rig.w;
+  if(H.staffW===undefined){let st=null;H.root.traverse(o=>{if(o.name==='staff')st=o;});const ua=(H.map.find(m=>m[0]==='shR')||[])[1],la=(H.map.find(m=>m[0]==='elR')||[])[1];
+    H.staffW=st&&ua&&la?{st,ua,la,P:null,from:null,on:false}:null;}
+  const S=H.staffW;if(!S||!w)return;const k=Math.max(0,Math.min(1,(w.walk||0)-(w.run||0)-(w.wave||0)));if(k<.02||rig.thrust>0){S.P=null;S.on=false;return;}
+  H.root.updateMatrixWorld(true);S.st.getWorldPosition(_hbsT);
+  const open=activeZoneId==='world'&&!hbIndoors()&&typeof worldH==='function',gy=(x,z)=>{rig.root.getWorldPosition(_hbsP);return open?_hbsP.y+worldH(x,z)-worldH(_hbsP.x,_hbsP.z):_hbsP.y;};
+  const f=(rig.phase%1+1)%1,D=PW.DUTY,tg=_hbsB;
+  if(f<D){if(!S.on||!S.P){S.P=new THREE.Vector3(_hbsT.x,gy(_hbsT.x,_hbsT.z),_hbsT.z);S.on=true;}tg.copy(S.P);}
+  else{if(S.on){S.from=S.P;S.on=false;}const u=(f-D)/(1-D),e=u*u*(3-2*u);tg.set(_hbsT.x,gy(_hbsT.x,_hbsT.z)+HB_STAFF.LIFT*Math.sin(Math.PI*u),_hbsT.z);if(S.from)tg.lerp(S.from,1-e);}
+  tg.lerp(_hbsT,1-k);
+  // the elbow first, bent in the plane of the arm and the staff until the shoulder reaches the staff's foot as far as the target is;
+  // then the upper arm turned to aim it there
+  S.ua.getWorldPosition(_hbsP);S.la.getWorldPosition(_hbsA);const a=_hbsA.distanceTo(_hbsP),b=_hbsA.distanceTo(_hbsT),es=_hbsP.clone().sub(_hbsA),et=_hbsT.clone().sub(_hbsA);
+  const c=Math.max(Math.abs(a-b)+1e-3,Math.min(a+b-1e-3,tg.distanceTo(_hbsP))),g0=es.angleTo(et),g1=Math.acos(pwClamp((a*a+b*b-c*c)/(2*a*b))),n=es.clone().cross(et);
+  if(n.lengthSq()>1e-10)hbStaffTurn(S.la,_hbsQ.setFromAxisAngle(n.normalize(),Math.max(-HB_STAFF.BEND,Math.min(HB_STAFF.BEND,g1-g0))));
+  S.st.getWorldPosition(_hbsT);_hbsA.subVectors(_hbsT,_hbsP);const t2=tg.clone().sub(_hbsP);
+  if(_hbsA.lengthSq()>1e-8&&t2.lengthSq()>1e-8){_hbsQ.setFromUnitVectors(_hbsA.normalize(),t2.normalize());const ang=2*Math.acos(Math.min(1,Math.abs(_hbsQ.w)));
+    if(ang>HB_STAFF.TURN)_hbsQ.slerp(_hbsR.identity(),1-HB_STAFF.TURN/ang).normalize();hbStaffTurn(S.ua,_hbsQ);}}
+// a bone turned by a rotation given in the world's frame, its children with it
+function hbStaffTurn(b,q){b.parent.getWorldQuaternion(_hbsR);b.getWorldQuaternion(_hbq3);b.quaternion.copy(_hbsR.invert().multiply(q.multiply(_hbq3)));b.updateMatrixWorld(true);}
 // a foe's glow: the driver's emissive on every material of the builder's body, and the parry's stagger (which swaps the driver's
 // material for a yellow clone, 74-strikes.js) as a strong gold; the materials the kill clones are the ones on the meshes now
 function hbGlow(rig){const H=rig.hb,m=rig.mesh.material;let em=m&&m.emissive?m.emissive.getHex():0;if(m!==H.drv&&m&&m.color&&m.color.getHex()===0xffdd44)em=0xb08010;
