@@ -49,6 +49,15 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 - **C.** Wait for the designer's page: OG-142 written up as a proposal first.
 
 **Recommendation.** A. The numbers (×2, one in eight) are the ones a player would feel: say if you want them otherwise. Devlog: `docs/devlog/1984.md`.
+### Cooking — names on today's meals, a pot with a second ingredient, or that plus the table as a deed? (from the systems designer, 2026-11-08, #1296)
+**The question.** Backlog L8's *Cooking* (OG-023, OG-108) asks for each island's nine dishes and three drinks, and for the campfire, hearth, spit and clay oven. Today every island cooks the same three meals (Roast Meat, Baked Fish, Pottage) at any fire, a meal never turns, and nothing is learned. Should a dish be a new name, a recipe you discover, or also something you give and sell?
+
+**Options.**
+- **A.** The island's table: today's three meals named by island and the inn's nine dishes, same buffs. One systems session.
+- **B (recommended).** The pot and the second thing: a main plus one of its island's three seconds makes a dish that lasts 3 h, not 2, and carries a rider (the grain ×1.5 longer; the sweet restores 30 health and 30 stamina; the island's own adds Rich ×1.25 in the Gatelands, Warmth +1 in the Mark or Cool +1 in Aurenne). Learned by eating it at an inn, asking a cook, or trying the pair. A campfire roasts (dishes need a mess kit), a hearth stews, a clay oven bakes food that keeps. Meals turn to half strength after 3 game days, bakes after 15. Three systems sessions, one look, one quest-writer run.
+- **C.** B, plus the table as a deed: a dish of their island raises a person's disposition +10 once, an inn buys three of your dishes a day, six at a feast add +1 town favour. Five systems sessions.
+
+**Recommendation.** B: it meets the note in full on the three fed kinds already built, learning comes by discovery rather than purchase, and the Mark's curd and Aurenne's olives become how you meet climate B. C reaches into Speech and the economy and can follow as its own question. Page: `docs/design/cooking.md`.
 ### The dungeon's cell by kind: old gates at 3 m, and forts and lairs at what? (systems builder, Session 1105) — DECISION #421
 **The question.** F2b's last session sets a dungeon's grid cell at true scale; it is one unit today, so corridors are 1 m wide for a 1.8 m body. Michael chose **C, 3 m** on #300 and added: "If by dungeon we mean Old Gates, they should be extremely massive and cavernous. A normal 'dungeon' like a mine, or a cave can be a more typical size." The game has three kinds of underground place: the **old gates** (the world's portals, themed by school: crypts, haunted halls, elemental and deep caverns, ruins), **fort interiors** (the `fort_` layouts), and **lairs and dens** (a beast's lair, the cloak's den). So the cell can differ by kind, and "a more typical size" is a number a player feels.
 
