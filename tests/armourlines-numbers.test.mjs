@@ -75,7 +75,7 @@ const L = await page.evaluate(async () => {
 }).catch(e => ({ err: String(e) }));
 console.log(JSON.stringify(L));
 check('through a save slot: light, robe, an enchanted cloak and a bagged piece keep weight, price and gate', !L.err && JSON.stringify(L.before) === JSON.stringify(L.after), L);
-// 3. the Mages' Guild's counter (S566): in the hall, the head's *Browse your wares.* opens a counter of the four robes alone
+// 3. the Mages' Guild's counter (S566): in the hall, the head's *Browse your wares.* opens a counter of the four robes (and, since S1858, the implements)
 await page.evaluate(() => { const S = WORLD.settle.get('dunmore'); goToInterior(S.houses.find(h => h.type === 'guild_m')); });
 await page.waitForFunction(() => typeof currentHouse !== 'undefined' && currentHouse && currentHouse.type === 'guild_m', null, { timeout: 60000 });
 await page.waitForTimeout(1500);
@@ -90,7 +90,11 @@ console.log(JSON.stringify(G));
 // S979 — and the guild library's lore book, The Seventh Niche (the approved draft), beside them
 // S1483's mortar (mortarFor sells the Mortar and Pestle at an apothecary, a potion shop and the Mages' Guild) is the guild's too, not a goods shop's
 const mortar = G.rows.filter(n => n === 'Mortar and Pestle').length;
-const robes = G.rows.filter(n => n !== 'The Seventh Niche' && n !== 'Mortar and Pestle');
-check('the Mages\' Guild: its head offers Browse your wares., and the counter holds the four robes, the guild\'s lore book and nothing of a goods shop\'s', G.labels.includes('Browse your wares.') && G.open && G.rows.length === 5 + mortar && mortar <= 1 && G.rows.includes('The Seventh Niche') && robes.length === 4 && robes.every(n => / (Cowl|Robe|Wraps|Under-robe)$/.test(n)), G);
+// S2004 — and since S1858 (Michael's B on #1111) the guild's implements: a staff and a wand of each of the six words, Cloch's wand the
+// maul, all Wooden, 12 at Novice (the tomes come at Adept). They are counted exactly, as the robes are.
+const IMPL = /^Wooden (Staff|Wand|Maul) of (Tine|Uisce|Gaoth|Cloch|Scáth|Solas)$/;
+const impl = G.rows.filter(n => IMPL.test(n));
+const robes = G.rows.filter(n => n !== 'The Seventh Niche' && n !== 'Mortar and Pestle' && !IMPL.test(n));
+check('the Mages\' Guild: its head offers Browse your wares., and the counter holds the four robes, the guild\'s lore book, the twelve staves and wands of the six words and nothing of a goods shop\'s', G.labels.includes('Browse your wares.') && G.open && G.rows.length === 5 + 12 + mortar && mortar <= 1 && impl.length === 12 && new Set(impl).size === 12 && G.rows.includes('The Seventh Niche') && robes.length === 4 && robes.every(n => / (Cowl|Robe|Wraps|Under-robe)$/.test(n)), { G, impl: impl.length });
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
