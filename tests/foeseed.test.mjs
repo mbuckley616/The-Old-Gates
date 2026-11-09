@@ -22,11 +22,19 @@ for (let k = 0; k < 12; k++) {
   if (ids.length >= 3) break;
   await page.evaluate((k) => { px += 120 * Math.cos(k); pz += 120 * Math.sin(k); }, k);
 }
-console.log('chunk foes', ids.length, JSON.stringify(ids.slice(0, 6)));
+// Since Session 1704 the chunk's wild animals (fish, hares, foxes, sheep) ride the same list, keyed wild:<chunk>:<n> (88-world-ticks.js):
+// they are not foes and carry no epoch, so they are counted on their own (QA, Session 2000; the weekly run of 8 Nov read 12 of 42).
+const wild = ids.filter(e => (e.id || '').startsWith('wild:'));
+ids = ids.filter(e => !(e.id || '').startsWith('wild:'));
+console.log('chunk foes', ids.length, JSON.stringify(ids.slice(0, 6)), 'wild', wild.length, JSON.stringify(wild.slice(0, 4)));
 const re = /^-?\d+,-?\d+:\d+:(\d+|shark)$/;
 const uniq = new Set(ids.map(e => e.id)).size;
 check(`every chunk foe has an id <chunk>:<epoch>:<index> naming its own chunk, and a stream (${ids.length} foes, ${uniq} ids)`,
   ids.length >= 1 && ids.every(e => re.test(e.id || '') && e.id.startsWith(e.chunk + ':') && e.rng) && uniq === ids.length, ids);
+const reW = /^wild:-?\d+,-?\d+:[A-Za-z0-9_]+$/;
+const uniqW = new Set(wild.map(e => e.id)).size;
+check(`every wild animal in a chunk has an id wild:<chunk>:<n> naming its own chunk, and a stream (${wild.length} animals, ${uniqW} ids)`,
+  wild.every(e => reW.test(e.id) && e.id.startsWith('wild:' + e.chunk + ':') && e.rng) && uniqW === wild.length, wild);
 
 // 2. the variant: one id picks one variant, every time
 const vr = await page.evaluate(() => { let same = 0, picked = 0; const N = 300;
