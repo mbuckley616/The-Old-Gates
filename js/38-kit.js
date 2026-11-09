@@ -7278,6 +7278,83 @@ function aurenneOrrery(hAt, o = {}) {
       stack: { ...Object.fromEntries(['x', 'z'].map((k, i) => [k, T(S.x, S.z)[i]])), y: +sy.toFixed(3), R: SR, H: SH }, hut: { x: -HX, z: -HZ, y: +hy0.toFixed(3), R: HR, H: HH, door: { x: -HX, z: +(-(HZ + HR)).toFixed(3) } },
       stands: stands.map(s => { const [x, z] = T(s.x, s.z); return { x, y: +s.y.toFixed(3), z, what: s.what }; }), road: { z: -RZ }, pads: CC_PADS.map(p => { const [x, z] = T(p.x, p.z); return { x, z, r: p.r }; }) };
   }
+  // S2028 (card F8; OG-124's panel 6, "small mysteries with no marker: … a locked cellar", Michael's A on #1292) — the Gatelands' locked cellar
+  // in the open world, places.js's gatelandsCellar (Session 1026) without the prototype's own land: the world brings the pasture, the lane and
+  // the ash trees, so the page's ground grid, its lane and its nine ashes are left out. The footings in their courses with the doorway's gap,
+  // the west gable whole with its stack, the limewash, the fireplace and the hearth stone, the rubble fallen in, the hatch in its kerb with
+  // its two oak leaves, the strap hinges, the hasp, the new chain and the bright padlock, the nettles in the footings, the elder in the east
+  // corner, the thorn by the lane and the path worn from the lane through the doorway to the hatch are the prototype's, on the world's ground.
+  // Built in the prototype's frame (its lane at +z) and turned half round, so it faces the road at -z as the other places by a road do;
+  // o.ground(x, z) is the drawn ground in the piece's frame, o.road (below 0) starts the path. The cottage's floor is levelled by the world's
+  // stamp (waysideStamps), so it reads flat here.
+  // -> { group, tris, draws, sol, house { x0, x1, z0, z1, door }, hatch { x, z, y (the leaves' top), lock [x, y, z] }, gable { x, apex },
+  //      stands [{ x, y, z, what }], road { z } }
+  let CLM = null;
+  function gatelandsCellar(o = {}) {
+    const std = (c, ro = .9, x = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: ro, ...x });
+    if (!CLM) CLM = { track: mat('turfDry', { ns: 1.0, color: 0x9a8a6c, rough: 1 }), wall: mat('stone', { ns: 1.3, color: 0xa8a49a, rough: .95 }), dress: mat('ashlar', { ns: .9, color: 0xc8c2b2, rough: .9 }),
+      lime: mat('plaster', { ns: .8, color: 0xf0ece0, rough: .95 }), oak: mat('wood', { ns: 1.1, color: 0x8a8478, rough: .95 }), iron: std(0x4a3426, .8, { metalness: .4 }), bright: std(0xe4e6e8, .3, { metalness: .55 }),
+      bark: std(0x5e564c, .95), leaf: std(0x56682a, .85), nettle: std(0x3e5a26, .9), dark: std(0x0c0a08, 1) };
+    const M = CLM, B = new Map(), key = String(o.key || 'cellar'), F = stream(key + ':lie'), ph = Array.from({ length: 10 }, () => F() * 6.283), V3 = (x, y, z) => new THREE.Vector3(x, y, z);
+    const put = (geo, k, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, uv = .5) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal'].includes(a)) g.deleteAttribute(a);
+      if (!g.attributes.normal) g.computeVertexNormals(); g.applyMatrix4(new THREE.Matrix4().compose(V3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), V3(1, 1, 1))); worldUV(g, uv);
+      if (!B.has(k)) B.set(k, []); B.get(k).push(g); return g; };
+    const rod = (k, a, b, rad, seg = 6, taper = 1) => { const A = V3(...a), C = V3(...b), d = C.clone().sub(A), g = new THREE.CylinderGeometry(rad * taper, rad, d.length(), seg);
+      g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(V3(0, 1, 0), d.clone().normalize())); g.translate((A.x + C.x) / 2, (A.y + C.y) / 2, (A.z + C.z) / 2); return put(g, k); };
+    const G0 = typeof o.ground === 'function' ? o.ground : () => 0, ground = (x, z) => G0(-x, -z), stands = [];
+    const RZ = Math.max(8, -(o.road ?? -10)), RW = 3.4, X0 = -3.5, X1 = 3.5, Z0 = -2.3, Z1 = 2.3, T = .55, DOOR = [-.5, .5], FY = ground(0, 0);
+    const HX = 2.0, HZ = -.8, HW = 1.2, HD = 1.0;
+    const paths = [[[1.2, RZ], [.6, 6.0], [0, Z1 + 1.2], [0, Z1 - .2], [.9, .4], [HX - .3, HZ + HD / 2 + .45]]];
+    const segD = (x, z, a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], t = Math.max(0, Math.min(1, ((x - a[0]) * dx + (z - a[1]) * dz) / (dx * dx + dz * dz))); return Math.hypot(x - a[0] - dx * t, z - a[1] - dz * t); };
+    const pathD = (x, z) => Math.min(...paths.flatMap(p => p.slice(0, -1).map((q, i) => segD(x, z, q, p[i + 1]))));
+    const worn = (x, z) => pathD(x, z) < .45 || (Math.abs(x - HX) < HW / 2 + .5 && Math.abs(z - HZ) < HD / 2 + .5);
+    // the path worn from the lane through the doorway to the hatch, and the trodden ground round the hatch: strips a hand over the drawn ground
+    for (const P of paths) { const pts = []; for (let i = 0; i + 1 < P.length; i++) { const [a, b] = [P[i], P[i + 1]], L = Math.hypot(b[0] - a[0], b[1] - a[1]), n = Math.ceil(L / .4); for (let k = i ? 1 : 0; k <= n; k++) pts.push([a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n]); }
+      const pos = [], idx = []; pts.forEach(([x, z], i) => { const [p, q] = [pts[Math.max(0, i - 1)], pts[Math.min(pts.length - 1, i + 1)]], dx = q[0] - p[0], dz = q[1] - p[1], l = Math.hypot(dx, dz), w = .42 + .06 * Math.sin(i * .7 + ph[6]);
+        for (const sd of [-1, -.5, 0, .5, 1]) { const ex = x - dz / l * w * sd, ez = z + dx / l * w * sd; pos.push(ex, ground(ex, ez) + .03, ez); } if (i) { const o2 = (i - 1) * 5; for (let c = 0; c < 4; c++) idx.push(o2 + c, o2 + c + 5, o2 + c + 1, o2 + c + 1, o2 + c + 5, o2 + c + 6); } });
+      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); if (g.attributes.normal.array[1] < 0) { g.setIndex(idx.map((v, j) => idx[j - j % 3 + [0, 2, 1][j % 3]])); g.computeVertexNormals(); } put(g, 'track', 0, 0, 0, 0, 0, 0, .35); }
+    { const W2 = HW / 2 + .5, D2 = HD / 2 + .5, n = 6, pos = []; for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) { const q = (u, v) => { const x = HX - W2 + 2 * W2 * u, z = HZ - D2 + 2 * D2 * v; return [x, ground(x, z) + .025, z]; };
+        const a = q(i / n, j / n), b = q((i + 1) / n, j / n), c = q(i / n, (j + 1) / n), d = q((i + 1) / n, (j + 1) / n); pos.push(...a, ...c, ...b, ...b, ...c, ...d); }
+      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.computeVertexNormals(); put(g, 'track', 0, 0, 0, 0, 0, 0, .35); }
+    // the footings: rubble stone in courses along the four walls, each stretch to its own height; the doorway's gap in the south wall
+    const hAt = s => .3 + .6 * (.5 + .5 * Math.sin(s * .9 + ph[3]) * Math.cos(s * .37 + ph[4]));
+    const runs = [[X0 + T, Z1 - T / 2, DOOR[0], 0], [DOOR[1], Z1 - T / 2, X1 - T, 0], [X0 + T, Z0 + T / 2, X1 - T, 0], [X1 - T / 2, Z0, Z1, 1]];
+    for (const [a, at, b, alongZ] of runs) for (let s = a; s < b - .05; s += .5) { const L = Math.min(.5, b - s), m = s + L / 2, x = alongZ ? at : m, z = alongZ ? m : at, h = hAt(m + (alongZ ? 20 : 0) + at), n = Math.max(1, Math.round(h / .22)), ch = h / n;
+      for (let c = 0; c < n; c++) put(new THREE.BoxGeometry(alongZ ? T - c * .03 : L - .02, ch - .015, alongZ ? L - .02 : T - c * .03), 'wall', x + (alongZ ? 0 : (c % 2) * .04), FY - .05 + c * ch + ch / 2, z + (alongZ ? (c % 2) * .04 : 0), 0, (F() - .5) * .05); }
+    // the west gable, whole: the wall to the eaves at 2.4 m, then its triangle to the apex at 4.6 m, the stack over it; limewash on its inner face
+    const GX = X0 + T / 2, EAVE = 2.4, APEX = 4.6, STK = 5.5;
+    for (let y = 0; y < APEX - .05; y += .25) { const half = y < EAVE ? Z1 : Z1 * (APEX - y) / (APEX - EAVE), h2 = y < EAVE ? Z1 : Z1 * (APEX - y - .25) / (APEX - EAVE), w = Math.max(.3, (half + h2)); put(new THREE.BoxGeometry(T, .24, w), 'wall', GX, FY - .05 + y + .12, 0); }
+    put(new THREE.BoxGeometry(.6, STK - APEX + .3, .9), 'wall', GX, FY + APEX + (STK - APEX) / 2 - .2, 0); put(new THREE.BoxGeometry(.7, .1, 1.0), 'dress', GX, FY + STK + .05, 0);
+    put(new THREE.BoxGeometry(.02, 1.4, 2.2), 'lime', GX + T / 2 + .01, FY + 1.3, -.6); put(new THREE.BoxGeometry(.02, .7, 1.0), 'lime', GX + T / 2 + .01, FY + 1.85, 1.0);
+    put(new THREE.BoxGeometry(.9, 1.1, .7), 'dark', GX + T / 2 - .1, FY + .55, 0); put(new THREE.BoxGeometry(.25, .06, 1.3), 'dress', GX + T / 2 + .1, FY + 1.12, 0);
+    put(new THREE.BoxGeometry(1.0, .08, 1.3), 'dress', GX + T / 2 + .5, FY + .02, 0); stands.push({ x: GX + T / 2 + .5, y: FY, z: 0, what: 'hearth stone' });
+    // the rubble fallen inside along the walls and out of the east end
+    for (let k = 0; k < 34; k++) { const side = k % 4, t = F(), x = side < 2 ? X0 + T + .5 + t * (X1 - X0 - 2 * T - 1) : side === 2 ? X1 - T - .4 - F() * .5 : X1 + .4 + F() * .9, z = side === 0 ? Z1 - T - .3 - F() * .4 : side === 1 ? Z0 + T + .3 + F() * .4 : Z0 + .6 + t * (Z1 - Z0 - 1.2);
+      if (worn(x, z) || pathD(x, z) < .7) continue; const q = .12 + F() * .1, g = new THREE.BoxGeometry(q * 2.2, q, q * 1.5), gy = ground(x, z); put(g, 'wall', x, gy + q / 2 - .01, z, (F() - .5) * .3, F() * 3, (F() - .5) * .3);
+      if (side === 3 && !stands.some(s => s.what === 'rubble')) stands.push({ x, y: gy, z, what: 'rubble' }); }
+    // the hatch: a kerb of dressed stone round a 1.2 by 1.0 m mouth, flush with the floor; two oak leaves on strap hinges, a hasp, the chain, the padlock
+    const ky = ground(HX, HZ); { const KW = .2; for (const [w, d, x, z] of [[HW + 2 * KW, KW, HX, HZ - HD / 2 - KW / 2], [HW + 2 * KW, KW, HX, HZ + HD / 2 + KW / 2], [KW, HD, HX - HW / 2 - KW / 2, HZ], [KW, HD, HX + HW / 2 + KW / 2, HZ]]) put(new THREE.BoxGeometry(w, .3, d), 'dress', x, ky + .03 - .15, z); }
+    stands.push({ x: HX, y: ky, z: HZ, what: 'hatch' });
+    const LT = ky + .03 + .045; for (const sx of [-1, 1]) { for (let p = 0; p < 4; p++) put(new THREE.BoxGeometry(HW / 8 - .008, .045, HD + .06), 'oak', HX + sx * HW / 8 * (p + .5), LT - .0225, HZ, 0, 0, (F() - .5) * .01);
+      for (const sz of [-.3, .3]) put(new THREE.BoxGeometry(HW / 2 - .1, .012, .06), 'iron', HX + sx * (HW / 2 - (HW / 2 - .1) / 2 - .02), LT + .006, HZ + sz); }
+    { const x = HX, z = HZ + .05; put(new THREE.BoxGeometry(.22, .014, .06), 'iron', x, LT + .007, z); rod('iron', [x - .02, LT + .03, z], [x + .02, LT + .03, z], .012, 5); }
+    for (let k = 0; k < 19; k++) { const t = k / 18, x = HX - .55 + 1.1 * t, y = LT + .012 + .02 * Math.sin(t * Math.PI), z = HZ + .05 + .03 * Math.sin(t * 5 + ph[5]); const tor = new THREE.TorusGeometry(.034, .007, 4, 8); tor.scale(1.25, 1, 1); put(tor, 'bright', x, y, z, k % 2 ? Math.PI / 2 : 0, 0, 0); }
+    for (const sx of [-1, 1]) put(new THREE.TorusGeometry(.03, .008, 4, 8), 'iron', HX + sx * .55, LT + .03, HZ + .05, Math.PI / 2);
+    const lock = [HX + .01, LT + .06, HZ + .05]; put(new THREE.BoxGeometry(.075, .08, .03), 'bright', lock[0], lock[1], lock[2], -1.2); put(new THREE.TorusGeometry(.024, .007, 4, 10, Math.PI), 'bright', lock[0], lock[1] + .045 * Math.cos(1.2), lock[2] + .045 * Math.sin(1.2), -1.2);
+    // the nettles in the footings, the elder grown against the east end, the thorn by the lane
+    for (let k = 0, n = 0; k < 2000 && n < 90; k++) { const x = X0 - 1 + F() * (X1 - X0 + 2), z = Z0 - 1 + F() * (Z1 - Z0 + 2); if (worn(x, z) || pathD(x, z) < .6 || (x < X0 + T + 1.2 && Math.abs(z) < .8)) continue; n++;
+      const h = .4 + F() * .5; put(new THREE.ConeGeometry(.16 + F() * .1, h, 5), 'nettle', x, ground(x, z) + h / 2 - .02, z, (F() - .5) * .2, F() * 3); }
+    const bushes = [], bush = (x, z, s, k) => { const gy = ground(x, z); for (let c = 0; c < 3; c++) rod('bark', [x, gy - .1, z], [x + (F() - .5) * s, gy + s * .9, z + (F() - .5) * s], .05, 5, .6); for (let c = 0; c < 6; c++) put(new THREE.IcosahedronGeometry(s * (.35 + F() * .2), 0).scale(1.2, .8, 1.2), k, x + (F() - .5) * s * 1.2, gy + s * (.7 + F() * .6), z + (F() - .5) * s * 1.2, F(), F() * 3); bushes.push({ x, z }); };
+    bush(X1 + 1.4, Z0 - .8, 2.4, 'leaf'); bush(-4.6, Math.min(RZ - RW / 2 - 1.2, 8), 2.0, 'nettle');
+    // baked one mesh a material, turned half round to face the road at -z
+    const group = new THREE.Group(); let tris = 0; const turn = g => { g.rotateY(Math.PI); g.computeBoundingSphere(); g.computeBoundingBox(); return g; };
+    for (const [k, gs] of B) { const g = turn(mergeGeometries(gs)); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = !['track', 'dark'].includes(k); m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
+    const Tn = (x, z) => [+(-x).toFixed(3), +(-z).toFixed(3)], Sq = (x, z, w, d, h) => { const [a, b] = Tn(x, z); return { x: a, z: b, w, d, ry: 0, h }; };
+    const sol = [Sq((X0 + T + DOOR[0]) / 2, Z1 - T / 2, DOOR[0] - X0 - T, T, .9), Sq((DOOR[1] + X1 - T) / 2, Z1 - T / 2, X1 - T - DOOR[1], T, .9), Sq(0, Z0 + T / 2, X1 - X0 - 2 * T, T, .9),
+      Sq(X1 - T / 2, 0, T, Z1 - Z0, .9), Sq(GX, 0, T, Z1 - Z0, STK), ...bushes.map(b => Sq(b.x, b.z, .5, .5, 2))];
+    return { group, tris: Math.round(tris), draws: group.children.length, sol, house: { x0: -X1, x1: -X0, z0: -Z1, z1: -Z0, door: [-DOOR[1], -DOOR[0]] }, gable: { x: -GX, apex: +(FY + APEX).toFixed(2) },
+      hatch: { x: -HX, z: -HZ, y: +LT.toFixed(3), lock: [-lock[0], +lock[1].toFixed(3), -lock[2]] }, stands: stands.map(s => { const [x, z] = Tn(s.x, s.z); return { x, y: +s.y.toFixed(3), z, what: s.what }; }), road: { z: -RZ } };
+  }
   // the cave's mouth in the open world (Session 1768): an outcrop of grey limestone half sunk in the slope, 15 m across and 11 deep, its
   // face toward +z, and in it the mouth, 4.4 m wide and 3.6 m high, a short throat of rock 6 m into the dark. Its own frame: the throat's
   // floor at the origin (the ground before the mouth), +z out. The world's ground cannot be holed, so the throat has a floor of its own,
@@ -8026,7 +8103,7 @@ function aurenneOrrery(hAt, o = {}) {
     return { group, tris: Math.round(tris), draws: group.children.length, sol, piers: piers.map(f2), bays: bays.map(({ hi, ...b }) => ({ ...b, x0: f2(b.x0), x1: f2(b.x1) })), gap: GAP ? { x0: f2(GAP.x0), x1: f2(GAP.x1), stump: f2(GAP.stump) } : null,
       two, depth: f2(D), deep: f2(xd), arch: { pitch: PITCH, pier: PIER, span: SPAN, r: RAD, upSpring: f2(US), lowSpring: two ? f2(LS) : null, tier: two ? f2(TIER + SC) : null, deck: DECK }, channel: { w: CW, x0: CX0, x1: CX1, runs }, x0: X0, x1: X1, broken: !!GAP, far, farTris: Math.round(far.reduce((a, [g]) => a + g.attributes.position.count / 3, 0)) };
   }
-  return { stream, hashKey, mergeByMaterial, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, coveEscape, grotto: aurenneGrotto, mine: markMine, aqueduct: aurenneAqueduct, carriage: gatelandsCarriage, hunters: markHuntersCamp, charcoal: gatelandsCharcoalCamp }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, trunk: felledTrunk }, ships: { SWATCHES: SHIP_SWATCHES, swatch: shipSwatch, BANNERS: SHIP_BANNERS, banner: shipBanner, sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
+  return { stream, hashKey, mergeByMaterial, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, coveEscape, grotto: aurenneGrotto, mine: markMine, aqueduct: aurenneAqueduct, carriage: gatelandsCarriage, hunters: markHuntersCamp, charcoal: gatelandsCharcoalCamp, cellar: gatelandsCellar }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, trunk: felledTrunk }, ships: { SWATCHES: SHIP_SWATCHES, swatch: shipSwatch, BANNERS: SHIP_BANNERS, banner: shipBanner, sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
     mk: { hall: markHall, townhouse: markTownHouse, lot: markLot, alehall: markAlehall, smithy: markSmithy, apothecary: markApothecary, longhouse: markLonghouse, mats: markMats, yard: markYard, ring: markRing },
     au: { house: aurenneHouse, lot: aurenneLot, smithy: aurenneSmithy, smithyStack: aurSmithyStack, apothecary: aurenneApothecary, courtyard: aurenneCourtyard, church: aurenneChurch, churchBox: aurenneChurchBox, civic: aurenneCivic, academy: aurenneAcademy, academyBox: aurenneAcademyBox, library: aurenneLibrary, churchHall: aurenneChurchHall, courtyardHouse: aurenneCourtyardHouse, home: aurenneHome, homeOne: aurenneHomeOne, tavern: aurenneTavern, mats: aurMats, roomMats: homeMats, AUR, tunnel: aurenneTunnel },
     gl: { PLANS, FIN, PS, PAINTS, guildHall: guildHallRoom, forge: forgeRoom, apothecary: apothecaryRoom, TOWN: GL_TOWN, building, church, keep, market: marketHouse, marketRoom, farmstead, coachInn, coachInnPlan, coachRoom, townhouse: townhouseRoom, farmhouse: farmhouseRoom, byre: byreRoom, barn: barnRoom, row: shrineRow, ROW_GODS, inn: gatelandsInn, cottage: gatelandsCottage, churchLen: n => +((n === 2 ? 2 : 3) * 4.8 + 1.6 + 5.6 - .5 + 7.2 - .9 - .02).toFixed(2), lot: gatelandsLot, mats: glMats, BAYS, bayPlan, bayWidth, baysFor } };

@@ -758,10 +758,11 @@
   // Nothing marks it until you come within 40 m (tickDiscovery, 83), and then the map has it, with no travel to it.
   // -> {id, kind, name, x, z, ry, off, cell} or null, kept on the cell (c._wayside)
   const WAYSIDE={gatelander:['charcoal','merchants','carriage','cellar','erratic'],markman:['hunters','unfinished'],aurennais:['expedition']};
-  const WAYSIDE_OFF={carriage:[20,24],hunters:[20,34],charcoal:[22,34]},WAYSIDE_NAME={carriage:'An overturned coach',hunters:'A hunters’ camp',charcoal:'A charcoal burners’ camp'},WAYSIDE_FIND=40; /* S2025 — the hunters' camp in sight of its road */
+  const WAYSIDE_OFF={carriage:[20,24],hunters:[20,34],charcoal:[22,34],cellar:[20,28]},WAYSIDE_NAME={carriage:'An overturned coach',hunters:'A hunters’ camp',charcoal:'A charcoal burners’ camp',cellar:'A fallen cottage'},WAYSIDE_FIND=40; /* S2025 — the hunters' camp in sight of its road */
   /* S2027 — the charcoal burners' four stances in the camp's own frame (the kit's CC_PADS turned half round: the burning stack's pitstead, the opened
      one's, the hut's and the cordwood's), [x, z, r]; the land under them may rise 2 m across the camp, where the coach's pad allows 1.2 */
-  const WAYSIDE_PADS={charcoal:[[0,0,4.6],[12,1,4.2],[-9,5,2.4],[4,10.5,3.4]]},WAYSIDE_RISE={charcoal:2};
+  /* S2028 — the fallen cottage's floor, 7 by 4.6 m, levelled as one stance */
+  const WAYSIDE_PADS={charcoal:[[0,0,4.6],[12,1,4.2],[-9,5,2.4],[4,10.5,3.4]],cellar:[[0,0,4.4]]},WAYSIDE_RISE={charcoal:2};
   function waysideAt(c){
     if(!c||c._wayside!==undefined)return c?c._wayside:null;c._wayside=null;
     if(c.type==='sea'||c.home||!c.sites||!c.roadDefs||window.OG_LOOK!=='new'||window.OG_KIT_TOWNS===false||typeof PKIT==='undefined'||!PKIT.places)return null;
@@ -801,6 +802,11 @@
       {const [x,z]=W(2,4);out.push(addStamp({id:D.id+'_clear',kind:'door',noFlat:true,x,z,r:17,blend:2,y:0,cell:k}));}
       for(let q=1;q<=4;q++){const t=q/4,[x,z]=W(-3.6-.6*t,-9.5+(-D.off+9.5)*t);out.push(addStamp({id:`${D.id}_way${q}`,kind:'door',noFlat:true,x,z,r:3,blend:1.5,y:0,cell:k}));}
       return out;}
+    if(D.kind==='cellar'){ /* S2028 — the cottage's floor flat at its ground, a clearing of the scatter round the footings, the elder and the thorn, and the path to the road */
+      {const [x,z]=W(0,0);out.push(addStamp({id:D.id+'_floor',kind:'door',x,z,r:4.4,blend:2.5,y,cell:k}));}
+      {const [x,z]=W(0,-2);out.push(addStamp({id:D.id+'_clear',kind:'door',noFlat:true,x,z,r:9.5,blend:2,y:0,cell:k}));}
+      for(let q=1;q<=4;q++){const t=q/4,[x,z]=W(-.6-.6*t,-6+(-D.off+6)*t);out.push(addStamp({id:`${D.id}_way${q}`,kind:'door',noFlat:true,x,z,r:3,blend:1.5,y:0,cell:k}));}
+      return out;}
     {const [x,z]=W(0,-.3);out.push(addStamp({id:D.id+'_pad',kind:'door',x,z,r:3.4,blend:3,y,cell:k}));}
     {const [x,z]=W(0,1);out.push(addStamp({id:D.id+'_clear',kind:'door',noFlat:true,x,z,r:9,blend:2,y:0,cell:k}));}
     for(let q=1;q<=4;q++){const t=q/4,[x,z]=W(2+17*t,-.8+(-D.off+2.6+.8)*t);out.push(addStamp({id:`${D.id}_way${q}`,kind:'door',noFlat:true,x,z,r:3.5,blend:1.5,y:0,cell:k}));}
@@ -812,7 +818,7 @@
     M.group.position.set(D.x,y0,D.z);M.group.rotation.y=D.ry;M.group.name='wayside '+D.kind;sc.add(M.group);
     for(const b of M.sol||[]){const ca=Math.cos(b.ry),sa=Math.sin(b.ry),along=b.w>=b.d,L=Math.max(b.w,b.d),h=Math.min(b.w,b.d)/2,n=Math.max(1,Math.ceil(L/(2*h)));
       for(let q=0;q<n;q++){const t=n>1?-L/2+h+q*(L-2*h)/(n-1):0,lu=along?t:0,lv=along?0:t,[cx,cz]=W(b.x+lu*ca+lv*sa,b.z-lu*sa+lv*ca);STATIC_SOL.push({cx,cz,rx:h,rz:h,top:y0+b.h,wayside:true});}}
-    D.y=y0;D.tris=M.tris;D.draws=M.draws;D.group=M.group;D.lying=M.lying;D.coach=M.coach;D.tent=M.tent;D.stands=M.stands;D.stack=M.stack;D.hut=M.hut;D.pits=M.pits;return M.group;}
+    D.y=y0;D.tris=M.tris;D.draws=M.draws;D.group=M.group;D.lying=M.lying;D.coach=M.coach;D.tent=M.tent;D.stands=M.stands;D.stack=M.stack;D.hut=M.hut;D.pits=M.pits;D.house=M.house;D.hatch=M.hatch;return M.group;}
   // S1800 (card F8; Michael's A on #333, "broken, as drawn", and his A on #1072, "fit the arcade to the land") — Aurenne's ruined aqueducts
   // (PKIT.places.aqueduct, places.js's aurenneAqueduct): an arcade across a river's valley, one tier where it is under 12 m deep and two where
   // deeper. One Aurenne cell in three keeps one, by its own stream (aqueduct:<cell>), so no other draw of the cell moves. Read by place
