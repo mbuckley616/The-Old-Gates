@@ -135,7 +135,7 @@ console.log(JSON.stringify(ds));
 check(`Uisce touched douses the fire 1.5 m ahead (${ds.near}, gone ${ds.gone}: "${ds.said}"), not one 2.5 m ahead (${ds.far}) or behind you (${ds.behind}); a use of Uisce (${ds.use})`,
   ds.near && ds.gone && !ds.far && ds.farLeft && !ds.behind && ds.use && ds.said === 'The fire hisses out.', ds);
 
-// Session 2010 — water B, session 1 (Michael's B on #1254, `docs/design/water.md`): a waterskin (4 uses, 0.3 empty and 0.25 a use) at
+// Session 2012 — water B, session 1 (Michael's B on #1254, `docs/design/water.md`): a waterskin (4 uses, 0.3 empty and 0.25 a use) at
 // every goods shop and inn; E fills every vessel at a town's well (clean, foul while the town has the plague), in a river or lake 0.3 m
 // deep (raw), never the sea; rain outdoors adds a use each 10 game minutes. A drink leaves you Watered for 2 hours (a flask 4):
 // stamina regeneration ×1.1 and Cool 1. Foul water does you no good. Watered is the character's and saved.
@@ -179,7 +179,7 @@ check(`the sea fills nothing ("${wt.sea && wt.sea.said}", no prompt)`, wt.sea &&
 check(`rain outdoors: three ten-minute marks, ${wt.rain} uses`, wt.rain === 3, wt);
 check(`a flask's drink lasts ${wt.flask} min; Watered is the character's and read back on load`, wt.flask === 240 && wt.save.char && wt.save.list, wt);
 
-// Session 2011 — water B, session 2: raw water leaves you Queasy one drink in eight (×0.8 stamina regeneration, 20 min), seeded by the
+// Session 2013 — water B, session 2: raw water leaves you Queasy one drink in eight (×0.8 stamina regeneration, 20 min), seeded by the
 // fill's chunk and day and the drink's index; foul water always (60 min, not Watered). A fill at a source pours out worse water. Boiling
 // at a fire cleans raw water and heats a canteen (a hot drink is Warmth 1, not Cool 1); a Charcoal filters raw water. The canteen at
 // the Mark's goods shops, the flask at Aurenne's.
