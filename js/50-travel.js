@@ -894,8 +894,18 @@ function wellNear(){if(!_waterOutside()||typeof SETTLE==='undefined')return null
     const x=st.x+6,z=st.z+4;if(Math.hypot(px-x,pz-z)<=1.3+WATER_REACH)return {site:st,x,z};}
   return null;}
 function townPlague(site){const t=worldState.towns&&worldState.towns[site.id];return !!(t&&t.flags&&t.flags.plague!=null);}
+// S2022 — water inside a gate (water.md's sources: foul in a failing or catastrophic gate, raw in a steady one): a pool's water (not
+// frozen) within the reach of its kerb, or a flooded hall's, standing in it, on your floor. Pools are a gate's only (gateThings).
+function _gateWaterHere(){if(lid==='overworld'||(typeof isInterior==='function'&&isInterior()))return null;
+  const G=window._lastGen;if(!G||!G.gate||typeof DZONE==='undefined'||!DZONE)return null;const kind=G.cond==='failing'||G.cond==='catastrophic'?'foul':'raw';
+  for(const t of (typeof GATE_THINGS!=='undefined'?GATE_THINGS:[])){if(t.kind!=='pool'||t.frozen||(t.floor||1)!==currentFloor)continue;
+    if(Math.hypot(px-t.x,pz-t.z)-t.R<=WATER_REACH)return {kind,from:'the pool',gate:true};}
+  const u=px/DCELL+.5,v=pz/DCELL+.5;
+  for(const sp of G.spaces||[]){if(sp.type!=='flooded'||(sp.floor||1)!==currentFloor)continue;
+    if(u>=sp.x&&u<sp.x+sp.w&&v>=sp.y&&v<sp.y+sp.h)return {kind,from:'the flooded hall',gate:true};}
+  return null;}
 // what you could fill from where you stand: {kind, from} or {sea:true}, or null
-function waterSourceHere(){if(!_waterOutside())return null;
+function waterSourceHere(){if(!_waterOutside())return _gateWaterHere();
   const w=wellNear();if(w)return {kind:townPlague(w.site)?'foul':'clean',from:'the well',site:w.site};
   let y=0;try{y=worldH(px,pz);}catch(e){return null;}if(!(y<SEA_Y-WATER_DEEP))return null;
   let fresh=false;try{fresh=wildRiverNear(px,pz,0)||wildLakeNear(px,pz);}catch(e){}
@@ -907,7 +917,7 @@ function fillHere(){const V=vesselsInBag();if(!V.length)return false;const s=wat
   const poured=room.filter(v=>v.wUses>0&&WATER_KINDS[v.wKind||'clean']>WATER_KINDS[s.kind]).length;room.forEach(v=>fillVessel(v,s.kind,null,true));
   if(poured&&s.kind!=='foul'){const w=room.length>1?'your water':`the ${room[0].name.toLowerCase()}`;showMsg(`You pour out the old water and fill ${w} from ${s.from}.`,'#88b8e0');if(typeof renderHubInv==='function')renderHubInv();return true;}
   const what=room.length>1?'your water':`the ${room[0].name.toLowerCase()}`;
-  showMsg(s.kind==='foul'?`You fill ${what} at the well. It smells of the sickness.`:`You fill ${what} from ${s.from}.`,s.kind==='foul'?'#a0a060':'#88b8e0');
+  showMsg(s.kind==='foul'?(s.gate?`You fill ${what} from ${s.from}. It smells of the gate.`:`You fill ${what} at the well. It smells of the sickness.`):`You fill ${what} from ${s.from}.`,s.kind==='foul'?'#a0a060':'#88b8e0');
   if(typeof renderHubInv==='function')renderHubInv();return true;}
 function waterPrompt(){const V=vesselsInBag();if(!V.length)return '';const s=waterSourceHere();if(!s||s.sea)return '';
   const room=V.filter(v=>vesselHasRoom(v)||(v.wUses>0&&WATER_KINDS[v.wKind||'clean']>WATER_KINDS[s.kind]));if(!room.length)return '';
@@ -2623,4 +2633,5 @@ function interact(){
     }
     return;
   }
+  if(fillHere())return; /* S2022 — water B: a gate's pool or flooded hall */
 }
